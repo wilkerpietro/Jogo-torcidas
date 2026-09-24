@@ -87,33 +87,33 @@ TO.planejamento = (function(){
      ======================================================= */
   const PONTOS = [
     /* o destino: só faz sentido quando se decide esperar o rival chegar */
-    {id:'arredores', nome:'Arredores do estádio', curto:'ARREDORES',
+    {id:'arredores', nome:_t('Arredores do estádio'), curto:_t('ARREDORES'),
      risco:3, prestigio:4, ida:false, x:0.80, y:0.34, acima:false,
-     nota:'cordão da PM em peso, mas é onde o rival inteiro está'},
+     nota:_t('cordão da PM em peso, mas é onde o rival inteiro está')},
     /* os da ida: o bonde deles ainda está na rua, quebrado em pedaços */
-    {id:'bar',       nome:'Bar do rival',         curto:'BAR DELES',
+    {id:'bar',       nome:_t('Bar do rival'),         curto:_t('BAR DELES'),
      risco:2, prestigio:5, ida:true, via:'sul', x:0.21, y:0.46, acima:false,
-     nota:'poucos lá dentro, mas é humilhação que fica'},
-    {id:'praca',     nome:'Praça de encontro',    curto:'PRAÇA',
+     nota:_t('poucos lá dentro, mas é humilhação que fica')},
+    {id:'praca',     nome:_t('Praça de encontro'),    curto:_t('PRAÇA'),
      risco:2, prestigio:2, ida:true, via:'norte', x:0.37, y:0.15, acima:true,
-     nota:'aberta, a briga espalha e pouca gente se pega'},
-    {id:'terminal',  nome:'Terminal rodoviário',  curto:'TERMINAL',
+     nota:_t('aberta, a briga espalha e pouca gente se pega')},
+    {id:'terminal',  nome:_t('Terminal rodoviário'),  curto:_t('TERMINAL'),
      risco:4, prestigio:3, ida:true, via:'sul', x:0.34, y:0.76, acima:false,
-     nota:'fechado: pega o bonde na descida, a PM chega rápido'},
-    {id:'avenida',   nome:'Avenida de acesso',    curto:'AVENIDA',
+     nota:_t('fechado: pega o bonde na descida, a PM chega rápido')},
+    {id:'avenida',   nome:_t('Avenida de acesso'),    curto:_t('AVENIDA'),
      risco:2, prestigio:3, ida:true, via:'norte', x:0.57, y:0.38, acima:true,
-     nota:'larga, favorece a linha e a fuga'},
-    {id:'viaduto',   nome:'Viaduto da via expressa', curto:'VIADUTO',
+     nota:_t('larga, favorece a linha e a fuga')},
+    {id:'viaduto',   nome:_t('Viaduto da via expressa'), curto:_t('VIADUTO'),
      risco:3, prestigio:4, ida:true, via:'sul', x:0.66, y:0.74, acima:false,
-     nota:'gargalo: o bonde tem de passar por baixo, sem saída pelos lados'}
+     nota:_t('gargalo: o bonde tem de passar por baixo, sem saída pelos lados')}
   ];
 
   /* GDD §14: esperar no destino ou cortar o caminho */
   const COMO = [
-    {id:'arredores', rot:'Só nos arredores do estádio',
-     nota:'espera o bonde deles chegar inteiro; PM em peso, briga grande'},
-    {id:'ida',       rot:'Na ida ao estádio',
-     nota:'corta o caminho antes do cordão; precisa do olheiro no ponto certo'}
+    {id:'arredores', rot:_t('Só nos arredores do estádio'),
+     nota:_t('espera o bonde deles chegar inteiro; PM em peso, briga grande')},
+    {id:'ida',       rot:_t('Na ida ao estádio'),
+     nota:_t('corta o caminho antes do cordão; precisa do olheiro no ponto certo')}
   ];
 
   /* o ponto ganha um bairro de verdade da praça, sempre o mesmo */
@@ -184,8 +184,8 @@ TO.planejamento = (function(){
     }));
     return {torcida:o, efetivo, bondes, tamanhos, confianca, rotas,
             texto: bondes===1
-              ? `Saem num bonde só, ${tamanhos[0]} na conta do olheiro.`
-              : `Devem se quebrar em ${bondes} bondes: ${tamanhos.join(', ')}.`};
+              ? _t('Saem num bonde só, {n} na conta do olheiro.', {n:tamanhos[0]})
+              : _t('Devem se quebrar em {n} bondes: {lista}.', {n:bondes, lista:tamanhos.join(', ')})};
   }
 
   /* Chance de o olheiro estar no lugar certo: com o rival num bonde só,
@@ -198,8 +198,8 @@ TO.planejamento = (function(){
       (gente ? 62 : 14) + (rel.confianca-70)*0.4, 8, 92));
     return {gente, chance, bondes:pegos.length,
             texto: gente
-              ? `O olheiro põe ${gente} deles passando aqui`
-              : 'O olheiro não vê bonde nenhum por aqui'};
+              ? _t('O olheiro põe {n} deles passando aqui', {n:gente})
+              : _t('O olheiro não vê bonde nenhum por aqui')};
   }
 
   /* GDD §16.7: dividir por zona rende mais frentes de ataque, cada uma
@@ -330,8 +330,9 @@ TO.planejamento = (function(){
     if(r.nivel !== 'nada'){
       TO.relacoes.marcarAjuda(E, aliadoId);
       moral = r.nivel === 'churrasco' ? 0.4 : r.nivel === 'hospedar' || r.nivel === 'escolta' ? 0.2 : 0;
-      if(moral) TO.estado.mexerIndicador(E, 'moral', moral,
-        `Recebidos pela ${o.nome} em ${j.cidadeAdv || 'fora'}`);
+      if(moral) TO.estado.mexerIndicador(E, 'moral', moral, j.cidadeAdv
+        ? _t('Recebidos pela {nome} em {cidade}', {nome:o.nome, cidade:j.cidadeAdv})
+        : _t('Recebidos pela {nome} fora de casa', {nome:o.nome}));
       /* O GASTO ENTRA NAS FINANÇAS DELA (conferência do dono, 08/09/2026):
          a mesma porta do resto da economia das IAs — `lancarIA` escreve
          no extrato que o perfil da torcida mostra; o caixa paga até
@@ -342,7 +343,8 @@ TO.planejamento = (function(){
         t.caixa = Math.max(0, (t.caixa||0) - r.custo);
         if(pago && TO.relacoes.lancarIA)
           TO.relacoes.lancarIA(E, aliadoId,
-            `Recepção da ${E.torcida.nome} (${r.cabecas} cabeças · ${rec.rot.toLowerCase()})`, -pago);
+            _t('Recepção da {nome} ({n} cabeças · {nivel})',
+               {nome:E.torcida.nome, n:r.cabecas, nivel:rec.rot.toLowerCase()}), -pago);
       }
     }
     const escolta = (r.nivel === 'escolta' || r.nivel === 'churrasco')
@@ -353,10 +355,10 @@ TO.planejamento = (function(){
     /* a resposta chega como mensagem dela (mensagens entre torcidas) */
     if(TO.feed && TO.feed.mensagemDe){
       const TXT = {
-        hospedar: `Estamos juntos. A sede fica aberta pra caravana de vocês — colchão, banho e café. Chega cedo.`,
-        escolta:  `Estamos juntos. Dormem na sede e o nosso bonde anda com vocês até o portão. Aqui ninguém encosta.`,
-        churrasco:`Estamos juntos. Churrasco na sede quando chegarem, e a gente sobe pro estádio de bonde junto. Cidade de vocês.`,
-        nada:     `Irmão, dessa vez não vai dar. Semana pesada por aqui. Fica pra próxima.`
+        hospedar: _t('Estamos juntos. A sede fica aberta pra caravana de vocês — colchão, banho e café. Chega cedo.'),
+        escolta:  _t('Estamos juntos. Dormem na sede e o nosso bonde anda com vocês até o portão. Aqui ninguém encosta.'),
+        churrasco:_t('Estamos juntos. Churrasco na sede quando chegarem, e a gente sobe pro estádio de bonde junto. Cidade de vocês.'),
+        nada:     _t('Irmão, dessa vez não vai dar. Semana pesada por aqui. Fica pra próxima.')
       };
       TO.feed.mensagemDe(E, aliadoId, TXT[r.nivel] || TXT.nada,
                          r.nivel === 'nada' ? 'recusa' : 'juntos');
@@ -423,8 +425,8 @@ TO.planejamento = (function(){
      torcidas da rua são aliadas, a única intenção possível é a paz */
   function intencoes(E){
     return [
-      {id:'paz', rot:'Ir em paz', nota:'entrar pelo portão, bandeira e bateria'},
-      {id:'atacar', rot:'Atacar', nota:'procurar a torcida rival antes da bola rolar'}
+      {id:'paz', rot:_t('Ir em paz'), nota:_t('entrar pelo portão, bandeira e bateria')},
+      {id:'atacar', rot:_t('Atacar'), nota:_t('procurar a torcida rival antes da bola rolar')}
     ];
   }
 
@@ -479,9 +481,10 @@ TO.planejamento = (function(){
     });
   }
   const opcoesDeDestino = E =>
-    [{id:'estadio', nome:'Direto pro estádio', nota:'entra pelo portão, sem parar'}]
+    [{id:'estadio', nome:_t('Direto pro estádio'), nota:_t('entra pelo portão, sem parar')}]
       .concat(pontosDeAtaque(E).map(x=>({id:x.id,
-        nome:`Atacar — ${x.nome}`, nota:`${x.bairro} · risco ${x.risco}/5`})));
+        nome:_t('Atacar — {ponto}', {ponto:x.nome}),
+        nota:_t('{bairro} · risco {n}/5', {bairro:x.bairro, n:x.risco})})));
 
   /* =======================================================
      ALIADOS NA NOSSA CIDADE
@@ -597,18 +600,18 @@ TO.planejamento = (function(){
   /* GDD §11.1: acolher bem é o jeito mais barato de subir relação */
   /* os números saem da tabela da relação (TO.relacoes.REL) */
   const RECEPCAO = [
-    {id:'nada',      rot:'Não receber',        porCabeca:0,
+    {id:'nada',      rot:_t('Não receber'),        porCabeca:0,
      get relacao(){ return -TO.relacoes.REL.naoReceber; },
-     nota:'cada um se vira; o aliado registra e cobra depois'},
-    {id:'hospedar',  rot:'Hospedar na sede',   porCabeca:25,
+     nota:_t('cada um se vira; o aliado registra e cobra depois')},
+    {id:'hospedar',  rot:_t('Hospedar na sede'),   porCabeca:25,
      get relacao(){ return TO.relacoes.REL.hospedar; },
-     nota:'colchão no salão e café de manhã'},
-    {id:'escolta',   rot:'Hospedar e escoltar', porCabeca:50,
+     nota:_t('colchão no salão e café de manhã')},
+    {id:'escolta',   rot:_t('Hospedar e escoltar'), porCabeca:50,
      get relacao(){ return TO.relacoes.REL.hospedarEscolta; },
-     nota:'bonde junto com o deles até o portão'},
-    {id:'churrasco', rot:'Churrasco e escolta', porCabeca:75,
+     nota:_t('bonde junto com o deles até o portão')},
+    {id:'churrasco', rot:_t('Churrasco e escolta'), porCabeca:75,
      get relacao(){ return TO.relacoes.REL.churrasco; },
-     nota:'recepção de irmandade: carne, bebida e caminhada junto'}
+     nota:_t('recepção de irmandade: carne, bebida e caminhada junto')}
   ];
   const recepcaoDe = id => RECEPCAO.find(r=>r.id===id) || RECEPCAO[0];
 
@@ -648,8 +651,8 @@ TO.planejamento = (function(){
       let custo = custoRecepcao(nivel, a.estimativa);
       if(custo > E.dinheiro){ nivel = 'nada'; custo = 0; }
       if(custo > 0)
-        TO.estado.lancar(E, `Recepção da ${a.torcida.nome} `+
-                            `(${a.estimativa} cabeças)`, -custo);
+        TO.estado.lancar(E, _t('Recepção da {nome} ({n} cabeças)',
+                               {nome:a.torcida.nome, n:a.estimativa}), -custo);
       const relRec = recepcaoDe(nivel).relacao;
       E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0)
         + (relRec > 0
@@ -660,10 +663,10 @@ TO.planejamento = (function(){
       /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
       if(TO.feed && TO.feed.mensagemDe){
         const TXT = {
-          hospedar: 'Obrigado pela casa, irmão. Colchão no salão e café de manhã: ninguém recebe assim. Vocês têm crédito com a gente.',
-          escolta:  'Andar até o portão com o bonde de vocês do lado foi outra coisa. Fica registrado: o que precisar, é só chamar.',
-          churrasco:'Que recepção. Carne, bebida e o bonde junto — isso é irmandade. Quando vierem, a casa é de vocês.',
-          nada:     'Passamos pela cidade de vocês e ninguém apareceu. Anotado.'
+          hospedar: _t('Obrigado pela casa, irmão. Colchão no salão e café de manhã: ninguém recebe assim. Vocês têm crédito com a gente.'),
+          escolta:  _t('Andar até o portão com o bonde de vocês do lado foi outra coisa. Fica registrado: o que precisar, é só chamar.'),
+          churrasco:_t('Que recepção. Carne, bebida e o bonde junto — isso é irmandade. Quando vierem, a casa é de vocês.'),
+          nada:     _t('Passamos pela cidade de vocês e ninguém apareceu. Anotado.')
         };
         TO.feed.mensagemDe(E, a.id, TXT[nivel] || TXT.nada,
                            nivel === 'nada' ? 'cobranca' : 'agradecimento');
@@ -798,9 +801,9 @@ TO.planejamento = (function(){
     const curta  = caminho(E, origem, destino, false);
     const segura = caminho(E, origem, destino, true);
     if(!curta) return [{
-      id:'ar', nome:'De avião', rodovias:[], cidades:[origem, destino], saltos:1,
+      id:'ar', nome:_t('De avião'), rodovias:[], cidades:[origem, destino], saltos:1,
       custo:CUSTO_AR, risco:0,
-      nota:'não há estrada ligando as duas praças; só voando'
+      nota:_t('não há estrada ligando as duas praças; só voando')
     }];
 
     const monta = (r, id, nome, nota)=>({
@@ -808,24 +811,26 @@ TO.planejamento = (function(){
       custo: CUSTO_BASE + CUSTO_SALTO*r.saltos + (id==='segura' ? 600 : 0),
       risco: r.risco, nota
     });
-    const fora = [monta(curta, 'curta', 'Rota mais curta',
-      `${curta.saltos} ${curta.saltos===1?'trecho':'trechos'} por ` +
-      `${curta.rodovias.join(' e ') || 'estrada vicinal'}`)];
+    const eJunta = l => l.join(_t(' e '));
+    const fora = [monta(curta, 'curta', _t('Rota mais curta'),
+      _tn(curta.saltos, '{n} trecho por {vias}', '{n} trechos por {vias}',
+          {vias:eJunta(curta.rodovias) || _t('estrada vicinal')}))];
     const igual = segura && segura.cidades.join() === curta.cidades.join();
     if(segura && !igual)
-      fora.push(monta(segura, 'segura', 'Rota que desvia dos rivais',
-        `${segura.saltos} trechos por ${segura.rodovias.join(' e ')}, ` +
-        'fugindo do território de quem nos odeia'));
+      fora.push(monta(segura, 'segura', _t('Rota que desvia dos rivais'),
+        _tn(segura.saltos, '{n} trecho por {vias}, fugindo do território de quem nos odeia',
+                           '{n} trechos por {vias}, fugindo do território de quem nos odeia',
+            {vias:eJunta(segura.rodovias)})));
     /* VIAGEM DE OUTRO CONTINENTE DE DISTÂNCIA (malha do dono,
        24/08/2026): com as travessias, Santiago fica a 15 trechos de
        estrada — dá pra ir, e cada praça é uma emboscada possível. Mas
        caravana longa assim merece a alternativa: a partir de 5 trechos
        o avião entra como opção, com o custo de sempre. */
     if(curta.saltos >= 5)
-      fora.push({id:'ar', nome:'De avião', rodovias:[],
+      fora.push({id:'ar', nome:_t('De avião'), rodovias:[],
         cidades:[origem, destino], saltos:1, custo:CUSTO_AR, risco:0,
-        nota:`${curta.saltos} trechos de estrada é caravana de dias — `+
-             'voando não tem emboscada, mas custa caro'});
+        nota:_t('{n} trechos de estrada é caravana de dias — voando não tem emboscada, mas custa caro',
+                {n:curta.saltos})});
     return fora;
   }
 
@@ -914,35 +919,35 @@ TO.planejamento = (function(){
     if(!j) return fora;
 
     const briga = p.intencao !== 'paz';
-    põe('intencao', 'Intenção do dia de jogo', true,
-        p.intencao === 'paz' ? 'Ir em paz'
-        : p.intencao === 'trair' ? 'Trair aliado' : 'Atacar');
+    põe('intencao', _t('Intenção do dia de jogo'), true,
+        p.intencao === 'paz' ? _t('Ir em paz')
+        : p.intencao === 'trair' ? _t('Trair aliado') : _t('Atacar'));
 
     if(briga){
       const alvo = M().torcida(p.alvoTorcida);
-      põe('alvo', 'Contra quem', !!p.alvoTorcida,
-          alvo ? alvo.nome : 'ninguém escolhido');
+      põe('alvo', _t('Contra quem'), !!p.alvoTorcida,
+          alvo ? alvo.nome : _t('ninguém escolhido'));
       if(p.alvoTorcida){
-        põe('como', 'Como atacar', !!p.como,
+        põe('como', _t('Como atacar'), !!p.como,
             (COMO.find(c=>c.id===p.como)||{}).rot || '—');
         if(p.como === 'ida')
-          põe('olheiro', 'Olheiro no mapa', !!p.olheiro,
-              p.olheiro ? ponto(p.olheiro).nome : 'sem posição definida');
-        põe('bombas', 'Bombas', true,
-            p.bombas ? `${p.bombas} do estoque` : 'só na pedra');
+          põe('olheiro', _t('Olheiro no mapa'), !!p.olheiro,
+              p.olheiro ? ponto(p.olheiro).nome : _t('sem posição definida'));
+        põe('bombas', _t('Bombas'), true,
+            p.bombas ? _t('{n} do estoque', {n:p.bombas}) : _t('só na pedra'));
       }
     }
     const al = aliadosNaCidade(E, E.data.semana);
     if(al.length){
       const decididos = al.filter(a=>plano(E).recepcao[a.id] || recepcaoPadrao(E)).length;
-      põe('aliados', 'Aliados na cidade', decididos === al.length,
-          `${al.length} ${al.length===1?'torcida':'torcidas'} · ${decididos} resolvidas`);
+      põe('aliados', _t('Aliados na cidade'), decididos === al.length,
+          _tn(al.length, '{n} torcida · {d} resolvidas', '{n} torcidas · {d} resolvidas', {d:decididos}));
     }
     const ou = outrosJogosNaCidade(E, E.data.semana);
     if(ou.length){
       const n = Object.values(p.investidas||{}).filter(Boolean).length;
-      põe('outros', 'Outros jogos na cidade', true,
-          n ? `${n} ${n===1?'investida':'investidas'}` : `${ou.length} sem investida`);
+      põe('outros', _t('Outros jogos na cidade'), true,
+          n ? _tn(n, '{n} investida', '{n} investidas') : _t('{n} sem investida', {n:ou.length}));
     }
     return fora;
   }
@@ -988,28 +993,27 @@ TO.planejamento = (function(){
     if(TO.financeiro.temCaravana(E) && E.proximoJogo){
       const j = E.proximoJogo, est = estimativaCaravana(E);
       const pago = !!((E.caravanasPagas||{})[j.chave]);
-      põe('caravana', `Caravana para ${j.cidadeAdv || 'fora'}`,
+      põe('caravana', _t('Caravana para {destino}', {destino:j.cidadeAdv || _t('fora')}),
           est ? est.custo : TO.financeiro.CARAVANA, pago,
           est ? (est.custo <= 0 && est.onibus
-                  ? `${est.vao} pessoas na frota da torcida — o rateio de `+
-                    `${U.dinheiro(est.rateio)} entra como receita`
+                  ? _t('{n} pessoas na frota da torcida — o rateio de {valor} entra como receita',
+                       {n:est.vao, valor:U.dinheiro(est.rateio)})
                   : est.onibus
-                  ? `${est.vao} pessoas por ${est.rota.nome} · `+
-                    `${est.onibus} ${est.onibus===1?'ônibus abate':'ônibus abatem'} `+
-                    `${Math.round(est.desconto*100)}% de `+
-                    `${U.dinheiro(est.cheio)}`
-                  : `${est.vao} pessoas por ${est.rota.nome} · `+
-                    `${U.dinheiro(est.rateio)} sai do rateio dos que vão`)
-              : 'rota ainda não escolhida — vale o valor cheio do GDD');
+                  ? _t('{n} pessoas por {rota}', {n:est.vao, rota:est.rota.nome}) + ' · ' +
+                    _tn(est.onibus, '{n} ônibus abate {p}% de {valor}', '{n} ônibus abatem {p}% de {valor}',
+                        {p:Math.round(est.desconto*100), valor:U.dinheiro(est.cheio)})
+                  : _t('{n} pessoas por {rota}', {n:est.vao, rota:est.rota.nome}) + ' · ' +
+                    _t('{valor} sai do rateio dos que vão', {valor:U.dinheiro(est.rateio)}))
+              : _t('rota ainda não escolhida — vale o valor cheio do GDD'));
     }
 
     /* 2. os aliados que jogam na nossa praça */
     for(const a of aliadosNaCidade(E, E.data.semana)){
       const nivel = nivelDe(E, a.id), r = recepcaoDe(nivel);
       const rel = (r.relacao>0?'+':'') + r.relacao;
-      põe('rec-'+a.id, `Recepção da ${a.torcida.nome}`,
+      põe('rec-'+a.id, _t('Recepção da {nome}', {nome:a.torcida.nome}),
           custoRecepcao(nivel, a.estimativa), (p.pago||{})[a.id],
-          `${r.rot} · ~${a.estimativa} aliados · relação ${rel}`,
+          _t('{nivel} · ~{n} aliados · relação {rel}', {nivel:r.rot, n:a.estimativa, rel}),
           nivel==='nada' ? 'aviso' : 'dinheiro');
     }
 
@@ -1018,10 +1022,10 @@ TO.planejamento = (function(){
       const inv = investidaDe(E, chave);
       if(!inv || !inv.alvo) continue;
       const t = M().torcida(inv.alvo);
-      põe('inv-'+chave, `Investida contra ${t ? t.nome : inv.alvo}`, 0,
+      põe('inv-'+chave, _t('Investida contra {nome}', {nome:t ? t.nome : inv.alvo}), 0,
           (p.pago||{})['inv-'+chave],
-          `${inv.como==='ida' ? 'na ida ao estádio, em '+ponto(inv.olheiro).nome
-                              : 'nos arredores do estádio'} · custa 1 ação`, 'acao');
+          (inv.como==='ida' ? _t('na ida ao estádio, em {ponto}', {ponto:ponto(inv.olheiro).nome})
+                            : _t('nos arredores do estádio')) + ' · ' + _t('custa 1 ação'), 'acao');
     }
 
     const soma = f => fora.filter(f).reduce((s,x)=>s+x.v, 0);
@@ -1040,26 +1044,27 @@ TO.planejamento = (function(){
       fora.push({id, texto, detalhe, pagina, tipo:tipo||''});
 
     const sobra = TO.acoes.restantes(E);
-    if(sobra) põe('acoes', `${sobra} ${sobra===1?'ação disponível':'ações disponíveis'}`,
-      'a semana fecha e o que não for usado se perde', 'inicio');
+    if(sobra) põe('acoes', _tn(sobra, '{n} ação disponível', '{n} ações disponíveis'),
+      _t('a semana fecha e o que não for usado se perde'), 'inicio');
 
     const j = E.proximoJogo;
     if(j){
       const p = plano(E);
       if(TO.financeiro.temCaravana(E) && !p.rota)
-        põe('rota', 'Escolher a estrada da caravana',
-            `${j.cidadeAdv}, ${E.data.dia<=(j.dia||6)?'ainda dá tempo':'em cima da hora'}`,
+        põe('rota', _t('Escolher a estrada da caravana'),
+            E.data.dia<=(j.dia||6) ? _t('{cidade}, ainda dá tempo', {cidade:j.cidadeAdv})
+                                   : _t('{cidade}, em cima da hora', {cidade:j.cidadeAdv}),
             'gestao', 'urgente');
       if(!p.decidido)
-        põe('plano', 'Fechar o plano do dia de jogo',
-            `${p.intencao==='atacar' ? 'ataque em '+ponto(p.alvo).nome : 'ir em paz'} · `+
-            `${p.bondes===1?'bonde único':p.bondes+' bondes'}`, 'gestao');
+        põe('plano', _t('Fechar o plano do dia de jogo'),
+            (p.intencao==='atacar' ? _t('ataque em {ponto}', {ponto:ponto(p.alvo).nome}) : _t('ir em paz'))+
+            ' · ' + (p.bondes===1 ? _t('bonde único') : _t('{n} bondes', {n:p.bondes})), 'gestao');
     }
 
     for(const a of aliadosNaCidade(E, E.data.semana)){
       if(plano(E).recepcao[a.id]) continue;
-      põe('aliado-'+a.id, `${a.torcida.nome} chega na cidade`,
-          `~${a.estimativa} aliados, jogo do ${a.clube.nome} aqui`, 'gestao', 'aliado');
+      põe('aliado-'+a.id, _t('{nome} chega na cidade', {nome:a.torcida.nome}),
+          _t('~{n} aliados, jogo do {clube} aqui', {n:a.estimativa, clube:a.clube.nome}), 'gestao', 'aliado');
     }
 
     /* O QUE ACONTECEU SEM O JOGADOR MANDAR.
@@ -1071,21 +1076,21 @@ TO.planejamento = (function(){
     const hoje = (E.data.ano*40 + E.data.semana)*7 + E.data.dia;
     for(const b of (E.baixasDeRua || []))
       if(hoje - b.quando <= 3)
-        põe('baixa-'+b.quando+'-'+b.nome, `${b.nome} fora de combate`,
+        põe('baixa-'+b.quando+'-'+b.nome, _t('{nome} fora de combate', {nome:b.nome}),
             b.txt, 'torcida', b.tipo === 'boa' ? '' : 'urgente');
 
     const presos = E.membros.filter(m=>m.preso).length;
-    if(presos) põe('presos', `${presos} ${presos===1?'membro preso':'membros presos'}`,
-      'a fiança sai pela ficha do membro', 'torcida', 'urgente');
+    if(presos) põe('presos', _tn(presos, '{n} membro preso', '{n} membros presos'),
+      _t('a fiança sai pela ficha do membro'), 'torcida', 'urgente');
 
     const promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
-    if(promoveis) põe('promocao', `${promoveis} prontos pra promoção`,
-      'subir de cargo custa dinheiro e rende atributo', 'torcida');
+    if(promoveis) põe('promocao', _tn(promoveis, '{n} pronto pra promoção', '{n} prontos pra promoção'),
+      _t('subir de cargo custa dinheiro e rende atributo'), 'torcida');
 
     /* o aviso de fila de treino vazia saiu: a diretoria sorteia e
        treina sozinha todo dia (decisão do dono, 17/08/2026) */
-    if(E.dinheiro < 0) põe('caixa', 'Caixa no vermelho',
-      'se durar, membro começa a sair', 'financeiro', 'urgente');
+    if(E.dinheiro < 0) põe('caixa', _t('Caixa no vermelho'),
+      _t('se durar, membro começa a sair'), 'financeiro', 'urgente');
 
     return fora;
   }
@@ -1105,12 +1110,12 @@ TO.planejamento = (function(){
      campos que `resolverIda` já lê.
      ======================================================= */
   const ONDE_ATAQUE = [
-    {id:'praca', rot:'Na concentração', como:'ida', olheiro:'praca',
-     nota:'a praça onde eles se juntam antes de subir pro estádio'},
-    {id:'pista', rot:'Na pista', como:'ida', olheiro:'avenida',
-     nota:'a avenida de acesso, com o bonde deles em movimento'},
-    {id:'arredores', rot:'Nos arredores', como:'arredores', olheiro:null,
-     nota:'a beira do estádio, com o cordão da PM em peso'}
+    {id:'praca', rot:_t('Na concentração'), como:'ida', olheiro:'praca',
+     nota:_t('a praça onde eles se juntam antes de subir pro estádio')},
+    {id:'pista', rot:_t('Na pista'), como:'ida', olheiro:'avenida',
+     nota:_t('a avenida de acesso, com o bonde deles em movimento')},
+    {id:'arredores', rot:_t('Nos arredores'), como:'arredores', olheiro:null,
+     nota:_t('a beira do estádio, com o cordão da PM em peso')}
   ];
   const ondeDoPlano = p => p.como === 'ida'
     ? (ONDE_ATAQUE.find(o=>o.olheiro === p.olheiro) || ONDE_ATAQUE[0]).id
@@ -1122,8 +1127,8 @@ TO.planejamento = (function(){
   function faixaDeEfetivo(E, n, chave){
     const r = baralhoFixo(`${chave}|${E.data.ano}|${E.data.semana}`);
     const erro = 0.25 + r()*0.25;
-    return `${Math.max(5, Math.round(n*(1-erro)/5)*5)} a `+
-           `${Math.round(n*(1+erro)/5)*5}`;
+    return _t('{min} a {max}', {min:Math.max(5, Math.round(n*(1-erro)/5)*5),
+                                max:Math.round(n*(1+erro)/5)*5});
   }
 
   /* OS ALVOS DA VIAGEM: as torcidas do clube MANDANTE, que é quem vai
@@ -1309,18 +1314,15 @@ TO.planejamento = (function(){
   const RELACAO_QUENTE = -55;
 
   const POLITICA_ATAQUE = [
-    {id:'nunca',   rot:'Nunca atacar',
-     nota:'toda semana começa em paz; ataque só quando você marcar à mão — '+
-          'sem briga não há ferido, preso nem prestígio em jogo'},
-    {id:'rivais',  rot:'Sempre atacar rivais',
-     nota:'a diretoria marca ataque sozinha sempre que houver torcida rival '+
-          'no jogo — prestígio e baixas saem de cada briga'},
-    {id:'quentes', rot:`Atacar rivais com relação abaixo de ${RELACAO_QUENTE}`,
-     nota:`só marca ataque quando a relação está abaixo de ${RELACAO_QUENTE} — `+
-          'os ódios de verdade; o resto do calendário fica em paz'},
-    {id:'todos',   rot:'Sempre atacar todos',
-     nota:'marca ataque contra qualquer torcida metida no jogo — máximo de '+
-          'briga, de prestígio em disputa e de gente no hospital'}
+    {id:'nunca',   rot:_t('Nunca atacar'),
+     nota:_t('toda semana começa em paz; ataque só quando você marcar à mão — sem briga não há ferido, preso nem prestígio em jogo')},
+    {id:'rivais',  rot:_t('Sempre atacar rivais'),
+     nota:_t('a diretoria marca ataque sozinha sempre que houver torcida rival no jogo — prestígio e baixas saem de cada briga')},
+    {id:'quentes', rot:_t('Atacar rivais com relação abaixo de {n}', {n:RELACAO_QUENTE}),
+     nota:_t('só marca ataque quando a relação está abaixo de {n} — os ódios de verdade; o resto do calendário fica em paz',
+             {n:RELACAO_QUENTE})},
+    {id:'todos',   rot:_t('Sempre atacar todos'),
+     nota:_t('marca ataque contra qualquer torcida metida no jogo — máximo de briga, de prestígio em disputa e de gente no hospital')}
   ];
 
   function politicas(E){

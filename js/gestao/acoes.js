@@ -19,9 +19,9 @@ TO.acoes = (function(){
   const U = TO.util;
 
   const TURNOS = [
-    {id:'manha', nome:'Manhã'},
-    {id:'tarde', nome:'Tarde'},
-    {id:'noite', nome:'Noite'}
+    {id:'manha', nome:_t('Manhã')},
+    {id:'tarde', nome:_t('Tarde')},
+    {id:'noite', nome:_t('Noite')}
   ];
   const expediente = E => (E.expediente = E.expediente || {manha:null, tarde:null, noite:null});
 
@@ -120,11 +120,11 @@ TO.acoes = (function(){
      (nível → 50/90/150/200/500). A base da praça continua sendo o
      portão: sem torcedor fora de organizada, ninguém entra. */
   const TABELA_RECRUTA = {
-    titulo:    {um:0.40, dois:0.20, rot:'título ou acesso fresco'},
-    rebaixado: {um:0.00, dois:0.00, rot:'rebaixamento fresco'},
-    ganhou:    {um:0.15, dois:0.05, rot:'vitória no último jogo'},
-    perdeu:    {um:0.05, dois:0.00, rot:'derrota no último jogo'},
-    normal:    {um:0.10, dois:0.05, rot:'semana comum'}
+    titulo:    {um:0.40, dois:0.20, rot:_t('título ou acesso fresco')},
+    rebaixado: {um:0.00, dois:0.00, rot:_t('rebaixamento fresco')},
+    ganhou:    {um:0.15, dois:0.05, rot:_t('vitória no último jogo')},
+    perdeu:    {um:0.05, dois:0.00, rot:_t('derrota no último jogo')},
+    normal:    {um:0.10, dois:0.05, rot:_t('semana comum')}
   };
   function regimeRecrutamento(E){
     const sa = TO.relacoes.semanaAbs(E);
@@ -177,7 +177,8 @@ TO.acoes = (function(){
       const rel = TO.relacoes.nivel(E, o.id);
       fora.push({
         id: `${o.id}|${p.tipo}`, torcidaId:o.id, tipo:p.tipo, deQuem:o.nome,
-        nome: `${p.tipo === 'bar' ? 'Bar' : 'Sede'} da ${o.nome}`,
+        nome: p.tipo === 'bar' ? _t('Bar da {nome}', {nome:o.nome})
+                               : _t('Sede da {nome}', {nome:o.nome}),
         artigo:'a', bairro:p.bairro, x:p.x, y:p.y, cor:p.cor,
         relacao: rel,
         efetivo: efetivoDePe(E, o)
@@ -224,10 +225,10 @@ TO.acoes = (function(){
     const dmNossa = res && res.moralAplicada != null
       ? r1(res.moralAplicada) : r1(res && res.moralTorcida || 0);
     const efeitos = [
-      {ind:'relacao', delta:-22, dono:`com a ${deles.nome}`},
-      {ind:'prestigio', delta: dpNosso, dono:'nosso'},
-      {ind:'prestigio', delta: dpDeles, dono:`da ${deles.nome}`},
-      {ind:'moral', delta: dmNossa, dono:'nossa'}
+      {ind:'relacao', delta:-22, dono:_t('com a {nome}', {nome:deles.nome})},
+      {ind:'prestigio', delta: dpNosso, dono:_t('nosso')},
+      {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:deles.nome})},
+      {ind:'moral', delta: dmNossa, dono:_t('nossa')}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: deles.torcida, ganhamos, atacamos: !enc.sofrido,
@@ -263,7 +264,6 @@ TO.acoes = (function(){
     const tomamos = fx.por === nossoLado;
     const bandeira = fx.tipo === 'bandeira';
     const V = bandeira ? PAT.BANDEIRA : PAT.FAIXA;
-    const rot = bandeira ? 'bandeira' : 'faixa';
     const listaNossa = () => bandeira ? PAT.bandeirasDe(E) : PAT.faixasDe(E);
     const contaIA = (t) => bandeira ? 'bandeiras' : 'faixas';
     const tomadasIA = (t) => bandeira ? 'bandeirasTomadas' : 'faixasTomadas';
@@ -273,9 +273,13 @@ TO.acoes = (function(){
       if(t) t[contaIA(t)] = Math.max(0, t[contaIA(t)] - 1);
       listaNossa().tomadas.push({de:fx.torcidaId, nome:fx.nome,
         quando:{ano:E.data.ano, semana:E.data.semana}});
-      TO.estado.mexerIndicador(E, 'prestigio', V.ganho/5, `Tomamos a ${rot} da ${fx.nome}`);
+      TO.estado.mexerIndicador(E, 'prestigio', V.ganho/5, bandeira
+        ? _t('Tomamos a bandeira da {nome}', {nome:fx.nome})
+        : _t('Tomamos a faixa da {nome}', {nome:fx.nome}));
       R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5);
-      fecho.linhas.push(`tomamos a ${rot} da ${fx.nome}`);
+      fecho.linhas.push(bandeira
+        ? _t('tomamos a bandeira da {nome}', {nome:fx.nome})
+        : _t('tomamos a faixa da {nome}', {nome:fx.nome}));
       fecho.faixa = 'tomamos';
       return 'tomamos';
     }
@@ -285,9 +289,15 @@ TO.acoes = (function(){
       const o = outroId ? TO.mundo.torcida(outroId) : null;
       const t = outroId ? PAT.faixasIA(E, outroId) : null;
       if(t) t[tomadasIA(t)].push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano});
-      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5, `Perdemos a nossa ${rot}`+(o?` pra ${o.nome}`:''));
+      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5,
+        o ? (bandeira ? _t('Perdemos a nossa bandeira pra {nome}', {nome:o.nome})
+                      : _t('Perdemos a nossa faixa pra {nome}', {nome:o.nome}))
+          : (bandeira ? _t('Perdemos a nossa bandeira') : _t('Perdemos a nossa faixa')));
       if(outroId) R.mover(E, outroId, 'prestigio', V.ganho/5);
-      fecho.linhas.push(`perdemos a nossa ${rot}${o ? ` pra ${o.nome}` : ''}`);
+      fecho.linhas.push(
+        o ? (bandeira ? _t('perdemos a nossa bandeira pra {nome}', {nome:o.nome})
+                      : _t('perdemos a nossa faixa pra {nome}', {nome:o.nome}))
+          : (bandeira ? _t('perdemos a nossa bandeira') : _t('perdemos a nossa faixa')));
       fecho.faixa = 'perdemos';
       return 'perdemos';
     }
@@ -347,15 +357,15 @@ TO.acoes = (function(){
     const t = T[faixa];
     const antesP = E.indicadores.prestigio, antesM = E.indicadores.moral;
     const antesR = R.nivel(E, alvo.torcidaId);
-    const motivo = `Briga na arquibancada contra a ${alvo.nome}`;
+    const motivo = _t('Briga na arquibancada contra a {nome}', {nome:alvo.nome});
     TO.estado.mexerIndicador(E, 'prestigio', t.p/5, motivo);
     if(t.m) TO.estado.mexerIndicador(E, 'moral', t.m, motivo);
     R.hostilidade(E, alvo.torcidaId, AZEDA[faixa]);
     const efeitos = [
-      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP), dono:'nosso'},
-      {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:'nossa'},
+      {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP), dono:_t('nosso')},
+      {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:_t('nossa')},
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesR),
-       dono:`com a ${alvo.nome}`}
+       dono:_t('com a {nome}', {nome:alvo.nome})}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
@@ -366,9 +376,9 @@ TO.acoes = (function(){
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos});
     return {ganhou, dinheiro:0, efeitos,
-            titulo: ganhou ? 'A ARQUIBANCADA FICOU NOSSA'
-                           : 'CORRERAM COM A GENTE NO ESTÁDIO',
-            linhas:[`éramos ${alvo.nossos||0} contra ${alvo.deles||0} no setor`]};
+            titulo: ganhou ? _t('A ARQUIBANCADA FICOU NOSSA')
+                           : _t('CORRERAM COM A GENTE NO ESTÁDIO'),
+            linhas:[_t('éramos {a} contra {b} no setor', {a:alvo.nossos||0, b:alvo.deles||0})]};
   }
 
   /* A TRETA MARCADA fecha com a conta própria do dono (régua nova em
@@ -386,7 +396,8 @@ TO.acoes = (function(){
     /* preço do dono (19/08/2026): vencer paga +3/+4/+5; perder custa
        −1 de prestígio e −1 de moral pra cada um que foi */
     TO.estado.mexerIndicador(E, 'prestigio', ganhou ? display/5 : -0.2,
-      `Treta contra a ${alvo.nome}: ${ganhou ? 'vencemos' : 'perdemos'}`);
+      ganhou ? _t('Treta contra a {nome}: vencemos', {nome:alvo.nome})
+             : _t('Treta contra a {nome}: perdemos', {nome:alvo.nome}));
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
                             ganhou ? -0.2 : display/5);
     const membros = (res && res.membros) || [];
@@ -402,20 +413,20 @@ TO.acoes = (function(){
       if(ganhou){
         bolada = aposta;
         if(m) m.caixa = Math.max(0, (m.caixa||0) - aposta);
-        TO.estado.lancar(E, `Aposta da treta — ${alvo.nome}`, bolada);
+        TO.estado.lancar(E, _t('Aposta da treta — {nome}', {nome:alvo.nome}), bolada);
       }else{
         bolada = -aposta;
         if(m) m.caixa = (m.caixa||0) + aposta;
-        TO.estado.lancar(E, `Aposta da treta — ${alvo.nome}`, bolada);
+        TO.estado.lancar(E, _t('Aposta da treta — {nome}', {nome:alvo.nome}), bolada);
       }
     }
     const efeitos = [
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antesRel),
-       dono:`com a ${alvo.nome}`},
+       dono:_t('com a {nome}', {nome:alvo.nome})},
       {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP),
-       dono:'nosso'},
-      {ind:'prestigio', delta: dpDeles, dono:`da ${alvo.nome}`},
-      {ind:'dinheiro',  delta: bolada, dono:'nosso'}
+       dono:_t('nosso')},
+      {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:alvo.nome})},
+      {ind:'dinheiro',  delta: bolada, dono:_t('nosso')}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
@@ -443,15 +454,17 @@ TO.acoes = (function(){
       if(TO.feed && TO.feed.lntDepoisDaCena) TO.feed.lntDepoisDaCena(E);
     }
     const linhas = alvo.lnt
-      ? [`${alvo.lnt.fase} da ${alvo.lnt.nomeDiv} da LNT, `+
-         `${alvo.n} de cada lado`]
-      : [`no bairro ${alvo.bairro||'—'}, ${alvo.n} de cada lado`];
+      /* fase e divisão são dado (chave de lógica na LNT): traduz na tela */
+      ? [_t('{fase} da {div} da LNT, {n} de cada lado',
+            {fase:_t(alvo.lnt.fase), div:_t(alvo.lnt.nomeDiv), n:alvo.n})]
+      : [_t('no bairro {bairro}, {n} de cada lado', {bairro:alvo.bairro||'—', n:alvo.n})];
     if(aposta > 0)
-      linhas.push(`${U.dinheiro(aposta)} apostados — `+
-                  `${ganhou ? 'levamos a dos dois' : 'a nossa ficou com eles'}`);
+      linhas.push(ganhou
+        ? _t('{valor} apostados — levamos a dos dois', {valor:U.dinheiro(aposta)})
+        : _t('{valor} apostados — a nossa ficou com eles', {valor:U.dinheiro(aposta)}));
     return {ganhou, dinheiro:bolada, lnt,
-            titulo: alvo.lnt ? (ganhou ? 'PASSAMOS NA LNT' : 'CAÍMOS NA LNT')
-                  : ganhou ? 'TRETA VENCIDA' : 'TRETA PERDIDA',
+            titulo: alvo.lnt ? (ganhou ? _t('PASSAMOS NA LNT') : _t('CAÍMOS NA LNT'))
+                  : ganhou ? _t('TRETA VENCIDA') : _t('TRETA PERDIDA'),
             linhas};
   }
 
@@ -476,8 +489,8 @@ TO.acoes = (function(){
            (pacote do dono, 02/09/2026) */
         perdeu = TO.patrimonio.protegerPerda(E, perdeu);
         if(perdeu > 0){
-          TO.estado.lancar(E, 'Levaram do nosso bar', -perdeu);
-          linhas.push(`${U.dinheiro(perdeu)} da gaveta e do caixa`);
+          TO.estado.lancar(E, _t('Levaram do nosso bar'), -perdeu);
+          linhas.push(_t('{valor} da gaveta e do caixa', {valor:U.dinheiro(perdeu)}));
         }
         /* O BAR SAI QUEBRADO (ordem do dono, 10/09/2026): metade da
            receita por 45 dias. Quebram o mais caro — é o que tem
@@ -486,7 +499,7 @@ TO.acoes = (function(){
         const meu = F.barMaisVisado((E.patrimonio||{}).bares);
         if(meu){
           F.danificarBar(meu, (E.data && E.data.absoluto) || 0);
-          linhas.push(`o bar ficou em cacos: metade da receita por ${F.DANO_BAR.dias} dias`);
+          linhas.push(_t('o bar ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
           /* a cidade toma conhecimento (dono, 19/09/2026): o cartão do
              feed pergunta se a gente responde na porta deles */
           if(TO.feed && TO.feed.registrarObra)
@@ -494,14 +507,14 @@ TO.acoes = (function(){
               dono:E.torcida.id, atacante:(alvo && alvo.torcidaId) || null});
         }
       }
-      TO.estado.mexerIndicador(E, 'moral', -3, 'Fugimos sem defender o que é nosso');
-      TO.estado.mexerIndicador(E, 'prestigio', -0.7, 'Fugimos sem defender o que é nosso');
-      linhas.push(naEstrada ? 'o ônibus seguiu viagem com meia turma de pé'
-                            : 'eles saíram de lá com a casa na mão');
+      TO.estado.mexerIndicador(E, 'moral', -3, _t('Fugimos sem defender o que é nosso'));
+      TO.estado.mexerIndicador(E, 'prestigio', -0.7, _t('Fugimos sem defender o que é nosso'));
+      linhas.push(naEstrada ? _t('o ônibus seguiu viagem com meia turma de pé')
+                            : _t('eles saíram de lá com a casa na mão'));
     }else{
-      TO.estado.mexerIndicador(E, 'moral', 1.5, 'Defendemos o que é nosso');
-      TO.estado.mexerIndicador(E, 'prestigio', 0.7, 'Defendemos o que é nosso');
-      linhas.push(naEstrada ? 'a pista ficou nossa' : 'a casa ficou de pé');
+      TO.estado.mexerIndicador(E, 'moral', 1.5, _t('Defendemos o que é nosso'));
+      TO.estado.mexerIndicador(E, 'prestigio', 0.7, _t('Defendemos o que é nosso'));
+      linhas.push(naEstrada ? _t('a pista ficou nossa') : _t('a casa ficou de pé'));
     }
     if(naEstrada) E.viagem = {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
@@ -519,15 +532,15 @@ TO.acoes = (function(){
        (carimbada no res) entrava no indicador mas sumia do ocorrido —
        a mensagem mostrava só o ±0,7 fixo da defesa */
     const efeitos = [
-      {ind:'dinheiro',  delta: -perdeu, dono:'nosso'},
+      {ind:'dinheiro',  delta: -perdeu, dono:_t('nosso')},
       {ind:'moral',     delta: r1(E.indicadores.moral - antes.moral
-                                  + ((res && res.moralAplicada) || 0)), dono:'nossa'},
+                                  + ((res && res.moralAplicada) || 0)), dono:_t('nossa')},
       {ind:'prestigio', delta: r1(E.indicadores.prestigio - antes.prestigio
                                   + ((res && res.prestigioAplicado) || 0)/5),
-       dono:'nosso'},
+       dono:_t('nosso')},
       {ind:'relacao',   delta: r1(R.nivel(E, alvo.torcidaId) - antes.relacao),
-       dono:`com a ${alvo.nome}`},
-      {ind:'moral',     delta: dmDelas, dono:`da ${alvo.nome}`}
+       dono:_t('com a {nome}', {nome:alvo.nome})},
+      {ind:'moral',     delta: dmDelas, dono:_t('da {nome}', {nome:alvo.nome})}
     ].filter(x=>x.delta);
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: seguramos,
@@ -538,10 +551,10 @@ TO.acoes = (function(){
       b: ladoDeles(E, alvo, res, seguramos),
       efeitos});
     return {ganhou:seguramos, linhas, dinheiro:-perdeu, efeitos,
-            titulo: seguramos ? (naEstrada ? 'A PISTA FICOU NOSSA'
-                                           : 'A CASA FICOU DE PÉ')
-                              : (naEstrada ? 'PEGARAM A CARAVANA'
-                                           : 'PERDEMOS A CASA')};
+            titulo: seguramos ? (naEstrada ? _t('A PISTA FICOU NOSSA')
+                                           : _t('A CASA FICOU DE PÉ'))
+                              : (naEstrada ? _t('PEGARAM A CARAVANA')
+                                           : _t('PERDEMOS A CASA'))};
   }
 
   function nossoLado(E, alvo, res, ganhamos){
@@ -591,12 +604,12 @@ TO.acoes = (function(){
         }
         if(levou > 0){
           if(m) m.caixa = Math.max(0, m.caixa - levou);
-          TO.estado.lancar(E, `Saque — ${alvo.nome}`, levou);
+          TO.estado.lancar(E, _t('Saque — {nome}', {nome:alvo.nome}), levou);
           /* o prejuízo entra no extrato DELA (crivo do dono, 31/08) */
           if(TO.relacoes.lancarIA)
             TO.relacoes.lancarIA(E, alvo.torcidaId,
-                                 'Saque sofrido no bar', -levou);
-          linhas.push(`${U.dinheiro(levou)} do caixa deles`);
+                                 _t('Saque sofrido no bar'), -levou);
+          linhas.push(_t('{valor} do caixa deles', {valor:U.dinheiro(levou)}));
         }
         /* e o ponto deles fica quebrado 45 dias, na mesma régua que
            vale pra gente (dono, 10/09/2026) */
@@ -604,17 +617,17 @@ TO.acoes = (function(){
         const dele = m && F.barMaisVisado(m.bares);
         if(dele){
           F.danificarBar(dele, (E.data && E.data.absoluto) || 0);
-          linhas.push(`o bar deles ficou em cacos: metade da receita por ${F.DANO_BAR.dias} dias`);
+          linhas.push(_t('o bar deles ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
         }
       }
       /* o corte permanente de membros saiu (18/08/2026): os caídos
          agora viram baixa temporária de verdade em registrarConfronto
          — ferido 5 a 15 dias, preso 15 a 90 — em vez do desconto seco */
       if(m) m.moral = U.limitar(m.moral - 3, 0, 20);
-      if(alvo.tipo === 'sede') linhas.push('faixa deles rasgada na porta');
-      if(alvo.tipo === 'casa') linhas.push('a resenha deles acabou no grito');
+      if(alvo.tipo === 'sede') linhas.push(_t('faixa deles rasgada na porta'));
+      if(alvo.tipo === 'casa') linhas.push(_t('a resenha deles acabou no grito'));
     }else{
-      linhas.push('a gente saiu de lá pior do que entrou');
+      linhas.push(_t('a gente saiu de lá pior do que entrou'));
     }
     const antes = R.nivel(E, alvo.torcidaId);
     R.hostilidade(E, alvo.torcidaId,
@@ -634,15 +647,15 @@ TO.acoes = (function(){
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
-                dono:`com a ${dona}`},
+                dono:_t('com a {nome}', {nome:dona})},
                /* o que ENTROU, não o que a briga reivindicou */
                {ind:'prestigio', delta: res.prestigioAplicado != null
                   ? r1(res.prestigioAplicado/5)
-                  : r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:'nosso'},
-               {ind:'prestigio', delta: dpDeles, dono:`da ${dona}`},
-               {ind:'dinheiro',  delta: levou, dono:'nosso'}].filter(x=>x.delta)});
+                  : r1(U.limitar((res.prestigio||0)/5, -2, 2)), dono:_t('nosso')},
+               {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:dona})},
+               {ind:'dinheiro',  delta: levou, dono:_t('nosso')}].filter(x=>x.delta)});
     return {ganhou, linhas, dinheiro:levou,
-            titulo: ganhou ? 'ATAQUE BEM-SUCEDIDO' : 'ATAQUE FRACASSOU'};
+            titulo: ganhou ? _t('ATAQUE BEM-SUCEDIDO') : _t('ATAQUE FRACASSOU')};
   }
 
   /* semanas que a cobrança do elenco dura — hoje só mexe na relação com
@@ -656,10 +669,10 @@ TO.acoes = (function(){
     c.relacao = U.limitar(c.relacao - gasto, 0, 100);
     c.cobranca = {ate: E.data.semana + COBRANCA.semanas};
     TO.estado.mexerIndicador(E, 'moral', chegou ? 0.8 : -1.2,
-      chegou ? 'Caravana chegou inteira' : 'Caravana emboscada na estrada');
+      chegou ? _t('Caravana chegou inteira') : _t('Caravana emboscada na estrada'));
     return {ganhou:chegou, dinheiro:0,
-            titulo: chegou ? 'COBRANÇA FEITA' : 'COBRANÇA FRACASSOU',
-            linhas:[`relação com o clube em ${Math.round(c.relacao)}`]};
+            titulo: chegou ? _t('COBRANÇA FEITA') : _t('COBRANÇA FRACASSOU'),
+            linhas:[_t('relação com o clube em {n}', {n:Math.round(c.relacao)})]};
   }
 
   /* =======================================================
@@ -673,24 +686,24 @@ TO.acoes = (function(){
      dobro. Rotina salva com 'treinar' só pula o turno. */
   const LISTA = [
     {
-      id:'recrutar', nome:'Recrutar', icone:'megafone', cena:'Praça',
-      efeito:'chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube dita a sorte',
+      id:'recrutar', nome:_t('Recrutar'), icone:'megafone', cena:_t('Praça'),
+      efeito:_t('chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube dita a sorte'),
       disponivel(E){
         const p = previsaoRecrutamento(E);
-        if(p.vaga <= 0) return {ok:false, motivo: nivelDaSede(E) <= 0 ? 'a esquina não cabe mais gente: construa a sede' : 'a sede está cheia'};
-        if(p.base <= 0) return {ok:false, motivo:'não há torcedor fora de organizada'};
-        return {ok:true, nota:`${p.rotRegime}: ${Math.round(p.um*100)}% de 1 · `+
-                              `${Math.round(p.dois*100)}% de 2`};
+        if(p.vaga <= 0) return {ok:false, motivo: nivelDaSede(E) <= 0 ? _t('a esquina não cabe mais gente: construa a sede') : _t('a sede está cheia')};
+        if(p.base <= 0) return {ok:false, motivo:_t('não há torcedor fora de organizada')};
+        return {ok:true, nota:_t('{regime}: {um}% de 1 · {dois}% de 2',
+                                 {regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
-        if(p.vaga <= 0) return {ok:false, msg: nivelDaSede(E) <= 0 ? 'A esquina não cabe mais gente: construa a sede.' : 'A sede está cheia.', semCusto:true};
+        if(p.vaga <= 0) return {ok:false, msg: nivelDaSede(E) <= 0 ? _t('A esquina não cabe mais gente: construa a sede.') : _t('A sede está cheia.'), semCusto:true};
 
         /* o dado do dono: dois primeiro, um depois, o resto é ninguém */
         const r = U.rng();
         let n = r < p.dois ? 2 : r < p.dois + p.um ? 1 : 0;
         n = Math.min(n, p.vaga);
-        if(n <= 0) return {ok:true, msg:'Ninguém quis entrar hoje.'};
+        if(n <= 0) return {ok:true, msg:_t('Ninguém quis entrar hoje.')};
 
         /* O NOVATO PODE ENTRAR PELA SEDE OU POR UMA FILIAL (aprovado
            pelo dono, 25/08/2026): mesma regra, mesmo dado — o sorteio
@@ -709,7 +722,7 @@ TO.acoes = (function(){
           if(teto - tem > 0 && base > 0)
             locais.push({filial:f.cidade, vaga:teto - tem});
         }
-        if(!locais.length) return {ok:true, msg:'Ninguém quis entrar hoje.'};
+        if(!locais.length) return {ok:true, msg:_t('Ninguém quis entrar hoje.')};
         const sorteiaLocal = ()=>{
           const soma = locais.reduce((s,l)=>s+l.vaga, 0);
           let d = U.rng()*soma;
@@ -725,30 +738,32 @@ TO.acoes = (function(){
           if(l.filial) daFilial++;
           if(!locais.length) break;
         }
-        TO.estado.lancar(E, `Recrutamento de ${n} novatos`, -5*n);
+        TO.estado.lancar(E, _tn(n, 'Recrutamento de {n} novato', 'Recrutamento de {n} novatos'), -5*n);
         E.historicoRecrutamento = E.historicoRecrutamento || [];
         E.historicoRecrutamento.unshift({semana:E.data.semana, n,
         base:Math.round(p.base), querem:p.querem});
         if(E.historicoRecrutamento.length>60) E.historicoRecrutamento.pop();
-        return {ok:true, msg:`${n} ${n===1?'novato entrou':'novatos entraram'}`+
-                             `${daFilial ? ` (${daFilial} pela subsede de fora)` : ''}.`};
+        return {ok:true, msg: daFilial
+          ? _tn(n, '{n} novato entrou ({f} pela subsede de fora).',
+                   '{n} novatos entraram ({f} pela subsede de fora).', {f:daFilial})
+          : _tn(n, '{n} novato entrou.', '{n} novatos entraram.')};
       }
     },
     {
-      id:'festa', nome:'Festa na sede', icone:'copo', cena:'Sede',
+      id:'festa', nome:_t('Festa na sede'), icone:'copo', cena:_t('Sede'),
       /* O PREÇO SEGUE O TAMANHO DO SALÃO (régua do dono, 20/08/2026):
          R$ 170 na sede 1 e R$ 1.700 na 5, com os R$ 700 de sempre na
          sede 4. Por isso custo e efeito são função de E, não número
          fixo — quem lê a linha da ação lê o preço da NOSSA sede. */
-      efeito: E => `custa ${U.dinheiro(custoFesta(E))}; rende R$ 4,80–6,40 `+
-        `por presente — lucra com ~${TO.financeiro.pisoDaFesta(nivelDaSede(E))} disponíveis`,
+      efeito: E => _t('custa {valor}; rende R$ 4,80–6,40 por presente — lucra com ~{n} disponíveis',
+        {valor:U.dinheiro(custoFesta(E)), n:TO.financeiro.pisoDaFesta(nivelDaSede(E))}),
       custo: E => custoFesta(E),
       disponivel(E){
         /* sem sede não há festa (dono, 22/09/2026): a esquina não tem salão */
-        if(nivelDaSede(E) <= 0) return {ok:false, motivo:'sem sede não há festa'};
+        if(nivelDaSede(E) <= 0) return {ok:false, motivo:_t('sem sede não há festa')};
         const c = custoFesta(E);
         return E.dinheiro >= c ? {ok:true}
-             : {ok:false, motivo:`custa ${U.dinheiro(c)}`};
+             : {ok:false, motivo:_t('custa {valor}', {valor:U.dinheiro(c)})};
       },
       executar(E){
         /* festa é na SEDE: membro de filial mora longe e não conta */
@@ -768,7 +783,7 @@ TO.acoes = (function(){
            (decisão do dono, 18/08/2026 — a festa diária poluía tudo) */
         TO.estado.lancarNoResumo(E, 'festa', -custo);
         TO.estado.lancarNoResumo(E, 'festa', receita, true);
-        return {ok:true, msg:`Festa na sede. ${U.dinheiro(receita-custo)} de saldo.`};
+        return {ok:true, msg:_t('Festa na sede. {valor} de saldo.', {valor:U.dinheiro(receita-custo)})};
       }
     },
     /* AÇÃO SOCIAL E CAMPANHA DE RECRUTAMENTO APOSENTADAS (ordem do
@@ -776,29 +791,30 @@ TO.acoes = (function(){
        retorno que pagasse a conta. No lugar entrou o bloco novo
        abaixo. Save antigo com elas no expediente só pula o turno. */
     {
-      id:'visita', nome:'Visita aos feridos', icone:'conversa', cena:'Hospital',
-      efeito:'grátis; cada ferido sara 2 dias mais cedo · Moral +0,3',
+      id:'visita', nome:_t('Visita aos feridos'), icone:'conversa', cena:_t('Hospital'),
+      efeito:_t('grátis; cada ferido sara 2 dias mais cedo · Moral +0,3'),
       disponivel(E){
         const n = E.membros.filter(m=>m.ferido).length;
-        return n ? {ok:true, nota:`${n} de molho`}
-                 : {ok:false, motivo:'ninguém ferido'};
+        return n ? {ok:true, nota:_t('{n} de molho', {n})}
+                 : {ok:false, motivo:_t('ninguém ferido')};
       },
       executar(E){
         let n = 0;
         for(const m of E.membros)
           if(m.ferido){ m.ferido.dias = Math.max(0, m.ferido.dias - 2); n++; }
-        if(!n) return {ok:false, msg:'Ninguém ferido.', semCusto:true};
-        TO.estado.mexerIndicador(E, 'moral', 0.3, 'Visita aos feridos');
-        return {ok:true, msg:`${n} visitados — sara todo mundo 2 dias mais cedo.`};
+        if(!n) return {ok:false, msg:_t('Ninguém ferido.'), semCusto:true};
+        TO.estado.mexerIndicador(E, 'moral', 0.3, _t('Visita aos feridos'));
+        return {ok:true, msg:_tn(n, '{n} visitado — sara 2 dias mais cedo.',
+                                    '{n} visitados — sara todo mundo 2 dias mais cedo.')};
       }
     },
     {
-      id:'pix', nome:'Campanha de doação por PIX', icone:'dinheiro', cena:'Sede',
-      efeito:'grátis; arrecada R$ 8–15 por membro disponível · Prestígio −1 (na régua de 0 a 100)',
+      id:'pix', nome:_t('Campanha de doação por PIX'), icone:'dinheiro', cena:_t('Sede'),
+      efeito:_t('grátis; arrecada R$ 8–15 por membro disponível · Prestígio −1 (na régua de 0 a 100)'),
       disponivel(E){
         const n = E.membros.filter(TO.membros.disponivel).length;
         return n >= 3 ? {ok:true}
-                      : {ok:false, motivo:'precisa de pelo menos três de pé'};
+                      : {ok:false, motivo:_t('precisa de pelo menos três de pé')};
       },
       executar(E){
         const n = E.membros.filter(TO.membros.disponivel).length;
@@ -806,95 +822,95 @@ TO.acoes = (function(){
         /* diária: o caixa mexe agora, a linha do extrato sai no mês */
         TO.estado.lancarNoResumo(E, 'pix', v, true);
         TO.estado.mexerIndicador(E, 'prestigio', -0.2,
-          'Campanha de doação por PIX');
-        return {ok:true, msg:`${U.dinheiro(v)} caíram na conta.`};
+          _t('Campanha de doação por PIX'));
+        return {ok:true, msg:_t('{valor} caíram na conta.', {valor:U.dinheiro(v)})};
       }
     },
     {
-      id:'padrinho', nome:'Padrinho de treino', icone:'halter', cena:'Sede',
-      efeito:'R$ 150 de gratificação; um veterano da velha guarda puxa o treino do dia: rende +15% e novato ganha XP em dobro',
+      id:'padrinho', nome:_t('Padrinho de treino'), icone:'halter', cena:_t('Sede'),
+      efeito:_t('R$ 150 de gratificação; um veterano da velha guarda puxa o treino do dia: rende +15% e novato ganha XP em dobro'),
       custo:150,
       disponivel(E){
         if(!(E.velhaGuarda||[]).length)
-          return {ok:false, motivo:'ninguém pendurou a bandeira ainda'};
-        if(E.dinheiro < 150) return {ok:false, motivo:'custa R$ 150'};
-        return {ok:true, nota:`${E.velhaGuarda.length} na velha guarda`};
+          return {ok:false, motivo:_t('ninguém pendurou a bandeira ainda')};
+        if(E.dinheiro < 150) return {ok:false, motivo:_t('custa {valor}', {valor:U.dinheiro(150)})};
+        return {ok:true, nota:_t('{n} na velha guarda', {n:E.velhaGuarda.length})};
       },
       executar(E){
         const abs = E.data.absoluto || 0;
         if(E.padrinhoAbs === abs)
-          return {ok:true, msg:'O padrinho já está no tatame hoje.', semCusto:true};
+          return {ok:true, msg:_t('O padrinho já está no tatame hoje.'), semCusto:true};
         TO.estado.lancarNoResumo(E, 'padrinho', -150, true);
         E.padrinhoAbs = abs;
         /* quem assume é a melhor ficha da velha guarda — quem apanhou
            e bateu mais tem mais o que ensinar */
         const vg = [...E.velhaGuarda]
           .sort((a,b)=>((b.forca||0)+(b.defesa||0))-((a.forca||0)+(a.defesa||0)))[0];
-        const nome = (vg && (vg.apelido || vg.nome)) || 'Um veterano';
-        return {ok:true, msg:`${nome} assumiu o treino de hoje.`};
+        const nome = (vg && (vg.apelido || vg.nome)) || _t('Um veterano');
+        return {ok:true, msg:_t('{nome} assumiu o treino de hoje.', {nome})};
       }
     },
     {
-      id:'bateria', nome:'Treino de bateria', icone:'tambor', cena:'Sede',
-      efeito:'grátis; precisa de 6 de pé — com a bateria afiada, o Fator Torcida empurra o nosso time em casa (+20%)',
+      id:'bateria', nome:_t('Treino de bateria'), icone:'tambor', cena:_t('Sede'),
+      efeito:_t('grátis; precisa de 6 de pé — com a bateria afiada, o Fator Torcida empurra o nosso time em casa (+20%)'),
       disponivel(E){
         const n = TO.membros.aptosParaOEstadio(E).length;
         return n >= 6 ? {ok:true}
-                      : {ok:false, motivo:'precisa de seis de pé'};
+                      : {ok:false, motivo:_t('precisa de seis de pé')};
       },
       executar(E){
         E.bateriaAbs = E.data.absoluto || 0;
-        return {ok:true, msg:'Bateria ensaiada — jogo em casa vai ter empurrão.'};
+        return {ok:true, msg:_t('Bateria ensaiada — jogo em casa vai ter empurrão.')};
       }
     },
     {
-      id:'inteligencia', nome:'Inteligência', icone:'olho', cena:'Rua',
-      efeito:'R$ 100 por dia; o olheiro tem 50% de chance de prever emboscada na estrada ou ataque que vem',
+      id:'inteligencia', nome:_t('Inteligência'), icone:'olho', cena:_t('Rua'),
+      efeito:_t('R$ 100 por dia; o olheiro tem 50% de chance de prever emboscada na estrada ou ataque que vem'),
       custo:100,
       disponivel(E){
         return E.dinheiro >= 100 ? {ok:true}
-                                 : {ok:false, motivo:'custa R$ 100 por dia'};
+                                 : {ok:false, motivo:_t('custa {valor} por dia', {valor:U.dinheiro(100)})};
       },
       executar(E){
         const abs = E.data.absoluto || 0;
         if(E.campana && E.campana.pagoAbs === abs)
-          return {ok:true, msg:'A campana de hoje já está de pé.', semCusto:true};
+          return {ok:true, msg:_t('A campana de hoje já está de pé.'), semCusto:true};
         TO.estado.lancarNoResumo(E, 'campana', -100, true);
         E.campana = {nivel:1, pagoAbs:abs};
-        return {ok:true, msg:'Olheiro na rua, ouvido no chão.'};
+        return {ok:true, msg:_t('Olheiro na rua, ouvido no chão.')};
       }
     },
     {
-      id:'inteligencia2', nome:'Inteligência ×2', icone:'olho', cena:'Rua',
-      efeito:'R$ 400 por dia; o olheiro crava TODOS os ataques que vêm',
+      id:'inteligencia2', nome:_t('Inteligência ×2'), icone:'olho', cena:_t('Rua'),
+      efeito:_t('R$ 400 por dia; o olheiro crava TODOS os ataques que vêm'),
       custo:400,
       disponivel(E){
         return E.dinheiro >= 400 ? {ok:true}
-                                 : {ok:false, motivo:'custa R$ 400 por dia'};
+                                 : {ok:false, motivo:_t('custa {valor} por dia', {valor:U.dinheiro(400)})};
       },
       executar(E){
         const abs = E.data.absoluto || 0;
         if(E.campana && E.campana.pagoAbs === abs && E.campana.nivel >= 2)
-          return {ok:true, msg:'A campana dupla de hoje já está de pé.',
+          return {ok:true, msg:_t('A campana dupla de hoje já está de pé.'),
                   semCusto:true};
         /* subir da simples pra dupla no mesmo dia paga só a diferença */
         const paga = E.campana && E.campana.pagoAbs === abs ? 300 : 400;
         TO.estado.lancarNoResumo(E, 'campana', -paga, true);
         E.campana = {nivel:2, pagoAbs:abs};
-        return {ok:true, msg:'Dois olheiros na rua — nada passa sem a gente saber.'};
+        return {ok:true, msg:_t('Dois olheiros na rua — nada passa sem a gente saber.')};
       }
     },
     /* PICHAR E IR À DELEGACIA APOSENTADAS (ordem do dono, 24/08/2026),
        na mesma leva de limpeza do expediente. A fiança individual
        continua no perfil do membro. */
     {
-      id:'reuniao', nome:'Reunião de diretoria', icone:'conversa', cena:'Sede',
-      efeito:'Relação +6 com o aliado mais próximo; precisa de 2 diretores de pé',
+      id:'reuniao', nome:_t('Reunião de diretoria'), icone:'conversa', cena:_t('Sede'),
+      efeito:_t('Relação +6 com o aliado mais próximo; precisa de 2 diretores de pé'),
       disponivel(E){
         const n = E.membros.filter(m=>m.cargo==='diretoria' && TO.membros.disponivel(m)).length;
-        if(n < 2) return {ok:false, motivo:'precisa de dois diretores de pé'};
+        if(n < 2) return {ok:false, motivo:_t('precisa de dois diretores de pé')};
         const alvos = Object.entries(E.relacoes||{}).filter(([,v])=>v > -70);
-        if(!alvos.length) return {ok:false, motivo:'ninguém com quem conversar'};
+        if(!alvos.length) return {ok:false, motivo:_t('ninguém com quem conversar')};
         return {ok:true};
       },
       executar(E){
@@ -905,27 +921,29 @@ TO.acoes = (function(){
         const o = TO.mundo.torcida(id);
         E.relacoes[id] = U.limitar(v + REL().reuniao, -100, 100);
         TO.relacoes.marcarAjuda(E, id);
-        return {ok:true, msg:`Reunião com ${o?o.nome:'a diretoria aliada'}. Relação em `+
-                             `${Math.round(E.relacoes[id])}.`};
+        return {ok:true, msg: o
+          ? _t('Reunião com {nome}. Relação em {n}.', {nome:o.nome, n:Math.round(E.relacoes[id])})
+          : _t('Reunião com a diretoria aliada. Relação em {n}.', {n:Math.round(E.relacoes[id])})};
       }
     },
     /* --- as duas manuais que abrem cena: não entram no expediente --- */
-    {id:'atacar', nome:'Atacar bar ou sede rival', icone:'tijolo', cena:'Bar',
-     efeito:'a briga vale até ±10 de prestígio; no bar, saque de R$ 60 por defensor + 22% do caixa deles — 1 ataque por semana', alvos:alvosDeAtaque, manual:true,
+    {id:'atacar', nome:_t('Atacar bar ou sede rival'), icone:'tijolo', cena:_t('Bar'),
+     efeito:_t('a briga vale até ±10 de prestígio; no bar, saque de R$ 60 por defensor + 22% do caixa deles — 1 ataque por semana'), alvos:alvosDeAtaque, manual:true,
      disponivel(E){
        const aptos = TO.membros.aptosParaOEstadio(E).length;
        if(aptos < MINIMO_SAIDA)
-         return {ok:false, motivo:`gente apta de menos (${aptos} de ${MINIMO_SAIDA})`};
+         return {ok:false, motivo:_t('gente apta de menos ({n} de {min})', {n:aptos, min:MINIMO_SAIDA})};
        if(E.acoes.ultimoAtaqueManual === E.data.semana)
-         return {ok:false, motivo:'já saiu bonde pra cima de casa rival esta semana'};
+         return {ok:false, motivo:_t('já saiu bonde pra cima de casa rival esta semana')};
        const l = alvosDeAtaque(E);
-       if(!l.length) return {ok:false, motivo:'nenhum bar ou sede rival mapeado na praça'};
+       if(!l.length) return {ok:false, motivo:_t('nenhum bar ou sede rival mapeado na praça')};
        const q = l[0];
-       return {ok:true, nota:`${l.length} alvos · o de pior relação é ${q.nome}`};
+       return {ok:true, nota:_tn(l.length, '{n} alvo · o de pior relação é {nome}',
+                                           '{n} alvos · o de pior relação é {nome}', {nome:q.nome})};
      },
      executar(E, opc){
        const alvo = escolher(alvosDeAtaque(E), opc);
-       if(!alvo) return {ok:false, msg:'Esse alvo não existe mais.'};
+       if(!alvo) return {ok:false, msg:_t('Esse alvo não existe mais.')};
        E.acoes.ultimoAtaqueManual = E.data.semana;
        /* teto do dono (18/08/2026): briga de bar é de salão — quem
           defende bota no máximo 40 na cena */
@@ -933,28 +951,28 @@ TO.acoes = (function(){
        if(alvo.tipo === 'bar') noAlvo = Math.min(noAlvo, 40);
        return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
                               efetivoRival: noAlvo},
-               msg:`Bonde a caminho: ${alvo.nome}, ${alvo.bairro}.`};
+               msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})};
      }},
 
-    {id:'pressionar', nome:'Pressionar o clube', icone:'megafone', cena:'CT',
-     efeito:'chegando no gramado, Relação com o clube −18 · Moral +0,8; falhando, −28 · Moral −1,2', manual:true,
+    {id:'pressionar', nome:_t('Pressionar o clube'), icone:'megafone', cena:_t('CT'),
+     efeito:_t('chegando no gramado, Relação com o clube −18 · Moral +0,8; falhando, −28 · Moral −1,2'), manual:true,
      disponivel(E){
        const aptos = TO.membros.aptosParaOEstadio(E).length;
        if(aptos < MINIMO_SAIDA)
-         return {ok:false, motivo:`gente apta de menos (${aptos} de ${MINIMO_SAIDA})`};
+         return {ok:false, motivo:_t('gente apta de menos ({n} de {min})', {n:aptos, min:MINIMO_SAIDA})};
        const c = clube(E);
        if(c.relacao <= 5)
-         return {ok:false, motivo:'a diretoria não abre mais o portão pra vocês'};
+         return {ok:false, motivo:_t('a diretoria não abre mais o portão pra vocês')};
        if(c.cobranca && c.cobranca.ate >= E.data.semana)
-         return {ok:false, motivo:`o elenco já foi cobrado (vale até a semana ${c.cobranca.ate})`};
-       return {ok:true, nota:`relação com o clube em ${Math.round(c.relacao)}`};
+         return {ok:false, motivo:_t('o elenco já foi cobrado (vale até a semana {n})', {n:c.cobranca.ate})};
+       return {ok:true, nota:_t('relação com o clube em {n}', {n:Math.round(c.relacao)})};
      },
      executar(E){
        const c = clube(E);
        return {ok:true, cena:{cena:'ct', acao:'pressionar',
                               alvo:{nome:E.torcida.clube, tipo:'ct'},
                               efetivoRival: 10},
-               msg:`Caravana no portão do CT. Relação em ${Math.round(c.relacao)}.`};
+               msg:_t('Caravana no portão do CT. Relação em {n}.', {n:Math.round(c.relacao)})};
      }}
   ];
 
@@ -971,46 +989,52 @@ TO.acoes = (function(){
   /* riscos e penas reapertados pelo dono em 18/08/2026;
      os valores de ganho continuam os mesmos */
   const ASSALTOS = [
-    {id:'banco',        nome:'Banco',             art:'no', efetivos:[10, 20],
+    {id:'banco',        nome:_t('Banco'),             art:'no', efetivos:[10, 20],
+     no:_t('no banco'), doLocal:_t('do banco'),
      ganho:{10:[30000, 50000], 20:[60000, 120000]}, chance:0.50, pena:180},
-    {id:'joalheria',    nome:'Joalheria',         art:'na', efetivos:[10, 20],
+    {id:'joalheria',    nome:_t('Joalheria'),         art:'na', efetivos:[10, 20],
+     no:_t('na joalheria'), doLocal:_t('da joalheria'),
      ganho:{10:[10000, 20000], 20:[30000, 40000]},  chance:0.35, pena:120},
-    {id:'supermercado', nome:'Supermercado',      art:'no', efetivos:[5, 10],
+    {id:'supermercado', nome:_t('Supermercado'),      art:'no', efetivos:[5, 10],
+     no:_t('no supermercado'), doLocal:_t('do supermercado'),
      ganho:{5:[5000, 10000],   10:[10000, 15000]},  chance:0.35, pena:120},
-    {id:'posto',        nome:'Posto de gasolina', art:'no', efetivos:[5, 10],
+    {id:'posto',        nome:_t('Posto de gasolina'), art:'no', efetivos:[5, 10],
+     no:_t('no posto de gasolina'), doLocal:_t('do posto de gasolina'),
      ganho:{5:[2000, 3000],    10:[4000, 5000]},    chance:0.20, pena:90},
-    {id:'mercadinho',   nome:'Mercadinho',        art:'no', efetivos:[2, 5],
+    {id:'mercadinho',   nome:_t('Mercadinho'),        art:'no', efetivos:[2, 5],
+     no:_t('no mercadinho'), doLocal:_t('do mercadinho'),
      ganho:{2:[1000, 2000],    5:[3000, 4000]},     chance:0.10, pena:45},
-    {id:'roupas',       nome:'Loja de roupas',    art:'na', efetivos:[2, 5],
+    {id:'roupas',       nome:_t('Loja de roupas'),    art:'na', efetivos:[2, 5],
+     no:_t('na loja de roupas'), doLocal:_t('da loja de roupas'),
      ganho:{2:[500, 1000],     5:[2000, 3000]},     chance:0.05, pena:30}
   ];
 
   function executarAssalto(E, alvoId, n){
     const a = ASSALTOS.find(x=>x.id === alvoId);
-    if(!a || !a.efetivos.includes(n)) return {ok:false, msg:'alvo inválido'};
+    if(!a || !a.efetivos.includes(n)) return {ok:false, msg:_t('alvo inválido')};
     const aptos = E.membros.filter(TO.membros.disponivel);
     if(aptos.length < n)
-      return {ok:false, msg:`só ${aptos.length} disponíveis — precisa de ${n}`};
+      return {ok:false, msg:_t('só {n} disponíveis — precisa de {m}', {n:aptos.length, m:n})};
     /* membros ALEATÓRIOS, como manda a tabela — não é a elite que vai */
     const grupo = U.embaralhar([...aptos]).slice(0, n);
     const caiu = U.rng() < a.chance;
     if(caiu){
       for(const m of grupo)
-        TO.membros.prender(E, m, a.pena, `Preso no assalto — ${a.nome}`);
+        TO.membros.prender(E, m, a.pena, _t('Preso no assalto — {alvo}', {alvo:a.nome}));
       if(TO.feed) TO.feed.propor(E, {
         kind:'assalto', peso:'info', tipo:'ruim', voz:'diretor',
-        texto:`Deu ruim ${a.art} ${a.nome.toLowerCase()}: os ${n} foram presos. `+
-              `Pena de ${a.pena} dias pra cada um.`
+        texto:_t('Deu ruim {local}: os {n} foram presos. Pena de {pena} dias pra cada um.',
+                 {local:a.no, n, pena:a.pena})
       });
       return {ok:true, caiu:true, n, pena:a.pena, alvo:a.nome};
     }
     const [mn, mx] = a.ganho[n];
     const v = U.inteiro(mn, mx);
-    TO.estado.lancar(E, `Assalto — ${a.nome}`, v);
+    TO.estado.lancar(E, _t('Assalto — {alvo}', {alvo:a.nome}), v);
     if(TO.feed) TO.feed.propor(E, {
       kind:'assalto', peso:'info', tipo:'boa', voz:'diretor',
-      texto:`Os ${n} voltaram d${a.art==='na'?'a':'o'} ${a.nome.toLowerCase()} com `+
-            `${U.dinheiro(v)}. Ninguém viu, ninguém sabe.`
+      texto:_t('Os {n} voltaram {local} com {valor}. Ninguém viu, ninguém sabe.',
+               {n, local:a.doLocal, valor:U.dinheiro(v)})
     });
     return {ok:true, caiu:false, n, valor:v, alvo:a.nome};
   }
@@ -1020,7 +1044,7 @@ TO.acoes = (function(){
      ======================================================= */
   function executar(E, id, opc){
     const a = porId(id);
-    if(!a) return {ok:false, msg:'ação desconhecida'};
+    if(!a) return {ok:false, msg:_t('ação desconhecida')};
 
     const d = a.disponivel(E);
     if(!d.ok) return {ok:false, msg:d.motivo};
@@ -1054,7 +1078,7 @@ TO.acoes = (function(){
            Agora o "Últimos turnos" do Expediente conta a falha. */
         E.acoes.feitas = E.acoes.feitas || [];
         E.acoes.feitas.push({semana:E.data.semana, dia:E.data.dia, id,
-          ok:false, msg:`${a.nome} não rolou: ${r.msg}.`});
+          ok:false, msg:_t('{acao} não rolou: {msg}.', {acao:a.nome, msg:r.msg})});
         if(E.acoes.feitas.length > 60) E.acoes.feitas.shift();
       }
     }

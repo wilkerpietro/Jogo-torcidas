@@ -110,8 +110,9 @@ TO.financeiro = (function(){
         if((p.lojas[k].nivel||1) < (p.lojas[i].nivel||1)) i = k;
       loja = p.lojas.splice(i, 1)[0];
       E.dinheiro += VENDA_LOJA;
-      TO.estado.lancar(E, `Loja${loja.bairro?' — '+loja.bairro:''} vendida `+
-                          `— 30 dias no vermelho`, VENDA_LOJA);
+      TO.estado.lancar(E, loja.bairro
+        ? _t('Loja — {bairro} vendida — 30 dias no vermelho', {bairro:loja.bairro})
+        : _t('Loja vendida — 30 dias no vermelho'), VENDA_LOJA);
     }
     let fechadas = 0;
     while(fechadas < 3 && (p.subsedes||[]).length){
@@ -125,8 +126,10 @@ TO.financeiro = (function(){
       for(const m of (E.membros||[]))
         if(m.filial === fil.cidade){
           m.filial = null;
-          m.historico.push('De volta à sede — a subsede de '+
-            nomeCidade(fil.cidade)+' fechou nas dívidas');
+          /* com o tipo ao lado (como `membros.anotar`): a frase agora
+             nasce no idioma do jogador e a tela não a lê mais por regex */
+          m.historico.push({t:'volta', x:_t('De volta à sede — a subsede de {cidade} fechou nas dívidas',
+            {cidade:nomeCidade(fil.cidade)})});
         }
       fechadas++;
     }
@@ -135,12 +138,14 @@ TO.financeiro = (function(){
     if(TO.feed && TO.feed.propor) TO.feed.propor(E, {
       kind:'aviso', peso:'info', voz:'diretor',
       texto:(loja
-        ? `Chefe, 30 dias no vermelho e não deu mais pra segurar: `+
-          `vendemos a loja${loja.bairro?' do bairro '+loja.bairro:''} por `+
-          `R$ 90.000 pra botar as contas em dia.`
-        : `Chefe, 30 dias no vermelho e não deu mais pra segurar.`)+
-        (fechadas ? ` Fechamos também ${fechadas} subsede`+
-          `${fechadas>1?'s':''} pra estancar a sangria.` : '')
+        ? (loja.bairro
+            ? _t('Chefe, 30 dias no vermelho e não deu mais pra segurar: vendemos a loja do bairro {bairro} por {valor} pra botar as contas em dia.',
+                 {bairro:loja.bairro, valor:U.dinheiro(VENDA_LOJA)})
+            : _t('Chefe, 30 dias no vermelho e não deu mais pra segurar: vendemos a loja por {valor} pra botar as contas em dia.',
+                 {valor:U.dinheiro(VENDA_LOJA)}))
+        : _t('Chefe, 30 dias no vermelho e não deu mais pra segurar.'))+
+        (fechadas ? ' ' + _tn(fechadas, 'Fechamos também {n} subsede pra estancar a sangria.',
+                                        'Fechamos também {n} subsedes pra estancar a sangria.') : '')
     });
     return loja || {fechadas};
   }
@@ -333,6 +338,11 @@ TO.financeiro = (function(){
   function contas(E){
     const p = patrimonio(E);
     const rec = [], des = [];
+    /* A MARCA DO COMÉRCIO (idiomas, 24/09/2026): o fechamento separava
+       bar, loja e subsede pelo RÓTULO (/^(Bar|Loja|Subsede)/), e o rótulo
+       agora nasce no idioma do jogador — quem diz o que é comércio é a
+       marca `com`, não o texto */
+    const COM = {com:true};
     const juntar = (lista, rot, v, extra)=>{
       v = Math.round(v);
       if(v) lista.push(Object.assign({rot, v}, extra||{}));
@@ -350,15 +360,16 @@ TO.financeiro = (function(){
        outras três: linha de R$ 0 toda semana é ruído que ensina o
        jogador a não ler a tabela. */
     if(semanaDaMensalidade(E))
-      juntar(rec, `Mensalidades (${pagantes})`, mens);
+      juntar(rec, _t('Mensalidades ({n})', {n:pagantes}), mens);
 
     const fator = fatorComercial(E) * multMoral(E);
     const hoje = absDe(E);
     for(const b of p.bares){
       const dd = diasDeDano(b, hoje);
-      juntar(rec, `Bar${b.bairro?' — '+b.bairro:''} (n${b.nivel})`+
-                  (dd ? ` · quebrado, ${dd} d` : ''),
-             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje));
+      juntar(rec, (b.bairro ? _t('Bar — {bairro} (n{nivel})', {bairro:b.bairro, nivel:b.nivel})
+                            : _t('Bar (n{nivel})', {nivel:b.nivel}))+
+                  (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : ''),
+             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje), COM);
     }
     /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
        na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
@@ -368,23 +379,25 @@ TO.financeiro = (function(){
        +15% de 76 a 100. Só a loja recebe; o bar é outra economia. */
     const multClube = TO.relacaoClube ? TO.relacaoClube.multLoja(E) : 1;
     for(const l of p.lojas){
-      if(l.semInsumo){ des.push({rot:`Loja — ${l.bairro}: sem insumo`, v:0, nota:true}); continue; }
-      juntar(rec, `Loja${l.bairro?' — '+l.bairro:''} (n${l.nivel})${p.fabrica?' · fábrica':''}`+
-                  (multClube > 1 ? ' · material oficial' : ''),
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube);
+      if(l.semInsumo){ des.push({rot:_t('Loja — {bairro}: sem insumo', {bairro:l.bairro}), v:0, nota:true}); continue; }
+      juntar(rec, (l.bairro ? _t('Loja — {bairro} (n{nivel})', {bairro:l.bairro, nivel:l.nivel})
+                            : _t('Loja (n{nivel})', {nivel:l.nivel}))+
+                  (p.fabrica ? ' · ' + _t('fábrica') : '')+
+                  (multClube > 1 ? ' · ' + _t('material oficial') : ''),
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube, COM);
     }
     for(const s of p.subsedes)
-      juntar(rec, `Subsede${s.bairro?' — '+s.bairro:''}`,
-             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM);
+      juntar(rec, s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede'),
+             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM, COM);
     /* as FILIAIS (subsede em outra cidade, dono 25/08/2026) rendem a
        mesma régua da subsede, no multiplicador da cidade DELAS */
     for(const f of (p.filiais||[]))
-      juntar(rec, `Subsede — ${nomeCidade(f.cidade)} (n${f.nivel})`,
-             RECEITA.subsede*multFilial(E,f)*fator*SEM);
+      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}),
+             RECEITA.subsede*multFilial(E,f)*fator*SEM, COM);
 
     /* --- despesas --- */
     if(MANUT_SEDE[E.torcida.sedeNivel])
-      juntar(des, `Manutenção da sede (n${E.torcida.sedeNivel})`,
+      juntar(des, _t('Manutenção da sede (n{nivel})', {nivel:E.torcida.sedeNivel}),
              MANUT_SEDE[E.torcida.sedeNivel]*SEM);
     const corteFab = p.fabrica
       ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteCusto : 0.5) : 0;
@@ -394,20 +407,20 @@ TO.financeiro = (function(){
     for(const s of p.subsedes) manutCom += MANUT.subsede[s.nivel || 1];
     for(const f of (p.filiais||[]))
       manutCom += MANUT.subsede[f.nivel] || MANUT.subsede[1];
-    juntar(des, 'Manutenção do comércio', manutCom*SEM);
+    juntar(des, _t('Manutenção do comércio'), manutCom*SEM, COM);
 
     /* os ANEXOS da sede (pacote do dono, 02/09/2026): enfermaria e
        galpão têm mensalidade; o cofre é obra paga uma vez */
     const px = E.patrimonio || {};
-    if(px.enfermaria) juntar(des, 'Enfermaria da sede',
+    if(px.enfermaria) juntar(des, _t('Enfermaria da sede'),
       (TO.patrimonio ? TO.patrimonio.ANEXOS.enfermaria.mes : 1200)*SEM);
-    if(px.galpao) juntar(des, 'Galpão de material',
+    if(px.galpao) juntar(des, _t('Galpão de material'),
       (TO.patrimonio ? TO.patrimonio.ANEXOS.galpao.mes : 600)*SEM);
 
     /* o insumo entra no mesmo corte de 50% da fábrica */
     let insumo = 0;
     for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteFab);
-    juntar(des, `Insumos das lojas${corteFab?' · fábrica':''}`, insumo*SEM);
+    juntar(des, _t('Insumos das lojas') + (corteFab ? ' · ' + _t('fábrica') : ''), insumo*SEM, COM);
 
     const soma = l => l.reduce((s,x)=>s+x.v, 0);
     return {receitas:rec, despesas:des,
@@ -484,7 +497,7 @@ TO.financeiro = (function(){
     const chave = E.proximoJogo.chave;
     if(E.caravanasPagas[chave]) return null;
     E.caravanasPagas[chave] = true;
-    const destino = E.proximoJogo.cidadeAdv || 'fora';
+    const destino = E.proximoJogo.cidadeAdv || _t('fora');
     /* a conta é da estrada e do tamanho da caravana; sem plano, o valor
        cheio do GDD §7.3 */
     const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
@@ -503,12 +516,14 @@ TO.financeiro = (function(){
     if(est && est.custo <= 0 && est.rateio > 0 && est.rota &&
        est.rota.id !== 'ar')
       TO.estado.lancar(E,
-        `Caravana para ${destino} — rateio dos ${est.vao} no ônibus`,
+        _t('Caravana para {destino} — rateio dos {n} no ônibus', {destino, n:est.vao}),
         est.rateio);
     else if(valor > 0)
-      TO.estado.lancar(E, `Caravana para ${destino}`+
-        (est ? ` (${est.vao} pessoas, rateio de ${U.dinheiro(est.rateio)})` : '')+
-        (ajudaDoClube ? ` · clube cobriu ${U.dinheiro(ajudaDoClube)}` : ''),
+      TO.estado.lancar(E, (est
+          ? _t('Caravana para {destino} ({n} pessoas, rateio de {valor})',
+               {destino, n:est.vao, valor:U.dinheiro(est.rateio)})
+          : _t('Caravana para {destino}', {destino}))+
+        (ajudaDoClube ? ' · ' + _t('clube cobriu {valor}', {valor:U.dinheiro(ajudaDoClube)}) : ''),
         -valor);
     /* a lista não pode crescer pra sempre num save de dez temporadas */
     const chaves = Object.keys(E.caravanasPagas);
@@ -559,22 +574,21 @@ TO.financeiro = (function(){
        resumo consolidado no fim do mês — a tela de transações estava
        afogada em linhas iguais. O relatório mensal segue detalhado
        por rótulo, porque ele soma rel.receitas/despesas direto. */
-    const doComercio = rot => /^(Bar|Loja|Subsede)\b/.test(rot) ||
-      rot === 'Manutenção do comércio' || /^Insumos das lojas/.test(rot);
+    const doComercio = x => !!x.com;
     for(const r of rel.receitas){
-      if(doComercio(r.rot)) TO.estado.lancarNoResumo(E, 'comercio', r.v);
+      if(doComercio(r)) TO.estado.lancarNoResumo(E, 'comercio', r.v);
       else TO.estado.lancar(E, r.rot, r.v);
     }
     for(const d of rel.despesas){
-      if(doComercio(d.rot)) TO.estado.lancarNoResumo(E, 'comercio', -d.v);
+      if(doComercio(d)) TO.estado.lancarNoResumo(E, 'comercio', -d.v);
       else TO.estado.lancar(E, d.rot, -d.v);
     }
 
     /* GDD §7.1: doação esporádica, tanto maior quanto o prestígio */
     if(U.rng() < 0.10){
       const v = Math.round(200 + E.indicadores.prestigio*U.entre(30, 90));
-      TO.estado.lancar(E, 'Doação de simpatizante', v);
-      rel.receitas.push({rot:'Doação de simpatizante', v});
+      TO.estado.lancar(E, _t('Doação de simpatizante'), v);
+      rel.receitas.push({rot:_t('Doação de simpatizante'), v});
       rel.receita += v; rel.saldo += v;
     }
 
@@ -600,18 +614,18 @@ TO.financeiro = (function(){
        autor: a ideia de debandar saiu do jogo) */
     if(E.dinheiro < 0){
       E.semanasNoVermelho = (E.semanasNoVermelho||0) + 1;
-      TO.estado.mexerIndicador(E, 'moral', -1, 'Caixa no vermelho');
-      rel.avisos.push(`Caixa negativo há ${E.semanasNoVermelho} `+
-                      `${E.semanasNoVermelho===1?'semana':'semanas'}. `+
-                      'A moral cai toda semana enquanto durar.');
+      TO.estado.mexerIndicador(E, 'moral', -1, _t('Caixa no vermelho'));
+      rel.avisos.push(_tn(E.semanasNoVermelho,
+        'Caixa negativo há {n} semana. A moral cai toda semana enquanto durar.',
+        'Caixa negativo há {n} semanas. A moral cai toda semana enquanto durar.'));
     }else{
-      if(E.semanasNoVermelho) rel.avisos.push('Caixa de volta ao azul.');
+      if(E.semanasNoVermelho) rel.avisos.push(_t('Caixa de volta ao azul.'));
       E.semanasNoVermelho = 0;
     }
 
     /* o que o expediente da sede tentou e não conseguiu */
     for(const [nome, msg] of Object.entries(E.acoes.rotinaFalha || {}))
-      rel.avisos.push(`Expediente: ${nome} não rodou — ${msg}.`);
+      rel.avisos.push(_t('Expediente: {nome} não rodou — {msg}.', {nome, msg}));
     E.acoes.rotinaFalha = {};
 
     rel.promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
@@ -633,20 +647,23 @@ TO.financeiro = (function(){
       const rm = E.resumoMes || {};
       const c = rm.comercio, f = rm.festa;
       if(c && c.rec) TO.estado.registrarLinha(E,
-        'Comércio — receitas do mês (bar, loja, subsede)', Math.round(c.rec));
+        _t('Comércio — receitas do mês (bar, loja, subsede)'), Math.round(c.rec));
       if(c && c.des) TO.estado.registrarLinha(E,
-        'Comércio — manutenção e insumos do mês', -Math.round(c.des));
+        _t('Comércio — manutenção e insumos do mês'), -Math.round(c.des));
       if(f && (f.rec || f.des)) TO.estado.registrarLinha(E,
-        `Festas na sede — ${f.n} no mês`, Math.round(f.rec - f.des));
+        _tn(f.n, 'Festas na sede — {n} no mês', 'Festas na sede — {n} no mês'), Math.round(f.rec - f.des));
       /* as diárias do expediente novo (dono, 24/08/2026) fecham por
          mês do mesmo jeito: o caixa já mexeu na hora, aqui é registro */
       if(rm.pix && rm.pix.rec) TO.estado.registrarLinha(E,
-        `Doações por PIX — ${rm.pix.n} campanhas no mês`, Math.round(rm.pix.rec));
+        _tn(rm.pix.n, 'Doações por PIX — {n} campanha no mês',
+                      'Doações por PIX — {n} campanhas no mês'), Math.round(rm.pix.rec));
       if(rm.campana && rm.campana.des) TO.estado.registrarLinha(E,
-        `Campana do olheiro — ${rm.campana.n} diárias no mês`,
+        _tn(rm.campana.n, 'Campana do olheiro — {n} diária no mês',
+                          'Campana do olheiro — {n} diárias no mês'),
         -Math.round(rm.campana.des));
       if(rm.padrinho && rm.padrinho.des) TO.estado.registrarLinha(E,
-        `Padrinho de treino — ${rm.padrinho.n} gratificações no mês`,
+        _tn(rm.padrinho.n, 'Padrinho de treino — {n} gratificação no mês',
+                           'Padrinho de treino — {n} gratificações no mês'),
         -Math.round(rm.padrinho.des));
       E.resumoMes = {};
     }
@@ -655,8 +672,8 @@ TO.financeiro = (function(){
     const profs = professoresDe(E);
     if(profs && fimDoMes(E)){
       const mes = MMA_MES * profs;
-      TO.estado.lancar(E, profs === 1 ? 'Professor de MMA — mês'
-                                      : `Professores de MMA (${profs}) — mês`, -mes);
+      TO.estado.lancar(E, profs === 1 ? _t('Professor de MMA — mês')
+                                      : _t('Professores de MMA ({n}) — mês', {n:profs}), -mes);
       rel.despesa += mes; rel.saldo -= mes;
     }
     /* os advogados cobram R$ 5.000 cada no fim do mês (pedido do
@@ -664,23 +681,23 @@ TO.financeiro = (function(){
     const advs = advogadosDe(E);
     if(advs && fimDoMes(E)){
       const mes = ADVOGADO_MES * advs;
-      TO.estado.lancar(E, advs === 1 ? 'Advogado — mês'
-                                     : `Advogados (${advs}) — mês`, -mes);
+      TO.estado.lancar(E, advs === 1 ? _t('Advogado — mês')
+                                     : _t('Advogados ({n}) — mês', {n:advs}), -mes);
       rel.despesa += mes; rel.saldo -= mes;
     }
     const frota = onibusDe(E);
     if(frota && fimDoMes(E)){
       const mes = ONIBUS_MES * frota;
       TO.estado.lancar(E, frota === 1
-        ? 'Ônibus — combustível e manutenção'
-        : `Ônibus (${frota}) — combustível e manutenção`, -mes);
+        ? _t('Ônibus — combustível e manutenção')
+        : _t('Ônibus ({n}) — combustível e manutenção', {n:frota}), -mes);
       rel.despesa += mes; rel.saldo -= mes;
       /* a manutenção séria é sorteada POR ÔNIBUS: frota maior quebra
          mais, que é o preço de ter frota */
       for(let k = 0; k < frota; k++) if(U.rng() < 0.01){
-        TO.estado.lancar(E, 'Ônibus — manutenção séria', -15000);
+        TO.estado.lancar(E, _t('Ônibus — manutenção séria'), -15000);
         rel.despesa += 15000; rel.saldo -= 15000;
-        rel.avisos.push('Um ônibus quebrou de verdade: R$ 15.000 de oficina.');
+        rel.avisos.push(_t('Um ônibus quebrou de verdade: {valor} de oficina.', {valor:U.dinheiro(15000)}));
       }
     }
     acumularNoMes(E, rel);
