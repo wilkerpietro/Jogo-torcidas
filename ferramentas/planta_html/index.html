@@ -85,6 +85,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 .legenda i.barf { background: #8f8a7f; border: 2px solid #3d3a35; border-radius: 50%; }
 .legenda i.sede { background: #1f5aa8; border: 2px solid #f2f1ec; }
 .legenda i.sedev { background: #aaa598; border: 2px dashed #57544d; }
+.legenda i.metro { background: #1f5aa8; border: 2px solid #f2f1ec; border-radius: 50%; }
 .torcidas { width: 100%; border-collapse: collapse; margin: 6px 0 0; font: 13px/1.3 var(--f-texto); }
 .torcidas th { text-align: left; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); padding: 0 6px 4px 0; }
 .torcidas td { padding: 4px 6px 4px 0; border-top: 1px solid var(--linha); vertical-align: top; font-variant-numeric: tabular-nums; }
@@ -123,6 +124,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 }
 .alterna3d input { accent-color: #0e7a82; margin: 0; }
 .alterna3d:has(input:focus-visible) { outline: 2px solid var(--selecao); outline-offset: 2px; }
+.viagem3d { position: absolute; left: 8px; top: 8px; margin: 0; padding: 6px 10px; border-radius: 8px; background: #1f5aa8; color: #fff;
+  font: 600 13px/1.2 var(--f-ui); letter-spacing: .02em; pointer-events: none; }
+.acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.acoes button { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; padding: 9px 12px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--linha); background: var(--papel); color: var(--tinta); }
+.acoes button.principal { background: #1f5aa8; border-color: #1f5aa8; color: #fff; }
 .ficha h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
 .comodos { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; color: var(--tinta-2); }
 .comodos b { color: var(--tinta); font: 700 13.5px/1.2 var(--f-ui); letter-spacing: .02em; }
@@ -202,6 +209,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
       <div class="vista3d" id="vista3d">
         <canvas id="c3d"></canvas>
         <label class="alterna3d" id="alterna-telhado" hidden><input type="checkbox" id="c-telhado"> Telhado</label>
+        <p class="viagem3d" id="viagem3d" hidden></p>
         <div class="carregando3d" id="carregando3d" hidden>montando…</div>
         <p class="dica">Arraste pra girar · role pra aproximar · duplo clique centraliza</p>
       </div>
@@ -224,6 +232,8 @@ import { ATLAS } from './js/modelos_atlas.js';
 import { Construtor } from './js/construtor3d.js';
 import { gerarProposta, RUA } from './js/proposta.js';
 import { montarSede } from './js/sede3d.js';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
+import { montarShopping, montarDelegacia, montarPraca } from './js/equip3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -510,6 +520,21 @@ function sedeDoEquip(eq) {
 const plantaDaSede = sd => montarSede(sd, {}, { so2d: true });
 for (const e of equipamentos) if (e.q.equip.tipo === 'sede') { e.sede = sedeDoEquip(e.q.equip); e.montagem = plantaDaSede(e.sede); }
 const porticos = PROP.porticos.map(p => { const pol = poligonoDoPortico(p, 3.2); return { tipo: 'portico', p, pol, bb: bbox(pol), nome: p.nome, proposta: true }; });
+/* O METRÔ: a entrada de cada estação é o que se clica no mapa. A planta
+   baixa (a entrada na rua e o que fica embaixo) sai do próprio modelo. */
+const METRO_P = PROP.metro;
+const outraDe = e => METRO_P.estacoes.find(o => o !== e);
+const painelDe = e => 'partidas_' + outraDe(e).nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const opcEstacao = e => ({ outra: outraDe(e).nome, painel: painelDe(e) });
+const estacoes = METRO_P ? METRO_P.estacoes.map(e => ({ tipo: 'estacao', est: e, pol: retPts(e.entrada), bb: { ...e.entrada }, nome: e.completo, proposta: true,
+                                                        planta: montarEstacao(e, {}, opcEstacao(e)) })) : [];
+/* OS EQUIPAMENTOS NOVOS com modelo: o shopping, a delegacia e a Praça da
+   Vila (a praça ocupa a quadra inteira, calçada junto; os prédios, o miolo) */
+const MONTAR_EQUIP = { shopping: montarShopping, delegacia: montarDelegacia, praca: montarPraca };
+const temModelo = q => !!q.equip && (q.equip.tipo === 'shopping' || q.equip.tipo === 'delegacia' || (q.equip.tipo === 'praca' && q.equip.nome === 'Praça da Vila'));
+const specDoEquip = q => ({ area: q.equip.tipo === 'praca' ? { x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 } : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 },
+                            frente: q.equip.frente || 's', nome: q.equip.nome });
+for (const q of PROP.quadras) if (temModelo(q)) q.plantaEquip = MONTAR_EQUIP[q.equip.tipo](specDoEquip(q), {}).planta2d;
 const estadios = [
   { tipo: 'estadio', dx: 0, dy: 0, nome: 'Estádio', pol: P.anel(P.R.fachada1) },
   { tipo: 'estadio', dx: PROP.estadio2.dx, dy: PROP.estadio2.dy, nome: PROP.estadio2.nome, proposta: true,
@@ -776,6 +801,7 @@ function desenhar() {
     ctx.fillStyle = T ? T.cor : '#8f8a7f'; ctx.fill();
     ctx.lineWidth = px(2); ctx.strokeStyle = T ? T.cor2 : '#3d3a35'; ctx.stroke();
   }
+  if (prop) desenharMetro(px, ve);
   /* ---- a seleção e o que está debaixo do mouse ---- */
   for (const [it, cor, esp] of [[estado.sobre, '#ffffff', 2], [estado.sel, getComputedStyle(document.documentElement).getPropertyValue('--selecao').trim() || '#d4731c', 3.5]]) {
     if (!it) continue;
@@ -806,6 +832,7 @@ function desenharProposta(ve, px) {
     const miolo = { x0: q.ix0, y0: q.iy0, x1: q.ix1, y1: q.iy1 };
     if (q.equip && q.equip.tipo === 'estadio') { ret(miolo, COR.estadio); desenharEstadio(PROP.estadio2.dx, PROP.estadio2.dy); }
     else if (q.equip && q.equip.tipo === 'condominio') { ret(miolo, q.equip.cor); ret(q.jardim, '#6f9a55'); ret(q.faixaLotes, COR.miolo); }
+    else if (q.plantaEquip) desenharPlanta(q.plantaEquip, px);
     else if (q.equip) {
       ret(miolo, q.equip.cor);
       if (q.equip.tipo === 'campo') {
@@ -835,6 +862,43 @@ function desenharProposta(ve, px) {
   ctx.setLineDash([]);
 }
 
+/* A PLANTA DE UM MODELO NOVO: o piso, a grama, a água, o móvel, a
+   cobertura e a copa das árvores, nessa ordem */
+function desenharPlanta(marcas, px) {
+  for (const tipo of ['piso', 'grama', 'agua', 'movel', 'teto', 'vao', 'arvore']) for (const r of marcas) {
+    if (r.tipo !== tipo) continue;
+    if (r.r !== undefined) { ctx.fillStyle = r.cor; ctx.globalAlpha = tipo === 'arvore' ? 0.85 : 1; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue; }
+    ret(r, r.cor);
+    if (tipo === 'teto' || tipo === 'movel') { ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = px(0.8); ctx.strokeRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0); }
+  }
+}
+/* O METRÔ EM RAIO-X: a linha tracejada no caminho do trilho, o salão da
+   plataforma e o mezanino de cada estação tracejados, e a entrada na rua */
+function desenharMetro(px, ve) {
+  if (!METRO_P) return;
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = px(7); caminho(METRO_P.caminho, false); ctx.stroke();
+  ctx.setLineDash([px(12), px(7)]); ctx.strokeStyle = METRO_P.cor; ctx.lineWidth = px(4.5); caminho(METRO_P.caminho, false); ctx.stroke();
+  ctx.setLineDash([px(6), px(4)]);
+  for (const it of estacoes) {
+    for (const r of it.planta.subsolo) {
+      if (r.tipo !== 'salao' && r.tipo !== 'mezanino') continue;
+      ctx.fillStyle = 'rgba(31,90,168,.16)'; ctx.fillRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+      ctx.strokeStyle = METRO_P.cor; ctx.lineWidth = px(2); ctx.strokeRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+    }
+  }
+  ctx.restore();
+  for (const it of estacoes) {
+    if (!ve(it.bb)) continue;
+    desenharPlanta(it.planta.planta2d, px);
+    const a = it.bb, cx = (a.x0 + a.x1) / 2, cy = (a.y0 + a.y1) / 2, r = Math.max(px(9), 30);
+    ctx.fillStyle = METRO_P.cor; ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill();
+    ctx.lineWidth = Math.max(px(2), r * 0.14); ctx.strokeStyle = '#ffffff'; ctx.stroke();
+    ctx.fillStyle = '#ffffff'; ctx.font = `700 ${r * 1.15}px Barlow, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('M', cx, cy + r * 0.06);
+  }
+}
 /* A SEDE EM PLANTA: o chão, os pisos de cada cômodo, a mobília e as
    paredes (com o vão das portas), tudo do modelo; a vaga, coberta */
 function desenharSede(sd, m, px) {
@@ -926,6 +990,7 @@ function desenharRotulos(vis, prop) {
       for (const q of PROP.quadras) if (q.equip && q.equip.tipo !== 'condominio' && q.equip.tipo !== 'estadio') etiqueta(q.equip.nome, (q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
       for (const f of PROP.favelas) etiqueta(f.nome, (f.bb.x0 + f.bb.x1) / 2, (f.bb.y0 + f.bb.y1) / 2);
       for (const it of espacos) etiqueta(it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga', (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
+      for (const it of estacoes) etiqueta('Metrô ' + it.est.nome, (it.bb.x0 + it.bb.x1) / 2, it.est.entra === 'n' ? it.bb.y0 - 90 : it.bb.y1 + 90);
       if (s >= 0.1) for (const x of bares) {
         const T = x.b.lote.torcida;
         if (T || s >= 0.25) etiqueta(T ? 'Bar do ' + T.rot : 'Bar fechado', x.b.x, x.b.y + (x.b.lote.frente === 'n' ? -60 : 60));
@@ -969,7 +1034,7 @@ function pegar(sx, sy) {
     for (const p of pecasSoltas) { if (prop && p.somePelaProposta) continue; const d = Math.hypot(p.x - x, p.y - y); if (d < md) { md = d; melhor = p; } }
     if (melhor) return melhor;
   }
-  if (prop) { const n = naLista(marcosNovos) || naLista(porticos) || naLista(espacos); if (n) return n; }
+  if (prop) { const n = naLista(estacoes) || naLista(marcosNovos) || naLista(porticos) || naLista(espacos); if (n) return n; }
   const m = naLista(prop ? marcos.filter(m => !m.atacadex) : marcos);
   if (m) return m;
   const est = naLista(prop ? estadios : estadios.slice(0, 1));
@@ -1073,7 +1138,7 @@ function montarLegenda() {
                  ['Árvore', '#2e7d2e'], ['Poste', COR.poste]];
   $('legenda').innerHTML = itens.map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('') +
     (estado.modo === 'proposta' ? '<span><i class="nova"></i>Quadra nova</span><span><i class="bar"></i>Bar aberto</span><span><i class="barf"></i>Bar fechado</span>' +
-                                  '<span><i class="sede"></i>Sede</span><span><i class="sedev"></i>Sede vaga</span>' : '');
+                                  '<span><i class="sede"></i>Sede</span><span><i class="sedev"></i>Sede vaga</span><span><i class="metro"></i>Metrô</span>' : '');
 }
 
 /* ======================================================
@@ -1088,6 +1153,7 @@ function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return n
 function tituloDe(it) {
   if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar do ' + it.l.torcida.rot : 'Bar fechado';
   if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga';
+  if (it.tipo === 'estacao') return it.nome;
   if (it.tipo === 'lote') {
     const pc = planoSeguro(it.l);
     const m = it.l.muro || (pc && pc.tipo);
@@ -1159,6 +1225,52 @@ function fichaDe(it) {
       ['Onde', e.terreno ? e.terreno.onde : '', true]
     ]) + `<p class="nota">Nenhuma torcida de ${esc(cidade)} mora aqui${zero.length ? ` (${esc(zero.map(T => T.sigla).join(', '))}, no nível 0, não tem sede)` : ''}: o espaço fica com a ${sd.nivel === 1 ? 'sede de nível 1' : 'sede grande'} fechada — cor de reboco, vazia por dentro, a porta de enrolar abaixada, as portas fechadas e o telhado.</p>`
       + NOTA_DA_SEDE;
+  }
+  if (it.tipo === 'estacao') {
+    const e = it.est, o = outraDe(e), m = METRO_P, a = e.entrada, sl = e.salao;
+    const trilho = Math.abs(o.km - e.km), seg = Math.round(trilho / M / (36 / 3.6) + 15);
+    return `<p class="sobre">Metrô · ${esc(m.nome)} · quadra ${esc(e.quadra)}${chip}</p><h2>${esc(e.completo)}</h2>` + linhas([
+      ['Linha', m.nome], ['Próxima', 'Estação ' + o.nome],
+      ['Até lá', metros(trilho) + ' de trilho'], ['Viagem', 'uns ' + seg + ' s'],
+      ['Entrada', metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0) + ', desce da rua do ' + (e.entra === 'n' ? 'norte' : 'sul'), true],
+      ['Mezanino', 'a 5,2 m'], ['Plataforma', 'a 10 m, ' + metros(sl.x1 - sl.x0) + ' × ' + metros(sl.y1 - sl.y0)],
+      ['Onde', e.onde, true]
+    ]) + `<div class="acoes"><button class="principal" data-acao="viajar">Pegar o trem até a Estação ${esc(o.nome)}</button><button data-acao="plataforma">Descer na plataforma</button></div>` +
+    '<h3>Da rua à plataforma</h3><ul class="comodos">' + [
+      ['Entrada', 'a caixa de vidro no pórtico branco, a viga em onda descendo no fundo, a faixa grafite com o M e METRÔ, o totem do M na calçada e a grade de enrolar recolhida no canto'],
+      ['Descida', 'a escada fixa de 31 degraus, de bocel amarelo, e a escada rolante, entre as paredes de azulejo azul'],
+      ['Mezanino', 'a bilheteria, o mapa da linha, as cinco catracas e as placas penduradas da plataforma e da saída; do lado pago, a escada pra plataforma'],
+      ['Plataforma', 'o piso bege, a pedra da borda e a faixa amarela tátil, os bancos, os anúncios iluminados, os dois painéis dos próximos trens pendurados, o nome da estação na parede, a faixa azul, o friso de triângulos e a parede de tijolo com a boca do túnel'],
+      ['Trem', 'três carros de 11 m: a cara azul-marinho de moldura vermelha nas duas pontas, a caixa branca com a faixa azul e as portas vermelhas']
+    ].map(([n, t]) => `<li><b>${n}</b> — ${t}</li>`).join('') + '</ul>' +
+    `<p class="nota">De cima, a estação aparece em corte: o chão da rua some, e a parede e o teto do lado de cá também (a face deles é só pra dentro). O jogo ainda não tem metrô: a viagem é a animação daqui — a linha, as duas estações e o túnel de ${metros(m.comprimento)} estão prontos pra virar cena.</p>`;
+  }
+  if (it.tipo === 'quadraNova' && temModelo(it.q)) {
+    const q = it.q, e = q.equip;
+    const LISTA = {
+      shopping: [['Fachada', 'três andares de cortina de vidro verde, com a faixa de alumínio em cada laje, e a ponta redonda; a parede cega da praça em painel cinza, com a faixa de vidro'],
+                 ['Térreo', 'as vitrines das lojas, as portas de correr da entrada e a marquise de vidro em dois pilares'],
+                 ['Último andar', 'recuado, de vidro inclinado pra fora (o da foto), com a platibanda'],
+                 ['Teto', 'a casa de máquinas com a cobertura em meia-lua, as três condensadoras, a claraboia em pirâmide, os exaustores e a antena'],
+                 ['Praça da frente', 'o totem cinza e vermelho com o nome, as duas árvores no vaso, os bancos, o bicicletário, os balizadores e a lixeira']],
+      delegacia: [['Prédio', 'dois andares de pastilha bege, a platibanda e o volume de cima em azul, as janelas de caixilho escuro em fita, a porta de vidro com POLÍCIA CIVIL'],
+                  ['Frente', 'a marquise branca de friso vermelho em pilares finos, com o letreiro DELEGACIA DE POLÍCIA, o brasão da Polícia Civil e a bandeira do Brasil no mastro da fachada'],
+                  ['Alas', 'a baixa da esquerda, e a do plantão 24 h na direita'],
+                  ['Teto', 'as condensadoras, os canos de respiro e as placas solares'],
+                  ['Pátio', 'cercado de grade, com o portão de correr, a guarita e três viaturas da Polícia Civil']],
+      praca: [['Chão', 'a pedra portuguesa branca em volta e a preta e branca em onda no calçadão e na cruz'],
+              ['Meio', 'o chafariz de pastilha azul e branca, com o esguicho'],
+              ['Parquinho', 'na areia: o escorregador com a torre, o balanço e a gangorra'],
+              ['Academia', 'no piso emborrachado: dois jogos de aparelhos de tubo pintado'],
+              ['Gramados', 'com os ipês amarelos e as árvores de copa verde; no piso, as duas mesas de xadrez'],
+              ['Em volta', 'a banca de jornal, os bancos de ripa, os postes de praça, as lixeiras, o bicicletário e a placa da praça']]
+    }[e.tipo];
+    const nomes = { shopping: 'Shopping', delegacia: 'Delegacia', praca: 'Praça' };
+    return `<p class="sobre">${nomes[e.tipo]} · quadra nova ${esc(nomeQuadraNova(q))}${chip}</p><h2>${esc(e.nome)}</h2>` + linhas([
+      ['Terreno', metros((e.tipo === 'praca' ? q.x1 - q.x0 : q.ix1 - q.ix0)) + ' × ' + metros((e.tipo === 'praca' ? q.y1 - q.y0 : q.iy1 - q.iy0)), true],
+      ['Frente para', e.tipo === 'praca' ? 'as quatro ruas' : FRENTE[e.frente]]
+    ]) + `<p class="nota">${esc(e.nota)}</p><h3>O que tem</h3><ul class="comodos">` +
+      LISTA.map(([n, t]) => `<li><b>${n}</b> — ${t}</li>`).join('') + '</ul>';
   }
   if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') {
     const eq = it.q.equip, T = eq.torcida || {}, a = eq.area;
@@ -1298,7 +1410,12 @@ function textura(folha) {
   return texturas[folha];
 }
 function material(folha) {
-  if (!materiais[folha]) materiais[folha] = new THREE.MeshLambertMaterial({
+  if (materiais[folha]) return materiais[folha];
+  /* o que fica embaixo da terra (o metrô) tem a face pra dentro do cômodo e
+     só se desenha de frente: de cima, o teto e a parede do lado de cá somem */
+  if (folha === 'metro_sub') materiais[folha] = new THREE.MeshLambertMaterial({ map: textura('metro'), vertexColors: true, side: THREE.FrontSide });
+  else if (folha === 'vidros') materiais[folha] = new THREE.MeshLambertMaterial({ color: '#bcd6e0', transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+  else materiais[folha] = new THREE.MeshLambertMaterial({
     map: textura(folha), vertexColors: true, side: THREE.DoubleSide,
     alphaTest: folha === 'grades' ? 0.08 : 0, alphaToCoverage: folha === 'grades' });
   return materiais[folha];
@@ -1311,7 +1428,8 @@ function malhaDeBlocos(blocos, folha) {
   g.setAttribute('color', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'cor'), 3));
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, material(folha));
-  m.castShadow = true; m.receiveShadow = true;
+  /* o subsolo não pega a sombra da rua, e o vidro não faz sombra */
+  m.castShadow = folha !== 'metro_sub' && folha !== 'vidros'; m.receiveShadow = folha !== 'vidros' && folha !== 'metro_sub';
   return m;
 }
 const matCor = {};
@@ -1552,6 +1670,21 @@ function ajustarTelhado(it) {
   if (sd) $('c-telhado').checked = telhadoDe(sd);
 }
 $('c-telhado').onchange = ev => { verTelhado = ev.target.checked; vista.telhado(verTelhado); };
+/* os botões da estação: a viagem (e, na chegada, a outra estação na ficha
+   e no meio do mapa) e a câmera na plataforma */
+$('ficha').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-acao]');
+  const A = estado.sel;
+  if (!b || !A || A.tipo !== 'estacao') return;
+  if (b.dataset.acao === 'viajar') {
+    const B = estacoes.find(x => x.est === outraDe(A.est));
+    vista.viagem(A, B, () => { selecionar(B); centrarEm((B.bb.x0 + B.bb.x1) / 2, (B.bb.y0 + B.bb.y1) / 2); });
+  } else if (b.dataset.acao === 'plataforma') vista.olhar(A.planta.olhar, [A.planta.parada.dir, 0]);
+});
+function centrarEm(x, y) {
+  estado.ox = x - estado.larg / 2 / estado.s; estado.oy = y - estado.alt / 2 / estado.s;
+  pedirDesenho();
+}
 /* `o.telhado`: na vista da quadra inteira o telhado fica sempre posto */
 function objetoDaSede(sd, g, o = {}) {
   const destino = {};
@@ -1590,6 +1723,62 @@ function texturaPlaca(texto, tinta, fundo, razao, faixa) {
   c.fillText(texto, W / 2, H / 2 + 4);
   const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
+}
+/* o brasão da Polícia Civil: o escudo azul-marinho de borda dourada, a
+   estrela e o nome */
+function texturaBrasao(p) {
+  const W = 128, H = 154, cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+  const c = cv2.getContext('2d');
+  const escudo = (m) => { c.beginPath(); c.moveTo(m, m); c.lineTo(W - m, m); c.lineTo(W - m, H * 0.55); c.quadraticCurveTo(W - m, H - m * 1.2, W / 2, H - m); c.quadraticCurveTo(m, H - m * 1.2, m, H * 0.55); c.closePath(); };
+  escudo(4); c.fillStyle = p.tinta; c.fill();
+  escudo(11); c.fillStyle = p.fundo; c.fill();
+  c.fillStyle = p.tinta; c.beginPath();
+  for (let i = 0; i < 10; i++) { const r = i % 2 ? 11 : 26, t = -Math.PI / 2 + i * Math.PI / 5; c.lineTo(W / 2 + r * Math.cos(t), H * 0.36 + r * Math.sin(t)); }
+  c.closePath(); c.fill();
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  let t = 22; c.font = `bold ${t}px "Arial Narrow", Arial, sans-serif`;
+  const [a, b] = p.texto.split(' ');
+  while (t > 10 && c.measureText(a || '').width > W - 34) { t -= 1; c.font = `bold ${t}px "Arial Narrow", Arial, sans-serif`; }
+  c.fillText(a || '', W / 2, H * 0.62); c.fillText(b || '', W / 2, H * 0.62 + t + 2);
+  const tx = new THREE.CanvasTexture(cv2); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+  return tx;
+}
+/* o decalque de qualquer modelo novo: escudo, logo e brasão com recorte;
+   o resto é placa na proporção dela */
+function placaDoModelo(g, p) {
+  const lug = { x: p.x, y: p.y, z: p.z, ox: p.ox, oz: p.oz, larg: p.larg, alt: p.alt };
+  if (p.tipo === 'escudo') placaNoMundo(g, lug, texturaEscudo(p), true);
+  else if (p.tipo === 'logo') placaNoMundo(g, lug, texturaEscudo({ forma: 'bola', cor: p.fundo, texto: p.texto, corTexto: p.tinta }), true);
+  else if (p.tipo === 'brasao') placaNoMundo(g, lug, texturaBrasao(p), true);
+  else placaNoMundo(g, lug, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, p.tipo === 'faixa'));
+}
+/* A ESTAÇÃO DO METRÔ: a entrada na rua e a estação inteira embaixo (o
+   corte de casa de boneca), com o trem parado na plataforma */
+function objetoDaEstacao(it, g) {
+  const destino = {};
+  const r = montarEstacao(it.est, destino, opcEstacao(it.est));
+  for (const [lista, m] of Object.entries(destino)) { const mm = malhaDeBlocos(m, lista); if (mm) g.add(mm); }
+  for (const p of r.placas) placaDoModelo(g, p);
+  for (const car of tremNaParada(r.parada)) g.add(car);
+  g.userData.subsolo = true;
+}
+/* os três carros, parados no meio da plataforma */
+function tremNaParada(parada) {
+  const L = (TREM.carro + TREM.vao) * M;
+  return ['tras', 'meio', 'frente'].map((ponta, k) => {
+    const m = malhaDeBlocos(montarCarro(ponta).metro, 'metro');
+    m.position.set(parada.x + (k - 1) * L * parada.dir, parada.y, parada.z);
+    m.rotation.y = parada.dir > 0 ? 0 : Math.PI;
+    return m;
+  });
+}
+/* O EQUIPAMENTO NOVO: a calçada da quadra e o modelo em cima */
+function objetoDoEquipNovo(q, g) {
+  caixa(g, q.x0, q.x1, 0, 1.4, q.y0, q.y1, '#a9a69b');
+  const destino = {};
+  const r = MONTAR_EQUIP[q.equip.tipo](specDoEquip(q), destino);
+  for (const [lista, m] of Object.entries(destino)) { const mm = malhaDeBlocos(m, lista); if (mm) g.add(mm); }
+  for (const p of r.placas) placaDoModelo(g, p);
 }
 /* O ESCUDO, do jeito que o jogo desenha (bairro3d): o da torcida é a
    bola na cor dela com a sigla; o do clube, as duas cores em 135° com a
@@ -1725,6 +1914,12 @@ function objetoDaQuadra(q, g, nova, prop) {
   const lotesDela = nova || !prop ? q.lotes
     : q.lotes.filter(l => !PROP.lotesTirados.has(l)).concat(PROP.lotesExtra.filter(l => l.quadra.i === q.i && l.quadra.j === q.j));
   for (const l of lotesDela) objetoDoLote(l, g);
+  if (nova && q.estacao) {
+    const destino = {}, it = estacoes.find(x => x.est === q.estacao);
+    const r = montarEstacao(q.estacao, destino, opcEstacao(q.estacao));
+    for (const lista of ['metro', 'grades', 'vidros']) { const mm = malhaDeBlocos(destino[lista] || [], lista); if (mm) g.add(mm); }
+    for (const p of r.placas) if (p.y > 0) placaDoModelo(g, p);
+  }
   const esp = espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && x.e.hoje && x.e.quadra === id);
   if (esp) objetoDoEspaco(esp, g, { telhado: true });
   if (q.equip && !nova && !(prop && somemNaProposta.has(id))) objetoDoEquip(q.equip, g, { telhado: true });
@@ -1757,6 +1952,8 @@ function frenteDe(it) {
   if (it.tipo === 'portico') return [-it.p.dir[0], -it.p.dir[1]];
   if (it.tipo === 'espaco') return NORMAL[it.e.frente] || null;
   if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') return NORMAL[it.q.equip.frente] || null;
+  if (it.tipo === 'estacao') return NORMAL[it.est.entra] || null;
+  if (it.tipo === 'quadraNova' && temModelo(it.q)) return NORMAL[it.q.equip.frente || 's'] || null;
   return null;
 }
 function criarVista(canvas) {
@@ -1773,6 +1970,9 @@ function criarVista(canvas) {
   chao.rotation.x = -Math.PI / 2; chao.receiveShadow = true; cena.add(chao);
   let grupo = null, raio = 200, elBase = 0.42, azBase = -0.75;
   const orb = { az: -0.75, el: 0.42, dist: 600, alvo: new THREE.Vector3(), gira: true };
+  /* `anima(dt)` roda a cada quadro enquanto existir (a viagem de trem);
+     `livre` deixa a câmera chegar perto (a vista da plataforma) */
+  let anima = null, livre = false, ultimo0 = 0;
   const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function cores() {
     const cs = getComputedStyle(document.documentElement);
@@ -1789,7 +1989,10 @@ function criarVista(canvas) {
   function quadro(t) {
     pedido3 = 0;
     const dt = ultimo ? Math.min(0.05, (t - ultimo) / 1000) : 0; ultimo = t;
-    if (orb.gira && !reduzido && grupo) { orb.az += dt * 0.28; pedido3 = requestAnimationFrame(quadro); }
+    /* a viagem anda no relógio de verdade (numa máquina lenta ela pula quadro,
+       mas chega na hora) */
+    if (anima) { anima(ultimo0 ? Math.min(0.25, (t - ultimo0) / 1000) : 0); ultimo0 = t; pedido3 = requestAnimationFrame(quadro); }
+    else if (orb.gira && !reduzido && grupo) { orb.az += dt * 0.28; pedido3 = requestAnimationFrame(quadro); }
     else ultimo = 0;
     posicionar();
     rend.render(cena, cam);
@@ -1801,9 +2004,9 @@ function criarVista(canvas) {
     pedir();
   }
   new ResizeObserver(ajustar).observe(canvas);
-  function mostrar(it) {
-    $('carregando3d').hidden = false;
-    setTimeout(() => {
+  function limpar() {
+    anima = null; livre = false;
+    $('viagem3d').hidden = true;
       if (grupo) {
         cena.remove(grupo);
         grupo.traverse(o => {
@@ -1812,6 +2015,12 @@ function criarVista(canvas) {
           if (o.material && o.material.map && o.material.map.isCanvasTexture) { o.material.map.dispose(); o.material.dispose(); }
         });
       }
+  }
+  function mostrar(it) {
+    $('carregando3d').hidden = false;
+    anima = null;
+    setTimeout(() => {
+      limpar();
       grupo = new THREE.Group();
       try {
         if (it.tipo === 'lote') objetoDoLote(it.l, grupo);
@@ -1821,10 +2030,12 @@ function criarVista(canvas) {
         else if (it.tipo === 'quadra') objetoDaQuadra(it.q, grupo, false, estado.modo === 'proposta');
         else if (it.tipo === 'portico') objetoDoPortico(it.p, grupo);
         else if (it.tipo === 'espaco') objetoDoEspaco(it, grupo);
+        else if (it.tipo === 'estacao') objetoDaEstacao(it, grupo);
         else if (it.tipo === 'estadio') objetoDoEstadio(it.dx, it.dy, grupo);
         else if (it.tipo === 'quadraNova') {
           const e = it.q.equip;
-          if (e && e.tipo === 'condominio') {
+          if (e && temModelo(it.q)) objetoDoEquipNovo(it.q, grupo);
+          else if (e && e.tipo === 'condominio') {
             caixa(grupo, it.q.x0, it.q.x1, 0, 1.4, it.q.y0, it.q.y1, '#a9a69b');
             for (const pc of e.torres) objetoDoMarco({ pc }, grupo);
             for (const l of it.q.lotes) objetoDoLote(l, grupo);
@@ -1833,15 +2044,23 @@ function criarVista(canvas) {
           else objetoDaQuadra(it.q, grupo, true);
         }
       } catch (e) { console.error(e); }
+      enquadrar3d(it);
+    }, 16);
+  }
+  /* a câmera em volta do que foi montado; o subsolo esconde o chão e
+     abre mais de cima, pra ver dentro */
+  function enquadrar3d(it) {
       const box = new THREE.Box3().setFromObject(grupo);
       if (box.isEmpty()) box.set(new THREE.Vector3(-50, 0, -50), new THREE.Vector3(50, 50, 50));
       const c = box.getCenter(new THREE.Vector3()), tam = box.getSize(new THREE.Vector3());
       grupo.position.set(-c.x, 0, -c.z);
       cena.add(grupo);
+      const sub = !!grupo.userData.subsolo;
+      chao.visible = !sub;
       raio = Math.max(40, 0.5 * Math.hypot(tam.x, tam.y, tam.z));
-      orb.alvo.set(0, tam.y * 0.5, 0);
-      orb.dist = raio / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.04;
-      orb.el = elBase = tam.y > Math.max(tam.x, tam.z) * 1.5 ? 0.22 : 0.45;
+      orb.alvo.set(0, sub ? c.y : tam.y * 0.5, 0);
+      orb.dist = raio / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * (sub ? 0.95 : 1.04);
+      orb.el = elBase = sub ? 0.62 : tam.y > Math.max(tam.x, tam.z) * 1.5 ? 0.22 : 0.45;
       const fr = frenteDe(it);
       orb.az = azBase = fr ? Math.atan2(fr[0], fr[1]) + 0.55 : -0.75;
       orb.gira = true;
@@ -1853,7 +2072,63 @@ function criarVista(canvas) {
       cores();
       $('carregando3d').hidden = true;
       pedir();
-    }, 16);
+  }
+  /* DESCER NA PLATAFORMA: a câmera na altura do olho, olhando ao longo
+     do trilho */
+  function olhar(pos, dir) {
+    if (!grupo) return;
+    const p = new THREE.Vector3(pos.x, pos.y, pos.z).add(grupo.position);
+    orb.alvo.set(p.x + dir[0] * 12 * M, p.y, p.z + dir[1] * 12 * M);
+    orb.az = azBase = Math.atan2(-dir[0], -dir[1]); orb.el = elBase = 0.03; orb.dist = 12 * M;
+    orb.gira = false; livre = true;
+    pedir();
+  }
+  /* A VIAGEM: as duas estações, o túnel inteiro e o trem andando de uma à
+     outra; a câmera vai atrás do trem. No fim, `aoChegar`. */
+  function viagem(A, B, aoChegar) {
+    limpar();
+    grupo = new THREE.Group();
+    const destino = {};
+    const rs = [A, B].map(x => montarEstacao(x.est, destino, { ...opcEstacao(x.est), semToco: true }));
+    const cam0 = METRO_P.caminho, acum = METRO_P.acum, total = METRO_P.comprimento, [E0, E1] = METRO_P.estacoes;
+    montarTunel(cam0, destino, { de: E0.salao.x1 - cam0[0][0], ate: total - (cam0[cam0.length - 1][0] - E1.salao.x0) });
+    for (const [lista, m] of Object.entries(destino)) { const mm = malhaDeBlocos(m, lista); if (mm) grupo.add(mm); }
+    for (const r of rs) for (const p of r.placas) placaDoModelo(grupo, p);
+    const carros = ['tras', 'meio', 'frente'].map(p => { const m = malhaDeBlocos(montarCarro(p).metro, 'metro'); grupo.add(m); return m; });
+    grupo.userData.subsolo = true;
+    enquadrar3d(A);
+    const yTrem = rs[0].parada.y, passo = (TREM.carro + TREM.vao) * M;
+    const noCaminho = s => {
+      s = Math.max(0, Math.min(total, s));
+      let i = 1;
+      while (i < acum.length - 1 && acum[i] < s) i++;
+      const t = (s - acum[i - 1]) / Math.max(1e-6, acum[i] - acum[i - 1]);
+      const a = cam0[i - 1], b = cam0[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      return { x: a[0] + (b[0] - a[0]) * t, z: a[1] + (b[1] - a[1]) * t, dx: (b[0] - a[0]) / l, dz: (b[1] - a[1]) / l };
+    };
+    const s0 = A.est.km, s1 = B.est.km, T = 13, sinal = Math.sign(s1 - s0) || 1;
+    const suave = f => f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+    let t = -1.2;
+    const por = s => carros.forEach((m, k) => {
+      const q = noCaminho(s + (k - 1) * passo);
+      m.position.set(q.x, yTrem, q.z);
+      m.rotation.y = Math.atan2(-q.dz, q.dx);
+    });
+    por(s0);
+    $('viagem3d').textContent = `${METRO_P.nome} · ${A.est.nome} → ${B.est.nome}`;
+    $('viagem3d').hidden = false;
+    orb.gira = false; livre = true;
+    ultimo0 = 0;
+    anima = dt => {
+      t += dt;
+      const f = suave(Math.min(1, Math.max(0, t / T))), s = s0 + (s1 - s0) * f;
+      por(s);
+      const q = noCaminho(s), dx = q.dx * sinal, dz = q.dz * sinal;
+      orb.alvo.set(q.x + grupo.position.x, yTrem + 2 * M, q.z + grupo.position.z);
+      orb.az = Math.atan2(-dx, -dz) + 0.6; orb.el = 0.62; orb.dist = 48 * M;
+      if (t > T + 0.9) { anima = null; $('viagem3d').hidden = true; aoChegar(); }
+    };
+    pedir();
   }
   /* girar e aproximar */
   const toques = new Map(); let base = null;
@@ -1864,12 +2139,12 @@ function criarVista(canvas) {
     const ant = toques.get(ev.pointerId); toques.set(ev.pointerId, [ev.clientX, ev.clientY]);
     if (toques.size === 2 && base) { const [a, b] = [...toques.values()]; orb.dist = base.dist * base.d / Math.max(1, Math.hypot(a[0] - b[0], a[1] - b[1])); }
     else { orb.az -= (ev.clientX - ant[0]) * 0.008; orb.el = Math.min(1.45, Math.max(0.05, orb.el + (ev.clientY - ant[1]) * 0.006)); }
-    orb.dist = Math.min(raio * 12, Math.max(raio * 0.6, orb.dist));
+    orb.dist = Math.min(raio * 12, Math.max(raio * (livre ? 0.01 : 0.6), orb.dist));
     pedir();
   });
   const fim = ev => { toques.delete(ev.pointerId); if (toques.size < 2) base = null; };
   canvas.addEventListener('pointerup', fim); canvas.addEventListener('pointercancel', fim);
-  canvas.addEventListener('wheel', ev => { ev.preventDefault(); orb.gira = false; orb.dist = Math.min(raio * 12, Math.max(raio * 0.6, orb.dist * Math.exp(ev.deltaY * 0.0012))); pedir(); }, { passive: false });
+  canvas.addEventListener('wheel', ev => { ev.preventDefault(); orb.gira = false; orb.dist = Math.min(raio * 12, Math.max(raio * (livre ? 0.01 : 0.6), orb.dist * Math.exp(ev.deltaY * 0.0012))); pedir(); }, { passive: false });
   canvas.addEventListener('dblclick', () => { orb.az = azBase; orb.el = elBase; orb.dist = raio / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * 1.04; orb.gira = true; pedir(); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { cores(); pedir(); });
   new MutationObserver(() => { cores(); pedir(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -1879,12 +2154,12 @@ function criarVista(canvas) {
     if (grupo) grupo.traverse(o => { if (o.name === 'telhado') o.visible = v; });
     pedir();
   }
-  return { mostrar, pedir, telhado };
+  return { mostrar, pedir, telhado, olhar, viagem };
 }
 const vista = criarVista($('c3d'));
 /* pro teste automático: ?teste expõe o estado do mapa */
 if (new URLSearchParams(location.search).has('teste')) window.__planta = { estado, paraTela, zoomEm, lotes, lotesNovos, lotesFavelaNova, marcosNovos, porticos, estadios, pecasSoltas, marcos, equipamentos, K, PROP,
-  bares, espacos, ocupacao: () => ocupacao, mudarCidade, selecionar };
+  bares, espacos, estacoes, ocupacao: () => ocupacao, mudarCidade, selecionar };
 
 /* ======================================================
    AS NOTAS DA PROPOSTA
@@ -1909,7 +2184,8 @@ function notasDaProposta() {
   const plural = { casa: 'casas', sobrado: 'sobrados', galpão: 'galpões', prédio: 'prédios', muro: 'muros', 'casa de muro': 'casas de muro' };
   const lista = Object.entries(tipos).sort((a, b) => b[1] - a[1]).map(([k, n]) => n + ' ' + (n > 1 ? plural[k] || k : k)).join(', ');
   const EQ = { praca: ['praça', 'praças'], condominio: ['condomínio', 'condomínios'], igreja: ['igreja', 'igrejas'], sede: ['terreno de sede', 'terrenos de sede'],
-               campo: ['campo de várzea', 'campos de várzea'], ubs: ['posto de saúde', 'postos de saúde'], estadio: ['estádio', 'estádios'] };
+               campo: ['campo de várzea', 'campos de várzea'], ubs: ['posto de saúde', 'postos de saúde'], estadio: ['estádio', 'estádios'],
+               shopping: ['shopping', 'shoppings'], delegacia: ['delegacia', 'delegacias'] };
   const eqTxt = Object.entries(c.porTipo).sort((a, b) => b[1] - a[1]).map(([k, n]) => n + ' ' + (EQ[k] ? EQ[k][n > 1 ? 1 : 0] : k)).join(', ');
   const oeste = Math.round((K.VX0 - PROP.mundo.x0) / M), norte = Math.round((K.VY0 - PROP.mundo.y0) / M), sul = Math.round((PROP.mundo.y1 - (K.VY0 + K.VH)) / M);
   const saem = lotes.filter(it => it.sobProposta && it.beira && !it.l.favela).length;
@@ -1918,12 +2194,19 @@ function notasDaProposta() {
   const [fNO, fSO] = c.casasFavela, fTotal = fNO + fSO;
   const comercio = lotesNovos.filter(it => it.l.placa && !ehBar(it.l)).length;
   const cond = PROP.condominios.map(cd => `${cd.t1.replace('Edifício ', '')} e ${cd.t2.replace('Residencial ', '')} (${cd.cores})`).join('; ');
-  return `<p class="sobre">Proposta · 3ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
+  return `<p class="sobre">Proposta · 4ª versão</p><h2>A cidade cresce pra oeste e pro norte</h2>
   <dl class="numeros">
     <div><dt>Quadras</dt><dd>${c.quadrasHoje} → ${qTotal}</dd><small>${qTotal - c.quadrasHoje >= 0 ? '+' : ''}${qTotal - c.quadrasHoje}</small></div>
     <div><dt>Lotes</dt><dd>${c.lotesHoje} → ${lTotal}</dd><small>em quadra</small></div>
     <div><dt>Na favela</dt><dd>${c.casasFavelaHoje} → ${fTotal}</dd><small>em 2 favelas</small></div>
   </dl>
+  <h3>O que entrou agora</h3>
+  <ul>
+    <li><b>O metrô</b>: a ${esc(METRO_P ? METRO_P.nome : 'Linha 1')}, com duas estações subterrâneas — a Poente, na ponta leste da quadra −2,6 (de frente pra delegacia nova), e a Norte, na ponta oeste da 3,−1 (do lado da igreja). A entrada é a da foto (a caixa de vidro no pórtico branco, a escada e a rolante entre o azulejo azul); embaixo, o mezanino com as catracas e a plataforma da outra foto, com o trem parado. Um túnel de ${METRO_P ? metros(METRO_P.tunel) : '—'} liga as duas (${METRO_P ? metros(METRO_P.comprimento) : '—'} de trilho de plataforma a plataforma). Na ficha da estação, <b>Pegar o trem</b> faz a viagem até a outra, e <b>Descer na plataforma</b> põe a câmera lá embaixo.</li>
+    <li><b>O Shopping Poente</b> no lugar do campo de várzea (−2,4): a cortina de vidro, a ponta redonda, o último andar recuado de vidro inclinado, a marquise da entrada e o totem.</li>
+    <li><b>O 2º Distrito Policial</b> no lugar do posto de saúde (−1,6): o prédio de pastilha e azul, a marquise de friso vermelho, o brasão, a bandeira e o pátio das viaturas.</li>
+    <li><b>A Praça da Vila</b> (1,1) montada: pedra portuguesa em onda, chafariz, parquinho, academia ao ar livre, xadrez, banca, ipês.</li>
+  </ul>
   <h3>Os bares e as sedes da torcida</h3>
   <ul>
     <li><b>O bar da torcida encolheu</b> pro tamanho do bar da favela (${metros(LARG_BAR_M * M)} de frente, o fundo da fileira), com o arranjo dele — a varanda coberta com as mesas na frente, o salão aberto pra rua atrás — mas no jeito de classe média: térreo nas cores da torcida com porta de enrolar e o letreiro BAR DO ${esc(ocupacao.torcidas[0] ? ocupacao.torcidas[0].sigla : 'X')} no frontão, e o apartamento em cima. Dentro, o que o bar grande tinha.</li>
@@ -1955,12 +2238,12 @@ function notasDaProposta() {
     <li>As favelas saem do gerador da planta com o beco reto; a de hoje sai. Favela grande pesa: são ${fTotal} casas, contra ${c.casasFavelaHoje} hoje.</li>
     <li>O pórtico é modelo novo; o texto sai do nome da cidade da torcida.</li>
     <li>O Estádio Municipal é o mesmo estádio: a cena da torcida teria que aceitar dois.</li>
-    <li>Os equipamentos novos (igreja, posto de saúde, campo) ainda não têm modelo. Os espaços de sede já são a fatia que a planta dá pra sede: é só a planta aceitar mais de duas sedes.</li>
+    <li>A igreja nova e as praças que sobraram da avenida ainda não têm modelo; o shopping, a delegacia, a Praça da Vila e o metrô têm (<code>equip3d.js</code> e <code>metro3d.js</code>), mas só a proposta os usa. O metrô no jogo pede a cena das duas estações e a troca de uma pra outra (o trem pode ser a transição). Os espaços de sede já são a fatia que a planta dá pra sede: é só a planta aceitar mais de duas sedes.</li>
     <li>O bar pequeno já é modelo do jogo (<code>bartorcida</code> no casas3d), mas a cena do dia de jogo ainda usa o bar grande andável, com as duas torcidas da partida. Pôr as torcidas da cidade nos 18 bares e nas 9 sedes é trabalho da planta.</li>
     <li>A sede nova (<code>sede3d.js</code>) por enquanto é só visual: a cena do dia de jogo ainda monta a sede em caixa lisa, e a mobília nova teria que entrar na máscara de caminhada antes da troca.</li>
     <li>A regra de quem fica com o quê é desta página (a sede maior perto do estádio, um bar por sede, o mais perto dela). O GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D não tem zona, então fiquei com o que a planta já fazia.</li>
   </ul>
-  <p class="nota">Clique num bar, num espaço de sede, numa casa da favela, numa quadra nova ou num pórtico pra ver em 3D.</p>`;
+  <p class="nota">Clique numa estação do metrô (o M azul), num bar, num espaço de sede, numa casa da favela, numa quadra nova ou num pórtico pra ver em 3D.</p>`;
 }
 /* ======================================================
    COMEÇO

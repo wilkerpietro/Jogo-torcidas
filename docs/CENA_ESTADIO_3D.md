@@ -2152,6 +2152,154 @@ O que falta pro jogo: a cena do dia de jogo continua montando a sede em caixa. P
 caminhada (hoje só a da planta bloqueia) — o telhado já vem à parte, que é o corte que a
 cena faz quando o jogador entra.
 
+### 4.36. O metrô, o segundo shopping, a delegacia nova e a Praça da Vila
+
+O dono mandou cinco fotos e pediu, na proposta: a Praça da Vila mais detalhada; um shopping
+detalhado no lugar do campo de várzea; a delegacia no lugar do posto de saúde; e duas entradas
+de metrô subterrâneo, na quadra −2,6 e na 3,−1, com a entrada da foto da entrada e a parte de
+dentro da foto da plataforma, as duas ligadas embaixo da terra, com trem de uma pra outra.
+
+**Onde foi cada coisa.** Tudo é da proposta (a aba Mapa atual não mudou nada):
+
+- a Praça da Vila é a quadra 1,1 inteira;
+- o **Shopping Poente** fica na −2,4, no lugar do campo (`EQUIP`, frente pro sul);
+- o **2º Distrito Policial** fica na −1,6, no lugar do posto de saúde (frente pro norte, de
+  frente pra entrada do metrô Poente). O posto de saúde saiu. A delegacia de hoje, a da 2,3,
+  CONTINUA: a cidade da proposta tem duas. Se a ideia era mudar a delegacia de lugar, é tirar a
+  da 2,3 da `EQUIP`, que é uma linha;
+- a **Estação Poente** fica na ponta leste da −2,6, e o povo desce da rua do norte;
+- a **Estação Norte** fica na ponta oeste da 3,−1, e o povo desce da rua do sul.
+
+**O metrô nos dados** (`proposta.js`, a tabela `METRO` e o trecho depois dos bares, pra não
+mexer no sorteio dos 18 bares). A ENTRADA é o terreno da ponta da quadra, de uma rua à outra,
+com 6,4 m de frente pra rua do lado. O lote da ponta de cada fileira sai; o vizinho que ficaria
+com menos de 2,9 m entra no terreno; o que sobra mais que isso é aparado até a divisa (e perde
+o muro, que era do lote inteiro). O quintal do meio encolhe junto. A −2,6 ficou com 9 lotes e a
+3,−1 com 10.
+
+A ESTAÇÃO é um salão de 11 m de largura embaixo da quadra, de ponta a ponta, que passa 3 m
+debaixo das ruas do lado:
+
+- o mezanino fica a 5,2 m e a plataforma a 10 m;
+- o trilho corre do lado da rua de onde o povo desce, e a plataforma e o mezanino ficam do
+  outro lado;
+- o TÚNEL sai da ponta da entrada de uma e chega na ponta da entrada da outra, numa Bézier que
+  sai e chega no rumo do trilho.
+
+A linha tem 358 m e o túnel reto daria 256 m. Da parada de uma à parada da outra são 319 m, e
+o raio mais apertado da curva é de 58 m. `gerarProposta` devolve `metro` com:
+
+- `estacoes`: a oeste primeiro;
+- `caminho`: os pontos do eixo do trilho, de 20 em 20, com a distância acumulada;
+- `km` de cada parada.
+
+Cada quadra com estação ganha `q.estacao`.
+
+**O modelo** (`js/diajogo/metro3d.js`). A estação é escrita UMA vez, no referencial da
+Poente: x ao longo do salão, com a entrada e o túnel no x grande; z do trilho pra plataforma;
+y a altura. A Norte é a mesma girada 180°, que não espelha nada, e então o que tem letra lê
+certo nas duas. `montarEstacao(est, destino, opc)` devolve:
+
+- os blocos;
+- os decalques com texto (o nome da estação, as placas penduradas, o sentido);
+- a planta baixa (o que está na rua e o que está embaixo, à parte);
+- onde o trem para;
+- de onde se olha a plataforma.
+
+As partes, de cima pra baixo:
+
+- ENTRADA (a foto da entrada de vidro): a caixa de vidro no pórtico branco, a viga em onda
+  descendo no fundo, a faixa grafite com o M e METRÔ, o totem do M na calçada e a grade de
+  enrolar recolhida;
+- DESCIDA (a foto de cima): a escada fixa de 31 degraus com o bocel amarelo e a rolante, entre
+  as paredes de azulejo azul;
+- MEZANINO: a bilheteria, o mapa da linha, as cinco catracas e as placas penduradas; do lado
+  pago, a escada pra plataforma;
+- PLATAFORMA (a foto de Londres): o piso bege, a pedra da borda e a faixa amarela tátil, os
+  bancos, os anúncios iluminados e os dois painéis de próximos trens. Na parede, o nome da
+  estação, a faixa azul e o friso de triângulos. No fim, a parede de tijolo com a boca do
+  túnel.
+
+O CORTE DE CASA DE BONECA: tudo que é de baixo da terra tem a face virada pra dentro e vai na
+lista `metro_sub`, que quem mostra desenha só de frente (FrontSide). De cima, o teto e a parede
+do lado de cá, que mostram as costas, somem sozinhos, e a estação aparece inteira. Da
+plataforma, está tudo lá. O que pende do teto só tem a face de baixo. O vidro vai em `vidros`,
+transparente e sem escrever no depth.
+
+As outras peças:
+
+- `montarTunel(caminho, destino, {de, ate})` levanta o tubo em peças de 2,4 m, com a brita, os
+  trilhos e uma luminária a cada 12 m;
+- `montarCarro(ponta)` faz um carro de 11 m: a cara azul-marinho com a moldura vermelha, o
+  carro branco com a faixa azul e as portas vermelhas, e os truques. O trem são três carros.
+
+Uma estação tem uns 7.900 triângulos e sai em 30 a 60 ms. O túnel tem 5.400 e cada carro de
+320 a 360.
+
+**Os equipamentos** (`js/diajogo/equip3d.js`: `montarShopping`, `montarDelegacia`,
+`montarPraca`). O referencial é o do construtor: x da esquerda pra direita de quem olha a
+fachada, z entrando no terreno. Pro mundo ele só GIRA, então a porta da delegacia, a viatura e
+a banca leem certo. O que tem texto que muda (o nome do shopping, o letreiro e o brasão da
+delegacia, a placa da praça) vai como decalque.
+
+- SHOPPING (a primeira foto): a planta de estádio, com a ponta redonda. Três andares de
+  cortina de vidro verde, com a faixa de alumínio em cada laje, e o último andar recuado de
+  vidro inclinado. A marquise de vidro na entrada. No teto, a casa de máquinas em meia-lua, as
+  condensadoras, a claraboia em pirâmide, os exaustores e a antena. Na praça da frente, o totem
+  cinza e vermelho, as árvores no vaso, os bancos, o bicicletário e os balizadores.
+- DELEGACIA (a segunda foto): dois andares de pastilha bege, a platibanda e o volume de cima
+  em azul, as janelas em fita. A marquise branca de friso vermelho, o letreiro, o brasão e a
+  bandeira do Brasil no mastro da fachada. A ala do plantão 24 h. No teto, as condensadoras e
+  as placas solares. O pátio tem grade, portão de correr, guarita e três viaturas da Polícia
+  Civil.
+
+  A folha nunca espelha, e o lado da viatura tem nome, farol e lanterna. Por isso ele é DUAS
+  células (`viatura_lado` e `viatura_lado_i`, a lataria invertida com o nome escrito certo), e
+  cada lado pega a que põe o farol na ponta da cara.
+- PRAÇA: a pedra portuguesa em onda e a cruz de calçadão, o chafariz de pastilha, o parquinho
+  na areia e no piso emborrachado (escorregador, balanço, gangorra) e as duas academias ao ar
+  livre. Também as mesas de xadrez, a banca de jornal, os ipês amarelos e as outras árvores,
+  os bancos de ripa, os postes de praça, as lixeiras, o bicicletário e a placa.
+
+Em triângulos: o shopping tem uns 4.400, a delegacia 6.060 e a praça 6.740. Cada um sai em uns
+35 ms. Nenhum vértice passa do terreno (conferido).
+
+**As folhas.** `pintar_modelos.py` ganhou duas folhas: `metro` (31 peças) e `equip` (34). E
+agora pinta só as folhas que se pedem:
+
+    python3 ferramentas/pintar_modelos.py metro equip
+
+Isso junta as duas no atlas que já existe. As outras folhas ficam idênticas, byte a byte.
+
+**No artefato** (a "4ª versão" das notas da proposta):
+
+- No mapa 2D:
+  - a linha tracejada azul;
+  - o salão e o mezanino tracejados;
+  - a planta da entrada e o M;
+  - a planta baixa do shopping, da delegacia e da praça.
+- Clicar no M abre a ficha da estação, com dois botões:
+  - **Pegar o trem**: monta as duas estações, o túnel inteiro e os três carros, e anima a
+    viagem em uns 13 s com a câmera atrás do trem. Na chegada, a ficha vira a da outra
+    estação. O tempo "uns 47 s" da ficha é o de verdade: 10 m/s mais 15 s de arrancar e frear.
+  - **Descer na plataforma**: põe a câmera na altura do olho, olhando ao longo do trilho.
+- A vista de cima esconde o chão da rua.
+
+**O que NÃO está feito, e por quê:**
+
+- O jogo não tem metrô. A viagem é a animação da página. Pra virar jogo, precisa de cena (a
+  plataforma andável) e de uma transição, e isso é outra conversa.
+- É uma linha de ida e volta, de um trilho só, com a plataforma de um lado. Metrô de verdade
+  tem dois trilhos. Dá pra dobrar, mas o salão passa de 11 m pra uns 15 m.
+- A escala é a da cidade, que é compacta. O raio de 58 m é apertado pra metrô de verdade, que
+  normalmente faz curva bem mais aberta. No jogo não se nota, mas não é realista.
+- O corte de casa de boneca é escolha de visualização. Na cena, a parede do lado de cá teria
+  de aparecer.
+- O detalhe é de caixa: a árvore é pirulito, o móvel é caixa, a viatura é caixa com a peça
+  pintada.
+- O shopping não tem estacionamento. A igreja e as praças que sobraram continuam sem modelo.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2678,10 +2826,12 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo), as casas de muro (M1 a M4) e o bar pequeno da torcida embaixo do apartamento (`bartorcida`, aberto ou fechado), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares e os 9 espaços de sede), `conferir_sede.mjs` confere o modelo da sede contra a planta, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes e os módulos 3D) |
+| `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
+| `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos e a Linha 1 do metrô: o terreno das duas entradas, o salão de cada estação e o caminho do túnel), `conferir_sede.mjs` confere o modelo da sede contra a planta, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes e os módulos 3D) |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`) e escreve o atlas; roda de novo sempre que mudar uma peça |
-| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) e dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
+| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
 | `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |

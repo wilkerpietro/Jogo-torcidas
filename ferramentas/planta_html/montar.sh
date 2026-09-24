@@ -17,11 +17,11 @@ cp "$R/ferramentas/planta_html/proposta.js" "$A/js/"
 cp "$R/dados/torcidas.js" "$R/dados/times.js" "$A/dados/"
 n=$(grep -n '^TO.dados.cenaEstadio = (function(){' "$R/dados/cena_estadio.js" | cut -d: -f1)
 head -n $((n - 1)) "$R/dados/cena_estadio.js" > "$A/dados/cena_estadio.js"
-for f in construtor3d casas3d sede3d modelos3d props3d modelos_atlas; do
+for f in construtor3d casas3d sede3d metro3d equip3d modelos3d props3d modelos_atlas; do
   sed "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
     "$R/js/diajogo/$f.js" > "$A/js/$f.js"
 done
-for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg atacadex.jpg torres.jpg props.jpg; do
+for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg atacadex.jpg torres.jpg props.jpg metro.jpg equip.jpg; do
   cp "$R/img/texturas/modelos/$f" "$A/img/texturas/modelos/"
 done
 # as três variantes de cor da folha das torres (pintar_variantes.py)

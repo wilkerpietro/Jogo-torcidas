@@ -77,13 +77,31 @@ const ESTADIO2 = { i: [-2, -1], j: [8, 10] };
 const EQUIP = {
   '1,1':  { tipo: 'praca',  nome: 'Praça da Vila', cor: '#5f9a4c',
             nota: 'No meio de onde era a favela: o bairro novo ganha a praça dele.' },
-  '-2,4': { tipo: 'campo',  nome: 'Campo de várzea', cor: '#3f7f3a',
-            nota: 'O segundo campo da cidade, pra pelada e pra briga de torcida.' },
-  '-1,6': { tipo: 'ubs',    nome: 'Posto de saúde', cor: '#e2ddd0',
-            nota: 'UBS pro oeste, no meio do bairro novo.' },
+  '-2,4': { tipo: 'shopping', nome: 'Shopping Poente', cor: '#8fa3ad', frente: 's',
+            nota: 'O segundo shopping da cidade, no lugar do campo de várzea: fachada de vidro, a ponta redonda e o totem, a duas quadras do metrô.' },
+  '-1,6': { tipo: 'delegacia', nome: '2º Distrito Policial', cor: '#d8cfb6', frente: 'n',
+            nota: 'A delegacia do oeste, no lugar do posto de saúde: de frente pra entrada do metrô Poente, do outro lado da rua.' },
   '2,-1': { tipo: 'igreja', nome: 'Igreja', cor: '#d8cfb8',
             nota: 'A igreja do bairro novo do norte.' }
 };
+/* O METRÔ: a Linha 1, com duas estações subterrâneas. A entrada toma a
+   ponta da quadra (o lote da ponta de cada fileira, de ponta a ponta do
+   fundo); a estação fica embaixo da quadra, com o salão da plataforma
+   ao longo dela, e o túnel liga a ponta de uma à ponta da outra.
+   `entra`: de que rua o povo desce (a escada começa nesse lado). */
+const METRO = {
+  nome: 'Linha 1 – Azul', cor: '#1f5aa8',
+  estacoes: [
+    { id: '-2,6', nome: 'Poente', ponta: 'l', entra: 'n', onde: 'no oeste, entre o Shopping Poente e a delegacia' },
+    { id: '3,-1', nome: 'Norte',  ponta: 'o', entra: 's', onde: 'no bairro novo do norte, do lado da igreja' }
+  ],
+  LARG_ENTRADA: 124,          // 6,4 m de frente pra rua do lado
+  PROF_PLATAFORMA: 10.0,      // o piso da plataforma, em metros abaixo da rua
+  PROF_MEZANINO: 5.2,         // o piso do mezanino (as catracas)
+  LARG_SALAO: 11.0,           // o salão da plataforma, de parede a parede
+  SOBRA_SALAO: 3.0            // quanto o salão passa da quadra, debaixo da rua do lado
+};
+
 /* os condomínios: a quadra alta (linha 2) e a folha de cor de cada um */
 const CONDOMINIOS = [
   { id: '1,2',  folha: 'torres_v1', t1: 'Edifício Horizonte', t2: 'Residencial Porto Belo',
@@ -617,6 +635,88 @@ export function gerarProposta(P) {
                  nome: 'Bar ' + (k + 1), noLugarDoBarGrande: BARES_HOJE.includes(e.id) });
   });
 
+  /* ---- O METRÔ: a entrada na ponta da quadra, a estação embaixo dela
+     e o túnel de uma à outra ----
+     A ENTRADA é o terreno da ponta da quadra, de uma rua à outra: sai o
+     lote da ponta de cada fileira (e o do meio, quando tem); o vizinho
+     que fica com menos de 56 (2,9 m) entra no terreno, o que sobra mais
+     que isso é aparado até a divisa. O quintal encolhe junto.
+     A ESTAÇÃO é o salão da plataforma embaixo da quadra, de ponta a
+     ponta e passando 3 m debaixo das ruas do lado; o trilho corre do
+     lado da rua de onde o povo desce. O TÚNEL sai da ponta da estação e chega na
+     ponta da outra, em curva (uma Bézier que sai e chega no rumo do
+     trilho). */
+  const metroEstacoes = [];
+  METRO.estacoes.forEach((E, k) => {
+    const q = quadras.find(q => q.id === E.id);
+    if (!q || q.equip || !q.lotes.length) return;
+    const leste = E.ponta === 'l';
+    if (E.entra !== (leste ? 'n' : 's')) throw new Error('metrô: a entrada da ponta ' + E.ponta + ' desce de ' + (leste ? 'n' : 's'));
+    let W = METRO.LARG_ENTRADA;
+    const faixa = () => leste ? { x0: q.ix1 - W, x1: q.ix1 } : { x0: q.ix0, x1: q.ix0 + W };
+    for (let volta = 0; volta < 6; volta++) {
+      const f = faixa();
+      let cresceu = false;
+      for (const l of q.lotes) {
+        if (l.x1 <= f.x0 + 0.5 || l.x0 >= f.x1 - 0.5) continue;
+        const sobra = leste ? f.x0 - l.x0 : l.x1 - f.x1;
+        if (sobra > 0.5 && sobra < 56) { W += sobra; cresceu = true; }
+      }
+      if (!cresceu) break;
+    }
+    const f = faixa(), entrada = { x0: f.x0, x1: f.x1, y0: q.iy0, y1: q.iy1 };
+    const lotes = [];
+    for (const l of q.lotes) {
+      if (l.x1 <= f.x0 + 0.5 || l.x0 >= f.x1 - 0.5) { lotes.push(l); continue; }
+      const sobra = leste ? f.x0 - l.x0 : l.x1 - f.x1;
+      if (sobra < 0.5) continue;                              // cai inteiro no terreno
+      const resto = { ...l, x0: leste ? l.x0 : f.x1, x1: leste ? f.x0 : l.x1, aparado: true };
+      delete resto._plano;
+      if (resto.muro) delete resto.muro;
+      lotes.push(resto);
+    }
+    q.lotes = lotes;
+    if (q.quintal) {
+      q.quintal = leste ? { ...q.quintal, x1: Math.min(q.quintal.x1, f.x0) } : { ...q.quintal, x0: Math.max(q.quintal.x0, f.x1) };
+      if (q.quintal.x1 - q.quintal.x0 < 20) q.quintal = null;
+    }
+    const ym = (q.y0 + q.y1) / 2, larg = METRO.LARG_SALAO * M, sobra = METRO.SOBRA_SALAO * M;
+    const salao = { x0: q.x0 - sobra, x1: q.x1 + sobra, y0: ym - larg / 2, y1: ym + larg / 2 };
+    /* a estação da ponta oeste é a da ponta leste girada 180°: o trilho
+       fica do lado de onde o povo desce (a plataforma e o mezanino, do
+       outro), e o túnel sai sempre pela ponta da entrada */
+    const giro = !leste;
+    const trilhoY = giro ? salao.y1 - (0.4 + 2.3) * M : salao.y0 + (0.4 + 2.3) * M;
+    const est = { n: k + 1, nome: E.nome, completo: 'Estação ' + E.nome, quadra: q.id, ponta: E.ponta, entra: E.entra, onde: E.onde,
+                  entrada, salao, trilhoY, giro, parada: { x: (salao.x0 + salao.x1) / 2, y: trilhoY },
+                  profundidade: METRO.PROF_PLATAFORMA, mezanino: METRO.PROF_MEZANINO };
+    q.estacao = est;
+    metroEstacoes.push(est);
+  });
+  /* o caminho do trem: a plataforma de uma, o túnel e a plataforma da
+     outra, em pontos (x, y) de mundo, de 20 em 20 */
+  let metro = null;
+  if (metroEstacoes.length === 2) {
+    const [A, B] = metroEstacoes[0].parada.x < metroEstacoes[1].parada.x ? metroEstacoes : metroEstacoes.slice().reverse();
+    const P0 = [A.salao.x1, A.trilhoY], P3 = [B.salao.x0, B.trilhoY];
+    const d = Math.hypot(P3[0] - P0[0], P3[1] - P0[1]), kk = d * 0.42;
+    const P1 = [P0[0] + kk, P0[1]], P2 = [P3[0] - kk, P3[1]];
+    const bez = t => { const u = 1 - t; return [0, 1].map(i => u * u * u * P0[i] + 3 * u * u * t * P1[i] + 3 * u * t * t * P2[i] + t * t * t * P3[i]); };
+    const caminho = [[A.salao.x0 + 1.5 * M, A.trilhoY]];
+    for (let x = A.salao.x0 + 1.5 * M + 20; x < P0[0]; x += 20) caminho.push([x, A.trilhoY]);
+    for (let i = 0; i <= 160; i++) caminho.push(bez(i / 160));
+    for (let x = P3[0] + 20; x < B.salao.x1 - 1.5 * M; x += 20) caminho.push([x, B.trilhoY]);
+    caminho.push([B.salao.x1 - 1.5 * M, B.trilhoY]);
+    const acum = [0];
+    for (let i = 1; i < caminho.length; i++) acum.push(acum[i - 1] + Math.hypot(caminho[i][0] - caminho[i - 1][0], caminho[i][1] - caminho[i - 1][1]));
+    /* onde o trem para em cada uma: o meio do salão */
+    const total = acum[acum.length - 1];
+    A.km = A.parada.x - caminho[0][0];                        // a plataforma é reta: a distância é a do x
+    B.km = total - (caminho[caminho.length - 1][0] - B.parada.x);
+    metro = { nome: METRO.nome, cor: METRO.cor, estacoes: [A, B], caminho, acum, comprimento: total,
+              tunel: Math.hypot(P3[0] - P0[0], P3[1] - P0[1]) };
+  }
+
   /* ---- OS ESPAÇOS DE SEDE: os sete terrenos e as duas sedes de hoje
      (a 2,9 é a fatia de nível 3; a 5,2, a de nível 1 — ali só cabe a
      sede pequena). A página é que diz quem mora em cada um. ---- */
@@ -902,7 +1002,7 @@ export function gerarProposta(P) {
   for (const q of quadras) if (q.equip) conta[q.equip.tipo] = (conta[q.equip.tipo] || 0) + 1;
   return {
     quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, estadio2, condominios, substitui, terrenos,
-    bares, baresHoje: BARES_HOJE, lotesExtra, lotesTirados, espacosSede,
+    bares, baresHoje: BARES_HOJE, lotesExtra, lotesTirados, espacosSede, metro,
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB,
     contagem: { quadras: quadras.length, residenciais: residenciais.length, equipamentos: quadras.length - residenciais.length,
                 porTipo: conta, lotesNovos, lotesExtra: lotesExtra.length, lotesTirados: lotesTirados.size,
