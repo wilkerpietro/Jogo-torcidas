@@ -117,14 +117,14 @@
       const v = TO.estado.saveMaisNovo();
       if(v && await TO.estado.carregarDe(v)) return entrarNoJogo();
       if(await TO.estado.carregar()) return entrarNoJogo();
-      alert('O save guardado não abriu — pode ser de outra versão do jogo.');
+      alert(_t('O save guardado não abriu — pode ser de outra versão do jogo.'));
     };
     $('btNovoJogo').onclick = abrirSelecao;
     $('btCarregar').onclick = abrirCofreNoMenu;
     $('arquivoSave').onchange = ev=>{
       const f = ev.target.files[0];
       if(f) TO.estado.importar(f, r=>{
-        if(r.ok) entrarNoJogo(); else alert('Não deu pra importar: '+r.motivo);
+        if(r.ok) entrarNoJogo(); else alert(_t('Não deu pra importar: {motivo}', {motivo:r.motivo}));
       });
     };
     /* o alarme do armazenamento aparece já na abertura: quem vai jogar
@@ -133,10 +133,36 @@
     const lista = $('menuLista');
     if(!d.ok && lista && !$('menuAlarme')){
       const av = el('div',{class:'save-alarme', id:'menuAlarme'});
-      av.innerHTML = `<b>Este navegador não guarda o save.</b>`+
+      av.innerHTML = `<b>${_t('Este navegador não guarda o save.')}</b>`+
                      `<span>${d.motivo}</span>`;
       lista.parentNode.insertBefore(av, lista.nextSibling);
     }
+    /* CONFIGURAÇÕES: o idioma (pedido do dono, 24/09/2026) */
+    const bCfg = $('btConfiguracoes');
+    if(bCfg){ bCfg.disabled = false; bCfg.onclick = abrirConfiguracoes; }
+  }
+
+  /* =======================================================
+     CONFIGURAÇÕES (pedido do dono, 24/09/2026)
+     Por ora, só o idioma: português, español ou english. A escolha é
+     do navegador (não do save) e recarrega a página — o texto do jogo
+     nasce no idioma em que a página abriu (js/i18n.js).
+     ======================================================= */
+  function abrirConfiguracoes(){
+    const I = TO.i18n;
+    const cx = el('div',{class:'config'});
+    cx.appendChild(el('div',{class:'fase-rot', texto:_t('Idioma')}));
+    const grade = el('div',{class:'config-idiomas'});
+    for(const l of I.LINGUAS){
+      const b = el('button',{class:'bt config-idioma'+(l.id === I.idioma ? ' destaque' : '')});
+      b.innerHTML = `<b>${l.nome}</b>`;
+      b.onclick = ()=>{ if(l.id !== I.idioma) I.trocar(l.id); };
+      grade.appendChild(b);
+    }
+    cx.appendChild(grade);
+    cx.appendChild(el('p',{class:'nota', texto:
+      _t('O idioma vale pro jogo inteiro neste navegador. As mensagens que um save já tinha continuam na língua em que foram escritas.')}));
+    modal(_t('Configurações'), '', cx, [], 'estreita');
   }
 
   /* o cofre visto do menu: as vagas, o arquivo e o texto, antes de
@@ -149,25 +175,24 @@
       const vagas = TO.estado.listarSaves().filter(v=>!v.vazia);
       if(!vagas.length){
         lista.appendChild(el('p',{class:'nota', texto:
-          'Nenhuma vaga ocupada neste navegador. Dá pra trazer um save '+
-          'de arquivo ou de texto aqui embaixo.'}));
+          _t('Nenhuma vaga ocupada neste navegador. Dá pra trazer um save de arquivo ou de texto aqui embaixo.')}));
         return;
       }
       for(const v of vagas){
         const l = el('div',{class:'save-vaga'});
         const q = v.quando ? new Date(v.quando) : null;
         l.appendChild(el('div',{class:'save-rot', html:
-          `<b>${v.auto?'Autosave':'Vaga '+v.vaga}</b>`+
+          `<b>${v.auto?_t('Autosave'):_t('Vaga {n}', {n:v.vaga})}</b>`+
           `<small>${v.torcida} · ${v.clube||'—'}</small>`}));
         l.appendChild(el('div',{class:'save-quando', html:
-          `<span>semana ${v.semana} de ${v.ano}</span>`+
+          `<span>${_t('semana {s} de {a}', {s:v.semana, a:v.ano})}</span>`+
           `<small>${q ? `${String(q.getDate()).padStart(2,'0')}/`+
             `${String(q.getMonth()+1).padStart(2,'0')}` : ''}</small>`}));
         const bts = el('div',{class:'save-bts'});
-        const ler = el('button',{class:'bt destaque', texto:'Jogar'});
+        const ler = el('button',{class:'bt destaque', texto:_t('Jogar')});
         ler.onclick = async ()=>{
           if(await TO.estado.carregarDe(v.vaga)){ fechar(); entrarNoJogo(); }
-          else alert('Esse save não abriu — pode ser de outra versão.');
+          else alert(_t('Esse save não abriu — pode ser de outra versão.'));
         };
         bts.appendChild(ler);
         l.appendChild(bts);
@@ -179,22 +204,21 @@
 
     const fora = el('div',{class:'save-saida'});
     fora.appendChild(el('div',{class:'save-rot', html:
-      '<b>De fora do navegador</b><small>arquivo .json ou texto '+
-      'compactado</small>'}));
+      `<b>${_t('De fora do navegador')}</b><small>${_t('arquivo .json ou texto compactado')}</small>`}));
     const bts = el('div',{class:'save-bts'});
-    const bArq = el('button',{class:'bt', texto:'De arquivo'});
+    const bArq = el('button',{class:'bt', texto:_t('De arquivo')});
     bArq.onclick = ()=>$('arquivoSave').click();
     bts.appendChild(bArq);
-    const bTxt = el('button',{class:'bt', texto:'De texto'});
+    const bTxt = el('button',{class:'bt', texto:_t('De texto')});
     bTxt.onclick = ()=>{
       const c2 = el('div');
-      c2.appendChild(el('p',{class:'nota', texto:'Cole o texto do save.'}));
+      c2.appendChild(el('p',{class:'nota', texto:_t('Cole o texto do save.')}));
       const ta = el('textarea',{class:'save-texto'});
       ta.placeholder = 'TO2z:…';
       c2.appendChild(ta);
-      modal('Colar um save', '', c2, [['Carregar', ()=>{
+      modal(_t('Colar um save'), '', c2, [[_t('Carregar'), ()=>{
         TO.estado.deTexto(ta.value).then(r=>{
-          if(!r.ok){ alert('Não deu: '+r.motivo); return; }
+          if(!r.ok){ alert(_t('Não deu: {motivo}', {motivo:r.motivo})); return; }
           fechar(); entrarNoJogo();
         });
       }]], 'larga');
@@ -203,7 +227,7 @@
     fora.appendChild(bts);
     cx.appendChild(fora);
 
-    const fechar = modal('Carregar jogo', 'as vagas deste navegador',
+    const fechar = modal(_t('Carregar jogo'), _t('as vagas deste navegador'),
                          cx, [], 'larga');
   }
 
@@ -286,7 +310,7 @@
       `<b>${titulo}</b><span>${conta}</span>`}));
     const rolo = el('div',{class:'sel-rolo'});
     if(!itens.length) rolo.appendChild(el('div',{class:'sel-vazio',
-      texto:'escolha ao lado'}));
+      texto:_t('escolha ao lado')}));
     for(const it of itens) rolo.appendChild(montar(it));
     c.appendChild(rolo);
     return c;
@@ -323,22 +347,22 @@
     $('btSelecionarTorcida').classList.toggle('oculto', !p2);
     $('btSelecionarTorcida').disabled = !escolhida;
     $('btComecarPartida').classList.toggle('oculto', !p3);
-    $('btVoltarMenu').textContent = (p2 || p3) ? 'Voltar' : 'Voltar ao menu';
+    $('btVoltarMenu').textContent = (p2 || p3) ? _t('Voltar') : _t('Voltar ao menu');
     $('abasSelecao').innerHTML = '';
 
     const sub = $('subSelecao');
     if(p3){
-      sub.textContent = `passo 3 de 3 · ${escolhida.nome} · quem é o presidente`;
+      sub.textContent = _t('passo 3 de 3 · {nome} · quem é o presidente', {nome:escolhida.nome});
       pintarPasso3();
       return;
     }
     if(!p2){
-      sub.textContent = `passo 1 de 3 · país, liga e clube · `+
-        `${TO.mundo.todosTimes.length} clubes em 10 países`;
+      sub.textContent = _t('passo 1 de 3 · país, liga e clube · {n} clubes em 10 países',
+        {n:TO.mundo.todosTimes.length});
       pintarPasso1();
       return;
     }
-    sub.textContent = `passo 2 de 3 · ${selClube.nome} · escolha a torcida`;
+    sub.textContent = _t('passo 2 de 3 · {nome} · escolha a torcida', {nome:selClube.nome});
     pintarPasso2();
   }
 
@@ -351,16 +375,15 @@
     const cx = $('fichaPresidente'); cx.innerHTML = '';
     if(!nomePresidenteSel) nomePresidenteSel = TO.membros.nomeSugerido(escolhida.clubeId);
     cx.appendChild(el('p',{class:'nota', html:
-      `Você é o presidente da <b>${escolhida.nome}</b>. É o seu boneco que desce `+
-      `nas cenas — quando ele estiver preso, ferido ou fora da escalação, você `+
-      `assume o membro mais forte que estiver de pé.`}));
+      _t('Você é o presidente da <b>{nome}</b>. É o seu boneco que desce nas cenas — quando ele estiver preso, ferido ou fora da escalação, você assume o membro mais forte que estiver de pé.',
+         {nome:escolhida.nome})}));
     const linha = el('div',{class:'sel-presidente'});
     const campo = el('input',{class:'busca', type:'text', maxlength:'28',
-      placeholder:'nome do presidente'});
+      placeholder:_t('nome do presidente')});
     campo.value = nomePresidenteSel;
     campo.oninput = ev=>{ nomePresidenteSel = ev.target.value; };
     campo.onkeydown = ev=>{ if(ev.key === 'Enter') $('btComecarPartida').click(); };
-    const sortear = el('button',{class:'bt', texto:'Sortear outro'});
+    const sortear = el('button',{class:'bt', texto:_t('Sortear outro')});
     sortear.onclick = ()=>{ nomePresidenteSel = TO.membros.nomeSugerido(escolhida.clubeId); campo.value = nomePresidenteSel; campo.focus(); };
     linha.append(campo, sortear);
     cx.appendChild(linha);
@@ -370,26 +393,26 @@
   /* ---------- PASSO 1: três colunas encadeadas ---------- */
   function pintarPasso1(){
     const h = document.querySelector('#passo1Sel .cartao h2');
-    if(h && h.firstChild) h.firstChild.textContent = 'Onde você torce ';
+    if(h && h.firstChild) h.firstChild.textContent = _t('Onde você torce') + ' ';
     const cx = $('listaTorcidas'); cx.innerHTML = '';
     const grade = el('div',{class:'sel-tres'});
 
     const paises = paisesComTorcida();
-    grade.appendChild(coluna('País', `${paises.length}`, paises, p=>
+    grade.appendChild(coluna(_t('País'), `${paises.length}`, paises, p=>
       linhaSel(selPais===p.pais?' on':'', selo(p.pais),
-        p.pais, `${p.clubes} clubes`,
-        p.torcidas ? `${p.torcidas}<small>torcidas</small>`
-                   : `<small>sem torcidas</small>`,
+        _t(p.pais), _t('{n} clubes', {n:p.clubes}),
+        p.torcidas ? `${p.torcidas}<small>${_t('torcidas')}</small>`
+                   : `<small>${_t('sem torcidas')}</small>`,
         !p.torcidas,
         ()=>{ selPais = p.pais; selLiga = null; selClube = null;
               escolhida = null; pintarSelecao(); })));
 
     const ligas = selPais ? ligasDoPais(selPais) : [];
-    grade.appendChild(coluna('Liga', selPais ? `${ligas.length}` : '', ligas, l=>
+    grade.appendChild(coluna(_t('Liga'), selPais ? `${ligas.length}` : '', ligas, l=>
       linhaSel(selLiga===l.liga?' on':'', null,
-        l.liga.replace('Brasileirão ',''), `${l.clubes} clubes`,
-        l.torcidas ? `${l.torcidas}<small>torcidas</small>`
-                   : `<small>sem torcidas</small>`,
+        l.liga.replace('Brasileirão ',''), _t('{n} clubes', {n:l.clubes}),
+        l.torcidas ? `${l.torcidas}<small>${_t('torcidas')}</small>`
+                   : `<small>${_t('sem torcidas')}</small>`,
         !l.torcidas,
         ()=>{ selLiga = l.liga; selClube = null; escolhida = null;
               pintarSelecao(); })));
@@ -398,15 +421,15 @@
     const lista = clubes.filter(c=>!buscaSel ||
       (c.time.nome + c.time.cidade).toLowerCase()
         .includes(buscaSel.toLowerCase()));
-    const colC = coluna('Clube', selLiga ? `${lista.length}` : '', lista, c=>
+    const colC = coluna(_t('Clube'), selLiga ? `${lista.length}` : '', lista, c=>
       linhaSel(selClube && selClube.id===c.time.id?' on':'',
         /* `escudo` quer o ARRAY de cores; `coresDaTorcida` devolve
            {cor, cor2, cor3} e não se desestrutura */
         escudo(c.time.cores, c.time.sigla || c.time.nome.slice(0,3),
           null, ['c', c.time.id]),
         c.time.nome, `${c.time.cidade}${c.time.uf?' - '+c.time.uf:''}`,
-        c.torcidas ? `${c.torcidas}<small>${c.torcidas===1?'torcida':'torcidas'}</small>`
-                   : `<small>sem torcida</small>`,
+        c.torcidas ? `${c.torcidas}<small>${c.torcidas===1?_t('torcida'):_t('torcidas')}</small>`
+                   : `<small>${_t('sem torcida')}</small>`,
         !c.torcidas,
         ()=>{ selClube = c.time; escolhida = null;
               const t = torcidasDoClube(c.time.id);
@@ -416,7 +439,7 @@
               pintarSelecao(); }));
     if(selLiga){
       const bs = el('input',{class:'busca', type:'search',
-        placeholder:'clube ou cidade…'});
+        placeholder:_t('clube ou cidade…')});
       bs.value = buscaSel;
       bs.oninput = ev=>{ buscaSel = ev.target.value; pintarPasso1(); };
       colC.insertBefore(bs, colC.lastChild);
@@ -435,15 +458,15 @@
       for(const f of lista){
         cx.appendChild(linhaSel(escolhida && escolhida.id===f.id?' on':'',
           escudo(f.cores, TO.mundo.sigla(f), null, ['t', f.id]), f.nome,
-          `${f.cidade} - ${f.uf} · fundada em ${f.fundacao}`,
-          `${U.numero(f.membros)}<small>membros</small>`, false,
+          _t('{cidade} - {uf} · fundada em {ano}', {cidade:f.cidade, uf:f.uf, ano:f.fundacao}),
+          `${U.numero(f.membros)}<small>${_t('membros')}</small>`, false,
           ()=>{ escolhida = f; pintarSelecao(); }));
       }
       cxF.appendChild(cx);
     }
     if(!escolhida){
       cxF.appendChild(el('p',{class:'nota',
-        texto:'Escolha uma das torcidas acima pra ver a ficha.'}));
+        texto:_t('Escolha uma das torcidas acima pra ver a ficha.')}));
       return;
     }
     montarFicha(cxF, escolhida);
@@ -454,7 +477,7 @@
     cab.appendChild(escudo(f.cores, TO.mundo.sigla(f), null, ['t', f.id]));
     cab.appendChild(el('div',{html:
       `<h3>${f.nome}</h3>
-       <span>${f.clube} · ${f.cidade} - ${f.uf} · fundada em ${f.fundacao}</span>`}));
+       <span>${f.clube} · ${_t('{cidade} - {uf} · fundada em {ano}', {cidade:f.cidade, uf:f.uf, ano:f.fundacao})}</span>`}));
     cxF.appendChild(cab);
 
     /* o efetivo que a torcida realmente tem, cargo a cargo (GDD §5.1) */
@@ -463,7 +486,7 @@
     const barras = el('div',{class:'hierarquia-fina'});
     for(const [cargo, n] of plano){
       barras.appendChild(el('div',{html:
-        `<span>${TO.membros.CARGOS[cargo].nome}</span>
+        `<span>${_t(TO.membros.CARGOS[cargo].nome)}</span>
          <i style="width:${Math.round(n/f.membros*100)}%"></i>
          <b>${n}</b>`}));
     }
@@ -487,14 +510,14 @@
        tamanho dele ao lado — é o que responde "com quem eu vou brigar
        de igual pra igual". */
     cxF.appendChild(el('div',{class:'grade-atributos', html:
-      `<div><span>Membros</span><b>${U.numero(f.membros)}</b></div>
-       <div><span>Sede</span><b>${nivelSede > 0 ? `nível ${nivelSede}` : 'nenhuma'}</b></div>
-       <div><span>Prestígio</span><b>${f.prestigio}/100</b></div>
-       <div><span>Divisão</span><b>${f.divisao||'—'}</b></div>
-       <div><span>Estádio</span><b>${f.estadio||'—'}</b></div>
-       <div><span>Aliados / Rivais</span><b>${f.qtdAliados} / ${f.qtdRivais}</b></div>
-       <div class="largo"><span>Rivalidade máxima</span><b>${f.rival}`+
-       `${f.rivalMembros ? ` <small>${U.numero(f.rivalMembros)} membros</small>`
+      `<div><span>${_t('Membros')}</span><b>${U.numero(f.membros)}</b></div>
+       <div><span>${_t('Sede')}</span><b>${nivelSede > 0 ? _t('nível {n}', {n:nivelSede}) : _t('nenhuma')}</b></div>
+       <div><span>${_t('Prestígio')}</span><b>${f.prestigio}/100</b></div>
+       <div><span>${_t('Divisão')}</span><b>${f.divisao||'—'}</b></div>
+       <div><span>${_t('Estádio')}</span><b>${f.estadio||'—'}</b></div>
+       <div><span>${_t('Aliados / Rivais')}</span><b>${f.qtdAliados} / ${f.qtdRivais}</b></div>
+       <div class="largo"><span>${_t('Rivalidade máxima')}</span><b>${f.rival}`+
+       `${f.rivalMembros ? ` <small>${U.numero(f.rivalMembros)} ${_t('membros')}</small>`
                          : ''}</b></div>`}));
   }
 
@@ -505,23 +528,23 @@
   const NAV = [
     /* o feed com ícone próprio (pedido do dono, 07/09/2026): o
        megafone era um alto-falante genérico e não dizia "início" */
-    {id:'feed',        rot:'Feed',        ic:'feed'},
-    {id:'torcida',     rot:'Torcida',     ic:'torcida'},
-    {id:'financeiro',  rot:'Financeiro',  ic:'dinheiro'},
-    {id:'calendario',  rot:'Calendário',  ic:'calendario'},
-    {id:'competicoes', rot:'Competições', ic:'trofeu'},
-    {id:'ranking',     rot:'Ranking',     ic:'medalha'},
-    {id:'diplomacia',  rot:'Diplomacia',  ic:'diplomacia'},
-    {id:'noticias',    rot:'Notícias',    ic:'jornal'},
+    {id:'feed',        rot:_t('Feed'),        ic:'feed'},
+    {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
+    {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
+    {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
+    {id:'competicoes', rot:_t('Competições'), ic:'trofeu'},
+    {id:'ranking',     rot:_t('Ranking'),     ic:'medalha'},
+    {id:'diplomacia',  rot:_t('Diplomacia'),  ic:'diplomacia'},
+    {id:'noticias',    rot:_t('Notícias'),    ic:'jornal'},
     /* O COFRE DE SAVES tem lugar na coluna (pedido do dono, 23/08/2026):
        salvar estava atrás de um Ctrl+S que ninguém adivinha, e uma
        partida de cinco anos precisa de porta com placa. */
-    {id:'jogo',        rot:'Jogo',        ic:'disquete'},
+    {id:'jogo',        rot:_t('Jogo'),        ic:'disquete'},
     /* VOLTAR AO MENU PRINCIPAL (pedido do dono, 21/09/2026). Não é
        página: é saída. Fica no fim da coluna, depois do cofre, e
        `acao` é o que separa os dois — item com `acao` executa, item
        sem `acao` abre painel. */
-    {id:'sair',        rot:'Menu principal', ic:'saida', acao:'menu'}
+    {id:'sair',        rot:_t('Menu principal'), ic:'saida', acao:'menu'}
   ];
   /* o que um item de `acao` faz */
   const ACAO_NAV = {menu: () => sairParaMenu()};
@@ -3576,7 +3599,7 @@
           (v.vazia ? '<small>vazia</small>'
                    : `<small>${v.torcida} · ${v.clube||'—'}</small>`)}));
         l.appendChild(el('div',{class:'save-quando', html: v.vazia ? '—' :
-          `<span>semana ${v.semana} de ${v.ano}</span>`+
+          `<span>${_t('semana {s} de {a}', {s:v.semana, a:v.ano})}</span>`+
           `<small>${dt} · ${Math.round((v.bytes||0)/1024)} KB · `+
           `${v.membros||0} membros</small>`}));
         const bts = el('div',{class:'save-bts'});
@@ -4690,7 +4713,7 @@
       f.appendChild(b);
     }
     if(!semFechar){
-      const fechar = el('button',{class:'bt destaque', texto:'Fechar'});
+      const fechar = el('button',{class:'bt destaque', texto:_t('Fechar')});
       fechar.onclick = ()=>fundo.remove();
       f.appendChild(fechar);
     }
@@ -10586,5 +10609,8 @@
     }
   };
 
+  /* o HTML estático no idioma escolhido (js/i18n.js) */
+  TO.i18n.traduzirDom(document.body);
+  document.title = _t('Torcida Organizada');
   montarMenu();
 })();

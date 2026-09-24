@@ -56,9 +56,12 @@ TO.util = (function(){
   }
 
   /* ---------- texto ---------- */
+  /* o separador de milhar segue o idioma (dono, 24/09/2026): 2.000 em
+     português e espanhol, 2,000 em inglês; a moeda continua o real */
+  const locale = () => (TO.i18n && TO.i18n.locale) || 'pt-BR';
   const dinheiro = v =>
-    (v<0?'−':'')+'R$ '+Math.abs(Math.round(v)).toLocaleString('pt-BR');
-  const numero = (v,casas=0)=> Number(v).toLocaleString('pt-BR',
+    (v<0?'−':'')+'R$ '+Math.abs(Math.round(v)).toLocaleString(locale());
+  const numero = (v,casas=0)=> Number(v).toLocaleString(locale(),
     {minimumFractionDigits:casas, maximumFractionDigits:casas});
   /* 'Copa do Nordeste' -> 'copa-do-nordeste'; mesma regra dos importadores */
   const identificador = t => String(t||'').normalize('NFD')
@@ -74,8 +77,10 @@ TO.util = (function(){
   ];
   function faixa(valor, tabela){
     const t = tabela || FAIXAS_PADRAO;
-    for(const f of t) if(valor<=f.ate) return f;
-    return t[t.length-1];
+    let f = t[t.length-1];
+    for(const x of t) if(valor<=x.ate){ f = x; break; }
+    /* o nome da faixa sai no idioma do jogo */
+    return (window._t && f.nome) ? Object.assign({}, f, {nome:_t(f.nome)}) : f;
   }
 
   /* ---------- DOM ---------- */
@@ -165,10 +170,38 @@ TO.genero = (function(){
     /* sem artigo não tem o que pôr antes do nome */
     o:   {f:'a',    fp:'as',    m:'o',    s:''}
   };
+  /* EM ESPANHOL E EM INGLÊS (dono, 24/09/2026): o gênero de competição
+     e de estádio é o mesmo do português (la Copa, el Mineiro, la
+     Arena); o nome da FASE é palavra comum e é traduzido, e o gênero
+     sai do nome traduzido. Em inglês o artigo é um só. */
+  const ART_ES = {
+    d:   {f:'de la',  fp:'de las',  mp:'de los',  m:'del',    s:'de'},
+    em:  {f:'en la',  fp:'en las',  mp:'en los',  m:'en el',  s:'en'},
+    por: {f:'por la', fp:'por las', mp:'por los', m:'por el', s:'por'},
+    o:   {f:'la',     fp:'las',     mp:'los',     m:'el',     s:''}
+  };
+  const faseEs = n => /^(octavos|cuartos|dieciseisavos|treintaidosavos)/i.test(n) ? 'mp'
+                    : /^(playoff|repechaje|cuadrangular|hexagonal|torneo)/i.test(n) ? 'm' : 'f';
+  const ART_EN = {d:'of the', em:'in the', por:'for the', o:'the'};
+  const ART_EN_S = {d:'of', em:'in', por:'for', o:''};
   const junta = (forma, tipo, nome, vazio) => {
     if(!nome) return vazio || '';
-    const a = ART[forma][de(tipo, nome)];
-    return a ? `${a} ${nome}` : String(nome);
+    const lang = (TO.i18n && TO.i18n.idioma) || 'pt';
+    if(lang === 'pt'){
+      const a = ART[forma][de(tipo, nome)];
+      return a ? `${a} ${nome}` : String(nome);
+    }
+    const g = de(tipo, nome);
+    const nomeT = tipo === 'fase' && window._t ? _t(nome) : String(nome);
+    if(lang === 'es'){
+      const ge = tipo === 'fase' ? faseEs(nomeT) : g;
+      const a = ART_ES[forma][ge];
+      return a ? `${a} ${nomeT}` : nomeT;
+    }
+    /* inglês: estádio é "at", cidade não leva artigo */
+    if(forma === 'em' && tipo === 'estadio') return `at ${nomeT}`;
+    const a = g === 's' ? ART_EN_S[forma] : ART_EN[forma];
+    return a ? `${a} ${nomeT}` : nomeT;
   };
 
   return {
@@ -177,6 +210,11 @@ TO.genero = (function(){
     em:  (tipo, nome, vazio) => junta('em',  tipo, nome, vazio),
     por: (tipo, nome, vazio) => junta('por', tipo, nome, vazio),
     o:   (tipo, nome, vazio) => junta('o',   tipo, nome, vazio),
-    artigo: (forma, tipo, nome) => ART[forma][de(tipo, nome)]
+    artigo: (forma, tipo, nome) => {
+      const lang = (TO.i18n && TO.i18n.idioma) || 'pt';
+      if(lang === 'es') return ART_ES[forma][tipo === 'fase' && window._t ? faseEs(_t(nome)) : de(tipo, nome)];
+      if(lang === 'en') return de(tipo, nome) === 's' ? ART_EN_S[forma] : ART_EN[forma];
+      return ART[forma][de(tipo, nome)];
+    }
   };
 })();

@@ -301,3 +301,7 @@ body.com-painel #painelBarra{
   position:absolute;left:6vw;bottom:18px;
   font-family:var(--mono);font-size:9.5px;color:var(--apagado);
 }
+
+/* CONFIGURAÇÕES: o idioma (dono, 24/09/2026) */
+.config-idiomas{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.config-idioma{min-width:120px}
