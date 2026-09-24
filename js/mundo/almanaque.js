@@ -35,45 +35,43 @@ TO.almanaque = (function(){
   const MOLDES = {
     campeao:{
       chapeu:{
-        nosso:  ['É NOSSO'],
-        rival:  ['A taça ficou com eles'],
-        outros: ['Deu campeão']
+        nosso:  [_t('É NOSSO')],
+        rival:  [_t('A taça ficou com eles')],
+        outros: [_t('Deu campeão')]
       },
       manchete:{
-        nosso:  ['{A} é campeão e a festa é nossa',
-                 'Acabou: o título é do {A}',
-                 '{A} levanta a taça {comp}'],
-        rival:  ['{A} levanta a taça e a gente engole',
-                 'Deu {A}, e não dá pra fingir que não doeu'],
-        outros: ['{A} fatura {compO}',
-                 '{A} é o campeão {comp}',
-                 'A taça {comp} é do {A}']
+        nosso:  [_t('{A} é campeão e a festa é nossa'),
+                 _t('Acabou: o título é do {A}'),
+                 _t('{A} levanta a taça {comp}')],
+        rival:  [_t('{A} levanta a taça e a gente engole'),
+                 _t('Deu {A}, e não dá pra fingir que não doeu')],
+        outros: [_t('{A} fatura {compO}'),
+                 _t('{A} é o campeão {comp}'),
+                 _t('A taça {comp} é do {A}')]
       },
       olho:{
-        comVice:['{A} terminou {compO} na frente de todo mundo; '+
-                 'o {B} ficou com o vice.'],
-        semVice:['{A} terminou {compO} na frente de todo mundo.']
+        comVice:[_t('{A} terminou {compO} na frente de todo mundo; o {B} ficou com o vice.')],
+        semVice:[_t('{A} terminou {compO} na frente de todo mundo.')]
       }
     },
 
     sobeDesce:{
       chapeu:{
-        nosso:  ['O nosso clube se mexeu'],
-        padrao: ['Sobe e desce']
+        nosso:  [_t('O nosso clube se mexeu')],
+        padrao: [_t('Sobe e desce')]
       },
       manchete:{
-        subimosNos: ['Subimos! O {A} está de volta',
-                     'Acesso do {A}: a divisão é outra'],
-        caimosNos:  ['O {A} caiu, e o ano que vem é embaixo',
-                     'Rebaixado: o {A} desce de divisão'],
-        padrao:     ['{N} clubes trocam de divisão na virada',
-                     'A virada mexeu com {N} clubes']
+        subimosNos: [_t('Subimos! O {A} está de volta'),
+                     _t('Acesso do {A}: a divisão é outra')],
+        caimosNos:  [_t('O {A} caiu, e o ano que vem é embaixo'),
+                     _t('Rebaixado: o {A} desce de divisão')],
+        padrao:     [_t('{N} clubes trocam de divisão na virada'),
+                     _t('A virada mexeu com {N} clubes')]
       },
       olho:{
-        comNosso:['{S} subiram e {D} desceram no país. '+
-                  'O nosso clube está no meio.'],
-        padrao:  ['{S} subiram e {D} desceram no país.'],
-        vazio:   ['Nenhuma divisão trocou de dono na virada.']
+        comNosso:[_t('{S} subiram e {D} desceram no país. O nosso clube está no meio.')],
+        padrao:  [_t('{S} subiram e {D} desceram no país.')],
+        vazio:   [_t('Nenhuma divisão trocou de dono na virada.')]
       }
     },
 
@@ -81,141 +79,134 @@ TO.almanaque = (function(){
        (pedido do dono, 23/08/2026) */
     tretaDoAno:{
       chapeu:{
-        nossa:  ['Foi a nossa noite'],
-        contra: ['A noite que a gente prefere esquecer'],
-        padrao: ['A treta do ano']
+        nossa:  [_t('Foi a nossa noite')],
+        contra: [_t('A noite que a gente prefere esquecer')],
+        padrao: [_t('A treta do ano')]
       },
       manchete:{
-        nossa:  ['A {A} passou o rodo na {B} e fechou o ano no topo da rua',
-                 'Ninguém esquece o que a {A} fez com a {B} em {ano}'],
-        contra: ['A {B} pegou a gente de jeito, e {ano} tem essa marca',
-                 'O ano guarda a noite em que a {B} passou por cima da {A}'],
-        padrao: ['A {A} deixou {N} da {B} no chão: a treta do ano',
-                 'Foi na {onde} que {ano} teve a sua maior treta'],
-        vazio:  ['{ano} passou sem uma treta pra contar']
+        nossa:  [_t('A {A} passou o rodo na {B} e fechou o ano no topo da rua'),
+                 _t('Ninguém esquece o que a {A} fez com a {B} em {ano}')],
+        contra: [_t('A {B} pegou a gente de jeito, e {ano} tem essa marca'),
+                 _t('O ano guarda a noite em que a {B} passou por cima da {A}')],
+        padrao: [_t('A {A} deixou {N} da {B} no chão: a treta do ano'),
+                 _t('Foi na {onde} que {ano} teve a sua maior treta')],
+        vazio:  [_t('{ano} passou sem uma treta pra contar')]
       },
       olho:{
-        cheio:['{F} feridos e {P} presos numa noite só, {onde}, '+
-               'na {sem}ª semana do ano.'],
-        semPreso:['{F} feridos numa noite só, {onde}, '+
-                  'na {sem}ª semana do ano. Ninguém foi pro camburão.'],
-        vazio:['Nenhuma briga do ano deixou baixa que valesse manchete.']
+        cheio:[_t('{F} feridos e {P} presos numa noite só, {onde}, na {sem}ª semana do ano.')],
+        semPreso:[_t('{F} feridos numa noite só, {onde}, na {sem}ª semana do ano. Ninguém foi pro camburão.')],
+        vazio:[_t('Nenhuma briga do ano deixou baixa que valesse manchete.')]
       }
     },
 
     torcidaDoAno:{
       chapeu:{
-        nossa:  ['A coroa é nossa'],
-        padrao: ['Torcida do ano']
+        nossa:  [_t('A coroa é nossa')],
+        padrao: [_t('Torcida do ano')]
       },
       manchete:{
-        nossa:  ['A {A} fecha o ano em primeiro',
-                 'Ninguém segurou a {A} em {ano}'],
-        padrao: ['A {A} é a torcida do ano',
-                 '{ano} foi da {A}',
-                 'A {A} fecha {ano} no topo do ranking']
+        nossa:  [_t('A {A} fecha o ano em primeiro'),
+                 _t('Ninguém segurou a {A} em {ano}')],
+        padrao: [_t('A {A} é a torcida do ano'),
+                 _t('{ano} foi da {A}'),
+                 _t('A {A} fecha {ano} no topo do ranking')]
       },
       olho:{
-        comSegunda:['Fechou o ano com {P} pontos, {D} à frente da {B}.'],
-        sozinha:   ['Fechou o ano com {P} pontos no ranking.']
+        comSegunda:[_t('Fechou o ano com {P} pontos, {D} à frente da {B}.')],
+        sozinha:   [_t('Fechou o ano com {P} pontos no ranking.')]
       }
     },
 
     reiDaPista:{
       chapeu:{
-        nossa:  ['A pista é nossa'],
-        padrao: ['Rei da pista']
+        nossa:  [_t('A pista é nossa')],
+        padrao: [_t('Rei da pista')]
       },
       manchete:{
-        nossa:  ['Ninguém correu com a gente em {ano}',
-                 'A {A} é o rei da pista e não teve pra ninguém'],
-        padrao: ['A {A} é o rei da pista de {ano}',
-                 'Quem mandou na rua em {ano} foi a {A}'],
-        vazio:  ['{ano} passou sem ninguém dominar a rua']
+        nossa:  [_t('Ninguém correu com a gente em {ano}'),
+                 _t('A {A} é o rei da pista e não teve pra ninguém')],
+        padrao: [_t('A {A} é o rei da pista de {ano}'),
+                 _t('Quem mandou na rua em {ano} foi a {A}')],
+        vazio:  [_t('{ano} passou sem ninguém dominar a rua')]
       },
       olho:{
-        cheio:['{V} brigas ganhas contra {Dr} perdidas: saldo de {S} no ano.'],
-        vazio:['Nenhuma torcida fechou o ano com saldo de brigas.']
+        cheio:[_t('{V} brigas ganhas contra {Dr} perdidas: saldo de {S} no ano.')],
+        vazio:[_t('Nenhuma torcida fechou o ano com saldo de brigas.')]
       }
     },
 
     janela:{
-      chapeu:{padrao:['A janela fechou']},
+      chapeu:{padrao:[_t('A janela fechou')]},
       manchete:{
-        cheia:['{A} foi quem mais se reforçou',
-               'O {A} montou time pra brigar lá em cima',
-               '{A} chega {ano} com outro elenco'],
-        magra:['A janela passou em branco pelo país']
+        cheia:[_t('{A} foi quem mais se reforçou'),
+               _t('O {A} montou time pra brigar lá em cima'),
+               _t('{A} chega {ano} com outro elenco')],
+        magra:[_t('A janela passou em branco pelo país')]
       },
       olho:{
-        cheia:['Ganhou {G} de força de um ano pro outro; '+
-               'quem mais perdeu foi o {B}, com {P}.'],
-        soGanho:['Ganhou {G} de força de um ano pro outro.'],
-        magra:['Nenhum elenco mudou o suficiente pra virar notícia.']
+        cheia:[_t('Ganhou {G} de força de um ano pro outro; quem mais perdeu foi o {B}, com {P}.')],
+        soGanho:[_t('Ganhou {G} de força de um ano pro outro.')],
+        magra:[_t('Nenhum elenco mudou o suficiente pra virar notícia.')]
       }
     },
 
     abertura:{
       chapeu:{
-        titulo: ['Começa a disputa'],
-        acesso: ['Vale o acesso'],
-        queda:  ['Tem gente pra cair'],
-        copa:   ['Mata-mata']
+        titulo: [_t('Começa a disputa')],
+        acesso: [_t('Vale o acesso')],
+        queda:  [_t('Tem gente pra cair')],
+        copa:   [_t('Mata-mata')]
       },
       manchete:[
-        'Vem aí {compO}',
-        '{compO} começa semana que vem',
-        'Daqui a uma semana rola a bola {comp}'
+        _t('Vem aí {compO}'),
+        _t('{compO} começa semana que vem'),
+        _t('Daqui a uma semana rola a bola {comp}')
       ],
       /* A COPA TEM MOLDE PRÓPRIO (pedido do dono, 21/08/2026): não tem
          tabela, não tem acesso e não tem queda — tem eliminação. */
       mancheteCopa:[
-        'Vem aí {compO}: erro não tem volta',
-        '{compO} começa semana que vem, e é jogo único',
-        'Daqui a uma semana abre {compO}, no tudo ou nada'
+        _t('Vem aí {compO}: erro não tem volta'),
+        _t('{compO} começa semana que vem, e é jogo único'),
+        _t('Daqui a uma semana abre {compO}, no tudo ou nada')
       ],
       olho:{
         /* {F} favoritos ao título · {S} favoritos ao acesso ·
            {Q} ameaçados de queda · {N} clubes na disputa */
-        tudo:  ['{N} clubes na disputa. Favoritos ao título: {F}. '+
-                'Brigam pelo acesso: {S}. Ameaçados de queda: {Q}.'],
-        titAcesso:['{N} clubes na disputa. Favoritos ao título: {F}. '+
-                   'Brigam pelo acesso: {S}.'],
-        titQueda:['{N} clubes na disputa. Favoritos ao título: {F}. '+
-                  'Ameaçados de queda: {Q}.'],
-        soTitulo:['{N} clubes na disputa. Favoritos ao título: {F}.'],
-        copa:['{N} clubes e um caminho só: quem tropeçar uma vez está '+
-              'fora. Favoritos à taça: {F}.']
+        tudo:  [_t('{N} clubes na disputa. Favoritos ao título: {F}. Brigam pelo acesso: {S}. Ameaçados de queda: {Q}.')],
+        titAcesso:[_t('{N} clubes na disputa. Favoritos ao título: {F}. Brigam pelo acesso: {S}.')],
+        titQueda:[_t('{N} clubes na disputa. Favoritos ao título: {F}. Ameaçados de queda: {Q}.')],
+        soTitulo:[_t('{N} clubes na disputa. Favoritos ao título: {F}.')],
+        copa:[_t('{N} clubes e um caminho só: quem tropeçar uma vez está fora. Favoritos à taça: {F}.')]
       },
       /* A BRECHA DO NOSSO CLUBE (pedido do dono, 21/08/2026): quando
          ele não está nem entre os favoritos nem na zona de risco, a
          notícia abre espaço pra dizer o que se espera dele. Nunca com
          número: expectativa é palavra, não força. */
       nos:{
-        alto:  ['O {A} entra brigando lá em cima.'],
-        meio:  ['Do {A} se espera meio de tabela.'],
-        baixo: ['O {A} entra como azarão.'],
-        risco: ['O {A} entra com a corda no pescoço.'],
-        copaAlto: ['O {A} entra como um dos que podem ir longe.'],
-        copaMeio: ['O {A} entra sem favoritismo, mas com chance.'],
-        copaBaixo:['O {A} entra pra dar trabalho a quem for maior.']
+        alto:  [_t('O {A} entra brigando lá em cima.')],
+        meio:  [_t('Do {A} se espera meio de tabela.')],
+        baixo: [_t('O {A} entra como azarão.')],
+        risco: [_t('O {A} entra com a corda no pescoço.')],
+        copaAlto: [_t('O {A} entra como um dos que podem ir longe.')],
+        copaMeio: [_t('O {A} entra sem favoritismo, mas com chance.')],
+        copaBaixo:[_t('O {A} entra pra dar trabalho a quem for maior.')]
       }
     },
 
     patrimonio:{
       chapeu:{
-        nossa:  ['A obra foi nossa'],
-        padrao: ['O ano da obra']
+        nossa:  [_t('A obra foi nossa')],
+        padrao: [_t('O ano da obra')]
       },
       manchete:{
-        cheia:['A {A} foi quem mais construiu em {ano}',
-               '{ano} foi de obra na {A}',
-               'A {A} abriu mais porta que ninguém'],
-        magra:['Ninguém levantou tijolo em {ano}']
+        cheia:[_t('A {A} foi quem mais construiu em {ano}'),
+               _t('{ano} foi de obra na {A}'),
+               _t('A {A} abriu mais porta que ninguém')],
+        magra:[_t('Ninguém levantou tijolo em {ano}')]
       },
       olho:{
-        cheia:['Abriu {N} {porta} no ano e fechou com {T} no total.'],
-        magra:['Nenhuma torcida do país abriu prédio novo no ano.']
+        cheia:[_t('Abriu {N} {porta} no ano e fechou com {T} no total.')],
+        magra:[_t('Nenhuma torcida do país abriu prédio novo no ano.')]
       }
     }
   };
@@ -252,8 +243,8 @@ TO.almanaque = (function(){
      Copa" pedem a forma com de; "faturou O Brasileirão" e "terminou A
      Copa" pedem a forma sem. Um molde só dava "terminou do
      Brasileirão", que não é português. */
-  const dArt = n => TO.genero.d('competicao', n, 'do campeonato');
-  const oArt = n => TO.genero.o('competicao', n, 'o campeonato');
+  const dArt = n => TO.genero.d('competicao', n, _t('do campeonato'));
+  const oArt = n => TO.genero.o('competicao', n, _t('o campeonato'));
 
   /* =======================================================
      A FOTO DO ANO
@@ -313,15 +304,15 @@ TO.almanaque = (function(){
     const CM = MOLDES.campeao;
     return {
       ano, tipo:'campeao', tom: nosso ? 'boa' : rival ? 'ruim' : '',
-      jornal:'O Almanaque', edicao:'Edição de campeão',
+      jornal:'O Almanaque', edicao:_t('Edição de campeão'),
       chapeu: CM.chapeu[cond][0],
       manchete: encher(daFila(CM.manchete[cond], sem), v),
       olho: encher(B ? CM.olho.comVice[0] : CM.olho.semVice[0], v),
       tarja:[comp.nome, `<b>${E.data.ano}</b>`],
       quadro:{
-        titulo:'O pódio',
-        linhas:[{rot:'Campeão', valor:nomeTime(A), forte:true, nossa:nosso}]
-          .concat(B ? [{rot:'Vice', valor:nomeTime(B), nossa: B === meu}] : [])
+        titulo:_t('O pódio'),
+        linhas:[{rot:_t('Campeão'), valor:nomeTime(A), forte:true, nossa:nosso}]
+          .concat(B ? [{rot:_t('Vice'), valor:nomeTime(B), nossa: B === meu}] : [])
       }
     };
   }
@@ -335,12 +326,12 @@ TO.almanaque = (function(){
       const SDv = MOLDES.sobeDesce;
       return {
         ano, tipo:'sobeDesce', tom:'',
-        jornal:'O Almanaque', edicao:'Edição da virada',
+        jornal:'O Almanaque', edicao:_t('Edição da virada'),
         chapeu: SDv.chapeu.padrao[0],
         manchete: encher(SDv.manchete.padrao[0], {N:0}),
         olho: SDv.olho.vazio[0],
-        tarja:[`virada de <b>${ano}</b>`],
-        quadro:{titulo:'Sobe e desce', linhas:[]}
+        tarja:[_t('virada de <b>{ano}</b>', {ano})],
+        quadro:{titulo:_t('Sobe e desce'), linhas:[]}
       };
     }
     const meu = E.torcida.clubeId;
@@ -353,19 +344,20 @@ TO.almanaque = (function(){
     const v = {A: nomeTime(meu), N: mov.length,
                S: sobem.length, D: caem.length, ano};
     const linha = (m, sobe) => ({
-      rot: sobe ? 'sobe' : 'cai', valor: nomeTime(m.id),
+      rot: sobe ? _t('sobe') : _t('cai'), valor: nomeTime(m.id),
       nota: m.para, sobe, nossa: m.id === meu});
     return {
       ano, tipo:'sobeDesce', tom: !nosso ? '' :
         C().subiu(nosso.de, nosso.para) ? 'boa' : 'ruim',
-      jornal:'O Almanaque', edicao:'Edição da virada',
+      jornal:'O Almanaque', edicao:_t('Edição da virada'),
       chapeu: nosso ? SD.chapeu.nosso[0] : SD.chapeu.padrao[0],
       manchete: encher(daFila(SD.manchete[cond], ano), v),
       olho: encher(nosso ? SD.olho.comNosso[0] : SD.olho.padrao[0], v),
-      tarja:[`<b>${sobem.length}</b> subiram`, `<b>${caem.length}</b> desceram`,
-             `temporada de <b>${ano}</b>`],
+      tarja:[_tn(sobem.length, '<b>{n}</b> subiu', '<b>{n}</b> subiram'),
+             _tn(caem.length, '<b>{n}</b> desceu', '<b>{n}</b> desceram'),
+             _t('temporada de <b>{ano}</b>', {ano})],
       quadro:{
-        titulo:'Quem trocou de divisão',
+        titulo:_t('Quem trocou de divisão'),
         linhas:[...sobem.slice(0, LINHAS).map(m=>linha(m,true)),
                 ...caem.slice(0, LINHAS).map(m=>linha(m,false))],
         resto: Math.max(0, mov.length - Math.min(sobem.length, LINHAS)
@@ -388,18 +380,18 @@ TO.almanaque = (function(){
                D: segunda ? Math.round(primeira.pontos - segunda.pontos) : 0};
     return {
       ano, tipo:'torcidaDoAno', tom: nossa ? 'boa' : '',
-      jornal:'O Almanaque', edicao:'Prêmio do ano',
+      jornal:'O Almanaque', edicao:_t('Prêmio do ano'),
       chapeu: nossa ? TA.chapeu.nossa[0] : TA.chapeu.padrao[0],
       manchete: encher(daFila(TA.manchete[nossa?'nossa':'padrao'], ano), v),
       olho: encher(segunda ? TA.olho.comSegunda[0] : TA.olho.sozinha[0], v) +
-            (premios[0] ? ` Leva ${reais(premios[0].valor)} de prêmio.` : ''),
-      tarja:[`fechamento de <b>31/12/${ano}</b>`, 'ranking geral'],
+            (premios[0] ? ' ' + _t('Leva {valor} de prêmio.', {valor:reais(premios[0].valor)}) : ''),
+      tarja:[_t('fechamento de <b>{data}</b>', {data:`31/12/${ano}`}), _t('ranking geral')],
       premios,
       quadro:{
-        titulo:'O pódio do ranking',
+        titulo:_t('O pódio do ranking'),
         linhas: lista.slice(0, LINHAS).map((x,i)=>({
-          rot:`${i+1}º`, valor: x.nome || nomeTorcida(x.id),
-          nota: `${Math.round(x.pontos)} pt`,
+          rot:_t('{n}º', {n:i+1}), valor: x.nome || nomeTorcida(x.id),
+          nota: _t('{n} pt', {n:Math.round(x.pontos)}),
           forte: i === 0, nossa: x.id === E.torcida.id}))
       }
     };
@@ -413,30 +405,31 @@ TO.almanaque = (function(){
                               .sort((a,b)=> b.saldo - a.saldo || b.v - a.v);
     if(!lista.length) return {
       ano, tipo:'reiDaPista', tom:'',
-      jornal:'O Almanaque', edicao:'Prêmio do ano',
+      jornal:'O Almanaque', edicao:_t('Prêmio do ano'),
       chapeu: RP.chapeu.padrao[0],
       manchete: encher(RP.manchete.vazio[0], {ano}),
       olho: RP.olho.vazio[0],
-      tarja:[`temporada de <b>${ano}</b>`],
-      quadro:{titulo:'A rua em ' + ano, linhas:[]}
+      tarja:[_t('temporada de <b>{ano}</b>', {ano})],
+      quadro:{titulo:_t('A rua em {ano}', {ano}), linhas:[]}
     };
     const rei = lista[0];
     const nossa = rei.id === E.torcida.id;
     const v = {A: rei.nome, ano, V: rei.v, Dr: rei.d, S: `+${rei.saldo}`};
     return {
       ano, tipo:'reiDaPista', tom: nossa ? 'boa' : '',
-      jornal:'O Almanaque', edicao:'Prêmio do ano',
+      jornal:'O Almanaque', edicao:_t('Prêmio do ano'),
       chapeu: nossa ? RP.chapeu.nossa[0] : RP.chapeu.padrao[0],
       manchete: encher(daFila(RP.manchete[nossa?'nossa':'padrao'], ano), v),
       olho: encher(RP.olho.cheio[0], v) +
-            (premios[0] ? ` Leva ${reais(premios[0].valor)} de prêmio.` : ''),
-      tarja:[`<b>${rei.v}</b> ganhas`, `<b>${rei.d}</b> perdidas`,
-             `saldo <b>+${rei.saldo}</b>`],
+            (premios[0] ? ' ' + _t('Leva {valor} de prêmio.', {valor:reais(premios[0].valor)}) : ''),
+      tarja:[_tn(rei.v, '<b>{n}</b> ganha', '<b>{n}</b> ganhas'),
+             _tn(rei.d, '<b>{n}</b> perdida', '<b>{n}</b> perdidas'),
+             _t('saldo <b>+{n}</b>', {n:rei.saldo})],
       premios,
       quadro:{
-        titulo:'O saldo do ano',
+        titulo:_t('O saldo do ano'),
         linhas: lista.slice(0, LINHAS).map((x,i)=>({
-          rot:`${i+1}º`, valor:x.nome, nota:`${x.v}–${x.d} · +${x.saldo}`,
+          rot:_t('{n}º', {n:i+1}), valor:x.nome, nota:`${x.v}–${x.d} · +${x.saldo}`,
           forte: i === 0, nossa: x.id === E.torcida.id}))
       }
     };
@@ -452,27 +445,27 @@ TO.almanaque = (function(){
     const cairam  = lista.filter(x=>x.d < 0).sort((a,b)=> a.d - b.d);
     if(!subiram.length) return {
       ano, tipo:'janela', tom:'',
-      jornal:'O Almanaque', edicao:'Edição da janela',
+      jornal:'O Almanaque', edicao:_t('Edição da janela'),
       chapeu: JN.chapeu.padrao[0],
       manchete: JN.manchete.magra[0],
       olho: JN.olho.magra[0],
-      tarja:[`janela de <b>${ano}</b>`],
-      quadro:{titulo:'Os elencos', linhas:[]}
+      tarja:[_t('janela de <b>{ano}</b>', {ano})],
+      quadro:{titulo:_t('Os elencos'), linhas:[]}
     };
     const top = subiram[0], pior = cairam[0];
     const v = {A: top.nome, ano, G:`+${top.d}`,
                B: pior ? pior.nome : '', P: pior ? String(pior.d) : ''};
     return {
       ano, tipo:'janela', tom: top.id === E.torcida.clubeId ? 'boa' : '',
-      jornal:'O Almanaque', edicao:'Edição da janela',
+      jornal:'O Almanaque', edicao:_t('Edição da janela'),
       chapeu: JN.chapeu.padrao[0],
       manchete: encher(daFila(JN.manchete.cheia, ano), v),
       olho: encher(pior ? JN.olho.cheia[0] : JN.olho.soGanho[0], v),
-      tarja:[`<b>${subiram.length}</b> se reforçaram`,
-             `<b>${cairam.length}</b> perderam elenco`,
-             `janela de <b>${ano}</b>`],
+      tarja:[_tn(subiram.length, '<b>{n}</b> se reforçou', '<b>{n}</b> se reforçaram'),
+             _tn(cairam.length, '<b>{n}</b> perdeu elenco', '<b>{n}</b> perderam elenco'),
+             _t('janela de <b>{ano}</b>', {ano})],
       quadro:{
-        titulo:'Quem mais mexeu no elenco',
+        titulo:_t('Quem mais mexeu no elenco'),
         /* SEM NÚMERO DE FORÇA (régua do dono, 21/08/2026): o que a
            notícia conta é o QUANTO mudou, não o nível de ninguém */
         /* `num` É O NÚMERO, `rot` É O RÓTULO (conserto de 21/09/2026).
@@ -506,29 +499,29 @@ TO.almanaque = (function(){
     lista.sort((a,b)=> b.d - a.d || b.total - a.total);
     if(!lista.length) return {
       ano, tipo:'patrimonio', tom:'',
-      jornal:'O Almanaque', edicao:'Edição do balanço',
+      jornal:'O Almanaque', edicao:_t('Edição do balanço'),
       chapeu: PT.chapeu.padrao[0],
       manchete: encher(PT.manchete.magra[0], {ano}),
       olho: PT.olho.magra[0],
-      tarja:[`balanço de <b>${ano}</b>`],
-      quadro:{titulo:'As obras do ano', linhas:[]}
+      tarja:[_t('balanço de <b>{ano}</b>', {ano})],
+      quadro:{titulo:_t('As obras do ano'), linhas:[]}
     };
     const top = lista[0];
     const nossa = top.id === E.torcida.id;
     const v = {A: top.nome, ano, N: top.d, T: top.total,
-               porta: top.d === 1 ? 'porta' : 'portas'};
+               porta: top.d === 1 ? _t('porta') : _t('portas')};
     return {
       ano, tipo:'patrimonio', tom: nossa ? 'boa' : '',
-      jornal:'O Almanaque', edicao:'Edição do balanço',
+      jornal:'O Almanaque', edicao:_t('Edição do balanço'),
       chapeu: nossa ? PT.chapeu.nossa[0] : PT.chapeu.padrao[0],
       manchete: encher(daFila(PT.manchete.cheia, ano), v),
       olho: encher(PT.olho.cheia[0], v),
-      tarja:[`<b>${lista.length}</b> torcidas construíram`,
-             `balanço de <b>${ano}</b>`],
+      tarja:[_tn(lista.length, '<b>{n}</b> torcida construiu', '<b>{n}</b> torcidas construíram'),
+             _t('balanço de <b>{ano}</b>', {ano})],
       quadro:{
-        titulo:'Quem mais construiu',
+        titulo:_t('Quem mais construiu'),
         linhas: lista.slice(0, LINHAS).map((x,i)=>({
-          rot:`+${x.d}`, valor:x.nome, nota:`${x.total} no total`,
+          rot:`+${x.d}`, valor:x.nome, nota:_t('{n} no total', {n:x.total}),
           sobe:true, forte: i === 0, nossa: x.id === E.torcida.id}))
       }
     };
@@ -589,10 +582,10 @@ TO.almanaque = (function(){
       rot, valor:nomeTime(x.id), sobe: cls, nossa: x.id === meu});
     /* a posição na fila de força, pra rotular a linha da queda quando
        ela é a nossa: "18º", e não só "risco" */
-    const posDe = x => `${fila.findIndex(y=>y.id === x.id) + 1}º`;
+    const posDe = x => _t('{n}º', {n:fila.findIndex(y=>y.id === x.id) + 1});
     return {
       ano, tipo:'abertura', tom:'',
-      jornal:'O Almanaque', edicao:'Edição de véspera',
+      jornal:'O Almanaque', edicao:_t('Edição de véspera'),
       /* O CHAPÉU FALA DA NOSSA SITUAÇÃO, não da competição: numa Série
          B com acesso e queda, quem está em terceiro lê "vale o acesso"
          e quem está em décimo oitavo lê "tem gente pra cair". Dizer
@@ -606,12 +599,12 @@ TO.almanaque = (function(){
       manchete: encher(daFila(copa ? AB.mancheteCopa : AB.manchete,
                               ano + comp.nome.length), v),
       olho: encher(AB.olho[cond][0], v) + (nossaLinha ? ' ' + nossaLinha : ''),
-      tarja:[comp.nome, `<b>${fila.length}</b> clubes`,
-             copa ? 'jogo único' : '',
-             sobem ? `<b>${sobem}</b> sobem` : '',
-             caem ? `<b>${caem}</b> caem` : ''].filter(Boolean),
+      tarja:[comp.nome, _tn(fila.length, '<b>{n}</b> clube', '<b>{n}</b> clubes'),
+             copa ? _t('jogo único') : '',
+             sobem ? _tn(sobem, '<b>{n}</b> sobe', '<b>{n}</b> sobem') : '',
+             caem ? _tn(caem, '<b>{n}</b> cai', '<b>{n}</b> caem') : ''].filter(Boolean),
       quadro:{
-        titulo:'Como chegam',
+        titulo:_t('Como chegam'),
         /* A LINHA DO NOSSO CLUBE (pedido do dono, 22/09/2026): quando
            ele não está em nenhuma das duas pontas, entra NO MEIO do
            quadro — entre os de cima e os de baixo — e o rótulo é a
@@ -619,10 +612,10 @@ TO.almanaque = (function(){
            a fila é a mesma que rotula os favoritos, e 13º elenco
            mais forte é o que a rua espera dele. Nas pontas, a linha
            dele já vem com a posição (o favorito é o 1º). */
-        linhas:[...topo.map((x,i)=>linha(x, i === 0 ? 'favorito' : `${i+1}º`, true)),
-                ...(jaCitado ? [] : [{rot:`${nossaPos+1}º`, valor:nomeTime(meu),
+        linhas:[...topo.map((x,i)=>linha(x, i === 0 ? _t('favorito') : _t('{n}º', {n:i+1}), true)),
+                ...(jaCitado ? [] : [{rot:_t('{n}º', {n:nossaPos+1}), valor:nomeTime(meu),
                                       nossa:true}]),
-                ...daQueda.map(x=>linha(x, x.id === meu ? posDe(x) : 'risco', false))]
+                ...daQueda.map(x=>linha(x, x.id === meu ? posDe(x) : _t('risco'), false))]
       }
     };
   }
@@ -678,14 +671,14 @@ TO.almanaque = (function(){
     const t = E.tretaDoAno;
     if(!t || t.ano !== ano) return {
       ano, tipo:'tretaDoAno', tom:'',
-      jornal:'O Almanaque', edicao:'Edição da rua',
+      jornal:'O Almanaque', edicao:_t('Edição da rua'),
       chapeu: TA.chapeu.padrao[0],
       manchete: encher(TA.manchete.vazio[0], {ano}),
       olho: TA.olho.vazio[0],
-      tarja:[`a rua em <b>${ano}</b>`],
-      quadro:{titulo:'A treta do ano', linhas:[]}
+      tarja:[_t('a rua em <b>{ano}</b>', {ano})],
+      quadro:{titulo:_t('A treta do ano'), linhas:[]}
     };
-    const onde = t.onde || 'na rua';
+    const onde = t.onde || _t('na rua');
     const cond = t.nossa ? 'nossa' : t.contra ? 'contra' : 'padrao';
     const v = {A:t.a.nome, B:t.b.nome, ano, onde,
                N:t.derrubados, F:t.b.feridos, P:t.b.presos,
@@ -693,23 +686,24 @@ TO.almanaque = (function(){
     return {
       ano, tipo:'tretaDoAno',
       tom: t.nossa ? 'boa' : t.contra ? 'ruim' : '',
-      jornal:'O Almanaque', edicao:'Edição da rua',
+      jornal:'O Almanaque', edicao:_t('Edição da rua'),
       chapeu: TA.chapeu[cond][0],
       manchete: encher(daFila(TA.manchete[cond], ano), v),
       olho: encher(t.b.presos ? TA.olho.cheio[0] : TA.olho.semPreso[0], v),
-      tarja:[`<b>${t.derrubados}</b> derrubados`,
-             `<b>${t.b.feridos}</b> feridos`,
-             `<b>${t.b.presos}</b> presos`, onde],
+      tarja:[_tn(t.derrubados, '<b>{n}</b> derrubado', '<b>{n}</b> derrubados'),
+             _tn(t.b.feridos, '<b>{n}</b> ferido', '<b>{n}</b> feridos'),
+             _tn(t.b.presos, '<b>{n}</b> preso', '<b>{n}</b> presos'), onde],
       quadro:{
-        titulo:'A noite, lado a lado',
+        titulo:_t('A noite, lado a lado'),
         linhas:[
-          {rot:'levou a melhor', valor:t.a.nome, nota:`${t.a.n} na rua`,
+          {rot:_t('levou a melhor'), valor:t.a.nome, nota:_t('{n} na rua', {n:t.a.n}),
            forte:true, nossa:t.a.id === E.torcida.id},
-          {rot:'ficou no chão',  valor:t.b.nome,
-           nota:`${t.b.feridos} feridos · ${t.b.presos} presos`,
+          {rot:_t('ficou no chão'),  valor:t.b.nome,
+           nota:_t('{feridos} · {presos}', {feridos:_tn(t.b.feridos, '{n} ferido', '{n} feridos'),
+                                            presos:_tn(t.b.presos, '{n} preso', '{n} presos')}),
            nossa:t.b.id === E.torcida.id},
-          {rot:'baixa do vencedor', valor:`${t.a.feridos} feridos`,
-           nota:`${t.a.presos} presos`}
+          {rot:_t('baixa do vencedor'), valor:_tn(t.a.feridos, '{n} ferido', '{n} feridos'),
+           nota:_tn(t.a.presos, '{n} preso', '{n} presos')}
         ]
       }
     };
@@ -744,11 +738,13 @@ TO.almanaque = (function(){
       .sort((a,b)=> b.saldo - a.saldo || b.v - a.v).slice(0, PREMIOS.length)
       .map((x, i) => ({id:x.id, nome:x.nome || nomeTorcida(x.id), pos:i+1,
                        valor:PREMIOS[i], nossa:nossa(x.id), v:x.v, d:x.d, saldo:x.saldo}));
-    for(const r of ranking) pagarPremio(E, r.id, `Prêmio Torcida do Ano ${ano} — ${r.pos}º lugar`, r.valor);
-    for(const r of pista)   pagarPremio(E, r.id, `Prêmio Rei da Pista ${ano} — ${r.pos}º lugar`, r.valor);
+    for(const r of ranking) pagarPremio(E, r.id,
+      _t('Prêmio Torcida do Ano {ano} — {pos}º lugar', {ano, pos:r.pos}), r.valor);
+    for(const r of pista)   pagarPremio(E, r.id,
+      _t('Prêmio Rei da Pista {ano} — {pos}º lugar', {ano, pos:r.pos}), r.valor);
     return {ranking, pista};
   }
-  const reais = v => 'R$ ' + (v >= 1000 && v % 1000 === 0 ? `${v/1000} mil` : String(v));
+  const reais = v => v >= 1000 && v % 1000 === 0 ? _t('R$ {n} mil', {n:v/1000}) : 'R$ ' + String(v);
 
   function fecharAno(E, ctx){
     const ano = (ctx && ctx.ano) || E.data.ano;

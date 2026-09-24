@@ -26,6 +26,9 @@ TO.porrada = (function(){
   const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho',
                'agosto','setembro','outubro','novembro','dezembro'];
   const DIA_SEM = ['','Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  /* "Sábado, 12 de outubro", no idioma do jogo */
+  const dataDe = (dia, dt) => _t('{dia}, {n} de {mes}',
+    {dia:_t(DIA_SEM[dia]), n:dt.getDate(), mes:_t(MES[dt.getMonth()])});
   const ROMANO = n => ['','I','II','III','IV','V','VI','VII','VIII','IX','X',
                        'XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'][n] || n;
 
@@ -37,14 +40,14 @@ TO.porrada = (function(){
   const MOLDES = {
     /* 1 · chapéu — condição única, não alterna */
     chapeu:{
-      atropelo:  ['Atropelo'],
-      menos:     ['Era menos e não correu'],
-      cadeia:    ['Noite de camburão'],
-      semLuta:   ['Ninguém desceu'],
-      arquibancada:['O setor se pegou'],
-      lnt:       ['Dia de LNT'],
-      apoio:     ['Desceu junto'],
-      padrao:    ['O pau do dia']
+      atropelo:  [_t('Atropelo')],
+      menos:     [_t('Era menos e não correu')],
+      cadeia:    [_t('Noite de camburão')],
+      semLuta:   [_t('Ninguém desceu')],
+      arquibancada:[_t('O setor se pegou')],
+      lnt:       [_t('Dia de LNT')],
+      apoio:     [_t('Desceu junto')],
+      padrao:    [_t('O pau do dia')]
     },
 
     /* 2 · manchete
@@ -54,17 +57,17 @@ TO.porrada = (function(){
     manchete:{
       /* venceu atropelando: 3 ou mais feridos de diferença */
       atropelo:[
-        '{A} passou o trator na {B}',
-        '{A} amassou a {B} e não teve conversa',
-        '{B} não durou nem cinco minutos contra a {A}',
-        'Deu {A} do começo ao fim, e a {B} não teve resposta'
+        _t('{A} passou o trator na {B}'),
+        _t('{A} amassou a {B} e não teve conversa'),
+        _t('{B} não durou nem cinco minutos contra a {A}'),
+        _t('Deu {A} do começo ao fim, e a {B} não teve resposta')
       ],
       /* venceu no sufoco */
       vitoria:[
-        '{A} levou a melhor contra a {B} no sufoco',
-        'Foi apertado, mas quem ficou de pé foi a {A}',
-        '{A} segurou o rojão e virou o jogo',
-        '{A} saiu por cima por pouco'
+        _t('{A} levou a melhor contra a {B} no sufoco'),
+        _t('Foi apertado, mas quem ficou de pé foi a {A}'),
+        _t('{A} segurou o rojão e virou o jogo'),
+        _t('{A} saiu por cima por pouco')
       ],
       /* venceu em menor número
          "CORREU COM A" NÃO DIZ QUEM GANHOU (correção do dono,
@@ -76,43 +79,43 @@ TO.porrada = (function(){
          que só tem uma leitura: venceu, levou a melhor, botou pra
          correr. */
       vitoriaMenos:[
-        '{A} era {nA} contra {nB} e venceu a {B} do mesmo jeito',
-        'Em menor número, {A} não correu e ainda botou a {B} pra correr',
-        '{A} era menor mas mesmo assim passou por cima da {B}'
+        _t('{A} era {nA} contra {nB} e venceu a {B} do mesmo jeito'),
+        _t('Em menor número, {A} não correu e ainda botou a {B} pra correr'),
+        _t('{A} era menor mas mesmo assim passou por cima da {B}')
       ],
       /* perdeu no detalhe */
       derrota:[
-        'Deu {A} no detalhe, e a treta não morre aí',
-        '{A} levou por pouco e a {B} não engoliu',
-        'A {B} caiu de pé, mas caiu: quem levou foi a {A}'
+        _t('Deu {A} no detalhe, e a treta não morre aí'),
+        _t('{A} levou por pouco e a {B} não engoliu'),
+        _t('A {B} caiu de pé, mas caiu: quem levou foi a {A}')
       ],
       /* apanhou feio */
       apanhou:[
-        '{B} tomou um baile da {A}',
-        'Sobrou pra {B} de todo lado, e quem distribuiu foi a {A}',
-        '{A} passou o rodo e a {B} foi contar os feridos'
+        _t('{B} tomou um baile da {A}'),
+        _t('Sobrou pra {B} de todo lado, e quem distribuiu foi a {A}'),
+        _t('{A} passou o rodo e a {B} foi contar os feridos')
       ],
       /* perdeu em desvantagem numérica */
       apanhouMenos:[
-        'A {B} era {nB} contra {nA} e a {A} não perdoou',
-        'Eram muitos: a {B} apanhou da {A} no braço contado'
+        _t('A {B} era {nB} contra {nA} e a {A} não perdoou'),
+        _t('Eram muitos: a {B} apanhou da {A} no braço contado')
       ],
       /* ninguém levou a melhor */
       empate:[
-        '{A} e {B}: ninguém levou a melhor e os dois contaram ferido',
-        'Deu treta e deu empate entre {A} e {B}: saíram machucados os dois',
-        '{A} e {B} bateram de igual pra igual e ficou por isso mesmo'
+        _t('{A} e {B}: ninguém levou a melhor e os dois contaram ferido'),
+        _t('Deu treta e deu empate entre {A} e {B}: saíram machucados os dois'),
+        _t('{A} e {B} bateram de igual pra igual e ficou por isso mesmo')
       ],
       /* ninguém desceu pra segurar */
       semLuta:[
-        'A {A} quebrou tudo e foi embora sem achar ninguém',
-        'A {A} chegou, quebrou e ninguém desceu pra segurar'
+        _t('A {A} quebrou tudo e foi embora sem achar ninguém'),
+        _t('A {A} chegou, quebrou e ninguém desceu pra segurar')
       ],
       /* a polícia levou gente demais */
       cadeia:[
-        'A polícia encheu o camburão, e quem levou a melhor foi a {A}',
-        'Acabou com camburão cheio dos dois lados, e a melhor foi da {A}',
-        'Terminou na delegacia com {P} nomes na lista, e a {A} ainda levou a melhor'
+        _t('A polícia encheu o camburão, e quem levou a melhor foi a {A}'),
+        _t('Acabou com camburão cheio dos dois lados, e a melhor foi da {A}'),
+        _t('Terminou na delegacia com {P} nomes na lista, e a {A} ainda levou a melhor')
       ]
     },
 
@@ -127,122 +130,122 @@ TO.porrada = (function(){
     mancheteCena:{
       arquibancada:{
         vitoria:[
-          '{A} tomou o setor e a {B} subiu as escadas correndo',
-          'A {A} varreu a arquibancada e a {B} assistiu o resto de longe',
-          'O jogo parou no campo e no setor: deu {A} pra cima da {B}'
+          _t('{A} tomou o setor e a {B} subiu as escadas correndo'),
+          _t('A {A} varreu a arquibancada e a {B} assistiu o resto de longe'),
+          _t('O jogo parou no campo e no setor: deu {A} pra cima da {B}')
         ],
         derrota:[
-          'A {A} invadiu o setor e a {B} não segurou a grade',
-          'A {B} perdeu a própria arquibancada pra {A}',
-          'Deu {A} no meio do setor, e a {B} desceu antes do fim do jogo'
+          _t('A {A} invadiu o setor e a {B} não segurou a grade'),
+          _t('A {B} perdeu a própria arquibancada pra {A}'),
+          _t('Deu {A} no meio do setor, e a {B} desceu antes do fim do jogo')
         ]
       },
       emboscada:{
         vitoria:[
-          '{A} levou a melhor na estrada e a {B} juntou os cacos no acostamento',
-          'Teve emboscada na rota e a {A} seguiu viagem por cima da {B}',
-          'A parada virou campo de batalha e a {B} saiu por baixo: deu {A}'
+          _t('{A} levou a melhor na estrada e a {B} juntou os cacos no acostamento'),
+          _t('Teve emboscada na rota e a {A} seguiu viagem por cima da {B}'),
+          _t('A parada virou campo de batalha e a {B} saiu por baixo: deu {A}')
         ],
         derrota:[
-          'A rota virou armadilha e a {B} pagou o pedágio pra {A}',
-          'Deu {A} no asfalto, e a {B} saiu carregando os seus',
-          'A emboscada na estrada terminou com a {B} no prejuízo e a {A} por cima'
+          _t('A rota virou armadilha e a {B} pagou o pedágio pra {A}'),
+          _t('Deu {A} no asfalto, e a {B} saiu carregando os seus'),
+          _t('A emboscada na estrada terminou com a {B} no prejuízo e a {A} por cima')
         ]
       },
       bar:{
         vitoria:[
-          'O bar fechou mais cedo: deu {A} pra cima da {B} no meio das mesas',
-          '{A} venceu a {B} no salão do bar e saiu pisando em caco de garrafa',
-          'Mesa, cadeira e garrafa voando: no fim, o bar era da {A} e a {B} tinha ido embora'
+          _t('O bar fechou mais cedo: deu {A} pra cima da {B} no meio das mesas'),
+          _t('{A} venceu a {B} no salão do bar e saiu pisando em caco de garrafa'),
+          _t('Mesa, cadeira e garrafa voando: no fim, o bar era da {A} e a {B} tinha ido embora')
         ],
         derrota:[
-          'A conta do bar sobrou pra {B}: a {A} cobrou na porrada',
-          'Deu {A} no bar, e a {B} saiu pelos fundos',
-          'A noite no bar acabou mal pra {B}: a {A} não deixou copo em pé'
+          _t('A conta do bar sobrou pra {B}: a {A} cobrou na porrada'),
+          _t('Deu {A} no bar, e a {B} saiu pelos fundos'),
+          _t('A noite no bar acabou mal pra {B}: a {A} não deixou copo em pé')
         ]
       },
       comercio:{
         vitoria:[
-          'Deu {A} na porta do comércio e a {B} não voltou pra buscar o troco',
-          'A {A} venceu a {B} no meio das bancas e ninguém abriu no dia seguinte',
-          '{A} passou por cima da {B} e o comércio baixou as portas'
+          _t('Deu {A} na porta do comércio e a {B} não voltou pra buscar o troco'),
+          _t('A {A} venceu a {B} no meio das bancas e ninguém abriu no dia seguinte'),
+          _t('{A} passou por cima da {B} e o comércio baixou as portas')
         ],
         derrota:[
-          'O comércio fechou no susto: a {A} passou por cima da {B}',
-          'A {B} perdeu a queda de braço na porta da loja pra {A}',
-          'Deu {A} entre as bancas, e a {B} amargou o prejuízo'
+          _t('O comércio fechou no susto: a {A} passou por cima da {B}'),
+          _t('A {B} perdeu a queda de braço na porta da loja pra {A}'),
+          _t('Deu {A} entre as bancas, e a {B} amargou o prejuízo')
         ]
       },
       casa:{
         vitoria:[
-          'A briga chegou na porta da sede e deu {A} pra cima da {B}',
-          '{A} venceu a {B} no portão da sede e pendurou o resultado no muro',
-          'A sede virou praça de guerra: a {A} ficou de pé e a {B} não'
+          _t('A briga chegou na porta da sede e deu {A} pra cima da {B}'),
+          _t('{A} venceu a {B} no portão da sede e pendurou o resultado no muro'),
+          _t('A sede virou praça de guerra: a {A} ficou de pé e a {B} não')
         ],
         derrota:[
-          'Deu {A} na porta da sede, e a {B} recolheu os seus',
-          'A {B} perdeu a batalha da sede: a {A} saiu por cima',
-          'O dia da sede acabou com a {A} por cima e a {B} contando ferido'
+          _t('Deu {A} na porta da sede, e a {B} recolheu os seus'),
+          _t('A {B} perdeu a batalha da sede: a {A} saiu por cima'),
+          _t('O dia da sede acabou com a {A} por cima e a {B} contando ferido')
         ]
       },
       praca:{
         vitoria:[
-          'A praça tem dono hoje: deu {A} pra cima da {B}',
-          '{A} venceu a {B} no meio da praça, com a cidade inteira olhando',
-          'A {B} veio marcar presença na praça e a {A} marcou em cima'
+          _t('A praça tem dono hoje: deu {A} pra cima da {B}'),
+          _t('{A} venceu a {B} no meio da praça, com a cidade inteira olhando'),
+          _t('A {B} veio marcar presença na praça e a {A} marcou em cima')
         ],
         derrota:[
-          'A {B} perdeu a praça no braço: deu {A}',
-          'No coração da cidade, a {A} passou por cima da {B}',
-          'A tarde na praça terminou com a {B} correndo e a {A} por cima'
+          _t('A {B} perdeu a praça no braço: deu {A}'),
+          _t('No coração da cidade, a {A} passou por cima da {B}'),
+          _t('A tarde na praça terminou com a {B} correndo e a {A} por cima')
         ]
       },
       rua:{
         vitoria:[
-          'A rua escolheu lado: deu {A} pra cima da {B}',
-          '{A} venceu a {B} no meio da rua e o bairro inteiro ouviu',
-          'Esquina fechada, rua parada: a {A} saiu andando e a {B} saiu carregada'
+          _t('A rua escolheu lado: deu {A} pra cima da {B}'),
+          _t('{A} venceu a {B} no meio da rua e o bairro inteiro ouviu'),
+          _t('Esquina fechada, rua parada: a {A} saiu andando e a {B} saiu carregada')
         ],
         derrota:[
-          'A {B} cruzou com a {A} na rua errada e pagou o preço',
-          'Deu {A} no asfalto do bairro, e a {B} saiu mancando',
-          'A rua ficou pequena pra {B}: a {A} tomou conta'
+          _t('A {B} cruzou com a {A} na rua errada e pagou o preço'),
+          _t('Deu {A} no asfalto do bairro, e a {B} saiu mancando'),
+          _t('A rua ficou pequena pra {B}: a {A} tomou conta')
         ]
       },
       arredores:{
         vitoria:[
-          'Nos arredores do estádio, deu {A} pra cima da {B} antes do apito',
-          '{A} venceu a {B} a duas quadras do portão e o jogo nem tinha começado',
-          'O entorno do estádio ferveu e a {A} saiu por cima da {B}'
+          _t('Nos arredores do estádio, deu {A} pra cima da {B} antes do apito'),
+          _t('{A} venceu a {B} a duas quadras do portão e o jogo nem tinha começado'),
+          _t('O entorno do estádio ferveu e a {A} saiu por cima da {B}')
         ],
         derrota:[
-          'A {B} não chegou inteira no portão: a {A} estava no caminho',
-          'Deu {A} nos arredores, e a {B} entrou contando os seus',
-          'O caminho do estádio custou caro pra {B}: a {A} cobrou na porrada'
+          _t('A {B} não chegou inteira no portão: a {A} estava no caminho'),
+          _t('Deu {A} nos arredores, e a {B} entrou contando os seus'),
+          _t('O caminho do estádio custou caro pra {B}: a {A} cobrou na porrada')
         ]
       },
       treta:{
         vitoria:[
-          'Marcaram, desceram e deu {A}: a {B} saiu carregada do combinado',
-          'No pau marcado, a {A} cumpriu o trato e a {B} não aguentou',
-          'Hora marcada, lugar marcado e dono marcado: a {A} venceu a {B}'
+          _t('Marcaram, desceram e deu {A}: a {B} saiu carregada do combinado'),
+          _t('No pau marcado, a {A} cumpriu o trato e a {B} não aguentou'),
+          _t('Hora marcada, lugar marcado e dono marcado: a {A} venceu a {B}')
         ],
         derrota:[
-          'A {B} topou o combinado e voltou menor: deu {A}',
-          'No pau marcado, a {B} até foi, mas quem voltou por cima foi a {A}',
-          'A {B} desceu pro combinado e subiu carregada: deu {A}'
+          _t('A {B} topou o combinado e voltou menor: deu {A}'),
+          _t('No pau marcado, a {B} até foi, mas quem voltou por cima foi a {A}'),
+          _t('A {B} desceu pro combinado e subiu carregada: deu {A}')
         ]
       },
       lnt:{
         vitoria:[
-          'Pela LNT, {A} venceu a {B} dez contra dez',
-          'Na liga, a {A} fez valer o regulamento da porrada em cima da {B}',
-          'Dia de LNT: deu {A} pra cima da {B} no campo combinado'
+          _t('Pela LNT, {A} venceu a {B} dez contra dez'),
+          _t('Na liga, a {A} fez valer o regulamento da porrada em cima da {B}'),
+          _t('Dia de LNT: deu {A} pra cima da {B} no campo combinado')
         ],
         derrota:[
-          'Pela LNT, a {B} não aguentou o ritmo da {A}',
-          'A liga cobrou caro da {B}: deu {A} dez contra dez',
-          'Na LNT, a {A} levou a melhor e a {B} saiu devendo'
+          _t('Pela LNT, a {B} não aguentou o ritmo da {A}'),
+          _t('A liga cobrou caro da {B}: deu {A} dez contra dez'),
+          _t('Na LNT, a {A} levou a melhor e a {B} saiu devendo')
         ]
       },
       /* apoio a aliado (pedido do dono, 31/08/2026): a escolta desceu
@@ -250,35 +253,30 @@ TO.porrada = (function(){
          grupo da cena, porque a notícia é a aliança na porrada */
       apoio:{
         vitoria:[
-          'A {AL} foi atacada, a {A} desceu junto e a {B} se arrependeu',
-          '{A} e {AL} lado a lado: a {B} veio pra emboscar e saiu carregada',
-          'Mexeu com a {AL}, mexeu com a {A}: a {B} aprendeu na porrada'
+          _t('A {AL} foi atacada, a {A} desceu junto e a {B} se arrependeu'),
+          _t('{A} e {AL} lado a lado: a {B} veio pra emboscar e saiu carregada'),
+          _t('Mexeu com a {AL}, mexeu com a {A}: a {B} aprendeu na porrada')
         ],
         derrota:[
-          'A {A} atropelou a escolta: {B} e {AL} saíram no prejuízo',
-          'A {B} desceu pela {AL}, mas quem mandou na rua foi a {A}',
-          'Nem junto deu: a {A} venceu a {B} e a {AL} de uma vez'
+          _t('A {A} atropelou a escolta: {B} e {AL} saíram no prejuízo'),
+          _t('A {B} desceu pela {AL}, mas quem mandou na rua foi a {A}'),
+          _t('Nem junto deu: a {A} venceu a {B} e a {AL} de uma vez')
         ]
       }
     },
 
     /* 3 · olho da manchete */
     olho:{
-      completo:['Foi {onde}, {nA} de um lado e {nB} do outro: '+
-                '{fA} {plA} da {A} e {fB} da {B}.'],
-      comPresos:['Foi {onde}, {nA} contra {nB}. Saldo: {F} no chão e '+
-                 '{P} no camburão — a melhor foi da {A}.'],
-      empate:['Foi {onde}, {nA} de um lado e {nB} do outro, e saiu todo '+
-              'mundo contando o que doeu.'],
-      semLuta:['Foi {onde}. Não teve briga: teve prejuízo.'],
+      completo:[_t('Foi {onde}, {nA} de um lado e {nB} do outro: {fA} {plA} da {A} e {fB} da {B}.')],
+      comPresos:[_t('Foi {onde}, {nA} contra {nB}. Saldo: {F} no chão e {P} no camburão — a melhor foi da {A}.')],
+      empate:[_t('Foi {onde}, {nA} de um lado e {nB} do outro, e saiu todo mundo contando o que doeu.')],
+      semLuta:[_t('Foi {onde}. Não teve briga: teve prejuízo.')],
       /* DUAS FRASES, E NÃO UMA (revisão do dono, 22/08/2026): "era
          menos" é sempre sobre o NOSSO lado, e {A} é sempre o vencedor.
          Com um olho só, a derrota em menor número saía dizendo que
          quem venceu é que estava em desvantagem. */
-      menosGanhou:['Foi {onde}. A {A} era {nA} contra {nB} e mandou '+
-                   'embora do mesmo jeito.'],
-      menosPerdeu:['Foi {onde}. A {B} era {nB} contra {nA} e não teve '+
-                   'como segurar a {A}.']
+      menosGanhou:[_t('Foi {onde}. A {A} era {nA} contra {nB} e mandou embora do mesmo jeito.')],
+      menosPerdeu:[_t('Foi {onde}. A {B} era {nB} contra {nA} e não teve como segurar a {A}.')]
     },
 
     /* 4 · as notas das outras brigas do dia (o card aberto) */
@@ -286,16 +284,16 @@ TO.porrada = (function(){
        Gazeta — nenhuma condição entra mais vezes do que tem frase —,
        e com um molde só o dia de seis brigas saía com uma nota. */
     nota:{
-      atropelo:['{A} botou a {B} pra correr e não deu trabalho.',
-                'A {B} nem esquentou: {A} resolveu rápido.',
-                '{A} passou por cima da {B} sem sustos.'],
-      vitoria: ['{A} levou a melhor contra a {B} no aperto.',
-                'Deu {A} sobre a {B}, mas custou caro.',
-                '{A} ganhou da {B} no detalhe.'],
-      empate:  ['{A} e {B} bateram de igual e ninguém levou nada.',
-                'Nem {A} nem {B}: saíram os dois no prejuízo.'],
-      cadeia:  ['{A} sobre a {B}, e a viatura levou {P}.',
-                'Deu {A} sobre a {B} e a noite acabou na delegacia.']
+      atropelo:[_t('{A} botou a {B} pra correr e não deu trabalho.'),
+                _t('A {B} nem esquentou: {A} resolveu rápido.'),
+                _t('{A} passou por cima da {B} sem sustos.')],
+      vitoria: [_t('{A} levou a melhor contra a {B} no aperto.'),
+                _t('Deu {A} sobre a {B}, mas custou caro.'),
+                _t('{A} ganhou da {B} no detalhe.')],
+      empate:  [_t('{A} e {B} bateram de igual e ninguém levou nada.'),
+                _t('Nem {A} nem {B}: saíram os dois no prejuízo.')],
+      cadeia:  [_t('{A} sobre a {B}, e a viatura levou {P}.'),
+                _t('Deu {A} sobre a {B} e a noite acabou na delegacia.')]
     },
 
     /* 6 · A LNT (textos submetidos ao crivo do dono, 23/08/2026)
@@ -303,27 +301,24 @@ TO.porrada = (function(){
        {C} quem desce · {N} quantas torcidas */
     lnt:{
       fundacao:[
-        'A LNT está de pé: {N} torcidas, quatro divisões, dez contra dez'],
+        _t('A LNT está de pé: {N} torcidas, quatro divisões, dez contra dez')],
       fundacaoOlho:[
-        'Duas edições por ano, uma em cada semestre. Cinco rodadas de '+
-        'chave e depois mata-mata; o último de cada chave desce de '+
-        'divisão e o mata-mata dá o acesso. Na 1ª Divisão o campeão '+
-        'leva {P}.'],
+        _t('Duas edições por ano, uma em cada semestre. Cinco rodadas de chave e depois mata-mata; o último de cada chave desce de divisão e o mata-mata dá o acesso. Na 1ª Divisão o campeão leva {P}.')],
       campeao:[
-        '{A} é campeã da {D} da LNT',
-        '{A} levantou a taça da {D} da LNT',
-        'Deu {A} na {D}: a taça da LNT ficou com ela'],
+        _t('{A} é campeã da {D} da LNT'),
+        _t('{A} levantou a taça da {D} da LNT'),
+        _t('Deu {A} na {D}: a taça da LNT ficou com ela')],
       campeaoNos:[
-        'A taça da {D} da LNT é NOSSA',
-        'Somos campeões da {D} da LNT'],
+        _t('A taça da {D} da LNT é NOSSA'),
+        _t('Somos campeões da {D} da LNT')],
       olhoFim:[
-        '{V} ficou com o vice. Sobem: {S}. Descem: {C}.',
-        'O vice foi da {V}. Quem sobe: {S}. Quem desce: {C}.'],
+        _t('{V} ficou com o vice. Sobem: {S}. Descem: {C}.'),
+        _t('O vice foi da {V}. Quem sobe: {S}. Quem desce: {C}.')],
       olhoFimSemDesce:[
-        '{V} ficou com o vice. Sobem: {S}.'],
+        _t('{V} ficou com o vice. Sobem: {S}.')],
       nosso:[
-        'A gente parou {F} da {DN} Divisão.',
-        'A nossa campanha acabou {F} da {DN} Divisão.']
+        _t('A gente parou {F} da {DN}ª Divisão.'),
+        _t('A nossa campanha acabou {F} da {DN}ª Divisão.')]
     },
 
     /* 7 · A OBRA NA PRAÇA (pedido do dono, 21/09/2026)
@@ -348,38 +343,38 @@ TO.porrada = (function(){
          cidade" e o chapéu dizia "na praça" logo acima dela: duas
          palavras pro mesmo lugar, na mesma notícia. */
       chapeu:{
-        abriu:  ['Porta nova na cidade'],
-        ampliou:['Reforma na cidade'],
-        sede:   ['A casa cresceu'],
-        fabrica:['Material próprio'],
-        filial: ['Bandeira fora da cidade']
+        abriu:  [_t('Porta nova na cidade')],
+        ampliou:[_t('Reforma na cidade')],
+        sede:   [_t('A casa cresceu')],
+        fabrica:[_t('Material próprio')],
+        filial: [_t('Bandeira fora da cidade')]
       },
       /* MANCHETE CURTA. A primeira leva tinha frase de linha inteira
          e o recorte saía com seis linhas de caixa alta, o dobro do
          que a página comporta. O número e a comparação descem pro
          olho e pro quadro, que é onde número se lê. */
       abriu:[
-        '{A} abre {O} na cidade',
-        '{A} inaugura {O} na cidade'
+        _t('{A} abre {O} na cidade'),
+        _t('{A} inaugura {O} na cidade')
       ],
       ampliou:[
-        '{A} amplia {O} na cidade',
-        '{A} reforma {O} e ocupa mais rua'
+        _t('{A} amplia {O} na cidade'),
+        _t('{A} reforma {O} e ocupa mais rua')
       ],
       sede:[
-        '{A} amplia a sede',
-        '{A} reforma a casa e ganha espaço'
+        _t('{A} amplia a sede'),
+        _t('{A} reforma a casa e ganha espaço')
       ],
       fabrica:[
-        '{A} monta fábrica própria',
-        '{A} passa a fazer o material dela'
+        _t('{A} monta fábrica própria'),
+        _t('{A} passa a fazer o material dela')
       ],
       /* {C} já vem com a preposição — "no Rio de Janeiro", "em
          Salvador", "na Bahia" —, porque cidade tem gênero e metade
          desta lista é região. A tabela é dados/genero.js. */
       filial:[
-        '{A} abre subsede {C}',
-        '{A} finca bandeira {C}'
+        _t('{A} abre subsede {C}'),
+        _t('{A} finca bandeira {C}')
       ],
       /* o olho: o fato seco e a comparação, na mesma terceira pessoa
          da manchete — era "contra 2 nossos" e "empata com a gente" */
@@ -388,16 +383,16 @@ TO.porrada = (function(){
       /* o fato já disse "na cidade"; repetir na comparação dava
          "abriu um bar novo na cidade… Na cidade são 2 pontos" */
       olhoCompara:[
-        '{F}{C2}. São {N} pontos dela contra {M} da {NN}.'],
+        _t('{F}{C2}. São {N} pontos dela contra {M} da {NN}.')],
       olhoEmpate:[
-        '{F}{C2}. Ela empata com a {NN}: {N} pontos de cada lado.'],
+        _t('{F}{C2}. Ela empata com a {NN}: {N} pontos de cada lado.')],
       olhoNossa:[
-        '{F}{C2}. São {N} pontos dela na cidade.']
+        _t('{F}{C2}. São {N} pontos dela na cidade.')]
     },
 
     /* 5 · quando o país não se pegou */
-    vazio:['O resto do país passou o dia em paz.',
-           'Fora essa, nenhuma outra treta hoje.']
+    vazio:[_t('O resto do país passou o dia em paz.'),
+           _t('Fora essa, nenhuma outra treta hoje.')]
   };
 
   /* ---- o motor de moldes (o mesmo da Gazeta) ---- */
@@ -444,13 +439,31 @@ TO.porrada = (function(){
     arredores:'arredores',
     'treta-beco':'treta', 'treta-galpao':'treta', 'treta-campo':'treta'
   };
-  const ondeDe = d =>{
+  /* o mesmo lugar sem a preposição, pra tarja ("praça", "bar") — era
+     um regex que arrancava o "na"/"no" do texto, e isso só funciona em
+     português */
+  const LUGAR_CENA = {
+    arredores:'arredores do estádio', praca:'praça',
+    rua:'rua de periferia', 'rua-media':'rua de classe média',
+    'rua-nobre':'rua de classe alta', bar:'bar', comercio:'comércio',
+    ct:'CT', sede:'sede', loja:'loja', subsede:'subsede',
+    'estadio-10':'arquibancada', 'estadio-20':'arquibancada',
+    'estadio-40':'arquibancada',
+    'treta-beco':'beco', 'treta-galpao':'pátio do galpão',
+    'treta-campo':'campo de terra',
+    'emb-posto':'posto', 'emb-onibus':'estrada',
+    'casa-piscina':'casa de piscina'
+  };
+  /* A TABELA FICA EM PORTUGUÊS e a conta do bairro repetido também
+     (ela compara com o texto de lá); o que sai pra tela é traduzido.
+     `nua` devolve o lugar sem a preposição, pra tarja. */
+  const ondeDe = (d, nua) =>{
     const c = d.cena || '';
-    const nome = NOMES_CENA[c] || 'na rua';
+    const nome = nua ? _t(LUGAR_CENA[c] || 'rua') : _t(NOMES_CENA[c] || 'na rua');
     const cabe = d.bairro && SEM_BAIRRO.indexOf(c) < 0 &&
                  NOMES_CENA[c] !== `na ${d.bairro}` &&
                  NOMES_CENA[c] !== `no ${d.bairro}`;
-    return cabe ? `${nome}, no bairro ${d.bairro}` : nome;
+    return cabe ? _t('{lugar}, no bairro {bairro}', {lugar:nome, bairro:d.bairro}) : nome;
   };
 
   /* =======================================================
@@ -495,8 +508,12 @@ TO.porrada = (function(){
     /* na LNT o lugar é a fase: o campo de terra é o mesmo toda
        edição, e o que a página precisa dizer é o que estava em jogo */
     const onde = d.lnt
-      ? `${naFaseLNT(d.lnt.fase)} da ${d.lnt.nomeDiv} da LNT`
+      ? _t('{fase} da {div} da LNT', {fase:naFaseLNT(d.lnt.fase), div:_t(d.lnt.nomeDiv)})
       : ondeDe(d);
+    /* o lugar sem preposição, pra tarja */
+    const lugar = d.lnt
+      ? _t('{fase} da {div} da LNT', {fase:faseLNTNua(d.lnt.fase), div:_t(d.lnt.nomeDiv)})
+      : ondeDe(d, true);
     const v = {
       A: venc ? venc.nome : a.nome, B: perd ? perd.nome : b.nome,
       nA: venc === b ? nB : nA, nB: venc === b ? nA : nB,
@@ -504,7 +521,7 @@ TO.porrada = (function(){
       F: fA + fB, P: presos, onde
     };
     /* "1 feridos" não existe: a palavra acompanha o número */
-    v.plA = v.fA === 1 ? 'ferido' : 'feridos';
+    v.plA = v.fA === 1 ? _t('ferido') : _t('feridos');
     /* o aliado escoltado entra na manchete de apoio */
     if(d.aliado) v.AL = d.aliado.nome;
 
@@ -548,13 +565,13 @@ TO.porrada = (function(){
       cabeca:{
         ano: ROMANO(Math.max(1, ano - 2025)),
         edicao: d.edicao || E.brigasNossasTotal || 1,
-        data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
+        data: dataDe(dia, dt)
       },
       tarja: [
-        `<b>${nA + nB}</b> na treta`,
-        `<b>${fA + fB}</b> ${fA + fB === 1 ? 'ferido' : 'feridos'}`,
-        `<b>${presos}</b> ${presos === 1 ? 'preso' : 'presos'}`,
-        onde.replace(/^n[ao]s? /, '').replace(/^num[a]? /, '')
+        _t('<b>{n}</b> na treta', {n:nA + nB}),
+        _tn(fA + fB, '<b>{n}</b> ferido', '<b>{n}</b> feridos'),
+        _tn(presos, '<b>{n}</b> preso', '<b>{n}</b> presos'),
+        lugar
       ],
       chapeu, manchete, olho,
       /* O PLACAR É DE DERRUBADOS, NÃO DE FERIDOS (correção do dono,
@@ -566,7 +583,7 @@ TO.porrada = (function(){
          quem ganhou — e o rótulo mudou junto. O quadro da noite, ao
          lado, continua contando os feridos de cada um. */
       placar:{a:a.nome, ga:fB, gb:fA, b:b.nome, nossaCasa:true,
-              rot:'derrubados',
+              rot:_t('derrubados'),
               venceuA: venc ? venc.nome === a.nome : false,
               venceuB: venc ? venc.nome === b.nome : false},
       /* O QUADRO DA NOITE, no lugar da classificação */
@@ -586,7 +603,7 @@ TO.porrada = (function(){
         const xa = x.a || {}, xb = x.b || {};
         const emp = !x.ganhamos && (xa.caidos||0) === (xb.caidos||0);
         return {
-          onde: x.lnt ? 'na LNT' : ondeDe(x),
+          onde: x.lnt ? _t('na LNT') : ondeDe(x),
           a:{nome:xa.nome, id:xa.id, n:xa.n||0, feridos:xa.caidos||0, presos:xa.presos||0},
           b:{nome:xb.nome, id:xb.id, n:xb.n||0, feridos:xb.caidos||0, presos:xb.presos||0},
           ganhamos: !!x.ganhamos, empate: emp, semResistencia: !!x.semResistencia,
@@ -640,7 +657,7 @@ TO.porrada = (function(){
         frase: encher(proxima(NT[c], 'nota-'+c),
                       {A:venc.nome, B:perd.nome, P:presos}),
         cidade: x.cidade || '',
-        motivo: /×/.test(x.jogo||'') ? `na sombra de ${x.jogo}` : (x.jogo || ''),
+        motivo: /×/.test(x.jogo||'') ? _t('na sombra de {jogo}', {jogo:x.jogo}) : (x.jogo || ''),
         lados:[{nome:x.a.nome, id:x.a.id, n:x.a.n,
                 feridos:x.a.feridos, presos:x.a.presos},
                {nome:x.b.nome, id:x.b.id, n:x.b.n,
@@ -690,19 +707,18 @@ TO.porrada = (function(){
                                              : [p[ch]||0, nos[ch]||0]];
     const meu = nos.total || 0, dele = p.total || 0;
     return {
-      titulo:'O quadro da cidade',
+      titulo:_t('O quadro da cidade'),
       lados: d.nossa
         ? [{nome:d.nomeNossa, id:E.torcida.id, nossa:true},
            {nome:outro.nome, id:outro.id, nossa:false}]
         : [{nome:d.nome, id:d.torcida, nossa:false},
            {nome:d.nomeNossa, id:E.torcida.id, nossa:true}],
-      linhas:[linha('Bares','bares'), linha('Lojas','lojas'),
-              linha('Subsedes','subsedes'),
-              ['Pontos', d.nossa ? [meu, dele] : [dele, meu], true]],
+      linhas:[linha(_t('Bares'),'bares'), linha(_t('Lojas'),'lojas'),
+              linha(_t('Subsedes'),'subsedes'),
+              [_t('Pontos'), d.nossa ? [meu, dele] : [dele, meu], true]],
       /* o pé segue a voz da página: nome, não "a gente" */
-      pe: meu === dele ? 'Empatadas na cidade'
-        : meu > dele ? `${d.nomeNossa} tem mais pontos`
-        : `${outro.nome} tem mais pontos`
+      pe: meu === dele ? _t('Empatadas na cidade')
+        : _t('{nome} tem mais pontos', {nome: meu > dele ? d.nomeNossa : outro.nome})
     };
   }
 
@@ -724,15 +740,15 @@ TO.porrada = (function(){
        pelo nome, na terceira pessoa, e não há mais lista `…Nos` */
     const lista = B[grupo];
     const eles = d.eles || {}, nos = d.nos || {};
-    const v = {A:d.nome, O:O_QUE[d.item] || 'ponto',
+    const v = {A:d.nome, O:_t(O_QUE[d.item] || 'ponto'),
                N:eles.total || 0, M:nos.total || 0,
-               NN:d.nomeNossa || 'a gente',
-               C:d.cidadeEm || 'fora da praça'};
+               NN:d.nomeNossa || _t('a gente'),
+               C:d.cidadeEm || _t('fora da praça')};
 
     /* o olho leva o fato seco e, quando é de outra torcida da praça,
        a comparação — é o que faz a notícia ser NOSSA também */
     v.F = d.frase || '';
-    v.C2 = d.bairro ? `, no bairro ${d.bairro}` : '';
+    v.C2 = d.bairro ? _t(', no bairro {bairro}', {bairro:d.bairro}) : '';
     const molde = nossa ? B.olhoNossa
                 : !d.naPraca ? B.olho
                 : (eles.total === nos.total) ? B.olhoEmpate
@@ -746,7 +762,7 @@ TO.porrada = (function(){
       cabeca:{
         ano: ROMANO(Math.max(1, ano - 2025)),
         edicao: (q.absoluto || E.data.absoluto || 0) + 200,
-        data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
+        data: dataDe(dia, dt)
       },
       /* o chapéu é do tipo de obra pra todo mundo: "Obra nossa" era
          a última primeira pessoa que sobrava, e quem é a torcida já
@@ -772,17 +788,18 @@ TO.porrada = (function(){
     const cabeca = {
       ano: ROMANO(Math.max(1, ano - 2025)),
       edicao: d.n || 1,
-      data: `${DIA_SEM[dia]}, ${dt.getDate()} de ${MES[dt.getMonth()]}`
+      data: dataDe(dia, dt)
     };
     const dinheiro = v => TO.util.dinheiro(v);
 
     if(m.kind === 'lnt-fundacao'){
       const total = (d.divisoes||[]).reduce((s,x)=>s + x.clubes, 0);
       return {
-        cabeca, especial:'A fundação da liga',
-        tarja:[`<b>${total}</b> torcidas`, `<b>4</b> divisões`,
-               `<b>2</b> edições por ano`, 'dez contra dez'],
-        chapeu:'Nasce a liga',
+        cabeca, especial:_t('A fundação da liga'),
+        tarja:[_tn(total, '<b>{n}</b> torcida', '<b>{n}</b> torcidas'),
+               _t('<b>{n}</b> divisões', {n:4}),
+               _t('<b>{n}</b> edições por ano', {n:2}), _t('dez contra dez')],
+        chapeu:_t('Nasce a liga'),
         manchete: encher(proxima(L.fundacao, 'lnt-man'), {N:total}),
         olho: encher(proxima(L.fundacaoOlho, 'lnt-olho'),
                      {P:dinheiro(300000)}),
@@ -798,24 +815,25 @@ TO.porrada = (function(){
          e quem DESCE é o último de cada chave dela mesma */
       const sobem = ((d.campeoes || [])[1] || {}).sobem || '';
       const nos = d.nosso && /Campeão/.test(d.nosso.fase) && d.nosso.div === 1;
-      const v = {D:'1ª Divisão', A:c.campeao || '—', V:c.vice || '—',
+      const nDecididas = (d.campeoes || []).length;
+      const v = {D:_t('1ª Divisão'), A:c.campeao || '—', V:c.vice || '—',
                  S: sobem || '—', C: c.caem || '—'};
       const olho = c.caem
         ? encher(proxima(L.olhoFim, 'lnt-olho'), v)
         : encher(proxima(L.olhoFimSemDesce, 'lnt-olho'), v);
       const meu = d.nosso ? encher(proxima(L.nosso, 'lnt-nosso'),
         {F: /Campeão|Vice/.test(d.nosso.fase)
-             ? `como ${d.nosso.fase.toLowerCase()}`
+             ? _t('como {fase}', {fase:_t(d.nosso.fase).toLowerCase()})
              : `${naFaseLNT(d.nosso.fase)}`,
-         DN: d.nosso.div + 'ª'}) : '';
+         DN: d.nosso.div}) : '';
       return {
-        cabeca, especial:`${d.semestre}º semestre de ${d.ano}`,
-        tarja:[`<b>${d.n}ª</b> edição`,
-               `<b>${(d.campeoes||[]).length}</b> divisões decididas`,
-               d.nosso ? `nós na <b>${d.nosso.div}ª</b>` : 'nós de fora',
+        cabeca, especial:_t('{n}º semestre de {ano}', {n:d.semestre, ano:d.ano}),
+        tarja:[_t('<b>{n}ª</b> edição', {n:d.n}),
+               _tn(nDecididas, '<b>{n}</b> divisão decidida', '<b>{n}</b> divisões decididas'),
+               d.nosso ? _t('nós na <b>{n}ª</b>', {n:d.nosso.div}) : _t('nós de fora'),
                d.nosso && d.nosso.premio
-                 ? `<b>${dinheiro(d.nosso.premio)}</b> de prêmio` : 'sem prêmio'],
-        chapeu:'Fim de LNT',
+                 ? _t('<b>{valor}</b> de prêmio', {valor:dinheiro(d.nosso.premio)}) : _t('sem prêmio')],
+        chapeu:_t('Fim de LNT'),
         manchete: encher(proxima(nos ? L.campeaoNos : L.campeao, 'lnt-man'), v),
         olho, meu,
         campeoes: d.campeoes || []
@@ -832,11 +850,29 @@ TO.porrada = (function(){
      "24 clubes", saía "na 24 clubes". Agora o gênero vem do mesmo
      dados/genero.js do resto do jogo, e sobra aqui só o que é
      próprio da LNT: a chave contada, que é montada na hora. */
+  /* EM ESPANHOL E EM INGLÊS a fase vai com o nome original, pro
+     gênero achar a tradução, e só desce pra minúscula depois — em
+     português o texto sai igual. A rodada de chave ("2ª rodada") e a
+     chave contada ("24 clubes") são montadas na hora e têm frase
+     própria. */
   const naFaseLNT = f => {
     const b = String(f || '').trim();
-    if(!b) return 'na fase';
-    if(/clubes$/i.test(b)) return `na fase de ${b.toLowerCase()}`;
-    return TO.genero.em('fase', b.toLowerCase());
+    if(!b) return _t('na fase');
+    const cl = b.match(/^(\d+) clubes$/i);
+    if(cl) return _t('na fase de {n} clubes', {n:cl[1]});
+    const rd = b.match(/^(\d+)ª rodada$/i);
+    if(rd) return _t('na {n}ª rodada', {n:rd[1]});
+    return TO.genero.em('fase', b).toLowerCase();
+  };
+  /* a mesma fase sem a preposição, pra tarja */
+  const faseLNTNua = f => {
+    const b = String(f || '').trim();
+    if(!b) return _t('fase');
+    const cl = b.match(/^(\d+) clubes$/i);
+    if(cl) return _t('fase de {n} clubes', {n:cl[1]});
+    const rd = b.match(/^(\d+)ª rodada$/i);
+    if(rd) return _t('{n}ª rodada', {n:rd[1]});
+    return _t(b).toLowerCase();
   };
 
   return {montar, montarLNT, montarObra, MOLDES, encher, ondeDe,
