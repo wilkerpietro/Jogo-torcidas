@@ -45,7 +45,7 @@ with open(os.path.join(A, 'dados/escudos_embutidos.js'), 'w', encoding='utf-8') 
 PY
 n=$(grep -n '^TO.dados.cenaEstadio = (function(){' "$R/dados/cena_estadio.js" | cut -d: -f1)
 head -n $((n - 1)) "$R/dados/cena_estadio.js" > "$A/dados/cena_estadio.js"
-for f in construtor3d casas3d sede3d metro3d equip3d modelos3d props3d modelos_atlas arvores3d praia3d; do
+for f in construtor3d casas3d sede3d metro3d equip3d modelos3d props3d modelos_atlas arvores3d arvores_lowpoly praia3d; do
   sed "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
     "$R/js/diajogo/$f.js" > "$A/js/$f.js"
 done

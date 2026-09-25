@@ -267,6 +267,7 @@ import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
 import { montarShopping, montarDelegacia, montarPraca } from './js/equip3d.js';
 import { montarArvore, ESPECIES, FLORA } from './js/arvores3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez } from './js/arvores_lowpoly.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -1967,9 +1968,10 @@ function selecionar(it, rolar) {
 }
 
 /* ======================================================
-   OS MODELOS 3D: o catálogo do que ainda não entrou no mapa — as
-   árvores de todos os mapas (js/arvores3d.js) e as peças da praia
-   (js/praia3d.js). Cada um abre grande no 3D, com a ficha.
+   OS MODELOS 3D: o catálogo do que ainda não entrou no mapa — as dez
+   árvores low poly (js/arvores_lowpoly.js), as peças da praia
+   (js/praia3d.js) e as árvores de cartão de todos os mapas
+   (js/arvores3d.js). Cada um abre grande no 3D, com a ficha.
    ====================================================== */
 const GRUPOS_FLORA = { mata: 'Mata', cerrado: 'Cerrado', caatinga: 'Caatinga', cidade: 'Cidade', praia: 'Praia', sul: 'Sul' };
 const CHAO_FLORA = { mata: '#6b7f4a', cerrado: '#b3a868', caatinga: '#b9a98a', cidade: '#8f9a78', praia: '#dccb9e', sul: '#6f8a52' };
@@ -1978,6 +1980,38 @@ const MODELOS = [];
 function malhasDoDestino(destino, g, placas) {
   for (const [lista, m] of Object.entries(destino)) { const mm = malhaDeBlocos(m, lista); if (mm) g.add(mm); }
   for (const p of placas || []) placaDoModelo(g, p);
+}
+/* as árvores low poly (js/arvores_lowpoly.js): as dez juntas, pra comparar,
+   e cada uma sozinha */
+MODELOS.push({
+  tipo: 'modelo', id: 'lowpoly-as-dez', secao: 'Árvores low poly', grupo: 'As dez', nome: 'As dez juntas', semente: 1, info: null, chao: '#8f9a78',
+  /* a câmera de frente pras duas filas (o enquadramento soma 0,55 rad ao rumo da frente) */
+  frente: [-Math.sin(0.55), Math.cos(0.55)],
+  nota: 'As dez juntas, pra comparar: as altas atrás (jequitibá, araucária, coqueiro, ingá, mangueira), de 11 em 11 m, e as baixas na frente, desencontradas.',
+  montar(g) { const destino = {}; this.info = montarAsDez({}, destino, this.semente); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+  ficha() {
+    const i = this.info;
+    return `<p class="sobre">Modelo 3D · árvore low poly</p><h2>${esc(this.nome)}</h2>` + linhas([
+      ['Espécies', '10'], ['A mais alta', i ? metros(i.altura * M) : '…'], ['Triângulos', i ? String(Math.round(i.triangulos)) + ' (as dez)' : '…'], ['Semente', String(this.semente)]
+    ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
+    `<p class="nota">A copa é sólido facetado (bolas de 80 faces, mexidas no vértice), o tronco é prisma, e a cor é chapada, uma por face — sem textura e sem recorte. Cada árvore tem de 280 a 690 triângulos. <code>js/diajogo/arvores_lowpoly.js</code>.</p>`;
+  }
+});
+for (const [id, e] of Object.entries(ESPECIES_LP)) {
+  MODELOS.push({
+    tipo: 'modelo', id: 'lowpoly-' + id, secao: 'Árvores low poly', grupo: GRUPOS_FLORA[e.lugar], nome: e.nome, nota: e.nota,
+    chao: CHAO_FLORA[e.lugar], semente: 1, info: null,
+    montar(g) { const destino = {}; this.info = montarArvoreLowpoly(id, {}, destino, this.semente); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+    ficha() {
+      const i = this.info, onde = Object.entries(FLORA_LP).filter(([, t]) => t[id]).map(([k]) => GRUPOS_FLORA[k].toLowerCase());
+      return `<p class="sobre">Modelo 3D · árvore low poly · ${esc(this.grupo.toLowerCase())}</p><h2>${esc(this.nome)}</h2>` + linhas([
+        ['Altura', i ? metros(i.altura * M) : '…'], ['Copa', i ? metros(i.raio * 2 * M) + ' de largura' : '…'],
+        ...(i && i.flor ? [['Flor', i.flor]] : []),
+        ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)], ['Vai em', onde.join(', '), true]
+      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
+      `<p class="nota">Low poly: a copa facetada, o tronco em prisma e a cor chapada por face, sem textura. A semente dá outro galho, outra copa, outro tamanho (±12%) e outro tom. <code>js/diajogo/arvores_lowpoly.js</code>.</p>`;
+    }
+  });
 }
 for (const [id, p] of Object.entries(PECAS_PRAIA)) {
   MODELOS.push({
@@ -2065,6 +2099,8 @@ function material(folha) {
      cartão vem nas duas, cada uma com a normal de fora da copa */
   else if (folha === 'folhagem') materiais[folha] = new THREE.MeshLambertMaterial({
     map: textura('vegetacao'), vertexColors: true, side: THREE.FrontSide, alphaTest: 0.45, alphaToCoverage: true });
+  /* a árvore low poly: só a cor de cada face, chapada, sem mapa */
+  else if (folha === 'lowpoly') materiais[folha] = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
   /* a rede do vôlei: a folha da vegetação, mas transparente de verdade (e
      não recortada) — a malha fina, na média do mipmap, fica abaixo de
      qualquer limiar: recortada, ou some ou vira faixa preta; misturada,
@@ -2645,6 +2681,7 @@ function frenteDe(it) {
   if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') return NORMAL[it.q.equip.frente] || null;
   if (it.tipo === 'estacao') return NORMAL[it.est.entra] || null;
   if (it.tipo === 'quadraNova' && temModelo(it.q)) return NORMAL[it.q.equip.frente || 's'] || null;
+  if (it.tipo === 'modelo') return it.frente || null;
   return null;
 }
 function criarVista(canvas) {

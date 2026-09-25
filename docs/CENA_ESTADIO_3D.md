@@ -2802,6 +2802,53 @@ Custo, em triângulos:
 5. **As 25 praças de mata dividem a mesma mata.** A `FLORA` não separa a Mata Atlântica da Amazônia: o açaí aparece em todas.
 
 
+### 4.44. As dez árvores low poly
+
+O dono pediu uma variedade de dez árvores low poly. Elas são a outra família de árvore do jogo, em `js/diajogo/arvores_lowpoly.js`:
+
+- `ESPECIES_LP` é o catálogo;
+- `FLORA_LP` diz o que vai em cada lugar;
+- `montarArvoreLowpoly(especie, onde, destino, semente)` monta uma;
+- `especieLowpolyDe(lugar, rnd)` sorteia uma espécie do lugar;
+- `montarAsDez` põe as dez juntas, pra comparar.
+
+A de cartão (4.43) continua lá. Nada disso entrou no mapa ainda. Na aba Modelos 3D, as low poly vêm primeiro, e o catálogo abre em **As dez juntas**: as altas atrás, as baixas na frente, desencontradas, com a câmera de frente.
+
+| lugar | espécies (peso) |
+|---|---|
+| cidade | oiti 5, mangueira 2, ipê 2 |
+| mata | ingá 4, jequitibá 1, ipê 1 |
+| cerrado | pequizeiro 5, ipê 2 |
+| caatinga | catingueira 5, mandacaru 3 |
+| praia | coqueiro 1 |
+| sul | araucária 3, ingá 2 |
+
+O ipê é um só; a semente dá a cor. Em mil sementes saíram 42% amarelo, 32% roxo, 16% rosa e 10% branco.
+
+**Como é feita.** Sem textura e sem recorte:
+
+- **A copa** é um sólido facetado: bolas de 80 faces (o icosaedro dividido uma vez). Cada vértice é mexido até 14% do raio, com a mesma mexida pro vértice que as faces dividem, senão abre fresta. O fundo às vezes sai chato, e as faces de baixo, mais escuras (a sombra de dentro da copa). Uma copa são de três a seis bolas: a do meio e as das pontas dos galhos.
+- **O tronco e o galho** são prismas de três a sete lados, dobrados na curva, com o anel levado de um ponto ao outro sem torcer. Fecham na ponta.
+- **A cor** é chapada, uma por face (no prisma, uma por quadrado), com um tremor de ±7% de face pra face. É o que dá o jeito de low poly.
+- **As formas próprias:**
+  - a folha do coqueiro é uma fita dobrada em V, com a borda em serra;
+  - o tufo da araucária é um prato (a lente de seis lados);
+  - o mandacaru é a coluna de cinco costelas, com a ponta redonda;
+  - a catingueira é só galho, dividido três vezes;
+  - a sapopema do jequitibá são cinco aletas;
+  - o ipê tem o tapete de flor no chão, a mangueira a manga na beira da copa, e o coqueiro o cacho de coco.
+
+Tudo sai numa lista só, `lowpoly`, com a posição e a cor de cada face; a UV vai zerada. O material é o de cor de vértice, sem mapa, com `flatShading`. A semente dá outro galho, outra copa, outro tamanho (±12%) e outro tom.
+
+**Custo.** De 280 a 690 triângulos por árvore (vinte sementes de cada), e 5.100 as dez juntas. A de cartão tem de 400 a 3.700. Mil árvores low poly dão uns 500 mil triângulos, e com instância (a mesma árvore copiada) ficam ainda mais baratas.
+
+**O que ficou aberto:**
+
+1. **Nada entrou no mapa.**
+2. **A escolha das dez é minha.** Cobre os seis lugares com a silhueta mais diferente possível. Faltam, se precisar, o juazeiro, o buriti, a palmeira-imperial, a amendoeira, a embaúba e o açaí.
+3. **O estilo não é o dos prédios.** A árvore low poly é de cor chapada, e os prédios e as casas têm textura. Com a mesma luz e a mesma sombra a mistura funciona, mas é uma decisão de estilo: ou a cidade inteira vai pro low poly, ou a árvore fica sendo a exceção.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -3331,8 +3378,9 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/arvores3d.js` | as árvores de todos os mapas: as dezoito espécies (`ESPECIES`), o que vai em cada lugar (`FLORA`: mata, cerrado, caatinga, cidade, praia, sul) e a montagem de cada uma pela semente — o tronco varrido, a copa de cachos com a normal de volume, a fronde da palmeira, o cacto. Devolve as listas `vegetacao` e `folhagem`. Por enquanto só a aba Modelos 3D da planta usa |
+| `js/diajogo/arvores_lowpoly.js` | as dez árvores low poly (`ESPECIES_LP`: oiti, mangueira, ipê, jequitibá, ingá, pequizeiro, catingueira, mandacaru, coqueiro e araucária), o que vai em cada lugar (`FLORA_LP`) e a montagem pela semente: a copa de bolas facetadas, o tronco em prisma e a cor chapada por face, sem textura, numa lista só (`lowpoly`); e `montarAsDez`, as dez juntas. Por enquanto só a aba Modelos 3D da planta usa |
 | `js/diajogo/praia3d.js` | as onze peças da praia em 3D (`PECAS_PRAIA`: guarda-sol, mesa, barraca, posto, quadra, os dois quiosques, calçadão, beira do mar com a onda, jangada e barco de pesca), no tamanho de verdade, com a semente; devolve os blocos e os decalques. Por enquanto só a aba Modelos 3D da planta usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta a mata, o cerrado ou o mato seco da caatinga, pela `vegetacao` da praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos), tem a aba **Modelos 3D** (as peças da praia e as árvores, cada uma grande no 3D, com a ficha e a semente) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta a mata, o cerrado ou o mato seco da caatinga, pela `vegetacao` da praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos), tem a aba **Modelos 3D** (as dez árvores low poly, as peças da praia e as árvores de cartão, cada uma grande no 3D, com a ficha e a semente) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
 | `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia`, `temLagoa` e `vegetacao` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça), da praia (a folha `praia`: deck, lona, tecido do guarda-sol, palha, tábua pintada, balcão de azulejo, cardápio, geladeira, freezer, mesa, vela, casco, canga, prancha) e das árvores (a folha `vegetacao`, com alfa: o cacho de copa de cada espécie, a flor do ipê, a fronde, o leque do buriti, o tufo da araucária, as cascas, o cacto, o coco e a rede do vôlei) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
