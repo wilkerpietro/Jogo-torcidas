@@ -983,7 +983,7 @@ const TONS_PISO = { cimentado: ['#cdc8bc', '#c2bdb0', '#d5d0c5', '#bcb7ac'], lad
                     bloquete: ['#c0bcb2', '#bd7a60', '#aeaaa1', '#c98b6f'], grama: ['#ffffff'] };
 
 function montarCalcadas() {
-  const C = { rets: [], pols: [], bordas: [], cantos: [], faixas: [], moveis: [], zebras: [], bocas: [], covas: [], tateis: [], pedacos: [], alt: CALCADA_ALT };
+  const C = { rets: [], pols: [], bordas: [], cantos: [], faixas: [], enchimentos: [], moveis: [], zebras: [], bocas: [], covas: [], tateis: [], pedacos: [], alt: CALCADA_ALT };
   const noRet = (r, x, y, m = 0) => x > r.x0 - m && x < r.x1 + m && y > r.y0 - m && y < r.y1 + m;
   const E = PROP.entrada;
   /* AS QUADRAS COM CALÇADA: a de hoje que fica (a da beira da praia tem
@@ -1009,15 +1009,33 @@ function montarCalcadas() {
   /* QUEM OCUPA O CHÃO: a quadra (com calçada ou não), a célula de hoje que
      é quadra, campo ou estádio, a rua, a avenida, a favela, o Atacadex e
      a praia */
-  const todas = PROP.quadras.map(q => ({ x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 })).concat(lista.filter(Q => Q.hoje).map(Q => Q.r));
+  /* (a quadra que a costa recorta vale pelo polígono: a caixa dela passa da avenida da beira) */
+  const todas = PROP.quadras.map(q => ({ x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 })).concat(lista.filter(Q => Q.hoje).map(Q => Q.cortada ? { ...Q.r, pol: Q.fora } : Q.r));
   const quadraEm = IndiceRet(todas, r => r);
   const ruaEm = IndiceRet(PROP.quadras.filter(q => q.rua), q => q.rua);
   const lotesFav = IndiceRet(lotesFavelaNova, it => ({ x0: it.bb.x0 - 12, x1: it.bb.x1 + 12, y0: it.bb.y0 - 12, y1: it.bb.y1 + 12 }));
-  const celulaHoje = (x, y) => { const c = K.celulaEm(x, y); return !!c && (c.tipo === 'campo' || c.tipo === 'estadio' || (c.tipo === 'quadra' && !PROP.substitui.has(c.i + ',' + c.j))); };
-  const emQuadra = (x, y) => quadraEm(x, y).some(r => noRet(r, x, y)) || celulaHoje(x, y);
-  const ehAsfalto = (x, y) => !emQuadra(x, y) && (K.naRua(x, y) || PROP.naAvenida(x, y, 0) || ruaEm(x, y).some(q => noRet(q.rua, x, y)));
+  /* A COSTA: o mar, a areia e a orla (a zona do jogo) contam onde o mapa
+     pinta a praia ou a lagoa; na praça sem nenhuma das duas, a zona da
+     costa é pintada de mato (até a rua de hoje que corria pra areia some
+     no desenho) — e é mato: tem calçada de borda e grade */
+  const temCosta = temPraia() || temLagoa();
+  const naZonaCosta = (x, y) => { const z = K.zona(x, y); return z === 'mar' || z === 'praia' || z === 'orla'; };
+  const sumiu = (x, y) => !temCosta && naZonaCosta(x, y);
+  const celulaHoje = (x, y) => { const c = K.celulaEm(x, y); return !!c && (c.tipo === 'campo' || c.tipo === 'estadio' || (c.tipo === 'quadra' && !PROP.substitui.has(c.i + ',' + c.j))) && !sumiu(x, y); };
+  const emQuadra = (x, y) => quadraEm(x, y).some(r => noRet(r, x, y) && (!r.pol || dentro(x, y, r.pol))) || celulaHoje(x, y);
+  const ehAsfalto = (x, y) => !emQuadra(x, y) && ((K.naRua(x, y) && !sumiu(x, y)) || PROP.naAvenida(x, y, 0) || ruaEm(x, y).some(q => noRet(q.rua, x, y)));
   const naFavela = (x, y) => PROP.naFavelaNova(x, y) || lotesFav(x, y).some(it => noRet({ x0: it.bb.x0 - 12, x1: it.bb.x1 + 12, y0: it.bb.y0 - 12, y1: it.bb.y1 + 12 }, x, y));
-  const ocupado = (x, y) => { const z = K.zona(x, y); return z === 'mar' || z === 'praia' || z === 'orla' || emQuadra(x, y) || ehAsfalto(x, y) || naFavela(x, y) || PROP.noAtacadex(x, y, 30); };
+  const naCosta = (x, y, comOrla = true) => { if (!temCosta) return false; const z = K.zona(x, y); return z === 'mar' || z === 'praia' || (comOrla && z === 'orla'); };
+  /* a calçada pintada das avenidas (dentro da cidade de hoje e em volta
+     da quadra nova, como o desenho pinta): é chão de cidade, não mato */
+  const contornoHoje = K.CONTORNO.map(([a, b]) => K.pxm(a, b)), cbb = bbox(contornoHoje);
+  const emVoltaDaNova = IndiceRet(PROP.quadras.map(q => ({ x0: q.x0 - RUA / 2, x1: q.x1 + RUA / 2, y0: q.y0 - RUA / 2, y1: q.y1 + RUA / 2 })), r => r);
+  const naCalcadaPintada = (x, y) => ((x > cbb.x0 && x < cbb.x1 && y > cbb.y0 && y < cbb.y1 && dentro(x, y, contornoHoje)) || emVoltaDaNova(x, y).some(r => noRet(r, x, y))) &&
+    PROP.avenidas.some(a => PROP.distAvenida(x, y, a) < a.l / 2 + CALC) && !sumiu(x, y);
+  const ocupado = (x, y) => naCosta(x, y) || emQuadra(x, y) || ehAsfalto(x, y) || naFavela(x, y) || PROP.noAtacadex(x, y, 0.6 * M) || naCalcadaPintada(x, y);
+  /* a calçada da borda não entra na zona da costa (no mapa sem praia a
+     avenida da beira corta a grade na diagonal: do outro lado dela é mato) */
+  const semLugar = (x, y) => ocupado(x, y) || naZonaCosta(x, y);
   /* a largura da rua a partir de um ponto da guia, pra fora (0: não tem rua) */
   const larguraEm = (px, py, n) => {
     const asf = d => ehAsfalto(px + n[0] * d, py + n[1] * d);
@@ -1043,6 +1061,10 @@ function montarCalcadas() {
     return ws.length ? Math.min(...ws) : 0;
   };
   for (const Q of lista) Q.w = { n: largura(Q, 'n'), s: largura(Q, 's'), o: largura(Q, 'o'), l: Q.cortada ? 0 : largura(Q, 'l') };
+  /* a quadra do estádio e a da Praça da Vila não têm o anel de calçada,
+     mas a rua em volta delas tem o outro lado: entram na conta da borda */
+  const semAnel = PROP.quadras.filter(q => q.estadio || (temModelo(q) && q.equip.tipo === 'praca')).map(q => ({ r: { x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 } }));
+  for (const Q of semAnel) Q.w = { n: largura(Q, 'n'), s: largura(Q, 's'), o: largura(Q, 'o'), l: largura(Q, 'l') };
 
   /* A CALÇADA DA BORDA: do outro lado de cada rua, onde não tem quadra nem
      nada (é mato). A horizontal passa por cima das esquinas; a vertical
@@ -1062,17 +1084,17 @@ function montarCalcadas() {
       }
     }
   };
-  for (const Q of lista) {
+  for (const Q of lista.concat(semAnel)) {
     const r = Q.r, w = Q.w;
     for (const lado of ['n', 's']) {
       if (w[lado] < 30) continue;
       const yf = lado === 'n' ? r.y0 - w[lado] : r.y1 + w[lado], yc = lado === 'n' ? yf - CALC / 2 : yf + CALC / 2;
-      faixa(lado + ':' + Math.round(yf), r.x0 - w.o - CALC, r.x1 + w.l + CALC, x => !ocupado(x, yc));
+      faixa(lado + ':' + Math.round(yf), r.x0 - w.o - CALC, r.x1 + w.l + CALC, x => !semLugar(x, yc));
     }
     for (const lado of ['o', 'l']) {
       if (w[lado] < 30) continue;
       const xf = lado === 'o' ? r.x0 - w[lado] : r.x1 + w[lado], xc = lado === 'o' ? xf - CALC / 2 : xf + CALC / 2;
-      faixa(lado + ':' + Math.round(xf), r.y0 - w.n, r.y1 + w.s, y => !ocupado(xc, y));
+      faixa(lado + ':' + Math.round(xf), r.y0 - w.n, r.y1 + w.s, y => !semLugar(xc, y));
     }
   }
   for (const [chave, ints] of linhas) {
@@ -1082,6 +1104,13 @@ function montarCalcadas() {
     for (const [a, b] of ints) { if (U.length && a <= U[U.length - 1][1] + 1) U[U.length - 1][1] = Math.max(U[U.length - 1][1], b); else U.push([a, b]); }
     for (const [a, b] of U) C.faixas.push(lado === 'n' ? { x0: a, x1: b, y0: c - CALC, y1: c, guia: 's' } : lado === 's' ? { x0: a, x1: b, y0: c, y1: c + CALC, guia: 'n' }
                                         : lado === 'o' ? { x0: c - CALC, x1: c, y0: a, y1: b, guia: 'l' } : { x0: c, x1: c + CALC, y0: a, y1: b, guia: 'o' });
+  }
+  /* A CALÇADA DO ATACADEX: o estacionamento dele fica a 4 m da pista da
+     avenida de entrada — é a calçada da avenida, na frente dele (até a
+     linha da grade dele, meio metro além do estacionamento) */
+  if (PROP.atacadex && PROP.atacadex.bb.x0 > E.x1 + 1) {
+    const b = PROP.atacadex.bb;
+    C.faixas.push({ x0: E.x1, x1: b.x0, y0: b.y0 - 0.5 * M, y1: b.y1 + 0.5 * M, guia: 'o' });
   }
 
   /* AS LAJES: o anel de cada quadra em quatro retângulos (menos o asfalto
@@ -1101,6 +1130,116 @@ function montarCalcadas() {
   for (const f of C.faixas) rets.push({ x0: f.x0, x1: f.x1, y0: f.y0, y1: f.y1, tipo: 'faixa', piso: 'cimentado', tom: TONS_PISO.cimentado[0], larg: CALC });
   const xc0 = E.x0 + E.pista, xc1 = xc0 + E.canteiro;
   for (const [a, b] of E.canteiros) if (b - a > 20) rets.push({ x0: xc0, x1: xc1, y0: a, y1: b, tipo: 'canteiro', piso: 'grama', tom: '#ffffff', larg: E.canteiro });
+
+  /* O VÃO FINO: a calçada da borda que para a menos de 5 m do asfalto, do
+     Atacadex ou de outra calçada deixa um fiapo de mato entre duas grades
+     coladas (a da beira dela e a do outro) — o fiapo vira calçada: um
+     polígono da beira dela até o que tem do outro lado (no asfalto, com
+     guia). Só onde no meio é mato: favela, quadra e costa não entram */
+  {
+    const VAO = 5 * M, MIN = 0.25 * M, lajes = rets.filter(r => r.tipo !== 'canteiro'), idxL = IndiceRet(lajes, r => r);
+    const naLaje0 = (x, y) => idxL(x, y).some(r => noRet(r, x, y)) ||
+      C.pols.some(pl => noRet(pl.r, x, y) && dentro(x, y, pl.fora) && !(pl.dentro && dentro(x, y, pl.dentro))) ||
+      C.enchimentos.some(e => noRet(e.r, x, y) && dentro(x, y, e.fora));
+    const alvo = (x, y) => ehAsfalto(x, y) || PROP.noAtacadex(x, y, 0) || naLaje0(x, y);
+    const passa = (x, y) => !naCosta(x, y) && !emQuadra(x, y) && !naFavela(x, y);
+    /* de P pra fora (n): quanto até o alvo, se no caminho só tem mato (senão null) */
+    const vaoEm = (px, py, n) => {
+      const em = d => alvo(px + n[0] * d, py + n[1] * d);
+      if (em(0.6)) return 0;
+      for (let d = 6; d <= VAO + 6; d += 6) {
+        if (em(d)) { let a = d - 6, b = d; for (let i = 0; i < 8; i++) { const m = (a + b) / 2; if (em(m)) b = m; else a = m; } return b <= VAO ? b : null; }
+        if (!passa(px + n[0] * d, py + n[1] * d)) return null;
+      }
+      return null;
+    };
+    /* o que pode estar do outro lado (a caixa): só perto disso vale medir */
+    const caixas = [];
+    if (PROP.atacadex) caixas.push(PROP.atacadex.bb);
+    for (const av of PROP.avenidas) for (let k = 1; k < av.pontos.length; k++) {
+      const [ax, ay] = av.pontos[k - 1], [bx, by] = av.pontos[k], h = av.l / 2;
+      caixas.push({ x0: Math.min(ax, bx) - h, x1: Math.max(ax, bx) + h, y0: Math.min(ay, by) - h, y1: Math.max(ay, by) + h });
+    }
+    for (const q of PROP.quadras) if (q.rua) caixas.push(q.rua);
+    for (const pl of C.pols) caixas.push(pl.r);
+    caixas.push(bbox(K.CONTORNO.map(([a, b]) => K.pxm(a, b))));
+    for (const r of lajes) caixas.push(r);
+    const ok = d => d !== null && d >= MIN;
+    /* um lado da faixa, de A a B, com a normal pra fora `n` */
+    const encher = (A, B, n, fonte) => {
+      const L = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      if (L < 1) return;
+      const u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L], P = t => [A[0] + u[0] * t, A[1] + u[1] * t];
+      const cx = { x0: Math.min(A[0], B[0]) + Math.min(0, n[0] * VAO), x1: Math.max(A[0], B[0]) + Math.max(0, n[0] * VAO),
+                   y0: Math.min(A[1], B[1]) + Math.min(0, n[1] * VAO), y1: Math.max(A[1], B[1]) + Math.max(0, n[1] * VAO) };
+      const ints = [];
+      for (const b of caixas) {
+        if (b === fonte || b.x0 >= cx.x1 || b.x1 <= cx.x0 || b.y0 >= cx.y1 || b.y1 <= cx.y0) continue;
+        const ts = [[b.x0, b.y0], [b.x1, b.y0], [b.x0, b.y1], [b.x1, b.y1]].map(([x, y]) => (x - A[0]) * u[0] + (y - A[1]) * u[1]);
+        const a = Math.max(0, Math.min(...ts) - 8), c = Math.min(L, Math.max(...ts) + 8);
+        if (c > a) ints.push([a, c]);
+      }
+      if (!ints.length) return;
+      ints.sort((p, q) => p[0] - q[0]);
+      const U = [];
+      for (const [a, c] of ints) { if (U.length && a <= U[U.length - 1][1] + 1) U[U.length - 1][1] = Math.max(U[U.length - 1][1], c); else U.push([a, c]); }
+      const d = t => vaoEm(...P(t), n);
+      for (const [a0, a1] of U) {
+        /* as amostras de 5 em 5; onde muda (o fim do vão, o degrau), a conta fina */
+        const am = [];
+        for (let t = a0; ; t += 5) { const tt = Math.min(t, a1); am.push([tt, d(tt)]); if (tt >= a1) break; }
+        const pts = [];                                  // [t, d] do vão, com o degrau em pé
+        const fecha = () => {
+          if (pts.length >= 2 && pts[pts.length - 1][0] - pts[0][0] > 0.4 * M) {
+            const fora = [P(pts[0][0]), P(pts[pts.length - 1][0])];
+            const lado = [];
+            for (let k = pts.length - 1; k >= 0; k--) { const [t, dd] = pts[k], Q = P(t); lado.push([Q[0] + n[0] * dd, Q[1] + n[1] * dd]); }
+            /* tira o ponto do meio de três em linha (o lado reto fica um segmento só) */
+            const lim = [lado[0]];
+            for (let k = 1; k < lado.length - 1; k++) {
+              const [ax, ay] = lim[lim.length - 1], [bx, by] = lado[k], [cx2, cy2] = lado[k + 1];
+              const cr = Math.abs((bx - ax) * (cy2 - ay) - (by - ay) * (cx2 - ax)) / (Math.hypot(cx2 - ax, cy2 - ay) || 1);
+              if (cr > 0.3) lim.push(lado[k]);
+            }
+            lim.push(lado[lado.length - 1]);
+            const poli = fora.concat(lim);
+            C.enchimentos.push({ fora: poli, r: bbox(poli) });
+          }
+          pts.length = 0;
+        };
+        for (let k = 0; k < am.length; k++) {
+          const [t, dd] = am[k];
+          if (k > 0) {
+            const [t0, d0] = am[k - 1];
+            if (ok(d0) !== ok(dd)) {
+              /* o fim (ou o começo) do vão */
+              let lo = t0, hi = t;
+              for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (ok(d(m)) === ok(d0)) lo = m; else hi = m; }
+              if (ok(d0)) { pts.push([lo, d(lo)]); fecha(); } else { const dh = d(hi); if (ok(dh)) pts.push([hi, dh]); }
+            } else if (ok(dd) && Math.abs(dd - d0) > 1.5) {
+              /* o degrau (a laje do lado e o Atacadex, por exemplo): em pé */
+              let lo = t0, hi = t;
+              for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2, dm = d(m); if (ok(dm) && Math.abs(dm - d0) < 0.8) lo = m; else hi = m; }
+              pts.push([lo, d(lo)]);
+              const dh = d(hi);
+              if (ok(dh)) pts.push([hi, dh]);
+            }
+          }
+          if (ok(dd)) pts.push([t, dd]);
+        }
+        fecha();
+      }
+    };
+    for (const f of C.faixas) {
+      const r = rets.find(x => x.tipo === 'faixa' && x.x0 === f.x0 && x.x1 === f.x1 && x.y0 === f.y0 && x.y1 === f.y1);
+      /* (o lado da guia dá pra rua: esse não) */
+      if (f.guia !== 'n') encher([f.x0, f.y0], [f.x1, f.y0], [0, -1], r);
+      if (f.guia !== 's') encher([f.x0, f.y1], [f.x1, f.y1], [0, 1], r);
+      if (f.guia !== 'o') encher([f.x0, f.y0], [f.x0, f.y1], [-1, 0], r);
+      if (f.guia !== 'l') encher([f.x1, f.y0], [f.x1, f.y1], [1, 0], r);
+    }
+    for (const e of C.enchimentos) C.pols.push({ fora: e.fora, dentro: null, r: e.r, piso: 'cimentado', tom: TONS_PISO.cimentado[0], tipo: 'anel', nova: true, larg: CALC, vao: true });
+  }
 
   /* O CONTORNO: de cada lado de cada retângulo, o pedaço que nenhum outro
      cobre do lado de fora; e cada pedaço, pelo que tem do lado de fora,
@@ -1188,7 +1327,8 @@ function montarCalcadas() {
      Aerolândia): a tela verde de poste em poste em cima da mureta de
      concreto. Vai onde a cidade encosta no mato: atrás da calçada da
      borda (na beira dela, em cima da laje) e da quadra que dá direto pro
-     mato; em volta da favela e do Atacadex; dos dois lados das avenidas
+     mato; em volta da favela (do que ela ocupa, não do contorno desenhado)
+     e do Atacadex; dos dois lados das avenidas
      onde elas correm no mato (a de entrada fora da cidade; a da beira,
      na praça sem praia), a meio metro do asfalto (no pórtico ela passa
      pelo pilar); e, no litoral, na beira da areia ao norte e ao sul da
@@ -1197,7 +1337,7 @@ function montarCalcadas() {
   const ehMato = (x, y) => !ocupado(x, y) && !C.naLaje(x, y);
   /* na beira da areia a zona do jogo ainda diz "orla" (a calçada da
      avenida da beira, que ao norte e ao sul da cidade é mato pintado) */
-  const ehMatoDaCosta = (x, y) => { const z = K.zona(x, y); return z !== 'mar' && z !== 'praia' && !emQuadra(x, y) && !ehAsfalto(x, y) && !naFavela(x, y) && !PROP.noAtacadex(x, y, 30) && !C.naLaje(x, y); };
+  const ehMatoDaCosta = (x, y) => !naCosta(x, y, false) && !emQuadra(x, y) && !ehAsfalto(x, y) && !naFavela(x, y) && !PROP.noAtacadex(x, y, 30) && !C.naLaje(x, y);
   /* os trechos de A a B em que `ok(x, y)` vale: [t0, t1] em unidades */
   const trechos = (A, B, ok) => {
     const dx = B[0] - A[0], dy = B[1] - A[1], L = Math.hypot(dx, dy), out = [];
@@ -1221,25 +1361,171 @@ function montarCalcadas() {
   };
   /* a grade ao longo de A→B, deslocada `d` pra normal `n` (que aponta pro mato),
      nos trechos em que o ponto a `teste` dali (pro lado do mato) é mato */
-  const cercar = (A, B, n, d, teste, y0, mato = ehMato) => {
+  const cercar = (A, B, n, d, teste, y0, mato = ehMato, dono = null) => {
     const L = Math.hypot(B[0] - A[0], B[1] - A[1]);
     if (L < 1) return;
     const u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L];
     for (const [t0, t1] of trechos(A, B, (x, y) => mato(x + n[0] * teste, y + n[1] * teste)))
-      C.grades.push({ ax: A[0] + u[0] * t0 + n[0] * d, ay: A[1] + u[1] * t0 + n[1] * d, bx: A[0] + u[0] * t1 + n[0] * d, by: A[1] + u[1] * t1 + n[1] * d, nx: n[0], ny: n[1], y0 });
+      C.grades.push({ ax: A[0] + u[0] * t0 + n[0] * d, ay: A[1] + u[1] * t0 + n[1] * d, bx: A[0] + u[0] * t1 + n[0] * d, by: A[1] + u[1] * t1 + n[1] * d, nx: n[0], ny: n[1], y0, dono });
   };
   C.grades = [];
-  for (const b of C.bordas) if (!b.guia && b.tipo !== 'canteiro') cercar([b.ax, b.ay], [b.bx, b.by], [b.nx, b.ny], -0.12 * M, 3, CALCADA_ALT);
+  /* (o teste a meio metro da beira: a fresta de uns centímetros entre a
+     calçada e o asfalto não é mato) */
+  for (const b of C.bordas) if (!b.guia && b.tipo !== 'canteiro') cercar([b.ax, b.ay], [b.bx, b.by], [b.nx, b.ny], -0.12 * M, 0.5 * M, CALCADA_ALT);
   const normalPraFora = (pts, A, B) => {
     const L = Math.hypot(B[0] - A[0], B[1] - A[1]);
     let n = [(B[1] - A[1]) / L, -(B[0] - A[0]) / L];
     if (dentro(A[0] / 2 + B[0] / 2 + n[0] * 2, A[1] / 2 + B[1] / 2 + n[1] * 2, pts)) n = [-n[0], -n[1]];
     return n;
   };
-  const contornar = (pts, d) => { for (let i = 0; i < pts.length; i++) { const A = pts[i], B = pts[(i + 1) % pts.length];
-    if (Math.hypot(B[0] - A[0], B[1] - A[1]) > 1) cercar(A, B, normalPraFora(pts, A, B), d, d + 0.6 * M, 0); } };
-  for (const f of PROP.favelas) contornar(f.poly, 0.4 * M);
-  if (PROP.atacadex) contornar(PROP.atacadex.area, 0.5 * M);
+  /* A GRADE DA FAVELA: em volta do que ela ocupa de verdade — as casas, os
+     becos e o campinho —, a um metro deles, em degrau (a favela é da grade
+     da cidade). O contorno desenhado da favela não serve: ele passa por
+     dentro dela (corta beco e deixa fileira de casa de fora). Numa grade
+     de um metro: marca o que é da favela, fecha as frestas de até uns 5 m
+     (engorda 3 células e emagrece 2), tapa os buracos, e a grade vai em
+     cada lado de célula da borda que dá pro mato (a favela vizinha, a
+     rua, a calçada e a quadra não são mato; o contorno dela também não) */
+  const chaoDaCidade = (x, y) => emQuadra(x, y) || ehAsfalto(x, y) || naCalcadaPintada(x, y) || C.naLaje(x, y);
+  const matoForaDaFavela = (x, y) => !naCosta(x, y, false) && !emQuadra(x, y) && !ehAsfalto(x, y) && !naCalcadaPintada(x, y) &&
+    !C.naLaje(x, y) && !PROP.noAtacadex(x, y, 0.55 * M) && !lotesFav(x, y).some(it => dentro(x, y, it.pol));
+  for (const f of PROP.favelas) {
+    const casas = lotesFavelaNova.filter(it => it.favelaNova === f), becos = f.becos || [];
+    if (!casas.length) continue;
+    const c = M;
+    let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+    const cresce = (x, y) => { bx0 = Math.min(bx0, x); by0 = Math.min(by0, y); bx1 = Math.max(bx1, x); by1 = Math.max(by1, y); };
+    for (const it of casas) { cresce(it.bb.x0, it.bb.y0); cresce(it.bb.x1, it.bb.y1); }
+    for (const t of becos) for (const [x, y] of t) cresce(x, y);
+    const x0 = bx0 - 8 * c, y0 = by0 - 8 * c, nx = Math.ceil((bx1 - bx0) / c) + 16, ny = Math.ceil((by1 - by0) / c) + 16;
+    let g = new Uint8Array(nx * ny);
+    const meio = (i, j) => [x0 + (i + 0.5) * c, y0 + (j + 0.5) * c];
+    for (const it of casas) {
+      const i0 = Math.max(0, Math.floor((it.bb.x0 - x0) / c)), i1 = Math.min(nx - 1, Math.floor((it.bb.x1 - x0) / c));
+      const j0 = Math.max(0, Math.floor((it.bb.y0 - y0) / c)), j1 = Math.min(ny - 1, Math.floor((it.bb.y1 - y0) / c));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const [x, y] = meio(i, j); if (dentro(x, y, it.pol)) g[j * nx + i] = 1; }
+    }
+    /* o beco: cada pedaço marca as células da caixa dele que ficam a meia largura da reta */
+    const marca = r => {
+      const i0 = Math.max(0, Math.floor((r.x0 - x0) / c)), i1 = Math.min(nx - 1, Math.floor((r.x1 - x0) / c));
+      const j0 = Math.max(0, Math.floor((r.y0 - y0) / c)), j1 = Math.min(ny - 1, Math.floor((r.y1 - y0) / c));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) if (!r.fn || r.fn(...meio(i, j))) g[j * nx + i] = 1;
+    };
+    for (const t of becos) {
+      const r = (t.w || 44) / 2;
+      for (let k = 0; k + 1 < t.length; k++) {
+        const [ax, ay] = t[k], [bx, by] = t[k + 1], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+        marca({ x0: Math.min(ax, bx) - r, x1: Math.max(ax, bx) + r, y0: Math.min(ay, by) - r, y1: Math.max(ay, by) + r, fn: (x, y) => {
+          const u = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2)) : 0;
+          return Math.hypot(x - ax - dx * u, y - ay - dy * u) <= r; } });
+      }
+    }
+    if (f.campinho) marca(f.campinho);
+    /* engorda e emagrece (no quadrado, o degrau fica reto): a janela corre
+       na linha e depois na coluna, contando quantas células cheias tem */
+    const morfo = (a, r, engorda) => {
+      const passo = (de, pra, horiz) => {
+        const A = horiz ? ny : nx, B = horiz ? nx : ny, W = 2 * r + 1;
+        for (let a2 = 0; a2 < A; a2++) {
+          const k = b2 => horiz ? a2 * nx + b2 : b2 * nx + a2;
+          let soma = 0;
+          for (let b2 = -r; b2 < r; b2++) if (b2 >= 0 && b2 < B) soma += de[k(b2)];
+          for (let b2 = 0; b2 < B; b2++) {
+            if (b2 + r < B) soma += de[k(b2 + r)];
+            pra[k(b2)] = engorda ? (soma > 0 ? 1 : 0) : (soma === W ? 1 : 0);
+            if (b2 - r >= 0) soma -= de[k(b2 - r)];
+          }
+        }
+      };
+      const t = new Uint8Array(nx * ny), b = new Uint8Array(nx * ny);
+      passo(a, t, true); passo(t, b, false);
+      return b;
+    };
+    /* o vão estreito (até uns 5 m) entre a favela e o chão da cidade (a
+       rua, a calçada, a quadra) é da favela: ela encosta na cidade sem
+       sobrar bolsão de mato com grade (o Atacadex fica de fora: com ele a
+       grade é a dele, acertada lá embaixo) */
+    const cid = new Uint8Array(nx * ny);
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const [x, y] = meio(i, j); if (chaoDaCidade(x, y)) cid[j * nx + i] = 1; }
+    const g3 = morfo(g, 3, true), c3 = morfo(cid, 3, true);
+    for (let k = 0; k < nx * ny; k++) if (g3[k] && c3[k] && !cid[k]) g[k] = 1;
+    g = morfo(morfo(g, 3, true), 2, false);
+    for (let k = 0; k < nx * ny; k++) if (cid[k]) g[k] = 0;
+    /* os buracos de dentro (o que não se chega da borda da grade) viram favela */
+    const fora = new Uint8Array(nx * ny), fila = [];
+    const semente = k => { if (!g[k] && !fora[k]) { fora[k] = 1; fila.push(k); } };
+    for (let i = 0; i < nx; i++) { semente(i); semente((ny - 1) * nx + i); }
+    for (let j = 0; j < ny; j++) { semente(j * nx); semente(j * nx + nx - 1); }
+    for (let q = 0; q < fila.length; q++) {
+      const k = fila[q], i = k % nx, j = (k - i) / nx;
+      if (i > 0) semente(k - 1);
+      if (i < nx - 1) semente(k + 1);
+      if (j > 0) semente(k - nx);
+      if (j < ny - 1) semente(k + nx);
+    }
+    for (let k = 0; k < nx * ny; k++) if (!fora[k]) g[k] = 1;
+    /* a borda: em cada linha (e coluna), o lado de célula que dá pro mato, em corridas */
+    const ok = (i, j) => { const [x, y] = meio(i, j); return matoForaDaFavela(x, y); };
+    const corre = lado => {
+      const hor = lado === 'n' || lado === 's', di = lado === 'o' ? -1 : lado === 'l' ? 1 : 0, dj = lado === 'n' ? -1 : lado === 's' ? 1 : 0;
+      const A = hor ? ny : nx, B = hor ? nx : ny;
+      for (let a = 0; a < A; a++) {
+        let ini = -1;
+        for (let b2 = 0; b2 <= B; b2++) {
+          const i = hor ? b2 : a, j = hor ? a : b2, ii = i + di, jj = j + dj;
+          const borda = b2 < B && !!g[j * nx + i] && !(ii >= 0 && jj >= 0 && ii < nx && jj < ny && g[jj * nx + ii]) && ok(ii, jj);
+          if (borda && ini < 0) ini = b2;
+          if (!borda && ini >= 0) {
+            if (hor) { const y = y0 + (a + (lado === 's' ? 1 : 0)) * c; C.grades.push({ ax: x0 + ini * c, ay: y, bx: x0 + b2 * c, by: y, nx: 0, ny: dj, y0: 0, dono: 'favela' }); }
+            else { const x = x0 + (a + (lado === 'l' ? 1 : 0)) * c; C.grades.push({ ax: x, ay: y0 + ini * c, bx: x, by: y0 + b2 * c, nx: di, ny: 0, y0: 0, dono: 'favela' }); }
+            ini = -1;
+          }
+        }
+      }
+    };
+    for (const lado of ['n', 's', 'o', 'l']) corre(lado);
+  }
+  /* O ATACADEX: em volta do estacionamento, a meio metro dele (os lados
+     emendam no canto), menos onde ele dá pra calçada ou pra rua — pra
+     favela também: entre os dois, a grade é a dele */
+  if (PROP.atacadex) {
+    const pts = PROP.atacadex.area, d = 0.5 * M;
+    const aberto = (x, y) => !C.naLaje(x, y) && !ehAsfalto(x, y) && !emQuadra(x, y);
+    for (let i = 0; i < pts.length; i++) {
+      const A = pts[i], B = pts[(i + 1) % pts.length], L = Math.hypot(B[0] - A[0], B[1] - A[1]);
+      if (L < 1) continue;
+      const u = [(B[0] - A[0]) / L, (B[1] - A[1]) / L];
+      cercar([A[0] - u[0] * d, A[1] - u[1] * d], [B[0] + u[0] * d, B[1] + u[1] * d], normalPraFora(pts, A, B), d, M, 0, aberto, 'atacadex');
+    }
+    /* a favela colada nele (a menos de 3 m): a grade dela que corre de
+       frente pra dele sai, e as pontas do corredor fecham até a dele */
+    const doAt = C.grades.filter(g => g.dono === 'atacadex'), novas = [];
+    for (const g of C.grades) {
+      if (g.dono !== 'favela') { novas.push(g); continue; }
+      const hor = g.ay === g.by;
+      let partes = [[Math.min(hor ? g.ax : g.ay, hor ? g.bx : g.by), Math.max(hor ? g.ax : g.ay, hor ? g.bx : g.by)]];
+      const fixo = hor ? g.ay : g.ax, sn = hor ? g.ny : g.nx;
+      for (const a of doAt) {
+        if ((a.ay === a.by) !== hor) continue;
+        const fa = hor ? a.ay : a.ax, sa = hor ? a.ny : a.nx;
+        if (sa !== -sn || (fa - fixo) * sn <= 0 || Math.abs(fa - fixo) > 3 * M) continue;
+        const a0 = Math.min(hor ? a.ax : a.ay, hor ? a.bx : a.by), a1 = Math.max(hor ? a.ax : a.ay, hor ? a.bx : a.by);
+        const res = [];
+        for (const [p0, p1] of partes) {
+          const c0 = Math.max(p0, a0), c1 = Math.min(p1, a1);
+          if (c1 - c0 < 0.5) { res.push([p0, p1]); continue; }
+          if (c0 - p0 > 0.5) res.push([p0, c0]);
+          if (p1 - c1 > 0.5) res.push([c1, p1]);
+          /* as pontas do corredor: de uma grade à outra */
+          for (const [v, s2] of [[c0, -1], [c1, 1]])
+            novas.push(hor ? { ax: v, ay: fixo, bx: v, by: fa, nx: s2, ny: 0, y0: 0, dono: 'favela' } : { ax: fixo, ay: v, bx: fa, by: v, nx: 0, ny: s2, y0: 0, dono: 'favela' });
+        }
+        partes = res;
+      }
+      for (const [p0, p1] of partes) novas.push(hor ? { ...g, ax: p0, bx: p1 } : { ...g, ay: p0, by: p1 });
+    }
+    C.grades = novas;
+  }
   const LADO_AV = 0.5 * M;
   for (const av of PROP.avenidas) {
     const pts = av.pontos;
@@ -1973,7 +2259,8 @@ function desenhar() {
   const veg = prop ? vegetacao() : 'caatinga';
   const padrao = chao === 'mascara' ? null : chao ? padraoRasteira(veg) : veg === 'mata' ? padraoMata() : veg === 'cerrado' ? padraoCerrado() : null;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = chao === 'mascara' ? COR.mato : chao ? CHAO_VEG[veg] || COR.mato : veg === 'mata' ? '#2c4424' : veg === 'cerrado' ? '#a39d5e' : COR.mato;
+  const fundoMato = chao === 'mascara' ? COR.mato : chao ? CHAO_VEG[veg] || COR.mato : veg === 'mata' ? '#2c4424' : veg === 'cerrado' ? '#a39d5e' : COR.mato;
+  ctx.fillStyle = fundoMato;
   ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(dpr * s, 0, 0, dpr * s, -dpr * s * ox, -dpr * s * oy);
   if (padrao) { ctx.fillStyle = padrao; ctx.fillRect(vis.x0, vis.y0, vis.x1 - vis.x0, vis.y1 - vis.y0); }
@@ -1983,11 +2270,12 @@ function desenhar() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.strokeStyle = COR.trilha; ctx.lineWidth = 16;
   for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
-  if (!padrao && chao !== 'mascara') for (const m of K.MOITAS) {
+  const moitas = (so = null) => { if (!padrao && chao !== 'mascara') for (const m of K.MOITAS) {
     if (m.x + m.r < vis.x0 || m.x - m.r > vis.x1 || m.y + m.r < vis.y0 || m.y - m.r > vis.y1) continue;
-    if (prop && somePelaProposta(m.x, m.y)) continue;
+    if ((prop && somePelaProposta(m.x, m.y)) || (so && !so(m.x, m.y))) continue;
     ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
-  }
+  } };
+  moitas();
   if (prop) for (const f of PROP.favelas) for (const m of f.moitas) {
     ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
   }
@@ -2066,8 +2354,14 @@ function desenhar() {
      ou lagoa tem a lagoa ---- */
   /* no chão do cenário o mar vai até a borda do ladrilho */
   const X1 = MUNDO.x1 + (chao ? 100000 : 200);
-  if (prop && temLagoa()) desenharLagoa(px);
-  else if (!prop || temPraia()) {
+  if (prop && (temLagoa() || !temPraia())) {
+    /* sem praia (mato ou lagoa): da beira oeste da orla pro leste é mato —
+       a rua de hoje que corria até a areia não fica solta no mato */
+    const zc = fechado(costa(K.PRAIA + K.ORLA), X1);
+    pol(zc, fundoMato); if (padrao) pol(zc, padrao);
+    moitas((x, y) => { const z = K.zona(x, y); return z === 'orla' || z === 'praia' || z === 'mar'; });
+    if (temLagoa()) desenharLagoa(px);
+  } else if (!prop || temPraia()) {
     /* no mapa a orla acaba onde a beira-mar acaba */
     const bm = prop && PROP.avenidas.find(a => a.id === 'beiramar');
     const orla = bm ? costa(K.PRAIA + K.ORLA, bm.pontos[0][1], bm.pontos[bm.pontos.length - 1][1]) : costa(K.PRAIA + K.ORLA);
@@ -2091,6 +2385,8 @@ function desenhar() {
   if (prop) desenharProposta(ve, px);
   /* ---- a calçada da borda da cidade (do outro lado da rua, no mato) ---- */
   if (prop && CALCADAS) for (const f of CALCADAS.faixas) if (ve(f)) ret(f, COR.calcada);
+  /* (e o vão fino que virou calçada) */
+  if (prop && CALCADAS) for (const e of CALCADAS.enchimentos) if (ve(e.r)) pol(e.fora, COR.calcada);
 
   /* ---- as avenidas por cima ---- */
   for (const av of avenidas) {
@@ -4556,7 +4852,7 @@ function notasDaProposta() {
     <li><b>As avenidas tortas saíram</b> (fica só a da beira, que segue a praia ou a lagoa): a entrada da cidade, no norte e no sul, é a avenida duplicada entre as colunas 1 e 2 de quadras.</li>
     <li><b>A calçada</b> é laje de 7 cm com o meio-fio de concreto e a sarjeta; o piso é cimentado ou ladrilho hidráulico na quadra de hoje, bloquete ou ladrilho na nova. Em cima: o poste de concreto num lado de cada rua (de 34 em 34 m), a árvore na cova de terra (na quadra nova; a de hoje já tem as dela), o cesto de lixo, o hidrante e a placa da rua na esquina. No chão: a faixa de pedestre rente à esquina, com o piso tátil amarelo nas pontas, e a boca de lobo na sarjeta.</li>
     <li><b>Até a rua que não tem casa do outro lado</b> (a da borda, que dá pro mato) tem calçada, meio-fio, poste e árvore.</li>
-    <li><b>A grade de proteção</b> (a tela verde de poste em poste, em cima da mureta) corre toda a divisa entre a cidade e o mato: atrás da calçada da borda, em volta das favelas e do Atacadex, dos dois lados da avenida fora da cidade e na beira da areia. No cenário a pé o boneco não passa pro mato.</li>
+    <li><b>A grade de proteção</b> (a tela verde de poste em poste, em cima da mureta) corre toda a divisa entre a cidade e o mato: atrás da calçada da borda, em volta das favelas (pelo que elas ocupam — as casas, os becos e o campinho —, não pelo contorno desenhado) e do Atacadex, dos dois lados da avenida fora da cidade e na beira da areia. Onde sobrava um fiapo de mato entre duas grades, ele virou calçada. Na praça sem praia, a grade corre do lado de fora da avenida da beira. No cenário a pé o boneco não passa pro mato.</li>
     <li><b>As pichações</b> são das torcidas da praça (o nome, a sigla, a sigla com o ano, o grito do clube), na cor de cada uma, de quem é o bairro (perto da sede dela), e têm a altura do boneco.</li>
   </ul>
   <h3>Os bares e as sedes da torcida</h3>
