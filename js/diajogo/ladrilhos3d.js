@@ -37,7 +37,9 @@
    objeto está (é o meio dele que escolhe o ladrilho: a casa inteira cai
    num ladrilho só, e a de perto e a de longe trocam juntas) e o que ele
    vira de longe:
-     'predio'  blocos de altura (só os triângulos das malhas `impostor`);
+     'predio'  blocos de altura (só os triângulos das malhas `impostor`) —
+               ou, se quem montou mandou, a `longe` pronta dele (o hospital,
+               a escola: a caixa com as faixas de janela);
      'arvore'  `longe`, a versão de longe da árvore, já no mundo;
      'alto'    uma haste da base ao topo (poste, mastro, semáforo);
      'mesmo'   os mesmos triângulos (o carro);
@@ -400,12 +402,12 @@ export function emLadrilhos(grupos, opc = {}) {
         guardar(o._lad.perto, m, t);
         /* o que a versão de longe do objeto precisa: o prédio, só das
            malhas que fazem o volume (a janela de grade e o decalque não) */
-        if (PRECISA[o.tipo] && (o.tipo !== 'predio' || L.impostor !== false)) (o._tris || (o._tris = [])).push(m, t);
+        if (PRECISA[o.tipo] && !o.longe && (o.tipo !== 'predio' || L.impostor !== false)) (o._tris || (o._tris = [])).push(m, t);
       }
     }
     /* o objeto que só tem versão de longe pronta (a árvore) também cai
        no ladrilho dele, mesmo sem triângulo tiled (não acontece hoje) */
-    for (const o of objs) if (o.tipo === 'arvore' && o.longe && !o._lad) { o._lad = ladrilho(o.x, o.z); o._lad.objetos.push(o); }
+    for (const o of objs) if (o.longe && !o._lad) { o._lad = ladrilho(o.x, o.z); o._lad.objetos.push(o); }
   }
 
   const matLonge = opc.materialLonge || new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
@@ -437,8 +439,8 @@ export function emLadrilhos(grupos, opc = {}) {
     /* a versão de longe dos objetos do ladrilho */
     const F = { pos: [], cor: [] };
     for (const o of t.objetos) {
-      if (o.tipo === 'predio') predio(o, F);
-      else if (o.tipo === 'arvore' && o.longe) { for (const v of o.longe.pos) F.pos.push(v); for (const v of o.longe.cor) F.cor.push(v); }
+      if (o.longe) { for (const v of o.longe.pos) F.pos.push(v); for (const v of o.longe.cor) F.cor.push(v); }
+      else if (o.tipo === 'predio') predio(o, F);
       else if (o.tipo === 'alto' && o._tris) haste(o, F);
       else if (o.tipo === 'mesmo' && o._tris) copiarTriangulos(o, F, false);
       else if (o.tipo === 'chao' && o._tris) copiarTriangulos(o, F, true);

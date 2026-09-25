@@ -1274,9 +1274,11 @@ TO.dados.plantaEstadio = (function(){
       p('muro', { x0: px1, x1: bx1, y0: Y1 - 8, y1: Y1, alt: 44, cor: '#c6c2b6' });
       p('arvore', { x: X0 + 22, y: Y1 - 26, r: 16 }, false);
       p('arvore', { x: X1 - 22, y: Y1 - 26, r: 16 }, false);
-      p('cruz', { x: cx - 120, y: Y0 + fundo, base: 150, ox: 0, oz: 1, tam: 44 }, false);
-      /* acima do telhado da ala oeste, senão ela come metade do letreiro */
-      p('letreiro', { x: cx + 40, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 26, base: 152 }, false);
+      /* a cruz e o nome vão no ANDAR DE CIMA da lâmina, no painel liso que
+         o modelo (js/diajogo/equip_antigo3d.js) deixa entre as janelas —
+         acima do telhado da ala oeste, senão ela come metade do letreiro */
+      p('cruz', { x: cx - 120, y: Y0 + fundo, base: 181, ox: 0, oz: 1, tam: 44 }, false);
+      p('letreiro', { x: cx + 40, y: Y0 + fundo, ox: 0, oz: 1, texto: 'HOSPITAL MUNICIPAL', placa: true, larg: 148, altura: 26, base: 190 }, false);
       p('letreiro', { x: mx0 + 59, y: my1, ox: 0, oz: 1, texto: 'PRONTO-SOCORRO', placa: true, larg: 96, altura: 20, base: 62 }, false);
     }
 
@@ -1364,11 +1366,12 @@ TO.dados.plantaEstadio = (function(){
         for(const ax of [(kx0*2 + kx1)/3, (kx0 + kx1*2)/3])
           p('bomba', Object.assign({ alt: 52 }, ret(ax, ay, 16, 22)));
       }
-      p('totem', { x0: X1 - 46, x1: X1 - 20, y0: Y1 - 52, y1: Y1 - 26, alt: 150, cor: '#1f6a3a' });
+      p('totem', { x0: X1 - 46, x1: X1 - 20, y0: Y1 - 52, y1: Y1 - 26, alt: 150, cor: '#c8232c' });
       p('carro', { x0: kx0 + 34, x1: kx0 + 70, y0: ky0 + 34, y1: ky0 + 68, cor: escolher(CORES_CARRO_EQ) });
       fila(3, X0 + 30, cx - lw/2 - 30, x => p('arvore', { x, y: Y0 + 34, r: 18 }, false));
+      /* a placa branca de letra vermelha, na faixa da marca (a marca é nossa) */
       p('letreiro', { x: cx, y: ky0 - 26, ox: 0, oz: 1, texto: 'POSTO BEIRA-ESTRADA', placa: true,
-                      larg: Math.min(130, lw - 16), altura: 22, base: 48 }, false);
+                      larg: Math.min(130, lw - 16), altura: 22, base: 48, fundo: '#f4f3ee', tinta: '#c8232c' }, false);
     }
 
     if(tipo === 'galeria'){
@@ -1427,7 +1430,11 @@ TO.dados.plantaEstadio = (function(){
       fila(3, ex0, X1 - 42, x => fila(6, Y0 + 12, Y1 - 44, y => piso(x - 2, y - 1, x + 38, y + 1, '#e8e5da')));
       fila(4, Y0 + 40, Y1 - 40, y => p('poste', { x: ex0 - 12, y, dx: 1, dz: 0 }, false));
       p('totem', { x0: X1 - 30, x1: X1 - 10, y0: Y1 - 34, y1: Y1 - 14, alt: 190, cor: '#3a4a66' });
-      p('letreiro', { x: cx - larg*0.03, y: Y0 + fundo + 26, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true, larg: 150, altura: 30, base: 112 }, false);
+      /* o nome vai na fachada da caixa, a oeste da torre de vidro e acima
+         da marquise: na frente da torre (4 m) a placa de 7,7 m ficava
+         pendurada no ar dos dois lados */
+      p('letreiro', { x: (bx0 + cx - larg*0.18)/2, y: Y0 + fundo, ox: 0, oz: 1, texto: 'SHOPPING BEIRA-MAR', placa: true,
+                      larg: Math.min(150, cx - larg*0.18 - bx0 - 16), altura: 30, base: 90 }, false);
       p('arvore', { x: X1 - 22, y: Y0 + 22, r: 16 }, false);
     }
     if(tipo === 'baldio'){

@@ -606,7 +606,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                     y0: hz ? fr.y0 : a, y1: hz ? fr.y1 : a + larg,
                     alt: par8(entre(T.alt[0], T.alt[1], si, sj, fi, k, 4)) || T.alt[0],
                     cor: T.cor[hash(si, sj, fi, k, 5) % T.cor.length],
-                    quadra: { i: q.i, j: q.j, proposta: true } };
+                    quadra: { i: q.i, j: q.j, proposta: true, ix0: q.ix0, ix1: q.ix1, iy0: q.iy0, iy1: q.iy1 } };
         a += larg; k++;
         if (tocaAvenida(l) || noEstadio(l)) continue;
         /* o comércio e o recado na parede, na mesma proporção da cidade */

@@ -39,8 +39,11 @@
    espalhadas, no lote que a planta escolhe (`l.muro`).
 
    QUEM VIRA O QUÊ sai da POSIÇÃO do lote, não do `rng()` da planta:
-   a cidade continua a mesma casa por casa, só muda a roupa. Só o muro
-   continua com o desenho antigo do bairro.
+   a cidade continua a mesma casa por casa, só muda a roupa.
+
+   E o LOTE DE MURO, que era uma caixa da altura do muro no lote inteiro,
+   é o TERRENO BALDIO: o muro fino na frente (e no lado que dá pra rua),
+   a terra, o capim e a bananeira low poly e o entulho atrás.
 
    A FAVELA É LOW POLY: a casa da favela e as oito casas grandes saem
    no modo chapado do construtor — cada face numa cor lisa, tirada da
@@ -162,6 +165,16 @@ export function planoDaCasa(l, K) {
       p.porta = 2.4;
       p.placa = { y: (p.porta + 0.12) * M + alt / 2, larg, alt };
     }
+    l._plano = p;
+    return p;
+  }
+  /* O LOTE DE MURO É TERRENO BALDIO: o muro fino na frente (e no lado
+     que dá pra rua, na esquina e no quarteirão raso) e a terra com o
+     mato atrás dele. Antes era uma caixa da altura do muro no lote
+     inteiro — um bloco de 2 m sem sentido nenhum. */
+  if (l.tipo === 'muro' && !l.favela) {
+    const [W, D] = medidas(l);
+    p = { tipo: 'baldio', rec: 0.05, W, D, H: l.alt / M, s: sorteDe(l), semManchas: true, muro: true };
     l._plano = p;
     return p;
   }
@@ -2246,7 +2259,155 @@ function barTorcidaDireita(B, p, l, conta, G, letras) {
   }
 }
 
-const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4,
+/* =======================================================
+   O TERRENO BALDIO — o lote de muro
+   O muro de 20 cm na divisa da frente, na altura que a planta deu
+   (1,9 a 2,5 m): de bloco aparente, de reboco cru ou de reboco pintado
+   e desbotado, às vezes com o portão de chapa. Na esquina e no
+   quarteirão raso o lado que dá pra rua também é muro (senão o lote
+   ficava aberto pra calçada, e a máscara, que tranca o lote inteiro,
+   virava parede invisível). Os lados que encostam no vizinho não têm
+   muro: a parede da casa do lado é que fecha.
+   Dentro, terra batida com mato ralo (a textura corre com um desvio
+   sorteado, pra dois baldios vizinhos não saírem iguais), uma a quatro
+   moitas de capim, às vezes a bananeira e o monte de entulho.
+   ======================================================= */
+const TINTA_BALDIO = ['#e9e4d6', '#e0d6b6', '#cfd8c6', '#e6cdb8', '#d3dbe2', '#e8dfb4', '#d9d4ca', '#e4d9cc'];
+/* de que lado do lote (esquerda, direita, fundo de quem olha a frente)
+   fica cada divisa do retângulo do mundo */
+const LADOS_DO_LOTE = { n: { esq: 'l', dir: 'o', fundo: 's' }, s: { esq: 'o', dir: 'l', fundo: 'n' },
+                        o: { esq: 'n', dir: 's', fundo: 'l' }, l: { esq: 's', dir: 'n', fundo: 'o' } };
+/* os lados do lote que caem na borda do miolo do quarteirão — a calçada */
+export function ladosNaRua(l) {
+  const q = l.quadra, fora = { esq: false, dir: false, fundo: false };
+  if (l.ang || !q || q.ix0 === undefined || !LADOS_DO_LOTE[l.frente]) return fora;
+  const na = { n: Math.abs(l.y0 - q.iy0) < 3, s: Math.abs(l.y1 - q.iy1) < 3,
+               o: Math.abs(l.x0 - q.ix0) < 3, l: Math.abs(l.x1 - q.ix1) < 3 };
+  const L = LADOS_DO_LOTE[l.frente];
+  return { esq: na[L.esq], dir: na[L.dir], fundo: na[L.fundo] };
+}
+/* a cor lisa na folha das casas: a UV parada no miolo da parede lisa e a
+   cor na tinta (o que o modo chapado faz, aqui numa peça só) */
+function liso(B, tinta, P) {
+  const c = B.cel('lisa'), uv = [(c[0] + c[2]) / 2, (c[1] + c[3]) / 2];
+  B.pintar(tinta); B.poli(P, P.map(() => uv)); B.pintar(null);
+}
+/* a moita de capim low poly: oito folhas largas em leque, cada uma um
+   triângulo de um verde (ou palha), deitando pra fora */
+const VERDES_CAPIM = ['#6c7d38', '#8f8a4a', '#5a6f33', '#7d8a40', '#9a9152'];
+function capimLowpoly(B, cx, cz, esc, s, k) {
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + s(k + 'a' + i) * 0.7;
+    const r = 0.04 + s(k + 'r' + i) * 0.1, h = (0.35 + s(k + 'h' + i) * 0.45) * esc, inc = 0.3 + s(k + 'i' + i) * 0.4;
+    const bx = cx + Math.cos(a) * r, bz = cz + Math.sin(a) * r;
+    const px = -Math.sin(a) * 0.07, pz = Math.cos(a) * 0.07;
+    liso(B, VERDES_CAPIM[(i + (s(k) * 5 | 0)) % VERDES_CAPIM.length],
+         [[bx - px, 0.01, bz - pz], [bx + px, 0.01, bz + pz], [bx + Math.cos(a) * h * inc, h, bz + Math.sin(a) * h * inc]]);
+  }
+}
+/* o pé de bananeira low poly: o tronco em prisma de quatro lados e seis
+   folhas compridas que saem do alto e caem na ponta (a de baixo, seca) */
+function bananeiraLowpoly(B, cx, cz, alt, giro, s) {
+  const ht = alt * 0.5, rt = 0.1;
+  const q = [0, 1, 2, 3].map(i => [cx + Math.cos(giro + i * Math.PI / 2) * rt, cz + Math.sin(giro + i * Math.PI / 2) * rt]);
+  for (let i = 0; i < 4; i++) {
+    const [ax, az] = q[i], [bx, bz] = q[(i + 1) % 4];
+    liso(B, i % 2 ? '#6d6b3c' : '#7b7844', [[ax, 0, az], [bx, 0, bz], [bx * 0.7 + cx * 0.3, ht, bz * 0.7 + cz * 0.3], [ax * 0.7 + cx * 0.3, ht, az * 0.7 + cz * 0.3]]);
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = giro + i * Math.PI / 3 + s('bf' + i) * 0.5, L = alt * (0.42 + s('bl' + i) * 0.14), w = 0.2;
+    const ux = Math.cos(a), uz = Math.sin(a), px = -uz * w, pz = ux * w;
+    const y0 = ht - 0.05, meio = [cx + ux * L * 0.55, y0 + L * 0.28, cz + uz * L * 0.55], ponta = [cx + ux * L, y0 - L * 0.12, cz + uz * L];
+    const cor = i === 5 ? '#a28d4a' : i % 2 ? '#4f8a33' : '#5f9a3a';
+    liso(B, cor, [[cx, y0, cz], [meio[0] - px, meio[1], meio[2] - pz], ponta, [meio[0] + px, meio[1], meio[2] + pz]]);
+  }
+}
+/* os trechos de muro do lote de muro, no mundo (x, y da planta): a
+   divisa da frente e os lados que dão pra rua — é o que a planta
+   desenha em cima do chão de terra, no mapa */
+export function segmentosDoMuro(l) {
+  if (l.ang) {
+    const c = Math.cos(l.ang), sn = Math.sin(l.ang), v = (l.vf || -1) * l.h / 2;
+    const P = u => [l.cx + u * c - v * sn, l.cy + u * sn + v * c];
+    return [[...P(-l.w / 2), ...P(l.w / 2)]];
+  }
+  const lado = { n: [l.x0, l.y0, l.x1, l.y0], s: [l.x0, l.y1, l.x1, l.y1], o: [l.x0, l.y0, l.x0, l.y1], l: [l.x1, l.y0, l.x1, l.y1] };
+  const out = [lado[l.frente]], L = LADOS_DO_LOTE[l.frente], rua = ladosNaRua(l);
+  if (L) for (const k of ['esq', 'dir', 'fundo']) if (rua[k]) out.push(lado[L[k]]);
+  return out.filter(Boolean);
+}
+function baldio(B, p, l, conta, G) {
+  const { s, W, D, H } = p;
+  const e = 0.2, x0 = 0.05, x1 = W - 0.05, zF = -0.05, zD = zF - e, zB = -D + 0.05;
+  const r = s('parede');
+  const k = r < 0.36 ? 'bloco' : r < 0.62 ? 'crua' : 'lisa';
+  const tinta = k === 'lisa' ? escolher(s, 'tinta', TINTA_BALDIO) : null;
+  const dentro = k === 'bloco' ? 'bloco' : 'crua';
+  const rua = ladosNaRua(l);
+  const h = Math.max(0.6, H);
+  /* ---- o muro da frente, com o portão de chapa em um de cada quatro ---- */
+  const larg = x1 - x0, vaos = [];
+  if (larg >= 4.6 && s('portao') < 0.25) {
+    /* com pixação o portão vai pra uma ponta: sobra o muro inteiro do
+       outro lado pra lata */
+    const wp = Math.min(2.4, larg * 0.42);
+    const a0 = l.pixacao ? (s('ondePortao') < 0.5 ? 0.35 : larg - wp - 0.35) : 0.35 + s('ondePortao') * (larg - wp - 0.7);
+    vaos.push({ a0, a1: a0 + wp, b0: 0, b1: Math.min(2.0, h - 0.12), k: 'portao_chapa', fundo: 0.04 });
+  }
+  paredes(B, x0, x1, zD, zF, 0, h, { frente: { k, tinta, vaos }, tras: { k: dentro } }, conta);
+  B.caixa(x0, x1, h, h + 0.04, zD - 0.02, zF + 0.02, { todas: { k: 'laje_borda', modo: 'esticar' }, base: null });
+  /* as pontas do muro: a que vira a esquina continua a face da rua; a
+     que encosta no vizinho é reboco cru */
+  B.esticar(B.plano([x0, 0, zD], [0, 0, 1], [0, 1, 0]), 0, e, 0, h, rua.esq ? k : dentro, { tinta: rua.esq ? tinta : null });
+  B.esticar(B.plano([x1, 0, zF], [0, 0, -1], [0, 1, 0]), 0, e, 0, h, rua.dir ? k : dentro, { tinta: rua.dir ? tinta : null });
+  /* ---- o muro do lado que dá pra rua ---- */
+  const lado = (xa, xb, fora) => {
+    paredes(B, xa, xb, zB, zD, 0, h, fora > 0 ? { dir: { k, tinta }, esq: { k: dentro } } : { esq: { k, tinta }, dir: { k: dentro } });
+    B.caixa(xa, xb, h, h + 0.04, zB, zD, { todas: { k: 'laje_borda', modo: 'esticar' }, base: null });
+  };
+  if (rua.esq) lado(x0, x0 + e, -1);
+  if (rua.dir) lado(x1 - e, x1, 1);
+  if (rua.fundo) {
+    paredes(B, x0 + (rua.esq ? e : 0), x1 - (rua.dir ? e : 0), zB, zB + e, 0, h, { tras: { k, tinta }, frente: { k: dentro } });
+    B.caixa(x0 + (rua.esq ? e : 0), x1 - (rua.dir ? e : 0), h, h + 0.04, zB, zB + e, { todas: { k: 'laje_borda', modo: 'esticar' }, base: null });
+  }
+  /* ---- o chão de terra, atrás do muro ---- */
+  const cx0 = x0 + (rua.esq ? e : 0), cx1 = x1 - (rua.dir ? e : 0), cz1 = zD, cz0 = zB + (rua.fundo ? e : 0);
+  if (cz1 - cz0 < 0.25 || cx1 - cx0 < 0.5) return;
+  B.tampa([[cx0, cz1], [cx1, cz1], [cx1, cz0], [cx0, cz0]], 0.015, 'terra', false, { oa: s('oa') * 3, ob: s('ob') * 3 });
+  if (cz1 - cz0 < 1.2) return;                     // o lote raso da avenida: só a faixa de terra
+  /* ---- o mato, a bananeira e o entulho ----
+     LOW POLY, na folha das casas: folha de capim e de bananeira são
+     triângulos de cor lisa. Com o recorte (a folha das grades) cada
+     ladrilho de 40 m com um baldio ganhava uma malha a mais — oito
+     chamadas de desenho a mais numa rua, só pelo mato. */
+  const dentroDo = (m) => [cx0 + m + s('x' + m) * (cx1 - cx0 - 2 * m), cz0 + m + s('z' + m) * (cz1 - cz0 - 2 * m)];
+  const area = (cx1 - cx0) * (cz1 - cz0);
+  const moitas = Math.max(1, Math.min(5, Math.round(area / 5)));
+  for (let i = 0; i < moitas; i++) {
+    const cx = cx0 + 0.4 + s('mx' + i) * (cx1 - cx0 - 0.8), cz = cz0 + 0.4 + s('mz' + i) * (cz1 - cz0 - 0.8);
+    capimLowpoly(B, cx, cz, 0.7 + s('me' + i) * 0.7, s, 'm' + i);
+  }
+  if (area > 12 && s('bananeira') < 0.3) {
+    const [bx, bz] = dentroDo(0.9);
+    bananeiraLowpoly(B, bx, bz, 2.2 + s('bAlt') * 0.9, s('bGiro') * Math.PI * 2, s);
+  }
+  if (s('entulho') < 0.55) {
+    /* o monte: uma pirâmide torta de base retangular, o cume fora do meio */
+    const [mx, mz] = dentroDo(0.9);
+    const a = 0.45 + s('ea') * 0.35, b = 0.35 + s('eb') * 0.25, hm = 0.25 + s('eh') * 0.25;
+    const c = [mx + (s('ecx') - 0.5) * a * 0.6, hm, mz + (s('ecz') - 0.5) * b * 0.6];
+    const q = [[mx - a, 0, mz + b], [mx + a, 0, mz + b], [mx + a, 0, mz - b], [mx - a, 0, mz - b]];
+    const cel = B.cel('entulho');
+    for (let i = 0; i < 4; i++) {
+      const P = q[i], Q = q[(i + 1) % 4];
+      B.poli([P, Q, c], [[cel[0], cel[1]], [cel[2], cel[1]], [(cel[0] + cel[2]) / 2, cel[3]]]);
+    }
+  }
+}
+
+const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4, baldio,
                 bartorcida: barTorcida };
 
 /* =======================================================
@@ -2332,9 +2493,11 @@ export function lugarDoDecalque(l, p, larg, alt, o = {}) {
   const sup = [];
   for (const S of p.frentes) {
     sup.push({ x0: S.x0, x1: S.x1, y0: S.y0, y1: S.y1, z: S.z, m: folga, obst: S.vaos.concat(p.obst) });
+    /* o portão de chapa (o vermelho da favela, o marrom do terreno baldio)
+       leva pixação da barra de baixo até onde começa a grade */
     if (o.portas) for (const v of S.vaos)
-      if (v.k === 'enrolar' || v.k === 'portao_vermelho')
-        sup.push({ x0: v.a0, x1: v.a1, y0: v.b0 + (v.k === 'portao_vermelho' ? 0.1 : 0), y1: v.k === 'portao_vermelho' ? v.b1 * 0.78 : v.b1,
+      if (v.k === 'enrolar' || v.k === 'portao_vermelho' || v.k === 'portao_chapa')
+        sup.push({ x0: v.a0, x1: v.a1, y0: v.b0 + (v.k === 'enrolar' ? 0 : 0.1), y1: v.k === 'portao_vermelho' ? v.b1 * 0.78 : v.k === 'portao_chapa' ? v.b1 * 0.84 : v.b1,
                    z: S.z - v.fundo, m: 0.1, obst: [] });
   }
   for (let w = larg / M; w >= wMin - 1e-6; w *= 0.86) {

@@ -26,6 +26,8 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, arquivoDaFolha } from './casas3d.js';
 import { sorteio } from './construtor3d.js';
 import { facesDaArvore, especieLowpolyDe } from './arvores_lowpoly.js';
+import { montarEquipAntigo } from './equip_antigo3d.js';
+import { MEDIAS } from './modelos_medias.js';
 
 export function montarBairro(P) {
   const K = P.CIDADE;
@@ -618,8 +620,9 @@ export function montarBairro(P) {
      embaixo, o sobrado de laje e o casarão), o galpão e o prédio da
      cidade dos quatro modelos deles (o galpão de platibanda, o de arco,
      o predinho de reboco e o prédio de tijolo), e doze casas térreas
-     viram casa de muro (três de cada modelo), tudo com a folha pintada
-     das casas; só o muro (e a sede) continua caixa. Cada pedaço da
+     viram casa de muro (três de cada modelo), e o lote de muro vira
+     terreno baldio (o muro fino na frente, a terra atrás), tudo com a
+     folha pintada das casas; só a sede continua caixa. Cada pedaço da
      cidade junta as casas dele numa malha — é o que deixa a câmera
      descartar o que está fora do quadro. */
   const CASAS = new Map();
@@ -673,8 +676,9 @@ export function montarBairro(P) {
     if (l.ang) objeto(l.cx, l.cy, l.ang, 'predio');
     else objeto((l.x0 + l.x1) / 2, (l.y0 + l.y1) / 2, 0, 'predio');
     if (casaDeModelo(l)) return;
-    /* o lote de caixa (a sede, o muro) já é caixa: de longe, o mesmo.
-       Bloco de altura é pra casa de modelo, que é textura e detalhe */
+    /* o lote de caixa (a sede) já é caixa: de longe, o mesmo. Bloco de
+       altura é pra casa de modelo, que é textura e detalhe. O muro só
+       chega aqui se não tiver plano (não acontece: é o terreno baldio) */
     objetos[objAtual].tipo = 'mesmo';
     if (l.ang) {
       /* casa da avenida: corpo, telhado e a fachada virada pra avenida */
@@ -1318,9 +1322,31 @@ export function montarBairro(P) {
                        canteiro: 'mesmo', marquise: 'mesmo', claraboia: 'mesmo', maquina: 'mesmo', portao: 'mesmo',
                        caixadagua: 'mesmo', fonte: 'mesmo', coreto: 'mesmo', cruz: 'mesmo', piso: 'chao', carro: 'mesmo',
                        pilar: 'alto', poste: 'alto', mastro: 'alto', tabela: 'alto' };
-  function desenharPecas(T, TL, uv, pecas) {
+  /* OS EQUIPAMENTOS ANTIGOS COM MODELO: o hospital, a delegacia, a
+     escola, o posto e o shopping saem de `equip_antigo3d.js`, na folha
+     das casas, das MESMAS peças — as partes entram nas malhas de casa do
+     pedaço, cada uma um objeto (o prédio leva a versão de longe dele, a
+     caixa com as faixas de janela; a marquise, o muro e a bomba vão com
+     os mesmos triângulos). Devolve as peças que o modelo já desenhou; o
+     resto (carro, árvore, poste, mastro, letreiro, piso) continua saindo
+     de `desenharPecas`. */
+  function vestirEquipamento(q) {
+    const r = montarEquipAntigo(q.equip, { limite: { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 }, medias: MEDIAS.casas });
+    if (!r) return null;
+    const k = (q.i >> 2) + ',' + (q.j >> 2);
+    if (!CASAS.has(k)) CASAS.set(k, { casas: [], grades: [] });
+    const destino = CASAS.get(k);
+    for (const pt of r.partes) {
+      const id = objeto(pt.x, pt.z, 0, pt.longe, pt.distante ? { longe: pt.distante } : null);
+      for (const [lista, blocos] of Object.entries(pt.blocos))
+        for (const b of blocos) { b.obj = id; destino[lista].push(b); }
+    }
+    return r.feitas;
+  }
+  function desenharPecas(T, TL, uv, pecas, feitas) {
     const PEDRA = '#b9b3a4', GRAMA = '#4a7a3c';
     for (const o of pecas) {
+      if (feitas && feitas.has(o)) continue;
       const mx = (o.x0 + o.x1) / 2, mz = (o.y0 + o.y1) / 2;
       if (o.x0 !== undefined) objeto(mx, mz, 0, LONGE_PECA[o.k] || 'prop');
       else objeto(o.x, o.y, 0, LONGE_PECA[o.k] || 'prop');
@@ -1632,12 +1658,18 @@ export function montarBairro(P) {
     }
     if (l.pixacao) {
       /* baixa, na altura do peito pra baixo, e fora do eixo da porta —
-         ou na porta de aço, se a parede não tem vão livre */
-      const larg = Math.min(W - 12, 62), alt = Math.min(14, larg / 4.3);
+         ou na porta de aço, se a parede não tem vão livre. NO MURO DO
+         TERRENO BALDIO ela toma o muro: de ponta a ponta, na altura do
+         peito, que é onde a lata chega (a regra do lote de caixa) */
+      const muro = !!pc.muro;
+      const larg = muro ? Math.min(W - 10, 126) : Math.min(W - 12, 62);
+      const alt = muro ? Math.min(larg / 4, H - 10) : Math.min(14, larg / 4.3);
       const u = uv.get(chavePixo(l.pixacao, l.pixoTinta));
       if (!u || alt < 3) return;
       const lado = somaTexto(l.pixacao) % 2 ? 1 : -1;
-      const lug = lugarDoDecalque(l, pc, larg, alt, { u: lado * W * 0.22, y: 3 + alt / 2, min: 14, portas: true });
+      const lug = lugarDoDecalque(l, pc, larg, alt, muro
+        ? { u: lado * Math.max(0, (W - larg) / 2 - 2) * 0.7, y: Math.max(alt / 2 + 3, H * 0.5), min: Math.min(30, larg), portas: true }
+        : { u: lado * W * 0.22, y: 3 + alt / 2, min: 14, portas: true });
       if (!lug) { semDecalque.pixacao++; return; }
       const i0 = TL.uv.length;
       placa(TL, lug.x, lug.y, lug.z, lug.ox, lug.oz, lug.larg, lug.alt, u);
@@ -1669,7 +1701,7 @@ export function montarBairro(P) {
     for (const [T, q] of comEquipamento) {
       /* a mesma regra da casa: beiral de hospital não invade calçada */
       limite = { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
-      if (q.equip) desenharPecas(T, TL, uv, q.equip.pecas);
+      if (q.equip) desenharPecas(T, TL, uv, q.equip.pecas, vestirEquipamento(q));
       for (const pr of q.pracinhas || []) {
         for (const t of pr.tiras) { objeto((t.x0 + t.x1) / 2, (t.y0 + t.y1) / 2, 0, 'chao'); tampa(T, t.x0, t.x1, 1.7, t.y0, t.y1, '#b5afa0'); }
         desenharPecas(T, TL, uv, pr.pecas);

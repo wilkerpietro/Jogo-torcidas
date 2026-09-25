@@ -256,7 +256,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque } from './js/casas3d.js';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js';
 import { montarModelos } from './js/modelos3d.js';
 import { moldeDaPeca, comTransformador } from './js/props3d.js';
 import { ATLAS } from './js/modelos_atlas.js';
@@ -265,6 +265,7 @@ import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA } from './js/proposta.js';
 import { montarSede } from './js/sede3d.js';
 import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
 import { montarShopping, montarDelegacia, montarPraca } from './js/equip3d.js';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
 import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
@@ -312,7 +313,7 @@ const NOME_MODELO = {
   m3: 'Casa de muro com quintal na frente', m4: 'Casinha no meio do lote',
   favela: 'Casa da favela', f1: 'Casa de laje com terraço', f2: 'Casa rosa de quintal', bar: 'Bar da favela',
   lanche: 'Lanchonete da favela', escada: 'Casa da escada de fora', varal: 'Sobrado do varal',
-  garagem: 'Casa das garagens', base: 'Casa do embasamento'
+  garagem: 'Casa das garagens', base: 'Casa do embasamento', baldio: 'Terreno baldio murado'
 };
 const NOME_TIPO = { casa: 'Casa', sobrado: 'Sobrado', galpao: 'Galpão', predio: 'Prédio', muro: 'Muro', barraco: 'Barraco' };
 const NOME_MARCO = {
@@ -358,7 +359,8 @@ const COR = {
   /* a lagoa: a água doce, o raso, o barro da beira, o capim da margem e o junco */
   lagoa: '#48675f', raso: '#5a7c70', barro: '#6f6547', margem: '#869f5c', junco: '#3d5a2c'
 };
-const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#aaaa88', barraco: '#c98a5a' };
+/* o lote de muro é terreno baldio: o chão de terra, com o muro riscado na frente */
+const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#b39a70', barraco: '#c98a5a' };
 const COR_FAVELA = { casa: '#d9a066', sobrado: '#c9804e', barraco: '#c98a5a', galpao: '#a88a6a' };
 const COR_PROP = { cacamba: '#2f8f2f', lixeira: '#7f9fb0', saco: '#111', caixa: '#b88a50', cesto: '#d2b53a', barreira: '#e0e0e0',
                    correio: '#c33b27', hidrante: '#d33', balizador: '#e3b21f', espuma: '#e8cf36', delineador: '#e1701f',
@@ -1288,12 +1290,20 @@ function desenhar() {
       ctx.strokeStyle = '#222'; ctx.lineWidth = px(1); ctx.strokeRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
     }
   }
+  /* o muro do terreno baldio: um risco de 20 cm (ou de 2 px, de longe)
+     na divisa da frente e nos lados que dão pra rua */
+  const riscarMuro = l => {
+    ctx.strokeStyle = '#4a453e'; ctx.lineWidth = Math.max(px(2), 0.2 * M); ctx.lineCap = 'square';
+    for (const [a, b, c, d] of segmentosDoMuro(l)) { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); }
+    ctx.lineCap = 'butt';
+  };
   /* ---- os lotes ---- */
   for (const it of lotes) {
     if (!ve(it.bb) || (prop && it.sobProposta)) continue;
     const l = it.l;
     pol(it.pol, l.favela ? (COR_FAVELA[l.tipo] || COR_FAVELA.casa) : (COR_LOTE[l.tipo] || '#f0f'));
     ctx.strokeStyle = '#222'; ctx.lineWidth = px(0.9); ctx.stroke();
+    if (l.tipo === 'muro' && !l.favela) riscarMuro(l);
   }
   if (prop) for (const it of lotesNovos) {
     if (!ve(it.bb)) continue;
@@ -1306,6 +1316,7 @@ function desenhar() {
     }
     pol(it.pol, COR_LOTE[it.l.tipo] || '#f0f');
     ctx.strokeStyle = '#123a3d'; ctx.lineWidth = px(0.9); ctx.stroke();
+    if (it.l.tipo === 'muro') riscarMuro(it.l);
   }
   if (prop) for (const it of lotesFavelaNova) {
     if (!ve(it.bb)) continue;
@@ -1490,7 +1501,8 @@ function desenharGrade(vis) {
 function rotuloDoLote(l) {
   if (ehBar(l)) return l.torcida ? 'bar ' + l.torcida.rot : 'bar fechado';
   const pc = planoSeguro(l);
-  const m = l.muro || (pc && pc.tipo && pc.tipo !== 'favela' ? pc.tipo.toUpperCase() : '');
+  const m = l.muro || (pc && pc.tipo && pc.tipo !== 'favela' && pc.tipo !== 'baldio' ? pc.tipo.toUpperCase() : '');
+  if (pc && pc.tipo === 'baldio') return 'baldio ' + (l.frente || '');
   return (NOME_TIPO[l.tipo] || l.tipo).toLowerCase() + ' ' + (l.frente || '') + (m ? ' ' + m : '');
 }
 function desenharRotulos(vis, prop) {
@@ -1693,7 +1705,7 @@ for (const m of MODOS) $('aba-' + m).onclick = () => { abrirCatalogo(false); mud
 
 function montarLegenda() {
   const itens = [['Casa', COR_LOTE.casa], ['Sobrado', COR_LOTE.sobrado], ['Galpão', COR_LOTE.galpao], ['Prédio', COR_LOTE.predio],
-                 ['Muro', COR_LOTE.muro], ['Favela', COR_FAVELA.casa], ['Marco', COR.marco], ['Quintal', COR.quintal],
+                 ['Terreno baldio', COR_LOTE.muro], ['Favela', COR_FAVELA.casa], ['Marco', COR.marco], ['Quintal', COR.quintal],
                  ['Árvore', '#2e7d2e'], ['Poste', COR.poste]];
   $('legenda').innerHTML = itens.map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('') +
     (estado.modo !== 'atual' ? '<span><i class="nova"></i>Quadra nova</span><span><i class="bar"></i>Bar aberto</span><span><i class="barf"></i>Bar fechado</span>' +
@@ -1860,11 +1872,11 @@ function fichaDe(it) {
     const modelo = l.muro || (pc && pc.tipo);
     return `<p class="sobre">Lote · ${esc(onde)}${chip}</p><h2>${esc(tituloDe(it))}</h2>` + linhas([
       ['Tipo na planta', NOME_TIPO[l.tipo] || l.tipo],
-      ['Modelo 3D', modelo ? String(modelo).toUpperCase() : 'caixa (muro)'],
+      ['Modelo 3D', modelo === 'baldio' ? 'muro fino e terreno baldio' : modelo ? String(modelo).toUpperCase() : 'caixa'],
       ['Frente para', FRENTE[l.frente] || '—'],
-      ['Testada', metros(testada)], ['Fundo', l.tipo === 'muro' ? '' : metros(fundo)],
-      ['Área', l.tipo === 'muro' ? '' : ((testada / M) * (fundo / M)).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' m²'],
-      ['Altura', metros(l.alt)],
+      ['Testada', metros(testada)], ['Fundo', metros(fundo)],
+      ['Área', ((testada / M) * (fundo / M)).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' m²'],
+      ['Altura', metros(l.alt) + (l.tipo === 'muro' ? ' (o muro)' : '')],
       ['Letreiro', l.placa, true], ['Pixação', l.pixacao, true],
       ['Na planta', 'x ' + Math.round(l.cx ?? (l.x0 + l.x1) / 2) + ' · y ' + Math.round(l.cy ?? (l.y0 + l.y1) / 2), true]
     ]) + (it.favelaNova ? '<p class="nota">Casa da favela nova: a mesma conta da favela do jogo (a casa, a altura, a cor, as casas grandes), com o beco na grade da cidade.</p>'
@@ -1912,7 +1924,9 @@ function fichaDe(it) {
     return `<p class="sobre">Equipamento · quadra ${it.q.i},${it.q.j}</p><h2>${esc(it.nome)}</h2>` + linhas([
       ['Área', metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0), true],
       ['Peças', it.q.equip.pecas.length]
-    ]) + '<p class="nota">No jogo o equipamento é montado em caixas; aqui aparecem os mesmos volumes, sem a textura.</p>';
+    ]) + (TIPOS_ANTIGOS.has(it.q.equip.tipo)
+      ? '<p class="nota">Modelado na folha das casas, das mesmas peças da planta: o que tranca no jogo (o prédio, o muro, o pilar, a bomba) continua no mesmo lugar e na mesma medida. O carro, a árvore, o poste e o letreiro são os de sempre.</p>'
+      : '<p class="nota">No jogo o equipamento é montado em caixas; aqui aparecem os mesmos volumes, sem a textura.</p>');
   }
   if (it.tipo === 'quadraNova' && it.q.equip && it.q.equip.tipo === 'condominio') {
     const q = it.q, e = q.equip;
@@ -2209,10 +2223,15 @@ function decalques(l, pc, g) {
     if (lug) placaNoMundo(g, lug, texturaDizer(l.placa, true, l.placaTinta, l.placaFundo));
   }
   if (l.pixacao) {
-    const larg = Math.min(W - 12, 62), alt = Math.min(14, larg / 4.3);
+    /* no muro do terreno baldio a pixação toma o muro (a regra do jogo) */
+    const muro = !!pc.muro, H = l.alt;
+    const larg = muro ? Math.min(W - 10, 126) : Math.min(W - 12, 62);
+    const alt = muro ? Math.min(larg / 4, H - 10) : Math.min(14, larg / 4.3);
     if (alt < 3) return;
     const lado = somaTexto(l.pixacao) % 2 ? 1 : -1;
-    const lug = lugarDoDecalque(l, pc, larg, alt, { u: lado * W * 0.22, y: 3 + alt / 2, min: 14, portas: true });
+    const lug = lugarDoDecalque(l, pc, larg, alt, muro
+      ? { u: lado * Math.max(0, (W - larg) / 2 - 2) * 0.7, y: Math.max(alt / 2 + 3, H * 0.5), min: Math.min(30, larg), portas: true }
+      : { u: lado * W * 0.22, y: 3 + alt / 2, min: 14, portas: true });
     if (lug) placaNoMundo(g, lug, texturaDizer(l.pixacao, false, l.pixoTinta), true);
   }
 }
@@ -2612,11 +2631,25 @@ function objetoDoProp(it, g) {
   m.position.set(it.x, 0, it.y); m.rotation.y = it.ang || 0;
   g.add(m);
 }
+/* O EQUIPAMENTO ANTIGO COM MODELO (o hospital, a delegacia, a escola, o
+   posto e o shopping de hoje): o mesmo `equip_antigo3d.js` do jogo, das
+   mesmas peças; devolve as peças que o modelo já desenhou */
+function modeloDoEquipAntigo(eq, g) {
+  const q = K.QUADRAS.find(x => x.equip === eq);
+  const r = montarEquipAntigo(eq, { limite: q ? { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 } : null });
+  if (!r) return null;
+  const listas = {};
+  for (const pt of r.partes) for (const [lista, blocos] of Object.entries(pt.blocos)) (listas[lista] = listas[lista] || []).push(...blocos);
+  for (const [lista, blocos] of Object.entries(listas)) { const m = malhaDeBlocos(blocos, lista); if (m) g.add(m); }
+  return r.feitas;
+}
 function objetoDoEquip(eq, g, o) {
   if (eq.tipo === 'sede') { objetoDaSede(sedeDoEquip(eq), g, o); return; }
   const a = eq.area;
   caixa(g, a.x0, a.x1, 0, 1.65, a.y0, a.y1, eq.chao || '#9d9a90');
+  const feitas = modeloDoEquipAntigo(eq, g);
   for (const o of eq.pecas) {
+    if (feitas && feitas.has(o)) continue;
     switch (o.k) {
       case 'bloco': caixa(g, o.x0, o.x1, 0, o.alt, o.y0, o.y1, o.cor || '#cfcac0'); if (o.teto) caixa(g, o.x0 - 2, o.x1 + 2, o.alt, o.alt + 4, o.y0 - 2, o.y1 + 2, o.teto); break;
       case 'muro': case 'guarita': case 'totem': case 'monumento': case 'bomba': caixa(g, o.x0, o.x1, 0, o.alt || 20, o.y0, o.y1, o.cor || '#b9b3a4'); break;
