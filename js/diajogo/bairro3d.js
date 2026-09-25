@@ -16,6 +16,8 @@
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, arquivoDaFolha } from './casas3d.js';
+import { sorteio } from './construtor3d.js';
+import { facesDaArvore, especieLowpolyDe } from './arvores_lowpoly.js';
 
 export function montarBairro(P) {
   const K = P.CIDADE;
@@ -671,15 +673,21 @@ export function montarBairro(P) {
       faceBox(12, larg - 12, 60, 72, l.cor, 1.9);
     }
   }
-  /* copa arredondada: uma pirâmide pra cima e outra pra baixo, base com
-     base — de longe é uma bola, e é o que a árvore de rua do mapa é */
+  /* A ÁRVORE: a low poly do jogo (`arvores_lowpoly.js`) — a de rua da
+     cidade (oiti, mangueira ou ipê, pelo peso da FLORA_LP), encaixada no
+     lugar que a planta dá: a copa com uma vez e meia o raio do círculo
+     dela, que é o que a calçada comporta, e a altura da árvore de rua de
+     verdade, de 4 a 7,5 m. Todas numa malha só (`arvores`), de cor por
+     vértice, fora do tecido do quarteirão. */
+  const TA = { pos: [], cor: [] };
   function arvore(T, a) {
-    /* árvore de rua de verdade tem uns 5 m: o tronco sobe acima da
-       cabeça antes de abrir a copa */
-    const galho = 26 + a.r * 1.2, copa = a.r * 3.1;
-    caixa(T, a.x - 2.4, a.x + 2.4, 0, galho + copa * 0.3, a.y - 2.4, a.y + 2.4, '#5a4630');
-    piramide(T, a.x, galho, galho + copa, a.r, a.y, '#3f7a34');
-    piramide(T, a.x, galho, galho - a.r * 0.9, a.r, a.y, '#356b2c');
+    const sem = (Math.abs(Math.round(a.x * 17 + a.y * 131)) % 1000003) + 1, rnd = sorteio(sem);
+    const r = facesDaArvore(especieLowpolyDe('cidade', rnd), sem,
+                            { caber: { alt: (26 + a.r * 4.3) / METRO, raio: a.r * 1.5 / METRO } });
+    const g = rnd() * 2 * Math.PI, c = Math.cos(g), sn = Math.sin(g), P = r.perto.pos;
+    for (let i = 0; i < P.length; i += 3)
+      TA.pos.push(a.x + (P[i] * c - P[i + 2] * sn) * METRO, P[i + 1] * METRO, a.y + (P[i] * sn + P[i + 2] * c) * METRO);
+    for (const v of r.perto.cor) TA.cor.push(v);
   }
 
   /* poste de rua: mastro, braço e a luminária na ponta */
@@ -1846,6 +1854,7 @@ export function montarBairro(P) {
     }
   }
   malha(TS, true, 'soltos');
+  malha(TA, true, 'arvores');
 
   /* ---- as malhas texturadas: telhado e mancha de parede ---- */
   alvoTelhado = null;

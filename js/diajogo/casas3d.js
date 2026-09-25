@@ -42,13 +42,22 @@
    a cidade continua a mesma casa por casa, só muda a roupa. Só o muro
    continua com o desenho antigo do bairro.
 
+   A FAVELA É LOW POLY: a casa da favela e as oito casas grandes saem
+   no modo chapado do construtor — cada face numa cor lisa, tirada da
+   cor média da peça da folha (PALETA_FAVELA), sem ladrilhar; a janela
+   e a porta viram placa na frente da parede, sem requadro; a caixa
+   d'água tem seis lados e o ferro de espera é um por quina. A casa é a
+   mesma (o volume, o terraço, a escada, o varal), com um terço dos
+   triângulos. O mural, a faixa de cerveja, o toldo, o guarda-sol e a
+   geladeira continuam com a textura: são a cara das casas grandes.
+
    TUDO CABE NO LOTE. Nada passa da divisa (telhado por cima da
    calçada é o que a varredura pega): quando o tipo tem beiral,
    marquise ou sacada na frente, a parede da frente RECUA o que eles
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit } from './construtor3d.js';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js';
 import { ATLAS } from './modelos_atlas.js';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
@@ -345,7 +354,16 @@ function empenas(B, x0, x1, z0, z1, h, yr, k, tinta) {
 }
 /* o ferro de espera nas quinas da laje: a casa ainda vai subir */
 function ferros(B, x0, x1, z0, z1, y) {
-  for (const [x, z] of [[x0 + 0.1, z0 + 0.1], [x1 - 0.1, z0 + 0.1], [x0 + 0.1, z1 - 0.1], [x1 - 0.1, z1 - 0.1]])
+  const cantos = [[x0 + 0.1, z0 + 0.1], [x1 - 0.1, z0 + 0.1], [x0 + 0.1, z1 - 0.1], [x1 - 0.1, z1 - 0.1]];
+  if (B.chapado) {
+    /* na favela low poly, um ferro por quina, em dois planos cruzados */
+    for (const [x, z] of cantos) {
+      B.esticar(B.plano([x - 0.03, y, z], [1, 0, 0], [0, 1, 0]), 0, 0.06, 0, 0.75, 'laje_borda', { tinta: FERRUGEM });
+      B.esticar(B.plano([x, y, z - 0.03], [0, 0, 1], [0, 1, 0]), 0, 0.06, 0, 0.75, 'laje_borda', { tinta: FERRUGEM });
+    }
+    return;
+  }
+  for (const [x, z] of cantos)
     for (const d of [-0.06, 0.06])
       B.caixa(x + d - 0.012, x + d + 0.012, y, y + 0.75, z - 0.012, z + 0.012,
               { todas: { k: 'laje_borda', tinta: FERRUGEM, modo: 'esticar' }, topo: null, base: null });
@@ -1214,7 +1232,8 @@ function poste(B, cx, cz, alt) {
    de lá): os vértices trocam de lado, e as paredes que o bairro usa pro
    decalque também */
 function espelhado(B, G, W, conta, fn) {
-  const B2 = Construtor('casas'), G2 = Construtor('grades'), c2 = contaMuda();
+  /* o espelho sai no mesmo modo da casa (o chapado da favela low poly) */
+  const B2 = Construtor('casas', B.opcoes), G2 = Construtor('grades'), c2 = contaMuda();
   fn(B2, G2, c2);
   for (const [C, Dst] of [[B2, B], [G2, G]]) {
     for (let i = 0; i < C.pos.length; i += 3) Dst.pos.push(W - C.pos[i], C.pos[i + 1], C.pos[i + 2]);
@@ -2239,8 +2258,26 @@ const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, 
    milhão de posições custava mais que desenhar a casa.
    `y0` (em unidades) é o chão onde a casa assenta: no quarteirão, a
    laje do lote, que é 1,6 acima da rua. */
+/* A FAVELA LOW POLY: os tipos que saem no modo chapado, e a cor lisa de
+   cada peça — a cor média dela na folha das casas, com a janela um tom
+   mais escura (de longe a janela é o buraco escuro da parede) */
+const TIPOS_FAVELA = new Set(['favela', 'f1', 'f2', 'bar', 'lanche', 'escada', 'varal', 'garagem', 'base']);
+export const PALETA_FAVELA = {
+  lisa: '#ece9e1', suja: '#d6d2c6', crua: '#bcb9b1', tijolo: '#b06c54', tijolo_furos: '#8a5645', tijolo_rosa: '#d29c8f',
+  bloco: '#a2a19c', laje: '#a29f98', laje_borda: '#9a9993', telha: '#bb7849', calha: '#8a8e90',
+  fibro: '#959691', fibro_sujo: '#8f908b', zinco: '#8b9195', grama: '#5d7c38', piso_bar: '#c3c0b8', caixa: '#2c47a0',
+  jan2: '#4c5254', basc: '#5f6466', jan_vidro: '#62758b', jan_peq: '#565b5c', veneziana: '#4a372a', jan_grade: '#48484a',
+  jan_grade_branca: '#62686b', jan_verde_grade: '#2f443b', jan_madeira: '#3a3b3b', jan_alu4: '#474f55', jan_cortina: '#6f7476',
+  tijolo_vidro: '#7f9b97', vitro_alto: '#40494e', veneziana_ar: '#63676a',
+  porta_vene: '#c9cac4', porta_ferro: '#626360', porta_alu: '#d8d8d5', porta_verde: '#366246', porta_azul: '#2c5da9',
+  porta_madeira: '#583825', porta_escura: '#38393a', porta_grade_azul: '#3f5f8a', porta_ap: '#747777',
+  vidraca_verde: '#3f6352', portao_madeira: '#835a35', portao_chapa: '#78442f', portao_vermelho: '#b54d41',
+  enrolar: '#aeb0af', enrolar_meia: '#858380'
+};
 export function montarCasa(l, p, destino, y0 = 0) {
-  const B = Construtor('casas'), G = Construtor('grades');
+  const favela = TIPOS_FAVELA.has(p.tipo);
+  const B = Construtor('casas', favela ? { chapado: { paleta: PALETA_FAVELA, branca: 'lisa', rnd: sorteio(Math.floor(p.s('lowpoly') * 4294967295)), treme: 0.06, lados: 6 } } : {});
+  const G = Construtor('grades');
   const conta = { portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [] };
   TIPOS[p.tipo](B, p, l, conta, G);
   p.frentes = conta.frentes; p.obst = conta.obst; p.y0 = y0;

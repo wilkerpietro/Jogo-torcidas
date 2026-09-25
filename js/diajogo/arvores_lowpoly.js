@@ -1,9 +1,8 @@
 /* =========================================================
    AS ÁRVORES LOW POLY — dez árvores de pouca face e cor chapada
    ---------------------------------------------------------
-   A outra família de árvore do jogo. A de `arvores3d.js` tem a copa de
-   cartão recortado, com o desenho da folha; aqui não tem textura nem
-   recorte:
+   AS ÁRVORES DO JOGO — todas (a rua, a praça, a praia, o mato em volta
+   da cidade). Não tem textura nem recorte:
    - a COPA é um sólido facetado: bolas de 80 faces (a icosfera dividida
      uma vez), com cada vértice mexido pra perder o jeito de bola, o fundo
      às vezes chato e as faces de baixo mais escuras (a sombra de dentro);
@@ -14,8 +13,23 @@
    - a PALMEIRA tem a folha em fita dobrada em V, com a borda em serra; a
      ARAUCÁRIA, o tufo em prato; o CACTO, a coluna de costela.
 
-   Uma árvore tem de 280 a 690 triângulos: mil delas cabem numa mata (a
-   de cartão tem de 400 a 3.700).
+   Uma árvore tem de 280 a 690 triângulos DE PERTO. E cada uma tem a
+   versão DE LONGE, de 20 a 110 (`facesDaArvore(...).longe`), tirada do
+   registro da de perto — onde ficou cada bola da copa, cada galho, cada
+   folha —, então a troca não salta:
+     copa      (oiti, mangueira, ipê, jequitibá, ingá, pequizeiro) uma ou
+               duas bolas de 20 faces no volume da copa, na cor média
+               dela, e o tronco num prisma de três lados;
+     palmeira  (coqueiro) o tronco de três lados e seis folhas em losango;
+     araucária o tronco e um prato por andar, da largura do andar;
+     cacto     (mandacaru) cada coluna com quatro lados e o joelho;
+     galho     (catingueira) os caules e os dois primeiros galhos.
+   É o MATO SIMPLIFICADO (`mato3d.js`): a árvore a menos de 60 m da câmera
+   sai inteira; mais longe, a de longe.
+
+   `caber: { alt, raio }` encaixa a árvore num lugar dado (a árvore de
+   rua da planta tem o raio da calçada): a altura e a copa esticam cada
+   uma pro seu lado.
 
    As dez, pelo lugar (FLORA_LP):
      cidade    oiti, mangueira, ipê
@@ -31,8 +45,7 @@
    posição e a cor de cada face (a UV vai zerada). O material é o de cor
    de vértice, chapado (`flatShading`), sem mapa.
    ========================================================= */
-import { METRO, sub, soma, esc, unit, pv, noMundo } from './construtor3d.js';
-import { sorteio } from './arvores3d.js';
+import { METRO, sub, soma, esc, unit, pv, noMundo, sorteio } from './construtor3d.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -54,6 +67,11 @@ function eixos(d) {
 /* =======================================================
    AS FERRAMENTAS
    ======================================================= */
+/* O REGISTRO da árvore que está sendo montada: cada bola da copa, cada
+   tubo (o primeiro é o tronco), cada prato, cada folha de palmeira e
+   cada galho da catingueira — é dele que sai a árvore de longe */
+let REG = null;
+const registrar = (tipo, x) => { if (REG) REG[tipo].push(x); };
 /* AS FACES: cada triângulo numa cor só (a face chapada), tremida um tanto
    pra cima ou pra baixo */
 function Faces(rnd) {
@@ -107,6 +125,7 @@ function bola(F, c, r, k, rnd, o = {}) {
     return [c[0] + (x * cg - z * sg) * rx, Math.max(piso, c[1] + p[1] * m * ry), c[2] + (x * sg + z * cg) * rz];
   });
   const escuro = o.escuro === undefined ? 0.62 : o.escuro;
+  if (o.copa !== false) registrar('copas', { c, rx, ry, rz, k, fundo: o.fundo });
   for (const [a, b, d] of E.f) {
     const P = V[a], Q = V[b], R = V[d], t = clamp(((P[1] + Q[1] + R[1]) / 3 - (c[1] - ry)) / (2 * ry), 0, 1);
     F.tri(P, Q, R, vezes(k, lerp(escuro, 1.06, Math.pow(t, 0.7))), o.treme);
@@ -120,6 +139,7 @@ function bola(F, c, r, k, rnd, o = {}) {
    em vez de chato; `tampa: false` deixa aberto. */
 function tubo(F, pts, raios, k, lados, rnd, o = {}) {
   const n = pts.length;
+  registrar('tubos', { pts, raios, k: k || (o.faixas && o.faixas[0]), ponta: o.ponta, estrela: o.estrela });
   const T = pts.map((p, i) => unit(sub(pts[Math.min(n - 1, i + 1)], pts[Math.max(0, i - 1)])));
   let [a, b] = eixos(T[0]);
   const g = o.giro === undefined ? rnd() * Math.PI : o.giro, est = o.estrela || 1;
@@ -160,6 +180,7 @@ const afina = (n, r0, r1) => Array.from({ length: n }, (_, i) => lerp(r0, r1, i 
 /* o PRATO (o tufo da araucária): a lente de seis lados, o aro mexido,
    a face de baixo na sombra */
 function prato(F, c, r, h, k, rnd, lados = 6) {
+  registrar('pratos', { c, r, h, k });
   const g = rnd() * Math.PI;
   const aro = Array.from({ length: lados }, (_, i) => {
     const t = g + i / lados * 2 * Math.PI, rr = r * rnd.entre(0.8, 1.1);
@@ -180,6 +201,7 @@ function fronde(F, p, dir, L, larg, cai, k, rnd, o = {}) {
   const eixo = t => soma(p, [d[0] * L * t, L * (sobe * t - cai * t * t), d[2] * L * t]);
   const w = t => larg * Math.sin(Math.PI * Math.min(1, 0.12 + 0.88 * t)) * (1 - 0.25 * t);
   const V = 0.45;
+  registrar('frondes', { eixo, w, lado, k, seca: !!o.seca });
   for (let i = 0; i < N; i++) {
     const t0 = i / N, t1 = (i + 1) / N, tm = (t0 + t1) / 2, c0 = eixo(t0), c1 = eixo(t1);
     for (const s of [-1, 1]) {
@@ -249,7 +271,7 @@ const FORMAS = {
       for (let i = 0; i < n; i++) {
         const lado = rnd.entre(-0.5, 0.5), d = [fora[0] - fora[2] * lado, 0, fora[2] + fora[0] * lado];
         bola(F, [c[0] + d[0] * rc * 0.78, c[1] - rc * 0.8 * 0.6 - 0.1 * f, c[2] + d[2] * rc * 0.78], [0.11 * f, 0.15 * f, 0.11 * f],
-             cor(rnd() < 0.6 ? '#e8a032' : '#c8b43a'), rnd, { nivel: 0, mexe: 0.05, escuro: 0.9 });
+             cor(rnd() < 0.6 ? '#e8a032' : '#c8b43a'), rnd, { nivel: 0, mexe: 0.05, escuro: 0.9, copa: false });
       }
     }
   },
@@ -260,6 +282,7 @@ const FORMAS = {
     const { F, rnd, f } = x, cinza = cor('#8f8a80');
     let r = rnd(), qual = FLORES_IPE[0];
     for (const c of FLORES_IPE) { if ((r -= c[2]) < 0) { qual = c; break; } }
+    if (x.florPedida) qual = FLORES_IPE.find(c => c[0] === x.florPedida) || qual;
     x.flor = qual[0];
     const flor = cor(qual[1]);
     const H = 2.6 * f, la = rnd.entre(-0.3, 0.3), lb = rnd.entre(-0.3, 0.3);
@@ -356,7 +379,7 @@ const FORMAS = {
       tubo(F, pts, [rb, rb, rb, rb * 0.95], verde, 10, rnd, { estrela: 0.72, ponta: 0.08 * f, giro: 0 });
       topos.push(pts[3]);
     }
-    if (rnd() < 0.6) { const t = topos[Math.floor(rnd() * topos.length)]; bola(F, soma(t, [0.08 * f, 0.22 * f, 0]), 0.09 * f, cor('#c0306a'), rnd, { nivel: 0, mexe: 0.05, escuro: 0.9 }); }
+    if (rnd() < 0.6) { const t = topos[Math.floor(rnd() * topos.length)]; bola(F, soma(t, [0.08 * f, 0.22 * f, 0]), 0.09 * f, cor('#c0306a'), rnd, { nivel: 0, mexe: 0.05, escuro: 0.9, copa: false }); }
   },
   /* o COQUEIRO: o tronco deitado que levanta a ponta, com o anel, o
      palmito, as doze folhas em arco, duas secas penduradas e o cacho */
@@ -376,12 +399,12 @@ const FORMAS = {
     }
     for (let i = 0; i < 2; i++) {
       const a = rnd() * 2 * Math.PI;
-      fronde(F, soma(topo, [0, 0.1, 0]), [Math.cos(a), 0, Math.sin(a)], 3.2 * f, 0.45 * f, 1.7, cor('#a88a50'), rnd, { sobe: 0.1 });
+      fronde(F, soma(topo, [0, 0.1, 0]), [Math.cos(a), 0, Math.sin(a)], 3.2 * f, 0.45 * f, 1.7, cor('#a88a50'), rnd, { sobe: 0.1, seca: true });
     }
     for (let i = 0; i < 6; i++) {
       const a = rnd() * 2 * Math.PI, dd = rnd.entre(0.2, 0.36) * f;
       bola(F, soma(topo, [Math.cos(a) * dd, rnd.entre(-0.35, 0.05) * f, Math.sin(a) * dd]), 0.17 * f, cor(rnd() < 0.7 ? '#7a9a30' : '#8a6a34'), rnd,
-           { nivel: 0, mexe: 0.08, escuro: 0.85 });
+           { nivel: 0, mexe: 0.08, escuro: 0.85, copa: false });
     }
   },
   /* a ARAUCÁRIA: o tronco nu e reto e, só no alto, os andares de galho
@@ -408,6 +431,7 @@ const FORMAS = {
    menores, até `nivel` chegar a zero */
 function ramo(F, p, d, L, r, nivel, rnd, k) {
   const pts = nivel >= 2 ? curva(p, d, L, 2, rnd, 0.35) : [p, soma(p, esc(unit(d), L))];
+  registrar('ramos', { pts, r, nivel, k });
   tubo(F, pts, nivel >= 2 ? [r, r * 0.8, r * 0.62] : [r, r * 0.62], k, nivel >= 2 ? 5 : 3, rnd);
   if (!nivel) return;
   const q = pts[pts.length - 1];
@@ -442,20 +466,95 @@ export const FLORA_LP = {
   sul: { araucaria: 3, inga: 2 }
 };
 
-/* MONTA a árvore low poly da `especie` com a `semente`, em (onde.x,
-   onde.z) do mundo, e põe o bloco em `destino.lowpoly`. Devolve a
-   altura, o raio da copa, os triângulos e, no ipê, a cor da flor. */
-export function montarArvoreLowpoly(especie, onde = {}, destino = {}, semente = 1) {
+/* A ÁRVORE DE LONGE, tirada do registro da de perto (ver o cabeçalho) */
+const FAMILIA = { oiti: 'copa', mangueira: 'copa', ipe: 'copa', jequitiba: 'copa', inga: 'copa', pequizeiro: 'copa',
+                  catingueira: 'galho', mandacaru: 'cacto', coqueiro: 'palmeira', araucaria: 'araucaria' };
+function deLonge(familia, R, rnd) {
+  const F = Faces(rnd);
+  const prisma = (t, lados = 3) => { const n = t.pts.length; tubo(F, [t.pts[0], t.pts[n - 1]], [t.raios[0] * 0.9, t.raios[n - 1] * 0.9], t.k, lados, rnd, { tampa: false }); };
+  const tronco = R.tubos[0];
+  if (familia === 'copa') {
+    if (tronco) prisma(tronco);
+    /* o volume da copa inteira (a caixa das bolas) e a cor média, pesada pelo tamanho */
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity, pes = 0;
+    const k = [0, 0, 0];
+    for (const b of R.copas) {
+      x0 = Math.min(x0, b.c[0] - b.rx); x1 = Math.max(x1, b.c[0] + b.rx);
+      y0 = Math.min(y0, b.c[1] - b.ry * (b.fundo === undefined ? 1 : b.fundo)); y1 = Math.max(y1, b.c[1] + b.ry);
+      z0 = Math.min(z0, b.c[2] - b.rz); z1 = Math.max(z1, b.c[2] + b.rz);
+      const v = b.rx * b.ry * b.rz; pes += v; for (let i = 0; i < 3; i++) k[i] += b.k[i] * v;
+    }
+    if (!pes) return F;
+    const kk = vezes(k, 1 / pes), H = y1 - y0, W = x1 - x0, D = z1 - z0;
+    /* copa larga e baixa (a do jequitibá, a do ingá) sai em duas bolas, pra não virar um disco */
+    const partes = Math.max(W, D) / H > 2.4 && R.copas.length > 2 ? 2 : 1;
+    for (let i = 0; i < partes; i++) {
+      const emX = W >= D, fr = partes === 1 ? 0.5 : (i + 0.5) / 2;
+      const cx = emX ? x0 + W * fr : (x0 + x1) / 2, cz = emX ? (z0 + z1) / 2 : z0 + D * fr;
+      const rx = (emX ? W / partes : W) / 2 * 0.95, rz = (emX ? D : D / partes) / 2 * 0.95;
+      bola(F, [cx, y0 + H * 0.52, cz], [rx, H / 2 * 0.95, rz], kk, rnd, { nivel: 0, mexe: 0.08, fundo: 0.8, escuro: 0.66, copa: false });
+    }
+  } else if (familia === 'palmeira') {
+    if (tronco) { const n = tronco.pts.length, ix = [0, Math.round(n / 3), Math.round(2 * n / 3), n - 1];
+                  tubo(F, ix.map(i => tronco.pts[i]), ix.map(i => tronco.raios[i]), tronco.k, 3, rnd, { tampa: false }); }
+    /* seis folhas verdes, em losango: a base, o meio (com a largura) e a ponta */
+    R.frondes.filter(f => !f.seca).forEach((f, i) => {
+      if (i % 2) return;
+      const b = f.eixo(0), m = f.eixo(0.45), t = f.eixo(1), w = f.w(0.45) * 1.1;
+      F.tri(b, soma(m, esc(f.lado, w)), t, f.k); F.tri(b, t, soma(m, esc(f.lado, -w)), f.k);
+    });
+  } else if (familia === 'araucaria') {
+    if (tronco) prisma(tronco);
+    /* um prato por andar: os pratos agrupados pela altura, e o de cima */
+    const ps = R.pratos.slice().sort((a, b) => a.c[1] - b.c[1]), andares = [];
+    for (const p of ps) { const u = andares[andares.length - 1]; if (u && p.c[1] - u[u.length - 1].c[1] < 0.9) u.push(p); else andares.push([p]); }
+    for (const an of andares) {
+      const y = an.reduce((a, p) => a + p.c[1], 0) / an.length, h = an.reduce((a, p) => a + p.h, 0) / an.length;
+      const r = Math.max(...an.map(p => Math.hypot(p.c[0], p.c[2]) + p.r * 0.8));
+      prato(F, [0, y, 0], r, h, an[0].k, rnd, 5);
+    }
+  } else if (familia === 'cacto') {
+    for (const t of R.tubos) {
+      const n = t.pts.length, ix = n > 3 ? [0, Math.floor(n / 2), n - 1] : t.pts.map((_, i) => i);
+      tubo(F, ix.map(i => t.pts[i]), ix.map(i => t.raios[i]), t.k, 4, rnd, { ponta: t.ponta, tampa: t.ponta ? undefined : false });
+    }
+  } else if (familia === 'galho') {
+    for (const g of R.ramos) if (g.nivel >= 2) tubo(F, [g.pts[0], g.pts[g.pts.length - 1]], [g.r, g.r * 0.62], g.k, 3, rnd, { tampa: false });
+  }
+  return F;
+}
+/* as FACES da árvore da `especie` com a `semente`, em metros, com o pé na
+   origem: a de perto, a de longe, a altura, o raio da copa e (no ipê) a
+   cor. `o.fator`: o tamanho (senão a semente sorteia ±12%); `o.flor`: a
+   cor do ipê; `o.caber: { alt, raio }`: estica a árvore pro lugar dado */
+export function facesDaArvore(especie, semente = 1, o = {}) {
   const forma = FORMAS[especie];
   if (!forma) throw new Error('arvores_lowpoly: não conheço a espécie ' + especie);
   const rnd = sorteio(semente * 7919 + especie.length * 104729 + 17);
-  const F = Faces(rnd), x = { F, rnd, f: onde.fator || rnd.entre(0.88, 1.12) };
-  forma(x);
-  let alt = 0, raio = 0;
-  for (let i = 0; i < F.pos.length; i += 3) { alt = Math.max(alt, F.pos[i + 1]); raio = Math.max(raio, Math.hypot(F.pos[i], F.pos[i + 2])); }
-  noMundo({ lowpoly: F }, destino, onde);
+  const F = Faces(rnd), x = { F, rnd, f: o.fator || rnd.entre(0.88, 1.12), florPedida: o.flor };
+  REG = { copas: [], tubos: [], pratos: [], frondes: [], ramos: [] };
+  try { forma(x); } finally { var R = REG; REG = null; }
+  const L = deLonge(FAMILIA[especie], R, sorteio(semente * 31 + 7));
+  const medir = P => { let a = 0, r = 0; for (let i = 0; i < P.length; i += 3) { a = Math.max(a, P[i + 1]); r = Math.max(r, Math.hypot(P[i], P[i + 2])); } return [a, r]; };
+  let [alt, raio] = medir(F.pos);
+  if (o.caber) {
+    const kxz = o.caber.raio / Math.max(0.1, raio), ky = o.caber.alt / Math.max(0.1, alt);
+    for (const P of [F.pos, L.pos]) for (let i = 0; i < P.length; i += 3) { P[i] *= kxz; P[i + 1] *= ky; P[i + 2] *= kxz; }
+    alt = o.caber.alt; raio = o.caber.raio;
+  }
+  return { perto: F, longe: L, altura: alt, raio, flor: x.flor };
+}
+/* MONTA a árvore da `especie` com a `semente` em (onde.x, onde.z) do
+   mundo e põe o bloco em `destino.lowpoly` (ou `o.lista`); `o.longe`
+   monta a de longe. Devolve a altura, o raio da copa, os triângulos (os
+   da que montou e os das duas) e, no ipê, a cor da flor. */
+export function montarArvoreLowpoly(especie, onde = {}, destino = {}, semente = 1, o = {}) {
+  const r = facesDaArvore(especie, semente, { fator: onde.fator, flor: o.flor, caber: o.caber });
+  const F = o.longe ? r.longe : r.perto;
+  noMundo({ [o.lista || 'lowpoly']: F }, destino, onde);
   const k = onde.escala || 1;
-  return { altura: alt * k, raio: raio * k, triangulos: F.pos.length / 9, flor: x.flor };
+  return { altura: r.altura * k, raio: r.raio * k, triangulos: F.pos.length / 9,
+           perto: r.perto.pos.length / 9, longe: r.longe.pos.length / 9, flor: r.flor };
 }
 /* sorteia uma espécie do lugar, pelo peso */
 export function especieLowpolyDe(lugar, rnd) {
@@ -467,14 +566,14 @@ export function especieLowpolyDe(lugar, rnd) {
 /* AS DEZ JUNTAS, pra comparar: as altas atrás (jequitibá, araucária,
    coqueiro, ingá, mangueira), de 11 em 11 m, e as baixas na frente,
    desencontradas (a de trás aparece no vão das da frente) */
-export function montarAsDez(onde = {}, destino = {}, semente = 1) {
+export function montarAsDez(onde = {}, destino = {}, semente = 1, o = {}) {
   const fila = [['jequitiba', 'araucaria', 'coqueiro', 'inga', 'mangueira'], ['oiti', 'ipe', 'pequizeiro', 'catingueira', 'mandacaru']];
   const k = onde.escala || 1, c = Math.cos(onde.giro || 0), s = Math.sin(onde.giro || 0);
   let triangulos = 0, altura = 0;
   fila.forEach((linha, j) => linha.forEach((especie, i) => {
     const lx = (i - 2) * 11 + (j ? 5.5 : 0), lz = j ? 6 : -6;
     const r = montarArvoreLowpoly(especie, { x: (onde.x || 0) + (lx * c - lz * s) * k * METRO, z: (onde.z || 0) + (lx * s + lz * c) * k * METRO,
-                                             y: onde.y || 0, giro: (onde.giro || 0) + i * 1.3, escala: k }, destino, semente + i + j * 5);
+                                             y: onde.y || 0, giro: (onde.giro || 0) + i * 1.3, escala: k }, destino, semente + i + j * 5, o);
     triangulos += r.triangulos; altura = Math.max(altura, r.altura);
   }));
   return { altura, triangulos, especies: 10 };

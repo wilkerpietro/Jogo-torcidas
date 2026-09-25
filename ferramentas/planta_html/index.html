@@ -260,14 +260,14 @@ import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque } from './js/cas
 import { montarModelos } from './js/modelos3d.js';
 import { moldeDaPeca, comTransformador } from './js/props3d.js';
 import { ATLAS } from './js/modelos_atlas.js';
-import { Construtor } from './js/construtor3d.js';
+import { Construtor, sorteio } from './js/construtor3d.js';
 import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA } from './js/proposta.js';
 import { montarSede } from './js/sede3d.js';
 import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
 import { montarShopping, montarDelegacia, montarPraca } from './js/equip3d.js';
-import { montarArvore, ESPECIES, FLORA } from './js/arvores3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez } from './js/arvores_lowpoly.js';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -1969,9 +1969,9 @@ function selecionar(it, rolar) {
 
 /* ======================================================
    OS MODELOS 3D: o catálogo do que ainda não entrou no mapa — as dez
-   árvores low poly (js/arvores_lowpoly.js), as peças da praia
-   (js/praia3d.js) e as árvores de cartão de todos os mapas
-   (js/arvores3d.js). Cada um abre grande no 3D, com a ficha.
+   árvores low poly, que são as árvores do jogo (js/arvores_lowpoly.js),
+   de perto e de longe, o mato simplificado (js/mato3d.js) e as peças da
+   praia (js/praia3d.js). Cada um abre grande no 3D, com a ficha.
    ====================================================== */
 const GRUPOS_FLORA = { mata: 'Mata', cerrado: 'Cerrado', caatinga: 'Caatinga', cidade: 'Cidade', praia: 'Praia', sul: 'Sul' };
 const CHAO_FLORA = { mata: '#6b7f4a', cerrado: '#b3a868', caatinga: '#b9a98a', cidade: '#8f9a78', praia: '#dccb9e', sul: '#6f8a52' };
@@ -1988,28 +1988,72 @@ MODELOS.push({
   /* a câmera de frente pras duas filas (o enquadramento soma 0,55 rad ao rumo da frente) */
   frente: [-Math.sin(0.55), Math.cos(0.55)],
   nota: 'As dez juntas, pra comparar: as altas atrás (jequitibá, araucária, coqueiro, ingá, mangueira), de 11 em 11 m, e as baixas na frente, desencontradas.',
-  montar(g) { const destino = {}; this.info = montarAsDez({}, destino, this.semente); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+  longe: false,
+  montar(g) { const destino = {}; this.info = montarAsDez({}, destino, this.semente, { longe: this.longe }); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
   ficha() {
     const i = this.info;
-    return `<p class="sobre">Modelo 3D · árvore low poly</p><h2>${esc(this.nome)}</h2>` + linhas([
+    return `<p class="sobre">Modelo 3D · árvore low poly${this.longe ? ' · de longe' : ''}</p><h2>${esc(this.nome)}</h2>` + linhas([
       ['Espécies', '10'], ['A mais alta', i ? metros(i.altura * M) : '…'], ['Triângulos', i ? String(Math.round(i.triangulos)) + ' (as dez)' : '…'], ['Semente', String(this.semente)]
-    ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
-    `<p class="nota">A copa é sólido facetado (bolas de 80 faces, mexidas no vértice), o tronco é prisma, e a cor é chapada, uma por face — sem textura e sem recorte. Cada árvore tem de 280 a 690 triângulos. <code>js/diajogo/arvores_lowpoly.js</code>.</p>`;
+    ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button><button data-acao="longe">${this.longe ? 'Ver de perto' : 'Ver de longe'}</button></div><p class="nota">${esc(this.nota)}</p>` +
+    `<p class="nota">São as árvores do jogo, todas. A copa é sólido facetado (bolas de 80 faces, mexidas no vértice), o tronco é prisma, e a cor é chapada, uma por face — sem textura e sem recorte. De perto, cada árvore tem de 280 a 690 triângulos; <b>de longe</b> (a mais de ${LONGE_M} m da câmera), a mesma árvore em 20 a 130: a copa numa ou duas bolas de 20 faces, o tronco num prisma. <code>js/diajogo/arvores_lowpoly.js</code>.</p>`;
   }
 });
 for (const [id, e] of Object.entries(ESPECIES_LP)) {
   MODELOS.push({
     tipo: 'modelo', id: 'lowpoly-' + id, secao: 'Árvores low poly', grupo: GRUPOS_FLORA[e.lugar], nome: e.nome, nota: e.nota,
-    chao: CHAO_FLORA[e.lugar], semente: 1, info: null,
-    montar(g) { const destino = {}; this.info = montarArvoreLowpoly(id, {}, destino, this.semente); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+    chao: CHAO_FLORA[e.lugar], semente: 1, info: null, longe: false,
+    montar(g) { const destino = {}; this.info = montarArvoreLowpoly(id, {}, destino, this.semente, { longe: this.longe }); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
     ficha() {
       const i = this.info, onde = Object.entries(FLORA_LP).filter(([, t]) => t[id]).map(([k]) => GRUPOS_FLORA[k].toLowerCase());
-      return `<p class="sobre">Modelo 3D · árvore low poly · ${esc(this.grupo.toLowerCase())}</p><h2>${esc(this.nome)}</h2>` + linhas([
+      return `<p class="sobre">Modelo 3D · árvore low poly · ${esc(this.grupo.toLowerCase())}${this.longe ? ' · de longe' : ''}</p><h2>${esc(this.nome)}</h2>` + linhas([
         ['Altura', i ? metros(i.altura * M) : '…'], ['Copa', i ? metros(i.raio * 2 * M) + ' de largura' : '…'],
         ...(i && i.flor ? [['Flor', i.flor]] : []),
-        ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)], ['Vai em', onde.join(', '), true]
-      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
-      `<p class="nota">Low poly: a copa facetada, o tronco em prisma e a cor chapada por face, sem textura. A semente dá outro galho, outra copa, outro tamanho (±12%) e outro tom. <code>js/diajogo/arvores_lowpoly.js</code>.</p>`;
+        ['Triângulos', i ? `${Math.round(i.perto)} de perto · ${Math.round(i.longe)} de longe` : '…'], ['Semente', String(this.semente)], ['Vai em', onde.join(', '), true]
+      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button><button data-acao="longe">${this.longe ? 'Ver de perto' : 'Ver de longe'}</button></div><p class="nota">${esc(this.nota)}</p>` +
+      `<p class="nota">Low poly: a copa facetada, o tronco em prisma e a cor chapada por face, sem textura. A semente dá outro galho, outra copa, outro tamanho (±12%) e outro tom. A de longe sai do registro da de perto (o volume da copa, o tronco, as folhas), então a troca a ${LONGE_M} m não salta. <code>js/diajogo/arvores_lowpoly.js</code>.</p>`;
+    }
+  });
+}
+/* O MATO SIMPLIFICADO (js/mato3d.js): um pedaço de 160 × 120 m de cada
+   vegetação, plantado pela densidade do lugar, em ladrilhos de 40 m —
+   cada ladrilho é um THREE.LOD: a menos de LONGE_M da câmera, a árvore
+   inteira; mais longe, a de longe */
+const MATOS = [['mata', 'Mata', 'A mata fechada: ingá, jequitibá e ipê, uma árvore a cada 70 m².'],
+               ['cerrado', 'Cerrado', 'O cerrado ralo: pequizeiro e ipê, uma árvore a cada 200 m².'],
+               ['caatinga', 'Caatinga', 'A caatinga na seca: catingueira e mandacaru, uma planta a cada 150 m².'],
+               ['sul', 'Mata de araucária', 'O Sul: araucária e ingá, uma árvore a cada 90 m².']];
+for (const [lugar, nome, nota] of MATOS) {
+  MODELOS.push({
+    tipo: 'modelo', id: 'mato-' + lugar, secao: 'Árvores low poly', grupo: 'Mato simplificado', nome, nota,
+    chao: CHAO_FLORA[lugar], semente: 1, info: null,
+    montar(g) {
+      const arv = plantarMato({ x0: -80, x1: 80, z0: -60, z1: 60, lugar, semente: this.semente });
+      const lads = montarMato(arv);
+      let perto = 0, longe = 0;
+      for (const t of lads) {
+        const lod = new THREE.LOD(), cx = t.cx * M, cz = t.cz * M;
+        lod.position.set(cx, 0, cz);
+        const mP = malhaDeBlocos(t.perto.lowpoly || [], 'lowpoly'), mL = malhaDeBlocos(t.longe.lowpoly || [], 'lowpoly');
+        if (!mP || !mL) continue;
+        for (const m of [mP, mL]) m.position.set(-cx, 0, -cz);
+        /* a distância é do centro do ladrilho: meia diagonal a menos, pra
+           árvore da beira dele trocar perto dos 60 m */
+        lod.addLevel(mP, 0); lod.addLevel(mL, (LONGE_M + LADRILHO_M * 0.35) * M);
+        g.add(lod);
+        perto += t.triPerto; longe += t.triLonge;
+      }
+      this.info = { arvores: arv.length, ladrilhos: lads.length, perto, longe };
+      if (estado.sel === this) $('ficha').innerHTML = this.ficha();
+    },
+    ficha() {
+      const i = this.info;
+      return `<p class="sobre">Modelo 3D · mato simplificado</p><h2>${esc(this.nome)}</h2>` + linhas([
+        ['Área', '160 × 120 m'], ['Árvores', i ? String(i.arvores) + ' (uma a cada ' + DENSIDADE[lugar] + ' m²)' : '…'],
+        ['Ladrilhos', i ? String(i.ladrilhos) + ' de ' + LADRILHO_M + ' m' : '…'],
+        ['Tudo de perto', i ? Math.round(i.perto).toLocaleString('pt-BR') + ' triângulos' : '…'],
+        ['Tudo de longe', i ? Math.round(i.longe).toLocaleString('pt-BR') + ' triângulos' : '…'], ['Semente', String(this.semente)]
+      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(nota)}</p>` +
+      `<p class="nota">Cada ladrilho de ${LADRILHO_M} m tem as duas malhas: a menos de ${LONGE_M} m da câmera, a árvore inteira; mais longe, a de longe. Daqui a câmera está longe e tudo sai de longe — <b>role pra aproximar</b> e veja os ladrilhos da frente ganharem a árvore inteira. Uma chamada de desenho por ladrilho, não por árvore. <code>js/diajogo/mato3d.js</code>.</p>`;
     }
   });
 }
@@ -2024,22 +2068,6 @@ for (const [id, p] of Object.entries(PECAS_PRAIA)) {
         ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)]
       ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
       `<p class="nota">No tamanho de verdade, em metros; a semente troca as cores, o nome e o que está solto na areia. O texto que muda (o nome, o número do posto) é decalque. <code>js/diajogo/praia3d.js</code>.</p>`;
-    }
-  });
-}
-for (const [id, e] of Object.entries(ESPECIES)) {
-  MODELOS.push({
-    tipo: 'modelo', id: 'arvore-' + id, secao: 'As árvores', grupo: GRUPOS_FLORA[e.grupo], nome: e.nome, nota: e.nota,
-    chao: CHAO_FLORA[e.grupo], semente: 1, info: null,
-    montar(g) { const destino = {}; this.info = montarArvore(id, {}, destino, this.semente); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
-    ficha() {
-      const i = this.info, onde = Object.entries(FLORA).filter(([, t]) => t[id]).map(([k]) => GRUPOS_FLORA[k].toLowerCase());
-      return `<p class="sobre">Modelo 3D · árvore · ${esc(this.grupo.toLowerCase())}</p><h2>${esc(this.nome)}</h2>` + linhas([
-        ['Altura', i ? metros(i.altura * M) : '…'], ['Copa', i ? metros(i.raio * 2 * M) + ' de largura' : '…'],
-        ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)],
-        ['Vai em', onde.join(', '), true]
-      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
-      `<p class="nota">A mesma espécie muda com a semente: outro galho, outra copa, outro tamanho (±12%). A copa é de cachos de cartão recortado, com a luz de um volume (a normal sai do centro da copa); o tronco é o tubo varrido com a casca da espécie. <code>js/diajogo/arvores3d.js</code>.</p>`;
     }
   });
 }
@@ -2095,21 +2123,17 @@ function material(folha) {
      só se desenha de frente: de cima, o teto e a parede do lado de cá somem */
   if (folha === 'metro_sub') materiais[folha] = new THREE.MeshLambertMaterial({ map: textura('metro'), vertexColors: true, side: THREE.FrontSide });
   else if (folha === 'vidros') materiais[folha] = new THREE.MeshLambertMaterial({ color: '#bcd6e0', transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
-  /* a folhagem (o cartão da copa e a fronde): só a face da frente, que o
-     cartão vem nas duas, cada uma com a normal de fora da copa */
-  else if (folha === 'folhagem') materiais[folha] = new THREE.MeshLambertMaterial({
-    map: textura('vegetacao'), vertexColors: true, side: THREE.FrontSide, alphaTest: 0.45, alphaToCoverage: true });
   /* a árvore low poly: só a cor de cada face, chapada, sem mapa */
   else if (folha === 'lowpoly') materiais[folha] = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
-  /* a rede do vôlei: a folha da vegetação, mas transparente de verdade (e
+  /* a rede do vôlei: a folha das grades, mas transparente de verdade (e
      não recortada) — a malha fina, na média do mipmap, fica abaixo de
      qualquer limiar: recortada, ou some ou vira faixa preta; misturada,
      de longe ela é o véu escuro que a rede é */
   else if (folha === 'rede') materiais[folha] = new THREE.MeshLambertMaterial({
-    map: textura('vegetacao'), vertexColors: true, side: THREE.DoubleSide, transparent: true, depthWrite: false });
+    map: textura('grades'), vertexColors: true, side: THREE.DoubleSide, transparent: true, depthWrite: false });
   else materiais[folha] = new THREE.MeshLambertMaterial({
     map: textura(folha), vertexColors: true, side: THREE.DoubleSide,
-    alphaTest: folha === 'grades' ? 0.08 : folha === 'vegetacao' ? 0.45 : 0, alphaToCoverage: folha === 'grades' || folha === 'vegetacao' });
+    alphaTest: folha === 'grades' ? 0.08 : 0, alphaToCoverage: folha === 'grades' });
   return materiais[folha];
 }
 function malhaDeBlocos(blocos, folha) {
@@ -2118,13 +2142,13 @@ function malhaDeBlocos(blocos, folha) {
   g.setAttribute('position', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'pos'), 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'uv'), 2));
   g.setAttribute('color', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'cor'), 3));
-  /* a folhagem traz a normal dela (a de fora da copa); o resto, a da face */
+  /* o bloco que traz a normal fica com ela; o resto, a da face */
   if (blocos.every(b => b.nor)) g.setAttribute('normal', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'nor'), 3));
   else g.computeVertexNormals();
   const m = new THREE.Mesh(g, material(folha));
-  /* o que é recortado (a folha, a grade, a rede) faz a sombra recortada */
-  if (folha === 'folhagem' || folha === 'vegetacao' || folha === 'grades' || folha === 'rede')
-    m.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: textura(folha === 'folhagem' || folha === 'rede' ? 'vegetacao' : folha), alphaTest: 0.45 });
+  /* o que é recortado (a grade, a rede) faz a sombra recortada */
+  if (folha === 'grades' || folha === 'rede')
+    m.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: textura('grades'), alphaTest: 0.45 });
   /* o subsolo não pega a sombra da rua, e o vidro não faz sombra */
   m.castShadow = folha !== 'metro_sub' && folha !== 'vidros'; m.receiveShadow = folha !== 'vidros' && folha !== 'metro_sub';
   return m;
@@ -2373,6 +2397,7 @@ $('ficha').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-acao]');
   const A = estado.sel;
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'semente') { A.semente++; selecionar(A); return; }
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'longe') { A.longe = !A.longe; selecionar(A); return; }
   if (!b || !A || A.tipo !== 'estacao') return;
   if (b.dataset.acao === 'viajar') {
     const B = estacoes.find(x => x.est === outraDe(A.est));
@@ -2623,11 +2648,16 @@ function objetoDoEquip(eq, g, o) {
     }
   }
 }
+/* a árvore de rua e de praça: a low poly do jogo, a da cidade (oiti,
+   mangueira, ipê), encaixada no círculo da planta — a copa com uma vez e
+   meia o raio dele, a altura da árvore de rua; a mesma conta do jogo */
 function arvore3d(g, a) {
-  const galho = 26 + a.r * 1.2, copa = a.r * 3.1;
-  caixa(g, a.x - 2.4, a.x + 2.4, 0, galho + copa * 0.3, a.y - 2.4, a.y + 2.4, '#5a4630');
-  const c1 = new THREE.Mesh(new THREE.ConeGeometry(a.r, copa, 4), lisa('#3f7a34')); c1.position.set(a.x, galho + copa / 2, a.y); c1.castShadow = true; g.add(c1);
-  const c2 = new THREE.Mesh(new THREE.ConeGeometry(a.r, a.r * 0.9, 4), lisa('#356b2c')); c2.rotation.x = Math.PI; c2.position.set(a.x, galho - a.r * 0.45, a.y); g.add(c2);
+  const sem = (Math.abs(Math.round(a.x * 17 + a.y * 131)) % 1000003) + 1, rnd = sorteio(sem);
+  const destino = {};
+  montarArvoreLowpoly(especieLowpolyDe('cidade', rnd), { x: a.x, z: a.y, giro: rnd() * 2 * Math.PI }, destino, sem,
+                      { caber: { alt: (26 + a.r * 4.3) / M, raio: a.r * 1.5 / M } });
+  const m = malhaDeBlocos(destino.lowpoly || [], 'lowpoly');
+  if (m) g.add(m);
 }
 function objetoDaQuadra(q, g, nova, prop) {
   const pts = nova ? retPts(q) : q.pol;

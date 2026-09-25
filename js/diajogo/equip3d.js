@@ -17,8 +17,9 @@
    A PRAÇA DA VILA é de bairro: o calçadão de pedra portuguesa em onda,
    o chafariz de pastilha no meio, o parquinho na areia (escorregador,
    balanço, gangorra), a academia ao ar livre, as mesas de xadrez, a
-   banca de jornal, os ipês amarelos e as outras árvores, os bancos de
-   ripa, os postes de praça e as lixeiras.
+   banca de jornal, os ipês amarelos e as outras árvores (as low poly do
+   jogo, na lista `lowpoly`), os bancos de ripa, os postes de praça e as
+   lixeiras.
 
    O REFERENCIAL é o do construtor: x da esquerda pra direita de quem
    olha a fachada, z negativo entrando no terreno, em metros. Pro mundo
@@ -28,6 +29,7 @@
    quem mostra escrever.
    ========================================================= */
 import { Construtor, METRO, lerp, sub, unit } from './construtor3d.js';
+import { facesDaArvore } from './arvores_lowpoly.js';
 
 const M = METRO;
 const lisa = tinta => ({ k: 'lisa', tinta });
@@ -104,33 +106,19 @@ function cilindro(C, x, z, y0, y1, r, tinta, lados = 10, k = 'lisa') {
 /* =======================================================
    AS PEÇAS DE PRAÇA (a praça e a frente do shopping)
    ======================================================= */
-/* o torno com a peça REPETIDA: `rep` vezes em volta e uma vez por pedaço
-   do perfil (o do construtor estica a peça numa volta só, e a folha da
-   copa, de 2 m, virava risco) */
-function tornoRep(C, cx, cz, perfil, lados, k, rep, giro = 0) {
-  const c = C.cel(k), n = lados / rep;
-  for (let i = 0; i < lados; i++) {
-    const t0 = giro + i / lados * Math.PI * 2, t1 = giro + (i + 1) / lados * Math.PI * 2;
-    const f0 = (i % n) / n, f1 = (i % n + 1) / n;
-    const u0 = lerp(c[0], c[2], f0), u1 = lerp(c[0], c[2], f1);
-    for (let j = 0; j < perfil.length - 1; j++) {
-      const [r0, y0] = perfil[j], [r1, y1] = perfil[j + 1];
-      C.poli([[cx + r0 * Math.cos(t0), y0, cz - r0 * Math.sin(t0)], [cx + r0 * Math.cos(t1), y0, cz - r0 * Math.sin(t1)],
-              [cx + r1 * Math.cos(t1), y1, cz - r1 * Math.sin(t1)], [cx + r1 * Math.cos(t0), y1, cz - r1 * Math.sin(t0)]],
-             [[u0, c[1]], [u1, c[1]], [u1, c[3]], [u0, c[3]]]);
-    }
-  }
-}
-/* a árvore: o tronco de casca, dois galhos e a copa de folha em volta; o
-   ipê leva a copa amarela. `marcas` recebe a copa em planta. */
-function arvore(C, x, z, alt, raio, ipe, marcas) {
-  const r = raio, y0 = alt * 0.42;
-  C.torno(x, z, [[0.2, 0], [0.16, y0 * 0.6], [0.13, y0 + 0.2]], 7, 'casca');
-  for (const [dx, dz, h] of [[0.5, 0.2, 0.7], [-0.4, -0.3, 0.8]]) barra(C, [x, y0 * 0.85, z], [x + dx, y0 + h, z + dz], 0.1, 'casca');
-  const k = ipe ? 'copa_ipe' : 'copa';
-  tornoRep(C, x, z, [[0.05, y0], [r * 0.75, y0 + 0.15 * alt], [r, y0 + 0.36 * alt], [r * 0.92, y0 + 0.5 * alt],
-                     [r * 0.6, y0 + 0.62 * alt], [0.05, y0 + 0.66 * alt]], 12, k, 4, (x * 7 + z * 3) % 1);
-  if (marcas) marcas.push({ x, z, r, cor: ipe ? '#e6b81f' : '#3f7a34', tipo: 'arvore' });
+/* o coletor da lista `lowpoly` (a árvore): posição, UV zerada e cor */
+const coletor = () => ({ pos: [], uv: [], cor: [] });
+/* a árvore: a low poly do jogo (o oiti; o ipê amarelo quando `ipe`),
+   encaixada na altura e no raio de copa que o desenho pede, girada pela
+   semente do lugar. `marcas` recebe a copa em planta. */
+function arvore(LP, x, z, alt, raio, ipe, marcas) {
+  const sem = Math.abs(Math.round(x * 131 + z * 71)) + 1;
+  const r = facesDaArvore(ipe ? 'ipe' : 'oiti', sem, { caber: { alt, raio }, flor: ipe ? 'amarelo' : undefined });
+  const g = sem * 0.7, c = Math.cos(g), s = Math.sin(g), P = r.perto.pos;
+  for (let i = 0; i < P.length; i += 3) LP.pos.push(x + P[i] * c - P[i + 2] * s, P[i + 1], z + P[i] * s + P[i + 2] * c);
+  for (const v of r.perto.uv) LP.uv.push(v);
+  for (const v of r.perto.cor) LP.cor.push(v);
+  if (marcas) marcas.push({ x, z, r: raio, cor: ipe ? '#e6b81f' : '#3f7a34', tipo: 'arvore' });
 }
 /* o banco de praça: o assento e o encosto de ripa nos pés de ferro */
 function banco(C, x0, x1, z, dir, marcas) {
@@ -171,7 +159,7 @@ function canteiro(C, x0, x1, z0, z1, marcas, k = 'grama') {
 export function montarShopping(spec, destino = {}, opc = {}) {
   const E = eixosDoEquip(spec.area, spec.frente);
   const L = E.L / M, A = E.A / M;
-  const B = Construtor('equip'), V = Construtor('equip');
+  const B = Construtor('equip'), V = Construtor('equip'), LP = coletor();
   const placas = [], marcas = [];
   /* o prédio: da praça (5 m na ponta esquerda) até a ponta redonda */
   const xa = 5.2, zf = -0.9, zt = -A + 0.6, R = (zf - zt) / 2, zc = (zf + zt) / 2, xr = L - 0.4 - R;
@@ -299,7 +287,7 @@ export function montarShopping(spec, destino = {}, opc = {}) {
   for (const [x, z] of [[1.3, -8.0], [3.6, -10.8]]) {
     B.caixa(x - 0.8, x + 0.8, 0, 0.5, z - 0.8, z + 0.8, { todas: 'concreto_claro' });
     B.tampa([[x - 0.7, z + 0.7], [x + 0.7, z + 0.7], [x + 0.7, z - 0.7], [x - 0.7, z - 0.7]], 0.46, 'grama', false);
-    arvore(B, x, z, 5.4, 1.7, false, marcas);
+    arvore(LP, x, z, 5.4, 1.7, false, marcas);
   }
   banco(B, 0.4, 2.2, -5.3, -1, marcas);
   banco(B, 3.0, 4.8, -6.4, 1, marcas);
@@ -312,7 +300,7 @@ export function montarShopping(spec, destino = {}, opc = {}) {
   for (let x = xa + 0.6; x < xr; x += 2.6) cilindro(B, x, zf + 0.55, 0, 0.9, 0.1, '#6f7477', 8);
   lixeira(B, 4.4, -1.2);
 
-  const r = fechar(E, { equip: B, vidros: V }, destino, placas, marcas);
+  const r = fechar(E, { equip: B, vidros: V, lowpoly: LP }, destino, placas, marcas);
   return { ...r, altura: H4 + 3.4 };
 }
 
@@ -351,7 +339,7 @@ function viatura(C, x, z, dir, marcas) {
 export function montarDelegacia(spec, destino = {}, opc = {}) {
   const E = eixosDoEquip(spec.area, spec.frente);
   const L = E.L / M, A = E.A / M;
-  const B = Construtor('equip'), G = Construtor('grades'), V = Construtor('equip');
+  const B = Construtor('equip'), G = Construtor('grades'), V = Construtor('equip'), LP = coletor();
   const placas = [], marcas = [];
   /* o prédio de dois andares, com a ala baixa de cada lado */
   const bx0 = 3.2, bx1 = 20.4, bz0 = -A + 0.8, bz1 = -2.8;
@@ -477,9 +465,9 @@ export function montarDelegacia(spec, destino = {}, opc = {}) {
   /* na calçada da frente, os balizadores e a lixeira */
   for (let x = bx0 + 0.6; x < bx1; x += 2.2) cilindro(B, x, -0.15, 0, 0.8, 0.09, '#2a4a8c', 8);
   lixeira(B, bx0 - 1.2, -1.2);
-  arvore(B, 1.6, -1.6, 5.2, 1.6, false, marcas);
+  arvore(LP, 1.6, -1.6, 5.2, 1.6, false, marcas);
 
-  return fechar(E, { equip: B, grades: G, vidros: V }, destino, placas, marcas);
+  return fechar(E, { equip: B, grades: G, vidros: V, lowpoly: LP }, destino, placas, marcas);
 }
 
 /* =======================================================
@@ -570,7 +558,7 @@ function banca(C, x0, z0, marcas) {
 export function montarPraca(spec, destino = {}, opc = {}) {
   const E = eixosDoEquip(spec.area, spec.frente || 's');
   const L = E.L / M, A = E.A / M;
-  const B = Construtor('equip'), V = Construtor('equip');
+  const B = Construtor('equip'), V = Construtor('equip'), LP = coletor();
   const placas = [], marcas = [];
   const zm = -A / 2, xm = L / 2;
   /* O CHÃO: a pedra portuguesa branca na volta (a calçada é da praça), a
@@ -605,14 +593,14 @@ export function montarPraca(spec, destino = {}, opc = {}) {
   canteiro(B, s1 - 3.4, s1, s2, s3, marcas);
   mesaXadrez(B, s0 + 6.0, (s2 + s3) / 2 + 0.5, marcas);
   mesaXadrez(B, s0 + 8.8, (s2 + s3) / 2 - 0.3, marcas);
-  arvore(B, s0 + 1.8, (s2 + s3) / 2, 6.2, 2.2, false, marcas);
-  arvore(B, s1 - 1.7, s2 + 1.4, 5.6, 1.9, true, marcas);
+  arvore(LP, s0 + 1.8, (s2 + s3) / 2, 6.2, 2.2, false, marcas);
+  arvore(LP, s1 - 1.7, s2 + 1.4, 5.6, 1.9, true, marcas);
   /* o sudeste: o gramado, os dois ipês, a banca na quina */
   const [e0, e1, e2, e3] = q.se;
   canteiro(B, e0, e1 - 3.6, e2, e3, marcas);
-  arvore(B, e0 + 2.0, e3 - 1.6, 6.0, 2.1, true, marcas);
-  arvore(B, e0 + 6.8, e2 + 1.5, 6.4, 2.3, false, marcas);
-  arvore(B, e1 - 5.8, e3 - 1.4, 5.4, 1.8, true, marcas);
+  arvore(LP, e0 + 2.0, e3 - 1.6, 6.0, 2.1, true, marcas);
+  arvore(LP, e0 + 6.8, e2 + 1.5, 6.4, 2.3, false, marcas);
+  arvore(LP, e1 - 5.8, e3 - 1.4, 5.4, 1.8, true, marcas);
   banca(B, e1 - 3.2, e3 + 0.1, marcas);
   /* O CHAFARIZ no cruzamento: a borda de pastilha, a água, o pé e o
      esguicho */
@@ -653,5 +641,5 @@ export function montarPraca(spec, destino = {}, opc = {}) {
   B.caixa(1.0, 4.4, 0, 0.7, -1.0, -0.4, { todas: 'concreto_claro' });
   placa(placas, 'placa_praca', (spec.nome || 'PRAÇA').toUpperCase(), '#e3dfd3', '#2f4f3a', 2.7, 0.38, -0.39, 0, 1, 3.2, 0.5);
   placa(placas, 'placa_praca', (spec.nome || 'PRAÇA').toUpperCase(), '#e3dfd3', '#2f4f3a', 2.7, 0.38, -1.01, 0, -1, 3.2, 0.5);
-  return fechar(E, { equip: B, vidros: V }, destino, placas, marcas);
+  return fechar(E, { equip: B, vidros: V, lowpoly: LP }, destino, placas, marcas);
 }

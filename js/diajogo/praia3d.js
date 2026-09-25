@@ -17,11 +17,12 @@
    Cada peça é montada em METROS em volta da origem, com o chão em y = 0
    e a frente pro +z (o lado de quem olha: o mar, no quiosque; a areia,
    na beira do mar), e `noMundo` põe no lugar. As listas: `praia` (a
-   folha praia.jpg), `equip` (a pedra portuguesa, a areia, o concreto —
-   equip.jpg), `vegetacao` (o coco) e `rede` (a rede do vôlei: a mesma
-   folha, mas transparente de verdade, não recortada — recortada, a
-   malha fina some de longe ou vira faixa preta); o coqueiro vem de `arvores3d.js`. O texto que muda (o nome do quiosque,
-   da barraca, do barco, o número do posto) é decalque.
+   folha praia.jpg, com o coco), `equip` (a pedra portuguesa, a areia, o
+   concreto — equip.jpg), `rede` (a rede do vôlei, na folha das grades,
+   transparente de verdade e não recortada: recortada, a malha fina some
+   de longe ou vira faixa preta) e `lowpoly` (o coqueiro, que é a árvore
+   low poly de `arvores_lowpoly.js`). O texto que muda (o nome do
+   quiosque, da barraca, do barco, o número do posto) é decalque.
 
    O TAMANHO É O DE VERDADE: a quadra tem 16 × 8 m e a jangada 6 m. O 2D
    da planta desenha as duas menores, como símbolo — quem puser a peça no
@@ -31,8 +32,8 @@
    guarda-sol, da lona e da tábua, o nome, a canga, o que está solto na
    areia e o jeito de cada cadeira.
    ========================================================= */
-import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo } from './construtor3d.js';
-import { sorteio, varrer, esfera, montarArvore } from './arvores3d.js';
+import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js';
+import { montarArvoreLowpoly } from './arvores_lowpoly.js';
 
 const ALTO = [0, 1, 0];
 const escolha = (rnd, lista) => lista[Math.floor(rnd() * lista.length) % lista.length];
@@ -264,7 +265,7 @@ function mesaComGuardaSol(x, L, o = {}) {
     const a = i * Math.PI / 2 + rnd.entre(-0.18, 0.18), d = rnd.entre(0.58, 0.7);
     cadeiraPlastica(B, L.dentro(Math.cos(a) * d, Math.sin(a) * d, Math.atan2(Math.cos(a), -Math.sin(a)) + rnd.entre(-0.25, 0.25)), o.cadeira || '#f1efe9');
   }
-  if (o.coco !== false && rnd() < 0.7) esfera(x.Vg, L.pt([rnd.entre(-0.2, 0.2), 0.83, rnd.entre(0.1, 0.25)]), 0.105, 'coco', 6, 4);
+  if (o.coco !== false && rnd() < 0.7) esfera(x.B, L.pt([rnd.entre(-0.2, 0.2), 0.83, rnd.entre(0.1, 0.25)]), 0.105, 'coco', 6, 4);
 }
 /* o ISOPOR: a caixa de gelo com a tampa um pouco maior */
 function isopor(C, L, o = {}) {
@@ -298,11 +299,11 @@ function prancha(C, L, o = {}) {
   if (o.tinta) C.pintar(null);
 }
 /* a PILHA DE COCO verde: a volta de baixo e os de cima */
-function cocos(Vg, L, n, rnd) {
+function cocos(C, L, n, rnd) {
   const r = 0.11, baixo = [[0, 0], [0.21, 0.03], [-0.2, 0.06], [0.04, 0.21], [0.08, -0.2], [-0.13, -0.16], [0.24, -0.17], [-0.25, 0.22]];
   const cima = [[0.1, 0.08], [-0.09, -0.04], [0.02, 0.18]];
-  for (let i = 0; i < Math.min(n, baixo.length); i++) esfera(Vg, L.pt([baixo[i][0], r * 0.92, baixo[i][1]]), r * rnd.entre(0.9, 1.1), 'coco', 6, 4);
-  for (let i = 0; i < Math.min(n - baixo.length, cima.length); i++) esfera(Vg, L.pt([cima[i][0], r * 2.6, cima[i][1]]), r * rnd.entre(0.9, 1.1), 'coco', 6, 4);
+  for (let i = 0; i < Math.min(n, baixo.length); i++) esfera(C, L.pt([baixo[i][0], r * 0.92, baixo[i][1]]), r * rnd.entre(0.9, 1.1), 'coco', 6, 4);
+  for (let i = 0; i < Math.min(n - baixo.length, cima.length); i++) esfera(C, L.pt([cima[i][0], r * 2.6, cima[i][1]]), r * rnd.entre(0.9, 1.1), 'coco', 6, 4);
 }
 /* a BANQUETA do balcão: o pé redondo, o cano e o assento */
 function banqueta(C, L, cor) {
@@ -335,7 +336,7 @@ function pecaGuardaSol(x) {
   isopor(B, Lugar(0.08, -0.62, rnd.entre(-0.4, 0.4)));
   if (rnd() < 0.65) prancha(B, Lugar(-1.2, -0.75, rnd.entre(0.2, 0.6)));
   else prancha(B, Lugar(-0.2, 2.75, rnd.entre(-0.3, 0.3)), { deitada: true });
-  if (rnd() < 0.6) esfera(x.Vg, [0.95, 0.1, -0.25], 0.1, 'coco', 6, 4);
+  if (rnd() < 0.6) esfera(x.B, [0.95, 0.1, -0.25], 0.1, 'coco', 6, 4);
 }
 /* A MESA COM GUARDA-SOL (a do quiosque, solta) */
 function pecaMesa(x) {
@@ -346,7 +347,7 @@ function pecaMesa(x) {
    nos seis paus, o babado com o nome, e embaixo a mesa, as cadeiras, os
    isopores, a pilha de cadeira e o coco */
 function pecaBarraca(x) {
-  const { B, Vg, rnd, placas } = x;
+  const { B, rnd, placas } = x;
   const lona = escolha(rnd, LONAS), cor = COR_DA_LONA[lona];
   const a = 1.5, o = 0.15, hE = 2.05, hR = 2.75, cai = 0.22;
   /* os paus e as travessas */
@@ -376,11 +377,11 @@ function pecaBarraca(x) {
     const t = i * Math.PI / 2 + 0.25 + rnd.entre(-0.2, 0.2), d = rnd.entre(0.6, 0.72);
     cadeiraPlastica(B, Lugar(0.1 + Math.cos(t) * d, 0.3 + Math.sin(t) * d, Math.atan2(Math.cos(t), -Math.sin(t)) + rnd.entre(-0.3, 0.3)), '#f1efe9');
   }
-  for (let i = 0; i < 3; i++) esfera(Vg, [0.1 + rnd.entre(-0.25, 0.25), 0.83, 0.3 + rnd.entre(-0.25, 0.25)], 0.105, 'coco', 6, 4);
+  for (let i = 0; i < 3; i++) esfera(B, [0.1 + rnd.entre(-0.25, 0.25), 0.83, 0.3 + rnd.entre(-0.25, 0.25)], 0.105, 'coco', 6, 4);
   isopor(B, Lugar(-1.05, -1.0, 0.1));
   isopor(B, Lugar(-1.05, -1.0, 0.18, 0.45), { larg: 0.52 });
   for (let i = 0; i < 4; i++) cadeiraPlastica(B, Lugar(1.05, -1.0, -0.3, i * 0.075), '#f1efe9');
-  cocos(Vg, Lugar(-1.15, 0.9), 9, rnd);
+  cocos(B, Lugar(-1.15, 0.9), 9, rnd);
 }
 /* O POSTO DE GUARDA-VIDAS: as quatro pernas com o X, o tablado, a
    cabine vermelha de janela nos três lados e porta atrás, o telhado
@@ -472,7 +473,7 @@ function pecaQuadra(x) {
    colunas, com o letreiro em cima; senão, o de palha nos esteios de
    tronco, com a placa de madeira. */
 function pecaQuiosque(x, orla) {
-  const { B, Vg, rnd, placas } = x;
+  const { B, rnd, placas } = x;
   const Y = 0.3, DX = 3.6, DZ = 2.7;
   const nome = orla ? escolha(rnd, ['QUIOSQUE BEIRA-MAR', 'QUIOSQUE ONDA AZUL', 'QUIOSQUE PÉ NA AREIA', 'QUIOSQUE MAR ABERTO'])
                     : escolha(rnd, ['ESTRELA DO MAR', 'BARRACA DO NEGUINHO', 'SOL E MAR', 'CANTINHO DA PRAIA', 'BARRACA DA NETA']);
@@ -505,8 +506,8 @@ function pecaQuiosque(x, orla) {
                                                     todas: { k: 'lisa', tinta: '#e6e4de' } });
   B.caixa(1.05, 1.78, Y, Y + 1.8, Z1, Z1 + 0.68, { frente: { k: 'geladeira', modo: 'esticar' }, base: null, todas: { k: 'lisa', tinta: '#c8322b' } });
   for (const bx of [-0.35, 0.2, 0.75]) banqueta(B, Lugar(bx, Z1 + 0.95, 0, Y), orla ? acento : '#a8362e');
-  cocos(Vg, Lugar(2.2, 0.05, 0, Y), 11, rnd);
-  for (let i = 0; i < 3; i++) esfera(Vg, [-0.4 + i * 0.24, Y + 0.95, Z1 + 0.28 + rnd.entre(-0.05, 0.05)], 0.1, 'coco', 6, 4);
+  cocos(B, Lugar(2.2, 0.05, 0, Y), 11, rnd);
+  for (let i = 0; i < 3; i++) esfera(B, [-0.4 + i * 0.24, Y + 0.95, Z1 + 0.28 + rnd.entre(-0.05, 0.05)], 0.1, 'coco', 6, 4);
   /* o telhado */
   const yB = Y + H;
   if (orla) {
@@ -813,34 +814,35 @@ for (const p of Object.values(PECAS_PRAIA)) p.chao = p.chao || AREIA;
 
 /* MONTA a peça `id` da praia com a `semente`, em (onde.x, onde.z) do
    mundo, girada de `onde.giro`: os blocos vão pra `destino` e os
-   decalques voltam no mundo. `info`: a planta (largura × fundo), a altura e os triângulos.
-   As listas: praia, equip, vegetacao, rede e, no coqueiro, folhagem. */
+   decalques voltam no mundo. `info`: a planta (largura × fundo), a
+   altura e os triângulos. As listas: praia, equip, rede e, no coqueiro,
+   lowpoly. */
 export function montarPecaDaPraia(id, onde = {}, destino = {}, semente = 1) {
   const peca = PECAS_PRAIA[id];
   if (!peca) throw new Error('praia3d: não conheço a peça ' + id);
   const rnd = sorteio(semente * 104729 + id.length * 7919 + id.charCodeAt(0));
-  const B = Construtor('praia'), E = Construtor('equip'), Vg = Construtor('vegetacao'), R = Construtor('vegetacao'), placas = [];
+  const B = Construtor('praia'), E = Construtor('equip'), R = Construtor('grades'), placas = [];
   let arvores = 0;
   const caixa = [Infinity, -Infinity, 0, Infinity, -Infinity];            // x0, x1, altura, z0, z1
   const k = onde.escala || 1, c = Math.cos(onde.giro || 0), s = Math.sin(onde.giro || 0);
-  const x = { B, E, Vg, R, rnd, placas,
+  const x = { B, E, R, rnd, placas,
     /* a árvore dentro da peça: o lugar dela no mundo sai do lugar da peça */
     arvore(especie, lx, lz, giro = 0) {
-      const r = montarArvore(especie, { x: (onde.x || 0) + (lx * c - lz * s) * k * METRO, z: (onde.z || 0) + (lx * s + lz * c) * k * METRO,
+      const r = montarArvoreLowpoly(especie, { x: (onde.x || 0) + (lx * c - lz * s) * k * METRO, z: (onde.z || 0) + (lx * s + lz * c) * k * METRO,
                                         y: onde.y || 0, giro: (onde.giro || 0) + giro, escala: k }, destino, semente * 31 + arvores + 1);
       arvores += r.triangulos;
       caixa[0] = Math.min(caixa[0], lx - r.raio / k); caixa[1] = Math.max(caixa[1], lx + r.raio / k); caixa[2] = Math.max(caixa[2], r.altura / k);
       caixa[3] = Math.min(caixa[3], lz - r.raio / k); caixa[4] = Math.max(caixa[4], lz + r.raio / k);
     } };
   peca.montar(x);
-  for (const C of [B, E, Vg, R]) for (let i = 0; i < C.pos.length; i += 3) {
+  for (const C of [B, E, R]) for (let i = 0; i < C.pos.length; i += 3) {
     caixa[0] = Math.min(caixa[0], C.pos[i]); caixa[1] = Math.max(caixa[1], C.pos[i]); caixa[2] = Math.max(caixa[2], C.pos[i + 1]);
     caixa[3] = Math.min(caixa[3], C.pos[i + 2]); caixa[4] = Math.max(caixa[4], C.pos[i + 2]);
   }
-  noMundo({ praia: B, equip: E, vegetacao: Vg, rede: R }, destino, onde);
+  noMundo({ praia: B, equip: E, rede: R }, destino, onde);
   return {
     placas: placasNoMundo(placas, onde),
     info: { larg: (caixa[1] - caixa[0]) * k, fundo: (caixa[4] - caixa[3]) * k, altura: caixa[2] * k,
-            triangulos: (B.pos.length + E.pos.length + Vg.pos.length + R.pos.length) / 9 + arvores }
+            triangulos: (B.pos.length + E.pos.length + R.pos.length) / 9 + arvores }
   };
 }

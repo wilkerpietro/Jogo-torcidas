@@ -14,6 +14,14 @@
    seguintes — a parede clara da folha vira o sobrado verde ou o
    mercado azul, e a janela desenhada depois de `pintar(null)` não
    pega tinta nenhuma.
+
+   E tem o MODO CHAPADO (`Construtor(folha, { chapado })`, a favela low
+   poly): a peça que está na `paleta` sai numa cor lisa — o polígono
+   uma vez só, sem ladrilhar, com a UV parada no miolo de uma peça
+   branca da folha e a cor da paleta na tinta, tremida um tanto de face
+   pra face —; o vão da fachada vira placa 1,5 cm na frente da parede,
+   sem requadro nem recuo; e o torno perde lados. O que não está na
+   paleta (o mural, a faixa de cerveja) continua com a textura.
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { ATLAS } from './modelos_atlas.js';
@@ -27,10 +35,23 @@ export const pv = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2
 export const pe = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 export const unit = a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
 
+/* o sorteio de semente fixa (mulberry32): a mesma semente dá a mesma
+   sequência — a árvore, a casa e a peça da praia saem iguais sempre */
+export function sorteio(semente) {
+  let est = (semente >>> 0) || 1;
+  const r = () => {
+    est = (est + 0x6D2B79F5) >>> 0; let t = est;
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  r.entre = (a, b) => a + r() * (b - a);
+  return r;
+}
+
 /* =======================================================
    O CONSTRUTOR — junta triângulos com a UV da folha
    ======================================================= */
-export function Construtor(folha) {
+export function Construtor(folha, opcoes = {}) {
   const A = ATLAS[folha];
   const pos = [], uv = [], cor = [];
   const cel = k => {
@@ -45,6 +66,16 @@ export function Construtor(folha) {
      do vértice) */
   let tinta = [1, 1, 1];
   const linear = new THREE.Color();
+  /* O MODO CHAPADO: a cor lisa de cada peça da paleta (linear) e a UV
+     parada no miolo da peça branca */
+  const CH = opcoes.chapado || null, corLisa = {};
+  let uvLiso = null;
+  if (CH) {
+    const c = cel(CH.branca || 'lisa');
+    uvLiso = [(c[0] + c[2]) / 2, (c[1] + c[3]) / 2];
+    for (const [k, hex] of Object.entries(CH.paleta)) { linear.set(hex); corLisa[k] = [linear.r, linear.g, linear.b]; }
+  }
+  const liso = k => !!CH && !!corLisa[k];
   function pintar(c) {
     if (!c) { tinta = [1, 1, 1]; return; }
     if (Array.isArray(c)) { tinta = c; return; }
@@ -61,6 +92,15 @@ export function Construtor(folha) {
   }
   function poli(P, T, escuro) {
     for (let i = 1; i < P.length - 1; i++) tri(P[0], P[i], P[i + 1], T[0], T[i], T[i + 1], escuro);
+  }
+  /* a face lisa do modo chapado: o polígono uma vez, a UV parada, a cor
+     da paleta vezes a tinta corrente, tremida pela semente */
+  function chapar(P, k, escuro) {
+    const cl = corLisa[k], f = CH.rnd ? 1 + (CH.rnd() - 0.5) * 2 * (CH.treme === undefined ? 0.06 : CH.treme) : 1;
+    const antes = tinta;
+    tinta = [antes[0] * cl[0] * f, antes[1] * cl[1] * f, antes[2] * cl[2] * f];
+    poli(P, P.map(() => uvLiso), escuro);
+    tinta = antes;
   }
   /* um PLANO: origem O e dois eixos unitários U (largura) e V (altura);
      a normal de fora é U × V */
@@ -99,6 +139,7 @@ export function Construtor(folha) {
   };
   function ladrilhar(F, pol, k, o = {}) { comTinta(o, () => ladrilharJa(F, pol, k, o)); }
   function ladrilharJa(F, pol, k, o) {
+    if (liso(k)) { chapar(pol.map(([a, b]) => noPlano(F, a, b)), k, o.escuro); return; }
     const c = cel(k), tw = o.tw || c[4], th = o.th || c[5], oa = o.oa || 0, ob = o.ob || 0;
     let amin = Infinity, amax = -Infinity, bmin = Infinity, bmax = -Infinity;
     for (const [a, b] of pol) { amin = Math.min(amin, a); amax = Math.max(amax, a); bmin = Math.min(bmin, b); bmax = Math.max(bmax, b); }
@@ -118,6 +159,7 @@ export function Construtor(folha) {
      um pedaço dela (frações u0, u1, v0, v1). */
   function esticar(F, a0, a1, b0, b1, k, o = {}) { comTinta(o, () => esticarJa(F, a0, a1, b0, b1, k, o)); }
   function esticarJa(F, a0, a1, b0, b1, k, o) {
+    if (liso(k)) { chapar([noPlano(F, a0, b0), noPlano(F, a1, b0), noPlano(F, a1, b1), noPlano(F, a0, b1)], k, o.escuro); return; }
     const c = cel(k);
     const [f0, f1, g0, g1] = o.parte || [0, 1, 0, 1];
     const U0 = lerp(c[0], c[2], f0), U1 = lerp(c[0], c[2], f1);
@@ -157,6 +199,7 @@ export function Construtor(folha) {
      Nada fica por cima de nada — parede e janela no mesmo plano, sem
      briga de profundidade. */
   function fachada(F, larg, alt, parede, vaos, oParede = {}) {
+    if (CH) return fachadaChapada(F, larg, alt, parede, vaos, oParede);
     /* a TINTA é da parede (e do requadro, que é parede); a janela, a
        porta e a peça desenhada saem sem tinta nenhuma, a não ser que
        o vão peça a dele */
@@ -207,6 +250,15 @@ export function Construtor(folha) {
     }
     tinta = antes;
   }
+  /* a fachada do modo chapado: a parede numa peça só, e cada vão uma
+     placa 1,5 cm na frente dela — sem requadro, sem recuo, sem arco */
+  function fachadaChapada(F, larg, alt, parede, vaos, oParede) {
+    const antes = tinta;
+    ladrilhar(F, ret(0, larg, 0, alt), parede, Object.assign({}, oParede, { tinta: oParede.tinta === undefined ? tinta : oParede.tinta }));
+    const Ff = plano(soma(F.O, esc(F.N, 0.015)), F.U, F.V);
+    for (const v of vaos) esticar(Ff, v.a0, v.a1, v.b0, v.b1, v.k, Object.assign({}, v, { tinta: v.tinta === undefined ? null : v.tinta }));
+    tinta = antes;
+  }
   /* MÓDULOS: uma grade de nx × ny peças no retângulo, cada uma
      esticada no seu vão. `qual(i, j)` escolhe a peça. */
   function modulos(F, a0, a1, b0, b1, nx, ny, qual) {
@@ -234,7 +286,18 @@ export function Construtor(folha) {
   /* O TORNO: um perfil [[raio, y], ...] girado em volta de (cx, cz).
      A peça dá UMA volta inteira em u; em v ela acompanha o perfil. */
   function torno(cx, cz, perfil, lados, k, o = {}) {
-    const c = cel(k);
+    if (CH) lados = Math.min(lados, CH.lados || 6);
+    if (liso(k)) {
+      /* a peça lisa: a cor da paleta na tinta, uma vez pro torno inteiro */
+      const cl = corLisa[k], antes = tinta;
+      tinta = [antes[0] * cl[0], antes[1] * cl[1], antes[2] * cl[2]];
+      tornoJa(cx, cz, perfil, lados, [uvLiso[0], uvLiso[1], uvLiso[0], uvLiso[1]], o);
+      tinta = antes;
+      return;
+    }
+    tornoJa(cx, cz, perfil, lados, cel(k), o);
+  }
+  function tornoJa(cx, cz, perfil, lados, c, o) {
     const L = [0];
     for (let j = 1; j < perfil.length; j++)
       L.push(L[j - 1] + Math.hypot(perfil[j][0] - perfil[j - 1][0], perfil[j][1] - perfil[j - 1][1]));
@@ -338,12 +401,69 @@ export function Construtor(folha) {
   }
   return { cel, tri, poli, plano, noPlano, recuado, ladrilhar, esticar, ret, faces, caixa, fachada, modulos,
            paredes, tampa, torno, extrudar, viga, telhado4, aguaDeTelhado, pintar,
-           get triangulos() { return pos.length / 9; }, pos, uv, cor, folha };
+           get triangulos() { return pos.length / 9; }, get chapado() { return !!CH; }, opcoes, pos, uv, cor, folha };
+}
+
+/* VARRER: o tubo ao longo da polilinha `pts`, com o raio de cada ponto
+   (o mastro, o tronco da jangada, o cano). A peça `k` dá `rep` voltas
+   em u (uma por metro de volta, no mínimo uma) e, em v, a peça inteira
+   a cada altura dela (`vPor`): onde a costura cai no meio de um trecho,
+   entra um anel ali, e a UV nunca dá a volta dentro de um gomo. O anel
+   é levado de um ponto ao outro sem torcer. */
+function eixosDe(d) {
+  let a = pv(d, [0, 1, 0]);
+  if (Math.hypot(...a) < 1e-4) a = pv(d, [1, 0, 0]);
+  a = unit(a);
+  return [a, unit(pv(d, a))];
+}
+export function varrer(C, pts, raios, lados, k, o = {}) {
+  const c = C.cel(k), vPor = o.vPor || c[5];
+  const P = [pts[0]], R = [raios[0]], S = [0];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], L = Math.hypot(...sub(b, a)), s0 = S[S.length - 1];
+    if (L < 1e-5) continue;
+    let prox = (Math.floor(s0 / vPor + 1e-6) + 1) * vPor;
+    while (prox < s0 + L - 1e-4) {
+      const t = (prox - s0) / L;
+      P.push(soma(a, esc(sub(b, a), t))); R.push(raios[i - 1] + (raios[i] - raios[i - 1]) * t); S.push(prox);
+      prox += vPor;
+    }
+    P.push(b); R.push(raios[i]); S.push(s0 + L);
+  }
+  const n = P.length;
+  if (n < 2) return;
+  const T = P.map((p, i) => unit(sub(P[Math.min(n - 1, i + 1)], P[Math.max(0, i - 1)])));
+  let [a, b] = eixosDe(T[0]);
+  const aneis = [];
+  for (let i = 0; i < n; i++) {
+    if (i) { const t = T[i]; a = unit(sub(a, esc(t, pe(a, t)))); b = unit(pv(t, a)); }
+    aneis.push([a, b]);
+  }
+  const rMedio = R.reduce((x, y) => x + y, 0) / n;
+  const rep = o.rep || Math.max(1, Math.round(2 * Math.PI * rMedio / c[4]));
+  const porVolta = Math.max(1, Math.round(lados / rep)), L = porVolta * rep, giro = o.giro || 0;
+  const noAnel = (i, t) => soma(P[i], soma(esc(aneis[i][0], R[i] * Math.cos(t)), esc(aneis[i][1], R[i] * Math.sin(t))));
+  for (let i = 0; i < n - 1; i++) {
+    const v0 = S[i] / vPor - Math.floor(S[i] / vPor + 1e-6), v1 = Math.min(1, v0 + (S[i + 1] - S[i]) / vPor);
+    const V0 = c[1] + (c[3] - c[1]) * Math.max(0, v0), V1 = c[1] + (c[3] - c[1]) * v1;
+    for (let j = 0; j < L; j++) {
+      const t0 = giro + j / L * 2 * Math.PI, t1 = giro + (j + 1) / L * 2 * Math.PI;
+      const f0 = (j % porVolta) / porVolta, f1 = (j % porVolta + 1) / porVolta;
+      const U0 = c[0] + (c[2] - c[0]) * f0, U1 = c[0] + (c[2] - c[0]) * f1;
+      C.poli([noAnel(i, t0), noAnel(i, t1), noAnel(i + 1, t1), noAnel(i + 1, t0)], [[U0, V0], [U1, V0], [U1, V1], [U0, V1]]);
+    }
+  }
+}
+/* a ESFERA (o coco, a bola): um torno de poucos lados */
+export function esfera(C, c, r, k, lados = 6, aneis = 4) {
+  const perfil = [];
+  for (let i = 0; i <= aneis; i++) { const t = -Math.PI / 2 + i / aneis * Math.PI; perfil.push([Math.max(0.001, r * Math.cos(t)), c[1] + r * Math.sin(t)]); }
+  C.torno(c[0], c[2], perfil, lados, k);
 }
 
 /* O MODELO SOLTO NO MUNDO (a árvore, o quiosque): as listas montadas em
-   metros em volta da origem — um Construtor, ou a folhagem, que traz a
-   normal dela — viram blocos de mundo em (x, z), girados de `giro` e na
+   metros em volta da origem — um Construtor, ou a árvore low poly, com
+   a posição e a cor — viram blocos de mundo em (x, z), girados de `giro` e na
    `escala`; a normal gira junto */
 export function noMundo(listas, destino, onde = {}) {
   const x0 = onde.x || 0, z0 = onde.z || 0, y0 = onde.y || 0, k = onde.escala || 1;

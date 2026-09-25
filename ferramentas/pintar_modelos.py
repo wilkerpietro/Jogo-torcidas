@@ -8,11 +8,13 @@
        img/texturas/modelos/loja.jpg       o prédio de 3 andares com mercado
        img/texturas/modelos/adm.jpg        o centro administrativo
        img/texturas/modelos/casa.jpg       a casa de classe média
-       img/texturas/modelos/grades.png     grades e portões vazados (alfa)
+       img/texturas/modelos/grades.png     grades e portões vazados (alfa), e a rede do vôlei
        img/texturas/modelos/metro.jpg      o metrô: entrada, plataforma, túnel e trem
        img/texturas/modelos/equip.jpg      o shopping, a delegacia e a praça da proposta
-       img/texturas/modelos/praia.jpg      a praia: quiosque, barraca, guarda-sol, posto, barco
-       img/texturas/modelos/vegetacao.png  as árvores (alfa): a copa em cacho, a fronde, a casca
+       img/texturas/modelos/praia.jpg      a praia: quiosque, barraca, guarda-sol, posto, barco, o coco
+
+   (As árvores não têm folha: são low poly, de cor por vértice —
+   js/diajogo/arvores_lowpoly.js.)
 
    COMO UMA FOLHA FUNCIONA. Cada folha é um mosaico de CÉLULAS, e cada
    célula é um pedaço de fachada com tamanho de mundo em metros: "uma
@@ -1498,6 +1500,20 @@ def p_portao_lanca(w, h, ppm, rnd):
     return a
 
 
+def p_gr_rede(w, h, ppm, rnd):
+    """a rede de vôlei: a malha preta de 10 cm (alfa). A corda é mais
+       grossa que a de verdade (2 cm): mais fina, a malha some de longe."""
+    a = np.zeros((h, w, 4), np.float32)
+    passo = w / max(1, int(round(w / (0.1 * ppm))))
+    esp = max(2, int(round(0.02 * ppm)))
+    for x in np.arange(0, w, passo):
+        a[:, int(x):int(x) + esp] = [0.1, 0.1, 0.1, 1]
+    passo_y = h / max(1, int(round(h / (0.1 * ppm))))
+    for y in np.arange(0, h, passo_y):
+        a[int(y):int(y) + esp, :] = [0.1, 0.1, 0.1, 1]
+    return a
+
+
 def folha_grades():
     F = Folha('grades', larg=512, alfa=True)
     F.cel('branca', 1.0, 2.5, 120, p_grade('#f1f1ee', 0.1, 0.028, (0.06, 1.25, 2.44)), lad=True)
@@ -1508,6 +1524,8 @@ def folha_grades():
     F.cel('ferrugem', 1.0, 2.0, 120, p_grade('#6e4632', 0.1, 0.022, (0.1, 1.05, 1.9)), lad=True)
     F.cel('antena', 0.8, 0.8, 120, p_antena)
     F.cel('varal', 2.0, 0.6, 110, p_varal)
+    # a rede do vôlei da praia (praia3d.js): a malha, com alfa
+    F.cel('rede', 1.0, 1.0, 120, p_gr_rede, lad=True)
     return F.montar()
 
 
@@ -4914,6 +4932,14 @@ def p_pr_vidro(w, h, ppm, rnd):
     return a
 
 
+def p_pr_coco(w, h, ppm, rnd):
+    """a casca do coco verde: o verde com a estria clara"""
+    a = chapado(w, h, '#6c8f2e')
+    ys = np.arange(h, dtype=np.float32)
+    a = multiplicar(a, np.broadcast_to((0.9 + 0.12 * np.sin(ys / h * np.pi * 6))[:, None], (h, w)).astype(np.float32))
+    return np.clip(multiplicar(a, 1 + 0.12 * fbm(h, w, 0.1 * ppm, rnd, 3, True)), 0, 1)
+
+
 def folha_praia():
     F = Folha('praia')
     F.cel('deck', 2.0, 2.0, 90, p_pr_deck, lad=True)
@@ -4945,450 +4971,14 @@ def folha_praia():
     F.cel('prateleira', 1.4, 0.9, 140, p_pr_prateleira)
     F.cel('telha_metal', 1.0, 1.0, 90, p_pr_telha_metal, lad=True)
     F.cel('vidro', 1.0, 1.0, 90, p_pr_vidro)
-    return F.montar()
-
-
-# =========================================================
-#   16. A VEGETAÇÃO — as árvores de todos os mapas
-#   Folha COM ALFA. A copa é feita de cachos de cartão recortado: cada
-#   espécie tem o seu (a folha larga da mata, a miúda do oiti, a comprida
-#   da mangueira, a de couro do cerrado, a grande da amendoeira, a flor
-#   do ipê, o galho seco da caatinga); a palmeira tem a fronde (coqueiro,
-#   imperial, açaí), o buriti o leque, a araucária o tufo e a embaúba a
-#   folha de mão. E as cascas, a pele do mandacaru, o palmito e o coco,
-#   que são opacos (alfa 1) na mesma folha, pra árvore ter um material só
-#   no tronco.
-#   O cartão é desenhado em dobro e reduzido (a borda sai lisa), e a cor
-#   da folha SANGRA pro transparente em volta: sem isso, o mipmap de longe
-#   mistura o preto do vazio e a copa ganha um contorno escuro.
-# =========================================================
-def recortado(w, h, fn, ss=2):
-    """desenha em RGBA no dobro e reduz com alfa pré-multiplicado"""
-    im = Image.new('RGBA', (w * ss, h * ss), (0, 0, 0, 0))
-    fn(ImageDraw.Draw(im), ss, im)
-    im = im.convert('RGBa').resize((w, h), Image.LANCZOS).convert('RGBA')
-    return np.asarray(im, np.float32) / 255
-
-
-def sangrar(a, r=5.0):
-    """espalha a cor da folha pro pixel transparente em volta (o alfa não
-       muda): o filtro de longe pega verde, e não preto"""
-    al = a[..., 3]
-    m = (al > 0.1).astype(np.float32)
-    peso = borrar(m, r)
-    cores = [borrar(a[..., c] * m, r) for c in range(3)]
-    for c in range(3):
-        cheio = cores[c] / np.maximum(peso, 1e-4)
-        a[..., c] = np.where(m > 0, a[..., c], np.clip(cheio, 0, 1))
-    return a
-
-
-def folha_forma(t, tipo):
-    """a meia-largura da folha ao longo dela (t de 0 na base a 1 na ponta)"""
-    if tipo == 'lanca':
-        return math.sin(math.pi * min(1, t)) ** 1.2 * 0.16
-    if tipo == 'redonda':
-        return math.sin(math.pi * min(1, t)) ** 0.6 * 0.42
-    if tipo == 'grande':
-        return (math.sin(math.pi * min(1, t)) ** 0.7) * (0.3 + 0.18 * t)
-    return math.sin(math.pi * min(1, t)) ** 0.8 * 0.3            # oval
-
-
-def desenhar_folha(d, x, y, ang, L, tipo, c, nervura=None):
-    pts_e, pts_d = [], []
-    dx, dy = math.cos(ang), math.sin(ang)
-    for i in range(9):
-        t = i / 8
-        m = folha_forma(t, tipo) * L
-        cx, cy = x + dx * L * t, y + dy * L * t
-        pts_e.append((cx - dy * m, cy + dx * m))
-        pts_d.append((cx + dy * m, cy - dx * m))
-    d.polygon(pts_e + pts_d[::-1], fill=c)
-    if nervura:
-        d.line([(x, y), (x + dx * L * 0.92, y + dy * L * 0.92)], fill=nervura, width=max(1, int(L * 0.04)))
-
-
-def p_vg_cacho(tipo, tons, n_folhas, tam, densidade=1.0, frutas=None, flor=None, galho='#5a4630', luz=0.35):
-    """um cacho da copa: galhinhos saindo do meio e as folhas em volta,
-       escuras embaixo e por dentro, claras em cima e na borda. O contorno
-       é irregular (a copa de verdade não é um círculo)."""
-    def f(w, h, ppm, rnd):
-        def des(d, ss, im):
-            W, H = w * ss, h * ss
-            cx, cy = W / 2, H * 0.55
-            R = min(W, H) * 0.46
-            # o contorno do cacho: um círculo amassado por harmônicos
-            har = [(k, rnd.uniform(0.04, 0.12) / k ** 0.3, rnd.uniform(0, 6.28)) for k in (2, 3, 5, 7)]
-            raio = lambda t: R * (1 + sum(a * math.sin(k * t + p) for k, a, p in har))
-            # os galhinhos
-            for _ in range(7):
-                t = rnd.uniform(0, 2 * math.pi)
-                r = raio(t) * rnd.uniform(0.5, 0.85)
-                d.line([(cx, cy + R * 0.3), (cx + math.cos(t) * r, cy + math.sin(t) * r)], fill=cor_rgb(galho) + (255,), width=max(1, int(0.02 * ppm * ss)))
-            itens = []
-            for _ in range(int(n_folhas * densidade)):
-                t = rnd.uniform(0, 2 * math.pi)
-                rr = raio(t) * math.sqrt(rnd.random())
-                x, y = cx + math.cos(t) * rr, cy + math.sin(t) * rr * 0.92
-                itens.append((y, x, t, rr / R))
-            itens.sort()
-            for y, x, t, fr in itens:
-                L = tam * ppm * ss * rnd.uniform(0.75, 1.25)
-                ang = t + rnd.uniform(-0.9, 0.9)
-                if tipo == 'lanca':
-                    ang = math.pi / 2 + rnd.uniform(-0.8, 0.8)           # a folha comprida pende
-                # a luz: de cima e de fora; embaixo e no miolo, escuro
-                claro = luz * (1 - (y - (cy - R)) / (2 * R)) + 0.45 * fr
-                c = tons[int(rnd.integers(0, len(tons)))]
-                g = 0.55 + claro * rnd.uniform(0.8, 1.2)
-                cc = tuple(int(min(255, v * g)) for v in cor_rgb(c)) + (255,)
-                nerv = tuple(int(min(255, v * g * 1.18)) for v in cor_rgb(c)) + (255,)
-                desenhar_folha(d, x - math.cos(ang) * L * 0.5, y - math.sin(ang) * L * 0.5, ang, L, tipo, cc, nerv if L > 6 * ss else None)
-                if flor and rnd.random() < flor[1]:
-                    fr_r = flor[2] * ppm * ss * rnd.uniform(0.7, 1.3)
-                    fc = cor_rgb(flor[0][int(rnd.integers(0, len(flor[0])))])
-                    for k in range(5):
-                        tt = k * 2 * math.pi / 5 + rnd.random()
-                        px, py = x + math.cos(tt) * fr_r * 0.6, y + math.sin(tt) * fr_r * 0.6
-                        d.ellipse([px - fr_r * 0.55, py - fr_r * 0.55, px + fr_r * 0.55, py + fr_r * 0.55], fill=fc + (255,))
-                    d.ellipse([x - fr_r * 0.25, y - fr_r * 0.25, x + fr_r * 0.25, y + fr_r * 0.25], fill=(120, 80, 30, 255))
-            if frutas:
-                for _ in range(frutas[1]):
-                    t = rnd.uniform(0, 2 * math.pi)
-                    rr = raio(t) * rnd.uniform(0.2, 0.8)
-                    x, y = cx + math.cos(t) * rr, cy + math.sin(t) * rr
-                    r = frutas[2] * ppm * ss
-                    fc = cor_rgb(frutas[0][int(rnd.integers(0, len(frutas[0])))])
-                    d.ellipse([x - r * 0.75, y - r, x + r * 0.75, y + r], fill=fc + (255,))
-                    d.ellipse([x - r * 0.35, y - r * 0.7, x, y - r * 0.2], fill=tuple(min(255, int(v * 1.3)) for v in fc) + (255,))
-        a = recortado(w, h, des)
-        return sangrar(a)
-    return f
-
-
-def cor_rgb(h):
-    h = h.lstrip('#')
-    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
-
-
-def p_vg_flores(tons, galho='#6b5a48'):
-    """o cacho do ipê florido: quase sem folha, a flor em trombeta em bolas
-       nas pontas dos galhinhos"""
-    def f(w, h, ppm, rnd):
-        def des(d, ss, im):
-            W, H = w * ss, h * ss
-            cx, cy = W / 2, H * 0.6
-            pontas = []
-            for _ in range(9):
-                t = rnd.uniform(-math.pi * 0.95, -math.pi * 0.05)
-                L = min(W, H) * rnd.uniform(0.25, 0.45)
-                x, y = cx + math.cos(t) * L, cy + math.sin(t) * L
-                d.line([(cx, cy + H * 0.15), (x, y)], fill=cor_rgb(galho) + (255,), width=max(1, int(0.025 * ppm * ss)))
-                pontas.append((x, y))
-            for (px, py) in pontas:
-                for _ in range(26):
-                    t = rnd.uniform(0, 2 * math.pi)
-                    r = min(W, H) * 0.13 * math.sqrt(rnd.random())
-                    x, y = px + math.cos(t) * r, py + math.sin(t) * r
-                    fr = 0.06 * ppm * ss * rnd.uniform(0.7, 1.2)
-                    c = cor_rgb(tons[int(rnd.integers(0, len(tons)))])
-                    g = rnd.uniform(0.82, 1.12) * (1.06 if y < py else 0.9)
-                    cc = tuple(int(min(255, v * g)) for v in c) + (255,)
-                    ang = rnd.uniform(0, 2 * math.pi)
-                    for k in range(5):
-                        tt = ang + k * 2 * math.pi / 5
-                        qx, qy = x + math.cos(tt) * fr * 0.5, y + math.sin(tt) * fr * 0.5
-                        d.ellipse([qx - fr * 0.5, qy - fr * 0.5, qx + fr * 0.5, qy + fr * 0.5], fill=cc)
-                    d.ellipse([x - fr * 0.2, y - fr * 0.2, x + fr * 0.2, y + fr * 0.2], fill=(150, 110, 40, 255))
-        return sangrar(recortado(w, h, des))
-    return f
-
-
-def p_vg_galhos_secos(w, h, ppm, rnd):
-    """o galho seco da caatinga na seca: cinza, a forquilha fina, e uma ou
-       outra folhinha que ficou"""
-    def des(d, ss, im):
-        W, H = w * ss, h * ss
-        def galho(x, y, ang, L, esp, n):
-            x2, y2 = x + math.cos(ang) * L, y + math.sin(ang) * L
-            g = rnd.uniform(0.85, 1.1)
-            d.line([(x, y), (x2, y2)], fill=(int(128 * g), int(122 * g), int(112 * g), 255), width=max(1, int(esp)))
-            if n > 0:
-                for s in (-1, 1):
-                    galho(x2, y2, ang + s * rnd.uniform(0.3, 0.7), L * rnd.uniform(0.6, 0.78), esp * 0.68, n - 1)
-            elif rnd.random() < 0.35:
-                r = 0.018 * ppm * ss
-                d.ellipse([x2 - r, y2 - r, x2 + r, y2 + r], fill=(120, 138, 70, 255))
-        for _ in range(3):
-            galho(W / 2 + rnd.uniform(-0.1, 0.1) * W, H * 0.98, -math.pi / 2 + rnd.uniform(-0.6, 0.6), H * 0.28, 0.035 * ppm * ss, 5)
-    return sangrar(recortado(w, h, des))
-
-
-def p_vg_fronde(tom, n=48, caida=0.25, folha=0.26, larg=0.02, abre=0.9, seca=False):
-    """a fronde da palmeira, deitada no cartão: a raque vai da base
-       (embaixo) à ponta (em cima), e o folíolo sai dos dois lados, caindo
-       pra ponta; mais curto na base e na ponta"""
-    def f(w, h, ppm, rnd):
-        def des(d, ss, im):
-            W, H = w * ss, h * ss
-            base, ponta = (W / 2, H * 0.99), (W / 2, H * 0.02)
-            rq = cor_rgb('#8a8a4a' if not seca else '#7a5a3a')
-            d.line([base, ponta], fill=rq + (255,), width=max(2, int(0.025 * ppm * ss)))
-            for i in range(n):
-                t = (i + 0.5) / n
-                y = base[1] + (ponta[1] - base[1]) * t
-                comp = folha * ppm * ss * math.sin(math.pi * (0.12 + 0.88 * t)) ** 0.7 * (1.05 - 0.35 * t)
-                for s in (-1, 1):
-                    ang = -math.pi / 2 + s * (abre + rnd.uniform(-0.12, 0.12))
-                    x0, y0 = W / 2, y
-                    x1 = x0 + math.cos(ang) * comp
-                    y1 = y0 + math.sin(ang) * comp * 0.55 + caida * comp
-                    c = cor_rgb(tom)
-                    g = rnd.uniform(0.8, 1.15) * (0.85 + 0.25 * t)
-                    if seca:
-                        g *= rnd.uniform(0.8, 1.1)
-                    cc = tuple(int(min(255, v * g)) for v in c) + (255,)
-                    lw = larg * ppm * ss * (1 - 0.35 * t)
-                    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2 + caida * comp * 0.2
-                    # o folíolo em fuso: largo no meio, fino na base e na ponta
-                    pts_a, pts_b = [], []
-                    for q in range(7):
-                        u = q / 6
-                        bx = (1 - u) ** 2 * x0 + 2 * (1 - u) * u * xm + u * u * x1
-                        by = (1 - u) ** 2 * y0 + 2 * (1 - u) * u * ym + u * u * y1
-                        tx = 2 * (1 - u) * (xm - x0) + 2 * u * (x1 - xm)
-                        ty = 2 * (1 - u) * (ym - y0) + 2 * u * (y1 - ym)
-                        tl = math.hypot(tx, ty) or 1
-                        m = lw / 2 * math.sin(math.pi * min(1, 0.15 + u * 0.95)) ** 0.8
-                        pts_a.append((bx - ty / tl * m, by + tx / tl * m))
-                        pts_b.append((bx + ty / tl * m, by - tx / tl * m))
-                    d.polygon(pts_a + pts_b[::-1], fill=cc)
-        return sangrar(recortado(w, h, des))
-    return f
-
-
-def p_vg_leque(w, h, ppm, rnd):
-    """o leque do buriti: os segmentos saindo do pecíolo em quase uma
-       volta inteira, rasgados na ponta"""
-    def des(d, ss, im):
-        W, H = w * ss, h * ss
-        cx, cy = W / 2, H / 2
-        R = min(W, H) * 0.48
-        n = 44
-        for i in range(n):
-            t = -math.pi * 1.35 + i / n * math.pi * 1.7 + math.pi * 0.35
-            L = R * rnd.uniform(0.85, 1.0)
-            g = rnd.uniform(0.82, 1.12)
-            c = (int(92 * g), int(128 * g), int(58 * g), 255)
-            a0, a1 = t - 0.035, t + 0.035
-            pts = [(cx, cy), (cx + math.cos(a0) * L, cy + math.sin(a0) * L), (cx + math.cos(t) * L * 1.04, cy + math.sin(t) * L * 1.04),
-                   (cx + math.cos(a1) * L, cy + math.sin(a1) * L)]
-            d.polygon(pts, fill=c)
-            d.line([(cx, cy), (cx + math.cos(t) * L * 0.95, cy + math.sin(t) * L * 0.95)], fill=(150, 170, 90, 255), width=max(1, int(0.006 * ppm * ss)))
-        r = R * 0.08
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(110, 110, 60, 255))
-    return sangrar(recortado(w, h, des))
-
-
-def p_vg_tufo_araucaria(w, h, ppm, rnd):
-    """o tufo da ponta do galho da araucária: a escova de agulha dura
-       virada pra cima, cheia (o miolo quase fechado) e escura; a agulha
-       tem de ter corpo, senão some de longe"""
-    def des(d, ss, im):
-        W, H = w * ss, h * ss
-        for k in range(4):
-            bx = W * (0.22 + 0.19 * k) + rnd.uniform(-0.03, 0.03) * W
-            by = H * 0.96
-            topo = H * rnd.uniform(0.06, 0.2)
-            curva = rnd.uniform(-0.07, 0.07) * W
-            d.line([(bx, by), (bx + curva, topo)], fill=(70, 58, 40, 255), width=max(2, int(0.02 * ppm * ss)))
-            for i in range(90):
-                t = i / 90
-                x = bx + curva * t * t
-                y = by + (topo - by) * t
-                r = min(W, H) * 0.12 * (1 - 0.45 * t)
-                for _ in range(4):
-                    ang = rnd.uniform(-math.pi * 0.95, -math.pi * 0.05)
-                    g = rnd.uniform(0.7, 1.1) * (0.8 + 0.35 * t)
-                    c = (int(40 * g), int(74 * g), int(40 * g), 255)
-                    x2, y2 = x + math.cos(ang) * r, y + math.sin(ang) * r * 0.9
-                    d.polygon([(x - 0.012 * ppm * ss, y), (x2, y2), (x + 0.012 * ppm * ss, y)], fill=c)
-    return sangrar(recortado(w, h, des))
-
-
-def p_vg_embauba(w, h, ppm, rnd):
-    """a folha da embaúba: peltada, nove lobos saindo do meio pra todo
-       lado, como uma mão aberta. O cartão tem as duas faces lado a lado:
-       a de cima verde (metade esquerda) e a de baixo prateada, quase
-       branca (metade direita) — o modelo escolhe a metade pela UV"""
-    def des(d, ss, im):
-        W, H = w * ss, h * ss
-        for lado, (cor_c, cor_n) in enumerate((((88, 122, 78), (140, 164, 120)), ((206, 212, 200), (232, 236, 228)))):
-            cx, cy = W * (0.25 + 0.5 * lado), H * 0.5
-            R = min(W / 2, H) * 0.47
-            giro = rnd.uniform(0, 0.4)
-            for i in range(9):
-                t = giro + i * 2 * math.pi / 9
-                L = R * rnd.uniform(0.86, 1.0)
-                pts = []
-                for j in range(11):
-                    s_ = j / 10
-                    m = math.sin(math.pi * min(1, s_ * 1.05)) ** 0.85 * L * 0.2
-                    x, y = cx + math.cos(t) * L * s_, cy + math.sin(t) * L * s_
-                    pts.append((x - math.sin(t) * m, y + math.cos(t) * m))
-                for j in range(10, -1, -1):
-                    s_ = j / 10
-                    m = math.sin(math.pi * min(1, s_ * 1.05)) ** 0.85 * L * 0.2
-                    x, y = cx + math.cos(t) * L * s_, cy + math.sin(t) * L * s_
-                    pts.append((x + math.sin(t) * m, y - math.cos(t) * m))
-                g = rnd.uniform(0.9, 1.08)
-                d.polygon(pts, fill=tuple(int(min(255, v * g)) for v in cor_c) + (255,))
-                d.line([(cx, cy), (cx + math.cos(t) * L * 0.92, cy + math.sin(t) * L * 0.92)], fill=cor_n + (255,), width=max(1, int(0.01 * ppm * ss)))
-            r = R * 0.07
-            d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=cor_n + (255,))
-    return sangrar(recortado(w, h, des))
-
-
-def p_vg_saia(w, h, ppm, rnd):
-    """a saia seca da palmeira (o buriti e o coqueiro velho): a folha morta
-       pendurada, marrom"""
-    return p_vg_fronde('#8a6a44', n=40, caida=0.9, folha=0.3, larg=0.06, abre=1.2, seca=True)(w, h, ppm, rnd)
-
-
-def p_vg_casca(tipo):
-    """as cascas: `lisa` (clara, com lenticela), `rugosa` (a fissura
-       comprida), `cortica` (o cerrado: a placa grossa e funda), `aneis`
-       (o coqueiro), `palmeira` (a imperial, cinza de cimento), `escamas`
-       (a araucária), `seca` (a caatinga), `branca` (a embaúba)"""
-    def f(w, h, ppm, rnd):
-        base = {'lisa': '#a39a8c', 'rugosa': '#86705a', 'cortica': '#8f7a60', 'aneis': '#a8987c', 'palmeira': '#b9b6ae',
-                'escamas': '#8a6c54', 'seca': '#a39d92', 'branca': '#d9d8cf'}[tipo]
-        a = chapado(w, h, base)
-        a = multiplicar(a, 1 + 0.12 * fbm(h, w, 0.25 * ppm, rnd, 4, True))
-        xs = np.arange(w, dtype=np.float32)
-        ys = np.arange(h, dtype=np.float32)
-        if tipo in ('rugosa', 'seca'):
-            fis = np.abs(np.sin(xs / w * 2 * np.pi * (7 if tipo == 'rugosa' else 5) + 3 * fbm(1, w, 0.2 * ppm, rnd, 2, True)[0]))
-            vert = veio(w, h, ppm, rnd, True, 8, 0.04).T
-            a = multiplicar(a, (0.72 + 0.36 * fis[None, :] ** 0.5 + 0.2 * vert).astype(np.float32))
-        elif tipo == 'cortica':
-            m = fbm(h, w, 0.12 * ppm, rnd, 4, True)
-            placas = np.clip(np.abs(m) * 6, 0, 1)
-            a = multiplicar(a, (0.6 + 0.5 * placas).astype(np.float32))
-        elif tipo in ('aneis', 'palmeira', 'branca'):
-            passo = {'aneis': 0.09, 'palmeira': 0.22, 'branca': 0.3}[tipo] * ppm
-            n = max(1, int(round(h / passo)))
-            passo = h / n
-            f = (ys % passo) / passo
-            anel = np.where(f < (0.18 if tipo == 'aneis' else 0.06), 0.62, 1.0)
-            a = multiplicar(a, np.broadcast_to(anel[:, None], (h, w)).astype(np.float32))
-            if tipo == 'aneis':
-                a = multiplicar(a, 1 + 0.2 * veio(w, h, ppm, rnd, True, 6, 0.03).T)
-        elif tipo == 'escamas':
-            img = para_pil(a)
-            d = ImageDraw.Draw(img)
-            ew, eh = 0.1 * ppm, 0.07 * ppm
-            for j in range(int(h / eh) + 2):
-                for i in range(int(w / ew) + 2):
-                    x = i * ew + (ew / 2 if j % 2 else 0)
-                    y = j * eh
-                    g = rnd.uniform(0.75, 1.1)
-                    for dx in (-w, 0, w):
-                        d.arc([x + dx - ew * 0.5, y - eh * 0.4, x + dx + ew * 0.5, y + eh * 0.6], 0, 180, fill=(int(60 * g), int(42 * g), int(30 * g)), width=max(1, int(0.01 * ppm)))
-            a = para_np(img)
-        else:  # lisa: a lenticela deitada
-            m = pontos(h, w, (w / ppm) * (h / ppm) * 90, 0.6, 1.6, rnd, True, sinal=1.0)
-            a = multiplicar(a, 1 - 0.25 * np.clip(m, 0, 1))
-        return np.clip(a, 0, 1)
-    return f
-
-
-def p_vg_mandacaru(w, h, ppm, rnd):
-    """a pele do mandacaru: as costelas em pé (claro na crista, escuro no
-       vale), o espinho em pontinho claro na crista"""
-    a = chapado(w, h, '#4f7a4a')
-    xs = np.arange(w, dtype=np.float32)
-    n = 8
-    fase = (xs / w * n) % 1
-    crista = 0.62 + 0.55 * np.sin(fase * np.pi) ** 1.5
-    a = multiplicar(a, np.broadcast_to(crista[None, :], (h, w)).astype(np.float32))
-    a = multiplicar(a, 1 + 0.08 * fbm(h, w, 0.2 * ppm, rnd, 3, True))
-    img = para_pil(a)
-    d = ImageDraw.Draw(img)
-    for i in range(n):
-        x = (i + 0.5) / n * w
-        for y in np.arange(0, h, 0.05 * ppm):
-            r = max(1, 0.006 * ppm)
-            d.ellipse([x - r, y - r, x + r, y + r], fill=(222, 214, 180))
-    return np.clip(para_np(img), 0, 1)
-
-
-def p_vg_palmito(w, h, ppm, rnd):
-    """o palmito da imperial: o verde liso e brilhante do topo do tronco"""
-    a = chapado(w, h, '#5f8a3e')
-    xs = np.arange(w, dtype=np.float32)
-    a = multiplicar(a, np.broadcast_to((0.9 + 0.12 * np.sin(xs / w * np.pi * 8))[None, :], (h, w)).astype(np.float32))
-    return np.clip(multiplicar(a, 1 + 0.06 * fbm(h, w, 0.3 * ppm, rnd, 3, True)), 0, 1)
-
-
-def p_vg_coco(w, h, ppm, rnd):
-    """a casca do coco verde: o verde com a estria clara"""
-    a = chapado(w, h, '#6c8f2e')
-    ys = np.arange(h, dtype=np.float32)
-    a = multiplicar(a, np.broadcast_to((0.9 + 0.12 * np.sin(ys / h * np.pi * 6))[:, None], (h, w)).astype(np.float32))
-    return np.clip(multiplicar(a, 1 + 0.12 * fbm(h, w, 0.1 * ppm, rnd, 3, True)), 0, 1)
-
-
-def p_vg_rede(w, h, ppm, rnd):
-    """a rede de vôlei: a malha preta de 10 cm (alfa). A corda é mais
-       grossa que a de verdade (2 cm): mais fina, a malha some de longe."""
-    a = np.zeros((h, w, 4), np.float32)
-    passo = w / max(1, int(round(w / (0.1 * ppm))))
-    esp = max(2, int(round(0.02 * ppm)))
-    for x in np.arange(0, w, passo):
-        a[:, int(x):int(x) + esp] = [0.1, 0.1, 0.1, 1]
-    passo_y = h / max(1, int(round(h / (0.1 * ppm))))
-    for y in np.arange(0, h, passo_y):
-        a[int(y):int(y) + esp, :] = [0.1, 0.1, 0.1, 1]
-    return a
-
-
-def folha_vegetacao():
-    F = Folha('vegetacao', larg=2048, alfa=True)
-    # os cachos da copa (cartões de 2 m)
-    F.cel('cacho_mata', 2.0, 2.0, 110, p_vg_cacho('oval', ['#3e6b2c', '#4a7a32', '#35602a', '#557f36'], 260, 0.2))
-    F.cel('cacho_cidade', 2.0, 2.0, 110, p_vg_cacho('redonda', ['#2f5a26', '#3a6a2c', '#447532'], 620, 0.09, luz=0.4))
-    F.cel('cacho_manga', 2.0, 2.0, 110, p_vg_cacho('lanca', ['#234d22', '#2b5a28', '#35652e', '#6b4a2a'], 300, 0.26,
-                                                    frutas=(['#e0a032', '#c8b23a', '#d86a2a'], 7, 0.05)))
-    F.cel('cacho_cerrado', 2.0, 2.0, 110, p_vg_cacho('oval', ['#6b7f3a', '#7f8f42', '#5d7534', '#a39a4a'], 170, 0.22, densidade=0.9))
-    F.cel('cacho_amendoeira', 2.0, 2.0, 110, p_vg_cacho('grande', ['#3f6f2e', '#4d7f36', '#c8522a', '#d98a2a', '#3a662b'], 120, 0.3))
-    F.cel('cacho_juazeiro', 2.0, 2.0, 110, p_vg_cacho('redonda', ['#3f7a2e', '#4a8a34', '#56963a'], 520, 0.1))
-    F.cel('cacho_jequitiba', 2.0, 2.0, 110, p_vg_cacho('oval', ['#2f5a2a', '#3b6a30', '#476f35', '#5a7f3a'], 380, 0.14))
-    F.cel('flor_ipe_amarelo', 2.0, 2.0, 110, p_vg_flores(['#f2c21b', '#f6d43a', '#e8b010']))
-    F.cel('flor_ipe_roxo', 2.0, 2.0, 110, p_vg_flores(['#d05aa8', '#e07ab8', '#b8448e']))
-    F.cel('galhos_secos', 2.0, 2.0, 110, p_vg_galhos_secos)
-    F.cel('folha_embauba', 2.4, 1.2, 110, p_vg_embauba)
-    # as frondes, deitadas (a base embaixo)
-    F.cel('fronde_coqueiro', 1.4, 4.2, 90, p_vg_fronde('#7f9a3a', n=70, caida=0.45, folha=0.64, larg=0.07, abre=1.0))
-    F.cel('fronde_imperial', 1.4, 4.2, 90, p_vg_fronde('#4d7a33', n=76, caida=0.5, folha=0.62, larg=0.066, abre=0.95))
-    F.cel('fronde_acai', 1.2, 3.2, 90, p_vg_fronde('#577f34', n=64, caida=1.2, folha=0.54, larg=0.05, abre=0.4))
-    F.cel('saia_seca', 1.4, 2.4, 80, p_vg_saia)
-    F.cel('leque_buriti', 2.4, 2.4, 90, p_vg_leque)
-    F.cel('tufo_araucaria', 1.6, 1.4, 110, p_vg_tufo_araucaria)
-    # as cascas e o que é opaco
-    for t in ('lisa', 'rugosa', 'cortica', 'aneis', 'palmeira', 'escamas', 'seca', 'branca'):
-        F.cel('casca_' + t, 1.0, 2.0, 90, p_vg_casca(t), lad=True)
-    F.cel('mandacaru', 1.0, 1.0, 120, p_vg_mandacaru, lad=True)
-    F.cel('palmito', 1.0, 1.0, 80, p_vg_palmito, lad=True)
-    F.cel('coco', 0.4, 0.4, 150, p_vg_coco, lad=True)
-    F.cel('rede', 1.0, 1.0, 120, p_vg_rede, lad=True)
+    F.cel('coco', 0.4, 0.4, 150, p_pr_coco, lad=True)
     return F.montar()
 
 
 FOLHAS = {
     'predio': folha_predio, 'igreja': folha_igreja, 'loja': folha_loja, 'adm': folha_adm, 'casa': folha_casa,
     'atacadex': folha_atacadex, 'torres': folha_torres, 'props': folha_props, 'casas': folha_casas, 'grades': folha_grades,
-    'metro': folha_metro, 'equip': folha_equip, 'praia': folha_praia, 'vegetacao': folha_vegetacao,
+    'metro': folha_metro, 'equip': folha_equip, 'praia': folha_praia,
 }
 
 
