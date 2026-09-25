@@ -129,6 +129,9 @@ def main():
             # praça de rio ou lagoa (Belém, Manaus, Porto Alegre): água a
             # leste, com margem de capim e junco em vez de areia
             'temLagoa': bool(c.get('temLagoa')),
+            # a vegetação em volta da cidade: 'mata' (verde), 'cerrado' ou
+            # 'caatinga' (o mato seco); sem o dado, a planta fica com o de hoje
+            'vegetacao': c.get('vegetacao', ''),
             'estadios': c.get('estadios', []),
             'rodovias': c.get('rodovias', []),
             'multMedio': c.get('multiplicadorFaturamentoMedio', 1.0),

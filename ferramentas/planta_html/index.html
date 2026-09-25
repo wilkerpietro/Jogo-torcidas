@@ -585,9 +585,11 @@ function nomesDosEstadios() {
 const temPraia = () => { const c = infoDaCidade(cidade); return !c || !!c.temPraia; };
 /* a praça de rio ou lagoa: a lagoa no lugar da praia e do mar */
 const temLagoa = () => { const c = infoDaCidade(cidade); return !!(c && c.temLagoa); };
-/* A VEGETAÇÃO EM VOLTA DA CIDADE: no Nordeste, o mato claro e seco de
-   hoje; nas outras regiões, a mata verde. Sem o dado, fica o mato de hoje */
-const temMata = () => { const c = infoDaCidade(cidade); return !!c && c.regiao !== 'Nordeste'; };
+/* A VEGETAÇÃO EM VOLTA DA CIDADE, a `vegetacao` da praça: 'mata' (a mata
+   verde), 'cerrado' ou 'caatinga' (o mato seco, o de hoje). Sem o dado,
+   fica o de hoje */
+const vegetacao = () => { const c = infoDaCidade(cidade); return (c && c.vegetacao) || 'caatinga'; };
+const NOME_VEGETACAO = { mata: 'a mata verde', cerrado: 'o cerrado', caatinga: 'o mato seco da caatinga' };
 function montarDerivados() {
   cobertoPelaProposta = PROP.coberto;
   fav0 = PROP.favelaDeHoje;
@@ -743,6 +745,74 @@ function padraoMata() {
   PADRAO_MATA = ctx.createPattern(cv2, 'repeat');
   PADRAO_MATA.setTransform(new DOMMatrix([1 / k, 0, 0, 1 / k, 0, 0]));
   return PADRAO_MATA;
+}
+/* O CERRADO: o capim amarelado, com mancha mais seca e mais verde, a terra
+   vermelha aparecendo, o arbusto, a árvore baixa e torta bem espaçada (a
+   copa de três ou quatro bolas, com a sombra) e o cupinzeiro. O mesmo
+   ladrilho de 2.400 unidades da mata, sem emenda, com semente própria. */
+let PADRAO_CERRADO = null;
+function padraoCerrado() {
+  if (PADRAO_CERRADO) return PADRAO_CERRADO;
+  const T = 1024, U = 2400, k = T / U;
+  const cv2 = document.createElement('canvas'); cv2.width = cv2.height = T;
+  const c = cv2.getContext('2d');
+  c.fillStyle = '#a39d5e'; c.fillRect(0, 0, T, T);
+  let est = 50923;
+  const rnd = () => {                                                    // mulberry32
+    est = (est + 0x6D2B79F5) >>> 0; let t = est;
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  /* desenha em volta do ladrilho também, pra ele emendar consigo mesmo */
+  const volta = (x, y, r, f) => { for (const dx of [-T, 0, T]) for (const dy of [-T, 0, T]) {
+    const X = x + dx, Y = y + dy; if (X + r < 0 || X - r > T || Y + r < 0 || Y - r > T) continue; f(X, Y); } };
+  const bola = (x, y, rx, ry, cor, a = 1) => { c.globalAlpha = a; c.fillStyle = cor; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, 7); c.fill(); c.globalAlpha = 1; };
+  /* a mancha de borda macia: o degradê some na beira, sem o risco do círculo */
+  const mancha = (x, y, r, e, rgb, a) => {
+    c.save(); c.translate(x, y); c.scale(1, e);
+    const g = c.createRadialGradient(0, 0, 0, 0, 0, r);
+    g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(0.6, `rgba(${rgb},${a * 0.7})`); g.addColorStop(1, `rgba(${rgb},0)`);
+    c.fillStyle = g; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill(); c.restore();
+  };
+  /* as manchas do capim: mais seco (dourado) e mais verde */
+  for (let n = 0; n < 60; n++) {
+    const x = rnd() * T, y = rnd() * T, r = (60 + rnd() * 170) * k, rgb = rnd() < 0.55 ? '184,172,102' : '138,145,86', a = 0.45 + rnd() * 0.3, e = 0.6 + rnd() * 0.4;
+    volta(x, y, r, (X, Y) => mancha(X, Y, r, e, rgb, a));
+  }
+  /* a terra vermelha: três ou quatro manchas juntas, de beira macia */
+  for (let n = 0; n < 16; n++) {
+    const x = rnd() * T, y = rnd() * T, r = (18 + rnd() * 44) * k, partes = 3 + Math.floor(rnd() * 2);
+    for (let i = 0; i < partes; i++) {
+      const px2 = x + (rnd() - 0.5) * r * 1.4, py2 = y + (rnd() - 0.5) * r, rr = r * (0.55 + rnd() * 0.5), e = 0.55 + rnd() * 0.4;
+      volta(px2, py2, rr, (X, Y) => mancha(X, Y, rr, e, '176,114,70', 0.75));
+    }
+  }
+  /* o fiapo do capim */
+  for (let n = 0; n < 2600; n++) {
+    const x = rnd() * T, y = rnd() * T, cor = rnd() < 0.5 ? '#c2b673' : '#7f844c';
+    c.fillStyle = cor; c.globalAlpha = 0.5; c.fillRect(x, y, 1.6, 1.6); c.globalAlpha = 1;
+  }
+  /* o cupinzeiro */
+  for (let n = 0; n < 34; n++) {
+    const x = rnd() * T, y = rnd() * T, r = (4 + rnd() * 3) * k;
+    volta(x, y, r * 2, (X, Y) => { bola(X + r * 0.5, Y + r * 0.4, r, r, 'rgba(40,30,15,.35)'); bola(X, Y, r, r, '#8d5e3b'); bola(X - r * 0.3, Y - r * 0.3, r * 0.45, r * 0.45, '#b07a50'); });
+  }
+  /* o arbusto e a árvore: a sombra primeiro, a copa por cima, de cima pra baixo */
+  const plantas = [];
+  for (let n = 0; n < 300; n++) plantas.push({ x: rnd() * T, y: rnd() * T, r: (7 + rnd() * 9) * k, arv: false, tom: rnd() });
+  for (let n = 0; n < 150; n++) plantas.push({ x: rnd() * T, y: rnd() * T, r: (18 + rnd() * 22) * k, arv: true, tom: rnd(), bolas: 3 + Math.floor(rnd() * 2), giro: rnd() * 6.28 });
+  plantas.sort((a, b) => a.y - b.y);
+  const TONS = ['#4e6a2e', '#5a7434', '#465f2a', '#617a3a'];
+  for (const p of plantas) volta(p.x, p.y, p.r * 2, (X, Y) => {
+    const cor = p.arv ? TONS[Math.floor(p.tom * TONS.length)] : (p.tom < 0.5 ? '#6f7d3a' : '#7c8742');
+    const partes = p.arv ? Array.from({ length: p.bolas }, (_, i) => { const t = p.giro + i * 6.28 / p.bolas; return [X + Math.cos(t) * p.r * 0.45, Y + Math.sin(t) * p.r * 0.45, p.r * 0.62]; }) : [[X, Y, p.r]];
+    for (const [x, y, r] of partes) bola(x + r * 0.35, y + r * 0.4, r, r * 0.9, 'rgba(45,40,15,.4)');
+    for (const [x, y, r] of partes) bola(x, y, r, r, cor);
+    if (p.arv) for (const [x, y, r] of partes) bola(x - r * 0.3, y - r * 0.3, r * 0.45, r * 0.45, '#7f9a4c', 0.55);
+  });
+  PADRAO_CERRADO = ctx.createPattern(cv2, 'repeat');
+  PADRAO_CERRADO.setTransform(new DOMMatrix([1 / k, 0, 0, 1 / k, 0, 0]));
+  return PADRAO_CERRADO;
 }
 
 /* A PRAIA (as praças do litoral, nos três mapas). Da avenida pro mar:
@@ -1039,20 +1109,21 @@ function desenhar() {
   const ve = b => b.x1 >= vis.x0 && b.x0 <= vis.x1 && b.y1 >= vis.y0 && b.y0 <= vis.y1;
   const px = v => v / s;                                    // v pixels de tela, em unidades de mundo
   const prop = estado.modo !== 'atual';
-  /* no Nordeste o mato claro de hoje; nas outras regiões, a mata (o "Jogo
-     hoje" fica como o jogo é) */
-  const mata = prop && temMata();
+  /* a vegetação da praça: a mata, o cerrado ou o mato seco de hoje (o
+     "Jogo hoje" fica como o jogo é) */
+  const veg = prop ? vegetacao() : 'caatinga';
+  const padrao = veg === 'mata' ? padraoMata() : veg === 'cerrado' ? padraoCerrado() : null;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = mata ? '#2c4424' : COR.mato; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = veg === 'mata' ? '#2c4424' : veg === 'cerrado' ? '#a39d5e' : COR.mato; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(dpr * s, 0, 0, dpr * s, -dpr * s * ox, -dpr * s * oy);
-  if (mata) { ctx.fillStyle = padraoMata(); ctx.fillRect(vis.x0, vis.y0, vis.x1 - vis.x0, vis.y1 - vis.y0); }
+  if (padrao) { ctx.fillStyle = padrao; ctx.fillRect(vis.x0, vis.y0, vis.x1 - vis.x0, vis.y1 - vis.y0); }
 
   /* ---- o mato: trilha, moita, beco da favela (a moita solta é do mato
-     claro: na mata ela some na copa) ---- */
+     seco: na mata e no cerrado o ladrilho já tem a planta dele) ---- */
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.strokeStyle = COR.trilha; ctx.lineWidth = 16;
   for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
-  if (!mata) for (const m of K.MOITAS) {
+  if (!padrao) for (const m of K.MOITAS) {
     if (m.x + m.r < vis.x0 || m.x - m.r > vis.x1 || m.y + m.r < vis.y0 || m.y - m.r > vis.y1) continue;
     if (prop && somePelaProposta(m.x, m.y)) continue;
     ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
@@ -2709,7 +2780,7 @@ function notasDaProposta() {
   <ul>
     <li>${esc(cidade)} é praça de porte <b>${esc(porte.toLowerCase())}</b>: o mapa dela é o ${NOME_MAPA[doPorte]}.${doPorte !== modo ? ` <b>Aqui ela está no ${NOME_MAPA[modo]}</b>, pra comparar.` : ''}</li>
     <li><b>Estádios</b>: ${esc(lista(nomes))}${fora.length ? ` — ${esc(lista(fora))} não ${fora.length > 1 ? 'cabem' : 'cabe'} neste mapa (${fora.length > 1 ? 'são' : 'é'} ${fora.length} a mais que as vagas)` : ''}. ${total && total < vagas ? `A praça tem ${total} e o mapa tem ${vagas} vagas: a que sobra volta a ser quadra de casa (ou mato, se fica fora da grade).` : ''}</li>
-    <li>${temMata() ? `Região ${esc(ci.regiao)}: em volta da cidade, <b>a mata verde</b>.` : ci ? `Região Nordeste: em volta da cidade, <b>o mato claro e seco</b>.` : ''}</li>
+    <li>${ci ? `Em volta da cidade, <b>${NOME_VEGETACAO[vegetacao()] || NOME_VEGETACAO.caatinga}</b> (região ${esc(ci.regiao)}).` : ''}</li>
     <li>${temLagoa() ? '<b>É de rio e lagoa</b>: a leste, depois da avenida da beira, a margem de capim e a lagoa, com a outra margem à vista, o junco, o aguapé, o trapiche e a ilhota — sem areia e sem mar.' : temPraia() ? 'É do litoral: a leste, a orla com o calçadão de pedra portuguesa e os coqueiros, a praia com os quiosques, o guarda-sol, a barraca, o posto de salva-vidas e a quadra de vôlei, e o mar com a onda e os barcos.' : '<b>Não é do litoral</b>: depois da avenida da beira é mato, sem praia e sem mar.'}</li>
     ${PROP.mapa.metro ? `<li>${METRO_P ? `Tem metrô: a ${esc(METRO_P.nome)}, com as estações ${esc(METRO_P.estacoes.map(e => e.nome).join(' e '))}. Na ficha da estação, <b>Pegar o trem</b> faz a viagem e <b>Descer na plataforma</b> põe a câmera lá embaixo.` : '<b>Não tem metrô</b>: as duas entradas somem, e o terreno delas volta a ser casa.'}</li>` : ''}
     <li>Casas por favela — ${esc(porFavela)}.</li>

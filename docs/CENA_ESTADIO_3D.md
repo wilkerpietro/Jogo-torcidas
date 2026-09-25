@@ -2656,6 +2656,37 @@ O calçadão, os coqueiros, os quiosques, o guarda-sol, a barraca, o posto e a q
 É desenho fixo (hash, sem sorteio), montado uma vez por trecho de avenida e desenhado só no que está na tela. De longe, a praia vira uma faixa colorida com o calçadão; de perto, cada guarda-sol tem os gomos, cada quiosque as mesinhas.
 
 
+### 4.42. A vegetação é da praça: mata, cerrado ou caatinga
+
+O dono refez a regra da 4.40:
+
+- o Centro-Oeste é **cerrado**;
+- o Maranhão é **mata verde**;
+- só o Interior do CE e o Interior de PE ficam com o **mato seco**;
+- o resto do Nordeste também é verde.
+
+A regra deixou de ser a região. Agora é um dado da praça, `vegetacao`, na fonte (`dados/fonte/cidades_bairros.json`, ao lado de `temPraia` e `temLagoa`), passado pelo importador pra `dados/cidades.js`:
+
+| `vegetacao` | praças |
+|---|---|
+| `mata` | as outras 25 |
+| `cerrado` | Brasília, Goiânia e Mato Grosso |
+| `caatinga` | Interior do CE e Interior de PE |
+
+Sem o dado, a planta fica com o mato seco de antes. As notas da praça dizem qual vale.
+
+**O cerrado** (`padraoCerrado` em `index.html`) é o mesmo tipo de ladrilho da mata (2.400 unidades, sem emenda, semente própria). Tem, de baixo pra cima:
+
+- o capim amarelado, com manchas mais secas (douradas) e mais verdes, de borda macia (degradê);
+- a terra vermelha aparecendo, em manchas de três ou quatro pedaços;
+- o fiapo do capim;
+- o cupinzeiro;
+- o arbusto;
+- a árvore baixa e espaçada, de copa em três ou quatro bolas, com a sombra pro sudeste.
+
+Na mata e no cerrado, as moitas soltas do mato seco não entram, porque o ladrilho já tem a planta dele. As trilhas continuam nas três. O "Jogo hoje" continua com o mato do jogo.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -3184,8 +3215,8 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto (os escudos com o caminho do PNG do jogo) e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta o mato claro no Nordeste ou a mata nas outras regiões) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
-| `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia` e `temLagoa` |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta a mata, o cerrado ou o mato seco da caatinga, pela `vegetacao` da praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
+| `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia`, `temLagoa` e `vegetacao` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) e dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |

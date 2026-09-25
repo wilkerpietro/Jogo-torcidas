@@ -65,6 +65,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Estadio Bruno Daniel",
@@ -334,6 +335,7 @@
    "temMetro": true,
    "temPraia": false,
    "temLagoa": true,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Mangueirao",
@@ -645,6 +647,7 @@
    "temMetro": true,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Mineirao",
@@ -959,6 +962,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "cerrado",
    "quantidadeEstadios": 2,
    "estadios": [
     "Serejão",
@@ -1371,6 +1375,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Brinco de Ouro",
@@ -1652,6 +1657,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "cerrado",
    "quantidadeEstadios": 2,
    "estadios": [
     "Arena Pantanal",
@@ -1870,6 +1876,7 @@
    "temMetro": true,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena da Baixada",
@@ -2153,6 +2160,7 @@
    "temMetro": false,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Orlando Scarpelli",
@@ -2448,6 +2456,7 @@
    "temMetro": true,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Castelão",
@@ -2802,6 +2811,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "cerrado",
    "quantidadeEstadios": 3,
    "estadios": [
     "Serra Dourada",
@@ -3073,6 +3083,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 1,
    "estadios": [
     "Estadio Regional"
@@ -3316,6 +3327,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "caatinga",
    "quantidadeEstadios": 2,
    "estadios": [
     "Cornélio de Barros",
@@ -3552,6 +3564,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Heriberto Hulse",
@@ -3799,6 +3812,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Maião",
@@ -4113,6 +4127,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "caatinga",
    "quantidadeEstadios": 2,
    "estadios": [
     "Junco",
@@ -4367,6 +4382,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Germano Kruger",
@@ -4613,6 +4629,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Bento Freitas",
@@ -4880,6 +4897,7 @@
    "temMetro": false,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Rei Pelé",
@@ -5150,6 +5168,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": true,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Arena da Amazônia",
@@ -5420,6 +5439,7 @@
    "temMetro": false,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Castelão",
@@ -5701,6 +5721,7 @@
    "temMetro": false,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Almeidão",
@@ -6055,6 +6076,7 @@
    "temMetro": true,
    "temPraia": false,
    "temLagoa": true,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena do Gremio",
@@ -6364,6 +6386,7 @@
    "temMetro": true,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Estadio dos Aflitos",
@@ -6741,6 +6764,7 @@
    "temMetro": true,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Maracanã",
@@ -7322,6 +7346,7 @@
    "temMetro": true,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena das Dunas",
@@ -7613,6 +7638,7 @@
    "temMetro": true,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Fonte Nova",
@@ -7868,6 +7894,7 @@
    "temMetro": false,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Vila Belmiro",
@@ -8118,6 +8145,7 @@
    "temMetro": true,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 4,
    "estadios": [
     "Morumbi",
@@ -8691,6 +8719,7 @@
    "temMetro": false,
    "temPraia": true,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Batistão",
@@ -8952,6 +8981,7 @@
    "temMetro": false,
    "temPraia": false,
    "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Moca Bonita",
