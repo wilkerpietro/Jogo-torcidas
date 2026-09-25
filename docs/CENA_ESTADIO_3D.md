@@ -3278,9 +3278,9 @@ O dono pediu o cenário 3D das cidades num link do GitHub Pages: escolhe a praç
 
 **O clique é exato.** Cada vértice do forno leva o número da coisa de onde veio; no clique, a cena é desenhada de novo num alvo de 1 × 1 pixel, com o número na cor, e o que está naquele pixel é o que se clicou — a parede do bar, não a caixa em volta da sede do lado (a primeira versão, por caixa, errava justamente isso). A ficha que abre é a da planta, com o contorno laranja na coisa; com o mouse parado, o nome aparece do lado.
 
-**A câmera.** Órbita em volta de um alvo no chão: arrastar pega o chão (o ponto fica debaixo do dedo); o botão direito (ou Shift) gira e inclina; a roda aproxima no cursor; WASD e as setas andam, Q/E giram, R/F inclinam; o duplo clique voa até o ponto; **Nível da rua** desce à altura do olho (1,6 m); **Vista de cima** volta pra cidade inteira. No toque: um dedo arrasta, dois dedos aproximam, giram e inclinam. O perto e o longe da câmera e a névoa acompanham a distância, e o sol (de noroeste, como a sombra do 2D) leva a caixa da sombra junto do alvo.
+**A câmera.** Órbita em volta de um alvo no chão: arrastar pega o chão (o ponto fica debaixo do dedo); o botão direito (ou Shift) gira e inclina; a roda aproxima no cursor; WASD e as setas andam, Q/E giram, R/F inclinam; o duplo clique voa até o ponto; **Nível da rua** desce à altura do olho (1,6 m); **Vista de cima** volta pra cidade inteira. No toque: um dedo arrasta, dois dedos aproximam, giram e inclinam. O perto e o longe da câmera e a névoa acompanham a distância; o sol vem de noroeste, como a sombra do 2D (a sombra em si saiu na 4.50).
 
-**A página.** `montar_pages.sh` monta a pasta `cenario3d/` pro GitHub Pages: o `index.html` inteiro (com o `<head>`) abre direto na **lista das 30 praças por porte** (grandes → mapa grande, médias → médio, pequenas → pequeno, com os estádios, a praia ou a lagoa, o metrô e a vegetação de cada uma); escolhida a praça, o mapa monta com a barra de progresso (o chão primeiro, depois a cidade, o mato por último). No topo: a praça, as abas dos três mapas (o do porte marcado), Vista de cima, Nível da rua, a qualidade (Leve: sem sombra, chão a 4 px/m e decalque menor — é a que o celular abre; Normal; Alta), Praças e **Planta 2D**, que fecha o cenário e mostra a planta, a mesma página por baixo. O endereço acompanha (`?cenario&cidade=Recife`, e `&mapa=` quando não é o do porte), então dá pra mandar o link de uma praça. `planta.html` abre só a planta. Na planta (o artefato), o botão **Cenário 3D** abre o mesmo cenário da praça e do mapa da tela.
+**A página.** `montar_pages.sh` monta a pasta `cenario3d/` pro GitHub Pages: o `index.html` inteiro (com o `<head>`) abre direto na **lista das 30 praças por porte** (grandes → mapa grande, médias → médio, pequenas → pequeno, com os estádios, a praia ou a lagoa, o metrô e a vegetação de cada uma); escolhida a praça, o mapa monta com a barra de progresso (o chão primeiro, depois a cidade, o mato por último). No topo: a praça, as abas dos três mapas (o do porte marcado), Vista de cima, Nível da rua, a qualidade (Leve: chão a 4 px/m, decalque menor e a tela sem densidade extra — é a que o celular abre; Normal; Alta), Praças e **Planta 2D**, que fecha o cenário e mostra a planta, a mesma página por baixo. O endereço acompanha (`?cenario&cidade=Recife`, e `&mapa=` quando não é o do porte), então dá pra mandar o link de uma praça. `planta.html` abre só a planta. Na planta (o artefato), o botão **Cenário 3D** abre o mesmo cenário da praça e do mapa da tela.
 
 **Os números** (neste ambiente, rasterizador por software: o tempo de montar é de processador e vale como ordem de grandeza; o fps não foi medido):
 
@@ -3299,6 +3299,29 @@ As 30 praças montam sem erro (`todas.js` do teste passa por todas), e os confer
 - **A água é pintada.** O mar e a lagoa são o chão pintado (sem onda em 3D); o trapiche, o aguapé e o junco da lagoa também. O metrô tem só a entrada na rua (a estação de baixo e a viagem continuam na ficha da planta). O carro é a caixa com cabine do jogo, e não tem gente.
 - **O mato pintado debaixo da árvore** lê como copa vista de cima, mas nas faixas estreitas de mato perto da cidade, rente ao chão, parece mancha.
 - **O fps de verdade** tem de ser visto numa máquina com placa de vídeo: aqui só dá pra contar triângulo e chamada de desenho.
+
+### 4.50. A praia mais larga, o mar sem mato, o fps, a sombra fora e as rivais longe
+
+O dono abriu o cenário de Fortaleza no Pages e pediu: a faixa de areia mais larga; o mar estava "bugado", com uma textura de mata dentro dele; a areia seguindo pra fora da cidade, pra praia e mar parecerem contínuos; um medidor de fps; tirar a sombra de vez, pra ver se ajuda no rendimento; e redistribuir as sedes e os bares — a sede de uma torcida no lado oposto do mapa da sede da rival, e o bar longe da própria sede e da sede rival.
+
+**A praia.** Nos três mapas a faixa de areia passou de 12,5 m pra ~42 m (`PRAIA_A_MAIS`, 105 px do desenho do jogo): a **linha d'água vai pro mar** e a cidade e a avenida da beira ficam onde estavam; o "Jogo hoje" continua com a faixa do jogo. As peças se espalham pela areia nova, na distância da água proporcional à faixa: o guarda-sol (agora até seis por grupo) e a barraca em dois terços da areia, o posto a um quarto, a quadra de vôlei no meio, o quiosque e o coqueiro na beira do calçadão. A costa dos três mapas também **passa das pontas** (reta, como o `xCosta` segue pra lá da ponta): a areia, a espuma, o raso e a onda vão até a borda do desenho, na planta e no cenário.
+
+**O "mato dentro do mar"** não era desenho, era **profundidade**: o chão de longe era um plano de mato enorme 0,8 unidade debaixo do plano do mar, e de longe o teste de profundidade não separa 0,8 unidade a 20 mil — os dois brigavam e saía listrado. Agora o chão de longe são **faixas que não se sobrepõem**, em volta da área pintada e na mesma altura dela: o mato (o ladrilho da planta, com a uv no mundo) a oeste; ao norte e ao sul, o mato, a **faixa da praia** e o mar; a leste, o mar. A faixa da praia é um pedaço de 124 m da própria praia pintada pela planta (a areia, a areia molhada, a espuma, o raso e a onda), logo pra lá da ponta do mapa, repetido ao longo da costa até o horizonte; o mar de longe tem a cor tirada do mar pintado. E o "perto" da câmera sobe com a distância (2% dela), o que dá precisão de sobra lá longe.
+
+**A sombra saiu.** O cenário não desenha sombra nenhuma: o renderizador não tem mapa de sombra, e o sol só dá a luz de cada face. A sombra custava desenhar a cena mais uma vez por quadro (o mapa de sombra, que seguia o alvo). O custo visual é o de sempre: o prédio não projeta nada no chão, e a cidade fica mais chapada.
+
+**O medidor de fps** fica no canto de baixo, à esquerda (e no celular também): os quadros por segundo (verde a partir de 50, amarelo de 28 a 50, vermelho abaixo), os milissegundos por quadro, as chamadas de desenho e os triângulos do quadro e o tempo do processador pra mandar o quadro, na média de meio segundo. Pra medir de verdade, **o cenário desenha todo quadro** enquanto está aberto, como um jogo (antes ele só desenhava quando algo mudava); enquanto a praça monta, só desenha quando pede, pra não roubar tempo da montagem. Neste ambiente o rasterizador é por software e mostra 0 a 2 fps — o número que vale é o da sua máquina.
+
+**As sedes e os bares** (a regra é da planta, `distribuirTorcidas`, e vale pro 2D e pro 3D):
+
+- **A rivalidade é a dos dados**: entre as torcidas da praça, `maioresRivais` pesa 3 e `rivais` pesa 1 (de um lado ou do outro); a do mesmo clube não conta. É o que já estava em `dados/torcidas.js` (vindo do JSON de relações da era Unity): Gaviões × Mancha Verde, Remo × Paysandu, Ceará × Fortaleza estão lá como maiores rivais.
+- **Quem tem sede** não mudou: a maior primeiro, a de nível 1 cabe no espaço pequeno ou num terreno, a de nível 2 pra cima só no terreno.
+- **Onde**: a busca passa por todas as distribuições das sedes nos espaços (no máximo nove torcidas em nove espaços: 360 mil distribuições, em até 80 ms) e dá nota a cada uma, nesta ordem: a **menor distância entre duas sedes de maior rivalidade**, a menor entre duas rivais quaisquer — ninguém em cima da rival: é o "lado oposto" —, e a soma das distâncias entre rivais, com o peso. A praça sem rival fica com a regra antiga (a maior perto do estádio).
+- **O bar** fica a 100 m ou mais da sede da torcida e a 150 m ou mais da sede de uma rival no mapa grande; no médio e no pequeno as duas distâncias encolhem com a cidade (92/139 m e 63–71/95–107 m). Os bares saem **todos de uma vez**, pelo método húngaro (`casar`): o máximo de torcidas com bar que serve e, entre essas distribuições, cada bar o mais perto da própria sede; quem fica sem bar que sirva leva o que chega mais perto da regra.
+- **A sede manda**: das distribuições de sede quase tão boas quanto a melhor (a menor distância entre rivais a 90% ou mais da melhor), fica a primeira em que menos bar quebra a regra.
+- As notas da planta explicam a regra, e a tabela das torcidas mostra o bar com a distância dele à sede e a **sede rival mais perto**, com a distância.
+
+**O resultado**, nas 30 praças (no mapa do porte de cada uma): 139 torcidas com sede; **121 com o bar dentro da regra**. As 18 que não cumprem estão nos mapas onde não há bar que sirva — São Paulo (3), Belém (3), Subúrbio Carioca (3), Interior do RS (3), Goiânia (2), Rio (1), Interior de SC, Interior do PR e Mato Grosso (1 cada) —, quase todas a 85–98% da distância pedida; as piores (Subúrbio Carioca e Belém) a dois terços. O que as resolveria é bar em outro lugar: os pontos de bar são do gerador do mapa (um por bairro) e não mudaram. A primeira tentativa, que punha o bar antes da sede, deixava sede rival a 49 m em São Paulo — por isso a sede manda.
 
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
@@ -3651,7 +3674,11 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 10. **O cenário 3D (4.49) ainda não tem versão de longe da casa**, nem o
     estádio detalhado da cena da torcida: a cidade vai inteira (0,4 a 0,9
     milhão de triângulos) e o estádio é a casca da planta. O fps dele não
-    foi medido aqui (rasterizador por software).
+    foi medido aqui (rasterizador por software); o medidor (4.50) mostra
+    o da máquina de quem abre.
+11. **18 das 139 torcidas ficam com o bar fora da regra** (4.50): perto
+    da própria sede ou de uma sede rival, porque o mapa não tem bar que
+    sirva. Resolver é mexer onde o gerador põe os bares.
 
 ## 10. O que este trabalho NÃO mexeu
 
