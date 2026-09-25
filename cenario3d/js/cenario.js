@@ -19,6 +19,9 @@
    - O LETREIRO, A PIXAÇÃO E O ESCUDO (cada um com o texto num canvas
      só dele) vão pra folhas de decalque de 2048 px, e a malha deles
      também junta por bloco.
+   - A PÉ, o boneco do jogo (js/bonecos3.js) anda na rua, na camisa de
+     uma torcida da praça: a GRADE DO PASSO, riscada pelo forno com o
+     que cada coisa tem na altura do corpo, diz onde ele pisa.
 
    Nada aqui decide o que vai no mapa: muda a planta, muda o cenário.
    Em unidades de mundo da planta (x pra leste, y da planta = z do 3D pro
@@ -36,11 +39,24 @@ const PX_CHAO = 1024, SOBRA = 2;
    desenha sombra nenhuma (o sol só dá a luz de cada face). A sombra custa
    desenhar a cena mais uma vez por quadro (o mapa de sombra), e o dono
    pediu pra ver o fps sem ela */
+/* A MÍNIMA é pra placa de vídeo fraca (a integrada de dez anos atrás):
+   a tela desenhada com 0,6 pixel por pixel (sai borrada, e custa um terço)
+   e a pé só se vê até 180 m */
 const QUALIDADES = {
-  leve:   { nome: 'Leve', pxm: 4, dpr: 1, decal: 0.35 },
-  normal: { nome: 'Normal', pxm: 6, dpr: 1.5, decal: 0.5 },
-  alta:   { nome: 'Alta', pxm: 8, dpr: 2, decal: 0.62 }
+  minima: { nome: 'Mínima', pxm: 3, dpr: 0.6, decal: 0.3, vista: 180 },
+  leve:   { nome: 'Leve', pxm: 4, dpr: 1, decal: 0.35, vista: 260 },
+  normal: { nome: 'Normal', pxm: 6, dpr: 1.5, decal: 0.5, vista: 450 },
+  alta:   { nome: 'Alta', pxm: 8, dpr: 2, decal: 0.62, vista: 800 }
 };
+/* A PÉ (o boneco do jogo na rua): as velocidades (m/s), o raio do corpo
+   pra colisão, a altura pra onde a câmera olha e a câmera de partida
+   atrás dele. `vista` (acima, em m) é até onde se enxerga a pé: a névoa
+   fecha antes, e o que passa dela nem vai pra placa de vídeo — é o que
+   segura o fps na máquina fraca */
+const APE = { anda: 2.2, corre: 6, raio: 0.28, olho: 1.5, dist: 4.4, el: 0.26 };
+/* o que é prédio (a câmera não entra na parede dele); o resto (o poste,
+   a árvore, o carro, o prop, a peça da praia) só barra o corpo */
+const PREDIOS = new Set(['casa', 'favela', 'bar', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
 /* o lado do BLOCO do forno (m): a malha junta tudo o que cai nele; o
    bloco é também o que a câmera descarta fora da vista */
 const BLOCO_M = 96;
@@ -52,6 +68,195 @@ const CEU = new THREE.Color('#cfdde6'), ZENITE = new THREE.Color('#7fa6c4');
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const espera = () => new Promise(ok => setTimeout(ok, 0));
+
+/* ======================================================
+   A GRADE DO PASSO: onde o boneco pode pisar
+   ------------------------------------------------------
+   O chão da área em células de meio metro. O forno passa por aqui cada
+   triângulo que assa, e o que corta a FAIXA DO CORPO (de 35 cm a 1,80 m
+   do chão) risca as células por onde passa: SÓLIDO — a parede, o muro, a
+   grade, o carro, o poste, o tronco, o banco; o meio-fio e o degrau baixo
+   não. Só o contorno é riscado, e basta: o risco é contínuo (cada passo
+   dele anda uma célula em x ou em z), então o corpo não atravessa, e o
+   miolo fechado de um carro ou de uma mesa nunca é alcançado. O que é de
+   prédio guarda ainda a ALTURA da parede (em quartos de metro), pra
+   câmera não entrar nela. O mato passa o tronco dele; a água (o mar pra lá
+   da linha d'água, a lagoa menos a ilhota e o trapiche) entra por último.
+   O ALCANCE é o que se chega andando da borda da área: é nele que o
+   boneco nasce, e não dentro de uma casa fechada.
+   ====================================================== */
+const CEL_M = 0.5, FAIXA_M = [0.35, 1.8], ALTO_M = 2.2;
+const SOLIDO = 1, AGUA = 2, ALCANCE = 4;
+function GradeDoPasso(ar, M) {
+  const c = CEL_M * M, nx = Math.ceil((ar.x1 - ar.x0) / c), nz = Math.ceil((ar.y1 - ar.y0) / c);
+  const g = new Uint8Array(nx * nz), alt = new Uint8Array(nx * nz);
+  const Y0 = FAIXA_M[0] * M, Y1 = FAIXA_M[1] * M, YA = ALTO_M * M, qm = 4 / M;
+  const ox = ar.x0, oz = ar.y0;
+  let alcancou = false;
+  function marcar(i, j, bit, h) {
+    if (i < 0 || j < 0 || i >= nx || j >= nz) return;
+    const k = j * nx + i;
+    g[k] |= bit;
+    if (h > alt[k]) alt[k] = h;
+  }
+  /* o risco de (a) a (b), em células: toda célula que a reta atravessa */
+  function riscar(ax, az, bx, bz, bit, h) {
+    let i = Math.floor(ax), j = Math.floor(az);
+    const dx = bx - ax, dz = bz - az, si = dx > 0 ? 1 : -1, sj = dz > 0 ? 1 : -1;
+    const tdx = dx ? Math.abs(1 / dx) : Infinity, tdz = dz ? Math.abs(1 / dz) : Infinity;
+    let tx = dx ? (dx > 0 ? i + 1 - ax : ax - i) * tdx : Infinity, tz = dz ? (dz > 0 ? j + 1 - az : az - j) * tdz : Infinity;
+    let n = Math.min(40000, Math.abs(Math.floor(bx) - i) + Math.abs(Math.floor(bz) - j));
+    for (;;) {
+      marcar(i, j, bit, h);
+      if (n-- <= 0) break;
+      if (tx < tz) { tx += tdx; i += si; } else { tz += tdz; j += sj; }
+    }
+  }
+  /* o pedaço do triângulo dentro da faixa: corta em y (Sutherland–Hodgman) */
+  const A = new Float64Array(24), B = new Float64Array(24);
+  function cortar(de, n, y, acima, pra) {
+    let m = 0;
+    for (let k = 0; k < n; k++) {
+      const a = k * 3, b = ((k + 1) % n) * 3;
+      const da = acima ? de[a + 1] - y : y - de[a + 1], db = acima ? de[b + 1] - y : y - de[b + 1];
+      if (da >= 0) { pra[m * 3] = de[a]; pra[m * 3 + 1] = de[a + 1]; pra[m * 3 + 2] = de[a + 2]; m++; }
+      if ((da >= 0) !== (db >= 0)) {
+        const t = da / (da - db);
+        pra[m * 3] = de[a] + (de[b] - de[a]) * t; pra[m * 3 + 1] = y; pra[m * 3 + 2] = de[a + 2] + (de[b + 2] - de[a + 2]) * t; m++;
+      }
+    }
+    return m;
+  }
+  /* os triângulos soltos de P (x, y, z em unidades de mundo), n vértices */
+  let ms = 0;
+  function assar(P, n, predio) {
+    const t0 = performance.now();
+    try { assarTri(P, n, predio); } finally { ms += performance.now() - t0; }
+  }
+  function assarTri(P, n, predio) {
+    for (let o = 0; o + 8 < n * 3; o += 9) {
+      const ya = P[o + 1], yb = P[o + 4], yc = P[o + 7];
+      const ymax = Math.max(ya, yb, yc);
+      if (ymax < Y0) continue;
+      const ymin = Math.min(ya, yb, yc);
+      if (predio && ymax > YA) {
+        const h = Math.min(255, Math.round(ymax * qm));
+        const ax = (P[o] - ox) / c, az = (P[o + 2] - oz) / c, bx = (P[o + 3] - ox) / c, bz = (P[o + 5] - oz) / c, cx = (P[o + 6] - ox) / c, cz = (P[o + 8] - oz) / c;
+        riscar(ax, az, bx, bz, 0, h); riscar(bx, bz, cx, cz, 0, h); riscar(cx, cz, ax, az, 0, h);
+      }
+      if (ymin > Y1) continue;
+      for (let k = 0; k < 9; k++) A[k] = P[o + k];
+      let m = 3, poli = A;
+      if (ymin < Y0) { m = cortar(poli, m, Y0, true, B); poli = B; }
+      if (ymax > Y1) { const pra = poli === A ? B : A; m = cortar(poli, m, Y1, false, pra); poli = pra; }
+      if (m < 2) continue;
+      for (let k = 0; k < m; k++) {
+        const a = k * 3, b = ((k + 1) % m) * 3;
+        riscar((poli[a] - ox) / c, (poli[a + 2] - oz) / c, (poli[b] - ox) / c, (poli[b + 2] - oz) / c, SOLIDO, 0);
+      }
+    }
+  }
+  /* a água: o mar pra lá da linha d'água; a lagoa (o contorno), menos a
+     ilhota e o trapiche, que se pisa */
+  function agua(costa, lagoa) {
+    const cruza = (pol, z, xs) => {
+      xs.length = 0;
+      for (let k = 0, l = pol.length - 1; k < pol.length; l = k++) {
+        const [xa, za] = pol[k], [xb, zb] = pol[l];
+        if ((za > z) !== (zb > z)) xs.push(xa + (z - za) / (zb - za) * (xb - xa));
+      }
+      return xs.sort((a, b) => a - b);
+    };
+    const xs = [], i0 = x => Math.max(0, Math.ceil((x - ox) / c - 0.5)), i1 = x => Math.min(nx - 1, Math.floor((x - ox) / c - 0.5));
+    for (let j = 0; j < nz; j++) {
+      const z = oz + (j + 0.5) * c, lin = j * nx;
+      if (costa) for (let i = i0(costa.agua(z)); i < nx; i++) g[lin + i] |= AGUA;
+      if (!lagoa) continue;
+      cruza(lagoa.agua, z, xs);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] |= AGUA;
+      cruza(lagoa.ilha, z, xs);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] &= ~AGUA;
+      for (const r of lagoa.pisa) if (z >= r.y0 && z <= r.y1) for (let i = i0(r.x0), e = i1(r.x1); i <= e; i++) g[lin + i] &= ~AGUA;
+    }
+  }
+  /* o alcance: o que se chega andando da borda (a busca em largura, com a
+     fila circular que cresce se precisar) */
+  function alcancar() {
+    if (alcancou) return;
+    alcancou = true;
+    let q = new Int32Array(1 << 18), ini = 0, fim = 0;
+    const poe = k => {
+      if (g[k] & (SOLIDO | AGUA | ALCANCE)) return;
+      g[k] |= ALCANCE;
+      if (fim - ini === q.length) {
+        const nq = new Int32Array(q.length * 2);
+        for (let t = ini; t < fim; t++) nq[t - ini] = q[t & (q.length - 1)];
+        q = nq; fim -= ini; ini = 0;
+      }
+      q[fim++ & (q.length - 1)] = k;
+    };
+    for (let i = 0; i < nx; i++) { poe(i); poe((nz - 1) * nx + i); }
+    for (let j = 0; j < nz; j++) { poe(j * nx); poe(j * nx + nx - 1); }
+    while (ini < fim) {
+      const k = q[ini++ & (q.length - 1)], i = k % nx;
+      if (i > 0) poe(k - 1);
+      if (i < nx - 1) poe(k + 1);
+      if (k >= nx) poe(k - nx);
+      if (k < (nz - 1) * nx) poe(k + nx);
+    }
+  }
+  /* cabe o corpo (um círculo de raio r) com o meio em (x, z)? */
+  function cabe(x, z, r) {
+    const i0 = Math.floor((x - r - ox) / c), i1 = Math.floor((x + r - ox) / c), j0 = Math.floor((z - r - oz) / c), j1 = Math.floor((z + r - oz) / c);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      if (i < 0 || j < 0 || i >= nx || j >= nz) return false;
+      if (!(g[j * nx + i] & (SOLIDO | AGUA))) continue;
+      const px = clamp(x, ox + i * c, ox + (i + 1) * c), pz = clamp(z, oz + j * c, oz + (j + 1) * c);
+      if ((px - x) * (px - x) + (pz - z) * (pz - z) < r * r) return false;
+    }
+    return true;
+  }
+  /* o lugar alcançável mais perto de (x, z) onde o corpo cabe, até `raio` */
+  function perto(x, z, r, raio) {
+    alcancar();
+    const ci = Math.floor((x - ox) / c), cj = Math.floor((z - oz) / c), R = Math.ceil(raio / c);
+    for (let d = 0; d <= R; d++) {
+      let melhor = null, md = Infinity;
+      for (let j = cj - d; j <= cj + d; j++) for (let i = ci - d; i <= ci + d; i++) {
+        if (Math.max(Math.abs(i - ci), Math.abs(j - cj)) !== d || i < 0 || j < 0 || i >= nx || j >= nz) continue;
+        if (!(g[j * nx + i] & ALCANCE)) continue;
+        const px = ox + (i + 0.5) * c, pz = oz + (j + 0.5) * c, dd = (px - x) ** 2 + (pz - z) ** 2;
+        if (dd < md && cabe(px, pz, r)) { md = dd; melhor = { x: px, z: pz }; }
+      }
+      if (melhor) return melhor;
+    }
+    return null;
+  }
+  /* a câmera: quanto da reta de (a) a (b) anda antes de bater numa parede
+     de prédio (0 a 1), andando de quarto em quarto de metro */
+  function livreAte(ax, ay, az, bx, by, bz) {
+    const L = Math.hypot(bx - ax, bz - az), n = Math.ceil(L / (0.25 * M));
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ay + (by - ay) * t;
+      const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
+      if (i < 0 || j < 0 || i >= nx || j >= nz) continue;
+      const h = alt[j * nx + i];
+      if (h && y < h / qm) return (k - 1) / n;
+    }
+    return 1;
+  }
+  function conta() {
+    let s = 0, a = 0, p = 0;
+    for (let k = 0; k < g.length; k++) { if (g[k] & SOLIDO) s++; if (g[k] & AGUA) a++; if (alt[k]) p++; }
+    return { celulas: g.length, nx, nz, solidas: s, agua: a, paredes: p, msRiscar: Math.round(ms) };
+  }
+  /* o que tem na célula de (x, z): SÓLIDO, ÁGUA, ALCANCE (pro teste) */
+  function celula(x, z) {
+    const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
+    return i < 0 || j < 0 || i >= nx || j >= nz ? -1 : g[j * nx + i];
+  }
+  return { assar, agua, alcancar, cabe, perto, livreAte, conta, celula, nx, nz };
+}
 const agora = () => performance.now();
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
 
@@ -99,6 +304,7 @@ const CSS = `
 .cen-fps b { font-size: 15px; }
 .cen-fps b.bom { color: #7fd67a; } .cen-fps b.meio { color: #f0c64a; } .cen-fps b.ruim { color: #ff7b6b; }
 .cen-fps small { display: block; font-weight: 400; color: #c9ccc6; }
+.cen-fps small.cen-aviso { color: #ffb4a8; font-weight: 600; max-width: 300px; white-space: normal; }
 .cen-hover { position: absolute; pointer-events: none; transform: translate(12px, -30px); padding: 4px 8px; border-radius: 6px; white-space: nowrap;
   font: 600 13px/1.2 var(--f-ui); color: #f2f3ef; background: rgba(20,22,21,.82); }
 .cen-carga { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(207,221,230,.55); }
@@ -120,6 +326,25 @@ const CSS = `
 .cen-praças small { display: block; margin-top: 3px; font: 400 12px/1.3 var(--f-texto); color: var(--tinta-2); }
 .cen-como { font-size: 13px; }
 .cen-voltar { float: right; margin: 4px 0 8px 12px; }
+.cen.ape .so-voo, .cen:not(.ape) .so-ape { display: none !important; }
+.cen-bt:disabled { opacity: .55; cursor: progress; }
+/* o pad do toque (o mesmo desenho do pad do jogo, css/pad3d.css): a cruz
+   do W, A, S, D à esquerda e o Correr à direita, só a pé e só no toque */
+.cen-pad { position: absolute; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between; align-items: flex-end; pointer-events: none;
+  padding: 0 calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left)); }
+.cen.ape.toque .cen-pad { display: flex; }
+.cen-pad button { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  background: rgba(20,20,22,.8); border: 1px solid rgba(255,255,255,.18); color: #eeeae0; border-radius: 8px; font: 700 15px/1 var(--f-ui); letter-spacing: .04em; }
+.cen-pad button.apertado, .cen-pad button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
+.cen-cruz { display: grid; gap: 6px; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 48px); grid-template-areas: ". w ." "a . d" ". s ."; }
+.cen-cruz [data-tecla="w"] { grid-area: w; } .cen-cruz [data-tecla="a"] { grid-area: a; } .cen-cruz [data-tecla="s"] { grid-area: s; } .cen-cruz [data-tecla="d"] { grid-area: d; }
+.cen-correr { width: 96px; height: 58px; font-size: 14px !important; }
+/* no toque, a pé: o fps sobe pra baixo da barra de cima (embaixo é do pad) e fica só com o número */
+.cen.ape.toque .cen-fps { top: calc(var(--topo-alt, 60px) + 16px); bottom: auto; left: 8px; }
+.cen.ape.toque .cen-fps small:not(.cen-aviso) { display: none; }
+.cen.ape.toque .cen-fps small.cen-aviso { max-width: 230px; }
+.cen .curto { display: none; }
+.cen.ape.toque .cen-ficha { bottom: calc(176px + env(safe-area-inset-bottom)); max-height: 34vh; }
 @media (max-width: 760px) {
   .cen-topo { left: 8px; right: 8px; top: 8px; padding: 7px 9px; gap: 6px 10px; }
   .cen-nome h1 { font-size: 17px; }
@@ -129,6 +354,12 @@ const CSS = `
   .cen-mapas button { padding: 6px 8px; }
   .cen-dica { display: none; }
   .cen-ficha { left: 8px; bottom: 56px; max-height: 40vh; }
+  /* a pé, a barra de cima numa linha ou duas: sem o nome da praça, com os rótulos curtos */
+  .cen.ape .cen-nome, .cen.ape .cen-ctrl label > .rot { display: none; }
+  .cen.ape .longo { display: none; }
+  .cen.ape .curto { display: inline; }
+  .cen.ape .cen-camisa { max-width: 150px; }
+  .cen-cruz { grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 46px); }
   .cen-fps { left: 8px; bottom: 8px; }
 }`;
 
@@ -148,19 +379,25 @@ export function criarCenario(P) {
     <header class="cen-topo">
       <div class="cen-nome"><h1>Cenário 3D</h1><p class="cen-resumo">—</p></div>
       <div class="cen-ctrl">
-        <label>Praça <select class="cen-cidade"></select></label>
-        <div class="cen-mapas" role="tablist" aria-label="Qual mapa">
+        <label class="so-voo">Praça <select class="cen-cidade"></select></label>
+        <div class="cen-mapas so-voo" role="tablist" aria-label="Qual mapa">
           <button role="tab" data-mapa="pequeno">Pequeno</button><button role="tab" data-mapa="medio">Médio</button><button role="tab" data-mapa="grande">Grande</button>
         </div>
-        <button class="cen-bt" data-acao="cima">Vista de cima</button>
-        <button class="cen-bt" data-acao="rua">Nível da rua</button>
-        <label>Qualidade <select class="cen-q">${Object.entries(QUALIDADES).map(([k, q]) => `<option value="${k}">${q.nome}</option>`).join('')}</select></label>
-        <button class="cen-bt" data-acao="escolher">Praças</button>
-        <button class="cen-bt" data-acao="planta">Planta 2D</button>
+        <button class="cen-bt so-voo" data-acao="cima">Vista de cima</button>
+        <button class="cen-bt so-voo" data-acao="rua">Nível da rua</button>
+        <button class="cen-bt so-voo cen-bt-ape" data-acao="ape" title="Põe o boneco do jogo na rua, no meio da tela, pra andar com ele">A pé</button>
+        <label class="so-ape"><span class="rot">Camisa</span> <select class="cen-camisa" aria-label="A camisa do boneco"></select></label>
+        <button class="cen-bt so-ape cen-bt-sede" data-acao="sede"><span class="longo">Ir pra sede</span><span class="curto">Sede</span></button>
+        <button class="cen-bt so-ape" data-acao="rosto"><span class="longo">Outro boneco</span><span class="curto">Outro</span></button>
+        <label><span class="rot">Qualidade</span> <select class="cen-q" aria-label="Qualidade">${Object.entries(QUALIDADES).map(([k, q]) => `<option value="${k}">${q.nome}</option>`).join('')}</select></label>
+        <button class="cen-bt so-voo" data-acao="escolher">Praças</button>
+        <button class="cen-bt so-voo" data-acao="planta">Planta 2D</button>
+        <button class="cen-bt so-ape" data-acao="sair"><span class="longo">Sair da rua</span><span class="curto">Sair</span></button>
       </div>
     </header>
     <aside class="cen-ficha" hidden><button class="cen-x" aria-label="Fechar a ficha">×</button><div class="cen-ficha-corpo"></div></aside>
-    <p class="cen-dica"><b>Arraste</b> pra andar · <b>botão direito</b> (ou Shift) gira e inclina · <b>role</b> pra aproximar · <b>WASD</b> anda, <b>Q/E</b> gira · <b>duplo clique</b> voa até o ponto · <b>clique</b> numa coisa pra ver a ficha<span class="cen-num"></span></p>
+    <p class="cen-dica"><span class="so-voo"><b>Arraste</b> pra andar · <b>botão direito</b> (ou Shift) gira e inclina · <b>role</b> pra aproximar · <b>WASD</b> anda, <b>Q/E</b> gira · <b>duplo clique</b> voa até o ponto · <b>clique</b> numa coisa pra ver a ficha</span><span class="so-ape"><b>WASD</b> ou as setas andam · <b>Shift</b> corre · <b>arraste</b> gira a câmera · <b>role</b> aproxima · <b>Q/E</b> giram, <b>R/F</b> inclinam · <b>clique</b> numa coisa pra ver a ficha</span><span class="cen-num"></span></p>
+    <div class="cen-pad"><div class="cen-cruz"><button data-tecla="w" aria-label="Pra frente">W</button><button data-tecla="a" aria-label="Pra esquerda">A</button><button data-tecla="d" aria-label="Pra direita">D</button><button data-tecla="s" aria-label="Pra trás">S</button></div><button class="cen-correr" aria-pressed="false">Correr</button></div>
     <div class="cen-hover" hidden></div>
     <p class="cen-fps" aria-live="off"><b>—</b> fps<small>medindo…</small></p>
     <div class="cen-carga" hidden><div class="cen-carga-caixa" role="status" aria-live="polite"><p class="cen-carga-txt">Montando…</p><div class="cen-barra"><i></i></div></div></div>
@@ -226,6 +463,7 @@ export function criarCenario(P) {
     pedir();
   }
   new ResizeObserver(ajustarTela).observe(tela);
+  new ResizeObserver(() => raiz.style.setProperty('--topo-alt', Math.round($('.cen-topo').getBoundingClientRect().height) + 'px')).observe($('.cen-topo'));
 
   /* ======================================================
      A CÂMERA: órbita em volta de um alvo no chão
@@ -233,23 +471,50 @@ export function criarCenario(P) {
   const orb = { alvo: new THREE.Vector3(), dist: 6000, az: -0.55, el: 0.85 };
   let area = { x0: 0, y0: 0, x1: 1000, y1: 1000 };
   const OLHO = 1.6;                       // m: a altura do olho de quem anda
+  const suave = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+  const fovAPe = () => cam.aspect >= 1 ? 50 : 50 + (1 - cam.aspect) * 30;
+  const distAPe = () => APE.dist * M * (cam.aspect < 1 ? 1.15 : 1);
   function posicionar() {
-    orb.dist = clamp(orb.dist, 2.5 * M, 2600 * M);
-    orb.el = clamp(orb.el, 0.02, 1.54);
-    orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
-    orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
-    orb.alvo.y = OLHO * M;
+    /* a pé (`k` vai de 0 a 1 na chegada): o alvo é o boneco, a câmera
+       chega mais perto e pode olhar de baixo */
+    const k = ape ? suave(ape.chegada) : 0;
+    /* no pulo (de um lugar da rua pro outro) a lente e a névoa ficam as de a pé */
+    const kv = ape && ape.de.pulo ? 1 : k;
+    if (k >= 1) { orb.dist = clamp(orb.dist, 1.2 * M, 30 * M); orb.el = clamp(orb.el, -0.3, 1.4); }
+    else { orb.dist = clamp(orb.dist, 2.5 * M, 2600 * M); orb.el = clamp(orb.el, 0.02, 1.54); }
+    if (ape) {
+      const de = ape.de;
+      orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M, de.z + (ape.z - de.z) * k);
+    } else {
+      orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
+      orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
+      orb.alvo.y = OLHO * M;
+    }
     const c = orb.alvo, ce = Math.cos(orb.el);
-    cam.position.set(c.x + orb.dist * ce * Math.sin(orb.az), c.y + orb.dist * Math.sin(orb.el), c.z + orb.dist * ce * Math.cos(orb.az));
+    let d = orb.dist;
+    /* A CÂMERA NÃO ENTRA NA PAREDE: a pé, se um prédio fica entre o
+       boneco e ela, ela chega pra frente dele (de uma vez), e volta
+       devagar quando ele sai do caminho */
+    if (ape && grade && k >= 1) {
+      const f = grade.livreAte(c.x, c.y, c.z, c.x + d * ce * Math.sin(orb.az), c.y + d * Math.sin(orb.el), c.z + d * ce * Math.cos(orb.az));
+      const quer = f < 1 ? Math.max(1.0 * M, d * f - 0.35 * M) : d;
+      ape.camDist = ape.camDist == null || quer < ape.camDist ? quer : ape.camDist + (quer - ape.camDist) * 0.06;
+      d = Math.min(d, ape.camDist);
+    }
+    cam.position.set(c.x + d * ce * Math.sin(orb.az), Math.max(0.3 * M, c.y + d * Math.sin(orb.el)), c.z + d * ce * Math.cos(orb.az));
     cam.lookAt(c);
+    /* a pé, a lente abre (a tela em pé do celular é estreita: com 42° o
+       boneco tomava a largura inteira) */
+    cam.fov = 42 + (fovAPe() - 42) * kv;
     /* o perto e o longe acompanham a distância: a profundidade não perde
-       precisão rente ao chão, e a névoa esconde a borda do mundo */
-    const d = orb.dist;
-    cam.near = clamp(d * 0.02, 0.5, 400);
-    cam.far = d * 6 + 60000;
+       precisão rente ao chão, e a névoa esconde a borda do mundo. A pé,
+       o longe é a `vista` da qualidade, com a névoa fechando antes */
+    const vista = QUALIDADES[qualidade].vista * M, mis = (a, b) => a + (b - a) * kv;
+    cam.near = mis(clamp(d * 0.02, 0.5, 400), 0.08 * M);
+    cam.far = mis(d * 6 + 60000, vista);
     cam.updateProjectionMatrix();
-    cena.fog.near = d * 1.6 + 1500;
-    cena.fog.far = d * 5 + 40000;
+    cena.fog.near = mis(d * 1.6 + 1500, vista * 0.35);
+    cena.fog.far = mis(d * 5 + 40000, vista * 0.97);
     /* o sol: só a direção conta (luz sem sombra) */
     sol.target.position.set(c.x, 0, c.z);
     sol.position.copy(sol.target.position).addScaledVector(SOL, 1000);
@@ -271,7 +536,8 @@ export function criarCenario(P) {
     /* o tempo de verdade (a máquina lenta pula quadro, mas chega na hora) */
     const dt = ultimo ? Math.min(0.2, (t - ultimo) / 1000) : 0.016;
     ultimo = t;
-    if (teclas.size) andar(dt);
+    if (ape) andarAPe(dt);
+    else if (teclas.size) andar(dt);
     if (voo) voo(dt);
     posicionar();
     const t0 = performance.now();
@@ -284,6 +550,19 @@ export function criarCenario(P) {
      meio segundo; o tempo do processador pra mandar o quadro; as chamadas
      de desenho e os triângulos do quadro */
   const fpsEl = $('.cen-fps');
+  /* QUEM DESENHA: o nome da placa de vídeo que o navegador usa. Quando ele
+     desiste da placa (a lista negra do Chrome pega placa velha e driver
+     velho), o WebGL cai no SwiftShader, que desenha no processador — e aí
+     o fps é de um dígito em qualquer máquina. O medidor avisa */
+  const placa = (() => {
+    try {
+      const gl = rend.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
+      const nome = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+      const semPlaca = /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(nome);
+      const curto = nome.replace(/^ANGLE \((.*)\)$/, '$1').replace(/Direct3D.*|vs_\d.*|\(0x[0-9a-f]+\)/gi, '').replace(/\s+/g, ' ').replace(/[ ,]+$/, '').slice(0, 60);
+      return { nome, semPlaca, curto };
+    } catch (e) { return { nome: '', semPlaca: false, curto: '' }; }
+  })();
   function medir(t, cpu) {
     medidor.quadros++; medidor.cpu += cpu;
     if (!medidor.desde) { medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0; return; }
@@ -293,7 +572,9 @@ export function criarCenario(P) {
     const fps = medidor.quadros * 1000 / passou, ms = passou / medidor.quadros, r = rend.info.render;
     const classe = fps >= 50 ? 'bom' : fps >= 28 ? 'meio' : 'ruim';
     fpsEl.innerHTML = `<b class="${classe}">${Math.round(fps)}</b> fps · ${ms.toFixed(1).replace('.', ',')} ms` +
-      `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${(medidor.cpu / medidor.quadros).toFixed(1).replace('.', ',')} ms</small>`;
+      `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${(medidor.cpu / medidor.quadros).toFixed(1).replace('.', ',')} ms</small>` +
+      (placa.semPlaca ? `<small class="cen-aviso">Sem placa de vídeo: o navegador desenha no processador (${esc(placa.curto)})</small>`
+        : placa.curto ? `<small>${esc(placa.curto)}</small>` : '');
     medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0;
   }
 
@@ -370,7 +651,8 @@ export function criarCenario(P) {
     ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY });
     cancelarVoo();
     if (ptrs.size === 1) {
-      const gira = ev.button === 2 || ev.button === 1 || ev.shiftKey || ev.ctrlKey;
+      /* a pé, o chão não se arrasta: arrastar gira a câmera em volta dele */
+      const gira = !!ape || ev.button === 2 || ev.button === 1 || ev.shiftKey || ev.ctrlKey;
       gesto = gira ? { tipo: 'gira', moveu: false } : { tipo: 'arrasta', ponto: chaoEm(ev.clientX, ev.clientY), moveu: false };
     } else if (ptrs.size === 2) {
       const [a, b] = [...ptrs.values()];
@@ -388,6 +670,7 @@ export function criarCenario(P) {
     if (!gesto.moveu) return;
     if (gesto.tipo === 'gira') {
       orb.az -= dx * 0.006; orb.el += dy * 0.005;
+      if (ape) ape.girou = agora();
     } else if (gesto.tipo === 'arrasta') {
       /* PEGAR O CHÃO: o ponto que estava debaixo do dedo continua debaixo dele */
       const agoraP = gesto.ponto && chaoEm(ev.clientX, ev.clientY);
@@ -403,6 +686,7 @@ export function criarCenario(P) {
       orb.dist = gesto.dist * gesto.d / Math.max(1, d);
       orb.az = gesto.az - (ang - gesto.ang);
       orb.el = gesto.el + (my - gesto.my) * 0.004;
+      if (ape) ape.girou = agora();
     }
     pedir();
   });
@@ -413,7 +697,7 @@ export function criarCenario(P) {
     if (gesto && !gesto.moveu && p && ev.type === 'pointerup' && ptrs.size === 0 && ev.button === 0) clicar(ev.clientX, ev.clientY);
     if (ptrs.size === 1 && gesto && gesto.tipo === 'dois') {
       const [q] = [...ptrs.values()];
-      gesto = { tipo: 'arrasta', ponto: chaoEm(q.x, q.y), moveu: true };
+      gesto = ape ? { tipo: 'gira', moveu: true } : { tipo: 'arrasta', ponto: chaoEm(q.x, q.y), moveu: true };
     } else if (ptrs.size === 0) gesto = null;
   };
   tela.addEventListener('pointerup', soltar);
@@ -422,6 +706,8 @@ export function criarCenario(P) {
     ev.preventDefault();
     cancelarVoo();
     const f = Math.exp(clamp(ev.deltaY, -120, 120) * (ev.deltaMode === 1 ? 0.05 : 0.0016));
+    /* a pé, a roda só aproxima a câmera do boneco */
+    if (ape) { orb.dist = clamp(orb.dist * f, 1.2 * M, 30 * M); pedir(); return; }
     /* aproxima NO CURSOR: o ponto do chão debaixo dele fica onde está */
     const p = chaoEm(ev.clientX, ev.clientY);
     const antes = orb.dist;
@@ -430,6 +716,7 @@ export function criarCenario(P) {
     pedir();
   }, { passive: false });
   tela.addEventListener('dblclick', ev => {
+    if (ape) return;
     const p = chaoEm(ev.clientX, ev.clientY);
     if (p) voarPara(p.x, p.z, Math.max(18 * M, orb.dist * 0.4));
   });
@@ -575,7 +862,7 @@ export function criarCenario(P) {
     return { lugar, texturas, recopiar, jogarFora, folhas };
   }
 
-  function Forno(ar, escalaDecal) {
+  function Forno(ar, escalaDecal, grade) {
     const LADO = BLOCO_M * M;
     const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
     const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null];
@@ -624,11 +911,13 @@ export function criarCenario(P) {
       }
       return { chave, m, P3, N3, C3, U2, n };
     }
-    /* ASSAR uma coisa: as malhas dela, no bloco do meio dela */
-    function assar(grupo, it) {
+    /* ASSAR uma coisa: as malhas dela, no bloco do meio dela (e, na grade
+       do passo, o que barra o corpo e a câmera) */
+    function assar(grupo, it, tipo) {
       grupo.updateMatrixWorld(true);
       const pedacos = [];
       grupo.traverse(o => { if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
+      if (grade) { const predio = PREDIOS.has(tipo); for (const p of pedacos) grade.assar(p.P3, p.n, predio); }
       /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
       let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
       for (const p of pedacos) for (let k = 0; k < p.n; k++) {
@@ -858,7 +1147,7 @@ export function criarCenario(P) {
   /* ======================================================
      O MATO: onde o desenho é mato, o mato3d.js do jogo
      ====================================================== */
-  function montarMatoDoMapa(ar, grupo) {
+  function montarMatoDoMapa(ar, grupo, grade) {
     const m1 = 1 / M;                                   // metro por unidade
     const W = Math.ceil((ar.x1 - ar.x0) * m1), H = Math.ceil((ar.y1 - ar.y0) * m1);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -894,6 +1183,8 @@ export function criarCenario(P) {
     for (const t of lads) {
       const perto = malhaLowpoly(t.perto.lowpoly), longe = malhaLowpoly(t.longe.lowpoly);
       if (!perto || !longe) continue;
+      /* o tronco (e o galho baixo) barra o corpo */
+      if (grade) for (const b of t.perto.lowpoly) grade.assar(b.pos, b.pos.length / 3, false);
       const lod = new THREE.LOD(), cx = t.cx * M, cz = t.cz * M;
       lod.position.set(cx, 0, cz);
       for (const m of [perto, longe]) { m.position.set(-cx, 0, -cz); m.updateMatrix(); m.matrixAutoUpdate = false; }
@@ -943,7 +1234,13 @@ export function criarCenario(P) {
     montando = true;
     try { await montarPraca(nome, modo, vivo); }
     catch (e) { console.error('cenário:', e); if (vivo()) { carga.hidden = false; aviso('Não deu pra montar ' + nome + ': ' + e.message, 1); } }
-    finally { if (vivo()) { montando = false; medidor.desde = 0; pedir(); } }
+    finally {
+      if (vivo()) {
+        montando = false; medidor.desde = 0; $('.cen-bt-ape').disabled = !grade; pedir();
+        /* quem estava a pé (a troca de qualidade remonta) volta pro mesmo lugar */
+        if (voltarAPe) { const v = voltarAPe; voltarAPe = null; entrarAPe(v); }
+      }
+    }
   }
   async function montarPraca(nome, modo, vivo) {
     raiz.querySelector('.cen-escolha').hidden = true;
@@ -953,6 +1250,9 @@ export function criarCenario(P) {
     P.irPara(nome, modo);
     atualizarTopo();
     const t0 = agora();
+    sairDaRua(false);
+    grade = null;
+    $('.cen-bt-ape').disabled = true;
     jogarForaOMapa();
     area = P.areaDoCenario();
     enquadrarCidade(true);
@@ -963,12 +1263,13 @@ export function criarCenario(P) {
     chaoDeLonge(area, grupoChao);
     pedir();
     /* 2. as coisas, no forno */
-    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal), porTipo = {};
+    const gradeNova = GradeDoPasso(area, M);
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova), porTipo = {};
     let i = 0, tFatia = agora();
     for (const pc of pecas) {
       const g = new THREE.Group();
       try { pc.montar(g); } catch (e) { console.error('cenário: não montei', pc.tipo, e); }
-      forno.assar(g, pc.it);
+      forno.assar(g, pc.it, pc.tipo);
       porTipo[pc.tipo] = (porTipo[pc.tipo] || 0) + 1;
       i++;
       if (agora() - tFatia > 40) {
@@ -990,10 +1291,14 @@ export function criarCenario(P) {
     await espera();
     if (!vivo()) return;
     const grupoMato = new THREE.Group(); doMapa.add(grupoMato);
-    const mato = montarMatoDoMapa(area, grupoMato);
+    const mato = montarMatoDoMapa(area, grupoMato, gradeNova);
+    /* a água entra por último na grade do passo */
+    const tGrade = agora();
+    gradeNova.agua(P.costa && P.costa(), P.lagoa && P.lagoa());
+    grade = gradeNova;
     montado = { nome, decal: forno.decal };
     numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000,
-                folhas: forno.decal.folhas.length, area: { ...area } };
+                folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(agora() - tGrade) }) };
     /* o escudo em PNG chega depois: a folha copia de novo */
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
@@ -1049,6 +1354,228 @@ export function criarCenario(P) {
   }
 
   /* ======================================================
+     A PÉ: o boneco do jogo, na rua
+     ------------------------------------------------------
+     O boneco é o do jogo (js/bonecos3.js, o modelo do Blender), com o
+     mesmo andar e o mesmo correr, na camisa de uma torcida da praça. Ele
+     só carrega quando alguém entra a pé: o modelo tem 2,7 MB. Anda na
+     grade do passo (não atravessa parede, muro, carro, poste, tronco nem
+     água) e a câmera vai atrás, de ombro: arrastar gira, a roda aproxima,
+     e andando pra frente ela volta sozinha pras costas dele. A pé se
+     enxerga até a `vista` da qualidade, com névoa.
+     ====================================================== */
+  const toque = matchMedia('(pointer: coarse)').matches;
+  raiz.classList.toggle('toque', toque);
+  const selCamisa = $('.cen-camisa');
+  let grade = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
+  /* o penteado sai da semente (o modelo leve não tem boné nem bandana) */
+  const CABELOS = ['curto', 'raspado', 'degrade', 'black', 'cacheado', 'topete', 'franja', 'entradas', 'moicano', 'comprido', 'rabo', 'coque', 'careca'];
+  /* a camisa é lembrada pela torcida (o id; 'nenhuma' é o "Sem torcida"), não pela posição na lista */
+  let semente = 1 + Math.floor(Math.random() * 997), torcidas = [], camisa = 0, camisaId = null;
+  function carregarScript(src) {
+    return new Promise((ok, falhou) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = () => ok(); s.onerror = () => falhou(new Error('não carregou ' + src));
+      document.head.appendChild(s);
+    });
+  }
+  /* o módulo do boneco e o modelo (em base64, dados/boneco_glb.js: o
+     carregador do jogo lê dali sem pedir arquivo nenhum), uma vez só */
+  function chamarBoneco() {
+    if (!chamando) chamando = (async () => {
+      const TO = window.TO || (window.TO = { dados: {} });
+      TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
+      if (!TO.dados.bonecoGLB) await carregarScript(new URL('../dados/boneco_glb.js', import.meta.url).href);
+      const mod = await import('./bonecos3.js');
+      /* a câmera chega a um metro dele: a malha afina menos que no jogo */
+      mod.cfg.afinarCelulas = 72;
+      /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m */
+      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86) });
+      return povo;
+    })().catch(e => { chamando = null; throw e; });
+    return chamando;
+  }
+  /* o disco do boneco (o que o jogo passa por quadro): a camisa, a
+     semente do rosto e o lugar */
+  function vestir() {
+    const t = torcidas[camisa] || null;
+    eu = { nome: 'na rua ' + semente, spawn: 'cenario', lado: 'mandante', lider: true, vivo: true,
+           torcida: t ? t.nome : 'sem torcida', cor: t ? t.cor : '#E8E4DC', cor2: t ? t.cor2 : '#3A3A3A', cor3: t ? t.cor3 : null,
+           cabecaForcada: CABELOS[semente % CABELOS.length],
+           x: ape ? ape.x : 0, y: ape ? ape.z : 0, rumo: ape ? ape.rumo : 0, passada: 1,
+           derrubado: 0, golpe: 0, apanhou: 0, atordoado: 0, esquivou: 0, tremor: 0, defendendo: 0, hostil: 0,
+           inimigoPerto: 0, chamou: -99, linha: 'frente' };
+    /* um jogo novo a cada roupa: a paleta do calção é por jogo */
+    jogo = { t: jogo ? jogo.t : 0, discos: [eu], policiais: [], projeteis: [], grades: [], paz: true };
+    window.TO.diaJogo.J = jogo;
+    const tem = !!(t && t.porta);
+    $('.cen-bt-sede').disabled = !tem;
+    $('.cen-bt-sede').title = tem ? 'Leva o boneco pra calçada na frente da sede da ' + t.nome : 'Esta torcida não tem sede nesta praça';
+    pedir();
+  }
+  function encherCamisas() {
+    torcidas = P.torcidas ? P.torcidas() : [];
+    selCamisa.innerHTML = torcidas.map((t, i) => `<option value="${i}">${esc(t.nome)}${t.porta ? '' : ' (sem sede)'}</option>`).join('') +
+      `<option value="${torcidas.length}">Sem torcida</option>`;
+    /* a de antes, se é desta praça; senão, a maior com sede */
+    const antes = camisaId === 'nenhuma' ? torcidas.length : torcidas.findIndex(t => t.id === camisaId);
+    camisa = antes >= 0 ? antes : Math.max(0, torcidas.findIndex(t => t.porta));
+    selCamisa.value = String(camisa);
+  }
+  /* ENTRAR A PÉ: onde a câmera olha (ou `onde`), na célula alcançável
+     mais perto em que o corpo cabe */
+  async function entrarAPe(onde) {
+    if (ape || montando || !grade) return false;
+    const bt = $('.cen-bt-ape');
+    bt.disabled = true;
+    try {
+      /* no meio da rua, se der: primeiro onde sobra 3 m pra todo lado */
+      const alvo = onde || { x: orb.alvo.x, z: orb.alvo.z };
+      const lugar = () => onde ? grade.perto(alvo.x, alvo.z, APE.raio * M, 60 * M)
+        : grade.perto(alvo.x, alvo.z, 3 * M, 60 * M) || grade.perto(alvo.x, alvo.z, 1.5 * M, 150 * M) || grade.perto(alvo.x, alvo.z, APE.raio * M, 400 * M);
+      if (!lugar()) throw new Error('não achei chão livre perto do meio da tela');
+      if (!povo) {
+        carga.hidden = false; aviso('Chamando o boneco…', 0.5);
+        try { await chamarBoneco(); } finally { carga.hidden = true; }
+      }
+      /* a praça pode ter mudado enquanto ele carregava */
+      if (ape || montando || !grade) return false;
+      const p = lugar();
+      if (!p) throw new Error('não achei chão livre perto do meio da tela');
+      encherCamisas();
+      const az = onde && onde.az != null ? onde.az : orb.az;
+      ape = { x: p.x, z: p.z, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), correr: false, girou: 0, camDist: null,
+              chegada: 0, de: { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az }, para: { az } };
+      vestir();
+      cancelarVoo(); fecharFicha();
+      raiz.classList.add('ape');
+      $('.cen-correr').setAttribute('aria-pressed', 'false');
+      tela.focus({ preventScroll: true });
+      pedir();
+      return true;
+    } catch (e) {
+      console.error('cenário, a pé:', e);
+      carga.hidden = false; aviso('O boneco não veio: ' + e.message, 1);
+      setTimeout(() => { if (!montando) carga.hidden = true; }, 3500);
+      return false;
+    } finally { bt.disabled = montando; }
+  }
+  /* SAIR DA RUA: o boneco sai da cena e a câmera sobe por cima de onde ele estava */
+  function sairDaRua(voar = true) {
+    if (!ape) return;
+    const { x, z } = ape;
+    ape = null;
+    raiz.classList.remove('ape');
+    for (const k of ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']) teclas.delete(k);
+    for (const b of raiz.querySelectorAll('.cen-pad .apertado')) b.classList.remove('apertado');
+    if (povo && jogo) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
+    if (voar) { orb.alvo.set(x, 0, z); voarPara(x, z, 70 * M, 0.62, orb.az); }
+    pedir();
+  }
+  /* LEVAR o boneco a um ponto (a porta da sede), com a câmera voando até lá */
+  function levarPara(x, z, az) {
+    const p = grade && (grade.perto(x, z, 1.2 * M, 10 * M) || grade.perto(x, z, APE.raio * M, 80 * M));
+    if (!ape || !p) return false;
+    /* a câmera PULA por cima dos telhados (rente ao chão ela atravessaria a cidade) */
+    ape.de = { x: ape.x, z: ape.z, dist: orb.dist, el: orb.el, az: orb.az, pulo: true };
+    ape.para = { az };
+    ape.x = p.x; ape.z = p.z; ape.vx = ape.vz = 0; ape.chegada = 0; ape.camDist = null;
+    ape.rumo = Math.atan2(-Math.sin(az), -Math.cos(az));
+    if (eu) { eu.x = ape.x; eu.y = ape.z; }
+    pedir();
+    return true;
+  }
+  function irPraSede() {
+    const t = torcidas[camisa];
+    if (!t || !t.porta) return;
+    /* de costas pra câmera e de frente pra porta: a câmera fica do lado da rua */
+    const P0 = t.porta;
+    levarPara(P0.x, P0.y, Math.atan2(P0.fx, P0.fy));
+  }
+  /* o corpo anda de 15 em 15 cm; o que bate num eixo desliza no outro */
+  function mover(dx, dz) {
+    const r = APE.raio * M, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / (0.15 * M)));
+    const sx = dx / n, sz = dz / n;
+    /* nasceu encostado (não deveria): deixa sair */
+    const preso = !grade.cabe(ape.x, ape.z, r);
+    for (let i = 0; i < n; i++) {
+      if (preso || grade.cabe(ape.x + sx, ape.z, r)) ape.x += sx; else ape.vx = 0;
+      if (preso || grade.cabe(ape.x, ape.z + sz, r)) ape.z += sz; else ape.vz = 0;
+    }
+  }
+  function andarAPe(dt) {
+    const t = teclas;
+    const frente = (t.has('w') || t.has('arrowup') ? 1 : 0) - (t.has('s') || t.has('arrowdown') ? 1 : 0);
+    const lado = (t.has('d') || t.has('arrowright') ? 1 : 0) - (t.has('a') || t.has('arrowleft') ? 1 : 0);
+    if (t.has('q')) { orb.az += dt * 1.6; ape.girou = agora(); }
+    if (t.has('e')) { orb.az -= dt * 1.6; ape.girou = agora(); }
+    if (t.has('r')) orb.el += dt * 0.8;
+    if (t.has('f')) orb.el -= dt * 0.8;
+    if (t.has('+') || t.has('=')) orb.dist *= Math.exp(-dt * 1.6);
+    if (t.has('-')) orb.dist *= Math.exp(dt * 1.6);
+    /* a chegada: a câmera desce de onde estava até as costas dele */
+    if (ape.chegada < 1) {
+      const de = ape.de, T = de.pulo ? 1.3 : 0.6 + 0.35 * Math.log10(Math.max(1, de.dist / distAPe()));
+      ape.chegada = Math.min(1, ape.chegada + dt / T);
+      const k = suave(ape.chegada), arco = de.pulo ? Math.sin(Math.PI * k) : 0;
+      orb.dist = Math.exp(Math.log(de.dist) + (Math.log(distAPe()) - Math.log(de.dist)) * k) * (1 + 11 * arco);
+      orb.el = de.el + (APE.el - de.el) * k + 0.55 * arco;
+      let da = ape.para.az - de.az; da = Math.atan2(Math.sin(da), Math.cos(da));
+      orb.az = de.az + da * k;
+    }
+    const corre = t.has('shift') || ape.correr;
+    const fx = -Math.sin(orb.az), fz = -Math.cos(orb.az), rx = Math.cos(orb.az), rz = -Math.sin(orb.az);
+    let dx = fx * frente + rx * lado, dz = fz * frente + rz * lado;
+    const L = Math.hypot(dx, dz);
+    if (L) { dx /= L; dz /= L; }
+    const quer = L ? (corre ? APE.corre : APE.anda) * M : 0;
+    const k = Math.min(1, dt * (quer ? 7 : 10));
+    ape.vx += (dx * quer - ape.vx) * k; ape.vz += (dz * quer - ape.vz) * k;
+    mover(ape.vx * dt, ape.vz * dt);
+    if (L) ape.rumo = Math.atan2(dx, dz);
+    const v = Math.hypot(ape.vx, ape.vz);
+    /* ANDANDO PRA FRENTE, a câmera volta sozinha pras costas (quem girou
+       a câmera agora há pouco manda nela); de lado ou pra trás, não */
+    if (frente > 0 && L && ape.chegada >= 1 && agora() - ape.girou > 1200) {
+      let d = Math.atan2(-dx, -dz) - orb.az; d = Math.atan2(Math.sin(d), Math.cos(d));
+      orb.az += d * Math.min(1, dt * 2.2 * frente / (frente + Math.abs(lado)));
+    }
+    /* o boneco: o jogo lê o disco e faz o resto (o passo, o parado, a virada) */
+    eu.x = ape.x; eu.y = ape.z; eu.rumo = ape.rumo;
+    eu._cacando = corre && v > APE.anda * M * 1.25;
+    eu.passada = eu._cacando ? 2.1 : 1.15;
+    jogo.t += dt;
+    povo.atualizar(jogo, dt);
+  }
+  /* depois de escolher, o teclado volta pro boneco (no seletor, o W e as
+     setas trocariam a opção em vez de andar) */
+  const devolverTeclado = () => { if (ape) tela.focus({ preventScroll: true }); };
+  selCamisa.onchange = () => {
+    camisa = +selCamisa.value;
+    camisaId = torcidas[camisa] ? torcidas[camisa].id : 'nenhuma';
+    if (ape) vestir();
+    devolverTeclado();
+  };
+  /* o pad: cada botão liga a tecla dele enquanto o dedo está nele */
+  for (const b of raiz.querySelectorAll('.cen-cruz button')) {
+    const k = b.dataset.tecla;
+    b.addEventListener('pointerdown', ev => {
+      ev.preventDefault(); ev.stopPropagation();
+      try { b.setPointerCapture(ev.pointerId); } catch (e) {}
+      b.classList.add('apertado'); teclas.add(k); pedir();
+    });
+    const solta = () => { b.classList.remove('apertado'); teclas.delete(k); };
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, solta);
+    b.addEventListener('contextmenu', ev => ev.preventDefault());
+  }
+  $('.cen-correr').addEventListener('pointerdown', ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    if (!ape) return;
+    ape.correr = !ape.correr;
+    $('.cen-correr').setAttribute('aria-pressed', String(ape.correr));
+  });
+
+  /* ======================================================
      OS BOTÕES
      ====================================================== */
   selCidade.onchange = () => montar(selCidade.value);
@@ -1057,6 +1584,8 @@ export function criarCenario(P) {
     qualidade = selQ.value;
     try { localStorage.setItem('cenario-qualidade', qualidade); } catch (e) {}
     ajustarTela();
+    /* a pé: volta pro mesmo lugar, virado pro mesmo lado, depois de remontar */
+    if (ape) voltarAPe = { x: ape.x, z: ape.z, az: orb.az };
     /* o chão muda de resolução: remonta a praça (o forno junta de novo) */
     if (montado) montar(P.cidade(), P.modo());
   };
@@ -1065,6 +1594,10 @@ export function criarCenario(P) {
     if (!b) return;
     if (b.dataset.acao === 'cima') enquadrarCidade(false);
     else if (b.dataset.acao === 'rua') nivelDaRua();
+    else if (b.dataset.acao === 'ape') entrarAPe();
+    else if (b.dataset.acao === 'sair') sairDaRua();
+    else if (b.dataset.acao === 'sede') { irPraSede(); devolverTeclado(); }
+    else if (b.dataset.acao === 'rosto') { semente++; if (ape) vestir(); devolverTeclado(); }
     else if (b.dataset.acao === 'escolher') escolher();
     else if (b.dataset.acao === 'planta') fechar();
   });
@@ -1094,6 +1627,7 @@ export function criarCenario(P) {
     montar(nome, modo);
   }
   function fechar() {
+    sairDaRua(false);
     raiz.hidden = true;
     document.documentElement.style.overflow = '';
     teclas.clear();
@@ -1114,5 +1648,8 @@ export function criarCenario(P) {
            /* pro teste: o que está no pixel (sx, sy) */
            pegarEm(sx, sy) { const c = pegar(sx, sy); return c ? { tipo: c.it.tipo, titulo: P.tituloDe(c.it) } : null; },
            /* pro teste: a câmera num lugar */
-           olhar(x, z, dist, el, az) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; pedir(); } };
+           olhar(x, z, dist, el, az) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; pedir(); },
+           /* pro teste: a pé */
+           aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, get estado() { return ape && { x: ape.x, z: ape.z, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
+                  get grade() { return grade; }, get povo() { return povo; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
 }

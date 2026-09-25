@@ -3277,7 +3277,7 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
   get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; },
-  ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo };
+  get LAGOA() { return LAGOA; }, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo };
 
 /* ======================================================
    O CENÁRIO 3D (js/cenario.js): o mapa inteiro em 3D, por cima da planta
@@ -3322,6 +3322,28 @@ function apiDoCenario() {
       };
       const a = costa(-PRAIA_A_MAIS), r = costa(K.PRAIA);
       return a.length > 1 && r.length > 1 ? { agua: linha(a), areia: linha(r) } : null;
+    },
+    /* a lagoa (só na praça de lagoa): o contorno da água, a ilhota e o
+       trapiche — o que o boneco não atravessa e onde ele pisa */
+    lagoa() {
+      if (!temLagoa()) return null;
+      const L = LAGOA || (LAGOA = montarLagoa());
+      return { agua: L.agua, ilha: L.ilha, pisa: [L.trapiche.ponte, L.trapiche.cabeca] };
+    },
+    /* as torcidas da praça, na ordem da tabela (a maior primeiro): as
+       cores da camisa e, pra quem tem sede, o ponto da calçada na frente
+       da porta (3 m pra fora da frente dela) */
+    torcidas() {
+      const fora = 3 * M;
+      return ocupacao.torcidas.map(T => {
+        const s = T.sede && T.sede.sede, a = s && s.area;
+        const cx = a && (a.x0 + a.x1) / 2, cy = a && (a.y0 + a.y1) / 2;
+        /* (fx, fy): pra onde a frente olha, a rua */
+        const porta = !a ? null : s.frente === 'n' ? { x: cx, y: a.y0 - fora, fx: 0, fy: -1 } : s.frente === 's' ? { x: cx, y: a.y1 + fora, fx: 0, fy: 1 }
+          : s.frente === 'o' ? { x: a.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: a.x1 + fora, y: cy, fx: 1, fy: 0 };
+        /* a terceira cor só quando a torcida tem (é ela que dá a gola dupla) */
+        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta };
+      });
     },
     tituloDe: it => it ? tituloDe(it) : '', fichaDe: it => it ? fichaDe(it) : '',
     aoFechar() { if (estado.sel) vista.mostrar(estado.sel); pedirDesenho(); }
