@@ -21,7 +21,9 @@
      também junta por bloco.
    - A PÉ, o boneco do jogo (js/bonecos3.js) anda na rua, na camisa de
      uma torcida da praça: a GRADE DO PASSO, riscada pelo forno com o
-     que cada coisa tem na altura do corpo, diz onde ele pisa.
+     que cada coisa tem na altura do corpo, diz onde ele pisa. No metrô
+     ele desce a escada até a plataforma: embaixo da rua quem diz onde
+     ele pisa é o SUBSOLO (subsolo.js), com os triângulos da estação.
 
    Nada aqui decide o que vai no mapa: muda a planta, muda o cenário.
    Em unidades de mundo da planta (x pra leste, y da planta = z do 3D pro
@@ -29,6 +31,8 @@
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { plantarMato, montarMato, LONGE_M } from './mato3d.js';
+import { FAIXA_M, riscosDaFaixa, Paredes } from './passo.js';
+import { Subsolo } from './subsolo.js';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -40,20 +44,27 @@ const PX_CHAO = 1024, SOBRA = 2;
    desenhar a cena mais uma vez por quadro (o mapa de sombra), e o dono
    pediu pra ver o fps sem ela */
 /* A MÍNIMA é pra placa de vídeo fraca (a integrada de dez anos atrás):
-   a tela desenhada com 0,6 pixel por pixel (sai borrada, e custa um terço)
-   e a pé só se vê até 180 m */
+   a tela desenhada com 0,6 pixel por pixel (sai borrada, e custa um terço) */
 const QUALIDADES = {
-  minima: { nome: 'Mínima', pxm: 3, dpr: 0.6, decal: 0.3, vista: 180 },
-  leve:   { nome: 'Leve', pxm: 4, dpr: 1, decal: 0.35, vista: 260 },
-  normal: { nome: 'Normal', pxm: 6, dpr: 1.5, decal: 0.5, vista: 450 },
-  alta:   { nome: 'Alta', pxm: 8, dpr: 2, decal: 0.62, vista: 800 }
+  minima: { nome: 'Mínima', pxm: 3, dpr: 0.6, decal: 0.3 },
+  leve:   { nome: 'Leve', pxm: 4, dpr: 1, decal: 0.35 },
+  normal: { nome: 'Normal', pxm: 6, dpr: 1.5, decal: 0.5 },
+  alta:   { nome: 'Alta', pxm: 8, dpr: 2, decal: 0.62 }
 };
-/* A PÉ (o boneco do jogo na rua): as velocidades (m/s), o raio do corpo
-   pra colisão, a altura pra onde a câmera olha e a câmera de partida
-   atrás dele. `vista` (acima, em m) é até onde se enxerga a pé: a névoa
-   fecha antes, e o que passa dela nem vai pra placa de vídeo — é o que
-   segura o fps na máquina fraca */
-const APE = { anda: 2.2, corre: 6, raio: 0.28, olho: 1.5, dist: 4.4, el: 0.26 };
+/* A PÉ (o boneco do jogo na rua, visto DE CIMA): as velocidades (m/s), o
+   raio do corpo pra colisão, a altura pra onde a câmera olha, quantos
+   metros cabem no lado menor da tela (a roda e a pinça mudam) e a
+   inclinação da câmera (1,25 rad: quase a pino, com um pouco da fachada) */
+const APE = { anda: 2.2, corre: 6, raio: 0.25, olho: 1.0, vao: 13, el: 1.25 };
+/* O CORTE: o que fica entre a câmera e o boneco, acima da cabeça, some
+   (a copa, o beiral, o prédio do lado), e o prédio em que ele está
+   DENTRO perde o que passa de 2,20 m (o telhado, a laje, o alto da
+   parede): de cima se vê a planta dos cômodos */
+const CORTE_M = { raio: 2.2, acima: 2.2, dentro: 2.2 };
+/* EMBAIXO DA RUA (no metrô): a cidade em cima da caixa da estação, com
+   esta folga (m) pra cada lado, some do teto do nível dele pra cima, e a
+   terra em volta aparece (a caixa marrom, do mesmo tamanho) */
+const SUB_FOLGA = 1.5, TERRA_M = -12;
 /* o que é prédio (a câmera não entra na parede dele); o resto (o poste,
    a árvore, o carro, o prop, a peça da praia) só barra o corpo */
 const PREDIOS = new Set(['casa', 'favela', 'bar', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
@@ -70,94 +81,76 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const espera = () => new Promise(ok => setTimeout(ok, 0));
 
 /* ======================================================
-   A GRADE DO PASSO: onde o boneco pode pisar
+   A GRADE DO PASSO: onde o boneco pisa
    ------------------------------------------------------
-   O chão da área em células de meio metro. O forno passa por aqui cada
-   triângulo que assa, e o que corta a FAIXA DO CORPO (de 35 cm a 1,80 m
-   do chão) risca as células por onde passa: SÓLIDO — a parede, o muro, a
-   grade, o carro, o poste, o tronco, o banco; o meio-fio e o degrau baixo
-   não. Só o contorno é riscado, e basta: o risco é contínuo (cada passo
-   dele anda uma célula em x ou em z), então o corpo não atravessa, e o
-   miolo fechado de um carro ou de uma mesa nunca é alcançado. O que é de
-   prédio guarda ainda a ALTURA da parede (em quartos de metro), pra
-   câmera não entrar nela. O mato passa o tronco dele; a água (o mar pra lá
-   da linha d'água, a lagoa menos a ilhota e o trapiche) entra por último.
-   O ALCANCE é o que se chega andando da borda da área: é nele que o
-   boneco nasce, e não dentro de uma casa fechada.
+   O CORPO bate nos RISCOS DA FAIXA (passo.js): o forno passa por aqui
+   cada coisa que assa, e o que ela tem entre 35 cm e 1,80 m do chão vira
+   risco — a parede, o muro, a folha da porta aberta, o carro, o poste, o
+   tronco, a mesa, a cadeira. O corpo desliza contra eles, exato. (A
+   primeira versão marcava células de meio metro: cada móvel e cada
+   batente engrossavam até meio metro, e 29 cômodos das sedes fechavam.)
+   A GRADE, de meio metro, fica pro resto:
+   - a ÁGUA: o mar pra lá da linha d'água, a lagoa menos a ilhota e o
+     trapiche, que se pisa;
+   - o ALCANCE: o que se chega andando da borda da área, com os riscos
+     marcados nas células (de sobra: é só pra escolher onde o boneco
+     nasce, e ele não nasce dentro de casa fechada);
+   - o TETO: o número da coisa (o prédio) cujo telhado cobre a célula —
+     é por ele que a câmera de cima sabe de que prédio tirar o telhado.
    ====================================================== */
-const CEL_M = 0.5, FAIXA_M = [0.35, 1.8], ALTO_M = 2.2;
+const CEL_M = 0.5, TETO_M = 2.3;
 const SOLIDO = 1, AGUA = 2, ALCANCE = 4;
 function GradeDoPasso(ar, M) {
   const c = CEL_M * M, nx = Math.ceil((ar.x1 - ar.x0) / c), nz = Math.ceil((ar.y1 - ar.y0) / c);
-  const g = new Uint8Array(nx * nz), alt = new Uint8Array(nx * nz);
-  const Y0 = FAIXA_M[0] * M, Y1 = FAIXA_M[1] * M, YA = ALTO_M * M, qm = 4 / M;
+  const g = new Uint8Array(nx * nz), teto = new Uint16Array(nx * nz);
+  const Y0 = FAIXA_M[0] * M, Y1 = FAIXA_M[1] * M, YT = TETO_M * M;
   const ox = ar.x0, oz = ar.y0;
-  let alcancou = false;
-  function marcar(i, j, bit, h) {
-    if (i < 0 || j < 0 || i >= nx || j >= nz) return;
-    const k = j * nx + i;
-    g[k] |= bit;
-    if (h > alt[k]) alt[k] = h;
-  }
+  const paredes = Paredes(ox, oz, ar.x1, ar.y1, 2 * M);
+  let alcancou = false, ms = 0;
   /* o risco de (a) a (b), em células: toda célula que a reta atravessa */
-  function riscar(ax, az, bx, bz, bit, h) {
+  function riscar(ax, az, bx, bz) {
     let i = Math.floor(ax), j = Math.floor(az);
     const dx = bx - ax, dz = bz - az, si = dx > 0 ? 1 : -1, sj = dz > 0 ? 1 : -1;
     const tdx = dx ? Math.abs(1 / dx) : Infinity, tdz = dz ? Math.abs(1 / dz) : Infinity;
     let tx = dx ? (dx > 0 ? i + 1 - ax : ax - i) * tdx : Infinity, tz = dz ? (dz > 0 ? j + 1 - az : az - j) * tdz : Infinity;
     let n = Math.min(40000, Math.abs(Math.floor(bx) - i) + Math.abs(Math.floor(bz) - j));
     for (;;) {
-      marcar(i, j, bit, h);
+      if (i >= 0 && j >= 0 && i < nx && j < nz) g[j * nx + i] |= SOLIDO;
       if (n-- <= 0) break;
       if (tx < tz) { tx += tdx; i += si; } else { tz += tdz; j += sj; }
     }
   }
-  /* o pedaço do triângulo dentro da faixa: corta em y (Sutherland–Hodgman) */
-  const A = new Float64Array(24), B = new Float64Array(24);
-  function cortar(de, n, y, acima, pra) {
-    let m = 0;
-    for (let k = 0; k < n; k++) {
-      const a = k * 3, b = ((k + 1) % n) * 3;
-      const da = acima ? de[a + 1] - y : y - de[a + 1], db = acima ? de[b + 1] - y : y - de[b + 1];
-      if (da >= 0) { pra[m * 3] = de[a]; pra[m * 3 + 1] = de[a + 1]; pra[m * 3 + 2] = de[a + 2]; m++; }
-      if ((da >= 0) !== (db >= 0)) {
-        const t = da / (da - db);
-        pra[m * 3] = de[a] + (de[b] - de[a]) * t; pra[m * 3 + 1] = y; pra[m * 3 + 2] = de[a + 2] + (de[b + 2] - de[a + 2]) * t; m++;
-      }
-    }
-    return m;
-  }
-  /* os triângulos soltos de P (x, y, z em unidades de mundo), n vértices */
-  let ms = 0;
-  function assar(P, n, predio) {
+  /* uma coisa assada: os triângulos soltos P (x, y, z), n vértices; `id`
+     é o número dela quando é prédio (0: não cobre nada) */
+  function assar(P, n, id) {
     const t0 = performance.now();
-    try { assarTri(P, n, predio); } finally { ms += performance.now() - t0; }
+    paredes.novaCoisa();
+    riscosDaFaixa(P, n, Y0, Y1, 0.01 * M, paredes.juntar);
+    if (id) cobrir(P, n, id);
+    ms += performance.now() - t0;
   }
-  function assarTri(P, n, predio) {
+  /* O TETO: o triângulo todo acima de 2,30 m e deitado (o telhado, a laje,
+     o forro — não a parede) cobre as células cujo meio está debaixo dele */
+  function cobrir(P, n, id) {
     for (let o = 0; o + 8 < n * 3; o += 9) {
       const ya = P[o + 1], yb = P[o + 4], yc = P[o + 7];
-      const ymax = Math.max(ya, yb, yc);
-      if (ymax < Y0) continue;
-      const ymin = Math.min(ya, yb, yc);
-      if (predio && ymax > YA) {
-        const h = Math.min(255, Math.round(ymax * qm));
-        const ax = (P[o] - ox) / c, az = (P[o + 2] - oz) / c, bx = (P[o + 3] - ox) / c, bz = (P[o + 5] - oz) / c, cx = (P[o + 6] - ox) / c, cz = (P[o + 8] - oz) / c;
-        riscar(ax, az, bx, bz, 0, h); riscar(bx, bz, cx, cz, 0, h); riscar(cx, cz, ax, az, 0, h);
-      }
-      if (ymin > Y1) continue;
-      for (let k = 0; k < 9; k++) A[k] = P[o + k];
-      let m = 3, poli = A;
-      if (ymin < Y0) { m = cortar(poli, m, Y0, true, B); poli = B; }
-      if (ymax > Y1) { const pra = poli === A ? B : A; m = cortar(poli, m, Y1, false, pra); poli = pra; }
-      if (m < 2) continue;
-      for (let k = 0; k < m; k++) {
-        const a = k * 3, b = ((k + 1) % m) * 3;
-        riscar((poli[a] - ox) / c, (poli[a + 2] - oz) / c, (poli[b] - ox) / c, (poli[b + 2] - oz) / c, SOLIDO, 0);
+      if (ya < YT || yb < YT || yc < YT) continue;
+      const ax = P[o], az = P[o + 2], bx = P[o + 3], bz = P[o + 5], cx = P[o + 6], cz = P[o + 8];
+      const ux = bx - ax, uy = yb - ya, uz = bz - az, vx = cx - ax, vy = yc - ya, vz = cz - az;
+      const ny = uz * vx - ux * vz, nl = Math.hypot(uy * vz - uz * vy, ny, ux * vy - uy * vx);
+      if (!nl || Math.abs(ny) / nl < 0.35) continue;
+      const i0 = Math.max(0, Math.floor((Math.min(ax, bx, cx) - ox) / c)), i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx, cx) - ox) / c));
+      const j0 = Math.max(0, Math.floor((Math.min(az, bz, cz) - oz) / c)), j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz, cz) - oz) / c));
+      const lado = (px, pz, qx, qz, rx, rz) => (qx - px) * (rz - pz) - (qz - pz) * (rx - px);
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const px = ox + (i + 0.5) * c, pz = oz + (j + 0.5) * c;
+        const d1 = lado(ax, az, bx, bz, px, pz), d2 = lado(bx, bz, cx, cz, px, pz), d3 = lado(cx, cz, ax, az, px, pz);
+        if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) teto[j * nx + i] = id;
       }
     }
   }
   /* a água: o mar pra lá da linha d'água; a lagoa (o contorno), menos a
-     ilhota e o trapiche, que se pisa */
+     ilhota e o trapiche, que se pisa. Depois dela, os riscos se arrumam */
   function agua(costa, lagoa) {
     const cruza = (pol, z, xs) => {
       xs.length = 0;
@@ -178,12 +171,20 @@ function GradeDoPasso(ar, M) {
       for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] &= ~AGUA;
       for (const r of lagoa.pisa) if (z >= r.y0 && z <= r.y1) for (let i = i0(r.x0), e = i1(r.x1); i <= e; i++) g[lin + i] &= ~AGUA;
     }
+    const t0 = performance.now();
+    paredes.fechar();
+    ms += performance.now() - t0;
   }
   /* o alcance: o que se chega andando da borda (a busca em largura, com a
-     fila circular que cresce se precisar) */
+     fila circular que cresce se precisar), por cima dos riscos marcados
+     nas células — feito na primeira vez que alguém entra a pé, e não na
+     montagem, que não precisa dele */
   function alcancar() {
     if (alcancou) return;
     alcancou = true;
+    const sg = paredes.seg;
+    for (let s = 0; s < paredes.n; s++)
+      riscar((sg[s * 4] - ox) / c, (sg[s * 4 + 1] - oz) / c, (sg[s * 4 + 2] - ox) / c, (sg[s * 4 + 3] - oz) / c);
     let q = new Int32Array(1 << 18), ini = 0, fim = 0;
     const poe = k => {
       if (g[k] & (SOLIDO | AGUA | ALCANCE)) return;
@@ -205,17 +206,19 @@ function GradeDoPasso(ar, M) {
       if (k < (nz - 1) * nx) poe(k + nx);
     }
   }
-  /* cabe o corpo (um círculo de raio r) com o meio em (x, z)? */
-  function cabe(x, z, r) {
+  /* o chão debaixo do corpo (um círculo de raio r) é seco e fica na área? */
+  function seco(x, z, r) {
     const i0 = Math.floor((x - r - ox) / c), i1 = Math.floor((x + r - ox) / c), j0 = Math.floor((z - r - oz) / c), j1 = Math.floor((z + r - oz) / c);
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
       if (i < 0 || j < 0 || i >= nx || j >= nz) return false;
-      if (!(g[j * nx + i] & (SOLIDO | AGUA))) continue;
+      if (!(g[j * nx + i] & AGUA)) continue;
       const px = clamp(x, ox + i * c, ox + (i + 1) * c), pz = clamp(z, oz + j * c, oz + (j + 1) * c);
       if ((px - x) * (px - x) + (pz - z) * (pz - z) < r * r) return false;
     }
     return true;
   }
+  /* cabe o corpo com o meio em (x, z): nenhum risco a menos de r, chão seco */
+  const cabe = (x, z, r) => seco(x, z, r) && paredes.cabe(x, z, r);
   /* o lugar alcançável mais perto de (x, z) onde o corpo cabe, até `raio` */
   function perto(x, z, r, raio) {
     alcancar();
@@ -232,30 +235,36 @@ function GradeDoPasso(ar, M) {
     }
     return null;
   }
-  /* a câmera: quanto da reta de (a) a (b) anda antes de bater numa parede
-     de prédio (0 a 1), andando de quarto em quarto de metro */
-  function livreAte(ax, ay, az, bx, by, bz) {
-    const L = Math.hypot(bx - ax, bz - az), n = Math.ceil(L / (0.25 * M));
-    for (let k = 1; k <= n; k++) {
-      const t = k / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = ay + (by - ay) * t;
-      const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
-      if (i < 0 || j < 0 || i >= nx || j >= nz) continue;
-      const h = alt[j * nx + i];
-      if (h && y < h / qm) return (k - 1) / n;
-    }
-    return 1;
+  /* o prédio cujo telhado cobre (x, z) (0: céu aberto) */
+  function tetoEm(x, z) {
+    const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
+    return i < 0 || j < 0 || i >= nx || j >= nz ? 0 : teto[j * nx + i];
   }
-  function conta() {
-    let s = 0, a = 0, p = 0;
-    for (let k = 0; k < g.length; k++) { if (g[k] & SOLIDO) s++; if (g[k] & AGUA) a++; if (alt[k]) p++; }
-    return { celulas: g.length, nx, nz, solidas: s, agua: a, paredes: p, msRiscar: Math.round(ms) };
+  /* o prédio em que (x, z) está DENTRO: coberto ali e a 60 cm pros quatro
+     lados (debaixo do beiral, na calçada, não conta; encostado na parede
+     de dentro, os 60 cm caem dentro da parede, que é coberta) */
+  function dentroDe(x, z) {
+    const id = tetoEm(x, z), d = 0.6 * M;
+    return id && tetoEm(x + d, z) === id && tetoEm(x - d, z) === id && tetoEm(x, z + d) === id && tetoEm(x, z - d) === id ? id : 0;
+  }
+  /* o retângulo (x0, x1, z0, z1) fica fora do alcance: o boneco não nasce
+     ali (o poço do metrô: na rua ele é buraco) */
+  function bloquear(r) {
+    const i0 = Math.max(0, Math.floor((r.x0 - ox) / c)), i1 = Math.min(nx - 1, Math.floor((r.x1 - ox) / c));
+    const j0 = Math.max(0, Math.floor((r.z0 - oz) / c)), j1 = Math.min(nz - 1, Math.floor((r.z1 - oz) / c));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) g[j * nx + i] |= SOLIDO;
   }
   /* o que tem na célula de (x, z): SÓLIDO, ÁGUA, ALCANCE (pro teste) */
   function celula(x, z) {
     const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
     return i < 0 || j < 0 || i >= nx || j >= nz ? -1 : g[j * nx + i];
   }
-  return { assar, agua, alcancar, cabe, perto, livreAte, conta, celula, nx, nz };
+  function conta() {
+    let a = 0, t = 0;
+    for (let k = 0; k < g.length; k++) { if (g[k] & AGUA) a++; if (teto[k]) t++; }
+    return { celulas: g.length, nx, nz, agua: a, cobertas: t, riscos: paredes.n, ms: Math.round(ms) };
+  }
+  return { assar, agua, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz };
 }
 const agora = () => performance.now();
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
@@ -328,23 +337,26 @@ const CSS = `
 .cen-voltar { float: right; margin: 4px 0 8px 12px; }
 .cen.ape .so-voo, .cen:not(.ape) .so-ape { display: none !important; }
 .cen-bt:disabled { opacity: .55; cursor: progress; }
-/* o pad do toque (o mesmo desenho do pad do jogo, css/pad3d.css): a cruz
-   do W, A, S, D à esquerda e o Correr à direita, só a pé e só no toque */
-.cen-pad { position: absolute; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between; align-items: flex-end; pointer-events: none;
-  padding: 0 calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left)); }
-.cen.ape.toque .cen-pad { display: flex; }
-.cen-pad button { pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
-  background: rgba(20,20,22,.8); border: 1px solid rgba(255,255,255,.18); color: #eeeae0; border-radius: 8px; font: 700 15px/1 var(--f-ui); letter-spacing: .04em; }
-.cen-pad button.apertado, .cen-pad button[aria-pressed="true"] { background: var(--acento); border-color: var(--acento); color: #fff; }
-.cen-cruz { display: grid; gap: 6px; grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(3, 48px); grid-template-areas: ". w ." "a . d" ". s ."; }
-.cen-cruz [data-tecla="w"] { grid-area: w; } .cen-cruz [data-tecla="a"] { grid-area: a; } .cen-cruz [data-tecla="s"] { grid-area: s; } .cen-cruz [data-tecla="d"] { grid-area: d; }
-.cen-correr { width: 96px; height: 58px; font-size: 14px !important; }
-/* no toque, a pé: o fps sobe pra baixo da barra de cima (embaixo é do pad) e fica só com o número */
-.cen.ape.toque .cen-fps { top: calc(var(--topo-alt, 60px) + 16px); bottom: auto; left: 8px; }
+/* O JOYSTICK: o círculo embaixo à esquerda, com o pino que segue o dedo
+   (ou o mouse); até a borda, corre. A pé ele aparece em qualquer tela */
+.cen-joy { position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: calc(18px + env(safe-area-inset-bottom)); width: 136px; height: 136px;
+  border-radius: 50%; display: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; cursor: grab;
+  background: radial-gradient(circle, rgba(20,22,21,.18) 0 52%, rgba(20,22,21,.42) 53% 100%); border: 2px solid rgba(255,255,255,.5);
+  box-shadow: 0 2px 14px rgba(0,0,0,.25); }
+.cen.ape .cen-joy { display: block; }
+.cen-joy::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; border: 1px dashed rgba(255,255,255,.35); pointer-events: none; }
+.cen-joy-pino { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; pointer-events: none;
+  background: rgba(242,243,239,.94); box-shadow: 0 2px 8px rgba(0,0,0,.4); transition: transform .14s ease-out; }
+.cen-joy.ativo { cursor: grabbing; }
+.cen-joy.ativo .cen-joy-pino { transition: none; }
+.cen-joy.correndo .cen-joy-pino { background: var(--acento); }
+/* a pé, o fps sobe pra baixo da barra de cima (embaixo é do joystick) e a
+   ficha sobe por cima dele; no toque, o fps fica só com o número */
+.cen.ape .cen-fps { top: calc(var(--topo-alt, 60px) + 16px); bottom: auto; left: 12px; }
 .cen.ape.toque .cen-fps small:not(.cen-aviso) { display: none; }
 .cen.ape.toque .cen-fps small.cen-aviso { max-width: 230px; }
+.cen.ape .cen-ficha { bottom: calc(172px + env(safe-area-inset-bottom)); max-height: 34vh; }
 .cen .curto { display: none; }
-.cen.ape.toque .cen-ficha { bottom: calc(176px + env(safe-area-inset-bottom)); max-height: 34vh; }
 @media (max-width: 760px) {
   .cen-topo { left: 8px; right: 8px; top: 8px; padding: 7px 9px; gap: 6px 10px; }
   .cen-nome h1 { font-size: 17px; }
@@ -359,7 +371,6 @@ const CSS = `
   .cen.ape .longo { display: none; }
   .cen.ape .curto { display: inline; }
   .cen.ape .cen-camisa { max-width: 150px; }
-  .cen-cruz { grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 46px); }
   .cen-fps { left: 8px; bottom: 8px; }
 }`;
 
@@ -396,8 +407,8 @@ export function criarCenario(P) {
       </div>
     </header>
     <aside class="cen-ficha" hidden><button class="cen-x" aria-label="Fechar a ficha">×</button><div class="cen-ficha-corpo"></div></aside>
-    <p class="cen-dica"><span class="so-voo"><b>Arraste</b> pra andar · <b>botão direito</b> (ou Shift) gira e inclina · <b>role</b> pra aproximar · <b>WASD</b> anda, <b>Q/E</b> gira · <b>duplo clique</b> voa até o ponto · <b>clique</b> numa coisa pra ver a ficha</span><span class="so-ape"><b>WASD</b> ou as setas andam · <b>Shift</b> corre · <b>arraste</b> gira a câmera · <b>role</b> aproxima · <b>Q/E</b> giram, <b>R/F</b> inclinam · <b>clique</b> numa coisa pra ver a ficha</span><span class="cen-num"></span></p>
-    <div class="cen-pad"><div class="cen-cruz"><button data-tecla="w" aria-label="Pra frente">W</button><button data-tecla="a" aria-label="Pra esquerda">A</button><button data-tecla="d" aria-label="Pra direita">D</button><button data-tecla="s" aria-label="Pra trás">S</button></div><button class="cen-correr" aria-pressed="false">Correr</button></div>
+    <p class="cen-dica"><span class="so-voo"><b>Arraste</b> pra andar · <b>botão direito</b> (ou Shift) gira e inclina · <b>role</b> pra aproximar · <b>WASD</b> anda, <b>Q/E</b> gira · <b>duplo clique</b> voa até o ponto · <b>clique</b> numa coisa pra ver a ficha</span><span class="so-ape">O <b>joystick</b> anda (na borda, corre) · <b>WASD</b> ou as setas também (<b>Shift</b> corre) · <b>arraste</b> a tela pra girar · <b>role</b> aproxima · <b>Q/E</b> giram, <b>R/F</b> inclinam · <b>clique</b> numa coisa pra ver a ficha</span><span class="cen-num"></span></p>
+    <div class="cen-joy" role="application" aria-label="Joystick: arraste o pino pra andar; na borda, corre"><div class="cen-joy-pino"></div></div>
     <div class="cen-hover" hidden></div>
     <p class="cen-fps" aria-live="off"><b>—</b> fps<small>medindo…</small></p>
     <div class="cen-carga" hidden><div class="cen-carga-caixa" role="status" aria-live="polite"><p class="cen-carga-txt">Montando…</p><div class="cen-barra"><i></i></div></div></div>
@@ -472,49 +483,39 @@ export function criarCenario(P) {
   let area = { x0: 0, y0: 0, x1: 1000, y1: 1000 };
   const OLHO = 1.6;                       // m: a altura do olho de quem anda
   const suave = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
-  const fovAPe = () => cam.aspect >= 1 ? 50 : 50 + (1 - cam.aspect) * 30;
-  const distAPe = () => APE.dist * M * (cam.aspect < 1 ? 1.15 : 1);
+  /* A PÉ, DE CIMA: a distância da câmera que põe `vao` metros no lado
+     menor da tela (no celular em pé, a largura) */
+  const FOV_APE = 40;
+  const distDoVao = vao => vao * M / 2 / (Math.tan(THREE.MathUtils.degToRad(FOV_APE / 2)) * Math.min(1, cam.aspect));
   function posicionar() {
-    /* a pé (`k` vai de 0 a 1 na chegada): o alvo é o boneco, a câmera
-       chega mais perto e pode olhar de baixo */
-    const k = ape ? suave(ape.chegada) : 0;
-    /* no pulo (de um lugar da rua pro outro) a lente e a névoa ficam as de a pé */
-    const kv = ape && ape.de.pulo ? 1 : k;
-    if (k >= 1) { orb.dist = clamp(orb.dist, 1.2 * M, 30 * M); orb.el = clamp(orb.el, -0.3, 1.4); }
+    /* a pé (`k` vai de 0 a 1 na chegada): o alvo é o boneco e a câmera
+       olha de cima; `kv`, a lente e o longe de a pé (no pulo de um lugar
+       da rua pro outro, já são os de a pé) */
+    const k = ape ? suave(ape.chegada) : 0, kv = ape && ape.de.pulo ? 1 : k;
+    if (ape && k >= 1) { orb.dist = distDoVao(ape.vao); orb.el = clamp(orb.el, 0.9, 1.5); }
     else { orb.dist = clamp(orb.dist, 2.5 * M, 2600 * M); orb.el = clamp(orb.el, 0.02, 1.54); }
     if (ape) {
       const de = ape.de;
-      orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M, de.z + (ape.z - de.z) * k);
+      orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M + ape.yv * k, de.z + (ape.z - de.z) * k);
     } else {
       orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
       orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
       orb.alvo.y = OLHO * M;
     }
-    const c = orb.alvo, ce = Math.cos(orb.el);
-    let d = orb.dist;
-    /* A CÂMERA NÃO ENTRA NA PAREDE: a pé, se um prédio fica entre o
-       boneco e ela, ela chega pra frente dele (de uma vez), e volta
-       devagar quando ele sai do caminho */
-    if (ape && grade && k >= 1) {
-      const f = grade.livreAte(c.x, c.y, c.z, c.x + d * ce * Math.sin(orb.az), c.y + d * Math.sin(orb.el), c.z + d * ce * Math.cos(orb.az));
-      const quer = f < 1 ? Math.max(1.0 * M, d * f - 0.35 * M) : d;
-      ape.camDist = ape.camDist == null || quer < ape.camDist ? quer : ape.camDist + (quer - ape.camDist) * 0.06;
-      d = Math.min(d, ape.camDist);
-    }
-    cam.position.set(c.x + d * ce * Math.sin(orb.az), Math.max(0.3 * M, c.y + d * Math.sin(orb.el)), c.z + d * ce * Math.cos(orb.az));
+    const c = orb.alvo, ce = Math.cos(orb.el), d = orb.dist;
+    cam.position.set(c.x + d * ce * Math.sin(orb.az), c.y + d * Math.sin(orb.el), c.z + d * ce * Math.cos(orb.az));
     cam.lookAt(c);
-    /* a pé, a lente abre (a tela em pé do celular é estreita: com 42° o
-       boneco tomava a largura inteira) */
-    cam.fov = 42 + (fovAPe() - 42) * kv;
+    cam.fov = 42 + (FOV_APE - 42) * kv;
     /* o perto e o longe acompanham a distância: a profundidade não perde
        precisão rente ao chão, e a névoa esconde a borda do mundo. A pé,
-       o longe é a `vista` da qualidade, com a névoa fechando antes */
-    const vista = QUALIDADES[qualidade].vista * M, mis = (a, b) => a + (b - a) * kv;
-    cam.near = mis(clamp(d * 0.02, 0.5, 400), 0.08 * M);
-    cam.far = mis(d * 6 + 60000, vista);
+       de cima, a tela só mostra umas dezenas de metros em volta dele: o
+       longe fica curto, sem névoa, e o que passa dele nem vai pra placa */
+    const mis = (a, b) => a + (b - a) * kv, longe = d * 3 + 60 * M;
+    cam.near = mis(clamp(d * 0.02, 0.5, 400), Math.max(0.3 * M, d * 0.03));
+    cam.far = mis(d * 6 + 60000, longe);
     cam.updateProjectionMatrix();
-    cena.fog.near = mis(d * 1.6 + 1500, vista * 0.35);
-    cena.fog.far = mis(d * 5 + 40000, vista * 0.97);
+    cena.fog.near = mis(d * 1.6 + 1500, longe * 2);
+    cena.fog.far = mis(d * 5 + 40000, longe * 3);
     /* o sol: só a direção conta (luz sem sombra) */
     sol.target.position.set(c.x, 0, c.z);
     sol.position.copy(sol.target.position).addScaledVector(SOL, 1000);
@@ -540,6 +541,7 @@ export function criarCenario(P) {
     else if (teclas.size) andar(dt);
     if (voo) voo(dt);
     posicionar();
+    atualizarCorte();
     const t0 = performance.now();
     rend.render(cena, cam);
     medir(t, performance.now() - t0);
@@ -656,7 +658,7 @@ export function criarCenario(P) {
       gesto = gira ? { tipo: 'gira', moveu: false } : { tipo: 'arrasta', ponto: chaoEm(ev.clientX, ev.clientY), moveu: false };
     } else if (ptrs.size === 2) {
       const [a, b] = [...ptrs.values()];
-      gesto = { tipo: 'dois', d: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), my: (a.y + b.y) / 2, dist: orb.dist, az: orb.az, el: orb.el, moveu: true };
+      gesto = { tipo: 'dois', d: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), my: (a.y + b.y) / 2, dist: orb.dist, vao: ape ? ape.vao : 0, az: orb.az, el: orb.el, moveu: true };
     }
     $('.cen-hover').hidden = true;
   });
@@ -670,7 +672,6 @@ export function criarCenario(P) {
     if (!gesto.moveu) return;
     if (gesto.tipo === 'gira') {
       orb.az -= dx * 0.006; orb.el += dy * 0.005;
-      if (ape) ape.girou = agora();
     } else if (gesto.tipo === 'arrasta') {
       /* PEGAR O CHÃO: o ponto que estava debaixo do dedo continua debaixo dele */
       const agoraP = gesto.ponto && chaoEm(ev.clientX, ev.clientY);
@@ -683,10 +684,11 @@ export function criarCenario(P) {
     } else if (gesto.tipo === 'dois' && ptrs.size === 2) {
       const [a, b] = [...ptrs.values()];
       const d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x), my = (a.y + b.y) / 2;
-      orb.dist = gesto.dist * gesto.d / Math.max(1, d);
+      /* a pé, a pinça muda o quanto cabe na tela */
+      if (ape) ape.vao = clamp(gesto.vao * gesto.d / Math.max(1, d), 5, 80);
+      else orb.dist = gesto.dist * gesto.d / Math.max(1, d);
       orb.az = gesto.az - (ang - gesto.ang);
       orb.el = gesto.el + (my - gesto.my) * 0.004;
-      if (ape) ape.girou = agora();
     }
     pedir();
   });
@@ -706,8 +708,8 @@ export function criarCenario(P) {
     ev.preventDefault();
     cancelarVoo();
     const f = Math.exp(clamp(ev.deltaY, -120, 120) * (ev.deltaMode === 1 ? 0.05 : 0.0016));
-    /* a pé, a roda só aproxima a câmera do boneco */
-    if (ape) { orb.dist = clamp(orb.dist * f, 1.2 * M, 30 * M); pedir(); return; }
+    /* a pé, a roda muda o quanto cabe na tela, com o boneco no meio */
+    if (ape) { ape.vao = clamp(ape.vao * f, 5, 80); pedir(); return; }
     /* aproxima NO CURSOR: o ponto do chão debaixo dele fica onde está */
     const p = chaoEm(ev.clientX, ev.clientY);
     const antes = orb.dist;
@@ -735,13 +737,28 @@ export function criarCenario(P) {
   const caixaSel = new THREE.Box3Helper(new THREE.Box3(), 0xf09c45);
   caixaSel.visible = false; caixaSel.material.depthTest = false; caixaSel.renderOrder = 5; cena.add(caixaSel);
   const alvoId = new THREE.WebGLRenderTarget(1, 1), pixel = new Uint8Array(4);
+  /* o clique respeita o corte (o telhado que sumiu não pega o clique, nem
+     a cidade em cima da estação quando ele está no metrô) e o buraco do
+     poço no chão (o chão é a coisa 0) — os uniformes entram com o CORTE,
+     lá embaixo */
   const matId = new THREE.ShaderMaterial({
-    vertexShader: `attribute float idCoisa; varying vec3 vId;
+    uniforms: {},
+    vertexShader: `attribute float idCoisa; varying vec3 vId; varying vec3 vCorteP; varying float vCorteId;
       void main() {
         vId = vec3(mod(idCoisa, 256.0), mod(floor(idCoisa / 256.0), 256.0), floor(idCoisa / 65536.0)) / 255.0;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vCorteId = idCoisa;
+        vec4 p = modelMatrix * vec4(position, 1.0);
+        vCorteP = p.xyz;
+        gl_Position = projectionMatrix * viewMatrix * p;
       }`,
-    fragmentShader: `varying vec3 vId; void main() { gl_FragColor = vec4(vId, 1.0); }`,
+    fragmentShader: `varying vec3 vId; varying vec3 vCorteP; varying float vCorteId;
+      CORTE_GLSL
+      void main() {
+        if ( corteSub( vCorteP ) ) discard;
+        if ( uCorte > 0.5 && uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;
+        if ( vCorteId < 0.5 && abs( vCorteP.y ) < 1.0 && noBuraco( vCorteP ) ) discard;
+        gl_FragColor = vec4(vId, 1.0);
+      }`,
     side: THREE.DoubleSide
   });
   function pegar(sx, sy) {
@@ -799,6 +816,74 @@ export function criarCenario(P) {
   /* ======================================================
      O FORNO: junta as malhas por bloco e por material
      ====================================================== */
+  /* O CORTE NOS MATERIAIS (a pé, de cima): os uniformes são os mesmos
+     objetos em todos, e o quadro só troca o valor. No fragmento:
+     - o que é da coisa `uCorteId` (o prédio em que o boneco está dentro,
+       pelo número de cada vértice) e passa de `uCorteY` some: o telhado,
+       a laje e o alto da parede — de cima se vê a planta dos cômodos;
+     - o que passa de `uCorteAcima` e está dentro do CONE da cabeça dele
+       até a câmera (`uCorteR` de raio em cima da cabeça, fechando até a
+       câmera: só o que fica na frente dele na tela) fica ralo, num
+       pontilhado que some no meio (a copa, o beiral, o prédio alto do lado
+       da câmera): vê-se através */
+  /* - EMBAIXO DA RUA (no metrô), o que passa de `uSubY` dentro do
+       retângulo `uSub` (a caixa da estação, com folga) some: a cidade em
+       cima dela, o chão, o mezanino quando ele está na plataforma;
+     - SEMPRE, o chão tem um buraco em cada POÇO do metrô (`uBuraco`): é
+       por ali que a escada desce */
+  const CORTE = {
+    uCorte: { value: 0 }, uCorteId: { value: 0 }, uCorteY: { value: 0 }, uCorteR: { value: 1 }, uCorteAcima: { value: 0 },
+    uCorteA: { value: new THREE.Vector3() }, uCorteB: { value: new THREE.Vector3() },
+    uSub: { value: new THREE.Vector4() }, uSubY: { value: 1e9 },
+    uBuraco: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) }, uNBuraco: { value: 0 }
+  };
+  const CORTE_GLSL = `uniform float uCorte, uCorteId, uCorteY, uCorteR, uCorteAcima, uSubY;
+uniform vec3 uCorteA, uCorteB;
+uniform vec4 uSub;
+uniform vec4 uBuraco[ 4 ];
+uniform int uNBuraco;
+bool corteSub( vec3 p ) { return uCorte > 0.5 && p.y > uSubY && p.x > uSub.x && p.x < uSub.z && p.z > uSub.y && p.z < uSub.w; }
+float corteBayer( vec2 a ) { a = floor( a ); return fract( a.x / 2.0 + a.y * a.y * 0.75 ); }
+bool corteCone( vec3 p ) {
+  if ( uCorte < 0.5 || p.y <= uCorteAcima ) return false;
+  vec3 ab = uCorteB - uCorteA;
+  float t = clamp( dot( p - uCorteA, ab ) / max( dot( ab, ab ), 1e-3 ), 0.0, 1.0 );
+  float d = length( p - ( uCorteA + ab * t ) ), R = uCorteR * ( 1.0 - 0.85 * t );
+  float k = 1.0 - smoothstep( R * 0.55, R, d );
+  float limiar = corteBayer( 0.5 * gl_FragCoord.xy ) * 0.25 + corteBayer( gl_FragCoord.xy );
+  return k * 0.92 > limiar;
+}
+bool noBuraco( vec3 p ) {
+  for ( int i = 0; i < 4; i++ ) {
+    if ( i >= uNBuraco ) break;
+    vec4 b = uBuraco[ i ];
+    if ( p.x > b.x && p.x < b.z && p.z > b.y && p.z < b.w ) return true;
+  }
+  return false;
+}
+`;
+  matId.fragmentShader = matId.fragmentShader.replace('CORTE_GLSL', CORTE_GLSL);
+  Object.assign(matId.uniforms, CORTE);
+  function cortavel(mat, comId) {
+    const antes = mat.onBeforeCompile;
+    mat.onBeforeCompile = (sh, r) => {
+      if (antes) antes.call(mat, sh, r);
+      Object.assign(sh.uniforms, CORTE);
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', `${comId ? 'attribute float idCoisa;' : ''}\nvarying vec3 vCorteP;\nvarying float vCorteId;\nvoid main() {`)
+        .replace('#include <project_vertex>', `#include <project_vertex>\n  vCorteP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\n  vCorteId = ${comId ? 'idCoisa' : '0.0'};`);
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', `${CORTE_GLSL}
+varying vec3 vCorteP;
+varying float vCorteId;
+void main() {
+  if ( corteSub( vCorteP ) || corteCone( vCorteP ) ) discard;
+  if ( uCorte > 0.5 && uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;`);
+    };
+    const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
+    mat.customProgramCacheKey = () => chave + '|corte' + (comId ? 1 : 0);
+    return mat;
+  }
+
   /* a cor do material entra no vértice (em linear, como o three.js
      guarda), multiplicada pela do vértice quando ele tem */
   const matsDoForno = new Map();
@@ -810,9 +895,9 @@ export function criarCenario(P) {
   }
   function materialDoForno(chave, m) {
     if (matsDoForno.has(chave)) return matsDoForno.get(chave);
-    const mat = new THREE.MeshLambertMaterial({
+    const mat = cortavel(new THREE.MeshLambertMaterial({
       map: m.map || null, vertexColors: true, side: m.side, transparent: m.transparent, opacity: m.transparent ? m.opacity : 1,
-      alphaTest: m.alphaTest || 0, depthWrite: m.depthWrite, flatShading: !!m.flatShading, alphaToCoverage: !!m.alphaToCoverage });
+      alphaTest: m.alphaTest || 0, depthWrite: m.depthWrite, flatShading: !!m.flatShading, alphaToCoverage: !!m.alphaToCoverage }), true);
     matsDoForno.set(chave, mat);
     return mat;
   }
@@ -862,7 +947,7 @@ export function criarCenario(P) {
     return { lugar, texturas, recopiar, jogarFora, folhas };
   }
 
-  function Forno(ar, escalaDecal, grade) {
+  function Forno(ar, escalaDecal, grade, sub) {
     const LADO = BLOCO_M * M;
     const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
     const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null];
@@ -912,12 +997,11 @@ export function criarCenario(P) {
       return { chave, m, P3, N3, C3, U2, n };
     }
     /* ASSAR uma coisa: as malhas dela, no bloco do meio dela (e, na grade
-       do passo, o que barra o corpo e a câmera) */
+       do passo, o que barra o corpo e, se é prédio, o telhado dela) */
     function assar(grupo, it, tipo) {
       grupo.updateMatrixWorld(true);
       const pedacos = [];
       grupo.traverse(o => { if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
-      if (grade) { const predio = PREDIOS.has(tipo); for (const p of pedacos) grade.assar(p.P3, p.n, predio); }
       /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
       let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
       for (const p of pedacos) for (let k = 0; k < p.n; k++) {
@@ -933,6 +1017,9 @@ export function criarCenario(P) {
       let id = 0;
       if (it) { id = lista.length; lista.push({ it, caixa: [x0, Math.max(0, y0), z0, x1, Math.max(y1, 4), z1] }); }
       for (const p of pedacos) p.id = id;
+      if (grade) { const teto = PREDIOS.has(tipo) ? id : 0; for (const p of pedacos) grade.assar(p.P3, p.n, teto); }
+      /* a estação do metrô vai inteira pro subsolo (onde o boneco desce) */
+      if (sub && tipo === 'metro') for (const p of pedacos) sub.juntar(p.P3, p.n);
       const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
       for (const p of pedacos) {
         const k = i + ',' + j + '|' + p.chave;
@@ -952,8 +1039,8 @@ export function criarCenario(P) {
         if (b.chave.startsWith('decal|')) {
           const f = decal.folhas[+b.chave.slice(6)];
           if (!matsDecal.has(f)) {
-            const md = new THREE.MeshLambertMaterial({ map: f.tex, alphaTest: 0.35, side: THREE.DoubleSide,
-              vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
+            const md = cortavel(new THREE.MeshLambertMaterial({ map: f.tex, alphaTest: 0.35, side: THREE.DoubleSide,
+              vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }), true);
             md.userData.doMapa = true;
             matsDecal.set(f, md);
           }
@@ -1016,16 +1103,20 @@ export function criarCenario(P) {
     const m = new THREE.MeshLambertMaterial({ map: tex });
     const u = { uGrao: { value: texturaDoGrao() }, uEscala: { value: metros / 3.2 } };
     m.onBeforeCompile = sh => {
-      Object.assign(sh.uniforms, u);
+      Object.assign(sh.uniforms, u, CORTE);
+      /* o buraco do poço do metrô e, com ele embaixo da rua, o corte */
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', 'varying vec3 vChaoP;\nvoid main() {')
+        .replace('#include <project_vertex>', '#include <project_vertex>\n  vChaoP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
       sh.fragmentShader = sh.fragmentShader
-        .replace('void main() {', 'uniform sampler2D uGrao; uniform float uEscala;\nvoid main() {')
+        .replace('void main() {', `uniform sampler2D uGrao; uniform float uEscala;\n${CORTE_GLSL}\nvarying vec3 vChaoP;\nvoid main() {\n  if ( noBuraco( vChaoP ) || corteSub( vChaoP ) || corteCone( vChaoP ) ) discard;`)
         .replace('#include <map_fragment>', `#include <map_fragment>
   {
     float gA = texture2D( uGrao, vMapUv * uEscala ).r, gB = texture2D( uGrao, vMapUv * uEscala * 0.21 + 0.37 ).r;
     diffuseColor.rgb *= 1.0 + ( gA * 0.62 + gB * 0.38 - 0.5 ) * 0.55;
   }`);
     };
-    m.customProgramCacheKey = () => 'chao-grao';
+    m.customProgramCacheKey = () => 'chao-grao-poco';
     return m;
   }
   /* uma textura do canvas (e o canvas volta pra ser pintado de novo) */
@@ -1184,7 +1275,7 @@ export function criarCenario(P) {
       const perto = malhaLowpoly(t.perto.lowpoly), longe = malhaLowpoly(t.longe.lowpoly);
       if (!perto || !longe) continue;
       /* o tronco (e o galho baixo) barra o corpo */
-      if (grade) for (const b of t.perto.lowpoly) grade.assar(b.pos, b.pos.length / 3, false);
+      if (grade) for (const b of t.perto.lowpoly) grade.assar(b.pos, b.pos.length / 3, 0);
       const lod = new THREE.LOD(), cx = t.cx * M, cz = t.cz * M;
       lod.position.set(cx, 0, cz);
       for (const m of [perto, longe]) { m.position.set(-cx, 0, -cz); m.updateMatrix(); m.matrixAutoUpdate = false; }
@@ -1195,7 +1286,7 @@ export function criarCenario(P) {
     }
     return { arvores: arvores.length, tri };
   }
-  const matLowpoly = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide });
+  const matLowpoly = cortavel(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), false);
   function malhaLowpoly(blocos) {
     if (!blocos || !blocos.length) return null;
     let n = 0;
@@ -1251,7 +1342,7 @@ export function criarCenario(P) {
     atualizarTopo();
     const t0 = agora();
     sairDaRua(false);
-    grade = null;
+    grade = null; sub = null; CORTE.uNBuraco.value = 0;
     $('.cen-bt-ape').disabled = true;
     jogarForaOMapa();
     area = P.areaDoCenario();
@@ -1262,9 +1353,10 @@ export function criarCenario(P) {
     if (!vivo()) return;
     chaoDeLonge(area, grupoChao);
     pedir();
-    /* 2. as coisas, no forno */
+    /* 2. as coisas, no forno (e a estação do metrô também no subsolo) */
     const gradeNova = GradeDoPasso(area, M);
-    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova), porTipo = {};
+    const estacoes = P.metro ? P.metro() : [], subNovo = estacoes.length ? Subsolo(M, estacoes) : null;
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo), porTipo = {};
     let i = 0, tFatia = agora();
     for (const pc of pecas) {
       const g = new THREE.Group();
@@ -1295,15 +1387,41 @@ export function criarCenario(P) {
     /* a água entra por último na grade do passo */
     const tGrade = agora();
     gradeNova.agua(P.costa && P.costa(), P.lagoa && P.lagoa());
-    grade = gradeNova;
+    /* O METRÔ: o poço de cada estação é buraco no chão (e o boneco não
+       nasce nele), o subsolo fecha, e a terra em volta da estação fica
+       pronta pra quando ele descer */
+    const tSub = agora();
+    if (subNovo) {
+      subNovo.fechar();
+      estacoes.slice(0, 4).forEach((e, k) => { CORTE.uBuraco.value[k].set(e.poco.x0, e.poco.z0, e.poco.x1, e.poco.z1); gradeNova.bloquear(e.poco); });
+      CORTE.uNBuraco.value = Math.min(4, estacoes.length);
+      for (const e of estacoes) doMapa.add(terraDaEstacao(e));
+    }
+    grade = gradeNova; sub = subNovo;
     montado = { nome, decal: forno.decal };
     numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000,
-                folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(agora() - tGrade) }) };
+                folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade) }),
+                subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(agora() - tSub) } : null };
     /* o escudo em PNG chega depois: a folha copia de novo */
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
     carga.hidden = true;
     if (window.__cenarioPronto) window.__cenarioPronto(numeros);
+  }
+
+  /* A TERRA em volta da estação: uma caixa marrom do tamanho do corte,
+     vista de dentro (o chão dela e as paredes do lado de lá). Na rua ela
+     fica embaixo do chão (só aparece pelo poço, no fundo da escada); com
+     ele no metrô, a cidade em cima some e a estação aparece dentro dela.
+     Ela não é cortada: a parede dela sobe até a rua e fecha a borda do
+     corte (sem ela, entre o chão cortado e o resto via-se o céu) */
+  const matTerra = new THREE.MeshLambertMaterial({ color: '#4d3d2e', side: THREE.BackSide });
+  function terraDaEstacao(e) {
+    const c = e.caixa, f = SUB_FOLGA * M, y0 = TERRA_M * M, y1 = -0.5;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(c.x1 - c.x0 + 2 * f, y1 - y0, c.z1 - c.z0 + 2 * f), matTerra);
+    m.position.set((c.x0 + c.x1) / 2, (y0 + y1) / 2, (c.z0 + c.z1) / 2);
+    m.name = 'terra'; m.updateMatrix(); m.matrixAutoUpdate = false;
+    return m;
   }
 
   /* a cidade inteira na tela, de três quartos */
@@ -1358,16 +1476,23 @@ export function criarCenario(P) {
      ------------------------------------------------------
      O boneco é o do jogo (js/bonecos3.js, o modelo do Blender), com o
      mesmo andar e o mesmo correr, na camisa de uma torcida da praça. Ele
-     só carrega quando alguém entra a pé: o modelo tem 2,7 MB. Anda na
-     grade do passo (não atravessa parede, muro, carro, poste, tronco nem
-     água) e a câmera vai atrás, de ombro: arrastar gira, a roda aproxima,
-     e andando pra frente ela volta sozinha pras costas dele. A pé se
-     enxerga até a `vista` da qualidade, com névoa.
+     só carrega quando alguém entra a pé: o modelo tem 2,7 MB. Anda contra
+     os riscos da grade do passo (não atravessa parede, muro, móvel,
+     carro, poste, tronco nem água), e a câmera o segue DE CIMA, quase a
+     pino, com o norte pra cima: arrastar gira, a roda e a pinça mudam
+     quanto cabe na tela. O joystick (o círculo embaixo à esquerda) anda
+     pra onde o pino aponta na tela; na borda, corre. O que fica entre a
+     câmera e ele some (O CORTE), e o prédio em que ele entra perde o
+     telhado. NO METRÔ ele desce a escada (ou a rolante) do poço, passa a
+     catraca e desce pra plataforma: o pé tem altura (`ape.y`), e embaixo
+     da rua quem diz onde ele pisa é o SUBSOLO; a câmera desce junto, e a
+     cidade em cima da estação some (a caixa dela, do teto do nível em que
+     ele está pra cima), com a terra em volta.
      ====================================================== */
   const toque = matchMedia('(pointer: coarse)').matches;
   raiz.classList.toggle('toque', toque);
   const selCamisa = $('.cen-camisa');
-  let grade = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
+  let grade = null, sub = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
   /* o penteado sai da semente (o modelo leve não tem boné nem bandana) */
   const CABELOS = ['curto', 'raspado', 'degrade', 'black', 'cacheado', 'topete', 'franja', 'entradas', 'moicano', 'comprido', 'rabo', 'coque', 'careca'];
   /* a camisa é lembrada pela torcida (o id; 'nenhuma' é o "Sem torcida"), não pela posição na lista */
@@ -1389,8 +1514,10 @@ export function criarCenario(P) {
       const mod = await import('./bonecos3.js');
       /* a câmera chega a um metro dele: a malha afina menos que no jogo */
       mod.cfg.afinarCelulas = 72;
-      /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m */
-      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86) });
+      /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
+         tem altura: a do pé que se vê (no metrô, embaixo da rua) */
+      const PE = { x: 0, y: 0, z: 0 };
+      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86), pos: (x, y) => { PE.x = x; PE.y = ape ? ape.yv : 0; PE.z = y; return PE; } });
       return povo;
     })().catch(e => { chamando = null; throw e; });
     return chamando;
@@ -1422,8 +1549,16 @@ export function criarCenario(P) {
     camisa = antes >= 0 ? antes : Math.max(0, torcidas.findIndex(t => t.porta));
     selCamisa.value = String(camisa);
   }
-  /* ENTRAR A PÉ: onde a câmera olha (ou `onde`), na célula alcançável
-     mais perto em que o corpo cabe */
+  /* o chão da rua em (x, z): zero, ou o da estação do metrô (a praça da
+     entrada fica 8 cm acima da rua) */
+  function naRua(x, z) {
+    if (!sub || !sub.estacaoEm(x, z)) return 0;
+    const y = sub.chao(x, z, 0);
+    return y === y ? y : 0;
+  }
+  /* ENTRAR A PÉ: onde a câmera olha (ou `onde`), no lugar alcançável mais
+     perto em que o corpo cabe; `onde` com `y` embaixo da rua (a troca de
+     qualidade no metrô) volta pro mesmo degrau */
   async function entrarAPe(onde) {
     if (ape || montando || !grade) return false;
     const bt = $('.cen-bt-ape');
@@ -1431,7 +1566,8 @@ export function criarCenario(P) {
     try {
       /* no meio da rua, se der: primeiro onde sobra 3 m pra todo lado */
       const alvo = onde || { x: orb.alvo.x, z: orb.alvo.z };
-      const lugar = () => onde ? grade.perto(alvo.x, alvo.z, APE.raio * M, 60 * M)
+      const yEmbaixo = onde && onde.y < -0.05 * M && sub ? sub.chao(onde.x, onde.z, onde.y) : NaN;
+      const lugar = () => yEmbaixo === yEmbaixo ? { x: onde.x, z: onde.z, y: yEmbaixo } : onde ? grade.perto(alvo.x, alvo.z, APE.raio * M, 60 * M)
         : grade.perto(alvo.x, alvo.z, 3 * M, 60 * M) || grade.perto(alvo.x, alvo.z, 1.5 * M, 150 * M) || grade.perto(alvo.x, alvo.z, APE.raio * M, 400 * M);
       if (!lugar()) throw new Error('não achei chão livre perto do meio da tela');
       if (!povo) {
@@ -1443,13 +1579,16 @@ export function criarCenario(P) {
       const p = lugar();
       if (!p) throw new Error('não achei chão livre perto do meio da tela');
       encherCamisas();
-      const az = onde && onde.az != null ? onde.az : orb.az;
-      ape = { x: p.x, z: p.z, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), correr: false, girou: 0, camDist: null,
+      /* de cima, a rua fica de pé ou deitada na tela: o giro da câmera vai
+         pro quarto de volta mais perto (com a cidade inteira na tela, o
+         norte pra cima, como na planta) */
+      const quarto = Math.PI / 2, az = onde && onde.az != null ? onde.az : Math.round(orb.az / quarto) * quarto;
+      const y = p.y != null ? p.y : naRua(p.x, p.z);
+      ape = { x: p.x, z: p.z, y, yv: y, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), vao: (onde && onde.vao) || APE.vao, teto: 0, tetoAte: 0,
               chegada: 0, de: { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az }, para: { az } };
       vestir();
       cancelarVoo(); fecharFicha();
       raiz.classList.add('ape');
-      $('.cen-correr').setAttribute('aria-pressed', 'false');
       tela.focus({ preventScroll: true });
       pedir();
       return true;
@@ -1467,19 +1606,21 @@ export function criarCenario(P) {
     ape = null;
     raiz.classList.remove('ape');
     for (const k of ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']) teclas.delete(k);
-    for (const b of raiz.querySelectorAll('.cen-pad .apertado')) b.classList.remove('apertado');
+    soltarJoy();
+    CORTE.uCorte.value = 0;
     if (povo && jogo) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
     if (voar) { orb.alvo.set(x, 0, z); voarPara(x, z, 70 * M, 0.62, orb.az); }
     pedir();
   }
-  /* LEVAR o boneco a um ponto (a porta da sede), com a câmera voando até lá */
+  /* LEVAR o boneco a um ponto (a porta da sede), com a câmera pulando por
+     cima dos telhados até lá */
   function levarPara(x, z, az) {
     const p = grade && (grade.perto(x, z, 1.2 * M, 10 * M) || grade.perto(x, z, APE.raio * M, 80 * M));
     if (!ape || !p) return false;
-    /* a câmera PULA por cima dos telhados (rente ao chão ela atravessaria a cidade) */
     ape.de = { x: ape.x, z: ape.z, dist: orb.dist, el: orb.el, az: orb.az, pulo: true };
     ape.para = { az };
-    ape.x = p.x; ape.z = p.z; ape.vx = ape.vz = 0; ape.chegada = 0; ape.camDist = null;
+    ape.x = p.x; ape.z = p.z; ape.vx = ape.vz = 0; ape.chegada = 0;
+    ape.y = ape.yv = naRua(p.x, p.z);
     ape.rumo = Math.atan2(-Math.sin(az), -Math.cos(az));
     if (eu) { eu.x = ape.x; eu.y = ape.z; }
     pedir();
@@ -1488,64 +1629,126 @@ export function criarCenario(P) {
   function irPraSede() {
     const t = torcidas[camisa];
     if (!t || !t.porta) return;
-    /* de costas pra câmera e de frente pra porta: a câmera fica do lado da rua */
+    /* de frente pra porta, com a câmera do lado da rua: de cima, a fachada
+       da sede fica embaixo na tela, com o nome dela */
     const P0 = t.porta;
     levarPara(P0.x, P0.y, Math.atan2(P0.fx, P0.fy));
   }
-  /* o corpo anda de 15 em 15 cm; o que bate num eixo desliza no outro */
+  /* O PASSO: o corpo anda de 12 em 12 cm; o que bate num risco o empurra
+     pra fora e ele desliza ao longo dele (passo.js). A água e a borda da
+     área seguram: ali só anda o eixo que dá. Embaixo da rua (ou entrando
+     no poço do metrô), o passo é o do SUBSOLO: o chão a um degrau do pé e
+     a faixa do corpo contada dele */
+  const corpo = { x: 0, z: 0, y: 0 };
   function mover(dx, dz) {
-    const r = APE.raio * M, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / (0.15 * M)));
-    const sx = dx / n, sz = dz / n;
-    /* nasceu encostado (não deveria): deixa sair */
-    const preso = !grade.cabe(ape.x, ape.z, r);
+    const r = APE.raio * M, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / (0.12 * M)));
+    const sx = dx / n, sz = dz / n, W = grade.paredes;
+    const tenta = (ax, az) => {
+      if (sub && (ape.y < -0.05 * M || sub.noPoco(ape.x + ax, ape.z + az))) {
+        if (!sub.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
+      corpo.x = ape.x + ax; corpo.z = ape.z + az;
+      W.empurrar(corpo, r);
+      if (!grade.cabe(corpo.x, corpo.z, r * 0.97)) return false;
+      /* a rua o empurrou pra dentro do poço: lá o chão é o do subsolo */
+      if (sub && sub.noPoco(corpo.x, corpo.z)) {
+        const y = sub.chao(corpo.x, corpo.z, ape.y);
+        if (y !== y || !sub.cabe(corpo.x, corpo.z, y, r * 0.97)) return false;
+        ape.y = y;
+      } else ape.y = naRua(corpo.x, corpo.z);
+      ape.x = corpo.x; ape.z = corpo.z;
+      return true;
+    };
     for (let i = 0; i < n; i++) {
-      if (preso || grade.cabe(ape.x + sx, ape.z, r)) ape.x += sx; else ape.vx = 0;
-      if (preso || grade.cabe(ape.x, ape.z + sz, r)) ape.z += sz; else ape.vz = 0;
+      if (tenta(sx, sz) || tenta(sx, 0) || tenta(0, sz)) continue;
+      ape.vx = ape.vz = 0;
+      break;
     }
   }
   function andarAPe(dt) {
     const t = teclas;
-    const frente = (t.has('w') || t.has('arrowup') ? 1 : 0) - (t.has('s') || t.has('arrowdown') ? 1 : 0);
-    const lado = (t.has('d') || t.has('arrowright') ? 1 : 0) - (t.has('a') || t.has('arrowleft') ? 1 : 0);
-    if (t.has('q')) { orb.az += dt * 1.6; ape.girou = agora(); }
-    if (t.has('e')) { orb.az -= dt * 1.6; ape.girou = agora(); }
+    if (t.has('q')) orb.az += dt * 1.6;
+    if (t.has('e')) orb.az -= dt * 1.6;
     if (t.has('r')) orb.el += dt * 0.8;
     if (t.has('f')) orb.el -= dt * 0.8;
-    if (t.has('+') || t.has('=')) orb.dist *= Math.exp(-dt * 1.6);
-    if (t.has('-')) orb.dist *= Math.exp(dt * 1.6);
-    /* a chegada: a câmera desce de onde estava até as costas dele */
+    if (t.has('+') || t.has('=')) ape.vao = clamp(ape.vao * Math.exp(-dt * 1.6), 5, 80);
+    if (t.has('-')) ape.vao = clamp(ape.vao * Math.exp(dt * 1.6), 5, 80);
+    /* a chegada: a câmera desce de onde estava até em cima dele (ou pula
+       por cima dos telhados, do lugar de antes pro novo) */
     if (ape.chegada < 1) {
-      const de = ape.de, T = de.pulo ? 1.3 : 0.6 + 0.35 * Math.log10(Math.max(1, de.dist / distAPe()));
+      const de = ape.de, alvo = distDoVao(ape.vao), T = de.pulo ? 1.3 : 0.6 + 0.35 * Math.log10(Math.max(1, de.dist / alvo));
       ape.chegada = Math.min(1, ape.chegada + dt / T);
       const k = suave(ape.chegada), arco = de.pulo ? Math.sin(Math.PI * k) : 0;
-      orb.dist = Math.exp(Math.log(de.dist) + (Math.log(distAPe()) - Math.log(de.dist)) * k) * (1 + 11 * arco);
-      orb.el = de.el + (APE.el - de.el) * k + 0.55 * arco;
+      orb.dist = Math.exp(Math.log(de.dist) + (Math.log(alvo) - Math.log(de.dist)) * k) * (1 + 3 * arco);
+      orb.el = de.el + (APE.el - de.el) * k;
       let da = ape.para.az - de.az; da = Math.atan2(Math.sin(da), Math.cos(da));
       orb.az = de.az + da * k;
     }
-    const corre = t.has('shift') || ape.correr;
+    /* pra onde: o joystick (na tela, pra cima é pra frente) ou o teclado */
+    let frente, lado, forca = 1, corre;
+    if (joy.ativo && joy.m > 0) { frente = -joy.y; lado = joy.x; forca = joy.m; corre = joy.borda; }
+    else {
+      frente = (t.has('w') || t.has('arrowup') ? 1 : 0) - (t.has('s') || t.has('arrowdown') ? 1 : 0);
+      lado = (t.has('d') || t.has('arrowright') ? 1 : 0) - (t.has('a') || t.has('arrowleft') ? 1 : 0);
+      corre = t.has('shift');
+    }
     const fx = -Math.sin(orb.az), fz = -Math.cos(orb.az), rx = Math.cos(orb.az), rz = -Math.sin(orb.az);
     let dx = fx * frente + rx * lado, dz = fz * frente + rz * lado;
     const L = Math.hypot(dx, dz);
     if (L) { dx /= L; dz /= L; }
-    const quer = L ? (corre ? APE.corre : APE.anda) * M : 0;
+    const quer = L ? (corre ? APE.corre : APE.anda * forca) * M : 0;
     const k = Math.min(1, dt * (quer ? 7 : 10));
     ape.vx += (dx * quer - ape.vx) * k; ape.vz += (dz * quer - ape.vz) * k;
+    const x0 = ape.x, z0 = ape.z;
     mover(ape.vx * dt, ape.vz * dt);
     if (L) ape.rumo = Math.atan2(dx, dz);
-    const v = Math.hypot(ape.vx, ape.vz);
-    /* ANDANDO PRA FRENTE, a câmera volta sozinha pras costas (quem girou
-       a câmera agora há pouco manda nela); de lado ou pra trás, não */
-    if (frente > 0 && L && ape.chegada >= 1 && agora() - ape.girou > 1200) {
-      let d = Math.atan2(-dx, -dz) - orb.az; d = Math.atan2(Math.sin(d), Math.cos(d));
-      orb.az += d * Math.min(1, dt * 2.2 * frente / (frente + Math.abs(lado)));
-    }
+    const v = dt > 0 ? Math.hypot(ape.x - x0, ape.z - z0) / dt : 0;
+    /* o pé que se vê (e a câmera) vai atrás do pé da conta, macio: na
+       escada, o degrau de 17 cm não sacode a tela */
+    ape.yv += (ape.y - ape.yv) * Math.min(1, dt * 12);
+    /* o prédio em que ele está dentro (e ainda um instante depois de
+       sair: na porta, o telhado não pisca); embaixo da rua, nenhum */
+    const dentro = ape.y > -0.5 * M ? grade.dentroDe(ape.x, ape.z) : 0;
+    if (dentro) { ape.teto = dentro; ape.tetoAte = agora() + 350; }
+    else if (agora() > ape.tetoAte) ape.teto = 0;
     /* o boneco: o jogo lê o disco e faz o resto (o passo, o parado, a virada) */
     eu.x = ape.x; eu.y = ape.z; eu.rumo = ape.rumo;
     eu._cacando = corre && v > APE.anda * M * 1.25;
     eu.passada = eu._cacando ? 2.1 : 1.15;
     jogo.t += dt;
     povo.atualizar(jogo, dt);
+  }
+  /* O CORTE, a cada quadro: do alto da cabeça dele até a câmera (tudo
+     contado do pé que se vê) */
+  function atualizarCorte() {
+    if (!ape) { CORTE.uCorte.value = 0; return; }
+    const y = ape.yv;
+    CORTE.uCorte.value = 1;
+    CORTE.uCorteA.value.set(ape.x, y + 1.7 * M, ape.z);
+    CORTE.uCorteB.value.copy(cam.position);
+    CORTE.uCorteR.value = CORTE_M.raio * M;
+    CORTE.uCorteAcima.value = y + CORTE_M.acima * M;
+    CORTE.uCorteId.value = ape.chegada >= 1 ? ape.teto : 0;
+    CORTE.uCorteY.value = y + CORTE_M.dentro * M;
+    /* EMBAIXO DA RUA: a cidade em cima da estação some, do teto do nível
+       dele pra cima (com a terra em volta) */
+    const est = sub && ape.y < -1.2 * M ? sub.estacaoEm(ape.x, ape.z, SUB_FOLGA * M) : null;
+    if (est) {
+      const c = est.caixa, f = SUB_FOLGA * M;
+      CORTE.uSub.value.set(c.x0 - f, c.z0 - f, c.x1 + f, c.z1 + f);
+      CORTE.uSubY.value = alturaDoCorte(est.niveis, y / M) * M;
+    } else CORTE.uSubY.value = 1e9;
+  }
+  /* A ALTURA DO CORTE embaixo da rua (m), pelo pé: descendo a escada da
+     rua, o chão da cidade (e o que tem em cima) some logo que a cabeça
+     chega nele; mais embaixo o corte desce com ele até o teto do mezanino;
+     e da metade da escada da plataforma pra baixo (2 m abaixo do
+     mezanino), o mezanino some também, do teto da plataforma pra cima */
+  function alturaDoCorte(N, y) {
+    if (y < N.mezanino - 2.0) return N.tetoPlataforma;
+    return Math.max(N.tetoMezanino, Math.min(-0.05, y + 2.2));
   }
   /* depois de escolher, o teclado volta pro boneco (no seletor, o W e as
      setas trocariam a opção em vez de andar) */
@@ -1556,24 +1759,39 @@ export function criarCenario(P) {
     if (ape) vestir();
     devolverTeclado();
   };
-  /* o pad: cada botão liga a tecla dele enquanto o dedo está nele */
-  for (const b of raiz.querySelectorAll('.cen-cruz button')) {
-    const k = b.dataset.tecla;
-    b.addEventListener('pointerdown', ev => {
-      ev.preventDefault(); ev.stopPropagation();
-      try { b.setPointerCapture(ev.pointerId); } catch (e) {}
-      b.classList.add('apertado'); teclas.add(k); pedir();
-    });
-    const solta = () => { b.classList.remove('apertado'); teclas.delete(k); };
-    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(t, solta);
-    b.addEventListener('contextmenu', ev => ev.preventDefault());
+  /* O JOYSTICK: o pino segue o dedo (ou o mouse) dentro do círculo; a
+     direção é a da tela (pra cima é pra frente), a força é o quanto ele
+     saiu do meio (com uma folga no meio, pra o dedo parado não andar), e
+     da borda pra fora ele corre */
+  const joyEl = $('.cen-joy'), pino = $('.cen-joy-pino');
+  const joy = { ativo: false, id: null, x: 0, y: 0, m: 0, borda: false };
+  function mexerJoy(ev) {
+    const r = joyEl.getBoundingClientRect(), R = r.width / 2, lim = R - 12;
+    const ex = ev.clientX - (r.left + R), ey = ev.clientY - (r.top + R), d = Math.hypot(ex, ey);
+    const f = Math.min(1, d / lim), k = d > lim ? lim / d : 1;
+    pino.style.transform = `translate(${(ex * k).toFixed(1)}px, ${(ey * k).toFixed(1)}px)`;
+    joy.x = d ? ex / d : 0; joy.y = d ? ey / d : 0;
+    joy.m = f < 0.18 ? 0 : Math.min(1, (f - 0.18) / 0.7);
+    joy.borda = f > 0.9;
+    joyEl.classList.toggle('correndo', joy.borda);
   }
-  $('.cen-correr').addEventListener('pointerdown', ev => {
+  function soltarJoy(ev) {
+    if (ev && ev.pointerId !== joy.id) return;
+    joy.ativo = false; joy.id = null; joy.x = joy.y = joy.m = 0; joy.borda = false;
+    pino.style.transform = '';
+    joyEl.classList.remove('ativo', 'correndo');
+  }
+  joyEl.addEventListener('pointerdown', ev => {
     ev.preventDefault(); ev.stopPropagation();
     if (!ape) return;
-    ape.correr = !ape.correr;
-    $('.cen-correr').setAttribute('aria-pressed', String(ape.correr));
+    try { joyEl.setPointerCapture(ev.pointerId); } catch (e) {}
+    joy.ativo = true; joy.id = ev.pointerId;
+    joyEl.classList.add('ativo');
+    mexerJoy(ev); pedir();
   });
+  joyEl.addEventListener('pointermove', ev => { if (joy.ativo && ev.pointerId === joy.id) { ev.preventDefault(); mexerJoy(ev); } });
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) joyEl.addEventListener(t, soltarJoy);
+  joyEl.addEventListener('contextmenu', ev => ev.preventDefault());
 
   /* ======================================================
      OS BOTÕES
@@ -1584,8 +1802,9 @@ export function criarCenario(P) {
     qualidade = selQ.value;
     try { localStorage.setItem('cenario-qualidade', qualidade); } catch (e) {}
     ajustarTela();
-    /* a pé: volta pro mesmo lugar, virado pro mesmo lado, depois de remontar */
-    if (ape) voltarAPe = { x: ape.x, z: ape.z, az: orb.az };
+    /* a pé: volta pro mesmo lugar, virado pro mesmo lado e com o mesmo
+       zoom, depois de remontar */
+    if (ape) voltarAPe = { x: ape.x, z: ape.z, y: ape.y, az: orb.az, vao: ape.vao };
     /* o chão muda de resolução: remonta a praça (o forno junta de novo) */
     if (montado) montar(P.cidade(), P.modo());
   };
@@ -1650,6 +1869,9 @@ export function criarCenario(P) {
            /* pro teste: a câmera num lugar */
            olhar(x, z, dist, el, az) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; pedir(); },
            /* pro teste: a pé */
-           aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, get estado() { return ape && { x: ape.x, z: ape.z, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
-                  get grade() { return grade; }, get povo() { return povo; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
+           aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, levar: levarPara,
+                  /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */
+                  mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
+                  get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
+                  get grade() { return grade; }, get sub() { return sub; }, get povo() { return povo; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
 }

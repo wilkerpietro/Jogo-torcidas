@@ -64,6 +64,15 @@
    parte, que quem mostra pode esconder), os decalques com texto (o
    letreiro, as placas das salas, os escudos e as faixas: quem desenha
    o texto é quem mostra) e a planta baixa em retângulos.
+
+   A PASSAGEM (25/09/2026). O boneco que anda a pé no cenário 3D da
+   planta bate em toda a mobília, e a folha das portas das salas da
+   frente abre pra dentro, com 1,5 m: o que fica logo depois da ponta
+   dela vira parede. Na secretaria a mesa e as cadeiras de quem chega
+   foram pro lado oposto ao da folha, e no banheiro o box ficou 0,90 ×
+   1,25 m — os dois tinham passagem de 55 cm. `conferir_passagem.mjs`
+   (em ferramentas/planta_html) prova que em toda sede dos três mapas
+   um corpo de 70 cm entra em todo cômodo; mexeu na mobília, rode ele.
    ========================================================= */
 import { Construtor, METRO, arSplit } from './construtor3d.js';
 
@@ -724,14 +733,21 @@ const MOBILIA = {
   secretaria(ctx, Q) {
     const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
     /* a mesa de atendimento de frente pra porta: quem trabalha fica
-       entre ela e a fachada, quem chega senta do lado de cá */
-    const m0 = Math.max(p0 + 0.9, W * 0.55 - 0.75), m1 = Math.min(W - 0.25, m0 + 1.5);
-    mesa(ctx, Q, m0, m1, D - 1.25, D - 0.55, 0.75, MADEIRA_CLARA, '#6b6f73');
-    computador(ctx, Q, m0 + 0.45, D - 1.1, PISO + 0.75, '+t');
-    papeis(ctx, Q, m1 - 0.35, D - 0.95, PISO + 0.75);
-    cadeiraEscritorio(ctx, Q, (m0 + m1) / 2, D - 0.32, '+t');
-    cadeira(ctx, Q, m0 + 0.35, D - 1.72, '-t', '#2d62c8');
-    cadeira(ctx, Q, m1 - 0.35, D - 1.72, '-t', '#2d62c8');
+       entre ela e a fachada, quem chega senta do lado de cá. A FOLHA DA
+       PORTA abre pra dentro, presa do lado esquerdo, e a ponta dela
+       para a 1,5 m da porta: a mesa e as duas cadeiras de quem chega
+       vão pro lado direito, a um metro da ponta da folha (quando as
+       cadeiras ficavam junto dela, o caminho pro fundo da sala era de
+       55 cm), e atrás da mesa ficam 70 cm pra quem trabalha */
+    const ponta = Q.pc - Q.pw / 2 + 0.26;
+    const m1 = W - 0.25, m0 = Math.max(ponta + 0.8, m1 - 1.5);
+    mesa(ctx, Q, m0, m1, D - 1.4, D - 0.7, 0.75, MADEIRA_CLARA, '#6b6f73');
+    computador(ctx, Q, m0 + 0.45, D - 1.25, PISO + 0.75, '+t');
+    papeis(ctx, Q, m1 - 0.35, D - 1.1, PISO + 0.75);
+    cadeiraEscritorio(ctx, Q, (m0 + m1) / 2, D - 0.36, '+t');
+    const c0 = Math.max(m0 + 0.35, ponta + 1.0 + 0.21);
+    cadeira(ctx, Q, c0, D - 1.87, '-t', '#2d62c8');
+    if (m1 - 0.35 - c0 > 0.6) cadeira(ctx, Q, m1 - 0.35, D - 1.87, '-t', '#2d62c8');
     arquivo(ctx, Q, 0.08, 0.58, D - 0.55, D - 0.08, '-t');
     estanteAco(ctx, Q, 0.05, 0.45, 1.75, Math.min(D - 0.7, 2.75), 1.9, 5, (i, a0, a1, b0, b1, y) => {
       const cores = ['#1f4fb0', '#c8342b', '#1f7a3a', '#e0a52a', '#5a5f66'];
@@ -760,8 +776,11 @@ const MOBILIA = {
   },
   banheiro(ctx, Q) {
     const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
-    /* dois boxes contra a fachada, com a divisória e a porta de alumínio */
-    const bx = 1.0, t0 = D - 1.45, fim = W, ini = W - 2 * bx;
+    /* dois boxes contra a fachada, com a divisória e a porta de alumínio:
+       0,90 × 1,25 m (eram 1,00 × 1,45 — a quina do box ficava a 65 cm da
+       ponta da folha da porta, que abre pra dentro, e o caminho pros
+       mictórios era de raspão) */
+    const bx = 0.9, t0 = D - 1.25, fim = W, ini = W - 2 * bx;
     for (let i = 0; i < 2; i++) {
       const a = ini + i * bx;
       vaso(ctx, Q, a + bx / 2, D - 0.42, '+t');

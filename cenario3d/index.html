@@ -2980,7 +2980,9 @@ function pecasDoCenario() {
     const it = { tipo: 'quadraNova', q, pol: retPts(q), bb: { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1 } };
     poe('equipamento', it, g => temModelo(q) ? objetoDoEquipNovo(q, g) : objetoDeEstudo(q, g));
   }
-  for (const it of estacoes) poe('metro', it, g => entradaDaEstacao(it.est, g));
+  /* o metrô inteiro: a entrada na rua e a estação embaixo (o mezanino, a
+     plataforma, o trem parado), que o boneco a pé desce pra ver */
+  for (const it of estacoes) poe('metro', it, g => objetoDaEstacao(it, g));
   for (const it of porticos) poe('portico', it, g => objetoDoPortico(it.p, g));
   for (const e of estadios) poe('estadio', e, g => objetoDoEstadio(e.dx, e.dy, g));
   for (const p of pecasSoltas) if (!p.somePelaProposta) poe(p.k === 'poste' ? 'poste' : 'prop', p, g => objetoDoProp(p, g));
@@ -3323,6 +3325,10 @@ function apiDoCenario() {
       const a = costa(-PRAIA_A_MAIS), r = costa(K.PRAIA);
       return a.length > 1 && r.length > 1 ? { agua: linha(a), areia: linha(r) } : null;
     },
+    /* o metrô: de cada estação, o que o boneco a pé precisa pra descer
+       (metro3d.js, `andar`: o poço, a caixa, a borda da plataforma, os
+       braços das catracas e as alturas dos níveis) */
+    metro: () => estacoes.map(it => it.planta.andar),
     /* a lagoa (só na praça de lagoa): o contorno da água, a ilhota e o
        trapiche — o que o boneco não atravessa e onde ele pisa */
     lagoa() {
