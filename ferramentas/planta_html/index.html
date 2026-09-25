@@ -585,6 +585,9 @@ function nomesDosEstadios() {
 const temPraia = () => { const c = infoDaCidade(cidade); return !c || !!c.temPraia; };
 /* a praça de rio ou lagoa: a lagoa no lugar da praia e do mar */
 const temLagoa = () => { const c = infoDaCidade(cidade); return !!(c && c.temLagoa); };
+/* A VEGETAÇÃO EM VOLTA DA CIDADE: no Nordeste, o mato claro e seco de
+   hoje; nas outras regiões, a mata verde. Sem o dado, fica o mato de hoje */
+const temMata = () => { const c = infoDaCidade(cidade); return !!c && c.regiao !== 'Nordeste'; };
 function montarDerivados() {
   cobertoPelaProposta = PROP.coberto;
   fav0 = PROP.favelaDeHoje;
@@ -699,6 +702,49 @@ const fechado = (pts, xFim) => pts.concat([[xFim, pts[pts.length - 1][1]], [xFim
    d'água e junco; no raso, aguapé boiando; um trapiche de madeira com a
    canoa amarrada, no meio da cidade; uma ilhota; e a mata na margem de
    lá. É desenho fixo (seno e hash, sem sorteio): sai igual toda vez. */
+/* A MATA: a copa das árvores vista de cima, num ladrilho de 2.400
+   unidades (124 m) que se repete sem emenda — a copa que passa da borda
+   dá a volta e aparece do outro lado. Cada copa tem a sombra pro sudeste
+   e o brilho pro noroeste (o sol do mapa), e as de baixo cobrem as de
+   cima. É desenho fixo (semente própria), feito uma vez. */
+let PADRAO_MATA = null;
+function padraoMata() {
+  if (PADRAO_MATA) return PADRAO_MATA;
+  const T = 1024, U = 2400, k = T / U;
+  const cv2 = document.createElement('canvas'); cv2.width = cv2.height = T;
+  const c = cv2.getContext('2d');
+  c.fillStyle = '#2c4424'; c.fillRect(0, 0, T, T);
+  let est = 71317;
+  const rnd = () => {                                                    // mulberry32
+    est = (est + 0x6D2B79F5) >>> 0; let t = est;
+    t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const TONS = [['#34522b', '#4d6f3b'], ['#3b5c2f', '#557a41'], ['#44672f', '#608a45'], ['#2f4b27', '#466838'],
+                ['#4a6d35', '#6a9150'], ['#3a5a35', '#557a4c'], ['#526f2f', '#6f9044']];
+  const copas = [];
+  for (let n = 0; n < 1150; n++) {
+    const r = (28 + rnd() * 46) * k;
+    copas.push({ x: rnd() * T, y: rnd() * T, r, tom: TONS[Math.floor(rnd() * TONS.length)] });
+  }
+  copas.sort((a, b) => a.y - b.y);
+  const copa = (x, y, r, [corpo, luz]) => {
+    c.fillStyle = 'rgba(18,30,14,.55)'; c.beginPath(); c.arc(x + r * 0.22, y + r * 0.28, r, 0, 7); c.fill();
+    c.fillStyle = corpo; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    c.fillStyle = luz; c.globalAlpha = 0.55; c.beginPath(); c.arc(x - r * 0.28, y - r * 0.3, r * 0.55, 0, 7); c.fill();
+    c.globalAlpha = 1;
+  };
+  for (const p of copas)
+    for (const dx of [-T, 0, T]) for (const dy of [-T, 0, T]) {
+      const x = p.x + dx, y = p.y + dy;
+      if (x + p.r * 1.3 < 0 || x - p.r > T || y + p.r * 1.3 < 0 || y - p.r > T) continue;
+      copa(x, y, p.r, p.tom);
+    }
+  PADRAO_MATA = ctx.createPattern(cv2, 'repeat');
+  PADRAO_MATA.setTransform(new DOMMatrix([1 / k, 0, 0, 1 / k, 0, 0]));
+  return PADRAO_MATA;
+}
+
 let LAGOA = null;
 function montarLagoa() {
   const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];      // 1 px do mapa em unidades
@@ -795,15 +841,20 @@ function desenhar() {
   const ve = b => b.x1 >= vis.x0 && b.x0 <= vis.x1 && b.y1 >= vis.y0 && b.y0 <= vis.y1;
   const px = v => v / s;                                    // v pixels de tela, em unidades de mundo
   const prop = estado.modo !== 'atual';
+  /* no Nordeste o mato claro de hoje; nas outras regiões, a mata (o "Jogo
+     hoje" fica como o jogo é) */
+  const mata = prop && temMata();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = COR.mato; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = mata ? '#2c4424' : COR.mato; ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(dpr * s, 0, 0, dpr * s, -dpr * s * ox, -dpr * s * oy);
+  if (mata) { ctx.fillStyle = padraoMata(); ctx.fillRect(vis.x0, vis.y0, vis.x1 - vis.x0, vis.y1 - vis.y0); }
 
-  /* ---- o mato: trilha, moita, beco da favela ---- */
+  /* ---- o mato: trilha, moita, beco da favela (a moita solta é do mato
+     claro: na mata ela some na copa) ---- */
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.strokeStyle = COR.trilha; ctx.lineWidth = 16;
   for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
-  for (const m of K.MOITAS) {
+  if (!mata) for (const m of K.MOITAS) {
     if (m.x + m.r < vis.x0 || m.x - m.r > vis.x1 || m.y + m.r < vis.y0 || m.y - m.r > vis.y1) continue;
     if (prop && somePelaProposta(m.x, m.y)) continue;
     ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
@@ -2458,6 +2509,7 @@ function notasDaProposta() {
   <ul>
     <li>${esc(cidade)} é praça de porte <b>${esc(porte.toLowerCase())}</b>: o mapa dela é o ${NOME_MAPA[doPorte]}.${doPorte !== modo ? ` <b>Aqui ela está no ${NOME_MAPA[modo]}</b>, pra comparar.` : ''}</li>
     <li><b>Estádios</b>: ${esc(lista(nomes))}${fora.length ? ` — ${esc(lista(fora))} não ${fora.length > 1 ? 'cabem' : 'cabe'} neste mapa (${fora.length > 1 ? 'são' : 'é'} ${fora.length} a mais que as vagas)` : ''}. ${total && total < vagas ? `A praça tem ${total} e o mapa tem ${vagas} vagas: a que sobra volta a ser quadra de casa (ou mato, se fica fora da grade).` : ''}</li>
+    <li>${temMata() ? `Região ${esc(ci.regiao)}: em volta da cidade, <b>a mata verde</b>.` : ci ? `Região Nordeste: em volta da cidade, <b>o mato claro e seco</b>.` : ''}</li>
     <li>${temLagoa() ? '<b>É de rio e lagoa</b>: a leste, depois da avenida da beira, a margem de capim e a lagoa, com a outra margem à vista, o junco, o aguapé, o trapiche e a ilhota — sem areia e sem mar.' : temPraia() ? 'É do litoral: a orla, a praia e o mar a leste.' : '<b>Não é do litoral</b>: depois da avenida da beira é mato, sem praia e sem mar.'}</li>
     ${PROP.mapa.metro ? `<li>${METRO_P ? `Tem metrô: a ${esc(METRO_P.nome)}, com as estações ${esc(METRO_P.estacoes.map(e => e.nome).join(' e '))}. Na ficha da estação, <b>Pegar o trem</b> faz a viagem e <b>Descer na plataforma</b> põe a câmera lá embaixo.` : '<b>Não tem metrô</b>: as duas entradas somem, e o terreno delas volta a ser casa.'}</li>` : ''}
     <li>Casas por favela — ${esc(porFavela)}.</li>
