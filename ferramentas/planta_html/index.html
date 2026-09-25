@@ -171,6 +171,29 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
   .zoom { top: 10px; }
   .painel { overflow: visible; }
 }
+.bt-modelos { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); background: var(--folha);
+  border: 1px solid var(--linha); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
+.bt-modelos[aria-pressed="true"] { background: var(--acento); color: var(--folha); border-color: var(--acento); }
+.catalogo { min-height: 0; overflow: auto; border-radius: 10px; border: 1px solid var(--linha); background: var(--folha); padding: 12px 14px; }
+.catalogo h2 { margin: 2px 0 4px; font: 700 17px/1.2 var(--f-ui); }
+.catalogo > p { margin: 0 0 6px; font: 13px/1.4 var(--f-texto); color: var(--tinta-2); }
+.catalogo h3 { margin: 16px 0 6px; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+.catalogo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.catalogo button { width: 100%; text-align: left; border: 1px solid var(--linha); background: var(--papel); border-radius: 8px;
+  padding: 8px 10px; cursor: pointer; font: 600 14px/1.2 var(--f-ui); color: var(--tinta); }
+.catalogo button small { display: block; margin-top: 3px; font: 400 12px/1.3 var(--f-texto); color: var(--tinta-2); }
+.catalogo button[aria-pressed="true"] { border-color: var(--acento); box-shadow: inset 4px 0 0 var(--acento); }
+.app.catalogo .mapa, .app.catalogo .notas { display: none; }
+.app.catalogo .corpo { grid-template-columns: 320px minmax(0, 1fr); }
+.app.catalogo .vista3d { aspect-ratio: auto; height: min(64vh, 660px); }
+.ficha .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 2px; }
+.ficha .acoes button { font: 600 13px/1 var(--f-ui); border: 1px solid var(--linha); background: var(--papel); color: var(--tinta);
+  border-radius: 7px; padding: 8px 11px; cursor: pointer; }
+@media (max-width: 860px) {
+  .app.catalogo .corpo { grid-template-columns: minmax(0, 1fr); }
+  .app.catalogo .vista3d { height: 52vh; }
+  .catalogo { max-height: 42vh; }
+}
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -188,6 +211,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
         <button role="tab" id="aba-grande" aria-selected="true">Grande</button>
         <button role="tab" id="aba-atual" aria-selected="false">Jogo hoje</button>
       </div>
+      <button class="bt-modelos" id="bt-modelos" aria-pressed="false">Modelos 3D</button>
       <div class="camadas">
         <label><input type="checkbox" id="c-rotulos" checked> Rótulos</label>
         <label><input type="checkbox" id="c-grade" checked> Grade</label>
@@ -211,6 +235,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
       <div class="dica-hover" id="hover" hidden></div>
       <div class="aviso" id="aviso">Montando a cidade…</div>
     </section>
+    <section class="catalogo" id="catalogo" hidden aria-label="Os modelos 3D ainda fora do mapa"></section>
     <aside class="painel">
       <div class="vista3d" id="vista3d">
         <canvas id="c3d"></canvas>
@@ -240,6 +265,8 @@ import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA } from './js/proposta.js';
 import { montarSede } from './js/sede3d.js';
 import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
 import { montarShopping, montarDelegacia, montarPraca } from './js/equip3d.js';
+import { montarArvore, ESPECIES, FLORA } from './js/arvores3d.js';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -1661,7 +1688,7 @@ function mudarModo(modo, reenquadrar = true) {
   pedirDesenho();
   try { localStorage.setItem('planta-modo', modo); } catch (e) {}
 }
-for (const m of MODOS) $('aba-' + m).onclick = () => mudarModo(m);
+for (const m of MODOS) $('aba-' + m).onclick = () => { abrirCatalogo(false); mudarModo(m); };
 
 function montarLegenda() {
   const itens = [['Casa', COR_LOTE.casa], ['Sobrado', COR_LOTE.sobrado], ['Galpão', COR_LOTE.galpao], ['Prédio', COR_LOTE.predio],
@@ -1730,6 +1757,7 @@ function comodosDaSede(m) {
 }
 const NOTA_DA_SEDE = '<p class="nota">Modelo novo (<code>js/diajogo/sede3d.js</code>): as paredes, as portas e os móveis que bloqueiam a caminhada são os da sede andável da planta, no mesmo lugar e na mesma medida; a textura, as janelas, o telhado e o resto da mobília são novos. A cena do dia de jogo ainda monta a sede em caixa lisa, e a mobília nova ainda não entra na colisão.</p>';
 function fichaDe(it) {
+  if (it && it.tipo === 'modelo') return it.ficha();
   if (!it) return '<p class="sobre">Ficha</p><h2>Clique num lote</h2><p class="nota">Cada lote do mapa abre o imóvel em 3D, montado com o mesmo código do jogo.</p>';
   const chip = it.proposta || it.tipo === 'quadraNova' ? '<span class="chip">proposta</span>' : '';
   const coresDe = T => `<span class="cores">${[T.cor, T.cor2, T.cor3].filter((c, i, a) => c && a.indexOf(c) === i).map(c => `<i style="background:${c}"></i>`).join('')}</span>`;
@@ -1939,6 +1967,81 @@ function selecionar(it, rolar) {
 }
 
 /* ======================================================
+   OS MODELOS 3D: o catálogo do que ainda não entrou no mapa — as
+   árvores de todos os mapas (js/arvores3d.js) e as peças da praia
+   (js/praia3d.js). Cada um abre grande no 3D, com a ficha.
+   ====================================================== */
+const GRUPOS_FLORA = { mata: 'Mata', cerrado: 'Cerrado', caatinga: 'Caatinga', cidade: 'Cidade', praia: 'Praia', sul: 'Sul' };
+const CHAO_FLORA = { mata: '#6b7f4a', cerrado: '#b3a868', caatinga: '#b9a98a', cidade: '#8f9a78', praia: '#dccb9e', sul: '#6f8a52' };
+const MODELOS = [];
+/* os blocos do destino viram malha no grupo 3D; os decalques, placa */
+function malhasDoDestino(destino, g, placas) {
+  for (const [lista, m] of Object.entries(destino)) { const mm = malhaDeBlocos(m, lista); if (mm) g.add(mm); }
+  for (const p of placas || []) placaDoModelo(g, p);
+}
+for (const [id, p] of Object.entries(PECAS_PRAIA)) {
+  MODELOS.push({
+    tipo: 'modelo', id: 'praia-' + id, secao: 'A praia', grupo: p.grupo, nome: p.nome, nota: p.nota, chao: p.chao, semente: 1, info: null,
+    montar(g) { const destino = {}, r = montarPecaDaPraia(id, {}, destino, this.semente); this.info = r.info; malhasDoDestino(destino, g, r.placas); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+    ficha() {
+      const i = this.info;
+      return `<p class="sobre">Modelo 3D · praia · ${esc(this.grupo.toLowerCase())}</p><h2>${esc(this.nome)}</h2>` + linhas([
+        ['Planta', i ? metros(i.larg * M) + ' × ' + metros(i.fundo * M) : '…'], ['Altura', i ? metros(i.altura * M) : '…'],
+        ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)]
+      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
+      `<p class="nota">No tamanho de verdade, em metros; a semente troca as cores, o nome e o que está solto na areia. O texto que muda (o nome, o número do posto) é decalque. <code>js/diajogo/praia3d.js</code>.</p>`;
+    }
+  });
+}
+for (const [id, e] of Object.entries(ESPECIES)) {
+  MODELOS.push({
+    tipo: 'modelo', id: 'arvore-' + id, secao: 'As árvores', grupo: GRUPOS_FLORA[e.grupo], nome: e.nome, nota: e.nota,
+    chao: CHAO_FLORA[e.grupo], semente: 1, info: null,
+    montar(g) { const destino = {}; this.info = montarArvore(id, {}, destino, this.semente); malhasDoDestino(destino, g); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+    ficha() {
+      const i = this.info, onde = Object.entries(FLORA).filter(([, t]) => t[id]).map(([k]) => GRUPOS_FLORA[k].toLowerCase());
+      return `<p class="sobre">Modelo 3D · árvore · ${esc(this.grupo.toLowerCase())}</p><h2>${esc(this.nome)}</h2>` + linhas([
+        ['Altura', i ? metros(i.altura * M) : '…'], ['Copa', i ? metros(i.raio * 2 * M) + ' de largura' : '…'],
+        ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)],
+        ['Vai em', onde.join(', '), true]
+      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
+      `<p class="nota">A mesma espécie muda com a semente: outro galho, outra copa, outro tamanho (±12%). A copa é de cachos de cartão recortado, com a luz de um volume (a normal sai do centro da copa); o tronco é o tubo varrido com a casca da espécie. <code>js/diajogo/arvores3d.js</code>.</p>`;
+    }
+  });
+}
+function montarCatalogo() {
+  const secoes = [...new Set(MODELOS.map(m => m.secao))];
+  $('catalogo').innerHTML = `<h2>Modelos 3D</h2><p>O que ainda não entrou no mapa: cada peça abre grande no 3D, com a ficha.</p>` +
+    secoes.map(sec => {
+      const doSec = MODELOS.filter(m => m.secao === sec), grupos = [...new Set(doSec.map(m => m.grupo))];
+      return `<h3 style="font-size:13px;color:var(--tinta)">${esc(sec)}</h3>` + grupos.map(gr => `<h3>${esc(gr)}</h3><ul>` +
+        doSec.filter(m => m.grupo === gr).map(m => `<li><button data-modelo="${m.id}" aria-pressed="false">${esc(m.nome)}<small>${esc(m.nota)}</small></button></li>`).join('') + '</ul>').join('');
+    }).join('');
+}
+function marcarNoCatalogo() {
+  for (const b of $('catalogo').querySelectorAll('button[data-modelo]')) b.setAttribute('aria-pressed', String(!!estado.sel && estado.sel.id === b.dataset.modelo));
+}
+function abrirCatalogo(sim) {
+  const app = document.querySelector('.app');
+  if (app.classList.contains('catalogo') === sim) return;
+  app.classList.toggle('catalogo', sim);
+  $('catalogo').hidden = !sim;
+  $('bt-modelos').setAttribute('aria-pressed', String(sim));
+  if (sim) {
+    if (!$('catalogo').childElementCount) montarCatalogo();
+    if (!estado.sel || estado.sel.tipo !== 'modelo') selecionar(MODELOS[0]);
+    marcarNoCatalogo();
+  } else if (estado.sel && estado.sel.tipo === 'modelo') selecionar(null);
+}
+$('bt-modelos').onclick = () => abrirCatalogo(!document.querySelector('.app').classList.contains('catalogo'));
+$('catalogo').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-modelo]');
+  if (!b) return;
+  selecionar(MODELOS.find(m => m.id === b.dataset.modelo));
+  marcarNoCatalogo();
+});
+
+/* ======================================================
    O 3D
    ====================================================== */
 const texturas = {}, materiais = {};
@@ -1958,9 +2061,19 @@ function material(folha) {
      só se desenha de frente: de cima, o teto e a parede do lado de cá somem */
   if (folha === 'metro_sub') materiais[folha] = new THREE.MeshLambertMaterial({ map: textura('metro'), vertexColors: true, side: THREE.FrontSide });
   else if (folha === 'vidros') materiais[folha] = new THREE.MeshLambertMaterial({ color: '#bcd6e0', transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false });
+  /* a folhagem (o cartão da copa e a fronde): só a face da frente, que o
+     cartão vem nas duas, cada uma com a normal de fora da copa */
+  else if (folha === 'folhagem') materiais[folha] = new THREE.MeshLambertMaterial({
+    map: textura('vegetacao'), vertexColors: true, side: THREE.FrontSide, alphaTest: 0.45, alphaToCoverage: true });
+  /* a rede do vôlei: a folha da vegetação, mas transparente de verdade (e
+     não recortada) — a malha fina, na média do mipmap, fica abaixo de
+     qualquer limiar: recortada, ou some ou vira faixa preta; misturada,
+     de longe ela é o véu escuro que a rede é */
+  else if (folha === 'rede') materiais[folha] = new THREE.MeshLambertMaterial({
+    map: textura('vegetacao'), vertexColors: true, side: THREE.DoubleSide, transparent: true, depthWrite: false });
   else materiais[folha] = new THREE.MeshLambertMaterial({
     map: textura(folha), vertexColors: true, side: THREE.DoubleSide,
-    alphaTest: folha === 'grades' ? 0.08 : 0, alphaToCoverage: folha === 'grades' });
+    alphaTest: folha === 'grades' ? 0.08 : folha === 'vegetacao' ? 0.45 : 0, alphaToCoverage: folha === 'grades' || folha === 'vegetacao' });
   return materiais[folha];
 }
 function malhaDeBlocos(blocos, folha) {
@@ -1969,8 +2082,13 @@ function malhaDeBlocos(blocos, folha) {
   g.setAttribute('position', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'pos'), 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'uv'), 2));
   g.setAttribute('color', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'cor'), 3));
-  g.computeVertexNormals();
+  /* a folhagem traz a normal dela (a de fora da copa); o resto, a da face */
+  if (blocos.every(b => b.nor)) g.setAttribute('normal', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'nor'), 3));
+  else g.computeVertexNormals();
   const m = new THREE.Mesh(g, material(folha));
+  /* o que é recortado (a folha, a grade, a rede) faz a sombra recortada */
+  if (folha === 'folhagem' || folha === 'vegetacao' || folha === 'grades' || folha === 'rede')
+    m.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: textura(folha === 'folhagem' || folha === 'rede' ? 'vegetacao' : folha), alphaTest: 0.45 });
   /* o subsolo não pega a sombra da rua, e o vidro não faz sombra */
   m.castShadow = folha !== 'metro_sub' && folha !== 'vidros'; m.receiveShadow = folha !== 'vidros' && folha !== 'metro_sub';
   return m;
@@ -2218,6 +2336,7 @@ $('c-telhado').onchange = ev => { verTelhado = ev.target.checked; vista.telhado(
 $('ficha').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-acao]');
   const A = estado.sel;
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'semente') { A.semente++; selecionar(A); return; }
   if (!b || !A || A.tipo !== 'estacao') return;
   if (b.dataset.acao === 'viajar') {
     const B = estacoes.find(x => x.est === outraDe(A.est));
@@ -2267,6 +2386,18 @@ function texturaPlaca(texto, tinta, fundo, razao, faixa) {
   const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
 }
+/* o letreiro PINTADO direto na peça (o nome do barco): só a letra, sem
+   placa em volta */
+function texturaPintada(texto, tinta, razao) {
+  const H = 128, W = Math.round(H * Math.min(8, Math.max(1.2, razao)));
+  const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+  const c = cv2.getContext('2d'), fonte = t => `bold ${t}px "Arial Narrow", Arial, sans-serif`;
+  let tam = 100; c.font = fonte(tam);
+  while (tam > 18 && c.measureText(texto).width > W - 12) { tam -= 3; c.font = fonte(tam); }
+  c.fillStyle = tinta; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(texto, W / 2, H / 2 + 4);
+  const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
 /* o brasão da Polícia Civil: o escudo azul-marinho de borda dourada, a
    estrela e o nome */
 function texturaBrasao(p) {
@@ -2293,6 +2424,7 @@ function placaDoModelo(g, p) {
   if (p.tipo === 'escudo') placaNoMundo(g, lug, texturaEscudo(p), true);
   else if (p.tipo === 'logo') placaNoMundo(g, lug, texturaEscudo({ forma: 'bola', cor: p.fundo, texto: p.texto, corTexto: p.tinta }), true);
   else if (p.tipo === 'brasao') placaNoMundo(g, lug, texturaBrasao(p), true);
+  else if (p.tipo === 'pintado') placaNoMundo(g, lug, texturaPintada(p.texto, p.tinta, p.larg / p.alt), true);
   else placaNoMundo(g, lug, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, p.tipo === 'faixa'));
 }
 /* A ESTAÇÃO DO METRÔ: a entrada na rua e a estação inteira embaixo (o
@@ -2591,6 +2723,7 @@ function criarVista(canvas) {
         else if (it.tipo === 'espaco') objetoDoEspaco(it, grupo);
         else if (it.tipo === 'estacao') objetoDaEstacao(it, grupo);
         else if (it.tipo === 'estadio') objetoDoEstadio(it.dx, it.dy, grupo);
+        else if (it.tipo === 'modelo') it.montar(grupo);
         else if (it.tipo === 'quadraNova') {
           const e = it.q.equip;
           if (e && temModelo(it.q)) objetoDoEquipNovo(it.q, grupo);
@@ -2629,6 +2762,7 @@ function criarVista(canvas) {
       const sc = sol.shadow.camera, e = raio * 1.5;
       sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.near = 1; sc.far = raio * 8 + tam.y * 2; sc.updateProjectionMatrix();
       cores();
+      if (it && it.chao) chao.material.color.set(it.chao);
       $('carregando3d').hidden = true;
       pedir();
   }
@@ -2721,7 +2855,7 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
   get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; },
-  ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista };
+  ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo };
 
 /* ======================================================
    AS NOTAS DA PROPOSTA

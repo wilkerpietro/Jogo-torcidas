@@ -341,6 +341,46 @@ export function Construtor(folha) {
            get triangulos() { return pos.length / 9; }, pos, uv, cor, folha };
 }
 
+/* O MODELO SOLTO NO MUNDO (a árvore, o quiosque): as listas montadas em
+   metros em volta da origem — um Construtor, ou a folhagem, que traz a
+   normal dela — viram blocos de mundo em (x, z), girados de `giro` e na
+   `escala`; a normal gira junto */
+export function noMundo(listas, destino, onde = {}) {
+  const x0 = onde.x || 0, z0 = onde.z || 0, y0 = onde.y || 0, k = onde.escala || 1;
+  const c = Math.cos(onde.giro || 0), s = Math.sin(onde.giro || 0);
+  for (const [lista, C] of Object.entries(listas)) {
+    const p = C.pos, n = p.length / 3;
+    if (!n) continue;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const lx = p[3 * i] * k, ly = p[3 * i + 1] * k, lz = p[3 * i + 2] * k;
+      pos[3 * i] = x0 + (lx * c - lz * s) * METRO;
+      pos[3 * i + 1] = y0 + ly * METRO;
+      pos[3 * i + 2] = z0 + (lx * s + lz * c) * METRO;
+    }
+    const b = { pos, uv: new Float32Array(C.uv), cor: new Float32Array(C.cor) };
+    if (C.nor && C.nor.length === p.length) {
+      const q = C.nor, nor = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const nx = q[3 * i], nz = q[3 * i + 2];
+        nor[3 * i] = nx * c - nz * s; nor[3 * i + 1] = q[3 * i + 1]; nor[3 * i + 2] = nx * s + nz * c;
+      }
+      b.nor = nor;
+    }
+    (destino[lista] = destino[lista] || []).push(b);
+  }
+}
+/* os decalques de texto do modelo solto, no mesmo lugar do mundo */
+export function placasNoMundo(placas, onde = {}) {
+  const x0 = onde.x || 0, z0 = onde.z || 0, y0 = onde.y || 0, k = onde.escala || 1;
+  const c = Math.cos(onde.giro || 0), s = Math.sin(onde.giro || 0);
+  return placas.map(p => {
+    const lx = p.x * k, lz = p.z * k;
+    return { ...p, x: x0 + (lx * c - lz * s) * METRO, y: y0 + p.y * k * METRO, z: z0 + (lx * s + lz * c) * METRO,
+             ox: p.nx * c - p.nz * s, oz: p.nx * s + p.nz * c, larg: p.larg * k * METRO, alt: p.alt * k * METRO };
+  });
+}
+
 /* a mureta em volta de uma laje: face de fora (continua a parede), face
    de dentro e o capeamento em cima. `pts` é o piso, no mesmo sentido
    de sempre (frente-esquerda → frente-direita → fundo). */
