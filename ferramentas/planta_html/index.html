@@ -745,6 +745,204 @@ function padraoMata() {
   return PADRAO_MATA;
 }
 
+/* A PRAIA (as praças do litoral, nos três mapas). Da avenida pro mar:
+   - o calçadão de pedra portuguesa, com a onda preta e branca;
+   - os coqueiros na beira do calçadão;
+   - os quiosques, com o deck de madeira e as mesinhas de guarda-sol;
+   - a areia: guarda-sol com a canga do lado, barraca, o posto de
+     salva-vidas com a bandeira e a quadra de vôlei;
+   - a areia molhada e a espuma na linha d'água;
+   - o mar: o raso mais claro, as linhas de onda e os barcos (jangada de
+     vela e barco de pesca com a esteira).
+   O que é da praia de cidade (calçadão, coqueiro, quiosque, guarda-sol,
+   barraca, posto, quadra) vai só onde a avenida da beira passa; a onda,
+   a espuma e o raso vão na costa inteira. A faixa de areia é a da
+   planta (12,5 m): a posição de cada coisa é a distância pra linha
+   d'água, na horizontal, como a própria faixa. Desenho fixo (hash, sem
+   sorteio), montado uma vez por trecho de avenida. */
+const PRAIAS = new Map();
+function montarPraia(ya, yb) {
+  const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
+  const xc = y => K.pxm(K.xCosta((y - y00) / u), 0)[0];                 // a linha d'água
+  const larg = K.PRAIA * u;                                              // a faixa de areia
+  const rumo = y => Math.atan2(16, xc(y + 8) - xc(y - 8));               // o ângulo da costa (o x local corre ao longo dela)
+  const Y0 = K.pxm(0, -420)[1], Y1 = K.pxm(0, 1260)[1];
+  ya = Math.max(Y0, ya); yb = Math.min(Y1, yb);
+  const h = (...n) => { let v = 2166136261; for (const x of n) v = Math.imul(v ^ Math.round(x * 7 + 13), 16777619); v ^= v >>> 13; v = Math.imul(v, 2246822507); v ^= v >>> 16; return ((v >>> 0) % 100000) / 100000; };
+  const linha = (d, y0 = Y0, y1 = Y1, passo = 16) => { const pts = []; for (let y = y0; y <= y1; y += passo) pts.push([xc(y) + d, y]); return pts; };
+  /* as linhas de onda: pedaços de crista paralelos à praia, cada vez mais
+     fracos pro fundo; e a espuma na linha d'água, contínua */
+  const ondas = [];
+  [[30, 8, 0.9], [82, 6, 0.72], [150, 5, 0.52], [245, 4, 0.36]].forEach(([d, w, a], n) => {
+    for (let y = Y0 + h(n, 1) * 200, k = 0; y < Y1; k++) {
+      const l = 140 + h(n, k, 2) * 260, pts = [];
+      for (let t = 0; t <= l; t += 14) { const yy = Math.min(Y1, y + t); pts.push([xc(yy) + d + 7 * Math.sin(yy / 47 + n * 1.7 + k), yy]); }
+      ondas.push({ pts, w, a });
+      y += l + 50 + h(n, k, 3) * 190;
+    }
+  });
+  const espuma = []; for (let y = Y0; y <= Y1; y += 12) espuma.push([xc(y) + 3 + 4 * Math.sin(y / 31) + 2 * Math.sin(y / 11 + 1), y]);
+  /* o calçadão (a faixa de cima da areia) e a onda preta dele */
+  const CALC_P = 40;
+  const calcadao = ya < yb ? linha(-larg, ya, yb, 12).concat(linha(-larg + CALC_P, ya, yb, 12).reverse()) : [];
+  const ondaCalcadao = []; for (let y = ya; y <= yb; y += 6) ondaCalcadao.push([xc(y) - larg + CALC_P / 2 + 11 * Math.sin(y / 23), y]);
+  const lugar = (y, d) => ({ x: xc(y) - d, y, a: rumo(y) });
+  /* os quiosques, a cada 1.000 a 1.400 unidades */
+  const quiosques = [];
+  for (let y = ya + 380, k = 0; y < yb - 300; y += 1000 + h(k, 10) * 400, k++) quiosques.push({ ...lugar(y, larg - CALC_P - 44), k });
+  const longeDe = (lista, y, m) => lista.every(o => Math.abs(o.y - y) > m);
+  /* o posto de salva-vidas e a quadra de vôlei, entre os quiosques */
+  const postos = [];
+  for (let y = ya + 900, k = 0; y < yb - 200; y += 1500 + h(k, 20) * 400, k++) {
+    let yy = y; while (!longeDe(quiosques, yy, 170) && yy < yb - 200) yy += 60;
+    if (yy < yb - 200) postos.push(lugar(yy, 78));
+  }
+  const quadras = [];
+  for (const f of [0.3, 0.68]) {
+    let y = ya + (yb - ya) * f; while ((!longeDe(quiosques, y, 260) || !longeDe(postos, y, 170)) && y < yb - 300) y += 80;
+    if (y < yb - 300 && yb - ya > 1500) quadras.push(lugar(y, 100));
+  }
+  /* o guarda-sol, em grupinhos, fora do quiosque, da quadra e do posto */
+  const TOLDOS = [['#e0443a', '#f4efe6'], ['#2f6fc0', '#f4efe6'], ['#f2b632', '#2a8f5a'], ['#ef7d2a', '#f4efe6'],
+                  ['#7a3fa0', '#f4efe6'], ['#18a0a8', '#f2e36b'], ['#d8323a', '#f2c14e'], ['#3aa05a', '#f4efe6']];
+  const CANGAS = ['#e94f6d', '#f2a33a', '#3f8fd6', '#8e5bc8', '#2fb59a', '#f5d547', '#e8643c'];
+  const sois = [], cangas = [], barracas = [];
+  for (let y = ya + 60, k = 0; y < yb - 40; y += 48 + h(k, 30) * 90, k++) {
+    if (!longeDe(quiosques, y, 95) || !longeDe(quadras, y, 150) || !longeDe(postos, y, 34)) continue;
+    const n = h(k, 31) < 0.2 ? 0 : 1 + Math.floor(h(k, 32) * 3.4);
+    for (let i = 0; i < n; i++) {
+      const d = 46 + h(k, i, 33) * 104, yy = y + (h(k, i, 34) - 0.5) * 50, r = 17 + h(k, i, 35) * 6;
+      const L = lugar(yy, d);
+      sois.push({ ...L, r, cores: TOLDOS[Math.floor(h(k, i, 36) * TOLDOS.length)], giro: h(k, i, 37) * 0.8 });
+      if (h(k, i, 38) < 0.6) cangas.push({ ...lugar(yy + (h(k, i, 39) - 0.5) * 20, Math.max(54, d - 30)), cor: CANGAS[Math.floor(h(k, i, 40) * CANGAS.length)], giro: (h(k, i, 41) - 0.5) * 0.5 });
+    }
+    if (h(k, 42) < 0.1) barracas.push({ ...lugar(y + 30, 64 + h(k, 43) * 70), cor: TOLDOS[Math.floor(h(k, 44) * TOLDOS.length)][0] });
+  }
+  /* os coqueiros, na beira do calçadão */
+  const coqueiros = [];
+  for (let y = ya + 40, k = 0; y < yb - 30; y += 210 + h(k, 50) * 140, k++) {
+    if (h(k, 51) < 0.12 || !longeDe(quiosques, y, 70)) continue;
+    coqueiros.push({ ...lugar(y, larg - CALC_P - 4 - h(k, 52) * 10), r: 32 + h(k, 53) * 10, giro: h(k, 54) * 6.28 });
+  }
+  /* os barcos, no mar, na costa inteira */
+  const barcos = [];
+  for (let k = 0; k < 8; k++) {
+    const y = Y0 + 500 + (Y1 - Y0 - 1000) * (k + h(k, 60) * 0.6) / 8;
+    barcos.push({ x: xc(y) + 420 + h(k, 61) * 1000, y, a: rumo(y) + (h(k, 62) - 0.5) * 1.2, vela: h(k, 63) < 0.55 });
+  }
+  return { linha0: linha(0), areia: linha(-larg).concat(linha(0).reverse()), ondas, espuma, calcadao, ondaCalcadao,
+           quiosques, postos, quadras, sois, cangas, barracas, coqueiros, barcos };
+}
+function desenharPraia(px, vis, ya, yb, X1) {
+  const chave = Math.round(ya) + '|' + Math.round(yb);
+  if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb));
+  const P = PRAIAS.get(chave);
+  const ve = (o, m = 160) => o.x > vis.x0 - m && o.x < vis.x1 + m && o.y > vis.y0 - m && o.y < vis.y1 + m;
+  const linhaMin = w => Math.max(w, px(1));
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  /* o mar: o raso claro na beira, e as linhas de onda (só na água) */
+  ctx.save(); caminho(fechado(P.linha0, X1)); ctx.clip();
+  caminho(P.linha0, false);
+  for (const [w, cor] of [[760, '#467f9a'], [420, '#4f92a8'], [180, '#62a8b6']]) { ctx.strokeStyle = cor; ctx.lineWidth = w; ctx.stroke(); }
+  for (const o of P.ondas) {
+    if (o.pts[o.pts.length - 1][1] < vis.y0 - 50 || o.pts[0][1] > vis.y1 + 50) continue;
+    ctx.strokeStyle = `rgba(255,255,255,${o.a})`; ctx.lineWidth = linhaMin(o.w); caminho(o.pts, false); ctx.stroke();
+  }
+  ctx.restore();
+  /* a areia molhada e a espuma */
+  ctx.save(); caminho(P.areia); ctx.clip();
+  caminho(P.linha0, false); ctx.strokeStyle = '#cbb683'; ctx.lineWidth = 78; ctx.stroke();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.lineWidth = linhaMin(5); caminho(P.espuma, false); ctx.stroke();
+  /* o calçadão e a onda dele */
+  if (P.calcadao.length) {
+    pol(P.calcadao, '#ece8de');
+    ctx.strokeStyle = '#2d2d2b'; ctx.lineWidth = linhaMin(4.5); caminho(P.ondaCalcadao, false); ctx.stroke();
+  }
+  /* uma coisa girada no rumo da costa: o x local corre ao longo da praia,
+     o y local aponta pra terra */
+  const girado = (o, f) => { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a); f(); ctx.restore(); };
+  const rect = (x, y, w, h, cor) => { ctx.fillStyle = cor; ctx.fillRect(x - w / 2, y - h / 2, w, h); };
+  /* as cangas, debaixo de tudo */
+  for (const c of P.cangas) if (ve(c)) girado({ ...c, a: c.a + c.giro }, () => { rect(0, 0, 32, 16, c.cor); rect(0, 0, 32, 3.5, 'rgba(255,255,255,.7)'); });
+  /* a quadra de vôlei: as linhas, a rede e os postes */
+  for (const q of P.quadras) if (ve(q, 300)) girado(q, () => {
+    ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = linhaMin(3); ctx.strokeRect(-88, -46, 176, 92);
+    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = linhaMin(2.4); ctx.beginPath(); ctx.moveTo(0, -53); ctx.lineTo(0, 53); ctx.stroke();
+    rect(0, -54, 6, 6, '#3a3a3a'); rect(0, 54, 6, 6, '#3a3a3a');
+  });
+  /* os quiosques: o deck de madeira, as mesinhas de guarda-sol pro lado do
+     mar e o quiosque (o telhado de quatro águas) pro lado do calçadão */
+  for (const q of P.quiosques) if (ve(q, 200)) girado(q, () => {
+    rect(0, 0, 112, 86, '#b48c5c');
+    ctx.strokeStyle = 'rgba(80,55,30,.45)'; ctx.lineWidth = linhaMin(1.2);
+    for (let x = -50; x <= 50; x += 10) { ctx.beginPath(); ctx.moveTo(x, -43); ctx.lineTo(x, 43); ctx.stroke(); }
+    for (const [x, y] of [[-36, -22], [0, -26], [36, -22]]) {
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(x + 4, y + 3, 14, 0, 7); ctx.fill();
+      ctx.fillStyle = '#f4efe6'; ctx.beginPath(); ctx.arc(x, y, 13, 0, 7); ctx.fill();
+      ctx.fillStyle = '#d8453a'; for (let s2 = 0; s2 < 6; s2 += 2) { ctx.beginPath(); ctx.moveTo(x, y); ctx.arc(x, y, 13, s2 * Math.PI / 3, (s2 + 1) * Math.PI / 3); ctx.fill(); }
+    }
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(-30, 8, 66, 40);
+    rect(0, 22, 62, 38, '#c9643e');
+    ctx.strokeStyle = '#8f3f22'; ctx.lineWidth = linhaMin(1.6);
+    ctx.beginPath(); ctx.moveTo(-31, 3); ctx.lineTo(-12, 22); ctx.lineTo(12, 22); ctx.lineTo(31, 3); ctx.moveTo(-31, 41); ctx.lineTo(-12, 22); ctx.moveTo(12, 22); ctx.lineTo(31, 41); ctx.stroke();
+    ctx.strokeRect(-31, 3, 62, 38);
+  });
+  /* o posto de salva-vidas: a cabine vermelha, o telhado branco e a
+     bandeira vermelha e amarela */
+  for (const p of P.postos) if (ve(p)) girado(p, () => {
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(-12, -10, 30, 30);
+    rect(0, 0, 28, 28, '#d6453c'); rect(0, 0, 16, 16, '#f4efe6');
+    ctx.strokeStyle = '#3a3a3a'; ctx.lineWidth = linhaMin(1.5); ctx.beginPath(); ctx.moveTo(-14, -14); ctx.lineTo(-30, -30); ctx.stroke();
+    rect(-36, -30, 12, 8, '#e2352b'); rect(-36, -24, 12, 6, '#f2c14e');
+  });
+  /* o guarda-sol: a sombra na areia e os gomos nas duas cores */
+  for (const g of P.sois) if (ve(g)) { ctx.fillStyle = 'rgba(0,0,0,.17)'; ctx.beginPath(); ctx.ellipse(g.x + g.r * 0.35, g.y + g.r * 0.28, g.r, g.r * 0.85, 0, 0, 7); ctx.fill(); }
+  for (const g of P.sois) if (ve(g)) {
+    ctx.fillStyle = g.cores[1]; ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, 7); ctx.fill();
+    ctx.fillStyle = g.cores[0];
+    for (let s2 = 0; s2 < 8; s2 += 2) { ctx.beginPath(); ctx.moveTo(g.x, g.y); ctx.arc(g.x, g.y, g.r, g.giro + s2 * Math.PI / 4, g.giro + (s2 + 1) * Math.PI / 4); ctx.fill(); }
+    ctx.fillStyle = '#5a5046'; ctx.beginPath(); ctx.arc(g.x, g.y, g.r * 0.12, 0, 7); ctx.fill();
+  }
+  /* a barraca: a lona de duas águas, com a cumeeira */
+  for (const b of P.barracas) if (ve(b)) girado(b, () => {
+    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(-15, -13, 38, 38);
+    rect(0, -9.5, 38, 19, b.cor); rect(0, 9.5, 38, 19, '#f4efe6');
+    ctx.globalAlpha = 0.35; rect(0, 9.5, 38, 19, b.cor); ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = linhaMin(1.2); ctx.strokeRect(-19, -19, 38, 38);
+  });
+  /* o coqueiro: a sombra e as folhas em leque */
+  for (const c of P.coqueiros) if (ve(c)) {
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.arc(c.x + c.r * 0.4, c.y + c.r * 0.3, c.r * 0.9, 0, 7); ctx.fill();
+  }
+  for (const c of P.coqueiros) if (ve(c)) {
+    for (let f = 0; f < 8; f++) {
+      const t = c.giro + f * Math.PI / 4 + (f % 2) * 0.18, r = c.r * (f % 2 ? 0.86 : 1);
+      const cx = Math.cos(t), cy = Math.sin(t), nx = -cy * r * 0.2, ny = cx * r * 0.2;
+      ctx.fillStyle = f % 2 ? '#3f7d36' : '#4d8f3f';
+      ctx.beginPath(); ctx.moveTo(c.x, c.y);
+      ctx.quadraticCurveTo(c.x + cx * r * 0.5 + nx, c.y + cy * r * 0.5 + ny, c.x + cx * r, c.y + cy * r);
+      ctx.quadraticCurveTo(c.x + cx * r * 0.5 - nx, c.y + cy * r * 0.5 - ny, c.x, c.y); ctx.fill();
+    }
+    ctx.fillStyle = '#7a5a2e'; ctx.beginPath(); ctx.arc(c.x, c.y, c.r * 0.14, 0, 7); ctx.fill();
+  }
+  /* os barcos: a jangada de vela e o barco de pesca com a esteira */
+  for (const b of P.barcos) if (ve(b, 200)) girado(b, () => {
+    if (b.vela) {
+      rect(0, 0, 58, 16, '#8a5a36');
+      ctx.strokeStyle = 'rgba(60,35,18,.6)'; ctx.lineWidth = linhaMin(1); for (let y = -5; y <= 5; y += 5) { ctx.beginPath(); ctx.moveTo(-29, y); ctx.lineTo(29, y); ctx.stroke(); }
+      ctx.fillStyle = '#f7f4ec'; ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(24, -30); ctx.lineTo(-18, -26); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = linhaMin(1); ctx.stroke();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = linhaMin(2.5);
+      ctx.beginPath(); ctx.moveTo(-26, -4); ctx.lineTo(-110, -22); ctx.moveTo(-26, 4); ctx.lineTo(-110, 22); ctx.stroke();
+      ctx.fillStyle = '#f2f2ee'; ctx.beginPath(); ctx.moveTo(-26, -10); ctx.lineTo(16, -10); ctx.quadraticCurveTo(34, 0, 16, 10); ctx.lineTo(-26, 10); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#2f5a86'; ctx.lineWidth = linhaMin(2); ctx.stroke();
+      rect(-6, 0, 16, 12, '#2f5a86');
+    }
+  });
+}
+
 let LAGOA = null;
 function montarLagoa() {
   const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];      // 1 px do mapa em unidades
@@ -944,6 +1142,8 @@ function desenhar() {
     if (orla.length > 1) pol(fechado(orla, X1), COR.rua);
     pol(fechado(costa(K.PRAIA), X1), COR.areia);
     pol(fechado(costa(0), X1), COR.mar);
+    /* nos três mapas, a praia de verdade (o "Jogo hoje" fica como o jogo é) */
+    if (bm) desenharPraia(px, vis, bm.pontos[0][1], bm.pontos[bm.pontos.length - 1][1], X1);
   }
   /* ---- o campo de várzea ---- */
   for (const f of K.CAMPOS) {
@@ -2510,7 +2710,7 @@ function notasDaProposta() {
     <li>${esc(cidade)} é praça de porte <b>${esc(porte.toLowerCase())}</b>: o mapa dela é o ${NOME_MAPA[doPorte]}.${doPorte !== modo ? ` <b>Aqui ela está no ${NOME_MAPA[modo]}</b>, pra comparar.` : ''}</li>
     <li><b>Estádios</b>: ${esc(lista(nomes))}${fora.length ? ` — ${esc(lista(fora))} não ${fora.length > 1 ? 'cabem' : 'cabe'} neste mapa (${fora.length > 1 ? 'são' : 'é'} ${fora.length} a mais que as vagas)` : ''}. ${total && total < vagas ? `A praça tem ${total} e o mapa tem ${vagas} vagas: a que sobra volta a ser quadra de casa (ou mato, se fica fora da grade).` : ''}</li>
     <li>${temMata() ? `Região ${esc(ci.regiao)}: em volta da cidade, <b>a mata verde</b>.` : ci ? `Região Nordeste: em volta da cidade, <b>o mato claro e seco</b>.` : ''}</li>
-    <li>${temLagoa() ? '<b>É de rio e lagoa</b>: a leste, depois da avenida da beira, a margem de capim e a lagoa, com a outra margem à vista, o junco, o aguapé, o trapiche e a ilhota — sem areia e sem mar.' : temPraia() ? 'É do litoral: a orla, a praia e o mar a leste.' : '<b>Não é do litoral</b>: depois da avenida da beira é mato, sem praia e sem mar.'}</li>
+    <li>${temLagoa() ? '<b>É de rio e lagoa</b>: a leste, depois da avenida da beira, a margem de capim e a lagoa, com a outra margem à vista, o junco, o aguapé, o trapiche e a ilhota — sem areia e sem mar.' : temPraia() ? 'É do litoral: a leste, a orla com o calçadão de pedra portuguesa e os coqueiros, a praia com os quiosques, o guarda-sol, a barraca, o posto de salva-vidas e a quadra de vôlei, e o mar com a onda e os barcos.' : '<b>Não é do litoral</b>: depois da avenida da beira é mato, sem praia e sem mar.'}</li>
     ${PROP.mapa.metro ? `<li>${METRO_P ? `Tem metrô: a ${esc(METRO_P.nome)}, com as estações ${esc(METRO_P.estacoes.map(e => e.nome).join(' e '))}. Na ficha da estação, <b>Pegar o trem</b> faz a viagem e <b>Descer na plataforma</b> põe a câmera lá embaixo.` : '<b>Não tem metrô</b>: as duas entradas somem, e o terreno delas volta a ser casa.'}</li>` : ''}
     <li>Casas por favela — ${esc(porFavela)}.</li>
   </ul>

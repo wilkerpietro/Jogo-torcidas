@@ -2625,6 +2625,37 @@ O dono pediu que o mato claro em volta do mapa fique só nas praças do Nordeste
 A regra é a região da praça (`regiao` em `dados/cidades.js`); sem o dado, fica o mato claro. As notas da praça dizem qual das duas vale.
 
 
+### 4.41. A praia de verdade: calçadão, quiosque, guarda-sol, barraca e onda
+
+O dono pediu mais detalhe na praia das praças do litoral: quiosque, barraca, guarda-sol, onda e o resto. Como a lagoa (4.39), é desenho do mapa (`montarPraia` e `desenharPraia` em `index.html`). Vale nos três mapas e nas onze praças com `temPraia`. O "Jogo hoje" fica com a praia lisa do jogo.
+
+A faixa de areia continua a da planta: 12,5 m (243 unidades) entre a avenida da beira e a linha d'água. Cada coisa fica a uma distância dessa linha, medida na horizontal, como a própria faixa. O que é girado (quiosque, quadra, barraca, canga, posto, barco) segue o rumo da costa naquela altura. Da avenida pro mar:
+
+- **O calçadão**: os 2 m de cima da areia, em pedra portuguesa clara, com a onda preta no meio, a de Copacabana.
+- **Os coqueiros**: na beira do calçadão, a cada 11 a 18 m, com a sombra e as oito folhas em leque.
+- **Os quiosques**: a cada 50 a 70 m.
+  - O deck de madeira (5,8 × 4,4 m, com as tábuas).
+  - Três mesinhas com guarda-sol vermelho e branco, pro lado do mar.
+  - O quiosque de telhado de quatro águas, pro lado do calçadão.
+- **A areia**:
+  - guarda-sol em grupinhos, de 1,8 a 2,4 m, em oito pares de cores, com a sombra;
+  - canga do lado de seis em cada dez, fora da areia molhada;
+  - uma barraca de lona de duas águas aqui e ali;
+  - o posto de salva-vidas a cada 80 a 100 m (a cabine vermelha, o telhado branco e a bandeira vermelha e amarela);
+  - duas quadras de vôlei por praia (9 × 4,7 m, com a rede e os postes), ao longo da areia.
+
+  O guarda-sol não entra no deck do quiosque, na quadra nem no posto.
+- **A beira d'água**: a areia molhada (2 m mais escura) e a espuma, uma linha branca que ondula.
+- **O mar**:
+  - o raso em três faixas, do turquesa ao azul de sempre;
+  - quatro linhas de crista em pedaços, cada vez mais fracas pro fundo;
+  - oito barcos: a jangada de vela e o barco de pesca com a esteira.
+
+O calçadão, os coqueiros, os quiosques, o guarda-sol, a barraca, o posto e a quadra vão só onde a avenida da beira passa. Pra lá dela, a praia é deserta: só areia, onda e espuma. A onda, o raso e os barcos vão na costa inteira.
+
+É desenho fixo (hash, sem sorteio), montado uma vez por trecho de avenida e desenhado só no que está na tela. De longe, a praia vira uma faixa colorida com o calçadão; de perto, cada guarda-sol tem os gomos, cada quiosque as mesinhas.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -3153,7 +3184,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto (os escudos com o caminho do PNG do jogo) e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia, lagoa ou mato a leste, pela praça, e em volta o mato claro no Nordeste ou a mata nas outras regiões) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta o mato claro no Nordeste ou a mata nas outras regiões) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
 | `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia` e `temLagoa` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) e dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
