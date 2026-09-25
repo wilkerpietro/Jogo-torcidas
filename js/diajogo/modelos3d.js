@@ -933,6 +933,9 @@ function textura(caminho, aniso) {
   const t = new THREE.TextureLoader().load(cam);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = aniso;
+  /* de onde veio: quem junta malhas de vários marcos (o cenário da
+     planta) junta pela folha, não pela textura, que é uma por chamada */
+  t.userData.src = caminho;
   return t;
 }
 

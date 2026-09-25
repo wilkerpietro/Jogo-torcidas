@@ -174,6 +174,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 .bt-modelos { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); background: var(--folha);
   border: 1px solid var(--linha); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
 .bt-modelos[aria-pressed="true"] { background: var(--acento); color: var(--folha); border-color: var(--acento); }
+.bt-cenario { color: var(--folha); background: var(--acento); border-color: var(--acento); }
 .catalogo { min-height: 0; overflow: auto; border-radius: 10px; border: 1px solid var(--linha); background: var(--folha); padding: 12px 14px; }
 .catalogo h2 { margin: 2px 0 4px; font: 700 17px/1.2 var(--f-ui); }
 .catalogo > p { margin: 0 0 6px; font: 13px/1.4 var(--f-texto); color: var(--tinta-2); }
@@ -212,6 +213,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
         <button role="tab" id="aba-atual" aria-selected="false">Jogo hoje</button>
       </div>
       <button class="bt-modelos" id="bt-modelos" aria-pressed="false">Modelos 3D</button>
+      <button class="bt-modelos bt-cenario" id="bt-cenario" title="O mapa inteiro da praça em 3D">Cenário 3D</button>
       <div class="camadas">
         <label><input type="checkbox" id="c-rotulos" checked> Rótulos</label>
         <label><input type="checkbox" id="c-grade" checked> Grade</label>
@@ -343,6 +345,9 @@ const CIDADES = [
 ];
 let cidade = 'São Paulo';
 try { const c = localStorage.getItem('planta-cidade'); if (CIDADES.some(([n]) => n === c)) cidade = c; } catch (e) {}
+/* ?cidade=… (o endereço do cenário) abre nessa praça */
+const PARAMS = new URLSearchParams(location.search);
+if (CIDADES.some(([n]) => n === PARAMS.get('cidade'))) cidade = PARAMS.get('cidade');
 const boasVindas = () => { const [n, a] = CIDADES.find(([k]) => k === cidade) || [cidade, 'A']; return ['BEM-VINDO ' + a, n.toUpperCase()]; };
 const metros = v => (v / M).toLocaleString('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' m';
 
@@ -362,6 +367,20 @@ const COR = {
 /* o lote de muro é terreno baldio: o chão de terra, com o muro riscado na frente */
 const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#b39a70', barraco: '#c98a5a' };
 const COR_FAVELA = { casa: '#d9a066', sobrado: '#c9804e', barraco: '#c98a5a', galpao: '#a88a6a' };
+/* A PALETA DO CHÃO do cenário 3D: as mesmas chaves do desenho, nas cores
+   do chão do jogo (estadio_pintura.js) — o asfalto, a calçada de cimento,
+   a terra do lote, a areia, o mar. `lote` é o chão debaixo de toda casa
+   (a casa em 3D cobre o resto) */
+const COR_CHAO = {
+  mato: '#b9a98a', moita: '#6d7a4c', trilha: '#b39e74', beco: '#5f5d57',
+  rua: '#48484b', avenida: '#414144', eixo: '#d6c26c', calcada: '#a9a597', miolo: '#8b8474',
+  quintal: '#9b8e6f', fundos: '#6f8a52', pracinha: '#b5afa0', areia: '#e3d2a4', mar: '#2e5a75',
+  estadio: '#a39f93', arquibancada: '#8a8780', pista: '#8f8b80', gramado: '#4a8a3c',
+  terreno: '#a89c80', lote: '#87816f'
+};
+/* o chão do mato, por vegetação (o fundo; a mata e o cerrado ainda levam o
+   ladrilho deles por cima) */
+const CHAO_VEG = { mata: '#3c5230', cerrado: '#a8a064', caatinga: '#b9a98a' };
 const COR_PROP = { cacamba: '#2f8f2f', lixeira: '#7f9fb0', saco: '#111', caixa: '#b88a50', cesto: '#d2b53a', barreira: '#e0e0e0',
                    correio: '#c33b27', hidrante: '#d33', balizador: '#e3b21f', espuma: '#e8cf36', delineador: '#e1701f',
                    cone: '#ea6a1c', cinzeiro: '#babcb9', banco: '#8f5d33' };
@@ -684,7 +703,9 @@ function usarMapa(modo) {
 /* ======================================================
    O MAPA
    ====================================================== */
-const cv = $('cv'), ctx = cv.getContext('2d');
+let cv = $('cv'), ctx = cv.getContext('2d');
+/* o que o desenho está pintando agora: nada (a tela), 'chao' ou 'mascara' (o cenário 3D, pintarChao) */
+let pintandoChao = null;
 const mapa = $('mapa');
 const estado = {
   modo: 'atual', s: 0.1, ox: 0, oy: 0, larg: 1, alt: 1, dpr: 1,
@@ -723,7 +744,10 @@ const ret = (r, cor) => { ctx.fillStyle = cor; ctx.fillRect(r.x0, r.y0, r.x1 - r
 
 function costa(dpx, yMin = -Infinity, yMax = Infinity) {
   const pts = [];
-  for (let ypx = -420; ypx <= 1260; ypx += 10) { const p = K.pxm(K.xCosta(ypx) - dpx, ypx); if (p[1] >= yMin && p[1] <= yMax) pts.push(p); }
+  /* no chão do cenário a costa passa da ponta do mapa (reta, como o
+     xCosta segue pra lá das pontas): o mar e a areia vão até a borda */
+  const [ya, yb] = pintandoChao ? [-4000, 5000] : [-420, 1260];
+  for (let ypx = ya; ypx <= yb; ypx += 10) { const p = K.pxm(K.xCosta(ypx) - dpx, ypx); if (p[1] >= yMin && p[1] <= yMax) pts.push(p); }
   return pts;
 }
 const fechado = (pts, xFim) => pts.concat([[xFim, pts[pts.length - 1][1]], [xFim, pts[0][1]]]);
@@ -934,6 +958,7 @@ function montarPraia(ya, yb) {
            quiosques, postos, quadras, sois, cangas, barracas, coqueiros, barcos };
 }
 function desenharPraia(px, vis, ya, yb, X1) {
+  const chao = pintandoChao;
   const chave = Math.round(ya) + '|' + Math.round(yb);
   if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb));
   const P = PRAIAS.get(chave);
@@ -959,6 +984,7 @@ function desenharPraia(px, vis, ya, yb, X1) {
     pol(P.calcadao, '#ece8de');
     ctx.strokeStyle = '#2d2d2b'; ctx.lineWidth = linhaMin(4.5); caminho(P.ondaCalcadao, false); ctx.stroke();
   }
+  if (chao) return;
   /* uma coisa girada no rumo da costa: o x local corre ao longo da praia,
      o y local aponta pra terra */
   const girado = (o, f) => { ctx.save(); ctx.translate(o.x, o.y); ctx.rotate(o.a); f(); ctx.restore(); };
@@ -1107,7 +1133,7 @@ function desenharLagoa(px) {
   /* a ilhota */
   caminho(L.ilha); ctx.strokeStyle = COR.barro; ctx.lineWidth = 26; ctx.stroke();
   ctx.fillStyle = COR.margem; ctx.fill();
-  for (const a of L.arvoresIlha) { ctx.fillStyle = '#2e5b2a'; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
+  if (!pintandoChao) for (const a of L.arvoresIlha) { ctx.fillStyle = '#2e5b2a'; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
   /* o aguapé: folha redonda verde, uma ou outra com a flor lilás */
   for (const folhas of L.aguapes) for (const [x, y, r, flor] of folhas) {
     ctx.fillStyle = '#5b8a3c'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
@@ -1130,10 +1156,14 @@ function desenharLagoa(px) {
   ctx.fillStyle = '#b04a32'; ctx.beginPath(); ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, 7); ctx.fill();
   ctx.fillStyle = '#6b4a30'; ctx.beginPath(); ctx.ellipse(c.x, c.y, c.rx * 0.78, c.ry * 0.55, 0, 0, 7); ctx.fill();
   /* a mata da margem de lá */
-  for (const a of L.mata) { ctx.fillStyle = a.tom ? '#2f5e2b' : '#3a6b33'; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
+  if (!pintandoChao) for (const a of L.mata) { ctx.fillStyle = a.tom ? '#2f5e2b' : '#3a6b33'; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
 }
 
 function desenhar() {
+  /* `chao`: pintando o chão do cenário 3D (só o que é chão, sem rótulo,
+     árvore, carro, poste, volume nem seleção); 'mascara', o mesmo com o
+     mato em magenta — onde o cenário planta o mato */
+  const chao = pintandoChao;
   const { s, ox, oy, dpr } = estado;
   const vis = { x0: ox, y0: oy, x1: ox + estado.larg / s, y1: oy + estado.alt / s };
   const ve = b => b.x1 >= vis.x0 && b.x0 <= vis.x1 && b.y1 >= vis.y0 && b.y0 <= vis.y1;
@@ -1142,9 +1172,10 @@ function desenhar() {
   /* a vegetação da praça: a mata, o cerrado ou o mato seco de hoje (o
      "Jogo hoje" fica como o jogo é) */
   const veg = prop ? vegetacao() : 'caatinga';
-  const padrao = veg === 'mata' ? padraoMata() : veg === 'cerrado' ? padraoCerrado() : null;
+  const padrao = chao === 'mascara' ? null : veg === 'mata' ? padraoMata() : veg === 'cerrado' ? padraoCerrado() : null;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = veg === 'mata' ? '#2c4424' : veg === 'cerrado' ? '#a39d5e' : COR.mato; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.fillStyle = chao === 'mascara' ? COR.mato : chao ? CHAO_VEG[veg] || COR.mato : veg === 'mata' ? '#2c4424' : veg === 'cerrado' ? '#a39d5e' : COR.mato;
+  ctx.fillRect(0, 0, cv.width, cv.height);
   ctx.setTransform(dpr * s, 0, 0, dpr * s, -dpr * s * ox, -dpr * s * oy);
   if (padrao) { ctx.fillStyle = padrao; ctx.fillRect(vis.x0, vis.y0, vis.x1 - vis.x0, vis.y1 - vis.y0); }
 
@@ -1153,7 +1184,7 @@ function desenhar() {
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.strokeStyle = COR.trilha; ctx.lineWidth = 16;
   for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
-  if (!padrao) for (const m of K.MOITAS) {
+  if (!padrao && chao !== 'mascara') for (const m of K.MOITAS) {
     if (m.x + m.r < vis.x0 || m.x - m.r > vis.x1 || m.y + m.r < vis.y0 || m.y - m.r > vis.y1) continue;
     if (prop && somePelaProposta(m.x, m.y)) continue;
     ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
@@ -1193,7 +1224,7 @@ function desenhar() {
     pol(q.pol, COR.calcada);
     if (q.polMiolo.length >= 3) {
       pol(q.polMiolo, COR.miolo);
-      ctx.strokeStyle = '#000'; ctx.lineWidth = px(1); ctx.stroke();
+      if (!chao) { ctx.strokeStyle = '#000'; ctx.lineWidth = px(1); ctx.stroke(); }
     }
     if (q.equip && q.equip.tipo !== 'sede' && !(prop && somemNaProposta.has(q.i + ',' + q.j))) {
       ret(q.equip.area, q.equip.chao || '#9d9a90');
@@ -1234,7 +1265,8 @@ function desenhar() {
   /* ---- a orla: a avenida da beira, a praia e o mar. A praça que não é
      do litoral não tem praia: depois da avenida da beira é mato; a de rio
      ou lagoa tem a lagoa ---- */
-  const X1 = MUNDO.x1 + 200;
+  /* no chão do cenário o mar vai até a borda do ladrilho */
+  const X1 = MUNDO.x1 + (chao ? 100000 : 200);
   if (prop && temLagoa()) desenharLagoa(px);
   else if (!prop || temPraia()) {
     /* no mapa a orla acaba onde a beira-mar acaba */
@@ -1265,7 +1297,7 @@ function desenhar() {
     ctx.setLineDash([18, 14]); ctx.strokeStyle = COR.eixo; ctx.lineWidth = 1.6; caminho(av.pontos, false); ctx.stroke(); ctx.setLineDash([]);
   }
   /* ---- os pórticos, por cima da estrada ---- */
-  if (prop) for (const it of porticos) {
+  if (prop && !chao) for (const it of porticos) {
     const { noMundo } = eixosDoPortico(it.p), a = PORTICO.xp, b = PORTICO.pilar;
     ctx.strokeStyle = '#6a5440'; ctx.lineWidth = 1.2 * M;
     caminho([noMundo(-a - b, 0), noMundo(a + b, 0)], false); ctx.stroke();
@@ -1274,17 +1306,17 @@ function desenhar() {
   }
 
   /* ---- os equipamentos: as peças em planta ---- */
-  for (const e of equipamentos) {
+  if (!chao) for (const e of equipamentos) {
     if (!ve(e.bb) || (prop && e.somePelaProposta)) continue;
     if (e.montagem) desenharSede(e.sede, e.montagem, px);
     else desenharPecas(e.q.equip.pecas);
   }
-  for (const q of K.QUADRAS) for (const pr of q.pracinhas || []) desenharPecas(pr.pecas);
+  if (!chao) for (const q of K.QUADRAS) for (const pr of q.pracinhas || []) desenharPecas(pr.pecas);
   /* ---- os marcos, o atacarejo e as torres: o chão da fatia e o volume ---- */
   for (const m of prop ? marcosDeHoje().concat(marcosNovos) : marcos) {
     if (!ve(m.bb)) continue;
     if (m.atacadex) pol(m.pol, COR.rua);
-    for (const v of m.volumes || []) {
+    if (!chao) for (const v of m.volumes || []) {
       if (v.base) continue;
       ret(v, v.alt > 400 ? '#9b8cc4' : COR.marco);
       ctx.strokeStyle = '#222'; ctx.lineWidth = px(1); ctx.strokeRect(v.x0, v.y0, v.x1 - v.x0, v.y1 - v.y0);
@@ -1297,7 +1329,12 @@ function desenhar() {
     for (const [a, b, c, d] of segmentosDoMuro(l)) { ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke(); }
     ctx.lineCap = 'butt';
   };
-  /* ---- os lotes ---- */
+  /* ---- os lotes ---- (no chão do cenário, a terra debaixo da casa, e mais nada) */
+  if (chao) {
+    for (const lista of [prop ? lotes.filter(it => !it.sobProposta) : lotes, prop ? lotesNovos : [], prop ? lotesFavelaNova : []])
+      for (const it of lista) if (ve(it.bb)) pol(it.pol, COR.lote);
+    return;
+  }
   for (const it of lotes) {
     if (!ve(it.bb) || (prop && it.sobProposta)) continue;
     const l = it.l;
@@ -1367,6 +1404,25 @@ function desenhar() {
   atualizarRegua();
 }
 const dentroDaCidade = (x, y) => { const q = K.celulaEm(x, y); return !!q && q.tipo === 'quadra'; };
+/* O CHÃO DO CENÁRIO 3D: este mesmo desenho, só com o que é chão (a rua, a
+   calçada, a terra do lote, a areia, a água, o mato), na paleta do chão
+   do jogo, no contexto `c2`, com `s` pixels por unidade a partir de
+   (x0, y0). `mascara`: o mato (o fundo e a moita) sai magenta — é por ela
+   que o cenário sabe onde plantar o mato em 3D */
+function pintarChao(c2, x0, y0, s, mascara = false) {
+  const antes = { cv, ctx, s: estado.s, ox: estado.ox, oy: estado.oy, larg: estado.larg, alt: estado.alt, dpr: estado.dpr }, corAntes = { ...COR };
+  cv = c2.canvas; ctx = c2;
+  Object.assign(estado, { s, ox: x0, oy: y0, larg: c2.canvas.width, alt: c2.canvas.height, dpr: 1 });
+  Object.assign(COR, COR_CHAO, mascara ? { mato: '#ff00ff', moita: '#ff00ff' } : null);
+  pintandoChao = mascara ? 'mascara' : 'chao';
+  try { desenhar(); }
+  finally {
+    pintandoChao = null;
+    Object.assign(COR, corAntes);
+    cv = antes.cv; ctx = antes.ctx;
+    Object.assign(estado, { s: antes.s, ox: antes.ox, oy: antes.oy, larg: antes.larg, alt: antes.alt, dpr: antes.dpr });
+  }
+}
 
 function desenharEstadio(dx, dy) {
   const T = pts => dx || dy ? pts.map(([x, y]) => [x + dx, y + dy]) : pts;
@@ -1404,10 +1460,12 @@ function desenharProposta(ve, px) {
     if (!ve(a)) continue;
     if (it.sede.resto) ret(it.sede.resto, COR.terreno);
     desenharSede(it.sede, it.montagem, px);
+    if (pintandoChao) continue;
     const T = it.dono;
     ctx.setLineDash(T ? [] : [px(6), px(4)]); ctx.strokeStyle = T ? T.cor2 : '#57544d'; ctx.lineWidth = px(T ? 3 : 2.4);
     ctx.strokeRect(a.x0 + 2, a.y0 + 2, a.x1 - a.x0 - 4, a.y1 - a.y0 - 4); ctx.setLineDash([]);
   }
+  if (pintandoChao) return;
   ctx.setLineDash([px(7), px(5)]); ctx.strokeStyle = COR.nova; ctx.lineWidth = px(2.2);
   for (const q of PROP.quadras) if (ve(q)) ctx.strokeRect(q.x0, q.y0, q.x1 - q.x0, q.y1 - q.y0);
   ctx.setLineDash([]);
@@ -1416,7 +1474,7 @@ function desenharProposta(ve, px) {
 /* A PLANTA DE UM MODELO NOVO: o piso, a grama, a água, o móvel, a
    cobertura e a copa das árvores, nessa ordem */
 function desenharPlanta(marcas, px) {
-  for (const tipo of ['piso', 'grama', 'agua', 'movel', 'teto', 'vao', 'arvore']) for (const r of marcas) {
+  for (const tipo of pintandoChao ? ['piso', 'grama', 'agua'] : ['piso', 'grama', 'agua', 'movel', 'teto', 'vao', 'arvore']) for (const r of marcas) {
     if (r.tipo !== tipo) continue;
     if (r.r !== undefined) { ctx.fillStyle = r.cor; ctx.globalAlpha = tipo === 'arvore' ? 0.85 : 1; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 7); ctx.fill(); ctx.globalAlpha = 1; continue; }
     ret(r, r.cor);
@@ -1454,8 +1512,8 @@ function desenharMetro(px, ve) {
    paredes (com o vão das portas), tudo do modelo; a vaga, coberta */
 function desenharSede(sd, m, px) {
   ret(sd.area, '#a8a396');
-  for (const tipo of ['piso', 'movel', 'parede']) for (const r of m.planta2d) if (r.tipo === tipo) ret(r, r.cor);
-  if (!sd.torcida) { ctx.globalAlpha = 0.85; for (const t of m.teto) ret(t, t.cor); ctx.globalAlpha = 1; }
+  for (const tipo of pintandoChao ? ['piso'] : ['piso', 'movel', 'parede']) for (const r of m.planta2d) if (r.tipo === tipo) ret(r, r.cor);
+  if (!sd.torcida && !pintandoChao) { ctx.globalAlpha = 0.85; for (const t of m.teto) ret(t, t.cor); ctx.globalAlpha = 1; }
 }
 function desenharPecas(pecas) {
   for (const o of pecas) {
@@ -1575,15 +1633,17 @@ function atualizarRegua() {
 /* ======================================================
    CLIQUE E ARRASTE
    ====================================================== */
-function pegar(sx, sy) {
-  const [x, y] = paraMundo(sx, sy);
+function pegar(sx, sy) { const [x, y] = paraMundo(sx, sy); return pegarNoMundo(x, y, estado.s); }
+/* o que está no ponto (x, y) do mundo; `s` (pixels por unidade) decide o
+   quanto o prop pega de longe */
+function pegarNoMundo(x, y, s) {
   const prop = estado.modo !== 'atual';
   const naLista = lista => lista.find(it => x >= it.bb.x0 && x <= it.bb.x1 && y >= it.bb.y0 && y <= it.bb.y1 && dentro(x, y, it.pol));
   if (prop) { const n = naLista(lotesNovos) || naLista(lotesFavelaNova); if (n) return n; }
   const l = naLista(lotes.filter(it => !(prop && it.sobProposta)));
   if (l) return l;
-  if (estado.camadas.props && estado.s > 0.12) {
-    let melhor = null, md = Math.max(8 / estado.s, 6);
+  if (estado.camadas.props && s > 0.12) {
+    let melhor = null, md = Math.max(8 / s, 6);
     for (const p of pecasSoltas) { if (prop && p.somePelaProposta) continue; const d = Math.hypot(p.x - x, p.y - y); if (d < md) { md = d; melhor = p; } }
     if (melhor) return melhor;
   }
@@ -2127,6 +2187,7 @@ function textura(folha) {
   if (!texturas[folha]) {
     const t = new THREE.TextureLoader().load(ATLAS[folha].arquivo);
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    t.userData.src = ATLAS[folha].arquivo;          // (o forno do cenário junta pela folha)
     texturas[folha] = t;
   }
   return texturas[folha];
@@ -2265,6 +2326,7 @@ function texturaVariante(folha) {
   if (!texVariante[folha]) {
     const t = new THREE.TextureLoader().load('img/texturas/modelos/' + folha + '.jpg');
     t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+    t.userData.src = 'img/texturas/modelos/' + folha + '.jpg';
     texVariante[folha] = t;
   }
   return texVariante[folha];
@@ -2647,9 +2709,13 @@ function objetoDoEquip(eq, g, o) {
   if (eq.tipo === 'sede') { objetoDaSede(sedeDoEquip(eq), g, o); return; }
   const a = eq.area;
   caixa(g, a.x0, a.x1, 0, 1.65, a.y0, a.y1, eq.chao || '#9d9a90');
-  const feitas = modeloDoEquipAntigo(eq, g);
-  for (const o of eq.pecas) {
-    if (feitas && feitas.has(o)) continue;
+  pecasEm3d(eq.pecas, g, modeloDoEquipAntigo(eq, g), o && o.semMarco);
+}
+/* as peças do equipamento e da pracinha em 3D, cada uma na caixa dela (ou
+   no modelo); `feitas`: as que o modelo do equipamento antigo já desenhou */
+function pecasEm3d(pecas, g, feitas, semMarco) {
+  for (const o of pecas) {
+    if ((feitas && feitas.has(o)) || (semMarco && o.k === 'modelo')) continue;
     switch (o.k) {
       case 'bloco': caixa(g, o.x0, o.x1, 0, o.alt, o.y0, o.y1, o.cor || '#cfcac0'); if (o.teto) caixa(g, o.x0 - 2, o.x1 + 2, o.alt, o.alt + 4, o.y0 - 2, o.y1 + 2, o.teto); break;
       case 'muro': case 'guarita': case 'totem': case 'monumento': case 'bomba': caixa(g, o.x0, o.x1, 0, o.alt || 20, o.y0, o.y1, o.cor || '#b9b3a4'); break;
@@ -2704,16 +2770,19 @@ function objetoDaQuadra(q, g, nova, prop) {
   const lotesDela = nova || !prop ? q.lotes
     : q.lotes.filter(l => !PROP.lotesTirados.has(l)).concat(PROP.lotesExtra.filter(l => l.quadra.i === q.i && l.quadra.j === q.j));
   for (const l of lotesDela) objetoDoLote(l, g);
-  if (nova && q.estacao) {
-    const destino = {}, it = estacoes.find(x => x.est === q.estacao);
-    const r = montarEstacao(q.estacao, destino, opcEstacao(q.estacao));
-    for (const lista of ['metro', 'grades', 'vidros']) { const mm = malhaDeBlocos(destino[lista] || [], lista); if (mm) g.add(mm); }
-    for (const p of r.placas) if (p.y > 0) placaDoModelo(g, p);
-  }
+  if (nova && q.estacao) entradaDaEstacao(q.estacao, g);
   const esp = espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && x.e.hoje && x.e.quadra === id);
   if (esp) objetoDoEspaco(esp, g, { telhado: true });
   if (q.equip && !nova && !(prop && somemNaProposta.has(id))) objetoDoEquip(q.equip, g, { telhado: true });
   if (!nova) for (const a of q.arvores || []) arvore3d(g, a);
+}
+/* A ENTRADA DO METRÔ: só o que fica na rua (a boca da escada, a cobertura
+   e a placa), sem a estação de baixo nem o trem */
+function entradaDaEstacao(est, g) {
+  const destino = {};
+  const r = montarEstacao(est, destino, opcEstacao(est));
+  for (const lista of ['metro', 'grades', 'vidros']) { const mm = malhaDeBlocos(destino[lista] || [], lista); if (mm) g.add(mm); }
+  for (const p of r.placas) if (p.y > 0) placaDoModelo(g, p);
 }
 function objetoDeEstudo(q, g) {
   /* o equipamento proposto ainda não tem modelo: um volume de estudo */
@@ -2728,6 +2797,101 @@ function objetoDeEstudo(q, g) {
   const alt = { escola: 150, ubs: 90, igreja: 220, sede: 110 }[e.tipo] || 100;
   caixa(g, x0, x1, 0, alt, y0, y1, e.cor);
   caixa(g, x0 - 3, x1 + 3, alt, alt + 5, y0 - 3, y1 + 3, '#8f8a80');
+}
+
+/* ======================================================
+   O CENÁRIO 3D (js/cenario.js): o mapa inteiro em 3D
+   ====================================================== */
+/* O QUE O CENÁRIO MONTA: cada coisa do mapa da vez com o montador dela,
+   pelo mesmo filtro do desenho — o que a planta desenha, o cenário monta.
+   `tipo` separa na contagem; `it` é o item da planta (o clique abre a
+   ficha dele), e fica nulo no que a planta não tem ficha (a árvore, o
+   carro, a peça da pracinha e da praia) */
+function pecasDoCenario() {
+  const out = [], poe = (tipo, it, montar) => out.push({ tipo, it, montar });
+  for (const it of lotes) if (!it.sobProposta) poe(it.l.favela ? 'favela' : 'casa', it, g => objetoDoLote(it.l, g));
+  for (const it of lotesNovos) poe(ehBar(it.l) ? 'bar' : 'casa', it, g => objetoDoLote(it.l, g));
+  for (const it of lotesFavelaNova) poe('favela', it, g => objetoDoLote(it.l, g));
+  for (const it of marcosDeHoje().concat(marcosNovos)) poe('marco', it, g => objetoDoMarco(it, g));
+  for (const it of espacos) poe('sede', it, g => objetoDoEspaco(it, g, { telhado: true }));
+  /* o marco que mora num equipamento já está nos marcos */
+  for (const e of equipamentos) if (!e.somePelaProposta) poe('equipamento', e, g => objetoDoEquip(e.q.equip, g, { telhado: true, semMarco: true }));
+  for (const q of PROP.quadras) {
+    const e = q.equip;
+    if (!e || e.tipo === 'condominio' || e.tipo === 'estadio') continue;
+    const it = { tipo: 'quadraNova', q, pol: retPts(q), bb: { x0: q.x0, y0: q.y0, x1: q.x1, y1: q.y1 } };
+    poe('equipamento', it, g => temModelo(q) ? objetoDoEquipNovo(q, g) : objetoDeEstudo(q, g));
+  }
+  for (const it of estacoes) poe('metro', it, g => entradaDaEstacao(it.est, g));
+  for (const it of porticos) poe('portico', it, g => objetoDoPortico(it.p, g));
+  for (const e of estadios) poe('estadio', e, g => objetoDoEstadio(e.dx, e.dy, g));
+  for (const p of pecasSoltas) if (!p.somePelaProposta) poe(p.k === 'poste' ? 'poste' : 'prop', p, g => objetoDoProp(p, g));
+  for (const q of K.QUADRAS) if (!PROP.substitui.has(q.i + ',' + q.j)) for (const pr of q.pracinhas || []) poe('praca', null, g => pecasEm3d(pr.pecas, g));
+  /* a árvore: a de rua (o filtro do desenho) e a da favela nova */
+  for (const a of K.ARVORES) {
+    if ((somePelaProposta(a.x, a.y, 0) && !dentroDaCidade(a.x, a.y)) || (!PROP.ficaFavelaDeHoje && naFavelaDeHoje(a.x, a.y, 0)) ||
+        (!!PROP.atacadex && noAtacadexDeHoje(a.x, a.y, 10)) || naTrocada(a.x, a.y)) continue;
+    poe('arvore', null, g => arvore3d(g, a));
+  }
+  for (const f of PROP.favelas) for (const a of f.arvores) poe('arvore', null, g => arvore3d(g, a));
+  for (const c of K.CARROS) if (!carroSome.has(c)) poe('carro', null, g => carro3d(g, c));
+  /* A PRAIA: cada coisa que o 2D desenha na areia e no mar vira a peça
+     dela (js/praia3d.js), no lugar do desenho; a frente da peça (+z) pro
+     mar. O quiosque do Nordeste é o de palha; o do resto, o da orla */
+  const pr = praiaDoMapa();
+  if (pr) {
+    const ci = infoDaCidade(cidade), palha = !!ci && ci.regiao === 'Nordeste';
+    const peca = (tipo, id, o, sem, giro = o.a + Math.PI) => poe(tipo, null, g => {
+      const destino = {}, r = montarPecaDaPraia(id, { x: o.x, z: o.y, giro }, destino, sem);
+      malhasDoDestino(destino, g, r.placas);
+    });
+    const sem = o => (Math.abs(Math.round(o.x * 7 + o.y * 13)) % 99991) + 1;
+    for (const o of pr.quiosques) peca('praia', palha ? 'quiosque_palha' : 'quiosque_orla', o, sem(o));
+    for (const o of pr.postos) peca('praia', 'posto', o, sem(o));
+    for (const o of pr.quadras) peca('praia', 'quadra', o, sem(o));
+    for (const o of pr.sois) peca('praia', 'guarda_sol', o, sem(o), o.a + Math.PI + o.giro);
+    for (const o of pr.barracas) peca('praia', 'barraca', o, sem(o));
+    for (const o of pr.barcos) peca('barco', o.vela ? 'jangada' : 'barco', o, sem(o), o.a);
+    for (const o of pr.coqueiros) poe('arvore', null, g => {
+      const destino = {};
+      montarArvoreLowpoly('coqueiro', { x: o.x, z: o.y, giro: o.giro }, destino, sem(o));
+      malhasDoDestino(destino, g);
+    });
+  }
+  /* A LAGOA: a árvore da ilhota e a mata da margem de lá (a água, o
+     aguapé, o junco e o trapiche ficam pintados no chão) */
+  if (temLagoa()) {
+    const L = LAGOA || (LAGOA = montarLagoa()), lugar = vegetacao();
+    for (const a of L.arvoresIlha.concat(L.mata)) poe('arvore', null, g => arvoreDoMato(g, a, lugar));
+  }
+  return out;
+}
+/* a praia do mapa da vez (o que o 2D desenha na areia e no mar), ou nada */
+function praiaDoMapa() {
+  if (!PROP || temLagoa() || !temPraia()) return null;
+  const bm = PROP.avenidas.find(a => a.id === 'beiramar');
+  if (!bm) return null;
+  const ya = bm.pontos[0][1], yb = bm.pontos[bm.pontos.length - 1][1], chave = Math.round(ya) + '|' + Math.round(yb);
+  if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb));
+  return PRAIAS.get(chave);
+}
+/* o carro estacionado: a caixa na cor dele e a cabine mais escura (a
+   conta do jogo, bairro3d) */
+function carro3d(g, c) {
+  const ao = c.x1 - c.x0 > c.y1 - c.y0, cor = new THREE.Color(c.cor || '#8a8f96');
+  caixa(g, c.x0, c.x1, 1.4, 17, c.y0, c.y1, c.cor || '#8a8f96');
+  const escuro = '#' + cor.multiplyScalar(0.7).getHexString();
+  if (ao) caixa(g, c.x0 + 9, c.x1 - 10, 17, 28, c.y0 + 1.5, c.y1 - 1.5, escuro);
+  else caixa(g, c.x0 + 1.5, c.x1 - 1.5, 17, 28, c.y0 + 9, c.y1 - 10, escuro);
+}
+/* a árvore do mato (a da flora da praça), encaixada no círculo do desenho */
+function arvoreDoMato(g, a, lugar) {
+  const sem = (Math.abs(Math.round(a.x * 17 + a.y * 131)) % 1000003) + 1, rnd = sorteio(sem);
+  const destino = {};
+  montarArvoreLowpoly(especieLowpolyDe(lugar, rnd), { x: a.x, z: a.y, giro: rnd() * 2 * Math.PI }, destino, sem,
+                      { caber: { alt: (40 + a.r * 4.5) / M, raio: a.r * 1.3 / M } });
+  const m = malhaDeBlocos(destino.lowpoly || [], 'lowpoly');
+  if (m) g.add(m);
 }
 
 /* pra onde a fachada olha (x, z): a câmera abre de frente, a três quartos */
@@ -2958,6 +3122,66 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo };
 
 /* ======================================================
+   O CENÁRIO 3D (js/cenario.js): o mapa inteiro em 3D, por cima da planta
+   ====================================================== */
+/* o que o cenário pede da planta: a praça e o mapa, a lista do que
+   montar, o chão pintado, a ficha. Ele não decide nada do mapa */
+function apiDoCenario() {
+  return {
+    M, CIDADES: CIDADES.map(([n]) => n), infoDaCidade, mapaDoPorte, MAPA_DO_PORTE, NOME_MAPA,
+    cidade: () => cidade, modo: () => estado.modo,
+    /* põe a praça (e o mapa: o do porte dela, se não vier outro) na planta */
+    irPara(nome, modo) {
+      if (nome !== cidade) {
+        cidade = nome; selCidade.value = nome;
+        try { localStorage.setItem('planta-cidade', cidade); } catch (e) {}
+      }
+      mudarModo(modo && modo !== 'atual' ? modo : mapaDoPorte(nome));
+      $('ficha').innerHTML = fichaDe(estado.sel);
+      ajustarTelhado(estado.sel);
+    },
+    resumo: () => resumoDaTela(),
+    pecas: pecasDoCenario, pintarChao, vegetacao,
+    limite: () => LIM_PROPOSTA,
+    /* a área do chão: o mundo do mapa, e a lagoa inteira quando tem */
+    areaDoCenario() {
+      const a = { ...MUNDO };
+      if (temLagoa()) {
+        const L = LAGOA || (LAGOA = montarLagoa());
+        for (const [x, y] of L.agua) { a.x0 = Math.min(a.x0, x - 300); a.x1 = Math.max(a.x1, x + 300); a.y0 = Math.min(a.y0, y - 300); a.y1 = Math.max(a.y1, y + 300); }
+        for (const t of L.mata) a.x1 = Math.max(a.x1, t.x + t.r + 200);
+      }
+      return a;
+    },
+    /* a linha d'água (só na praça de praia): o x dela na altura y */
+    costa() {
+      if (temLagoa() || !temPraia()) return null;
+      const c = costa(0);
+      if (c.length < 2) return null;
+      return { em(y) {
+        if (y <= c[0][1]) return c[0][0];
+        for (let i = 1; i < c.length; i++) if (y <= c[i][1]) { const t = (y - c[i - 1][1]) / (c[i][1] - c[i - 1][1] || 1); return c[i - 1][0] + t * (c[i][0] - c[i - 1][0]); }
+        return c[c.length - 1][0];
+      } };
+    },
+    tituloDe: it => it ? tituloDe(it) : '', fichaDe: it => it ? fichaDe(it) : '',
+    aoFechar() { if (estado.sel) vista.mostrar(estado.sel); pedirDesenho(); }
+  };
+}
+let cenario = null;
+async function abrirCenario(nome, modo) {
+  if (!cenario) {
+    try {
+      const { criarCenario } = await import('./js/cenario.js');
+      cenario = criarCenario(apiDoCenario());
+    } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
+  }
+  cenario.abrir(nome, modo);
+}
+$('bt-cenario').onclick = () => abrirCenario(cidade, estado.modo);
+if (PARAMS.has('teste')) { window.__planta.abrirCenario = abrirCenario; Object.defineProperty(window.__planta, 'cenario', { get: () => cenario }); }
+
+/* ======================================================
    AS NOTAS DA PROPOSTA
    ====================================================== */
 const LARG_BAR_M = 7.4;
@@ -3058,10 +3282,17 @@ selCidade.onchange = ev => mudarCidade(ev.target.value);
 tamanho();
 let modoSalvo = mapaDoPorte(cidade);
 try { const m = localStorage.getItem('planta-modo'); if (MODOS.includes(m)) modoSalvo = m; } catch (e) {}
+/* o cenário abre direto com ?cenario (ou quando a página que embrulha
+   pede, `window.__CENARIO`: é o que o GitHub Pages usa) */
+const cenarioDireto = PARAMS.has('cenario') || !!window.__CENARIO;
+if (cenarioDireto) modoSalvo = MODOS.includes(PARAMS.get('mapa')) && PARAMS.get('mapa') !== 'atual' ? PARAMS.get('mapa') : mapaDoPorte(cidade);
 mudarModo(modoSalvo);
 new ResizeObserver(() => { tamanho(); pedirDesenho(); }).observe(mapa);
 aviso.hidden = true;
-/* abre com um imóvel na tela: o Residencial Bela Vista */
-const inicial = marcos.find(m => m.pc && m.pc.modelo === 'torre2') || lotes[0];
-selecionar(inicial);
+if (cenarioDireto) abrirCenario(PARAMS.get('cidade') === cidade ? cidade : null, estado.modo);
+else {
+  /* abre com um imóvel na tela: o Residencial Bela Vista */
+  const inicial = marcos.find(m => m.pc && m.pc.modelo === 'torre2') || lotes[0];
+  selecionar(inicial);
+}
 </script>
