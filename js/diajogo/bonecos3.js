@@ -37,7 +37,7 @@
    o movimento de quem está longe é leve. Medido lá, antes de
    tudo isso: 12 bonecos 49 fps, 52 bonecos 4 fps.
 
-   O QUE MUDOU AO ENTRAR NO REPOSITÓRIO — cinco coisas, e nenhuma
+   O QUE MUDOU AO ENTRAR NO REPOSITÓRIO — seis coisas, e nenhuma
    delas é de pose ou de desenho:
 
    1. VIROU MÓDULO ES. O artefato era script solto com `THREE`
@@ -70,6 +70,15 @@
    5. `entrarEm(cena)`. No jogo este módulo é dono do
       renderizador, da câmera e da luz. No estádio quem é dono é
       `estadio3d.js`, e aqui só entra a gente.
+
+   6. `d.passada` (o boneco que anda no cenário 3D da planta,
+      25/09/2026). O ciclo do passo sai da velocidade medida, e a
+      corrida daqui é de briga, curta: a 6 m/s — a de quem
+      atravessa o mapa correndo — o boneco dava sete passos por
+      segundo. O disco pode trazer `passada` (sem ela, 1): o ciclo
+      anda na velocidade dividida por ela, e o passo sai mais longo
+      e mais lento sem o boneco andar menos. No jogo ninguém manda
+      `passada`, e nada muda.
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { GLTFLoader, SkeletonUtils } from '../../vendor/three/GLTFLoader.js';
@@ -1880,7 +1889,7 @@ let noQuadroExterno = null;
       if(d.tremor >= 4.5 && !f.impacto && d.golpe <= 0)
         f.impacto = {t:0, dur:0.4, forca:1.1, lado: Math.sin(f.fase)>0?1:-1, tipo:'pedra'};
 
-      const andando = passo(p, f, vel, dt, corre, emBriga ? 20 : 6);
+      const andando = passo(p, f, vel / (d.passada || 1), dt, corre, emBriga ? 20 : 6);
       if(!andando) parado(p, f, ti);
       if(corre && d.fugindo) fugir(p, f, t, dt);
       if(d.fugaBomba) cobrir(p);

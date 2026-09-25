@@ -2,7 +2,7 @@
 # Monta a pasta da planta em HTML (a página que vira artefato): a página,
 # a proposta de expansão, o cenário 3D (cenario.js; a pasta do GitHub
 # Pages sai de montar_pages.sh, por cima desta) e o que ela usa do jogo —
-# a planta (sem a cena),
+# a planta (sem a cena), o boneco do jogo (que anda a pé no cenário),
 # as torcidas, os clubes e as praças (o porte decide o mapa), os escudos
 # (embutidos), os módulos 3D (com o three.js do CDN) e as folhas.
 #
@@ -51,6 +51,25 @@ for f in construtor3d casas3d sede3d metro3d equip3d equip_antigo3d modelos3d pr
   sed "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
     "$R/js/diajogo/$f.js" > "$A/js/$f.js"
 done
+# O BONECO que anda a pé no cenário: o módulo do jogo (bonecos3.js), o
+# carregador de GLB que ele usa (vendor/three/GLTFLoader.js), os dois
+# apontando pro three.js do CDN, e o modelo em base64 num .js — o
+# carregador do jogo lê dali sem pedir arquivo, e o cenário só puxa esse
+# .js (3,6 MB) quando alguém entra a pé
+sed -e "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
+    -e "s#'../../vendor/three/GLTFLoader.js'#'./GLTFLoader.js'#" \
+    -e "s#'../../img/boneco.glb'#'../img/boneco.glb'#" \
+  "$R/js/diajogo/bonecos3.js" > "$A/js/bonecos3.js"
+sed "s#'./three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
+  "$R/vendor/three/GLTFLoader.js" > "$A/js/GLTFLoader.js"
+python3 - "$R/img/boneco.glb" "$A/dados/boneco_glb.js" <<'PY'
+import base64, sys
+b = open(sys.argv[1], 'rb').read()
+with open(sys.argv[2], 'w', encoding='ascii') as s:
+    s.write('/* o boneco do jogo (img/boneco.glb, %d bytes) em base64 (montar.sh) */\n' % len(b))
+    s.write('window.TO = window.TO || { dados: {} }; TO.dados = TO.dados || {};\n')
+    s.write("TO.dados.bonecoGLB = 'data:model/gltf-binary;base64,%s';\n" % base64.b64encode(b).decode('ascii'))
+PY
 for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg atacadex.jpg torres.jpg props.jpg metro.jpg equip.jpg praia.jpg; do
   cp "$R/img/texturas/modelos/$f" "$A/img/texturas/modelos/"
 done
