@@ -124,6 +124,8 @@ def main():
             'quarteiroes': quart, 'grade': list(lado),
             'populacao': c.get('populacao', 0),
             'temMetro': bool(c.get('temMetro')),
+            # praça à beira do mar: o mapa 3D tem praia a leste; sem ela, mato
+            'temPraia': bool(c.get('temPraia')),
             'estadios': c.get('estadios', []),
             'rodovias': c.get('rodovias', []),
             'multMedio': c.get('multiplicadorFaturamentoMedio', 1.0),

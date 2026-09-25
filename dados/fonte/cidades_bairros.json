@@ -2,7 +2,7 @@
  "meta": {
   "fonte": "Unity — Assets/Scripts/Data/Cidades/*.asset (CityMapData + BairroDados)",
   "total_cidades": 30,
-  "total_bairros": 348,
+  "total_bairros": 352,
   "chaves": "cidade.id + bairro.id (slugs ASCII); a combinação dos dois é única"
  },
  "enums": {
@@ -63,6 +63,7 @@
    },
    "populacao": 2700,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Estadio Bruno Daniel",
@@ -330,6 +331,7 @@
    },
    "populacao": 1500,
    "temMetro": true,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Mangueirao",
@@ -639,6 +641,7 @@
    },
    "populacao": 2500,
    "temMetro": true,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Mineirao",
@@ -951,6 +954,7 @@
    },
    "populacao": 3000,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Serejão",
@@ -1361,6 +1365,7 @@
    },
    "populacao": 1200,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Brinco de Ouro",
@@ -1640,6 +1645,7 @@
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Arena Pantanal",
@@ -1856,6 +1862,7 @@
    },
    "populacao": 1900,
    "temMetro": true,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena da Baixada",
@@ -2137,6 +2144,7 @@
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": true,
    "quantidadeEstadios": 2,
    "estadios": [
     "Orlando Scarpelli",
@@ -2430,6 +2438,7 @@
    },
    "populacao": 2700,
    "temMetro": true,
+   "temPraia": true,
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Castelão",
@@ -2782,6 +2791,7 @@
    },
    "populacao": 1500,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Serra Dourada",
@@ -3051,6 +3061,7 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 1,
    "estadios": [
     "Estadio Regional"
@@ -3292,6 +3303,7 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Cornélio de Barros",
@@ -3526,11 +3538,11 @@
    },
    "populacao": 800,
    "temMetro": false,
-   "quantidadeEstadios": 3,
+   "temPraia": false,
+   "quantidadeEstadios": 2,
    "estadios": [
     "Arena Joinville",
-    "Heriberto Hulse",
-    "Arena Condá"
+    "Heriberto Hulse"
    ],
    "rodovias": [
     "Rodovia Sul 1",
@@ -3764,14 +3776,15 @@
    "regiao": "Sudeste",
    "assetUnity": "Interior_de_SP",
    "mapa": {
-    "nivel": 3,
-    "tamanho": "Pequeno",
-    "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "nivel": 2,
+    "tamanho": "Médio",
+    "quarteiroes": 120,
+    "bairrosEsperados": 12,
+    "bairrosPorZonaEsperado": 3
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Maião",
@@ -3782,7 +3795,7 @@
     "Rodovia Sudeste 1",
     "Rodovia Sudeste 2"
    ],
-   "multiplicadorFaturamentoMedio": 0.975,
+   "multiplicadorFaturamentoMedio": 0.992,
    "bairros": [
     {
      "id": "itu",
@@ -3805,6 +3818,14 @@
      ]
     },
     {
+     "id": "sorocaba",
+     "nome": "Sorocaba",
+     "zona": "Sul",
+     "classeSocial": "Classe Baixa",
+     "multiplicadorFaturamento": 0.8,
+     "torcidasComSede": []
+    },
+    {
      "id": "mirassol",
      "nome": "Mirassol",
      "zona": "Norte",
@@ -3823,6 +3844,14 @@
      "torcidasComSede": [
       "Fiel Força Tricolor"
      ]
+    },
+    {
+     "id": "sao_jose_do_rio_preto",
+     "nome": "São José do Rio Preto",
+     "zona": "Norte",
+     "classeSocial": "Nobre",
+     "multiplicadorFaturamento": 1.5,
+     "torcidasComSede": []
     },
     {
      "id": "novo_horizonte",
@@ -3845,6 +3874,14 @@
      ]
     },
     {
+     "id": "sao_carlos",
+     "nome": "São Carlos",
+     "zona": "Leste",
+     "classeSocial": "Classe Média",
+     "multiplicadorFaturamento": 1.0,
+     "torcidasComSede": []
+    },
+    {
      "id": "bauru",
      "nome": "Bauru",
      "zona": "Oeste",
@@ -3857,6 +3894,14 @@
     {
      "id": "marilia",
      "nome": "Marília",
+     "zona": "Oeste",
+     "classeSocial": "Classe Baixa",
+     "multiplicadorFaturamento": 0.8,
+     "torcidasComSede": []
+    },
+    {
+     "id": "presidente_prudente",
+     "nome": "Presidente Prudente",
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
@@ -4052,6 +4097,7 @@
    },
    "populacao": 600,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Junco",
@@ -4304,6 +4350,7 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Germano Kruger",
@@ -4548,10 +4595,10 @@
    },
    "populacao": 800,
    "temMetro": false,
-   "quantidadeEstadios": 3,
+   "temPraia": false,
+   "quantidadeEstadios": 2,
    "estadios": [
     "Bento Freitas",
-    "Estadio Centenario",
     "Alfredo Jaconi"
    ],
    "rodovias": [
@@ -4814,6 +4861,7 @@
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": true,
    "quantidadeEstadios": 2,
    "estadios": [
     "Rei Pelé",
@@ -5082,6 +5130,7 @@
    },
    "populacao": 2200,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 2,
    "estadios": [
     "Arena da Amazônia",
@@ -5350,6 +5399,7 @@
    },
    "populacao": 1400,
    "temMetro": false,
+   "temPraia": true,
    "quantidadeEstadios": 2,
    "estadios": [
     "Castelão",
@@ -5629,6 +5679,7 @@
    },
    "populacao": 1250,
    "temMetro": false,
+   "temPraia": true,
    "quantidadeEstadios": 2,
    "estadios": [
     "Almeidão",
@@ -5981,6 +6032,7 @@
    },
    "populacao": 1500,
    "temMetro": true,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena do Gremio",
@@ -6288,6 +6340,7 @@
    },
    "populacao": 1600,
    "temMetro": true,
+   "temPraia": true,
    "quantidadeEstadios": 3,
    "estadios": [
     "Estadio dos Aflitos",
@@ -6663,6 +6716,7 @@
    },
    "populacao": 6700,
    "temMetro": true,
+   "temPraia": true,
    "quantidadeEstadios": 3,
    "estadios": [
     "Maracanã",
@@ -7242,6 +7296,7 @@
    },
    "populacao": 1200,
    "temMetro": true,
+   "temPraia": true,
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena das Dunas",
@@ -7531,6 +7586,7 @@
    },
    "populacao": 2900,
    "temMetro": true,
+   "temPraia": true,
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Fonte Nova",
@@ -7784,6 +7840,7 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": true,
    "quantidadeEstadios": 2,
    "estadios": [
     "Vila Belmiro",
@@ -8032,6 +8089,7 @@
    },
    "populacao": 12300,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 4,
    "estadios": [
     "Morumbi",
@@ -8603,6 +8661,7 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": true,
    "quantidadeEstadios": 2,
    "estadios": [
     "Batistão",
@@ -8862,6 +8921,7 @@
    },
    "populacao": 3000,
    "temMetro": false,
+   "temPraia": false,
    "quantidadeEstadios": 3,
    "estadios": [
     "Moca Bonita",

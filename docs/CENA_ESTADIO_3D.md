@@ -2381,6 +2381,174 @@ O que saiu:
   Horizonte.
 
 
+### 4.38. Três mapas — o pequeno, o médio e o grande —, e cada praça no dela
+
+**O pedido.** Depois da conferência da 4.37, o dono decidiu:
+
+- Interior de SP é praça média; Interior do RS e Interior de SC têm 2 estádios. É pra
+  corrigir no código.
+- O mapa das pequenas é o de hoje com uma cópia do estádio, 5 terrenos de sede, 8 prédios de
+  bar e 3 favelas, com as construções da proposta.
+- Praça sem praia não tem praia no mapa: no lugar dela, mato.
+- É pra fazer um mapa médio com o máximo que uma praça média pede.
+- O mapa 3D tem de ter todos os estádios da praça.
+
+**Os dados.** `dados/cidades.js` é gerado, então a correção foi feita na fonte
+(`dados/fonte/cidades_bairros.json`), e depois `ferramentas/importar_bairros.py` rodou de novo.
+O importador precisa do `openpyxl` pra ler o `Book_3_1.xlsx`; sem ele, perde os dados da
+planilha sem avisar.
+
+- **Interior de SP** passou a nível 2, porte Médio, 120 quarteirões e 12 bairros (3 por zona).
+  Tinha 8 bairros, então entraram 4, um por zona, sem sede de torcida:
+
+  | bairro | zona | classe | faturamento |
+  |---|---|---|---|
+  | Sorocaba | Sul | Classe Baixa | 0,8 |
+  | São José do Rio Preto | Norte | Nobre | 1,5 |
+  | São Carlos | Leste | Classe Média | 1,0 |
+  | Presidente Prudente | Oeste | Classe Baixa | 0,8 |
+
+  A classe de cada um foi escolha minha. O multiplicador médio foi de 0,975 pra 0,992.
+- **Interior do RS** perdeu o Estádio Centenário e ficou com o Bento Freitas e o Alfredo
+  Jaconi. **Interior de SC** perdeu a Arena Condá e ficou com a Arena Joinville e o Heriberto
+  Hulse. O critério foi manter o estádio das torcidas com mais membros:
+  - no RS, o Centenário soma 80 membros (Falange Grená e Mancha do Ypiranga), empatado com o
+    Jaconi (Mancha Verde, que tem sede de nível 3 e clube na 2ª divisão);
+  - em SC, a Condá tem 30 membros (Jovem Chape), contra 60 da Arena Joinville. Pela divisão do
+    clube a conta vira: a Chapecoense é a única da 1ª divisão.
+
+  As três torcidas continuam apontando pro estádio que saiu (`dados/torcidas.js`). A lista de
+  estádios do jogo 2D (`dados/estadios.js` e o `estadio` de cada clube) não foi mexida.
+- **`temPraia`** é chave nova, ao lado de `temMetro`. Vale `true` pras 11 praças do litoral:
+  Litoral Catarinense, Fortaleza, Alagoas, Maranhão, Paraíba, Recife, Rio de Janeiro, Rio
+  Grande do Norte, Bahia, Santos e Sergipe. Belém, Manaus e Porto Alegre ficaram sem praia,
+  porque a água delas é rio ou lagoa, não mar aberto.
+
+A fonte diz que veio dos `.asset` da Unity. Lá as mudanças ainda precisam ser feitas.
+
+**O gerador.** `gerarProposta(P, cfg, opc)` (`proposta.js`) recebe o mapa em `cfg`, que é um
+de `MAPAS.pequeno`, `MAPAS.medio` e `MAPAS.grande`. Em `opc` vai o que a praça decide:
+
+- `estadios`: quantos estádios ela tem;
+- `metro: false`, que tira o metrô.
+
+O que era constante do mapa grande (a grade, os equipamentos, o metrô, os condomínios, os
+terrenos, as quadras partidas e juntadas, as favelas) virou campo da config. Cada mapa tem o
+que a praça mais exigente do porte pede:
+
+| | estádios | espaços de sede (grande + pequeno) | bares | favelas (casas) | metrô |
+|---|---|---|---|---|---|
+| pequeno | 2 | 4 + 1 | 8 | 3: a de hoje 229, oeste 279, norte 174 | não |
+| médio | 3 | 6 + 1 | 12 | 4: noroeste 504, sudoeste 394, sul 309, norte 477 | sim |
+| grande | 4 | 8 + 1 | 18 | 5: noroeste 545, sudoeste 397, sul 309, norte 388, alto 185 | sim |
+
+O máximo de cada porte, tirado dos dados:
+
+- pequenas: 8 bairros, até 5 torcidas, 2 estádios e 3 bairros de favela;
+- médias: 12 bairros, até 7 torcidas (Interior de SP), 3 estádios e 4 bairros de favela;
+- grandes: 16 bairros, até 8 torcidas, 4 estádios (São Paulo) e 5 bairros de favela
+  (Fortaleza).
+
+O bar segue o número de bairros (8 e 12). O grande continua com os 18 de antes.
+
+**As vagas de estádio.** O estádio de hoje é a primeira vaga de todo mapa. As outras são
+blocos de 2 × 3 quadras, sem as ruas do meio, com a cópia do quarteirão do estádio. A praça
+ocupa as vagas na ordem:
+
+- no pequeno, a cópia vai pro sul, abaixo da 1,10 e do campo da 2,10 (colunas 1 e 2, fileiras
+  11 a 13);
+- no médio e no grande, a primeira cópia vai pro sudoeste (a do Estádio Municipal) e a segunda
+  pro noroeste (seis quadras das colunas −2 e −1, fileiras −1 a 1);
+- o grande tem uma quarta, no oeste (colunas −5 e −4, fileiras 6 a 8), só pra São Paulo.
+
+A vaga que a praça não usa volta a ser quadra de casa, se cai na grade, ou mato, se está fora
+dela. O nome de cada vaga é o estádio da praça, na ordem de `estadios` em `dados/cidades.js`:
+o primeiro fica no estádio de hoje. Em São Paulo, o Morumbi fica no lugar de hoje, a Neo
+Química Arena no sudoeste, o Allianz Parque no noroeste e o Canindé no oeste. Cada cópia abre
+em 3D com o mesmo modelo do estádio, e a ficha diz "Nº de N estádios".
+
+**O mapa pequeno** é a cidade de hoje, sem quadra nova, com isto a mais:
+
+- **A cópia do estádio**, no sul.
+- **Três terrenos de sede** tirados de quadras de hoje, na ponta sem casa de avenida:
+  - a 1,6, no oeste, perto do Atacadex;
+  - a 2,1, no norte, entre as duas favelas;
+  - a ponta leste da 3,4, no meio.
+
+  O terreno toma até 430 da ponta da quadra. Os lotes debaixo dele saem, e o que foi cortado
+  no meio fica aparado, se sobrar pelo menos 56. A quadra de hoje não é alterada: o que muda
+  vai em `lotesTirados` e `lotesExtra`, senão a mudança vazava pros outros mapas. Com as duas
+  sedes de hoje, são 5 espaços.
+- **Oito bares** pequenos da torcida, postos como na proposta. Os dois bares grandes de hoje
+  viram casa.
+- **Duas favelas novas** na grade da cidade:
+  - a do oeste, entre o Atacadex e a estrada sul;
+  - a do norte, acima da 2,1 e da 3,1.
+
+  Com a de hoje, que fica, são três. A favela nova não pisa no Atacadex nem na favela de hoje:
+  os dois entram na `barra`.
+
+O pequeno não tem metrô nem equipamento novo, e o Atacadex fica onde está.
+
+**O mapa médio** é a expansão cortada no meio. A cidade cresce três colunas pra oeste (−2 a 0)
+e duas linhas pro norte (−1 e 0). Fica sem as colunas −4 e −3 e sem as linhas −3 e −2 do
+grande. Tem:
+
+- 5 terrenos (5,0; 2,0; 0,4; −2,5; 0,9), que com as 2 sedes de hoje dão 7 espaços;
+- 12 bares;
+- o metrô com as mesmas duas estações;
+- o Shopping Poente, o 2º Distrito Policial, a Praça da Vila, a igreja, dois condomínios, o
+  Atacadex na estrada norte e os dois pórticos.
+
+A favela do noroeste começou com o traço do grande, mas no médio as colunas dela não existem,
+e ela ficou solta no mato, encostada na cidade só por um canto. Ganhou um traço próprio
+(`FAVELA_NOROESTE_MEDIO`), colado na rua oeste da coluna −2: a coluna −3 das fileiras −1 a 4 e
+a −4 no alto. Com o primeiro traço (as colunas −3 e −4 inteiras) saíam 765 casas, mais que a
+do grande. O traço foi afinado pra 504. A do norte (`FAVELA_NORTE_MEDIO`) desce até a linha −1.
+A do sudoeste e a do sul são as do grande.
+
+**O mapa grande** é a proposta de antes com duas coisas a mais:
+
+- a quarta vaga de estádio;
+- a **Favela do Alto** (185 casas), acima da −1,−2 e da 0,−2, porque Fortaleza tem cinco
+  bairros de favela e o grande tinha quatro favelas. O leste não tinha lugar: é o Atacadex e a
+  praia.
+
+Com 2 estádios, o grande sai igual à proposta do commit anterior, conferido chave a chave. Só
+mudam a lista de favelas (entrou a quinta) e a contagem.
+
+**A página.**
+
+- **As abas.** São Pequeno, Médio, Grande e Jogo hoje. Escolher a praça abre o mapa do porte
+  dela, e as outras abas servem pra comparar. O seletor de cidade é agrupado por porte.
+- **A variante.** Cada combinação de mapa, número de estádios e metrô sai do gerador uma vez
+  e fica guardada.
+- **A praia.** Se a praça não tem praia (`temPraia`), depois da avenida da beira vem mato: sem
+  areia, sem orla e sem mar. O "Jogo hoje" continua sendo a planta do jogo como está.
+- **As notas.** O painel mostra:
+  - estádios ocupados de quantas vagas, sedes, bares e casas na favela;
+  - a lista dos estádios da praça, e o que não cabe;
+  - se a praça tem praia e metrô;
+  - as casas por favela;
+  - a tabela dos três mapas, com o da praça marcado.
+- **A troca.** O que estava selecionado do mapa anterior sai quando o mapa troca.
+
+**A conferência.** `conferir_cidades.mjs` confere cada praça contra os três mapas e o "Jogo
+hoje". A capacidade de cada mapa é tirada do próprio mapa, com todas as vagas ocupadas. Se
+alguma praça não cabe no mapa do porte dela, o teste sai com erro. Hoje, as 30 cabem:
+
+| porte | praças | cabem no mapa do porte |
+|---|---|---|
+| pequeno | 7 | 7 |
+| médio | 18 | 18 |
+| grande | 5 | 5 |
+
+**O que isto NÃO faz.** O jogo continua com um mapa só. Os três mapas existem na planta
+(`proposta.js` e o artefato); levar pro jogo 2D e pra cena 3D é outro trabalho. São Paulo
+continua com `temMetro: false`, e por isso a praça tem vaga de metrô no mapa grande mas fica
+sem as estações. Pelo jeito, é erro de dado.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -2909,7 +3077,8 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera a expansão (favelas nas pontas, estádio 2, condomínios, entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as quatro favelas: noroeste, sudoeste, sul e norte), `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o mapa atual e a proposta (estádio, sede, bar, favela, metrô), `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes e os módulos 3D) |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças e os módulos 3D) |
+| `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro` e `temPraia` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) e dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |

@@ -1,7 +1,8 @@
 #!/bin/sh
 # Monta a pasta da planta em HTML (a página que vira artefato): a página,
 # a proposta de expansão e o que ela usa do jogo — a planta (sem a cena),
-# as torcidas e os clubes, os módulos 3D (com o three.js do CDN) e as folhas.
+# as torcidas, os clubes e as praças (o porte decide o mapa), os módulos 3D
+# (com o three.js do CDN) e as folhas.
 #
 #   sh ferramentas/planta_html/montar.sh [pasta]      (padrão: /tmp/planta_html)
 #
@@ -14,7 +15,7 @@ A=${1:-/tmp/planta_html}
 mkdir -p "$A/dados" "$A/js" "$A/img/texturas/modelos"
 cp "$R/ferramentas/planta_html/index.html" "$A/"
 cp "$R/ferramentas/planta_html/proposta.js" "$A/js/"
-cp "$R/dados/torcidas.js" "$R/dados/times.js" "$A/dados/"
+cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$A/dados/"
 n=$(grep -n '^TO.dados.cenaEstadio = (function(){' "$R/dados/cena_estadio.js" | cut -d: -f1)
 head -n $((n - 1)) "$R/dados/cena_estadio.js" > "$A/dados/cena_estadio.js"
 for f in construtor3d casas3d sede3d metro3d equip3d modelos3d props3d modelos_atlas; do

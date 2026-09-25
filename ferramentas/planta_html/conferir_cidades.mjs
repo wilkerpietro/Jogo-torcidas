@@ -1,10 +1,11 @@
 /* =========================================================
-   CADA CIDADE CABE EM QUAL MAPA?
+   CADA CIDADE CABE NO MAPA DO PORTE DELA?
    ---------------------------------------------------------
-   A ideia do dono: o mapa de hoje (a planta) é o das cidades pequenas, e
-   a proposta de expansão é o das grandes. Este teste pega as 30 praças
-   de dados/cidades.js e as torcidas de dados/torcidas.js e confere, pra
-   cada uma, o que ela pede contra o que cada mapa tem:
+   São três mapas (proposta.js, MAPAS): o pequeno (o mapa de hoje com o
+   que a praça pequena pede), o médio e o grande. Este teste pega as 30
+   praças de dados/cidades.js e as torcidas de dados/torcidas.js e
+   confere, pra cada uma, o que ela pede contra o que cada mapa tem (e o
+   "Jogo hoje", a planta como o jogo usa, pra comparar):
 
    - ESTÁDIO: um por estádio da praça (o array `estadios`);
    - SEDE: uma por torcida — a de nível 2 em diante pede espaço de sede
@@ -14,8 +15,10 @@
    - METRÔ: se a praça tem (`temMetro`).
 
    O que cada mapa tem sai dele mesmo (as sedes, os bares e o estádio da
-   planta; os espaços, os bares, os estádios, as favelas e o metrô da
-   proposta), então dá pra rodar de novo depois de mexer num mapa.
+   planta; os espaços, os bares, as vagas de estádio, as favelas e o
+   metrô de cada mapa, com todas as vagas ocupadas), então dá pra rodar de
+   novo depois de mexer num mapa. A praça tem de caber no mapa do porte
+   dela; se alguma não cabe, o teste sai com erro.
 
      node ferramentas/planta_html/conferir_cidades.mjs
      node ferramentas/planta_html/conferir_cidades.mjs --csv saida.csv
@@ -29,19 +32,21 @@ const require = createRequire(import.meta.url);
 global.TO = { dados: {} };
 for (const f of ['torcidas', 'times', 'cena_estadio', 'cidades']) require(path.join(R, 'dados', f + '.js'));
 const P = TO.dados.plantaEstadio, K = P.CIDADE;
-const { gerarProposta } = await import(path.join(R, 'ferramentas/planta_html/proposta.js'));
-const PROP = gerarProposta(P);
+const { gerarProposta, MAPAS, MAPA_DO_PORTE } = await import(path.join(R, 'ferramentas/planta_html/proposta.js'));
 
 /* o que cada mapa tem */
 const sedesHoje = K.QUADRAS.filter(q => q.equip && q.equip.tipo === 'sede').map(q => q.equip);
-const MAPAS = [
-  { id: 'atual', nome: 'Mapa atual', em: 'no mapa atual', estadios: 1,
+const doMapa = id => {
+  const R = gerarProposta(P, MAPAS[id]);                     // todas as vagas de estádio, com metrô
+  return { id, nome: MAPAS[id].nome, em: 'no ' + MAPAS[id].nome.toLowerCase(), estadios: R.mapa.vagas,
+           sedeGrande: R.espacosSede.filter(e => e.cabe > 1).length, sedePequena: R.espacosSede.filter(e => e.cabe === 1).length,
+           bares: R.bares.length, favelas: R.favelas.length + (R.ficaFavelaDeHoje ? 1 : 0), metro: !!R.mapa.metro };
+};
+const LISTA = [
+  { id: 'atual', nome: 'Jogo hoje', em: 'no jogo de hoje', estadios: 1,
     sedeGrande: sedesHoje.filter(e => e.nivel !== 1).length, sedePequena: sedesHoje.filter(e => e.nivel === 1).length,
-    bares: K.QUADRAS.filter(q => q.equip && q.equip.tipo === 'bar').length, favelas: K.BEIRA.some(l => l.favela) ? 1 : 0, metro: false },
-  { id: 'proposta', nome: 'Proposta', em: 'na proposta', estadios: 1 + (PROP.estadio2 ? 1 : 0),
-    sedeGrande: PROP.espacosSede.filter(e => e.cabe > 1).length, sedePequena: PROP.espacosSede.filter(e => e.cabe === 1).length,
-    bares: PROP.bares.length, favelas: PROP.favelas.length, metro: !!PROP.metro }
-];
+    bares: K.QUADRAS.filter(q => q.equip && q.equip.tipo === 'bar').length, favelas: K.BEIRA.some(l => l.favela) ? 1 : 0, metro: false }
+].concat(['pequeno', 'medio', 'grande'].map(doMapa));
 /* o que falta no mapa `m` pra praça `x` */
 function falta(m, x) {
   const f = [];
@@ -68,28 +73,34 @@ const linhas = TO.dados.cidades.map(c => {
     metro: !!c.temMetro
   };
   return { c, x, zonas: c.bairros.filter(b => b.classe === 'Favela').map(b => b.zona[0]).join(''),
-           falta: Object.fromEntries(MAPAS.map(m => [m.id, falta(m, x)])) };
+           falta: Object.fromEntries(LISTA.map(m => [m.id, falta(m, x)])) };
 }).sort((a, b) => ORDEM[a.c.tamanho] - ORDEM[b.c.tamanho] || b.x.torcidas - a.x.torcidas || a.c.nome.localeCompare(b.c.nome));
 
-for (const m of MAPAS)
+for (const m of LISTA)
   console.log(`${m.nome}: ${m.estadios} estádio(s), ${m.sedeGrande} espaço(s) de sede grande e ${m.sedePequena} pequeno, ${m.bares} bares, ${m.favelas} favela(s), ${m.metro ? 'com' : 'sem'} metrô`);
 console.log('');
 for (const { c, x, zonas, falta: f } of linhas)
   console.log(`${c.tamanho.padEnd(7)} ${c.nome.padEnd(20)} ${x.torcidas} torcidas (${x.sedeGrande} de sede grande) · ${x.estadios} estádio(s) · ` +
               `${x.favelas} favela(s)${zonas ? ' ' + zonas : ''} · ${x.metro ? 'metrô' : 'sem metrô'}  | ` +
-              MAPAS.map(m => `${m.nome}: ${f[m.id].length ? 'falta ' + f[m.id].join(', ') : 'cabe'}`).join('  | '));
+              LISTA.map(m => `${m.nome}: ${f[m.id].length ? 'falta ' + f[m.id].join(', ') : 'cabe'}`).join('  | '));
 console.log('');
+let fora = 0;
 for (const porte of ['Pequeno', 'Médio', 'Grande']) {
-  const g = linhas.filter(l => l.c.tamanho === porte);
-  console.log(`${porte}: ${g.length} praças · ` + MAPAS.map(m => `cabem ${m.em}: ${g.filter(l => !l.falta[m.id].length).length}`).join(' · '));
+  const g = linhas.filter(l => l.c.tamanho === porte), seu = MAPA_DO_PORTE[porte];
+  const naoCabem = g.filter(l => l.falta[seu].length);
+  fora += naoCabem.length;
+  console.log(`${porte}: ${g.length} praças · ` + LISTA.map(m => `cabem ${m.em}: ${g.filter(l => !l.falta[m.id].length).length}`).join(' · ') +
+              (naoCabem.length ? `  ← NÃO CABEM no mapa do porte: ${naoCabem.map(l => l.c.nome).join(', ')}` : ''));
 }
 
 const i = process.argv.indexOf('--csv');
 if (i > 0) {
   const cab = ['Cidade', 'Porte', 'Bairros', 'Torcidas', 'Sedes de nível 2+', 'Sedes de nível 1', 'Estádios', 'Bairros de favela', 'Zonas das favelas', 'Metrô']
-    .concat(MAPAS.map(m => m.nome));
+    .concat(LISTA.map(m => m.nome));
   const csv = [cab.join(';')].concat(linhas.map(({ c, x, zonas, falta: f }) => [c.nome, c.tamanho, c.bairros.length, x.torcidas, x.sedeGrande, x.sedePequena,
-    x.estadios, x.favelas, zonas || '—', x.metro ? 'sim' : 'não'].concat(MAPAS.map(m => f[m.id].length ? 'falta ' + f[m.id].join(', ') : 'cabe')).join(';')));
+    x.estadios, x.favelas, zonas || '—', x.metro ? 'sim' : 'não'].concat(LISTA.map(m => f[m.id].length ? 'falta ' + f[m.id].join(', ') : 'cabe')).join(';')));
   fs.writeFileSync(process.argv[i + 1], '﻿' + csv.join('\r\n'));
   console.log('\nCSV em', process.argv[i + 1]);
 }
+console.log(fora ? `\nFALHOU: ${fora} praça(s) não cabem no mapa do porte delas` : '\ntoda praça cabe no mapa do porte dela');
+process.exit(fora ? 1 : 0);
