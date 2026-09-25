@@ -2628,7 +2628,14 @@ TO.dados.plantaEstadio = (function(){
      de mato livre mais larga que sobra DENTRO do tabuleiro, na beira
      oeste, longe da estrada que a avenida faz por ali (e das casas
      de beira dela) e do campo/baldio ao sul. */
-  const AREA_FAV = { x0:8, x1:1120, y0:90, y1:2700 };
+  /* A FAVELA PELA METADE (o dono pediu, pra ganhar triângulo): a área de
+     casa é só a metade de baixo da faixa, a de y ≥ 1347 — onde caía a
+     metade da área construída —, colada nas quadras da coluna 1 e longe
+     da estrada que cortava a de cima. A grade torta continua medida na
+     faixa inteira (`FAIXA_FAV`), então a quadra e o beco caem no mesmo
+     traçado; a de cima volta a ser mato (moita, trilha). */
+  const FAIXA_FAV = { x0:8, x1:1120, y0:90, y1:2700 };
+  const AREA_FAV = { x0:8, x1:1120, y0:1347, y1:2700 };
   /* a folga de 48 é porque a casa pode passar um pouco da divisa da
      área (a divisa é contabilidade minha; o que manda de verdade é o
      mato, o asfalto e a borda do tabuleiro) — e moita nenhuma pode
@@ -3186,9 +3193,9 @@ TO.dados.plantaEstadio = (function(){
        sentido dela (norte-sul), senão a quadra nasce cortada. */
     const ANG = 1.88;
     const CO = Math.cos(ANG), SE = Math.sin(ANG);
-    const CXF = (AREA_FAV.x0 + AREA_FAV.x1)/2, CYF = (AREA_FAV.y0 + AREA_FAV.y1)/2;
+    const CXF = (FAIXA_FAV.x0 + FAIXA_FAV.x1)/2, CYF = (FAIXA_FAV.y0 + FAIXA_FAV.y1)/2;
     const paraMundo = (u, v) => [CXF + u*CO - v*SE, CYF + u*SE + v*CO];
-    const RAIO = Math.hypot(AREA_FAV.x1 - AREA_FAV.x0, AREA_FAV.y1 - AREA_FAV.y0)/2 + 40;
+    const RAIO = Math.hypot(FAIXA_FAV.x1 - FAIXA_FAV.x0, FAIXA_FAV.y1 - FAIXA_FAV.y0)/2 + 40;
 
     /* O LIMITE DURO é o TABULEIRO, não a área declarada. Exigir a casa
        INTEIRA dentro do retângulo comia uma faixa de meia casa em toda
@@ -3632,20 +3639,22 @@ TO.dados.plantaEstadio = (function(){
          em metros, quantas, e a distância mínima entre duas iguais */
       /* o fundo da quadra de duas fileiras aqui é quase sempre 4,5 a
          4,9 m (só uma em oito passa de 5,8): o modelo se ajusta a ele */
+      /* com a favela pela metade, a conta de cada uma também caiu pela
+         metade (uma de cada, duas da f1 e da f2) */
       const MODELOS = [
-        { modelo: 'bar',    w: [5.0, 7.8], d: 4.3, n: 2, longe: 30, tipo: 'sobrado', alt: 6.0, parede: 'tijolo', esquina: true },
-        { modelo: 'f2',     w: [5.6, 8.6], d: 4.4, n: 3, longe: 18, tipo: 'casa',    alt: 3.4, parede: 'pintada' },
-        { modelo: 'lanche', w: [5.0, 7.4], d: 4.3, n: 2, longe: 22, tipo: 'sobrado', alt: 6.2, parede: 'pintada' },
-        { modelo: 'f1',     w: [5.0, 7.6], d: 4.4, n: 4, longe: 15, tipo: 'sobrado', alt: 8.2, parede: 'tijolo' }
+        { modelo: 'bar',    w: [5.0, 7.8], d: 4.3, n: 1, longe: 30, tipo: 'sobrado', alt: 6.0, parede: 'tijolo', esquina: true },
+        { modelo: 'f2',     w: [5.6, 8.6], d: 4.4, n: 2, longe: 18, tipo: 'casa',    alt: 3.4, parede: 'pintada' },
+        { modelo: 'lanche', w: [5.0, 7.4], d: 4.3, n: 1, longe: 22, tipo: 'sobrado', alt: 6.2, parede: 'pintada' },
+        { modelo: 'f1',     w: [5.0, 7.6], d: 4.4, n: 2, longe: 15, tipo: 'sobrado', alt: 8.2, parede: 'tijolo' }
       ];
       /* a segunda leva de referências: a casa da escada de fora com o
          muro curvo (quer esquina), o sobrado do varal com o poste, o
          sobrado das duas garagens e a casa de tijolo no embasamento alto */
       const MODELOS2 = [
-        { modelo: 'escada',  w: [6.4, 8.6], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.1, parede: 'reboco', esquina: true },
-        { modelo: 'varal',   w: [5.0, 7.0], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.2, parede: 'tijolo' },
-        { modelo: 'garagem', w: [6.2, 8.2], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 5.6, parede: 'tijolo' },
-        { modelo: 'base',    w: [6.0, 8.2], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.5, parede: 'tijolo' }
+        { modelo: 'escada',  w: [6.4, 8.6], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.1, parede: 'reboco', esquina: true },
+        { modelo: 'varal',   w: [5.0, 7.0], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.2, parede: 'tijolo' },
+        { modelo: 'garagem', w: [6.2, 8.2], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 5.6, parede: 'tijolo' },
+        { modelo: 'base',    w: [6.0, 8.2], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.5, parede: 'tijolo' }
       ];
       const usadas = new Set(), postas = [];
       /* em RODADAS, uma de cada por vez: a primeira da lista não leva

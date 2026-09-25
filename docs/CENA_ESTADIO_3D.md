@@ -3016,6 +3016,49 @@ A cor de longe é a do vértice vezes a MÉDIA da textura naquele ponto: a da c�
 5. **O fps não foi medido:** este ambiente não tem placa de vídeo.
 
 
+### 4.47. As favelas pela metade
+
+O dono pediu a área de cada favela pela metade — elas não precisam ser tão grandes no jogo, e é triângulo que se ganha —, com as favelas seguindo conectadas à cidade.
+
+**A regra.** Em cada favela fica a metade colada na cidade; quando as duas metades encostam nela, a mais perto do estádio. Quando uma viela da grade dá perto da metade (de 44 a 53% da mancha), o corte cai nela; senão, cai no ponto exato da metade, no meio do quarteirão. A `caixa` da favela para a casa no corte, e a viela e o beco só ficam onde tem casa do lado (o passo 6 do gerador já fazia isso), então não sobra rua no mato. Cada favela da planta guarda onde foi cortada (`corte`, em `proposta.js`).
+
+| favela | mapa | o que ficou | corte |
+|---|---|---|---|
+| a de hoje, no jogo | jogo e aba "Jogo hoje" | a de baixo da estrada, colada nas quadras da coluna 1 | y ≥ 1347 (a metade da área construída) |
+| Noroeste | pequeno | a de baixo da estrada noroeste2 | y ≥ 1085 |
+| Oeste | pequeno | a de leste, colada nas quadras da coluna 1 | viela x = −680 |
+| Norte | pequeno | a de leste | viela x = 1750 |
+| Noroeste | médio | a de cima, colada no estádio | viela y = 617 |
+| Norte | médio | a de leste | x ≥ 2054 |
+| Sudoeste | médio e grande | a coluna −3, no lado oeste do estádio, da fileira 9 à 12 | viela x = −2300 |
+| Sul | médio e grande | a de leste | x ≥ 1375 |
+| Noroeste | grande | a de leste, colada nas quadras −3 e −2 e no estádio | viela x = −3920 |
+| Norte | grande | a de leste | x ≥ 2181 |
+| Alto | grande | a de leste | viela x = −680 |
+
+A do sudoeste primeiro saiu cortada na horizontal, pra ficar com o pedaço embaixo do estádio também, e sobrava uma fileira só de casa embaixo dele: lia como fileira, não como favela. Cortada na vertical, é um bloco a oeste do estádio.
+
+**A favela do jogo** (`dados/cena_estadio.js`): a área de casa (`AREA_FAV`) ficou só com a metade de baixo da faixa, y ≥ 1347, onde caía a metade da área construída — a de cima era mais rala, cortada pela estrada. A grade torta continua medida na faixa inteira (`FAIXA_FAV`), então a quadra e o beco caem no mesmo traçado. A de cima voltou a ser mato (482 → 531 moitas). O sorteio da cidade não anda: a favela usa o sorteio dela, a pixação da favela é a última a sortear, e a árvore de beira pula a favela antes do `rng()`.
+
+**As casas grandes também pela metade**: a conta de cada modelo caiu pra metade (uma de cada, duas da f1 e da f2), 10 por favela em vez de 19 — a mesma proporção de antes. Com a conta antiga, a favela pequena ficava com casa grande demais, e a casa grande é a que mais pesa.
+
+**O que deu:**
+
+| | antes | agora |
+|---|---|---|
+| favela do jogo | 229 casas, 727 mil un² construídos | 98 casas, 369 mil (51%) |
+| casas de favela, mapa pequeno | 676 casas, 66.816 triângulos | 348 casas, 34.624 (−48%) |
+| casas de favela, mapa médio | 1.684 casas, 148.212 triângulos | 729 casas, 66.384 (−55%) |
+| casas de favela, mapa grande | 1.824 casas, 161.878 triângulos | 795 casas, 73.832 (−54%) |
+| área de favela, medida no mapa | 15.137 / 28.764 / 30.049 m² | 7.439 / 14.259 / 14.539 m² |
+| a cidade medida, sem o estádio | 314 / 584 / 741 mil | 284 / 502 / 653 mil |
+| a cena do jogo | 424.514 triângulos | 406.648 |
+
+Cada favela ficou com 39 a 63% da área construída de antes (o corte é pela mancha; a parte cortada nem sempre tinha a mesma densidade — a do noroeste do pequeno perdeu justo a metade que a estrada cortava). A borda oeste do mundo acompanha a favela mais a oeste, então o mapa pequeno e o grande do Rio (sem a vaga do Estádio do Oeste) ficaram mais estreitos: menos mato em volta.
+
+No jogo o ganho é menor que na planta porque a favela do jogo já é low poly e já vai de longe nos ladrilhos (4.46). A favela continua toda andável: dentro dela nenhuma célula onde o corpo cabe ficou presa. Na faixa inteira da favela de antes sobraram 2 presas, as duas no mato que voltou, ao norte do corte, em bolsão de moita; no tabuleiro inteiro são 158, contra 156 antes.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade

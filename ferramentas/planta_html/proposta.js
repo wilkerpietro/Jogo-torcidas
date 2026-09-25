@@ -27,6 +27,14 @@
    colado no Estádio Municipal, e os outros dois vão pro sul da 2,10 (a
    Favela do Sul) e pro norte da 3,−2 (a Favela do Norte).
 
+   E depois cada favela ficou com METADE DA ÁREA (o dono pediu, pra
+   ganhar triângulo): fica a metade colada na cidade, e quando as duas
+   metades encostam nela, a mais perto do estádio. O corte cai numa viela
+   da grade quando a viela dá perto da metade (de 46 a 53% da área); se
+   não, no ponto exato da metade, no meio do quarteirão — a `caixa` para
+   a casa ali, e a viela e o beco só ficam onde tem casa do lado. `corte`
+   guarda onde foi.
+
    Os lotes saem com a mesma conta do `lotear()` da planta, só que com
    hash da posição no lugar do sorteio, e a favela com a mesma conta da
    favela da planta, com um sorteio próprio de semente fixa: a proposta
@@ -145,12 +153,15 @@ const JUNTAS = [['0,-1', '1,-1'], ['-2,3', '-1,3'], ['0,7', '1,7']];
 /* as avenidas transversais que saem da proposta */
 const SEM_AVENIDA = ['oeste', 'noroeste2'];
 
-/* AS FAVELAS: as manchas que o dono circulou, em coordenada de planta */
+/* AS FAVELAS: as manchas que o dono circulou, em coordenada de planta,
+   cada uma cortada pela metade (a metade colada na cidade) */
 const FAVELAS_GRANDE = [
+  /* a metade de leste, a que encosta nas quadras −3 e −2 e no estádio:
+     o corte na viela x = −3920 (46% da mancha) */
   { id: 'noroeste', nome: 'Favela do Noroeste', semente: 913247,
-    poly: [[-4230, 1530], [-4975, 1150], [-4985, 360], [-4580, -130], [-3935, -565], [-3290, -745], [-2745, -745],
-           [-2450, -475], [-2375, -105], [-2595, -65], [-3040, -30], [-3170, 20], [-3170, 430], [-3735, 410],
-           [-4045, 560], [-4060, 1150], [-4010, 1370]] },
+    poly: [[-3920, -569], [-3290, -745], [-2745, -745], [-2450, -475], [-2375, -105], [-2595, -65], [-3040, -30],
+           [-3170, 20], [-3170, 430], [-3735, 410], [-3920, 500]],
+    caixa: { x0: -3920, x1: 1e5, y0: -1e5, y1: 1e5 }, corte: 'x ≥ −3920 (viela)' },
   /* A do sudoeste foi dividida em três (o dono pediu): o que fica é o
      pedaço colado no Estádio Municipal — a coluna −3 do lado oeste dele
      (fileiras 9 a 11) e as duas fileiras de baixo (11 e 12) —, com o
@@ -158,29 +169,34 @@ const FAVELAS_GRANDE = [
      a oeste da coluna −3 e na viela de baixo da fileira 11 (da 12, só
      embaixo do estádio). Os outros dois pedaços foram pro sul da 2,10 e
      pro norte da 3,−2. `caixa`: onde a favela pode pôr casa (a viela da
-     borda), pra ela não vazar pela regra do GAP pro quarteirão vizinho. */
+     borda), pra ela não vazar pela regra do GAP pro quarteirão vizinho.
+     Pela metade: fica a coluna −3, colada no lado oeste do estádio, da
+     fileira 9 até a 12 (corte na viela x = −2300, 44% da mancha). Cortada
+     na horizontal, pra ficar com o pedaço de baixo do estádio também,
+     sobrava uma fileira só de casa embaixo dele — lia como fileira, não
+     como favela. */
   { id: 'sudoeste', nome: 'Favela do Sudoeste', semente: 481523,
-    poly: [[-3140, 4571], [-3140, 5880], [-2300, 5880], [-2300, 6345], [-1380, 6345], [-1215, 6310], [-720, 6000],
-           [-660, 5660], [-1095, 5595], [-1590, 5445], [-2085, 5350], [-2160, 5195], [-2180, 4640]],
-    caixa: { x0: -3110, x1: 130, y0: 4300, y1: 6345 } },
+    poly: [[-3140, 4571], [-3140, 5880], [-2300, 5880], [-2300, 4631]],
+    caixa: { x0: -3110, x1: -2300, y0: 4300, y1: 6345 }, corte: 'x ≤ −2300 (viela)' },
   /* o pedaço do sul: abaixo da 2,10 (o campo), da 1,10 e da 3,10, entre a
-     estrada sul e a praia — as fileiras 11 e 12 das colunas 1 a 3 */
+     estrada sul e a praia — as fileiras 11 e 12 das colunas 1 a 3. Pela
+     metade: fica a de leste, a mais perto do estádio (x ≥ 1375) */
   { id: 'sul', nome: 'Favela do Sul', semente: 275183,
-    poly: [[160, 5430], [2560, 5430], [2560, 5870], [2470, 6150], [2230, 6340], [1640, 6390], [1050, 6370],
-           [560, 6310], [250, 6140], [160, 5900]],
-    caixa: { x0: 130, x1: 2557, y0: 5400, y1: 6345 } },
+    poly: [[1375, 5430], [2560, 5430], [2560, 5870], [2470, 6150], [2230, 6340], [1640, 6390], [1375, 6381]],
+    caixa: { x0: 1375, x1: 2557, y0: 5400, y1: 6345 }, corte: 'x ≥ 1375 (meio do quarteirão)' },
   /* o pedaço do norte: acima da 3,−2 e da sede da 2,−3, até a estrada do
      norte — as fileiras −3 a −5 das colunas 2 a 4 (a 4 só do lado de cá
-     da estrada, longe do pórtico) */
+     da estrada, longe do pórtico). Pela metade: fica a de leste (x ≥ 2181) */
   { id: 'norte', nome: 'Favela do Norte', semente: 639127,
-    poly: [[1180, -2650], [3130, -2650], [3130, -1290], [1760, -1290], [1760, -1720], [960, -1720], [960, -2420]],
-    caixa: { x0: 940, x1: 3150, y0: -2660, y1: -1250 } },
+    poly: [[2181, -2650], [3130, -2650], [3130, -1290], [2181, -1290]],
+    caixa: { x0: 2181, x1: 3150, y0: -2660, y1: -1250 }, corte: 'x ≥ 2181 (meio do quarteirão)' },
   /* a quinta, pra praça grande que tem cinco bairros de favela (Fortaleza):
      no alto do norte, acima da −1,−2 e da 0,−2, longe das outras (o leste
-     não tem lugar: é o Atacadex e a praia) */
+     não tem lugar: é o Atacadex e a praia). Pela metade: fica a de leste,
+     na viela x = −680 */
   { id: 'alto', nome: 'Favela do Alto', semente: 824613,
-    poly: [[-1300, -2175], [130, -2175], [130, -1250], [-1460, -1250], [-1460, -1990]],
-    caixa: { x0: -1480, x1: 130, y0: -2190, y1: -1250 } }
+    poly: [[-680, -2175], [130, -2175], [130, -1250], [-680, -1250]],
+    caixa: { x0: -680, x1: 130, y0: -2190, y1: -1250 }, corte: 'x ≥ −680 (viela)' }
 ];
 /* as cores da favela do jogo */
 const CORES_FAVELA = {
@@ -194,16 +210,18 @@ const GRAFITE_FAVELA = RECADOS.concat(['RUA SEM MEDO', 'FAVELA VIVA', 'LUZ NO BE
   'MC ZINHO', 'DJ BEIJA-FLOR', 'RESPEITA QUEM SUBIU O MORRO', 'BONDE DO BECO', 'TUDO NOSSO', 'ISSO AQUI É NOSSO']);
 const TINTAS_PIXO = ['#2a2a28', '#1c2a44', '#3a1f1f', '#23331f', '#b02a22', '#22439a'];
 /* as casas grandes da favela do jogo: largura e fundo em metros, quantas,
-   e a distância mínima entre duas iguais */
+   e a distância mínima entre duas iguais. Com a favela pela metade, a
+   conta de cada uma também caiu pela metade (uma de cada, duas da f1 e
+   da f2): 10 por favela em vez de 19, a mesma proporção de antes */
 const CASAS_GRANDES = [
-  { modelo: 'bar',     w: [5.0, 7.8], d: 4.3, n: 2, longe: 30, tipo: 'sobrado', alt: 6.0, parede: 'tijolo', esquina: true },
-  { modelo: 'f2',      w: [5.6, 8.6], d: 4.4, n: 3, longe: 18, tipo: 'casa',    alt: 3.4, parede: 'pintada' },
-  { modelo: 'lanche',  w: [5.0, 7.4], d: 4.3, n: 2, longe: 22, tipo: 'sobrado', alt: 6.2, parede: 'pintada' },
-  { modelo: 'f1',      w: [5.0, 7.6], d: 4.4, n: 4, longe: 15, tipo: 'sobrado', alt: 8.2, parede: 'tijolo' },
-  { modelo: 'escada',  w: [6.4, 8.6], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.1, parede: 'reboco', esquina: true },
-  { modelo: 'varal',   w: [5.0, 7.0], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.2, parede: 'tijolo' },
-  { modelo: 'garagem', w: [6.2, 8.2], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 5.6, parede: 'tijolo' },
-  { modelo: 'base',    w: [6.0, 8.2], d: 4.3, n: 2, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.5, parede: 'tijolo' }
+  { modelo: 'bar',     w: [5.0, 7.8], d: 4.3, n: 1, longe: 30, tipo: 'sobrado', alt: 6.0, parede: 'tijolo', esquina: true },
+  { modelo: 'f2',      w: [5.6, 8.6], d: 4.4, n: 2, longe: 18, tipo: 'casa',    alt: 3.4, parede: 'pintada' },
+  { modelo: 'lanche',  w: [5.0, 7.4], d: 4.3, n: 1, longe: 22, tipo: 'sobrado', alt: 6.2, parede: 'pintada' },
+  { modelo: 'f1',      w: [5.0, 7.6], d: 4.4, n: 2, longe: 15, tipo: 'sobrado', alt: 8.2, parede: 'tijolo' },
+  { modelo: 'escada',  w: [6.4, 8.6], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.1, parede: 'reboco', esquina: true },
+  { modelo: 'varal',   w: [5.0, 7.0], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.2, parede: 'tijolo' },
+  { modelo: 'garagem', w: [6.2, 8.2], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 5.6, parede: 'tijolo' },
+  { modelo: 'base',    w: [6.0, 8.2], d: 4.3, n: 1, longe: 15, perto: 5, tipo: 'sobrado', alt: 6.5, parede: 'tijolo' }
 ];
 const dentroPol = (x, y, pol) => {
   let d = false;
@@ -250,13 +268,15 @@ const TERRENOS_MEDIO = [
 ];
 /* no médio a cidade para na coluna −2 e na linha −1: a favela do noroeste
    encosta na rua oeste dela (a coluna −3 das fileiras −1 a 4, e a −4 no
-   alto), e a do norte desce até a linha −1 */
+   alto), e a do norte desce até a linha −1. Pela metade: a do noroeste
+   fica com a de cima, colada no estádio (a viela y = 617), e a do norte
+   com a de leste (x ≥ 2054) */
 const FAVELA_NOROESTE_MEDIO = { id: 'noroeste', nome: 'Favela do Noroeste', semente: 913247,
-  poly: [[-3560, -760], [-2360, -760], [-2360, 2600], [-2800, 2600], [-3100, 2150], [-3150, 1200], [-3560, 700], [-3700, 0]],
-  caixa: { x0: -3760, x1: -2360, y0: -780, y1: 2620 } };
+  poly: [[-3560, -760], [-2360, -760], [-2360, 617], [-3577, 617], [-3700, 0]],
+  caixa: { x0: -3760, x1: -2360, y0: -780, y1: 617 }, corte: 'y ≤ 617 (viela)' };
 const FAVELA_NORTE_MEDIO = { id: 'norte', nome: 'Favela do Norte', semente: 639127,
-  poly: [[1180, -2190], [3130, -2190], [3130, -830], [960, -830], [960, -1960]],
-  caixa: { x0: 940, x1: 3150, y0: -2200, y1: -790 } };
+  poly: [[2054, -2190], [3130, -2190], [3130, -830], [2054, -830]],
+  caixa: { x0: 2054, x1: 3150, y0: -2200, y1: -790 }, corte: 'x ≥ 2054 (meio do quarteirão)' };
 /* o pequeno é a cidade de hoje: a cópia do estádio vai pro sul, abaixo
    da 1,10 e do campo; as três favelas são da grade da cidade — a do
    noroeste no lugar da favela de hoje (que era torta, com a casa girada
@@ -269,18 +289,20 @@ const TERRENOS_PEQUENO = [
   { id: '3,4', frente: 'n', hoje: true, ponta: 'l', onde: 'no meio da cidade' }
 ];
 const FAVELAS_PEQUENO = [
-  /* a coluna 1 das fileiras 0 a 3, e um pedaço da 0: o mesmo lugar e
-     quase o mesmo tanto de casa da favela de hoje (223 contra 229), com a
-     estrada noroeste2 passando no meio, como passa hoje */
+  /* a coluna 1 das fileiras 0 a 3, e um pedaço da 0: o mesmo lugar da
+     favela de hoje. Pela metade, como a de hoje: fica a de baixo da
+     estrada noroeste2 (y ≥ 1085), colada nas quadras da coluna 2 */
   { id: 'noroeste', nome: 'Favela do Noroeste', semente: 527193,
-    poly: [[-150, 60], [880, 60], [880, 2110], [-150, 2110]],
-    caixa: { x0: -150, x1: 900, y0: 40, y1: 2120 } },
+    poly: [[-150, 1085], [880, 1085], [880, 2110], [-150, 2110]],
+    caixa: { x0: -150, x1: 900, y0: 1085, y1: 2120 }, corte: 'y ≥ 1085 (meio do quarteirão)' },
+  /* pela metade: a de leste, colada nas quadras da coluna 1 (a viela x = −680) */
   { id: 'oeste', nome: 'Favela do Oeste', semente: 358291,
-    poly: [[-1460, 4030], [110, 4030], [110, 5420], [-1300, 5420], [-1460, 5260]],
-    caixa: { x0: -1480, x1: 130, y0: 4000, y1: 5420 } },
+    poly: [[-680, 4030], [110, 4030], [110, 5420], [-680, 5420]],
+    caixa: { x0: -680, x1: 130, y0: 4000, y1: 5420 }, corte: 'x ≥ −680 (viela)' },
+  /* pela metade: a de leste, a mais perto do estádio (a viela x = 1750) */
   { id: 'norte', nome: 'Favela do Norte', semente: 639127,
-    poly: [[1060, -760], [2540, -760], [2540, 150], [960, 150], [960, -640]],
-    caixa: { x0: 940, x1: 2557, y0: -780, y1: 150 } }
+    poly: [[1750, -760], [2540, -760], [2540, 150], [1750, 150]],
+    caixa: { x0: 1750, x1: 2557, y0: -780, y1: 150 }, corte: 'x ≥ 1750 (viela)' }
 ];
 export const MAPAS = {
   pequeno: {
