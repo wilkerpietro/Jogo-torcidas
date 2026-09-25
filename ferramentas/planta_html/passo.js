@@ -158,3 +158,79 @@ export function Paredes(x0, z0, x1, z1, cel) {
   }
   return { juntar, novaCoisa: () => { nUlt = 0; }, fechar, cabe, empurrar, perto, maisPerto, get n() { return n; }, get seg() { return seg; } };
 }
+
+/* O PISO DA RUA: onde o pé pisa em cima da rua — a laje da calçada, o
+   canteiro, o piso da sede, o degrau da porta, o tablado do quiosque.
+   Cada coisa que o forno assa deixa aqui os triângulos virados pra cima
+   que ficam EMBAIXO da faixa do corpo (o que está nela é parede); o pé
+   fica no mais alto debaixo dele que não passe de um DEGRAU acima do pé
+   de agora — pra baixo ele desce o que for (nada aqui é mais alto que a
+   faixa) —, ou na rua (y = 0). Num balde por metro, como o subsolo */
+export const DEGRAU_RUA_M = 0.3;
+export function PisoDaRua(x0, z0, x1, z1, M) {
+  const CEL = 1 * M, TETO = FAIXA_M[0] * M, DEG = DEGRAU_RUA_M * M, FUNDO = -0.05 * M;
+  const nx = Math.max(1, Math.ceil((x1 - x0) / CEL)), nz = Math.max(1, Math.ceil((z1 - z0) / CEL));
+  let T = new Float32Array(9 * 4096), n = 0;
+  /* o triângulo virado pra cima (até uns 30° de rampa), inteiro entre a
+     rua e a faixa do corpo */
+  function juntar(P, nv) {
+    for (let o = 0; o + 8 < nv * 3; o += 9) {
+      const ya = P[o + 1], yb = P[o + 4], yc = P[o + 7];
+      if (ya > TETO || yb > TETO || yc > TETO || ya < FUNDO || yb < FUNDO || yc < FUNDO) continue;
+      if (ya < 0.02 * M && yb < 0.02 * M && yc < 0.02 * M) continue;          // rente à rua: é a rua
+      const ux = P[o + 3] - P[o], uy = yb - ya, uz = P[o + 5] - P[o + 2];
+      const vx = P[o + 6] - P[o], vy = yc - ya, vz = P[o + 8] - P[o + 2];
+      const Nx = uy * vz - uz * vy, Ny = uz * vx - ux * vz, Nz = ux * vy - uy * vx, L = Math.hypot(Nx, Ny, Nz);
+      if (!L || Ny / L < 0.85) continue;
+      if (n * 9 + 9 > T.length) { const t2 = new Float32Array(T.length * 2); t2.set(T); T = t2; }
+      for (let k = 0; k < 9; k++) T[n * 9 + k] = P[o + k];
+      n++;
+    }
+  }
+  let ini = null, idx = null, plano = null;
+  function fechar() {
+    T = T.slice(0, n * 9);
+    const faixa = k => {
+      const o = k * 9;
+      return [Math.max(0, Math.floor((Math.min(T[o], T[o + 3], T[o + 6]) - x0) / CEL)), Math.min(nx - 1, Math.floor((Math.max(T[o], T[o + 3], T[o + 6]) - x0) / CEL)),
+              Math.max(0, Math.floor((Math.min(T[o + 2], T[o + 5], T[o + 8]) - z0) / CEL)), Math.min(nz - 1, Math.floor((Math.max(T[o + 2], T[o + 5], T[o + 8]) - z0) / CEL))];
+    };
+    const conta = new Uint32Array(nx * nz + 1);
+    for (let k = 0; k < n; k++) { const [i0, i1, j0, j1] = faixa(k); for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) conta[j * nx + i + 1]++; }
+    for (let c = 0; c < nx * nz; c++) conta[c + 1] += conta[c];
+    ini = conta; idx = new Uint32Array(conta[nx * nz]);
+    const pos = conta.slice(0, nx * nz);
+    for (let k = 0; k < n; k++) { const [i0, i1, j0, j1] = faixa(k); for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) idx[pos[j * nx + i]++] = k; }
+    /* o plano de cada um: y = a·x + b·z + c */
+    plano = new Float32Array(n * 3);
+    for (let k = 0; k < n; k++) {
+      const o = k * 9;
+      const ux = T[o + 3] - T[o], uy = T[o + 4] - T[o + 1], uz = T[o + 5] - T[o + 2];
+      const vx = T[o + 6] - T[o], vy = T[o + 7] - T[o + 1], vz = T[o + 8] - T[o + 2];
+      const Nx = uy * vz - uz * vy, Ny = uz * vx - ux * vz, Nz = ux * vy - uy * vx;
+      plano[k * 3] = -Nx / Ny; plano[k * 3 + 1] = -Nz / Ny;
+      plano[k * 3 + 2] = T[o + 1] + (Nx * T[o] + Nz * T[o + 2]) / Ny;
+    }
+  }
+  /* O CHÃO debaixo de (x, z) pra quem está com o pé em `yPe` */
+  function chao(x, z, yPe = 0) {
+    let melhor = 0;
+    if (!ini) return melhor;
+    const i = Math.floor((x - x0) / CEL), j = Math.floor((z - z0) / CEL);
+    if (i < 0 || j < 0 || i >= nx || j >= nz) return melhor;
+    const c = j * nx + i, e = 1e-3 * M * M;
+    for (let q = ini[c]; q < ini[c + 1]; q++) {
+      const k = idx[q];
+      const y = plano[k * 3] * x + plano[k * 3 + 1] * z + plano[k * 3 + 2];
+      if (y > yPe + DEG || y <= melhor) continue;
+      const o = k * 9;
+      const ax = T[o], az = T[o + 2], bx = T[o + 3], bz = T[o + 5], cx = T[o + 6], cz = T[o + 8];
+      const d1 = (bx - ax) * (z - az) - (bz - az) * (x - ax);
+      const d2 = (cx - bx) * (z - bz) - (cz - bz) * (x - bx);
+      const d3 = (ax - cx) * (z - cz) - (az - cz) * (x - cx);
+      if ((d1 >= -e && d2 >= -e && d3 >= -e) || (d1 <= e && d2 <= e && d3 <= e)) melhor = y;
+    }
+    return melhor;
+  }
+  return { juntar, fechar, chao, get n() { return n; } };
+}

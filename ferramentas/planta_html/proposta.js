@@ -35,6 +35,18 @@
    a casa ali, e a viela e o beco só ficam onde tem casa do lado. `corte`
    guarda onde foi.
 
+   E depois as AVENIDAS FICARAM RETAS (o dono pediu): saem as diagonais
+   da cidade de hoje — a do sudoeste e a do noroeste, que eram as duas
+   entradas, e as duas saídas pro oeste — e a estrada norte; fica só a da
+   beira (a da praia ou da lagoa), que segue a costa. A ENTRADA da cidade
+   passa a ser uma AVENIDA DUPLICADA, reta, de ponta a ponta do mapa, na
+   rua entre a coluna 1 e a 2 de quadras: a pista do leste é a rua de
+   hoje, e o canteiro e a pista do oeste saem da coluna 1, que estreita
+   8,6 m. As quadras de hoje que as diagonais cortavam, e as da coluna 1,
+   são refeitas inteiras (o prédio que tinha nelas fica, e a casa nova
+   não pisa nele); o pórtico de BEM-VINDO fica nas duas pontas dela, na
+   borda da cidade, e o Atacadex vai pra beira dela, ao norte.
+
    Os lotes saem com a mesma conta do `lotear()` da planta, só que com
    hash da posição no lugar do sorteio, e a favela com a mesma conta da
    favela da planta, com um sorteio próprio de semente fixa: a proposta
@@ -150,8 +162,16 @@ const TERRENOS_GRANDE = [
 const PARTIDAS = ['-3,2', '-1,2', '0,2'];
 /* os pares que viram uma quadra só, por cima da rua (de oeste pra leste) */
 const JUNTAS = [['0,-1', '1,-1'], ['-2,3', '-1,3'], ['0,7', '1,7']];
-/* as avenidas transversais que saem da proposta */
-const SEM_AVENIDA = ['oeste', 'noroeste2'];
+/* AS AVENIDAS QUE SAEM: toda avenida torta da cidade de hoje (a do
+   sudoeste e a do noroeste, que eram as entradas, e as duas saídas pro
+   oeste) e a estrada norte. Fica a da beira, que segue a costa; a entrada
+   é a avenida duplicada (`AVENIDA_ENTRADA`) */
+const SEM_AVENIDA = ['oeste', 'noroeste2', 'sudoeste', 'noroeste', 'norte'];
+/* A AVENIDA DE ENTRADA, duplicada: duas pistas da largura da rua da cidade
+   (118,8 = 6,1 m) com o canteiro de 2,5 m no meio, na rua entre a coluna
+   1 e a 2 de quadras. A pista do leste é a própria rua de hoje; o canteiro
+   e a pista do oeste tomam 8,6 m da coluna 1 */
+export const AVENIDA_ENTRADA = { coluna: 1, canteiro: 48 };
 
 /* AS FAVELAS: as manchas que o dono circulou, em coordenada de planta,
    cada uma cortada pela metade (a metade colada na cidade) */
@@ -277,8 +297,9 @@ const FAVELA_NOROESTE_MEDIO = { id: 'noroeste', nome: 'Favela do Noroeste', seme
 const FAVELA_NORTE_MEDIO = { id: 'norte', nome: 'Favela do Norte', semente: 639127,
   poly: [[2054, -2190], [3130, -2190], [3130, -830], [2054, -830]],
   caixa: { x0: 2054, x1: 3150, y0: -2200, y1: -790 }, corte: 'x ≥ 2054 (meio do quarteirão)' };
-/* o pequeno é a cidade de hoje: a cópia do estádio vai pro sul, abaixo
-   da 1,10 e do campo; as três favelas são da grade da cidade — a do
+/* o pequeno é a cidade de hoje: a cópia do estádio vai pro sudoeste,
+   abaixo da favela do oeste (antes era abaixo da 1,10 e do campo, onde
+   agora passa a avenida de entrada); as três favelas são da grade da cidade — a do
    noroeste no lugar da favela de hoje (que era torta, com a casa girada
    junto da estrada), a do oeste entre o Atacadex e a estrada sul e a do
    norte acima da 2,1 e da 3,1; os três terrenos saem de quadras de hoje,
@@ -307,10 +328,10 @@ const FAVELAS_PEQUENO = [
 export const MAPAS = {
   pequeno: {
     id: 'pequeno', nome: 'Mapa pequeno', porte: 'Pequeno',
-    grade: {}, estadios: [{ i: [1, 2], j: [11, 13], nome: 'Estádio Municipal' }],
+    grade: {}, estadios: [{ i: [-1, 0], j: [11, 13], nome: 'Estádio Municipal' }],
     equip: {}, metro: null, condominios: [], terrenos: TERRENOS_PEQUENO,
-    partidas: [], juntas: [], semAvenida: [], favelas: FAVELAS_PEQUENO, favelaDeHoje: false,
-    nBares: 8, atacadexNoNorte: false, norteJ: 1, norteAte: null, beiramarJ: null, mundoY0: null
+    partidas: [], juntas: [], semAvenida: SEM_AVENIDA, favelas: FAVELAS_PEQUENO, favelaDeHoje: false,
+    nBares: 8, atacadexNoNorte: true, norteJ: 1, norteAte: null, beiramarJ: null, mundoY0: null
   },
   medio: {
     id: 'medio', nome: 'Mapa médio', porte: 'Médio',
@@ -353,10 +374,16 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const cruza = (a, b, m) => a.x0 < b.x1 + m && a.x1 > b.x0 - m && a.y0 < b.y1 + m && a.y1 > b.y0 - m;
   const MARGEM = RUA / 2 + 4;
 
-  /* ---- a grade: as colunas e as linhas de hoje, e as novas no mesmo passo ---- */
+  /* ---- a avenida de entrada: a banda dela (as duas pistas e o canteiro) ---- */
+  const cE = AVENIDA_ENTRADA.coluna, xE = K.COLUNAS[cE].c, CANTEIRO = AVENIDA_ENTRADA.canteiro;
+  const ENTRADA = { pista: RUA, canteiro: CANTEIRO, x1: xE + RUA / 2, x0: xE + RUA / 2 - 2 * RUA - CANTEIRO };
+  ENTRADA.xc = (ENTRADA.x0 + ENTRADA.x1) / 2; ENTRADA.l = ENTRADA.x1 - ENTRADA.x0;
+  /* ---- a grade: as colunas e as linhas de hoje, e as novas no mesmo passo
+     (a coluna da avenida de entrada acaba na pista do oeste dela) ---- */
   const cx0 = K.COLUNAS[0].c, passoX = K.COLUNAS[1].c - K.COLUNAS[0].c;
   const ly0 = K.LINHAS[0].c;
-  const colX = i => i >= 1 ? [K.bordasX[2 * i], K.bordasX[2 * i + 1]]
+  const colX = i => i === cE ? [i >= 1 ? K.bordasX[2 * i] : cx0 + (i - 1) * passoX + RUA / 2, ENTRADA.x0]
+                  : i >= 1 ? [K.bordasX[2 * i], K.bordasX[2 * i + 1]]
                            : [cx0 + (i - 1) * passoX + RUA / 2, cx0 + i * passoX - RUA / 2];
   const linY = j => j >= 1 ? [K.bordasY[2 * j], K.bordasY[2 * j + 1]]
                            : [ly0 + (j - 1) * PASSO_Y + RUA / 2, ly0 + j * PASSO_Y - RUA / 2];
@@ -418,13 +445,19 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     }
     avenidas.push({ id: a.id, l: a.l, pontos: p });
   }
+  /* A AVENIDA DE ENTRADA: reta de norte a sul, de ponta a ponta do mapa
+     (a ponta do norte acompanha o que o mapa tiver lá em cima: o Atacadex) */
+  const avEntrada = { id: 'entrada', l: ENTRADA.l, reta: true, dupla: { pista: RUA, canteiro: CANTEIRO, x0: ENTRADA.x0, x1: ENTRADA.x1 },
+                      pontos: [[ENTRADA.xc, (cfg.mundoY0 ?? K.VY0) - 200], [ENTRADA.xc, mundoY1 + 200]] };
+  avenidas.push(avEntrada);
   const distSeg = (x, y, [ax, ay], [bx, by]) => {
     const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
     const t = L ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L)) : 0;
     return Math.hypot(x - ax - t * dx, y - ay - t * dy);
   };
   const distAvenida = (x, y, a) => { let d = Infinity; for (let k = 1; k < a.pontos.length; k++) d = Math.min(d, distSeg(x, y, a.pontos[k - 1], a.pontos[k])); return d; };
-  const naAvenida = (x, y, m = 0) => avenidas.some(a => distAvenida(x, y, a) < a.l / 2 + m);
+  /* `soTortas`: só as que cortam quadra (a de entrada corre na beira dela) */
+  const naAvenida = (x, y, m = 0, soTortas = false) => avenidas.some(a => !(soTortas && a.reta) && distAvenida(x, y, a) < a.l / 2 + m);
 
   const cantos = l => K.cantosDoLote(l).slice(0, 4);
   const bbOf = pts => ({ x0: Math.min(...pts.map(p => p[0])), x1: Math.max(...pts.map(p => p[0])),
@@ -436,10 +469,27 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const A0 = K.ATACADEX;
   let atacadex = null;
   if (A0 && cfg.atacadexNoNorte) {
-    const norte = av('norte'), xN = norte.pontos[0][0];
+    /* NA AVENIDA DE ENTRADA, ao norte da cidade, do lado do leste e de
+       frente pra ela: o estacionamento dá na calçada da avenida. Sobe até
+       não encostar em favela nem na cidade */
     const zP = 20;                                                        // o estacionamento: 20 m até a guia
     const W = A0.W, D = A0.D;
-    const f = { x0: xN + norte.l / 2 + CALC + 30 + zP * M, y0: -2560 };
+    const xa = ENTRADA.x1 + CALC + 30 + zP * M;
+    const bbF = FAVELAS.map(F => bbOf(F.poly));
+    const naGrade = (x0, x1, y0, y1) => {
+      for (const [ci, faixas] of Object.entries(GRADE)) for (const [ja, jb] of faixas) for (let j = ja; j <= jb; j++) {
+        const [qx0, qx1] = colX(+ci), [qy0, qy1] = linY(j);
+        if (x0 < qx1 + RUA && x1 > qx0 - RUA && y0 < qy1 + RUA && y1 > qy0 - RUA) return true;
+      }
+      return K.QUADRAS.some(q => x0 < q.x1 + RUA && x1 > q.x0 - RUA && y0 < q.y1 + RUA && y1 > q.y0 - RUA);
+    };
+    let y1A = Math.min(...K.QUADRAS.map(q => q.y0)) - RUA - 150;
+    for (let volta = 0; volta < 60; volta++) {
+      const x0 = xa - zP * M - 60, x1 = xa + D * M + 60, y0 = y1A - W * M - 60, y1 = y1A + 60;
+      if (!naGrade(x0, x1, y0, y1) && !bbF.some(b => x0 < b.x1 && x1 > b.x0 && y0 < b.y1 && y1 > b.y0)) break;
+      y1A -= 100;
+    }
+    const f = { x0: xa, y0: y1A - W * M };
     f.x1 = f.x0 + D * M; f.y1 = f.y0 + W * M;
     /* a borda do estacionamento agora é reta: as vagas, o totem e os
        postes da guia são refeitos com a mesma conta da planta */
@@ -466,20 +516,26 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   }
 
   /* ---- os pórticos: onde a estrada cruza a borda da cidade ---- */
+  /* (a ponta do norte da avenida passa do Atacadex) */
+  if (atacadex) avEntrada.pontos[0][1] = Math.min(avEntrada.pontos[0][1], atacadex.bb.y0 - 400);
   const porticos = [];
   {
-    const n = av('norte'), xN = n.pontos[0][0];
-    porticos.push({ id: 'norte', nome: 'Pórtico da entrada norte', x: xN, y: linY(cfg.norteJ)[0] - RUA - 88, dir: [0, 1], l: n.l });
-    const s = avenidas.find(a => a.id === 'sudoeste').pontos, [ax, ay] = s[0], [bx, by] = s[1];
-    const yP = linY(10)[1] + RUA + 84, t = (yP - ay) / (by - ay);
-    const L = Math.hypot(bx - ax, by - ay);
-    porticos.push({ id: 'sul', nome: 'Pórtico da entrada sul', x: ax + (bx - ax) * t, y: yP, dir: [(bx - ax) / L, (by - ay) / L], l: av('sudoeste').l });
+    /* nas duas pontas da cidade, na avenida de entrada: a quadra mais ao
+       norte e a mais ao sul das duas colunas dela (a da vaga de estádio
+       conta), com a rua em volta */
+    const cols = [cE, cE + 1], ys0 = [], ys1 = [];
+    for (const c of cols) for (const [ja, jb] of GRADE[String(c)] || []) { ys0.push(linY(ja)[0]); ys1.push(linYx(jb)[1]); }
+    for (const q of K.QUADRAS) if (cols.includes(q.i)) { ys0.push(q.y0); ys1.push(q.y1); }
+    for (const v of VAGAS) if (cols.some(c => c >= v.i[0] && c <= v.i[1])) ys1.push(linYx(v.j[1])[1]);
+    const xP = ENTRADA.xc, meiaVao = ENTRADA.l / 2 / M + 1.0;
+    porticos.push({ id: 'norte', nome: 'Pórtico da entrada norte', x: xP, y: Math.min(...ys0) - RUA - 88, dir: [0, 1], l: ENTRADA.l, xp: meiaVao, dupla: true });
+    porticos.push({ id: 'sul', nome: 'Pórtico da entrada sul', x: xP, y: Math.max(...ys1) + RUA + 88, dir: [0, -1], l: ENTRADA.l, xp: meiaVao, dupla: true });
   }
 
   /* ---- as células ---- */
   const celulas = [];
   const nova = (i, j, x0, x1, y0, y1, parte, extra) => celulas.push({ i, j, x0, x1, y0, y1, parte: parte || '', ...extra });
-  const xn = av('norte').pontos[0][0], ln = av('norte').l;
+  const avN = avenidas.find(a => a.id === 'norte'), xn = avN ? avN.pontos[0][0] : -1e9, ln = avN ? avN.l : 0;
   const naVaga = (v, i, j) => i >= v.i[0] && i <= v.i[1] && j >= v.j[0] && j <= v.j[1];
   const noEstadio2 = (i, j) => VAGAS.some(v => naVaga(v, i, j));
   const deHoje = id => K.QUADRAS.find(q => q.i + ',' + q.j === id);
@@ -493,7 +549,18 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     }
     return false;
   };
-  const substitui = new Set(K.QUADRAS.filter(cortada).map(q => q.i + ',' + q.j));
+  /* (e as da coluna da avenida de entrada, que estreita) */
+  const substitui = new Set(K.QUADRAS.filter(q => cortada(q) || q.i === cE).map(q => q.i + ',' + q.j));
+  /* O QUE A QUADRA REFEITA GUARDA: o prédio que ela tinha (o marco, o
+     equipamento), com a casa nova fora dele; a quadra que era toda ele
+     (o terreno baldio do lado do estádio) não ganha casa nenhuma */
+  const mantemDe = id => {
+    const q = deHoje(id);
+    if (!q || !q.equip) return null;
+    const e = q.equip;
+    const areas = e.tipo === 'marco' ? e.pecas.filter(p => p.k === 'modelo').map(p => p.fatia) : [e.area];
+    return { equip: e, areas: areas.filter(Boolean), semCasa: !q.lotes.length };
+  };
   for (const par of JUNTAS) for (const id of par) if (deHoje(id)) substitui.add(id);
   const ids = [];
   for (const [ci, faixas] of Object.entries(GRADE)) for (const [ja, jb] of faixas) for (let j = ja; j <= jb; j++) ids.push([+ci, j]);
@@ -527,7 +594,12 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     } else if (xn > x0 && xn < x1) {
       /* a avenida norte sobe reta pelo meio da coluna do estádio e parte a quadra em duas */
       nova(i, j, x0, xn - ln / 2, y0, y1, 'o', { sal: 1 }); nova(i, j, xn + ln / 2, x1, y0, y1, 'l', { sal: 2 });
-    } else nova(i, j, x0, x1, y0, y1, '', substitui.has(id) ? { substitui: [id], refeita: true } : {});
+    } else if (substitui.has(id) && y1 - y0 > 700 && !mantemDe(id)) {
+      /* a quadra alta de hoje refeita: a rua no meio, como as partidas */
+      const xm = (x0 + x1) / 2;
+      nova(i, j, x0, xm - RUA / 2, y0, y1, 'o', { sal: 1, partida: true, substitui: [id], refeita: true });
+      nova(i, j, xm + RUA / 2, x1, y0, y1, 'l', { sal: 2, partida: true, substitui: [id], refeita: true });
+    } else nova(i, j, x0, x1, y0, y1, '', substitui.has(id) ? { substitui: [id], refeita: true, mantem: mantemDe(id) } : {});
   }
   /* as cópias do estádio, uma por vaga ocupada: o quarteirão do estádio de
      hoje, deslocado pro meio da vaga */
@@ -571,15 +643,18 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     });
     q.equip = { tipo: 'condominio', nome: 'Condomínio ' + cd.t1.replace('Edifício ', ''), cor: '#b5afa0', torres, cores: cd.cores,
                 nota: `${cd.t1} e ${cd.t2}: os mesmos dois prédios do baldio, em ${cd.cores}.` };
-    q.faixaLotes = { x0: q.ix1 - 112, x1: q.ix1, y0: q.iy0, y1: q.iy1 };  // a fileira de casas do outro lado
-    q.jardim = { x0: q.ix0 + L, x1: q.ix1 - 112, y0: q.iy0, y1: q.iy1 };
+    /* a fileira de casas do outro lado, se couber (na coluna da avenida
+       de entrada a quadra estreitou: fica só o jardim) */
+    const cabeFileira = q.ix1 - q.ix0 - L >= 112 + 40;
+    q.faixaLotes = cabeFileira ? { x0: q.ix1 - 112, x1: q.ix1, y0: q.iy0, y1: q.iy1 } : null;
+    q.jardim = { x0: q.ix0 + L, x1: cabeFileira ? q.ix1 - 112 : q.ix1, y0: q.iy0, y1: q.iy1 };
     condominios.push({ q, torres, ...cd });
   }
 
   /* ---- os lotes: a conta do `lotear()`, com hash no lugar do sorteio ---- */
   const tocaAvenida = l => {
     const xs = [l.x0, (l.x0 + l.x1) / 2, l.x1], ys = [l.y0, (l.y0 + l.y1) / 2, l.y1];
-    for (const x of xs) for (const y of ys) if (naAvenida(x, y, CALC + 4)) return true;
+    for (const x of xs) for (const y of ys) if (naAvenida(x, y, CALC + 4, true)) return true;
     return false;
   };
   const noEstadio = l => (l.x1 > P.QEST_X0 && l.x0 < P.QEST_X1 && l.y1 > P.QEST_Y0 && l.y0 < P.QEST_Y1) || copias.some(e => cruza(l, e.qest, 0));
@@ -629,10 +704,12 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   for (const q of quadras) {
     if (q.equip && q.equip.tipo === 'condominio') {
       const r = q.faixaLotes;
-      lotear(q, [{ f: 'l', x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 }]);
+      if (r) lotear(q, [{ f: 'l', x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 }]);
       continue;
     }
     if (q.equip) continue;
+    /* a quadra de hoje que era toda o prédio dela (o terreno baldio) */
+    if (q.mantem && q.mantem.semCasa) continue;
     const largI = q.ix1 - q.ix0, altI = q.iy1 - q.iy0;
     if (largI < 40 || altI < 40) continue;
     let prof = par8(entre(88, 112, q.i, q.j + (q.sal || 0) * 1000, 1));
@@ -654,6 +731,13 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
          { f: 'l', x0: q.ix1 - prof, x1: q.ix1, y0: q.iy0 + prof, y1: q.iy1 - prof }];
     lotear(q, frentes);
     if (!raso) q.quintal = { x0: q.ix0 + prof, x1: q.ix1 - prof, y0: q.iy0 + prof, y1: q.iy1 - prof };
+    /* a casa nova não pisa no prédio que a quadra refeita guardou */
+    if (q.mantem) {
+      const pisa = l => q.mantem.areas.some(a => l.x0 < a.x1 + 8 && l.x1 > a.x0 - 8 && l.y0 < a.y1 + 8 && l.y1 > a.y0 - 8);
+      q.lotes = q.lotes.filter(l => !pisa(l));
+      if (q.quintal && pisa(q.quintal)) q.quintal = null;
+      continue;
+    }
     /* a avenida que atravessa a quadra na diagonal pode não deixar lote
        nenhum: a sobra vira praça, como já é no centro */
     if (q.lotes.length < 3) {
@@ -671,9 +755,10 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const lotesExtra = [], lotesTirados = new Set();
   const bbLote = l => l.ang ? bbOf(cantos(l)) : l;
   TERRENOS_SEDE.forEach((t, k) => {
-    const hoje = !!t.hoje;
+    /* o terreno numa quadra de hoje que foi refeita vai pra quadra nova */
+    const hoje = !!t.hoje && !substitui.has(t.id);
     const q = hoje ? deHoje(t.id) : quadras.find(q => q.id === t.id);
-    if (!q || q.equip || (hoje && substitui.has(t.id))) return;
+    if (!q || q.equip || q.mantem) return;
     const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
     const w = hoje ? Math.min(Lx, 430) : Math.min(Lx, Math.max(420, Lx * 0.72));
     if (w < 340 || Ly < 190) return;
@@ -1193,6 +1278,24 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   /* ---- o que a proposta cobre (pra esconder o mato, a beira e a favela de hoje) ---- */
   const coberto = (x, y, folga = RUA / 2) => quadras.some(q => x > q.x0 - folga && x < q.x1 + folga && y > q.y0 - folga && y < q.y1 + folga);
   const naFavelaNova = (x, y) => favelas.some(f => dentroPol(x, y, f.poly));
+
+  /* ---- O CANTEIRO DA AVENIDA DE ENTRADA: corre ao lado das quadras dela
+     e abre nas ruas que a cruzam (o carro atravessa ali); fora da cidade,
+     do começo da avenida até a rua da ponta dela, é contínuo ---- */
+  {
+    const lados = [];
+    for (const q of quadras.concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j))))
+      if (Math.abs(q.x1 - ENTRADA.x0) < 2 || Math.abs(q.x0 - ENTRADA.x1) < 2) lados.push([q.y0, q.y1]);
+    lados.sort((a, b) => a[0] - b[0]);
+    const U = [];
+    for (const [a, b] of lados) { if (U.length && a <= U[U.length - 1][1] + 1) U[U.length - 1][1] = Math.max(U[U.length - 1][1], b); else U.push([a, b]); }
+    const [yN, yS] = [avEntrada.pontos[0][1], avEntrada.pontos[1][1]];
+    ENTRADA.canteiros = U.length ? [[yN, U[0][0] - RUA]].concat(U, [[U[U.length - 1][1] + RUA, yS]]) : [[yN, yS]];
+    /* as ruas que cruzam a avenida, dentro da cidade (a faixa de pedestre vai nelas) */
+    ENTRADA.cruzamentos = [];
+    for (let k = 1; k < U.length; k++) ENTRADA.cruzamentos.push([U[k - 1][1], U[k][0]]);
+    ENTRADA.cidade = U.length ? [U[0][0] - RUA, U[U.length - 1][1] + RUA] : null;
+  }
   const noAtacadex = (x, y, m = 0) => !!atacadex && x > atacadex.bb.x0 - m && x < atacadex.bb.x1 + m && y > atacadex.bb.y0 - m && y < atacadex.bb.y1 + m;
 
   const residenciais = quadras.filter(q => !q.equip);
@@ -1216,6 +1319,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                 quadrasTrocadas: substitui.size,
                 quadrasHoje: K.QUADRAS.length, lotesHoje: K.QUADRAS.reduce((n, q) => n + q.lotes.length, 0) },
     limite: { x0: x0 - RUA, y0: y0 - RUA, x1, y1 },
-    mundo: { x0: x0 - 400, y0: cfg.mundoY0 ?? K.VY0, x1: K.VX0 + K.VW, y1: mundoY1 }
+    mundo: { x0: x0 - 400, y0: Math.min(cfg.mundoY0 ?? K.VY0, atacadex ? atacadex.bb.y0 - 300 : Infinity), x1: K.VX0 + K.VW, y1: mundoY1 },
+    /* a avenida de entrada: a banda dela (as duas pistas e o canteiro) */
+    entrada: { ...ENTRADA }
   };
 }
