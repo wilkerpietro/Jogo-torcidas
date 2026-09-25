@@ -2934,9 +2934,86 @@ As praças são Interior do PR no pequeno, Bahia no médio (3 estádios, metrô 
 
 1. **O mato ainda não está no mapa.** O módulo planta e monta. Falta decidir o `pode` de cada mapa (onde é cidade, estrada e mar) e ligar o LOD na cena do jogo.
 2. **A de longe não é o cartão de dois triângulos** da estimativa: tem de 26 a 128. É mais pesada, mas não precisa de textura nem de foto da árvore, e a troca não salta.
-3. **A árvore da cidade, no jogo, não troca pra de longe.** Se pesar, é pôr em ladrilhos com LOD, como o mato.
+3. ~~**A árvore da cidade, no jogo, não troca pra de longe.**~~ Resolvido na 4.46: a cidade inteira foi pra ladrilhos, e a árvore troca pra de longe junto com o ladrilho dela.
 4. **A favela perdeu a textura** de tijolo, de telha e de reboco. De longe fica igual; de perto, a casa é bloco de cor.
 5. **O ipê pequeno parece um cacho de balão.** A flor são bolas soltas na ponta dos galhos, sem folha. Na praça e na rua, encaixado no raio do 2D, lê como balão de festa.
+
+
+### 4.46. O jogo mais leve: a sombra anda com a câmera, a cidade em ladrilhos e a versão de longe
+
+O dono perguntou se o jogo roda no celular e no PC fraco, e se ajudava fazer como os jogos grandes: low poly de longe, detalhe de perto. Antes de mexer, medi a câmera de ombro olhando uma rua (tela + sombra, 1280 × 720). Eram 671 mil triângulos por quadro, e só uns 101 mil estavam dentro da tela. Três coisas explicavam isso:
+
+- **a sombra desenhava a cidade de novo:** 322 mil triângulos, numa caixa fixa em volta do estádio. A favela, fora dela, não tinha sombra e pagava igual;
+- **a cidade estava em poucas malhas grandes:** as árvores numa malha só, com 99 mil triângulos. A câmera não tinha o que descartar;
+- **quase tudo o que aparecia estava longe** e vinha com o detalhe de perto.
+
+Foram três mudanças.
+
+**1. A sombra anda com a câmera** (`moverSombra`, em `estadio3d.js`). A caixa tem o mesmo tamanho (134 × 113 m), mas agora fica em volta do alvo da câmera:
+
+- nas câmeras que seguem, o alvo é o líder;
+- nas outras, é o ponto olhado, e a caixa cresce com a distância nas vistas de longe.
+
+O centro anda de texel em texel no plano do sol; senão a borda da sombra treme. A favela agora tem sombra.
+
+**2. A cidade vai em ladrilhos de 40 m** (`ladrilhos3d.js`). Quem monta a cidade (`bairro3d`, `props3d`) diz de quem é cada triângulo: antes de uma casa, de uma árvore ou de um carro, chama `objeto(x, z, giro, tipo)`, e todo triângulo que sai depois leva o número dele. O recorte junta, em cada ladrilho, os triângulos dos objetos cujo meio cai ali, então a casa inteira fica num ladrilho só.
+
+- **Materiais iguais viram um.** Cada material é uma chamada de desenho por ladrilho. O reboco do quarteirão e o da beira viraram um só, e o de cor por vértice dos soltos e das árvores também. A textura pedida duas vezes (a telha da casa e a da favela) agora é carregada uma vez.
+- **Fica inteiro o que é pouco e é chão:** o tampo da laje, a moita e a falha de reboco. Recortados, cada um virava uma chamada por ladrilho pra desenhar uma dúzia de triângulos.
+- **Os marcos também ficam inteiros** (a igreja, as torres, o atacarejo). Já são uma malha cada, e a fachada deles é o que os faz marco: em bloco de uma cor, a torre azul e tijolo virava uma caixa cinza.
+
+**3. Cada ladrilho tem uma versão de longe.** Ele tem três estados, pela distância da câmera ao PONTO MAIS PERTO dele (a caixa do ladrilho):
+
+- de perto, tudo;
+- de longe, uma malha só, de cor por vértice;
+- além da névoa, nada.
+
+Pelo meio do ladrilho não servia: a borda de perto de um ladrilho grande trocava pra bloco a 35 m da câmera. De longe, cada coisa fica assim:
+
+- **a casa de modelo** (a da favela e as da cidade) vira blocos de altura. O telhado dela vai pra uma grade no referencial do lote, com células de 0,6 a 2 m, em degraus de meio metro, e cada retângulo de mesma altura vira um bloco. A cor do topo é a do telhado ali; a dos lados, a média das paredes. Ficam a laje, o quarto em cima dela, a caixa d'água e o muro; somem a janela, a porta e a calha;
+- **a árvore** vira a versão de longe dela, de 26 a 128 triângulos;
+- **o poste, o mastro e o semáforo** viram uma haste;
+- **o que já é caixa** (o carro, o hospital, o muro, a sede) fica igual, só sem o grão do reboco. Em blocos de altura, o hospital de seis andares virava uma caixa cinza sem janela;
+- **o miúdo** some: a lixeira, o cone, o banco, o móvel da sede, o decalque de chão.
+
+A cor de longe é a do vértice vezes a MÉDIA da textura naquele ponto: a da célula do atlas em que a UV cai, ou a da textura solta (o reboco, a telha). As médias saem do pintor, em `js/diajogo/modelos_medias.js` (`python3 ferramentas/pintar_modelos.py --medias` refaz só elas).
+
+**A troca desce com o modo leve:** 72 m no cheio, 57 no leve, 44 no leve+ e 33 no mínimo. O que passa do fim da névoa não é desenhado. Antes, a névoa curta dos níveis baixos só escondia a cidade: os três níveis sem sombra davam o mesmo número.
+
+**O que deu** (chamadas de desenho / triângulos por quadro, tela + sombra):
+
+| vista | antes, cheio | agora, cheio | antes, sem sombra | agora, leve | agora, mínimo |
+|---|---|---|---|---|---|
+| ombro, na rua | 100 / 671 mil | 164 / 352 mil | 55 / 349 mil | 69 / 139 mil | 57 / 124 mil |
+| ombro, na rua, pro outro lado | 176 / 819 mil | 250 / 532 mil | 93 / 384 mil | 122 / 221 mil | 108 / 189 mil |
+| alta, na favela | 55 / 498 mil | 95 / 166 mil | 20 / 181 mil | 29 / 47 mil | 27 / 45 mil |
+| a favela de longe | 63 / 539 mil | 117 / 210 mil | 28 / 222 mil | 37 / 55 mil | 28 / 34 mil |
+| maquete | 266 / 882 mil | 295 / 481 mil | 155 / 461 mil | 162 / 238 mil | 148 / 213 mil |
+| a câmera do começo do jogo | 209 / 599 mil | 228 / 372 mil | — | — | — |
+
+- **Os triângulos caíram de 1,5 a 6 vezes.** O menor ganho é olhando pro lado do estádio, que não entrou no recorte; o maior é na favela.
+- **As chamadas subiram no cheio**, porque a sombra passa por todos os ladrilhos que tocam a caixa dela. No leve, que é o nível do celular, ficaram parecidas.
+- **A conta que fiz antes de mexer foi otimista.** Pra câmera de ombro eu tinha dito "de 670 mil pra uns 100 mil"; deu 352 mil no cheio e 139 mil no leve. O estádio, que não entrou no recorte, tem 70 mil triângulos na tela e mais 59 mil na sombra dessa vista.
+- **A imagem quase não muda.** Comparando o automático com "tudo de perto" na mesma câmera, menos de 1% dos pixels muda mais de 40 níveis de cinza. Na maquete é 0,9%: lá a cidade atrás do estádio vira bloco.
+
+**Por que 40 m.** Medi também 60 e 80 m, com a troca pelo ponto mais perto. Com 60 m, no leve, o quadro tinha de 20 a 70% mais triângulos e só umas 5 chamadas a menos. A vantagem do 60 m é na sombra, e a sombra só liga em máquina forte. Com 80 m, a favela vista de cima desenhava o dobro.
+
+**A favela com textura de volta.** Com `?favela=detalhada` no `estadio3d.html`, a favela low poly troca pela de antes, com tijolo, telha e reboco. A de longe é a mesma nas duas. Na vista alta da favela:
+
+- no leve, 73 mil triângulos (47 mil com a low poly);
+- no cheio, 220 mil (166 mil com a low poly).
+
+É menos da metade do que a low poly custava antes dos ladrilhos. Nessa vista, umas 200 casas ficam de perto: cada 100 triângulos a mais por casa custam uns 20 mil por quadro, e uns 40 mil com sombra.
+
+**Como medir.** `estadio.vista._ladrilhos.forcar('perto' | 'longe' | null)` trava todos os ladrilhos num estado (pra foto e teste); `conta` diz quantos são e quanto pesa cada versão.
+
+**O que ficou aberto:**
+
+1. **O estádio não tem versão de longe.** Com 70 mil triângulos (e mais 59 mil na sombra), é a maior peça da cena nas vistas da rua.
+2. **Cada boneco é uma chamada de desenho** (`bonecos3.js`, um SkinnedMesh por figura). Na maquete são 44 chamadas na tela e 44 na sombra, somando 104 mil triângulos. É o próximo gargalo em cena de multidão.
+3. **O cheio tem mais chamadas que antes** (164 contra 100 na rua): a sombra passa ladrilho por ladrilho. No PC forte não pesa; no celular, a sombra já desliga no leve.
+4. **Dá pra ver a troca, se procurar.** A casa vira bloco a 72 m no cheio, e somem a janela e o telhado de duas águas.
+5. **O fps não foi medido:** este ambiente não tem placa de vídeo.
 
 
 ### 4.16. Dois bugs que a sede menor desenterrou
@@ -3428,7 +3505,9 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
    laje e o sólido empurra a câmera pra perto do líder.
 6. **O fps de verdade.** Este ambiente só tem rasterizador por software; os
    números de chamada e triângulo valem, o fps não. Rode aí e olhe o
-   contador; `H` desliga a sombra, que é o primeiro suspeito.
+   contador; `H` desliga a sombra, que é o primeiro suspeito. (A 4.46
+   mediu e cortou o que se desenha: a sombra anda com a câmera e a
+   cidade vai em ladrilhos com versão de longe.)
 7. **A cena não está no dia de jogo.** É uma página à parte, como antes.
 8. **Placar, bandeirão de mastro, fumaça de sinalizador**: continuam não
    existindo. O bandeirão de setor é uma faixa colorida na mureta.
@@ -3457,23 +3536,25 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | arquivo | o que é |
 |---|---|
 | `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), o atacarejo e as casas de muro, a rua sem saída, os dois prédios do baldio e os props de rua, máscara, spawns, setores, PM, grades, filas, gatilho; o `DX` do tabuleiro |
-| `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve), ligação com a simulação e com a gente |
-| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, só o muro é caixa), calçadas (com o furo da rua sem saída), árvores (a low poly de `arvores_lowpoly.js`, encaixada no raio do 2D), carros, postes, campos, moitas |
+| `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve, com a distância em que a cidade troca pra versão de longe), a sombra que anda com a câmera, ligação com a simulação e com a gente |
+| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, só o muro é caixa), calçadas (com o furo da rua sem saída), árvores (a low poly de `arvores_lowpoly.js`, encaixada no raio do 2D), carros, postes, campos, moitas; cada triângulo sai com o objeto dele (`objeto`), pro recorte em ladrilhos |
 | `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões (e a rua sem saída), ruas, avenidas, costa, campos, estádio |
 | `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão; e `noMundo`/`placasNoMundo`, que põem um modelo solto (a árvore, a peça da praia) no mundo, girado e na escala, com a normal junto; o modo chapado (a peça da paleta vira uma cor lisa, sem textura: a favela low poly); `sorteio`, `varrer` e `esfera` |
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
-| `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
+| `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600; cada peça é um objeto pro recorte em ladrilhos (o poste vira haste de longe, o resto some) |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), as nove no modo chapado, com a `PALETA_FAVELA`, o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo), as casas de muro (M1 a M4) e o bar pequeno da torcida embaixo do apartamento (`bartorcida`, aberto ou fechado), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
 | `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto (os escudos com o caminho do PNG do jogo) e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila, com as árvores low poly; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/arvores_lowpoly.js` | as árvores do jogo, todas: as dez espécies low poly (`ESPECIES_LP`: oiti, mangueira, ipê, jequitibá, ingá, pequizeiro, catingueira, mandacaru, coqueiro e araucária), o que vai em cada lugar (`FLORA_LP`) e a montagem pela semente (a copa de bolas facetadas, o tronco em prisma, a cor chapada por face, sem textura, na lista `lowpoly`). `facesDaArvore` devolve a de perto e a de longe (de 26 a 128 triângulos, tirada do registro da de perto) e encaixa a árvore num lugar dado (`caber`); `montarAsDez` põe as dez juntas |
 | `js/diajogo/mato3d.js` | o mato simplificado: `plantarMato` planta uma área pela densidade do lugar (a grade tremida, a espécie pela `FLORA_LP`, o `pode` que tira a cidade, a estrada e o mar) e `montarMato` junta em ladrilhos de 40 m, cada um com a malha de perto e a de longe, pro `THREE.LOD` (a de perto a menos de 60 m). Por enquanto só a aba Modelos 3D da planta usa |
+| `js/diajogo/ladrilhos3d.js` | a cidade do jogo em ladrilhos de 40 m: cada um com a versão de perto, a de longe (a casa de modelo em blocos de altura, a árvore de longe, o poste em haste, o que já é caixa igual, o miúdo some) e nada além da névoa; a troca pela distância da câmera ao ponto mais perto do ladrilho, e os materiais iguais juntos numa malha |
+| `js/diajogo/modelos_medias.js` | GERADO pelo pintor: a cor média (linear) de cada célula de cada folha, e a do reboco e da telha do bairro — é a cor da versão de longe |
 | `js/diajogo/praia3d.js` | as onze peças da praia em 3D (`PECAS_PRAIA`: guarda-sol, mesa, barraca, posto, quadra, os dois quiosques, calçadão, beira do mar com a onda, jangada e barco de pesca), no tamanho de verdade, com a semente; devolve os blocos e os decalques; o coqueiro é o low poly. Por enquanto só a aba Modelos 3D da planta usa |
 | `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta a mata, o cerrado ou o mato seco da caatinga, pela `vegetacao` da praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos), tem a aba **Modelos 3D** (as dez árvores low poly, de perto e de longe, o mato simplificado e as peças da praia, cada um grande no 3D, com a ficha e a semente) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
 | `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia`, `temLagoa` e `vegetacao` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
-| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça), da praia (a folha `praia`: deck, lona, tecido do guarda-sol, palha, tábua pintada, balcão de azulejo, cardápio, geladeira, freezer, mesa, vela, casco, canga, prancha, coco) e a rede do vôlei, na folha de grades, e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça), da praia (a folha `praia`: deck, lona, tecido do guarda-sol, palha, tábua pintada, balcão de azulejo, cardápio, geladeira, freezer, mesa, vela, casco, canga, prancha, coco) e a rede do vôlei, na folha de grades, e escreve o atlas e as cores médias (`modelos_medias.js`, que a versão de longe usa; `--medias` refaz só elas); roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`), a da praia (`praia.jpg`, com o coco) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena, varal e a rede do vôlei) |
 | `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
 | `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |

@@ -938,7 +938,7 @@ function textura(caminho, aniso) {
 
 export function montarModelos(P, opc = {}) {
   const K = P.CIDADE;
-  const meshes = [], materiais = {};
+  const meshes = [], materiais = {}, objetos = [];
   let triangulos = 0;
   const material = folha => {
     if (materiais[folha]) return materiais[folha];
@@ -970,6 +970,21 @@ export function montarModelos(P, opc = {}) {
       const def = MODELOS[pc.modelo];
       const B = Construtor(def.folha), G = Construtor('grades');
       def.montar(B, pc.massa, G);
+      /* o marco inteiro é um objeto (o meio sai da caixa do corpo, no
+         mundo). Ele NÃO entra no recorte em ladrilhos: são oito, altos,
+         e a fachada deles é o que os faz marco — de longe, em bloco de
+         uma cor só, a torre azul e tijolo virava uma caixa cinza. Cada um
+         já é uma malha, que a câmera descarta sozinha. */
+      const id = objetos.length, obj = { x: 0, z: 0, ang: 0, tipo: 'predio' };
+      objetos.push(obj);
+      {
+        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+        for (let i = 0; i < B.pos.length; i += 3) {
+          const [X, Z] = paraMundo(pc.fatia, pc.frente, B.pos[i], B.pos[i + 2]);
+          if (X < x0) x0 = X; if (X > x1) x1 = X; if (Z < z0) z0 = Z; if (Z > z1) z1 = Z;
+        }
+        obj.x = (x0 + x1) / 2; obj.z = (z0 + z1) / 2;
+      }
       for (const C of [B, G]) {
         if (!C.pos.length) continue;
         const n = C.pos.length / 3, arr = new Float32Array(C.pos.length);
@@ -986,10 +1001,11 @@ export function montarModelos(P, opc = {}) {
         const mesh = new THREE.Mesh(g, material(C.folha));
         mesh.castShadow = true; mesh.receiveShadow = true;
         mesh.name = 'marco:' + pc.modelo + (C === G ? ':grade' : '');
+        mesh.userData.obj = id;
         meshes.push(mesh);
         triangulos += n / 3;
       }
     }
   }
-  return { meshes, triangulos, materiais: Object.values(materiais) };
+  return { meshes, triangulos, materiais: Object.values(materiais), objetos };
 }

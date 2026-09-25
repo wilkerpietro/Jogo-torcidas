@@ -21,6 +21,9 @@
    cada lugar, girada e escalada, e tudo o que cai no mesmo quadrado
    de 1.600 do mapa (uns 80 m) vira UMA malha: quase quatrocentas
    peças em uma dúzia de chamadas de desenho.
+
+   Cada peça é um OBJETO pro recorte em ladrilhos (`ladrilhos3d.js`): o
+   poste vira uma haste de longe; o resto, que é miúdo, some.
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { ATLAS } from './modelos_atlas.js';
@@ -245,6 +248,7 @@ export function montarProps(P, opc = {}) {
     return moldes.get(chave);
   };
   const pedacos = new Map();
+  const objetos = [];
   /* OS POSTES DA RUA entram aqui também: a planta dá o ponto e pra que
      lado o braço aponta (a rua); um em cada quatro, pelo hash do ponto,
      tem a caixa do transformador */
@@ -255,8 +259,11 @@ export function montarProps(P, opc = {}) {
     if (!PECAS[p.k]) continue;
     const B = molde(p.k, p.v);
     const chave = Math.floor(p.x / 1600) + ',' + Math.floor(p.y / 1600);
-    if (!pedacos.has(chave)) pedacos.set(chave, { pos: [], uv: [], cor: [] });
+    if (!pedacos.has(chave)) pedacos.set(chave, { pos: [], uv: [], cor: [], ids: [] });
     const T = pedacos.get(chave);
+    const id = objetos.length;
+    objetos.push({ x: p.x, z: p.y, ang: 0, tipo: p.k === 'poste' ? 'alto' : 'prop' });
+    for (let i = B.pos.length / 9; i > 0; i--) T.ids.push(id);
     const c = Math.cos(p.ang || 0), s = Math.sin(p.ang || 0), e = (p.s || 1) * METRO, y0 = p.alt0 || 0;
     for (let i = 0; i < B.pos.length; i += 3) {
       const lx = B.pos[i], ly = B.pos[i + 1], lz = B.pos[i + 2];
@@ -281,8 +288,9 @@ export function montarProps(P, opc = {}) {
     const m = new THREE.Mesh(g, mat);
     m.castShadow = true; m.receiveShadow = true;
     m.name = 'props:' + chave;
+    m.userData.lad = { modo: 'lod', ids: Int32Array.from(T.ids), impostor: false, folha: 'props' };
     meshes.push(m);
     triangulos += T.pos.length / 9;
   }
-  return { meshes, triangulos, materiais: [mat], moldes: moldes.size, pecas: lista.length, postes: postes.length };
+  return { meshes, triangulos, materiais: [mat], moldes: moldes.size, pecas: lista.length, postes: postes.length, objetos };
 }

@@ -2274,8 +2274,11 @@ export const PALETA_FAVELA = {
   vidraca_verde: '#3f6352', portao_madeira: '#835a35', portao_chapa: '#78442f', portao_vermelho: '#b54d41',
   enrolar: '#aeb0af', enrolar_meia: '#858380'
 };
+/* `favelaLowPoly: false` volta a favela pra textura (tijolo, telha,
+   reboco) — é o `?favela=detalhada` do estadio3d.html, pra comparar */
+export const OPCOES_CASAS = { favelaLowPoly: true };
 export function montarCasa(l, p, destino, y0 = 0) {
-  const favela = TIPOS_FAVELA.has(p.tipo);
+  const favela = OPCOES_CASAS.favelaLowPoly && TIPOS_FAVELA.has(p.tipo);
   const B = Construtor('casas', favela ? { chapado: { paleta: PALETA_FAVELA, branca: 'lisa', rnd: sorteio(Math.floor(p.s('lowpoly') * 4294967295)), treme: 0.06, lados: 6 } } : {});
   const G = Construtor('grades');
   const conta = { portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [] };

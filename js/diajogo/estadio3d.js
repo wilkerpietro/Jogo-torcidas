@@ -25,8 +25,10 @@ import * as THREE from '../../vendor/three/three.module.min.js';
 import { entrarEm } from './bonecos3.js';
 import { criarTradutor } from './sinais3d.js';
 import { montarBairro } from './bairro3d.js';
+import { OPCOES_CASAS } from './casas3d.js';
 import { montarModelos } from './modelos3d.js';
 import { montarProps } from './props3d.js';
+import { emLadrilhos } from './ladrilhos3d.js';
 import { criarChaoPBR } from './chao3d.js';
 import { criarNuvens } from './nuvens3d.js';
 
@@ -66,6 +68,9 @@ export function criar(canvas) {
      serve pra ler o canvas de fora (as fotos dos testes): liga com
      `?foto=1` na URL, e mais nada */
   const paraFoto = /[?&]foto=1/.test(location.search);
+  /* `?favela=detalhada`: a favela com a textura de antes (tijolo, telha),
+     no lugar da low poly — pra comparar o custo com os ladrilhos */
+  if (/[?&]favela=detalhada/.test(location.search)) OPCOES_CASAS.favelaLowPoly = false;
   const rend = new THREE.WebGLRenderer({ canvas, antialias: true,
                                          preserveDrawingBuffer: paraFoto });
   rend.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -101,12 +106,17 @@ export function criar(canvas) {
      passada de desenho inteira); depois a resolução, que é o que
      mais pesa numa placa fraca; por último a anisotropia da
      textura do chão e a névoa, que encurta o que se desenha.
+     `longe` é onde o ladrilho da cidade troca pra versão de longe
+     (`ladrilhos3d.js`), contado da câmera ao ponto mais perto dele
+     (72 m no cheio, 33 m no mínimo): desce com o nível. E o que passa do fim da névoa não vai pra placa — antes a
+     névoa curta só escondia, e a cidade inteira era desenhada assim
+     mesmo.
      ======================================================= */
   const NIVEIS = [
-    { rot: 'cheio',   sombra: true,  dpr: 2.0,  aniso: 8, nevoa: [2400, 5600] },
-    { rot: 'leve',    sombra: false, dpr: 1.0,  aniso: 4, nevoa: [2400, 5600] },
-    { rot: 'leve+',   sombra: false, dpr: 0.75, aniso: 1, nevoa: [1800, 4200] },
-    { rot: 'mínimo',  sombra: false, dpr: 0.5,  aniso: 1, nevoa: [1200, 3000] }
+    { rot: 'cheio',   sombra: true,  dpr: 2.0,  aniso: 8, nevoa: [2400, 5600], longe: 1400 },
+    { rot: 'leve',    sombra: false, dpr: 1.0,  aniso: 4, nevoa: [2400, 5600], longe: 1100 },
+    { rot: 'leve+',   sombra: false, dpr: 0.75, aniso: 1, nevoa: [1800, 4200], longe: 850 },
+    { rot: 'mínimo',  sombra: false, dpr: 0.5,  aniso: 1, nevoa: [1200, 3000], longe: 650 }
   ];
   let nivel = 0, mediaDt = 1 / 60, tempoNoNivel = 0, nivelFixo = false;
   function aplicarNivel() {
@@ -122,6 +132,8 @@ export function criar(canvas) {
     const c = CAMERAS[vista];
     const nv = (c && c.nevoa) || (c && !c.seguir ? NIVEIS[0].nevoa : q.nevoa);
     cena.fog.near = nv[0]; cena.fog.far = nv[1];
+    /* o ladrilho some quando o ponto mais perto dele já passou da névoa */
+    if (ladrilhos) ladrilhos.distancias(q.longe, nv[1]);
     if (texChao) { texChao.anisotropy = Math.min(q.aniso, maxAniso); texChao.needsUpdate = true; }
     /* a anisotropia do chão vale pro conjunto do splat: sem ela o
        relevo lava no ângulo raso da câmera de ombro, que é bem onde
@@ -144,7 +156,7 @@ export function criar(canvas) {
       nivel--; tempoNoNivel = 0; mediaDt = 1 / 45; aplicarNivel();
     }
   }
-  let texChao = null, matChao = null, chaoPBR = null, nuvens = null, maxAniso = 1;
+  let texChao = null, matChao = null, chaoPBR = null, nuvens = null, maxAniso = 1, ladrilhos = null;
 
   cena.add(new THREE.HemisphereLight(0xd2dced, 0x6a6454, 1.0));
   /* O SOL SUBIU DE 1,0 PRA 1,45 QUANDO A NUVEM ENTROU, e não é gosto:
@@ -155,7 +167,8 @@ export function criar(canvas) {
      nível antigo: a média se mantém e o que aparece é a DIFERENÇA,
      que é o ponto de ter nuvem. */
   const sol = new THREE.DirectionalLight(0xfff0d8, 1.45);
-  sol.position.set(P.CX - 1300, 1700, P.CY - 700);
+  const SOL_DE = new THREE.Vector3(-1300, 1700, -700);   // de onde vem o sol, visto do alvo
+  sol.position.set(P.CX, 0, P.CY).add(SOL_DE);
   sol.target.position.set(P.CX, 0, P.CY);
   sol.castShadow = true;
   sol.shadow.mapSize.set(2048, 2048);
@@ -163,6 +176,35 @@ export function criar(canvas) {
     left: -1300, right: 1300, top: 1100, bottom: -1100, near: 200, far: 5000 });
   sol.shadow.bias = -0.0018;
   cena.add(sol, sol.target);
+
+  /* A SOMBRA ANDA COM A CÂMERA. A caixa da sombra era fixa, 134 × 113 m
+     em volta do estádio: a favela, a 143 m dali, não tinha sombra
+     nenhuma e pagava a passada da sombra do mesmo jeito (a passada
+     desenha tudo o que toca a caixa, esteja a câmera onde estiver).
+     Agora a caixa, do mesmo tamanho, vai com o alvo da câmera — o líder,
+     nas câmeras que seguem; o ponto olhado, nas outras —, e cresce com a
+     distância da câmera nas vistas de longe, pra cobrir o que elas
+     mostram. O centro anda de TEXEL em TEXEL do mapa de sombra, no plano
+     do sol: andando de pouquinho, a borda da sombra tremeria. */
+  const solZ = SOL_DE.clone().normalize();
+  const solX = new THREE.Vector3(0, 1, 0).cross(solZ).normalize();
+  const solY = solZ.clone().cross(solX);
+  const centroSombra = new THREE.Vector3();
+  let escalaSombra = 1;
+  function moverSombra(alvoCam, distCam) {
+    const s = Math.max(1, distCam / 1300);
+    if (Math.abs(s - escalaSombra) > 1e-3) {
+      escalaSombra = s;
+      Object.assign(sol.shadow.camera, { left: -1300 * s, right: 1300 * s, top: 1100 * s, bottom: -1100 * s });
+      sol.shadow.camera.updateProjectionMatrix();
+    }
+    const tx = 2600 * s / sol.shadow.mapSize.x, ty = 2200 * s / sol.shadow.mapSize.y;
+    const u = Math.round(alvoCam.dot(solX) / tx) * tx, v = Math.round(alvoCam.dot(solY) / ty) * ty;
+    centroSombra.copy(solX).multiplyScalar(u).addScaledVector(solY, v).addScaledVector(solZ, alvoCam.dot(solZ));
+    sol.target.position.copy(centroSombra);
+    sol.position.copy(centroSombra).add(SOL_DE);
+    sol.target.updateMatrixWorld();
+  }
   /* o corredor é coberto e sem luz própria fica preto: uma luz
      fraca presa ao líder, uma hemisférica de dentro e uma rasante
      da arcada, todas sem sombra e só acesas quando se está lá */
@@ -680,19 +722,26 @@ export function criar(canvas) {
       if (cidade.lajesChao) cidade.lajesChao.material = matChao;
       /* a nuvem passa por cima da CIDADE, não só do chão: sem isto o
          telhado fica no sol enquanto a rua ao lado escurece */
-      for (const m of cidade.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
+      for (const m of cidade.meshes) nuvens.aplicarEm(m.material);
       /* a folha das casas de modelo é vista de lado, na rua: sem
          anisotropia o reboco e a telha lavam no ângulo raso */
       for (const m of cidade.materiaisCasas || []) if (m.map) m.map.anisotropy = Math.min(8, maxAniso);
       /* os cinco prédios modelados (igreja, prédio alto, mercado,
          centro administrativo, casa): a planta abriu o lugar deles */
       marcos = montarModelos(P, { anisotropia: Math.min(8, maxAniso) });
-      for (const m of marcos.meshes) { nuvens.aplicarEm(m.material); cena.add(m); }
+      for (const m of marcos.meshes) nuvens.aplicarEm(m.material);
       /* o mobiliário da calçada: lixo, lixeira, cesto, hidrante, cone,
          barreira, correio, banco de praça — onde a planta mandou */
       props = montarProps(P, { anisotropia: Math.min(8, maxAniso) });
       nuvens.aplicarEm(props.materiais[0]);
-      for (const m of props.meshes) cena.add(m);
+      /* A CIDADE EM LADRILHOS DE 40 M, cada um com a versão de perto e a
+         de longe (`ladrilhos3d.js`): a câmera descarta o ladrilho que
+         está fora do quadro, e o que está longe vai simplificado */
+      ladrilhos = emLadrilhos([{ meshes: cidade.meshes, objetos: cidade.objetos },
+                               { meshes: marcos.meshes, objetos: marcos.objetos },
+                               { meshes: props.meshes, objetos: props.objetos }]);
+      nuvens.aplicarEm(ladrilhos.materialLonge);
+      cena.add(ladrilhos.raiz);
     }
     conta = { degraus: P.NDEG, vomitorios: P.VOMITORIOS.length,
               lojas: P.LOJAS.length, lotes: K.LOTES.length, quadras: K.QUADRAS.length,
@@ -1092,7 +1141,9 @@ export function criar(canvas) {
                || J.discos.find(d => d.lider && d.vivo);
     abrirTetoDaSede(lider);
     posicionarCamera(lider, dt);
+    moverSombra(alvoSuave, dist);
     cam.updateMatrixWorld();
+    if (ladrilhos) ladrilhos.atualizar(cam.position);
     atualizarTronco();
     povo.atualizar(J, dt);
     sincronizarRotulos(J);
@@ -1150,6 +1201,7 @@ export function criar(canvas) {
            get info() { return rend.info; },
            _rend: rend, _cena: cena, _cam: cam, _planta: P,
            get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; }, get _marcos() { return marcos; }, get _props() { return props; },
+           get _ladrilhos() { return ladrilhos; },
            get _cidade() { return cidade; },
            _mirar(g, i, d) {
              if (g !== undefined) giro = g;

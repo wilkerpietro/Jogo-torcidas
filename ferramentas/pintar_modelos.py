@@ -40,6 +40,15 @@
        python3 ferramentas/pintar_modelos.py
        python3 ferramentas/pintar_modelos.py metro equip    (só essas duas)
 
+   E ESCREVE `js/diajogo/modelos_medias.js`: a COR MÉDIA de cada célula
+   (em linear, a conta que o shader faz), lida das folhas que estão no
+   disco, e a do reboco e da telha do bairro. É a cor da VERSÃO DE LONGE
+   do jogo (`ladrilhos3d.js`), que não tem textura: a parede de tijolo
+   de longe é a cor do vértice vezes a média do tijolo. Pra refazer só
+   as médias, sem pintar nada:
+
+       python3 ferramentas/pintar_modelos.py --medias
+
    Tudo é determinístico (semente fixa por célula): rodar duas vezes dá
    a mesma imagem, byte a byte no PNG e quase isso no JPG.
 """
@@ -54,6 +63,7 @@ except ImportError:
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SAIDA = os.path.join(RAIZ, 'img', 'texturas', 'modelos')
 ATLAS_JS = os.path.join(RAIZ, 'js', 'diajogo', 'modelos_atlas.js')
+MEDIAS_JS = os.path.join(RAIZ, 'js', 'diajogo', 'modelos_medias.js')
 MARGEM = 6
 QUALIDADE = 86
 
@@ -4990,9 +5000,58 @@ def atlas_atual():
     return json.loads(txt[txt.index('{'):txt.rindex('}') + 1])
 
 
+def linear(c):
+    """sRGB (0..1) pra linear, a conta do three.js"""
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+
+def media_linear(arr):
+    """a média, em linear, de um pedaço RGBA (0..1), pesada pelo alfa:
+       o furo de uma grade não entra na cor dela"""
+    a = arr[..., 3:4]
+    lin = linear(arr[..., :3])
+    s = float(a.sum())
+    m = (lin * a).sum(axis=(0, 1)) / s if s > 1e-6 else lin.mean(axis=(0, 1))
+    return [round(float(v), 4) for v in m]
+
+
+def escrever_medias(atlas):
+    """a cor média de cada célula de cada folha, e a do reboco e da telha
+       do bairro, lidas do disco"""
+    medias = {}
+    for nome, A in atlas.items():
+        caminho = os.path.join(RAIZ, A['arquivo'])
+        if not os.path.isfile(caminho):
+            continue
+        arr = np.asarray(Image.open(caminho).convert('RGBA')).astype(np.float32) / 255
+        H, W = arr.shape[:2]
+        cel = {}
+        for k, c in A['cel'].items():
+            u0, v0, u1, v1 = c[:4]
+            x0, x1 = int(u0 * W), max(int(u0 * W) + 1, int(round(u1 * W)))
+            y0, y1 = int((1 - v1) * H), max(int((1 - v1) * H) + 1, int(round((1 - v0) * H)))
+            cel[k] = media_linear(arr[y0:y1, x0:x1])
+        medias[nome] = cel
+    soltas = {}
+    for nome in ('reboco', 'telha'):
+        caminho = os.path.join(RAIZ, 'img', 'texturas', nome + '.png')
+        soltas[nome] = media_linear(np.asarray(Image.open(caminho).convert('RGBA')).astype(np.float32) / 255)
+    with open(MEDIAS_JS, 'w', encoding='utf-8') as f:
+        f.write('/* GERADO por ferramentas/pintar_modelos.py — não edite à mão.\n'
+                '   A cor média (linear) de cada célula de cada folha, e a das texturas\n'
+                '   soltas do bairro: é a cor da versão de longe (ladrilhos3d.js). */\n')
+        f.write('export const MEDIAS = ' + json.dumps(medias, ensure_ascii=False, separators=(',', ':')) + ';\n')
+        f.write('export const MEDIAS_SOLTAS = ' + json.dumps(soltas, separators=(',', ':')) + ';\n')
+    print('médias:', os.path.relpath(MEDIAS_JS, RAIZ))
+
+
 def main():
     """sem argumento pinta todas; com nomes (`metro equip`), só essas, e o
-       atlas guarda o que as outras já tinham"""
+       atlas guarda o que as outras já tinham; `--medias` não pinta nada,
+       só refaz as cores médias"""
+    if '--medias' in sys.argv[1:]:
+        escrever_medias(atlas_atual())
+        return
     pedidas = [a for a in sys.argv[1:] if not a.startswith('-')]
     for n in pedidas:
         if n not in FOLHAS:
@@ -5010,6 +5069,7 @@ def main():
                 '   caiu: [u0, v0, u1, v1, largura_m, altura_m], com v0 embaixo. */\n')
         f.write('export const ATLAS = ' + corpo + ';\n')
     print('atlas:', os.path.relpath(ATLAS_JS, RAIZ))
+    escrever_medias(atlas)
 
 
 if __name__ == '__main__':

@@ -13,6 +13,14 @@
    EM PEDAÇOS: os quarteirões saem em malhas de 4 × 4 células, e
    não numa só — é o que deixa a câmera descartar o que está
    fora do quadro, que numa cidade desse tamanho é quase tudo.
+
+   E CADA TRIÂNGULO SABE DE QUEM É. Quem monta uma casa, uma árvore,
+   um carro diz antes `objeto(x, z, giro, tipo)`, e todo triângulo que
+   sai depois leva o número dele (`T.ids`). A tabela `objetos` e o
+   `userData.lad` de cada malha vão pro `ladrilhos3d.js`, que recorta a
+   cidade em ladrilhos de 40 m e monta a versão de longe de cada coisa
+   pelo tipo dela (o prédio vira bloco, a árvore a de longe, o miúdo
+   some).
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, arquivoDaFolha } from './casas3d.js';
@@ -26,7 +34,27 @@ export function montarBairro(P) {
   const tmp = new THREE.Color();
   /* o tecido comum agora tem UV: as paredes levam REBOCO, e a escala
      do reboco é mais graúda que a da telha pra não pentear a parede */
-  const Tecido = () => ({ pos: [], cor: [], uv: [], esc: REBOCO_ESC });
+  const Tecido = () => ({ pos: [], cor: [], uv: [], esc: REBOCO_ESC, ids: [] });
+
+  /* O OBJETO QUE ESTÁ SENDO MONTADO: o meio dele no mundo, o giro e o
+     tipo, que diz o que ele vira de longe ('predio', 'arvore', 'alto',
+     'mesmo', 'chao', 'prop' — ver `ladrilhos3d.js`). O -1 é o de
+     ninguém: vai pro ladrilho pelo meio do triângulo e não muda de
+     longe (não deve sobrar nada nele). */
+  const objetos = [];
+  let objAtual = -1;
+  function objeto(x, z, ang, tipo, extra) {
+    objAtual = objetos.length;
+    objetos.push(Object.assign({ x, z, ang: ang || 0, tipo }, extra || null));
+    return objAtual;
+  }
+  const ninguem = () => { objAtual = -1; };
+  /* o que o recorte em ladrilhos precisa saber de uma malha */
+  function ladrilhavel(m, T, extra) {
+    if (!m) return m;
+    m.userData.lad = Object.assign({ modo: 'lod', ids: T && T.ids ? Int32Array.from(T.ids) : null, impostor: true }, extra);
+    return m;
+  }
 
   /* Tecido com `uv` é tecido TEXTURADO, e a coordenada sai do MUNDO —
      nunca da peça —, pra textura correr contínua de casa em casa e
@@ -35,6 +63,7 @@ export function montarBairro(P) {
      a ALTURA, senão a textura sai esticada numa tira só. */
   function tri(T, a, b, c, hex, tom, eixo) {
     T.pos.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+    if (T.ids) T.ids.push(objAtual);
     tmp.set(hex).multiplyScalar(tom === undefined ? 1 : tom);
     for (let k = 0; k < 3; k++) T.cor.push(tmp.r, tmp.g, tmp.b);
     if (!T.uv) return;
@@ -173,12 +202,19 @@ export function montarBairro(P) {
   /* as texturas do bairro. Fora do navegador não há `TextureLoader`
      (as varreduras rodam no node), e aí a malha sai sem mapa — o que
      se mede lá é geometria, não pintura. */
+  /* a mesma textura pedida duas vezes é a mesma (a telha da casa e a da
+     favela): uma cópia só na placa, e o recorte em ladrilhos junta as
+     malhas que usam as duas */
+  const texturas = new Map();
   function textura(caminho, repete) {
     if (!THREE.TextureLoader) return null;
+    const chave = caminho + (repete ? '|r' : '');
+    if (texturas.has(chave)) return texturas.get(chave);
     const cam = (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
     const t = new THREE.TextureLoader().load(cam);
     if (repete) { t.wrapS = t.wrapT = THREE.RepeatWrapping; }
     t.colorSpace = THREE.SRGBColorSpace;
+    texturas.set(chave, t);
     return t;
   }
 
@@ -224,15 +260,15 @@ export function montarBairro(P) {
   const pixacoes = [];
   /* o tecido de TELHADO (textura de telha) e o de MANCHA (decalque de
      mofo e chuva na parede), os dois com UV */
-  const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC };
+  const TELHADOS = { pos: [], cor: [], uv: [], esc: TELHA_ESC, ids: [] };
   /* A TELHA DA FAVELA É MIÚDA. A textura tem 8 canaletas por ladrilho,
      então a escala é o tamanho de OITO telhas: 104 dá canaleta de 13
      unidades (0,59 m), que numa casa de 47 de frente sai com três
      canaletas e meia — telha de gigante. Aqui o ladrilho repete a cada
      34, que é canaleta de 4,25 (0,19 m), a medida da telha de verdade.
      Escala é do TECIDO, não do triângulo, então é outra malha. */
-  const TELHADOS_FAV = { pos: [], cor: [], uv: [], esc: 34 };
-  const MANCHAS  = { pos: [], cor: [], uv: [] };   // as falhas de reboco, UV do decalque
+  const TELHADOS_FAV = { pos: [], cor: [], uv: [], esc: 34, ids: [] };
+  const MANCHAS  = { pos: [], cor: [], uv: [], ids: [] };   // as falhas de reboco, UV do decalque
 
   /* ---- OS LETREIROS E AS PIXAÇÕES ----
      Texto não sai de caixa: sai de textura. Todos os dizeres que a
@@ -464,6 +500,7 @@ export function montarBairro(P) {
     const p = (v, s, t) => { T.pos.push(v[0], v[1], v[2]); T.uv.push(s, t); };
     p(a, u[0], u[1]); p(b, u[2], u[1]); p(e, u[2], u[3]);
     p(a, u[0], u[1]); p(e, u[2], u[3]); p(d, u[0], u[3]);
+    if (T.ids) T.ids.push(objAtual, objAtual);
   }
 
   /* ---- O DECALQUE DE CHÃO ----
@@ -486,6 +523,7 @@ export function montarBairro(P) {
     };
     p(-h, -h, u0, v0); p(-h, h, u0, v1); p(h, h, u1, v1);
     p(-h, -h, u0, v0); p(h, h, u1, v1); p(h, -h, u1, v0);
+    if (T.ids) T.ids.push(objAtual, objAtual);
   }
 
   /* ---- TELHADO DE DUAS ÁGUAS ----
@@ -591,7 +629,10 @@ export function montarBairro(P) {
     const pc = planoDaCasa(l, K);
     if (!pc) return false;
     if (!CASAS.has(chaveCasas)) CASAS.set(chaveCasas, { casas: [], grades: [] });
-    const c = montarCasa(l, pc, CASAS.get(chaveCasas), chaoCasas);
+    const destino = CASAS.get(chaveCasas), n0 = destino.casas.length, g0 = destino.grades.length;
+    const c = montarCasa(l, pc, destino, chaoCasas);
+    for (let i = n0; i < destino.casas.length; i++) destino.casas[i].obj = objAtual;
+    for (let i = g0; i < destino.grades.length; i++) destino.grades[i].obj = objAtual;
     registroCasas.push({ lote: l, tipo: pc.tipo, portas: c.portas, janelas: c.janelas, janelasLado: c.janelasLado });
     return true;
   }
@@ -611,6 +652,9 @@ export function montarBairro(P) {
   function malhaCasas(blocos, folha, nome) {
     if (!blocos.length) return;
     const pos = juntarBlocos(blocos, 'pos');
+    const ids = new Int32Array(pos.length / 9);
+    let k = 0;
+    for (const b of blocos) { const n = b.pos.length / 9; ids.fill(b.obj === undefined ? -1 : b.obj, k, k + n); k += n; }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(juntarBlocos(blocos, 'uv'), 2));
@@ -619,12 +663,19 @@ export function montarBairro(P) {
     const m = new THREE.Mesh(g, materialCasa(folha));
     m.castShadow = true; m.receiveShadow = true;
     m.name = nome;
+    /* a grade (portão, janela vazada) não faz volume de longe */
+    m.userData.lad = { modo: 'lod', ids, impostor: folha !== 'grades', folha };
     triangulos += pos.length / 9;
     meshes.push(m);
   }
 
   function lote(T, l) {
+    if (l.ang) objeto(l.cx, l.cy, l.ang, 'predio');
+    else objeto((l.x0 + l.x1) / 2, (l.y0 + l.y1) / 2, 0, 'predio');
     if (casaDeModelo(l)) return;
+    /* o lote de caixa (a sede, o muro) já é caixa: de longe, o mesmo.
+       Bloco de altura é pra casa de modelo, que é textura e detalhe */
+    objetos[objAtual].tipo = 'mesmo';
     if (l.ang) {
       /* casa da avenida: corpo, telhado e a fachada virada pra avenida */
       caixaRot(T, l.cx, l.cy, l.w - 2, l.h - 2, 0, l.alt, l.ang, l.cor);
@@ -679,15 +730,24 @@ export function montarBairro(P) {
      dela, que é o que a calçada comporta, e a altura da árvore de rua de
      verdade, de 4 a 7,5 m. Todas numa malha só (`arvores`), de cor por
      vértice, fora do tecido do quarteirão. */
-  const TA = { pos: [], cor: [] };
+  const TA = { pos: [], cor: [], ids: [] };
   function arvore(T, a) {
     const sem = (Math.abs(Math.round(a.x * 17 + a.y * 131)) % 1000003) + 1, rnd = sorteio(sem);
     const r = facesDaArvore(especieLowpolyDe('cidade', rnd), sem,
                             { caber: { alt: (26 + a.r * 4.3) / METRO, raio: a.r * 1.5 / METRO } });
-    const g = rnd() * 2 * Math.PI, c = Math.cos(g), sn = Math.sin(g), P = r.perto.pos;
-    for (let i = 0; i < P.length; i += 3)
-      TA.pos.push(a.x + (P[i] * c - P[i + 2] * sn) * METRO, P[i + 1] * METRO, a.y + (P[i] * sn + P[i + 2] * c) * METRO);
+    const g = rnd() * 2 * Math.PI, c = Math.cos(g), sn = Math.sin(g);
+    const noMundo = P => {
+      const out = [];
+      for (let i = 0; i < P.length; i += 3)
+        out.push(a.x + (P[i] * c - P[i + 2] * sn) * METRO, P[i + 1] * METRO, a.y + (P[i] * sn + P[i + 2] * c) * METRO);
+      return out;
+    };
+    /* a de longe (de 26 a 128 triângulos) vai no objeto: é o ladrilho
+       que a desenha, quando está longe */
+    const id = objeto(a.x, a.y, 0, 'arvore', { longe: { pos: noMundo(r.longe.pos), cor: r.longe.cor } });
+    for (const v of noMundo(r.perto.pos)) TA.pos.push(v);
     for (const v of r.perto.cor) TA.cor.push(v);
+    for (let i = r.perto.pos.length / 9; i > 0; i--) TA.ids.push(id);
   }
 
   /* poste de rua: mastro, braço e a luminária na ponta */
@@ -1248,10 +1308,22 @@ export function montarBairro(P) {
       caixa(T, c.x0 + 2, c.x1 - 2, 22, 30, c.y1 - 0.4, c.y1 + 0.5, '#c9463c');
     }
   }
+  /* o que cada peça de equipamento vira de longe. Ela já é caixa (o
+     prédio com as janelas, o muro, a guarita, o coreto, a cruz do
+     hospital): fica a mesma, só sem o grão do reboco — em bloco de
+     altura, o hospital de seis andares virava uma caixa cinza sem
+     janela, e de caixa ele já é barato. O alto e fino vira haste; o piso
+     fica o piso; o miúdo (banco, mesa, móvel da sede, bomba) some. */
+  const LONGE_PECA = { bloco: 'mesmo', muro: 'mesmo', guarita: 'mesmo', totem: 'mesmo', monumento: 'mesmo',
+                       canteiro: 'mesmo', marquise: 'mesmo', claraboia: 'mesmo', maquina: 'mesmo', portao: 'mesmo',
+                       caixadagua: 'mesmo', fonte: 'mesmo', coreto: 'mesmo', cruz: 'mesmo', piso: 'chao', carro: 'mesmo',
+                       pilar: 'alto', poste: 'alto', mastro: 'alto', tabela: 'alto' };
   function desenharPecas(T, TL, uv, pecas) {
     const PEDRA = '#b9b3a4', GRAMA = '#4a7a3c';
     for (const o of pecas) {
       const mx = (o.x0 + o.x1) / 2, mz = (o.y0 + o.y1) / 2;
+      if (o.x0 !== undefined) objeto(mx, mz, 0, LONGE_PECA[o.k] || 'prop');
+      else objeto(o.x, o.y, 0, LONGE_PECA[o.k] || 'prop');
       switch (o.k) {
         case 'bloco':
           caixa(T, o.x0, o.x1, 0, o.alt, o.y0, o.y1, o.cor);
@@ -1435,6 +1507,7 @@ export function montarBairro(P) {
        borda do furo na laje da calçada é a guia), e a calçada dela é a
        laje de 1,4 aparecendo pelo furo da laje do lote */
     const s = q.semSaida;
+    objeto((q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2, 0, 'chao');
     for (const p of menosRets(semAsAvenidas(q), s && s.asfalto)) laje(T, p, 0, 1.4, '#8d897d', TCHAO);
     for (const p of menosRets(semAsAvenidas(q.polMiolo, K.CALC), s && s.livre)) laje(T, p, 0, 1.6, '#7d7668', TCHAO);
     /* a fatia do equipamento tem chão próprio, e só ela */
@@ -1445,6 +1518,7 @@ export function montarBairro(P) {
     if (q.quintal) for (const p of semAsAvenidas(q.quintal, K.CALC)) laje(T, p, 0, q.quintal.alt, q.quintal.cor);
     /* os puxadinhos do fundo do quintal */
     for (const f of q.fundos || []) {
+      objeto((f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2, 0, 'predio');
       caixa(T, f.x0, f.x1, 0, f.alt, f.y0, f.y1, f.cor);
       telhado(T, f.x0 - 2, f.x1 + 2, f.y0 - 2, f.y1 + 2, f.alt, Math.min(f.x1 - f.x0, f.y1 - f.y0) * 0.26, '#8f8a80');
     }
@@ -1458,6 +1532,7 @@ export function montarBairro(P) {
     chaveCasas = 'solta'; chaoCasas = 0;
     for (const a of q.arvores || []) arvore(T, a);
     if (q.equip || q.pracinhas) comEquipamento.push([T, q]);
+    ninguem();
   }
 
   /* ---- a beira da estrada e a favela ----
@@ -1471,8 +1546,11 @@ export function montarBairro(P) {
   limite = null;
   /* a calçada primeiro, que a casa assenta em cima dela */
   for (const l of K.BEIRA || [])
-    if (l.calcada) caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
-                            0, 1.4, l.calcada.ang, '#8d897d');
+    if (l.calcada) {
+      objeto(l.calcada.cx, l.calcada.cy, l.calcada.ang, 'chao');
+      caixaRot(TB, l.calcada.cx, l.calcada.cy, l.calcada.w, l.calcada.h,
+               0, 1.4, l.calcada.ang, '#8d897d');
+    }
   for (const l of K.BEIRA || []) {
     /* a casa da favela manda o telhado dela pra malha de telha miúda */
     alvoTelhado = l.favela ? TELHADOS_FAV : TELHADOS;
@@ -1485,6 +1563,7 @@ export function montarBairro(P) {
   }
   chaveCasas = 'solta';
   alvoTelhado = TELHADOS;
+  ninguem();
   /* ---- os dizeres ---- */
   const dizeres = new Map();
   for (const q of K.QUADRAS) {
@@ -1537,6 +1616,7 @@ export function montarBairro(P) {
         const lug = lugarDoDecalque(l, pc, lado, lado, { u: desl, y: alta ? 999 : 2 + lado / 2 + r * H * 0.16, min: 10 });
         if (!lug) continue;
         const u0 = (q2 % 2) * 0.5, v0 = q2 < 2 ? 0.5 : 0;
+        objeto(lug.x, lug.z, 0, 'prop');
         placa(MANCHAS, lug.x, lug.y, lug.z, lug.ox, lug.oz, lug.larg, lug.alt,
               [u0 + 0.004, v0 + 0.004, u0 + 0.496, v0 + 0.496]);
       }
@@ -1591,11 +1671,12 @@ export function montarBairro(P) {
       limite = { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 };
       if (q.equip) desenharPecas(T, TL, uv, q.equip.pecas);
       for (const pr of q.pracinhas || []) {
-        for (const t of pr.tiras) tampa(T, t.x0, t.x1, 1.7, t.y0, t.y1, '#b5afa0');
+        for (const t of pr.tiras) { objeto((t.x0 + t.x1) / 2, (t.y0 + t.y1) / 2, 0, 'chao'); tampa(T, t.x0, t.x1, 1.7, t.y0, t.y1, '#b5afa0'); }
         desenharPecas(T, TL, uv, pr.pecas);
       }
       limite = null;
     }
+    ninguem();
     for (const l of K.LOTES) {
       if (l._plano && l._plano.frentes) { decalquesDaCasa(l, l._plano, TL, uv); continue; }
       /* a frente do lote: pra onde ela olha, onde fica a parede e
@@ -1642,6 +1723,7 @@ export function montarBairro(P) {
           /* de lado, nunca centralizada: falha não se alinha com a porta */
           const desl = (((h >> (n * 3 + 2)) % 2) ? 1 : -1) * (frente - lado) * 0.5 * (0.30 + r * 0.6);
           const u0 = (q2 % 2) * 0.5, v0 = q2 < 2 ? 0.5 : 0;
+          objeto(px, pz, 0, 'prop');
           placa(MANCHAS, px, cy, pz, ox, oz, lado, lado,
                 [u0 + 0.004, v0 + 0.004, u0 + 0.496, v0 + 0.496], desl);
         }
@@ -1681,6 +1763,7 @@ export function montarBairro(P) {
         if (l.pixo) registrarPixo(l.pixo, l, uv, i0, px + oz * desloc, pz - ox * desloc, y, ox, oz);
       }
     }
+    ninguem();
     const malhaLetreiros = malhaUV(TL, tex, 'letreiros');
     for (const p of pixacoes) p.mesh = malhaLetreiros;
 
@@ -1774,7 +1857,7 @@ export function montarBairro(P) {
      antes dos dizeres). É lote girado, como a casa da avenida, e passa
      pelo MESMO `lote()`. Sem `limite`, que aqui não há calçada pra
      respeitar. */
-  malhaTex(TB, REBOCO_LAZY(), 'beira');
+  ladrilhavel(malhaTex(TB, REBOCO_LAZY(), 'beira'), TB, { solta: 'reboco' });
   for (const [k, A] of CASAS) {
     malhaCasas(A.casas, 'casas', 'casas:' + k);
     malhaCasas(A.grades, 'grades', 'casas:grade:' + k);
@@ -1785,7 +1868,7 @@ export function montarBairro(P) {
      a cor do vértice continua mandando no tom de cada casa — o Lambert
      multiplica os dois. A UV sai do MUNDO, com o eixo certo por face,
      então parede vizinha não repete o mesmo pedaço da textura. */
-  for (const T of pedacos.values()) malhaTex(T, REBOCO_LAZY(), 'quarteirao');
+  for (const T of pedacos.values()) ladrilhavel(malhaTex(T, REBOCO_LAZY(), 'quarteirao'), T, { solta: 'reboco' });
 
   /* o tampo das lajes nasce com um material provisório: quem sabe o
      material do chão é a cena, e ela troca este na montagem. Recebe
@@ -1799,6 +1882,9 @@ export function montarBairro(P) {
     lajesChao = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: 0x8d897d }));
     lajesChao.receiveShadow = true; lajesChao.castShadow = false;
     lajesChao.name = 'lajes:chao';
+    /* é chão de perto e de longe e são poucos triângulos: recortada em
+       ladrilhos, virava uma chamada de desenho por ladrilho pra desenhar
+       uma dúzia de triângulos em cada. Fica inteira. */
     triangulos += TCHAO.pos.length / 9;
     meshes.push(lajesChao);
   }
@@ -1806,6 +1892,7 @@ export function montarBairro(P) {
   /* ---- os soltos: carros, postes, campos ---- */
   const TS = Tecido();
   for (const c of K.CARROS) {
+    objeto((c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2, 0, 'mesmo');
     const ao = c.x1 - c.x0 > c.y1 - c.y0;
     caixa(TS, c.x0, c.x1, 1.4, 8, c.y0, c.y1, c.cor);
     tmp.set(c.cor).multiplyScalar(0.7);
@@ -1815,7 +1902,7 @@ export function montarBairro(P) {
   }
   /* os postes da rua saem no `props3d.js` (o poste de concreto com
      cruzeta e luminária); o `poste()` daqui fica pro das praças e pátios */
-  for (const s of K.SEMAFOROS || []) semaforo(TS, s);
+  for (const s of K.SEMAFOROS || []) { objeto(s.x, s.y, 0, 'alto'); semaforo(TS, s); }
   /* a caixa d'água da favela assenta no alto da casa de modelo dela,
      que não tem a altura do lote de caixa (`alt`) */
   function sobreACasa(o) {
@@ -1828,9 +1915,10 @@ export function montarBairro(P) {
     }
     return o;
   }
-  for (const o of K.FAVELA_CAIXAS || []) caixaDagua(TS, sobreACasa(o));
+  for (const o of K.FAVELA_CAIXAS || []) { objeto(o.x, o.y, 0, 'predio'); caixaDagua(TS, sobreACasa(o)); }
   /* os campos de várzea: cerca de mourão e arame, arquibancadinha, traves */
   for (const f of K.CAMPOS) {
+    objeto(f.cx, f.cy, 0, 'prop');
     const CER = '#6e6a5e';
     const lados = [[f.x0, f.y0, f.x1, f.y0, 'n'], [f.x0, f.y1, f.x1, f.y1, 's'], [f.x0, f.y0, f.x0, f.y1, 'o'], [f.x1, f.y0, f.x1, f.y1, 'l']];
     for (const [ax, az, bx, bz, lado] of lados) {
@@ -1853,15 +1941,17 @@ export function montarBairro(P) {
       caixa(TS, x - 1, x + 1, 15, 16.5, f.cy - 24, f.cy + 24, '#eeeeea');
     }
   }
-  malha(TS, true, 'soltos');
-  malha(TA, true, 'arvores');
+  ninguem();
+  ladrilhavel(malha(TS, true, 'soltos'), TS);
+  ladrilhavel(malha(TA, true, 'arvores'), TA, { impostor: false });
 
   /* ---- as malhas texturadas: telhado e mancha de parede ---- */
   alvoTelhado = null;
   /* o teto da sede também é caixa, e o tecido dele tem UV: sem mapa a
      malha sai lisa, que é o que fibrocimento é */
-  malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados');
-  malhaTex(TELHADOS_FAV, textura('img/texturas/telha.png', true), 'telhados:favela');
+  ladrilhavel(malhaTex(TELHADOS, textura('img/texturas/telha.png', true), 'telhados'), TELHADOS, { solta: 'telha' });
+  ladrilhavel(malhaTex(TELHADOS_FAV, textura('img/texturas/telha.png', true), 'telhados:favela'), TELHADOS_FAV, { solta: 'telha' });
+  /* a falha de reboco são umas centenas de triângulos: inteira */
   malhaTex(MANCHAS, textura('img/texturas/tijolo.png'), 'tijolo', true);
 
   /* ---- os decalques de chão: mato, entulho, terra e folha ----
@@ -1869,9 +1959,10 @@ export function montarBairro(P) {
      placas, e cada uma virar chamada de desenho seria o fim. O corte
      de alfa é mais baixo que o das placas de letreiro (0,32 contra
      0,45) porque folha de capim é fina e some com corte alto. */
-  const TDEC = { pos: [], uv: [] };
-  for (const d of K.DECALQUES || []) decalqueChao(TDEC, d, 2.4);
-  malhaUV(TDEC, textura('img/texturas/chao.png'), 'decalques', 0.32, true);
+  const TDEC = { pos: [], uv: [], ids: [] };
+  for (const d of K.DECALQUES || []) { objeto(d.x, d.y, 0, 'prop'); decalqueChao(TDEC, d, 2.4); }
+  ninguem();
+  ladrilhavel(malhaUV(TDEC, textura('img/texturas/chao.png'), 'decalques', 0.32, true), TDEC, { impostor: false });
 
   /* ---- o mato: moitas, em duas pirâmides baixas ---- */
   const TM = Tecido();
@@ -1879,8 +1970,10 @@ export function montarBairro(P) {
     piramide(TM, m.x, 0, m.r * 0.9, m.r * 0.8, m.y, '#5d7746');
     piramide(TM, m.x + m.r * 0.5, 0, m.r * 0.6, m.r * 0.5, m.y - m.r * 0.3, '#52693e');
   }
+  /* a moita: 8 triângulos cada, uns 4 mil ao todo — inteira, pelo mesmo
+     motivo da laje */
   malha(TM, false, 'moitas');
 
   return { meshes, triangulos, tetos, bandeiras, portas, pixacoes, lajesChao, pedacos: pedacos.size,
-           casas: registroCasas, materiaisCasas, semDecalque };
+           casas: registroCasas, materiaisCasas, semDecalque, objetos };
 }
