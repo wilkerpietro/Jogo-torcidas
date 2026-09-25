@@ -30,21 +30,23 @@ import { plantarMato, montarMato, LONGE_M } from './mato3d.js';
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
 const PX_CHAO = 1024, SOBRA = 2;
-/* A QUALIDADE: pixels por metro no chão, o tamanho do mapa de sombra
-   (0: sem sombra), o teto da densidade de pixel da tela e a escala do
-   texto na folha de decalque (o canvas do letreiro tem 512 × 128; na
-   folha normal, 256 × 64) */
+/* A QUALIDADE: pixels por metro no chão, o teto da densidade de pixel
+   da tela e a escala do texto na folha de decalque (o canvas do letreiro
+   tem 512 × 128; na folha normal, 256 × 64). SEM SOMBRA: o cenário não
+   desenha sombra nenhuma (o sol só dá a luz de cada face). A sombra custa
+   desenhar a cena mais uma vez por quadro (o mapa de sombra), e o dono
+   pediu pra ver o fps sem ela */
 const QUALIDADES = {
-  leve:   { nome: 'Leve', pxm: 4, sombra: 0, dpr: 1, decal: 0.35 },
-  normal: { nome: 'Normal', pxm: 6, sombra: 2048, dpr: 1.5, decal: 0.5 },
-  alta:   { nome: 'Alta', pxm: 8, sombra: 4096, dpr: 2, decal: 0.62 }
+  leve:   { nome: 'Leve', pxm: 4, dpr: 1, decal: 0.35 },
+  normal: { nome: 'Normal', pxm: 6, dpr: 1.5, decal: 0.5 },
+  alta:   { nome: 'Alta', pxm: 8, dpr: 2, decal: 0.62 }
 };
 /* o lado do BLOCO do forno (m): a malha junta tudo o que cai nele; o
    bloco é também o que a câmera descarta fora da vista */
 const BLOCO_M = 96;
 /* a folha dos decalques e o vão entre um quadro e outro */
 const FOLHA_DECAL = 2048, VAO_DECAL = 4;
-/* o sol do mapa: de noroeste, alto (a sombra da copa no 2D vai pro sudeste) */
+/* o sol do mapa: de noroeste, alto (a sombra da copa no 2D vai pro sudeste); só luz */
 const SOL = new THREE.Vector3(-0.52, 0.78, -0.36).normalize();
 const CEU = new THREE.Color('#cfdde6'), ZENITE = new THREE.Color('#7fa6c4');
 
@@ -76,7 +78,7 @@ const CSS = `
 .cen-mapas button { font: 600 13px/1 var(--f-ui); color: var(--tinta-2); background: none; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
 .cen-mapas button.porte::after { content: '•'; margin-left: 4px; color: var(--selecao); }
 .cen button:focus-visible, .cen select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
-.cen-ficha { position: absolute; left: 12px; bottom: 12px; width: min(360px, calc(100% - 24px)); max-height: min(56vh, 520px); overflow: auto;
+.cen-ficha { position: absolute; left: 12px; bottom: 62px; width: min(360px, calc(100% - 24px)); max-height: min(52vh, 480px); overflow: auto;
   padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--folha) 94%, transparent); border: 1px solid var(--linha);
   box-shadow: 0 2px 14px rgba(0,0,0,.16); }
 .cen-ficha .acoes { display: none; }
@@ -92,6 +94,11 @@ const CSS = `
   font: 12px/1.35 var(--f-texto); color: var(--tinta-2); background: color-mix(in srgb, var(--folha) 88%, transparent); border: 1px solid var(--linha); }
 .cen-dica b { color: var(--tinta); font-weight: 600; }
 .cen-num { display: block; margin-top: 4px; font: 11px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; }
+.cen-fps { position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 5px 9px; border-radius: 7px; pointer-events: none;
+  font: 600 12px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; color: #f2f3ef; background: rgba(20,22,21,.8); }
+.cen-fps b { font-size: 15px; }
+.cen-fps b.bom { color: #7fd67a; } .cen-fps b.meio { color: #f0c64a; } .cen-fps b.ruim { color: #ff7b6b; }
+.cen-fps small { display: block; font-weight: 400; color: #c9ccc6; }
 .cen-hover { position: absolute; pointer-events: none; transform: translate(12px, -30px); padding: 4px 8px; border-radius: 6px; white-space: nowrap;
   font: 600 13px/1.2 var(--f-ui); color: #f2f3ef; background: rgba(20,22,21,.82); }
 .cen-carga { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(207,221,230,.55); }
@@ -121,7 +128,8 @@ const CSS = `
   .cen-bt { padding: 7px 9px; font-size: 13px; }
   .cen-mapas button { padding: 6px 8px; }
   .cen-dica { display: none; }
-  .cen-ficha { left: 8px; bottom: 8px; max-height: 42vh; }
+  .cen-ficha { left: 8px; bottom: 56px; max-height: 40vh; }
+  .cen-fps { left: 8px; bottom: 8px; }
 }`;
 
 export function criarCenario(P) {
@@ -154,6 +162,7 @@ export function criarCenario(P) {
     <aside class="cen-ficha" hidden><button class="cen-x" aria-label="Fechar a ficha">×</button><div class="cen-ficha-corpo"></div></aside>
     <p class="cen-dica"><b>Arraste</b> pra andar · <b>botão direito</b> (ou Shift) gira e inclina · <b>role</b> pra aproximar · <b>WASD</b> anda, <b>Q/E</b> gira · <b>duplo clique</b> voa até o ponto · <b>clique</b> numa coisa pra ver a ficha<span class="cen-num"></span></p>
     <div class="cen-hover" hidden></div>
+    <p class="cen-fps" aria-live="off"><b>—</b> fps<small>medindo…</small></p>
     <div class="cen-carga" hidden><div class="cen-carga-caixa" role="status" aria-live="polite"><p class="cen-carga-txt">Montando…</p><div class="cen-barra"><i></i></div></div></div>
     <section class="cen-escolha" hidden aria-label="Escolha a praça"><div class="cen-escolha-miolo"></div></section>`;
   document.body.appendChild(raiz);
@@ -188,14 +197,13 @@ export function criarCenario(P) {
      O 3D
      ====================================================== */
   const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: true, powerPreference: 'high-performance' });
-  rend.shadowMap.enabled = true; rend.shadowMap.type = THREE.PCFSoftShadowMap;
+  rend.shadowMap.enabled = false;
   const cena = new THREE.Scene();
   cena.background = CEU.clone();
   cena.fog = new THREE.Fog(CEU.clone(), 1000, 100000);
   const cam = new THREE.PerspectiveCamera(42, 1, 1, 100000);
   cena.add(new THREE.HemisphereLight(0xe3edf5, 0x6d695d, 1.25));
   const sol = new THREE.DirectionalLight(0xfff1da, 2.2);
-  sol.shadow.bias = -0.0004;
   cena.add(sol, sol.target);
   /* o céu: a cúpula clara no horizonte (a cor da névoa) e azul no alto */
   {
@@ -218,18 +226,6 @@ export function criarCenario(P) {
     pedir();
   }
   new ResizeObserver(ajustarTela).observe(tela);
-  function ajustarSombra() {
-    const q = QUALIDADES[qualidade];
-    sol.castShadow = !!q.sombra;
-    if (q.sombra && sol.shadow.mapSize.x !== q.sombra) {
-      sol.shadow.mapSize.set(q.sombra, q.sombra);
-      if (sol.shadow.map) { sol.shadow.map.dispose(); sol.shadow.map = null; }
-    }
-    rend.shadowMap.type = qualidade === 'alta' ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
-    rend.shadowMap.needsUpdate = true;
-    /* o material que já compilou com outra sombra recompila */
-    cena.traverse(o => { if (o.material) o.material.needsUpdate = true; });
-  }
 
   /* ======================================================
      A CÂMERA: órbita em volta de um alvo no chão
@@ -249,19 +245,14 @@ export function criarCenario(P) {
     /* o perto e o longe acompanham a distância: a profundidade não perde
        precisão rente ao chão, e a névoa esconde a borda do mundo */
     const d = orb.dist;
-    cam.near = clamp(d * 0.01, 0.4, 60);
+    cam.near = clamp(d * 0.02, 0.5, 400);
     cam.far = d * 6 + 60000;
     cam.updateProjectionMatrix();
     cena.fog.near = d * 1.6 + 1500;
     cena.fog.far = d * 5 + 40000;
-    /* o sol acompanha o alvo, e a caixa da sombra cobre o que se vê */
-    const e = clamp(d * 0.95, 60 * M, 520 * M);
+    /* o sol: só a direção conta (luz sem sombra) */
     sol.target.position.set(c.x, 0, c.z);
-    sol.position.copy(sol.target.position).addScaledVector(SOL, e * 3);
-    const sc = sol.shadow.camera;
-    sc.left = -e; sc.right = e; sc.top = e; sc.bottom = -e; sc.near = e * 0.5; sc.far = e * 6;
-    sc.updateProjectionMatrix();
-    sol.shadow.normalBias = e / (sol.shadow.mapSize.x || 2048) * 1.2;
+    sol.position.copy(sol.target.position).addScaledVector(SOL, 1000);
     sol.target.updateMatrixWorld();
   }
 
@@ -269,19 +260,41 @@ export function criarCenario(P) {
   let pedido = 0, ultimo = 0;
   const teclas = new Set();
   let voo = null;
+  /* O LAÇO: com o cenário aberto, desenha todo quadro, como um jogo — é o
+     que o medidor de fps mede (parado ou andando dá o mesmo trabalho).
+     Enquanto a praça monta, só desenha quando pede (o quadro contínuo
+     roubaria o tempo da montagem na máquina lenta) */
   function pedir() { if (!pedido && !raiz.hidden) pedido = requestAnimationFrame(quadro); }
+  const medidor = { desde: 0, quadros: 0, cpu: 0 };
   function quadro(t) {
     pedido = 0;
     /* o tempo de verdade (a máquina lenta pula quadro, mas chega na hora) */
     const dt = ultimo ? Math.min(0.2, (t - ultimo) / 1000) : 0.016;
     ultimo = t;
-    let segue = false;
-    if (teclas.size) { andar(dt); segue = true; }
-    if (voo) { segue = voo(dt) !== false || segue; }
+    if (teclas.size) andar(dt);
+    if (voo) voo(dt);
     posicionar();
+    const t0 = performance.now();
     rend.render(cena, cam);
+    medir(t, performance.now() - t0);
     contar();
-    if (segue) pedir(); else ultimo = 0;
+    if (!montando) pedir();
+  }
+  /* O MEDIDOR: quadros por segundo e milissegundos por quadro, na média de
+     meio segundo; o tempo do processador pra mandar o quadro; as chamadas
+     de desenho e os triângulos do quadro */
+  const fpsEl = $('.cen-fps');
+  function medir(t, cpu) {
+    medidor.quadros++; medidor.cpu += cpu;
+    if (!medidor.desde) { medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0; return; }
+    const passou = t - medidor.desde;
+    if (montando) { medidor.desde = 0; fpsEl.innerHTML = '<b>—</b> fps<small>montando a praça…</small>'; return; }
+    if (passou < 500 || !medidor.quadros) return;
+    const fps = medidor.quadros * 1000 / passou, ms = passou / medidor.quadros, r = rend.info.render;
+    const classe = fps >= 50 ? 'bom' : fps >= 28 ? 'meio' : 'ruim';
+    fpsEl.innerHTML = `<b class="${classe}">${Math.round(fps)}</b> fps · ${ms.toFixed(1).replace('.', ',')} ms` +
+      `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${(medidor.cpu / medidor.quadros).toFixed(1).replace('.', ',')} ms</small>`;
+    medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0;
   }
 
   /* ANDAR NO TECLADO: WASD e setas no chão, Q/E gira, R/F inclina; com
@@ -448,9 +461,9 @@ export function criarCenario(P) {
     if (coisas.length < 2) return null;
     const r = tela.getBoundingClientRect();
     posicionar();
-    const fundo = cena.background, auto = rend.shadowMap.autoUpdate, cor = rend.getClearColor(new THREE.Color()), alfa = rend.getClearAlpha();
+    const fundo = cena.background, cor = rend.getClearColor(new THREE.Color()), alfa = rend.getClearAlpha();
     const vis = caixaSel.visible;
-    cena.background = null; cena.overrideMaterial = matId; rend.shadowMap.autoUpdate = false; caixaSel.visible = false;
+    cena.background = null; cena.overrideMaterial = matId; caixaSel.visible = false;
     rend.setClearColor(0x000000, 1);
     cam.setViewOffset(r.width, r.height, Math.floor(sx - r.left), Math.floor(sy - r.top), 1, 1);
     rend.setRenderTarget(alvoId);
@@ -458,7 +471,7 @@ export function criarCenario(P) {
     rend.readRenderTargetPixels(alvoId, 0, 0, 1, 1, pixel);
     rend.setRenderTarget(null);
     cam.clearViewOffset();
-    cena.background = fundo; cena.overrideMaterial = null; rend.shadowMap.autoUpdate = auto; caixaSel.visible = vis;
+    cena.background = fundo; cena.overrideMaterial = null; caixaSel.visible = vis;
     rend.setClearColor(cor, alfa);
     const id = pixel[0] + pixel[1] * 256 + pixel[2] * 65536;
     return coisas[id] || null;
@@ -513,10 +526,6 @@ export function criarCenario(P) {
     const mat = new THREE.MeshLambertMaterial({
       map: m.map || null, vertexColors: true, side: m.side, transparent: m.transparent, opacity: m.transparent ? m.opacity : 1,
       alphaTest: m.alphaTest || 0, depthWrite: m.depthWrite, flatShading: !!m.flatShading, alphaToCoverage: !!m.alphaToCoverage });
-    /* o vidro (transparente, sem folha) não faz sombra */
-    mat.userData.sombra = !(m.transparent && !m.map && m.opacity < 0.5);
-    /* o recortado (a grade, a rede) faz a sombra recortada */
-    if (m.map && (m.alphaTest > 0 || m.transparent)) mat.userData.recorte = m.map;
     matsDoForno.set(chave, mat);
     return mat;
   }
@@ -681,10 +690,6 @@ export function criarCenario(P) {
         /* depois de subir pra placa de vídeo, a cópia daqui sai */
         for (const a of Object.values(g.attributes)) a.onUpload(function () { this.array = null; });
         const malha = new THREE.Mesh(g, mat);
-        const decalque = b.chave.startsWith('decal|');
-        malha.castShadow = !decalque && mat.userData.sombra !== false;
-        malha.receiveShadow = !mat.transparent || !!mat.map;
-        if (mat.userData.recorte) malha.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: mat.userData.recorte, alphaTest: 0.45 });
         malha.matrixAutoUpdate = false;
         grupo.add(malha);
       }
@@ -775,46 +780,78 @@ export function criarCenario(P) {
       g.setAttribute('uv', new THREE.Float32BufferAttribute([u0, u0, u0, uY, uX, uY, uX, u0], 2));
       g.setIndex([0, 1, 2, 0, 2, 3]);
       const m = new THREE.Mesh(g, materialDoChao(tex, lado / M));
-      m.position.y = -0.3; m.receiveShadow = true; m.name = 'chao';
+      m.position.y = -0.3; m.name = 'chao';
       m.updateMatrix(); m.matrixAutoUpdate = false;
       grupo.add(m);
       avisar(++feitos / (nx * nz));
       await espera();
     }
   }
-  /* O CHÃO DE LONGE: pra lá do desenho, o mato (e o mar, na praça do
-     litoral, a leste da linha d'água), até o horizonte */
+  /* O CHÃO DE LONGE: pra lá da área pintada, até o horizonte, em quatro
+     faixas em volta dela, que NÃO se sobrepõem (plano embaixo de plano,
+     de longe, briga pela profundidade e sai listrado — era o "mato dentro
+     do mar"). Todas na altura do chão pintado:
+     - o MATO é o próprio ladrilho do mato da planta (a copa da mata, o
+       capim do cerrado: 2.400 unidades que repetem sem emenda), com a uv
+       no mundo — emenda com o chão pintado, que tem o mesmo ladrilho;
+     - na praça de praia, a costa segue reta pra lá das pontas (como na
+       planta): ao norte e ao sul, o mato, a FAIXA DA PRAIA (um pedaço da
+       própria praia pintada pela planta — a areia, a areia molhada, a
+       espuma, o raso e a onda — repetido ao longo da costa) e o mar; a
+       leste, só o mar, na cor do mar da planta. */
   function chaoDeLonge(ar, grupo) {
-    const G = 400000;
-    /* O MATO DE LONGE é o próprio ladrilho do mato da planta (a copa da
-       mata, o capim do cerrado: 2.400 unidades que repetem sem emenda),
-       pintado longe da cidade e repetido até o horizonte — emenda com o
-       chão pintado, que tem o mesmo ladrilho */
-    const T = 2400, cv = document.createElement('canvas'); cv.width = cv.height = 512;
-    const x0 = Math.floor((ar.x0 - 4 * T) / T) * T, y0 = Math.floor((ar.y0 - 4 * T) / T) * T;
-    P.pintarChao(cv.getContext('2d'), x0, y0, 512 / T);
-    const tex = new THREE.CanvasTexture(cv);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-    tex.repeat.set(2 * G / T, 2 * G / T);
-    const mat = new THREE.MeshLambertMaterial({ map: tex });
-    const g = new THREE.PlaneGeometry(2 * G, 2 * G);
-    const mato = new THREE.Mesh(g, mat);
-    /* o ladrilho começa num múltiplo de T, como o da planta */
-    mato.rotation.x = -Math.PI / 2; mato.position.set(x0 + G, -2.2, y0 + G); mato.name = 'chao';
-    grupo.add(mato);
+    const G = 400000, T = 2400, Y = -0.3;
+    const quad = (x0, x1, z0, z1, mat, uv) => {
+      if (x1 - x0 < 1 || z1 - z0 < 1) return;
+      const g = new THREE.BufferGeometry(), c = [[x0, z0], [x0, z1], [x1, z1], [x1, z0]];
+      g.setAttribute('position', new THREE.Float32BufferAttribute(c.flatMap(([x, z]) => [x, Y, z]), 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(c.flatMap(([x, z]) => uv(x, z)), 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      const m = new THREE.Mesh(g, mat); m.name = 'longe'; m.frustumCulled = false;
+      grupo.add(m);
+    };
+    const material = (cv, repete) => {
+      const tex = new THREE.CanvasTexture(cv);
+      tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      tex.wrapS = repete ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping; tex.wrapT = THREE.RepeatWrapping;
+      const m = new THREE.MeshLambertMaterial({ map: tex });
+      m.userData.doMapa = true;
+      return m;
+    };
+    /* o ladrilho do mato, pintado longe da cidade, num múltiplo de T */
+    const cvM = document.createElement('canvas'); cvM.width = cvM.height = 512;
+    P.pintarChao(cvM.getContext('2d'), Math.floor((ar.x0 - 4 * T) / T) * T, Math.floor((ar.y0 - 4 * T) / T) * T, 512 / T);
+    const mato = material(cvM, true), uvMundo = (x, z) => [x / T, z / T];
     const costa = P.costa && P.costa();
-    if (costa) {
-      /* o mar: a leste do desenho, e ao norte e ao sul dele a partir da
-         linha d'água da ponta */
-      const agua = new THREE.MeshLambertMaterial({ color: '#2f5c77' });
-      agua.userData.doMapa = true;
-      const retangulo = (x0, x1, z0, z1) => {
-        const m = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), agua);
-        m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, -1.4, (z0 + z1) / 2); grupo.add(m);
-      };
-      retangulo(ar.x1, ar.x1 + G, ar.y0 - G, ar.y1 + G);
-      retangulo(costa.em(ar.y0), ar.x1, ar.y0 - G, ar.y0);
-      retangulo(costa.em(ar.y1), ar.x1, ar.y1, ar.y1 + G);
+    quad(ar.x0 - G, ar.x0, ar.y0, ar.y1, mato, uvMundo);                      // oeste
+    if (!costa) {
+      quad(ar.x1, ar.x1 + G, ar.y0, ar.y1, mato, uvMundo);                    // leste
+      quad(ar.x0 - G, ar.x1 + G, ar.y0 - G, ar.y0, mato, uvMundo);            // norte
+      quad(ar.x0 - G, ar.x1 + G, ar.y1, ar.y1 + G, mato, uvMundo);            // sul
+      return;
+    }
+    /* a faixa da praia: 124 m da praia pintada logo pra lá da ponta, da
+       beira de terra da areia até 25 m mar adentro */
+    let corMar = null;
+    const faixa = (zBorda, sentido) => {
+      const xa = costa.areia(zBorda), xw = costa.agua(zBorda), x1 = xw + 25 * M;
+      const s = 0.3, L = T, cv = document.createElement('canvas');
+      cv.width = Math.max(8, Math.ceil((x1 - xa) * s)); cv.height = Math.ceil(L * s);
+      const c2 = cv.getContext('2d', { willReadFrequently: true });
+      const z0 = sentido < 0 ? zBorda - L : zBorda;
+      P.pintarChao(c2, xa, z0, s);
+      if (!corMar) { const d = c2.getImageData(cv.width - 2, 2, 1, 1).data; corMar = new THREE.Color().setRGB(d[0] / 255, d[1] / 255, d[2] / 255, THREE.SRGBColorSpace); }
+      return { xa, x1, z0, L, mat: material(cv, false) };
+    };
+    const norte = faixa(ar.y0, -1), sul = faixa(ar.y1, 1);
+    const mar = new THREE.MeshLambertMaterial({ color: corMar }); mar.userData.doMapa = true;
+    const nada = () => [0, 0];
+    quad(ar.x1, ar.x1 + G, ar.y0, ar.y1, mar, nada);                          // leste: o mar
+    for (const [f, z0, z1] of [[norte, ar.y0 - G, ar.y0], [sul, ar.y1, ar.y1 + G]]) {
+      quad(ar.x0 - G, f.xa, z0, z1, mato, uvMundo);
+      quad(f.xa, f.x1, z0, z1, f.mat, (x, z) => [(x - f.xa) / (f.x1 - f.xa), (z - f.z0) / f.L]);
+      quad(f.x1, ar.x1 + G, z0, z1, mar, nada);
     }
   }
 
@@ -843,8 +880,8 @@ export function criarCenario(P) {
     const ANEL_M = 110, costa = P.costa && P.costa();
     const fora = (x, z) => {
       if (costa) {
-        const X = x * M, Z = z * M, lim = Z < ar.y0 ? costa.em(ar.y0) : Z > ar.y1 ? costa.em(ar.y1) : ar.x1;
-        if (X > Math.min(lim, ar.x1) - 30 * M) return false;
+        const X = x * M, Z = z * M, lim = Z < ar.y0 ? costa.areia(ar.y0) : Z > ar.y1 ? costa.areia(ar.y1) : ar.x1;
+        if (X > Math.min(lim, ar.x1) - 8 * M) return false;
       }
       const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
       return h - Math.floor(h) < 0.5;
@@ -879,9 +916,7 @@ export function criarCenario(P) {
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
     g.computeVertexNormals(); g.computeBoundingSphere();
-    const m = new THREE.Mesh(g, matLowpoly);
-    m.castShadow = m.receiveShadow = true;
-    return m;
+    return new THREE.Mesh(g, matLowpoly);
   }
 
   /* ======================================================
@@ -895,16 +930,22 @@ export function criarCenario(P) {
     doMapa.traverse(o => {
       if (o.geometry) o.geometry.dispose();
       if (o.material && o.name === 'chao') { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
-      if (o.material && o.material.userData.doMapa) o.material.dispose();
-      if (o.customDepthMaterial) o.customDepthMaterial.dispose();
+      else if (o.material && o.material.userData.doMapa) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
     });
     if (montado && montado.decal) montado.decal.jogarFora();
     doMapa = new THREE.Group(); cena.add(doMapa);
     coisas = [null]; fecharFicha();
   }
+  /* MONTAR: a praça inteira; a montagem que chega depois cancela a de
+     antes (`vivo`), e o erro aparece na caixa em vez de travar a tela */
   async function montar(nome, modo) {
     const minha = ++vez, vivo = () => minha === vez;
     montando = true;
+    try { await montarPraca(nome, modo, vivo); }
+    catch (e) { console.error('cenário:', e); if (vivo()) { carga.hidden = false; aviso('Não deu pra montar ' + nome + ': ' + e.message, 1); } }
+    finally { if (vivo()) { montando = false; medidor.desde = 0; pedir(); } }
+  }
+  async function montarPraca(nome, modo, vivo) {
     raiz.querySelector('.cen-escolha').hidden = true;
     carga.hidden = false;
     aviso('Abrindo ' + nome + '…', 0);
@@ -957,9 +998,6 @@ export function criarCenario(P) {
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
     carga.hidden = true;
-    montando = false;
-    ajustarSombra();
-    pedir();
     if (window.__cenarioPronto) window.__cenarioPronto(numeros);
   }
 
@@ -1007,8 +1045,7 @@ export function criarCenario(P) {
     const t = agora();
     if (t - ultimaConta < 500) return;
     ultimaConta = t;
-    const r = rend.info.render;
-    $('.cen-num').textContent = `${milhar(numeros.pecas)} peças · ${milhar(numeros.tri + numeros.mato.tri)} triângulos · ${r.calls} chamadas neste quadro · montado em ${numeros.segundos.toFixed(1).replace('.', ',')} s`;
+    $('.cen-num').textContent = `${milhar(numeros.pecas)} peças · ${milhar(numeros.tri + numeros.mato.tri)} triângulos na cena · montado em ${numeros.segundos.toFixed(1).replace('.', ',')} s`;
   }
 
   /* ======================================================
@@ -1019,7 +1056,7 @@ export function criarCenario(P) {
   selQ.onchange = () => {
     qualidade = selQ.value;
     try { localStorage.setItem('cenario-qualidade', qualidade); } catch (e) {}
-    ajustarTela(); ajustarSombra();
+    ajustarTela();
     /* o chão muda de resolução: remonta a praça (o forno junta de novo) */
     if (montado) montar(P.cidade(), P.modo());
   };
@@ -1048,8 +1085,9 @@ export function criarCenario(P) {
      ====================================================== */
   function abrir(nome, modo) {
     raiz.hidden = false;
+    medidor.desde = 0; ultimo = 0;
     document.documentElement.style.overflow = 'hidden';
-    ajustarTela(); ajustarSombra();
+    ajustarTela();
     /* sem praça: a lista pra escolher */
     if (!nome) { escolher(); return; }
     if (montado && montado.nome === nome && P.modo() === (modo || P.mapaDoPorte(nome)) && !montando) { atualizarTopo(); pedir(); return; }

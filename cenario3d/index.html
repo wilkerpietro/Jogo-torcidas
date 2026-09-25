@@ -490,14 +490,142 @@ const corLegivel = hex => luz(hex) > 150 ? '#1a1a1a' : '#f6f3ea';
 const NEUTRO = { cor: '#d6d1c4', cor2: '#c4beb0', cor3: '#8f8a7f' };
 
 /* QUEM FICA COM O QUÊ (a regra é desta página; o jogo ainda não tem):
-   - SEDE: a maior torcida (nível da sede, depois o poder) escolhe
-     primeiro, e o espaço mais perto do estádio vai pra ela. A sede de
-     nível 1 prefere o espaço pequeno (o da 5,2, onde só ela cabe); de
-     nível 2 pra cima, o terreno inteiro. Nível 0 não tem sede.
-   - BAR: toda sede já vem com um bar (GDD §8.1: a sede nível 1 ganha
-     um bar nível 1), e é o bar livre mais perto da sede. Se a torcida
-     tiver `bares` nos dados, ela fica com esse tanto.
+   - QUEM TEM SEDE: a maior torcida (nível da sede, depois o poder)
+     entra primeiro. A sede de nível 1 cabe no espaço pequeno (o da 5,2,
+     onde só ela cabe) ou num terreno inteiro; do nível 2 pra cima, só no
+     terreno inteiro. Nível 0 não tem sede.
+   - ONDE: a sede de uma torcida fica do lado oposto do mapa da sede das
+     rivais. A rivalidade é a dos dados, entre as torcidas da praça
+     (`maioresRivais` pesa 3, `rivais` pesa 1; a do mesmo clube não conta),
+     e de todas as distribuições possíveis sai a que deixa as rivais mais
+     longe umas das outras (a soma das distâncias, com o peso). No empate
+     (a praça sem rivalidade), a maior fica mais perto do estádio.
+   - BAR: toda sede vem com um bar (GDD §8.1: a sede nível 1 ganha um bar
+     nível 1), e ele não fica perto da sede da torcida (a BAR_LONGE_SEDE
+     ou mais) nem da sede de uma rival (a BAR_LONGE_RIVAL ou mais) — o GDD
+     §7.2 pede o bar noutra zona que a sede. As duas distâncias são as do
+     mapa grande; no médio e no pequeno encolhem com o tamanho da cidade.
+     Os bares saem todos de uma vez (`casar`): o máximo de torcidas com bar
+     que serve e, entre essas, cada bar o mais perto da própria sede; quem
+     fica sem bar que sirva leva o que chega mais perto da regra. Se a
+     torcida tiver `bares` nos dados, ela fica com esse tanto.
+   - SEDE E BAR JUNTOS: a sede manda. Das distribuições de sede quase tão
+     boas quanto a melhor (a menor distância entre rivais a 90% ou mais
+     da melhor), fica a primeira em que menos bar quebra a regra.
    - O que ninguém ocupa fica NEUTRO, de porta fechada. */
+const BAR_LONGE_SEDE = 100, BAR_LONGE_RIVAL = 150;          // m, no mapa grande
+/* o peso da rivalidade entre duas torcidas da praça (0: não são rivais) */
+function pesoRival(A, B) {
+  const a = A.t, b = B.t;
+  if (a.clubeId && a.clubeId === b.clubeId) return 0;
+  if ((a.maioresRivais || []).includes(b.id) || (b.maioresRivais || []).includes(a.id)) return 3;
+  if ((a.rivais || []).includes(b.id) || (b.rivais || []).includes(a.id)) return 1;
+  return 0;
+}
+const centroDe = x => [(x.bb.x0 + x.bb.x1) / 2, (x.bb.y0 + x.bb.y1) / 2];
+/* o "perto" do bar encolhe com a cidade: a diagonal dela contra a do mapa grande (675 m) */
+function escalaDoMapa() {
+  const L = PROP.limite;
+  return Math.min(1, Math.hypot(L.x1 - L.x0, L.y1 - L.y0) / M / 675);
+}
+/* ONDE CADA SEDE FICA: as torcidas `S` (já na ordem de quem é maior)
+   nos espaços. A nota de cada distribuição, nesta ordem: a menor
+   distância entre duas sedes de maior rivalidade, a menor entre duas
+   rivais quaisquer (ninguém em cima da rival: é o "lado oposto") e a
+   soma das distâncias entre rivais, com o peso, menos um tico da
+   distância da maior ao estádio (a praça sem rival fica com a regra
+   antiga). São no máximo nove torcidas em nove espaços: a busca passa
+   por todas as distribuições que cabem, e devolve as `quantas` melhores */
+function melhoresSedes(S, lista, quantas = 300) {
+  const n = lista.length, k = S.length;
+  const c = lista.map(centroDe);
+  const d = (i, j) => Math.hypot(c[i][0] - c[j][0], c[i][1] - c[j][1]);
+  const est = c.map(([x, y]) => Math.hypot(x - P.CX, y - P.CY));
+  const W = S.map(A => S.map(B => A === B ? 0 : pesoRival(A, B)));
+  const cabe = S.map(T => lista.map(x => T.nivel === 1 || x.e.cabe > 1));
+  const melhorQue = (a, b) => a.maior !== b.maior ? a.maior > b.maior : a.todas !== b.todas ? a.todas > b.todas : a.soma > b.soma + 1e-6;
+  const topo = [];
+  const atrib = new Array(k), usado = new Array(n).fill(false);
+  const buscar = (i, soma, maior, todas) => {
+    if (i === k) {
+      const nota = { soma, maior, todas };
+      if (topo.length === quantas && !melhorQue(nota, topo[topo.length - 1])) return;
+      let p = topo.length;
+      while (p > 0 && melhorQue(nota, topo[p - 1])) p--;
+      topo.splice(p, 0, { ...nota, atrib: atrib.slice() });
+      if (topo.length > quantas) topo.pop();
+      return;
+    }
+    for (let e = 0; e < n; e++) {
+      if (usado[e] || !cabe[i][e]) continue;
+      let ganho = -0.05 / (i + 1) * est[e], ma = maior, to = todas;
+      for (let j = 0; j < i; j++) {
+        const w = W[i][j];
+        if (!w) continue;
+        const dd = d(e, atrib[j]);
+        ganho += w * dd;
+        if (dd < to) to = dd;
+        if (w === 3 && dd < ma) ma = dd;
+      }
+      /* a distância vai arredondada a 1 m, pra o empate valer entre as quase iguais */
+      usado[e] = true; atrib[i] = e;
+      buscar(i + 1, soma + ganho, Math.round(ma / M) * M, Math.round(to / M) * M);
+      usado[e] = false;
+    }
+  };
+  buscar(0, 0, Infinity, Infinity);
+  return topo;
+}
+/* CASAR cada linha com uma coluna pelo menor custo total (o método
+   húngaro; as linhas não passam das colunas) */
+function casar(custo) {
+  const n = custo.length, m = custo[0].length, INF = 1e18;
+  const u = new Array(n + 1).fill(0), v = new Array(m + 1).fill(0), p = new Array(m + 1).fill(0), via = new Array(m + 1).fill(0);
+  for (let i = 1; i <= n; i++) {
+    p[0] = i;
+    let j0 = 0;
+    const minv = new Array(m + 1).fill(INF), usada = new Array(m + 1).fill(false);
+    do {
+      usada[j0] = true;
+      const i0 = p[j0];
+      let delta = INF, j1 = 0;
+      for (let j = 1; j <= m; j++) if (!usada[j]) {
+        const cur = custo[i0 - 1][j - 1] - u[i0] - v[j];
+        if (cur < minv[j]) { minv[j] = cur; via[j] = j0; }
+        if (minv[j] < delta) { delta = minv[j]; j1 = j; }
+      }
+      for (let j = 0; j <= m; j++) if (usada[j]) { u[p[j]] += delta; v[j] -= delta; } else minv[j] -= delta;
+      j0 = j1;
+    } while (p[j0] !== 0);
+    do { const j1 = via[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
+  }
+  const res = new Array(n).fill(-1);
+  for (let j = 1; j <= m; j++) if (p[j]) res[p[j] - 1] = j - 1;
+  return res;
+}
+/* OS BARES de uma distribuição de sede, todos de uma vez: o máximo de
+   torcidas com bar que serve (longe da sede e das rivais) e, entre essas
+   distribuições, o bar mais perto da própria sede; o que não serve paga
+   pelo quanto falta. Devolve quantas torcidas ficaram com bar fora da regra */
+function escolherBares(ts, lp, lr) {
+  for (const x of bares) x.dono = null;
+  for (const T of ts) T.bares = [];
+  const dist = (x, [cx, cy]) => Math.hypot(x.b.x - cx, x.b.y - cy) / M;
+  const linhas = [];
+  for (const T of ts) if (T.sede) for (let q = 0; q < (T.nBares ?? 1); q++)
+    linhas.push({ T, casa: centroDe(T.sede), rivais: ts.filter(U => U !== T && U.sede && pesoRival(T, U) > 0).map(U => centroDe(U.sede)) });
+  const lista = bares.slice(), usadas = linhas.slice(0, lista.length);
+  if (!usadas.length) return 0;
+  const falta = (q, b) => Math.max(0, 1 - dist(b, q.casa) / lp, ...q.rivais.map(r => 1 - dist(b, r) / lr));
+  const custo = usadas.map(q => lista.map(b => { const f = falta(q, b); return (f > 0 ? 1e5 + 1e4 * f : 0) + dist(b, q.casa); }));
+  let fora = 0;
+  casar(custo).forEach((j, i) => {
+    const q = usadas[i], x = lista[j];
+    x.dono = q.T; q.T.bares.push(x);
+    if (falta(q, x) > 0) fora++;
+  });
+  return fora;
+}
 let ocupacao = { torcidas: [], semSede: [], mapa: '' };
 /* O ESCUDO DE VERDADE: o mesmo PNG do jogo, pela mesma regra da planta
    (`caminhoDoEscudo` de dados/cena_estadio.js): dados/escudos.js é o
@@ -523,20 +651,32 @@ function distribuirTorcidas() {
   }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
   for (const x of espacos) x.dono = null;
   for (const x of bares) x.dono = null;
-  const doEstadio = x => Math.hypot((x.bb.x0 + x.bb.x1) / 2 - P.CX, (x.bb.y0 + x.bb.y1) / 2 - P.CY);
-  const grandes = espacos.filter(x => x.e.cabe > 1).sort((a, b) => doEstadio(a) - doEstadio(b));
-  const pequenos = espacos.filter(x => x.e.cabe === 1).sort((a, b) => doEstadio(a) - doEstadio(b));
+  /* quem tem sede: a maior primeiro, enquanto houver espaço do tamanho dela */
+  let livresG = espacos.filter(x => x.e.cabe > 1).length, livresP = espacos.filter(x => x.e.cabe === 1).length;
+  const S = [];
   for (const T of ts) {
     if (T.nivel < 1) continue;
-    const x = (T.nivel === 1 && pequenos.find(p => !p.dono)) || grandes.find(g => !g.dono);
-    if (x) { x.dono = T; T.sede = x; }
+    if (T.nivel === 1 && livresP) { livresP--; S.push(T); }
+    else if (livresG) { livresG--; S.push(T); }
   }
-  for (const T of ts) {
-    if (!T.sede) continue;
-    const a = T.sede.bb, cx = (a.x0 + a.x1) / 2, cy = (a.y0 + a.y1) / 2;
-    const livres = bares.filter(x => !x.dono).sort((p, q) => Math.hypot(p.b.x - cx, p.b.y - cy) - Math.hypot(q.b.x - cx, q.b.y - cy));
-    for (const x of livres.slice(0, T.nBares ?? 1)) { x.dono = T; T.bares.push(x); }
+  /* onde: as rivais em lados opostos do mapa, e o bar longe da sede e
+     das rivais — das melhores distribuições de sede, a primeira em que
+     menos bar quebra a regra */
+  const escala = escalaDoMapa(), lp = BAR_LONGE_SEDE * escala, lr = BAR_LONGE_RIVAL * escala;
+  const poe = atrib => { for (const x of espacos) x.dono = null; for (const T of ts) T.sede = null;
+    S.forEach((T, i) => { const x = espacos[atrib[i]]; x.dono = T; T.sede = x; }); };
+  const topo = S.length ? melhoresSedes(S, espacos) : [{ atrib: [], maior: Infinity, todas: Infinity }];
+  const quase = (a, b) => a === Infinity || b >= a * 0.9;
+  let melhor = topo[0].atrib, menos = Infinity;
+  for (const t of topo) {
+    if (!quase(topo[0].maior, t.maior) || !quase(topo[0].todas, t.todas)) continue;
+    poe(t.atrib);
+    const fora = escolherBares(ts, lp, lr);
+    if (fora < menos) { menos = fora; melhor = t.atrib; }
+    if (!fora) break;
   }
+  poe(melhor);
+  escolherBares(ts, lp, lr);
   /* o bar leva a torcida pro modelo 3D: a cor, o letreiro e o fundo dele */
   for (const x of bares) {
     const l = x.b.lote, T = x.dono;
@@ -754,9 +894,10 @@ const ret = (r, cor) => { ctx.fillStyle = cor; ctx.fillRect(r.x0, r.y0, r.x1 - r
 
 function costa(dpx, yMin = -Infinity, yMax = Infinity) {
   const pts = [];
-  /* no chão do cenário a costa passa da ponta do mapa (reta, como o
-     xCosta segue pra lá das pontas): o mar e a areia vão até a borda */
-  const [ya, yb] = pintandoChao ? [-4000, 5000] : [-420, 1260];
+  /* nos três mapas (e no chão do cenário) a costa passa da ponta do mapa
+     (reta, como o xCosta segue pra lá das pontas): a areia e o mar vão
+     até a borda, em faixa contínua; o "Jogo hoje" fica como o jogo é */
+  const [ya, yb] = pintandoChao || estado.modo !== 'atual' ? [-4000, 5000] : [-420, 1260];
   for (let ypx = ya; ypx <= yb; ypx += 10) { const p = K.pxm(K.xCosta(ypx) - dpx, ypx); if (p[1] >= yMin && p[1] <= yMax) pts.push(p); }
   return pts;
 }
@@ -890,17 +1031,24 @@ function padraoCerrado() {
      vela e barco de pesca com a esteira).
    O que é da praia de cidade (calçadão, coqueiro, quiosque, guarda-sol,
    barraca, posto, quadra) vai só onde a avenida da beira passa; a onda,
-   a espuma e o raso vão na costa inteira. A faixa de areia é a da
-   planta (12,5 m): a posição de cada coisa é a distância pra linha
-   d'água, na horizontal, como a própria faixa. Desenho fixo (hash, sem
-   sorteio), montado uma vez por trecho de avenida. */
+   a espuma e o raso vão na costa inteira. A FAIXA DE AREIA dos três
+   mapas é a da planta (12,5 m) mais PRAIA_A_MAIS: a linha d'água vai pro
+   mar (a cidade e a avenida ficam onde estão), e a areia fica com ~42 m;
+   o "Jogo hoje" fica com a faixa do jogo. A posição de cada coisa é a
+   distância pra linha d'água, na horizontal, como a própria faixa: o
+   guarda-sol e a barraca espalhados em dois terços da areia, o posto a
+   um quarto, a quadra no meio, o quiosque e o coqueiro na beira do
+   calçadão. Desenho fixo (hash, sem sorteio), montado uma vez por trecho
+   de avenida. */
+const PRAIA_A_MAIS = 105;                 // px do desenho do jogo (45 px = 12,5 m)
 const PRAIAS = new Map();
 function montarPraia(ya, yb) {
   const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
-  const xc = y => K.pxm(K.xCosta((y - y00) / u), 0)[0];                 // a linha d'água
-  const larg = K.PRAIA * u;                                              // a faixa de areia
+  const xc = y => K.pxm(K.xCosta((y - y00) / u) + PRAIA_A_MAIS, 0)[0];  // a linha d'água
+  const larg = (K.PRAIA + PRAIA_A_MAIS) * u;                             // a faixa de areia
   const rumo = y => Math.atan2(16, xc(y + 8) - xc(y - 8));               // o ângulo da costa (o x local corre ao longo dela)
-  const Y0 = K.pxm(0, -420)[1], Y1 = K.pxm(0, 1260)[1];
+  /* a onda, a espuma e o raso vão na costa inteira, pra lá das pontas do mapa */
+  const Y0 = K.pxm(0, -4000)[1], Y1 = K.pxm(0, 5000)[1];
   ya = Math.max(Y0, ya); yb = Math.min(Y1, yb);
   const h = (...n) => { let v = 2166136261; for (const x of n) v = Math.imul(v ^ Math.round(x * 7 + 13), 16777619); v ^= v >>> 13; v = Math.imul(v, 2246822507); v ^= v >>> 16; return ((v >>> 0) % 100000) / 100000; };
   const linha = (d, y0 = Y0, y1 = Y1, passo = 16) => { const pts = []; for (let y = y0; y <= y1; y += passo) pts.push([xc(y) + d, y]); return pts; };
@@ -929,12 +1077,12 @@ function montarPraia(ya, yb) {
   const postos = [];
   for (let y = ya + 900, k = 0; y < yb - 200; y += 1500 + h(k, 20) * 400, k++) {
     let yy = y; while (!longeDe(quiosques, yy, 170) && yy < yb - 200) yy += 60;
-    if (yy < yb - 200) postos.push(lugar(yy, 78));
+    if (yy < yb - 200) postos.push(lugar(yy, Math.max(78, larg * 0.26)));
   }
   const quadras = [];
   for (const f of [0.3, 0.68]) {
     let y = ya + (yb - ya) * f; while ((!longeDe(quiosques, y, 260) || !longeDe(postos, y, 170)) && y < yb - 300) y += 80;
-    if (y < yb - 300 && yb - ya > 1500) quadras.push(lugar(y, 100));
+    if (y < yb - 300 && yb - ya > 1500) quadras.push(lugar(y, Math.max(100, larg * 0.5)));
   }
   /* o guarda-sol, em grupinhos, fora do quiosque, da quadra e do posto */
   const TOLDOS = [['#e0443a', '#f4efe6'], ['#2f6fc0', '#f4efe6'], ['#f2b632', '#2a8f5a'], ['#ef7d2a', '#f4efe6'],
@@ -943,14 +1091,14 @@ function montarPraia(ya, yb) {
   const sois = [], cangas = [], barracas = [];
   for (let y = ya + 60, k = 0; y < yb - 40; y += 48 + h(k, 30) * 90, k++) {
     if (!longeDe(quiosques, y, 95) || !longeDe(quadras, y, 150) || !longeDe(postos, y, 34)) continue;
-    const n = h(k, 31) < 0.2 ? 0 : 1 + Math.floor(h(k, 32) * 3.4);
+    const n = h(k, 31) < 0.2 ? 0 : 1 + Math.floor(h(k, 32) * 5.4);
     for (let i = 0; i < n; i++) {
-      const d = 46 + h(k, i, 33) * 104, yy = y + (h(k, i, 34) - 0.5) * 50, r = 17 + h(k, i, 35) * 6;
+      const d = 46 + h(k, i, 33) * Math.max(104, larg * 0.62 - 46), yy = y + (h(k, i, 34) - 0.5) * 50, r = 17 + h(k, i, 35) * 6;
       const L = lugar(yy, d);
       sois.push({ ...L, r, cores: TOLDOS[Math.floor(h(k, i, 36) * TOLDOS.length)], giro: h(k, i, 37) * 0.8 });
       if (h(k, i, 38) < 0.6) cangas.push({ ...lugar(yy + (h(k, i, 39) - 0.5) * 20, Math.max(54, d - 30)), cor: CANGAS[Math.floor(h(k, i, 40) * CANGAS.length)], giro: (h(k, i, 41) - 0.5) * 0.5 });
     }
-    if (h(k, 42) < 0.1) barracas.push({ ...lugar(y + 30, 64 + h(k, 43) * 70), cor: TOLDOS[Math.floor(h(k, 44) * TOLDOS.length)][0] });
+    if (h(k, 42) < 0.1) barracas.push({ ...lugar(y + 30, 64 + h(k, 43) * Math.max(70, larg * 0.55 - 64)), cor: TOLDOS[Math.floor(h(k, 44) * TOLDOS.length)][0] });
   }
   /* os coqueiros, na beira do calçadão */
   const coqueiros = [];
@@ -1284,7 +1432,7 @@ function desenhar() {
     const orla = bm ? costa(K.PRAIA + K.ORLA, bm.pontos[0][1], bm.pontos[bm.pontos.length - 1][1]) : costa(K.PRAIA + K.ORLA);
     if (orla.length > 1) pol(fechado(orla, X1), COR.rua);
     pol(fechado(costa(K.PRAIA), X1), COR.areia);
-    pol(fechado(costa(0), X1), COR.mar);
+    pol(fechado(costa(prop ? -PRAIA_A_MAIS : 0), X1), COR.mar);
     /* nos três mapas, a praia de verdade (o "Jogo hoje" fica como o jogo é) */
     if (bm) desenharPraia(px, vis, bm.pontos[0][1], bm.pontos[bm.pontos.length - 1][1], X1);
   }
@@ -3163,16 +3311,17 @@ function apiDoCenario() {
       }
       return a;
     },
-    /* a linha d'água (só na praça de praia): o x dela na altura y */
+    /* a costa (só na praça de praia): o x da linha d'água (`agua`) e da
+       beira de terra da areia (`areia`) na altura y */
     costa() {
       if (temLagoa() || !temPraia()) return null;
-      const c = costa(0);
-      if (c.length < 2) return null;
-      return { em(y) {
+      const linha = c => y => {
         if (y <= c[0][1]) return c[0][0];
         for (let i = 1; i < c.length; i++) if (y <= c[i][1]) { const t = (y - c[i - 1][1]) / (c[i][1] - c[i - 1][1] || 1); return c[i - 1][0] + t * (c[i][0] - c[i - 1][0]); }
         return c[c.length - 1][0];
-      } };
+      };
+      const a = costa(-PRAIA_A_MAIS), r = costa(K.PRAIA);
+      return a.length > 1 && r.length > 1 ? { agua: linha(a), areia: linha(r) } : null;
     },
     tituloDe: it => it ? tituloDe(it) : '', fichaDe: it => it ? fichaDe(it) : '',
     aoFechar() { if (estado.sel) vista.mostrar(estado.sel); pedirDesenho(); }
@@ -3202,10 +3351,24 @@ function tabelaDaCidade() {
   const abertos = bares.filter(x => x.dono).length, ocupados = espacos.filter(x => x.dono).length;
   const linhasT = ts.map(T => `<tr><td><span class="cores">${[T.cor, T.cor2, T.cor3].filter((c, i, a) => c && a.indexOf(c) === i).map(c => `<i style="background:${c}"></i>`).join('')}</span>${esc(T.sigla)}</td>
     <td>${T.nivel}</td><td>${T.sede ? esc(T.sede.e.hoje ? 'quadra ' + T.sede.e.quadra : T.sede.e.nome.replace('Terreno para sede ', 'terreno ')) : T.nivel < 1 ? 'sem sede (nível 0)' : 'sem espaço'}</td>
-    <td>${T.bares.length ? T.bares.map(x => x.b.n).join(', ') : '—'}</td></tr>`).join('');
+    <td>${T.bares.length ? T.bares.map(x => x.b.n + (T.sede ? ` <small>(${Math.round(distDaSede(x, T.sede))} m da sede)</small>` : '')).join(', ') : '—'}</td>
+    <td>${rivalMaisPerto(T)}</td></tr>`).join('');
   return `<h3>As torcidas de ${esc(cidade)}</h3>
   <p>${ts.length} torcida${ts.length > 1 ? 's' : ''}: ${abertos} de ${bares.length} bares abertos e ${ocupados} de ${espacos.length} espaços de sede ocupados.</p>
-  <table class="torcidas"><thead><tr><th>Torcida</th><th>Nível</th><th>Sede</th><th>Bar</th></tr></thead><tbody>${linhasT}</tbody></table>`;
+  <table class="torcidas"><thead><tr><th>Torcida</th><th>Nível</th><th>Sede</th><th>Bar</th><th>Sede rival mais perto</th></tr></thead><tbody>${linhasT}</tbody></table>`;
+}
+/* a distância (m) do bar à sede, e a sede rival mais perto da sede da torcida */
+const distDaSede = (x, sede) => { const [cx, cy] = centroDe(sede); return Math.hypot(x.b.x - cx, x.b.y - cy) / M; };
+function rivalMaisPerto(T) {
+  if (!T.sede) return '—';
+  const [cx, cy] = centroDe(T.sede);
+  let melhor = null, md = Infinity;
+  for (const U of ocupacao.torcidas) {
+    if (U === T || !U.sede || !pesoRival(T, U)) continue;
+    const [ux, uy] = centroDe(U.sede), d = Math.hypot(ux - cx, uy - cy) / M;
+    if (d < md) { md = d; melhor = U; }
+  }
+  return melhor ? `${esc(melhor.sigla)} <small>a ${Math.round(md)} m</small>` : '—';
 }
 /* o que cada mapa tem (o máximo do porte), pra tabela das notas */
 function resumoDoMapa(id) {
@@ -3265,13 +3428,14 @@ function notasDaProposta() {
     <li>O bar da torcida é o pequeno, de esquina: ${metros(LARG_BAR_M * M)} de frente, o térreo nas cores da torcida com a porta de enrolar e o letreiro BAR DO ${esc(ocupacao.torcidas[0] ? ocupacao.torcidas[0].sigla : 'X')}, e o apartamento em cima. Os dois primeiros ficam nas quadras dos bares grandes de hoje (2,8 e 5,1); os outros, na esquina mais longe de todo bar já posto.</li>
     <li>A sede é a do modelo novo, com cada cômodo mobiliado (a lista está na ficha da sede); o botão <b>Telhado</b>, no 3D, tira e põe o telhado.</li>
     <li>Quem ocupa cada um é a torcida da cidade escolhida. Bar que nenhuma torcida usa fica <b>neutro, de porta fechada</b>; espaço de sede sem torcida fica com a <b>sede fechada</b>, em cor de reboco.</li>
+    <li><b>As rivais ficam em lados opostos do mapa</b>: a rivalidade é a dos dados das torcidas (a maior rivalidade pesa três vezes a outra; a do mesmo clube não conta), e das distribuições possíveis fica a que deixa as sedes rivais mais longe umas das outras. <b>O bar</b> fica a ${Math.round(BAR_LONGE_SEDE * escalaDoMapa())} m ou mais da sede da torcida e a ${Math.round(BAR_LONGE_RIVAL * escalaDoMapa())} m ou mais da sede de uma rival (o GDD §7.2 pede o bar noutra zona que a sede; no mapa grande, ${BAR_LONGE_SEDE} e ${BAR_LONGE_RIVAL} m, e no médio e no pequeno a distância encolhe com a cidade). Quando o mapa não tem bar que sirva, fica o que chega mais perto da regra. A tabela das torcidas mostra as duas distâncias.</li>
   </ul>
   <h3>O que muda no jogo pra fazer</h3>
   <ul>
     <li>O jogo ainda usa um mapa só, o de hoje ("Jogo hoje"). Os três mapas são da planta em HTML: pra virar jogo, a cena do dia de jogo tem de montar o mapa do porte da praça.</li>
     <li>Os estádios copiados são o mesmo estádio: a cena da torcida teria de aceitar mais de um.</li>
     <li>O shopping, a delegacia, a Praça da Vila e o metrô têm modelo (<code>equip3d.js</code> e <code>metro3d.js</code>), mas só a planta os usa. A sede nova (<code>sede3d.js</code>) também é só visual por enquanto.</li>
-    <li>A regra de quem fica com o quê é desta página (a sede maior perto do estádio, um bar por sede, o mais perto dela). O GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D ainda não tem bairro nem zona.</li>
+    <li>A regra de quem fica com o quê é desta página (as sedes rivais em lados opostos do mapa, um bar por sede, longe dela e das rivais). O mapa ainda não tem bairro nem zona: "longe" é distância em linha reta.</li>
   </ul>
   <p class="nota">Clique numa estação do metrô (o M azul), num bar, num espaço de sede, numa casa da favela, numa quadra nova, num estádio ou num pórtico pra ver em 3D.</p>`;
 }
