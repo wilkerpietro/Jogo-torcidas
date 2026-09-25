@@ -93,6 +93,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 .torcidas .cores { display: inline-flex; gap: 2px; vertical-align: -1px; margin-right: 5px; }
 .torcidas .cores i, .ficha .cores i { width: 10px; height: 10px; display: inline-block; border: 1px solid rgba(0,0,0,.45); }
 .ficha .cores { display: inline-flex; gap: 3px; vertical-align: -1px; }
+.ficha .escudos { display: flex; gap: 10px; align-items: center; margin: 2px 0 10px; }
+.ficha .escudos img { width: 48px; height: 48px; object-fit: contain; }
+.ficha .escudos span { font: 12px/1.3 var(--f-texto); color: var(--tinta-2); }
 .regua {
   position: absolute; right: 10px; bottom: 10px; padding: 5px 8px 6px; border-radius: 8px;
   background: rgba(24,27,26,.78); color: #eef0ec; font: 11px/1 var(--f-dado); pointer-events: none;
@@ -257,10 +260,14 @@ try {
   await carregarScript('dados/times.js');
   await carregarScript('dados/cena_estadio.js');
   await carregarScript('dados/cidades.js');
+  await carregarScript('dados/escudos.js');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
+/* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
+   caminho vai direto pra img/escudos/ */
+await carregarScript('dados/escudos_embutidos.js').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -319,7 +326,9 @@ const COR = {
   quintal: '#c9b98f', fundos: '#88aa77', pracinha: '#55aa55', areia: '#dccb9e', mar: '#3f6c84',
   estadio: '#a7a397', arquibancada: '#8a8780', pista: '#8f8b80', gramado: '#4f8f3f',
   arvore: 'rgba(0,120,0,.7)', carro: '#ee3333', poste: '#ffff00', marco: '#b39ad6', nova: '#45b6be',
-  terreno: '#b3946a', sede: '#8e3f9c'
+  terreno: '#b3946a', sede: '#8e3f9c',
+  /* a lagoa: a água doce, o raso, o barro da beira, o capim da margem e o junco */
+  lagoa: '#48675f', raso: '#5a7c70', barro: '#6f6547', margem: '#869f5c', junco: '#3d5a2c'
 };
 const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#aaaa88', barraco: '#c98a5a' };
 const COR_FAVELA = { casa: '#d9a066', sobrado: '#c9804e', barraco: '#c98a5a', galpao: '#a88a6a' };
@@ -431,6 +440,18 @@ const NEUTRO = { cor: '#d6d1c4', cor2: '#c4beb0', cor3: '#8f8a7f' };
      tiver `bares` nos dados, ela fica com esse tanto.
    - O que ninguém ocupa fica NEUTRO, de porta fechada. */
 let ocupacao = { torcidas: [], semSede: [], mapa: '' };
+/* O ESCUDO DE VERDADE: o mesmo PNG do jogo, pela mesma regra da planta
+   (`caminhoDoEscudo` de dados/cena_estadio.js): dados/escudos.js é o
+   manifesto do que existe em img/escudos/ (clube-<id>.png e
+   torcida-<id>.png); sem o id lá, a sede fica com o escudo gerado. O
+   caminho passa antes pelo `window.__EMBUTIDOS`, como o `IMG()` do jogo:
+   aqui é onde moram os PNG embutidos. */
+function caminhoDoEscudo(tipo, id) {
+  const m = ((TO.dados && TO.dados.escudos) || {})[tipo === 'c' ? 'clubes' : 'torcidas'];
+  if (!m || !id || !m[id]) return null;
+  const caminho = 'img/escudos/' + (tipo === 'c' ? 'clube' : 'torcida') + '-' + id + '.png';
+  return (window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho;
+}
 function distribuirTorcidas() {
   const mapa = slugDe(cidade);
   const ts = (TO.dados.torcidas || []).filter(t => t.mapa === mapa).map(t => {
@@ -438,6 +459,7 @@ function distribuirTorcidas() {
     const cc = (cl && cl.cores || []).map(x => String(x).toUpperCase());
     return { t, id: t.id, clubeSigla: (cl && cl.sigla) || t.sigla || '', clubeCor: cc[0] || null, clubeCor2: cc.find(x => x !== cc[0]) || '#E8E2D0', sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
              clube: t.clube, nivel: t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
+             escudo: caminhoDoEscudo('t', t.id), escudoClube: caminhoDoEscudo('c', t.clubeId),
              cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: Array.isArray(t.bares) ? t.bares.length : null, sede: null, bares: [] };
   }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
   for (const x of espacos) x.dono = null;
@@ -490,14 +512,16 @@ function sedeDoEspaco(x) {
   const area = pequeno && e.cabe > 1 ? fatiaDoNivel1(e.area, e.frente) : e.area;
   return { area, frente: e.frente, nivel: pequeno ? 1 : 3, lado: 'mandante', resto: area !== e.area ? e.area : null,
            torcida: T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.sigla, nome: T.nomeCompleto,
-                          clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2 } : null };
+                          clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2,
+                          escudo: T.escudo, escudoClube: T.escudoClube } : null };
 }
 /* a sede de hoje (a da planta, com a torcida da partida que ela põe lá) */
 function sedeDoEquip(eq) {
   const T = eq.torcida;
   return { area: eq.area, frente: eq.frente, nivel: eq.nivel, lado: eq.lado || 'mandante', resto: null,
            torcida: T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.rot || T.nome, nome: T.nomeCompleto || T.rot,
-                          clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2 } : null };
+                          clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2,
+                          escudo: caminhoDoEscudo('t', T.id), escudoClube: caminhoDoEscudo('c', T.clubeId) } : null };
 }
 /* a planta baixa sai do mesmo modelo, sem a geometria */
 const plantaDaSede = sd => montarSede(sd, {}, { so2d: true });
@@ -559,6 +583,8 @@ function nomesDosEstadios() {
 }
 /* sem o dado, fica a praia do jogo */
 const temPraia = () => { const c = infoDaCidade(cidade); return !c || !!c.temPraia; };
+/* a praça de rio ou lagoa: a lagoa no lugar da praia e do mar */
+const temLagoa = () => { const c = infoDaCidade(cidade); return !!(c && c.temLagoa); };
 function montarDerivados() {
   cobertoPelaProposta = PROP.coberto;
   fav0 = PROP.favelaDeHoje;
@@ -667,6 +693,102 @@ function costa(dpx, yMin = -Infinity, yMax = Infinity) {
 }
 const fechado = (pts, xFim) => pts.concat([[xFim, pts[pts.length - 1][1]], [xFim, pts[0][1]]]);
 
+/* A LAGOA (Belém, Manaus, Porto Alegre): no lugar da praia e do mar, uma
+   lagoa comprida ao longo da avenida da beira, com a outra margem à vista
+   e as duas pontas arredondadas. A beira é de capim, com barro na linha
+   d'água e junco; no raso, aguapé boiando; um trapiche de madeira com a
+   canoa amarrada, no meio da cidade; uma ilhota; e a mata na margem de
+   lá. É desenho fixo (seno e hash, sem sorteio): sai igual toda vez. */
+let LAGOA = null;
+function montarLagoa() {
+  const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];      // 1 px do mapa em unidades
+  const xDaCosta = y => K.pxm(K.xCosta((y - y00) / u), 0)[0];
+  const guia = y => xDaCosta(y) - K.PRAIA * u;                           // a guia leste da avenida da beira
+  const onda = (y, a) => a[0] * Math.sin(y / 190 + a[1]) + a[2] * Math.sin(y / 61 + a[3]) + a[4] * Math.sin(y / 23 + a[5]);
+  const perto = y => guia(y) + 130 + onda(y, [26, 0.3, 12, 1.7, 5, 0.4]);
+  const longe = y => xDaCosta(y) + 1450 + 280 * Math.sin(y / 950 + 0.8) + 90 * Math.sin(y / 310 + 2.1) + onda(y, [30, 2.2, 14, 0.9, 6, 2.8]);
+  const Y0 = -2350, Y1 = 6250, R = 900;                                  // as pontas
+  const fecha = y => Math.min(1, Math.sqrt(Math.max(0, (y - Y0) / R)), Math.sqrt(Math.max(0, (Y1 - y) / R)));
+  const h = (...n) => { let v = 2166136261; for (const x of n) v = Math.imul(v ^ Math.round(x * 7), 16777619); return ((v >>> 0) % 10000) / 10000; };
+  const beira = y => { const a = perto(y), b = longe(y), m = (a + b) / 2, r = (b - a) / 2 * fecha(y); return [m - r, m + r]; };
+  const oeste = [], leste = [];
+  for (let y = Y0; y <= Y1; y += 20) { const [a, b] = beira(y); oeste.push([a, y]); leste.push([b, y]); }
+  const agua = oeste.concat(leste.slice().reverse());
+  /* o junco: tufos na linha d'água, dos dois lados */
+  const juncos = [];
+  for (const [lado, pts] of [[-1, oeste], [1, leste]])
+    for (let k = 0; k < pts.length; k += 2) {
+      if (h(k, lado, 1) < 0.25) continue;
+      const [x, y] = pts[k];
+      juncos.push({ x: x + lado * (4 + h(k, lado, 2) * 14), y: y + (h(k, lado, 3) - 0.5) * 20, l: 10 + h(k, lado, 4) * 9, a: h(k, lado, 5) * 6 });
+    }
+  /* o aguapé: manchas no raso do lado da cidade */
+  const aguapes = [];
+  for (let y = Y0 + 700, k = 0; y < Y1 - 600; y += 240 + h(k, 9) * 200, k++) {
+    const [a, b] = beira(y), x = a + 50 + h(k, 10) * Math.min(220, (b - a) * 0.3);
+    const folhas = [];
+    const n = 5 + Math.floor(h(k, 11) * 6);
+    for (let f = 0; f < n; f++) folhas.push([x + (h(k, f, 12) - 0.5) * 70, y + (h(k, f, 13) - 0.5) * 50, 8 + h(k, f, 14) * 9, h(k, f, 15) < 0.3]);
+    aguapes.push(folhas);
+  }
+  /* o trapiche, no meio da cidade, e a canoa amarrada nele */
+  const yT = 1520, xT = beira(yT)[0] - 60, compr = 330, larg = 34;
+  const trapiche = { ponte: { x0: xT, x1: xT + compr, y0: yT - larg / 2, y1: yT + larg / 2 },
+                     cabeca: { x0: xT + compr - larg, x1: xT + compr, y0: yT - 70, y1: yT + 70 },
+                     canoa: { x: xT + compr - 110, y: yT + 52, rx: 44, ry: 12 } };
+  /* a ilhota, no meio da lagoa */
+  const yI = 3950, [ia, ib] = beira(yI), ilha = [];
+  for (let k = 0; k < 36; k++) {
+    const t = k / 36 * Math.PI * 2, r = 1 + 0.12 * Math.sin(3 * t + 1) + 0.07 * Math.sin(7 * t);
+    ilha.push([(ia + ib) / 2 + Math.cos(t) * 230 * r, yI + Math.sin(t) * 120 * r]);
+  }
+  const arvoresIlha = [[-70, -20, 38], [30, 15, 44], [95, -30, 30], [-10, 45, 28]].map(([dx, dy, r]) => ({ x: (ia + ib) / 2 + dx, y: yI + dy, r }));
+  /* a mata da margem de lá */
+  const mata = [];
+  for (let y = Y0 - 200, k = 0; y < Y1 + 250; y += 60, k++) {
+    if (h(k, 20) < 0.3) continue;
+    const [, b] = beira(Math.min(Y1 - 1, Math.max(Y0 + 1, y)));
+    mata.push({ x: Math.max(b, xDaCosta(y) + 400) + 90 + h(k, 21) * 380, y: y + (h(k, 22) - 0.5) * 40, r: 22 + h(k, 23) * 30, tom: h(k, 24) < 0.5 });
+  }
+  return { agua, juncos, aguapes, trapiche, ilha, arvoresIlha, mata };
+}
+function desenharLagoa(px) {
+  const L = LAGOA || (LAGOA = montarLagoa());
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  /* a margem de capim e o barro da linha d'água, por baixo da água */
+  caminho(L.agua); ctx.strokeStyle = COR.margem; ctx.lineWidth = 190; ctx.stroke();
+  ctx.strokeStyle = COR.barro; ctx.lineWidth = 44; ctx.stroke();
+  ctx.fillStyle = COR.lagoa; ctx.fill();
+  ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 70; ctx.stroke(); ctx.restore();
+  /* a ilhota */
+  caminho(L.ilha); ctx.strokeStyle = COR.barro; ctx.lineWidth = 26; ctx.stroke();
+  ctx.fillStyle = COR.margem; ctx.fill();
+  for (const a of L.arvoresIlha) { ctx.fillStyle = '#2e5b2a'; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
+  /* o aguapé: folha redonda verde, uma ou outra com a flor lilás */
+  for (const folhas of L.aguapes) for (const [x, y, r, flor] of folhas) {
+    ctx.fillStyle = '#5b8a3c'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.fillStyle = flor ? '#a98bd0' : '#86ad5c'; ctx.beginPath(); ctx.arc(x - r * 0.25, y - r * 0.25, r * 0.35, 0, 7); ctx.fill();
+  }
+  /* o junco: um tufo de cinco folhas finas */
+  ctx.strokeStyle = COR.junco; ctx.lineWidth = Math.max(2.2, px(1));
+  ctx.beginPath();
+  for (const j of L.juncos) for (let f = 0; f < 5; f++) {
+    const t = j.a + f * 1.2566;
+    ctx.moveTo(j.x, j.y); ctx.lineTo(j.x + Math.cos(t) * j.l, j.y + Math.sin(t) * j.l);
+  }
+  ctx.stroke();
+  /* o trapiche: as tábuas, a borda e os pilares; e a canoa */
+  const T = L.trapiche;
+  for (const r of [T.ponte, T.cabeca]) { ret(r, '#9a7a52'); ctx.strokeStyle = '#5e4630'; ctx.lineWidth = 3; ctx.strokeRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0); }
+  ctx.fillStyle = '#4a3726';
+  for (let x = T.ponte.x0 + 40; x < T.ponte.x1 - 20; x += 50) for (const y of [T.ponte.y0, T.ponte.y1 - 7]) ctx.fillRect(x, y, 7, 7);
+  const c = T.canoa;
+  ctx.fillStyle = '#b04a32'; ctx.beginPath(); ctx.ellipse(c.x, c.y, c.rx, c.ry, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#6b4a30'; ctx.beginPath(); ctx.ellipse(c.x, c.y, c.rx * 0.78, c.ry * 0.55, 0, 0, 7); ctx.fill();
+  /* a mata da margem de lá */
+  for (const a of L.mata) { ctx.fillStyle = a.tom ? '#2f5e2b' : '#3a6b33'; ctx.beginPath(); ctx.arc(a.x, a.y, a.r, 0, 7); ctx.fill(); }
+}
+
 function desenhar() {
   const { s, ox, oy, dpr } = estado;
   const vis = { x0: ox, y0: oy, x1: ox + estado.larg / s, y1: oy + estado.alt / s };
@@ -760,9 +882,11 @@ function desenhar() {
     if (temCol && temLin && temRua([i, j], [i + 1, j], [i, j + 1], [i + 1, j + 1])) ctx.fillRect(x1, y1, bx[2 * i + 2] - x1, by[2 * j + 2] - y1);
   }
   /* ---- a orla: a avenida da beira, a praia e o mar. A praça que não é
-     do litoral não tem praia: depois da avenida da beira é mato ---- */
+     do litoral não tem praia: depois da avenida da beira é mato; a de rio
+     ou lagoa tem a lagoa ---- */
   const X1 = MUNDO.x1 + 200;
-  if (!prop || temPraia()) {
+  if (prop && temLagoa()) desenharLagoa(px);
+  else if (!prop || temPraia()) {
     /* no mapa a orla acaba onde a beira-mar acaba */
     const bm = prop && PROP.avenidas.find(a => a.id === 'beiramar');
     const orla = bm ? costa(K.PRAIA + K.ORLA, bm.pontos[0][1], bm.pontos[bm.pontos.length - 1][1]) : costa(K.PRAIA + K.ORLA);
@@ -1252,6 +1376,12 @@ function tituloDe(it) {
   return '';
 }
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+/* os dois escudos da sede, na ficha: os PNG do jogo (os mesmos da fachada) */
+function escudosDe(escT, escC, nomeT, nomeC) {
+  if (!escT && !escC) return '<p class="escudos"><span>Sem o PNG do escudo nos arquivos do jogo: a fachada fica com o escudo gerado.</span></p>';
+  const img = (src, alt) => src ? `<img src="${esc(src)}" alt="${esc(alt)}" title="${esc(alt)}">` : '';
+  return `<p class="escudos">${img(escT, 'Escudo da ' + (nomeT || 'torcida'))}${img(escC, 'Escudo do ' + (nomeC || 'clube'))}<span>os escudos da fachada${escT && escC ? '' : escT ? ' (o do clube é o gerado: não tem PNG)' : ' (o da torcida é o gerado: não tem PNG)'}</span></p>`;
+}
 function linhas(pares) {
   return '<dl class="dados">' + pares.filter(p => p && p[1] !== undefined && p[1] !== null && p[1] !== '').map(([k, v, largo]) =>
     `<div${largo ? ' class="largo"' : ''}><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('') + '</dl>';
@@ -1299,7 +1429,7 @@ function fichaDe(it) {
     const e = it.e, a = e.area, T = it.dono, sd = it.sede;
     const tam = metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0);
     const onde = e.hoje ? 'a sede de hoje, quadra ' + e.quadra : e.nome.replace('Terreno para sede', 'terreno') + ', quadra ' + e.quadra;
-    if (T) return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>${esc(T.nome)}</h2>` + linhas([
+    if (T) return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>${esc(T.nome)}</h2>` + escudosDe(T.escudo, T.escudoClube, T.sigla, T.clube) + linhas([
       ['Torcida', T.sigla], ['Clube', T.clube], ['Nível da sede', T.nivel], ['Membros', T.membros],
       ['Bar', T.bares.length ? T.bares.map(x => 'bar ' + x.b.n).join(', ') : 'nenhum livre', true],
       ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Onde', e.terreno ? e.terreno.onde : '', true]
@@ -1360,7 +1490,8 @@ function fichaDe(it) {
   }
   if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') {
     const eq = it.q.equip, T = eq.torcida || {}, a = eq.area;
-    return `<p class="sobre">Sede do jogo · quadra ${it.q.i},${it.q.j}</p><h2>${esc(T.nomeCompleto || it.nome)}</h2>` + linhas([
+    return `<p class="sobre">Sede do jogo · quadra ${it.q.i},${it.q.j}</p><h2>${esc(T.nomeCompleto || it.nome)}</h2>` +
+      escudosDe(caminhoDoEscudo('t', T.id), caminhoDoEscudo('c', T.clubeId), T.rot, T.clube) + linhas([
       ['Torcida', T.rot], ['Clube', T.clube], ['Na partida', eq.lado === 'visitante' ? 'visitante' : 'mandante'], ['Nível da sede', eq.nivel],
       ['Área', metros(a.x1 - a.x0) + ' × ' + metros(a.y1 - a.y0)], ['Frente para', FRENTE[eq.frente]]
     ]) + `<p class="nota">A sede que a planta põe na cidade pra torcida ${eq.lado === 'visitante' ? 'visitante' : 'mandante'} da partida (a planta escolhe as duas; aqui é o exemplo que vem nos dados).</p>`
@@ -1890,6 +2021,22 @@ function texturaEscudo(p) {
   c.shadowColor = 'rgba(0,0,0,.85)'; c.shadowOffsetY = 2; c.shadowBlur = 6;
   c.fillStyle = p.corTexto; c.fillText(p.texto, S / 2, S / 2 + 2);
   const tx = new THREE.CanvasTexture(cv2); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+  /* O PNG DO ESCUDO, quando existe: carrega depois e repinta o quadrado
+     inteiro, na proporção dele e centrado (o jeito do bairro3d do jogo);
+     sem ele, fica o gerado */
+  if (p.img) {
+    const im = new Image();
+    im.onload = () => {
+      c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
+      c.clearRect(0, 0, S, S);
+      c.imageSmoothingQuality = 'high';
+      const e = Math.min(S / im.width, S / im.height), w = im.width * e, h = im.height * e;
+      c.drawImage(im, (S - w) / 2, (S - h) / 2, w, h);
+      tx.needsUpdate = true;
+    };
+    im.onerror = () => {};
+    im.src = p.img;
+  }
   return tx;
 }
 /* O ESTÁDIO: o volume na medida do jogo (a esplanada, o gramado, a pista,
@@ -2252,7 +2399,7 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
   get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; },
-  ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar };
+  ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista };
 
 /* ======================================================
    AS NOTAS DA PROPOSTA
@@ -2290,8 +2437,8 @@ function notasDaProposta() {
   const linhaMapa = id => { const r = resumoDoMapa(id);
     return `<tr${id === modo ? ' class="aqui"' : ''}><td>${NOME_MAPA[id]}</td><td>${r.estadios}</td><td>${r.sedes}</td><td>${r.bares}</td><td>${r.favelas}</td><td>${r.metro ? 'sim' : '—'}</td></tr>`; };
   const COMO = {
-    pequeno: `<li><b>É o mapa de hoje</b> com o que a praça pequena mais exigente pede: a <b>cópia do estádio</b> ao sul, abaixo da 1,10 e do campo; <b>três terrenos de sede</b> tirados de quadras de hoje (1,6 no oeste, 2,1 no norte, a ponta leste da 3,4 no meio), que com as duas sedes de hoje dão cinco espaços; <b>oito bares</b> pequenos da torcida (os dois bares grandes de hoje viram casa, e o bar vai pra esquina); e <b>duas favelas novas</b> na grade da cidade — a do oeste, entre o Atacadex e a estrada sul, e a do norte, acima da 2,1 e da 3,1 — que, com a de hoje, dão três.</li>
-               <li>O resto é a cidade do jogo como está: as quadras, as avenidas, o Atacadex no oeste, a favela de hoje.</li>`,
+    pequeno: `<li><b>É o mapa de hoje</b> com o que a praça pequena mais exigente pede: a <b>cópia do estádio</b> ao sul, abaixo da 1,10 e do campo; <b>três terrenos de sede</b> tirados de quadras de hoje (1,6 no oeste, 2,1 no norte, a ponta leste da 3,4 no meio), que com as duas sedes de hoje dão cinco espaços; <b>oito bares</b> pequenos da torcida (os dois bares grandes de hoje viram casa, e o bar vai pra esquina); e <b>três favelas</b> na grade da cidade: a do noroeste, no lugar da favela de hoje (a de hoje era torta, com a casa girada junto da estrada; esta tem o beco reto, na grade), a do oeste, entre o Atacadex e a estrada sul, e a do norte, acima da 2,1 e da 3,1.</li>
+               <li>O resto é a cidade do jogo como está: as quadras, as avenidas e o Atacadex no oeste.</li>`,
     medio: `<li><b>É a expansão cortada no meio</b>: a cidade cresce três colunas pra oeste (−2 a 0) e duas linhas pro norte (−1 e 0), sem as colunas −4 e −3 nem as linhas −3 e −2 do mapa grande.</li>
             <li>Tem o que a praça média mais exigente pede: <b>três estádios</b> (o de hoje, o do sudoeste e o do noroeste), <b>sete espaços de sede</b> (cinco terrenos e as duas sedes de hoje), <b>doze bares</b> (um por bairro), <b>quatro favelas</b> (a do noroeste encosta na rua oeste da cidade, e a do norte desce até ela) e o <b>metrô</b>, com as mesmas duas estações.</li>
             <li>Do grande ficaram o Shopping Poente, o 2º Distrito Policial, a Praça da Vila, a igreja, dois condomínios, o Atacadex na estrada norte e os pórticos.</li>`,
@@ -2311,7 +2458,7 @@ function notasDaProposta() {
   <ul>
     <li>${esc(cidade)} é praça de porte <b>${esc(porte.toLowerCase())}</b>: o mapa dela é o ${NOME_MAPA[doPorte]}.${doPorte !== modo ? ` <b>Aqui ela está no ${NOME_MAPA[modo]}</b>, pra comparar.` : ''}</li>
     <li><b>Estádios</b>: ${esc(lista(nomes))}${fora.length ? ` — ${esc(lista(fora))} não ${fora.length > 1 ? 'cabem' : 'cabe'} neste mapa (${fora.length > 1 ? 'são' : 'é'} ${fora.length} a mais que as vagas)` : ''}. ${total && total < vagas ? `A praça tem ${total} e o mapa tem ${vagas} vagas: a que sobra volta a ser quadra de casa (ou mato, se fica fora da grade).` : ''}</li>
-    <li>${temPraia() ? 'É do litoral: a orla, a praia e o mar a leste.' : '<b>Não é do litoral</b>: depois da avenida da beira é mato, sem praia e sem mar.'}</li>
+    <li>${temLagoa() ? '<b>É de rio e lagoa</b>: a leste, depois da avenida da beira, a margem de capim e a lagoa, com a outra margem à vista, o junco, o aguapé, o trapiche e a ilhota — sem areia e sem mar.' : temPraia() ? 'É do litoral: a orla, a praia e o mar a leste.' : '<b>Não é do litoral</b>: depois da avenida da beira é mato, sem praia e sem mar.'}</li>
     ${PROP.mapa.metro ? `<li>${METRO_P ? `Tem metrô: a ${esc(METRO_P.nome)}, com as estações ${esc(METRO_P.estacoes.map(e => e.nome).join(' e '))}. Na ficha da estação, <b>Pegar o trem</b> faz a viagem e <b>Descer na plataforma</b> põe a câmera lá embaixo.` : '<b>Não tem metrô</b>: as duas entradas somem, e o terreno delas volta a ser casa.'}</li>` : ''}
     <li>Casas por favela — ${esc(porFavela)}.</li>
   </ul>
@@ -2319,7 +2466,7 @@ function notasDaProposta() {
   <h3>Os três mapas</h3>
   <table class="torcidas"><thead><tr><th>Mapa</th><th>Estádios</th><th>Sedes</th><th>Bares</th><th>Favelas</th><th>Metrô</th></tr></thead>
     <tbody>${['pequeno', 'medio', 'grande'].map(linhaMapa).join('')}</tbody></table>
-  <p class="nota">Cada mapa tem o máximo que as praças do porte pedem (a planilha): um estádio por estádio da praça, um espaço de sede por torcida, um bar por bairro e uma mancha de favela por bairro de favela. A praça escolhida decide quantas vagas de estádio ficam ocupadas, se tem metrô e se tem praia.</p>
+  <p class="nota">Cada mapa tem o máximo que as praças do porte pedem (a planilha): um estádio por estádio da praça, um espaço de sede por torcida, um bar por bairro e uma mancha de favela por bairro de favela. A praça escolhida decide quantas vagas de estádio ficam ocupadas, se tem metrô e se o leste é praia, lagoa ou mato.</p>
   <h3>Como o ${NOME_MAPA[modo]} foi feito</h3>
   <ul>${COMO[modo]}</ul>
   <h3>Os bares e as sedes da torcida</h3>

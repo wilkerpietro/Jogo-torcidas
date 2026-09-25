@@ -258,15 +258,23 @@ const FAVELA_NORTE_MEDIO = { id: 'norte', nome: 'Favela do Norte', semente: 6391
   poly: [[1180, -2190], [3130, -2190], [3130, -830], [960, -830], [960, -1960]],
   caixa: { x0: 940, x1: 3150, y0: -2200, y1: -790 } };
 /* o pequeno é a cidade de hoje: a cópia do estádio vai pro sul, abaixo
-   da 1,10 e do campo; as duas favelas novas, pro oeste (entre o Atacadex
-   e a estrada sul) e pro norte (acima da 2,1 e da 3,1); os três terrenos
-   saem de quadras de hoje, na ponta sem casa de avenida */
+   da 1,10 e do campo; as três favelas são da grade da cidade — a do
+   noroeste no lugar da favela de hoje (que era torta, com a casa girada
+   junto da estrada), a do oeste entre o Atacadex e a estrada sul e a do
+   norte acima da 2,1 e da 3,1; os três terrenos saem de quadras de hoje,
+   na ponta sem casa de avenida */
 const TERRENOS_PEQUENO = [
   { id: '1,6', frente: 'n', hoje: true, onde: 'no oeste, perto do Atacadex' },
   { id: '2,1', frente: 's', hoje: true, onde: 'no norte, entre as duas favelas' },
   { id: '3,4', frente: 'n', hoje: true, ponta: 'l', onde: 'no meio da cidade' }
 ];
 const FAVELAS_PEQUENO = [
+  /* a coluna 1 das fileiras 0 a 3, e um pedaço da 0: o mesmo lugar e
+     quase o mesmo tanto de casa da favela de hoje (223 contra 229), com a
+     estrada noroeste2 passando no meio, como passa hoje */
+  { id: 'noroeste', nome: 'Favela do Noroeste', semente: 527193,
+    poly: [[-150, 60], [880, 60], [880, 2110], [-150, 2110]],
+    caixa: { x0: -150, x1: 900, y0: 40, y1: 2120 } },
   { id: 'oeste', nome: 'Favela do Oeste', semente: 358291,
     poly: [[-1460, 4030], [110, 4030], [110, 5420], [-1300, 5420], [-1460, 5260]],
     caixa: { x0: -1480, x1: 130, y0: 4000, y1: 5420 } },
@@ -279,7 +287,7 @@ export const MAPAS = {
     id: 'pequeno', nome: 'Mapa pequeno', porte: 'Pequeno',
     grade: {}, estadios: [{ i: [1, 2], j: [11, 13], nome: 'Estádio Municipal' }],
     equip: {}, metro: null, condominios: [], terrenos: TERRENOS_PEQUENO,
-    partidas: [], juntas: [], semAvenida: [], favelas: FAVELAS_PEQUENO, favelaDeHoje: true,
+    partidas: [], juntas: [], semAvenida: [], favelas: FAVELAS_PEQUENO, favelaDeHoje: false,
     nBares: 8, atacadexNoNorte: false, norteJ: 1, norteAte: null, beiramarJ: null, mundoY0: null
   },
   medio: {

@@ -2549,6 +2549,65 @@ continua com `temMetro: false`, e por isso a praça tem vaga de metrô no mapa g
 sem as estações. Pelo jeito, é erro de dado.
 
 
+### 4.39. A lagoa, a favela do noroeste na grade e o escudo de verdade na sede
+
+O dono revisou a 4.38 e pediu cinco coisas:
+
+- trocar a Arena Condá pela Arena Joinville;
+- corrigir o metrô de São Paulo;
+- pôr uma lagoa em Belém, Manaus e Porto Alegre;
+- deixar a favela do noroeste do mapa pequeno reta, na grade;
+- usar na sede os escudos PNG que o jogo já tem.
+
+Os estádios vão ser trocados pelos três modelos padrão do jogo, que ele ainda vai apontar. Levar os mapas pro jogo fica pra quando o planejamento e a modelagem estiverem fechados.
+
+**Os dados** (na fonte, e `dados/cidades.js` gerado de novo):
+
+- **Interior de SC** fica com o Heriberto Hulse e a Arena Condá. Sai a Arena Joinville. Agora é a União Tricolor (Joinville) que aponta pra um estádio que não está na praça.
+- **São Paulo** passa a `temMetro: true`, e o mapa grande dela ganha as duas estações.
+- **`temLagoa`** é chave nova, ao lado de `temPraia`. Vale `true` em Belém, Manaus e Porto Alegre, e o importador passa ela adiante.
+
+**A lagoa** (`desenharLagoa` em `index.html`). Nas três praças, o lugar da praia e do mar é uma lagoa comprida ao longo da avenida da beira:
+
+- **A forma.** A outra margem fica à vista, a 1.100–1.900 unidades da costa, e as duas pontas são arredondadas: a do norte perto de y −2.350, a do sul perto de 6.250.
+- **A beira.** A margem é de capim, com uma faixa de barro na linha d'água e um raso mais claro por dentro. A linha da margem ondula (soma de senos), pra não sair paralela à costa.
+- **Os detalhes.**
+  - junco em tufos dos dois lados;
+  - aguapé boiando no raso do lado da cidade, com uma ou outra flor lilás;
+  - um trapiche de madeira no meio da cidade (y 1.520), com a canoa amarrada;
+  - uma ilhota com quatro árvores;
+  - a mata na margem de lá.
+
+É desenho fixo (seno e hash, sem sorteio), montado uma vez e guardado. Vale nos três mapas. O "Jogo hoje" continua com a praia do jogo, pra todas as praças.
+
+**A favela do noroeste do mapa pequeno.** O pequeno ficava com a favela de hoje, a da planta do jogo. Ela é torta: as casas giradas uns 17°, acompanhando a estrada noroeste2. Agora o pequeno não guarda mais a favela de hoje (`favelaDeHoje: false`). No lugar dela entra uma favela da grade (`FAVELAS_PEQUENO`, `noroeste`), com o mesmo gerador das outras:
+
+- ocupa a coluna 1 das fileiras 0 a 3 e um pedaço da coluna 0 (x −150 a 880, y 60 a 2.110);
+- a casa fica a 0°, e o beco é a continuação da rua da cidade;
+- tem 223 casas, contra 229 da de hoje.
+
+A estrada noroeste2 continua passando no meio, como passa hoje. As casas de beira dessa estrada continuam acompanhando ela: não são da favela. A do oeste e a do norte saíram iguais (279 e 174). Os três mapas agora têm só favela da grade. A opção `favelaDeHoje` continua no gerador, sem uso.
+
+**O escudo de verdade na sede.** A sede nova (`js/diajogo/sede3d.js`) pintava o escudo gerado: a bola na cor da torcida com a sigla, e a diagonal nas duas cores do clube. A sede antiga da cena já usava o PNG (a seção 4, "O escudo é o do jogo, e vira o PNG quando ele existir"). A nova agora segue a mesma regra:
+
+- **O caminho.** Quem monta a sede resolve o caminho pelo manifesto `dados/escudos.js` (`caminhoDoEscudo`, a mesma da planta). O caminho é `img/escudos/torcida-<id>.png` e `clube-<clubeId>.png`, e passa antes pelo `window.__EMBUTIDOS`, como o `IMG()` do jogo.
+- **O decalque.** A sede recebe o caminho em `torcida.escudo` e `torcida.escudoClube` e põe no `img` dos quatro decalques de escudo: os dois da fachada e um em cada parede do lado.
+- **A textura.** `texturaEscudo` pinta o gerado. Quando o PNG carrega, repinta o quadrado com ele, na proporção e centrado (o jeito do `bairro3d`). Sem o PNG, fica o gerado. É o caso da Mancha Negra e do São Raimundo, que não têm arquivo.
+- **Onde vale.** Vale pra sede de cada espaço (a torcida da praça) e pra sede do jogo na aba "Jogo hoje" (a da Jovem Fla e a da Jovem do Grêmio).
+- **A ficha.** A ficha da sede mostra os dois escudos.
+
+**Os PNG no artefato.** São 278 arquivos, e o artefato tem teto de 255. O `montar.sh` embute num arquivo só (`dados/escudos_embutidos.js`, que preenche `window.__EMBUTIDOS`) os escudos das torcidas dos dados e dos clubes delas: 246 PNG, 2,0 MB. A página carrega o manifesto e, se existir, o embutido. Sem ele, o caminho vai direto pra `img/escudos/`.
+
+**O teste.** O gancho `?teste` da página agora também entrega a `vista` (a câmera do 3D). Com ela, o teste põe a câmera de frente pros escudos da fachada. Conferido na tela:
+
+- a sede da Jovem Fla, com o escudo dela e o do Flamengo;
+- a da União Fanática, com o dela e o do União Rondonópolis;
+- nenhum erro de console;
+- as 30 praças nas quatro abas;
+- a viagem de metrô;
+- `conferir_sede` e `conferir_cidades` passando.
+
+
 ### 4.16. Dois bugs que a sede menor desenterrou
 
 Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
@@ -3074,11 +3133,11 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
 | `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600 |
 | `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo), as casas de muro (M1 a M4) e o bar pequeno da torcida embaixo do apartamento (`bartorcida`, aberto ou fechado), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
-| `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
+| `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto (os escudos com o caminho do PNG do jogo) e a planta baixa. Por enquanto só o artefato usa |
 | `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem. Por enquanto só o artefato usa |
 | `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas) e a Praça da Vila; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
-| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças e os módulos 3D) |
-| `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro` e `temPraia` |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (com praia, lagoa ou mato a leste, pela praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D) |
+| `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia` e `temLagoa` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) e dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça) e escreve o atlas; roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
 | `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena e varal incluídos) |

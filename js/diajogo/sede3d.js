@@ -1214,8 +1214,12 @@ function telhado3d(ctx) {
    A SEDE INTEIRA
    ======================================================= */
 /* `sede`: { area, frente, nivel, lado, torcida: { cor, cor2, cor3, sigla,
-   nome, clubeSigla, clubeCor, clubeCor2 } | null }. Sem torcida é a sede
-   vaga. `opc.so2d` só faz a planta baixa (sem geometria). */
+   nome, clubeSigla, clubeCor, clubeCor2, escudo, escudoClube } | null }.
+   Sem torcida é a sede vaga. `escudo` e `escudoClube` são o caminho do
+   PNG do jogo (img/escudos/torcida-<id>.png e clube-<id>.png), que quem
+   monta a sede resolve pelo manifesto; vão no `img` do decalque, e quem
+   mostra põe a imagem por cima do escudo gerado (sem o PNG, fica o
+   gerado). `opc.so2d` só faz a planta baixa (sem geometria). */
 export function montarSede(sede, destino = {}, opc = {}) {
   const E = eixosDaSede(sede.area, sede.frente);
   const P = planoDaSede(E.L, E.A, sede.nivel, sede.lado || 'mandante');
@@ -1353,17 +1357,17 @@ export function montarSede(sede, destino = {}, opc = {}) {
     placas.push({ tipo: 'placa', texto: T0.nome || T0.sigla, fundo: cor.cor2, tinta: legivel(cor.cor2), x: xL, y: yL, z: zF, nx: 0, nz: -1, larg, alt });
     const esc = alt * 0.95, dx = larg / 2 + esc * 0.8;
     placas.push({ tipo: 'escudo', forma: 'bola', cor: cor.cor, cor2: cor.cor2, texto: T0.sigla, corTexto: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
-                  x: xL - dx, y: yL, z: zF, nx: 0, nz: -1, larg: esc, alt: esc });
+                  img: T0.escudo || null, x: xL - dx, y: yL, z: zF, nx: 0, nz: -1, larg: esc, alt: esc });
     /* o do clube, nas duas cores dele; sem os clubes carregados, nas duas
        últimas da torcida (branco sobre a parede de reboco some) */
     const cc1 = T0.clubeCor || cor.cor2, cc2 = T0.clubeCor ? T0.clubeCor2 || cor.cor2 : cor.cor3;
-    if (T0.clubeSigla) placas.push({ tipo: 'escudo', forma: 'diagonal', cor: cc1, cor2: cc2, texto: T0.clubeSigla,
-                                     corTexto: '#ffffff', x: xL + dx, y: yL, z: zF, nx: 0, nz: -1, larg: esc * 0.85, alt: esc * 0.85 });
+    if (T0.clubeSigla || T0.escudoClube) placas.push({ tipo: 'escudo', forma: 'diagonal', cor: cc1, cor2: cc2, texto: T0.clubeSigla || '',
+                                     corTexto: '#ffffff', img: T0.escudoClube || null, x: xL + dx, y: yL, z: zF, nx: 0, nz: -1, larg: esc * 0.85, alt: esc * 0.85 });
     /* e um escudo em cada parede do lado, que também é parede de fora */
     const zm = P.N === 3 ? u((P.vF + P.vB) / 2) : u(P.A / 2);
     for (const [x, nx] of [[-0.035, -1], [L + 0.035, 1]])
       placas.push({ tipo: 'escudo', forma: 'bola', cor: cor.cor, cor2: cor.cor2, texto: T0.sigla, corTexto: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
-                    x, y: 1.9, z: zm - (P.N === 3 ? 1.9 : 0), nx, nz: 0, larg: 0.8, alt: 0.8 });
+                    img: T0.escudo || null, x, y: 1.9, z: zm - (P.N === 3 ? 1.9 : 0), nx, nz: 0, larg: 0.8, alt: 0.8 });
     /* A PLACA DE CADA SALA, na verga, do lado de quem chega (a planta
        põe ali o mesmo letreiro) */
     for (const p of portas) {

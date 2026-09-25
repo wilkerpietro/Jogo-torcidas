@@ -126,6 +126,9 @@ def main():
             'temMetro': bool(c.get('temMetro')),
             # praça à beira do mar: o mapa 3D tem praia a leste; sem ela, mato
             'temPraia': bool(c.get('temPraia')),
+            # praça de rio ou lagoa (Belém, Manaus, Porto Alegre): água a
+            # leste, com margem de capim e junco em vez de areia
+            'temLagoa': bool(c.get('temLagoa')),
             'estadios': c.get('estadios', []),
             'rodovias': c.get('rodovias', []),
             'multMedio': c.get('multiplicadorFaturamentoMedio', 1.0),
