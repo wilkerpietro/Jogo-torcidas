@@ -1129,7 +1129,7 @@ function vao3d(ctx, w, X, v, C0, C1) {
   const sentido = pt.abre;
   /* o giro da folha: fechada ao longo da parede, aberta pra `sentido`
      (o mesmo da planta); presa na face pra onde ela abre */
-  const aberta = ctx.aberta, ang = aberta ? (v.tipo === 'portao' ? 1.25 : 1.4) : 0;
+  const aberta = ctx.aberta, angAberta = v.tipo === 'portao' ? 1.25 : 1.4, ang = aberta && !ctx.vivas ? angAberta : 0;
   const face = sentido > 0 ? C1 - 0.03 : C0 + 0.03;
   if (v.tipo === 'portao') {
     /* os batentes na terceira cor, a bandeira de vidro em cima, as duas
@@ -1148,7 +1148,7 @@ function vao3d(ctx, w, X, v, C0, C1) {
     B.esticar(B.plano(P(g0, cm, hp), U, [0, 1, 0]), 0, g1 - g0, 0, v.b1 - hp, 'vitro_alto');
     if (X) B.caixa(g0, g1, hp - 0.04, hp, cm - 0.04, cm + 0.04, { todas: lisa('#b9bcbe') });
     else B.caixa(cm - 0.04, cm + 0.04, hp - 0.04, hp, g0, g1, { todas: lisa('#b9bcbe') });
-    for (const [h, dirF] of [[g0, 1], [g1, -1]]) folha(ctx, X, h, face, dirF, sentido, larg, hp, ang, 'jan2');
+    for (const [h, dirF] of [[g0, 1], [g1, -1]]) folhaDaPorta(ctx, X, h, face, dirF, sentido, larg, hp, ang, 'jan2', 'portao', angAberta);
     if (!aberta) {
       const fr = ctx.u(ctx.P.F0) - 0.02;
       B.esticar(B.plano(P(g0, fr, 0), U, [0, 1, 0]), 0, g1 - g0, 0, v.b1, 'enrolar');
@@ -1169,7 +1169,20 @@ function vao3d(ctx, w, X, v, C0, C1) {
       B.caixa(c, c + 0.012, hp, hp + 0.07, v.a0 - 0.07, v.a1 + 0.07, al);
     }
   }
-  folha(ctx, X, v.a0, face, 1, sentido, v.a1 - v.a0, hp, ang, 'porta_madeira');
+  folhaDaPorta(ctx, X, v.a0, face, 1, sentido, v.a1 - v.a0, hp, ang, 'porta_madeira', 'porta:' + ctx.vivas?.length, angAberta);
+}
+/* A FOLHA QUE ABRE E FECHA (opc.portasVivas, o cenário a pé: o F abre e
+   fecha): a folha sai FECHADA num construtor só dela, com a dobradiça e
+   o rumo da folha fechada e aberta (no modelo; quem monta passa pro
+   mundo). `grupo`: as duas folhas do portão abrem juntas. Sem as portas
+   vivas, a folha entra na malha da sede, aberta ou fechada */
+function folhaDaPorta(ctx, X, h, face, dirF, sentido, larg, alt, ang, k, grupo, angAberta) {
+  if (!ctx.vivas) { folha(ctx, X, h, face, dirF, sentido, larg, alt, ang, k); return; }
+  const C = Construtor('casas');
+  folha({ ...ctx, B: C }, X, h, face, dirF, sentido, larg, alt, 0, k);
+  const fechada = X ? [dirF, 0] : [0, dirF];
+  const aberta = X ? [dirF * Math.cos(angAberta), sentido * Math.sin(angAberta)] : [sentido * Math.sin(angAberta), dirF * Math.cos(angAberta)];
+  ctx.vivas.push({ C, hx: X ? h : face, hz: X ? face : h, fechada, aberta, larg, alt, grupo, vidro: k === 'jan2' });
 }
 /* uma folha de porta: presa em `h` (ao longo da parede), na linha
    `face`; fechada ela corre pra `dirF` ao longo da parede, e gira `ang`
@@ -1258,6 +1271,7 @@ export function montarSede(sede, destino = {}, opc = {}) {
   const marcas = [], placas = [];
   const ctx = {
     B, G, T: Tt, P, u, aberta, cores: cor, c1: cor.cor, c2: cor.cor2, c3: cor.cor3, paredes, comodos, portas, PAR_M: u(P.PAR),
+    vivas: opc.portasVivas && aberta && !so2d ? [] : null,
     regiao(x, z) {
       for (const c of comodos) if (dentro(c, x, z)) return c;
       for (const w of paredes) if (dentro(w, x, z)) return 'parede';
@@ -1427,6 +1441,16 @@ export function montarSede(sede, destino = {}, opc = {}) {
     const [x, z] = noMundo(p.x, p.z), [dx, dz] = dirMundo(p.nx, p.nz), n = Math.hypot(dx, dz) || 1;
     return { ...p, x, y: y0 + p.y * M, z, ox: dx / n, oz: dz / n, larg: p.larg * M, alt: p.alt * M };
   });
+  /* AS PORTAS VIVAS no mundo: a folha fechada, a dobradiça e o giro (em
+     y, o do three.js) que leva a folha fechada até a aberta */
+  if (ctx.vivas) destino.portas = ctx.vivas.map(f => {
+    const b = bloco(f.C);
+    if (!b) return null;
+    const [hx, hz] = noMundo(f.hx, f.hz), v0 = dirMundo(...f.fechada), v1 = dirMundo(...f.aberta);
+    const n0 = Math.hypot(...v0) || 1;
+    return { bloco: b, hx, hz, larg: f.larg * M, alt: f.alt * M, grupo: f.grupo, vidro: f.vidro, dir: [v0[0] / n0, v0[1] / n0],
+             ang: Math.atan2(v0[1] * v1[0] - v0[0] * v1[1], v0[0] * v1[0] + v0[1] * v1[1]) };
+  }).filter(Boolean);
   const retMundo = r => {
     const [ax, az] = noMundo(r.x0, r.z0), [bx, bz] = noMundo(r.x1, r.z1);
     return { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(az, bz), y1: Math.max(az, bz), cor: r.cor, tipo: r.tipo };
