@@ -3065,7 +3065,7 @@ O dono mandou a foto de um lote de muro na planta ("caixa (muro)", 7,4 m de test
 
 **O lote de muro.** O gerador (`tipoDoLote`, em `dados/cena_estadio.js`, e o `lotear` da proposta) sorteia `muro` como tipo de lote junto com casa e sobrado, e o lote sai com o fundo inteiro (4 a 5 m); o desenho era uma caixa da altura do muro (1,9 a 2,5 m) no lote todo — um bloco maciço. Agora `planoDaCasa` dá a ele o tipo `baldio` (`js/diajogo/casas3d.js`), e o jogo e a planta desenham o mesmo modelo:
 
-- o **muro de 20 cm** na divisa da frente, na altura que a planta deu: de bloco aparente (36%), de reboco cru (26%) ou de reboco pintado e desbotado (38%, oito tintas), com o capeamento em cima; um em quatro tem o **portão de chapa** (quando o muro tem pixação, o portão vai pra uma ponta, e a pixação pode ir no próprio portão);
+- o **muro de 20 cm** na divisa da frente, na altura que a planta deu: de bloco aparente (36%), de reboco cru (26%) ou de reboco pintado e desbotado (38%, oito tintas), com o capeamento em cima; um em quatro tem o **portão de chapa** — no muro com pixação, só a partir de 6,5 m e numa ponta, pra lata ter o muro (com o portão no meio do muro curto a pixação encolhia pra 2 m e sumia na vista da planta); a pixação também pode ir no próprio portão;
 - o **lado que dá pra rua** também é muro: na esquina e no quarteirão raso (quando o lote vai de uma rua à outra, o fundo também). Sem isso o lote ficava aberto pra calçada — e a máscara, que tranca o lote inteiro, virava parede invisível. O lado que encosta no vizinho não tem muro: quem fecha é a parede da casa do lado. É `ladosNaRua(l)`, pela borda do miolo da quadra (os lotes da proposta passaram a levar o miolo da quadra deles);
 - dentro, o **chão de terra** (a peça `terra`, 3 × 3 m, com a textura desviada por lote pra dois baldios vizinhos não saírem iguais), de uma a cinco **moitas de capim** low poly, às vezes a **bananeira** low poly e o **monte de entulho** (a peça `entulho`);
 - a pixação, que no muro "toma o muro" (a regra antiga do lote de caixa: de ponta a ponta, na altura do peito), foi pro `decalquesDaCasa` do jogo e pro `decalques` da planta, no lugar livre do muro novo.
@@ -3094,8 +3094,8 @@ Três ajustes de dado, todos em peça que **não tranca** e sem `rng()` (a cidad
 
 | | antes | agora |
 |---|---|---|
-| triângulos da cidade | 406.648 | 409.864 (+0,8%) |
-| os 93 lotes de muro | 930 (caixa de 10) | 5.400 (58 por lote; 90 no lote inteiro) |
+| triângulos da cidade | 406.648 | 409.796 (+0,8%) |
+| os 93 lotes de muro | 930 (caixa de 10) | 5.330 (57 por lote; 88 no lote inteiro) |
 | os cinco equipamentos | ~6.500 (cada janela era uma caixinha) | 5.298 (hospital 1.150, escola 1.798, delegacia 908, shopping 836, posto 606) |
 | rua na frente do hospital | 297 chamadas | 301 |
 | rua na frente da escola | 283 chamadas | 288 |
@@ -3104,7 +3104,7 @@ Três ajustes de dado, todos em peça que **não tranca** e sem `rng()` (a cidad
 
 As quatro ou cinco chamadas a mais perto do hospital e da escola vêm de o prédio ter ido pra malha das casas: o ladrilho que só tinha a malha de reboco (o chão, o carro, o poste) ganhou a das casas. Na planta, que monta tudo de perto, o mapa pequeno foi de 284 pra 292 mil triângulos e o grande de 653 pra 667 mil (+2,3 a 2,8%): lá as caixas antigas não tinham janela nenhuma, então o equipamento custa mais (22 → 27 mil nos oito de hoje), e os baldios, 10 mil a mais no grande.
 
-**Conferido:** a máscara do jogo é a mesma, byte a byte, as peças que trancam nos equipamentos são as mesmas e os lotes são os mesmos (tipo, lugar, altura, pixação); o jogo carrega sem erro; as 30 praças abrem na planta sem erro nas quatro abas; `conferir_cidades` e `conferir_sede` passam.
+**Conferido:** a máscara do jogo é a mesma, byte a byte, as peças que trancam nos equipamentos são as mesmas e os lotes são os mesmos (tipo, lugar, altura, pixação); as 35 pixações de muro do jogo e as 49 do mapa grande acham lugar no muro novo (nenhuma cai); o jogo carrega sem erro; as 30 praças abrem na planta sem erro nas quatro abas; `conferir_cidades` e `conferir_sede` passam.
 
 
 ### 4.16. Dois bugs que a sede menor desenterrou

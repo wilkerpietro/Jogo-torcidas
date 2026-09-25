@@ -2348,9 +2348,9 @@ function baldio(B, p, l, conta, G) {
   const h = Math.max(0.6, H);
   /* ---- o muro da frente, com o portão de chapa em um de cada quatro ---- */
   const larg = x1 - x0, vaos = [];
-  if (larg >= 4.6 && s('portao') < 0.25) {
-    /* com pixação o portão vai pra uma ponta: sobra o muro inteiro do
-       outro lado pra lata */
+  if (larg >= (l.pixacao ? 6.5 : 4.6) && s('portao') < 0.25) {
+    /* com pixação, só no muro comprido, e o portão vai pra uma ponta:
+       sobra o muro inteiro do outro lado pra lata */
     const wp = Math.min(2.4, larg * 0.42);
     const a0 = l.pixacao ? (s('ondePortao') < 0.5 ? 0.35 : larg - wp - 0.35) : 0.35 + s('ondePortao') * (larg - wp - 0.7);
     vaos.push({ a0, a1: a0 + wp, b0: 0, b1: Math.min(2.0, h - 0.12), k: 'portao_chapa', fundo: 0.04 });
