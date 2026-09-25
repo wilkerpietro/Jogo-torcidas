@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Estádio 3D — o bairro, o portão, o corredor, a arquibancada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<link rel="stylesheet" href="css/pad3d.css">
+<style>
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{display:block;padding:0;background:#0e0e0d}
+  #caixa{position:fixed;inset:0}
+  #cv3d{position:absolute;inset:0;width:100%;height:100%;display:block;
+    touch-action:none;cursor:grab}
+  #cv3d:active{cursor:grabbing}
+  #rotulos{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .rot3d{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;
+    font-family:var(--mono);font-size:10px;font-weight:600;color:#e0b040;
+    text-shadow:0 1px 3px #000,0 0 6px #000;padding-bottom:3px}
+  /* a dica do F fica SOBRE a pixação, não no rodapé: o que falta saber
+     não é que a tecla existe, é qual muro responde a ela */
+  .dica3d{color:#0e0e0d;background:#e0b040;border-radius:3px;padding:2px 6px 3px;
+    font-size:9px;letter-spacing:.06em;text-shadow:none;
+    box-shadow:0 2px 6px #000a}
+  #estado{position:absolute;left:12px;top:calc(10px + env(safe-area-inset-top));
+    font-family:var(--mono);font-size:11px;line-height:1.7;color:#cfcabd;
+    background:#0e0e0dcc;border:1px solid #45443f;padding:7px 10px;
+    pointer-events:none;letter-spacing:.04em;max-width:60vw}
+  #estado b{color:#fff}
+  #estado i{color:var(--ouro);font-style:normal}
+  #legenda{position:absolute;left:12px;bottom:calc(112px + env(safe-area-inset-bottom));
+    font-family:var(--mono);font-size:10px;line-height:1.7;color:#9a968c;
+    pointer-events:none;letter-spacing:.04em}
+  #legenda b{color:var(--ouro)}
+  @media (max-width:900px){ #legenda{display:none} }
+  #erro{padding:20px;font-family:var(--mono);font-size:12px;color:#e07a6a;
+    white-space:pre-wrap;display:none;position:fixed;inset:0;background:#0e0e0d;
+    z-index:99;overflow:auto}
+</style>
+</head>
+<body>
+
+<div id="caixa">
+  <canvas id="cv3d"></canvas>
+  <div id="rotulos"></div>
+  <div id="estado"></div>
+  <div id="legenda">
+    <b>WASD</b> anda (relativo à câmera)<br>
+    <b>Q</b> bater &nbsp; <b>E</b> defender (segurar; soltar no golpe é contragolpe) &nbsp;
+    <b>F</b> agarrar / porta / pixar &nbsp; <b>C</b> chamar<br>
+    <b>2</b> pedra &nbsp; <b>3</b> bomba &nbsp; <b>R</b> recuar &nbsp; <b>X</b> fugir &nbsp;
+    <b>ENTER</b> todo mundo pro portão<br>
+    <b>arrastar</b> gira a câmera &nbsp; <b>roda</b> aproxima<br>
+    câmera <b>Z</b> ombro · <b>V</b> alta · <b>B</b> maquete · <b>N</b> zenital · <b>M</b> mapa &nbsp;
+    <b>H</b> sombra &nbsp; <b>L</b> nível · <b>K</b> automático &nbsp; <b>ESPAÇO</b> pausa
+  </div>
+</div>
+
+<pre id="erro"></pre>
+
+<script src="js/nucleo.js"></script>
+<script src="dados/nomes.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+<script src="dados/cenas.js"></script>
+<!-- ANTES de cena_estadio.js: a planta escolhe as duas torcidas da noite
+     daqui, e pinta a sede de cada uma com as cores dela -->
+<script src="dados/times.js"></script>
+<script src="dados/torcidas.js"></script>
+<!-- o manifesto do que existe em img/escudos/: é ele que diz se a
+     sede põe o escudo de verdade ou o gerado -->
+<script src="dados/escudos.js"></script>
+<script src="dados/cena_estadio.js"></script>
+<script>
+/* O TABULEIRO DESTA CENA É MAIOR QUE O DOS ARREDORES (2592 × 2048
+   contra 1536 × 1024), e `arredores.js` lê largura, altura e célula
+   UMA VEZ, na carga, da cena padrão — a malha, os campos e a memória
+   de rota nascem daquele tamanho e não crescem quando se troca de
+   cena. Então nesta página a cena padrão É o estádio: trocada aqui,
+   antes de `arredores.js` subir, ele já nasce do tamanho certo, e
+   `usarCena('estadio')` só reconstrói. O jogo em `index.html` não
+   passa por aqui e continua com os arredores de sempre. */
+TO.dados.cenaArredores = TO.dados.cenaEstadio;
+</script>
+<script src="js/diajogo/cenario.js"></script>
+<!-- depois de cenario.js: o pintor do estádio se acrescenta ao pintor -->
+<script src="js/diajogo/estadio_pintura.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<!-- a ficha de quem briga sai do mesmo gerador da gestão: apelido,
+     arquétipo, força, defesa e moral por cargo -->
+<script src="js/gestao/membros.js"></script>
+
+<script type="module">
+/* =========================================================
+   A PÁGINA DO ESTÁDIO
+   A mesma simulação de sempre — `combate.js` intacto, o mesmo
+   `criarEstado`, a mesma malha — num cenário que tem dois
+   andares. O que muda é só quem desenha e onde é o chão.
+   ========================================================= */
+import { criar } from './js/diajogo/estadio3d.js';
+import { montarPad } from './js/diajogo/pad3d.js';
+
+const A = TO.diaJogo.arredores;
+const C = TO.diaJogo.combate;
+
+const cv3d = document.getElementById('cv3d');
+const caixa = document.getElementById('caixa');
+const elEstado = document.getElementById('estado');
+
+let pausado = false, J = null, ant = 0;
+const teclas = {};
+let vista;
+
+try { vista = criar(cv3d); }
+catch (e) { falhar(e); }
+
+function falhar(e) {
+  const p = document.getElementById('erro');
+  p.style.display = 'block';
+  p.textContent = 'A cena 3D não subiu:\n\n' + ((e && e.stack) || e) +
+    '\n\nSe a mensagem fala de módulo ou de CORS, a página está aberta ' +
+    'em file:// — abra por um servidor local:\n  python3 -m http.server\n' +
+    '  http://localhost:8000/estadio3d.html';
+  throw e;
+}
+
+/* =========================================================
+   AS DUAS TORCIDAS DA NOITE
+   ---------------------------------------------------------
+   A cena não é mais "mandante contra visitante" genérico. A planta
+   já escolheu duas torcidas de `dados/torcidas.js` — é com as cores
+   delas que ela pinta as sedes — e aqui elas viram BONDES do combate,
+   que é o que `index.html` faz quando abre um dia de jogo. Com bonde
+   o motor sabe de que lado o jogador está, a camisa de cada boneco
+   sai da paleta da torcida (primária no calção, segunda no anel e
+   terceira no desenho) e a briga tem dois times de verdade.
+
+   A ESCALAÇÃO é a mesma da gestão: `TO.membros.povoarInicial` gera
+   apelido, arquétipo, cargo, força, defesa, moral e XP na proporção
+   de cargos que a fonte dá pra torcida. Quem tem ficha tem nome na
+   cena, vida pela defesa e consequência depois da briga; o resto é
+   povão, que é o que povão é.
+   ========================================================= */
+/* A PLANTA PODE SER VELHA. O navegador guarda cada arquivo por conta
+   própria: ele baixa o `torcidas.js` novo (que nunca viu) e continua
+   com o `cena_estadio.js` do cache, que ainda não escolhe torcida
+   nenhuma. Sem reserva aqui a página morria no primeiro `TORCIDAS.
+   mandante` — tela preta, sem uma linha de explicação. Com reserva ela
+   abre igual e a barra de estado diz que o arquivo está velho. */
+const RESERVA = {
+  mandante:  { id:'casa', nome:'MANDANTE',  rot:'MANDANTE',  cor:'#b02a22', cor2:'#e8e2d0', cor3:'#1a1a1a' },
+  visitante: { id:'fora', nome:'VISITANTE', rot:'VISITANTE', cor:'#22439a', cor2:'#e8e2d0', cor3:'#e0b040' }
+};
+const TORCIDAS = (TO.dados.plantaEstadio.CIDADE || {}).TORCIDAS || RESERVA;
+const plantaVelha = TORCIDAS === RESERVA;
+
+function escalacaoDe(t, quantos) {
+  const reg = (TO.dados.torcidas || []).find(o => o.id === t.id);
+  if (!TO.membros || !reg) return [];
+  const E = { proximoId: 1, data: { semana: 1, dia: 1 }, membros: [],
+              torcida: reg, indicadores: { moral: 62 } };
+  /* POVOA A TORCIDA INTEIRA e só depois corta. `planoDeCargos` usa os
+     números ABSOLUTOS que a fonte dá (a Jovem Fla tem 250), e o total
+     que se passa só serve pra engrossar os novatos quando sobra — não
+     corta quando falta. Pedindo 34 vinham 248, e a cena abria com 298
+     bonecos. Quem vai pro estádio são os mais fortes, como na gestão. */
+  TO.membros.povoarInicial(E, reg.membros || quantos, reg.cargos);
+  return E.membros.sort((a, b) => (b.forca + b.defesa) - (a.forca + a.defesa))
+                  .slice(0, quantos);
+}
+
+/* Quanta gente em cada portão. Um bonde por spawn, na ordem que
+   `combate.js` usa (o do jogador primeiro): 1º escalão, 2º escalão,
+   setor visitante (que já está dentro, de guarda) e retaguarda. Os
+   números são os de sempre — a cena rodava com 68 discos e continua
+   —, só que agora cada monte tem dono. */
+function bondesDaNoite() {
+  const M = TORCIDAS.mandante, V = TORCIDAS.visitante;
+  /* o NOME é a chave da paleta em `bonecos3.js`: os dois bondes da
+     mesma torcida têm de trazer o mesmo, senão o segundo entra como
+     "torcida que repete a primária" e sai de calção trocado */
+  const b = (lado, n, t, nossa) => ({
+    lado, n, nossa, cor: t.cor, cor2: t.cor2, cor3: t.cor3,
+    sigla: t.nome, nome: t.nome
+  });
+  return [ b('mandante', 26, M, true), b('mandante', 14, M, false),
+           b('visitante', 22, V, false), b('visitante', 14, V, false) ];
+}
+
+function abrir() {
+  const D = A.usarCena('estadio');
+  /* A NOITE, ENCURTADA. `combate.js` conta em minutos até o jogo:
+     quem chega fica na sede e só marcha pro estádio faltando 25.
+     Com o relógio de 150 isso são três minutos e meio olhando a
+     torcida conversar; com 60, a marcha começa perto de um minuto
+     — tempo de você chegar no estádio antes deles — e o bonde
+     hostil sai atrás do rival entre 20 e 55 segundos. A vadiagem
+     encolhe junto, pra ninguém vagar até o meio do estádio. */
+  const PC = TO.diaJogo.P;
+  PC.minutosAteJogo = 60;
+  PC.raioVadiagem = 220;
+  const bondes = bondesDaNoite();
+  J = C.criarEstado({ local: 'estadio', intencao: 'atacar', tensao: 80,
+                      bombas: 2, bondes,
+                      escalacao: escalacaoDe(TORCIDAS.mandante, 34),
+                      efetivoRival: bondes[2].n + bondes[3].n });
+  TO.diaJogo.J = J;
+  vista.montar(D);
+  pad.marcarCamera('ombro');
+}
+
+vista.ligarRotulos(document.getElementById('rotulos'));
+
+/* ---- os botões de movimento, os mesmos da cena 2D ---- */
+const pad = montarPad({
+  pai: document.body,
+  teclas,
+  /* AS AÇÕES SÃO AS DO MOTOR NOVO, com as MESMAS teclas do
+     `ponte.js`: Q bate, E defende enquanto segurado (soltar na hora do
+     golpe é o contragolpe), F agarra, C chama, 2 pedra, 3 bomba, R
+     recua, X foge, ENTER manda entrar. As câmeras saíram de X/C/F/V,
+     que agora são de briga, e foram pra Z/V/B/N/M. */
+  acoes: [
+    { tecla: 'q', rot: 'BATER',    fn: () => { const l = lider(); if (l) C.bater(J, l); } },
+    { tecla: 'e', rot: 'DEFENDER', segurar: true,
+      aoSoltar: () => { const l = lider(); if (l) C.soltarDefesa(J, l); } },
+    { tecla: 'f', rot: 'PORTA/PIXAR\nAGARRAR', fn: () => usarF() },
+    { tecla: 'c', rot: 'CHAMAR',   fn: () => { if (J) C.chamar(J, C.ladoDoJogador(J)); } },
+    { tecla: '2', rot: 'PEDRA',    fn: () => { if (J) C.arremessar(J, 'pedra'); } },
+    { tecla: '3', rot: 'BOMBA',    fn: () => { if (J) C.arremessar(J, 'bomba'); } },
+    { tecla: 'r', rot: 'RECUAR',   fn: () => { if (J) C.alternarRecuo(J); } },
+    { tecla: 'x', rot: 'FUGIR',    fn: () => { if (J) C.mandarFugir(J); } },
+    { tecla: 'enter', rot: 'ENTRAR', fn: () => {
+        if (!J) return;
+        if (!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p');
+      } }
+  ],
+  /* o motor novo tem uma formação só (o Quadrado), e ela não tem
+     tecla: a fila de formação do pad sai fora em vez de virar um
+     botão solitário */
+  formacoes: Object.entries(C.FORMACOES).filter(([, f]) => f.tecla).map(([id, f]) => ({
+    id, tecla: f.tecla, fn: () => { if (J) J.form = id; }
+  })),
+  cameras: {
+    lista: [{ id: 'ombro', rot: 'OMBRO' }, { id: 'alto', rot: 'ALTA' },
+            { id: 'maquete', rot: 'MAQUETE' }, { id: 'zenital', rot: 'ZENITAL' }, { id: 'mapa', rot: 'MAPA' }],
+    fn: id => vista.irPara(id)
+  }
+});
+
+/* o líder do jogador, que é quem bate, agarra e defende */
+const lider = () => J && (J.discos.find(d => d.lider && d.doJogador && d.vivo)
+                       || J.discos.find(d => d.lider && d.vivo));
+
+/* O F FAZ TRÊS COISAS, e qual delas depende de onde o líder está.
+   Encostado numa porta da sede, ele ABRE OU FECHA a porta; encostado
+   numa pixação do rival, ele PIXA POR CIMA; longe das duas, continua
+   sendo o AGARRAR do motor de luta, que é o dono antigo da tecla.
+   Tirar o agarrar pra pôr porta seria trocar uma mecânica de briga por
+   um enfeite; porta e pixação só tomam a tecla no instante em que há
+   uma delas ao alcance.
+
+   A PORTA VEM PRIMEIRO. As duas quase nunca disputam — porta é de
+   dentro da sede, pixação é de muro de rua —, mas quando disputam quem
+   está com a mão na maçaneta quer entrar, não pintar.
+
+   Fora do estádio o mundo é o próprio tabuleiro — a menos do `DX`, o
+   tabuleiro começa a oeste do mundo —, então o x,y do líder passa por
+   `mundo()` e serve pra procurar as duas. */
+function usarF() {
+  const l = lider();
+  if (!l) return;
+  const m = vista.mundo(l.x, l.y), mx = m.x, mz = m.z;
+  const r = vista.alternarPorta(mx, mz);
+  if (r !== null) { C.logar(J, r ? 'Porta aberta.' : 'Porta fechada.', 'n'); return; }
+  const t = vista.pixarPorCima(mx, mz, l.lado);
+  if (t !== null) {
+    const nome = (TORCIDAS[l.lado] && TORCIDAS[l.lado].rot) || l.lado.toUpperCase();
+    C.logar(J, 'Pixou por cima: ' + t + '. O muro é da ' + nome + '.', 'n');
+    return;
+  }
+  C.agarrar(J, l);
+}
+
+/* ---- teclado ---- */
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  teclas[k] = true;
+  if (!J) return;
+  if (k === 'q') { const l = lider(); if (l) C.bater(J, l); }
+  else if (k === 'f') usarF();
+  else if (k === 'c') C.chamar(J, C.ladoDoJogador(J));
+  else if (k === '2') C.arremessar(J, 'pedra');
+  else if (k === '3') C.arremessar(J, 'bomba');
+  else if (k === 'r') C.alternarRecuo(J);
+  else if (k === 'x') C.mandarFugir(J);
+  else if (k === 'enter') { if (!C.mandarEntrar(J)) C.logar(J, 'Não sobrou ninguém pra entrar.', 'p'); }
+  else if (k === 'z') { vista.irPara('ombro');   pad.marcarCamera('ombro'); }
+  else if (k === 'v') { vista.irPara('alto');    pad.marcarCamera('alto'); }
+  else if (k === 'b') { vista.irPara('maquete'); pad.marcarCamera('maquete'); }
+  else if (k === 'n') { vista.irPara('zenital'); pad.marcarCamera('zenital'); }
+  else if (k === 'm') { vista.irPara('mapa');    pad.marcarCamera('mapa'); }
+  else if (k === 'h') vista.trocarSombra();
+  else if (k === 'l') { const n = vista.fixarNivel(); vista.fixarNivel((n + 1) % 4); }
+  else if (k === 'k') vista.fixarNivel(null);
+  else if (k === ' ') { pausado = !pausado; e.preventDefault(); }
+});
+/* SOLTAR O E É O CONTRAGOLPE: a defesa é lida por `teclas.e` dentro do
+   motor, e largar na janela certa devolve o golpe. */
+addEventListener('keyup', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'e' && teclas.e && J) { const l = lider(); if (l) C.soltarDefesa(J, l); }
+  teclas[k] = false;
+});
+
+/* NÃO HÁ CENA 2D AQUI, e é decisão do dono: este cenário é só
+   3D. A dobra torna a vista de cima do tabuleiro uma mentira:
+   nele o corredor está ao lado da arquibancada e o gramado é
+   menor do que é. */
+
+/* Na câmera de ombro, W tem que ser "pra frente da câmera" e não
+   "pro norte da cena". A vista devolve o vetor já no eixo dela, e é
+   ele que vai pro combate — as teclas cruas ficam de fora, senão o
+   boneco andaria pelo norte do mapa. */
+/* o que a barra de estado mostra: por onde a intenção do jogador está
+   entrando. "vetor" é o caminho certo; "teclas" quer dizer que algum
+   arquivo velho ficou no cache do navegador */
+let comoAnda = 'parado';
+function entradaDoQuadro() {
+  const t = Object.assign({}, teclas);
+  t.w = t.a = t.s = t.d = false;
+  t.arrowup = t.arrowdown = t.arrowleft = t.arrowright = false;
+  const v = vista.girarEntrada(teclas);
+  if (!v) { comoAnda = 'parado'; return t; }
+  comoAnda = typeof v.x === 'number' ? 'vetor' : 'teclas (cache velho)';
+  /* a vista nova devolve vetor e booleanos juntos; uma vista velha no
+     cache devolve só booleanos. Repassa os dois, e o combate escolhe. */
+  if (typeof v.x === 'number') t.vetor = v;
+  t.w = !!v.w; t.a = !!v.a; t.s = !!v.s; t.d = !!v.d;
+  return t;
+}
+
+let quadrosFps = 0, fps = 0, marcoFps = 0;
+
+/* A SIMULAÇÃO ANDA EM PASSO FIXO. Antes era um passo por quadro, com
+   dt travado em 50 ms: a 3 fps o jogo corria a um sexto da velocidade —
+   câmera lenta. Agora o tempo real acumula e a simulação dá quantos
+   passos de 1/60 forem necessários (até 24 por quadro, 0,4 s): a 3 fps
+   a tela pula, mas o jogo corre no tempo certo. */
+const PASSO = 1 / 60;
+let acumulado = 0;
+function laco(agora) {
+  let dt = (agora - ant) / 1000; ant = agora;
+  if (dt > 0.4) dt = 0.4;
+  if (J && !pausado) {
+    acumulado += dt;
+    const teclas = entradaDoQuadro();
+    let n = 0;
+    while (acumulado >= PASSO && n < 24) { C.passo(J, PASSO, teclas, true); acumulado -= PASSO; n++; }
+    if (n === 24) acumulado = 0;
+  }
+  if (J) {
+    vista.redimensionar(); vista.quadro(J, dt);
+    quadrosFps++;
+    if (agora - marcoFps >= 500) {
+      fps = Math.round(quadrosFps * 1000 / (agora - marcoFps));
+      marcoFps = agora; quadrosFps = 0;
+    }
+    pad.gastar('2', C.restaCd(J, 'pedra') > 0);
+    pad.gastar('3', J.bombas <= 0 || C.restaCd(J, 'bomba') > 0);
+    /* `restaCd` só conhece pedra e bomba; o do chamar é por LADO, no
+       `J.chamouEm`, com a espera que o próprio motor publica */
+    pad.gastar('c', J.t < ((J.chamouEm || {})[C.ladoDoJogador(J)] || -99) + C.CD_CHAMAR);
+    pad.gastar('f', !C.podeAgarrar(J, lider()));
+    /* quem está onde: é a conta que esta cena inventou, porque é
+       a primeira em que "onde" quer dizer alguma coisa */
+    const P = vista._planta;
+    const onde = { arquibancada: 0, vomitorio: 0, corredor: 0, rua: 0, fachada: 0 };
+    for (const d of J.discos) {
+      if (!d.vivo || d.entrou || d.sumiu) continue;
+      const k = P.onde(d.x - P.DX, d.y);             // o disco anda no x do tabuleiro
+      onde[k] = (onde[k] || 0) + 1;
+    }
+    const c = vista.conta || {};
+    elEstado.innerHTML =
+      '<b>' + vista.vista + '</b> · ' + fps + ' fps · <b>' + vista.nivel + '</b> · ' +
+      (vista.comModelo ? 'boneco do Blender' : 'boneco de cápsula') +
+      (vista.corte ? ' · ' + vista.corte.vistos + ' na tela, ' + vista.corte.cortados + ' fora' : '') + '<br>' +
+      'rua <b>' + onde.rua + '</b> · portão <b>' + onde.fachada + '</b> · corredor <b>' + onde.corredor +
+      '</b> · vomitório <b>' + onde.vomitorio + '</b> · arquibancada <b>' + onde.arquibancada + '</b>' +
+      ' · entraram ' + TORCIDAS.mandante.rot + ' <b>' + ((J.entraram||{}).mandante||0) + '</b> · ' +
+      TORCIDAS.visitante.rot + ' <b>' + ((J.entraram||{}).visitante||0) + '</b><br>' +
+      'atenção PM ' + Math.round(J.alerta) + '%' + (J.rompido ? ' · <i>CORDÃO ROMPIDO</i>' : '') +
+      ' · andar: <b>' + comoAnda + '</b>' +
+      (plantaVelha ? ' · <i>PLANTA VELHA NO CACHE (Ctrl+Shift+R)</i>' : '') + '<br>' +
+      c.degraus + ' degraus · ' + c.vomitorios + ' vomitórios · ' + c.portoes + ' portões · ' +
+      c.lojas + ' balcões · ' + c.quadras + ' quarteirões · ' + c.lotes + ' lotes · ' +
+      (c.triangulos || 0).toLocaleString('pt-BR') + ' triângulos' +
+      (vista.sombra ? '' : ' · sem sombra') +
+      '<br><span style="color:#8a867b">' + String(vista.gpu).slice(0, 70) + ' · cena montada em ' + tCarga + ' ms</span>' +
+      (vista.gpuSoftware ? '<br><i>SEM PLACA DE VÍDEO: o Chrome está desenhando por software. ' +
+        'Ligue "Usar aceleração gráfica" em chrome://settings/system e reinicie.</i>' : '') +
+      (pausado ? '<br>PAUSADO' : '');
+  }
+  requestAnimationFrame(laco);
+}
+
+new ResizeObserver(() => vista.redimensionar()).observe(caixa);
+const tAntes = performance.now();
+/* MONTAR TAMBÉM FALHA NA TELA, não só no console. Antes só o `criar()`
+   estava protegido: qualquer tropeço daqui pra frente deixava a página
+   preta e a explicação escondida no console, que ninguém abre. */
+try { abrir(); } catch (e) { falhar(e); }
+const tCarga = Math.round(performance.now() - tAntes);
+ant = marcoFps = performance.now();
+requestAnimationFrame(laco);
+
+/* à mão no console, pra medir sem instrumentar nada */
+window.estadio = { get J() { return J; }, vista, tCarga };
+</script>
+</body>
+</html>
