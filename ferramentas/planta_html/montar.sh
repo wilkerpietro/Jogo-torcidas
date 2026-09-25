@@ -1,8 +1,9 @@
 #!/bin/sh
 # Monta a pasta da planta em HTML (a página que vira artefato): a página,
-# a proposta de expansão, o cenário 3D (cenario.js, e passo.js, onde o
-# corpo do boneco bate; a pasta do GitHub
-# Pages sai de montar_pages.sh, por cima desta) e o que ela usa do jogo —
+# a proposta de expansão, o cenário 3D (cenario.js; passo.js, onde o
+# corpo do boneco bate na rua, e subsolo.js, onde ele pisa no metrô; a
+# pasta do GitHub Pages sai de montar_pages.sh, por cima desta) e o que
+# ela usa do jogo —
 # a planta (sem a cena), o boneco do jogo (que anda a pé no cenário),
 # as torcidas, os clubes e as praças (o porte decide o mapa), os escudos
 # (embutidos), os módulos 3D (com o three.js do CDN) e as folhas.
@@ -17,7 +18,7 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 A=${1:-/tmp/planta_html}
 mkdir -p "$A/dados" "$A/js" "$A/img/texturas/modelos"
 cp "$R/ferramentas/planta_html/index.html" "$A/"
-cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$A/js/"
+cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$A/js/"
 cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/escudos.js" "$A/dados/"
 # os escudos do jogo (img/escudos/, 278 PNG) não cabem como arquivo solto
 # (o artefato tem teto de 255 arquivos): vão embutidos num arquivo só, no

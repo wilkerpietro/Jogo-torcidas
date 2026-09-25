@@ -21,7 +21,9 @@
      também junta por bloco.
    - A PÉ, o boneco do jogo (js/bonecos3.js) anda na rua, na camisa de
      uma torcida da praça: a GRADE DO PASSO, riscada pelo forno com o
-     que cada coisa tem na altura do corpo, diz onde ele pisa.
+     que cada coisa tem na altura do corpo, diz onde ele pisa. No metrô
+     ele desce a escada até a plataforma: embaixo da rua quem diz onde
+     ele pisa é o SUBSOLO (subsolo.js), com os triângulos da estação.
 
    Nada aqui decide o que vai no mapa: muda a planta, muda o cenário.
    Em unidades de mundo da planta (x pra leste, y da planta = z do 3D pro
@@ -30,6 +32,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { plantarMato, montarMato, LONGE_M } from './mato3d.js';
 import { FAIXA_M, riscosDaFaixa, Paredes } from './passo.js';
+import { Subsolo } from './subsolo.js';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -58,6 +61,10 @@ const APE = { anda: 2.2, corre: 6, raio: 0.25, olho: 1.0, vao: 13, el: 1.25 };
    DENTRO perde o que passa de 2,20 m (o telhado, a laje, o alto da
    parede): de cima se vê a planta dos cômodos */
 const CORTE_M = { raio: 2.2, acima: 2.2, dentro: 2.2 };
+/* EMBAIXO DA RUA (no metrô): a cidade em cima da caixa da estação, com
+   esta folga (m) pra cada lado, some do teto do nível dele pra cima, e a
+   terra em volta aparece (a caixa marrom, do mesmo tamanho) */
+const SUB_FOLGA = 1.5, TERRA_M = -12;
 /* o que é prédio (a câmera não entra na parede dele); o resto (o poste,
    a árvore, o carro, o prop, a peça da praia) só barra o corpo */
 const PREDIOS = new Set(['casa', 'favela', 'bar', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
@@ -240,6 +247,13 @@ function GradeDoPasso(ar, M) {
     const id = tetoEm(x, z), d = 0.6 * M;
     return id && tetoEm(x + d, z) === id && tetoEm(x - d, z) === id && tetoEm(x, z + d) === id && tetoEm(x, z - d) === id ? id : 0;
   }
+  /* o retângulo (x0, x1, z0, z1) fica fora do alcance: o boneco não nasce
+     ali (o poço do metrô: na rua ele é buraco) */
+  function bloquear(r) {
+    const i0 = Math.max(0, Math.floor((r.x0 - ox) / c)), i1 = Math.min(nx - 1, Math.floor((r.x1 - ox) / c));
+    const j0 = Math.max(0, Math.floor((r.z0 - oz) / c)), j1 = Math.min(nz - 1, Math.floor((r.z1 - oz) / c));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) g[j * nx + i] |= SOLIDO;
+  }
   /* o que tem na célula de (x, z): SÓLIDO, ÁGUA, ALCANCE (pro teste) */
   function celula(x, z) {
     const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
@@ -250,7 +264,7 @@ function GradeDoPasso(ar, M) {
     for (let k = 0; k < g.length; k++) { if (g[k] & AGUA) a++; if (teto[k]) t++; }
     return { celulas: g.length, nx, nz, agua: a, cobertas: t, riscos: paredes.n, ms: Math.round(ms) };
   }
-  return { assar, agua, alcancar, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz };
+  return { assar, agua, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz };
 }
 const agora = () => performance.now();
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
@@ -482,7 +496,7 @@ export function criarCenario(P) {
     else { orb.dist = clamp(orb.dist, 2.5 * M, 2600 * M); orb.el = clamp(orb.el, 0.02, 1.54); }
     if (ape) {
       const de = ape.de;
-      orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M, de.z + (ape.z - de.z) * k);
+      orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M + ape.yv * k, de.z + (ape.z - de.z) * k);
     } else {
       orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
       orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
@@ -723,13 +737,28 @@ export function criarCenario(P) {
   const caixaSel = new THREE.Box3Helper(new THREE.Box3(), 0xf09c45);
   caixaSel.visible = false; caixaSel.material.depthTest = false; caixaSel.renderOrder = 5; cena.add(caixaSel);
   const alvoId = new THREE.WebGLRenderTarget(1, 1), pixel = new Uint8Array(4);
+  /* o clique respeita o corte (o telhado que sumiu não pega o clique, nem
+     a cidade em cima da estação quando ele está no metrô) e o buraco do
+     poço no chão (o chão é a coisa 0) — os uniformes entram com o CORTE,
+     lá embaixo */
   const matId = new THREE.ShaderMaterial({
-    vertexShader: `attribute float idCoisa; varying vec3 vId;
+    uniforms: {},
+    vertexShader: `attribute float idCoisa; varying vec3 vId; varying vec3 vCorteP; varying float vCorteId;
       void main() {
         vId = vec3(mod(idCoisa, 256.0), mod(floor(idCoisa / 256.0), 256.0), floor(idCoisa / 65536.0)) / 255.0;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        vCorteId = idCoisa;
+        vec4 p = modelMatrix * vec4(position, 1.0);
+        vCorteP = p.xyz;
+        gl_Position = projectionMatrix * viewMatrix * p;
       }`,
-    fragmentShader: `varying vec3 vId; void main() { gl_FragColor = vec4(vId, 1.0); }`,
+    fragmentShader: `varying vec3 vId; varying vec3 vCorteP; varying float vCorteId;
+      CORTE_GLSL
+      void main() {
+        if ( corteSub( vCorteP ) ) discard;
+        if ( uCorte > 0.5 && uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;
+        if ( vCorteId < 0.5 && abs( vCorteP.y ) < 1.0 && noBuraco( vCorteP ) ) discard;
+        gl_FragColor = vec4(vId, 1.0);
+      }`,
     side: THREE.DoubleSide
   });
   function pegar(sx, sy) {
@@ -797,10 +826,44 @@ export function criarCenario(P) {
        câmera: só o que fica na frente dele na tela) fica ralo, num
        pontilhado que some no meio (a copa, o beiral, o prédio alto do lado
        da câmera): vê-se através */
+  /* - EMBAIXO DA RUA (no metrô), o que passa de `uSubY` dentro do
+       retângulo `uSub` (a caixa da estação, com folga) some: a cidade em
+       cima dela, o chão, o mezanino quando ele está na plataforma;
+     - SEMPRE, o chão tem um buraco em cada POÇO do metrô (`uBuraco`): é
+       por ali que a escada desce */
   const CORTE = {
     uCorte: { value: 0 }, uCorteId: { value: 0 }, uCorteY: { value: 0 }, uCorteR: { value: 1 }, uCorteAcima: { value: 0 },
-    uCorteA: { value: new THREE.Vector3() }, uCorteB: { value: new THREE.Vector3() }
+    uCorteA: { value: new THREE.Vector3() }, uCorteB: { value: new THREE.Vector3() },
+    uSub: { value: new THREE.Vector4() }, uSubY: { value: 1e9 },
+    uBuraco: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) }, uNBuraco: { value: 0 }
   };
+  const CORTE_GLSL = `uniform float uCorte, uCorteId, uCorteY, uCorteR, uCorteAcima, uSubY;
+uniform vec3 uCorteA, uCorteB;
+uniform vec4 uSub;
+uniform vec4 uBuraco[ 4 ];
+uniform int uNBuraco;
+bool corteSub( vec3 p ) { return uCorte > 0.5 && p.y > uSubY && p.x > uSub.x && p.x < uSub.z && p.z > uSub.y && p.z < uSub.w; }
+float corteBayer( vec2 a ) { a = floor( a ); return fract( a.x / 2.0 + a.y * a.y * 0.75 ); }
+bool corteCone( vec3 p ) {
+  if ( uCorte < 0.5 || p.y <= uCorteAcima ) return false;
+  vec3 ab = uCorteB - uCorteA;
+  float t = clamp( dot( p - uCorteA, ab ) / max( dot( ab, ab ), 1e-3 ), 0.0, 1.0 );
+  float d = length( p - ( uCorteA + ab * t ) ), R = uCorteR * ( 1.0 - 0.85 * t );
+  float k = 1.0 - smoothstep( R * 0.55, R, d );
+  float limiar = corteBayer( 0.5 * gl_FragCoord.xy ) * 0.25 + corteBayer( gl_FragCoord.xy );
+  return k * 0.92 > limiar;
+}
+bool noBuraco( vec3 p ) {
+  for ( int i = 0; i < 4; i++ ) {
+    if ( i >= uNBuraco ) break;
+    vec4 b = uBuraco[ i ];
+    if ( p.x > b.x && p.x < b.z && p.z > b.y && p.z < b.w ) return true;
+  }
+  return false;
+}
+`;
+  matId.fragmentShader = matId.fragmentShader.replace('CORTE_GLSL', CORTE_GLSL);
+  Object.assign(matId.uniforms, CORTE);
   function cortavel(mat, comId) {
     const antes = mat.onBeforeCompile;
     mat.onBeforeCompile = (sh, r) => {
@@ -809,23 +872,12 @@ export function criarCenario(P) {
       sh.vertexShader = sh.vertexShader
         .replace('void main() {', `${comId ? 'attribute float idCoisa;' : ''}\nvarying vec3 vCorteP;\nvarying float vCorteId;\nvoid main() {`)
         .replace('#include <project_vertex>', `#include <project_vertex>\n  vCorteP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\n  vCorteId = ${comId ? 'idCoisa' : '0.0'};`);
-      sh.fragmentShader = sh.fragmentShader.replace('void main() {', `uniform float uCorte, uCorteId, uCorteY, uCorteR, uCorteAcima;
-uniform vec3 uCorteA, uCorteB;
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', `${CORTE_GLSL}
 varying vec3 vCorteP;
 varying float vCorteId;
-float corteBayer( vec2 a ) { a = floor( a ); return fract( a.x / 2.0 + a.y * a.y * 0.75 ); }
 void main() {
-  if ( uCorte > 0.5 ) {
-    if ( uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;
-    if ( vCorteP.y > uCorteAcima ) {
-      vec3 ab = uCorteB - uCorteA;
-      float t = clamp( dot( vCorteP - uCorteA, ab ) / max( dot( ab, ab ), 1e-3 ), 0.0, 1.0 );
-      float d = length( vCorteP - ( uCorteA + ab * t ) ), R = uCorteR * ( 1.0 - 0.85 * t );
-      float k = 1.0 - smoothstep( R * 0.55, R, d );
-      float limiar = corteBayer( 0.5 * gl_FragCoord.xy ) * 0.25 + corteBayer( gl_FragCoord.xy );
-      if ( k * 0.92 > limiar ) discard;
-    }
-  }`);
+  if ( corteSub( vCorteP ) || corteCone( vCorteP ) ) discard;
+  if ( uCorte > 0.5 && uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;`);
     };
     const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
     mat.customProgramCacheKey = () => chave + '|corte' + (comId ? 1 : 0);
@@ -895,7 +947,7 @@ void main() {
     return { lugar, texturas, recopiar, jogarFora, folhas };
   }
 
-  function Forno(ar, escalaDecal, grade) {
+  function Forno(ar, escalaDecal, grade, sub) {
     const LADO = BLOCO_M * M;
     const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
     const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null];
@@ -966,6 +1018,8 @@ void main() {
       if (it) { id = lista.length; lista.push({ it, caixa: [x0, Math.max(0, y0), z0, x1, Math.max(y1, 4), z1] }); }
       for (const p of pedacos) p.id = id;
       if (grade) { const teto = PREDIOS.has(tipo) ? id : 0; for (const p of pedacos) grade.assar(p.P3, p.n, teto); }
+      /* a estação do metrô vai inteira pro subsolo (onde o boneco desce) */
+      if (sub && tipo === 'metro') for (const p of pedacos) sub.juntar(p.P3, p.n);
       const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
       for (const p of pedacos) {
         const k = i + ',' + j + '|' + p.chave;
@@ -1049,16 +1103,20 @@ void main() {
     const m = new THREE.MeshLambertMaterial({ map: tex });
     const u = { uGrao: { value: texturaDoGrao() }, uEscala: { value: metros / 3.2 } };
     m.onBeforeCompile = sh => {
-      Object.assign(sh.uniforms, u);
+      Object.assign(sh.uniforms, u, CORTE);
+      /* o buraco do poço do metrô e, com ele embaixo da rua, o corte */
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', 'varying vec3 vChaoP;\nvoid main() {')
+        .replace('#include <project_vertex>', '#include <project_vertex>\n  vChaoP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
       sh.fragmentShader = sh.fragmentShader
-        .replace('void main() {', 'uniform sampler2D uGrao; uniform float uEscala;\nvoid main() {')
+        .replace('void main() {', `uniform sampler2D uGrao; uniform float uEscala;\n${CORTE_GLSL}\nvarying vec3 vChaoP;\nvoid main() {\n  if ( noBuraco( vChaoP ) || corteSub( vChaoP ) || corteCone( vChaoP ) ) discard;`)
         .replace('#include <map_fragment>', `#include <map_fragment>
   {
     float gA = texture2D( uGrao, vMapUv * uEscala ).r, gB = texture2D( uGrao, vMapUv * uEscala * 0.21 + 0.37 ).r;
     diffuseColor.rgb *= 1.0 + ( gA * 0.62 + gB * 0.38 - 0.5 ) * 0.55;
   }`);
     };
-    m.customProgramCacheKey = () => 'chao-grao';
+    m.customProgramCacheKey = () => 'chao-grao-poco';
     return m;
   }
   /* uma textura do canvas (e o canvas volta pra ser pintado de novo) */
@@ -1284,7 +1342,7 @@ void main() {
     atualizarTopo();
     const t0 = agora();
     sairDaRua(false);
-    grade = null;
+    grade = null; sub = null; CORTE.uNBuraco.value = 0;
     $('.cen-bt-ape').disabled = true;
     jogarForaOMapa();
     area = P.areaDoCenario();
@@ -1295,9 +1353,10 @@ void main() {
     if (!vivo()) return;
     chaoDeLonge(area, grupoChao);
     pedir();
-    /* 2. as coisas, no forno */
+    /* 2. as coisas, no forno (e a estação do metrô também no subsolo) */
     const gradeNova = GradeDoPasso(area, M);
-    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova), porTipo = {};
+    const estacoes = P.metro ? P.metro() : [], subNovo = estacoes.length ? Subsolo(M, estacoes) : null;
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo), porTipo = {};
     let i = 0, tFatia = agora();
     for (const pc of pecas) {
       const g = new THREE.Group();
@@ -1328,15 +1387,41 @@ void main() {
     /* a água entra por último na grade do passo */
     const tGrade = agora();
     gradeNova.agua(P.costa && P.costa(), P.lagoa && P.lagoa());
-    grade = gradeNova;
+    /* O METRÔ: o poço de cada estação é buraco no chão (e o boneco não
+       nasce nele), o subsolo fecha, e a terra em volta da estação fica
+       pronta pra quando ele descer */
+    const tSub = agora();
+    if (subNovo) {
+      subNovo.fechar();
+      estacoes.slice(0, 4).forEach((e, k) => { CORTE.uBuraco.value[k].set(e.poco.x0, e.poco.z0, e.poco.x1, e.poco.z1); gradeNova.bloquear(e.poco); });
+      CORTE.uNBuraco.value = Math.min(4, estacoes.length);
+      for (const e of estacoes) doMapa.add(terraDaEstacao(e));
+    }
+    grade = gradeNova; sub = subNovo;
     montado = { nome, decal: forno.decal };
     numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000,
-                folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(agora() - tGrade) }) };
+                folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade) }),
+                subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(agora() - tSub) } : null };
     /* o escudo em PNG chega depois: a folha copia de novo */
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
     carga.hidden = true;
     if (window.__cenarioPronto) window.__cenarioPronto(numeros);
+  }
+
+  /* A TERRA em volta da estação: uma caixa marrom do tamanho do corte,
+     vista de dentro (o chão dela e as paredes do lado de lá). Na rua ela
+     fica embaixo do chão (só aparece pelo poço, no fundo da escada); com
+     ele no metrô, a cidade em cima some e a estação aparece dentro dela.
+     Ela não é cortada: a parede dela sobe até a rua e fecha a borda do
+     corte (sem ela, entre o chão cortado e o resto via-se o céu) */
+  const matTerra = new THREE.MeshLambertMaterial({ color: '#4d3d2e', side: THREE.BackSide });
+  function terraDaEstacao(e) {
+    const c = e.caixa, f = SUB_FOLGA * M, y0 = TERRA_M * M, y1 = -0.5;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(c.x1 - c.x0 + 2 * f, y1 - y0, c.z1 - c.z0 + 2 * f), matTerra);
+    m.position.set((c.x0 + c.x1) / 2, (y0 + y1) / 2, (c.z0 + c.z1) / 2);
+    m.name = 'terra'; m.updateMatrix(); m.matrixAutoUpdate = false;
+    return m;
   }
 
   /* a cidade inteira na tela, de três quartos */
@@ -1398,12 +1483,16 @@ void main() {
      quanto cabe na tela. O joystick (o círculo embaixo à esquerda) anda
      pra onde o pino aponta na tela; na borda, corre. O que fica entre a
      câmera e ele some (O CORTE), e o prédio em que ele entra perde o
-     telhado.
+     telhado. NO METRÔ ele desce a escada (ou a rolante) do poço, passa a
+     catraca e desce pra plataforma: o pé tem altura (`ape.y`), e embaixo
+     da rua quem diz onde ele pisa é o SUBSOLO; a câmera desce junto, e a
+     cidade em cima da estação some (a caixa dela, do teto do nível em que
+     ele está pra cima), com a terra em volta.
      ====================================================== */
   const toque = matchMedia('(pointer: coarse)').matches;
   raiz.classList.toggle('toque', toque);
   const selCamisa = $('.cen-camisa');
-  let grade = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
+  let grade = null, sub = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
   /* o penteado sai da semente (o modelo leve não tem boné nem bandana) */
   const CABELOS = ['curto', 'raspado', 'degrade', 'black', 'cacheado', 'topete', 'franja', 'entradas', 'moicano', 'comprido', 'rabo', 'coque', 'careca'];
   /* a camisa é lembrada pela torcida (o id; 'nenhuma' é o "Sem torcida"), não pela posição na lista */
@@ -1425,8 +1514,10 @@ void main() {
       const mod = await import('./bonecos3.js');
       /* a câmera chega a um metro dele: a malha afina menos que no jogo */
       mod.cfg.afinarCelulas = 72;
-      /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m */
-      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86) });
+      /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
+         tem altura: a do pé que se vê (no metrô, embaixo da rua) */
+      const PE = { x: 0, y: 0, z: 0 };
+      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86), pos: (x, y) => { PE.x = x; PE.y = ape ? ape.yv : 0; PE.z = y; return PE; } });
       return povo;
     })().catch(e => { chamando = null; throw e; });
     return chamando;
@@ -1458,8 +1549,16 @@ void main() {
     camisa = antes >= 0 ? antes : Math.max(0, torcidas.findIndex(t => t.porta));
     selCamisa.value = String(camisa);
   }
+  /* o chão da rua em (x, z): zero, ou o da estação do metrô (a praça da
+     entrada fica 8 cm acima da rua) */
+  function naRua(x, z) {
+    if (!sub || !sub.estacaoEm(x, z)) return 0;
+    const y = sub.chao(x, z, 0);
+    return y === y ? y : 0;
+  }
   /* ENTRAR A PÉ: onde a câmera olha (ou `onde`), no lugar alcançável mais
-     perto em que o corpo cabe */
+     perto em que o corpo cabe; `onde` com `y` embaixo da rua (a troca de
+     qualidade no metrô) volta pro mesmo degrau */
   async function entrarAPe(onde) {
     if (ape || montando || !grade) return false;
     const bt = $('.cen-bt-ape');
@@ -1467,7 +1566,8 @@ void main() {
     try {
       /* no meio da rua, se der: primeiro onde sobra 3 m pra todo lado */
       const alvo = onde || { x: orb.alvo.x, z: orb.alvo.z };
-      const lugar = () => onde ? grade.perto(alvo.x, alvo.z, APE.raio * M, 60 * M)
+      const yEmbaixo = onde && onde.y < -0.05 * M && sub ? sub.chao(onde.x, onde.z, onde.y) : NaN;
+      const lugar = () => yEmbaixo === yEmbaixo ? { x: onde.x, z: onde.z, y: yEmbaixo } : onde ? grade.perto(alvo.x, alvo.z, APE.raio * M, 60 * M)
         : grade.perto(alvo.x, alvo.z, 3 * M, 60 * M) || grade.perto(alvo.x, alvo.z, 1.5 * M, 150 * M) || grade.perto(alvo.x, alvo.z, APE.raio * M, 400 * M);
       if (!lugar()) throw new Error('não achei chão livre perto do meio da tela');
       if (!povo) {
@@ -1483,7 +1583,8 @@ void main() {
          pro quarto de volta mais perto (com a cidade inteira na tela, o
          norte pra cima, como na planta) */
       const quarto = Math.PI / 2, az = onde && onde.az != null ? onde.az : Math.round(orb.az / quarto) * quarto;
-      ape = { x: p.x, z: p.z, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), vao: (onde && onde.vao) || APE.vao, teto: 0, tetoAte: 0,
+      const y = p.y != null ? p.y : naRua(p.x, p.z);
+      ape = { x: p.x, z: p.z, y, yv: y, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), vao: (onde && onde.vao) || APE.vao, teto: 0, tetoAte: 0,
               chegada: 0, de: { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az }, para: { az } };
       vestir();
       cancelarVoo(); fecharFicha();
@@ -1519,6 +1620,7 @@ void main() {
     ape.de = { x: ape.x, z: ape.z, dist: orb.dist, el: orb.el, az: orb.az, pulo: true };
     ape.para = { az };
     ape.x = p.x; ape.z = p.z; ape.vx = ape.vz = 0; ape.chegada = 0;
+    ape.y = ape.yv = naRua(p.x, p.z);
     ape.rumo = Math.atan2(-Math.sin(az), -Math.cos(az));
     if (eu) { eu.x = ape.x; eu.y = ape.z; }
     pedir();
@@ -1534,15 +1636,28 @@ void main() {
   }
   /* O PASSO: o corpo anda de 12 em 12 cm; o que bate num risco o empurra
      pra fora e ele desliza ao longo dele (passo.js). A água e a borda da
-     área seguram: ali só anda o eixo que dá */
-  const corpo = { x: 0, z: 0 };
+     área seguram: ali só anda o eixo que dá. Embaixo da rua (ou entrando
+     no poço do metrô), o passo é o do SUBSOLO: o chão a um degrau do pé e
+     a faixa do corpo contada dele */
+  const corpo = { x: 0, z: 0, y: 0 };
   function mover(dx, dz) {
     const r = APE.raio * M, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / (0.12 * M)));
     const sx = dx / n, sz = dz / n, W = grade.paredes;
     const tenta = (ax, az) => {
+      if (sub && (ape.y < -0.05 * M || sub.noPoco(ape.x + ax, ape.z + az))) {
+        if (!sub.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
       corpo.x = ape.x + ax; corpo.z = ape.z + az;
       W.empurrar(corpo, r);
       if (!grade.cabe(corpo.x, corpo.z, r * 0.97)) return false;
+      /* a rua o empurrou pra dentro do poço: lá o chão é o do subsolo */
+      if (sub && sub.noPoco(corpo.x, corpo.z)) {
+        const y = sub.chao(corpo.x, corpo.z, ape.y);
+        if (y !== y || !sub.cabe(corpo.x, corpo.z, y, r * 0.97)) return false;
+        ape.y = y;
+      } else ape.y = naRua(corpo.x, corpo.z);
       ape.x = corpo.x; ape.z = corpo.z;
       return true;
     };
@@ -1590,9 +1705,12 @@ void main() {
     mover(ape.vx * dt, ape.vz * dt);
     if (L) ape.rumo = Math.atan2(dx, dz);
     const v = dt > 0 ? Math.hypot(ape.x - x0, ape.z - z0) / dt : 0;
+    /* o pé que se vê (e a câmera) vai atrás do pé da conta, macio: na
+       escada, o degrau de 17 cm não sacode a tela */
+    ape.yv += (ape.y - ape.yv) * Math.min(1, dt * 12);
     /* o prédio em que ele está dentro (e ainda um instante depois de
-       sair: na porta, o telhado não pisca) */
-    const dentro = grade.dentroDe(ape.x, ape.z);
+       sair: na porta, o telhado não pisca); embaixo da rua, nenhum */
+    const dentro = ape.y > -0.5 * M ? grade.dentroDe(ape.x, ape.z) : 0;
     if (dentro) { ape.teto = dentro; ape.tetoAte = agora() + 350; }
     else if (agora() > ape.tetoAte) ape.teto = 0;
     /* o boneco: o jogo lê o disco e faz o resto (o passo, o parado, a virada) */
@@ -1602,16 +1720,35 @@ void main() {
     jogo.t += dt;
     povo.atualizar(jogo, dt);
   }
-  /* O CORTE, a cada quadro: do alto da cabeça dele até a câmera */
+  /* O CORTE, a cada quadro: do alto da cabeça dele até a câmera (tudo
+     contado do pé que se vê) */
   function atualizarCorte() {
     if (!ape) { CORTE.uCorte.value = 0; return; }
+    const y = ape.yv;
     CORTE.uCorte.value = 1;
-    CORTE.uCorteA.value.set(ape.x, 1.7 * M, ape.z);
+    CORTE.uCorteA.value.set(ape.x, y + 1.7 * M, ape.z);
     CORTE.uCorteB.value.copy(cam.position);
     CORTE.uCorteR.value = CORTE_M.raio * M;
-    CORTE.uCorteAcima.value = CORTE_M.acima * M;
+    CORTE.uCorteAcima.value = y + CORTE_M.acima * M;
     CORTE.uCorteId.value = ape.chegada >= 1 ? ape.teto : 0;
-    CORTE.uCorteY.value = CORTE_M.dentro * M;
+    CORTE.uCorteY.value = y + CORTE_M.dentro * M;
+    /* EMBAIXO DA RUA: a cidade em cima da estação some, do teto do nível
+       dele pra cima (com a terra em volta) */
+    const est = sub && ape.y < -1.2 * M ? sub.estacaoEm(ape.x, ape.z, SUB_FOLGA * M) : null;
+    if (est) {
+      const c = est.caixa, f = SUB_FOLGA * M;
+      CORTE.uSub.value.set(c.x0 - f, c.z0 - f, c.x1 + f, c.z1 + f);
+      CORTE.uSubY.value = alturaDoCorte(est.niveis, y / M) * M;
+    } else CORTE.uSubY.value = 1e9;
+  }
+  /* A ALTURA DO CORTE embaixo da rua (m), pelo pé: descendo a escada da
+     rua, o chão da cidade (e o que tem em cima) some logo que a cabeça
+     chega nele; mais embaixo o corte desce com ele até o teto do mezanino;
+     e da metade da escada da plataforma pra baixo (2 m abaixo do
+     mezanino), o mezanino some também, do teto da plataforma pra cima */
+  function alturaDoCorte(N, y) {
+    if (y < N.mezanino - 2.0) return N.tetoPlataforma;
+    return Math.max(N.tetoMezanino, Math.min(-0.05, y + 2.2));
   }
   /* depois de escolher, o teclado volta pro boneco (no seletor, o W e as
      setas trocariam a opção em vez de andar) */
@@ -1667,7 +1804,7 @@ void main() {
     ajustarTela();
     /* a pé: volta pro mesmo lugar, virado pro mesmo lado e com o mesmo
        zoom, depois de remontar */
-    if (ape) voltarAPe = { x: ape.x, z: ape.z, az: orb.az, vao: ape.vao };
+    if (ape) voltarAPe = { x: ape.x, z: ape.z, y: ape.y, az: orb.az, vao: ape.vao };
     /* o chão muda de resolução: remonta a praça (o forno junta de novo) */
     if (montado) montar(P.cidade(), P.modo());
   };
@@ -1732,6 +1869,9 @@ void main() {
            /* pro teste: a câmera num lugar */
            olhar(x, z, dist, el, az) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; pedir(); },
            /* pro teste: a pé */
-           aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, get estado() { return ape && { x: ape.x, z: ape.z, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
-                  get grade() { return grade; }, get povo() { return povo; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
+           aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, levar: levarPara,
+                  /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */
+                  mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
+                  get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
+                  get grade() { return grade; }, get sub() { return sub; }, get povo() { return povo; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
 }

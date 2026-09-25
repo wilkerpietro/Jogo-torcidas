@@ -30,6 +30,13 @@
    O que fica pendurado no teto só tem a face de baixo, pelo mesmo
    motivo. O vidro vai em `vidros` (transparente); a grade, em `grades`.
 
+   A PÉ. No cenário da planta o boneco desce a escada (ou a rolante) da
+   rua até o mezanino, passa a catraca e desce pra plataforma, pisando
+   nos próprios triângulos da estação (ferramentas/planta_html/
+   subsolo.js). `montarEstacao` devolve em `andar` o que os triângulos
+   não dizem: o poço (a rua ali não tem chão), a caixa da estação, a
+   borda da plataforma e os braços das catracas, que o corpo atravessa.
+
    O TREM é de três carros de 11 m: a cara azul-marinho com a moldura
    vermelha nas duas pontas, o carro branco com a faixa azul e as portas
    vermelhas. `montarCarro` devolve cada carro na origem (x ao longo dele,
@@ -226,8 +233,9 @@ function escada(C, x0, x1, zTopo, yTopo, n, dir, passo, alt, k = 'degrau') {
        vai pro lado de onde se desce */
     const F = dir > 0 ? C.plano([x0, y, zb], [1, 0, 0], [0, 0, -1]) : C.plano([x1, y, za], [-1, 0, 0], [0, 0, 1]);
     C.esticar(F, 0, x1 - x0, 0, passo, k);
-    /* o espelho, virado pra quem desce */
-    const Fe = dir > 0 ? C.plano([x1, y, za], [-1, 0, 0], [0, 1, 0]) : C.plano([x0, y, zb], [1, 0, 0], [0, 1, 0]);
+    /* o espelho, virado pro pé da escada (é quem sobe que o vê; ele
+       estava virado pro alto, e de baixo a escada saía vazada) */
+    const Fe = dir > 0 ? C.plano([x0, y, za], [1, 0, 0], [0, 1, 0]) : C.plano([x1, y, zb], [-1, 0, 0], [0, 1, 0]);
     C.ladrilhar(Fe, C.ret(0, x1 - x0, 0, alt), 'lisa', { tinta: '#8f8d88' });
   }
 }
@@ -330,15 +338,20 @@ function mezanino(C, e, ctx) {
     if (z > z1 - 0.8) break;
     S.caixa(catraca - 0.6, catraca + 0.6, Y_MEZ, Y_MEZ + 1.0, z - 0.15, z + 0.15,
             { todas: lisa(INOX), base: null, frente: { k: 'catraca', modo: 'esticar' }, tras: { k: 'catraca', modo: 'esticar' } });
-    if (i < 5) S.caixa(catraca - 0.05, catraca + 0.05, Y_MEZ + 0.85, Y_MEZ + 0.9, z + 0.15, z + 0.6, { todas: lisa(PRETO) });
+    if (i < 5) {
+      S.caixa(catraca - 0.05, catraca + 0.05, Y_MEZ + 0.85, Y_MEZ + 0.9, z + 0.15, z + 0.6, { todas: lisa(PRETO) });
+      ctx.bracos.push({ x0: catraca - 0.05, x1: catraca + 0.05, z0: z + 0.15, z1: z + 0.6, y0: Y_MEZ + 0.85, y1: Y_MEZ + 0.9 });
+    }
   }
   ctx.marca(catraca - 0.6, catraca + 0.6, z0 + 0.75, z1 - 0.8, '#8d9295', 'movel', true);
-  /* o guarda-corpo em volta do buraco da escada da plataforma */
+  /* o guarda-corpo dos dois lados do buraco da escada da plataforma. Na
+     ponta do leste é a boca da escada (o primeiro degrau sai de bx1 pro
+     oeste): ali não tem guarda-corpo — o que tinha tapava a descida; na
+     do oeste, a parede do mezanino */
   const gc = 1.05;
-  barra(S, [bx1, Y_MEZ + gc, bz0], [bx1, Y_MEZ + gc, bz1], 0.05, 'lisa', INOX);
   barra(S, [bx0 + 0.02, Y_MEZ + gc, bz0], [bx1, Y_MEZ + gc, bz0], 0.05, 'lisa', INOX);
   barra(S, [bx0 + 0.02, Y_MEZ + gc, bz1], [bx1, Y_MEZ + gc, bz1], 0.05, 'lisa', INOX);
-  for (const [p, q] of [[[bx1, bz0], [bx1, bz1]], [[bx0, bz0], [bx1, bz0]], [[bx0, bz1], [bx1, bz1]]])
+  for (const [p, q] of [[[bx0, bz0], [bx1, bz0]], [[bx0, bz1], [bx1, bz1]]])
     C.V.poli([[p[0], Y_MEZ, p[1]], [q[0], Y_MEZ, q[1]], [q[0], Y_MEZ + gc, q[1]], [p[0], Y_MEZ + gc, p[1]]], [[0, 0], [1, 0], [1, 1], [0, 1]]);
   /* as placas penduradas: PLATAFORMA do lado pago, SAÍDA do outro */
   ctx.pendurada(catraca - 1.6, Y_MEZ_TETO - 0.45, (z0 + z1) / 2, 'PLATAFORMA · SENTIDO ' + ctx.sentido, -1);
@@ -466,6 +479,7 @@ export function montarEstacao(est, destino = {}, opc = {}) {
     }
   };
   ctx.zMez = 6.5;
+  ctx.bracos = [];
   const e = entrada(C, T, ctx);
   const mz = mezanino(C, e, ctx);
   /* a escada do mezanino pra plataforma: desce pro oeste, no lado pago */
@@ -515,6 +529,7 @@ export function montarEstacao(est, destino = {}, opc = {}) {
     const [a0, b0] = noMundo(r.x0, r.z0), [a1, b1] = noMundo(r.x1, r.z1);
     return { x0: Math.min(a0, a1), x1: Math.max(a0, a1), y0: Math.min(b0, b1), y1: Math.max(b0, b1), cor: r.cor, tipo: r.tipo };
   };
+  const ret3 = (x0, x1, z0, z1) => { const r = retMundo({ x0, x1, z0, z1 }); return { x0: r.x0, x1: r.x1, z0: r.y0, z1: r.y1 }; };
   const [px, pz] = noMundo(Lh / 2, TRILHO_Z);
   return {
     placas: placasMundo, planta2d: marcas.map(retMundo), subsolo: sub_.map(retMundo),
@@ -523,17 +538,38 @@ export function montarEstacao(est, destino = {}, opc = {}) {
        mureta da escada (fora do plano dela, que de lado vira um risco),
        olhando pro túnel da linha (o trem à esquerda, a parede à direita) */
     olhar: { x: noMundo(2.8, 6.4)[0], y: y0 + (Y_PLAT + 1.65) * M, z: noMundo(2.8, 6.4)[1] },
-    niveis: { rua: Y_RUA, mezanino: Y_MEZ, plataforma: Y_PLAT }
+    niveis: { rua: Y_RUA, mezanino: Y_MEZ, plataforma: Y_PLAT },
+    /* PRA QUEM ANDA (o boneco a pé do cenário), no mundo: o POÇO (o
+       buraco da rua por onde a escada e a rolante descem: ali a rua não
+       tem chão) e a BOCA dele (o ponto da praça na frente da escada), o
+       MEZANINO e a PLATAFORMA, a CAIXA da estação inteira (o salão, o
+       mezanino e o terreno da entrada), a BORDA da plataforma (o degrau
+       de 1,1 m pro trilho, que não tem parede), os BRAÇOS das catracas
+       (giram: o corpo passa) e a altura de cada nível e do teto dele
+       (m). Os retângulos vão em x e z do 3D (o z é o y da planta) */
+    andar: {
+      boca: noMundo((e.P0 + e.P1) / 2, T.z0 + 0.8),
+      poco: ret3(e.P0, e.P1, e.B0, e.B1),
+      mezanino: ret3(mz.x0, mz.x1, mz.z0, mz.z1),
+      plataforma: ret3(0, Lh, BORDA_Z, LARG - PAREDE),
+      caixa: ret3(Math.min(0, mz.x0, T.x0), Math.max(Lh, mz.x1, T.x1), Math.min(0, mz.z0, T.z0), Math.max(LARG, mz.z1, T.z1)),
+      borda: [...noMundo(0, BORDA_Z), ...noMundo(Lh, BORDA_Z), y0 + Y_PLAT * M],
+      bracos: ctx.bracos.map(b => ({ ...ret3(b.x0, b.x1, b.z0, b.z1), y0: y0 + b.y0 * M, y1: y0 + b.y1 * M })),
+      niveis: { rua: Y_RUA, mezanino: Y_MEZ, tetoMezanino: Y_MEZ_TETO, plataforma: Y_PLAT, tetoPlataforma: Y_TETO }
+    }
   };
 }
-/* a escada que desce em x (a do mezanino pra plataforma) */
+/* a escada que desce em x (a do mezanino pra plataforma): o piso virado
+   pra cima, com o bocel na borda de onde se desce, e o espelho virado
+   pro pé da escada (os dois estavam do avesso: de cima o degrau sumia, e
+   o boneco a pé não tinha onde pisar) */
 function escadaX(C, xTopo, yTopo, n, dir, passo, alt, z0, z1) {
   for (let i = 0; i < n; i++) {
     const xA = xTopo + dir * i * passo, xB = xA + dir * passo, y = yTopo - (i + 1) * alt;
     const [xa, xb] = dir > 0 ? [xA, xB] : [xB, xA];
-    const F = dir < 0 ? C.plano([xb, y, z0], [0, 0, 1], [-1, 0, 0]) : C.plano([xa, y, z1], [0, 0, -1], [1, 0, 0]);
+    const F = dir < 0 ? C.plano([xb, y, z1], [0, 0, -1], [-1, 0, 0]) : C.plano([xa, y, z0], [0, 0, 1], [1, 0, 0]);
     C.esticar(F, 0, z1 - z0, 0, passo, 'degrau');
-    const Fe = dir < 0 ? C.plano([xb, y, z1], [0, 0, -1], [0, 1, 0]) : C.plano([xa, y, z0], [0, 0, 1], [0, 1, 0]);
+    const Fe = dir < 0 ? C.plano([xb, y, z0], [0, 0, 1], [0, 1, 0]) : C.plano([xa, y, z1], [0, 0, -1], [0, 1, 0]);
     C.ladrilhar(Fe, C.ret(0, z1 - z0, 0, alt), 'lisa', { tinta: '#8f8d88' });
   }
 }
