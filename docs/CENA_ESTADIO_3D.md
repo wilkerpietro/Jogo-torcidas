@@ -3598,7 +3598,7 @@ Por dentro, cada boca de vomitório no corredor ganhou a **placa VOMITÓRIO pend
 
 **O nome no letreiro** (`nomeDoLetreiro`): em maiúscula, com o acento que falta na planilha (Mangueirao → MANGUEIRÃO, Sao Januário → SÃO JANUÁRIO, Arena do Gremio → ARENA DO GRÊMIO, Moca Bonita, Mineirao, Independencia, Etelvino Mendonca, Germano Kruger, Antonio Accyoly, Estadio → ESTÁDIO), com "ESTÁDIO" na frente de quem não é estádio nem arena (Allianz Parque e Neo Química Arena ficam como são) e "ESTÁDIO DO" nos apelidos que pedem (MORUMBI, MARACANÃ, ARRUDA, CANINDÉ, JUNCO). No catálogo, sem praça, o de fábrica: ESTÁDIO MUNICIPAL, ESTÁDIO CENTENÁRIO, ARENA DA CIDADE. A etiqueta do estádio na planta 2D sai com o mesmo acento (`nomeComAcento`, sem o "ESTÁDIO" na frente). As letras são um canvas recortado (Arial Black onde tem; a espessura mais escura embaixo e do lado); o nome comprido aperta na largura.
 
-**No mapa.** Cada estádio da praça é agora o modelo da **lotação** dele (`dados/estadios.js`, que a planta passou a carregar): até 15 mil lugares, o de 10; até 30 mil, o de 20; acima, o de 40 (`modeloDaLotacao`). Das 76 praças de jogo, 25 são o de 10, 13 o de 20 e 38 o de 40. O modelo entra **no tamanho de verdade** — 154 × 126 m o terreno do de 10, 204 × 152 o do de 20, 284 × 236 o do de 40 —, e a vaga de estádio da cidade tem 77 × 66 m: ele não cabe. Então o gerador (`proposta.js`, com `opc.terrenos`) **tira o estádio da vaga pra fora da cidade, do lado dela** (`fora`: o do oeste pro oeste, o do sudoeste pro sul, o do noroeste e o do nordeste pro norte), **girado com o portão 1 de frente pra cidade**, no lugar livre mais perto: empurra pra fora e escorrega de lado até a rua em volta dele (a de sempre, 6,1 m) só encostar — nada dele pisa em quadra, favela, Atacadex, na avenida de entrada, na avenida da beira (a praia e a lagoa ficam do outro lado) nem em outro estádio — e **a reta do portão 1 chega numa rua da cidade** (a de uma quadra, a avenida de entrada ou a de outro estádio) em menos de 134 m, sem passar por favela nem pelo Atacadex. Quando a rua dele já é a da cidade, é ela; senão sai a **rua de acesso**, reta, de duas pistas, do portão 1 até a primeira rua. A vaga do próprio estádio vem primeiro; a de outro só se a dele não tem lugar (nas 30 praças, todo estádio ficou na vaga dele). O mundo cresce pra caber, e a avenida de entrada vai de ponta a ponta dele.
+**No mapa.** Cada estádio da praça é agora o modelo da **lotação** dele (`dados/estadios.js`, que a planta passou a carregar): até 15 mil lugares, o de 10; até 30 mil, o de 20; acima, o de 40 (`modeloDaLotacao`). Das 76 praças de jogo, 25 são o de 10, 13 o de 20 e 38 o de 40. O modelo entra **no tamanho de verdade** — 154 × 126 m o terreno do de 10, 204 × 152 o do de 20, 284 × 236 o do de 40 (o tamanho da foto; a 4.60 encolheu cada um pro tamanho de jogo) —, e a vaga de estádio da cidade tem 77 × 66 m: ele não cabe. Então o gerador (`proposta.js`, com `opc.terrenos`) **tira o estádio da vaga pra fora da cidade, do lado dela** (`fora`: o do oeste pro oeste, o do sudoeste pro sul, o do noroeste e o do nordeste pro norte), **girado com o portão 1 de frente pra cidade**, no lugar livre mais perto: empurra pra fora e escorrega de lado até a rua em volta dele (a de sempre, 6,1 m) só encostar — nada dele pisa em quadra, favela, Atacadex, na avenida de entrada, na avenida da beira (a praia e a lagoa ficam do outro lado) nem em outro estádio — e **a reta do portão 1 chega numa rua da cidade** (a de uma quadra, a avenida de entrada ou a de outro estádio) em menos de 134 m, sem passar por favela nem pelo Atacadex. Quando a rua dele já é a da cidade, é ela; senão sai a **rua de acesso**, reta, de duas pistas, do portão 1 até a primeira rua. A vaga do próprio estádio vem primeiro; a de outro só se a dele não tem lugar (nas 30 praças, todo estádio ficou na vaga dele). O mundo cresce pra caber, e a avenida de entrada vai de ponta a ponta dele.
 
 | mapa (praça) | estádios | mundo (era) |
 |---|---|---|
@@ -3629,6 +3629,46 @@ Quase tudo o que cresceu é o estádio (em São Paulo, +370 mil dos quatro; as r
 - Em algumas praças **um estádio chega na cidade pela rua de outro** (Porto Alegre: o Passo d'Areia pela rua do Grêmio; Bahia: o Joia da Princesa pela da Fonte Nova): o acesso encosta na rua do vizinho.
 - **O que a foto não mostra, eu pus**: o pórtico, a marquise, a fila, as bilheterias do de 10 e do portão 2, as placas penduradas, o nome pintado e o arco do de 10. E tirei os dois prédios de entrada do de 40.
 - A lotação do nome continua não sendo a do modelo (o de 40 tem 75 mil lugares a 0,5 m; o Morumbi de 60 mil e o Allianz de 40 mil usam o mesmo). O modelo é pela faixa de lotação, não um por estádio.
+
+### 4.60. Os estádios no tamanho de jogo: menores, o de 40 mil com menos vomitórios, mais fileiras em cima e o corredor de cima debaixo delas
+
+O dono pediu: "Os estádios ficaram grandes e desproporcionais ao mapa, pode diminuir sem precisar seguir as dimensões oficiais"; depois, "Diminua a quantidade de vomitórios no estádio de 40 mil" e "Preciso que o anel superior do estádio de 40 mil tenha mais degraus de arquibancada e o corredor superior fique abaixo da arquibancada superior".
+
+**O tamanho de jogo** (`js/diajogo/estadios3d.js`: `G10`, `G20`, `G40`). A foto é de estádio de verdade; o mapa é comprimido (a quadra tem 35,6 × 17,8 m). Cada um encolhe onde não tem gente — o campo (com as linhas na mesma proporção: as áreas, o círculo, a marca do pênalti), a pista, o fosso e as margens — e o de 20 perde fileiras; o degrau (0,80 m), o corredor, o vomitório, o portão, a catraca, a escada e o pórtico continuam do tamanho de gente. O que a foto marca (o vomitório, a divisória do dono, o portão, a vala) vai pelo **u do anel da foto** (`anel20Foto`, `anel40Foto`, `aneis10Foto` com `uDaFoto`): cai no mesmo lugar do anel menor, porque o u anda em fração do lado e do canto. O vomitório que fica perto demais de uma divisória anda pro meio do trecho dele e, se o trecho é estreito, afina (`longeDosGradis`).
+
+| | 10 mil | 20 mil | 40 mil |
+|---|---|---|---|
+| terreno | 100 × 86 m (era 154 × 126) | 118 × 89 (204 × 152) | 162 × 141 (284 × 236) |
+| campo | 46 × 30 (100 × 68) | 56 × 36 (105 × 68) | 56 × 36 (105 × 68) |
+| fileiras | 15 (15) | 22 (34) | 12 embaixo e 28 em cima (28 e 39) |
+| vomitórios | 10 valas (10) | 10 com túnel (10) | 14 em cima e 7 embaixo (29 e 13) |
+| corredor | 6,4 m de largura (6,4) | 8,55 m (8) | o do chão, 11 m; o de cima, 7,5 m a 6,2 m do chão (11,4; 8 a 18,9 m) |
+| lugares, a 0,5 m de degrau por pessoa | 4,1 mil (8,5 mil) | 11,0 mil (33,5 mil) | 22,9 mil (75,1 mil) |
+| triângulos | 14,7 mil (15,6 mil) | 25,0 mil (34,3 mil) | 58,9 mil (117,0 mil) |
+
+- **O de 10 mil** é o que menos encolhe: as duas arquibancadas (a reta do norte e o L do leste e sul), a passarela, o muro e a asa do sudoeste não têm o que tirar. Tudo sai de meia dúzia de números (`G10`: o meio campo, as frentes, as pontas, as curvas, o muro), e a passarela do sul ficou de 3,4 m (era 5,7). O corte do portão 1 continua com 10,6 m (as 10 catracas); o nome pintado no muro do leste cabe entre o muro do norte e a bilheteria.
+- **O de 20 mil**: o vomitório é o poço das fileiras 2 a 8 com o túnel até o corredor, que começa na fileira 12 (o teto do túnel, a 4 m, passa 20 cm embaixo da fileira 9); a fachada tem dois andares (cobogó e brise) e o letreiro fica entre a placa do portão e a cimalha; as torres de luz têm 30 m; o portão 2 fica a 12 m do meio do sul (no x da foto batia na torre do meio).
+- **O de 40 mil**: ficam **14 vomitórios em cima** dos 29 da foto (`VOM40`: dois no norte, dois em cada curva, dois em cada lado e dois no sul, espelhados), cada setor do dono com pelo menos um, e **7 embaixo** (um sim, um não dos de cima, fora os que encostam num gradil). O anel de cima tem **28 fileiras** (a última a 22 m) e o **corredor de cima** agora fica na altura do corredor entre os anéis (6,2 m), **inteiro debaixo do anel de cima**: o vomitório de cima é como o do de 20 — o poço das fileiras 3 a 8, a escada que desce por baixo das fileiras até o corredor e o túnel (o teto dele, a 11,1 m, passa meio metro embaixo da fileira 9). A escadaria de cada portão sobe 6,2 m; o lance que volta pra fora passa por baixo da laje do corredor de cima, e só a 3,75 m do alto é que a cabeça cabe — por isso o corredor de cima acaba 6,3 m antes da fachada, e o salão (16,4 m) é mais comprido que a escadaria. Com 20 fileiras em cima o terreno era de 149 × 128 m; as 8 a mais custaram 13 m em cada lado.
+- **O balcão do corredor** ficou mais raso (1,7 m da parede; era 2,05): no corredor de cima do de 40, o fundo tomava a passagem.
+
+**No mapa**, o gerador é o mesmo (4.59): o estádio sai da vaga pra fora da cidade, com o portão 1 de frente pra ela. Com os estádios menores o mundo encolheu:
+
+| mapa (praça) | mundo com a foto (4.59) | no tamanho de jogo | sem os estádios de verdade |
+|---|---|---|---|
+| grande (São Paulo, Rio) | 944 × 938 m | 783 × 678 m | 689 × 509 |
+| médio (Bahia, Porto Alegre, Curitiba) | 865 a 868 × 702 a 774 | 695 × 580 | 606 × 530 |
+| pequeno (Interior do PR) | 608 × 691 | 554 × 569 | 471 × 443 |
+
+A etiqueta do estádio na planta 2D sai com o acento do letreiro (`nomeComAcento`).
+
+**Conferido:** o `conferir_estadios.mjs` passa nos três (de cada portão, o corredor e a arquibancada do lado dele, e só elas — ele pegou duas coisas no caminho: o balcão fundo demais no corredor de cima e a escada do lado de um vomitório encostando no gradil da PM1, as duas corrigidas); o `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam; o cenário monta as 30 praças (CENARIO_RESULTADO).
+
+**O que isto ainda não é:**
+
+- **O nome e o modelo não batem**: o "de 40 mil" tem 22,9 mil lugares e o "de 20 mil", 11 mil (a 0,5 m de degrau por pessoa). A lotação do jogo é a da planilha (`dados/estadios.js`); o modelo é só pela faixa de lotação.
+- O campo é menor que o de regra (56 × 36 e 46 × 30): a proporção das linhas é a de regra, o tamanho não. O gol é o de verdade (7,32 m).
+- O de 10 mil encolheu menos que os outros e ficou quase do fundo do de 20 (86 × 89 m).
+- O corredor do norte do de 10 mil (37 m) ficou sem pilar e sem balcão: todo lugar dele cai perto de uma vala ou de um gradil.
 
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
@@ -3994,11 +4034,12 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
     a pé não foi medido numa placa de vídeo de verdade; o medidor diz
     quando o navegador está sem placa, que é o suspeito dos 2 fps do i5
     de 2ª geração.
-13. **Os três estádios do jogo (4.57 a 4.59) já são os do mapa**, na escala
-    de verdade (o mapa cresceu pra caber, 4.59); o jogo ("Jogo hoje" e a
-    cena da torcida) continua no estádio comprimido. A planta da foto do
-    de 20 e do de 40 dá bem mais lugar que o nome (33,5 mil e 75,1 mil),
-    e o modelo é pela faixa de lotação. O corredor, os vomitórios e os
+13. **Os três estádios do jogo (4.57 a 4.60) já são os do mapa**, no
+    tamanho de jogo (4.60: menores que a foto, com o degrau, o corredor e
+    o portão do tamanho de gente); o jogo ("Jogo hoje" e a cena da
+    torcida) continua no estádio comprimido. No tamanho de jogo o de 20 e
+    o de 40 dão bem menos lugar que o nome (11 mil e 22,9 mil; a planta
+    da foto dava 33,5 e 75,1), e o modelo é pela faixa de lotação. O corredor, os vomitórios e os
     portões estão no modelo (e o conferidor prova o caminho de cada
     torcida), mas a torcida, a briga e a PM entrando são do jogo; no
     cenário o boneco a pé chega no corredor do chão, não na arquibancada.
@@ -4035,7 +4076,7 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `js/diajogo/mato3d.js` | o mato simplificado: `plantarMato` planta uma área pela densidade do lugar (a grade tremida, a espécie pela `FLORA_LP`, o `pode` que tira a cidade, a estrada e o mar) e `montarMato` junta em ladrilhos de 40 m, cada um com a malha de perto e a de longe, pro `THREE.LOD` (a de perto a menos de 60 m). Por enquanto só a aba Modelos 3D da planta usa |
 | `js/diajogo/ladrilhos3d.js` | a cidade do jogo em ladrilhos de 40 m: cada um com a versão de perto, a de longe (a casa de modelo em blocos de altura, a árvore de longe e o prédio que traz a dele — os cinco equipamentos —, o poste em haste, o que já é caixa igual, o miúdo some) e nada além da névoa; a troca pela distância da câmera ao ponto mais perto do ladrilho, e os materiais iguais juntos numa malha |
 | `js/diajogo/modelos_medias.js` | GERADO pelo pintor: a cor média (linear) de cada célula de cada folha, e a do reboco e da telha do bairro — é a cor da versão de longe |
-| `js/diajogo/estadios3d.js` | os três estádios do jogo (4.57): o de 10, o de 20 e o de 40 mil, medidos nas fotos do protótipo — a família de anéis (o retângulo arredondado que fecha, o caminho aberto do de 10), a arquibancada (degrau, escada, vomitório, mureta, corte, ponta), o campo pintado, o gol, o banco, a torre de luz, a placa, o muro e o portão, a camada dos setores do dono (a cor, o nome, a faixa, a lotação e os vomitórios de cada um), o `.glb` (`glbDoEstadio`) e, por dentro (4.58), as três entradas da rua (o salão, a catraca, a placa, a escadaria do de 40), o corredor debaixo da arquibancada (os pilares, os balcões, a luminária, a barra e o gradil de cada trecho), o vomitório em vala ou com túnel, o chão de baixo e o corte (`cortarEstadio`); e por fora (4.59) a fachada de concreto aparente (pilar, faixa de laje, cobogó e brise, embasamento, cimalha — `fachadaDetalhada`), o letreiro com o nome (`letreiro`, `nomeDoLetreiro`), o pórtico de cada portão com a marquise e a fila (`porticoDoPortao`), a bilheteria, o muro caiado e o arco do de 10; o modelo de cada lotação (`modeloDaLotacao`), o terreno de cada um e a planta 2D (`plantaDoEstadio`) pro mapa, e o modo do mapa (`montarEstadioJogo(id, { nome, mapa })`); a textura é pintada ali mesmo, em canvas. A aba Modelos 3D, a planta e o cenário 3D usam |
+| `js/diajogo/estadios3d.js` | os três estádios do jogo (4.57): o de 10, o de 20 e o de 40 mil, medidos nas fotos do protótipo — a família de anéis (o retângulo arredondado que fecha, o caminho aberto do de 10), a arquibancada (degrau, escada, vomitório, mureta, corte, ponta), o campo pintado, o gol, o banco, a torre de luz, a placa, o muro e o portão, a camada dos setores do dono (a cor, o nome, a faixa, a lotação e os vomitórios de cada um), o `.glb` (`glbDoEstadio`) e, por dentro (4.58), as três entradas da rua (o salão, a catraca, a placa, a escadaria do de 40), o corredor debaixo da arquibancada (os pilares, os balcões, a luminária, a barra e o gradil de cada trecho), o vomitório em vala ou com túnel, o chão de baixo e o corte (`cortarEstadio`); e por fora (4.59) a fachada de concreto aparente (pilar, faixa de laje, cobogó e brise, embasamento, cimalha — `fachadaDetalhada`), o letreiro com o nome (`letreiro`, `nomeDoLetreiro`), o pórtico de cada portão com a marquise e a fila (`porticoDoPortao`), a bilheteria, o muro caiado e o arco do de 10; o modelo de cada lotação (`modeloDaLotacao`), o terreno de cada um e a planta 2D (`plantaDoEstadio`) pro mapa, e o modo do mapa (`montarEstadioJogo(id, { nome, mapa })`); e o tamanho de jogo (4.60: `G10`, `G20`, `G40`, o u do anel da foto com `uDaFoto`, o vomitório longe do gradil com `longeDosGradis`, os 14 vomitórios de cima do de 40 com `vomitorios40`); a textura é pintada ali mesmo, em canvas. A aba Modelos 3D, a planta e o cenário 3D usam |
 | `vendor/three/GLTFExporter.js`, `TextureUtils.js` | o exportador de glTF do three r160 (licença MIT), com o import apontando pro `three.module.min.js` daqui: o `.glb` dos estádios |
 | `ferramentas/planta_html/referencias/` | as fotos dos três estádios do protótipo e as imagens dos setores do dono (em webp), que a ficha do estádio mostra |
 | `js/diajogo/praia3d.js` | as onze peças da praia em 3D (`PECAS_PRAIA`: guarda-sol, mesa, barraca, posto, quadra, os dois quiosques, calçadão, beira do mar com a onda, jangada e barco de pesca), no tamanho de verdade, com a semente; devolve os blocos e os decalques; o coqueiro é o low poly. Por enquanto só a aba Modelos 3D da planta usa |
