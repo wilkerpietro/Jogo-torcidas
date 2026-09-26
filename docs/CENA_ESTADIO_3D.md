@@ -3707,7 +3707,16 @@ O dono pediu: "Diminua o lance de arquibancadas do estádio de 40 mil pra 15 deg
 
 **No mapa**: o terreno menor encolheu o mundo das praças com o de 40 (grande: 767 × 646 m, era 783 × 678; médio: 679 × 560 a 564, era 695 × 580; pequeno: 554 × 553, era 554 × 569).
 
-**Conferido:** o `conferir_estadios.mjs` passa nos três: de cada portão, 100% do corredor do lado dele (os dois, no de 40), os setores do lado dele (m1 e m2; v1, v2 e v3 no de 40) e nada do outro lado nem da PM. Sobram dois pontos soltos que o corpo não alcança, sem derrubar o setor: um de v3 a 8 cm do gradil da PM2 e um de m1 que o portão 2 alcança e o 1 não (a grade do conferidor muda de alinhamento conforme o portão). O `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam.
+**Conferido:** o `conferir_estadios.mjs` passa nos três: de cada portão, 100% do corredor do lado dele (os dois, no de 40), os setores do lado dele (m1 e m2; v1, v2 e v3 no de 40) e nada do outro lado nem da PM. Sobram dois pontos soltos que o corpo não alcança, sem derrubar o setor: um de v3 a 8 cm do gradil da PM2 e um de m1 que o portão 2 alcança e o 1 não (a grade do conferidor muda de alinhamento conforme o portão). O `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam, e o cenário monta as 30 praças sem erro (triângulos da cidade e chamadas; o tempo, com rasterizador por software, não vale):
+
+| praça | no tamanho de jogo (4.60) | com o de 40 de 15 + 15 |
+|---|---|---|
+| São Paulo | 1,30 mi · 405 | 1,25 mi · 412 |
+| Rio de Janeiro | 1,43 mi · 413 | 1,38 mi · 413 |
+| Bahia | 1,15 mi · 336 | 1,12 mi · 358 |
+| Interior do PR | 0,51 mi · 183 | 0,50 mi · 199 |
+
+Os triângulos caem de 2 a 4%; as chamadas não caem junto, e na Bahia e no Interior do PR subiram (o estádio não ganhou material novo; não investiguei por quê).
 
 **O que isto ainda não é:**
 
