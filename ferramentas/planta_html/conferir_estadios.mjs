@@ -11,13 +11,16 @@
    da porta). O corpo sobe até DEGRAU m de um passo (o degrau da
    arquibancada é de 0,40 a 0,52 m) e bate no que tem de FAIXA acima do
    pé; o braço da catraca não conta (ele gira: o material dele diz
-   `semRisco`, e o cenário também não bate nele). Fora do estádio (o muro
+   `semRisco`, e o cenário também não bate nele). É o corpo do boneco a
+   pé do cenário nos andares do estádio (cenario.js: o raio de APE e o
+   ESTADIO_PASSO): o que passa aqui, ele anda lá. Fora do estádio (o muro
    do de 10 mil, a fachada do de 20 e do de 40) só se anda perto do
    começo: a rua liga os portões, o teste é do lado de dentro.
 
    O que ele alcança se mede na camada dos setores: o chão pintado de
    cada setor (a cor do escalão) e de cada trecho do corredor (a cor de
-   quem usa). Pede, de cada portão:
+   quem usa); a lasca mais fina que FINO (o chão pintado colado num
+   gradil) não conta. Pede, de cada portão:
    - todo o trecho do corredor do lado dele;
    - pelo menos 90% do chão de cada setor do lado dele (o que fica colado
      numa parede ou num gradil não cabe o corpo);
@@ -45,7 +48,7 @@ const THREE = await import(path.join(R, 'vendor/three/three.module.min.js'));
 const { ESTADIOS_JOGO, montarEstadioJogo } = await import(path.join(R, 'js/diajogo/estadios3d.js'));
 const { Subsolo } = await import(path.join(R, 'ferramentas/planta_html/subsolo.js'));
 
-const RAIO = 0.2, PASSO = 0.2, DEGRAU = 0.55, FAIXA = [0.55, 1.9], LIVRE = 10, MINIMO = 0.9;
+const RAIO = 0.25, PASSO = 0.2, DEGRAU = 0.55, FAIXA = [0.55, 1.9], FINO = 0.3, LIVRE = 10, MINIMO = 0.9;
 /* a cor de cada setor e de cada trecho do corredor (as de estadios3d.js) */
 const SETOR = { '#1b7f3b': 'm1', '#43a047': 'm2', '#9ccc3c': 'm3', '#c62828': 'v1', '#ef6c00': 'v2', '#f2b705': 'v3', '#1f3f9a': 'pm' };
 const ZONA = { '#c62828': 'visitante', '#1b7f3b': 'mandante', '#1f3f9a': 'pm' };
@@ -72,6 +75,8 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
         if (Math.max(...ys) - Math.min(...ys) > 1e-3) continue;
         const area = Math.abs((pts[k + 3] - pts[k]) * (pts[k + 8] - pts[k + 2]) - (pts[k + 6] - pts[k]) * (pts[k + 5] - pts[k + 2])) / 2;
         if (area < 0.08) continue;
+        const lados = [[0, 3], [3, 6], [6, 0]].map(([a, b]) => Math.hypot(pts[k + b] - pts[k + a], pts[k + b + 2] - pts[k + a + 2]));
+        if (2 * area / Math.max(...lados) < FINO) continue;
         const x = (pts[k] + pts[k + 3] + pts[k + 6]) / 3, z = (pts[k + 2] + pts[k + 5] + pts[k + 8]) / 3;
         const nivel = niveis.find(n => Math.abs(ys[0] - (n + 0.04)) < 0.004);
         if (nivel !== undefined) alvos.push({ nome: 'corredor ' + ZONA[cor], lado: ZONA[cor], x, z, y: nivel });
