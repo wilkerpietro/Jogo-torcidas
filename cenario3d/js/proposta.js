@@ -109,20 +109,22 @@ const GRADE_GRANDE = {
    quadra do estádio). As dos cantos de cima ficam a pouco mais de 120 m
    da entrada norte: é o limite do mapa (o leste é a costa, e o oeste já
    tem as outras), então elas são as últimas a entrar. */
+/* `fora`: pra que lado da cidade o estádio de verdade sai da vaga (o
+   portão 1 fica de frente pro lado contrário, o da cidade) */
 const ESTADIOS_GRANDE = [
-  { i: [-6, -5], j: [3, 5],   nome: 'Estádio do Oeste' },           // o principal: a ponta oeste (395 m da entrada sul)
-  { i: [-6, -5], j: [9, 11],  nome: 'Estádio do Sudoeste' },        // no canto sudoeste (257 m)
-  { i: [-3, -2], j: [-5, -3], nome: 'Estádio do Noroeste' },        // acima do bairro do noroeste (132 m da norte)
-  { area: { x0: 3300, x1: 4610, y0: -2576, y1: -1301 }, nome: 'Estádio do Nordeste' }   // entre a favela do norte e a praia (129 m)
+  { i: [-6, -5], j: [3, 5],   nome: 'Estádio do Oeste', fora: 'o' },           // o principal: a ponta oeste (395 m da entrada sul)
+  { i: [-6, -5], j: [9, 11],  nome: 'Estádio do Sudoeste', fora: 's' },        // no canto sudoeste (257 m)
+  { i: [-3, -2], j: [-5, -3], nome: 'Estádio do Noroeste', fora: 'n' },        // acima do bairro do noroeste (132 m da norte)
+  { area: { x0: 3300, x1: 4610, y0: -2576, y1: -1301 }, nome: 'Estádio do Nordeste', fora: 'n' }   // entre a favela do norte e a praia (129 m)
 ];
 const ESTADIOS_MEDIO = [
-  { i: [-4, -3], j: [3, 5],   nome: 'Estádio do Oeste' },           // 312 m da entrada sul
-  { area: { x0: 3300, x1: 4610, y0: -2111, y1: -837 }, nome: 'Estádio do Nordeste' },   // 133 m da norte
-  { i: [-3, -2], j: [-4, -2], nome: 'Estádio do Noroeste' }         // acima da favela do noroeste (124 m da norte)
+  { i: [-4, -3], j: [3, 5],   nome: 'Estádio do Oeste', fora: 'o' },           // 312 m da entrada sul
+  { area: { x0: 3300, x1: 4610, y0: -2111, y1: -837 }, nome: 'Estádio do Nordeste', fora: 'n' },   // 133 m da norte
+  { i: [-3, -2], j: [-4, -2], nome: 'Estádio do Noroeste', fora: 'n' }         // acima da favela do noroeste (124 m da norte)
 ];
 const ESTADIOS_PEQUENO = [
-  { area: { x0: -1240, x1: 70, y0: 2439, y1: 3713 }, nome: 'Estádio do Oeste' },     // entre as duas favelas do oeste (147 m da sul)
-  { area: { x0: 2690, x1: 4000, y0: -1183, y1: 92 }, nome: 'Estádio do Nordeste' }    // acima da cidade de hoje (101 m da norte)
+  { area: { x0: -1240, x1: 70, y0: 2439, y1: 3713 }, nome: 'Estádio do Oeste', fora: 'o' },     // entre as duas favelas do oeste (147 m da sul)
+  { area: { x0: 2690, x1: 4000, y0: -1183, y1: 92 }, nome: 'Estádio do Nordeste', fora: 'n' }    // acima da cidade de hoje (101 m da norte)
 ];
 
 /* o que vira equipamento, e não casa */
@@ -677,6 +679,137 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     return { i: ie, j: je, x0: X0, x1: X1, y0: Y0, y1: Y1,
              ruas: [{ x0: xm - h, x1: xm + h, y0: Y0 - RUA, y1: Y1 + RUA }, { x0: X0 - RUA, x1: X1 + RUA, y0: ym - h, y1: ym + h }] };
   })();
+  /* O TERRENO DE VERDADE DE CADA ESTÁDIO. Com `opc.terrenos` (um por
+     estádio, na ordem: o terreno do modelo 3D da lotação dele, em metros,
+     com o portão 1 no +x — {x0, x1, z0, z1, p1: o z do portão 1}), o
+     estádio não é mais a cópia do quarteirão de hoje: é o modelo de
+     verdade (js/diajogo/estadios3d.js), que não cabe na vaga (a vaga tem
+     77 × 66 m; o de 40 mil pede 284 × 236). Ele sai da vaga pro lado de
+     FORA da cidade (`fora`), girado com o PORTÃO 1 DE FRENTE PRA CIDADE,
+     no lugar livre mais perto: a rua em volta dele (RUA) pode ser a mesma
+     da cidade, mas nada dele pisa em quadra, favela, Atacadex, avenida de
+     entrada, na avenida da beira (a praia e a lagoa ficam do outro lado
+     dela) nem em outro estádio, e a reta do portão 1 chega numa rua da
+     cidade. Procura empurrando pra fora (`d`) e escorregando de lado
+     (`b`, que conta a metade); se a vaga dele não tem lugar (ou só muito
+     mais longe que a de outro), ele vai pra vaga que tiver. Do portão 1
+     sai o ACESSO: a rua reta, de duas pistas, até a primeira rua da
+     cidade (quando a rua dele já não é a da cidade). */
+  const acessos = [];
+  if (opc.terrenos) {
+    const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
+    const bm = avenidas.find(a => a.id === 'beiramar'), lBeira = bm ? bm.l : 76;
+    /* a guia oeste da avenida da beira na altura y (pra lá das pontas dela, a mesma distância da costa) */
+    const guiaDaBeira = y => K.pxm(K.xCosta((y - y00) / u), 0)[0] - K.PRAIA * u - lBeira;
+    const lesteMax = (ya, yb) => { if (!opc.costa) return Infinity; let m = Infinity; for (let k = 0; k <= 24; k++) m = Math.min(m, guiaDaBeira(ya + (yb - ya) * k / 24)); return m - CALC; };
+    const obst = celulas.map(c => ({ x0: c.x0, x1: c.x1, y0: c.y0, y1: c.y1 }))
+      .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 })))
+      .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))))
+      .concat(FAVELAS.map(F => ({ ...bbOf(F.poly), barra: true })))
+      .concat(atacadex ? [{ ...atacadex.bb, barra: true }] : []);
+    const faixaEntrada = { x0: ENTRADA.x0 - CALC, x1: ENTRADA.x1 + CALC };
+    const postos = [];
+    /* o terreno r (com a calçada) cabe? a rua dele (RUA) encosta, mas não passa */
+    const livre = r => {
+      if (r.x0 < faixaEntrada.x1 + RUA && r.x1 > faixaEntrada.x0 - RUA) return false;
+      if (r.x1 + RUA > lesteMax(r.y0 - RUA, r.y1 + RUA)) return false;
+      for (const o of obst) if (cruza(r, o, RUA - 0.5)) return false;
+      for (const o of postos) if (cruza(r, o, RUA - 0.5)) return false;
+      return true;
+    };
+    const ACESSO_MAX = 2600;
+    const DIR = { o: [1, 0], l: [-1, 0], n: [0, 1], s: [0, -1] };
+    /* (pra cada linha reta — o lado de fora e a coordenada de lado —, os
+       trechos do eixo que são alvo ou barra, em ordem: a conta de cada
+       portão vira uma busca na lista; a lista muda quando entra estádio) */
+    let linhas = new Map();
+    const linha = (f, lat) => {
+      const ch = f + lat;
+      if (linhas.has(ch)) return linhas.get(ch);
+      const hz = f === 'o' || f === 'l', tr = [];
+      const poe = (o, m, tipo) => { const a0 = hz ? o.y0 - m : o.x0 - m, a1 = hz ? o.y1 + m : o.x1 + m; if (lat > a0 && lat < a1) tr.push(hz ? [o.x0 - m, o.x1 + m, tipo] : [o.y0 - m, o.y1 + m, tipo]); };
+      for (const o of obst) poe(o, o.barra ? 0 : RUA, o.barra ? 'barra' : 'alvo');
+      for (const o of postos) poe(o, RUA, 'alvo');
+      if (!hz) tr.push([-1e7, 1e7, lat > ENTRADA.x0 && lat < ENTRADA.x1 ? 'alvo' : 'nada']);
+      else tr.push([ENTRADA.x0, ENTRADA.x1, 'alvo']);
+      const l = tr.filter(t => t[2] !== 'nada');
+      linhas.set(ch, l);
+      return l;
+    };
+    /* A RETA DO ACESSO: do portão 1 (na beira do terreno), passando a rua do
+       estádio, até a rua da primeira quadra da cidade, a avenida de entrada
+       ou a rua de outro estádio; se antes bate em favela ou no Atacadex, ou
+       se passa de ACESSO_MAX, o portão 1 não dá pra cidade */
+    const reta = (pe, f) => {
+      const d = DIR[f], hz = f === 'o' || f === 'l', lat = Math.round(hz ? pe[1] : pe[0]);
+      const a0 = (hz ? pe[0] : pe[1]) + (hz ? d[0] : d[1]) * RUA, sg = hz ? d[0] : d[1];
+      /* o primeiro trecho que a reta encontra, andando no sentido sg a partir de a0 */
+      let melhor = null;
+      for (const [b0, b1, tipo] of linha(f, lat)) {
+        const s = sg > 0 ? (b1 <= a0 ? null : Math.max(0, b0 - a0)) : (b0 >= a0 ? null : Math.max(0, a0 - b1));
+        if (s === null) continue;
+        if (!melhor || s < melhor.s || (s === melhor.s && tipo === 'barra')) melhor = { s, tipo };
+      }
+      if (!melhor || melhor.tipo === 'barra' || melhor.s > ACESSO_MAX) return null;
+      return { ini: hz ? [a0, pe[1]] : [pe[0], a0], s: melhor.s };
+    };
+    const PASSO = 40, D_MAX = 7000, B_MAX = 7000, OUTRA_VAGA = 3000;
+    /* o terreno de W × H em volta da vaga v: `d` pra fora da beira dela do
+       lado da cidade, `b` de lado (a partir do meio dela); `pe(r)`: o portão 1 */
+    const procurar = (v, W, H, pe) => {
+      const a = areaDaVaga(v), f = v.fora, hz = f === 'o' || f === 'l';
+      const c = hz ? (a.y0 + a.y1) / 2 : (a.x0 + a.x1) / 2;
+      const ret = (d, b) => f === 'o' ? { x0: a.x1 - d - W, x1: a.x1 - d, y0: c + b - H / 2, y1: c + b + H / 2 }
+        : f === 'l' ? { x0: a.x0 + d, x1: a.x0 + d + W, y0: c + b - H / 2, y1: c + b + H / 2 }
+        : f === 'n' ? { x0: c + b - W / 2, x1: c + b + W / 2, y0: a.y1 - d - H, y1: a.y1 - d }
+        : { x0: c + b - W / 2, x1: c + b + W / 2, y0: a.y0 + d, y1: a.y0 + d + H };
+      const serve = r => livre(r) && !!reta(pe(r, f), f);
+      let melhor = null;
+      for (let d = 0; d <= D_MAX && !(melhor && d >= melhor.custo); d += PASSO)
+        for (let k = 0; k * PASSO <= B_MAX; k++) {
+          const custo = d + 0.5 * k * PASSO;
+          if (melhor && custo >= melhor.custo) break;
+          const b = [k * PASSO, -k * PASSO].find(bb => serve(ret(d, bb)));
+          if (b !== undefined) { melhor = { r: ret(d, b), d, b, custo, fora: f }; break; }
+        }
+      return melhor;
+    };
+    const GIRO = { o: 0, n: 90, s: -90, l: 180 };
+    copias.forEach((e, k) => {
+      const T = opc.terrenos[k];
+      if (!T) return;
+      const fundo = (T.x1 - T.x0) * M, frente = (T.z1 - T.z0) * M, p1 = T.p1 || 0;
+      /* o portão 1 na beira do terreno r (que tem a calçada em volta), pra cada lado de fora */
+      const pe = (r, f) => f === 'o' ? [r.x1, r.y0 + CALC + (p1 - T.z0) * M] : f === 'l' ? [r.x0, r.y0 + CALC + (T.z1 - p1) * M]
+        : f === 'n' ? [r.x0 + CALC + (T.z1 - p1) * M, r.y1] : [r.x0 + CALC + (p1 - T.z0) * M, r.y0];
+      /* a vaga dele primeiro; a de outro estádio só se a dele não tem lugar perto */
+      let melhor = null;
+      for (const j of [k, ...VAGAS.map((_, j) => j).filter(j => j !== k)]) {
+        const v = VAGAS[j], hz = v.fora === 'o' || v.fora === 'l';
+        const r = procurar(v, (hz ? fundo : frente) + 2 * CALC, (hz ? frente : fundo) + 2 * CALC, pe);
+        if (r) r.custo += j === k ? 0 : OUTRA_VAGA;
+        if (r && (!melhor || r.custo < melhor.custo)) melhor = { ...r, vaga: j };
+      }
+      if (!melhor) throw new Error(`o estádio ${k + 1} (${fundo / M} × ${frente / M} m) não coube em vaga nenhuma`);
+      const q = melhor.r, t = { x0: q.x0 + CALC, x1: q.x1 - CALC, y0: q.y0 + CALC, y1: q.y1 - CALC }, g = GIRO[melhor.fora];
+      /* onde fica o (0, 0) do modelo no mundo, com o giro */
+      const centro = g === 0 ? [t.x0 - T.x0 * M, t.y0 - T.z0 * M] : g === 90 ? [t.x0 + T.z1 * M, t.y0 - T.x0 * M]
+        : g === -90 ? [t.x0 - T.z0 * M, t.y0 + T.x1 * M] : [t.x0 + T.x1 * M, t.y0 + T.z1 * M];
+      /* o acesso: a rua de duas pistas do portão 1 até a primeira rua */
+      const p = pe(q, melhor.fora), d = DIR[melhor.fora], rt = reta(p, melhor.fora);
+      let acesso = null;
+      if (rt && rt.s > 0) {
+        acesso = { id: 'acesso' + (k + 1), l: 2 * RUA, reta: true, acesso: true, estadio: e.id,
+                   pontos: [[rt.ini[0] - d[0] * RUA / 2, rt.ini[1] - d[1] * RUA / 2], [rt.ini[0] + d[0] * (rt.s + RUA / 2), rt.ini[1] + d[1] * (rt.s + RUA / 2)]] };
+        acessos.push(acesso);
+      }
+      const cx = (t.x0 + t.x1) / 2, cy = (t.y0 + t.y1) / 2;
+      Object.assign(e, { area: q, terreno: t, qest: t, giro: g, centro, fora: melhor.fora, vagaUsada: melhor.vaga + 1, empurrado: melhor.d, deLado: melhor.b,
+                         dx: cx - P.CX, dy: cy - P.CY, naGrade: false, modelo: T.modelo, portao1: p, acesso });
+      postos.push(q); linhas = new Map();
+    });
+    avenidas.push(...acessos);
+  }
   /* LONGE DO ESTÁDIO: a quadra de cada estádio da praça; a sede e o bar da
      torcida ficam a LONGE_DO_ESTADIO_M dela ou mais (a distância é de
      caixa a caixa) */
@@ -1111,7 +1244,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
      - em cada faixa, duas fileiras de costas, casa encostada na casa
        (42 a 66 de frente), cada uma virada pro seu beco.
      A mancha que o dono desenhou recorta as casas do lado do mato. */
-  for (const q of quadras) q.rua = ruaDe(q);
+  /* (o terreno do estádio de verdade tem a rua dele inteira em volta: ele não é da grade) */
+  for (const q of quadras) q.rua = q.estadio && q.estadio.modelo ? { x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA } : ruaDe(q);
   const barra = quadras.map(q => q.rua)
     .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ruaDe(q)))
     .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))).filter(b => {
@@ -1399,6 +1533,10 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   }
   const noAtacadex = (x, y, m = 0) => !!atacadex && x > atacadex.bb.x0 - m && x < atacadex.bb.x1 + m && y > atacadex.bb.y0 - m && y < atacadex.bb.y1 + m;
 
+  /* a avenida de entrada vai de ponta a ponta do mundo (que cresceu com os estádios de verdade) */
+  const deVerdade = copias.filter(e => e.terreno);
+  avEntrada.pontos[0][1] = Math.min(avEntrada.pontos[0][1], ...deVerdade.map(e => e.area.y0 - RUA - 500));
+  avEntrada.pontos[1][1] = Math.max(avEntrada.pontos[1][1], ...deVerdade.map(e => e.area.y1 + RUA + 500));
   const residenciais = quadras.filter(q => !q.equip);
   const lotesNovos = quadras.reduce((n, q) => n + q.lotes.length, 0);
   let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
@@ -1421,7 +1559,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                 quadrasTrocadas: substitui.size,
                 quadrasHoje: K.QUADRAS.length, lotesHoje: K.QUADRAS.reduce((n, q) => n + q.lotes.length, 0) },
     limite: { x0: x0 - RUA, y0: y0 - RUA, x1, y1 },
-    mundo: { x0: x0 - 400, y0: Math.min(cfg.mundoY0 ?? K.VY0, atacadex ? atacadex.bb.y0 - 300 : Infinity), x1: K.VX0 + K.VW, y1: mundoY1 },
+    mundo: { x0: x0 - 400, y0: Math.min(cfg.mundoY0 ?? K.VY0, atacadex ? atacadex.bb.y0 - 300 : Infinity, ...deVerdade.map(e => e.area.y0 - RUA - 300)),
+             x1: Math.max(K.VX0 + K.VW, ...deVerdade.map(e => e.area.x1 + RUA + 400)), y1: Math.max(mundoY1, ...deVerdade.map(e => e.area.y1 + RUA + 300)) },
     /* a avenida de entrada: a banda dela (as duas pistas e o canteiro) */
     entrada: { ...ENTRADA }
   };

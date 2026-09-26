@@ -286,7 +286,7 @@ import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
 import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio } from './js/estadios3d.js';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento } from './js/estadios3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -307,6 +307,7 @@ try {
   await carregarScript('dados/times.js');
   await carregarScript('dados/cena_estadio.js');
   await carregarScript('dados/cidades.js');
+  await carregarScript('dados/estadios.js');
   await carregarScript('dados/escudos.js');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
@@ -862,11 +863,20 @@ const infoDaCidade = nome => (TO.dados.cidades || []).find(c => c.id === slugDe(
 const mapaDoPorte = nome => { const c = infoDaCidade(nome); return (c && MAPA_DO_PORTE[c.tamanho]) || 'grande'; };
 const NOME_MAPA = { pequeno: 'pequeno', medio: 'médio', grande: 'grande' };
 const cacheDeMapas = new Map();
+/* A LOTAÇÃO de cada estádio (dados/estadios.js) decide o modelo 3D dele
+   (js/diajogo/estadios3d.js: até 15 mil, o de 10; até 30 mil, o de 20;
+   acima, o de 40) e o tamanho do terreno no mapa */
+const lotacaoDe = nome => { const e = (TO.dados.estadios || []).find(x => x.nome === nome); return e ? e.capacidade : 0; };
+const modeloDoEstadio = nome => lotacaoDe(nome) ? modeloDaLotacao(lotacaoDe(nome)) : 'estadio-20';
 function varianteDe(modo, nome = cidade) {
   const c = infoDaCidade(nome), cfg = MAPAS[modo], vagas = cfg.estadios.length;
   const n = c && c.estadios.length ? Math.min(vagas, c.estadios.length) : vagas;
   const metro = !!cfg.metro && !!(c && c.temMetro);
-  return { chave: modo + '|' + n + '|' + (metro ? 'metro' : '-'), cfg, opc: { estadios: n, metro } };
+  /* o terreno de cada estádio e a costa (a praia ou a lagoa: o estádio não passa da avenida da beira; sem o dado, a praia do jogo) */
+  const modelos = Array.from({ length: n }, (_, k) => modeloDoEstadio(c && c.estadios[k]));
+  const costa = !c || !!(c.temPraia || c.temLagoa);
+  const terrenos = modelos.map(id => ({ modelo: id, ...ESTADIOS_JOGO[id].terreno }));
+  return { chave: [modo, n, metro ? 'metro' : '-', modelos.join(','), costa ? 'costa' : '-'].join('|'), cfg, opc: { estadios: n, metro, terrenos, costa } };
 }
 function propostaDe(modo) {
   const v = varianteDe(modo);
@@ -925,7 +935,7 @@ function montarDerivados() {
                                                    planta: montarEstacao(e, {}, opcEstacao(e)) })) : [];
   for (const q of PROP.quadras) if (temModelo(q) && !q.plantaEquip) q.plantaEquip = MONTAR_EQUIP[q.equip.tipo](specDoEquip(q), {}).planta2d;
   estadios = PROP.estadios.map(e => ({ tipo: 'estadio', dx: e.dx, dy: e.dy, vaga: e.vaga, copia: e, principal: e.principal, proposta: true,
-                                        pol: P.anel(P.R.fachada1).map(([x, y]) => [x + e.dx, y + e.dy]) }));
+                                        pol: e.terreno ? retPts(e.terreno) : P.anel(P.R.fachada1).map(([x, y]) => [x + e.dx, y + e.dy]) }));
   for (const e of estadios) e.bb = bbox(e.pol);
   trocadas = K.QUADRAS.filter(q => PROP.substitui.has(q.i + ',' + q.j));
   for (const it of lotes) if (it.q && PROP.substitui.has(it.q.i + ',' + it.q.j)) it.sobProposta = true;
@@ -936,8 +946,8 @@ function montarDerivados() {
       PROP.estadioDeHoje.ruas.some(r => c.x1 > r.x0 - 20 && c.x0 < r.x1 + 20 && c.y1 > r.y0 - 20 && c.y0 < r.y1 + 20); }));
   for (const p of pecasSoltas) p.somePelaProposta = (moveu && noAtacadexDeHoje(p.x, p.y, 20)) || (somePelaProposta(p.x, p.y, 0) && !dentroDaCidadeHoje(p.x, p.y))
     || naTrocada(p.x, p.y) || naAvenidaTirada(p.x, p.y) || naEntrada(p.x, p.y);
-  LIM_PROPOSTA = { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: 5000, y1: Math.max(5980, PROP.limite.y1 + 80) };
-  MUNDO = { x0: Math.min(K.VX0, PROP.mundo.x0), y0: Math.min(K.VY0, PROP.mundo.y0), x1: K.VX0 + K.VW, y1: Math.max(K.VY0 + K.VH, PROP.mundo.y1) };
+  LIM_PROPOSTA = { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: Math.max(5000, PROP.limite.x1 + 80), y1: Math.max(5980, PROP.limite.y1 + 80) };
+  MUNDO = { x0: Math.min(K.VX0, PROP.mundo.x0), y0: Math.min(K.VY0, PROP.mundo.y0), x1: Math.max(K.VX0 + K.VW, PROP.mundo.x1), y1: Math.max(K.VY0 + K.VH, PROP.mundo.y1) };
   montarCalcadas();
 }
 
@@ -2599,6 +2609,22 @@ function desenharCalcadas(vis, px) {
     else { ctx.fillStyle = COR_PROP[m.k] || '#fff'; ctx.beginPath(); ctx.arc(m.x, m.y, Math.max(3, px(2)), 0, 7); ctx.fill(); }
   }
 }
+/* O ESTÁDIO DE VERDADE em planta (plantaDoEstadio, do estadios3d.js): o
+   chão do terreno, as arquibancadas, os vomitórios, o gramado e as
+   linhas, girados e postos no terreno dele */
+const PLANTAS_ESTADIO = {};
+function noTerreno(e) {
+  const g = e.giro * Math.PI / 180, c = Math.cos(g), s = Math.sin(g), [cx, cy] = e.centro;
+  return ([x, z]) => [cx + (x * c - z * s) * M, cy + (x * s + z * c) * M];
+}
+function desenharEstadioNovo(e, px) {
+  const pl = PLANTAS_ESTADIO[e.modelo] || (PLANTAS_ESTADIO[e.modelo] = plantaDoEstadio(e.modelo)), T = noTerreno(e);
+  for (const f of pl.formas) pol(f.pts.map(T), f.cor);
+  if (pintandoChao) return;
+  ctx.lineCap = 'butt';
+  for (const l of pl.linhas) { ctx.strokeStyle = l.cor; ctx.lineWidth = Math.max(px(1), l.larg * M); caminho(l.pts.map(T), l.fechada); ctx.stroke(); }
+  ctx.lineCap = 'round';
+}
 function desenharEstadio(dx, dy) {
   const T = pts => dx || dy ? pts.map(([x, y]) => [x + dx, y + dy]) : pts;
   ret({ x0: P.QEST_X0 + dx, y0: P.QEST_Y0 + dy, x1: P.QEST_X1 + dx, y1: P.QEST_Y1 + dy }, COR.estadio);
@@ -2631,7 +2657,7 @@ function desenharProposta(ve, px) {
     if (!ve(q)) continue;
     ret(q, COR.calcada);
     const miolo = { x0: q.ix0, y0: q.iy0, x1: q.ix1, y1: q.iy1 };
-    if (q.equip && q.equip.tipo === 'estadio') { ret(miolo, COR.estadio); desenharEstadio(q.estadio.dx, q.estadio.dy); }
+    if (q.equip && q.equip.tipo === 'estadio') { if (q.estadio.modelo) desenharEstadioNovo(q.estadio, px); else { ret(miolo, COR.estadio); desenharEstadio(q.estadio.dx, q.estadio.dy); } }
     else if (q.equip && q.equip.tipo === 'condominio') { ret(miolo, q.equip.cor); ret(q.jardim, '#6f9a55'); if (q.faixaLotes) ret(q.faixaLotes, COR.miolo); }
     else if (q.plantaEquip) desenharPlanta(q.plantaEquip, px);
     else if (q.equip) {
@@ -2791,10 +2817,13 @@ function desenharRotulos(vis, prop) {
     ctx.fillStyle = 'rgba(20,22,21,.78)'; ctx.fillRect(sx - w / 2, sy - 9, w, 18);
     ctx.fillStyle = '#f2f3ef'; ctx.fillText(texto, sx, sy + 0.5);
   };
-  if (s >= 0.07) {
-    /* o nome dos estádios primeiro: é o que mais se procura no mapa */
+  /* o nome dos estádios primeiro, em qualquer zoom: é o que mais se procura
+     no mapa (e o de verdade é grande, dá pra ver de longe) */
+  if (s >= 0.07 || prop) {
     if (!prop) etiqueta('ESTÁDIO', P.CX, P.CY);
-    else for (const e of estadios) etiqueta(e.nome.toUpperCase(), P.CX + e.dx, P.CY + e.dy);
+    else for (const e of estadios) etiqueta(nomeComAcento(e.nome), P.CX + e.dx, P.CY + e.dy);
+  }
+  if (s >= 0.07) {
     for (const e of equipamentos) if (!(prop && e.somePelaProposta)) etiqueta(e.nome, (e.bb.x0 + e.bb.x1) / 2, (e.bb.y0 + e.bb.y1) / 2);
     for (const m of prop ? marcosDeHoje().concat(marcosNovos) : marcos) etiqueta(m.nome, (m.bb.x0 + m.bb.x1) / 2, (m.bb.y0 + m.bb.y1) / 2);
     if (prop) {
@@ -3177,6 +3206,20 @@ function fichaDe(it) {
   if (it.tipo === 'estadio' || (it.tipo === 'quadraNova' && it.q.equip && it.q.equip.tipo === 'estadio')) {
     const e = it.tipo === 'estadio' ? it : estadios.find(x => x.copia === it.q.estadio) || it;
     const noMapa = estado.modo !== 'atual';
+    if (noMapa && e.copia && e.copia.modelo) {
+      const c = e.copia, E = ESTADIOS_JOGO[c.modelo], t = c.terreno, ci = infoDaCidade(cidade), total = ci ? ci.estadios.length : estadios.length, lot = lotacaoDe(e.nome);
+      const LADO = { o: 'a oeste', n: 'ao norte', s: 'ao sul', l: 'a leste' }, FRENTE = { o: 'leste', n: 'sul', s: 'norte', l: 'oeste' };
+      const acesso = c.acesso ? Math.hypot(c.acesso.pontos[1][0] - c.acesso.pontos[0][0], c.acesso.pontos[1][1] - c.acesso.pontos[0][1]) - RUA : 0;
+      return `<p class="sobre">Estádio${e.principal ? '<span class="chip">principal</span>' : ''}</p><h2>${esc(e.nome)}</h2>` + linhas([
+        ['Na praça', `${e.vaga}º de ${total} estádios de ${cidade}`, true],
+        ['Lotação', lot ? milhar(lot) + ' lugares' : 'sem o dado', true],
+        ['Modelo', `${E.nome} (${milhar(E.mil)} lugares de nome)`, true],
+        ['Letreiro', nomeDoLetreiro(e.nome), true],
+        ['Terreno', metros(t.x1 - t.x0) + ' × ' + metros(t.y1 - t.y0), true],
+        ['Portão 1', `de frente pra cidade (virado pro ${FRENTE[c.fora]})` + (acesso > 0 ? `, com a rua de acesso de ${metros(acesso)} até a primeira rua` : ', na rua da cidade'), true],
+        ['Onde', `saiu da vaga ${c.vagaUsada === e.vaga ? 'dele' : 'do ' + c.vagaUsada + 'º estádio'} pra fora da cidade, ${LADO[c.fora]}` + (c.empurrado > 1 ? `, ${metros(c.empurrado)} além da beira dela` : ''), true]
+      ]) + '<p class="nota">O estádio de verdade da praça, no tamanho de verdade: o modelo 3D da lotação dele (até 15 mil lugares, o de 10 mil; até 30 mil, o de 20; acima, o de 40), com a fachada, o letreiro com o nome e os três portões (o 1 e o 2 do mandante, o 3 do visitante) que dão no corredor debaixo da arquibancada e, dele, nos vomitórios. Ele não cabe na vaga da cidade (a vaga tem 77 × 66 m; o de 40 mil pede 284 × 236): sai dela pra fora, do lado dela, no lugar livre mais perto, com o portão 1 de frente pra cidade — o mapa cresce pra caber. Por dentro (os setores, o corredor, o corte), no catálogo de modelos 3D.</p>';
+    }
     const nome = noMapa ? e.nome : 'Estádio', ci = infoDaCidade(cidade), total = ci ? ci.estadios.length : 0;
     /* a distância até a entrada mais perto: em linha reta e pela grade (andando só de norte a sul e de leste a oeste) */
     const cx = P.CX + e.dx, cy = P.CY + e.dy, q = { x0: P.QEST_X0 + e.dx, x1: P.QEST_X1 + e.dx, y0: P.QEST_Y0 + e.dy, y1: P.QEST_Y1 + e.dy };
@@ -3317,12 +3360,13 @@ for (const E of Object.values(ESTADIOS_JOGO)) {
       return sobre + linhas([
         ['Planta', emM(i.planta[0]) + ' × ' + emM(i.planta[1]) + ' (com o terreno)', true], ['Altura', emM(i.alturaArq) + ' na arquibancada'],
         ['Luz', i.luz, true],
+        ['Fachada', i.fachada, true], ['Letreiro', i.letreiro + ' (no mapa, o nome do estádio da praça)', true],
         ['Lugares', milhar(i.lugares) + ' (0,5 m por pessoa)'], ...aneis,
         ['Vomitórios', `${i.vomitorios}, ${i.tipoVom}`, true], ['Triângulos', milhar(i.triangulos) + ' em ' + i.malhas + ' malhas']
       ]) + `<div class="acoes"><button data-acao="setores" aria-pressed="${this.setores}">${this.setores ? 'Esconder os setores' : 'Mostrar os setores'}</button>` +
         cortes + `<button data-acao="glb"${this.baixando ? ' disabled' : ''}>${this.baixando ? 'Gerando o .glb…' : 'Baixar .glb'}</button></div>` +
         (this.erroGlb ? `<p class="nota">${esc(this.erroGlb)}</p>` : '') + entradas + corredores + setores + refs +
-        `<p class="nota">Medido na foto com o campo de régua (105 × 68 m; o de 10 mil, 100 × 68), em metros. O degrau é o de verdade (0,80 m de piso); a foto, gerada, desenha o degrau mais largo ou mais estreito, e com o degrau de verdade a planta da foto ${contaDosLugares(i.lugares, E.mil)}. A camada dos setores (a cor, o nome, a faixa de cada escalão, o nome dos portões e a cor do corredor) liga e desliga; as divisórias de gradil ficam. O corte tira tudo acima do teto do corredor e sobe a câmera: dá pra ver o corredor, os vomitórios e os portões de cima. O .glb leva o que está visível, com as texturas, em metros — o Blender abre direto; no Unity, pelo pacote glTFast. No artefato do claude.ai ele vem dentro de um .zip (o artefato só deixa baixar zip); no GitHub Pages, direto. <code>js/diajogo/estadios3d.js</code>.</p>`;
+        `<p class="nota">Medido na foto com o campo de régua (105 × 68 m; o de 10 mil, 100 × 68), em metros. O degrau é o de verdade (0,80 m de piso); a foto, gerada, desenha o degrau mais largo ou mais estreito, e com o degrau de verdade a planta da foto ${contaDosLugares(i.lugares, E.mil)}. A camada dos setores (a cor, o nome, a faixa de cada escalão, o nome dos portões e a cor do corredor) liga e desliga; as divisórias de gradil ficam. O corte tira tudo acima do teto do corredor e sobe a câmera: dá pra ver o corredor, os vomitórios e os portões de cima. No mapa da praça (a planta e o cenário 3D), cada estádio é este modelo, o da lotação dele, no tamanho de verdade, com o nome dele no letreiro e sem a camada dos setores. O .glb leva o que está visível, com as texturas, em metros — o Blender abre direto; no Unity, pelo pacote glTFast. No artefato do claude.ai ele vem dentro de um .zip (o artefato só deixa baixar zip); no GitHub Pages, direto. <code>js/diajogo/estadios3d.js</code>.</p>`;
     }
   });
 }
@@ -4111,6 +4155,19 @@ function degraus() {
   texDegraus.wrapS = THREE.RepeatWrapping; texDegraus.magFilter = THREE.NearestFilter;
   return texDegraus;
 }
+/* O ESTÁDIO DE VERDADE no mapa: o modelo da lotação (sem a camada dos
+   setores e sem a rua de fora), com o nome dele no letreiro, na escala do
+   mapa, girado com o portão 1 de frente pra cidade e 2 cm acima do chão
+   pintado */
+function objetoDoEstadioNovo(e, g) {
+  const c = e.copia || e;
+  const { grupo } = montarEstadioJogo(c.modelo, { nome: e.nome, mapa: true });
+  grupo.scale.setScalar(M);
+  grupo.rotation.y = -c.giro * Math.PI / 180;
+  grupo.position.set(c.centro[0], 0.02 * M, c.centro[1]);
+  g.add(grupo);
+}
+const objetoDeEstadio = (e, g) => (e.copia || e).modelo ? objetoDoEstadioNovo(e, g) : objetoDoEstadio(e.dx, e.dy, g);
 function objetoDoEstadio(dx, dy, g) {
   const anel = r => P.anel(r).map(([x, y]) => [x + dx, y + dy]);
   caixa(g, P.QEST_X0 + dx, P.QEST_X1 + dx, 0, 1.2, P.QEST_Y0 + dy, P.QEST_Y1 + dy, '#b9b4a6');
@@ -4598,7 +4655,7 @@ function pecasDoCenario() {
      plataforma, o trem parado), que o boneco a pé desce pra ver */
   for (const it of estacoes) poe('metro', it, g => objetoDaEstacao(it, g));
   for (const it of porticos) poe('portico', it, g => objetoDoPortico(it.p, g));
-  for (const e of estadios) poe('estadio', e, g => objetoDoEstadio(e.dx, e.dy, g));
+  for (const e of estadios) poe('estadio', e, g => objetoDeEstadio(e, g));
   /* o poste e o prop de hoje que ficam na calçada sobem na laje dela */
   const naLaje = (x, y) => !!CALCADAS && CALCADAS.naLaje(x, y);
   for (const p of pecasSoltas) if (!p.somePelaProposta) poe(p.k === 'poste' ? 'poste' : 'prop', p, g => objetoDoProp(naLaje(p.x, p.y) ? { ...p, alt: CALCADA_ALT } : p, g));
@@ -4773,7 +4830,7 @@ function criarVista(canvas) {
         else if (it.tipo === 'portico') objetoDoPortico(it.p, grupo);
         else if (it.tipo === 'espaco') objetoDoEspaco(it, grupo);
         else if (it.tipo === 'estacao') objetoDaEstacao(it, grupo);
-        else if (it.tipo === 'estadio') objetoDoEstadio(it.dx, it.dy, grupo);
+        else if (it.tipo === 'estadio') objetoDeEstadio(it, grupo);
         else if (it.tipo === 'modelo') it.montar(grupo);
         else if (it.tipo === 'quadraNova') {
           const e = it.q.equip;
@@ -4782,7 +4839,7 @@ function criarVista(canvas) {
             caixa(grupo, it.q.x0, it.q.x1, 0, 1.4, it.q.y0, it.q.y1, '#a9a69b');
             for (const pc of e.torres) objetoDoMarco({ pc }, grupo);
             for (const l of it.q.lotes) objetoDoLote(l, grupo);
-          } else if (e && e.tipo === 'estadio') objetoDoEstadio(it.q.estadio.dx, it.q.estadio.dy, grupo);
+          } else if (e && e.tipo === 'estadio') objetoDeEstadio(estadios.find(x => x.copia === it.q.estadio) || it.q.estadio, grupo);
           else if (e) objetoDeEstudo(it.q, grupo);
           else objetoDaQuadra(it.q, grupo, true);
         }
@@ -4910,7 +4967,7 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
   get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; },
-  get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm };
+  get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm, pecasDoCenario };
 
 /* ======================================================
    O CENÁRIO 3D (js/cenario.js): o mapa inteiro em 3D, por cima da planta

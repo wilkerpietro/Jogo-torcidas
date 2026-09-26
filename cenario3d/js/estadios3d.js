@@ -25,8 +25,9 @@
      volta do campo com as quatro pontes (as do leste e do oeste são os
      túneis dos jogadores), o anel de baixo, o corredor entre os anéis,
      o anel de cima com 29 vomitórios e as muretas que dividem em
-     blocos, a pista de ônibus em volta, os prédios de entrada do leste
-     e do oeste e as torres de escada do norte e do sul.
+     blocos, a pista de ônibus em volta e as bilheterias do norte e do
+     sul. (Os prédios de entrada do leste e do oeste da foto saíram:
+     tapavam o portão 1, o 2 e o letreiro.)
 
    POR DENTRO, nos três: o CORREDOR debaixo da arquibancada (o de 40 mil
    tem dois: o do chão e o de cima), onde a torcida anda, compra e briga
@@ -38,6 +39,19 @@
    mandante, portão 3 do visitante —, cada uma com catraca, placa e a
    porta que dá no trecho do corredor do lado dela. A vista em corte
    (`cortarEstadio`) tira o teto do corredor pra ver tudo isso de cima.
+
+   POR FORA: no de 20 e no de 40 mil, a FACHADA de concreto aparente —
+   o pilar a cada 6 m, a faixa de cada laje, o cobogó entre eles, o
+   embasamento e a cimalha —, o LETREIRO com o nome do estádio em cima
+   do portão 1 (e no oeste) e, em cada um dos três portões, o PÓRTICO:
+   os pilares, a verga com o setor, a marquise com a barra na cor do
+   lado e a placa do portão em cima, e a FILA com a grade de contenção.
+   No de 10 mil, o muro caiado com a barra azul, o nome pintado e o
+   ARCO do portão 1 com o nome. O nome vem de quem monta (`opc.nome`,
+   o do estádio da praça); sem ele, o de fábrica. No mapa da cidade
+   (`opc.mapa`) o estádio sai sem a camada dos setores e sem a rua de
+   fora: o terreno (`info.terreno`) encosta na rua do mapa, com o
+   portão 1 no +x.
 
    OS SETORES do dono (mandante 1º/2º/3º escalão, visitante 1º/2º/3º,
    a PM) vão numa camada à parte — o grupo `setores`, com a cor por
@@ -284,24 +298,60 @@ function pintarRefletor() {
   }
   return virarTextura(c, { repete: false });
 }
-/* A FACHADA: 12 × 6 m — pilar a cada 6 m, o painel recuado, a viga de
-   cima e as janelas de ventilação; repete pra cima de 6 em 6 m */
+/* A FACHADA: 12 m × dois andares (dois vãos de 6 m entre pilares). O
+   pilar, a faixa da laje, o embasamento e a cimalha são de verdade
+   (fachadaDetalhada); aqui fica o que vai entre eles: a viga da laje (o
+   pé do andar) com a sombra embaixo dela, o painel de concreto com a
+   junta da fôrma a cada 60 cm e, um andar sim, um não, o COBOGÓ (a
+   grelha de furos de 20 cm a cada 30, com a moldura) e o BRISE (as
+   lâminas deitadas com a sombra entre elas), com o escorrido da chuva
+   embaixo. O canvas é de cabeça pra baixo: a linha de baixo é o piso do
+   andar do cobogó; o andar de 6 m aqui estica pro andar de cada estádio. */
 function pintarFachada() {
-  const W = 1024, H = 512, c = tela(W, H), pxm = W / 12;
-  const n = ruido(W, H, [[128, 11], [32, 7], [4, 5]], sorteio(71));
+  const W = 1024, H = 1024, c = tela(W, H), pxm = W / 12, pym = H / 12;
+  const n = ruido(W, H, [[128, 10], [32, 6], [4, 5]], sorteio(71));
   const e = ruido(W, H, [[8, 16, 220]], sorteio(72));
   const ctx = pixels(c, (i, x, y) => {
-    const xm = (x / pxm) % 6, ym = y / pxm;
-    let v = 198 + n[i] + Math.min(0, e[i]) * 1.2;
-    if (xm < 0.9) v += 10; else if (xm < 1.0 || xm > 5.92) v -= 34; else v -= 8;
-    if (ym < 0.55) v += 12; else if (ym < 0.63) v -= 36;
+    const xm = (x / pxm) % 6, ym = ((H - 1 - y) / pym) % 6;
+    let v = 196 + n[i] + Math.min(0, e[i]) * 1.1;
+    if (ym < 0.6) v += 12;
+    else if (ym < 0.68) v -= 30;
+    else if ((ym - 0.68) % 0.6 < 0.025) v -= 9;
+    if (xm < 0.45 || xm > 5.55) v -= 12;
     return [cl(v + 3, 0, 255), cl(v + 1, 0, 255), cl(v - 3, 0, 255)];
   });
-  for (const x0 of [0, 6]) for (const k of [0, 1]) {
-    const x = (x0 + 1.9 + k * 2.4) * pxm, y = 0.95 * pxm, w = 1.2 * pxm, h = 0.45 * pxm;
-    ctx.fillStyle = 'rgba(40,40,42,0.9)'; ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = 'rgba(150,150,150,0.55)';
-    for (let j = 1; j < 6; j++) ctx.fillRect(x, y + j * h / 6, w, 1.5);
+  /* metros acima do piso do andar k (0: o do cobogó, 1: o do brise) → linha do canvas */
+  const Y = (m, k) => H - (k * 6 + m) * pym;
+  const escorrido = (xa, xb, yb, ate) => {
+    const g = ctx.createLinearGradient(0, yb, 0, ate);
+    g.addColorStop(0, 'rgba(66,60,52,0.26)'); g.addColorStop(1, 'rgba(66,60,52,0)');
+    ctx.fillStyle = g; ctx.fillRect(xa + 8, yb, xb - xa - 16, ate - yb);
+  };
+  for (const x0 of [0, 6]) {
+    /* o cobogó */
+    let xa = (x0 + 1.0) * pxm, xb = (x0 + 5.0) * pxm, ya = Y(4.3, 0), yb = Y(1.3, 0);
+    const m = 0.12 * pxm;
+    escorrido(xa, xb, yb, Y(0.72, 0));
+    ctx.fillStyle = '#e6e0d2'; ctx.fillRect(xa - m, ya - m, xb - xa + 2 * m, yb - ya + 2 * m);
+    ctx.fillStyle = 'rgba(96,90,80,0.9)'; ctx.fillRect(xa - m, yb + m, xb - xa + 2 * m, 0.05 * pym);
+    const p = 0.3 * pxm, f = 0.2 * pxm, py = 0.3 * pym, fy = 0.2 * pym;
+    for (let yy = ya + 0.05 * pym; yy + fy <= yb + 0.5; yy += py) for (let xx = xa + 0.05 * pxm; xx + f <= xb + 0.5; xx += p) {
+      ctx.fillStyle = '#34312c'; ctx.fillRect(xx, yy, f, fy);
+      ctx.fillStyle = 'rgba(255,250,240,0.22)'; ctx.fillRect(xx, yy + fy - 2, f, 2);
+    }
+    /* o brise: 12 lâminas deitadas no vão escuro, a de cima clara e a sombra embaixo de cada uma */
+    xa = (x0 + 0.8) * pxm; xb = (x0 + 5.2) * pxm; ya = Y(4.7, 1); yb = Y(1.0, 1);
+    escorrido(xa, xb, yb, Y(0.72, 1));
+    ctx.fillStyle = '#e6e0d2'; ctx.fillRect(xa - m, ya - m, xb - xa + 2 * m, yb - ya + 2 * m);
+    ctx.fillStyle = '#2f2c28'; ctx.fillRect(xa, ya, xb - xa, yb - ya);
+    const passo = (yb - ya) / 12;
+    for (let k = 0; k < 12; k++) {
+      const y = ya + k * passo;
+      ctx.fillStyle = '#d8d1c2'; ctx.fillRect(xa, y, xb - xa, passo * 0.58);
+      ctx.fillStyle = '#f1ece1'; ctx.fillRect(xa, y, xb - xa, 2);
+      ctx.fillStyle = 'rgba(40,36,32,0.55)'; ctx.fillRect(xa, y + passo * 0.58, xb - xa, passo * 0.14);
+    }
+    ctx.fillStyle = 'rgba(96,90,80,0.9)'; ctx.fillRect(xa - m, yb + m, xb - xa + 2 * m, 0.05 * pym);
   }
   return virarTextura(c);
 }
@@ -314,18 +364,20 @@ function pintarBoca() {
   ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fillRect(0, W * 0.24, W, W * 0.04);
   return virarTextura(c, { repete: false });
 }
-/* AS PLACAS ESCRITAS (o portão, o balcão do corredor): uma folha de 2 × 8 */
+/* AS PLACAS ESCRITAS (o portão, o setor, o balcão do corredor, o
+   vomitório, a bilheteria): uma folha de 2 × 10 */
 const SINAIS = [
   ['PORTÃO 1 · MANDANTE', '#1b6e36', '#ffffff'], ['PORTÃO 2 · MANDANTE', '#1b6e36', '#ffffff'], ['PORTÃO 3 · VISITANTE', '#b3261e', '#ffffff'],
   ['LANCHES', '#e65100', '#ffffff'], ['BAR', '#5e2a84', '#ffffff'], ['CHURRASQUINHO', '#9f1c1c', '#ffffff'], ['PASTEL', '#f2b705', '#2b1d00'],
   ['ÁGUA · REFRIGERANTE', '#0b67a8', '#ffffff'], ['CACHORRO-QUENTE', '#c2410c', '#ffffff'], ['SORVETE', '#b0226b', '#ffffff'],
   ['BANHEIRO', '#37474f', '#ffffff'], ['VOMITÓRIO', '#263238', '#f2b705'], ['SETOR VISITANTE', '#b3261e', '#ffffff'], ['SETOR MANDANTE', '#1b6e36', '#ffffff'],
-  ['PM', '#1f3f9a', '#ffffff'], ['SAÍDA', '#2e7d32', '#ffffff']
+  ['PM', '#1f3f9a', '#ffffff'], ['SAÍDA', '#2e7d32', '#ffffff'], ['BILHETERIA', '#0b4f8a', '#ffffff'], ['CORREDOR · VOMITÓRIOS', '#263238', '#f2b705']
 ];
+const FILAS_SINAIS = 10;
 const SINAL = Object.fromEntries(SINAIS.map((x, i) => [x[0], i]));
 const VENDAS = ['LANCHES', 'BAR', 'CHURRASQUINHO', 'PASTEL', 'ÁGUA · REFRIGERANTE', 'CACHORRO-QUENTE', 'SORVETE', 'BANHEIRO'].map(n => SINAL[n]);
 function pintarSinais() {
-  const W = 1024, c = tela(W, W), ctx = c.getContext('2d');
+  const W = 1024, c = tela(W, FILAS_SINAIS * 128), ctx = c.getContext('2d');
   SINAIS.forEach(([txt, fundo, letra], i) => {
     const x = (i % 2) * 512, y = Math.floor(i / 2) * 128;
     ctx.fillStyle = fundo; ctx.fillRect(x, y, 512, 128);
@@ -336,7 +388,7 @@ function pintarSinais() {
   return virarTextura(c, { repete: false });
 }
 /* a célula k da folha: [u0, v0, u1, v1] */
-const celulaDoSinal = k => { const col = k % 2, fil = Math.floor(k / 2); return [col * 0.5 + 0.004, 1 - (fil + 1) / 8 + 0.004, col * 0.5 + 0.496, 1 - fil / 8 - 0.004]; };
+const celulaDoSinal = k => { const col = k % 2, fil = Math.floor(k / 2); return [col * 0.5 + 0.004, 1 - (fil + 1) / FILAS_SINAIS + 0.004, col * 0.5 + 0.496, 1 - fil / FILAS_SINAIS - 0.004]; };
 const PINTORES = {
   concreto: pintarConcreto, parede: pintarParede, piso: pintarPiso, grama: pintarGrama, terra: pintarTerra,
   asfalto: pintarAsfalto, gradil: pintarGradil, rede: pintarRede, trelica: pintarTrelica, placas: pintarPlacas,
@@ -391,6 +443,40 @@ function pintarCampo(c) {
   return virarTextura(cv, { repete: false });
 }
 
+/* O NOME DO LETREIRO: em maiúscula, com o acento que falta na planilha
+   (dados/estadios.js vem sem alguns) e "ESTÁDIO" na frente de quem não é
+   estádio nem arena ("DO" nos apelidos que pedem) */
+const ACENTOS = [['ESTADIO', 'ESTÁDIO'], ['CENTENARIO', 'CENTENÁRIO'], ['GREMIO', 'GRÊMIO'], ['MANGUEIRAO', 'MANGUEIRÃO'], ['MINEIRAO', 'MINEIRÃO'],
+  ['SAO', 'SÃO'], ['QUIMICA', 'QUÍMICA'], ['MENDONCA', 'MENDONÇA'], ['MOCA', 'MOÇA'], ['ANTONIO', 'ANTÔNIO'], ['INDEPENDENCIA', 'INDEPENDÊNCIA'], ['KRUGER', 'KRÜGER']];
+const COM_DO = ['MORUMBI', 'MARACANÃ', 'ARRUDA', 'CANINDÉ', 'JUNCO'];
+/* só a maiúscula com o acento (a etiqueta do estádio na planta usa esta) */
+export function nomeComAcento(nome) {
+  let t = ' ' + String(nome || '').trim().replace(/\s+/g, ' ').toUpperCase() + ' ';
+  for (const [a, b] of ACENTOS) t = t.split(' ' + a + ' ').join(' ' + b + ' ');
+  return t.trim();
+}
+export function nomeDoLetreiro(nome) {
+  const t = nomeComAcento(nome);
+  if (COM_DO.includes(t)) return 'ESTÁDIO DO ' + t;
+  return /^(ESTÁDIO|ARENA) /.test(t) || / (ARENA|PARQUE)$/.test(t) ? t : 'ESTÁDIO ' + t;
+}
+/* AS LETRAS DO LETREIRO, recortadas: a face e (com `sombra`) a espessura
+   mais escura, pra baixo e pro lado; o nome comprido aperta na largura
+   (até 3072 px). `aspecto` é a largura sobre a altura. */
+const LETREIROS = new Map();
+function pintarLetreiro(texto, cor, sombra) {
+  const H = 192, fonte = '900 150px "Arial Black", "Arial", "Helvetica", sans-serif';
+  const m = tela(4, 4).getContext('2d');
+  m.font = fonte;
+  const w = Math.ceil(m.measureText(texto).width) + 48, W = Math.max(64, Math.min(3072, w)), esc = Math.min(1, (W - 48) / Math.max(1, w - 48));
+  const c = tela(W, H), ctx = c.getContext('2d');
+  ctx.font = fonte; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.setTransform(esc, 0, 0, 1, W / 2, H / 2 + 6);
+  if (sombra) { ctx.fillStyle = sombra; for (let k = 7; k >= 1; k--) ctx.fillText(texto, k * 0.9, k * 0.9); }
+  ctx.fillStyle = cor; ctx.fillText(texto, 0, 0);
+  return { mapa: virarTextura(c, { repete: false, alfa: true }), aspecto: W / H };
+}
+
 /* O ROTULO (o nome do setor) e a FAIXA da torcida: canvas próprio */
 function rotulo(texto, cor, larg) {
   const W = 1024, H = 200, c = tela(W, H), ctx = c.getContext('2d');
@@ -426,7 +512,8 @@ const NOMES = {
   degrau: 'degraus', parede: 'paredes', fachada: 'fachada', piso: 'pisos', grama: 'grama', terra: 'terra', asfalto: 'asfalto',
   escuro: 'vaos', boca: 'bocas_de_tunel', gradil: 'gradil', rede: 'redes', trelica: 'torres', placas: 'placas',
   refletor: 'refletores', pintura: 'pintura', lona: 'lona', vidro: 'vidro', nariz: 'faixa_branca',
-  corr_piso: 'corredor_piso', corr_parede: 'corredor_paredes', corr_teto: 'corredor_teto', sinais: 'placas_escritas', lampada: 'luminarias'
+  corr_piso: 'corredor_piso', corr_parede: 'corredor_paredes', corr_teto: 'corredor_teto', sinais: 'placas_escritas', lampada: 'luminarias',
+  braco: 'bracos_da_catraca'
 };
 function material(k) {
   if (MAT[k]) return MAT[k];
@@ -455,6 +542,8 @@ function material(k) {
     /* o teto do corredor não pega sol: um pouco de luz própria (as luminárias acesas) */
     corr_teto: () => L({ map: tex('parede'), vertexColors: true, emissive: 0x57544c }),
     lampada: () => L({ color: 0xfffaf0, emissive: 0xfff1d0, emissiveIntensity: 0.9 }),
+    /* o braço da catraca gira: quem anda (o boneco no cenário) passa por ele */
+    braco: () => Object.assign(L({ vertexColors: true }), { userData: { semRisco: true } }),
     sinais: () => L({ map: tex('sinais'), side: THREE.DoubleSide })
   };
   if (k.startsWith('setor:')) MAT[k] = new THREE.MeshBasicMaterial({ color: k.slice(6), transparent: true, opacity: 0.5, depthWrite: false,
@@ -475,7 +564,7 @@ function novaObra() {
         if (M.vazia) continue;
         const mat = proprios[k] ? (MAT[k] || (MAT[k] = proprios[k]())) : material(k);
         const malha = new THREE.Mesh(M.geometria(), mat);
-        malha.name = k.startsWith('setor:') ? 'setor' : k.startsWith('campo:') ? 'gramado' : NOMES[k] || k;
+        malha.name = k.startsWith('setor:') ? 'setor' : k.startsWith('campo:') ? 'gramado' : k.startsWith('letreiro:') ? 'letreiro' : NOMES[k] || k;
         if (sombra && !k.startsWith('setor:')) { malha.castShadow = !['vidro', 'nariz', 'rede'].includes(k); malha.receiveShadow = true; }
         grupo.add(malha);
       }
@@ -779,7 +868,7 @@ function arquibancada(O, fam, c) {
         const dp = dn + t.larg, ytop = yn + t.par;
         paredeV(Mpar, dp, yn, ytop, i, tParede, -1);
         pisoH(Mpar, dp, dp + 0.25, ytop, i, tParede);
-        if (t.fachada) { const vao = (t.vaos || []).find(e => naFaixa(e, meio(i))); paredeV(O.m('fachada'), dp + 0.25, vao ? t.yChao + vao.h : t.yChao, ytop, i, t.corFachada || tParede, 1, 12, 6, t.yChao); }
+        if (t.fachada) { const vao = (t.vaos || []).find(e => naFaixa(e, meio(i))); paredeV(O.m('fachada'), dp + 0.25, vao ? t.yChao + vao.h : t.yChao, ytop, i, t.corFachada || tParede, 1, 12, 2 * (t.andar || 6), t.yChao); }
         else paredeV(Mpar, dp + 0.25, yn, ytop, i, tParede, 1);
       }
     }
@@ -1161,6 +1250,175 @@ function gradilReto(O, x0, z0, x1, z1, y0, h) {
 }
 
 /* ======================================================
+   A FACHADA DE FORA. No de 20 e no de 40 mil, o concreto aparente em
+   pórtico: o PILAR a cada 6 m, a FAIXA de cada laje, o EMBASAMENTO
+   escuro embaixo e a CIMALHA em cima, com o cobogó pintado entre eles;
+   o LETREIRO com o nome do estádio; e em cada portão o PÓRTICO — os
+   dois pilares, a verga com a placa do setor, a marquise com a barra na
+   cor do lado, a placa do portão em pé em cima dela e as luminárias
+   embaixo — e a FILA: a grade de contenção em raias de 1 m. No de 10
+   mil, o muro caiado ganha a barra azul, o capeamento, o nome pintado e
+   o arco do portão 1.
+   ====================================================== */
+/* O RELEVO DA FACHADA da arquibancada A (a que tem `topo.fachada`). `c`:
+   pilar [largura, fundo], portas (os planos das entradas: o pilar não
+   cai no pórtico), pula (trechos de u sem relevo: a torre do meio do de
+   20 mil), cor, corBase */
+function fachadaDetalhada(O, A, c) {
+  const fam = A.fam, t = A.c.topo, dF = A.dn + t.larg + 0.25, y0 = t.yChao, y1 = A.yn + t.par, andar = t.andar || 6;
+  const Mw = O.m('parede'), COR = c.cor, [pw, pp] = c.pilar, pula = c.pula || [], portas = c.portas || [];
+  const naFaixa = (e, u) => [u, u - 9, u + 9].some(x => x > e.ua && x < e.ub);
+  const perto = (x, z) => portas.some(E => {
+    const dx = x - E.Q.P0[0], dz = z - E.Q.P0[1];
+    return Math.abs(dx * E.Q.w[0] + dz * E.Q.w[1]) < 4 && Math.abs(dx * E.Q.tv[0] + dz * E.Q.tv[1]) < E.hl + 1.9;
+  });
+  /* O PILAR a cada 6 m, contado do mesmo começo da textura (o comprimento
+     no anel da fachada, pelas mesmas amostras): cai sempre na faixa
+     escura pintada; vai do chão até a cimalha */
+  const us = A.us, R = us.map(u => fam.ponto(dF, u)), len = comprimentos(R), yP = y1 - 1.3;
+  let pilares = 0;
+  for (let L = 0, i = 0; L < len[len.length - 1] - 1; L += 6) {
+    while (i < len.length - 2 && len[i + 1] < L) i++;
+    const f = (L - len[i]) / Math.max(1e-9, len[i + 1] - len[i]), a = R[i], b = R[i + 1];
+    const x = a[0] + (b[0] - a[0]) * f, z = a[1] + (b[1] - a[1]) * f;
+    if (perto(x, z) || pula.some(e => naFaixa(e, us[i] + (us[i + 1] - us[i]) * f))) continue;
+    let nx = a[2] + (b[2] - a[2]) * f, nz = a[3] + (b[3] - a[3]) * f;
+    const l = Math.hypot(nx, nz); nx /= l; nz /= l;
+    caixa(Mw, x + nx * (pp / 2 - 0.05), y0, z + nz * (pp / 2 - 0.05), pw, pp, yP - y0, Math.atan2(nz, nx) + Math.PI / 2, COR, 4);
+    pilares++;
+  }
+  /* a faixa corrida em volta (na reta, um pedaço só): a frente no anel dB,
+     de ya a yb, o topo e (se pedir) o fundo até dentro da fachada e as
+     costas (a cimalha, vista do corredor de cima) */
+  const faixa = (dB, ya, yb, cor, vaos, fundo, costas) => {
+    const fora = u => [...pula, ...vaos].some(e => naFaixa(e, u));
+    const uu = fam.amostras(0, 9, [...pula, ...vaos].flatMap(e => [e.ua, e.ub]));
+    const Fr = uu.map(u => fam.ponto(dB, u)), Tr = uu.map(u => fam.ponto(dF - 0.3, u)), Lf = comprimentos(Fr);
+    const reto = j => { const a = Fr[j - 1], b = Fr[j], q = Fr[j + 1]; return Math.abs((b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0])) < 1e-4 * Math.hypot(q[0] - a[0], q[1] - a[1]); };
+    const P = (q, y) => [q[0], y, q[1]], chao = (q, y) => pl(P(q, y), 4);
+    for (let i = 0; i < uu.length - 1;) {
+      if (fora((uu[i] + uu[i + 1]) / 2)) { i++; continue; }
+      let j = i + 1;
+      while (j < uu.length - 1 && !fora((uu[j] + uu[j + 1]) / 2) && reto(j)) j++;
+      const a = Fr[i], b = Fr[j], ta = Tr[i], tb = Tr[j];
+      Mw.quad(P(a, ya), P(b, ya), P(b, yb), P(a, yb), [Lf[i] / 4, ya / 4], [Lf[j] / 4, ya / 4], [Lf[j] / 4, yb / 4], [Lf[i] / 4, yb / 4], cor, [a[2] + b[2], 0, a[3] + b[3]]);
+      Mw.quad(P(ta, yb), P(tb, yb), P(b, yb), P(a, yb), chao(ta, yb), chao(tb, yb), chao(b, yb), chao(a, yb), cor, CIMA);
+      if (fundo) Mw.quad(P(ta, ya), P(tb, ya), P(b, ya), P(a, ya), chao(ta, ya), chao(tb, ya), chao(b, ya), chao(a, ya), vezes(cor, 0.82), [0, -1, 0]);
+      if (costas) Mw.quad(P(ta, y1), P(tb, y1), P(tb, yb), P(ta, yb), [0, 0], [1, 0], [1, 0.1], [0, 0.1], cor, [-(ta[2] + tb[2]), 0, -(ta[3] + tb[3])]);
+      i = j;
+    }
+  };
+  faixa(dF + 0.1, y0, y0 + 1.0, c.corBase, t.vaos || [], false, false);
+  let faixas = 0;
+  for (let y = y0 + andar; y < y1 - 1.6; y += andar, faixas++) faixa(dF + 0.22, y - 0.18, y + 0.18, COR, [], true, false);
+  faixa(dF + 0.65, y1 - 1.3, y1 + 0.12, COR, [], true, true);
+  return { pilares, faixas, andar };
+}
+/* O LETREIRO em pé no quadro Q, a face em s, centrado em t = 0: as letras
+   de `alto` metros a partir de y0 (até `larg` de largura: o nome
+   comprido fica mais baixo). Com `placa` (a cor), a placa atrás, `sai`
+   metros pra fora do s, com `margem` em volta; sem ela, as letras são
+   pintadas direto na parede. */
+function letreiro(O, Q, s, texto, y0, alto, larg, c = {}) {
+  const cor = c.cor || '#f6f3ea', sombra = c.sombra === undefined ? '#8e969d' : c.sombra, chave = 'letreiro:' + [texto, cor, sombra].join('|');
+  if (!LETREIROS.has(chave)) LETREIROS.set(chave, pintarLetreiro(texto, cor, sombra));
+  const L = LETREIROS.get(chave);
+  O.proprio(chave, () => new THREE.MeshLambertMaterial({ name: 'letreiro', map: L.mapa, alphaTest: 0.5 }));
+  const w = Math.min(larg, alto * L.aspecto), h = w / L.aspecto, ya = y0 + (alto - h) / 2, yb = ya + h;
+  let sf = s;
+  if (c.placa) {
+    const m = c.margem ?? 0.45, sp = s - c.sai, ta = -w / 2 - 2 * m, tb = w / 2 + 2 * m, Mp = O.m('pintura');
+    caixaL(Mp, Q, sp, s + 0.1, ta, tb, y0 - m, y0 + alto + m, c.placa);
+    const f = [Q.L(sp, ta, y0 - m), Q.L(s, ta, y0 - m), Q.L(s, tb, y0 - m), Q.L(sp, tb, y0 - m)];
+    Mp.quad(f[0], f[1], f[2], f[3], [0, 0], [1, 0], [1, 1], [0, 1], vezes(c.placa, 0.8), [0, -1, 0]);
+    sf = sp;
+  }
+  const f = sf - 0.02;
+  O.m(chave).quad(Q.L(f, -w / 2, ya), Q.L(f, w / 2, ya), Q.L(f, w / 2, yb), Q.L(f, -w / 2, yb), [0, 0], [1, 0], [1, 1], [0, 1], BRANCO, Q.dir(-1, 0));
+  return { largura: w, altura: h };
+}
+/* A GRADE DE CONTENÇÃO da fila: de s0 a s1 no t, `h` de altura, o tubo
+   em cima e um pé a cada 2,5 m */
+function grade(O, Q, t, s0, s1, h) {
+  const a = Q.L(s0, t, 0), b = Q.L(s1, t, 0), L = Math.abs(s1 - s0), sa = Math.min(s0, s1), sb = Math.max(s0, s1), Mp = O.m('pintura'), TUBO = lin('#8e969b');
+  O.m('gradil').quad([a[0], 0.05, a[2]], [b[0], 0.05, b[2]], [b[0], h, b[2]], [a[0], h, a[2]], [0, 0], [L / 2.5, 0], [L / 2.5, 1], [0, 1]);
+  caixaL(Mp, Q, sa, sb, t - 0.025, t + 0.025, h, h + 0.05, TUBO);
+  const n = Math.max(1, Math.ceil(L / 2.5));
+  for (let j = 0; j <= n; j++) { const s = sa + (sb - sa) * j / n; caixaL(Mp, Q, s - 0.03, s + 0.03, t - 0.03, t + 0.03, 0, h, TUBO); }
+}
+/* O PÓRTICO DO PORTÃO na fachada ou no muro (o plano da entrada E, a porta
+   de `h` de altura). `c`: sai (quanto a marquise sai), lado, placa (a do
+   portão), setor (a da verga), fila [s0, s1] (pra fora, negativos) e cor.
+   Os pilares ficam 2 cm pra fora da parede do salão (face nenhuma
+   coincide) e entram 30 cm na fachada (na curva a de trás some nela). */
+function porticoDoPortao(O, E, c) {
+  const { Q, hl } = E, h = c.h, esp = 0.28, yM = h + 1.1, sai = c.sai, T = hl + 1.6;
+  const Mw = O.m('parede'), Mp = O.m('pintura'), CONC = c.cor || lin('#dcd6ca'), LADO = lin(c.lado === 'visitante' ? '#b3261e' : '#1b6e36');
+  caixaL(Mw, Q, -0.9, 0.3, hl + 0.02, hl + 1.0, 0, yM - esp, CONC, 4);
+  caixaL(Mw, Q, -0.9, 0.3, -hl - 1.0, -hl - 0.02, 0, yM - esp, CONC, 4);
+  caixaL(Mw, Q, -0.45, 0.3, -hl - 0.02, hl + 0.02, h, yM - esp, CONC, 4);
+  const vb = [Q.L(-0.45, -hl, h), Q.L(0, -hl, h), Q.L(0, hl, h), Q.L(-0.45, hl, h)];
+  Mw.quad(vb[0], vb[1], vb[2], vb[3], pl(vb[0], 4), pl(vb[1], 4), pl(vb[2], 4), pl(vb[3], 4), vezes(CONC, 0.85), [0, -1, 0]);
+  /* a marquise: a laje, o forro, a barra da frente na cor do lado e as luminárias */
+  caixaL(Mp, Q, -sai, 0.3, -T, T, yM - esp, yM, lin('#ece8df'));
+  const fb = [Q.L(-sai, -T, yM - esp), Q.L(0, -T, yM - esp), Q.L(0, T, yM - esp), Q.L(-sai, T, yM - esp)];
+  Mp.quad(fb[0], fb[1], fb[2], fb[3], [0, 0], [1, 0], [1, 1], [0, 1], lin('#d4d0c6'), [0, -1, 0]);
+  paredeL(Mp, Q, -sai - 0.012, -T, -sai - 0.012, T, yM - esp + 0.05, yM - 0.05, LADO, -1, 0);
+  for (const t of [-hl / 2, hl / 2]) { const p = Q.L(-sai / 2, t, yM - esp - 0.015); luminaria(O, p[0], p[1], p[2], Q.w[0], Q.w[1]); }
+  /* a placa do portão em pé em cima da marquise, a do setor na verga */
+  const w = Math.min(hl + 0.9, 3.4);
+  placaSinal(O, Q, -sai + 0.35, -w, w, yM + 0.04, yM + 0.04 + w / 2, c.placa);
+  if (c.setor != null) placaSinal(O, Q, -0.6, -1.3, 1.3, h + 0.09, h + 0.74, c.setor);
+  /* a fila: raias de 1 m (um número ímpar: a do meio fica no eixo) */
+  let raias = 0;
+  if (c.fila) {
+    raias = Math.max(1, Math.round(2 * hl)) | 1;
+    for (let k = 0; k <= raias; k++) grade(O, Q, -hl + 2 * hl * k / raias, c.fila[0], c.fila[1], 1.1);
+  }
+  return { raias };
+}
+/* a faixa de pedestre atravessada (listras de 50 cm a cada metro, no rumo de quem anda) */
+function faixaDePedestre(O, Q, s0, s1, t0, t1) {
+  const M = O.m('pintura'), B = lin('#eeeee8');
+  for (let t = t0; t + 0.5 <= t1 + 1e-6; t += 1.0) {
+    const a = Q.L(s0, t, 0.02), b = Q.L(s1, t, 0.02), c = Q.L(s1, t + 0.5, 0.02), d = Q.L(s0, t + 0.5, 0.02);
+    M.quad(a, b, c, d, [0, 0], [1, 0], [1, 1], [0, 1], B, CIMA);
+  }
+}
+/* A BILHETERIA: a casinha (de s0 a s1 no quadro, t0 a t1; a frente em s0,
+   virada pra −w), o telhado que sai na frente, as janelas com o balcão e
+   a placa em cima */
+function bilheteria(O, Q, s0, s1, t0, t1, h, corTeto = '#2f5f8a') {
+  const Mp = O.m('pintura'), TETO = lin(corTeto), VIDRO = lin('#2a2c2e'), TAMPO = lin('#8a8f94');
+  caixaL(Mp, Q, s0, s1, t0, t1, 0, h, lin('#e7e2d5'));
+  caixaL(Mp, Q, s0 - 0.35, s1 + 0.1, t0 - 0.2, t1 + 0.2, h, h + 0.22, TETO);
+  const r = [Q.L(s0 - 0.35, t0 - 0.2, h), Q.L(s0, t0 - 0.2, h), Q.L(s0, t1 + 0.2, h), Q.L(s0 - 0.35, t1 + 0.2, h)];
+  Mp.quad(r[0], r[1], r[2], r[3], [0, 0], [1, 0], [1, 1], [0, 1], vezes(TETO, 0.7), [0, -1, 0]);
+  const n = Math.max(1, Math.round((t1 - t0) / 1.5)), w = (t1 - t0) / n;
+  for (let j = 0; j < n; j++) {
+    const ta = t0 + j * w + 0.22, tb = t0 + (j + 1) * w - 0.22;
+    paredeL(Mp, Q, s0 - 0.01, ta, s0 - 0.01, tb, 1.0, 1.95, VIDRO, -1, 0);
+    caixaL(Mp, Q, s0 - 0.28, s0, ta - 0.06, tb + 0.06, 0.94, 1.0, TAMPO);
+  }
+  const tm = (t0 + t1) / 2, ws = Math.min((t1 - t0) / 2 - 0.1, 1.3);
+  placaSinal(O, Q, s0 - 0.5, tm - ws, tm + ws, h + 0.24, h + 0.24 + ws / 2, SINAL.BILHETERIA);
+}
+/* o acabamento do muro reto (o mesmo de `muro`): a barra de 1 m pintada
+   na face de fora (`fora`: +1 ou −1 no eixo que não muda) e o capeamento
+   em cima (que passa por cima das portas de verga) */
+function acabamentoDoMuro(O, x0, z0, x1, z1, esp, h, fora, vaos, barra, capa) {
+  const emX = z0 === z1, a0 = emX ? Math.min(x0, x1) : Math.min(z0, z1), a1 = emX ? Math.max(x0, x1) : Math.max(z0, z1), fixo = emX ? z0 : x0;
+  const f = fixo + fora * (esp / 2 + 0.012), Mw = O.m('parede');
+  const trechos = lista => { const out = []; let a = a0; for (const [p, q] of [...lista].sort((m, n) => m[0] - n[0])) { if (p > a) out.push([a, p]); a = Math.max(a, q); } if (a1 > a) out.push([a, a1]); return out; };
+  const P = (s, y) => emX ? [s, y, f] : [f, y, s];
+  for (const [p, q] of trechos(vaos)) Mw.quad(P(p, 0), P(q, 0), P(q, 1.0), P(p, 1.0), [p / 4, 0], [q / 4, 0], [q / 4, 0.25], [p / 4, 0.25], barra, emX ? [0, 0, fora] : [fora, 0, 0]);
+  for (const [p, q] of trechos(vaos.filter(v => v[2] == null))) {
+    if (emX) bloco(Mw, p - 0.06, q + 0.06, fixo - esp / 2 - 0.06, fixo + esp / 2 + 0.06, h, h + 0.1, capa);
+    else bloco(Mw, fixo - esp / 2 - 0.06, fixo + esp / 2 + 0.06, p - 0.06, q + 0.06, h, h + 0.1, capa);
+  }
+}
+
+/* ======================================================
    O CORREDOR debaixo da arquibancada: o piso, o teto, a parede de dentro
    (com a boca de cada vomitório) e a de fora (com a porta de cada
    entrada), a barra pintada na cor de quem usa o trecho (vermelha do
@@ -1175,7 +1433,7 @@ function gradilReto(O, x0, z0, x1, z1, y0, h) {
 const COR_ZONA = { visitante: '#c62828', mandante: '#1b7f3b', pm: '#1f3f9a' };
 const zona = (ua, ub, lado) => ({ ua, ub, lado, cor: COR_ZONA[lado] });
 /* a boca de cada vomitório na parede de dentro do corredor */
-const bocasDe = (A, C) => A.vomitorios.filter(v => v.tunel).map(v => ({ ua: v.ua, ub: v.ub, h: v.tunel.tipo === 'vala' ? C.h : Math.min(C.h, v.yP + v.tunel.hT - C.y) }));
+const bocasDe = (A, C) => A.vomitorios.filter(v => v.tunel).map(v => ({ ua: v.ua, ub: v.ub, h: v.tunel.tipo === 'vala' ? C.h : Math.min(C.h, v.yP + v.tunel.hT - C.y), servico: !!v.servico }));
 function corredor(O, S, fam, c) {
   const extras = [...(c.gradis || [])];
   for (const L of [c.bocas, c.portas, c.zonas]) for (const e of L || []) extras.push(e.ua, e.ub);
@@ -1211,6 +1469,11 @@ function corredor(O, S, fam, c) {
   for (const u of c.gradis || []) {
     const qa = fam.ponto(c.dI, u), qb = fam.ponto(c.dF, u);
     gradilReto(O, qa[0], qa[1], qb[0], qb[1], y0, c.h - 0.05);
+  }
+  /* a placa pendurada no teto na frente de cada boca: VOMITÓRIO (a do serviço é da PM) */
+  for (const b of c.bocas || []) {
+    const q = fam.ponto(c.dI + 0.4, (b.ua + b.ub) / 2), Q = quadro([q[0], q[1]], [-q[2], -q[3]]);
+    placaSinal(O, Q, 0, -1.0, 1.0, y1 - 0.64, y1 - 0.14, SINAL[b.servico ? 'PM' : 'VOMITÓRIO']);
   }
   /* o que está a menos de m metros de uma boca, porta ou gradil (pro pilar e o balcão não taparem) */
   const perto = (u, d, m) => {
@@ -1319,16 +1582,18 @@ function salao(O, E, c) {
   if (c.portao) caixaL(O.m('pintura'), Q, -0.45, -0.02, -hl - 0.1, hl + 0.1, y1 - 0.05, y1 + 0.5, lin('#5f6468'));
   const w = Math.min(hl + 0.4, 2.8);
   if (c.placa != null) placaSinal(O, Q, -0.14, -w, w, y1 + 0.6, y1 + 0.6 + w / 2, c.placa);
+  if (c.fundo != null) { const w2 = Math.min(hl - 0.2, 1.4), sE = Math.min(sF[0], sF[1]) - 0.2; placaSinal(O, Q, sE, -w2, w2, y1 - 0.12 - w2 / 2, y1 - 0.12, c.fundo); }
   return { catracas: n };
 }
-/* A FILA DE CATRACAS atravessada no eixo, em s: o pé de inox de cada uma e o braço */
+/* A FILA DE CATRACAS atravessada no eixo, em s: o pé de inox de cada uma e o
+   braço (num balde à parte: ele gira, não barra quem anda) */
 function catracas(O, Q, s, t0, t1, y0) {
-  const Mp = O.m('pintura'), INOX = lin('#a9b1b6'), BRACO = lin('#d4d9dc');
+  const Mp = O.m('pintura'), Mb = O.m('braco'), INOX = lin('#a9b1b6'), BRACO = lin('#d4d9dc');
   const n = Math.max(2, Math.floor((t1 - t0) / 0.95)), passo = (t1 - t0) / n;
   for (let j = 0; j < n; j++) {
     const t = t0 + passo * j + 0.18;
     caixaL(Mp, Q, s - 0.35, s + 0.35, t - 0.14, t + 0.14, y0, y0 + 1.0, INOX);
-    caixaL(Mp, Q, s - 0.03, s + 0.03, t + 0.14, t + Math.min(0.62, passo - 0.2), y0 + 0.85, y0 + 0.91, BRACO);
+    caixaL(Mb, Q, s - 0.03, s + 0.03, t + 0.14, t + Math.min(0.62, passo - 0.2), y0 + 0.85, y0 + 0.91, BRACO);
   }
   return n;
 }
@@ -1471,17 +1736,36 @@ function marcador(G, texto, cor, x, y, z, tam) {
 }
 
 /* ======================================================
+   OS ANÉIS DE CADA UM (o modelo e a planta 2D usam os mesmos)
+   ====================================================== */
+const aneis10 = () => ({
+  Fg: anelFechado({ A0: 53.75, B0: 38.5, r0: 4, k: 1 }),
+  Fn: caminho([{ reta: [-45.2, -40.6, 46.1, -40.6] }]),
+  Fl: caminho([
+    { arco: [47.7, -34, 7.9, -90, 0] }, { reta: [55.6, -34, 55.6, 31.6] }, { arco: [47.7, 31.6, 7.9, 0, 90] },
+    { reta: [47.7, 39.5, -51.5, 39.5] }, { arco: [-51.5, 36.1, 3.4, 90, 180] }
+  ])
+});
+const anel20 = () => anelFechado({ A0: 67, B0: 45.7, r0: 12, k: 0.68 });
+const anel40 = () => anelFechado({ A0: 73.6, B0: 50.1, r0: 28, k: 0.8 });
+/* os vomitórios da foto: os 8 do de 20 mil e os dois do meio do leste e do oeste */
+const VOM20 = [[42.2, -53.8], [-42.2, -53.8], [75.8, -24.7], [75.8, 24.7], [32.8, 54.5], [-32.8, 54.5], [-75.8, 24.7], [-75.8, -24.7], [80, 0], [-80, 0]];
+/* os 29 do anel de cima do de 40 mil (espelhados: a foto é simétrica) */
+const VOM40 = (() => {
+  const V = [[0, -89.6], [24, -88.4], [-24, -88.4], [47.7, -84.6], [-47.7, -84.6]];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const [x, z] of [[69.6, 77.7], [87, 67.1], [100.2, 52.1]]) V.push([sx * x, sz * z]);
+  for (const sx of [-1, 1]) for (const [x, z] of [[108.3, -32.9], [112.8, -11.2], [112.8, 11.3], [108.4, 33.1]]) V.push([sx * x, z]);
+  for (const x of [22, -22, 44.6, -44.6]) V.push([x, 90.5]);
+  return V;
+})();
+
+/* ======================================================
    O ESTÁDIO DE 10 MIL (nível 1)
    foto: 12,65 px por metro, campo de 100 × 68
    ====================================================== */
-function montar10(O, S, G) {
+function montar10(O, S, G, opc) {
   const tArq = lin('#dcd9d1'), tMuro = lin('#eeebe3'), tPasso = lin('#d2cfc6'), tBaixo = lin('#8e8a80');
-  const Fg = anelFechado({ A0: 53.75, B0: 38.5, r0: 4, k: 1 });
-  const Fn = caminho([{ reta: [-45.2, -40.6, 46.1, -40.6] }]);
-  const Fl = caminho([
-    { arco: [47.7, -34, 7.9, -90, 0] }, { reta: [55.6, -34, 55.6, 31.6] }, { arco: [47.7, 31.6, 7.9, 0, 90] },
-    { reta: [47.7, 39.5, -51.5, 39.5] }, { arco: [-51.5, 36.1, 3.4, 90, 180] }
-  ]);
+  const { Fg, Fn, Fl } = aneis10();
   const N = 15, BASE = { d0: 0, n: N, prof: 0.8, esp: 0.4, y0: 1.0, yBase: 0, yChao: 0, par: 1.0, tinta: tArq, tintaParede: tMuro, nariz: true, topo: { larg: 0, par: 0 } };
   /* O CORREDOR debaixo de cada arquibancada, da fileira 7 até o fundo (6,4
      m de largura, 3 de pé-direito). O VOMITÓRIO é uma vala a céu aberto
@@ -1544,27 +1828,44 @@ function montar10(O, S, G) {
   bloco(Mpar, 67.6, 70.4, -5.9, -5.7, 0, yP + 1.1, tMuro);
   bloco(Mpar, 67.6, 70.4, 4.9, 5.1, 0, yP + 1.1, tMuro);
   const hA = yP + 1.1;
-  muro(Mpar, -67.3, -56.2, -45.2, -56.2, 0.4, 3.0, tMuro);
-  muro(Mpar, -45.2, -56.2, 70.8, -56.2, 0.4, hA, tMuro);
-  muro(Mpar, -67.3, 57.4, 70.8, 57.4, 0.4, hA, tMuro, [[23.5, 26.5, C.h]]);
-  muro(Mpar, 70.6, -56.4, 70.6, 57.6, 0.4, hA, tMuro, [[-5.7, 4.9]]);
-  muro(Mpar, -67.1, -56.4, -67.1, 36.1, 0.4, 3.0, tMuro, [[-5.9, 4.2], [-54.8, -50.0]]);
-  muro(Mpar, -67.1, 36.1, -67.1, 57.6, 0.4, hA, tMuro);
+  /* [x0, z0, x1, z1, altura, o lado de fora, vãos]: a barra azul por fora e o capeamento */
+  const MUROS = [
+    [-67.3, -56.2, -45.2, -56.2, 3.0, -1, []], [-45.2, -56.2, 70.8, -56.2, hA, -1, []], [-67.3, 57.4, 70.8, 57.4, hA, 1, [[23.5, 26.5, C.h]]],
+    [70.6, -56.4, 70.6, 57.6, hA, 1, [[-5.7, 4.9]]], [-67.1, -56.4, -67.1, 36.1, 3.0, -1, [[-5.9, 4.2], [-54.8, -50.0]]], [-67.1, 36.1, -67.1, 57.6, hA, -1, []]
+  ];
+  for (const [x0, z0, x1, z1, h, fora, vaos] of MUROS) {
+    muro(Mpar, x0, z0, x1, z1, 0.4, h, tMuro, vaos);
+    acabamentoDoMuro(O, x0, z0, x1, z1, 0.4, h, fora, vaos, lin('#2f5f8a'), lin('#d3cec3'));
+  }
   /* o portão do oeste é de serviço (a ambulância): fica fechado */
   portao(O, false, -67.1, -5.9, 4.2, 2.8, '#35607f');
 
   /* PORTÃO 1 (mandante): o corte da do leste. O portão do muro aberto pra
      fora, a viga com a placa, a fila de catracas; dentro, uma porta de cada
      lado pro corredor (a ponta de cada pedaço) e, no lado do campo, o
-     portão fechado */
+     portão fechado. Por fora, o ARCO com o nome do estádio e a
+     bilheteria do lado */
   const Q1 = quadro([70.8, -0.4], [-1, 0]);
   portao(O, false, 70.6, -5.7, 4.9, 3.2, '#2f5f8a', 1);
   bloco(O.m('pintura'), 70.45, 70.75, -5.7, 4.9, 3.5, 4.2, lin('#3b4046'));
   placaSinal(O, Q1, -0.07, -1.8, 1.8, 3.4, 4.3, SINAL['PORTÃO 1 · MANDANTE']);
   const n1 = catracas(O, Q1, 4, -5.2, 5.2, 0);
   portao(O, false, 55.5, -5.7, 4.9, 2.4, '#2f5f8a');
-  /* PORTÃO 2 (mandante): no muro do sul, o salão de 3 m que passa debaixo da passarela até o corredor da do sul */
-  const n2 = salao(O, E2, { h: C.h, catraca: 2, portao: true, placa: SINAL['PORTÃO 2 · MANDANTE'] }).catracas;
+  const Marco = O.m('parede');
+  for (const [ta, tb] of [[5.45, 6.65], [-6.65, -5.45]]) caixaL(Marco, Q1, -1.2, -0.02, ta, tb, 0, 10.4, tMuro, 4);
+  caixaL(Marco, Q1, -1.2, -0.02, -5.45, 5.45, 8.4, 10.4, tMuro, 4);
+  const vA = [Q1.L(-1.2, -5.45, 8.4), Q1.L(-0.02, -5.45, 8.4), Q1.L(-0.02, 5.45, 8.4), Q1.L(-1.2, 5.45, 8.4)];
+  Marco.quad(vA[0], vA[1], vA[2], vA[3], pl(vA[0], 4), pl(vA[1], 4), pl(vA[2], 4), pl(vA[3], 4), vezes(tMuro, 0.85), [0, -1, 0]);
+  letreiro(O, Q1, -1.2, opc.nome, 8.75, 1.3, 12.2, { placa: lin('#2f5f8a'), sai: 0.1, margem: 0.2, cor: '#ffffff', sombra: '#9db3c9' });
+  bilheteria(O, quadro([70.8, -11.7], [-1, 0]), -2.5, -0.02, -1.5, 1.5, 2.7);
+  /* o nome pintado no muro, em azul: no leste (ao norte do portão 1) e no sul (a oeste do portão 2) */
+  letreiro(O, quadro([70.8, -33], [-1, 0]), -0.02, opc.nome, 3.3, 3.2, 38, { cor: '#1f4f8c', sombra: null });
+  letreiro(O, quadro([-22, 57.6], [0, -1]), -0.02, opc.nome, 3.3, 3.2, 44, { cor: '#1f4f8c', sombra: null });
+  /* PORTÃO 2 (mandante): no muro do sul, o pórtico com a marquise e a
+     fila; o salão de 3 m passa debaixo da passarela até o corredor da do
+     sul, com a placa do corredor no fundo */
+  const n2 = salao(O, E2, { h: C.h, catraca: 2, fundo: SINAL['CORREDOR · VOMITÓRIOS'] }).catracas;
+  const r2 = porticoDoPortao(O, E2, { h: C.h, sai: 3.2, fila: [-1.0, -6.0], lado: 'mandante', placa: SINAL['PORTÃO 2 · MANDANTE'], setor: SINAL['SETOR MANDANTE'], cor: tMuro }).raias;
 
   /* PORTÃO 3 (visitante): o túnel de lona do noroeste, de fora do muro até
      perto do campo. Na boca, o pórtico com a placa e as catracas; do fim
@@ -1617,7 +1918,8 @@ function montar10(O, S, G) {
   chaoPlano(Mb, [...linha(12, 0, corte.ua), [70.4, -5.7], [70.4, -56.0], [47.7, -56.0]], [], 0, tBaixo, 4);
   chaoPlano(Mb, [...linha(12, corte.ub, uSul(26.5)), [26.5, 57.2], [70.4, 57.2], [70.4, 4.9]], [], 0, tBaixo, 4);
   chaoPlano(Mb, [...linha(12, uSul(23.5), 5), [-66.9, 57.2], [23.5, 57.2]], [], 0, tBaixo, 4);
-  chaoPlano(O.m('terra'), retangulo(-95, 101, -82, 84), [retangulo(-67.3, 70.8, -56.4, 57.6)], -0.01, lin('#f2e2cc'), 6);
+  /* (no mapa, só até a divisa do terreno: a rua em volta é do mapa) */
+  chaoPlano(O.m('terra'), opc.mapa ? retangulo(-76, 78, -62, 64) : retangulo(-95, 101, -82, 84), [retangulo(-67.3, 70.8, -56.4, 57.6)], -0.01, lin('#f2e2cc'), 6);
 
   /* OS SETORES (as imagens do dono): norte v1, v2, PM; leste-sul m1 (até o portão), m2 (até a vala do meio), m3 */
   const setores = camadaDosSetores(S, G, [
@@ -1638,10 +1940,11 @@ function montar10(O, S, G) {
     setores, livre: 'o resto da do norte, do leste da PM até a ponta (2,5 a 46 m), fica sem torcida',
     vomitorios, tipoVom: 'em vala (a arquibancada é baixa demais pra túnel): o poço das fileiras 2 a 6 e a escada até o chão do corredor',
     alturaArq: yP + 1.1, luz: 'quatro postes de 20 m nos cantos',
+    fachada: 'o muro caiado com a barra azul e o capeamento, o nome pintado no leste e no sul, o arco do portão 1 com o nome e a bilheteria do lado dele',
     entradas: [
-      { nome: 'Portão 1', lado: 'mandante', onde: `o corte da do leste: o portão do muro, ${n1} catracas e uma porta de cada lado pro corredor`,
+      { nome: 'Portão 1', lado: 'mandante', onde: `o corte da do leste: o arco com o nome, o portão do muro, ${n1} catracas e uma porta de cada lado pro corredor`,
         chega: [cL1.zonaEm(corte.ua - 1e-3), cL2.zonaEm(corte.ub + 1e-3)], ...naRua(Q1) },
-      { nome: 'Portão 2', lado: 'mandante', onde: `no muro do sul: o salão de 3 m, com ${n2} catracas, até o corredor da do sul`,
+      { nome: 'Portão 2', lado: 'mandante', onde: `no muro do sul: o pórtico com a marquise, a fila de ${r2} raias e o salão de 3 m, com ${n2} catracas, até o corredor da do sul`,
         chega: [cL2.zonaEm((E2.vaoCorr.ua + E2.vaoCorr.ub) / 2)], ...naRua(E2.Q) },
       { nome: 'Portão 3', lado: 'visitante', onde: `o túnel de lona do noroeste: ${n3} catracas na boca e o caminho cercado até a porta do corredor da do norte`,
         chega: [cN.zonaEm(1e-3)], ...naRua(Q3) }
@@ -1657,8 +1960,8 @@ function montar10(O, S, G) {
    O ESTÁDIO DE 20 MIL (nível 2)
    foto: 9,7 px por metro, campo de 105 × 68
    ====================================================== */
-function montar20(O, S, G) {
-  const F = anelFechado({ A0: 67, B0: 45.7, r0: 12, k: 0.68 });
+function montar20(O, S, G, opc) {
+  const F = anel20();
   const tArq = lin('#d9caa9'), tMuro = lin('#e3d8c1'), tPista = lin('#a7a59e'), tBaixo = lin('#8b8478');
   const N = 34, W = 5.0;
   /* O CORREDOR em volta, debaixo da arquibancada: da fileira 25 até a
@@ -1669,8 +1972,7 @@ function montar20(O, S, G) {
   const TUNEL = { tipo: 'tunel', dI: C.dI, yC: C.y, hT: 2.6, hC: C.h };
   /* os 8 vomitórios da foto e os dois do meio do leste e do oeste (sem o
      do oeste, o 1º escalão visitante ficava sem vomitório nenhum) */
-  const vom = [[42.2, -53.8], [-42.2, -53.8], [75.8, -24.7], [75.8, 24.7], [32.8, 54.5], [-32.8, 54.5], [-75.8, 24.7], [-75.8, -24.7], [80, 0], [-80, 0]]
-    .map(([x, z]) => ({ ...faixaEm(F, x, z, W, 8), k0: 3, k1: 12, tunel: TUNEL }));
+  const vom = VOM20.map(([x, z]) => ({ ...faixaEm(F, x, z, W, 8), k0: 3, k1: 12, tunel: TUNEL }));
   /* os túneis do meio do norte e do sul (os dos jogadores, ao nível do campo) */
   const tuneis = [[0, -47], [0, 47]].map(([x, z]) => ({ ...faixaEm(F, x, z, 3.6, 2), k0: 0, k1: 5, yPiso: 0 }));
   const esc = (u, k0) => ({ ...faixaNoU(F, u, 1.2, 14), k0, k1: N - 1 });
@@ -1683,14 +1985,17 @@ function montar20(O, S, G) {
      atrás dela */
   const HP = 3.4;
   const naFachada = (x, z) => { const q = F.ponto(28, F.uDe(x, z).u); return planoDaEntrada(F, [q[0], q[1]], [-q[2], -q[3]], 5, C.dF); };
+  /* cada um com o pórtico e a marquise; a fila fica entre a fachada e o
+     muro (no sul não cabe: o muro está a 1,9 m) */
   const P = [
-    { E: naFachada(100, 0), nome: 'Portão 1', lado: 'mandante', placa: 'PORTÃO 1 · MANDANTE', onde: 'no meio da fachada do leste, de frente pro portão do muro do leste' },
-    { E: naFachada(14, 80), nome: 'Portão 2', lado: 'mandante', placa: 'PORTÃO 2 · MANDANTE', onde: 'na fachada do sul (x 14), de frente pro portão novo do muro do sul' },
-    { E: naFachada(-100, -18), nome: 'Portão 3', lado: 'visitante', placa: 'PORTÃO 3 · VISITANTE', onde: 'na fachada do oeste (z −18), a entrada do portão do muro do oeste' }
+    { E: naFachada(100, 0), nome: 'Portão 1', lado: 'mandante', placa: 'PORTÃO 1 · MANDANTE', sai: 3.0, fila: [-1.6, -6.2], onde: 'no meio da fachada do leste, debaixo do letreiro, de frente pro portão do muro do leste' },
+    { E: naFachada(14, 80), nome: 'Portão 2', lado: 'mandante', placa: 'PORTÃO 2 · MANDANTE', sai: 1.4, fila: null, onde: 'na fachada do sul (x 14), de frente pro portão novo do muro do sul' },
+    { E: naFachada(-100, -18), nome: 'Portão 3', lado: 'visitante', placa: 'PORTÃO 3 · VISITANTE', sai: 3.0, fila: [-1.6, -4.4], onde: 'na fachada do oeste (z −18), a entrada do portão do muro do oeste' }
   ];
+  const ALTO = 1.0 + N * 0.4 + 1.1;
   const A = arquibancada(O, F, {
     u0: 0, u1: 9, d0: 0, n: N, prof: 0.8, esp: 0.4, y0: 1.0, yBase: 0, par: 1.0, tinta: tArq, tintaParede: tMuro, semente: 7,
-    topo: { larg: 0.55, par: 1.1, fachada: true, yChao: 0, corFachada: tMuro, vaos: P.map(p => ({ ...p.E.vao(p.E.uEm(0, -p.E.hl), p.E.uEm(0, p.E.hl)), h: HP })) },
+    topo: { larg: 0.55, par: 1.1, fachada: true, yChao: 0, andar: ALTO / 3, corFachada: tMuro, vaos: P.map(p => ({ ...p.E.vao(p.E.uEm(0, -p.E.hl), p.E.uEm(0, p.E.hl)), h: HP })) },
     vom: [...vom, ...tuneis], aberturas: tuneis.map(t => ({ ua: t.ua, ub: t.ub })),
     escadas: [
       esc(0, 6), esc(4.5, 6), esc(2.5, 0), esc(6.5, 0), esc(1.5, 0), esc(3.5, 0), esc(5.5, 0), esc(7.5, 0),
@@ -1703,7 +2008,15 @@ function montar20(O, S, G) {
   const corr = corredor(O, S, F, { u0: 0, u1: 9, ...C, bocas: bocasDe(A, C), portas: P.map(p => ({ ...p.E.vaoCorr, h: HP })), gradis: div,
     zonas: [zona(div[3], div[0], 'visitante'), zona(div[0], div[1], 'pm'), zona(div[1], div[2] + 9, 'mandante'), zona(div[2], div[3], 'pm')],
     pilar: 9, balcao: 16, semente: 1 });
-  for (const p of P) p.catracas = salao(O, p.E, { h: HP, catraca: -1.0, portao: true, placa: SINAL[p.placa] }).catracas;
+  for (const p of P) {
+    p.catracas = salao(O, p.E, { h: HP, catraca: -1.0 }).catracas;
+    p.raias = porticoDoPortao(O, p.E, { h: HP, sai: p.sai, fila: p.fila, lado: p.lado, placa: SINAL[p.placa], setor: SINAL[p.lado === 'visitante' ? 'SETOR VISITANTE' : 'SETOR MANDANTE'] }).raias;
+  }
+  /* A FACHADA: o relevo (menos na torre do meio do norte e do sul) e o
+     letreiro com o nome em cima do portão 1 e no oeste, no andar de cima */
+  const relevo = fachadaDetalhada(O, A, { pilar: [0.8, 0.5], portas: P.map(p => p.E), cor: vezes(tMuro, 1.04), corBase: lin('#7a746a'),
+    pula: [faixaEm(F, 0, -73.7, 12.4, 28), faixaEm(F, 0, 73.7, 12.4, 28)] });
+  for (const [x, z, w] of [[95, 0, [-1, 0]], [-95, 4, [1, 0]]]) letreiro(O, quadro([x, z], w), 0, opc.nome, 11.15, 2.8, 52, { placa: lin('#2c3640'), sai: 0.75 });
 
   /* A PISTA cinza, as placas na beira do gramado (com o vão do túnel no meio do norte e do sul), o gramado */
   faixaDeAnel(O.m('piso'), F, -5.2, 0, 0, tPista, 4);
@@ -1729,7 +2042,8 @@ function montar20(O, S, G) {
   for (const x of [-102, 102]) {
     muro(Mpar, x, -76.4, x, 75.6, 0.3, 2.4, tMuro, [[-7.5, 6.5]]);
     portao(O, false, x, -7.5, 6.5, 2.4, '#2f5f8a', -2 * Math.sign(x));
-    for (const z of [-10.6, 9.6]) { const s = Math.sign(x); bloco(Mp, x - s * 3.2 - 1.5, x - s * 3.2 + 1.5, z - 1.5 + 0.5, z + 1.5 + 0.5, 0, 2.8, lin('#e9e4d6')); bloco(Mp, x - s * 3.2 - 1.8, x - s * 3.2 + 1.8, z - 1.3, z + 2.3, 2.8, 3.05, lin('#2f5f8a')); }
+    /* as bilheterias dos dois lados do portão do muro, com a janela pro caminho */
+    for (const [z, sz] of [[-8.6, -1], [8.6, 1]]) bilheteria(O, quadro([x - Math.sign(x) * 3.2, z], [0, sz]), 0, 3.0, -1.5, 1.5, 2.8);
   }
   for (const s of [-1, 1]) {
     const z0 = s < 0 ? -75.5 : 73.7, z1 = s < 0 ? -73.7 : 75.5;
@@ -1737,8 +2051,11 @@ function montar20(O, S, G) {
   }
   const buraco = contornoDe(F, 28.0);
   chaoPlano(O.m('asfalto'), retangulo(-102, 102, -76.4, 75.6), [buraco], 0, lin('#e6e6e6'), 6);
-  chaoPlano(O.m('piso'), retangulo(-105, 105, -79.4, 78.6), [retangulo(-102, 102, -76.4, 75.6)], 0.02, lin('#c9c6be'), 4);
-  chaoPlano(O.m('asfalto'), retangulo(-116, 116, -90, 89), [retangulo(-105, 105, -79.4, 78.6)], -0.02, lin('#c4c4c4'), 6);
+  /* a calçada e a rua em volta (no mapa, a rua é do mapa) */
+  if (!opc.mapa) {
+    chaoPlano(O.m('piso'), retangulo(-105, 105, -79.4, 78.6), [retangulo(-102, 102, -76.4, 75.6)], 0.02, lin('#c9c6be'), 4);
+    chaoPlano(O.m('asfalto'), retangulo(-116, 116, -90, 89), [retangulo(-105, 105, -79.4, 78.6)], -0.02, lin('#c4c4c4'), 6);
+  }
   /* o chão de baixo da arquibancada, na frente do corredor (só aparece no corte) */
   chaoDeBaixo(O.m('piso'), A, C.dI, 0, tBaixo);
 
@@ -1758,7 +2075,8 @@ function montar20(O, S, G) {
     aneis: [{ nome: 'Anel único', fileiras: N, degrau: '0,80 × 0,40 m', lugares: A.lugares() }],
     setores, livre: '', vomitorios: vom.length, tipoVom: 'com túnel: o poço das fileiras 3 a 12, a escada que desce por baixo das fileiras e o túnel até o corredor',
     alturaArq: A.yn + 1.1, luz: 'quatro torres de treliça de 42 m nas quinas',
-    entradas: P.map(p => ({ nome: p.nome, lado: p.lado, onde: `${p.onde}; ${p.catracas} catracas do lado de fora`, chega: [corr.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2)], ...naRua(p.E.Q) })),
+    fachada: `concreto aparente em ${Math.round(ALTO / relevo.andar)} andares de ${relevo.andar.toFixed(1).replace('.', ',')} m: ${relevo.pilares} pilares, a faixa de cada laje, o cobogó, o embasamento e a cimalha; o letreiro com o nome em cima do portão 1 e no oeste; as quatro bilheterias do lado dos portões do muro`,
+    entradas: P.map(p => ({ nome: p.nome, lado: p.lado, onde: `${p.onde}; o pórtico com a marquise${p.raias ? `, a fila de ${p.raias} raias` : ''} e ${p.catracas} catracas do lado de fora`, chega: [corr.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2)], ...naRua(p.E.Q) })),
     corredores: [{ nome: 'O anel inteiro', zonas: 'visitante · PM · mandante · PM', ...corr }],
     servico: 'os túneis do meio do norte e do sul são os dos jogadores (não ligam no corredor); as duas torres do meio do norte e do sul não têm porta pra rua',
     cortes: [{ nome: 'Corte no corredor', y: C.y + C.h - 0.05 }]
@@ -1769,8 +2087,8 @@ function montar20(O, S, G) {
    O ESTÁDIO DE 40 MIL (nível 3)
    foto: 7,8 px por metro, campo de 105 × 68
    ====================================================== */
-function montar40(O, S, G) {
-  const F = anelFechado({ A0: 73.6, B0: 50.1, r0: 28, k: 0.8 });
+function montar40(O, S, G, opc) {
+  const F = anel40();
   const tArq = lin('#cbb99a'), tMuro = lin('#d6cbb6'), tCorr = lin('#c7c0b2'), tBaixo = lin('#8b8478');
   const NI = 28, NS = 39;
   const yC = 1.2 + NI * 0.42;                        // o corredor entre os anéis
@@ -1783,10 +2101,7 @@ function montar40(O, S, G) {
   /* os 29 vomitórios do anel de cima, onde a foto mostra (espelhados: a
      foto é simétrica); o piso do poço já é o do corredor de cima, e o
      túnel vai reto até ele */
-  const V = [[0, -89.6], [24, -88.4], [-24, -88.4], [47.7, -84.6], [-47.7, -84.6]];
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) for (const [x, z] of [[69.6, 77.7], [87, 67.1], [100.2, 52.1]]) V.push([sx * x, sz * z]);
-  for (const sx of [-1, 1]) for (const [x, z] of [[108.3, -32.9], [112.8, -11.2], [112.8, 11.3], [108.4, 33.1]]) V.push([sx * x, z]);
-  for (const x of [22, -22, 44.6, -44.6]) V.push([x, 90.5]);
+  const V = VOM40;
   const dV = 24.4 + 14.5 * 0.8;
   const TS = { tipo: 'tunel', dI: C1.dI, yC: C1.y, hT: 2.8, hC: C1.h };
   const vom = V.map(([x, z]) => ({ ...faixaEm(F, x, z, 4.4, dV), k0: 10, k1: 18, tunel: TS })).sort((a, b) => a.u - b.u);
@@ -1819,11 +2134,14 @@ function montar40(O, S, G) {
   const HP = C0.h;
   const naFachada = uu => { const q = F.ponto(58, uu); return planoDaEntrada(F, [q[0], q[1]], [-q[2], -q[3]], 5, C0.dF); };
   const uVis = (Math.max(pm3[1], pm4[1]) + Math.min(pm2[0], pm1[0])) / 2;
+  /* cada um com o pórtico e a marquise por cima da pista de ônibus, a faixa
+     de pedestre atravessada nela e a fila do outro lado, na praça */
   const P = [
-    { E: naFachada(2.5), nome: 'Portão 1', lado: 'mandante', placa: 'PORTÃO 1 · MANDANTE', onde: 'no meio da fachada do leste, de frente pro prédio de entrada' },
-    { E: naFachada(u(-130, -10)), nome: 'Portão 2', lado: 'mandante', placa: 'PORTÃO 2 · MANDANTE', onde: 'na fachada do oeste (z −10), de frente pro prédio de entrada do oeste' },
-    { E: naFachada(uVis), nome: 'Portão 3', lado: 'visitante', placa: 'PORTÃO 3 · VISITANTE', onde: 'na curva do sudoeste, entre a PM3 e a PM2 embaixo e entre a PM4 e a PM1 em cima' }
+    { E: naFachada(2.5), nome: 'Portão 1', lado: 'mandante', placa: 'PORTÃO 1 · MANDANTE', fila: [-6.4, -10], onde: 'no meio da fachada do leste, debaixo do letreiro' },
+    { E: naFachada(u(-130, -10)), nome: 'Portão 2', lado: 'mandante', placa: 'PORTÃO 2 · MANDANTE', fila: [-6.4, -10], onde: 'na fachada do oeste (z −10)' },
+    { E: naFachada(uVis), nome: 'Portão 3', lado: 'visitante', placa: 'PORTÃO 3 · VISITANTE', fila: [-6.4, -11], onde: 'na curva do sudoeste, entre a PM3 e a PM2 embaixo e entre a PM4 e a PM1 em cima' }
   ];
+  const ALTO = y0s + NS * 0.52 + 1.1;
   const Ai = arquibancada(O, F, {
     u0: 0, u1: 9, d0: 0, n: NI, prof: 0.8, esp: 0.42, y0: 1.2, yBase: -2.4, par: 1.0, tinta: tArq, tintaParede: tMuro, semente: 9,
     topo: { larg: 2.0, par: 0, corPiso: tCorr },
@@ -1833,7 +2151,7 @@ function montar40(O, S, G) {
   });
   const As = arquibancada(O, F, {
     u0: 0, u1: 9, d0: 24.4, n: NS, prof: 0.8, esp: 0.52, y0: y0s, yBase: yC, par: 1.0, tinta: tArq, tintaParede: tMuro, semente: 10,
-    topo: { larg: 2.15, par: 1.1, fachada: true, yChao: 0, corFachada: tMuro, vaos: P.map(p => ({ ...p.E.vao(p.E.uEm(0, -p.E.hl), p.E.uEm(0, p.E.hl)), h: HP })) },
+    topo: { larg: 2.15, par: 1.1, fachada: true, yChao: 0, andar: ALTO / 6, corFachada: tMuro, vaos: P.map(p => ({ ...p.E.vao(p.E.uEm(0, -p.E.hl), p.E.uEm(0, p.E.hl)), h: HP })) },
     vom, muretas: mur.map(m => ({ u: m, k0: 0, k1: NS - 1 })),
     escadas: [
       ...vom.map(v => ({ ...faixaNoU(F, v.u, 1.4, 30), k0: 0, k1: 9 })),
@@ -1850,7 +2168,9 @@ function montar40(O, S, G) {
     zonas: [zona(pm3[1], pm2[0], 'visitante'), zona(pm2[0], pm2[1], 'pm'), zona(pm2[1], pm3[0] + 9, 'mandante'), zona(pm3[0], pm3[1], 'pm')],
     pilar: 9, balcao: 18, semente: 2 });
   const escs = P.map(p => {
-    p.catracas = salao(O, p.E, { h: HP, catraca: 3, portao: true, placa: SINAL[p.placa], aberturas: [{ lado: 1, s0: 4, s1: 8, h: HP }] }).catracas;
+    p.catracas = salao(O, p.E, { h: HP, catraca: 3, fundo: SINAL['CORREDOR · VOMITÓRIOS'], aberturas: [{ lado: 1, s0: 4, s1: 8, h: HP }] }).catracas;
+    p.raias = porticoDoPortao(O, p.E, { h: HP, sai: 4.0, fila: p.fila, lado: p.lado, placa: SINAL[p.placa], setor: SINAL[p.lado === 'visitante' ? 'SETOR VISITANTE' : 'SETOR MANDANTE'] }).raias;
+    faixaDePedestre(O, p.E.Q, -0.3, -5.8, -p.E.hl - 0.5, p.E.hl + 0.5);
     return escadaria(O, F, p.E, { yTopo: C1.y, hTopo: C1.h, dPorta: C1.dF, dCorrIni: C1.dI, hSalao: HP });
   });
   const cS = corredor(O, S, F, { u0: 0, u1: 9, ...C1, bocas: bocasDe(As, C1), portas: escs.map(e => e.portaCima), gradis: gradisS,
@@ -1888,23 +2208,16 @@ function montar40(O, S, G) {
   banco(O, -22, -6.6, 41.2, 43.8, true);
   banco(O, 7.6, 22.9, 41.2, 43.8, true, '#a11d2b');
 
-  /* POR FORA: a pista de ônibus em volta, a praça, a rua; os prédios de
-     entrada do leste e do oeste (de frente pro portão 1 e pro 2) e as
-     bilheterias do norte e do sul */
+  /* POR FORA: a pista de ônibus em volta, a praça, a rua (no mapa, a rua é
+     do mapa) e as bilheterias do norte e do sul. Os prédios de entrada do
+     leste e do oeste da foto saíram: tapavam o portão 1 e o 2 e o letreiro. */
   faixaDeAnel(O.m('asfalto'), F, 58.0, 64.0, 0, lin('#d2d2d2'), 6);
   chaoPlano(O.m('piso'), retangulo(-142, 142, -118, 118), [contornoDe(F, 64.0)], 0, lin('#cbc7bf'), 4);
-  chaoPlano(O.m('asfalto'), retangulo(-156, 156, -131, 131), [retangulo(-142, 142, -118, 118)], 0, lin('#c4c4c4'), 6);
-  const Mb = O.m('pintura'), CZ = lin('#d0c7b5'), ES = lin('#2c2a28');
-  for (const s of [-1, 1]) {
-    bloco(Mb, s > 0 ? 136 : -145, s > 0 ? 145 : -136, -12.5, 12.5, 0, 9, CZ);
-    for (const z of [-8, 0, 8]) bloco(Mb, s > 0 ? 135.9 : -136.1, s > 0 ? 136.1 : -135.9, z - 1.4, z + 1.4, 0, 2.6, ES);
-    for (const x of [-8.8, 4.6]) {
-      const z0 = s > 0 ? 108.2 : -113.5, z1 = s > 0 ? 113.5 : -108.2, zf = s > 0 ? z1 : z0;
-      bloco(Mb, x, x + 4.2, z0, z1, 0, 3.2, CZ);
-      bloco(Mb, x - 0.3, x + 4.5, z0 - 0.3, z1 + 0.3, 3.2, 3.45, lin('#2f5f8a'));
-      for (const xx of [x + 0.5, x + 2.4]) bloco(Mb, xx, xx + 1.3, zf - 0.05, zf + 0.05, 1.0, 2.1, ES);
-    }
-  }
+  if (!opc.mapa) chaoPlano(O.m('asfalto'), retangulo(-156, 156, -131, 131), [retangulo(-142, 142, -118, 118)], 0, lin('#c4c4c4'), 6);
+  for (const s of [-1, 1]) for (const x of [-8.8, 4.6]) bilheteria(O, quadro([x + 2.1, s * 113.5], [0, -s]), 0, 5.3, -2.1, 2.1, 3.2);
+  /* A FACHADA: o relevo e o letreiro com o nome em cima do portão 1 e no oeste, no 5º andar */
+  const relevo = fachadaDetalhada(O, As, { pilar: [1.0, 0.7], portas: P.map(p => p.E), cor: vezes(tMuro, 1.04), corBase: lin('#77705f') });
+  for (const [x, w] of [[131.6, [-1, 0]], [-131.6, [1, 0]]]) letreiro(O, quadro([x, 0], w), 0, opc.nome, 24.4, 4.55, 56, { placa: lin('#2c3640'), sai: 0.95 });
   /* o chão de baixo (só aparece no corte): debaixo do anel de baixo, na
      frente do corredor (sem os túneis), e debaixo do de cima, do corredor
      do chão até a fachada, entre os salões (a escadaria fica em cima dele) */
@@ -1933,7 +2246,8 @@ function montar40(O, S, G) {
     setores, livre: '', vomitorios: vom.length + vomI.length,
     tipoVom: `com túnel nos dois anéis: ${vom.length} em cima (o poço das fileiras 10 a 18 no nível do corredor de cima) e ${vomI.length} embaixo (fileiras 4 a 9, a escada desce até o corredor do chão)`,
     alturaArq: As.yn + 1.1, luz: 'nenhuma (a foto não mostra torre nem refletor)',
-    entradas: P.map((p, j) => ({ nome: p.nome, lado: p.lado, onde: `${p.onde}; ${p.catracas} catracas no salão e a escada de ${escs[j].degraus} degraus até o corredor de cima`,
+    fachada: `concreto aparente em 6 andares de ${relevo.andar.toFixed(1).replace('.', ',')} m: ${relevo.pilares} pilares, a faixa de cada laje, o cobogó, o embasamento e a cimalha; o letreiro com o nome em cima do portão 1 e no oeste; as quatro bilheterias do norte e do sul`,
+    entradas: P.map((p, j) => ({ nome: p.nome, lado: p.lado, onde: `${p.onde}; o pórtico com a marquise, a faixa de pedestre na pista de ônibus, a fila de ${p.raias} raias, ${p.catracas} catracas no salão e a escada de ${escs[j].degraus} degraus até o corredor de cima`,
       chega: [cI.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2), cS.zonaEm((escs[j].portaCima.ua + escs[j].portaCima.ub) / 2)], ...naRua(p.E.Q) })),
     corredores: [{ nome: 'Do chão (debaixo do anel de baixo)', zonas: 'visitante · PM2 · mandante · PM3', ...cI },
                  { nome: 'De cima (debaixo do anel de cima, a 18,9 m)', zonas: 'visitante · PM1 · mandante · PM4', ...cS }],
@@ -1947,31 +2261,113 @@ function montar40(O, S, G) {
    OS TRÊS, pro catálogo
    ====================================================== */
 export const ESTADIOS_JOGO = {
-  'estadio-10': { id: 'estadio-10', nome: 'Estádio de 10 mil', nivel: 1, mil: 10000, foto: 'estadio_10', montar: montar10,
-    nota: 'O municipal: arquibancada reta no norte, a do leste e sul em L, o corredor embaixo das duas, os vomitórios em vala e os três portões (o 3, do visitante, pelo túnel de lona).' },
-  'estadio-20': { id: 'estadio-20', nome: 'Estádio de 20 mil', nivel: 2, mil: 20000, foto: 'estadio_20', montar: montar20,
-    nota: 'O anel único bege: o corredor em volta, embaixo, 10 vomitórios com túnel, os três portões na fachada, a pista, as placas e as quatro torres de luz.' },
-  'estadio-40': { id: 'estadio-40', nome: 'Estádio de 40 mil', nivel: 3, mil: 40000, foto: 'estadio_40', montar: montar40,
-    nota: 'A tigela de dois anéis: um corredor debaixo de cada anel, vomitórios com túnel nos dois, os três portões com a escadaria até o corredor de cima, o fosso e a pista de ônibus.' }
+  'estadio-10': { id: 'estadio-10', nome: 'Estádio de 10 mil', nivel: 1, mil: 10000, foto: 'estadio_10', montar: montar10, letreiro: 'Estádio Municipal',
+    terreno: { x0: -76, x1: 78, z0: -62, z1: 64, p1: -0.4 },
+    nota: 'O municipal: arquibancada reta no norte, a do leste e sul em L, o corredor embaixo das duas, os vomitórios em vala e os três portões (o 3, do visitante, pelo túnel de lona); por fora, o muro caiado com o nome pintado e o arco do portão 1.' },
+  'estadio-20': { id: 'estadio-20', nome: 'Estádio de 20 mil', nivel: 2, mil: 20000, foto: 'estadio_20', montar: montar20, letreiro: 'Estádio Centenário',
+    terreno: { x0: -102.15, x1: 102.15, z0: -76.55, z1: 75.75, p1: 0 },
+    nota: 'O anel único bege: o corredor em volta, embaixo, 10 vomitórios com túnel, os três portões com pórtico na fachada de concreto e cobogó, o letreiro, a pista, as placas e as quatro torres de luz.' },
+  'estadio-40': { id: 'estadio-40', nome: 'Estádio de 40 mil', nivel: 3, mil: 40000, foto: 'estadio_40', montar: montar40, letreiro: 'Arena da Cidade',
+    terreno: { x0: -142, x1: 142, z0: -118, z1: 118, p1: 0 },
+    nota: 'A tigela de dois anéis: um corredor debaixo de cada anel, vomitórios com túnel nos dois, os três portões com pórtico e a escadaria até o corredor de cima, o letreiro na fachada de seis andares, o fosso e a pista de ônibus.' }
 };
-/* monta um dos três: o grupo em metros (com a camada `setores` dentro) e a ficha */
-export function montarEstadioJogo(id) {
+/* o modelo de cada praça pela lotação (dados/estadios.js): até 15 mil, o
+   de 10; até 30 mil, o de 20; acima, o de 40 */
+export const modeloDaLotacao = n => n > 30000 ? 'estadio-40' : n > 15000 ? 'estadio-20' : 'estadio-10';
+/* A PLANTA 2D de cada um, pro mapa da cidade: o chão do terreno, o muro,
+   as arquibancadas em faixa com os vomitórios, a pista, o fosso, o
+   gramado e as linhas do campo — em metros, no referencial do modelo (o
+   portão 1 no +x, z pro sul). `formas`: {cor, pts} (polígono cheio, na
+   ordem de pintar); `linhas`: {cor, pts, larg, fechada}. */
+export function plantaDoEstadio(id) {
+  const formas = [], linhas = [];
+  const ret = (x0, x1, z0, z1) => [[x0, z0], [x1, z0], [x1, z1], [x0, z1]];
+  const cheio = (pts, cor) => formas.push({ cor, pts });
+  const traco = (pts, cor, larg, fechada = false) => linhas.push({ cor, pts, larg, fechada });
+  const anel = (F, d, u0 = 0, u1 = 9) => F.amostras(u0, u1).map(u => { const q = F.ponto(d, u); return [q[0], q[1]]; });
+  const faixa = (F, dA, dB, u0, u1) => anel(F, dB, u0, u1).concat(anel(F, dA, u0, u1).reverse());
+  const campo = (comp, larg) => {
+    const C = comp / 2, L = larg / 2, B = '#f4f4ee', l = 0.14;
+    traco(ret(-C, C, -L, L), B, l, true); traco([[0, -L], [0, L]], B, l);
+    const circ = (cx, cz, r, a0 = 0, a1 = 2 * Math.PI) => Array.from({ length: 33 }, (_, k) => { const a = a0 + (a1 - a0) * k / 32; return [cx + r * Math.cos(a), cz + r * Math.sin(a)]; });
+    traco(circ(0, 0, 9.15), B, l, true);
+    for (const s of [-1, 1]) {
+      traco([[s * C, -20.16], [s * (C - 16.5), -20.16], [s * (C - 16.5), 20.16], [s * C, 20.16]], B, l);
+      traco([[s * C, -9.16], [s * (C - 5.5), -9.16], [s * (C - 5.5), 9.16], [s * C, 9.16]], B, l);
+      const aa = Math.acos(5.5 / 9.15);
+      traco(s > 0 ? circ(C - 11, 0, 9.15, Math.PI - aa, Math.PI + aa) : circ(-C + 11, 0, 9.15, -aa, aa), B, l);
+    }
+  };
+  const E = ESTADIOS_JOGO[id], T = E.terreno;
+  if (id === 'estadio-10') {
+    const { Fg, Fn, Fl } = aneis10();
+    const corte = entre(Fl, [61, -5.7], [61, 4.9]);
+    cheio(ret(T.x0, T.x1, T.z0, T.z1), '#d9c9a8');
+    cheio(ret(-67.3, 70.8, -56.4, 57.6), '#b3a888');
+    const PASSA = '#c8c5bc', ARQ = '#d4d1c9';
+    cheio(ret(-45.2, 47.7, -56.0, -52.6), PASSA);
+    cheio([...anel(Fl, 12, 0, corte.ua), [70.4, -5.7], [70.4, -56.0], [47.7, -56.0]], PASSA);
+    cheio([...anel(Fl, 12, corte.ub, 5), [-66.9, 57.2], [70.4, 57.2], [70.4, 4.9]], PASSA);
+    cheio(faixa(Fn, 0, 12, 0, 1), ARQ);
+    cheio(faixa(Fl, 0, 12, 0, corte.ua), ARQ); cheio(faixa(Fl, 0, 12, corte.ub, 5), ARQ);
+    /* as valas dos vomitórios (fileiras 2 a 6: 1,6 a 5,6 m da frente) */
+    for (const [F, pts] of [[Fn, [-38, -14.4, 14.9, 38].map(x => [x, -45])], [Fl, [[61, -20], [61, 20], [44.2, 45], [13.8, 45], [-18, 45], [-40, 45]]]])
+      for (const [x, z] of pts) { const v = faixaEm(F, x, z, 2.4, 6); cheio(faixa(F, 1.6, 5.6, v.ua, v.ub), '#6e6a62'); }
+    cheio(anel(Fg, 0.2), '#f2f0ea');
+    cheio(anel(Fg, 0), '#7f9a4c');
+    campo(100, 68);
+    traco(ret(-67.1, 70.6, -56.2, 57.4), '#f4f1ea', 0.4, true);
+  } else if (id === 'estadio-20') {
+    const F = anel20();
+    cheio(ret(T.x0, T.x1, T.z0, T.z1), '#b8b8b3');
+    cheio(anel(F, 28), '#cdbf9f');
+    cheio(anel(F, 27.2), '#d9caa9');
+    for (const [x, z] of VOM20) { const v = faixaEm(F, x, z, 5, 8); cheio(faixa(F, 2.4, 10.4, v.ua, v.ub), '#5c574f'); }
+    cheio(anel(F, 0), '#a7a59e');
+    cheio(anel(F, -5.2), '#5f8b3c');
+    campo(105, 68);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) cheio(ret(sx * 88.5 - 1, sx * 88.5 + 1, sz * 66.5 - 1, sz * 66.5 + 1), '#8d9196');
+    for (const s of [-1, 1]) cheio(ret(-6, 6, s < 0 ? -75.5 : 73.7, s < 0 ? -73.7 : 75.5), '#e3d8c1');
+    traco(ret(-102, 102, -76.4, 75.6), '#e8dfcb', 0.3, true);
+  } else {
+    const F = anel40();
+    cheio(ret(T.x0, T.x1, T.z0, T.z1), '#cbc7bf');
+    cheio(anel(F, 64), '#8f8f8a');
+    cheio(anel(F, 58), '#c4b595');
+    cheio(anel(F, 55.6), '#cbb99a');
+    const dV = 24.4 + 14.5 * 0.8;
+    for (const [x, z] of VOM40) { const v = faixaEm(F, x, z, 4.4, dV); cheio(faixa(F, 24.4 + 10 * 0.8, 24.4 + 19 * 0.8, v.ua, v.ub), '#5c574f'); }
+    cheio(anel(F, 24.4), '#c7c0b2');
+    cheio(anel(F, 22.4), '#c2b192');
+    cheio(anel(F, 0), '#8d7a62');
+    cheio(anel(F, -5.3), '#b4ae84');
+    cheio(anel(F, -9.4), '#4d7f30');
+    campo(105, 68);
+    for (const s of [-1, 1]) for (const x of [-8.8, 4.6]) cheio(ret(x, x + 4.2, s > 0 ? 108.2 : -113.5, s > 0 ? 113.5 : -108.2), '#e7e2d5');
+  }
+  return { formas, linhas, terreno: { ...T } };
+}
+/* monta um dos três: o grupo em metros (com a camada `setores` dentro) e a
+   ficha. `opc.nome`: o nome do letreiro (sem ele, o de fábrica); `opc.mapa`:
+   pro mapa da cidade — sem a camada dos setores e sem o chão de fora do
+   terreno (`info.terreno`, em metros; o portão 1 fica sempre no +x) */
+export function montarEstadioJogo(id, opc = {}) {
   const E = ESTADIOS_JOGO[id];
   /* os materiais são de todos: o corte de um estádio visto antes não fica */
   for (const m of Object.values(MAT)) if (m.clippingPlanes && m.clippingPlanes.length) { m.clippingPlanes = null; m.needsUpdate = true; }
   const grupo = new THREE.Group(), setores = new THREE.Group();
   grupo.name = E.nome; setores.name = 'setores';
-  const O = novaObra(), S = novaObra();
-  const info = E.montar(O, S, setores);
-  O.fechar(grupo); S.fechar(setores, false);
-  grupo.add(setores);
+  const O = novaObra(), S = novaObra(), letreiro = nomeDoLetreiro(opc.nome || E.letreiro);
+  const info = E.montar(O, S, setores, { nome: letreiro, mapa: !!opc.mapa });
+  O.fechar(grupo, !opc.mapa);
+  if (!opc.mapa) { S.fechar(setores, false); grupo.add(setores); }
   let tri = 0, malhas = 0;
   grupo.traverse(o => { if (o.isMesh && o.parent === grupo) { tri += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3; malhas++; } });
   const caixa3 = new THREE.Box3();
   for (const o of grupo.children) if (o.isMesh) caixa3.expandByObject(o);
   const tam = caixa3.getSize(new THREE.Vector3());
   info.lugares = info.aneis.reduce((s, a) => s + a.lugares, 0);
-  Object.assign(info, { id, nome: E.nome, nivel: E.nivel, triangulos: Math.round(tri), malhas, planta: [tam.x, tam.z], altura: caixa3.max.y });
+  Object.assign(info, { id, nome: E.nome, nivel: E.nivel, triangulos: Math.round(tri), malhas, planta: [tam.x, tam.z], altura: caixa3.max.y, letreiro, terreno: { ...E.terreno } });
   return { grupo, info };
 }
 /* O CORTE: tira tudo acima da altura y (em metros, a do estádio) — o
