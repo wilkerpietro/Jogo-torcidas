@@ -20,6 +20,12 @@
    novo depois de mexer num mapa. A praça tem de caber no mapa do porte
    dela; se alguma não cabe, o teste sai com erro.
 
+   E depois, O MAPA DE CADA PRAÇA DE VERDADE: o que a planta abre pra ela
+   (mapa_da_praca.mjs), com os estádios dela no tamanho de verdade — o
+   modelo da lotação, que sai da vaga pra fora da cidade e muda o que
+   fica longe de estádio (a sede e o bar). A praça tem de caber nele
+   também.
+
      node ferramentas/planta_html/conferir_cidades.mjs
      node ferramentas/planta_html/conferir_cidades.mjs --csv saida.csv
    ========================================================= */
@@ -61,6 +67,7 @@ function falta(m, x) {
   return f;
 }
 
+const { mapaDaPraca } = await import(path.join(R, 'ferramentas/planta_html/mapa_da_praca.mjs'));
 const ORDEM = { Pequeno: 0, 'Médio': 1, Grande: 2 };
 const linhas = TO.dados.cidades.map(c => {
   const ts = TO.dados.torcidas.filter(t => t.mapa === c.id);
@@ -102,5 +109,20 @@ if (i > 0) {
   fs.writeFileSync(process.argv[i + 1], '﻿' + csv.join('\r\n'));
   console.log('\nCSV em', process.argv[i + 1]);
 }
-console.log(fora ? `\nFALHOU: ${fora} praça(s) não cabem no mapa do porte delas` : '\ntoda praça cabe no mapa do porte dela');
+/* o mapa de cada praça de verdade, com os estádios dela no tamanho de verdade */
+console.log('\nO MAPA DE CADA PRAÇA, com os estádios de verdade:');
+let foraDeVerdade = 0;
+for (const { c, x } of linhas) {
+  const { id, cfg, opc } = mapaDaPraca(c);
+  const G = gerarProposta(P, cfg, opc);
+  const m = { estadios: G.estadios.length, sedeGrande: G.espacosSede.filter(e => e.cabe > 1).length, sedePequena: G.espacosSede.filter(e => e.cabe === 1).length,
+              bares: G.bares.length, favelas: G.favelas.length + (G.ficaFavelaDeHoje ? 1 : 0), metro: !!G.metro };
+  const f = falta(m, x);
+  if (f.length) foraDeVerdade++;
+  const W = (G.mundo.x1 - G.mundo.x0) / P.METRO, H = (G.mundo.y1 - G.mundo.y0) / P.METRO;
+  console.log(`  ${c.nome.padEnd(20)} ${id.padEnd(7)} ${G.estadios.map(e => e.modelo.replace('estadio-', '') + (e.vagaUsada !== e.vaga ? '(vaga ' + e.vagaUsada + ')' : '')).join(' ')} · mundo ${Math.round(W)} × ${Math.round(H)} m · ` +
+              `${m.sedeGrande} sede grande, ${m.sedePequena} pequena, ${m.bares} bares · ${f.length ? 'FALTA ' + f.join(', ') : 'cabe'}`);
+}
+fora += foraDeVerdade;
+console.log(fora ? `\nFALHOU: ${fora} praça(s) não cabem no mapa do porte delas` : '\ntoda praça cabe no mapa do porte dela (e no mapa dela, com os estádios de verdade)');
 process.exit(fora ? 1 : 0);

@@ -19,7 +19,7 @@ A=${1:-/tmp/planta_html}
 mkdir -p "$A/dados" "$A/js" "$A/img/texturas/modelos"
 cp "$R/ferramentas/planta_html/index.html" "$A/"
 cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$A/js/"
-cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/escudos.js" "$A/dados/"
+cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/estadios.js" "$R/dados/escudos.js" "$A/dados/"
 # os escudos do jogo (img/escudos/, 278 PNG) não cabem como arquivo solto
 # (o artefato tem teto de 255 arquivos): vão embutidos num arquivo só, no
 # `window.__EMBUTIDOS` do jogo de arquivo único — só os das torcidas dos

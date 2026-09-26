@@ -1045,11 +1045,13 @@ void main() {
       let id = 0;
       if (it) { id = lista.length; lista.push({ it, caixa: [x0, Math.max(0, y0), z0, x1, Math.max(y1, 4), z1] }); }
       for (const p of pedacos) p.id = id;
-      if (grade) { const teto = PREDIOS.has(tipo) ? id : 0; for (const p of pedacos) grade.assar(p.P3, p.n, teto); }
+      /* (o que não barra quem anda — o braço da catraca, que gira — não risca nem vira piso) */
+      const barram = pedacos.filter(p => !p.m.userData.semRisco);
+      if (grade) { const teto = PREDIOS.has(tipo) ? id : 0; for (const p of barram) grade.assar(p.P3, p.n, teto); }
       /* a estação do metrô vai inteira pro subsolo (onde o boneco desce);
          o resto deixa o chão dele no piso da rua */
-      if (sub && tipo === 'metro') for (const p of pedacos) sub.juntar(p.P3, p.n);
-      else if (piso) for (const p of pedacos) piso.juntar(p.P3, p.n);
+      if (sub && tipo === 'metro') for (const p of barram) sub.juntar(p.P3, p.n);
+      else if (piso) for (const p of barram) piso.juntar(p.P3, p.n);
       const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
       for (const p of pedacos) {
         const k = i + ',' + j + '|' + p.chave;
@@ -1199,7 +1201,28 @@ void main() {
     const t = new THREE.CanvasTexture(c2); t.flipY = false;
     return t;
   }
-  async function montarChao(ar, grupo, avisar, vivo) {
+  /* A MÁSCARA DO MATO: o desenho da planta com o mato em magenta, um pixel
+     por metro. Sai antes do chão: o ladrilho que é só mato não é pintado
+     (é o mato de longe, o mesmo ladrilho), e o mato em 3D planta nela */
+  function mascaraDoMato(ar) {
+    const m1 = 1 / M, W = Math.ceil((ar.x1 - ar.x0) * m1), H = Math.ceil((ar.y1 - ar.y0) * m1);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c2 = cv.getContext('2d', { willReadFrequently: true });
+    P.pintarChao(c2, ar.x0, ar.y0, 1 / M, true);
+    const px = c2.getImageData(0, 0, W, H).data;
+    const dados = new Uint8Array(W * H);
+    for (let k = 0; k < W * H; k++) dados[k] = px[k * 4] > 200 && px[k * 4 + 1] < 60 && px[k * 4 + 2] > 200 ? 255 : 0;
+    cv.width = cv.height = 1;
+    return { W, H, dados, m1 };
+  }
+  /* o retângulo (em unidades) é todo mato na máscara? (com um metro de folga) */
+  const soMato = (masc, ar, x0, y0, x1, y1) => {
+    const i0 = Math.max(0, Math.floor((x0 - ar.x0) * masc.m1) - 1), i1 = Math.min(masc.W - 1, Math.ceil((x1 - ar.x0) * masc.m1) + 1);
+    const j0 = Math.max(0, Math.floor((y0 - ar.y0) * masc.m1) - 1), j1 = Math.min(masc.H - 1, Math.ceil((y1 - ar.y0) * masc.m1) + 1);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) if (masc.dados[j * masc.W + i] !== 255) return false;
+    return true;
+  };
+  async function montarChao(ar, grupo, avisar, vivo, masc) {
     const pxm = QUALIDADES[qualidade].pxm, s = pxm / M, lado = PX_CHAO / s;
     const nx = Math.ceil((ar.x1 - ar.x0) / lado), nz = Math.ceil((ar.y1 - ar.y0) / lado);
     const W = PX_CHAO + 2 * SOBRA;
@@ -1208,9 +1231,16 @@ void main() {
     const aniso = Math.min(8, rend.capabilities.getMaxAnisotropy());
     const u0 = SOBRA / W, u1 = (SOBRA + PX_CHAO) / W;
     let feitos = 0;
+    const deMato = [];
     for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
-      if (!vivo()) return;
+      if (!vivo()) return deMato;
       const x0 = ar.x0 + i * lado, y0 = ar.y0 + j * lado;
+      /* o ladrilho só de mato fica pro mato de longe */
+      if (masc && soMato(masc, ar, x0, y0, Math.min(x0 + lado, ar.x1), Math.min(y0 + lado, ar.y1))) {
+        deMato.push({ x0, y0, x1: Math.min(x0 + lado, ar.x1), y1: Math.min(y0 + lado, ar.y1) });
+        avisar(++feitos / (nx * nz));
+        continue;
+      }
       P.pintarChao(c2, x0 - SOBRA / s, y0 - SOBRA / s, s);
       const tex = await texturaDoCanvas(cv);
       tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = aniso;
@@ -1229,6 +1259,7 @@ void main() {
       avisar(++feitos / (nx * nz));
       await espera();
     }
+    return deMato;
   }
   /* O CHÃO DE LONGE: pra lá da área pintada, até o horizonte, em quatro
      faixas em volta dela, que NÃO se sobrepõem (plano embaixo de plano,
@@ -1242,7 +1273,7 @@ void main() {
        própria praia pintada pela planta — a areia, a areia molhada, a
        espuma, o raso e a onda — repetido ao longo da costa) e o mar; a
        leste, só o mar, na cor do mar da planta. */
-  function chaoDeLonge(ar, grupo) {
+  function chaoDeLonge(ar, grupo, deMato = []) {
     const G = 400000, T = 2400, Y = -0.3;
     const quad = (x0, x1, z0, z1, mat, uv) => {
       if (x1 - x0 < 1 || z1 - z0 < 1) return;
@@ -1284,6 +1315,8 @@ void main() {
   }`);
     };
     mato.customProgramCacheKey = () => 'longe-mato-capim';
+    /* o ladrilho de dentro que era só mato (montarChao não pintou) */
+    for (const r of deMato) quad(r.x0, r.x1, r.y0, r.y1, mato, uvMundo);
     const costa = P.costa && P.costa();
     quad(ar.x0 - G, ar.x0, ar.y0, ar.y1, mato, uvMundo);                      // oeste
     if (!costa) {
@@ -1319,16 +1352,10 @@ void main() {
   /* ======================================================
      O MATO: onde o desenho é mato, o mato3d.js do jogo
      ====================================================== */
-  function montarMatoDoMapa(ar, grupo, grade) {
+  function montarMatoDoMapa(ar, grupo, grade, masc) {
     const m1 = 1 / M;                                   // metro por unidade
-    const W = Math.ceil((ar.x1 - ar.x0) * m1), H = Math.ceil((ar.y1 - ar.y0) * m1);
-    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const c2 = cv.getContext('2d', { willReadFrequently: true });
-    P.pintarChao(c2, ar.x0, ar.y0, 1 / M, true);
-    const px = c2.getImageData(0, 0, W, H).data;
+    const { W, H, dados } = masc || mascaraDoMato(ar);
     /* a máscara vai pro chão: o capim de perto só onde é mato */
-    const dados = new Uint8Array(W * H);
-    for (let k = 0; k < W * H; k++) dados[k] = px[k * 4] > 200 && px[k * 4 + 1] < 60 && px[k * 4 + 2] > 200 ? 255 : 0;
     if (MATO_U.uMatoM.value) MATO_U.uMatoM.value.dispose();
     const tm = new THREE.DataTexture(dados, W, H, THREE.RedFormat, THREE.UnsignedByteType);
     tm.magFilter = tm.minFilter = THREE.LinearFilter; tm.unpackAlignment = 1; tm.needsUpdate = true;
@@ -1343,10 +1370,35 @@ void main() {
     });
     const magenta = (x, y) => {
       const i = Math.floor(x), j = Math.floor(y);
-      if (i < 0 || j < 0 || i >= W || j >= H) return false;
-      const k = (j * W + i) * 4;
-      return px[k] > 200 && px[k + 1] < 60 && px[k + 2] > 200;
+      return i >= 0 && j >= 0 && i < W && j < H && dados[j * W + i] === 255;
     };
+    /* A DISTÂNCIA (m) de cada metro de mato até o que não é mato (a cidade,
+       a estrada, o estádio): a árvore fica até PERTO_M dele, com metade das
+       árvores depois de CHEIO_M. Longe de tudo (o mundo cresceu com os
+       estádios de verdade), o mato é só o chão pintado */
+    const CHEIO_M = 60, PERTO_M = 130, dist = new Float32Array(W * H);
+    for (let k = 0; k < W * H; k++) dist[k] = dados[k] === 255 ? 1e9 : 0;
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const k = j * W + i; let d = dist[k];
+      if (!d) continue;
+      if (i > 0) d = Math.min(d, dist[k - 1] + 1);
+      if (j > 0) { d = Math.min(d, dist[k - W] + 1); if (i > 0) d = Math.min(d, dist[k - W - 1] + 1.414); if (i < W - 1) d = Math.min(d, dist[k - W + 1] + 1.414); }
+      dist[k] = d;
+    }
+    for (let j = H - 1; j >= 0; j--) for (let i = W - 1; i >= 0; i--) {
+      const k = j * W + i; let d = dist[k];
+      if (!d) continue;
+      if (i < W - 1) d = Math.min(d, dist[k + 1] + 1);
+      if (j < H - 1) { d = Math.min(d, dist[k + W] + 1); if (i < W - 1) d = Math.min(d, dist[k + W + 1] + 1.414); if (i > 0) d = Math.min(d, dist[k + W - 1] + 1.414); }
+      dist[k] = d;
+    }
+    const meia = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h) < 0.5; };
+    /* a distância de um ponto de fora da área: a da beira dela mais o que falta até a beira */
+    const distEm = (a, b) => {
+      const i = Math.min(W - 1, Math.max(0, Math.floor(a))), j = Math.min(H - 1, Math.max(0, Math.floor(b)));
+      return dist[j * W + i] + Math.hypot(Math.max(0, -a, a - W), Math.max(0, -b, b - H));
+    };
+    const pertoDeAlgo = (a, b, x, z) => { const d = distEm(a, b); return d <= CHEIO_M || (d <= PERTO_M && meia(x, z)); };
     /* longe da beira do que não é mato: 2 m pros quatro lados; e a BEIRA
        do mato (LIMPO_M, rente à cidade, à estrada e à favela) fica só com
        a vegetação rasteira do chão — a árvore começa depois dela */
@@ -1355,7 +1407,7 @@ void main() {
       const a = x - ox, b = z - oz;
       if (!(magenta(a, b) && magenta(a - 2, b) && magenta(a + 2, b) && magenta(a, b - 2) && magenta(a, b + 2))) return false;
       for (let k = 0; k < 8; k++) if (!magenta(a + LIMPO_M * Math.cos(k * Math.PI / 4), b + LIMPO_M * Math.sin(k * Math.PI / 4))) return false;
-      return true;
+      return pertoDeAlgo(a, b, x, z);
     };
     /* PRA LÁ DO CHÃO PINTADO, um anel de ANEL_M metros com metade das
        árvores, pra borda do mato não sair reta; no litoral, só do lado de
@@ -1366,8 +1418,7 @@ void main() {
         const X = x * M, Z = z * M, lim = Z < ar.y0 ? costa.areia(ar.y0) : Z > ar.y1 ? costa.areia(ar.y1) : ar.x1;
         if (X > Math.min(lim, ar.x1) - 8 * M) return false;
       }
-      const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
-      return h - Math.floor(h) < 0.5;
+      return meia(x, z) && distEm(x - ox, z - oz) <= PERTO_M;
     };
     const pode = (x, z) => (x >= ox && x < ox + W && z >= oz && z < oz + H) ? dentro(x, z) : fora(x, z);
     const lugar = P.vegetacao();
@@ -1452,11 +1503,15 @@ void main() {
     jogarForaOMapa();
     area = P.areaDoCenario();
     enquadrarCidade(true);
-    /* 1. o chão */
+    /* 1. o chão (os tempos de cada fase vão pros números) */
+    const tempos = {}, marca = (k, t) => { tempos[k] = +((agora() - t) / 1000).toFixed(2); };
+    let tf = agora();
     const grupoChao = new THREE.Group(); doMapa.add(grupoChao);
-    await montarChao(area, grupoChao, f => aviso('Pintando o chão…', f * 0.25), vivo);
+    let masc = mascaraDoMato(area);
+    const deMato = await montarChao(area, grupoChao, f => aviso('Pintando o chão…', f * 0.25), vivo, masc);
     if (!vivo()) return;
-    chaoDeLonge(area, grupoChao);
+    chaoDeLonge(area, grupoChao, deMato);
+    marca('chao', tf); tf = agora();
     pedir();
     /* 2. as coisas, no forno (e a estação do metrô também no subsolo) */
     const gradeNova = GradeDoPasso(area, M), pisoNovo = PisoDaRua(area.x0, area.y0, area.x1, area.y1, M);
@@ -1476,11 +1531,13 @@ void main() {
         tFatia = agora();
       }
     }
+    marca('cidade', tf); tf = agora();
     aviso('Juntando as malhas…', 0.86);
     await espera();
     if (!vivo()) return;
     const tri = forno.triangulos, nMalhas = forno.malhas;
     const cidade3d = forno.tirar();
+    marca('juntar', tf);
     doMapa.add(cidade3d);
     montarPortas(forno.vivos);
     coisas = forno.coisas;
@@ -1489,7 +1546,11 @@ void main() {
     await espera();
     if (!vivo()) return;
     const grupoMato = new THREE.Group(); doMapa.add(grupoMato);
-    const mato = montarMatoDoMapa(area, grupoMato, gradeNova);
+    tf = agora();
+    const mato = montarMatoDoMapa(area, grupoMato, gradeNova, masc);
+    masc = null;
+    marca('mato', tf);
+    mato.ladrilhosDeMato = deMato.length;
     /* a água entra por último na grade do passo */
     const tGrade = agora();
     gradeNova.agua(P.costa && P.costa(), P.lagoa && P.lagoa());
@@ -1506,7 +1567,7 @@ void main() {
     }
     grade = gradeNova; sub = subNovo; piso = pisoNovo;
     montado = { nome, decal: forno.decal };
-    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000,
+    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000, tempos,
                 folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade), piso: piso.n }),
                 subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(agora() - tSub) } : null };
     /* o escudo em PNG chega depois: a folha copia de novo */

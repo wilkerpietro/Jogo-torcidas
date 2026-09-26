@@ -49,10 +49,14 @@ function fatiaDoNivel1(a, frente) {
   return { x0: a.x1 - PR, x1: a.x1, y0: a.y0, y1: a.y0 + LF };
 }
 
-/* as sedes possíveis: uma por (tamanho, nível, frente) */
+/* as sedes possíveis: uma por (tamanho, nível, frente), nos três mapas e
+   no mapa de cada praça (com os estádios de verdade, o que fica longe de
+   estádio muda) */
 const casos = new Map();
-for (const id of ['pequeno', 'medio', 'grande']) {
-  const G = gerarProposta(P, MAPAS[id]);
+const { mapaDaPraca } = await import(path.join(R, 'ferramentas/planta_html/mapa_da_praca.mjs'));
+const mapas = ['pequeno', 'medio', 'grande'].map(id => [id, gerarProposta(P, MAPAS[id])])
+  .concat(TO.dados.cidades.map(c => { const { id, cfg, opc } = mapaDaPraca(c); return [id + ' de ' + c.nome, gerarProposta(P, cfg, opc)]; }));
+for (const [id, G] of mapas) {
   for (const e of G.espacosSede) {
     const lista = e.cabe === 1 ? [[1, e.area]] : [[3, e.area], [1, fatiaDoNivel1(e.area, e.frente)]];
     for (const [nivel, area] of lista) {

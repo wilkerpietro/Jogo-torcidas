@@ -10,7 +10,8 @@
    partir da fila de cada portão (`info.entradas[].ponto`, 2,5 m pra fora
    da porta). O corpo sobe até DEGRAU m de um passo (o degrau da
    arquibancada é de 0,40 a 0,52 m) e bate no que tem de FAIXA acima do
-   pé; o braço da catraca não conta (ele gira). Fora do estádio (o muro
+   pé; o braço da catraca não conta (ele gira: o material dele diz
+   `semRisco`, e o cenário também não bate nele). Fora do estádio (o muro
    do de 10 mil, a fachada do de 20 e do de 40) só se anda perto do
    começo: a rua liga os portões, o teste é do lado de dentro.
 
@@ -78,14 +79,9 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
       }
       return;
     }
-    const fica = [];
-    for (let k = 0; k < I.count * 3; k += 9) {
-      const ys = [pts[k + 1], pts[k + 4], pts[k + 7]];
-      /* o braço da catraca (de 0,85 a 0,91 m do chão): gira, o corpo passa */
-      if (o.name === 'pintura' && Math.min(...ys) > 0.84 && Math.max(...ys) < 0.92) continue;
-      for (let t = 0; t < 9; t++) fica.push(pts[k + t]);
-    }
-    S.juntar(new Float32Array(fica), fica.length / 3);
+    /* o braço da catraca: gira, o corpo passa (o balde dele não barra) */
+    if (o.material.userData.semRisco) return;
+    S.juntar(pts, pts.length / 3);
   });
   S.fechar();
   console.log(`${ESTADIOS_JOGO[id].nome}: montado em ${((Date.now() - t0) / 1000).toFixed(1)} s, ${S.n} triângulos, ${alvos.length} pontos de chão pintado`);
