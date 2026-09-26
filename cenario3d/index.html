@@ -159,6 +159,12 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 .dados dd { margin: 2px 0 0; font: 13px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .dados .largo { grid-column: 1 / -1; }
 .nota { margin: 10px 0 0; color: var(--tinta-2); font-size: 13px; }
+.ficha .refs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.ficha .refs a { display: block; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); text-decoration: none; }
+.ficha .refs img { display: block; width: 100%; height: auto; margin-top: 4px; border-radius: 6px; border: 1px solid var(--linha); }
+.setores-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13px; }
+.setores-lista i { display: inline-block; width: 11px; height: 11px; margin-right: 7px; border-radius: 3px; vertical-align: -1px; }
+.setores-lista span { font: 12px var(--f-dado); font-variant-numeric: tabular-nums; color: var(--tinta-2); }
 .campo { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
 .campo select { font: 500 15px/1.2 var(--f-texto); letter-spacing: 0; text-transform: none; color: var(--tinta); background: var(--papel);
   border: 1px solid var(--linha); border-radius: 8px; padding: 7px 9px; }
@@ -281,6 +287,7 @@ import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
 import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio } from './js/estadios3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -3251,10 +3258,11 @@ function selecionar(it, rolar) {
 }
 
 /* ======================================================
-   OS MODELOS 3D: o catálogo do que ainda não entrou no mapa — as dez
-   árvores low poly, que são as árvores do jogo (js/arvores_lowpoly.js),
-   de perto e de longe, o mato simplificado (js/mato3d.js) e as peças da
-   praia (js/praia3d.js). Cada um abre grande no 3D, com a ficha.
+   OS MODELOS 3D: o catálogo do que ainda não entrou no mapa — os três
+   estádios do jogo (js/estadios3d.js), as dez árvores low poly, que são
+   as árvores do jogo (js/arvores_lowpoly.js), de perto e de longe, o
+   mato simplificado (js/mato3d.js) e as peças da praia (js/praia3d.js).
+   Cada um abre grande no 3D, com a ficha.
    ====================================================== */
 const GRUPOS_FLORA = { mata: 'Mata', cerrado: 'Cerrado', caatinga: 'Caatinga', cidade: 'Cidade', praia: 'Praia', sul: 'Sul' };
 const CHAO_FLORA = { mata: '#6b7f4a', cerrado: '#b3a868', caatinga: '#b9a98a', cidade: '#8f9a78', praia: '#dccb9e', sul: '#6f8a52' };
@@ -3263,6 +3271,48 @@ const MODELOS = [];
 function malhasDoDestino(destino, g, placas) {
   for (const [lista, m] of Object.entries(destino)) { const mm = malhaDeBlocos(m, lista); if (mm) g.add(mm); }
   for (const p of placas || []) placaDoModelo(g, p);
+}
+/* OS ESTÁDIOS DO JOGO (js/estadios3d.js): as três cenas de estádio do
+   protótipo do feed, em 3D e em metros, com a foto e os setores do dono
+   do lado. A camada dos setores liga e desliga sem remontar; o .glb sai
+   do que está na vista (em metros, pro Blender ou pro Unity). Sem o chão
+   redondo da vista: o estádio traz o dele. */
+const emM = v => v.toLocaleString('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' m';
+const milhar = n => Math.round(n).toLocaleString('pt-BR');
+const contaDosLugares = (n, nome) => { const r = n / nome;
+  return `dá ${milhar(n)} lugares, ${r > 1.25 ? 'bem mais que os' : r < 0.85 ? 'menos que os' : 'perto dos'} ${milhar(nome)} do nome`; };
+for (const E of Object.values(ESTADIOS_JOGO)) {
+  MODELOS.push({
+    tipo: 'modelo', id: 'jogo-' + E.id, secao: 'Estádios do jogo', grupo: 'As três cenas do protótipo', nome: E.nome, nota: E.nota,
+    chao: '#b9b8ae', semChao: true, frente: [0, 1], info: null, obj: null, setores: true, baixando: false,
+    arquivo: E.id.replace('-', '_') + '_mil.glb',
+    montar(g) {
+      const r = montarEstadioJogo(E.id), w = new THREE.Group();
+      w.scale.setScalar(M); w.add(r.grupo); g.add(w);
+      r.grupo.getObjectByName('setores').visible = this.setores;
+      this.obj = r.grupo; this.info = r.info;
+      if (estado.sel === this) $('ficha').innerHTML = this.ficha();
+    },
+    ficha() {
+      const i = this.info, sobre = `<p class="sobre">Modelo 3D · estádio do jogo · nível ${E.nivel}</p><h2>${esc(E.nome)}</h2>`;
+      const refs = `<div class="refs"><a href="img/referencias/${E.foto}.webp" target="_blank" rel="noopener">Foto do protótipo<img src="img/referencias/${E.foto}.webp" alt="A foto aérea do ${esc(E.nome)} no protótipo" loading="lazy"></a>` +
+        `<a href="img/referencias/${E.foto}_setores.webp" target="_blank" rel="noopener">Setores do dono<img src="img/referencias/${E.foto}_setores.webp" alt="Os setores que o dono marcou no ${esc(E.nome)}" loading="lazy"></a></div>`;
+      if (!i) return sobre + '<p class="nota">Montando o estádio…</p>' + refs;
+      const aneis = i.aneis.map(a => [a.nome, `${a.fileiras} degraus de ${a.degrau} · ${milhar(a.lugares)} lugares`, true]);
+      const setores = '<h3>Setores do dono</h3><ul class="setores-lista">' + i.setores.map(s =>
+        `<li><i style="background:${s.cor}"></i>${esc(s.nome)}${s.id === 'pm' ? ' — a faixa vazia entre as torcidas' : ''} <span>· ${milhar(s.lugares)} lugares</span></li>`).join('') + '</ul>' +
+        (i.livre ? `<p class="nota">Sem setor: ${esc(i.livre)}.</p>` : '') + (i.aviso ? `<p class="nota">${esc(i.aviso)}</p>` : '');
+      return sobre + linhas([
+        ['Planta', emM(i.planta[0]) + ' × ' + emM(i.planta[1]) + ' (com o terreno)', true], ['Altura', emM(i.alturaArq) + ' na arquibancada'],
+        ['Luz', i.luz, true],
+        ['Lugares', milhar(i.lugares) + ' (0,5 m por pessoa)'], ...aneis,
+        ['Vomitórios', String(i.vomitorios)], ['Triângulos', milhar(i.triangulos) + ' em ' + i.malhas + ' malhas']
+      ]) + `<div class="acoes"><button data-acao="setores" aria-pressed="${this.setores}">${this.setores ? 'Esconder os setores' : 'Mostrar os setores'}</button>` +
+        `<button data-acao="glb"${this.baixando ? ' disabled' : ''}>${this.baixando ? 'Gerando o .glb…' : 'Baixar .glb'}</button></div>` +
+        (this.erroGlb ? `<p class="nota">${esc(this.erroGlb)}</p>` : '') + setores + refs +
+        `<p class="nota">Medido na foto com o campo de régua (105 × 68 m; o de 10 mil, 100 × 68), em metros. O degrau é o de verdade (0,80 m de piso); a foto, gerada, desenha o degrau mais largo ou mais estreito, e com o degrau de verdade a planta da foto ${contaDosLugares(i.lugares, E.mil)}. A camada dos setores (a cor, o nome, a faixa de cada escalão e os túneis) liga e desliga; as divisórias de gradil ficam. O .glb leva o que está visível, com as texturas, em metros — o Blender abre direto; no Unity, pelo pacote glTFast. No artefato do claude.ai ele vem dentro de um .zip (o artefato só deixa baixar zip); no GitHub Pages, direto. <code>js/diajogo/estadios3d.js</code>.</p>`;
+    }
+  });
 }
 /* as árvores low poly (js/arvores_lowpoly.js): as dez juntas, pra comparar,
    e cada uma sozinha */
@@ -3750,12 +3800,49 @@ $('ficha').addEventListener('click', ev => {
   const A = estado.sel;
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'semente') { A.semente++; selecionar(A); return; }
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'longe') { A.longe = !A.longe; selecionar(A); return; }
+  /* o estádio: liga e desliga a camada dos setores; baixa o .glb do que está na vista */
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'setores' && A.obj) {
+    A.setores = !A.setores;
+    A.obj.getObjectByName('setores').visible = A.setores;
+    $('ficha').innerHTML = A.ficha(); vista.pedir(); return;
+  }
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'glb' && A.obj && !A.baixando) {
+    A.baixando = true; A.erroGlb = ''; $('ficha').innerHTML = A.ficha();
+    glbDoEstadio(A.obj).then(buf => oferecerArquivo(A.arquivo, buf))
+      .catch(e => { if (e && e.code !== 'declined') { console.error(e); A.erroGlb = 'Não deu pra baixar: ' + (e.message || e.code || e); } })
+      .finally(() => { A.baixando = false; if (estado.sel === A) $('ficha').innerHTML = A.ficha(); });
+    return;
+  }
   if (!b || !A || A.tipo !== 'estacao') return;
   if (b.dataset.acao === 'viajar') {
     const B = estacoes.find(x => x.est === outraDe(A.est));
     vista.viagem(A, B, () => { selecionar(B); centrarEm((B.bb.x0 + B.bb.x1) / 2, (B.bb.y0 + B.bb.y1) / 2); });
   } else if (b.dataset.acao === 'plataforma') vista.olhar(A.planta.olhar, [A.planta.parada.dir, 0]);
 });
+/* BAIXAR UM ARQUIVO: no artefato do claude.ai, pela capacidade
+   `downloads` (quem vê confirma; ela só aceita alguns formatos, e .glb
+   não é um deles — o .glb vai dentro de um .zip); na página solta (o
+   GitHub Pages), o arquivo direto */
+const baixador = window.claude && typeof window.claude.use === 'function' ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+const TABELA_CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = TABELA_CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+/* o .zip mais simples: um arquivo só, guardado sem compressão */
+function zipDeUm(nome, dados) {
+  const nb = new TextEncoder().encode(nome), crc = crc32(dados), n = dados.length;
+  const loc = new DataView(new ArrayBuffer(30)), cen = new DataView(new ArrayBuffer(46)), fim = new DataView(new ArrayBuffer(22));
+  for (const [dv, o, v, t] of [[loc, 0, 0x04034b50, 4], [loc, 4, 20, 2], [loc, 6, 0x0800, 2], [loc, 12, 0x21, 2], [loc, 14, crc, 4], [loc, 18, n, 4], [loc, 22, n, 4], [loc, 26, nb.length, 2],
+    [cen, 0, 0x02014b50, 4], [cen, 4, 20, 2], [cen, 6, 20, 2], [cen, 8, 0x0800, 2], [cen, 14, 0x21, 2], [cen, 16, crc, 4], [cen, 20, n, 4], [cen, 24, n, 4], [cen, 28, nb.length, 2],
+    [fim, 0, 0x06054b50, 4], [fim, 8, 1, 2], [fim, 10, 1, 2], [fim, 12, 46 + nb.length, 4], [fim, 16, 30 + nb.length + n, 4]])
+    if (t === 4) dv.setUint32(o, v, true); else dv.setUint16(o, v, true);
+  return new Blob([loc, nb, dados, cen, nb, fim]);
+}
+async function oferecerArquivo(nome, buf) {
+  const dl = await baixador;
+  if (dl) { await dl.save({ filename: nome.replace(/\.glb$/, '.zip'), data: zipDeUm(nome, new Uint8Array(buf)) }); return; }
+  const url = URL.createObjectURL(new Blob([buf], { type: 'model/gltf-binary' })), a = document.createElement('a');
+  a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
 function centrarEm(x, y) {
   estado.ox = x - estado.larg / 2 / estado.s; estado.oy = y - estado.alt / 2 / estado.s;
   pedirDesenho();
@@ -4690,7 +4777,7 @@ function criarVista(canvas) {
       comBandeira = false;
       grupo.traverse(o => { if (o.userData.bandeira) comBandeira = true; });
       const sub = !!grupo.userData.subsolo;
-      chao.visible = !sub;
+      chao.visible = !sub && !(it && it.semChao);
       raio = Math.max(40, 0.5 * Math.hypot(tam.x, tam.y, tam.z));
       orb.alvo.set(0, sub ? c.y : tam.y * 0.5, 0);
       orb.dist = raio / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * (sub ? 0.95 : 1.04);
@@ -4799,7 +4886,7 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
   get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; },
-  get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo };
+  get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm };
 
 /* ======================================================
    O CENÁRIO 3D (js/cenario.js): o mapa inteiro em 3D, por cima da planta
