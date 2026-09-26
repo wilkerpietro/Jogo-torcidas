@@ -712,16 +712,17 @@ function sofa(ctx, Q, s0, s1, t0, t1, costas, tinta) {
   for (const b of ao ? [[s0, s1, t0, t0 + 0.16], [s0, s1, t1 - 0.16, t1]] : [[s0, s0 + 0.16, t0, t1], [s1 - 0.16, s1, t0, t1]])
     qcaixa(ctx, Q, b[0], b[1], b[2], b[3], PISO + 0.42, PISO + 0.62, { todas: lisa(tinta), base: null });
 }
-/* o mastro com a bandeira nas três cores, o pano ao longo de `dir` */
-function mastroComBandeira(ctx, x, z, y0, alt, dx, dz, cores) {
+/* o mastro; a BANDEIRA (o pano, ao longo de `dir`) não vai no bloco: ela
+   tremula, então sai à parte (`ctx.bandeira`, no mundo em `bandeira`) e
+   quem mostra monta o pano vivo — o escudo da torcida no meio, o fundo
+   na cor 1 e a borda nas cores 2 e 3 */
+const BANDEIRA = { larg: 1.6, alt: 1.05 };
+function mastroComBandeira(ctx, x, z, y0, alt, dx, dz) {
   const B = ctx.B;
   B.pintar('#c9ccce');
   B.torno(x, z, [[0.04, y0], [0.03, y0 + alt], [0.05, y0 + alt + 0.04], [0.001, y0 + alt + 0.1]], 8, 'lisa');
   B.pintar(null);
-  const larg = 1.3, h = 0.84, topo = y0 + alt - 0.05;
-  const F = B.plano([x + dx * 0.04, topo - h, z + dz * 0.04], [dx, 0, dz], [0, 1, 0]);
-  [cores.cor, cores.cor2, cores.cor3].forEach((c, i) =>
-    B.esticar(F, 0, larg, h - (i + 1) * h / 3, h - i * h / 3, 'lisa', { tinta: viva(c) }));
+  ctx.bandeira = { x: x + dx * 0.04, z: z + dz * 0.04, topo: y0 + alt - 0.05, dx, dz, larg: BANDEIRA.larg, alt: BANDEIRA.alt };
 }
 
 /* =======================================================
@@ -1358,7 +1359,7 @@ export function montarSede(sede, destino = {}, opc = {}) {
 
   /* ---- a fachada: mastro, arandelas, o ar do lado de fora ---- */
   const mt = P.mastro;
-  if (aberta && mt) mastroComBandeira(ctx, u(mt.u), u(mt.v), u(mt.base), u(mt.alt), 1, 0, cor);
+  if (aberta && mt) mastroComBandeira(ctx, u(mt.u), u(mt.v), u(mt.base), u(mt.alt), 1, 0);
   if (!so2d) {
     const fz = u(P.F0) - 0.01, gl = u(P.g0) - u(8), gr = u(P.g1) + u(8);
     for (const x of [gl, gr]) {
@@ -1456,7 +1457,16 @@ export function montarSede(sede, destino = {}, opc = {}) {
     return { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(az, bz), y1: Math.max(az, bz), cor: r.cor, tipo: r.tipo };
   };
   const tetoMundo = P.teto.map(t => retMundo({ x0: u(t.u0), x1: u(t.u1), z0: u(t.v0), z1: u(t.v1), cor: '#8e8a82', tipo: 'teto' }));
-  return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), teto: tetoMundo,
+  /* A BANDEIRA no mundo: o canto de cima do pano do lado do mastro, o rumo
+     do pano (`dx`, `dz`), as cores e o escudo */
+  const bm = ctx.bandeira && T0 ? ctx.bandeira : null;
+  const bandeira = bm ? (() => {
+    const [x, z] = noMundo(bm.x, bm.z), [dx, dz] = dirMundo(bm.dx, bm.dz), n = Math.hypot(dx, dz) || 1;
+    return { x, z, topo: y0 + bm.topo * M, dx: dx / n, dz: dz / n, larg: bm.larg * M, alt: bm.alt * M,
+             cor: cor.cor, cor2: cor.cor2, cor3: cor.cor3, img: T0.escudo || null, sigla: T0.sigla || '',
+             corTexto: legivelSobre(cor.cor2, [cor.cor, cor.cor3]) };
+  })() : null;
+  return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), teto: tetoMundo, bandeira,
            comodos: comodos.map(c => ({ nome: c.nome, tipo: c.tipo, larg: c.x1 - c.x0, fundo: c.z1 - c.z0 })) };
 }
 /* a cor que se lê sobre a cor da torcida: a primeira das dela que se

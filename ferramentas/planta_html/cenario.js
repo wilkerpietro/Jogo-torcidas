@@ -560,6 +560,7 @@ export function criarCenario(P) {
     if (ape) andarAPe(dt);
     else if (teclas.size) andar(dt);
     animarPortas(dt);
+    if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
     if (voo) voo(dt);
     posicionar();
     atualizarCorte();
@@ -1025,8 +1026,9 @@ void main() {
       grupo.updateMatrixWorld(true);
       const pedacos = [];
       /* a folha da porta que abre e fecha fica viva (não junta nem risca: o
-         cenário gira ela e bate nela na hora) */
-      grupo.traverse(o => { if (o.isMesh && o.userData.porta) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
+         cenário gira ela e bate nela na hora); a bandeira da sede também
+         (ela tremula) */
+      grupo.traverse(o => { if (o.isMesh && (o.userData.porta || o.userData.bandeira)) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
       /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
       let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
       for (const p of pedacos) for (let k = 0; k < p.n; k++) {
@@ -1035,7 +1037,7 @@ void main() {
       }
       /* o que a coisa trouxe e é só dela (o decalque, a geometria) sai */
       grupo.traverse(o => {
-        if (o.userData.porta) return;
+        if (o.userData.porta || o.userData.bandeira) return;
         if (o.geometry) o.geometry.dispose();
         if (o.material && o.material.map && o.material.map.isCanvasTexture && o.material.map.wrapS !== THREE.RepeatWrapping) { o.material.map.dispose(); o.material.dispose(); }
       });
@@ -1680,6 +1682,17 @@ void main() {
   function montarPortas(vivos) {
     portas = [];
     for (const m of vivos) {
+      /* a bandeira: só entra no mapa (e no corte), com o mundo dela */
+      if (m.userData.bandeira) {
+        m.material = cortavel(m.material, false);
+        m.material.userData.doMapa = true;                // (sai com o mapa, textura junto)
+        m.updateMatrixWorld(true);
+        const w = m.matrixWorld.clone();
+        m.removeFromParent();
+        w.decompose(m.position, m.quaternion, m.scale);
+        doMapa.add(m);
+        continue;
+      }
       const d = m.userData.porta;
       if (!matPorta.has(m.material)) matPorta.set(m.material, cortavel(m.material.clone(), false));
       m.material = matPorta.get(m.material);

@@ -1,5 +1,5 @@
 /* =========================================================
-   OS EQUIPAMENTOS NOVOS DA PROPOSTA — o shopping, a delegacia e a praça
+   OS EQUIPAMENTOS NOVOS DA PROPOSTA — o shopping, a delegacia, a praça e a igreja
    ---------------------------------------------------------
    O SHOPPING POENTE (no lugar do campo de várzea) é o da primeira foto
    do dono: três andares de cortina de vidro verde com a faixa de
@@ -468,6 +468,197 @@ export function montarDelegacia(spec, destino = {}, opc = {}) {
   arvore(LP, 1.6, -1.6, 5.2, 1.6, false, marcas);
 
   return fechar(E, { equip: B, grades: G, vidros: V, lowpoly: LP }, destino, placas, marcas);
+}
+
+/* =======================================================
+   A IGREJA DO BAIRRO NOVO DO NORTE — a Paróquia São Judas Tadeu
+   ---------------------------------------------------------
+   Igreja de bairro, não matriz: uma torre só, do lado, e o frontão
+   reto. De frente pra avenida de entrada, com o adro na frente:
+   - a NAVE de parede amarela, com o embasamento, as pilastras e a
+     cornija no reboco branco, cinco janelas de cada lado, a porta do
+     lado esquerdo e o telhado de telha em duas águas;
+   - a FACHADA com a porta verde em arco (o nome da paróquia na placa
+     em cima), as duas janelas, o óculo e o FRONTÃO triangular que passa
+     do telhado, com a beira branca e a cruz na ponta;
+   - a TORRE SINEIRA do lado direito, um pouco à frente da fachada: a
+     porta, as janelinhas, o vão do sino nos quatro lados, a cornija e o
+     telhado em pirâmide com a cruz;
+   - a CAPELA-MOR atrás, mais baixa, com o vitral em losango;
+   - o ADRO de pedra portuguesa, a escadaria de pedra até a porta, os
+     dois canteiros (o oiti e o ipê amarelo), os postes de praça e o
+     quadro dos horários da missa; o resto do terreno é gramado, cercado
+     de mureta e grade nos lados e no fundo.
+   Tudo nas peças da folha da igreja matriz (a folha `igreja`), menos o
+   chão, o canteiro e o poste, que são os da praça.
+   ======================================================= */
+const AMARELO_IGREJA = '#f3dd9c';
+export function montarIgreja(spec, destino = {}, opc = {}) {
+  const E = eixosDoEquip(spec.area, spec.frente);
+  const L = E.L / M, A = E.A / M;
+  const I = Construtor('igreja'), B = Construtor('equip'), G = Construtor('grades'), LP = coletor();
+  const placas = [], marcas = [];
+  const R = 'reboco', P = 'cantaria', AM = { tinta: AMARELO_IGREJA };
+  const branco = { todas: R }, pedra = { todas: P, base: null };
+  const ang = 30 * Math.PI / 180, incl = Math.tan(ang), co = Math.cos(ang), si = Math.sin(ang);
+  /* AS MEDIDAS: a torre à direita de quem olha, a nave no meio do resto */
+  const TW = Math.min(2.8, L * 0.22), W = Math.min(8.4, L - TW - 1.2);
+  const xa = Math.max(0.5, (L - W - TW) / 2), xb = xa + W, xt = xb + TW, xc = (xa + xb) / 2;
+  const fz = -4.2;                                                // a fachada; na frente, o adro
+  const naveZ = Math.max(fz - 20, -A + 6.6), Ln = fz - naveZ;       // o fundo da nave e o comprimento dela
+  const CAP = Math.min(2.6, W / 2 - 1.2), fundoZ = Math.max(naveZ - 4.2, -A + 1.4);
+  const hN = 7.2, hC = hN + 0.4, hA = 5.4, hAc = hA + 0.3, hT = 15.0, EMB = 0.45;
+  const tz1 = fz + 0.3, tz0 = fz - 2.5, TD = tz1 - tz0;              // a torre sai 30 cm da fachada
+  const beiral = 0.4;
+
+  /* ---- O CHÃO: o gramado do terreno e o adro de pedra portuguesa (acima
+     da laje da quadra, que é de 7 cm) ---- */
+  B.tampa([[0, fz], [L, fz], [L, -A], [0, -A]], 0.08, 'grama', false);
+  B.tampa([[0, 0], [L, 0], [L, fz], [0, fz]], 0.1, 'pedra', false);
+  marcas.push({ x0: 0, x1: L, z0: -A, z1: fz, cor: '#6f9a55', tipo: 'grama' });
+  marcas.push({ x0: 0, x1: L, z0: fz, z1: 0, cor: '#d9d2c2', tipo: 'piso' });
+
+  /* ---- A NAVE ---- */
+  const d2a = d => Ln - d;                                         // do lado esquerdo o plano corre de trás pra frente
+  const janelas = (a, pula) => [3.4, 6.8, 10.2, 13.6, 17.0].filter(d => d < Ln - 1.2 && !(pula && d < pula))
+    .map(d => ({ a0: a(d) - 0.65, a1: a(d) + 0.65, b0: 2.6, b1: 5.2, k: 'janela', fundo: 0.14 }));
+  /* a fachada: a porta em arco no meio, as duas janelas, o óculo */
+  I.fachada(I.plano([xa, 0, fz], [1, 0, 0], [0, 1, 0]), W, hN, R, [
+    { a0: W / 2 - 1.2, a1: W / 2 + 1.2, b0: EMB, b1: 4.6, k: 'porta', fundo: 0.22 },
+    { a0: 0.9, a1: 2.2, b0: 2.4, b1: 5.0, k: 'janela', fundo: 0.14 },
+    { a0: W - 2.2, a1: W - 0.9, b0: 2.4, b1: 5.0, k: 'janela', fundo: 0.14 },
+    { a0: W / 2 - 0.85, a1: W / 2 + 0.85, b0: 5.3, b1: 7.0, k: 'oculo' }
+  ], AM);
+  /* os lados (o direito começa depois da torre) e o fundo */
+  const dPorta = 8.5;
+  I.fachada(I.plano([xa, 0, naveZ], [0, 0, 1], [0, 1, 0]), Ln, hN, R, janelas(d2a).concat(
+    [{ a0: d2a(dPorta) - 0.85, a1: d2a(dPorta) + 0.85, b0: 0.2, b1: 3.4, k: 'porta_lat', fundo: 0.16 }]), AM);
+  I.fachada(I.plano([xb, 0, fz], [0, 0, -1], [0, 1, 0]), Ln, hN, R, janelas(d => d, TD + 0.3), AM);
+  I.fachada(I.plano([xb, 0, naveZ], [-1, 0, 0], [0, 1, 0]), W, hN, R, [], AM);
+  /* o embasamento, as pilastras e a cornija, no reboco branco */
+  I.caixa(xa - 0.08, xa, 0, EMB, naveZ - 0.08, fz + 0.08, pedra);
+  I.caixa(xb, xb + 0.08, 0, EMB, naveZ - 0.08, tz0, pedra);
+  I.caixa(xa - 0.08, xb + 0.08, 0, EMB, naveZ - 0.08, naveZ, pedra);
+  I.caixa(xa - 0.08, xc - 1.35, 0, EMB, fz, fz + 0.08, pedra);
+  I.caixa(xc + 1.35, xb, 0, EMB, fz, fz + 0.08, pedra);
+  for (const [x0, x1] of [[xa - 0.12, xa + 0.42], [xb - 0.42, xb + 0.12]])
+    I.caixa(x0, x1, EMB, hN, fz, fz + 0.12, { todas: R, base: null });
+  /* (as do meio entre duas janelas, longe da porta do lado) */
+  for (const d of [5.1, 11.9, 15.3]) {
+    if (d > Ln - 1) continue;
+    I.caixa(xa - 0.12, xa, EMB, hN, fz - d - 0.28, fz - d + 0.28, { todas: R, base: null });
+    I.caixa(xb, xb + 0.12, EMB, hN, fz - d - 0.28, fz - d + 0.28, { todas: R, base: null });
+  }
+  for (const x of [xa, xb]) I.caixa(x - 0.12, x + 0.12, EMB, hN, naveZ - 0.12, naveZ + 0.28, { todas: R, base: null });
+  I.caixa(xa - 0.25, xb + 0.25, hN, hC, fz - 0.3, fz + 0.25, branco);
+  I.caixa(xa - 0.25, xa + 0.05, hN, hC, naveZ - 0.25, fz - 0.3, branco);
+  I.caixa(xb - 0.05, xb + 0.25, hN, hC, naveZ - 0.25, tz0, branco);
+  I.caixa(xa - 0.25, xb + 0.25, hN, hC, naveZ - 0.25, naveZ + 0.05, { todas: R, frente: null });
+
+  /* ---- O TELHADO da nave, de telha, em duas águas (e a empena do fundo) ---- */
+  const meia = W / 2 + beiral, rise = meia * incl, lenAgua = meia / co, cume = hC + rise;
+  const zTras = naveZ - 0.35, zFrente = fz - 0.3;
+  I.ladrilhar(I.plano([xa - beiral, hC, zTras], [0, 0, 1], [co, si, 0]), I.ret(0, zFrente - zTras, 0, lenAgua), 'telha');
+  I.ladrilhar(I.plano([xb + beiral, hC, zFrente], [0, 0, -1], [-co, si, 0]), I.ret(0, zFrente - zTras, 0, lenAgua), 'telha');
+  I.viga([xc, cume, zTras], [xc, cume, zFrente], 0.3, 0.16, 'telha');
+  marcas.push({ x0: xa - beiral, x1: xb + beiral, z0: zTras, z1: fz, cor: '#a9573b', tipo: 'teto' });
+  const eB = beiral * incl;
+  I.ladrilhar(I.plano([xb, hC, naveZ], [-1, 0, 0], [0, 1, 0]), [[0, 0], [W, 0], [W, eB], [W / 2, rise], [0, eB]], R, AM);
+
+  /* ---- O FRONTÃO: passa do telhado, com a beira branca e a cruz ---- */
+  const hG = (W / 2 + 0.25) * incl + 0.55, topoG = hC + hG;
+  const tri = [[0, 0], [W + 0.5, 0], [W / 2 + 0.25, hG]];
+  I.ladrilhar(I.plano([xa - 0.25, hC, fz + 0.02], [1, 0, 0], [0, 1, 0]), tri, R, AM);
+  I.ladrilhar(I.plano([xb + 0.25, hC, fz - 0.3], [-1, 0, 0], [0, 1, 0]), tri, R, AM);
+  for (const s of [-1, 1]) {
+    const p = [xc + s * (W / 2 + 0.4), hC - 0.05, fz - 0.14], q = [xc, topoG + 0.08, fz - 0.14];
+    I.viga(p, q, 0.5, 0.26, R);
+  }
+  I.esticar(I.plano([xc - 0.32, hC + hG * 0.36 - 0.32, fz + 0.03], [1, 0, 0], [0, 1, 0]), 0, 0.64, 0, 0.64, 'oculo_p');
+  I.caixa(xc - 0.09, xc + 0.09, topoG, topoG + 1.5, fz - 0.23, fz - 0.05, branco);
+  I.caixa(xc - 0.5, xc + 0.5, topoG + 0.92, topoG + 1.08, fz - 0.23, fz - 0.05, branco);
+  marcas.push({ x0: xa - 0.25, x1: xb + 0.25, z0: fz - 0.3, z1: fz + 0.25, cor: '#f1eee6', tipo: 'teto' });
+  /* o nome da paróquia na placa em cima da porta */
+  placa(placas, 'letreiro', spec.letreiro || 'PARÓQUIA SÃO JUDAS TADEU', '#f7f1e2', '#5a3b1c', xc, 4.93, fz + 0.05, 0, 1, 4.6, 0.36);
+
+  /* ---- A CAPELA-MOR, atrás, mais baixa ---- */
+  const LA = naveZ - fundoZ, x0A = xc - CAP, x1A = xc + CAP;
+  I.fachada(I.plano([x0A, 0, fundoZ], [0, 0, 1], [0, 1, 0]), LA, hA, R, [{ a0: LA / 2 - 0.45, a1: LA / 2 + 0.45, b0: 2.4, b1: 3.55, k: 'janelinha', fundo: 0.1 }], AM);
+  I.fachada(I.plano([x1A, 0, naveZ], [0, 0, -1], [0, 1, 0]), LA, hA, R, [{ a0: LA / 2 - 0.45, a1: LA / 2 + 0.45, b0: 2.4, b1: 3.55, k: 'janelinha', fundo: 0.1 }], AM);
+  I.fachada(I.plano([x1A, 0, fundoZ], [-1, 0, 0], [0, 1, 0]), 2 * CAP, hA, R, [{ a0: CAP - 0.65, a1: CAP + 0.65, b0: 2.6, b1: 3.9, k: 'losango' }], AM);
+  I.ladrilhar(I.plano([x0A, hA, fundoZ], [0, 0, 1], [0, 1, 0]), I.ret(0, LA, 0, 0.3), R, AM);
+  I.ladrilhar(I.plano([x1A, hA, naveZ], [0, 0, -1], [0, 1, 0]), I.ret(0, LA, 0, 0.3), R, AM);
+  I.caixa(x0A - 0.2, x1A + 0.2, hA, hAc, fundoZ - 0.2, naveZ, { todas: R, frente: null });
+  I.caixa(x0A - 0.08, x1A + 0.08, 0, EMB, fundoZ - 0.08, naveZ, { todas: P, base: null, frente: null });
+  const meiaA = CAP + 0.35, riseA = meiaA * incl, lenA = meiaA / co, zTA = fundoZ - 0.35;
+  I.ladrilhar(I.plano([x0A - 0.35, hAc, zTA], [0, 0, 1], [co, si, 0]), I.ret(0, naveZ - zTA, 0, lenA), 'telha');
+  I.ladrilhar(I.plano([x1A + 0.35, hAc, naveZ], [0, 0, -1], [-co, si, 0]), I.ret(0, naveZ - zTA, 0, lenA), 'telha');
+  I.viga([xc, hAc + riseA, zTA], [xc, hAc + riseA, naveZ], 0.28, 0.15, 'telha');
+  I.ladrilhar(I.plano([x1A, hAc, fundoZ], [-1, 0, 0], [0, 1, 0]), [[0, 0], [2 * CAP, 0], [2 * CAP, 0.35 * incl], [CAP, riseA], [0, 0.35 * incl]], R, AM);
+  marcas.push({ x0: x0A - 0.35, x1: x1A + 0.35, z0: zTA, z1: naveZ, cor: '#a9573b', tipo: 'teto' });
+
+  /* ---- A TORRE SINEIRA ---- */
+  const sino = (larg, y0) => ({ a0: larg / 2 - 0.65, a1: larg / 2 + 0.65, b0: 11.0 - y0, b1: 13.8 - y0, k: 'sineira', fundo: 0.2 });
+  I.fachada(I.plano([xb, 0, tz1], [1, 0, 0], [0, 1, 0]), TW, hT, R, [
+    { a0: TW / 2 - 0.75, a1: TW / 2 + 0.75, b0: 0.2, b1: 3.3, k: 'porta_lat', fundo: 0.16 },
+    { a0: TW / 2 - 0.45, a1: TW / 2 + 0.45, b0: 5.0, b1: 6.15, k: 'janelinha', fundo: 0.1 },
+    { a0: TW / 2 - 0.3, a1: TW / 2 + 0.3, b0: 8.3, b1: 8.9, k: 'oculo_p' },
+    sino(TW, 0)], AM);
+  I.fachada(I.plano([xt, 0, tz1], [0, 0, -1], [0, 1, 0]), TD, hT, R, [
+    { a0: TD / 2 - 0.45, a1: TD / 2 + 0.45, b0: 5.0, b1: 6.15, k: 'janelinha', fundo: 0.1 }, sino(TD, 0)], AM);
+  I.fachada(I.plano([xt, 0, tz0], [-1, 0, 0], [0, 1, 0]), TW, hT, R, [sino(TW, 0)], AM);
+  I.fachada(I.plano([xb, hC, tz0], [0, 0, 1], [0, 1, 0]), TD, hT - hC, R, [sino(TD, hC)], AM);
+  I.ladrilhar(I.plano([xb, 0, fz], [0, 0, 1], [0, 1, 0]), I.ret(0, tz1 - fz, 0, hC), R, AM);
+  /* o embasamento, a faixa do meio, a cornija */
+  I.caixa(xb, xt + 0.08, 0, EMB, tz0 - 0.08, tz1 + 0.08, pedra);
+  I.caixa(xb - 0.1, xt + 0.1, 10.3, 10.55, tz0 - 0.1, tz1 + 0.1, branco);
+  I.caixa(xb - 0.22, xt + 0.22, hT, hT + 0.42, tz0 - 0.22, tz1 + 0.22, branco);
+  for (const [x, z] of [[xt, tz1], [xt, tz0], [xb, tz1]]) I.caixa(x - 0.14, x + 0.14, EMB, hT, z - 0.14, z + 0.14, { todas: R, base: null });
+  /* o telhado em pirâmide e a cruz */
+  const hP = 2.4, yP = hT + 0.42;
+  I.telhado4(xb - 0.3, xt + 0.3, tz0 - 0.3, tz1 + 0.3, yP, hP, 'telha', null);
+  const cxT = (xb + xt) / 2, czT = (tz0 + tz1) / 2, yx = yP + hP - 0.1;
+  I.caixa(cxT - 0.07, cxT + 0.07, yx, yx + 1.3, czT - 0.07, czT + 0.07, branco);
+  I.caixa(cxT - 0.38, cxT + 0.38, yx + 0.78, yx + 0.92, czT - 0.07, czT + 0.07, branco);
+  marcas.push({ x0: xb - 0.3, x1: xt + 0.3, z0: tz0 - 0.3, z1: tz1 + 0.3, cor: '#8f4a33', tipo: 'teto' });
+
+  /* ---- O ADRO: a escadaria de pedra, os canteiros, as árvores, os
+     postes e o quadro da missa ---- */
+  I.caixa(xc - 2.3, xc + 2.3, 0, EMB, fz, fz + 1.2, pedra);
+  I.caixa(xc - 2.6, xc + 2.6, 0, 0.3, fz + 1.2, fz + 1.5, pedra);
+  I.caixa(xc - 2.9, xc + 2.9, 0, 0.15, fz + 1.5, fz + 1.8, pedra);
+  marcas.push({ x0: xc - 2.9, x1: xc + 2.9, z0: fz, z1: fz + 1.8, cor: '#cdbb92', tipo: 'movel' });
+  const c0 = xc - 3.4, c1 = xc + 3.4;
+  /* (a copa passa do canteiro estreito: fica por cima do adro) */
+  if (c0 - 0.4 > 1.0) { canteiro(B, 0.4, c0, fz + 0.5, -0.5, marcas); arvore(LP, (0.4 + c0) / 2, (fz + 0.5 - 0.5) / 2, 5.4, Math.max(1.2, Math.min(1.7, (c0 - 0.4) / 2)), false, marcas); }
+  if (L - 0.4 - c1 > 1.2) { canteiro(B, c1, L - 0.4, tz1 + 0.35, -0.5, marcas); arvore(LP, (c1 + L - 0.4) / 2, (tz1 + 0.35 - 0.5) / 2, 4.8, Math.min(1.5, (L - 0.4 - c1) / 2), true, marcas); }
+  postePraca(B, 0.35, -0.25);
+  postePraca(B, L - 0.35, -0.25);
+  /* o quadro dos horários, nos dois pés, na frente do canteiro da direita (de frente pra calçada) */
+  const qx = Math.min(c1 + 1.4, L - 1.3), qz = -0.3;
+  for (const x of [qx - 0.62, qx + 0.62]) B.caixa(x - 0.04, x + 0.04, 0, 1.55, qz - 0.08, qz, { todas: lisa(PRETO) });
+  B.caixa(qx - 0.72, qx + 0.72, 0.95, 1.6, qz - 0.1, qz - 0.04, { todas: lisa('#23407a') });
+  placa(placas, 'letreiro', 'MISSAS · SÁB 19H · DOM 8H E 19H', '#23407a', '#ffffff', qx, 1.275, qz - 0.035, 0, 1, 1.36, 0.5);
+  marcas.push({ x0: qx - 0.72, x1: qx + 0.72, z0: qz - 0.1, z1: qz, cor: '#23407a', tipo: 'movel' });
+
+  /* ---- A CERCA dos lados e do fundo: a mureta amarela e a grade ---- */
+  const e = 0.2;
+  const cerca = (p, q) => {
+    const U = unit(sub([q[0], 0, q[1]], [p[0], 0, p[1]])), len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    G.ladrilhar(G.plano([p[0], 0.5, p[1]], U, [0, 1, 0]), G.ret(0, len, 0, 1.3), 'gradil');
+    I.caixa(Math.min(p[0], q[0]) - 0.1, Math.max(p[0], q[0]) + 0.1, 0, 0.5, Math.min(p[1], q[1]) - 0.1, Math.max(p[1], q[1]) + 0.1, { todas: { k: R, tinta: AMARELO_IGREJA }, base: null });
+    const n = Math.max(1, Math.round(len / 3));
+    for (let i = 0; i <= n; i++) {
+      const x = lerp(p[0], q[0], i / n), z = lerp(p[1], q[1], i / n);
+      I.caixa(x - 0.14, x + 0.14, 0, 1.9, z - 0.14, z + 0.14, { todas: R, base: null });
+    }
+    marcas.push({ x0: Math.min(p[0], q[0]) - 0.1, x1: Math.max(p[0], q[0]) + 0.1, z0: Math.min(p[1], q[1]) - 0.1, z1: Math.max(p[1], q[1]) + 0.1, cor: '#d9c98f', tipo: 'movel' });
+  };
+  cerca([e, fz], [e, -A + e]);
+  cerca([e, -A + e], [L - e, -A + e]);
+  cerca([L - e, -A + e], [L - e, fz]);
+
+  return fechar(E, { igreja: I, equip: B, grades: G, lowpoly: LP }, destino, placas, marcas);
 }
 
 /* =======================================================
