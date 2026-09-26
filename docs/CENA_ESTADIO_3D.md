@@ -3661,7 +3661,16 @@ O dono pediu: "Os estádios ficaram grandes e desproporcionais ao mapa, pode dim
 
 A etiqueta do estádio na planta 2D sai com o acento do letreiro (`nomeComAcento`).
 
-**Conferido:** o `conferir_estadios.mjs` passa nos três (de cada portão, o corredor e a arquibancada do lado dele, e só elas — ele pegou duas coisas no caminho: o balcão fundo demais no corredor de cima e a escada do lado de um vomitório encostando no gradil da PM1, as duas corrigidas); o `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam; o cenário monta as 30 praças (CENARIO_RESULTADO).
+**Conferido:** o `conferir_estadios.mjs` passa nos três (de cada portão, o corredor e a arquibancada do lado dele, e só elas — ele pegou duas coisas no caminho: o balcão fundo demais no corredor de cima e a escada do lado de um vomitório encostando no gradil da PM1, as duas corrigidas); o `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam; o cenário monta as 30 praças sem erro, mais leve que com o estádio da foto (triângulos da cidade e chamadas; o tempo, com rasterizador por software, é só pra comparar e não vale):
+
+| praça | antes dos estádios de verdade | com o estádio da foto (4.59) | no tamanho de jogo |
+|---|---|---|---|
+| São Paulo | 1,10 mi · 326 | 1,51 mi · 510 | 1,30 mi · 405 |
+| Rio de Janeiro | 1,25 mi · 342 | 1,64 mi · 500 | 1,43 mi · 413 |
+| Bahia | 1,00 mi · 293 | 1,30 mi · 419 | 1,15 mi · 336 |
+| Interior do PR | 0,43 mi · 155 | 0,58 mi · 205 | 0,51 mi · 183 |
+
+O mundo menor também tem menos árvore de mato (São Paulo: 5.153 → 3.501).
 
 **O que isto ainda não é:**
 
