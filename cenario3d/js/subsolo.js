@@ -31,9 +31,12 @@ import { FAIXA_M, riscosDaFaixa } from './passo.js';
 export const DEGRAU_M = 0.3;
 
 /* `estacoes`: o `andar` de cada estação (metro3d.js: o poço, a caixa, a
-   borda, os braços das catracas e as alturas dos níveis) */
-export function Subsolo(M, estacoes) {
-  const CEL = 1 * M, DEG = DEGRAU_M * M, Y0 = FAIXA_M[0] * M, Y1 = FAIXA_M[1] * M, FINO = 0.01 * M;
+   borda, os braços das catracas e as alturas dos níveis). `op` troca o
+   degrau e a faixa do corpo (em metros): o conferidor dos estádios anda
+   na arquibancada, de degrau de 0,40 a 0,52 m */
+export function Subsolo(M, estacoes, op = {}) {
+  const faixa = op.faixa || FAIXA_M;
+  const CEL = 1 * M, DEG = (op.degrau ?? DEGRAU_M) * M, Y0 = faixa[0] * M, Y1 = faixa[1] * M, FINO = 0.01 * M;
   const bracos = [], bordas = [];
   for (const e of estacoes) {
     for (const b of e.bracos || []) bracos.push(b);

@@ -287,7 +287,7 @@ import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
 import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio } from './js/estadios3d.js';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio } from './js/estadios3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -3274,8 +3274,9 @@ function malhasDoDestino(destino, g, placas) {
 }
 /* OS ESTÁDIOS DO JOGO (js/estadios3d.js): as três cenas de estádio do
    protótipo do feed, em 3D e em metros, com a foto e os setores do dono
-   do lado. A camada dos setores liga e desliga sem remontar; o .glb sai
-   do que está na vista (em metros, pro Blender ou pro Unity). Sem o chão
+   do lado. A camada dos setores liga e desliga sem remontar; o corte tira
+   o teto do corredor (a câmera sobe pra ver de cima); o .glb sai do que
+   está na vista (em metros, pro Blender ou pro Unity). Sem o chão
    redondo da vista: o estádio traz o dele. */
 const emM = v => v.toLocaleString('pt-BR', { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + ' m';
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
@@ -3284,12 +3285,13 @@ const contaDosLugares = (n, nome) => { const r = n / nome;
 for (const E of Object.values(ESTADIOS_JOGO)) {
   MODELOS.push({
     tipo: 'modelo', id: 'jogo-' + E.id, secao: 'Estádios do jogo', grupo: 'As três cenas do protótipo', nome: E.nome, nota: E.nota,
-    chao: '#b9b8ae', semChao: true, frente: [0, 1], info: null, obj: null, setores: true, baixando: false,
+    chao: '#b9b8ae', semChao: true, frente: [0, 1], info: null, obj: null, setores: true, corte: null, baixando: false,
     arquivo: E.id.replace('-', '_') + '_mil.glb',
     montar(g) {
       const r = montarEstadioJogo(E.id), w = new THREE.Group();
       w.scale.setScalar(M); w.add(r.grupo); g.add(w);
       r.grupo.getObjectByName('setores').visible = this.setores;
+      if (this.corte != null) cortarEstadio(r.grupo, this.corte);
       this.obj = r.grupo; this.info = r.info;
       if (estado.sel === this) $('ficha').innerHTML = this.ficha();
     },
@@ -3299,18 +3301,29 @@ for (const E of Object.values(ESTADIOS_JOGO)) {
         `<a href="img/referencias/${E.foto}_setores.webp" target="_blank" rel="noopener">Setores do dono<img src="img/referencias/${E.foto}_setores.webp" alt="Os setores que o dono marcou no ${esc(E.nome)}" loading="lazy"></a></div>`;
       if (!i) return sobre + '<p class="nota">Montando o estádio…</p>' + refs;
       const aneis = i.aneis.map(a => [a.nome, `${a.fileiras} degraus de ${a.degrau} · ${milhar(a.lugares)} lugares`, true]);
+      const vomi = n => `${n} vomitório${n === 1 ? '' : 's'}`;
       const setores = '<h3>Setores do dono</h3><ul class="setores-lista">' + i.setores.map(s =>
-        `<li><i style="background:${s.cor}"></i>${esc(s.nome)}${s.id === 'pm' ? ' — a faixa vazia entre as torcidas' : ''} <span>· ${milhar(s.lugares)} lugares</span></li>`).join('') + '</ul>' +
+        `<li><i style="background:${s.cor}"></i>${esc(s.nome)}${s.id === 'pm' ? ' — a faixa vazia entre as torcidas' : ''} <span>· ${milhar(s.lugares)} lugares · ${vomi(s.vomitorios)}</span></li>`).join('') + '</ul>' +
         (i.livre ? `<p class="nota">Sem setor: ${esc(i.livre)}.</p>` : '') + (i.aviso ? `<p class="nota">${esc(i.aviso)}</p>` : '');
+      /* as três entradas da rua e o corredor de baixo da arquibancada */
+      const COR_LADO = { visitante: '#c62828', mandante: '#1b7f3b' };
+      const entradas = '<h3>Entradas da rua</h3><ul class="setores-lista">' + i.entradas.map(e =>
+        `<li><i style="background:${COR_LADO[e.lado]}"></i>${esc(e.nome)} · ${esc(e.lado)} <span>— ${esc(e.onde)}</span></li>`).join('') + '</ul>';
+      const maiuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
+      const corredores = '<h3>Corredor debaixo da arquibancada</h3><ul class="setores-lista">' + i.corredores.map(c =>
+        `<li>${esc(c.nome)} <span>· ${emM(c.comprimento)} × ${emM(c.largura)}, pé-direito ${emM(c.peDireito)} · ${esc(c.zonas)} · ${c.pilares} pilares · ${c.balcoes} balcões</span></li>`).join('') + '</ul>' +
+        `<p class="nota">É por ele que a torcida chega nos vomitórios, e é o lugar de briga fora da arquibancada. A barra da parede (e o chão, na camada dos setores) tem a cor de quem usa o trecho — vermelho do visitante, verde do mandante, azul da PM —, e onde o dono pôs divisória o gradil vai do chão ao teto. ${esc(maiuscula(i.servico))}.</p>`;
+      const cortes = i.cortes.map(c => `<button data-acao="corte" data-y="${c.y}" aria-pressed="${this.corte === c.y}">${esc(c.nome)}</button>`).join('') +
+        (this.corte != null ? '<button data-acao="corte" data-y="">Sem corte</button>' : '');
       return sobre + linhas([
         ['Planta', emM(i.planta[0]) + ' × ' + emM(i.planta[1]) + ' (com o terreno)', true], ['Altura', emM(i.alturaArq) + ' na arquibancada'],
         ['Luz', i.luz, true],
         ['Lugares', milhar(i.lugares) + ' (0,5 m por pessoa)'], ...aneis,
-        ['Vomitórios', String(i.vomitorios)], ['Triângulos', milhar(i.triangulos) + ' em ' + i.malhas + ' malhas']
+        ['Vomitórios', `${i.vomitorios}, ${i.tipoVom}`, true], ['Triângulos', milhar(i.triangulos) + ' em ' + i.malhas + ' malhas']
       ]) + `<div class="acoes"><button data-acao="setores" aria-pressed="${this.setores}">${this.setores ? 'Esconder os setores' : 'Mostrar os setores'}</button>` +
-        `<button data-acao="glb"${this.baixando ? ' disabled' : ''}>${this.baixando ? 'Gerando o .glb…' : 'Baixar .glb'}</button></div>` +
-        (this.erroGlb ? `<p class="nota">${esc(this.erroGlb)}</p>` : '') + setores + refs +
-        `<p class="nota">Medido na foto com o campo de régua (105 × 68 m; o de 10 mil, 100 × 68), em metros. O degrau é o de verdade (0,80 m de piso); a foto, gerada, desenha o degrau mais largo ou mais estreito, e com o degrau de verdade a planta da foto ${contaDosLugares(i.lugares, E.mil)}. A camada dos setores (a cor, o nome, a faixa de cada escalão e os túneis) liga e desliga; as divisórias de gradil ficam. O .glb leva o que está visível, com as texturas, em metros — o Blender abre direto; no Unity, pelo pacote glTFast. No artefato do claude.ai ele vem dentro de um .zip (o artefato só deixa baixar zip); no GitHub Pages, direto. <code>js/diajogo/estadios3d.js</code>.</p>`;
+        cortes + `<button data-acao="glb"${this.baixando ? ' disabled' : ''}>${this.baixando ? 'Gerando o .glb…' : 'Baixar .glb'}</button></div>` +
+        (this.erroGlb ? `<p class="nota">${esc(this.erroGlb)}</p>` : '') + entradas + corredores + setores + refs +
+        `<p class="nota">Medido na foto com o campo de régua (105 × 68 m; o de 10 mil, 100 × 68), em metros. O degrau é o de verdade (0,80 m de piso); a foto, gerada, desenha o degrau mais largo ou mais estreito, e com o degrau de verdade a planta da foto ${contaDosLugares(i.lugares, E.mil)}. A camada dos setores (a cor, o nome, a faixa de cada escalão, o nome dos portões e a cor do corredor) liga e desliga; as divisórias de gradil ficam. O corte tira tudo acima do teto do corredor e sobe a câmera: dá pra ver o corredor, os vomitórios e os portões de cima. O .glb leva o que está visível, com as texturas, em metros — o Blender abre direto; no Unity, pelo pacote glTFast. No artefato do claude.ai ele vem dentro de um .zip (o artefato só deixa baixar zip); no GitHub Pages, direto. <code>js/diajogo/estadios3d.js</code>.</p>`;
     }
   });
 }
@@ -3804,6 +3817,16 @@ $('ficha').addEventListener('click', ev => {
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'setores' && A.obj) {
     A.setores = !A.setores;
     A.obj.getObjectByName('setores').visible = A.setores;
+    $('ficha').innerHTML = A.ficha(); vista.pedir(); return;
+  }
+  /* o corte: tira o teto do corredor (ou volta) e olha de cima */
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'corte' && A.obj) {
+    const antes = A.corte;
+    A.corte = b.dataset.y === '' ? null : +b.dataset.y;
+    cortarEstadio(A.obj, A.corte);
+    /* a câmera sobe (e chega um pouco mais perto) no corte; sem corte, volta */
+    if (A.corte != null) vista.orbita(0, 1.12, antes == null ? 0.72 : 1);
+    else vista.orbita(0, 0.45, 1 / 0.72);
     $('ficha').innerHTML = A.ficha(); vista.pedir(); return;
   }
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'glb' && A.obj && !A.baixando) {
@@ -4675,6 +4698,8 @@ function criarVista(canvas) {
   const rend = new THREE.WebGLRenderer({ canvas, antialias: true });
   rend.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   rend.shadowMap.enabled = true; rend.shadowMap.type = THREE.PCFSoftShadowMap;
+  /* o corte dos estádios do jogo (o plano no material) */
+  rend.localClippingEnabled = true;
   const cena = new THREE.Scene();
   const cam = new THREE.PerspectiveCamera(32, 4 / 3, 1, 60000);
   cena.add(new THREE.HemisphereLight(0xe8eff4, 0x6d695d, 1.35));
