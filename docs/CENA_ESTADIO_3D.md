@@ -3739,7 +3739,7 @@ O dono mandou a foto do boneco no corredor do chão do de 40 mil: "Não dá pra 
 **Conferido:**
 - O `conferir_estadios.mjs` agora anda com o corpo do boneco do cenário (raio de 25 cm; era 20) e não conta a lasca de chão pintado mais fina que 30 cm (a que fica colada no gradil, onde o corpo não encosta). Passa nos três: de cada portão, 100% dos corredores do lado dele, 94 a 100% de cada setor dele e nada do outro lado nem da PM.
 - No cenário de verdade (São Paulo, no navegador sem placa de vídeo), o boneco a pé andou com a colisão do cenário (`aPe.mover`, de 20 em 20 cm): do portão 1 do Morumbi (de 40) pelo salão, o corredor do chão, a escada interna (o patamar da volta a 3,77 m, o de cima a 7,52), o corredor de cima, o túnel do vomitório (o poço a 8,76) e a arquibancada até a última fileira (16,04 m), e a volta até a fila, na rua; do portão 3 (visitante), pela escada curva do sudoeste, até a última fileira do v1; e no Canindé (de 20), do portão 1 pelo corredor e o túnel até o alto da arquibancada.
-- O conferidor das cidades, o da passagem, o do metrô e o da sede passam.
+- O conferidor das cidades, o da passagem, o do metrô e o da sede passam, e o cenário monta as 30 praças sem erro, com os mesmos triângulos e chamadas de antes (os andares não desenham nada). Em São Paulo, os andares dos quatro estádios somam 151 mil triângulos e fecham em 0,1 a 0,2 s.
 
 **O que isto ainda não é:**
 - Ele sobe a fileira de até 55 cm de um passo só; a tela vai atrás macia, mas o boneco não tem animação de subir degrau.
