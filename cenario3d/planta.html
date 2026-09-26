@@ -3354,7 +3354,8 @@ for (const E of Object.values(ESTADIOS_JOGO)) {
       const maiuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
       const corredores = '<h3>Corredor debaixo da arquibancada</h3><ul class="setores-lista">' + i.corredores.map(c =>
         `<li>${esc(c.nome)} <span>· ${emM(c.comprimento)} × ${emM(c.largura)}, pé-direito ${emM(c.peDireito)} · ${esc(c.zonas)} · ${c.pilares} pilares · ${c.balcoes} balcões</span></li>`).join('') + '</ul>' +
-        `<p class="nota">É por ele que a torcida chega nos vomitórios, e é o lugar de briga fora da arquibancada. A barra da parede (e o chão, na camada dos setores) tem a cor de quem usa o trecho — vermelho do visitante, verde do mandante, azul da PM —, e onde o dono pôs divisória o gradil vai do chão ao teto. ${esc(maiuscula(i.servico))}.</p>`;
+        `<p class="nota">É por ele que a torcida chega nos vomitórios, e é o lugar de briga fora da arquibancada. A barra da parede (e o chão, na camada dos setores) tem a cor de quem usa o trecho — vermelho do visitante, verde do mandante, azul da PM —, e onde o dono pôs divisória o gradil vai do chão ao teto. ${esc(maiuscula(i.servico))}.</p>` +
+        (i.escadas ? `<p class="nota">${esc(i.escadas)}</p>` : '');
       const cortes = i.cortes.map(c => `<button data-acao="corte" data-y="${c.y}" aria-pressed="${this.corte === c.y}">${esc(c.nome)}</button>`).join('') +
         (this.corte != null ? '<button data-acao="corte" data-y="">Sem corte</button>' : '');
       return sobre + linhas([
