@@ -64,6 +64,19 @@ sed -e "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm
   "$R/js/diajogo/bonecos3.js" > "$A/js/bonecos3.js"
 sed "s#'./three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
   "$R/vendor/three/GLTFLoader.js" > "$A/js/GLTFLoader.js"
+# OS ESTÁDIOS DO JOGO (estadios3d.js): o módulo, o exportador de .glb que
+# ele carrega quando alguém baixa (vendor/three/GLTFExporter.js, com o
+# TextureUtils.js do lado), tudo apontando pro three.js do CDN, e as
+# fotos de referência (a do protótipo e a dos setores do dono)
+sed -e "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
+    -e "s#'../../vendor/three/GLTFExporter.js'#'./GLTFExporter.js'#" \
+  "$R/js/diajogo/estadios3d.js" > "$A/js/estadios3d.js"
+for f in GLTFExporter TextureUtils; do
+  sed "s#'./three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
+    "$R/vendor/three/$f.js" > "$A/js/$f.js"
+done
+mkdir -p "$A/img/referencias"
+cp "$R/ferramentas/planta_html/referencias/"estadio_*.webp "$A/img/referencias/"
 python3 - "$R/img/boneco.glb" "$A/dados/boneco_glb.js" <<'PY'
 import base64, sys
 b = open(sys.argv[1], 'rb').read()
