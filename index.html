@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Torcida Organizada</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/paineis.css">
+<link rel="stylesheet" href="css/cenas.css">
+<link rel="stylesheet" href="css/itinerario.css">
+<link rel="stylesheet" href="css/gazeta.css">
+<link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+
+<!-- ================= JOGO ================= -->
+<div id="jogo" class="oculto">
+
+  <!-- O CABEÇALHO ENTROU NA BARRA DO FEED.
+       Havia aqui uma faixa de 56px com a marca, a data, o nome da
+       torcida e três indicadores. Ela virou HUD do mapa e, com o mapa
+       descontinuado, virou HUD do feed: a data e o ≫ no canto de cima à
+       direita, o escudo, o nome e os números na faixa da torcida, e a
+       marca "Torcida Organizada" fora — o nome da torcida na periferia
+       já diz onde o jogador está. Quem monta tudo isso é `pintarFeed`.
+       O ☰ e a gaveta saíram junto: a coluna de ícones é a navegação
+       inteira, em qualquer largura. -->
+  <div id="painelBarra">
+    <span id="painelTitulo">—</span>
+    <button id="painelFechar" aria-label="Fechar">Fechar &times;</button>
+  </div>
+
+  <nav id="lateral"></nav>
+
+  <main id="tela">
+    <!-- O FEED É A TELA PRINCIPAL. Ele vem primeiro porque é o que o
+         jogo é: uma lista de mensagens que chega sozinha. As outras
+         páginas são painéis de gestão que abrem por cima dele; a página
+         do mapa saiu com o mapa. -->
+    <section class="pagina" data-pag="feed"></section>
+    <section class="pagina" data-pag="torcida"></section>
+    <section class="pagina" data-pag="financeiro"></section>
+    <section class="pagina" data-pag="calendario"></section>
+    <section class="pagina" data-pag="competicoes"></section>
+    <section class="pagina" data-pag="ranking"></section>
+    <section class="pagina" data-pag="diplomacia"></section>
+    <section class="pagina" data-pag="noticias"></section>
+    <section class="pagina" data-pag="jogo"></section>
+  </main>
+</div>
+
+<!-- ================= MENU PRINCIPAL ================= -->
+<div id="telaMenu" class="tela-cheia">
+  <div id="menuFundo"></div>
+  <div id="menuConteudo">
+    <div id="menuTitulo">
+      <div class="estrelas">★ ★ ★</div>
+      <h1>Torcida<em>Organizada</em></h1>
+      <div class="desde">— desde 1997 —</div>
+    </div>
+    <div id="menuLista">
+      <button id="btContinuar">Continuar</button>
+      <button id="btNovoJogo" class="destaque">Novo jogo</button>
+      <button id="btCarregar">Carregar jogo</button>
+      <button id="btConfiguracoes">Configurações</button>
+      <button disabled>Conquistas</button>
+      <button disabled>Créditos</button>
+    </div>
+    <div id="menuVersao">v0.4.0 · o feed é o jogo</div>
+  </div>
+</div>
+
+<!-- ================= SELEÇÃO DE TORCIDA ================= -->
+<div id="telaSelecao" class="tela-cheia oculto">
+  <div class="moldura">
+    <header><h2>Seleção de torcida</h2><span id="subSelecao"></span></header>
+    <!-- DOIS PASSOS: escolher o nome, e só depois ler a ficha. Ler a
+         ficha é a decisão; escolher o nome é o começo dela. -->
+    <div>
+      <div id="passo1Sel">
+        <div class="subabas" id="abasSelecao"></div>
+        <div class="cartao">
+          <h2>Torcidas <span class="conta" id="contaTorcidas"></span></h2>
+          <div id="listaTorcidas"></div>
+        </div>
+      </div>
+      <div id="passo2Sel" class="oculto">
+        <div class="cartao">
+          <div class="corpo" id="fichaTorcida"></div>
+        </div>
+      </div>
+      <!-- PASSO 3: o nome do presidente (pedido do dono, 22/09/2026).
+           O jogador é um membro da diretoria com nome: é ele o boneco
+           controlado nas cenas. -->
+      <div id="passo3Sel" class="oculto">
+        <div class="cartao">
+          <h2>O presidente da torcida</h2>
+          <div class="corpo" id="fichaPresidente"></div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <button class="bt" id="btVoltarMenu">Voltar</button>
+      <button class="bt destaque" id="btAvancarSelecao">Avançar</button>
+      <button class="bt destaque oculto" id="btSelecionarTorcida">Selecionar torcida</button>
+      <button class="bt destaque oculto" id="btComecarPartida">Começar a partida</button>
+    </footer>
+  </div>
+</div>
+
+<!-- ============== ITINERÁRIO DO DIA DE JOGO ==============
+     A linha vertical de paradas: o dia inteiro numa tela só.
+     O conteúdo é montado em main.js (abrirItinerario). -->
+
+<!-- ================= DIA DE JOGO ================= -->
+<div id="telaDiaJogo" class="tela-cheia oculto">
+  <div id="djGrade">
+    <div id="djPalco">
+      <!-- A FAIXA DA TRANSMISSÃO (régua do dono, 22/08/2026): tudo o que
+           é informação parada saiu de cima da cena e virou UMA linha
+           acima dela — tempo, PM e placar, na ordem em que se lê. Só o
+           que é momento (o anúncio) e o que é comando (os botões)
+           continua sobre o palco. -->
+      <div id="djFaixa">
+        <div class="fx fx-tempo" id="djTarjaTempo">
+          <span class="ao-vivo" aria-hidden="true"></span>
+          <span id="djRelogio">18:00</span>
+          <button id="djVelocidade" title="Velocidade da cena">1×</button>
+        </div>
+        <div class="fx fx-pm" id="djAlerta">
+          <span class="rot">PM</span>
+          <div class="barra"><i id="djBarraAlerta" style="width:12%"></i></div>
+          <div class="barra pressao"><i id="djBarraPressao" style="width:0%"></i></div>
+          <div id="djCarga"></div>
+        </div>
+        <div class="fx fx-placar" id="djPlacar"></div>
+      </div>
+      <!-- OS TRÊS CANVAS NUMA CAIXA SÓ: a faixa da transmissão mora
+           acima do canvas, então a camada dos bonecos (absoluta) precisa
+           de um pai que seja exatamente o canvas 2D, e não o palco
+           inteiro — senão ela nasce deslocada pela altura da faixa. -->
+      <div id="djCanvases">
+        <canvas id="djPrincipal" width="1140" height="820"></canvas>
+        <!-- a versão 3D da rua: o palco WebGL e a camada de nomes por cima.
+             Ficam escondidos até a opção pedir; um canvas não troca de
+             contexto, então o 2D e o WebGL são elementos separados. -->
+        <!-- na cena de cima o mesmo canvas vira a camada transparente dos
+             bonecos (classe sobre-gl); a ponte troca a classe conforme o modo -->
+        <canvas id="djPrincipal3d" class="tres" width="1140" height="820" hidden></canvas>
+        <canvas id="djSobre" width="1140" height="820" hidden></canvas>
+        <!-- A REUNIÃO DA DIRETORIA (fase B, 22/09/2026): os balões de
+             fala são HTML por cima do canvas, um por diretor, ancorados
+             no boneco pela escala da ponte (main.js, abrirReuniaoEmCena) -->
+        <div id="djBaloes" class="cena-baloes" hidden></div>
+      </div>
+      <div class="hud" id="djAviso"></div>
+      <!-- os comandos ficam sobre o palco: a cena é a tela inteira -->
+      <div class="hud" id="djComandos">
+        <div id="djFormacoes"></div>
+        <div class="dj-botoes">
+          <button class="acao-btn" id="djBtBater" title="Soltar o E na hora do golpe é o contragolpe">Bater <b>Q</b> · Defender <b>E</b> · Agarrar <b>F</b> · Chamar <b>C</b></button>
+          <button class="acao-btn" id="djBtPedra">Pedra <b>2</b></button>
+          <button class="acao-btn" id="djBtBomba">Bomba <b>3</b> · <span id="djQtdBomba">0</span></button>
+          <button class="acao-btn" id="djBtRecuar">Recuar <b>R</b></button>
+          <button class="acao-btn fugir" id="djBtFugir">Fugir <b>X</b></button>
+          <button class="acao-btn entrar" id="djBtEntrar">Entrar pelo portão <b>ENTER</b></button>
+        </div>
+      </div>
+      <!-- djLocal, djLog e djSliders saíram daqui: eram `hidden` e o
+           `atualizarHUD` continuava escrevendo neles todo quadro.
+           Continuam existindo na bancada (arredores.html), que é onde
+           servem pra alguma coisa. -->
+    </div>
+  </div>
+</div>
+
+<!-- ================= RELATÓRIO ================= -->
+<div id="telaRelatorio" class="tela-cheia oculto">
+  <div class="moldura">
+    <header><h2>Fim da noite</h2><span id="subRelatorio"></span></header>
+    <div id="corpoRelatorio"></div>
+    <footer><button class="bt destaque" id="btFecharRelatorio">Voltar pra sede</button></footer>
+  </div>
+</div>
+
+<!-- ================= RETROSPECTIVA DO ANO ================= -->
+<div id="telaRetro" class="tela-cheia oculto">
+  <div class="moldura retro-moldura">
+    <header><h2 id="retroTitulo">Retrospectiva</h2><span id="retroSub"></span></header>
+    <div id="corpoRetro"></div>
+    <footer id="peRetro"></footer>
+  </div>
+</div>
+
+<input type="file" id="arquivoSave" accept=".json" hidden>
+<div id="notificacoes"></div>
+
+<!-- núcleo (cria o namespace TO, tem que vir antes dos dados) -->
+<script src="js/nucleo.js"></script>
+<!-- os idiomas (dono, 24/09/2026): o núcleo da tradução e os dicionários,
+     um por fatia do código — ver js/i18n.js e docs/I18N.md -->
+<script src="js/i18n.js"></script>
+<script src="dados/i18n/comum.js"></script>
+<script src="dados/i18n/menu.js"></script>
+<script src="dados/i18n/main1.js"></script>
+<script src="dados/i18n/main2.js"></script>
+<script src="dados/i18n/main3.js"></script>
+<script src="dados/i18n/main4.js"></script>
+<script src="dados/i18n/main5.js"></script>
+<script src="dados/i18n/feed1.js"></script>
+<script src="dados/i18n/feed2.js"></script>
+<script src="dados/i18n/feed3.js"></script>
+<script src="dados/i18n/jornal.js"></script>
+<script src="dados/i18n/cena.js"></script>
+<script src="dados/i18n/gestao.js"></script>
+<script src="dados/i18n/tutorial.js"></script>
+<script src="dados/i18n/mundo.js"></script>
+<script src="dados/i18n/dados.js"></script>
+
+<!-- dados -->
+<script src="dados/nomes.js"></script>
+<script src="dados/cidades.js"></script>
+<script src="dados/times.js"></script>
+<script src="dados/fundacoes.js"></script>
+<script src="dados/escudos.js"></script>
+<script src="dados/capas.js"></script>
+<script src="dados/torcidas.js"></script>
+<script src="dados/barras.js"></script>
+<script src="dados/malha.js"></script>
+<script src="dados/estadios.js"></script>
+<script src="dados/historia.js"></script>
+<script src="dados/genero.js"></script>
+<script src="dados/cidade_mapa.js"></script>
+<script src="dados/cidade_mapa_sao_paulo.js"></script>
+<script src="dados/cidade_mapa_belo_horizonte.js"></script>
+<script src="dados/diplomacia.js"></script>
+<script src="dados/eixos.js"></script>
+<script src="dados/cena_arredores.js"></script>
+<script src="dados/cenas_foto.js"></script>
+<script src="dados/cenas_editadas.js"></script>
+  <script src="dados/cenas.js"></script>
+
+<!-- gestão -->
+<script src="js/mundo/mundo.js"></script>
+<script src="js/mundo/competicoes.js"></script>
+<script src="js/mundo/relacoes.js"></script>
+<script src="js/mundo/eixos.js"></script>
+<script src="js/mundo/relacaoclube.js"></script>
+<script src="js/mundo/mapa.js"></script>
+  <script src="js/mundo/mapa_gerado.js"></script>
+<script src="js/mundo/praca.js"></script>
+<script src="js/mundo/lnt.js"></script>
+<script src="js/mundo/ligas.js"></script>
+<script src="js/mundo/conmebol.js"></script>
+<script src="js/gestao/membros.js"></script>
+<script src="js/gestao/torcedores.js"></script>
+<script src="js/gestao/financeiro.js"></script>
+<script src="js/gestao/patrimonio.js"></script>
+<script src="js/gestao/acoes.js"></script>
+<script src="js/gestao/planejamento.js"></script>
+<script src="js/gestao/itinerario.js"></script>
+<script src="js/estado.js"></script>
+<!-- o feed lê tudo que está acima dele: calendário, relações, rua,
+     membros, patrimônio e planejamento. Ele não simula nada. -->
+<script src="js/mundo/gazeta.js"></script>
+<script src="js/mundo/porrada.js"></script>
+<script src="js/mundo/almanaque.js"></script>
+<script src="js/mundo/feed.js"></script>
+
+<!-- dia de jogo -->
+<script src="js/diajogo/cenario.js"></script>
+<script src="js/diajogo/arredores.js"></script>
+<script src="js/diajogo/combate.js"></script>
+<!-- os bonecos: Three.js e o modelo leve do Blender por cima da cena 2D;
+     tres.js é a rua vista de perto (opção briga3d) -->
+<script src="js/diajogo/tres.js"></script>
+<script src="js/lib/three.min.js"></script>
+<script src="js/lib/GLTFLoader.js"></script>
+<script src="js/lib/SkeletonUtils.js"></script>
+<script src="dados/boneco_leve_glb.js"></script>
+<script src="js/diajogo/bonecos3.js"></script>
+<script src="js/diajogo/ponte.js"></script>
+<script src="js/diajogo/simular.js"></script>
+
+<!-- interface -->
+<script src="js/ui/icones.js"></script>
+<script src="js/gestao/tutorial.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+/* =========================================================
+   CENAS — dia de jogo (canvas) e editor de cena
+   ========================================================= */
+
+#djGrade{display:grid;grid-template-columns:1fr 300px;gap:12px;
+  width:100%;max-width:1460px;margin:0 auto;padding:12px}
+@media(max-width:1100px){#djGrade{grid-template-columns:1fr}}
+
+#djPalco{position:relative;line-height:0}
+#djPrincipal{display:block;width:100%;height:auto;background:#16150f;
+  border:1px solid #45443f;cursor:crosshair}
+
+/* ---------- a cena 3D ----------
+   O canvas WebGL fica no lugar do de cima, e a camada de nomes (2D)
+   deita por cima dele sem pegar o mouse: quem gira a câmera é o canvas
+   de baixo. Os botões da HUD vêm depois no DOM e continuam clicáveis. */
+#djPalco canvas.tres{cursor:grab}
+#djPalco canvas.tres:active{cursor:grabbing}
+#djSobre{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+/* a caixa dos canvases do jogo (index.html): é dela que a camada dos
+   bonecos tira posição e tamanho, e não do palco, que tem a faixa em cima */
+#djCanvases{position:relative;line-height:0}
+/* o canvas WebGL transparente com os bonecos por cima da cena 2D */
+#djPalco canvas.sobre-gl{position:absolute;left:0;top:0;width:100%;height:100%;
+  pointer-events:none;background:transparent;border:0}
+/* o `display:block` de cima ganharia do `hidden` do navegador */
+#djPalco canvas[hidden]{display:none}
+
+/* ---------- mini-mapa ---------- */
+#djCaixaMini{position:absolute;right:10px;bottom:10px;width:182px;
+  border:1px solid #55534d;background:#0e0e0de6;cursor:pointer;
+  transition:border-color .15s,width .18s}
+#djCaixaMini:hover{border-color:var(--ouro);width:300px}
+#djMini{display:block;width:100%;height:auto;background:#22231f}
+#djMiniRot{position:absolute;top:0;left:0;right:0;
+  font-family:var(--mono);font-size:8px;letter-spacing:.1em;
+  color:var(--texto);background:#0e0e0dcc;padding:2px 4px;text-transform:uppercase;
+  display:flex;justify-content:space-between;pointer-events:none}
+#djMiniRot b{color:var(--ouro)}
+#djMiniAviso{position:absolute;left:0;right:0;bottom:0;background:#c0392bdd;color:#fff;
+  font-family:var(--mono);font-size:8px;padding:2px 4px;line-height:1.25;
+  text-align:center;pointer-events:none;opacity:0;transition:opacity .25s}
+#djMiniAviso.on{opacity:1}
+
+/* =========================================================
+   A FAIXA DA TRANSMISSÃO (pedido do dono, 22/08/2026)
+
+   Antes eram três placas flutuando SOBRE a cena, cada uma num canto —
+   e mesmo bonitas elas tapavam pedaço de rua. Agora tudo o que é
+   informação parada mora numa linha ACIMA do palco, na ordem em que
+   se lê: tempo à esquerda, PM no meio, placar à direita. A cena volta
+   a ser só a cena; sobre ela ficam só o anúncio (que é momento) e os
+   botões (que são comando).
+
+   A faixa tem `width:0; min-width:100%` de propósito: assim ela ocupa
+   a largura inteira do palco SEM puxar essa largura pra si — quem
+   decide o tamanho do palco continua sendo o canvas, e a faixa se
+   encaixa nele. Sem isso, um nome de torcida comprido alargava o
+   palco e a cena encolhia pra caber ao lado dele.
+   ========================================================= */
+.hud{position:absolute;pointer-events:none;font-family:var(--mono);
+  line-height:1.35}
+
+/* UMA BARRA SÓ, e não pedaços colados: o fundo é da faixa inteira e o
+   que separa os assuntos é um fio de um pixel — três retângulos com
+   vão claro entre eles pareciam três coisas, não uma transmissão. */
+#djFaixa{
+  display:flex;align-items:stretch;
+  /* A QUEBRA É DECIDIDA, NÃO ACIDENTAL: `flex-wrap` sozinho quebrava
+     onde calhava e a segunda linha nascia empurrada pra direita, com um
+     vão escuro à esquerda. Quem decide é `medirFaixa`, em ponte.js, que
+     põe a classe `duas` quando os três assuntos não cabem lado a lado. */
+  flex-wrap:nowrap;
+  width:0;min-width:100%;box-sizing:border-box;
+  font-family:var(--mono);line-height:1.35;
+  background:rgba(10,10,9,.92);
+  border:1px solid rgba(255,255,255,.13);border-bottom:0;
+  border-radius:5px 5px 0 0;overflow:hidden;
+}
+#djFaixa .fx{display:flex;align-items:center;padding:7px 12px;min-width:0}
+#djFaixa .fx + .fx{border-left:1px solid rgba(255,255,255,.10)}
+#djFaixa .fx-placar{margin-left:auto;flex:0 1 auto;padding:0}
+
+/* ---- DUAS LINHAS, as duas inteiras ---- */
+#djFaixa.duas{flex-wrap:wrap}
+#djFaixa.duas .fx-pm{flex:1 1 auto}          /* fecha a primeira linha */
+#djFaixa.duas .fx-placar{
+  flex:1 0 100%;margin-left:0;border-left:0;
+  border-top:1px solid rgba(255,255,255,.10);
+}
+#djFaixa.duas #djPlacar{width:100%}
+#djFaixa.duas #djPlacar .pl-rodape{margin-left:auto}
+#djFaixa.duas #djPlacar .pl-time:first-child{border-left:0}
+/* com a linha inteira pra si, o nome do time volta a caber */
+#djFaixa.duas #djPlacar .pl-nome{max-width:none}
+
+/* ---- o estado de MEDIR: ninguém encolhe, ninguém estica ----
+   Dura um quadro, só pra perguntar quanto a faixa precisa. Ver a nota
+   de `medirFaixa`, em ponte.js. */
+#djFaixa.medindo{flex-wrap:nowrap}
+#djFaixa.medindo .fx{flex:0 0 auto !important;min-width:max-content}
+#djFaixa.medindo .fx-placar{margin-left:0}
+#djFaixa.medindo #djPlacar .pl-nome{max-width:none}
+
+/* ---- tempo: ao vivo · relógio · velocidade ---- */
+#djTarjaTempo{gap:9px;flex:0 0 auto}
+#djTarjaTempo .ao-vivo{
+  width:7px;height:7px;border-radius:50%;background:#e04b45;flex:0 0 auto;
+  box-shadow:0 0 0 3px rgba(224,75,69,.16);
+  animation:djPulso 2s ease-in-out infinite;
+}
+@keyframes djPulso{ 0%,100%{opacity:1} 50%{opacity:.35} }
+@media (prefers-reduced-motion:reduce){ #djTarjaTempo .ao-vivo{animation:none} }
+#djRelogio{
+  font-size:17px;font-weight:600;line-height:1;letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;color:var(--texto);
+}
+#djVelocidade{
+  font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+  padding:3px 7px;border-radius:3px;line-height:1;cursor:pointer;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+  color:var(--fraco);
+}
+#djVelocidade:hover{border-color:var(--ouro);color:var(--ouro)}
+#djVelocidade.rapido{border-color:var(--ouro);color:var(--ouro);
+  background:rgba(217,164,65,.12)}
+
+/* ---- a PM ---- */
+#djAlerta{gap:8px;flex:0 1 230px;min-width:0}
+#djAlerta .rot{font-size:8.5px;letter-spacing:.18em;color:var(--pm);
+  text-transform:uppercase;flex:0 0 auto}
+#djAlerta .barra{height:4px;border-radius:2px;overflow:hidden;
+  background:rgba(255,255,255,.09);border:0;position:relative;
+  flex:1 1 40px;min-width:22px}
+#djAlerta .barra i{position:absolute;inset:0 auto 0 0;background:var(--pm);
+  border-radius:2px;transition:width .3s}
+#djAlerta .barra.pressao{flex-basis:24px;height:3px;
+  opacity:0;transition:opacity .3s}
+#djAlerta .barra.pressao i{background:#c0392b}
+#djCarga{font-size:8.5px;letter-spacing:.12em;color:#5fa87d;
+  text-transform:uppercase;white-space:nowrap;flex:0 0 auto}
+#djCarga:empty{display:none}
+#djCarga.quente{color:var(--ouro)}
+
+/* ---- o placar, na ponta direita da faixa ---- */
+#djPlacar .pl-times{display:flex;align-items:stretch}
+#djPlacar .pl-time{
+  display:flex;align-items:center;gap:8px;padding:0 12px 0 0;
+  border-left:1px solid rgba(255,255,255,.10);
+}
+/* A TARJA É A CAMISA (régua do dono, 22/08/2026): primária no corpo,
+   secundária na borda de cima e terciária na de baixo. O fio claro em
+   volta continua, porque camisa preta — e há várias — sumia dentro da
+   placa escura. */
+#djPlacar .pl-time::before{
+  content:'';display:block;width:6px;align-self:stretch;margin-right:7px;
+  background:linear-gradient(to bottom,
+    var(--c2) 0 26%, var(--c1) 26% 74%, var(--c3) 74% 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.18);
+}
+#djPlacar .pl-nome{
+  font-family:var(--titulo);font-size:12px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--texto);line-height:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:15ch;
+}
+#djPlacar .pl-n{
+  font-family:var(--mono);font-size:14px;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--texto);
+  min-width:2ch;text-align:right;
+}
+#djPlacar .pl-rodape{
+  display:flex;align-items:center;gap:12px;padding:0 12px;
+  border-left:1px solid rgba(255,255,255,.10);
+  font-size:9px;letter-spacing:.06em;color:var(--texto);white-space:nowrap;
+}
+#djPlacar .pl-dado i{font-style:normal;color:var(--fraco);
+  letter-spacing:.14em;text-transform:uppercase;margin-right:5px}
+#djPlacar .pl-clima{
+  letter-spacing:.14em;text-transform:uppercase;
+  display:flex;align-items:center;gap:5px;
+}
+#djPlacar .pl-clima::before{
+  content:'';width:5px;height:5px;border-radius:50%;background:currentColor;
+}
+#djPlacar .pl-clima.calmo{color:#7fc2a0}
+#djPlacar .pl-clima.pesado{color:#d9705f}
+/* a faixa é uma linha só: o placar vira uma fileira, não um bloco */
+/* nowrap por dentro: é a largura HONESTA do placar que diz se a faixa
+   cabe numa linha — placar que quebra sozinho mente na medida */
+#djPlacar{display:flex;align-items:stretch;flex-wrap:nowrap}
+
+/* ---- FAIXA ESTREITA: o palco pequeno encolhe a faixa junto ---- */
+#djPalco.hud-mini #djFaixa .fx{padding:6px 7px}
+#djPalco.hud-mini #djRelogio{font-size:14px}
+#djPalco.hud-mini #djTarjaTempo{gap:6px}
+#djPalco.hud-mini #djTarjaTempo .ao-vivo{width:5px;height:5px;box-shadow:none}
+#djPalco.hud-mini #djVelocidade{font-size:8.5px;padding:2px 5px}
+#djPalco.hud-mini #djAlerta{flex-basis:96px;gap:5px}
+#djPalco.hud-mini #djAlerta .rot{font-size:7.5px;letter-spacing:.1em}
+#djPalco.hud-mini #djCarga{font-size:7px;letter-spacing:.08em}
+#djPalco.hud-mini #djPlacar .pl-nome{font-size:9.5px;max-width:9ch}
+/* mas com a linha inteira pra si o nome cabe todo — e esta regra tem de
+   vir DEPOIS da de cima, que tem a mesma força e ganharia pela ordem */
+#djPalco.hud-mini #djFaixa.duas #djPlacar .pl-nome{max-width:none}
+#djPalco.hud-mini #djPlacar .pl-n{font-size:11px}
+#djPalco.hud-mini #djPlacar .pl-time{gap:5px;padding-right:8px}
+#djPalco.hud-mini #djPlacar .pl-rodape{font-size:7.5px;gap:7px;padding:0 8px}
+/* na faixa estreita o rótulo do dado sai: o número fala sozinho, e a
+   palavra "clima" some do clima — sobra a bolinha e o estado. Foi o que
+   fez a linha caber inteira num palco de 500px, sem quebrar em duas. */
+#djPalco.hud-mini #djPlacar .pl-dado i{display:none}
+#djPalco.hud-mini #djPlacar .pl-clima{font-size:7.5px;letter-spacing:.1em}
+#djPalco.hud-mini #djPlacar .pl-clima .rot-clima{display:none}
+#djPalco.hud-mini #djAviso{font-size:20px;letter-spacing:.08em}
+
+/* ---- o anúncio no meio do palco ---- */
+#djAviso{top:38%;left:0;right:0;text-align:center;font-family:var(--titulo);
+  font-size:32px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  text-shadow:0 3px 18px #000, 0 0 40px rgba(0,0,0,.7);
+  opacity:0;transition:opacity .3s}
+
+/* ---- a tira de dicas, no rodapé ---- */
+#djDica{bottom:9px;left:12px;font-size:10px;color:var(--fraco);
+  letter-spacing:.04em;text-shadow:0 1px 4px #000;max-width:700px}
+#djDica kbd{font-family:var(--mono);font-size:9.5px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);
+  border-radius:3px;padding:1px 5px;color:var(--texto)}
+
+#djSubrelogio{top:52px;left:50%;transform:translateX(-50%);font-size:10px;
+  color:var(--fraco);text-shadow:0 1px 4px #000;white-space:nowrap}
+
+/* ---------- botões da cena ---------- */
+#djFormacoes{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+.form-btn{flex:1;min-width:76px;background:#252522;border:1px solid #3d3d39;color:var(--texto);
+  font-family:var(--titulo);font-size:12px;letter-spacing:.08em;
+  text-transform:uppercase;padding:7px 3px 5px;cursor:pointer}
+.form-btn:hover{background:#2e2e2a}
+.form-btn.on{background:var(--rubro);border-color:var(--rubro)}
+.form-btn small{display:block;font-family:var(--mono);font-size:8px;color:var(--fraco);margin-top:2px}
+.form-btn.on small{color:#00000099}
+
+.acao-btn{width:100%;background:#252522;border:1px solid #3d3d39;color:var(--texto);
+  font-family:var(--titulo);font-size:12.5px;letter-spacing:.07em;
+  text-transform:uppercase;padding:8px 5px;cursor:pointer;margin-bottom:5px}
+.acao-btn:hover:not(:disabled){background:#2e2e2a}
+.acao-btn:disabled{opacity:.35;cursor:default}
+.acao-btn b{color:var(--ouro);font-family:var(--mono);font-size:10.5px}
+.acao-btn.entrar{border-color:var(--ouro);color:var(--ouro)}
+.acao-btn.entrar:hover:not(:disabled){background:var(--ouro);color:#151514}
+/* correr é decisão de peso e tem cara de decisão de peso */
+.acao-btn.fugir{border-color:var(--vermelho);color:var(--vermelho)}
+.acao-btn.fugir:hover:not(:disabled){background:var(--vermelho);color:#151514}
+.acao-btn.gasto{opacity:.35}
+
+#djLog{height:118px;overflow-y:auto;font-family:var(--mono);
+  font-size:10px;line-height:1.5;color:var(--fraco)}
+#djLog div{padding:1px 0;border-bottom:1px solid var(--sulco)}
+#djLog .r{color:#d9705f}
+#djLog .a{color:#7098d9}
+#djLog .p{color:var(--ouro)}
+#djLog .pm{color:#5fa87d}
+
+.slider{margin-bottom:7px}
+.slider label{display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:9.5px;color:var(--fraco);margin-bottom:2px}
+.slider label b{color:var(--texto)}
+.slider input[type=range]{width:100%;accent-color:var(--rubro);height:3px}
+
+/* =========================================================
+   EDITOR DE CENA
+   ========================================================= */
+#editorBarra{
+  position:fixed;left:0;right:0;top:0;z-index:70;
+  background:#0e0e0df2;border-bottom:1px solid var(--ouro);
+  display:flex;align-items:center;gap:14px;padding:7px 14px;
+  font-family:var(--mono);font-size:11px;color:var(--texto);
+  /* seis ferramentas e os números da grade não cabem numa linha só
+     em tela de notebook: a barra quebra em vez de empurrar o resto
+     pra fora da janela */
+  flex-wrap:wrap;
+}
+#editorBarra b{color:var(--ouro);letter-spacing:.1em}
+#editorBarra .grupo{display:flex;align-items:center;gap:6px}
+#editorBarra button{
+  background:#252522;border:1px solid #3d3d39;color:var(--texto);
+  font-family:var(--mono);font-size:10.5px;padding:4px 9px;cursor:pointer;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+#editorBarra button:hover{background:#2e2e2a}
+#editorBarra button.on{background:var(--ouro);border-color:var(--ouro);color:#151514}
+#editorBarra .dica{color:var(--fraco);margin-left:auto;text-align:right;line-height:1.4}
+/* o aviso da boca de fuga é linha inteira, alinhado à esquerda: é
+   recado de erro, não rodapé */
+#editorBarra #edAviso{flex-basis:100%;margin-left:0;text-align:left}
+
+#editorSaida{
+  position:fixed;inset:6% 8%;z-index:80;background:#0e0e0dfa;
+  border:1px solid var(--ouro);display:flex;flex-direction:column;padding:12px;gap:9px;
+}
+#editorSaida textarea{
+  flex:1;background:#141412;color:#cfcabd;border:1px solid var(--linha);
+  font-family:var(--mono);font-size:10.5px;line-height:1.45;padding:9px;resize:none;
+}
+#editorSaida .linha{display:flex;gap:8px;align-items:center}
+#editorSaida .linha span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);margin-right:auto}
+
+#alvoSolta{
+  position:fixed;inset:0;z-index:90;background:#0c0c0bdd;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--titulo);font-size:30px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ouro);border:3px dashed var(--ouro);
+  pointer-events:none;
+}
+
+/* =========================================================
+   O PALCO EM POP-UP
+   A cena é a tela: nada de cartão de log, de calibragem nem
+   de painel lateral. Os comandos ficam sobre o próprio palco.
+   ========================================================= */
+#telaDiaJogo{display:flex; align-items:center; justify-content:center;
+  background:rgba(6,6,7,.92); padding:10px; overflow:hidden}
+
+/* A CENA CABE NA TELA (pedido do dono, 22/08/2026)
+
+   O palco pedia 100% da largura e o canvas devolvia a altura
+   proporcional (1140×820): num notebook isso passava do alto do
+   monitor e a tela ganhava barra de rolagem — quem estava no meio de
+   uma briga tinha de arrastar pra ver o rodapé. O `max-height:94vh`
+   que morava aqui não resolvia nada: teto em elemento de fora não
+   encolhe filho de altura automática, só deixa ele transbordar.
+
+   O conserto é geometria. O canvas é elemento substituído e tem
+   tamanho intrínseco: com `width` e `height` em `auto` e teto nos DOIS
+   lados medido na JANELA, ele encolhe sozinho mantendo a proporção. O
+   palco passa a ter o tamanho do canvas, então a HUD — que se
+   posiciona por ele — continua colada nas bordas certas. */
+#djGrade{display:block; max-width:100%; max-height:100%; padding:0}
+#djPalco{
+  border:1px solid var(--fio, #383838);
+  box-shadow:0 24px 70px rgba(0,0,0,.7);
+  width:fit-content; max-width:100%;
+}
+/* a faixa mora acima do canvas, então o teto de altura desconta ela */
+#djPalco canvas{
+  display:block; width:auto; height:auto;
+  max-width:calc(100vw - 22px);
+  max-height:calc(100vh - 60px);
+  max-width:calc(100dvw - 22px);
+  max-height:calc(100dvh - 60px);
+}
+/* UMA LINHA SÓ (pedido do dono, 18/08/2026): 1-4, Q, E, R e ENTER
+   lado a lado — a caixa em coluna cobria a briga que acontecia
+   embaixo dela */
+#djComandos{
+  left:50%; transform:translateX(-50%); bottom:12px; right:auto; top:auto;
+  display:flex; flex-direction:row; flex-wrap:nowrap; gap:8px;
+  align-items:center;
+  background:rgba(12,12,14,.82); border:1px solid rgba(255,255,255,.10);
+  padding:5px 10px; max-width:calc(100% - 24px); overflow-x:auto;
+}
+#djComandos .dj-botoes{display:flex; gap:6px; flex-wrap:nowrap}
+#djComandos #djFormacoes{display:flex; gap:5px; flex-wrap:nowrap;
+  margin-bottom:0}
+#djComandos .acao-btn{width:auto; white-space:nowrap}
+#djComandos .form-btn{flex:none; min-width:0; white-space:nowrap;
+  padding-left:8px; padding-right:8px}
+#djComandos .form-btn small{display:inline; margin-top:0; margin-left:5px}
+
+/* =========================================================
+   A REUNIÃO DA DIRETORIA NO PÁTIO DA SEDE (fase B, 22/09/2026)
+   O palco é o mesmo da briga; o que muda é o que fica por cima
+   dele. Sem PM, sem placar, sem botão de briga: a faixa vira o
+   cabeçalho da reunião (mês, assuntos) com o botão de encerrar, e
+   os balões de fala — HTML — ficam ancorados nos bonecos, um por
+   diretor com pauta e um pro presidente.
+   ========================================================= */
+#djPalco.reuniao #djAlerta, #djPalco.reuniao #djPlacar,
+#djPalco.reuniao #djComandos{display:none}
+body.em-reuniao #djPad{display:none !important}
+/* um modal aberto de dentro da reunião (fundar eixo, chamar um nome)
+   tem de vencer o palco fixo do celular (z 60) */
+body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
+#djFaixa .fx-reuniao{margin-left:auto;gap:12px;padding:5px 8px 5px 12px;min-width:0;flex:0 1 auto}
+#djFaixa .fx-reuniao .reu-titulo{display:flex;flex-direction:column;line-height:1.2;min-width:0;overflow:hidden}
+#djFaixa .fx-reuniao .reu-titulo b, #djFaixa .fx-reuniao .reu-titulo span{overflow:hidden;text-overflow:ellipsis}
+#djFaixa .fx-reuniao .bt{flex:none}
+@media(max-width:600px){ #djFaixa .fx-reuniao .reu-titulo b{font-size:11px} }
+#djFaixa .fx-reuniao .reu-titulo b{font-family:var(--titulo);font-size:13px;letter-spacing:.08em;
+  text-transform:uppercase;color:#f3dcdc;white-space:nowrap}
+#djFaixa .fx-reuniao .reu-titulo span{font-size:10px;color:var(--fraco);letter-spacing:.06em;white-space:nowrap}
+#djFaixa .fx-reuniao .bt{margin:0;padding:6px 11px;font-size:11px;white-space:nowrap}
+.cena-baloes{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;
+  z-index:6;overflow:hidden;font-family:var(--corpo);line-height:1.4}
+.cena-baloes[hidden]{display:none}
+.cena-balao{position:absolute;pointer-events:auto;transform:translate(-50%,-100%);
+  --rabo:50%;max-width:min(330px,88vw);box-sizing:border-box}
+.cena-balao.abaixo{transform:translate(-50%,0)}
+/* o marcador fechado: um ponto de exclamação em cima da cabeça (e o
+   assunto ao passar o mouse); as cadeiras vizinhas ficam a 50 px e um
+   rótulo inteiro cobriria o vizinho */
+.cena-balao .cena-marca{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  background:rgba(14,14,13,.92);border:1px solid rgba(255,255,255,.3);color:#f3dcdc;
+  font-family:var(--titulo);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  padding:0;border-radius:13px;height:26px;min-width:26px;box-sizing:border-box;white-space:nowrap}
+.cena-balao .cena-marca i{font-style:normal;color:var(--ouro);font-family:var(--mono);font-size:13px;
+  font-weight:700;width:24px;text-align:center;line-height:1}
+.cena-balao .cena-marca span{display:none;padding:0 10px 0 1px}
+.cena-balao .cena-marca:hover{border-color:var(--ouro)}
+.cena-balao .cena-marca:hover span{display:inline}
+.cena-balao.feito .cena-marca{border-color:rgba(255,255,255,.14);color:var(--fraco)}
+.cena-balao.feito .cena-marca i{color:var(--verde-vivo)}
+.cena-balao.aberto{z-index:2}
+/* o rabo do balão aberto fica no embrulho: a fala rola por dentro
+   (overflow) e cortaria um rabo desenhado nela */
+.cena-balao.aberto::after{content:'';position:absolute;left:var(--rabo);top:100%;
+  transform:translateX(-50%);border:7px solid transparent;border-top-color:rgba(255,255,255,.2)}
+.cena-balao.aberto::before{content:'';position:absolute;left:var(--rabo);top:calc(100% - 1px);
+  transform:translateX(-50%);border:6px solid transparent;border-top-color:rgba(16,16,15,.96);z-index:1}
+.cena-balao.aberto.abaixo::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:rgba(255,255,255,.2)}
+.cena-balao.aberto.abaixo::before{top:auto;bottom:calc(100% - 1px);border-top-color:transparent;border-bottom-color:rgba(16,16,15,.96)}
+/* o balão aberto: quem fala, a fala, o quando/contra do bote e os botões */
+.cena-balao .cena-fala{background:rgba(16,16,15,.96);border:1px solid rgba(255,255,255,.2);
+  border-radius:6px;padding:10px 12px 11px;box-shadow:0 6px 22px rgba(0,0,0,.55);
+  min-width:240px;text-align:left;position:relative;box-sizing:border-box;overflow-y:auto}
+.cena-balao .cena-fala .cena-quem{font-family:var(--mono);font-size:9.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ouro);margin:0 22px 8px 0}
+.cena-balao .cena-fala .reu-quem{margin-bottom:6px;flex-wrap:wrap;gap:6px 9px}
+.cena-balao .cena-fala .reu-quem b{font-size:14px}
+.cena-balao .cena-fala .reu-quem .quem{margin-left:0;flex-basis:100%;font-size:11px}
+.cena-balao .cena-fala .reu-balao{font-size:12.5px;line-height:1.5;margin:0 0 8px;padding:0;
+  background:none;border:0;border-radius:0;color:var(--texto)}
+.cena-balao .cena-fala .reu-balao::before{display:none}
+.cena-balao .cena-fala .reu-balao b{color:#e9a6a6}
+.cena-balao .cena-fala .reu-quando{margin-bottom:8px}
+.cena-balao .cena-fala .reu-fala{font-size:12px;margin-bottom:8px}
+.cena-balao .cena-fala .msg-bts{display:flex;flex-wrap:wrap;gap:6px}
+.cena-balao .cena-fala .msg-bts .bt{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  padding:6px 10px;font-size:11.5px;margin:0}
+.cena-balao .cena-fala .msg-bts .bt small{font-family:var(--corpo);font-size:10px;text-transform:none;letter-spacing:0;color:var(--fraco)}
+.cena-balao .cena-fala .msg-bts .bt.destaque small{color:#f0d6d6}
+.cena-balao .cena-fala .reu-ata{margin-top:6px;padding:7px 9px}
+.cena-balao .cena-fala .reu-pedido{display:grid;gap:6px;margin-bottom:8px}
+.cena-balao .cena-fala .reu-campo{display:flex;flex-direction:column;gap:2px}
+.cena-balao .cena-fala .reu-campo .rot{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--fraco);text-transform:uppercase}
+.cena-balao .cena-fala .eixo-nota{font-size:11px;color:var(--fraco);margin-bottom:6px}
+.cena-balao .cena-fala .reu-eixos{margin-top:8px}
+.cena-balao .cena-fala .cena-fechar{position:absolute;right:6px;top:4px;background:none;border:0;
+  color:var(--fraco);font-size:15px;cursor:pointer;padding:2px 5px;line-height:1}
+.cena-balao .cena-fala .cena-fechar:hover{color:var(--texto)}
+.cena-balao .cena-fala .cena-lista{display:flex;flex-direction:column;gap:9px}
+.cena-balao .cena-fala .cena-lista > div + div{border-top:1px solid var(--sulco);padding-top:9px}
+.cena-balao .cena-fala .cena-vazio{font-size:12px;color:var(--fraco)}
+#djPalco.hud-mini .fx-reuniao .reu-titulo{display:none}
+#djPalco.hud-mini .cena-balao .cena-fala{min-width:200px;padding:8px 10px 9px}
+#djPalco.hud-mini .cena-balao .cena-marca{font-size:10.5px;padding:4px 7px}

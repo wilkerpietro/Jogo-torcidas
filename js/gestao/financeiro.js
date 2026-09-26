@@ -1,0 +1,806 @@
+/* =========================================================
+   FINANCEIRO — fechamento semanal (GDD §7 e §8)
+   ---------------------------------------------------------
+   O GDD escreve as receitas e as manutenções por mês, porque
+   é assim que um bar fecha caixa. O jogo, porém, decide por
+   semana. Em vez de cobrar tudo de uma vez a cada quatro
+   semanas — o que deixaria três fechamentos vazios e um
+   traumático —, cada semana paga um quarto. O número que o
+   jogador vê na tela é sempre o da semana.
+   ========================================================= */
+window.TO = window.TO || {};
+
+TO.financeiro = (function(){
+  const U = TO.util;
+
+  const SEM = 1/4;                                   // mês → semana
+
+  /* GDD §8.1 — manutenção mensal por nível de sede */
+  const MANUT_SEDE = [0, 200, 480, 960, 1800, 3000, 5000];   // n0: o ponto de encontro não custa
+  /* =======================================================
+     O CUSTO DA FESTA, POR NÍVEL DE SEDE
+     (régua do dono, 20/08/2026 — pra ser viável pra todos)
+
+     A festa de R$ 700 fixos só pagava a conta em sede grande:
+     torcida de bairro fazia vaquinha e nunca festa. Agora o
+     preço acompanha o tamanho do salão — a lotação da sede é
+     50, 90, 150, 200 e 500 —, e a conta fecha sempre no mesmo
+     ponto: com a sede ~70% cheia, até a noite fraca (R$ 4,80
+     por cabeça) paga o custo. Sede nível 4 continua nos R$ 700
+     de sempre: o que mudou foi embaixo, não o que já existia.
+     ======================================================= */
+  const FESTA = [null, 170, 300, 500, 700, 1700, 2600];
+  /* quanta gente a festa deste nível precisa pra se pagar */
+  const pisoDaFesta = nivel => Math.ceil((FESTA[nivel] || 700)/4.8);
+
+  /* GDD §8.3 — receita bruta mensal, antes do bairro e do fator.
+     A REFORMA DO COMÉRCIO (proposta aceita pelo dono, 24/08/2026): o
+     bar de 40 mil rendia ~680 líquidos/mês e se pagava em cinco anos —
+     ninguém compra isso. Com a receita nova, ponto novo se paga em
+     ~2 anos e ampliar (que também baixou de preço no patrimônio)
+     passou a valer a conta. A subsede ficou como era. */
+  /* RECEITAS +10% (reajuste do dono, 02/09/2026): a régua da moral
+     tinha deixado o comércio deficitário demais — o vermelho de moral
+     baixa continua, mas o ponto respira antes */
+  const RECEITA = {bar:[null, 1760, 3960, 8250], loja:[null, 2420, 5500, 11000],
+                   subsede:660};
+  /* custo fixo de bar e loja DOBROU (reajuste do dono, 31/08/2026), e
+     o do bar dobrou DE NOVO no mesmo dia ("despesa de bar tá com valor
+     muito baixo"). A SUBSEDE subiu pra 700/1.200/1.800 por nível
+     (reajuste do dono, 31/08/2026) — vale pra local (sempre nível 1)
+     e pra filial em outra cidade, e a IA paga pela mesma tabela. */
+  /* CUSTO FIXO NA RÉGUA DA MORAL (reajuste do dono, 02/09/2026):
+     bar e loja sobem até ~50% da receita cheia — com a moral baixa
+     (×0,4–0,6) o ponto FECHA NO VERMELHO e só volta a dar lucro com a
+     torcida animada. A subsede fica como está: pela régua do dono de
+     31/08 ela já é prejuízo direto em qualquer moral. */
+  const MANUT   = {bar:[null, 800, 1800, 3800],  loja:[null, 600, 1300, 2600],
+                   subsede:[null, 700, 1200, 1800]};
+
+  /* BAR QUEBRADO NÃO FATURA IGUAL (ordem do dono, 10/09/2026): "bar
+     atacado diminui 50% da receita por 45 dias, no sentido dele ter
+     sido danificado pelo ataque". A marca fica no próprio bar
+     (`b.danoAte`, em dia absoluto), então a mesma função serve pro
+     nosso e pro das IAs — os dois lados guardam bar como objeto de
+     lista. Despesa NÃO cai: conserto de vidro e mesa é o que dói. */
+  const DANO_BAR = {dias:45, corte:0.5};
+  function danificarBar(b, abs){
+    if(!b) return null;
+    /* ataque em cima de ataque não empilha, RENOVA: o prazo passa a
+       contar do estrago de agora */
+    b.danoAte = (abs || 0) + DANO_BAR.dias;
+    return b;
+  }
+  /* o bar mais caro é o que o rival quebra: é o que tem o que quebrar */
+  function barMaisVisado(bares){
+    let m = null;
+    for(const b of (bares||[])) if(!m || (b.nivel||1) > (m.nivel||1)) m = b;
+    return m;
+  }
+  function diasDeDano(b, abs){
+    if(!b || !b.danoAte) return 0;
+    return Math.max(0, b.danoAte - (abs || 0));
+  }
+  function multDano(b, abs){ return diasDeDano(b, abs) > 0 ? 1 - DANO_BAR.corte : 1; }
+  const absDe = E => (E && E.data && E.data.absoluto) || 0;
+
+  const INSUMO   = 0.25;   // GDD §8.3: loja sem insumo não fatura
+
+  /* =======================================================
+     A VENDA FORÇADA (ordem do dono, 02/09/2026): 30 dias
+     seguidos com o caixa no vermelho e uma loja é vendida por
+     R$ 90 mil pra ajudar nas finanças — vai embora a de nível
+     mais baixo. Vale pro jogador (aqui, contado dia a dia no
+     avancarDia) e pras IAs (relacoes, na fatia semanal).
+     ======================================================= */
+  const VENDA_LOJA = 90000, DIAS_DIVIDA = 30;
+  function venderLojaSeEndividado(E){
+    if(E.dinheiro >= 0){ E.diasNoVermelho = 0; return null; }
+    E.diasNoVermelho = (E.diasNoVermelho || 0) + 1;
+    if(E.diasNoVermelho < DIAS_DIVIDA) return null;
+    const p = patrimonio(E);
+    /* a loja de nível mais baixo é vendida — ninguém entrega a joia
+       primeiro — e ATÉ 3 SUBSEDES FECHAM junto (ordem do dono,
+       02/09/2026): primeiro as da cidade, depois a filial mais fraca,
+       com os destacados voltando pra sede */
+    let loja = null;
+    if((p.lojas||[]).length){
+      let i = 0;
+      for(let k=1; k<p.lojas.length; k++)
+        if((p.lojas[k].nivel||1) < (p.lojas[i].nivel||1)) i = k;
+      loja = p.lojas.splice(i, 1)[0];
+      E.dinheiro += VENDA_LOJA;
+      TO.estado.lancar(E, loja.bairro
+        ? _t('Loja — {bairro} vendida — 30 dias no vermelho', {bairro:loja.bairro})
+        : _t('Loja vendida — 30 dias no vermelho'), VENDA_LOJA);
+    }
+    let fechadas = 0;
+    while(fechadas < 3 && (p.subsedes||[]).length){
+      p.subsedes.pop(); fechadas++;
+    }
+    while(fechadas < 3 && (p.filiais||[]).length){
+      let i = 0;
+      for(let k=1; k<p.filiais.length; k++)
+        if((p.filiais[k].nivel||1) < (p.filiais[i].nivel||1)) i = k;
+      const fil = p.filiais.splice(i, 1)[0];
+      for(const m of (E.membros||[]))
+        if(m.filial === fil.cidade){
+          m.filial = null;
+          /* com o tipo ao lado (como `membros.anotar`): a frase agora
+             nasce no idioma do jogador e a tela não a lê mais por regex */
+          m.historico.push({t:'volta', x:_t('De volta à sede — a subsede de {cidade} fechou nas dívidas',
+            {cidade:nomeCidade(fil.cidade)})});
+        }
+      fechadas++;
+    }
+    if(!loja && !fechadas) return null;      // nada a vender, segue devendo
+    E.diasNoVermelho = 0;
+    if(TO.feed && TO.feed.propor) TO.feed.propor(E, {
+      kind:'aviso', peso:'info', voz:'diretor',
+      texto:(loja
+        ? (loja.bairro
+            ? _t('Chefe, 30 dias no vermelho e não deu mais pra segurar: vendemos a loja do bairro {bairro} por {valor} pra botar as contas em dia.',
+                 {bairro:loja.bairro, valor:U.dinheiro(VENDA_LOJA)})
+            : _t('Chefe, 30 dias no vermelho e não deu mais pra segurar: vendemos a loja por {valor} pra botar as contas em dia.',
+                 {valor:U.dinheiro(VENDA_LOJA)}))
+        : _t('Chefe, 30 dias no vermelho e não deu mais pra segurar.'))+
+        (fechadas ? ' ' + _tn(fechadas, 'Fechamos também {n} subsede pra estancar a sangria.',
+                                        'Fechamos também {n} subsedes pra estancar a sangria.') : '')
+    });
+    return loja || {fechadas};
+  }
+  const CARAVANA = 3000;   // GDD §7.3
+
+  /* =======================================================
+     O MÊS
+
+     A mensalidade era dividida em quatro e cobrada toda semana. Passa a
+     entrar INTEIRA, uma vez por mês, na semana que contém o dia 1 do
+     calendário de parede — que é onde uma mensalidade cai na vida real.
+
+     O TOTAL DO ANO NÃO É O MESMO, e é preciso dizer: o ano do jogo tem
+     52 semanas, e `SEM = 1/4` tratava o mês como quatro semanas, o que
+     dá TREZE meses por ano. Um novato de R$ 20 pagava R$ 260 no ano. Com
+     o mês de parede são doze, e ele paga R$ 240 — que é o que "vinte por
+     mês" quer dizer. A diferença de 7,7% é conserto, não perda.
+
+     O que muda de verdade é o RITMO: uma data em que o dinheiro chega e
+     três semanas em que ele só sai.
+     ======================================================= */
+  /* a semana contém o dia 1 de algum mês? */
+  function semanaDaMensalidade(E, ano, semana){
+    ano = ano != null ? ano : E.data.ano;
+    semana = semana != null ? semana : E.data.semana;
+    for(let d=1; d<=7; d++)
+      if(TO.estado.dataDaSemana(ano, semana, d).getDate() === 1) return true;
+    return false;
+  }
+  /* esta é a última semana do mês? é quando o relatório mensal fecha */
+  function fimDoMes(E, ano, semana){
+    ano = ano != null ? ano : E.data.ano;
+    semana = semana != null ? semana : E.data.semana;
+    let a = ano, s = semana + 1;
+    if(s > TO.competicoes.SEMANAS_ANO){ s = 1; a++; }
+    return semanaDaMensalidade(E, a, s);
+  }
+
+  /* =======================================================
+     PATRIMÔNIO
+     A estrutura vive aqui porque é daqui que ela cobra e
+     fatura; quem compra e quem mostra é patrimonio.js. O
+     nível 1 já nasce com o que o GDD dá de graça.
+     ======================================================= */
+  /* =======================================================
+     A FROTA (régua do dono, 20/08/2026)
+     Um ônibus tira 30% do custo da caravana, dois tiram 60%, três
+     deixam a estrada de graça. Cada um custa os mesmos R$ 100 mil na
+     compra e R$ 1.500 por mês de combustível e manutenção — três
+     ônibus são R$ 4.500 por mês —, fora a manutenção séria de R$ 15
+     mil, que é sorteada por ônibus.
+     ======================================================= */
+  const ONIBUS_MAX = 3, ONIBUS_MES = 1500, ONIBUS_CUSTO = 100000;
+  /* =======================================================
+     A GARAGEM E A SALA DE TREINO CABEM NA SEDE
+     (régua do dono, 20/08/2026)
+     Ônibus e professor não são só dinheiro: precisam de onde
+     guardar e onde treinar. Sede nível 1 não comporta nenhum
+     dos dois; a partir do 2 cabe um, do 3 cabem dois, e o
+     terceiro só na sede nível 5.
+     ======================================================= */
+  const TETO_SEDE = [0, 0, 1, 2, 2, 3, 4];
+  /* o nível 0 é honesto (decisão do dono, 22/09/2026): `|| 1` virava a
+     esquina em sede */
+  const nivelDaSede = E => (E && E.torcida && E.torcida.sedeNivel != null) ? E.torcida.sedeNivel : 1;
+  const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel == null ? 1 : nivel, 0, 6)] || 0;
+  const onibusMax = E => cabeNaSede(nivelDaSede(E));
+  const mmaMax    = E => cabeNaSede(nivelDaSede(E));
+  /* =======================================================
+     A COMISSÃO TÉCNICA (régua do dono, 20/08/2026)
+     A mesma escada dos ônibus: um professor faz o treino
+     render +30%, dois +60%, três +100% — o dobro só com a
+     sala cheia. Cada um custa R$ 2.000 por mês, então três
+     saem por R$ 6.000, e ninguém paga entrada: a mensalidade
+     cobra no fechamento.
+     ======================================================= */
+  const MMA_MAX = 3, MMA_MES = 2000;
+  const GANHO_MMA = [1, 1.30, 1.60, 2.00];
+  /* =======================================================
+     O ESCRITÓRIO DE ADVOCACIA (pedido do dono, 31/08/2026)
+     Cada advogado custa R$ 5.000 por mês, cobrados no
+     fechamento como a comissão técnica, e corta 10 dias da
+     cadeia de todo membro preso — na contratação e em toda
+     prisão nova. A escada é própria, não a do ônibus: sede
+     nível 2 comporta 1, o 3 comporta 2, o 4 quatro e o 5,
+     oito.
+     ======================================================= */
+  const ADVOGADO_MES = 5000, ADVOGADO_DIAS = 10;
+  const ADVOGADOS_SEDE = [0, 0, 1, 2, 4, 8, 12];
+  const advogadosMax = E => ADVOGADOS_SEDE[U.limitar(nivelDaSede(E), 0, 6)] || 0;
+  function advogadosDe(E){
+    const a = E && E.advogados;
+    if(!a) return 0;
+    /* o teto da sede vale AGORA, como nos professores */
+    return U.limitar(Math.round(a.n != null ? a.n : 1), 0, advogadosMax(E));
+  }
+  /* quantos professores a torcida tem hoje. O campo já foi booleano
+     (um professor ou nenhum): save antigo lê `true` como um. */
+  function professoresDe(E){
+    const p = E && E.professorMMA;
+    if(!p) return 0;
+    if(p === true) return 1;
+    /* o teto da sede vale AGORA: sede que não comporta mais aquele
+       terceiro professor não conta o que não cabe */
+    return U.limitar(Math.round(p.n != null ? p.n : 1), 0, mmaMax(E));
+  }
+  const ganhoDoTreino = E => GANHO_MMA[professoresDe(E)] || 1;
+  const DESCONTO_ONIBUS = [0, 0.30, 0.60, 1];
+  /* save antigo guardava um objeto só, sem contagem: aquilo é 1 */
+  function onibusDe(E){
+    const o = E && E.onibus;
+    if(!o) return 0;
+    /* a garagem da sede é o teto de agora: ônibus que não cabe não roda */
+    return U.limitar(Math.round(o.n || 1), 0, onibusMax(E));
+  }
+  const descontoCaravana = E => DESCONTO_ONIBUS[onibusDe(E)] || 0;
+
+  function patrimonio(E){
+    if(!E.patrimonio) E.patrimonio = {bares:[], lojas:[], subsedes:[], filiais:[],
+                                      fabrica:false, itens:{}};
+    /* save de antes das filiais (dono, 25/08/2026) ganha a lista vazia */
+    if(!E.patrimonio.filiais) E.patrimonio.filiais = [];
+    if(!E.patrimonio.itens) E.patrimonio.itens = {};
+    const p = E.patrimonio;
+    /* O BAR GRÁTIS VEM COM A SEDE NÍVEL 2 (decisão do dono, 22/09/2026;
+       era o n1 do GDD §8.1): a torcida sem sede e a de primeira sede
+       vivem sem bar até comprar um ou ampliar. Dado uma vez só — o bar
+       não renasce se a lista esvaziar. Save antigo já tem o dele. */
+    if(!p.bares.length && !p.barGratisDado && nivelDaSede(E) >= 2){
+      p.bares.push({nivel:1, bairro:bairroDeFora(E), gratis:true});
+      p.barGratisDado = true;
+    }
+    return p;
+  }
+
+  /* GDD §7.2: bar, loja e subsede ficam em zona diferente da sede.
+     A regra existe pra empurrar a torcida pra fora do próprio quintal. */
+  function bairroDeFora(E, semente){
+    const todos = TO.mundo.bairrosDe(E.torcida.mapa);
+    if(!todos.length) return '';
+    const sede = TO.mundo.bairroDaSede(E.torcida);
+    const fora = sede ? todos.filter(b=>b.zona !== sede.zona) : todos;
+    const lista = fora.length ? fora : todos;
+    /* Endereço não se sorteia: a mesma torcida abre o bar sempre no mesmo
+       bairro, em toda partida nova. Quem decide é o hash do nome, não o
+       dado do momento — mapa que se remonta a cada save confunde. */
+    const b = lista[TO.mapa.hash(`${E.torcida.id}|${semente||'bar'}`) % lista.length];
+    return b ? b.nome : '';
+  }
+
+  const multDe = (E, nomeBairro) =>
+    TO.mundo.multiplicador(TO.mundo.bairro(E.torcida.mapa, nomeBairro));
+
+  /* o multiplicador da FILIAL sai de um bairro da cidade DELA, cravado
+     por hash — a mesma filial rende no mesmo bairro pra sempre */
+  const nomeCidade = id =>
+    ((TO.mundo.cidade && TO.mundo.cidade(id)) || {}).nome || id;
+  /* o `dono` opcional deixa a mesma régua valer pras filiais das IAs
+     (dono, 27/08/2026): cada torcida tem o próprio bairro sorteado */
+  function multFilial(E, f, dono){
+    const bairros = (TO.mundo.bairrosDe && TO.mundo.bairrosDe(f.cidade)) || [];
+    if(!bairros.length) return 1;
+    const b = bairros[TO.mapa.hash(`${dono || E.torcida.id}|filial|${f.cidade}`)
+                      % bairros.length];
+    return TO.mundo.multiplicador(b) || 1;
+  }
+
+  /* GDD §7.1: o comércio varia com a fase do time, o prestígio e o
+     tamanho da torcida. Fase do time entra junto com as competições;
+     por ora valem os dois que já existem. */
+  function fatorComercial(E){
+    return 0.7 + (E.indicadores.prestigio/20)*0.4
+               + U.limitar(E.membros.length/150, 0, 1)*0.3;
+  }
+
+  /* A MORAL MANDA NO MOVIMENTO (régua do dono, 24/08/2026): a
+     arrecadação de bar, loja e subsede multiplica pela faixa da moral
+     da torcida, na régua de 0 a 100 — ×0,4 de 0 a 10, subindo 0,1 a
+     cada faixa de 10, até ×1,3 de 91 a 100. Vale pro mundo inteiro:
+     as IAs passam a régua na moral delas (relacoes.balanco). */
+  const faixaDaMoral = m100 =>
+    0.4 + 0.1 * (m100 <= 10 ? 0 : Math.min(9, Math.ceil(m100/10) - 1));
+  const multMoral = E => faixaDaMoral(Math.round((E.indicadores.moral||0)*5));
+
+  /* =======================================================
+     A CONTA DA SEMANA
+     Determinística: a mesma função alimenta a tela do
+     Financeiro e o fechamento de fato.
+     ======================================================= */
+  function contas(E){
+    const p = patrimonio(E);
+    const rec = [], des = [];
+    /* A MARCA DO COMÉRCIO (idiomas, 24/09/2026): o fechamento separava
+       bar, loja e subsede pelo RÓTULO (/^(Bar|Loja|Subsede)/), e o rótulo
+       agora nasce no idioma do jogador — quem diz o que é comércio é a
+       marca `com`, não o texto */
+    const COM = {com:true};
+    const juntar = (lista, rot, v, extra)=>{
+      v = Math.round(v);
+      if(v) lista.push(Object.assign({rot, v}, extra||{}));
+    };
+
+    /* --- receitas --- */
+    let mens = 0, pagantes = 0;
+    for(const m of E.membros){
+      /* quem está na cadeia não paga: a prisão já custa caro */
+      if(m.preso) continue;
+      mens += TO.membros.CARGOS[m.cargo].mensalidade;
+      pagantes++;
+    }
+    /* A LINHA SÓ EXISTE NA SEMANA DO DIA 1, e não aparece como zero nas
+       outras três: linha de R$ 0 toda semana é ruído que ensina o
+       jogador a não ler a tabela. */
+    if(semanaDaMensalidade(E))
+      juntar(rec, _t('Mensalidades ({n})', {n:pagantes}), mens);
+
+    const fator = fatorComercial(E) * multMoral(E);
+    const hoje = absDe(E);
+    for(const b of p.bares){
+      const dd = diasDeDano(b, hoje);
+      juntar(rec, (b.bairro ? _t('Bar — {bairro} (n{nivel})', {bairro:b.bairro, nivel:b.nivel})
+                            : _t('Bar (n{nivel})', {nivel:b.nivel}))+
+                  (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : ''),
+             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje), COM);
+    }
+    /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
+       na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
+    /* O MATERIAL OFICIAL DO CLUBE (pedido do dono, 18/09/2026): a
+       relação com o clube acima de 50 põe camisa e material oficial
+       na loja da torcida pra revender — +5% de receita de 51 a 75,
+       +15% de 76 a 100. Só a loja recebe; o bar é outra economia. */
+    const multClube = TO.relacaoClube ? TO.relacaoClube.multLoja(E) : 1;
+    for(const l of p.lojas){
+      if(l.semInsumo){ des.push({rot:_t('Loja — {bairro}: sem insumo', {bairro:l.bairro}), v:0, nota:true}); continue; }
+      juntar(rec, (l.bairro ? _t('Loja — {bairro} (n{nivel})', {bairro:l.bairro, nivel:l.nivel})
+                            : _t('Loja (n{nivel})', {nivel:l.nivel}))+
+                  (p.fabrica ? ' · ' + _t('fábrica') : '')+
+                  (multClube > 1 ? ' · ' + _t('material oficial') : ''),
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube, COM);
+    }
+    for(const s of p.subsedes)
+      juntar(rec, s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede'),
+             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM, COM);
+    /* as FILIAIS (subsede em outra cidade, dono 25/08/2026) rendem a
+       mesma régua da subsede, no multiplicador da cidade DELAS */
+    for(const f of (p.filiais||[]))
+      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}),
+             RECEITA.subsede*multFilial(E,f)*fator*SEM, COM);
+
+    /* --- despesas --- */
+    if(MANUT_SEDE[E.torcida.sedeNivel])
+      juntar(des, _t('Manutenção da sede (n{nivel})', {nivel:E.torcida.sedeNivel}),
+             MANUT_SEDE[E.torcida.sedeNivel]*SEM);
+    const corteFab = p.fabrica
+      ? (TO.patrimonio ? TO.patrimonio.FABRICA.corteCusto : 0.5) : 0;
+    let manutCom = 0;
+    for(const b of p.bares)    manutCom += MANUT.bar[b.nivel];
+    for(const l of p.lojas)    manutCom += MANUT.loja[l.nivel]*(1-corteFab);
+    for(const s of p.subsedes) manutCom += MANUT.subsede[s.nivel || 1];
+    for(const f of (p.filiais||[]))
+      manutCom += MANUT.subsede[f.nivel] || MANUT.subsede[1];
+    juntar(des, _t('Manutenção do comércio'), manutCom*SEM, COM);
+
+    /* os ANEXOS da sede (pacote do dono, 02/09/2026): enfermaria e
+       galpão têm mensalidade; o cofre é obra paga uma vez */
+    const px = E.patrimonio || {};
+    if(px.enfermaria) juntar(des, _t('Enfermaria da sede'),
+      (TO.patrimonio ? TO.patrimonio.ANEXOS.enfermaria.mes : 1200)*SEM);
+    if(px.galpao) juntar(des, _t('Galpão de material'),
+      (TO.patrimonio ? TO.patrimonio.ANEXOS.galpao.mes : 600)*SEM);
+
+    /* o insumo entra no mesmo corte de 50% da fábrica */
+    let insumo = 0;
+    for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteFab);
+    juntar(des, _t('Insumos das lojas') + (corteFab ? ' · ' + _t('fábrica') : ''), insumo*SEM, COM);
+
+    const soma = l => l.reduce((s,x)=>s+x.v, 0);
+    return {receitas:rec, despesas:des,
+            receita:soma(rec), despesa:soma(des),
+            saldo:soma(rec)-soma(des), insumo:Math.round(insumo*SEM)};
+  }
+
+  /* =======================================================
+     CARAVANA (GDD §7.3 e §3.2)
+     Jogo fora em outra cidade só custa se a torcida decidir
+     ir. A postura da semana é que manda; a cobrança é
+     automática na véspera, uma vez só por jogo. A chave
+     impede que reabrir o save cobre de novo.
+     ======================================================= */
+  function precisaCaravana(E){
+    const j = E.proximoJogo;
+    return !!(j && !j.casa && j.mapaAdv && j.mapaAdv !== E.torcida.mapa);
+  }
+  /* Torcida organizada não falta jogo: se tem jogo, ela vai. O que se
+     decide é o tamanho da caravana e por onde ela passa, não se sai de
+     casa. */
+  const temCaravana = E => precisaCaravana(E);
+
+  /* GDD §7.3: véspera e dia seguinte da viagem ficam travados. Vale
+     sempre que o jogo é fora, em outra cidade — a torcida está
+     organizando ou desfazendo a caravana, e a semana perde esses dias
+     mesmo que no fim ninguém embarque.
+
+     A conta é feita em dias corridos do ano, não em dias da semana:
+     jogo de domingo tem a volta na segunda, que já é da semana
+     seguinte. */
+  const emDias  = (semana, dia) => (semana-1)*7 + (dia-1);
+  const daConta = a => ({semana: Math.floor(a/7)+1, dia:(a%7)+1});
+
+  /* dias corridos ocupados pela caravana de um jogo fora em outra cidade */
+  function diasDaViagem(E, j){
+    if(!j || j.casa || j.neutro) return [];
+    const t = TO.mundo.time(j.adversario);
+    if(!t || t.mapa === E.torcida.mapa) return [];
+    const a = emDias(j.semana, j.dia);
+    return [a-1, a+1].filter(x=>x >= 0);
+  }
+
+  /* dias da semana corrente travados, olhando também a semana anterior
+     (a volta de domingo cai na segunda) e a seguinte */
+  function diasDeCaravana(E){
+    const meu = TO.mundo.time(E.torcida.clubeId);
+    if(!meu || !E.temporada) {
+      if(!precisaCaravana(E)) return [];
+      const d = (E.proximoJogo && E.proximoJogo.dia) || 6;
+      return [d-1, d+1].filter(x=>x>=1 && x<=7);
+    }
+    const fora = [];
+    for(const s of [E.data.semana-1, E.data.semana, E.data.semana+1]){
+      if(s < 1) continue;
+      for(const j of TO.competicoes.jogosDaSemana(E, meu.id, s))
+        for(const a of diasDaViagem(E, j)){
+          const {semana, dia} = daConta(a);
+          if(semana === E.data.semana && !fora.includes(dia)) fora.push(dia);
+        }
+    }
+    return fora.sort((x,y)=>x-y);
+  }
+
+  /* a postura vira consequência do calendário, não escolha */
+  function postura(E){
+    if(!E.proximoJogo) return 'folga';
+    return precisaCaravana(E) ? 'viajar' : 'estadio';
+  }
+
+  function cobrarCaravana(E){
+    if(!temCaravana(E)) return null;
+    E.caravanasPagas = E.caravanasPagas || {};
+    const chave = E.proximoJogo.chave;
+    if(E.caravanasPagas[chave]) return null;
+    E.caravanasPagas[chave] = true;
+    const destino = E.proximoJogo.cidadeAdv || _t('fora');
+    /* a conta é da estrada e do tamanho da caravana; sem plano, o valor
+       cheio do GDD §7.3 */
+    const est = TO.planejamento && TO.planejamento.estimativaCaravana(E);
+    let valor = est ? est.custo : CARAVANA;
+    /* O CLUBE AJUDA NA ESTRADA (pedido do dono, 18/09/2026): relação
+       76 a 100 cobre 20% do que a caravana custaria. Só entra quando
+       há despesa de verdade — frota cheia já zerou o custo antes
+       disto rodar. */
+    const abate = TO.relacaoClube ? TO.relacaoClube.abateCaravana(E) : 0;
+    const ajudaDoClube = abate && valor > 0 ? Math.round(valor * abate) : 0;
+    if(ajudaDoClube) valor -= ajudaDoClube;
+    /* FROTA CHEIA (três ônibus, régua do dono 20/08/2026): a despesa
+       da estrada morre e o rateio dos que embarcam vira RECEITA. Com
+       um ou dois ônibus a despesa só encolhe — 30% e 60% —, e o
+       rateio segue sendo o abatimento de sempre. */
+    if(est && est.custo <= 0 && est.rateio > 0 && est.rota &&
+       est.rota.id !== 'ar')
+      TO.estado.lancar(E,
+        _t('Caravana para {destino} — rateio dos {n} no ônibus', {destino, n:est.vao}),
+        est.rateio);
+    else if(valor > 0)
+      TO.estado.lancar(E, (est
+          ? _t('Caravana para {destino} ({n} pessoas, rateio de {valor})',
+               {destino, n:est.vao, valor:U.dinheiro(est.rateio)})
+          : _t('Caravana para {destino}', {destino}))+
+        (ajudaDoClube ? ' · ' + _t('clube cobriu {valor}', {valor:U.dinheiro(ajudaDoClube)}) : ''),
+        -valor);
+    /* a lista não pode crescer pra sempre num save de dez temporadas */
+    const chaves = Object.keys(E.caravanasPagas);
+    if(chaves.length > 80) delete E.caravanasPagas[chaves[0]];
+    return {valor, destino};
+  }
+
+  /* =======================================================
+     O SALDO DA SEMANA
+     A conta corrente (contas) mais o que a Gestão decidiu. Um
+     é rotina, o outro é escolha, mas os dois saem do mesmo
+     caixa — e é esse número que a tela mostra como saldo.
+     ======================================================= */
+  const compromissos = E =>
+    (TO.planejamento && TO.planejamento.compromissos(E))
+      || {itens:[], total:0, pago:0, pendente:0};
+
+  function resumoDaSemana(E){
+    const c = contas(E), g = compromissos(E);
+    return {contas:c, gestao:g,
+            receita:c.receita,
+            despesa:c.despesa + g.total,
+            saldo:  c.saldo   - g.total};
+  }
+
+  /* =======================================================
+     FECHAMENTO
+     ======================================================= */
+  function fecharSemana(E){
+    const c = contas(E);
+    const rel = {
+      semana:E.data.semana, ano:E.data.ano,
+      receitas:c.receitas.filter(x=>!x.nota), despesas:c.despesas.filter(x=>!x.nota),
+      notas:c.despesas.filter(x=>x.nota).map(x=>x.rot),
+      receita:c.receita, despesa:c.despesa, saldo:c.saldo,
+      /* o caixa de referência é o do fechamento anterior: só assim o
+         "de → para" cobre a semana inteira, inclusive o que saiu no meio
+         dela (caravana, recepção, recrutamento, fiança) */
+      caixaAntes: E.caixaAberturaSemana != null ? E.caixaAberturaSemana : E.dinheiro,
+      caixaDepois:0,
+      saidas:[], avisos:[], promoveis:0,
+      acoesSobrando:TO.acoes.restantes(E)
+    };
+
+
+    /* BAR, LOJA E SUBSEDE NÃO ESCREVEM LINHA POR SEMANA (decisão do
+       dono, 18/08/2026): o caixa mexe agora, mas o extrato só ganha o
+       resumo consolidado no fim do mês — a tela de transações estava
+       afogada em linhas iguais. O relatório mensal segue detalhado
+       por rótulo, porque ele soma rel.receitas/despesas direto. */
+    const doComercio = x => !!x.com;
+    for(const r of rel.receitas){
+      if(doComercio(r)) TO.estado.lancarNoResumo(E, 'comercio', r.v);
+      else TO.estado.lancar(E, r.rot, r.v);
+    }
+    for(const d of rel.despesas){
+      if(doComercio(d)) TO.estado.lancarNoResumo(E, 'comercio', -d.v);
+      else TO.estado.lancar(E, d.rot, -d.v);
+    }
+
+    /* GDD §7.1: doação esporádica, tanto maior quanto o prestígio */
+    if(U.rng() < 0.10){
+      const v = Math.round(200 + E.indicadores.prestigio*U.entre(30, 90));
+      TO.estado.lancar(E, _t('Doação de simpatizante'), v);
+      rel.receitas.push({rot:_t('Doação de simpatizante'), v});
+      rel.receita += v; rel.saldo += v;
+    }
+
+    /* O que a Gestão decidiu já saiu do caixa na hora (cobrarCaravana e
+       planejamento.confirmar), mas é dinheiro da semana: entra na despesa
+       e no saldo. O que não pode é lançar de novo — por isso este bloco
+       vem depois do laço de lançamento, e não antes. */
+    const comp = compromissos(E);
+    if(comp.itens.length){
+      rel.compromissos = comp.itens;
+      rel.compromissoTotal = comp.total;
+      for(const i of comp.itens)
+        if(i.v) rel.despesas.push({rot:i.rot, v:i.v, daGestao:true});
+      rel.despesa += comp.total;
+      rel.saldo   -= comp.total;
+    }
+
+    /* loja sem insumo não fatura na semana seguinte (GDD §8.3) */
+    const p = patrimonio(E);
+    for(const l of p.lojas) l.semInsumo = E.dinheiro < 0;
+
+    /* caixa negativo pesa na moral — mas ninguém debanda (decisão do
+       autor: a ideia de debandar saiu do jogo) */
+    if(E.dinheiro < 0){
+      E.semanasNoVermelho = (E.semanasNoVermelho||0) + 1;
+      TO.estado.mexerIndicador(E, 'moral', -1, _t('Caixa no vermelho'));
+      rel.avisos.push(_tn(E.semanasNoVermelho,
+        'Caixa negativo há {n} semana. A moral cai toda semana enquanto durar.',
+        'Caixa negativo há {n} semanas. A moral cai toda semana enquanto durar.'));
+    }else{
+      if(E.semanasNoVermelho) rel.avisos.push(_t('Caixa de volta ao azul.'));
+      E.semanasNoVermelho = 0;
+    }
+
+    /* o que o expediente da sede tentou e não conseguiu */
+    for(const [nome, msg] of Object.entries(E.acoes.rotinaFalha || {}))
+      rel.avisos.push(_t('Expediente: {nome} não rodou — {msg}.', {nome, msg}));
+    E.acoes.rotinaFalha = {};
+
+    rel.promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
+    rel.caixaDepois = E.dinheiro;
+    /* o que o caixa andou além da conta: ação da semana, fiança, multa */
+    rel.foraDaConta = Math.round((rel.caixaDepois - rel.caixaAntes) - rel.saldo);
+    E.caixaAberturaSemana = E.dinheiro;
+
+    /* O MÊS É O QUE O JOGADOR LÊ; a semana continua sendo o motor.
+       `acumularNoMes` soma esta semana no bloco corrente, e na última
+       semana do mês o bloco vira `E.ultimoFechamento` — que é o que o
+       modal e o botão "Último fechamento" mostram. */
+    /* o ônibus cobra no fim do mês: combustível e manutenção fixos, e
+       1% de chance de uma manutenção séria (decisão do dono) */
+    /* o fim do mês despeja o resumo no extrato: uma linha de receita
+       e uma de despesa pro comércio, uma consolidada pras festas —
+       o dinheiro já entrou aos poucos, aqui é só o registro */
+    if(fimDoMes(E)){
+      const rm = E.resumoMes || {};
+      const c = rm.comercio, f = rm.festa;
+      if(c && c.rec) TO.estado.registrarLinha(E,
+        _t('Comércio — receitas do mês (bar, loja, subsede)'), Math.round(c.rec));
+      if(c && c.des) TO.estado.registrarLinha(E,
+        _t('Comércio — manutenção e insumos do mês'), -Math.round(c.des));
+      if(f && (f.rec || f.des)) TO.estado.registrarLinha(E,
+        _tn(f.n, 'Festas na sede — {n} no mês', 'Festas na sede — {n} no mês'), Math.round(f.rec - f.des));
+      /* as diárias do expediente novo (dono, 24/08/2026) fecham por
+         mês do mesmo jeito: o caixa já mexeu na hora, aqui é registro */
+      if(rm.pix && rm.pix.rec) TO.estado.registrarLinha(E,
+        _tn(rm.pix.n, 'Doações por PIX — {n} campanha no mês',
+                      'Doações por PIX — {n} campanhas no mês'), Math.round(rm.pix.rec));
+      if(rm.campana && rm.campana.des) TO.estado.registrarLinha(E,
+        _tn(rm.campana.n, 'Campana do olheiro — {n} diária no mês',
+                          'Campana do olheiro — {n} diárias no mês'),
+        -Math.round(rm.campana.des));
+      if(rm.padrinho && rm.padrinho.des) TO.estado.registrarLinha(E,
+        _tn(rm.padrinho.n, 'Padrinho de treino — {n} gratificação no mês',
+                           'Padrinho de treino — {n} gratificações no mês'),
+        -Math.round(rm.padrinho.des));
+      E.resumoMes = {};
+    }
+    /* a comissão cobra R$ 2.000 por professor no fim de cada mês
+       (pedido do dono, 18/08/2026; escada em 20/08/2026) */
+    const profs = professoresDe(E);
+    if(profs && fimDoMes(E)){
+      const mes = MMA_MES * profs;
+      TO.estado.lancar(E, profs === 1 ? _t('Professor de MMA — mês')
+                                      : _t('Professores de MMA ({n}) — mês', {n:profs}), -mes);
+      rel.despesa += mes; rel.saldo -= mes;
+    }
+    /* os advogados cobram R$ 5.000 cada no fim do mês (pedido do
+       dono, 31/08/2026) */
+    const advs = advogadosDe(E);
+    if(advs && fimDoMes(E)){
+      const mes = ADVOGADO_MES * advs;
+      TO.estado.lancar(E, advs === 1 ? _t('Advogado — mês')
+                                     : _t('Advogados ({n}) — mês', {n:advs}), -mes);
+      rel.despesa += mes; rel.saldo -= mes;
+    }
+    const frota = onibusDe(E);
+    if(frota && fimDoMes(E)){
+      const mes = ONIBUS_MES * frota;
+      TO.estado.lancar(E, frota === 1
+        ? _t('Ônibus — combustível e manutenção')
+        : _t('Ônibus ({n}) — combustível e manutenção', {n:frota}), -mes);
+      rel.despesa += mes; rel.saldo -= mes;
+      /* a manutenção séria é sorteada POR ÔNIBUS: frota maior quebra
+         mais, que é o preço de ter frota */
+      for(let k = 0; k < frota; k++) if(U.rng() < 0.01){
+        TO.estado.lancar(E, _t('Ônibus — manutenção séria'), -15000);
+        rel.despesa += 15000; rel.saldo -= 15000;
+        rel.avisos.push(_t('Um ônibus quebrou de verdade: {valor} de oficina.', {valor:U.dinheiro(15000)}));
+      }
+    }
+    acumularNoMes(E, rel);
+    E.ultimaSemana = rel;
+    if(fimDoMes(E)) rel.mes = fecharMes(E);
+    E.historicoSemanas = E.historicoSemanas || [];
+    E.historicoSemanas.unshift({semana:rel.semana, receita:rel.receita,
+                                despesa:rel.despesa, saldo:rel.saldo,
+                                caixa:rel.caixaDepois, saidas:rel.saidas.length});
+    if(E.historicoSemanas.length > 60) E.historicoSemanas.pop();
+    return rel;
+  }
+
+  /* =======================================================
+     O RELATÓRIO MENSAL
+
+     O fechamento SEMANAL continua sendo o motor: é ele que cobra
+     manutenção e insumo, aplica compromisso e dispara a debandada. O que
+     vira mensal é o que o jogador VÊ.
+
+     E o motivo é o item 1: com a mensalidade caindo numa semana em
+     quatro, a semana isolada mostraria vermelho três vezes em quatro e
+     ensinaria o jogador a ignorar a linha. O mês é o ciclo em que a
+     receita de verdade entra, então é o período que responde "estou
+     ganhando ou perdendo dinheiro?".
+
+     O ALARME NÃO ESPERA O MÊS. Caixa negativo continua sendo aviso da
+     semana em que o buraco apareceu, e continua parando o tempo.
+     Relatório é balanço; alarme é urgência.
+     ======================================================= */
+  const mesCorrente = E => E.mesCorrente || null;
+
+  function acumularNoMes(E, rel){
+    const m = E.mesCorrente = E.mesCorrente || {
+      ano:E.data.ano, semanaDe:rel.semana, semanaAte:rel.semana,
+      receitas:{}, despesas:{}, receita:0, despesa:0, saldo:0,
+      caixaAntes: rel.caixaAntes, caixaDepois: rel.caixaDepois,
+      saidas:0, semanas:0, notas:[], compromissoTotal:0
+    };
+    /* as linhas se somam POR RÓTULO: quatro semanas de "Manutenção da
+       sede (n4)" viram uma linha com o valor do mês, que é como um
+       extrato se lê. A mensalidade aparece uma vez porque ela só
+       aconteceu uma vez. */
+    const junta = (mapa, lista)=>{
+      for(const x of lista||[]){
+        const k = x.rot;
+        mapa[k] = mapa[k] || {rot:k, v:0, daGestao:!!x.daGestao};
+        mapa[k].v += x.v;
+      }
+    };
+    junta(m.receitas, rel.receitas);
+    junta(m.despesas, rel.despesas);
+    m.receita += rel.receita; m.despesa += rel.despesa; m.saldo += rel.saldo;
+    m.compromissoTotal += rel.compromissoTotal || 0;
+    m.saidas += (rel.saidas||[]).length;
+    m.semanaAte = rel.semana; m.semanas++;
+    m.caixaDepois = rel.caixaDepois;
+    for(const n of rel.notas||[]) if(!m.notas.includes(n)) m.notas.push(n);
+    return m;
+  }
+
+  /* fecha o bloco e devolve o relatório do mês, na mesma forma que o
+     modal já sabe desenhar */
+  function fecharMes(E){
+    const m = E.mesCorrente;
+    if(!m) return null;
+    const rel = {
+      mensal:true, ano:m.ano, semana:m.semanaAte,
+      semanaDe:m.semanaDe, semanaAte:m.semanaAte, semanas:m.semanas,
+      receitas:Object.values(m.receitas).sort((a,b)=>b.v-a.v),
+      despesas:Object.values(m.despesas).sort((a,b)=>b.v-a.v),
+      notas:m.notas,
+      receita:m.receita, despesa:m.despesa, saldo:m.saldo,
+      compromissoTotal:m.compromissoTotal,
+      caixaAntes:m.caixaAntes, caixaDepois:m.caixaDepois,
+      saidas:[], avisos:[], promoveis:0,
+      saidasNoMes:m.saidas,
+      foraDaConta: Math.round((m.caixaDepois - m.caixaAntes) - m.saldo),
+      acoesSobrando:TO.acoes.restantes(E)
+    };
+    E.ultimoFechamento = rel;
+    E.mesCorrente = null;
+    E.historicoMeses = E.historicoMeses || [];
+    E.historicoMeses.unshift({ano:rel.ano, ate:rel.semanaAte,
+      receita:rel.receita, despesa:rel.despesa, saldo:rel.saldo,
+      caixa:rel.caixaDepois});
+    if(E.historicoMeses.length > 26) E.historicoMeses.pop();
+    return rel;
+  }
+
+  return {contas, resumoDaSemana, compromissos, patrimonio, fatorComercial,
+          faixaDaMoral, multMoral, multFilial, nomeCidade, bairroDeFora,
+          precisaCaravana, temCaravana, cobrarCaravana, diasDeCaravana, diasDaViagem,
+          postura, fecharSemana,
+          semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,
+          venderLojaSeEndividado, VENDA_LOJA,
+          onibusDe, descontoCaravana,
+          ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
+          FESTA, pisoDaFesta,
+          MMA_MAX, MMA_MES, GANHO_MMA, professoresDe, ganhoDoTreino,
+          ADVOGADO_MES, ADVOGADO_DIAS, ADVOGADOS_SEDE,
+          advogadosDe, advogadosMax,
+          TETO_SEDE, cabeNaSede, onibusMax, mmaMax,
+          MANUT_SEDE, RECEITA, MANUT, INSUMO, CARAVANA, SEM,
+          DANO_BAR, danificarBar, barMaisVisado, diasDeDano, multDano};
+})();

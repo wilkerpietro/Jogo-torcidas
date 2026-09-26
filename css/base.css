@@ -1,0 +1,307 @@
+/* =========================================================
+   BASE — paleta, tipografia, casca (lateral + topo + tela)
+   Segue os mockups em img/cenas/: barra lateral com ícones,
+   cabeçalho com data, escudo e indicadores, e conteúdo em
+   cartões de faixa escura.
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Ultra&family=Archivo+Narrow:wght@600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+/* Ultra, Archivo Narrow e PT Serif são do JORNAL da rodada e de mais
+   nada: o dono escolheu fidelidade ao recorte dos anos 40 (20/08/2026) */
+
+:root{
+  /* fundos, do mais fundo pro mais próximo */
+  --fundo:#0d0d0d;
+  --painel:#171717;
+  --painel-alto:#1e1e1e;
+  --faixa:#232323;
+  --linha:#2c2c2c;
+  --sulco:#232323;
+
+  /* texto */
+  --texto:#e9e9e9;
+  --fraco:#8d8d8d;
+  --apagado:#5f5f5f;
+
+  /* acentos */
+  --rubro:#9d2222;          /* aba ativa, item ativo */
+  --rubro-vivo:#d24141;     /* texto de destaque, alertas */
+  --rubro-fundo:#3a1414;
+  --verde:#4aa85c;
+  --verde-vivo:#5ec472;
+  --ouro:#d9a441;
+  --azul:#3a6ea8;
+  --pm:#3f7d5a;
+  --vermelho:#e04b45;
+
+  --titulo:'Barlow Condensed', system-ui, sans-serif;
+  --corpo: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, monospace;
+
+  --lateral:186px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  background:var(--fundo);
+  color:var(--texto);
+  font-family:var(--corpo);
+  font-size:13px;
+  min-height:100vh;
+}
+button{font-family:var(--corpo);color:inherit}
+/* COR SEM FUNDO É ARMADILHA. Isto dava `color:inherit` e mais nada, e
+   todo `select` novo nascia com o texto claro do tema sobre o branco
+   padrão do navegador — invisível, e ninguém desconfia porque o texto
+   ESTÁ lá. O fundo do tema vem junto agora; `select.campo` continua
+   existindo pro campo de formulário completo (borda, foco, largura). */
+input,select,textarea{
+  font-family:var(--corpo);color:var(--texto);
+  background:#141414;border:1px solid var(--linha);
+}
+input[type=checkbox],input[type=radio]{background:initial;border:initial}
+.oculto{display:none !important}
+
+/* =========================================================
+   CASCA
+   ========================================================= */
+/* O JOGO É O MAPA E O TICKER.
+   A casca era um grid de quatro áreas — marca, topo, lateral e tela —,
+   e o mapa era uma das onze páginas que se revezavam na área "tela".
+   Agora a tela é o mapa, sempre, e todo o resto (menu, data, torcida,
+   saldo) é HUD sobre ele; as páginas de gestão abrem como painel por
+   cima e fecham. Sobrou o ticker, que continua fora do mapa. */
+#jogo{
+  display:grid;
+  grid-template-columns:1fr;
+  grid-template-rows:1fr auto;
+  grid-template-areas:
+    "tela"
+    "ticker";
+  height:100vh; min-height:100vh; overflow:hidden;
+}
+
+/* ---------- barra lateral ---------- */
+#lateral{
+  grid-area:lateral;
+  background:var(--painel);
+  border-right:1px solid var(--linha);
+  padding:8px 0;
+}
+.nav-item{
+  display:flex;align-items:center;gap:11px;
+  width:100%;padding:9px 14px;
+  background:transparent;border:0;border-left:3px solid transparent;
+  cursor:pointer;text-align:left;
+  font-family:var(--titulo);font-size:13.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.nav-item svg{width:16px;height:16px;flex:none;opacity:.8}
+.nav-item:hover{background:#1f1f1f;color:var(--texto)}
+.nav-item.on{
+  background:linear-gradient(90deg,var(--rubro-fundo),transparent 88%);
+  border-left-color:var(--rubro-vivo);
+  color:#f3dcdc;
+}
+.nav-item.on svg{opacity:1;color:var(--rubro-vivo)}
+.nav-item:disabled{opacity:.34;cursor:default}
+.nav-item:disabled:hover{background:transparent;color:var(--fraco)}
+
+/* A BARRA LATERAL NÃO EXISTE MAIS EM LARGURA NENHUMA.
+   Quem navega é a coluna de ícones dentro do mapa — no celular também.
+   O `<nav id="lateral">` continua no HTML e vazio de propósito: tirar a
+   tag exigiria mexer em `montarLateral`, que é o mesmo `NAV` que a
+   coluna usa; escondê-la aqui é uma linha e não deixa resto na tela. */
+#lateral{display:none}
+
+/* ---------- área de conteúdo ---------- */
+/* o padding de baixo abre espaço pro botão flutuante de avançar o dia */
+#tela{grid-area:tela;padding:0;overflow:hidden;position:relative;min-height:0}
+.pagina{display:none}
+.pagina.on{display:block}
+/* a página do mapa ocupa a área inteira: ela É a tela */
+.pagina[data-pag="mapa"].on{height:100%}
+
+/* PAINEL POR CIMA DO FEED, EM QUALQUER LARGURA.
+   A tela principal é o feed, e todo o resto — o mapa incluído — é
+   painel por cima dele. O painel cobre a área inteira porque a
+   navegação do feed é uma faixa horizontal no alto, e não uma coluna na
+   margem: deixar 58px de fora só mostraria pedaço de mensagem atrás do
+   painel. Quem fecha é a barra de título, que atravessa a tela toda. */
+body.com-painel .pagina.painel{
+  position:absolute; inset:0; z-index:52;
+  overflow-y:auto; background:var(--fundo);
+  padding:44px 14px 24px;
+}
+/* a barra de título do painel e o aviso de girar só existem quando
+   servem: os dois eram escondidos por regra de celular, e sem o grid
+   antigo passaram a aparecer soltos no rodapé da tela larga */
+#painelBarra{display:none}
+body.com-painel #painelBarra{
+  display:flex;align-items:center;gap:8px;
+  position:absolute;z-index:53;left:0;right:0;top:0;
+  height:40px;padding:0 12px;
+  background:var(--painel);border-bottom:1px solid var(--linha);
+}
+#painelTitulo{
+  font-family:var(--titulo);font-size:14px;letter-spacing:.11em;
+  text-transform:uppercase;flex:1;
+}
+#painelFechar{
+  background:transparent;border:1px solid var(--linha);color:var(--texto);
+  padding:4px 12px;font-size:14px;cursor:pointer;
+}
+#painelFechar:hover{border-color:var(--ouro,#d9a441);color:var(--ouro,#d9a441)}
+.titulo-pagina{
+  font-family:var(--titulo);font-size:19px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;
+  padding:2px 2px 10px;
+}
+/* variante das telas de competição e calendário: barra rubra à esquerda */
+.titulo-barra{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 0 12px;
+}
+.titulo-barra::before{
+  content:'';width:4px;height:19px;background:var(--rubro-vivo);flex:none;
+}
+.titulo-barra h1{
+  font-family:var(--titulo);font-size:17px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#dedede;
+}
+
+/* O BOTÃO FLUTUANTE DE AVANÇAR O DIA SAIU.
+   Havia três caminhos pra mesma ação — ele, o play do cabeçalho e o
+   atalho de canto. Sobrou um: o ≫ ao lado da data, dentro do mapa. */
+
+/* ---------- ticker ---------- */
+#ticker{
+  grid-area:ticker;height:26px;
+  background:var(--painel);border-top:1px solid var(--linha);
+  display:flex;align-items:stretch;overflow:hidden;
+}
+#tickerRot{
+  flex:none;display:flex;align-items:center;padding:0 11px;
+  background:var(--rubro);color:#fff;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+}
+#tickerCaixa{flex:1;position:relative;overflow:hidden}
+#tickerFita{
+  position:absolute;white-space:nowrap;left:0;top:0;
+  font-family:var(--corpo);font-size:11px;line-height:26px;color:var(--fraco);
+}
+#tickerFita span{margin-right:14px}
+#tickerFita span::before{content:'●';color:var(--rubro-vivo);margin-right:8px;font-size:8px;vertical-align:2px}
+
+/* =========================================================
+   NOTIFICAÇÕES
+   ========================================================= */
+/* empilha acima do botão flutuante, nunca por baixo dele */
+#notificacoes{
+  position:fixed;right:14px;bottom:112px;width:296px;z-index:61;
+  display:flex;flex-direction:column;gap:7px;pointer-events:none;
+}
+.nota{
+  background:#1b1b1be8;border:1px solid var(--linha);border-left:3px solid var(--ouro);
+  padding:8px 11px;font-size:12.5px;animation:entraNota .22s ease-out;
+}
+.nota small{
+  display:block;font-family:var(--mono);font-size:8.5px;color:var(--fraco);
+  letter-spacing:.13em;text-transform:uppercase;margin-bottom:2px;
+}
+.nota.boa{border-left-color:var(--verde)}
+.nota.ruim{border-left-color:var(--vermelho)}
+@keyframes entraNota{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* =========================================================
+   TELAS CHEIAS (menu, seleção, escalação, relatório)
+   ========================================================= */
+/* A TELA CHEIA VEM POR CIMA DO PAINEL (correção, 21/08/2026): o painel
+   sobe a 52 e a barra dele a 53, então um modal aberto de dentro de um
+   painel — o perfil do membro, o assalto, a caravana — nascia ATRÁS da
+   página e o clique não achava nada na tela. Fica em 55: acima do
+   painel, abaixo do aviso (61) e das camadas da cena (70+). */
+.tela-cheia{
+  position:fixed;inset:0;z-index:55;background:#09090af5;
+  display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;
+}
+.moldura{
+  background:var(--painel);border:1px solid var(--linha);
+  width:100%;max-width:900px;max-height:92vh;display:flex;flex-direction:column;
+}
+.moldura.estreita{max-width:540px}
+.moldura.media{max-width:720px}
+.moldura>header{
+  padding:12px 16px;border-bottom:1px solid var(--linha);background:var(--painel-alto);
+}
+.moldura>header h2{
+  font-family:var(--titulo);font-size:18px;font-weight:700;
+  letter-spacing:.13em;text-transform:uppercase;
+}
+.moldura>header span{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.moldura>div{padding:14px 16px;overflow-y:auto;flex:1}
+.moldura>footer{
+  padding:11px 16px;border-top:1px solid var(--linha);
+  display:flex;gap:8px;justify-content:flex-end;
+}
+
+.bt{
+  background:#262626;border:1px solid #383838;padding:8px 16px;cursor:pointer;
+  font-family:var(--titulo);font-size:13px;letter-spacing:.11em;text-transform:uppercase;
+}
+.bt:hover:not(:disabled){background:#303030}
+.bt:disabled{opacity:.32;cursor:default}
+.bt.destaque{background:var(--rubro);border-color:var(--rubro);color:#fff}
+.bt.destaque:hover:not(:disabled){background:#b62a2a}
+.bt.larga{width:100%;justify-content:center}
+
+/* =========================================================
+   MENU PRINCIPAL
+   ========================================================= */
+#telaMenu{
+  background:#08080a;
+  align-items:stretch;justify-content:flex-start;padding:0;
+}
+#menuFundo{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 62% 42%, #4a1410 0%, transparent 52%),
+    radial-gradient(ellipse at 30% 78%, #2a1008 0%, transparent 46%),
+    linear-gradient(180deg,#0a0a0c 0%,#141012 55%,#0a0809 100%);
+}
+#menuFundo::after{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(90deg,#0000 0 3px,#00000022 3px 4px);
+  opacity:.5;
+}
+#menuConteudo{position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 0 0 0;width:100%}
+#menuTitulo{text-align:center;margin-bottom:30px}
+#menuTitulo .estrelas{color:#cfcfcf;letter-spacing:.5em;font-size:13px}
+#menuTitulo h1{
+  font-family:var(--titulo);font-size:64px;font-weight:700;line-height:.92;
+  letter-spacing:.06em;text-transform:uppercase;color:#f2f2f2;
+  text-shadow:0 4px 24px #000;
+}
+#menuTitulo h1 em{display:block;font-style:normal;color:var(--rubro-vivo)}
+#menuTitulo .desde{
+  font-family:var(--titulo);font-size:14px;letter-spacing:.34em;
+  color:#c9c9c9;margin-top:8px;
+}
+#menuLista{width:260px;align-self:flex-start;margin-left:6vw}
+#menuLista button{
+  display:block;width:100%;text-align:left;
+  background:#141414cc;border:0;border-left:3px solid transparent;
+  padding:10px 16px;cursor:pointer;color:#d6d6d6;
+  font-family:var(--titulo);font-size:15px;letter-spacing:.14em;text-transform:uppercase;
+}
+#menuLista button:hover:not(:disabled){background:#1e1e1ecc;color:#fff}
+#menuLista button.destaque{background:var(--rubro);border-left-color:#e46a6a;color:#fff}
+#menuLista button:disabled{opacity:.3;cursor:default}
+#menuVersao{
+  position:absolute;left:6vw;bottom:18px;
+  font-family:var(--mono);font-size:9.5px;color:var(--apagado);
+}
+
+/* CONFIGURAÇÕES: o idioma (dono, 24/09/2026) */
+.config-idiomas{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.config-idioma{min-width:120px}

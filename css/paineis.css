@@ -1,0 +1,2526 @@
+/* =========================================================
+   PAINÉIS — cartões, sub-abas, tabelas e listas
+   Vocabulário visual dos mockups: cartão com faixa de título,
+   sub-aba ativa em vermelho, número com barrinha ao lado.
+   ========================================================= */
+
+/* ---------- cartão ---------- */
+.cartao{
+  background:var(--painel);
+  border:1px solid var(--linha);
+  margin-bottom:11px;
+  display:flex;flex-direction:column;
+}
+.cartao>h2{
+  background:var(--painel-alto);
+  border-bottom:1px solid var(--linha);
+  padding:8px 12px;
+  font-family:var(--titulo);font-size:12px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:#cfcfcf;
+  display:flex;align-items:center;gap:8px;
+}
+.cartao>h2 .conta{
+  margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--fraco);
+  letter-spacing:.04em;text-transform:none;
+}
+.cartao>.corpo{padding:11px 12px}
+.cartao>.rodape{
+  border-top:1px solid var(--linha);padding:8px 12px;
+  display:flex;gap:8px;justify-content:flex-end;
+}
+
+.tag{
+  font-family:var(--mono);font-size:9px;letter-spacing:.05em;
+  background:#2a2a2a;border:1px solid var(--linha);color:var(--texto);
+  padding:1px 6px;text-transform:none;
+}
+
+/* ---------- grades de layout ---------- */
+.colunas{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+.colunas-2{display:grid;grid-template-columns:1fr 1fr;gap:11px;align-items:start}
+.colunas-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;align-items:start}
+.principal-lateral{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:11px;align-items:start}
+.lista-detalhe{display:grid;grid-template-columns:230px minmax(0,1fr);gap:11px;align-items:start}
+@media(max-width:1080px){
+  .colunas,.colunas-2,.colunas-3,.principal-lateral,.lista-detalhe{grid-template-columns:1fr}
+}
+
+/* ---------- abas grandes (competições e calendário) ---------- */
+.abas-grandes{
+  display:flex;background:var(--fundo);border-bottom:1px solid var(--linha);
+  margin-bottom:13px;
+}
+.abas-grandes button{
+  flex:1;background:transparent;border:0;border-bottom:3px solid transparent;
+  padding:17px 12px;cursor:pointer;
+  font-family:var(--titulo);font-size:13.5px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#8a8a8a;line-height:1.25;
+}
+.abas-grandes button:hover{color:#d0d0d0;background:#141414}
+.abas-grandes button.on{
+  color:#fff;background:#1a1a1a;border-bottom-color:var(--rubro-vivo);
+}
+.abas-grandes button:disabled{opacity:.35;cursor:default}
+.abas-grandes button:disabled:hover{background:transparent;color:#8a8a8a}
+
+/* ---------- competições ---------- */
+.comp-duas{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:13px;align-items:start}
+@media(max-width:1200px){ .comp-duas{grid-template-columns:1fr} }
+
+.quadro{background:var(--painel);border:1px solid var(--linha)}
+.quadro>header{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;border-bottom:1px solid var(--linha);
+}
+.quadro>header h2{
+  font-family:var(--titulo);font-size:13px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;color:#dcdcdc;
+}
+.quadro>header .conta{font-size:11.5px;color:var(--fraco)}
+.rolo{max-height:560px;overflow-y:auto}
+.rolo::-webkit-scrollbar{width:9px}
+.rolo::-webkit-scrollbar-track{background:#151515}
+.rolo::-webkit-scrollbar-thumb{background:#3a3a3a}
+
+/* classificação no formato do mockup.
+   COLUNA TRAVADA NA RÉGUA (pedido do dono, 24/08/2026): com o layout
+   automático cada grupo media as colunas pelo maior nome de time e as
+   classificações empilhadas desalinhavam entre si. `table-layout:fixed`
+   com largura cravada nos números deixa toda tabela com o MESMO
+   espaçamento; o nome fica com a sobra e corta com reticências. */
+table.liga{width:100%;border-collapse:collapse;table-layout:fixed}
+table.liga th{
+  background:#151515;color:var(--fraco);
+  font-family:var(--titulo);font-size:11px;font-weight:600;letter-spacing:.13em;
+  text-transform:uppercase;text-align:center;padding:9px 4px;
+  border-bottom:1px solid var(--linha);position:sticky;top:0;z-index:2;
+}
+table.liga th:not(.time){width:34px}
+table.liga th.time{text-align:left;padding-left:8px;width:auto}
+@media (max-width:560px){
+  table.liga th:not(.time){width:29px}
+  table.liga th,table.liga td{padding-left:2px;padding-right:2px}
+}
+table.liga td{
+  padding:9px 4px;text-align:center;border-bottom:1px solid #1e1e1e;
+  font-family:var(--mono);font-size:12px;font-weight:600;
+}
+table.liga td.pos{width:34px;color:var(--fraco);font-size:11.5px}
+table.liga td.time{
+  text-align:left;padding-left:8px;font-family:var(--corpo);font-size:12.5px;
+  font-weight:600;color:#e6e6e6;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+table.liga td.time i{
+  width:11px;height:11px;display:inline-block;margin-right:8px;vertical-align:-1px;
+  border:1px solid rgba(255,255,255,.22);
+}
+table.liga tbody tr:hover td{background:#1b1b1b}
+table.liga tr.meu td{background:#2b1414}
+table.liga tr.meu td.pos{
+  box-shadow:inset 3px 0 0 var(--rubro-vivo);color:var(--rubro-vivo);
+}
+table.liga tr.sobe td.pos{color:var(--verde-vivo)}
+table.liga tr.cai  td.pos{color:var(--vermelho)}
+
+/* navegação de rodada: ‹ RODADA 4 DE 38 › */
+header.nav-rodada{justify-content:space-between}
+header.nav-rodada h2{
+  flex:1;text-align:center;display:flex;align-items:baseline;justify-content:center;gap:9px;
+}
+header.nav-rodada h2 .conta{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);letter-spacing:.08em;
+  text-transform:none;
+}
+.nav-rodada button{
+  background:#1e1e1e;border:1px solid var(--linha);color:#cfcfcf;
+  width:30px;height:30px;cursor:pointer;font-size:14px;line-height:1;
+}
+.nav-rodada button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.nav-rodada button:disabled{opacity:.3;cursor:default}
+
+.jogo{padding:9px 14px;border-bottom:1px solid #1e1e1e}
+.jogo .quando{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  color:var(--ouro);margin-bottom:5px;
+}
+/* O PLACAR NUMA LINHA SÓ (pedido do dono, 24/08/2026): a coluna do
+   meio tinha 26px fixos — "2 × 1" não cabia e descia de linha — e o
+   nome comprido quebrava o resto. O meio agora estica pro placar e o
+   nome corta com reticências em vez de dobrar. */
+.jogo .duelo{
+  display:grid;grid-template-columns:1fr minmax(30px,auto) 1fr;
+  align-items:center;gap:8px;
+  font-size:12.5px;font-weight:600;
+}
+.jogo .duelo .casa,.jogo .duelo .fora{
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.jogo .duelo .casa{text-align:right}
+.jogo .duelo .x{text-align:center;color:var(--apagado);font-family:var(--mono);font-size:11px}
+.jogo .duelo i{
+  width:11px;height:11px;display:inline-block;vertical-align:-1px;
+  border:1px solid rgba(255,255,255,.22);
+}
+.jogo .duelo .casa i{margin-left:7px}
+.jogo .duelo .fora i{margin-right:7px}
+.jogo .placar{
+  font-family:var(--mono);font-size:13px;color:#fff;text-align:center;
+  white-space:nowrap;
+}
+.jogo.meu{background:#2b1414;box-shadow:inset 3px 0 0 var(--rubro-vivo)}
+.jogo.feito .duelo{color:#cdcdcd}
+
+.filtros-linha{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
+.filtros-linha button{
+  background:var(--painel);border:1px solid var(--linha);color:var(--fraco);
+  padding:6px 11px;cursor:pointer;font-size:11.5px;display:flex;gap:7px;align-items:center;
+}
+.filtros-linha button:hover{background:#1f1f1f;color:var(--texto)}
+.filtros-linha button.on{background:var(--rubro);border-color:var(--rubro);color:#fff}
+.filtros-linha button.minha{border-color:var(--rubro-vivo)}
+.filtros-linha button .conta{font-family:var(--mono);font-size:9.5px;opacity:.7}
+
+table.tabela-liga{font-size:11.5px}
+table.tabela-liga td{padding:4px 6px;font-family:var(--mono);text-align:right}
+table.tabela-liga th{padding:4px 6px;text-align:right;font-size:9.5px}
+table.tabela-liga th:nth-child(2),table.tabela-liga td.clube{text-align:left}
+table.tabela-liga td.pos,table.tabela-liga th.pos{width:22px;text-align:center;color:var(--fraco)}
+table.tabela-liga td.clube{
+  font-family:var(--corpo);display:flex;align-items:center;gap:6px;border-bottom:0;
+}
+table.tabela-liga td.clube i{width:3px;height:13px;display:block;flex:none}
+table.tabela-liga td.p{color:#fff;font-weight:600}
+table.tabela-liga tr.passa td.pos{color:var(--verde-vivo)}
+table.tabela-liga tr.meu td{background:var(--rubro-fundo)}
+
+.campeao{display:flex;align-items:center;gap:11px;padding:6px 0}
+.campeao svg{width:26px;height:26px;color:var(--ouro)}
+.campeao b{font-family:var(--titulo);font-size:17px;letter-spacing:.08em;text-transform:uppercase}
+.campeao small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+
+.fase-rot{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fraco);padding:8px 0 3px;
+}
+.jogo-chave{
+  /* a quarta coluna tem largura fixa (dono, 17/09/2026): com `auto`
+     a linha que tinha pênaltis empurrava o placar pra esquerda e os
+     placares da chave saíam desalinhados */
+  display:grid;grid-template-columns:1fr 62px 1fr 96px;align-items:center;gap:8px;
+  padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
+}
+.jogo-chave .a,.jogo-chave .b{
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.jogo-chave b{font-family:var(--mono);text-align:center;white-space:nowrap}
+.jogo-chave .b{text-align:right}
+.jogo-chave .venceu{color:#fff;font-weight:600}
+.jogo-chave em{font-family:var(--mono);font-size:9.5px;color:var(--fraco);font-style:normal;white-space:nowrap}
+.jogo-chave.meu{background:var(--rubro-fundo)}
+.sub-chave{font-family:var(--mono);font-size:9.5px;color:var(--ouro);
+  padding:3px 0 6px;text-align:center}
+
+/* A VAGA CONTINENTAL (dono, 23/08/2026): posição, cor do clube, nome e
+   a etiqueta do torneio. Libertadores em ouro, Sul-Americana em prata —
+   é a hierarquia que a arquibancada enxerga de longe. */
+.vaga-cm{display:grid;grid-template-columns:26px 16px 1fr;
+  align-items:center;gap:8px;padding:5px 0;font-size:12px;
+  border-bottom:1px solid var(--sulco)}
+.vaga-cm:last-child{border-bottom:0}
+.vaga-cm .pos{font-family:var(--mono);font-size:10px}
+.vaga-cm.lib .pos{color:var(--ouro)}
+.vaga-cm.sul .pos{color:#b9c3cc}
+.vaga-cm i{width:11px;height:11px;display:inline-block;
+  border:1px solid rgba(255,255,255,.22)}
+.vaga-cm.meu{background:var(--rubro-fundo)}
+.vaga-cm.meu .nm{color:#fff;font-weight:600}
+
+/* a tabela de prêmios da LNT: rótulo à esquerda, dinheiro à direita */
+.lnt-premio{display:flex;justify-content:space-between;align-items:baseline;
+  gap:10px;font-family:var(--mono);font-size:10px;
+  padding:4px 14px;border-bottom:1px solid var(--linha)}
+.lnt-premio:last-child{border-bottom:0}
+.lnt-premio .rot{color:var(--fraco);letter-spacing:.06em;text-transform:uppercase}
+.lnt-premio .v{color:var(--ouro)}
+.lnt-premio.nosso .rot{color:var(--texto)}
+
+/* ---------- calendário mensal ---------- */
+.mes-cab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid var(--linha);
+}
+.mes-cab .titulo{
+  font-family:var(--titulo);font-size:15px;font-weight:600;
+  letter-spacing:.19em;text-transform:uppercase;
+}
+.mes-cab .titulo small{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);
+  letter-spacing:.1em;margin-left:7px;
+}
+.mes-cab button{
+  background:#1e1e1e;border:1px solid var(--linha);color:#cfcfcf;
+  width:36px;height:32px;cursor:pointer;font-size:15px;line-height:1;
+}
+.mes-cab button:hover{background:#2a2a2a;color:#fff}
+
+.mes{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--linha)}
+.mes .cab{
+  background:#151515;border-right:1px solid var(--linha);
+  border-bottom:1px solid var(--linha);
+  padding:9px 4px;text-align:center;
+  font-family:var(--titulo);font-size:11px;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--fraco);
+}
+.mes .dia{
+  min-height:96px;border-right:1px solid var(--linha);border-bottom:1px solid var(--linha);
+  padding:7px 8px;display:flex;flex-direction:column;gap:3px;
+  background:var(--painel);
+}
+.mes .dia .n{font-family:var(--mono);font-size:12.5px;color:#cfcfcf}
+.mes .dia.fora-do-mes{background:#101010}
+.mes .dia.fora-do-mes .n{color:#3d3d3d}
+.mes .dia.passou{background:#131313}
+.mes .dia.passou .n{color:var(--apagado)}
+.mes .dia.hoje{border:1px solid var(--rubro-vivo);background:#1d1212}
+.mes .dia.hoje .n{color:var(--rubro-vivo);font-weight:600}
+.mes .dia.jogo{background:#241414}
+.mes .dia.jogo .n{color:#e8b0b0}
+.mes .dia .rot{
+  font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;
+}
+.mes .dia .rot i{width:9px;height:9px;display:block;flex:none;border:1px solid rgba(255,255,255,.2)}
+.mes .dia .rot svg{width:15px;height:15px;flex:none}
+.mes .dia .sub{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.mes .dia.caravana{
+  background:
+    repeating-linear-gradient(135deg, #1b1a16 0 7px, #151511 7px 14px);
+  border-color:#5a4a1e;
+}
+.mes .dia.caravana .n{color:var(--ouro)}
+.mes .dia.caravana .rot{color:var(--ouro);letter-spacing:.08em}
+.mes .dia .acao{
+  font-size:10.5px;color:#9fb8a5;display:flex;align-items:flex-start;gap:5px;
+  line-height:1.3;
+}
+.mes .dia .acao svg{width:11px;height:11px;flex:none;margin-top:1px}
+.mes .dia.fora-do-mes .acao{color:#5d6f62}
+
+/* ---------- rotina semanal ---------- */
+.recado{
+  border:1px solid var(--linha);border-left:3px solid var(--rubro-vivo);
+  background:var(--painel);padding:13px 15px;margin-bottom:13px;font-size:12.5px;
+  line-height:1.6;
+}
+.recado b{color:var(--rubro-vivo);font-weight:600}
+.recado small{display:block;color:var(--fraco);font-size:11.5px;margin-top:4px}
+.linha-rotina{
+  display:grid;grid-template-columns:170px minmax(0,1fr);align-items:center;gap:14px;
+  background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--rubro);
+  padding:12px 15px;margin-bottom:7px;
+}
+.linha-rotina.hoje{border-left-color:var(--rubro-vivo);background:#1d1414}
+.linha-rotina>span{
+  font-family:var(--titulo);font-size:13px;font-weight:600;
+  letter-spacing:.17em;text-transform:uppercase;color:#dcdcdc;
+}
+select.campo{
+  width:100%;background:#141414;border:1px solid var(--linha);color:var(--texto);
+  padding:10px 12px;font-family:var(--corpo);font-size:12.5px;cursor:pointer;
+}
+select.campo:focus{outline:0;border-color:var(--rubro-vivo)}
+
+/* ---------- ideologia ---------- */
+/* Os três seletores e a chave não tinham estilo NENHUM — nem `.pol-grupo`
+   nem `.ass-politicas` existiam aqui. O bloco funcionava e parecia
+   rascunho, e o `select` pelado é o que ficou branco no branco. */
+.ass-politicas{
+  background:var(--painel);border:1px solid var(--linha);padding:14px 16px;
+}
+.pol-grupo{margin-bottom:12px}
+/* a linha que explica o efeito da opção selecionada (dono, 19/08/2026) */
+.pol-grupo .pol-nota{display:block;margin-top:4px;line-height:1.35}
+.pol-grupo > b{
+  display:block;font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:6px;
+}
+.pol-rodape{
+  display:flex;justify-content:flex-end;
+  margin-top:14px;padding-top:12px;border-top:1px solid var(--linha);
+}
+
+/* ---------- agenda do time ---------- */
+.escolha-time{
+  display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:18px;align-items:center;
+  background:var(--painel);border:1px solid var(--linha);padding:14px 16px;margin-bottom:13px;
+}
+.escolha-time .rot{
+  font-family:var(--titulo);font-size:11px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:7px;
+}
+.escolha-time .quem{display:flex;align-items:center;gap:10px}
+.escolha-time .quem i{width:14px;height:14px;display:block;border:1px solid rgba(255,255,255,.22)}
+.escolha-time .quem b{font-family:var(--titulo);font-size:17px;letter-spacing:.06em}
+.escolha-time .quem small{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+
+table.agenda{width:100%;border-collapse:collapse}
+table.agenda th{
+  background:#151515;color:var(--fraco);text-align:left;
+  font-family:var(--titulo);font-size:11px;font-weight:600;letter-spacing:.15em;
+  text-transform:uppercase;padding:11px 14px;border-bottom:1px solid var(--linha);
+}
+table.agenda td{padding:10px 14px;border-bottom:1px solid #1e1e1e;font-size:12.5px}
+table.agenda tr:hover td{background:#1b1b1b}
+table.agenda tr.meu td{background:#2b1414}
+table.agenda .data b{font-family:var(--mono);font-size:13px;display:block}
+table.agenda .data small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+table.agenda .hora{font-family:var(--mono);font-size:12px;color:#cfcfcf}
+table.agenda .comp b{display:block;font-weight:600}
+table.agenda .comp small{color:var(--fraco);font-size:11px}
+table.agenda .local{
+  font-family:var(--titulo);font-size:12px;letter-spacing:.13em;text-transform:uppercase;
+}
+table.agenda .local.casa{color:var(--verde-vivo)}
+table.agenda .local.fora{color:var(--ouro)}
+table.agenda .adv{display:flex;align-items:center;gap:8px;font-weight:600}
+table.agenda .adv i{width:11px;height:11px;display:block;border:1px solid rgba(255,255,255,.22)}
+table.agenda .placar{font-family:var(--mono);font-size:13px;text-align:center}
+
+/* ---------- calendário: grade por semana (visão do ano) ---------- */
+.grade-semanas{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:5px}
+.cel-semana{
+  border:1px solid var(--linha);background:var(--painel-alto);padding:6px 7px;
+  display:flex;flex-direction:column;gap:2px;min-height:62px;
+}
+.cel-semana .s{
+  font-family:var(--mono);font-size:9px;color:var(--fraco);
+  display:flex;justify-content:space-between;
+}
+.cel-semana .s i{font-style:normal;opacity:.7}
+.cel-semana .adv{
+  font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+}
+.cel-semana .res{font-family:var(--mono);font-size:12px;color:var(--fraco)}
+.cel-semana .res.ganhou{color:var(--verde-vivo)}
+.cel-semana .res.perdeu{color:var(--vermelho)}
+.cel-semana .cp{font-size:8.5px;color:var(--apagado);text-transform:uppercase;letter-spacing:.06em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cel-semana.folga{opacity:.45}
+.cel-semana.folga .adv{font-size:11px;color:var(--fraco)}
+.cel-semana.passou{opacity:.75}
+.cel-semana.agora{border-color:var(--rubro-vivo);background:#241717;opacity:1}
+
+/* ---------- sub-abas ---------- */
+.subabas{display:flex;gap:1px;background:var(--linha);border:1px solid var(--linha);margin-bottom:11px}
+/* cinco abas não cabem em 390px (a Loja do dono, 09/09/2026): em tela
+   estreita a fileira quebra em vez de cortar a última */
+@media (max-width:560px){
+  .subabas{flex-wrap:wrap}
+  .subabas button{flex:1 1 30%;white-space:nowrap}
+}
+.subabas button{
+  flex:1;background:var(--painel);border:0;padding:9px 10px;cursor:pointer;
+  font-family:var(--titulo);font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.subabas button:hover{background:#202020;color:var(--texto)}
+.subabas button.on{background:var(--rubro);color:#fff}
+.subabas button:disabled{opacity:.35;cursor:default}
+.subabas button:disabled:hover{background:var(--painel);color:var(--fraco)}
+
+/* ---------- linhas de dado ---------- */
+.linha-dado{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:6px 0;border-bottom:1px solid var(--sulco);
+}
+.linha-dado:last-child{border-bottom:0}
+.linha-dado b{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.linha-dado .fraco{color:var(--fraco);font-size:12px}
+.positivo{color:var(--verde-vivo)}
+.negativo{color:var(--vermelho)}
+
+/* bloco grande de valor, como no Fluxo Financeiro */
+.valorao{padding:7px 0 10px;border-bottom:1px solid var(--sulco)}
+.valorao:last-child{border-bottom:0}
+.valorao span{
+  display:block;font-size:11.5px;color:var(--fraco);margin-bottom:3px;
+}
+.valorao b{
+  font-family:var(--mono);font-size:19px;font-variant-numeric:tabular-nums;
+}
+
+/* ---------- lista de filtro à esquerda ---------- */
+.filtros{display:flex;flex-direction:column}
+.filtros button{
+  display:flex;justify-content:space-between;align-items:center;gap:8px;
+  background:transparent;border:0;border-left:3px solid transparent;
+  padding:9px 12px;cursor:pointer;text-align:left;color:var(--fraco);
+  font-family:var(--titulo);font-size:13px;letter-spacing:.11em;text-transform:uppercase;
+  border-bottom:1px solid var(--sulco);
+}
+.filtros button .conta{font-family:var(--mono);font-size:11px}
+.filtros button:hover{background:#1f1f1f;color:var(--texto)}
+.filtros button.on{background:#212121;border-left-color:var(--rubro-vivo);color:var(--texto)}
+
+/* ---------- tabela ---------- */
+table.dados{width:100%;border-collapse:collapse;font-size:12.5px}
+table.dados th{
+  font-family:var(--mono);font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--fraco);text-align:left;padding:7px 9px;
+  border-bottom:1px solid var(--linha);white-space:nowrap;user-select:none;
+}
+table.dados th.ordenavel{cursor:pointer}
+table.dados th.ordenavel:hover{color:var(--texto)}
+table.dados th .seta{color:var(--rubro-vivo);margin-left:3px}
+table.dados td{padding:6px 9px;border-bottom:1px solid var(--sulco)}
+table.dados tbody tr:hover td{background:#1d1d1d}
+table.dados td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+table.dados tr.ferido td{color:var(--vermelho)}
+table.dados tr.preso td{color:var(--pm)}
+table.dados tr.selecionada td{background:#252525}
+
+/* número + barrinha, como nos mockups de membros */
+.medida{display:flex;align-items:center;gap:7px}
+.medida .n{font-family:var(--mono);font-size:12px;min-width:20px;text-align:right;
+  font-variant-numeric:tabular-nums}
+.medida .barra{flex:1;max-width:52px;height:4px;background:#2b2b2b;position:relative}
+.medida .barra i{position:absolute;inset:0 auto 0 0;background:var(--verde)}
+.medida.media .barra i{background:var(--ouro)}
+.medida.baixa .barra i{background:var(--vermelho)}
+
+/* marcador de cargo, o pontinho vermelho do mockup */
+.ponto{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  background:var(--rubro-vivo);margin-right:6px;vertical-align:-1px;
+}
+
+/* ---------- item de lista ---------- */
+.item{
+  border-left:3px solid #3a3a3a;padding:6px 0 6px 9px;margin-bottom:5px;
+  background:#00000026;
+}
+.item.meu{border-left-color:var(--rubro-vivo)}
+.item.chegou{border-left-color:var(--ouro);background:#d9a44112}
+.item.ferido{border-left-color:var(--vermelho);background:#e04b4512}
+.item.preso{border-left-color:var(--pm);background:#3f7d5a12}
+.item .l1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.item .nm{font-family:var(--titulo);font-size:13.5px;letter-spacing:.06em;text-transform:uppercase}
+.item .qt{font-family:var(--mono);font-size:11px;color:var(--ouro)}
+.item .l2{font-family:var(--mono);font-size:9.5px;color:var(--fraco);margin-top:2px}
+
+/* ---------- lista de notícias ---------- */
+.noticia{
+  display:flex;gap:10px;align-items:baseline;
+  padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12px;
+}
+.noticia .data{font-family:var(--mono);font-size:10px;color:var(--fraco);flex:none}
+.noticia .txt{flex:1}
+.noticia .hora{font-family:var(--mono);font-size:10px;color:var(--apagado);flex:none}
+
+/* ---------- ações do dia ---------- */
+.acao-linha{
+  display:flex;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--sulco);
+  background:none;border-left:0;border-right:0;border-top:0;
+  width:100%;text-align:left;cursor:pointer;color:var(--texto);font-size:12.5px;
+}
+.acao-linha:hover{color:#fff}
+.acao-linha:hover .ic{color:var(--rubro-vivo)}
+.acao-linha .ic{color:var(--fraco);display:flex}
+.acao-linha .ic svg{width:15px;height:15px}
+.acao-linha:disabled{opacity:.55;cursor:default}
+.acao-linha:disabled:hover{color:var(--texto)}
+.acao-linha:disabled:hover .ic{color:var(--fraco)}
+/* nome em cima, efeito ou motivo do bloqueio embaixo */
+.acao-linha .txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.acao-linha .txt small{font-size:10.5px;color:var(--fraco);line-height:1.3}
+.acao-linha:disabled .txt small{color:#a36b60}
+.acao-linha .custo{font-family:var(--mono);font-size:10.5px;color:var(--fraco);white-space:nowrap}
+
+/* fichas de ação da semana: gastas apagam */
+.fichas{display:flex;gap:4px;align-items:center;margin-left:auto}
+.fichas i{width:9px;height:9px;border:1px solid var(--rubro-vivo);border-radius:50%;
+  background:var(--rubro-vivo);display:block}
+.fichas i.gasta{background:none;border-color:var(--apagado)}
+
+/* relatório do fechamento semanal */
+.fecho{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.fecho h3{font-family:var(--titulo);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fraco);margin:2px 0 4px;font-weight:600}
+.fecho .col{min-width:0}
+.fecho .total{border-top:1px solid var(--linha);margin-top:5px;padding-top:5px}
+.fecho .largo{grid-column:1 / -1}
+
+/* ---------- confronto (próximo jogo) ---------- */
+.confronto{display:flex;align-items:center;justify-content:center;gap:26px;padding:8px 0 4px}
+.confronto .lado{text-align:center;width:110px}
+.confronto .escudo{width:54px;height:54px;margin:0 auto 7px;font-size:17px}
+.confronto .nome{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.09em;text-transform:uppercase;
+}
+.confronto .x{font-family:var(--titulo);font-size:24px;color:var(--fraco)}
+.confronto-info{text-align:center;padding:6px 0 2px;font-family:var(--mono);font-size:11px}
+.confronto-info .local{
+  display:block;font-size:9.5px;color:var(--fraco);letter-spacing:.13em;
+  text-transform:uppercase;margin-top:4px;
+}
+.competicao-rot{
+  text-align:center;font-size:11.5px;color:var(--fraco);
+  padding-bottom:6px;border-bottom:1px solid var(--sulco);margin-bottom:6px;
+}
+
+/* ---------- seleção de torcida ---------- */
+.torcida-opcao{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:transparent;border:0;border-bottom:1px solid var(--sulco);
+  border-left:3px solid transparent;
+  padding:8px 11px;cursor:pointer;text-align:left;
+}
+.torcida-opcao:hover{background:#1f1f1f}
+.torcida-opcao.on{background:#242424;border-left-color:var(--rubro-vivo)}
+.torcida-opcao .escudo{width:30px;height:30px;font-size:11px}
+.torcida-opcao .nm{
+  font-family:var(--titulo);font-size:13.5px;letter-spacing:.07em;text-transform:uppercase;
+  line-height:1.15;
+}
+.torcida-opcao .cid{font-family:var(--mono);font-size:9px;color:var(--fraco)}
+.torcida-opcao .qt-membros{
+  margin-left:auto;text-align:right;font-family:var(--mono);font-size:13px;line-height:1.1;
+}
+.torcida-opcao .qt-membros small{
+  display:block;font-size:8px;color:var(--fraco);letter-spacing:.1em;text-transform:uppercase;
+}
+
+/* divisão de cargos na ficha da seleção */
+.hierarquia-fina{display:grid;gap:3px;padding:0 0 12px}
+.hierarquia-fina>div{
+  display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:8px;
+  font-size:11px;
+}
+.hierarquia-fina span{color:var(--fraco)}
+.hierarquia-fina i{height:7px;background:var(--rubro);display:block;min-width:2px}
+.hierarquia-fina b{font-family:var(--mono);font-size:11.5px;text-align:right}
+
+.ficha-torcida{display:flex;align-items:center;gap:16px;padding:4px 0 14px}
+.ficha-torcida .escudo{width:74px;height:74px;font-size:20px;border-width:3px}
+.ficha-torcida h3{
+  font-family:var(--titulo);font-size:26px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;line-height:1;
+}
+.ficha-torcida span{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+.grade-atributos{
+  display:grid;grid-template-columns:1fr 1fr;gap:11px 20px;
+  border-top:1px solid var(--sulco);padding-top:12px;
+}
+.grade-atributos div span{
+  display:block;font-size:11px;color:var(--fraco);margin-bottom:2px;
+}
+.grade-atributos div b{font-family:var(--mono);font-size:14px}
+/* a rivalidade ocupa a linha inteira: nome de torcida não cabe em meia
+   coluna, e o efetivo dela vai junto, miúdo */
+.grade-atributos div.largo{grid-column:1 / -1}
+.grade-atributos div.largo b small{
+  font-family:var(--mono);font-size:11px;color:var(--fraco);
+  margin-left:7px;letter-spacing:.04em;
+}
+
+/* ---------- busca ---------- */
+.busca{
+  width:100%;background:#111;border:1px solid var(--linha);
+  padding:7px 10px;font-size:12.5px;color:var(--texto);margin-bottom:9px;
+}
+.busca:focus{outline:0;border-color:var(--rubro-vivo)}
+
+/* ---------- transações ---------- */
+.transacao{
+  display:flex;justify-content:space-between;gap:10px;
+  font-family:var(--mono);font-size:10.5px;padding:4px 0;
+  border-bottom:1px solid var(--sulco);
+}
+.transacao .dia{color:var(--fraco);flex:none;width:44px}
+.transacao .desc{flex:1;color:var(--texto);font-family:var(--corpo);font-size:11.5px}
+/* o mês corrente acumulando: já está no caixa, a linha fecha depois */
+.transacao.pendente{opacity:.72}
+.transacao.pendente .desc small{display:block;color:var(--fraco);font-size:10px}
+.transacao .val{flex:none;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- aviso de fase ---------- */
+.em-construcao{
+  padding:26px 18px;text-align:center;color:var(--fraco);font-size:12.5px;line-height:1.6;
+}
+.em-construcao b{
+  display:block;font-family:var(--titulo);font-size:16px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--texto);margin-bottom:7px;
+}
+
+/* ---------- diplomacia ---------- */
+.rel-barra{
+  display:inline-block;position:relative;width:110px;height:8px;
+  background:#262626;border:1px solid var(--linha);vertical-align:-1px;
+}
+.rel-barra i{position:absolute;top:0;bottom:0;display:block}
+.rel-barra u{
+  position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;
+  background:var(--apagado);
+}
+.rel-num{
+  font-family:var(--mono);font-size:10.5px;margin-left:8px;color:var(--fraco);
+  font-variant-numeric:tabular-nums;
+}
+.rel-acoes{white-space:nowrap}
+.mini-bt{
+  width:22px;height:20px;margin-right:3px;cursor:pointer;
+  background:#262626;border:1px solid #383838;color:var(--texto);
+  font-family:var(--mono);font-size:11px;line-height:1;
+}
+.mini-bt:hover:not(:disabled){background:var(--rubro);border-color:var(--rubro)}
+.mini-bt:disabled{opacity:.3;cursor:default}
+
+/* ---------- o saldo da cena de ação, no relatório ---------- */
+.fecho-cena{
+  display:flex;flex-direction:column;gap:3px;margin-top:12px;
+  padding:9px 11px;background:#16160f;border-left:3px solid var(--fraco);
+}
+.fecho-cena.boa{border-left-color:var(--verde-vivo)}
+.fecho-cena.ruim{border-left-color:var(--vermelho)}
+.fecho-cena b{font-size:13px;line-height:1.35}
+.fecho-cena small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+
+/* ---------- o cartaz que abre o fim da cena ----------
+   Deu certo ou não, em letra grande, e a conta da noite embaixo.
+   É a primeira coisa da tela de relatório. */
+.cartaz-cena{
+  margin-bottom:14px;padding:13px 15px;
+  background:#16160f;border:1px solid var(--linha);border-top:3px solid var(--fraco);
+}
+.cartaz-cena.boa {border-top-color:var(--verde-vivo);background:#131a13}
+.cartaz-cena.ruim{border-top-color:var(--vermelho);  background:#1a1312}
+/* eles correram: nem verde nem vermelho. Não houve vitória — não houve
+   briga —, e também não houve derrota: quem virou as costas foi o outro. */
+.cartaz-cena.neutra{border-top-color:var(--fraco);background:#15161a}
+.cartaz-cena h3{
+  font-size:21px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  margin-bottom:10px;
+}
+.cartaz-cena.boa  h3{color:var(--verde-vivo)}
+.cartaz-cena.ruim h3{color:var(--vermelho)}
+.cartaz-cena.neutra h3{color:var(--texto)}
+/* UMA COLUNA SÓ (pedido do dono, 18/08/2026): em duas colunas o valor
+   da esquerda ficava a 18px do rótulo da direita e o "23" parecia ser
+   dos "Feridos nossos" — a leitura saía fora de ordem conforme a
+   largura da tela. Uma coluna lê sempre de cima pra baixo. */
+.dados-cena{display:grid;grid-template-columns:1fr;gap:6px}
+.dado-cena{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  border-bottom:1px solid var(--sulco);padding-bottom:4px;
+}
+.dado-cena span{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--fraco);
+}
+.dado-cena b{font-size:14px;white-space:nowrap}
+
+/* o mesmo cartaz por cima do palco, na bancada, que não tem
+   tela de relatório depois da cena */
+#djFim{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,10,9,.72);z-index:6;
+}
+#djFim .cartaz-cena{width:min(560px,86%);box-shadow:0 18px 60px rgba(0,0,0,.6)}
+#djFim .cartaz-cena small{
+  display:block;margin-top:9px;font-family:var(--mono);font-size:11px;color:var(--fraco);
+}
+#djFim .acao-btn{margin-top:12px}
+
+/* ---------- avisos na tela de início ---------- */
+.aviso-linha{
+  display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;cursor:pointer;
+  background:none;border:0;border-bottom:1px solid var(--sulco);
+  padding:8px 0;color:var(--texto);
+}
+.aviso-linha:last-child{border-bottom:0}
+.aviso-linha:hover{color:#fff}
+.aviso-linha:hover .pino{background:var(--rubro-vivo)}
+.aviso-linha .pino{
+  width:7px;height:7px;flex:none;margin-top:5px;background:var(--fraco);
+  border-radius:50%;
+}
+.aviso-linha.urgente .pino{background:var(--vermelho)}
+.aviso-linha.aliado  .pino{background:var(--verde-vivo)}
+.aviso-linha .txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.aviso-linha .txt span{font-size:12.5px;font-weight:600}
+.aviso-linha .txt small{font-size:10.5px;color:var(--fraco);line-height:1.3}
+
+/* ---------- gestão inteligente ---------- */
+.confronto-linha{
+  display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;
+  padding:4px 0 10px;border-bottom:1px solid var(--sulco);margin-bottom:9px;
+}
+.confronto-linha b{font-family:var(--titulo);font-size:16px;letter-spacing:.06em}
+.confronto-linha span{color:var(--apagado);font-family:var(--mono)}
+.confronto-linha small{
+  width:100%;font-family:var(--mono);font-size:10.5px;color:var(--fraco);margin-top:3px;
+}
+
+.opcoes{display:flex;flex-direction:column;gap:5px;padding:2px 0 4px}
+.opcao{
+  display:grid;grid-template-columns:1fr auto;gap:2px 10px;
+  background:#171717;border:1px solid var(--linha);border-left:3px solid transparent;
+  padding:9px 11px;cursor:pointer;text-align:left;color:var(--texto);
+}
+.opcao:hover:not(.off){background:#1f1f1f}
+.opcao.on{background:#241717;border-left-color:var(--rubro-vivo)}
+.opcao.off{opacity:.4;cursor:default}
+.opcao .rot{font-size:12.5px;font-weight:600}
+.opcao .custo{font-family:var(--mono);font-size:11px;color:var(--ouro);text-align:right}
+.opcao small{grid-column:1/-1;font-size:10.5px;color:var(--fraco);line-height:1.35}
+.opcao.on small{color:#a89a95}
+
+.contador{display:flex;align-items:center;gap:9px;padding:5px 0}
+.contador button{
+  width:30px;height:30px;background:#1e1e1e;border:1px solid var(--linha);
+  color:#cfcfcf;cursor:pointer;font-size:15px;line-height:1;
+}
+.contador button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.contador button:disabled{opacity:.3;cursor:default}
+/* o botão de texto dentro do contador (Quantidade equivalente): a regra
+   de cima força 30px de largura pros botões de − e +, e o rótulo
+   estourava. Aqui ele volta a crescer pro lado, com fonte menor. */
+.contador .bt{
+  width:auto;height:30px;padding:0 13px;font-size:10px;
+  letter-spacing:.07em;white-space:nowrap;
+}
+.contador b{font-family:var(--mono);font-size:17px;min-width:22px;text-align:center}
+.contador small{color:var(--fraco);font-size:11px}
+
+.medidor{display:flex;align-items:center;gap:9px;width:100%;font-size:11.5px}
+.medidor span{color:var(--fraco);min-width:112px}
+.medidor i{flex:1;height:7px;background:#242424;display:block}
+.medidor i b{display:block;height:100%}
+.medidor em{font-family:var(--mono);font-style:normal;font-size:11.5px;min-width:26px;text-align:right}
+
+.aliado-cab{display:flex;align-items:center;gap:9px;padding:9px 0 6px}
+.aliado-cab .escudinho{
+  width:16px;height:16px;flex:none;border:1px solid rgba(255,255,255,.25);
+}
+.aliado-cab b{font-family:var(--titulo);font-size:14px;letter-spacing:.05em}
+.aliado-cab small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+
+.trajeto{display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:7px 0}
+.trajeto .parada{
+  font-size:11px;background:#1d1d1d;border:1px solid var(--linha);padding:3px 8px;
+}
+.trajeto .parada.saida{border-color:var(--verde);color:var(--verde-vivo)}
+.trajeto .parada.chegada{border-color:var(--rubro-vivo);color:#e8b0b0}
+.trajeto .parada.hostil{border-color:var(--ouro);color:var(--ouro)}
+.trajeto i{color:var(--apagado);font-style:normal}
+.quadro>.rodape{
+  border-top:1px solid var(--linha);padding:9px 14px;
+  display:flex;gap:8px;justify-content:flex-end;
+}
+/* o corpo do quadro é encostado (tabelas) e só recua quando pedido */
+.quadro>.recuado{padding:9px 14px 12px}
+
+/* destino de cada bonde */
+.linha-bonde{
+  display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px;align-items:center;
+  padding:4px 0;
+}
+.linha-bonde .zona{
+  font-family:var(--titulo);font-size:13px;letter-spacing:.13em;text-transform:uppercase;
+}
+.linha-bonde .zona small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+  letter-spacing:.04em;text-transform:none;
+}
+
+/* ---------- tensão ---------- */
+.ten-barra{
+  display:inline-block;width:66px;height:7px;background:#242424;vertical-align:middle;
+}
+.ten-barra i{display:block;height:100%}
+.ten-num{font-family:var(--mono);font-size:11px;margin-left:7px}
+.linha-tensao{
+  display:grid;grid-template-columns:14px minmax(0,1fr) auto 92px;
+  gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--sulco);
+}
+.linha-tensao:last-child{border-bottom:0}
+.linha-tensao .cor{width:12px;height:12px;border:1px solid rgba(255,255,255,.25)}
+.linha-tensao .nm{font-size:12.5px;font-weight:600}
+.linha-tensao .nm small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);font-weight:400;
+}
+.linha-tensao .faixa{
+  font-family:var(--titulo);font-size:11.5px;letter-spacing:.13em;
+  text-transform:uppercase;text-align:right;
+}
+
+/* ---------- gestão: faixa do próximo jogo ---------- */
+.gestao-topo{
+  background:linear-gradient(180deg,#1c1414,#151515);
+  border:1px solid var(--linha);border-left:3px solid var(--rubro-vivo);
+  padding:12px 16px;margin-bottom:10px;
+}
+.gestao-topo.vazio{border-left-color:var(--linha)}
+.gestao-topo .cab h2{
+  font-family:var(--titulo);font-size:16px;letter-spacing:.08em;text-transform:uppercase;
+}
+.gestao-topo .times{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.gestao-topo .times .lado{
+  display:flex;align-items:center;gap:7px;font-family:var(--titulo);
+  font-size:17px;letter-spacing:.05em;color:var(--apagado);
+}
+.gestao-topo .times .lado.nosso{color:#fff}
+.gestao-topo .times .lado i{
+  width:13px;height:13px;flex:none;border:1px solid rgba(255,255,255,.28);
+}
+.gestao-topo .times em{color:var(--fraco);font-family:var(--mono);font-style:normal}
+.gestao-topo .cab small{
+  display:block;font-family:var(--mono);font-size:10.5px;color:var(--fraco);margin-top:4px;
+}
+.gestao-topo .dados{
+  display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:10px;padding-top:9px;
+  border-top:1px solid var(--sulco);
+}
+.gestao-topo .dados > div{display:flex;flex-direction:column;gap:1px}
+.gestao-topo .dados span{font-size:10px;color:var(--fraco);text-transform:uppercase;
+  letter-spacing:.1em}
+.gestao-topo .dados b{font-size:12.5px}
+
+/* ---------- gestão: trilha das decisões ---------- */
+.trilha{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px;
+  padding:8px 12px;background:#151515;border:1px solid var(--linha);
+}
+.trilha .etapa{
+  font-size:11px;line-height:1.25;color:var(--apagado);
+  border-left:2px solid var(--verde);padding-left:7px;
+}
+.trilha .etapa.aberta{border-left-color:var(--vermelho);color:#e8b0b0}
+.trilha .etapa small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+}
+.trilha i{color:var(--apagado);font-style:normal}
+
+/* ---------- gestão: cartão de passo ---------- */
+.passo{background:var(--painel);border:1px solid var(--linha);margin-bottom:10px}
+.passo.pendente{border-color:#4a2a2a}
+.passo > header{
+  display:flex;align-items:center;gap:10px;padding:9px 14px;
+  border-bottom:1px solid var(--linha);background:#161616;
+}
+.passo > header .num{
+  width:20px;height:20px;flex:none;display:grid;place-items:center;
+  background:#241717;border:1px solid var(--rubro);color:#e8b0b0;
+  font-family:var(--mono);font-size:11px;font-style:normal;
+}
+.passo.pendente > header .num{background:var(--rubro);color:#fff}
+.passo > header h2{
+  flex:1;font-family:var(--titulo);font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.passo > header .conta{font-size:11.5px;color:var(--fraco)}
+.passo > .corpo{padding:9px 14px 12px}
+
+/* ---------- gestão: o mapa do olheiro ---------- */
+.mapa-olheiro{
+  background:#111;border:1px solid var(--linha);margin:8px 0;padding:6px;
+}
+.mapa-olheiro svg{display:block;width:100%;height:auto;aspect-ratio:174/78}
+.mapa-olheiro .malha{stroke:#1e1e1e;stroke-width:.3}
+.mapa-olheiro .moldura{fill:none;stroke:#262626;stroke-width:.4}
+.mapa-olheiro .rota{
+  fill:none;stroke:#3a2a2a;stroke-width:.7;stroke-dasharray:2 1.6;
+}
+.mapa-olheiro .ancora{fill:#222;stroke:#555;stroke-width:.4}
+.mapa-olheiro .ancora.nossa{fill:#1d3326;stroke:var(--verde)}
+.mapa-olheiro .ancora.deles{fill:#331d1d;stroke:var(--rubro-vivo)}
+.mapa-olheiro .ancora.estadio{fill:#2e2a18;stroke:var(--ouro)}
+.mapa-olheiro text{
+  font-family:var(--mono);font-size:2.4px;fill:var(--fraco);text-anchor:middle;
+}
+.mapa-olheiro text.rot{font-size:2.3px;letter-spacing:.12px}
+.mapa-olheiro text.rot.nossa{fill:var(--verde-vivo)}
+.mapa-olheiro text.rot.deles{fill:#e08b8b}
+.mapa-olheiro text.rot.estadio{fill:var(--ouro)}
+.mapa-olheiro .pino{cursor:pointer}
+.mapa-olheiro .pino circle{fill:#242424;stroke:#6a6a6a;stroke-width:.4}
+.mapa-olheiro .pino:hover circle{stroke:#fff}
+.mapa-olheiro .pino.quente circle{fill:#3a2418;stroke:var(--ouro)}
+.mapa-olheiro .pino.on circle{fill:var(--rubro);stroke:#fff;stroke-width:.6}
+.mapa-olheiro .pino.on text{fill:#fff}
+.mapa-olheiro .pino .qtd{fill:var(--ouro);font-size:2.6px}
+
+/* ---------- gestão: relatório do olheiro ---------- */
+.olheiro{
+  background:#151515;border:1px solid var(--linha);border-left:3px solid var(--ouro);
+  padding:8px 11px;margin:6px 0;
+}
+.olheiro .l1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.olheiro .l1 b{font-family:var(--titulo);font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase}
+.olheiro .l1 span{font-family:var(--mono);font-size:10.5px;color:var(--ouro)}
+.olheiro .l2{font-size:12px;color:var(--apagado);margin-top:3px}
+.olheiro .bondes{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.olheiro .bondes span{
+  background:#1d1d1d;border:1px solid var(--linha);padding:4px 9px;text-align:center;
+}
+.olheiro .bondes b{display:block;font-family:var(--mono);font-size:14px}
+.olheiro .bondes small{font-size:9.5px;color:var(--fraco)}
+
+/* ---------- a coluna de ícones ---------- */
+/* AQUI MORAVA A TELA DO MAPA: o palco, o viewport que arrastava, a HUD
+   por cima do canvas, o recolhível de pontos, o zoom, a dica flutuante,
+   a faixa da torcida e o bloco de data sobre a cidade. Saiu tudo com o
+   canvas. O que ficou é o botão de ícone, porque ele nunca foi do mapa:
+   é o botão da navegação, e a navegação agora mora no feed. */
+.mapa-ic{
+  width:32px;height:30px;display:flex;align-items:center;justify-content:center;
+  background:#1e1e20;border:1px solid var(--linha);color:#cfcfcf;cursor:pointer;
+  padding:0;position:relative;
+}
+/* O NÚMERO VERMELHO NO CANTO DE BAIXO À DIREITA (dono, 08/09/2026):
+   pendências no ícone — promoções na Torcida, mensagens em Notícias */
+.ic-badge{
+  position:absolute;right:-5px;bottom:-5px;min-width:15px;height:15px;
+  padding:0 3px;border-radius:8px;background:var(--rubro-vivo);color:#fff;
+  font-family:var(--mono);font-size:9px;font-weight:700;line-height:15px;
+  text-align:center;font-style:normal;pointer-events:none;
+  box-shadow:0 0 0 2px #141416;z-index:3;
+}
+.nav-item{position:relative}
+.nav-item .ic-badge{right:auto;left:26px;bottom:6px}
+/* o aviso ao lado do ícone: "Mensagem de {torcida}" — abaixo das telas
+   cheias (z 55): a página do feed fica viva por baixo do relatório, e o
+   balão aparecia solto em cima do Fim da noite */
+.ic-balao{
+  position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);
+  white-space:nowrap;background:#1b1b1d;border:1px solid var(--rubro-vivo);
+  color:#f3dcdc;font-family:var(--corpo);font-size:11.5px;padding:4px 9px;
+  border-radius:4px;z-index:40;pointer-events:none;
+  animation:balao-entra .22s ease-out;box-shadow:0 4px 14px rgba(0,0,0,.5);
+}
+.ic-balao::before{
+  content:'';position:absolute;left:-5px;top:50%;margin-top:-4px;
+  border:4px solid transparent;border-right-color:var(--rubro-vivo);border-left:0;
+}
+@keyframes balao-entra{from{opacity:0;transform:translate(-6px,-50%)}to{opacity:1;transform:translateY(-50%)}}
+
+/* as faixas no Patrimônio: as nossas, e as tomadas de cabeça pra baixo */
+.faixas-rot{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);margin:6px 0 5px}
+.faixas-lista{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+/* o pano ondulado tem margem transparente: sem borda nem caixa de sombra (dono, 09/09/2026) */
+.faixa-img{width:180px;height:56px;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));image-rendering:auto}
+.faixa-img.virada{transform:rotate(180deg)}
+.faixa-tomada{display:flex;flex-direction:column;gap:3px;align-items:center}
+.faixa-tomada small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+
+/* a pauta da semana em Notícias → Mensagens: a linha de botões de cada jogo */
+.tab-olheiro tr.to-acoes td{padding:4px 8px 10px;border-bottom:1px solid var(--linha)}
+.tab-olheiro tr.to-acoes .to-estado{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
+.tab-olheiro tr.to-acoes .rec-botoes{margin-top:0}
+
+/* as mensagens de outras torcidas (Notícias → Mensagens) */
+.msg-torcida{padding:9px 0;border-bottom:1px solid var(--sulco)}
+.msg-torcida:last-child{border-bottom:0}
+.msg-torcida.nova{box-shadow:inset 3px 0 0 var(--rubro-vivo);padding-left:9px}
+.msg-torcida .mt-cab{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:12.5px}
+.msg-torcida .mt-cab .quando{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--apagado)}
+.msg-torcida p{font-size:13px;line-height:1.45;color:#d8d4cd}
+.msg-torcida.tipo-provocacao p{color:#e8b0b0}
+.msg-torcida.tipo-juntos p,.msg-torcida.tipo-agradecimento p{color:#cfe6d3}
+.pp-nossas{margin-top:8px;border-top:1px solid var(--fio-jornal,#4a463c);padding-top:6px}
+.pp-nossas .gz-secao{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco);margin-bottom:4px}
+.pp-nossas small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.mapa-ic svg{width:18px;height:18px;display:block}
+.mapa-ic .rot{font-family:var(--mono);font-size:11.5px;line-height:1}
+.mapa-ic:hover:not(:disabled){background:#2a2a2a;color:#fff;border-color:#5a5a5a}
+.mapa-ic:disabled{opacity:.32;cursor:default}
+.mapa-ic.aceso{border-color:var(--ouro,#d9a441);color:var(--ouro,#d9a441)}
+.mapa-ic.alerta{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
+  animation:pisca-ic 1.1s ease-in-out infinite;
+}
+@keyframes pisca-ic{50%{opacity:.55}}
+.mapa-ic.largo{width:auto;gap:6px;padding:0 9px}
+.mapa-ic.largo .rot{
+  font-family:var(--titulo);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;
+}
+
+/* ---------- fator torcida (GDD §9.5) ---------- */
+.fator{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:4px 20px;margin-top:10px;padding-top:9px;border-top:1px solid var(--sulco);
+}
+.fator-parte{display:grid;grid-template-columns:1fr 70px auto;gap:9px;align-items:center}
+.fator-parte .rot{font-size:11.5px}
+.fator-parte .rot small{
+  display:block;font-family:var(--mono);font-size:9.5px;color:var(--fraco);
+}
+.fator-parte i{height:6px;background:#242424;display:block}
+.fator-parte i b{display:block;height:100%;background:var(--rubro-vivo)}
+.fator-parte em{
+  font-family:var(--mono);font-style:normal;font-size:11.5px;text-align:right;
+  min-width:52px;
+}
+.fator-parte em small{color:var(--fraco);font-size:9.5px;margin-left:3px}
+
+/* =========================================================
+   PATRIMÔNIO — a tabela da estrutura e a loja de material
+   ========================================================= */
+.tabela-pat{display:flex;flex-direction:column}
+.tabela-pat .cab,.tabela-pat .linha{
+  display:grid;grid-template-columns:1fr 96px 96px 100px;gap:8px;align-items:baseline;
+  padding:7px 0;border-bottom:1px solid var(--sulco);
+}
+.tabela-pat .cab{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--fraco);border-bottom-color:var(--linha);
+}
+.tabela-pat .cab span:not(:first-child),.tabela-pat .v{text-align:right}
+.tabela-pat .nome{display:flex;flex-direction:column;gap:1px;font-size:13px}
+.tabela-pat .nome small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.tabela-pat .v{font-family:var(--mono);font-size:12.5px}
+.tabela-pat .total{border-bottom:0;border-top:1px solid var(--linha);margin-top:2px}
+.tabela-pat .total .nome{font-weight:700}
+
+/* uma oferta: o que é, quanto custa, e o motivo quando não dá */
+.oferta{
+  display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:#16160f;border:1px solid var(--linha);color:var(--texto);
+  padding:9px 12px;margin-bottom:6px;cursor:pointer;
+}
+.oferta:hover:not(:disabled){border-color:var(--ouro);color:#fff}
+.oferta .txt{display:flex;flex-direction:column;gap:2px;flex:1}
+.oferta .txt b{font-size:13px}
+.oferta .txt small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+.oferta .preco{font-family:var(--mono);font-size:13px;color:var(--ouro);white-space:nowrap}
+.oferta.travada{opacity:.55;cursor:default}
+.oferta .trava{
+  font-family:var(--mono);font-size:10px;color:var(--vermelho);
+  text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;
+}
+/* a oferta com escolha: um botão só e o dropdown do destino dentro */
+.oferta.escolha{cursor:default;flex-wrap:wrap}
+.oferta.escolha:hover{border-color:var(--linha);color:var(--texto)}
+.oferta.escolha select{
+  background:#0f0f0a;border:1px solid var(--linha);color:var(--texto);
+  font-family:var(--mono);font-size:11.5px;padding:6px 8px;
+  max-width:min(46%,340px);
+}
+.oferta.escolha select:disabled{opacity:.55}
+.oferta .bt-oferta{
+  background:none;border:1px solid var(--linha);color:var(--ouro);
+  font-family:var(--mono);font-size:13px;padding:7px 12px;cursor:pointer;
+  white-space:nowrap;
+}
+.oferta .bt-oferta:hover:not(:disabled){border-color:var(--ouro)}
+.oferta .bt-oferta:disabled{opacity:.55;cursor:default}
+@media (max-width:560px){
+  .oferta.escolha select{max-width:100%;flex:1 1 100%}
+}
+
+.itens-pat{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px}
+.item-pat{
+  display:flex;align-items:baseline;gap:8px;
+  background:#16160f;border-left:2px solid var(--ouro);padding:7px 10px;
+}
+.item-pat b{font-family:var(--mono);font-size:16px;color:var(--ouro)}
+.item-pat span{font-size:12px;line-height:1.25}
+@media (max-width:820px){
+  .tabela-pat .cab,.tabela-pat .linha{grid-template-columns:1fr 78px 78px 84px}
+}
+
+/* barra do elenco: o que o clube conquistou e o que a torcida bancou
+   por cima, na mesma escala de 4 a 50 */
+.barra-elenco{
+  position:relative; height:14px; background:var(--sulco);
+  border:1px solid var(--linha); margin:2px 0 10px;
+}
+.barra-elenco i{position:absolute; top:0; bottom:0; display:block}
+.barra-elenco i.base{left:0; background:var(--azul)}
+.barra-elenco i.inv{background:var(--ouro)}
+
+/* =========================================================
+   O FEED — a tela principal, e agora a única
+
+   A coluna de ícones na esquerda, o corpo à direita: em cima a
+   faixa da torcida em uma linha, o bloco de data com o ≫ e o
+   1×/2×; embaixo a lista, a nova sempre no topo. A lista é uma
+   coluna estreita no meio: linha de texto que atravessa 1600px
+   não se lê.
+
+   A coluna é a mesma que morava dentro do mapa, e volta pro
+   lugar em que estava — a borda esquerda. Ela é `column wrap`
+   porque são onze ícones: enche a altura que tem e quebra numa
+   segunda coluna ao lado em vez de rolar escondida.
+   ========================================================= */
+.pagina[data-pag="feed"].on{
+  height:100%;display:flex;flex-direction:row;min-height:0;
+}
+.feed-menu{
+  display:flex;flex-flow:column wrap;gap:3px;align-content:flex-start;
+  background:#141416;border-right:1px solid var(--linha);padding:5px 4px;
+  flex:none;min-height:0;max-height:100%;
+}
+.feed-menu .mapa-ic{width:32px;height:28px;flex:none}
+.feed-menu .mapa-ic svg{width:16px;height:16px}
+.feed-menu .mapa-ic.aceso{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff;
+}
+.feed-corpo{
+  flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;
+}
+.feed-barra{
+  display:flex;align-items:center;gap:10px;flex-wrap:nowrap;
+  padding:6px 10px;background:var(--painel);
+  border-bottom:1px solid var(--linha);flex:none;
+}
+/* o ticker de manchetes, logo abaixo do cabeçalho (dono, 08/09/2026) */
+.feed-ticker{
+  display:flex;align-items:stretch;height:24px;flex:none;overflow:hidden;
+  background:#101012;border-bottom:1px solid var(--linha);
+}
+.feed-ticker[hidden]{display:none}
+.ticker-rot{
+  flex:none;display:flex;align-items:center;padding:0 10px;
+  background:var(--rubro);color:#fff;font-family:var(--mono);
+  font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;
+}
+.ticker-caixa{flex:1;min-width:0;position:relative;overflow:hidden}
+.ticker-fita{
+  position:absolute;left:0;top:0;white-space:nowrap;width:max-content;
+  font-family:var(--corpo);font-size:11.5px;line-height:24px;color:var(--fraco);
+  animation:ticker-roda 40s linear infinite;will-change:transform;
+}
+.feed-ticker:hover .ticker-fita{animation-play-state:paused}
+.ticker-item{color:inherit;text-decoration:none;cursor:pointer;margin-right:18px}
+.ticker-item::before{content:'●';color:var(--rubro-vivo);margin-right:7px;font-size:7px;vertical-align:2px}
+.ticker-item.nossa{color:var(--texto)}
+.ticker-item.nossa::before{color:var(--ouro)}
+.ticker-item:hover{color:#fff;text-decoration:underline}
+@keyframes ticker-roda{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){ .ticker-fita{animation-duration:120s !important} }
+
+.feed-marca{display:flex;align-items:center;gap:9px;min-width:0;flex:1 1 auto;
+  flex-wrap:nowrap;overflow:hidden}
+.feed-marca .escudo{
+  width:26px;height:26px;flex:none;display:flex;align-items:center;
+  justify-content:center;font-family:var(--titulo);font-size:11px;
+  letter-spacing:.04em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.85);
+}
+.feed-marca b{
+  font-family:var(--titulo);font-size:15px;letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw;
+}
+.feed-marca .num{
+  display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);
+  font-size:12px;white-space:nowrap;
+}
+.feed-marca .num svg{width:14px;height:14px;opacity:.8}
+.feed-marca .num.negativo,.feed-marca .num.falta{color:var(--vermelho)}
+.feed-marca .num.sobra{color:var(--verde-vivo)}
+.feed-marca .num em{font-style:normal;opacity:.55;font-size:10px}
+/* O BLOCO DE DATA NO CANTO DE CIMA À DIREITA, com o ≫ colado.
+   Ele já foi HUD do mapa e a forma é a mesma: quando estamos e o
+   botão de empurrar o dia, numa moldura só. */
+.feed-quando{
+  display:flex;align-items:center;gap:8px;flex:none;
+  background:#141416;border:1px solid var(--linha);padding:2px 4px 2px 9px;
+}
+.feed-quando .quando-txt{text-align:right;line-height:1.15}
+.feed-quando b{
+  display:block;font-family:var(--titulo);font-size:14px;letter-spacing:.05em;
+  white-space:nowrap;
+}
+.feed-quando small{display:block;color:var(--fraco);font-size:10.5px;
+  white-space:nowrap}
+.feed-quando .mapa-ic{width:30px;height:26px}
+
+/* A ORDEM DE SACRIFÍCIO, quando não cabe — escrita aqui e não no olho:
+   escudo e sigla nunca saem; depois caem prestígio e membros; depois o
+   saldo da semana; e a linha de baixo do bloco de data. Item que não
+   cabe SAI INTEIRO: número em reais cortado é número errado. */
+@media (max-width:900px){ .feed-marca .num:nth-last-child(-n+2){display:none} }
+@media (max-width:640px){
+  .feed-marca .num.semana{display:none}
+  .feed-marca b{font-size:13px}
+}
+/* abaixo disto o bloco de data perde a linha de baixo: "semana 12 de 52"
+   é contexto, e o dia e o ≫ são o que se usa */
+@media (max-width:380px){ .feed-quando small{display:none} }
+.feed-rolo{flex:1;overflow-y:auto;min-height:0;padding:10px 12px 30px}
+.feed-lista{
+  display:flex;flex-direction:column;gap:8px;
+  max-width:720px;margin:0 auto;
+}
+.feed-mais{display:block;margin:12px auto 0}
+
+/* ---------- a mensagem ---------- */
+.msg{
+  border:1px solid var(--linha);border-left:3px solid var(--linha);
+  background:var(--painel);padding:9px 11px;
+}
+/* o recorte de jornal é o cartão inteiro; a faixa de origem ("Jornal")
+   fica por cima dele, com o recuo que a mensagem perdeu */
+.msg:has(> .gz){padding:0;border-left-width:1px}
+.msg:has(> .gz) > .msg-cab{padding:6px 11px 0;margin-bottom:0}
+.msg > .gz{margin-top:6px}
+/* o cabeçalho é uma linha só, com a origem e mais nada (dono,
+   12/09/2026) — por isso ele encolheu junto com o resto do feed */
+.msg-cab{
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  font-size:11px;color:var(--fraco);margin-bottom:2px;
+}
+.msg-voz{
+  font-family:var(--titulo);font-size:11.5px;letter-spacing:.08em;
+  color:var(--fraco);text-transform:uppercase;
+}
+.msg-papel{font-size:10.5px}
+.msg-cat{
+  margin-left:auto;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.08em;text-transform:uppercase;opacity:.6;
+}
+.msg-cab time{font-family:var(--mono);font-size:10.5px;opacity:.75}
+.msg-txt{font-size:13.5px;line-height:1.4}
+
+/* o ranking de torcidas */
+.tab-ranking{width:100%;border-collapse:collapse;font-size:12.5px}
+.tab-ranking th{
+  text-align:left;color:var(--fraco);font-size:10.5px;letter-spacing:.07em;
+  text-transform:uppercase;padding:6px 9px;border-bottom:1px solid var(--linha);
+  position:sticky;top:0;background:var(--fundo,#121212);
+}
+.tab-ranking td{padding:6px 9px;border-bottom:1px solid #222}
+.tab-ranking .nu{text-align:right;font-family:var(--mono)}
+.tab-ranking .pos{color:var(--fraco);font-family:var(--mono)}
+.tab-ranking tr.nossa td{background:#26201c;color:#f0e2c8}
+.tab-ranking tr.nossa .pos{color:#e8c76a}
+.pos-rank{color:#e8c76a}
+
+/* a coluna de situação financeira (tabela do dono): do vermelho da
+   dívida ao verde de quem tem cofre */
+.tab-ranking .fin{white-space:nowrap;font-size:11.5px}
+.fin-endividado{color:#e5484d}
+.fin-muitoruim{color:#e07b39}
+.fin-pobre{color:#b9ac93}
+.fin-estavel{color:#c9d19a}
+.fin-bem{color:#8fbf6f}
+.fin-rico{color:#57c76a}
+
+/* a aba Brigas das Notícias: uma linha por briga do mundo */
+.briga-ia{padding:8px 2px;border-bottom:1px solid #222;font-size:12.5px}
+.briga-ia-cab{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.briga-ia-cab .dia{color:var(--fraco);font-family:var(--mono);font-size:11px}
+.briga-ia-vence{color:#7fbf7f;margin-left:auto}
+.briga-ia small{color:var(--fraco);display:block;margin-top:2px}
+.briga-ia .pano-tomado{color:var(--ouro);font-weight:600}
+
+/* turno do expediente que não rodou: fica no registro, esmaecido */
+.turno-falhou{opacity:.62}
+.turno-falhou .desc{color:#d9a05f}
+
+/* a partida ao vivo: placar, barra de minutos e a lista de gols */
+.partida-live{margin-top:9px}
+.partida-placar{
+  font-family:var(--titulo);font-size:15px;letter-spacing:.06em;
+  margin-bottom:7px;
+}
+.partida-linha{display:flex;align-items:center;gap:9px}
+.partida-bt{
+  width:30px;height:24px;background:#1e1e1e;border:1px solid var(--linha);
+  color:#cfcfcf;cursor:pointer;font-size:11px;line-height:1;flex:0 0 auto;
+  font-family:var(--mono);
+}
+.partida-bt:hover{background:#2a2a2a;color:#fff}
+.partida-vel{width:34px}
+.partida-trilho{
+  position:relative;flex:1;height:8px;background:#242424;
+  border:1px solid var(--linha);
+}
+.partida-fill{
+  position:absolute;left:0;top:0;bottom:0;width:0;display:block;
+  background:var(--rubro);transition:width .25s linear;
+}
+.partida-meio{
+  position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;
+  background:var(--linha);
+}
+.partida-min{
+  font-family:var(--mono);font-size:12.5px;min-width:30px;text-align:right;
+}
+/* O CLIMA DO ESTÁDIO (pedido do dono, 19/08/2026): cartão abaixo da
+   barra de minutos. Sobe de tranquilo a tenso conforme o jogo anda —
+   e a cor acompanha, porque é o aviso de que a arquibancada vai virar
+   cena. Borda esquerda grossa: é o mesmo idioma dos cartazes de cena. */
+.partida-clima{
+  margin-top:8px;padding:6px 10px;font-family:var(--mono);font-size:11.5px;
+  letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--linha);border-left-width:3px;background:#16160f;
+}
+.partida-clima.clima-0{border-left-color:var(--verde-vivo);color:#9fc7a8}
+.partida-clima.clima-1{border-left-color:var(--ouro);color:#e0b040}
+.partida-clima.clima-2{
+  border-left-color:var(--vermelho);color:#e88b76;background:#1a1312;
+  animation:clima-pulsa 1.1s ease-in-out infinite;
+}
+@keyframes clima-pulsa{
+  0%,100%{background:#1a1312}
+  50%    {background:#241614}
+}
+.partida-eventos{margin-top:7px}
+.partida-gol{
+  font-size:12.5px;margin:3px 0;color:#e8d9a0;
+}
+
+/* a tabela do relatório do olheiro: jogo na esquerda, torcidas na
+   direita, uma linha por jogo */
+.tab-olheiro{
+  width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px;
+}
+.tab-olheiro td{
+  border:1px solid var(--linha);padding:7px 9px;vertical-align:top;
+}
+.tab-olheiro .to-jogo{width:46%}
+.tab-olheiro .to-jogo small{
+  display:block;color:var(--fraco);font-size:10.5px;letter-spacing:.05em;
+  text-transform:uppercase;margin-bottom:3px;
+}
+.to-chip{
+  display:inline-block;width:9px;height:9px;border-radius:2px;
+  margin-right:5px;vertical-align:baseline;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18);
+}
+.tab-olheiro .to-x{color:var(--fraco);margin:0 6px}
+.tab-olheiro .to-torcidas div{margin:2px 0}
+.tab-olheiro .to-faixa{color:var(--fraco)}
+.tab-olheiro .to-mansa{opacity:.62}
+/* quem põe gente no estádio: linha única, uma coluna por torcida,
+   com a cor primária na borda esquerda (pedido do dono, 26/08/2026) */
+.rolo-presenca{overflow-x:auto;margin-top:8px}
+.tab-presenca{border-collapse:collapse;font-size:12px}
+.tab-presenca td{
+  border:1px solid var(--linha);border-left:3px solid #888;
+  padding:6px 9px;white-space:nowrap;vertical-align:middle;
+}
+.tab-presenca td span{margin-right:7px}
+.tab-presenca td b{font-family:var(--mono);font-size:12.5px;color:var(--ouro)}
+.tab-presenca td.fora{background:rgba(255,255,255,.03)}
+.tab-presenca td.fora span,.tab-presenca td.fora b{opacity:.88}
+/* o bloco da recepção de aliado na mensagem do olheiro (dono, 28/08/2026) */
+.bloco-recepcao{
+  margin-top:9px;border:1px solid var(--linha);padding:8px 10px;
+  background:rgba(255,255,255,.02);
+}
+.rec-titulo{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--fraco);margin-bottom:6px;
+}
+.rec-aliado{margin-bottom:7px}
+.rec-aliado:last-child{margin-bottom:0}
+.rec-aliado.pago{opacity:.6}
+.rec-nome{font-size:12.5px;margin-bottom:4px}
+.rec-botoes{display:flex;gap:5px;flex-wrap:wrap}
+.rec-bt{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  background:#16160f;border:1px solid var(--linha);color:var(--texto);
+  font-size:11.5px;padding:4px 8px;cursor:pointer;line-height:1.2;
+}
+.rec-bt small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+.rec-bt:hover:not(:disabled){border-color:var(--ouro)}
+.rec-bt.on{border-color:var(--ouro);color:#fff}
+.rec-bt.on small{color:var(--ouro)}
+.rec-bt:disabled{cursor:default}
+/* ESCOLHA FEITA, LINHA TRAVADA (pedido do dono, 19/09/2026): quando a
+   pergunta do jornalista (ou a recepção do aliado) já tem resposta, os
+   botões ficam à vista como registro — mas só o escolhido continua
+   aceso. Sem isto os três pareciam clicáveis do mesmo jeito e não dava
+   pra ver qual tinha sido a resposta. */
+.rec-bt:disabled:not(.on){opacity:.38}
+.msg-abaixo{
+  margin-top:5px;font-size:11.5px;color:var(--fraco);
+  display:flex;align-items:center;gap:8px;
+}
+.msg-link{
+  background:none;border:none;border-bottom:1px solid var(--ouro);
+  color:var(--ouro);cursor:pointer;font-size:11.5px;padding:0;
+}
+.msg-bts{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.msg-bts .bt{
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  line-height:1.15;padding:5px 10px;
+}
+.msg-bts .bt small{font-size:10px;opacity:.65;font-weight:400}
+.msg-prazo{
+  margin-top:5px;font-family:var(--mono);font-size:10px;color:var(--fraco);
+}
+.msg-resp{
+  margin-top:6px;font-size:11.5px;color:var(--fraco);
+  border-top:1px dashed var(--sulco);padding-top:5px;
+}
+.msg-resp.expirou{color:var(--ouro)}
+.msg.respondida{opacity:.72}
+
+/* a cor da barra da esquerda diz de quem é a voz, e o peso diz se ela
+   está pedindo alguma coisa */
+.msg.cat1{border-left-color:#6f8fae}
+.msg.cat2{border-left-color:var(--ouro)}
+.msg.cat3{border-left-color:var(--vermelho)}
+.msg.cat4{border-left-color:#8d8d8d}
+.msg.cat5{border-left-color:#4b4b4b}
+.msg.cat6{border-left-color:var(--verde)}
+.msg.cat7{border-left-color:#a05fbe}
+.msg.peso-decisao{background:var(--painel-alto);border-color:#3a3a3a}
+.msg.peso-decisao .msg-voz{color:#fff}
+.msg.boa .msg-txt{color:#d8f0dd}
+.msg.ruim .msg-txt{color:#f4d6d4}
+
+@media (max-width:640px){
+  /* A FAIXA CONTINUA SENDO UMA LINHA, e é a BARRA que quebra em duas.
+     Aqui a faixa é que ganhava a linha inteira com `flex-wrap:wrap`, e
+     em 390px o resultado era o contrário do pedido: 85px de largura pro
+     nome, o escudo em cima, o nome no meio e o saldo embaixo — três
+     linhas. Agora o bloco de data e o 1×/2× descem pra segunda linha da
+     barra e a faixa fica com os 390px inteiros, numa linha só. */
+  .feed-barra{flex-wrap:wrap;row-gap:5px}
+  .feed-marca{flex:1 1 100%;flex-wrap:nowrap}
+  .feed-quando{margin-right:auto}
+  .feed-marca b{max-width:none;min-width:0;font-size:14px}
+  .feed-marca .num{font-size:11px}
+  .feed-quando b{font-size:12.5px}
+  .feed-rolo{padding:8px 8px 24px}
+  .feed-ticker{height:22px} .ticker-fita{font-size:11px;line-height:22px} .ticker-rot{padding:0 7px;font-size:8px}
+  .msg-txt{font-size:13px}
+}
+
+/* o cartão de confronto no arquivo de Notícias: mesma moldura da
+   mensagem, com o placar de baixas e a linha de consequência */
+.msg-briga .msg-voz{text-transform:none}
+.msg-briga .msg-txt{font-size:13px;color:var(--apagado)}
+.msg-briga.boa{border-left-color:var(--verde)}
+.msg-briga.ruim{border-left-color:var(--rubro-vivo)}
+
+/* a linha de consequência: o que a mensagem moveu no estado */
+.msg-efeitos{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-top:5px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.35;
+}
+.msg-efeitos .sep{color:var(--apagado)}
+.msg-efeitos .ef.boa{color:var(--verde-vivo)}
+.msg-efeitos .ef.ruim{color:var(--vermelho)}
+
+/* o saldo de brigas do ano no ranking: verde ganha, vermelho perde
+   (coluna pedida pelo dono, 20/08/2026) */
+.tab-ranking .saldo-briga{font-variant-numeric:tabular-nums}
+.tab-ranking .saldo-briga.bom{color:var(--verde)}
+.tab-ranking .saldo-briga.ruim{color:var(--rubro-vivo)}
+
+/* A VARIAÇÃO DO MÊS no ranking (pedido do dono, 20/08/2026): menor e
+   apagada, colada à direita do número — quem lê a coluna lê o número
+   grande primeiro e só depois repara no que ele andou. */
+.tab-ranking .rk-var{
+  font-style:normal; font-size:10px; color:var(--apagado);
+  font-variant-numeric:tabular-nums; letter-spacing:0;
+}
+.tab-ranking .rk-var.bom{color:var(--verde)}
+.tab-ranking .rk-var.ruim{color:var(--rubro-vivo)}
+
+/* quem já pode subir de cargo se anuncia na lista da torcida: a
+   promoção mora no botão Ações e ninguém a achava (dono, 20/08/2026) */
+.pronto-promo{color:var(--ouro); font-weight:600}
+
+/* a idade na lista de membros: quem passou dos 35 já está em declínio
+   (régua do dono, 20/08/2026) */
+.pagina[data-pag="torcida"] td.num.velho{color:var(--ouro)}
+
+/* =========================================================
+   OS PÊNALTIS (pedido do dono, 21/08/2026)
+   A disputa não abre tela: ela acontece dentro da partida ao
+   vivo, linha a linha, junto dos gols. O que mora aqui é o
+   RESUMO dela, nas telas que mostram o placar decidido.
+   ========================================================= */
+/* ---- o resumo, nas telas que mostram o placar ---- */
+.jogo-chave em.pen{color:var(--ouro)}
+td.placar small.pen{
+  display:block; font-family:var(--mono); font-size:9.5px;
+  color:var(--ouro); letter-spacing:.04em; margin-top:1px;
+}
+
+/* o aviso do fim do tempo normal, na lista de eventos da partida */
+.partida-gol.pen{color:var(--ouro)}
+
+/* ---- a grade da disputa, dentro do cartão da partida ao vivo ---- */
+.partida-pen{
+  display:flex; flex-direction:column; gap:9px;
+  margin:8px 0 2px; padding:9px 10px 10px;
+  border:1px solid var(--linha); border-radius:6px;
+  background:rgba(0,0,0,.16);
+}
+.partida-pen .pen-onde{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--fraco); text-align:center;
+}
+.partida-pen .pen-placar{
+  display:grid; grid-template-columns:1fr auto auto 1fr; gap:0 12px;
+  align-items:center; justify-items:center;
+  border-top:1px solid var(--linha); border-bottom:1px solid var(--linha);
+  padding:7px 0;
+}
+.partida-pen .pen-placar .t{
+  font-family:var(--titulo); font-size:11.5px; letter-spacing:.06em;
+  text-transform:uppercase; text-align:center; line-height:1.2;
+}
+.partida-pen .pen-placar .t:first-child{justify-self:end; text-align:right}
+.partida-pen .pen-placar .t:last-child{justify-self:start; text-align:left}
+.partida-pen .pen-placar b{
+  font-family:var(--mono); font-size:26px; line-height:1;
+  font-variant-numeric:tabular-nums; color:var(--ouro);
+}
+.partida-pen .pen-grade{display:flex; flex-direction:column; gap:7px}
+.partida-pen .pen-lado{
+  display:grid; grid-template-columns:minmax(0,7.5em) auto; gap:0 10px;
+  align-items:center;
+}
+.partida-pen .pen-time{
+  font-size:11.5px; color:var(--fraco); text-align:right;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.partida-pen .pen-bolas{display:flex; gap:5px; flex-wrap:wrap}
+.partida-pen .pen-bola{
+  width:13px; height:13px; border-radius:50%;
+  border:1.5px solid var(--linha); background:transparent;
+  transition:background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.partida-pen .pen-bola.fez{
+  background:var(--verde); border-color:var(--verde); transform:scale(1.12);
+}
+.partida-pen .pen-bola.errou{
+  background:transparent; border-color:var(--vermelho); opacity:.75;
+}
+.partida-pen .pen-bola.errou::after{
+  content:''; display:block; width:100%; height:1.5px;
+  background:var(--vermelho); transform:translateY(4px) rotate(-45deg);
+}
+@media (prefers-reduced-motion:reduce){ .partida-pen .pen-bola{transition:none} }
+.partida-pen .pen-recado{
+  text-align:center; font-size:12.5px; min-height:1.4em; color:var(--fraco);
+}
+.partida-pen .pen-recado.fez{color:var(--verde)}
+.partida-pen .pen-recado.errou{color:var(--vermelho)}
+.partida-pen .pen-recado.fim{
+  color:var(--texto); font-family:var(--titulo); font-size:13px;
+  letter-spacing:.04em; text-transform:uppercase;
+}
+
+/* =========================================================
+   O COFRE DE SAVES (dono, 23/08/2026)
+   ========================================================= */
+.save-alarme{display:flex;flex-direction:column;gap:4px;
+  margin:0 0 12px;padding:10px 14px;border-radius:4px;
+  background:rgba(178,34,34,.14);border:1px solid var(--vermelho)}
+.save-alarme b{color:var(--vermelho);letter-spacing:.04em}
+.save-alarme span{font-size:12px;color:var(--texto);line-height:1.45}
+
+.save-vaga{display:grid;grid-template-columns:1fr auto auto;
+  align-items:center;gap:10px;padding:9px 14px;
+  border-bottom:1px solid var(--linha)}
+.save-vaga:last-child{border-bottom:0}
+.save-vaga.atual{background:rgba(255,255,255,.03);
+  box-shadow:inset 3px 0 0 var(--vermelho)}
+.save-vaga.vazia .save-rot b,
+.save-vaga.vazia .save-quando{color:var(--fraco)}
+.save-rot{display:flex;flex-direction:column;gap:1px;min-width:0}
+.save-rot b{font-size:12.5px;letter-spacing:.03em}
+.save-rot small{font-size:10.5px;color:var(--fraco);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.save-quando{display:flex;flex-direction:column;gap:1px;text-align:right;
+  font-family:var(--mono)}
+.save-quando span{font-size:11px}
+.save-quando small{font-size:9.5px;color:var(--fraco)}
+.save-bts{display:flex;gap:5px;flex-shrink:0}
+.save-bts .bt{padding:5px 9px;font-size:10.5px}
+.save-bts .bt.fraco{color:var(--fraco)}
+.save-bts .bt:disabled{opacity:.35;cursor:default}
+
+.save-saida{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:9px 14px;border-top:1px solid var(--linha);flex-wrap:wrap}
+.save-texto{width:100%;min-height:190px;margin:8px 0;padding:8px;
+  font-family:var(--mono);font-size:10px;line-height:1.4;
+  color:var(--texto);background:var(--fundo-2, #111);
+  border:1px solid var(--linha);border-radius:3px;resize:vertical;
+  word-break:break-all}
+
+/* as vagas no menu de abertura */
+.menu-vagas{display:flex;flex-direction:column;gap:6px;margin:10px 0 0}
+.menu-vagas .save-vaga{border:1px solid var(--linha);border-radius:3px;
+  background:rgba(0,0,0,.35)}
+@media (max-width:700px){
+  .save-vaga{grid-template-columns:1fr;gap:6px}
+  .save-quando{text-align:left}
+}
+
+/* =========================================================
+   SELEÇÃO EM DOIS PASSOS (dono, 23/08/2026)
+   Passo 1: país, liga e clube em três colunas encadeadas.
+   Passo 2: a torcida do clube, com a ficha embaixo.
+   ========================================================= */
+.sel-tres{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:1px;
+  background:var(--linha)}
+.sel-coluna{display:flex;flex-direction:column;background:var(--fundo-1,#0d0d0d);
+  min-width:0}
+.sel-cab{display:flex;align-items:baseline;justify-content:space-between;
+  gap:8px;padding:8px 12px;border-bottom:1px solid var(--linha)}
+.sel-cab b{font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.sel-cab span{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.sel-vazio{padding:16px 12px;font-size:11px;color:var(--fraco);
+  font-style:italic}
+.sel-coluna .busca{margin:8px 10px 0}
+.sel-rolo{max-height:46vh;overflow-y:auto}
+.sel-torcidas{border-bottom:1px solid var(--linha);margin-bottom:10px}
+.torcida-opcao.on{background:rgba(255,255,255,.07);
+  box-shadow:inset 3px 0 0 var(--vermelho)}
+@media (max-width:820px){
+  .sel-tres{grid-template-columns:1fr}
+  .sel-rolo{max-height:26vh}
+}
+.sel-bandeira{display:flex;align-items:center;justify-content:center;
+  width:34px;height:34px;flex:0 0 34px;border-radius:3px;
+  background:rgba(255,255,255,.05);border:1px solid var(--linha);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;
+  color:var(--fraco)}
+.torcida-opcao.off{opacity:.4;cursor:default}
+.torcida-opcao.off:hover{background:none}
+
+/* a linha de países do nível nacional: mais discreta que a de
+   competição, que é a que o jogador troca o tempo todo */
+/* O FILTRO DO PAÍS É UMA FILEIRA DE BANDEIRAS (dono, 23/08/2026):
+   dez numa linha só, sem quebrar. O `flex-wrap:none` é o que garante a
+   linha única; em tela estreita a fileira rola no eixo x em vez de
+   virar duas linhas, porque duas linhas de bandeira ficam ilegíveis. */
+.filtros-linha.paises{flex-wrap:nowrap;overflow-x:auto;gap:4px;
+  scrollbar-width:none}
+.filtros-linha.paises::-webkit-scrollbar{display:none}
+.filtros-linha.paises button{padding:4px 6px;line-height:0;flex:0 0 auto;
+  opacity:.62;transition:opacity .12s,border-color .12s}
+.filtros-linha.paises button:hover{opacity:.9;background:#1f1f1f}
+.filtros-linha.paises button.on{opacity:1;background:transparent;
+  border-color:var(--rubro)}
+.filtros-linha.paises button.minha{box-shadow:inset 0 -2px 0 var(--vermelho)}
+.filtros-linha.paises .bandeira{display:block;border-radius:2px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+/* a bandeira agora é imagem do banco (dono, 02/09/2026): mesma medida
+   do svg antigo na fileira, e encaixada no selo quadrado da seleção */
+img.bandeira{width:30px;height:20px;object-fit:cover;border-radius:2px}
+.sel-bandeira img.bandeira{box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.filtros-linha.torneios{padding-top:0}
+
+
+/* O BOTÃO DE SIMULAR (dono, 23/08/2026): é a saída rápida, não a
+   resposta principal — fica ao lado da decisão, mais discreto, com a
+   borda tracejada de quem pula a cena. */
+.msg-bts .bt.simular{border-style:dashed;color:var(--fraco);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.04em}
+.msg-bts .bt.simular:hover{color:var(--texto);border-color:var(--fraco)}
+
+
+/* O PAÍS AO LADO DO NOME, na aba mundial do ranking (dono, 23/08/2026) */
+.tab-ranking .rk-pais{display:inline-block;margin-left:8px;font-style:normal;
+  font-family:var(--mono);font-size:9px;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--fraco)}
+
+/* =======================================================
+   O PERFIL DA TORCIDA (crivo do dono, 31/08/2026)
+   O nome da torcida em tabela ou quadro é link; o perfil
+   abre em overlay com a faixa nas cores dela.
+   ======================================================= */
+.t-link{cursor:pointer; border-bottom:1px dotted currentColor}
+.t-link:hover{opacity:.75}
+.perfil-torcida .perfil-t-faixa{height:10px; border-radius:3px;
+  margin-bottom:10px}
+.perfil-torcida .filtros{margin-bottom:10px}
+.perfil-torcida table.dados{width:100%}
+.perfil-torcida .recado{margin:6px 0}
+.c-link{cursor:pointer; border-bottom:1px dotted currentColor}
+.c-link:hover{opacity:.75}
+
+/* escudos no lugar dos quadradinhos (pedido do dono, 01/09/2026) */
+.to-escudo{width:16px; height:16px; object-fit:contain;
+  vertical-align:-3px; margin-right:6px; display:inline-block}
+.tab-ranking .to-escudo{width:18px; height:18px}
+/* a onda que faltava (ordem do dono, 02/09/2026): o escudo entra em
+   TODO canto que tinha quadradinho de cor de clube — cada contexto
+   dimensionava o <i>, então a imagem herda a medida do lugar */
+.jogo .duelo .to-escudo{vertical-align:-4px}
+.jogo .duelo .casa .to-escudo{margin:0 0 0 7px}
+.jogo .duelo .casa .to-chip{margin:0 0 0 7px}
+.jogo .duelo .fora .to-escudo{margin:0 7px 0 0}
+.vaga-cm .to-escudo,.vaga-cm .to-chip{margin:0; vertical-align:middle}
+.vaga-cm .to-escudo{width:16px; height:16px}
+table.agenda .adv .to-escudo,
+table.agenda .adv .to-chip{margin:0; flex:none}
+.escolha-time .quem .to-escudo{width:22px; height:22px; margin:0; flex:none}
+.escolha-time .quem .to-chip{margin:0; flex:none}
+.mes .dia .rot .to-escudo{width:13px; height:13px; margin:0; flex:none}
+.mes .dia .rot .to-chip{margin:0; flex:none}
+/* o escudo-imagem nos lugares do gradiente com sigla (seleção de
+   torcida, ficha, faixa do topo): mesma medida do span que ele rende */
+img.escudo-img{object-fit:contain; background:none; border:none; flex:none}
+/* a capa do perfil da cidade: foto embaixo, gradiente por cima */
+header.capa-cidade{background-size:cover; background-position:center;
+  min-height:92px; display:flex; flex-direction:column;
+  justify-content:flex-end}
+
+/* a linha das estruturas por zona: o bairro não é data de 44px — vai
+   à direita, numa linha só, com reticências se o nome for comprido
+   (ajuste do dono, 01/09/2026) */
+.transacao.linha-zona{flex-wrap:nowrap; align-items:baseline}
+.transacao.linha-zona .desc{white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis; min-width:0}
+.transacao.linha-zona .dia{width:auto; max-width:45%; flex:none;
+  text-align:right; white-space:nowrap; overflow:hidden;
+  text-overflow:ellipsis}
+
+/* =========================================================
+   O TUTORIAL (crivo do dono, 02/09/2026): o cartão do passo a
+   passo em overlay, os círculos dourados na tela de verdade e o
+   palco da briga simulada.
+   ========================================================= */
+#tutOverlay{position:fixed; left:50%; bottom:18px; z-index:1200;
+  transform:translateX(-50%); width:min(640px, calc(100vw - 24px))}
+#tutOverlay .tut-msg{background:var(--painel); border:1px solid #3a3a3a;
+  border-left:3px solid var(--rubro); padding:10px 13px;
+  box-shadow:0 14px 44px rgba(0,0,0,.75)}
+.tut-cab{display:flex; align-items:baseline; gap:8px; margin-bottom:6px}
+.tut-cab span{font-family:var(--titulo); font-size:12.5px;
+  letter-spacing:.09em; text-transform:uppercase; color:var(--rubro-vivo)}
+.tut-cab small{font-size:10.5px; color:var(--fraco)}
+.tut-progresso{display:flex; align-items:center; gap:10px; margin:2px 0 10px}
+.tut-progresso small{font-family:var(--mono); font-size:10.5px;
+  color:var(--fraco); letter-spacing:.06em; white-space:nowrap}
+.tut-tracos{display:flex; gap:3px; flex:1}
+.tut-tracos i{height:3px; flex:1; background:var(--linha)}
+.tut-tracos i.feito{background:var(--rubro-vivo)}
+.tut-tela{font-family:var(--titulo); font-size:17px; letter-spacing:.08em;
+  text-transform:uppercase; margin-bottom:4px}
+.tut-tela .ic{display:inline-block; width:20px; text-align:center;
+  margin-right:6px; color:var(--ouro)}
+.tut-corpo{font-size:13.5px; line-height:1.5}
+.tut-corpo em{color:var(--ouro); font-style:normal}
+.tut-acoes{display:flex; gap:8px; margin-top:10px}
+.tut-acoes button{background:var(--painel-alto); border:1px solid var(--linha);
+  padding:7px 14px; font-family:var(--titulo); font-size:12.5px;
+  letter-spacing:.09em; text-transform:uppercase; cursor:pointer;
+  color:inherit}
+.tut-acoes button:hover{background:#262626}
+.tut-acoes .tut-forte{background:var(--rubro); border-color:var(--rubro)}
+.tut-acoes .tut-forte:hover{background:#b32a2a}
+.tut-acoes #tutPular{margin-left:auto}
+
+/* o círculo dourado do tutorial — no indicador da faixa e nos
+   pedaços da tela que o passo descreve */
+.tut-circulado{position:relative}
+.tut-circulado::after{content:''; position:absolute; inset:-7px -10px;
+  border:2px solid var(--ouro); border-radius:16px; pointer-events:none;
+  z-index:1150; animation:tut-pulso 1.2s ease-in-out infinite}
+#feedTopo .tut-circulado::after, .feed-marca .tut-circulado::after{
+  border-radius:50%}
+@keyframes tut-pulso{
+  0%,100%{transform:scale(1); opacity:1}
+  50%{transform:scale(1.06); opacity:.55}
+}
+@media (prefers-reduced-motion:reduce){
+  .tut-circulado::after{animation:none}
+}
+
+/* ---------- o palco da briga simulada ---------- */
+#tutArena{display:none; position:fixed; inset:0; z-index:1300;
+  background:#0a0a0a}
+.tut-arena-cab{display:flex; align-items:center; gap:14px; padding:8px 14px;
+  background:var(--painel); border-bottom:1px solid var(--linha)}
+.tut-arena-cab .lado{display:flex; align-items:center; gap:8px;
+  font-family:var(--titulo); font-size:14px; letter-spacing:.07em;
+  text-transform:uppercase}
+.tut-arena-cab .lado i{width:11px; height:11px; display:inline-block;
+  border:1px solid rgba(255,255,255,.25)}
+.tut-arena-cab .lado em{font-family:var(--mono); font-size:12px;
+  font-style:normal}
+.tut-arena-cab .vs{font-family:var(--mono); font-size:11px;
+  color:var(--apagado)}
+.tut-barra{width:130px; height:7px; background:#222; position:relative;
+  border:1px solid var(--linha); display:inline-block}
+.tut-barra>i{position:absolute; inset:0; transform-origin:left;
+  background:#1d4f8a}
+.tut-barra>u{position:absolute; top:-3px; bottom:-3px; left:60%; width:1px;
+  background:var(--ouro)}
+#tutSairBriga{margin-left:auto; background:var(--painel-alto);
+  border:1px solid var(--linha); padding:6px 12px; font-family:var(--titulo);
+  font-size:12px; letter-spacing:.09em; text-transform:uppercase;
+  cursor:pointer; color:inherit}
+.tut-palco{position:absolute; inset:44px 0 0 0}
+.tut-palco canvas{display:block; width:100%; height:100%; cursor:crosshair}
+.tut-toques{position:absolute; right:14px; bottom:14px; display:flex;
+  gap:8px; z-index:1310}
+.tut-toques button{background:var(--painel-alto); border:1px solid var(--linha);
+  padding:10px 14px; font-family:var(--titulo); font-size:13px;
+  letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+  color:inherit}
+.tut-toques button b{color:var(--ouro); font-family:var(--mono);
+  font-size:11px}
+.tut-balao{position:absolute; left:26px; top:22px; max-width:300px;
+  background:var(--painel-alto); border:1px solid var(--ouro);
+  padding:11px 13px; z-index:1320; box-shadow:0 10px 30px rgba(0,0,0,.65);
+  opacity:0; transform:translateY(6px);
+  transition:opacity .25s, transform .25s; pointer-events:none}
+.tut-balao.on{opacity:1; transform:none; pointer-events:auto}
+.tut-balao .rot{font-family:var(--titulo); font-size:11.5px;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--ouro);
+  margin-bottom:4px}
+.tut-balao p{font-size:12.5px; line-height:1.45}
+.tut-balao p b{color:var(--ouro)}
+.tut-balao .feito{margin-top:8px; font-family:var(--mono); font-size:10.5px;
+  color:var(--verde-vivo); display:none}
+.tut-balao.cumprido{border-color:var(--verde-vivo)}
+.tut-balao.cumprido .feito{display:block}
+.tut-balao .entendi{margin-top:8px; background:var(--rubro); border:0;
+  width:100%; padding:7px; font-family:var(--titulo); font-size:12px;
+  letter-spacing:.09em; text-transform:uppercase; cursor:pointer;
+  color:inherit}
+.tut-balao kbd{font-family:var(--mono); font-size:11px; background:#0d0d0d;
+  border:1px solid var(--linha); border-bottom-width:2px; padding:1px 6px;
+  border-radius:3px; color:var(--ouro)}
+.tut-desfecho{display:none; position:absolute; left:50%; top:38%;
+  transform:translate(-50%,-50%); z-index:1330; text-align:center;
+  background:var(--painel); border:1px solid var(--rubro);
+  padding:22px 34px; box-shadow:0 16px 50px rgba(0,0,0,.7)}
+.tut-desfecho h2{font-family:var(--titulo); font-size:30px;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--verde-vivo)}
+.tut-desfecho p{color:var(--fraco); font-size:13px; margin:6px 0 14px}
+.tut-desfecho button{background:var(--rubro); border:0; padding:9px 18px;
+  font-family:var(--titulo); font-size:13px; letter-spacing:.09em;
+  text-transform:uppercase; margin:0 4px; cursor:pointer; color:inherit}
+
+/* a briga do tutorial na CENA REAL (dono, 02/09/2026): os balões e o
+   desfecho flutuam por cima da tela do dia de jogo */
+#tutBaloes{position:fixed; left:26px; top:70px; z-index:2400;
+  width:min(300px, 70vw)}
+#tutBaloes .tut-balao{position:static}
+#tutDesfecho{position:fixed; z-index:2410}
+
+/* ---------- O RESUMO DA NOITE (dono, 08/09/2026) ---------- */
+.fim-titulo{
+  font-family:var(--titulo);font-size:24px;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;padding:6px 0 12px;border-bottom:3px solid var(--fraco);margin-bottom:12px;
+}
+.fim-titulo.boa{color:var(--verde-vivo);border-color:var(--verde-vivo)}
+.fim-titulo.ruim{color:var(--vermelho);border-color:var(--vermelho)}
+.fim-titulo.neutra{color:var(--texto)}
+.fim-lados{
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  gap:0 10px;align-items:center;margin-bottom:14px;
+}
+.fim-cab{
+  display:flex;align-items:center;gap:7px;padding:6px 0 8px;
+  font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;
+  border-bottom:1px solid var(--linha);min-width:0;
+}
+.fim-cab b{min-width:0;overflow-wrap:anywhere;line-height:1.15}
+.fim-cab.nos{grid-column:1}
+.fim-cab.eles{grid-column:3;justify-content:flex-end;text-align:right}
+.fim-val{font-family:var(--mono);font-size:18px;font-variant-numeric:tabular-nums;padding:7px 0;border-bottom:1px solid var(--sulco)}
+.fim-val.nos{text-align:left;color:var(--texto)}
+.fim-val.eles{text-align:right;color:var(--texto)}
+.fim-rot{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--fraco);text-align:center;padding:7px 4px;border-bottom:1px solid var(--sulco);white-space:nowrap;
+}
+.fim-cons .linha-dado b{font-size:14px}
+/* no celular o nome quebra em duas linhas em vez de virar "LEÕE…";
+   o rótulo do meio fica estreito pra sobrar largura pras colunas */
+@media (max-width:480px){
+  .fim-titulo{font-size:19px} .fim-val{font-size:16px}
+  .fim-cab{font-size:11px;letter-spacing:.03em;gap:5px} .fim-cab .brasao-mini,.fim-cab svg{flex:none}
+  .fim-rot{font-size:8px;letter-spacing:.04em;padding:7px 2px}
+  .fim-lados{gap:0 6px}
+}
+
+/* ---------- A RETROSPECTIVA DO ANO (dono, 09/09/2026) ---------- */
+.retro-moldura{max-width:760px}
+.retro-pag{position:relative}
+.retro-indice{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+.retro-ponto{
+  background:transparent;border:1px solid var(--linha);color:var(--fraco);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  padding:4px 8px;cursor:pointer;
+}
+.retro-ponto.on{border-color:var(--ouro);color:var(--ouro)}
+.retro-ano{
+  font-family:var(--titulo);font-size:64px;font-weight:700;line-height:.9;
+  color:var(--faixa);letter-spacing:-.02em;position:absolute;right:0;top:34px;
+  pointer-events:none;user-select:none;
+}
+.retro-chapeu{
+  font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ouro);margin-bottom:6px;
+}
+.retro-manchete{
+  font-family:var(--titulo);font-size:30px;font-weight:700;line-height:1.02;
+  letter-spacing:.01em;text-transform:uppercase;margin:0 0 8px;max-width:88%;
+}
+.retro-pag.boa .retro-manchete{color:var(--verde-vivo)}
+.retro-pag.ruim .retro-manchete{color:var(--vermelho)}
+.retro-olho{font-size:14px;line-height:1.45;color:var(--texto);margin:0 0 10px;max-width:60ch}
+.retro-tarja{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.retro-tarja span{
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--fraco);border:1px solid var(--linha);padding:3px 7px;
+}
+.retro-tarja b{color:var(--texto)}
+.retro-destaque{border-top:3px solid var(--ouro);padding-top:12px;margin-bottom:16px}
+.retro-vazio{color:var(--fraco);font-style:italic;padding:8px 0}
+.retro-col-tit{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--fraco);margin-bottom:8px;
+}
+/* o pódio */
+.retro-podio{display:grid;grid-template-columns:1fr 1.25fr 1fr;gap:8px;align-items:end}
+.retro-lugar{
+  background:var(--painel-alto);border:1px solid var(--linha);padding:12px 8px 10px;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;
+}
+.retro-lugar.p1{border-color:var(--ouro);padding-top:18px;padding-bottom:16px}
+.retro-lugar.nossa{box-shadow:inset 0 0 0 1px var(--verde)}
+.retro-pos{font-family:var(--titulo);font-size:22px;font-weight:700;color:var(--fraco)}
+.retro-lugar.p1 .retro-pos{font-size:34px;color:var(--ouro)}
+.retro-escudo .to-escudo,.retro-escudo .to-chip{width:44px;height:44px;margin:0}
+.retro-lugar.p1 .retro-escudo .to-escudo,.retro-lugar.p1 .retro-escudo .to-chip{width:64px;height:64px}
+.retro-nome{font-family:var(--titulo);font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;line-height:1.1;overflow-wrap:anywhere}
+.retro-lugar.p1 .retro-nome{font-size:19px}
+.retro-dado{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+.retro-resto{margin-top:10px}
+.retro-linha{
+  display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--sulco);min-width:0;
+}
+.retro-linha .pos{font-family:var(--mono);font-size:11px;color:var(--fraco);width:26px}
+.retro-linha .nome{flex:1;min-width:0;overflow-wrap:anywhere}
+.retro-linha .dado{font-family:var(--mono);font-size:11px;color:var(--fraco);white-space:nowrap}
+.retro-linha.nossa .nome{color:var(--verde-vivo)}
+/* sobe e desce */
+.retro-colunas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.retro-col.sobe .retro-col-tit{color:var(--verde-vivo)}
+.retro-col.desce .retro-col-tit{color:var(--vermelho)}
+.retro-mais{grid-column:1/-1;color:var(--fraco);font-family:var(--mono);font-size:10px}
+/* a janela: barras */
+.retro-barra{display:grid;grid-template-columns:minmax(0,1.2fr) 2fr auto;gap:8px;align-items:center;padding:5px 0}
+.retro-barra .nome{display:flex;align-items:center;gap:6px;min-width:0;overflow-wrap:anywhere}
+.retro-barra .trilho{display:block;height:10px;background:var(--faixa);position:relative}
+.retro-barra .trilho i{display:block;height:100%;background:var(--verde)}
+.retro-barra.desce .trilho i{background:var(--vermelho)}
+.retro-barra .dado{font-family:var(--mono);font-size:12px;width:34px;text-align:right}
+.retro-barra.sobe .dado{color:var(--verde-vivo)}
+.retro-barra.desce .dado{color:var(--vermelho)}
+.retro-barra.nossa .nome{color:var(--verde-vivo)}
+/* o balanço */
+.retro-obra{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--sulco)}
+.retro-obra .mais{font-family:var(--titulo);font-size:22px;color:var(--ouro);width:40px}
+.retro-obra .nome{flex:1;min-width:0}
+.retro-obra .dado{font-family:var(--mono);font-size:11px;color:var(--fraco)}
+.retro-obra.nossa .nome{color:var(--verde-vivo)}
+/* a treta do ano */
+.retro-treta{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.retro-lado{background:var(--painel-alto);border:1px solid var(--linha);padding:12px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px}
+.retro-lado.venceu{border-color:var(--ouro)}
+.retro-lado.nossa{box-shadow:inset 0 0 0 1px var(--verde)}
+.retro-rot{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco)}
+.retro-x{font-family:var(--titulo);font-size:34px;color:var(--fraco)}
+.retro-nota{grid-column:1/-1;font-family:var(--mono);font-size:11px;color:var(--fraco);text-align:center}
+/* a premiação */
+.retro-premios{border-top:1px solid var(--linha);padding-top:10px}
+.retro-tab td.pos{font-family:var(--mono);color:var(--fraco);width:30px}
+.retro-tab td.num{font-family:var(--mono);font-size:11px;white-space:nowrap}
+.retro-tab td.premio{color:var(--ouro);font-weight:700;white-space:nowrap}
+.retro-tab tr.nossa td{color:var(--verde-vivo)}
+.retro-nosso{margin-top:8px;font-size:13px}
+.retro-nosso b{color:var(--ouro)}
+.retro-rever{margin-bottom:12px}
+@media (max-width:480px){
+  .retro-ano{font-size:44px;top:38px}
+  .retro-manchete{font-size:24px;max-width:100%}
+  .retro-podio{grid-template-columns:1fr 1.15fr 1fr;gap:5px}
+  .retro-lugar{padding:8px 4px}
+  .retro-lugar.p1 .retro-nome{font-size:15px}
+  .retro-nome{font-size:12px}
+  .retro-colunas{grid-template-columns:1fr}
+  .retro-tab td,.retro-tab th{padding:5px 4px;font-size:12px}
+  .retro-tab td.num{font-size:10px}
+  .retro-barra{grid-template-columns:minmax(0,1.5fr) 1.6fr auto}
+  .retro-barra .nome{font-size:13px}
+}
+
+/* as bandeiras no Patrimônio (dono, 09/09/2026) */
+.faixas-lista.bandeiras{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
+.bandeira-img{width:72px;height:72px;display:block;border:1px solid var(--linha)}
+.bandeira-img.virada{transform:rotate(180deg)}
+
+/* =========================================================
+   A LOJA (pedido do dono, 09/09/2026): compra rápida em cima —
+   bomba, faixa, bandeira — e o resto em cartões por natureza
+   ========================================================= */
+.loja-chamada{display:flex;justify-content:flex-end;margin-bottom:11px}
+.loja-caixa{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--ouro);
+  padding:10px 14px;margin-bottom:12px;
+}
+.loja-caixa span{font-family:var(--titulo);letter-spacing:.15em;text-transform:uppercase;font-size:11px;color:var(--fraco)}
+.loja-caixa b{font-family:var(--mono);font-size:18px;color:var(--ouro);font-variant-numeric:tabular-nums}
+.loja-secao{margin-bottom:16px}
+.loja-secao h3{
+  font-family:var(--titulo);font-size:12.5px;font-weight:600;letter-spacing:.17em;
+  text-transform:uppercase;color:#dcdcdc;padding:6px 0;border-bottom:1px solid var(--linha);
+  margin-bottom:9px;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;
+}
+.loja-secao h3 small{font-family:var(--mono);font-size:10px;color:var(--fraco);letter-spacing:.04em;text-transform:none}
+.loja-rapida{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.loja-rapida{grid-template-columns:1fr}}
+.loja-tile{
+  background:#16160f;border:1px solid var(--linha);border-top:3px solid var(--ouro);
+  padding:12px 13px;display:flex;flex-direction:column;gap:8px;min-width:0;
+}
+.loja-tile h3{font-family:var(--titulo);font-size:16px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.loja-tile .estoque{font-family:var(--mono);font-size:10.5px;color:var(--fraco);line-height:1.4}
+.loja-tile .estoque b{color:var(--texto)}
+.loja-tile .previa{
+  min-height:72px;display:flex;align-items:center;justify-content:center;
+  background:#0d0d0d;border:1px solid var(--linha);padding:8px;
+}
+.loja-tile .previa img{max-width:100%;height:auto}
+.loja-tile .previa .bandeira-img{width:56px;height:56px}
+.loja-tile .stepper{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.loja-tile .stepper button{
+  width:30px;height:30px;background:#1e1e1e;border:1px solid var(--linha);
+  color:#cfcfcf;cursor:pointer;font-size:15px;line-height:1;
+}
+.loja-tile .stepper button:hover:not(:disabled){background:#2a2a2a;color:#fff}
+.loja-tile .stepper button:disabled{opacity:.3;cursor:default}
+.loja-tile .stepper button.atalho{width:auto;padding:0 9px;font-family:var(--mono);font-size:11px;margin-left:2px}
+.loja-tile .stepper b{font-family:var(--mono);font-size:17px;min-width:28px;text-align:center}
+.loja-tile .pe,.loja-item .pe{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;flex-wrap:wrap}
+.loja-tile .preco,.loja-item .preco{font-family:var(--mono);font-size:14px;color:var(--ouro);white-space:nowrap;font-variant-numeric:tabular-nums}
+.loja-bt{
+  background:var(--rubro);border:1px solid var(--rubro);color:#fff;
+  font-family:var(--titulo);font-size:12px;letter-spacing:.11em;text-transform:uppercase;
+  padding:7px 14px;cursor:pointer;white-space:nowrap;
+}
+.loja-bt:hover:not(:disabled){background:#b62a2a}
+.loja-bt:disabled{opacity:.35;cursor:default}
+.loja-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.loja-item{
+  background:var(--painel);border:1px solid var(--linha);padding:10px 12px;
+  display:flex;flex-direction:column;gap:6px;min-width:0;
+}
+.loja-item.travada{opacity:.6}
+.loja-item>b{font-size:13px;line-height:1.3}
+.loja-item small.loja-nota{font-family:var(--mono);font-size:10.5px;color:var(--fraco);line-height:1.4}
+.loja-item select{
+  width:100%;background:#0f0f0a;border:1px solid var(--linha);color:var(--texto);
+  font-family:var(--mono);font-size:11.5px;padding:6px 8px;
+}
+.loja-tile .trava,.loja-item .trava{
+  font-family:var(--mono);font-size:10px;color:var(--vermelho);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+
+/* =========================================================
+   AS QUATRO TELAS APROVADAS (dono, 10/09/2026): troféu da noite,
+   perfil do membro, membros com resumo, patrimônio em cartões
+   ========================================================= */
+.barra-g{height:10px;background:#242424;position:relative;min-width:0}
+.barra-g i{position:absolute;left:0;top:0;bottom:0;display:block}
+/* ---- o troféu da noite ---- */
+.trofeu{background:#16160f;border:1px solid var(--linha);border-top:3px solid var(--ouro);padding:12px 14px;margin-bottom:14px}
+.trofeu h3{font-family:var(--titulo);font-size:13px;letter-spacing:.17em;text-transform:uppercase;color:var(--ouro);margin-bottom:10px}
+.trofeu-foto{background:#0d0d0d;border:1px solid var(--linha);min-height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden}
+.trofeu-foto.revelando span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);letter-spacing:.1em;text-transform:uppercase;animation:pisca 1.2s infinite}
+@keyframes pisca{50%{opacity:.35}}
+.trofeu-foto img{display:block;width:100%;height:auto}
+.trofeu-legendas{display:flex;flex-direction:column;gap:6px}
+.trofeu-legendas .peca b{display:block;font-size:14px}
+.trofeu-legendas .peca small{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+/* ---- o perfil do membro ---- */
+.pm-cab{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--linha);margin-bottom:12px}
+.pm-av{width:64px;height:64px;border-radius:50%;border:3px solid #fff2;display:flex;align-items:center;justify-content:center;font-family:var(--titulo);font-size:22px;font-weight:700;letter-spacing:.04em}
+.pm-id h2{font-family:var(--titulo);font-size:22px;letter-spacing:.06em;text-transform:uppercase;line-height:1.05;margin-bottom:6px}
+.pm-tags{display:flex;gap:5px;flex-wrap:wrap}
+.tag.ok{color:var(--verde-vivo);border-color:#2f5a38} .tag.ruim{color:var(--vermelho);border-color:#5a2a2a} .tag.pm{color:#8fd0a8;border-color:#2f5a48}
+.pm-forca{display:flex;flex-direction:column;gap:9px;padding:12px 0}
+.pm-f{display:grid;grid-template-columns:130px 1fr 60px;gap:12px;align-items:center;font-size:12.5px;color:var(--fraco)}
+.pm-f .barra-g{height:16px} .pm-f b{font-family:var(--mono);font-size:17px;color:var(--texto);text-align:right} .pm-f b small{font-size:10px;color:var(--fraco)}
+.pm-nota{font-family:var(--mono);font-size:10.5px}
+.pm-nums{display:grid;grid-template-columns:repeat(5,1fr);background:var(--painel-alto);border:1px solid var(--linha)}
+.pm-nums div{padding:9px 6px;text-align:center;border-right:1px solid var(--sulco);min-width:0} .pm-nums div:last-child{border-right:0}
+.pm-nums b{display:block;font-family:var(--mono);font-size:18px;white-space:nowrap} .pm-nums span{font-size:9.5px;color:var(--fraco);text-transform:uppercase;letter-spacing:.08em}
+.pm-linha{position:relative;padding-left:4px}
+.pm-linha:before{content:'';position:absolute;left:9px;top:6px;bottom:6px;width:2px;background:var(--linha)}
+.pm-ev{display:grid;grid-template-columns:12px 1fr;gap:10px;align-items:start;padding:5px 0}
+.pm-ev i{width:12px;height:12px;border-radius:50%;background:var(--fraco);border:2px solid var(--painel);margin-top:2px;position:relative;z-index:1}
+.pm-ev p{font-size:12.5px;line-height:1.35}
+.pm-ev.ouro i{background:var(--ouro)} .pm-ev.vermelho i{background:var(--vermelho)} .pm-ev.verde i{background:var(--verde-vivo)} .pm-ev.pm i{background:var(--pm)}
+@media (max-width:560px){.pm-nums{grid-template-columns:repeat(3,1fr)}.pm-f{grid-template-columns:96px 1fr 52px}}
+/* ---- membros ---- */
+.mb-resumo{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.mb-rc{background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--fraco);padding:9px 12px;min-width:0}
+.mb-rc b{display:block;font-family:var(--mono);font-size:21px;white-space:nowrap} .mb-rc span{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)} .mb-rc small{font-size:10.5px;color:var(--apagado)}
+.mb-rc.ok{border-left-color:var(--verde-vivo)} .mb-rc.ruim{border-left-color:var(--vermelho)} .mb-rc.pm{border-left-color:var(--pm)}
+.mb-filtros{align-items:center;margin-bottom:8px}
+.mb-filtros .rot{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);margin-right:4px;min-width:48px}
+.mb-busca{width:220px;margin:0 0 0 auto}
+.mb-acao{width:88px;text-align:right}
+.mb-promo{width:auto;padding:0 9px;color:var(--verde-vivo);border-color:#2f5a38}
+@media (max-width:760px){.mb-resumo{grid-template-columns:repeat(2,1fr)}.mb-busca{width:100%;margin:6px 0 0}.mb-acao{width:auto}}
+
+/* =======================================================
+   O CARTÃO DE SEGUNDA — o planejamento da semana no feed
+   (pedido do dono, 10/09/2026). Denso e discreto: o botão de fechar
+   mora no cabeçalho do cartão (sem rolar), cada jogo é uma linha com
+   o selo do dia, os clubes e quem está na rua, e os chips ficam
+   miúdos. O plano do nosso jogo é um bloco de linhas curtas.
+   ======================================================= */
+.msg.kind-semana{padding-bottom:9px}
+.msg.kind-semana .msg-txt{font-size:12.5px;color:var(--fraco)}
+.sem{margin-top:6px;border:1px solid #2c2c2c;background:#121212}
+.sem-cab{
+  display:flex;align-items:center;gap:9px;padding:5px 9px;
+  background:#181818;border-bottom:1px solid #2c2c2c;
+}
+.sem-sem{font-family:var(--titulo);font-size:14.5px;letter-spacing:.07em;text-transform:uppercase;color:#e6d9c0}
+.sem-datas{font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.sem-selo{
+  font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ouro);border:1px solid #5a4a1e;padding:1px 6px;
+}
+.sem-selo.passada{color:var(--fraco);border-color:#3a3a3a}
+.sem-cab .msg-bts{margin:0 0 0 auto;gap:5px}
+.sem-cab .msg-bts .bt{padding:4px 10px;font-size:11px;letter-spacing:.08em;line-height:1.15}
+.sem-cab .msg-bts .bt small{display:none}
+/* as abas, uma por praça */
+.sem-abas{display:flex;background:#0f0f0f;border-bottom:1px solid #2c2c2c;overflow-x:auto}
+.sem-aba{
+  display:flex;align-items:baseline;gap:6px;background:none;border:0;
+  border-bottom:2px solid transparent;color:var(--fraco);padding:5px 11px 4px;cursor:pointer;
+}
+.sem-aba span{font-family:var(--titulo);font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.sem-aba small{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;opacity:.65}
+.sem-aba:hover{color:var(--texto)}
+.sem-aba.on{color:#fff;border-bottom-color:var(--ouro)}
+.sem-aba.on small{color:var(--ouro);opacity:1}
+.sem-corpo{padding:6px 9px 2px}
+.sem-nucleo{font-size:11.5px;color:var(--fraco);padding:2px 0 5px}
+.sem-nucleo b{font-family:var(--mono);color:var(--texto);font-size:12px}
+/* os rótulos de seção */
+.sem-rot{
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fraco);display:flex;align-items:baseline;gap:6px;margin:0 0 3px;
+}
+.sem-rot small{font-family:var(--corpo);font-size:10.5px;letter-spacing:0;text-transform:none;opacity:.8}
+.sem-rot.alto{margin:6px 0 3px;padding-top:5px;border-top:1px dashed #2a2a2a}
+/* um jogo da praça: uma linha com o selo do dia à esquerda */
+.sem-jogo{display:grid;grid-template-columns:38px 1fr;gap:3px 8px;padding:5px 0;border-bottom:1px solid #202020}
+.sem-jogo:last-child{border-bottom:0}
+.sem-jogo.nosso{padding:6px 8px;margin-bottom:4px;border:1px solid #3d3218;background:#181610}
+.sem-jogo.passou{opacity:.45}
+.sem-jogo-cab{display:contents}
+.sem-dia{
+  grid-row:1 / span 3;align-self:start;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  width:38px;height:34px;background:#0e0e0e;border:1px solid #2c2c2c;
+  font-family:var(--titulo);font-size:13px;letter-spacing:.06em;color:#e6d9c0;line-height:1;
+}
+.sem-jogo.nosso .sem-dia{border-color:#6a5420;color:var(--ouro)}
+.sem-dia small{font-family:var(--mono);font-size:8.5px;color:var(--fraco);letter-spacing:0;margin-top:2px}
+.sem-dia.passou{color:var(--apagado);border-color:#262626}
+.sem-duelo{min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sem-clubes{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-size:12.5px}
+.sem-clubes b{font-weight:600}
+.sem-clubes i{color:var(--fraco);font-style:normal;margin:0 2px}
+.sem-clubes .to-escudo{width:15px;height:15px;vertical-align:-3px}
+.sem-duelo small{color:var(--fraco);font-size:10.5px}
+/* quem estará na rua: uma linha corrida */
+.sem-rua{display:flex;flex-wrap:wrap;gap:2px 9px;font-size:11px;line-height:1.5}
+.sem-rua.vazia{color:var(--apagado);font-style:italic}
+.sem-torcida{display:inline-flex;align-items:center;gap:4px;opacity:.65}
+.sem-torcida.hostil{opacity:1}
+.sem-torcida.hostil .t-link{color:#f4d6d4}
+.sem-torcida .to-escudo{width:13px;height:13px}
+.sem-torcida small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
+/* os chips miúdos */
+.sem-chips{display:flex;flex-wrap:wrap;gap:3px;margin:2px 0}
+.sem-chip{
+  display:flex;align-items:baseline;gap:5px;background:#161616;border:1px solid #333;color:var(--texto);
+  font-size:11px;padding:2px 7px;cursor:pointer;line-height:1.3;
+}
+.sem-chip small{font-family:var(--mono);font-size:9px;color:var(--fraco)}
+.sem-chip:hover:not(:disabled){border-color:var(--ouro)}
+.sem-chip.on{border-color:var(--ouro);color:#fff;background:#221c10}
+.sem-chip.on small{color:var(--ouro)}
+.sem-chip.off{opacity:.4}
+.sem-chip:disabled{cursor:default}
+.sem-chip .t-link{border-bottom:0}
+/* os outros jogos da praça seguem a mesma regra do plano: o que se
+   lê fica à esquerda, o que se clica vai pra direita */
+.sem-invest{display:flex;flex-wrap:wrap;gap:3px 8px;align-items:center;justify-content:flex-end}
+.sem-invest .sem-chips{margin:0;justify-content:flex-end}
+/* A PLANILHA DO PLANO (dono, 12/09/2026): `<table>` de três colunas —
+   CAMPO, o que a escolha vale, e os BOTÕES na última coluna, sempre
+   encostados à direita. Linhas rajadas e fio fino, como planilha. */
+.sem-plano{
+  grid-column:1 / -1;width:100%;border-collapse:collapse;
+  margin-top:3px;table-layout:auto;
+}
+.sem-plano tr{border-top:1px solid #232019}
+.sem-plano tr:nth-child(even){background:#00000026}
+.sem-plano th,.sem-plano td{padding:4px 8px;vertical-align:middle}
+.sem-plano th{
+  width:1%;white-space:nowrap;text-align:left;
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--fraco);font-weight:400;
+}
+.sem-plano th.larga{
+  font-family:var(--corpo);font-size:11.5px;letter-spacing:0;text-transform:none;
+  color:var(--texto);
+}
+/* a coluna do meio come a sobra; a dos botões não encolhe abaixo da
+   fileira inteira — botão empilhado não é planilha */
+.sem-plano td.dado{
+  font-size:10.5px;color:var(--fraco);line-height:1.3;
+  font-variant-numeric:tabular-nums;
+}
+.sem-plano td.dado b{font-family:var(--mono);font-size:10.5px}
+.sem-plano td.bts{width:1%;white-space:nowrap;text-align:right}
+.sem-plano .sem-chip{white-space:nowrap}
+.sem-rolo{grid-column:1 / -1;overflow-x:auto;margin-top:3px}
+.sem-rolo::-webkit-scrollbar{height:6px}
+.sem-rolo::-webkit-scrollbar-thumb{background:#3a3a3a}
+.sem-plano td.bts > *{display:inline-flex;vertical-align:middle}
+.sem-plano .sem-chips{margin:0;justify-content:flex-end;flex-wrap:nowrap}
+.sem-plano .sem-trajeto{justify-content:flex-end}
+.sem-plano tr.pago{opacity:.6}
+.sem-val{font-size:11.5px;text-align:right;white-space:nowrap}
+.sem-contador{padding:0;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.sem-contador button{width:24px;height:24px;font-size:13px}
+.sem-contador b{font-size:14px;color:#fff;min-width:28px}
+.sem-contador small{font-size:10.5px}
+.sem-trajeto{display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-size:10.5px;color:var(--fraco)}
+.sem-trajeto span{padding:0 5px;border:1px solid #2e2e2e;background:#171717}
+.sem-trajeto span.saida,.sem-trajeto span.chegada{color:var(--texto);border-color:#3a3a3a}
+.sem-trajeto span.hostil{color:#f4d6d4;border-color:#5a2a2a}
+.sem-trajeto i{color:var(--apagado);font-style:normal}
+.sem-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11.5px;padding:2px 0}
+.sem-linha.pago{opacity:.6}
+.sem-linha > b{font-family:var(--mono);font-size:10.5px;white-space:nowrap}
+.sem-linha .sem-chips{flex-basis:100%}
+.sem-mini{
+  background:none;border:1px solid var(--ouro);color:var(--ouro);font-size:10px;
+  padding:2px 8px;cursor:pointer;font-family:var(--titulo);letter-spacing:.06em;text-transform:uppercase;
+}
+.sem-mini:hover{background:rgba(217,164,65,.12)}
+.sem-resumo{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  font-size:11.5px;padding:3px 8px;background:#0e0e0e;border-left:2px solid var(--ouro);margin-top:2px;
+}
+.sem-resumo b{font-family:var(--mono);font-size:11.5px}
+/* a recepção é uma linha por aliado: aqui a fileira PODE quebrar,
+   porque são quatro opções compridas e não vale rolar de lado */
+.sem-recep{margin-top:6px;padding-top:4px;border-top:1px dashed #2a2a2a;overflow-x:visible}
+.sem-recep .sem-chips{flex-wrap:wrap}
+.sem-recep td.bts{white-space:normal}
+@media (max-width:640px){
+  .sem-cab{flex-wrap:wrap;gap:4px 9px}
+  .sem-cab .msg-bts{flex-basis:100%;margin:2px 0 0}
+  /* em tela estreita a planilha vira lista: cada célula ocupa a
+     largura toda, e os botões continuam à direita */
+  .sem-plano,.sem-plano tbody,.sem-plano tr,.sem-plano th,.sem-plano td{display:block;width:auto}
+  .sem-plano tr{padding:3px 0}
+  .sem-plano th,.sem-plano td{padding:1px 0;white-space:normal}
+  .sem-plano td.bts{width:auto;text-align:right;white-space:normal}
+  .sem-plano .sem-chips{flex-wrap:wrap}
+  .sem-plano td.dado:empty{display:none}
+}
+/* os eixos de aliança (dono, 11/09/2026) */
+.x-link{cursor:pointer;border-bottom:1px dotted currentColor;color:#f0e2c8}
+.x-link:hover{opacity:.75}
+.linha-dado.eixo-nosso{background:#1d1a14;padding-left:6px;padding-right:6px}
+.linha-dado .fraco .t-link{white-space:nowrap}
+/* a tela dos eixos de aliança (dono, 11/09/2026) */
+.nov-eixo{display:flex;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1px solid var(--sulco);font-size:12.5px}
+.nov-eixo:last-child{border-bottom:0}
+.nov-eixo .data{font-family:var(--mono);font-size:10px;color:var(--fraco);flex:none;width:62px}
+.nov-eixo .txt{flex:1}
+.nov-eixo .tag{flex:none;color:var(--ouro);border-color:#5a4a1e;background:#1d1a14}
+.nov-eixo.nova{background:rgba(217,164,65,.05)}
+.nov-eixo.nosso .txt b{color:#f0e2c8}
+.eixos-grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px;align-items:start}
+.eixo-card.nosso{border-color:#4a3a1a}
+.eixo-card.nosso>h2{background:#1d1a14;color:#f0e2c8}
+.eixo-praças{font-size:11px;margin-bottom:7px}
+.eixo-membros{display:flex;flex-direction:column;gap:3px}
+.eixo-membro{display:flex;align-items:baseline;gap:6px;font-size:12.5px}
+.eixo-membro small{color:var(--fraco);font-size:10.5px;margin-left:auto;white-space:nowrap}
+.eixo-membro.nossa{color:#f0e2c8;font-weight:600}
+.eixo-membro .to-escudo{width:15px;height:15px;flex:none;vertical-align:-3px}
+.eixo-membro .to-chip{width:9px;height:9px;flex:none;display:inline-block;border:1px solid rgba(255,255,255,.22)}
+.eixo-rivais{margin-top:8px;padding-top:7px;border-top:1px solid var(--sulco);font-size:11.5px;color:var(--fraco);line-height:1.45}
+.eixo-rivais .rot{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+
+/* ---------- a nossa mesa nos eixos (dono, 11/09/2026) ---------- */
+.eixo-mesa-card{border-left:3px solid var(--ouro)}
+.eixo-mesa-card .corpo p{line-height:1.5}
+.eixo-mesa{display:flex;flex-direction:column;gap:10px}
+.eixo-mesa>p{line-height:1.5;font-size:12px}
+.eixo-nome{display:flex;gap:7px}
+.eixo-nome .busca{margin-bottom:0}
+.eixo-nome .sigla{width:84px;flex:none;text-align:center;
+  font-family:var(--mono);letter-spacing:.1em}
+.eixo-sugestoes{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.eixo-sugestoes .rot{width:100%;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--fraco)}
+.eixo-cands{display:flex;flex-direction:column;gap:3px;
+  max-height:46vh;overflow-y:auto}
+.eixo-cand{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;text-align:left;cursor:pointer;color:var(--texto);
+  background:#171717;border:1px solid var(--linha);border-left:3px solid transparent;
+  padding:7px 10px;font-size:12.5px}
+.eixo-cand:hover:not(:disabled){background:#1f1f1f}
+.eixo-cand.on{background:#241717;border-left-color:var(--rubro-vivo)}
+.eixo-cand.off{opacity:.45;cursor:default}
+.eixo-cand .qm{display:flex;align-items:baseline;gap:7px;min-width:0;flex-wrap:wrap}
+.eixo-cand .qm b{font-weight:600}
+.eixo-cand .qm small{color:var(--fraco);font-size:10.5px}
+.eixo-cand .qm .to-chip{width:9px;height:9px;flex:none;display:inline-block;
+  border:1px solid rgba(255,255,255,.22)}
+.eixo-cand .ch{flex:none;font-family:var(--mono);font-size:13px;text-align:right;line-height:1.05}
+.eixo-cand .ch small{display:block;font-size:8.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fraco)}
+.eixo-cand .ch.boa{color:var(--verde-vivo)}
+.eixo-cand .ch.meia{color:var(--ouro)}
+.eixo-cand .ch.magra{color:var(--vermelho)}
+.eixo-cand .nao{flex:none;font-size:10.5px;color:var(--fraco);text-align:right;max-width:46%}
+.eixo-nota{font-size:11.5px;color:var(--ouro);padding:6px 9px;
+  background:#1d1a14;border-left:3px solid #5a4a1e}
+.eixo-nota.pronta{color:var(--verde-vivo);background:#131a13;border-left-color:var(--verde)}
+
+/* ---------- a reunião mensal de diplomacia (dono, 11/09/2026) ---------- */
+.moldura.larga{max-width:820px}
+.reuniao{display:flex;flex-direction:column;gap:12px}
+.reu-trilha{display:flex;flex-wrap:wrap;gap:4px}
+.reu-passo{display:flex;align-items:center;gap:7px;cursor:pointer;
+  background:#171717;border:1px solid var(--linha);border-bottom:2px solid var(--linha);
+  color:var(--fraco);padding:6px 10px;font-size:11.5px;text-align:left}
+.reu-passo b{font-family:var(--mono);font-size:10px;width:16px;height:16px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:#2a2a2a;color:var(--fraco)}
+.reu-passo:hover{background:#1f1f1f;color:var(--texto)}
+.reu-passo.feito b{background:var(--verde);color:#0d0d0d}
+.reu-passo.on{background:#241717;border-bottom-color:var(--rubro-vivo);color:#f3dcdc}
+.reu-passo.on b{background:var(--rubro-vivo);color:#fff}
+.reu-palco{display:flex;flex-direction:column;gap:11px;min-height:180px}
+.reu-item{background:var(--painel-alto);border:1px solid var(--linha);
+  border-left:3px solid var(--rubro);padding:12px 14px}
+.reu-quem{display:flex;align-items:baseline;gap:9px;margin-bottom:7px}
+.reu-quem .rot{font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--fraco)}
+.reu-quem b{font-family:var(--titulo);font-size:15px;letter-spacing:.06em}
+.reu-fala{font-size:13px;line-height:1.6;margin-bottom:10px}
+.reu-item .msg-bts{display:flex;flex-wrap:wrap;gap:7px}
+.reu-item .msg-bts .bt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  text-align:left;padding:8px 13px}
+.reu-item .msg-bts .bt small{font-family:var(--corpo);font-size:10.5px;
+  letter-spacing:0;text-transform:none;color:var(--fraco);opacity:.9}
+.reu-item .msg-bts .bt.destaque small{color:#f0d6d6}
+.reu-eixos{margin-top:11px;padding-top:9px;border-top:1px solid var(--sulco);
+  display:flex;flex-direction:column;gap:5px}
+.reu-eixo{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.reu-eixo b{font-size:13px}
+.reu-eixo small{color:var(--fraco);font-size:10.5px;margin-left:8px}
+.reu-ata{background:#131a13;border:1px solid #1e2a1e;padding:9px 12px}
+.reu-ata .rot{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--verde-vivo);margin-bottom:5px}
+.reu-ata-linha{display:flex;gap:9px;align-items:baseline;padding:3px 0;font-size:12px}
+.reu-ata-linha b{flex:none;color:var(--verde-vivo);font-size:11.5px}
+.reu-ata-linha span{color:var(--fraco)}
+.reu-pe{display:flex;align-items:center;gap:7px}
+.reu-pe-esq{flex:1;font-size:11.5px}
+
+/* ---------- a aba Diplomacia do perfil da torcida (dono, 11/09/2026) ---------- */
+.dip-eixo{display:flex;align-items:baseline;gap:9px;padding:4px 0;font-size:12.5px}
+.dip-eixo .fraco{font-size:11px}
+.dip-bloco>h2{border-left:3px solid var(--linha)}
+.dip-boa>h2{border-left-color:var(--verde)}
+.dip-ruim>h2{border-left-color:var(--rubro-vivo)}
+.dip-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 14px}
+.dip-linha{display:flex;align-items:baseline;gap:6px;padding:3px 0;font-size:12.5px;
+  border-bottom:1px solid var(--sulco)}
+.dip-linha .to-chip{width:9px;height:9px;flex:none;display:inline-block;
+  border:1px solid rgba(255,255,255,.22)}
+.dip-linha small{color:var(--fraco);font-size:10px;margin-left:auto;white-space:nowrap}
+.dip-linha b{flex:none;font-family:var(--mono);font-size:11.5px;width:34px;text-align:right}
+.dip-linha .tag{flex:none;font-size:8px;padding:0 4px}
+.dip-linha .tag.ruim{color:var(--rubro-vivo);border-color:#5a1e1e;background:#1d1414}
+
+/* ---------- as opções em dropdown (dono, 12/09/2026) ---------- */
+.escolha-drop{display:flex;align-items:center;gap:8px;min-width:0}
+.escolha-drop .rot{font-family:var(--titulo);font-size:11px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--fraco);flex:none}
+.escolha-drop select.campo{width:auto;min-width:190px;max-width:100%;
+  padding:7px 10px;flex:0 1 auto}
+.drop-comp{margin-bottom:11px}
+.drop-comp select.campo{min-width:260px;max-width:440px}
+/* o país das competições: a bandeira do escolhido antes do rótulo */
+.drop-pais{margin-bottom:9px}
+.drop-pais img.bandeira{flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.drop-pais select.campo{min-width:200px;max-width:320px}
+/* os dois campos do nacional começam na mesma coluna: rótulo de
+   largura fixa, e o de baixo recuado pela bandeira (30px + o gap) */
+.drop-pais .rot,.drop-comp.com-pais .rot{min-width:102px}
+.drop-comp.com-pais{padding-left:38px}
+/* a faixa de filtros dos membros: cargo, estado e a busca numa linha só */
+.mb-filtros{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;
+  margin-bottom:11px}
+.mb-filtros .busca{margin-bottom:0;flex:1;min-width:190px}
+@media (max-width:560px){
+  .escolha-drop{width:100%}
+  .escolha-drop select.campo{min-width:0}
+  .drop-comp select.campo{min-width:0}
+  .drop-pais select.campo{min-width:0}
+  .drop-comp.com-pais{padding-left:0}
+  .drop-pais .rot,.drop-comp.com-pais .rot{min-width:0}
+}
+
+/* o pedido a um aliado, na reunião (dono, 17/09/2026): três campos lado
+   a lado, empilhando no celular */
+/* O BALÃO DA PAUTA (reunião da diretoria, 22/09/2026): cada assunto é
+   trazido por um diretor, e a fala dele vem num balão — a mesma forma
+   que vai aparecer em cima do boneco sentado quando a cena da roda
+   existir. */
+.reu-quem .quem{font-family:var(--corpo);font-size:11.5px;color:var(--fraco);margin-left:auto}
+.reu-quem .quem b{font-family:var(--titulo);font-size:13px;letter-spacing:.05em;color:#e6e6e6}
+.reu-balao{position:relative;background:#f1ede2;color:#1c1b18;border-radius:12px;
+  padding:11px 14px;margin:2px 0 12px 14px;font-size:13px;line-height:1.55}
+.reu-balao::before{content:'';position:absolute;left:-12px;top:14px;border:8px solid transparent;
+  border-right-color:#f1ede2;border-left:0}
+.reu-balao b{color:#9d2222}
+.reu-quando{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 10px;font-family:var(--mono);
+  font-size:10.5px;color:var(--fraco)}
+.reu-quando b{color:var(--ouro);font-weight:600}
+/* o passo 3 da abertura: o nome do presidente */
+.sel-presidente{display:flex;gap:8px;align-items:center;margin-top:10px}
+.sel-presidente .busca{margin:0;font-size:15px;padding:10px 12px}
+/* o bote marcado no calendário */
+.mes .dia.bote{background:#241a14}
+.mes .dia.bote .n{color:#e8b090}
+.mes .dia .rot.bote-rot{color:#e8b090}
+.reu-pedido{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:4px 0 9px}
+@media (max-width:720px){ .reu-pedido{grid-template-columns:1fr} }
+.reu-campo{display:flex;flex-direction:column;gap:4px;min-width:0}
+.reu-campo .rot{font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--fraco)}
+.reu-campo select.campo{padding:8px 10px;font-size:12px}

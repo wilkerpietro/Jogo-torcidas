@@ -1,0 +1,170 @@
+/* =========================================================
+   O ITINERÁRIO DO DIA DE JOGO, DENTRO DA MENSAGEM
+   (correção do dono, 20/08/2026)
+
+   A tela cheia saiu. A mesma linha de paradas de baixo pra
+   cima, com a mesma lógica, mora agora no cartão da própria
+   mensagem que abriu o dia — e por isso é bem mais enxuta:
+   sem cabeçalho, sem barra de botões, sem o "lugar" de cada
+   parada. Sobra o essencial: a hora, a bolinha e o nome, e
+   o recado ao lado quando a parada tem recado.
+   ========================================================= */
+.itn-mini{
+  margin-top:12px; border-top:1px solid var(--linha); padding-top:10px;
+}
+
+/* ---------- A LINHA ÚNICA (pedido do dono, 08/09/2026) ----------
+   A trilha de paradas saiu. O que fica é a parada de agora: o símbolo
+   do lugar à esquerda (ônibus na estrada, cidade na concentração e na
+   pista, estádio nos arredores e no jogo), a hora, o nome com o lugar
+   embaixo, o estado do dia e o efetivo à direita. Embaixo, um ponto
+   por parada diz quanto do dia já passou. */
+.itn-linha{
+  display:grid; grid-template-columns:34px auto minmax(0,1fr) auto;
+  gap:0 12px; align-items:center;
+  background:var(--painel-alto); border:1px solid var(--linha);
+  border-left:3px solid var(--linha); padding:9px 12px 9px 10px;
+  transition:border-color .25s;
+}
+.itn-linha[data-lugar="onibus"]{border-left-color:var(--ouro)}
+.itn-linha[data-lugar="cidade"]{border-left-color:#7fa3d6}
+.itn-linha[data-lugar="estadio"]{border-left-color:var(--verde)}
+.itn-linha.dojogo{border-left-color:var(--ouro); background:#1e1a12}
+.itn-ic{
+  width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+  border-radius:50%; background:var(--fundo); border:1px solid var(--linha);
+  color:var(--texto);
+}
+.itn-ic svg{width:19px; height:19px}
+.itn-linha[data-lugar="onibus"] .itn-ic{color:var(--ouro); border-color:#4a3a18}
+.itn-linha[data-lugar="cidade"] .itn-ic{color:#9fc0ea; border-color:#2b3a4f}
+.itn-linha[data-lugar="estadio"] .itn-ic{color:var(--verde-vivo); border-color:#24402c}
+.itn-hora{
+  font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums;
+  color:var(--texto); letter-spacing:.03em; text-align:center; line-height:1.15;
+}
+.itn-hora small{
+  display:block; font-size:8px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--apagado); margin-top:2px;
+}
+.itn-corpo{min-width:0}
+.itn-nome{
+  font-family:var(--titulo); font-weight:700; font-size:15px; letter-spacing:.06em;
+  text-transform:uppercase; line-height:1.15; color:var(--texto);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.itn-nome .lugar{
+  font-family:var(--corpo); font-weight:400; font-size:11px; letter-spacing:0;
+  text-transform:none; color:var(--fraco); margin-left:8px;
+}
+.itn-linha .estado{
+  font-family:var(--mono); font-size:9px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ouro); margin-top:3px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.itn-linha .estado.travado{color:var(--rubro-vivo)}
+.itn-mini.fechado .itn-linha .estado{color:var(--apagado)}
+.itn-mini.fechado .itn-linha{border-left-color:var(--linha)}
+.itn-mini.fechado .itn-ic{color:var(--fraco); border-color:var(--linha)}
+
+/* ---------- os pontinhos do dia ---------- */
+.itn-pontos{display:flex; gap:4px; padding:6px 2px 0 47px; flex-wrap:wrap}
+.itn-ponto{
+  display:block; width:6px; height:6px; border-radius:50%;
+  background:var(--fundo); border:1px solid var(--linha); transition:.25s;
+}
+.itn-ponto.dojogo{width:8px; height:8px; margin-top:-1px}
+.itn-ponto.passou{background:var(--fraco); border-color:var(--fraco)}
+.itn-ponto.passou.brigou{background:var(--rubro-vivo); border-color:var(--rubro-vivo)}
+.itn-ponto.agora{
+  background:var(--ouro); border-color:var(--ouro); transform:scale(1.35);
+  box-shadow:0 0 0 3px rgba(217,164,65,.16);
+}
+
+/* ---------- os recados embaixo da linha ---------- */
+.itn-recados{display:flex; flex-direction:column; gap:4px}
+.itn-recados:empty{display:none}
+
+/* ---------- o cartão do recado ---------- */
+.itn-cartao{
+  margin-top:7px; background:var(--painel); border:1px solid var(--linha);
+  border-left:3px solid var(--linha); padding:10px 12px 11px;
+  animation:itn-sobe .3s ease-out both;
+}
+@keyframes itn-sobe{from{opacity:0; transform:translateY(5px)} to{opacity:1; transform:none}}
+.itn-cartao.investida{border-left-color:var(--ouro)}
+.itn-cartao.sofrido,
+.itn-cartao.emboscada{border-left-color:var(--rubro-vivo); background:#1a1414}
+.itn-cartao .voz{
+  font-family:var(--mono); font-size:9px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--apagado); margin-bottom:5px;
+}
+.itn-cartao.investida .voz{color:var(--ouro)}
+.itn-cartao.sofrido .voz,
+.itn-cartao.emboscada .voz{color:var(--rubro-vivo)}
+.itn-cartao p{color:#d8d4cd; font-size:13px}
+.itn-cartao .custo{
+  font-family:var(--mono); font-size:10px; color:var(--fraco);
+  margin-top:7px; padding-top:6px; border-top:1px dashed var(--linha);
+}
+.itn-cartao .custo b{color:var(--texto); font-weight:600}
+.itn-cartao .bts{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px}
+.itn-bt{
+  font-family:var(--mono); font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--fraco);
+  background:var(--painel-alto); border:1px solid var(--linha);
+  padding:6px 11px; cursor:pointer; transition:.14s;
+}
+.itn-bt:hover{color:var(--texto); border-color:#3d3d3d}
+.itn-bt:focus-visible{outline:2px solid var(--ouro); outline-offset:2px}
+.itn-bt.acao{color:var(--ouro); border-color:#4a3a18}
+.itn-bt.acao:hover{background:#3a2c11}
+.itn-cartao .saldo{
+  font-family:var(--mono); font-size:10px; margin-top:8px; padding-top:7px;
+  border-top:1px solid var(--linha); color:var(--fraco);
+}
+.itn-cartao .saldo b{color:var(--texto)}
+.itn-cartao .saldo .bom{color:var(--verde)}
+.itn-cartao .saldo .ruim{color:var(--rubro-vivo)}
+
+/* ---------- a partida dentro da parada ---------- */
+/* é o MESMO cartão do feed (partida-live), só que embaixo da linha */
+.itn-recados .partida-live{
+  margin-top:9px; background:var(--painel-alto); border:1px solid #33301f;
+  padding:10px 12px;
+}
+.itn-trava{
+  font-family:var(--mono); font-size:9px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--apagado); margin-top:7px;
+}
+
+@media (max-width:620px){
+  .itn-linha{grid-template-columns:30px auto minmax(0,1fr); gap:0 9px; padding:8px 10px 8px 8px}
+  .itn-ic{width:30px; height:30px}
+  .itn-ic svg{width:17px; height:17px}
+  .itn-linha .itn-efetivo{grid-column:2 / -1; margin-top:2px}
+  .itn-nome .lugar{display:block; margin:1px 0 0; white-space:normal}
+  .itn-pontos{padding-left:2px}
+}
+@media (prefers-reduced-motion:reduce){
+  .itn-cartao{animation:none}
+  .itn-ponto{transition:none}
+}
+
+/* O EFETIVO QUE ANDA COM A LINHA (régua do dono, 20/08/2026): o bonde
+   parte com um número e cada baixa some dele. Fica na barra de estado
+   e, ponto a ponto, embaixo do nome da parada. */
+.itn-efetivo{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--fraco); white-space:nowrap;
+  text-align:right;
+}
+.itn-efetivo b{color:var(--texto); font-weight:600}
+/* a escolta da aliada, somada ao nosso número só nas paradas da cidade */
+.itn-efetivo .escolta{color:var(--verde-vivo)}
+.itn-efetivo .escolta b{color:var(--verde-vivo)}
+
+
+/* O SIMULAR NA LINHA DO DIA (dono, 23/08/2026): mesma família do botão
+   do feed — tracejado, discreto, ao lado de quem desce. */
+.itn-bt.simular{border-style:dashed;font-size:10px;letter-spacing:.04em}
