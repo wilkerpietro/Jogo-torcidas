@@ -4163,11 +4163,17 @@ function degraus() {
    pintado */
 function objetoDoEstadioNovo(e, g) {
   const c = e.copia || e;
-  const { grupo } = montarEstadioJogo(c.modelo, { nome: e.nome, mapa: true });
+  const { grupo, info } = montarEstadioJogo(c.modelo, { nome: e.nome, mapa: true });
   grupo.scale.setScalar(M);
   grupo.rotation.y = -c.giro * Math.PI / 180;
   grupo.position.set(c.centro[0], 0.02 * M, c.centro[1]);
   g.add(grupo);
+  /* o que é dentro dele (da fachada pra dentro; no de 10, do muro), em
+     unidades de mundo: ali o boneco a pé do cenário pisa nos andares do
+     estádio (as escadas, os corredores, a arquibancada) */
+  grupo.updateMatrix();
+  const volta = grupo.matrix.clone().invert(), v = new THREE.Vector3();
+  g.userData.dentroDoEstadio = (x, z) => { v.set(x, 0, z).applyMatrix4(volta); return info.dentro(v.x, v.z); };
 }
 const objetoDeEstadio = (e, g) => (e.copia || e).modelo ? objetoDoEstadioNovo(e, g) : objetoDoEstadio(e.dx, e.dy, g);
 function objetoDoEstadio(dx, dy, g) {

@@ -25,7 +25,11 @@
      DA RUA (o que cada coisa tem de chão embaixo da faixa do corpo: a
      laje da calçada, o piso da sede) diz em que altura ele pisa. No metrô
      ele desce a escada até a plataforma: embaixo da rua quem diz onde
-     ele pisa é o SUBSOLO (subsolo.js), com os triângulos da estação.
+     ele pisa é o SUBSOLO (subsolo.js), com os triângulos da estação. No
+     ESTÁDIO (da fachada pra dentro; no de 10, do muro) ele sobe: quem
+     diz onde ele pisa são os ANDARES DO ESTÁDIO, a mesma conta do
+     subsolo com os triângulos do estádio — a escada interna, o corredor
+     de cima, o túnel do vomitório e a arquibancada, fileira por fileira.
 
    Nada aqui decide o que vai no mapa: muda a planta, muda o cenário.
    Em unidades de mundo da planta (x pra leste, y da planta = z do 3D pro
@@ -58,6 +62,10 @@ const QUALIDADES = {
    metros cabem no lado menor da tela (a roda e a pinça mudam) e a
    inclinação da câmera (1,25 rad: quase a pino, com um pouco da fachada) */
 const APE = { anda: 2.2, corre: 6, raio: 0.25, olho: 1.0, vao: 13, el: 1.25 };
+/* NOS ANDARES DO ESTÁDIO, o degrau e a faixa do corpo (m) são os do
+   conferidor dos estádios: a fileira da arquibancada tem de 40 a 52 cm, e
+   ele sobe uma por uma (com a faixa da rua, de 35 cm, a fileira era parede) */
+const ESTADIO_PASSO = { degrau: 0.55, faixa: [0.55, 1.9] };
 /* O CORTE: o que fica entre a câmera e o boneco, acima da cabeça, some
    (a copa, o beiral, o prédio do lado), e o prédio em que ele está
    DENTRO perde o que passa de 2,20 m (o telhado, a laje, o alto da
@@ -971,7 +979,7 @@ void main() {
     return { lugar, texturas, recopiar, jogarFora, folhas };
   }
 
-  function Forno(ar, escalaDecal, grade, sub, piso) {
+  function Forno(ar, escalaDecal, grade, sub, piso, andares) {
     const LADO = BLOCO_M * M;
     const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
     const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null], vivos = [];
@@ -1049,9 +1057,11 @@ void main() {
       const barram = pedacos.filter(p => !p.m.userData.semRisco);
       if (grade) { const teto = PREDIOS.has(tipo) ? id : 0; for (const p of barram) grade.assar(p.P3, p.n, teto); }
       /* a estação do metrô vai inteira pro subsolo (onde o boneco desce);
-         o resto deixa o chão dele no piso da rua */
+         o resto deixa o chão dele no piso da rua; o estádio (o que diz o
+         que é dentro dele) vai também pros andares (onde o boneco sobe) */
       if (sub && tipo === 'metro') for (const p of barram) sub.juntar(p.P3, p.n);
       else if (piso) for (const p of barram) piso.juntar(p.P3, p.n);
+      if (andares && grupo.userData.dentroDoEstadio) for (const p of barram) andares.juntar(p.P3, p.n);
       const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
       for (const p of pedacos) {
         const k = i + ',' + j + '|' + p.chave;
@@ -1513,15 +1523,18 @@ void main() {
     chaoDeLonge(area, grupoChao, deMato);
     marca('chao', tf); tf = agora();
     pedir();
-    /* 2. as coisas, no forno (e a estação do metrô também no subsolo) */
+    /* 2. as coisas, no forno (e a estação do metrô também no subsolo, e o
+       estádio nos andares dele) */
     const gradeNova = GradeDoPasso(area, M), pisoNovo = PisoDaRua(area.x0, area.y0, area.x1, area.y1, M);
     const estacoes = P.metro ? P.metro() : [], subNovo = estacoes.length ? Subsolo(M, estacoes) : null;
-    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo), porTipo = {};
+    const andaresNovos = Subsolo(M, [], ESTADIO_PASSO), dentroNovos = [];
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo, andaresNovos), porTipo = {};
     let i = 0, tFatia = agora();
     for (const pc of pecas) {
       const g = new THREE.Group();
       try { pc.montar(g); } catch (e) { console.error('cenário: não montei', pc.tipo, e); }
       forno.assar(g, pc.it, pc.tipo);
+      if (g.userData.dentroDoEstadio) dentroNovos.push(g.userData.dentroDoEstadio);
       porTipo[pc.tipo] = (porTipo[pc.tipo] || 0) + 1;
       i++;
       if (agora() - tFatia > 40) {
@@ -1565,11 +1578,15 @@ void main() {
       CORTE.uNBuraco.value = Math.min(4, estacoes.length);
       for (const e of estacoes) doMapa.add(terraDaEstacao(e));
     }
+    const tAndares = agora();
+    andaresNovos.fechar();
     grade = gradeNova; sub = subNovo; piso = pisoNovo;
+    andares = dentroNovos.length ? andaresNovos : null; dentroDosEstadios = dentroNovos;
     montado = { nome, decal: forno.decal };
     numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000, tempos,
                 folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade), piso: piso.n }),
-                subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(agora() - tSub) } : null };
+                subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(tAndares - tSub) } : null,
+                andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null };
     /* o escudo em PNG chega depois: a folha copia de novo */
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
@@ -1661,6 +1678,10 @@ void main() {
   raiz.classList.toggle('toque', toque);
   const selCamisa = $('.cen-camisa');
   let grade = null, sub = null, piso = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
+  /* os ANDARES DOS ESTÁDIOS (um subsolo com os triângulos deles) e o que é
+     dentro de cada um: ali o chão e a parede são os deles */
+  let andares = null, dentroDosEstadios = [];
+  const noEstadio = (x, z) => !!andares && dentroDosEstadios.some(f => f(x, z));
   /* o penteado sai da semente (o modelo leve não tem boné nem bandana) */
   const CABELOS = ['curto', 'raspado', 'degrade', 'black', 'cacheado', 'topete', 'franja', 'entradas', 'moicano', 'comprido', 'rabo', 'coque', 'careca'];
   /* a camisa é lembrada pela torcida (o id; 'nenhuma' é o "Sem torcida"), não pela posição na lista */
@@ -1721,6 +1742,7 @@ void main() {
      rua (a laje da calçada, 7 cm; o piso da sede) ou o da estação do
      metrô (a praça da entrada fica 8 cm acima da rua) */
   function naRua(x, z, yPe = 0) {
+    if (noEstadio(x, z)) { const y = andares.chao(x, z, yPe); return y === y ? y : 0; }
     if (!sub || !sub.estacaoEm(x, z)) return piso ? piso.chao(x, z, yPe) : 0;
     const y = sub.chao(x, z, 0);
     return y === y ? y : 0;
@@ -1926,7 +1948,9 @@ void main() {
      pra fora e ele desliza ao longo dele (passo.js). A água e a borda da
      área seguram: ali só anda o eixo que dá. Embaixo da rua (ou entrando
      no poço do metrô), o passo é o do SUBSOLO: o chão a um degrau do pé e
-     a faixa do corpo contada dele */
+     a faixa do corpo contada dele. No estádio (o passo que sai de dentro
+     dele ou entra, e todo passo com o pé acima de um degrau do estádio),
+     é o mesmo, com os ANDARES DO ESTÁDIO */
   const corpo = { x: 0, z: 0, y: 0 };
   function mover(dx, dz) {
     const r = APE.raio * M, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / (0.12 * M)));
@@ -1934,6 +1958,11 @@ void main() {
     const tenta = (ax, az) => {
       if (sub && (ape.y < -0.05 * M || sub.noPoco(ape.x + ax, ape.z + az))) {
         if (!sub.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
+      if (andares && (ape.y > ESTADIO_PASSO.degrau * M || noEstadio(ape.x + ax, ape.z + az) || noEstadio(ape.x, ape.z))) {
+        if (!andares.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
         ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
         return true;
       }
@@ -2162,7 +2191,7 @@ void main() {
                   /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */
                   mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
                   get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
-                  get grade() { return grade; }, get sub() { return sub; }, get piso() { return piso; }, get povo() { return povo; },
+                  get grade() { return grade; }, get sub() { return sub; }, get piso() { return piso; }, get andares() { return andares; }, noEstadio: (x, z) => noEstadio(x, z), get povo() { return povo; },
                   porta: () => alternarPorta(), get portas() { return portas.map(p => ({ hx: p.hx, hz: p.hz, larg: p.larg, a: p.a, alvo: p.alvo, ang: p.ang, grupo: p.grupo, vidro: p.vidro })); },
                   perto: () => { const p = portaPerto(); return p && { hx: p.hx, hz: p.hz, grupo: p.grupo, alvo: p.alvo }; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
 }
