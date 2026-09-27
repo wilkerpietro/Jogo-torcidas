@@ -87,6 +87,16 @@
       tela também (`noQuadro(x, z, d)`), e o PM parado vira pro `rumo`
       dele, com o escudo em pé se tiver `escudo` (o cordão). Sem
       eles, nada muda.
+
+   8. O JEITO DO DIA DE JOGO (27/09/2026). O disco pode trazer `jeito`:
+      'festa' (a rodinha na porta da sede), 'bonde' (torcer andando pra
+      o estádio, ou em pé quando o bonde para) e 'fila' (a catraca) — ver
+      `gestoDoJeito`. Os gestos andam no relógio de verdade (`tAnim`),
+      não no do jogo, que no dia de jogo corre a 30×; o PM parado
+      também. E duas correções que valem pra todo mundo: a multidão leve
+      guarda o tempo dos quadros pulados (antes o ciclo do passo dela
+      andava a um terço e o pé patinava), e o passo de cada um começa
+      numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { GLTFLoader, SkeletonUtils } from '../../vendor/three/GLTFLoader.js';
@@ -252,7 +262,8 @@ let noQuadroExterno = null;
       olhaTras:0, tGesto:0, gesto:0,
       queda:null, caiDeFrente: frac(s+'q') < 0.55, jazido:0, quedaVar:0, derrubadoRef:null, esquiva:null, arrRef:null, arrVar:0,
       varianteForcada: d.varianteForcada!=null ? d.varianteForcada : null,
-      px:null, pz:null, vx:0, vz:0, ciclo:0,
+      /* (o passo de cada um começa numa fase dele: quem sai junto não sai no mesmo pé) */
+      px:null, pz:null, vx:0, vz:0, ciclo: frac(s+'ci')*6.28,
       pose:null
     };
     return d._b3;
@@ -1522,6 +1533,139 @@ let noQuadroExterno = null;
       p.inclina = 0.2; p.olhaX = 0.05; p.gira = -0.2;
     }
   }
+
+  /* =======================================================
+     O JEITO DO DIA DE JOGO (`d.jeito`, pedido do dono, 27/09/2026):
+     "Deixe os bonecos mais espalhados em frente à sede como se
+     estivessem à vontade confraternizando. Crie um movimento de
+     torcer andando, que vai ser como eles vão se comportar enquanto
+     estiverem caminhando na rua em direção ao estádio. Também evite
+     fazer um movimento padronizado caminhando."
+     - 'festa': parado na porta da sede, na rodinha — conversa com a
+       mão, escuta de braço cruzado, bebe, ri, olha o celular, puxa um
+       canto, aponta;
+     - 'bonde': andando pra o estádio, torce ANDANDO — as pernas são as
+       do passo (a passada, a cadência e o balanço de cada um) e em
+       cima vai o gesto: o braço no alto bombando, palmas em cima da
+       cabeça, palmas no peito, os dois braços pra cima balançando, o
+       soco no ar no tempo do canto, conversa virado pro lado, ou só
+       anda. Parado (a revista), torce em pé;
+     - 'fila': na fila da catraca, mais calmo.
+     Cada um troca de gesto quando quer (3 a 9 s, o favorito dele pesa
+     mais), no ritmo dele (o tempo da palma é de cada um) e fora de fase
+     com o vizinho: ninguém faz o mesmo que o do lado na mesma hora.
+     O relógio é o de verdade (`tAnim`), não o do jogo: o dia de jogo
+     corre a 30× e a palma não pode.
+     ======================================================= */
+  const GESTOS = {
+    /* [gesto, peso]: 0 nada (o braço do passo ou o do parado) */
+    festa:     [['conversa', 26], ['escuta', 18], ['bebe', 14], ['ri', 10], ['celular', 10], ['canta', 12], ['aponta', 5], [0, 5]],
+    bondeAnda: [[0, 26], ['braco', 15], ['palmaAlta', 12], ['palmaPeito', 13], ['festa', 8], ['soco', 12], ['conversaAnda', 14]],
+    bonde:     [[0, 18], ['braco', 18], ['palmaAlta', 16], ['palmaPeito', 16], ['festa', 10], ['pula', 8], ['soco', 14]],
+    fila:      [[0, 40], ['palmaPeito', 14], ['braco', 10], ['celular', 14], ['conversa', 14], ['escuta', 8]]
+  };
+  function escolherGesto(f, lista){
+    let tot = 0; for(const [,w] of lista) tot += w;
+    /* o favorito de cada um (gestoFav: 0 a 4) pesa o dobro */
+    const fav = lista[1 + (f.estilo.gestoFav % (lista.length - 1))][0];
+    let r = Math.random()*(tot + 12);
+    if(r >= tot) return fav;
+    for(const [g,w] of lista){ r -= w; if(r <= 0) return g; }
+    return 0;
+  }
+  function gestoDoJeito(p, f, t, dt, jeito, andando){
+    const chave = jeito === 'bonde' ? (andando ? 'bondeAnda' : 'bonde') : jeito;
+    const lista = GESTOS[chave] || GESTOS.fila;
+    f.jgT = (f.jgT == null ? Math.random()*4 : f.jgT) - dt;
+    if(f.jgT <= 0 || f.jgChave !== chave || (f.gestoForcado != null && f.jg !== f.gestoForcado)){
+      f.jg = f.gestoForcado != null ? f.gestoForcado : escolherGesto(f, lista); f.jgChave = chave;
+      f.jgT = 3 + Math.random()*6;
+      /* o tempo da palma (1,5 a 2,1 por segundo) e a fase: de cada um */
+      if(f.jgRitmo == null){ f.jgRitmo = 4.7 + frac(f.sem+'rt')*1.9; f.jgFase = frac(f.sem+'rf')*6.28; }
+    }
+    const g = f.jg, e = f.estilo;
+    if(!g) return;
+    const w = t*f.jgRitmo + f.jgFase, bate = Math.abs(Math.sin(w)), pulso = Math.max(0, Math.sin(w*0.5));
+    const lado = e.canhoto ? 0 : 1, o = 1 - lado;
+    switch(g){
+      /* ---- na porta da sede ---- */
+      case 'conversa': {       // falando: uma mão desenha no ar, a cabeça acompanha
+        const a = Math.sin(t*2.3 + f.fase), b = Math.sin(t*3.1 + f.fase*1.7);
+        p.ombro[lado] = -0.6 + 0.22*a; p.cotovelo[lado] = -1.55 + 0.35*b; p.ombroZ[lado] = 0.18 + 0.1*b; p.maoZ[lado] = 0.2 + 0.2*a; p.punho[lado] = 0;
+        p.olhaX += 0.05*Math.sin(t*4.2 + f.fase); p.olhaY = 0.12*a; p.gira += 0.05*b;
+        break;
+      }
+      case 'escuta':           // braço cruzado, pesa numa perna, balança a cabeça de vez em quando
+        p.ombro = [-0.28, -0.28]; p.cotovelo = [-1.95, -1.95]; p.ombroZ = [0.22, 0.22]; p.maoZ = [0.95, 0.95]; p.punho = [0, 0];
+        p.olhaX = 0.04 + 0.05*Math.max(0, Math.sin(t*1.1 + f.fase)); p.olhaY = 0.08*Math.sin(t*0.5 + f.fase);
+        break;
+      case 'bebe': {           // a lata na boca de tempos em tempos: sobe, gole, desce
+        const c = (t*0.22 + f.fase) % 1, sobe = suave(c/0.15)*(1 - suave((c - 0.45)/0.15));
+        p.ombro[lado] = mistura(-0.45, -1.25, sobe); p.cotovelo[lado] = mistura(-1.5, -2.35, sobe); p.ombroZ[lado] = mistura(0.12, 0.3, sobe);
+        p.maoZ[lado] = mistura(0.15, 0.55, sobe); p.punho[lado] = 1;
+        p.olhaX = mistura(p.olhaX, -0.3, sobe); p.inclina -= 0.05*sobe;
+        break;
+      }
+      case 'ri': {             // gargalhada: o tronco sacode, a cabeça vai pra trás, mão na barriga
+        const s = Math.abs(Math.sin(t*9 + f.fase))*(0.5 + 0.5*Math.max(0, Math.sin(t*0.9 + f.fase)));
+        p.inclina = 0.08 + 0.14*s; p.olhaX = -0.18 + 0.12*s; p.peito += 0.03*s; p.y -= 0.4*s;
+        p.ombro[o] = -0.35; p.cotovelo[o] = -1.75; p.maoZ[o] = 0.85; p.ombroZ[o] = 0.2;
+        p.ombro[lado] = -0.5 + 0.2*s; p.cotovelo[lado] = -1.2; p.ombroZ[lado] = 0.35;
+        break;
+      }
+      case 'celular':          // a cabeça baixa, as duas mãos juntas na frente
+        p.ombro = [-0.55, -0.55]; p.cotovelo = [-1.8, -1.8]; p.ombroZ = [0.16, 0.16]; p.maoZ = [0.5, 0.5]; p.punho = [0, 0];
+        p.olhaX = 0.42; p.olhaY = 0; p.inclina += 0.04;
+        break;
+      case 'canta':            // puxando o canto parado: o braço bombando no tempo
+        p.ombro[lado] = -2.75 + 0.25*Math.sin(w); p.cotovelo[lado] = -0.35; p.ombroZ[lado] = 0.05; p.punho[lado] = 1;
+        p.olhaX = -0.22; p.peito += 0.03*bate;
+        break;
+      case 'aponta':           // mostrando alguma coisa lá longe
+        p.ombro[lado] = -1.5; p.cotovelo[lado] = -0.12; p.ombroZ[lado] = 0.2; p.punho[lado] = 0.5;
+        p.gira += 0.15*(lado ? -1 : 1); p.olhaY = 0.2*(lado ? -1 : 1);
+        break;
+      /* ---- andando pro estádio (as pernas são as do passo) ---- */
+      case 'braco':            // o braço no alto, bombando no tempo do canto
+        p.ombro[lado] = -2.75 + 0.3*Math.sin(w); p.cotovelo[lado] = -0.2 - 0.25*pulso; p.ombroZ[lado] = 0.05; p.punho[lado] = 1;
+        p.olhaX = Math.min(p.olhaX, -0.12) - 0.08; p.inclina -= 0.03;
+        break;
+      case 'palmaAlta':        // palmas em cima da cabeça
+        /* (com o braço erguido, o ombroZ do GLB fecha: 0,5 junta as mãos em cima da cabeça, 0,2 abre em V, 0,7 cruza os braços) */
+        p.ombro = [-2.6, -2.6]; p.cotovelo = [-0.5, -0.5]; p.maoZ = [0.2, 0.2]; p.punho = [0, 0];
+        p.ombroZ = [0.5 - 0.28*bate, 0.5 - 0.28*bate];
+        p.olhaX = -0.25; p.inclina -= 0.05;
+        break;
+      case 'palmaPeito':       // palmas na altura do peito
+        p.ombro = [-0.8, -0.8]; p.cotovelo = [-1.2, -1.2]; p.maoZ = [0.5, 0.5]; p.punho = [0, 0]; p.pulso = [-0.2, -0.2];
+        p.ombroZ = [0.12 + 0.38*bate, 0.12 + 0.38*bate];
+        break;
+      case 'festa': {          // os dois braços pra cima, balançando de um lado pro outro
+        const s = Math.sin(t*2.2 + f.jgFase);
+        /* (braço erguido: o ombroZ pequeno abre em V; ver as palmas altas) */
+        p.ombro = [-2.6 + 0.12*s, -2.6 - 0.12*s]; p.cotovelo = [-0.35, -0.35]; p.maoZ = [0.1, 0.1]; p.punho = [0, 0];
+        p.ombroZ = [0.08 + 0.1*s, 0.08 - 0.1*s]; p.tomba += 0.08*s; p.olhaX = -0.2;
+        if(!andando) p.y += 0.6*Math.max(0, Math.sin(t*4.4 + f.jgFase));
+        break;
+      }
+      case 'soco':             // o soco no ar, pra frente e pra cima, a cada batida do canto
+        p.ombro[lado] = -1.85 - 0.55*pulso; p.cotovelo[lado] = -1.5 + 1.25*pulso; p.ombroZ[lado] = 0.22; p.punho[lado] = 1;
+        p.olhaX = -0.12; p.inclina += 0.03*pulso;
+        break;
+      case 'conversaAnda': {   // andando e conversando com o do lado
+        const vira = (frac(f.sem+'cv'+Math.floor(t/7)) < 0.5 ? -1 : 1);
+        p.olhaY = 0.45*vira; p.gira += 0.08*vira;
+        p.ombro[lado] = -0.7 + 0.2*Math.sin(t*2.6 + f.fase); p.cotovelo[lado] = -1.45 + 0.3*Math.sin(t*3.3 + f.fase); p.maoZ[lado] = 0.25; p.punho[lado] = 0;
+        break;
+      }
+      case 'pula': {           // pulando no lugar (parado)
+        const s = Math.max(0, Math.sin(w*0.8));
+        p.y = s*3.2; p.joelho = [0.5 - s*0.4, 0.5 - s*0.4]; p.coxa = [-0.2, -0.2];
+        p.ombro = [-2.6, -2.6]; p.cotovelo = [-0.3, -0.3]; p.ombroZ = [0.2, 0.2];
+        break;
+      }
+    }
+  }
   /* levar pancada: cabeça vai, tronco vai atrás, um passo pra trás */
   /* quem está apanhando sem revidar se cobre: braços em volta da
      cabeça, queixo enterrado, meio de lado, encolhido */
@@ -1958,12 +2102,17 @@ let noQuadroExterno = null;
       d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3);
     fg.mudou = true;
     if(leve && !agitado && ((quadroN + i) % 3)){
-      const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05 || (d.alt != null && Math.abs(d.alt - f.py) > 0.05);
-      if(moveu){ const q = pos(d.x, d.y, d); c.raiz.position.set(q.x, q.y, q.z); f.px = q.x; f.pz = q.z; f.py = q.y; }
+      /* o tempo do quadro pulado fica guardado: no quadro que conta, o
+         passo, a velocidade e a pose andam com ele (sem isso o ciclo do
+         passo da multidão andava a um terço e o pé patinava) */
+      f.dtLeve = (f.dtLeve || 0) + dt;
+      const moveu = f.bx == null || Math.abs(d.x - f.bx) > 0.05 || Math.abs(d.y - f.bz) > 0.05 || (d.alt != null && Math.abs(d.alt - f.balt) > 0.05);
+      if(moveu){ const q = pos(d.x, d.y, d); c.raiz.position.set(q.x, q.y, q.z); f.bx = d.x; f.bz = d.y; f.balt = d.alt; }
       else fg.mudou = false;
       c.raiz.visible = true;
       return;
     }
+    if(f.dtLeve){ dt += f.dtLeve; f.dtLeve = 0; }
     /* o relógio do repouso: congelado pra multidão, vivo pro líder */
     const ti = leve ? f.fase * 10 : t;
     const p = poseNeutra();
@@ -2010,7 +2159,12 @@ let noQuadroExterno = null;
         f.impacto = {t:0, dur:0.4, forca:1.1, lado: Math.sin(f.fase)>0?1:-1, tipo:'pedra'};
 
       const andando = passo(p, f, vel / (d.passada || 1), dt, corre, emBriga ? 20 : 6);
-      if(!andando) parado(p, f, ti);
+      /* o jeito do dia de jogo (a festa na sede, o bonde, a fila): no relógio de verdade, mesmo na multidão leve */
+      const jeito = d.jeito;
+      if(!andando) parado(p, f, jeito ? tAnim : ti);
+      /* (`d.gestoForcado`: a vitrine e o teste pedindo um gesto certo) */
+      f.gestoForcado = d.gestoForcado;
+      if(jeito && !emBriga && !corre) gestoDoJeito(p, f, tAnim, dt, jeito, andando);
       if(corre && d.fugindo) fugir(p, f, t, dt);
       if(d.fugaBomba) cobrir(p);
 
@@ -2044,7 +2198,7 @@ let noQuadroExterno = null;
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
       else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, ti); rapidez = 12; f.ataque = null; }
       else if(!andando && d.linha==='retaguarda' && !J.paz && !leve){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
-      else { f.ataque = null; rapidez = andando ? 14 : 5; }
+      else { f.ataque = null; rapidez = andando ? 14 : jeito ? 8 : 5; }
       if(d.esquivou > 0) esquivar(p, f, d);
       else flinch(p, f, d, dt);
     }
@@ -2054,6 +2208,7 @@ let noQuadroExterno = null;
        A pancada aparece no corpo (`flinch`), não no chão. */
     const qd = pos(d.x, d.y, d);
     c.raiz.position.set(qd.x, qd.y, qd.z);
+    f.bx = d.x; f.bz = d.y; f.balt = d.alt;
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
     if(c.anel){
@@ -2084,7 +2239,8 @@ let noQuadroExterno = null;
       /* parado, vira pra onde o disco manda (o PM do cordão do dia de jogo, de frente pra torcida) */
       else if(typeof pm.rumo === 'number') f.yaw = girar(f.yaw, pm.rumo, Math.min(1, dt*6));
       const andando = passo(p, f, vel / (pm.passada || 1), dt, false, 6);
-      if(!andando) parado(p, f, J.t);
+      /* (o relógio de verdade: o do dia de jogo corre acelerado, e o PM parado respirava a 30×) */
+      if(!andando) parado(p, f, tAnim);
       /* cassetete na mão: braço direito meio dobrado */
       p.ombro[1] = Math.min(p.ombro[1], -0.5); p.cotovelo[1] = -1.6;
       if(pm.carga){ p.escudo = true; p.ombro[0] = -1.2; p.cotovelo[0] = -1.4; p.ombroZ[0] = 0.1; p.inclina += 0.14; }
@@ -2273,6 +2429,8 @@ let noQuadroExterno = null;
   const DPR_NIVEIS = [1.5, 1.0, 0.75];
   const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true};
   let quadroN = 0;
+  /* o relógio de verdade das figuras (o do jogo, J.t, pode correr acelerado: o dia de jogo) */
+  let tAnim = 0;
   let dprNivel = 0, mediaDt = 1/60, tempoNoNivel = 0;
   const dprAtual = () => Math.min(cfg.resolucaoAdaptativa ? DPR_NIVEIS[dprNivel] : 1.5,
                                   window.devicePixelRatio||1);
@@ -2371,7 +2529,7 @@ let noQuadroExterno = null;
        z >= vista.z0 - MARGEM_VISTA && z <= vista.z1 + MARGEM_VISTA);
   const conta = {vistos:0, cortados:0};
   function atualizarCena(J, dt){
-    quadroN++;
+    quadroN++; tAnim += dt;
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;

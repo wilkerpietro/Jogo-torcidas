@@ -21,7 +21,11 @@
      corpo cabendo);
    - as VAGAS: as NVAGAS mais perto do centro (o lugar de cada um, a 0,5
      m de degrau por pessoa, estadios3d.js), cada uma com o ponto do
-     caminho onde a pessoa sai dele e a CAUDA (as retas até a vaga).
+     caminho onde a pessoa sai dele e a CAUDA (as retas até a vaga);
+   - as RAIAS de cada portão (a passagem que o modelo dá: as raias da
+     fila e o vão de cada catraca), e quais delas servem pra cada vaga
+     (de onde a raia acaba, logo depois da catraca, a pessoa volta pro
+     caminho dela em reta).
 
    A busca é a do conferidor (conferir_estadios.mjs): o corpo de RAIO m,
    o degrau de 0,55 m (a fileira da arquibancada tem de 0,40 a 0,52), a
@@ -182,6 +186,69 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
     return out;
   }
   const plano = (B, c, ks) => ks.flatMap(k => pos(B, c[k]).map(r2));
+  /* a reta de a pra b ([x, y, z]) se anda? (a mesma conta de `seVeem`, com pontos) */
+  function anda(B, a, b) {
+    const L = Math.hypot(b[0] - a[0], b[2] - a[2]), n = Math.max(1, Math.ceil(L / AMOSTRA));
+    let y = a[1];
+    for (let s = 1; s <= n; s++) {
+      const t = s / n, x = a[0] + (b[0] - a[0]) * t, z = a[2] + (b[2] - a[2]) * t;
+      if (!B.pode(x, z)) return false;
+      const y2 = S.chao(x, z, y);
+      if (y2 !== y2 || !S.cabe(x, z, y2, RAIO * 0.9)) return false;
+      y = y2;
+    }
+    return Math.abs(y - b[1]) < 0.15;
+  }
+  /* o ponto da linha V ([x, y, z] em fila) onde ela passa s* no eixo do portão (a primeira vez) */
+  function depoisDe(V, sDe, sAlvo) {
+    for (let i = 1; i < V.length; i++) {
+      const s0 = sDe(V[i - 1]), s1 = sDe(V[i]);
+      if (s1 < sAlvo) continue;
+      if (s0 >= sAlvo) return V[i - 1];
+      const k = (sAlvo - s0) / (s1 - s0);
+      return [V[i - 1][0] + (V[i][0] - V[i - 1][0]) * k, V[i - 1][1] + (V[i][1] - V[i - 1][1]) * k, V[i - 1][2] + (V[i][2] - V[i - 1][2]) * k];
+    }
+    return null;
+  }
+  /* AS RAIAS de cada portão (o dono, 27/09/2026: "Faça os bonecos
+     utilizarem as 5 bocas de entrada e não só uma"): da frente da fila
+     (sem fila, 3 m antes da catraca) pela raia até a catraca do vão mais
+     perto dela (a PARADA, 0,6 m antes do pé), e 0,75 m depois dela. Cada
+     ponto no chão e cada trecho conferidos no corpo; o ponto em que o
+     corpo não cabe chega pro meio, até 0,6 m. A raia que não passa fica
+     de fora */
+  function raiasDo(B) {
+    const pg = B.E.passagem;
+    if (!pg) return [];
+    const L = (s, t) => [pg.P0[0] + pg.w[0] * s - pg.w[1] * t, pg.P0[1] + pg.w[1] * s + pg.w[0] * t];
+    const boca = [X(B.boca.i), B.boca.y, X(B.boca.j)], out = [];
+    for (const tk of pg.raias || pg.vaos) {
+      const tc = pg.vaos.reduce((m, v) => Math.abs(v - tk) < Math.abs(m - tk) ? v : m, pg.vaos[0]);
+      const st = [];
+      if (pg.fila) { st.push([pg.fila[1] - 0.6, tk]); st.push([Math.min(pg.fila[0] + 0.3, pg.catraca - 0.6), tk]); }
+      else st.push([pg.catraca - 3, tc]);
+      st.push([pg.catraca - 0.6, tc, 'parada']);
+      st.push([pg.catraca + 0.75, tc]);
+      /* (a menos de 30 cm do anterior, o ponto sai; a parada fica) */
+      for (let i = st.length - 2; i >= 0; i--) if (Math.hypot(st[i + 1][0] - st[i][0], st[i + 1][1] - st[i][1]) < 0.3) st.splice(st[i + 1][2] ? i : i + 1, 1);
+      let prev = boca, ok = true;
+      const pts = [];
+      let para = -1;
+      for (const [s, t, marca] of st) {
+        let achou = null;
+        for (let d = 0; d <= 0.6 + 1e-9 && !achou; d += 0.1) {
+          const tt = t - Math.sign(t) * Math.min(Math.abs(t), d), [x, z] = L(s, tt), y = S.chao(x, z, prev[1]);
+          if (y === y && S.cabe(x, z, y, RAIO) && anda(B, prev, [x, y, z])) achou = [x, y, z];
+        }
+        if (!achou) { ok = false; break; }
+        if (marca) para = pts.length;
+        pts.push(achou); prev = achou;
+      }
+      if (ok) out.push({ t: r2(tk), pts, para });
+    }
+    return out;
+  }
+  for (const B of buscas) B.raias = raiasDo(B);
 
   const setores = {};
   for (const s of info.setores) {
@@ -228,17 +295,41 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
       maxCauda = Math.max(maxCauda, ce.length);
     }
     const caminho = plano(B, main, simp);
-    setores[s.id] = { portao: B.g, caminho, centro: melhor.centro.map(r2), vagas: lista };
+    /* QUE RAIAS SERVEM PRA CADA VAGA: de cada raia, a pessoa volta pro
+       caminho dela (o do setor até a cauda sair, e a cauda) no ponto em
+       que ele passa 0,5 m da ponta da raia (no eixo do portão), logo
+       depois da catraca; a raia serve se a reta até lá se anda. Uma
+       máscara por vaga (bit k: a raia k) */
+    const cam = [];
+    for (let i = 0; i < caminho.length; i += 3) cam.push([caminho[i], caminho[i + 1], caminho[i + 2]]);
+    const pg = B.E.passagem;
+    const sDe = p => (p[0] - pg.P0[0]) * pg.w[0] + (p[2] - pg.P0[1]) * pg.w[1];
+    const raias = !pg ? [] : lista.map(v => {
+      const V = cam.slice(0, v[0] + 1);
+      for (let i = 1; i < v.length; i += 3) V.push([v[i], v[i + 1], v[i + 2]]);
+      let m = 0;
+      B.raias.forEach((r, k) => {
+        const fim = r.pts[r.pts.length - 1], P = depoisDe(V, sDe, sDe(fim) + 0.5);
+        /* (o y no meio da reta não é o do chão: a reta pode acabar numa escada) */
+        if (P) { const y = S.chao(P[0], P[2], fim[1]); if (y === y) P[1] = y; }
+        if (P && anda(B, fim, P)) m |= 1 << k;
+      });
+      return m;
+    });
+    setores[s.id] = { portao: B.g, caminho, centro: melhor.centro.map(r2), vagas: lista, raias };
+    const semRaia = raias.filter(m => !m).length, cheias = raias.filter(m => m === (1 << B.raias.length) - 1).length;
     const comp = (B.D[melhor.k] / 10 * PASSO);
-    resumo.push(`  ${id} ${s.id}: ${B.E.nome} (${lado}), ${comp.toFixed(0)} m, ${simp.length} pontos no caminho, ${lista.length} vagas (cauda de até ${maxCauda} retas)${semCaminho ? `, ${semCaminho} vagas sem caminho no meio delas` : ''}`);
+    resumo.push(`  ${id} ${s.id}: ${B.E.nome} (${lado}), ${comp.toFixed(0)} m, ${simp.length} pontos no caminho, ${lista.length} vagas (cauda de até ${maxCauda} retas)${semCaminho ? `, ${semCaminho} vagas sem caminho no meio delas` : ''}; ${cheias} vagas com as ${B.raias.length} raias${semRaia ? `, ${semRaia} sem raia nenhuma` : ''}`);
   }
   saida[id] = {
     marca: marcaDe(info),
-    portoes: buscas.map(B => ({ nome: B.E.nome, lado: B.E.lado, ponto: B.E.ponto.map(r2), boca: [r2(X(B.boca.i)), r2(B.boca.y), r2(X(B.boca.j))] })),
+    portoes: buscas.map(B => ({ nome: B.E.nome, lado: B.E.lado, ponto: B.E.ponto.map(r2), boca: [r2(X(B.boca.i)), r2(B.boca.y), r2(X(B.boca.j))],
+      eixo: B.E.passagem ? { P0: B.E.passagem.P0, w: B.E.passagem.w } : null,
+      raias: B.raias.map(r => ({ t: r.t, para: r.para, pts: r.pts.flatMap(p => p.map(r2)) })) })),
     setores
   };
   resumo.splice(resumo.length - Object.keys(setores).length, 0,
-    `${ESTADIOS_JOGO[id].nome}: ${S.n} triângulos, ${buscas.map(B => `${B.E.nome} ${B.n} lugares do corpo`).join(', ')} · ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+    `${ESTADIOS_JOGO[id].nome}: ${S.n} triângulos, ${buscas.map(B => `${B.E.nome} ${B.n} lugares do corpo e ${B.raias.length} raias (${B.E.passagem ? (B.E.passagem.raias || B.E.passagem.vaos).length : 0} no modelo)`).join(', ')} · ${((Date.now() - t0) / 1000).toFixed(1)} s`);
 }
 
 const txt = `/* =========================================================
@@ -247,11 +338,15 @@ const txt = `/* =========================================================
    mão: rode de novo quando mexer num estádio (estadios3d.js).
    Em metros, no referencial do modelo (o centro do campo na origem, x
    pro leste, z pro sul, y pra cima). Pra cada modelo: a marca (bate com
-   a do estádio do mapa?), os portões (o ponto da fila e a boca, onde a
-   rua encosta) e, pra cada setor, o portão dele, o caminho da boca até
-   o centro do setor ([x, y, z] em fila) e as vagas, da mais perto do
-   centro pra mais longe: [a, x, y, z, …], onde \`a\` é o ponto do
-   caminho de onde a cauda sai e o último ponto é a vaga.
+   a do estádio do mapa?), os portões (o ponto da fila, a boca, onde a
+   rua encosta, e as raias: da frente da fila até depois da catraca,
+   com a parada na frente dela) e, pra cada setor, o portão dele, o
+   caminho da boca até o centro do setor ([x, y, z] em fila), as vagas,
+   da mais perto do centro pra mais longe: [a, x, y, z, …], onde \`a\` é
+   o ponto do caminho de onde a cauda sai e o último ponto é a vaga, e
+   as raias que servem pra cada vaga (bit k: a raia k do portão; de
+   cada uma, a pessoa volta pro caminho da vaga onde ele passa 0,5 m
+   da ponta da raia, no eixo do portão).
    ========================================================= */
 export const ROTAS_ESTADIOS = ${JSON.stringify(saida)};
 `;

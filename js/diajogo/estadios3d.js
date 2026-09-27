@@ -1575,6 +1575,17 @@ function balcao(O, fam, dF, u, k, y0) {
    ====================================================== */
 /* onde a fila do portão começa (2,5 m pra fora da porta, no eixo) e o rumo de quem entra, em metros */
 const naRua = Q => { const p = Q.L(-2.5, 0, 0); return { ponto: [+p[0].toFixed(2), +p[2].toFixed(2)], rumo: [+Q.w[0].toFixed(4), +Q.w[1].toFixed(4)] }; };
+/* A PASSAGEM de um portão, pro dia de jogo (rotas_estadios.mjs): o
+   quadro da entrada (P0 e o rumo w de quem entra; t pro lado), a meia
+   largura, a fila [s0, s1] (pra fora, negativos) com o meio de cada raia
+   dela, e a linha de catracas em s com o meio do vão de cada uma (a
+   mesma conta de `catracas`: o vão j fica entre o pé j e o seguinte) */
+function passagemDe(Q, hl, fila, raias, sCat, t0, t1) {
+  const n = Math.max(2, Math.floor((t1 - t0) / 0.95)), passo = (t1 - t0) / n, r2 = v => +v.toFixed(2);
+  return { P0: [r2(Q.P0[0]), r2(Q.P0[1])], w: [+Q.w[0].toFixed(4), +Q.w[1].toFixed(4)], hl: r2(hl), fila: fila ? fila.slice() : null,
+           raias: fila && raias ? Array.from({ length: raias }, (_, k) => r2(-hl + 2 * hl * (k + 0.5) / raias)) : null,
+           catraca: sCat, vaos: Array.from({ length: n }, (_, j) => r2(t0 + passo * (j + 0.5) + 0.18)) };
+}
 /* O PLANO DE UMA ENTRADA reta: o eixo nasce em P0 (na face de fora — a
    fachada ou o muro) e entra no rumo w; `sF` é onde cada lado (−hl, +hl)
    encosta no anel dCorr (a parede de fora do corredor), `vaoCorr` o
@@ -2206,11 +2217,11 @@ function montar10(O, S, G, opc) {
     fachada: 'o muro caiado com a barra azul e o capeamento, o nome pintado no leste e no sul, o arco do portão 1 com o nome e a bilheteria do lado dele',
     entradas: [
       { nome: 'Portão 1', lado: 'mandante', onde: `o corte da do leste: o arco com o nome, o portão do muro, ${n1} catracas e uma porta de cada lado pro corredor`,
-        chega: [cL1.zonaEm(corte.ua - 1e-3), cL2.zonaEm(corte.ub + 1e-3)], ...naRua(Q1) },
+        chega: [cL1.zonaEm(corte.ua - 1e-3), cL2.zonaEm(corte.ub + 1e-3)], ...naRua(Q1), passagem: passagemDe(Q1, (zC1 - zC0) / 2, null, 0, 3.2, -5.2, 5.2) },
       { nome: 'Portão 2', lado: 'mandante', onde: `no muro do sul: o pórtico com a marquise, a fila de ${r2} raias e o salão de 3 m, com ${n2} catracas, até o corredor da do sul`,
-        chega: [cL2.zonaEm((E2.vaoCorr.ua + E2.vaoCorr.ub) / 2)], ...naRua(E2.Q) },
+        chega: [cL2.zonaEm((E2.vaoCorr.ua + E2.vaoCorr.ub) / 2)], ...naRua(E2.Q), passagem: passagemDe(E2.Q, E2.hl, [-1.0, -6.0], r2, 2, -E2.hl, E2.hl) },
       { nome: 'Portão 3', lado: 'visitante', onde: `o túnel de lona do noroeste: ${n3} catracas na boca e o caminho cercado até a porta do corredor da do norte`,
-        chega: [cN.zonaEm(1e-3)], ...naRua(Q3) }
+        chega: [cN.zonaEm(1e-3)], ...naRua(Q3), passagem: passagemDe(Q3, 1.8, null, 0, -0.5, -1.95, 1.95) }
     ],
     corredores: [{ nome: 'Norte', zonas: 'visitante · PM · mandante', ...cN }, { nome: 'Leste (até o portão 1)', zonas: 'mandante', ...cL1 },
                  { nome: 'Leste e sul (do portão 1 à ponta)', zonas: 'mandante', ...cL2 }],
@@ -2353,7 +2364,8 @@ function montar20(O, S, G, opc) {
     setores, livre: '', vomitorios: vom.length, tipoVom: 'com túnel: o poço das fileiras 2 a 5, a escada que começa nele e desce por baixo das fileiras e o túnel até o corredor',
     alturaArq: A.yn + 1.1, luz: 'quatro torres de treliça de 30 m nas quinas',
     fachada: `concreto aparente em ${Math.round(ALTO / relevo.andar)} andares de ${relevo.andar.toFixed(1).replace('.', ',')} m: ${relevo.pilares} pilares, a faixa de cada laje, o cobogó e o brise, o embasamento e a cimalha; o letreiro com o nome em cima do portão 1 e no oeste; as quatro bilheterias do lado dos portões do muro`,
-    entradas: P.map(p => ({ nome: p.nome, lado: p.lado, onde: `${p.onde}; o pórtico com a marquise${p.raias ? `, a fila de ${p.raias} raias` : ''} e ${p.catracas} catracas do lado de fora`, chega: [corr.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2)], ...naRua(p.E.Q) })),
+    entradas: P.map(p => ({ nome: p.nome, lado: p.lado, onde: `${p.onde}; o pórtico com a marquise${p.raias ? `, a fila de ${p.raias} raias` : ''} e ${p.catracas} catracas do lado de fora`, chega: [corr.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2)], ...naRua(p.E.Q),
+      passagem: passagemDe(p.E.Q, p.E.hl, p.fila, p.raias, -1.0, -p.E.hl, p.E.hl) })),
     corredores: [{ nome: 'O anel inteiro', zonas: 'visitante · PM · mandante · PM', ...corr }],
     servico: 'os túneis do meio do norte e do sul são os dos jogadores (não ligam no corredor); as duas torres do meio do norte e do sul não têm porta pra rua',
     cortes: [{ nome: 'Corte no corredor', y: C.y + C.h - 0.05 }]
@@ -2557,7 +2569,8 @@ function montar40(O, S, G, opc) {
     fachada: `concreto aparente em ${Math.round(ALTO / relevo.andar)} andares de ${m(relevo.andar)} m: ${relevo.pilares} pilares, a faixa de cada laje, o cobogó e o brise, o embasamento e a cimalha; o letreiro com o nome em cima do portão 1 e no oeste; as quatro bilheterias do norte e do sul`,
     entradas: P.map((p, j) => ({ nome: p.nome, lado: p.lado,
       onde: `${p.onde}; o pórtico com a marquise, a faixa de pedestre na pista de ônibus, a fila de ${p.raias} raias e ${p.catracas} catracas no salão, que dá no corredor do chão; dele, a escada interna (${escs[j].onde}) sobe pro corredor de cima`,
-      chega: [cI.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2), cS.zonaEm((escs[j].furo.ua + escs[j].furo.ub) / 2)], ...naRua(p.E.Q) })),
+      chega: [cI.zonaEm((p.E.vaoCorr.ua + p.E.vaoCorr.ub) / 2), cS.zonaEm((escs[j].furo.ua + escs[j].furo.ub) / 2)], ...naRua(p.E.Q),
+      passagem: passagemDe(p.E.Q, p.E.hl, fila, p.raias, 1.2, -p.E.hl, p.E.hl) })),
     escadas: `As ${escs.length} escadas internas, uma perto de cada portão, ficam no poço de ${m(g.dP - C0.dF)} m debaixo do corredor de cima: dois lances de ${escs[0].degraus / 2} degraus ao longo do anel, com a parede no meio — um sobe da porta do corredor do chão (a placa ESCADA · ANEL SUPERIOR) até o patamar da volta, o outro volta e chega no corredor de cima por um vão no piso dele, cercado de guarda-corpo (a placa SAÍDA em cima). É o único caminho de um corredor pro outro.`,
     corredores: [{ nome: 'Do chão (debaixo do anel de baixo)', zonas: 'visitante · PM2 · mandante · PM3', ...cI },
                  { nome: `De cima (debaixo do anel de cima, a ${m(C1.y)} m)`, zonas: 'visitante · PM1 · mandante · PM4', ...cS }],

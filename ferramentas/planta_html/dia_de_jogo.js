@@ -31,8 +31,12 @@
      de uma torcida vira REVISTA (a grade em funil e 3 PMs; o bonde para
      ali); as outras bocas da zona do visitante ficam FECHADAS (a grade
      atravessada e 2 PMs); as do mandante, abertas;
-   - a ESCOLTA: 4 PMs andam com o bonde do 1º escalão visitante, da sede
-     até a revista.
+   - a ESCOLTA: até 4 PMs andam com o bonde do 1º escalão visitante, da
+     sede até a revista.
+   O EFETIVO é proporcional à gente do jogo, sempre (o dono, 27/09/2026):
+   um PM pra cada 4 torcedores (PM_POR_TORCEDOR), dividido entre os
+   postos pela ordem de importância (ver `montar`); a grade fica inteira,
+   o que muda é quanto PM tem na frente dela.
 
    AS ROTAS da sede à boca do portão saem da GRADE DA ROTA, de 1 m, feita
    da grade do passo do cenário (o que o corpo alcança, fora do estádio),
@@ -53,9 +57,22 @@
    até o centro do setor, pela fila, a catraca, o corredor e o vomitório,
    e dali até a vaga de cada um), girada e posta no mapa.
 
-   O BONDE é uma coluna de até LARG pessoas por fileira atrás da
-   primeira, que estreita onde a rua estreita; na boca vira fila, e cada
-   um passa a catraca CATRACA s depois do da frente.
+   O BONDE é uma massa solta (o dono, 27/09/2026, com a foto de um bonde
+   na rua: "evite fazer um movimento padronizado caminhando, deixando
+   eles mais espalhados"): cada um num lugar sorteado dele, a PERTO m ou
+   mais dos outros, numa faixa de LARGURA m (que aperta onde a rua
+   aperta, perto do cordão e na abertura da revista) com AREA m² por
+   pessoa; o desenho respira devagar (uma onda que passa pelo bonde) e
+   cada um balança pro lado no tempo dele. Parado (a revista), o bonde
+   encolhe: quem vem atrás anda até APERTA do comprimento, e na saída o
+   da frente vai primeiro. Antes de sair, a torcida fica em RODINHAS na
+   frente da sede, confraternizando, e cada um sai da rodinha a tempo de
+   pegar o lugar dele no bonde.
+   NO PORTÃO, AS RAIAS (rotas_estadios.js): cada um vai pra raia do lado
+   dele no bonde, anda nela até a parada na frente da catraca e espera a
+   vez — CATRACA s cada um, e cada raia tem a sua catraca, então o
+   portão de cinco raias anda cinco vezes mais rápido; na fila da raia,
+   NA_FILA m um do outro. Passou, volta pro caminho da vaga dele.
 
    Unidades: as de mundo da planta (1 m = M), x pro leste, z (o y da
    planta) pro sul. O relógio do jogo em segundos do dia.
@@ -67,13 +84,16 @@ const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (enc
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
 const FOLGA_BOA = 2.5;      // m até a parede: daí pra mais, o passo custa 1
 const FOLGA_MIN = 0.7;      // m: com menos, o bonde não passa
-const MARCHA = 1.25;        // m/s, o bonde na rua
-const DENTRO = 1.05;        // m/s, na fila, na escada, no corredor
-const ESPACO = 0.9;         // m entre as fileiras do bonde
-const LADO = 0.8;           // m entre um e outro na fileira
-const LARG = 4;             // gente por fileira
-const CATRACA = 1.2;        // s entre um e o próximo na catraca
+const MARCHA = 1.25;        // m/s, o bonde na rua (e na raia do portão)
+const DENTRO = 1.05;        // m/s, depois da catraca: na escada, no corredor
+const AREA = 1.9;           // m² de rua por pessoa no bonde andando (a massa solta da foto, não a fileira)
+const LARGURA = 4.4;        // m: a largura do bonde, onde a rua deixa
+const PERTO = 0.95;         // m: o mínimo entre dois no desenho do bonde
+const APERTA = 0.5;         // parado (a revista), o bonde encolhe até esta fração do comprimento
+const CATRACA = 2.0;        // s de cada um na catraca (cada raia tem a sua)
+const NA_FILA = 0.65;       // m entre um e o da frente, na fila da raia
 const REVISTA = 1.5;        // s de revista por pessoa (o bonde inteiro espera)
+const PM_POR_TORCEDOR = 0.25; // a PM do jogo: um PM pra cada 4 torcedores das torcidas do jogo (em bonecos, os dois)
 const ENCONTRO = 60;        // m: rivais mais perto que isso na cidade é encontro
 const TRAVESSIA = 15;       // m: as rotas de dois rivais mais perto que isso na cidade é um cruzamento (a PM fecha)
 const MARGEM = 300;         // s: num cruzamento, o primeiro passa (o rabo) pelo menos isso antes de o segundo chegar
@@ -304,6 +324,55 @@ function Trilha(pts) {
 }
 
 /* ======================================================
+   O BONDE SOLTO: o sorteio, o desenho e as contas de linha
+   ====================================================== */
+/* um sorteio que se repete (a mesma torcida, o mesmo desenho) */
+function semente(txt) {
+  let h = 2166136261;
+  for (let i = 0; i < txt.length; i++) h = Math.imul(h ^ txt.charCodeAt(i), 16777619);
+  return () => { h = h + 0x6D2B79F5 | 0; let t = Math.imul(h ^ h >>> 15, 1 | h); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const liso = k => k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k);
+/* O DESENHO DO BONDE: cada um num lugar solto dentro de uma faixa de
+   LARGURA m, com o comprimento pra AREA m² por pessoa, a PERTO m ou
+   mais dos outros (sorteado até caber; se não cabe, o mínimo afrouxa);
+   o primeiro na frente, no meio. Em metros: `o` atrás da cabeça, `l` pro
+   lado. E o que é de cada um: a fase e o tempo do balanço pro lado, o
+   tamanho do passo e a demora pra sair da rodinha */
+function desenhoDoBonde(n, rnd) {
+  const comp = Math.max(1.5, n * AREA / LARGURA), pts = [{ o: 0, l: 0 }];
+  let dmin = PERTO, falhas = 0;
+  while (pts.length < n) {
+    const o = rnd() * comp, l = (rnd() - 0.5) * LARGURA;
+    if (pts.every(q => (q.o - o) ** 2 + (q.l - l) ** 2 >= dmin * dmin)) { pts.push({ o, l }); falhas = 0; }
+    else if (++falhas > 300) { dmin *= 0.95; falhas = 0; }
+  }
+  pts.sort((a, b) => a.o - b.o);
+  for (const q of pts) { q.fl = rnd() * 6.28; q.wl = 2 * Math.PI / (5 + rnd() * 4); q.passo = 0.95 + rnd() * 0.3; q.reage = rnd() * 5; }
+  return pts;
+}
+/* o ponto da linha V ([x, y, z] em fila) onde ela passa s* (a primeira vez), pela conta `sDe`; e o índice do ponto seguinte */
+function depoisDe(V, sDe, sAlvo) {
+  for (let i = 1; i < V.length; i++) {
+    const s0 = sDe(V[i - 1]), s1 = sDe(V[i]);
+    if (s1 < sAlvo) continue;
+    if (s0 >= sAlvo) return { p: V[i - 1], i };
+    const k = (sAlvo - s0) / (s1 - s0);
+    return { p: [V[i - 1][0] + (V[i][0] - V[i - 1][0]) * k, V[i - 1][1] + (V[i][1] - V[i - 1][1]) * k, V[i - 1][2] + (V[i][2] - V[i - 1][2]) * k], i };
+  }
+  return null;
+}
+/* o ponto a `d` do começo da linha V (o comprimento em x, z) */
+function naLinha(V, d) {
+  for (let i = 1; i < V.length; i++) {
+    const l = Math.hypot(V[i][0] - V[i - 1][0], V[i][2] - V[i - 1][2]);
+    if (l >= d) { const k = l ? d / l : 0; return { p: [V[i - 1][0] + (V[i][0] - V[i - 1][0]) * k, V[i - 1][1] + (V[i][1] - V[i - 1][1]) * k, V[i - 1][2] + (V[i][2] - V[i - 1][2]) * k], i }; }
+    d -= l;
+  }
+  return { p: V[V.length - 1], i: V.length - 1 };
+}
+
+/* ======================================================
    O PLANO: o jogo, as zonas, a PM, as rotas e o horário
    ====================================================== */
 export function planejar(ctx, escolha = {}) {
@@ -356,6 +425,13 @@ export function planejar(ctx, escolha = {}) {
     });
   }
   if (!bondes.some(b => b.lado === 'mandante') || !bondes.some(b => b.lado === 'visitante')) return { erro: 'Falta torcida com sede de um dos dois clubes.' };
+  /* o desenho de cada bonde (o lugar solto de cada um) e o comprimento dele (a cauda, m) */
+  for (const b of bondes) {
+    const rnd = semente(b.t.id + '|' + b.n);
+    b.povo = desenhoDoBonde(b.n, rnd);
+    b.cauda = b.povo[b.n - 1].o;
+    b.onda = [rnd() * 6.28, rnd() * 6.28];
+  }
   marca('jogo');
 
   /* A GRADE DA ROTA (o alcance da grade do passo só é feito na primeira vez que alguém precisa) */
@@ -677,9 +753,9 @@ export function planejar(ctx, escolha = {}) {
     if (T < s1 + tRevista(b)) return b.sRevista;
     return Math.min(b.rua.L, b.sRevista + (T - s1 - tRevista(b)) * MARCHA * M);
   };
-  /* a hora em que a cabeça passa no ponto s da rua; e o rabo (o bonde tem uma fileira a cada ESPACO m) */
+  /* a hora em que a cabeça passa no ponto s da rua; e o rabo (o bonde tem `cauda` m) */
   const quando = (b, s) => b.sai + s / M / MARCHA + (s > b.sRevista ? tRevista(b) : 0);
-  const quandoRabo = (b, s) => quando(b, s) + Math.ceil(b.n / LARG) * ESPACO / MARCHA;
+  const quandoRabo = (b, s) => quando(b, s) + b.cauda / MARCHA;
   const Q = {};
   const naCidade = (b, s) => { const p = b.rua.ponto(s, Q), K = R.celula(p.x, p.z); return K < 0 || !noArredor[K]; };
   /* a menor distância entre dois bondes rivais na cidade (fora dos arredores): a cabeça e o rabo de cada um */
@@ -691,7 +767,7 @@ export function planejar(ctx, escolha = {}) {
       const sa = cabeca(a, t), sb = cabeca(b, t);
       if (t < a.sai || t < b.sai) continue;
       if (sa >= a.rua.L - 1 || sb >= b.rua.L - 1) continue;
-      for (const oa of [0, a.n / LARG * ESPACO * M]) for (const ob of [0, b.n / LARG * ESPACO * M]) {
+      for (const oa of [0, a.cauda * M]) for (const ob of [0, b.cauda * M]) {
         const s1 = Math.max(0, sa - oa), s2 = Math.max(0, sb - ob);
         if (!naCidade(a, s1) || !naCidade(b, s2)) continue;
         a.rua.ponto(s1, pa); b.rua.ponto(s2, pb);
@@ -747,12 +823,130 @@ export function planejar(ctx, escolha = {}) {
     b.sai = base - melhor.adianta * 60;
     b.adiantou = melhor.adianta;
   }
+  /* A FAIXA DE CADA RUA: quanto se anda pra cada lado da rota (m), a cada
+     metro dela — até onde a rua acaba (a folga de 0,7 m da parede, do
+     carro, do poste) ou até o cordão —, com a abertura de 3,2 m da
+     revista apertando os dois lados; no pior de 2 m pra frente e pra trás,
+     e alisada (o bonde não pula de largura de uma célula pra outra). A
+     rota às vezes corre rente a uma parede: o bonde vai pro lado da rua */
+  const alisar = w => {
+    const n = w.length, mn = new Float32Array(n), out = new Float32Array(n);
+    for (let i = 0; i < n; i++) { let v = Infinity; for (let j = Math.max(0, i - 2); j <= Math.min(n - 1, i + 2); j++) v = Math.min(v, w[j]); mn[i] = v; }
+    for (let i = 0; i < n; i++) { let sm = 0, c = 0; for (let j = Math.max(0, i - 2); j <= Math.min(n - 1, i + 2); j++) { sm += mn[j]; c++; } out[i] = Math.min(sm / c, w[i] + 0.15); }
+    return out;
+  };
+  for (const b of vivos) {
+    const n = Math.ceil(b.rua.L / M) + 1, lados = [new Float32Array(n), new Float32Array(n)];
+    for (let i = 0; i < n; i++) {
+      b.rua.ponto(i * M, Q);
+      const nx = Q.tz, nz = -Q.tx, dr = Math.abs(i * M - b.sRevista) / M, teto = dr < 9 ? 1.0 + Math.max(0, dr - 3) * 0.3 : 6;
+      for (const [j, sg] of [[0, -1], [1, 1]]) {
+        let d = 0;
+        for (let k = 1; k <= 12; k++) {
+          const K = R.celula(Q.x + nx * sg * k * 0.5 * M, Q.z + nz * sg * k * 0.5 * M);
+          if (K < 0 || !R.anda[K] || divisa[K]) break;
+          d = k * 0.5;
+        }
+        lados[j][i] = Math.min(d, teto);
+      }
+    }
+    b.lados = lados.map(alisar);
+  }
+  /* a faixa do bonde no ponto s da rota: o meio dela (m pro lado da rota)
+     e a meia largura — LARGURA onde cabe, centrada na rota, e empurrada
+     pro lado que tem rua quando a rota corre rente a uma parede */
+  const faixaEm = (b, s) => {
+    const n = b.lados[0].length, i = Math.min(n - 1, Math.max(0, s / M)), i0 = Math.floor(i), i1 = Math.min(n - 1, i0 + 1), k = i - i0;
+    const wl = b.lados[0][i0] + (b.lados[0][i1] - b.lados[0][i0]) * k, wr = b.lados[1][i0] + (b.lados[1][i1] - b.lados[1][i0]) * k;
+    const livre = Math.max(0, wl + wr - 0.3);
+    if (livre <= LARGURA) return { c: (wr - wl) / 2, h: livre / 2 };
+    return { c: clamp(0, -wl + 0.15 + LARGURA / 2, wr - 0.15 - LARGURA / 2), h: LARGURA / 2 };
+  };
+  /* onde o bonde se forma na saída: o primeiro ponto da rota com 2,4 m de faixa (de 3 a 12 m da porta) */
+  for (const b of vivos) {
+    let i0 = 3;
+    while (i0 < 12 && i0 * M < b.rua.L * 0.5 && faixaEm(b, i0 * M).h < 1.2) i0++;
+    b.s0 = Math.min(i0 * M, b.rua.L * 0.5);
+  }
+  /* o lado (m) de quem está na fração u (−1 a 1) da faixa no ponto s */
+  const ladoEm = (b, s, u) => { const f = faixaEm(b, s); return f.c + clamp(u, -1, 1) * f.h; };
+  /* A CHEGADA NO PORTÃO (rotas_estadios.js): a raia de cada um, o caminho
+     dele (a raia até a parada na frente da catraca; dali, a catraca e o
+     caminho da vaga dele) e a vez dele na catraca */
+  function prepararRaias(b) {
+    const RP = rotas.portoes[b.nPortao], S = b.S, eixo = RP.eixo;
+    const sDe = p => (p[0] - eixo.P0[0]) * eixo.w[0] + (p[2] - eixo.P0[1]) * eixo.w[1];
+    const cam = [];
+    for (let i = 0; i < S.caminho.length; i += 3) cam.push([S.caminho[i], S.caminho[i + 1], S.caminho[i + 2]]);
+    const mascaras = S.raias || [];
+    /* o fim da rua (a boca) e o lado de quem chega nela */
+    const L = b.rua.L, E = b.rua.pts[b.rua.pts.length - 1];
+    b.rua.ponto(Math.max(0, L - 0.5 * M), Q);
+    const nx = Q.tz, nz = -Q.tx;
+    const raias = !eixo ? [] : (RP.raias || []).map((r, k) => {
+      const P = [];
+      for (let i = 0; i < r.pts.length; i += 3) P.push([r.pts[i], r.pts[i + 1], r.pts[i + 2]]);
+      return { k, P, para: r.para };
+    });
+    b.raias = raias;
+    /* onde cada um chega no fim da rua: no lugar dele no bonde (o lado dele, na largura de lá) */
+    const fins = b.povo.map(q => { const lat = ladoEm(b, L, q.l / (LARGURA / 2)); return [E[0] + nx * lat * M, E[2] + nz * lat * M]; });
+    /* cada um na raia mais perto de onde ele chega, entre as que servem pra
+       vaga dele, e as raias com a mesma gente (o mais perto primeiro) */
+    const cap = Math.ceil(b.n / Math.max(1, raias.length)), cheia = new Int32Array(raias.length), pares = [];
+    const entrada = raias.map(r => mundo(...r.P[0]));
+    b.povo.forEach((q, m) => raias.forEach((r, k) => { if ((mascaras[b.vaga0 + m] || 0) >> r.k & 1) pares.push([Math.hypot(entrada[k][0] - fins[m][0], entrada[k][2] - fins[m][1]), m, k]); }));
+    pares.sort((a, c) => a[0] - c[0]);
+    b.pessoas = b.povo.map((q, m) => ({ m, raia: -1 }));
+    for (const [, m, k] of pares) if (b.pessoas[m].raia < 0 && cheia[k] < cap) { b.pessoas[m].raia = k; cheia[k]++; }
+    /* (quem sobrou sem raia livre: a que serve pra ele mais perto, mesmo cheia) */
+    for (const [, m, k] of pares) if (b.pessoas[m].raia < 0) b.pessoas[m].raia = k;
+    for (const g of b.pessoas) {
+      const vg = S.vagas[b.vaga0 + g.m], V = cam.slice(0, vg[0] + 1);
+      for (let i = 1; i < vg.length; i += 3) V.push([vg[i], vg[i + 1], vg[i + 2]]);
+      const r = raias[g.raia];
+      let antes, depois;
+      const x = r && depoisDe(V, sDe, sDe(r.P[r.P.length - 1]) + 0.5);
+      if (x) { antes = r.P.slice(0, r.para + 1); depois = r.P.slice(r.para).concat([x.p], V.slice(x.i)); }
+      else {
+        /* sem raia (a rota de dentro é de antes das raias): o caminho da vaga, com a parada 7 m depois da boca */
+        g.raia = -1;
+        const y = naLinha(V, 7);
+        antes = V.slice(1, y.i).concat([y.p]); depois = [y.p].concat(V.slice(y.i));
+      }
+      const [ex, ez] = fins[g.m];
+      g.fila = Trilha([[ex, ctx.chaoDaRua(ex, ez), ez], ...antes.map(p => mundo(...p))]);
+      g.dentro = Trilha(depois.map(p => mundo(...p)));
+      g.Lf = g.fila.L / M;
+    }
+  }
+  /* a vez de cada um: chega na parada (livre, no passo do bonde) e passa
+     CATRACA s depois dela ou do da frente na raia, o que for mais tarde */
+  function filaDo(b) {
+    b.chega = b.sai + durRua(b);
+    b.passa = new Float64Array(b.n);
+    const porRaia = new Map();
+    for (const g of b.pessoas) {
+      g.tChega = b.chega + (g.Lf + b.povo[g.m].o) / MARCHA;
+      if (!porRaia.has(g.raia)) porRaia.set(g.raia, []);
+      porRaia.get(g.raia).push(g);
+    }
+    for (const lista of porRaia.values()) {
+      lista.sort((a, c) => a.tChega - c.tChega);
+      let ant = -Infinity;
+      lista.forEach((g, j) => { g.j = j; g.mesmaRaia = lista; ant = Math.max(g.tChega, ant) + CATRACA; b.passa[g.m] = g.passa = ant; });
+    }
+    b.fim = Math.max(...b.pessoas.map(g => g.passa + g.dentro.L / M / DENTRO));
+  }
+  for (const b of vivos) prepararRaias(b);
+  for (const b of vivos) if (b.lado === 'visitante') filaDo(b);
+
   /* o corredor abre um minuto depois do último visitante passar a catraca;
      o mandante que anda nele sai mais tarde, se precisar, pra entrar nele
      depois disso */
   let tAbre = null;
   if (vivos.some(b => b.peloCorredor)) {
-    tAbre = Math.max(...vivos.filter(b => b.lado === 'visitante').map(b => b.sai + durRua(b) + 4 + (b.n - 1) * CATRACA)) + 60;
+    tAbre = Math.max(...vivos.filter(b => b.lado === 'visitante').map(b => Math.max(...b.passa))) + 60;
     for (const b of vivos) if (b.peloCorredor) {
       const k = b.cels.findIndex(K => noArredor[K] && (zonaV[K] === 1 || divisa[K]));
       if (k < 0) continue;
@@ -764,6 +958,17 @@ export function planejar(ctx, escolha = {}) {
       if (atraso > 0) { b.sai += atraso; b.esperou = Math.ceil(atraso / 60); }
     }
   }
+  for (const b of vivos) if (b.lado === 'mandante') filaDo(b);
+  /* QUANTO CADA UM ESTÁ ATRÁS DA CABEÇA (m) na hora t: o `o` dele, menos
+     o que o bonde encolheu parado na revista — quem vem atrás anda até
+     ficar a APERTA do lugar dele; na saída, a cabeça anda e cada um só
+     sai quando o espaço dele abre de novo */
+  const atras = (b, o, t) => {
+    const t1 = b.sai + b.sRevista / M / MARCHA, t2 = t1 + tRevista(b);
+    if (t <= t1) return o;
+    const oParado = Math.max(o * APERTA, o - MARCHA * (Math.min(t, t2) - t1));
+    return t <= t2 ? oParado : Math.min(o, oParado + MARCHA * (t - t2));
+  };
   let menor = { d: Infinity };
   for (const a of vivos) for (const o of rivaisDe(a)) if (a.lado === 'mandante') { const e = encontro(a, o); if (e.d < menor.d) menor = { ...e, a, b: o }; }
   /* AS TRAVESSIAS: os cruzamentos (os de 25 m um do outro viram um só).
@@ -786,20 +991,8 @@ export function planejar(ctx, escolha = {}) {
   for (const v of travessias) v.folga = v.chega - v.libera + 60;
   marca('horario');
 
-  /* dentro do estádio: a hora em que cada um passa a catraca e o caminho dele até a vaga */
-  for (const b of vivos) {
-    b.chega = b.sai + durRua(b);
-    const S = b.S, cam = [];
-    for (let i = 0; i < S.caminho.length; i += 3) cam.push(mundo(S.caminho[i], S.caminho[i + 1], S.caminho[i + 2]));
-    b.dentro = [];
-    for (let m = 0; m < b.n; m++) {
-      const vg = S.vagas[b.vaga0 + m], a = vg[0], pts = cam.slice(0, a + 1);
-      for (let i = 1; i < vg.length; i += 3) pts.push(mundo(vg[i], vg[i + 1], vg[i + 2]));
-      b.dentro.push(Trilha(pts));
-    }
-    b.entra = m => b.chega + 4 + m * CATRACA;
-    b.fim = b.entra(b.n - 1) + b.dentro[b.n - 1].L / M / DENTRO;
-  }
+  /* (o caminho de dentro de cada um, da catraca até a vaga, pro teste e pra câmera) */
+  for (const b of vivos) b.dentro = b.pessoas.map(g => g.dentro);
 
   /* A PM: o cordão divisório, a revista na boca de cada rota e, fechadas,
      as outras bocas da zona do visitante (as do mandante ficam abertas: é
@@ -810,7 +1003,7 @@ export function planejar(ctx, escolha = {}) {
   marca('pm');
   return {
     casa, fora, pares: pares.map(p => p[0].nome + ' × ' + p[1].nome), par: escolha.par || 0,
-    estadio: est, centroEst, mundo, portoes, bondes, vivos, R, zona, noArredor, divisa, raio, bocas, cordoes, pm, menor, travessias, cabeca, M, rotaVelha, longeDe, tentativas, tAbre, portoesQueAbrem: [...new Set(vivos.filter(b => b.peloCorredor).map(b => b.portao.nome))],
+    estadio: est, centroEst, mundo, portoes, bondes, vivos, R, zona, noArredor, divisa, raio, bocas, cordoes, pm, menor, travessias, cabeca, atras, ladoEm, M, rotaVelha, longeDe, tentativas, tAbre, portoesQueAbrem: [...new Set(vivos.filter(b => b.peloCorredor).map(b => b.portao.nome))],
     inicio: Math.min(...vivos.map(b => b.sai)) - 120, fimTudo: Math.max(...vivos.map(b => b.fim)), tempos
   };
 }
@@ -968,6 +1161,45 @@ export function criarDiaDeJogo(ctx) {
     return im;
   }
 
+  /* AS RODINHAS na frente da sede (o dono, 27/09/2026: "Deixe os bonecos
+     mais espalhados em frente à sede como se estivessem à vontade
+     confraternizando"): a torcida em grupos de 1 a 6 (mais de 3 e 4),
+     cada grupo em roda, virado pro meio dela, numa faixa de uns 16 m ao
+     longo da fachada e até uns 10 m pra fora (a calçada e a rua); a roda
+     (0,54 m de raio a dois, 1 m a seis) fica onde tem 0,45 m de folga em
+     volta dela, a 1,8 m ou mais das outras (se não acha, vai abrindo a
+     faixa). Um lugar por pessoa,
+     sorteado: o bonde não sai na ordem das rodinhas */
+  function rodinhas(b, R, rnd) {
+    const P0 = b.t.porta, fx = P0.fx, fz = P0.fy, ux = fz, uz = -fx;
+    const tamanhos = [];
+    for (let n = b.n; n > 0;) { const k = Math.min(n, [1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6][Math.floor(rnd() * 12)]); tamanhos.push(k); n -= k; }
+    const rodas = [], lugares = [];
+    for (const k of tamanhos) {
+      const r = k === 1 ? 0 : 0.3 + 0.12 * k;
+      let ok = null;
+      for (let tent = 0; tent < 600 && !ok; tent++) {
+        const alc = 1 + tent / 120, v = 1.3 + rnd() * 8.5 * alc, u = (rnd() - 0.5) * 16 * alc;
+        const cx = P0.x + (fx * v + ux * u) * M, cz = P0.y + (fz * v + uz * u) * M;
+        if (R.folgaEm(cx, cz) < r + 0.45) continue;
+        if (rodas.some(c => Math.hypot(c.x - cx, c.z - cz) < (c.r + r + 1.8) * M)) continue;
+        ok = { x: cx, z: cz, r };
+      }
+      /* (não coube: fica na porta, um atrás do outro) */
+      if (!ok) ok = { x: P0.x + fx * (1.2 + rodas.length * 0.6) * M, z: P0.y + fz * (1.2 + rodas.length * 0.6) * M, r: 0 };
+      rodas.push(ok);
+      const a0 = rnd() * 6.28;
+      for (let i = 0; i < k; i++) {
+        const a = a0 + 6.28 * i / k + (rnd() - 0.5) * 0.4, rr = ok.r ? ok.r + (rnd() - 0.5) * 0.1 : 0;
+        const x = ok.x + Math.cos(a) * rr * M, z = ok.z + Math.sin(a) * rr * M;
+        const rumo = k === 1 || !ok.r ? Math.atan2(fx, fz) + (rnd() - 0.5) * 2.4 : Math.atan2(ok.x - x, ok.z - z) + (rnd() - 0.5) * 0.4;
+        lugares.push({ x, z, rumo });
+      }
+    }
+    for (let i = lugares.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [lugares[i], lugares[j]] = [lugares[j], lugares[i]]; }
+    return lugares;
+  }
+
   /* ======================================================
      MONTAR: o plano, a PM, as fitas e os bonecos na porta da sede
      ====================================================== */
@@ -994,24 +1226,23 @@ export function criarDiaDeJogo(ctx) {
         p.pmsQueSaem.push({ pm: q.pm, fecha: [q.pm.x, q.pm.y], abre: [px + ox, pz + oz], libera: p.tAbre, rumoFecha: q.pm.rumo, rumoAbre: q.pm.rumo });
       }
     };
-    /* O CORDÃO DIVISÓRIO: a grade na divisa e os PMs de escudo virados pro visitante, 1,2 m pro lado dele */
+    /* OS POSTOS DA PM: primeiro a grade de cada um e quantos PMs ele pede
+       no máximo; os PMs vêm depois, do efetivo do jogo */
+    const postos = [];
+    /* O CORDÃO DIVISÓRIO: a grade na divisa; os PMs de escudo virados pro
+       visitante, 1,2 m pro lado dele, um a cada 1,4 m no máximo (a 2ª fila
+       a 2,4 m, se sobrar gente) */
     for (const c of p.cordoes) {
       const abre = abreCorredor && c.abre;
       poeGrades(c.a, c.b, abre ? gradesAbre : grades);
-      const L = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1]) / M, n = Math.max(2, Math.round(L / 1.4));
+      const L = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1]) / M, max = Math.max(2, Math.round(L / 1.4));
       /* o lado do visitante: a célula do visitante mais perto do meio */
       const nx = -c.dir[1], nz = c.dir[0];
       const Kv = R.celula(c.meio[0] + nx * 2 * M, c.meio[1] + nz * 2 * M), s = Kv >= 0 && p.zona[Kv] === 1 ? 1 : -1;
-      const fila = [];
-      for (let k = 0; k < n; k++) {
-        const t0 = (k + 0.5) / n, x = c.a[0] + (c.b[0] - c.a[0]) * t0 + s * nx * 1.2 * M, z = c.a[1] + (c.b[1] - c.a[1]) * t0 + s * nz * 1.2 * M;
-        if (R.folgaEm(x, z) < 0.3) continue;
-        fila.push({ pm: poePM(x, z, Math.atan2(s * nx, s * nz)) });
-      }
-      if (abre) abrirFila(fila, c.a, c.b);
+      postos.push({ tipo: 'cordao', max, max1: max, n: 0, c, abre, s, nx, nz });
       const r = rotulo(abre ? 'Cordão da PM · abre às ' + hora(p.tAbre) : 'Cordão da PM', '#1f3f9a'); r.position.set(c.meio[0], 5 * M, c.meio[1]); r.userData.prio = 2 + 1 / (1 + c.n); grupo.add(r);
     }
-    /* AS BOCAS: a fechada (só as da zona do visitante) leva a grade atravessada e dois PMs; a da revista, o funil e três */
+    /* AS BOCAS: a fechada (só as da zona do visitante) leva a grade atravessada e até dois PMs; a da revista, o funil e até três */
     for (const q of p.pm.fechadas.concat(p.pm.revistas)) {
       const nx = -q.dir[1], nz = q.dir[0];
       /* pra fora: o lado sem arredor */
@@ -1020,8 +1251,7 @@ export function criarDiaDeJogo(ctx) {
       if (!q.usada.length) {
         const abre = abreCorredor && q.abre;
         poeGrades(q.a, q.b, abre ? gradesAbre : grades);
-        const fila = [0.3, 0.7].map(k => ({ pm: poePM(q.a[0] + (q.b[0] - q.a[0]) * k - s * nx * 1.0 * M, q.a[1] + (q.b[1] - q.a[1]) * k - s * nz * 1.0 * M, Math.atan2(s * nx, s * nz)) }));
-        if (abre) abrirFila(fila, q.a, q.b);
+        postos.push({ tipo: 'fechada', max: 2, n: 0, q, abre, s, nx, nz });
       } else {
         /* a abertura de 3 m onde a rota passa */
         const b0 = q.usada[0], rp = b0.rua.ponto(b0.sRevista, {}), tRota = ((rp.x - q.a[0]) * q.dir[0] + (rp.z - q.a[1]) * q.dir[1]);
@@ -1029,17 +1259,14 @@ export function criarDiaDeJogo(ctx) {
         const pa = [q.a[0] + q.dir[0] * (tRota - abre), q.a[1] + q.dir[1] * (tRota - abre)], pb = [q.a[0] + q.dir[0] * (tRota + abre), q.a[1] + q.dir[1] * (tRota + abre)];
         if (tRota - abre > 0.5 * M) poeGrades(q.a, pa, grades);
         if (L * M - (tRota + abre) > 0.5 * M) poeGrades(pb, q.b, grades);
-        for (const [dx, dz] of [[-1.2, 1.3], [1.2, 1.3], [0, 2.4]]) {
-          const x = rp.x + q.dir[0] * dx * M + s * nx * dz * M, z = rp.z + q.dir[1] * dx * M + s * nz * dz * M;
-          poePM(x, z, Math.atan2(-s * nx, -s * nz), false);
-        }
+        postos.push({ tipo: 'revista', max: 3, n: 0, q, rp, s, nx, nz });
         const r = rotulo('Revista · ' + q.usada.map(b => b.t.sigla).join(', '), '#1f3f9a'); r.position.set(rp.x, 4.5 * M, rp.z); r.userData.prio = 1; grupo.add(r);
       }
     }
     /* AS TRAVESSIAS: na rua de quem passa depois, dos dois lados da rota
-       de quem passa antes, a grade de parede a parede e 3 PMs do lado do
-       cruzamento, virados pra fora dele; na hora de liberar, a grade sai e
-       os PMs vão pra calçada */
+       de quem passa antes, a grade de parede a parede e até 3 PMs do lado
+       do cruzamento, virados pra fora dele; na hora de liberar, a grade sai
+       e os PMs vão pra calçada */
     for (const v of p.travessias) {
       const rota = v.depois[0].rua, outra = v.antes[0].rua, gradesV = [];
       /* a distância (m) do ponto até a rota de quem passa antes, perto do cruzamento */
@@ -1055,8 +1282,88 @@ export function criarDiaDeJogo(ctx) {
         if (!ali) continue;
         const meia = Math.max(0.6, R.folgaEm(ali.x, ali.z) - 0.3), nx = ali.tz, nz = -ali.tx;
         poeGrades([ali.x - nx * meia * M, ali.z - nz * meia * M], [ali.x + nx * meia * M, ali.z + nz * meia * M], gradesV);
-        const rumoFecha = Math.atan2(lado * ali.tx, lado * ali.tz);
-        for (let i = 0; i < 3; i++) {
+        postos.push({ tipo: 'travessia', max: 3, n: 0, v, lado, ali, meia, nx, nz });
+      }
+      const mg = malhaDeGrades(gradesV);
+      if (mg) { mg.name = 'grades-da-travessia'; grupo.add(mg); p.gradesQueSaem.push({ malha: mg, libera: v.libera }); p.nGradesQueSaem += gradesV.length; }
+      const r = rotulo('Travessia · PM fecha até ' + hora(v.libera), '#1f3f9a'); r.position.set(v.x, 4.5 * M, v.z); r.userData.prio = 1; grupo.add(r);
+    }
+    /* A ESCOLTA: até 4 PMs com o bonde do 1º escalão visitante */
+    const escoltado = p.vivos.find(b => b.lado === 'visitante' && b.escalao === 1);
+    if (escoltado) postos.push({ tipo: 'escolta', max: 4, n: 0, b: escoltado });
+
+    /* O EFETIVO (o dono, 27/09/2026: "Coloque a PM proporcional à
+       quantidade de torcedores envolvidos no jogo, sempre"): um PM pra cada
+       1/PM_POR_TORCEDOR torcedores do jogo. Primeiro um em cada revista,
+       um de cada lado de cada travessia, um em cada cordão (o maior
+       primeiro), dois na escolta e um em cada rua fechada; o resto se
+       divide pelo que cada posto ainda pede — o cordão, um a cada 1,4 m;
+       a revista, 3; a travessia, 3 de cada lado; a escolta, 4; a rua
+       fechada, 2 — e, se ainda sobra, vira uma 2ª (3ª, 4ª) fila atrás de
+       cada cordão. Com pouca gente, sobra grade sem PM; com muita, o
+       cordão fica fundo */
+    const torcedores = p.vivos.reduce((s, b) => s + b.n, 0);
+    const efetivo = Math.max(1, Math.round(torcedores * PM_POR_TORCEDOR));
+    let resta = efetivo;
+    const da = (q, k = 1) => { const x = Math.max(0, Math.min(k, q.max - q.n, resta)); q.n += x; resta -= x; return x; };
+    const doTipo = tp => postos.filter(q => q.tipo === tp);
+    const cords = doTipo('cordao').sort((a, c) => c.max1 - a.max1);
+    for (const q of doTipo('revista')) da(q);
+    for (const q of doTipo('travessia')) da(q);
+    for (const q of cords) da(q);
+    for (const q of doTipo('escolta')) da(q, 2);
+    for (const q of doTipo('fechada')) da(q);
+    /* o resto, pelo que cada posto ainda pede (o cordão, um a cada 1,4 m;
+       a revista, a travessia, a escolta e a rua fechada, os delas); o que
+       sobra de tudo cheio, em mais uma fila atrás de cada cordão */
+    for (let filaN = 1; resta > 0 && filaN <= 4; filaN++) {
+      if (filaN > 1) { if (!cords.length) break; for (const q of cords) q.max += q.max1; }
+      const abertos = filaN === 1 ? postos : cords, livre = abertos.reduce((s, q) => s + q.max - q.n, 0);
+      if (!livre) continue;
+      const k = Math.min(1, resta / livre);
+      for (const q of abertos) da(q, Math.floor((q.max - q.n) * k));
+      for (const q of abertos.slice().sort((a, c) => (c.max - c.n) - (a.max - a.n))) if (resta > 0) da(q);
+    }
+    /* (o que ainda sobra fica atrás da revista, na fila da reserva) */
+    const revs = doTipo('revista');
+    if (resta > 0 && revs.length) for (let i = 0; resta > 0; i++) { revs[i % revs.length].max++; da(revs[i % revs.length]); }
+
+    /* OS PMs de cada posto, no número que coube a ele */
+    const livreEm = (x, z) => R.folgaEm(x, z) >= 0.3;
+    for (const q of postos) {
+      if (!q.n) continue;
+      if (q.tipo === 'cordao') {
+        const c = q.c, fila = [];
+        for (let fl = 0, feitos = 0; feitos < q.n; fl++) {
+          const nf = Math.min(q.max1, q.n - feitos), off = q.s * 1.2 * (fl + 1) * M;
+          for (let k = 0; k < nf; k++) {
+            let t0 = (k + 0.5) / nf, x, z;
+            /* (onde não cabe gente, escorrega pro lado ao longo do cordão) */
+            const L = Math.hypot(c.b[0] - c.a[0], c.b[1] - c.a[1]);
+            for (const d of [0, 0.35, -0.35, 0.7, -0.7]) {
+              const tt = clamp(t0 + d * M / L, 0, 1);
+              x = c.a[0] + (c.b[0] - c.a[0]) * tt + q.nx * off; z = c.a[1] + (c.b[1] - c.a[1]) * tt + q.nz * off;
+              if (livreEm(x, z)) break;
+            }
+            fila.push({ pm: poePM(x, z, Math.atan2(q.s * q.nx, q.s * q.nz)) });
+          }
+          feitos += nf;
+        }
+        if (q.abre) abrirFila(fila, c.a, c.b);
+      } else if (q.tipo === 'fechada') {
+        const Q0 = q.q, fila = (q.n === 1 ? [0.5] : [0.3, 0.7]).map(k => ({ pm: poePM(Q0.a[0] + (Q0.b[0] - Q0.a[0]) * k - q.s * q.nx * 1.0 * M, Q0.a[1] + (Q0.b[1] - Q0.a[1]) * k - q.s * q.nz * 1.0 * M, Math.atan2(q.s * q.nx, q.s * q.nz)) }));
+        if (q.abre) abrirFila(fila, Q0.a, Q0.b);
+      } else if (q.tipo === 'revista') {
+        const Q0 = q.q, lugares = [[-1.2, 1.3], [1.2, 1.3], [0, 2.4]];
+        /* (a reserva, se sobrou gente: uma fila 3,6 m pra fora) */
+        for (let i = 3; i < q.n; i++) lugares.push([(i - 3 - (q.n - 4) / 2) * 0.9, 3.6]);
+        for (const [dx, dz] of lugares.slice(0, q.n)) {
+          const x = q.rp.x + Q0.dir[0] * dx * M + q.s * q.nx * dz * M, z = q.rp.z + Q0.dir[1] * dx * M + q.s * q.nz * dz * M;
+          poePM(x, z, Math.atan2(-q.s * q.nx, -q.s * q.nz), false);
+        }
+      } else if (q.tipo === 'travessia') {
+        const { v, lado, ali, meia, nx, nz } = q, rumoFecha = Math.atan2(lado * ali.tx, lado * ali.tz);
+        for (const i of [[1], [0, 2], [0, 1, 2]][q.n - 1]) {
           const lat = (i - 1) * meia * 0.6, la = i === 0 ? -(meia - 0.3) : meia - 0.3, ao = -lado * (1.2 + (i === 1 ? 1.3 : 0));
           const fecha = [ali.x + nx * lat * M - lado * ali.tx * 1.2 * M, ali.z + nz * lat * M - lado * ali.tz * 1.2 * M];
           const abre = [ali.x + nx * la * M + ali.tx * ao * M, ali.z + nz * la * M + ali.tz * ao * M];
@@ -1064,10 +1371,12 @@ export function criarDiaDeJogo(ctx) {
           p.pmsQueSaem.push({ pm: poePM(fecha[0], fecha[1], rumoFecha), fecha, abre, libera: v.libera, rumoFecha, rumoAbre: Math.atan2(-sg * nx, -sg * nz) });
         }
       }
-      const mg = malhaDeGrades(gradesV);
-      if (mg) { mg.name = 'grades-da-travessia'; grupo.add(mg); p.gradesQueSaem.push({ malha: mg, libera: v.libera }); p.nGradesQueSaem += gradesV.length; }
-      const r = rotulo('Travessia · PM fecha até ' + hora(v.libera), '#1f3f9a'); r.position.set(v.x, 4.5 * M, v.z); r.userData.prio = 1; grupo.add(r);
     }
+    /* a escolta: na frente (k 0 e 1) e atrás (2 e 3) do bonde */
+    const qe = doTipo('escolta')[0];
+    p.escolta = qe && qe.n ? [[0], [0, 2], [0, 1, 2], [0, 1, 2, 3]][qe.n - 1].map(k => ({ pm: poePM(qe.b.rua.pts[0][0], qe.b.rua.pts[0][2], 0, false), k, b: qe.b })) : [];
+    const soma = tp => doTipo(tp).reduce((s, q) => s + q.n, 0);
+    p.efetivo = { torcedores, pms: policiais.length, cordoes: soma('cordao'), revistas: soma('revista'), fechadas: soma('fechada'), travessias: soma('travessia'), escolta: p.escolta.length, filas: Math.max(1, ...cords.map(q => Math.ceil(q.n / q.max1))) };
     /* o corredor que abre pro mandante: as grades dele numa malha à parte */
     const mgA = malhaDeGrades(gradesAbre);
     if (mgA) { mgA.name = 'grades-do-corredor'; grupo.add(mgA); p.gradesQueSaem.push({ malha: mgA, libera: p.tAbre }); p.nGradesQueSaem += gradesAbre.length; }
@@ -1075,9 +1384,6 @@ export function criarDiaDeJogo(ctx) {
     const im = malhaDeGrades(grades);
     if (im) { im.name = 'grades-da-pm'; grupo.add(im); }
     p.nGrades = grades.length + p.nGradesQueSaem;
-    /* A ESCOLTA: 4 PMs com o bonde do 1º escalão visitante */
-    const escoltado = p.vivos.find(b => b.lado === 'visitante' && b.escalao === 1);
-    p.escolta = escoltado ? [0, 1, 2, 3].map(k => ({ pm: poePM(escoltado.rua.pts[0][0], escoltado.rua.pts[0][2], 0, false), k, b: escoltado })) : [];
     p.nPMs = policiais.length;
     /* AS FITAS das rotas e o rótulo de cada sede */
     p.fitas = [];
@@ -1086,18 +1392,23 @@ export function criarDiaDeJogo(ctx) {
       const r = rotulo(`${b.t.sigla} · ${b.n}`, b.cor, luz(b.cor) > 150 ? '#1a1a1a' : '#fff'); r.userData.prio = 0; b.rotulo = r; grupo.add(r);
     }
     const z = chaoDasZonas(p); if (z) { z.name = 'zonas'; grupo.add(z); p.chaoZonas = z; }
-    /* OS BONECOS: cada um com o lugar na porta da sede (a torcida junta na calçada, virada pra rua) */
+    /* OS BONECOS: na frente da sede, em rodinhas (a festa antes de sair);
+       cada um sai da rodinha a tempo de pegar o lugar dele no bonde, lá
+       onde o bonde se forma (s0) */
     for (const b of p.vivos) {
-      const P0 = b.t.porta, fx = P0.fx, fz = P0.fy;
+      const lugares = rodinhas(b, R, semente(b.t.id + '|festa|' + b.n));
+      b.rua.ponto(b.s0, Q);
       b.gente = [];
       for (let m = 0; m < b.n; m++) {
-        const r = Math.floor(m / 6), c = m % 6;
-        let gx = P0.x + fx * (0.5 + r * 0.8) * M + fz * (c - 2.5) * 0.8 * M, gz = P0.y + fz * (0.5 + r * 0.8) * M - fx * (c - 2.5) * 0.8 * M;
+        const lg = lugares[m], q = b.povo[m];
         const d = { nome: b.t.sigla + ' ' + (m + 1), spawn: b.t.id, torcida: b.t.sigla, cor: b.t.cor, cor2: b.t.cor2, cor3: b.t.cor3 || undefined,
-                    x: gx, y: gz, alt: ctx.chaoDaRua(gx, gz), rumo: Math.atan2(fx, fz), vivo: true, passada: 1.15,
+                    x: lg.x, y: lg.z, alt: ctx.chaoDaRua(lg.x, lg.z), rumo: lg.rumo, vivo: true, passada: 1.15, jeito: 'festa',
                     derrubado: 0, golpe: 0, apanhou: 0, atordoado: 0, esquivou: 0, tremor: 0, defendendo: 0, hostil: 0, inimigoPerto: 0, chamou: -99, linha: 'frente' };
-        const junto = [gx, gz];
-        b.gente.push({ d, junto, m, dJunto: Math.hypot(junto[0] - b.rua.pts[0][0], junto[1] - b.rua.pts[0][2]) });
+        /* o lugar dele no bonde lá no s0, e quanto ele leva andando até lá */
+        const lat = p.ladoEm(b, b.s0, q.l / (LARGURA / 2)), px = Q.x + Q.tz * lat * M, pz = Q.z - Q.tx * lat * M;
+        const T = Math.hypot(px - lg.x, pz - lg.z) / M / (MARCHA * 1.1) + 0.6;
+        const tLugar = b.sai + (b.s0 / M + q.o) / MARCHA;
+        b.gente.push({ d, m, festa: [lg.x, lg.z], festaAlt: d.alt, festaRumo: lg.rumo, passada: 1.1 * q.passo, T, sai: Math.max(b.sai + (m ? q.reage : 0), tLugar - T) });
         discos.push(d);
       }
     }
@@ -1124,61 +1435,78 @@ export function criarDiaDeJogo(ctx) {
      O PASSO DO RELÓGIO: cada boneco onde deve estar na hora t
      ====================================================== */
   const estadoDe = (b, m) => {
+    const g = b.pessoas[m];
     if (t < b.sai) return 'na sede';
-    const e = b.entra(m);
-    if (t >= e) { const s = (t - e) * DENTRO * M; return s >= b.dentro[m].L ? 'no lugar' : 'entrando'; }
+    if (t >= g.passa) { const s = (t - g.passa) * DENTRO * M; return s >= g.dentro.L ? 'no lugar' : 'entrando'; }
     const sh = plano.cabeca(b, t);
     if (sh >= b.rua.L - 1) return 'na fila';
     if (Math.abs(sh - b.sRevista) < 1 && t - b.sai > b.sRevista / M / MARCHA) return 'na revista';
     return 'andando';
   };
   const suave = (a, b, k) => a + (b - a) * k;
+  /* o relógio de verdade (o balanço de cada um pro lado não corre a 30×) */
+  let tReal = 0;
   function atualizar(dt) {
     if (!plano) return;
     const p = plano;
+    tReal += dt;
     for (const b of p.vivos) {
       const sh = p.cabeca(b, t), L = b.rua.L;
-      /* quantos já passaram a catraca (a fila anda) */
-      let dentro = 0; while (dentro < b.n && b.entra(dentro) <= t) dentro++;
+      /* quantos já passaram a catraca */
+      let dentro = 0; for (const g of b.pessoas) if (g.passa <= t) dentro++;
       b.dentroN = dentro;
       let noLugar = 0;
-      for (const g of b.gente) {
-        const d = g.d, m = g.m;
+      /* a cabeça, com a raia depois da boca: quem vem atrás continua no passo do bonde */
+      const cab = t <= b.chega ? sh : L + (t - b.chega) * MARCHA * M;
+      /* o desenho respira andando e para quieto com o bonde parado (a revista) */
+      const t1 = b.sai + b.sRevista / M / MARCHA, t2 = t1 + b.n * REVISTA;
+      const anda = 1 - liso((t - t1 + 3) / 3) * (1 - liso((t - t2) / 5));
+      for (const gg of b.gente) {
+        const d = gg.d, m = gg.m, g = b.pessoas[m], q = b.povo[m];
         const x0 = d.x, z0 = d.y;
-        const e = b.entra(m);
-        if (t >= e) {
-          /* DENTRO: pela rota do estádio até a vaga */
-          const tr = b.dentro[m], s = (t - e) * DENTRO * M;
+        d.passada = gg.passada * Math.max(1, rodando ? vezes : 1); d._cacando = false;
+        if (t >= g.passa) {
+          /* DENTRO: da catraca até a vaga */
+          const tr = g.dentro, s = (t - g.passa) * DENTRO * M;
           tr.ponto(s, Q);
           d.x = Q.x; d.y = Q.z;
           const yc = ctx.chaoDoEstadio ? ctx.chaoDoEstadio(Q.x, Q.z, d.alt ?? Q.y) : NaN;
           d.alt = yc === yc && Math.abs(yc - Q.y) < 1.2 * M ? suave(d.alt ?? yc, yc, 0.5) : Q.y;
+          d.jeito = undefined;
           if (s >= tr.L) { noLugar++; d.rumo = Math.atan2(p.centroEst[0] - d.x, p.centroEst[2] - d.y); }
+          else { const mx = d.x - x0, mz = d.y - z0; if (mx * mx + mz * mz > 1e-4) d.rumo = Math.atan2(mx, mz); }
           continue;
         }
-        /* NA RUA: a fileira dele atrás da cabeça; na boca vira fila */
-        const r = Math.floor(m / LARG), c = m % LARG;
-        let s = sh - (r * ESPACO + (c % 2) * 0.3) * M;
-        const fila = m - dentro;
-        s = Math.min(s, L - (fila * 0.7 + 0.4) * M);
-        if (s + g.dJunto <= 0 || t < b.sai) {
-          /* ainda na porta da sede */
-          d.x = g.junto[0]; d.y = g.junto[1]; d.alt = ctx.chaoDaRua(d.x, d.y);
+        if (t < gg.sai) {
+          /* NA PORTA DA SEDE, na rodinha */
+          d.x = gg.festa[0]; d.y = gg.festa[1]; d.alt = gg.festaAlt; d.rumo = gg.festaRumo; d.jeito = 'festa';
           continue;
         }
-        if (s < 0) {
-          /* da porta até o começo da rota */
-          const k = clamp((s + g.dJunto) / g.dJunto, 0, 1), p0 = b.rua.pts[0];
-          d.x = g.junto[0] + (p0[0] - g.junto[0]) * k; d.y = g.junto[1] + (p0[2] - g.junto[1]) * k;
+        /* NA RUA E NA RAIA: o lugar dele no bonde (com a onda que passa
+           pelo desenho, que some perto do portão), até a fila da raia
+           dele deixar — ela anda um NA_FILA a cada um que passa a catraca */
+        const perto = clamp((L - (cab - q.o * M)) / (12 * M), 0, 1);
+        const onda = anda * perto * (0.5 * Math.sin(q.o * 2 * Math.PI / 14 + t * 2 * Math.PI / 47 + b.onda[0]) + 0.25 * Math.sin(q.l * 2 * Math.PI / 7 + t * 2 * Math.PI / 29 + b.onda[1]));
+        const livre = cab - (p.atras(b, q.o, t) - onda) * M;
+        let adiante = g.j;
+        for (const h of g.mesmaRaia) { if (h.j >= g.j) break; adiante -= liso((t - h.passa) / 0.6); }
+        const lim = L + g.fila.L - adiante * NA_FILA * M, X = Math.min(livre, lim);
+        let x, z, alt;
+        if (X > L) {
+          g.fila.ponto(X - L, Q); x = Q.x; z = Q.z;
+          const yc = ctx.chaoDoEstadio ? ctx.chaoDoEstadio(x, z, d.alt ?? Q.y) : NaN;
+          alt = yc === yc && Math.abs(yc - Q.y) < 1.2 * M ? yc : ctx.chaoDaRua(x, z);
         } else {
+          const s = Math.max(b.s0, X);
           b.rua.ponto(s, Q);
-          /* o lado dele na fileira: estreita onde a rua estreita, e some perto da boca (a fila) */
-          const folga = p.R.folgaEm(Q.x, Q.z), max = Math.max(0, folga - 0.6);
-          let lat = clamp((c - (LARG - 1) / 2) * LADO, -max, max);
-          lat *= clamp((L - s) / (8 * M), 0, 1) * clamp(s / (3 * M), 0, 1);
-          d.x = Q.x + Q.tz * lat * M; d.y = Q.z - Q.tx * lat * M;
+          const lat = p.ladoEm(b, s, q.l / (LARGURA / 2)) + 0.1 * anda * perto * Math.sin(tReal * q.wl + q.fl);
+          x = Q.x + Q.tz * lat * M; z = Q.z - Q.tx * lat * M; alt = ctx.chaoDaRua(x, z);
         }
-        d.alt = ctx.chaoDaRua(d.x, d.y);
+        /* saindo da rodinha: da festa até o lugar dele no bonde */
+        const k = liso((t - gg.sai) / gg.T);
+        if (k < 1) { x = gg.festa[0] + (x - gg.festa[0]) * k; z = gg.festa[1] + (z - gg.festa[1]) * k; alt = ctx.chaoDaRua(x, z); }
+        d.x = x; d.y = z; d.alt = alt;
+        d.jeito = lim < livre - 0.05 * M ? 'fila' : 'bonde';
         const mx = d.x - x0, mz = d.y - z0;
         if (mx * mx + mz * mz > 1e-4) d.rumo = Math.atan2(mx, mz);
       }
@@ -1186,12 +1514,10 @@ export function criarDiaDeJogo(ctx) {
       /* o rótulo em cima da cabeça do bonde (ou em cima da torcida, no lugar) */
       const lider = b.gente[0].d;
       b.rotulo.position.set(lider.x, (lider.alt || 0) + 3.4 * M, lider.y);
-      /* a passada: o relógio acelerado não pode virar corrida */
-      for (const g of b.gente) { g.d.passada = 1.15 * Math.max(1, rodando ? vezes : 1); g.d._cacando = false; }
     }
-    /* a escolta: dois na frente e dois atrás do bonde, até a revista */
+    /* a escolta: na frente e atrás do bonde, até a revista */
     for (const e of p.escolta) {
-      const b = e.b, sh = p.cabeca(b, t), atras = (Math.ceil(b.n / LARG) * ESPACO + 1.5) * M;
+      const b = e.b, sh = p.cabeca(b, t), atras = (b.cauda + 1.5) * M;
       const s = Math.min(e.k < 2 ? sh + 2 * M : Math.max(0, sh - atras), b.sRevista - (e.k < 2 ? -0 : 3 * M));
       b.rua.ponto(Math.max(0, s), Q2);
       const folga = p.R.folgaEm(Q2.x, Q2.z), lat = Math.min(2.2, Math.max(0.6, folga - 0.6)) * (e.k % 2 ? 1 : -1);
@@ -1243,8 +1569,7 @@ export function criarDiaDeJogo(ctx) {
     const p = plano;
     if (!p || p.erro) return;
     const menor = p.menor && p.menor.d < Infinity ? p.menor : null;
-    const pmN = p.pm;
-    const nCord = policiais.length - p.escolta.length;
+    const pmN = p.pm, ef = p.efetivo;
     painel.innerHTML = cabecalho() + `
       <h2>${esc(p.casa.nome)} × ${esc(p.fora.nome)}</h2>
       <p class="cj-onde">${esc(p.estadio.nome)} · domingo, bola rolando às 16h00</p>
@@ -1256,7 +1581,7 @@ export function criarDiaDeJogo(ctx) {
       <p class="cj-lado">Visitante · portão 3</p><ul>${p.vivos.filter(b => b.lado === 'visitante').map(linhaDe).join('')}</ul>
       ${p.bondes.filter(b => !b.rua).map(b => `<p class="cj-aviso ruim">${esc(b.t.sigla)}: ${esc(b.erro || 'sem rota')}</p>`).join('')}
       ${p.rotaVelha ? `<p class="cj-aviso ruim">O ${esc(p.estadio.modelo.replace('estadio-', 'estádio de ') + ' mil')} mudou depois das rotas de dentro dele: dentro do estádio a torcida pode atravessar parede. Rode ferramentas/planta_html/rotas_estadios.mjs de novo.</p>` : ''}
-      <p class="cj-pm"><b>A PM</b>: ${pmN.cordoes.length} cordão${pmN.cordoes.length === 1 ? '' : 'ões'} na divisa das zonas (a verde é do mandante, a vermelha do visitante), ${pmN.revistas.length} revista${pmN.revistas.length === 1 ? '' : 's'} e ${pmN.fechadas.length} rua${pmN.fechadas.length === 1 ? '' : 's'} fechada${pmN.fechadas.length === 1 ? '' : 's'} na borda dos arredores (${Math.round(p.raio)} m de rua em volta dos portões)${p.travessias.length ? `, ${p.travessias.length} travessia${p.travessias.length === 1 ? '' : 's'} na cidade` : ''}${p.longeDe.length && p.tAbre == null ? ` (o corredor do visitante foi traçado longe do ${esc(p.longeDe.map(n => n.toLowerCase()).join(' e do '))}, que ele deixava ilhado)` : ''} · ${nCord} PMs parados, ${p.escolta.length} na escolta do visitante · ${p.nGrades} grades.${p.tAbre != null ? ` O ${esc(p.portoesQueAbrem.map(n => n.toLowerCase()).join(' e o '))} fica no caminho do visitante (o mapa não deixa outro): a PM segura o corredor até o último visitante entrar e só às ${hora(p.tAbre)} abre a rua pro mandante.` : ''}</p>
+      <p class="cj-pm"><b>A PM</b>: ${pmN.cordoes.length} ${pmN.cordoes.length === 1 ? 'cordão' : 'cordões'} na divisa das zonas (a verde é do mandante, a vermelha do visitante), ${pmN.revistas.length} revista${pmN.revistas.length === 1 ? '' : 's'} e ${pmN.fechadas.length} rua${pmN.fechadas.length === 1 ? '' : 's'} fechada${pmN.fechadas.length === 1 ? '' : 's'} na borda dos arredores (${Math.round(p.raio)} m de rua em volta dos portões)${p.travessias.length ? `, ${p.travessias.length} travessia${p.travessias.length === 1 ? '' : 's'} na cidade` : ''}${p.longeDe.length && p.tAbre == null ? ` (o corredor do visitante foi traçado longe do ${esc(p.longeDe.map(n => n.toLowerCase()).join(' e do '))}, que ele deixava ilhado)` : ''} · ${p.nGrades} grades. <b>${ef.pms} PMs</b>, um pra cada ${Math.round(1 / PM_POR_TORCEDOR)} torcedores do jogo (${ef.torcedores}): ${[[ef.cordoes, 'nos cordões' + (ef.filas > 1 ? ` (em ${ef.filas} filas)` : '')], [ef.revistas, 'nas revistas'], [ef.fechadas, 'nas ruas fechadas'], [ef.travessias, 'nas travessias'], [ef.escolta, 'na escolta do visitante']].filter(x => x[0]).map(x => x[0] + ' ' + x[1]).join(', ')}.${p.tAbre != null ? ` O ${esc(p.portoesQueAbrem.map(n => n.toLowerCase()).join(' e o '))} fica no caminho do visitante (o mapa não deixa outro): a PM segura o corredor até o último visitante entrar e só às ${hora(p.tAbre)} abre a rua pro mandante.` : ''}</p>
       <p class="cj-aviso${(menor && menor.d < ENCONTRO) || p.travessias.some(v => v.folga < 60) ? ' ruim' : ''}">${encontroTxt(p)}</p>
       <div class="cj-ctrl">
         <button class="cen-bt" data-jogo="plano">Ver o plano</button>
@@ -1407,10 +1732,11 @@ export function criarDiaDeJogo(ctx) {
       if (!plano || plano.erro) return plano;
       return { hora: hora(t), t, inicio: plano.inicio, fim: plano.fimTudo, raio: plano.raio, tempos: plano.tempos, rotaVelha: plano.rotaVelha,
                menor: plano.menor && { d: plano.menor.d, t: plano.menor.t, a: plano.menor.a && plano.menor.a.t.sigla, b: plano.menor.b && plano.menor.b.t.sigla },
-               pm: { cordoes: plano.pm.cordoes.length, revistas: plano.pm.revistas.length, fechadas: plano.pm.fechadas.length, pms: policiais.length, grades: plano.nGrades },
+               pm: { cordoes: plano.pm.cordoes.length, revistas: plano.pm.revistas.length, fechadas: plano.pm.fechadas.length, pms: policiais.length, grades: plano.nGrades, efetivo: plano.efetivo },
                longeDe: plano.longeDe, tentativas: plano.tentativas, abre: plano.tAbre != null ? hora(plano.tAbre) : null,
                travessias: plano.travessias.map(v => ({ antes: v.antes.map(b => b.t.sigla).join('+'), depois: v.depois.map(b => b.t.sigla).join('+'), d: Math.round(v.d), libera: hora(v.libera), chega: hora(v.chega), folga: Math.round(v.folga / 60) })),
                bondes: plano.vivos.map(b => ({ sigla: b.t.sigla, lado: b.lado, escalao: b.escalao, setor: b.setor, portao: b.portao.nome, n: b.n, m: Math.round(b.comprimento), sai: hora(b.sai), chega: hora(b.chega), fim: hora(b.fim), adiantou: b.adiantou || 0, esperou: b.esperou || 0,
+                                             raias: b.raias.length, semRaia: b.pessoas.filter(g => g.raia < 0).length, catraca: Math.round(Math.max(...b.passa) - Math.min(...b.passa) + CATRACA), cauda: +b.cauda.toFixed(1),
                                              estado: estadoDe(b, 0) + ' / ' + estadoDe(b, b.n - 1), dentro: b.dentroN, noLugar: b.noLugar })),
                erros: plano.bondes.filter(b => !b.rua).map(b => b.t.sigla + ': ' + (b.erro || '')) };
     },
