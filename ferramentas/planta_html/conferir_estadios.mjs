@@ -6,10 +6,11 @@
    debaixo da arquibancada e o vomitório, que é o único caminho do
    corredor pra arquibancada. Este teste monta cada estádio, passa os
    triângulos pro subsolo (subsolo.js, a mesma conta do boneco a pé no
-   metrô) e procura, de 20 em 20 cm, por onde um corpo de RAIO m passa a
-   partir da fila de cada portão (`info.entradas[].ponto`, 2,5 m pra fora
-   da porta). O corpo sobe até DEGRAU m de um passo (o degrau da
-   arquibancada é de 0,40 a 0,52 m) e bate no que tem de FAIXA acima do
+   metrô) e procura, de 10 em 10 cm (PASSO, a mesma grade pra todos os
+   portões), por onde um corpo de RAIO m passa a partir da fila de cada
+   portão (`info.entradas[].ponto`, 2,5 m pra fora da porta). O corpo
+   sobe até DEGRAU m de um passo (o degrau da arquibancada é de 0,40 a
+   0,52 m) e bate no que tem de FAIXA acima do
    pé; o braço da catraca não conta (ele gira: o material dele diz
    `semRisco`, e o cenário também não bate nele). É o corpo do boneco a
    pé do cenário nos andares do estádio (cenario.js: o raio de APE e o
@@ -51,7 +52,7 @@ const THREE = await import(path.join(R, 'vendor/three/three.module.min.js'));
 const { ESTADIOS_JOGO, montarEstadioJogo } = await import(path.join(R, 'js/diajogo/estadios3d.js'));
 const { Subsolo } = await import(path.join(R, 'ferramentas/planta_html/subsolo.js'));
 
-const RAIO = 0.25, PASSO = 0.2, DEGRAU = 0.55, FAIXA = [0.55, 1.9], FINO = 0.3, LIVRE = 10, MINIMO = 0.9;
+const RAIO = 0.25, PASSO = 0.1, JANELA = 2, DEGRAU = 0.55, FAIXA = [0.55, 1.9], FINO = 0.3, LIVRE = 10, MINIMO = 0.9;
 /* a cor de cada setor e de cada trecho do corredor (as de estadios3d.js) */
 const SETOR = { '#1b7f3b': 'm1', '#43a047': 'm2', '#9ccc3c': 'm3', '#c62828': 'v1', '#ef6c00': 'v2', '#f2b705': 'v3', '#1f3f9a': 'pm' };
 const ZONA = { '#c62828': 'visitante', '#1b7f3b': 'mandante', '#1f3f9a': 'pm' };
@@ -92,33 +93,46 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
     S.juntar(pts, pts.length / 3);
   });
   S.fechar();
-  /* e o chão pintado onde o corpo não fica em pé, na altura dele, em
-     lugar nenhum a menos de 20 cm (debaixo do balcão do corredor, na
-     lasca da fileira atrás do poço, entre a mureta de trás dele e o
-     degrau seguinte) também não é alvo */
-  const emPe = a => { for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const x = a.x + i * 0.1, z = a.z + j * 0.1, y = S.chao(x, z, a.y); if (y === y && Math.abs(y - a.y) < 0.12 && S.cabe(x, z, y, RAIO)) return true; } return false; };
+  /* A GRADE é uma só pra todos os portões (x = I·PASSO, z = J·PASSO): com
+     a grade de cada um começando na fila dele, o alvo colado num canto (o
+     do balcão do corredor) caía numa casa livre pra um portão e não pro
+     outro. Cada alvo guarda as casas em volta dele (JANELA de cada lado:
+     até 20 cm) onde o corpo fica em pé, na altura dele; o chão pintado
+     sem nenhuma (debaixo do balcão, na lasca da fileira atrás do poço,
+     entre a mureta de trás dele e o degrau seguinte, no fundo da última
+     fileira do de 40, colada na parede) não é alvo */
+  const casa = v => Math.round(v / PASSO);
+  for (const a of alvos) {
+    const I = casa(a.x), J = casa(a.z);
+    a.casas = [];
+    for (let di = -JANELA; di <= JANELA; di++) for (let dj = -JANELA; dj <= JANELA; dj++) {
+      const x = (I + di) * PASSO, z = (J + dj) * PASSO, y = S.chao(x, z, a.y);
+      if (y === y && Math.abs(y - a.y) < 0.12 && S.cabe(x, z, y, RAIO)) a.casas.push([I + di, J + dj]);
+    }
+  }
   const todos = alvos.length;
-  alvos.splice(0, alvos.length, ...alvos.filter(emPe));
+  alvos.splice(0, alvos.length, ...alvos.filter(a => a.casas.length));
   console.log(`${ESTADIOS_JOGO[id].nome}: montado em ${((Date.now() - t0) / 1000).toFixed(1)} s, ${S.n} triângulos, ${alvos.length} pontos de chão pintado (${todos - alvos.length} onde o corpo não fica em pé)`);
 
   let bx0 = Infinity, bx1 = -Infinity, bz0 = Infinity, bz1 = -Infinity;
   for (const a of alvos) { bx0 = Math.min(bx0, a.x); bx1 = Math.max(bx1, a.x); bz0 = Math.min(bz0, a.z); bz1 = Math.max(bz1, a.z); }
   for (const E of info.entradas) {
     const [sx, sz] = E.ponto, t1 = Date.now();
-    const x0 = Math.min(sx, bx0) - 30, z0 = Math.min(sz, bz0) - 30, x1 = Math.max(sx, bx1) + 30, z1 = Math.max(sz, bz1) + 30;
-    const nx = Math.ceil((x1 - x0) / PASSO), nz = Math.ceil((z1 - z0) / PASSO);
+    const I0 = casa(Math.min(sx, bx0) - 30), J0 = casa(Math.min(sz, bz0) - 30);
+    const nx = casa(Math.max(sx, bx1) + 30) - I0 + 1, nz = casa(Math.max(sz, bz1) + 30) - J0 + 1;
+    const X = i => (I0 + i) * PASSO, Z = j => (J0 + j) * PASSO;
     const chave = (i, j, y) => (Math.round(y / 0.02) + 200) * nx * nz + j * nx + i;
     const pode = (x, z) => info.dentro(x, z) || Math.hypot(x - sx, z - sz) < LIVRE;
     const visto = new Set(), fila = [];
-    const i0 = Math.round((sx - x0) / PASSO), j0 = Math.round((sz - z0) / PASSO), y0 = S.chao(x0 + i0 * PASSO, z0 + j0 * PASSO, 0);
-    if (y0 === y0 && S.cabe(x0 + i0 * PASSO, z0 + j0 * PASSO, y0, RAIO)) { visto.add(chave(i0, j0, y0)); fila.push([i0, j0, y0]); }
+    const i0 = casa(sx) - I0, j0 = casa(sz) - J0, y0 = S.chao(X(i0), Z(j0), 0);
+    if (y0 === y0 && S.cabe(X(i0), Z(j0), y0, RAIO)) { visto.add(chave(i0, j0, y0)); fila.push([i0, j0, y0]); }
     for (let f = 0; f < fila.length; f++) {
       const [i, j, y] = fila[f];
       for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
         if (!di && !dj) continue;
         const a = i + di, b = j + dj;
         if (a < 0 || b < 0 || a >= nx || b >= nz) continue;
-        const x = x0 + a * PASSO, z = z0 + b * PASSO;
+        const x = X(a), z = Z(b);
         if (!pode(x, z)) continue;
         const y2 = S.chao(x, z, y);
         if (y2 !== y2) continue;
@@ -127,14 +141,12 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
         visto.add(k); fila.push([a, b, y2]);
       }
     }
-    /* o alvo foi alcançado se tem um lugar do corpo na célula dele (ou numa do lado), na altura do pé */
+    /* o alvo foi alcançado se o corpo chegou numa das casas dele, na altura do pé */
     const onde = new Map();
     for (const [i, j, y] of fila) { const k = j * nx + i; if (!onde.has(k)) onde.set(k, []); onde.get(k).push(y); }
     const conta = new Map();
     for (const a of alvos) {
-      const i = Math.round((a.x - x0) / PASSO), j = Math.round((a.z - z0) / PASSO);
-      let ok = false;
-      for (let di = -1; di <= 1 && !ok; di++) for (let dj = -1; dj <= 1 && !ok; dj++) { const l = onde.get((j + dj) * nx + i + di); if (l && l.some(y => Math.abs(y - a.y) < 0.12)) ok = true; }
+      const ok = a.casas.some(([I, J]) => { const l = onde.get((J - J0) * nx + I - I0); return l && l.some(y => Math.abs(y - a.y) < 0.12); });
       const c = conta.get(a.nome) || { lado: a.lado, sim: 0, tot: 0 };
       c.tot++; if (ok) c.sim++;
       conta.set(a.nome, c);
