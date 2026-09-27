@@ -2416,8 +2416,11 @@ function montar40(O, S, G, opc) {
   }
   /* OS PORTÕES: o salão de 5 m (4,5 de pé-direito) da fachada até o
      corredor do chão, com as catracas logo depois da porta. O 1 no meio
-     do leste, o 2 no oeste (8 m ao norte do meio), o 3 (visitante) na
-     curva do sudoeste, no meio do que é visitante embaixo e em cima */
+     do leste, o 2 no meio da lateral do norte (entre as duas bilheterias
+     de lá), o 3 (visitante) na curva do sudoeste, no meio do que é
+     visitante embaixo e em cima. (O 2 ficava no oeste, 8 m ao norte do
+     meio, a uns 38 m do 3: o dono pediu, 27/09/2026, pra ele ir pra
+     lateral do campo — o dia de jogo separa melhor as duas torcidas) */
   const HP = C0.h;
   const naFachada = uu => { const q = F.ponto(dFac, uu); return planoDaEntrada(F, [q[0], q[1]], [-q[2], -q[3]], 5, C0.dF); };
   const uVis = (Math.max(pm3[1], pm4[1]) + Math.min(pm2[0], pm1[0])) / 2;
@@ -2426,7 +2429,7 @@ function montar40(O, S, G, opc) {
   const fila = [-g.onibus - 0.6, -g.onibus - 5.2];
   const P = [
     { E: naFachada(2.5), nome: 'Portão 1', lado: 'mandante', placa: 'PORTÃO 1 · MANDANTE', onde: 'no meio da fachada do leste, debaixo do letreiro' },
-    { E: naFachada(F.uDe(-100, -8).u), nome: 'Portão 2', lado: 'mandante', placa: 'PORTÃO 2 · MANDANTE', onde: 'na fachada do oeste, 8 m ao norte do meio' },
+    { E: naFachada(0), nome: 'Portão 2', lado: 'mandante', placa: 'PORTÃO 2 · MANDANTE', onde: 'no meio da lateral do norte, entre as bilheterias' },
     { E: naFachada(uVis), nome: 'Portão 3', lado: 'visitante', placa: 'PORTÃO 3 · VISITANTE', onde: 'na curva do sudoeste, entre a PM3 e a PM2 embaixo e entre a PM4 e a PM1 em cima' }
   ];
   const ALTO = y0s + NS * 0.52 + 1.1;
@@ -2456,7 +2459,8 @@ function montar40(O, S, G, opc) {
   const base = { dA: C0.dF, dB: g.dP, yT: C1.y, hC: C1.h };
   const escs = [
     { lado: 'mandante', onde: 'na curva do nordeste, depois do vomitório ao norte do portão 1', ...escadaInterna(O, F, { ...base, u0: vomL.ua - larguraU(F, vomL.ua, C0.dF, 1.5), sg: -1 }) },
-    { lado: 'mandante', onde: 'na curva do noroeste, do lado do salão do portão 2', ...escadaInterna(O, F, { ...base, u0: depoisDoSalao(P[1].E), sg: 1 }) },
+    /* a do noroeste fica onde era quando o portão 2 era no oeste: logo depois de onde ficava o salão dele */
+    { lado: 'mandante', onde: 'na curva do noroeste', ...escadaInterna(O, F, { ...base, u0: depoisDoSalao(naFachada(F.uDe(-100, -8).u)), sg: 1 }) },
     { lado: 'visitante', onde: 'na curva do sudoeste, do lado do salão do portão 3', ...escadaInterna(O, F, { ...base, u0: depoisDoSalao(P[2].E), sg: 1 }) }
   ];
   /* os corredores e as entradas: o do chão (visitante | PM2 | mandante |
@@ -2515,7 +2519,8 @@ function montar40(O, S, G, opc) {
   chaoPlano(O.m('piso'), retangulo(-xT, xT, -zT, zT), [contornoDe(F, dO)], 0, lin('#cbc7bf'), 4);
   if (!opc.mapa) chaoPlano(O.m('asfalto'), retangulo(-xT - 14, xT + 14, -zT - 13, zT + 13), [retangulo(-xT, xT, -zT, zT)], 0, lin('#c4c4c4'), 6);
   const zB = g.B0 + dO + 5.8;
-  for (const s of [-1, 1]) for (const x of [-8.8, 4.6]) bilheteria(O, quadro([x + 2.1, s * zB], [0, -s]), 0, 5.3, -2.1, 2.1, 3.2);
+  /* as do norte, 1,5 m mais pra fora: o portão 2 fica entre elas */
+  for (const s of [-1, 1]) for (const x of s < 0 ? [-10.3, 6.1] : [-8.8, 4.6]) bilheteria(O, quadro([x + 2.1, s * zB], [0, -s]), 0, 5.3, -2.1, 2.1, 3.2);
   /* A FACHADA: o relevo e o letreiro com o nome em cima do portão 1 e no oeste, no andar de cima */
   const relevo = fachadaDetalhada(O, As, { pilar: [1.0, 0.7], portas: P.map(p => p.E), cor: vezes(tMuro, 1.04), corBase: lin('#77705f') });
   const yLet = ALTO - 1.3 - 0.65 - 3.0;
@@ -2567,13 +2572,13 @@ function montar40(O, S, G, opc) {
    ====================================================== */
 export const ESTADIOS_JOGO = {
   'estadio-10': { id: 'estadio-10', nome: 'Estádio de 10 mil', nivel: 1, mil: 10000, foto: 'estadio_10', montar: montar10, letreiro: 'Estádio Municipal',
-    terreno: { ...G10.terreno, p1: G10.p1 },
+    terreno: { ...G10.terreno, p1: G10.p1, vis: -1 },
     nota: 'O municipal: arquibancada reta no norte, a do leste e sul em L, o corredor embaixo das duas, os vomitórios em vala e os três portões (o 3, do visitante, pelo túnel de lona); por fora, o muro caiado com o nome pintado e o arco do portão 1.' },
   'estadio-20': { id: 'estadio-20', nome: 'Estádio de 20 mil', nivel: 2, mil: 20000, foto: 'estadio_20', montar: montar20, letreiro: 'Estádio Centenário',
-    terreno: { x0: -G20.xM - 0.15, x1: G20.xM + 0.15, z0: G20.zN - 0.15, z1: G20.zS + 0.15, p1: 0 },
+    terreno: { x0: -G20.xM - 0.15, x1: G20.xM + 0.15, z0: G20.zN - 0.15, z1: G20.zS + 0.15, p1: 0, vis: -1 },
     nota: 'O anel único bege: o corredor em volta, embaixo, 10 vomitórios com túnel, os três portões com pórtico na fachada de concreto e cobogó, o letreiro, a pista, as placas e as quatro torres de luz.' },
   'estadio-40': { id: 'estadio-40', nome: 'Estádio de 40 mil', nivel: 3, mil: 40000, foto: 'estadio_40', montar: montar40, letreiro: 'Arena da Cidade',
-    terreno: { x0: -G40.xT, x1: G40.xT, z0: -G40.zT, z1: G40.zT, p1: 0 },
+    terreno: { x0: -G40.xT, x1: G40.xT, z0: -G40.zT, z1: G40.zT, p1: 0, vis: 1 },
     nota: 'A tigela de dois anéis de 15 fileiras: um corredor debaixo de cada anel, ligados pelas escadas internas, vomitórios com túnel nos dois, os três portões com pórtico, o letreiro na fachada de três andares, o fosso e a pista de ônibus.' }
 };
 /* o modelo de cada praça pela lotação de verdade (dados/estadios.js):

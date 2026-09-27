@@ -183,7 +183,10 @@ function GradeDaRota(crua, M, foraDoEstadio) {
    (Infinity: não passa); o passo de a pra b custa o comprimento × a média
    dos dois. Sem `fim`, é o Dijkstra de todas as `fontes` até `limite` (m) */
 function Buscador(R) {
-  const dist = new Float32Array(R.N).fill(Infinity), pai = new Int32Array(R.N).fill(-1);
+  /* a distância em 64 bits: em 32, o número guardado arredonda pra cima e
+     o mesmo caminho parece "melhor" de novo toda vez — cada vizinho volta
+     pro monte, sem fim (na Bahia invertida, a memória acabava) */
+  const dist = new Float64Array(R.N).fill(Infinity), pai = new Int32Array(R.N).fill(-1);
   let tocados = new Int32Array(1 << 16), nToc = 0;
   const toca = K => { if (nToc === tocados.length) { const t2 = new Int32Array(nToc * 2); t2.set(tocados); tocados = t2; } tocados[nToc++] = K; };
   function limpar() { for (let i = 0; i < nToc; i++) { const K = tocados[i]; dist[K] = Infinity; pai[K] = -1; } nToc = 0; }
@@ -428,7 +431,8 @@ export function planejar(ctx, escolha = {}) {
       if (!R.anda[K]) { c[K] = Infinity; continue; }
       let v = R.mult[K];
       if (noArredor[K]) {
-        if (lado === 'visitante' && proibidoV && proibidoV[K]) { c[K] = Infinity; continue; }
+        /* o proibido só vale pra traçar o corredor; depois, o visitante anda na zona dele inteira */
+        if (lado === 'visitante' && proibidoV && proibidoV[K] && !zonaV) { c[K] = Infinity; continue; }
         if (zonaV && peloCorredor) {
           /* o mandante do portão ilhado: anda no corredor do visitante depois
              que ele abre (o cordão sai), mas nunca perto do portão do visitante */
@@ -445,7 +449,6 @@ export function planejar(ctx, escolha = {}) {
         v += LONGE_DO_LADO * Math.exp(-dL[K] * dm / 25);
         if (dR) v += 10 * Math.exp(-dR[K] * dm / 30);
       }
-      if (v !== v && !custoDo.avisou) { custoDo.avisou = true; console.warn('dia de jogo: custo NaN', { lado, peloCorredor, K, mult: R.mult[K], dS: dS[K], dL: dL[K], dR: dR && dR[K], noArredor: noArredor[K], zonaV: zonaV && zonaV[K], dCorredor: dCorredor && dCorredor[K] }); }
       c[K] = v;
     }
     return c;
@@ -496,6 +499,13 @@ export function planejar(ctx, escolha = {}) {
     for (const p of portoes) if (p.lado === 'mandante') {
       const I0 = p.K % CX, J0 = (p.K - I0) / CX;
       for (let J = J0 - r; J <= J0 + r; J++) for (let I = I0 - r; I <= I0 + r; I++) if (I >= 0 && J >= 0 && I < CX && J < CZ) zonaV[J * CX + I] = 0;
+    }
+    /* mas o caminho do corredor (e a célula de cada lado) é sempre do
+       visitante, mesmo na frente de um portão do mandante: ele passa antes,
+       e a torcida daquele portão espera na sede a PM abrir o corredor */
+    for (const K of fontes) {
+      const I = K % CX, J = (K - I) / CX;
+      for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const a = I + di, b2 = J + dj; if (a >= 0 && b2 >= 0 && a < CX && b2 < CZ && noArredor[b2 * CX + a]) zonaV[b2 * CX + a] = 1; }
     }
     divisa = new Uint8Array(N);
     for (let K = 0; K < N; K++) {
@@ -577,6 +587,12 @@ export function planejar(ctx, escolha = {}) {
   }
   for (const b of bondes) if (b.lado === 'mandante' && !b.cels && ilhados.includes(b.nPortao)) b.erro = 'o ' + b.portao.nome.toLowerCase() + ' ficou ilhado na zona do visitante (o corredor dele passa na rua do portão, e o mapa não deixa outro)';
   rotasDo('visitante');
+  /* quem ficou sem rota: é o mapa (a sede não chega no portão nem sem PM
+     nenhuma) ou é a zona? */
+  for (const b of bondes) if (!b.cels && b.K0 >= 0) {
+    b.semMapa = !B.buscar([b.K0], livre, portoes[b.nPortao].K);
+    if (b.semMapa) b.erro = 'a sede não chega no ' + b.portao.nome.toLowerCase() + ' nem sem a PM: o mapa não liga as duas';
+  }
   marca('rotas');
   const naRotaQueAbre = new Uint8Array(N);
   for (const b of bondes) if (b.peloCorredor) for (const K of b.cels) {

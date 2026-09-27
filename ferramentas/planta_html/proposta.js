@@ -717,7 +717,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       for (const o of postos) if (cruza(r, o, RUA - 0.5)) return false;
       return true;
     };
-    const ACESSO_MAX = 2600;
+    const ACESSO_MAX = 2600, ACESSO_LADO_MAX = 6000, LONGE_DO_P1 = 25;
     const DIR = { o: [1, 0], l: [-1, 0], n: [0, 1], s: [0, -1] };
     /* (pra cada linha reta — o lado de fora e a coordenada de lado —, os
        trechos do eixo que são alvo ou barra, em ordem: a conta de cada
@@ -740,7 +740,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        estádio, até a rua da primeira quadra da cidade, a avenida de entrada
        ou a rua de outro estádio; se antes bate em favela ou no Atacadex, ou
        se passa de ACESSO_MAX, o portão 1 não dá pra cidade */
-    const reta = (pe, f) => {
+    const reta = (pe, f, max = ACESSO_MAX) => {
       const d = DIR[f], hz = f === 'o' || f === 'l', lat = Math.round(hz ? pe[1] : pe[0]);
       const a0 = (hz ? pe[0] : pe[1]) + (hz ? d[0] : d[1]) * RUA, sg = hz ? d[0] : d[1];
       /* o primeiro trecho que a reta encontra, andando no sentido sg a partir de a0 */
@@ -750,7 +750,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         if (s === null) continue;
         if (!melhor || s < melhor.s || (s === melhor.s && tipo === 'barra')) melhor = { s, tipo };
       }
-      if (!melhor || melhor.tipo === 'barra' || melhor.s > ACESSO_MAX) return null;
+      if (!melhor || melhor.tipo === 'barra' || melhor.s > max) return null;
       return { ini: hz ? [a0, pe[1]] : [pe[0], a0], s: melhor.s };
     };
     const PASSO = 40, D_MAX = 7000, B_MAX = 7000, OUTRA_VAGA = 3000;
@@ -803,9 +803,32 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                    pontos: [[rt.ini[0] - d[0] * RUA / 2, rt.ini[1] - d[1] * RUA / 2], [rt.ini[0] + d[0] * (rt.s + RUA / 2), rt.ini[1] + d[1] * (rt.s + RUA / 2)]] };
         acessos.push(acesso);
       }
+      /* OS ACESSOS DE LADO (o dono pediu, 27/09/2026: "Crie mais uma ou duas
+         ruas que acessam o estádio pra ajudar a resolver essa logística"):
+         de cada lado do estádio — primeiro o do portão 3, do visitante
+         (`T.vis`, o lado do z do modelo) —, uma rua reta pra cidade,
+         paralela ao acesso do portão 1. Ela sai da rua em volta do estádio,
+         na frente, o mais perto da quina daquele lado que der, e a
+         LONGE_DO_P1 m ou mais do eixo do portão 1: a torcida do portão 3 (e a
+         do 2, do outro lado) chega no dela sem passar na frente do 1. Se a
+         rua em volta do estádio já encosta na cidade ali, não precisa */
+      const extras = [], hz = melhor.fora === 'o' || melhor.fora === 'l', eixo1 = hz ? p[1] : p[0], vis = T.vis || -1;
+      for (const s of [vis, -vis]) {
+        /* o lado s (do z do modelo) no mundo, com o giro */
+        const L = g === 0 ? [0, s] : g === 90 ? [-s, 0] : g === -90 ? [s, 0] : [0, -s], l = hz ? L[1] : L[0];
+        const quina = hz ? (l > 0 ? q.y1 + RUA / 2 : q.y0 - RUA / 2) : (l > 0 ? q.x1 + RUA / 2 : q.x0 - RUA / 2);
+        for (let lat = quina; l * (lat - eixo1) >= LONGE_DO_P1 * M; lat -= l * 4 * M) {
+          const rt2 = reta(hz ? [p[0], lat] : [lat, p[1]], melhor.fora, ACESSO_LADO_MAX);
+          if (!rt2) continue;
+          if (rt2.s > 0) extras.push({ id: 'acesso' + (k + 1) + (s === vis ? 'v' : 'm'), l: RUA, reta: true, acesso: true, lateral: true, estadio: e.id,
+                                        pontos: [[rt2.ini[0] - d[0] * RUA / 2, rt2.ini[1] - d[1] * RUA / 2], [rt2.ini[0] + d[0] * (rt2.s + RUA / 2), rt2.ini[1] + d[1] * (rt2.s + RUA / 2)]] });
+          break;
+        }
+      }
+      acessos.push(...extras);
       const cx = (t.x0 + t.x1) / 2, cy = (t.y0 + t.y1) / 2;
       Object.assign(e, { area: q, terreno: t, qest: t, giro: g, centro, fora: melhor.fora, vagaUsada: melhor.vaga + 1, empurrado: melhor.d, deLado: melhor.b,
-                         dx: cx - P.CX, dy: cy - P.CY, naGrade: false, modelo: T.modelo, portao1: p, acesso });
+                         dx: cx - P.CX, dy: cy - P.CY, naGrade: false, modelo: T.modelo, portao1: p, acesso, acessosDeLado: extras });
       postos.push(q); linhas = new Map();
     });
     avenidas.push(...acessos);
