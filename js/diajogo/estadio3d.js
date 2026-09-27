@@ -770,7 +770,8 @@ export function criar(canvas) {
     return tronco.intersectsSphere(bolha);
   }
 
-  const povo = entrarEm(cena, { pos: posicao, sombra: true, escala: 1.15, noQuadro });
+  /* a câmera vai junto: o boneco pequeno na tela usa o nível de longe (bonecos3.js, `trocarNivel`) */
+  const povo = entrarEm(cena, { pos: posicao, sombra: true, escala: 1.15, noQuadro, camera: cam, alturaTela: () => canvas.clientHeight });
   const traduzir = criarTradutor();
 
   /* =======================================================
@@ -1198,6 +1199,8 @@ export function criar(canvas) {
            get corte() { return povo.conta; },
            get comModelo() { return povo.comModelo; },
            get gente() { return povo.quantas; },
+           /* quantos bonecos em cada nível (perto, longe) e os triângulos deles */
+           get niveis() { return povo.niveis; },
            get info() { return rend.info; },
            _rend: rend, _cena: cena, _cam: cam, _planta: P,
            get _chaoPBR() { return chaoPBR; }, get _nuvens() { return nuvens; }, get _marcos() { return marcos; }, get _props() { return props; },

@@ -55,12 +55,13 @@ for f in construtor3d casas3d sede3d metro3d equip3d equip_antigo3d modelos3d pr
 done
 # O BONECO que anda a pé no cenário: o módulo do jogo (bonecos3.js), o
 # carregador de GLB que ele usa (vendor/three/GLTFLoader.js), os dois
-# apontando pro three.js do CDN, e o modelo em base64 num .js — o
-# carregador do jogo lê dali sem pedir arquivo, e o cenário só puxa esse
-# .js (3,6 MB) quando alguém entra a pé
+# apontando pro three.js do CDN, e o modelo em base64 num .js — os dois
+# níveis afinados (img/boneco_perto.glb e boneco_longe.glb, de
+# ferramentas/afinar_boneco.mjs); o carregador do jogo lê dali sem pedir
+# arquivo, e o cenário só puxa esse .js (~0,6 MB) quando alguém entra a pé
 sed -e "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
     -e "s#'../../vendor/three/GLTFLoader.js'#'./GLTFLoader.js'#" \
-    -e "s#'../../img/boneco.glb'#'../img/boneco.glb'#" \
+    -e "s#'../../img/boneco#'../img/boneco#" \
   "$R/js/diajogo/bonecos3.js" > "$A/js/bonecos3.js"
 sed "s#'./three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
   "$R/vendor/three/GLTFLoader.js" > "$A/js/GLTFLoader.js"
@@ -77,13 +78,14 @@ for f in GLTFExporter TextureUtils; do
 done
 mkdir -p "$A/img/referencias"
 cp "$R/ferramentas/planta_html/referencias/"estadio_*.webp "$A/img/referencias/"
-python3 - "$R/img/boneco.glb" "$A/dados/boneco_glb.js" <<'PY'
+python3 - "$R/img/boneco_perto.glb" "$R/img/boneco_longe.glb" "$A/dados/boneco_glb.js" <<'PY'
 import base64, sys
-b = open(sys.argv[1], 'rb').read()
-with open(sys.argv[2], 'w', encoding='ascii') as s:
-    s.write('/* o boneco do jogo (img/boneco.glb, %d bytes) em base64 (montar.sh) */\n' % len(b))
+with open(sys.argv[3], 'w', encoding='ascii') as s:
+    s.write('/* o boneco do jogo, os dois niveis afinados (img/boneco_perto.glb e boneco_longe.glb) em base64 (montar.sh) */\n')
     s.write('window.TO = window.TO || { dados: {} }; TO.dados = TO.dados || {};\n')
-    s.write("TO.dados.bonecoGLB = 'data:model/gltf-binary;base64,%s';\n" % base64.b64encode(b).decode('ascii'))
+    for chave, arq in (('bonecoPertoGLB', sys.argv[1]), ('bonecoLongeGLB', sys.argv[2])):
+        b = open(arq, 'rb').read()
+        s.write("TO.dados.%s = 'data:model/gltf-binary;base64,%s';\n" % (chave, base64.b64encode(b).decode('ascii')))
 PY
 for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg atacadex.jpg torres.jpg props.jpg metro.jpg equip.jpg praia.jpg; do
   cp "$R/img/texturas/modelos/$f" "$A/img/texturas/modelos/"

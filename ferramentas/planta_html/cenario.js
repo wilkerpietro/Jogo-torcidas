@@ -1703,20 +1703,24 @@ void main() {
       document.head.appendChild(s);
     });
   }
-  /* o módulo do boneco e o modelo (em base64, dados/boneco_glb.js: o
-     carregador do jogo lê dali sem pedir arquivo nenhum), uma vez só */
+  /* o módulo do boneco e o modelo (em base64, dados/boneco_glb.js: os dois
+     níveis afinados, o de perto e o de longe; o carregador do jogo lê dali
+     sem pedir arquivo nenhum), uma vez só */
   function chamarBoneco() {
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoGLB) await carregarScript(new URL('../dados/boneco_glb.js', import.meta.url).href);
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js', import.meta.url).href);
       const mod = await import('./bonecos3.js');
-      /* a câmera chega a um metro dele: a malha afina menos que no jogo */
+      /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
+         chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
       /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
          tem altura: a do pé que se vê (no metrô, embaixo da rua) */
       const PE = { x: 0, y: 0, z: 0 };
-      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86), pos: (x, y) => { PE.x = x; PE.y = ape ? ape.yv : 0; PE.z = y; return PE; } });
+      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86), pos: (x, y) => { PE.x = x; PE.y = ape ? ape.yv : 0; PE.z = y; return PE; },
+        /* a câmera: o boneco pequeno na tela usa o nível de longe (bonecos3.js) */
+        camera: cam, alturaTela: () => tela.clientHeight });
       return povo;
     })().catch(e => { chamando = null; throw e; });
     return chamando;
