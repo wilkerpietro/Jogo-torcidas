@@ -61,7 +61,11 @@ TO.diaJogo.ponte = (function(){
     let local = (opc.config||{}).local;
     tres = !!opc.tres || /-3d$/.test(String(local||''));
     if(tres){
-      T = TO.diaJogo.tres;
+      /* O PALCO NA CIDADE (jogo 3D, 27/09/2026): quem monta pode trazer o
+         próprio renderizador — a reunião na sala da sede, a briga na casa
+         de veraneio —, com o mesmo contrato do tres.js (montar, desenhar,
+         vetorDoTeclado, trocarCamera, limparDeCima) */
+      T = opc.renderizador || TO.diaJogo.tres;
       if(!T || !T.montar(cv, opc.sobre || document.getElementById('djSobre'))){
         /* sem WebGL: a mesma briga, vista de cima */
         tres = false; T = null;
@@ -1921,6 +1925,8 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
 
   return {montar, parar, novaNoite, encerrar, alternarEditor, gerarArquivo,
           get tres(){ return tres; }, get bonecos(){ return bonecos; },
+          /* quem desenha a cena de perto (o tres.js, ou o palco do jogo 3D) */
+          get renderizador(){ return tres ? T : null; },
           alternarVelocidade,
           get zoom(){return zoom;},
           set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },

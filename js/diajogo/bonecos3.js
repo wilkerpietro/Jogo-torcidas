@@ -115,6 +115,10 @@ let pos = (x, y) => { PLANO.x = x; PLANO.y = 0; PLANO.z = y; return PLANO; };
 let sombraDeLuz = false;
 /* o teste de "cabe na tela" de quem tem a câmera */
 let noQuadroExterno = null;
+/* o rumo de cada disco: o dele, ou o que quem é dono da cena diz (o jogo
+   3D senta a diretoria nas cadeiras da sala da sede, cada uma virada pra
+   mesa: o rumo da cadeira da cena 2D não serve lá) */
+let rumoDe = d => d.rumo;
 
   /* o util do jogo (nucleo.js) pode chegar depois deste módulo — no
      jogo 3D o cenário importa o boneco antes de o jogo carregar —, então
@@ -229,7 +233,7 @@ let noQuadroExterno = null;
     d._b3 = {
       sem:s, fase:frac(s+'f')*6.28, yaw:frac(s+'y')*6.28,
       pele:PELE[dado(s+'p',PELE.length)],
-      calca: calcaoDe(TO.diaJogo.J, d, CALCA[dado(s+'c',CALCA.length)]),
+      calca: d.calca || calcaoDe(TO.diaJogo.J, d, CALCA[dado(s+'c',CALCA.length)]),
       cabelo:CABELO[dado(s+'h',CABELO.length)],
       tenis:TENIS[dado(s+'t',TENIS.length)],
       bermuda: frac(s+'bm') < 0.5,
@@ -835,6 +839,8 @@ let noQuadroExterno = null;
   function anelDe(J, d){
     const m = estudo.anel;
     if(!m) return null;
+    /* a vida da praça (o jogo 3D) não tem lado: ninguém leva anel */
+    if(J && J.semAnel) return null;
     if(m === 'lado') return 'lado';
     const p = paletaDaCena(J);
     if(m === 'auto' && !p.colisao) return null;
@@ -1566,7 +1572,15 @@ let noQuadroExterno = null;
     festa:     [['conversa', 26], ['escuta', 18], ['bebe', 14], ['ri', 10], ['celular', 10], ['canta', 12], ['aponta', 5], [0, 5]],
     bondeAnda: [[0, 26], ['braco', 15], ['palmaAlta', 12], ['palmaPeito', 13], ['festa', 8], ['soco', 12], ['conversaAnda', 14]],
     bonde:     [[0, 18], ['braco', 18], ['palmaAlta', 16], ['palmaPeito', 16], ['festa', 10], ['pula', 8], ['soco', 14]],
-    fila:      [[0, 40], ['palmaPeito', 14], ['braco', 10], ['celular', 14], ['conversa', 14], ['escuta', 8]]
+    fila:      [[0, 40], ['palmaPeito', 14], ['braco', 10], ['celular', 14], ['conversa', 14], ['escuta', 8]],
+    /* A VIDA DA PRAÇA (jogo 3D, 27/09/2026): sentado na sede (à mesa, no
+       banco, no balcão), trabalhando na mesa, em pé de conversa na sede,
+       na porta do bar e andando na calçada */
+    sentado:   [['conversa', 26], ['escuta', 30], ['bebe', 14], ['ri', 10], ['celular', 16]],
+    trabalho:  [['digita', 70], ['escuta', 18], ['celular', 12]],
+    sede:      [['conversa', 26], ['escuta', 22], ['bebe', 12], ['ri', 12], ['celular', 12], ['aponta', 4], [0, 12]],
+    bar:       [['bebe', 30], ['conversa', 24], ['ri', 14], ['escuta', 16], ['canta', 6], ['celular', 6], [0, 4]],
+    rua:       [[0, 62], ['celular', 20], ['conversaAnda', 18]]
   };
   function escolherGesto(f, lista){
     let tot = 0; for(const [,w] of lista) tot += w;
@@ -1676,6 +1690,56 @@ let noQuadroExterno = null;
         const s = Math.max(0, Math.sin(w*0.8));
         p.y = s*3.2; p.joelho = [0.5 - s*0.4, 0.5 - s*0.4]; p.coxa = [-0.2, -0.2];
         p.ombro = [-2.6, -2.6]; p.cotovelo = [-0.3, -0.3]; p.ombroZ = [0.2, 0.2];
+        break;
+      }
+      /* ---- a sede com vida (jogo 3D) ---- */
+      case 'digita': {         // sentado no computador: os antebraços na mesa, os dedos batendo
+        const a = Math.sin(t*11 + f.fase), b = Math.sin(t*13.7 + f.fase*1.3);
+        p.ombro = [-0.5, -0.5]; p.ombroZ = [0.2, 0.2]; p.cotovelo = [-1.2 + 0.06*a, -1.2 + 0.06*b];
+        p.maoZ = [0.32, 0.32]; p.punho = [0, 0];
+        p.olhaX = 0.16 + 0.04*Math.sin(t*0.6 + f.fase); p.olhaY = 0.06*Math.sin(t*0.4 + f.fase); p.inclina += 0.1;
+        break;
+      }
+      case 'sinuca': {         // debruçado na mesa, o taco na mão de trás; de tempos em tempos, a tacada
+        const c = (t*0.28 + f.fase) % 1, puxa = c < 0.7 ? Math.sin(c/0.7*Math.PI*3)*0.35 : -0.5*Math.sin((c - 0.7)/0.3*Math.PI);
+        p.inclina = 0.62; p.olhaX = -0.4;
+        p.ombro[o] = -1.35; p.cotovelo[o] = -0.25; p.ombroZ[o] = 0.3; p.maoZ[o] = 0.1; p.punho[o] = 0;
+        p.ombro[lado] = -0.35 + 0.25*puxa; p.cotovelo[lado] = -1.55 - 0.4*puxa; p.ombroZ[lado] = 0.12; p.punho[lado] = 1;
+        p.coxa = [-0.18, 0.12]; p.joelho = [0.25, 0.1];
+        break;
+      }
+      case 'pebolim': {        // as duas mãos nas varetas, girando rápido
+        const a = Math.sin(t*9 + f.fase), b = Math.sin(t*7.3 + f.fase*2);
+        p.inclina = 0.22; p.olhaX = 0.3;
+        p.ombro = [-0.75 + 0.08*a, -0.75 + 0.08*b]; p.cotovelo = [-0.95, -0.95]; p.ombroZ = [0.28, 0.28];
+        p.maoZ = [0.15, 0.15]; p.punho = [1, 1]; p.gira += 0.05*Math.sin(t*5 + f.fase);
+        break;
+      }
+      case 'surdo': {          // a baqueta na mão forte, a outra abafando a pele
+        p.inclina = 0.12; p.olhaX = 0.22;
+        p.ombro[lado] = -0.85 - 0.55*bate; p.cotovelo[lado] = -1.5 + 0.7*bate; p.ombroZ[lado] = 0.2; p.punho[lado] = 1;
+        p.ombro[o] = -0.55; p.cotovelo[o] = -1.0; p.ombroZ[o] = 0.25; p.maoZ[o] = 0.2; p.punho[o] = 0;
+        break;
+      }
+      case 'churrasco': {      // virando a carne na grelha, olhando pra ela
+        const a = Math.sin(t*1.9 + f.fase);
+        p.inclina = 0.14; p.olhaX = 0.36;
+        p.ombro[lado] = -0.85 + 0.1*a; p.cotovelo[lado] = -1.1 + 0.25*a; p.ombroZ[lado] = 0.2; p.punho[lado] = 1;
+        p.ombro[o] = -0.3; p.cotovelo[o] = -1.4; p.ombroZ[o] = 0.15; p.maoZ[o] = 0.4;
+        break;
+      }
+      case 'arruma': {         // mexendo na prateleira, um braço de cada vez
+        const a = Math.sin(t*1.3 + f.fase), b = Math.sin(t*1.3 + f.fase + 2.2);
+        p.olhaX = -0.18 - 0.1*Math.max(0, a);
+        p.ombro[lado] = -1.8 - 0.25*a; p.cotovelo[lado] = -0.7 - 0.3*a; p.ombroZ[lado] = 0.2; p.punho[lado] = 0;
+        p.ombro[o] = -1.2 - 0.3*b; p.cotovelo[o] = -1.1; p.ombroZ[o] = 0.2; p.punho[o] = 0;
+        break;
+      }
+      case 'balcao': {         // o garçom passando o pano no balcão, em roda
+        const a = Math.sin(t*3 + f.fase), b = Math.cos(t*3 + f.fase);
+        p.inclina = 0.14; p.olhaX = 0.22;
+        p.ombro[lado] = -0.8 + 0.12*a; p.cotovelo[lado] = -0.95 + 0.2*b; p.ombroZ[lado] = 0.22 + 0.08*b; p.maoZ[lado] = 0.25; p.punho[lado] = 0;
+        p.ombro[o] = -0.5; p.cotovelo[o] = -1.2; p.ombroZ[o] = 0.25; p.maoZ[o] = 0.4;
         break;
       }
     }
@@ -2070,8 +2134,9 @@ let noQuadroExterno = null;
     p.gira = 0.06*Math.sin(w*0.45);
     p.ombro = [0.45 + 0.15*b, -0.55 - 0.45*a]; p.ombroZ = [0.25 + 0.2*b, 0.55 + 0.25*a];
     p.cotovelo = [-1.0 - 0.3*b, -1.65 + 0.55*a]; p.maoZ = [0.35, 0.3 + 0.4*a]; p.punho = [0.4, 0];
-    /* e o presidente, se estiver na roda, é pra quem se fala */
-    if(d && J){ const pres = J.discos.find(x=>x.lider && x.vivo); if(pres && pres !== d) olharPara(p, f, d, pres, t); }
+    /* e o presidente, se estiver na roda, é pra quem se fala (ou quem o
+       disco diz: `olhaPara`) */
+    if(d && J){ const pres = d.olhaPara || J.discos.find(x=>x.lider && x.vivo); if(pres && pres !== d) olharPara(p, f, d, pres, t); }
   }
   /* FALAR EM PÉ: o presidente com a palavra, de frente pra roda — o peso
      numa perna, uma mão na cintura, a outra abrindo pros diretores. */
@@ -2231,9 +2296,19 @@ let noQuadroExterno = null;
       f.queda = null; f.jazido = 0; esmaecer(c, 1);
       const q0 = pos(d.x, d.y, d);
       f.px = q0.x; f.pz = q0.z; f.vx = 0; f.vz = 0;
-      if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
-      if(J.falante === d){ falarSentado(p, f, t, d, J); rapidez = 9; }
-      else { sentadoCadeira(p, f, ti, d, J); rapidez = 8; }
+      { const r = rumoDe(d); if(typeof r === 'number') f.yaw = girar(f.yaw, r, Math.min(1, dt*14)); }
+      /* (`d.falando` e `d.olhaPara`: a conversa de dois, sem a roda — o
+         recado na cadeira da frente e o presidente, no jogo 3D) */
+      if(J.falante === d || d.falando){ falarSentado(p, f, t, d, J); rapidez = 9; }
+      else {
+        sentadoCadeira(p, f, ti, d, J); rapidez = 8;
+        /* A SEDE COM VIDA (jogo 3D, 27/09/2026): sentado e fazendo alguma
+           coisa — digita, bebe, mexe no celular, conversa —, as pernas da
+           cadeira e as mãos do gesto */
+        f.gestoForcado = d.gestoForcado;
+        if(d.olhaPara) olharPara(p, f, d, d.olhaPara, t);
+        else if(d.jeito && !J.falante) gestoDoJeito(p, f, tAnim, dt, d.jeito, false);
+      }
       f.impacto = null; f.ataque = null; f.provoca = null;
     } else {
       f.queda = null; f.jazido = 0;
@@ -2242,7 +2317,8 @@ let noQuadroExterno = null;
       const vel = medirVelocidade(f, q0.x, q0.z, dt);
       const corre = !!(d.fugindo || d._cacando || d.fugaBomba);
       const emBriga = d.golpe > 0 || d.apanhou > 0 || d.hostil > 0;
-      if(typeof d.rumo === 'number') f.yaw = girar(f.yaw, d.rumo, Math.min(1, dt*14));
+      const rumo = rumoDe(d);
+      if(typeof rumo === 'number') f.yaw = girar(f.yaw, rumo, Math.min(1, dt*14));
       else if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
       if(d.arremesso && d.arremesso.t > 0.4){
         const pr = J.projeteis.find(q=>!q.morto && q.t < 0.2 && Math.hypot(q.x-d.x, q.y-d.y) < 60);
@@ -2965,6 +3041,7 @@ let noQuadroExterno = null;
     if(opc.escala) escalaDeCima = opc.escala;
     sombraDeLuz = !!opc.sombra;
     noQuadroExterno = opc.noQuadro || null;
+    rumoDe = opc.rumo || (d => d.rumo);
     /* a resolução adaptativa é do canvas de quem é dono do
        renderizador; aqui ela não tem o que ajustar */
     cfg.resolucaoAdaptativa = false;

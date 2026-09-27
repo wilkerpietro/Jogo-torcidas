@@ -637,6 +637,10 @@ function escolherBares(ts, lp, lr) {
   return fora;
 }
 let ocupacao = { torcidas: [], semSede: [], mapa: '' };
+/* O NÍVEL DA SEDE QUE O JOGO DIZ (o jogo 3D, 27/09/2026): a torcida do
+   jogador tem a sede do save dela, não a da tabela — `nivelDoJogo` põe
+   aqui antes de a praça montar */
+const NIVEL_DO_JOGO = {};
 /* O ESCUDO DE VERDADE: o mesmo PNG do jogo, pela mesma regra da planta
    (`caminhoDoEscudo` de dados/cena_estadio.js): dados/escudos.js é o
    manifesto do que existe em img/escudos/ (clube-<id>.png e
@@ -655,7 +659,7 @@ function distribuirTorcidas() {
     const c = coresDaTorcida(t), cl = (TO.dados.times || []).find(o => o.id === t.clubeId) || null;
     const cc = (cl && cl.cores || []).map(x => String(x).toUpperCase());
     return { t, id: t.id, clubeSigla: (cl && cl.sigla) || t.sigla || '', clubeCor: cc[0] || null, clubeCor2: cc.find(x => x !== cc[0]) || '#E8E2D0', sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
-             clube: t.clube, nivel: t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
+             clube: t.clube, nivel: NIVEL_DO_JOGO[t.id] ?? t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
              escudo: caminhoDoEscudo('t', t.id), escudoClube: caminhoDoEscudo('c', t.clubeId),
              cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: Array.isArray(t.bares) ? t.bares.length : null, sede: null, bares: [] };
   }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
@@ -1137,6 +1141,9 @@ function montarCalcadas() {
      da rua sem saída, mais as calçadas dela), a faixa da borda e o
      canteiro; a quadra da costa, em polígono */
   const rets = C.rets;
+  /* OS ANÉIS DE CALÇADA de cada quadra de retângulo (sem rua sem saída):
+     é neles que o povo da praça anda no jogo 3D (a vida da praça) */
+  C.aneis = lista.filter(Q => !Q.cortada && Q.m && !(Q.q && Q.q.semSaida)).map(Q => ({ fora: { ...Q.r }, dentro: { ...Q.m } }));
   for (const Q of lista) {
     if (Q.cortada) { C.pols.push({ fora: Q.fora, dentro: Q.dentro, r: Q.r, piso: Q.piso, tom: Q.tom, tipo: 'anel', nova: !Q.hoje, larg: CALC }); continue; }
     const r = Q.r, m = Q.m;
@@ -5042,11 +5049,42 @@ function apiDoCenario() {
            o clube, o tamanho e as rivais, pro dia de jogo */
         const rivais = {};
         for (const U of ocupacao.torcidas) { const w = U !== T ? pesoRival(T, U) : 0; if (w > 0) rivais[U.id] = w; }
-        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta,
+        /* a sede de dentro (o jogo 3D): o modelo (1, o barracão; 3, a sede
+           grande), os cômodos e os lugares de gente, no mundo */
+        const mt = T.sede && T.sede.montagem;
+        const sede3d = mt ? { nivel: mt.nivel, lugares: mt.lugares, comodos: mt.comodos, area: { ...a }, frente: s.frente } : null;
+        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta, sede3d,
                  clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais,
                  cargos: T.t.cargos || null, irmandade: T.t.irmandade || [], aliados: T.t.aliados || [] };
       });
     },
+    /* O NÍVEL DA SEDE DO JOGO: o jogo 3D diz o nível da torcida do jogador
+       (o do save); vale na próxima vez que a praça montar. Devolve se mudou */
+    nivelDoJogo(id, nivel) {
+      const n = nivel == null ? undefined : Math.round(+nivel);
+      const t = (TO.dados.torcidas || []).find(x => x.id === id);
+      /* o modelo que a sede tem: nenhum (0), o barracão (1) ou a sede grande (2 pra cima) */
+      const modelo = v => v == null ? null : v < 1 ? 0 : v === 1 ? 1 : 3;
+      const antes = modelo(NIVEL_DO_JOGO[id] ?? (t ? t.sedeNivel ?? 1 : null));
+      if (n === undefined) delete NIVEL_DO_JOGO[id]; else NIVEL_DO_JOGO[id] = n;
+      const depois = modelo(NIVEL_DO_JOGO[id] ?? (t ? t.sedeNivel ?? 1 : null));
+      return antes !== depois;
+    },
+    /* OS BARES DAS TORCIDAS (a vida da praça): o lote, o dono (o id da
+       torcida, ou nulo: fechado) e a porta — o meio da frente, 1,6 m pra
+       fora dela, na calçada */
+    bares() {
+      const fora = 1.6 * M;
+      return bares.filter(x => x.b && x.b.lote).map(x => {
+        const l = x.b.lote, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, f = l.frente;
+        const porta = f === 'n' ? { x: cx, y: l.y0 - fora, fx: 0, fy: -1 } : f === 's' ? { x: cx, y: l.y1 + fora, fx: 0, fy: 1 }
+          : f === 'o' ? { x: l.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: l.x1 + fora, y: cy, fx: 1, fy: 0 };
+        return { n: x.b.n, nome: x.b.nome || '', dono: x.dono ? x.dono.id : null, porta, lote: { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1 } };
+      });
+    },
+    /* OS ANÉIS DE CALÇADA das quadras (o retângulo de fora e o do miolo):
+       o povo da praça anda no meio deles */
+    aneis() { if (!CALCADAS) montarCalcadas(); return ((CALCADAS && CALCADAS.aneis) || []).map(a => ({ fora: { ...a.fora }, dentro: { ...a.dentro } })); },
     /* O VISITANTE DE OUTRA CIDADE (dia_de_jogo.js): as torcidas de um
        clube, de qualquer praça (sem sede aqui: a porta vem nula) */
     torcidasDoClube(clubeId) {
@@ -5118,12 +5156,18 @@ async function abrirJogo3d() {
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
-      abrirPraca(nome) {
+      abrirPraca(nome, forcar) {
         try { localStorage.setItem('jogo3d-praca', nome); } catch (e) {}
+        /* `forcar`: a mesma praça, montada de novo (a sede do jogador mudou de nível) */
+        if (forcar && cenario && cenario.praca === nome) return cenario.montar(nome, mapaDoPorte(nome));
         return abrirCenario(nome, mapaDoPorte(nome));
       },
       /* a calçada na frente da porta da sede (o mesmo ponto do dia de jogo) */
-      sedeDe(id) { const t = apiDoCenario().torcidas().find(x => x.id === id); return t && t.porta; }
+      sedeDe(id) { const t = apiDoCenario().torcidas().find(x => x.id === id); return t && t.porta; },
+      /* a planta (a vida da praça lê dela as sedes, os bares e as calçadas) */
+      get planta() { return apiDoCenario(); },
+      /* o nível da sede do save (vale na próxima montagem da praça) */
+      nivelDoJogo: (id, n) => apiDoCenario().nivelDoJogo(id, n)
     });
   } catch (e) { console.error(e); alert('O jogo não carregou: ' + e.message); }
 }

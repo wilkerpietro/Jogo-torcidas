@@ -114,3 +114,66 @@ body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
   #j3dFeed{right:10px;top:auto;bottom:calc(46vh + 2px);width:54px;height:22px;border:1px solid var(--linha);border-bottom:0}
   body.jogo3d.feed-fechado #j3dFeed{bottom:0;right:10px}
 }
+
+/* =========================================================
+   A VIDA DA PRAÇA (27/09/2026, vida3d.js)
+   ========================================================= */
+/* o relógio do dia, na barra de cima, antes da data */
+#j3dHora{
+  font-family:var(--mono);font-size:15px;font-weight:600;color:#f3e6c4;letter-spacing:.04em;
+  padding:0 10px 0 2px;align-self:center;white-space:nowrap;
+}
+/* O BALÃO DA SALA DO PRESIDENTE: o cartão da mensagem que acabou de
+   cair, em cima de quem veio falar (a cadeira da frente da mesa dele).
+   Fica por baixo da HUD (o feed, a barra, os painéis) e por cima da
+   cidade; os botões respondem como no feed */
+.j3d-balao{
+  position:fixed;z-index:19;left:0;top:0;width:min(360px, 86vw);box-sizing:border-box;
+  --rabo:50%;pointer-events:auto;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));
+}
+.j3d-balao[hidden]{display:none}
+.j3d-balao-corpo{
+  max-height:min(46vh, 420px);overflow:auto;background:var(--painel, #161616);
+  border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:2px;
+}
+.j3d-balao-corpo .msg{border:0;border-left:3px solid var(--linha);background:transparent}
+.j3d-balao.decisao .j3d-balao-corpo{border-color:var(--ouro, #e0b040)}
+.j3d-balao.decisao .j3d-balao-corpo .msg{border-left-color:var(--ouro, #e0b040)}
+.j3d-balao-hora{font-family:var(--mono);font-size:10px;color:var(--fraco);padding:4px 11px 0;letter-spacing:.06em}
+/* o rabo aponta pra cabeça de quem fala */
+.j3d-balao::after{content:'';position:absolute;left:var(--rabo);top:100%;transform:translateX(-50%);
+  border:9px solid transparent;border-top-color:rgba(255,255,255,.22)}
+.j3d-balao::before{content:'';position:absolute;left:var(--rabo);top:calc(100% - 1px);transform:translateX(-50%);
+  border:8px solid transparent;border-top-color:var(--painel, #161616);z-index:1}
+.j3d-balao-x{
+  position:absolute;right:-9px;top:-9px;z-index:2;width:22px;height:22px;border-radius:11px;cursor:pointer;
+  background:#222;color:#ddd;border:1px solid rgba(255,255,255,.3);font:600 14px/1 var(--corpo);padding:0;
+}
+.j3d-balao-x:hover{background:var(--rubro, #8a1f1f);color:#fff}
+/* a sala fora da tela: o balão encosta no alto, sem rabo, com o botão que volta */
+.j3d-balao.solto::after,.j3d-balao.solto::before{display:none}
+.j3d-balao-ir{
+  display:block;width:100%;margin-top:6px;cursor:pointer;padding:6px 10px;
+  background:rgba(20,20,22,.92);color:#f3e6c4;border:1px solid rgba(255,255,255,.2);
+  font-family:var(--titulo);font-size:11px;letter-spacing:.1em;text-transform:uppercase;border-radius:6px;
+}
+.j3d-balao-ir[hidden]{display:none}
+/* sem jogo na tela (o menu, a escolha) e com painel aberto, o balão some */
+body.jogo3d:not(.j3d-em-jogo) .j3d-balao, body.jogo3d.com-painel .j3d-balao{display:none}
+@media (max-width:760px){
+  .j3d-balao{width:min(320px, 92vw)}
+  .j3d-balao-corpo{max-height:34vh}
+}
+
+/* A REUNIÃO NA SALA DA SEDE: o palco da cena fica transparente — a
+   cidade aparece atrás, com a diretoria na mesa de reunião —, e sobram
+   a faixa (o título e o Encerrar) e os balões de fala; arrastar no
+   meio gira a câmera da cidade */
+body.jogo3d.palco3d #telaDiaJogo{background:transparent;pointer-events:none}
+body.jogo3d.palco3d #djPalco{border-color:transparent;box-shadow:none;background:transparent;pointer-events:none}
+body.jogo3d.palco3d #djPrincipal{visibility:hidden}
+body.jogo3d.palco3d #djFaixa,
+body.jogo3d.palco3d .cena-balao,
+body.jogo3d.palco3d #djComandos,
+body.jogo3d.palco3d #djPad{pointer-events:auto}

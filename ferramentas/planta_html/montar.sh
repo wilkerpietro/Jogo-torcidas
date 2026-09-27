@@ -18,7 +18,7 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 A=${1:-/tmp/planta_html}
 mkdir -p "$A/dados" "$A/js" "$A/img/texturas/modelos"
 cp "$R/ferramentas/planta_html/index.html" "$A/"
-cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$A/js/"
+cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$R/ferramentas/planta_html/vida3d.js" "$A/js/"
 # as rotas de dentro dos estádios do dia de jogo (GERADO por rotas_estadios.mjs)
 cp "$R/js/diajogo/rotas_estadios.js" "$A/js/"
 cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/estadios.js" "$R/dados/escudos.js" "$A/dados/"
@@ -106,7 +106,12 @@ cp "$R/ferramentas/planta_html/texturas/"torres_v*.jpg "$A/img/texturas/modelos/
 mkdir -p "$A/css" "$A/img/cenas"
 cp "$R/ferramentas/planta_html/jogo3d.js" "$A/js/"
 cp "$R/ferramentas/planta_html/jogo3d.css" "$A/css/"
-cp "$R/js/diajogo/bonecos3_global.js" "$A/js/"
+# O BONECO DAS CENAS 2D DO JOGO é outra cópia do módulo (bonecos3_cena.js):
+# o bonecos3.js guarda a cena e a câmera de quem o usa num estado só, e o
+# cenário (a vida da praça, a reunião na sala da sede) já está nele — a
+# cena de briga 2D, montando o dela, tomava a cidade (27/09/2026)
+cp "$A/js/bonecos3.js" "$A/js/bonecos3_cena.js"
+sed "s#from './bonecos3.js'#from './bonecos3_cena.js'#" "$R/js/diajogo/bonecos3_global.js" > "$A/js/bonecos3_global.js"
 python3 - "$R" "$A" <<'PY'
 import base64, json, os, re, sys
 R, A = sys.argv[1], sys.argv[2]

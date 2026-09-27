@@ -470,6 +470,26 @@ TO.feed = (function(){
     passo('placar',         ()=>placarDoDia(E, ctx.jogos || []));
     passo('almanaque',      ()=>almanaqueDoDia(E));
     passo('dica',           ()=>dicaDeHoje(E));
+    passo('hora do dia',    ()=>horasEmOrdem(E));
+  }
+
+  /* A HORA DO DIA EM ORDEM (o jogo 3D, 27/09/2026): a `hora` de cada
+     mensagem era um sorteio por tipo (8h a 22h), fora da ordem da fila —
+     e ninguém lia. No jogo 3D o dia passa na tela e a mensagem cai na hora
+     dela: as do dia ganham horas crescentes, das 8h às 21h30, na ordem em
+     que vão cair (a da fila), cada uma num pedaço do dia, com um tanto de
+     acaso dentro dele. O jogo de feed segue igual. */
+  function horasEmOrdem(E){
+    const hoje = E.data.absoluto || 0;
+    const doDia = (E.feedFila || []).filter(m => m.quando && m.quando.abs === hoje);
+    const n = doDia.length;
+    if(!n) return;
+    const ini = 8*60, fim = 21*60 + 30, pedaco = (fim - ini) / n;
+    doDia.forEach((m, i) => {
+      const h = TO.mapa.hash(`${hoje}|${m.kind || 'msg'}|${i}`);
+      const min = Math.round(ini + pedaco*(i + 0.15 + 0.7*((h % 1000)/1000)));
+      m.hora = `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+    });
   }
 
   /* =======================================================
