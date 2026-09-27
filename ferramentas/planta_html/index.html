@@ -277,7 +277,7 @@ import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
 import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento } from './js/estadios3d.js';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -4151,9 +4151,12 @@ function degraus() {
    setores e sem a rua de fora), com o nome dele no letreiro, na escala do
    mapa, girado com o portão 1 de frente pra cidade e 2 cm acima do chão
    pintado */
+const marcaDoModelo = {};
 function objetoDoEstadioNovo(e, g) {
   const c = e.copia || e;
   const { grupo, info } = montarEstadioJogo(c.modelo, { nome: e.nome, mapa: true });
+  /* a marca do modelo: o dia de jogo confere com a das rotas de dentro dele */
+  marcaDoModelo[c.modelo] = marcaDoEstadio(info);
   grupo.scale.setScalar(M);
   grupo.rotation.y = -c.giro * Math.PI / 180;
   grupo.position.set(c.centro[0], 0.02 * M, c.centro[1]);
@@ -5035,8 +5038,30 @@ function apiDoCenario() {
         /* (fx, fy): pra onde a frente olha, a rua */
         const porta = !a ? null : s.frente === 'n' ? { x: cx, y: a.y0 - fora, fx: 0, fy: -1 } : s.frente === 's' ? { x: cx, y: a.y1 + fora, fx: 0, fy: 1 }
           : s.frente === 'o' ? { x: a.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: a.x1 + fora, y: cy, fx: 1, fy: 0 };
-        /* a terceira cor só quando a torcida tem (é ela que dá a gola dupla) */
-        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta };
+        /* a terceira cor só quando a torcida tem (é ela que dá a gola dupla);
+           o clube, o tamanho e as rivais, pro dia de jogo */
+        const rivais = {};
+        for (const U of ocupacao.torcidas) { const w = U !== T ? pesoRival(T, U) : 0; if (w > 0) rivais[U.id] = w; }
+        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta,
+                 clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais };
+      });
+    },
+    /* os clubes da praça (dados/cidades.js, na ordem de lá: os daqui
+       primeiro), com as cores (dados/times.js) */
+    clubes() {
+      const c = infoDaCidade(cidade);
+      return ((c && c.times) || []).map(x => {
+        const t = (TO.dados.times || []).find(o => o.id === x.clubeId) || {};
+        return { id: x.clubeId, nome: x.clube, sigla: x.sigla, local: !!x.local, cores: (t.cores || []).map(v => String(v).toUpperCase()), nomeCompleto: t.nomeCompleto || x.clube };
+      });
+    },
+    /* os estádios do mapa: o nome, o modelo e onde ele está (o centro, o
+       giro em graus, o terreno em metros) e quem manda nele (dados/estadios.js) */
+    estadios() {
+      return estadios.map(e => {
+        const c = e.copia || {}, d = (TO.dados.estadios || []).find(x => x.nome === e.nome) || {};
+        return { nome: e.nome, principal: !!e.principal, modelo: c.modelo || null, centro: c.centro || null, giro: c.giro || 0, terreno: c.terreno || null,
+                 mandantes: d.mandantes || [], lotacao: d.capacidade || 0, marca: (c.modelo && marcaDoModelo[c.modelo]) || null };
       });
     },
     tituloDe: it => it ? tituloDe(it) : '', fichaDe: it => it ? fichaDe(it) : '',

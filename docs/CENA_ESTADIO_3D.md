@@ -3923,6 +3923,151 @@ O dono perguntou por que o Presidente Vargas (Fortaleza) saía o estádio de 40 
 
 **O que isto ainda não é:** o Estádio Regional (Interior de Minas) e o Estádio do Trabalhador (Subúrbio Carioca) não têm clube na planilha, e o legado diz 15 mil redondos: pela regra, viram o de 20. Se a lotação de verdade deles for menor, é uma linha na tabela `CAPACIDADE`.
 
+### 4.67. O dia de jogo no cenário: o clássico da praça, as rotas das torcidas da sede ao lugar na arquibancada e a PM separando as duas
+
+O dono pediu: "Vamos começar a trabalhar em outros pontos do jogo, estou parcialmente satisfeito com o mapa no momento. Comece a iniciar rotas de entrada no estádio das torcidas pra chegar ao seu local exato na arquibancada, através da sua respectiva entrada, partindo da sua sede. Crie um jogo fictício de dois times da mesma cidade pras respectivas torcidas se locomoverem até lá. A polícia vai fazer cordões de isolamento ao redor do estádio pra evitar que haja encontro entre elas, e as torcidas vão fazer rotas no intuito de não se chocarem."
+
+**Onde está.** No cenário 3D (4.49), o botão **Dia de jogo** (no celular, **Jogo**) na barra de cima. Ele monta o plano (em ~1 s no navegador sem placa de vídeo daqui), põe a PM e os bonecos na porta das sedes e abre o painel do jogo. O código é `ferramentas/planta_html/dia_de_jogo.js`; o que ele pede do cenário e da planta está no fim.
+
+**O jogo (fictício).** Os dois primeiros clubes da praça (a ordem de `dados/cidades.js`, os daqui antes) que têm torcida com sede no mapa. O primeiro manda, no estádio dele (`mandantes` de `dados/estadios.js`; sem estádio próprio no mapa, o principal), domingo às 16h. No painel dá pra trocar o jogo (os outros pares da praça) e inverter o mando (o outro clube manda, no estádio dele).
+
+**Quem vai pra onde.** Cada torcida do clube vai pro setor do **escalão** dela: a de mais poder no 1º, a seguinte no 2º… O mandante entra pelos portões 1 e 2, o visitante pelo 3 (4.58). O portão de cada setor é o de caminho mais curto até ele. O de 40 tem m1, m2, v1, v2 e v3; o de 20 tem três de cada lado; o de 10 tem m1 a m3, v1 e v2. A torcida que sobra (o 3º visitante no de 10, o 3º mandante no de 40) divide o último setor do lado dela, nas vagas seguintes.
+
+**O bonde.** Um boneco a cada 3,3 membros (no mínimo 5, no máximo 40 por torcida; no painel, "pouca gente" divide por dois e "muita gente" dobra, sem passar de 40). Eles se juntam na calçada da sede, virados pra rua, e saem numa coluna de 4 por fileira (0,8 m de lado, 0,9 m entre as fileiras) que estreita onde a rua estreita. Na revista da PM a coluna para: 1,5 s por pessoa. Na boca do portão ela vira fila, e cada um passa a catraca 1,2 s depois do da frente. Dali cada um anda, a 1,05 m/s, pela rota de dentro até a vaga dele, e fica virado pro campo. Na rua a marcha é de 1,25 m/s.
+
+#### As rotas de dentro do estádio (`rotas_estadios.mjs`, fora do jogo)
+
+A rota de dentro não se calcula no jogo: `ferramentas/planta_html/rotas_estadios.mjs` roda uma vez e grava `js/diajogo/rotas_estadios.js` (66 KB, GERADO).
+
+- O chão é o mesmo que o boneco a pé pisa (os andares do `subsolo.js`, 4.62): a escada, o corredor, o vomitório e a arquibancada de cada um dos três modelos.
+- O caminho é o de menor custo (algoritmo de Dial, passos de 10 e 14) numa grade de 10 cm, com o corpo do boneco (0,25 m de raio) e o degrau que ele sobe. Sai da **boca** do portão (8 m pra fora do ponto da fila), passa a fila, a catraca, o corredor e o vomitório, e chega no centro do setor.
+- Depois o caminho é enxugado: o trecho vira reta onde a reta passa.
+- Cada setor tem **100 vagas**, os lugares do degrau de 0,5 em 0,5 m nos trechos cheios da arquibancada (`vagas` da camada dos setores, `estadios3d.js`). Cada vaga guarda onde ela sai do caminho do setor e o pedaço dela até o lugar.
+- No de 40, por exemplo, o m1 fica a 50 m do portão 1 e o m2 a 59 m do portão 2.
+- Leva uns 45 s. **Roda de novo sempre que um estádio mudar.** Cada modelo guarda a marca (`marcaDoEstadio`, em `estadios3d.js`: os lugares, o ponto de cada entrada e os lugares de cada setor). A planta tira a marca do estádio que ela monta no mapa, e o painel avisa em vermelho quando as duas não batem.
+
+#### A grade da rota na cidade
+
+A rota da sede até a boca do portão sai de uma grade de 1 m, feita da grade do passo do cenário (0,5 m: o que o corpo alcança, 4.52) sem o estádio.
+
+- Cada célula tem a **folga**, a distância até a parede, o carro ou o poste, pela distância de chanfro.
+- O meio da rua custa 1 por metro; a beira custa até 4 (a partir de 2,5 m de folga, custa 1). Com menos de 0,7 m de folga o bonde não passa.
+- A busca é o A* com um monte binário. O custo de cada lado é uma tabela, uma conta por célula feita antes da busca: sem isso, a busca levava 27 s.
+
+#### O plano da PM
+
+1. **Os arredores.** É o que se anda até 110 m dos portões, ou menos se uma sede do jogo fica perto: 70% da distância dela, no mínimo 45 m. A PM divide os arredores em duas zonas.
+2. **O corredor do visitante, primeiro.** A PM traça a rota do visitante até o portão 3. Ela paga caro (+8 por metro) no pedaço dos arredores mais perto dos portões do mandante, e não passa a menos de **12 m** da boca de um portão do mandante (quando o mapa deixa).
+   - A **zona do visitante** é o pedaço dos arredores mais perto do portão 3 (andando) mais o corredor. O corredor é o que se anda até 8 m da rota: a rua inteira, de parede a parede, e a boca das transversais.
+   - O resto é a **zona do mandante**. A boca dos portões do mandante é sempre dele.
+   - Dividir só pelo portão mais perto não servia: no de 40 de Fortaleza, o portão 3 fica num bolsão que só se alcança passando pela zona do mandante.
+   - **A conferência.** Todo portão do mandante que uma torcida dele usa tem de dar na rua pela zona do mandante, e o portão 3 pela do visitante.
+     - Se o corredor deixou um portão do mandante ilhado (passou na única rua dele), a PM traça o corredor de novo, cada vez mais longe daquele portão (16, 24, 36 e 54 m andando), enquanto o visitante ainda chegar no dele.
+     - Antes da regra dos 12 m e desta conferência, o corredor do Rei Pelé (Alagoas) passava na rua do portão 2, e a 2ª torcida do CRB ficava sem caminho.
+   - **O corredor que abre.** Às vezes o mapa obriga: no Dutrinha (Mato Grosso, com o Mixto mandando), o portão 3 fica no canto nordeste, e as duas ruas que chegam nele passam na frente dos portões 1 e 2.
+     - Aí a torcida do portão ilhado espera: a PM segura o corredor até o último visitante passar a catraca, e um minuto depois abre a rua.
+     - A grade do cordão daquele trecho sai, os PMs se espremem nas pontas (na calçada), e o rótulo diz a hora ("Cordão da PM · abre às 15:06").
+     - A rota dessa torcida passa pelo corredor, mas nunca a menos de 15 m do portão do visitante. Se ela chegasse antes da hora, sairia da sede mais tarde; o painel diz quanto.
+3. **O cordão divisório.** Onde uma zona encosta na outra, a PM põe a grade de contenção e uma fila de PMs de escudo a cada 1,4 m, 1,2 m pro lado do visitante e virados pra ele.
+4. **As bocas**, onde a rua sai dos arredores:
+   - a boca por onde entra a rota de uma torcida vira **revista**: a grade em funil com a abertura de 3 m e 3 PMs, e o bonde para ali;
+   - as outras bocas da zona do visitante ficam **fechadas**: a grade atravessada e 2 PMs;
+   - as bocas do mandante ficam **abertas**, porque é por onde chega o resto da torcida dele.
+5. **A escolta.** 4 PMs andam com o bonde do 1º escalão visitante, dois na frente e dois atrás, da sede até a revista.
+
+#### As rotas das torcidas: "no intuito de não se chocarem"
+
+Fora dos arredores não tem cordão, e quem separa é a rota e o horário.
+
+- **A ordem.** Primeiro sai a rota do visitante (a do corredor). Depois a do mandante, que paga caro perto das rotas do visitante. Depois a do visitante de novo, que paga perto das do mandante.
+- **O que cada lado paga a mais, por metro, fora dos arredores:**
+  - perto da sede rival: até +6, a metade a cada 31 m;
+  - perto da rota rival: até +10, a metade a cada 21 m;
+  - perto do pedaço dos arredores do lado rival: até +6, a metade a cada 17 m. Sem esse último, o visitante contornava a zona do mandante rente à borda e passava na boca por onde o mandante entra: na primeira versão, a 1 m da revista do mandante.
+- **O horário.** Cada bonde sai pra chegar na boca do portão na hora dele: o visitante às 15h05, o mandante às 15h20, e 5 min depois a cada escalão. A PM traz o visitante cedo.
+  - Depois o plano confere cada visitante contra cada mandante, a cada 10 s, a cabeça e o rabo de cada coluna.
+  - Se dois bondes rivais passam a menos de **60 m** um do outro na cidade, a saída do visitante adianta de 3 em 3 min (até 30).
+  - Adianta também se ele passa num cruzamento sem a margem que vem abaixo.
+- **Os cruzamentos e as travessias.** Quando o mapa obriga (o visitante mora do lado do mandante e o portão dele fica do outro lado), as rotas se cruzam.
+  - Cada trecho em que a rota de um mandante passa a menos de **15 m** da de um visitante, na cidade, é um cruzamento; cruzamentos a menos de 25 m um do outro viram um só.
+  - O rabo de quem passa antes tem de passar pelo menos **5 min** antes de a cabeça do outro chegar.
+  - A PM monta ali uma **travessia**: na rua de quem passa depois, dos dois lados da rota de quem passa antes, a grade de parede a parede e 3 PMs do lado do cruzamento. O rótulo diz até quando ela fica fechada.
+  - Um minuto depois do último passar, a grade sai e os PMs andam pra calçada.
+- O painel diz o que separou: a menor distância entre dois bondes rivais na rua, e cada cruzamento com a hora de cada um.
+
+#### No cenário
+
+- **O painel:**
+  - o relógio, **Começar/Pausar**, a velocidade (1×, 10×, 30×, 60×) e a régua da hora;
+  - cada torcida, com a hora de saída, os metros até o portão, o setor e o que ela está fazendo (na porta da sede, andando, na revista, na fila, passando a catraca, no lugar);
+  - a PM (cordões, revistas, ruas fechadas, travessias, PMs, grades) e o encontro.
+- **Os botões:**
+  - **Ver o plano**: de cima, todas as rotas;
+  - **Ver o estádio**;
+  - **Seguir**: a câmera anda com a cabeça de um bonde, e sobe junto na arquibancada;
+  - **Rotas e zonas**: a fita de cada rota na cor da torcida e as zonas pintadas no chão;
+  - o jogo, **Inverter o mando** e quanta gente.
+- **Os bonecos** são os do jogo (`bonecos3.js`), o mesmo `povo` do boneco a pé: com o dia de jogo aberto, dá pra andar a pé no meio deles. A passada acompanha a velocidade do relógio, pra 60× não virar corrida.
+- **O rótulo** de cada bonde (sigla e quantos) anda em cima da cabeça dele. Os rótulos ficam do mesmo tamanho na tela. Quando dois se cobrem, fica o mais importante: o da torcida, depois o da revista e o da travessia, depois o do cordão maior.
+- A câmera ganhou a **altura do alvo** (`orb.alto`), pra olhar a arquibancada e não a fachada.
+
+![o dia de jogo: as zonas e os cordões, a revista, a travessia, o lugar na arquibancada e o corredor do Dutrinha, fechado e aberto](../img/cena3d/dia-de-jogo.jpg)
+
+#### O que mudou fora do arquivo novo
+
+- `bonecos3.js`:
+  - `pos(x, y, d)` recebe o disco e usa `d.alt` como a altura do pé;
+  - o corte do que está fora da tela recebe o disco (`noQuadro(x, z, d)`);
+  - o PM parado fica virado pro `rumo` dele, usa a `passada` e o `escudo` levantado.
+  
+  Sem esses campos, faz o que fazia.
+- `cenario.js`:
+  - o botão e o painel;
+  - `GradeDoPasso.crua()`;
+  - os bonecos do dia junto com o boneco a pé, cortados pelo que a câmera vê;
+  - a altura da tela guardada na troca de tamanho. Lida a cada quadro (`clientHeight`), depois de o painel mudar um texto, ela obrigava o navegador a refazer o leiaute da página no meio do quadro: era um terço do tempo dos bonecos.
+  - a linha "dia de jogo: N bonecos, X ms" no medidor.
+- `index.html`: a planta dá ao cenário o clube, o poder, os membros, o nível, o bairro e os rivais de cada torcida, os clubes da praça com as cores e os estádios com o modelo, o terreno e a marca do modelo que ela montou.
+- `estadios3d.js`: a arquibancada dá as `vagas`, a camada dos setores dá as vagas e o centro de cada setor, e `marcaDoEstadio` dá a marca do modelo.
+
+#### Medido
+
+No navegador daqui, sem placa de vídeo. As contas do plano e dos bonecos são de processador, e valem; o fps não vale.
+
+| praça (mapa) | jogo · estádio | torcidas (bonecos) | plano | PM | cruzamentos na cidade | no lugar |
+|---|---|---|---|---|---|---|
+| Fortaleza (grande) | Fortaleza × Ceará · Arena Castelão (40) | 5 (114) | 1,5 s | 4 cordões, 3 revistas, 65 PMs, 49 grades | 2: o visitante passa 7 e 10 min antes | todos às 15h26 |
+| Alagoas (médio) | CRB × CSA · Rei Pelé (20) | 4 (62) | 1,0 s | 9 cordões, 1 revista, 64 PMs, 46 grades | 1: 11 min antes | todos às 15h25 |
+| Mato Grosso (pequeno) | Cuiabá × Mixto · Arena Pantanal (40) | 2 (12) | 0,5 s | 3 cordões, 2 revistas, 1 rua fechada, 64 PMs | nenhum | todos às 15h20 |
+| Mato Grosso, invertido | Mixto × Cuiabá · Dutrinha (10) | 2 (12) | 0,9 s | 7 cordões, 2 revistas, 103 PMs; o corredor abre às 15h06 | nenhum | todos às 15h20 |
+
+- Em nenhum dos quatro dois bondes rivais ficam na rua ao mesmo tempo, fora dos arredores. Onde as rotas se cruzam, a folga de tempo é de 7 a 11 min.
+- **As 30 praças, com o mando normal e invertido** (60 planos, um atrás do outro no mesmo navegador):
+  - **47 sem problema**: todas as torcidas chegam no lugar, e nenhum bonde rival fica a menos de 60 m de outro na rua. Onde as rotas se cruzam, a folga é de 7 a 17 min.
+  - **Em 12, uma ou mais torcidas visitantes ficam sem caminho até o portão 3** ("não achei caminho da sede ao portão 3"). Isso acontece no Estádio Regional (os dois mandos), no Heriberto Hülse (os dois), na Ilha do Retiro, e com o mando invertido no Cornélio de Barros, no Junco, no Germano Kruger, no Bento Freitas, no Amigão, no São Januário e no Ulrico Mursa. **A causa ainda não foi investigada.**
+  - **Na Bahia com o mando invertido (Vitória × Bahia), a página dá erro de memória** ("Array buffer allocation failed"). O monte da busca de caminho cresce sem parar; a suspeita é um custo que não é número. **Ainda não foi consertado.**
+  - **Três planos levam muito mais que o normal** (0,4 a 2,2 s): São Paulo, 47 s; Sergipe invertido, 67 s; Maranhão invertido, 168 s. Ainda sem causa.
+- **Os controles** (`controles.js`, em Fortaleza e no Mato Grosso), todos sem erro na página:
+  - Começar, Pausar e Continuar, com o relógio andando a 60×;
+  - a régua da hora: no fim, todos no lugar;
+  - Seguir (a câmera na cabeça do bonde), Rotas e zonas, Ver o plano e Ver o estádio;
+  - Inverter o mando, a gente (pouca, normal, muita: 65, 114 e 146 bonecos em Fortaleza) e o outro jogo da praça;
+  - o boneco a pé andando no meio do jogo, Fechar e abrir de novo.
+- **Os bonecos, andando** (Fortaleza, 179 bonecos: 114 da torcida e 65 PMs): o `povo.atualizar` leva 0,7 a 1,2 ms por quadro.
+  - Na primeira vez que entram na tela, cada boneco é montado (uns 3 ms cada: meio segundo pros 180 da vista de cima).
+  - Antes da altura da tela guardada, um terço do tempo dos bonecos era o navegador refazendo o leiaute da página.
+
+#### O que isto ainda não é
+
+- **Onde o mapa obriga, quem separa é o horário.** Em Fortaleza, as sedes do visitante ficam no nordeste, o portão 3 no sudoeste do estádio e as sedes do mandante no sudeste. Não tem caminho que não cruze, e as rotas se cruzam em dois pontos. A PM fecha a travessia e o visitante passa uns 7 a 10 min antes, mas ninguém "segura" um bonde na grade: se o horário apertar, os dois passam.
+- **Não tem reação.** Ninguém vê o rival, corre, desvia ou briga. O bonde anda no trilho e no horário do plano. A PM não age: está parada, na escolta ou abrindo a travessia. O combate do jogo (`combate.js`) não está ligado aqui.
+- **Um boneco é 3,3 torcedores**, e só vão as torcidas com sede no mapa. O resto do público (o torcedor comum, quem vem de ônibus) não existe, então a arquibancada fica quase vazia.
+- **A rota de dentro é de 3 modelos**, gerada fora do jogo. Qualquer mudança nos estádios pede rodar `rotas_estadios.mjs` de novo.
+- **13 dos 60 planos das 30 praças ainda falham** (acima): visitante sem caminho até o portão 3 em 12, e o erro de memória na Bahia invertida; e três planos levam de 47 a 168 s. É o que vem primeiro, antes de qualquer coisa nova no dia de jogo.
+- **Os bonecos aparecem de uma vez.** Na primeira vez que entram na tela, cada boneco é montado; a vista de cima trava meio segundo. Depois disso, o custo é o de cima.
+- **A PM é grande.** O cordão põe um PM a cada 1,4 m de rua, e onde o corredor contorna o estádio (o Dutrinha), são 100 PMs pra 12 bonecos de torcida.
+- O fps não foi medido numa placa de vídeo de verdade. O navegador daqui desenha no processador e leva segundos por quadro com a cidade inteira; o medidor mostra o da máquina de quem abre.
+
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
 - **O MOTOR DE LUTA ESTAVA DUAS VERSÕES ATRÁS.** Este branch saiu de um
@@ -4300,6 +4445,14 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
     torcida), mas a torcida, a briga e a PM entrando são do jogo; no
     cenário o boneco a pé anda nos andares do estádio (4.62): a escada,
     os dois corredores, o vomitório e a arquibancada.
+14. **O dia de jogo do cenário (4.67) é plano e horário, sem reação.**
+    As torcidas saem das sedes, a PM separa as duas (zonas, cordão,
+    revista, travessia, escolta) e cada boneco chega na vaga dele; mas
+    ninguém vê o rival nem briga, e a PM não age. Onde o mapa obriga as
+    rotas a se cruzarem, quem separa é o horário. O combate do jogo não
+    está ligado ali. E 13 dos 60 planos das 30 praças ainda falham
+    (visitante sem caminho até o portão 3; o erro de memória na Bahia
+    invertida): ver a 4.67.
 
 ## 10. O que este trabalho NÃO mexeu
 
@@ -4309,7 +4462,11 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
   disco, `passada`, pro boneco que anda a pé no cenário da planta; sem ele
   o módulo faz exatamente o que fazia. Na 4.65 ele passou a carregar os dois
   níveis afinados do boneco e a trocar entre eles pelo tamanho na tela; sem
-  os GLB novos, cai no `boneco.glb` afinado na chegada, como antes.)
+  os GLB novos, cai no `boneco.glb` afinado na chegada, como antes. Na 4.67,
+  pro dia de jogo do cenário, o `pos` e o corte do que está fora da tela
+  passaram a receber o disco — `d.alt` é a altura do pé —, e o PM parado
+  fica virado pro `rumo` dele, com a `passada` e o escudo levantado; sem
+  esses campos, faz o que fazia.)
 - `cenas.js`, `cena_arredores.js` e todo dado de cena do jogo 2D: intactos.
   A cena do estádio se acrescenta ao mapa de cenas de fora, e a troca da
   cena padrão acontece só em `estadio3d.html`.
@@ -4341,6 +4498,8 @@ próprio portão — foi isso que tirou o cordão do portão da casa.
 | `ferramentas/afinar_boneco.mjs`, `img/boneco_perto.glb`, `img/boneco_longe.glb` | o afinador do boneco (4.65: o simplificador do meshoptimizer peça por peça, o cabelo inflado e empurrado pra fora da cabeça afinada) e os dois níveis que ele grava do `img/boneco.glb`: o de perto (~2,9 mil triângulos por boneco) e o de longe (~1,0 mil), que o `bonecos3.js` troca pelo tamanho na tela |
 | `js/diajogo/praia3d.js` | as onze peças da praia em 3D (`PECAS_PRAIA`: guarda-sol, mesa, barraca, posto, quadra, os dois quiosques, calçadão, beira do mar com a onda, jangada e barco de pesca), no tamanho de verdade, com a semente; devolve os blocos e os decalques; o coqueiro é o low poly. Por enquanto só a aba Modelos 3D da planta usa |
 | `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (a calçada em laje com o meio-fio, a sarjeta, a faixa de pedestre, o mobiliário e a grade de proteção na beira do mato, `montarCalcadas`, e a pixação das torcidas da praça, 4.54; com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta a mata, o cerrado ou o mato seco da caatinga, pela `vegetacao` da praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos), tem a aba **Modelos 3D** (as dez árvores low poly, de perto e de longe, o mato simplificado e as peças da praia, cada um grande no 3D, com a ficha e a semente) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D); `cenario.js` é o **cenário 3D** (o mapa inteiro da praça em 3D, montado pela planta: o chão pintado, o mato, o forno que junta as malhas, o clique exato, a câmera, a lista das praças, o medidor de fps com o nome da placa de vídeo e o modo **a pé**, com o boneco do jogo andando na rua, visto de cima, com o joystick e o telhado que some, 4.51 e 4.52, e a porta da sede que abre no F, o mato que não se anda e o capim de perto no chão do mato, 4.54 — o `montar.sh` leva junto o `bonecos3.js`, o `GLTFLoader.js` e os dois níveis do modelo em `dados/boneco_glb.js`, 4.65), `passo.js` é onde o corpo do boneco bate (os riscos da faixa do corpo e o deslizar neles, a colisão exata) e onde ele pisa em cima da rua (o `PisoDaRua`: a laje da calçada, o piso da sede, 4.54), `subsolo.js` é onde ele pisa embaixo da rua (o chão a um degrau do pé e a faixa do corpo contada dele, nos triângulos da estação do metrô, 4.53; o degrau e a faixa podem mudar, 4.58) e nos andares dos estádios (os triângulos do estádio, da fachada pra dentro, 4.62; e o que tem em cima da cabeça, `teto`, pra câmera saber se ele está no corredor ou na arquibancada, 4.63), `conferir_passagem.mjs` prova com a mesma conta que todo cômodo de toda sede dos três mapas se alcança do portão, `conferir_metro.mjs` prova que da calçada se chega à plataforma de toda estação, `conferir_estadios.mjs` prova que de cada portão dos três estádios do jogo a torcida chega no corredor e na arquibancada do lado dela, e só nelas (4.58; com o corpo do boneco do cenário desde a 4.62; sem o chão onde o corpo não fica em pé, 4.63; numa grade só pra todos os portões, de 10 cm, 4.64), `mapa_da_praca.mjs` dá aos conferidores o mapa que cada praça abre de verdade, com os estádios da lotação dela no tamanho de verdade (4.59; o `proposta.js` tira cada um da vaga pra fora da cidade, com o portão 1 de frente pra ela e a rua de acesso) e `montar_pages.sh` monta a pasta `cenario3d/` do GitHub Pages, que abre direto no cenário (4.49) |
+| `ferramentas/planta_html/dia_de_jogo.js` | o **dia de jogo** do cenário (4.67): o clássico da praça, a grade da rota de 1 m com a folga, o plano da PM (os arredores, o corredor do visitante, as zonas, o cordão, as bocas — revista, fechada, aberta —, a escolta), as rotas das torcidas (o A* com o custo de cada lado numa tabela), os cruzamentos e as travessias, o horário, e a cena: os bonecos (o `povo` do `bonecos3.js`), a PM, a grade em instâncias, as fitas, as zonas no chão, os rótulos e o painel |
+| `ferramentas/planta_html/rotas_estadios.mjs`, `js/diajogo/rotas_estadios.js` | a rota de dentro de cada um dos três estádios (4.67), do portão ao setor e às 100 vagas de cada setor, pelos andares do `subsolo.js` numa grade de 10 cm; roda fora do jogo e grava o `rotas_estadios.js` (GERADO), com a marca do modelo (`marcaDoEstadio`) que o dia de jogo confere |
 | `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia`, `temLagoa` e `vegetacao` |
 | `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
 | `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça), da praia (a folha `praia`: deck, lona, tecido do guarda-sol, palha, tábua pintada, balcão de azulejo, cardápio, geladeira, freezer, mesa, vela, casco, canga, prancha, coco) e a rede do vôlei, na folha de grades, e escreve o atlas e as cores médias (`modelos_medias.js`, que a versão de longe usa; `--medias` refaz só elas); roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |

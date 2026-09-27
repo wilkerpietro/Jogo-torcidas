@@ -79,6 +79,14 @@
       anda na velocidade dividida por ela, e o passo sai mais longo
       e mais lento sem o boneco andar menos. No jogo ninguém manda
       `passada`, e nada muda.
+
+   7. O DIA DE JOGO do cenário 3D (27/09/2026) põe a torcida inteira
+      e a PM na rua e na arquibancada. Três campos opcionais: `pos`
+      recebe o disco (`pos(x, y, d)`: lá cada um traz a altura do pé,
+      `d.alt`, que sobe a escada e a fileira), o teste de quem está na
+      tela também (`noQuadro(x, z, d)`), e o PM parado vira pro `rumo`
+      dele, com o escudo em pé se tiver `escudo` (o cordão). Sem
+      eles, nada muda.
    ========================================================= */
 import * as THREE from '../../vendor/three/three.module.min.js';
 import { GLTFLoader, SkeletonUtils } from '../../vendor/three/GLTFLoader.js';
@@ -1950,8 +1958,8 @@ let noQuadroExterno = null;
       d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3);
     fg.mudou = true;
     if(leve && !agitado && ((quadroN + i) % 3)){
-      const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05;
-      if(moveu){ const q = pos(d.x, d.y); c.raiz.position.set(q.x, q.y, q.z); f.px = q.x; f.pz = q.z; }
+      const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05 || (d.alt != null && Math.abs(d.alt - f.py) > 0.05);
+      if(moveu){ const q = pos(d.x, d.y, d); c.raiz.position.set(q.x, q.y, q.z); f.px = q.x; f.pz = q.z; f.py = q.y; }
       else fg.mudou = false;
       c.raiz.visible = true;
       return;
@@ -1986,7 +1994,7 @@ let noQuadroExterno = null;
     } else {
       f.queda = null; f.jazido = 0;
       esmaecer(c, 1);
-      const q0 = pos(d.x, d.y);
+      const q0 = pos(d.x, d.y, d);
       const vel = medirVelocidade(f, q0.x, q0.z, dt);
       const corre = !!(d.fugindo || d._cacando || d.fugaBomba);
       const emBriga = d.golpe > 0 || d.apanhou > 0 || d.hostil > 0;
@@ -2044,7 +2052,7 @@ let noQuadroExterno = null;
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));
     /* sem deslocamento aleatório: o disco fica onde o combate o pôs.
        A pancada aparece no corpo (`flinch`), não no chão. */
-    const qd = pos(d.x, d.y);
+    const qd = pos(d.x, d.y, d);
     c.raiz.position.set(qd.x, qd.y, qd.z);
     c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
@@ -2070,14 +2078,18 @@ let noQuadroExterno = null;
     if(!pm.vivo){ cair(p, f, dt); rapidez = 14; esmaecer(c, +Math.max(0.5, 1 - 0.5*suave((f.queda.t-0.4)/0.5)).toFixed(2)); }
     else {
       f.queda = null; esmaecer(c, 1);
-      const qp = pos(pm.x, pm.y);
+      const qp = pos(pm.x, pm.y, pm);
       const vel = medirVelocidade(f, qp.x, qp.z, dt);
       if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*8));
-      const andando = passo(p, f, vel, dt, false, 6);
+      /* parado, vira pra onde o disco manda (o PM do cordão do dia de jogo, de frente pra torcida) */
+      else if(typeof pm.rumo === 'number') f.yaw = girar(f.yaw, pm.rumo, Math.min(1, dt*6));
+      const andando = passo(p, f, vel / (pm.passada || 1), dt, false, 6);
       if(!andando) parado(p, f, J.t);
       /* cassetete na mão: braço direito meio dobrado */
       p.ombro[1] = Math.min(p.ombro[1], -0.5); p.cotovelo[1] = -1.6;
       if(pm.carga){ p.escudo = true; p.ombro[0] = -1.2; p.cotovelo[0] = -1.4; p.ombroZ[0] = 0.1; p.inclina += 0.14; }
+      /* o escudo em pé, na frente do corpo (o cordão de isolamento) */
+      else if(pm.escudo){ p.escudo = true; p.ombro[0] = -0.9; p.cotovelo[0] = -1.2; p.ombroZ[0] = 0.12; }
       if(pm.golpe > 0){
         const k = 1 - pm.golpe/0.3, desce = suave(k/0.6);
         p.ombro[1] = mistura(-2.8, -0.9, desce); p.cotovelo[1] = mistura(-0.9, -0.3, desce); p.ombroZ[1] = 0.25;
@@ -2086,7 +2098,7 @@ let noQuadroExterno = null;
       } else if(pm.cooldown > 1.2 && !pm.carga){ p.ombro[1] = -0.7; p.cotovelo[1] = -1.9; }
     }
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));
-    const qm = pos(pm.x, pm.y);
+    const qm = pos(pm.x, pm.y, pm);
     c.raiz.position.set(qm.x, qm.y, qm.z); c.raiz.rotation.y = f.yaw;
     aplicarPose(c, f.pose, f.escala*escalaDeCima*0.86);
     c.raiz.visible = true;
@@ -2353,8 +2365,8 @@ let noQuadroExterno = null;
      perspectiva não sai: quem sabe o que cabe na tela é o dono da
      câmera, e é ele que passa o teste em `entrarEm`. Sem teste, vale o
      retângulo de sempre. */
-  const naVista = (x, z) => noQuadroExterno
-    ? noQuadroExterno(x, z)
+  const naVista = (x, z, d) => noQuadroExterno
+    ? noQuadroExterno(x, z, d)
     : (x >= vista.x0 - MARGEM_VISTA && x <= vista.x1 + MARGEM_VISTA &&
        z >= vista.z0 - MARGEM_VISTA && z <= vista.z1 + MARGEM_VISTA);
   const conta = {vistos:0, cortados:0};
@@ -2366,7 +2378,7 @@ let noQuadroExterno = null;
     const cortar = cfg.cortarForaDaTela;
     conta.vistos = 0; conta.cortados = 0;
     const animar = (d, i, pm) => {
-      if(cortar && !naVista(d.x, d.y)){
+      if(cortar && !naVista(d.x, d.y, d)){
         const fg = figuras.get(d);
         if(fg) fg.viva = true;            // fica na lista, fora do quadro
         conta.cortados++;

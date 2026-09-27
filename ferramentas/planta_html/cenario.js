@@ -285,7 +285,10 @@ function GradeDoPasso(ar, M) {
     for (let k = 0; k < g.length; k++) { if (g[k] & AGUA) a++; if (g[k] & MATO) mt++; if (teto[k]) t++; }
     return { celulas: g.length, nx, nz, agua: a, mato: mt, cobertas: t, riscos: paredes.n, ms: Math.round(ms) };
   }
-  return { assar, agua, mato, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz };
+  /* a grade crua (o dia de jogo acha o caminho das torcidas nela): as
+     marcas de cada célula, o tamanho e onde começa */
+  const crua = () => ({ g, nx, nz, ox, oz, c, SOLIDO, AGUA, ALCANCE, MATO });
+  return { assar, agua, mato, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz, crua };
 }
 const agora = () => performance.now();
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
@@ -426,6 +429,7 @@ export function criarCenario(P) {
         <button class="cen-bt so-voo" data-acao="cima">Vista de cima</button>
         <button class="cen-bt so-voo" data-acao="rua">Nível da rua</button>
         <button class="cen-bt so-voo cen-bt-ape" data-acao="ape" title="Põe o boneco do jogo na rua, no meio da tela, pra andar com ele">A pé</button>
+        <button class="cen-bt cen-bt-jogo" data-acao="jogo" aria-pressed="false" title="O clássico da praça: as torcidas saem das sedes até o lugar delas na arquibancada, com o plano da PM"><span class="longo">Dia de jogo</span><span class="curto">Jogo</span></button>
         <label class="so-ape"><span class="rot">Camisa</span> <select class="cen-camisa" aria-label="A camisa do boneco"></select></label>
         <button class="cen-bt so-ape cen-bt-sede" data-acao="sede"><span class="longo">Ir pra sede</span><span class="curto">Sede</span></button>
         <button class="cen-bt so-ape" data-acao="rosto"><span class="longo">Outro boneco</span><span class="curto">Outro</span></button>
@@ -496,8 +500,13 @@ export function criarCenario(P) {
   /* o que é do mapa da vez (o chão, o mato, o forno, a seleção): sai inteiro na troca */
   let doMapa = new THREE.Group(); cena.add(doMapa);
 
+  /* a altura da tela em pixels CSS, guardada na troca de tamanho: ler
+     `clientHeight` a cada quadro, depois que o painel mudou um texto, faz o
+     navegador refazer o leiaute da página inteira ali no meio */
+  let altoTela = 0;
   function ajustarTela() {
     const r = tela.getBoundingClientRect();
+    altoTela = r.height;
     rend.setPixelRatio(Math.min(window.devicePixelRatio || 1, QUALIDADES[qualidade].dpr));
     rend.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
     cam.aspect = Math.max(1, r.width) / Math.max(1, r.height);
@@ -509,7 +518,8 @@ export function criarCenario(P) {
   /* ======================================================
      A CÂMERA: órbita em volta de um alvo no chão
      ====================================================== */
-  const orb = { alvo: new THREE.Vector3(), dist: 6000, az: -0.55, el: 0.85 };
+  /* `alto`: quanto o alvo sobe do chão (o dia de jogo segue uma torcida na arquibancada) */
+  const orb = { alvo: new THREE.Vector3(), dist: 6000, az: -0.55, el: 0.85, alto: 0 };
   let area = { x0: 0, y0: 0, x1: 1000, y1: 1000 };
   const OLHO = 1.6;                       // m: a altura do olho de quem anda
   const suave = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
@@ -530,7 +540,7 @@ export function criarCenario(P) {
     } else {
       orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
       orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
-      orb.alvo.y = OLHO * M;
+      orb.alvo.y = OLHO * M + orb.alto;
     }
     const c = orb.alvo, ce = Math.cos(orb.el), d = orb.dist;
     cam.position.set(c.x + d * ce * Math.sin(orb.az), c.y + d * Math.sin(orb.el), c.z + d * ce * Math.cos(orb.az));
@@ -571,9 +581,12 @@ export function criarCenario(P) {
     else if (teclas.size) andar(dt);
     animarPortas(dt);
     if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
+    if (dia && dia.aberto) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
     if (voo) voo(dt);
     posicionar();
     atualizarCorte();
+    if (dia && dia.aberto) dia.ajustarRotulos();
+    atualizarPovo(dt);
     const t0 = performance.now();
     rend.render(cena, cam);
     medir(t, performance.now() - t0);
@@ -607,6 +620,7 @@ export function criarCenario(P) {
     const classe = fps >= 50 ? 'bom' : fps >= 28 ? 'meio' : 'ruim';
     fpsEl.innerHTML = `<b class="${classe}">${Math.round(fps)}</b> fps · ${ms.toFixed(1).replace('.', ',')} ms` +
       `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${(medidor.cpu / medidor.quadros).toFixed(1).replace('.', ',')} ms</small>` +
+      (dia && dia.aberto ? `<small>dia de jogo: ${dia.J.discos.length + dia.J.policiais.length} bonecos, ${(custoDia.povo + custoDia.dia).toFixed(1).replace('.', ',')} ms</small>` : '') +
       (placa.semPlaca ? `<small class="cen-aviso">Sem placa de vídeo: o navegador desenha no processador (${esc(placa.curto)})</small>`
         : placa.curto ? `<small>${esc(placa.curto)}</small>` : '');
     medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0;
@@ -659,9 +673,9 @@ export function criarCenario(P) {
   }
   function cancelarVoo() { voo = null; }
   /* VOAR até um ponto: o alvo e a distância vão juntos, suave */
-  function voarPara(x, z, dist, el, az) {
-    const de = { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az };
-    const para = { x, z, dist: dist ?? orb.dist, el: el ?? orb.el, az: az ?? orb.az };
+  function voarPara(x, z, dist, el, az, alto = 0) {
+    const de = { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az, alto: orb.alto };
+    const para = { x, z, dist: dist ?? orb.dist, el: el ?? orb.el, az: az ?? orb.az, alto };
     let da = para.az - de.az; da = Math.atan2(Math.sin(da), Math.cos(da));
     let t = 0;
     const T = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.01 : 0.7;
@@ -671,6 +685,7 @@ export function criarCenario(P) {
       orb.alvo.x = de.x + (para.x - de.x) * f; orb.alvo.z = de.z + (para.z - de.z) * f;
       orb.dist = Math.exp(Math.log(de.dist) + (Math.log(para.dist) - Math.log(de.dist)) * f);
       orb.el = de.el + (para.el - de.el) * f; orb.az = de.az + da * f;
+      orb.alto = de.alto + (para.alto - de.alto) * f;
       if (t >= 1) { voo = null; return false; }
       return true;
     };
@@ -800,7 +815,8 @@ export function criarCenario(P) {
     const r = tela.getBoundingClientRect();
     posicionar();
     const fundo = cena.background, cor = rend.getClearColor(new THREE.Color()), alfa = rend.getClearAlpha();
-    const vis = caixaSel.visible;
+    const vis = caixaSel.visible, dv = doMapa.getObjectByName('dia-de-jogo');
+    if (dv) dv.visible = false;
     cena.background = null; cena.overrideMaterial = matId; caixaSel.visible = false;
     rend.setClearColor(0x000000, 1);
     cam.setViewOffset(r.width, r.height, Math.floor(sx - r.left), Math.floor(sy - r.top), 1, 1);
@@ -810,6 +826,7 @@ export function criarCenario(P) {
     rend.setRenderTarget(null);
     cam.clearViewOffset();
     cena.background = fundo; cena.overrideMaterial = null; caixaSel.visible = vis;
+    if (dv) dv.visible = true;
     rend.setClearColor(cor, alfa);
     const id = pixel[0] + pixel[1] * 256 + pixel[2] * 65536;
     return coisas[id] || null;
@@ -1495,7 +1512,7 @@ void main() {
     catch (e) { console.error('cenário:', e); if (vivo()) { carga.hidden = false; aviso('Não deu pra montar ' + nome + ': ' + e.message, 1); } }
     finally {
       if (vivo()) {
-        montando = false; medidor.desde = 0; $('.cen-bt-ape').disabled = !grade; pedir();
+        montando = false; medidor.desde = 0; $('.cen-bt-ape').disabled = !grade; $('.cen-bt-jogo').disabled = !grade; pedir();
         /* quem estava a pé (a troca de qualidade remonta) volta pro mesmo lugar */
         if (voltarAPe) { const v = voltarAPe; voltarAPe = null; entrarAPe(v); }
       }
@@ -1510,8 +1527,9 @@ void main() {
     atualizarTopo();
     const t0 = agora();
     sairDaRua(false);
+    if (dia) { dia.limpar(); limparBonecos(); }
     grade = null; sub = null; piso = null; CORTE.uNBuraco.value = 0;
-    $('.cen-bt-ape').disabled = true;
+    $('.cen-bt-ape').disabled = true; $('.cen-bt-jogo').disabled = true;
     jogarForaOMapa();
     area = P.areaDoCenario();
     enquadrarCidade(true);
@@ -1618,7 +1636,7 @@ void main() {
     /* o alvo um pouco pra lá do meio: a cidade desce na tela e sai de
        baixo da barra de cima */
     const cx = (L.x0 + L.x1) / 2 - Math.sin(az) * d * 0.035, cz = (L.y0 + L.y1) / 2 - Math.cos(az) * d * 0.035;
-    if (ja) { orb.alvo.set(cx, 0, cz); orb.dist = d; orb.el = 0.72; orb.az = az; pedir(); }
+    if (ja) { orb.alvo.set(cx, 0, cz); orb.dist = d; orb.el = 0.72; orb.az = az; orb.alto = 0; pedir(); }
     else voarPara(cx, cz, d, 0.72, az);
   }
   function nivelDaRua() {
@@ -1718,12 +1736,86 @@ void main() {
       /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
          tem altura: a do pé que se vê (no metrô, embaixo da rua) */
       const PE = { x: 0, y: 0, z: 0 };
-      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86), pos: (x, y) => { PE.x = x; PE.y = ape ? ape.yv : 0; PE.z = y; return PE; },
+      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86),
+        /* o pé: o do boneco a pé é o da conta dele; o do dia de jogo vem no disco (`alt`) */
+        pos: (x, y, d) => { PE.x = x; PE.y = d && d.alt != null ? d.alt : ape ? ape.yv : 0; PE.z = y; return PE; },
+        /* quem está fora da tela não é animado (o dia de jogo tem uns 150) */
+        noQuadro: (x, z, d) => { esferaPovo.center.set(x, (d && d.alt != null ? d.alt : 0) + 0.9 * M, z); return quadroPovo.intersectsSphere(esferaPovo); },
         /* a câmera: o boneco pequeno na tela usa o nível de longe (bonecos3.js) */
-        camera: cam, alturaTela: () => tela.clientHeight });
+        camera: cam, alturaTela: () => altoTela || tela.clientHeight });
       return povo;
     })().catch(e => { chamando = null; throw e; });
     return chamando;
+  }
+  /* ======================================================
+     O DIA DE JOGO (dia_de_jogo.js): o clássico da praça — as torcidas
+     saem das sedes, passam pela PM e vão pro lugar delas na
+     arquibancada. Os bonecos são os do jogo (o mesmo `povo` do a pé; a pé
+     dá pra andar no meio deles)
+     ====================================================== */
+  let dia = null;
+  const quadroPovo = new THREE.Frustum(), mPovo = new THREE.Matrix4(), esferaPovo = new THREE.Sphere(new THREE.Vector3(), 1.4 * M);
+  /* o jogo do quadro: o boneco a pé e os do dia de jogo, num objeto só (a paleta do jogo guarda a conta por objeto) */
+  const jogoDoDia = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true };
+  const custoDia = { povo: 0, dia: 0 };
+  function atualizarPovo(dt) {
+    const comDia = dia && dia.aberto;
+    if (!povo || !(ape || comDia)) return;
+    const t0 = performance.now();
+    cam.updateMatrixWorld();
+    mPovo.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    quadroPovo.setFromProjectionMatrix(mPovo);
+    if (!comDia) { povo.atualizar(jogo, dt); return; }
+    jogoDoDia.t = dia.J.t;
+    jogoDoDia.discos = ape && eu ? [eu].concat(dia.J.discos) : dia.J.discos;
+    jogoDoDia.policiais = dia.J.policiais;
+    povo.atualizar(jogoDoDia, dt);
+    /* quanto os bonecos custam no processador (a média, pro medidor) */
+    custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
+  }
+  /* tira da cena os bonecos do dia de jogo (fica o de a pé, se tiver) */
+  function limparBonecos() {
+    if (!povo) return;
+    jogoDoDia.discos = ape && eu ? [eu] : []; jogoDoDia.policiais = [];
+    povo.atualizar(jogoDoDia, 0.016);
+  }
+  async function abrirDiaDeJogo() {
+    if (montando || !grade) return;
+    const bt = $('.cen-bt-jogo');
+    if (dia && dia.aberto) { dia.fechar(); return; }
+    bt.disabled = true;
+    try {
+      if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
+      if (!dia) {
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js');
+        dia = criarDiaDeJogo(contextoDoJogo());
+      }
+      if (montando || !grade) return;
+      carga.hidden = false; aviso('A PM está montando o plano do jogo…', 0.7);
+      await espera(); await espera();
+      try { fecharFicha(); dia.abrir(); } finally { carga.hidden = true; }
+      bt.setAttribute('aria-pressed', String(dia.aberto));
+    } catch (e) {
+      console.error('cenário, dia de jogo:', e);
+      carga.hidden = false; aviso('O dia de jogo não abriu: ' + e.message, 1);
+      setTimeout(() => { if (!montando) carga.hidden = true; }, 3500);
+    } finally { bt.disabled = montando || !grade; }
+  }
+  /* o que o dia de jogo pede do cenário */
+  function contextoDoJogo() {
+    return {
+      M, P, raiz, cam,
+      get grade() { return grade; },
+      noEstadio: (x, z) => noEstadio(x, z),
+      chaoDaRua: (x, z) => piso ? piso.chao(x, z, 0) : 0,
+      chaoDoEstadio: (x, z, y) => andares ? andares.chao(x, z, y) : NaN,
+      doMapa: () => doMapa,
+      voarPara: (x, z, d, el, az, alto) => voarPara(x, z, d, el, az, alto),
+      /* a câmera vai atrás de um ponto (a cabeça do bonde que se segue), na altura dele */
+      seguirPonto: (x, z, y = 0) => { if (voo) return; orb.alvo.x += (x - orb.alvo.x) * 0.25; orb.alvo.z += (z - orb.alvo.z) * 0.25; orb.alto += (y - orb.alto) * 0.25; },
+      pedir,
+      aoFechar: () => { $('.cen-bt-jogo').setAttribute('aria-pressed', 'false'); limparBonecos(); }
+    };
   }
   /* o disco do boneco (o que o jogo passa por quadro): a camisa, a
      semente do rosto e o lugar */
@@ -1932,7 +2024,7 @@ void main() {
     for (const k of ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']) teclas.delete(k);
     soltarJoy();
     CORTE.uCorte.value = 0;
-    if (povo && jogo) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
+    if (povo && jogo && !(dia && dia.aberto)) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
     if (voar) { orb.alvo.set(x, 0, z); voarPara(x, z, 70 * M, 0.62, orb.az); }
     pedir();
   }
@@ -2056,7 +2148,6 @@ void main() {
     eu._cacando = corre && v > APE.anda * M * 1.25;
     eu.passada = eu._cacando ? 2.1 : 1.15;
     jogo.t += dt;
-    povo.atualizar(jogo, dt);
   }
   /* O CORTE, a cada quadro: do alto da cabeça dele até a câmera (tudo
      contado do pé que se vê) */
@@ -2160,6 +2251,7 @@ void main() {
     else if (b.dataset.acao === 'rosto') { semente++; if (ape) vestir(); devolverTeclado(); }
     else if (b.dataset.acao === 'escolher') escolher();
     else if (b.dataset.acao === 'planta') fechar();
+    else if (b.dataset.acao === 'jogo') abrirDiaDeJogo();
   });
   $('.cen-escolha').addEventListener('click', ev => {
     const b = ev.target.closest('button[data-cidade]');
@@ -2205,10 +2297,12 @@ void main() {
   gerente.onProgress = (...a) => { if (antesProg) antesProg(...a); pedir(); };
 
   return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; },
+           /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */
+           get dia() { return dia; }, abrirDiaDeJogo, get custoDia() { return { ...custoDia }; },
            /* pro teste: o que está no pixel (sx, sy) */
            pegarEm(sx, sy) { const c = pegar(sx, sy); return c ? { tipo: c.it.tipo, titulo: P.tituloDe(c.it) } : null; },
            /* pro teste: a câmera num lugar */
-           olhar(x, z, dist, el, az) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; pedir(); },
+           olhar(x, z, dist, el, az, alto = 0) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; orb.alto = alto; pedir(); },
            /* pro teste: a pé */
            aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, levar: levarPara,
                   /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */

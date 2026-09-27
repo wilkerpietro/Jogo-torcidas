@@ -1012,6 +1012,21 @@ function arquibancada(O, fam, c) {
         }
       }
     },
+    /* AS VAGAS (o lugar de cada um, pro dia de jogo): o meio do piso da
+       fileira, a cada 0,5 m, fora da escada, do poço e do corte — a mesma
+       conta de `lugares`, ponto por ponto: [x, y, z] (y é o piso) */
+    vagas(ua, ub, k0 = 0, k1 = n - 1) {
+      const e = { ua, ub }, out = [];
+      for (let i = 0; i < us.length - 1; i++) {
+        if (ua !== undefined && !naFaixa(e, meio(i))) continue;
+        for (let k = k0; k <= Math.min(k1, n - 1); k++) {
+          if (tipo(i, k) !== 'cheia') continue;
+          const A = anel(dk(k) + prof / 2), a = A[i], b = A[i + 1], L = A.len[i + 1] - A.len[i];
+          for (let s = 0.25; s < L; s += 0.5) { const t = s / L; out.push([a[0] + (b[0] - a[0]) * t, yk(k), a[1] + (b[1] - a[1]) * t]); }
+        }
+      }
+      return out;
+    },
     /* lugares: 0,5 m de degrau por pessoa, fora da escada, do poço e do corte */
     lugares(ua, ub, k0 = 0, k1 = n - 1) {
       const e = { ua, ub };
@@ -1809,8 +1824,12 @@ const NOME_SETOR = {
   m1: 'Mandante 1º escalão', m2: 'Mandante 2º escalão', m3: 'Mandante 3º escalão',
   v1: 'Visitante 1º escalão', v2: 'Visitante 2º escalão', v3: 'Visitante 3º escalão', pm: 'PM'
 };
-/* cada setor: {id, arq (a arquibancada), ua, ub, k0, k1}; a faixa vai no meio, o nome em cima */
-function camadaDosSetores(S, G, setores, tamRotulo) {
+/* cada setor: {id, arq (a arquibancada), ua, ub, k0, k1}; a faixa vai no meio, o nome em cima.
+   Com `comVagas` (o gerador das rotas do dia de jogo), cada setor leva
+   também, fora da ficha (propriedade escondida), as VAGAS (o lugar de
+   cada um, [x, y, z]) e o CENTRO (o meio do piso na altura da faixa, na
+   fileira do meio: é onde a torcida se junta) */
+function camadaDosSetores(S, G, setores, tamRotulo, comVagas) {
   const lista = [];
   for (const s of setores) {
     const A = s.arq, k0 = s.k0 ?? 0, k1 = s.k1 ?? A.n - 1, cor = COR_SETOR[s.id];
@@ -1825,11 +1844,25 @@ function camadaDosSetores(S, G, setores, tamRotulo) {
       const larg = Math.min(s.faixa || 24, comp * 0.7);
       if (s.faixaNoAnel !== false && larg > 4) A.faixa(G, um, larg, NOME_SETOR[s.id].toUpperCase(), cor, s.id[0] === 'm' ? '#0d3b1e' : '#4a0d0d');
     }
-    lista.push({ id: s.id, nome: NOME_SETOR[s.id], cor, lugares: A.lugares(s.ua, s.ub, k0, k1), vomitorios: A.vomsEm(s.ua, s.ub), onde: s.onde });
+    const x = { id: s.id, nome: NOME_SETOR[s.id], cor, lugares: A.lugares(s.ua, s.ub, k0, k1), vomitorios: A.vomsEm(s.ua, s.ub), onde: s.onde };
+    if (comVagas) {
+      Object.defineProperty(x, 'vagas', { value: A.vagas(s.ua, s.ub, k0, k1), enumerable: false, writable: true });
+      Object.defineProperty(x, 'centro', { value: A.ponto(um, km, 0), enumerable: false, writable: true });
+    }
+    lista.push(x);
   }
-  /* o mesmo escalão pode ter mais de um pedaço: soma */
+  /* o mesmo escalão pode ter mais de um pedaço: soma (o centro é o do pedaço maior) */
   const soma = {};
-  for (const x of lista) { if (!soma[x.id]) soma[x.id] = { ...x }; else { soma[x.id].lugares += x.lugares; soma[x.id].vomitorios += x.vomitorios; } }
+  for (const x of lista) {
+    const y = soma[x.id];
+    if (!y) {
+      soma[x.id] = { ...x };
+      if (comVagas) for (const k of ['vagas', 'centro']) Object.defineProperty(soma[x.id], k, { value: x[k], enumerable: false, writable: true });
+      continue;
+    }
+    if (comVagas) { if (x.lugares > y.lugares) y.centro = x.centro; y.vagas = y.vagas.concat(x.vagas); }
+    y.lugares += x.lugares; y.vomitorios += x.vomitorios;
+  }
   return Object.values(soma);
 }
 /* o que é dentro do estádio (o muro do de 10, a fachada do de 20 e do de 40), pro conferidor; não vai pra ficha */
@@ -2158,7 +2191,7 @@ function montar10(O, S, G, opc) {
     { id: 'm1', arq: Al, ua: 0, ub: corte.ua, faixa: 12 },
     { id: 'm2', arq: Al, ua: corte.ub, ub: uMeioSul, faixa: 12 },
     { id: 'm3', arq: Al, ua: uMeioSul, ub: 5, faixa: 12 }
-  ], 12);
+  ], 12, opc.vagas);
   marcador(G, 'Portão 1 · mandante', '#1b7f3b', g.xML + 4.4, 6, zG1, 16);
   marcador(G, 'Portão 2 · mandante', '#1b7f3b', xG2, 6, g.zMS + 4.6, 16);
   marcador(G, 'Portão 3 · visitante', '#c62828', g.xMO - 6.9, 6, g.zMN - 3.8, 16);
@@ -2313,7 +2346,7 @@ function montar20(O, S, G, opc) {
     { id: 'pm', arq: A, ua: div[2], ub: div[3] },
     { id: 'v1', arq: A, ua: div[3], ub: uV13, faixa: 16 },
     { id: 'v3', arq: A, ua: uV13, ub: 7.5, faixa: 16 }
-  ], 14);
+  ], 14, opc.vagas);
   for (const p of P) { const q = p.E.Q.L(-5, 0, 0); marcador(G, `${p.nome} · ${p.lado}`, p.lado === 'visitante' ? '#c62828' : '#1b7f3b', q[0], 6, q[2], 12); }
   return dentroDo((x, z) => F.dentroDe(x, z, dFac), {
     aneis: [{ nome: 'Anel único', fileiras: N, degrau: '0,40 × 0,40 m', lugares: A.lugares() }],
@@ -2507,7 +2540,7 @@ function montar40(O, S, G, opc) {
     { id: 'pm', arq: Ai, ua: pm2[0], ub: pm2[1] },
     { id: 'v3', arq: Ai, ua: pm3[1], ub: pm2[0], faixa: 20 },
     { id: 'pm', arq: Ai, ua: pm3[0], ub: pm3[1] }
-  ], 18);
+  ], 18, opc.vagas);
   for (const p of P) { const q = p.E.Q.L(-7, 0, 0); marcador(G, `${p.nome} · ${p.lado}`, p.lado === 'visitante' ? '#c62828' : '#1b7f3b', q[0], 8, q[2], 16); }
   const m = v => v.toFixed(1).replace('.', ',');
   return dentroDo((x, z) => F.dentroDe(x, z, dFac), {
@@ -2547,6 +2580,11 @@ export const ESTADIOS_JOGO = {
    abaixo de 15 mil, o de 10; de 15 a 35 mil, o de 20; acima, o de 40 (a
    regra do dono, 27/09/2026) */
 export const modeloDaLotacao = n => n > 35000 ? 'estadio-40' : n >= 15000 ? 'estadio-20' : 'estadio-10';
+/* a MARCA do modelo (o `info` de montarEstadioJogo): os lugares, o ponto
+   de cada entrada e os lugares de cada setor. As rotas de dentro do dia de
+   jogo (rotas_estadios.mjs) guardam a do modelo em que foram feitas; se a
+   do estádio do mapa não bate, o estádio mudou depois delas */
+export const marcaDoEstadio = info => [info.lugares, ...info.entradas.map(e => e.ponto.map(v => v.toFixed(1)).join(',')), ...info.setores.map(s => s.id + s.lugares)].join('|');
 /* A PLANTA 2D de cada um, pro mapa da cidade: o chão do terreno, o muro,
    as arquibancadas em faixa com os vomitórios, a pista, o fosso, o
    gramado e as linhas do campo — em metros, no referencial do modelo (o
@@ -2621,7 +2659,9 @@ export function plantaDoEstadio(id) {
 /* monta um dos três: o grupo em metros (com a camada `setores` dentro) e a
    ficha. `opc.nome`: o nome do letreiro (sem ele, o de fábrica); `opc.mapa`:
    pro mapa da cidade — sem a camada dos setores e sem o chão de fora do
-   terreno (`info.terreno`, em metros; o portão 1 fica sempre no +x) */
+   terreno (`info.terreno`, em metros; o portão 1 fica sempre no +x);
+   `opc.vagas`: cada setor da ficha leva as vagas e o centro dele (o
+   gerador das rotas do dia de jogo, rotas_estadios.mjs) */
 export function montarEstadioJogo(id, opc = {}) {
   const E = ESTADIOS_JOGO[id];
   /* os materiais são de todos: o corte de um estádio visto antes não fica */
@@ -2629,7 +2669,7 @@ export function montarEstadioJogo(id, opc = {}) {
   const grupo = new THREE.Group(), setores = new THREE.Group();
   grupo.name = E.nome; setores.name = 'setores';
   const O = novaObra(), S = novaObra(), letreiro = nomeDoLetreiro(opc.nome || E.letreiro);
-  const info = E.montar(O, S, setores, { nome: letreiro, mapa: !!opc.mapa });
+  const info = E.montar(O, S, setores, { nome: letreiro, mapa: !!opc.mapa, vagas: !!opc.vagas });
   O.fechar(grupo, !opc.mapa);
   if (!opc.mapa) { S.fechar(setores, false); grupo.add(setores); }
   let tri = 0, malhas = 0;
