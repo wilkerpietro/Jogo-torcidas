@@ -1,0 +1,116 @@
+/* =========================================================
+   O JOGO EM 3D (27/09/2026): a cidade é a tela, e a casca do
+   jogo de feed (Torcida Organizada) vira HUD por cima dela.
+
+   O dono pediu: "Traga toda a hud pro jogo, como o menu lateral,
+   as informações superiores, o menu inicial, e os dias passando."
+   A casca é a mesma do jogo de feed (os mesmos ids, o mesmo
+   main.js); esta folha só muda ONDE cada pedaço fica:
+   - o cenário 3D ocupa a tela inteira, atrás de tudo;
+   - a barra de cima (a torcida, o caixa, os membros, a data, o ≫
+     e o 1×/2×) e a fita das manchetes ficam no alto;
+   - a coluna de ícones (os painéis) fica na esquerda;
+   - o feed vira uma coluna à direita, que recolhe (o botão da
+     borda) pra deixar só a cidade;
+   - os painéis, os modais, o relatório e as cenas de briga abrem
+     por cima de tudo, como no jogo de feed;
+   - o menu inicial e a escolha da torcida deixam a cidade aparecer
+     atrás.
+   O que não é HUD não pega o mouse: arrastar no meio da tela move
+   a câmera da cidade.
+   ========================================================= */
+/* O TEMA DO JOGO GANHA O DA PLANTA: a página da planta pinta o body
+   (cor de tinta escura, 14px/1.45 Barlow) e define a --linha dela no
+   :root, depois do CSS do jogo — sem isto o nome da torcida e os números
+   da barra de cima saíam escuros sobre o escuro */
+body.jogo3d{
+  background:#0b0b0d;overflow:hidden;
+  --linha:#2c2c2c;
+  color:var(--texto);font-family:var(--corpo);font-size:13px;line-height:normal;
+}
+/* o cenário atrás de tudo, e sem o topo dele (a praça é a da torcida
+   do jogo; o dia de jogo, os mapas e a planta são coisa da ferramenta) */
+body.jogo3d .cen{z-index:0}
+body.jogo3d .cen-topo,
+body.jogo3d .cen-dica,
+body.jogo3d .cen-escolha{display:none !important}
+/* o medidor de fps e a ficha do que se clica descem pra não ficar
+   embaixo da barra do jogo */
+body.jogo3d .cen-fps{top:auto;bottom:6px;left:50px;right:auto}
+/* no menu o medidor some (fica em cima da versão do jogo) */
+body.jogo3d:not(.j3d-em-jogo) .cen-fps{display:none}
+body.jogo3d .cen-ficha{top:78px}
+
+/* ---------- a casca ---------- */
+body.jogo3d #jogo{
+  position:fixed;inset:0;z-index:20;pointer-events:none;
+  background:transparent;height:auto;min-height:0;display:block;
+}
+body.jogo3d #tela{position:absolute;inset:0;background:transparent}
+body.jogo3d .pagina[data-pag="feed"].on{position:absolute;inset:0;background:transparent}
+body.jogo3d .feed-menu{
+  pointer-events:auto;background:rgba(20,20,22,.9);
+  box-shadow:2px 0 10px rgba(0,0,0,.35);
+}
+body.jogo3d .feed-corpo{pointer-events:none}
+body.jogo3d .feed-barra{
+  pointer-events:auto;background:rgba(26,26,28,.92);
+  box-shadow:0 2px 10px rgba(0,0,0,.35);
+}
+body.jogo3d .feed-ticker{pointer-events:auto;background:rgba(14,14,16,.86)}
+
+/* ---------- o feed: a coluna da direita ---------- */
+body.jogo3d .feed-rolo{
+  pointer-events:auto;align-self:flex-end;
+  width:min(460px, 46vw);
+  background:linear-gradient(to left, rgba(12,12,14,.94), rgba(12,12,14,.84));
+  border-left:1px solid var(--linha);
+  box-shadow:-4px 0 16px rgba(0,0,0,.35);
+  transition:transform .25s ease, opacity .25s ease;
+}
+body.jogo3d .feed-lista{max-width:none}
+body.jogo3d.feed-fechado .feed-rolo{transform:translateX(104%);opacity:0;pointer-events:none}
+/* o botão da borda que recolhe e abre o feed */
+#j3dFeed{
+  position:fixed;z-index:21;right:min(460px, 46vw);top:84px;
+  pointer-events:auto;cursor:pointer;
+  width:22px;height:54px;border:1px solid var(--linha);border-right:0;
+  background:rgba(26,26,28,.94);color:var(--fraco);
+  font-family:var(--titulo);font-size:14px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  transition:right .25s ease;
+}
+#j3dFeed:hover{color:#fff;background:var(--rubro)}
+body.jogo3d.feed-fechado #j3dFeed{right:0}
+#j3dFeed .badge{
+  position:absolute;top:-7px;left:-7px;min-width:16px;height:16px;padding:0 3px;
+  background:var(--rubro-vivo);color:#fff;font:600 10px/16px var(--mono);border-radius:8px;
+}
+#j3dFeed .badge[hidden]{display:none}
+/* sem jogo aberto (o menu, a escolha) o botão some */
+body.jogo3d:not(.j3d-em-jogo) #j3dFeed{display:none}
+
+/* ---------- o menu inicial e a escolha: a cidade atrás ---------- */
+body.jogo3d #telaMenu{
+  background:linear-gradient(90deg, rgba(8,8,10,.94) 0, rgba(8,8,10,.78) 34%, rgba(8,8,10,.18) 68%, rgba(8,8,10,0) 100%);
+}
+body.jogo3d #menuFundo{display:none}
+body.jogo3d #menuTitulo{text-align:left;margin-left:6vw}
+body.jogo3d #telaSelecao{background:rgba(9,9,10,.84)}
+/* o letreiro da praça que aparece atrás do menu */
+#j3dPraca{
+  position:fixed;z-index:56;right:18px;bottom:14px;pointer-events:none;
+  font-family:var(--titulo);letter-spacing:.2em;text-transform:uppercase;
+  font-size:12px;color:#d8d8d8;text-shadow:0 1px 6px #000;
+}
+#j3dPraca b{color:#fff;font-size:15px}
+body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
+
+/* no celular o feed é a tela de baixo: meia altura, recolhível */
+@media (max-width:760px){
+  body.jogo3d .feed-rolo{width:100%;align-self:stretch;max-height:46vh;margin-top:auto;
+    border-left:0;border-top:1px solid var(--linha)}
+  body.jogo3d.feed-fechado .feed-rolo{transform:translateY(104%)}
+  #j3dFeed{right:10px;top:auto;bottom:calc(46vh + 2px);width:54px;height:22px;border:1px solid var(--linha);border-bottom:0}
+  body.jogo3d.feed-fechado #j3dFeed{bottom:0;right:10px}
+}
