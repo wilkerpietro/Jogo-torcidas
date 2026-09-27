@@ -2543,9 +2543,10 @@ export const ESTADIOS_JOGO = {
     terreno: { x0: -G40.xT, x1: G40.xT, z0: -G40.zT, z1: G40.zT, p1: 0 },
     nota: 'A tigela de dois anéis de 15 fileiras: um corredor debaixo de cada anel, ligados pelas escadas internas, vomitórios com túnel nos dois, os três portões com pórtico, o letreiro na fachada de três andares, o fosso e a pista de ônibus.' }
 };
-/* o modelo de cada praça pela lotação (dados/estadios.js): até 15 mil, o
-   de 10; até 30 mil, o de 20; acima, o de 40 */
-export const modeloDaLotacao = n => n > 30000 ? 'estadio-40' : n > 15000 ? 'estadio-20' : 'estadio-10';
+/* o modelo de cada praça pela lotação de verdade (dados/estadios.js):
+   abaixo de 15 mil, o de 10; de 15 a 35 mil, o de 20; acima, o de 40 (a
+   regra do dono, 27/09/2026) */
+export const modeloDaLotacao = n => n > 35000 ? 'estadio-40' : n >= 15000 ? 'estadio-20' : 'estadio-10';
 /* A PLANTA 2D de cada um, pro mapa da cidade: o chão do terreno, o muro,
    as arquibancadas em faixa com os vomitórios, a pista, o fosso, o
    gramado e as linhas do campo — em metros, no referencial do modelo (o

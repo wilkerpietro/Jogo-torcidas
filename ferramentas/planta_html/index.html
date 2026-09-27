@@ -855,8 +855,8 @@ const mapaDoPorte = nome => { const c = infoDaCidade(nome); return (c && MAPA_DO
 const NOME_MAPA = { pequeno: 'pequeno', medio: 'médio', grande: 'grande' };
 const cacheDeMapas = new Map();
 /* A LOTAÇÃO de cada estádio (dados/estadios.js) decide o modelo 3D dele
-   (js/diajogo/estadios3d.js: até 15 mil, o de 10; até 30 mil, o de 20;
-   acima, o de 40) e o tamanho do terreno no mapa */
+   (js/diajogo/estadios3d.js: abaixo de 15 mil, o de 10; de 15 a 35 mil, o
+   de 20; acima, o de 40) e o tamanho do terreno no mapa */
 const lotacaoDe = nome => { const e = (TO.dados.estadios || []).find(x => x.nome === nome); return e ? e.capacidade : 0; };
 const modeloDoEstadio = nome => lotacaoDe(nome) ? modeloDaLotacao(lotacaoDe(nome)) : 'estadio-20';
 function varianteDe(modo, nome = cidade) {
@@ -3209,7 +3209,7 @@ function fichaDe(it) {
         ['Terreno', metros(t.x1 - t.x0) + ' × ' + metros(t.y1 - t.y0), true],
         ['Portão 1', `de frente pra cidade (virado pro ${FRENTE[c.fora]})` + (acesso > 0 ? `, com a rua de acesso de ${metros(acesso)} até a primeira rua` : ', na rua da cidade'), true],
         ['Onde', `saiu da vaga ${c.vagaUsada === e.vaga ? 'dele' : 'do ' + c.vagaUsada + 'º estádio'} pra fora da cidade, ${LADO[c.fora]}` + (c.empurrado > 1 ? `, ${metros(c.empurrado)} além da beira dela` : ''), true]
-      ]) + '<p class="nota">O estádio de verdade da praça, no tamanho de verdade: o modelo 3D da lotação dele (até 15 mil lugares, o de 10 mil; até 30 mil, o de 20; acima, o de 40), com a fachada, o letreiro com o nome e os três portões (o 1 e o 2 do mandante, o 3 do visitante) que dão no corredor debaixo da arquibancada e, dele, nos vomitórios. Ele não cabe na vaga da cidade (a vaga tem 77 × 66 m; o de 40 mil pede 284 × 236): sai dela pra fora, do lado dela, no lugar livre mais perto, com o portão 1 de frente pra cidade — o mapa cresce pra caber. Por dentro (os setores, o corredor, o corte), no catálogo de modelos 3D.</p>';
+      ]) + '<p class="nota">O estádio de verdade da praça, no tamanho de verdade: o modelo 3D da lotação dele (abaixo de 15 mil lugares, o de 10 mil; de 15 a 35 mil, o de 20; acima, o de 40), com a fachada, o letreiro com o nome e os três portões (o 1 e o 2 do mandante, o 3 do visitante) que dão no corredor debaixo da arquibancada e, dele, nos vomitórios. Ele não cabe na vaga da cidade (a vaga tem 77 × 66 m; o de 40 mil pede 284 × 236): sai dela pra fora, do lado dela, no lugar livre mais perto, com o portão 1 de frente pra cidade — o mapa cresce pra caber. Por dentro (os setores, o corredor, o corte), no catálogo de modelos 3D.</p>';
     }
     const nome = noMapa ? e.nome : 'Estádio', ci = infoDaCidade(cidade), total = ci ? ci.estadios.length : 0;
     /* a distância até a entrada mais perto: em linha reta e pela grade (andando só de norte a sul e de leste a oeste) */

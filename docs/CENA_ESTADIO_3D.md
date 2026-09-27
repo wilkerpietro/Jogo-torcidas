@@ -3910,6 +3910,19 @@ O dono pediu: "Tente diminuir os triângulos do boneco sem perder qualidade, por
 - **Triângulo não é o único custo de 300 bonecos**: cada um é uma chamada de desenho (300, mais a sombra), e cada esqueleto de 16 ossos é animado no processador a cada quadro. Essas duas não mudaram aqui, e é provável que sejam o próximo gargalo.
 - A câmera ortográfica (`desenharDeCima`) tem a conta, mas nenhuma página usa esse caminho hoje: não foi testada.
 
+### 4.66. A regra da lotação (de 15 a 35 mil é o de 20) e a lotação de verdade de cada estádio
+
+O dono perguntou por que o Presidente Vargas (Fortaleza) saía o estádio de 40 mil e não o de 20, e depois deu a regra: "Estádios de 15 até 35 mil na vida real são o estádio de 20 mil no jogo. Abaixo disso é o de 10 e acima é o de 40."
+
+**Por que saía o de 40:** o `dados/estadios.js` é gerado do protótipo antigo (`legado/unity/data.js`), e a lotação de lá é de preenchimento em metade dos estádios — 35 mil, 60 mil, 15 mil redondos. O Presidente Vargas tinha 60 mil (a planilha, `dados/times.js`, diz 20.268). E o Treze (Campina Grande) aparecia como mandante dele, porque o estádio do Treze também se chama Presidente Vargas.
+
+**O que mudou:**
+- `modeloDaLotacao` (`estadios3d.js`): abaixo de 15 mil, o de 10; **de 15 a 35 mil**, o de 20; acima de 35 mil, o de 40 (era: até 15 mil, o de 10; até 30 mil, o de 20).
+- `ferramentas/importar_estadios.py`: a lotação é a da planilha quando os clubes da praça que mandam no estádio dizem a mesma; senão, a do legado (e uma tabela `CAPACIDADE` pra correção à mão: por enquanto só o Serra Dourada, 50.049, que o legado dizia 35 mil). O mandante é só clube da mesma praça (o Treze saiu do Presidente Vargas de Fortaleza). E a praça que ganhou bairros depois do legado (o Interior de SP, 4.38) volta a parear: vale a única daqui que tem todos os bairros da de lá — sem isso, o importador rodado de novo perdia os três estádios dela.
+- Das 74 praças de jogo que as cidades usam, 19 são o de 10, 36 o de 20 e 19 o de 40; **30 mudaram de modelo** (a maioria de 40 pra 20: Presidente Vargas, São Januário, Vila Belmiro, Vila Capanema, Rei Pelé, Moisés Lucarelli…; umas de 40 pra 10: Moça Bonita, Passo d'Areia, Ulrico Mursa, Nogueirão, Zinho de Oliveira; e umas de 10 pra 20: Alfredo Jaconi, Arena Condá, Heriberto Hülse, Batistão…). `conferir_cidades.mjs`: as 30 praças cabem no mapa do porte delas, com os estádios novos (Fortaleza: 40, 20 e 10).
+
+**O que isto ainda não é:** o Estádio Regional (Interior de Minas) e o Estádio do Trabalhador (Subúrbio Carioca) não têm clube na planilha, e o legado diz 15 mil redondos: pela regra, viram o de 20. Se a lotação de verdade deles for menor, é uma linha na tabela `CAPACIDADE`.
+
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
 - **O MOTOR DE LUTA ESTAVA DUAS VERSÕES ATRÁS.** Este branch saiu de um

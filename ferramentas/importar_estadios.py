@@ -32,6 +32,14 @@ APELIDOS = {
 }
 
 
+# A lotacao de verdade de estadio que nenhum clube da planilha aponta, e
+# que o legado traz com numero de preenchimento. So entra aqui o que se
+# sabe: o Serra Dourada (Goiania) tem uns 50 mil, e o legado diz 35.
+CAPACIDADE = {
+    'serra-dourada': 50049,
+}
+
+
 def identificador(txt):
     """mesma regra dos outros importadores: 'Arena Castelão' -> 'arena-castelao'"""
     txt = unicodedata.normalize('NFD', str(txt or ''))
@@ -62,13 +70,19 @@ def main():
     times_legado = bloco(legado, 'times')
     nossas = carregar_nossas_cidades()
 
-    # pareia praca por conjunto de bairros
+    # pareia praca por conjunto de bairros: o mesmo conjunto, ou (a praca
+    # que ganhou bairros depois, como o Interior de SP) a unica daqui que
+    # tem todos os do legado
     por_bairros = {frozenset(b['nome'] for b in c['bairros']): c['id'] for c in nossas}
     de_para = {}
     for c in cid_legado:
         chave = frozenset(b['nome'] for b in c['bairros'])
         if chave in por_bairros:
             de_para[c['id']] = por_bairros[chave]
+            continue
+        contem = [cid for bs, cid in por_bairros.items() if chave and chave <= bs]
+        if len(contem) == 1:
+            de_para[c['id']] = contem[0]
     faltando = [c['id'] for c in cid_legado if c['id'] not in de_para]
     if faltando:
         print(f'  AVISO: {len(faltando)} pracas do legado sem par aqui: {faltando}')
@@ -78,9 +92,12 @@ def main():
     # fonte pra isso.
     txt_times = (RAIZ / 'dados' / 'times.js').read_text(encoding='utf-8')
     nossos_times = json.loads(txt_times[txt_times.index('['):txt_times.rindex(']') + 1])
+    # So vale o clube DA MESMA PRACA: o Treze (Campina Grande) aponta pro
+    # "Presidente Vargas" dele, que tem o mesmo nome do de Fortaleza, e
+    # sem isto virava mandante em Fortaleza.
     manda_em = {}
     for t in nossos_times:
-        manda_em.setdefault(identificador(t.get('estadio')), []).append(t['id'])
+        manda_em.setdefault(identificador(t.get('estadio')), []).append(t)
 
     saida = []
     for e in sorted(estadios, key=lambda x: x['nome']):
@@ -90,17 +107,27 @@ def main():
         eid = identificador(e['nome'])
         apelidos = APELIDOS.get(eid, [])
         # o clube que aponta pro apelido manda aqui, nao num estadio novo
-        mandantes = list(manda_em.get(eid, []))
+        clubes = [t for t in manda_em.get(eid, []) if t.get('mapa') == mapa]
         for ap in apelidos:
             for t in manda_em.get(identificador(ap), []):
-                if t not in mandantes:
-                    mandantes.append(t)
+                if t.get('mapa') == mapa and t not in clubes:
+                    clubes.append(t)
+        mandantes = [t['id'] for t in clubes]
+        # A LOTACAO DE VERDADE: a da planilha (times.js), quando os clubes
+        # da praca que mandam aqui dizem a mesma. A do legado e de
+        # preenchimento em metade dos estadios (35 mil, 60 mil, 15 mil
+        # redondos: o Presidente Vargas de Fortaleza tinha 60 mil, e tem
+        # 20.268), e ela decide o modelo 3D (ate 15 mil, o de 10; de 15 a
+        # 35 mil, o de 20; acima, o de 40). Sem planilha, a do legado, ou a
+        # da tabela de correcao abaixo.
+        caps = sorted({t.get('capacidade') for t in clubes if t.get('capacidade')})
+        capacidade = caps[0] if len(caps) == 1 else (CAPACIDADE.get(eid) or e.get('capacidade') or 0)
         reg = {
             'id': eid,
             'nome': e['nome'],
             'mapa': mapa,
             'bairro': e.get('bairroEstadio') or '',
-            'capacidade': e.get('capacidade') or 0,
+            'capacidade': capacidade,
             'mandantes': mandantes,
         }
         if apelidos:
