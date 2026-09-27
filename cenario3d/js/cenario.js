@@ -2041,8 +2041,7 @@ void main() {
        ESTÁDIO o telhado do mapa não serve (visto de cima, a arquibancada
        inteira é telhado, e o corte dela mostrava o corredor embaixo):
        dentro é debaixo de alguma coisa — o corredor, o túnel, a escada, o
-       salão —, e na arquibancada, no campo e no corredor entre os anéis,
-       a céu aberto, nada some */
+       salão —, e na arquibancada e no campo, a céu aberto, nada some */
     const noEst = ape.y > -0.5 * M && noEstadio(ape.x, ape.z);
     ape.aberto = noEst && !coberto(ape.x, ape.z, ape.y);
     const dentro = ape.y <= -0.5 * M ? 0 : noEst ? (ape.aberto ? 0 : grade.tetoEm(ape.x, ape.z)) : grade.dentroDe(ape.x, ape.z);
