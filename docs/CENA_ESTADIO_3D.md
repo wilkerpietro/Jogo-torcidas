@@ -3840,7 +3840,18 @@ As três escadas ficam onde estavam, uma perto de cada portão (a do 2 e a do 3 
 - `conferir_estadios.mjs`: de cada portão dos três, 100% dos corredores do lado dele, 100% de cada setor dele e nada do outro lado nem da PM. Saem 44 alvos no de 10, 48 no de 20 e 60 no de 40 (onde o corpo não fica em pé): 25 dos 32 a mais no de 40 são da última fileira de cima, que agora encosta na mureta de trás (veja abaixo).
 - As três escadas internas fora de todo salão, com o vão longe das bocas (acima).
 - `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam.
-- No cenário de verdade (no navegador sem placa de vídeo), com o caminho achado pela busca (agora na grade de 10 cm: na de 20, a busca não achava lugar pro corpo na última fileira de cima): do portão 1 do Morumbi (de 40, São Paulo) pelo salão, o corredor do chão, a escada interna, o vão no piso do corredor de cima, o vomitório e a arquibancada até a última fileira (16,04 m, com a arquibancada inteira na tela); e do portão 2 (mandante), pela escada do noroeste, até a última fileira do m2 (16,04 m). Os dois sem travar em nenhum ponto do caminho (79 e 66 pontos).
+- No cenário de verdade (no navegador sem placa de vídeo), com o caminho achado pela busca (agora na grade de 10 cm: na de 20, a busca não achava lugar pro corpo na última fileira de cima): do portão 1 do Morumbi (de 40, São Paulo) pelo salão, o corredor do chão, a escada interna, o vão no piso do corredor de cima, o vomitório e a arquibancada até a última fileira (16,04 m, com a arquibancada inteira na tela); do portão 2 (mandante), pela escada do noroeste, até a última fileira do m2; e do portão 3 (visitante), pela escada do sudoeste, até a última fileira do v1 (as duas também a 16,04 m). Os três sem travar em nenhum ponto do caminho (79, 66 e 68 pontos). No Felipe Santiago (de 10, Fortaleza), do portão 1 até a última fileira do m1 e do portão 3, pelo túnel de lona, até a do v1 (34 e 56 pontos), também sem travar.
+- **No mapa**, o mundo das 22 praças com o de 40 encolhe 8 m num lado ou nos dois (São Paulo e Rio, 739 × 598 → 731 × 582 m; as médias com dois de 40, 655 × 612 → 647 × 604; Interior do PR, 542 × 487 → 542 × 479); as 8 sem o de 40 ficam iguais. O cenário monta as 30 praças sem erro (triângulos da cidade e chamadas; o tempo, com rasterizador por software, não vale):
+
+| praça | antes (4.63) | sem as plataformas |
+|---|---|---|
+| São Paulo | 1,24 mi · 418 | 1,23 mi · 392 |
+| Rio de Janeiro | 1,38 mi · 420 | 1,37 mi · 397 |
+| Fortaleza | 1,31 mi · 388 | 1,31 mi · 377 |
+| Bahia | 1,12 mi · 359 | 1,12 mi · 351 |
+| Interior do PR | 0,49 mi · 165 | 0,49 mi · 164 |
+
+  Os triângulos ficam iguais ou caem até 0,7% (o de 40 tem 1,4 mil a menos, e a cidade em volta muda um pouco com o terreno menor); as chamadas caem nas 22 praças com o de 40 e ficam iguais nas outras 8.
 
 **O que isto ainda não é:**
 - **A última fileira de cada anel encosta numa parede** (a de baixo, na mureta do anel de cima; a de cima, na mureta de trás e na fachada): o corpo do boneco (0,5 m) só fica em pé nos 15 cm da frente do degrau de 0,40, e o conferidor tirou 25 pontos dela. Em pé, de costas pra parede, cabe; dois lado a lado ao longo da fileira, também. Se precisar de folga, a saída é a última fileira mais funda (uns 0,65 m), 25 cm a mais em cada anel.
