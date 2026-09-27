@@ -4,7 +4,7 @@
 # viewport) abrindo direto no cenário — a lista das praças; escolhida a
 # praça, o mapa do porte dela em 3D. O botão "Planta 2D" fecha o cenário e
 # mostra a planta, que é a mesma página por baixo; planta.html abre só a
-# planta.
+# planta; jogo.html abre o jogo em 3D (o jogo de feed por cima da praça).
 #
 #   sh ferramentas/planta_html/montar_pages.sh [pasta]    (padrão: /tmp/cenario3d)
 #
@@ -22,6 +22,11 @@ cabeca() {
 { cabeca 'Cenário 3D das praças' 'O mapa de cada praça do jogo em 3D, montado pela planta da cidade: as casas, as favelas, os bares e as sedes das torcidas, os estádios, o metrô, a praia ou a lagoa e o mato.'
   printf '<script>window.__CENARIO = true;</script>\n</head>\n<body>\n'
   cat "$A/index.html"; printf '</body>\n</html>\n'; } > "$A/index.tmp"
+# O JOGO EM 3D (27/09/2026): a mesma página com o jogo de feed por cima
+# da praça (js/jogo3d.js)
+{ cabeca 'Torcida Organizada 3D' 'O jogo Torcida Organizada por cima da praça em 3D: o menu, a barra de cima, os painéis, o feed e os dias passando, com a cidade da torcida atrás.'
+  printf '<script>window.__JOGO = true;</script>\n</head>\n<body>\n'
+  cat "$A/index.html"; printf '</body>\n</html>\n'; } > "$A/jogo.html"
 { cabeca 'Planta da Cidade do Estádio' 'A planta dos três mapas da cidade do estádio, com o que se clica aberto em 3D.'
   printf '</head>\n<body>\n'
   cat "$A/index.html"; printf '</body>\n</html>\n'; } > "$A/planta.html"

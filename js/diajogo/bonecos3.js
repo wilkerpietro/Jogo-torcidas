@@ -116,7 +116,10 @@ let sombraDeLuz = false;
 /* o teste de "cabe na tela" de quem tem a câmera */
 let noQuadroExterno = null;
 
-  const U = TO.util;
+  /* o util do jogo (nucleo.js) pode chegar depois deste módulo — no
+     jogo 3D o cenário importa o boneco antes de o jogo carregar —, então
+     ele é lido na hora de usar, não na de carregar */
+  const U = { limitar: (v, a, b) => TO.util.limitar(v, a, b) };
   const A = () => TO.diaJogo.arredores;
 
   let cv=null, renderer=null, scene=null, cam=null, ativo=false;

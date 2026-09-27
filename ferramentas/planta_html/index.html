@@ -5104,6 +5104,29 @@ function apiDoCenario() {
     aoFechar() { if (estado.sel) vista.mostrar(estado.sel); pedirDesenho(); }
   };
 }
+/* O JOGO EM 3D: a praça do último jogo (ou Fortaleza) monta atrás do
+   menu; o jogo de feed carrega por cima e, quando a partida começa, a
+   praça vira a da torcida do jogador (js/jogo3d.js) */
+async function abrirJogo3d() {
+  const nomes = CIDADES.map(([n]) => n);
+  let inicial = nomes.includes('Fortaleza') ? 'Fortaleza' : nomes[0];
+  try { const s = localStorage.getItem('jogo3d-praca'); if (s && nomes.includes(s)) inicial = s; } catch (e) {}
+  if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
+  const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
+  try {
+    const { montarJogo } = await import('./js/jogo3d.js');
+    await montarJogo({
+      get cenario() { return cenario; },
+      pronta, nomes, M,
+      abrirPraca(nome) {
+        try { localStorage.setItem('jogo3d-praca', nome); } catch (e) {}
+        return abrirCenario(nome, mapaDoPorte(nome));
+      },
+      /* a calçada na frente da porta da sede (o mesmo ponto do dia de jogo) */
+      sedeDe(id) { const t = apiDoCenario().torcidas().find(x => x.id === id); return t && t.porta; }
+    });
+  } catch (e) { console.error(e); alert('O jogo não carregou: ' + e.message); }
+}
 let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
@@ -5112,7 +5135,7 @@ async function abrirCenario(nome, modo) {
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
-  cenario.abrir(nome, modo);
+  return cenario.abrir(nome, modo);
 }
 $('bt-cenario').onclick = () => abrirCenario(cidade, estado.modo);
 if (PARAMS.has('teste')) { window.__planta.abrirCenario = abrirCenario; Object.defineProperty(window.__planta, 'cenario', { get: () => cenario }); }
@@ -5248,13 +5271,17 @@ tamanho();
 let modoSalvo = mapaDoPorte(cidade);
 try { const m = localStorage.getItem('planta-modo'); if (MODOS.includes(m)) modoSalvo = m; } catch (e) {}
 /* o cenário abre direto com ?cenario (ou quando a página que embrulha
-   pede, `window.__CENARIO`: é o que o GitHub Pages usa) */
-const cenarioDireto = PARAMS.has('cenario') || !!window.__CENARIO;
+   pede, `window.__CENARIO`: é o que o GitHub Pages usa). O JOGO EM 3D
+   (27/09/2026) abre com ?jogo (ou `window.__JOGO`, o jogo.html do Pages):
+   o cenário da praça atrás e o jogo de feed por cima (js/jogo3d.js) */
+const modoJogo = PARAMS.has('jogo') || !!window.__JOGO;
+const cenarioDireto = PARAMS.has('cenario') || !!window.__CENARIO || modoJogo;
 if (cenarioDireto) modoSalvo = MODOS.includes(PARAMS.get('mapa')) && PARAMS.get('mapa') !== 'atual' ? PARAMS.get('mapa') : mapaDoPorte(cidade);
 mudarModo(modoSalvo);
 new ResizeObserver(() => { tamanho(); pedirDesenho(); }).observe(mapa);
 aviso.hidden = true;
-if (cenarioDireto) abrirCenario(PARAMS.get('cidade') === cidade ? cidade : null, estado.modo);
+if (modoJogo) abrirJogo3d();
+else if (cenarioDireto) abrirCenario(PARAMS.get('cidade') === cidade ? cidade : null, estado.modo);
 else {
   /* abre com um imóvel na tela: o Residencial Bela Vista */
   const inicial = marcos.find(m => m.pc && m.pc.modelo === 'torre2') || lotes[0];

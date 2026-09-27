@@ -94,6 +94,79 @@ for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg at
 done
 # as três variantes de cor da folha das torres (pintar_variantes.py)
 cp "$R/ferramentas/planta_html/texturas/"torres_v*.jpg "$A/img/texturas/modelos/"
+# O JOGO EM 3D (?jogo; js/jogo3d.js): o jogo de feed (o index.html da raiz)
+# por cima do cenário. A casca (o HTML sem os scripts) vira um módulo
+# (js/jogo_casca.js); os scripts, na ordem do index.html, um arquivo só
+# (js/jogo.js) — menos os do boneco clássico (o Three r147 e o GLB em
+# base64): quem desenha o boneco das cenas é o do cenário, pendurado por
+# bonecos3_global.js; o CSS, um arquivo só (css/jogo.css), e o jogo3d.css
+# que põe cada pedaço no lugar; as fotos das cenas de briga (as .webp que
+# os dados citam) e, embutidos num .js, os escudos de todos os clubes, as
+# fotos das praças e as bandeiras (o IMG() do jogo lê de lá)
+mkdir -p "$A/css" "$A/img/cenas"
+cp "$R/ferramentas/planta_html/jogo3d.js" "$A/js/"
+cp "$R/ferramentas/planta_html/jogo3d.css" "$A/css/"
+cp "$R/js/diajogo/bonecos3_global.js" "$A/js/"
+python3 - "$R" "$A" <<'PY'
+import base64, json, os, re, sys
+R, A = sys.argv[1], sys.argv[2]
+html = open(os.path.join(R, 'index.html'), encoding='utf-8').read()
+corpo = html[html.index('<body'):]
+corpo = corpo[corpo.index('>') + 1:corpo.rindex('</body>')]
+scripts = re.findall(r'<script\s+src="([^"]+)"\s*></script>', corpo)
+casca = re.sub(r'<script\b[^>]*>.*?</script>\s*', '', corpo, flags=re.S)
+casca = re.sub(r'<!--.*?-->\s*', '', casca, flags=re.S).strip()
+with open(os.path.join(A, 'js/jogo_casca.js'), 'w', encoding='utf-8') as s:
+    s.write('/* a casca do jogo de feed: o <body> do index.html da raiz, sem os scripts (GERADO por montar.sh) */\n')
+    s.write('export const CASCA = ' + json.dumps(casca, ensure_ascii=False) + ';\n')
+fora = {'js/lib/three.min.js', 'js/lib/GLTFLoader.js', 'js/lib/SkeletonUtils.js', 'dados/boneco_leve_glb.js'}
+with open(os.path.join(A, 'js/jogo.js'), 'w', encoding='utf-8') as s:
+    s.write('/* O JOGO DE FEED (Torcida Organizada), os scripts do index.html da raiz\n   na mesma ordem, num arquivo só (GERADO por montar.sh) */\n')
+    n = 0
+    for src in scripts:
+        if src in fora:
+            continue
+        s.write('\n/* ===== %s ===== */\n' % src)
+        s.write(open(os.path.join(R, src), encoding='utf-8').read())
+        s.write('\n;\n')
+        n += 1
+print('jogo.js: %d scripts' % n)
+css = re.findall(r'<link\s+rel="stylesheet"\s+href="([^"]+)"', html)
+with open(os.path.join(A, 'css/jogo.css'), 'w', encoding='utf-8') as s:
+    for i, f in enumerate(css):
+        t = open(os.path.join(R, f), encoding='utf-8').read()
+        if i:
+            t = re.sub(r'@import[^;]*;', '', t)
+        s.write('/* ===== %s ===== */\n%s\n' % (f, t))
+usadas = set()
+for pasta in ('dados', 'js'):
+    for raiz, _, arqs in os.walk(os.path.join(R, pasta)):
+        for a in arqs:
+            if a.endswith('.js'):
+                usadas.update(re.findall(r'img/cenas/[A-Za-z0-9_.-]+\.(?:webp|png|jpe?g)', open(os.path.join(raiz, a), encoding='utf-8', errors='ignore').read()))
+for f in sorted(usadas):
+    if os.path.exists(os.path.join(R, f)):
+        with open(os.path.join(R, f), 'rb') as e, open(os.path.join(A, f), 'wb') as d:
+            d.write(e.read())
+emb = {}
+tipos = {'.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml'}
+for pasta in ('img/escudos', 'img/cidades', 'img/bandeiras'):
+    for a in sorted(os.listdir(os.path.join(R, pasta))):
+        ext = os.path.splitext(a)[1]
+        if ext in tipos:
+            b = open(os.path.join(R, pasta, a), 'rb').read()
+            emb[pasta + '/' + a] = 'data:%s;base64,%s' % (tipos[ext], base64.b64encode(b).decode('ascii'))
+with open(os.path.join(A, 'dados/imagens_jogo.js'), 'w', encoding='utf-8') as s:
+    s.write('/* os escudos, as fotos das praças e as bandeiras do jogo, embutidos (montar.sh): %d imagens */\n' % len(emb))
+    s.write('window.__EMBUTIDOS = Object.assign(window.__EMBUTIDOS || {}, ')
+    json.dump(emb, s, separators=(',', ':'))
+    s.write(');\n')
+print('cenas: %d fotos; embutidas: %d imagens' % (len(usadas), len(emb)))
+PY
 { printf '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>\n'
   cat "$A/index.html"; printf '</body></html>\n'; } > "$A/local.html"
+# o jogo em 3D numa página própria (o botão "Jogo 3D" do cenário abre ela):
+# a mesma página, com o __JOGO
+{ printf '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Torcida Organizada 3D</title><script>window.__JOGO = true;</script></head><body>\n'
+  cat "$A/index.html"; printf '</body></html>\n'; } > "$A/jogo.html"
 du -sh "$A"

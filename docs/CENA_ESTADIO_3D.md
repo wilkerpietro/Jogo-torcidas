@@ -4290,6 +4290,33 @@ O dono pediu, olhando o dia de jogo da 4.69:
 - **Quem ataca e quem é atacado não é o jogador.** Tudo aqui é a IA contra a IA; a torcida do jogador, com a rota que ele escolher, é o próximo passo.
 
 
+### 4.71. As regras do jogo mais novo no dia de jogo, e o jogo inteiro por cima da cidade
+
+O dono, olhando a 4.70:
+- "Baixe a base_procura pra 55% maior rival e 25% rival."
+- "A quantidade de gente que vai pra rua tá desatualizada, consulte o html torcida organizada mais recente que foi publicado no github Pages pra consultar as regras dele."
+- Sobre o bonde da escolta da PM não atacar: "o bonde escoltado pode atacar sim."
+- Sobre o sorteio do aliado: "está correto, inclusive registre isso pra ir pro outro html do jogo também."
+- Sobre a escolta de 10 fixa: "volte a aplicar a regra de 8 a 15."
+- Sobre a conta de feridos: "deve registrar os dois lados."
+- "Em jogo Fortaleza x CSA, o aliado só hospeda a TOMA, e ela sai da sede sozinha pro estádio."
+- E o passo grande: "Comece a importar os detalhes de movimento dos bonecos e motor de briga pra dentro do jogo, assim como toda a rotina do html Torcida Organizada. Traga toda a hud pro jogo, como o menu lateral, as informações superiores, o menu inicial, e os dias passando." — ver `docs/JOGO_3D.md`.
+
+#### As regras (do jogo do Pages, commit 82bd43d)
+
+- **Quem vai pra rua** (`naRuaEm`, `js/mundo/praca.js`): a torcida da praça bota **todo mundo de pé** (as `disponiveisIA`: sem ferido, preso ou gente em subsede; os 60% caíram no jogo em 31/08), menos a escolta que ela empresta. A de fora vem na **caravana do jogo** (`caravanaDe`): a régua da caravana do jogador com 2 trechos e risco zero, × 0,6 — com a moral 12 com que toda IA nasce, uns 47% das de pé, no mínimo 5. A Cearamor (150) bota 150 na rua (40 bonecos, o teto); a TOMA (80) vem com 37; a Sangue Azul (20), com 9.
+- **O anfitrião** é o `anfitriaoDe` do jogo: uma torcida da praça com sede que está na irmandade (antes) ou nos aliados do visitante; o empate pelo hash do par (o `hash` FNV-1a de `js/mundo/mapa.js`). A TOMA tem dois aliados em Fortaleza, a TUF e a Jovem Garra; o hash dá a Jovem Garra.
+- **O que ele decide** continua sorteado (irmandade 10/30/60, aliado 35/45/20), mas **do clube mandante só hospeda**: a fatia da escolta vira hospedagem, e o painel nem oferece "hospeda e escolta". No Fortaleza × CSA, a Jovem Garra é do Fortaleza: hospeda (ou não recebe) e a TOMA sai da sede dela sozinha.
+- **A escolta** é a do jogo (`escoltaDe`): de 5 a 10% do efetivo de quem hospeda, pelo hash do par — a TUF (150) emprestaria de 8 a 15; a Jovem Garra (45), de 2 a 5. Ela sai do efetivo de quem empresta.
+- **A chance de atacar**: a base 55 (maior rival) / 25 (rival) × a paridade (até 1,3). O jogo ainda soma a mágoa e para em 57%; aqui não, porque a base foi dada pelo dono. O bonde escoltado pela PM também ataca.
+- **A briga** é a das IAs do jogo (`brigaIA`, com a tabela de `simular.js`): força = gente × a ficha média da torcida (a pirâmide de cargos: diretoria 15,5, frente 11,5, componente 6,5, novato 2,5; a escolta com a ficha dela), o favorito vence 70% das vezes, e as baixas são dos dois lados — quem perde deixa de 25 a 40% no chão e de 5 a 12% presos; quem ganha, de 8 a 16% e de 1 a 4%. O preso fica **rendido no lugar, de mãos pra cima** (a pose da revista), esperando a viatura; o ferido fica deitado, como antes. Cada lado vai pro estádio com quem ficou de pé e solto.
+- **No jogo** (`js/mundo/praca.js`, anotado em `docs/DECISOES.md`): a `BASE_PROCURA` passou a 55/25 (o hostil fica em 10), e o anfitrião da IA passou a sortear como recebe, com o do mandante só hospedando (`decisaoDoAnfitriao`, fixo pro par e pro dia). Os feridos dos dois lados o jogo já registrava (`relacoes.baixasIA`).
+
+#### Medido
+
+- **As 30 praças, 90 planos** (o clássico, o mando invertido e um visitante de fora em cada): **os 90 sem erro**, todo bonde com rota. Brigas: **58** (eram 74 com a base 88/72): 26 dos 30 clássicos, 20 dos 30 invertidos e 4 dos 30 com visitante de fora. A favorita venceu 42 e a zebra 16 (72%). As baixas por lado: feridos de 8 a 40% do bonde (mediana 20%), presos de 0 a 12% (mediana 5%). O plano leva de 0,2 a 1,3 s (mediana 0,57 s).
+- **Fortaleza × CSA** (a TOMA de fora): o anfitrião é a Jovem Garra, do Fortaleza. No sorteio deste jogo ela não recebe (o aliado não recebe em 35%) e a TOMA desce na entrada sul; mandada hospedar, hospeda, e a TOMA sai da sede dela sozinha pro estádio; o painel não oferece a escolta. **Ceará × CSA**: a Jovem Garra (de outro clube) escolta com 3 bonecos; com "quem pode, ataca", a Cearamor (150) cai em cima da TOMA (42 com a escolta) e ganha: ficam 20 feridos e 5 presos da Cearamor, 16 e 4 da TOMA.
+
 ## 5. A vida da cena — o que o combate já fazia, e como foi ligado
 
 - **O MOTOR DE LUTA ESTAVA DUAS VERSÕES ATRÁS.** Este branch saiu de um

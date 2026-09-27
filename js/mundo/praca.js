@@ -335,6 +335,31 @@ TO.praca = (function(){
     return Math.max(1, Math.round((anfitriao.membros || 20) * pct / 100));
   }
 
+  /* O QUE O ALIADO DA IA DECIDE (régua do dono, 27/09/2026): o anfitrião
+     que não é a nossa torcida não recebe sempre, nem escolta sempre — ele
+     sorteia, e a irmandade tende a escoltar, o aliado a só hospedar:
+     [não recebe, hospeda, hospeda e escolta], em %. Da irmandade, 10/30/60;
+     do aliado, 35/45/20. O dono conferiu no dia de jogo em 3D ("está
+     correto, inclusive registre isso pra ir pro outro html do jogo
+     também").
+     E O ALIADO DO MANDANTE SÓ HOSPEDA ("Em jogo Fortaleza x CSA, o aliado
+     só hospeda a TOMA, e ela sai da sede sozinha pro estádio"): no dia
+     ele vai pro estádio pelo clube dele, contra o visitante — a fatia da
+     escolta vira hospedagem.
+     O sorteio é fixo pro par e pro dia: a pergunta da véspera (o
+     assistente de ataque) e a rua do dia dão a mesma resposta. */
+  const HOSPEDA = {2:[10, 30, 60], 1:[35, 45, 20]};
+  function decisaoDoAnfitriao(E, anfitriao, visitante, jogo){
+    const g = (visitante.irmandade||[]).includes(anfitriao.id) ? 2
+            : (visitante.aliados||[]).includes(anfitriao.id) ? 1 : 0;
+    if(!g) return 'nada';
+    const pct = HOSPEDA[g];
+    const x = MP().hash(`hospeda|${anfitriao.id}|${visitante.id}|${E.data.ano}|${E.data.semana}|${jogo && jogo.dia}`) % 100;
+    let d = x < pct[0] ? 'nada' : x < pct[0] + pct[1] ? 'hospedar' : 'escolta';
+    if(d === 'escolta' && jogo && jogo.casa && anfitriao.clubeId === jogo.casa.id) d = 'hospedar';
+    return d;
+  }
+
   /* toda organizada pisa na rua no dia do jogo dela */
   const podeSair = () => true;
 
@@ -363,6 +388,10 @@ TO.praca = (function(){
         if(PL().caravanaDe(o, (E.relacoes||{})[o.id], E) < 5) continue;
         const casa = anfitriaoDe(E, mo, o);
         if(!casa) continue;
+        /* o anfitrião da IA decide (o nosso é o nível que o jogador
+           escolheu na recepção, dentro de escoltaDe) */
+        if(casa.torcida.id !== E.torcida.id &&
+           decisaoDoAnfitriao(E, casa.torcida, o, jogo) !== 'escolta') continue;
         const n = escoltaDe(E, casa.torcida, o);
         if(!n) continue;
         escoltas[o.id] = {casa, n};
@@ -481,7 +510,10 @@ TO.praca = (function(){
      base era 88/72/20. O maior rival cai 30% (62), o rival comum e o
      hostil caem 50% (36/10) — na média a rua briga 40% menos, e quando
      briga é quase sempre com quem importa. */
-  const BASE_PROCURA = {maior:62, rival:36, hostil:10};
+  /* E MENOS AINDA (régua do dono, 27/09/2026, no dia de jogo em 3D):
+     "Baixe a base_procura pra 55% maior rival e 25% rival". O hostil
+     fica nos 10. */
+  const BASE_PROCURA = {maior:55, rival:25, hostil:10};
   /* o agravante que era da tensão agora é a MÁGOA: quanto a relação
      está abaixo de −45 — briga recente derruba a relação além do
      natural, e é isso que esquenta a semana seguinte */
@@ -800,7 +832,7 @@ TO.praca = (function(){
           pontoDaSede, pontoDoBar,
           RUA_DA_CLASSE, ruaDaClasse, localDe, larguraEm, pontoNoBairro, LARGO,
           hexParaRgb, tonalizar, tomVizinho, siglaUnica, elencoDaNoite,
-          anfitriaoDe, escoltaDe, naRuaHoje, naRuaEm,
+          anfitriaoDe, escoltaDe, decisaoDoAnfitriao, HOSPEDA, naRuaHoje, naRuaEm,
           hostis, chanceDeProcurar, chanceDeAcaso, corredor,
           grauDeRivalidade, fatorParidade, BASE_PROCURA, PISO_PARIDADE,
           efetivoDeTorcida:efetivoDe,

@@ -436,6 +436,7 @@ export function criarCenario(P) {
         <label><span class="rot">Qualidade</span> <select class="cen-q" aria-label="Qualidade">${Object.entries(QUALIDADES).map(([k, q]) => `<option value="${k}">${q.nome}</option>`).join('')}</select></label>
         <button class="cen-bt so-voo" data-acao="escolher">Praças</button>
         <button class="cen-bt so-voo" data-acao="planta">Planta 2D</button>
+        <a class="cen-bt so-voo cen-bt-jogo3d" href="jogo.html" title="O jogo Torcida Organizada por cima da praça em 3D: o menu, a barra de cima, os painéis, o feed e os dias passando">Jogo 3D</a>
         <button class="cen-bt so-ape" data-acao="sair"><span class="longo">Sair da rua</span><span class="curto">Sair</span></button>
       </div>
     </header>
@@ -570,7 +571,12 @@ export function criarCenario(P) {
      que o medidor de fps mede (parado ou andando dá o mesmo trabalho).
      Enquanto a praça monta, só desenha quando pede (o quadro contínuo
      roubaria o tempo da montagem na máquina lenta) */
-  function pedir() { if (!pedido && !raiz.hidden) pedido = requestAnimationFrame(quadro); }
+  function pedir() { if (!pedido && !raiz.hidden && !pausado) pedido = requestAnimationFrame(quadro); }
+  /* PAUSADO: quem está por cima cobre a tela inteira (no jogo 3D, um
+     painel, uma cena de briga, um modal) e a cidade para de desenhar —
+     o último quadro fica na tela, e as teclas não mexem na câmera */
+  let pausado = false;
+  function pausar(v) { v = !!v; if (v === pausado) return; pausado = v; teclas.clear(); if (!v) { ultimo = 0; pedir(); } }
   const medidor = { desde: 0, quadros: 0, cpu: 0 };
   function quadro(t) {
     pedido = 0;
@@ -646,7 +652,7 @@ export function criarCenario(P) {
   }
   const TECLAS = new Set(['w', 'a', 's', 'd', 'q', 'e', 'r', 'f', 't', '+', '=', '-', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift']);
   window.addEventListener('keydown', ev => {
-    if (raiz.hidden || ev.target.closest && ev.target.closest('select, input, textarea')) return;
+    if (raiz.hidden || pausado || ev.target.closest && ev.target.closest('select, input, textarea')) return;
     const k = ev.key.toLowerCase();
     if (k === 'escape') { fecharFicha(); return; }
     if (!TECLAS.has(k) || ev.ctrlKey || ev.metaKey || ev.altKey) return;
@@ -2274,9 +2280,10 @@ void main() {
     document.documentElement.style.overflow = 'hidden';
     ajustarTela();
     /* sem praça: a lista pra escolher */
-    if (!nome) { escolher(); return; }
-    if (montado && montado.nome === nome && P.modo() === (modo || P.mapaDoPorte(nome)) && !montando) { atualizarTopo(); pedir(); return; }
-    montar(nome, modo);
+    if (!nome) { escolher(); return Promise.resolve(); }
+    if (montado && montado.nome === nome && P.modo() === (modo || P.mapaDoPorte(nome)) && !montando) { atualizarTopo(); pedir(); return Promise.resolve(); }
+    /* quem abre pode esperar a praça ficar pronta (o jogo 3D espera pra levar a câmera à sede) */
+    return montar(nome, modo);
   }
   function fechar() {
     sairDaRua(false);
@@ -2297,6 +2304,8 @@ void main() {
   gerente.onProgress = (...a) => { if (antesProg) antesProg(...a); pedir(); };
 
   return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; },
+           /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
+           get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
            /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */
            get dia() { return dia; }, abrirDiaDeJogo, get custoDia() { return { ...custoDia }; },
            /* pro teste: o que está no pixel (sx, sy) */
