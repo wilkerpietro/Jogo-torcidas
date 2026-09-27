@@ -69,7 +69,9 @@ const ESTADIO_PASSO = { degrau: 0.55, faixa: [0.55, 1.9] };
 /* O CORTE: o que fica entre a câmera e o boneco, acima da cabeça, some
    (a copa, o beiral, o prédio do lado), e o prédio em que ele está
    DENTRO perde o que passa de 2,20 m (o telhado, a laje, o alto da
-   parede): de cima se vê a planta dos cômodos */
+   parede): de cima se vê a planta dos cômodos. No estádio, dentro é
+   debaixo de alguma coisa (o corredor, o túnel, a escada); na
+   arquibancada, a céu aberto, nada some */
 const CORTE_M = { raio: 2.2, acima: 2.2, dentro: 2.2 };
 /* EMBAIXO DA RUA (no metrô): a cidade em cima da caixa da estação, com
    esta folga (m) pra cada lado, some do teto do nível dele pra cima, e a
@@ -1682,6 +1684,14 @@ void main() {
      dentro de cada um: ali o chão e a parede são os deles */
   let andares = null, dentroDosEstadios = [];
   const noEstadio = (x, z) => !!andares && dentroDosEstadios.some(f => f(x, z));
+  /* debaixo de alguma coisa, no estádio: o que é deitado em cima da cabeça
+     dele (o forro, a laje, a arquibancada por cima do corredor), ali e 30
+     cm pra cada lado (debaixo da viga de 30 cm do portão do de 10 mil ele
+     não está dentro; no túnel de 1,2 m do vomitório do de 20, está) */
+  const coberto = (x, z, yPe) => {
+    const d = 0.3 * M, y = yPe + ESTADIO_PASSO.faixa[1] * M;
+    return [[0, 0], [d, 0], [-d, 0], [0, d], [0, -d]].every(([a, b]) => { const t = andares.teto(x + a, z + b, y); return t === t; });
+  };
   /* o penteado sai da semente (o modelo leve não tem boné nem bandana) */
   const CABELOS = ['curto', 'raspado', 'degrade', 'black', 'cacheado', 'topete', 'franja', 'entradas', 'moicano', 'comprido', 'rabo', 'coque', 'careca'];
   /* a camisa é lembrada pela torcida (o id; 'nenhuma' é o "Sem torcida"), não pela posição na lista */
@@ -2027,8 +2037,15 @@ void main() {
        escada, o degrau de 17 cm não sacode a tela */
     ape.yv += (ape.y - ape.yv) * Math.min(1, dt * 12);
     /* o prédio em que ele está dentro (e ainda um instante depois de
-       sair: na porta, o telhado não pisca); embaixo da rua, nenhum */
-    const dentro = ape.y > -0.5 * M ? grade.dentroDe(ape.x, ape.z) : 0;
+       sair: na porta, o telhado não pisca); embaixo da rua, nenhum. NO
+       ESTÁDIO o telhado do mapa não serve (visto de cima, a arquibancada
+       inteira é telhado, e o corte dela mostrava o corredor embaixo):
+       dentro é debaixo de alguma coisa — o corredor, o túnel, a escada, o
+       salão —, e na arquibancada, no campo e no corredor entre os anéis,
+       a céu aberto, nada some */
+    const noEst = ape.y > -0.5 * M && noEstadio(ape.x, ape.z);
+    ape.aberto = noEst && !coberto(ape.x, ape.z, ape.y);
+    const dentro = ape.y <= -0.5 * M ? 0 : noEst ? (ape.aberto ? 0 : grade.tetoEm(ape.x, ape.z)) : grade.dentroDe(ape.x, ape.z);
     if (dentro) { ape.teto = dentro; ape.tetoAte = agora() + 350; }
     else if (agora() > ape.tetoAte) ape.teto = 0;
     /* o boneco: o jogo lê o disco e faz o resto (o passo, o parado, a virada) */
@@ -2047,7 +2064,10 @@ void main() {
     CORTE.uCorteA.value.set(ape.x, y + 1.7 * M, ape.z);
     CORTE.uCorteB.value.copy(cam.position);
     CORTE.uCorteR.value = CORTE_M.raio * M;
-    CORTE.uCorteAcima.value = y + CORTE_M.acima * M;
+    /* (na arquibancada, a céu aberto, o cone também sai: de cima, quase a
+       pino, o degrau atrás dele não tapa ninguém, e o buraco que o cone
+       abria nele mostrava o corredor embaixo) */
+    CORTE.uCorteAcima.value = ape.aberto ? 1e9 : y + CORTE_M.acima * M;
     CORTE.uCorteId.value = ape.chegada >= 1 ? ape.teto : 0;
     CORTE.uCorteY.value = y + CORTE_M.dentro * M;
     /* EMBAIXO DA RUA: a cidade em cima da estação some, do teto do nível
@@ -2190,7 +2210,7 @@ void main() {
            aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, levar: levarPara,
                   /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */
                   mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
-                  get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
+                  get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, aberto: !!ape.aberto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
                   get grade() { return grade; }, get sub() { return sub; }, get piso() { return piso; }, get andares() { return andares; }, noEstadio: (x, z) => noEstadio(x, z), get povo() { return povo; },
                   porta: () => alternarPorta(), get portas() { return portas.map(p => ({ hx: p.hx, hz: p.hz, larg: p.larg, a: p.a, alvo: p.alvo, ang: p.ang, grupo: p.grupo, vidro: p.vidro })); },
                   perto: () => { const p = portaPerto(); return p && { hx: p.hx, hz: p.hz, grupo: p.grupo, alvo: p.alvo }; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };

@@ -69,8 +69,9 @@ export function Subsolo(M, estacoes, op = {}) {
   }
 
   /* FECHAR: os baldes (cada triângulo em toda célula que a caixa dele
-     toca) e, do que é chão, o plano e as três arestas */
-  let x0 = 0, z0 = 0, nx = 1, nz = 1, ini = null, idx = null, plano = null, marca = null;
+     toca) e, do que é deitado (o chão, virado pra cima; o forro e a laje,
+     pra baixo), o plano */
+  let x0 = 0, z0 = 0, nx = 1, nz = 1, ini = null, idx = null, plano = null, deCima = null, marca = null;
   function fechar() {
     T = T.slice(0, n * 9);
     x0 = Infinity; z0 = Infinity; let x1 = -Infinity, z1 = -Infinity;
@@ -93,15 +94,16 @@ export function Subsolo(M, estacoes, op = {}) {
     ini = conta; idx = new Uint32Array(conta[nx * nz]);
     const pos = conta.slice(0, nx * nz);
     for (let k = 0; k < n; k++) { const [i0, i1, j0, j1] = faixa(k); for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) idx[pos[j * nx + i]++] = k; }
-    /* o CHÃO: o triângulo virado pra cima (até 60° de inclinação) guarda
-       o plano (y = a·x + b·z + c); o resto guarda NaN */
-    plano = new Float32Array(n * 3).fill(NaN);
+    /* o DEITADO (até 60° de inclinação) guarda o plano (y = a·x + b·z +
+       c) e se é virado pra cima (o CHÃO); o resto (a parede) guarda NaN */
+    plano = new Float32Array(n * 3).fill(NaN); deCima = new Uint8Array(n);
     for (let k = 0; k < n; k++) {
       const o = k * 9;
       const ux = T[o + 3] - T[o], uy = T[o + 4] - T[o + 1], uz = T[o + 5] - T[o + 2];
       const vx = T[o + 6] - T[o], vy = T[o + 7] - T[o + 1], vz = T[o + 8] - T[o + 2];
       const Nx = uy * vz - uz * vy, Ny = uz * vx - ux * vz, Nz = ux * vy - uy * vx, L = Math.hypot(Nx, Ny, Nz);
-      if (!L || Ny / L < 0.5) continue;
+      if (!L || Math.abs(Ny) / L < 0.5) continue;
+      deCima[k] = Ny > 0 ? 1 : 0;
       plano[k * 3] = -Nx / Ny; plano[k * 3 + 1] = -Nz / Ny;
       plano[k * 3 + 2] = T[o + 1] + (Nx * T[o] + Nz * T[o + 2]) / Ny;
     }
@@ -113,6 +115,17 @@ export function Subsolo(M, estacoes, op = {}) {
   /* a estação cuja caixa tem (x, z) */
   const estacaoEm = (x, z, f = 0) => estacoes.find(e => e.caixa && noRet(e.caixa, x, z, f)) || null;
 
+  /* (x, z) dentro do triângulo k, visto de cima (com um fio de folga, pra
+     não cair na costura entre dois) */
+  function debaixo(k, x, z) {
+    const o = k * 9;
+    const ax = T[o], az = T[o + 2], bx = T[o + 3], bz = T[o + 5], cx = T[o + 6], cz = T[o + 8];
+    const d1 = (bx - ax) * (z - az) - (bz - az) * (x - ax);
+    const d2 = (cx - bx) * (z - bz) - (cz - bz) * (x - bx);
+    const d3 = (ax - cx) * (z - cz) - (az - cz) * (x - cx);
+    const e = 1e-3 * M * M;
+    return (d1 >= -e && d2 >= -e && d3 >= -e) || (d1 <= e && d2 <= e && d3 <= e);
+  }
   /* O CHÃO debaixo de (x, z) a um degrau de `yPe` (NaN: não tem) */
   function chao(x, z, yPe) {
     let melhor = -Infinity;
@@ -124,21 +137,34 @@ export function Subsolo(M, estacoes, op = {}) {
       for (let q = ini[c]; q < ini[c + 1]; q++) {
         const k = idx[q];
         const a = plano[k * 3];
-        if (a !== a) continue;
+        if (a !== a || !deCima[k]) continue;
         const y = a * x + plano[k * 3 + 1] * z + plano[k * 3 + 2];
         if (y > yPe + DEG || y < yPe - DEG || y <= melhor) continue;
-        /* (x, z) dentro do triângulo, visto de cima (com um fio de folga,
-           pra não cair na costura entre dois) */
-        const o = k * 9;
-        const ax = T[o], az = T[o + 2], bx = T[o + 3], bz = T[o + 5], cx = T[o + 6], cz = T[o + 8];
-        const d1 = (bx - ax) * (z - az) - (bz - az) * (x - ax);
-        const d2 = (cx - bx) * (z - bz) - (cz - bz) * (x - bx);
-        const d3 = (ax - cx) * (z - cz) - (az - cz) * (x - cx);
-        const e = 1e-3 * M * M;
-        if ((d1 >= -e && d2 >= -e && d3 >= -e) || (d1 <= e && d2 <= e && d3 <= e)) melhor = y;
+        if (debaixo(k, x, z)) melhor = y;
       }
     }
     return melhor === -Infinity ? NaN : melhor;
+  }
+  /* O TETO em cima de (x, z): a altura do deitado mais baixo acima de `y`
+     — o forro, a laje, o piso do andar de cima, a arquibancada por cima
+     do corredor (NaN: céu aberto). É por ele que a câmera do estádio sabe
+     se o boneco está debaixo de alguma coisa (o corredor, o túnel, a
+     escada, o salão) ou na arquibancada, a céu aberto */
+  function teto(x, z, y) {
+    if (!ini) return NaN;
+    const i = Math.floor((x - x0) / CEL), j = Math.floor((z - z0) / CEL);
+    if (i < 0 || j < 0 || i >= nx || j >= nz) return NaN;
+    const c = j * nx + i;
+    let melhor = Infinity;
+    for (let q = ini[c]; q < ini[c + 1]; q++) {
+      const k = idx[q];
+      const a = plano[k * 3];
+      if (a !== a) continue;
+      const yy = a * x + plano[k * 3 + 1] * z + plano[k * 3 + 2];
+      if (yy <= y || yy >= melhor) continue;
+      if (debaixo(k, x, z)) melhor = yy;
+    }
+    return melhor === Infinity ? NaN : melhor;
   }
 
   /* OS RISCOS de perto: os triângulos das células em volta de (x, z) até
@@ -225,6 +251,6 @@ export function Subsolo(M, estacoes, op = {}) {
     c.y = y;
     return c;
   }
-  return { juntar, fechar, chao, empurrar, cabe, passo, noPoco, estacaoEm, riscar,
+  return { juntar, fechar, chao, teto, empurrar, cabe, passo, noPoco, estacaoEm, riscar,
            get n() { return n; }, get riscos() { return { R, n: nR }; }, estacoes };
 }
