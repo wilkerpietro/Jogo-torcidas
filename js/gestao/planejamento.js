@@ -22,25 +22,44 @@ TO.planejamento = (function(){
      Zera sozinho quando o jogo muda: plano é da partida, não
      da temporada.
      ======================================================= */
-  function plano(E){
-    const chave = E.proximoJogo ? E.proximoJogo.chave
-                                : `folga-${E.data.ano}-${E.data.semana}`;
-    if(!E.plano || E.plano.chave !== chave){
-      /* o plano nasce do padrão salvo pra esse tipo de jogo, se houver:
-         quem não quer decidir toda semana decide uma vez */
-      const padrao = (E.padroes||{})[tipoDoJogo(E)];
-      E.plano = Object.assign(
-        {intencao:'paz', como:'arredores', olheiro:null,
-         alvo:'arredores', alvoTorcida:null, bombas:0,
-         bondes:1, destinos:{}, investidas:{}, caravana:null, rota:null},
-        padrao ? JSON.parse(JSON.stringify(padrao)) : {},
-        {chave, recepcao:{}, pago:{}, investidas:{}, decidido: !!padrao});
-      if(padrao && padrao.fracao != null){
-        const est = estimativaCaravana(E);
-        if(est) E.plano.caravana = Math.round(est.interessados * padrao.fracao);
-      }
+  /* UM PLANO POR JOGO, NÃO POR SEMANA (correção do dono, 22/09/2026):
+     `E.plano` era um objeto SÓ, preso à chave do `E.proximoJogo` — e
+     `proximoJogo` é um por semana. Numa semana com dois jogos nossos
+     (a Sul-Americana de quarta e o Brasileirão de sábado, por
+     exemplo), o segundo não tinha ONDE morar: a tela não tinha o que
+     mostrar pra ele, e se mostrasse leria por engano o plano do
+     primeiro. O `E.plano` do jogo da semana (o que pesa mais, e é dele
+     que vêm a rota e a caravana) continua exatamente onde estava —
+     save velho não muda nada. O SEGUNDO jogo (e um eventual terceiro)
+     ganha um slot próprio em `E.planosExtra`, por chave. */
+  function plano(E, jogo){
+    jogo = jogo || E.proximoJogo;
+    const chave = jogo ? jogo.chave : `folga-${E.data.ano}-${E.data.semana}`;
+    const primario = !E.proximoJogo || chave === E.proximoJogo.chave;
+    if(primario){
+      if(E.plano && E.plano.chave === chave) return E.plano;
+    } else {
+      E.planosExtra = E.planosExtra || {};
+      if(E.planosExtra[chave] && E.planosExtra[chave].chave === chave)
+        return E.planosExtra[chave];
     }
-    return E.plano;
+    /* o plano nasce do padrão salvo pra esse tipo de jogo, se houver:
+       quem não quer decidir toda semana decide uma vez — o padrão vale
+       pro segundo jogo também, pelo casa/fora DELE, não do primário */
+    const tipo = jogo && !jogo.casa ? 'fora' : 'casa';
+    const padrao = (E.padroes||{})[tipo];
+    const novo = Object.assign(
+      {intencao:'paz', como:'arredores', olheiro:null,
+       alvo:'arredores', alvoTorcida:null, bombas:0,
+       bondes:1, destinos:{}, investidas:{}, caravana:null, rota:null},
+      padrao ? JSON.parse(JSON.stringify(padrao)) : {},
+      {chave, recepcao:{}, pago:{}, investidas:{}, decidido: !!padrao});
+    if(primario) E.plano = novo; else E.planosExtra[chave] = novo;
+    if(padrao && padrao.fracao != null){
+      const est = estimativaCaravana(E, jogo);
+      if(est) novo.caravana = Math.round(est.interessados * padrao.fracao);
+    }
+    return novo;
   }
 
   /* dois padrões dão conta do ano: jogo em casa e viagem */
@@ -68,33 +87,33 @@ TO.planejamento = (function(){
      ======================================================= */
   const PONTOS = [
     /* o destino: só faz sentido quando se decide esperar o rival chegar */
-    {id:'arredores', nome:'Arredores do estádio', curto:'ARREDORES',
+    {id:'arredores', nome:_t('Arredores do estádio'), curto:_t('ARREDORES'),
      risco:3, prestigio:4, ida:false, x:0.80, y:0.34, acima:false,
-     nota:'cordão da PM em peso, mas é onde o rival inteiro está'},
+     nota:_t('cordão da PM em peso, mas é onde o rival inteiro está')},
     /* os da ida: o bonde deles ainda está na rua, quebrado em pedaços */
-    {id:'bar',       nome:'Bar do rival',         curto:'BAR DELES',
+    {id:'bar',       nome:_t('Bar do rival'),         curto:_t('BAR DELES'),
      risco:2, prestigio:5, ida:true, via:'sul', x:0.21, y:0.46, acima:false,
-     nota:'poucos lá dentro, mas é humilhação que fica'},
-    {id:'praca',     nome:'Praça de encontro',    curto:'PRAÇA',
+     nota:_t('poucos lá dentro, mas é humilhação que fica')},
+    {id:'praca',     nome:_t('Praça de encontro'),    curto:_t('PRAÇA'),
      risco:2, prestigio:2, ida:true, via:'norte', x:0.37, y:0.15, acima:true,
-     nota:'aberta, a briga espalha e pouca gente se pega'},
-    {id:'terminal',  nome:'Terminal rodoviário',  curto:'TERMINAL',
+     nota:_t('aberta, a briga espalha e pouca gente se pega')},
+    {id:'terminal',  nome:_t('Terminal rodoviário'),  curto:_t('TERMINAL'),
      risco:4, prestigio:3, ida:true, via:'sul', x:0.34, y:0.76, acima:false,
-     nota:'fechado: pega o bonde na descida, a PM chega rápido'},
-    {id:'avenida',   nome:'Avenida de acesso',    curto:'AVENIDA',
+     nota:_t('fechado: pega o bonde na descida, a PM chega rápido')},
+    {id:'avenida',   nome:_t('Avenida de acesso'),    curto:_t('AVENIDA'),
      risco:2, prestigio:3, ida:true, via:'norte', x:0.57, y:0.38, acima:true,
-     nota:'larga, favorece a linha e a fuga'},
-    {id:'viaduto',   nome:'Viaduto da via expressa', curto:'VIADUTO',
+     nota:_t('larga, favorece a linha e a fuga')},
+    {id:'viaduto',   nome:_t('Viaduto da via expressa'), curto:_t('VIADUTO'),
      risco:3, prestigio:4, ida:true, via:'sul', x:0.66, y:0.74, acima:false,
-     nota:'gargalo: o bonde tem de passar por baixo, sem saída pelos lados'}
+     nota:_t('gargalo: o bonde tem de passar por baixo, sem saída pelos lados')}
   ];
 
   /* GDD §14: esperar no destino ou cortar o caminho */
   const COMO = [
-    {id:'arredores', rot:'Só nos arredores do estádio',
-     nota:'espera o bonde deles chegar inteiro; PM em peso, briga grande'},
-    {id:'ida',       rot:'Na ida ao estádio',
-     nota:'corta o caminho antes do cordão; precisa do olheiro no ponto certo'}
+    {id:'arredores', rot:_t('Só nos arredores do estádio'),
+     nota:_t('espera o bonde deles chegar inteiro; PM em peso, briga grande')},
+    {id:'ida',       rot:_t('Na ida ao estádio'),
+     nota:_t('corta o caminho antes do cordão; precisa do olheiro no ponto certo')}
   ];
 
   /* o ponto ganha um bairro de verdade da praça, sempre o mesmo */
@@ -124,8 +143,19 @@ TO.planejamento = (function(){
   function relatorioDoOlheiro(E, idTorcida){
     const o = M().torcida(idTorcida);
     if(!o) return null;
-    const viva = (TO.tensao && TO.tensao.mundo(E)[idTorcida]) || {};
-    const efetivo = Math.max(6, Math.round((viva.membros || o.membros || 20) * 0.62));
+    /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+    const vivos = TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, idTorcida)
+      : (((TO.relacoes && TO.relacoes.mundo(E)[idTorcida]) || {}).membros
+         || o.membros || 20);
+    /* A RÉGUA DO JOGADOR AQUI TAMBÉM (ordem do dono, 31/08/2026): o
+       olheiro lê a presença de verdade — se a torcida joga na praça
+       DELA (nosso jogo fora, ou rival da nossa cidade), desce todo o
+       efetivo de pé; se ela vem de fora pro nosso jogo em casa, o que
+       chega é a caravana. Os 62% avulsos morreram. */
+    const j = E.proximoJogo;
+    const vemDeFora = j && j.casa && o.mapa !== E.torcida.mapa;
+    const efetivo = Math.max(6, vemDeFora ? caravanaDe(o, 0, E) : vivos);
     const r = baralhoFixo(`${idTorcida}|${E.data.ano}|${E.data.semana}`);
 
     /* torcida grande se divide mais; torcida pequena anda junto */
@@ -141,9 +171,11 @@ TO.planejamento = (function(){
     const soma = pesos.reduce((s,x)=>s+x, 0);
     const tamanhos = pesos.map(p=>Math.max(4, Math.round(efetivo*p/soma)));
 
-    /* quanto o olheiro enxerga: tensão alta deixa o rival cauteloso */
-    const t = TO.tensao ? TO.tensao.nivel(E, idTorcida) : 0;
-    const confianca = Math.round(U.limitar(88 - t*0.35 - (bondes-1)*9, 35, 95));
+    /* quanto o olheiro enxerga: relação muito ruim deixa o rival
+       cauteloso e a leitura mais incerta */
+    const rel = TO.relacoes.nivel(E, idTorcida);
+    const magoa = Math.max(0, -rel - 45);
+    const confianca = Math.round(U.limitar(88 - magoa*0.35 - (bondes-1)*9, 35, 95));
 
     const pts = pontosDeIda(E);
     /* cada bonde tem um caminho preferido; o olheiro chuta qual */
@@ -152,8 +184,8 @@ TO.planejamento = (function(){
     }));
     return {torcida:o, efetivo, bondes, tamanhos, confianca, rotas,
             texto: bondes===1
-              ? `Saem num bonde só, ${tamanhos[0]} na conta do olheiro.`
-              : `Devem se quebrar em ${bondes} bondes: ${tamanhos.join(', ')}.`};
+              ? _t('Saem num bonde só, {n} na conta do olheiro.', {n:tamanhos[0]})
+              : _t('Devem se quebrar em {n} bondes: {lista}.', {n:bondes, lista:tamanhos.join(', ')})};
   }
 
   /* Chance de o olheiro estar no lugar certo: com o rival num bonde só,
@@ -166,8 +198,8 @@ TO.planejamento = (function(){
       (gente ? 62 : 14) + (rel.confianca-70)*0.4, 8, 92));
     return {gente, chance, bondes:pegos.length,
             texto: gente
-              ? `O olheiro põe ${gente} deles passando aqui`
-              : 'O olheiro não vê bonde nenhum por aqui'};
+              ? _t('O olheiro põe {n} deles passando aqui', {n:gente})
+              : _t('O olheiro não vê bonde nenhum por aqui')};
   }
 
   /* GDD §16.7: dividir por zona rende mais frentes de ataque, cada uma
@@ -184,12 +216,154 @@ TO.planejamento = (function(){
     };
   }
 
-  /* quanta gente sai de casa: em jogo fora, o tamanho da caravana */
-  function efetivoDaSaida(E){
+  /* quanta gente sai de casa: em jogo fora, o tamanho da caravana.
+     Jogo na cidade de uma SUB-SEDE nossa (dono, 26/08/2026): todos os
+     membros daquele núcleo vão pro jogo, fora os demais que fazem
+     caravana normalmente — o núcleo já mora lá. */
+  /* O JOGO DO DIA MANDA, NÃO O DA SEMANA (correção do dono, 06/09/2026).
+     `E.proximoJogo` é um por semana — o mata-mata ou o de fim de semana
+     —, e numa semana com jogo em casa na quarta e jogo fora no domingo
+     o estádio de quarta lia o tamanho da CARAVANA de domingo: a TUF
+     punha 8 na arquibancada com 100 aptos. Quem chama passa a partida
+     do dia (`{mapa}` da praça onde ela é, ou `{casa}`); jogo na nossa
+     praça leva todo mundo apto, e a caravana só vale pra viagem. Sem
+     partida, segue lendo o jogo da semana, como antes. */
+  /* `jogo` é o TERCEIRO parâmetro, e opcional de propósito: quem chama
+     sem ele continua lendo `E.proximoJogo`, como sempre — o parâmetro
+     só existe pra quem precisa da caravana e da ajuda do SEGUNDO jogo
+     da semana (correção do dono, 22/09/2026), que tem seu próprio
+     plano e não pode herdar o do jogo principal. */
+  function efetivoDaSaida(E, partida, jogo){
     const aptos = TO.membros.aptosParaOEstadio(E).length;
-    if(!TO.financeiro.precisaCaravana(E)) return aptos;
-    const est = estimativaCaravana(E);
-    return est ? est.vao : aptos;
+    const j = jogo || E.proximoJogo;
+    const emCasa = partida
+      ? (partida.mapa ? partida.mapa === E.torcida.mapa : !!partida.casa)
+      : !TO.financeiro.precisaCaravana(E);
+    if(emCasa) return aptos;
+    const mapaAdv = (partida && partida.mapa) || (j && j.mapaAdv);
+    const nucleo = (mapaAdv && TO.patrimonio.temFilialEm &&
+                    TO.patrimonio.temFilialEm(E, mapaAdv))
+      ? TO.membros.aptosDaFilial(E, mapaAdv).length : 0;
+    const est = estimativaCaravana(E, j);
+    /* A ESCOLTA DO ALIADO DA PRAÇA DELES (pedido do dono, 08/09/2026):
+       se a ajuda pedida no planejamento veio com escolta, o bonde deles
+       anda junto do nosso na praça do jogo — entra no efetivo da saída
+       como a filial entra: gente do nosso lado na rua e no estádio. */
+    const aj = ajudaDe(E, j);
+    const escolta = (aj && aj.mapa === mapaAdv && aj.escolta) ? aj.escolta : 0;
+    return (est ? est.vao : aptos) + nucleo + escolta;
+  }
+
+  /* =======================================================
+     PEDIR AJUDA A ALIADO NO JOGO FORA (pedido do dono, 08/09/2026)
+     O espelho da recepção: na praça do jogo fora, uma aliada
+     (relação ≥ 20 ou irmã de clube) pode nos receber. O pedido
+     sai da tela da caravana e a resposta vem na hora, com o
+     tipo de ajuda — a MESMA tabela que a gente usa pra receber
+     aliado: só hospedagem, hospedagem e escolta, escolta e
+     churrasco, ou não recebe. Quem decide é a relação, com um
+     pouco de sorte fixa por semana. Cada nível custa a ela o
+     que custaria a nós (25/50/75 por cabeça da nossa caravana),
+     pago do caixa dela até onde ele alcança — o caixa das IAs é
+     curto e, se ele mandasse no nível, escolta e churrasco nunca
+     sairiam; quem manda é a relação.
+     O que muda pra gente:
+       · relação: receber soma a tabela da recepção (+7, +12,
+         +20); não receber tira −7 — é o que ELA cobra de nós
+         no caso inverso;
+       · moral: dormir na sede deles dá +1; churrasco dá +2;
+       · escolta: 10 membros dela (régua do dono, 08/09/2026)
+         andam com o nosso bonde a partir da CHEGADA na cidade —
+         concentração, pista, arredores e estádio — e ficam quando
+         a caravana pega a estrada de volta (efetivoDaSaida e a
+         linha do dia).
+     Um pedido por jogo; a resposta fica no plano da semana.
+     ======================================================= */
+  const ajudaDe = (E, jogo) => (plano(E, jogo) || {}).ajuda || null;
+
+  /* as aliadas da praça do jogo fora, e a resposta que cada uma daria */
+  function aliadasNaPracaDeles(E, jogo){
+    const j = jogo || E.proximoJogo;
+    if(!j || j.casa || !j.mapaAdv) return [];
+    const fora = [];
+    for(const o of M().torcidasEm(j.mapaAdv)){
+      if(o.id === E.torcida.id || o.incompleta) continue;
+      const irma = M().saoIrmas && M().saoIrmas(E.torcida.id, o.id);
+      const rel = TO.relacoes.nivel(E, o.id);
+      if(!irma && rel < RELACAO_ALIADO) continue;
+      fora.push({id:o.id, torcida:o, nome:o.nome, relacao:rel, irma});
+    }
+    return fora.sort((a,b)=>b.relacao-a.relacao);
+  }
+
+  /* a resposta: nível pela relação com uma sorte fixa da semana; o
+     caixa dela pode descer o nível */
+  function respostaDaAjuda(E, aliadoId, jogo){
+    const j = jogo || E.proximoJogo;
+    const rel = TO.relacoes.nivel(E, aliadoId);
+    const h = TO.mapa.hash(`ajuda|${E.data.ano}|${E.data.semana}|${aliadoId}`);
+    const nota = rel + (h % 21) - 10;
+    let nivel = nota >= 60 ? 'churrasco' : nota >= 42 ? 'escolta'
+              : nota >= 26 ? 'hospedar' : 'nada';
+    const est = estimativaCaravana(E, j);
+    const cabecas = est ? est.vao : 0;
+    return {nivel, custo: custoRecepcao(nivel, cabecas), cabecas, nota};
+  }
+
+  function pedirAjuda(E, aliadoId, jogo){
+    jogo = jogo || E.proximoJogo;
+    const p = plano(E, jogo);
+    if(p.ajuda) return p.ajuda;                       // um pedido por jogo
+    const j = jogo;
+    const o = M().torcida(aliadoId);
+    if(!j || j.casa || !o) return null;
+    const r = respostaDaAjuda(E, aliadoId, j);
+    const rec = recepcaoDe(r.nivel);
+    E.relacoes = E.relacoes || {};
+    /* o ganho encolhe a cada repetição no ano (régua do dono, 17/09/2026) */
+    const ganho = rec.relacao > 0
+      ? TO.relacoes.ganhoRepetido(E, E.torcida.id, aliadoId, 'caravana', rec.relacao)
+      : rec.relacao;
+    E.relacoes[aliadoId] = U.limitar(TO.relacoes.nivel(E, aliadoId)
+                                     + ganho, -100, 100);
+    let moral = 0;
+    if(r.nivel !== 'nada'){
+      TO.relacoes.marcarAjuda(E, aliadoId);
+      moral = r.nivel === 'churrasco' ? 0.4 : r.nivel === 'hospedar' || r.nivel === 'escolta' ? 0.2 : 0;
+      if(moral) TO.estado.mexerIndicador(E, 'moral', moral, j.cidadeAdv
+        ? _t('Recebidos pela {nome} em {cidade}', {nome:o.nome, cidade:j.cidadeAdv})
+        : _t('Recebidos pela {nome} fora de casa', {nome:o.nome}));
+      /* O GASTO ENTRA NAS FINANÇAS DELA (conferência do dono, 08/09/2026):
+         a mesma porta do resto da economia das IAs — `lancarIA` escreve
+         no extrato que o perfil da torcida mostra; o caixa paga até
+         onde alcança */
+      const t = (E.mundoTorcidas||{})[aliadoId];
+      if(t && r.custo){
+        const pago = Math.min(r.custo, Math.max(0, t.caixa || 0));
+        t.caixa = Math.max(0, (t.caixa||0) - r.custo);
+        if(pago && TO.relacoes.lancarIA)
+          TO.relacoes.lancarIA(E, aliadoId,
+            _t('Recepção da {nome} ({n} cabeças · {nivel})',
+               {nome:E.torcida.nome, n:r.cabecas, nivel:rec.rot.toLowerCase()}), -pago);
+      }
+    }
+    const escolta = (r.nivel === 'escolta' || r.nivel === 'churrasco')
+      ? Math.min(10, Math.max(0, TO.relacoes.disponiveisIA(E, aliadoId))) : 0;
+    p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
+               relacao:ganho, moral: Math.round(moral*5),
+               mapa:j.mapaAdv, chave:j.chave};
+    /* a resposta chega como mensagem dela (mensagens entre torcidas) */
+    if(TO.feed && TO.feed.mensagemDe){
+      const TXT = {
+        hospedar: _t('Estamos juntos. A sede fica aberta pra caravana de vocês — colchão, banho e café. Chega cedo.'),
+        escolta:  _t('Estamos juntos. Dormem na sede e o nosso bonde anda com vocês até o portão. Aqui ninguém encosta.'),
+        churrasco:_t('Estamos juntos. Churrasco na sede quando chegarem, e a gente sobe pro estádio de bonde junto. Cidade de vocês.'),
+        nada:     _t('Irmão, dessa vez não vai dar. Semana pesada por aqui. Fica pra próxima.')
+      };
+      TO.feed.mensagemDe(E, aliadoId, TXT[r.nivel] || TXT.nada,
+                         r.nivel === 'nada' ? 'recusa' : 'juntos');
+    }
+    return p.ajuda;
   }
 
   /* =======================================================
@@ -208,9 +382,10 @@ TO.planejamento = (function(){
     return M().torcidasDe(j.advId).filter(o=>!M().saoIrmas(E.torcida.id, o.id))
       .map(o=>{
       const v = (E.relacoes||{})[o.id];
-      return {id:o.id, torcida:o, relacao: v===undefined ? 0 : v,
-              aliada: v !== undefined && v >= 20,
-              tensao: TO.tensao ? TO.tensao.nivel(E, o.id) : 0};
+      return {id:o.id, torcida:o,
+              relacao: v===undefined ? M().valorInicial(
+                M().relacaoBase(E.torcida.id, o.id)) : v,
+              aliada: v !== undefined && v >= 20};
     }).sort((a,b)=>a.relacao-b.relacao);
   }
 
@@ -246,15 +421,12 @@ TO.planejamento = (function(){
     if(lista.length) return lista;
     return soAliados(E, ctx) ? ruaCrua(E, ctx) : [];
   }
+  /* trair aliado saiu do jogo (decisão do autor): quando todas as
+     torcidas da rua são aliadas, a única intenção possível é a paz */
   function intencoes(E){
-    const trair = soAliados(E);
     return [
-      {id:'paz', rot:'Ir em paz', nota:'entrar pelo portão, bandeira e bateria'},
-      trair
-        ? {id:'trair',  rot:'Trair aliado',
-           nota:'todas as torcidas do adversário são nossas aliadas; bater nelas '+
-                'derruba a relação de vez'}
-        : {id:'atacar', rot:'Atacar', nota:'procurar a torcida rival antes da bola rolar'}
+      {id:'paz', rot:_t('Ir em paz'), nota:_t('entrar pelo portão, bandeira e bateria')},
+      {id:'atacar', rot:_t('Atacar'), nota:_t('procurar a torcida rival antes da bola rolar')}
     ];
   }
 
@@ -269,8 +441,13 @@ TO.planejamento = (function(){
     const fora = [];
     for(const comp of E.temporada.competicoes){
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== semana) continue;
         for(const j of etapa.jogos){
+          /* A SEMANA É A DO JOGO, NÃO A DA RODADA (correção do dono,
+             21/09/2026): o árbitro da agenda (`arrumarAgenda`) adia o
+             jogo do clube escrevendo `j.s`; lendo só a rodada, o jogo
+             adiado seguia na semana velha e faltava na nova. */
+          const sem = j.s || etapa.semana;
+          if(sem !== semana) continue;
           if(!j.f) continue;
           if(j.c === meu || j.f === meu) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
@@ -281,7 +458,7 @@ TO.planejamento = (function(){
                     aliada: v !== undefined && v >= 20};
           });
           if(!visitantes.length) continue;
-          fora.push({chave:`${comp.id}|${etapa.semana}|${j.c}|${j.f}`,
+          fora.push({chave:`${comp.id}|${sem}|${j.c}|${j.f}`,
                      casa, vis, comp:comp.nome, dia:j.d || etapa.dia || 6,
                      visitantes});
         }
@@ -304,9 +481,10 @@ TO.planejamento = (function(){
     });
   }
   const opcoesDeDestino = E =>
-    [{id:'estadio', nome:'Direto pro estádio', nota:'entra pelo portão, sem parar'}]
+    [{id:'estadio', nome:_t('Direto pro estádio'), nota:_t('entra pelo portão, sem parar')}]
       .concat(pontosDeAtaque(E).map(x=>({id:x.id,
-        nome:`Atacar — ${x.nome}`, nota:`${x.bairro} · risco ${x.risco}/5`})));
+        nome:_t('Atacar — {ponto}', {ponto:x.nome}),
+        nota:_t('{bairro} · risco {n}/5', {bairro:x.bairro, n:x.risco})})));
 
   /* =======================================================
      ALIADOS NA NOSSA CIDADE
@@ -322,9 +500,76 @@ TO.planejamento = (function(){
      sem relação registrada vale o piso, porque a caravana existe mesmo
      quando não somos nada deles. */
   const RELACAO_ALIADO = 20;
-  function caravanaDe(torcida, relacao){
-    const v = relacao || 0;
-    return Math.max(4, Math.round((torcida.membros||20) * 0.18 * (1 + v/150)));
+  function caravanaDe(torcida, relacao, E){
+    /* A MESMA RÉGUA DO JOGADOR (ordem do dono, 31/08/2026): a caravana
+       da IA sai da MESMA conta da nossa — vontade = 0,72 − 0,09 por
+       trecho + 0,4 × moral − 0,15 × risco — com a viagem média de 2
+       trechos que a estrada delas já assume no custo, e risco zero
+       porque elas não traçam rota. Caíram os 18%, o "cresce com a
+       relação" e o "ônibus enche 30%": a nossa caravana não tem nada
+       disso — ônibus só barateia. `relacao` ficou na assinatura por
+       compatibilidade, mas não manda mais em nada. A base segue
+       `disponiveisIA` (de pé, sem ferido nem preso). */
+    const vivos = E && TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, torcida.id) : (torcida.membros||20);
+    if(vivos <= 0) return 0;
+    const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
+    const moral = (t && t.moral != null ? t.moral : 12) / 20;
+    const vontade = U.limitar(0.72 - 2*0.09 + moral*0.4, 0.08, 0.95);
+    /* O REDUTOR DO VISITANTE (calibragem do dono, 31/08/2026): a
+       caravana da IA sai da régua do jogador com uns 40% a menos —
+       na régua cheia a estrada lotava demais pro gosto do dono. */
+    return Math.min(vivos, Math.max(MINIMO,
+      Math.round(vivos * vontade * 0.6)));
+  }
+
+  /* A ESTRADA COBRA DAS IAs TAMBÉM (assimetria fechada pelo dono,
+     27/08/2026): mesma régua do jogador — por cabeça, a torcida paga
+     40% (o rateio dos embarcados cobre os outros 60%) e a frota abate
+     30% por ônibus até zerar com três. Sem rota traçada pra elas, a
+     viagem média vale 2 trechos. */
+  function custoCaravanaIA(n, frota){
+    const porCabeca = CABECA_BASE + CABECA_TRECHO * 2;
+    const desconto = TO.financeiro.DESCONTO_ONIBUS[
+      Math.min(3, frota || 0)] || 0;
+    return Math.round(porCabeca * n * (1 - RATEIO) * (1 - desconto));
+  }
+
+  /* =======================================================
+     A CARAVANA SILENCIOSA DA SUBSEDE (ordem do dono, 31/08/2026)
+     Em todo jogo nosso — em casa e fora — o núcleo da filial
+     tenta se deslocar pra praça da partida. Nada de feed, nada
+     de itinerário: a rota é SEMPRE a mais curta, e o custo segue
+     o padrão da caravana normal — por cabeça e por trecho, 40%
+     pra torcida, frota abatendo 30% por ônibus. Vale pra nossa
+     torcida e pras IAs.
+     ======================================================= */
+  function saltosEntre(E, origem, destino){
+    if(!origem || !destino || origem === destino) return 0;
+    const c = caminho(E, origem, destino, false);
+    return c ? c.saltos : 4;      // sem estrada ligando: vale viagem longa
+  }
+  function custoCaravanaFilial(n, saltos, frota){
+    if(!n) return 0;
+    const porCabeca = CABECA_BASE + CABECA_TRECHO * Math.max(1, saltos || 0);
+    const desconto = TO.financeiro.DESCONTO_ONIBUS[
+      Math.min(3, frota || 0)] || 0;
+    return Math.round(porCabeca * n * (1 - RATEIO) * (1 - desconto));
+  }
+  /* quem embarca do núcleo: a mesma vontade da caravana da sede,
+     com os trechos REAIS da rota mais curta */
+  function caravanaDaFilial(E, f, destino){
+    if(!f || f.cidade === destino) return {n:0, membros:[], saltos:0};
+    const aptos = TO.membros.aptosDaFilial(E, f.cidade);
+    if(aptos.length < 2) return {n:0, membros:[], saltos:0};
+    const saltos = saltosEntre(E, f.cidade, destino);
+    const moral = E.indicadores.moral/20;
+    const vontade = U.limitar(0.72 - saltos*0.09 + moral*0.4, 0.08, 0.95);
+    const n = Math.min(aptos.length,
+                       Math.max(2, Math.round(aptos.length * vontade)));
+    const membros = aptos.slice()
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, n);
+    return {n, membros, saltos};
   }
 
   function aliadosNaCidade(E, semana){
@@ -333,8 +578,9 @@ TO.planejamento = (function(){
     const fora = [];
     for(const comp of E.temporada.competicoes){
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== semana) continue;
         for(const j of etapa.jogos){
+          /* a semana é a do jogo (ver `outrosJogosNaCidade`) */
+          if((j.s || etapa.semana) !== semana) continue;
           if(!j.f) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
           if(!casa || !vis || casa.mapa !== nossa || vis.mapa === nossa) continue;
@@ -343,7 +589,7 @@ TO.planejamento = (function(){
             if(v === undefined || v < RELACAO_ALIADO) continue;   // só aliado de fato
             fora.push({id:o.id, torcida:o, clube:vis, adversario:casa,
                        relacao:v, dia:j.d || etapa.dia || 6, comp:comp.nome,
-                       estimativa:caravanaDe(o, v)});
+                       estimativa:caravanaDe(o, v, E)});
           }
         }
       }
@@ -352,15 +598,20 @@ TO.planejamento = (function(){
   }
 
   /* GDD §11.1: acolher bem é o jeito mais barato de subir relação */
+  /* os números saem da tabela da relação (TO.relacoes.REL) */
   const RECEPCAO = [
-    {id:'nada',      rot:'Não receber',        porCabeca:0,  relacao:-5,
-     nota:'cada um se vira; o aliado registra e cobra depois'},
-    {id:'hospedar',  rot:'Hospedar na sede',   porCabeca:25, relacao:2,
-     nota:'colchão no salão e café de manhã'},
-    {id:'escolta',   rot:'Hospedar e escoltar', porCabeca:50, relacao:5,
-     nota:'bonde junto com o deles até o portão'},
-    {id:'churrasco', rot:'Churrasco e escolta', porCabeca:75, relacao:12,
-     nota:'recepção de irmandade: carne, bebida e caminhada junto'}
+    {id:'nada',      rot:_t('Não receber'),        porCabeca:0,
+     get relacao(){ return -TO.relacoes.REL.naoReceber; },
+     nota:_t('cada um se vira; o aliado registra e cobra depois')},
+    {id:'hospedar',  rot:_t('Hospedar na sede'),   porCabeca:25,
+     get relacao(){ return TO.relacoes.REL.hospedar; },
+     nota:_t('colchão no salão e café de manhã')},
+    {id:'escolta',   rot:_t('Hospedar e escoltar'), porCabeca:50,
+     get relacao(){ return TO.relacoes.REL.hospedarEscolta; },
+     nota:_t('bonde junto com o deles até o portão')},
+    {id:'churrasco', rot:_t('Churrasco e escolta'), porCabeca:75,
+     get relacao(){ return TO.relacoes.REL.churrasco; },
+     nota:_t('recepção de irmandade: carne, bebida e caminhada junto')}
   ];
   const recepcaoDe = id => RECEPCAO.find(r=>r.id===id) || RECEPCAO[0];
 
@@ -376,6 +627,53 @@ TO.planejamento = (function(){
     (plano(E).recepcao[idAliado]) || recepcaoPadrao(E) || 'nada';
   const custoRecepcao = (nivel, gente) => recepcaoDe(nivel).porCabeca * gente;
 
+  /* a escolha do bloco de recepção da mensagem do olheiro (dono,
+     28/08/2026): fica anotada no plano e só vira dinheiro no dia do
+     jogo do aliado */
+  function definirRecepcao(E, idAliado, nivel){
+    plano(E).recepcao[idAliado] = nivel;
+    return nivel;
+  }
+
+  /* A COBRANÇA DO DIA (correção do dono, 28/08/2026): a recepção era
+     paga só quando o jogador CONFIRMAVA a tela de planejamento — quem
+     decidia pelo padrão ou pela mensagem nunca via a despesa cair. A
+     conta agora vira no DIA DO JOGO do aliado: paga o combinado, move
+     a relação da tabela (não receber cobra a dela também) e carimba
+     como pago. Sem caixa pro combinado, vira 'nada' — e a mensagem de
+     consequência é o extrato. */
+  function cobrarRecepcoes(E){
+    const p = plano(E);
+    for(const a of aliadosNaCidade(E, E.data.semana)){
+      if(a.dia !== E.data.dia) continue;
+      if((p.pago||{})[a.id]) continue;
+      let nivel = nivelDe(E, a.id);
+      let custo = custoRecepcao(nivel, a.estimativa);
+      if(custo > E.dinheiro){ nivel = 'nada'; custo = 0; }
+      if(custo > 0)
+        TO.estado.lancar(E, _t('Recepção da {nome} ({n} cabeças)',
+                               {nome:a.torcida.nome, n:a.estimativa}), -custo);
+      const relRec = recepcaoDe(nivel).relacao;
+      E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0)
+        + (relRec > 0
+            ? TO.relacoes.ganhoRepetido(E, E.torcida.id, a.id, 'caravana', relRec)
+            : relRec), -100, 100);
+      if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
+      p.pago = p.pago || {}; p.pago[a.id] = true;
+      /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
+      if(TO.feed && TO.feed.mensagemDe){
+        const TXT = {
+          hospedar: _t('Obrigado pela casa, irmão. Colchão no salão e café de manhã: ninguém recebe assim. Vocês têm crédito com a gente.'),
+          escolta:  _t('Andar até o portão com o bonde de vocês do lado foi outra coisa. Fica registrado: o que precisar, é só chamar.'),
+          churrasco:_t('Que recepção. Carne, bebida e o bonde junto — isso é irmandade. Quando vierem, a casa é de vocês.'),
+          nada:     _t('Passamos pela cidade de vocês e ninguém apareceu. Anotado.')
+        };
+        TO.feed.mensagemDe(E, a.id, TXT[nivel] || TXT.nada,
+                           nivel === 'nada' ? 'cobranca' : 'agradecimento');
+      }
+    }
+  }
+
   /* =======================================================
      ESTRADA (rodovias das 30 praças)
      Duas praças ligadas pela mesma rodovia são vizinhas. O
@@ -386,16 +684,32 @@ TO.planejamento = (function(){
   function grafo(){
     if(_grafo) return _grafo;
     _grafo = new Map();
+    const liga = (a,b,rod)=>{
+      if(!_grafo.has(a)) _grafo.set(a, new Map());
+      if(!_grafo.get(a).has(b)) _grafo.get(a).set(b, rod);
+    };
+    /* A MALHA DO DONO (24/08/2026, dados/malha.js): o grafo nasce da
+       planta fechada no Mapa das Praças — 94 praças, 45 rodovias,
+       travessias de fronteira incluídas. Vizinho é a PRÓXIMA praça do
+       corredor, não qualquer uma da mesma rodovia: é isso que faz cada
+       parada da rota ser uma praça de verdade, com emboscada possível.
+       De quebra, o continente inteiro ficou alcançável por terra. */
+    if(TO.dados.malha){
+      for(const r of TO.dados.malha)
+        for(const seg of r.seg)
+          for(let k=0;k<seg.length-1;k++){
+            liga(seg[k], seg[k+1], r.nome);
+            liga(seg[k+1], seg[k], r.nome);
+          }
+      return _grafo;
+    }
+    /* sem a planta (save de teste antigo): a régua velha, por rodovia */
     const porRodovia = new Map();
     for(const c of M().todasCidades)
       for(const r of (c.rodovias||[])){
         if(!porRodovia.has(r)) porRodovia.set(r, []);
         porRodovia.get(r).push(c.id);
       }
-    const liga = (a,b,rod)=>{
-      if(!_grafo.has(a)) _grafo.set(a, new Map());
-      _grafo.get(a).set(b, rod);
-    };
     for(const [rod, lista] of porRodovia)
       for(const a of lista) for(const b of lista) if(a!==b) liga(a,b,rod);
     return _grafo;
@@ -411,15 +725,32 @@ TO.planejamento = (function(){
     return pior;      // 0 a 100
   }
 
-  /* caminho mínimo com peso: 1 por salto, mais o que a praça cobra
-     de risco quando `evitarRival` está ligado */
+  /* O TRECHO PESA O QUE MEDE (regra do dono, 24/08/2026): a rota
+     curta é a de menor QUILOMETRAGEM, fiel ao "traçar rota" do Mapa
+     das Praças. Pesar 1 por salto empatava Fortaleza→Rio entre o
+     sertão e o cerrado (6 trechos dos dois jeitos) e o desempate era
+     ordem de inserção — a linha do Vasco saía por Brasília. O km vem
+     das posições da malha (haversine sobre malhaXY); praça sem
+     coordenada cai no peso antigo de 400 km por salto. */
+  function kmEntre(a, b){
+    const XY = TO.dados.malhaXY || {};
+    const pa = XY[a], pb = XY[b];
+    if(!pa || !pb) return 400;
+    const la1 = 13 - pa[1]/20, lo1 = pa[0]/20 - 82;
+    const la2 = 13 - pb[1]/20, lo2 = pb[0]/20 - 82;
+    const r = Math.PI/180, R = 6371;
+    const h = Math.sin((la2-la1)*r/2)**2 +
+      Math.cos(la1*r)*Math.cos(la2*r)*Math.sin((lo2-lo1)*r/2)**2;
+    return 2*R*Math.asin(Math.sqrt(h));
+  }
+
   function caminho(E, origem, destino, evitarRival){
     if(origem === destino) return {cidades:[origem], rodovias:[], saltos:0, risco:0};
     const g = grafo();
     const dist = new Map([[origem, 0]]);
     const anterior = new Map();
     const fila = [origem];
-    /* Dijkstra simples: 30 nós não pedem heap */
+    /* Dijkstra simples: 94 nós não pedem heap */
     const visto = new Set();
     while(fila.length){
       fila.sort((a,b)=>(dist.get(a)||1e9)-(dist.get(b)||1e9));
@@ -428,8 +759,10 @@ TO.planejamento = (function(){
       visto.add(n);
       if(n === destino) break;
       for(const [viz, rod] of (g.get(n) || new Map())){
-        const extra = evitarRival ? hostilidade(E, viz)/25 : 0;
-        const d = (dist.get(n)||0) + 1 + extra;
+        /* a régua do desvio acompanha a do peso: antes o risco valia
+           até 4 saltos; agora vale até o km de uns 4 trechos médios */
+        const extra = evitarRival ? hostilidade(E, viz)*16 : 0;
+        const d = (dist.get(n)||0) + kmEntre(n, viz) + extra;
         if(d < (dist.get(viz) ?? 1e9)){
           dist.set(viz, d); anterior.set(viz, [n, rod]);
           if(!visto.has(viz)) fila.push(viz);
@@ -449,17 +782,28 @@ TO.planejamento = (function(){
 
   const CUSTO_BASE = 1200, CUSTO_SALTO = 900, CUSTO_AR = 5200;
 
-  function rotas(E){
-    const j = E.proximoJogo;
+  /* A ROTA É DO JOGO QUE SE PEDE (correção do dono, 23/08/2026).
+
+     Isto lia `E.proximoJogo` e mais nada, e `proximoJogo` é o jogo da
+     SEMANA — o que pesa mais. Numa semana com dois jogos nossos, a
+     linha do dia de UM deles vinha com a estrada do OUTRO: com a TUF
+     jogando em Campinas, a volta saía por Porto Alegre, que era o
+     destino do jogo seguinte. O itinerário já sabia perguntar qual é o
+     jogo de hoje; era a rota que continuava respondendo pelo da semana.
+
+     Agora o jogo entra por parâmetro. Sem parâmetro, `proximoJogo`
+     continua sendo o padrão, que é o que a tela de planejamento usa. */
+  function rotas(E, jogo){
+    const j = jogo || E.proximoJogo;
     if(!j || j.casa || !j.mapaAdv || j.mapaAdv === E.torcida.mapa) return [];
     const origem = E.torcida.mapa, destino = j.mapaAdv;
 
     const curta  = caminho(E, origem, destino, false);
     const segura = caminho(E, origem, destino, true);
     if(!curta) return [{
-      id:'ar', nome:'De avião', rodovias:[], cidades:[origem, destino], saltos:1,
+      id:'ar', nome:_t('De avião'), rodovias:[], cidades:[origem, destino], saltos:1,
       custo:CUSTO_AR, risco:0,
-      nota:'não há estrada ligando as duas praças; só voando'
+      nota:_t('não há estrada ligando as duas praças; só voando')
     }];
 
     const monta = (r, id, nome, nota)=>({
@@ -467,19 +811,31 @@ TO.planejamento = (function(){
       custo: CUSTO_BASE + CUSTO_SALTO*r.saltos + (id==='segura' ? 600 : 0),
       risco: r.risco, nota
     });
-    const fora = [monta(curta, 'curta', 'Rota mais curta',
-      `${curta.saltos} ${curta.saltos===1?'trecho':'trechos'} por ` +
-      `${curta.rodovias.join(' e ') || 'estrada vicinal'}`)];
+    const eJunta = l => l.join(_t(' e '));
+    const fora = [monta(curta, 'curta', _t('Rota mais curta'),
+      _tn(curta.saltos, '{n} trecho por {vias}', '{n} trechos por {vias}',
+          {vias:eJunta(curta.rodovias) || _t('estrada vicinal')}))];
     const igual = segura && segura.cidades.join() === curta.cidades.join();
     if(segura && !igual)
-      fora.push(monta(segura, 'segura', 'Rota que desvia dos rivais',
-        `${segura.saltos} trechos por ${segura.rodovias.join(' e ')}, ` +
-        'fugindo do território de quem nos odeia'));
+      fora.push(monta(segura, 'segura', _t('Rota que desvia dos rivais'),
+        _tn(segura.saltos, '{n} trecho por {vias}, fugindo do território de quem nos odeia',
+                           '{n} trechos por {vias}, fugindo do território de quem nos odeia',
+            {vias:eJunta(segura.rodovias)})));
+    /* VIAGEM DE OUTRO CONTINENTE DE DISTÂNCIA (malha do dono,
+       24/08/2026): com as travessias, Santiago fica a 15 trechos de
+       estrada — dá pra ir, e cada praça é uma emboscada possível. Mas
+       caravana longa assim merece a alternativa: a partir de 5 trechos
+       o avião entra como opção, com o custo de sempre. */
+    if(curta.saltos >= 5)
+      fora.push({id:'ar', nome:_t('De avião'), rodovias:[],
+        cidades:[origem, destino], saltos:1, custo:CUSTO_AR, risco:0,
+        nota:_t('{n} trechos de estrada é caravana de dias — voando não tem emboscada, mas custa caro',
+                {n:curta.saltos})});
     return fora;
   }
 
-  const rotaEscolhida = E =>{
-    const p = plano(E), lista = rotas(E);
+  const rotaEscolhida = (E, jogo) =>{
+    const p = plano(E, jogo), lista = rotas(E, jogo);
     if(!lista.length) return null;
     return lista.find(r=>r.id === p.rota) || lista[0];
   };
@@ -493,23 +849,35 @@ TO.planejamento = (function(){
   /* Passagem, pedágio e comida de estrada: cobra por cabeça e por
      trecho. Setenta pessoas e dois trechos dão os R$ 3.000 do GDD §7.3,
      e levar menos gente pra economizar vira decisão legítima. */
-  function estimativaCaravana(E){
-    const r = rotaEscolhida(E);
+  function estimativaCaravana(E, jogo){
+    const r = rotaEscolhida(E, jogo);
     if(!r) return null;
     const aptos = TO.membros.aptosParaOEstadio(E);
     const moral = E.indicadores.moral/20;
     const vontade = U.limitar(0.72 - r.saltos*0.09 + moral*0.4
                               - (r.risco/100)*0.15, 0.08, 0.95);
     const interessados = Math.max(MINIMO, Math.round(aptos.length * vontade));
-    const escolhido = (E.plano||{}).caravana;
+    const escolhido = (plano(E, jogo)||{}).caravana;
     const vao = U.limitar(escolhido == null ? interessados : escolhido,
                           MINIMO, interessados);
     const porCabeca = r.id === 'ar' ? CABECA_AR
                     : CABECA_BASE + CABECA_TRECHO * r.saltos;
     const bruto = porCabeca*vao;
+    /* A FROTA ABATE A ESTRADA (régua do dono, 20/08/2026): um ônibus
+       tira 30% do que a torcida paga, dois tiram 60%, três deixam a
+       caravana sem custo nenhum — e aí o rateio de quem embarca vira
+       receita, como já era com o ônibus único. Quem embarca sempre
+       paga o rateio; o que a frota abate é a parte da TORCIDA. Avião
+       continua pago do jeito de sempre: ônibus não voa. */
+    const rateio = Math.round(bruto*RATEIO);
+    const daTorcida = bruto*(1-RATEIO);
+    const frota = r.id === 'ar' ? 0 : TO.financeiro.onibusDe(E);
+    const desconto = r.id === 'ar' ? 0 : TO.financeiro.descontoCaravana(E);
     return {aptos:aptos.length, interessados, vao, vontade, rota:r, porCabeca,
-            bruto, rateio: Math.round(bruto*RATEIO),
-            custo: Math.round(bruto*(1-RATEIO)), minimo:MINIMO};
+            bruto, rateio, minimo:MINIMO,
+            custo: Math.round(daTorcida*(1-desconto)),
+            cheio: Math.round(daTorcida),
+            onibus: frota, desconto};
   }
 
   /* =======================================================
@@ -518,36 +886,24 @@ TO.planejamento = (function(){
      próxima. Ir em paz encerra em dois passos; atacar abre o
      alvo, o modo, o mapa do olheiro e as bombas.
      ======================================================= */
-  /* A TRELA DO DELEGADO (feed 8.1). Três semanas em que a ideologia é
-     "nunca atacar": quem aceitou segurar a rapaziada não pode marcar
-     ataque na semana seguinte e fingir que aceitou. Ela mora no estado
-     e é lida aqui, que é o único lugar por onde uma intenção passa. */
-  const semAbs = E => (E.data.ano - 2026)*52 + E.data.semana;
-  const naTrela = E => !!(E && E.trela && semAbs(E) < E.trela.ate);
-
-  function definirIntencao(E, id){
-    const p = plano(E);
-    if(naTrela(E) && id !== 'paz'){
-      p.intencao = 'paz'; p.alvoTorcida = null; p.olheiro = null; p.bombas = 0;
-      p.alvo = alvoDe(p); p.decidido = false;
-      return p;
-    }
+  function definirIntencao(E, id, jogo){
+    const p = plano(E, jogo);
     p.intencao = id;
     if(id === 'paz'){ p.alvoTorcida = null; p.olheiro = null; p.bombas = 0; }
     p.alvo = alvoDe(p);
     p.decidido = false;
     return p;
   }
-  function definirComo(E, id){
-    const p = plano(E);
+  function definirComo(E, id, jogo){
+    const p = plano(E, jogo);
     p.como = id;
     if(id !== 'ida') p.olheiro = null;
     p.alvo = alvoDe(p);
     p.decidido = false;
     return p;
   }
-  function definirOlheiro(E, id){
-    const p = plano(E);
+  function definirOlheiro(E, id, jogo){
+    const p = plano(E, jogo);
     p.olheiro = id; p.como = 'ida'; p.alvo = alvoDe(p);
     p.decidido = false;
     return p;
@@ -563,38 +919,35 @@ TO.planejamento = (function(){
     if(!j) return fora;
 
     const briga = p.intencao !== 'paz';
-    põe('intencao', 'Intenção do dia de jogo', true,
-        p.intencao === 'paz' ? 'Ir em paz'
-        : p.intencao === 'trair' ? 'Trair aliado' : 'Atacar');
+    põe('intencao', _t('Intenção do dia de jogo'), true,
+        p.intencao === 'paz' ? _t('Ir em paz')
+        : p.intencao === 'trair' ? _t('Trair aliado') : _t('Atacar'));
 
     if(briga){
       const alvo = M().torcida(p.alvoTorcida);
-      põe('alvo', 'Contra quem', !!p.alvoTorcida,
-          alvo ? alvo.nome : 'ninguém escolhido');
+      põe('alvo', _t('Contra quem'), !!p.alvoTorcida,
+          alvo ? alvo.nome : _t('ninguém escolhido'));
       if(p.alvoTorcida){
-        põe('como', 'Como atacar', !!p.como,
+        põe('como', _t('Como atacar'), !!p.como,
             (COMO.find(c=>c.id===p.como)||{}).rot || '—');
         if(p.como === 'ida')
-          põe('olheiro', 'Olheiro no mapa', !!p.olheiro,
-              p.olheiro ? ponto(p.olheiro).nome : 'sem posição definida');
-        põe('bombas', 'Bombas', true,
-            p.bombas ? `${p.bombas} do estoque` : 'só na pedra');
+          põe('olheiro', _t('Olheiro no mapa'), !!p.olheiro,
+              p.olheiro ? ponto(p.olheiro).nome : _t('sem posição definida'));
+        põe('bombas', _t('Bombas'), true,
+            p.bombas ? _t('{n} do estoque', {n:p.bombas}) : _t('só na pedra'));
       }
     }
-    põe('saida', 'Formação da saída', true,
-        `${efetivoDaSaida(E)} saem · ${p.bondes===1?'um bonde':p.bondes+' bondes'}`);
-
     const al = aliadosNaCidade(E, E.data.semana);
     if(al.length){
       const decididos = al.filter(a=>plano(E).recepcao[a.id] || recepcaoPadrao(E)).length;
-      põe('aliados', 'Aliados na cidade', decididos === al.length,
-          `${al.length} ${al.length===1?'torcida':'torcidas'} · ${decididos} resolvidas`);
+      põe('aliados', _t('Aliados na cidade'), decididos === al.length,
+          _tn(al.length, '{n} torcida · {d} resolvidas', '{n} torcidas · {d} resolvidas', {d:decididos}));
     }
     const ou = outrosJogosNaCidade(E, E.data.semana);
     if(ou.length){
       const n = Object.values(p.investidas||{}).filter(Boolean).length;
-      põe('outros', 'Outros jogos na cidade', true,
-          n ? `${n} ${n===1?'investida':'investidas'}` : `${ou.length} sem investida`);
+      põe('outros', _t('Outros jogos na cidade'), true,
+          n ? _tn(n, '{n} investida', '{n} investidas') : _t('{n} sem investida', {n:ou.length}));
     }
     return fora;
   }
@@ -640,20 +993,27 @@ TO.planejamento = (function(){
     if(TO.financeiro.temCaravana(E) && E.proximoJogo){
       const j = E.proximoJogo, est = estimativaCaravana(E);
       const pago = !!((E.caravanasPagas||{})[j.chave]);
-      põe('caravana', `Caravana para ${j.cidadeAdv || 'fora'}`,
+      põe('caravana', _t('Caravana para {destino}', {destino:j.cidadeAdv || _t('fora')}),
           est ? est.custo : TO.financeiro.CARAVANA, pago,
-          est ? `${est.vao} pessoas por ${est.rota.nome} · `+
-                `${U.dinheiro(est.rateio)} sai do rateio dos que vão`
-              : 'rota ainda não escolhida — vale o valor cheio do GDD');
+          est ? (est.custo <= 0 && est.onibus
+                  ? _t('{n} pessoas na frota da torcida — o rateio de {valor} entra como receita',
+                       {n:est.vao, valor:U.dinheiro(est.rateio)})
+                  : est.onibus
+                  ? _t('{n} pessoas por {rota}', {n:est.vao, rota:est.rota.nome}) + ' · ' +
+                    _tn(est.onibus, '{n} ônibus abate {p}% de {valor}', '{n} ônibus abatem {p}% de {valor}',
+                        {p:Math.round(est.desconto*100), valor:U.dinheiro(est.cheio)})
+                  : _t('{n} pessoas por {rota}', {n:est.vao, rota:est.rota.nome}) + ' · ' +
+                    _t('{valor} sai do rateio dos que vão', {valor:U.dinheiro(est.rateio)}))
+              : _t('rota ainda não escolhida — vale o valor cheio do GDD'));
     }
 
     /* 2. os aliados que jogam na nossa praça */
     for(const a of aliadosNaCidade(E, E.data.semana)){
       const nivel = nivelDe(E, a.id), r = recepcaoDe(nivel);
       const rel = (r.relacao>0?'+':'') + r.relacao;
-      põe('rec-'+a.id, `Recepção da ${a.torcida.nome}`,
+      põe('rec-'+a.id, _t('Recepção da {nome}', {nome:a.torcida.nome}),
           custoRecepcao(nivel, a.estimativa), (p.pago||{})[a.id],
-          `${r.rot} · ~${a.estimativa} aliados · relação ${rel}`,
+          _t('{nivel} · ~{n} aliados · relação {rel}', {nivel:r.rot, n:a.estimativa, rel}),
           nivel==='nada' ? 'aviso' : 'dinheiro');
     }
 
@@ -662,10 +1022,10 @@ TO.planejamento = (function(){
       const inv = investidaDe(E, chave);
       if(!inv || !inv.alvo) continue;
       const t = M().torcida(inv.alvo);
-      põe('inv-'+chave, `Investida contra ${t ? t.nome : inv.alvo}`, 0,
+      põe('inv-'+chave, _t('Investida contra {nome}', {nome:t ? t.nome : inv.alvo}), 0,
           (p.pago||{})['inv-'+chave],
-          `${inv.como==='ida' ? 'na ida ao estádio, em '+ponto(inv.olheiro).nome
-                              : 'nos arredores do estádio'} · custa 1 ação`, 'acao');
+          (inv.como==='ida' ? _t('na ida ao estádio, em {ponto}', {ponto:ponto(inv.olheiro).nome})
+                            : _t('nos arredores do estádio')) + ' · ' + _t('custa 1 ação'), 'acao');
     }
 
     const soma = f => fora.filter(f).reduce((s,x)=>s+x.v, 0);
@@ -684,26 +1044,27 @@ TO.planejamento = (function(){
       fora.push({id, texto, detalhe, pagina, tipo:tipo||''});
 
     const sobra = TO.acoes.restantes(E);
-    if(sobra) põe('acoes', `${sobra} ${sobra===1?'ação disponível':'ações disponíveis'}`,
-      'a semana fecha e o que não for usado se perde', 'inicio');
+    if(sobra) põe('acoes', _tn(sobra, '{n} ação disponível', '{n} ações disponíveis'),
+      _t('a semana fecha e o que não for usado se perde'), 'inicio');
 
     const j = E.proximoJogo;
     if(j){
       const p = plano(E);
       if(TO.financeiro.temCaravana(E) && !p.rota)
-        põe('rota', 'Escolher a estrada da caravana',
-            `${j.cidadeAdv}, ${E.data.dia<=(j.dia||6)?'ainda dá tempo':'em cima da hora'}`,
+        põe('rota', _t('Escolher a estrada da caravana'),
+            E.data.dia<=(j.dia||6) ? _t('{cidade}, ainda dá tempo', {cidade:j.cidadeAdv})
+                                   : _t('{cidade}, em cima da hora', {cidade:j.cidadeAdv}),
             'gestao', 'urgente');
       if(!p.decidido)
-        põe('plano', 'Fechar o plano do dia de jogo',
-            `${p.intencao==='atacar' ? 'ataque em '+ponto(p.alvo).nome : 'ir em paz'} · `+
-            `${p.bondes===1?'bonde único':p.bondes+' bondes'}`, 'gestao');
+        põe('plano', _t('Fechar o plano do dia de jogo'),
+            (p.intencao==='atacar' ? _t('ataque em {ponto}', {ponto:ponto(p.alvo).nome}) : _t('ir em paz'))+
+            ' · ' + (p.bondes===1 ? _t('bonde único') : _t('{n} bondes', {n:p.bondes})), 'gestao');
     }
 
     for(const a of aliadosNaCidade(E, E.data.semana)){
       if(plano(E).recepcao[a.id]) continue;
-      põe('aliado-'+a.id, `${a.torcida.nome} chega na cidade`,
-          `~${a.estimativa} aliados, jogo do ${a.clube.nome} aqui`, 'gestao', 'aliado');
+      põe('aliado-'+a.id, _t('{nome} chega na cidade', {nome:a.torcida.nome}),
+          _t('~{n} aliados, jogo do {clube} aqui', {n:a.estimativa, clube:a.clube.nome}), 'gestao', 'aliado');
     }
 
     /* O QUE ACONTECEU SEM O JOGADOR MANDAR.
@@ -715,23 +1076,21 @@ TO.planejamento = (function(){
     const hoje = (E.data.ano*40 + E.data.semana)*7 + E.data.dia;
     for(const b of (E.baixasDeRua || []))
       if(hoje - b.quando <= 3)
-        põe('baixa-'+b.quando+'-'+b.nome, `${b.nome} fora de combate`,
+        põe('baixa-'+b.quando+'-'+b.nome, _t('{nome} fora de combate', {nome:b.nome}),
             b.txt, 'torcida', b.tipo === 'boa' ? '' : 'urgente');
 
     const presos = E.membros.filter(m=>m.preso).length;
-    if(presos) põe('presos', `${presos} ${presos===1?'membro preso':'membros presos'}`,
-      'fiança pela ficha ou negociação na delegacia', 'torcida', 'urgente');
+    if(presos) põe('presos', _tn(presos, '{n} membro preso', '{n} membros presos'),
+      _t('a fiança sai pela ficha do membro'), 'torcida', 'urgente');
 
     const promoveis = E.membros.filter(m=>TO.membros.podePromover(E,m).ok).length;
-    if(promoveis) põe('promocao', `${promoveis} prontos pra promoção`,
-      'subir de cargo custa dinheiro e rende atributo', 'torcida');
+    if(promoveis) põe('promocao', _tn(promoveis, '{n} pronto pra promoção', '{n} prontos pra promoção'),
+      _t('subir de cargo custa dinheiro e rende atributo'), 'torcida');
 
-    const fila = E.membros.filter(m=>m.naFila && TO.membros.disponivel(m)).length;
-    if(!fila) põe('treino', 'Fila de treino vazia',
-      'sem ninguém escalado, treinar não faz nada', 'torcida');
-
-    if(E.dinheiro < 0) põe('caixa', 'Caixa no vermelho',
-      'se durar, membro começa a sair', 'financeiro', 'urgente');
+    /* o aviso de fila de treino vazia saiu: a diretoria sorteia e
+       treina sozinha todo dia (decisão do dono, 17/08/2026) */
+    if(E.dinheiro < 0) põe('caixa', _t('Caixa no vermelho'),
+      _t('se durar, membro começa a sair'), 'financeiro', 'urgente');
 
     return fora;
   }
@@ -751,12 +1110,12 @@ TO.planejamento = (function(){
      campos que `resolverIda` já lê.
      ======================================================= */
   const ONDE_ATAQUE = [
-    {id:'praca', rot:'Na concentração', como:'ida', olheiro:'praca',
-     nota:'a praça onde eles se juntam antes de subir pro estádio'},
-    {id:'pista', rot:'Na pista', como:'ida', olheiro:'avenida',
-     nota:'a avenida de acesso, com o bonde deles em movimento'},
-    {id:'arredores', rot:'Nos arredores', como:'arredores', olheiro:null,
-     nota:'a beira do estádio, com o cordão da PM em peso'}
+    {id:'praca', rot:_t('Na concentração'), como:'ida', olheiro:'praca',
+     nota:_t('a praça onde eles se juntam antes de subir pro estádio')},
+    {id:'pista', rot:_t('Na pista'), como:'ida', olheiro:'avenida',
+     nota:_t('a avenida de acesso, com o bonde deles em movimento')},
+    {id:'arredores', rot:_t('Nos arredores'), como:'arredores', olheiro:null,
+     nota:_t('a beira do estádio, com o cordão da PM em peso')}
   ];
   const ondeDoPlano = p => p.como === 'ida'
     ? (ONDE_ATAQUE.find(o=>o.olheiro === p.olheiro) || ONDE_ATAQUE[0]).id
@@ -768,8 +1127,8 @@ TO.planejamento = (function(){
   function faixaDeEfetivo(E, n, chave){
     const r = baralhoFixo(`${chave}|${E.data.ano}|${E.data.semana}`);
     const erro = 0.25 + r()*0.25;
-    return `${Math.max(5, Math.round(n*(1-erro)/5)*5)} a `+
-           `${Math.round(n*(1+erro)/5)*5}`;
+    return _t('{min} a {max}', {min:Math.max(5, Math.round(n*(1-erro)/5)*5),
+                                max:Math.round(n*(1+erro)/5)*5});
   }
 
   /* OS ALVOS DA VIAGEM: as torcidas do clube MANDANTE, que é quem vai
@@ -785,11 +1144,14 @@ TO.planejamento = (function(){
       .filter(o=>!o.incompleta && !M().saoIrmas(E.torcida.id, o.id))
       .map(o=>{
         const rel = (E.relacoes||{})[o.id];
-        const viva = (TO.tensao && TO.tensao.mundo(E)[o.id]) || o;
-        const n = Math.max(4, Math.round((viva.membros || o.membros || 20)*0.6));
+        /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026);
+           em casa deles vai TODO o efetivo de pé, a régua do jogador
+           (ordem do dono, 31/08/2026) */
+        const vivos = TO.relacoes && TO.relacoes.disponiveisIA
+          ? TO.relacoes.disponiveisIA(E, o.id) : (o.membros || 20);
+        const n = Math.max(4, vivos);
         return {id:o.id, torcida:o, nome:o.nome, n,
                 faixa: faixaDeEfetivo(E, n, o.id),
-                tensao: TO.tensao ? TO.tensao.nivel(E, o.id) : 0,
                 relacao: rel === undefined ? M().valorInicial(
                   M().relacaoBase(E.torcida.id, o.id)) : rel,
                 aliada: rel !== undefined && rel >= RELACAO_ALIADO};
@@ -797,7 +1159,8 @@ TO.planejamento = (function(){
       /* `crua` é pra quem precisa saber se são TODAS aliadas — quem
          responde isso é a lista sem o filtro */
       .filter(a=>(ctx && ctx.crua) || !a.aliada)
-      .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
+      .filter(a => !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, a.id)))
+      .sort((a,b)=> a.relacao - b.relacao);
   }
 
   /* =======================================================
@@ -833,8 +1196,8 @@ TO.planejamento = (function(){
         const rel = (E.relacoes||{})[b.id];
         return {id:b.id, torcida:b.torcida, nome:b.nome, n:b.n,
                 faixa: faixaDeEfetivo(E, b.n, b.id),
-                tensao: TO.tensao ? TO.tensao.nivel(E, b.id) : 0,
-                relacao: rel === undefined ? 0 : rel,
+                relacao: rel === undefined ? M().valorInicial(
+                  M().relacaoBase(E.torcida.id, b.id)) : rel,
                 aliada: rel !== undefined && rel >= RELACAO_ALIADO,
                 deFora: !!b.deFora};
       })
@@ -844,15 +1207,20 @@ TO.planejamento = (function(){
          porta de quem PRECISA das aliadas — quem pergunta se são todas
          da casa, e a tela da traição. */
       .filter(a => ctx.crua || !a.aliada)
-      .sort((a,b)=> (b.tensao - a.tensao) || (a.relacao - b.relacao));
+      /* trégua aceita: fora da lista até o fim do ano */
+      .filter(a => !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, a.id)))
+      .sort((a,b)=> a.relacao - b.relacao);
   }
 
   /* QUANTOS VÃO ATACAR. O teto é quem sai de casa naquele dia e o piso
      é o mesmo da caravana — bonde de três não é bonde. Sem escolha, vai
      todo mundo, que é como era antes de existir o seletor. */
-  function efetivoDoAtaque(E){
-    const teto = Math.max(MINIMO, efetivoDaSaida(E));
-    const p = plano(E);
+  function efetivoDoAtaque(E, jogo){
+    const partida = jogo
+      ? {mapa: jogo.casa ? E.torcida.mapa : jogo.mapaAdv, casa: !!jogo.casa}
+      : undefined;
+    const teto = Math.max(MINIMO, efetivoDaSaida(E, partida, jogo));
+    const p = plano(E, jogo);
     return {teto, piso: Math.min(MINIMO, teto),
             vao: U.limitar(p.efetivoAtaque != null ? p.efetivoAtaque : teto,
                            Math.min(MINIMO, teto), teto)};
@@ -860,13 +1228,9 @@ TO.planejamento = (function(){
 
   /* a escolha do assistente chega ao plano da semana por aqui, e por
      `definirIntencao`, que é o único lugar que sabe da trela */
-  function definirAtaque(E, esc){
-    /* a intenção é lida na rua DAQUELE evento: sem o contexto, um
-       ataque marcado num jogo da praça de quarta era classificado
-       pela rua do nosso jogo de sábado */
-    definirIntencao(E, soAliados(E, esc.ctx) ? 'trair' : 'atacar');
-    const p = plano(E);
-    if(p.intencao === 'paz') return p;          // a trela barrou
+  function definirAtaque(E, esc, jogo){
+    definirIntencao(E, 'atacar', jogo);
+    const p = plano(E, jogo);
     if(esc.alvo) p.alvoTorcida = esc.alvo;
     const onde = ONDE_ATAQUE.find(o=>o.id === esc.onde) || ONDE_ATAQUE[2];
     p.como = onde.como;
@@ -875,7 +1239,7 @@ TO.planejamento = (function(){
     if(esc.bombas != null)
       p.bombas = U.limitar(esc.bombas, 0, (E.estoque||{}).bombas || 0);
     if(esc.efetivo != null){
-      const f = efetivoDoAtaque(E);
+      const f = efetivoDoAtaque(E, jogo);
       p.efetivoAtaque = U.limitar(esc.efetivo, f.piso, f.teto);
     }
     p.decidido = false;
@@ -885,30 +1249,24 @@ TO.planejamento = (function(){
   /* =======================================================
      FECHAR O PLANO
      ======================================================= */
-  function confirmar(E){
-    const p = plano(E);
+  function confirmar(E, jogo){
+    const p = plano(E, jogo);
     p.decidido = true;
-    /* a recepção do aliado é paga na hora: comida e colchão não fiam */
+    /* A RECEPÇÃO NÃO É MAIS PAGA AQUI (correção do dono, 28/08/2026):
+       a escolha fica no plano e `cobrarRecepcoes` vira a conta no DIA
+       do jogo do aliado — pagar na confirmação deixava sem despesa
+       quem decidia pelo padrão ou pela mensagem. */
     let gasto = 0;
-    for(const a of aliadosNaCidade(E, E.data.semana)){
-      const nivel = nivelDe(E, a.id);
-      if(!nivel || nivel === 'nada' || (p.pago||{})[a.id]) continue;
-      const custo = custoRecepcao(nivel, a.estimativa);
-      if(custo > E.dinheiro) continue;
-      TO.estado.lancar(E, `Recepção da ${a.torcida.nome}`, -custo);
-      E.relacoes[a.id] = U.limitar((E.relacoes[a.id]||0) + recepcaoDe(nivel).relacao,
-                                   -100, 100);
-      /* acolher bem também acalma o clima (GDD §11.1) */
-      TO.tensao.somar(E, a.id, -recepcaoDe(nivel).relacao/2, 'recepção de aliado');
-      p.pago = p.pago || {}; p.pago[a.id] = true;
-      gasto += custo;
-    }
     /* as investidas nos outros jogos da cidade gastam ação da semana */
     let usadas = 0;
     E.investidas = E.investidas || [];
     for(const chave of Object.keys(p.investidas || {})){
       const inv = investidaDe(E, chave);
       if(!inv || !inv.alvo || (p.pago||{})['inv-'+chave]) continue;
+      /* a investida da subsede é do núcleo de lá: não gasta ação da
+         semana nem entra na lista da praça — o bote do dia do jogo lê
+         o plano direto (cartão da semana, dono, 10/09/2026) */
+      if(inv.filial) continue;
       if(TO.acoes.restantes(E) <= 0) break;
       E.acoes.usadas = (E.acoes.usadas||0) + 1;
       p.pago = p.pago || {}; p.pago['inv-'+chave] = true;
@@ -951,13 +1309,20 @@ TO.planejamento = (function(){
      ainda deixa a faixa 30–45 como a zona em que a gente ataca antes de
      apanhar. Dois números próximos com significados diferentes é
      confusão garantida, então este tem nome. */
-  const TENSAO_QUENTE = 30;
+  /* sem tensão no jogo, o corte da ideologia é a RELAÇÃO: −55 é onde a
+     rivalidade já passou do declarado e virou guerra aberta */
+  const RELACAO_QUENTE = -55;
 
   const POLITICA_ATAQUE = [
-    {id:'nunca',   rot:'Nunca atacar'},
-    {id:'rivais',  rot:'Sempre atacar rivais'},
-    {id:'quentes', rot:`Atacar rivais com tensão acima de ${TENSAO_QUENTE}`},
-    {id:'todos',   rot:'Sempre atacar todos'}
+    {id:'nunca',   rot:_t('Nunca atacar'),
+     nota:_t('toda semana começa em paz; ataque só quando você marcar à mão — sem briga não há ferido, preso nem prestígio em jogo')},
+    {id:'rivais',  rot:_t('Sempre atacar rivais'),
+     nota:_t('a diretoria marca ataque sozinha sempre que houver torcida rival no jogo — prestígio e baixas saem de cada briga')},
+    {id:'quentes', rot:_t('Atacar rivais com relação abaixo de {n}', {n:RELACAO_QUENTE}),
+     nota:_t('só marca ataque quando a relação está abaixo de {n} — os ódios de verdade; o resto do calendário fica em paz',
+             {n:RELACAO_QUENTE})},
+    {id:'todos',   rot:_t('Sempre atacar todos'),
+     nota:_t('marca ataque contra qualquer torcida metida no jogo — máximo de briga, de prestígio em disputa e de gente no hospital')}
   ];
 
   function politicas(E){
@@ -988,8 +1353,8 @@ TO.planejamento = (function(){
     const rivais = livres.filter(a=>ehRival(E, a.torcida));
     if(id === 'rivais') return rivais;
     if(id === 'quentes')
-      return rivais.filter(a=>(a.tensao != null ? a.tensao
-                              : TO.tensao.nivel(E, a.id)) > TENSAO_QUENTE);
+      return rivais.filter(a=>(a.relacao != null ? a.relacao
+                              : TO.relacoes.nivel(E, a.id)) < RELACAO_QUENTE);
     return [];
   }
 
@@ -1003,12 +1368,12 @@ TO.planejamento = (function(){
      mais que bater em torcida que ninguém conhece, e é isso que faz o
      número existir do lado da IA em vez de ser float decorativo */
   const prestigioDe = (E, id) =>
-    ((TO.tensao && TO.tensao.indicadoresDe(E, id)) || {}).prestigio || 0;
+    ((TO.relacoes && TO.relacoes.indicadoresDe(E, id)) || {}).prestigio || 0;
 
   function melhorAlvo(E, alvos){
     return alvos.slice().sort((a,b)=>
       (ehRival(E,b.torcida)?1:0) - (ehRival(E,a.torcida)?1:0) ||
-      (b.tensao||0) - (a.tensao||0) ||
+      (a.relacao||0) - (b.relacao||0) ||
       prestigioDe(E, b.id) - prestigioDe(E, a.id) ||
       ((b.torcida||{}).membros||0) - ((a.torcida||{}).membros||0) ||
       (a.id < b.id ? -1 : 1))[0] || null;
@@ -1024,13 +1389,10 @@ TO.planejamento = (function(){
     const feito = {intencao:null, alvo:null, investidas:[], recepcao:recepcaoPadrao(E)};
     if(!E.proximoJogo) return feito;
 
-    /* NA TRELA, A IDEOLOGIA NÃO ESCOLHE ALVO. Sem isto, quem prometeu
-       ao delegado segurar a rapaziada apertaria "Seguir ideologia" na
-       semana seguinte e sairia atacando — a promessa valeria zero. */
-    const cand = naTrela(E) ? [] : alvosDaPolitica(E, alvosDoJogo(E), pol.jogo);
+    const cand = alvosDaPolitica(E, alvosDoJogo(E), pol.jogo);
     const alvo = melhorAlvo(E, cand);
     if(alvo){
-      definirIntencao(E, soAliados(E) ? 'trair' : 'atacar');
+      definirIntencao(E, 'atacar');
       p.alvoTorcida = alvo.id;
       definirComo(E, 'arredores');
       feito.intencao = p.intencao;
@@ -1052,11 +1414,115 @@ TO.planejamento = (function(){
     return feito;
   }
 
+  /* =======================================================
+     A EMBOSCADA DA ROTA
+     Qualquer rival cuja praça a rota atravessa pode fechar a
+     pista (decisão do autor): saiu de Fortaleza pra João
+     Pessoa passando pelo RN, a torcida rival de Natal pode
+     estar esperando. Determinístico por semana: a mesma
+     viagem reaberta dá a mesma estrada.
+     ======================================================= */
+  /* QUEM PODE FECHAR A PISTA NUMA PRAÇA
+     A régua é a mesma da emboscada da rota: torcida daquela cidade,
+     não-irmã, relação hostil, e grande o bastante pra encarar a
+     caravana. Fica separado porque o itinerário pergunta praça por
+     praça (régua do dono, 20/08/2026) e a emboscada antiga perguntava
+     pela viagem inteira. */
+  function hostisNaPraca(E, cidadeId, crew){
+    const fora = [];
+    for(const o of M().torcidasEm(cidadeId)){
+      if(o.incompleta || o.id === E.torcida.id) continue;
+      if(M().saoIrmas(E.torcida.id, o.id)) continue;
+      const rel = TO.relacoes.nivel(E, o.id);
+      if(rel > -15) continue;
+      if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) continue;
+      /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+      const viva = TO.relacoes.disponiveisIA(E, o.id);
+      if(viva < crew * 0.7) continue;
+      fora.push({id:o.id, torcida:o, relacao:rel});
+    }
+    return fora.sort((a,b)=>a.relacao-b.relacao || (a.id<b.id?-1:1));
+  }
+
+  /* A EMBOSCADA DAQUELA PRAÇA, na ida ou na volta.
+     Determinístico por semana, cidade e perna: reabrir o dia dá a
+     mesma estrada. Na VOLTA a chance é METADE da ida (régua do dono):
+     a estrada de madrugada é mais calma, mas não é segura. */
+  function emboscadaNaPraca(E, cidadeId, ida){
+    const H = TO.mapa.hash;
+    const est = estimativaCaravana(E);
+    const crew = (est && est.vao) || 20;
+    const lista = hostisNaPraca(E, cidadeId, crew);
+    if(!lista.length) return null;
+    const chave = `emb|${E.data.ano}|${E.data.semana}|${cidadeId}|${ida?'ida':'volta'}`;
+    /* o maior rival da praça fecha a pista primeiro (dono, 08/09/2026):
+       havendo um, três em quatro vezes é ele; senão, qualquer hostil */
+    const maiores = lista.filter(x=>TO.relacoes.ehMaiorRival(E, E.torcida.id, x.id));
+    const balde = (maiores.length && H(chave+'|mr') % 4) ? maiores : lista;
+    const alvo = balde[H(chave+'|quem') % balde.length];
+    /* e 40% a menos de chance em toda emboscada (FREIO_BRIGA) */
+    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45)
+                 * TO.relacoes.FREIO_BRIGA;
+    if(!ida) chance = chance/2;
+    /* praça com SUB-SEDE nossa é parada meio segura (dono, 26/08/2026):
+       o núcleo local conhece as ruas e a chance cai pela metade */
+    if(TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, cidadeId))
+      chance = chance/2;
+    if((H(chave+'|dado') % 100) >= chance) return null;
+    const cid = M().cidade(cidadeId);
+    return {torcida:alvo.id, nome:alvo.torcida.nome,
+            cidade: cid ? cid.nome : '', relacao:alvo.relacao,
+            /* os dois cenários do dono pra estrada */
+            cena: H(chave+'|cena') % 2 ? 'emb-posto' : 'emb-onibus'};
+  }
+
+  function emboscadaDaRota(E){
+    const r = rotaEscolhida(E);
+    if(!r || r.id === 'ar') return null;
+    const H = TO.mapa.hash;
+    const chave = `emb|${E.data.ano}|${E.data.semana}`;
+    /* as praças do meio do caminho E a de destino: todo mundo que vê o
+       ônibus passar */
+    const cidades = r.cidades.slice(1);
+    const candidatos = [];
+    /* na estrada o nosso efetivo é quem embarcou: rival menor que a
+       própria caravana não fecha pista (decisão do dono, 17/08/2026 —
+       ataque sofrido de efetivo muito menor que o nosso não existe) */
+    const est = estimativaCaravana(E);
+    const crew = (est && est.vao) || 20;
+    for(const c of cidades)
+      for(const o of M().torcidasEm(c)){
+        if(o.incompleta || o.id === E.torcida.id) continue;
+        if(M().saoIrmas(E.torcida.id, o.id)) continue;
+        const rel = TO.relacoes.nivel(E, o.id);
+        if(rel > -15) continue;
+        /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
+        const viva = TO.relacoes.disponiveisIA(E, o.id);
+        if(viva < crew * 0.7) continue;
+        candidatos.push({id:o.id, torcida:o, cidade:c, relacao:rel});
+      }
+    if(!candidatos.length) return null;
+    candidatos.sort((a,b)=>a.relacao-b.relacao || (a.id<b.id?-1:1));
+    const alvo = candidatos[H(chave+'|quem') % candidatos.length];
+    /* quanto pior a relação, maior a chance de fecharem a pista */
+    let chance = U.limitar(8 + Math.max(0, -alvo.relacao - 15)*0.35, 0, 45)
+                 * TO.relacoes.FREIO_BRIGA;
+    /* trecho passando por praça com SUB-SEDE nossa: metade da chance
+       (dono, 26/08/2026) — o núcleo local segura a barra da estrada */
+    if(TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, alvo.cidade))
+      chance = chance/2;
+    if((H(chave+'|dado') % 100) >= chance) return null;
+    const cid = M().cidade(alvo.cidade);
+    return {torcida:alvo.id, nome:alvo.torcida.nome,
+            cidade: cid ? cid.nome : '', relacao:alvo.relacao};
+  }
+
   return {plano, tipoDoJogo, salvarPadrao, temPadrao, esquecerPadrao,
-          TENSAO_QUENTE, POLITICA_ATAQUE, politicas, definirPolitica,
+          RELACAO_QUENTE, POLITICA_ATAQUE, politicas, definirPolitica,
           ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
+          definirRecepcao, cobrarRecepcoes,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
           ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, alvosDoAtaque,
           definirAtaque,
@@ -1065,10 +1531,11 @@ TO.planejamento = (function(){
           passos, falta, investidaDe, definirInvestida,
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
-          destinos, opcoesDeDestino,
-          aliadosNaCidade, caravanaDe, RELACAO_ALIADO,
+          aliadosNaCidade, caravanaDe, custoCaravanaIA, RELACAO_ALIADO,
+          aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
+          saltosEntre, custoCaravanaFilial, caravanaDaFilial,
           RECEPCAO, recepcaoDe, custoRecepcao,
-          naTrela,
+          emboscadaDaRota, emboscadaNaPraca, hostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
           compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
 })();

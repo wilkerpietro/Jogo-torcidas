@@ -55,6 +55,25 @@ def id_cidade(nome):
     return APELIDOS_CIDADE.get(base, base)
 
 
+def nomes_das_pracas():
+    """id da praca -> nome canonico, lido de cidades.js. A planilha chama
+    a praca pelo nome da capital (Salvador, Maceio, Cuiaba...) e o jogo
+    padronizou pelo nome da praca (Bahia, Alagoas, Mato Grosso...), porque
+    o mapa e a regiao inteira. Sete torcidas chegavam a tela com um nome
+    e a praca com outro (dono, 10/09/2026): agora o registro da torcida
+    carrega o nome canonico, e a planilha so serve pra achar o id."""
+    cid_js = RAIZ / 'dados/cidades.js'
+    if not cid_js.exists():
+        return {}
+    txt = cid_js.read_text(encoding='utf-8')
+    out = {}
+    for l in txt.splitlines():
+        if l.strip().startswith('{'):
+            c = json.loads(l.strip().rstrip(','))
+            out[c['id']] = c['nome']
+    return out
+
+
 def ano(data):
     """'20/05/2018' -> 2018"""
     try:
@@ -179,7 +198,8 @@ def main():
     siglas = siglas_da_planilha()
     datas = fundacao_da_planilha()
 
-    torcidas = []
+    torcidas, apagadas = [], []
+    pracas = nomes_das_pracas()
     for t in d['torcidas']:
         r = t.get('relacoes', {}) or {}
         dv = t.get('derivados', {}) or {}
@@ -191,7 +211,7 @@ def main():
             'clubeId': ident(t.get('clube', '')),
             'sigla': t.get('sigla', ''),                    # a do CLUBE
             'siglaTorcida': siglas.get(chave(t['nome']), ''),   # a da TORCIDA
-            'cidade': t.get('cidade', ''),
+            'cidade': pracas.get(id_cidade(t.get('cidade', '')), t.get('cidade', '')),
             'mapa': id_cidade(t.get('cidade', '')),
             'uf': t.get('uf', ''),
             'regiao': t.get('regiao', ''),
@@ -218,10 +238,12 @@ def main():
             'rivais': r.get('rivais', []),
             'maioresRivais': r.get('maioresRivais', r.get('maiores_rivais', [])),
         })
-        # asset sem clube nem cidade: fica no arquivo, mas marcado, pra nao
-        # aparecer na selecao e nao sumir sem ninguem notar
+        # asset sem clube nem cidade: SAI do arquivo (decisao do dono,
+        # 10/09/2026 — a "Mancha Negra" ficou um mes contando como a 140a
+        # torcida sem praca, clube nem jogo). O nome e impresso no fim
+        # pra ninguem perder o registro sem saber.
         if not t.get('clube') or not t.get('cidade'):
-            torcidas[-1]['incompleta'] = True
+            apagadas.append(torcidas.pop()['nome'])
 
     # Relacao e mao dupla. Onde a fonte so registrou um lado, o outro
     # e completado aqui — senao a mesma dupla se ve diferente conforme
@@ -286,8 +308,7 @@ def main():
                     assimetricas += 1
     print(f'  relacoes sem volta que foram completadas: {simetrizadas}')
     print(f'  ainda assimetricas depois de completar: {assimetricas}')
-    incompletas = [t['nome'] for t in torcidas if t.get('incompleta')]
-    print(f'  registros incompletos (sem clube ou cidade): {incompletas or "nenhum"}')
+    print(f'  registros apagados por falta de clube ou cidade: {apagadas or "nenhum"}')
 
     # cruzamento com times.js
     tj = RAIZ / 'dados/times.js'

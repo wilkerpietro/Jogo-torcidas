@@ -67,6 +67,34 @@ TO.competicoes = (function(){
     return g;
   }
 
+  /* A REGIONALIZAÇÃO (pedido do dono, 27/08/2026): grupo de divisão
+     inferior é corte CONTÍGUO do mapa, como na Série D real — nada de
+     Manaus caindo no grupo do Sul. A régua é a cadeia de UFs de norte
+     a sul; dentro da UF ordena pela cidade, então times da mesma praça
+     caem sempre juntos. O Grupo A é o mais ao norte, o último é o mais
+     ao sul — e o playoff, que cruza grupos vizinhos (A×B, C×D), vira
+     cruzamento de vizinhos de mapa. Clube sem cidade mapeada vai pro
+     fim da fila, o que hoje não acontece: os 108 têm praça. */
+  const CADEIA_UF = ['RR','AP','AM','PA','AC','RO','TO','MA','PI','CE',
+                     'RN','PB','PE','AL','SE','BA','GO','DF','MT','MS',
+                     'ES','MG','RJ','SP','PR','SC','RS'];
+  function dividirGruposPorRegiao(clubes, quantos){
+    const chave = id => {
+      const t = M().time(id);
+      const c = t && M().cidade(t.mapa);
+      const i = CADEIA_UF.indexOf((c && c.uf) || '');
+      return {uf: i < 0 ? 99 : i, cidade: (t && t.mapa) || '', id};
+    };
+    const ordem = [...clubes].map(chave).sort((a,b)=>
+      a.uf - b.uf ||
+      (a.cidade < b.cidade ? -1 : a.cidade > b.cidade ? 1 : 0) ||
+      (a.id < b.id ? -1 : 1)).map(x=>x.id);
+    const tam = Math.ceil(ordem.length / quantos);
+    const g = [];
+    for(let i=0; i<quantos; i++) g.push(ordem.slice(i*tam, (i+1)*tam));
+    return g.filter(x=>x.length);
+  }
+
   /* =======================================================
      FORÇA DOS CLUBES — teto 100, valores da fonte
      A planilha dá o ponto de partida e ele entra como está:
@@ -105,19 +133,20 @@ TO.competicoes = (function(){
   /* =======================================================
      REFORÇAR O ELENCO (GDD V3 §19)
      Um ponto de força custa o preço da faixa em que o clube
-     está — de R$ 50 mil no time pequeno a R$ 800 mil no
-     gigante. É o maior ralo de dinheiro do jogo, e é de
+     está — de R$ 20 mil no time pequeno a R$ 320 mil no
+     gigante (40% da tabela original, decisão do dono em
+     18/08/2026). É o maior ralo de dinheiro do jogo, e é de
      propósito: com bar, loja e subsede montados, é pra onde
      sobra. Fecha o laço da torcida com o gramado — elenco
      melhor ganha mais, ganhar sobe a satisfação, satisfação
      enche o recrutamento.
      ======================================================= */
   const TABELA_INVESTIMENTO = [
-    {ate: 10, custo:  50000}, {ate: 20, custo:  80000},
-    {ate: 30, custo: 140000}, {ate: 40, custo: 200000},
-    {ate: 50, custo: 250000}, {ate: 60, custo: 300000},
-    {ate: 70, custo: 350000}, {ate: 80, custo: 400000},
-    {ate: 90, custo: 500000}, {ate:100, custo: 800000}
+    {ate: 10, custo:  20000}, {ate: 20, custo:  32000},
+    {ate: 30, custo:  56000}, {ate: 40, custo:  80000},
+    {ate: 50, custo: 100000}, {ate: 60, custo: 120000},
+    {ate: 70, custo: 140000}, {ate: 80, custo: 160000},
+    {ate: 90, custo: 200000}, {ate:100, custo: 320000}
   ];
   function custoDoPonto(E, id){
     const f = forcaDe(E, id);
@@ -141,12 +170,12 @@ TO.competicoes = (function(){
     }
     if(!feitos) return {ok:false, pontos:0, gasto:0,
       msg: forcaDe(E, id) >= FORCA_MAX
-        ? 'O elenco já está no teto.' : 'Não dá: falta caixa.'};
+        ? _t('O elenco já está no teto.') : _t('Não dá: falta caixa.')};
     const time = (M().time(id)||{}).nome || id;
-    TO.estado.lancar(E, `Reforço no elenco do ${time}`, -gasto);
-    TO.estado.anotar(E, `A torcida reforçou o elenco do ${time}: `+
-      `+${feitos} de força.`, 'boa', {cat:6, assunto:'elenco'});
-    return {ok:true, pontos:feitos, gasto, msg:`${time}: +${feitos} de força`};
+    TO.estado.lancar(E, _t('Reforço no elenco do {time}', {time}), -gasto);
+    TO.estado.anotar(E, _t('A torcida reforçou o elenco do {time}: +{n} de força.', {time, n:feitos}),
+      'boa', {cat:6, assunto:'elenco'});
+    return {ok:true, pontos:feitos, gasto, msg:_t('{time}: +{n} de força', {time, n:feitos})};
   }
 
 
@@ -252,12 +281,122 @@ TO.competicoes = (function(){
     return [poisson(lc), poisson(lf)];
   }
 
-  /* mata-mata empatado vai a pênaltis; quem é melhor leva
-     vantagem, mas longe de garantia (GDD §18.3) */
-  function penaltis(a, b){
-    const p = forca(a) / (forca(a) + forca(b) || 1);
-    return U.rng() < (0.5 + (p-0.5)*0.5) ? a : b;
+  /* =======================================================
+     A DISPUTA DE PÊNALTIS (correção do dono, 21/08/2026)
+
+     Antes o empate no mata-mata era uma moeda pesada pela
+     força: `U.rng() < 0.5 + …` e pronto — o classificado saía
+     de lugar nenhum e ninguém via como. Agora é disputa de
+     verdade: cinco cobranças alternadas pra cada lado,
+     morte súbita se persistir, e o roteiro fica guardado no
+     jogo, cobrança a cobrança, pra tela poder mostrar.
+
+     A conversão sai da força, mas de raspão: o melhor bate a
+     78% e o pior a 73%, e nenhum passa disso. Pênalti é
+     loteria — bater bem não é ser grande, é ter sangue frio.
+     MEDIDO: com a faixa larga (68% a 82%) o gigante passava
+     75% das vezes contra o menor clube do país, o que não é
+     disputa de pênalti, é formalidade. Com esta, fica perto
+     de 60%: vantagem, e não sentença.
+     ======================================================= */
+  /* A RÉGUA DO DONO (21/08/2026): o favorito passa **60/40** contra o
+     pior clube do país. Pênalti é loteria; a força inclina a moeda,
+     não decide por ela. Os dois batem em torno de 75% e a vantagem é
+     uma fatia fina em cima disso — 0,032 aqui vira 60% lá na ponta,
+     porque a diferença compõe ao longo das cinco cobranças. O valor
+     saiu de varredura: 0,013 dava 54%, 0,045 dava 63%, 0,06 dava 68%. */
+  const PEN_BASE = 0.755, PEN_VANTAGEM = 0.032;
+  /* a trava contra série infinita é generosa de propósito: 50 rodadas
+     não acontecem na vida real, e chegar nelas empatado seria pior que
+     o remédio — disputa empatada não classifica ninguém */
+  const PEN_SERIE = 5, PEN_MAX_RODADAS = 50;
+
+  function chanceDePenalti(a, b){
+    const p = forca(a) / (forca(a) + forca(b) || 1);   // 0 a 1
+    return U.limitar(PEN_BASE + (p - 0.5) * 2 * PEN_VANTAGEM, 0.55, 0.95);
   }
+
+  /* uma cobrança de resultado dado, pra fechar a trava */
+  function cobrar2(cobrancas, gols, lado, n, marcou){
+    if(marcou) gols[lado]++;
+    cobrancas.push({lado, marcou, n});
+  }
+
+  /* =======================================================
+     A SÉRIE, PELA REGRA DE VERDADE (conferida a pedido do
+     dono, 21/08/2026)
+
+     · REGULAMENTAR: cinco cobranças pra cada lado, alternadas.
+       Para assim que uma das duas não puder mais ser
+       alcançada — o 3×0 no quarto par não vai até o fim.
+     · MORTE SÚBITA: dali em diante é PAR COMPLETO. Só decide
+       quando os dois bateram na rodada e o placar diferiu.
+       Nunca no meio de um par.
+     ======================================================= */
+  function disputaDePenaltis(a, b){
+    const chance = {c: chanceDePenalti(a,b), f: chanceDePenalti(b,a)};
+    const gols = {c:0, f:0};
+    const cobrancas = [];
+    const bateu = lado => cobrancas.filter(x=>x.lado === lado).length;
+
+    const cobrar = (lado, n)=>{
+      const marcou = U.rng() < chance[lado];
+      if(marcou) gols[lado]++;
+      cobrancas.push({lado, marcou, n});
+    };
+
+    /* ---- os cinco pares regulamentares ---- */
+    let acabou = false;
+    for(let r = 1; r <= PEN_SERIE && !acabou; r++){
+      for(const lado of ['c','f']){
+        cobrar(lado, r);
+        /* quem ainda vai bater quantas vezes na regulamentar */
+        const falta = {c: PEN_SERIE - bateu('c'), f: PEN_SERIE - bateu('f')};
+        if(gols.c - gols.f > falta.f || gols.f - gols.c > falta.c){
+          acabou = true; break;                 // decidida: não se bate mais
+        }
+      }
+    }
+
+    /* ---- morte súbita: par completo, e só ---- */
+    let r = PEN_SERIE + 1;
+    for(; !acabou && r <= PEN_MAX_RODADAS; r++){
+      cobrar('c', r);
+      cobrar('f', r);
+      if(gols.c !== gols.f) acabou = true;
+    }
+
+    /* BATEU NA TRAVA AINDA EMPATADO (uma em quatro mil, medido): a
+       série não pode terminar empatada, senão ninguém se classifica.
+       Uma última rodada em que um converte e o outro não, sorteada
+       pela mesma vantagem de força que vale o resto da disputa. */
+    if(!acabou){
+      const p = chance.c / (chance.c + chance.f || 1);
+      const passaC = U.rng() < p;
+      cobrar2(cobrancas, gols, 'c', r, passaC);
+      cobrar2(cobrancas, gols, 'f', r, !passaC);
+    }
+
+    return {c:gols.c, f:gols.f, venceu: gols.c > gols.f ? a : b, cobrancas};
+  }
+
+  /* o vencedor da disputa, guardando o roteiro no próprio jogo. E se
+     quem decidiu foi o NOSSO clube, deixa o recado pra tela abrir a
+     disputa cobrança a cobrança em vez de mostrar o placar pronto. */
+  function penaltisNoJogo(E, j, a, b, ctx){
+    const d = disputaDePenaltis(a, b);
+    j.pen = d;
+    j.penaltis = true;
+    const meu = E && E.torcida && E.torcida.clubeId;
+    if(meu && (a === meu || b === meu)){
+      E.penaltisPendente = {a, b, pen:d,
+        comp:(ctx && ctx.comp) || '', fase:(ctx && ctx.fase) || ''};
+    }
+    return d.venceu;
+  }
+
+  /* compat: quem só quer saber quem passou */
+  function penaltis(a, b){ return disputaDePenaltis(a, b).venceu; }
 
   /* =======================================================
      MONTAGEM DA TEMPORADA
@@ -361,7 +500,10 @@ TO.competicoes = (function(){
   }
 
   function criarCompeticao(id, nome, tipo, clubes, cfg, semanaInicio, finalEm){
-    const grupos = cfg.grupos > 1 ? dividirGrupos(clubes, cfg.grupos) : [clubes];
+    const grupos = cfg.grupos > 1
+      ? (cfg.regional ? dividirGruposPorRegiao(clubes, cfg.grupos)
+                      : dividirGrupos(clubes, cfg.grupos))
+      : [clubes];
     const porGrupo = grupos.map(g=>roundRobin(g, cfg.voltas));
     const maior = Math.max(...porGrupo.map(r=>r.length));
 
@@ -387,7 +529,9 @@ TO.competicoes = (function(){
       semanaInicio, finalEm: finalEm || null, dia: grade[0].d,
       rodadas, mata:[], campeao:null, vice:null,
       /* série com pontos corridos não tem mata-mata: campeão é o líder */
-      pontosCorridos: !!cfg.pontosCorridos
+      pontosCorridos: !!cfg.pontosCorridos,
+      /* cada chave do mata-mata se decide em dois jogos */
+      idaEVolta: !!cfg.idaEVolta
     };
   }
 
@@ -395,16 +539,56 @@ TO.competicoes = (function(){
      é fonte estática, então a mudança vive no save. */
   const divisaoDe  = (E, t) => (E.divisoes  || {})[t.id] || t.divisao;
   const regionalDe = (E, t) => (E.regionais || {})[t.id] || t.regional;
+  const paisDe     = t => (t && t.pais) || 'Brasil';
+
+  /* =======================================================
+     O MUNDO DE FORA AINDA NÃO JOGA (medido em 23/08/2026)
+
+     `dados/times.js` já traz os 248 clubes de nove países da América
+     do Sul, mas a temporada só monta o Brasil. Não é esquecimento, é
+     conta: deixando o motor de hoje montar tudo, a temporada vai a
+     20.714 jogos e o campo `temporada` do save salta de 154 KB pra
+     1.568 KB — o save passa de 2,3 MB ANTES de fechar o primeiro ano,
+     que é mais do que uma partida brasileira de cinco anos ocupa. O
+     dia também fica 21 ms mais lento, e o dia roda no relógio.
+
+     Além disso o formato estaria errado: as ligas de lá são Apertura
+     e Clausura, quadrangular, hexagonal, tabela anual e promedio, e
+     nada disso cabe em `{grupos, passam, voltas}`.
+
+     Então os clubes de fora ficam guardados e fora da temporada até o
+     motor de formatos existir. Quem ligar isto antes tem de resolver
+     o armazenamento junto. */
+  /* O PAÍS DO JOGADOR É QUE JOGA (régua do dono, 23/08/2026).
+     "O país cuja torcida que o jogador selecionar deve gerar os jogos e
+     as demais geram somente as tabelas." Este motor sabe o formato
+     brasileiro — estadual, quatro séries e Copa do Brasil —, então ele
+     monta a temporada quando o jogador é do Brasil. Quando não é, quem
+     monta é `ligas.js`, que sabe Apertura, Clausura, quadrangular,
+     hexagonal e tabela anual; a temporada nasce vazia aqui e ele
+     pendura as competições dele nela. O Brasil, nesse caso, cai pro
+     resumo das ligas junto com os outros oito. */
+  function paisDoJogador(E){
+    const meu = E && E.torcida && E.torcida.clubeId;
+    const t = meu ? M().time(meu) : null;
+    return (t && t.pais) || 'Brasil';
+  }
 
   function montarTemporada(E){
     U.usarSemente((E.semente || 1) + (E.data.ano||2026));
     const T = M().todosTimes;
     const comps = [];
 
+    if(paisDoJogador(E) !== 'Brasil')
+      return {ano:E.data.ano, competicoes:comps, deFora:true,
+              titulos:(E.temporada && E.temporada.titulos) || []};
+
     /* ---- fase 1: regionais e estaduais (GDD §18.3 e §18.4) ---- */
     const porRegional = {};
     for(const t of T){
+      if(paisDe(t) !== 'Brasil') continue;
       const r = regionalDe(E, t);
+      if(!r) continue;
       (porRegional[r] = porRegional[r] || []).push(t.id);
     }
     const janela = FINAL_REGIONAL - INICIO_REGIONAL + 1;
@@ -432,6 +616,7 @@ TO.competicoes = (function(){
     /* ---- fase 2: Brasileirão (GDD §18.2) ---- */
     const porDivisao = {};
     for(const t of T){
+      if(paisDe(t) !== 'Brasil') continue;
       const d = divisaoDe(E, t);
       (porDivisao[d] = porDivisao[d] || []).push(t.id);
     }
@@ -439,9 +624,14 @@ TO.competicoes = (function(){
       const clubes = porDivisao[nome];
       /* até 20 clubes é turno e returno; a D, com 48, vai em quatro
          grupos regionalizados com playoff, como manda o GDD */
+      /* MATA-MATA DA D É IDA E VOLTA (pedido do dono, 21/08/2026): a
+         D é a única série que sai dos grupos pro playoff, e playoff de
+         acesso não se decide em jogo único. */
+      /* os grupos da divisão inferior são REGIONALIZADOS (pedido do
+         dono, 27/08/2026): corte contíguo do mapa, norte no A */
       const cfg = clubes.length <= 20
         ? {grupos:1, passam:0, voltas:2, pontosCorridos:true}
-        : {grupos:4, passam:4, voltas:2};
+        : {grupos:4, passam:4, voltas:2, idaEVolta:true, regional:true};
       comps.push(criarCompeticao(U.identificador(nome), nome, 'nacional',
         clubes, cfg, INICIO_NACIONAL));
     }
@@ -759,8 +949,18 @@ TO.competicoes = (function(){
      neutro.
      ======================================================= */
   /* Uma fase a cada três semanas, na quarta-feira; ida e volta em
-     semanas seguidas. A final é o último jogo do ano e sai do meio de
-     semana: fecha a temporada depois da última rodada do Brasileirão. */
+     semanas seguidas. A final sai do meio de semana e vem depois da
+     última rodada do Brasileirão (semana 48) e das finais da Conmebol
+     (48 e 49).
+
+     A FINAL NÃO FECHA O ANO (pedido do dono, 17/09/2026): ela ficava
+     na semana 52, e o campeão saía no fechamento dessa semana — o
+     mesmo instante em que o ano vira e a temporada nova apaga a
+     antiga. O título ia pro histórico, mas ninguém noticiava, e a
+     tela da copa já amanhecia com a chave do ano seguinte: pra quem
+     jogava, a copa acabava sem campeão. Na 50 sobram duas semanas pro
+     jornal contar e pra chave ficar de pé com o troféu. */
+  const COPA_FINAL_SEMANA = 50;
   const COPA_FASES = [
     {fase:'Primeira fase', semanas:[22]},
     {fase:'Segunda fase',  semanas:[26], entram:'Brasileirão Série A'},
@@ -768,9 +968,15 @@ TO.competicoes = (function(){
     {fase:'Oitavas',       semanas:[34,35]},
     {fase:'Quartas',       semanas:[39,40]},
     {fase:'Semifinal',     semanas:[44,45]},
-    {fase:'Final',         semanas:[SEMANAS_ANO], neutro:true, grade:GRADE.final}
+    {fase:'Final',         semanas:[COPA_FINAL_SEMANA], neutro:true, grade:GRADE.final}
   ];
   const COPA_NOME = 'Copa do Brasil';
+  /* DOIS POTES ATÉ AS OITAVAS (pedido do dono, 17/09/2026): nessas
+     fases o sorteio separa os clubes em um pote de fortes e um de
+     fracos, e cada jogo cruza um de cada. Das quartas em diante o
+     sorteio é livre. */
+  const FASES_COM_POTES = new Set(['Primeira fase', 'Segunda fase',
+                                   'Terceira fase', 'Oitavas']);
 
   const forcaDivisao = (E, id)=>{
     const t = M().time(id);
@@ -787,25 +993,45 @@ TO.competicoes = (function(){
     return forca(a) >= forca(b) ? [a,b] : [b,a];
   }
 
+  /* do mais forte pro mais fraco: divisão mais alta primeiro, e dentro
+     da divisão a força do elenco */
+  const ordemDeForca = (E, ids) => ids.slice().sort((a,b)=>
+    forcaDivisao(E,a) - forcaDivisao(E,b) || forca(b) - forca(a));
+
+  /* O SORTEIO EM DOIS POTES: a metade de cima é o pote 1, a de baixo o
+     pote 2, cada pote embaralhado por si, e o k-ésimo de um pega o
+     k-ésimo do outro. O mando segue a régua de sempre (divisão mais
+     alta em casa). Com número ímpar, o último do pote 1 passa direto
+     — em vez de sumir da chave, que era o que o laço antigo fazia. */
+  function sortearPorPotes(E, ids){
+    const ordem = ordemDeForca(E, ids);
+    const meio  = Math.ceil(ordem.length / 2);
+    const pote1 = U.embaralhar(ordem.slice(0, meio));
+    const pote2 = U.embaralhar(ordem.slice(meio));
+    return pote1.map((a, k)=> pote2[k] ? mandante(E, a, pote2[k]) : [a, null]);
+  }
+
+  /* sorteio livre: embaralha e emparelha; ímpar, o que sobra passa */
+  function sortearLivre(E, ids){
+    const sorteio = U.embaralhar(ids);
+    const pares = [];
+    for(let i=0;i+1<sorteio.length;i+=2)
+      pares.push(mandante(E, sorteio[i], sorteio[i+1]));
+    if(sorteio.length % 2) pares.push([sorteio[sorteio.length-1], null]);
+    return pares;
+  }
+
   function criarCopa(E){
-    const T = M().todosTimes;
+    /* a Copa do Brasil é só de clube brasileiro: sem este filtro os
+       248 de fora entram como "resto" e disputam a primeira fase */
+    const T = M().todosTimes.filter(t=>paisDe(t) === 'Brasil');
     const daSerieA = T.filter(t=>divisaoDe(E,t)===ESCADA[0]).map(t=>t.id);
     const resto    = T.filter(t=>divisaoDe(E,t)!==ESCADA[0]).map(t=>t.id);
 
-    /* Primeira fase: B e C mandam em casa, e pra isso cada um deles pega
-       um clube da D. O que sobrar da D se enfrenta entre si. */
-    const bc = resto.filter(id=>forcaDivisao(E,id) <= 2);
-    const d  = U.embaralhar(resto.filter(id=>forcaDivisao(E,id) > 2));
-    const jogos = [];
-    for(const casa of U.embaralhar(bc)){
-      const fora = d.length ? d.shift() : null;
-      if(fora) jogos.push({c:casa, f:fora});
-      else jogos.push({c:casa, f:null});
-    }
-    while(d.length >= 2){
-      const [a,b] = mandante(E, d.shift(), d.shift());
-      jogos.push({c:a, f:b});
-    }
+    /* Primeira fase em dois potes: B, C e o topo da D de um lado, o
+       resto da D do outro. B e C seguem mandando em casa, que é a
+       régua do mando. */
+    const jogos = sortearPorPotes(E, resto).map(([c, f])=>({c, f}));
 
     const grade = GRADE.copa;
     jogos.forEach((j,k)=>{ const s = grade[k % grade.length]; j.d = s.d; j.h = s.h; });
@@ -823,17 +1049,40 @@ TO.competicoes = (function(){
     };
   }
 
+  /* QUEM DECIDE NA PARTIDA (correção do dono, 16/09/2026)
+     Nem toda linha guardada em `comp.mata` é mata-mata: a fase de
+     grupos da Libertadores e da Sul-Americana do clube do jogador mora
+     ali também, porque é de lá que sai a agenda dele. Sem esta trava,
+     todo empate de fecha de grupo ia pra disputa de pênaltis — e
+     empate em grupo é empate, vale um ponto pra cada. Ida e volta
+     também não decide na partida: quem decide é o agregado. */
+  const decideNaPartida = m =>
+    !m.grupo && m.perna !== 'ida' && m.perna !== 'volta';
+
   /* soma dos dois jogos; empatou, pênaltis */
-  function decidirAgregado(comp, volta){
+  function decidirAgregado(E, comp, volta){
     const ida = comp.mata.find(m=>m.indice===volta.indice && m.perna==='ida');
     for(const v of volta.jogos){
+      /* DECIDE UMA VEZ SÓ: a volta é resolvida no dia em que ela é
+         jogada (pra notícia daquele dia já contar a vaga) e o
+         fechamento da semana passa por aqui de novo. Sem esta trava a
+         disputa de pênaltis rodaria duas vezes, com resultados
+         diferentes — a manchete diria um e a chave, outro. */
+      if(v.venceu) continue;
+      if(!v.f){ v.venceu = v.c; continue; }          // sem adversário, passa
       const i = (ida ? ida.jogos : []).find(x=>x.par===v.par);
       if(!i) { v.venceu = v.gc>v.gf ? v.c : v.f; continue; }
       const golsC = i.gc + v.gf;   // o mandante da ida é o visitante da volta
       const golsF = i.gf + v.gc;
       v.agregado = `${golsC} × ${golsF}`;
-      v.venceu = golsC>golsF ? i.c : golsF>golsC ? i.f : penaltis(i.c, i.f);
-      v.penaltis = golsC===golsF;
+      /* A DISPUTA CORRE NA ORIENTAÇÃO DA VOLTA, e não na da ida: o
+         roteiro fica guardado no jogo da volta, então `pen.c` tem de
+         ser o mandante DELA. Rodando com os times da ida, o placar
+         saía trocado em relação aos nomes — "ASA 4×2 Paulista" com o
+         Paulista classificado. */
+      v.venceu = golsC>golsF ? i.c : golsF>golsC ? i.f
+               : penaltisNoJogo(E, v, v.c, v.f,
+                                {comp:comp.nome, fase:volta.fase});
     }
     return volta.jogos.map(j=>j.venceu);
   }
@@ -846,7 +1095,7 @@ TO.competicoes = (function(){
     const fora = M().todosTimes
       .filter(t=>t.estadio && !deles.has(t.estadio))
       .sort((x,y)=>(y.capacidade||0)-(x.capacidade||0))[0];
-    return fora ? fora.estadio : 'campo neutro';
+    return fora ? fora.estadio : _t('campo neutro');
   }
 
   function avancarCopa(E, comp, semana){
@@ -856,12 +1105,13 @@ TO.competicoes = (function(){
 
     /* decide quem passou */
     let vivos;
-    if(ult.perna === 'volta') vivos = decidirAgregado(comp, ult);
+    if(ult.perna === 'volta') vivos = decidirAgregado(E, comp, ult);
     else {
       for(const j of ult.jogos){
         if(!j.f){ j.venceu = j.c; continue; }          // sem adversário, passa direto
-        j.venceu = j.gc>j.gf ? j.c : j.gf>j.gc ? j.f : penaltis(j.c, j.f);
-        j.penaltis = j.gc===j.gf;
+        j.venceu = j.gc>j.gf ? j.c : j.gf>j.gc ? j.f
+                 : penaltisNoJogo(E, j, j.c, j.f,
+                                  {comp:comp.nome, fase:ult.fase});
       }
       vivos = ult.jogos.map(j=>j.venceu);
     }
@@ -887,13 +1137,10 @@ TO.competicoes = (function(){
     }
     if(chave.length < 2){ comp.campeao = chave[0] || null; return; }
 
-    /* sorteio: embaralha e emparelha, definindo o mando na hora */
-    const sorteio = U.embaralhar(chave);
-    const pares = [];
-    for(let i=0;i+1<sorteio.length;i+=2){
-      const [casa, fora] = mandante(E, sorteio[i], sorteio[i+1]);
-      pares.push([casa, fora]);
-    }
+    /* sorteio: em dois potes até as oitavas, livre dali em diante; o
+       mando sai na hora */
+    const pares = FASES_COM_POTES.has(prox.fase)
+      ? sortearPorPotes(E, chave) : sortearLivre(E, chave);
 
     const grade = prox.grade || comp.grade || GRADE.copa;
     const horario = js => js.forEach((j,k)=>{
@@ -904,7 +1151,9 @@ TO.competicoes = (function(){
     if(idaEVolta){
       /* quem tem melhor campanha decide em casa, então joga a volta
          como mandante (GDD §18.5) */
-      const ida   = pares.map(([a,b],k)=>({c:b, f:a, par:k}));
+      /* par sem adversário (chave ímpar): o clube fica como mandante
+         das duas pernas, sem jogo, e passa direto */
+      const ida   = pares.map(([a,b],k)=>({c:b || a, f:b ? a : null, par:k}));
       const volta = pares.map(([a,b],k)=>({c:a, f:b, par:k}));
       horario(ida); horario(volta);
       comp.mata.push({fase:`${prox.fase} · ida`, semana:prox.semanas[0], dia,
@@ -927,7 +1176,9 @@ TO.competicoes = (function(){
     return {id, j:0, v:0, e:0, d:0, gp:0, gc:0, sg:0, p:0};
   }
 
-  function tabela(comp, grupo){
+  /* `pular` (22/08/2026): uma rodada que NÃO deve contar. Serve pra
+     tabela "antes do jogo de hoje" — ver `posicaoNaTabela`. */
+  function tabela(comp, grupo, pular){
     const alvo = grupo===undefined ? null : grupo;
     const linhas = {};
     const lista = alvo===null ? comp.clubes : comp.grupos[alvo];
@@ -935,6 +1186,10 @@ TO.competicoes = (function(){
 
     for(const r of comp.rodadas){
       for(const j of r.jogos){
+        /* o `pular` recebe o JOGO também (dono, 21/09/2026): jogo adiado
+           tem semana e dia próprios (`j.s`, `j.d`), e a régua "antes de
+           hoje" da mensagem da partida lê os dele, não os da rodada */
+        if(pular && pular(r, comp, j)) continue;
         if(j.gc===undefined || j.gc===null) continue;
         if(alvo!==null && j.g!==alvo) continue;
         const a = linhas[j.c], b = linhas[j.f];
@@ -960,17 +1215,164 @@ TO.competicoes = (function(){
   /* =======================================================
      A SEMANA
      ======================================================= */
-  const bonusTorcida = (E, casa, fora) =>
-    (TO.torcedores ? TO.torcedores.bonusDoJogo(E, casa, fora) : 0);
+  /* O PLACAR É PURO (decisão do autor): só a força dos clubes entra na
+     simulação. O Fator Torcida saiu do jogo junto com a satisfação —
+     e VOLTOU por uma porta só (pedido do dono, 24/08/2026): o Treino
+     de bateria do expediente. Com a bateria ensaiada na última semana,
+     o clube DO JOGADOR manda em casa com +20% da régua de força (11
+     dos 55 pontos do divisor). O resto do mundo segue sem bônus. */
+  function bonusTorcida(E, casaId){
+    if(!E || !E.torcida || !E.torcida.clubeId) return 0;
+    if(casaId !== E.torcida.clubeId) return 0;
+    if(E.bateriaAbs == null) return 0;
+    const abs = (E.data && E.data.absoluto) || 0;
+    return abs - E.bateriaAbs <= 7 ? 55 * 0.20 : 0;
+  }
+
+  /* =======================================================
+     O ÁRBITRO DA AGENDA (régua do dono, 17/09/2026)
+
+     O calendário nasce em três lugares que não se olham — o nacional
+     aqui, a Conmebol em conmebol.js e as fases de copa que vão sendo
+     sorteadas — e cada um marca o seu dia sem perguntar aos outros. O
+     resultado era Libertadores e Brasileirão na MESMA quarta-feira, e
+     domingo com jogo de novo na terça. A régua do dono: NO MÁXIMO DOIS
+     JOGOS POR SEMANA, e SEMPRE TRÊS DIAS entre um e outro.
+
+     Este árbitro só cuida do clube do jogador (é a agenda que ele vê e
+     vive; pros outros 300 clubes o dia da semana não muda nada) e só
+     dos jogos que ainda vão acontecer. Ele roda todo dia, é barato e
+     dá sempre a mesma resposta pra mesma agenda:
+
+     1. Semana com três ou mais: adia o de menor peso pra semana mais
+        próxima que tenha vaga. Peso, do mais fixo pro mais móvel:
+        Conmebol (a Conmebol inteira anda na quarta, e o dia dela é a
+        âncora), copa nacional, liga, regional.
+     2. Dias: passa semana a semana escolhendo o dia de cada jogo pra
+        ficar a três ou mais do anterior e do seguinte — a Conmebol não
+        sai da quarta; o resto prefere o fim de semana (sábado, domingo)
+        e depois a quarta, quinta, sexta.
+
+     A mudança fica no próprio jogo (`j.d` = dia, `j.s` = semana), que é
+     o que toda leitura já respeita pro dia e passa a respeitar pra
+     semana. Jogo já jogado, ou de hoje, não se mexe.
+     ======================================================= */
+  const MAX_POR_SEMANA = 2, FOLGA_MIN = 3;
+  const semanaMarcada = (j, r) => j.s || r.semana;
+  const diaMarcado = (j, r, comp) => j.d || r.dia || comp.dia || DIA_FDS;
+  const absDe = (s, d) => (s - 1) * 7 + d;
+
+  function pesoDeFixar(comp, r, mata){
+    if(comp.deFora || comp.tipo === 'copa-de-fora') return 3;
+    if(mata || comp.copa) return 2;
+    if(comp.tipo === 'regional') return 0;
+    return 1;
+  }
+
+  function arrumarAgenda(E){
+    const S = E && E.temporada;
+    const meu = E && E.torcida && M().time(E.torcida.clubeId);
+    if(!S || !meu || !S.competicoes) return 0;
+    const hoje = absDe(E.data.semana, E.data.dia);
+    const ultimaSemana = 52;
+    let mexidas = 0;
+
+    /* a lista viva: cada jogo futuro do clube com o objeto de verdade */
+    const lista = [];
+    let ultimoJogado = -99;
+    for(const comp of S.competicoes){
+      const junta = (r, mata)=>{
+        for(const j of r.jogos){
+          if(!j.f || (j.c !== meu.id && j.f !== meu.id)) continue;
+          const s = semanaMarcada(j, r), d = diaMarcado(j, r, comp), abs = absDe(s, d);
+          if(temJogo(j) || abs <= hoje){ ultimoJogado = Math.max(ultimoJogado, abs); continue; }
+          lista.push({j, r, comp, peso:pesoDeFixar(comp, r, mata), s, d,
+                      fixo: pesoDeFixar(comp, r, mata) === 3});
+        }
+      };
+      comp.rodadas.forEach(r=>junta(r, false));
+      comp.mata.forEach(m=>junta(m, true));
+    }
+    if(!lista.length) return 0;
+
+    const porSemana = ()=>{
+      const m = new Map();
+      for(const x of lista) (m.get(x.s) || m.set(x.s, []).get(x.s)).push(x);
+      return m;
+    };
+
+    /* ---- 1. semana cheia: adia o mais leve ---- */
+    let mapa = porSemana();
+    const semanas = [...mapa.keys()].sort((a,b)=>a-b);
+    for(const s of semanas){
+      const l = mapa.get(s);
+      while(l.length > MAX_POR_SEMANA){
+        /* o mais leve sai; empate, sai o de dia mais tarde */
+        l.sort((a,b)=>a.peso - b.peso || b.d - a.d);
+        const sai = l[0];
+        if(sai.fixo) break;                       // três da Conmebol: não há o que fazer
+        let destino = null;
+        for(let k = 1; k <= 6 && !destino; k++){
+          for(const cand of [s + k, s - k]){
+            if(cand < 1 || cand > ultimaSemana) continue;
+            if(absDe(cand, 7) <= hoje) continue;   // já passou
+            if((mapa.get(cand) || []).length < MAX_POR_SEMANA){ destino = cand; break; }
+          }
+        }
+        if(!destino) break;
+        l.shift();
+        sai.s = destino; sai.j.s = destino; mexidas++;
+        (mapa.get(destino) || mapa.set(destino, []).get(destino)).push(sai);
+      }
+    }
+
+    /* ---- 2. os dias: três de folga com o anterior e o seguinte ---- */
+    mapa = porSemana();
+    const ordem = [...mapa.keys()].sort((a,b)=>a-b);
+    let anterior = ultimoJogado;                  // abs do último jogo marcado
+    const PREFERIDOS = [DIA_FDS, 7, DIA_MEIO, 4, 5, 2, 1];
+    for(let i = 0; i < ordem.length; i++){
+      const s = ordem[i], l = mapa.get(s);
+      /* o fixo da semana seguinte limita até onde esta pode ir */
+      const prox = mapa.get(ordem[i + 1]) || [];
+      const tetoFixo = prox.filter(x=>x.fixo).map(x=>absDe(x.s, x.d));
+      const limite = tetoFixo.length ? Math.min(...tetoFixo) - FOLGA_MIN : Infinity;
+      /* fixos primeiro, depois os móveis do dia mais cedo pro mais tarde */
+      l.sort((a,b)=>(b.fixo?1:0) - (a.fixo?1:0) || a.d - b.d);
+      const tomados = [];
+      for(const x of l){
+        const cabe = d => {
+          const abs = absDe(s, d);
+          if(abs <= hoje) return false;
+          if(abs - anterior < FOLGA_MIN) return false;
+          if(abs > limite) return false;
+          return tomados.every(t => Math.abs(t - abs) >= FOLGA_MIN);
+        };
+        let dia = x.d;
+        if(x.fixo){
+          /* a Conmebol não sai do dia dela; se o anterior ficou perto
+             demais, é o anterior que já deveria ter cedido */
+        } else if(!cabe(dia)){
+          const alt = [x.d, ...PREFERIDOS].find(cabe);
+          if(alt !== undefined) dia = alt;
+        }
+        if(dia !== x.d){ x.d = dia; x.j.d = dia; mexidas++; }
+        tomados.push(absDe(s, dia));
+      }
+      if(tomados.length) anterior = Math.max(...tomados);
+    }
+    return mexidas;
+  }
 
   function jogarSemana(E, semana){
+    arrumarAgenda(E);
     const S = E.temporada;
     if(!S) return [];
     const feitos = [];
     for(const comp of S.competicoes){
       for(const r of comp.rodadas){
-        if(r.semana !== semana) continue;
         for(const j of r.jogos){
+          if((j.s || r.semana) !== semana) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
@@ -978,28 +1380,105 @@ TO.competicoes = (function(){
         }
       }
       for(const m of comp.mata){
-        if(m.semana !== semana) continue;
         for(const j of m.jogos){
           if(!j.f) continue;                       // passou sem jogar
+          if((j.s || m.semana) !== semana) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
           const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
           j.gc = a; j.gf = b;
           /* em ida e volta quem decide é o agregado, não a partida */
-          if(m.perna !== 'ida' && m.perna !== 'volta'){
-            j.venceu = a>b ? j.c : b>a ? j.f : penaltis(j.c, j.f);
-            j.penaltis = a===b;
+          if(decideNaPartida(m)){
+            j.venceu = a>b ? j.c : b>a ? j.f
+                     : penaltisNoJogo(E, j, j.c, j.f,
+                                      {comp:comp.nome, fase:m.fase});
           }
-          feitos.push({comp:comp.id, ...j});
+          feitos.push({comp:comp.id, compNome:comp.nome, fase:m.fase, ...j});
         }
       }
       if(comp.copa) avancarCopa(E, comp, semana);
-      else avancarFase(comp, semana);
+      else avancarFase(E, comp, semana);
+    }
+    return costurarDecisao(E, feitos);
+  }
+
+  /* =======================================================
+     A DECISÃO CHEGA DEPOIS DO PLACAR (correção do dono, 22/08/2026)
+
+     `feitos` guarda uma CÓPIA de cada jogo, e em ida e volta a disputa
+     de pênaltis só é resolvida no `avancarFase`, que roda depois do
+     push: a cópia saía sem `pen` e sem `venceu`. A notícia então falava
+     do empate e não da vaga — não porque faltasse texto, mas porque o
+     dado não tinha chegado. Isto costura os dois de volta, no fim.
+     ======================================================= */
+  function costurarDecisao(E, feitos){
+    const S = E.temporada;
+    if(!S) return feitos;
+    for(const f of feitos){
+      if(f.pen || !f.fase) continue;
+      const comp = S.competicoes.find(c=>c.id === f.comp);
+      if(!comp) continue;
+      for(const m of (comp.mata||[]))
+        for(const j of m.jogos)
+          if(j.c === f.c && j.f === f.f && j.gc === f.gc && j.gf === f.gf){
+            if(j.pen) f.pen = j.pen;
+            if(j.venceu) f.venceu = j.venceu;
+            if(j.agregado) f.agregado = j.agregado;
+          }
     }
     return feitos;
   }
 
+  /* O DIA, NÃO A SEMANA: o feed conta o placar na noite do próprio
+     jogo, então os jogos daquele dia são simulados na hora. O avanço
+     de fase continua sendo trabalho do fechamento (`jogarSemana`), que
+     também recolhe qualquer jogo que tenha ficado pra trás. */
+  function jogarDia(E, semana, dia){
+    const S = E.temporada;
+    if(!S) return [];
+    arrumarAgenda(E);
+    const feitos = [];
+    for(const comp of S.competicoes){
+      for(const r of comp.rodadas){
+        for(const j of r.jogos){
+          if((j.s || r.semana) !== semana) continue;
+          if((j.d || r.dia || comp.dia || DIA_FDS) !== dia) continue;
+          if(j.gc !== undefined && j.gc !== null) continue;
+          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
+          j.gc = a; j.gf = b;
+          /* o número da rodada viaja com o jogo: a mensagem da nossa
+             partida fala "pela 3ª rodada" (pedido do dono, 18/08/2026) */
+          feitos.push({comp:comp.id, compNome:comp.nome,
+                       rodada: comp.rodadas.indexOf(r)+1, ...j});
+        }
+      }
+      for(const m of comp.mata){
+        for(const j of m.jogos){
+          if(!j.f) continue;
+          if((j.s || m.semana) !== semana) continue;
+          if((j.d || m.dia || DIA_FDS) !== dia) continue;
+          if(j.gc !== undefined && j.gc !== null) continue;
+          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
+          j.gc = a; j.gf = b;
+          if(decideNaPartida(m)){
+            j.venceu = a>b ? j.c : b>a ? j.f
+                     : penaltisNoJogo(E, j, j.c, j.f,
+                                      {comp:comp.nome, fase:m.fase});
+          }
+          feitos.push({comp:comp.id, compNome:comp.nome, fase:m.fase, ...j});
+        }
+        /* A VAGA SAI NO DIA DA VOLTA, e não no fechamento da semana: é
+           hoje que a notícia conta quem passou. O `avancarFase` volta a
+           passar por aqui no fim da semana e não muda nada, porque
+           `decidirAgregado` só decide o que ainda não foi decidido. */
+        if(m.perna === 'volta' && m.jogos.every(j=>!j.f || j.gc != null))
+          decidirAgregado(E, comp, m);
+      }
+    }
+    return costurarDecisao(E, feitos);
+  }
+
   /* fecha grupos e gera a chave; depois vai encurtando até a final */
-  function avancarFase(comp, semana){
+  function avancarFase(E, comp, semana){
     if(comp.campeao) return;
 
     const gruposAcabaram = comp.rodadas.every(r=>
@@ -1018,30 +1497,78 @@ TO.competicoes = (function(){
     const ultima = comp.mata[comp.mata.length-1];
     if(ultima && ultima.jogos.some(j=>j.gc===undefined || j.gc===null)) return;
 
+    /* IDA JOGADA, FALTA A VOLTA (pedido do dono, 21/08/2026): a chave
+       não anda até os dois jogos saírem. A volta inverte o mando, que
+       é o que `decidirAgregado` espera pra somar certo. */
+    if(ultima && ultima.perna === 'ida'){
+      const grade = comp.grade || gradeDe(comp.nome, comp.tipo);
+      const volta = ultima.jogos.map(j=>({c:j.f, f:j.c, par:j.par}));
+      volta.forEach((j,k)=>{ const g = grade[k % grade.length]; j.d = g.d; j.h = g.h; });
+      comp.mata.push({fase: ultima.fase, semana: ultima.semana + 1,
+                      dia: grade[0].d, indice: ultima.indice,
+                      perna:'volta', jogos: volta});
+      return;
+    }
+
     let vivos;
+    const jogos = [];
+    const par = (a,b)=>jogos.push({c:a, f:b});
     if(!ultima){
-      vivos = [];
-      comp.grupos.forEach((g, ig)=>{
-        const t = tabela(comp, ig);
-        vivos.push(...t.slice(0, comp.passam).map(l=>l.id));
-      });
+      /* CHAVEAMENTO OLÍMPICO (decisão do dono, 17/08/2026).
+         Saindo dos grupos, o cruzamento é fixo pela classificação:
+         · dois grupos (Copa do Nordeste, e a Série D par a par):
+           jogo 1: 1ºA×4ºB · jogo 2: 2ºB×3ºA · jogo 3: 1ºB×4ºA ·
+           jogo 4: 2ºA×3ºB — o mando é do mais bem classificado;
+         · grupo único: 1º×4º e 2º×3º;
+         · e dali em diante a chave anda sozinha: vencedor do jogo 1
+           pega o do jogo 2, o do 3 pega o do 4, sem re-sorteio. */
+      const porGrupo = comp.grupos.map((g, ig)=>
+        tabela(comp, ig).slice(0, comp.passam).map(l=>l.id));
+      vivos = porGrupo.flat();
+      const G = porGrupo.length, P = comp.passam;
+      if(G === 1 && P === 4){
+        const [p1,p2,p3,p4] = porGrupo[0];
+        par(p1,p4); par(p2,p3);
+      } else if(G === 1 && P === 2){
+        par(porGrupo[0][0], porGrupo[0][1]);
+      } else if(G % 2 === 0 && P === 4){
+        for(let k=0;k<G;k+=2){
+          const A = porGrupo[k], B = porGrupo[k+1];
+          par(A[0],B[3]); par(B[1],A[2]); par(B[0],A[3]); par(A[1],B[2]);
+        }
+      } else if(G % 2 === 0 && P === 2){
+        for(let k=0;k<G;k+=2){
+          const A = porGrupo[k], B = porGrupo[k+1];
+          par(A[0],B[1]); par(B[0],A[1]);
+        }
+      } else {
+        /* formato fora do catálogo: melhor contra pior, como era */
+        const ordem = [...vivos].sort((a,b)=>forca(b)-forca(a));
+        for(let i=0;i<ordem.length/2;i++)
+          par(ordem[i], ordem[ordem.length-1-i]);
+      }
     }else{
-      vivos = ultima.jogos.map(j=>j.venceu);
+      vivos = ultima.perna === 'volta'
+        ? decidirAgregado(E, comp, ultima)
+        : ultima.jogos.map(j=>j.venceu);
       if(vivos.length === 1){
         comp.campeao = vivos[0];
         const f = ultima.jogos[0];
         comp.vice = f.venceu===f.c ? f.f : f.c;
         return;
       }
+      if(vivos.length >= 2){
+        /* a chave olímpica anda na ordem dos jogos: V1×V2, V3×V4…
+           O mando fica com o clube mais forte, a régua de sempre. */
+        for(let i=0;i+1<vivos.length;i+=2){
+          const a = vivos[i], b = vivos[i+1];
+          if(forca(a) >= forca(b)) par(a,b); else par(b,a);
+        }
+      }
     }
     if(vivos.length < 2) { comp.campeao = vivos[0] || null; return; }
 
     const NOMES = {2:'Final', 4:'Semifinal', 8:'Quartas', 16:'Oitavas', 32:'Primeira fase'};
-    const jogos = [];
-    /* melhor contra pior, o clássico chaveamento de copa */
-    const ordem = [...vivos].sort((a,b)=>forca(b)-forca(a));
-    for(let i=0;i<ordem.length/2;i++)
-      jogos.push({c:ordem[i], f:ordem[ordem.length-1-i]});
 
     /* Com data de final marcada, a chave é contada de trás pra frente:
        a final na semana combinada, a semifinal na anterior e por aí.
@@ -1052,8 +1579,12 @@ TO.competicoes = (function(){
       : semana+1;
     const grade = comp.grade || gradeDe(comp.nome, comp.tipo);
     jogos.forEach((j,k)=>{ const s = grade[k % grade.length]; j.d = s.d; j.h = s.h; });
-    comp.mata.push({fase: NOMES[vivos.length] || `${vivos.length} clubes`,
-                    semana: quando, dia: grade[0].d, jogos});
+    const indice = comp.mata.length;
+    if(comp.idaEVolta) jogos.forEach((j,k)=>{ j.par = `${indice}-${k}`; });
+    comp.mata.push(Object.assign(
+      {fase: NOMES[vivos.length] || `${vivos.length} clubes`,
+       semana: quando, dia: grade[0].d, jogos},
+      comp.idaEVolta ? {perna:'ida', indice} : {}));
   }
 
   /* =======================================================
@@ -1072,7 +1603,7 @@ TO.competicoes = (function(){
           if(j.c!==clubeId && j.f!==clubeId) continue;
           if(!j.f) continue;                     /* passou sem adversário */
           const casa = j.c===clubeId;
-          fora.push({semana:r.semana, dia:j.d || r.dia || comp.dia || DIA_FDS,
+          fora.push({semana:j.s || r.semana, dia:j.d || r.dia || comp.dia || DIA_FDS,
                      hora:j.h || '16:00',
                      comp:comp.nome, compId:comp.id,
                      tipo:comp.tipo, fase, mata:!!mata,
@@ -1081,6 +1612,10 @@ TO.competicoes = (function(){
                      gp: temJogo(j) ? (casa?j.gc:j.gf) : null,
                      gc: temJogo(j) ? (casa?j.gf:j.gc) : null,
                      jogado: temJogo(j), penaltis: !!j.penaltis,
+                     /* o placar dos pênaltis anda junto com o do jogo:
+                        toda tela que mostra um mostra o outro */
+                     pen: j.pen ? (casa ? {c:j.pen.c, f:j.pen.f}
+                                        : {c:j.pen.f, f:j.pen.c}) : null,
                      agregado: j.agregado || null, venceu: j.venceu});
         }
       };
@@ -1094,19 +1629,49 @@ TO.competicoes = (function(){
   const jogosDaSemana = (E, clubeId, semana) =>
     agendaDoClube(E, clubeId).filter(j=>j.semana===semana);
 
+  /* a posição de um clube na tabela da competição — no grupo dele,
+     quando a competição tem mais de um.
+
+     `antesDe` = {semana, dia}: a rodada jogada nesse dia NÃO conta.
+     É o que a mensagem da nossa partida precisa (correção do dono,
+     22/08/2026): ela é escrita ANTES da bola rolar mas depois de o dia
+     ter sido simulado, então "o Fortaleza está em 15º" já vinha com o
+     resultado de hoje dentro — quem decorava a tabela sabia o placar
+     antes do apito. */
+  function posicaoNaTabela(E, compId, clubeId, antesDe){
+    const comp = ((E.temporada && E.temporada.competicoes) || [])
+      .find(c=>c.id === compId);
+    if(!comp || comp.copa) return 0;
+    const pular = antesDe ? (r, c, j)=>
+      ((j && j.s) || r.semana) === antesDe.semana &&
+      ((j && j.d) || r.dia || c.dia || DIA_FDS) === antesDe.dia : null;
+    let t;
+    if(comp.grupos.length > 1){
+      const gi = comp.grupos.findIndex(g=>g.includes(clubeId));
+      if(gi < 0) return 0;
+      t = tabela(comp, gi, pular);
+    } else {
+      t = tabela(comp, undefined, pular);
+    }
+    const i = t.findIndex(l=>l.id === clubeId);
+    return i < 0 ? 0 : i+1;
+  }
+
   /* O jogo da semana pra torcida. Numa semana com rodada de pontos
      corridos e jogo de copa, o que vale é o mata-mata: é dele que o
      bairro fala a semana inteira. */
   function jogoDaSemana(E, clubeId, semana){
     const lista = jogosDaSemana(E, clubeId, semana);
     if(!lista.length) return null;
-    const peso = j => (j.mata ? 2 : 0) + (j.dia===DIA_FDS ? 1 : 0);
+    /* domingo também é fim de semana: o árbitro da agenda manda jogo
+       pra lá (dono, 21/09/2026) */
+    const peso = j => (j.mata ? 2 : 0) + (j.dia >= DIA_FDS ? 1 : 0);
     return lista.slice().sort((a,b)=>peso(b)-peso(a))[0];
   }
 
   /* competições rolando nesta semana, pra tela de calendário */
   function faseDaSemana(semana){
-    return semana < INICIO_NACIONAL ? 'Regionais e estaduais' : 'Brasileirão';
+    return semana < INICIO_NACIONAL ? _t('Regionais e estaduais') : 'Brasileirão';
   }
 
   /* =======================================================
@@ -1183,6 +1748,57 @@ TO.competicoes = (function(){
     return mov;
   }
 
+  /* =======================================================
+     O QUE ESTÁ EM JOGO NUMA COMPETIÇÃO (pedido do dono,
+     21/08/2026): quantos sobem e quantos caem. É o que o
+     aviso de abertura precisa saber pra dizer quem são os
+     favoritos ao acesso e quem briga contra a queda.
+     ======================================================= */
+  function emJogo(comp){
+    const nome = (comp && comp.nome) || comp;
+    let sobem = 0, caem = 0;
+    const i = ESCADA.indexOf(nome);
+    if(i >= 0){
+      if(i > 0) sobem = TROCA;                    // a Série A não tem acesso
+      if(i < ESCADA.length - 1) caem = TROCA;     // da D ninguém cai
+    }
+    for(const {cima, baixo, troca} of ESCADA_REGIONAL){
+      if(nome === baixo) sobem = Math.max(sobem, troca);
+      if(nome === cima)  caem  = Math.max(caem, troca);
+    }
+    const cfg = FORMATO[nome];
+    if(cfg){
+      if(cfg.rebaixaPorGrupo) caem = Math.max(caem, cfg.rebaixaPorGrupo * (cfg.grupos||1));
+      if(cfg.sobemFinalistas) sobem = Math.max(sobem, 2);
+    }
+    return {sobem, caem};
+  }
+
+  /* os clubes de uma competição, do mais forte pro mais fraco.
+     A COPA NÃO TEM RODADA: ela nasce só com o mata-mata e a lista de
+     inscritos, então a lista é a fonte quando não há tabela. */
+  function porForca(E, comp){
+    const ids = new Set();
+    for(const r of (comp.rodadas||[])) for(const j of r.jogos){ ids.add(j.c); ids.add(j.f); }
+    if(!ids.size){
+      for(const id of (comp.clubes||[])) if(id) ids.add(id);
+      for(const m of (comp.mata||[])) for(const j of m.jogos){
+        if(j.c) ids.add(j.c); if(j.f) ids.add(j.f);
+      }
+    }
+    return [...ids].map(id=>({id, forca:forcaDe(E, id)}))
+                   .sort((a,b)=> b.forca - a.forca);
+  }
+
+  /* quando a bola rola pela primeira vez: a rodada 1, ou a primeira
+     fase do mata-mata pra quem não tem pontos corridos */
+  function estreiaDe(comp){
+    const r0 = (comp.rodadas||[])[0];
+    if(r0) return {semana:r0.semana, dia:r0.dia || DIA_FDS};
+    const m0 = (comp.mata||[])[0];
+    return m0 ? {semana:m0.semana, dia:m0.dia || comp.dia || DIA_FDS} : null;
+  }
+
   /* a competição `para` está acima de `de`? serve pro texto do aviso */
   function subiu(de, para){
     const ordem = ESCADA.concat(ESCADA_REGIONAL.flatMap(x=>[x.cima, x.baixo]));
@@ -1198,10 +1814,14 @@ TO.competicoes = (function(){
      ======================================================= */
   function etapas(comp){
     const dia = comp.dia || DIA_FDS;
-    const fora = comp.rodadas.map((r,i)=>({
-      rot:`Rodada ${i+1}`, semana:r.semana, dia, jogos:r.jogos, mata:false}));
+    /* a rodada pode trazer o próprio rótulo: a liga de fora chama a
+       fecha de mata-mata de "Semifinal", não de "Rodada 18" */
+    let n = 0;
+    const fora = comp.rodadas.map(r=>({
+      rot: r.rot ? _t(r.rot) : _t('Rodada {n}', {n:++n}), semana:r.semana, dia,
+      jogos:r.jogos, mata:!!r.rot}));
     for(const m of comp.mata)
-      fora.push({rot:m.fase, semana:m.semana, dia:m.dia||dia,
+      fora.push({rot:_t(m.fase), semana:m.semana, dia:m.dia||dia,
                  jogos:m.jogos, mata:true});
     return fora;
   }
@@ -1222,12 +1842,15 @@ TO.competicoes = (function(){
      só pra tabela não ficar com 38 linhas iguais. */
   const horaDoJogo = j => (j && j.h) || '16:00';
 
-  return {montarTemporada, jogarSemana, tabela, agendaDoClube, jogoDaSemana,
-          forcaDe, forcaBase, evoluirForca, usarSave,
+  return {montarTemporada, jogarSemana, jogarDia, tabela, agendaDoClube, jogoDaSemana, arrumarAgenda,
+          bonusTorcida,
+          forcaDe, forcaBase, evoluirForca, usarSave, forcaDivisao, ESCADA,
+          paisDe, paisDoJogador, simular, forca,
+          emJogo, porForca, estreiaDe, disputaDePenaltis,
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
-          jogosDaSemana, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
+          jogosDaSemana, posicaoNaTabela, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
           rivaisDiretos, ajustarMandos, piorSequencia, piorSequenciaEmCasa, diaDoJogo,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};

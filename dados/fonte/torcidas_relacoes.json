@@ -2416,7 +2416,7 @@
    "uf": "SE",
    "regiao": "Nordeste",
    "estadio": "Batistão",
-   "divisaoClube": 4,
+   "divisaoClube": 3,
    "bairroSede": "Dom Luciano",
    "fundacao": "08/08/1993",
    "cores": {
@@ -2693,7 +2693,7 @@
    "uf": "DF",
    "regiao": "Centro-Oeste",
    "estadio": "Serejão",
-   "divisaoClube": 4,
+   "divisaoClube": 3,
    "bairroSede": "Taguatinga",
    "fundacao": "20/05/2001",
    "cores": {
@@ -3217,7 +3217,7 @@
    "uf": "CE",
    "regiao": "Nordeste",
    "estadio": "Presidente Vargas",
-   "divisaoClube": 3,
+   "divisaoClube": 4,
    "bairroSede": "Antônio Bezerra",
    "fundacao": "04/11/1990",
    "cores": {
@@ -7883,7 +7883,7 @@
    "uf": "SP",
    "regiao": "Sudeste",
    "estadio": "Jorge Ismael de Biasi",
-   "divisaoClube": 3,
+   "divisaoClube": 4,
    "bairroSede": "Limeira",
    "fundacao": "01/04/1990",
    "cores": {
@@ -8760,7 +8760,7 @@
    "uf": "CE",
    "regiao": "Nordeste",
    "estadio": "Felipe Santiago",
-   "divisaoClube": 3,
+   "divisaoClube": 4,
    "bairroSede": "Conjunto Ceará",
    "fundacao": "01/01/2019",
    "cores": {
@@ -10255,7 +10255,7 @@
    "uf": "AL",
    "regiao": "Nordeste",
    "estadio": "Rei Pelé",
-   "divisaoClube": 4,
+   "divisaoClube": 3,
    "bairroSede": "Farol",
    "fundacao": "23/10/1992",
    "cores": {
@@ -12273,7 +12273,7 @@
    "uf": "AM",
    "regiao": "Norte",
    "estadio": "Arena da Amazônia",
-   "divisaoClube": 3,
+   "divisaoClube": 4,
    "bairroSede": "Comunidade da Sharp",
    "fundacao": "01/01/2020",
    "cores": {
@@ -13030,7 +13030,7 @@
    "uf": "AL",
    "regiao": "Nordeste",
    "estadio": "Rei Pelé",
-   "divisaoClube": 4,
+   "divisaoClube": 3,
    "bairroSede": "",
    "fundacao": "25/05/2010",
    "cores": {
@@ -15378,7 +15378,7 @@
    "uf": "SC",
    "regiao": "Sul",
    "estadio": "Arena Joinville",
-   "divisaoClube": 4,
+   "divisaoClube": 3,
    "bairroSede": "Joinville",
    "fundacao": "15/10/2001",
    "cores": {

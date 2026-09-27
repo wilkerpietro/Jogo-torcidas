@@ -42,6 +42,19 @@ LARG, ALT, CEL = 1536, 1024, 8
 COLS, ROWS = LARG // CEL, ALT // CEL
 QUINTAL = (74, 64, 52)          # o tom da faixa que sobra em cima e embaixo
 
+def foto(w, h, *r):
+    """Retangulo em PIXEL DA FOTO ORIGINAL (w x h) -> fracao da tela.
+    A casa de piscina tem parede reta de planta baixa: medir na foto
+    (com o zoom do visualizador) e escrever o numero e mais honesto do
+    que chutar fracao de tela. A conta e a mesma do `encaixar`."""
+    esc = LARG / w
+    topo = (ALT - round(h * esc)) // 2
+    x0, y0, x1, y1 = r
+    return (x0 / w, (topo + y0 * esc) / ALT, x1 / w, (topo + y1 * esc) / ALT)
+
+
+CASA = lambda *r: foto(2000, 1116, *r)
+
 FONTES = [
     {'id': 'praca', 'arquivo': 'Aerial_view_of_public_square_202608131340.jpeg',
      'saida': 'praca.webp',
@@ -92,16 +105,186 @@ FONTES = [
                  (0.16, 0.00, 0.37, 0.72),    # a vertical oeste
                  (0.62, 0.00, 0.91, 0.72),    # a vertical leste
                  (0.35, 0.28, 0.64, 0.72)]},  # o bar e a calcada dele
+
+    # ---- as SEDES (pedido do dono, 10/09/2026): cena de DENTRO ------
+    # Aqui a construcao nao sai por cor: a sede nao tem telhado, entao o
+    # topo do muro e o mesmo concreto cinza do patio. Sem `crista` a
+    # parede virava chao (medido: 73% do quadro). O recorte segura a rua
+    # inteira — e dela que o atacante spawna e caminha ate o portao — e o
+    # quarteirao da sede, deixando quintal de vizinho de fora.
+    {'id': 'sede-1', 'arquivo': 'sede_nivel_1.png', 'saida': 'sede_1.webp',
+     'crista': 8,
+     # so a rua: as salas tem de acender pela porta, e nao pela semente.
+     # Se alguma nao acender, a porta nao existe na foto.
+     'sementes': [(0.477, 0.80), (0.10, 0.80), (0.90, 0.80)],
+     'recorte': [(0.00, 0.545, 1.00, 0.930),    # a rua e os dois passeios
+                 (0.255, 0.085, 0.750, 0.575)]},# o quarteirao da sede
+
+    # ---- AS OUTRAS SEDES (fotos do dono, 22/09/2026): 2576x1438 do
+    #      Flow, a rua no quarto de baixo, o quarteirao sem telhado no
+    #      meio. Mesma receita da sede 1: crista tira o topo do muro, o
+    #      recorte segura a rua e o quarteirao, e as salas acendem pela
+    #      porta a partir da semente da rua. A semente extra e a calcada
+    #      na frente do portao, que na foto e um passeio claro e as
+    #      vezes nao encosta na pista por cor. O fino e do F2 (dono).
+    #      O nivel 6 usa a foto do 5 (decisao do dono, 10/09/2026).
+    {'id': 'sede-2', 'arquivo': 'sede_nivel_2.jpg', 'saida': 'sede_2.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85), (0.498, 0.72)],
+     'recorte': [(0.00, 0.69, 1.00, 0.93),      # a rua e os dois passeios
+                 (0.34, 0.25, 0.66, 0.70)]},    # o quarteirao da sede
+    {'id': 'sede-3', 'arquivo': 'sede_nivel_3.jpg', 'saida': 'sede_3.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85), (0.477, 0.72)],
+     'recorte': [(0.00, 0.69, 1.00, 0.93),
+                 (0.33, 0.20, 0.68, 0.745)]},
+    {'id': 'sede-4', 'arquivo': 'sede_nivel_4.jpg', 'saida': 'sede_4.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85),
+                  (0.40, 0.72), (0.60, 0.72), (0.70, 0.72)],   # portao, garagem, loja
+     'recorte': [(0.00, 0.69, 1.00, 0.93),
+                 (0.26, 0.23, 0.75, 0.70)]},
+    {'id': 'sede-5', 'arquivo': 'sede_nivel_5.jpg', 'saida': 'sede_5.webp',
+     'crista': 8,
+     'sementes': [(0.50, 0.85), (0.10, 0.85), (0.90, 0.85),
+                  (0.38, 0.72), (0.66, 0.72), (0.75, 0.72)],   # portao, loja, garagem
+     'recorte': [(0.00, 0.69, 1.00, 0.93),
+                 (0.19, 0.225, 0.815, 0.695)]},
+
+    # ---- lote de 19/08 (pedido do dono): tretas, emboscadas, CT e
+    #      os tres estadios por capacidade -------------------------------
+    # 5x5: a viela entre os quintais — corredor apertado de ponta a ponta
+    {'id': 'treta-beco', 'arquivo': 'treta_beco.jpeg',
+     'saida': 'treta_beco.webp', 'corredor': True,
+     'sementes': [(0.50, 0.50), (0.15, 0.50), (0.85, 0.50),
+                  (0.35, 0.47), (0.65, 0.53)],
+     # sem o recorte, a folga de calcada do corredor subia nos
+     # terracos dos dois cantos de cima
+     'recorte': [(0.00, 0.30, 1.00, 0.66)]},
+    # 7x7: o patio do galpao — placa de concreto murada, rua na borda
+    {'id': 'treta-galpao', 'arquivo': 'treta_galpao.jpeg',
+     'saida': 'treta_galpao.webp',
+     'sementes': [(0.45, 0.45), (0.60, 0.55), (0.30, 0.60), (0.55, 0.28),
+                  (0.35, 0.32), (0.70, 0.65), (0.25, 0.72)],
+     # so o patio: sem o recorte a conectividade escorre pro telhado do
+     # galpao e pras ruas em volta, e a treta e murada de proposito
+     'recorte': [(0.08, 0.16, 0.88, 0.82)]},
+    # 10x10: o campo de terra murado — a arena inteira e o chao
+    {'id': 'treta-campo', 'arquivo': 'treta_campo.jpeg',
+     'saida': 'treta_campo.webp', 'terra': True,
+     'sementes': [(0.50, 0.50), (0.35, 0.35), (0.65, 0.65), (0.30, 0.65),
+                  (0.70, 0.35), (0.50, 0.25), (0.50, 0.75)],
+     'recorte': [(0.16, 0.20, 0.86, 0.80)]},
+    # emboscada 1: o patio do posto de gasolina, com a pista embaixo
+    {'id': 'emb-posto', 'arquivo': 'emb_posto.jpeg',
+     'saida': 'emb_posto.webp',
+     'sementes': [(0.50, 0.50), (0.25, 0.42), (0.75, 0.42), (0.15, 0.70),
+                  (0.85, 0.68), (0.50, 0.70), (0.50, 0.92), (0.20, 0.92),
+                  (0.80, 0.92)]},
+    # emboscada 2: a estrada com o onibus parado no meio da pista
+    {'id': 'emb-onibus', 'arquivo': 'emb_onibus.jpeg',
+     'saida': 'emb_onibus.webp', 'corredor': True, 'terra': True,
+     'sementes': [(0.50, 0.48), (0.10, 0.52), (0.90, 0.45),
+                  (0.30, 0.55), (0.70, 0.50)]},
+    # frente do CT: a esplanada do portao e a rua embaixo
+    {'id': 'ct', 'arquivo': 'ct_frente.jpeg',
+     'saida': 'ct_frente.webp',
+     'sementes': [(0.50, 0.50), (0.25, 0.50), (0.75, 0.50), (0.50, 0.35),
+                  (0.15, 0.62), (0.85, 0.60), (0.20, 0.85), (0.80, 0.85),
+                  (0.50, 0.80)]},
+    # os tres estadios: anda-se no anel de rua e estacionamento em volta
+    # da arquibancada — o miolo (bancada e gramado) fica de fora pelo
+    # recorte, e os portoes moram na beira do anel
+    # o estadio pequeno nao tem anel externo continuo (casa encostada
+    # na borda da foto): o chao e a PROPRIA arquibancada, mais o
+    # terreirao da esquerda e a rua da direita — o gramado (mato) fica
+    # de fora sozinho
+    {'id': 'estadio-10', 'arquivo': 'estadio_10.jpeg',
+     'saida': 'estadio_10.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.05, 0.30), (0.05, 0.70), (0.95, 0.30), (0.95, 0.70),
+                  (0.09, 0.36),
+                  (0.50, 0.88), (0.50, 0.10), (0.17, 0.50), (0.83, 0.50),
+                  (0.25, 0.15), (0.75, 0.15), (0.25, 0.85), (0.75, 0.85)],
+     'excluir': [(0.155, 0.155, 0.855, 0.845)]},
+    # a briga e NA ARQUIBANCADA (setores do dono, 19/08/2026): o chao
+    # e a propria bancada; o gramado (mato) e o fosso ficam de fora
+    {'id': 'estadio-20', 'arquivo': 'estadio_20.jpeg',
+     'saida': 'estadio_20.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.50, 0.12), (0.50, 0.88), (0.13, 0.50), (0.87, 0.50),
+                  (0.25, 0.20), (0.75, 0.20), (0.25, 0.80), (0.75, 0.80),
+                  (0.18, 0.35), (0.82, 0.35), (0.18, 0.65), (0.82, 0.65)],
+     'recorte': [(0.05, 0.04, 0.95, 0.96)],
+     'excluir': [(0.245, 0.215, 0.755, 0.795)]},
+    {'id': 'estadio-40', 'arquivo': 'estadio_40.jpeg',
+     'saida': 'estadio_40.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.50, 0.10), (0.50, 0.90), (0.09, 0.50), (0.91, 0.50),
+                  (0.30, 0.15), (0.70, 0.15), (0.30, 0.85), (0.70, 0.85),
+                  (0.15, 0.30), (0.85, 0.30), (0.15, 0.70), (0.85, 0.70)],
+     'recorte': [(0.02, 0.02, 0.98, 0.98)],
+     'excluir': [(0.275, 0.235, 0.725, 0.775)]},
+
+    # ---- CASA DE PISCINA (pedido do dono, 21/09/2026): a resenha da
+    #      zona numa casa de praia. Foto zenital 2000x1116 (Google Flow):
+    #      a rua de areia embaixo, o lote murado no meio — garagem e casa
+    #      na esquerda, quintal de areia com dois carros, deck com
+    #      piscina na direita, portao na quina de baixo/direita.
+    #      AQUI A PAREDE NAO SAI POR COR NEM POR CRISTA: o topo do muro e
+    #      o piso sao o mesmo creme, e a `crista` (que serve na sede)
+    #      apagava o deck inteiro ao lado da piscina escura (medido: deck
+    #      22% de chao, quartos fechados). A planta e reta, entao as
+    #      paredes sao ditas na mao, em pixel da foto, com `excluir`; os
+    #      vaos de porta que a sombra fecharia sao abertos com `abrir`.
+    #      A garagem fica fechada (na foto ela nao tem vao pra rua nem
+    #      pro quintal) e os dois carros sao obstaculo.
+    {'id': 'casa-piscina', 'arquivo': 'casa_piscina.jpg',
+     'saida': 'casa_piscina.webp', 'terra': True, 'claro': True,
+     'sementes': [(0.50, 0.756), (0.15, 0.719), (0.85, 0.719),  # a rua
+                  (0.625, 0.651),                                # o portao
+                  (0.60, 0.531), (0.45, 0.501), (0.725, 0.531),  # o quintal
+                  (0.725, 0.306), (0.56, 0.418), (0.56, 0.231),  # o deck
+                  (0.475, 0.395), (0.425, 0.246),                # sala, hall
+                  (0.35, 0.253), (0.50, 0.253),                  # quartos
+                  (0.34, 0.418), (0.33, 0.332)],                 # deposito, banheiro
+     # a rua inteira e o lote; as casas da frente e os vizinhos ficam fora
+     'recorte': [CASA(0, 740, 2000, 990), CASA(505, 55, 1505, 750)],
+     'excluir': [
+         CASA(590, 526, 835, 750),                       # a garagem, fechada
+         CASA(890, 578, 1160, 712), CASA(1258, 528, 1432, 718),   # os carros
+         # as quatro paredes de fora da casa
+         CASA(590, 128, 1090, 140), CASA(586, 128, 600, 530),
+         CASA(1076, 128, 1092, 530), CASA(590, 524, 1090, 550),
+         # quarto 1 | hall | quarto 2 (as portas dos quartos dao no hall)
+         CASA(786, 130, 806, 262), CASA(910, 130, 928, 262),
+         CASA(590, 292, 788, 306), CASA(910, 296, 1090, 308),
+         # banheiro e vestibulo; a porta do deposito e no vestibulo
+         CASA(590, 366, 754, 378), CASA(790, 366, 830, 378),
+         CASA(728, 340, 742, 372),
+         CASA(820, 366, 834, 526),                       # deposito | sala
+         CASA(754, 436, 800, 448), CASA(752, 436, 764, 526),  # o quartinho
+         CASA(662, 166, 742, 250), CASA(990, 170, 1070, 258),  # as camas
+         CASA(610, 382, 654, 418), CASA(618, 410, 646, 526),   # tralha do deposito
+         CASA(726, 498, 758, 526),
+         CASA(1150, 136, 1500, 150)],                    # o muro do deck (da faixa)
+     'abrir': [
+         CASA(605, 64, 1495, 126),        # a passagem atras da casa
+         CASA(818, 124, 890, 176),        # a porta dos fundos do hall
+         CASA(1092, 118, 1150, 165),      # a boca da passagem no deck
+         CASA(836, 520, 900, 560)]},      # a porta da frente
 ]
 
 
 # ------------------------------------------------------------------ encaixe
 def encaixar(img):
-    """Largura inteira, sem distorcer. O que falta de altura vira quintal."""
+    """Largura inteira, sem distorcer. O que falta de altura vira quintal.
+    Foto mais ALTA que a tela (as 4:3 do lote de 19/08) é cortada
+    centrada — colar com topo negativo zerava a máscara inteira."""
     esc = LARG / img.width
     novo = img.resize((LARG, round(img.height * esc)), Image.LANCZOS)
     tela = Image.new('RGB', (LARG, ALT), QUINTAL)
     topo = (ALT - novo.height) // 2
+    if topo < 0:
+        novo = novo.crop((0, -topo, LARG, -topo + ALT))
+        topo = 0
     tela.paste(novo, (0, topo))
     return tela, topo, novo.height
 
@@ -155,7 +338,9 @@ def recortar(forma, retangulos):
     return fica
 
 
-def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
+def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
+         terra=False, claro=False, engorda=0, excluir=None, crista=0,
+         abrir=None):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -168,6 +353,28 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
     agua = (B > R + 20) & (B > G + 8)
     cinza = (sat < 34) & ~telha & ~mato & ~agua
     cand = cinza & (lum > 42) & (lum < 232)
+    if terra:
+        # campo de terra e estrada de barro: marrom claro, pouco saturado
+        # demais pra ser telha e sem verde de mato
+        chao_terra = (sat < 78) & (R >= G) & (G >= B) & ~mato & \
+                     (lum > 78) & (lum < 225)
+        cand |= chao_terra
+    if claro:
+        # passeio de concreto branco estourado de sol (o anel do estadio
+        # pequeno): mais claro que o teto normal de 232
+        cand |= cinza & (lum >= 232) & (lum < 253)
+
+    # PAREDE DE SEDE É CRISTA DE BRILHO (cenas de dentro, 10/09/2026).
+    # Nas cenas de fora a construção some por cor: telha é laranja, mato é
+    # verde. Dentro de uma sede sem telhado não há telha nenhuma — o topo
+    # do muro é o MESMO concreto cinza do pátio, e cor não separa os dois
+    # (medido: 73% do quadro virava chão, muro incluído). O que separa é a
+    # forma: o topo da parede é uma faixa mais clara que a vizinhança dela,
+    # e o piso é chapado. Tira-se o que está `crista` acima da mediana de
+    # janela larga, ANTES da morfologia, senão a textura do piso vira
+    # cisco e o vão da porta fecha.
+    if crista:
+        cand &= (lum - nd.uniform_filter(lum.astype(np.float32), 61)) <= crista
 
     # a faixa de quintal, em cima e embaixo, nunca é chão
     cand[:topo, :] = False
@@ -179,6 +386,16 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
         cand &= corredor(asf)
     if recorte:
         cand &= recortar(cand.shape, recorte)
+    if excluir:
+        # o inverso do recorte: DENTRO destes retangulos nao ha chao.
+        # E o gramado dos estadios — a briga e na arquibancada, e sem
+        # isto o campo de terra batida do estadio pequeno vira palco.
+        cand &= ~recortar(cand.shape, excluir)
+    if abrir:
+        # o VAO DE PORTA dito na mao: chao por decreto, por cima de cor e
+        # de `excluir` — e a passagem atras da casa de piscina, que a
+        # foto mostra na sombra e a cor nao pega
+        cand |= recortar(cand.shape, abrir)
 
     # fecha junta e remove cisco antes de olhar conectividade
     cand = nd.binary_closing(cand, np.ones((5, 5)))
@@ -194,6 +411,10 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None):
             if k:
                 fica[k] = True
     m = fica[lab]
+    if engorda:
+        # anel estreito demais pro corpo passar (malha do corpo erode a
+        # mascara): engorda o chao uns pixels pra rota existir
+        m = nd.binary_dilation(m, np.ones((engorda, engorda)))
 
     # tapa buraco pequeno (carro, bueiro, sombra) e volta a limpar borda
     m = nd.binary_closing(m, np.ones((9, 9)))
@@ -271,7 +492,10 @@ def main():
 
         a = np.asarray(tela).astype(np.int16)
         m = chao(a, f['sementes'], topo, altura,
-                 f.get('corredor', False), f.get('recorte'))
+                 f.get('corredor', False), f.get('recorte'),
+                 f.get('terra', False), f.get('claro', False),
+                 f.get('engorda', 0), f.get('excluir'), f.get('crista', 0),
+                 f.get('abrir'))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

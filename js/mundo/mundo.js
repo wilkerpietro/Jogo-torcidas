@@ -27,17 +27,14 @@ TO.mundo = (function(){
   /* torcidas jogáveis: as completas (a fonte tem um asset vazio) */
   const jogaveis = () => O().filter(o=>!o.incompleta);
 
-  /* Quem dá pra COMANDAR. O mundo inteiro roda com as 139 torcidas, mas
-     começar uma partida exige uma praça que o mapa saiba desenhar por
-     inteiro — as cinco cidades Grandes do GDD §10.1. Nelas os bairros
-     chegam a 16 e a cruz por zona fecha nos quatro lados; numa praça
-     Pequena de 8 bairros a cidade sai magra demais pra sustentar uma
-     temporada de briga de rua. As outras continuam existindo, brigando e
-     aparecendo no noticiário — só não são jogáveis. */
-  const PRACA_JOGAVEL = 'Grande';
+  /* Quem dá pra COMANDAR: todas (decisão do autor). O mapa como tela
+     saiu do jogo, e a geometria que sobrou — sede, bar, estádio, bairro
+     da briga — a planta gerada resolve pra praça de qualquer tamanho.
+     Só fica de fora torcida de praça que a fonte não descreve. */
+  const PRACA_JOGAVEL = 'Grande';   // ainda decide quem herda a foto
   const selecionaveis = () => jogaveis().filter(o=>{
     const c = cidade(o.mapa);
-    return c && c.tamanho === PRACA_JOGAVEL;
+    return c && (c.bairros||[]).length;
   });
 
   const torcidasDe = idClube => O().filter(o=>o.clubeId===idClube);
@@ -193,12 +190,26 @@ TO.mundo = (function(){
   const territorios = o => Math.max(1, Math.round((o.membros||20)/16));
 
   /* tudo que a seleção e a diplomacia precisam, num objeto só */
+  /* =======================================================
+     A RIVALIDADE MÁXIMA É A DO MESMO TAMANHO (régua do dono,
+     22/08/2026): rivalidade não se mede por ordem de lista — a briga
+     que interessa é a de igual pra igual. Entre todos os rivais
+     declarados, vale o de efetivo mais próximo do nosso; empatou, o
+     maior rival declarado tem a preferência, porque vem primeiro.
+     ======================================================= */
+  function rivalPareado(o){
+    const lista = [...(o.maioresRivais||[]), ...(o.rivais||[])]
+      .map(id => torcida(id)).filter(Boolean);
+    if(!lista.length) return null;
+    const meu = o.membros || 0;
+    return lista.reduce((a, b)=>
+      Math.abs((b.membros||0) - meu) < Math.abs((a.membros||0) - meu) ? b : a);
+  }
+
   function ficha(o){
     const t = time(o.clubeId) || {};
     const c = cidade(o.mapa)  || {};
-    const rel = relacoesDe(o.id);
-    const maior = rel.find(r=>r.tipo==='Maior Rival')
-               || rel.find(r=>r.tipo==='Rival');
+    const par = rivalPareado(o);
     return {
       id:o.id, nome:o.nome, cores:o.cores, detalhe:o.detalhe,
       fundacao:o.fundacao, membros:o.membros, bairroSede:o.bairroSede,
@@ -209,12 +220,14 @@ TO.mundo = (function(){
       divisao:t.divisao || `Série ${'ABCD'[(o.divisaoClube||1)-1] || '?'}`,
       regional:t.regional || '', mapa:o.mapa,
       grade:c.grade || [8,8], nivelCidade:c.nivel || 3,
-      sedeNivel:o.sedeNivel || 1,
+      /* a pequena (até 30) mora no ponto de encontro: nível 0 (dono, 22/09/2026) */
+      sedeNivel:(o.membros || 60) <= 30 ? 0 : (o.sedeNivel || 1),
       prestigio:o.prestigio || 15, moral:o.moral || 60,
       dinheiro:o.saldo || 0, poder:o.poder || 0,
       influencia:influencia(o), territorios:territorios(o),
       cargos:o.cargos || {},
-      rival: maior ? maior.nome : '—',
+      rival: par ? par.nome : '—',
+      rivalMembros: par ? (par.membros||0) : 0,
       qtdAliados: (o.aliados||[]).length + (o.irmandade||[]).length,
       qtdRivais:  (o.rivais||[]).length + (o.maioresRivais||[]).length
     };
@@ -251,6 +264,115 @@ TO.mundo = (function(){
     return fora;
   }
 
+  /* =======================================================
+     A TORCIDA DO CLUBE NA CIDADE É VIVA (ordem do dono, 02/09/2026)
+
+     O número da planilha é só o PONTO DE PARTIDA: a cada virada de
+     ano a fase do clube mexe nele (foi bem: +3 a 5%; foi mal: −3 a
+     5%) e a cidade cresce (grande +30–50, média +10–20, pequena
+     +5–10 pessoas/ano), com o crescimento repartido de forma NÃO
+     proporcional entre os clubes que já têm torcida na praça. O
+     valor corrente mora em E.torcedoresEv ("cidade|clube" → n);
+     quem quer saber quantos são AGORA pergunta aqui, nunca à
+     planilha.
+     ======================================================= */
+  function torcedoresDoClubeNa(cidadeId, clubeId){
+    const E = TO.estado && TO.estado.E;
+    const ev = E && E.torcedoresEv;
+    const ch = cidadeId + '|' + clubeId;
+    if(ev && ev[ch] != null) return ev[ch];
+    const c = cidade(cidadeId);
+    const t = c && (c.times||[]).find(x=>x.clubeId === clubeId);
+    return t ? (t.torcedores||0) : 0;
+  }
+
+  /* a virada do ano: `mov` é o sobe-e-desce que a temporada fechou.
+     Vai bem = campeão de série, acesso ou G-4 da Série A; vai mal =
+     rebaixado ou entre os 4 últimos da Série D. Quem faz os dois no
+     mesmo ano (não deveria existir) fica neutro. */
+  function evoluirTorcedores(E, mov){
+    const S = E && E.temporada;
+    if(!S || !S.competicoes) return null;
+    const C = TO.competicoes;
+    const por = {};
+    for(const c of S.competicoes) por[c.nome] = c;
+    const bem = new Set(), mal = new Set();
+    const A = por['Brasileirão Série A'], D = por['Brasileirão Série D'];
+    if(A) for(const id of C.melhores(A, 4)) bem.add(id);
+    for(const nome of ['Brasileirão Série A','Brasileirão Série B',
+                       'Brasileirão Série C','Brasileirão Série D']){
+      const comp = por[nome];
+      if(!comp) continue;
+      const campeao = comp.campeao || (C.melhores(comp, 1)||[])[0];
+      if(campeao) bem.add(campeao);
+    }
+    for(const m of (mov||[])){
+      if(!/Série/.test(m.de || '') || !/Série/.test(m.para || '')) continue;
+      (C.subiu(m.de, m.para) ? bem : mal).add(m.id);
+    }
+    if(D) for(const id of C.piores(D, 4)) mal.add(id);
+
+    /* A MESMA RÉGUA EM CADA PAÍS (ordem do dono, 02/09/2026): as ligas
+       de fora fecham o ano com campeão, sobem e caem por divisão — e a
+       tabela anual dá o G-4 da primeira e os 4 últimos da última. Isto
+       roda ANTES do montar() rearmar o ano novo, então E.ligas ainda é
+       a temporada que fechou. */
+    const LIGAS = E.ligas && E.ligas.paises;
+    if(LIGAS) for(const pais of Object.keys(LIGAS)){
+      const nomes = Object.keys(LIGAS[pais].divisoes || {});
+      nomes.forEach((nome, k)=>{
+        const div = LIGAS[pais].divisoes[nome];
+        if(!div) return;
+        if(div.campeao) bem.add(div.campeao);
+        for(const id of (div.sobem||[])) bem.add(id);
+        for(const id of (div.caem||[]))  mal.add(id);
+        const tabela = Object.values(div.anual || {})
+          .sort((a,b)=> b.p - a.p || (b.gp-b.gc) - (a.gp-a.gc));
+        if(k === 0)
+          for(const l of tabela.slice(0, 4)) bem.add(l.id);
+        if(k === nomes.length-1 && tabela.length > 4)
+          for(const l of tabela.slice(-4)) mal.add(l.id);
+      });
+    }
+    for(const id of [...bem]) if(mal.has(id)){ bem.delete(id); mal.delete(id); }
+
+    E.torcedoresEv = E.torcedoresEv || {};
+    const irand = n => Math.floor(Math.random()*n);
+    const registro = {ano:S.ano, bem:[...bem], mal:[...mal], cidades:{}};
+    for(const c of (TO.dados.cidades||[])){
+      const ts = c.times || [];
+      if(!ts.length) continue;
+      /* 1 · a fase do clube mexe na torcida dele em CADA praça */
+      for(const t of ts){
+        const f = bem.has(t.clubeId) ? 1 + (3 + Math.random()*2)/100
+                : mal.has(t.clubeId) ? 1 - (3 + Math.random()*2)/100 : 0;
+        if(!f) continue;
+        const atual = torcedoresDoClubeNa(c.id, t.clubeId);
+        E.torcedoresEv[c.id+'|'+t.clubeId] =
+          Math.max(1, Math.round(atual * f));
+      }
+      /* 2 · a cidade cresce, e o crescimento se reparte de forma NÃO
+         proporcional entre quem já tem torcida nela */
+      const cresce = c.tamanho === 'Grande' ? 30 + irand(21)
+                   : c.tamanho === 'Médio'  ? 10 + irand(11)
+                   :                           5 + irand(6);
+      registro.cidades[c.id] = cresce;
+      const pesos = ts.map(()=>0.2 + Math.random());
+      const soma = pesos.reduce((a,b)=>a+b, 0);
+      let resto = cresce;
+      ts.forEach((t, i)=>{
+        const q = i === ts.length-1 ? resto
+                : Math.round(cresce * pesos[i] / soma);
+        resto -= q;
+        if(q <= 0) return;
+        E.torcedoresEv[c.id+'|'+t.clubeId] =
+          torcedoresDoClubeNa(c.id, t.clubeId) + q;
+      });
+    }
+    E.torcedoresRegistro = registro;
+    return registro;
+  }
+
   /* GDD §6.2: base não organizada = torcedores do clube na cidade,
      menos quem já está em alguma organizada daquele clube */
   /* Quem sobra pra recrutar: o torcedor do clube que mora na praça e
@@ -266,7 +388,7 @@ TO.mundo = (function(){
     const organizados = torcidasEm(idCidade)
       .filter(o=>o.clubeId===idClube)
       .reduce((s,o)=>s+conta(o), 0);
-    return Math.max(0, (t.torcedores||0) - organizados);
+    return Math.max(0, torcedoresDoClubeNa(idCidade, idClube) - organizados);
   }
 
   function sigla(f){
@@ -318,12 +440,31 @@ TO.mundo = (function(){
      `cores[1:]` seguida de `detalhe` que seja DIFERENTE da primária;
      não havendo nenhuma, a secundária é nula e o miolo cai no tom claro
      genérico do lado, que é o que o jogo já fazia. */
+  /* duas cores quase iguais não contam como duas: sem isto a paleta
+     completada pelo clube dava dois azuis gêmeos no mesmo disco */
+  function coresParecidas(a, b){
+    const n = c => [1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+    const [r1,g1,b1] = n(a), [r2,g2,b2] = n(b);
+    return Math.hypot(r1-r2, g1-g2, b1-b2) < 60;
+  }
   function coresDaTorcida(o){
     const lista = [...((o && o.cores) || []), o && o.detalhe]
       .filter(Boolean).map(c=>String(c).toUpperCase());
-    const cor = lista[0] || null;
-    const cor2 = lista.slice(1).find(c=>c !== cor) || null;
-    return {cor, cor2};
+    /* TODAS as cores são da torcida (pedido do dono, 18/08/2026): a
+       fonte de muitas é curta — a TUF vem só com branco e azul —,
+       então a paleta se completa com as cores do CLUBE, que é de onde
+       a camisa vem (o Fortaleza é tricolor, a TUF também). */
+    const t = o && o.clubeId ? time(o.clubeId) : null;
+    for(const c of (t && t.cores) || [])
+      lista.push(String(c).toUpperCase());
+    const dist = [];
+    for(const c of lista){
+      if(!/^#[0-9A-F]{6}$/.test(c)) continue;
+      if(!dist.some(x => coresParecidas(x, c))) dist.push(c);
+      if(dist.length === 3) break;
+    }
+    return {cor: dist[0] || null, cor2: dist[1] || null,
+            cor3: dist[2] || null};
   }
 
   function adversario(idClube){
@@ -440,6 +581,7 @@ TO.mundo = (function(){
           torcidasDe, torcidasEm, timesEm,
           CLASSES, ZONAS, bairrosDe, bairro, bairroDaSede, multiplicador,
           bairrosPorZona, baseDeRecrutamento,
+          torcedoresDoClubeNa, evoluirTorcedores,
           estadio, estadiosEm, estadioDoClube,
           TIPOS, valorInicial, statusDoValor, relacaoBase, saoIrmas,
           estiloRelacao, relacoesDe,

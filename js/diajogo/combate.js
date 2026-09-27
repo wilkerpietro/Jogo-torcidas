@@ -122,6 +122,7 @@ TO.diaJogo.combate = (function(){
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
       this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
       this.vadiando=false;  // noite tranquila: fica de conversa até a hora
+      this.sentado=false;   // na roda da reunião: não anda, não é empurrado
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
       /* sinais só de desenho: a cena de perto e a de cima leem e animam,
          ninguém decide nada por eles. `apanhou` acende quando leva
@@ -289,6 +290,10 @@ TO.diaJogo.combate = (function(){
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
       config_perfilRival: cfg.perfilRival || null,
+      /* fichas prontas pro lado deles (a zona deles na casa de piscina):
+         cada grupo tira a sua fatia, na ordem, em vez de cada spawn
+         receber o topo do plantel de novo */
+      config_fichasRival: cfg.fichasRival || null, _fichasIdx:0,
       /* onde a briga cai: arredores do estádio, praça ou rua. Muda o
          tamanho do bonde rival e a pressa da PM (GDD §12). */
       local: cfg.local || 'arredores',
@@ -314,7 +319,8 @@ TO.diaJogo.combate = (function(){
     };
 
     for(const g of J.grades){ g.hpMax=P.vidaGrade; g.hp=P.vidaGrade; }
-    for(const p of D.pmPostos) J.policiais.push(new Policial(p));
+    /* a reunião não tem PM (a praça tem posto; a roda não) */
+    if(!cfg.reuniao) for(const p of D.pmPostos) J.policiais.push(new Policial(p));
 
     /* ---- povoa cada spawn ----
        Com escalação, cada disco É um membro: nome, força, defesa e moral
@@ -407,9 +413,17 @@ TO.diaJogo.combate = (function(){
                     || alvo.find(g=>g.s.jogador) || alvo[0] || null;
     const fichas = new Map();
     if(temEscalacao && grupoLider){
-      /* o mais rodado vai no bonde do jogador e vira o líder */
-      const fila=[...cfg.escalacao].sort((a,b)=>b.xp-a.xp);
-      fichas.set(grupoLider, [fila.shift()]);
+      /* O LÍDER É O PRESIDENTE (pedido do dono, 22/09/2026): o boneco
+         que o jogador controla é o membro batizado na abertura. Preso,
+         ferido ou fora desta escalação (a zona da casa de piscina, o
+         núcleo da filial), o controle passa ao mais forte que desceu —
+         força e defesa, e o mais rodado no desempate. */
+      const pres = (TO.estado && TO.estado.E) ? TO.estado.E.presidenteId : null;
+      const fila=[...cfg.escalacao].sort((a,b)=>
+        ((b.forca||0)+(b.defesa||0))-((a.forca||0)+(a.defesa||0)) || (b.xp||0)-(a.xp||0));
+      const iP = pres != null ? fila.findIndex(m=>m.id === pres) : -1;
+      const chefe = iP >= 0 ? fila.splice(iP, 1)[0] : fila.shift();
+      fichas.set(grupoLider, [chefe]);
       let k=0;
       for(const m of fila){
         const g = alvo[k++ % alvo.length];
@@ -514,7 +528,54 @@ TO.diaJogo.combate = (function(){
     /* `J.faixa` continua apontando pra faixa de quem defende (a
        primeira): é o nome que a ponte e os testes conhecem */
     J.faixa = J.faixas[0] || null;
+    /* A REUNIÃO É SÓ NOSSA (22/09/2026): na praça a cena tem portão do
+       outro lado e nasceria rival; na roda não há rival nem PM */
+    if(cfg.reuniao){
+      J.discos = J.discos.filter(d=>d.doJogador);
+      J.total = {mandante:J.discos.filter(d=>d.lado==='mandante').length,
+                 visitante:J.discos.filter(d=>d.lado==='visitante').length};
+    }
+    if(D.cadeiras && D.cadeiras.length) sentarNaRoda(J);
     return J;
+  }
+
+  /* =======================================================
+     AS CADEIRAS DA REUNIÃO (pedido do dono, 22/09/2026)
+     Cena sem briga: a diretoria sentada nas cadeiras — em C quadrado,
+     com a abertura pra direita (correção do dono, 22/09/2026) — e o
+     presidente — o líder, o boneco do jogador — em pé sozinho do lado
+     direito, virado pra eles. A forma é da CENA: cada cadeira de
+     `D.cadeiras` tem posição e rumo (pra onde o sentado olha), na
+     ordem em que se senta; `D.presidente` é o lugar dele. Quem não
+     coube nas cadeiras sai da cena: reunião é da diretoria, não do
+     bonde inteiro.
+     ======================================================= */
+  function sentarNaRoda(J){
+    const nossos = J.discos.filter(d=>d.doJogador && d.vivo);
+    const lider = nossos.find(d=>d.lider) || null;
+    const resto = nossos.filter(d=>d!==lider);
+    const cad = D.cadeiras.slice();
+    /* a mesma cadeira pro mesmo membro toda reunião: pela ficha */
+    resto.sort((a,b)=>(a.membroId||0)-(b.membroId||0));
+    const ficam = resto.slice(0, cad.length), saem = resto.slice(cad.length);
+    ficam.forEach((d, i)=>{
+      const c = cad[i];
+      d.x = c.x; d.y = c.y; d.vx = d.vy = 0;
+      d.rumo = c.rumo != null ? c.rumo : Math.atan2(A.W/2 - c.x, A.H/2 - c.y);
+      d.sentado = true; d.guarda = false; d.vadiando = false;
+    });
+    for(const d of saem){ d.vivo = false; d.sumiu = true; }
+    J.discos = J.discos.filter(d=>!saem.includes(d));
+    if(lider && D.presidente){
+      lider.x = D.presidente.x; lider.y = D.presidente.y; lider.vx = lider.vy = 0;
+      lider.rumo = D.presidente.rumo != null ? D.presidente.rumo
+                 : Math.atan2(A.W/2 - lider.x, A.H/2 - lider.y);
+    }
+    J.reuniao = true;
+    /* quem está com a palavra (o balão aberto): quem monta a cena põe
+       o disco aqui e o boneco gesticula; os outros viram a cabeça */
+    J.falante = null;
+    return ficam.length;
   }
 
   /* PORTÃO SELADO É BUG DE ARTE, E BUG DE ARTE TEM DE APARECER.
@@ -621,6 +682,20 @@ TO.diaJogo.combate = (function(){
                .slice(0, qtd);
   }
 
+  /* A ZONA DELES (régua do dono, 22/09/2026): o plantel inteiro da
+     torcida é gerado, repartido nas quatro zonas — a fila ordenada por
+     força, um pra cada zona, na roda — e a zona pedida leva os seus
+     mais fortes, até `qtd`. É a mesma régua da nossa zona
+     (`acoes.bondeDaZona`): os mais fortes DAQUELA zona, não da torcida. */
+  function fichasDaZona(perfil, zonaIdx, qtd){
+    const p = perfil || {};
+    const tamanho = Math.max(qtd, Math.min(p.membros || 60, 250));
+    const todos = fichasDoPerfil(p, tamanho);
+    const nZ = 4, z = ((zonaIdx|0) % nZ + nZ) % nZ;
+    const daZona = todos.filter((f, i) => i % nZ === z);
+    return (daZona.length ? daZona : todos).slice(0, qtd);
+  }
+
   function bancoDeApelidos(){
     const N = TO.dados.nomes;
     if(!N) return ['TROVÃO'];
@@ -652,7 +727,13 @@ TO.diaJogo.combate = (function(){
       idx[rotN] = de + qtd;
     } else nomes = nomes || U.embaralhar(bancoDeApelidos());
     const perfil = (g.bonde && g.bonde.perfil) || J.config_perfilRival || null;
-    const geradas = meuLado ? null : fichasDoPerfil(perfil, qtd);
+    let geradas = null;
+    if(!meuLado){
+      const prontas = J.config_fichasRival;
+      const fatia = prontas ? prontas.slice(J._fichasIdx, J._fichasIdx + qtd) : [];
+      if(prontas) J._fichasIdx += qtd;
+      geradas = fatia.length ? fatia : fichasDoPerfil(perfil, qtd);
+    }
     /* só o nosso bonde obedece à formação; aliado que divide o portão não */
     const meu = g.bonde ? !!g.bonde.nossa : !!s.jogador;
     /* LADO A LADO, COMO NO QUADRADO (pedido do dono, 19/08/2026).
@@ -850,7 +931,7 @@ TO.diaJogo.combate = (function(){
     b.agirEm = J.t;
     b.entraEm = b.entraEm || (J.t + 90);
     if(b.humor === 'atacar') J.paz = false;
-    logar(J, `${bonde.nome} chegou na esplanada.`, bonde.nossa ? 'v' : 'a');
+    logar(J, _t('{nome} chegou na esplanada.', {nome:bonde.nome}), bonde.nossa ? 'v' : 'a');
     return s.id;
   }
 
@@ -940,6 +1021,20 @@ TO.diaJogo.combate = (function(){
      deixava o vencedor sozinho no cenário sem nada pra fazer.
      ======================================================= */
   const dePe = (J,lado)=> J.discos.filter(d=>d.lado===lado && d.vivo).length;
+  /* quem este disco escolta: o portador da faixa do lado dele, quando a
+     cena tem abrigo (casa de piscina), a faixa está na mão, o lado dele
+     está em menor número e não há inimigo a 110 px — com inimigo em
+     cima, briga como sempre. O líder do jogador fica de fora: ele é
+     quem manda. */
+  function escoltaDaFaixa(J, d){
+    if(!D.faixaAbrigo || d.comFaixa || d.fugindo || d.noChao || d.lider || d.entrou || d.sumiu) return null;
+    const F = (J.faixas || []).find(F => F.lado === d.lado && F.estado === 'na-mao' &&
+                                     F.portador && F.portador.vivo && !F.portador.sumiu);
+    if(!F) return null;
+    if(dePe(J, d.lado) >= dePe(J, OUTRO_LADO[d.lado])) return null;
+    if(inimigoAlcancavel(J, d, 110)) return null;
+    return F.portador;
+  }
 
   /* =======================================================
      QUEM ESTÁ DISPOSTO A BATER
@@ -979,7 +1074,8 @@ TO.diaJogo.combate = (function(){
     b.agirEm = J.t;
     /* correr aqui é entrar: o portão é a saída de quem não quer briga */
     if(!reage) for(const m of meus) m.entraEm = J.t;
-    logar(J, `${b.rot}: ${reage?'veio pra cima':'correu pro portão'}.`,
+    logar(J, reage ? _t('{bonde}: veio pra cima.', {bonde:_t(b.rot)})
+                   : _t('{bonde}: correu pro portão.', {bonde:_t(b.rot)}),
           b.lado===ladoDoJogador(J)?'r':'a');
   }
 
@@ -995,13 +1091,16 @@ TO.diaJogo.combate = (function(){
     });
     if(J.paz && brigando){
       J.paz=false;
-      logar(J,'O clima virou — tem bonde procurando briga.','r');
+      logar(J,_t('O clima virou — tem bonde procurando briga.'),'r');
     }
     if(!J.paz && !brigando && J.caidos.mandante+J.caidos.visitante===0) J.paz=true;
   }
 
   function conferirFim(J){
     if(J.fase!=='ativo') return;
+    /* a reunião não acaba por briga: acaba pelo botão de encerrar
+       (22/09/2026) */
+    if(J.reuniao) return;
     /* Nos arredores o fim é outro e é mais simples: acabou quando o
        presidente entrou pelo portão. Lá não se toma nada de ninguém —
        o que se faz é chegar e entrar, e depois disso não há mais cena
@@ -1019,7 +1118,7 @@ TO.diaJogo.combate = (function(){
            vira pro nosso lado. O que estava errado era o `lado`. */
         J.acabou={lado:ladoDoJogador(J), venceu,
                   tranquila: J.caidos.mandante+J.caidos.visitante===0,
-                  motivo:'o presidente entrou pelo portão'};
+                  motivo:_t('o presidente entrou pelo portão')};
         logar(J, J.acabou.motivo, 'p');
         return;
       }
@@ -1036,7 +1135,7 @@ TO.diaJogo.combate = (function(){
       if(casa.length){
         J.fase='voltando'; J.voltarAte=J.t+9; J.ladoVencedor=lado;
         for(const d of casa){ d.voltando=true; d.fugindo=false; }
-        logar(J,'Eles voltaram pra dentro.','a');
+        logar(J,_t('Eles voltaram pra dentro.'),'a');
         return;
       }
     }
@@ -1079,8 +1178,8 @@ TO.diaJogo.combate = (function(){
     if(!n) return 0;
     J.entrando = true;
     J.entrarAte = J.t + TEMPO_DE_ENTRAR;
-    logar(J, 'Ordem de entrar: todo mundo pro portão.', 'v');
-    aviso(J, 'TODO MUNDO PRO PORTÃO', '#d9a441');
+    logar(J, _t('Ordem de entrar: todo mundo pro portão.'), 'v');
+    aviso(J, _t('TODO MUNDO PRO PORTÃO'), '#d9a441');
     return n;
   }
 
@@ -1113,7 +1212,7 @@ TO.diaJogo.combate = (function(){
     J.acabou = {lado:ladoDoJogador(J),
                 venceu: J.caidos.visitante >= J.caidos.mandante,
                 tranquila: J.caidos.mandante + J.caidos.visitante === 0,
-                entrou:true, motivo:'sua torcida entrou pelo portão'};
+                entrou:true, motivo:_t('sua torcida entrou pelo portão')};
     logar(J, J.acabou.motivo, 'p');
   }
 
@@ -1157,15 +1256,15 @@ TO.diaJogo.combate = (function(){
       J.caidos[outro] + J.presosPor[outro] === 0;
     J.fase='acabando';       // a ponte vê isto e abre a tela de fim
     J.acabou={lado, venceu, correram, tranquila:semBriga && !correram, motivo:
-        correram ? 'eles correram sem ninguém encostar em ninguém'
-      : semBriga ? 'a noite foi tranquila e todo mundo entrou'
-      : lado===null ? 'não sobrou ninguém de pé dos dois lados'
+        correram ? _t('eles correram sem ninguém encostar em ninguém')
+      : semBriga ? _t('a noite foi tranquila e todo mundo entrou')
+      : lado===null ? _t('não sobrou ninguém de pé dos dois lados')
       /* O TEXTO É DO NOSSO PONTO DE VISTA, e `venceu` é do mandante:
          ganhando como visitante, `venceu` é falso e a tela dizia "sua
          torcida foi corrida do lugar" pra uma briga que a gente venceu.
          Quem sobrou de pé é `lado`; se for o nosso, sobramos nós. */
-      : lado === ladoDoJogador(J) ? 'não sobrou ninguém deles na cena'
-               : 'sua torcida foi corrida do lugar'};
+      : lado === ladoDoJogador(J) ? _t('não sobrou ninguém deles na cena')
+               : _t('sua torcida foi corrida do lugar')};
     /* nada de faixa na cena aqui: quem conta o resultado é a tela de
        resumo, e um aviso piscando por cima do palco no mesmo instante
        só fazia perguntar qual dos dois era o resultado de verdade */
@@ -1266,7 +1365,11 @@ TO.diaJogo.combate = (function(){
        situações: no bar o que importa é o LUGAR (a porta), na praça e
        na rua o que importa é a DISTÂNCIA — não há porta pra vigiar,
        eles só reagem quando o outro bonde chega perto. */
-    if(g.perto){
+    /* SÓ A ZONA (casa de piscina, 21/09/2026): a resenha está de
+       costas pra rua e só percebe quem pisa no portão — nem a
+       distância nem a linha de visão pela porta acordam a casa */
+    const soZona = !!g.soZona;
+    if(g.perto && !soZona){
       const parados=J.discos.filter(d=>d.vivo && d.guarda);
       for(const d of parados){
         for(const a of atacantes)
@@ -1276,15 +1379,15 @@ TO.diaJogo.combate = (function(){
     }
     if(!por && g.raio) for(const a of atacantes)
       if(U.dist(a.x,a.y,g.x,g.y) <= g.raio){ por='zona'; break; }
-    if(!por) for(const d of J.discos){
+    if(!por && !soZona) for(const d of J.discos){
       if(!d.vivo || !d.guarda) continue;
       if(inimigoAlcancavel(J,d,170)){ por='visao'; break; }
     }
     if(!por) return;
     J.acordou=true; J.acordouPor=por; J.acordouEm=J.t;
     for(const d of J.discos) d.guarda=false;
-    logar(J, g.aviso || 'a casa acordou', 'r');
-    aviso(J, g.aviso || 'A CASA ACORDOU', 'r');
+    logar(J, g.aviso ? _t(g.aviso) : _t('a casa acordou'), 'r');
+    aviso(J, g.aviso ? _t(g.aviso) : _t('A CASA ACORDOU'), 'r');
   }
 
   /* =======================================================
@@ -1456,6 +1559,9 @@ TO.diaJogo.combate = (function(){
     for(const d of J.discos){
       if(!d.vivo) continue;
       if(PF) tq = performance.now();
+      /* sentado na roda (reunião da diretoria, 22/09/2026): fica na
+         cadeira, e ponto */
+      if(d.sentado){ d.vx=d.vy=0; d._ramo='sentado'; continue; }
 
       if(d.segurando || d.seguradoPor){ d.vx=d.vy=0; d._ramo='agarrao'; continue; }
       if(d.derrubado>0){
@@ -1497,7 +1603,7 @@ TO.diaJogo.combate = (function(){
 
       const recua = d.fugindo || recuando(J, d.lado);
 
-      let ax,ay, usarCampo=false, campo=null, ramo=null;
+      let ax,ay, usarCampo=false, campo=null, ramo=null, escolta=null;
       d._olhaPara=null;
 
       /* de guarda: fica no posto. Sem isto o dono do bar sai andando
@@ -1546,6 +1652,19 @@ TO.diaJogo.combate = (function(){
            bar e ficava oscilando a 60 px da faixa (correção, 09/09/2026) */
         campo = A.campoDoPonto('faixa:'+F.torcidaId+':'+F.tipo, F.x, F.y, J.grades, J.versaoGrades);
         usarCampo = true;
+      } else if(d.comFaixa && !d.fugindo && D.faixaAbrigo){
+        /* O ABRIGO DA FAIXA (casa de piscina, 21/09/2026): a cena diz
+           onde a peça se esconde — o depósito da casa — e quem a tirou
+           corre pra lá e fica, em vez de acompanhar o bonde. Pra tomar
+           a faixa o atacante tem de entrar na casa e derrubá-lo ali. */
+        const ab = D.faixaAbrigo;
+        if(U.dist(d.x,d.y,ab.x,ab.y) < (ab.raio||40)){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='faixa-abrigo'; d._alvo=null;
+          continue;
+        }
+        campo = A.campoDoPonto('faixa-abrigo', ab.x, ab.y, J.grades, J.versaoGrades);
+        usarCampo = true; ramo='faixa-abrigo'; d._olhaPara=null;
       } else if(d.comFaixa && !d.fugindo){
         /* QUEM CARREGA A FAIXA VAI JUNTO, MAS ATRÁS (correção do dono,
            09/09/2026): acompanha a aglomeração dos seus e fica no fundo
@@ -1676,6 +1795,23 @@ TO.diaJogo.combate = (function(){
         }
         campo = A.campoDaEntrada(id, J.grades, J.versaoGrades);
         usarCampo = true;
+      } else if((escolta = escoltaDaFaixa(J, d))){
+        /* A ESCOLTA DA FAIXA (pedido do dono, 21/09/2026): na casa de
+           piscina, a torcida atacada em MENOR NÚMERO não sai caçando —
+           fecha em volta de quem carrega a faixa, dentro da casa, e
+           briga ali. Quem tem inimigo em cima continua brigando (ver
+           `escoltaDaFaixa`); o resto vai pro portador e para a 70 px. */
+        if(U.dist(d.x,d.y,escolta.x,escolta.y) < 70){
+          d.vx*=0.7; d.vy*=0.7; A.mover(d, d.vx*dt, d.vy*dt);
+          d._ramo='escolta-faixa'; d._alvo=null; d._olhaPara=null;
+          continue;
+        }
+        let qx = Math.round(escolta.x/64)*64, qy = Math.round(escolta.y/64)*64, achou = A.caminhavel(qx, qy);
+        if(!achou) for(const [ox,oy] of [[32,0],[-32,0],[0,32],[0,-32],[32,32],[-32,-32],[32,-32],[-32,32]]){
+          if(A.caminhavel(qx+ox, qy+oy)){ qx+=ox; qy+=oy; achou=true; break; } }
+        if(achou){ campo = A.campoDoPonto('escolta:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades); usarCampo=true; }
+        else { ax=escolta.x; ay=escolta.y; }
+        ramo='escolta-faixa';
       } else if(recua){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -2463,7 +2599,7 @@ TO.diaJogo.combate = (function(){
     a.seguraAte = J.t + U.entre(1.6, 2.4) * (a.forca >= b.forca ? 1 : 0.7);
     b.ataque = null; b.defendendo = 0; b.linha = 'frente'; b.hostil = 3; a.hostil = 3;
     b.viraPara = rumoPara(b,a); levouDe(J, b, a); atacado(J,b);
-    if(b.lider) aviso(J,'Te agarraram — o bonde solta','#d9705f');
+    if(b.lider) aviso(J,_t('Te agarraram — o bonde solta'),'#d9705f');
   }
   function soltar(J,a){
     const b = a.segurando; if(!b) return;
@@ -2502,9 +2638,10 @@ TO.diaJogo.combate = (function(){
     const recuou = atenderam + 1 > inimigosVista && inimigosVista > 0;
     if(recuou) J.recuoChamado[outro] = J.t + 2.5;
     const nosso = lado === ladoDoJogador(J);
-    if(nosso) aviso(J, `CHAMOU! ${atenderam} atenderam${recuou ? ' · o rival recua' : ''}`, recuou ? '#7fc2a0' : '#f0d68a');
-    else aviso(J, `O rival chamou${recuou ? ' — recua um pouco' : ''}`, '#d9705f');
-    logar(J, nosso ? `Chamou: ${atenderam} de ${meus.length-1} atenderam.` : `O rival chamou o bonde dele.`, nosso ? 'r' : 'pm');
+    if(nosso) aviso(J, recuou ? _t('CHAMOU! {n} atenderam · o rival recua', {n:atenderam})
+                              : _t('CHAMOU! {n} atenderam', {n:atenderam}), recuou ? '#7fc2a0' : '#f0d68a');
+    else aviso(J, recuou ? _t('O rival chamou — recua um pouco') : _t('O rival chamou'), '#d9705f');
+    logar(J, nosso ? _t('Chamou: {n} de {total} atenderam.', {n:atenderam, total:meus.length-1}) : _t('O rival chamou o bonde dele.'), nosso ? 'r' : 'pm');
     return {atenderam, recuou};
   }
   function iaChamar(J){
@@ -2526,7 +2663,7 @@ TO.diaJogo.combate = (function(){
     if(!b.seguradoPor && b.derrubado<=0 && naFrente(b,a) && perfilDe(b).contra && J.t - b.soltouEm >= 0 && J.t - b.soltouEm <= JANELA_CONTRA){
       b.esquivou = 0.4; b.contra = 0.6; b.cdBater = 0; b.soltouEm = -9; b.defendendo = 0;
       b.contraEm = J.t;
-      if(b.lider) aviso(J,'CONTRA!','#7fc2a0');
+      if(b.lider) aviso(J,_t('CONTRA!'),'#7fc2a0');
       return;
     }
     /* no chão não se defende — e quem apanha no chão fica lá */
@@ -2735,7 +2872,7 @@ TO.diaJogo.combate = (function(){
         g.tremor=Math.min(5,g.tremor+0.5); a.hostil=3.5;
         if(g.hp<=0){
           g.hp=0; J.versaoGrades++; J.alerta=Math.min(100,J.alerta+13);
-          logar(J,'Um módulo da grade foi ao chão.','pm');
+          logar(J,_t('Um módulo da grade foi ao chão.'),'pm');
           romperCordao(J);
         }
       }
@@ -2750,7 +2887,7 @@ TO.diaJogo.combate = (function(){
         if(U.dist(p.x,p.y,a.x,a.y)>a.r+p.r+5) continue;
         p.hp-=a.forca*P.dano*dt*0.55; a.hostil=4.0;
         J.alerta=Math.min(100,J.alerta+7*dt);
-        if(p.hp<=0){p.caido=true; J.alerta=Math.min(100,J.alerta+18); logar(J,'Um PM foi ao chão.','pm');}
+        if(p.hp<=0){p.caido=true; J.alerta=Math.min(100,J.alerta+18); logar(J,_t('Um PM foi ao chão.'),'pm');}
         if(p.cooldown<=0){
           p.cooldown=1.9; a.hp-=P.forcaPM*P.dano; a.atordoado=0.7; a.tremor=5;
           a.apanhou=0.5; p.golpe=0.3; levouDe(J, a, p);
@@ -2784,7 +2921,7 @@ TO.diaJogo.combate = (function(){
       /* o reset fica ABAIXO do limiar de desarme do recuo (62): com 64,
          o reforço chegava e ainda segurava o visitante recuado uns
          segundos à toa (ordem do dono, 31/08/2026) */
-      J.alerta=56; logar(J,'Chegou reforço da PM.','pm');
+      J.alerta=56; logar(J,_t('Chegou reforço da PM.'),'pm');
     }
   }
 
@@ -2800,13 +2937,13 @@ TO.diaJogo.combate = (function(){
     /* a cascata de moral saiu junto com a moral da briga (decisão do
        dono): cada caído derrubava o lado dele e subia o outro, e era
        ela que transformava a primeira queda em varrida */
-    if(d.lider){logar(J,'Seu líder caiu.','r'); aviso(J,'Líder caiu','#d9705f');}
+    if(d.lider){logar(J,_t('Seu líder caiu.'),'r'); aviso(J,_t('Líder caiu'),'#d9705f');}
   }
   function prender(J,d){
     if(d.caido||d.preso) return;
     d.preso=true; d.hp=0; d.vx=d.vy=0;
     J.presos++; J.caidos[d.lado]++; J.presosPor[d.lado]++;
-    logar(J,`${d.nome} foi preso.`,'pm');
+    logar(J,_t('{nome} foi preso.', {nome:d.nome}),'pm');
   }
 
   /* Tropa de choque é coisa de operação montada: existe no cordão do
@@ -2822,10 +2959,10 @@ TO.diaJogo.combate = (function(){
     J.cargaEm = choque ? J.t+P.atrasoCarga : null;
     J.cargaAte= J.t + (choque ? P.atrasoCarga : 0) + P.duracaoCarga;
     for(const p of J.policiais) p.carga=true;
-    aviso(J,'Grade rompida','#e0b040');
+    aviso(J,_t('Grade rompida'),'#e0b040');
     logar(J, choque
-      ? `Romperam a grade. Tropa de choque a caminho (${Math.round(P.atrasoCarga)}s).`
-      : 'Romperam a grade. A PM que estava ali partiu pra cima.', 'pm');
+      ? _t('Romperam a grade. Tropa de choque a caminho ({s}s).', {s:Math.round(P.atrasoCarga)})
+      : _t('Romperam a grade. A PM que estava ali partiu pra cima.'), 'pm');
   }
 
   function passoCarga(J,dt){
@@ -2855,13 +2992,13 @@ TO.diaJogo.combate = (function(){
         p.x=q.x; p.y=q.y; p.carga=true; p.hpMax=380; p.hp=380; p.r=10;
         J.policiais.push(p);
       }
-      aviso(J,'Tropa de choque entrou','#5fa87d');
-      logar(J,`${n} PMs entraram dispersando os dois lados.`,'pm');
+      aviso(J,_t('Tropa de choque entrou'),'#5fa87d');
+      logar(J,_tn(n, '{n} PM entrou dispersando os dois lados.', '{n} PMs entraram dispersando os dois lados.'),'pm');
     }
     if(J.tropaVeio&&J.t>J.cargaAte){
       let voltou=false;
       for(const p of J.policiais) if(p.carga){p.carga=false;voltou=true;}
-      if(voltou) logar(J,'A tropa recompôs a linha.','pm');
+      if(voltou) logar(J,_t('A tropa recompôs a linha.'),'pm');
     }
   }
 
@@ -2873,24 +3010,24 @@ TO.diaJogo.combate = (function(){
     if(J.cdClima>0) return;
     J.cdClima=0.35;
     let motivo=null;
-    if(J.rompido) motivo='romperam a grade';
-    else if(J.caidos.mandante+J.caidos.visitante>0) motivo='caiu gente';
-    else if(J.alerta>45) motivo='a PM se mexeu';
-    else if(J.projeteis.some(p=>!p.morto)) motivo='voou pedra';
+    if(J.rompido) motivo=_t('romperam a grade');
+    else if(J.caidos.mandante+J.caidos.visitante>0) motivo=_t('caiu gente');
+    else if(J.alerta>45) motivo=_t('a PM se mexeu');
+    else if(J.projeteis.some(p=>!p.morto)) motivo=_t('voou pedra');
     else{
       const vivos=J.discos.filter(d=>d.vivo);
       for(const a of vivos){
         if(motivo) break;
         for(const b of vivos){
           if(b===a||!inimigos(a.lado,b.lado)) continue;
-          if(U.dist(a.x,a.y,b.x,b.y)<110&&A.livre(a.x,a.y,b.x,b.y)){motivo='os bondes se encostaram';break;}
+          if(U.dist(a.x,a.y,b.x,b.y)<110&&A.livre(a.x,a.y,b.x,b.y)){motivo=_t('os bondes se encostaram');break;}
         }
       }
     }
     if(motivo){
       J.paz=false;
-      logar(J,`O clima virou — ${motivo}. Ninguém mais entra em paz.`,'r');
-      aviso(J,'O clima virou','#d9705f');
+      logar(J,_t('O clima virou — {motivo}. Ninguém mais entra em paz.', {motivo}),'r');
+      aviso(J,_t('O clima virou'),'#d9705f');
     }
   }
 
@@ -2927,8 +3064,8 @@ TO.diaJogo.combate = (function(){
       J.sobPressao+=dt;
       if(!J.avisouPM&&J.sobPressao>1.2){
         J.avisouPM=true;
-        aviso(J,'PM em cima do seu bonde','#5fa87d');
-        logar(J,'A PM encostou no seu pessoal. R pra recuar.','pm');
+        aviso(J,_t('PM em cima do seu bonde'),'#5fa87d');
+        logar(J,_t('A PM encostou no seu pessoal. R pra recuar.'),'pm');
       }
     } else {
       J.sobPressao=Math.max(0,J.sobPressao-dt*1.6);
@@ -2949,7 +3086,7 @@ TO.diaJogo.combate = (function(){
     if(D.semRecuoPM) return;
     if(!J.recuoVisitante && J.alerta>78 && sob>0.22){
       J.recuoVisitante=true; J.recuoVisitanteAte=J.t+9;
-      logar(J,'Os visitantes recuaram.','pm');
+      logar(J,_t('Os visitantes recuaram.'),'pm');
     } else if(J.recuoVisitante && J.t>J.recuoVisitanteAte && J.alerta<62){
       J.recuoVisitante=false;
     }
@@ -3093,9 +3230,10 @@ TO.diaJogo.combate = (function(){
         a._edx+=dx/d*e; a._edy+=dy/d*e;
       }
     }
-    /* e agora o movimento, um por disco */
+    /* e agora o movimento, um por disco — quem está sentado na roda é
+       obstáculo pros outros e não sai da cadeira (22/09/2026) */
     for(const d of t)
-      if(d._edx || d._edy) A.empurrar(d, d._edx, d._edy);
+      if((d._edx || d._edy) && !d.sentado) A.empurrar(d, d._edx, d._edy);
   }
 
   /* =======================================================
@@ -3198,11 +3336,11 @@ TO.diaJogo.combate = (function(){
       (J.correuEm=J.correuEm||{})[lado]=J.correuEm[lado]??J.t;
       const meu = lado === meuLado;
       const txt = motivo==='minoria'
-        ? (meu ? 'Seu pessoal viu o tamanho deles e correu.'
-               : 'Eles viram o tamanho do bonde e correram.')
-        : (meu ? 'Seu pessoal correu.' : 'Os visitantes correram.');
+        ? (meu ? _t('Seu pessoal viu o tamanho deles e correu.')
+               : _t('Eles viram o tamanho do bonde e correram.'))
+        : (meu ? _t('Seu pessoal correu.') : _t('Os visitantes correram.'));
       logar(J, txt, meu?'r':'a');
-      aviso(J, meu?'Seu pessoal correu':'Eles correram', meu?'#d9705f':'#7098d9');
+      aviso(J, meu?_t('Seu pessoal correu'):_t('Eles correram'), meu?'#d9705f':'#7098d9');
     }
     soltarFuga(J);
   }
@@ -3227,7 +3365,8 @@ TO.diaJogo.combate = (function(){
     for(const F of (J.faixas || [])){
       if(F.lado !== lado || F.estado !== 'exposta') continue;
       F.estado = 'recolhendo'; escolherRecolhedores(J, F);
-      logar(J, `A ${F.nome} recolhe a ${F.tipo === 'bandeira' ? 'bandeira' : 'faixa'} antes de sair.`, 'a');
+      logar(J, F.tipo === 'bandeira' ? _t('A {nome} recolhe a bandeira antes de sair.', {nome:F.nome})
+                                     : _t('A {nome} recolhe a faixa antes de sair.', {nome:F.nome}), 'a');
     }
   }
   function soltarFuga(J){
@@ -3287,8 +3426,8 @@ TO.diaJogo.combate = (function(){
     /* recuo ligado junto da fuga só atrapalha: são duas ordens de andar
        pra trás no mesmo bonde, e a fuga é a que vale */
     J.recuando = false;
-    logar(J, 'Ordem de correr: todo mundo pra saída.', 'r');
-    aviso(J, 'TODO MUNDO CORRENDO', '#d9705f');
+    logar(J, _t('Ordem de correr: todo mundo pra saída.'), 'r');
+    aviso(J, _t('TODO MUNDO CORRENDO'), '#d9705f');
     return n;
   }
   /* o bonde correndo não bate, não recua e não joga pedra */
@@ -3328,7 +3467,7 @@ TO.diaJogo.combate = (function(){
       }
       alvo=g;
     }
-    if(!alvo){logar(J,'Não tem em quem jogar daqui.','p');return;}
+    if(!alvo){logar(J,_t('Não tem em quem jogar daqui.'),'p');return;}
 
     let ax=alvo.x, ay=alvo.y;
     const dx=ax-l.x, dy=ay-l.y, dist=hyp(dx,dy)||1;
@@ -3411,14 +3550,14 @@ TO.diaJogo.combate = (function(){
       J.projeteis.push(new Projetil(b.x,b.y,ax,ay,tipo,b.lado));
       if(tipo==='bomba'){
         J.alerta=Math.min(100,J.alerta+10);
-        logar(J,'Bomba deles.','a');
+        logar(J,_t('Bomba deles.'),'a');
       }
     }
   }
   function alternarRecuo(J){
     if(J.fase!=='ativo'||emFuga(J)) return;
     J.recuando=!J.recuando;
-    logar(J, J.recuando?'Recuando pro ponto de saída.':'De volta pra cima.','r');
+    logar(J, J.recuando?_t('Recuando pro ponto de saída.'):_t('De volta pra cima.'),'r');
   }
   function noPortao(J){
     const l=J.discos.find(d=>d.lider&&d.vivo);
@@ -3592,14 +3731,14 @@ TO.diaJogo.combate = (function(){
      fecha com a faixa ainda no muro e o lado dela derrotado sem
      ninguém de pé: tomada também.
      ======================================================= */
-  const CENAS_FAIXA = /^(bar|praca|estadio-)/;
+  const CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina)/;
   /* FAIXA_AFASTA: o portador tenta ficar a pelo menos isto de qualquer inimigo */
   const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180, FAIXA_AFASTA = 200;
   /* O QUE CADA CENA EXPÕE (pedido do dono, 09/09/2026): no bar, bandeira
      em 70% das vezes e faixa nas outras; na concentração (a praça),
      meio a meio; no estádio, faixa E bandeira lado a lado — e TODO
      setor de toda torcida presente estende as suas. */
-  const CHANCE_BANDEIRA = {bar:0.7, praca:0.5};
+  const CHANCE_BANDEIRA = {bar:0.7, praca:0.5, casa:0.5};
   function montarFaixas(J, cfg){
     if(!cfg || !D.id || !CENAS_FAIXA.test(D.id)) return [];
     const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
@@ -3637,7 +3776,7 @@ TO.diaJogo.combate = (function(){
       const lado = q === 'nos' ? meu : outro;
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
-      const chave = D.id === 'bar' ? 'bar' : 'praca';
+      const chave = D.id === 'bar' ? 'bar' : D.id === 'casa-piscina' ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){
@@ -3735,16 +3874,18 @@ TO.diaJogo.combate = (function(){
   function atualizarFaixas(J, dt){
     for(const F of (J.faixas || [])) atualizarFaixa(J, F, dt);
   }
-  const rotDe = F => F.tipo === 'bandeira' ? 'bandeira' : 'faixa';
   function atualizarFaixa(J, F, dt){
     if(!F || F.estado==='tomada') return;
     const inimigo = OUTRO_LADO[F.lado];
     if(F.estado==='exposta'){
+      /* na casa de piscina ninguém corre pra faixa antes de a casa
+         acordar: a resenha não sabe que tem bonde na rua */
+      if(D.gatilho && D.gatilho.soZona && !J.acordou) return;
       const perto = J.discos.some(d=>d.lado===inimigo && d.vivo && !d.entrou && !d.sumiu &&
                                     U.dist(d.x,d.y,F.x,F.y) < FAIXA_ALCANCE);
       if(perto || (!J.paz && J.t > 1.5)){
         F.estado='recolhendo'; escolherRecolhedores(J, F);
-        if(F.tipo !== 'bandeira') logar(J, `A ${F.nome} corre pra recolher a faixa.`, 'a');
+        if(F.tipo !== 'bandeira') logar(J, _t('A {nome} corre pra recolher a faixa.', {nome:F.nome}), 'a');
       }
       return;
     }
@@ -3761,7 +3902,9 @@ TO.diaJogo.combate = (function(){
           const equipe = F.equipe.slice();
           for(const d of F.equipe){ d.faixaIndo=false; d.tirando=false; }
           F.equipe = []; F.estado='na-mao'; F.portador=p; p.comFaixa=F;
-          logar(J, `${p.nome} saiu com a ${rotDe(F)} da ${F.nome} na mão.`, 'a');
+          logar(J, F.tipo === 'bandeira'
+            ? _t('{quem} saiu com a bandeira da {nome} na mão.', {quem:p.nome, nome:F.nome})
+            : _t('{quem} saiu com a faixa da {nome} na mão.', {quem:p.nome, nome:F.nome}), 'a');
           /* o bonde já correu: quem tirou corre agora, com a peça */
           if(J.debandou && J.debandou[F.lado]) for(const d of equipe) d.fugindo = true;
         }
@@ -3776,8 +3919,9 @@ TO.diaJogo.combate = (function(){
          levou a peça. Só entrega quem cai ferido ou preso. */
       if(p.caido || p.preso){
         p.comFaixa=false; F.estado='tomada'; F.tomadaPor=inimigo; F.tTomada=J.t;
-        logar(J, `Tomaram a ${rotDe(F)} da ${F.nome}!`, 'r');
-        aviso(J, F.tipo === 'bandeira' ? 'Bandeira tomada!' : 'Faixa tomada!', '#ffd35a');
+        logar(J, F.tipo === 'bandeira' ? _t('Tomaram a bandeira da {nome}!', {nome:F.nome})
+                                       : _t('Tomaram a faixa da {nome}!', {nome:F.nome}), 'r');
+        aviso(J, F.tipo === 'bandeira' ? _t('Bandeira tomada!') : _t('Faixa tomada!'), '#ffd35a');
       }
     }
   }
@@ -4003,7 +4147,7 @@ TO.diaJogo.combate = (function(){
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
           /* o simulador precisa das MESMAS fichas que a cena geraria:
              simular não pode dar ao rival um bonde diferente */
-          fichasDoPerfil,
+          fichasDoPerfil, fichasDaZona,
           naFrente, rumoPara, RAIO_BOMBA, podeArremessar, bater, defender, DUR_GOLPE, CAIDO_FICA, CAIDO_SOME,
           soltarDefesa, agarrar, podeAgarrar, chamar, perfilDe, CD_CHAMAR,
           ladoDoJogador, ladoDeles, OUTRO_LADO,

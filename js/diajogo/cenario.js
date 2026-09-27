@@ -1267,6 +1267,22 @@ TO.diaJogo.cenario = (function(){
     }
   }
 
+  /* A CADEIRA DA REUNIÃO (22/09/2026): a foto da sede não tem cadeira
+     nenhuma — quem põe é o jogo, uma por diretor, em cima da foto
+     (`arredores.desenharSobreposicoes` lê `D.cadeiras`). Assento de
+     plástico com o encosto atrás; o boneco senta em cima. */
+  function cadeira(c, k){
+    const sx = Math.sin(k.rumo||0), sy = Math.cos(k.rumo||0);   // pra onde olha
+    c.save();
+    c.translate(k.x, k.y); c.rotate(-(k.rumo||0));
+    c.fillStyle = '#e4e1d8'; c.fillRect(-8, -8, 16, 16);
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.strokeRect(-8, -8, 16, 16);
+    c.fillStyle = '#c9c5b9'; c.fillRect(-8, -11, 16, 4);
+    c.restore();
+    c.fillStyle = 'rgba(0,0,0,.12)';
+    c.beginPath(); c.arc(k.x - sx*6, k.y - sy*6, 9, 0, Math.PI*2); c.fill();
+  }
+
   const CENAS = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
                  bar, comercio, ct};
   const pintar = (c, D, W, H) => {
@@ -1276,7 +1292,7 @@ TO.diaJogo.cenario = (function(){
     return true;
   };
 
-  return {pintar, CENAS, ENFEITE, PINTOR, arvore, varal,
+  return {pintar, CENAS, ENFEITE, PINTOR, arvore, varal, cadeira,
           asfalto, calcadaPortuguesa, calcadaComum, paralelepipedo,
           bloquete, pedraClara, terreno, meioFio, faixaPedestre,
           /* a paleta e o sorteio com semente saem daqui pra fora

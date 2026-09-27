@@ -1,3 +1,4 @@
+
 /* =========================================================
    CENAS DE BRIGA — praça e rua
    ---------------------------------------------------------
@@ -79,7 +80,17 @@ TO.dados.cenas = (function(){
     bp(cx, cy, 92, 46, 'carro');
 
   const praca = montar({
-    id:'praca', nome:'Praça', pintura:'praca', blocos:blocosPraca,
+    id:'praca', nome:'Praça',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:207, y:490, len:150, dir:[-1,0]}, visitante:{x:1306, y:493, len:150, dir:[1,0]}}, pintura:'praca', blocos:blocosPraca,
+    /* A REUNIÃO DA TORCIDA SEM SEDE (decisão do dono, 22/09/2026): a
+       pequena senta na praça do bairro — o C de cadeiras no largo do
+       meio (o retângulo livre da malha, conferido), o presidente à
+       direita */
+    ...(()=>{ const c = cadeirasEmC(620, 440, 920, 620); return {cadeiras:c.cadeiras, presidente:c.presidente}; })(),
     /* aqui não se entra em estádio nenhum: quem sai da praça sai pela rua */
     local:'Na praça',
     /* praça de bairro não tem operação montada: quem responde é a PM
@@ -355,7 +366,12 @@ TO.dados.cenas = (function(){
   bb(1442, 544, 70, 60, 'engradado');
 
   const bar = montar({
-    id:'bar', nome:'Bar', pintura:'bar', blocos:blocosBar,
+    id:'bar', nome:'Bar',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:324, y:190, len:130, dir:[-1,0]}, visitante:{x:900, y:500, len:130, dir:[1,0]}}, pintura:'bar', blocos:blocosBar,
     local:'No bar deles',
     saida:{perto:'Tomar o bar', longe:'Balcão do bar (leve o líder)',
            feito:'sua torcida tomou o bar deles',
@@ -535,6 +551,297 @@ TO.dados.cenas = (function(){
   });
 
   /* =======================================================
+     O LOTE DE 19/08 (pedido do dono): as tretas com palco
+     próprio, as duas emboscadas de estrada, e os três
+     estádios por capacidade. Todas nascem SEM desenho — o
+     chão é a foto e a máscara vem dela (importar_cena_foto);
+     as coordenadas aqui são aproximadas de propósito, porque
+     o puxador reencosta cada marcador no chão mais perto.
+     ======================================================= */
+  const cenaDeFoto = cfg => montar(Object.assign({
+    blocos:[], enfeites:[], varais:[], grades:[], pintura:null
+  }, cfg));
+
+  /* 5x5: a viela entre os quintais — corredor de ponta a ponta */
+  const tretaBeco = cenaDeFoto({
+    id:'treta-beco', nome:'Beco', local:'No beco, treta marcada',
+    saida:{perto:'Furar pra fora', longe:'Boca do beco (leve o líder)',
+           feito:'sua torcida furou pra fora do beco',
+           dica:'Leve o líder até a boca do beco que é sua.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:140, y:512,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:1400, y:512,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'BOCA DO BECO', lado:'visitante', x:40,   y:512, raio:46, dir:[-1,0]},
+      {id:'boca_leste', rot:'FIM DO BECO',  lado:'mandante',  x:1496, y:512, raio:46, dir:[1,0]}
+    ],
+    pmPostos:[{x:150, y:640}, {x:1400, y:380}]
+  });
+
+  /* 7x7: o pátio murado do galpão */
+  const tretaGalpao = cenaDeFoto({
+    id:'treta-galpao', nome:'Galpão', local:'No pátio do galpão, treta marcada',
+    saida:{perto:'Furar pra fora', longe:'Saída do pátio (leve o líder)',
+           feito:'sua torcida saiu do pátio por cima',
+           dica:'Leve o líder até a saída do pátio.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:350, y:620,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:1050, y:400,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'CANTO DO PÁTIO', lado:'visitante', x:200,  y:280, raio:46, dir:[-1,0]},
+      {id:'boca_leste', rot:'SAÍDA DO PÁTIO', lado:'mandante',  x:1240, y:700, raio:46, dir:[1,0]}
+    ],
+    pmPostos:[{x:280, y:300}, {x:1180, y:720}]
+  });
+
+  /* 10x10: o campo de terra murado — a arena inteira */
+  const tretaCampo = cenaDeFoto({
+    id:'treta-campo', nome:'Campo de terra', local:'No campo de terra, treta marcada',
+    saida:{perto:'Furar pra fora', longe:'Canto do campo (leve o líder)',
+           feito:'sua torcida saiu do campo por cima',
+           dica:'Leve o líder até o canto do campo.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:480, y:600,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:1050, y:440,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'CANTO NORTE', lado:'visitante', x:330,  y:300, raio:46, dir:[-1,0]},
+      {id:'boca_leste', rot:'CANTO SUL',   lado:'mandante',  x:1200, y:720, raio:46, dir:[1,0]}
+    ],
+    pmPostos:[{x:520, y:280}, {x:1050, y:760}]
+  });
+
+  /* emboscada 1: o pátio do posto — a caravana parada nas bombas e
+     eles descendo por todo lado. Quem defende é o visitante (nós). */
+  /* AS DUAS EMBOSCADAS SÃO A MESMA CENA, com dois cenários: quem é
+     atacado fica em volta do ônibus, no meio da tela, e quem ataca
+     desce por uma ponta, em turma única (régua do dono, 22/08/2026 —
+     antes eram duas pontas). Daí os dois
+     dois spawns do lado emboscado e o `espalharBonde`, que reparte o
+     bonde entre eles em vez de deixar um ponto vazio.
+
+     E ali não se corre de ver o tamanho do outro: emboscada é gente
+     que veio pra isso e caravana que não tem pra onde ir. Corre-se de
+     sangue, pelo preço de sempre (30% no chão).
+
+     QUEM ATACA VEM EM UMA TURMA SÓ (correção do dono, 22/08/2026): o
+     bonde de emboscada desce junto, por um ponto só. O segundo ponto
+     deles saiu das duas cenas, e o `espalharBonde` agora nomeia o lado
+     que se espalha — o emboscado, em volta do ônibus. */
+  const embPosto = cenaDeFoto({
+    id:'emb-posto', nome:'Posto', local:'No posto, na parada da caravana',
+    /* QUEM ARMA EMBOSCADA NÃO RECUA DA PM (correção do dono,
+       23/08/2026). O recuo por alerta foi calibrado pros arredores do
+       estádio, onde existe cordão pra abrir distância. Na estrada não
+       existe cordão: quem fechou a pista escolheu o lugar e a hora, e
+       virava as costas assim que o alerta passava de 78 — medido, em
+       2 de 6 emboscadas o atacante recuava sem levar um soco. A PM
+       segue carregando e prendendo; o que ela não faz é cancelar a
+       emboscada. */
+    espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
+    semRecuoPM:true,
+    saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
+           feito:'a torcida voltou pro ônibus e a caravana seguiu',
+           dica:'Leve o líder de volta pro ônibus.'},
+    spawns:[
+      {id:'mandante1', rot:'ELES, PELA PISTA',  lado:'mandante', x:200,  y:820,
+       entrada:'ent_mandante'},
+      {id:'visitante1',rot:'NÓS, NAS BOMBAS',   lado:'visitante', x:700, y:640,
+       jogador:true, entrada:'ent_visitante'},
+      {id:'visitante2',rot:'NÓS, NO ÔNIBUS',    lado:'visitante', x:830, y:700,
+       entrada:'ent_visitante'}
+    ],
+    entradas:[
+      {id:'ent_mandante',  rot:'PISTA',  lado:'mandante',  x:40,   y:900, raio:48, dir:[-1,0]},
+      {id:'ent_visitante', rot:'ÔNIBUS', lado:'visitante', x:1496, y:880, raio:48, dir:[1,0]}
+    ],
+    pmPostos:[{x:120, y:500}, {x:1380, y:880}]
+  });
+
+  /* emboscada 2: a estrada com o ônibus parado no meio da pista */
+  const embOnibus = cenaDeFoto({
+    id:'emb-onibus', nome:'Estrada', local:'Na estrada, pista fechada',
+    /* mesma razão do posto: na pista não há cordão de onde recuar */
+    espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
+    semRecuoPM:true,
+    saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
+           feito:'a torcida voltou pro ônibus e a caravana seguiu',
+           dica:'Leve o líder de volta pro ônibus.'},
+    spawns:[
+      {id:'mandante1', rot:'ELES, NA PISTA',    lado:'mandante', x:150,  y:500,
+       entrada:'ent_mandante'},
+      {id:'visitante1',rot:'NÓS, NO ÔNIBUS',    lado:'visitante', x:700, y:560,
+       jogador:true, entrada:'ent_visitante'},
+      {id:'visitante2',rot:'NÓS, ATRÁS',        lado:'visitante', x:850, y:600,
+       entrada:'ent_visitante'}
+    ],
+    entradas:[
+      {id:'ent_mandante',  rot:'PISTA OESTE', lado:'mandante',  x:40,   y:512, raio:48, dir:[-1,0]},
+      {id:'ent_visitante', rot:'PISTA LESTE', lado:'visitante', x:1496, y:512, raio:48, dir:[1,0]}
+    ],
+    pmPostos:[{x:400, y:470}, {x:1100, y:540}]
+  });
+
+  /* Os três estádios, com os SETORES das imagens do dono (estadio
+     nivel 1/2/3.jpg, 19/08/2026): a briga é NA ARQUIBANCADA. Cada
+     escalão é uma torcida do clube, da maior pra menor (1º escalão =
+     a maior da praça — e isso vira se outra passar). PM e divisórias
+     (gradil) separam os setores como o dono marcou. As posições são
+     aproximadas: o puxador reencosta tudo no chão da foto. */
+  const fazEstadio = cfg => cenaDeFoto(Object.assign({
+    local:'Na arquibancada', gradesDaFoto:true,
+    /* na bancada ninguém corre do tamanho do outro — está tudo cercado
+       de grade. Corre-se de sangue, e caro: metade do setor no chão
+       (régua do dono, 19/08/2026). */
+    semFugaPorMinoria:true, debandadaEm:50,
+    /* e como está tudo cercado, quem não vê ninguém por perto marcha
+       pro setor do rival e derruba o gradil no caminho — sem isso os
+       setores ficavam a 900 px um do outro sem nunca se encontrarem */
+    marchaAoInimigo:true, semRecuoPM:true,
+    /* na bancada não se "entra pelo portão": o fim da briga é sumir
+       pelo túnel do próprio setor, com o líder no ponto */
+    saida:{perto:'Sair pelo túnel', longe:'Túnel (leve o líder)',
+           feito:'sua torcida saiu pelo túnel com a bancada na mão',
+           dica:'Leve o líder até o túnel do seu setor.'}
+  }, cfg));
+
+  const estadio10 = fazEstadio({
+    id:'estadio-10', nome:'Estádio de 10 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    /* âncoras medidas na borda do gramado (ajuste de 10/09/2026): a
+       quina do mandante 1 é reta neste trecho — o arco que havia não
+       acompanhava o muro */
+    faixas:{mandante1:{x:1232, y:300, len:150, dir:[-1,0]}, mandante2:{x:1000, y:845, len:150, dir:[0,-1]}, mandante3:{x:523, y:844, len:150, dir:[0,-1]},
+            visitante1:{x:515, y:197, len:150, dir:[0,1]}, visitante2:{x:655, y:201, len:150, dir:[0,1]}},
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:1000, y:865,
+       entrada:'portao_mandante'},
+      {id:'mandante3', rot:'MANDANTE 3º ESCALÃO', lado:'mandante', x:505,  y:838,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:470, y:140,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:640, y:140,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1320, y:480, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:350, y:110, raio:40, dir:[0,-1]}
+    ],
+    pmPostos:[{x:768, y:140}],
+    grades:[
+      {id:'div_norte1', rot:'DIVISÓRIA', de:{x:730, y:96},  ate:{x:730, y:190},
+       modulos:4, espessura:10},
+      {id:'div_norte2', rot:'DIVISÓRIA', de:{x:838, y:96},  ate:{x:838, y:190},
+       modulos:4, espessura:10}
+    ]
+  });
+
+  const estadio20 = fazEstadio({
+    id:'estadio-20', nome:'Estádio de 20 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    /* âncoras medidas na linha das placas (34 px fora do gramado —
+       ajuste de 10/09/2026); atrás do gol a placa faz um degrau, e a
+       faixa encurta pra 110 pra não atravessar o degrau; a quina dos
+       visitantes é um arco de centro (453,320) */
+    faixas:{mandante1:{x:1191, y:516, len:150, dir:[-1,0]}, mandante2:{x:675, y:802, len:110, dir:[0,-1]}, mandante3:{x:875, y:221, len:110, dir:[0,1]},
+            visitante1:{x:349, y:516, len:150, dir:[1,0]}, visitante2:{x:382, y:242, len:150, dir:[0.68,0.73], arco:[453,318]}, visitante3:{x:358, y:274, len:150, dir:[0.89,0.46], arco:[453,323]}},
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:675,  y:830,
+       entrada:'portao_mandante'},
+      {id:'mandante3', rot:'MANDANTE 3º ESCALÃO', lado:'mandante', x:875,  y:175,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:275, y:490,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:385, y:165,
+       entrada:'portao_visitante'},
+      {id:'visitante3',rot:'VISITANTE 3º ESCALÃO',lado:'visitante', x:260, y:275,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1310, y:705, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:245, y:390, raio:40, dir:[-1,0]}
+    ],
+    pmPostos:[{x:570, y:185}, {x:230, y:635}],
+    grades:[
+      {id:'div_norte1', rot:'DIVISÓRIA', de:{x:515, y:92},  ate:{x:515, y:225},
+       modulos:5, espessura:10},
+      {id:'div_norte2', rot:'DIVISÓRIA', de:{x:640, y:92},  ate:{x:640, y:225},
+       modulos:5, espessura:10},
+      {id:'div_oeste',  rot:'DIVISÓRIA', de:{x:205, y:570}, ate:{x:330, y:585},
+       modulos:5, espessura:10}
+    ]
+  });
+
+  const estadio40 = fazEstadio({
+    id:'estadio-40', nome:'Estádio de 40 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    /* âncoras medidas na frente do anel caminhável, amostrada ao longo
+       da curva (ajuste de 10/09/2026): neste trecho de 150 px o anel é
+       reto dentro de 4 px, só o visitante 3 curva */
+    faixas:{mandante1:{x:1252, y:371, len:150, dir:[-0.94,0.33]}, mandante2:{x:521, y:148, len:150, dir:[0.28,0.96]},
+            visitante1:{x:368, y:808, len:110, dir:[0.53,-0.85]}, visitante2:{x:269, y:583, len:150, dir:[0.99,-0.14]}, visitante3:{x:436, y:697, len:150, dir:[0.79,-0.61], arco:[532,623]}},
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:505,  y:125,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:360, y:815,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:215, y:590,
+       entrada:'portao_visitante'},
+      {id:'visitante3',rot:'VISITANTE 3º ESCALÃO',lado:'visitante', x:400, y:718,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1350, y:250, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:300, y:900, raio:40, dir:[0,1]}
+    ],
+    pmPostos:[{x:170, y:512}, {x:338, y:630}, {x:515, y:753}, {x:445, y:855}],
+    grades:[
+      {id:'div_v23', rot:'DIVISÓRIA', de:{x:280, y:585}, ate:{x:345, y:660},
+       modulos:4, espessura:10},
+      {id:'div_v31', rot:'DIVISÓRIA', de:{x:430, y:700}, ate:{x:490, y:775},
+       modulos:4, espessura:10}
+    ]
+  });
+
+  /* =======================================================
      QUANDO EXISTE FOTO
      A cena desenhada é o rascunho; quando a foto aérea chega,
      ela manda. A imagem vira o chão e a máscara tirada dela
@@ -607,14 +914,20 @@ TO.dados.cenas = (function(){
     cena.blocos = []; cena.enfeites = []; cena.varais = [];
     cena.poligonos = {caminhavel:[], bloqueio:[]};
     /* railing modelado é coisa de cena desenhada: na foto não dá pra
-       saber onde o gradil está sem marcar na mão */
-    cena.grades = [];
+       saber onde o gradil está sem marcar na mão. A exceção é a cena
+       que declara gradesDaFoto — as divisórias da arquibancada foram
+       marcadas na mão pelo dono (imagens de 19/08/2026). */
+    if(!cena.gradesDaFoto) cena.grades = [];
 
     const puxa = puxador(cena, f.mascara);
-    /* a pista da foto não cai na mesma altura da desenhada */
-    if(f.meio) for(const s of cena.spawns)
+    /* a pista da foto não cai na mesma altura da desenhada — mas numa
+       cena de DENTRO (as sedes) não há pista: `semMeio` (22/09/2026) */
+    if(f.meio && !cena.semMeio) for(const s of cena.spawns)
       if(Math.abs(s.y - cena.altura/2) < 40) s.y = f.meio;
-    if(f.bocas) for(const e of cena.entradas){
+    /* as bocas são régua de RUA (transversal em cada ponta); a casa
+       de piscina tem a rua inteira caminhável de borda a borda e a
+       boca "mais próxima" (x=420) puxava o fim da rua pro meio dela */
+    if(f.bocas && !cena.semBocas) for(const e of cena.entradas){
       if(e.x < cena.largura*0.2) e.x = f.bocas[0];
       if(e.x > cena.largura*0.8) e.x = f.bocas[1];
       if(f.meio && Math.abs(e.y - cena.altura/2) < 40) e.y = f.meio;
@@ -650,8 +963,13 @@ TO.dados.cenas = (function(){
         const novo = e[campo].find(x=>x.id===o.id);
         return novo ? Object.assign({}, o, copia(novo)) : o;
       }).concat(e[campo].filter(x=>!cena[campo].some(o=>o.id===x.id)).map(copia));
-    for(const campo of ['pmPostos', 'grades'])
+    /* Estes vêm inteiros do editor: quem edita apaga e cria, e mesclar
+       por id devolveria a grade que a mão tirou. `fugas` só existe
+       quando a mão marcou — sem ela a cena segue lendo as bocas da
+       máscara, como sempre. */
+    for(const campo of ['pmPostos', 'grades', 'fugas'])
       if(e[campo]) cena[campo] = copia(e[campo]);
+    if(e.tropaEm) cena.tropaEm = copia(e.tropaEm);
     if(e.poligonos) cena.poligonos = copia(e.poligonos);
     /* a zona que acorda a casa é coordenada como qualquer marcador, e
        muda junto com eles quando a foto tem outra planta */
@@ -664,14 +982,174 @@ TO.dados.cenas = (function(){
        mais perto, exatamente como quando a foto chegou. */
     if(e.mascara) {
       const puxa = puxador(cena, e.mascara);
-      for(const campo of ['spawns', 'entradas', 'pmPostos'])
-        cena[campo].forEach(puxa);
+      for(const campo of ['spawns', 'entradas', 'pmPostos', 'fugas'])
+        if(cena[campo]) cena[campo].forEach(puxa);
+      if(cena.tropaEm) puxa(cena.tropaEm);
     }
     return cena;
   }
 
+  /* =======================================================
+     CASA DE PISCINA (pedido do dono, 21/09/2026)
+     A resenha de uma zona da torcida numa casa de praia. A foto é
+     zenital: rua de areia embaixo, lote murado no meio — garagem e
+     casa na esquerda, quintal com dois carros, deck com piscina na
+     direita, portão na quina de baixo/direita. A máscara vem da
+     foto com as paredes ditas na mão (importar_cena_foto.py); o
+     acabamento fino fica pro editor (F2), como em toda cena.
+
+     Quem é atacado nasce ESPALHADO pelos cinco pontos (80% no deck,
+     em volta da piscina; 20% dentro da casa) e fica de guarda até o
+     invasor pisar no portão — só o portão acorda a casa (`soZona`):
+     ver alguém pela porta não conta, a resenha está de costas pra
+     rua. A faixa fica estendida no muro do fundo do deck; quem a
+     recolhe corre pro depósito, no canto de dentro da casa
+     (`faixaAbrigo`), e ali se tranca. O atacante entra pelo portão,
+     atravessa o quintal e toma o deck; a passagem atrás da casa
+     liga o deck à porta dos fundos, que dá no hall e na sala.
+     ======================================================= */
+  const casaPiscina = cenaDeFoto({
+    id:'casa-piscina', nome:'Casa de piscina',
+    local:'Na resenha deles, numa casa de piscina',
+    saida:{perto:'Tomar a casa', longe:'Beira da piscina (leve o líder)',
+           feito:'sua torcida tomou a resenha deles',
+           dica:'Leve o líder até a beira da piscina.'},
+    /* o muro do fundo do deck: o ponto é no chão, na frente dele */
+    faixas:{visitante:{x:983, y:210, len:130, dir:[0,-1]}},
+    /* onde quem recolheu a faixa se esconde: o depósito da casa */
+    faixaAbrigo:{x:522, y:429, raio:44, rot:'DEPÓSITO'},
+    /* um bonde só de quem defende, repartido pelos cinco pontos */
+    espalharBonde:'visitante',
+    /* a rua vai de borda a borda: o fim dela é a borda, não uma boca */
+    semBocas:true,
+    spawns:[
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1152, y:760,
+       jogador:true, entrada:'piscina'},
+      /* longe do portão: a 998 a grade do 2º escalão da bancada (sem
+         bonde, os dois spawns dividem o efetivo) nascia dentro da zona
+         do gatilho e a casa acordava no primeiro segundo */
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:1290, y:790,
+       entrada:'piscina'},
+      {id:'visitante1', rot:'DECK, LADO DA CASA', lado:'visitante', x:860, y:237,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante2', rot:'CHURRASQUEIRA', lado:'visitante', x:1114, y:252,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante3', rot:'BEIRA DA PISCINA', lado:'visitante', x:860, y:444,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante4', rot:'ESPREGUIÇADEIRAS', lado:'visitante', x:1106, y:444,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante5', rot:'NA SALA', lado:'visitante', x:737, y:406,
+       guarda:true, entrada:'fim_rua'}
+    ],
+    entradas:[
+      {id:'piscina', rot:'BEIRA DA PISCINA', lado:'mandante', x:998, y:463, raio:56, dir:[0,-1]},
+      {id:'fim_rua', rot:'FIM DA RUA', lado:'visitante', x:40, y:770, raio:46, dir:[-1,0]}
+    ],
+    /* só o portão acorda a casa: nem a distância, nem a linha de visão */
+    gatilho:{x:960, y:655, raio:110, lado:'mandante', soZona:true,
+             rot:'PORTÃO DA CASA',
+             espera:'a resenha ainda não te viu',
+             aviso:'gritaram no portão — a casa inteira veio pra cima'},
+    pmPostos:[{x:80, y:780}, {x:1470, y:780}]
+  });
+
+  /* =======================================================
+     AS SEDES (fotos do dono: nível 1 em 10/09, 2 a 5 em 22/09/2026)
+     Uma cena por nível de sede, sobre a foto de zênite do quarteirão
+     sem telhado — o nível 6 usa a foto do 5. É NELAS que a reunião
+     da diretoria acontece, no pátio (decisão do dono, 22/09/2026, no
+     lugar de uma sala própria): as cadeiras em C QUADRADO — quatro
+     no fundo, quatro em cima, quatro embaixo, a abertura pra direita
+     —, todas viradas pra dentro, e o presidente em pé sozinho do lado
+     direito, virado pra eles. O retângulo do pátio de cada nível foi
+     medido na foto; `cadeirasEmC` distribui as cadeiras nele e diz
+     onde o presidente fica. O combate lê `D.cadeiras` e
+     `D.presidente` (`sentarNaRoda`); o desenho das cadeiras por cima
+     da foto é do `arredores.desenharSobreposicoes`.
+
+     O spawn é o lugar do presidente; a entrada é o portão da rua, que
+     a máscara liga ao pátio pela conectividade — `conferirPortoes`
+     avisa no console se a foto não deixou o portão passar (aí é F2).
+     `semMeio`/`semBocas`: a régua de rua do `sobreFoto` (a pista no
+     meio, as bocas nas pontas) não vale numa cena de dentro.
+     ======================================================= */
+  function cadeirasEmC(x0, y0, x1, y1){
+    /* o C não cresce sem limite num pátio grande: fica centrado */
+    const wMax = 300, hMax = 230;
+    if(x1 - x0 > wMax){ const c = (x0+x1)/2; x0 = c - wMax/2; x1 = c + wMax/2; }
+    if(y1 - y0 > hMax){ const c = (y0+y1)/2; y0 = c - hMax/2; y1 = c + hMax/2; }
+    const w = x1 - x0, h = y1 - y0;
+    const mx = Math.max(14, Math.min(24, w*0.08)), my = Math.max(14, Math.min(24, h*0.10));
+    const xc = x0 + mx;                              // a coluna do fundo
+    const xp = x1 - mx;                              // o presidente
+    const xa0 = xc + Math.max(34, w*0.16), xa1 = xp - Math.max(50, w*0.24);
+    const olhaDireita = Math.atan2(1, 0), olhaBaixo = 0, olhaCima = Math.PI;
+    const R = Math.round;
+    const cadeiras = [];
+    for(let i=0;i<4;i++) cadeiras.push({x:R(xc), y:R(y0 + my + (h - 2*my)*i/3), rumo:olhaDireita});
+    for(let i=0;i<4;i++){
+      const x = R(xa0 + (xa1 - xa0)*i/3);
+      cadeiras.push({x, y:R(y0 + my), rumo:olhaBaixo});
+      cadeiras.push({x, y:R(y1 - my), rumo:olhaCima});
+    }
+    return {cadeiras, presidente:{x:R(xp), y:R((y0+y1)/2), rumo:Math.atan2(-1, 0)}};
+  }
+  const SEDE_SAIDA = {perto:'Sair da sede', longe:'Portão da rua (leve o líder)',
+                      feito:'a reunião acabou',
+                      dica:'A reunião acaba pelo botão de encerrar.'};
+  /* o pátio de cada nível, em pixel da tela (medido na foto, 22/09/2026),
+     e o portão da rua */
+  const SEDES = [
+    {n:1, patio:[430, 200, 770, 540], portao:600},
+    {n:2, patio:[632, 434, 930, 569], portao:765},
+    {n:3, patio:[538, 491, 768, 660], portao:732},
+    {n:4, patio:[452, 499, 646, 680], portao:610},
+    {n:5, patio:[472, 540, 682, 670], portao:585}
+  ];
+  const sedes = {};
+  for(const sd of SEDES){
+    const c = cadeirasEmC(...sd.patio);
+    sedes['sede-'+sd.n] = cenaDeFoto({
+      id:'sede-'+sd.n, nome:`Sede nível ${sd.n}`, local:'Na sede, reunião da diretoria',
+      cadeiras:c.cadeiras, presidente:c.presidente,
+      saida:SEDE_SAIDA, semBocas:true, semMeio:true, tropaChoque:false,
+      spawns:[
+        {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:c.presidente.x, y:c.presidente.y,
+         jogador:true, entrada:'portao'}
+      ],
+      entradas:[
+        {id:'portao', rot:'PORTÃO DA RUA', lado:'mandante', x:sd.portao, y:880, raio:40, dir:[0,1]}
+      ],
+      pmPostos:[]
+    });
+  }
+
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
-                 bar, comercio, ct};
+                 bar, comercio, ct, 'casa-piscina':casaPiscina, ...sedes,
+                 'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
+                 'treta-campo':tretaCampo,
+                 'emb-posto':embPosto, 'emb-onibus':embOnibus,
+                 'estadio-10':estadio10, 'estadio-20':estadio20,
+                 'estadio-40':estadio40};
+
+  /* =======================================================
+     AS RUAS EM 3D
+     A foto, logo abaixo, apaga os blocos da cena desenhada — e
+     é dos blocos que a versão 3D levanta parede, telhado e
+     poste. Então cada rua ganha uma cópia ANTES da foto passar,
+     com a mesma planta, os mesmos spawns e a mesma malha que o
+     desenho tinha: `rua-3d` é a rua de periferia vista de
+     perto, e o combate roda nela sem saber que é 3D.
+     ======================================================= */
+  const copia3d = o => JSON.parse(JSON.stringify(o));
+  for(const id of ['rua', 'rua-media', 'rua-nobre']){
+    if(!cenas[id]) continue;
+    const c = copia3d(cenas[id]);
+    c.base = id; c.tres = true;
+    c.id = id + '-3d';
+    c.nome = (cenas[id].nome || id) + ' em 3D';
+    cenas[c.id] = c;
+  }
 
   /* Quem manda é a ordem: desenho, depois foto, depois mão. As duas
      últimas varrem o que existir — cena que ganhar foto amanhã entra
@@ -685,3 +1163,14 @@ TO.dados.cenas = (function(){
 
   return cenas;
 })();
+
+/* A cena da sede pelo NÍVEL (22/09/2026): `sede-1` a `sede-5`, e o
+   nível 6 (o Complexo) usa a foto do 5 — decisão do dono, 10/09/2026.
+   É por aqui que a reunião da diretoria acha o pátio dela. */
+TO.dados.sedeCenaDoNivel = function(n){
+  const v = Math.round(+n);
+  /* sem sede (nível 0), a reunião é na praça do bairro (dono, 22/09/2026) */
+  if(!(v > 0)) return TO.dados.cenas.praca && TO.dados.cenas.praca.cadeiras ? 'praca' : 'sede-1';
+  const k = Math.max(1, Math.min(5, v));
+  return TO.dados.cenas['sede-'+k] ? 'sede-'+k : 'sede-1';
+};

@@ -715,8 +715,8 @@ TO.diaJogo.arredores = (function(){
       if(malha[r*COLS+cx]) c.fillRect(cx*CEL,r*CEL,CEL,CEL);
     c.font='600 15px "IBM Plex Mono",monospace';
     c.textAlign='center'; c.fillStyle='#e0b040';
-    c.fillText(imagemErro? 'img/cenas/arredores.png não encontrada — usando a malha'
-                         : 'carregando fundo…', W/2, 40);
+    c.fillText(imagemErro? _t('img/cenas/arredores.png não encontrada — usando a malha')
+                         : _t('carregando fundo…'), W/2, 40);
   }
 
   const COR_LADO={mandante:'#c0392b', visitante:'#2a5fa8'};
@@ -761,6 +761,10 @@ TO.diaJogo.arredores = (function(){
 
   function desenharSobreposicoes(c, mods, opc){
     opc=opc||{};
+    /* as cadeiras da reunião da diretoria (22/09/2026): a foto da sede
+       não as tem, o jogo desenha uma por diretor em cima dela */
+    if(D.cadeiras && TO.diaJogo.cenario && TO.diaJogo.cenario.cadeira)
+      for(const k of D.cadeiras) TO.diaJogo.cenario.cadeira(c, k);
 
     /* ---- spawns: invisíveis em jogo. São ponto de partida, não
        informação que o jogador precise ver a noite toda. Só o editor

@@ -4,7 +4,9 @@
    cabeçalho com data, escudo e indicadores, e conteúdo em
    cartões de faixa escura.
    ========================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&family=Ultra&family=Archivo+Narrow:wght@600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+/* Ultra, Archivo Narrow e PT Serif são do JORNAL da rodada e de mais
+   nada: o dono escolheu fidelidade ao recorte dos anos 40 (20/08/2026) */
 
 :root{
   /* fundos, do mais fundo pro mais próximo */
@@ -135,7 +137,6 @@ body.com-painel .pagina.painel{
    servem: os dois eram escondidos por regra de celular, e sem o grid
    antigo passaram a aparecer soltos no rodapé da tela larga */
 #painelBarra{display:none}
-#avisoGirar{display:none}
 body.com-painel #painelBarra{
   display:flex;align-items:center;gap:8px;
   position:absolute;z-index:53;left:0;right:0;top:0;
@@ -215,8 +216,13 @@ body.com-painel #painelBarra{
 /* =========================================================
    TELAS CHEIAS (menu, seleção, escalação, relatório)
    ========================================================= */
+/* A TELA CHEIA VEM POR CIMA DO PAINEL (correção, 21/08/2026): o painel
+   sobe a 52 e a barra dele a 53, então um modal aberto de dentro de um
+   painel — o perfil do membro, o assalto, a caravana — nascia ATRÁS da
+   página e o clique não achava nada na tela. Fica em 55: acima do
+   painel, abaixo do aviso (61) e das camadas da cena (70+). */
 .tela-cheia{
-  position:fixed;inset:0;z-index:50;background:#09090af5;
+  position:fixed;inset:0;z-index:55;background:#09090af5;
   display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;
 }
 .moldura{
@@ -295,3 +301,7 @@ body.com-painel #painelBarra{
   position:absolute;left:6vw;bottom:18px;
   font-family:var(--mono);font-size:9.5px;color:var(--apagado);
 }
+
+/* CONFIGURAÇÕES: o idioma (dono, 24/09/2026) */
+.config-idiomas{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+.config-idioma{min-width:120px}

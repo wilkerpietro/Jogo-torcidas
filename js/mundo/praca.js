@@ -33,15 +33,21 @@ TO.praca = (function(){
   /* o dia de jogo da praça: todo jogo com mando aqui na semana pedida,
      que por omissão é a corrente. A semana entra por parâmetro porque
      a janela de dez dias da ameaça (§8.27) atravessa a virada. */
-  function jogosDaPraca(E, semana){
-    const nossa = E.torcida.mapa;
+  function jogosDaPraca(E, semana, cidade){
+    /* a cidade entra por parâmetro (planejamento por subsede, dono,
+       10/09/2026): sem ela, é a nossa praça, como sempre foi */
+    const nossa = cidade || E.torcida.mapa;
     const fora = [];
     if(!E.temporada) return fora;
     const alvo = semana != null ? semana : E.data.semana;
     for(const comp of E.temporada.competicoes)
       for(const etapa of [...comp.rodadas, ...comp.mata]){
-        if(etapa.semana !== alvo) continue;
         for(const j of etapa.jogos){
+          /* A SEMANA É A DO JOGO, NÃO A DA RODADA (correção do dono,
+             21/09/2026): o árbitro da agenda (`arrumarAgenda`) adia o
+             jogo do clube escrevendo `j.s`; lendo só a rodada, o jogo
+             adiado seguia na semana velha e faltava na nova. */
+          if((j.s || etapa.semana) !== alvo) continue;
           if(!j.f) continue;
           const casa = M().time(j.c), vis = M().time(j.f);
           if(!casa || !vis || casa.mapa !== nossa) continue;
@@ -241,13 +247,14 @@ TO.praca = (function(){
                    || (b.membros||0) - (a.membros||0)
                    || (a.id < b.id ? -1 : 1));
 
-    const siglado = new Set(), cor = {}, cor2 = {}, sigla = {};
+    const siglado = new Set(), cor = {}, cor2 = {}, cor3 = {}, sigla = {};
     for(const o of cast){
       const s = siglaUnica(o, siglado);
       siglado.add(s); sigla[o.id] = s;
       const c = M().coresDaTorcida(o);
       cor[o.id]  = c.cor || '#999999';
       cor2[o.id] = c.cor2;
+      cor3[o.id] = c.cor3;
     }
 
     /* NINGUÉM TROCA DE COR. Cada uma usa a própria primária, sempre; só
@@ -263,7 +270,7 @@ TO.praca = (function(){
         cast.indexOf(a) - cast.indexOf(b));
       ordem.forEach((o,i)=>{ if(i) cor[o.id] = tomVizinho(cor[o.id], i); });
     }
-    return {cor, cor2, sigla};
+    return {cor, cor2, cor3, sigla};
   }
 
   /* Um tom que se distinga da base, na direção que dá contraste.
@@ -314,22 +321,22 @@ TO.praca = (function(){
             id: bons[0].id, nome: bons[0].nome};
   }
 
-  /* Quanta gente o anfitrião manda junto. GDD §11.1: acolher bem sobe a
-     relação, e escoltar é acolher com bonde. São 5 a 10% do efetivo de
-     quem recebe — a TUF, com 150, empresta de 8 a 15. */
+  /* Quanta gente o anfitrião manda junto. A NOSSA escolta é destacada
+     na régua do dono (28/08/2026): 10 membros, ou quantos aptos
+     houver se não der 10. A dos anfitriões IA segue os 5 a 10% do
+     efetivo de sempre. */
   function escoltaDe(E, anfitriao, visitante){
     if(anfitriao.id === E.torcida.id){
       const nivel = PL().nivelDe(E, visitante.id);
       if(nivel !== 'escolta' && nivel !== 'churrasco') return 0;
+      return Math.min(10, TO.membros.aptosParaOEstadio(E).length);
     }
     const pct = 5 + (MP().hash(`escolta|${anfitriao.id}|${visitante.id}`) % 6);
     return Math.max(1, Math.round((anfitriao.membros || 20) * pct / 100));
   }
 
-  /* TORCIDA BANIDA NÃO PISA NA RUA. Polícia zerada tira a organizada de
-     circulação por quatro semanas — a mesma punição que a gente sofre. */
-  const podeSair = (E, o) =>
-    !(TO.tensao && TO.tensao.banida && TO.tensao.banida(E, o.id));
+  /* toda organizada pisa na rua no dia do jogo dela */
+  const podeSair = () => true;
 
   /* A RUA DE UM DIA QUALQUER, e não só a de hoje: o assistente de
      ataque pergunta na véspera quem vai estar na rua no dia do jogo, e
@@ -353,7 +360,7 @@ TO.praca = (function(){
     for(const jogo of doDia)
       for(const o of M().torcidasDe(jogo.vis.id)){
         if(pontoDaSede(mo, o)) continue;         // mora aqui, não é caravana
-        if(PL().caravanaDe(o, (E.relacoes||{})[o.id]) < 5) continue;
+        if(PL().caravanaDe(o, (E.relacoes||{})[o.id], E) < 5) continue;
         const casa = anfitriaoDe(E, mo, o);
         if(!casa) continue;
         const n = escoltaDe(E, casa.torcida, o);
@@ -373,6 +380,7 @@ TO.praca = (function(){
         nossa: o.id === E.torcida.id,
         cor:  elenco.cor[o.id]  || (o.cores && o.cores[0]) || '#999',
         cor2: elenco.cor2[o.id] || M().coresDaTorcida(o).cor2,
+        cor3: elenco.cor3[o.id] || M().coresDaTorcida(o).cor3,
         sigla: elenco.sigla[o.id] || M().siglaTorcida(o),
         jogo: jogo && jogo.casa.id, partida: jogo
       }, extra || {});
@@ -382,9 +390,12 @@ TO.praca = (function(){
     for(const jogo of doDia){
       for(const o of M().torcidasDe(jogo.casa.id)){
         if(!podeSair(E, o) || !pontoDaSede(mo, o)) continue;
+        /* EM CASA VAI TODO MUNDO DE PÉ (ordem do dono, 31/08/2026): a
+           mesma régua da nossa torcida — os 60% caíram. Ferido e preso
+           seguem em casa: a base é `disponiveisIA`, não o total. */
         põe(o, o.id === E.torcida.id
-               ? menosAEscolta(o, PL().efetivoDaSaida(E))
-               : menosAEscolta(o, Math.round(TO.acoes.efetivoDe(E, o) * 0.6)),
+               ? menosAEscolta(o, PL().efetivoDaSaida(E, {mapa: E.torcida.mapa}))
+               : menosAEscolta(o, TO.relacoes.disponiveisIA(E, o.id)),
             jogo, {deFora:false});
       }
       for(const o of M().torcidasDe(jogo.vis.id)){
@@ -393,12 +404,12 @@ TO.praca = (function(){
            Azul é visitante no jogo e moradora da cidade. */
         if(pontoDaSede(mo, o)){
           põe(o, o.id === E.torcida.id
-                 ? menosAEscolta(o, PL().efetivoDaSaida(E))
-                 : menosAEscolta(o, Math.round(TO.acoes.efetivoDe(E, o) * 0.6)),
+                 ? menosAEscolta(o, PL().efetivoDaSaida(E, {mapa: E.torcida.mapa}))
+                 : menosAEscolta(o, TO.relacoes.disponiveisIA(E, o.id)),
               jogo, {deFora:false});
           continue;
         }
-        const vem = PL().caravanaDe(o, (E.relacoes||{})[o.id]);
+        const vem = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
         if(vem < 5) continue;
         const esc = escoltas[o.id];
         põe(o, vem + (esc ? esc.n : 0), jogo, {
@@ -429,19 +440,16 @@ TO.praca = (function(){
        procurando. Sobe com a tensão, mas devagar: é o que garante que
        o dia de jogo comum termine em paz.
      ======================================================= */
-  /* hostil é rival de fato, ou tensão alta o bastante pra sair faísca —
-     menos entre duas organizadas do mesmo clube ligadas por irmandade,
-     que não se pegam por número nenhum (§8.28). Esta linha vem antes de
-     tudo de propósito: a tensão passa por cima da relação, e sem ela
-     bastaria a tensão chegar a 45 pra as irmãs se estranharem. */
+  /* hostil é relação ruim de verdade — menos entre duas organizadas do
+     mesmo clube ligadas por irmandade, que não se pegam por número
+     nenhum (§8.28). */
   function hostis(E, ida, idb){
     if(M().saoIrmas(ida, idb)) return false;
     const meu = E.torcida.id;
     if(ida === meu || idb === meu){
       const outro = ida === meu ? idb : ida;
-      const rel = (E.relacoes||{})[outro];
-      const ten = TO.tensao ? TO.tensao.nivel(E, outro) : 0;
-      return (rel !== undefined && rel <= -15) || ten >= 45;
+      if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, outro)) return false;
+      return TO.relacoes.nivel(E, outro) <= -15;
     }
     const t = M().relacaoBase(ida, idb);
     return t === 'Rival' || t === 'Maior Rival';
@@ -469,8 +477,16 @@ TO.praca = (function(){
      fora do fator, trinta caras com ódio viriam pra cima de duzentos,
      que é exatamente o que não acontece na rua.
      ======================================================= */
-  const BASE_PROCURA = {maior:88, rival:72, hostil:20};
-  const K_TENSAO     = 0.5;      // agravante, não âncora
+  /* MENOS BRIGA, E COM O MAIOR RIVAL (régua do dono, 08/09/2026): a
+     base era 88/72/20. O maior rival cai 30% (62), o rival comum e o
+     hostil caem 50% (36/10) — na média a rua briga 40% menos, e quando
+     briga é quase sempre com quem importa. */
+  const BASE_PROCURA = {maior:62, rival:36, hostil:10};
+  /* o agravante que era da tensão agora é a MÁGOA: quanto a relação
+     está abaixo de −45 — briga recente derruba a relação além do
+     natural, e é isso que esquenta a semana seguinte */
+  const K_MAGOA = 0.3;      // era 0,5: os 40% a menos valem na mágoa também
+  const magoa = rel => Math.max(0, -(rel||0) - 45);
 
   /* A PARIDADE COMPARA TORCIDAS, NÃO BONDES, e o motivo é medido.
 
@@ -515,8 +531,12 @@ TO.praca = (function(){
   /* 0 abaixo do piso, sobe linear até a paridade da rua, e passa de 1
      quando eles são mais que a gente — com teto, porque bonde maior vem
      com mais vontade, não com certeza */
-  const efetivoDe = (E, id) => id === E.torcida.id ? E.membros.length
-    : (((TO.tensao && TO.tensao.mundo(E)[id]) || M().torcida(id) || {}).membros || 20);
+  /* de pé, sem ferido nem preso, dos dois lados (dono, 27/08/2026) */
+  const efetivoDe = (E, id) => id === E.torcida.id
+    ? TO.membros.aptosParaOEstadio(E).length
+    : (TO.relacoes && TO.relacoes.disponiveisIA
+        ? TO.relacoes.disponiveisIA(E, id)
+        : ((M().torcida(id) || {}).membros || 20));
 
   function fatorParidade(nossos, deles){
     const r = deles / Math.max(1, nossos);
@@ -526,10 +546,11 @@ TO.praca = (function(){
     return (r - PISO_PARIDADE) / (PAR_PARIDADE - PISO_PARIDADE);
   }
 
-  const chanceDeProcurar = (E, outro, tensao) =>
-    U.limitar((BASE_PROCURA[grauDeRivalidade(E, outro)] + tensao*K_TENSAO)
+  const chanceDeProcurar = (E, outro) =>
+    U.limitar((BASE_PROCURA[grauDeRivalidade(E, outro)]
+               + magoa(TO.relacoes.nivel(E, outro))*K_MAGOA)
               * fatorParidade(efetivoDe(E, E.torcida.id), efetivoDe(E, outro)),
-              0, 95);
+              0, 57);
 
   /* O ACASO É MUITO MENOR QUE A INTENÇÃO, e tem de ser: dois bondes que
      não estão se procurando só se pegam se derem de cara um com o
@@ -548,8 +569,8 @@ TO.praca = (function(){
      hostilidade (−15) dá 1,25%. Somado à intenção, é uma surpresa a
      cada dez pares hostis — três ou quatro na temporada, e a esmagadora
      maioria dos dias sem plano em paz, que é o que o prompt pede. */
-  const chanceDeAcaso = (tensao, relacao) => Math.min(12,
-    tensao * 0.10 + Math.max(0, -(relacao || 0)) / 12);
+  const chanceDeAcaso = relacao => Math.min(7.2,
+    Math.max(0, -(relacao || 0)) / 20);    // 40% a menos (dono, 08/09/2026)
 
   /* OS BAIRROS QUE LIGAM DUAS PONTAS. Não há rota pra percorrer, mas há
      geometria: o bairro que fica ao longo da reta entre a sede e o
@@ -617,12 +638,15 @@ TO.praca = (function(){
      `enc` tem a forma que `abrirConfronto` já espera: dois bondes com
      efetivo real e distinto, cor, sigla e nome, mais o local.
      ======================================================= */
-  function resolverIda(E){
+  /* `jogo` é o segundo jogo nosso da semana, quando é o dele que hoje
+     é (correção do dono, 22/09/2026): sem isto, o dia do jogo de casa
+     que não é o `proximoJogo` da semana lia o plano do OUTRO jogo. */
+  function resolverIda(E, jogo){
     const mo = MP().modelo(E);
     const rua = naRuaHoje(E);
     const nosso = rua.find(b => b.nossa) || rua.find(b => b.doJogador);
     if(!nosso) return {desfecho:'paz', semNos:true};
-    const p = PL().plano(E);
+    const p = PL().plano(E, jogo);
     const outros = rua.filter(b => b !== nosso && b.id !== nosso.id);
 
     /* a) INTENÇÃO NOSSA: quem planejou atacar, encontra */
@@ -632,7 +656,7 @@ TO.praca = (function(){
         const onde = lugarPlanejado(E, mo, p);
         /* QUANTOS VÃO ATACAR é escolha da tela (§8.29): quem sai de casa
            é o teto, e o resto fica. Sem escolha, vai o bonde inteiro. */
-        const f = PL().efetivoDoAtaque(E);
+        const f = PL().efetivoDoAtaque(E, jogo);
         const meu = Object.assign({}, nosso, {n: Math.min(nosso.n, f.vao)});
         return {desfecho:'planejada', onde,
                 enc: montarEncontro(meu, alvo, onde)};
@@ -645,11 +669,9 @@ TO.praca = (function(){
       .filter(b => hostis(E, nosso.id, b.id))
       .sort((a,b)=> b.n - a.n);
     for(const b of inimigos){
-      const ten = TO.tensao ? TO.tensao.nivel(E, b.id) : 0;
-      const rel = (E.relacoes||{})[b.id];
-      const procurou = U.rng()*100 <
-        chanceDeProcurar(E, b.id, ten);
-      const esbarrou = !procurou && U.rng()*100 < chanceDeAcaso(ten, rel);
+      const rel = TO.relacoes.nivel(E, b.id);
+      const procurou = U.rng()*100 < chanceDeProcurar(E, b.id);
+      const esbarrou = !procurou && U.rng()*100 < chanceDeAcaso(rel);
       if(!procurou && !esbarrou) continue;
       const onde = lugarDoEncontro(E, mo, b,
         `enc|${E.data.ano}|${E.data.semana}|${E.data.dia}|${b.id}`);
@@ -674,19 +696,21 @@ TO.praca = (function(){
      deles não há mando, e a convenção do dado das cenas continua
      valendo (nascemos como mandante).
      ======================================================= */
-  function encontroDaViagem(E){
-    const j = E.proximoJogo;
-    const p = PL().plano(E);
+  function encontroDaViagem(E, jogo){
+    const j = jogo || E.proximoJogo;
+    const p = PL().plano(E, j);
     if(!j || j.casa || p.intencao === 'paz' || !p.alvoTorcida) return null;
     const o = M().torcida(p.alvoTorcida);
     if(!o || M().saoIrmas(E.torcida.id, o.id)) return null;
     const onde = (PL().ONDE_ATAQUE.find(x=>x.id === PL().ondeDoPlano(p))
                   || {}).id || 'arredores';
-    /* O EFETIVO DELES É O DE CASA, a mesma conta de `naRuaHoje`: 60% do
-       que a torcida tem. O nosso é quem embarcou, e mais ninguém. */
-    const deles = Math.max(4, Math.round(
-      (((TO.tensao && TO.tensao.mundo(E)[o.id]) || o).membros || 20) * 0.6));
-    const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
+    /* O EFETIVO DELES É O DE CASA, a mesma conta de `naRuaEm`: todo o
+       efetivo de pé — a régua do jogador (ordem do dono, 31/08/2026).
+       O nosso é quem embarcou, e mais ninguém. */
+    const deles = Math.max(4, TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, o.id)
+      : Math.round((o.membros || 20) * 0.6));
+    const nossos = Math.max(2, PL().efetivoDoAtaque(E, j).vao);
     const cores = M().coresDaTorcida(o);
     const nossaCor = M().coresDaTorcida(E.torcida);
     const local = onde === 'praca' ? 'praca'
@@ -699,9 +723,10 @@ TO.praca = (function(){
       enc:{
         a:{torcida:E.torcida.id, nome:E.torcida.nome,
            sigla:M().siglaTorcida(E.torcida), n:nossos,
-           cor:nossaCor.cor, cor2:nossaCor.cor2, nossa:true},
+           cor:nossaCor.cor, cor2:nossaCor.cor2, cor3:nossaCor.cor3,
+           nossa:true},
         b:{torcida:o.id, nome:o.nome, sigla:M().siglaTorcida(o), n:deles,
-           cor:cores.cor, cor2:cores.cor2, nossa:false},
+           cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, nossa:false},
         local, bairro:o.bairroSede||'', nossa:true,
         /* nos arredores deles, o mando é deles */
         nossoLado: onde === 'arredores' ? 'visitante' : 'mandante'}};
@@ -721,31 +746,34 @@ TO.praca = (function(){
      rua —, o nosso é o do seletor, e o mando é NOSSO: a praça é nossa.
      ======================================================= */
   function encontroDaPraca(E, dia){
-    const p = PL().plano(E);
     dia = dia != null ? dia : E.data.dia;
-    /* alvo escolhido na pergunta, ou a investida marcada daquele dia */
-    let alvoId = p.alvoTorcida;
-    if(!alvoId){
-      for(const o of PL().outrosJogosNaCidade(E, E.data.semana)){
-        if((o.dia || 6) !== dia) continue;
-        const inv = PL().investidaDe(E, o.chave);
-        if(inv && inv.alvo){ alvoId = inv.alvo; break; }
-      }
+    /* o alvo E O LUGAR são da INVESTIDA marcada num jogo daquele dia —
+       o plano do nosso jogo não manda aqui */
+    let alvoId = null, invDoDia = null;
+    for(const o of PL().outrosJogosNaCidade(E, E.data.semana)){
+      if((o.dia || 6) !== dia) continue;
+      const inv = PL().investidaDe(E, o.chave);
+      if(inv && inv.alvo){ alvoId = inv.alvo; invDoDia = inv; break; }
     }
-    if(!alvoId || p.intencao === 'paz') return null;
+    if(!alvoId) return null;
     if(M().saoIrmas(E.torcida.id, alvoId)) return null;
     const rua = naRuaEm(E, dia);
     const alvo = rua.find(b => b.id === alvoId);
     if(!alvo) return null;
     const nosso = rua.find(b => b.nossa) || rua.find(b => b.doJogador);
     const mo = MP().modelo(E);
-    const onde = lugarPlanejado(E, mo, p);
+    /* o ponto vem da investida: concentração é a praça, pista é a rua
+       do bairro, arredores são os arredores */
+    const onde = lugarPlanejado(E, mo,
+      {alvo: invDoDia.como === 'ida' ? (invDoDia.olheiro || 'praca')
+                                     : 'arredores'});
     const nossos = Math.max(2, PL().efetivoDoAtaque(E).vao);
     const nossaCor = M().coresDaTorcida(E.torcida);
     const meu = nosso ? Object.assign({}, nosso, {n: Math.min(nosso.n, nossos)})
       : {id:E.torcida.id, nome:E.torcida.nome,
          sigla:M().siglaTorcida(E.torcida), n:nossos,
-         cor:nossaCor.cor, cor2:nossaCor.cor2, nossa:true};
+         cor:nossaCor.cor, cor2:nossaCor.cor2, cor3:nossaCor.cor3,
+         nossa:true};
     return {desfecho:'planejada', praca:true, onde,
             enc: Object.assign(montarEncontro(meu, alvo, onde),
                                {nossoLado:'mandante'})};
@@ -754,200 +782,18 @@ TO.praca = (function(){
   /* O EFETIVO É O REAL DOS DOIS LADOS, e eles são diferentes. Este é o
      mesmo cuidado da cena: nada é reequilibrado na abertura — se saímos
      com 80 e eles com 100, a cena é de 80 contra 100. */
+  /* AS TRÊS CORES ATRAVESSAM (correção do dono, 20/08/2026): faltava a
+     terceira aqui, e só aqui — nos jogos da praça (concentração, pista
+     e arredores) o bonde chegava na cena com duas cores, e a mesma
+     torcida que tinha duas listras na arquibancada aparecia com uma
+     só. O disco é o mesmo em toda cena; quem cortava era este objeto. */
   const montarEncontro = (nosso, deles, onde) => ({
     a: {torcida:nosso.id, nome:nosso.nome, sigla:nosso.sigla, n:nosso.n,
-        cor:nosso.cor, cor2:nosso.cor2, nossa:true},
+        cor:nosso.cor, cor2:nosso.cor2, cor3:nosso.cor3, nossa:true},
     b: {torcida:deles.id, nome:deles.nome, sigla:deles.sigla, n:deles.n,
-        cor:deles.cor, cor2:deles.cor2, nossa:false},
+        cor:deles.cor, cor2:deles.cor2, cor3:deles.cor3, nossa:false},
     local: onde.local, bairro: onde.bairro, nossa:true
   });
-
-  /* =======================================================
-     F. OS ASSALTOS DO MÊS
-
-     Dois ou três por mês na praça inteira. Agendados PELO CALENDÁRIO e
-     não sorteados quando a tela abre: o mesmo dia reaberto mostra o
-     mesmo assalto, e o mês fecha em dois ou três.
-
-     O QUE MUDOU COM O MAPA: a viatura era uma CORRIDA — ela saía de um
-     posto, andava pela rua e chegava (ou não) antes de o sujeito
-     terminar o serviço. Sem rua não há corrida, e a pergunta espacial
-     vira risco: o campo `seguranca` da tabela `COMERCIO` é a chance de
-     dar errado. Mercadinho 2, roupas e posto 3, joalheria 6, banco 8.
-     ======================================================= */
-  /* o que o sujeito leva é uma FRAÇÃO DO PISO da faixa: isto é um cara
-     levando a gaveta e saindo andando, não bonde invadindo com cena */
-  const FRACAO_GAVETA = 0.12;
-  const PENA = {joalheria:60, banco:60, roupas:30, posto:30, mercadinho:30};
-
-  /* DE SEGURANÇA PRA CHANCE DE DAR ERRADO.
-     O fator é 5, e é medido, não escolhido de véspera: a gaveta vale de
-     R$ 60 (mercadinho) a R$ 504 (joalheria) e a prisão custa 30 a 60
-     dias, mais o tombo de `policia` pelo calor do alvo. Com fator 10 o
-     banco seria preso em 8 de 10 e voltaria a ser a armadilha que a
-     corrida da viatura tinha criado — "preso em 7 de 7, sem render um
-     centavo nunca". Com o número cru (2% a 8%) ninguém seria preso em
-     uma temporada inteira e o alvo grande sairia de graça. Em 5 a
-     escada aparece e o banco continua sendo aposta: mercadinho 10%,
-     roupas e posto 15%, joalheria 30%, banco 40%. */
-  const RISCO_POR_SEGURANCA = 5;
-  const chanceDeDarErrado = tipo => {
-    const C = TO.acoes.COMERCIO[tipo];
-    return C ? U.limitar(C.seguranca * RISCO_POR_SEGURANCA, 0, 90) : 0;
-  };
-
-  /* AS ORGANIZADAS DA PRAÇA COM O EFETIVO DE AGORA.
-     O sorteio do autor é por PESO DE EFETIVO: torcida de 250 aparece na
-     rua mais que torcida de 20, porque tem mais gente pra aparecer. */
-  function organizadasComEfetivo(E){
-    const fora = [];
-    for(const o of M().torcidasEm(E.torcida.mapa)){
-      const n = o.id === E.torcida.id ? E.membros.length
-              : ((TO.tensao && TO.tensao.mundo(E)[o.id]) || {}).membros
-                || o.membros || 0;
-      if(n > 0) fora.push({torcida:o, n, nossa:o.id === E.torcida.id});
-    }
-    return fora;
-  }
-  /* sorteio por peso com número já sorteado em [0,1) — determinístico
-     quando o número vem de hash, que é o que o calendário precisa */
-  function porPeso(lista, r){
-    const soma = lista.reduce((a,x)=>a+x.n, 0) || 1;
-    let acc = 0, alvo = r * soma;
-    for(const x of lista){ acc += x.n; if(alvo < acc) return x; }
-    return lista[lista.length-1];
-  }
-
-  const blocoDe = E => Math.floor((E.data.semana - 1) / 4);
-
-  /* Os assaltos deste bloco de quatro semanas, sempre os mesmos pro
-     mesmo bloco. Devolve [{semana, dia, tipo, torcidaId}]. */
-  function assaltosDoBloco(E){
-    const H = MP().hash;
-    const bloco = blocoDe(E);
-    const chave = `${E.data.ano}|bloco${bloco}`;
-    const quantos = 2 + (H(`${chave}|quantos`) % 2);      // 2 ou 3
-    const donos = organizadasComEfetivo(E);
-    if(!donos.length) return [];
-    const tipos = Object.keys(TO.acoes.COMERCIO);
-    const fora = [], usados = new Set();
-    for(let i=0;i<quantos;i++){
-      const s = k => (H(`${chave}|a${i}|${k}`) % 10000) / 10000;
-      /* espalhados pelos 28 dias do bloco, sem dois no mesmo dia */
-      let d = Math.floor(s('dia') * 28);
-      while(usados.has(d)) d = (d + 9) % 28;
-      usados.add(d);
-      fora.push({
-        semana: bloco*4 + 1 + Math.floor(d/7),
-        dia: (d % 7) + 1,
-        tipo: tipos[Math.floor(s('alvo') * tipos.length)],
-        torcidaId: porPeso(donos, s('quem')).torcida.id
-      });
-    }
-    return fora;
-  }
-
-  const assaltoDeHoje = E => assaltosDoBloco(E).find(
-    a => a.semana === E.data.semana && a.dia === E.data.dia) || null;
-
-  const diaAbsoluto = E => (E.data.ano*40 + E.data.semana)*7 + E.data.dia;
-  /* A BAIXA FICA ANOTADA. Membro que some da lista sem explicação é o
-     tipo de coisa que faz o jogador achar que o jogo quebrou. */
-  function marcarBaixa(E, nome, txt, tipo){
-    (E.baixasDeRua = E.baixasDeRua || [])
-      .push({nome, txt, tipo:tipo||'ruim', quando:diaAbsoluto(E)});
-    if(E.baixasDeRua.length > 12) E.baixasDeRua.shift();
-  }
-
-  /* O assalto de hoje, resolvido de uma vez. Devolve o registro do que
-     aconteceu, ou null quando não houve. */
-  function resolverAssalto(E){
-    const plano = assaltoDeHoje(E);
-    if(!plano) return null;
-    const C = TO.acoes.COMERCIO[plano.tipo];
-    const o = M().torcida(plano.torcidaId);
-    if(!C || !o) return null;
-    const mo = MP().modelo(E);
-    const H = MP().hash;
-    const chave = `${E.data.ano}|${E.data.semana}|${E.data.dia}|assalto`;
-    /* ONDE: um dos pinos daquele tipo na praça. O bairro entra no aviso
-       porque é o que faz o assalto ser um lugar e não uma estatística. */
-    const alvos = ((mo && mo.pinos) || []).filter(p=>p.tipo === plano.tipo);
-    const p = alvos.length ? alvos[H(`${chave}|onde`) % alvos.length] : null;
-    const bairro = p ? p.bairro : '';
-    const nossa = plano.torcidaId === E.torcida.id;
-
-    /* o membro sai dos DISPONÍVEIS: quem já está ferido ou preso não sai
-       assaltando */
-    let membro = null;
-    if(nossa){
-      const aptos = E.membros.filter(TO.membros.disponivel);
-      if(!aptos.length) return null;              // ninguém de pé, não houve
-      membro = aptos[H(`${chave}|quem`) % aptos.length];
-    }
-    const preso = U.rng()*100 < chanceDeDarErrado(plano.tipo);
-    const levou = Math.round(C.rende[0] * FRACAO_GAVETA);
-    const pena  = PENA[plano.tipo] || 30;
-    /* O ARTIGO DO BAIRRO NÃO SE ADIVINHA. Era `d${vogal?'':'o '}` e
-       saía "Joalheria dAldeota": bairro que começa com vogal perdia o
-       artigo inteiro, e "do" está errado na metade dos que começam com
-       consoante ("do Aldeota", "do Messejana"). Nome de bairro tem
-       gênero e não está nos dados. "no bairro X" está certo sempre. */
-    const onde  = `${C.nome}${bairro ? ` no bairro ${bairro}` : ''}`;
-
-    /* TODA TENTATIVA VIRA AVISO, seja de quem for: é por ela que o
-       jogador sente que a praça tem outras torcidas vivendo nela. Isto é
-       recado, não decisão — não para o tempo. */
-    TO.estado.anotar(E, `${o.nome} tentou ${onde}: `+
-      (preso ? 'a PM pegou na porta.' : `saiu com ${U.dinheiro(levou)}.`),
-      nossa ? (preso ? 'ruim' : 'boa') : '',
-      nossa ? {cat:4} : {cat:5, local:true});
-
-    if(preso){
-      if(nossa && membro){
-        TO.membros.prender(E, membro, pena, `Preso assaltando ${onde}`);
-        const I = E.indicadores;
-        I.policia   = U.limitar(I.policia - C.calor, 0, 20);
-        I.prestigio = U.limitar(I.prestigio - 1, 0, 20);
-        TO.estado.anotar(E,
-          `${TO.membros.nomeDe(membro)} foi preso assaltando ${onde} — `+
-          `${pena} dias.`, 'ruim', {cat:4});
-        marcarBaixa(E, TO.membros.nomeDe(membro),
-          `preso assaltando ${onde} — ${pena} dias de pena`);
-      }else if(!nossa && TO.tensao){
-        /* pras 138 da IA a prisão é o mesmo tombo de polícia que a gente
-           leva: indicador que se move num lado e não no outro é
-           decoração (§8.20) */
-        TO.tensao.mover(E, plano.torcidaId, 'policia', -C.calor);
-      }
-    }else{
-      if(nossa){
-        TO.estado.lancar(E, `Assalto — ${onde}`, levou);
-        /* o artigo do comércio, esse, está na tabela: `COMERCIO` traz
-           `artigo` justamente pra isto */
-        if(membro) TO.estado.anotar(E,
-          `${TO.membros.nomeDe(membro)} limpou a gaveta d${C.artigo} `+
-          `${C.nome} e sumiu: ${U.dinheiro(levou)}.`, 'boa', {cat:4});
-      }else if(TO.tensao){
-        const t = TO.tensao.mundo(E)[plano.torcidaId];
-        if(t) t.caixa += levou;
-      }
-    }
-    return {tipo:plano.tipo, torcida:plano.torcidaId, nossa, preso, levou,
-            pena, bairro, onde};
-  }
-
-  /* =======================================================
-     O DIA DA PRAÇA
-
-     O que sobrou do laço que rodava minuto a minuto: um dia é uma
-     chamada, e ela resolve o assalto do calendário. A ida ao estádio
-     não entra aqui — ela é resposta a um botão do feed, e o jogador
-     tem de estar olhando quando ela acontece.
-     ======================================================= */
-  function passarDia(E){
-    return {assalto: resolverAssalto(E)};
-  }
 
   return {jogosDaPraca,
           pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
@@ -960,7 +806,5 @@ TO.praca = (function(){
           efetivoDeTorcida:efetivoDe,
           lugarPlanejado, lugarDoEncontro, resolverIda, encontroDaViagem,
           encontroDaPraca,
-          organizadasComEfetivo, porPeso, assaltosDoBloco, assaltoDeHoje,
-          resolverAssalto, chanceDeDarErrado, RISCO_POR_SEGURANCA,
-          FRACAO_GAVETA, PENA, marcarBaixa, passarDia};
+          };
 })();
