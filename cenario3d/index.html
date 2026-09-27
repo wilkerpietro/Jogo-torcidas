@@ -5053,9 +5053,43 @@ function apiDoCenario() {
         const rivais = {};
         for (const U of ocupacao.torcidas) { const w = U !== T ? pesoRival(T, U) : 0; if (w > 0) rivais[U.id] = w; }
         return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta,
-                 clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais };
+                 clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais };
       });
     },
+    /* O VISITANTE DE OUTRA CIDADE (dia_de_jogo.js): as torcidas de um
+       clube, de qualquer praça (sem sede aqui: a porta vem nula) */
+    torcidasDoClube(clubeId) {
+      return (TO.dados.torcidas || []).filter(t => t.clubeId === clubeId).map(t => {
+        const c = coresDaTorcida(t);
+        return { id: t.id, nome: t.nome, sigla: String(t.siglaTorcida || t.nome).toUpperCase(), cor: c.cor, cor2: c.cor2, cor3: c.cor3, porta: null,
+                 clubeId: t.clubeId, clube: t.clube || '', poder: t.poder || 0, membros: t.membros || 0, moral: t.moral ?? 50, cidade: t.cidade || '', uf: t.uf || '', bairro: t.bairroSede || '' };
+      });
+    },
+    /* os clubes dos dados (dados/times.js) que não são desta praça */
+    clubesDeFora() {
+      const c = infoDaCidade(cidade), daqui = new Set(((c && c.times) || []).map(x => x.clubeId));
+      return (TO.dados.times || []).filter(t => !daqui.has(t.id)).map(t => ({ id: t.id, nome: t.nome, sigla: t.sigla, cidade: t.cidade || '', uf: t.uf || '', local: false,
+        cores: (t.cores || []).map(v => String(v).toUpperCase()), nomeCompleto: t.nomeCompleto || t.nome }));
+    },
+    /* a relação de A com B, na tabela do mundo (a mesma conta de
+       js/mundo/mundo.js, `relacaoBase`: a lista de A, nesta ordem), e se as
+       duas são irmãs (o mesmo clube e irmandade declarada: não se pegam) */
+    relacao(idA, idB) {
+      const a = (TO.dados.torcidas || []).find(t => t.id === idA);
+      if (!a || idA === idB) return 'Neutro';
+      if ((a.maioresRivais || []).includes(idB)) return 'Maior Rival';
+      if ((a.rivais || []).includes(idB)) return 'Rival';
+      if ((a.irmandade || []).includes(idB)) return 'Irmandade';
+      if ((a.aliados || []).includes(idB)) return 'Aliado';
+      return 'Neutro';
+    },
+    irmas(idA, idB) {
+      const ts = TO.dados.torcidas || [], a = ts.find(t => t.id === idA), b = ts.find(t => t.id === idB);
+      if (!a || !b || idA === idB || !a.clubeId || a.clubeId !== b.clubeId) return false;
+      return (a.irmandade || []).includes(idB) || (b.irmandade || []).includes(idA);
+    },
+    /* as entradas da cidade: os pórticos da estrada (no mundo; `dir`, pra dentro da cidade) */
+    entradas: () => porticos.map(it => ({ id: it.p.id, nome: it.p.nome, x: it.p.x, y: it.p.y, dir: it.p.dir.slice() })),
     /* os clubes da praça (dados/cidades.js, na ordem de lá: os daqui
        primeiro), com as cores (dados/times.js) */
     clubes() {
