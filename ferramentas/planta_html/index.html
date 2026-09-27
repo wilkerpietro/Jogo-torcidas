@@ -5043,7 +5043,8 @@ function apiDoCenario() {
         const rivais = {};
         for (const U of ocupacao.torcidas) { const w = U !== T ? pesoRival(T, U) : 0; if (w > 0) rivais[U.id] = w; }
         return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta,
-                 clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais };
+                 clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais,
+                 cargos: T.t.cargos || null, irmandade: T.t.irmandade || [], aliados: T.t.aliados || [] };
       });
     },
     /* O VISITANTE DE OUTRA CIDADE (dia_de_jogo.js): as torcidas de um
@@ -5052,7 +5053,8 @@ function apiDoCenario() {
       return (TO.dados.torcidas || []).filter(t => t.clubeId === clubeId).map(t => {
         const c = coresDaTorcida(t);
         return { id: t.id, nome: t.nome, sigla: String(t.siglaTorcida || t.nome).toUpperCase(), cor: c.cor, cor2: c.cor2, cor3: c.cor3, porta: null,
-                 clubeId: t.clubeId, clube: t.clube || '', poder: t.poder || 0, membros: t.membros || 0, moral: t.moral ?? 50, cidade: t.cidade || '', uf: t.uf || '', bairro: t.bairroSede || '' };
+                 clubeId: t.clubeId, clube: t.clube || '', poder: t.poder || 0, membros: t.membros || 0, moral: t.moral ?? 50, cidade: t.cidade || '', uf: t.uf || '', bairro: t.bairroSede || '',
+                 cargos: t.cargos || null, irmandade: t.irmandade || [], aliados: t.aliados || [] };
       });
     },
     /* os clubes dos dados (dados/times.js) que não são desta praça */

@@ -18,22 +18,33 @@
    no 2º…): o mandante pelos portões 1 e 2, o visitante pelo 3 — o portão
    de cada setor é o de caminho mais curto até ele (rotas_estadios.js).
 
-   QUEM VAI PRA RUA (as contas do jogo: `naRuaEm` de js/mundo/praca.js e
-   `caravanaDe` de js/gestao/planejamento.js): a torcida da praça bota
-   NA_RUA do efetivo na rua; a de outra cidade vem em CARAVANA (18% dos
-   membros; se dá menos de CARAVANA_MIN, não vem). Um boneco vale
-   1/FATOR_GENTE torcedores (no máximo MAX_BONDE por torcida).
+   QUEM VAI PRA RUA (as contas do jogo mais novo, o "Torcida Organizada"
+   do GitHub Pages: `naRuaEm` de js/mundo/praca.js e `caravanaDe` de
+   js/gestao/planejamento.js; o dono, 27/09/2026: "a quantidade de gente
+   que vai pra rua tá desatualizada"): a torcida da praça bota TODO MUNDO
+   DE PÉ na rua (as `disponiveisIA`: o efetivo menos ferido, preso e quem
+   está em subsede; os 60% de antes caíram no jogo em 31/08/2026), menos
+   a escolta que ela empresta a um visitante; a de outra cidade vem em
+   caravana: a régua da caravana do jogador com 2 trechos e risco zero,
+   vezes 0,6 (o redutor do visitante) — com a moral 12 com que toda IA
+   nasce, uns 47% das de pé, e no mínimo CARAVANA_MIN (com menos de pé
+   que isso, não vem). Um boneco vale 1/FATOR_GENTE torcedores (no
+   máximo MAX_BONDE por torcida).
 
    O VISITANTE DE OUTRA CIDADE (o dono, 27/09/2026): "As torcidas
    visitantes que tem aliado iniciam sua rota ao estádio na sede do
    aliado, caso o aliado tenha optado por hospedá-lo. Caso tenha optado
    por hospedar e escoltar, 10 membros do aliado que recebeu vão com eles
    pro estádio." O aliado é o do jogo (`anfitriaoDe`): uma torcida da
-   praça com sede, a irmandade antes do aliado — nunca uma do clube
-   mandante, que no dia é rival. Ele decide (sorteado, HOSPEDA: a
-   irmandade escolta mais) entre não receber, hospedar e hospedar e
-   escoltar; com a escolta, ESCOLTA_ALIADO membros dele andam no bonde até
-   o setor. Sem aliado que receba, a caravana desce na ENTRADA da cidade
+   praça com sede que está na irmandade do visitante (antes) ou nos
+   aliados dele; no empate, a de menor hash do par. Ele decide (sorteado,
+   HOSPEDA: a irmandade escolta mais) entre não receber, hospedar e
+   hospedar e escoltar; com a escolta, de 5 a 10% do efetivo dele andam
+   no bonde até o setor (a conta do jogo, `escoltaDe`: a TUF, de 150,
+   empresta de 8 a 15; o dono, 27/09/2026: "volte a aplicar a regra de 8
+   a 15"). Se ele é do clube mandante, só hospeda: "Em jogo Fortaleza x
+   CSA, o aliado só hospeda a TOMA, e ela sai da sede sozinha pro
+   estádio". Sem aliado que receba, a caravana desce na ENTRADA da cidade
    (o pórtico da estrada; a PM escolhe a de caminho mais curto até o
    portão do visitante) e vai a pé de lá.
 
@@ -41,18 +52,29 @@
    da PM, que é o que o resto deste arquivo desenha — ou ATACAR uma
    rival do outro clube, "e isso tem mais chances de acontecer caso seja
    um jogo contra uma torcida que tenha pontuação alta de rivalidade". A
-   chance é a do jogo (`chanceDeProcurar`, js/mundo/praca.js): a base
-   pela relação dela com o alvo (maior rival 88%, rival 72%), vezes a
-   paridade das duas torcidas (abaixo de 45% do tamanho do alvo, não vai;
-   maior que ele, vai com mais vontade), no máximo 95%. Quem decide
+   chance é a conta do jogo (`chanceDeProcurar`, js/mundo/praca.js): a
+   base pela relação dela com o alvo (maior rival 55%, rival 25% — o dono
+   baixou de 88 e 72, 27/09/2026), vezes a paridade das duas torcidas
+   (abaixo de 45% do tamanho do alvo, não vai; maior que ele, vai com
+   mais vontade, até 1,3 vez), no máximo 95% (o jogo ainda soma a mágoa
+   — 0,3 por ponto de relação abaixo de −45 — e para em 57%; aqui não,
+   porque a base foi o dono quem deu). O bonde com a escolta da
+   PM também pode atacar (o dono: "o bonde escoltado pode atacar sim").
+   Quem decide
    atacar vai DE ENCONTRO ao bonde do alvo em vez de ir direto pro
    estádio: um ponto da rota dele na cidade (fora dos arredores, onde a
    PM está), o que deixa o caminho do atacante (sede → ponto → portão)
    mais curto; espera escondido ESCONDIDO m antes e cai em cima quando o
    bonde passa. A PM não sabe: o plano dela (o corredor, os cordões, as
-   travessias) é o da paz. A BRIGA dura BRIGA s; ganha quem tem mais
-   força (a gente na rua × a moral, com sorte, e a surpresa de quem
-   ataca); os feridos ficam no chão; "depois de ela ir de encontro à
+   travessias) é o da paz. A BRIGA dura BRIGA s e sai da conta das brigas
+   entre IAs do jogo (`brigaIA`, js/mundo/relacoes.js, e a mesma tabela de
+   js/diajogo/simular.js): a força de cada lado é a gente × a ficha média
+   da torcida (a pirâmide de cargos), o favorito vence 70% das vezes, e
+   as baixas são dos DOIS lados (o dono, 27/09/2026: "deve registrar os
+   dois lados"): quem perde deixa de 25 a 40% no chão e de 5 a 12% presos;
+   quem ganha, de 8 a 16% e de 1 a 4%. Os feridos ficam no chão; os
+   presos ficam rendidos no lugar, de mãos pra cima, esperando a viatura
+   (a PM não estava lá; o jogo manda eles pro camburão); "depois de ela ir de encontro à
    torcida rival, independente do que aconteça, ela vai pro estádio com
    aqueles que ficaram aptos" — e o alvo também, depois de juntar os
    dele (REAGRUPA s). Cada torcida entra em uma briga, no máximo.
@@ -143,13 +165,17 @@ const NA_FILA = 0.65;       // m entre um e o da frente, na fila da raia
 const REVISTA = 5;          // s de revista por pessoa, na boca da raia (um PM revista um de cada vez)
 const REVISTA_POR_PM = 10;  // bonecos que passam num portão pra cada PM da revista dele (no máximo um por raia)
 const PM_POR_TORCEDOR = 0.25; // a PM do jogo: um PM pra cada 4 torcedores das torcidas do jogo (em bonecos, os dois)
-const NA_RUA = 0.6;         // o que a torcida da praça bota na rua (a IA do jogo: `naRuaEm`, js/mundo/praca.js)
-const CARAVANA = 0.18, CARAVANA_MIN = 5; // a de outra cidade vem em caravana (`caravanaDe`); com menos que o mínimo, não vem
-const ESCOLTA_ALIADO = 10;  // membros do aliado que hospeda e escolta andando com o visitante até o estádio
+const MORAL_IA = 12;        // a moral com que toda torcida da IA nasce no jogo (`mundo()`, js/mundo/relacoes.js), de 0 a 20
+const CARAVANA_MIN = 5;     // a caravana mínima (`MINIMO` de js/gestao/planejamento.js); com menos de pé que isso, não vem
+/* a briga entre duas IAs (`brigaIA`, js/mundo/relacoes.js; a tabela de js/diajogo/simular.js) */
+const CHANCE_FAVORITO = 0.70;
+const BAIXAS = { perdeu: { ferido: [0.25, 0.40], preso: [0.05, 0.12] }, venceu: { ferido: [0.08, 0.16], preso: [0.01, 0.04] } };
+/* a ficha de cada cargo sem o mundo vivo (`mediaDeFichaGerada`): a base dele + 1,5 (abaixo do teto) */
+const FICHA_DO_CARGO = { diretoria: 15.5, frente: 11.5, componente: 6.5, novato: 2.5 };
 /* o que o aliado decide, em %: [não recebe, hospeda, hospeda e escolta] — a irmandade (2) e o aliado (1) */
 const HOSPEDA = { 2: [10, 30, 60], 1: [35, 45, 20] };
 /* a chance de procurar a rival (`chanceDeProcurar`, js/mundo/praca.js): a base pela relação, a paridade */
-const BASE_PROCURA = { 'Maior Rival': 88, 'Rival': 72 };
+const BASE_PROCURA = { 'Maior Rival': 55, 'Rival': 25 };   // o dono, 27/09/2026 (o jogo tinha 88 e 72)
 const PISO_PARIDADE = 0.45, PAR_PARIDADE = 0.8;
 const BRIGA = 45;           // s de briga
 const EMBOSCADA = 150;      // s: quem ataca chega no ponto esse tanto antes do alvo
@@ -395,6 +421,13 @@ function semente(txt) {
   return () => { h = h + 0x6D2B79F5 | 0; let t = Math.imul(h ^ h >>> 15, 1 | h); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 const liso = k => k <= 0 ? 0 : k >= 1 ? 1 : k * k * (3 - 2 * k);
+/* o hash do jogo (FNV-1a, `hash` de js/mundo/mapa.js): as contas fixas do jogo saem iguais aqui */
+function hashDoJogo(txt) {
+  let h = 2166136261;
+  const s = String(txt);
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
 /* O DESENHO DO BONDE: cada um num lugar solto dentro de uma faixa de
    LARGURA m, com o comprimento pra AREA m² por pessoa, a PERTO m ou
    mais dos outros (sorteado até caber; se não cabe, o mínimo afrouxa);
@@ -455,7 +488,38 @@ export function planejar(ctx, escolha = {}) {
     if (a.local && b.local) pares.push([a, b]);
   }
   if (!pares.length) for (let i = 0; i < lista.length; i++) for (let j = i + 1; j < lista.length; j++) pares.push([lista[i], lista[j]]);
-  const caravana = t => Math.max(4, Math.round((t.membros || 20) * CARAVANA));
+  /* AS DE PÉ (`disponiveisIA`): sem o jogo rodando, ninguém está ferido,
+     preso ou em subsede — o efetivo inteiro. Com o jogo, ele responde. */
+  const dePe = t => P.disponiveis ? P.disponiveis(t.id) : (t.membros || 20);
+  /* A FICHA MÉDIA de quem briga (`mediaDeFichaGerada`, sem o mundo vivo):
+     a pirâmide de cargos da torcida (`planoDeCargos`: a sobra do efetivo
+     entra como novato; sem cargos na fonte, 5% de diretoria, 15% de frente
+     e 30% de componentes), cada cargo com a ficha dele */
+  const fichaMedia = t => {
+    if (P.fichaMedia) return P.fichaMedia(t.id);
+    const tot = Math.max(1, t.membros || 20), c = t.cargos;
+    let plano;
+    if (c && Object.keys(c).length) {
+      plano = { diretoria: c.diretoria || 0, frente: c.frente || 0, componente: c.componentes || c.componente || 0, novato: c.povao || c.novato || 0 };
+      const soma = plano.diretoria + plano.frente + plano.componente + plano.novato;
+      if (tot > soma) plano.novato += tot - soma;
+    } else {
+      const d = Math.max(2, Math.round(tot * 0.05)), f = Math.round(tot * 0.15), k = Math.round(tot * 0.30);
+      plano = { diretoria: d, frente: f, componente: k, novato: Math.max(0, tot - d - f - k) };
+    }
+    let soma = 0, n = 0;
+    for (const cargo in plano) { soma += plano[cargo] * FICHA_DO_CARGO[cargo]; n += plano[cargo]; }
+    return n ? soma / n : 1;
+  };
+  /* A CARAVANA (`caravanaDe`): vontade = 0,72 − 2 trechos × 0,09 + 0,4 × a
+     moral, vezes o redutor de 0,6 do visitante; no mínimo CARAVANA_MIN */
+  const caravana = t => {
+    const v = dePe(t);
+    if (v <= 0) return 0;
+    const moral = (P.moralIA ? P.moralIA(t.id) : MORAL_IA) / 20;
+    const vontade = clamp(0.72 - 2 * 0.09 + moral * 0.4, 0.08, 0.95);
+    return Math.min(v, Math.max(CARAVANA_MIN, Math.round(v * vontade * 0.6)));
+  };
   const quemVem = id => (P.torcidasDoClube ? P.torcidasDoClube(id) : []).filter(t => caravana(t) >= CARAVANA_MIN);
   const deFora = (P.clubesDeFora ? P.clubesDeFora() : []).filter(c => quemVem(c.id).length).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
   if (!lista.length) return { erro: 'Nesta praça nenhum clube tem torcida com sede no mapa: não dá pra montar o jogo.' };
@@ -500,22 +564,39 @@ export function planejar(ctx, escolha = {}) {
   const bonecos = (x, min) => Math.min(MAX_BONDE, Math.max(min, Math.round(x * FATOR_GENTE * gente)));
   /* O ALIADO QUE HOSPEDA quem vem de fora (`anfitriaoDe` do jogo): uma
      torcida da praça com sede — a irmandade dele antes do aliado; no
-     empate, a do sorteio fixo do par —, nunca uma do mandante; e o que
-     ela decide (HOSPEDA, ou o que o painel mandou) */
+     empate, a do sorteio fixo do par —, e o que ela decide (HOSPEDA, ou
+     o que o painel mandou). Se ela é do clube mandante, só hospeda (o
+     dono, 27/09/2026: "Em jogo Fortaleza x CSA, o aliado só hospeda a
+     TOMA, e ela sai da sede sozinha pro estádio"): no dia ela torce
+     contra, e não anda com o visitante */
   function anfitriao(v) {
-    const grau = h => { const r = rel(v.id, h.id); return r === 'Irmandade' ? 2 : r === 'Aliado' ? 1 : 0; };
-    const bons = torcidas.filter(h => h.porta && h.clubeId !== casa.id && grau(h) > 0)
-      .map(h => ({ h, g: grau(h), k: semente(v.id + '|' + h.id)() })).sort((a, b) => b.g - a.g || a.k - b.k);
+    const grau = h => (v.irmandade || []).includes(h.id) ? 2 : (v.aliados || []).includes(h.id) ? 1 : 0;
+    const bons = torcidas.filter(h => h.porta && h.id !== v.id && grau(h) > 0)
+      .map(h => ({ h, g: grau(h), k: hashDoJogo(v.id + '|' + h.id) })).sort((a, b) => b.g - a.g || a.k - b.k);
     if (!bons.length) return null;
     const { h, g } = bons[0], pct = HOSPEDA[g], x = sorte('hospeda|' + v.id + '|' + h.id)() * 100;
     const forcada = escolha.anfitriao && escolha.anfitriao !== 'sorteio' ? escolha.anfitriao : null;
-    return { t: h, grau: g, pct, tirou: Math.floor(x), forcada: !!forcada,
-             decisao: forcada || (x < pct[0] ? 'nada' : x < pct[0] + pct[1] ? 'hospedar' : 'escolta') };
+    const doMandante = h.clubeId === casa.id;
+    let decisao = forcada || (x < pct[0] ? 'nada' : x < pct[0] + pct[1] ? 'hospedar' : 'escolta');
+    if (doMandante && decisao === 'escolta') decisao = 'hospedar';
+    return { t: h, grau: g, pct, tirou: Math.floor(x), forcada: !!forcada, doMandante, decisao,
+             /* quantos ele manda junto (`escoltaDe` do jogo): de 5 a 10% do efetivo dele, pelo hash do par */
+             escoltaMembros: Math.max(1, Math.round((h.membros || 20) * (5 + hashDoJogo('escolta|' + h.id + '|' + v.id) % 6) / 100)) };
   }
   const setoresDoLado = l => Object.keys(rotas.setores).filter(s => s[0] === l).sort();
   const lados = [{ lado: 'mandante', clube: casa, l: 'm' }, { lado: 'visitante', clube: fora, l: 'v' }];
   const vagasUsadas = {};
   const bondes = [];
+  /* AS ESCOLTAS SE RESOLVEM ANTES (`naRuaEm`): quem escolta sai do
+     efetivo de quem empresta e anda no bonde do visitante */
+  const hospDe = {}, devido = {};
+  for (const L of lados) {
+    if (lista.includes(L.clube)) continue;
+    for (const t of quemVem(L.clube.id)) {
+      const h = hospDe[t.id] = anfitriao(t);
+      if (h && h.decisao === 'escolta') devido[h.t.id] = (devido[h.t.id] || 0) + h.escoltaMembros;
+    }
+  }
   for (const L of lados) {
     const daqui = lista.includes(L.clube);
     const ts = (daqui ? comSede(L.clube.id) : quemVem(L.clube.id)).sort((a, b) => (b.poder || 0) - (a.poder || 0) || (b.membros || 0) - (a.membros || 0));
@@ -523,17 +604,17 @@ export function planejar(ctx, escolha = {}) {
     ts.forEach((t, r) => {
       const setor = disponiveis[Math.min(r, disponiveis.length - 1)], S = rotas.setores[setor];
       const jaUsadas = vagasUsadas[setor] || 0;
-      /* quem vai: NA_RUA do efetivo (a da praça) ou a caravana (a de fora) */
-      const naRua = daqui ? Math.max(4, Math.round((t.membros || 20) * NA_RUA)) : caravana(t);
-      const hosp = daqui ? null : anfitriao(t), recebe = !!hosp && hosp.decisao !== 'nada';
-      const nEsc = hosp && hosp.decisao === 'escolta' ? bonecos(ESCOLTA_ALIADO, 2) : 0;
+      /* quem vai: todo mundo de pé menos a escolta emprestada (a da praça) ou a caravana (a de fora) */
+      const naRua = daqui ? Math.max(4, dePe(t) - (devido[t.id] || 0)) : caravana(t);
+      const hosp = daqui ? null : hospDe[t.id], recebe = !!hosp && hosp.decisao !== 'nada';
+      const nEsc = hosp && hosp.decisao === 'escolta' ? bonecos(hosp.escoltaMembros, 2) : 0;
       const n = Math.min(bonecos(naRua, 5) + nEsc, S.vagas.length - jaUsadas);
       if (n <= 1) return;
       vagasUsadas[setor] = jaUsadas + n;
       bondes.push({ t, lado: L.lado, clube: L.clube, escalao: r + 1, setor, S, portao: rotas.portoes[S.portao], nPortao: S.portao, vaga0: jaUsadas, n, cor: corDaFita(t),
                     naRua, deFora: !daqui, anfitriao: hosp,
                     inicio: daqui ? { tipo: 'sede', porta: t.porta } : recebe ? { tipo: 'aliado', porta: hosp.t.porta, t: hosp.t } : { tipo: 'entrada', porta: null },
-                    escolta: nEsc ? { t: hosp.t, membros: ESCOLTA_ALIADO, n: Math.min(nEsc, n - 1) } : null });
+                    escolta: nEsc ? { t: hosp.t, membros: hosp.escoltaMembros, n: Math.min(nEsc, n - 1) } : null });
     });
   }
   if (!bondes.some(b => b.lado === 'mandante') || !bondes.some(b => b.lado === 'visitante')) return { erro: 'Falta torcida de um dos dois clubes.' };
@@ -1223,7 +1304,8 @@ export function planejar(ctx, escolha = {}) {
     if (P.irmas && P.irmas(a.t.id, v.t.id)) return 0;
     return clamp(Math.round((BASE_PROCURA[rel(a.t.id, v.t.id)] || 0) * paridade(v.t.membros || 20, a.t.membros || 20)), 0, 95);
   };
-  /* o bonde com a escolta da PM (o 1º escalão do visitante) não sai da rota: a escolta não deixa */
+  /* o bonde com a escolta da PM (o 1º escalão do visitante): ela anda com ele, mas não segura ninguém —
+     o bonde escoltado pode atacar (o dono, 27/09/2026) */
   const comEscoltaPM = vivos.filter(b => b.lado === 'visitante').sort((a, c) => a.escalao - c.escalao)[0] || null;
   /* as bocas fechadas (a grade da PM): ninguém passa */
   const fechadaCel = new Uint8Array(N);
@@ -1289,7 +1371,6 @@ export function planejar(ctx, escolha = {}) {
     if (!opcoes.length) { dec.porque = vivos.some(v => v.lado !== a.lado && BASE_PROCURA[rel(a.t.id, v.t.id)] && !(P.irmas && P.irmas(a.t.id, v.t.id))) ? 'pequena' : 'sem rival'; continue; }
     if (!livres.length) { dec.porque = 'rivais ocupadas'; continue; }
     dec.alvo = livres[0].v; dec.chance = livres[0].c;
-    if (a === comEscoltaPM) { dec.porque = 'escolta'; continue; }
     dec.ataca = modoIA === 'ataque' || (modoIA === 'sorteio' && dec.tirou < dec.chance);
     if (!dec.ataca) { dec.porque = modoIA === 'paz' ? 'paz' : 'sorteio'; continue; }
     const br = planejarBriga(a, dec.alvo);
@@ -1310,21 +1391,25 @@ export function planejar(ctx, escolha = {}) {
     a.adiantou = 0; a.esperou = 0;
     prepararFaixa(a); prepararRaias(a);
     a.brigou = v.brigou = br;
-    /* A FORÇA de cada lado (a conta da investida do jogo, js/mundo/tensao.js:
-       a gente × (0,6 + moral/40), com sorte), e a surpresa de quem ataca */
+    /* A BRIGA DAS DUAS IAs (`brigaIA`, js/mundo/relacoes.js): a força de
+       cada lado é a gente × a ficha média da torcida (a escolta com a
+       ficha dela); o favorito vence 70% — três em cada dez o menor sai
+       por cima —, e as baixas são dos dois lados (BAIXAS) */
     const rnd = sorte('briga|' + a.t.id + '|' + v.t.id);
     const escV = v.escolta ? v.escolta.membros : 0, nA = a.naRua, nV = v.naRua + escV;
-    const moralV = ((v.t.moral ?? 50) * v.naRua + (v.escolta ? (v.escolta.t.moral ?? 50) * escV : 0)) / nV;
-    const forca = (n, moral, surpresa) => n * (0.6 + moral / 40) * (0.75 + rnd() * 0.5) * surpresa;
-    br.fA = forca(nA, a.t.moral ?? 50, 1.15); br.fV = forca(nV, moralV, 1);
-    br.venceA = br.fA >= br.fV;
-    /* OS FERIDOS: cada lado bate com quem alcança (até dois de um lado em
-       cada um do outro); de 8 a 20% das pancadas ferem, 1,4 vez isso em
-       quem perde (foge apanhando) e 0,8 em quem ganha — ninguém cai todo.
-       (Cem contra cinquenta: quem ganha perde uns 6%; quem perde, uns 40%) */
-    const ferir = (golpes, perdeu, max) => clamp(Math.round(golpes * (0.08 + rnd() * 0.12) * (perdeu ? 1.4 : 0.8)), 1, Math.max(1, max));
-    br.ferV = ferir(Math.min(nA, 2 * nV), br.venceA, nV - 1);
-    br.ferA = ferir(Math.min(nV, 2 * nA), !br.venceA, nA - 1);
+    br.fA = nA * fichaMedia(a.t);
+    br.fV = v.naRua * fichaMedia(v.t) + (escV ? escV * fichaMedia(v.escolta.t) : 0);
+    br.favoritoA = br.fA === br.fV ? rnd() < 0.5 : br.fA > br.fV;
+    br.venceA = rnd() < CHANCE_FAVORITO ? br.favoritoA : !br.favoritoA;
+    const conta = (n, [x, y]) => Math.round(n * (x + rnd() * (y - x)));
+    const baixas = (n, perdeu) => {
+      const tab = perdeu ? BAIXAS.perdeu : BAIXAS.venceu;
+      const presos = Math.min(n - 1, conta(n, tab.preso));
+      return { presos, feridos: Math.min(n - 1 - presos, conta(n, tab.ferido)) };
+    };
+    const bxA = baixas(nA, !br.venceA), bxV = baixas(nV, br.venceA);
+    br.ferA = bxA.feridos; br.presA = bxA.presos;
+    br.ferV = bxV.feridos; br.presV = bxV.presos;
     br.nA = nA; br.nV = nV;
     /* QUEM BRIGA COM QUEM: os de quem ataca, cada um num do alvo (os da
        frente primeiro; até 3 no mesmo); quem sobra fica na guarda, atrás */
@@ -1338,19 +1423,23 @@ export function planejar(ctx, escolha = {}) {
     /* os bonecos no chão, na conta (um boneco é o que ele vale no bonde
        dele), entre os que brigam de fato; o primeiro, não (o rótulo e a
        câmera vão nele) */
-    const caem = (b, fer, n, briga) => {
-      const k = clamp(Math.round(fer * b.n / n), 1, b.n - 1);
+    const caem = (b, fer, pres, n, briga) => {
+      const k = fer ? clamp(Math.round(fer * b.n / n), 1, b.n - 1) : 0;
+      const kp = pres ? clamp(Math.round(pres * b.n / n), 1, Math.max(0, b.n - 1 - k)) : 0;
       let idx = b.povo.map((q, m) => m).filter(m => m > 0 && briga(m));
-      if (idx.length < k) idx = b.povo.map((q, m) => m).filter(m => m > 0);
+      if (idx.length < k + kp) idx = b.povo.map((q, m) => m).filter(m => m > 0);
       for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
       b.ferido = new Uint8Array(b.n);
       b.tCai = new Float64Array(b.n).fill(Infinity);
       for (const m of idx.slice(0, k)) { b.ferido[m] = 1; b.tCai[m] = br.tIni + 8 + rnd() * (BRIGA - 14); }
-      return k;
+      /* o preso se rende no fim da briga, onde estava */
+      for (const m of idx.slice(k, k + kp)) { b.ferido[m] = 2; b.tCai[m] = br.tFim - 4 - rnd() * 6; }
+      return [k, kp];
     };
-    br.caemV = caem(v, br.ferV, nV, m => br.quantosEm[m] > 0);
-    br.caemA = caem(a, br.ferA, nA, m => br.alvoDe[m] >= 0);
+    [br.caemV, br.rendemV] = caem(v, br.ferV, br.presV, nV, m => br.quantosEm[m] > 0);
+    [br.caemA, br.rendemA] = caem(a, br.ferA, br.presA, nA, m => br.alvoDe[m] >= 0);
     a.feridos = br.ferA; v.feridos = br.ferV;
+    a.presos = br.presA; v.presos = br.presV;
     br.rnd = rnd;
   }
   if (brigas.length) {
@@ -1852,7 +1941,7 @@ export function criarDiaDeJogo(ctx) {
   const estadoDe = (b, m) => {
     const g = b.pessoas[m], br = b.brigou;
     if (t < b.sai) return 'na sede';
-    if (b.ferido && b.ferido[m] && t >= b.tCai[m]) return 'ferido';
+    if (b.ferido && b.ferido[m] && t >= b.tCai[m]) return b.ferido[m] === 2 ? 'preso' : 'ferido';
     if (t >= g.passa) { const s = (t - g.passa) * DENTRO * M; return s >= g.dentro.L ? 'no lugar' : 'entrando'; }
     if (br && t >= br.tIni - 3 && t < br.tFim) return 'na briga';
     if (br && br.v === b && t >= br.tFim && t < br.tFim + REAGRUPA) return 'juntando';
@@ -1935,12 +2024,16 @@ export function criarDiaDeJogo(ctx) {
         const d = gg.d, m = gg.m, g = b.pessoas[m], q = b.povo[m];
         const x0 = d.x, z0 = d.y;
         d.passada = gg.passada * Math.max(1, rodando ? vezes : 1); d._cacando = false;
-        /* FERIDO NA BRIGA: fica no chão, onde caiu */
+        /* FERIDO NA BRIGA: fica no chão, onde caiu; PRESO: rendido de pé,
+           com as mãos pra cima, onde estava (esperando a viatura) */
         if (b.ferido && b.ferido[m] && t >= b.tCai[m]) {
           const f = ataca ? posAtaque(br, m, b.tCai[m], F1) : naRua(b, q, b.tCai[m], F1);
           d.x = f.x; d.y = f.z; d.alt = ctx.chaoDaRua(f.x, f.z);
-          d.jeito = undefined; d.hostil = 0; d.ataque = null; d.apanhou = 0;
-          d.derrubado = 1; d.derrubadoDur = 2; d.noChao = true;
+          d.hostil = 0; d.ataque = null; d.apanhou = 0;
+          if (b.ferido[m] === 2) {
+            if (d.noChao) { d.derrubado = 0; d.noChao = false; }
+            d.jeito = 'revista';
+          } else { d.jeito = undefined; d.derrubado = 1; d.derrubadoDur = 2; d.noChao = true; }
           continue;
         }
         if (d.noChao) { d.derrubado = 0; d.noChao = false; }
@@ -2081,7 +2174,7 @@ export function criarDiaDeJogo(ctx) {
   function saidaTxt(b) {
     const ini = b.inicio;
     if (ini.tipo === 'entrada') return `A caravana desce na ${esc(ini.entrada ? ini.entrada.nome.replace(/^Pórtico da /, '') : 'entrada da cidade')} e vai a pé`;
-    if (ini.tipo === 'aliado') return `Sai da sede da ${esc(ini.t.sigla)}, que ${b.anfitriao.decisao === 'escolta' ? 'hospedou e escolta' : 'hospedou'}`;
+    if (ini.tipo === 'aliado') return `Sai da sede da ${esc(ini.t.sigla)}, que ${b.anfitriao.decisao === 'escolta' ? 'hospedou e escolta' : 'hospedou'}${b.anfitriao.doMandante ? ' (e sai sozinha: a anfitriã é do mandante, só hospeda)' : ''}`;
     return `Sai da sede (${esc(b.t.bairro || '—')})`;
   }
   function genteTxt(b) {
@@ -2098,7 +2191,6 @@ export function criarDiaDeJogo(ctx) {
     if (d.porque === 'sem rival') return 'Vai em paz: nenhuma rival dela no outro clube.';
     if (d.porque === 'pequena') return 'Vai em paz: as rivais dela no outro clube são grandes demais (a paridade do jogo: com menos de 45% do tamanho da rival, ninguém vai).';
     if (d.porque === 'rivais ocupadas') return 'Vai em paz: as rivais dela já estão numa briga.';
-    if (d.porque === 'escolta') return `Vai em paz: a escolta da PM não deixa o bonde sair da rota (a chance de atacar a ${al} seria ${pct(d.chance)}).`;
     if (d.porque === 'paz') return `Vai em paz (mandada; a chance de atacar a ${al} era ${pct(d.chance)}).`;
     if (d.porque === 'não achou') return b.naoAchou && !b.naoAchou.pontos
       ? `Queria atacar a ${al}, mas a rota dela quase não passa pela cidade (a sede fica colada nos arredores do estádio, onde está a PM): vai em paz.`
@@ -2108,14 +2200,14 @@ export function criarDiaDeJogo(ctx) {
   function brigaTxt(b) {
     const br = b.brigou;
     if (!br) return '';
-    const ataca = br.a === b, venceu = ataca ? br.venceA : !br.venceA, fer = ataca ? br.ferA : br.ferV, n = ataca ? br.nA : br.nV;
-    return `Briga às ${hora(br.tIni)}: ${venceu ? 'ganhou' : 'perdeu'}; ${fer} ferido${fer === 1 ? '' : 's'} ficaram na rua — chega no estádio com ${n - fer} de ${n}.`;
+    const ataca = br.a === b, venceu = ataca ? br.venceA : !br.venceA, fer = ataca ? br.ferA : br.ferV, pres = ataca ? br.presA : br.presV, n = ataca ? br.nA : br.nV;
+    return `Briga às ${hora(br.tIni)}: ${venceu ? 'ganhou' : 'perdeu'}${(ataca ? br.favoritoA : !br.favoritoA) ? ' (era a favorita)' : ' (era a zebra)'}; ${fer} ferido${fer === 1 ? '' : 's'} e ${pres} preso${pres === 1 ? '' : 's'} ficam na rua — chega no estádio com ${n - fer - pres} de ${n}.`;
   }
   function linhaDe(b) {
     const est = b.estadoTxt || '—';
     return `<li><i style="background:${esc(b.cor)}"></i><div><b>${esc(b.t.sigla)}</b> <small>${esc(b.t.nome)} · ${b.escalao}º escalão · ${genteTxt(b)} · ${b.n} bonecos</small>
       <small>${saidaTxt(b)} às ${hora(b.sai)}${b.adiantou ? ` (${b.adiantou} min antes, pra não cruzar rival)` : ''}${b.esperou ? ` (${b.esperou} min depois: espera o corredor do visitante abrir)` : ''} · ${Math.round(b.comprimento)} m até o ${esc(b.portao.nome.toLowerCase())} · setor ${esc(b.setor)}</small>
-      ${b.deFora ? `<small>${b.anfitriao ? `Aliado na praça: ${esc(b.anfitriao.t.sigla)} (${b.anfitriao.grau === 2 ? 'irmandade' : 'aliado'}) — ${b.anfitriao.decisao === 'nada' ? 'não recebeu' : b.anfitriao.decisao === 'hospedar' ? 'hospedou' : 'hospedou e escoltou'}${b.anfitriao.forcada ? ' (mandado)' : ` (sorteio: ${b.anfitriao.pct.join('/')}%, tirou ${b.anfitriao.tirou})`}` : 'Sem aliado com sede na praça'}.</small>` : ''}
+      ${b.deFora ? `<small>${b.anfitriao ? `Aliado na praça: ${esc(b.anfitriao.t.sigla)} (${b.anfitriao.grau === 2 ? 'irmandade' : 'aliado'}${b.anfitriao.doMandante ? ', do mandante: só hospeda' : ''}) — ${b.anfitriao.decisao === 'nada' ? 'não recebeu' : b.anfitriao.decisao === 'hospedar' ? 'hospedou' : `hospedou e escoltou com ${b.anfitriao.escoltaMembros}`}${b.anfitriao.forcada ? ' (mandado)' : ` (sorteio: ${b.anfitriao.pct.join('/')}%, tirou ${b.anfitriao.tirou})`}` : 'Sem aliado com sede na praça'}.</small>` : ''}
       <small>${decisaoTxt(b)}${b.brigou ? ' ' + brigaTxt(b) : ''}</small>
       <small class="cj-estado" data-bonde="${esc(b.t.id)}">${esc(est)}</small></div></li>`;
   }
@@ -2140,13 +2232,15 @@ export function criarDiaDeJogo(ctx) {
     if (!p.brigas.length) return `<p class="cj-aviso">Nenhuma torcida decidiu atacar: todo mundo vai em paz, na rota da PM.</p>`;
     return p.brigas.map((br, i) => {
       const venc = br.venceA ? br.a : br.v, perd = br.venceA ? br.v : br.a;
-      return `<p class="cj-aviso ruim">Às ${hora(br.tIni)}, a ${esc(br.a.t.sigla)} (${br.nA}) cai em cima do bonde da ${esc(br.v.t.sigla)} (${br.nV}) na rua, fora dos arredores — a PM não sabia (o plano dela é o da paz). A ${esc(venc.t.sigla)} leva a melhor (força ${Math.round(br.venceA ? br.fA : br.fV)} × ${Math.round(br.venceA ? br.fV : br.fA)}). Ficam no chão ${br.ferA} da ${esc(br.a.t.sigla)} e ${br.ferV} da ${esc(br.v.t.sigla)}; depois, cada uma vai pro estádio com quem ficou de pé (a ${esc(br.v.t.sigla)} junta os dela por ${Math.round(REAGRUPA / 60)} min). <button class="cen-bt" data-jogo="briga" data-i="${i}">Ver a briga</button></p>`;
+      return `<p class="cj-aviso ruim">Às ${hora(br.tIni)}, a ${esc(br.a.t.sigla)} (${br.nA}) cai em cima do bonde da ${esc(br.v.t.sigla)} (${br.nV}) na rua, fora dos arredores — a PM não sabia (o plano dela é o da paz). A ${esc(venc.t.sigla)} leva a melhor (força ${Math.round(br.venceA ? br.fA : br.fV)} × ${Math.round(br.venceA ? br.fV : br.fA)}: ${(br.venceA === br.favoritoA) ? 'a favorita venceu, como em 70% das vezes' : 'deu zebra, como em 30% das vezes'}). Ficam no chão ${br.ferA} da ${esc(br.a.t.sigla)} e ${br.ferV} da ${esc(br.v.t.sigla)}, e ficam presos ${br.presA} e ${br.presV}; depois, cada uma vai pro estádio com quem ficou de pé e solto (a ${esc(br.v.t.sigla)} junta os dela por ${Math.round(REAGRUPA / 60)} min). <button class="cen-bt" data-jogo="briga" data-i="${i}">Ver a briga</button></p>`;
     }).join('');
   }
   function controlesDoJogo(p) {
     const daqui = p.lista.filter(c => c.id !== p.casa.id);
     const opt = (c, sel, uf) => `<option value="${esc(c.id)}"${sel ? ' selected' : ''}>${esc(c.nome)}${uf && c.uf ? ' (' + esc(c.uf) + ')' : ''}</option>`;
     const temAnf = p.vivos.some(b => b.anfitriao);
+    /* o aliado do mandante só hospeda: sem a opção de escoltar */
+    const podeEscoltar = p.vivos.some(b => b.anfitriao && !b.anfitriao.doMandante);
     return `<div class="cj-ctrl">
         <select data-jogo="casa" aria-label="O mandante">${p.lista.map(c => opt(c, c.id === p.casa.id)).join('')}</select> ×
         <select data-jogo="fora" aria-label="O visitante">${daqui.length ? `<optgroup label="Da praça">${daqui.map(c => opt(c, c.id === p.fora.id)).join('')}</optgroup>` : ''}<optgroup label="De fora">${p.deFora.map(c => opt(c, c.id === p.fora.id, true)).join('')}</optgroup></select>
@@ -2155,7 +2249,7 @@ export function criarDiaDeJogo(ctx) {
       </div>
       <div class="cj-ctrl">
         <select data-jogo="ia" aria-label="O que as torcidas decidem"><option value="sorteio"${(escolha.ia || 'sorteio') === 'sorteio' ? ' selected' : ''}>As torcidas decidem (sorteio)</option><option value="paz"${escolha.ia === 'paz' ? ' selected' : ''}>Todas vão em paz</option><option value="ataque"${escolha.ia === 'ataque' ? ' selected' : ''}>Quem pode, ataca</option></select>
-        ${temAnf ? `<select data-jogo="anfitriao" aria-label="O que o aliado decide"><option value="sorteio"${(escolha.anfitriao || 'sorteio') === 'sorteio' ? ' selected' : ''}>O aliado decide (sorteio)</option><option value="nada"${escolha.anfitriao === 'nada' ? ' selected' : ''}>O aliado não recebe</option><option value="hospedar"${escolha.anfitriao === 'hospedar' ? ' selected' : ''}>O aliado hospeda</option><option value="escolta"${escolha.anfitriao === 'escolta' ? ' selected' : ''}>Hospeda e escolta</option></select>` : ''}
+        ${temAnf ? `<select data-jogo="anfitriao" aria-label="O que o aliado decide"><option value="sorteio"${(escolha.anfitriao || 'sorteio') === 'sorteio' ? ' selected' : ''}>O aliado decide (sorteio)</option><option value="nada"${escolha.anfitriao === 'nada' ? ' selected' : ''}>O aliado não recebe</option><option value="hospedar"${escolha.anfitriao === 'hospedar' ? ' selected' : ''}>O aliado hospeda</option>${podeEscoltar ? `<option value="escolta"${escolha.anfitriao === 'escolta' ? ' selected' : ''}>Hospeda e escolta</option>` : ''}</select>` : ''}
         <button class="cen-bt" data-jogo="sortear">Sortear de novo</button>
       </div>`;
   }
@@ -2203,12 +2297,14 @@ export function criarDiaDeJogo(ctx) {
       const lider = estadoDe(b, 0);
       /* o último que ainda vai entrar (quem ficou ferido não conta) */
       let m1 = b.n - 1; while (m1 > 0 && b.ferido && b.ferido[m1]) m1--;
-      const ult = estadoDe(b, m1), caidos = b.ferido && b.tCai ? b.tCai.filter(x => x <= t).length : 0;
-      const fora = b.ferido ? b.n - b.ferido.reduce((s, x) => s + x, 0) : b.n;
+      const ult = estadoDe(b, m1);
+      let caidos = 0, presos = 0;
+      if (b.ferido && b.tCai) for (let m = 0; m < b.n; m++) if (b.tCai[m] <= t) { if (b.ferido[m] === 2) presos++; else caidos++; }
+      const fora = b.ferido ? b.ferido.reduce((s, x) => s + (x ? 0 : 1), 0) : b.n;
       let txt;
       if (lider === 'na sede') txt = b.inicio.tipo === 'entrada' ? 'Na entrada da cidade, descendo da caravana' : b.inicio.tipo === 'aliado' ? 'Na porta da sede do aliado' : 'Na porta da sede';
-      else if (ult === 'no lugar') txt = `Todos no lugar, no setor ${b.setor}` + (caidos ? ` (${caidos} ficaram na rua, feridos)` : '');
-      else if (lider === 'na briga') txt = `Na briga com a ${esc((b.brigou.a === b ? b.brigou.v : b.brigou.a).t.sigla)}` + (caidos ? `: ${caidos} no chão` : '');
+      else if (ult === 'no lugar') txt = `Todos no lugar, no setor ${b.setor}` + (caidos || presos ? ` (ficaram na rua ${caidos} feridos e ${presos} presos)` : '');
+      else if (lider === 'na briga') txt = `Na briga com a ${esc((b.brigou.a === b ? b.brigou.v : b.brigou.a).t.sigla)}` + (caidos || presos ? `: ${caidos} no chão${presos ? `, ${presos} rendidos` : ''}` : '');
       else if (lider === 'na tocaia') txt = `Na tocaia, esperando o bonde da ${b.brigou.v.t.sigla}`;
       else if (lider === 'juntando') txt = `Juntando os dela depois da briga (${caidos} no chão)`;
       else if (b.dentroN > 0) txt = `Passando a catraca: ${b.dentroN} de ${fora} dentro, ${b.noLugar} no lugar`;
@@ -2359,15 +2455,15 @@ export function criarDiaDeJogo(ctx) {
                menor: plano.menor && { d: plano.menor.d, t: plano.menor.t, a: plano.menor.a && plano.menor.a.t.sigla, b: plano.menor.b && plano.menor.b.t.sigla },
                jogo: plano.casa.nome + ' × ' + plano.fora.nome, deFora: !plano.foraDaqui, ia: plano.modoIA,
                pm: { cordoes: plano.pm.cordoes.length, revistas: plano.pm.revistas.map(rv => rv.portao.nome + ':' + rv.n).join(','), fechadas: plano.pm.fechadas.length, pms: policiais.length, grades: plano.nGrades, efetivo: plano.efetivo },
-               brigas: plano.brigas.map(br => ({ a: br.a.t.sigla, v: br.v.t.sigla, ini: hora(br.tIni), P: [Math.round(br.P[0]), Math.round(br.P[1])], vence: br.venceA ? br.a.t.sigla : br.v.t.sigla, nA: br.nA, nV: br.nV, ferA: br.ferA, ferV: br.ferV, caemA: br.caemA, caemV: br.caemV, fA: Math.round(br.fA), fV: Math.round(br.fV) })),
+               brigas: plano.brigas.map(br => ({ a: br.a.t.sigla, v: br.v.t.sigla, ini: hora(br.tIni), P: [Math.round(br.P[0]), Math.round(br.P[1])], vence: br.venceA ? br.a.t.sigla : br.v.t.sigla, nA: br.nA, nV: br.nV, ferA: br.ferA, ferV: br.ferV, presA: br.presA, presV: br.presV, caemA: br.caemA, caemV: br.caemV, rendemA: br.rendemA, rendemV: br.rendemV, fA: Math.round(br.fA), fV: Math.round(br.fV), favorita: br.favoritoA ? br.a.t.sigla : br.v.t.sigla })),
                longeDe: plano.longeDe, tentativas: plano.tentativas, abre: plano.tAbre != null ? hora(plano.tAbre) : null,
                travessias: plano.travessias.map(v => ({ antes: v.antes.map(b => b.t.sigla).join('+'), depois: v.depois.map(b => b.t.sigla).join('+'), d: Math.round(v.d), libera: hora(v.libera), chega: hora(v.chega), folga: Math.round(v.folga / 60) })),
                bondes: plano.vivos.map(b => ({ sigla: b.t.sigla, lado: b.lado, escalao: b.escalao, setor: b.setor, portao: b.portao.nome, n: b.n, m: Math.round(b.comprimento), sai: hora(b.sai), chega: hora(b.chega), fim: hora(b.fim), adiantou: b.adiantou || 0, esperou: b.esperou || 0,
                                              naRua: b.naRua, inicio: b.inicio.tipo + (b.inicio.entrada ? ':' + b.inicio.entrada.id : b.inicio.t ? ':' + b.inicio.t.sigla : ''), anfitriao: b.anfitriao ? b.anfitriao.t.sigla + ':' + b.anfitriao.decisao : null, escolta: b.escolta ? b.escolta.n : 0,
-                                             decisao: b.decisao ? { alvo: b.decisao.alvo && b.decisao.alvo.t.sigla, chance: b.decisao.chance, tirou: b.decisao.tirou, ataca: b.decisao.ataca, porque: b.decisao.porque, naoAchou: b.naoAchou || null } : null, feridos: b.feridos || 0,
+                                             decisao: b.decisao ? { alvo: b.decisao.alvo && b.decisao.alvo.t.sigla, chance: b.decisao.chance, tirou: b.decisao.tirou, ataca: b.decisao.ataca, porque: b.decisao.porque, naoAchou: b.naoAchou || null } : null, feridos: b.feridos || 0, presos: b.presos || 0,
                                              revista: (() => { let a = Infinity, z = -Infinity; for (const g of b.pessoas) if (g.rev0 < Infinity) { a = Math.min(a, g.rev0); z = Math.max(z, g.rev1); } return a < Infinity ? Math.round(z - a) : 0; })(),
                                              raias: b.raias.length, semRaia: b.pessoas.filter(g => g.raia < 0).length, catraca: (() => { const f = [...b.passa].filter(x => x < Infinity); return f.length ? Math.round(Math.max(...f) - Math.min(...f) + CATRACA) : 0; })(), cauda: +b.cauda.toFixed(1),
-                                             estado: estadoDe(b, 0) + ' / ' + estadoDe(b, (() => { let m = b.n - 1; while (m > 0 && b.ferido && b.ferido[m]) m--; return m; })()), dentro: b.dentroN, noLugar: b.noLugar, caidos: b.ferido ? b.ferido.reduce((s, x) => s + x, 0) : 0 })),
+                                             estado: estadoDe(b, 0) + ' / ' + estadoDe(b, (() => { let m = b.n - 1; while (m > 0 && b.ferido && b.ferido[m]) m--; return m; })()), dentro: b.dentroN, noLugar: b.noLugar, caidos: b.ferido ? b.ferido.reduce((s, x) => s + (x === 1 ? 1 : 0), 0) : 0, presosN: b.ferido ? b.ferido.reduce((s, x) => s + (x === 2 ? 1 : 0), 0) : 0 })),
                erros: plano.bondes.filter(b => !b.rua).map(b => b.t.sigla + ': ' + (b.erro || '')) };
     },
     limpar() { rodando = false; seguir = null; desmontar(); painel.hidden = true; }
