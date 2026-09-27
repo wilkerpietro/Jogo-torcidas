@@ -3790,6 +3790,17 @@ O dono pediu, com duas fotos do boneco na arquibancada: "O tamanho dos degraus d
 - As três escadas internas do de 40 continuam fora de todo vomitório (de cima e de baixo) e de todo salão.
 - `conferir_cidades.mjs` (as 30 praças cabem; o mundo encolhe na maioria — as pequenas, 554 × 466 → 542 × 454 m; São Paulo, 767 × 646 → 739 × 598 —, e em algumas o estádio acha outra vaga e o mundo troca de lado: Belém, 679 × 560 → 655 × 612), o da passagem, o do metrô (o subsolo mudou) e o da sede passam.
 - No cenário de verdade (no navegador sem placa de vídeo), com o caminho achado pela mesma busca do conferidor: do portão 1 do Morumbi (de 40, São Paulo) pelo salão, o corredor do chão, a escada interna (o patamar da volta a 3,77 m), o corredor de cima (7,52), o poço do vomitório (a escada nele a céu aberto a partir de 8,05) e a arquibancada até a última fileira (16,04 m); do portão 3 do Canindé (de 20) até a última do v3 (9,42 m); e do portão 3 do Felipe Santiago (de 10, Fortaleza) pelo túnel de lona, o caminho cercado, o corredor e a vala até a última do v1 (6,62 m). Nas fotos, no alto da arquibancada nada é cortado (a arquibancada inteira, sem corredor), e parado no corredor do de 20 o corte continua (o corredor de cima, com o balcão e a boca do vomitório).
+- O cenário monta as 30 praças sem erro (triângulos da cidade e chamadas; o tempo, com rasterizador por software, não vale):
+
+| praça | antes (4.62) | com o degrau de 0,40 |
+|---|---|---|
+| São Paulo | 1,25 mi · 412 | 1,24 mi · 418 |
+| Rio de Janeiro | 1,38 mi · 413 | 1,38 mi · 420 |
+| Fortaleza | 1,32 mi · 418 | 1,31 mi · 388 |
+| Bahia | 1,12 mi · 358 | 1,12 mi · 359 |
+| Interior do PR | 0,50 mi · 199 | 0,49 mi · 165 |
+
+  Os triângulos quase não mudam (o estádio tem uns tantos a mais, a cidade em volta muda um pouco com o terreno menor); as chamadas sobem ou descem conforme o estádio cai nos blocos do forno.
 
 **O que isto ainda não é:**
 - **O estádio continua vazio com 200 bonecos.** O degrau fino tira a metade da área, mas quase nenhum lugar: são os mesmos anéis, com as mesmas fileiras do mesmo comprimento. Com 200 bonecos, o de 10 fica com 5% dos lugares, o de 20 com 2% e o de 40 com 1,5%. Pra parecer cheio, o que conta é quantas fileiras (e quanta volta): menos fileiras, ou a torcida só num pedaço do anel.
