@@ -83,8 +83,11 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js';
 
-/* onde o modelo mora, quando não vem embutido em base64 */
+/* onde o modelo mora, quando não vem embutido em base64: o detalhado
+   (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
 const URL_GLB = new URL('../img/boneco.glb', import.meta.url).href;
+const URL_PERTO = new URL('../img/boneco_perto.glb', import.meta.url).href;
+const URL_LONGE = new URL('../img/boneco_longe.glb', import.meta.url).href;
 /* onde, no mundo, fica a posição (x, y) do tabuleiro. A cena
    plana devolve (x, 0, y); o estádio devolve a dobra. */
 const PLANO = { x:0, y:0, z:0 };
@@ -548,31 +551,99 @@ let noQuadroExterno = null;
     return out;
   }
   const ALTURA_CAIXAS = 34;         // a altura do corpo de caixas, na escala 1
+  /* OS DOIS NÍVEIS (pedido do dono, 27/09/2026: "cena de 300 bonecos").
+     O modelo do Blender tem ~22 mil triângulos por boneco; a cabeça (10
+     mil) e o cabelo (8 mil) são quase tudo. Afinar na chegada pela grade
+     dava 2,2 mil, mas levava o rosto junto — a cabeça virava uma bolota.
+     Agora o afinado sai pronto de `ferramentas/afinar_boneco.mjs`, com o
+     simplificador do meshoptimizer, em dois níveis: o de PERTO (~2,4 a
+     3,3 mil, com o rosto, as mãos e o cabelo) e o de LONGE (~0,9 a 1,3
+     mil) pra quem sai pequeno na tela (ver `trocarNivel`). O GLB afinado
+     diz `asset.extras.afinado` e não passa pela grade de novo. Sem ele (a
+     página que não leva os arquivos novos), vale o de antes: o detalhado,
+     afinado na chegada. A vitrine com o detalhado não troca de nível. */
+  let modeloLonge = null;
+  const detalhado = () => window.MODELO_BONECO === 'detalhado';
   function carregarGLB(){
     if(modeloGLB || carregandoGLB) return;
-    /* a cena de cima carrega o modelo LEVE (dados/boneco_leve_glb.js);
-       a vitrine, o detalhado (dados/boneco_glb.js). Cada página inclui
-       só o que quer; aqui vale o leve se ele existir. */
-    const dados = TO.dados && (window.MODELO_BONECO==='detalhado' && TO.dados.bonecoGLB ? TO.dados.bonecoGLB
-                               : (TO.dados.bonecoLeveGLB || TO.dados.bonecoGLB));
     if(typeof GLTFLoader !== 'function') return;
     carregandoGLB = true;
+    const D = TO.dados || {};
+    const falhou = err=>{
+      console.warn('boneco.glb: '+(err && (err.message||err))+' — fica o corpo de cápsulas');
+      carregandoGLB = false;
+    };
+    const longe = ()=>{
+      if(detalhado()) return;
+      lerGLB(D.bonecoLongeGLB, URL_LONGE, gltf=>{ modeloLonge = prepararModelo(gltf.scene); },
+        err=>console.warn('boneco_longe.glb: '+(err && (err.message||err))+' — todo mundo no nível de perto'));
+    };
+    /* o detalhado (a vitrine, ou quando o de perto não veio) */
+    const doDetalhado = ()=> lerGLB(D.bonecoGLB, URL_GLB, gltf=>{ pronto(gltf); longe(); }, falhou);
+    if(detalhado()) doDetalhado();
+    else lerGLB(D.bonecoPertoGLB, URL_PERTO, gltf=>{ pronto(gltf); longe(); },
+      err=>{ console.warn('boneco_perto.glb: '+(err && (err.message||err))+' — vai o detalhado, afinado na chegada'); doDetalhado(); });
+  }
+  /* o Lambert (mais barato que o Standard, e a cena não tem PBR), com o nome do material */
+  function prepararModelo(m){
+    m.updateMatrixWorld(true);
+    m.traverse(o=>{
+      if(o.isMesh){
+        const mt = o.material;
+        const novo = new THREE.MeshLambertMaterial({color: mt.color ? mt.color.clone() : new THREE.Color('#ccc'),
+          map: mt.map || null, transparent: !!mt.transparent, opacity: mt.opacity!==undefined ? mt.opacity : 1});
+        novo.name = mt.name; o.material = novo;
+        o.frustumCulled = false;
+      }
+    });
+    return m;
+  }
+  function pronto(gltf){
+    modeloGLB = gltf.scene;
+    modeloGLB.updateMatrixWorld(true);
+    /* A MALHA É AFINADA NA CHEGADA (fps do dono, 08/09/2026) quando o
+       modelo é o detalhado: ~23 mil triângulos por boneco; com 52
+       bonecos na tela eram 1,26 milhão de triângulos por quadro pra
+       figuras de 30 px — era isso, e não a resolução nem a luz, que
+       derrubava o fps (medido: 12 bonecos, 49 fps; 52, 4 fps). Cada
+       peça passa uma vez por `afinarMalha` e todo boneco nasce da malha
+       afinada. O de perto já vem afinado; a vitrine, de propósito, não. */
+    const jaAfinado = !!(gltf.asset && gltf.asset.extras && gltf.asset.extras.afinado);
+    if(cfg.afinarMalha && !jaAfinado && !detalhado()){
+      let antes = 0, depois = 0;
+      modeloGLB.traverse(o=>{
+        if(!o.isMesh || !o.geometry) return;
+        antes += triangulosDe(o.geometry);
+        const g = afinarMalha(o.geometry, cfg.afinarCelulas);
+        if(g){ o.geometry.dispose(); o.geometry = g; }
+        depois += triangulosDe(o.geometry);
+      });
+      estatMalha = {antes, depois};
+    }
+    nomesGLB = new Set(); modeloGLB.traverse(o=>{ if(o.isMesh) nomesGLB.add(o.name); });
+    prepararModelo(modeloGLB);
+    /* troca as figuras já feitas de caixa pelo modelo */
+    for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
+    carregandoGLB = false;
+  }
+  /* LER UM GLB: do base64 em `dados` (a página empacotada num HTML só),
+     ou do arquivo em `url` */
+  function lerGLB(dados, url, ok, erro){
     /* O ARQUIVO, E NÃO O BASE64.
        No artefato o GLB vinha embutido e era decodificado à mão porque
        o sandbox barra requisição — até de data-URI. No repositório não
        há esse muro: a página 3D já roda por servidor local (módulo ES
-       não carrega em file://), então o modelo é `img/boneco.glb` e quem
-       busca é o próprio GLTFLoader. Fica 3,6 MB de JavaScript a menos e
-       o modelo volta a ser um arquivo que dá pra abrir no Blender. O
-       base64 continua valendo quando alguém o carrega: é o caminho de
-       quem empacota a página inteira num HTML só. */
+       não carrega em file://), então o modelo é o arquivo em `img/` e
+       quem busca é o próprio GLTFLoader. O base64 continua valendo
+       quando alguém o carrega: é o caminho de quem empacota a página
+       inteira num HTML só. */
     let bin = null;
     if(dados){
       const b64 = dados.indexOf(',') >= 0 ? dados.slice(dados.indexOf(',')+1) : dados;
       try{
         const txt = atob(b64); bin = new Uint8Array(txt.length);
         for(let i=0;i<txt.length;i++) bin[i] = txt.charCodeAt(i);
-      }catch(err){ console.warn('boneco.glb: base64 inválido — vai buscar o arquivo'); bin = null; }
+      }catch(err){ console.warn('boneco: base64 inválido — vai buscar o arquivo'); bin = null; }
     }
     /* A TEXTURA DO ROSTO SEM BLOB: o GLTFLoader tira a imagem do GLB e
        carrega por `blob:` — com ImageBitmapLoader, que usa fetch —, e o
@@ -594,7 +665,7 @@ let noQuadroExterno = null;
         let str=''; for(let i=0;i<bytes.length;i+=8192) str += String.fromCharCode.apply(null, bytes.subarray(i, i+8192));
         dataPng = 'data:'+(img.mimeType||'image/png')+';base64,'+btoa(str);
       }
-    }catch(err){ if(err) console.warn('boneco.glb: sem textura ('+err.message+')'); }
+    }catch(err){ if(err) console.warn('boneco: sem textura ('+err.message+')'); }
     const gerente = new THREE.LoadingManager();
     if(dataPng) gerente.setURLModifier(u => (typeof u==='string' && u.indexOf('blob:')===0) ? dataPng : u);
     const carregador = new GLTFLoader(gerente);
@@ -603,49 +674,8 @@ let noQuadroExterno = null;
        TextureLoader, que carrega por <img> e aceita a data-URI */
     const cib = window.createImageBitmap;
     try{ window.createImageBitmap = undefined; }catch(_){}
-    const pronto = gltf=>{
-      modeloGLB = gltf.scene;
-      modeloGLB.updateMatrixWorld(true);
-      /* A MALHA É AFINADA NA CHEGADA (fps do dono, 08/09/2026): o GLB
-         "leve" tem ~61 mil vértices e ~23 mil triângulos por boneco;
-         com 52 bonecos na tela eram 1,26 milhão de triângulos por
-         quadro pra figuras de 30 px — era isso, e não a resolução nem
-         a luz, que derrubava o fps (medido: 12 bonecos, 49 fps; 52,
-         4 fps). Cada peça passa uma vez por `afinarMalha` e todo
-         boneco nasce da malha afinada. */
-      /* a vitrine com o modelo detalhado é pra olhar de perto: sem afinar */
-      if(cfg.afinarMalha && window.MODELO_BONECO !== 'detalhado'){
-        let antes = 0, depois = 0;
-        modeloGLB.traverse(o=>{
-          if(!o.isMesh || !o.geometry) return;
-          antes += triangulosDe(o.geometry);
-          const g = afinarMalha(o.geometry, cfg.afinarCelulas);
-          if(g){ o.geometry.dispose(); o.geometry = g; }
-          depois += triangulosDe(o.geometry);
-        });
-        estatMalha = {antes, depois};
-      }
-      nomesGLB = new Set(); modeloGLB.traverse(o=>{ if(o.isMesh) nomesGLB.add(o.name); });
-      /* Lambert é mais barato que Standard e a cena não tem PBR */
-      modeloGLB.traverse(o=>{
-        if(o.isMesh){
-          const m = o.material;
-          const novo = new THREE.MeshLambertMaterial({color: m.color ? m.color.clone() : new THREE.Color('#ccc'),
-            map: m.map || null, transparent: !!m.transparent, opacity: m.opacity!==undefined ? m.opacity : 1});
-          novo.name = m.name; o.material = novo;
-          o.frustumCulled = false;
-        }
-      });
-      /* troca as figuras já feitas de caixa pelo modelo */
-      for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
-      carregandoGLB = false;
-    };
-    const falhou = err=>{
-      console.warn('boneco.glb: '+(err && (err.message||err))+' — fica o corpo de cápsulas');
-      carregandoGLB = false;
-    };
-    if(bin) carregador.parse(bin.buffer, '', pronto, falhou);
-    else carregador.load(URL_GLB, pronto, undefined, falhou);
+    if(bin) carregador.parse(bin.buffer, '', ok, erro);
+    else carregador.load(url, ok, undefined, erro);
     try{ window.createImageBitmap = cib; }catch(_){}
   }
 
@@ -818,8 +848,9 @@ let noQuadroExterno = null;
   const geomCamisa = new Map();
   const matCamisaVC = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff});
   matCamisaVC.name = 'camisa';
-  function geometriaCamisa(base, idx, c1, c2, c3){
-    const chave = idx+'|'+c1+'|'+c2+'|'+c3;
+  function geometriaCamisa(base, idx, c1, c2, c3, nivel){
+    /* (o nível entra na chave: a camisa do boneco de longe é mais magra) */
+    const chave = idx+'|'+c1+'|'+c2+'|'+c3+'|'+(nivel||'');
     let g = geomCamisa.get(chave);
     if(g) return g;
     g = base.clone();
@@ -886,16 +917,44 @@ let noQuadroExterno = null;
   const geomJuntas = new Map();
   const matJunto = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff});
   matJunto.name = 'junto';
-  function juntarPecas(modelo, chave){
+  const geomJuntasLonge = new Map();
+  const guardar = (cache, chave, geo) => {
+    cache.set(chave, geo);
+    if(cache.size > 400){ const k0 = cache.keys().next().value; cache.get(k0).dispose(); cache.delete(k0); }
+  };
+  /* o corpo esqueletizado e as peças que aparecem */
+  function pecasDe(modelo){
     const base = (()=>{ let b=null; modelo.traverse(o=>{ if(!b && o.isSkinnedMesh) b=o; }); return b; })();
-    if(!base) return null;
+    if(!base) return {base:null, pecas:[]};
     modelo.updateMatrixWorld(true);
-    const ossosBase = base.skeleton.bones;
-    const idxOsso = new Map(ossosBase.map((b,i)=>[b.name, i]));
     const pecas = [];
     modelo.traverse(o=>{ if(o.isMesh && o.visible && o.geometry && o.geometry.getAttribute('position')) pecas.push(o); });
+    return {base, pecas};
+  }
+  function juntarPecas(modelo, chave){
+    const {base, pecas} = pecasDe(modelo);
+    if(!base) return null;
     let geo = geomJuntas.get(chave);
-    if(!geo){
+    if(!geo){ geo = geometriaJunta(base, pecas); guardar(geomJuntas, chave, geo); }
+    const junto = new THREE.SkinnedMesh(geo, matJunto);
+    junto.name = 'junto';
+    junto.frustumCulled = false;
+    junto.bind(base.skeleton, base.bindMatrix);
+    base.parent.add(junto);
+    junto.position.copy(base.position); junto.quaternion.copy(base.quaternion); junto.scale.copy(base.scale);
+    for(const o of pecas) o.parent.remove(o);
+    /* as peças escondidas (variantes desligadas) também saem: são só peso */
+    const sobras = []; modelo.traverse(o=>{ if(o.isMesh && o !== junto) sobras.push(o); });
+    for(const o of sobras) o.parent.remove(o);
+    return junto;
+  }
+  /* A GEOMETRIA JUNTA: as peças numa malha só, com os ossos do corpo. Os
+     dois níveis do boneco têm o mesmo esqueleto (os mesmos ossos, na mesma
+     ordem), e a geometria de um serve no esqueleto do outro. */
+  function geometriaJunta(base, pecas){
+    const idxOsso = new Map(base.skeleton.bones.map((b,i)=>[b.name, i]));
+    let geo;
+    {
       const P=[], N=[], C=[], SI=[], SW=[], IDX=[];
       const invBase = new THREE.Matrix4().copy(base.matrixWorld).invert();
       const m4 = new THREE.Matrix4(), m3 = new THREE.Matrix3(), v = new THREE.Vector3(), n = new THREE.Vector3();
@@ -946,30 +1005,18 @@ let noQuadroExterno = null;
       geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
       geo.setIndex(IDX);
       geo.computeBoundingSphere();
-      geomJuntas.set(chave, geo);
-      if(geomJuntas.size > 400){ const k0 = geomJuntas.keys().next().value; geomJuntas.get(k0).dispose(); geomJuntas.delete(k0); }
     }
-    const junto = new THREE.SkinnedMesh(geo, matJunto);
-    junto.name = 'junto';
-    junto.frustumCulled = false;
-    junto.bind(base.skeleton, base.bindMatrix);
-    base.parent.add(junto);
-    junto.position.copy(base.position); junto.quaternion.copy(base.quaternion); junto.scale.copy(base.scale);
-    for(const o of pecas) o.parent.remove(o);
-    /* as peças escondidas (variantes desligadas) também saem: são só peso */
-    const sobras = []; modelo.traverse(o=>{ if(o.isMesh && o !== junto) sobras.push(o); });
-    for(const o of sobras) o.parent.remove(o);
-    return junto;
+    return geo;
   }
 
-  function construirCorpoGLB(f, pm){
-    const g = G();
-    const raiz = new THREE.Group();
-    const modelo = SkeletonUtils.clone(modeloGLB);
-    const on = variantesDe(f, pm);
-    const cores = {pele:f.pele, camisa: pm ? '#233a2c' : f.camisa, faixa: pm ? '#c9d64a' : f.faixa,
-                   calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,
-                   bone: f.corBone, sola:'#2a2a2a'};
+  /* VESTIR: as variantes da ficha ligadas, a cor de cada peça e o desenho
+     da camisa — o mesmo nos dois níveis do boneco */
+  function coresDe(f, pm){
+    return {pele:f.pele, camisa: pm ? '#233a2c' : f.camisa, faixa: pm ? '#c9d64a' : f.faixa,
+            calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,
+            bone: f.corBone, sola:'#2a2a2a'};
+  }
+  function vestir(modelo, f, pm, on, cores, nivel){
     const matsFig = new Map();
     modelo.traverse(o=>{
       if(!o.isMesh) return;
@@ -977,7 +1024,7 @@ let noQuadroExterno = null;
       const nome = o.material.name;
       /* o desenho da camisa (estudo): cor por vértice na malha */
       if(nome === 'camisa' && !pm && f.desenho > 0 && o.geometry.getAttribute('position')){
-        o.geometry = geometriaCamisa(o.geometry, f.desenho, f.camisa, f.faixa, f.cor3);
+        o.geometry = geometriaCamisa(o.geometry, f.desenho, f.camisa, f.faixa, f.cor3, nivel);
         o.material = matCamisaVC;
         return;
       }
@@ -987,11 +1034,19 @@ let noQuadroExterno = null;
         o.material = m;
       }
     });
+  }
+  function construirCorpoGLB(f, pm){
+    const g = G();
+    const raiz = new THREE.Group();
+    const modelo = SkeletonUtils.clone(modeloGLB);
+    const on = variantesDe(f, pm);
+    const cores = coresDe(f, pm);
+    vestir(modelo, f, pm, on, cores);
     /* uma malha só (cfg.juntarPecas): catorze chamadas viram uma */
-    let junto = null;
+    let junto = null, chave = null;
     if(cfg.juntarPecas){
-      const chave = [pm?'pm':'', [...on].sort().join(','), f.desenho||0,
-                     cores.pele, cores.camisa, cores.faixa, cores.calca, cores.tenis, cores.cabelo, cores.bone, f.cor3||''].join('|');
+      chave = [pm?'pm':'', [...on].sort().join(','), f.desenho||0,
+               cores.pele, cores.camisa, cores.faixa, cores.calca, cores.tenis, cores.cabelo, cores.bone, f.cor3||''].join('|');
       try{ junto = juntarPecas(modelo, chave); }catch(err){ console.warn('juntarPecas: '+(err && err.message)); junto = null; }
     }
     /* escala: o GLB tem 1,75 m; o corpo de caixas tinha 34 na escala 1 */
@@ -1050,7 +1105,64 @@ let noQuadroExterno = null;
     sombra.rotation.x = -Math.PI/2; sombra.position.y = 0.3; sombra.scale.set(8.5, 6.5, 1);
     raiz.add(sombra);
     const {anel, anelFundo} = anelNoChao(raiz);
-    return {raiz, modelo, J, sombra, anel, anelFundo, glb:true, escudo, cassetete, junto};
+    /* os dois níveis: a geometria de perto é a do `junto`; a de longe sai na
+       primeira vez que o boneco fica pequeno na tela (`trocarNivel`) */
+    return {raiz, modelo, J, sombra, anel, anelFundo, glb:true, escudo, cassetete, junto,
+            nivel: {chave, f, pm, perto: junto ? junto.geometry : null, longe: undefined, eLonge: false}};
+  }
+  /* A GEOMETRIA DE LONGE de uma figura: o modelo de longe vestido igual e
+     juntado igual, guardada pela mesma chave (quem tem o mesmo visual
+     divide). Só clona o modelo de longe quando a chave é nova. */
+  function geometriaDeLonge(nv){
+    if(nv.longe !== undefined) return nv.longe;
+    if(!modeloLonge || !nv.chave) return null;          // ainda não chegou: fica o de perto, e tenta de novo
+    let geo = geomJuntasLonge.get(nv.chave);
+    if(!geo){
+      try{
+        const m = SkeletonUtils.clone(modeloLonge);
+        vestir(m, nv.f, nv.pm, variantesDe(nv.f, nv.pm), coresDe(nv.f, nv.pm), 'longe');
+        const {base, pecas} = pecasDe(m);
+        geo = base ? geometriaJunta(base, pecas) : null;
+        if(geo) guardar(geomJuntasLonge, nv.chave, geo);
+      }catch(err){ console.warn('nível de longe: '+(err && err.message)); geo = null; }
+    }
+    nv.longe = geo;
+    return geo;
+  }
+  /* O NÍVEL PELO TAMANHO NA TELA: quantos pixels (CSS) a altura do boneco
+     ocupa na câmera de quem desenha, pela distância (a profundidade do
+     meio do corpo) e não pela altura projetada — vista de cima, a altura
+     de quem está em pé encolhe, e o boneco grande na tela ia pro nível de
+     longe. Abaixo de NIVEL_LONGE vai o de longe; só volta pro de perto
+     acima de NIVEL_PERTO (pra não ficar trocando na divisa). O líder (o
+     boneco de quem joga, um só) fica sempre no de perto. Sem câmera
+     conhecida (a vitrine; quem entra na cena sem dizer a câmera), fica o
+     de perto. */
+  const NIVEL_LONGE = 110, NIVEL_PERTO = 135;
+  let camNivel = null, alturaNivel = 0;
+  const _pa = new THREE.Vector3();
+  function trocarNivel(c, lider){
+    const nv = c.nivel, junto = c.junto;
+    if(!nv || !junto || !nv.perto) return;
+    let longe = false;
+    if(camNivel && alturaNivel > 0 && !lider){
+      const h = ALTURA_CAIXAS * c.raiz.scale.y;
+      /* projectionMatrix[5]: 1/tan(meio campo) na perspectiva (com o zoom),
+         2/altura da vista na ortográfica */
+      const e5 = camNivel.projectionMatrix.elements[5];
+      _pa.copy(c.raiz.position); _pa.y += h / 2; _pa.applyMatrix4(camNivel.matrixWorldInverse);
+      const prof = camNivel.isOrthographicCamera ? 1 : -_pa.z;
+      /* atrás da câmera: tanto faz (não aparece) */
+      if(prof <= 0) longe = nv.eLonge;
+      else {
+        const px = h * e5 / prof * alturaNivel / 2;
+        longe = nv.eLonge ? px < NIVEL_PERTO : px < NIVEL_LONGE;
+      }
+    }
+    const geo = longe ? geometriaDeLonge(nv) : nv.perto;
+    if(!geo){ if(junto.geometry !== nv.perto) junto.geometry = nv.perto; nv.eLonge = false; return; }
+    if(junto.geometry !== geo) junto.geometry = geo;
+    nv.eLonge = longe;
   }
 
   const _e = new THREE.Euler(), _q = new THREE.Quaternion(), _v = new THREE.Vector3();
@@ -2262,7 +2374,7 @@ let noQuadroExterno = null;
       }
       if(pm) animarPM(d, i, J, dt); else animarDisco(d, i, J, dt);
       const fg = figuras.get(d);
-      if(fg) fg.viva = true;
+      if(fg){ fg.viva = true; trocarNivel(fg.corpo, !pm && d.lider); }
       conta.vistos++;
     };
     J.discos.forEach((d,i)=>{
@@ -2299,6 +2411,7 @@ let noQuadroExterno = null;
     if(!ajustarTamanho()) return;
     const dt = Math.min(0.05, opc.dt || 0.016);
     ajustarCamera(opc.escala, opc.cw, opc.ch);
+    cam.updateMatrixWorld(); camNivel = cam; alturaNivel = cv.clientHeight || opc.ch || 0;
     atualizarCena(J, dt);
     renderer.render(scene, cam);
   }
@@ -2324,6 +2437,7 @@ let noQuadroExterno = null;
     const a = opc.angulo||0, dist = opc.dist||150, alvo = opc.alvo||{x:0,z:0};
     camV.position.set(alvo.x+Math.sin(a)*dist, opc.altura||55, alvo.z+Math.cos(a)*dist);
     camV.lookAt(alvo.x, opc.mira!==undefined?opc.mira:15, alvo.z);
+    camNivel = null;                     // a vitrine é pra olhar de perto
     atualizarCena(J, dt);
     renderer.render(scene, camV);
   }
@@ -2588,8 +2702,16 @@ let noQuadroExterno = null;
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
     ativo = true;
     carregarGLB();
+    /* o nível de cada boneco sai da câmera de quem é dono dela: `opc.camera`
+       e `opc.alturaTela()` (a altura da tela em pixels CSS); sem elas, todo
+       mundo no nível de perto */
+    const camDono = opc.camera || null, alturaDono = opc.alturaTela || (() => window.innerHeight);
     return {
-      atualizar: (J, dt) => atualizarCena(J, Math.min(0.05, dt || 0.016)),
+      atualizar: (J, dt) => {
+        camNivel = camDono; alturaNivel = camDono ? alturaDono() : 0;
+        if(camDono) camDono.updateMatrixWorld();
+        return atualizarCena(J, Math.min(0.05, dt || 0.016));
+      },
       /* trocar de cena joga fora as figuras: sem isso o primeiro
          quadro da cena nova acha que todo mundo andou quinhentos
          pixels e a multidão inteira nasce em pose de corrida */
@@ -2599,8 +2721,20 @@ let noQuadroExterno = null;
       get comModelo(){ return !!modeloGLB; },
       get quantas(){ return figuras.size; },
       get conta(){ return conta; },
-      get estatMalha(){ return estatMalha; }
+      get estatMalha(){ return estatMalha; },
+      get niveis(){ return niveis(); }
     };
+  }
+  /* quantos bonecos estão em cada nível, e os triângulos deles */
+  function niveis(){
+    const r = {perto:0, longe:0, triangulos:0, comLonge: !!modeloLonge};
+    for(const fg of figuras.values()){
+      const j = fg.corpo.junto;
+      if(!j || !fg.corpo.raiz.visible) continue;
+      if(fg.corpo.nivel && fg.corpo.nivel.eLonge) r.longe++; else r.perto++;
+      r.triangulos += triangulosDe(j.geometry);
+    }
+    return r;
   }
 
 export { montar, desenharDeCima, desenharVitrine, limparDeCima, entrarEm,
@@ -2610,5 +2744,6 @@ export const bonecos = {
   get ativo(){ return ativo; },
   get comModelo(){ return !!modeloGLB; },
   get estatMalha(){ return estatMalha; },
+  get niveis(){ return niveis(); },
   get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }
 };
