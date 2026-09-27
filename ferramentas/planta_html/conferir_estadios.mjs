@@ -20,7 +20,10 @@
    O que ele alcança se mede na camada dos setores: o chão pintado de
    cada setor (a cor do escalão) e de cada trecho do corredor (a cor de
    quem usa); a lasca mais fina que FINO (o chão pintado colado num
-   gradil) não conta. Pede, de cada portão:
+   gradil) não conta, nem o chão onde o corpo não fica em pé (debaixo do
+   balcão do corredor, a lasca da fileira atrás da mureta de trás do
+   poço: com o degrau de 0,40 m, o corpo de 0,50 não cabe ali). Pede, de
+   cada portão:
    - todo o trecho do corredor do lado dele;
    - pelo menos 90% do chão de cada setor do lado dele (o que fica colado
      numa parede ou num gradil não cabe o corpo);
@@ -89,7 +92,14 @@ for (const id of Object.keys(ESTADIOS_JOGO)) {
     S.juntar(pts, pts.length / 3);
   });
   S.fechar();
-  console.log(`${ESTADIOS_JOGO[id].nome}: montado em ${((Date.now() - t0) / 1000).toFixed(1)} s, ${S.n} triângulos, ${alvos.length} pontos de chão pintado`);
+  /* e o chão pintado onde o corpo não fica em pé, na altura dele, em
+     lugar nenhum a menos de 20 cm (debaixo do balcão do corredor, na
+     lasca da fileira atrás do poço, entre a mureta de trás dele e o
+     degrau seguinte) também não é alvo */
+  const emPe = a => { for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const x = a.x + i * 0.1, z = a.z + j * 0.1, y = S.chao(x, z, a.y); if (y === y && Math.abs(y - a.y) < 0.12 && S.cabe(x, z, y, RAIO)) return true; } return false; };
+  const todos = alvos.length;
+  alvos.splice(0, alvos.length, ...alvos.filter(emPe));
+  console.log(`${ESTADIOS_JOGO[id].nome}: montado em ${((Date.now() - t0) / 1000).toFixed(1)} s, ${S.n} triângulos, ${alvos.length} pontos de chão pintado (${todos - alvos.length} onde o corpo não fica em pé)`);
 
   let bx0 = Infinity, bx1 = -Infinity, bz0 = Infinity, bz1 = -Infinity;
   for (const a of alvos) { bx0 = Math.min(bx0, a.x); bx1 = Math.max(bx1, a.x); bz0 = Math.min(bz0, a.z); bz1 = Math.max(bz1, a.z); }
