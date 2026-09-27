@@ -90,7 +90,8 @@
 
    8. O JEITO DO DIA DE JOGO (27/09/2026). O disco pode trazer `jeito`:
       'festa' (a rodinha na porta da sede), 'bonde' (torcer andando pra
-      o estádio, ou em pé quando o bonde para) e 'fila' (a catraca) — ver
+      o estádio, ou em pé quando o bonde para), 'fila' (a catraca) e
+      'revista' (na boca da raia, as mãos pro alto) — ver
       `gestoDoJeito`. Os gestos andam no relógio de verdade (`tAnim`),
       não no do jogo, que no dia de jogo corre a 30×; o PM parado
       também. E duas correções que valem pra todo mundo: a multidão leve
@@ -1573,7 +1574,17 @@ let noQuadroExterno = null;
     for(const [g,w] of lista){ r -= w; if(r <= 0) return g; }
     return 0;
   }
+  /* NA REVISTA (a boca da raia do portão, o dono, 27/09/2026): parado,
+     as mãos pro alto, abertas, em V, a cabeça reta — o PM passa a mão.
+     (Os braços abertos pro lado seriam o gesto mais comum, mas neste GLB
+     o ombroZ negativo, que abre o braço, arrasta a camisa junto e ela
+     abre em saia: medido de 0,8 a 1,5; pra cima, pelo ombro, não) */
   function gestoDoJeito(p, f, t, dt, jeito, andando){
+    if(jeito === 'revista'){
+      p.ombro = [-2.75, -2.75]; p.ombroZ = [0.18, 0.18]; p.cotovelo = [-0.15, -0.15]; p.maoZ = [0, 0]; p.punho = [0, 0];
+      p.olhaX = 0.05; p.olhaY = 0;
+      return;
+    }
     const chave = jeito === 'bonde' ? (andando ? 'bondeAnda' : 'bonde') : jeito;
     const lista = GESTOS[chave] || GESTOS.fila;
     f.jgT = (f.jgT == null ? Math.random()*4 : f.jgT) - dt;
