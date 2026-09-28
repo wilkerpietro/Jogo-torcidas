@@ -342,7 +342,9 @@ pra poder cair).
   baixo). A PM deixa guardas lá (3 na arquibancada, 2 no corredor, do
   efetivo do jogo, até 30% do que sobra da revista).
 - **A invasão:** uma por jogo, de uma torcida que não brigou na rua; a
-  chance é 40% da de procurar uma rival na rua. Pela arquibancada (a
+  chance é 40% da de procurar na rua a rival que está do outro lado do
+  isolamento (sem rival dela ali, sozinha ela não vai; mandada pelo
+  painel, vai mesmo assim e a PM empurra de volta). Pela arquibancada (a
   divisória mais perto, andando nas fileiras sem passar em poço de
   vomitório) ou pelo corredor (desce pelo vomitório dela e anda no
   corredor). Uns 60% da torcida correm pra grade e empurram 15 s; a grade
@@ -360,7 +362,8 @@ pra poder cair).
   sorteio / A PM segura / A torcida fura o cordão".
 
 **Limites:** no estádio de 10 mil o mandante fica na outra arquibancada —
-o visitante pode tentar, mas do outro lado do isolamento não tem ninguém.
+sozinho o visitante não tenta; mandado pelo painel, ele vai, mas do outro
+lado do isolamento não tem ninguém.
 A grade que cai só cai na cena (quem anda a pé no cenário continua
 barrado por ela). O pano do bandeirão atravessa gente e os outros panos
 (não tem colisão entre eles).
