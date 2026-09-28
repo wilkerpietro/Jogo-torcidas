@@ -13,7 +13,12 @@ falta pra cada pedaço do jogo de feed virar 3D.
 
 ## 1. Como abrir
 
-- **GitHub Pages:** `cenario3d/jogo.html` (a mesma pasta do cenário).
+- **GitHub Pages:** `cenario3d/jogo.html` (a mesma pasta do cenário). O
+  `montar_pages.sh` põe um `?v=` (o hash do que foi montado) em cada
+  módulo, script e folha que a página carrega (conserto de 28/09/2026): o
+  Pages manda guardar cada arquivo por 10 minutos, e recarregar logo depois
+  de uma publicação misturava a página nova com módulos velhos da cache —
+  foi assim que o jogo abriu com uma decisão pendente e nenhum balão.
 - **Aqui:** `sh ferramentas/planta_html/montar.sh <pasta>`, servir a pasta
   (`python3 -m http.server -d <pasta>`) e abrir `local.html?jogo`.
 - `?cidade=Recife` escolhe a praça que monta atrás do menu (sem ela, a do
@@ -54,7 +59,20 @@ mesmo relógio, os mesmos painéis e cenas. O 3D muda a tela, não as regras.
   vira o dia sozinho; decisão sem resposta, painel, modal ou cena param o
   tempo.
 - **Arrastar no meio da tela move a câmera** da cidade: o que não é HUD não
-  pega o mouse.
+  pega o mouse. O painel aberto pega (conserto de 28/09/2026): o `#jogo`
+  tem `pointer-events: none` e a propriedade é herdada, então o painel
+  (Torcida, Calendário, Competições…) e o "Fechar" da barra dele ficavam
+  surdos ao clique, à roda e ao toque — o clique atravessava pra cidade.
+- **O estilo da planta não vaza pro jogo** (conserto de 28/09/2026): o jogo
+  3D monta por cima da página da planta, e o `<style>` dela tinha regras
+  de classe soltas (`.painel`, `.dados`, `.campo`, `.corpo`, `.nota`,
+  `.topo`, `.acoes`…) que são classes do jogo também — o painel virava
+  coluna flex, a tabela de membros saía em duas colunas (o cabeçalho numa,
+  as linhas na outra), as caixas do Expediente em maiúsculas espaçadas e a
+  ficha da torcida na escolha em grade de duas colunas. Agora toda regra
+  de classe da planta vale só em `:where(.app, .cen-ficha)` (a planta e a
+  ficha do cenário; o `:where` não muda a força da regra). Regra nova de
+  classe na planta entra com o mesmo prefixo.
 - **A cidade para de desenhar** quando algo a cobre inteira (um painel, uma
   cena de briga, o relatório, um modal): o último quadro fica e o
   processador fica com o jogo.
@@ -495,7 +513,15 @@ reler) e com as abas Mensagens e Tretas. O jogo de feed da raiz
   a régua embaixo do balão mostra quanto falta —, o mouse em cima segura, e
   um clique dentro prende até o ×. O × e o "Próximo ▸" passam na hora; o pé
   do balão conta quantos recados esperam. A decisão fica até a resposta (sem
-  ×); respondida, fica 2,5 s com a resposta.
+  ×); respondida, fica 2,5 s com a resposta. A decisão em aberto fura a fila
+  (ela é que segura o relógio): com uma esperando, a notícia no ar sai em
+  1,5 s. O mouse só segura a leitura se ele se mexer em cima do balão (4 s
+  parado, a leitura volta a correr) — o balão que nasce debaixo de um
+  cursor parado não fica preso; e o balão que acabou de ser respondido sai
+  no tempo dele mesmo com o cursor em cima do botão clicado. Com o tempo
+  parado, o ≫ traz a decisão em aberto de volta pro balão, e o cartão que
+  não consegue se desenhar vira um cartão simples com os botões da decisão
+  (a fila nunca trava num recado).
 - **O relógio espera quem fala.** O ritmo do jogo 3D (`TO.jogo3d.ritmo`)
   soma o que falta ler (o balão no ar e a fila) no tempo da próxima
   mensagem: o dia só pinga a seguinte quando o balão acaba, e a fila não

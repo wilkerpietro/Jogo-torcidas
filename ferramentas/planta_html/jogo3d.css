@@ -60,6 +60,13 @@ body.jogo3d .feed-barra{
   box-shadow:0 2px 10px rgba(0,0,0,.35);
 }
 body.jogo3d .feed-ticker{pointer-events:auto;background:rgba(14,14,16,.86)}
+/* O PAINEL ABERTO PEGA O MOUSE E O TOQUE (conserto de 28/09/2026): o #jogo
+   não pega (o arrasto no meio da tela move a câmera) e o pointer-events é
+   herdado — sem isto os painéis do menu (Torcida, Financeiro, Calendário…)
+   e o "Fechar" da barra deles ficavam surdos ao clique, à roda e ao toque,
+   e o jogo parava esperando a resposta de um painel que não respondia */
+body.jogo3d.com-painel .pagina.painel,
+body.jogo3d.com-painel #painelBarra{pointer-events:auto}
 
 /* ---------- o feed não aparece ----------
    (o main.js nem monta o rolo com `TO.semFeed`; isto é a garantia) */

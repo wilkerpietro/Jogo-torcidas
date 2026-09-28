@@ -15,6 +15,43 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 A=${1:-/tmp/cenario3d}
 rm -rf "$A"
 sh "$R/ferramentas/planta_html/montar.sh" "$A" > /dev/null
+# OS ARQUIVOS COM VERSÃO (conserto de 28/09/2026): o GitHub Pages manda o
+# navegador guardar cada arquivo por 10 minutos, e recarregar logo depois
+# de uma publicação misturava a página e a folha novas com módulos velhos
+# guardados (no jogo 3D, a decisão ficou pendente sem balão nenhum). Cada
+# módulo, script e folha que a página carrega leva um ?v= com o hash do
+# que foi montado: a página nova só pede arquivo novo, e a velha, o velho.
+python3 - "$A" <<'PY'
+import hashlib, os, re, sys
+A = sys.argv[1]
+h = hashlib.sha1()
+for pasta in ('js', 'css', 'dados'):
+    for raiz, subs, arqs in os.walk(os.path.join(A, pasta)):
+        subs.sort()
+        for a in sorted(arqs):
+            h.update(open(os.path.join(raiz, a), 'rb').read())
+h.update(open(os.path.join(A, 'index.html'), 'rb').read())
+V = h.hexdigest()[:10]
+CAMINHOS = [
+    r"(\bfrom\s*['\"])(\.{1,2}/[A-Za-z0-9_./-]+\.js)(['\"])",
+    r"(\bimport\(\s*['\"])(\.{1,2}/[A-Za-z0-9_./-]+\.js)(['\"])",
+    r"(\bcarregarScript\(\s*['\"])((?:\./)?(?:dados|js)/[A-Za-z0-9_./-]+\.js)(['\"])",
+    r"(\bcarregarCss\(\s*['\"])((?:\./)?css/[A-Za-z0-9_./-]+\.css)(['\"])",
+    r"(\bnew URL\(\s*['\"])(\.\./dados/[A-Za-z0-9_./-]+\.js)(['\"])",
+]
+total = 0
+alvos = [os.path.join(A, 'index.html')] + sorted(os.path.join(A, 'js', a) for a in os.listdir(os.path.join(A, 'js')) if a.endswith('.js'))
+for f in alvos:
+    t = open(f, encoding='utf-8').read()
+    n = 0
+    for rx in CAMINHOS:
+        t, k = re.subn(rx, lambda m: m.group(1) + m.group(2) + '?v=' + V + m.group(3), t)
+        n += k
+    if n:
+        open(f, 'w', encoding='utf-8').write(t)
+        total += n
+print('versão %s: %d caminhos' % (V, total))
+PY
 cabeca() {
   printf '<!doctype html>\n<html lang="pt-BR">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n'
   printf '<title>%s</title>\n<meta name="description" content="%s">\n' "$1" "$2"

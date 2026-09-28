@@ -65,7 +65,7 @@ export function criarRecados(api, vida, dia3d) {
   const pedeResposta = m => !!(TO.tela && TO.tela.recadoPedeResposta && TO.tela.recadoPedeResposta(m));
   /* o recado no ar: a mensagem, a chave do cartão desenhado, quanto já foi
      lido e quanto ele fica (Infinity: até responder, ou até a linha do dia fechar) */
-  let atual = null, chave = null, lido = 0, lim = Infinity, fixo = false, preso = false, voltarFechando = false, sumiu = false;
+  let atual = null, chave = null, lido = 0, lim = Infinity, fixo = false, preso = false, voltarFechando = false, sumiu = false, mexeuEm = 0, confirmando = false;
   let folga = 0, tDecisao = 0, tSentar = 0, ancorado = 0, cAncora = null, desligarAncora = null;
   const mostrados = [];
   let balao = null, corpo = null, pe = null, maisEl = null, proxBt = null, xBt = null, irBt = null, tempoEl = null, tempoBar = null;
@@ -98,12 +98,20 @@ export function criarRecados(api, vida, dia3d) {
       if (ev.target.closest('.j3d-balao-x, .j3d-balao-prox, .j3d-balao-ir')) return;
       if (atual && !fixo) preso = true;
     });
+    /* O MOUSE EM CIMA SEGURA A LEITURA — mas só o mouse que se mexe em
+       cima do balão (4 s parado, a leitura volta a correr): o balão que
+       nasce debaixo de um cursor parado (o do "Começar partida", no meio da
+       tela) e o que acabou de ser respondido com o mouse em cima (o cursor
+       fica no botão) ficavam presos pra sempre */
+    balao.addEventListener('pointermove', ev => { if (ev.pointerType === 'mouse') mexeuEm = performance.now(); });
+    balao.addEventListener('pointerleave', () => { mexeuEm = 0; });
   }
 
   /* ======================================================
      A FILA
      ====================================================== */
   const pendente = m => !ehCaixa(m) && m.peso === 'decisao' && !m.respondido;
+  const pairando = () => !!mexeuEm && performance.now() - mexeuEm < 4000;
   /* o tempo de ler uma notícia: pelo tamanho do texto, e mais um tanto
      se ela traz tabela (o olheiro, a presença, a página do jornal) */
   function leitura(m) {
@@ -190,11 +198,12 @@ export function criarRecados(api, vida, dia3d) {
     if (document.querySelector('.j3d-dia-modal, .tela-cheia:not(.oculto):not(#telaMenu)')) return false;
     return true;
   }
+  const estadoSeguro = (e, m) => { try { return TO.tela && TO.tela.estadoDaMsg ? TO.tela.estadoDaMsg(e, m) : ''; } catch (err) { return 'erro'; } };
   const chaveDe = (e, m) => ehCaixa(m) ? 'cx|' + (m.resposta || '') + '|' + (m.lida ? 'l' : '')
-    : (TO.tela && TO.tela.estadoDaMsg ? TO.tela.estadoDaMsg(e, m) : '') + '|' + (m.respondido ? 'r' : '');
+    : estadoSeguro(e, m) + '|' + (m.respondido ? 'r' : '');
   function mostrar(m) {
     montar();
-    atual = m; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; tSentar = 0;
+    atual = m; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; confirmando = false; tSentar = 0;
     mostrados.push({ id: m.id, kind: ehCaixa(m) ? 'recado-' + (m.tipo || 'torcida') : m.kind, peso: m.peso || 'info' });
     if (mostrados.length > 300) mostrados.shift();
     sentar();
@@ -210,7 +219,38 @@ export function criarRecados(api, vida, dia3d) {
   }
   /* o cartão: o mesmo do feed, com os botões que respondem; com a linha
      do dia andando, só a linha (a parada, os recados dela, a partida) */
+  /* O CARTÃO QUE NÃO SE DESENHA NÃO TRAVA A FILA: um erro ao montar o
+     cartão (um save antigo, um anexo que falta) vira um cartão simples —
+     o texto e, na decisão, os botões dela, que respondem pelo mesmo caminho
+     do clique —, e o erro vai pro console com a chave da mensagem */
+  function cartaoSimples(e, m, err) {
+    console.error('os recados: o cartão não montou', m && (m.kind || m.tipo), m && (m.chave || m.id), err);
+    const art = document.createElement('article');
+    art.className = 'msg';
+    art.innerHTML = `<div class="msg-cab"><span class="msg-voz">${esc(ehCaixa(m) ? (m.nome || 'Recado') : 'Recado')}</span></div><p class="msg-txt">${esc(String(m.texto || '').replace(/<[^>]+>/g, ''))}</p>`;
+    if (!ehCaixa(m) && pendente(m) && (m.botoes || []).length) {
+      const bs = document.createElement('div');
+      bs.className = 'msg-bts';
+      for (const b of m.botoes) {
+        const bt = document.createElement('button');
+        bt.className = 'bt'; bt.textContent = b.rot || b.id;
+        bt.onclick = () => { try { TO.tela.responderMensagem(m.id, b.id); } catch (e2) { console.error(e2); } };
+        bs.appendChild(bt);
+      }
+      art.appendChild(bs);
+    }
+    return art;
+  }
   function pintar(e, k) {
+    try { pintar0(e, k); }
+    catch (err) {
+      corpo.innerHTML = '';
+      corpo.appendChild(cartaoSimples(e, atual, err));
+      fixo = pendente(atual); xBt.hidden = fixo;
+      if (fixo) lim = Infinity; else if (lim === Infinity) { lido = 0; lim = leitura(atual); }
+    }
+  }
+  function pintar0(e, k) {
     const m = atual, primeira = chave === null, eraFixo = fixo;
     chave = k; sumiu = false;
     corpo.innerHTML = '';
@@ -231,12 +271,13 @@ export function criarRecados(api, vida, dia3d) {
     if (fixo) lim = Infinity;
     else if (ehCaixa(m)) {
       /* respondido agora (o pedido de casa, a trégua): fica um pouco com a resposta */
-      if (primeira) { lido = 0; lim = leitura(m); }
-      else if (m.resposta && k.split('|')[1]) { lido = 0; preso = false; lim = RESPONDIDA; }
+      if (primeira) { lido = 0; lim = leitura(m); confirmando = false; }
+      else if (m.resposta && k.split('|')[1]) { lido = 0; preso = false; lim = RESPONDIDA; confirmando = true; }
     }
     else if (primeira || lim === Infinity) {
       /* respondida agora (ou a linha do dia fechou): fica um pouco com a resposta */
       lido = 0; preso = false;
+      confirmando = !primeira && eraFixo;
       lim = primeira ? leitura(m) : eraFixo ? (m.kind === 'partida' ? FIM_DO_DIA : RESPONDIDA) : leitura(m);
     }
   }
@@ -254,7 +295,7 @@ export function criarRecados(api, vida, dia3d) {
   function largar() {
     if (atual) naFila.delete(atual.id);
     const tinha = !!atual;
-    atual = null; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false;
+    atual = null; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; confirmando = false;
     esconder();
     if (tinha) vida.soltarRecado();
   }
@@ -364,9 +405,12 @@ export function criarRecados(api, vida, dia3d) {
       while (fila.length && ehCaixa(fila[0]) && fila[0].lida) naFila.delete(fila.shift().id);
       if (folga > 0) folga -= dt;
       else if (fila.length && pode) {
-        /* o que é da nossa torcida (as mensagens do jogo) vem antes do
-           recado de outra torcida, que espera a vez dele */
-        const i = fila.findIndex(m => !ehCaixa(m));
+        /* A DECISÃO EM ABERTO VEM PRIMEIRO (ela segura o relógio: esperar
+           atrás de notícia é o jogo parado sem nada pra responder); depois o
+           que é da nossa torcida (as mensagens do jogo); o recado de outra
+           torcida espera a vez dele */
+        let i = fila.findIndex(pendente);
+        if (i < 0) i = fila.findIndex(m => !ehCaixa(m));
         mostrar(fila.splice(i >= 0 ? i : 0, 1)[0]);
       }
     }
@@ -388,8 +432,11 @@ export function criarRecados(api, vida, dia3d) {
     /* quem traz o recado senta (a praça pode ter acabado de montar) */
     tSentar += dt;
     if (tSentar > 1) { tSentar = 0; sentar(); }
+    /* com uma decisão esperando na fila, a notícia no ar sai logo (mais um
+       segundo e meio de leitura, no máximo) — a decisão é que segura o jogo */
+    if (!fixo && lim !== Infinity && !preso && fila.some(pendente)) lim = Math.min(lim, lido + 1.5);
     if (lim !== Infinity) {
-      if (!preso && !balao.matches(':hover')) lido += dt;
+      if (confirmando || (!preso && !pairando())) lido += dt;
       if (lido >= lim) { fechar(); return; }
     }
     pintarPe();
@@ -404,7 +451,7 @@ export function criarRecados(api, vida, dia3d) {
   function espera() {
     try {
       if (!atual && !fila.length) return 0;
-      if (preso || (balao && !balao.hidden && balao.matches(':hover'))) return 60000;
+      if (!confirmando && (preso || pairando())) return 60000;
       let s = Math.max(0, folga);
       if (atual && lim !== Infinity) s += Math.max(0, lim - lido);
       for (const m of fila) s += (pendente(m) ? 0 : leitura(m)) + FOLGA;
@@ -417,8 +464,34 @@ export function criarRecados(api, vida, dia3d) {
     if (e && e === eVisto) { olhar(e); olharCaixa(e); }
   }
 
+  /* A DECISÃO EM ABERTO NA TELA, JÁ (o ≫ com o tempo parado chama): a
+     notícia no ar volta pra fila e a decisão entra; devolve o que impede o
+     balão de aparecer, se houver */
+  function trazerDecisao() {
+    const e = E();
+    if (!e || !e.feed) return 'sem jogo';
+    const d = e.feed.find(pendente);
+    if (!d) return 'nada em aberto';
+    if (e !== eVisto) iniciar(e);
+    if (atual !== d) {
+      const antes = atual;
+      if (antes) { largar(); if (!ouvidoJa(antes)) { naFila.add(antes.id); fila.unshift(antes); } }
+      const i = fila.indexOf(d);
+      if (i >= 0) fila.splice(i, 1);
+      naFila.add(d.id);
+      folga = 0;
+      mostrar(d);
+    }
+    if (!podeMostrar()) {
+      const b = document.body.classList;
+      return b.contains('com-painel') ? 'painel aberto' : b.contains('em-cena') || b.contains('palco-briga') ? 'cena aberta' : b.contains('palco3d') ? 'reunião' : 'tela por cima';
+    }
+    return '';
+  }
+  const ouvidoJa = m => ehCaixa(m) && m.lida;
+
   return {
-    quadro, espera, chegou,
+    quadro, espera, chegou, trazerDecisao,
     /* pro teste */
     get estado() {
       return { atual: atual && { id: atual.id, kind: ehCaixa(atual) ? 'recado-' + (atual.tipo || 'torcida') : atual.kind, peso: atual.peso || 'info', caixa: ehCaixa(atual) }, fila: fila.map(m => m.id), visivel: !!(balao && !balao.hidden),

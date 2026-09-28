@@ -332,6 +332,9 @@ TO.i18n.registrar({
   'Simular a invasão': {es:'Simular la invasión', en:'Simulate the charge'},
   'Ficar no lugar': {es:'Quedarse en su lugar', en:'Stay put'},
 
+  /* ---------- o jogo 3D sem feed: a decisão no balão ---------- */
+  'Responda o recado do balão — o tempo está parado.': {es:'Responde el recado del globo — el tiempo está detenido.', en:'Answer the message in the bubble — time is stopped.'},
+
   /* ---------- salvar ---------- */
   'NÃO SALVOU · {motivo}': {es:'NO SE GUARDÓ · {motivo}', en:'NOT SAVED · {motivo}'},
   'Salvo.': {es:'Guardado.', en:'Saved.'},

@@ -918,7 +918,13 @@
     bDia.onclick = ()=>{
       const at = E(); if(!at) return;
       if(TO.feed.travado(at)){
-        aviso(_t('Responda o que está aberto — o tempo está parado.'), 'ruim');
+        /* NO JOGO 3D A DECISÃO VEM PRO BALÃO (conserto de 28/09/2026): sem
+           o feed na tela, "responda o que está aberto" sem nada aberto à
+           vista era o jogo parado sem saída — o ≫ traz o recado de volta */
+        const R3 = TO.jogo3d && TO.jogo3d.recados;
+        if(TO.semFeed && R3 && R3.trazerDecisao) R3.trazerDecisao();
+        aviso(TO.semFeed ? _t('Responda o recado do balão — o tempo está parado.')
+                         : _t('Responda o que está aberto — o tempo está parado.'), 'ruim');
         atualizarFeed();
         return;
       }
