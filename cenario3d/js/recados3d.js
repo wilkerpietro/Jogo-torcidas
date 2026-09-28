@@ -36,7 +36,7 @@
    o tempo, como no feed). O que foi entregue fica lido. Eles esperam a
    vez: as mensagens da nossa torcida passam na frente.
    ========================================================= */
-import { areaLivre } from './vida3d.js?v=e422fd7958';
+import { areaLivre } from './vida3d.js?v=bae34b03b1';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

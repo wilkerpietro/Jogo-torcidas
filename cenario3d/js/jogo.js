@@ -55291,12 +55291,15 @@ TO.icones = (function(){
     /* NA SALA DA SEDE EM 3D (o jogo 3D) quem sabe onde o boneco está na
        tela é a câmera da cidade: o renderizador projeta a cabeça dele */
     const proj = P.tres && P.renderizador && P.renderizador.projetar;
-    if(proj) forcar = true;
     /* só refaz quando a câmera, a caixa ou o presidente (o único que
-       anda) mudaram: medir o DOM a cada quadro à toa é reflow à toa */
+       anda) mudaram: medir o DOM a cada quadro à toa é reflow à toa.
+       O balão que acabou de ser redesenhado (`forcar`) vai pro lugar
+       sempre — no 3D ele esperava a câmera se mexer (conserto de
+       28/09/2026: respondida a primeira pauta, a próxima só aparecia
+       arrastando o mapa) */
     const lider = J.discos.find(d=>d.lider) || {x:0, y:0};
     const chave = proj ? proj.chave() : [s, ox, oy, W, H, Math.round(lider.x), Math.round(lider.y)].join('|');
-    if(chave === R.chavePos && (!forcar || proj)) return;
+    if(!forcar && chave === R.chavePos) return;
     R.chavePos = chave;
     for(const b of R.camada.children){
       const g = R.grupos.get(b.dataset.chave); if(!g) continue;

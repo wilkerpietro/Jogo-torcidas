@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=e422fd7958';
-import { criarVida, horaTxt } from './vida3d.js?v=e422fd7958';
-import { criarMapaDaCidade } from './mapa3d.js?v=e422fd7958';
-import { criarDia3d } from './dia3d.js?v=e422fd7958';
-import { criarRecados } from './recados3d.js?v=e422fd7958';
+import { CASCA } from './jogo_casca.js?v=bae34b03b1';
+import { criarVida, horaTxt } from './vida3d.js?v=bae34b03b1';
+import { criarMapaDaCidade } from './mapa3d.js?v=bae34b03b1';
+import { criarDia3d } from './dia3d.js?v=bae34b03b1';
+import { criarRecados } from './recados3d.js?v=bae34b03b1';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=e422fd7958'), carregarCss('css/jogo3d.css?v=e422fd7958')]);
+  await Promise.all([carregarCss('css/jogo.css?v=bae34b03b1'), carregarCss('css/jogo3d.css?v=bae34b03b1')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=e422fd7958').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=bae34b03b1').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=e422fd7958');
+  await carregarScript('js/jogo.js?v=bae34b03b1');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=e422fd7958').catch(() => {});
-  await import('./bonecos3_global.js?v=e422fd7958');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=bae34b03b1').catch(() => {});
+  await import('./bonecos3_global.js?v=bae34b03b1');
   ligar(api);
   return TO.tela;
 }

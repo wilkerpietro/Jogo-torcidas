@@ -36,8 +36,8 @@
    Sem cidade em 3D pro jogo (a praça de fora sem mapa, o campo neutro,
    o mandante sem torcida com sede no mapa), a linha anda como sempre.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=e422fd7958';
-import { palcoDeBriga } from './palco_briga.js?v=e422fd7958';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=bae34b03b1';
+import { palcoDeBriga } from './palco_briga.js?v=bae34b03b1';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
