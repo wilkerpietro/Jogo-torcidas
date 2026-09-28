@@ -149,6 +149,7 @@
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { ROTAS_ESTADIOS } from './rotas_estadios.js';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -1320,7 +1321,10 @@ export function planejar(ctx, escolha = {}) {
      se não tem, a 5 m), e a volta sai de lá sem passar no ponto (onde o
      alvo se junta). Duas brigas não caem no mesmo lugar (40 m) */
   const pontosDeBriga = [];
-  function planejarBriga(a, v) {
+  /* `concentracao`: a briga cai na concentração do alvo (a porta de onde
+     ele sai, onde a torcida junta antes de andar: de 8 a 45 m da saída),
+     e não no meio do caminho — a cena de praça do jogo de feed */
+  function planejarBriga(a, v, concentracao = false) {
     const rotaV = new Uint8Array(N);
     for (const K of v.cels) if (!noArredor[K]) rotaV[K] = 1;
     const dRotaV = distanciaAte(R, rotaV);
@@ -1335,12 +1339,14 @@ export function planejar(ctx, escolha = {}) {
     let sBoca = v.rua.L;
     for (let s = 0; s <= v.rua.L; s += M) { v.rua.ponto(s, Q); const K = R.celula(Q.x, Q.z); if (K >= 0 && noArredor[K]) { sBoca = s; break; } }
     const cands = [];
-    for (let s = 30 * M; s <= sBoca - 20 * M; s += 2 * M) {
+    const [s0, s1] = concentracao ? [8 * M, Math.min(45 * M, sBoca - 5 * M)] : [30 * M, sBoca - 20 * M];
+    for (let s = s0; s <= s1; s += 2 * M) {
       v.rua.ponto(s, Q);
       const K = R.celula(Q.x, Q.z);
       if (K < 0 || !R.anda[K] || !(dIda[K] < Infinity) || !(dVolta[K] < Infinity)) continue;
       if (pontosDeBriga.some(([x, z]) => Math.hypot(Q.x - x, Q.z - z) < 40 * M)) continue;
-      cands.push({ s, K, nota: dIda[K] + dVolta[K] });
+      /* na concentração, o mais perto da porta que dá (é lá que a torcida junta) */
+      cands.push({ s, K, nota: dIda[K] + dVolta[K] + (concentracao ? s / M * 4 : 0) });
     }
     cands.sort((p, q) => p.nota - q.nota);
     const falha = { pontos: cands.length, cidade: Math.round((sBoca - 50 * M) / M), caminho: 0, esconderijo: 0, volta: 0 };
@@ -1363,7 +1369,23 @@ export function planejar(ctx, escolha = {}) {
     return null;
   }
   const brigas = [], emBriga = new Set();
-  for (const a of vivos.slice().sort((p, q) => (q.t.poder || 0) - (p.t.poder || 0) || q.n - p.n)) {
+  /* A BRIGA MANDADA (o jogo 3D, 28/09/2026; o dono: "A cena de ataque em
+     praça ou rua agora vão ser os ataques de alguma torcida em outra nos
+     dias de caminhada ao estádio"): quem ataca e quem é atacado vêm do
+     jogo de feed (a investida do jogador, ou o ataque que ele sofre), e
+     o lugar também — a praça é a concentração do alvo, a rua é o meio
+     do caminho dele. A IA não decide mais nada: as outras vão em paz */
+  const mandada = escolha.briga || null;
+  if (mandada) {
+    const a = vivos.find(b => b.t.id === mandada.a), v = vivos.find(b => b.t.id === mandada.v);
+    for (const b of vivos) b.decisao = { alvo: null, chance: 0, tirou: 0, ataca: false, porque: 'paz' };
+    if (a && v && a !== v) {
+      a.decisao = { alvo: v, chance: 100, tirou: 0, ataca: true, porque: 'mandada' };
+      const br = planejarBriga(a, v, mandada.onde === 'praca');
+      if (br) { brigas.push(br); emBriga.add(a); emBriga.add(v); }
+      else { a.decisao.ataca = false; a.decisao.porque = 'não achou'; }
+    }
+  } else for (const a of vivos.slice().sort((p, q) => (q.t.poder || 0) - (p.t.poder || 0) || q.n - p.n)) {
     const opcoes = vivos.filter(v => v.lado !== a.lado).map(v => ({ v, c: chanceDe(a, v) })).filter(x => x.c > 0).sort((p, q) => q.c - p.c || q.v.n - p.v.n);
     const livres = opcoes.filter(x => !emBriga.has(x.v));
     const dec = a.decisao = { alvo: null, chance: 0, tirou: Math.floor(sorte('ataca|' + a.t.id)() * 100), ataca: false, porque: '' };
@@ -1468,12 +1490,22 @@ export function planejar(ctx, escolha = {}) {
   for (const q of bocas) (!q.usada.length && q.lado === 'visitante' ? pm.fechadas : pm.abertas).push(q);
   for (const i of Object.keys(revistaDo)) pm.revistas.push({ i: +i, portao: portoes[i], n: revistaDo[i], raias: rotas.portoes[i].raias || [] });
   marca('pm');
-  return {
+  const plano = {
     casa, fora, foraDaqui, pares: pares.map(p => p[0].nome + ' × ' + p[1].nome), par: escolha.par || 0, lista, deFora,
     estadio: est, centroEst, mundo, portoes, bondes, vivos, R, zona, noArredor, divisa, raio, bocas, cordoes, pm, menor, travessias, cabeca, atras, paradaEm, ladoEm, M, rotaVelha, longeDe, tentativas, tAbre, portoesQueAbrem: [...new Set(vivos.filter(b => b.peloCorredor).map(b => b.portao.nome))],
     brigas, revistaDo, torcedores, efetivo, comEscoltaPM, modoIA,
     inicio: Math.min(...vivos.map(b => b.sai)) - 120, fimTudo: Math.max(...vivos.map(b => b.fim), ...brigas.map(x => x.tFim + REAGRUPA)), tempos
   };
+  /* A ARQUIBANCADA VIVA E A BRIGA NO ESTÁDIO (arquibancada.js): os papéis
+     de cada um no lugar, os guardas do isolamento e a invasão; o dia vai
+     até a bola rolar (e até a invasão acabar) */
+  try {
+    plano.arq = planejarArquibancada(plano, { M, BOLA, DENTRO, FATOR: 1 / FATOR_GENTE, sorte, fichaMedia, chanceDe, escolha, efetivo,
+      revistas: Object.values(revistaDo).reduce((s, n) => s + n, 0), BAIXAS, CHANCE_FAVORITO, brigas });
+  } catch (e) { console.error('dia de jogo, arquibancada:', e); plano.arq = null; }
+  if (plano.arq) plano.fimTudo = Math.max(plano.fimTudo, plano.arq.fim);
+  marca('arquibancada');
+  return plano;
 }
 
 /* ======================================================
@@ -1516,7 +1548,7 @@ export function criarDiaDeJogo(ctx) {
   raiz.appendChild(painel);
 
   let plano = null, escolha = { par: 0, inverter: false, gente: 1 }, t = 0, rodando = false, vezes = 30, lenta = null, seguir = null, verRotas = true;
-  let grupo = null, discos = [], policiais = [];
+  let grupo = null, discos = [], policiais = [], arq = null;
   const J = { discos: [], policiais: [], projeteis: [], grades: [], paz: true, t: 0 };
   const Q = {}, Q2 = {};
 
@@ -1765,7 +1797,9 @@ export function criarDiaDeJogo(ctx) {
        muita, o cordão fica fundo */
     const torcedores = p.torcedores, efetivo = p.efetivo;
     const naRevista = p.pm.revistas.reduce((s, rv) => s + rv.n, 0);
-    let resta = Math.max(0, efetivo - naRevista);
+    /* (os guardas do isolamento, dentro do estádio: o plano da arquibancada já tirou) */
+    const noIsolamento = p.arq ? p.arq.nGuardas : 0;
+    let resta = Math.max(0, efetivo - naRevista - noIsolamento);
     const da = (q, k = 1) => { const x = Math.max(0, Math.min(k, q.max - q.n, resta)); q.n += x; resta -= x; return x; };
     const doTipo = tp => postos.filter(q => q.tipo === tp);
     const cords = doTipo('cordao').sort((a, c) => c.max1 - a.max1);
@@ -1869,7 +1903,7 @@ export function criarDiaDeJogo(ctx) {
     const qe = doTipo('escolta')[0];
     p.escolta = qe && qe.n ? [[0], [0, 2], [0, 1, 2], [0, 1, 2, 3]][qe.n - 1].map(k => ({ pm: poePM(qe.b.rua.pts[0][0], qe.b.rua.pts[0][2], 0, false), k, b: qe.b })) : [];
     const soma = tp => doTipo(tp).reduce((s, q) => s + q.n, 0);
-    p.efetivo = { torcedores, total: efetivo, pms: policiais.length, revistas: naRevista, cordoes: soma('cordao'), fechadas: soma('fechada'), travessias: soma('travessia'), escolta: p.escolta.length, reserva, filas: Math.max(1, ...cords.map(q => Math.ceil(q.n / q.max1))) };
+    p.efetivo = { torcedores, total: efetivo, pms: policiais.length + noIsolamento, revistas: naRevista, isolamento: noIsolamento, cordoes: soma('cordao'), fechadas: soma('fechada'), travessias: soma('travessia'), escolta: p.escolta.length, reserva, filas: Math.max(1, ...cords.map(q => Math.ceil(q.n / q.max1))) };
     /* o corredor que abre pro mandante: as grades dele numa malha à parte */
     const mgA = malhaDeGrades(gradesAbre);
     if (mgA) { mgA.name = 'grades-do-corredor'; grupo.add(mgA); p.gradesQueSaem.push({ malha: mgA, libera: p.tAbre }); p.nGradesQueSaem += gradesAbre.length; }
@@ -1916,6 +1950,11 @@ export function criarDiaDeJogo(ctx) {
         discos.push(d);
       }
     }
+    /* A ARQUIBANCADA: os panos, a bateria, os bandeirões, os guardas do isolamento e a invasão */
+    if (p.arq) {
+      try { arq = criarArquibancada(ctx, p, grupo, { M, luta, sossega, poePM, rotulo, revistadores: p.revistadores }); }
+      catch (e) { console.error('dia de jogo, arquibancada:', e); arq = null; }
+    }
     t = p.inicio;
     J.discos = discos; J.policiais = policiais;
     atualizar(0);
@@ -1923,6 +1962,7 @@ export function criarDiaDeJogo(ctx) {
     return true;
   }
   function desmontar() {
+    if (arq) { try { arq.limpar(); } catch (e) { console.error(e); } arq = null; }
     if (grupo) {
       grupo.traverse(o => {
         if (o.isInstancedMesh) { o.dispose(); return; }
@@ -2036,6 +2076,9 @@ export function criarDiaDeJogo(ctx) {
           } else { d.jeito = undefined; d.derrubado = 1; d.derrubadoDur = 2; d.noChao = true; }
           continue;
         }
+        /* NO LUGAR (arquibancada.js): o papel dele — o canto, a bateria, o
+           bandeirão, o pano, o puxador — e a invasão */
+        if (arq && arq.controla(b, m, t)) { arq.pessoa(b, gg, d, t, dt); if (arq.noLugar(b, m, t)) noLugar++; continue; }
         if (d.noChao) { d.derrubado = 0; d.noChao = false; }
         if (t >= g.passa) {
           /* DENTRO: da catraca até a vaga */
@@ -2048,12 +2091,14 @@ export function criarDiaDeJogo(ctx) {
           d.jeito = undefined;
           if (s >= tr.L) { noLugar++; d.rumo = Math.atan2(p.centroEst[0] - d.x, p.centroEst[2] - d.y); }
           else { const mx = d.x - x0, mz = d.y - z0; if (mx * mx + mz * mz > 1e-4) d.rumo = Math.atan2(mx, mz); }
+          if (arq) arq.gesto(b, gg, d);
           continue;
         }
         if (t < gg.sai) {
           /* NA PORTA DA SEDE (ou de onde sai), na rodinha */
           sossega(d);
           d.x = gg.festa[0]; d.y = gg.festa[1]; d.alt = gg.festaAlt; d.rumo = gg.festaRumo; d.jeito = 'festa';
+          if (arq) arq.gesto(b, gg, d);
           continue;
         }
         /* NA RUA E NA RAIA: o lugar dele no bonde (com a onda que passa
@@ -2106,6 +2151,7 @@ export function criarDiaDeJogo(ctx) {
           }
         }
         d.x = x; d.y = z; d.alt = alt; d.jeito = jeito;
+        if (arq) arq.gesto(b, gg, d);
         if (brigando && (olha || alvoD)) {
           if (olha) d.rumo = Math.atan2(olha[0] - d.x, olha[1] - d.y);
           if (!ataca || (alvoD && Math.hypot(alvoD.x - d.x, alvoD.y - d.y) < 1.6 * M)) luta(gg, d, alvoD, ganhou, fimK, dt);
@@ -2119,7 +2165,8 @@ export function criarDiaDeJogo(ctx) {
       b.noLugar = noLugar;
       /* o rótulo em cima da cabeça do bonde (ou em cima da torcida, no lugar) */
       const lider = b.gente[0].d;
-      b.rotulo.position.set(lider.x, (lider.alt || 0) + 3.4 * M, lider.y);
+      /* (no lugar, em cima dos bandeirões: a 3,4 m ele tapava a torcida) */
+      b.rotulo.position.set(lider.x, (lider.alt || 0) + (arq && arq.controla(b, 0, t) ? 8.5 : 3.4) * M, lider.y);
     }
     /* o rótulo da briga aparece na hora dela e fica (é onde ficam os feridos) */
     for (const br of p.brigas) br.rotulo.userData.escondido = t < br.tIni - 3;
@@ -2158,6 +2205,8 @@ export function criarDiaDeJogo(ctx) {
       pm.alt = ctx.chaoDaRua(pm.x, pm.y);
       pm.rumo = k <= 0 ? q.rumoFecha : k >= 1 ? q.rumoAbre : Math.atan2(q.abre[0] - q.fecha[0], q.abre[1] - q.fecha[1]);
     }
+    /* A ARQUIBANCADA: os panos, os instrumentos, os bandeirões, as grades e a PM do estádio */
+    if (arq) arq.quadro(t, tReal, dt);
     /* a passada dos PMs que andam, como a dos bonecos */
     for (const pm of policiais) pm.passada = 1.15 * Math.max(1, rodando ? vezes : 1);
     J.t = t;
@@ -2187,6 +2236,7 @@ export function criarDiaDeJogo(ctx) {
     if (!d) return '';
     if (br && br.v === b) return `Foi atacada pela ${esc(br.a.t.sigla)}.`;
     const al = d.alvo ? esc(d.alvo.t.sigla) : '';
+    if (d.ataca && d.porque === 'mandada') return `<b>Vai atacar a ${al}</b> (a briga que o jogo mandou): vai de encontro ao bonde dela em vez de ir direto pro estádio.`;
     if (d.ataca) return `<b>Decidiu atacar a ${al}</b> (chance ${pct(d.chance)}${plano.modoIA === 'sorteio' ? `, tirou ${d.tirou}` : ''}): vai de encontro ao bonde dela em vez de ir direto pro estádio.`;
     if (d.porque === 'sem rival') return 'Vai em paz: nenhuma rival dela no outro clube.';
     if (d.porque === 'pequena') return 'Vai em paz: as rivais dela no outro clube são grandes demais (a paridade do jogo: com menos de 45% do tamanho da rival, ninguém vai).';
@@ -2209,6 +2259,7 @@ export function criarDiaDeJogo(ctx) {
       <small>${saidaTxt(b)} às ${hora(b.sai)}${b.adiantou ? ` (${b.adiantou} min antes, pra não cruzar rival)` : ''}${b.esperou ? ` (${b.esperou} min depois: espera o corredor do visitante abrir)` : ''} · ${Math.round(b.comprimento)} m até o ${esc(b.portao.nome.toLowerCase())} · setor ${esc(b.setor)}</small>
       ${b.deFora ? `<small>${b.anfitriao ? `Aliado na praça: ${esc(b.anfitriao.t.sigla)} (${b.anfitriao.grau === 2 ? 'irmandade' : 'aliado'}${b.anfitriao.doMandante ? ', do mandante: só hospeda' : ''}) — ${b.anfitriao.decisao === 'nada' ? 'não recebeu' : b.anfitriao.decisao === 'hospedar' ? 'hospedou' : `hospedou e escoltou com ${b.anfitriao.escoltaMembros}`}${b.anfitriao.forcada ? ' (mandado)' : ` (sorteio: ${b.anfitriao.pct.join('/')}%, tirou ${b.anfitriao.tirou})`}` : 'Sem aliado com sede na praça'}.</small>` : ''}
       <small>${decisaoTxt(b)}${b.brigou ? ' ' + brigaTxt(b) : ''}</small>
+      ${arq ? arq.linha(b) : ''}
       <small class="cj-estado" data-bonde="${esc(b.t.id)}">${esc(est)}</small></div></li>`;
   }
   /* o que o plano diz do encontro entre rivais na cidade */
@@ -2251,6 +2302,10 @@ export function criarDiaDeJogo(ctx) {
         <select data-jogo="ia" aria-label="O que as torcidas decidem"><option value="sorteio"${(escolha.ia || 'sorteio') === 'sorteio' ? ' selected' : ''}>As torcidas decidem (sorteio)</option><option value="paz"${escolha.ia === 'paz' ? ' selected' : ''}>Todas vão em paz</option><option value="ataque"${escolha.ia === 'ataque' ? ' selected' : ''}>Quem pode, ataca</option></select>
         ${temAnf ? `<select data-jogo="anfitriao" aria-label="O que o aliado decide"><option value="sorteio"${(escolha.anfitriao || 'sorteio') === 'sorteio' ? ' selected' : ''}>O aliado decide (sorteio)</option><option value="nada"${escolha.anfitriao === 'nada' ? ' selected' : ''}>O aliado não recebe</option><option value="hospedar"${escolha.anfitriao === 'hospedar' ? ' selected' : ''}>O aliado hospeda</option>${podeEscoltar ? `<option value="escolta"${escolha.anfitriao === 'escolta' ? ' selected' : ''}>Hospeda e escolta</option>` : ''}</select>` : ''}
         <button class="cen-bt" data-jogo="sortear">Sortear de novo</button>
+      </div>
+      <div class="cj-ctrl">
+        <select data-jogo="invade" aria-label="A briga no estádio"><option value="sorteio"${(escolha.estadio || 'sorteio') === 'sorteio' ? ' selected' : ''}>No estádio: as torcidas decidem</option><option value="nao"${escolha.estadio === 'nao' ? ' selected' : ''}>Ninguém invade</option><option value="arquibancada"${escolha.estadio === 'arquibancada' ? ' selected' : ''}>Invade pela arquibancada</option><option value="corredor"${escolha.estadio === 'corredor' ? ' selected' : ''}>Invade pelo corredor</option></select>
+        <select data-jogo="cordao" aria-label="O cordão da PM"><option value="sorteio"${(escolha.cordao || 'sorteio') === 'sorteio' ? ' selected' : ''}>O cordão: sorteio</option><option value="segura"${escolha.cordao === 'segura' ? ' selected' : ''}>A PM segura</option><option value="fura"${escolha.cordao === 'fura' ? ' selected' : ''}>A torcida fura o cordão</option></select>
       </div>`;
   }
   function desenharPainel() {
@@ -2269,9 +2324,10 @@ export function criarDiaDeJogo(ctx) {
       <p class="cj-lado">Mandante · portões 1 e 2</p><ul>${p.vivos.filter(b => b.lado === 'mandante').map(linhaDe).join('')}</ul>
       <p class="cj-lado">Visitante · portão 3</p><ul>${p.vivos.filter(b => b.lado === 'visitante').map(linhaDe).join('')}</ul>
       ${brigasTxt(p)}
+      ${arq ? arq.texto() : ''}
       ${p.bondes.filter(b => !b.rua).map(b => `<p class="cj-aviso ruim">${esc(b.t.sigla)}: ${esc(b.erro || 'sem rota')}</p>`).join('')}
       ${p.rotaVelha ? `<p class="cj-aviso ruim">O ${esc(p.estadio.modelo.replace('estadio-', 'estádio de ') + ' mil')} mudou depois das rotas de dentro dele: dentro do estádio a torcida pode atravessar parede. Rode ferramentas/planta_html/rotas_estadios.mjs de novo.</p>` : ''}
-      <p class="cj-pm"><b>A PM</b>: a revista é na entrada, na boca das raias de cada portão (${revTxt}: um PM pra cada ${REVISTA_POR_PM} que passam, no máximo um por raia; ${REVISTA} s cada um); ${pmN.cordoes.length} ${pmN.cordoes.length === 1 ? 'cordão' : 'cordões'} na divisa das zonas (a verde é do mandante, a vermelha do visitante) e ${pmN.fechadas.length} rua${pmN.fechadas.length === 1 ? '' : 's'} fechada${pmN.fechadas.length === 1 ? '' : 's'} na borda dos arredores (${Math.round(p.raio)} m de rua em volta dos portões)${p.travessias.length ? `, ${p.travessias.length} travessia${p.travessias.length === 1 ? '' : 's'} na cidade` : ''}${p.longeDe.length && p.tAbre == null ? ` (o corredor do visitante foi traçado longe do ${esc(p.longeDe.map(n => n.toLowerCase()).join(' e do '))}, que ele deixava ilhado)` : ''} · ${p.nGrades} grades. <b>${ef.pms} PMs</b>, um pra cada ${Math.round(1 / PM_POR_TORCEDOR)} torcedores do jogo (${ef.torcedores} bonecos): ${[[ef.revistas, 'na revista'], [ef.cordoes, 'nos cordões' + (ef.filas > 1 ? ` (em ${ef.filas} filas)` : '')], [ef.fechadas, 'nas ruas fechadas'], [ef.travessias, 'nas travessias'], [ef.escolta, 'na escolta do visitante'], [ef.reserva, 'de reserva na frente do portão']].filter(x => x[0]).map(x => x[0] + ' ' + x[1]).join(', ')}.${p.tAbre != null ? ` O ${esc(p.portoesQueAbrem.map(n => n.toLowerCase()).join(' e o '))} fica no caminho do visitante (o mapa não deixa outro): a PM segura o corredor até o último visitante entrar e só às ${hora(p.tAbre)} abre a rua pro mandante.` : ''}</p>
+      <p class="cj-pm"><b>A PM</b>: a revista é na entrada, na boca das raias de cada portão (${revTxt}: um PM pra cada ${REVISTA_POR_PM} que passam, no máximo um por raia; ${REVISTA} s cada um); ${pmN.cordoes.length} ${pmN.cordoes.length === 1 ? 'cordão' : 'cordões'} na divisa das zonas (a verde é do mandante, a vermelha do visitante) e ${pmN.fechadas.length} rua${pmN.fechadas.length === 1 ? '' : 's'} fechada${pmN.fechadas.length === 1 ? '' : 's'} na borda dos arredores (${Math.round(p.raio)} m de rua em volta dos portões)${p.travessias.length ? `, ${p.travessias.length} travessia${p.travessias.length === 1 ? '' : 's'} na cidade` : ''}${p.longeDe.length && p.tAbre == null ? ` (o corredor do visitante foi traçado longe do ${esc(p.longeDe.map(n => n.toLowerCase()).join(' e do '))}, que ele deixava ilhado)` : ''} · ${p.nGrades} grades. <b>${ef.pms} PMs</b>, um pra cada ${Math.round(1 / PM_POR_TORCEDOR)} torcedores do jogo (${ef.torcedores} bonecos): ${[[ef.revistas, 'na revista'], [ef.isolamento, 'no isolamento dentro do estádio (entre as torcidas)'], [ef.cordoes, 'nos cordões' + (ef.filas > 1 ? ` (em ${ef.filas} filas)` : '')], [ef.fechadas, 'nas ruas fechadas'], [ef.travessias, 'nas travessias'], [ef.escolta, 'na escolta do visitante'], [ef.reserva, 'de reserva na frente do portão']].filter(x => x[0]).map(x => x[0] + ' ' + x[1]).join(', ')}.${p.tAbre != null ? ` O ${esc(p.portoesQueAbrem.map(n => n.toLowerCase()).join(' e o '))} fica no caminho do visitante (o mapa não deixa outro): a PM segura o corredor até o último visitante entrar e só às ${hora(p.tAbre)} abre a rua pro mandante.` : ''}</p>
       <p class="cj-aviso${(menor && menor.d < ENCONTRO) || p.travessias.some(v => v.folga < 60) ? ' ruim' : ''}">${encontroTxt(p)}</p>
       <div class="cj-ctrl">
         <button class="cen-bt" data-jogo="plano">Ver o plano</button>
@@ -2310,6 +2366,9 @@ export function criarDiaDeJogo(ctx) {
       else if (b.dentroN > 0) txt = `Passando a catraca: ${b.dentroN} de ${fora} dentro, ${b.noLugar} no lugar`;
       else if (lider === 'na revista' || lider === 'na fila') txt = 'Na revista e na fila do ' + b.portao.nome.toLowerCase();
       else txt = `Andando: ${Math.round(plano.cabeca(b, t) / M)} de ${Math.round(b.comprimento)} m` + (caidos ? ` (${caidos} ficaram na rua)` : '');
+      /* a invasão no estádio (arquibancada.js) manda na linha de quem está nela */
+      const naInvasao = arq && arq.statusDe(b, t);
+      if (naInvasao) txt = naInvasao;
       el.textContent = txt;
     }
     const bt = painel.querySelector('[data-jogo="toca"]');
@@ -2328,7 +2387,7 @@ export function criarDiaDeJogo(ctx) {
     const lt = painel.querySelector('.cj-tempo');
     if (lt) lt.oninput = () => { t = +lt.value; atualizar(0); atualizarPainel(true); ctx.pedir(); };
   }
-  const refazem = ['inverter', 'par', 'gente', 'casa', 'fora', 'ia', 'anfitriao', 'sortear', 'padrao'];
+  const refazem = ['inverter', 'par', 'gente', 'casa', 'fora', 'ia', 'anfitriao', 'sortear', 'padrao', 'invade', 'cordao'];
   function acao(a, el) {
     if (a === 'fechar') { fechar(); return; }
     if (!plano || plano.erro) { if (refazem.includes(a)) refazer(a, el); return; }
@@ -2336,11 +2395,12 @@ export function criarDiaDeJogo(ctx) {
       if (t >= plano.fimTudo) t = plano.inicio;
       rodando = !rodando;
       if (rodando && !seguir) verPlano();
-    } else if (a === 'plano') { seguir = null; verPlano(); }
-    else if (a === 'estadio') { seguir = null; verEstadio(); }
-    else if (a === 'seguir') { seguir = plano.vivos.find(b => b.t.id === el.value) || null; if (seguir) { const d = seguir.gente[0].d; ctx.voarPara(d.x, d.y, 45 * M, 0.95, undefined, d.alt || 0); } }
+    } else if (a === 'plano') { seguir = null; semFoco(); verPlano(); }
+    else if (a === 'estadio') { seguir = null; semFoco(); verEstadio(); }
+    else if (a === 'invasao') { const iv = arq && arq.invasao; if (iv) { seguir = null; t = iv.t0 + Math.max(0, iv.tPush - iv.t0 - 14); iv.vista = true; devagar({ tFim: iv.tFim }); rodando = true; atualizar(0); verInvasao(); } }
+    else if (a === 'seguir') { semFoco(); seguir = plano.vivos.find(b => b.t.id === el.value) || null; if (seguir) { const d = seguir.gente[0].d; ctx.voarPara(d.x, d.y, 45 * M, 0.95, undefined, d.alt || 0); } }
     else if (a === 'rotas') { verRotas = el.checked; mostrarRotas(); }
-    else if (a === 'briga') { const br = plano.brigas[+el.dataset.i]; if (br) { seguir = null; t = br.tIni - 12; br.vista = true; devagar(br); rodando = true; atualizar(0); ctx.voarPara(br.P[0], br.P[1], 40 * M, 0.85, undefined, 0); } }
+    else if (a === 'briga') { const br = plano.brigas[+el.dataset.i]; if (br) { seguir = null; semFoco(); t = br.tIni - 12; br.vista = true; devagar(br); rodando = true; atualizar(0); ctx.voarPara(br.P[0], br.P[1], 40 * M, 0.85, undefined, 0); } }
     else refazer(a, el);
     atualizarPainel(true);
     ctx.pedir();
@@ -2354,6 +2414,8 @@ export function criarDiaDeJogo(ctx) {
     if (a === 'gente') escolha.gente = +el.value;
     if (a === 'ia') escolha.ia = el.value;
     if (a === 'anfitriao') escolha.anfitriao = el.value;
+    if (a === 'invade') escolha.estadio = el.value;
+    if (a === 'cordao') escolha.cordao = el.value;
     if (a === 'sortear') escolha.sorteio = (escolha.sorteio || 0) + 1;
     if (a === 'padrao') escolha = { par: 0, inverter: false, gente: escolha.gente || 1 };
     rodando = false; seguir = null;
@@ -2378,6 +2440,15 @@ export function criarDiaDeJogo(ctx) {
     const c = plano.centroEst;
     ctx.voarPara(c[0], c[2], 150 * M, 0.75, -0.6);
   }
+  /* A INVASÃO NO ESTÁDIO: a câmera na grade do isolamento (de cima, no
+     corredor: o que fica em cima dele se abre no corte do cenário) */
+  function verInvasao() {
+    const f = arq && arq.foco(), iv = arq && arq.invasao;
+    if (!f) return;
+    iv.foco = true;
+    ctx.voarPara(f.x, f.z, (f.corredor ? 26 : 34) * M, f.corredor ? 1.05 : 0.62, undefined, f.y);
+  }
+  const semFoco = () => { const iv = arq && arq.invasao; if (iv) iv.foco = false; };
 
   /* ======================================================
      O QUE O CENÁRIO CHAMA
@@ -2408,6 +2479,13 @@ export function criarDiaDeJogo(ctx) {
         t = br.tIni - 3 - dt * vezes;
         if (!seguir) ctx.voarPara(br.P[0], br.P[1], 40 * M, 0.85, undefined, 0);
         break;
+      }
+      const iv = arq && arq.invasao, tv = iv ? Math.max(iv.t0, iv.tPush - 12) : 0;
+      if (iv && !iv.vista && t < tv && t1 >= tv) {
+        iv.vista = true;
+        devagar({ tFim: iv.tFim });
+        t = tv - dt * vezes;
+        if (!seguir) verInvasao();
       }
       t += dt * vezes;
       if (lenta && t >= lenta.ate) { vezes = lenta.vezes; lenta = null; marcarVezes(); }
@@ -2444,6 +2522,9 @@ export function criarDiaDeJogo(ctx) {
   }
   return {
     abrir, fechar, quadro, ajustarRotulos, J,
+    /* o corte do cenário: o corredor da invasão, embaixo da arquibancada */
+    alvoDoCorte: () => (arq && !painel.hidden ? arq.alvoDoCorte(t) : null),
+    get arquibancada() { return arq; },
     get aberto() { return !painel.hidden; },
     get rodando() { return rodando; },
     get plano() { return plano; },
@@ -2464,7 +2545,8 @@ export function criarDiaDeJogo(ctx) {
                                              revista: (() => { let a = Infinity, z = -Infinity; for (const g of b.pessoas) if (g.rev0 < Infinity) { a = Math.min(a, g.rev0); z = Math.max(z, g.rev1); } return a < Infinity ? Math.round(z - a) : 0; })(),
                                              raias: b.raias.length, semRaia: b.pessoas.filter(g => g.raia < 0).length, catraca: (() => { const f = [...b.passa].filter(x => x < Infinity); return f.length ? Math.round(Math.max(...f) - Math.min(...f) + CATRACA) : 0; })(), cauda: +b.cauda.toFixed(1),
                                              estado: estadoDe(b, 0) + ' / ' + estadoDe(b, (() => { let m = b.n - 1; while (m > 0 && b.ferido && b.ferido[m]) m--; return m; })()), dentro: b.dentroN, noLugar: b.noLugar, caidos: b.ferido ? b.ferido.reduce((s, x) => s + (x === 1 ? 1 : 0), 0) : 0, presosN: b.ferido ? b.ferido.reduce((s, x) => s + (x === 2 ? 1 : 0), 0) : 0 })),
-               erros: plano.bondes.filter(b => !b.rua).map(b => b.t.sigla + ': ' + (b.erro || '')) };
+               erros: plano.bondes.filter(b => !b.rua).map(b => b.t.sigla + ': ' + (b.erro || '')),
+               arquibancada: arq ? arq.estado(t) : null };
     },
     limpar() { rodando = false; seguir = null; desmontar(); painel.hidden = true; }
   };

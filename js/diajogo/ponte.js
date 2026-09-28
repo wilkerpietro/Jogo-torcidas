@@ -495,10 +495,20 @@ TO.diaJogo.ponte = (function(){
          onde ela cai.
      Esc cancela. Fora do alcance o ponto é puxado pra borda do
      alcance, que aparece tracejada em volta do líder. A cena de perto
-     (3D) continua jogando direto: lá a mira em arco não faz sentido
-     de cima pra baixo.
+     do tres.js continua jogando direto.
+
+     NA CIDADE (o jogo 3D, o dono, 28/09/2026: "Adicione uma forma de
+     mirar a bomba com o mouse no 3d"): o palco que sabe achar o ponto
+     do tabuleiro debaixo do cursor (`T.pontoDaTela`) ganha a mesma
+     mira — 3 (ou o BOMBA) abre, o alvo anda no chão com o mouse, o
+     clique na cidade joga, 3 de novo joga, Esc ou o botão direito
+     cancela. Quem desenha a mira no chão é o palco (lê `ponte.mira`);
+     no pad, o arrasto do BOMBA vira pro rumo da câmera
+     (`T.deltaDaTela`).
      ======================================================= */
   let mira=null;   // {x,y, arrasto:{x0,y0,mexeu}|null}
+  /* o palco da cidade mira com o mouse (sem ele, a cena de perto joga direto) */
+  const miraNoPalco = ()=> tres && T && typeof T.pontoDaTela === 'function';
   const liderVivo = ()=> J && J.discos.find(d=>d.lider&&d.vivo);
   function pontoAdiante(l){
     const a=P.alcanceBomba*0.55;
@@ -511,7 +521,7 @@ TO.diaJogo.ponte = (function(){
   }
   function abrirMira(arrasto){
     if(!J) return false;
-    if(tres){ C.arremessar(J,'bomba'); return false; }
+    if(tres && !miraNoPalco()){ C.arremessar(J,'bomba'); return false; }
     if(!C.podeArremessar(J,'bomba')){
       C.aviso(J, J.bombas<=0 ? _t('Sem bomba na mochila.') : _t('Bomba recarregando.'), '#e0b040');
       return false;
@@ -883,6 +893,8 @@ TO.diaJogo.ponte = (function(){
       : espera
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
+      : tres && miraNoPalco()
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
       : tres
       ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
       : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
@@ -1186,7 +1198,10 @@ TO.diaJogo.ponte = (function(){
       const a=mira.arrasto, l=liderVivo(); if(!l) return;
       const dx=ev.clientX-a.x0, dy=ev.clientY-a.y0;
       if(Math.hypot(dx,dy)>10) a.mexeu=true;
-      if(a.mexeu) moverMira(l.x+dx*1.5, l.y+dy*1.5);
+      if(!a.mexeu) return;
+      /* na cidade a tela está girada com a câmera: o arrasto vira o rumo dela */
+      const q = miraNoPalco() && T.deltaDaTela ? T.deltaDaTela(dx*1.5, dy*1.5) : {x:dx*1.5, y:dy*1.5};
+      moverMira(l.x+q.x, l.y+q.y);
     });
     const soltaBomba = ev=>{
       if(ev) ev.preventDefault();
@@ -1300,6 +1315,19 @@ TO.diaJogo.ponte = (function(){
       if(k==='enter') mandarEntrarOuSair();
     });
     addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k==='e' && teclas.e && J) C.soltarDefesa(J, liderVivo()); teclas[k]=false; });
+    /* NA CIDADE, com a mira aberta, o clique na cidade joga a bomba ali —
+       antes de a cidade pegar o clique pra arrastar a câmera (a escuta é
+       na captura) — e o botão direito cancela. O que é do HUD (os
+       botões, o pad) segue com o clique dele */
+    addEventListener('pointerdown',e=>{
+      if(!mira || ED.ativo || !miraNoPalco() || !(e.target instanceof HTMLCanvasElement)) return;
+      if(e.button===2){ e.preventDefault(); e.stopImmediatePropagation(); cancelarMira(); return; }
+      if(e.button!==0) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      const q=T.pontoDaTela(e.clientX, e.clientY);
+      if(q) moverMira(q.x, q.y);
+      soltarBomba();
+    }, true);
 
     /* rodinha = zoom. `passive:false` porque sem o preventDefault a
        página rola junto e o zoom vira briga com o scroll. O passo é
@@ -1350,8 +1378,12 @@ TO.diaJogo.ponte = (function(){
     });
     addEventListener('pointermove',e=>{
       if(!ED.ativo){
-        if(e.pointerType!=='touch'){ ultimoMouse=paraCena(e); }
-        if(mira && !mira.arrasto && e.pointerType!=='touch') moverMira(ultimoMouse.x, ultimoMouse.y);
+        if(e.pointerType!=='touch'){
+          /* na cidade, o ponto do chão debaixo do cursor (no céu, nenhum) */
+          const q = miraNoPalco() ? T.pontoDaTela(e.clientX, e.clientY) : paraCena(e);
+          if(q) ultimoMouse = q;
+          if(q && mira && !mira.arrasto) moverMira(q.x, q.y);
+        }
         return;
       }
       const p=paraCena(e);
@@ -1941,6 +1973,12 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           get tres(){ return tres; }, get bonecos(){ return bonecos; },
           /* quem desenha a cena de perto (o tres.js, ou o palco do jogo 3D) */
           get renderizador(){ return tres ? T : null; },
+          /* a mira da bomba aberta ({x, y} no tabuleiro, ou null): o palco
+             da cidade desenha ela no chão; e o alcance e o raio de dano (px) */
+          get mira(){ return mira && !ED.ativo ? mira : null; },
+          get alcanceBomba(){ return P.alcanceBomba; },
+          get raioBomba(){ return C.RAIO_BOMBA || 92; },
+          abrirMira: ()=>abrirMira(null), soltarBomba, cancelarMira,
           alternarVelocidade,
           get zoom(){return zoom;},
           set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },

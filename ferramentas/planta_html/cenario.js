@@ -1129,7 +1129,21 @@ void main() {
       /* a folha da porta que abre e fecha fica viva (não junta nem risca: o
          cenário gira ela e bate nela na hora); a bandeira da sede também
          (ela tremula) */
-      grupo.traverse(o => { if ((o.isMesh || o.isLineSegments) && (o.userData.porta || o.userData.bandeira || o.userData.peca)) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
+      /* (a DIVISÓRIA do estádio, a grade entre as torcidas, também fica viva
+         — no dia de jogo ela pode cair —, mas segue barrando quem anda nos
+         andares do estádio: os triângulos dela vão pra lá do mesmo jeito) */
+      const soAndar = [];
+      grupo.traverse(o => {
+        if ((o.isMesh || o.isLineSegments) && (o.userData.porta || o.userData.bandeira || o.userData.peca)) {
+          vivos.push(o);
+          if (o.isMesh && o.userData.divisoria && o.geometry && o.geometry.attributes.position) {
+            const g = o.geometry, pos = g.attributes.position, idx = g.index, n = idx ? idx.count : pos.count, P3 = new Float32Array(n * 3);
+            for (let k = 0; k < n; k++) { v.fromBufferAttribute(pos, idx ? idx.getX(k) : k).applyMatrix4(o.matrixWorld); P3[3 * k] = v.x; P3[3 * k + 1] = v.y; P3[3 * k + 2] = v.z; }
+            soAndar.push({ P3, n });
+          }
+        } else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); }
+      });
+      if (andares && grupo.userData.dentroDoEstadio) for (const p of soAndar) andares.juntar(p.P3, p.n);
       /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
       let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
       for (const p of pedacos) for (let k = 0; k < p.n; k++) {
@@ -2283,7 +2297,8 @@ void main() {
          câmera e ele, o que passa da cabeça fica ralo — a copa do coqueiro,
          o beiral —, num cone mais largo que o de a pé (a briga é um bolo
          de gente em volta dele); o prédio que o palco abriu segue aberto */
-      const pc = palco && palco.alvoDoCorte ? palco.alvoDoCorte() : null;
+      /* (e a invasão do dia de jogo pelo corredor, embaixo da arquibancada) */
+      const pc = palco && palco.alvoDoCorte ? palco.alvoDoCorte() : dia && dia.aberto && dia.alvoDoCorte ? dia.alvoDoCorte() : null;
       if (pc) {
         CORTE.uCorte.value = 1;
         CORTE.uCorteA.value.set(pc.x, pc.y + 1.7 * M, pc.z);
@@ -2484,6 +2499,15 @@ void main() {
       o.x = r.left + (vPro.x + 1) / 2 * r.width; o.y = r.top + (1 - vPro.y) / 2 * r.height;
       o.frente = vPro.z > -1 && vPro.z < 1;
       return o;
+    },
+    /* o que o plano do dia de jogo (dia_de_jogo.js) pede do cenário: a
+       briga na caminhada do jogo 3D (caminhada.js) planeja com ele */
+    contextoDoDia: () => contextoDoJogo(),
+    /* o ponto do chão debaixo do ponto da tela (px CSS), no plano de altura
+       y (unidade de mundo), ou null (o céu; longe demais): a mira da bomba */
+    chaoNaTela(sx, sy, y = 0) {
+      const p = raioEm(sx, sy).intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), new THREE.Vector3());
+      return p && p.distanceTo(cam.position) < orb.dist * 12 + 2000 ? p : null;
     },
     /* quem ancora coisa na tela a cada quadro (os balões) */
     aCadaQuadro(f) { depoisDaCamera.add(f); return () => depoisDaCamera.delete(f); },

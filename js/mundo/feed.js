@@ -4786,6 +4786,8 @@ TO.feed = (function(){
         return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
           cena: d.cena === 'praca' ? 'praca' : 'rua', acao:'atacar',
           escalacao: nucleo, efetivoRival: viajaram,
+          /* a praça da sub-sede (o jogo 3D só tem a nossa em 3D) */
+          foraDeCasa: d.cidade && d.cidade !== E.torcida.mapa ? d.cidade : null,
           alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
                 tipo:'caravana', cena: d.cena === 'praca' ? 'praca' : 'rua',
                 bairro:TO.financeiro.nomeCidade(d.cidade),

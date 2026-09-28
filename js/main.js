@@ -529,6 +529,11 @@
     /* o feed com ícone próprio (pedido do dono, 07/09/2026): o
        megafone era um alto-falante genérico e não dizia "início" */
     {id:'feed',        rot:_t('Feed'),        ic:'feed'},
+    /* O MAPA DA CIDADE (o dono, 28/09/2026, no jogo 3D: "Preciso que o
+       mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
+       com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
+       planta da praça inteira, e o clique leva a câmera até lá */
+    {id:'mapa3d',      rot:_t('Mapa da cidade'), ic:'mapa', acao:'mapa3d', so3d:true},
     {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
     {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
     {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
@@ -547,7 +552,10 @@
     {id:'sair',        rot:_t('Menu principal'), ic:'saida', acao:'menu'}
   ];
   /* o que um item de `acao` faz */
-  const ACAO_NAV = {menu: () => sairParaMenu()};
+  const ACAO_NAV = {menu: () => sairParaMenu(),
+                    mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); }};
+  /* o item que só existe com a cidade em 3D */
+  const temNoMenu = n => !n.so3d || !!(TO.jogo3d && TO.jogo3d.abrirMapa);
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
@@ -622,6 +630,7 @@
   function montarMenuIcones(classe){
     const cx = el('div',{class: classe || 'feed-menu'});
     for(const n of NAV){
+      if(!temNoMenu(n)) continue;
       const b = el('button',{class:'mapa-ic', 'data-pag':n.id,
         html: IC.get(n.ic) + '<i class="ic-badge" hidden></i>'});
       b.title = n.rot;
@@ -640,6 +649,7 @@
   function montarLateral(){
     const nav = $('lateral'); nav.innerHTML='';
     for(const n of NAV){
+      if(!temNoMenu(n)) continue;
       const b = el('button',{class:'nav-item','data-pag':n.id,
         html:`${IC.get(n.ic)}<span>${n.rot}</span><i class="ic-badge" hidden></i>`});
       b.onclick = ()=>{
@@ -9229,6 +9239,8 @@
       return;
     }
     p.guerraJogada = true;
+    /* a briga é na praça DELES (o jogo fora): o jogo 3D sabe que não é na cidade dele */
+    if(r.fora) r.enc.foraDeCasa = r.cidade || true;
     abrirConfronto(e, r.enc);
   }
 
@@ -9501,7 +9513,9 @@
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
                 bondes, efetivoRival: deles.n, local: enc.local,
                 /* a faixa: quem é atacado expõe — sofremos, é a nossa */
-                faixaDefensor: enc.sofrido ? 'nos' : 'eles', rivalId: deles.torcida },
+                faixaDefensor: enc.sofrido ? 'nos' : 'eles', rivalId: deles.torcida,
+                /* a praça da briga, quando não é a nossa (o jogo 3D tem só a nossa em 3D) */
+                foraDeCasa: enc.foraDeCasa || null },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
     /* GUERRA É BRIGA MARCADA: os dois lados vieram pra isso. As cenas
@@ -9883,6 +9897,8 @@
                 fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
+                /* a praça da ação, quando não é a nossa (a sub-sede de fora) */
+                foraDeCasa: cena.foraDeCasa || null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
                   cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : SEGURANCA,
                 perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
@@ -10009,6 +10025,8 @@
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
                 faixaDefensor:'nos', rivalId: atq.torcida,
+                /* a praça do ataque, quando não é a nossa (o jogo fora) */
+                foraDeCasa: atq.mapa && atq.mapa !== e.torcida.mapa ? atq.mapa : null,
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,

@@ -1585,7 +1585,14 @@ let escalaDoTabuleiro = () => 1;
     trabalho:  [['digita', 70], ['escuta', 18], ['celular', 12]],
     sede:      [['conversa', 26], ['escuta', 22], ['bebe', 12], ['ri', 12], ['celular', 12], ['aponta', 4], [0, 12]],
     bar:       [['bebe', 30], ['conversa', 24], ['ri', 14], ['escuta', 16], ['canta', 6], ['celular', 6], [0, 4]],
-    rua:       [[0, 62], ['celular', 20], ['conversaAnda', 18]]
+    rua:       [[0, 62], ['celular', 20], ['conversaAnda', 18]],
+    /* A ARQUIBANCADA VIVA (o dia de jogo, 28/09/2026): a torcida no lugar
+       canta junto — palma em cima, braço bombando, pulando, os dois braços
+       balançando —, no tempo que a bateria dá (`d.gestoParam`: o ritmo e a
+       fase da torcida inteira; sem ele, cada um no seu); e o PUXADOR, de
+       costas pro jogo e de frente pra ela, regendo o canto */
+    arquibancada: [[0, 8], ['palmaAlta', 22], ['braco', 18], ['festa', 14], ['pula', 14], ['soco', 10], ['palmaPeito', 14]],
+    puxador:   [['reger', 34], ['palmaAlta', 18], ['braco', 18], ['festa', 14], ['pula', 10], ['aponta', 6]]
   };
   function escolherGesto(f, lista){
     let tot = 0; for(const [,w] of lista) tot += w;
@@ -1618,7 +1625,9 @@ let escalaDoTabuleiro = () => 1;
     }
     const g = f.jg, e = f.estilo;
     if(!g) return;
-    const w = t*f.jgRitmo + f.jgFase, bate = Math.abs(Math.sin(w)), pulso = Math.max(0, Math.sin(w*0.5));
+    /* o tempo do canto: o da torcida inteira quando ela canta junta (`gestoParam`) */
+    const gp = f.gestoParam, ritmo = gp && gp.ritmo ? gp.ritmo : f.jgRitmo, faseR = gp && gp.fase != null ? gp.fase : f.jgFase;
+    const w = t*ritmo + faseR, bate = Math.abs(Math.sin(w)), pulso = Math.max(0, Math.sin(w*0.5));
     const lado = e.canhoto ? 0 : 1, o = 1 - lado;
     switch(g){
       /* ---- na porta da sede ---- */
@@ -1724,6 +1733,53 @@ let escalaDoTabuleiro = () => 1;
         p.inclina = 0.12; p.olhaX = 0.22;
         p.ombro[lado] = -0.85 - 0.55*bate; p.cotovelo[lado] = -1.5 + 0.7*bate; p.ombroZ[lado] = 0.2; p.punho[lado] = 1;
         p.ombro[o] = -0.55; p.cotovelo[o] = -1.0; p.ombroZ[o] = 0.25; p.maoZ[o] = 0.2; p.punho[o] = 0;
+        break;
+      }
+      /* ---- a bateria da torcida (o dia de jogo, 28/09/2026) ---- */
+      case 'caixa': {          // as duas baquetas na caixa da cintura, uma de cada vez, no dobro do tempo
+        const a1 = Math.sin(w*2), a2 = Math.sin(w*2 + Math.PI);
+        p.inclina = 0.1; p.olhaX = 0.18;
+        p.ombro = [-0.62 - 0.16*Math.max(0, a1), -0.62 - 0.16*Math.max(0, a2)]; p.cotovelo = [-1.55 + 0.35*Math.max(0, a1), -1.55 + 0.35*Math.max(0, a2)];
+        p.ombroZ = [0.24, 0.24]; p.maoZ = [0.35, 0.35]; p.punho = [1, 1];
+        p.y += 0.25*bate;
+        break;
+      }
+      case 'repique': {        // o repique no quadril: a baqueta na mão forte, a outra mão batendo na pele
+        p.inclina = 0.08; p.olhaX = 0.12; p.gira += 0.12*(lado ? -1 : 1);
+        p.ombro[lado] = -0.9 - 0.45*bate; p.cotovelo[lado] = -1.35 + 0.55*bate; p.ombroZ[lado] = 0.22; p.punho[lado] = 1;
+        p.ombro[o] = -0.75 - 0.3*pulso; p.cotovelo[o] = -1.3 + 0.35*pulso; p.ombroZ[o] = 0.3; p.maoZ[o] = 0.3; p.punho[o] = 0;
+        break;
+      }
+      /* ---- o bandeirão de bambu: as duas mãos no mastro, o corpo no balanço dele ---- */
+      case 'mastro': {
+        /* `gestoParam.a`: o quanto o mastro deita pro lado agora (rad, + pra
+           direita de quem segura); quem desenha o pano manda o mesmo, e as
+           mãos vão junto */
+        const th = gp && gp.a != null ? gp.a : 0.8*Math.sin(t*2.6 + f.fase);
+        p.ombro = [-1.95 + 0.15*th, -1.75 - 0.15*th]; p.cotovelo = [-0.75, -1.05]; p.maoZ = [0.2, 0.2]; p.punho = [1, 1];
+        p.ombroZ = [0.42 + 0.22*th, 0.42 - 0.22*th];
+        p.gira += 0.3*th; p.tomba += -0.14*th; p.inclina += 0.06; p.olhaX = -0.32; p.olhaY = 0.25*th;
+        p.coxa = [-0.05, 0.1]; p.joelho = [0.18, 0.14];
+        break;
+      }
+      /* ---- o puxador, de frente pra torcida ---- */
+      case 'reger': {          // os dois braços no alto, um sobe quando o outro desce, no tempo do canto
+        const s1 = Math.sin(w);
+        p.ombro = [-2.45 + 0.45*s1, -2.45 - 0.45*s1]; p.cotovelo = [-0.35, -0.35]; p.ombroZ = [0.14, 0.14]; p.punho = [1, 1];
+        p.olhaX = -0.08; p.inclina -= 0.04; p.y += 0.5*bate;
+        break;
+      }
+      /* ---- a grade: empurrando, sacudindo ---- */
+      case 'empurra': {        // as duas mãos na grade na altura do peito, o corpo vai e volta
+        const s1 = Math.sin(t*7 + f.fase), s2 = Math.max(0, Math.sin(t*3.5 + f.fase));
+        p.ombro = [-1.45 + 0.1*s1, -1.4 - 0.1*s1]; p.cotovelo = [-0.55 - 0.35*s2, -0.6 - 0.35*s2]; p.ombroZ = [0.2, 0.2]; p.maoZ = [0.2, 0.2]; p.punho = [0, 0];
+        p.inclina = 0.32 + 0.1*s2; p.coxa = [-0.35, 0.25]; p.joelho = [0.45, 0.2]; p.olhaX = -0.1;
+        break;
+      }
+      /* ---- a faixa: as duas mãos em cima, segurando a borda do pano ---- */
+      case 'estende': {
+        p.ombro = [-2.25, -2.25]; p.cotovelo = [-0.8, -0.8]; p.ombroZ = [0.32, 0.32]; p.maoZ = [0.1, 0.1]; p.punho = [1, 1];
+        p.olhaX = -0.2;
         break;
       }
       case 'churrasco': {      // virando a carne na grelha, olhando pra ela
@@ -2310,7 +2366,7 @@ let escalaDoTabuleiro = () => 1;
         /* A SEDE COM VIDA (jogo 3D, 27/09/2026): sentado e fazendo alguma
            coisa — digita, bebe, mexe no celular, conversa —, as pernas da
            cadeira e as mãos do gesto */
-        f.gestoForcado = d.gestoForcado;
+        f.gestoForcado = d.gestoForcado; f.gestoParam = d.gestoParam;
         if(d.olhaPara) olharPara(p, f, d, d.olhaPara, t);
         else if(d.jeito && !J.falante) gestoDoJeito(p, f, tAnim, dt, d.jeito, false);
       }
@@ -2338,8 +2394,9 @@ let escalaDoTabuleiro = () => 1;
       /* o jeito do dia de jogo (a festa na sede, o bonde, a fila): no relógio de verdade, mesmo na multidão leve */
       const jeito = d.jeito;
       if(!andando) parado(p, f, jeito ? tAnim : ti);
-      /* (`d.gestoForcado`: a vitrine e o teste pedindo um gesto certo) */
-      f.gestoForcado = d.gestoForcado;
+      /* (`d.gestoForcado`: a vitrine e o teste pedindo um gesto certo; e o
+         que o dia de jogo manda num gesto: o ritmo da torcida, o mastro) */
+      f.gestoForcado = d.gestoForcado; f.gestoParam = d.gestoParam;
       if(jeito && !emBriga && !corre) gestoDoJeito(p, f, tAnim, dt, jeito, andando);
       if(corre && d.fugindo) fugir(p, f, t, dt);
       if(d.fugaBomba) cobrir(p);

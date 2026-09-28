@@ -81,8 +81,9 @@ Em ordem de peso pro jogo. Cada item espera o dono apontar as mudanças.
    torcida"); o evento de cada fase acontece no ponto da cidade onde as
    rotas se cruzam.
 2. **As brigas.** *(Em andamento: a festa na casa de praia e as duas
-   emboscadas da caravana já são 3D — seção 7. As outras cenas seguem na
-   foto 2D.)* Hoje abrem na cena de briga do jogo de feed (a foto aérea
+   emboscadas da caravana já são 3D — seção 7 —, e as de praça e de rua
+   viraram a briga da caminhada ao estádio — seção 11. As outras cenas
+   seguem na foto 2D.)* Hoje abrem na cena de briga do jogo de feed (a foto aérea
    2D com o boneco 3D por cima), em cima da cidade. **Proposta:** a briga
    acontece na própria rua da cidade, com o mesmo `combate.js`: um recorte
    da cidade em volta do ponto (1536×1024 px do motor, uns 79×53 m) vira a
@@ -154,6 +155,17 @@ sessão); o que eles fazem, pra refazer:
   `js/diajogo/caravana3d.js` e chama `montarCaravana(tipo, [0, 0])` e
   `cenaDaCaravana` (a máscara pintada por cima em vermelho mostra se o que
   barra bate com o que se vê).
+- **A briga da caminhada (seção 11):** no jogo, `TO.tela.abrirAcaoEmCena({
+  cena: 'rua' | 'praca', acao: 'atacar', ... })` e a defesa
+  (`e.ataqueMarcado` + `TO.tela.abrirDefesa()`); conferir que
+  `TO.jogo3d.vida.caminhada` tem a cena, o palco segue o líder, as saídas
+  ficam nas pontas da rua do alvo e o relatório abre no fim.
+- **A arquibancada e a invasão (seção 12):** o cenário com `?teste&cenario`,
+  o botão "Dia de jogo", os selects `invade` e `cordao` do painel; o
+  `dia.estado().arquibancada` diz os papéis de cada torcida e a invasão
+  (a via, quem, as horas, se furou, presos e feridos); `dia.irPara(t)` e
+  `cenario.olhar(...)` pras fotos (a faixa desenrolando, a bateria, os
+  bandeirões, o puxador, a grade caindo, o cordão).
 
 ## 6. A vida na cidade (28/09/2026)
 
@@ -245,3 +257,110 @@ Onde entra:
   inteiras na cena e no corte. O construtor ficou só com a areia, o
   corredor, as paredes, o portão e o telhado (o jogo corta o telhado pra
   ver dentro da casa).
+
+## 9. O mapa da cidade no menu (28/09/2026)
+
+O dono: "Preciso que o mapa da cidade seja uma opção no menu lateral do
+jogo". A coluna de ícones ganha o **Mapa da cidade** (`NAV` de
+`js/main.js`: o item `mapa3d` só existe com a cidade em 3D). Ele abre a
+planta da praça inteira por cima da cidade (`ferramentas/planta_html/mapa3d.js`):
+o mesmo desenho do mapa da planta (`pintarMapa` de `index.html`: as ruas,
+as quadras, as sedes, os bares na cor da torcida, os estádios, a praia, os
+rótulos), com o alfinete da sede do jogador e o leque da câmera da cidade.
+Arrastar move, a roda aproxima no cursor, o clique leva a câmera até lá e
+fecha; o dia para enquanto ele está aberto (como num painel) e Esc, o × e
+o ícone de novo fecham.
+
+## 10. A mira da bomba com o mouse (28/09/2026)
+
+O dono: "Adicione uma forma de mirar a bomba com o mouse no 3d". Na briga
+em 3D, o **3** abre a mira: o alvo é o ponto do chão debaixo do mouse
+(`chaoNaTela` do cenário, na altura do líder), o anel do raio da bomba e o
+X no chão, o círculo tracejado do alcance em volta do líder e o arco do
+arremesso; o clique joga, o botão direito (ou o 3 de novo) cancela. No
+toque, o pad arrasta a mira no sentido da câmera. A ponte do jogo
+(`js/diajogo/ponte.js`) pergunta ao palco (`pontoDaTela`, `deltaDaTela`
+de `palco_briga.js`) em vez de usar o tabuleiro 2D.
+
+## 11. A briga da caminhada: a praça e a rua na cidade (28/09/2026)
+
+O dono: "A cena de ataque em praça ou rua agora vão ser os ataques de
+alguma torcida em outra nos dias de caminhada ao estádio". As cenas de
+praça e de rua do jogo de feed (a investida do jogador ou o ataque que ele
+sofre, com bonde) abrem na própria cidade 3D (`ferramentas/planta_html/caminhada.js`):
+o plano do dia de jogo com a briga mandada (`escolha.briga`), o tabuleiro
+deitado ao longo da rua do alvo — na praça, a concentração dele (de 8 a 45
+m da porta de onde sai); na rua, o meio do caminho, fora dos arredores do
+estádio —, a máscara da grade do passo, a faixa no chão no sentido da
+marcha e a PM chegando pelas pontas. O alvo sai pela rua dele, pra frente
+(pro estádio); quem ataca some pela saída mais longe de onde as duas
+torcidas nascem — a rua de onde o alvo veio, a de onde ele mesmo veio, a
+rota dele pro estádio ou, se todas saem do tabuleiro colado em alguém, o
+ponto da beira ligado à tocaia mais longe de todo mundo.
+
+**O que ficou de fora:** a briga FORA DE CASA (a praça de outra torcida)
+segue na foto 2D: a cidade 3D do jogo é só a do jogador.
+
+## 12. A arquibancada viva e a briga no estádio (28/09/2026)
+
+O dono: "crie a animação da faixa e bandeira sendo estendida por dois
+membros assim que a torcida chega no estádio, animação de bandeiras de
+bambu balançando na arquibancada e na caminhada [...] de tamanho 4x4m [...],
+movimento de bateria de torcida com quantidade padrão por nível de sede
+[...], e um puxador que fica de costas pro jogo virado pra torcida [...].
+Uma torcida pode optar por atacar outra dentro do estádio, tentando
+quebrar a grade pra acessar o rival seja pela arquibancada ou pelos
+corredores do estádio. Polícia tenta impedir fazendo cordão de
+isolamento."
+
+`ferramentas/planta_html/arquibancada.js`, chamado pelo dia de jogo
+(`dia_de_jogo.js`: o plano no fim do `planejar`, a cena no `montar`, cada
+boneco no lugar dele no `atualizar`). A arquibancada vem do modelo do
+estádio pela planta (`estadios()[].geo`: os pedaços de cada setor e as
+DIVISÓRIAS — o gradil entre as torcidas, que o forno do cenário deixa vivo
+pra poder cair).
+
+- **O puxador** é o primeiro do bonde: chega e vai pra frente da torcida
+  (a fileira de baixo dela, ou em cima da mureta quando ela ocupa a
+  frente), de costas pro jogo, regendo (`puxador` de `bonecos3.js`).
+- **A faixa e a bandeira:** os dois primeiros que chegam (e os dois
+  seguintes) trazem o pano enrolado no ombro desde a sede, descem até a
+  mureta, andam cada um pra uma ponta desenrolando e soltam: o pano fica
+  pendurado virado pro campo. A cara é a régua do jogo (patrimônio): fundo
+  na cor primária, letra e borda na secundária, o escudo da torcida à
+  esquerda e o do clube à direita; a bandeira quadrada com o escudo.
+- **A bateria:** pelo nível da sede (`BATERIA_POR_NIVEL`: 2, 3, 4, 6, 8,
+  10, 12 do nível 0 ao 6; no máximo um quarto da torcida), com surdo,
+  repique e caixa no corpo; toca desde a sede, na caminhada e no lugar.
+- **Os bandeirões de bambu:** 4 × 4 m num bambu de 6 m, um a cada 14
+  bonecos (de 1 a 3), com o pano simulado (partículas presas no bambu,
+  gravidade, vento) e o bambu no oito; na sede, na caminhada e no alto da
+  torcida.
+- **O resto canta junto**, no tempo da torcida (`gestoParam`).
+- **O isolamento:** entre o visitante e o mandante o estádio tem o setor
+  vazio da PM, entre duas divisórias (na arquibancada e no corredor de
+  baixo). A PM deixa guardas lá (3 na arquibancada, 2 no corredor, do
+  efetivo do jogo, até 30% do que sobra da revista).
+- **A invasão:** uma por jogo, de uma torcida que não brigou na rua; a
+  chance é 40% da de procurar uma rival na rua. Pela arquibancada (a
+  divisória mais perto, andando nas fileiras sem passar em poço de
+  vomitório) ou pelo corredor (desce pelo vomitório dela e anda no
+  corredor). Uns 60% da torcida correm pra grade e empurram 15 s; a grade
+  cai pro lado do isolamento; os guardas e o reforço (os PMs da revista,
+  livres depois que todo mundo entrou) fazem o cordão a 2,2 m da grade, de
+  escudo; 24 s de pancada. A PM segura (volta pro lugar, gente no chão e
+  presa) ou a torcida fura (até 45%, pela força dela contra a do cordão),
+  quebra a segunda grade e se pega com a frente da rival (a tabela de
+  baixas da rua) até a PM se juntar e separar. A briga se vê a 1× (o
+  relógio para nela e a câmera vai até lá; no corredor, o corte do cenário
+  abre o que fica em cima).
+- **O painel** diz o papel de cada torcida no estádio, a decisão e a
+  invasão, e manda nela: "No estádio: as torcidas decidem / Ninguém
+  invade / Invade pela arquibancada / Invade pelo corredor" e "O cordão:
+  sorteio / A PM segura / A torcida fura o cordão".
+
+**Limites:** no estádio de 10 mil o mandante fica na outra arquibancada —
+o visitante pode tentar, mas do outro lado do isolamento não tem ninguém.
+A grade que cai só cai na cena (quem anda a pé no cenário continua
+barrado por ela). O pano do bandeirão atravessa gente e os outros panos
+(não tem colisão entre eles).

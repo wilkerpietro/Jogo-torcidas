@@ -194,3 +194,39 @@ body.jogo3d.palco-briga .cen-fps{bottom:54px}
 .j3d-lider[hidden]{display:none}
 .j3d-lider i{display:block;width:44px;height:3px;margin:3px auto 0;background:rgba(0,0,0,.65)}
 .j3d-lider i b{display:block;height:100%;background:#e0b040}
+/* a dica da mira da bomba, embaixo da zona dela no chão (palco_briga.js) */
+.j3d-mira{position:fixed;z-index:30;transform:translate(-50%,0);pointer-events:none;white-space:nowrap;
+  font:700 11px/1 var(--mono, "IBM Plex Mono", monospace);color:#ffd35a;background:rgba(0,0,0,.55);padding:3px 6px;border-radius:4px}
+.j3d-mira[hidden]{display:none}
+
+/* =========================================================
+   O MAPA DA CIDADE (28/09/2026, mapa3d.js): a planta da praça por cima
+   de tudo, como um painel — a barra com o título e o fechar, e o mapa
+   na tela toda (arrastar move, a roda aproxima, o clique leva a câmera)
+   ========================================================= */
+.j3d-mapa{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:#0e0e10}
+.j3d-mapa[hidden]{display:none}
+.j3d-mapa-barra{display:flex;align-items:center;gap:8px;height:40px;flex:none;padding:0 12px;
+  background:var(--painel, #161616);border-bottom:1px solid var(--linha, #2c2c2c);
+  font-family:var(--titulo);font-size:14px;letter-spacing:.11em;text-transform:uppercase;color:var(--texto, #eee)}
+.j3d-mapa-barra b{font-weight:700}
+.j3d-mapa-onde{flex:1;color:var(--fraco, #999);font-size:12px;letter-spacing:.08em}
+.j3d-mapa-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #eee);padding:4px 12px;font-size:13px;cursor:pointer;
+  font-family:var(--titulo);letter-spacing:.08em;text-transform:uppercase}
+.j3d-mapa-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.j3d-mapa-tela{position:relative;flex:1;min-height:0;overflow:hidden}
+.j3d-mapa-tela canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;display:block}
+.j3d-mapa-tela canvas.arrastando{cursor:grabbing}
+.j3d-mapa-zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:4px}
+.j3d-mapa-zoom button{width:34px;height:34px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(20,20,22,.9);color:#eee;
+  font:600 18px/1 var(--corpo, sans-serif);cursor:pointer}
+.j3d-mapa-zoom button:hover{background:var(--rubro, #8a1f1f);color:#fff}
+.j3d-mapa-dica,.j3d-mapa-legenda{position:absolute;left:12px;margin:0;padding:5px 9px;border-radius:5px;pointer-events:none;
+  background:rgba(12,12,14,.82);color:#ddd;font:500 12px/1.2 var(--corpo, sans-serif)}
+.j3d-mapa-dica{bottom:12px}
+.j3d-mapa-legenda{bottom:44px;display:flex;align-items:center;gap:6px}
+.j3d-mapa-legenda i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px}
+.j3d-mapa-legenda i:first-child{margin-left:0}
+.j3d-mapa-legenda i.sede{background:#d4731c;border:2px solid #fff}
+.j3d-mapa-legenda i.cam{background:#fff;border:2px solid #111}
+@media (max-width:760px){ .j3d-mapa-dica{display:none} .j3d-mapa-legenda{bottom:12px} }

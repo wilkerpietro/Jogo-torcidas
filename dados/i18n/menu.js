@@ -87,6 +87,7 @@ TO.i18n.registrar({
   'Notícias':       {es:'Noticias',        en:'News'},
   'Jogo':           {es:'Partida',         en:'Game'},
   'Menu principal': {es:'Menú principal',  en:'Main menu'},
+  'Mapa da cidade': {es:'Mapa de la ciudad', en:'City map'},
 
   /* ---------- o dia de jogo e o relatório (index.html) ---------- */
   'Velocidade da cena': {es:'Velocidad de la escena', en:'Scene speed'},

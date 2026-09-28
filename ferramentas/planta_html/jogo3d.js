@@ -22,6 +22,7 @@
    ========================================================= */
 import { CASCA } from './jogo_casca.js';
 import { criarVida, horaTxt } from './vida3d.js';
+import { criarMapaDaCidade } from './mapa3d.js';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -62,10 +63,14 @@ function ligar(api) {
      esperar (`TO.jogo3d.ritmo`), e a reunião abre na sala da sede
      (`TO.jogo3d.palcoDe`) */
   const vida = criarVida(api);
+  /* O MAPA DA CIDADE (mapa3d.js): o item "Mapa da cidade" da coluna de
+     ícones (main.js) chama `abrirMapa` */
+  const mapa = criarMapaDaCidade(api);
   TO.jogo3d = {
     get ritmo() { return vida.ligada ? vida.ritmo : null; },
     palcoDe: (local, cfg) => vida.palcoDe(local, cfg),
-    vida
+    abrirMapa: () => mapa.alternar(),
+    vida, mapa
   };
   /* o relógio do dia na barra de cima, do lado da data */
   const relogio = document.createElement('div');
@@ -165,6 +170,7 @@ function ligar(api) {
     document.body.classList.toggle('j3d-em-jogo', emJogo);
     if (emJogo) conferirPraca();
     else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }
+    if (!emJogo) mapa.fechar();
     pintarBotao();
   };
   /* o quadro do relógio (a hora da barra) */
@@ -183,7 +189,7 @@ function ligar(api) {
     /* a cena que roda na cidade (a reunião na sala da sede) não cobre nada:
        o palco dela é transparente */
     const palco = document.body.classList.contains('palco3d');
-    const cobre = document.body.classList.contains('com-painel') ||
+    const cobre = document.body.classList.contains('com-painel') || document.body.classList.contains('j3d-mapa-aberto') ||
       [...document.querySelectorAll('.tela-cheia:not(.oculto)')].some(el => el.id !== 'telaMenu' && !(palco && el.id === 'telaDiaJogo'));
     C.pausar(cobre);
   };

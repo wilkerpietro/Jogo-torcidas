@@ -18,7 +18,7 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 A=${1:-/tmp/planta_html}
 mkdir -p "$A/dados" "$A/js" "$A/img/texturas/modelos"
 cp "$R/ferramentas/planta_html/index.html" "$A/"
-cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$R/ferramentas/planta_html/vida3d.js" "$R/ferramentas/planta_html/palco_briga.js" "$A/js/"
+cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$R/ferramentas/planta_html/vida3d.js" "$R/ferramentas/planta_html/palco_briga.js" "$R/ferramentas/planta_html/mapa3d.js" "$R/ferramentas/planta_html/caminhada.js" "$R/ferramentas/planta_html/arquibancada.js" "$A/js/"
 # as rotas de dentro dos estádios do dia de jogo (GERADO por rotas_estadios.mjs)
 cp "$R/js/diajogo/rotas_estadios.js" "$A/js/"
 cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/estadios.js" "$R/dados/escudos.js" "$A/dados/"
