@@ -2590,6 +2590,25 @@ function pintarChao(c2, x0, y0, s, mascara = false) {
   }
 }
 
+/* O MAPA DA CIDADE NO JOGO 3D (o dono, 28/09/2026: "Preciso que o mapa da
+   cidade seja uma opção no menu lateral do jogo"): este mesmo desenho,
+   inteiro (os rótulos, as sedes, os bares, o estádio), no contexto `c2`
+   de fora — `s` px de CSS por unidade a partir de (x0, y0), `dpr` pixels
+   de tela por px de CSS —, sem a grade de coordenadas e sem a seleção */
+function pintarMapa(c2, x0, y0, s, dpr = 1) {
+  const antes = { cv, ctx, s: estado.s, ox: estado.ox, oy: estado.oy, larg: estado.larg, alt: estado.alt, dpr: estado.dpr, sel: estado.sel, sobre: estado.sobre, grade: estado.camadas.grade };
+  cv = c2.canvas; ctx = c2;
+  Object.assign(estado, { s, ox: x0, oy: y0, larg: c2.canvas.width / dpr, alt: c2.canvas.height / dpr, dpr, sel: null, sobre: null });
+  estado.camadas.grade = false;
+  try { desenhar(); }
+  finally {
+    cv = antes.cv; ctx = antes.ctx;
+    Object.assign(estado, { s: antes.s, ox: antes.ox, oy: antes.oy, larg: antes.larg, alt: antes.alt, dpr: antes.dpr, sel: antes.sel, sobre: antes.sobre });
+    estado.camadas.grade = antes.grade;
+    atualizarRegua();
+  }
+}
+
 /* O QUE A CALÇADA TEM EM CIMA, no mapa: a faixa de pedestre (de perto, as
    listras como no 3D), a árvore nova, o poste e o resto do mobiliário */
 function desenharCalcadas(vis, px) {
@@ -4237,12 +4256,18 @@ function degraus() {
    setores e sem a rua de fora), com o nome dele no letreiro, na escala do
    mapa, girado com o portão 1 de frente pra cidade e 2 cm acima do chão
    pintado */
-const marcaDoModelo = {};
+const marcaDoModelo = {}, geoDoModelo = {};
 function objetoDoEstadioNovo(e, g) {
   const c = e.copia || e;
-  const { grupo, info } = montarEstadioJogo(c.modelo, { nome: e.nome, mapa: true });
+  const { grupo, info } = montarEstadioJogo(c.modelo, { nome: e.nome, mapa: true, divisorias: true });
   /* a marca do modelo: o dia de jogo confere com a das rotas de dentro dele */
   marcaDoModelo[c.modelo] = marcaDoEstadio(info);
+  /* A ARQUIBANCADA DO DIA DE JOGO (28/09/2026): os pedaços de cada setor
+     (a frente onde a faixa pendura, as fileiras) e as divisórias, no
+     referencial do modelo; a grade de cada divisória fica viva (fora do
+     forno do cenário: quando a torcida quebra, ela cai) */
+  geoDoModelo[c.modelo] = { setores: info.setores.map(x => ({ id: x.id, pecas: x.pecas })), divisorias: (info.geo && info.geo.divisorias) || [] };
+  grupo.traverse(o => { if (o.isMesh && o.parent && o.parent.userData.divisoria != null) { o.userData.peca = true; o.userData.divisoria = { estadio: e.nome, i: o.parent.userData.divisoria }; } });
   grupo.scale.setScalar(M);
   grupo.rotation.y = -c.giro * Math.PI / 180;
   grupo.position.set(c.centro[0], 0.02 * M, c.centro[1]);
@@ -5086,6 +5111,8 @@ function apiDoCenario() {
     },
     resumo: () => resumoDaTela(),
     pecas: pecasDoCenario, pintarChao, vegetacao,
+    /* o mapa 2D inteiro, com os rótulos, num canvas de fora (o mapa da cidade do jogo 3D) */
+    pintarMapa,
     /* o relógio da bandeira da sede (o cenário anda ele a cada quadro) */
     tempoBandeira: TEMPO_BANDEIRA,
     limite: () => LIM_PROPOSTA,
@@ -5141,7 +5168,7 @@ function apiDoCenario() {
            grande), os cômodos e os lugares de gente, no mundo */
         const mt = T.sede && T.sede.montagem;
         const sede3d = mt ? { nivel: mt.nivel, lugares: mt.lugares, comodos: mt.comodos, area: { ...a }, frente: s.frente } : null;
-        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta, sede3d,
+        return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta, sede3d, escudo: T.escudo || null,
                  clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais,
                  cargos: T.t.cargos || null, irmandade: T.t.irmandade || [], aliados: T.t.aliados || [] };
       });
@@ -5213,6 +5240,7 @@ function apiDoCenario() {
       return (TO.dados.torcidas || []).filter(t => t.clubeId === clubeId).map(t => {
         const c = coresDaTorcida(t);
         return { id: t.id, nome: t.nome, sigla: String(t.siglaTorcida || t.nome).toUpperCase(), cor: c.cor, cor2: c.cor2, cor3: c.cor3, porta: null,
+                 escudo: caminhoDoEscudo('t', t.id), nivel: t.sedeNivel ?? 1,
                  clubeId: t.clubeId, clube: t.clube || '', poder: t.poder || 0, membros: t.membros || 0, moral: t.moral ?? 50, cidade: t.cidade || '', uf: t.uf || '', bairro: t.bairroSede || '',
                  cargos: t.cargos || null, irmandade: t.irmandade || [], aliados: t.aliados || [] };
       });
@@ -5257,7 +5285,9 @@ function apiDoCenario() {
       return estadios.map(e => {
         const c = e.copia || {}, d = (TO.dados.estadios || []).find(x => x.nome === e.nome) || {};
         return { nome: e.nome, principal: !!e.principal, modelo: c.modelo || null, centro: c.centro || null, giro: c.giro || 0, terreno: c.terreno || null,
-                 mandantes: d.mandantes || [], lotacao: d.capacidade || 0, marca: (c.modelo && marcaDoModelo[c.modelo]) || null };
+                 mandantes: d.mandantes || [], lotacao: d.capacidade || 0, marca: (c.modelo && marcaDoModelo[c.modelo]) || null,
+                 /* a arquibancada do modelo (os setores e as divisórias) — o dia de jogo */
+                 geo: (c.modelo && geoDoModelo[c.modelo]) || null };
       });
     },
     tituloDe: it => it ? tituloDe(it) : '', fichaDe: it => it ? fichaDe(it) : '',

@@ -51,6 +51,9 @@ export function palcoDeBriga(o) {
   }
   /* o tabuleiro no mundo */
   const pos = (x, y, d, P) => { const [wx, wz] = o.noMundo(x, y); P.x = wx; P.z = wz; P.y = o.chao(x, y) * M; return P; };
+  /* e o mundo no tabuleiro (a volta do noMundo: a origem e os dois eixos, na escala) */
+  const O0 = o.noMundo(0, 0);
+  const doMundo = o.doMundo || ((wx, wz) => { const dx = wx - O0[0], dz = wz - O0[1]; return [(dx * o.u[0] + dz * o.u[1]) / K, (dx * o.v[0] + dz * o.v[1]) / K]; });
   const rumoDe = (vx, vy) => Math.atan2(vx * o.u[0] + vy * o.v[0], vx * o.u[1] + vy * o.v[1]);
   const rumo = d => typeof d.rumo === 'number' ? rumoDe(Math.sin(d.rumo), Math.cos(d.rumo)) : undefined;
   /* A CÂMERA: o alvo vai atrás do líder (macio); a distância e a
@@ -179,6 +182,67 @@ export function palcoDeBriga(o) {
     anel.material.opacity = 0.45 + 0.3 * Math.sin(j.t * 3.2);
   }
 
+  /* A MIRA DA BOMBA (o dono, 28/09/2026: "Adicione uma forma de mirar a
+     bomba com o mouse no 3d"): a ponte abre (`ponte.mira`, no tabuleiro)
+     e aqui ela vira o chão — a zona onde a bomba cai (o raio de dano), o
+     X no meio, o alcance tracejado em volta do líder e o arco da mão
+     dele até o ponto; embaixo, a dica */
+  let mira = null;
+  const PM1 = {}, PM2 = {}, QM = {}, PT = {};
+  function montarMira() {
+    const cor = (c, op, extra) => new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide, ...extra });
+    const zona = new THREE.Mesh(new THREE.CircleGeometry(1, 48), cor('#e25028', 0.2));
+    const aro = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), cor('#ff7846', 0.9));
+    for (const m of [zona, aro]) { m.rotation.x = -Math.PI / 2; m.renderOrder = 12; }
+    const V = (x, z) => new THREE.Vector3(x, 0, z);
+    const xis = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([V(-1, -1), V(1, 1), V(1, -1), V(-1, 1)]),
+                                       new THREE.LineBasicMaterial({ color: '#ffdc5a', transparent: true, depthWrite: false }));
+    xis.renderOrder = 13;
+    /* o alcance: o círculo tracejado em volta do líder (em unidade de mundo: o tracejado não estica) */
+    const R = (TO.diaJogo.ponte.alcanceBomba || 210) * K, pts = [];
+    for (let i = 0; i <= 72; i++) pts.push(new THREE.Vector3(Math.cos(i / 72 * 2 * Math.PI) * R, 0, Math.sin(i / 72 * 2 * Math.PI) * R));
+    const alcance = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, dashSize: 0.35 * M, gapSize: 0.45 * M, depthWrite: false }));
+    alcance.computeLineDistances(); alcance.renderOrder = 12;
+    const arco = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(33 * 3), 3)),
+                                new THREE.LineDashedMaterial({ color: '#ffdc5a', transparent: true, opacity: 0.95, dashSize: 0.25 * M, gapSize: 0.18 * M, depthWrite: false }));
+    arco.frustumCulled = false; arco.renderOrder = 13;
+    const g = new THREE.Group(); g.name = 'mira da bomba';
+    g.add(zona, aro, xis, alcance, arco);
+    grupo.add(g);
+    const dica = document.createElement('div');
+    dica.className = 'j3d-mira'; dica.hidden = true;
+    dica.textContent = 'clique joga · 3 joga · Esc cancela';
+    document.body.appendChild(dica);
+    return { g, zona, aro, xis, alcance, arco, dica };
+  }
+  function desenharMira(j) {
+    const Pt = TO.diaJogo && TO.diaJogo.ponte, m = Pt && Pt.mira, l = m && lider();
+    if (!m || !l || !l.lider) { if (mira) { mira.g.visible = false; mira.dica.hidden = true; } return; }
+    if (!mira) mira = montarMira();
+    mira.g.visible = true;
+    const raio = (Pt.raioBomba || 92) * K, pul = 0.5 + 0.5 * Math.sin(performance.now() / 140);
+    /* o ponto (a ponte já puxa pra dentro do alcance) e o líder, no mundo */
+    const q = pos(m.x, m.y, null, PM1), a = pos(l.x, l.y, l, PM2), yq = q.y + 0.06 * M;
+    mira.zona.position.set(q.x, yq, q.z); mira.zona.scale.set(raio, raio, 1);
+    mira.zona.material.opacity = 0.14 + 0.1 * pul;
+    mira.aro.position.set(q.x, yq + 0.01 * M, q.z); mira.aro.scale.set(raio, raio, 1);
+    mira.aro.material.opacity = 0.65 + 0.3 * pul;
+    const cx = Math.max(0.35 * M, raio * 0.12);
+    mira.xis.position.set(q.x, yq + 0.02 * M, q.z); mira.xis.scale.set(cx, 1, cx); mira.xis.rotation.y = C.orb.az;
+    mira.alcance.position.set(a.x, a.y + 0.05 * M, a.z);
+    /* o arco: da mão do líder (1,5 m) até o chão do ponto, mais alto quanto mais longe */
+    const P = mira.arco.geometry.attributes.position, y0 = a.y + 1.5 * M, dist = Math.hypot(q.x - a.x, q.z - a.z), h = Math.max(1.2 * M, dist * 0.3);
+    for (let i = 0; i <= 32; i++) {
+      const k = i / 32;
+      P.setXYZ(i, a.x + (q.x - a.x) * k, y0 + (yq - y0) * k + 4 * h * k * (1 - k), a.z + (q.z - a.z) * k);
+    }
+    P.needsUpdate = true; mira.arco.geometry.computeBoundingSphere(); mira.arco.computeLineDistances();
+    /* a dica, embaixo da zona: na beira dela do lado da câmera */
+    const az = C.orb.az, t = C.vida.projetar(q.x + Math.sin(az) * raio, yq, q.z + Math.cos(az) * raio, QM);
+    mira.dica.hidden = !t.frente;
+    if (t.frente) { mira.dica.style.left = Math.round(t.x) + 'px'; mira.dica.style.top = Math.round(t.y + 8) + 'px'; }
+  }
+
   /* =====================================================
      O CONTRATO DA PONTE
      ===================================================== */
@@ -227,6 +291,25 @@ export function palcoDeBriga(o) {
       desenharPanos(j);
       desenharObjetivo(j);
       desenharLider();
+      desenharMira(j);
+    },
+    /* A MIRA COM O MOUSE: o ponto do tabuleiro debaixo do ponto da tela
+       (px CSS) — o raio da câmera até o chão na altura do líder —, ou
+       null (o céu) */
+    pontoDaTela(sx, sy) {
+      if (!montado || !C.vida.chaoNaTela) return null;
+      const l = lider(), y = l ? pos(l.x, l.y, l, PT).y : 0;
+      const p = C.vida.chaoNaTela(sx, sy, y);
+      if (!p) return null;
+      const [x, yb] = doMundo(p.x, p.z);
+      return { x, y: yb };
+    },
+    /* o arrasto do BOMBA no pad (px de tela) no tabuleiro: a direita da
+       tela é a direita da câmera; pra baixo, pra perto dela */
+    deltaDaTela(dx, dy) {
+      const az = C.orb.az, fx = -Math.sin(az), fz = -Math.cos(az), rx = Math.cos(az), rz = -Math.sin(az);
+      const wx = rx * dx - fx * dy, wz = rz * dx - fz * dy;
+      return { x: wx * o.u[0] + wz * o.u[1], y: wx * o.v[0] + wz * o.v[1] };
     },
     /* o WASD em relação à câmera: pra frente é pra onde ela olha */
     vetorDoTeclado(t) {
@@ -251,6 +334,7 @@ export function palcoDeBriga(o) {
       if (o.peca) o.peca.removeFromParent();
       for (const x of escondidos) x.visible = true;
       if (rotulo) { rotulo.remove(); rotulo = null; }
+      if (mira) { mira.dica.remove(); mira = null; }
       escondidos = [];
       if (grupo) {
         grupo.removeFromParent();

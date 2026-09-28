@@ -608,6 +608,7 @@ TO.i18n.registrar({
   'Notícias':       {es:'Noticias',        en:'News'},
   'Jogo':           {es:'Partida',         en:'Game'},
   'Menu principal': {es:'Menú principal',  en:'Main menu'},
+  'Mapa da cidade': {es:'Mapa de la ciudad', en:'City map'},
 
   /* ---------- o dia de jogo e o relatório (index.html) ---------- */
   'Velocidade da cena': {es:'Velocidad de la escena', en:'Scene speed'},
@@ -4094,6 +4095,9 @@ TO.i18n.registrar({
   '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima':
     {es:'<kbd>WASD</kbd> líder (hacia donde mira la cámara) · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender · <kbd>2</kbd> piedra · <kbd>3</kbd> bomba · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · <kbd>C</kbd> cámara · arrastrar gira · rueda acerca',
      en:'<kbd>WASD</kbd> leader (where the camera looks) · <kbd>Q</kbd> hit · <kbd>E</kbd> block · <kbd>2</kbd> stone · <kbd>3</kbd> bomb · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · <kbd>C</kbd> camera · drag to rotate · wheel to zoom'},
+  '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima':
+    {es:'<kbd>WASD</kbd> líder (hacia donde mira la cámara) · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender · <kbd>2</kbd> piedra · <kbd>3</kbd> mira de la bomba (clic tira) · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · <kbd>C</kbd> cámara · arrastrar gira · rueda acerca',
+     en:'<kbd>WASD</kbd> leader (where the camera looks) · <kbd>Q</kbd> hit · <kbd>E</kbd> block · <kbd>2</kbd> stone · <kbd>3</kbd> bomb aim (click throws) · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · <kbd>C</kbd> camera · drag to rotate · wheel to zoom'},
   '<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena':
     {es:'<kbd>WASD</kbd> líder · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender (mantener) · <kbd>F</kbd> agarrar · <kbd>C</kbd> llamar · <kbd>2</kbd> piedra · <kbd>3</kbd> mira de la bomba (clic tira) · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · ruedita = zoom · <kbd>F2</kbd> editor de escena',
      en:'<kbd>WASD</kbd> leader · <kbd>Q</kbd> hit · <kbd>E</kbd> block (hold) · <kbd>F</kbd> grab · <kbd>C</kbd> rally · <kbd>2</kbd> stone · <kbd>3</kbd> bomb aim (click throws) · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · wheel = zoom · <kbd>F2</kbd> scene editor'},
@@ -35210,6 +35214,8 @@ TO.feed = (function(){
         return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
           cena: d.cena === 'praca' ? 'praca' : 'rua', acao:'atacar',
           escalacao: nucleo, efetivoRival: viajaram,
+          /* a praça da sub-sede (o jogo 3D só tem a nossa em 3D) */
+          foraDeCasa: d.cidade && d.cidade !== E.torcida.mapa ? d.cidade : null,
           alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
                 tipo:'caravana', cena: d.cena === 'praca' ? 'praca' : 'rua',
                 bairro:TO.financeiro.nomeCidade(d.cidade),
@@ -44421,10 +44427,20 @@ TO.diaJogo.ponte = (function(){
          onde ela cai.
      Esc cancela. Fora do alcance o ponto é puxado pra borda do
      alcance, que aparece tracejada em volta do líder. A cena de perto
-     (3D) continua jogando direto: lá a mira em arco não faz sentido
-     de cima pra baixo.
+     do tres.js continua jogando direto.
+
+     NA CIDADE (o jogo 3D, o dono, 28/09/2026: "Adicione uma forma de
+     mirar a bomba com o mouse no 3d"): o palco que sabe achar o ponto
+     do tabuleiro debaixo do cursor (`T.pontoDaTela`) ganha a mesma
+     mira — 3 (ou o BOMBA) abre, o alvo anda no chão com o mouse, o
+     clique na cidade joga, 3 de novo joga, Esc ou o botão direito
+     cancela. Quem desenha a mira no chão é o palco (lê `ponte.mira`);
+     no pad, o arrasto do BOMBA vira pro rumo da câmera
+     (`T.deltaDaTela`).
      ======================================================= */
   let mira=null;   // {x,y, arrasto:{x0,y0,mexeu}|null}
+  /* o palco da cidade mira com o mouse (sem ele, a cena de perto joga direto) */
+  const miraNoPalco = ()=> tres && T && typeof T.pontoDaTela === 'function';
   const liderVivo = ()=> J && J.discos.find(d=>d.lider&&d.vivo);
   function pontoAdiante(l){
     const a=P.alcanceBomba*0.55;
@@ -44437,7 +44453,7 @@ TO.diaJogo.ponte = (function(){
   }
   function abrirMira(arrasto){
     if(!J) return false;
-    if(tres){ C.arremessar(J,'bomba'); return false; }
+    if(tres && !miraNoPalco()){ C.arremessar(J,'bomba'); return false; }
     if(!C.podeArremessar(J,'bomba')){
       C.aviso(J, J.bombas<=0 ? _t('Sem bomba na mochila.') : _t('Bomba recarregando.'), '#e0b040');
       return false;
@@ -44809,6 +44825,8 @@ TO.diaJogo.ponte = (function(){
       : espera
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
+      : tres && miraNoPalco()
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
       : tres
       ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
       : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
@@ -45112,7 +45130,10 @@ TO.diaJogo.ponte = (function(){
       const a=mira.arrasto, l=liderVivo(); if(!l) return;
       const dx=ev.clientX-a.x0, dy=ev.clientY-a.y0;
       if(Math.hypot(dx,dy)>10) a.mexeu=true;
-      if(a.mexeu) moverMira(l.x+dx*1.5, l.y+dy*1.5);
+      if(!a.mexeu) return;
+      /* na cidade a tela está girada com a câmera: o arrasto vira o rumo dela */
+      const q = miraNoPalco() && T.deltaDaTela ? T.deltaDaTela(dx*1.5, dy*1.5) : {x:dx*1.5, y:dy*1.5};
+      moverMira(l.x+q.x, l.y+q.y);
     });
     const soltaBomba = ev=>{
       if(ev) ev.preventDefault();
@@ -45226,6 +45247,19 @@ TO.diaJogo.ponte = (function(){
       if(k==='enter') mandarEntrarOuSair();
     });
     addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k==='e' && teclas.e && J) C.soltarDefesa(J, liderVivo()); teclas[k]=false; });
+    /* NA CIDADE, com a mira aberta, o clique na cidade joga a bomba ali —
+       antes de a cidade pegar o clique pra arrastar a câmera (a escuta é
+       na captura) — e o botão direito cancela. O que é do HUD (os
+       botões, o pad) segue com o clique dele */
+    addEventListener('pointerdown',e=>{
+      if(!mira || ED.ativo || !miraNoPalco() || !(e.target instanceof HTMLCanvasElement)) return;
+      if(e.button===2){ e.preventDefault(); e.stopImmediatePropagation(); cancelarMira(); return; }
+      if(e.button!==0) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      const q=T.pontoDaTela(e.clientX, e.clientY);
+      if(q) moverMira(q.x, q.y);
+      soltarBomba();
+    }, true);
 
     /* rodinha = zoom. `passive:false` porque sem o preventDefault a
        página rola junto e o zoom vira briga com o scroll. O passo é
@@ -45276,8 +45310,12 @@ TO.diaJogo.ponte = (function(){
     });
     addEventListener('pointermove',e=>{
       if(!ED.ativo){
-        if(e.pointerType!=='touch'){ ultimoMouse=paraCena(e); }
-        if(mira && !mira.arrasto && e.pointerType!=='touch') moverMira(ultimoMouse.x, ultimoMouse.y);
+        if(e.pointerType!=='touch'){
+          /* na cidade, o ponto do chão debaixo do cursor (no céu, nenhum) */
+          const q = miraNoPalco() ? T.pontoDaTela(e.clientX, e.clientY) : paraCena(e);
+          if(q) ultimoMouse = q;
+          if(q && mira && !mira.arrasto) moverMira(q.x, q.y);
+        }
         return;
       }
       const p=paraCena(e);
@@ -45867,6 +45905,12 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           get tres(){ return tres; }, get bonecos(){ return bonecos; },
           /* quem desenha a cena de perto (o tres.js, ou o palco do jogo 3D) */
           get renderizador(){ return tres ? T : null; },
+          /* a mira da bomba aberta ({x, y} no tabuleiro, ou null): o palco
+             da cidade desenha ela no chão; e o alcance e o raio de dano (px) */
+          get mira(){ return mira && !ED.ativo ? mira : null; },
+          get alcanceBomba(){ return P.alcanceBomba; },
+          get raioBomba(){ return C.RAIO_BOMBA || 92; },
+          abrirMira: ()=>abrirMira(null), soltarBomba, cancelarMira,
           alternarVelocidade,
           get zoom(){return zoom;},
           set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },
@@ -47011,6 +47055,11 @@ TO.icones = (function(){
     /* o feed com ícone próprio (pedido do dono, 07/09/2026): o
        megafone era um alto-falante genérico e não dizia "início" */
     {id:'feed',        rot:_t('Feed'),        ic:'feed'},
+    /* O MAPA DA CIDADE (o dono, 28/09/2026, no jogo 3D: "Preciso que o
+       mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
+       com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
+       planta da praça inteira, e o clique leva a câmera até lá */
+    {id:'mapa3d',      rot:_t('Mapa da cidade'), ic:'mapa', acao:'mapa3d', so3d:true},
     {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
     {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
     {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
@@ -47029,7 +47078,10 @@ TO.icones = (function(){
     {id:'sair',        rot:_t('Menu principal'), ic:'saida', acao:'menu'}
   ];
   /* o que um item de `acao` faz */
-  const ACAO_NAV = {menu: () => sairParaMenu()};
+  const ACAO_NAV = {menu: () => sairParaMenu(),
+                    mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); }};
+  /* o item que só existe com a cidade em 3D */
+  const temNoMenu = n => !n.so3d || !!(TO.jogo3d && TO.jogo3d.abrirMapa);
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
@@ -47104,6 +47156,7 @@ TO.icones = (function(){
   function montarMenuIcones(classe){
     const cx = el('div',{class: classe || 'feed-menu'});
     for(const n of NAV){
+      if(!temNoMenu(n)) continue;
       const b = el('button',{class:'mapa-ic', 'data-pag':n.id,
         html: IC.get(n.ic) + '<i class="ic-badge" hidden></i>'});
       b.title = n.rot;
@@ -47122,6 +47175,7 @@ TO.icones = (function(){
   function montarLateral(){
     const nav = $('lateral'); nav.innerHTML='';
     for(const n of NAV){
+      if(!temNoMenu(n)) continue;
       const b = el('button',{class:'nav-item','data-pag':n.id,
         html:`${IC.get(n.ic)}<span>${n.rot}</span><i class="ic-badge" hidden></i>`});
       b.onclick = ()=>{
@@ -55711,6 +55765,8 @@ TO.icones = (function(){
       return;
     }
     p.guerraJogada = true;
+    /* a briga é na praça DELES (o jogo fora): o jogo 3D sabe que não é na cidade dele */
+    if(r.fora) r.enc.foraDeCasa = r.cidade || true;
     abrirConfronto(e, r.enc);
   }
 
@@ -55983,7 +56039,9 @@ TO.icones = (function(){
       config: { escalacao: aptos, intencao:'atacar', bombas: p.bombas,
                 bondes, efetivoRival: deles.n, local: enc.local,
                 /* a faixa: quem é atacado expõe — sofremos, é a nossa */
-                faixaDefensor: enc.sofrido ? 'nos' : 'eles', rivalId: deles.torcida },
+                faixaDefensor: enc.sofrido ? 'nos' : 'eles', rivalId: deles.torcida,
+                /* a praça da briga, quando não é a nossa (o jogo 3D tem só a nossa em 3D) */
+                foraDeCasa: enc.foraDeCasa || null },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
     });
     /* GUERRA É BRIGA MARCADA: os dois lados vieram pra isso. As cenas
@@ -56365,6 +56423,8 @@ TO.icones = (function(){
                 fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
+                /* a praça da ação, quando não é a nossa (a sub-sede de fora) */
+                foraDeCasa: cena.foraDeCasa || null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
                   cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : SEGURANCA,
                 perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
@@ -56491,6 +56551,8 @@ TO.icones = (function(){
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
                 faixaDefensor:'nos', rivalId: atq.torcida,
+                /* a praça do ataque, quando não é a nossa (o jogo fora) */
+                foraDeCasa: atq.mapa && atq.mapa !== e.torcida.mapa ? atq.mapa : null,
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,

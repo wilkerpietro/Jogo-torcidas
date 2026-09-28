@@ -1040,7 +1040,9 @@ function arquibancada(O, fam, c) {
     /* O GRADIL da divisória no u: 2,4 m acima do degrau, da mureta da
        frente até o corredor de cima, com um poste a cada duas fileiras */
     gradil(u, h = 2.4) {
-      const M = O.m('gradil'), Mp = O.m('pintura'), POSTE = lin('#6d757b');
+      /* (as divisórias vivas: cada uma na obra dela, e o lugar na ficha) */
+      const Od = DIVISORIAS ? novaObra() : O;
+      const M = Od.m('gradil'), Mp = Od.m('pintura'), POSTE = lin('#6d757b');
       const seg = [];
       for (let k = 0; k < n; k++) seg.push([dk(k), dk(k + 1), yk(k)]);
       if (c.topo && c.topo.larg > 0) seg.push([dn, dn + c.topo.larg, yn]);
@@ -1049,6 +1051,9 @@ function arquibancada(O, fam, c) {
         M.quad(P(qa, y), P(qb, y), P(qb, y + h), P(qa, y + h), [(da - d0) / 2.5, 0], [(db - d0) / 2.5, 0], [(db - d0) / 2.5, h / 2.5], [(da - d0) / 2.5, h / 2.5]);
       }
       for (let k = 0; k <= n; k += 2) { const q = fam.ponto(Math.min(dk(k) + 0.1, dn), u); caixa(Mp, q[0], yk(Math.min(k, n - 1)), q[1], 0.08, 0.08, h, 0, POSTE); }
+      if (DIVISORIAS) DIVISORIAS.push({ tipo: 'arquibancada', u, h, obra: Od, fam,
+        /* o pé da grade, degrau por degrau, da frente pro alto: [x, y, z] */
+        pe: seg.map(([da, db, y]) => { const qa = fam.ponto(da, u), qb = fam.ponto(db, u); return [[qa[0], y, qa[1]], [qb[0], y, qb[1]]]; }) });
     },
     /* A FAIXA da torcida pendurada na mureta da frente, virada pro campo */
     faixa(grupo, u, larg, texto, cor1, cor2) {
@@ -1490,10 +1495,12 @@ function corredor(O, S, fam, c) {
     const po = em(c.portas, um); comBarra(B, i, po ? Math.min(y1, y0 + po.h) : y0, -1, cz);
     if (z && S) { const o = [P(a0, y0 + 0.04), P(a1, y0 + 0.04), P(b1, y0 + 0.04), P(b0, y0 + 0.04)]; S.m('setor:' + z.cor).quad(o[0], o[1], o[2], o[3], [0, 0], [1, 0], [1, 1], [0, 1], BRANCO, CIMA); }
   }
-  /* o gradil que separa as torcidas, atravessado do chão ao teto */
+  /* o gradil que separa as torcidas, atravessado do chão ao teto (as
+     divisórias vivas: cada uma na obra dela, e o lugar na ficha) */
   for (const u of c.gradis || []) {
-    const qa = fam.ponto(c.dI, u), qb = fam.ponto(c.dF, u);
-    gradilReto(O, qa[0], qa[1], qb[0], qb[1], y0, c.h - 0.05);
+    const qa = fam.ponto(c.dI, u), qb = fam.ponto(c.dF, u), Od = DIVISORIAS ? novaObra() : O;
+    gradilReto(Od, qa[0], qa[1], qb[0], qb[1], y0, c.h - 0.05);
+    if (DIVISORIAS) DIVISORIAS.push({ tipo: 'corredor', u, h: c.h - 0.05, obra: Od, fam, a: [qa[0], y0, qa[1]], b: [qb[0], y0, qb[1]], dI: c.dI, dF: c.dF, y: y0 });
   }
   /* a placa pendurada no teto na frente de cada boca: VOMITÓRIO (a do serviço é da PM; a porta da escada
      interna diz a dela), e na frente de cada porta da parede de fora que tem placa */
@@ -1856,6 +1863,9 @@ function camadaDosSetores(S, G, setores, tamRotulo, comVagas) {
       if (s.faixaNoAnel !== false && larg > 4) A.faixa(G, um, larg, NOME_SETOR[s.id].toUpperCase(), cor, s.id[0] === 'm' ? '#0d3b1e' : '#4a0d0d');
     }
     const x = { id: s.id, nome: NOME_SETOR[s.id], cor, lugares: A.lugares(s.ua, s.ub, k0, k1), vomitorios: A.vomsEm(s.ua, s.ub), onde: s.onde };
+    /* O PEDAÇO DE ARQUIBANCADA do setor (o dia de jogo: a frente onde a
+       faixa pendura, as fileiras, o u de cada lugar) — fora da ficha */
+    Object.defineProperty(x, 'pecas', { value: [{ A, ua: s.ua, ub: s.ub, k0, k1 }], enumerable: false, writable: true });
     if (comVagas) {
       Object.defineProperty(x, 'vagas', { value: A.vagas(s.ua, s.ub, k0, k1), enumerable: false, writable: true });
       Object.defineProperty(x, 'centro', { value: A.ponto(um, km, 0), enumerable: false, writable: true });
@@ -1868,9 +1878,11 @@ function camadaDosSetores(S, G, setores, tamRotulo, comVagas) {
     const y = soma[x.id];
     if (!y) {
       soma[x.id] = { ...x };
+      Object.defineProperty(soma[x.id], 'pecas', { value: x.pecas.slice(), enumerable: false, writable: true });
       if (comVagas) for (const k of ['vagas', 'centro']) Object.defineProperty(soma[x.id], k, { value: x[k], enumerable: false, writable: true });
       continue;
     }
+    y.pecas.push(...x.pecas);
     if (comVagas) { if (x.lugares > y.lugares) y.centro = x.centro; y.vagas = y.vagas.concat(x.vagas); }
     y.lugares += x.lugares; y.vomitorios += x.vomitorios;
   }
@@ -2674,6 +2686,16 @@ export function plantaDoEstadio(id) {
   }
   return { formas, linhas, terreno: { ...T } };
 }
+/* AS DIVISÓRIAS VIVAS (o dia de jogo, 28/09/2026: "uma torcida pode optar
+   por atacar outra dentro do estádio, tentando quebrar a grade pra acessar
+   o rival seja pela arquibancada ou pelos corredores"): com
+   `opc.divisorias`, o gradil que separa as torcidas — o da arquibancada,
+   da mureta da frente ao corredor de cima, e o do corredor de baixo, do
+   chão ao teto — sai de cada divisória num grupo à parte
+   (`divisoria:<i>`, que quem mostra pode tirar quando ela cai), e a ficha
+   leva onde cada uma fica (`info.geo.divisorias`: o tipo, o u, a altura
+   e o pé da grade) */
+let DIVISORIAS = null;
 /* monta um dos três: o grupo em metros (com a camada `setores` dentro) e a
    ficha. `opc.nome`: o nome do letreiro (sem ele, o de fábrica); `opc.mapa`:
    pro mapa da cidade — sem a camada dos setores e sem o chão de fora do
@@ -2687,8 +2709,19 @@ export function montarEstadioJogo(id, opc = {}) {
   const grupo = new THREE.Group(), setores = new THREE.Group();
   grupo.name = E.nome; setores.name = 'setores';
   const O = novaObra(), S = novaObra(), letreiro = nomeDoLetreiro(opc.nome || E.letreiro);
-  const info = E.montar(O, S, setores, { nome: letreiro, mapa: !!opc.mapa, vagas: !!opc.vagas });
+  DIVISORIAS = opc.divisorias ? [] : null;
+  let info, divs = null;
+  try { info = E.montar(O, S, setores, { nome: letreiro, mapa: !!opc.mapa, vagas: !!opc.vagas }); }
+  finally { divs = DIVISORIAS; DIVISORIAS = null; }
   O.fechar(grupo, !opc.mapa);
+  if (divs) {
+    divs.forEach((d, i) => {
+      const g = new THREE.Group(); g.name = 'divisoria:' + i; g.userData.divisoria = i;
+      d.obra.fechar(g, !opc.mapa); delete d.obra;
+      grupo.add(g);
+    });
+    Object.defineProperty(info, 'geo', { value: { divisorias: divs }, enumerable: false, writable: true });
+  }
   if (!opc.mapa) { S.fechar(setores, false); grupo.add(setores); }
   let tri = 0, malhas = 0;
   grupo.traverse(o => { if (o.isMesh && o.parent === grupo) { tri += o.geometry.index ? o.geometry.index.count / 3 : o.geometry.attributes.position.count / 3; malhas++; } });
