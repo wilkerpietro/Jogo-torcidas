@@ -21,6 +21,7 @@
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
 import { CASCA } from './jogo_casca.js';
+import { criarVida, horaTxt } from './vida3d.js';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -55,6 +56,28 @@ export async function montarJogo(api) {
 function ligar(api) {
   const E = () => TO.estado && TO.estado.E;
   const jogo = document.getElementById('jogo');
+  /* A VIDA DA PRAÇA (27/09/2026, vida3d.js): a sede com gente, o
+     presidente e o recado em balão, a reunião na sala, o povo na rua, os
+     bares e o dia passando. O relógio do jogo pergunta a ela quanto
+     esperar (`TO.jogo3d.ritmo`), e a reunião abre na sala da sede
+     (`TO.jogo3d.palcoDe`) */
+  const vida = criarVida(api);
+  TO.jogo3d = {
+    get ritmo() { return vida.ligada ? vida.ritmo : null; },
+    palcoDe: (local, cfg) => vida.palcoDe(local, cfg),
+    vida
+  };
+  /* o relógio do dia na barra de cima, do lado da data */
+  const relogio = document.createElement('div');
+  relogio.id = 'j3dHora';
+  relogio.title = 'A hora do dia na praça: o dia passa até acontecer alguma coisa';
+  let horaVista = '';
+  const pintarHora = () => {
+    const quando = document.querySelector('.feed-barra .quando-txt');
+    if (quando && relogio.parentElement !== quando.parentElement) quando.parentElement.insertBefore(relogio, quando);
+    const t = horaTxt(vida.relogio.minuto);
+    if (t !== horaVista) { horaVista = t; relogio.textContent = t; }
+  };
 
   /* o letreiro da praça atrás do menu */
   const letreiro = document.createElement('div');
@@ -105,16 +128,35 @@ function ligar(api) {
     const porta = api.sedeDe(e.torcida.id);
     if (porta) C.voarPara(porta.x, porta.y, 70 * api.M, 0.78, Math.atan2(porta.fx, porta.fy) + Math.PI);
   };
+  /* A PRAÇA DO JOGO COM VIDA: os bonecos carregados, a vida ligada na
+     torcida do jogador e a câmera na sala do presidente (sem sede na
+     praça, na calçada da porta) */
+  const ligarVida = async () => {
+    const e = E(), C = api.cenario;
+    if (!e || !C || !C.vida) return;
+    try { await C.vida.chamarPovo(); } catch (err) { console.error('jogo 3D: os bonecos não carregaram', err); }
+    if (!vida.ligar(e.torcida.id)) { irPraSede(); return; }
+    /* a porta da sede, dali até a sala: a primeira vista é a sede de fora */
+    if (vida.sede) {
+      const c = vida.sede.caixa, porta = api.sedeDe(e.torcida.id);
+      const az = porta ? Math.atan2(porta.fx, porta.fy) : C.orb.az;
+      C.olhar((c.x0 + c.x1) / 2, (c.z0 + c.z1) / 2, 40 * api.M, 0.9, az);
+      setTimeout(() => vida.irPraSala(), 400);
+    } else irPraSede();
+  };
   const conferirPraca = () => {
     const e = E();
     if (!e || !e.torcida) return;
     const nome = nomeDaPraca(e.torcida.mapa);
-    if (!nome || nome === pracaDoJogo) return;
+    /* a sede da torcida do jogador é a do save (o nível dela), não a da tabela */
+    const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
+    if (!nome || (nome === pracaDoJogo && !mudouNivel)) return;
     pracaDoJogo = nome;
     const C = api.cenario;
     const vez = pedida = Symbol();
-    const ir = C && C.praca === nome ? Promise.resolve() : api.abrirPraca(nome);
-    Promise.resolve(ir).then(() => { if (vez === pedida) { pintarLetreiro(); irPraSede(); } }, () => {});
+    vida.desligar();
+    const ir = C && C.praca === nome && !mudouNivel ? Promise.resolve() : api.abrirPraca(nome, mudouNivel);
+    Promise.resolve(ir).then(() => { if (vez === pedida) { pintarLetreiro(); ligarVida(); } }, () => {});
   };
 
   /* dentro da partida (a casca do jogo à mostra) ou no menu */
@@ -122,8 +164,12 @@ function ligar(api) {
     const emJogo = !!jogo && !jogo.classList.contains('oculto');
     document.body.classList.toggle('j3d-em-jogo', emJogo);
     if (emJogo) conferirPraca();
+    else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }
     pintarBotao();
   };
+  /* o quadro do relógio (a hora da barra) */
+  const laco = () => { if (vida.ligada) pintarHora(); requestAnimationFrame(laco); };
+  requestAnimationFrame(laco);
   if (jogo) new MutationObserver(conferirTela).observe(jogo, { attributes: true, attributeFilter: ['class'] });
   TO.estado.aoMudar(() => { conferirTela(); });
   /* o feed que chega com o relógio (a fila que pinga) não passa pelo aoMudar */
@@ -134,8 +180,11 @@ function ligar(api) {
   const conferirCobertura = () => {
     const C = api.cenario;
     if (!C || !C.pausar) return;
+    /* a cena que roda na cidade (a reunião na sala da sede) não cobre nada:
+       o palco dela é transparente */
+    const palco = document.body.classList.contains('palco3d');
     const cobre = document.body.classList.contains('com-painel') ||
-      [...document.querySelectorAll('.tela-cheia:not(.oculto)')].some(el => el.id !== 'telaMenu');
+      [...document.querySelectorAll('.tela-cheia:not(.oculto)')].some(el => el.id !== 'telaMenu' && !(palco && el.id === 'telaDiaJogo'));
     C.pausar(cobre);
   };
   new MutationObserver(conferirCobertura).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });

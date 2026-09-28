@@ -291,6 +291,39 @@ function naParede(ctx, Q, lado, a0, a1, y0, y1, prof, spec, marca) {
 }
 
 /* =======================================================
+   OS LUGARES DE GENTE (a sede com vida, 27/09/2026)
+   O dono: "Preciso que a sede da torcida selecionada tenha vida, com
+   atividades dentro dela acontecendo, e o presidente fica sentado na
+   sua sala enquanto as mensagens chegam em formato de balão na cadeira
+   de alguém que senta na frente dele. A reunião da diretoria agora
+   acontece dentro da sede 3D mesmo, numa sala que tem mesas e
+   cadeiras."
+   Cada móvel que recebe gente marca aqui ONDE o corpo fica (`s`, `t`
+   do meio dele, no referencial do cômodo), pra onde ele OLHA ('+t' é
+   pro fundo do cômodo), se é SENTADO e a altura do assento (m, do
+   chão da rua), e o GESTO do que ele faz ali. `montarSede` devolve a
+   lista no mundo (`lugares`): é dela que o jogo 3D senta o presidente,
+   o recado na cadeira da frente, a diretoria na mesa de reunião e o
+   povo de cada cômodo. O lugar é só marca: não desenha nem bloqueia.
+   ======================================================= */
+const ASSENTO = { cadeira: PISO + 0.44, escritorio: PISO + 0.5, banqueta: PISO + 0.79, banco: PISO + 0.45,
+                  sofa: PISO + 0.42, cama: PISO + 0.43 };
+function lugar(ctx, Q, tipo, s, t, olha, o = {}) {
+  if (!ctx.lugares) return;
+  const [x, z] = Q.pt(s, t), [nx, nz] = VEC[Q.d(olha)];
+  const l = Object.assign({ tipo, comodo: Q.c.tipo, x, z, nx, nz, sentado: false, assento: 0 }, o);
+  /* `conversa`: pra onde ele vira quando tem alguém no recado ('-s'...) */
+  if (typeof l.conversa === 'string') l.conversa = VEC[Q.d(l.conversa)];
+  ctx.lugares.push(l);
+}
+/* olhando pra um ponto do cômodo (o meio da mesa, a TV): o rumo sai do vetor */
+function lugarPara(ctx, Q, tipo, s, t, ps, pt, o = {}) {
+  if (!ctx.lugares) return;
+  const [x, z] = Q.pt(s, t), [ax, az] = Q.pt(ps, pt), l = Math.hypot(ax - x, az - z) || 1;
+  ctx.lugares.push(Object.assign({ tipo, comodo: Q.c.tipo, x, z, nx: (ax - x) / l, nz: (az - z) / l, sentado: false, assento: 0 }, o));
+}
+
+/* =======================================================
    A MOBÍLIA — tudo em metros, no referencial do cômodo
    ======================================================= */
 function mesa(ctx, Q, s0, s1, t0, t1, h, tinta, perna = tinta) {
@@ -746,9 +779,14 @@ const MOBILIA = {
     computador(ctx, Q, m0 + 0.45, D - 1.25, PISO + 0.75, '+t');
     papeis(ctx, Q, m1 - 0.35, D - 1.1, PISO + 0.75);
     cadeiraEscritorio(ctx, Q, (m0 + m1) / 2, D - 0.36, '+t');
+    lugar(ctx, Q, 'secretario', (m0 + m1) / 2, D - 0.36, '-t', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita' });
     const c0 = Math.max(m0 + 0.35, ponta + 1.0 + 0.21);
     cadeira(ctx, Q, c0, D - 1.87, '-t', '#2d62c8');
-    if (m1 - 0.35 - c0 > 0.6) cadeira(ctx, Q, m1 - 0.35, D - 1.87, '-t', '#2d62c8');
+    lugar(ctx, Q, 'espera', c0, D - 1.87, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'celular' });
+    if (m1 - 0.35 - c0 > 0.6) {
+      cadeira(ctx, Q, m1 - 0.35, D - 1.87, '-t', '#2d62c8');
+      lugar(ctx, Q, 'espera', m1 - 0.35, D - 1.87, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+    }
     arquivo(ctx, Q, 0.08, 0.58, D - 0.55, D - 0.08, '-t');
     estanteAco(ctx, Q, 0.05, 0.45, 1.75, Math.min(D - 0.7, 2.75), 1.9, 5, (i, a0, a1, b0, b1, y) => {
       const cores = ['#1f4fb0', '#c8342b', '#1f7a3a', '#e0a52a', '#5a5f66'];
@@ -773,7 +811,12 @@ const MOBILIA = {
     engradados(ctx, Q, 0.52, 0.2, 2);
     engradados(ctx, Q, 0.08, 0.56, 2);
     /* do lado do salão, as banquetas no balcão */
-    for (let s = p1 + 0.3; s <= W - 0.2; s += 0.5) banqueta(ctx, Q, s, -ctx.PAR_M - 0.35, ctx.c1);
+    for (let s = p1 + 0.3; s <= W - 0.2; s += 0.5) {
+      banqueta(ctx, Q, s, -ctx.PAR_M - 0.35, ctx.c1);
+      lugar(ctx, Q, 'balcao', s, -ctx.PAR_M - 0.35, '+t', { sentado: true, assento: ASSENTO.banqueta, gesto: 'bebe' });
+    }
+    /* quem serve: atrás do balcão, de frente pra janela */
+    lugar(ctx, Q, 'barman', (p1 + W) / 2, 1.0, '-t', { gesto: 'balcao' });
   },
   banheiro(ctx, Q) {
     const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
@@ -815,6 +858,7 @@ const MOBILIA = {
     /* uma estante de cada lado da janela, e outra na parede da direita */
     const jw = 0.3;
     estanteAco(ctx, Q, 0.05, Math.max(0.9, W / 2 - jw - 0.25), D - 0.5, D - 0.05, 2.0, 4, itens);
+    lugar(ctx, Q, 'estante', (0.05 + Math.max(0.9, W / 2 - jw - 0.25)) / 2 + 0.2, D - 0.88, '+t', { gesto: 'arruma' });
     estanteAco(ctx, Q, Math.min(W - 0.9, W / 2 + jw + 0.25), W - 0.05, D - 0.5, D - 0.05, 2.0, 4, itens);
     estanteAco(ctx, Q, W - 0.5, W - 0.05, 1.8, D - 0.6, 2.0, 4, itens);
     for (const [s, t, r, h, c] of [[0.35, 1.9, 0.28, 0.55, ctx.c1], [0.95, 1.95, 0.25, 0.5, ctx.c3], [0.4, 2.45, 0.22, 0.45, ctx.c2]]) surdo(ctx, s, t, PISO, r, h, c, Q);
@@ -837,11 +881,17 @@ const MOBILIA = {
     /* a sinuca na ponta oeste, a mesa comprida na ponta leste */
     const sw = Math.min(2.4, W * 0.14);
     sinuca(ctx, Q, 0.9, 0.9 + sw, D / 2 - 0.65, D / 2 + 0.65);
+    /* os dois da sinuca: um na tacada, na lateral de cá; o outro
+       esperando a vez, na cabeceira */
+    lugar(ctx, Q, 'sinuca', 0.9 + sw * 0.62, D / 2 - 0.65 - 0.42, '+t', { gesto: 'sinuca' });
+    lugarPara(ctx, Q, 'sinuca', 0.9 + sw + 0.45, D / 2 + 0.25, 0.9 + sw / 2, D / 2, { gesto: 'escuta' });
     const m1 = W - 0.9, m0 = m1 - Math.min(3.4, W * 0.18), mt0 = D / 2 - 0.4, mt1 = D / 2 + 0.4;
     mesa(ctx, Q, m0, m1, mt0, mt1, 0.74, BRANCO, '#c9cbcc');
     for (let s = m0 + 0.35; s <= m1 - 0.3; s += 0.62) {
       cadeira(ctx, Q, s, mt0 - 0.38, '-t', BRANCO);
       cadeira(ctx, Q, s, mt1 + 0.38, '+t', BRANCO);
+      lugar(ctx, Q, 'mesa', s, mt0 - 0.38, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+      lugar(ctx, Q, 'mesa', s, mt1 + 0.38, '-t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
     }
     /* a bateria no pé da faixa, na parede do fundo, entre duas portas */
     const vaoFundo = ctx.maiorVao(portasB, 0.6, W - 0.6);
@@ -852,6 +902,8 @@ const MOBILIA = {
         const s = fm + ds, t = D - 0.55;
         for (const [a, b] of [[-1, -1], [1, -1], [0, 1]]) qcaixa(ctx, Q, s + a * r * 0.7 - 0.012, s + a * r * 0.7 + 0.012, t + b * r * 0.7 - 0.012, t + b * r * 0.7 + 0.012, PISO, PISO + 0.35, { todas: lisa('#3a3d40'), base: null });
         surdo(ctx, s, t, PISO + 0.35, r, h, cores[k], Q);
+        /* o ritmista na frente de cada surdo, de frente pra faixa */
+        lugar(ctx, Q, 'bateria', s, t - r - 0.34, '+t', { gesto: 'surdo' });
       });
       ctx.faixa('+t', fm, PISO + 1.45, Math.min(4.6, f1 - f0 - 0.4), 0.85, Q);
     }
@@ -861,17 +913,37 @@ const MOBILIA = {
     if (vaoTV) tv(ctx, Q, '-t', (vaoTV[0] + vaoTV[1]) / 2, PISO + 1.75, 1.2);
     banco(ctx, Q, 0.05, 0.5, 0.9, Math.min(D - 0.9, 3.1));
     banco(ctx, Q, W - 0.5, W - 0.05, 0.9, Math.min(D - 0.9, 3.1));
+    /* quem senta nos bancos das pontas olha pro salão */
+    for (const t of [1.3, Math.min(D - 1.2, 2.4)]) {
+      lugar(ctx, Q, 'banco', 0.3, t, '+s', { sentado: true, assento: ASSENTO.banco, gesto: t < 2 ? 'celular' : 'conversa' });
+      lugar(ctx, Q, 'banco', W - 0.3, t, '-s', { sentado: true, assento: ASSENTO.banco, gesto: t < 2 ? 'conversa' : 'bebe' });
+    }
     pilhaCadeiras(ctx, Q, W - 0.4, D - 0.4, 6, BRANCO, '+t');
     pilhaCadeiras(ctx, Q, W - 0.9, D - 0.4, 4, BRANCO, '+t');
-    /* o pebolim entre a sinuca e o corredor */
-    pebolim(ctx, Q, Math.min(W * 0.3, 0.9 + sw + 1.1), D / 2 - 0.36, ctx.c1, ctx.c2);
+    /* o pebolim entre a sinuca e o corredor, um de cada lado */
+    const pbS = Math.min(W * 0.3, 0.9 + sw + 1.1), pbT = D / 2 - 0.36;
+    pebolim(ctx, Q, pbS, pbT, ctx.c1, ctx.c2);
+    lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT - 0.42, '+t', { gesto: 'pebolim' });
+    lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT + 0.72 + 0.42, '-t', { gesto: 'pebolim' });
+    /* a roda de conversa no meio do salão, em pé, entre o pebolim e a
+       mesa comprida (onde a folha de nenhuma porta chega) */
+    const rs = (pbS + 1.2 + m0) / 2, rt = D / 2;
+    if (m0 - (pbS + 1.2) > 2.4)
+      for (let k = 0; k < 4; k++) {
+        const a = k * Math.PI / 2 + 0.4, s = rs + Math.cos(a) * 0.62, t = rt + Math.sin(a) * 0.55;
+        lugarPara(ctx, Q, 'roda', s, t, rs, rt, { gesto: 'festa' });
+      }
     /* a lojinha da torcida no outro vão da parede do fundo: a mesa com a
        camisa dobrada e a arara com três penduradas */
     const vaos = [];
     let a = 0.6;
     for (const [p0, p1] of portasB.slice().sort((p, q) => p[0] - q[0]).concat([[W - 0.6, W - 0.6]])) { if (p0 - a > 2.2) vaos.push([a + 0.25, p0 - 0.25]); a = p1; }
     const loja = vaos.filter(v => !vaoFundo || Math.abs((v[0] + v[1]) / 2 - (vaoFundo[0] + vaoFundo[1]) / 2) > 1).sort((p, q) => (q[1] - q[0]) - (p[1] - p[0]))[0];
-    if (loja) lojinha(ctx, Q, (loja[0] + loja[1]) / 2, D);
+    if (loja) {
+      const ls = (loja[0] + loja[1]) / 2;
+      lojinha(ctx, Q, ls, D);
+      lugar(ctx, Q, 'loja', ls - 0.3, D - 1.05, '+t', { gesto: 'arruma' });
+    }
     /* a bandeira pregada na parede da frente, no vão entre duas salas do lado leste */
     const vaoBand = ctx.maiorVao(portasF.filter(p => p[0] > W / 2), W / 2, W - 0.5);
     if (vaoBand) bandeiraParede(ctx, Q, '-t', (vaoBand[0] + vaoBand[1]) / 2 - 1.1, (vaoBand[0] + vaoBand[1]) / 2 + 1.1, PISO + 1.45, PISO + 2.45, ctx.cores);
@@ -880,6 +952,9 @@ const MOBILIA = {
     const { W, D } = Q, [p0, p1] = livreDaPorta(Q), c = ctx.cores;
     beliche(ctx, Q, 0.08, 2.08, D - 0.98, D - 0.06, '-s', ctx.c1, ctx.c2);
     beliche(ctx, Q, W - 2.08, W - 0.08, D - 0.98, D - 0.06, '+s', ctx.c2, ctx.c1);
+    /* sentado na beira da cama de baixo, o pé no chão */
+    lugar(ctx, Q, 'cama', 1.2, D - 0.8, '-t', { sentado: true, assento: ASSENTO.cama, gesto: 'celular' });
+    lugar(ctx, Q, 'cama', W - 1.2, D - 0.8, '-t', { sentado: true, assento: ASSENTO.cama, gesto: 'conversa' });
     beliche(ctx, Q, 0.06, 1.0, 0.1, Math.min(2.1, D - 1.1), '-t', ctx.c3, ctx.c1);
     armarioAco(ctx, Q, 2.3, Math.min(W - 2.3, 4.1), D - 0.5, D - 0.05, 1.8, '-t', 4);
     colchao(ctx, Q, W - 0.98, W - 0.1, 0.2, 2.1, PISO, '+t', ctx.c3);
@@ -903,6 +978,11 @@ const MOBILIA = {
     cadeiraEscritorio(ctx, Q, (ms0 + ms1) / 2, D - 0.31, '+t');
     cadeira(ctx, Q, ms0 + 0.4, mt0 - 0.36, '-t', '#2b2b2e');
     cadeira(ctx, Q, ms1 - 0.4, mt0 - 0.36, '-t', '#2b2b2e');
+    /* O PRESIDENTE na cadeira dele, de frente pra porta, e o RECADO: quem
+       traz a mensagem senta numa das duas cadeiras da frente da mesa */
+    lugar(ctx, Q, 'presidente', (ms0 + ms1) / 2, D - 0.31, '-t', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita' });
+    lugar(ctx, Q, 'recado', ms0 + 0.4, mt0 - 0.36, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+    lugar(ctx, Q, 'recado', ms1 - 0.4, mt0 - 0.36, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'escuta' });
     const e1 = mt0 - 0.1;
     qcaixa(ctx, Q, 0.05, 0.45, 0.15, e1, PISO, PISO + 1.9, { todas: lisa(MADEIRA), base: null }, MADEIRA);
     for (let i = 0; i < 4; i++) {
@@ -915,12 +995,22 @@ const MOBILIA = {
     const rs0 = p1 + 0.55, rs1 = Math.min(W - 0.75, rs0 + 0.9), rt0 = 0.75, rt1 = Math.min(D - 0.75, rt0 + 1.7);
     if (rs1 - rs0 > 0.6) {
       mesa(ctx, Q, rs0, rs1, rt0, rt1, 0.75, MADEIRA, '#3a2618');
+      /* A MESA DE REUNIÃO: os lugares da diretoria, cada um olhando pro
+         meio da mesa; a cabeceira do fundo é a do presidente, e do lado
+         dela, em pé, é onde ele fala */
+      const mm = [(rs0 + rs1) / 2, (rt0 + rt1) / 2], sent = { sentado: true, assento: ASSENTO.cadeira, gesto: 'escuta' };
       for (let t = rt0 + 0.4; t <= rt1 - 0.35; t += 0.75) {
         cadeira(ctx, Q, rs0 - 0.36, t, '-s', '#2b2b2e');
         cadeira(ctx, Q, rs1 + 0.36, t, '+s', '#2b2b2e');
+        lugarPara(ctx, Q, 'reuniao', rs0 - 0.36, t, mm[0], t, sent);
+        lugarPara(ctx, Q, 'reuniao', rs1 + 0.36, t, mm[0], t, sent);
       }
       cadeira(ctx, Q, (rs0 + rs1) / 2, rt1 + 0.36, '+t', '#2b2b2e');
       cadeira(ctx, Q, (rs0 + rs1) / 2, rt0 - 0.36, '-t', '#2b2b2e');
+      lugar(ctx, Q, 'reuniao', (rs0 + rs1) / 2, rt0 - 0.36, '+t', sent);
+      lugar(ctx, Q, 'reuniaoCabeca', (rs0 + rs1) / 2, rt1 + 0.36, '-t', sent);
+      lugarPara(ctx, Q, 'reuniaoFala', rs1 + 0.2, rt1 + 0.5, mm[0], mm[1], {});
+      lugar(ctx, Q, 'reuniaoMesa', mm[0], mm[1], '+t', {});
       papeis(ctx, Q, (rs0 + rs1) / 2, (rt0 + rt1) / 2, PISO + 0.75);
       tv(ctx, Q, '+s', (rt0 + rt1) / 2, PISO + 1.45, 1.1);
     }
@@ -937,6 +1027,7 @@ const MOBILIA = {
     };
     for (const [a, b] of [[0.08, 1.28], [1.36, 2.56], [W - 2.56, W - 1.36], [W - 1.28, W - 0.08]])
       estanteAco(ctx, Q, a, b, D - 0.5, D - 0.05, 2.0, 4, itens);
+    lugar(ctx, Q, 'estante', 0.7, D - 0.88, '+t', { gesto: 'arruma' });
     /* O ARMÁRIO DA PLANTA (é ele que bloqueia a caminhada): a 8 da parede
        do lado, junto da parede do salão, com os troféus velhos em cima */
     const ha = u2(mm(2.00));
@@ -967,13 +1058,27 @@ const MOBILIA = {
     if (Lg > 0.3) ctx.G.esticar(ctx.G.plano([ax, PISO, az], [(bx - ax) / Lg, 0, (bz - az) / Lg], [0, 1, 0]), 0, Lg, 0, 2.2, 'preta');
     tanque(ctx, Q, 1.85, 2.5, D - 0.58, D - 0.05);
     churrasqueira(ctx, Q, 2.9, 4.2, D - 0.7, D - 0.05, '-t');
+    lugar(ctx, Q, 'churrasco', 3.55, D - 1.08, '+t', { gesto: 'churrasco' });
     const ms = Math.min(W - 0.9, 3.05), mt = D - 2.3;
     mesa(ctx, Q, ms - 0.45, ms + 0.45, mt - 0.45, mt + 0.45, 0.72, BRANCO, '#d4d6d6');
     cadeira(ctx, Q, ms - 0.72, mt, '-s', BRANCO);
     cadeira(ctx, Q, ms + 0.72, mt, '+s', BRANCO);
     cadeira(ctx, Q, ms, mt + 0.72, '+t', BRANCO);
+    const sent = g => ({ sentado: true, assento: ASSENTO.cadeira, gesto: g });
+    lugar(ctx, Q, 'mesa', ms - 0.72, mt, '+s', sent('bebe'));
+    lugar(ctx, Q, 'mesa', ms + 0.72, mt, '-s', sent('conversa'));
+    lugar(ctx, Q, 'mesa', ms, mt + 0.72, '-t', sent('escuta'));
     varal(ctx, Q, 2.6, 1.0, 2.9);
-    banco(ctx, Q, Math.min(W - 2.4, 4.5), Math.min(W - 0.3, 6.6), D - 0.55, D - 0.12);
+    const bs0 = Math.min(W - 2.4, 4.5), bs1 = Math.min(W - 0.3, 6.6);
+    banco(ctx, Q, bs0, bs1, D - 0.55, D - 0.12);
+    for (let s = bs0 + 0.4; s <= bs1 - 0.35; s += 0.7)
+      lugar(ctx, Q, 'banco', s, D - 0.33, '-t', { sentado: true, assento: ASSENTO.banco, gesto: s < bs0 + 1 ? 'celular' : 'conversa' });
+    /* a roda em pé no meio do pátio, longe do caminho do portão */
+    const rs = Math.min(W - 1.6, 4.9), rt = D * 0.42;
+    for (let k = 0; k < 4; k++) {
+      const a = k * Math.PI / 2 + 0.3;
+      lugarPara(ctx, Q, 'roda', rs + Math.cos(a) * 0.6, rt + Math.sin(a) * 0.6, rs, rt, { gesto: 'festa' });
+    }
     for (const [s, t, h] of [[W - 0.55, 0.35, 0.45], [W - 0.95, 0.4, 0.34], [W - 0.62, 0.85, 0.3]]) caixaPapelao(ctx, Q, s, s + h, t, t + h, PISO, h);
   },
   patrimonio(ctx, Q) {
@@ -989,6 +1094,7 @@ const MOBILIA = {
     });
     surdo(ctx, 1.05, 2.35, PISO, 0.3, 0.6, ctx.c1, Q);
     surdo(ctx, 1.05, 2.35, PISO + 0.6, 0.26, 0.5, ctx.c3, Q);
+    lugar(ctx, Q, 'estante', W / 2, D - u2(2 + mm(0.45)) - 0.45, '+t', { gesto: 'arruma' });
     surdo(ctx, 1.75, 2.75, PISO, 0.26, 0.5, ctx.c2, Q);
     for (let k = 0; k < 3; k++) qcaixa(ctx, Q, W - 0.2 - k * 0.05, W - 0.17 - k * 0.05, 0.1, 0.13, PISO, PISO + 2.2, { todas: lisa('#caa77a'), base: null });
     caixaPapelao(ctx, Q, W - 0.7, W - 0.2, 0.5, 1.0, PISO, 0.48);
@@ -1004,6 +1110,14 @@ const MOBILIA = {
     cadeiraEscritorio(ctx, Q, W - 1.1, D - 1.2, '-s');
     armario(ctx, Q, W - u2(2 + mm(0.45)), W - u2(2), u2(4), u2(4 + mm(1.20)), u2(mm(1.80)), '-s', MADEIRA, 2);
     sofa(ctx, Q, 0.4, 2.2, D - 0.85, D - 0.08, '+t', '#2f3a4a');
+    /* O PRESIDENTE de frente pro computador, e a CADEIRA DO RECADO atrás
+       dele: quem traz a mensagem senta ali, e ele gira a cadeira pra
+       ouvir (`conversa`: o rumo de quando tem gente no recado) */
+    const rs = W - 2.05, rt = D - 1.3;
+    cadeira(ctx, Q, rs, rt, '-s', '#2b2b2e');
+    lugar(ctx, Q, 'presidente', W - 1.1, D - 1.2, '+s', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita', conversa: '-s' });
+    lugar(ctx, Q, 'recado', rs, rt, '+s', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+    lugar(ctx, Q, 'sofa', 0.85, D - 0.5, '-t', { sentado: true, assento: ASSENTO.sofa, gesto: 'celular' });
     mural(ctx, Q, '-s', 1.34, 2.34, PISO + 1.4, PISO + 2.1);
     bandeiraParede(ctx, Q, '-s', 2.55, Math.min(D - 0.3, 4.1), PISO + 1.3, PISO + 2.05, ctx.cores);
     arInterno(ctx, Q, '+s', D - 0.95, PISO + 2.15);
@@ -1272,6 +1386,7 @@ export function montarSede(sede, destino = {}, opc = {}) {
   const marcas = [], placas = [];
   const ctx = {
     B, G, T: Tt, P, u, aberta, cores: cor, c1: cor.cor, c2: cor.cor2, c3: cor.cor3, paredes, comodos, portas, PAR_M: u(P.PAR),
+    lugares: [],
     vivas: opc.portasVivas && aberta && !so2d ? [] : null,
     regiao(x, z) {
       for (const c of comodos) if (dentro(c, x, z)) return c;
@@ -1466,8 +1581,26 @@ export function montarSede(sede, destino = {}, opc = {}) {
              cor: cor.cor, cor2: cor.cor2, cor3: cor.cor3, img: T0.escudo || null, sigla: T0.sigla || '',
              corTexto: legivelSobre(cor.cor2, [cor.cor, cor.cor3]) };
   })() : null;
+  /* OS LUGARES no mundo: o meio do corpo (x, z), o rumo (o do three.js:
+     atan2 do vetor pra onde ele olha), o chão (`chao`, em unidade de
+     mundo) e o assento (m); `conversa`, quando tem, vira rumo também */
+  const rumoDe = (nx, nz) => { const [dx, dz] = dirMundo(nx, nz); return Math.atan2(dx, dz); };
+  const lugares = ctx.lugares.map((l, i) => {
+    const [x, z] = noMundo(l.x, l.z);
+    const r = { ...l, i, x, z, rumo: rumoDe(l.nx, l.nz), chao: y0 + PISO * M };
+    delete r.nx; delete r.nz;
+    if (l.conversa) r.rumoConversa = rumoDe(l.conversa[0], l.conversa[1]);
+    delete r.conversa;
+    return r;
+  });
+  /* o meio de cada cômodo no mundo (a câmera enquadra por ele) */
+  const comodosMundo = comodos.map(c => {
+    const [ax, az] = noMundo(c.x0, c.z0), [bx, bz] = noMundo(c.x1, c.z1);
+    return { nome: c.nome, tipo: c.tipo, larg: c.x1 - c.x0, fundo: c.z1 - c.z0,
+             x0: Math.min(ax, bx), x1: Math.max(ax, bx), z0: Math.min(az, bz), z1: Math.max(az, bz) };
+  });
   return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), teto: tetoMundo, bandeira,
-           comodos: comodos.map(c => ({ nome: c.nome, tipo: c.tipo, larg: c.x1 - c.x0, fundo: c.z1 - c.z0 })) };
+           comodos: comodosMundo, lugares, nivel: P.N };
 }
 /* a cor que se lê sobre a cor da torcida: a primeira das dela que se
    separa do fundo; se nenhuma servir, preto ou branco */

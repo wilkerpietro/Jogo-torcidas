@@ -485,10 +485,14 @@ export function criarCenario(P) {
   cena.background = CEU.clone();
   cena.fog = new THREE.Fog(CEU.clone(), 1000, 100000);
   const cam = new THREE.PerspectiveCamera(42, 1, 1, 100000);
-  cena.add(new THREE.HemisphereLight(0xe3edf5, 0x6d695d, 1.25));
+  const hemi = new THREE.HemisphereLight(0xe3edf5, 0x6d695d, 1.25);
+  cena.add(hemi);
   const sol = new THREE.DirectionalLight(0xfff1da, 2.2);
   cena.add(sol, sol.target);
+  /* o rumo do sol da vez (a hora do dia do jogo 3D mexe nele; sem jogo, o de sempre) */
+  const solAgora = SOL.clone();
   /* o céu: a cúpula clara no horizonte (a cor da névoa) e azul no alto */
+  let ceuDaHora = null;
   {
     const g = new THREE.SphereGeometry(1, 32, 16), cor = [], p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { const t = clamp(p.getY(i) * 1.6, 0, 1); const c = CEU.clone().lerp(ZENITE, t); cor.push(c.r, c.g, c.b); }
@@ -496,6 +500,7 @@ export function criarCenario(P) {
     const ceu = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
     ceu.renderOrder = -10; ceu.frustumCulled = false; ceu.name = 'ceu';
     cena.add(ceu);
+    ceuDaHora = ceu;
     ceu.onBeforeRender = () => { ceu.position.copy(cam.position); ceu.scale.setScalar(cam.far * 0.9); ceu.updateMatrixWorld(); };
   }
   /* o que é do mapa da vez (o chão, o mato, o forno, a seleção): sai inteiro na troca */
@@ -539,8 +544,11 @@ export function criarCenario(P) {
       const de = ape.de;
       orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M + ape.yv * k, de.z + (ape.z - de.z) * k);
     } else {
-      orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
-      orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
+      /* (o palco à parte, longe da praça — a estrada da caravana —, solta a câmera da área) */
+      if (!(palco && palco.livre)) {
+        orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
+        orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
+      }
       orb.alvo.y = OLHO * M + orb.alto;
     }
     const c = orb.alvo, ce = Math.cos(orb.el), d = orb.dist;
@@ -559,8 +567,58 @@ export function criarCenario(P) {
     cena.fog.far = mis(d * 5 + 40000, longe * 3);
     /* o sol: só a direção conta (luz sem sombra) */
     sol.target.position.set(c.x, 0, c.z);
-    sol.position.copy(sol.target.position).addScaledVector(SOL, 1000);
+    sol.position.copy(sol.target.position).addScaledVector(solAgora, 1000);
     sol.target.updateMatrixWorld();
+  }
+
+  /* ======================================================
+     A HORA DO DIA (o jogo 3D, 27/09/2026): "O dia passa até ocorrer
+     alguma coisa". O sol nasce no leste às 6 h, passa alto pelo norte
+     e se põe no oeste às 18 h; a luz esquenta de manhã cedo e no fim da
+     tarde, e a noite é azul-escura com luar (clara o bastante pra ver a
+     rua). O céu, a névoa e a cúpula vão junto. Sem hora (a ferramenta,
+     a planta), fica o sol de sempre.
+     ====================================================== */
+  const COR_DIA = { ceu: new THREE.Color('#cfdde6'), hemiC: new THREE.Color(0xe3edf5), hemiT: new THREE.Color(0x6d695d), sol: new THREE.Color(0xfff1da) };
+  const HORA_TONS = [
+    /* hora, céu (horizonte), tinta da cúpula, luz do céu, chão, força do céu, sol, força do sol */
+    [0,    '#1f2a3e', '#2c3a55', '#8b9cc8', '#2a2833', 0.95, '#9fb4e0', 0.7],
+    [5,    '#243049', '#33425f', '#93a4cc', '#2c2a34', 0.95, '#a6badf', 0.7],
+    [6,    '#e7b995', '#c9b3b0', '#d8c2b8', '#4e443c', 0.85, '#ffb37a', 1.1],
+    [7.5,  '#d6dfe4', '#e8eef2', '#dfe8ef', '#645f54', 1.15, '#ffe2bd', 1.9],
+    [9,    '#cfdde6', '#ffffff', '#e3edf5', '#6d695d', 1.25, '#fff1da', 2.2],
+    [15.5, '#cfdde6', '#ffffff', '#e3edf5', '#6d695d', 1.25, '#fff1da', 2.2],
+    [17,   '#e3cfb3', '#f0dcc8', '#ecd9c4', '#6a5a48', 1.1,  '#ffc98e', 1.8],
+    [18,   '#e08a5c', '#b88a86', '#dcb09a', '#4f4038', 1.0,  '#ff9a5c', 1.3],
+    [19,   '#34405e', '#414d70', '#95a0c8', '#2e2a34', 1.0,  '#aab8e0', 0.75],
+    [24,   '#1f2a3e', '#2c3a55', '#8b9cc8', '#2a2833', 0.95, '#9fb4e0', 0.7]
+  ].map(([h, a, b, c, d, e, f, g]) => ({ h, ceu: new THREE.Color(a), cupula: new THREE.Color(b), hemiC: new THREE.Color(c), hemiT: new THREE.Color(d), fh: e, sol: new THREE.Color(f), fs: g }));
+  let horaDoDia = null;
+  function luzDaHora(h) {
+    horaDoDia = h == null ? null : ((+h % 24) + 24) % 24;
+    if (horaDoDia == null) {
+      solAgora.copy(SOL);
+      hemi.color.copy(COR_DIA.hemiC); hemi.groundColor.copy(COR_DIA.hemiT); hemi.intensity = 1.25;
+      sol.color.copy(COR_DIA.sol); sol.intensity = 2.2;
+      cena.background.copy(COR_DIA.ceu); cena.fog.color.copy(COR_DIA.ceu);
+      if (ceuDaHora) ceuDaHora.material.color.set('#ffffff');
+      pedir();
+      return;
+    }
+    const x = horaDoDia;
+    let i = 0; while (i < HORA_TONS.length - 2 && HORA_TONS[i + 1].h <= x) i++;
+    const a = HORA_TONS[i], b = HORA_TONS[i + 1], k = clamp((x - a.h) / Math.max(1e-6, b.h - a.h), 0, 1);
+    const mis = (ca, cb, o) => o.copy(ca).lerp(cb, k);
+    mis(a.ceu, b.ceu, cena.background); cena.fog.color.copy(cena.background);
+    if (ceuDaHora) mis(a.cupula, b.cupula, ceuDaHora.material.color);
+    mis(a.hemiC, b.hemiC, hemi.color); mis(a.hemiT, b.hemiT, hemi.groundColor);
+    hemi.intensity = a.fh + (b.fh - a.fh) * k;
+    mis(a.sol, b.sol, sol.color); sol.intensity = a.fs + (b.fs - a.fs) * k;
+    /* o rumo: de dia, o arco leste → norte → oeste; de noite, a lua alta no norte */
+    const f = (x - 6) / 12;
+    if (f > 0 && f < 1) solAgora.set(Math.cos(Math.PI * f), Math.max(0.12, Math.sin(Math.PI * f)), -0.36).normalize();
+    else solAgora.set(-0.3, 0.8, -0.5).normalize();
+    pedir();
   }
 
   /* pedir um quadro: desenha só quando algo muda */
@@ -578,21 +636,29 @@ export function criarCenario(P) {
   let pausado = false;
   function pausar(v) { v = !!v; if (v === pausado) return; pausado = v; teclas.clear(); if (!v) { ultimo = 0; pedir(); } }
   const medidor = { desde: 0, quadros: 0, cpu: 0 };
+  /* quem ancora alguma coisa na tela a cada quadro, com a câmera já no lugar (os balões do jogo 3D) */
+  const depoisDaCamera = new Set();
   function quadro(t) {
     pedido = 0;
     /* o tempo de verdade (a máquina lenta pula quadro, mas chega na hora) */
     const dt = ultimo ? Math.min(0.2, (t - ultimo) / 1000) : 0.016;
     ultimo = t;
     if (ape) andarAPe(dt);
+    /* o palco que tem câmera (a briga do jogo 3D): ela vai atrás do líder,
+       e o teclado é do boneco dele */
+    else if (palco && palco.seguir) { try { palco.seguir(dt, orb); } catch (e) { console.error('cenário, a câmera do palco:', e); } }
     else if (teclas.size) andar(dt);
     animarPortas(dt);
     if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
     if (dia && dia.aberto) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
+    if (vida && vida.quadro) { try { vida.quadro(dt); } catch (e) { console.error('cenário, a vida:', e); vida = null; } }
+    if (palco && palco.quadro) { try { palco.quadro(dt); } catch (e) { console.error('cenário, o palco:', e); } }
     if (voo) voo(dt);
     posicionar();
     atualizarCorte();
     if (dia && dia.aberto) dia.ajustarRotulos();
     atualizarPovo(dt);
+    for (const f of depoisDaCamera) { try { f(dt); } catch (e) { console.error('cenário, depois da câmera:', e); } }
     const t0 = performance.now();
     rend.render(cena, cam);
     medir(t, performance.now() - t0);
@@ -653,6 +719,8 @@ export function criarCenario(P) {
   const TECLAS = new Set(['w', 'a', 's', 'd', 'q', 'e', 'r', 'f', 't', '+', '=', '-', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift']);
   window.addEventListener('keydown', ev => {
     if (raiz.hidden || pausado || ev.target.closest && ev.target.closest('select, input, textarea')) return;
+    /* na briga do jogo 3D o WASD (e o Q, o E, o R, o F) é do líder */
+    if (palco && palco.seguir) return;
     const k = ev.key.toLowerCase();
     if (k === 'escape') { fecharFicha(); return; }
     if (!TECLAS.has(k) || ev.ctrlKey || ev.metaKey || ev.altKey) return;
@@ -1061,7 +1129,7 @@ void main() {
       /* a folha da porta que abre e fecha fica viva (não junta nem risca: o
          cenário gira ela e bate nela na hora); a bandeira da sede também
          (ela tremula) */
-      grupo.traverse(o => { if (o.isMesh && (o.userData.porta || o.userData.bandeira)) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
+      grupo.traverse(o => { if ((o.isMesh || o.isLineSegments) && (o.userData.porta || o.userData.bandeira || o.userData.peca)) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
       /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
       let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
       for (const p of pedacos) for (let k = 0; k < p.n; k++) {
@@ -1070,7 +1138,7 @@ void main() {
       }
       /* o que a coisa trouxe e é só dela (o decalque, a geometria) sai */
       grupo.traverse(o => {
-        if (o.userData.porta || o.userData.bandeira) return;
+        if (o.userData.porta || o.userData.bandeira || o.userData.peca) return;
         if (o.geometry) o.geometry.dispose();
         if (o.material && o.material.map && o.material.map.isCanvasTexture && o.material.map.wrapS !== THREE.RepeatWrapping) { o.material.map.dispose(); o.material.dispose(); }
       });
@@ -1741,12 +1809,25 @@ void main() {
       mod.cfg.afinarCelulas = 72;
       /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
          tem altura: a do pé que se vê (no metrô, embaixo da rua) */
-      const PE = { x: 0, y: 0, z: 0 };
+      const PE = { x: 0, y: 0, z: 0 }, PQ = { x: 0, y: 0, z: 0 };
       povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86),
         /* o pé: o do boneco a pé é o da conta dele; o do dia de jogo vem no disco (`alt`) */
-        pos: (x, y, d) => { PE.x = x; PE.y = d && d.alt != null ? d.alt : ape ? ape.yv : 0; PE.z = y; return PE; },
+        pos: (x, y, d) => {
+          if (palco && palco.pos && !(d && d.mundo)) return palco.pos(x, y, d, PE);
+          PE.x = x; PE.y = d && d.alt != null ? d.alt : ape ? ape.yv : 0; PE.z = y; return PE;
+        },
+        /* o rumo do disco do palco pode ser outro (a cadeira da sala da reunião) */
+        rumo: d => palco && palco.rumo && !(d && d.mundo) ? palco.rumo(d) : d.rumo,
+        /* um rumo do tabuleiro (vx, vy) no mundo: a pedra que sai da mão, o PM parado (o palco pode estar girado) */
+        rumoDoTabuleiro: (vx, vy) => palco && palco.rumoDe ? palco.rumoDe(vx, vy) : Math.atan2(vx, vy),
+        /* unidades do mundo por px do tabuleiro (a caravana é menor que 1:1): o raio da bomba no chão */
+        escalaDoTabuleiro: () => palco && palco.escala || 1,
         /* quem está fora da tela não é animado (o dia de jogo tem uns 150) */
-        noQuadro: (x, z, d) => { esferaPovo.center.set(x, (d && d.alt != null ? d.alt : 0) + 0.9 * M, z); return quadroPovo.intersectsSphere(esferaPovo); },
+        noQuadro: (x, z, d) => {
+          if (palco && palco.pos && !(d && d.mundo)) { const q = palco.pos(x, z, d, PQ); esferaPovo.center.set(q.x, q.y + 0.9 * M, q.z); }
+          else esferaPovo.center.set(x, (d && d.alt != null ? d.alt : 0) + 0.9 * M, z);
+          return quadroPovo.intersectsSphere(esferaPovo);
+        },
         /* a câmera: o boneco pequeno na tela usa o nível de longe (bonecos3.js) */
         camera: cam, alturaTela: () => altoTela || tela.clientHeight });
       return povo;
@@ -1763,14 +1844,40 @@ void main() {
   const quadroPovo = new THREE.Frustum(), mPovo = new THREE.Matrix4(), esferaPovo = new THREE.Sphere(new THREE.Vector3(), 1.4 * M);
   /* o jogo do quadro: o boneco a pé e os do dia de jogo, num objeto só (a paleta do jogo guarda a conta por objeto) */
   const jogoDoDia = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true };
+  /* o jogo do quadro da VIDA DA PRAÇA e o do PALCO (o jogo 3D) */
+  const jogoDaVida = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true, semAnel: true };
+  const jogoDoPalco = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true };
+  /* quem dá os bonecos: a vida ({ J, quadro(dt) }) e o palco ({ J, pos(x, y, d, PE), comVida, quadro(dt) }) */
+  let vida = null, palco = null, corteFixo = null;
   const custoDia = { povo: 0, dia: 0 };
   function atualizarPovo(dt) {
     const comDia = dia && dia.aberto;
-    if (!povo || !(ape || comDia)) return;
+    if (!povo || !(ape || comDia || vida || palco)) return;
     const t0 = performance.now();
     cam.updateMatrixWorld();
     mPovo.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
     quadroPovo.setFromProjectionMatrix(mPovo);
+    /* O PALCO (a cena do jogo desenhada aqui: a reunião na sede, a briga na
+       casa de veraneio): os discos dele, e a vida em volta se ele pedir */
+    if (palco) {
+      const P0 = palco.J;
+      Object.assign(jogoDoPalco, { t: P0.t, policiais: P0.policiais || [], projeteis: P0.projeteis || [], grades: P0.grades || [],
+                                   paz: P0.paz, reuniao: P0.reuniao, falante: P0.falante, bondes_: P0.bondes_, rivalInfo: P0.rivalInfo,
+                                   semAnel: !!palco.semAnel });
+      jogoDoPalco.discos = palco.comVida && vida ? P0.discos.concat(vida.J.discos) : P0.discos;
+      povo.atualizar(jogoDoPalco, dt);
+      custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
+      return;
+    }
+    /* A VIDA DA PRAÇA (o jogo 3D): a sede, a rua, os bares — e quem anda a pé no meio */
+    if (vida && !comDia) {
+      const V = vida.J;
+      jogoDaVida.t = V.t; jogoDaVida.falante = V.falante || null; jogoDaVida.reuniao = !!V.reuniao;
+      jogoDaVida.discos = ape && eu ? [eu].concat(V.discos) : V.discos;
+      povo.atualizar(jogoDaVida, dt);
+      custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
+      return;
+    }
     if (!comDia) { povo.atualizar(jogo, dt); return; }
     jogoDoDia.t = dia.J.t;
     jogoDoDia.discos = ape && eu ? [eu].concat(dia.J.discos) : dia.J.discos;
@@ -1877,6 +1984,19 @@ void main() {
   function montarPortas(vivos) {
     portas = [];
     for (const m of vivos) {
+      /* a PEÇA VIVA do kit de detalhe (a festa da casa de praia): entra
+         inteira, com o material dela (o forno achataria a sombra macia e o
+         vidro), e no corte da câmera; não barra quem anda a pé */
+      if (m.userData.peca) {
+        if (!m.material.userData.cortavel) { cortavel(m.material, false); m.material.userData.cortavel = true; m.material.needsUpdate = true; }
+        m.updateMatrixWorld(true);
+        const w = m.matrixWorld.clone();
+        m.removeFromParent();
+        w.decompose(m.position, m.quaternion, m.scale);
+        m.matrixAutoUpdate = true;
+        doMapa.add(m);
+        continue;
+      }
       /* a bandeira: só entra no mapa (e no corte), com o mundo dela */
       if (m.userData.bandeira) {
         m.material = cortavel(m.material, false);
@@ -2030,7 +2150,7 @@ void main() {
     for (const k of ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']) teclas.delete(k);
     soltarJoy();
     CORTE.uCorte.value = 0;
-    if (povo && jogo && !(dia && dia.aberto)) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
+    if (povo && jogo && !(dia && dia.aberto) && !vida && !palco) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
     if (voar) { orb.alvo.set(x, 0, z); voarPara(x, z, 70 * M, 0.62, orb.az); }
     pedir();
   }
@@ -2158,7 +2278,30 @@ void main() {
   /* O CORTE, a cada quadro: do alto da cabeça dele até a câmera (tudo
      contado do pé que se vê) */
   function atualizarCorte() {
-    if (!ape) { CORTE.uCorte.value = 0; return; }
+    if (!ape) {
+      /* A BRIGA NA CIDADE (o palco do jogo 3D que segue o líder): entre a
+         câmera e ele, o que passa da cabeça fica ralo — a copa do coqueiro,
+         o beiral —, num cone mais largo que o de a pé (a briga é um bolo
+         de gente em volta dele); o prédio que o palco abriu segue aberto */
+      const pc = palco && palco.alvoDoCorte ? palco.alvoDoCorte() : null;
+      if (pc) {
+        CORTE.uCorte.value = 1;
+        CORTE.uCorteA.value.set(pc.x, pc.y + 1.7 * M, pc.z);
+        CORTE.uCorteB.value.copy(cam.position);
+        CORTE.uCorteR.value = 6 * M;
+        CORTE.uCorteAcima.value = pc.y + CORTE_M.acima * M;
+        CORTE.uCorteId.value = corteFixo ? corteFixo.id : 0; CORTE.uCorteY.value = corteFixo ? corteFixo.y : 1e9;
+        CORTE.uSubY.value = 1e9;
+        return;
+      }
+      /* SEM NINGUÉM A PÉ, o prédio que o jogo abriu (a sede do jogador, no
+         jogo 3D) perde o que passa da altura dele: de cima se vê dentro */
+      if (corteFixo) {
+        CORTE.uCorte.value = 1; CORTE.uCorteId.value = corteFixo.id; CORTE.uCorteY.value = corteFixo.y;
+        CORTE.uCorteAcima.value = 1e9; CORTE.uSubY.value = 1e9;
+      } else CORTE.uCorte.value = 0;
+      return;
+    }
     const y = ape.yv;
     CORTE.uCorte.value = 1;
     CORTE.uCorteA.value.set(ape.x, y + 1.7 * M, ape.z);
@@ -2303,7 +2446,63 @@ void main() {
   gerente.onLoad = (...a) => { if (antesLoad) antesLoad(...a); pedir(); };
   gerente.onProgress = (...a) => { if (antesProg) antesProg(...a); pedir(); };
 
-  return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; },
+  /* ======================================================
+     O QUE O JOGO 3D PEDE DO CENÁRIO (27/09/2026): a vida da praça
+     ====================================================== */
+  const vPro = new THREE.Vector3();
+  const vidaApi = {
+    /* os bonecos (o modelo do jogo), carregados uma vez */
+    chamarPovo: () => chamarBoneco(),
+    get povo() { return povo; },
+    /* a vida: { J: { t, discos, falante, reuniao }, quadro(dt) } (null tira) */
+    set vida(v) { vida = v || null; if (!vida && povo && !palco && !(dia && dia.aberto)) limparBonecos(); pedir(); },
+    get vida() { return vida; },
+    /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
+    set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
+    get palco() { return palco; },
+    /* o prédio em (x, z) sem o que passa de `alto` m do chão (null: todos inteiros) */
+    abrirPredio(x, z, alto = 2.2) {
+      if (x == null || !grade) { corteFixo = null; pedir(); return 0; }
+      const id = grade.tetoEm(x, z) || grade.dentroDe(x, z);
+      corteFixo = id ? { id, y: (piso ? piso.chao(x, z, 0) : 0) + alto * M } : null;
+      pedir();
+      return id;
+    },
+    /* a hora do dia (h, de 0 a 24; null volta o sol de sempre) */
+    hora: h => luzDaHora(h),
+    get horaDoDia() { return horaDoDia; },
+    /* o chão da rua em (x, z) (a calçada, o piso da sede) */
+    chao: (x, z) => piso ? piso.chao(x, z, 0) : 0,
+    /* onde o corpo cabe (a grade do passo), com o raio em m */
+    cabe: (x, z, r = 0.25) => !!grade && grade.cabe(x, z, r * M),
+    get grade() { return grade; },
+    /* o ponto do mundo na tela: px CSS a partir do canto da tela do
+       cenário, e se está na frente da câmera */
+    projetar(x, y, z, o = {}) {
+      vPro.set(x, y, z).project(cam);
+      const r = tela.getBoundingClientRect();
+      o.x = r.left + (vPro.x + 1) / 2 * r.width; o.y = r.top + (1 - vPro.y) / 2 * r.height;
+      o.frente = vPro.z > -1 && vPro.z < 1;
+      return o;
+    },
+    /* quem ancora coisa na tela a cada quadro (os balões) */
+    aCadaQuadro(f) { depoisDaCamera.add(f); return () => depoisDaCamera.delete(f); },
+    get camera() { return cam; },
+    /* a cena (o jogo 3D põe nela o que é dele: as cadeiras a mais da reunião) */
+    get cena() { return doMapa; },
+    /* o CORTE num material de fora (o palco à parte da caravana, a festa):
+       o que passa da cabeça do boneco, entre ele e a câmera, fica ralo */
+    cortavel: m => cortavel(m, false),
+    /* abre (ou fecha) as portas vivas cuja dobradiça cai no retângulo */
+    abrirPortas(r, abrir = true) {
+      let n = 0;
+      for (const q of portas) if (q.hx > r.x0 && q.hx < r.x1 && q.hz > r.z0 && q.hz < r.z1) { q.alvo = abrir ? q.ang : 0; n++; }
+      pedir();
+      return n;
+    }
+  };
+
+  return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi,
            /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
            get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
            /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */

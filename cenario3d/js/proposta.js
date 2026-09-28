@@ -195,6 +195,10 @@ const TERRENOS_GRANDE = [
 ];
 /* a sede não fica a menos disto de um estádio (da quadra dele); o bar da torcida também não */
 export const LONGE_DO_ESTADIO_M = 50;
+/* A RUA DE VERANEIO (m): os lotes do lado de cá (20 × 30, sete, a casa da
+   festa no do meio), a rua de areia, os do outro lado (16 × 20) e a folga
+   nas pontas — as mesmas medidas de js/diajogo/veraneio3d.js */
+export const VERANEIO_M = { lote: 20, fundo: 30, loteSul: 16, fundoSul: 20, rua: 8, n: 7, margem: 4 };
 /* as quadras altas que ganham rua no meio (um corte de norte a sul) */
 const PARTIDAS = ['-3,2', '-1,2', '0,2'];
 /* os pares que viram uma quadra só, por cima da rua (de oeste pra leste) */
@@ -696,6 +700,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
      sai o ACESSO: a rua reta, de duas pistas, até a primeira rua da
      cidade (quando a rua dele já não é a da cidade). */
   const acessos = [];
+  let veraneio = null;
   if (opc.terrenos) {
     const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
     const bm = avenidas.find(a => a.id === 'beiramar'), lBeira = bm ? bm.l : 76;
@@ -831,6 +836,56 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                          dx: cx - P.CX, dy: cy - P.CY, naGrade: false, modelo: T.modelo, portao1: p, acesso, acessosDeLado: extras });
       postos.push(q); linhas = new Map();
     });
+    /* A RUA DE VERANEIO (o jogo 3D, 27/09/2026): "crie uma rua de casas de
+       veraneio em pontas do mapa pra criar a cena de ataque à festa na
+       casa com piscina". Uma rua de areia com as casas de muro dos dois
+       lados (js/diajogo/veraneio3d.js: do lado de cá os lotes de 20 × 30 m,
+       e no meio deles a casa da festa; do outro, os de 16 × 20), numa ponta
+       do mapa: a vaga de estádio que a praça não usa (mato) ou, se todas
+       estão ocupadas, em volta de uma delas — o mesmo lugar livre que o
+       estádio procura, com a rua reta de acesso da ponta dela até a
+       primeira rua da cidade */
+    {
+      const V = VERANEIO_M, LV = (V.n * V.lote + 2 * V.margem) * M, PV = (V.fundo + V.rua + V.fundoSul + 4) * M;
+      const meioRua = (2 + V.fundo + V.rua / 2) * M;
+      const pe = (r, f) => f === 'o' ? [r.x1, r.y0 + meioRua] : f === 'l' ? [r.x0, r.y0 + meioRua] : f === 'n' ? [r.x0 + meioRua, r.y1] : [r.x0 + meioRua, r.y0];
+      const candidatas = cfg.estadios.slice(nVagas).map(v => ({ v, vazia: true })).concat(VAGAS.map(v => ({ v, vazia: false })));
+      let melhor = null;
+      for (const { v, vazia } of candidatas) {
+        const hz = v.fora === 'o' || v.fora === 'l';
+        const r = procurar(v, hz ? LV : PV, hz ? PV : LV, pe);
+        if (r) { r.custo += vazia ? 0 : 3000; if (!melhor || r.custo < melhor.custo) melhor = r; }
+      }
+      if (melhor) {
+        const r = melhor.r, f = melhor.fora, hz = f === 'o' || f === 'l', lotes = [];
+        let ruaV;
+        if (hz) {
+          /* a rua de oeste a leste: os lotes grandes em cima (a frente pro sul), os pequenos embaixo */
+          const yN0 = r.y0 + 2 * M, yR0 = yN0 + V.fundo * M, yS0 = yR0 + V.rua * M, x0 = r.x0 + V.margem * M;
+          for (let k = 0; k < V.n; k++) lotes.push({ x0: x0 + k * V.lote * M, x1: x0 + (k + 1) * V.lote * M, y0: yN0, y1: yR0, frente: 's', veraneio: k === (V.n >> 1) ? 'festa' : 'norte', k });
+          const nS = Math.floor((r.x1 - r.x0 - 2 * V.margem * M) / (V.loteSul * M)), xs0 = (r.x0 + r.x1) / 2 - nS * V.loteSul * M / 2;
+          for (let k = 0; k < nS; k++) lotes.push({ x0: xs0 + k * V.loteSul * M, x1: xs0 + (k + 1) * V.loteSul * M, y0: yS0, y1: yS0 + V.fundoSul * M, frente: 'n', veraneio: 'sul', k });
+          ruaV = { x0: r.x0, x1: r.x1, y0: yR0, y1: yS0 };
+        } else {
+          /* a rua de norte a sul: os lotes grandes no oeste (a frente pro leste), os pequenos no leste */
+          const xW0 = r.x0 + 2 * M, xR0 = xW0 + V.fundo * M, xE0 = xR0 + V.rua * M, y0 = r.y0 + V.margem * M;
+          for (let k = 0; k < V.n; k++) lotes.push({ x0: xW0, x1: xR0, y0: y0 + k * V.lote * M, y1: y0 + (k + 1) * V.lote * M, frente: 'l', veraneio: k === (V.n >> 1) ? 'festa' : 'norte', k });
+          const nS = Math.floor((r.y1 - r.y0 - 2 * V.margem * M) / (V.loteSul * M)), ys0 = (r.y0 + r.y1) / 2 - nS * V.loteSul * M / 2;
+          for (let k = 0; k < nS; k++) lotes.push({ x0: xE0, x1: xE0 + V.fundoSul * M, y0: ys0 + k * V.loteSul * M, y1: ys0 + (k + 1) * V.loteSul * M, frente: 'o', veraneio: 'sul', k });
+          ruaV = { x0: xR0, x1: xE0, y0: r.y0, y1: r.y1 };
+        }
+        /* o acesso: a rua reta, de uma pista pra cada lado, da ponta da rua de areia até a cidade */
+        const p0 = pe(r, f), d = DIR[f], rt = reta(p0, f);
+        let acesso = null;
+        if (rt) {
+          acesso = { id: 'acessoVeraneio', l: RUA, reta: true, acesso: true, veraneio: true,
+                     pontos: [[p0[0] - d[0] * RUA / 2, p0[1] - d[1] * RUA / 2], [rt.ini[0] + d[0] * (rt.s + RUA / 2), rt.ini[1] + d[1] * (rt.s + RUA / 2)]] };
+          acessos.push(acesso);
+        }
+        veraneio = { area: r, rua: ruaV, lotes, fora: f, acesso, festa: lotes.find(l => l.veraneio === 'festa'), nome: 'Rua de veraneio' };
+        postos.push(r); linhas = new Map();
+      }
+    }
     avenidas.push(...acessos);
   }
   /* LONGE DO ESTÁDIO: a quadra de cada estádio da praça; a sede e o bar da
@@ -1573,7 +1628,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     /* os estádios, na ordem das vagas (o 1º é o principal); o quarteirão do
        estádio de hoje, que virou casa */
     estadios: copias, estadioDeHoje,
-    quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, condominios, substitui, terrenos,
+    quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, condominios, substitui, terrenos, veraneio,
     bares, baresHoje: BARES_HOJE, sedesHojeSaem, estadiosAqui, lotesExtra, lotesTirados, espacosSede, metro,
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB, colX, linY: linYx,
     contagem: { quadras: quadras.length, residenciais: residenciais.length, equipamentos: quadras.length - residenciais.length,

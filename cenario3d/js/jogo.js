@@ -30894,6 +30894,26 @@ TO.feed = (function(){
     passo('placar',         ()=>placarDoDia(E, ctx.jogos || []));
     passo('almanaque',      ()=>almanaqueDoDia(E));
     passo('dica',           ()=>dicaDeHoje(E));
+    passo('hora do dia',    ()=>horasEmOrdem(E));
+  }
+
+  /* A HORA DO DIA EM ORDEM (o jogo 3D, 27/09/2026): a `hora` de cada
+     mensagem era um sorteio por tipo (8h a 22h), fora da ordem da fila —
+     e ninguém lia. No jogo 3D o dia passa na tela e a mensagem cai na hora
+     dela: as do dia ganham horas crescentes, das 8h às 21h30, na ordem em
+     que vão cair (a da fila), cada uma num pedaço do dia, com um tanto de
+     acaso dentro dele. O jogo de feed segue igual. */
+  function horasEmOrdem(E){
+    const hoje = E.data.absoluto || 0;
+    const doDia = (E.feedFila || []).filter(m => m.quando && m.quando.abs === hoje);
+    const n = doDia.length;
+    if(!n) return;
+    const ini = 8*60, fim = 21*60 + 30, pedaco = (fim - ini) / n;
+    doDia.forEach((m, i) => {
+      const h = TO.mapa.hash(`${hoje}|${m.kind || 'msg'}|${i}`);
+      const min = Math.round(ini + pedaco*(i + 0.15 + 0.7*((h % 1000)/1000)));
+      m.hora = `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
+    });
   }
 
   /* =======================================================
@@ -41539,7 +41559,7 @@ TO.diaJogo.combate = (function(){
       const lado = q === 'nos' ? meu : outro;
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
-      const chave = D.id === 'bar' ? 'bar' : D.id === 'casa-piscina' ? 'casa' : 'praca';
+      const chave = D.id === 'bar' ? 'bar' : /^casa-piscina/.test(D.id) ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){
@@ -43942,6 +43962,9 @@ TO.diaJogo.ponte = (function(){
      sendo a de cima, e um canvas WebGL transparente por cima dela põe
      boneco no lugar do disco. */
   let tres=false, T=null, dtQuadro=0.016, bonecos=false;
+  /* o renderizador veio de quem montou (o palco na cidade, no jogo 3D):
+     quando a cena fecha, ele sai junto (`parar`) */
+  let externo=false;
   let aoTerminar=null;
   /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
      isso pra continuar o relógio da rua e mandar pra cá o bonde que
@@ -43967,8 +43990,15 @@ TO.diaJogo.ponte = (function(){
     let local = (opc.config||{}).local;
     tres = !!opc.tres || /-3d$/.test(String(local||''));
     if(tres){
-      T = TO.diaJogo.tres;
+      /* O PALCO NA CIDADE (jogo 3D, 27/09/2026): quem monta pode trazer o
+         próprio renderizador — a reunião na sala da sede, a briga na casa
+         de veraneio —, com o mesmo contrato do tres.js (montar, desenhar,
+         vetorDoTeclado, trocarCamera, limparDeCima) */
+      if(externo && T && T !== opc.renderizador && T.limparDeCima){ try{ T.limparDeCima(); }catch(e){ registrarErro('palco', e); } }
+      T = opc.renderizador || TO.diaJogo.tres;
+      externo = !!opc.renderizador;
       if(!T || !T.montar(cv, opc.sobre || document.getElementById('djSobre'))){
+        externo = false;
         /* sem WebGL: a mesma briga, vista de cima */
         tres = false; T = null;
         local = String(local||'').replace(/-3d$/, '');
@@ -44094,7 +44124,15 @@ TO.diaJogo.ponte = (function(){
      buffer WebGL cresceu até estourar o iPhone. Quem esconde o palco
      chama `parar`; e o próprio laço se desliga se a briga acabou e o
      canvas saiu da tela. `montar` religa. */
-  function parar(){ rodando=false; }
+  function parar(){
+    rodando=false;
+    /* O PALCO NA CIDADE SAI COM A CENA (jogo 3D, 28/09/2026): a reunião
+       na sala da sede ficava montada depois de encerrada — a vida da sede
+       parada e os discos da reunião na cidade. Quem fecha a cena chama
+       `parar`; o palco desmonta (a câmera e a vida voltam) */
+    if(externo && T && T.limparDeCima){ try{ T.limparDeCima(); }catch(e){ registrarErro('palco', e); } }
+    externo=false;
+  }
   function cenaSumiu(){
     return !!(J && J.fase==='fim' && cv && !cv.getClientRects().length);
   }
@@ -45827,6 +45865,8 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
 
   return {montar, parar, novaNoite, encerrar, alternarEditor, gerarArquivo,
           get tres(){ return tres; }, get bonecos(){ return bonecos; },
+          /* quem desenha a cena de perto (o tres.js, ou o palco do jogo 3D) */
+          get renderizador(){ return tres ? T : null; },
           alternarVelocidade,
           get zoom(){return zoom;},
           set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },
@@ -55028,18 +55068,27 @@ TO.icones = (function(){
     const rc = cv.getBoundingClientRect(); if(!rc.width || !cv.width) return;
     const k = rc.width / cv.width, W = rc.width, H = rc.height;
     const {s, ox, oy} = P.escala;
+    /* NA SALA DA SEDE EM 3D (o jogo 3D) quem sabe onde o boneco está na
+       tela é a câmera da cidade: o renderizador projeta a cabeça dele */
+    const proj = P.tres && P.renderizador && P.renderizador.projetar;
+    if(proj) forcar = true;
     /* só refaz quando a câmera, a caixa ou o presidente (o único que
        anda) mudaram: medir o DOM a cada quadro à toa é reflow à toa */
     const lider = J.discos.find(d=>d.lider) || {x:0, y:0};
-    const chave = [s, ox, oy, W, H, Math.round(lider.x), Math.round(lider.y)].join('|');
-    if(!forcar && chave === R.chavePos) return;
+    const chave = proj ? proj.chave() : [s, ox, oy, W, H, Math.round(lider.x), Math.round(lider.y)].join('|');
+    if(chave === R.chavePos && (!forcar || proj)) return;
     R.chavePos = chave;
     for(const b of R.camada.children){
       const g = R.grupos.get(b.dataset.chave); if(!g) continue;
       const d = g.disco;
       const alt = d.sentado ? ALTURA_BALAO.sentado : ALTURA_BALAO.emPe;
       const aberto = b.classList.contains('aberto');
-      const px = (d.x*s + ox)*k + (aberto ? 0 : (g.vaga||0)*30), py = ((d.y - alt)*s + oy)*k, pyBaixo = ((d.y + alt)*s + oy)*k;
+      let px = (d.x*s + ox)*k + (aberto ? 0 : (g.vaga||0)*30), py = ((d.y - alt)*s + oy)*k, pyBaixo = ((d.y + alt)*s + oy)*k;
+      if(proj){
+        const q = proj(d);
+        if(!q){ b.style.visibility = 'hidden'; continue; }
+        px = q.x - rc.left + (aberto ? 0 : (g.vaga||0)*30); py = q.cima - rc.top; pyBaixo = q.baixo - rc.top;
+      }
       /* mede solto; se não cabe nem em cima nem embaixo, rola por dentro */
       const fala = b.querySelector('.cena-fala');
       if(fala) fala.style.maxHeight = '';
@@ -55477,10 +55526,21 @@ TO.icones = (function(){
   const MS_DIA_VAZIO = 120;
   let relogioTempo = null;
   /* o compasso da PRÓXIMA mensagem da fila: decisão espera 1,5 s */
-  const compassoDaFila = e => {
+  const compassoDaFila0 = e => {
     const prox = (e.feedFila || [])[0];
     return prox && prox.peso === 'decisao' ? MS_DROP : MS_INFO;
   };
+  /* O DIA EM 3D (o jogo 3D, 27/09/2026): "O dia passa até ocorrer alguma
+     coisa". Quem tem o relógio do dia (`TO.jogo3d.ritmo`) diz quanto a
+     próxima mensagem espera — até a hora dela no relógio — e quanto o dia
+     calado leva até a noite; o compasso de sempre é o mínimo. Sem jogo 3D,
+     nada muda. */
+  const ritmo3d = () => TO.jogo3d && TO.jogo3d.ritmo;
+  const compassoDaFila = e => {
+    const r = ritmo3d(), base = compassoDaFila0(e);
+    return r ? Math.max(base, r.antesDaProxima(e) || 0) : base;
+  };
+  const esperaDoDiaVazio = e => { const r = ritmo3d(); return r ? r.diaVazio(e) : MS_DIA_VAZIO; };
 
   function pausarTempo(motivo){
     pausasT.add(motivo);
@@ -55503,7 +55563,8 @@ TO.icones = (function(){
       if(!e || pausasT.size || TO.feed.travado(e)) return;
       const vel = TO.diaJogo.ponte.velocidade || 1;
       if(TO.feed.pendentes(e) > 0){
-        TO.feed.dropar(e);
+        const caiu = TO.feed.dropar(e);
+        if(caiu && ritmo3d() && ritmo3d().caiu) ritmo3d().caiu(e, caiu);
         pintarTopo(); atualizarFeed();
         if(TO.feed.travado(e)) return;         // decisão dropada: espera
         relogioTempo = setTimeout(tique, compassoDaFila(e)/vel);
@@ -55515,7 +55576,7 @@ TO.icones = (function(){
       if(abrirRetrospectivaSePendente()) return;
       if(pausasT.size || TO.feed.travado(E())) return;
       relogioTempo = setTimeout(tique,
-        (TO.feed.pendentes(E()) > 0 ? compassoDaFila(E()) : MS_DIA_VAZIO)/vel);
+        (TO.feed.pendentes(E()) > 0 ? compassoDaFila(E()) : esperaDoDiaVazio(E()))/vel);
     };
     /* O PRIMEIRO TIQUE TAMBÉM É DE 1,5s quando há fila (correção do
        dono, 24/08/2026): o relógio abria em 450ms — o passo do dia
@@ -55523,7 +55584,7 @@ TO.icones = (function(){
        anterior. Fila cheia entra no compasso da mensagem; só o dia sem
        nada passa ligeiro. */
     relogioTempo = setTimeout(tique,
-      (TO.feed.pendentes(e0) > 0 ? compassoDaFila(e0) : MS_DIA_VAZIO)
+      (TO.feed.pendentes(e0) > 0 ? compassoDaFila(e0) : esperaDoDiaVazio(e0))
         / (TO.diaJogo.ponte.velocidade || 1));
   }
 
@@ -55619,6 +55680,8 @@ TO.icones = (function(){
     if(document.body.classList.contains('em-cena')) return null;
     try{ TO.estado.avancarDia(); }
     catch(err){ if(window.console) console.error('[dia] avancarDia falhou:', err); }
+    /* o dia em 3D recomeça de manhã (o jogo 3D) */
+    try{ const r = ritmo3d(); if(r && r.virouDia) r.virouDia(E()); }catch(_){}
     return null;
   }
 
@@ -56001,6 +56064,25 @@ TO.icones = (function(){
   function montarCena(m){
     const o = opc(E());
     const local = String((m.config||{}).local || '');
+    /* O PALCO NA CIDADE (o jogo 3D, 27/09/2026): a cena que tem lugar na
+       praça em 3D — a reunião na sala da sede, a briga na casa de veraneio,
+       a emboscada no posto e na estrada — roda o mesmo combate, e quem
+       desenha é a cidade (o renderizador que o jogo 3D dá). Sem jogo 3D,
+       ou se o palco não sobe, a cena de sempre. */
+    const P3 = TO.jogo3d && TO.jogo3d.palcoDe ? TO.jogo3d.palcoDe(local, m.config || {}) : null;
+    if(P3){
+      const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');
+      if(c3) c3.hidden = true;
+      if(sobre) sobre.hidden = true;
+      if(c2) c2.hidden = false;
+      if(P3.local) m.config.local = P3.local;
+      m.canvas = c2; m.tres = true; m.renderizador = P3.renderizador;
+      m.sobreGL = null; m.bonecos = false;
+      TO.diaJogo.ponte.montar(m);
+      if(TO.diaJogo.ponte.tres) return;
+      m.config.local = local; m.tres = false; m.renderizador = null;
+      if(P3.falhou) P3.falhou();
+    }
     const em3d = !!o.briga3d && /^rua(-media|-nobre)?$/.test(local)
               && !!(TO.dados.cenas && TO.dados.cenas[local+'-3d']) && !!TO.diaJogo.tres;
     const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');
@@ -57028,6 +57110,11 @@ TO.icones = (function(){
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
+    /* o cartão de uma mensagem (o mesmo do feed, com os botões que
+       respondem): o jogo 3D põe no balão da sala do presidente */
+    cartaoMensagem: cartaoSeguro,
+    /* a data de hoje por extenso (o relógio do jogo 3D escreve junto da hora) */
+    pintarTopo,
     abrirPerfilTorcida, abrirPerfilCidade,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
