@@ -3776,7 +3776,7 @@ TO.diaJogo.combate = (function(){
       const lado = q === 'nos' ? meu : outro;
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
-      const chave = D.id === 'bar' ? 'bar' : D.id === 'casa-piscina' ? 'casa' : 'praca';
+      const chave = D.id === 'bar' ? 'bar' : /^casa-piscina/.test(D.id) ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){

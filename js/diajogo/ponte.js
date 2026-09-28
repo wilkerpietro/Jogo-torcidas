@@ -36,6 +36,9 @@ TO.diaJogo.ponte = (function(){
      sendo a de cima, e um canvas WebGL transparente por cima dela põe
      boneco no lugar do disco. */
   let tres=false, T=null, dtQuadro=0.016, bonecos=false;
+  /* o renderizador veio de quem montou (o palco na cidade, no jogo 3D):
+     quando a cena fecha, ele sai junto (`parar`) */
+  let externo=false;
   let aoTerminar=null;
   /* chamado a cada quadro enquanto a cena roda: quem monta a cena usa
      isso pra continuar o relógio da rua e mandar pra cá o bonde que
@@ -65,8 +68,11 @@ TO.diaJogo.ponte = (function(){
          próprio renderizador — a reunião na sala da sede, a briga na casa
          de veraneio —, com o mesmo contrato do tres.js (montar, desenhar,
          vetorDoTeclado, trocarCamera, limparDeCima) */
+      if(externo && T && T !== opc.renderizador && T.limparDeCima){ try{ T.limparDeCima(); }catch(e){ registrarErro('palco', e); } }
       T = opc.renderizador || TO.diaJogo.tres;
+      externo = !!opc.renderizador;
       if(!T || !T.montar(cv, opc.sobre || document.getElementById('djSobre'))){
+        externo = false;
         /* sem WebGL: a mesma briga, vista de cima */
         tres = false; T = null;
         local = String(local||'').replace(/-3d$/, '');
@@ -192,7 +198,15 @@ TO.diaJogo.ponte = (function(){
      buffer WebGL cresceu até estourar o iPhone. Quem esconde o palco
      chama `parar`; e o próprio laço se desliga se a briga acabou e o
      canvas saiu da tela. `montar` religa. */
-  function parar(){ rodando=false; }
+  function parar(){
+    rodando=false;
+    /* O PALCO NA CIDADE SAI COM A CENA (jogo 3D, 28/09/2026): a reunião
+       na sala da sede ficava montada depois de encerrada — a vida da sede
+       parada e os discos da reunião na cidade. Quem fecha a cena chama
+       `parar`; o palco desmonta (a câmera e a vida voltam) */
+    if(externo && T && T.limparDeCima){ try{ T.limparDeCima(); }catch(e){ registrarErro('palco', e); } }
+    externo=false;
+  }
   function cenaSumiu(){
     return !!(J && J.fase==='fim' && cv && !cv.getClientRects().length);
   }

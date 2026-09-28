@@ -36,6 +36,8 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
+import { palcoDeBriga } from './palco_briga.js';
+
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -118,6 +120,8 @@ function areaLivre() {
 /* voar até (x, z) pondo o ponto no meio da parte livre da tela: o alvo
    da câmera anda pro lado (pra direita da tela, se o feed está aberto) */
 function voarNaAreaLivre(Cn, M, x, z, dist, el) {
+  /* com a briga na cidade a câmera é dela (vai atrás do líder) */
+  if (Cn.vida && Cn.vida.palco && Cn.vida.palco.seguir) return;
   const A = areaLivre(), az = Cn.orb.az, H = innerHeight || 800;
   const porPx = 2 * dist * Math.tan(21 * Math.PI / 180) / H;
   const desl = (A.W / 2 - A.meio) * porPx;
@@ -503,7 +507,7 @@ export function criarVida(api) {
     if (topo && topo.id !== vistoFeed) {
       vistoFeed = topo.id;
       /* a notícia de treta não passa pelo feed (vai pra Notícias) */
-      if (topo.kind !== 'confronto' && ligada && !reuniao3d) abrirBalao(topo);
+      if (topo.kind !== 'confronto' && ligada && !reuniao3d && !document.body.classList.contains('em-cena')) abrirBalao(topo);
     }
     /* a decisão respondida e a notícia lida saem sozinhas */
     if (msgBalao) {
@@ -971,13 +975,49 @@ export function criarVida(api) {
     desligarSede(); rua = null; J.discos = [];
     if (Cn && Cn.vida) { Cn.vida.vida = null; Cn.vida.abrirPredio(null); }
   }
+  /* a sede do jogador volta a ficar aberta (o palco da briga abriu outro prédio) */
+  function reabrirSede() {
+    const Cn = C();
+    if (!sede || !Cn || !Cn.vida) return;
+    const lp = sede.porTipo('presidente')[0];
+    const x = lp ? lp.x : (sede.caixa.x0 + sede.caixa.x1) / 2, z = lp ? lp.z : (sede.caixa.z0 + sede.caixa.z1) / 2;
+    sede.telhado = Cn.vida.abrirPredio(x, z, 2.2);
+  }
+  /* A BRIGA NA CASA DA FESTA (a cena 'casa-piscina' do jogo de feed, na
+     rua de veraneio da praça): o tabuleiro do combate em cima da casa da
+     festa, e o cenário desenhando a briga (palco_briga.js). Quando a cena
+     fecha, a câmera volta pra sala do presidente */
+  function palcoDaFesta() {
+    const B = api.planta.brigaNaFesta ? api.planta.brigaNaFesta() : null;
+    if (!B || !TO.dados || !TO.dados.cenas) return null;
+    TO.dados.cenas[B.cena.id] = B.cena;
+    const R = palcoDeBriga({ C: C(), M, cena: B.cena, noMundo: B.noMundo, u: B.u, v: B.v, chao: B.chao, predio: B.casa, rotAlto: 'a casa inteira, do alto',
+                             aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+    return { local: B.cena.id, renderizador: R };
+  }
+  /* A CARAVANA NA ESTRADA (as emboscadas 'emb-posto' e 'emb-onibus'): o
+     palco à parte, longe da praça — o posto ou a pista com o ônibus —, e a
+     câmera salta pra lá; no fim ela volta pra sala do presidente */
+  function palcoDaCaravana(local) {
+    const Pc = api.planta.palcoDaCaravana ? api.planta.palcoDaCaravana(local) : null;
+    if (!Pc || !TO.dados || !TO.dados.cenas) return null;
+    const B = Pc.briga;
+    TO.dados.cenas[B.cena.id] = B.cena;
+    const R = palcoDeBriga({ C: C(), M, cena: B.cena, noMundo: B.noMundo, u: B.u, v: B.v, chao: B.chao, peca: Pc.grupo, livre: true,
+                             rotAlto: local === 'emb-posto' ? 'o posto inteiro, do alto' : 'a estrada, do alto',
+                             aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+    return { local: B.cena.id, renderizador: R };
+  }
   /* a luz corre mesmo com a vida desligada (no menu, o dia parado nas 10h) */
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
     get ritmo() { return relogio.ritmo; },
     /* o palco da cena que tem lugar na sede em 3D: a reunião */
     palcoDe(local, cfg) {
-      if (!ligada || !sede || !cfg || !cfg.reuniao || !/^sede-|^praca$/.test(local)) return null;
+      if (!ligada) return null;
+      if (local === 'casa-piscina') return palcoDaFesta();
+      if (local === 'emb-posto' || local === 'emb-onibus') return palcoDaCaravana(local);
+      if (!sede || !cfg || !cfg.reuniao || !/^sede-|^praca$/.test(local)) return null;
       return { renderizador: palcoDaReuniao() };
     },
     get ligada() { return ligada; },

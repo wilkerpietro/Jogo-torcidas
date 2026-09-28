@@ -119,6 +119,9 @@ let noQuadroExterno = null;
    3D senta a diretoria nas cadeiras da sala da sede, cada uma virada pra
    mesa: o rumo da cadeira da cena 2D não serve lá) */
 let rumoDe = d => d.rumo;
+/* um rumo do tabuleiro (vx, vy) no mundo: igual, a não ser que quem é dono
+   da cena tenha o tabuleiro girado no mundo (a briga na cidade, no jogo 3D) */
+let rumoDoTabuleiro = (vx, vy) => Math.atan2(vx, vy);
 
   /* o util do jogo (nucleo.js) pode chegar depois deste módulo — no
      jogo 3D o cenário importa o boneco antes de o jogo carregar —, então
@@ -2322,7 +2325,7 @@ let rumoDe = d => d.rumo;
       else if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*10));
       if(d.arremesso && d.arremesso.t > 0.4){
         const pr = J.projeteis.find(q=>!q.morto && q.t < 0.2 && Math.hypot(q.x-d.x, q.y-d.y) < 60);
-        if(pr) f.yaw = girar(f.yaw, Math.atan2(pr.vx, pr.vy), Math.min(1, dt*18));
+        if(pr) f.yaw = girar(f.yaw, rumoDoTabuleiro(pr.vx, pr.vy), Math.min(1, dt*18));
       }
 
       /* pedra ou bomba: o combate sobe `tremor` de uma vez; vira um impacto */
@@ -2412,7 +2415,7 @@ let rumoDe = d => d.rumo;
       const vel = medirVelocidade(f, qp.x, qp.z, dt);
       if(vel > 4) f.yaw = girar(f.yaw, Math.atan2(f.vx, f.vz), Math.min(1, dt*8));
       /* parado, vira pra onde o disco manda (o PM do cordão do dia de jogo, de frente pra torcida) */
-      else if(typeof pm.rumo === 'number') f.yaw = girar(f.yaw, pm.rumo, Math.min(1, dt*6));
+      else if(typeof pm.rumo === 'number') f.yaw = girar(f.yaw, pm.mundo ? pm.rumo : rumoDoTabuleiro(Math.sin(pm.rumo), Math.cos(pm.rumo)), Math.min(1, dt*6));
       const andando = passo(p, f, vel / (pm.passada || 1), dt, false, 6);
       /* (o relógio de verdade: o do dia de jogo corre acelerado, e o PM parado respirava a 30×) */
       if(!andando) parado(p, f, tAnim);
@@ -2452,18 +2455,20 @@ let rumoDe = d => d.rumo;
     soltar(x, y, z, {vy:9+Math.random()*6, vx:(Math.random()-0.5)*8, vz:(Math.random()-0.5)*8, dur:0.5+Math.random()*0.4*(forte?2:1),
       tam:forte?4:2.2, cresce:forte?14:8, cor:forte?'#6a6a6a':'#8a8a8a', alfa:0.55});
   }
-  function explodir(x, z){
+  /* (x, z) no mundo e `y0`, o chão ali: quem desenha a cena num canto
+     da cidade (o jogo 3D) leva o tabuleiro pro lugar dele com o `pos` */
+  function explodir(x, z, y0 = 0){
     /* clarão, anel no chão, estilhaços e fumaça */
-    soltar(x, 6, z, {dur:0.22, tam:14, cresce:70, cor:'#ffd35a', alfa:0.9});
-    soltar(x, 4, z, {dur:0.35, tam:8, cresce:40, cor:'#ff7a2a', alfa:0.7});
+    soltar(x, y0+6, z, {dur:0.22, tam:14, cresce:70, cor:'#ffd35a', alfa:0.9});
+    soltar(x, y0+4, z, {dur:0.35, tam:8, cresce:40, cor:'#ff7a2a', alfa:0.7});
     for(let i=0;i<14;i++){
       const a = Math.random()*6.28, v = 60+Math.random()*120;
-      soltar(x, 5, z, {vx:Math.cos(a)*v, vz:Math.sin(a)*v, vy:40+Math.random()*80, grav:220, dur:0.5+Math.random()*0.4, tam:1.2, cor:'#3a2a1a', alfa:0.9});
+      soltar(x, y0+5, z, {vx:Math.cos(a)*v, vz:Math.sin(a)*v, vy:40+Math.random()*80, grav:220, dur:0.5+Math.random()*0.4, tam:1.2, cor:'#3a2a1a', alfa:0.9});
     }
-    for(let i=0;i<10;i++) fumo(x+(Math.random()-0.5)*20, 6, z+(Math.random()-0.5)*20, true);
+    for(let i=0;i<10;i++) fumo(x+(Math.random()-0.5)*20, y0+6, z+(Math.random()-0.5)*20, true);
   }
-  function poeira(x, z){
-    for(let i=0;i<5;i++) soltar(x+(Math.random()-0.5)*8, 1.5, z+(Math.random()-0.5)*8, {vy:6, dur:0.4, tam:1.8, cresce:6, cor:'#b9a98c', alfa:0.6});
+  function poeira(x, z, y0 = 0){
+    for(let i=0;i<5;i++) soltar(x+(Math.random()-0.5)*8, y0+1.5, z+(Math.random()-0.5)*8, {vy:6, dur:0.4, tam:1.8, cresce:6, cor:'#b9a98c', alfa:0.6});
   }
   function atualizarParticulas(dt){
     for(let i=particulas.length-1;i>=0;i--){
@@ -2516,25 +2521,25 @@ let rumoDe = d => d.rumo;
         v.faisca.visible = Math.sin(p.t*(30+k*70)) > 0;
         v.zona.visible = true; v.zona.position.set(qs.x, qs.y + 0.6, qs.z);
         v.zona.material.opacity = 0.25 + 0.45*k;
-        if(p.t - v.ultimoFumo > 0.07){ v.ultimoFumo = p.t; fumo(p.x+2.4, 8, p.y, false); }
+        if(p.t - v.ultimoFumo > 0.07){ v.ultimoFumo = p.t; fumo(qs.x+2.4, qs.y+8, qs.z, false); }
         continue;
       }
       if(!p.morto){
         const alt = Math.sin((p.t/p.dur)*Math.PI)*36 + 8;
         v.grupo.position.set(qs.x, qs.y + alt, qs.z);
         v.grupo.rotation.set(p.t*7, p.t*9, 0);
-        if(p.tipo==='bomba' && p.t - v.ultimoFumo > 0.05){ v.ultimoFumo = p.t; fumo(p.x, alt, p.y, false); }
+        if(p.tipo==='bomba' && p.t - v.ultimoFumo > 0.05){ v.ultimoFumo = p.t; fumo(qs.x, qs.y+alt, qs.z, false); }
         continue;
       }
       /* morto: explodiu (bomba) — a cena some com ele quando `explosao` passa */
       v.grupo.visible = false; v.sombra.visible = false;
       if(v.zona) v.zona.visible = false;
-      if(p.explosao!==undefined && !v.explodiu){ v.explodiu = true; explodir(p.x, p.y); }
+      if(p.explosao!==undefined && !v.explodiu){ v.explodiu = true; explodir(qs.x, qs.z, qs.y); }
     }
     for(const [p,v] of projMeshes) if(!agora.has(p)){
       projMeshes.delete(p);
       scene.remove(v.grupo); scene.remove(v.sombra); if(v.zona) scene.remove(v.zona);
-      if(v.tipo==='pedra' && v.t > 0.07) poeira(v.x, v.y);
+      if(v.tipo==='pedra' && v.t > 0.07){ const q = pos(v.x, v.y); poeira(q.x, q.z, q.y); }
     }
   }
 
@@ -3042,6 +3047,7 @@ let rumoDe = d => d.rumo;
     sombraDeLuz = !!opc.sombra;
     noQuadroExterno = opc.noQuadro || null;
     rumoDe = opc.rumo || (d => d.rumo);
+    rumoDoTabuleiro = opc.rumoDoTabuleiro || ((vx, vy) => Math.atan2(vx, vy));
     /* a resolução adaptativa é do canvas de quem é dono do
        renderizador; aqui ela não tem o que ajustar */
     cfg.resolucaoAdaptativa = false;

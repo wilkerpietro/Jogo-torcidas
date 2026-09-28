@@ -161,6 +161,8 @@ body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
 .j3d-balao-ir[hidden]{display:none}
 /* sem jogo na tela (o menu, a escolha) e com painel aberto, o balão some */
 body.jogo3d:not(.j3d-em-jogo) .j3d-balao, body.jogo3d.com-painel .j3d-balao{display:none}
+/* numa cena (a briga, a reunião) o balão da sala some: a mensagem fica no feed */
+body.jogo3d.em-cena .j3d-balao{display:none}
 @media (max-width:760px){
   .j3d-balao{width:min(320px, 92vw)}
   .j3d-balao-corpo{max-height:34vh}
@@ -177,3 +179,18 @@ body.jogo3d.palco3d #djFaixa,
 body.jogo3d.palco3d .cena-balao,
 body.jogo3d.palco3d #djComandos,
 body.jogo3d.palco3d #djPad{pointer-events:auto}
+
+/* A BRIGA NA CIDADE (a casa da festa na rua de veraneio, palco_briga.js):
+   a cidade é o palco e o HUD da briga (o placar em cima, os comandos
+   embaixo) fica sozinho — a barra do jogo, os ícones, o feed e o relógio
+   do dia saem até a cena fechar */
+body.jogo3d.palco-briga #jogo,
+body.jogo3d.palco-briga #j3dFeed,
+body.jogo3d.palco-briga #j3dHora{visibility:hidden}
+body.jogo3d.palco-briga .cen-fps{bottom:54px}
+/* o nome do líder (e a vida dele) em cima da cabeça, na briga da cidade */
+.j3d-lider{position:fixed;z-index:30;transform:translate(-50%,-100%);pointer-events:none;white-space:nowrap;text-align:center;
+  font:700 12px/1.1 var(--mono, "IBM Plex Mono", monospace);color:#e0b040;text-shadow:0 1px 2px #000,0 0 3px #000}
+.j3d-lider[hidden]{display:none}
+.j3d-lider i{display:block;width:44px;height:3px;margin:3px auto 0;background:rgba(0,0,0,.65)}
+.j3d-lider i b{display:block;height:100%;background:#e0b040}

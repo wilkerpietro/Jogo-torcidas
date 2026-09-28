@@ -271,6 +271,8 @@ import { ATLAS } from './js/modelos_atlas.js';
 import { Construtor, sorteio } from './js/construtor3d.js';
 import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js';
 import { montarSede } from './js/sede3d.js';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta } from './js/veraneio3d.js';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js';
 import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
 import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js';
 import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
@@ -368,7 +370,7 @@ const COR = {
   quintal: '#c9b98f', fundos: '#88aa77', pracinha: '#55aa55', areia: '#dccb9e', mar: '#3f6c84',
   estadio: '#a7a397', arquibancada: '#8a8780', pista: '#8f8b80', gramado: '#4f8f3f',
   arvore: 'rgba(0,120,0,.7)', carro: '#ee3333', poste: '#ffff00', marco: '#b39ad6', nova: '#45b6be',
-  terreno: '#b3946a', sede: '#8e3f9c',
+  terreno: '#b3946a', sede: '#8e3f9c', ruaAreia: '#cbb785',
   /* a avenida duplicada: a guia e a grama do canteiro, a faixa branca das pistas e a amarela da beira do canteiro */
   guia: '#d2cec4', canteiro: '#6f9a55', faixaBranca: '#f1efe7', faixaAmarela: '#e2bf45',
   /* a lagoa: a água doce, o raso, o barro da beira, o capim da margem e o junco */
@@ -386,7 +388,7 @@ const COR_CHAO = {
   rua: '#48484b', avenida: '#414144', eixo: '#d6c26c', calcada: '#a9a597', miolo: '#8b8474',
   quintal: '#9b8e6f', fundos: '#6f8a52', pracinha: '#b5afa0', areia: '#e3d2a4', mar: '#2e5a75',
   estadio: '#a39f93', arquibancada: '#8a8780', pista: '#8f8b80', gramado: '#4a8a3c',
-  terreno: '#a89c80', lote: '#87816f',
+  terreno: '#a89c80', lote: '#87816f', ruaAreia: '#cdb98c',
   guia: '#c3bfb4', canteiro: '#5b7d3f', faixaBranca: '#dcdad2', faixaAmarela: '#d2ad3c'
 };
 /* o chão do mato, por vegetação (o fundo; a mata e o cerrado ainda levam o
@@ -483,6 +485,10 @@ function poligonoDoPortico(p, fundo = PORTICO.zb) {
    bar grande (vira casa) e as duas sedes (viram espaço de sede, da
    torcida da cidade escolhida) */
 let somemNaProposta = new Set(), bares = [], espacos = [];
+/* a rua de veraneio (o jogo 3D): cada lote é um item (o clique abre a casa em 3D) */
+let lotesVeraneio = [];
+/* os palcos da caravana (montados uma vez, na primeira emboscada) */
+const PALCOS_CARAVANA = {};
 const ehBar = l => l.modelo === 'bartorcida';
 
 /* as torcidas da cidade: a praça do jogo (`mapa` da torcida) é o nome
@@ -924,6 +930,8 @@ function montarDerivados() {
   for (const e of equipamentos) e.somePelaProposta = somemNaProposta.has(e.q.i + ',' + e.q.j);
   bares = PROP.bares.map(b => ({ b, it: lotesNovos.find(it => it.l === b.lote) }));
   espacos = PROP.espacosSede.map(e => ({ tipo: 'espaco', e, pol: retPts(e.area), bb: { ...e.area }, nome: e.nome, proposta: true }));
+  lotesVeraneio = PROP.veraneio ? PROP.veraneio.lotes.map(l => ({ tipo: 'veraneio', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true,
+    nome: l.veraneio === 'festa' ? 'Casa da festa' : 'Casa de veraneio', planta: plantaDoLote(l) })) : [];
   porticos = PROP.porticos.map(p => { const pol = poligonoDoPortico(p, 3.2); return { tipo: 'portico', p, pol, bb: bbox(pol), nome: p.nome, proposta: true }; });
   METRO_P = PROP.metro;
   estacoes = METRO_P ? METRO_P.estacoes.map(e => ({ tipo: 'estacao', est: e, pol: retPts(e.entrada), bb: { ...e.entrada }, nome: e.completo, proposta: true,
@@ -2429,6 +2437,8 @@ function desenhar() {
 
   /* ---- a proposta: as ruas e as quadras novas por baixo das avenidas ---- */
   if (prop) desenharProposta(ve, px);
+  /* ---- a rua de veraneio: a areia, a rua de areia e (no mapa) as casas ---- */
+  if (prop && PROP.veraneio) desenharVeraneio(PROP.veraneio, ve, px);
   /* ---- a calçada da borda da cidade (do outro lado da rua, no mato) ---- */
   if (prop && CALCADAS) for (const f of CALCADAS.faixas) if (ve(f)) ret(f, COR.calcada);
   /* (e o vão fino que virou calçada) */
@@ -2695,6 +2705,26 @@ function desenharProposta(ve, px) {
   ctx.setLineDash([]);
 }
 
+/* A RUA DE VERANEIO (js/diajogo/veraneio3d.js): o terreno de areia, a
+   rua de areia batida no meio e, no mapa, os lotes — o muro, o deck, a
+   piscina e o telhado de cada casa; a casa da festa com o contorno
+   laranja. No chão do cenário, só a areia (a casa em 3D cobre o resto) */
+function desenharVeraneio(V, ve, px) {
+  if (!ve(V.area)) return;
+  ret(V.area, COR.areia);
+  ret(V.rua, COR.ruaAreia);
+  if (pintandoChao) return;
+  for (const it of lotesVeraneio) {
+    const l = it.l, P = it.planta;
+    ret(l, '#eee6d0');
+    ctx.strokeStyle = '#8c826c'; ctx.lineWidth = Math.max(px(1), 0.2 * M); ctx.strokeRect(l.x0, l.y0, l.x1 - l.x0, l.y1 - l.y0);
+    for (const d of P.deck) ret(d, '#d9cdb2');
+    if (P.piscina) ret(P.piscina, '#2fb3d9');
+    ret(P.casa, P.telha);
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = px(0.9); ctx.strokeRect(P.casa.x0, P.casa.y0, P.casa.x1 - P.casa.x0, P.casa.y1 - P.casa.y0);
+    if (l.veraneio === 'festa') { ctx.strokeStyle = '#e07b1f'; ctx.lineWidth = px(3); ctx.strokeRect(l.x0 + px(2), l.y0 + px(2), l.x1 - l.x0 - px(4), l.y1 - l.y0 - px(4)); }
+  }
+}
 /* A PLANTA DE UM MODELO NOVO: o piso, a grama, a água, o móvel, a
    cobertura e a copa das árvores, nessa ordem */
 function desenharPlanta(marcas, px) {
@@ -2828,6 +2858,7 @@ function desenharRotulos(vis, prop) {
       for (const q of PROP.quadras) if (q.equip && q.equip.tipo !== 'condominio' && q.equip.tipo !== 'estadio') etiqueta(q.equip.nome, (q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
       for (const f of PROP.favelas) etiqueta(f.nome, (f.bb.x0 + f.bb.x1) / 2, (f.bb.y0 + f.bb.y1) / 2);
       for (const it of espacos) etiqueta(it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga', (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
+      if (PROP.veraneio) { const r = PROP.veraneio.rua; etiqueta(PROP.veraneio.nome, (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2); }
       for (const it of estacoes) etiqueta('Metrô ' + it.est.nome, (it.bb.x0 + it.bb.x1) / 2, it.est.entra === 'n' ? it.bb.y0 - 90 : it.bb.y1 + 90);
       if (s >= 0.1) for (const x of bares) {
         const T = x.b.lote.torcida;
@@ -2874,7 +2905,7 @@ function pegarNoMundo(x, y, s) {
     for (const p of pecasSoltas) { if (prop && p.somePelaProposta) continue; const d = Math.hypot(p.x - x, p.y - y); if (d < md) { md = d; melhor = p; } }
     if (melhor) return melhor;
   }
-  if (prop) { const n = naLista(estacoes) || naLista(marcosNovos) || naLista(porticos) || naLista(espacos); if (n) return n; }
+  if (prop) { const n = naLista(estacoes) || naLista(marcosNovos) || naLista(porticos) || naLista(espacos) || naLista(lotesVeraneio); if (n) return n; }
   const m = naLista(prop ? marcosDeHoje() : marcos);
   if (m) return m;
   const est = naLista(prop ? estadios : [estadioDeHoje]);
@@ -3011,7 +3042,7 @@ function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return n
 function tituloDe(it) {
   if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar do ' + it.l.torcida.rot : 'Bar fechado';
   if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga';
-  if (it.tipo === 'estacao') return it.nome;
+  if (it.tipo === 'estacao' || it.tipo === 'veraneio') return it.nome;
   if (it.tipo === 'lote') {
     const pc = planoSeguro(it.l);
     const m = it.l.muro || (pc && pc.tipo);
@@ -3056,8 +3087,21 @@ function comodosDaSede(m) {
     `<li><b>${esc(nomeDoComodo(c.nome))}</b> <span>${metros(c.larg * M)} × ${metros(c.fundo * M)}</span> — ${esc(O_QUE_TEM[c.tipo] || '')}</li>`).join('') + '</ul>';
 }
 const NOTA_DA_SEDE = '<p class="nota">Modelo novo (<code>js/diajogo/sede3d.js</code>): as paredes, as portas e os móveis que bloqueiam a caminhada são os da sede andável da planta, no mesmo lugar e na mesma medida; a textura, as janelas, o telhado e o resto da mobília são novos. A cena do dia de jogo ainda monta a sede em caixa lisa, e a mobília nova ainda não entra na colisão.</p>';
+/* a ficha da casa de veraneio (e da casa da festa, a da cena do ataque) */
+function fichaDoVeraneio(it) {
+  const l = it.l, nS = l.frente === 'n' || l.frente === 's', festa = l.veraneio === 'festa';
+  const W = nS ? l.x1 - l.x0 : l.y1 - l.y0, D = nS ? l.y1 - l.y0 : l.x1 - l.x0;
+  const tem = festa ? 'o portão de correr (aberto) e o de gente, a garagem de areia com os dois carros, a casa (sala, cozinha, depósito, banheiro, hall e dois quartos), o corredor do lado, a piscina com o deck em volta, as espreguiçadeiras, as mesas de plástico, a churrasqueira no canto e o deck largo do fundo'
+    : l.veraneio === 'sul' ? 'o muro baixo com a pérgola de madeira em cima do portão e a casa de telha atrás'
+    : 'o muro com o portão, a casa de telha de um lado, a piscina pequena com o deck do outro e, às vezes, o carro';
+  return `<p class="sobre">${esc(PROP.veraneio ? PROP.veraneio.nome : 'Rua de veraneio')} <span class="chip">jogo 3D</span></p><h2>${esc(it.nome)}</h2>` + linhas([
+    ['Lote', metros(W) + ' × ' + metros(D)],
+    ['O que tem', tem, true]
+  ]) + (festa ? '<p class="nota">A casa da cena do ataque à festa (<code>img/cenas/casa_piscina.webp</code>, refeita em 3D em <code>js/diajogo/veraneio3d.js</code>): quem ataca entra pelo portão da frente; quem defende está no deck, na churrasqueira, na beira da piscina, nas espreguiçadeiras e na sala; a faixa fica estendida no deck do fundo, rente ao muro, e quem pega ela se tranca no depósito.</p>' : '');
+}
 function fichaDe(it) {
   if (it && it.tipo === 'modelo') return it.ficha();
+  if (it && it.tipo === 'veraneio') return fichaDoVeraneio(it);
   if (!it) return '<p class="sobre">Ficha</p><h2>Clique num lote</h2><p class="nota">Cada lote do mapa abre o imóvel em 3D, montado com o mesmo código do jogo.</p>';
   const chip = it.proposta || it.tipo === 'quadraNova' ? '<span class="chip">proposta</span>' : '';
   const coresDe = T => `<span class="cores">${[T.cor, T.cor2, T.cor3].filter((c, i, a) => c && a.indexOf(c) === i).map(c => `<i style="background:${c}"></i>`).join('')}</span>`;
@@ -3912,6 +3956,28 @@ function centrarEm(x, y) {
   estado.ox = x - estado.larg / 2 / estado.s; estado.oy = y - estado.alt / 2 / estado.s;
   pedirDesenho();
 }
+/* A CASA DE VERANEIO (js/diajogo/veraneio3d.js): o lote inteiro — o
+   muro, a casa, a piscina, o carro — e o telhado (o da casa da festa numa
+   malha à parte, como o da sede) */
+function objetoDoVeraneio(l, g) {
+  const destino = {}, r = montarLoteDeVeraneio(l, destino);
+  for (const [lista, folha] of [['casas', 'casas'], ['grades', 'grades'], ['telhado', 'casas']]) {
+    const m = malhaDeBlocos(destino[lista] || [], folha);
+    if (!m) continue;
+    if (lista === 'telhado') m.name = 'telhado';
+    g.add(m);
+  }
+  return r;
+}
+/* os coqueiros da rua de veraneio: um por lote, na areia da rua, rente
+   ao muro da frente e ao canto do lote (longe do portão) */
+function coqueirosDoVeraneio() {
+  return lotesVeraneio.map(({ l }) => {
+    const nS = l.frente === 'n' || l.frente === 's', W = (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M;
+    const [x, y] = noMundoDoLote(l)(W - 0.8, 0.9), sem = (Math.abs(Math.round(x * 7 + y * 13)) % 99991) + 1;
+    return { x, y, giro: (sem % 628) / 100, sem };
+  });
+}
 /* `o.telhado`: na vista da quadra inteira o telhado fica sempre posto */
 function objetoDaSede(sd, g, o = {}) {
   const destino = {};
@@ -4651,6 +4717,13 @@ function pecasDoCenario() {
   for (const it of lotesFavelaNova) poe('favela', it, g => objetoDoLote(it.l, g));
   for (const it of marcosDeHoje().concat(marcosNovos)) poe('marco', it, g => objetoDoMarco(it, g));
   for (const it of espacos) poe('sede', it, g => objetoDoEspaco(it, g, { telhado: true, portasVivas: true }));
+  /* a rua de veraneio: cada lote com a casa dele, e os coqueiros da rua */
+  for (const it of lotesVeraneio) poe('casa', it, g => objetoDoVeraneio(it.l, g));
+  for (const o of coqueirosDoVeraneio()) poe('arvore', null, g => {
+    const destino = {};
+    montarArvoreLowpoly('coqueiro', { x: o.x, z: o.y, giro: o.giro }, destino, o.sem);
+    malhasDoDestino(destino, g);
+  });
   /* o marco que mora num equipamento já está nos marcos */
   for (const e of equipamentos) if (!e.somePelaProposta) poe('equipamento', e, g => objetoDoEquip(e.q.equip, g, { telhado: true, semMarco: true, portasVivas: true }));
   for (const q of PROP.quadras) {
@@ -4752,6 +4825,7 @@ function frenteDe(it) {
   if (it.tipo === 'marco') return NORMAL[it.pc.frente] || null;
   if (it.tipo === 'portico') return [-it.p.dir[0], -it.p.dir[1]];
   if (it.tipo === 'espaco') return NORMAL[it.e.frente] || null;
+  if (it.tipo === 'veraneio') return NORMAL[it.l.frente] || null;
   if (it.tipo === 'equip' && it.q.equip.tipo === 'sede') return NORMAL[it.q.equip.frente] || null;
   if (it.tipo === 'estacao') return NORMAL[it.est.entra] || null;
   if (it.tipo === 'quadraNova' && temModelo(it.q)) return NORMAL[it.q.equip.frente || 's'] || null;
@@ -4837,6 +4911,7 @@ function criarVista(canvas) {
         else if (it.tipo === 'quadra') objetoDaQuadra(it.q, grupo, false, estado.modo !== 'atual');
         else if (it.tipo === 'portico') objetoDoPortico(it.p, grupo);
         else if (it.tipo === 'espaco') objetoDoEspaco(it, grupo);
+        else if (it.tipo === 'veraneio') objetoDoVeraneio(it.l, grupo);
         else if (it.tipo === 'estacao') objetoDaEstacao(it, grupo);
         else if (it.tipo === 'estadio') objetoDeEstadio(it, grupo);
         else if (it.tipo === 'modelo') it.montar(grupo);
@@ -4974,7 +5049,7 @@ const vista = criarVista($('c3d'));
 if (new URLSearchParams(location.search).has('teste')) window.__planta = { estado, paraTela, zoomEm, lotes, pecasSoltas, marcos, equipamentos, K,
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
-  get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; },
+  get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; }, get lotesVeraneio() { return lotesVeraneio; }, get api() { return apiDoCenario(); },
   get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm, pecasDoCenario };
 
 /* ======================================================
@@ -5085,6 +5160,42 @@ function apiDoCenario() {
     /* OS ANÉIS DE CALÇADA das quadras (o retângulo de fora e o do miolo):
        o povo da praça anda no meio deles */
     aneis() { if (!CALCADAS) montarCalcadas(); return ((CALCADAS && CALCADAS.aneis) || []).map(a => ({ fora: { ...a.fora }, dentro: { ...a.dentro } })); },
+    /* A RUA DE VERANEIO (a cena do ataque à festa na casa com piscina): a
+       área, a rua de areia, os lotes, a rua de acesso e o plano da casa da
+       festa no mundo (os cômodos, a piscina, a faixa, o depósito, o
+       portão e os cantos de quem defende) — o jogo 3D monta a briga nele */
+    veraneio() {
+      const V = PROP && PROP.veraneio;
+      if (!V) return null;
+      const c = r => ({ x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 });
+      return { nome: V.nome, fora: V.fora, area: c(V.area), rua: c(V.rua), lotes: V.lotes.map(l => ({ ...c(l), frente: l.frente, veraneio: l.veraneio })),
+               acesso: V.acesso ? V.acesso.pontos.map(p => [p[0], p[1]]) : null, festa: V.festa ? festaNoMundo(V.festa) : null,
+               coqueiros: coqueirosDoVeraneio().map(o => ({ x: o.x, y: o.y })) };
+    },
+    /* A BRIGA NA CASA DA FESTA (a cena 'casa-piscina@3d' do jogo 3D): o
+       tabuleiro do combate no mundo, a máscara e os pontos da cena
+       (veraneio3d.js, `cenaDaFesta`), com o tronco dos coqueiros da rua */
+    /* A CARAVANA NA ESTRADA (as emboscadas 'emb-posto' e 'emb-onibus' do
+       jogo 3D): o palco à parte, num canto vazio do mundo (a 2,5 km da
+       praça, pro noroeste), com a peça montada (o grupo, pra pôr e tirar da
+       cena do cenário) e a briga (o tabuleiro no mundo e a máscara) */
+    palcoDaCaravana(tipo) {
+      if (!['emb-posto', 'emb-onibus'].includes(tipo)) return null;
+      const cache = PALCOS_CARAVANA[tipo];
+      if (cache) return cache;
+      const O = [Math.round(MUNDO.x0 - 2500 * M) + (tipo === 'emb-onibus' ? -3000 : 0), Math.round(MUNDO.y0 - 2500 * M)];
+      const destino = {}, g = new THREE.Group();
+      montarCaravana(tipo, O, destino);
+      for (const [lista, blocos] of Object.entries(destino)) { const m = malhaDeBlocos(blocos, lista); if (m) { m.castShadow = false; g.add(m); } }
+      g.name = 'palco da caravana: ' + tipo;
+      return (PALCOS_CARAVANA[tipo] = { grupo: g, briga: cenaDaCaravana(tipo, O) });
+    },
+    brigaNaFesta() {
+      const V = PROP && PROP.veraneio;
+      if (!V || !V.festa) return null;
+      if (!V.briga) V.briga = cenaDaFesta(V.festa, { obstaculos: coqueirosDoVeraneio().map(o => ({ x: o.x, z: o.y, r: 0.3 * M })) });
+      return V.briga;
+    },
     /* O VISITANTE DE OUTRA CIDADE (dia_de_jogo.js): as torcidas de um
        clube, de qualquer praça (sem sede aqui: a porta vem nula) */
     torcidasDoClube(clubeId) {

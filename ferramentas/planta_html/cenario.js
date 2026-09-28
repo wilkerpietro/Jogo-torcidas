@@ -544,8 +544,11 @@ export function criarCenario(P) {
       const de = ape.de;
       orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M + ape.yv * k, de.z + (ape.z - de.z) * k);
     } else {
-      orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
-      orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
+      /* (o palco à parte, longe da praça — a estrada da caravana —, solta a câmera da área) */
+      if (!(palco && palco.livre)) {
+        orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
+        orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
+      }
       orb.alvo.y = OLHO * M + orb.alto;
     }
     const c = orb.alvo, ce = Math.cos(orb.el), d = orb.dist;
@@ -641,6 +644,9 @@ export function criarCenario(P) {
     const dt = ultimo ? Math.min(0.2, (t - ultimo) / 1000) : 0.016;
     ultimo = t;
     if (ape) andarAPe(dt);
+    /* o palco que tem câmera (a briga do jogo 3D): ela vai atrás do líder,
+       e o teclado é do boneco dele */
+    else if (palco && palco.seguir) { try { palco.seguir(dt, orb); } catch (e) { console.error('cenário, a câmera do palco:', e); } }
     else if (teclas.size) andar(dt);
     animarPortas(dt);
     if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
@@ -713,6 +719,8 @@ export function criarCenario(P) {
   const TECLAS = new Set(['w', 'a', 's', 'd', 'q', 'e', 'r', 'f', 't', '+', '=', '-', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift']);
   window.addEventListener('keydown', ev => {
     if (raiz.hidden || pausado || ev.target.closest && ev.target.closest('select, input, textarea')) return;
+    /* na briga do jogo 3D o WASD (e o Q, o E, o R, o F) é do líder */
+    if (palco && palco.seguir) return;
     const k = ev.key.toLowerCase();
     if (k === 'escape') { fecharFicha(); return; }
     if (!TECLAS.has(k) || ev.ctrlKey || ev.metaKey || ev.altKey) return;
@@ -1810,6 +1818,8 @@ void main() {
         },
         /* o rumo do disco do palco pode ser outro (a cadeira da sala da reunião) */
         rumo: d => palco && palco.rumo && !(d && d.mundo) ? palco.rumo(d) : d.rumo,
+        /* um rumo do tabuleiro (vx, vy) no mundo: a pedra que sai da mão, o PM parado (o palco pode estar girado) */
+        rumoDoTabuleiro: (vx, vy) => palco && palco.rumoDe ? palco.rumoDe(vx, vy) : Math.atan2(vx, vy),
         /* quem está fora da tela não é animado (o dia de jogo tem uns 150) */
         noQuadro: (x, z, d) => {
           if (palco && palco.pos && !(d && d.mundo)) { const q = palco.pos(x, z, d, PQ); esferaPovo.center.set(q.x, q.y + 0.9 * M, q.z); }
@@ -2254,6 +2264,21 @@ void main() {
      contado do pé que se vê) */
   function atualizarCorte() {
     if (!ape) {
+      /* A BRIGA NA CIDADE (o palco do jogo 3D que segue o líder): entre a
+         câmera e ele, o que passa da cabeça fica ralo — a copa do coqueiro,
+         o beiral —, num cone mais largo que o de a pé (a briga é um bolo
+         de gente em volta dele); o prédio que o palco abriu segue aberto */
+      const pc = palco && palco.alvoDoCorte ? palco.alvoDoCorte() : null;
+      if (pc) {
+        CORTE.uCorte.value = 1;
+        CORTE.uCorteA.value.set(pc.x, pc.y + 1.7 * M, pc.z);
+        CORTE.uCorteB.value.copy(cam.position);
+        CORTE.uCorteR.value = 6 * M;
+        CORTE.uCorteAcima.value = pc.y + CORTE_M.acima * M;
+        CORTE.uCorteId.value = corteFixo ? corteFixo.id : 0; CORTE.uCorteY.value = corteFixo ? corteFixo.y : 1e9;
+        CORTE.uSubY.value = 1e9;
+        return;
+      }
       /* SEM NINGUÉM A PÉ, o prédio que o jogo abriu (a sede do jogador, no
          jogo 3D) perde o que passa da altura dele: de cima se vê dentro */
       if (corteFixo) {
