@@ -73,13 +73,21 @@ export function brigaNaCaminhada(ctx, o) {
   const dentro = (x, y, m = 0) => x > m && y > m && x < TAB.W - m && y < TAB.H - m;
 
   /* A MÁSCARA: a célula de 8 px anda se o corpo (12 cm; o do combate tem
-     20, e encosta na parede) cabe no meio dela, na grade do passo, e não
-     é estádio */
+     20, e encosta na parede) cabe no meio dela, na grade do passo, não é
+     estádio E É CHÃO DE RUA (o dono, 28/09/2026: "a cena iniciada deu
+     vários membros da minha torcida presos dentro de terrenos, e quando o
+     rival corre eles ficam parados e a cena não evolui porque tem um
+     membro da torcida IA preso também"): o asfalto e a calçada do plano
+     do dia (`R.publico`, dia_de_jogo.js). O bonde nasce em bloco em volta
+     do ponto e quem não cabe é reencostado no vão livre mais perto — que
+     era o miolo do lote, do terreno baldio, do quintal murado, de onde
+     não se sai; e a cena só fecha quando não sobra ninguém de um lado */
   const COLS = TAB.W / TAB.CEL, ROWS = TAB.H / TAB.CEL, malha = new Uint8Array(COLS * ROWS);
-  const g = ctx.grade, r = 0.12 * M;
+  const g = ctx.grade, r = 0.12 * M, R = plano.R;
+  const naRua = (wx, wz) => { if (!R || !R.publico) return true; const K = R.celula(wx, wz); return K >= 0 && R.publico[K] === 1; };
   for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
     const [wx, wz] = noMundo((i + 0.5) * TAB.CEL, (j + 0.5) * TAB.CEL);
-    malha[j * COLS + i] = g && g.cabe(wx, wz, r) && !(ctx.noEstadio && ctx.noEstadio(wx, wz)) ? 1 : 0;
+    malha[j * COLS + i] = g && g.cabe(wx, wz, r) && naRua(wx, wz) && !(ctx.noEstadio && ctx.noEstadio(wx, wz)) ? 1 : 0;
   }
   const livre = (x, y) => { const i = Math.floor(x / TAB.CEL), j = Math.floor(y / TAB.CEL); return i >= 0 && j >= 0 && i < COLS && j < ROWS && malha[j * COLS + i] === 1; };
   /* o ponto andável mais perto de (x, y), em espiral (px) */
@@ -91,6 +99,30 @@ export function brigaNaCaminhada(ctx, o) {
     }
     return [x, y];
   };
+  /* SÓ O CHÃO LIGADO A QUEM BRIGA: o pedaço de rua que se alcança andando
+     do alvo, da tocaia e do ponto; o que sobra (a calçada fechada entre
+     muros, o recuo sem saída) sai da máscara — ninguém nasce nem fica
+     preso onde não se chega */
+  {
+    const n = COLS * ROWS, visto = new Uint8Array(n), fila = new Int32Array(n);
+    let ini = 0, fim = 0;
+    const semente = ([x, y]) => {
+      const i = Math.floor(x / TAB.CEL), j = Math.floor(y / TAB.CEL), c = j * COLS + i;
+      if (i >= 0 && j >= 0 && i < COLS && j < ROWS && malha[c] && !visto[c]) { visto[c] = 1; fila[fim++] = c; }
+    };
+    V.rua.ponto(Math.max(0, br.sV - 10 * M), Q); semente(soltar(...doMundo(Q.x, Q.z)));
+    semente(soltar(...doMundo(H[0], H[1])));
+    semente(soltar(...doMundo(P[0], P[1])));
+    while (ini < fim) {
+      const c = fila[ini++], i = c % COLS, j = (c - i) / COLS;
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const ii = i + di, jj = j + dj, k = jj * COLS + ii;
+        if (ii < 0 || jj < 0 || ii >= COLS || jj >= ROWS || visto[k] || !malha[k]) continue;
+        visto[k] = 1; fila[fim++] = k;
+      }
+    }
+    if (fim) for (let k = 0; k < n; k++) if (!visto[k]) malha[k] = 0;
+  }
   const linhas = [];
   for (let j = 0; j < ROWS; j++) {
     const runs = []; let v0 = 0, n = 0;

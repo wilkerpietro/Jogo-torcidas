@@ -1,76 +1,80 @@
 /* =========================================================
-   OS RECADOS EM BALÃO (o jogo 3D, 28/09/2026)
+   OS RECADOS NO JOGO 3D: A DECISÃO EM BALÃO, O RESTO EM AVISO (28/09/2026)
 
-   O dono: "Exclua a exposição do feed na tela. As mensagens sempre vão
-   ser via balões de alguém falando com o jogador."
+   O dono, primeiro: "Exclua a exposição do feed na tela. As mensagens
+   sempre vão ser via balões de alguém falando com o jogador." Depois,
+   jogando: "os recados não devem aparecer na tela, devem ficar somente
+   no notícias>mensagens e as mensagens que não geram botões de decisão
+   se tornam avisos do lado direito, na ideia do que era o feed
+   anteriormente, mas somem rapidamente."
 
    O feed saiu da tela do jogo 3D (o main.js não monta o rolo com
-   `TO.semFeed`). A história das mensagens continua em `E.feed`, igual,
-   e cada uma que cai chega ao jogador na boca de alguém:
-   - NA SEDE: quem traz o recado senta na cadeira da frente da mesa do
-     presidente (vida3d.js: o diretor, o olheiro, o repórter, o enviado
-     de outra torcida) e o balão fica em cima da cabeça dele;
-   - NO DIA DE JOGO (dia3d.js): o líder do nosso bonde, na rua ou na
-     arquibancada — e o balão mostra a linha do dia (a parada de agora,
-     os recados da parada com os botões, a partida);
-   - sem quem fala na tela (a câmera noutro canto, a praça sem sede, a
-     cidade montando), o balão encosta no alto, com o botão que leva a
-     câmera até quem fala.
-   UMA DE CADA VEZ, NENHUMA PERDIDA: as mensagens entram numa fila, na
-   ordem em que caíram. A notícia fica o tempo de ler (pelo tamanho do
-   texto; o mouse em cima segura, e um clique dentro prende até fechar) e
-   sai sozinha; o × e o "Próximo" passam na hora. A decisão fica até ser
-   respondida, sem ×. O relógio do jogo espera quem está falando (`espera`,
-   pelo ritmo do jogo 3D): a mensagem seguinte só cai quando o balão
-   acaba, então a fila não cresce sem fim. Painel, mapa, cena, reunião e
-   modal escondem o balão e seguram a fila; fechou, ele volta de onde
-   estava. A notícia de treta segue fora, como no feed (Notícias →
-   Tretas). O que já foi ouvido fica no save (`E.ouvido3d`, a mais nova
-   ouvida): carregar o jogo não repete recado, e decisão em aberto volta
-   sempre.
-   OS RECADOS DE OUTRAS TORCIDAS (Notícias → Mensagens: a provocação, o
-   convite, o agradecimento, o pedido de casa, a trégua) também chegam
-   assim: o enviado dela, com a camisa dela, senta na frente do
-   presidente. O pedido de casa e a trégua vêm com os botões da resposta;
-   sem resposta, eles seguem esperando em Notícias → Mensagens (não param
-   o tempo, como no feed). O que foi entregue fica lido. Eles entram na
-   fila na ordem em que chegam, como as mensagens da nossa torcida (só a
-   decisão em aberto passa na frente); o jogo carregado traz os que
-   ninguém leu dos últimos três dias.
+   `TO.semFeed`). A história das mensagens continua em `E.feed`, igual
+   (Notícias → Arquivo do feed mostra tudo), e cada uma que cai chega ao
+   jogador assim:
+   - A DECISÃO (a mensagem com botões que pedem resposta): no balão, na
+     boca de alguém — na sede, quem traz o recado senta na cadeira da
+     frente da mesa do presidente (vida3d.js: o diretor, o olheiro, o
+     repórter) e o balão fica em cima da cabeça dele; sem quem fala na
+     tela (a câmera noutro canto, a praça sem sede), o balão encosta no
+     alto, com o botão que leva a câmera até ele. A decisão fica até ser
+     respondida (o relógio do jogo espera por ela, como no feed);
+   - A NOTÍCIA (sem botão de decisão): um AVISO no lado direito da tela,
+     o cartão curto do feed de antes — quem fala, a hora e o texto — que
+     some sozinho em uns quatro segundos (o mouse em cima segura; um
+     toque abre o cartão inteiro, com a tabela, o jornal e os links, e
+     ele fica até o ×). O relógio NÃO espera aviso: as horas correm até a
+     próxima decisão;
+   - OS RECADOS DE OUTRAS TORCIDAS (a provocação, o convite, o pedido de
+     casa, a trégua): não aparecem na tela. Ficam em Notícias → Mensagens,
+     com o número vermelho no ícone (main.js), e os que pedem resposta
+     esperam lá, sem parar o tempo, como no feed;
+   - O DIA DE JOGO (dia3d.js): a linha do dia não ocupa mais a tela — o
+     placar de TV e a faixa das fases (dia3d.js) contam o dia —, e o
+     balão só aparece com uma decisão da linha (o ataque que a gente
+     sofre, a investida, a invasão, onde a caravana desce), no alto,
+     embaixo do placar; respondida, o saldo fica uns segundos e ele sai.
+   UMA DECISÃO DE CADA VEZ: elas entram numa fila, na ordem em que caíram.
+   Painel, mapa, cena, reunião e modal escondem o balão e seguram a fila;
+   fechou, ele volta de onde estava. A notícia de treta segue fora, como
+   no feed (Notícias → Tretas). O que já foi ouvido fica no save
+   (`E.ouvido3d`, a mais nova ouvida): carregar o jogo não repete recado,
+   e decisão em aberto volta sempre.
    ========================================================= */
 import { areaLivre } from './vida3d.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-/* entre um recado e o próximo: quem falou levanta, o outro chega (s) */
+/* entre uma decisão e a próxima: quem falou levanta, o outro chega (s) */
 const FOLGA = 0.45;
 /* a decisão respondida fica no ar com a resposta (s) */
 const RESPONDIDA = 2.5;
-/* a partida que acabou fica com a linha do dia fechada (s) */
-const FIM_DO_DIA = 5;
+/* o aviso: quanto fica na tela (s, a 1×) e quantos cabem na pilha */
+const AVISO_S = 4.2, AVISOS_MAX = 4;
+/* o saldo de um recado da linha do dia (a briga que passou) fica esse tanto (s) */
+const SALDO_S = 3.2;
 
 /* `api`: o do jogo 3D (cenario, M); `vida`: a vida da praça (vida3d.js,
-   quem senta na frente do presidente); `dia3d`: o dia de jogo (quem fala
-   é o líder do nosso bonde) */
+   quem senta na frente do presidente); `dia3d`: o dia de jogo */
 export function criarRecados(api, vida, dia3d) {
   const M = api.M;
   const C = () => api.cenario;
   const E = () => TO.estado && TO.estado.E;
   const vel = () => (TO.diaJogo && TO.diaJogo.ponte && TO.diaJogo.ponte.velocidade) || 1;
 
-  /* a fila: as mensagens esperando (os objetos de E.feed e de E.mensagens,
-     os recados de outras torcidas), a mais velha primeiro. Os dois nascem
-     do mesmo contador (`feedSeq`): o id não se repete entre eles */
-  let eVisto = null, topo = null, topoCaixa = null, fila = [], naFila = new Set();
-  const daCaixa = new WeakSet();
-  const ehCaixa = m => daCaixa.has(m);
-  const pedeResposta = m => !!(TO.tela && TO.tela.recadoPedeResposta && TO.tela.recadoPedeResposta(m));
+  /* a fila: as decisões esperando a vez do balão, a mais velha primeiro */
+  let eVisto = null, topo = null, fila = [], naFila = new Set();
   /* o recado no ar: a mensagem, a chave do cartão desenhado, quanto já foi
      lido e quanto ele fica (Infinity: até responder, ou até a linha do dia fechar) */
-  let atual = null, chave = null, lido = 0, lim = Infinity, fixo = false, preso = false, voltarFechando = false, sumiu = false, mexeuEm = 0, confirmando = false;
+  let atual = null, chave = null, lido = 0, lim = Infinity, fixo = false, preso = false, voltarFechando = false, sumiu = false, mexeuEm = 0, confirmando = false, eraLinha = false;
   let folga = 0, tDecisao = 0, tSentar = 0, ancorado = 0, cAncora = null, desligarAncora = null;
   const mostrados = [];
   let balao = null, corpo = null, pe = null, maisEl = null, proxBt = null, xBt = null, irBt = null, tempoEl = null, tempoBar = null;
+  /* os avisos do lado direito */
+  let pilha = null;
+  const avisos = [], avisados = [];
+  /* quando o saldo de cada cartão da linha do dia apareceu */
+  const saldoVisto = new WeakMap();
 
   function montar() {
     if (balao) return;
@@ -94,99 +98,141 @@ export function criarRecados(api, vida, dia3d) {
     xBt.onclick = () => { if (atual && !fixo) fechar(); };
     proxBt.onclick = () => { if (atual && !fixo) fechar(); };
     irBt.onclick = () => { if (dia3d.ativo) dia3d.verNossa(); else vida.irPraSala(); };
-    /* quem clica dentro está lendo (abriu o jornal, a aba do plano): o
-       recado fica até fechar */
+    /* quem clica dentro está lendo: o recado fica até fechar */
     balao.addEventListener('pointerdown', ev => {
       if (ev.target.closest('.j3d-balao-x, .j3d-balao-prox, .j3d-balao-ir')) return;
       if (atual && !fixo) preso = true;
     });
-    /* O MOUSE EM CIMA SEGURA A LEITURA — mas só o mouse que se mexe em
-       cima do balão (4 s parado, a leitura volta a correr): o balão que
-       nasce debaixo de um cursor parado (o do "Começar partida", no meio da
-       tela) e o que acabou de ser respondido com o mouse em cima (o cursor
-       fica no botão) ficavam presos pra sempre */
+    /* o mouse que se mexe em cima segura a leitura (4 s parado, ela volta a correr) */
     balao.addEventListener('pointermove', ev => { if (ev.pointerType === 'mouse') mexeuEm = performance.now(); });
     balao.addEventListener('pointerleave', () => { mexeuEm = 0; });
+    pilha = document.createElement('div');
+    pilha.className = 'j3d-avisos';
+    pilha.setAttribute('aria-live', 'polite');
+    document.body.appendChild(pilha);
   }
 
   /* ======================================================
-     A FILA
+     A FILA DAS DECISÕES
      ====================================================== */
-  const pendente = m => !ehCaixa(m) && m.peso === 'decisao' && !m.respondido;
+  const pendente = m => !!m && m.peso === 'decisao' && !m.respondido;
   const pairando = () => !!mexeuEm && performance.now() - mexeuEm < 4000;
-  /* o tempo de ler uma notícia: pelo tamanho do texto, e mais um tanto
-     se ela traz tabela (o olheiro, a presença, a página do jornal) */
-  function leitura(m) {
-    const txt = String(m.texto || '').replace(/<[^>]+>/g, '');
-    const d = m.dados || {};
-    const tabela = !ehCaixa(m) && ((d.tabela && d.tabela.length) || (d.presenca && d.presenca.length) || d.pagina || m.kind === 'rodada' || m.kind === 'semana');
-    /* (o pedido de casa e a trégua, com os botões: mais um tanto) */
-    return (clamp(3 + txt.length / 30 + (tabela ? 3 : 0), 4, 11) + (pedeResposta(m) ? 4 : 0)) / (vel() > 1 ? 1.4 : 1);
-  }
+  /* o tempo de ler o que não pede resposta no balão (a decisão que já veio respondida) */
+  const leitura = m => clamp(3 + String(m.texto || '').replace(/<[^>]+>/g, '').length / 30, 4, 9) / (vel() > 1 ? 1.4 : 1);
   function por(m, frente) {
-    /* a notícia de treta não passa pelo feed (vai pra Notícias → Tretas) */
-    if (!m || m.kind === 'confronto' || naFila.has(m.id)) return;
+    if (!m || naFila.has(m.id)) return;
     naFila.add(m.id);
     if (frente) fila.unshift(m); else fila.push(m);
   }
-  /* o recado de outra torcida que chegou (a caixa também recebe por cima) */
-  function olharCaixa(e) {
-    const cx = e.mensagens || [];
-    if (!cx.length || cx[0] === topoCaixa) return;
-    const novos = [];
-    for (const m of cx) { if (m === topoCaixa || novos.length > 60) break; if (!m.lida) novos.push(m); }
-    topoCaixa = cx[0];
-    for (let k = novos.length - 1; k >= 0; k--) { daCaixa.add(novos[k]); por(novos[k]); }
-  }
-  /* o que caiu desde a última olhada: tudo o que está acima do topo de
-     antes (a mensagem nova entra sempre por cima, em `E.feed`) */
+  /* o que caiu desde a última olhada (a mensagem nova entra sempre por cima,
+     em `E.feed`): a decisão vai pra fila do balão, a notícia vira aviso */
   function olhar(e) {
     const feed = e.feed || [];
     if (!feed.length || feed[0] === topo) return;
     const novos = [];
     for (const m of feed) { if (m === topo || novos.length > 400) break; novos.push(m); }
     topo = feed[0];
-    for (let k = novos.length - 1; k >= 0; k--) por(novos[k]);
+    /* (uma rajada grande, a de um dia inteiro que caiu de uma vez: só as últimas viram aviso) */
+    for (let k = novos.length - 1; k >= 0; k--) chegouUma(e, novos[k], k < AVISOS_MAX);
+  }
+  function chegouUma(e, m, avisa) {
+    /* a notícia de treta não passa pelo feed (vai pra Notícias → Tretas) */
+    if (!m || m.kind === 'confronto') return;
+    if (pendente(m)) { por(m); return; }
+    if (avisa) avisar(e, m);
+    ouvido(m);
   }
   /* a decisão em aberto segura o relógio: se ela não está na fila (um save
      antigo, uma que escapou), entra na frente */
   function conferirDecisoes(e) {
     for (const m of e.feed || []) if (pendente(m) && !naFila.has(m.id)) por(m, true);
   }
-  /* o save novo (jogo novo, carregado): a fila recomeça do que não foi
-     ouvido — acima da marca do save; sem marca (jogo novo, save de antes
-     dos balões), as de hoje — e das decisões em aberto */
+  /* o save novo (jogo novo, carregado): a fila recomeça das decisões em
+     aberto; as notícias já estão no arquivo (Notícias → Arquivo do feed) */
   function iniciar(e) {
     largar();
+    for (const a of avisos.slice()) tirarAviso(a, true);
     eVisto = e; fila = []; naFila = new Set(); folga = 0;
-    const feed = e.feed || [], cx = e.mensagens || [], hoje = (e.data && e.data.absoluto) || 0;
-    topo = feed[0] || null; topoCaixa = cx[0] || null;
-    const i = e.ouvido3d != null ? feed.findIndex(m => m.id === e.ouvido3d) : -1;
-    let novos = [];
-    if (i >= 0) novos = feed.slice(0, i);
-    else for (const m of feed) { if (!m.quando || m.quando.abs !== hoje) break; novos.push(m); }
-    /* os recados de outras torcidas dos últimos três dias que ninguém leu
-       (o jogo salvo e carregado no dia seguinte não perde o de ontem) */
-    for (const m of cx) { if (!m.quando || hoje - (m.quando.abs || 0) > 2) break; if (!m.lida) { daCaixa.add(m); novos.push(m); } }
-    novos.sort((a, b) => (+a.id || 0) - (+b.id || 0));
-    for (const m of novos) por(m);
+    topo = (e.feed || [])[0] || null;
     conferirDecisoes(e);
   }
   /* a marca do save: a mais nova ouvida (quanto mais perto do topo, mais nova) */
   function ouvido(m) {
     const e = E();
-    if (!e) return;
-    /* o recado de outra torcida entregue fica lido (o que pede resposta e
-       ficou sem ela segue esperando em Notícias → Mensagens) */
-    if (ehCaixa(m)) {
-      if (!pedeResposta(m) && !m.lida) { m.lida = true; if (TO.tela.atualizarBadges) TO.tela.atualizarBadges(); }
-      return;
-    }
-    if (!e.feed) return;
+    if (!e || !e.feed) return;
     const i = e.feed.indexOf(m);
     if (i < 0) return;
     const j = e.ouvido3d != null ? e.feed.findIndex(x => x.id === e.ouvido3d) : -1;
     if (j < 0 || i < j) e.ouvido3d = m.id;
+  }
+
+  /* ======================================================
+     O AVISO DO LADO DIREITO
+     ====================================================== */
+  const TITULO = { rodada: 'A Gazeta dos Sports da rodada saiu.', semana: 'O planejamento da semana está na mesa.' };
+  function textoDoAviso(m) {
+    const t = String(m.texto || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    return t || TITULO[m.kind] || '';
+  }
+  /* `m`: a mensagem do feed (o toque abre o cartão dela), ou null com
+     `o` = { voz, texto, hora, classe, botao: { rot, fn } } (o dia de jogo:
+     o gol, o jogo da cidade começando) */
+  function avisar(e, m, o = null) {
+    montar();
+    const txt = (o && o.texto) || (m ? textoDoAviso(m) : '');
+    if (!txt) return null;
+    const voz = (o && o.voz) || (m && TO.tela && TO.tela.vozDaMsg ? TO.tela.vozDaMsg(m) : '');
+    const hora = (o && o.hora) || (m && m.hora) || '';
+    const n = document.createElement('div');
+    n.className = 'j3d-aviso' + (m && m.tipo ? ' ' + m.tipo : '') + (o && o.classe ? ' ' + o.classe : '') + (m ? ' abre' : '');
+    n.innerHTML = `<div class="j3d-aviso-cab"><b>${esc(voz)}</b>${hora ? `<time>${esc(hora)}</time>` : ''}</div><p>${esc(txt)}</p>` +
+      (o && o.botao ? `<button class="j3d-aviso-bt">${esc(o.botao.rot)}</button>` : '');
+    const a = { n, m, o, resta: AVISO_S / (vel() > 1 ? 1.3 : 1), fixo: false, pairando: false, saindo: false };
+    n.addEventListener('pointerenter', ev => { if (ev.pointerType === 'mouse') a.pairando = true; });
+    n.addEventListener('pointerleave', () => { a.pairando = false; });
+    n.addEventListener('click', ev => {
+      if (ev.target.closest('.j3d-aviso-x')) { tirarAviso(a); return; }
+      if (ev.target.closest('.j3d-aviso-bt')) { try { o.botao.fn(); } catch (err) { console.error('o aviso:', err); } tirarAviso(a); return; }
+      if (!a.fixo && a.m) abrirAviso(a);
+    });
+    pilha.appendChild(n);
+    avisos.push(a);
+    avisados.push({ id: m ? m.id : null, kind: m ? m.kind : (o && o.classe) || 'aviso', voz, texto: txt.slice(0, 100) });
+    if (avisados.length > 120) avisados.shift();
+    /* a pilha é curta: o mais velho que não está aberto sai */
+    const soltos = avisos.filter(x => !x.fixo && !x.saindo);
+    while (soltos.length > AVISOS_MAX) tirarAviso(soltos.shift());
+    return a;
+  }
+  /* o toque abre o cartão inteiro da mensagem (a tabela, o jornal, os links), até o × */
+  function abrirAviso(a) {
+    const e = E();
+    a.fixo = true;
+    a.n.classList.add('aberto');
+    a.n.innerHTML = '<button class="j3d-aviso-x" title="Fechar" aria-label="Fechar">×</button>';
+    try { a.n.appendChild(TO.tela.cartaoMensagem(e, a.m)); }
+    catch (err) { console.error('o aviso: o cartão não montou', err); a.n.insertAdjacentHTML('beforeend', `<p>${esc(textoDoAviso(a.m))}</p>`); }
+  }
+  function tirarAviso(a, ja = false) {
+    if (a.saindo) return;
+    a.saindo = true;
+    const fora = () => { a.n.remove(); const i = avisos.indexOf(a); if (i >= 0) avisos.splice(i, 1); };
+    if (ja) { fora(); return; }
+    a.n.classList.add('saindo');
+    setTimeout(fora, 260);
+  }
+  /* sem jogo na tela, numa cena, num painel ou no mapa, os avisos esperam (e não correm) */
+  function podeAvisar() {
+    const b = document.body.classList;
+    return b.contains('j3d-em-jogo') && !b.contains('em-cena') && !b.contains('palco-briga') && !b.contains('com-painel') && !b.contains('j3d-mapa-aberto');
+  }
+  function quadroAvisos(dt) {
+    const pode = podeAvisar();
+    if (!pode) return;
+    /* a pilha embaixo da barra do jogo (e do placar, no dia de jogo) */
+    const y = Math.round(topoLivre());
+    if (pilha.style.top !== y + 'px') pilha.style.top = y + 'px';
+    for (const a of avisos.slice()) if (!a.fixo && !a.saindo && !a.pairando) { a.resta -= dt; if (a.resta <= 0) tirarAviso(a); }
   }
 
   /* ======================================================
@@ -198,43 +244,36 @@ export function criarRecados(api, vida, dia3d) {
     const b = document.body.classList;
     if (!b.contains('j3d-em-jogo') || b.contains('em-cena') || b.contains('palco-briga') || b.contains('palco3d') ||
         b.contains('com-painel') || b.contains('j3d-mapa-aberto') || vida.reuniao) return false;
-    /* o jogo da cidade (dia3d.js): o tempo do jogo está parado e ninguém da
-       torcida está ali pra falar — o recado espera a volta pra sede */
-    if (dia3d.jogoDaCidade) return false;
     if (document.querySelector('.j3d-dia-modal, .tela-cheia:not(.oculto):not(#telaMenu)')) return false;
     return true;
   }
   const estadoSeguro = (e, m) => { try { return TO.tela && TO.tela.estadoDaMsg ? TO.tela.estadoDaMsg(e, m) : ''; } catch (err) { return 'erro'; } };
-  const chaveDe = (e, m) => ehCaixa(m) ? 'cx|' + (m.resposta || '') + '|' + (m.lida ? 'l' : '')
-    : estadoSeguro(e, m) + '|' + (m.respondido ? 'r' : '');
+  const chaveDe = (e, m) => estadoSeguro(e, m) + '|' + (m.respondido ? 'r' : '');
   function mostrar(m) {
     montar();
-    atual = m; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; confirmando = false; tSentar = 0;
-    mostrados.push({ id: m.id, kind: ehCaixa(m) ? 'recado-' + (m.tipo || 'torcida') : m.kind, peso: m.peso || 'info' });
+    atual = m; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; confirmando = false; eraLinha = false; tSentar = 0;
+    mostrados.push({ id: m.id, kind: m.kind, peso: m.peso || 'info' });
     if (mostrados.length > 300) mostrados.shift();
     sentar();
   }
   /* quem traz: na sede, alguém senta na frente do presidente (no dia de
-     jogo quem fala é o líder do bonde, que já está na rua) */
+     jogo a decisão é da linha do dia, e ela fica no alto) */
   function sentar() {
     if (!atual || dia3d.ativo || !vida.ligada || vida.reuniao) return;
     const r = vida.recado;
     if (r && r.msg === atual.id) return;
-    /* o recado de outra torcida: o enviado dela, com a camisa dela */
-    vida.sentarRecado(ehCaixa(atual) ? { id: atual.id, voz: 'torcida', kind: 'recado-torcida', dados: { de: atual.de } } : atual);
+    vida.sentarRecado(atual);
   }
-  /* o cartão: o mesmo do feed, com os botões que respondem; com a linha
-     do dia andando, só a linha (a parada, os recados dela, a partida) */
   /* O CARTÃO QUE NÃO SE DESENHA NÃO TRAVA A FILA: um erro ao montar o
      cartão (um save antigo, um anexo que falta) vira um cartão simples —
-     o texto e, na decisão, os botões dela, que respondem pelo mesmo caminho
-     do clique —, e o erro vai pro console com a chave da mensagem */
+     o texto e os botões da decisão, que respondem pelo mesmo caminho do
+     clique —, e o erro vai pro console com a chave da mensagem */
   function cartaoSimples(e, m, err) {
-    console.error('os recados: o cartão não montou', m && (m.kind || m.tipo), m && (m.chave || m.id), err);
+    console.error('os recados: o cartão não montou', m && m.kind, m && (m.chave || m.id), err);
     const art = document.createElement('article');
     art.className = 'msg';
-    art.innerHTML = `<div class="msg-cab"><span class="msg-voz">${esc(ehCaixa(m) ? (m.nome || 'Recado') : 'Recado')}</span></div><p class="msg-txt">${esc(String(m.texto || '').replace(/<[^>]+>/g, ''))}</p>`;
-    if (!ehCaixa(m) && pendente(m) && (m.botoes || []).length) {
+    art.innerHTML = `<div class="msg-cab"><span class="msg-voz">Recado</span></div><p class="msg-txt">${esc(String(m.texto || '').replace(/<[^>]+>/g, ''))}</p>`;
+    if (pendente(m) && (m.botoes || []).length) {
       const bs = document.createElement('div');
       bs.className = 'msg-bts';
       for (const b of m.botoes) {
@@ -260,36 +299,44 @@ export function criarRecados(api, vida, dia3d) {
     const m = atual, primeira = chave === null, eraFixo = fixo;
     chave = k; sumiu = false;
     corpo.innerHTML = '';
-    const linha = !ehCaixa(m) && k.startsWith('itn|') && TO.tela.linhaDoDia ? TO.tela.linhaDoDia(m) : null;
-    if (ehCaixa(m)) {
-      corpo.appendChild(TO.tela.cartaoRecadoDeTorcida(e, m));
-    } else if (linha) {
-      corpo.insertAdjacentHTML('beforeend', `<div class="j3d-balao-quem">${esc(dia3d.ativo ? 'O nosso bonde · o dia de jogo' : 'O dia de jogo')}</div>`);
+    /* a linha do dia de jogo: o nó inteiro vai pro balão (a partida roda
+       dentro dele), mas só o cartão que pede resposta aparece */
+    const linha = k.startsWith('itn|') && TO.tela.linhaDoDia ? TO.tela.linhaDoDia(m) : null;
+    if (linha) {
       corpo.appendChild(linha);
-      /* o cartão da parada com os botões fica à vista (no celular o balão
-         é baixo e ele caía embaixo da dobra) */
-      const cart = [...linha.querySelectorAll('.itn-cartao')].pop();
-      if (cart && cart.querySelector('.itn-bt')) requestAnimationFrame(() => { try { cart.scrollIntoView({ block: 'nearest' }); } catch (e2) {} });
+      eraLinha = true;
     } else {
       if (m.hora) corpo.insertAdjacentHTML('beforeend', `<div class="j3d-balao-hora">${esc(m.hora)}</div>`);
       corpo.appendChild(TO.tela.cartaoMensagem(e, m));
     }
     fixo = pendente(m) || !!linha;
-    balao.classList.toggle('decisao', pendente(m));
+    balao.classList.toggle('decisao', fixo);
     balao.classList.toggle('linha', !!linha);
     xBt.hidden = fixo;
     if (fixo) lim = Infinity;
-    else if (ehCaixa(m)) {
-      /* respondido agora (o pedido de casa, a trégua): fica um pouco com a resposta */
-      if (primeira) { lido = 0; lim = leitura(m); confirmando = false; }
-      else if (m.resposta && k.split('|')[1]) { lido = 0; preso = false; lim = RESPONDIDA; confirmando = true; }
-    }
     else if (primeira || lim === Infinity) {
-      /* respondida agora (ou a linha do dia fechou): fica um pouco com a resposta */
+      /* respondida agora: fica um pouco com a resposta */
       lido = 0; preso = false;
       confirmando = !primeira && eraFixo;
-      lim = primeira ? leitura(m) : eraFixo ? (m.kind === 'partida' ? FIM_DO_DIA : RESPONDIDA) : leitura(m);
+      lim = primeira ? leitura(m) : RESPONDIDA;
     }
+  }
+  /* A LINHA DO DIA NO BALÃO: só o cartão que pede resposta (ou o saldo da
+     briga que acabou de passar, uns segundos) fica à vista; sem nenhum, o
+     balão some — a linha continua nele, escondida, com a partida rodando */
+  function cartoesDaLinha() {
+    const agora = performance.now();
+    let n = 0;
+    for (const c of corpo.querySelectorAll('.itn-cartao')) {
+      let vivo = !!c.querySelector('button');
+      if (!vivo && c.querySelector('.saldo')) {
+        if (!saldoVisto.has(c)) saldoVisto.set(c, agora);
+        vivo = agora - saldoVisto.get(c) < SALDO_S * 1000;
+      }
+      if (c.classList.contains('vivo') !== vivo) c.classList.toggle('vivo', vivo);
+      if (vivo) n++;
+    }
+    return n;
   }
   function exibir() {
     if (!balao.hidden) return;
@@ -305,12 +352,11 @@ export function criarRecados(api, vida, dia3d) {
   function largar() {
     if (atual) naFila.delete(atual.id);
     const tinha = !!atual;
-    atual = null; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; confirmando = false;
+    atual = null; chave = null; lido = 0; lim = Infinity; fixo = false; preso = false; voltarFechando = false; sumiu = false; confirmando = false; eraLinha = false;
     esconder();
     if (tinha) vida.soltarRecado();
   }
-  /* o recado acabou: ouvido, quem falou vai embora, e o relógio refaz a
-     conta de quanto esperar (a leitura pode ter sido mais curta que o previsto) */
+  /* o recado acabou: ouvido, quem falou vai embora, e o relógio refaz a conta */
   function fechar() {
     if (atual) ouvido(atual);
     largar();
@@ -326,6 +372,18 @@ export function criarRecados(api, vida, dia3d) {
   /* ======================================================
      ONDE O BALÃO FICA: em cima de quem fala, ou no alto
      ====================================================== */
+  /* o alto livre da tela: embaixo da barra do jogo, da fita das manchetes
+     e do placar do dia de jogo */
+  function topoLivre() {
+    let y = 62;
+    for (const s of ['.feed-barra', '.feed-ticker', '.j3d-placar']) {
+      const el = document.querySelector(s);
+      if (!el || el.hidden) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > 0 && r.bottom < innerHeight * 0.5) y = Math.max(y, r.bottom);
+    }
+    return y + 8;
+  }
   const PQ = {}, PP = {};
   function registrarAncora() {
     const Cn = C();
@@ -336,10 +394,15 @@ export function criarRecados(api, vida, dia3d) {
   function ancorar() {
     if (!balao || balao.hidden || !atual) return;
     ancorado = performance.now();
-    const Cn = C(), A = areaLivre(), larg = balao.offsetWidth || 340, alto = balao.offsetHeight || 140;
+    const Cn = C(), A = areaLivre();
+    /* (o balão nunca é mais largo que a parte livre da tela: no celular em pé, a coluna de ícones come a esquerda e ele passava da borda da direita) */
+    const cabe = Math.max(220, Math.floor(A.x1 - A.x0 - 16)) + 'px';
+    if (balao.style.maxWidth !== cabe) balao.style.maxWidth = cabe;
+    const larg = balao.offsetWidth || 340, alto = balao.offsetHeight || 140;
     let alvo = null, volta = null, x = null, y = null;
-    if (dia3d.ativo) { alvo = dia3d.falante; volta = 'Ver a nossa torcida'; }
-    else if (vida.ligada) {
+    /* (no dia de jogo a decisão fica sempre no alto, embaixo do placar: em
+       cima do líder ela tampava justamente o lado de onde a rival vinha) */
+    if (!dia3d.ativo && vida.ligada) {
       const r = vida.recado;
       if (r && r.msg === atual.id) alvo = { x: r.d.x, y: (r.d.alt || 0) + 1.45 * M, z: r.d.y };
       if (vida.sede) volta = 'Ir pra sala do presidente';
@@ -354,27 +417,27 @@ export function criarRecados(api, vida, dia3d) {
       irBt.hidden = !volta;
       if (volta && irBt.textContent !== volta) irBt.textContent = volta;
       balao.style.left = Math.round(clamp(A.meio - larg / 2, A.x0 + 8, Math.max(A.x0 + 8, A.x1 - larg - 8))) + 'px';
-      balao.style.top = '92px';
+      balao.style.top = Math.round(topoLivre()) + 'px';
       return;
     }
     balao.classList.remove('solto'); irBt.hidden = true;
     /* O PRESIDENTE À VISTA: o balão abre pro lado contrário ao dele (o rabo
        fica na cabeça de quem fala, perto da ponta do balão) */
     let meio = x;
-    const pres = !dia3d.ativo && vida.ligada ? vida.presidente : null;
+    const pres = vida.ligada ? vida.presidente : null;
     if (pres && Cn) {
       const qp = Cn.vida.projetar(pres.x, (pres.alt || 0) + 1.2 * M, pres.y, PP);
       if (qp.frente && Math.abs(qp.x - x) < larg * 0.6 && qp.y < y + 40) meio = qp.x >= x ? x - larg / 2 + 34 : x + larg / 2 - 34;
     }
     const left = clamp(meio - larg / 2, A.x0 + 8, Math.max(A.x0 + 8, A.x1 - larg - 8));
-    const top = Math.max(70, y - alto - 14);
+    const top = Math.max(topoLivre(), y - alto - 14);
     balao.style.left = Math.round(left) + 'px'; balao.style.top = Math.round(top) + 'px';
     balao.style.setProperty('--rabo', Math.round(clamp(x - left, 16, larg - 16)) + 'px');
   }
-  /* o pé: quantos esperam, o "Próximo" e a régua do tempo de leitura */
+  /* o pé: quantas decisões esperam e a régua do tempo da resposta */
   function pintarPe() {
     const n = fila.length;
-    const txt = n ? `+${n} ${n > 1 ? 'recados esperando' : 'recado esperando'}` : '';
+    const txt = n ? `+${n} ${n > 1 ? 'decisões esperando' : 'decisão esperando'}` : '';
     if (maisEl.textContent !== txt) maisEl.textContent = txt;
     const prox = !fixo && n > 0;
     if (proxBt.hidden === prox) proxBt.hidden = !prox;
@@ -394,44 +457,32 @@ export function criarRecados(api, vida, dia3d) {
     montar();
     if (e !== eVisto) iniciar(e);
     olhar(e);
-    olharCaixa(e);
+    quadroAvisos(dt);
     tDecisao += dt;
     if (tDecisao > 0.5) { tDecisao = 0; conferirDecisoes(e); }
     const pode = podeMostrar();
-    /* A LINHA DO DIA DE JOGO PASSA NA FRENTE: com ela andando (os recados
-       das brigas do dia, a partida), o que estava no balão volta pra fila
-       — sem contar como ouvido — e ela entra */
+    /* A LINHA DO DIA DE JOGO PASSA NA FRENTE: com ela andando, o que estava
+       no balão volta pra fila — sem contar como ouvido — e ela entra */
     const ml = TO.tela.msgDaLinha ? TO.tela.msgDaLinha() : null;
     if (ml && ml !== atual) {
       const antes = atual;
-      if (antes) { largar(); naFila.add(antes.id); fila.unshift(antes); }
+      if (antes) { largar(); if (pendente(antes)) { naFila.add(antes.id); fila.unshift(antes); } }
       const i = fila.indexOf(ml);
       if (i >= 0) fila.splice(i, 1);
       naFila.add(ml.id);
       mostrar(ml);
     }
+    /* a linha do dia acabou: o balão sai na hora (o placar da TV já contou o dia) */
+    if (atual && eraLinha && !ml) { fechar(); return; }
     if (!atual) {
-      /* o recado de outra torcida que o jogador já leu em Notícias → Mensagens não vem mais */
-      for (let k = fila.length - 1; k >= 0; k--) if (ehCaixa(fila[k]) && fila[k].lida) naFila.delete(fila.splice(k, 1)[0].id);
+      /* (a decisão respondida por fora, antes da vez dela, sai da fila) */
+      for (let k = fila.length - 1; k >= 0; k--) if (!pendente(fila[k])) naFila.delete(fila.splice(k, 1)[0].id);
       if (folga > 0) folga -= dt;
-      else if (fila.length && pode) {
-        /* A DECISÃO EM ABERTO VEM PRIMEIRO (ela segura o relógio: esperar
-           atrás de notícia é o jogo parado sem nada pra responder); o resto,
-           NA ORDEM EM QUE CAIU — o recado de outra torcida também
-           (conserto de 28/09/2026, o dono: "Os recados não aparecem na
-           tela, ficam somente em Notícias > Mensagens"): ele esperava atrás
-           de toda mensagem da nossa torcida, até das que chegaram depois
-           dele; num dia cheio a vez não chegava, o jogador lia o recado em
-           Notícias → Mensagens e ele saía da fila sem ter aparecido */
-        const i = fila.findIndex(pendente);
-        mostrar(fila.splice(i >= 0 ? i : 0, 1)[0]);
-      }
+      else if (fila.length && pode) mostrar(fila.shift());
     }
     if (!atual) { esconder(); return; }
     const k = chaveDe(e, atual);
     if (!pode) {
-      /* (o recado de outra torcida lido no painel de Mensagens não volta) */
-      if (chave !== null && ehCaixa(atual) && atual.lida) voltarFechando = true;
       if (chave !== null) sumiu = true;
       esconder();
       return;
@@ -441,13 +492,12 @@ export function criarRecados(api, vida, dia3d) {
     if (!voltarFechando && sumiu && k !== chave && fixo && !pendente(atual) && !k.startsWith('itn|')) voltarFechando = true;
     if (voltarFechando) { fechar(); return; }
     if (k !== chave) pintar(e, k);
+    /* a linha do dia: o balão só com a decisão da hora */
+    if (eraLinha && !cartoesDaLinha()) { esconder(); return; }
     exibir();
     /* quem traz o recado senta (a praça pode ter acabado de montar) */
     tSentar += dt;
     if (tSentar > 1) { tSentar = 0; sentar(); }
-    /* com uma decisão esperando na fila, a notícia no ar sai logo (mais um
-       segundo e meio de leitura, no máximo) — a decisão é que segura o jogo */
-    if (!fixo && lim !== Infinity && !preso && fila.some(pendente)) lim = Math.min(lim, lido + 1.5);
     if (lim !== Infinity) {
       if (confirmando || (!preso && !pairando())) lido += dt;
       if (lido >= lim) { fechar(); return; }
@@ -458,27 +508,25 @@ export function criarRecados(api, vida, dia3d) {
   }
 
   /* QUANTO O RELÓGIO ESPERA (ms a 1×; o relógio divide pela velocidade):
-     o que falta do recado no ar e o tempo de ler cada um da fila. Lendo
-     preso (o mouse em cima, o clique dentro), a espera é longa — ao
-     fechar, o relógio é cutucado e refaz a conta */
+     só o que falta da resposta no ar — aviso não segura as horas, e a
+     decisão em aberto já para o relógio sozinha */
   function espera() {
     try {
-      if (!atual && !fila.length) return 0;
+      if (!atual) return Math.max(0, folga) * 1000 * vel();
       if (!confirmando && (preso || pairando())) return 60000;
       let s = Math.max(0, folga);
-      if (atual && lim !== Infinity) s += Math.max(0, lim - lido);
-      for (const m of fila) s += (pendente(m) ? 0 : leitura(m)) + FOLGA;
+      if (lim !== Infinity) s += Math.max(0, lim - lido);
       return Math.min(60000, s * 1000 * vel());
     } catch (err) { return 0; }
   }
-  /* a mensagem que acabou de cair (o ritmo do jogo 3D avisa): entra na
-     fila na hora, pra `espera` já contar com ela */
+  /* a mensagem que acabou de cair (o ritmo do jogo 3D avisa): a decisão
+     entra na fila e a notícia vira aviso na hora */
   function chegou(e) {
-    if (e && e === eVisto) { olhar(e); olharCaixa(e); }
+    if (e && e === eVisto) olhar(e);
   }
 
-  /* A DECISÃO EM ABERTO NA TELA, JÁ (o ≫ com o tempo parado chama): a
-     notícia no ar volta pra fila e a decisão entra; devolve o que impede o
+  /* A DECISÃO EM ABERTO NA TELA, JÁ (o ≫ com o tempo parado chama): o que
+     estava no balão volta pra fila e a decisão entra; devolve o que impede o
      balão de aparecer, se houver */
   function trazerDecisao() {
     const e = E();
@@ -488,7 +536,7 @@ export function criarRecados(api, vida, dia3d) {
     if (e !== eVisto) iniciar(e);
     if (atual !== d) {
       const antes = atual;
-      if (antes) { largar(); if (!ouvidoJa(antes)) { naFila.add(antes.id); fila.unshift(antes); } }
+      if (antes) { largar(); if (pendente(antes)) { naFila.add(antes.id); fila.unshift(antes); } }
       const i = fila.indexOf(d);
       if (i >= 0) fila.splice(i, 1);
       naFila.add(d.id);
@@ -501,15 +549,18 @@ export function criarRecados(api, vida, dia3d) {
     }
     return '';
   }
-  const ouvidoJa = m => ehCaixa(m) && m.lida;
 
   return {
     quadro, espera, chegou, trazerDecisao,
+    /* um aviso que não é mensagem do feed (o dia de jogo: o gol, o jogo da cidade) */
+    avisar: o => avisar(E(), null, o),
     /* pro teste */
     get estado() {
-      return { atual: atual && { id: atual.id, kind: ehCaixa(atual) ? 'recado-' + (atual.tipo || 'torcida') : atual.kind, peso: atual.peso || 'info', caixa: ehCaixa(atual) }, fila: fila.map(m => m.id), visivel: !!(balao && !balao.hidden),
-               solto: !!(balao && balao.classList.contains('solto')), fixo, preso, lido: +lido.toFixed(2), lim: lim === Infinity ? null : +lim.toFixed(2),
-               ouvido: E() ? E().ouvido3d : null, mostrados: mostrados.slice(-60), quemFala: dia3d.ativo ? 'bonde' : vida.recado ? 'sede' : null };
+      return { atual: atual && { id: atual.id, kind: atual.kind, peso: atual.peso || 'info' }, fila: fila.map(m => m.id), visivel: !!(balao && !balao.hidden),
+               solto: !!(balao && balao.classList.contains('solto')), linha: eraLinha, fixo, preso, lido: +lido.toFixed(2), lim: lim === Infinity ? null : +lim.toFixed(2),
+               ouvido: E() ? E().ouvido3d : null, mostrados: mostrados.slice(-60), quemFala: dia3d.ativo ? 'linha' : vida.recado ? 'sede' : null,
+               avisos: avisos.filter(a => !a.saindo).map(a => ({ kind: a.m ? a.m.kind : 'aviso', aberto: a.fixo, texto: a.n.textContent.slice(0, 80) })),
+               avisados: avisados.slice(-60) };
     },
     get balao() { return balao; }
   };

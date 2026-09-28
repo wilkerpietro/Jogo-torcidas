@@ -61,13 +61,23 @@ const CALCAS = ['#2b3a55', '#1f2226', '#5f6368', '#b9a98a', '#3c4a2a', '#23355f'
 /* =======================================================
    O RELÓGIO DO DIA
    ======================================================= */
-/* o dia na tela: das 7h às 23h em DIA_MS a 1× (o 2× do jogo vale aqui) */
-const DIA_MS = 9000, INI = 7 * 60, FIM = 23 * 60, MS_MIN = DIA_MS / (FIM - INI), NOITE_MS = 700;
+/* o dia na tela: das 7h às 23h em DIA_MS a 1× (o 2× do jogo vale aqui).
+   AS HORAS CORREM ATÉ A PRÓXIMA DECISÃO (o dono, 28/09/2026: "as horas
+   pulam rapidamente até ocorrer outro evento de decisão. se o dia não
+   tiver nada, ele pula, inclusive, pois o calendário sem nada deixa o
+   jogo entediante se as horas passam devagar"): o dia inteiro leva 3,6 s
+   (eram 9), a notícia vira aviso e não segura o relógio (recados3d.js),
+   o dia em que não cai mensagem nenhuma e a cidade não tem jogo pula na
+   hora — sem nem a noite na tela —, e o resto do dia depois da última
+   mensagem passa em no máximo um segundo. O que tem de se ver na cidade
+   (o jogo de outros clubes, a nossa investida chegando no alvo: dia3d.js)
+   pede uma JANELA, um pedaço do dia com o passo mais lento */
+const DIA_MS = 3600, INI = 7 * 60, FIM = 23 * 60, MS_MIN = DIA_MS / (FIM - INI), NOITE_MS = 700, VAZIO_MS = 260, RESTO_MS = 1000;
 const minutoDe = hora => { const m = /^(\d\d?):(\d\d)/.exec(String(hora || '')); return m ? +m[1] * 60 + +m[2] : null; };
 export const horaTxt = min => { const m = Math.round(min) % (24 * 60); return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
 
 function criarRelogio(C) {
-  let agora = INI, alvo = INI, virada = null;
+  let agora = INI, alvo = INI, virada = null, caiuHoje = false;
   const E = () => TO.estado && TO.estado.E;
   const vel = () => (TO.diaJogo && TO.diaJogo.ponte && TO.diaJogo.ponte.velocidade) || 1;
   /* o tempo do jogo parado (decisão sem resposta, painel, modal, cena): o relógio da tela para junto */
@@ -76,6 +86,27 @@ function criarRelogio(C) {
     return !e || !TO.tela || TO.tela.tempoPausado() || TO.feed.travado(e) || document.body.classList.contains('em-cena');
   };
   const doDia = (e, m) => m && m.quando && e && e.data && m.quando.abs === e.data.absoluto;
+  /* AS JANELAS: { de, ate, ms } — de `de` a `ate` (minutos do dia) cada
+     minuto de jogo leva `ms` a 1× (fora delas, MS_MIN) */
+  const janelas = [];
+  const passoEm = min => { for (const j of janelas) if (min >= j.de && min < j.ate) return j.ms; return MS_MIN; };
+  const bordas = (a, b) => { const c = [b]; for (const j of janelas) { if (j.de > a && j.de < b) c.push(j.de); if (j.ate > a && j.ate < b) c.push(j.ate); } return c.sort((p, q) => p - q); };
+  /* quanto leva (ms a 1×) de `a` a `b` */
+  function msEntre(a, b) {
+    let t = 0, x = a;
+    if (b <= a) return 0;
+    for (const c of bordas(a, b)) { t += (c - x) * passoEm((x + c) / 2); x = c; }
+    return t;
+  }
+  /* anda `ms` (a 1×) na direção do alvo, no passo de cada pedaço */
+  function avancar(ms) {
+    let volta = 0;
+    while (ms > 0 && agora < alvo && volta++ < 20) {
+      const borda = bordas(agora, alvo)[0], passo = passoEm(agora), cabe = (borda - agora) * passo;
+      if (ms >= cabe) { ms -= cabe; agora = borda; } else { agora += ms / passo; ms = 0; }
+    }
+  }
+  const janelaAdiante = () => janelas.some(j => j.ate > agora);
   const ritmo = {
     /* quanto a próxima mensagem da fila espera (ms a 1×): até a hora dela */
     antesDaProxima(e) {
@@ -84,18 +115,31 @@ function criarRelogio(C) {
       const h = minutoDe(m.hora);
       if (h == null) return 0;
       alvo = clamp(h, agora, FIM);
-      return (alvo - agora) * MS_MIN;
+      return msEntre(agora, alvo);
     },
-    /* o dia sem mais nada: até as 23h, e a noite */
-    diaVazio() { alvo = FIM; return (FIM - agora) * MS_MIN + NOITE_MS; },
+    /* o dia sem mais nada: até as 23h, e a noite. O dia vazio (nada caiu e
+       a cidade não tem jogo) pula na hora; o resto do dia, em até 1 s */
+    diaVazio() {
+      if (!caiuHoje && !janelaAdiante() && !(C.temJogo && C.temJogo())) { alvo = agora; return VAZIO_MS; }
+      alvo = FIM;
+      const ms = msEntre(agora, FIM);
+      return (janelaAdiante() ? ms : Math.min(ms, RESTO_MS)) + NOITE_MS;
+    },
+    /* A TELA AINDA NÃO CHEGOU NA HORA (ms a 1×): o tempo do jogo (main.js)
+       conta no relógio da parede, e a tela anda por quadro — no máximo
+       0,2 s por quadro. Na máquina lenta a tela ficava pra trás e o dia
+       virava com o jogo da cidade no meio (às 18h, antes da bola rolar).
+       Agora a mensagem e a virada do dia esperam a tela chegar */
+    falta() { return agora < alvo - 0.01 ? msEntre(agora, alvo) : 0; },
     /* caiu uma mensagem: o relógio está na hora dela */
-    caiu(e, m) { if (doDia(e, m)) { const h = minutoDe(m.hora); if (h != null) agora = alvo = Math.max(agora, Math.min(FIM, h)); } },
-    /* dia novo: a noite passa num instante e amanhece às 7h */
-    virouDia() { virada = { de: Math.max(agora, 21 * 60), t: 0 }; agora = alvo = INI; }
+    caiu(e, m) { if (doDia(e, m)) { caiuHoje = true; const h = minutoDe(m.hora); if (h != null) agora = alvo = Math.max(agora, Math.min(FIM, h)); } },
+    /* dia novo: a noite passa num instante e amanhece às 7h (o dia que
+       pulou nem mostra a noite: a luz fica, e só a data anda) */
+    virouDia() { virada = agora > INI + 1 ? { de: Math.max(agora, 21 * 60), t: 0 } : null; agora = alvo = INI; caiuHoje = false; janelas.length = 0; }
   };
   let horaVista = null;
   function quadro(dt) {
-    if (!parado() && agora < alvo) agora = Math.min(alvo, agora + dt * 1000 * vel() / MS_MIN);
+    if (!parado() && agora < alvo) avancar(dt * 1000 * vel());
     /* a luz: na virada, das 23h às 7h do dia seguinte em meio segundo */
     let h = agora / 60;
     if (virada) {
@@ -107,7 +151,12 @@ function criarRelogio(C) {
   }
   return { ritmo, quadro, get minuto() { return agora; }, get hora() { return agora / 60; },
            /* pro teste: o relógio numa hora (min) */
-           definir(min) { agora = alvo = clamp(min, 0, FIM); virada = null; } };
+           definir(min) { agora = alvo = clamp(min, 0, FIM); virada = null; },
+           /* uma janela do dia com o passo mais lento: de `de` a `ate` (min do
+              dia), `ms` por minuto de jogo a 1× (dia3d.js: o jogo da cidade,
+              a nossa investida chegando no alvo); a virada do dia apaga */
+           janela(de, ate, ms) { if (ate > de && ms > 0) janelas.push({ de, ate, ms }); },
+           get janelas() { return janelas.map(j => ({ ...j })); } };
 }
 
 /* A PARTE DA TELA QUE A CIDADE MOSTRA: da coluna de ícones até a borda
@@ -227,7 +276,9 @@ export function criarVida(api) {
   const M = api.M;
   const C = () => api.cenario;
   const E = () => TO.estado && TO.estado.E;
-  const relogio = criarRelogio({ get vida() { return C().vida; } });
+  /* o dia tem jogo na cidade (o de outros clubes, dia3d.js): não é dia vazio */
+  let temJogoHoje = () => false;
+  const relogio = criarRelogio({ get vida() { return C().vida; }, temJogo: () => temJogoHoje() });
   /* dia novo, hóspedes novos (os de ontem já foram pro jogo deles) */
   const virouDia0 = relogio.ritmo.virouDia;
   relogio.ritmo.virouDia = e => { virouDia0(e); if (ligada && sede) poeHospedes(); };
@@ -469,7 +520,7 @@ export function criarVida(api) {
       p.sairEm = null; mandarAndar(p, null, p.d.x, p.d.y);
       if (p.pressa && p.vel) p.vel *= 1.6;
     }
-    if (segurando && (!sede.pessoas.some(p => p.hospede) || tAcc - segurando.desde > 12)) soltarHospedes(true);
+    if (segurando && (!sede.pessoas.some(p => p.hospede) || tAcc - segurando.desde > 7)) soltarHospedes(true);
   }
   function soltarHospedes(praSala) {
     if (!segurando) return;
@@ -1061,6 +1112,10 @@ export function criarVida(api) {
   /* a luz corre mesmo com a vida desligada (no menu, o dia parado nas 10h) */
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
+    set temJogoHoje(f) { temJogoHoje = typeof f === 'function' ? f : () => false; },
+    /* o jogo da cidade no fundo (dia3d.js): os hóspedes saem da sede na hora
+       em que o bonde deles aparece na nossa porta (min do dia) */
+    hospedesSaem(min) { if (sede && sede.hospedes) for (const a of sede.hospedes) if (!a.saindo) a.saida = min; },
     get ritmo() { return relogio.ritmo; },
     /* o mensageiro (recados3d.js): quem senta pra falar, quem levanta, e
        as cabeças do balão (quem fala e o presidente, que ele evita cobrir) */

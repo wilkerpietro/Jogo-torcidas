@@ -210,21 +210,31 @@ TO.diaJogo.ponte = (function(){
   function cenaSumiu(){
     return !!(J && J.fase==='fim' && cv && !cv.getClientRects().length);
   }
+  /* A MÁQUINA LENTA (o dono, jogando o jogo 3D num navegador sem placa de
+     vídeo — "Microsoft Basic Render Driver", 1 a 3 quadros por segundo):
+     o passo da briga segue de no máximo 0,05 s — ninguém teleporta —, mas
+     o quadro longo dá até 4 passos, e a briga anda perto do tempo de
+     verdade (antes, a 1 quadro por segundo, ela andava 20 vezes mais
+     devagar e parecia não sair do lugar). A aba que perdeu o foco volta
+     sem salto grande: no máximo 0,2 s de uma vez */
+  const PASSO_MAX = 0.05, PASSOS_MAX = 4;
   function quadro(agora){
     if(!rodando) return;
     if(cenaSumiu()){ rodando=false; return; }
-    let dt=(agora-ant)/1000; ant=agora;
-    if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
-    dtQuadro=dt;
+    const bruto=Math.max(0, (agora-ant)/1000); ant=agora;
+    const passos=Math.max(1, Math.min(PASSOS_MAX, Math.ceil(bruto/PASSO_MAX - 1e-9)));
+    const dt=Math.min(PASSO_MAX, bruto/passos);
+    dtQuadro=dt*passos;
     try{
       /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
       teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
       if(J && !ED.ativo){
-        for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
+        for(let p=0; p<passos && !(J.acabou && J.fase==='acabando'); p++)
+          for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
         /* a rua não para porque a briga começou: quem ainda estava andando
            chega no meio dela */
         if(aCadaQuadro)
-          for(const b of (aCadaQuadro(dt*velocidade, J) || [])) C.reforcar(J, b);
+          for(const b of (aCadaQuadro(dt*passos*velocidade, J) || [])) C.reforcar(J, b);
       }
       /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
          decide isso é o combate; aqui só se abre a tela. */

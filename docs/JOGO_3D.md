@@ -848,3 +848,186 @@ proporção.
   porta e apanha sem reagir (a conta é a do jogo).
 - A hora da linha do dia ("Ida ao estádio · 11:00") é a do jogo de feed; a
   cidade 3D anda no horário dela (a saída pro estádio perto das 15h).
+
+## 17. A hora da linha igual à da cidade, os avisos do lado direito, o relógio ligeiro, os jogos da cidade sozinhos e o placar de TV (28/09/2026)
+
+O dono, jogando: "corrija a hora do itinerário pra bater com o 3D. os
+recados não devem aparecer na tela, devem ficar somente no notícias >
+mensagens e as mensagens que não geram botões de decisão se tornam avisos
+do lado direito, na ideia do que era o feed anteriormente, mas somem
+rapidamente. as horas pulam rapidamente até ocorrer outro evento de
+decisão. se o dia não tiver nada, ele pula [...] o jogo não pergunta se eu
+quero acompanhar o que acontece em dia de outros jogos na mesma cidade, o
+itinerário delas acontece de forma automática no jogo (enquanto o tempo
+passa, eles se locomovem rumo ao estádio e a nossa torcida fica na sede
+caso não tenha planejado nada. se tiver planejado, vai em direção ao que
+quer atacar seja na pista ou concentração) quando o jogo pergunta se eu
+quero ver o itinerário de algum outro jogo na cidade, buga. refaça o
+visual de dia de jogo na cidade, com o placar do jogo em tempo real
+parecendo um placar de jogo de futebol na TV, e a tela com as informações
+do itinerário não ficarem ocupando a tela do jogo assim."
+
+- **A hora da linha é a da cidade.** A linha do dia (o itinerário,
+  `js/gestao/itinerario.js`) marcava a ida pra 5 horas antes da bola e a
+  volta pra 2h05 depois; a cidade 3D faz a ida quando o plano do dia manda
+  (o primeiro bonde saindo da sede, perto das 15h num jogo das 16h). Agora,
+  quando o plano monta, o dia 3D passa as horas dele pra linha
+  (`TO.tela.horasDaLinha`: a ida na saída do primeiro bonde, o jogo na
+  bola, a volta no apito final — os 90 minutos mais os 15 do intervalo,
+  que o relógio da cidade agora conta também). O recado da partida ("Hoje
+  tem…, Iniciar partida") caía numa hora qualquer da manhã e a cidade
+  pulava da manhã pra concentração; agora ele cai 75 minutos antes da bola
+  (`horaDaPartida`, jogo3d.js). E, fechado o nosso dia de jogo, o relógio
+  da praça segue da hora em que ele acabou (antes voltava pra hora de
+  antes do jogo).
+- **Os recados de outras torcidas não aparecem na tela.** Ficam só em
+  Notícias → Mensagens, com o número vermelho no ícone (a decisão da seção
+  16, de trazer o recado pro balão, foi desfeita a pedido do dono).
+- **O que não pede decisão vira aviso do lado direito.** A notícia sem
+  botão (o olheiro, o jornal, o resultado, a obra…) aparece como um aviso
+  pequeno no canto de cima, à direita (embaixo da barra do topo), como era
+  o feed: até 4 empilhados, cada um some sozinho em 4,2 s (quem passa o
+  mouse em cima segura; clicando, abre a mensagem inteira, com ×). O aviso
+  não segura o relógio. O balão no meio da tela ficou só pra decisão (os
+  botões), que para o tempo até a resposta, como sempre. O jogo carregado
+  não repete avisos velhos.
+- **O relógio anda ligeiro.** O dia da praça ia das 7h às 23h em 9 s a 1×;
+  agora são 3,6 s (15 minutos de jogo a cada 56 ms). A notícia não segura
+  mais as horas (antes cada balão de notícia esperava a leitura), então o
+  relógio corre até a hora da próxima mensagem e para só na decisão. Dia
+  sem nada (nem mensagem, nem jogo da cidade, nem janela lenta) pula em
+  0,26 s, sem o apagão da noite; depois do último evento do dia, o resto
+  dele passa em no máximo 1 s. As únicas partes lentas são as que se
+  veem na cidade: o jogo da cidade no fundo e a nossa investida (as
+  "janelas" do relógio, `vida3d.js`).
+  O tempo do jogo conta no relógio da parede e a tela conta por quadro
+  (no máximo 0,2 s por quadro): na máquina lenta a tela ficava pra trás e
+  o dia virava antes da hora — o teste pegou o jogo da cidade sumindo às
+  18h, antes da bola. Agora a mensagem e a virada do dia esperam a tela
+  chegar na hora (`ritmo.falta`); se a tela ficar 5 s parada (a cidade
+  presa por outro motivo), o jogo segue sem ela, pra nunca prender.
+- **Os jogos de outros clubes na cidade passam sozinhos.** O olheiro não
+  pergunta mais "quer ver na cidade?" (e o recado antigo dos saves de
+  antes é respondido sozinho). No dia de um jogo de dois outros clubes na
+  nossa praça — o mandante com torcida com sede no mapa, e sem jogo nosso
+  no dia —, o dia dele monta NO FUNDO da vida da praça (`jogoNoFundo`,
+  dia3d.js): o plano monta escondido no começo do dia (o relógio espera
+  uns segundos por ele), e 15 minutos antes do primeiro bonde sair os
+  bondes aparecem na concentração, com um aviso ("Hoje tem Ceará ×
+  Sport às 16:00… As torcidas estão saindo pro estádio", com "Ver na
+  cidade"). O relógio anda mais devagar da concentração à bola (uns 14 s
+  a 1×) e na partida (uns 9 s), o placar de TV aparece desde a
+  concentração (com a hora da bola; um toque nele leva a câmera pro
+  estádio) e mostra a partida, o gol vira aviso, a briga que o mundo sorteou entre elas (a aba Brigas) acontece na
+  rua com aviso, e 15 minutos depois do apito todo mundo some. A nossa
+  torcida fica na sede, a vida da praça segue na tela.
+- **Com investida marcada, o nosso bonde vai.** Se o planejamento marcou
+  investida nesse jogo (Outros jogos na cidade: concentração ou pista), o
+  nosso bonde (o efetivo do ataque inteiro, até 400, como no dia de jogo)
+  junta na nossa porta 8 minutos antes de sair, anda pela rua e pela calçada (o caminho da
+  grade do dia de jogo, `caminhoNaRua`) até o alvo — a porta da sede
+  deles, 4 minutos antes de saírem (concentração), ou o meio da rota deles
+  pro estádio, na hora em que a cabeça do bonde deles passa ali (pista) —
+  e chega 40 s antes. Nos últimos 25 minutos antes do encontro o relógio
+  desacelera; quando o bonde junta, a câmera vai pra nossa porta e um
+  aviso diz pra onde ele vai; na caminhada ela vai atrás da cabeça do
+  bonde (quem mexe na câmera fica com ela); e na chegada ela enquadra o
+  ponto do encontro, de trás da gente. A decisão do planejamento ("Ir pra Guerra", com o duelo e o
+  simular de sempre) cai na hora do encontro, com o texto do que se vê
+  ("A gente tá na rua, esperando o bonde da Cearamor passar a caminho do
+  estádio. Eles tão chegando — é agora."). Respondida, o bonde volta pra
+  sede pelo mesmo caminho.
+- **O bug do itinerário velho no balão** (a foto do dono: "VOLTA DO
+  ESTÁDIO 13:05 … 158 NOSSOS · 26 DA FACÇÃO JOVEM" em cima do recado do
+  olheiro). A linha que acabou ficava guardada pelo NÚMERO da mensagem; o
+  número recomeça num jogo novo e em save carregado, e a linha velha
+  aparecia em cima de outra mensagem com o mesmo número. Agora ela fica
+  presa à mensagem de verdade (o objeto, não o número), e a linha de outro
+  jogo é descartada quando o jogo carrega. A pergunta do olheiro, que
+  era onde o dono via isso, também saiu.
+- **A tela do dia de jogo.** Na nossa linha do dia a cidade fica livre:
+  - o **placar de TV** no alto, no meio: a faixa com a cor de cada clube,
+    a sigla (FOR, CEA), os gols no quadro branco e o relógio vermelho da
+    partida (o minuto; INT no intervalo; 90+2'; FIM). Antes da bola, a
+    hora dela. Embaixo, na nossa partida, o clima da arquibancada e os
+    botões de pausar e acelerar a partida;
+  - o **painel de baixo** encolheu: a faixa das fases (Ida · Jogo · Volta,
+    ou Caravana na ida fora de casa, cada uma com a hora da cidade e a de
+    agora acesa) e o efetivo (nós × eles, com a escolta), e os botões
+    (Nossa, Estádio, Cidade);
+  - o **balão** só aparece com decisão (o aviso do ataque, a invasão): a
+    linha do dia inteira (os pontos, a caixa da partida, o saldo) não
+    aparece mais no balão; o saldo de uma briga aparece uns segundos e
+    sai;
+  - o **gol** vira aviso do lado direito ("Gol · 20'").
+
+- **A briga na cidade sem ninguém preso em terreno.** O dono, jogando:
+  "optei por atacar uma torcida IA que estava visitando a praça e a cena
+  iniciada deu vários membros da minha torcida presos dentro de terrenos,
+  e quando o rival corre eles ficam parados e a cena não evolui porque tem
+  um membro da torcida IA preso também". A máscara do combate na cidade
+  (`caminhada.js`, a briga da praça e da rua) saía da grade do passo, que
+  deixa andar no miolo do lote, do terreno baldio e do quintal; o bonde
+  nasce em bloco em volta do ponto e quem não cabe é reencostado no vão
+  livre mais perto — que podia ser um quintal murado, de onde não há
+  caminho de volta. E a cena só fecha quando não sobra ninguém de um
+  lado: o preso segurava a briga pra sempre. Agora a máscara é só o chão
+  de rua do plano do dia (o asfalto e a calçada, `R.publico`, a mesma
+  régua da seção 16), e só o pedaço dela que se alcança andando do alvo,
+  da tocaia e do ponto: ninguém nasce nem fica fora do alcance.
+  E a briga em máquina lenta: as fotos do dono mostram o medidor em 1 a 3
+  quadros por segundo com "Sem placa de vídeo: o navegador desenha no
+  processador (Microsoft Basic Render Driver)". O laço da briga
+  (`js/diajogo/ponte.js`) dava no máximo 0,05 s de briga por quadro — a 1
+  quadro por segundo ela andava 20 vezes mais devagar que o tempo de
+  verdade e parecia parada. Agora o quadro longo dá até 4 passos de
+  0,05 s (ninguém teleporta; a aba que perdeu o foco volta com no máximo
+  0,2 s de uma vez).
+- **No celular em pé** o balão da decisão passava da borda da direita (a
+  coluna de ícones come a esquerda): agora ele nunca é mais largo que a
+  parte livre da tela. A faixa das fases (Ida · Jogo · Volta, a hora e o
+  efetivo) ficou mais compacta pra caber numa linha.
+
+**Como testar** (em `scratchpad/recados/`, Playwright na pasta do Pages):
+`avisos3d.js` (com o tempo parado caem uma notícia, um recado da Cearamor,
+outra notícia e uma decisão: as duas notícias viram aviso e somem, o
+recado fica em Mensagens, a decisão fica no balão; depois o tempo solto
+por 30 s, com as decisões respondidas na hora, conta os dias que passam),
+`fundo3d.js` com `INV=ida` (pista), `INV=praca` (concentração) ou
+`INV=nao` (o jogo do Ceará em casa trazido pra amanhã: a janela, o
+placar, o nosso bonde, a decisão na chegada, o fim), `linha3d.js` (o nosso
+dia de jogo: as horas da linha contra as do plano, o balão só com
+decisão, o placar de TV), `briga3d.js` com `INV=ida` ou `INV=praca` (a
+investida do jogo da cidade com "Ir pra Guerra": cada disco da cena na
+máscara e no chão de rua, e a briga correndo até fechar). `CEL=1` no
+tamanho de celular, com toque.
+
+**Medido** (no navegador de teste, sem placa de vídeo, 1 a 3 quadros por
+segundo): com as decisões respondidas na hora, passaram 27 dias do jogo
+em 30 s (os dias vazios pulam); o jogo da cidade (Floresta × Fluminense
+de Feira, trazido pro dia seguinte no teste) abriu a janela às 17:10, o
+nosso bonde de 150 saiu às 17:24 e chegou no ponto às 17:30 — a hora da
+decisão —, a partida passou no placar de TV e o aviso de fim de jogo
+saiu com o placar do mundo (2 × 0); na briga da investida (pista e
+concentração), os 150 nossos e os 10–11 deles nasceram todos na rua, e a
+cena fechou quando eles debandaram (14 a 20 s de briga).
+
+**Limites (sinceros):**
+- A janela do jogo da cidade é um "time-lapse": a ida inteira leva uns
+  14 s e a partida uns 9 s a 1×. Dá pra ver os bondes indo, não pra
+  acompanhar cada um.
+- A briga da investida ("Ir pra Guerra") ainda monta o plano dela à
+  parte (o nosso clube contra o clube da rival, como antes): o lugar da
+  briga é o que esse plano acha na rota da rival, não necessariamente a
+  esquina onde o nosso bonde esperou no jogo do fundo.
+- O bonde da investida na cidade é o efetivo inteiro (até 400): com a
+  vida da praça e o jogo da cidade juntos, é bastante boneco na tela.
+- Na briga, quem não está perto do líder não persegue quem foge: a cena
+  fecha quando o outro lado sai inteiro ou cai, e seguir o líder é do
+  jogador (é a regra do combate de sempre).
+- A máquina sem placa de vídeo (o "Microsoft Basic Render Driver" das
+  fotos do dono) continua lenta em tudo: a briga ficou perto do tempo de
+  verdade, mas a cidade desenha a 1–3 quadros por segundo. No Chrome, a
+  "aceleração de gráficos" ligada (Configurações → Sistema) e o driver da
+  placa de vídeo instalado resolvem isso de fora do jogo.
+- Testado só em Fortaleza, no navegador de teste (PC e celular em pé).

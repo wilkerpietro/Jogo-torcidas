@@ -651,13 +651,15 @@ export function criarCenario(P) {
     animarPortas(dt);
     if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
     /* (com a briga do jogo por cima, o dia só anda se ela pede os bonecos dele em volta) */
-    if (dia && dia.aberto && (!palco || palco.comDia)) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
+    /* (o jogo da cidade ainda escondido, antes da hora dele: nem anda nem se desenha) */
+    const diaNaTela = dia && dia.aberto && diaNoFundo !== 'oculto';
+    if (diaNaTela && (!palco || palco.comDia)) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
     if (vida && vida.quadro) { try { vida.quadro(dt); } catch (e) { console.error('cenário, a vida:', e); vida = null; } }
     if (palco && palco.quadro) { try { palco.quadro(dt); } catch (e) { console.error('cenário, o palco:', e); } }
     if (voo) voo(dt);
     posicionar();
     atualizarCorte();
-    if (dia && dia.aberto && !palco) dia.ajustarRotulos();
+    if (diaNaTela && !palco) dia.ajustarRotulos();
     atualizarPovo(dt);
     for (const f of depoisDaCamera) { try { f(dt); } catch (e) { console.error('cenário, depois da câmera:', e); } }
     const t0 = performance.now();
@@ -1864,6 +1866,14 @@ void main() {
   const jogoDoPalco = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true };
   /* quem dá os bonecos: a vida ({ J, quadro(dt) }) e o palco ({ J, pos(x, y, d, PE), comVida, quadro(dt) }) */
   let vida = null, palco = null, corteFixo = null;
+  /* O JOGO DA CIDADE NO FUNDO (o jogo 3D, dia3d.js; o dono, 28/09/2026: "o
+     itinerário delas acontece de forma automática no jogo — enquanto o
+     tempo passa, eles se locomovem rumo ao estádio e a nossa torcida fica
+     na sede"): o dia de jogo de outros clubes roda junto com a vida da
+     praça, e os bonecos dos dois saem no mesmo quadro. `extras`: bonecos
+     de fora (o nosso bonde indo pra investida). 'oculto': o plano já
+     montou, mas a hora dele não chegou — a vida segue sozinha na tela */
+  let diaNoFundo = false, extras = [];
   const custoDia = { povo: 0, dia: 0 };
   function atualizarPovo(dt) {
     const comDia = dia && dia.aberto;
@@ -1886,11 +1896,18 @@ void main() {
       custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
       return;
     }
-    /* A VIDA DA PRAÇA (o jogo 3D): a sede, a rua, os bares — e quem anda a pé no meio */
-    if (vida && !comDia) {
+    /* A VIDA DA PRAÇA (o jogo 3D): a sede, a rua, os bares — e quem anda a
+       pé no meio; com o jogo da cidade no fundo, os bondes, a PM e a
+       arquibancada dele junto (e o nosso bonde da investida) */
+    if (vida && (!comDia || diaNoFundo)) {
       const V = vida.J;
       jogoDaVida.t = V.t; jogoDaVida.falante = V.falante || null; jogoDaVida.reuniao = !!V.reuniao;
-      jogoDaVida.discos = ape && eu ? [eu].concat(V.discos) : V.discos;
+      const doDia = comDia && diaNoFundo !== 'oculto';
+      let ds = ape && eu ? [eu].concat(V.discos) : V.discos;
+      if (doDia) ds = ds.concat(dia.J.discos);
+      if (extras.length) ds = ds.concat(extras);
+      jogoDaVida.discos = ds;
+      jogoDaVida.policiais = doDia ? dia.J.policiais : [];
       povo.atualizar(jogoDaVida, dt);
       custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
       return;
@@ -1944,7 +1961,8 @@ void main() {
       /* a câmera vai atrás de um ponto (a cabeça do bonde que se segue), na altura dele */
       seguirPonto: (x, z, y = 0) => { if (voo) return; orb.alvo.x += (x - orb.alvo.x) * 0.25; orb.alvo.z += (z - orb.alvo.z) * 0.25; orb.alto += (y - orb.alto) * 0.25; },
       pedir,
-      aoFechar: () => { $('.cen-bt-jogo').setAttribute('aria-pressed', 'false'); limparBonecos(); }
+      /* (com a vida da praça no ar — o jogo da cidade no fundo —, o quadro seguinte já desenha ela) */
+      aoFechar: () => { $('.cen-bt-jogo').setAttribute('aria-pressed', 'false'); diaNoFundo = false; if (!vida) limparBonecos(); }
     };
   }
   /* o disco do boneco (o que o jogo passa por quadro): a camisa, a
@@ -2482,6 +2500,12 @@ void main() {
       return dia;
     },
     get dia() { return dia; },
+    /* o dia de jogo de outros clubes rodando junto com a vida (dia3d.js) */
+    set diaNoFundo(v) { diaNoFundo = v === 'oculto' ? 'oculto' : !!v; pedir(); },
+    get diaNoFundo() { return diaNoFundo; },
+    /* bonecos de fora, desenhados junto com a vida (o nosso bonde da investida) */
+    set extras(a) { extras = Array.isArray(a) ? a : []; pedir(); },
+    get extras() { return extras; },
     /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
     set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
     get palco() { return palco; },

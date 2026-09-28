@@ -365,6 +365,28 @@ function Buscador(R) {
   return { buscar, dist, pai };
 }
 
+/* O CAMINHO DE QUEM NÃO VAI PRO ESTÁDIO (o jogo 3D, dia3d.js: o nosso
+   bonde indo pra investida num jogo de outros clubes, e voltando pra
+   sede): de (x0, z0) a (x1, z1) pela grade do plano, a rua e a calçada
+   primeiro (o lote e a casa custam PRIVADO vezes mais: `R.mult`). Devolve
+   a trilha ({ pts, acc, L, ponto(s) }, unidade de mundo), ou null */
+export function caminhoNaRua(plano, x0, z0, x1, z1) {
+  const R = plano && plano.R;
+  if (!R) return null;
+  const ok = K => R.anda[K] && (!R.publico || R.publico[K]);
+  const K0 = R.perto(x0, z0, 30, ok), K1 = R.perto(x1, z1, 30, ok);
+  if (K0 < 0 || K1 < 0) return null;
+  if (!R.custoLivre) { const c = new Float32Array(R.N); for (let K = 0; K < R.N; K++) c[K] = R.anda[K] ? R.mult[K] : Infinity; R.custoLivre = c; }
+  const cam = Buscador(R).buscar([K0], R.custoLivre, K1);
+  if (!cam) return null;
+  /* (de três em três células: a trilha anda reta entre elas) */
+  const pts = [[x0, 0, z0]];
+  for (let i = 0; i < cam.length; i += 3) { const [x, z] = R.centro(cam[i]); pts.push([x, 0, z]); }
+  const [xf, zf] = R.centro(cam[cam.length - 1]);
+  pts.push([xf, 0, zf]);
+  return Trilha(pts);
+}
+
 /* distância (m, chanfro) na grade grossa até as células marcadas em `fonte` */
 function distanciaAte(R, fonte) {
   const { CX, CZ, N } = R, d = new Float32Array(N);
