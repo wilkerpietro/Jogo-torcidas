@@ -650,13 +650,14 @@ export function criarCenario(P) {
     else if (teclas.size) andar(dt);
     animarPortas(dt);
     if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
-    if (dia && dia.aberto) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
+    /* (com a briga do jogo por cima, o dia só anda se ela pede os bonecos dele em volta) */
+    if (dia && dia.aberto && (!palco || palco.comDia)) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
     if (vida && vida.quadro) { try { vida.quadro(dt); } catch (e) { console.error('cenário, a vida:', e); vida = null; } }
     if (palco && palco.quadro) { try { palco.quadro(dt); } catch (e) { console.error('cenário, o palco:', e); } }
     if (voo) voo(dt);
     posicionar();
     atualizarCorte();
-    if (dia && dia.aberto) dia.ajustarRotulos();
+    if (dia && dia.aberto && !palco) dia.ajustarRotulos();
     atualizarPovo(dt);
     for (const f of depoisDaCamera) { try { f(dt); } catch (e) { console.error('cenário, depois da câmera:', e); } }
     const t0 = performance.now();
@@ -1875,10 +1876,12 @@ void main() {
        casa de veraneio): os discos dele, e a vida em volta se ele pedir */
     if (palco) {
       const P0 = palco.J;
-      Object.assign(jogoDoPalco, { t: P0.t, policiais: P0.policiais || [], projeteis: P0.projeteis || [], grades: P0.grades || [],
+      Object.assign(jogoDoPalco, { t: P0.t, policiais: P0.policiais || [], projeteis: P0.projeteis || [], grades: palco.semGrades ? [] : P0.grades || [],
                                    paz: P0.paz, reuniao: P0.reuniao, falante: P0.falante, bondes_: P0.bondes_, rivalInfo: P0.rivalInfo,
                                    semAnel: !!palco.semAnel });
-      jogoDoPalco.discos = palco.comVida && vida ? P0.discos.concat(vida.J.discos) : P0.discos;
+      /* (a briga do dia de jogo: os bonecos do dia que não estão nela ficam em volta — a arquibancada cheia, a rua) */
+      jogoDoPalco.discos = palco.comVida && vida ? P0.discos.concat(vida.J.discos)
+        : palco.comDia && comDia ? P0.discos.concat(palco.comDia(dia.J.discos)) : P0.discos;
       povo.atualizar(jogoDoPalco, dt);
       custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
       return;
@@ -2472,6 +2475,13 @@ void main() {
     /* a vida: { J: { t, discos, falante, reuniao }, quadro(dt) } (null tira) */
     set vida(v) { vida = v || null; if (!vida && povo && !palco && !(dia && dia.aberto)) limparBonecos(); pedir(); },
     get vida() { return vida; },
+    /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
+    async diaDeJogo() {
+      if (!povo) await chamarBoneco();
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      return dia;
+    },
+    get dia() { return dia; },
     /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
     set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
     get palco() { return palco; },

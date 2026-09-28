@@ -500,9 +500,14 @@ export function planejarArquibancada(p, aux) {
   }
   const custo = c => c.mA + (c.alvo ? c.mV : 60);
 
-  /* A DECISÃO de cada torcida (uma invasão por jogo, a de mais poder primeiro) */
-  const emBriga = new Set(); for (const br of brigas) { emBriga.add(br.a); emBriga.add(br.v); }
-  const modo = escolha.estadio || 'sorteio', decisoes = new Map();
+  /* A DECISÃO de cada torcida (uma invasão por jogo, a de mais poder primeiro).
+     QUEM BRIGOU NA RUA TAMBÉM INVADE (o dono, 28/09/2026: "Que brigou na
+     rua pode invadir no estádio também"): a briga da caminhada não tira
+     ninguém da invasão. E A IA NÃO INVADE MAIS SOZINHA ("A invasão deve
+     ser controlável pela torcida do jogador somente"): sem mandar, ninguém
+     vai — no jogo, a invasão é a da torcida do jogador, jogada no combate
+     (invasao.js); aqui fica o sorteio só pra quem pede no painel da planta */
+  const modo = escolha.estadio || 'nao', decisoes = new Map();
   const ordemT = lista.slice().sort((x, y) => (y.b.t.poder || 0) - (x.b.t.poder || 0) || y.b.n - x.b.n);
   const cands = new Map();
   for (const T of ordemT) {
@@ -515,14 +520,13 @@ export function planejarArquibancada(p, aux) {
   }
   let escolhido = null;
   if (modo === 'arquibancada' || modo === 'corredor') {
-    const todos = ordemT.filter(T => !emBriga.has(T.b)).flatMap(T => cands.get(T).filter(c => c.via === modo));
+    const todos = ordemT.flatMap(T => cands.get(T).filter(c => c.via === modo));
     escolhido = todos.sort((x, y) => custo(x) - custo(y))[0] || null;
   }
   for (const T of ordemT) {
     const dec = decisoes.get(T.b), cs = cands.get(T);
-    if (emBriga.has(T.b)) { dec.porque = 'brigou na rua'; continue; }
     if (!cs.length) { dec.porque = 'longe'; continue; }
-    if (modo === 'nao') { dec.porque = 'mandada paz'; continue; }
+    if (modo === 'nao') { dec.porque = 'não invade sozinha'; continue; }
     if (modo === 'arquibancada' || modo === 'corredor') { dec.porque = escolhido && escolhido.T === T ? 'mandada' : escolhido ? 'outra invadiu' : 'não dá por ali'; continue; }
     if (escolhido) { dec.porque = 'outra invadiu'; continue; }
     if (!cs.some(c => c.alvo)) { dec.porque = 'ninguém do outro lado'; continue; }
@@ -784,7 +788,61 @@ export function planejarArquibancada(p, aux) {
 
   /* o fim de tudo: a bola rolando e o que a invasão pede */
   const fim = Math.max(BOLA + 6 * 60, inv ? inv.tFim + 30 : 0, ...lista.map(T => Math.max(T.faixa ? T.faixa.tSolta + 30 : 0, T.bandeira ? T.bandeira.tSolta + 30 : 0)));
-  return { lista, porBonde, buffers, estacoes: ordemEst, nGuardas: ordemEst.length, decisoes, invasao: inv, modo, fim, modelo, dirW, rumoDe, W };
+  /* OS CAMINHOS DA INVASÃO DE UMA TORCIDA (a do jogador, no jogo 3D:
+     invasao.js monta o combate em cima de um deles): pela arquibancada e
+     pelo corredor, dos dois lados, o mais barato primeiro; `soComRival`
+     deixa só os que têm rival do outro lado do isolamento */
+  function caminhosDe(b, soComRival = true, longe = false) {
+    const T = porBonde.get(b);
+    if (!T) return [];
+    const cs = longe ? caminhosLongos(T) : cands.get(T) || [...candidatosArq(T), ...candidatosCor(T)];
+    return cs.filter(c => !soComRival || c.alvo).sort((x, y) => custo(x) - custo(y));
+  }
+  /* OS CAMINHOS LONGOS (a torcida do jogador, invasao.js): a do 1º escalão
+     costuma sentar longe do visitante (no Castelão, a 100 m do isolamento)
+     e a IA, no sorteio, só tentava o isolamento a uns 45 m dela. A do
+     jogador vai a qualquer isolamento do mesmo anel — atravessa a
+     arquibancada ou desce pro corredor e anda até a grade; o combate
+     começa lá. Do outro lado, a rival a até 40 m (45 no corredor), antes
+     do próximo isolamento; e no caminho até a grade não pode ter setor
+     rival (aí o isolamento não separa ninguém dela) */
+  function caminhosLongos(T) {
+    const out = [];
+    for (const B of buffers) for (const via of ['arquibancada', 'corredor']) {
+      if (via === 'arquibancada' && !(B.arq && B.A === T.A)) continue;
+      const L = via === 'corredor' && T.saida ? T.saida.L : null;
+      if (via === 'corredor' && !(B.cor && L && B.cor.every(i => L.divs.includes(i)))) continue;
+      const fam = via === 'arquibancada' ? T.A.fam : L.fam, ref = via === 'arquibancada' ? T.uC : T.saida.u;
+      const dm = via === 'arquibancada' ? dFileira(T.A, Math.round(T.A.n / 2)) : (L.dI + L.dF) / 2;
+      const DV = via === 'arquibancada' ? B.arq : B.cor, lim = via === 'arquibancada' ? 40 : 45;
+      for (const s of [-1, 1]) {
+        const du = distUf(fam, ref, s > 0 ? B.ua : B.ub, s);
+        if (du == null) continue;
+        const u1 = ref + s * du, u2 = u1 + s * (B.ub - B.ua);
+        const mA = metros(fam, dm, ref, u1);
+        if (mA > 260) continue;
+        const doOutro = X => X.b.lado !== T.b.lado && (via === 'arquibancada' ? X.A === T.A : X.saida && X.saida.L === L);
+        const uDe = (X, lado) => via === 'arquibancada' ? (lado > 0 ? X.uLo : X.uHi) : X.saida.u;
+        if (lista.some(X => doOutro(X) && (distUf(fam, ref, uDe(X, s), s) ?? Infinity) < du)) continue;
+        let prox = Infinity;
+        for (const B2 of buffers) if (B2 !== B && (via === 'arquibancada' ? B2.arq && B2.A === T.A : B2.cor && B2.cor.every(i => L.divs.includes(i)))) { const d = distUf(fam, u2, s > 0 ? B2.ua : B2.ub, s); if (d != null) prox = Math.min(prox, d); }
+        let alvo = null;
+        for (const X of lista) {
+          if (!doOutro(X)) continue;
+          const d = distUf(fam, u2, uDe(X, s), s);
+          if (d == null || d > prox) continue;
+          if (!alvo || d < alvo.du) alvo = { X, du: d };
+        }
+        const mV = alvo ? metros(fam, dm, u2, u2 + s * alvo.du) : Infinity;
+        const c = { via, T, s, B, L, u1, u2, D1: DV[s > 0 ? 0 : 1], D2: DV[s > 0 ? 1 : 0], mA, mV, alvo: alvo && mV <= lim ? alvo.X : null, rival: alvo ? alvo.X : null, longe: true };
+        if (via === 'arquibancada') { c.kLo = clamp(T.kMed - 3, 0, T.A.n - 4); c.kHi = Math.min(T.A.n - 1, c.kLo + 6); }
+        out.push(c);
+      }
+    }
+    return out;
+  }
+  return { lista, porBonde, buffers, estacoes: ordemEst, nGuardas: ordemEst.length, decisoes, invasao: inv, modo, fim, modelo, dirW, rumoDe, W,
+           caminhosDe, divs, geo: { naFileira, dFileira, mPorU, metros, obst, livreV, livreH, distUf, perto, fechado } };
 }
 
 /* ======================================================
@@ -1114,7 +1172,9 @@ export function criarArquibancada(ctx, p, grupo, aux) {
      A CADA QUADRO: os panos, os instrumentos, os bandeirões, as grades
      e a PM do estádio
      ====================================================== */
-  const escondido = d => !d || !d.vivo || d.noChao || d.jeito === 'revista';
+  /* as torcidas numa briga do jogo (o combate desenha os bonecos delas, dia3d.js): os instrumentos, o pano enrolado e os bandeirões delas saem */
+  const ocultas = new Set();
+  const escondido = d => !d || !d.vivo || d.noChao || d.jeito === 'revista' || (ocultas.size > 0 && ocultas.has(d.spawn));
   function quadro(t, tr, dt) {
     for (const pn of panos) atualizarPano(pn, t, tr);
     /* os instrumentos: na cintura, na frente do corpo */
@@ -1305,7 +1365,6 @@ export function criarArquibancada(ctx, p, grupo, aux) {
       if (A.modo !== 'arquibancada' && A.modo !== 'corredor') return '';
       const ds = [...A.decisoes.values()], pelaVia = ds.filter(x => x.vias.includes(A.modo));
       const porque = !pelaVia.length ? `neste estádio nenhuma torcida do jogo encosta no isolamento ${naVia(A.modo)}`
-        : pelaVia.every(x => x.porque === 'brigou na rua') ? 'as torcidas que encostam no isolamento por esse caminho já brigaram na rua (cada torcida entra em uma briga só)'
         : 'não achei por onde a linha de frente chega na grade';
       return `<p class="cj-aviso">Ninguém invade ${naVia(A.modo)}: ${porque}.</p>`;
     }
@@ -1361,5 +1420,6 @@ export function criarArquibancada(ctx, p, grupo, aux) {
       invasao: inv ? { via: inv.via, a: inv.a.t.sigla, v: inv.v ? inv.v.t.sigla : null, rival: inv.rival ? inv.rival.t.sigla : null, ini: hora(inv.t0), grade: hora(inv.tQ1), fim: hora(inv.tFim), fura: inv.fura, pFura: +inv.pFura.toFixed(2),
         nAtk: inv.nAtk, nFront: inv.nFront, nPM: inv.nPM, cordao: cordao.length, gente: inv.gente, grades: inv.grades.map(g => g.i), originais: [...originais.values()].reduce((s, l) => s + l.length, 0) } : null };
   }
-  return { controla, pessoa, noLugar, gesto, quadro, linha, texto, statusDe, foco, alvoDoCorte, limpar, estado, get invasao() { return inv; } };
+  return { controla, pessoa, noLugar, gesto, quadro, linha, texto, statusDe, foco, alvoDoCorte, limpar, estado, get invasao() { return inv; },
+           ocultar(ids) { ocultas.clear(); for (const id of ids || []) ocultas.add(id); } };
 }

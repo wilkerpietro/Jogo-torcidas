@@ -23,6 +23,7 @@
 import { CASCA } from './jogo_casca.js';
 import { criarVida, horaTxt } from './vida3d.js';
 import { criarMapaDaCidade } from './mapa3d.js';
+import { criarDia3d } from './dia3d.js';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -66,11 +67,22 @@ function ligar(api) {
   /* O MAPA DA CIDADE (mapa3d.js): o item "Mapa da cidade" da coluna de
      ícones (main.js) chama `abrirMapa` */
   const mapa = criarMapaDaCidade(api);
+  /* O DIA DE JOGO EM 3D (28/09/2026, dia3d.js): a linha do dia de jogo
+     abre a cidade do jogo (a nossa, ou a deles) com os bondes, a PM, a
+     arquibancada e a invasão; enquanto ele está no ar a praça não troca
+     sozinha, e no fim ela volta pra do jogador */
+  let pracaTravada = false;
+  const dia3d = criarDia3d(api, vida, {
+    travarPraca(v) {
+      pracaTravada = !!v;
+      if (!v) { pracaDoJogo = null; conferirPraca(); }
+    }
+  });
   TO.jogo3d = {
     get ritmo() { return vida.ligada ? vida.ritmo : null; },
     palcoDe: (local, cfg) => vida.palcoDe(local, cfg),
     abrirMapa: () => mapa.alternar(),
-    vida, mapa
+    vida, mapa, dia: dia3d
   };
   /* o relógio do dia na barra de cima, do lado da data */
   const relogio = document.createElement('div');
@@ -80,7 +92,8 @@ function ligar(api) {
   const pintarHora = () => {
     const quando = document.querySelector('.feed-barra .quando-txt');
     if (quando && relogio.parentElement !== quando.parentElement) quando.parentElement.insertBefore(relogio, quando);
-    const t = horaTxt(vida.relogio.minuto);
+    /* (com o dia de jogo no ar, a hora é a dele) */
+    const t = dia3d.hora != null ? horaTxt(dia3d.hora / 60) : horaTxt(vida.relogio.minuto);
     if (t !== horaVista) { horaVista = t; relogio.textContent = t; }
   };
 
@@ -151,7 +164,7 @@ function ligar(api) {
   };
   const conferirPraca = () => {
     const e = E();
-    if (!e || !e.torcida) return;
+    if (!e || !e.torcida || pracaTravada) return;
     const nome = nomeDaPraca(e.torcida.mapa);
     /* a sede da torcida do jogador é a do save (o nível dela), não a da tabela */
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
@@ -168,13 +181,14 @@ function ligar(api) {
   const conferirTela = () => {
     const emJogo = !!jogo && !jogo.classList.contains('oculto');
     document.body.classList.toggle('j3d-em-jogo', emJogo);
+    if (!emJogo && (dia3d.ativo || dia3d.montando)) dia3d.fechar();
     if (emJogo) conferirPraca();
     else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }
     if (!emJogo) mapa.fechar();
     pintarBotao();
   };
   /* o quadro do relógio (a hora da barra) */
-  const laco = () => { if (vida.ligada) pintarHora(); requestAnimationFrame(laco); };
+  const laco = () => { if (vida.ligada || dia3d.hora != null) pintarHora(); requestAnimationFrame(laco); };
   requestAnimationFrame(laco);
   if (jogo) new MutationObserver(conferirTela).observe(jogo, { attributes: true, attributeFilter: ['class'] });
   TO.estado.aoMudar(() => { conferirTela(); });

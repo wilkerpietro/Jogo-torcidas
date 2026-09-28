@@ -2202,6 +2202,20 @@ TO.i18n.registrar({
   'Sem consequência além dos feridos.': {es:'Sin consecuencias aparte de los heridos.', en:'No consequences beyond the injured.'},
   'Consequências': {es:'Consecuencias', en:'Consequences'},
 
+  /* ---------- o dia de jogo na cidade em 3D (dia3d.js) e a invasão da nossa torcida ---------- */
+  'montando o dia na cidade': {es:'armando el día en la ciudad', en:'setting up the day in the city'},
+  'a caminho · na cidade': {es:'en camino · en la ciudad', en:'on the way · in the city'},
+  'as torcidas entrando no estádio': {es:'las barras entrando al estadio', en:'the crews filing into the stadium'},
+  'Invadir o setor deles?': {es:'¿Invadir su sector?', en:'Storm their section?'},
+  'só a nossa torcida decide': {es:'solo nuestra barra decide', en:'only our crew decides'},
+  'A arquibancada ferveu. A {rival} está do outro lado do isolamento da PM: a nossa torcida pode quebrar a grade e invadir, ou ficar no lugar. Simular roda o duelo na hora — as consequências são as mesmas.':
+    {es:'La tribuna hierve. {rival} está del otro lado del cordón de la policía: nuestra barra puede romper la reja e invadir, o quedarse en su lugar. Simular resuelve el duelo al instante — las consecuencias son las mismas.',
+     en:'The stands are boiling. {rival} is on the other side of the police buffer: our crew can break the fence and storm in, or stay put. Simulate settles the fight on the spot — same consequences.'},
+  'Invadir pela arquibancada': {es:'Invadir por la tribuna', en:'Storm across the stand'},
+  'Invadir pelo corredor': {es:'Invadir por el pasillo', en:'Storm through the concourse'},
+  'Simular a invasão': {es:'Simular la invasión', en:'Simulate the charge'},
+  'Ficar no lugar': {es:'Quedarse en su lugar', en:'Stay put'},
+
   /* ---------- salvar ---------- */
   'NÃO SALVOU · {motivo}': {es:'NO SE GUARDÓ · {motivo}', en:'NOT SAVED · {motivo}'},
   'Salvo.': {es:'Guardado.', en:'Saved.'},
@@ -27043,6 +27057,8 @@ TO.itinerario = (function(){
 
     return {
       casa, viaja,
+      /* o jogo desta linha (o jogo 3D monta o dia na cidade dele: dia3d.js) */
+      jogo: j,
       escolta,
       efetivo: efetivoInicial(E, msg, escolta),
       hora: j.hora || '21:00',
@@ -47921,6 +47937,37 @@ TO.icones = (function(){
   const partidaAoVivo = e => (e.feed||[]).find(m=>
     m.kind==='partida' && m.dados && m.dados.iniciada && !m.respondido);
 
+  /* A PARTIDA PRA CIDADE EM 3D (o jogo 3D, dia3d.js): o minuto com a
+     fração (o relógio do dia anda com ele) e a invasão pedida no painel
+     do dia — a mesma porta do clima tenso: a partida pausa, a torcida
+     escolhe (invadir, simular, ficar) e a briga abre no caminho dela.
+     Uma briga de arquibancada por jogo, como no clima tenso */
+  function minutoExato(d){
+    if(!d || d.minAcum === undefined) return null;
+    const rodando = d.pausada ? 0
+      : (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG * (d.vel||4);
+    return Math.min(90, (d.minAcum||0) + rodando);
+  }
+  function invadirNoEstadio(via){
+    const e = E(), m = e && partidaAoVivo(e), d = m && m.dados;
+    if(!d || document.body.classList.contains('em-cena')) return false;
+    if(!d.clima) d.clima = {nivel:0, min:0};
+    if(d.clima.aberto || d.clima.brigou) return false;
+    d.clima.aberto = true;
+    if(!d.pausada){ pontoDeControle(d); d.pausada = true; }
+    const volta = ()=>{
+      d.clima.nivel = Math.min(d.clima.nivel, 1); d.clima.aberto = false; d.clima.brigou = true;
+      pontoDeControle(d); d.pausada = false;
+    };
+    comEscolhaDeBriga((sim, v)=>{
+      if(sim === null){ d.clima.aberto = false; pontoDeControle(d); d.pausada = false; return; }
+      simularProxima = sim;
+      abrirBrigaNoEstadio(m, volta, v || via);
+    }, via ? [via] : null);
+    return true;
+  }
+  TO.jogoAoVivo = {minuto: minutoExato, invadir: invadirNoEstadio};
+
   /* ESPAÇO pausa e solta a partida ao vivo — só quando ela existe,
      fora de cena de briga e sem campo de texto em foco */
   addEventListener('keydown', ev=>{
@@ -48068,7 +48115,20 @@ TO.icones = (function(){
           d.pausada = true;
           eventos.appendChild(el('div',{class:'partida-gol',
             texto:_t("{min}' · A arquibancada se pegou — o jogo espera.", {min})}));
-          setTimeout(()=>comEscolhaDeBriga(sim=>{
+          /* NA CIDADE EM 3D A INVASÃO É DA NOSSA TORCIDA, E É ESCOLHA
+             (o dono, 28/09/2026: "A invasão deve ser controlável pela
+             torcida do jogador somente"): com caminho até o setor rival
+             (dia3d.js), o clima tenso pergunta se ela vai e por onde — e
+             ela pode ficar no lugar */
+          const D3 = TO.jogo3d && TO.jogo3d.dia;
+          const vias = D3 && D3.ativo ? D3.viasDaInvasao(true) : null;
+          setTimeout(()=>comEscolhaDeBriga((sim, via)=>{
+            if(sim === null){
+              /* ficou no lugar: a PM acalma a arquibancada e a bola volta */
+              d.clima.nivel = 1; d.clima.aberto = false; d.clima.brigou = true;
+              pontoDeControle(d); d.pausada = false; pintarClima();
+              return;
+            }
             simularProxima = sim;
             abrirBrigaNoEstadio(m, ()=>{
             /* de volta da briga: a PM baixa o clima e a bola volta a
@@ -48078,8 +48138,8 @@ TO.icones = (function(){
               pontoDeControle(d);
               d.pausada = false;
               pintarClima();
-            });
-          }), 1100);
+            }, via);
+          }, vias && vias.length ? vias : null, !!(D3 && D3.ativo)), 1100);
           return;
         }
       }
@@ -48206,7 +48266,7 @@ TO.icones = (function(){
     'estadio-20': {mandante:3, visitante:3},
     'estadio-40': {mandante:2, visitante:3}
   };
-  function abrirBrigaNoEstadio(m, aoVoltar){
+  function abrirBrigaNoEstadio(m, aoVoltar, via3d){
     const e = E();
     const d = m && m.dados;
     /* A BRIGA É AGENDADA COM 1,1 s DE ATRASO — o tempo do aviso "a
@@ -48232,8 +48292,17 @@ TO.icones = (function(){
     /* o maior rival presente é o alvo, antes da maior torcida (dono,
        08/09/2026); entre iguais, a maior */
     const mr = p => TO.relacoes.ehMaiorRival(e, e.torcida.id, p.id) ? 1 : 0;
-    const deles = pres.filter(p => p.casa !== !!d.somosCasa)
+    let deles = pres.filter(p => p.casa !== !!d.somosCasa)
       .sort((a,b) => mr(b) - mr(a) || b.n - a.n);
+    /* A INVASÃO EM 3D (o jogo 3D, dia3d.js: "A invasão deve ser
+       controlável pela torcida do jogador somente"): quem vai é SÓ a
+       nossa torcida, e o alvo é a rival do outro lado do isolamento no
+       caminho escolhido — a briga (e a conta dela) é contra essa */
+    const inv3d = via3d && via3d.rival ? deles.find(p => p.id === via3d.rival) : null;
+    if(inv3d){
+      deles = [inv3d];
+      nossos.splice(0, nossos.length, ...nossos.filter(p => p.id === e.torcida.id));
+    }
     if(!deles.length || !nossos.some(p => p.id === e.torcida.id)){
       /* sem rival na casa (ou nós nem fomos): nada abre, e a bola
          volta a rolar na hora */
@@ -48277,7 +48346,7 @@ TO.icones = (function(){
       quietas.push({nome:p.nome, de:alvo.nome, relacao:Math.round(r)});
       return false;
     };
-    const nossosVao = nossos.filter(desce);
+    const nossosVao = inv3d ? nossos : nossos.filter(desce);
     /* se TODA a nossa ala for aliada deles, a nossa desce sozinha */
     const nossosSet = compacta(nossosVao.length ? nossosVao
       : nossos.filter(p => p.id === e.torcida.id), setores[nossoLado]);
@@ -48316,6 +48385,8 @@ TO.icones = (function(){
       canvas: $('djPrincipal'),
       config:{escalacao:aptos, intencao:'atacar', paz:false, setores:true,
               bondes, efetivoRival: delesT, local,
+              /* o caminho da invasão em 3D (vida3d.js monta o palco nele) */
+              invasao3d: inv3d ? {via: via3d.via, rival: inv3d.id} : null,
               /* no estádio todo mundo estende faixa (dono, 09/09/2026) */
               faixaDefensor:'ambos', rivalId: rivalTop.id,
               perfilRival: perfilDe(rivalTop.id)},
@@ -48414,6 +48485,22 @@ TO.icones = (function(){
     pararTudo('itinerario');
     itnPintar();
     itnContar();
+    /* O DIA EM 3D (o jogo 3D, 28/09/2026: "Vamos ligar o dia de jogo com
+       arquibancada e invasão no cenário 3d"): com a cidade em 3D, o dia
+       monta nela — a praça do jogo, os bondes, a PM, a arquibancada — e
+       a linha só anda quando ele está pronto (fora de casa, depois de o
+       jogador dizer onde a caravana desce). Sem cidade pro jogo, a linha
+       anda como sempre */
+    const D3 = TO.jogo3d && TO.jogo3d.dia;
+    const pronto = D3 ? D3.abrir({it, msg}) : null;
+    if(pronto && pronto.then){
+      ITN.travado = true;
+      itnDizer(_t('montando o dia na cidade'), true);
+      const este = ITN;
+      const seguir = ()=>{ if(ITN !== este) return; ITN.travado = false; itnAgenda(400); };
+      pronto.then(seguir, seguir);
+      return true;
+    }
     ITN.timer = setTimeout(itnProximo, 700 / (TO.diaJogo.ponte.velocidade || 1));
     return true;
   }
@@ -48518,7 +48605,26 @@ TO.icones = (function(){
     itnPintar();
     itnMarcarEfetivo();
     const p = paradas[ITN.ponto];
-
+    /* A CIDADE ANDA PRIMEIRO (o jogo 3D, dia3d.js): cada fase passa na
+       cidade do jogo — a caminhada até o estádio, a entrada, a partida —
+       e o recado da fase só aparece quando a cidade chega nele (a briga
+       da caminhada, quando os dois bondes se encontram) */
+    const D3 = TO.jogo3d && TO.jogo3d.dia;
+    if(D3 && D3.ativo){
+      ITN.travado = true;
+      itnDizer(p.jogo ? _t('as torcidas entrando no estádio') : _t('a caminho · na cidade'), true);
+      const este = ITN;
+      D3.fase(p, ()=>{
+        if(ITN !== este || ITN.it.paradas[ITN.ponto] !== p) return;
+        ITN.travado = false;
+        itnNaParada(p);
+      });
+      return;
+    }
+    itnNaParada(p);
+  }
+  function itnNaParada(p){
+    const paradas = ITN.it.paradas;
     if(p.jogo){                       /* O JOGO SEGURA A LINHA */
       ITN.travado = true;
       itnDizer(_t('a partida rolando · o dia só segue no apito final'), true);
@@ -48612,7 +48718,10 @@ TO.icones = (function(){
     const e = E();
     cx.querySelector('.bts').remove();
     if(!briga){
-      /* ninguém desceu: a conta é a mesma do feed, pela mesma porta */
+      /* ninguém desceu: a conta é a mesma do feed, pela mesma porta (e o
+         dia em 3D mostra a rival batendo sem a gente reagir) */
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      if(D3 && D3.ativo) D3.naoDesceu(ev);
       const atq = (ev.abrir && ev.abrir.atq) || null;
       const r = TO.feed.naoDesceu ? TO.feed.naoDesceu(e, atq) : null;
       cx.appendChild(el('div',{class:'saldo',
@@ -48644,6 +48753,9 @@ TO.icones = (function(){
     ITN.esperando = null;
     parada.brigou = true;
     const res = ultimoResultado || {};
+    /* o dia em 3D segue com o resultado (quem ganhou, quem ficou no chão) */
+    const D3 = TO.jogo3d && TO.jogo3d.dia;
+    if(D3 && D3.ativo) D3.depoisDaCena(ev, res);
     /* AS BAIXAS SOMEM DO BONDE (régua do dono, 20/08/2026): quem caiu
        não segue viagem, e o próximo ponto recebe o que sobrou. Preso
        conta junto — quem foi pro camburão também não vai ao estádio. */
@@ -48719,11 +48831,17 @@ TO.icones = (function(){
     /* AQUI a bola rola, e só aqui (correção do dono, 20/08/2026): o
        botão do feed abriu o dia, não o jogo. */
     m.dados.iniciada = true;
+    /* NA CIDADE EM 3D A PARTIDA COMEÇA A 1× (dia3d.js): dá tempo de ver a
+       arquibancada e de mandar a torcida invadir; o botão da velocidade
+       continua valendo */
+    const D3 = TO.jogo3d && TO.jogo3d.dia, em3d = !!(D3 && D3.ativo);
     if(m.dados.minAcum === undefined){
       m.dados.minAcum = 0; m.dados.t0 = Date.now();
-      m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
+      m.dados.vel = m.dados.vel || (em3d ? 1 : 4); m.dados.pausada = false;
     }
+    if(em3d) D3.partida(m);
     const caixa = widgetPartida(m, ()=>{
+      if(em3d && D3.ativo) D3.apito();
       /* apito final: a linha volta a andar, e o aviso da trava sai */
       atualizarFeed(); pintarTopo();
       if(ITN && ITN.recados)
@@ -48741,6 +48859,8 @@ TO.icones = (function(){
 
   function itnAcabou(){
     if(!ITN) return;
+    /* o dia em 3D sai da cidade (a praça volta a ser a do jogador) */
+    if(TO.jogo3d && TO.jogo3d.dia) TO.jogo3d.dia.fechar();
     ITN.travado = true;
     itnLimparOcorridos();
     ITN.raiz.classList.add('fechado');
@@ -56085,8 +56205,30 @@ TO.icones = (function(){
      painel de Ações e da Diplomacia, onde não há mensagem pra pendurar
      botão. Nesses dois a pergunta vira este cartão — e ela é só sobre
      COMO brigar: a ação já foi executada e o custo já saiu. */
-  function comEscolhaDeBriga(fn){
+  function comEscolhaDeBriga(fn, vias, podeFicar){
     const corpo = el('div');
+    /* A INVASÃO NO ESTÁDIO EM 3D (dia3d.js): os caminhos da nossa torcida
+       até o setor rival — cada um abre a briga por ali —, o simular e o
+       ficar no lugar (fn(null)) */
+    if(vias && vias.length){
+      corpo.appendChild(el('div',{class:'em-construcao', texto:
+        _t('A arquibancada ferveu. A {rival} está do outro lado do isolamento da PM: a nossa torcida pode quebrar a grade e invadir, ou ficar no lugar. Simular roda o duelo na hora — as consequências são as mesmas.', {rival:vias[0].nome})}));
+      const bs = el('div',{class:'msg-bts'});
+      let fechar = null;
+      const opcao = (rot, classe, simular, via)=>{
+        const bt = el('button',{class:'bt '+classe, html:`<span>${rot}</span>`});
+        bt.onclick = ()=>{ if(fechar) fechar(); fn(simular, via); };
+        bs.appendChild(bt);
+      };
+      for(const v of vias)
+        opcao(v.via === 'corredor' ? _t('Invadir pelo corredor') : _t('Invadir pela arquibancada'), 'destaque', false, v);
+      opcao(_t('Simular a invasão'), 'simular', true, vias[0]);
+      opcao(_t('Ficar no lugar'), '', null, null);
+      corpo.appendChild(bs);
+      /* sem o Fechar do rodapé: fechar sem escolher deixava a partida parada — ficar é uma das escolhas */
+      fechar = modal(_t('Invadir o setor deles?'), _t('só a nossa torcida decide'), corpo, null, null, true);
+      return fechar;
+    }
     corpo.appendChild(el('div',{class:'em-construcao', texto:
       _t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
     const bs = el('div',{class:'msg-bts'});
@@ -56098,9 +56240,11 @@ TO.icones = (function(){
     };
     opcao(_t('Descer pra briga'), 'destaque', false);
     opcao(_t('Simular'), 'simular', true);
+    /* com o dia na cidade em 3D, a torcida pode ficar no lugar (fn(null)) */
+    if(podeFicar) opcao(_t('Ficar no lugar'), '', null);
     corpo.appendChild(bs);
     fechar = modal(_t('Como vai ser'), _t('a briga é a mesma; o comando é que muda'),
-                   corpo);
+                   corpo, null, null, !!podeFicar);
     return fechar;
   }
 

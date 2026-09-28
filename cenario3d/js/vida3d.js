@@ -1015,14 +1015,20 @@ export function criarVida(api) {
      de feed num dia de jogo na praça do jogador; caminhada.js): o plano do
      dia de jogo com a briga que o jogo mandou (quem ataca, quem é atacado,
      a concentração ou o meio do caminho), e o tabuleiro em volta do ponto
-     da emboscada. Briga noutra praça (o jogo fora, a sub-sede) segue na
-     cena de sempre: a cidade em 3D é a do jogador */
+     da emboscada. COM O DIA DE JOGO NO AR (dia3d.js; o dono, 28/09/2026:
+     "As brigas fora de casa devem respeitar o mesmo cenário das brigas em
+     casa") a briga é a do plano do dia, em casa ou fora: o mesmo lugar
+     onde os dois bondes se encontram na cidade do jogo. Sem ele, briga
+     noutra praça (a sub-sede) segue na cena de sempre */
   function palcoDaCaminhada(local, cfg) {
     const Cn = C(), e = E();
     if (!Cn || !Cn.vida || !Cn.vida.contextoDoDia || !e || !e.torcida || !TO.dados || !TO.dados.cenas) return null;
-    if (cfg.foraDeCasa) return null;
     const nosso = (cfg.bondes || []).find(b => b.nossa), rivalId = cfg.rivalId;
     if (!nosso || !rivalId) return null;
+    const atacados0 = cfg.faixaDefensor === 'nos';
+    const D3 = TO.jogo3d && TO.jogo3d.dia;
+    const G = D3 && D3.ativo ? D3.ganchosDaCaminhada(atacados0 ? rivalId : e.torcida.id, atacados0 ? e.torcida.id : rivalId) : null;
+    if (cfg.foraDeCasa && !G) return null;
     /* O JOGO: o nosso em casa, se é contra o clube do rival; senão, o nosso
        clube contra o do rival (a caminhada é a do dia, a rota é a de cada um) */
     const R = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(rivalId) : null, meu = e.torcida.clubeId, j = e.proximoJogo;
@@ -1030,20 +1036,22 @@ export function criarVida(api) {
     if (j && j.casa && j.advId && R && R.clubeId === j.advId) fora = j.advId;
     else if (R && R.clubeId && R.clubeId !== meu) fora = R.clubeId;
     else if (j && j.advId) fora = j.advId;
-    if (!fora) return null;
-    const atacados = cfg.faixaDefensor === 'nos';
+    if (!fora && !G) return null;
+    const atacados = atacados0;
     let B = null;
     try {
       B = brigaNaCaminhada(Cn.vida.contextoDoDia(), { casa: meu, fora, a: atacados ? rivalId : e.torcida.id, v: atacados ? e.torcida.id : rivalId,
-                                                     onde: local === 'praca' ? 'praca' : 'rua', nosso: e.torcida.id, nossoLado: nosso.lado });
-    } catch (err) { console.error('a briga na caminhada:', err); return null; }
-    if (!B || B.erro) { console.warn('a briga na caminhada não montou:', B && B.erro); return null; }
+                                                     onde: local === 'praca' ? 'praca' : 'rua', nosso: e.torcida.id, nossoLado: nosso.lado, plano: G ? G.plano : undefined });
+    } catch (err) { console.error('a briga na caminhada:', err); if (G) G.aoDesmontar(); return null; }
+    if (!B || B.erro) { console.warn('a briga na caminhada não montou:', B && B.erro); if (G) G.aoDesmontar(); return null; }
     TO.dados.cenas[B.cena.id] = B.cena;
     ultimaCaminhada = B;
     const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
                               vistas: { perto: { dist: 19, el: 1.08 }, alto: { dist: 40, el: 1.25 } },
                               rotAlto: local === 'praca' ? 'a concentração, do alto' : 'a rua, do alto',
-                              aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+                              /* (com o dia no ar, os outros bondes do dia ficam em volta) */
+                              comDia: G ? G.comDia : null,
+                              aoDesmontar: () => { if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } } });
     return { local: B.cena.id, renderizador: Rd };
   }
   let ultimaCaminhada = null;
@@ -1053,7 +1061,11 @@ export function criarVida(api) {
     get ritmo() { return relogio.ritmo; },
     /* o palco da cena que tem lugar na sede em 3D: a reunião */
     palcoDe(local, cfg) {
-      if (!ligada) return null;
+      /* (com o dia de jogo no ar, a vida da praça fica desligada e as brigas dele montam aqui) */
+      const D3 = TO.jogo3d && TO.jogo3d.dia, noDia = !!(D3 && D3.ativo);
+      if (!ligada && !noDia) return null;
+      /* A INVASÃO NO ESTÁDIO (invasao.js): a briga da arquibancada, com o dia no ar, é a invasão da nossa torcida */
+      if (/^estadio-(10|20|40)$/.test(local) && cfg && cfg.invasao3d && noDia) return D3.palcoDaInvasao(cfg);
       if (local === 'casa-piscina') return palcoDaFesta();
       if (local === 'emb-posto' || local === 'emb-onibus') return palcoDaCaravana(local);
       if (/^(praca|rua|rua-media|rua-nobre)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaCaminhada(local, cfg);
