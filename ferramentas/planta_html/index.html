@@ -271,7 +271,7 @@ import { ATLAS } from './js/modelos_atlas.js';
 import { Construtor, sorteio } from './js/construtor3d.js';
 import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js';
 import { montarSede } from './js/sede3d.js';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta } from './js/veraneio3d.js';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js';
 import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js';
 import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
 import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js';
@@ -3967,6 +3967,9 @@ function objetoDoVeraneio(l, g) {
     if (lista === 'telhado') m.name = 'telhado';
     g.add(m);
   }
+  /* a casa da festa: o deck, a piscina, a festa, os carros e a mobília são
+     do kit de detalhe (malhas vivas: o cenário não assa elas) */
+  if (l.veraneio === 'festa') g.add(detalheDaCasaDaFesta(l));
   return r;
 }
 /* os coqueiros da rua de veraneio: um por lote, na areia da rua, rente
@@ -5184,10 +5187,8 @@ function apiDoCenario() {
       const cache = PALCOS_CARAVANA[tipo];
       if (cache) return cache;
       const O = [Math.round(MUNDO.x0 - 2500 * M) + (tipo === 'emb-onibus' ? -3000 : 0), Math.round(MUNDO.y0 - 2500 * M)];
-      const destino = {}, g = new THREE.Group();
-      montarCaravana(tipo, O, destino);
-      for (const [lista, blocos] of Object.entries(destino)) { const m = malhaDeBlocos(blocos, lista); if (m) { m.castShadow = false; g.add(m); } }
-      g.name = 'palco da caravana: ' + tipo;
+      /* (a peça detalhada, js/diajogo/caravana3d.js com o kit de detalhe3d.js: já vem juntada por material) */
+      const g = montarCaravana(tipo, O);
       return (PALCOS_CARAVANA[tipo] = { grupo: g, briga: cenaDaCaravana(tipo, O) });
     },
     brigaNaFesta() {

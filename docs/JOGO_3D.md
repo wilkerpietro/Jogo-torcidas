@@ -80,7 +80,9 @@ Em ordem de peso pro jogo. Cada item espera o dono apontar as mudanças.
    pedido de 27/09: "o jogador vai poder optar por fazer outra rota com sua
    torcida"); o evento de cada fase acontece no ponto da cidade onde as
    rotas se cruzam.
-2. **As brigas.** Hoje abrem na cena de briga do jogo de feed (a foto aérea
+2. **As brigas.** *(Em andamento: a festa na casa de praia e as duas
+   emboscadas da caravana já são 3D — seção 7. As outras cenas seguem na
+   foto 2D.)* Hoje abrem na cena de briga do jogo de feed (a foto aérea
    2D com o boneco 3D por cima), em cima da cidade. **Proposta:** a briga
    acontece na própria rua da cidade, com o mesmo `combate.js`: um recorte
    da cidade em volta do ponto (1536×1024 px do motor, uns 79×53 m) vira a
@@ -144,3 +146,102 @@ sessão); o que eles fazem, pra refazer:
   cidade.
 - **O dia de jogo do 3D:** os 90 planos das 30 praças (o clássico, o mando
   invertido e um visitante de fora em cada).
+- **As brigas da seção 7:** com a vida ligada, `TO.tela.abrirAcaoEmCena({
+  cena: 'casa-piscina' | 'emb-posto' | 'emb-onibus', acao: 'atacar', ... })`;
+  conferir que o palco monta (`C.vida.palco.seguir`), que o líder anda com o
+  WASD, que o C troca a câmera, e que ao fechar a cena o relatório abre e a
+  câmera volta pra sede. Pras peças sozinhas: uma página que importa
+  `js/diajogo/caravana3d.js` e chama `montarCaravana(tipo, [0, 0])` e
+  `cenaDaCaravana` (a máscara pintada por cima em vermelho mostra se o que
+  barra bate com o que se vê).
+
+## 6. A vida na cidade (28/09/2026)
+
+`ferramentas/planta_html/vida3d.js`: o relógio do dia (7h às 23h; as
+mensagens do feed caem na hora delas e a luz do cenário segue a hora); a
+sede com os membros do save pelos cômodos (cada móvel que recebe gente
+marca o lugar em `sede3d.js`); o presidente sentado e quem traz a mensagem
+na cadeira da frente, com o cartão em balão; a reunião da diretoria na mesa
+da sala da sede (o palco da reunião, que desmonta quando a cena fecha); os
+pedestres nas calçadas e a turma de cada bar de torcida na porta.
+
+## 7. As brigas na cidade: a festa e a caravana
+
+`ferramentas/planta_html/palco_briga.js`: a briga é a MESMA do jogo de feed
+(o `combate.js`, a ponte, o HUD, os comandos); quem desenha é o cenário. O
+tabuleiro do combate (1536 × 1024 px) é um retângulo do mundo — `noMundo(x,
+y)` leva o ponto do tabuleiro pro mundo e `u`, `v` são os eixos dele —, e
+cada disco vira o boneco da cidade no ponto dele. A câmera vai atrás do
+líder (C troca entre perto e do alto), o WASD anda pela câmera, a faixa fica
+estendida no muro, o objetivo é o anel dourado no chão, e o nome do líder
+vai em cima da cabeça. O que passa da cabeça dele entre ele e a câmera fica
+ralo (o corte do cenário).
+
+- **A festa na casa de praia** (`casa-piscina@3d`, `js/diajogo/veraneio3d.js`):
+  a rua de veraneio numa ponta do mapa, a casa da festa no meio dela; a
+  máscara sai do plano da casa (paredes, portas, piscina, móveis). O
+  tabuleiro é 1:1 com o mundo (1 px = 5,1 cm).
+- **As emboscadas da caravana** (`emb-posto@3d`, `emb-onibus@3d`,
+  `js/diajogo/caravana3d.js`): palcos à parte, longe da praça, que entram
+  na cena quando a briga abre e saem quando fecha. **Escala (o dono,
+  28/09/2026: "essa cena aparentemente é muito grande, o novo cenário deve
+  ser menor já que não são tantos bonecos nessa cena" — 30% da área):** 1
+  px do tabuleiro = √0,3 unidade (2,8 cm), e o tabuleiro dá 43 × 29 m — a
+  escala das duas fotos (`img/cenas/emb_posto.webp`, `emb_onibus.webp`). O
+  plano é em px da foto, e os spawns, as entradas e os postos da PM são os
+  que o dono ajeitou no editor (`dados/cenas_editadas.js`). O motor segue
+  em px: o corpo (7 px) vira 20 cm de raio e a marcha (60 px/s) 1,7 m/s. O
+  palco recebe a `escala` (o anel do objetivo, a faixa) e o boneco também
+  (o anel da bomba no chão).
+
+## 8. O detalhe em Three.js (28/09/2026)
+
+O dono: "Refaça as cenas da caravana e da casa de praia com mais
+detalhismo no threejs". `js/diajogo/detalhe3d.js` é um kit de peças em
+metros, feito pra câmera da briga (de 15 a 45 m, bem de cima):
+
+- **Veículos:** o ônibus de viagem, o carro (sedã, hatch, SUV), o caminhão
+  baú e o contêiner. A carroceria é o perfil de lado extrudado com a borda
+  arredondada e a caixa de roda recortada (o pneu aparece inteiro), a
+  cabine mais estreita que o corpo, e os vidros assentados no perfil.
+- **Posto e estrada:** a bomba, a ilha, o totem, o poste, os pneus, o
+  tambor, o carretel, o freezer de sorvete, a gaiola de botijão, a lixeira,
+  o calibrador, a caixa d'água, a loja, o depósito, o muro de bloco, o muro
+  pré-moldado, os portões (grade e chapa), a concertina (em linha: arame
+  fino não precisa de triângulo), o galpão e o telheiro de zinco, o
+  arbusto, a árvore, o capim.
+- **Casa e festa:** a piscina, a escada, a boia, o colchão, a
+  churrasqueira, a espreguiçadeira, o guarda-sol, a mesa com as cadeiras e
+  os copos, o isopor, a caixa de som, o varal de luz, a toalha, o que fica
+  largado no chão, o sofá, a TV, a cozinha, a mesa de jantar, o banheiro, a
+  cama, a estante.
+- **Texturas pintadas no canvas** (repetem por metro): asfalto, remendo,
+  placa de concreto (a folha tem 2 × 2 placas e cada placa sorteia uma e o
+  giro — a repetição some), bloco, pré-moldado, reboco, laje, zinco com
+  ferrugem, azulejo da piscina, deck, cerâmica, ladrilho, tijolo, areia,
+  terra, prateleiras, geladeira, letreiros, painel de preço, placa do carro.
+- **Decalques do chão:** a marca de pneu, a rachadura, a mancha de óleo, a
+  areia soprada, a seta e a faixa pintadas e gastas, o ralo.
+- **A sombra de contato:** o cenário não tem mapa de sombra (é caro); cada
+  peça leva o borrão escuro embaixo (nove fatias: a borda não cresce com a
+  peça) e cada parede a faixa escura no pé.
+- **`juntar(grupo)`:** junta a geometria por material, e as cores lisas vão
+  pro vértice (uma malha por jeito de material). O posto inteiro: ~40 mil
+  triângulos em 74 malhas; a estrada, ~32 mil em 63.
+
+Onde entra:
+
+- **A caravana:** `montarCaravana(tipo, O)` monta o posto ou a estrada com
+  o kit (a loja com a vitrine, as prateleiras, as geladeiras, o balcão e os
+  quartinhos; o depósito aberto; as ilhas; o ônibus; o carro; a pintura do
+  pátio; os muros; o canteiro com o poste; a cerca e os postes da rede do
+  outro lado da pista; os galpões, o telheiro, os contêineres e o caminhão
+  atrás dos muros da estrada) e o chão até o horizonte com a cor mudando
+  por vértice. O palco põe o material de cada peça no corte da câmera.
+- **A festa:** `detalheDaCasaDaFesta(l)` (veraneio3d.js) põe o deck, a
+  cerâmica, a piscina, a churrasqueira, a festa, os dois carros e a mobília
+  no lote da casa da festa. As malhas vão marcadas `peca`: o forno do
+  cenário não assa elas (achataria a sombra macia e o vidro) — entram
+  inteiras na cena e no corte. O construtor ficou só com a areia, o
+  corredor, as paredes, o portão e o telhado (o jogo corta o telhado pra
+  ver dentro da casa).

@@ -122,6 +122,8 @@ let rumoDe = d => d.rumo;
 /* um rumo do tabuleiro (vx, vy) no mundo: igual, a não ser que quem é dono
    da cena tenha o tabuleiro girado no mundo (a briga na cidade, no jogo 3D) */
 let rumoDoTabuleiro = (vx, vy) => Math.atan2(vx, vy);
+/* unidades do mundo por px do tabuleiro (quem desenha a cena noutra escala: a caravana do cenário 3D) */
+let escalaDoTabuleiro = () => 1;
 
   /* o util do jogo (nucleo.js) pode chegar depois deste módulo — no
      jogo 3D o cenário importa o boneco antes de o jogo carregar —, então
@@ -2519,7 +2521,7 @@ let rumoDoTabuleiro = (vx, vy) => Math.atan2(vx, vy);
         const k = 1 - (p.explodeEm - p.t)/(p.pavio||1);
         v.grupo.position.set(qs.x, qs.y + 4.6, qs.z); v.grupo.rotation.set(0, 0, 0);
         v.faisca.visible = Math.sin(p.t*(30+k*70)) > 0;
-        v.zona.visible = true; v.zona.position.set(qs.x, qs.y + 0.6, qs.z);
+        v.zona.visible = true; v.zona.position.set(qs.x, qs.y + 0.6, qs.z); v.zona.scale.setScalar(raioBomba * escalaDoTabuleiro());
         v.zona.material.opacity = 0.25 + 0.45*k;
         if(p.t - v.ultimoFumo > 0.07){ v.ultimoFumo = p.t; fumo(qs.x+2.4, qs.y+8, qs.z, false); }
         continue;
@@ -3048,6 +3050,7 @@ let rumoDoTabuleiro = (vx, vy) => Math.atan2(vx, vy);
     noQuadroExterno = opc.noQuadro || null;
     rumoDe = opc.rumo || (d => d.rumo);
     rumoDoTabuleiro = opc.rumoDoTabuleiro || ((vx, vy) => Math.atan2(vx, vy));
+    escalaDoTabuleiro = opc.escalaDoTabuleiro || (() => 1);
     /* a resolução adaptativa é do canvas de quem é dono do
        renderizador; aqui ela não tem o que ajustar */
     cfg.resolucaoAdaptativa = false;

@@ -1129,7 +1129,7 @@ void main() {
       /* a folha da porta que abre e fecha fica viva (não junta nem risca: o
          cenário gira ela e bate nela na hora); a bandeira da sede também
          (ela tremula) */
-      grupo.traverse(o => { if (o.isMesh && (o.userData.porta || o.userData.bandeira)) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
+      grupo.traverse(o => { if ((o.isMesh || o.isLineSegments) && (o.userData.porta || o.userData.bandeira || o.userData.peca)) vivos.push(o); else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); } });
       /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
       let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
       for (const p of pedacos) for (let k = 0; k < p.n; k++) {
@@ -1138,7 +1138,7 @@ void main() {
       }
       /* o que a coisa trouxe e é só dela (o decalque, a geometria) sai */
       grupo.traverse(o => {
-        if (o.userData.porta || o.userData.bandeira) return;
+        if (o.userData.porta || o.userData.bandeira || o.userData.peca) return;
         if (o.geometry) o.geometry.dispose();
         if (o.material && o.material.map && o.material.map.isCanvasTexture && o.material.map.wrapS !== THREE.RepeatWrapping) { o.material.map.dispose(); o.material.dispose(); }
       });
@@ -1820,6 +1820,8 @@ void main() {
         rumo: d => palco && palco.rumo && !(d && d.mundo) ? palco.rumo(d) : d.rumo,
         /* um rumo do tabuleiro (vx, vy) no mundo: a pedra que sai da mão, o PM parado (o palco pode estar girado) */
         rumoDoTabuleiro: (vx, vy) => palco && palco.rumoDe ? palco.rumoDe(vx, vy) : Math.atan2(vx, vy),
+        /* unidades do mundo por px do tabuleiro (a caravana é menor que 1:1): o raio da bomba no chão */
+        escalaDoTabuleiro: () => palco && palco.escala || 1,
         /* quem está fora da tela não é animado (o dia de jogo tem uns 150) */
         noQuadro: (x, z, d) => {
           if (palco && palco.pos && !(d && d.mundo)) { const q = palco.pos(x, z, d, PQ); esferaPovo.center.set(q.x, q.y + 0.9 * M, q.z); }
@@ -1982,6 +1984,19 @@ void main() {
   function montarPortas(vivos) {
     portas = [];
     for (const m of vivos) {
+      /* a PEÇA VIVA do kit de detalhe (a festa da casa de praia): entra
+         inteira, com o material dela (o forno achataria a sombra macia e o
+         vidro), e no corte da câmera; não barra quem anda a pé */
+      if (m.userData.peca) {
+        if (!m.material.userData.cortavel) { cortavel(m.material, false); m.material.userData.cortavel = true; m.material.needsUpdate = true; }
+        m.updateMatrixWorld(true);
+        const w = m.matrixWorld.clone();
+        m.removeFromParent();
+        w.decompose(m.position, m.quaternion, m.scale);
+        m.matrixAutoUpdate = true;
+        doMapa.add(m);
+        continue;
+      }
       /* a bandeira: só entra no mapa (e no corte), com o mundo dela */
       if (m.userData.bandeira) {
         m.material = cortavel(m.material, false);
@@ -2475,6 +2490,9 @@ void main() {
     get camera() { return cam; },
     /* a cena (o jogo 3D põe nela o que é dele: as cadeiras a mais da reunião) */
     get cena() { return doMapa; },
+    /* o CORTE num material de fora (o palco à parte da caravana, a festa):
+       o que passa da cabeça do boneco, entre ele e a câmera, fica ralo */
+    cortavel: m => cortavel(m, false),
     /* abre (ou fecha) as portas vivas cuja dobradiça cai no retângulo */
     abrirPortas(r, abrir = true) {
       let n = 0;

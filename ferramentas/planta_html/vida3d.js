@@ -1003,7 +1003,9 @@ export function criarVida(api) {
     if (!Pc || !TO.dados || !TO.dados.cenas) return null;
     const B = Pc.briga;
     TO.dados.cenas[B.cena.id] = B.cena;
-    const R = palcoDeBriga({ C: C(), M, cena: B.cena, noMundo: B.noMundo, u: B.u, v: B.v, chao: B.chao, peca: Pc.grupo, livre: true,
+    /* (o tabuleiro da caravana é de 43 × 29 m: 1 px = `escala` unidade; as vistas são mais perto que as da festa) */
+    const R = palcoDeBriga({ C: C(), M, cena: B.cena, noMundo: B.noMundo, u: B.u, v: B.v, chao: B.chao, peca: Pc.grupo, livre: true, semLonge: true,
+                             escala: B.escala, vistas: { perto: { dist: 19, el: 1.08 }, alto: { dist: 36, el: 1.25 } },
                              rotAlto: local === 'emb-posto' ? 'o posto inteiro, do alto' : 'a estrada, do alto',
                              aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
     return { local: B.cena.id, renderizador: R };

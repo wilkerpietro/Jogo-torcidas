@@ -27,12 +27,14 @@ const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module
 const VISTAS = { perto: { dist: 21, el: 1.1 }, alto: { dist: 44, el: 1.3 } };
 
 /* `o`: { C (o cenário), M (unidades por metro), cena (a do combate),
-   noMundo(x, y) → [x, z], u, v (os eixos do tabuleiro no mundo), chao(x,
-   y) → m (o piso ali), predio: {x, z} (o prédio que perde o telhado),
-   peca (o grupo do palco à parte, que entra na cena e sai no fim), livre
-   (a câmera sai da área da praça), aoDesmontar() } */
+   noMundo(x, y) → [x, z], u, v (os eixos do tabuleiro no mundo), escala
+   (unidades do mundo por px do tabuleiro; sem ela, 1), chao(x, y) → m (o
+   piso ali), predio: {x, z} (o prédio que perde o telhado), peca (o grupo
+   que entra na cena e sai no fim), semLonge (o chão de longe da praça sai
+   junto: o palco à parte, na estrada), livre (a câmera sai da área da
+   praça), vistas ({perto, alto}: {dist, el}), aoDesmontar() } */
 export function palcoDeBriga(o) {
-  const { C, M } = o;
+  const { C, M } = o, K = o.escala || 1, VIS = o.vistas || VISTAS;
   let montado = false, THREE = null, grupo = null, modo = 'perto', seguindo = false;
   const PE = {}, PC = {};
   const J = () => (window.TO && TO.diaJogo && TO.diaJogo.J) || null;
@@ -64,7 +66,7 @@ export function palcoDeBriga(o) {
   }
   function vista(nome, voar) {
     modo = nome;
-    const v = VISTAS[nome], orb = C.orb;
+    const v = VIS[nome], orb = C.orb;
     /* na montagem a briga ainda não nasceu (a ponte monta o palco e só
        depois a noite): a câmera voa pro lugar de onde o nosso bonde sai */
     const l = voar ? null : lider(), sp = (o.cena.spawns || []).find(s => s.jogador) || (o.cena.spawns || [])[0];
@@ -122,9 +124,10 @@ export function palcoDeBriga(o) {
         /* NO MURO: o ponto é no chão, na frente dele; `dir` aponta pro muro.
            O pano fica em pé rente ao muro, de frente pra quem está no deck */
         const d = F.dir || [0, -1], enc = (F.encosto != null ? F.encosto : 10) - 1.5;
+        /* (o pano é em px do tabuleiro: no mundo, vezes a escala) */
         const [wx, wz] = o.noMundo(F.x + d[0] * enc, F.y + d[1] * enc);
         const nx = -(d[0] * o.u[0] + d[1] * o.v[0]), nz = -(d[0] * o.u[1] + d[1] * o.v[1]);
-        const w = F.w, h = F.h, y0 = o.chao(F.x, F.y) * M + Math.max(0.35 * M, 1.3 * M - h / 2);
+        const w = F.w * K, h = F.h * K, y0 = o.chao(F.x, F.y) * M + Math.max(0.35 * M, 1.3 * M - h / 2);
         p.mesh.scale.set(w, h, 1); p.mesh.position.set(wx, y0 + h / 2, wz); p.mesh.rotation.set(0, Math.atan2(nx, nz), 0);
         if (p.brilho.visible) {
           p.brilho.scale.set(w + 0.25 * M, h + 0.25 * M, 1);
@@ -169,7 +172,7 @@ export function palcoDeBriga(o) {
       anel.rotation.x = -Math.PI / 2;
       grupo.add(anel);
     }
-    const [wx, wz] = o.noMundo(e.x, e.y), r = Math.max(0.9 * M, (e.raio || 46) * 0.8);
+    const [wx, wz] = o.noMundo(e.x, e.y), r = Math.max(0.9 * M, (e.raio || 46) * 0.8 * K);
     anel.visible = true;
     anel.position.set(wx, o.chao(e.x, e.y) * M + 0.06 * M, wz);
     anel.scale.set(r, r, 1);
@@ -187,7 +190,7 @@ export function palcoDeBriga(o) {
       document.body.classList.add('palco3d', 'palco-briga');
       C.vida.palco = {
         get J() { return J() || { t: 0, discos: [], policiais: [], projeteis: [], grades: [] }; },
-        pos, rumo, rumoDe, seguir, semAnel: false, comVida: false, livre: !!o.livre,
+        pos, rumo, rumoDe, seguir, semAnel: false, comVida: false, livre: !!o.livre, escala: K,
         /* o cone do corte: da cabeça do líder até a câmera */
         alvoDoCorte: () => { const l = lider(); return l ? pos(l.x, l.y, l, PC) : null; }
       };
@@ -196,10 +199,14 @@ export function palcoDeBriga(o) {
       /* a peça do palco à parte (o posto, a estrada) entra na cena do cenário;
          o chão de longe da praça (o mato até o horizonte) sai enquanto ela
          está lá — de perto ele se desenhava por cima do pátio */
+      escondidos = [];
       if (o.peca) {
+        /* (o que passa da cabeça do líder, na frente da câmera, fica ralo: o teto da loja, o poste) */
+        if (C.vida.cortavel) o.peca.traverse(x => { const m = x.material; if (m && !m.userData.cortavel) { C.vida.cortavel(m); m.userData.cortavel = true; m.needsUpdate = true; } });
         C.vida.cena.add(o.peca);
+      }
+      if (o.semLonge) {
         let raiz = C.vida.cena; while (raiz.parent) raiz = raiz.parent;
-        escondidos = [];
         raiz.traverse(x => { if (x.name === 'longe' && x.visible) { x.visible = false; escondidos.push(x); } });
       }
       import(THREE_URL).then(m => {

@@ -33,7 +33,9 @@
    tira os pontos da briga (quem defende em cada canto, o portão que
    acorda a casa, a faixa e o depósito).
    ========================================================= */
+import * as THREE from '../../vendor/three/three.module.min.js';
 import { Construtor, METRO } from './construtor3d.js';
+import * as K from './detalhe3d.js';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -228,8 +230,14 @@ export function planoDaCasaDaFesta(W = 20, D = 30) {
       { x0: 2.5, x1: 4.9, z0: -7.7, z1: -7.15, h: 0.9, tinta: '#d8d2c2', nome: 'bancada' },
       { x0: 2.6, x1: 4.2, z0: -14.9, z1: -14.45, h: 1.9, tinta: '#9aa0a4', nome: 'estante' },
       { x0: 2.6, x1: 4.6, z0: -18.8, z1: -17.2, h: 0.5, tinta: '#f1eee6', nome: 'cama' },
-      { x0: 9.0, x1: 11.0, z0: -18.8, z1: -17.2, h: 0.5, tinta: '#f1eee6', nome: 'cama' }
+      { x0: 9.0, x1: 11.0, z0: -18.8, z1: -17.2, h: 0.5, tinta: '#f1eee6', nome: 'cama' },
+      { x0: 6.7, x1: 8.5, z0: -7.62, z1: -7.18, h: 0.5, tinta: '#5a3b27', nome: 'rack' },
+      { x0: 7.15, x1: 8.05, z0: -9.08, z1: -8.52, h: 0.38, tinta: '#6b4a33', nome: 'mesinha' },
+      { x0: 4.98, x1: 5.72, z0: -7.78, z1: -7.1, h: 1.8, tinta: '#f1f1ee', nome: 'geladeira' },
+      { x0: 3.85, x1: 5.35, z0: -11.2, z1: -9.6, h: 0.8, tinta: '#c99b6d', nome: 'mesa da cozinha' }
     ],
+    /* as caixas de som da festa (no tripé, nos cantos do deck do fundo) */
+    caixasDeSom: [[1.2, -28.8], [10.2, -29.3]],
     /* a faixa: no chão, na frente do muro do fundo, no meio do deck */
     faixa: { x: 7.8, z: -D + 0.9, larg: 6.2 },
     /* o depósito, onde quem pega a faixa se tranca */
@@ -262,20 +270,19 @@ export function planoDaCasaDaFesta(W = 20, D = 30) {
     ...PL.isopores.map(([x, z]) => ({ x0: x - 0.3, x1: x + 0.3, z0: z - 0.22, z1: z + 0.22, nome: 'isopor' })),
     ...PL.carros.map(c => ({ ...caixaDoCarro(c), nome: 'carro' })),
     ...PL.moveis.filter(m => m.h > 0.35),
+    ...PL.caixasDeSom.map(([x, z]) => ({ x0: x - 0.42, x1: x + 0.42, z0: z - 0.42, z1: z + 0.42, nome: 'caixa de som' })),
     { x0: PL.folhaDoPortao.x0, x1: PL.folhaDoPortao.x1, z0: PL.folhaDoPortao.z - 0.05, z1: PL.folhaDoPortao.z + 0.05, nome: 'portão' }
   ];
   return PL;
 }
 
-/* a casa da festa, no referencial do lote */
+/* a casa da festa, no referencial do lote: a areia, o corredor, as paredes,
+   o portão e o telhado; o deck, a cerâmica, a piscina, a churrasqueira, a
+   festa, os carros e a mobília são do kit (`detalheDaCasaDaFesta`) */
 function montarCasaDaFesta(B, G, PL, s) {
   const { W, D, casa: C } = PL, rebo = escolher(s, 'reboco', REBOCO);
-  /* os pisos: a areia da garagem e do corredor, o deck, a casa */
   piso(B, 0.2, W - 0.2, -D + 0.2, 0, 0.02, 'lisa', AREIA);
-  piso(B, PL.deckFundo.x0, PL.deckFundo.x1, PL.deckFundo.z0, PL.deckFundo.z1, 0.05, 'piso_bar', DECK);
-  piso(B, PL.deckPiscina.x0, PL.deckPiscina.x1, PL.deckPiscina.z0, PL.deckPiscina.z1, 0.05, 'piso_bar', DECK);
   piso(B, PL.corredor.x0, PL.corredor.x1, PL.corredor.z0, -0.3, 0.04, 'laje', CIMENTO);
-  piso(B, C.x0, C.x1, C.z0, C.z1, 0.08, 'piso_bar', '#f3ebdc');
   /* AS PAREDES do plano: o muro e a casa */
   for (const p of PL.paredes) parede(B, p.eixo, p.fixo, p.a, p.b, p.esp, p.h, p.vaos, p.tinta === 'muro' ? MURO : rebo, p.k || 'suja');
   /* o portão de correr, recolhido pro lado (aberto: é festa) */
@@ -283,30 +290,98 @@ function montarCasaDaFesta(B, G, PL, s) {
   G.esticar(G.plano([fp.x0, 0, fp.z], [1, 0, 0], [0, 1, 0]), 0, fp.x1 - fp.x0, 0, 1.9, 'lanca');
   /* O TELHADO (à parte: o jogo corta ele pra ver dentro) */
   telhado4(B.telhado || B, C.x0 - 0.45, C.x1 + 0.45, C.z0 - 0.45, C.z1 + 0.45, PL.H, escolher(s, 'telha', TELHA));
-  /* A PISCINA: a borda, o azulejo e a água */
-  const P = PL.piscina, bd = 0.35;
-  B.caixa(P.x0 - bd, P.x1 + bd, 0.05, 0.12, P.z0 - bd, P.z0, { todas: lisa(BORDA), base: null });
-  B.caixa(P.x0 - bd, P.x1 + bd, 0.05, 0.12, P.z1, P.z1 + bd, { todas: lisa(BORDA), base: null });
-  B.caixa(P.x0 - bd, P.x0, 0.05, 0.12, P.z0, P.z1, { todas: lisa(BORDA), base: null });
-  B.caixa(P.x1, P.x1 + bd, 0.05, 0.12, P.z0, P.z1, { todas: lisa(BORDA), base: null });
-  piso(B, P.x0, P.x1, P.z0, P.z1, 0.09, 'lisa', PISCINA);                           // a água, acima do deck e abaixo da borda
-  /* a escadinha de inox */
-  for (const dx of [-0.25, 0.25]) B.caixa(P.x1 - 0.9 + dx - 0.02, P.x1 - 0.9 + dx + 0.02, 0.1, 0.95, P.z1 - 0.05, P.z1 + 0.25, { todas: lisa('#c9cdd0') });
-  /* a churrasqueira, as espreguiçadeiras, as mesas e o isopor da festa */
+}
+
+/* =======================================================
+   A CASA DA FESTA EM DETALHE (o kit de detalhe3d.js, 28/09/2026)
+   ------------------------------------------------------
+   O dono: "Refaça as cenas da caravana e da casa de praia com mais
+   detalhismo no threejs". O que era caixa na casa da festa sai do
+   construtor e vem do kit, em malha de verdade e com a sombra de
+   contato: o deck de pedra clara, a cerâmica da casa e o ladrilho do
+   banheiro; a piscina (o azulejo que escurece no fundo, a água, a borda
+   de pedra, a escada de inox, a boia e o colchão); a churrasqueira de
+   tijolo; a festa — as espreguiçadeiras, as mesas de plástico com as
+   cadeiras, os copos, as latas e as garrafas, os guarda-sóis, os
+   isopores, as caixas de som, o varal de luz, as toalhas, o que ficou
+   largado no chão —; os dois carros na areia; e a mobília (o sofá, a TV,
+   a cozinha com a geladeira e a mesa, o banheiro, as camas, a estante do
+   depósito). As posições são as do plano (a máscara da briga sai dele).
+   Devolve o grupo no mundo (juntado por material), com cada malha
+   marcada `peca`: o cenário não assa ela (o forno achataria a sombra
+   macia e o vidro), põe inteira na cena e no corte da câmera.
+   ======================================================= */
+export function detalheDaCasaDaFesta(l) {
+  const [W, D] = medidasDoLote(l), PL = planoDaCasaDaFesta(W, D), f = frameDoLote(l);
+  const rnd = K.sorteio(Math.abs(Math.round(l.x0 * 7 + l.y0 * 13)) + 5), PI = Math.PI;
+  const fora = new THREE.Group(), g = new THREE.Group();
+  fora.position.set(f.fx, 0, f.fz); fora.rotation.y = Math.atan2(-f.rz, f.rx); fora.scale.setScalar(M);
+  g.position.x = -W / 2; fora.add(g);
+  const pt = (o, x, z, ry = 0, y = 0) => { o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o; };
+  /* o piso de um retângulo com a textura presa ao lote (as emendas batem de um pedaço pro outro) */
+  const pisoK = (x0, x1, z0, z1, y, mat, m) => {
+    if (x1 - x0 < 0.01 || z1 - z0 < 0.01) return;
+    const geo = new THREE.PlaneGeometry(x1 - x0, z1 - z0); geo.rotateX(-PI / 2); geo.translate((x0 + x1) / 2, y, (z0 + z1) / 2);
+    const p = geo.attributes.position, uv = geo.attributes.uv;
+    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / m, -p.getZ(i) / m);
+    g.add(new THREE.Mesh(geo, mat));
+  };
+  const C = PL.casa, P = PL.piscina, bd = 0.35, df = PL.deckFundo, dp = PL.deckPiscina;
+  /* O DECK de pedra clara, em volta da piscina (sem passar por baixo dela nem da borda) */
+  const deck = K.pintado('deckFesta', K.TEX.deck(), { cor: '#fbf6ea' });
+  const px0 = P.x0 - bd, px1 = P.x1 + bd, pz0 = P.z0 - bd, pz1 = P.z1 + bd;
+  pisoK(df.x0, df.x1, df.z0, pz0, 0.05, deck, 2);
+  pisoK(df.x0, px0, pz0, df.z1, 0.05, deck, 2); pisoK(px1, df.x1, pz0, df.z1, 0.05, deck, 2);
+  pisoK(dp.x0, px0, dp.z0, dp.z1, 0.05, deck, 2); pisoK(px1, dp.x1, dp.z0, dp.z1, 0.05, deck, 2);
+  pisoK(px0, px1, pz1, dp.z1, 0.05, deck, 2);
+  /* A CERÂMICA da casa e o ladrilho do banheiro */
+  const cer = K.pintado('ceramicaFesta', K.TEX.ceramica(), { cor: '#fbf6ec' }), lad = K.pintado('ladrilho', K.TEX.ladrilho());
+  const ban = PL.comodos.find(c => c.tipo === 'banheiro');
+  pisoK(C.x0, C.x1, C.z0, ban.z0, 0.08, cer, 1.6); pisoK(C.x0, C.x1, ban.z1, C.z1, 0.08, cer, 1.6);
+  pisoK(C.x0, ban.x0, ban.z0, ban.z1, 0.08, cer, 1.6); pisoK(ban.x1, C.x1, ban.z0, ban.z1, 0.08, cer, 1.6);
+  pisoK(ban.x0, ban.x1, ban.z0, ban.z1, 0.08, lad, 1.6);
+  /* A PISCINA, a escada, a boia e o colchão */
+  pt(K.piscina(P.x1 - P.x0, P.z1 - P.z0, bd), (P.x0 + P.x1) / 2, (P.z0 + P.z1) / 2, 0, 0.05);
+  pt(K.escadaDePiscina(), P.x1 - 0.9, P.z1 - 0.02, PI, 0.05);
+  pt(K.boia('#ff6a3d'), P.x0 + 1.4, P.z1 - 3.5, 0, 0.09);
+  pt(K.colchaoInflavel('#f2c230'), P.x0 + 2.6, P.z0 + 2.8, 0.5, 0.09);
+  /* A CHURRASQUEIRA no canto do fundo */
   const cq = PL.churrasqueira;
-  churrasqueira(B, cq.x0, cq.x1, cq.z0, cq.z1);
-  for (const [x, z] of PL.espreguicadeiras) espreguicadeira(B, x, z, false);
-  for (const [x, z] of PL.mesas) mesaDePlastico(B, x, z);
-  for (const [x, z] of PL.isopores) isopor(B, x, z);
-  /* os dois carros na garagem */
-  for (const [x, z, a, cor] of PL.carros) carro(B, x, z, a, cor);
-  /* a mobília de dentro: o sofá (com o encosto), a bancada da cozinha, a estante do depósito e as camas */
-  for (const m of PL.moveis) {
-    if (m.nome === 'sofá') { B.caixa(m.x0, m.x1, 0.08, 0.5, m.z0, m.z1, { todas: lisa(m.tinta) }); B.caixa(m.x0, m.x1, 0.5, m.h, m.z0, m.z0 + 0.2, { todas: lisa(m.tinta) }); }
-    else if (m.nome === 'bancada') B.caixa(m.x0, m.x1, 0.08, m.h, m.z0, m.z1, { todas: lisa(m.tinta), topo: lisa('#3b3936') });
-    else if (m.nome === 'cama') B.caixa(m.x0, m.x1, 0.08, m.h, m.z0, m.z1, { todas: lisa(m.tinta), topo: lisa('#b85a4a') });
-    else B.caixa(m.x0, m.x1, 0.08, m.h, m.z0, m.z1, { todas: lisa(m.tinta) });
-  }
+  pt(K.churrasqueira(cq.x1 - cq.x0, cq.z1 - cq.z0), (cq.x0 + cq.x1) / 2, (cq.z0 + cq.z1) / 2, 0, 0.05);
+  /* A FESTA: as espreguiçadeiras (uma com a almofada, uma com a toalha), as
+     mesas com as cadeiras e o que tem em cima, os guarda-sóis, os isopores,
+     as caixas de som, o varal de luz, o que ficou largado, a bola */
+  PL.espreguicadeiras.forEach(([x, z], i) => pt(K.espreguicadeira(i === 1 ? '#2f7fbf' : null), x, z, -PI / 2, 0.05));
+  pt(K.toalha('#e0a52a', 1.2, 0.6), PL.espreguicadeiras[2][0], PL.espreguicadeiras[2][1] + 0.3, PI / 2, 0.39);
+  pt(K.toalha('#2b8f6a', 1.5, 0.7), P.x0 - 1.1, P.z1 - 2.4, 0.3, 0.06);
+  PL.mesas.forEach(([x, z]) => pt(K.mesaComCadeiras(rnd), x, z, rnd() * PI, 0.05));
+  pt(K.guardaSol('#e2574c', '#f4efe2', 1.35), PL.mesas[0][0], PL.mesas[0][1], 0.3, 0.05);
+  pt(K.guardaSol('#2f7fbf', '#f4efe2', 1.35), PL.mesas[2][0], PL.mesas[2][1], 1.1, 0.05);
+  PL.isopores.forEach(([x, z], i) => pt(K.isopor(i === 0), x, z, (rnd() - 0.5) * 0.6, 0.05));
+  PL.caixasDeSom.forEach(([x, z]) => pt(K.caixaDeSom(), x, z, Math.atan2(8 - x, -22 - z), 0.05));
+  pt(K.varalDeLuz([[2.6, 2.7, -19.08], [6.5, 2.32, -29.72], [8.0, 2.7, -19.08], [12.5, 2.32, -29.72], [11.3, 2.7, -19.08]]), 0, 0, 0, 0.05);
+  pt(K.largados(14, 3.2, rnd), 8.5, -24.2, 0, 0.05);
+  pt(K.largados(7, 1.6, rnd), P.x0 - 1.0, P.z0 - 1.4, 0, 0.05);
+  pt(K.bola(), 9.6, -21.4, 0, 0.05);
+  /* OS DOIS CARROS na areia da garagem */
+  PL.carros.forEach(([x, z, a, cor], i) => pt(K.carro({ tipo: i ? 'hatch' : 'suv', cor }), x, z, -a, 0.02));
+  /* A MOBÍLIA */
+  const mov = n => PL.moveis.find(m => m.nome === n), meio = m => [(m.x0 + m.x1) / 2, (m.z0 + m.z1) / 2];
+  let q = mov('sofá'); pt(K.sofa(q.x1 - q.x0, '#4b5d7a'), ...meio(q), 0, 0.08);
+  q = mov('rack'); pt(K.salaDeTV(), (q.x0 + q.x1) / 2, (q.z0 + q.z1) / 2, PI, 0.08);
+  q = mov('bancada'); pt(K.cozinha(q.x1 - q.x0), ...meio(q), PI, 0.08);
+  q = mov('mesa da cozinha'); pt(K.mesaDeJantar(1.2, 0.8), ...meio(q), 0, 0.08);
+  q = mov('estante'); pt(K.estanteDeposito(q.x1 - q.x0, rnd), ...meio(q), 0, 0.08);
+  PL.moveis.filter(m => m.nome === 'cama').forEach((c, i) => pt(K.cama(c.x1 - c.x0, c.z1 - c.z0, i ? '#3f7a8c' : '#b85a4a', i ? 1 : -1), ...meio(c), i ? 0 : PI, 0.08));
+  pt(K.banheiro(), (ban.x0 + ban.x1) / 2, (ban.z0 + ban.z1) / 2, -PI / 2, 0.08);
+  /* a sombra no pé dos muros e das paredes de fora da casa */
+  const muro = (L, x, z, ry) => { const s = K.sombraDeParede(L, 0.8, 0.26); s.position.set(x, 0.05, z); s.rotation.y = ry; g.add(s); };
+  muro(W - 0.4, W / 2, -D + 0.2, 0); muro(D - 0.4, 0.2, -D / 2, PI / 2); muro(D - 0.4, W - 0.2, -D / 2, -PI / 2);
+  muro(C.x1 - C.x0, (C.x0 + C.x1) / 2, C.z0 - 0.08, PI); muro(C.z1 - C.z0, C.x1 + 0.08, (C.z0 + C.z1) / 2, PI / 2);
+  const junto = K.juntar(fora, 'a festa na casa de praia');
+  fora.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+  junto.traverse(o => { if (o.isMesh || o.isLineSegments) o.userData.peca = true; });
+  return junto;
 }
 
 /* =======================================================
