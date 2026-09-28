@@ -27,7 +27,7 @@
    estádio (a rua dele, pra frente); o de quem ataca, sumir pela rua de
    onde veio. A PM chega pelas duas pontas da rua do alvo.
    ========================================================= */
-import { planejar } from './dia_de_jogo.js?v=ac8d464b22';
+import { planejar } from './dia_de_jogo.js?v=749d0dd612';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma das emboscadas da caravana)
@@ -123,10 +123,14 @@ export function brigaNaCaminhada(ctx, o) {
   const sV1 = Math.max(0, br.sV - 10 * M), sV2 = Math.max(0, br.sV - 18 * M);
   const pV1 = soltar(...naTab(V.rua, sV1)), pV2 = soltar(...naTab(V.rua, sV2));
   const pA = soltar(...doMundo(H[0], H[1]));
+  /* (na porta da sede — a concentração, antes de sair — o alvo está nas
+     rodinhas, e quem ataca vem da esquina de lá; na pista, o alvo anda e
+     quem ataca sai da tocaia na transversal) */
+  const naPorta = !!br.naPorta;
   const spawns = [
-    { id: ladoV + '1', rot: somosV ? 'NÓS, NA CAMINHADA' : 'ELES, NA CAMINHADA', lado: ladoV, x: Math.round(pV1[0]), y: Math.round(pV1[1]), jogador: somosV, entrada: 'saida_' + ladoV },
+    { id: ladoV + '1', rot: somosV ? (naPorta ? 'NÓS, NA CONCENTRAÇÃO' : 'NÓS, NA CAMINHADA') : (naPorta ? 'ELES, NA CONCENTRAÇÃO' : 'ELES, NA CAMINHADA'), lado: ladoV, x: Math.round(pV1[0]), y: Math.round(pV1[1]), jogador: somosV, entrada: 'saida_' + ladoV },
     { id: ladoV + '2', rot: somosV ? 'NÓS, O GROSSO' : 'ELES, O GROSSO', lado: ladoV, x: Math.round(pV2[0]), y: Math.round(pV2[1]), entrada: 'saida_' + ladoV },
-    { id: ladoA + '1', rot: somosV ? 'ELES, NA TOCAIA' : 'NÓS, NA TOCAIA', lado: ladoA, x: Math.round(pA[0]), y: Math.round(pA[1]), jogador: !somosV, entrada: 'saida_' + ladoA }
+    { id: ladoA + '1', rot: somosV ? (naPorta ? 'ELES, NA ESQUINA' : 'ELES, NA TOCAIA') : (naPorta ? 'NÓS, NA ESQUINA' : 'NÓS, NA TOCAIA'), lado: ladoA, x: Math.round(pA[0]), y: Math.round(pA[1]), jogador: !somosV, entrada: 'saida_' + ladoA }
   ];
   /* AS SAÍDAS: o alvo segue pro estádio (a rua dele, pra frente, até a
      borda); quem ataca bate e some — pela rua de onde o alvo veio (pra
@@ -191,7 +195,7 @@ export function brigaNaCaminhada(ctx, o) {
   const cena = {
     id: 'caminhada@3d', base: o.onde === 'praca' ? 'praca' : 'rua', tres: true,
     nome: naConcentracao ? 'Na concentração' : 'Na caminhada',
-    local: naConcentracao ? 'Na concentração, a caminho do estádio' : 'Na rua, a caminho do estádio',
+    local: naConcentracao ? 'Na porta da sede, antes de sair pro estádio' : br.esquina ? 'Na esquina, a caminho do estádio' : 'Na rua, a caminho do estádio',
     largura: TAB.W, altura: TAB.H, celula: TAB.CEL, imagem: null, mascara: linhas.join(';'),
     blocos: [], enfeites: [], varais: [], grades: [], pintura: null,
     espalharBonde: ladoV, marchaAoInimigo: true,

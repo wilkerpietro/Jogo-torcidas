@@ -28,8 +28,14 @@
    caravana: a régua da caravana do jogador com 2 trechos e risco zero,
    vezes 0,6 (o redutor do visitante) — com a moral 12 com que toda IA
    nasce, uns 47% das de pé, e no mínimo CARAVANA_MIN (com menos de pé
-   que isso, não vem). Um boneco vale 1/FATOR_GENTE torcedores (no
-   máximo MAX_BONDE por torcida).
+   que isso, não vem). UM BONECO É UM TORCEDOR (o dono, 28/09/2026: "se
+   eu tenho mais de 100 aptos com a TUF e o jogo só coloca 40 na rota do
+   estádio até a arquibancada. Tem que ser os 100 aptos, tanto pra mim
+   como pras torcidas IA"): era um boneco por dois, e no máximo 40 por
+   torcida. Agora quem vai pra rua vai inteiro, até o que o setor dela
+   tem de lugar com caminho (rotas_estadios.js: 400 por setor, menos nos
+   setores pequenos do visitante — 168 no de 10 mil, 211 num do de 40)
+   e até MAX_BONDE, a trava de segurança.
 
    O VISITANTE DE OUTRA CIDADE (o dono, 27/09/2026): "As torcidas
    visitantes que tem aliado iniciam sua rota ao estádio na sede do
@@ -78,6 +84,27 @@
    torcida rival, independente do que aconteça, ela vai pro estádio com
    aqueles que ficaram aptos" — e o alvo também, depois de juntar os
    dele (REAGRUPA s). Cada torcida entra em uma briga, no máximo.
+
+   A BRIGA MANDADA PELO JOGO (o ataque que o jogador sofre, a investida
+   dele) cai onde o jogo diz, e do jeito que se vê na rua (o dono,
+   28/09/2026: "se for na pista, minha torcida vai normalmente fazer sua
+   rota e em alguma esquina vai ser abordada pelo adversário, gerando a
+   mensagem de aviso. Se for na concentração eles vem atacar em frente a
+   sede, antes da torcida partir"):
+   - NA PISTA, numa ESQUINA da rota do alvo: o ponto em que ela cruza
+     outra rua (saem de lá pelo menos três ruas de ESQUINA m ou mais, nos
+     quatro rumos da grade do mapa); quem ataca espera na transversal,
+     escondido, e sai correndo quando a cabeça do bonde chega na esquina.
+     Sem esquina que sirva, o ponto é o de antes (o mais curto pra quem
+     ataca);
+   - NA CONCENTRAÇÃO, NA PORTA DA SEDE, ANTES DE SAIR: o ponto é a frente
+     da porta, onde a torcida está nas rodinhas; quem ataca vem da sede
+     dele, dobra a última esquina (espera só ESPERA_PORTA s) e cai em
+     cima da concentração; a briga acaba e a torcida ainda junta os dela
+     (REAGRUPA_PORTA s) antes da hora de sair, e sai com quem ficou de pé.
+     Na porta, cada um de quem ataca vai no do alvo mais perto de onde ele
+     vem (o `parear` do plano, refeito quando as rodinhas estão postas), e
+     quem é atacado briga no lugar da rodinha dele.
 
    O PLANO DA PM, nos ARREDORES (o que se anda até ARREDOR m dos portões):
    - o CORREDOR DO VISITANTE: a PM traça primeiro a rota da torcida
@@ -148,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=ac8d464b22';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=ac8d464b22';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=749d0dd612';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=749d0dd612';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -182,6 +209,10 @@ const BRIGA = 45;           // s de briga
 const EMBOSCADA = 150;      // s: quem ataca chega no ponto esse tanto antes do alvo
 const ESCONDIDO = 14;       // m: e espera esse tanto antes do ponto, na rua dele
 const REAGRUPA = 120;       // s: depois da briga, o alvo junta os dele antes de seguir
+const ESQUINA = 18;         // m: a rua que sai de um ponto, nos quatro rumos, pra ele ser esquina (a briga na pista)
+const PRIVADO = 8;          // quanto custa a mais andar fora da rua e da calçada (o lote, o terreno baldio, o quintal, a praça)
+const ESPERA_PORTA = 6;     // s: na concentração, quem ataca dobra a última esquina e quase não espera
+const REAGRUPA_PORTA = 90;  // s: na concentração, entre o fim da briga e a hora de o bonde sair
 const CORRE = 3.2;          // m/s: quem ataca, na hora de cair em cima
 const ENCONTRO = 60;        // m: rivais mais perto que isso na cidade é encontro
 const TRAVESSIA = 15;       // m: as rotas de dois rivais mais perto que isso na cidade é um cruzamento (a PM fecha)
@@ -190,8 +221,8 @@ const LONGE_DO_PORTAO = 12; // m: a rota que traça o corredor do visitante não
 const PERTO_DO_VISITANTE = 15; // m: quando o corredor abre pro mandante, ele ainda não chega mais perto que isso do portão do visitante
 const LONGE_DO_LADO = 6;    // o quanto custa a mais, por fora dos arredores, andar rente ao pedaço do lado rival (cai pela metade a cada 17 m)
 const BOLA = 16 * 3600;     // a bola rola às 16h
-const FATOR_GENTE = 0.5;    // um boneco por 2 torcedores na rua
-const MAX_BONDE = 40;       // bonecos por torcida, no máximo
+const FATOR_GENTE = 1;      // um boneco por torcedor na rua (era um por dois)
+const MAX_BONDE = 400;      // bonecos por torcida, no máximo (a trava: o setor com caminho tem até 400 lugares)
 const VEZES = [1, 10, 30, 60];
 
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -663,8 +694,9 @@ export function planejar(ctx, escolha = {}) {
                   : pres ? Math.max(1, Math.round(pres.n) - (daqui ? (devido[t.id] || 0) : 0))
                   : daqui ? Math.max(4, dePe(t) - (devido[t.id] || 0)) : caravana(t);
       const hosp = daqui ? null : hospDe[t.id], recebe = !!hosp && hosp.decisao !== 'nada';
-      const nEsc = hosp && hosp.decisao === 'escolta' ? bonecos(hosp.escoltaMembros, 2) : 0;
-      const n = Math.min(bonecos(naRua, 5) + nEsc, S.vagas.length - jaUsadas);
+      const nEsc = hosp && hosp.decisao === 'escolta' ? bonecos(hosp.escoltaMembros, 1) : 0;
+      /* (a torcida inteira, um boneco por torcedor, até os lugares do setor) */
+      const n = Math.min(bonecos(naRua, 2) + nEsc, S.vagas.length - jaUsadas);
       if (n <= 1) return;
       vagasUsadas[setor] = jaUsadas + n;
       bondes.push({ t, lado: L.lado, clube: L.clube, escalao: r + 1, setor, S, portao: rotas.portoes[S.portao], nPortao: S.portao, vaga0: jaUsadas, n, cor: corDaFita(t),
@@ -700,6 +732,26 @@ export function planejar(ctx, escolha = {}) {
       marcar(Math.floor((t.x0 - G.ox) / G.c), Math.ceil((t.x1 - G.ox) / G.c), Math.floor((t.y0 - G.oz) / G.c), Math.ceil((t.y1 - G.oz) / G.c), ctx.noEstadio);
     }
   });
+  /* O CHÃO DA RUA (o dono, 28/09/2026: "alguns membros das torcidas estão
+     dentro de terrenos baldios e casas, organize pra eles ficarem somente
+     nas calçadas e ruas, porque senão eles ficam presos aí dentro"): o
+     asfalto e a calçada (a planta, `naRuaOuCalcada`) e o terreno do estádio
+     (a esplanada, os portões). O resto que o corpo alcança — o lote, o
+     terreno baldio, o quintal, a sede por dentro, a praça, a viela — custa
+     PRIVADO vezes mais pra andar: a rota só passa por lá se não tem outro
+     jeito. A rodinha da concentração e a faixa do bonde ficam só nele
+     (`R.publico`) */
+  {
+    const publico = R.publico = new Uint8Array(R.N);
+    const naRua = P.naRuaOuCalcada ? (x, z) => P.naRuaOuCalcada(x, z) : () => true;
+    const terrenos = estadios.filter(e => e.terreno).map(e => e.terreno);
+    for (let K = 0; K < R.N; K++) {
+      if (!R.anda[K]) continue;
+      const [x, z] = R.centro(K);
+      if (naRua(x, z) || terrenos.some(t => x >= t.x0 && x <= t.x1 && z >= t.y0 && z <= t.y1)) publico[K] = 1;
+      else R.mult[K] *= PRIVADO;
+    }
+  }
   const B = Buscador(R);
   marca('grade');
 
@@ -966,6 +1018,8 @@ export function planejar(ctx, escolha = {}) {
   const pode = { mandante: new Uint8Array(N), visitante: new Uint8Array(N) };
   for (let K = 0; K < N; K++) {
     if (!R.anda[K] || R.folga[K] < 1.0) continue;
+    /* (a reta que enxuga a rota não corta caminho pelo lote nem pelo terreno baldio) */
+    if (R.publico && !R.publico[K]) continue;
     if (!noArredor[K]) { pode.mandante[K] = pode.visitante[K] = 1; continue; }
     if (divisa[K]) continue;
     if (zonaV[K]) pode.visitante[K] = 1; else pode.mandante[K] = 1;
@@ -1143,7 +1197,8 @@ export function planejar(ctx, escolha = {}) {
         let d = 0;
         for (let k = 1; k <= 12; k++) {
           const K = R.celula(Q.x + nx * sg * k * 0.5 * M, Q.z + nz * sg * k * 0.5 * M);
-          if (K < 0 || !R.anda[K] || divisa[K]) break;
+          /* (o bonde se espalha na rua e na calçada, não pro lote do lado) */
+          if (K < 0 || !R.anda[K] || divisa[K] || (R.publico && !R.publico[K])) break;
           d = k * 0.5;
         }
         lados[j][i] = d;
@@ -1394,17 +1449,21 @@ export function planejar(ctx, escolha = {}) {
     let sBoca = v.rua.L;
     for (let s = 0; s <= v.rua.L; s += M) { v.rua.ponto(s, Q); const K = R.celula(Q.x, Q.z); if (K >= 0 && noArredor[K]) { sBoca = s; break; } }
     const cands = [];
-    const [s0, s1] = concentracao ? [8 * M, Math.min(45 * M, sBoca - 5 * M)] : [30 * M, sBoca - 20 * M];
+    /* NA CONCENTRAÇÃO, a frente da porta (é lá que a torcida junta, nas
+       rodinhas, antes de sair); NA PISTA, do meio da rua pra frente */
+    const [s0, s1] = concentracao ? [2 * M, Math.min(14 * M, sBoca - 5 * M)] : [30 * M, sBoca - 20 * M];
     for (let s = s0; s <= s1; s += 2 * M) {
       v.rua.ponto(s, Q);
       const K = R.celula(Q.x, Q.z);
       if (K < 0 || !R.anda[K] || !(dIda[K] < Infinity) || !(dVolta[K] < Infinity)) continue;
       if (pontosDeBriga.some(([x, z]) => Math.hypot(Q.x - x, Q.z - z) < 40 * M)) continue;
-      /* na concentração, o mais perto da porta que dá (é lá que a torcida junta) */
-      cands.push({ s, K, nota: dIda[K] + dVolta[K] + (concentracao ? s / M * 4 : 0) });
+      /* na concentração, o mais perto da porta que dá */
+      cands.push({ s, K, esq: !concentracao && ehEsquina(Q.x, Q.z), nota: dIda[K] + dVolta[K] + (concentracao ? s / M * 30 : 0) });
     }
-    cands.sort((p, q) => p.nota - q.nota);
-    const falha = { pontos: cands.length, cidade: Math.round((sBoca - 50 * M) / M), caminho: 0, esconderijo: 0, volta: 0 };
+    /* na pista, AS ESQUINAS primeiro (o dono: "em alguma esquina vai ser
+       abordada pelo adversário"); sem esquina que sirva, o resto */
+    cands.sort((p, q) => (q.esq - p.esq) || p.nota - q.nota);
+    const falha = { pontos: cands.length, esquinas: cands.filter(c => c.esq).length, cidade: Math.round((sBoca - 50 * M) / M), caminho: 0, esconderijo: 0, volta: 0 };
     const rP = Math.ceil(10 / dm), passos = Math.round(ESCONDIDO / dm);
     for (const [c, longe] of cands.slice(0, 40).map(c => [c, 10]).concat(cands.slice(0, 12).map(c => [c, 5]))) {
       const cam1 = B.buscar([a.K0], ida, c.K);
@@ -1418,10 +1477,23 @@ export function planejar(ctx, escolha = {}) {
       if (!cam2) { falha.volta++; continue; }
       const [px, pz] = R.centro(c.K);
       pontosDeBriga.push([px, pz]);
-      return { a, v, sV: c.s, P: [px, pz], cels: cam1.slice(0, kQ + 1).concat(cam2.slice(1)), kQ };
+      return { a, v, sV: c.s, P: [px, pz], cels: cam1.slice(0, kQ + 1).concat(cam2.slice(1)), kQ, naPorta: !!concentracao, esquina: !!c.esq };
     }
     a.naoAchou = falha;
     return null;
+  }
+  /* A ESQUINA: de (x, z) saem pelo menos três ruas de ESQUINA m (nos
+     quatro rumos da grade do mapa: no meio de um quarteirão só saem duas,
+     a rua pra frente e pra trás) */
+  function ruaQueSai(x, z, dx, dz) {
+    let n = 0;
+    for (let k = 1; k <= ESQUINA; k++) { const K = R.celula(x + dx * k * M, z + dz * k * M); if (K < 0 || !R.anda[K]) break; n = k; }
+    return n;
+  }
+  function ehEsquina(x, z) {
+    let n = 0;
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (ruaQueSai(x, z, dx, dz) >= ESQUINA) n++;
+    return n >= 3;
   }
   const brigas = [], emBriga = new Set();
   /* A BRIGA MANDADA (o jogo 3D, 28/09/2026; o dono: "A cena de ataque em
@@ -1460,11 +1532,22 @@ export function planejar(ctx, escolha = {}) {
     const { a, v } = br;
     a.ruaPaz = a.rua; a.saiPaz = a.sai; a.cels = br.cels;
     br.sQ = fazerRua(a, br.cels, pode[a.lado], br.kQ);
-    br.tIni = quando(v, br.sV);
-    br.tFim = br.tIni + BRIGA;
-    v.paradas = [{ s: br.sV, ate: br.tFim + REAGRUPA }];
-    a.paradas = [{ s: br.sQ, ate: br.tFim }];
-    a.sai = br.tIni - EMBOSCADA - br.sQ / M / MARCHA;
+    if (br.naPorta) {
+      /* NA PORTA, ANTES DE SAIR: a briga acaba e a torcida ainda junta os
+         dela antes da hora de o bonde sair (ele não para na rua); quem
+         ataca dobra a última esquina e quase não espera */
+      br.tIni = v.sai - REAGRUPA_PORTA - BRIGA;
+      br.tFim = br.tIni + BRIGA;
+      v.paradas = [];
+      a.paradas = [{ s: br.sQ, ate: br.tFim }];
+      a.sai = br.tIni - ESPERA_PORTA - br.sQ / M / MARCHA;
+    } else {
+      br.tIni = quando(v, br.sV);
+      br.tFim = br.tIni + BRIGA;
+      v.paradas = [{ s: br.sV, ate: br.tFim + REAGRUPA }];
+      a.paradas = [{ s: br.sQ, ate: br.tFim }];
+      a.sai = br.tIni - EMBOSCADA - br.sQ / M / MARCHA;
+    }
     a.adiantou = 0; a.esperou = 0;
     prepararFaixa(a); prepararRaias(a);
     a.brigou = v.brigou = br;
@@ -1489,14 +1572,18 @@ export function planejar(ctx, escolha = {}) {
     br.ferV = bxV.feridos; br.presV = bxV.presos;
     br.nA = nA; br.nV = nV;
     /* QUEM BRIGA COM QUEM: os de quem ataca, cada um num do alvo (os da
-       frente primeiro; até 3 no mesmo); quem sobra fica na guarda, atrás */
-    const vitimas = v.povo.map((q, m) => m).sort((p, q) => v.povo[p].o - v.povo[q].o);
-    const nPar = Math.min(a.n, 3 * v.n);
-    br.alvoDe = new Int32Array(a.n).fill(-1);
-    br.quantosEm = new Int32Array(v.n);
-    br.ordem = new Int32Array(a.n);
-    br.primeiro = new Int32Array(v.n).fill(-1);
-    for (let i = 0; i < nPar; i++) { const w = vitimas[i % v.n]; br.alvoDe[i] = w; br.ordem[i] = br.quantosEm[w]++; if (br.primeiro[w] < 0) br.primeiro[w] = i; }
+       frente primeiro; até 3 no mesmo); quem sobra fica na guarda, atrás.
+       Na porta, a ordem dos alvos é a de quem está mais perto de onde
+       quem ataca vem (a montagem refaz, com as rodinhas postas) */
+    br.parear = vitimas => {
+      const nPar = Math.min(a.n, 3 * v.n);
+      br.alvoDe = new Int32Array(a.n).fill(-1);
+      br.quantosEm = new Int32Array(v.n);
+      br.ordem = new Int32Array(a.n);
+      br.primeiro = new Int32Array(v.n).fill(-1);
+      for (let i = 0; i < nPar; i++) { const w = vitimas[i % v.n]; br.alvoDe[i] = w; br.ordem[i] = br.quantosEm[w]++; if (br.primeiro[w] < 0) br.primeiro[w] = i; }
+    };
+    br.parear(v.povo.map((q, m) => m).sort((p, q) => v.povo[p].o - v.povo[q].o));
     /* os bonecos no chão, na conta (um boneco é o que ele vale no bonde
        dele), entre os que brigam de fato; o primeiro, não (o rótulo e a
        câmera vão nele) */
@@ -1513,10 +1600,14 @@ export function planejar(ctx, escolha = {}) {
       for (const m of idx.slice(k, k + kp)) { b.ferido[m] = 2; b.tCai[m] = br.tFim - 4 - rnd() * 6; }
       return [k, kp];
     };
-    [br.caemV, br.rendemV] = caem(v, br.ferV, br.presV, nV, m => br.quantosEm[m] > 0);
-    [br.caemA, br.rendemA] = caem(a, br.ferA, br.presA, nA, m => br.alvoDe[m] >= 0);
-    a.feridos = br.ferA; v.feridos = br.ferV;
-    a.presos = br.presA; v.presos = br.presV;
+    /* quem cai e quem é preso, entre os que brigam (a montagem refaz, quando refaz os pares) */
+    br.sortearQuedas = () => {
+      [br.caemV, br.rendemV] = caem(v, br.ferV, br.presV, nV, m => br.quantosEm[m] > 0);
+      [br.caemA, br.rendemA] = caem(a, br.ferA, br.presA, nA, m => br.alvoDe[m] >= 0);
+      a.feridos = br.ferA; v.feridos = br.ferV;
+      a.presos = br.presA; v.presos = br.presV;
+    };
+    br.sortearQuedas();
     br.rnd = rnd;
     /* O RESULTADO DE FORA (o jogo 3D, dia3d.js: a briga jogada no combate,
        a simulada ou a que ninguém desceu): quem ganhou e quantos caíram e
@@ -1526,10 +1617,7 @@ export function planejar(ctx, escolha = {}) {
       const lim = (x, n) => clamp(Math.round(x || 0), 0, Math.max(0, n - 1));
       br.ferA = lim(o.ferA, nA); br.presA = lim(o.presA, nA - br.ferA);
       br.ferV = lim(o.ferV, nV); br.presV = lim(o.presV, nV - br.ferV);
-      [br.caemV, br.rendemV] = caem(v, br.ferV, br.presV, nV, m => br.quantosEm[m] > 0);
-      [br.caemA, br.rendemA] = caem(a, br.ferA, br.presA, nA, m => br.alvoDe[m] >= 0);
-      a.feridos = br.ferA; v.feridos = br.ferV;
-      a.presos = br.presA; v.presos = br.presV;
+      br.sortearQuedas();
       br.aplicado = true;
     };
   }
@@ -1747,29 +1835,82 @@ export function criarDiaDeJogo(ctx) {
      sorteado: o bonde não sai na ordem das rodinhas. É na frente de onde o
      bonde sai (a sede dele, a do aliado que o hospeda, ou a entrada da
      cidade, onde a caravana desceu); `rodas`, as que já estão lá (dois
-     bondes na mesma porta não se sobrepõem) */
+     bondes na mesma porta não se sobrepõem).
+     A TORCIDA INTEIRA NA PORTA (28/09/2026: um boneco por torcedor, 150 na
+     porta da TUF): a roda só fica onde se chega andando da porta sem volta
+     grande (a calçada, a rua, a praça da frente — o terreno atrás do muro e
+     o quintal do vizinho, não), a faixa abre primeiro ao longo da fachada
+     (a rua) e só um tanto pra fora, e a torcida grande junta mais: a roda a
+     1 m da outra (a 1,8 m até 40 pessoas) e rodas de até 8 */
+  const VIZ8 = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, Math.SQRT2], [1, -1, Math.SQRT2], [-1, 1, Math.SQRT2], [-1, -1, Math.SQRT2]];
+  function alcanceDaPorta(R, x, z, lim) {
+    const d = new Map(), K0 = R.perto(x, z, 10, K => R.anda[K] && (!R.publico || R.publico[K]));
+    if (K0 < 0) return d;
+    const dm = R.L / M, fila = [K0];
+    d.set(K0, 0);
+    for (let i = 0; i < fila.length; i++) {
+      const K = fila[i], I = K % R.CX, J = (K - I) / R.CX, dk = d.get(K);
+      for (const [di, dj, c] of VIZ8) {
+        const a = I + di, bb = J + dj;
+        if (a < 0 || bb < 0 || a >= R.CX || bb >= R.CZ) continue;
+        const K2 = bb * R.CX + a;
+        if (!R.anda[K2] || (R.publico && !R.publico[K2])) continue;
+        const nd = dk + c * dm;
+        if (nd > lim) continue;
+        const velho = d.get(K2);
+        if (velho == null || nd < velho - 1e-6) { d.set(K2, nd); fila.push(K2); }
+      }
+    }
+    return d;
+  }
   function rodinhas(b, R, rnd, rodas = []) {
     const P0 = b.porta, fx = P0.fx, fz = P0.fy, ux = fz, uz = -fx;
+    const alcance = alcanceDaPorta(R, P0.x, P0.y, 70);
+    const chega = (x, z) => { const K = R.celula(x, z); if (K < 0) return false; const d = alcance.get(K); return d != null && d <= Math.hypot(x - P0.x, z - P0.y) / M * 1.35 + 4; };
+    /* a roda inteira no chão da rua: o meio e a volta dela (o terreno do lado, não) */
+    const naRua = (x, z, r) => {
+      if (!R.publico) return true;
+      for (const [dx, dz] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const K = R.celula(x + dx * (r + 0.35) * M, z + dz * (r + 0.35) * M); if (K < 0 || !R.publico[K]) return false; }
+      return true;
+    };
+    const folgaEntre = b.n <= 40 ? 1.8 : b.n >= 150 ? 1.0 : 1.8 - 0.8 * (b.n - 40) / 110;
+    const TAM = b.n <= 60 ? [1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6] : [2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8, 8];
     const tamanhos = [];
-    for (let n = b.n; n > 0;) { const k = Math.min(n, [1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 6][Math.floor(rnd() * 12)]); tamanhos.push(k); n -= k; }
+    for (let n = b.n; n > 0;) { const k = Math.min(n, TAM[Math.floor(rnd() * 12)]); tamanhos.push(k); n -= k; }
     const lugares = [];
     for (const k of tamanhos) {
       const r = k === 1 ? 0 : 0.3 + 0.12 * k;
       let ok = null;
       for (let tent = 0; tent < 600 && !ok; tent++) {
-        const alc = 1 + tent / 120, v = 1.3 + rnd() * 8.5 * alc, u = (rnd() - 0.5) * 16 * alc;
+        const alc = 1 + tent / 120, v = 1.3 + rnd() * 8.5 * Math.min(alc, 2), u = (rnd() - 0.5) * 16 * alc;
         const cx = P0.x + (fx * v + ux * u) * M, cz = P0.y + (fz * v + uz * u) * M;
         if (R.folgaEm(cx, cz) < r + 0.45) continue;
-        if (rodas.some(c => Math.hypot(c.x - cx, c.z - cz) < (c.r + r + 1.8) * M)) continue;
+        if (!chega(cx, cz) || !naRua(cx, cz, r)) continue;
+        if (rodas.some(c => Math.hypot(c.x - cx, c.z - cz) < (c.r + r + folgaEntre) * M)) continue;
         ok = { x: cx, z: cz, r };
       }
-      /* (não coube: fica na porta, um atrás do outro) */
+      /* (não coube à vontade: o primeiro lugar de rua livre na frente da
+         porta, abrindo pros dois lados da fachada e pra fora, com a roda
+         mais junta; só sem nenhum, fica na porta, um atrás do outro) */
+      for (let k2 = 0; k2 < 240 && !ok; k2++) {
+        const u = (k2 % 2 ? 1 : -1) * Math.ceil((k2 % 40) / 2) * 1.1, v = 1.4 + Math.floor(k2 / 40) * 1.6;
+        const cx = P0.x + (fx * v + ux * u) * M, cz = P0.y + (fz * v + uz * u) * M;
+        if (R.folgaEm(cx, cz) < r + 0.3 || !naRua(cx, cz, r)) continue;
+        if (rodas.some(c => Math.hypot(c.x - cx, c.z - cz) < (c.r + r + 0.4) * M)) continue;
+        ok = { x: cx, z: cz, r };
+      }
       if (!ok) ok = { x: P0.x + fx * (1.2 + rodas.length * 0.6) * M, z: P0.y + fz * (1.2 + rodas.length * 0.6) * M, r: 0 };
       rodas.push(ok);
       const a0 = rnd() * 6.28;
       for (let i = 0; i < k; i++) {
         const a = a0 + 6.28 * i / k + (rnd() - 0.5) * 0.4, rr = ok.r ? ok.r + (rnd() - 0.5) * 0.1 : 0;
-        const x = ok.x + Math.cos(a) * rr * M, z = ok.z + Math.sin(a) * rr * M;
+        let x = ok.x + Math.cos(a) * rr * M, z = ok.z + Math.sin(a) * rr * M;
+        /* (o da roda que cai fora da calçada — a beira dela com o lote — vem pro meio da roda) */
+        if (R.publico) {
+          const fora = (px, pz) => { const K = R.celula(px, pz); return K < 0 || !R.publico[K]; };
+          if (fora(x, z)) { x = ok.x + Math.cos(a) * 0.35 * M; z = ok.z + Math.sin(a) * 0.35 * M; }
+          if (fora(x, z)) { x = ok.x; z = ok.z; }
+        }
         const rumo = k === 1 || !ok.r ? Math.atan2(fx, fz) + (rnd() - 0.5) * 2.4 : Math.atan2(ok.x - x, ok.z - z) + (rnd() - 0.5) * 0.4;
         lugares.push({ x, z, rumo });
       }
@@ -2028,6 +2169,15 @@ export function criarDiaDeJogo(ctx) {
         discos.push(d);
       }
     }
+    /* A BRIGA NA PORTA (a concentração), com as rodinhas postas: quem ataca
+       vai no do alvo mais perto de onde ele vem (a esquina da tocaia), e
+       quem cai sai dos que brigam de fato */
+    for (const br of p.brigas) if (br.naPorta) {
+      br.a.rua.ponto(br.sQ, Q);
+      const hx = Q.x, hz = Q.z;
+      br.parear(br.v.gente.map(gg => ({ m: gg.m, d: Math.hypot(gg.festa[0] - hx, gg.festa[1] - hz) })).sort((x, y) => x.d - y.d).map(x => x.m));
+      br.sortearQuedas();
+    }
     /* A ARQUIBANCADA: os panos, a bateria, os bandeirões, os guardas do isolamento e a invasão */
     if (p.arq) {
       try { arq = criarArquibancada(ctx, p, grupo, { M, luta, sossega, poePM, rotulo, revistadores: p.revistadores }); }
@@ -2058,6 +2208,8 @@ export function criarDiaDeJogo(ctx) {
      ====================================================== */
   const estadoDe = (b, m) => {
     const g = b.pessoas[m], br = b.brigou;
+    /* (a briga na porta é antes de sair: a concentração é que briga) */
+    if (br && br.naPorta && br.v === b && t >= br.tIni - 3 && t < br.tFim && !(b.ferido && b.ferido[m] && t >= b.tCai[m])) return 'na briga';
     if (t < b.sai) return 'na sede';
     if (b.ferido && b.ferido[m] && t >= b.tCai[m]) return b.ferido[m] === 2 ? 'preso' : 'ferido';
     if (t >= g.passa) { const s = (t - g.passa) * DENTRO * M; return s >= g.dentro.L ? 'no lugar' : 'entrando'; }
@@ -2083,12 +2235,15 @@ export function criarDiaDeJogo(ctx) {
      CORRE m/s) de onde estava na tocaia, 3 s antes de o alvo chegar no
      ponto, até o lado do alvo dele (os que caem no mesmo, em volta dele);
      quem não tem alvo avança até perto e fica na guarda */
+  /* o lugar da rodinha dele, na porta de onde sai (a concentração) */
+  const naRodinha = (gg, o) => { o.x = gg.festa[0]; o.z = gg.festa[1]; return o; };
   const posAtaque = (br, m, tt, o = {}) => {
     const a = br.a, v = br.v, w = br.alvoDe[m];
     const de = naRua(a, a.povo[m], br.tIni - 3, F2), dx0 = de.x, dz0 = de.z;
     let ax, az, ox, oz;
     if (w >= 0) {
-      const pv = naRua(v, v.povo[w], tt, Q3), px = pv.x, pz = pv.z;
+      /* (na porta, o alvo está na rodinha dele) */
+      const pv = br.naPorta ? naRodinha(v.gente[w], Q3) : naRua(v, v.povo[w], tt, Q3), px = pv.x, pz = pv.z;
       const dx = dx0 - px, dz = dz0 - pz, l = Math.hypot(dx, dz) || 1;
       const ang = (br.ordem[m] - (br.quantosEm[w] - 1) / 2) * 0.9, c = Math.cos(ang), s = Math.sin(ang);
       ax = px + (dx * c - dz * s) / l * 0.8 * M; az = pz + (dx * s + dz * c) / l * 0.8 * M; ox = px; oz = pz;
@@ -2145,7 +2300,7 @@ export function criarDiaDeJogo(ctx) {
         /* FERIDO NA BRIGA: fica no chão, onde caiu; PRESO: rendido de pé,
            com as mãos pra cima, onde estava (esperando a viatura) */
         if (b.ferido && b.ferido[m] && t >= b.tCai[m]) {
-          const f = ataca ? posAtaque(br, m, b.tCai[m], F1) : naRua(b, q, b.tCai[m], F1);
+          const f = ataca ? posAtaque(br, m, b.tCai[m], F1) : br && br.naPorta ? naRodinha(gg, F1) : naRua(b, q, b.tCai[m], F1);
           d.x = f.x; d.y = f.z; d.alt = ctx.chaoDaRua(f.x, f.z);
           d.hostil = 0; d.ataque = null; d.apanhou = 0;
           if (b.ferido[m] === 2) {
@@ -2173,6 +2328,18 @@ export function criarDiaDeJogo(ctx) {
           continue;
         }
         if (t < gg.sai) {
+          /* A BRIGA NA PORTA (a concentração): quem está na rodinha briga ali
+             mesmo, virado pra quem veio nele (quem ficou sem ninguém, pro
+             meio da briga) */
+          if (naBriga && br.naPorta && !ataca) {
+            d.x = gg.festa[0]; d.y = gg.festa[1]; d.alt = gg.festaAlt; d.jeito = undefined;
+            const i = br.primeiro[m], alvoD = i >= 0 ? br.a.gente[i].d : null;
+            d.rumo = Math.atan2((alvoD ? alvoD.x : br.P[0]) - d.x, (alvoD ? alvoD.y : br.P[1]) - d.y);
+            if (brigando && alvoD && Math.hypot(alvoD.x - d.x, alvoD.y - d.y) < 1.6 * M) luta(gg, d, alvoD, ganhou, fimK, dt);
+            else if (brigando) { d.hostil = 1; d.ataque = null; }
+            else sossega(d);
+            continue;
+          }
           /* NA PORTA DA SEDE (ou de onde sai), na rodinha */
           sossega(d);
           d.x = gg.festa[0]; d.y = gg.festa[1]; d.alt = gg.festaAlt; d.rumo = gg.festaRumo; d.jeito = 'festa';
@@ -2314,7 +2481,7 @@ export function criarDiaDeJogo(ctx) {
     if (!d) return '';
     if (br && br.v === b) return `Foi atacada pela ${esc(br.a.t.sigla)}.`;
     const al = d.alvo ? esc(d.alvo.t.sigla) : '';
-    if (d.ataca && d.porque === 'mandada') return `<b>Vai atacar a ${al}</b> (a briga que o jogo mandou): vai de encontro ao bonde dela em vez de ir direto pro estádio.`;
+    if (d.ataca && d.porque === 'mandada') return `<b>Vai atacar a ${al}</b> (a briga que o jogo mandou): ${b.brigou && b.brigou.naPorta ? 'vai até a porta de onde ela sai e cai em cima da concentração, antes de ela partir' : 'espera na esquina da rota dela e cai em cima do bonde quando ele passa'}; depois, vai pro estádio.`;
     if (d.ataca) return `<b>Decidiu atacar a ${al}</b> (chance ${pct(d.chance)}${plano.modoIA === 'sorteio' ? `, tirou ${d.tirou}` : ''}): vai de encontro ao bonde dela em vez de ir direto pro estádio.`;
     if (d.porque === 'sem rival') return 'Vai em paz: nenhuma rival dela no outro clube.';
     if (d.porque === 'pequena') return 'Vai em paz: as rivais dela no outro clube são grandes demais (a paridade do jogo: com menos de 45% do tamanho da rival, ninguém vai).';
@@ -2361,7 +2528,7 @@ export function criarDiaDeJogo(ctx) {
     if (!p.brigas.length) return `<p class="cj-aviso">Nenhuma torcida decidiu atacar: todo mundo vai em paz, na rota da PM.</p>`;
     return p.brigas.map((br, i) => {
       const venc = br.venceA ? br.a : br.v, perd = br.venceA ? br.v : br.a;
-      return `<p class="cj-aviso ruim">Às ${hora(br.tIni)}, a ${esc(br.a.t.sigla)} (${br.nA}) cai em cima do bonde da ${esc(br.v.t.sigla)} (${br.nV}) na rua, fora dos arredores — a PM não sabia (o plano dela é o da paz). A ${esc(venc.t.sigla)} leva a melhor (força ${Math.round(br.venceA ? br.fA : br.fV)} × ${Math.round(br.venceA ? br.fV : br.fA)}: ${(br.venceA === br.favoritoA) ? 'a favorita venceu, como em 70% das vezes' : 'deu zebra, como em 30% das vezes'}). Ficam no chão ${br.ferA} da ${esc(br.a.t.sigla)} e ${br.ferV} da ${esc(br.v.t.sigla)}, e ficam presos ${br.presA} e ${br.presV}; depois, cada uma vai pro estádio com quem ficou de pé e solto (a ${esc(br.v.t.sigla)} junta os dela por ${Math.round(REAGRUPA / 60)} min). <button class="cen-bt" data-jogo="briga" data-i="${i}">Ver a briga</button></p>`;
+      return `<p class="cj-aviso ruim">Às ${hora(br.tIni)}, a ${esc(br.a.t.sigla)} (${br.nA}) cai em cima ${br.naPorta ? `da concentração da ${esc(br.v.t.sigla)} (${br.nV}), na porta de onde ela sai, antes de o bonde partir` : `do bonde da ${esc(br.v.t.sigla)} (${br.nV}) ${br.esquina ? 'numa esquina da rota dela' : 'na rua'}, fora dos arredores`} — a PM não sabia (o plano dela é o da paz). A ${esc(venc.t.sigla)} leva a melhor (força ${Math.round(br.venceA ? br.fA : br.fV)} × ${Math.round(br.venceA ? br.fV : br.fA)}: ${(br.venceA === br.favoritoA) ? 'a favorita venceu, como em 70% das vezes' : 'deu zebra, como em 30% das vezes'}). Ficam no chão ${br.ferA} da ${esc(br.a.t.sigla)} e ${br.ferV} da ${esc(br.v.t.sigla)}, e ficam presos ${br.presA} e ${br.presV}; depois, cada uma vai pro estádio com quem ficou de pé e solto (a ${esc(br.v.t.sigla)} junta os dela ${br.naPorta ? 'e sai na hora dela' : `por ${Math.round(REAGRUPA / 60)} min`}). <button class="cen-bt" data-jogo="briga" data-i="${i}">Ver a briga</button></p>`;
     }).join('');
   }
   function controlesDoJogo(p) {
@@ -2454,7 +2621,8 @@ export function criarDiaDeJogo(ctx) {
   }
   const marcarVezes = () => { for (const o of painel.querySelectorAll('[data-vezes]')) o.setAttribute('aria-pressed', String(+o.dataset.vezes === vezes)); };
   /* a briga a 1×, até ela acabar; depois volta a velocidade de antes */
-  const devagar = br => { if (vezes > 1 || lenta) { lenta = { ate: br.tFim + 8, vezes: lenta ? lenta.vezes : vezes }; vezes = 1; marcarVezes(); } };
+  /* (no jogo de verdade a briga passa a 2×: a 1× ela tomava 45 s de tela a cada vez) */
+  const devagar = br => { const v1 = modoJogo ? 2 : 1; if (vezes > v1 || lenta) { lenta = { ate: br.tFim + 8, vezes: lenta ? lenta.vezes : vezes }; vezes = v1; marcarVezes(); } };
   function ligarPainel() {
     for (const el of painel.querySelectorAll('[data-jogo]')) {
       const a = el.dataset.jogo;

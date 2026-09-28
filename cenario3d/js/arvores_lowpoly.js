@@ -45,7 +45,7 @@
    posição e a cor de cada face (a UV vai zerada). O material é o de cor
    de vértice, chapado (`flatShading`), sem mapa.
    ========================================================= */
-import { METRO, sub, soma, esc, unit, pv, noMundo, sorteio } from './construtor3d.js?v=ac8d464b22';
+import { METRO, sub, soma, esc, unit, pv, noMundo, sorteio } from './construtor3d.js?v=749d0dd612';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;

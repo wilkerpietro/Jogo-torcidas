@@ -33,10 +33,12 @@
    assim: o enviado dela, com a camisa dela, senta na frente do
    presidente. O pedido de casa e a trégua vêm com os botões da resposta;
    sem resposta, eles seguem esperando em Notícias → Mensagens (não param
-   o tempo, como no feed). O que foi entregue fica lido. Eles esperam a
-   vez: as mensagens da nossa torcida passam na frente.
+   o tempo, como no feed). O que foi entregue fica lido. Eles entram na
+   fila na ordem em que chegam, como as mensagens da nossa torcida (só a
+   decisão em aberto passa na frente); o jogo carregado traz os que
+   ninguém leu dos últimos três dias.
    ========================================================= */
-import { areaLivre } from './vida3d.js?v=ac8d464b22';
+import { areaLivre } from './vida3d.js?v=749d0dd612';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -163,8 +165,9 @@ export function criarRecados(api, vida, dia3d) {
     let novos = [];
     if (i >= 0) novos = feed.slice(0, i);
     else for (const m of feed) { if (!m.quando || m.quando.abs !== hoje) break; novos.push(m); }
-    /* os recados de outras torcidas de hoje que ninguém leu */
-    for (const m of cx) { if (!m.quando || m.quando.abs !== hoje) break; if (!m.lida) { daCaixa.add(m); novos.push(m); } }
+    /* os recados de outras torcidas dos últimos três dias que ninguém leu
+       (o jogo salvo e carregado no dia seguinte não perde o de ontem) */
+    for (const m of cx) { if (!m.quando || hoje - (m.quando.abs || 0) > 2) break; if (!m.lida) { daCaixa.add(m); novos.push(m); } }
     novos.sort((a, b) => (+a.id || 0) - (+b.id || 0));
     for (const m of novos) por(m);
     conferirDecisoes(e);
@@ -263,6 +266,10 @@ export function criarRecados(api, vida, dia3d) {
     } else if (linha) {
       corpo.insertAdjacentHTML('beforeend', `<div class="j3d-balao-quem">${esc(dia3d.ativo ? 'O nosso bonde · o dia de jogo' : 'O dia de jogo')}</div>`);
       corpo.appendChild(linha);
+      /* o cartão da parada com os botões fica à vista (no celular o balão
+         é baixo e ele caía embaixo da dobra) */
+      const cart = [...linha.querySelectorAll('.itn-cartao')].pop();
+      if (cart && cart.querySelector('.itn-bt')) requestAnimationFrame(() => { try { cart.scrollIntoView({ block: 'nearest' }); } catch (e2) {} });
     } else {
       if (m.hora) corpo.insertAdjacentHTML('beforeend', `<div class="j3d-balao-hora">${esc(m.hora)}</div>`);
       corpo.appendChild(TO.tela.cartaoMensagem(e, m));
@@ -405,15 +412,18 @@ export function criarRecados(api, vida, dia3d) {
     }
     if (!atual) {
       /* o recado de outra torcida que o jogador já leu em Notícias → Mensagens não vem mais */
-      while (fila.length && ehCaixa(fila[0]) && fila[0].lida) naFila.delete(fila.shift().id);
+      for (let k = fila.length - 1; k >= 0; k--) if (ehCaixa(fila[k]) && fila[k].lida) naFila.delete(fila.splice(k, 1)[0].id);
       if (folga > 0) folga -= dt;
       else if (fila.length && pode) {
         /* A DECISÃO EM ABERTO VEM PRIMEIRO (ela segura o relógio: esperar
-           atrás de notícia é o jogo parado sem nada pra responder); depois o
-           que é da nossa torcida (as mensagens do jogo); o recado de outra
-           torcida espera a vez dele */
-        let i = fila.findIndex(pendente);
-        if (i < 0) i = fila.findIndex(m => !ehCaixa(m));
+           atrás de notícia é o jogo parado sem nada pra responder); o resto,
+           NA ORDEM EM QUE CAIU — o recado de outra torcida também
+           (conserto de 28/09/2026, o dono: "Os recados não aparecem na
+           tela, ficam somente em Notícias > Mensagens"): ele esperava atrás
+           de toda mensagem da nossa torcida, até das que chegaram depois
+           dele; num dia cheio a vez não chegava, o jogador lia o recado em
+           Notícias → Mensagens e ele saía da fila sem ter aparecido */
+        const i = fila.findIndex(pendente);
         mostrar(fila.splice(i >= 0 ? i : 0, 1)[0]);
       }
     }

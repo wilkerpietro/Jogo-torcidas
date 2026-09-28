@@ -281,22 +281,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=ac8d464b22';
-import { montarModelos } from './js/modelos3d.js?v=ac8d464b22';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=ac8d464b22';
-import { ATLAS } from './js/modelos_atlas.js?v=ac8d464b22';
-import { Construtor, sorteio } from './js/construtor3d.js?v=ac8d464b22';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=ac8d464b22';
-import { montarSede } from './js/sede3d.js?v=ac8d464b22';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=ac8d464b22';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=ac8d464b22';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=ac8d464b22';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=ac8d464b22';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=ac8d464b22';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=ac8d464b22';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=ac8d464b22';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=ac8d464b22';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=ac8d464b22';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=749d0dd612';
+import { montarModelos } from './js/modelos3d.js?v=749d0dd612';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=749d0dd612';
+import { ATLAS } from './js/modelos_atlas.js?v=749d0dd612';
+import { Construtor, sorteio } from './js/construtor3d.js?v=749d0dd612';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=749d0dd612';
+import { montarSede } from './js/sede3d.js?v=749d0dd612';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=749d0dd612';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=749d0dd612';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=749d0dd612';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=749d0dd612';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=749d0dd612';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=749d0dd612';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=749d0dd612';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=749d0dd612';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=749d0dd612';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -313,19 +313,19 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=ac8d464b22');
-  await carregarScript('dados/times.js?v=ac8d464b22');
-  await carregarScript('dados/cena_estadio.js?v=ac8d464b22');
-  await carregarScript('dados/cidades.js?v=ac8d464b22');
-  await carregarScript('dados/estadios.js?v=ac8d464b22');
-  await carregarScript('dados/escudos.js?v=ac8d464b22');
+  await carregarScript('dados/torcidas.js?v=749d0dd612');
+  await carregarScript('dados/times.js?v=749d0dd612');
+  await carregarScript('dados/cena_estadio.js?v=749d0dd612');
+  await carregarScript('dados/cidades.js?v=749d0dd612');
+  await carregarScript('dados/estadios.js?v=749d0dd612');
+  await carregarScript('dados/escudos.js?v=749d0dd612');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=ac8d464b22').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=749d0dd612').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -1389,6 +1389,8 @@ function montarCalcadas() {
   /* onde tem laje (pro poste de hoje, a árvore e o prop subirem nela) */
   const idxLaje = IndiceRet(rets.concat(C.pols.map(pl => ({ ...pl.r, pl }))), r => r);
   C.naLaje = (x, y) => idxLaje(x, y).some(r => r.pl ? dentro(x, y, r.pl.fora) && !(r.pl.dentro && dentro(x, y, r.pl.dentro)) : noRet(r, x, y));
+  /* (o chão da rua, pro dia de jogo: o asfalto e a calçada pintada das avenidas) */
+  C.ehAsfalto = ehAsfalto; C.naCalcadaPintada = naCalcadaPintada;
 
   /* A GRADE DE PROTEÇÃO entre a cidade e o mato (a da foto do dono, a da
      Aerolândia): a tela verde de poste em poste em cima da mureta de
@@ -5133,6 +5135,12 @@ function apiDoCenario() {
     },
     resumo: () => resumoDaTela(),
     pecas: pecasDoCenario, pintarChao, vegetacao,
+    /* O CHÃO DA RUA (o dono, 28/09/2026: "alguns membros das torcidas estão
+       dentro de terrenos baldios e casas, organize pra eles ficarem somente
+       nas calçadas e ruas"): o asfalto, a calçada das quadras e a calçada
+       pintada das avenidas — não o lote, o terreno baldio, o quintal nem a
+       casa. Sem as calçadas montadas (a planta sem proposta), tudo vale */
+    naRuaOuCalcada(x, y) { const C = CALCADAS; return !C || !C.ehAsfalto || C.ehAsfalto(x, y) || C.naLaje(x, y) || C.naCalcadaPintada(x, y); },
     /* o mapa 2D inteiro, com os rótulos, num canvas de fora (o mapa da cidade do jogo 3D) */
     pintarMapa,
     /* o relógio da bandeira da sede (o cenário anda ele a cada quadro) */
@@ -5345,7 +5353,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=ac8d464b22');
+    const { montarJogo } = await import('./js/jogo3d.js?v=749d0dd612');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5376,7 +5384,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=ac8d464b22');
+      const { criarCenario } = await import('./js/cenario.js?v=749d0dd612');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
