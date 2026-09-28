@@ -35,9 +35,37 @@
    - VOLTA: o dia fecha e a cidade volta pra praça do jogador.
    Sem cidade em 3D pro jogo (a praça de fora sem mapa, o campo neutro,
    o mandante sem torcida com sede no mapa), a linha anda como sempre.
+
+   A TELA DO DIA (o dono, 28/09/2026: "refaça o visual de dia de jogo na
+   cidade, com o placar do jogo em tempo real parecendo um placar de jogo
+   de futebol na TV, e a tela com as informações do itinerário não ficarem
+   ocupando a tela do jogo assim"): o PLACAR DE TV no alto (as siglas com
+   a cor de cada clube, os gols, o relógio da partida; antes da bola, a
+   hora dela; no fim, FIM), a FAIXA DAS FASES no painel de baixo (ida,
+   jogo e volta, cada uma com a hora em que a cidade faz ela — "corrija a
+   hora do itinerário pra bater com o 3D" — e o efetivo dos dois lados),
+   e o balão só com a decisão da hora (recados3d.js). O gol vira aviso.
+
+   OS JOGOS DE OUTROS CLUBES NA NOSSA PRAÇA (o dono, 28/09/2026: "o jogo
+   não pergunta se eu quero acompanhar o que acontece em dia de outros
+   jogos na mesma cidade, o itinerário delas acontece de forma automática
+   no jogo — enquanto o tempo passa, eles se locomovem rumo ao estádio e a
+   nossa torcida fica na sede caso não tenha planejado nada; se tiver
+   planejado, vai em direção ao que quer atacar seja na pista ou
+   concentração"): o olheiro não pergunta mais. O dia do jogo monta NO
+   FUNDO (`jogoNoFundo`), junto com a vida da praça: o relógio do dia
+   (vida3d.js) manda nele, os bondes aparecem na concentração e vão pro
+   estádio enquanto as horas passam (numa janela de passo mais lento, pra
+   se ver), o placar de TV mostra a partida, e no fim eles somem. A nossa
+   torcida segue na sede. Com INVESTIDA MARCADA nesse jogo (o
+   planejamento: concentração ou pista), o nosso bonde sai da nossa porta
+   e anda pela rua até o alvo — a porta da sede deles, antes de saírem,
+   ou um ponto da rota deles —, e a decisão do planejamento ("Ir pra
+   Guerra") chega quando ele chega lá, com a câmera no encontro; depois
+   ele volta pra sede.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=749d0dd612';
-import { palcoDeBriga } from './palco_briga.js?v=749d0dd612';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=4c330697b2';
+import { palcoDeBriga } from './palco_briga.js?v=4c330697b2';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -46,6 +74,13 @@ const hhmm = s => { const m = Math.floor(s / 60 + 1e-6); return String(Math.floo
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const espera = () => new Promise(r => requestAnimationFrame(() => r()));
 const naVia = v => v === 'corredor' ? 'pelo corredor' : 'pela arquibancada';
+/* a sigla da TV (FOR, CEA, CAM): as três primeiras letras do nome, sem acento */
+const siglaTV = nome => String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || '???';
+const corDoClube = (t, i) => (t && Array.isArray(t.cores) && t.cores[i]) || (i ? '#d8d8d8' : '#5a5a5a');
+/* a partida na cidade: 90 minutos e o intervalo de 15 (o apito final, na hora do dia) */
+const INTERVALO_S = 15 * 60, DURACAO_S = (90 * 60) + INTERVALO_S;
+/* o nome curto de cada fase da linha, na faixa */
+const ROT_FASE = { ida: 'Ida', jogo: 'Jogo', volta: 'Volta' };
 
 /* `api`: o do jogo 3D (jogo3d.js: cenario, abrirPraca, planta, M);
    `vida`: a vida da praça (vida3d.js); `g`: { travarPraca(v) } — a
@@ -70,15 +105,14 @@ export function criarDia3d(api, vida, g = {}) {
     if (hud) return hud;
     hud = document.createElement('div');
     hud.className = 'j3d-dia'; hud.hidden = true;
-    hud.innerHTML = `<div class="j3d-dia-topo"><b class="j3d-dia-hora">--:--</b><span class="j3d-dia-fase"></span></div>
+    hud.innerHTML = `<div class="j3d-dia-topo"><b class="j3d-dia-hora">--:--</b><ol class="j3d-dia-fases" aria-label="As fases do dia"></ol><span class="j3d-dia-efetivo"></span></div>
       <p class="j3d-dia-estado"></p>
       <div class="j3d-dia-bts">
         <span class="j3d-dia-vezes" role="group" aria-label="Velocidade do dia">${VEZES.map(v => `<button data-vezes="${v}">${v}×</button>`).join('')}</span>
         <button data-dia="pular" title="Pula até o próximo ponto do dia">Pular ▸▸</button>
-        <button data-dia="nossa" title="A câmera vai atrás do nosso bonde">Nossa torcida</button>
+        <button data-dia="nossa" title="A câmera vai atrás do nosso bonde">Nossa</button>
         <button data-dia="estadio" title="A câmera no estádio">Estádio</button>
         <button data-dia="plano" title="O dia inteiro, de cima">Cidade</button>
-        <button data-dia="sair" class="acao" title="Fecha o jogo da cidade e volta pra sede" hidden>Voltar pra sede</button>
       </div>
       <div class="j3d-dia-invadir" hidden></div>`;
     document.body.appendChild(hud);
@@ -88,7 +122,6 @@ export function criarDia3d(api, vida, g = {}) {
       if (b.dataset.vezes) { D.vezes = +b.dataset.vezes; if (dia.rodando) dia.rodar(D.vezes); pintar(); return; }
       const a = b.dataset.dia;
       if (a === 'pular') pular();
-      else if (a === 'sair') fechar();
       else if (a === 'nossa') { if (D.nosso) dia.seguirBonde(D.nosso); }
       else if (a === 'estadio') { if (D.fase === 'jogo' && D.nosso) verNossoSetor(); else dia.verEstadio(); }
       else if (a === 'plano') dia.verPlano();
@@ -101,19 +134,14 @@ export function criarDia3d(api, vida, g = {}) {
     p.textContent = txt || ''; p.classList.toggle('ruim', !!ruim);
   }
   function pintar() {
-    if (!hud || !D) return;
+    /* (o jogo da cidade no fundo não tem painel: a vida da praça segue) */
+    if (!hud || !D || D.fundo) return;
     hud.hidden = false;
-    const f = D.ia ? ({ ida: 'As torcidas a caminho', jogo: 'O jogo', volta: 'Fim de jogo' }[D.fase] || 'Jogo da cidade')
-      : ({ ida: D.fora ? 'Caravana · ida' : 'Ida ao estádio', jogo: 'O jogo', volta: 'Volta' }[D.fase] || 'Dia de jogo');
-    hud.querySelector('.j3d-dia-fase').textContent = `${D.titulo} · ${f}`;
+    pintarFases(true);
     for (const o of hud.querySelectorAll('[data-vezes]')) o.setAttribute('aria-pressed', String(+o.dataset.vezes === D.vezes));
-    hud.querySelector('[data-dia="pular"]').disabled = !D.corrida && !(D.ia && D.fase === 'jogo' && D.minuto < FIM_DO_JOGO);
-    /* no jogo da cidade quem volta é o jogador (a linha do dia não manda nele);
-       a "nossa torcida" é a aliada que a gente hospedou, quando tem */
-    hud.querySelector('[data-dia="sair"]').hidden = !D.ia;
+    hud.querySelector('[data-dia="pular"]').disabled = !D.corrida;
     const bn = hud.querySelector('[data-dia="nossa"]');
     bn.hidden = !D.nosso;
-    bn.textContent = D.ia && D.nosso ? `A ${D.nosso.t.sigla}` : 'Nossa torcida';
     /* A INVASÃO: só na partida, uma por jogo, pelos caminhos que a nossa torcida tem */
     const inv = hud.querySelector('.j3d-dia-invadir');
     const vias = D.partida && !D.invadiu ? viasDaInvasao() : [];
@@ -124,6 +152,146 @@ export function criarDia3d(api, vida, g = {}) {
     if (!hud || !D || !dia) return;
     const h = hud.querySelector('.j3d-dia-hora'), txt = hhmm(dia.t);
     if (h.textContent !== txt) h.textContent = txt;
+  }
+  /* A FAIXA DAS FASES: ida, jogo e volta, cada uma com a hora da cidade
+     (a que já passou apagada, a de agora acesa), e o efetivo dos dois lados */
+  let fasesVistas = '';
+  function pintarFases(forcar) {
+    if (!hud || !D || D.fundo) return;
+    const r = TO.tela && TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
+    const ol = hud.querySelector('.j3d-dia-fases'), ef = hud.querySelector('.j3d-dia-efetivo');
+    if (!r) { if (forcar) { ol.innerHTML = `<li class="agora"><b>${esc(D.titulo)}</b></li>`; ef.textContent = ''; } return; }
+    const sig = JSON.stringify([r.ponto, r.nos, r.eles, r.escolta, r.paradas.map(p => p.hora + p.brigou)]);
+    if (!forcar && sig === fasesVistas) return;
+    fasesVistas = sig;
+    ol.innerHTML = r.paradas.map((p, i) => {
+      const rot = p.id === 'ida' && D.fora ? 'Caravana' : ROT_FASE[p.id] || p.nome;
+      const cls = i < r.ponto ? 'passou' : i === r.ponto ? 'agora' : 'vem';
+      return `<li class="${cls}${p.brigou ? ' brigou' : ''}"><b>${esc(rot)}</b><span>${p.rotDia && r.dias > 1 ? `<small>${esc(p.rotDia)}</small> ` : ''}${esc(p.hora)}</span></li>`;
+    }).join('');
+    const nome = r.nomeDeles || 'deles';
+    ef.innerHTML = `<b>${r.nos}</b>${r.escolta ? `<small>+${r.escolta}</small>` : ''}${r.temDeles ? ` <i>×</i> <b>${r.eles}</b>` : ''}`;
+    ef.title = `${r.nos} nossos${r.escolta ? ` e ${r.escolta} da escolta da ${r.nomeEscolta}` : ''}${r.temDeles ? ` · ${r.eles} da ${nome}` : ''}`;
+  }
+
+  /* ======================================================
+     O PLACAR DE TV (no alto): as siglas com a cor de cada clube, os gols
+     e o relógio da partida — antes da bola, a hora dela; no fim, FIM. No
+     nosso jogo, o clima do estádio e a pausa e a velocidade da partida
+     (as mesmas portas da barra de minutos do feed); no jogo da cidade no
+     fundo, o minuto é o do relógio do dia
+     ====================================================== */
+  let placar = null, placarVisto = '';
+  function montarPlacar() {
+    if (placar) return placar;
+    placar = document.createElement('div');
+    placar.className = 'j3d-placar'; placar.hidden = true;
+    placar.setAttribute('role', 'status');
+    placar.innerHTML = `<div class="j3d-placar-tv">
+        <span class="j3d-placar-time casa"><i></i><b></b></span>
+        <span class="j3d-placar-gols"><b class="gc">0</b><b class="gf">0</b></span>
+        <span class="j3d-placar-time fora"><b></b><i></i></span>
+        <span class="j3d-placar-rel"></span>
+      </div>
+      <div class="j3d-placar-pe"><span class="j3d-placar-clima"></span><span class="j3d-placar-bts"><button data-placar="pausa" title="Pausar e seguir a partida (espaço)">❚❚</button><button data-placar="vel" title="A velocidade da partida">1×</button></span></div>`;
+    document.body.appendChild(placar);
+    placar.addEventListener('click', ev => {
+      const b = ev.target.closest('[data-placar]'), m = D && D.partida;
+      /* o toque na faixa leva a câmera: o jogo da cidade, pro estádio dele; o nosso, pra nossa torcida */
+      if (!b) { if (D && dia && dia.plano) { if (D.fundo) dia.verEstadio(); else verNossa(); } return; }
+      if (!m || !TO.jogoAoVivo || !TO.jogoAoVivo.pausar) return;
+      if (b.dataset.placar === 'pausa') TO.jogoAoVivo.pausar(m); else TO.jogoAoVivo.vel(m);
+      pintarPlacar();
+    });
+    placar.querySelector('.j3d-placar-tv').title = 'Ver na cidade';
+    return placar;
+  }
+  /* o que o placar mostra agora: os dois clubes, os gols, o relógio */
+  function estadoDoPlacar() {
+    if (!D) return null;
+    if (D.fundo) {
+      const F = D;
+      /* (da concentração em diante: antes da bola, a hora dela) */
+      if (!F.plano || F.fase === 'montando' || F.fase === 'espera') return null;
+      const ate = F.minuto == null ? -1 : F.minuto;
+      let gc = 0, gf = 0;
+      for (const gl of F.gols) if (gl.min <= ate) { if (gl.lado === 'c') gc++; else gf++; }
+      const rel = F.minuto == null ? F.hora : F.intervalo ? 'INT' : F.minuto >= FIM_DO_JOGO ? 'FIM'
+        : F.minuto > 90 ? `90+${Math.ceil(F.minuto - 90)}'` : `${Math.max(1, Math.floor(F.minuto))}'`;
+      return { casa: F.casa, fora: F.vis, gc, gf, pre: F.minuto == null, rel, clima: null, bts: false };
+    }
+    const j = D.j;
+    if (!j || !j.mandante || !j.visitante) return null;
+    const m = D.partida || D.partidaVista, d = m && m.dados;
+    const min = d && TO.jogoAoVivo ? TO.jogoAoVivo.minuto(d) : null;
+    if (!d || min == null) return { casa: j.mandante, fora: j.visitante, gc: 0, gf: 0, pre: true, rel: j.hora || '', clima: null, bts: false };
+    const fim = !!D.apitado || (m.respondido && !D.partida);
+    const ate = fim ? 999 : Math.floor(min);
+    let gc = 0, gf = 0;
+    for (const gl of d.gols || []) if (gl.min <= ate) { if (gl.lado === 'c') gc++; else gf++; }
+    const rel = fim ? 'FIM' : `${Math.max(1, Math.ceil(min))}'`;
+    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 1, gols: d.gols || [], ate };
+  }
+  const ROT_CLIMA = ['Tranquilo', 'Esquentando', 'Tenso'];
+  /* (o placar fica embaixo da barra do jogo e da fita das manchetes, que no celular são mais altas) */
+  const topoDaBarra = () => {
+    let y = 56;
+    for (const q of ['.feed-barra', '.feed-ticker']) {
+      const el = document.querySelector(q);
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height > 0 && r.bottom < innerHeight * 0.4) y = Math.max(y, r.bottom);
+    }
+    return Math.round(y + 6);
+  };
+  function pintarPlacar() {
+    const st = estadoDoPlacar();
+    if (!st) { if (placar && !placar.hidden) placar.hidden = true; return; }
+    montarPlacar();
+    const topo = topoDaBarra() + 'px';
+    if (placar.style.top !== topo) placar.style.top = topo;
+    const sig = JSON.stringify([st.casa.nome, st.fora.nome, st.gc, st.gf, st.pre, st.rel, st.clima, st.bts, st.pausada, st.vel]);
+    placar.hidden = false;
+    if (sig === placarVisto) return;
+    placarVisto = sig;
+    const tv = placar.querySelector('.j3d-placar-tv');
+    const [c, f] = tv.querySelectorAll('.j3d-placar-time');
+    c.querySelector('b').textContent = siglaTV(st.casa.nome); c.querySelector('i').style.background = corDoClube(st.casa, 0); c.title = st.casa.nome;
+    f.querySelector('b').textContent = siglaTV(st.fora.nome); f.querySelector('i').style.background = corDoClube(st.fora, 0); f.title = st.fora.nome;
+    const g = tv.querySelector('.j3d-placar-gols');
+    g.classList.toggle('pre', st.pre);
+    g.querySelector('.gc').textContent = st.pre ? '' : st.gc;
+    g.querySelector('.gf').textContent = st.pre ? '' : st.gf;
+    const rel = tv.querySelector('.j3d-placar-rel');
+    rel.textContent = st.rel;
+    rel.classList.toggle('fim', st.rel === 'FIM');
+    rel.classList.toggle('vivo', !st.pre && st.rel !== 'FIM' && st.rel !== 'INT');
+    const pe = placar.querySelector('.j3d-placar-pe'), cl = placar.querySelector('.j3d-placar-clima');
+    pe.hidden = st.clima == null && !st.bts;
+    cl.hidden = st.clima == null;
+    if (st.clima != null) { cl.textContent = `Clima · ${ROT_CLIMA[st.clima] || ''}`; cl.className = 'j3d-placar-clima clima-' + st.clima; }
+    const bts = placar.querySelector('.j3d-placar-bts');
+    bts.hidden = !st.bts;
+    if (st.bts) {
+      bts.querySelector('[data-placar="pausa"]').textContent = st.pausada ? '▶' : '❚❚';
+      bts.querySelector('[data-placar="vel"]').textContent = `${st.vel}×`;
+    }
+  }
+  /* O GOL VIRA AVISO (no lado direito, como as notícias) */
+  const avisar = o => { const R = TO.jogo3d && TO.jogo3d.recados; if (R && R.avisar) R.avisar(o); };
+  function avisarGols(gols, ate, casa, fora) {
+    if (!D) return;
+    D.golVisto = D.golVisto || 0;
+    let c = 0, f = 0;
+    const vistos = gols.filter(gl => gl.min <= ate);
+    for (let i = 0; i < vistos.length; i++) {
+      const gl = vistos[i];
+      if (gl.lado === 'c') c++; else f++;
+      if (i < D.golVisto) continue;
+      D.golVisto = i + 1;
+      const de = gl.lado === 'c' ? casa : fora;
+      avisar({ voz: `Gol · ${Math.round(gl.min)}'`, texto: `Gol do ${de.nome}! ${casa.nome} ${c} × ${f} ${fora.nome}`, classe: 'gol' });
+    }
   }
 
   /* ======================================================
@@ -156,6 +324,9 @@ export function criarDia3d(api, vida, g = {}) {
       const p = dia.jogo(esc0);
       if (!p || p.erro) throw new Error(p && p.erro ? p.erro : 'o plano do dia não montou');
       D.plano = p; D.nosso = p.doJogador || null; D.escolha = esc0;
+      /* A HORA DA LINHA É A DA CIDADE: a ida começa quando a concentração
+         começa, o jogo na bola, a volta no apito final (com o intervalo) */
+      if (TO.tela && TO.tela.horasDaLinha) TO.tela.horasDaLinha({ ida: p.inicio, jogo: p.bola, volta: p.bola + DURACAO_S });
       D.briga = esc0.briga && p.brigas && p.brigas[0] && p.brigas[0].a.t.id === esc0.briga.a && p.brigas[0].v.t.id === esc0.briga.v ? p.brigas[0] : null;
       D.evBriga = D.briga ? esc0.briga.ev : null;
       /* o dia começa um pouco antes de o primeiro bonde sair */
@@ -163,7 +334,7 @@ export function criarDia3d(api, vida, g = {}) {
       if (D.nosso) dia.seguirBonde(D.nosso); else dia.verPlano();
       if (!laco) laco = requestAnimationFrame(quadro);
       status(D.nosso ? inicioTxt(D.nosso) : 'A nossa torcida não entrou no plano do dia (sem rota até o estádio).');
-      pintar();
+      pintar(); pintarPlacar();
       return true;
     } catch (err) {
       console.error('dia de jogo 3D:', err);
@@ -315,24 +486,29 @@ export function criarDia3d(api, vida, g = {}) {
   }
 
   /* ======================================================
-     O JOGO DA CIDADE (o jogo 3D, 28/09/2026; o dono: "os demais jogos na
-     cidade entre times IA tem dia de jogo normalmente, com as torcidas
-     brigando ou não entre elas"). O jogo de dois outros clubes na nossa
-     praça: o recado do olheiro (jogo3d.js) pergunta se o jogador quer ver
-     e, vendo, a cidade monta o dia do jogo como o nosso — os bondes das
-     torcidas dos dois clubes saindo das sedes (e da casa de quem as
-     recebe: o aliado que a gente hospeda sai da NOSSA porta, com a nossa
-     escolta quando ela vai junto), a PM, a revista, a arquibancada e a
-     partida. A BRIGA É A DO JOGO: o mundo já sorteou, no começo do dia,
-     se as torcidas se pegam (js/mundo/relacoes.js, `brigasDeHoje`, na
-     aba Brigas das Notícias); tendo briga entre duas do jogo, ela
-     acontece na rua, no caminho do atacado, com o resultado de lá
-     (quem ganhou, e a proporção de feridos e presos de cada lado); sem
-     briga, todas vão em paz. O tempo do jogo fica parado enquanto o dia
-     da cidade está no ar, e o placar é o da rodada. Ninguém invade: a
-     invasão é só da nossa torcida, e ela não está no jogo
+     O JOGO DA CIDADE, NO FUNDO (o dono, 28/09/2026: "o jogo não pergunta
+     se eu quero acompanhar o que acontece em dia de outros jogos na mesma
+     cidade, o itinerário delas acontece de forma automática no jogo").
+     O jogo de dois outros clubes na nossa praça monta o dia dele como o
+     nosso — os bondes das torcidas dos dois clubes saindo das sedes (e da
+     casa de quem as recebe: o aliado que a gente hospeda sai da NOSSA
+     porta, com a nossa escolta quando ela vai junto), a PM, a revista, a
+     arquibancada e a partida —, mas sem tomar a tela: a vida da praça
+     segue (a nossa torcida na sede), o relógio do dia manda nele, e os
+     bonecos dele aparecem junto com os da vida (cenario.js, `diaNoFundo`).
+     Na hora (15 min antes do primeiro bonde sair) um aviso conta e leva a
+     câmera se o jogador quiser; o relógio anda mais devagar da
+     concentração ao apito (as janelas do relógio, vida3d.js), pra se ver;
+     o placar de TV mostra a partida; e no fim eles somem. A BRIGA É A DO
+     JOGO: o mundo já sorteou, no começo do dia, se as torcidas se pegam
+     (js/mundo/relacoes.js, `brigasDeHoje`, na aba Brigas das Notícias);
+     tendo briga entre duas do jogo, ela acontece na rua, no caminho do
+     atacado, com o resultado de lá; sem briga, todas vão em paz. Ninguém
+     invade: a invasão é só da nossa torcida, e ela não está no jogo
      ====================================================== */
   const FIM_DO_JOGO = 96;
+  /* quanto a janela do jogo leva a 1×: da concentração à bola, e a partida */
+  const FUNDO_ANDA_MS = 14000, FUNDO_JOGO_MS = 9000;
   /* quem foi pra rua (a mesma lista da pauta do jogo, `naRuaEm`): o
      visitante sem a escolta de quem o recebe (o plano soma a escolta de
      novo), a da casa com a gente que emprestou pra escolta (o plano tira
@@ -375,40 +551,45 @@ export function criarDia3d(api, vida, g = {}) {
     for (let k = 0; k < pl.gf; k++) gols.push({ min: 3 + h(`gol|${casaId}|${visId}|f|${k}|${e.data.semana}`) % 88, lado: 'f' });
     return gols.sort((a, b) => a.min - b.min);
   }
-  async function abrirJogoDaCidade(m) {
-    const e = E(), d = m && m.dados;
-    if (!e || !e.torcida || !d || D) return false;
-    const Mu = TO.mundo, casa = Mu && Mu.time(d.casa), vis = Mu && Mu.time(d.vis);
+  /* o jogo de hoje na nossa praça (js/mundo/praca.js, `jogosDaPraca`: { casa,
+     vis, hora, comp }), montado no fundo da vida da praça */
+  async function jogoNoFundo(j) {
+    const e = E();
+    if (D || !e || !e.torcida || !j || !j.casa || !j.vis) return false;
     const Cn = C();
-    if (!casa || !vis || !Cn || !Cn.vida || !Cn.vida.diaDeJogo) return false;
-    const nome = nomeDaPraca(e.torcida.mapa);
-    if (!nome) return false;
-    const eu = D = { ia: true, msg: m, e, fora: false, nome, fase: null, vezes: 30, corrida: null, partida: null, invadiu: true,
-                     titulo: `${casa.nome} × ${vis.nome}`, casa, vis, hora: d.hora || '16:00', minuto: null, gols: [], placar: null };
-    montarHud(); pintar();
-    status('A PM montando o plano do dia…');
-    /* o tempo do jogo espera o dia da cidade */
-    if (TO.tela && TO.tela.pausarTempo) TO.tela.pausarTempo('jogo-praca');
-    if (g.travarPraca) g.travarPraca(true);
-    vida.desligar();
+    if (!Cn || !Cn.vida || !Cn.vida.diaDeJogo || !vida.ligada || !vida.relogio) return false;
+    const bola = segDe(j.hora);
+    /* (o jogo que já acabou na hora do relógio não monta) */
+    if (vida.relogio.minuto * 60 > bola + DURACAO_S + 15 * 60) return false;
+    const casa = j.casa, vis = j.vis;
+    const eu = D = { ia: true, fundo: true, e, fora: false, nome: Cn.praca, fase: 'montando', vezes: 30, corrida: null, partida: null, invadiu: true,
+                     titulo: `${casa.nome} × ${vis.nome}`, casa, vis, hora: j.hora || '16:00', estadio: j.estadio || casa.estadio || '',
+                     minuto: undefined, gols: [], placar: null, golVisto: 0 };
+    /* O TEMPO ESPERA O PLANO MONTAR (uns segundos, no começo do dia): o
+       relógio conta a espera do dia com as janelas dele — sem elas, o dia
+       virava antes de o jogo acontecer. Montado, a espera é refeita */
+    const T = TO.tela;
+    if (T && T.pausarTempo) T.pausarTempo('jogo-da-cidade');
+    const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
-      if (!await esperarPraca(nome, eu)) return false;
-      dia = await C().vida.diaDeJogo();
+      dia = await Cn.vida.diaDeJogo();
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=4c330697b2');
       if (D !== eu) return false;
-      await espera(); await espera();
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
       /* a praça (a concentração do atacado) ou a rua (o caminho dele): fixo pro registro */
       const onde = reg && ((reg.a.n || 0) + (reg.b.n || 0)) % 3 === 0 ? 'praca' : 'rua';
-      const esc0 = { jogo: true, casa: casa.id, fora: vis.id, bola: segDe(D.hora), presenca: pres.length ? pres : null, ia: 'paz', estadio: 'nao', gente: 1,
+      const esc0 = { jogo: true, casa: casa.id, fora: vis.id, bola, presenca: pres.length ? pres : null, ia: 'paz', estadio: 'nao', gente: 1,
                      hospedes: hospedesDoJogo(e, casa.id, vis.id), briga: reg ? { a: reg.a.id, v: reg.b.id, onde } : null };
+      /* (até a hora dele, a cidade não mostra nada do jogo: a vida segue sozinha na tela) */
+      Cn.vida.diaNoFundo = 'oculto';
       let p = dia.jogo(esc0);
       /* (a briga que não achou lugar no mapa não derruba o dia: ele monta em paz) */
       if ((!p || p.erro) && esc0.briga) { esc0.briga = null; p = dia.jogo(esc0); }
       if (!p || p.erro) throw new Error(p && p.erro ? p.erro : 'o plano do dia não montou');
+      if (D !== eu) return false;
+      dia.parar(); dia.esconder(true, true);
       D.plano = p; D.escolha = esc0; D.reg = reg;
-      /* a "nossa" aqui é a aliada que a gente hospeda (o bonde dela sai da nossa porta) */
-      D.nosso = p.vivos.find(b => b.anfitriao && b.anfitriao.doJogador && b.inicio.tipo === 'aliado') || null;
       D.briga = reg && p.brigas && p.brigas[0] && p.brigas[0].a.t.id === reg.a.id && p.brigas[0].v.t.id === reg.b.id ? p.brigas[0] : null;
       /* o resultado é o do mundo: quem ganhou e a proporção de feridos e presos de cada lado */
       if (D.briga) {
@@ -418,79 +599,231 @@ export function criarDia3d(api, vida, g = {}) {
       }
       D.placar = placarDoJogo(e, casa.id, vis.id);
       D.gols = golsDoJogo(D.placar, casa.id, vis.id, e);
-      dia.parar(); dia.irPara(p.inicio);
-      if (D.nosso) dia.seguirBonde(D.nosso); else dia.verPlano();
+      /* a janela: da concentração (15 min antes do primeiro bonde sair) ao fim */
+      D.t0 = Math.min(bola - 30 * 60, p.inicio - 15 * 60);
+      D.t1 = bola + DURACAO_S + 15 * 60;
+      D.fase = 'espera';
+      const r = vida.relogio, m0 = D.t0 / 60, mb = bola / 60, m1 = (bola + DURACAO_S) / 60;
+      /* a nossa investida nesse jogo (a janela dela vem antes: vale na frente) */
+      investidaNoFundo(e, j, p, caminhoNaRua);
+      if (r.janela) { if (mb > m0) r.janela(m0, mb, FUNDO_ANDA_MS / (mb - m0)); r.janela(mb, m1, FUNDO_JOGO_MS / (m1 - mb)); }
+      /* os hóspedes saem da nossa sede quando o bonde deles aparece na porta */
+      if (vida.hospedesSaem) vida.hospedesSaem(m0);
+      dia.irPara(Math.max(p.inicio, D.t0));
       if (!laco) laco = requestAnimationFrame(quadro);
-      correrJogoDaCidade();
       return true;
     } catch (err) {
-      console.error('jogo da cidade 3D:', err);
-      if (D === eu) {
-        status('O jogo da cidade não montou em 3D: ' + err.message, true);
-        const d0 = D;
-        setTimeout(() => { if (D === d0) fechar(); }, 3500);
-      }
+      console.error('jogo da cidade no fundo:', err);
+      if (D === eu) fechar();
       return false;
+    } finally { soltar(); }
+  }
+  /* O JOGO DA CIDADE ANDA COM O RELÓGIO DO DIA (a vida da praça) */
+  function quadroFundo() {
+    const F = D, r = vida.relogio, Cn = C();
+    if (!F || !F.plano || !r || !dia || !dia.plano) return;
+    const t = r.minuto * 60, bola = F.plano.bola;
+    /* a janela abriu: os bondes na concentração, e o aviso no canto */
+    if (F.fase === 'espera' && t >= F.t0) {
+      F.fase = 'ida';
+      dia.esconder(false, true);
+      if (Cn && Cn.vida) Cn.vida.diaNoFundo = true;
+      avisar({ voz: 'Jogo na cidade', texto: `Hoje tem ${F.titulo} às ${F.hora}${F.estadio ? ` (${F.estadio})` : ''}. As torcidas estão saindo pro estádio.`,
+               botao: { rot: 'Ver na cidade', fn: () => { if (D === F && dia) dia.verPlano(); } } });
     }
-  }
-  /* o dia do jogo da cidade, sozinho: a ida (a briga, se tem, a cidade
-     mostra a 1×), a entrada, a partida (o relógio do dia anda com o minuto
-     dela, e o placar sai nos gols) e o fim — aí o jogador volta pra sede */
-  function correrJogoDaCidade() {
-    if (!D || !D.ia || !D.plano) return;
-    const pl = D.plano, hosp = D.nosso;
-    D.fase = 'ida';
-    const br = D.briga;
-    const ida = br ? `A caminho do estádio. A ${br.a.t.sigla} e a ${br.v.t.sigla} estão na rua…`
-      : hosp ? `A ${hosp.t.sigla} sai da nossa sede${hosp.escolta ? ` com ${hosp.escolta.membros} dos nossos de escolta` : ''} pro estádio.`
-      : 'As torcidas saindo pro estádio.';
-    const fimIda = Math.max(pl.inicio, br ? br.tFim + 20 : 0);
-    /* a câmera larga quem ela segue e vai pro ponto da briga (a cidade mostra ela a 1×) */
-    const naBriga = () => {
-      if (!D || !D.ia) return;
-      dia.seguirBonde(null);
-      C().voarPara(br.P[0], br.P[1], 38 * M, 0.9, undefined, 0);
-      status(`A ${br.a.t.sigla} caiu em cima da ${br.v.t.sigla}!`, true);
-      rodarAte(fimIda, D.vezes, null, entrar);
-    };
-    const entrar = () => {
-      if (!D || !D.ia) return;
-      if (br) status(br.venceA ? `A ${br.a.t.sigla} levou a melhor em cima da ${br.v.t.sigla}.` : `A ${br.v.t.sigla} segurou a ${br.a.t.sigla} e saiu por cima.`, false);
-      const alvo = Math.max(dia.t, Math.min(pl.bola - 60, tudoNoLugar() + 15));
-      rodarAte(alvo, 60, br ? null : 'As torcidas entrando no estádio…', () => { if (D && D.ia) comecarPartida(); });
-    };
-    if (br) rodarAte(Math.max(pl.inicio + 1, br.tIni - 7), D.vezes, ida, naBriga);
-    else { status(ida); rodarAte(Math.max(pl.inicio + 1, Math.min(pl.bola - 60, tudoNoLugar() + 15)), D.vezes, null, () => { if (D && D.ia) comecarPartida(); }); }
-    pintar();
-  }
-  function comecarPartida() {
-    D.fase = 'jogo'; D.minuto = 0; D.vezes = 60; D.golVisto = 0;
-    dia.parar(); dia.soTorcidas = true;
-    verNossoSetor();
-    status(`Bola rolando: ${D.casa.nome} × ${D.vis.nome}.`);
-    pintar();
-  }
-  function placarTxt(ate) {
-    let c = 0, f = 0;
-    for (const gl of D.gols) if (gl.min <= ate) { if (gl.lado === 'c') c++; else f++; }
-    return `${D.casa.nome} ${c} × ${f} ${D.vis.nome}`;
-  }
-  function andarPartida(dtReal) {
-    if (!D || !D.ia || D.fase !== 'jogo' || D.minuto == null) return;
-    /* a 60× um minuto de jogo por segundo; o intervalo passa num instante */
-    D.minuto = Math.min(FIM_DO_JOGO, D.minuto + dtReal * D.vezes / 60);
-    dia.t = D.plano.bola + D.minuto * 60 + (D.minuto > 45 ? 15 * 60 : 0);
-    while (D.golVisto < D.gols.length && D.gols[D.golVisto].min <= D.minuto) {
-      const gl = D.gols[D.golVisto++];
-      status(`${Math.round(gl.min)}' — gol do ${gl.lado === 'c' ? D.casa.nome : D.vis.nome}! ${placarTxt(gl.min)}`);
+    quadroInvestida(t);
+    if (F.fase === 'espera' || F.fase === 'montando') return;
+    dia.t = Math.max(F.plano.inicio, t);
+    /* a partida: o minuto sai do relógio (com o intervalo) */
+    if (t < bola - 20 * 60) F.minuto = undefined;
+    else if (t < bola) { F.minuto = null; F.intervalo = false; }
+    else {
+      const sj = t - bola;
+      F.intervalo = sj >= 45 * 60 && sj < 45 * 60 + INTERVALO_S;
+      F.minuto = Math.min(FIM_DO_JOGO, sj < 45 * 60 ? sj / 60 : F.intervalo ? 45 : (sj - INTERVALO_S) / 60);
+      avisarGols(F.gols, F.minuto, F.casa, F.vis);
+      if (F.minuto >= 90 && !F.avisouFim) {
+        F.avisouFim = true;
+        const pl = F.placar;
+        avisar({ voz: 'Fim de jogo', texto: pl ? `${F.casa.nome} ${pl.gc} × ${pl.gf} ${F.vis.nome}. As torcidas saindo do estádio.` : `${F.titulo}: as torcidas saindo do estádio.` });
+      }
     }
-    if (D.minuto >= FIM_DO_JOGO) acabouPartida();
+    /* a briga do mundo entre elas: o aviso na hora */
+    const br = F.briga;
+    if (br && !F.avisouBriga && t >= br.tIni) {
+      F.avisouBriga = true;
+      avisar({ voz: 'Briga na cidade', classe: 'ruim', texto: `A ${br.a.t.nome} caiu em cima da ${br.v.t.nome}${br.naPorta ? ' na porta da sede dela' : ' na rua'}!`,
+               botao: { rot: 'Ver', fn: () => C().voarPara(br.P[0], br.P[1], 38 * M, 0.9, undefined, 0) } });
+    }
+    if (t >= F.t1 && !(F.inv && F.inv.fase !== 'fim')) fechar();
   }
-  function acabouPartida() {
-    D.fase = 'volta'; D.minuto = FIM_DO_JOGO;
-    const pl = D.placar;
-    status(pl ? `Fim de jogo: ${D.casa.nome} ${pl.gc} × ${pl.gf} ${D.vis.nome}. As torcidas saindo — é só voltar pra sede.` : 'Fim de jogo. As torcidas saindo — é só voltar pra sede.');
-    pintar();
+
+  /* ======================================================
+     A NOSSA INVESTIDA NUM JOGO DA CIDADE (o dono: "se tiver planejado, vai
+     em direção ao que quer atacar seja na pista ou concentração"): o
+     planejamento marcou — a concentração deles, na porta da sede antes de
+     saírem, ou a pista, a rua a caminho do estádio. O nosso bonde junta na
+     nossa porta, sai na hora certa e anda pela rua e pela calçada até o
+     alvo (o relógio desacelera na chegada, com a câmera atrás dele); a
+     decisão do planejamento ("Ir pra Guerra", o duelo e o simular de
+     sempre, feed.js) cai quando ele chega, com o texto do que se vê; depois
+     de respondida, ele volta pra sede
+     ====================================================== */
+  /* (o bonde da investida é o efetivo do ataque inteiro, até 400 como no dia de jogo; de 6 em 6 lado a lado quando passa de 120) */
+  const MARCHA_INV = 1.35, MAX_INV = 400, JUNTA_S = 8 * 60, ESPERA_S = 40;
+  function investidaNoFundo(e, j, p, caminhoNaRua) {
+    const PL = TO.planejamento;
+    if (!PL || !PL.outrosJogosNaCidade || !PL.investidaDe) return;
+    let og = null;
+    try { og = PL.outrosJogosNaCidade(e, e.data.semana).find(o => (o.dia || 6) === e.data.dia && o.casa.id === j.casa.id && o.vis.id === j.vis.id); } catch (err) { og = null; }
+    const inv = og && PL.investidaDe(e, og.chave);
+    if (!inv || !inv.alvo || inv.jogada) return;
+    const alvo = p.vivos.find(b => b.t.id === inv.alvo);
+    const porta = api.sedeDe ? api.sedeDe(e.torcida.id) : null;
+    if (!alvo || !alvo.rua || !porta) return;
+    const onde = inv.como === 'ida' ? (inv.olheiro === 'praca' ? 'concentracao' : 'pista') : 'arredores';
+    const Q = {};
+    let P, tEnc;
+    if (onde === 'concentracao') {
+      /* na porta da sede deles, com a concentração ainda nas rodinhas */
+      alvo.rua.ponto(Math.min(alvo.rua.L, 8 * M), Q);
+      P = [Q.x, Q.z]; tEnc = alvo.sai - 4 * 60;
+    } else {
+      /* na rota deles: na pista, perto da metade; nos arredores, antes da boca do portão */
+      const sAlvo = onde === 'pista' ? alvo.rua.L * 0.45 : Math.max(0, alvo.rua.L - 60 * M);
+      alvo.rua.ponto(sAlvo, Q);
+      P = [Q.x, Q.z];
+      /* a hora em que a cabeça deles passa ali (a conta do plano, ao contrário) */
+      let a = alvo.sai, b = alvo.chega || alvo.sai + 3600;
+      for (let k = 0; k < 40; k++) { const m = (a + b) / 2; if (p.cabeca(alvo, m) < sAlvo) a = m; else b = m; }
+      tEnc = b - 20;
+    }
+    const tr = caminhoNaRua(p, porta.x + porta.fx * 2 * M, porta.y + porta.fy * 2 * M, P[0], P[1]);
+    if (!tr || tr.L < 5 * M) return;
+    const anda = tr.L / M / MARCHA_INV;
+    const tSai = tEnc - anda - ESPERA_S, tJunta = tSai - JUNTA_S;
+    /* (uma investida que já passou da hora no relógio de agora não sai) */
+    if (vida.relogio.minuto * 60 > tSai) return;
+    let n = 20;
+    try { n = Math.max(6, Math.min(MAX_INV, Math.round(PL.efetivoDoAtaque(e).vao || 20))); } catch (err) { n = 20; }
+    const cc = TO.mundo && TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(e.torcida) : { cor: '#777', cor2: '#eee', cor3: null };
+    const gente = [], lado = n > 120 ? 6 : 4;
+    for (let i = 0; i < n; i++) gente.push({ i, fila: Math.floor(i / lado), col: (i % lado) - (lado - 1) / 2, d: { nome: `${e.torcida.nome} (investida ${i + 1})`, spawn: 'investida', torcida: e.torcida.nome,
+      cor: cc.cor, cor2: cc.cor2, cor3: cc.cor3, lado: 'mandante', lider: i === 0, vivo: true, x: porta.x, y: porta.y, alt: 0, rumo: 0, passada: 1.15, derrubado: 0, golpe: 0, apanhou: 0,
+      atordoado: 0, esquivou: 0, tremor: 0, defendendo: 0, hostil: 0, inimigoPerto: 0, chamou: -99, linha: 'frente', mundo: true } });
+    const filas = Math.ceil(n / lado);
+    D.inv = { alvo, onde, P, tEnc, tSai, tJunta, tr, gente, filas, chave: og.chave, fase: 'espera', viu: false, tVolta: null, sVolta: 0,
+              camera: null, voouEm: 0, seguir: true, deixou: null, chegouVista: false };
+    /* a decisão do planejamento cai na hora do encontro, com o texto do que se vê */
+    retimarGuerra(e, og.chave, tEnc, alvo, onde);
+    /* a chegada se vê: os últimos 25 minutos antes do encontro, devagar */
+    const r = vida.relogio;
+    if (r.janela) r.janela(Math.max(0, tEnc / 60 - 25), tEnc / 60 + 1, 380);
+  }
+  /* A DECISÃO NA HORA DO ENCONTRO: o recado do planejamento (feed.js, "Hoje é
+     o dia… Ir pra Guerra") cai quando o nosso bonde chega no alvo */
+  function retimarGuerra(e, chave, tEnc, alvo, onde) {
+    const fila = e.feedFila || [];
+    const m = fila.find(x => x && x.kind === 'guerra' && x.dados && x.dados.tipo === 'praca' && x.dados.chaveJogo === chave);
+    if (!m) return;
+    m.hora = hhmm(tEnc);
+    const nome = alvo.t.nome;
+    m.texto = onde === 'concentracao' ? `Chegamos na esquina da sede da ${nome}. A concentração deles tá toda na porta, antes de sair pro estádio — é agora.`
+      : onde === 'pista' ? `A gente tá na rua, esperando o bonde da ${nome} passar a caminho do estádio. Eles tão chegando — é agora.`
+      : `A gente tá perto do estádio, no caminho da ${nome}. Eles tão chegando nos arredores — é agora.`;
+    /* a fila de hoje na ordem das horas (a decisão não pode esperar atrás de uma mais tarde) */
+    const hoje = e.data.absoluto || 0, min = x => { const a = /^(\d\d?):(\d\d)/.exec(String(x.hora || '')); return a ? +a[1] * 60 + +a[2] : 0; };
+    const doDia = fila.filter(x => x.quando && x.quando.abs === hoje);
+    const resto = fila.filter(x => !(x.quando && x.quando.abs === hoje));
+    doDia.sort((a, b) => min(a) - min(b));
+    fila.length = 0; fila.push(...doDia, ...resto);
+  }
+  /* A CÂMERA DA INVESTIDA: na nossa porta quando o bonde junta (com o
+     aviso), atrás da cabeça dele na caminhada, e na chegada no ponto do
+     encontro, de trás da gente, com o lado de onde eles vêm na frente —
+     é ali que a decisão cai. Quem mexe na câmera no meio do caminho fica
+     com ela (o bonde deixa de ser seguido) */
+  const QC = {};
+  function cameraDaInvestida(I, cabeca, h0) {
+    const Cn = C();
+    if (!Cn || !Cn.orb || I.fase === 'volta' || I.fase === 'fim') return;
+    const agora = performance.now(), ob = Cn.orb.alvo;
+    if (!I.viu) {
+      I.viu = true;
+      I.tr.ponto(Math.min(I.tr.L, 6 * M), QC);
+      Cn.voarPara(QC.x, QC.z, 50 * M, 0.95, Math.atan2(-QC.tx, -QC.tz), 0);
+      I.voouEm = agora; I.deixou = null;
+      const onde = I.onde === 'concentracao' ? 'na porta da sede deles, antes de saírem' : I.onde === 'pista' ? 'na rota deles pro estádio' : 'perto do estádio';
+      avisar({ voz: 'Investida', texto: `O nosso bonde tá juntando na porta da sede pra ir pra cima da ${I.alvo.t.nome}, ${onde}.` });
+      return;
+    }
+    /* a chegada: o ponto do encontro */
+    if (I.fase === 'chegou' && !I.chegouVista) {
+      I.chegouVista = true;
+      I.tr.ponto(I.tr.L, QC);
+      Cn.voarPara(I.P[0] - QC.tx * 6 * M, I.P[1] - QC.tz * 6 * M, 58 * M, 0.88, Math.atan2(-QC.tx, -QC.tz), 0);
+      I.voouEm = agora; I.deixou = null;
+      return;
+    }
+    /* a caminhada: a câmera vai atrás da cabeça (depois do voo; quem mexeu, manda) */
+    if (I.fase !== 'anda' || !I.seguir || agora - I.voouEm < 1400) return;
+    if (I.deixou && Math.hypot(ob.x - I.deixou.x, ob.z - I.deixou.z) > 4 * M) { I.seguir = false; return; }
+    I.tr.ponto(Math.max(0, Math.min(I.tr.L, cabeca - h0 * 0.35)), QC);
+    ob.x += (QC.x - ob.x) * 0.12; ob.z += (QC.z - ob.z) * 0.12;
+    I.deixou = { x: ob.x, z: ob.z };
+    if (Cn.pedir) Cn.pedir();
+  }
+  /* o nosso bonde da investida, a cada quadro (s do dia: o relógio da vida) */
+  const QI = {};
+  function quadroInvestida(t) {
+    const I = D && D.inv, Cn = C();
+    if (!I || !Cn || !Cn.vida) return;
+    const e = E();
+    /* respondida a decisão (foi, simulou ou deixou), o bonde volta */
+    if (I.fase !== 'volta' && I.fase !== 'fim') {
+      const m = e && (e.feed || []).find(x => x && x.kind === 'guerra' && x.dados && x.dados.tipo === 'praca' && x.dados.chaveJogo === I.chave);
+      if (m && m.respondido && !document.body.classList.contains('em-cena')) { I.fase = 'volta'; I.tVolta = t + 20; }
+    }
+    if (t < I.tJunta || I.fase === 'fim') { if (Cn.vida.extras.length) Cn.vida.extras = []; return; }
+    const L = I.tr.L, passo = 1.1 * M, lado = 0.85 * M, h0 = I.filas * passo;
+    let cabeca, volta = false;
+    if (I.fase === 'volta' && I.tVolta != null && t >= I.tVolta) {
+      volta = true;
+      cabeca = Math.min(L, I.sParou || L) - (t - I.tVolta) * MARCHA_INV * M;
+      if (cabeca + h0 < 0) { I.fase = 'fim'; Cn.vida.extras = []; return; }
+    } else {
+      cabeca = Math.min(L - 2 * M, h0 + Math.max(0, t - I.tSai) * MARCHA_INV * M);
+      I.sParou = cabeca;
+      if (I.fase === 'espera' && t >= I.tSai) I.fase = 'anda';
+      if (I.fase === 'anda' && cabeca >= L - 2 * M - 1e-3) I.fase = 'chegou';
+    }
+    cameraDaInvestida(I, cabeca, h0);
+    const ds = [];
+    for (const g of I.gente) {
+      /* na volta a última fila vai na frente */
+      const s = volta ? cabeca + g.fila * passo : cabeca - g.fila * passo;
+      if (s < 0) continue;
+      I.tr.ponto(Math.min(L, s), QI);
+      const lat = g.col * lado;
+      const d = g.d, x = QI.x + QI.tz * lat, z = QI.z - QI.tx * lat;
+      const mx = x - d.x, mz = z - d.y;
+      if (mx * mx + mz * mz > 1e-4) d.rumo = Math.atan2(mx, mz);
+      else if (I.fase === 'chegou') d.rumo = Math.atan2(I.P[0] - x + (volta ? 0 : 0.01), I.P[1] - z);
+      d.x = x; d.y = z; d.alt = Cn.vida.chao ? Cn.vida.chao(x, z) : 0;
+      ds.push(d);
+    }
+    Cn.vida.extras = ds;
+  }
+  /* o jogo da cidade no fundo hoje (o relógio da vida não pula o dia) */
+  const jogoNoFundoHoje = () => !!(D && D.fundo);
+  /* o recado do olheiro dos saves de antes (o jogo da cidade com pergunta): vira o jogo no fundo */
+  function abrirJogoDaCidade(m) {
+    const d = m && m.dados, Mu = TO.mundo;
+    if (!d || !Mu) return false;
+    const casa = Mu.time(d.casa), vis = Mu.time(d.vis);
+    if (!casa || !vis) return false;
+    jogoNoFundo({ casa, vis, hora: d.hora, comp: d.comp, estadio: d.estadio });
+    return true;
   }
 
   /* ======================================================
@@ -513,14 +846,7 @@ export function criarDia3d(api, vida, g = {}) {
     if (c.fim) c.fim();
   }
   function pular() {
-    /* no jogo da cidade, com a bola rolando: o apito final */
-    if (D && D.ia && D.fase === 'jogo') {
-      D.minuto = FIM_DO_JOGO; D.golVisto = D.gols.length;
-      dia.t = D.plano.bola + (FIM_DO_JOGO + 15) * 60;
-      acabouPartida();
-      return;
-    }
-    if (!D || !D.corrida) return;
+    if (!D || D.fundo || !D.corrida) return;
     dia.irPara(Math.max(dia.t, D.corrida.alvo));
     terminarCorrida();
   }
@@ -721,9 +1047,9 @@ export function criarDia3d(api, vida, g = {}) {
   }
   function apito() {
     if (!D) return;
-    D.partida = null;
+    D.partidaVista = D.partida; D.partida = null; D.apitado = true;
     status('Fim de jogo.');
-    pintar();
+    pintar(); pintarPlacar();
   }
 
   /* ======================================================
@@ -848,18 +1174,28 @@ export function criarDia3d(api, vida, g = {}) {
     const dtq = antesQ ? Math.min(0.25, Math.max(0, (agora - antesQ) / 1000)) : 0.016;
     antesQ = agora;
     if (!dia || !dia.plano) return;
-    /* o jogo da cidade: o relógio do dia é o minuto da partida */
-    if (D.ia) andarPartida(dtq);
+    /* o jogo da cidade no fundo: o relógio é o da vida da praça (a luz é dela) */
+    if (D.fundo) {
+      quadroFundo();
+      if (D && agora - ultimo > 200) { ultimo = agora; pintarPlacar(); }
+      return;
+    }
     /* a partida: o relógio do dia é o minuto dela (a bola, mais o que rolou) */
     if (D.partida && TO.jogoAoVivo && D.partida.dados) {
       const min = TO.jogoAoVivo.minuto(D.partida.dados);
-      if (min != null) dia.t = D.plano.bola + min * 60;
+      /* (com o intervalo: o segundo tempo começa 15 minutos depois do fim do primeiro) */
+      if (min != null) dia.t = D.plano.bola + min * 60 + (min > 45 ? INTERVALO_S : 0);
     }
     if (D.corrida && dia.t >= D.corrida.alvo) terminarCorrida();
     /* a luz da hora do dia */
     const h = dia.t / 3600;
     if (luzVista == null || Math.abs(h - luzVista) > 0.01) { luzVista = h; const Cn = C(); if (Cn && Cn.vida) Cn.vida.hora(h); }
-    if (agora - ultimo > 200) { ultimo = agora; pintarHora(); if (D.partida && !D.invadiu) { const n = viasDaInvasao().length, i = hud && hud.querySelector('.j3d-dia-invadir'); if (i && i.hidden === !!n) pintar(); } }
+    if (agora - ultimo > 200) {
+      ultimo = agora; pintarHora(); pintarFases(); pintarPlacar();
+      const st = D.j && estadoDoPlacar();
+      if (st && st.gols) avisarGols(st.gols, st.ate, D.j.mandante, D.j.visitante);
+      if (D.partida && !D.invadiu) { const n = viasDaInvasao().length, i = hud && hud.querySelector('.j3d-dia-invadir'); if (i && i.hidden === !!n) pintar(); }
+    }
   }
 
   /* ======================================================
@@ -867,19 +1203,22 @@ export function criarDia3d(api, vida, g = {}) {
      ====================================================== */
   function fechar() {
     if (!D) return;
-    const eraIa = D.ia, tDia = dia && dia.plano ? dia.t : null;
+    const eraFundo = !!D.fundo, tDia = dia && dia.plano ? dia.t : null;
     D = null;
     if (laco) { cancelAnimationFrame(laco); laco = 0; }
-    luzVista = null; antesQ = 0;
-    if (dia) { dia.soTorcidas = false; dia.sair(); }
+    luzVista = null; antesQ = 0; fasesVistas = ''; placarVisto = '';
+    const Cn = C();
+    if (Cn && Cn.vida) { Cn.vida.extras = []; }
+    if (dia) { dia.soTorcidas = false; dia.esconder(false, true); dia.sair(); }
+    if (Cn && Cn.vida) Cn.vida.diaNoFundo = false;
     if (hud) hud.hidden = true;
+    if (placar) placar.hidden = true;
     for (const m of document.querySelectorAll('.j3d-dia-modal')) m.remove();
-    /* o jogo da cidade: o dia da praça segue da hora em que ele acabou
-       (o que passou lá passou aqui), e o tempo do jogo volta a andar */
-    if (eraIa) {
-      if (tDia != null && vida.relogio && vida.relogio.definir) vida.relogio.definir(Math.max(vida.relogio.minuto, Math.min(23 * 60, Math.round(tDia / 60))));
-      if (TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('jogo-praca');
-    }
+    if (eraFundo) return;
+    /* O NOSSO DIA DE JOGO: o dia da praça segue da hora em que ele acabou
+       (o que passou lá passou aqui: a volta pra sede é depois do apito) */
+    if (tDia != null && vida.relogio && vida.relogio.definir) vida.relogio.definir(Math.max(vida.relogio.minuto, Math.min(23 * 60, Math.round(tDia / 60))));
+    if (TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('jogo-praca');
     if (g.travarPraca) g.travarPraca(false);
   }
 
@@ -890,7 +1229,7 @@ export function criarDia3d(api, vida, g = {}) {
      a posição é sempre a do líder), ou da cabeça dele sem o rótulo */
   const PF = {};
   function falante() {
-    if (!D || D.ia || !D.plano || !D.nosso || D.emCena || D.avisoNoAlto || !dia || !dia.plano) return null;
+    if (!D || D.fundo || !D.plano || !D.nosso || D.emCena || D.avisoNoAlto || !dia || !dia.plano) return null;
     const b = D.nosso, d = b.gente && b.gente[0] && b.gente[0].d;
     if (!d) return null;
     const r = b.rotulo ? b.rotulo.position : null;
@@ -906,20 +1245,27 @@ export function criarDia3d(api, vida, g = {}) {
 
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
-    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque,
+    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
     get falante() { return falante(); },
-    get ativo() { return !!(D && D.plano && dia && dia.plano); },
-    /* o jogo da cidade no ar (ou montando): os recados esperam a volta pra sede */
-    get jogoDaCidade() { return !!(D && D.ia); },
-    get montando() { return !!D && !D.plano; },
-    get hora() { return D && dia && dia.plano ? dia.t : null; },
+    /* o NOSSO dia de jogo no ar (o jogo da cidade no fundo não conta: a vida da praça segue) */
+    get ativo() { return !!(D && !D.fundo && D.plano && dia && dia.plano); },
+    /* o jogo da cidade no fundo hoje (o relógio da vida não pula o dia) */
+    get jogoNoFundoHoje() { return jogoNoFundoHoje(); },
+    get montandoNoFundo() { return !!(D && D.fundo && !D.plano); },
+    get jogoDaCidade() { return false; },
+    get montando() { return !!D && !D.fundo && !D.plano; },
+    get hora() { return D && !D.fundo && dia && dia.plano ? dia.t : null; },
     /* o nosso bonde ainda longe do portão (a briga da ida atrasou a caminhada) */
     get nossoNaRua() { return !!(D && D.nosso && dia && dia.plano && dia.t < D.nosso.chega - 20); },
     /* pro teste */
     get estado() {
       if (!D) return null;
       const b = D.nosso;
-      return { ia: !!D.ia, minuto: D.minuto, placar: D.placar, reg: D.reg ? { a: D.reg.a.nome, b: D.reg.b.nome, ganhouA: D.reg.ganhouA } : null,
+      const I = D.inv;
+      return { ia: !!D.ia, fundo: !!D.fundo, minuto: D.minuto, placar: D.placar, reg: D.reg ? { a: D.reg.a.nome, b: D.reg.b.nome, ganhouA: D.reg.ganhouA } : null,
+               janela: D.fundo ? { t0: D.t0 != null ? hhmm(D.t0) : null, t1: D.t1 != null ? hhmm(D.t1) : null } : null,
+               investida: I ? { alvo: I.alvo.t.sigla, onde: I.onde, fase: I.fase, enc: hhmm(I.tEnc), sai: hhmm(I.tSai), m: Math.round(I.tr.L / M), n: I.gente.length } : null,
+               placarTV: placar && !placar.hidden ? placar.textContent.replace(/\s+/g, ' ').trim() : null,
                praca: D.nome, fora: D.fora, fase: D.fase, hora: dia && dia.plano ? hhmm(dia.t) : null, t: dia && dia.plano ? dia.t : null, corrida: D.corrida ? hhmm(D.corrida.alvo) : null,
                plano: !!D.plano, nosso: b ? { sigla: b.t.sigla, n: b.n, naRua: b.naRua, inicio: b.inicio.tipo + (b.inicio.t ? ':' + b.inicio.t.sigla : ''), lado: b.lado, setor: b.setor, estado: dia.estadoDo(b, 0) } : null,
                briga: D.briga ? { a: D.briga.a.t.sigla, v: D.briga.v.t.sigla, ini: hhmm(D.briga.tIni), aplicada: !!D.briga.aplicado, venceA: D.briga.venceA } : null,

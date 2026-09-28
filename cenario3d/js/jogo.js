@@ -44188,21 +44188,31 @@ TO.diaJogo.ponte = (function(){
   function cenaSumiu(){
     return !!(J && J.fase==='fim' && cv && !cv.getClientRects().length);
   }
+  /* A MÁQUINA LENTA (o dono, jogando o jogo 3D num navegador sem placa de
+     vídeo — "Microsoft Basic Render Driver", 1 a 3 quadros por segundo):
+     o passo da briga segue de no máximo 0,05 s — ninguém teleporta —, mas
+     o quadro longo dá até 4 passos, e a briga anda perto do tempo de
+     verdade (antes, a 1 quadro por segundo, ela andava 20 vezes mais
+     devagar e parecia não sair do lugar). A aba que perdeu o foco volta
+     sem salto grande: no máximo 0,2 s de uma vez */
+  const PASSO_MAX = 0.05, PASSOS_MAX = 4;
   function quadro(agora){
     if(!rodando) return;
     if(cenaSumiu()){ rodando=false; return; }
-    let dt=(agora-ant)/1000; ant=agora;
-    if(dt>0.05) dt=0.05;           // aba que perdeu foco não teleporta ninguém
-    dtQuadro=dt;
+    const bruto=Math.max(0, (agora-ant)/1000); ant=agora;
+    const passos=Math.max(1, Math.min(PASSOS_MAX, Math.ceil(bruto/PASSO_MAX - 1e-9)));
+    const dt=Math.min(PASSO_MAX, bruto/passos);
+    dtQuadro=dt*passos;
     try{
       /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
       teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
       if(J && !ED.ativo){
-        for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
+        for(let p=0; p<passos && !(J.acabou && J.fase==='acabando'); p++)
+          for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
         /* a rua não para porque a briga começou: quem ainda estava andando
            chega no meio dela */
         if(aCadaQuadro)
-          for(const b of (aCadaQuadro(dt*velocidade, J) || [])) C.reforcar(J, b);
+          for(const b of (aCadaQuadro(dt*passos*velocidade, J) || [])) C.reforcar(J, b);
       }
       /* a briga pode acabar sozinha: um lado sem ninguém de pé. Quem
          decide isso é o combate; aqui só se abre a tela. */
@@ -47158,6 +47168,7 @@ TO.icones = (function(){
   }
 
   function entrarNoJogo(partidaNova){
+    if(ITN && ITN.e !== E()) descartarLinha();
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.add('oculto');
     $('jogo').classList.remove('oculto');
@@ -47735,11 +47746,28 @@ TO.icones = (function(){
      ficam desenhadas na mensagem como registro. Nada disso vai pro
      save: é DOM, e DOM não se serializa. */
   let ITN = null;      // {it, msg, ponto, travado, timer, esperando, raiz}
-  const itnProntos = {};
+  /* A LINHA ENCERRADA FICA NA MENSAGEM QUE A ABRIU, pela MENSAGEM e não
+     pelo número dela (conserto de 28/09/2026, o dono: "quando o jogo
+     pergunta se eu quero ver o itinerário de algum outro jogo na cidade,
+     buga"): guardada pelo id, a linha do nosso jogo aparecia no cartão
+     de outra mensagem com o mesmo número — a do save carregado por cima,
+     a do jogo novo aberto na mesma página — com o placar e a volta do
+     estádio de um jogo que não era dela */
+  const itnProntos = new WeakMap();
+  const daLinha = m => !!(ITN && ITN.msg && m && ITN.msg === m);
+  /* a linha de outra partida (o save carregado por cima dela, o jogo novo
+     aberto na mesma página) sai sem fechar nada da partida de agora */
+  function descartarLinha(){
+    if(!ITN) return;
+    clearTimeout(ITN.timer);
+    if(TO.jogo3d && TO.jogo3d.dia) TO.jogo3d.dia.fechar();
+    ITN = null;
+    soltarTudo('itinerario');
+  }
 
   const estadoDaMsg = (e, m) =>
-    (ITN && ITN.msg && ITN.msg.id === m.id) ? 'itn'
-    : itnProntos[m.id] ? 'itn-fim'
+    daLinha(m) ? 'itn'
+    : itnProntos.has(m) ? 'itn-fim'
     /* o jornal aberto é estado da mensagem: sem isso o repinte do feed
        montava o cartão de novo e a página voltava a fechar */
     : m.kind === 'rodada' ? (m.gzAberto ? 'gz-aberto' : 'gz')
@@ -48032,7 +48060,10 @@ TO.icones = (function(){
     }, via ? [via] : null);
     return true;
   }
-  TO.jogoAoVivo = {minuto: minutoExato, invadir: invadirNoEstadio};
+  TO.jogoAoVivo = {minuto: minutoExato, invadir: invadirNoEstadio,
+    /* o placar da TV do jogo 3D (dia3d.js) pausa e acelera a partida pelas
+       mesmas portas do botão da barra de minutos */
+    pausar: m => alternarPausaPartida(m), vel: m => alternarVelPartida(m)};
 
   /* ESPAÇO pausa e solta a partida ao vivo — só quando ela existe,
      fora de cena de briga e sem campo de texto em foco */
@@ -48488,7 +48519,7 @@ TO.icones = (function(){
     const e = E();
     const it = TO.itinerario.montar(e, msg);
     if(!it) return false;
-    ITN = {it, msg, ponto:-1, travado:false, timer:null, esperando:null,
+    ITN = {it, msg, e, ponto:-1, travado:false, timer:null, esperando:null,
            /* O EFETIVO ANDA COM A LINHA (régua do dono, 20/08/2026): a
               caravana parte com o que tem e cada baixa some do número
               que chega no próximo ponto. Vale pros dois lados. */
@@ -48571,11 +48602,46 @@ TO.icones = (function(){
     return true;
   }
 
+  /* A HORA DA LINHA É A DA CIDADE (o dono, 28/09/2026: "corrija a hora do
+     itinerário pra bater com o 3D"): com o dia de jogo em 3D (dia3d.js),
+     cada fase do dia do jogo marca a hora em que a cidade faz ela — a
+     concentração, a bola rolando, o apito final. `h`: segundos do dia de
+     cada fase ({ida, jogo, volta}); as da estrada (véspera, volta no dia
+     seguinte) ficam como estão */
+  function itnHorasDaCidade(h){
+    if(!ITN || !h) return;
+    const hhmm = TO.itinerario.hhmm;
+    for(const p of ITN.it.paradas){
+      const seg = p.id === 'ida' ? h.ida : p.jogo ? h.jogo : p.id === 'volta' ? h.volta : null;
+      if(seg == null || (p.dia || 0) !== 0) continue;
+      /* (o minuto cortado, como o relógio da cidade mostra) */
+      p.min = Math.floor(seg / 60 + 1e-6); p.hora = hhmm(p.min);
+    }
+    for(const b of ITN.pontos.children){
+      const q = ITN.it.paradas[+b.dataset.i];
+      if(q) b.title = `${q.hora} · ${q.nome}`;
+    }
+    itnPintar();
+  }
+  /* a linha em números (o painel do dia do jogo 3D desenha ela enxuta,
+     numa faixa, no lugar do balão) */
+  function itnResumo(){
+    if(!ITN || ITN.e !== E()) return null;
+    const ef = ITN.it.efetivo || {};
+    return {ponto: ITN.ponto, dias: ITN.it.dias, travado: ITN.travado,
+            paradas: ITN.it.paradas.map(p=>({id:p.id, nome:p.nome, hora:p.hora, dia:p.dia||0,
+                                              jogo:!!p.jogo, brigou:!!p.brigou,
+                                              rotDia: ITN.rotDia && ITN.rotDia[p.dia] ? ITN.rotDia[p.dia].split(' · ')[0] : ''})),
+            nos: ITN.nos, eles: ITN.eles, nomeDeles: ef.nomeDeles || '', temDeles: !!ef.eles,
+            escolta: itnEscoltaAtiva(), nomeEscolta: ITN.escolta ? ITN.escolta.nome : '',
+            estado: ITN.estado ? ITN.estado.textContent : ''};
+  }
+
   /* o cartão da mensagem chama isto: se a linha é desta mensagem, ela
      vem pra cá inteira, com estado e tudo */
   function itnNaMensagem(m){
-    if(ITN && ITN.msg && ITN.msg.id === m.id) return ITN.raiz;
-    return itnProntos[m.id] || null;
+    if(daLinha(m)) return ITN.raiz;
+    return itnProntos.get(m) || null;
   }
 
   /* o símbolo do lugar: estrada é ônibus, concentração e pista são a
@@ -48950,7 +49016,7 @@ TO.icones = (function(){
        21/08/2026): a linha percorrida fica na própria mensagem do dia
        de jogo, e as brigas já saíram cada uma na mensagem delas. O que
        sai aqui é só a trava do relógio */
-    itnProntos[ITN.msg.id] = ITN.raiz;
+    itnProntos.set(ITN.msg, ITN.raiz);
     ITN = null;
     /* a notícia única do dia: as brigas do lote, somadas */
     TO.feed.fecharLote(E());
@@ -55822,6 +55888,25 @@ TO.icones = (function(){
   }
   const tempoPausado = () => pausasT.size > 0;
 
+  /* A TELA 3D QUE FICOU PRA TRÁS (o jogo 3D, 28/09/2026): o relógio do
+     dia em 3D anda por quadro, e na máquina lenta ele chega depois deste
+     aqui — o dia virava com o jogo da cidade no meio. A mensagem e a
+     virada esperam a tela chegar na hora (`ritmo.falta`). Enquanto ela
+     anda, o jogo espera; parada 5 s (a cidade presa por outro motivo), o
+     jogo segue sem ela */
+  const ESPERA_TELA_MAX = 5000;
+  let esperaTela0 = 0, faltaAntes = Infinity;
+  function telaAtrasada(){
+    const r = ritmo3d();
+    const f = r && r.falta ? r.falta(E()) : 0;
+    if(f <= 1){ esperaTela0 = 0; faltaAntes = Infinity; return 0; }
+    const agora = performance.now();
+    if(!esperaTela0 || f < faltaAntes - 0.5) esperaTela0 = agora;
+    faltaAntes = f;
+    if(agora - esperaTela0 > ESPERA_TELA_MAX){ esperaTela0 = 0; faltaAntes = Infinity; return 0; }
+    return f;
+  }
+
   function rodarTempo(){
     if(relogioTempo) return;
     const e0 = E(); if(!e0) return;
@@ -55831,6 +55916,8 @@ TO.icones = (function(){
       const e = E();
       if(!e || pausasT.size || TO.feed.travado(e)) return;
       const vel = TO.diaJogo.ponte.velocidade || 1;
+      const atras = telaAtrasada();
+      if(atras){ relogioTempo = setTimeout(tique, Math.max(30, Math.min(250, atras/vel))); return; }
       if(TO.feed.pendentes(e) > 0){
         const caiu = TO.feed.dropar(e);
         if(caiu && ritmo3d() && ritmo3d().caiu) ritmo3d().caiu(e, caiu);
@@ -55925,6 +56012,11 @@ TO.icones = (function(){
     if(pausasT.has('jogo-praca')){
       const D3 = TO.jogo3d && TO.jogo3d.dia;
       if(!D3 || !(D3.ativo || D3.montando)){ pausasT.delete('jogo-praca'); curas.push(_t('pausa do jogo da cidade sem o jogo')); }
+    }
+    /* o jogo da cidade montando no fundo (dia3d.js) segura o tempo uns segundos */
+    if(pausasT.has('jogo-da-cidade')){
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      if(!D3 || !D3.montandoNoFundo){ pausasT.delete('jogo-da-cidade'); curas.push(_t('pausa do jogo da cidade já montado')); }
     }
     if(pausasT.has('foco') && !document.hidden && document.hasFocus()){
       pausasT.delete('foco'); curas.push(_t('pausa de foco com a página em foco'));
@@ -57468,8 +57560,14 @@ TO.icones = (function(){
     estadoDaMsg: (e, m) => estadoDaMsg(e, m),
     /* o recado de outra torcida (Notícias → Mensagens), no balão do enviado dela */
     cartaoRecadoDeTorcida, recadoPedeResposta, atualizarBadges,
-    linhaDoDia: m => (ITN && ITN.msg && m && ITN.msg.id === m.id) ? ITN.raiz : null,
-    msgDaLinha: () => (ITN && ITN.msg) || null,
+    /* quem fala na mensagem, em texto (o aviso rápido do jogo 3D, recados3d.js) */
+    vozDaMsg: m => !m ? '' : m.voz === 'torcida' && m.dados && m.dados.nome ? m.dados.nome
+      : m.voz === 'eixo' && m.dados && m.dados.nome ? m.dados.nome : (ROT_VOZ[m.voz] || _t('Diplomacia')),
+    linhaDoDia: m => daLinha(m) ? ITN.raiz : null,
+    msgDaLinha: () => (ITN && ITN.msg && ITN.e === E()) ? ITN.msg : null,
+    /* a linha enxuta (o painel do dia de jogo em 3D) e a hora de cada fase pela cidade */
+    resumoDaLinha: () => itnResumo(),
+    horasDaLinha: h => itnHorasDaCidade(h),
     /* um recado a mais na linha do dia que está andando (a pergunta de onde
        a caravana desce, dia3d.js): devolve quem tira ele, ou null sem linha */
     recadoNaLinha: no => { if(!ITN || !ITN.recados || !no) return null; ITN.recados.insertBefore(no, ITN.recados.firstChild); return ()=>no.remove(); },

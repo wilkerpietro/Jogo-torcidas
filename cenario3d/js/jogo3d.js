@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=749d0dd612';
-import { criarVida, horaTxt } from './vida3d.js?v=749d0dd612';
-import { criarMapaDaCidade } from './mapa3d.js?v=749d0dd612';
-import { criarDia3d } from './dia3d.js?v=749d0dd612';
-import { criarRecados } from './recados3d.js?v=749d0dd612';
+import { CASCA } from './jogo_casca.js?v=4c330697b2';
+import { criarVida, horaTxt } from './vida3d.js?v=4c330697b2';
+import { criarMapaDaCidade } from './mapa3d.js?v=4c330697b2';
+import { criarDia3d } from './dia3d.js?v=4c330697b2';
+import { criarRecados } from './recados3d.js?v=4c330697b2';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=749d0dd612'), carregarCss('css/jogo3d.css?v=749d0dd612')]);
+  await Promise.all([carregarCss('css/jogo.css?v=4c330697b2'), carregarCss('css/jogo3d.css?v=4c330697b2')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=749d0dd612').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=4c330697b2').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=749d0dd612');
+  await carregarScript('js/jogo.js?v=4c330697b2');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=749d0dd612').catch(() => {});
-  await import('./bonecos3_global.js?v=749d0dd612');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=4c330697b2').catch(() => {});
+  await import('./bonecos3_global.js?v=4c330697b2');
   ligar(api);
   return TO.tela;
 }
@@ -96,68 +96,77 @@ function ligar(api) {
   const ritmo = {
     antesDaProxima: e => Math.max(vida.ligada ? vida.ritmo.antesDaProxima(e) || 0 : 0, recados.espera()),
     diaVazio: e => vida.ligada ? vida.ritmo.diaVazio(e) : 120,
-    caiu(e, m) { recados.chegou(e, m); if (vida.ligada) vida.ritmo.caiu(e, m); },
-    virouDia(e) { if (vida.ligada) vida.ritmo.virouDia(e); anunciarJogosDaCidade(e); }
+    /* (o que falta pra tela chegar na hora: o jogo espera) */
+    falta: e => vida.ligada && vida.ritmo.falta ? vida.ritmo.falta(e) : 0,
+    caiu(e, m) {
+      /* (a pergunta do olheiro que ficou na fila de um save de antes: responde sozinha, o jogo vai pro fundo) */
+      if (m && m.kind === 'jogo-praca' && !m.respondido && TO.feed.marcarResposta) {
+        TO.feed.marcarResposta(e, m.id, 'seguir', 'o jogo da cidade passa sozinho');
+        agendarJogosDaCidade(e);
+      }
+      recados.chegou(e, m); if (vida.ligada) vida.ritmo.caiu(e, m);
+    },
+    /* (o jogo da cidade de ontem sai; o de hoje entra depois da virada do relógio, que apaga as janelas) */
+    virouDia(e) { if (dia3d.jogoNoFundoHoje) dia3d.fechar(); if (vida.ligada) vida.ritmo.virouDia(e); horaDaPartida(e); agendarJogosDaCidade(e); }
   };
 
-  /* OS JOGOS DA CIDADE (o jogo 3D, 28/09/2026; o dono: "os demais jogos
-     na cidade entre times IA tem dia de jogo normalmente, com as torcidas
-     brigando ou não entre elas"). No dia de um jogo de dois outros clubes
-     na nossa praça (o calendário da praça: js/mundo/praca.js), o olheiro
-     avisa TRÊS HORAS ANTES DA BOLA — um recado com pergunta, que para o
-     tempo até a resposta: ver o dia na cidade (dia3d.js,
-     `abrirJogoDaCidade`: as torcidas saindo das sedes, a briga que o
-     mundo sorteou entre elas, se teve, a arquibancada e o placar) ou
-     seguir o dia. O recado entra na fila do dia NA HORA DELE (as do feed
-     já têm hora, em ordem: feed.js, `horasEmOrdem`), uma vez por jogo (a
-     chave). Dia de jogo nosso, não: a cidade é da nossa linha. E o
-     mandante precisa de torcida com sede no mapa (sem ela o dia não monta) */
-  const AVISO_ANTES = 180;
+  /* OS JOGOS DA CIDADE (o jogo 3D, 28/09/2026). Primeiro o olheiro avisava e
+     perguntava se o jogador queria ver o dia na cidade; o dono, jogando: "o
+     jogo não pergunta se eu quero acompanhar o que acontece em dia de
+     outros jogos na mesma cidade, o itinerário delas acontece de forma
+     automática no jogo". Agora, no dia de um jogo de dois outros clubes na
+     nossa praça (o calendário da praça: js/mundo/praca.js), o dia dele
+     monta NO FUNDO da vida da praça (dia3d.js, `jogoNoFundo`): os bondes
+     vão pro estádio enquanto as horas passam, a nossa torcida fica na sede
+     (ou vai pra investida que o planejamento marcou). Dia de jogo nosso,
+     não: a cidade é da nossa linha. E o mandante precisa de torcida com
+     sede no mapa (sem ela o dia não monta). Um jogo por dia (o primeiro) */
   const minutoDe = h => { const m = /^(\d\d?):(\d\d)/.exec(String(h || '')); return m ? +m[1] * 60 + +m[2] : null; };
   const hhmmDe = min => String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(Math.round(min) % 60).padStart(2, '0');
+  /* A PARTIDA CAI PERTO DA HORA DO JOGO (o dono, 28/09/2026: "corrija a hora
+     do itinerário pra bater com o 3D"): o recado "Hoje tem…, Iniciar
+     partida" chegava numa hora qualquer do dia (feed.js, `horasEmOrdem`,
+     espalha as do dia pela ordem da fila) — de manhã, pra um jogo à tarde —,
+     e a cidade pulava da manhã pra concentração. Agora ele cai 75 minutos
+     antes da bola, e a fila de hoje fica na ordem das horas */
+  function horaDaPartida(e) {
+    try {
+      const fila = e.feedFila || [], hoje = (e.data && e.data.absoluto) || 0, j = e.proximoJogo;
+      const m = fila.find(x => x && x.kind === 'partida' && x.quando && x.quando.abs === hoje);
+      const bola = j && j.dia === e.data.dia ? minutoDe(j.hora) : null;
+      if (!m || bola == null) return;
+      m.hora = hhmmDe(Math.max(8 * 60, bola - 75));
+      const doDia = fila.filter(x => x.quando && x.quando.abs === hoje), resto = fila.filter(x => !(x.quando && x.quando.abs === hoje));
+      doDia.sort((a, b) => (minutoDe(a.hora) || 0) - (minutoDe(b.hora) || 0));
+      fila.length = 0; fila.push(...doDia, ...resto);
+    } catch (err) { console.error('jogo 3D, a hora da partida:', err); }
+  }
   const jogamosHoje = e => {
     try {
       const ag = TO.competicoes && TO.competicoes.agendaDoClube ? TO.competicoes.agendaDoClube(e, e.torcida.clubeId) || [] : [];
       return ag.some(a => a.semana === e.data.semana && a.dia === e.data.dia);
     } catch (err) { return false; }
   };
-  function anunciarJogosDaCidade(e) {
+  let jogoDaCidadeDe = null;
+  function agendarJogosDaCidade(e) {
     try {
-      if (!e || !e.torcida || !e.temporada || !TO.praca || !TO.praca.jogosDaPraca || jogamosHoje(e)) return;
-      /* (a planta tem de estar na nossa praça: é dela que sai quem tem sede no mapa) */
+      if (!e || !e.torcida || !e.temporada || !TO.praca || !TO.praca.jogosDaPraca) return;
+      /* (o recado com pergunta dos saves de antes: responde sozinho, o jogo vai pro fundo) */
+      for (const m of e.feed || []) if (m && m.kind === 'jogo-praca' && !m.respondido && TO.feed.marcarResposta) TO.feed.marcarResposta(e, m.id, 'seguir', 'o jogo da cidade passa sozinho');
+      const chave = `${e.data.ano}|${e.data.semana}|${e.data.dia}`;
+      if (jogoDaCidadeDe === chave || jogamosHoje(e) || dia3d.ativo || dia3d.jogoNoFundoHoje) return;
+      /* (a planta tem de estar na nossa praça, com a vida ligada: é dela que sai quem tem sede no mapa) */
       const nossa = nomeDaPraca(e.torcida.mapa);
-      if (!nossa || !api.cenario || api.cenario.praca !== nossa) return;
-      const meu = e.torcida.clubeId, hoje = e.data.absoluto || 0;
+      if (!nossa || !api.cenario || api.cenario.praca !== nossa || !vida.ligada) return;
+      const meu = e.torcida.clubeId;
       const comSede = new Set((api.planta && api.planta.torcidas ? api.planta.torcidas() : []).filter(t => t.porta && t.clubeId).map(t => t.clubeId));
-      const jogos = TO.praca.jogosDaPraca(e).filter(j => j.dia === e.data.dia && j.casa.id !== meu && j.vis.id !== meu && comSede.has(j.casa.id));
-      if (!jogos.length) return;
-      let hosp = [];
-      try { hosp = TO.planejamento && TO.planejamento.hospedesDeHoje ? TO.planejamento.hospedesDeHoje(e) : []; } catch (err) { hosp = []; }
-      const fila = e.feedFila = e.feedFila || [];
-      for (const j of jogos) {
-        const chave = `jogo-praca|${e.data.ano}|${e.data.semana}|${e.data.dia}|${j.casa.id}|${j.vis.id}`;
-        if ((e.feed || []).some(m => m.chave === chave) || fila.some(m => m.chave === chave)) continue;
-        const bola = minutoDe(j.hora) ?? 16 * 60, min = Math.max(8 * 60, Math.min(21 * 60, bola - AVISO_ANTES));
-        const est = j.casa.estadio || 'estádio';
-        const nossos = hosp.filter(a => a.clube && a.clube.id === j.vis.id);
-        const reg = dia3d.brigaRegistrada ? dia3d.brigaRegistrada(e, j.casa, j.vis) : null;
-        let texto = `Chefe, hoje tem ${j.casa.nome} × ${j.vis.nome} às ${j.hora || '16:00'} (${est}).`;
-        if (nossos.length) texto += ` A ${nossos.map(a => a.torcida.nome).join(' e a ')} passou a noite aqui na sede e sai daqui pro estádio` +
-          (nossos.some(a => a.nivel === 'escolta' || a.nivel === 'churrasco') ? ', com os nossos de escolta.' : '.');
-        if (reg) texto += ` O clima entre a ${reg.a.nome} e a ${reg.b.nome} tá pesado.`;
-        texto += ' Quer ver o dia na cidade?';
-        const m = { id: e.feedSeq++, kind: 'jogo-praca', peso: 'decisao', voz: 'olheiro', tipo: '', chave,
-                    quando: { ano: e.data.ano, semana: e.data.semana, dia: e.data.dia, abs: hoje }, hora: hhmmDe(min),
-                    texto, dados: { casa: j.casa.id, vis: j.vis.id, hora: j.hora || '16:00', comp: j.comp, estadio: est },
-                    botoes: [{ id: 'ver', rot: 'Ver na cidade', acao: 'jogo-praca' }, { id: 'seguir', rot: 'Seguir o dia', acao: 'nada' }],
-                    links: null, respondido: null };
-        /* na fila do dia, na hora dele (depois das de antes, antes das de depois) */
-        let i = fila.findIndex(x => { const a = x.quando ? x.quando.abs : hoje; return a > hoje || (a === hoje && (minutoDe(x.hora) ?? 0) > min); });
-        if (i < 0) i = fila.length;
-        fila.splice(i, 0, m);
-      }
+      const j = TO.praca.jogosDaPraca(e).filter(x => x.dia === e.data.dia && x.casa.id !== meu && x.vis.id !== meu && comSede.has(x.casa.id))[0];
+      jogoDaCidadeDe = chave;
+      if (j) dia3d.jogoNoFundo({ casa: j.casa, vis: j.vis, hora: j.hora || '16:00', comp: j.comp, estadio: j.casa.estadio || '' });
     } catch (err) { console.error('jogo 3D, os jogos da cidade:', err); }
   }
+  /* o dia com jogo da cidade no fundo não é dia vazio (o relógio não pula ele) */
+  vida.temJogoHoje = () => dia3d.jogoNoFundoHoje;
   TO.jogo3d = {
     get ritmo() { return ritmo; },
     palcoDe: (local, cfg) => vida.palcoDe(local, cfg),
@@ -181,7 +190,8 @@ function ligar(api) {
     const quando = document.querySelector('.feed-barra .quando-txt');
     if (quando && relogio.parentElement !== quando.parentElement) quando.parentElement.insertBefore(relogio, quando);
     /* (com o dia de jogo no ar, a hora é a dele) */
-    const t = dia3d.hora != null ? horaTxt(dia3d.hora / 60) : horaTxt(vida.relogio.minuto);
+    /* (o minuto cortado, como o painel do dia e a linha mostram) */
+    const t = horaTxt(Math.floor((dia3d.hora != null ? dia3d.hora / 60 : vida.relogio.minuto) + 1e-6));
     if (t !== horaVista) { horaVista = t; relogio.textContent = t; }
   };
 
@@ -230,8 +240,8 @@ function ligar(api) {
     if (!e || !C || !C.vida) return;
     try { await C.vida.chamarPovo(); } catch (err) { console.error('jogo 3D: os bonecos não carregaram', err); }
     if (!vida.ligar(e.torcida.id)) { irPraSede(); return; }
-    /* (o jogo que abriu no meio do dia: o aviso do jogo da cidade de hoje) */
-    anunciarJogosDaCidade(e);
+    /* (o jogo que abriu no meio do dia: o jogo da cidade de hoje, no fundo) */
+    agendarJogosDaCidade(e);
     if (barNovo && barNovo.porta) {
       /* a câmera na rua, de frente pra fachada (o letreiro "BAR DO ...") */
       const q = barNovo.porta;
