@@ -97,8 +97,67 @@ function ligar(api) {
     antesDaProxima: e => Math.max(vida.ligada ? vida.ritmo.antesDaProxima(e) || 0 : 0, recados.espera()),
     diaVazio: e => vida.ligada ? vida.ritmo.diaVazio(e) : 120,
     caiu(e, m) { recados.chegou(e, m); if (vida.ligada) vida.ritmo.caiu(e, m); },
-    virouDia(e) { if (vida.ligada) vida.ritmo.virouDia(e); }
+    virouDia(e) { if (vida.ligada) vida.ritmo.virouDia(e); anunciarJogosDaCidade(e); }
   };
+
+  /* OS JOGOS DA CIDADE (o jogo 3D, 28/09/2026; o dono: "os demais jogos
+     na cidade entre times IA tem dia de jogo normalmente, com as torcidas
+     brigando ou não entre elas"). No dia de um jogo de dois outros clubes
+     na nossa praça (o calendário da praça: js/mundo/praca.js), o olheiro
+     avisa TRÊS HORAS ANTES DA BOLA — um recado com pergunta, que para o
+     tempo até a resposta: ver o dia na cidade (dia3d.js,
+     `abrirJogoDaCidade`: as torcidas saindo das sedes, a briga que o
+     mundo sorteou entre elas, se teve, a arquibancada e o placar) ou
+     seguir o dia. O recado entra na fila do dia NA HORA DELE (as do feed
+     já têm hora, em ordem: feed.js, `horasEmOrdem`), uma vez por jogo (a
+     chave). Dia de jogo nosso, não: a cidade é da nossa linha. E o
+     mandante precisa de torcida com sede no mapa (sem ela o dia não monta) */
+  const AVISO_ANTES = 180;
+  const minutoDe = h => { const m = /^(\d\d?):(\d\d)/.exec(String(h || '')); return m ? +m[1] * 60 + +m[2] : null; };
+  const hhmmDe = min => String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(Math.round(min) % 60).padStart(2, '0');
+  const jogamosHoje = e => {
+    try {
+      const ag = TO.competicoes && TO.competicoes.agendaDoClube ? TO.competicoes.agendaDoClube(e, e.torcida.clubeId) || [] : [];
+      return ag.some(a => a.semana === e.data.semana && a.dia === e.data.dia);
+    } catch (err) { return false; }
+  };
+  function anunciarJogosDaCidade(e) {
+    try {
+      if (!e || !e.torcida || !e.temporada || !TO.praca || !TO.praca.jogosDaPraca || jogamosHoje(e)) return;
+      /* (a planta tem de estar na nossa praça: é dela que sai quem tem sede no mapa) */
+      const nossa = nomeDaPraca(e.torcida.mapa);
+      if (!nossa || !api.cenario || api.cenario.praca !== nossa) return;
+      const meu = e.torcida.clubeId, hoje = e.data.absoluto || 0;
+      const comSede = new Set((api.planta && api.planta.torcidas ? api.planta.torcidas() : []).filter(t => t.porta && t.clubeId).map(t => t.clubeId));
+      const jogos = TO.praca.jogosDaPraca(e).filter(j => j.dia === e.data.dia && j.casa.id !== meu && j.vis.id !== meu && comSede.has(j.casa.id));
+      if (!jogos.length) return;
+      let hosp = [];
+      try { hosp = TO.planejamento && TO.planejamento.hospedesDeHoje ? TO.planejamento.hospedesDeHoje(e) : []; } catch (err) { hosp = []; }
+      const fila = e.feedFila = e.feedFila || [];
+      for (const j of jogos) {
+        const chave = `jogo-praca|${e.data.ano}|${e.data.semana}|${e.data.dia}|${j.casa.id}|${j.vis.id}`;
+        if ((e.feed || []).some(m => m.chave === chave) || fila.some(m => m.chave === chave)) continue;
+        const bola = minutoDe(j.hora) ?? 16 * 60, min = Math.max(8 * 60, Math.min(21 * 60, bola - AVISO_ANTES));
+        const est = j.casa.estadio || 'estádio';
+        const nossos = hosp.filter(a => a.clube && a.clube.id === j.vis.id);
+        const reg = dia3d.brigaRegistrada ? dia3d.brigaRegistrada(e, j.casa, j.vis) : null;
+        let texto = `Chefe, hoje tem ${j.casa.nome} × ${j.vis.nome} às ${j.hora || '16:00'} (${est}).`;
+        if (nossos.length) texto += ` A ${nossos.map(a => a.torcida.nome).join(' e a ')} passou a noite aqui na sede e sai daqui pro estádio` +
+          (nossos.some(a => a.nivel === 'escolta' || a.nivel === 'churrasco') ? ', com os nossos de escolta.' : '.');
+        if (reg) texto += ` O clima entre a ${reg.a.nome} e a ${reg.b.nome} tá pesado.`;
+        texto += ' Quer ver o dia na cidade?';
+        const m = { id: e.feedSeq++, kind: 'jogo-praca', peso: 'decisao', voz: 'olheiro', tipo: '', chave,
+                    quando: { ano: e.data.ano, semana: e.data.semana, dia: e.data.dia, abs: hoje }, hora: hhmmDe(min),
+                    texto, dados: { casa: j.casa.id, vis: j.vis.id, hora: j.hora || '16:00', comp: j.comp, estadio: est },
+                    botoes: [{ id: 'ver', rot: 'Ver na cidade', acao: 'jogo-praca' }, { id: 'seguir', rot: 'Seguir o dia', acao: 'nada' }],
+                    links: null, respondido: null };
+        /* na fila do dia, na hora dele (depois das de antes, antes das de depois) */
+        let i = fila.findIndex(x => { const a = x.quando ? x.quando.abs : hoje; return a > hoje || (a === hoje && (minutoDe(x.hora) ?? 0) > min); });
+        if (i < 0) i = fila.length;
+        fila.splice(i, 0, m);
+      }
+    } catch (err) { console.error('jogo 3D, os jogos da cidade:', err); }
+  }
   TO.jogo3d = {
     get ritmo() { return ritmo; },
     palcoDe: (local, cfg) => vida.palcoDe(local, cfg),
@@ -109,7 +168,9 @@ function ligar(api) {
       if (dia3d.ativo) { dia3d.verNossa(); return; }
       if (vida.ligada && vida.sede) vida.irPraSala(); else irPraSede();
     },
-    vida, mapa, dia: dia3d, recados
+    vida, mapa, dia: dia3d, recados,
+    /* (pro teste: a praça e a planta — os bares, as sedes) */
+    get api() { return api; }
   };
   /* o relógio do dia na barra de cima, do lado da data */
   const relogio = document.createElement('div');
@@ -137,7 +198,9 @@ function ligar(api) {
   /* A PRAÇA É A DA TORCIDA: quando a partida abre (nova ou carregada), a
      cidade troca pra praça dela e a câmera voa até a porta da sede */
   let pracaDoJogo = null, pedida = null;
+  /* o mapa do jogo ('sao-paulo') vira a praça da planta ('São Paulo') pelo slug (index.html, `pracaDe`) */
   const nomeDaPraca = mapa => {
+    if (api.pracaDe) return api.pracaDe(mapa);
     const c = (TO.dados.cidades || []).find(x => x.id === mapa);
     return c && api.nomes.includes(c.nome) ? c.nome : null;
   };
@@ -147,14 +210,38 @@ function ligar(api) {
     const porta = api.sedeDe(e.torcida.id);
     if (porta) C.voarPara(porta.x, porta.y, 70 * api.M, 0.78, Math.atan2(porta.fx, porta.fy) + Math.PI);
   };
+  /* o aviso curto no canto (o mesmo das compras do jogo) */
+  const avisar = txt => {
+    const cx = document.getElementById('notificacoes');
+    if (!cx) return;
+    const n = document.createElement('div');
+    const d = TO.estado && TO.estado.dataTexto ? TO.estado.dataTexto().curta : '';
+    n.className = 'nota boa';
+    n.innerHTML = (d ? `<small>${d}</small>` : '') + txt;
+    cx.appendChild(n);
+    setTimeout(() => n.remove(), 5200);
+  };
   /* A PRAÇA DO JOGO COM VIDA: os bonecos carregados, a vida ligada na
      torcida do jogador e a câmera na sala do presidente (sem sede na
-     praça, na calçada da porta) */
-  const ligarVida = async () => {
+     praça, na calçada da porta). `barNovo`: o bar que a torcida acabou
+     de abrir — a câmera passa na porta dele antes de ir pra sala */
+  const ligarVida = async barNovo => {
     const e = E(), C = api.cenario;
     if (!e || !C || !C.vida) return;
     try { await C.vida.chamarPovo(); } catch (err) { console.error('jogo 3D: os bonecos não carregaram', err); }
     if (!vida.ligar(e.torcida.id)) { irPraSede(); return; }
+    /* (o jogo que abriu no meio do dia: o aviso do jogo da cidade de hoje) */
+    anunciarJogosDaCidade(e);
+    if (barNovo && barNovo.porta) {
+      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DO ...") */
+      const q = barNovo.porta;
+      C.voarPara(q.x, q.y, 30 * api.M, 0.5, Math.atan2(q.fx, q.fy));
+      avisar(`O bar novo da <b>${String(e.torcida.nome || '').replace(/[&<>]/g, '')}</b> abriu as portas.`);
+      const este = barNovo;
+      setTimeout(() => { if (este === barMostrado && vida.ligada && !pracaTravada && !dia3d.ativo) vida.irPraSala(); }, 5000);
+      barMostrado = este;
+      return;
+    }
     /* a porta da sede, dali até a sala: a primeira vista é a sede de fora */
     if (vida.sede) {
       const c = vida.sede.caixa, porta = api.sedeDe(e.torcida.id);
@@ -163,19 +250,50 @@ function ligar(api) {
       setTimeout(() => vida.irPraSala(), 400);
     } else irPraSede();
   };
+  /* OS BARES DO SAVE (conserto de 28/09/2026, o dono: "Eu comprei um bar
+     no jogo e o mapa não atualizou com mais um bar pra minha torcida"):
+     a praça punha um bar por torcida, o da tabela. Agora o número é o do
+     jogo — o patrimônio do jogador e o mundo vivo da IA, que também
+     compra. A praça remonta quando o do JOGADOR muda; o da IA entra na
+     próxima montagem (remontar a cidade no meio do dia porque uma torcida
+     da IA abriu um bar seria pesado, e sem motivo pra quem joga). Devolve
+     se o do jogador mudou */
+  const conferirBares = e => {
+    if (!api.baresDoJogo) return false;
+    const mundo = e.mundoTorcidas || {};
+    for (const id in mundo) { const v = mundo[id]; if (v && Array.isArray(v.bares)) api.baresDoJogo(id, v.bares.length); }
+    const p = TO.financeiro && TO.financeiro.patrimonio ? TO.financeiro.patrimonio(e) : e.patrimonio;
+    return api.baresDoJogo(e.torcida.id, p && Array.isArray(p.bares) ? p.bares.length : 0, true);
+  };
+  const baresDoJogador = id => api.planta && api.planta.bares ? api.planta.bares().filter(b => b.dono === id) : [];
+  let barMostrado = null;
   const conferirPraca = () => {
     const e = E();
     if (!e || !e.torcida || pracaTravada) return;
+    /* com um painel aberto (a compra do bar, a obra da sede), a praça
+       espera ele fechar: remontar escondida atrás dele, e a câmera passar
+       no bar novo sem ninguém ver, não serve (o fechar chama de novo) */
+    if (document.body.classList.contains('com-painel') && pracaDoJogo) return;
     const nome = nomeDaPraca(e.torcida.mapa);
     /* a sede da torcida do jogador é a do save (o nível dela), não a da tabela */
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
-    if (!nome || (nome === pracaDoJogo && !mudouNivel)) return;
-    pracaDoJogo = nome;
+    const mudouBares = conferirBares(e);
+    const refazer = mudouNivel || mudouBares;
+    if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
+    /* os bares que ela tinha na praça: o que aparecer a mais é o novo */
+    const tinha = mudouBares && C && C.praca === nome ? new Set(baresDoJogador(e.torcida.id).map(b => b.n)) : null;
+    pracaDoJogo = nome;
     const vez = pedida = Symbol();
     vida.desligar();
-    const ir = C && C.praca === nome && !mudouNivel ? Promise.resolve() : api.abrirPraca(nome, mudouNivel);
-    Promise.resolve(ir).then(() => { if (vez === pedida) { pintarLetreiro(); ligarVida(); } }, () => {});
+    const ir = C && C.praca === nome && !refazer ? Promise.resolve() : api.abrirPraca(nome, refazer);
+    /* (a montagem que outra cancelou no meio — o dia de jogo abrindo a
+       praça de fora — não liga a vida: a praça na tela não é esta) */
+    Promise.resolve(ir).then(() => {
+      if (vez !== pedida || pracaTravada || !api.cenario || api.cenario.praca !== nome || api.cenario.montando) return;
+      const novo = tinha ? baresDoJogador(e.torcida.id).find(b => !tinha.has(b.n)) : null;
+      pintarLetreiro(); ligarVida(novo);
+    }, () => {});
   };
 
   /* dentro da partida (a casca do jogo à mostra) ou no menu */
@@ -202,7 +320,12 @@ function ligar(api) {
   /* A CIDADE PARA QUANDO ALGO A COBRE: um painel, uma cena de briga, o
      relatório, a escolha da torcida, um modal — o último quadro fica, e
      o processador fica com o jogo. No menu ela segue desenhando. */
+  let tinhaPainel = false;
   const conferirCobertura = () => {
+    /* o painel fechou: o que se comprou nele (um bar, a obra da sede) vai pra praça */
+    const comPainel = document.body.classList.contains('com-painel');
+    if (tinhaPainel && !comPainel) setTimeout(() => { if (!document.body.classList.contains('com-painel')) conferirPraca(); }, 0);
+    tinhaPainel = comPainel;
     const C = api.cenario;
     if (!C || !C.pausar) return;
     /* a cena que roda na cidade (a reunião na sala da sede) não cobre nada:

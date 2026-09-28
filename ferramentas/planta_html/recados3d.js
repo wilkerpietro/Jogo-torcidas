@@ -195,6 +195,9 @@ export function criarRecados(api, vida, dia3d) {
     const b = document.body.classList;
     if (!b.contains('j3d-em-jogo') || b.contains('em-cena') || b.contains('palco-briga') || b.contains('palco3d') ||
         b.contains('com-painel') || b.contains('j3d-mapa-aberto') || vida.reuniao) return false;
+    /* o jogo da cidade (dia3d.js): o tempo do jogo está parado e ninguém da
+       torcida está ali pra falar — o recado espera a volta pra sede */
+    if (dia3d.jogoDaCidade) return false;
     if (document.querySelector('.j3d-dia-modal, .tela-cheia:not(.oculto):not(#telaMenu)')) return false;
     return true;
   }

@@ -2539,6 +2539,8 @@ void main() {
   return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi,
            /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
            get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
+           /* se a praça ainda está montando (quem abre a de fora espera o fim dela: dia3d.js) */
+           get montando() { return montando; },
            /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */
            get dia() { return dia; }, abrirDiaDeJogo, get custoDia() { return { ...custoDia }; },
            /* pro teste: o que está no pixel (sx, sy) */

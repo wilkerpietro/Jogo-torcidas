@@ -584,3 +584,136 @@ cartão da briga, a partida e o balão fechando no fim do dia.
   da tela).
 - O "Mensagem de X" que piscava do lado do ícone de Notícias saiu do 3D (o
   enviado entrega em pessoa); o número vermelho continua.
+
+
+## 15. O jogo fora, os bares, os jogos da cidade e o aliado hospedado (28/09/2026)
+
+O dono: "Quando o jogador opta por hospedar na sede um aliado, eles aparecem
+na sede no dia do jogo e partem da sede pro estádio, os demais jogos na
+cidade entre times IA tem dia de jogo normalmente, com as torcidas brigando
+ou não entre elas. Aprimore isso. A mecânica de jogo fora de casa também não
+está completa, o jogo inicia com o mapa da outra cidade nem ter carregado
+ainda. Eu comprei um bar no jogo e o mapa não atualizou com mais um bar pra
+minha torcida."
+
+- **O jogo fora abria sem a cidade de lá.** Duas causas. (1) Seis praças
+  têm o nome sem acento nos dados do jogo (`dados/cidades.js`: "Sao Paulo",
+  "Belem", "Brasilia", "Goiania", "Paraiba", "Suburbio Carioca") e o 3D
+  procurava a praça pelo nome: nessas seis o dia de jogo não achava a
+  cidade e a linha do dia andava com a praça do jogador na tela. A praça
+  agora sai do id do mapa pelo slug (`pracaDe`, em `index.html`, a mesma
+  conta de `infoDaCidade`) — no jogo 3D e no dia de jogo. (2) O dia de
+  jogo não esperava a montagem que estivesse em curso (a praça do jogador
+  remontando por causa de um bar novo, por exemplo) nem conferia se a
+  montagem que ele pediu tinha terminado de verdade. `dia3d.js`
+  (`esperarPraca`) pede a praça, espera o cenário parar de montar
+  (`C.montando`, novo em `cenario.js`), confere que a praça montada é a do
+  jogo e só então monta o plano; o painel do dia diz "Carregando o mapa de
+  São Paulo…" enquanto isso, e a linha do dia fica travada ("montando o dia
+  na cidade"). Montagem que não termina vira erro no painel (e a linha
+  segue sem o 3D), em vez de dia de jogo em cima de meia cidade. (3) Com a
+  cidade montada, o plano do dia ainda podia recusar o jogo: "o visitante
+  do jogo não tem torcida que venha". A lista de clubes de cada praça
+  (`dados/cidades.js`) traz também os de fora que têm torcedor nela —
+  Flamengo, Corinthians, Palmeiras, São Paulo e Vasco em Fortaleza; o
+  Fortaleza em São Paulo — e o plano tirava TODOS os da lista dos "de
+  fora" (`clubesDeFora`, em `index.html`): esses clubes ficavam sem lado.
+  O Fortaleza em São Paulo caía nisso, e **o jogo em casa contra um desses
+  clubes também** (Fortaleza × Flamengo não montava em 3D). Agora "de fora"
+  é todo clube que não é o da praça (`local`) nem tem torcida com sede no
+  mapa. Conferido: Palmeiras × Fortaleza em São Paulo e Fortaleza ×
+  Flamengo, × Corinthians, × Ceará e × Bahia em Fortaleza montam.
+- **O bar comprado.** A praça punha UM bar por torcida com sede, o da
+  tabela — o save não entrava na conta. Agora o número de bares de cada
+  torcida é o do jogo: o patrimônio do jogador (`TO.financeiro.patrimonio`)
+  e o mundo vivo da IA (`E.mundoTorcidas[id].bares`, que também compra).
+  `index.html` guarda o número (`baresDoJogo`) e a distribuição dos bares
+  (`escolherBares`) põe os do jogador primeiro — com menos vaga de bar que
+  bar pra pôr, quem fica sem é a IA. A praça remonta quando o número do
+  JOGADOR muda (o da IA entra na próxima montagem: remontar a cidade no
+  meio do dia porque uma torcida da IA abriu um bar seria pesado, e sem
+  motivo pra quem joga). A remontagem espera o painel fechar (a compra é
+  na Loja do Financeiro): fechou, a praça monta de novo, a câmera passa na
+  porta do bar novo com o aviso "O bar novo da ... abriu as portas", e em
+  5 s volta pra sala do presidente. O começo do jogo também mudou: a
+  torcida sem bar no save (sede nível 1) não tem mais o bar da tabela.
+- **Os jogos da cidade (entre clubes da IA).** No dia de um jogo de dois
+  outros clubes na nossa praça (o calendário da praça, `jogosDaPraca`), o
+  olheiro avisa TRÊS HORAS ANTES DA BOLA: um recado com pergunta, no balão
+  (o tempo para até a resposta) — "Ver na cidade" ou "Seguir o dia". O
+  recado entra na fila do dia na hora dele (`jogo3d.js`,
+  `anunciarJogosDaCidade`; uma vez por jogo). Vendo, `dia3d.js`
+  (`abrirJogoDaCidade`) monta o dia do jogo como o nosso: os bondes das
+  torcidas dos dois clubes (quem vai e quantos: a mesma lista da pauta,
+  `naRuaEm`), a PM, a revista, a entrada, a arquibancada viva e a partida.
+  A BRIGA É A DO MUNDO: o jogo já sorteou, no começo do dia, se as
+  torcidas se pegam (`brigasDeHoje`, na aba Brigas das Notícias); tendo
+  briga entre duas torcidas do jogo, ela acontece na rua (ou na
+  concentração do atacado), a câmera vai até lá e a cidade mostra a 1×,
+  com o resultado de lá (quem ganhou e a proporção de feridos e presos de
+  cada lado). Sem briga, todas vão em paz. A partida corre com o minuto no
+  relógio do dia, os gols saem no painel ("gol do ...", com o placar) e o
+  placar final é o da rodada. Ninguém invade: a invasão é só da nossa
+  torcida, e ela não está no jogo. O painel tem "Voltar pra sede" (a
+  qualquer hora); voltando, o dia da praça segue da hora em que o jogo
+  acabou e o tempo do jogo volta a andar. Enquanto o jogo da cidade está no
+  ar os recados esperam (o tempo está parado e ninguém da torcida está ali
+  pra falar); o ≫ volta pra sede antes de empurrar o dia; e o vigia do
+  relógio solta a pausa do jogo da cidade se ela ficar órfã.
+- **O aliado hospedado.** A recepção do planejamento (hospedar, hospedar e
+  escoltar, churrasco) agora vale no 3D. `planejamento.js` guarda o nível
+  que valeu na cobrança do dia (`p.recebido`; sem caixa, vira "nada") e
+  diz quem a gente recebe hoje (`hospedesDeHoje`). **Na sede:** de manhã a
+  caravana do aliado está lá dentro, com a camisa dele, nas camas do
+  alojamento, no sofá, nas rodas e nas mesas (até 12 bonecos; o vaivém
+  dos nossos não mexe neles); duas horas e meia antes da bola eles saem
+  pela porta, um atrás do outro — e o tempo do jogo espera a saída (até
+  12 s), com a câmera na sede inteira, antes de voltar pra sala (o relógio
+  da sede corre: sem essa espera o dia acabava antes de eles chegarem na
+  porta). **No dia do jogo** (o da cidade, ou o
+  nosso em casa contra o clube dele): o bonde do aliado parte da NOSSA
+  porta; com escolta (hospedar e escoltar, churrasco), até 10 dos nossos
+  andam junto, com a nossa camisa. No nosso jogo em casa ele só hospeda (a
+  regra do dono: "o aliado só hospeda a TOMA, e ela sai da sede sozinha pro
+  estádio" — o anfitrião do mandante torce contra). Quem recebe os outros
+  visitantes é o que o jogo diz (`anfitriaoDe`, `decisaoDoAnfitriao`,
+  `escoltaDe` de `js/mundo/praca.js`): o plano do dia (`escolha.hospedes`
+  em `dia_de_jogo.js`) não sorteia outro, e a nossa casa só recebe quem o
+  jogador disse que recebe.
+
+**Como testar:** em `scratchpad/recados/` (Playwright, na pasta do Pages):
+`fora_carrega.js` (o jogo fora em São Paulo: a linha não anda antes da
+praça de lá estar montada, e o plano monta nela), `sonda_fora.js` (o plano
+do jogo fora em São Paulo e dos jogos em casa contra Flamengo, Corinthians,
+Ceará e Bahia, direto no dia de jogo), `bar3d.js` (a compra do bar na Loja com
+clique de verdade, o painel fechado, a praça remontando com mais um bar
+nosso), `jogo_cidade.js` (um Ceará × clube de fora em Fortaleza com a
+torcida visitante aliada e hospedada: os hóspedes na sede, o aviso no
+balão, "Ver na cidade", o bonde saindo da nossa porta, a briga do mundo, a
+partida, o fim e a volta; `MODO=casa`, o nosso jogo em casa contra o clube
+da aliada hospedada; `SEGUIR=1`, o "Seguir o dia": os hóspedes saem da sede
+na hora deles). `CEL=1` roda no tamanho de celular, com toque.
+
+**Limites (sinceros):**
+- Jogo fora no exterior (Libertadores, Sul-Americana) não tem cidade 3D: a
+  linha do dia anda no balão, com a nossa praça na tela.
+- Montar São Paulo (o mapa grande) leva uns segundos num PC e bem mais num
+  celular fraco; enquanto isso a linha espera — não tem como pular.
+- O bar novo remonta a praça inteira (é o mesmo caminho da sede que muda de
+  nível). Os outros bares podem trocar de lugar na remontagem (a conta
+  junta todos de novo).
+- O jogo da cidade só aparece quando o mandante tem torcida com sede no
+  mapa 3D; e não aparece em dia de jogo nosso (a cidade é da nossa linha).
+- A briga do jogo da cidade só acontece na rua quando as duas torcidas
+  estão no jogo (o mundo também sorteia briga com torcida da cidade que não
+  é dos dois clubes: essa fica só na aba Brigas).
+- O minuto dos gols do jogo da cidade é inventado (fixo pro par): o mundo
+  guarda só o placar.
+- Os hóspedes na sede aparecem de manhã e saem 2h30 antes da bola; o
+  relógio da sede é rápido (o dia inteiro em ~9 s a 1×): de manhã eles
+  ficam pouco tempo à vista — o recado do jogo da cidade (3 h antes da
+  bola) para o tempo com eles ainda lá dentro, e a saída segura o tempo
+  uns segundos.
+- As cores do hóspede são as da torcida dele: aliada com as cores parecidas
+  com as nossas (a Bamor e a TUF, azul, vermelho e branco) quase não se
+  distingue dos nossos dentro da sede.

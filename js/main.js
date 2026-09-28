@@ -928,6 +928,10 @@
         atualizarFeed();
         return;
       }
+      /* o jogo da cidade no ar (o jogo 3D): o ≫ volta pra sede antes de
+         empurrar o dia — o dia novo não começa com o jogo de ontem na tela */
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      if(D3 && D3.jogoDaCidade) D3.fechar();
       /* o ≫ que não anda tem de dizer por quê (dono, 17/09/2026): antes
          ele voltava calado quando uma cena órfã segurava o dia */
       curarRelogio();
@@ -3552,6 +3556,11 @@
       else if(t === 'cena-treta') abrirTreta(m && m.dados);
       else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
       else if(t === 'tutorial') TO.tutorial.iniciar();
+      /* o jogo de outro clube na nossa praça, visto na cidade (o jogo 3D) */
+      else if(t === 'jogo-praca'){
+        const D3 = TO.jogo3d && TO.jogo3d.dia;
+        if(D3 && D3.abrirJogoDaCidade) D3.abrirJogoDaCidade(m);
+      }
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
     /* A BOLA ROLANDO ABRE O DIA INTEIRO (régua do dono, 20/08/2026):
@@ -9313,6 +9322,16 @@
     }
     if(pausasT.has('itinerario') && !ITN){
       pausasT.delete('itinerario'); curas.push(_t('pausa de itinerário sem linha'));
+    }
+    /* os hóspedes saindo da sede em 3D (vida3d.js) seguram o tempo uns segundos */
+    if(pausasT.has('hospedes')){
+      const V3 = TO.jogo3d && TO.jogo3d.vida;
+      if(!V3 || !V3.segurandoHospedes){ pausasT.delete('hospedes'); curas.push(_t('pausa dos hóspedes sem hóspedes saindo')); }
+    }
+    /* o jogo da cidade em 3D (dia3d.js) segura o tempo enquanto está no ar */
+    if(pausasT.has('jogo-praca')){
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      if(!D3 || !(D3.ativo || D3.montando)){ pausasT.delete('jogo-praca'); curas.push(_t('pausa do jogo da cidade sem o jogo')); }
     }
     if(pausasT.has('foco') && !document.hidden && document.hasFocus()){
       pausasT.delete('foco'); curas.push(_t('pausa de foco com a página em foco'));

@@ -4541,6 +4541,12 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
+      /* O JOGO DA CIDADE NO 3D (o jogo 3D, 28/09/2026): "Ver na cidade"
+         abre o dia de jogo da praça — as torcidas do jogo, da sede ao
+         estádio, e a briga que o mundo sorteou entre elas, se teve */
+      case 'jogo-praca':
+        marcar();
+        return {ok:true, abrir:{tela:'jogo-praca', msg:m}};
       /* SÓ PRA SAVE ANTIGO (19/09/2026): obra virou notícia sem botão
          no mesmo dia em que nasceu como decisão, mas um save feito
          no meio do caminho pode ter um cartão de obra ainda aberto —

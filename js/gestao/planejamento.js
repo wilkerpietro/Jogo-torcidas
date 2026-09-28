@@ -660,6 +660,9 @@ TO.planejamento = (function(){
             : relRec), -100, 100);
       if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
       p.pago = p.pago || {}; p.pago[a.id] = true;
+      /* o nível que VALEU (sem caixa, virou 'nada'): o jogo 3D põe o
+         aliado recebido na nossa sede no dia, e ele sai de lá pro estádio */
+      p.recebido = p.recebido || {}; p.recebido[a.id] = nivel;
       /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
       if(TO.feed && TO.feed.mensagemDe){
         const TXT = {
@@ -672,6 +675,19 @@ TO.planejamento = (function(){
                            nivel === 'nada' ? 'cobranca' : 'agradecimento');
       }
     }
+  }
+
+  /* QUEM A GENTE RECEBE HOJE (o jogo 3D, 28/09/2026; o dono: "Quando o
+     jogador opta por hospedar na sede um aliado, eles aparecem na sede no
+     dia do jogo e partem da sede pro estádio"): o aliado que joga hoje na
+     nossa praça e o nível da recepção — o que valeu na cobrança do dia,
+     ou, antes dela, o combinado. Quem não é recebido fica de fora */
+  function hospedesDeHoje(E){
+    const p = plano(E);
+    return aliadosNaCidade(E, E.data.semana)
+      .filter(a => a.dia === E.data.dia)
+      .map(a => Object.assign({}, a, {nivel: (p.recebido||{})[a.id] || nivelDe(E, a.id)}))
+      .filter(a => a.nivel && a.nivel !== 'nada');
   }
 
   /* =======================================================
@@ -1522,7 +1538,7 @@ TO.planejamento = (function(){
           ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
-          definirRecepcao, cobrarRecepcoes,
+          definirRecepcao, cobrarRecepcoes, hospedesDeHoje,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
           ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, alvosDoAtaque,
           definirAtaque,
