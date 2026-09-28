@@ -196,6 +196,13 @@ são do mensageiro, `recados3d.js`, seção 14); a reunião da diretoria na mesa
 da sala da sede (o palco da reunião, que desmonta quando a cena fecha); os
 pedestres nas calçadas e a turma de cada bar de torcida na porta.
 
+Os balões da reunião são os do jogo de feed (`posicionarBaloesDaReuniao`,
+`js/main.js`): no 3D quem diz onde fica a cabeça de cada diretor é a câmera
+da cidade (`projetar`, com a chave da câmera). O laço de cada quadro só
+reposiciona quando a câmera muda; o balão recém-desenhado vai pro lugar
+sempre (conserto de 28/09/2026: respondida a primeira pauta, o balão da
+próxima ficava fora da tela até alguém arrastar o mapa).
+
 ## 7. As brigas na cidade: a festa e a caravana
 
 `ferramentas/planta_html/palco_briga.js`: a briga é a MESMA do jogo de feed
