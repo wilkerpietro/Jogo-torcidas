@@ -37,8 +37,8 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js';
-import { brigaNaCaminhada } from './caminhada.js';
+import { palcoDeBriga } from './palco_briga.js?v=e422fd7958';
+import { brigaNaCaminhada } from './caminhada.js?v=e422fd7958';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;

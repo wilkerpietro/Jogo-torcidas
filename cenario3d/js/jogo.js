@@ -2217,6 +2217,9 @@ TO.i18n.registrar({
   'Simular a invasão': {es:'Simular la invasión', en:'Simulate the charge'},
   'Ficar no lugar': {es:'Quedarse en su lugar', en:'Stay put'},
 
+  /* ---------- o jogo 3D sem feed: a decisão no balão ---------- */
+  'Responda o recado do balão — o tempo está parado.': {es:'Responde el recado del globo — el tiempo está detenido.', en:'Answer the message in the bubble — time is stopped.'},
+
   /* ---------- salvar ---------- */
   'NÃO SALVOU · {motivo}': {es:'NO SE GUARDÓ · {motivo}', en:'NOT SAVED · {motivo}'},
   'Salvo.': {es:'Guardado.', en:'Saved.'},
@@ -47471,7 +47474,13 @@ TO.icones = (function(){
     bDia.onclick = ()=>{
       const at = E(); if(!at) return;
       if(TO.feed.travado(at)){
-        aviso(_t('Responda o que está aberto — o tempo está parado.'), 'ruim');
+        /* NO JOGO 3D A DECISÃO VEM PRO BALÃO (conserto de 28/09/2026): sem
+           o feed na tela, "responda o que está aberto" sem nada aberto à
+           vista era o jogo parado sem saída — o ≫ traz o recado de volta */
+        const R3 = TO.jogo3d && TO.jogo3d.recados;
+        if(TO.semFeed && R3 && R3.trazerDecisao) R3.trazerDecisao();
+        aviso(TO.semFeed ? _t('Responda o recado do balão — o tempo está parado.')
+                         : _t('Responda o que está aberto — o tempo está parado.'), 'ruim');
         atualizarFeed();
         return;
       }

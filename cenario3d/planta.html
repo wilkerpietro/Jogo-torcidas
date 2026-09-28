@@ -48,167 +48,175 @@ body { background: var(--papel); color: var(--tinta); font: 14px/1.45 var(--f-te
   box-sizing: border-box; height: 100%; display: flex; flex-direction: column; gap: 10px;
   padding-inline: 16px; padding-block: 12px;
 }
-.topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
-.nome h1 {
+/* O ESTILO DA PLANTA FICA NA PLANTA (conserto de 28/09/2026): cada regra de
+   classe daqui vale só dentro da .app (a planta) e da .cen-ficha (a ficha do
+   cenário, que usa o mesmo HTML) — o :where não muda a força de regra
+   nenhuma. O jogo 3D monta por cima desta mesma página, e .painel, .dados,
+   .campo, .corpo, .nota, .topo, .acoes… são classes dele também: sem isto,
+   o painel do jogo virava coluna flex, a tabela de membros saía em duas
+   colunas e as caixas do Expediente em maiúsculas espaçadas. Regra nova de
+   classe entra com o mesmo :where na frente. */
+:where(.app, .cen-ficha) .topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 24px; }
+:where(.app, .cen-ficha) .nome h1 {
   margin: 0; font: 700 24px/1.05 var(--f-ui); letter-spacing: .01em; text-wrap: balance;
 }
-.resumo { margin: 3px 0 0; font: 12px/1.3 var(--f-dado); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
-.controles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.modos { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; padding: 2px; background: var(--folha); }
-.modos button {
+:where(.app, .cen-ficha) .resumo { margin: 3px 0 0; font: 12px/1.3 var(--f-dado); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+:where(.app, .cen-ficha) .controles { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+:where(.app, .cen-ficha) .modos { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; padding: 2px; background: var(--folha); }
+:where(.app, .cen-ficha) .modos button {
   font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); background: none;
   border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer;
 }
-.modos button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
-.modos button:not(#aba-atual)[aria-selected="true"] { background: var(--acento); color: var(--folha); }
-.camadas { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 500 13px/1 var(--f-ui); color: var(--tinta-2); }
-.cidade { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); }
-.cidade select { font: 600 14px/1.2 var(--f-ui); letter-spacing: .01em; color: var(--tinta); background: var(--folha);
+:where(.app, .cen-ficha) .modos button[aria-selected="true"] { background: var(--tinta); color: var(--papel); }
+:where(.app, .cen-ficha) .modos button:not(#aba-atual)[aria-selected="true"] { background: var(--acento); color: var(--folha); }
+:where(.app, .cen-ficha) .camadas { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 500 13px/1 var(--f-ui); color: var(--tinta-2); }
+:where(.app, .cen-ficha) .cidade { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .cidade select { font: 600 14px/1.2 var(--f-ui); letter-spacing: .01em; color: var(--tinta); background: var(--folha);
   border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; max-width: 190px; }
-.cidade select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
-.camadas label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
-.camadas input { accent-color: var(--acento); margin: 0; }
+:where(.app, .cen-ficha) .cidade select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
+:where(.app, .cen-ficha) .camadas label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+:where(.app, .cen-ficha) .camadas input { accent-color: var(--acento); margin: 0; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
 
-.corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; }
-.mapa {
+:where(.app, .cen-ficha) .corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 12px; }
+:where(.app, .cen-ficha) .mapa {
   position: relative; min-height: 0; border-radius: 10px; overflow: hidden; background: #555;
   border: 1px solid var(--linha); touch-action: none; cursor: grab;
 }
-.mapa.arrastando { cursor: grabbing; }
-.mapa canvas { display: block; width: 100%; height: 100%; }
-.zoom { position: absolute; right: 10px; top: 30px; display: flex; flex-direction: column; gap: 4px; }
-.zoom button {
+:where(.app, .cen-ficha) .mapa.arrastando { cursor: grabbing; }
+:where(.app, .cen-ficha) .mapa canvas { display: block; width: 100%; height: 100%; }
+:where(.app, .cen-ficha) .zoom { position: absolute; right: 10px; top: 30px; display: flex; flex-direction: column; gap: 4px; }
+:where(.app, .cen-ficha) .zoom button {
   width: 34px; height: 34px; border-radius: 8px; border: 1px solid rgba(0,0,0,.35); cursor: pointer;
   background: rgba(246,247,243,.92); color: #1d2420; font: 600 18px/1 var(--f-ui);
 }
-.legenda {
+:where(.app, .cen-ficha) .legenda {
   position: absolute; left: 30px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 4px 10px; max-width: calc(100% - 200px);
   padding: 6px 9px; border-radius: 8px; background: rgba(24,27,26,.78); color: #eef0ec;
   font: 500 12px/1.2 var(--f-ui); letter-spacing: .02em; pointer-events: none;
 }
-.legenda span { display: inline-flex; align-items: center; gap: 5px; }
-.legenda i { width: 11px; height: 11px; border: 1px solid #111; display: inline-block; }
-.legenda i.nova { border: 2px dashed #45b6be; background: transparent; }
-.legenda i.bar { background: #c8342b; border: 2px solid #f2f1ec; border-radius: 50%; }
-.legenda i.barf { background: #8f8a7f; border: 2px solid #3d3a35; border-radius: 50%; }
-.legenda i.sede { background: #1f5aa8; border: 2px solid #f2f1ec; }
-.legenda i.sedev { background: #aaa598; border: 2px dashed #57544d; }
-.legenda i.metro { background: #1f5aa8; border: 2px solid #f2f1ec; border-radius: 50%; }
-.torcidas { width: 100%; border-collapse: collapse; margin: 6px 0 0; font: 13px/1.3 var(--f-texto); }
-.torcidas th { text-align: left; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); padding: 0 6px 4px 0; }
-.torcidas td { padding: 4px 6px 4px 0; border-top: 1px solid var(--linha); vertical-align: top; font-variant-numeric: tabular-nums; }
-.torcidas tr.aqui td { font-weight: 700; color: var(--acento); }
-.torcidas .cores { display: inline-flex; gap: 2px; vertical-align: -1px; margin-right: 5px; }
-.torcidas .cores i, .ficha .cores i { width: 10px; height: 10px; display: inline-block; border: 1px solid rgba(0,0,0,.45); }
-.ficha .cores { display: inline-flex; gap: 3px; vertical-align: -1px; }
-.ficha .escudos { display: flex; gap: 10px; align-items: center; margin: 2px 0 10px; }
-.ficha .escudos img { width: 48px; height: 48px; object-fit: contain; }
-.ficha .escudos span { font: 12px/1.3 var(--f-texto); color: var(--tinta-2); }
-.regua {
+:where(.app, .cen-ficha) .legenda span { display: inline-flex; align-items: center; gap: 5px; }
+:where(.app, .cen-ficha) .legenda i { width: 11px; height: 11px; border: 1px solid #111; display: inline-block; }
+:where(.app, .cen-ficha) .legenda i.nova { border: 2px dashed #45b6be; background: transparent; }
+:where(.app, .cen-ficha) .legenda i.bar { background: #c8342b; border: 2px solid #f2f1ec; border-radius: 50%; }
+:where(.app, .cen-ficha) .legenda i.barf { background: #8f8a7f; border: 2px solid #3d3a35; border-radius: 50%; }
+:where(.app, .cen-ficha) .legenda i.sede { background: #1f5aa8; border: 2px solid #f2f1ec; }
+:where(.app, .cen-ficha) .legenda i.sedev { background: #aaa598; border: 2px dashed #57544d; }
+:where(.app, .cen-ficha) .legenda i.metro { background: #1f5aa8; border: 2px solid #f2f1ec; border-radius: 50%; }
+:where(.app, .cen-ficha) .torcidas { width: 100%; border-collapse: collapse; margin: 6px 0 0; font: 13px/1.3 var(--f-texto); }
+:where(.app, .cen-ficha) .torcidas th { text-align: left; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); padding: 0 6px 4px 0; }
+:where(.app, .cen-ficha) .torcidas td { padding: 4px 6px 4px 0; border-top: 1px solid var(--linha); vertical-align: top; font-variant-numeric: tabular-nums; }
+:where(.app, .cen-ficha) .torcidas tr.aqui td { font-weight: 700; color: var(--acento); }
+:where(.app, .cen-ficha) .torcidas .cores { display: inline-flex; gap: 2px; vertical-align: -1px; margin-right: 5px; }
+:where(.app, .cen-ficha) .torcidas .cores i, :where(.app, .cen-ficha) .ficha .cores i { width: 10px; height: 10px; display: inline-block; border: 1px solid rgba(0,0,0,.45); }
+:where(.app, .cen-ficha) .ficha .cores { display: inline-flex; gap: 3px; vertical-align: -1px; }
+:where(.app, .cen-ficha) .ficha .escudos { display: flex; gap: 10px; align-items: center; margin: 2px 0 10px; }
+:where(.app, .cen-ficha) .ficha .escudos img { width: 48px; height: 48px; object-fit: contain; }
+:where(.app, .cen-ficha) .ficha .escudos span { font: 12px/1.3 var(--f-texto); color: var(--tinta-2); }
+:where(.app, .cen-ficha) .regua {
   position: absolute; right: 10px; bottom: 10px; padding: 5px 8px 6px; border-radius: 8px;
   background: rgba(24,27,26,.78); color: #eef0ec; font: 11px/1 var(--f-dado); pointer-events: none;
 }
-.regua b { display: block; height: 4px; margin-bottom: 4px; background: repeating-linear-gradient(90deg, #eef0ec 0 50%, #555 50% 100%); border: 1px solid #eef0ec; }
-.coord {
+:where(.app, .cen-ficha) .regua b { display: block; height: 4px; margin-bottom: 4px; background: repeating-linear-gradient(90deg, #eef0ec 0 50%, #555 50% 100%); border: 1px solid #eef0ec; }
+:where(.app, .cen-ficha) .coord {
   position: absolute; left: 30px; top: 30px; padding: 4px 8px; border-radius: 6px; background: rgba(24,27,26,.72);
   color: #eef0ec; font: 11px/1.2 var(--f-dado); pointer-events: none; font-variant-numeric: tabular-nums;
 }
-.aviso {
+:where(.app, .cen-ficha) .aviso {
   position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 16px;
   background: #555; color: #eef0ec; font: 600 16px/1.4 var(--f-ui); letter-spacing: .02em;
 }
-.dica-hover {
+:where(.app, .cen-ficha) .dica-hover {
   position: absolute; pointer-events: none; padding: 4px 7px; border-radius: 6px; background: rgba(24,27,26,.88);
   color: #fff; font: 500 12px/1.25 var(--f-ui); white-space: nowrap; transform: translate(12px, 12px);
 }
 
-.painel { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
-.vista3d {
+:where(.app, .cen-ficha) .painel { min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+:where(.app, .cen-ficha) .vista3d {
   position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--linha); background: var(--ceu3d);
   aspect-ratio: 4 / 3; max-width: 100%; flex: none;
 }
-.vista3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
-.dica { position: absolute; left: 8px; bottom: 6px; margin: 0; font: 500 11px/1 var(--f-ui); color: var(--tinta-2); pointer-events: none; }
-.alterna3d {
+:where(.app, .cen-ficha) .vista3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+:where(.app, .cen-ficha) .dica { position: absolute; left: 8px; bottom: 6px; margin: 0; font: 500 11px/1 var(--f-ui); color: var(--tinta-2); pointer-events: none; }
+:where(.app, .cen-ficha) .alterna3d {
   position: absolute; right: 8px; top: 8px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px 6px 8px;
   border-radius: 8px; border: 1px solid rgba(0,0,0,.35); background: rgba(246,247,243,.92); color: #1d2420;
   font: 600 13px/1 var(--f-ui); letter-spacing: .02em; cursor: pointer;
 }
-.alterna3d input { accent-color: #0e7a82; margin: 0; }
-.alterna3d:has(input:focus-visible) { outline: 2px solid var(--selecao); outline-offset: 2px; }
-.viagem3d { position: absolute; left: 8px; top: 8px; margin: 0; padding: 6px 10px; border-radius: 8px; background: #1f5aa8; color: #fff;
+:where(.app, .cen-ficha) .alterna3d input { accent-color: #0e7a82; margin: 0; }
+:where(.app, .cen-ficha) .alterna3d:has(input:focus-visible) { outline: 2px solid var(--selecao); outline-offset: 2px; }
+:where(.app, .cen-ficha) .viagem3d { position: absolute; left: 8px; top: 8px; margin: 0; padding: 6px 10px; border-radius: 8px; background: #1f5aa8; color: #fff;
   font: 600 13px/1.2 var(--f-ui); letter-spacing: .02em; pointer-events: none; }
-.acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.acoes button { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; padding: 9px 12px; border-radius: 8px; cursor: pointer;
+:where(.app, .cen-ficha) .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+:where(.app, .cen-ficha) .acoes button { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; padding: 9px 12px; border-radius: 8px; cursor: pointer;
   border: 1px solid var(--linha); background: var(--papel); color: var(--tinta); }
-.acoes button.principal { background: #1f5aa8; border-color: #1f5aa8; color: #fff; }
-.ficha h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
-.comodos { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; color: var(--tinta-2); }
-.comodos b { color: var(--tinta); font: 700 13.5px/1.2 var(--f-ui); letter-spacing: .02em; }
-.comodos span { font: 12px var(--f-dado); font-variant-numeric: tabular-nums; }
-.carregando3d { position: absolute; inset: 0; display: grid; place-items: center; font: 600 13px var(--f-ui); color: var(--tinta-2); pointer-events: none; }
-.ficha, .notas { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 14px 16px; }
-.sobre { margin: 0 0 4px; font: 600 12px/1.3 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
-.sobre .chip { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--acento); color: var(--folha); letter-spacing: .04em; }
-.ficha h2, .notas h2 { margin: 0 0 10px; font: 700 21px/1.15 var(--f-ui); text-wrap: balance; }
-.dados { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
-.dados div { min-width: 0; }
-.dados dt { font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
-.dados dd { margin: 2px 0 0; font: 13px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.dados .largo { grid-column: 1 / -1; }
-.nota { margin: 10px 0 0; color: var(--tinta-2); font-size: 13px; }
-.ficha .refs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-.ficha .refs a { display: block; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); text-decoration: none; }
-.ficha .refs img { display: block; width: 100%; height: auto; margin-top: 4px; border-radius: 6px; border: 1px solid var(--linha); }
-.setores-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13px; }
-.setores-lista i { display: inline-block; width: 11px; height: 11px; margin-right: 7px; border-radius: 3px; vertical-align: -1px; }
-.setores-lista span { font: 12px var(--f-dado); font-variant-numeric: tabular-nums; color: var(--tinta-2); }
-.campo { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
-.campo select { font: 500 15px/1.2 var(--f-texto); letter-spacing: 0; text-transform: none; color: var(--tinta); background: var(--papel);
+:where(.app, .cen-ficha) .acoes button.principal { background: #1f5aa8; border-color: #1f5aa8; color: #fff; }
+:where(.app, .cen-ficha) .ficha h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
+:where(.app, .cen-ficha) .comodos { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13px; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .comodos b { color: var(--tinta); font: 700 13.5px/1.2 var(--f-ui); letter-spacing: .02em; }
+:where(.app, .cen-ficha) .comodos span { font: 12px var(--f-dado); font-variant-numeric: tabular-nums; }
+:where(.app, .cen-ficha) .carregando3d { position: absolute; inset: 0; display: grid; place-items: center; font: 600 13px var(--f-ui); color: var(--tinta-2); pointer-events: none; }
+:where(.app, .cen-ficha) .ficha, :where(.app, .cen-ficha) .notas { background: var(--folha); border: 1px solid var(--linha); border-radius: 10px; padding: 14px 16px; }
+:where(.app, .cen-ficha) .sobre { margin: 0 0 4px; font: 600 12px/1.3 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .sobre .chip { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; background: var(--acento); color: var(--folha); letter-spacing: .04em; }
+:where(.app, .cen-ficha) .ficha h2, :where(.app, .cen-ficha) .notas h2 { margin: 0 0 10px; font: 700 21px/1.15 var(--f-ui); text-wrap: balance; }
+:where(.app, .cen-ficha) .dados { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+:where(.app, .cen-ficha) .dados div { min-width: 0; }
+:where(.app, .cen-ficha) .dados dt { font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .dados dd { margin: 2px 0 0; font: 13px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+:where(.app, .cen-ficha) .dados .largo { grid-column: 1 / -1; }
+:where(.app, .cen-ficha) .nota { margin: 10px 0 0; color: var(--tinta-2); font-size: 13px; }
+:where(.app, .cen-ficha) .ficha .refs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+:where(.app, .cen-ficha) .ficha .refs a { display: block; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); text-decoration: none; }
+:where(.app, .cen-ficha) .ficha .refs img { display: block; width: 100%; height: auto; margin-top: 4px; border-radius: 6px; border: 1px solid var(--linha); }
+:where(.app, .cen-ficha) .setores-lista { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; font-size: 13px; }
+:where(.app, .cen-ficha) .setores-lista i { display: inline-block; width: 11px; height: 11px; margin-right: 7px; border-radius: 3px; vertical-align: -1px; }
+:where(.app, .cen-ficha) .setores-lista span { font: 12px var(--f-dado); font-variant-numeric: tabular-nums; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .campo { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .campo select { font: 500 15px/1.2 var(--f-texto); letter-spacing: 0; text-transform: none; color: var(--tinta); background: var(--papel);
   border: 1px solid var(--linha); border-radius: 8px; padding: 7px 9px; }
-.campo select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 1px; }
-.notas h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
-.notas p, .notas li { font-size: 13.5px; }
-.notas ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
-.numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
-.numeros div { border-left: 3px solid var(--acento); padding: 2px 0 2px 8px; }
-.numeros dt { font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
-.numeros dd { margin: 2px 0 0; font: 600 17px/1.15 var(--f-dado); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.numeros small { font: 12px var(--f-dado); color: var(--tinta-2); }
+:where(.app, .cen-ficha) .campo select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 1px; }
+:where(.app, .cen-ficha) .notas h3 { margin: 14px 0 6px; font: 700 15px/1.2 var(--f-ui); letter-spacing: .02em; }
+:where(.app, .cen-ficha) .notas p, :where(.app, .cen-ficha) .notas li { font-size: 13.5px; }
+:where(.app, .cen-ficha) .notas ul { margin: 0; padding-left: 18px; display: grid; gap: 5px; }
+:where(.app, .cen-ficha) .numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+:where(.app, .cen-ficha) .numeros div { border-left: 3px solid var(--acento); padding: 2px 0 2px 8px; }
+:where(.app, .cen-ficha) .numeros dt { font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .numeros dd { margin: 2px 0 0; font: 600 17px/1.15 var(--f-dado); font-variant-numeric: tabular-nums; white-space: nowrap; }
+:where(.app, .cen-ficha) .numeros small { font: 12px var(--f-dado); color: var(--tinta-2); }
 
 @media (max-width: 860px) {
   .app { height: auto; min-height: 100%; }
-  .corpo { grid-template-columns: minmax(0, 1fr); }
-  .mapa { height: 62vh; min-height: 320px; }
-  .legenda { left: 10px; max-width: calc(100% - 20px); bottom: 44px; }
-  .coord { left: 10px; top: 10px; }
-  .zoom { top: 10px; }
-  .painel { overflow: visible; }
+  :where(.app, .cen-ficha) .corpo { grid-template-columns: minmax(0, 1fr); }
+  :where(.app, .cen-ficha) .mapa { height: 62vh; min-height: 320px; }
+  :where(.app, .cen-ficha) .legenda { left: 10px; max-width: calc(100% - 20px); bottom: 44px; }
+  :where(.app, .cen-ficha) .coord { left: 10px; top: 10px; }
+  :where(.app, .cen-ficha) .zoom { top: 10px; }
+  :where(.app, .cen-ficha) .painel { overflow: visible; }
 }
-.bt-modelos { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); background: var(--folha);
+:where(.app, .cen-ficha) .bt-modelos { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta-2); background: var(--folha);
   border: 1px solid var(--linha); border-radius: 8px; padding: 9px 12px; cursor: pointer; }
-.bt-modelos[aria-pressed="true"] { background: var(--acento); color: var(--folha); border-color: var(--acento); }
-.bt-cenario { color: var(--folha); background: var(--acento); border-color: var(--acento); }
-.catalogo { min-height: 0; overflow: auto; border-radius: 10px; border: 1px solid var(--linha); background: var(--folha); padding: 12px 14px; }
-.catalogo h2 { margin: 2px 0 4px; font: 700 17px/1.2 var(--f-ui); }
-.catalogo > p { margin: 0 0 6px; font: 13px/1.4 var(--f-texto); color: var(--tinta-2); }
-.catalogo h3 { margin: 16px 0 6px; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
-.catalogo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.catalogo button { width: 100%; text-align: left; border: 1px solid var(--linha); background: var(--papel); border-radius: 8px;
+:where(.app, .cen-ficha) .bt-modelos[aria-pressed="true"] { background: var(--acento); color: var(--folha); border-color: var(--acento); }
+:where(.app, .cen-ficha) .bt-cenario { color: var(--folha); background: var(--acento); border-color: var(--acento); }
+:where(.app, .cen-ficha) .catalogo { min-height: 0; overflow: auto; border-radius: 10px; border: 1px solid var(--linha); background: var(--folha); padding: 12px 14px; }
+:where(.app, .cen-ficha) .catalogo h2 { margin: 2px 0 4px; font: 700 17px/1.2 var(--f-ui); }
+:where(.app, .cen-ficha) .catalogo > p { margin: 0 0 6px; font: 13px/1.4 var(--f-texto); color: var(--tinta-2); }
+:where(.app, .cen-ficha) .catalogo h3 { margin: 16px 0 6px; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+:where(.app, .cen-ficha) .catalogo ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+:where(.app, .cen-ficha) .catalogo button { width: 100%; text-align: left; border: 1px solid var(--linha); background: var(--papel); border-radius: 8px;
   padding: 8px 10px; cursor: pointer; font: 600 14px/1.2 var(--f-ui); color: var(--tinta); }
-.catalogo button small { display: block; margin-top: 3px; font: 400 12px/1.3 var(--f-texto); color: var(--tinta-2); }
-.catalogo button[aria-pressed="true"] { border-color: var(--acento); box-shadow: inset 4px 0 0 var(--acento); }
+:where(.app, .cen-ficha) .catalogo button small { display: block; margin-top: 3px; font: 400 12px/1.3 var(--f-texto); color: var(--tinta-2); }
+:where(.app, .cen-ficha) .catalogo button[aria-pressed="true"] { border-color: var(--acento); box-shadow: inset 4px 0 0 var(--acento); }
 .app.catalogo .mapa, .app.catalogo .notas { display: none; }
 .app.catalogo .corpo { grid-template-columns: 320px minmax(0, 1fr); }
 .app.catalogo .vista3d { aspect-ratio: auto; height: min(64vh, 660px); }
-.ficha .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 2px; }
-.ficha .acoes button { font: 600 13px/1 var(--f-ui); border: 1px solid var(--linha); background: var(--papel); color: var(--tinta);
+:where(.app, .cen-ficha) .ficha .acoes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 2px; }
+:where(.app, .cen-ficha) .ficha .acoes button { font: 600 13px/1 var(--f-ui); border: 1px solid var(--linha); background: var(--papel); color: var(--tinta);
   border-radius: 7px; padding: 8px 11px; cursor: pointer; }
 @media (max-width: 860px) {
   .app.catalogo .corpo { grid-template-columns: minmax(0, 1fr); }
   .app.catalogo .vista3d { height: 52vh; }
-  .catalogo { max-height: 42vh; }
+  :where(.app, .cen-ficha) .catalogo { max-height: 42vh; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -273,22 +281,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js';
-import { montarModelos } from './js/modelos3d.js';
-import { moldeDaPeca, comTransformador } from './js/props3d.js';
-import { ATLAS } from './js/modelos_atlas.js';
-import { Construtor, sorteio } from './js/construtor3d.js';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js';
-import { montarSede } from './js/sede3d.js';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=e422fd7958';
+import { montarModelos } from './js/modelos3d.js?v=e422fd7958';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=e422fd7958';
+import { ATLAS } from './js/modelos_atlas.js?v=e422fd7958';
+import { Construtor, sorteio } from './js/construtor3d.js?v=e422fd7958';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=e422fd7958';
+import { montarSede } from './js/sede3d.js?v=e422fd7958';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=e422fd7958';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=e422fd7958';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=e422fd7958';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=e422fd7958';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=e422fd7958';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=e422fd7958';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=e422fd7958';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=e422fd7958';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=e422fd7958';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -305,19 +313,19 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js');
-  await carregarScript('dados/times.js');
-  await carregarScript('dados/cena_estadio.js');
-  await carregarScript('dados/cidades.js');
-  await carregarScript('dados/estadios.js');
-  await carregarScript('dados/escudos.js');
+  await carregarScript('dados/torcidas.js?v=e422fd7958');
+  await carregarScript('dados/times.js?v=e422fd7958');
+  await carregarScript('dados/cena_estadio.js?v=e422fd7958');
+  await carregarScript('dados/cidades.js?v=e422fd7958');
+  await carregarScript('dados/estadios.js?v=e422fd7958');
+  await carregarScript('dados/escudos.js?v=e422fd7958');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=e422fd7958').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -5303,7 +5311,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js');
+    const { montarJogo } = await import('./js/jogo3d.js?v=e422fd7958');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5326,7 +5334,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js');
+      const { criarCenario } = await import('./js/cenario.js?v=e422fd7958');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
