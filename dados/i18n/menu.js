@@ -79,6 +79,7 @@ TO.i18n.registrar({
 
   /* ---------- a coluna de navegação ---------- */
   'Feed':           {es:'Feed',            en:'Feed'},
+  'Sala do presidente': {es:'Despacho del presidente', en:"President's office"},
   'Financeiro':     {es:'Finanzas',        en:'Finances'},
   'Calendário':     {es:'Calendario',      en:'Calendar'},
   'Competições':    {es:'Competiciones',   en:'Competitions'},

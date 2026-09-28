@@ -47,10 +47,9 @@ mesmo relógio, os mesmos painéis e cenas. O 3D muda a tela, não as regras.
   câmera voa até a porta da sede dela.
 - **O HUD do jogo de feed, inteiro:** a barra de cima (escudo, ranking,
   caixa, saldo da semana, membros, prestígio, moral, força, a data, o ≫ que
-  empurra o dia e o 1×/2×), a fita das manchetes, a coluna de ícones (os
-  nove painéis e o menu principal) e o feed, que vira uma coluna à direita
-  e recolhe pelo botão da borda (com o número do que chegou enquanto estava
-  fechado).
+  empurra o dia e o 1×/2×), a fita das manchetes e a coluna de ícones (os
+  nove painéis e o menu principal). O feed NÃO aparece (28/09/2026): cada
+  mensagem chega num balão, na boca de quem a traz (seção 14).
 - **Os dias passam** como no jogo de feed: o relógio pinga as mensagens e
   vira o dia sozinho; decisão sem resposta, painel, modal ou cena param o
   tempo.
@@ -104,9 +103,10 @@ Em ordem de peso pro jogo. Cada item espera o dono apontar as mudanças.
    passa a ser a única; `pontoDaSede`, `pontoDoBar` e os bairros do jogo
    leem dela. É a peça de arquitetura que destrava o resto (o dia de jogo e
    a briga na rua dependem dela).
-5. **O feed.** Fica como a coluna das mensagens (é o celular do
-   presidente). Alguns cartões podem ganhar um "ver na cidade" — o olheiro
-   apontando o bar da rival, a obra do patrimônio, a caravana chegando.
+5. **O feed.** Saiu da tela (28/09/2026): as mensagens chegam em balão,
+   na boca de quem as traz (seção 14). Alguns recados podem ganhar um "ver
+   na cidade" — o olheiro apontando o bar da rival, a obra do patrimônio, a
+   caravana chegando.
 6. **Os painéis** (Torcida, Financeiro, Calendário, Competições, Ranking,
    Diplomacia, Notícias, Jogo) ficam como são: são planilha. Os que têm
    lugar na cidade (o bar, a loja, a sede do patrimônio; as sedes das
@@ -173,7 +173,8 @@ sessão); o que eles fazem, pra refazer:
 mensagens do feed caem na hora delas e a luz do cenário segue a hora); a
 sede com os membros do save pelos cômodos (cada móvel que recebe gente
 marca o lugar em `sede3d.js`); o presidente sentado e quem traz a mensagem
-na cadeira da frente, com o cartão em balão; a reunião da diretoria na mesa
+na cadeira da frente, com o cartão em balão (o balão e a fila dos recados
+são do mensageiro, `recados3d.js`, seção 14); a reunião da diretoria na mesa
 da sala da sede (o palco da reunião, que desmonta quando a cena fecha); os
 pedestres nas calçadas e a turma de cada bar de torcida na porta.
 
@@ -414,7 +415,8 @@ visitante podendo iniciar a rota ou na entrada ou na casa do aliado".
   atravessa o anel até a grade e o combate começa lá. O clima tenso não
   força mais a briga na cidade 3D: pergunta "Invadir o setor deles?"
   (invadir por um caminho, simular ou ficar no lugar — ficando, a PM
-  acalma e a bola volta). Uma briga de arquibancada por jogo, como antes;
+  acalma e a bola volta). Desde 28/09/2026 a pergunta é um recado na
+  linha do dia, no balão do líder do bonde (seção 14), e não uma caixa. Uma briga de arquibancada por jogo, como antes;
   a conta é a da tabela do estádio (`fecharEstadio`), contra a rival do
   outro lado do isolamento — as outras torcidas do nosso clube não descem.
 - **A invasão jogada** (`invasao.js`): o combate do jogo em cima da
@@ -436,7 +438,8 @@ visitante podendo iniciar a rota ou na entrada ou na casa do aliado".
   3D) e, se a aliada respondeu que recebe no pedido de ajuda do
   planejamento e tem sede no mapa, o jogador escolhe onde a caravana
   desce: **na sede da aliada** (com a escolta dela junto, se ela escolta)
-  ou **na entrada da cidade** (pelo pórtico). Sem aliada que receba, desce
+  ou **na entrada da cidade** (pelo pórtico) — a pergunta também é um
+  recado na linha do dia, no balão (seção 14). Sem aliada que receba, desce
   na entrada. A briga da caminhada fora é a mesma da de casa (o combate no
   plano do dia, na cidade deles).
 
@@ -450,9 +453,9 @@ confere, praça por praça, os caminhos de invasão de cada torcida e o
 tabuleiro (a grade do combate em cima da divisória do modelo).
 
 **Limites (sinceros):**
-- A linha do feed mostra as horas dela (a concentração 5 h antes da bola)
-  e a cidade mostra as do plano (a caminhada começa ~1 h antes): são dois
-  relógios.
+- A linha do dia (no balão do líder do bonde, seção 14) mostra as horas
+  dela (a concentração 5 h antes da bola) e a cidade mostra as do plano (a
+  caminhada começa ~1 h antes): são dois relógios.
 - O resultado da invasão não tira ninguém da arquibancada no 3D (a conta
   vai pro jogo; os bonecos continuam no lugar).
 - A briga dos arredores (a investida marcada nos arredores) continua na
@@ -460,7 +463,91 @@ tabuleiro (a grade do combate em cima da divisória do modelo).
 - A emboscada na estrada (fora de casa) é a do palco à parte da caravana;
   a caminhada na cidade deles vem depois, na fase do jogo.
 - Sem mapa 3D pra praça do jogo, sem torcida do mandante com sede no mapa
-  ou em campo neutro, o dia segue só na linha do feed.
+  ou em campo neutro, o dia segue só na linha do dia (no balão, na sede).
 - No swiftshader do teste a cidade roda a 1–2 quadros por segundo; o
   "Pular" existe porque a caminhada inteira a 30× leva uns 40 s de verdade.
 
+
+## 14. Sem feed na tela: os recados em balão (28/09/2026)
+
+O dono: "Exclua a exposição do feed na tela. As mensagens sempre vão ser
+via balões de alguém falando com o jogador."
+
+`ferramentas/planta_html/recados3d.js` (o mensageiro), com `TO.semFeed`
+(o `jogo3d.js` liga antes de carregar o jogo; o `main.js` não monta o rolo
+do feed, e o botão da borda que recolhia o feed saiu). A história continua
+em `E.feed`, igual; Notícias segue com o arquivo (tudo o que já passou, pra
+reler) e com as abas Mensagens e Tretas. O jogo de feed da raiz
+(`index.html`) não mudou.
+
+- **Quem fala.** Na sede, quem traz o recado senta na cadeira da frente da
+  mesa do presidente — o diretor, o olheiro, o repórter, o enviado de outra
+  torcida, pela voz da mensagem (`vida3d.js`, `sentarRecado`) — e o balão
+  fica em cima da cabeça dele, abrindo pro lado contrário ao presidente. No
+  dia de jogo, quem fala é o líder do nosso bonde (`dia3d.falante`: o balão
+  em cima do nome do bonde, na rua e na arquibancada). Sem quem fala na tela
+  (a câmera noutro canto, a praça sem sede, a cidade montando), o balão
+  encosta no alto, com o botão que leva a câmera até ele ("Ir pra sala do
+  presidente" / "Ver a nossa torcida").
+- **Uma de cada vez, nenhuma perdida.** A fila guarda as mensagens na ordem
+  em que caíram. A notícia fica o tempo de ler — 3 s mais 1 s a cada 30
+  letras, entre 4 e 11 s (mais 3 s com tabela; no 2×, 1,4 vez mais rápido);
+  a régua embaixo do balão mostra quanto falta —, o mouse em cima segura, e
+  um clique dentro prende até o ×. O × e o "Próximo ▸" passam na hora; o pé
+  do balão conta quantos recados esperam. A decisão fica até a resposta (sem
+  ×); respondida, fica 2,5 s com a resposta.
+- **O relógio espera quem fala.** O ritmo do jogo 3D (`TO.jogo3d.ritmo`)
+  soma o que falta ler (o balão no ar e a fila) no tempo da próxima
+  mensagem: o dia só pinga a seguinte quando o balão acaba, e a fila não
+  cresce sem fim. Fechou antes da hora, o relógio refaz a conta.
+- **O que esconde o balão (e segura a fila):** painel, mapa, cena de briga,
+  a reunião da diretoria, modal e o relatório. A decisão respondida por trás
+  (a reunião encerrada, a tela do ataque confirmada) não volta.
+- **O dia de jogo.** O cartão da partida é o balão; com a linha do dia
+  andando, o balão mostra só a linha (a parada de agora, os recados da
+  parada com os botões — descer, simular, deixar quieto — e a partida) e não
+  sai até a linha fechar; aí fica 5 s com o dia fechado. Se a linha começa
+  com outro recado no ar, ela passa na frente (o outro volta pra fila, sem
+  contar como ouvido). As duas perguntas do dia que eram caixas por cima de
+  tudo viraram recados na linha: "Onde a caravana desce?" (fora de casa) e
+  "Invadir o setor deles?" (o clima tenso; também o botão de invadir do
+  painel). Sem linha do dia no ar, elas voltam a ser a caixa de sempre.
+- **Os recados de outras torcidas** (Notícias → Mensagens: provocação,
+  convite, agradecimento, pedido de casa, trégua) também chegam assim: o
+  enviado dela, com a camisa dela. O pedido de casa e a trégua vêm com os
+  botões; sem resposta, seguem esperando em Notícias → Mensagens (não param
+  o tempo, como antes). O que foi entregue fica lido. Eles esperam a vez:
+  as mensagens da nossa torcida passam na frente.
+- **O que fica no save:** `E.ouvido3d`, o id da mensagem mais nova já
+  ouvida. Carregar o jogo refaz a fila com o que está acima dela; save sem a
+  marca (jogo novo, save de antes) começa pelas de hoje. Decisão em aberto
+  sempre volta.
+- **O menu lateral:** o primeiro item deixou de ser "Feed" e virou "Sala do
+  presidente" (fecha o painel e leva a câmera até a sala; no dia de jogo,
+  até o nosso bonde). O passo do tutorial que falava do feed fala dos
+  balões.
+- A notícia de treta segue fora (Notícias → Tretas), como no feed.
+
+**Como testar:** `scratchpad/recados/sede.js` (Playwright): jogo novo com a
+TUF e o relógio correndo por uns dias — cada decisão respondida no balão, as
+telas e painéis que ela abre fechados, a reunião encerrada, notícias
+fechadas no × e no "Próximo"; no fim, confere que toda mensagem do `E.feed`
+(menos as de treta) passou pelo balão e a maior fila. `scratchpad/recados/
+dia_balao.js`: o dia de jogo com a linha no balão do líder do bonde, o
+cartão da briga, a partida e o balão fechando no fim do dia.
+
+**Limites (sinceros):**
+- O relógio espera o balão: num dia com muita notícia, o dia anda mais
+  devagar que no feed (é o preço de ler tudo). O × e o "Próximo" existem
+  pra isso, e o ≫ continua empurrando o dia.
+- Recado que saiu do balão não volta: pra reler, Notícias (o arquivo guarda
+  as mensagens; a aba Mensagens, os recados de outras torcidas).
+- O pedido de casa e a trégua sem resposta no balão ficam esperando em
+  Notícias → Mensagens, com o número vermelho no ícone; o balão não volta
+  pra lembrar.
+- O balão cobre um pedaço da sala (às vezes o presidente, com a câmera
+  atrás dele) e, na partida, um pedaço da arquibancada. O planejamento da
+  semana e a tabela do olheiro rolam por dentro do balão (até 46% da altura
+  da tela).
+- O "Mensagem de X" que piscava do lado do ícone de Notícias saiu do 3D (o
+  enviado entrega em pessoa); o número vermelho continua.

@@ -14,8 +14,11 @@
      jogo_casca.js, que o montar.sh gera do index.html da raiz;
    - os scripts do jogo vêm num arquivo só (js/jogo.js, na mesma ordem
      do index.html), e o CSS também (css/jogo.css); jogo3d.css muda
-     onde fica cada pedaço (a barra em cima, os ícones na esquerda, o
-     feed numa coluna à direita que recolhe);
+     onde fica cada pedaço (a barra em cima, os ícones na esquerda);
+   - O FEED NÃO APARECE (28/09/2026, o dono: "Exclua a exposição do feed
+     na tela. As mensagens sempre vão ser via balões de alguém falando
+     com o jogador"): cada mensagem chega num balão, na boca de quem a
+     traz (recados3d.js);
    - o boneco das cenas é o do cenário (bonecos3_global.js);
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
@@ -24,6 +27,7 @@ import { CASCA } from './jogo_casca.js';
 import { criarVida, horaTxt } from './vida3d.js';
 import { criarMapaDaCidade } from './mapa3d.js';
 import { criarDia3d } from './dia3d.js';
+import { criarRecados } from './recados3d.js';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -46,6 +50,9 @@ export async function montarJogo(api) {
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
   await carregarScript('dados/imagens_jogo.js').catch(() => {});
+  /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
+  window.TO = window.TO || {};
+  TO.semFeed = true;
   await carregarScript('js/jogo.js');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
@@ -78,11 +85,31 @@ function ligar(api) {
       if (!v) { pracaDoJogo = null; conferirPraca(); }
     }
   });
+  /* OS RECADOS EM BALÃO (28/09/2026, recados3d.js): cada mensagem que cai
+     chega na boca de alguém — quem senta na frente do presidente, na sede;
+     o líder do nosso bonde, no dia de jogo */
+  const recados = criarRecados(api, vida, dia3d);
+  /* O RITMO: quanto a próxima mensagem espera. Com a vida da praça, até a
+     hora dela no relógio do dia; e sempre, até quem está falando acabar
+     (a fila de balões não cresce). O dia calado sem a vida passa no
+     compasso de sempre do jogo de feed (120 ms) */
+  const ritmo = {
+    antesDaProxima: e => Math.max(vida.ligada ? vida.ritmo.antesDaProxima(e) || 0 : 0, recados.espera()),
+    diaVazio: e => vida.ligada ? vida.ritmo.diaVazio(e) : 120,
+    caiu(e, m) { recados.chegou(e, m); if (vida.ligada) vida.ritmo.caiu(e, m); },
+    virouDia(e) { if (vida.ligada) vida.ritmo.virouDia(e); }
+  };
   TO.jogo3d = {
-    get ritmo() { return vida.ligada ? vida.ritmo : null; },
+    get ritmo() { return ritmo; },
     palcoDe: (local, cfg) => vida.palcoDe(local, cfg),
     abrirMapa: () => mapa.alternar(),
-    vida, mapa, dia: dia3d
+    /* o primeiro item do menu lateral (no lugar do Feed): a câmera na sala
+       do presidente, onde os recados chegam — no dia de jogo, no nosso bonde */
+    irPraSala() {
+      if (dia3d.ativo) { dia3d.verNossa(); return; }
+      if (vida.ligada && vida.sede) vida.irPraSala(); else irPraSede();
+    },
+    vida, mapa, dia: dia3d, recados
   };
   /* o relógio do dia na barra de cima, do lado da data */
   const relogio = document.createElement('div');
@@ -106,32 +133,6 @@ function ligar(api) {
     letreiro.innerHTML = p ? `A praça de <b>${p.replace(/[&<>]/g, '')}</b>` : '';
   };
   api.pronta && api.pronta.then(pintarLetreiro, () => {});
-
-  /* o feed recolhe e abre pelo botão da borda; o número conta o que chegou
-     enquanto ele estava fechado */
-  const bt = document.createElement('button');
-  bt.id = 'j3dFeed';
-  bt.innerHTML = '<span class="seta"></span><span class="badge" hidden></span>';
-  document.body.appendChild(bt);
-  let fechado = false, vistos = 0;
-  try { fechado = localStorage.getItem('jogo3d-feed') === 'fechado'; } catch (e) {}
-  const contarFeed = () => { const e = E(); return e && e.feed ? e.feed.length : 0; };
-  const pintarBotao = () => {
-    document.body.classList.toggle('feed-fechado', fechado);
-    bt.querySelector('.seta').textContent = fechado ? '◂' : '▸';
-    bt.title = fechado ? 'Abrir o feed' : 'Recolher o feed (deixa só a cidade)';
-    bt.setAttribute('aria-label', bt.title);
-    const novos = fechado ? Math.max(0, contarFeed() - vistos) : 0;
-    const b = bt.querySelector('.badge');
-    b.hidden = !novos; b.textContent = novos > 99 ? '99+' : String(novos);
-    if (!fechado) vistos = contarFeed();
-  };
-  bt.onclick = () => {
-    fechado = !fechado;
-    try { localStorage.setItem('jogo3d-feed', fechado ? 'fechado' : 'aberto'); } catch (e) {}
-    pintarBotao();
-  };
-  pintarBotao();
 
   /* A PRAÇA É A DA TORCIDA: quando a partida abre (nova ou carregada), a
      cidade troca pra praça dela e a câmera voa até a porta da sede */
@@ -185,15 +186,19 @@ function ligar(api) {
     if (emJogo) conferirPraca();
     else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }
     if (!emJogo) mapa.fechar();
-    pintarBotao();
   };
-  /* o quadro do relógio (a hora da barra) */
-  const laco = () => { if (vida.ligada || dia3d.hora != null) pintarHora(); requestAnimationFrame(laco); };
+  /* o quadro do jogo 3D: a hora da barra e os recados em balão */
+  let tAntes = 0;
+  const laco = t => {
+    const dt = tAntes ? Math.min(0.25, Math.max(0, (t - tAntes) / 1000)) : 0.016;
+    tAntes = t;
+    if (vida.ligada || dia3d.hora != null) pintarHora();
+    try { recados.quadro(dt); } catch (err) { console.error('jogo 3D, os recados:', err); }
+    requestAnimationFrame(laco);
+  };
   requestAnimationFrame(laco);
   if (jogo) new MutationObserver(conferirTela).observe(jogo, { attributes: true, attributeFilter: ['class'] });
   TO.estado.aoMudar(() => { conferirTela(); });
-  /* o feed que chega com o relógio (a fila que pinga) não passa pelo aoMudar */
-  setInterval(pintarBotao, 1500);
   /* A CIDADE PARA QUANDO ALGO A COBRE: um painel, uma cena de briga, o
      relatório, a escolha da torcida, um modal — o último quadro fica, e
      o processador fica com o jogo. No menu ela segue desenhando. */

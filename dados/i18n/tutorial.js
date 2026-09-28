@@ -19,6 +19,7 @@ TO.i18n.registrar({
   'Indicadores · Recrutar':  {es:'Indicadores · Reclutar',  en:'Indicators · Recruit'},
   'Indicadores · Relações':  {es:'Indicadores · Relaciones',en:'Indicators · Relationships'},
   'Feed':                    {es:'Feed',                    en:'Feed'},
+  'Recados':                 {es:'Recados',                 en:'Messages'},
   'Financeiro · 1 de 2':     {es:'Finanzas · 1 de 2',       en:'Finances · 1 of 2'},
   'Financeiro · 2 de 2':     {es:'Finanzas · 2 de 2',       en:'Finances · 2 of 2'},
   'Calendário':              {es:'Calendario',              en:'Calendar'},
@@ -42,6 +43,9 @@ TO.i18n.registrar({
   '<em>Relações</em>: Nível de relação com um rival, mas mais na frente eu te explico com mais detalhe no passo a passo.':
     {es:'<em>Relaciones</em>: tu nivel de relación con un rival, pero más adelante te lo explico con más detalle en el paso a paso.',
      en:"<em>Relationships</em>: where you stand with a rival — but I'll explain it in more detail further on in the walkthrough."},
+  'Aqui não tem feed: tudo chega na boca de alguém. Na sede, quem traz o recado senta na frente da mesa do presidente — o diretor, o olheiro, o repórter, o enviado de outra torcida — e fala num balão; no dia de jogo, quem fala é o líder do nosso bonde. A decisão espera a sua resposta, com as opções e as consequências de cada uma; a notícia sai sozinha depois de lida (ou no ×). Tudo o que já passou fica em Notícias.':
+    {es:'Aquí no hay feed: todo llega de boca de alguien. En la sede, quien trae el recado se sienta frente al escritorio del presidente — el directivo, el informante, el periodista, el enviado de otra barra — y habla en un globo; en el día de partido, quien habla es el líder de nuestra columna. La decisión espera tu respuesta, con las opciones y las consecuencias de cada una; la noticia se va sola después de leída (o con la ×). Todo lo que ya pasó queda en Noticias.',
+     en:"There's no feed here: everything comes from someone's mouth. At the clubhouse, whoever brings the message sits across the president's desk — the director, the scout, the reporter, the envoy from another firm — and speaks in a speech bubble; on match day, the one talking is the leader of our mob. A decision waits for your answer, with the options and the consequences of each; news leaves on its own once read (or with the ×). Everything that already happened stays in News."},
   'O feed é onde o jogo acontece. Tudo é decidido por aqui: recado de olheiro, planejamento de ações, notícia. Decisões importantes têm opções que detalham as consequências de cada uma — o resto é pra ler e seguir.':
     {es:'El feed es donde pasa el juego. Todo se decide aquí: el aviso del informante, la planificación de acciones, las noticias. Las decisiones importantes tienen opciones que detallan las consecuencias de cada una; el resto es para leer y seguir.',
      en:'The feed is where the game happens. Everything gets decided here: tip-offs from scouts, action planning, news. Big decisions come with options that spell out the consequences of each one — the rest is just to read and move on.'},

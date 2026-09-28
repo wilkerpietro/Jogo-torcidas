@@ -37,7 +37,13 @@
       '<em>Recrutar</em>: É a ação de conseguir novos membros. Quem dita se um dia terá novos membros recrutados é a fase do clube: se vai bem novos membros são recrutados mais fácil, se vai mal se torna bem mais difícil.')},
     {ic:'🤝', tela:_t('Indicadores · Relações'), txt:_t(
       '<em>Relações</em>: Nível de relação com um rival, mas mais na frente eu te explico com mais detalhe no passo a passo.')},
-    {ic:'📣', tela:_t('Feed'), txt:_t(
+    /* NO JOGO 3D NÃO TEM FEED (dono, 28/09/2026): o passo fala dos
+       recados em balão, e o círculo vai no balão que estiver no ar */
+    TO.semFeed
+    ? {ic:'📣', tela:_t('Recados'), txt:_t(
+      'Aqui não tem feed: tudo chega na boca de alguém. Na sede, quem traz o recado senta na frente da mesa do presidente — o diretor, o olheiro, o repórter, o enviado de outra torcida — e fala num balão; no dia de jogo, quem fala é o líder do nosso bonde. A decisão espera a sua resposta, com as opções e as consequências de cada uma; a notícia sai sozinha depois de lida (ou no ×). Tudo o que já passou fica em Notícias.'),
+      alvos: ()=>[document.querySelector('.j3d-balao:not([hidden])')]}
+    : {ic:'📣', tela:_t('Feed'), txt:_t(
       'O feed é onde o jogo acontece. Tudo é decidido por aqui: recado de olheiro, planejamento de ações, notícia. Decisões importantes têm opções que detalham as consequências de cada uma — o resto é pra ler e seguir.'),
       alvos: ()=>{
         /* de preferência uma decisão em aberto; sem uma, o cartão mais
