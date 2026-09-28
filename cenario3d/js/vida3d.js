@@ -37,8 +37,8 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=bae34b03b1';
-import { brigaNaCaminhada } from './caminhada.js?v=bae34b03b1';
+import { palcoDeBriga } from './palco_briga.js?v=ac8d464b22';
+import { brigaNaCaminhada } from './caminhada.js?v=ac8d464b22';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -228,6 +228,9 @@ export function criarVida(api) {
   const C = () => api.cenario;
   const E = () => TO.estado && TO.estado.E;
   const relogio = criarRelogio({ get vida() { return C().vida; } });
+  /* dia novo, hóspedes novos (os de ontem já foram pro jogo deles) */
+  const virouDia0 = relogio.ritmo.virouDia;
+  relogio.ritmo.virouDia = e => { virouDia0(e); if (ligada && sede) poeHospedes(); };
   /* o jogo do quadro que o cenário desenha (os discos da vida) */
   const J = { t: 0, discos: [], falante: null, reuniao: false };
   let ligada = false, sede = null, rua = null, praca = null, tAcc = 0;
@@ -336,6 +339,8 @@ export function criarVida(api) {
       sentarNo(p, lp);
       sede.pessoas.push(p); sede.presidente = p;
     }
+    /* os hóspedes do dia primeiro (o aliado que dormiu aqui): o resto se ajeita em volta */
+    poeHospedes();
     /* a sede já com o movimento da hora (sem ninguém andando na chegada) */
     const alvo = alvoDaSede(), livres = membrosLivres(), ls = lugaresDoTurno(alvo.acao);
     const n = Math.min(livres.length, Math.round(ls.length * alvo.frac));
@@ -361,12 +366,13 @@ export function criarVida(api) {
       } else p.d.alt = C().vida.chao(p.d.x, p.d.y);
     }
     sede.pessoas = sede.pessoas.filter(p => !p.sai);
+    quadroHospedes();
     if (reuniao3d) return;                // na reunião a sede fica como está
     sede.proxTroca -= dt;
     if (sede.proxTroca > 0) return;
     sede.proxTroca = 3 + Math.random() * 5;
     const alvo = alvoDaSede();
-    const quem = sede.pessoas.filter(p => !p.presidente && !p.recado);
+    const quem = sede.pessoas.filter(p => !p.presidente && !p.recado && !p.hospede);
     const cabem = lugaresDoTurno(alvo.acao);
     const quer = Math.round((quem.length + cabem.length) * alvo.frac);
     const andando = quem.filter(p => p.estado === 'andando').length;
@@ -386,6 +392,90 @@ export function criarVida(api) {
       if (quem.length <= quer && cabem.length && Math.random() < 0.6) mandarAndar(p, cabem[Math.floor(Math.random() * cabem.length)], l.x, l.z);
       else mandarAndar(p, null, l.x, l.z);
     }
+  }
+
+  /* =====================================================
+     OS HÓSPEDES (o jogo 3D, 28/09/2026; o dono: "Quando o jogador opta
+     por hospedar na sede um aliado, eles aparecem na sede no dia do jogo
+     e partem da sede pro estádio"). O aliado que a torcida recebe hoje (a
+     recepção do planejamento — hospedar, hospedar e escoltar, churrasco —
+     do jogo dele na nossa praça: `hospedesDeHoje`) passou a noite aqui: de
+     manhã a caravana dele está dentro da sede, com a camisa dele, nas
+     camas do alojamento, no sofá, nas rodas e nas mesas (até 12; o
+     vaivém dos nossos não mexe neles). Duas horas e meia antes da bola
+     eles saem pela porta, um atrás do outro. Vendo o jogo na cidade
+     (dia3d.js), o bonde deles parte da nossa porta
+     ===================================================== */
+  const SAIDA_ANTES = 150;
+  const LUGAR_DE_HOSPEDE = { cama: 9, sofa: 7, roda: 6, mesa: 5, banco: 5, churrasco: 4, balcao: 3, sinuca: 2, pebolim: 2, espera: 1 };
+  function hospedesDeHoje() {
+    const e = E(), PL = TO.planejamento;
+    if (!e || !PL || !PL.hospedesDeHoje) return [];
+    let lista = [];
+    try { lista = PL.hospedesDeHoje(e); } catch (err) { return []; }
+    const jogos = TO.praca && TO.praca.jogosDaPraca ? TO.praca.jogosDaPraca(e).filter(j => j.dia === e.data.dia) : [];
+    return lista.map(a => {
+      const j = jogos.find(x => a.clube && x.vis.id === a.clube.id);
+      const bola = (j && minutoDe(j.hora)) || 16 * 60;
+      const cc = TO.mundo && TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(a.torcida) : { cor: '#777777', cor2: '#eeeeee', cor3: null };
+      return { id: a.id, nome: a.torcida.nome, n: a.estimativa || 8, nivel: a.nivel, bola, saida: bola - SAIDA_ANTES, cor: cc.cor, cor2: cc.cor2, cor3: cc.cor3 };
+    });
+  }
+  function tirarHospedes() {
+    if (!sede) return;
+    for (const p of sede.pessoas) if (p.hospede && p.lugar) { p.lugar.ocupado = null; p.lugar = null; }
+    sede.pessoas = sede.pessoas.filter(p => !p.hospede);
+    sede.hospedes = [];
+  }
+  function poeHospedes() {
+    if (!sede) return;
+    tirarHospedes();
+    const h = relogio.minuto;
+    sede.hospedes = hospedesDeHoje().filter(a => h < a.saida);
+    for (const a of sede.hospedes) {
+      const livres = sede.lugares.filter(l => !l.ocupado && LUGAR_DE_HOSPEDE[l.tipo])
+        .sort((x, y) => LUGAR_DE_HOSPEDE[y.tipo] - LUGAR_DE_HOSPEDE[x.tipo] || frac(a.id + '|' + x.x + '|' + x.z) - frac(a.id + '|' + y.x + '|' + y.z));
+      const n = Math.min(livres.length, Math.max(3, Math.min(12, Math.round(a.n))));
+      a.dentro = n;
+      for (let k = 0; k < n; k++) {
+        const d = disco({ nome: a.nome + ' (hóspede ' + (k + 1) + ')', spawn: 'hospede', torcida: a.nome, cor: a.cor, cor2: a.cor2, cor3: a.cor3 });
+        const p = { m: null, d, hospede: a.id };
+        sentarNo(p, livres[k]);
+        sede.pessoas.push(p);
+      }
+    }
+  }
+  /* A HORA DELES: saem pela porta, um atrás do outro, com pressa. O relógio
+     da sede corre (o dia inteiro em ~9 s a 1×) e, sem esperar, o dia acabava
+     antes de eles chegarem na porta: A SAÍDA SE VÊ — o tempo do jogo espera
+     eles saírem (até 12 s), com a câmera na sede inteira, e volta pra sala */
+  let segurando = null;
+  function quadroHospedes() {
+    if (!sede || !sede.hospedes || !sede.hospedes.length) return;
+    const h = relogio.minuto;
+    for (const a of sede.hospedes) {
+      if (a.saindo || h < a.saida) continue;
+      a.saindo = true;
+      let k = 0;
+      for (const p of sede.pessoas) if (p.hospede === a.id && p.estado === 'no lugar') { p.sairEm = tAcc + 0.35 * k++; p.pressa = true; }
+      const b = document.body.classList;
+      if (k && !segurando && TO.tela && TO.tela.pausarTempo && !b.contains('com-painel') && !b.contains('em-cena') && !reuniao3d) {
+        TO.tela.pausarTempo('hospedes');
+        segurando = { desde: tAcc };
+        irPraSede();
+      }
+    }
+    for (const p of sede.pessoas) if (p.sairEm != null && tAcc >= p.sairEm) {
+      p.sairEm = null; mandarAndar(p, null, p.d.x, p.d.y);
+      if (p.pressa && p.vel) p.vel *= 1.6;
+    }
+    if (segurando && (!sede.pessoas.some(p => p.hospede) || tAcc - segurando.desde > 12)) soltarHospedes(true);
+  }
+  function soltarHospedes(praSala) {
+    if (!segurando) return;
+    segurando = null;
+    if (TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('hospedes');
+    if (praSala) irPraSala();
   }
 
   /* =====================================================
@@ -883,6 +973,7 @@ export function criarVida(api) {
     return true;
   }
   function desligar() {
+    soltarHospedes(false);
     ligada = false;
     const Cn = C();
     desligarSede(); rua = null; J.discos = [];
@@ -992,10 +1083,13 @@ export function criarVida(api) {
       return { renderizador: palcoDaReuniao() };
     },
     get ligada() { return ligada; },
+    /* os hóspedes saindo com o tempo do jogo esperando (o vigia do relógio confere) */
+    get segurandoHospedes() { return !!segurando; },
     /* pro teste */
     get estado() {
       return { ligada, praca, hora: relogio.hora, sede: sede && { pessoas: sede.pessoas.length, andando: sede.pessoas.filter(p => p.estado === 'andando').length,
-               presidente: !!sede.presidente, recado: !!sede.recado, lugares: sede.lugares.length },
+               presidente: !!sede.presidente, recado: !!sede.recado, lugares: sede.lugares.length,
+               hospedes: (sede.hospedes || []).map(a => ({ id: a.id, nome: a.nome, nivel: a.nivel, saida: horaTxt(a.saida), dentro: sede.pessoas.filter(p => p.hospede === a.id).length, saindo: !!a.saindo })) },
                povo: rua ? rua.povo.length : 0, bares: rua ? rua.bares.map(b => ({ n: b.n, dono: b.dono, gente: b.gente.length, chegando: b.gente.filter(g => g.estado === 'chegando').length })) : [],
                aneis: rua ? rua.aneis.length : 0, reuniao: !!reuniao3d, discos: J.discos.length };
     },

@@ -148,8 +148,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=bae34b03b1';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=bae34b03b1';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=ac8d464b22';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=ac8d464b22';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -586,6 +586,23 @@ export function planejar(ctx, escolha = {}) {
      TOMA, e ela sai da sede sozinha pro estádio"): no dia ela torce
      contra, e não anda com o visitante */
   function anfitriao(v) {
+    /* O ANFITRIÃO QUE O JOGO DIZ (o jogo 3D, 28/09/2026; o dono: "Quando o
+       jogador opta por hospedar na sede um aliado, eles aparecem na sede
+       no dia do jogo e partem da sede pro estádio"): com o jogo rodando,
+       quem recebe quem e o que decide vêm dele (`escolha.hospedes`, por
+       visitante: a recepção que o jogador escolheu, quando a casa é a
+       dele; o sorteio fixo do jogo, quando é da IA) — o sorteio daqui
+       não inventa outro, e ninguém hospeda por conta a torcida do jogador */
+    if (escolha.hospedes) {
+      const dado = escolha.hospedes[v.id];
+      const h = dado && dado.anfitriao ? torcidas.find(x => x.id === dado.anfitriao && x.porta && x.id !== v.id) : null;
+      if (!h) return null;
+      const doMandante = h.clubeId === casa.id;
+      let decisao = dado.decisao === 'churrasco' ? 'escolta' : dado.decisao === 'escolta' || dado.decisao === 'hospedar' ? dado.decisao : 'nada';
+      if (doMandante && decisao === 'escolta') decisao = 'hospedar';
+      return { t: h, grau: dado.grau || 1, pct: null, tirou: 0, forcada: true, doMandante, doJogo: true, doJogador: !!dado.doJogador, decisao,
+               escoltaMembros: Math.max(1, Math.round(dado.escolta || 1)) };
+    }
     const grau = h => (v.irmandade || []).includes(h.id) ? 2 : (v.aliados || []).includes(h.id) ? 1 : 0;
     const bons = torcidas.filter(h => h.porta && h.id !== v.id && grau(h) > 0)
       .map(h => ({ h, g: grau(h), k: hashDoJogo(v.id + '|' + h.id) })).sort((a, b) => b.g - a.g || a.k - b.k);

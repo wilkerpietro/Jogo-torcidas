@@ -281,22 +281,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=bae34b03b1';
-import { montarModelos } from './js/modelos3d.js?v=bae34b03b1';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=bae34b03b1';
-import { ATLAS } from './js/modelos_atlas.js?v=bae34b03b1';
-import { Construtor, sorteio } from './js/construtor3d.js?v=bae34b03b1';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=bae34b03b1';
-import { montarSede } from './js/sede3d.js?v=bae34b03b1';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=bae34b03b1';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=bae34b03b1';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=bae34b03b1';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=bae34b03b1';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=bae34b03b1';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=bae34b03b1';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=bae34b03b1';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=bae34b03b1';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=bae34b03b1';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=ac8d464b22';
+import { montarModelos } from './js/modelos3d.js?v=ac8d464b22';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=ac8d464b22';
+import { ATLAS } from './js/modelos_atlas.js?v=ac8d464b22';
+import { Construtor, sorteio } from './js/construtor3d.js?v=ac8d464b22';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=ac8d464b22';
+import { montarSede } from './js/sede3d.js?v=ac8d464b22';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=ac8d464b22';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=ac8d464b22';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=ac8d464b22';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=ac8d464b22';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=ac8d464b22';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=ac8d464b22';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=ac8d464b22';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=ac8d464b22';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=ac8d464b22';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -313,19 +313,19 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=bae34b03b1');
-  await carregarScript('dados/times.js?v=bae34b03b1');
-  await carregarScript('dados/cena_estadio.js?v=bae34b03b1');
-  await carregarScript('dados/cidades.js?v=bae34b03b1');
-  await carregarScript('dados/estadios.js?v=bae34b03b1');
-  await carregarScript('dados/escudos.js?v=bae34b03b1');
+  await carregarScript('dados/torcidas.js?v=ac8d464b22');
+  await carregarScript('dados/times.js?v=ac8d464b22');
+  await carregarScript('dados/cena_estadio.js?v=ac8d464b22');
+  await carregarScript('dados/cidades.js?v=ac8d464b22');
+  await carregarScript('dados/estadios.js?v=ac8d464b22');
+  await carregarScript('dados/escudos.js?v=ac8d464b22');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=bae34b03b1').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=ac8d464b22').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -645,12 +645,18 @@ function escolherBares(ts, lp, lr) {
   for (const T of ts) T.bares = [];
   const dist = (x, [cx, cy]) => Math.hypot(x.b.x - cx, x.b.y - cy) / M;
   const linhas = [];
-  for (const T of ts) if (T.sede) for (let q = 0; q < (T.nBares ?? 1); q++)
-    linhas.push({ T, casa: centroDe(T.sede), rivais: ts.filter(U => U !== T && U.sede && pesoRival(T, U) > 0).map(U => centroDe(U.sede)) });
+  /* (a torcida do jogador sem sede também tem o bar que comprou: sem a
+     casa, ele só foge das rivais) */
+  for (const T of ts) if (T.sede || (T.id === TORCIDA_DO_JOGO && BARES_DO_JOGO[T.id] != null)) for (let q = 0; q < (T.nBares ?? 1); q++)
+    linhas.push({ T, casa: T.sede ? centroDe(T.sede) : null, rivais: ts.filter(U => U !== T && U.sede && pesoRival(T, U) > 0).map(U => centroDe(U.sede)) });
+  /* os bares da torcida do jogador primeiro: com menos vaga de bar que
+     bar pra pôr, quem fica sem é a IA, não o bar que ele comprou */
+  if (TORCIDA_DO_JOGO) linhas.sort((a, b) => (b.T.id === TORCIDA_DO_JOGO) - (a.T.id === TORCIDA_DO_JOGO));
   const lista = bares.slice(), usadas = linhas.slice(0, lista.length);
   if (!usadas.length) return 0;
-  const falta = (q, b) => Math.max(0, 1 - dist(b, q.casa) / lp, ...q.rivais.map(r => 1 - dist(b, r) / lr));
-  const custo = usadas.map(q => lista.map(b => { const f = falta(q, b); return (f > 0 ? 1e5 + 1e4 * f : 0) + dist(b, q.casa); }));
+  const perto = (q, b) => q.casa ? dist(b, q.casa) : 0;
+  const falta = (q, b) => Math.max(0, q.casa ? 1 - dist(b, q.casa) / lp : 0, ...q.rivais.map(r => 1 - dist(b, r) / lr));
+  const custo = usadas.map(q => lista.map(b => { const f = falta(q, b); return (f > 0 ? 1e5 + 1e4 * f : 0) + perto(q, b); }));
   let fora = 0;
   casar(custo).forEach((j, i) => {
     const q = usadas[i], x = lista[j];
@@ -664,6 +670,15 @@ let ocupacao = { torcidas: [], semSede: [], mapa: '' };
    jogador tem a sede do save dela, não a da tabela — `nivelDoJogo` põe
    aqui antes de a praça montar */
 const NIVEL_DO_JOGO = {};
+/* OS BARES QUE O JOGO DIZ (conserto de 28/09/2026, o dono: "Eu comprei um
+   bar no jogo e o mapa não atualizou com mais um bar pra minha torcida"):
+   quantos bares cada torcida tem no save — a do jogador, o patrimônio
+   dela; as da IA, o mundo vivo (elas também compram). Sem o número do
+   jogo, vale o da tabela (um por torcida com sede). `baresDoJogo` põe
+   aqui antes de a praça montar; a torcida do jogador fica marcada pra
+   os bares dela entrarem primeiro */
+const BARES_DO_JOGO = {};
+let TORCIDA_DO_JOGO = null;
 /* O ESCUDO DE VERDADE: o mesmo PNG do jogo, pela mesma regra da planta
    (`caminhoDoEscudo` de dados/cena_estadio.js): dados/escudos.js é o
    manifesto do que existe em img/escudos/ (clube-<id>.png e
@@ -684,7 +699,7 @@ function distribuirTorcidas() {
     return { t, id: t.id, clubeSigla: (cl && cl.sigla) || t.sigla || '', clubeCor: cc[0] || null, clubeCor2: cc.find(x => x !== cc[0]) || '#E8E2D0', sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
              clube: t.clube, nivel: NIVEL_DO_JOGO[t.id] ?? t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
              escudo: caminhoDoEscudo('t', t.id), escudoClube: caminhoDoEscudo('c', t.clubeId),
-             cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: Array.isArray(t.bares) ? t.bares.length : null, sede: null, bares: [] };
+             cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: BARES_DO_JOGO[t.id] ?? (Array.isArray(t.bares) ? t.bares.length : null), sede: null, bares: [] };
   }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
   for (const x of espacos) x.dono = null;
   for (const x of bares) x.dono = null;
@@ -5192,6 +5207,17 @@ function apiDoCenario() {
       const depois = modelo(NIVEL_DO_JOGO[id] ?? (t ? t.sedeNivel ?? 1 : null));
       return antes !== depois;
     },
+    /* OS BARES DO JOGO: quantos bares a torcida tem no save (null volta
+       o da tabela; `doJogador`, a torcida de quem joga); vale na próxima
+       vez que a praça montar. Devolve se o número mudou */
+    baresDoJogo(id, n, doJogador) {
+      const t = (TO.dados.torcidas || []).find(x => x.id === id);
+      const conta = () => BARES_DO_JOGO[id] ?? (t && Array.isArray(t.bares) ? t.bares.length : 1);
+      const antes = conta();
+      if (n == null) delete BARES_DO_JOGO[id]; else BARES_DO_JOGO[id] = Math.max(0, Math.round(+n) || 0);
+      if (doJogador) TORCIDA_DO_JOGO = id;
+      return antes !== conta();
+    },
     /* OS BARES DAS TORCIDAS (a vida da praça): o lote, o dono (o id da
        torcida, ou nulo: fechado) e a porta — o meio da frente, 1,6 m pra
        fora dela, na calçada */
@@ -5252,9 +5278,17 @@ function apiDoCenario() {
                  cargos: t.cargos || null, irmandade: t.irmandade || [], aliados: t.aliados || [] };
       });
     },
-    /* os clubes dos dados (dados/times.js) que não são desta praça */
+    /* os clubes dos dados (dados/times.js) que vêm de fora: todos menos os
+       daqui — o da praça (`local`) e o que tem torcida com sede no mapa.
+       (Conserto de 28/09/2026: a lista de clubes de cada praça, em
+       dados/cidades.js, traz também os de fora que têm torcedor nela —
+       Flamengo, Corinthians e Palmeiras em Fortaleza; o Fortaleza em São
+       Paulo —, e tirar TODOS os da lista deixava esses clubes sem lado: não
+       eram da casa (sem torcida com sede aqui) nem de fora, e o dia de jogo
+       não montava — "o visitante do jogo não tem torcida que venha") */
     clubesDeFora() {
-      const c = infoDaCidade(cidade), daqui = new Set(((c && c.times) || []).map(x => x.clubeId));
+      const c = infoDaCidade(cidade), daqui = new Set(((c && c.times) || []).filter(x => x.local).map(x => x.clubeId));
+      for (const T of ocupacao.torcidas) if (T.sede && T.t && T.t.clubeId) daqui.add(T.t.clubeId);
       return (TO.dados.times || []).filter(t => !daqui.has(t.id)).map(t => ({ id: t.id, nome: t.nome, sigla: t.sigla, cidade: t.cidade || '', uf: t.uf || '', local: false,
         cores: (t.cores || []).map(v => String(v).toUpperCase()), nomeCompleto: t.nomeCompleto || t.nome }));
     },
@@ -5311,10 +5345,16 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=bae34b03b1');
+    const { montarJogo } = await import('./js/jogo3d.js?v=ac8d464b22');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
+      /* A PRAÇA DE UM MAPA DO JOGO (o id de dados/cidades.js: 'sao-paulo'):
+         pelo slug do nome, como `infoDaCidade` — o nome dos dados vem sem
+         acento em seis praças ("Sao Paulo", "Belem"…), e procurar pelo
+         nome deixava essas seis sem cidade em 3D (conserto de 28/09/2026:
+         o jogo fora em São Paulo abria com a cidade do jogador na tela) */
+      pracaDe: mapa => (mapa && nomes.find(n => slugDe(n) === mapa)) || null,
       abrirPraca(nome, forcar) {
         try { localStorage.setItem('jogo3d-praca', nome); } catch (e) {}
         /* `forcar`: a mesma praça, montada de novo (a sede do jogador mudou de nível) */
@@ -5326,7 +5366,9 @@ async function abrirJogo3d() {
       /* a planta (a vida da praça lê dela as sedes, os bares e as calçadas) */
       get planta() { return apiDoCenario(); },
       /* o nível da sede do save (vale na próxima montagem da praça) */
-      nivelDoJogo: (id, n) => apiDoCenario().nivelDoJogo(id, n)
+      nivelDoJogo: (id, n) => apiDoCenario().nivelDoJogo(id, n),
+      /* quantos bares a torcida tem no save (idem) */
+      baresDoJogo: (id, n, doJogador) => apiDoCenario().baresDoJogo(id, n, doJogador)
     });
   } catch (e) { console.error(e); alert('O jogo não carregou: ' + e.message); }
 }
@@ -5334,7 +5376,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=bae34b03b1');
+      const { criarCenario } = await import('./js/cenario.js?v=ac8d464b22');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }

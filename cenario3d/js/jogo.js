@@ -25823,6 +25823,9 @@ TO.planejamento = (function(){
             : relRec), -100, 100);
       if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
       p.pago = p.pago || {}; p.pago[a.id] = true;
+      /* o nível que VALEU (sem caixa, virou 'nada'): o jogo 3D põe o
+         aliado recebido na nossa sede no dia, e ele sai de lá pro estádio */
+      p.recebido = p.recebido || {}; p.recebido[a.id] = nivel;
       /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
       if(TO.feed && TO.feed.mensagemDe){
         const TXT = {
@@ -25835,6 +25838,19 @@ TO.planejamento = (function(){
                            nivel === 'nada' ? 'cobranca' : 'agradecimento');
       }
     }
+  }
+
+  /* QUEM A GENTE RECEBE HOJE (o jogo 3D, 28/09/2026; o dono: "Quando o
+     jogador opta por hospedar na sede um aliado, eles aparecem na sede no
+     dia do jogo e partem da sede pro estádio"): o aliado que joga hoje na
+     nossa praça e o nível da recepção — o que valeu na cobrança do dia,
+     ou, antes dela, o combinado. Quem não é recebido fica de fora */
+  function hospedesDeHoje(E){
+    const p = plano(E);
+    return aliadosNaCidade(E, E.data.semana)
+      .filter(a => a.dia === E.data.dia)
+      .map(a => Object.assign({}, a, {nivel: (p.recebido||{})[a.id] || nivelDe(E, a.id)}))
+      .filter(a => a.nivel && a.nivel !== 'nada');
   }
 
   /* =======================================================
@@ -26685,7 +26701,7 @@ TO.planejamento = (function(){
           ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
-          definirRecepcao, cobrarRecepcoes,
+          definirRecepcao, cobrarRecepcoes, hospedesDeHoje,
           COMO, definirIntencao, definirComo, definirOlheiro, alvoDe,
           ONDE_ATAQUE, ondeDoPlano, alvosNaRua, alvosDaViagem, alvosDoAtaque,
           definirAtaque,
@@ -34993,6 +35009,12 @@ TO.feed = (function(){
       case 'nada':
         marcar();
         return {ok:true};
+      /* O JOGO DA CIDADE NO 3D (o jogo 3D, 28/09/2026): "Ver na cidade"
+         abre o dia de jogo da praça — as torcidas do jogo, da sede ao
+         estádio, e a briga que o mundo sorteou entre elas, se teve */
+      case 'jogo-praca':
+        marcar();
+        return {ok:true, abrir:{tela:'jogo-praca', msg:m}};
       /* SÓ PRA SAVE ANTIGO (19/09/2026): obra virou notícia sem botão
          no mesmo dia em que nasceu como decisão, mas um save feito
          no meio do caminho pode ter um cartão de obra ainda aberto —
@@ -47484,6 +47506,10 @@ TO.icones = (function(){
         atualizarFeed();
         return;
       }
+      /* o jogo da cidade no ar (o jogo 3D): o ≫ volta pra sede antes de
+         empurrar o dia — o dia novo não começa com o jogo de ontem na tela */
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      if(D3 && D3.jogoDaCidade) D3.fechar();
       /* o ≫ que não anda tem de dizer por quê (dono, 17/09/2026): antes
          ele voltava calado quando uma cena órfã segurava o dia */
       curarRelogio();
@@ -50108,6 +50134,11 @@ TO.icones = (function(){
       else if(t === 'cena-treta') abrirTreta(m && m.dados);
       else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
       else if(t === 'tutorial') TO.tutorial.iniciar();
+      /* o jogo de outro clube na nossa praça, visto na cidade (o jogo 3D) */
+      else if(t === 'jogo-praca'){
+        const D3 = TO.jogo3d && TO.jogo3d.dia;
+        if(D3 && D3.abrirJogoDaCidade) D3.abrirJogoDaCidade(m);
+      }
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
     /* A BOLA ROLANDO ABRE O DIA INTEIRO (régua do dono, 20/08/2026):
@@ -55869,6 +55900,16 @@ TO.icones = (function(){
     }
     if(pausasT.has('itinerario') && !ITN){
       pausasT.delete('itinerario'); curas.push(_t('pausa de itinerário sem linha'));
+    }
+    /* os hóspedes saindo da sede em 3D (vida3d.js) seguram o tempo uns segundos */
+    if(pausasT.has('hospedes')){
+      const V3 = TO.jogo3d && TO.jogo3d.vida;
+      if(!V3 || !V3.segurandoHospedes){ pausasT.delete('hospedes'); curas.push(_t('pausa dos hóspedes sem hóspedes saindo')); }
+    }
+    /* o jogo da cidade em 3D (dia3d.js) segura o tempo enquanto está no ar */
+    if(pausasT.has('jogo-praca')){
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      if(!D3 || !(D3.ativo || D3.montando)){ pausasT.delete('jogo-praca'); curas.push(_t('pausa do jogo da cidade sem o jogo')); }
     }
     if(pausasT.has('foco') && !document.hidden && document.hasFocus()){
       pausasT.delete('foco'); curas.push(_t('pausa de foco com a página em foco'));
