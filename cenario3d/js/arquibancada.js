@@ -64,7 +64,8 @@
    GUARDAS lá dentro (três na arquibancada, dois no corredor, tirados do
    efetivo do jogo antes dos postos de fora). Uma torcida que não brigou
    na rua pode tentar INVADIR: ela escolhe (a chance é 40% da de
-   procurar uma rival do outro clube na rua) e o caminho — PELA
+   procurar na rua a rival que está do outro lado do isolamento; sem
+   rival dela ali, sozinha ela não vai) e o caminho — PELA
    ARQUIBANCADA (a divisória do isolamento mais perto dela, andando nas
    fileiras sem passar em poço de vomitório) ou PELO CORREDOR (desce pelo
    vomitório dela, o caminho de entrada ao contrário, e anda no corredor
@@ -89,8 +90,9 @@
      PM se juntar de novo no meio e separar.
    O painel pode mandar ("Ninguém invade", "Invade pela arquibancada",
    "Invade pelo corredor"; "A PM segura", "A torcida fura o cordão").
-   No de 10 mil o mandante fica na outra arquibancada: o visitante até
-   pode tentar, mas do outro lado do isolamento não tem ninguém.
+   No de 10 mil o mandante fica na outra arquibancada: sozinho o
+   visitante não tenta; mandado pelo painel, ele vai, mas do outro lado
+   do isolamento não tem ninguém.
 
    Tudo é conta da hora do jogo (voltar a régua volta a cena); o pano
    dos bandeirões e o balanço das grades correm no relógio de verdade.
@@ -506,8 +508,9 @@ export function planejarArquibancada(p, aux) {
   for (const T of ordemT) {
     const cs = [...candidatosArq(T), ...candidatosCor(T)];
     cands.set(T, cs);
-    const rivais = p.vivos.filter(x => x.lado !== T.b.lado);
-    decisoes.set(T.b, { chance: Math.round(Math.max(0, ...rivais.map(x => chanceDe(T.b, x))) * 0.4), tirou: Math.floor(sorte('invade|' + T.b.t.id)() * 100),
+    /* a chance vem da rival que está do outro lado do isolamento (sem rival ao alcance, sozinha ela não vai) */
+    const alvos = [...new Set(cs.map(c => c.alvo).filter(Boolean))];
+    decisoes.set(T.b, { chance: Math.round(Math.max(0, ...alvos.map(X => chanceDe(T.b, X.b))) * 0.4), tirou: Math.floor(sorte('invade|' + T.b.t.id)() * 100),
                         vias: [...new Set(cs.map(c => c.via))], invade: false, porque: '' });
   }
   let escolhido = null;
@@ -522,9 +525,11 @@ export function planejarArquibancada(p, aux) {
     if (modo === 'nao') { dec.porque = 'mandada paz'; continue; }
     if (modo === 'arquibancada' || modo === 'corredor') { dec.porque = escolhido && escolhido.T === T ? 'mandada' : escolhido ? 'outra invadiu' : 'não dá por ali'; continue; }
     if (escolhido) { dec.porque = 'outra invadiu'; continue; }
+    if (!cs.some(c => c.alvo)) { dec.porque = 'ninguém do outro lado'; continue; }
     if (!dec.chance) { dec.porque = 'sem rival'; continue; }
     if (dec.tirou >= dec.chance) { dec.porque = 'sorteio'; continue; }
-    const arqs = cs.filter(x => x.via === 'arquibancada').sort((x, y) => custo(x) - custo(y)), cors = cs.filter(x => x.via === 'corredor').sort((x, y) => custo(x) - custo(y));
+    const vale = c => c.alvo && chanceDe(T.b, c.alvo.b) > 0;
+    const arqs = cs.filter(x => x.via === 'arquibancada' && vale(x)).sort((x, y) => custo(x) - custo(y)), cors = cs.filter(x => x.via === 'corredor' && vale(x)).sort((x, y) => custo(x) - custo(y));
     escolhido = arqs.length && (!cors.length || sorte('via|' + T.b.t.id)() < 0.65) ? arqs[0] : cors[0];
     dec.porque = 'sorteio';
   }
@@ -1288,6 +1293,8 @@ export function criarArquibancada(ctx, p, grupo, aux) {
       if (dec.invade) d = ` <b>Vai tentar invadir ${naVia(dec.via)}</b>${inv.v ? ` (a ${esc(inv.v.t.sigla)} está do outro lado do isolamento)` : ''}${dec.porque === 'mandada' ? ' (mandado)' : ` (chance ${dec.chance}%, tirou ${dec.tirou})`}.`;
       else if (dec.porque === 'sorteio' && dec.chance) d = ` No estádio fica no lugar (a chance de invadir era ${dec.chance}%; tirou ${dec.tirou}).`;
       else if (dec.porque === 'longe') d = ' No estádio não encosta no isolamento: não tem como invadir.';
+      else if (dec.porque === 'ninguém do outro lado') d = ' No estádio não tem rival dela do outro lado do isolamento: fica no lugar.';
+      else if (dec.porque === 'sem rival') d = ' No estádio a torcida do outro lado do isolamento não é rival dela: fica no lugar.';
     }
     return `<small>No estádio: ${partes.join(', ')}.${d}</small>`;
   }
@@ -1307,7 +1314,7 @@ export function criarArquibancada(ctx, p, grupo, aux) {
     let fimTxt;
     if (!inv.fura) fimTxt = `<b>A PM segura</b> (a chance de furar era ${Math.round(inv.pFura * 100)}%: força ${Math.round(inv.fA)} da ${esc(a)} contra ${Math.round(inv.fP)} do cordão): a ${esc(a)} volta pro lugar e deixa ${tt(inv.gente.feridosA)} no chão e ${tt(inv.gente.presosA)} presos; o cordão fica na grade quebrada.`;
     else fimTxt = `<b>A ${esc(a)} fura o cordão</b> (chance de ${Math.round(inv.pFura * 100)}%) e quebra a segunda grade${v && inv.nFront ? `: pancada com a frente da ${esc(v)} (${tt(inv.nFront)}), ${inv.venceA ? `a ${esc(a)} leva a melhor` : `a ${esc(v)} segura`}, até a PM se juntar e separar. Ficam no chão ${tt(inv.gente.feridosA)} da ${esc(a)} e ${tt(inv.gente.feridosV)} da ${esc(v)}; presos, ${tt(inv.gente.presosA)} e ${tt(inv.gente.presosV)}` : `, mas do outro lado não tem rival perto — a PM se junta e empurra de volta; ${tt(inv.gente.presosA)} presos`}.`;
-    return `<p class="cj-aviso ruim">Às ${hora(inv.t0)}, com a bola rolando, a ${esc(a)} tenta invadir ${v ? `o setor da ${esc(v)}` : 'o lado do mandante'} ${naVia(inv.via)}: ${tt(inv.nAtk)} correm pra grade do isolamento e empurram até ela ceder (às ${hora(inv.tQ1)}). A PM faz o cordão de isolamento com ${cord}. ${fimTxt} <button class="cen-bt" data-jogo="invasao">Ver a briga no estádio</button></p>`;
+    return `<p class="cj-aviso ruim">Às ${hora(inv.t0)}, com a bola rolando, a ${esc(a)} tenta invadir ${v ? `o setor da ${esc(v)}` : inv.a.lado === 'mandante' ? 'o lado do visitante' : 'o lado do mandante'} ${naVia(inv.via)}: ${tt(inv.nAtk)} correm pra grade do isolamento e empurram até ela ceder (às ${hora(inv.tQ1)}). A PM faz o cordão de isolamento com ${cord}. ${fimTxt} <button class="cen-bt" data-jogo="invasao">Ver a briga no estádio</button></p>`;
   }
   /* a linha de estado da torcida, na hora da invasão */
   function statusDe(b, t) {
