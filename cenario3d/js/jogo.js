@@ -600,6 +600,7 @@ TO.i18n.registrar({
 
   /* ---------- a coluna de navegação ---------- */
   'Feed':           {es:'Feed',            en:'Feed'},
+  'Sala do presidente': {es:'Despacho del presidente', en:"President's office"},
   'Financeiro':     {es:'Finanzas',        en:'Finances'},
   'Calendário':     {es:'Calendario',      en:'Calendar'},
   'Competições':    {es:'Competiciones',   en:'Competitions'},
@@ -4887,6 +4888,7 @@ TO.i18n.registrar({
   'Indicadores · Recrutar':  {es:'Indicadores · Reclutar',  en:'Indicators · Recruit'},
   'Indicadores · Relações':  {es:'Indicadores · Relaciones',en:'Indicators · Relationships'},
   'Feed':                    {es:'Feed',                    en:'Feed'},
+  'Recados':                 {es:'Recados',                 en:'Messages'},
   'Financeiro · 1 de 2':     {es:'Finanzas · 1 de 2',       en:'Finances · 1 of 2'},
   'Financeiro · 2 de 2':     {es:'Finanzas · 2 de 2',       en:'Finances · 2 of 2'},
   'Calendário':              {es:'Calendario',              en:'Calendar'},
@@ -4910,6 +4912,9 @@ TO.i18n.registrar({
   '<em>Relações</em>: Nível de relação com um rival, mas mais na frente eu te explico com mais detalhe no passo a passo.':
     {es:'<em>Relaciones</em>: tu nivel de relación con un rival, pero más adelante te lo explico con más detalle en el paso a paso.',
      en:"<em>Relationships</em>: where you stand with a rival — but I'll explain it in more detail further on in the walkthrough."},
+  'Aqui não tem feed: tudo chega na boca de alguém. Na sede, quem traz o recado senta na frente da mesa do presidente — o diretor, o olheiro, o repórter, o enviado de outra torcida — e fala num balão; no dia de jogo, quem fala é o líder do nosso bonde. A decisão espera a sua resposta, com as opções e as consequências de cada uma; a notícia sai sozinha depois de lida (ou no ×). Tudo o que já passou fica em Notícias.':
+    {es:'Aquí no hay feed: todo llega de boca de alguien. En la sede, quien trae el recado se sienta frente al escritorio del presidente — el directivo, el informante, el periodista, el enviado de otra barra — y habla en un globo; en el día de partido, quien habla es el líder de nuestra columna. La decisión espera tu respuesta, con las opciones y las consecuencias de cada una; la noticia se va sola después de leída (o con la ×). Todo lo que ya pasó queda en Noticias.',
+     en:"There's no feed here: everything comes from someone's mouth. At the clubhouse, whoever brings the message sits across the president's desk — the director, the scout, the reporter, the envoy from another firm — and speaks in a speech bubble; on match day, the one talking is the leader of our mob. A decision waits for your answer, with the options and the consequences of each; news leaves on its own once read (or with the ×). Everything that already happened stays in News."},
   'O feed é onde o jogo acontece. Tudo é decidido por aqui: recado de olheiro, planejamento de ações, notícia. Decisões importantes têm opções que detalham as consequências de cada uma — o resto é pra ler e seguir.':
     {es:'El feed es donde pasa el juego. Todo se decide aquí: el aviso del informante, la planificación de acciones, las noticias. Las decisiones importantes tienen opciones que detallan las consecuencias de cada una; el resto es para leer y seguir.',
      en:'The feed is where the game happens. Everything gets decided here: tip-offs from scouts, action planning, news. Big decisions come with options that spell out the consequences of each one — the rest is just to read and move on.'},
@@ -46239,7 +46244,13 @@ TO.icones = (function(){
       '<em>Recrutar</em>: É a ação de conseguir novos membros. Quem dita se um dia terá novos membros recrutados é a fase do clube: se vai bem novos membros são recrutados mais fácil, se vai mal se torna bem mais difícil.')},
     {ic:'🤝', tela:_t('Indicadores · Relações'), txt:_t(
       '<em>Relações</em>: Nível de relação com um rival, mas mais na frente eu te explico com mais detalhe no passo a passo.')},
-    {ic:'📣', tela:_t('Feed'), txt:_t(
+    /* NO JOGO 3D NÃO TEM FEED (dono, 28/09/2026): o passo fala dos
+       recados em balão, e o círculo vai no balão que estiver no ar */
+    TO.semFeed
+    ? {ic:'📣', tela:_t('Recados'), txt:_t(
+      'Aqui não tem feed: tudo chega na boca de alguém. Na sede, quem traz o recado senta na frente da mesa do presidente — o diretor, o olheiro, o repórter, o enviado de outra torcida — e fala num balão; no dia de jogo, quem fala é o líder do nosso bonde. A decisão espera a sua resposta, com as opções e as consequências de cada uma; a notícia sai sozinha depois de lida (ou no ×). Tudo o que já passou fica em Notícias.'),
+      alvos: ()=>[document.querySelector('.j3d-balao:not([hidden])')]}
+    : {ic:'📣', tela:_t('Feed'), txt:_t(
       'O feed é onde o jogo acontece. Tudo é decidido por aqui: recado de olheiro, planejamento de ações, notícia. Decisões importantes têm opções que detalham as consequências de cada uma — o resto é pra ler e seguir.'),
       alvos: ()=>{
         /* de preferência uma decisão em aberto; sem uma, o cartão mais
@@ -47070,7 +47081,10 @@ TO.icones = (function(){
   const NAV = [
     /* o feed com ícone próprio (pedido do dono, 07/09/2026): o
        megafone era um alto-falante genérico e não dizia "início" */
-    {id:'feed',        rot:_t('Feed'),        ic:'feed'},
+    /* NO JOGO 3D NÃO TEM FEED (dono, 28/09/2026): o primeiro item fecha o
+       painel e leva a câmera até a sala do presidente, onde os recados
+       chegam em balão (no dia de jogo, até o nosso bonde) */
+    {id:'feed',        rot:TO.semFeed ? _t('Sala do presidente') : _t('Feed'), ic:'feed'},
     /* O MAPA DA CIDADE (o dono, 28/09/2026, no jogo 3D: "Preciso que o
        mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
        com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
@@ -47129,6 +47143,9 @@ TO.icones = (function(){
       atualizarBadges();
       /* com a aba Mensagens aberta a lista já mostra o recado: sem balão */
       if(painel === 'noticias' && subNoticias === 'mensagens'){ redesenhar(); return; }
+      /* no jogo 3D o enviado da torcida vem entregar em pessoa (o balão,
+         recados3d.js): o aviso no ícone seria o mesmo recado duas vezes */
+      if(TO.semFeed) return;
       balaoNoIcone('noticias', _t('Mensagem de {nome}', {nome:m.nome}));
     };
     /* TRETA NÃO NOTIFICA (pedido do dono, 12/09/2026): a briga já foi
@@ -47169,6 +47186,7 @@ TO.icones = (function(){
      fora, é uma só. O parâmetro fica porque a classe é o que a folha de
      estilo usa pra posicionar a coluna.
      Clicar abre a página como painel; clicar de novo fecha. */
+  const irPraSalaNo3d = () => { if(TO.semFeed && TO.jogo3d && TO.jogo3d.irPraSala) TO.jogo3d.irPraSala(); };
   function montarMenuIcones(classe){
     const cx = el('div',{class: classe || 'feed-menu'});
     for(const n of NAV){
@@ -47180,7 +47198,8 @@ TO.icones = (function(){
       if(painel === n.id) b.classList.add('aceso');
       b.onclick = ()=>{
         if(n.acao){ (ACAO_NAV[n.acao] || (()=>{}))(); return; }
-        if(n.id === 'feed' || painel === n.id){ fecharPainel(); return; }
+        if(n.id === 'feed'){ fecharPainel(); irPraSalaNo3d(); return; }
+        if(painel === n.id){ fecharPainel(); return; }
         abrirPainel(n.id);
       };
       cx.appendChild(b);
@@ -47197,7 +47216,7 @@ TO.icones = (function(){
       b.onclick = ()=>{
         fecharGaveta();
         if(n.acao){ (ACAO_NAV[n.acao] || (()=>{}))(); return; }
-        if(n.id === 'feed'){ fecharPainel(); return; }
+        if(n.id === 'feed'){ fecharPainel(); irPraSalaNo3d(); return; }
         abrirPainel(n.id);
       };
       nav.appendChild(b);
@@ -47480,15 +47499,26 @@ TO.icones = (function(){
     if(TO.diaJogo.ponte.velocidade > 1) bVel.classList.add('aceso');
     barra.append(noFeedTopo, noFeedQuando, bVel);
 
-    const rolo = el('div',{class:'feed-rolo'});
-    noFeedLista = el('div',{class:'feed-lista'});
-    rolo.appendChild(noFeedLista);
-    const hist = feedVisivel(e);
-    if(hist.length > janelaDoFeed(e).teto){
-      const b = el('button',{class:'bt feed-mais',
-        texto:_t('Mostrar mais antigas ({n})', {n:hist.length - janelaDoFeed(e).teto})});
-      b.onclick = ()=>{ tetoFeed += TETO_LISTA; pintarFeed(); };
-      rolo.appendChild(b);
+    /* O JOGO 3D NÃO MOSTRA O FEED (o dono, 28/09/2026: "Exclua a
+       exposição do feed na tela. As mensagens sempre vão ser via balões
+       de alguém falando com o jogador"): a barra, a fita das manchetes
+       e os ícones ficam; o rolo das mensagens não nasce, e quem entrega
+       cada uma é o balão do jogo 3D (recados3d.js). Sem a lista,
+       `atualizarFeed` não tem o que fazer, e a linha do dia de jogo mora
+       no balão. */
+    let rolo = null;
+    if(TO.semFeed) noFeedLista = null;
+    else {
+      rolo = el('div',{class:'feed-rolo'});
+      noFeedLista = el('div',{class:'feed-lista'});
+      rolo.appendChild(noFeedLista);
+      const hist = feedVisivel(e);
+      if(hist.length > janelaDoFeed(e).teto){
+        const b = el('button',{class:'bt feed-mais',
+          texto:_t('Mostrar mais antigas ({n})', {n:hist.length - janelaDoFeed(e).teto})});
+        b.onclick = ()=>{ tetoFeed += TETO_LISTA; pintarFeed(); };
+        rolo.appendChild(b);
+      }
     }
     /* a coluna de ícones é irmã do corpo, não filha da barra: ela é a
        navegação inteira e vai da borda de cima à de baixo, do mesmo
@@ -47507,7 +47537,8 @@ TO.icones = (function(){
       abrirPainel('noticias');
     });
     tickerAss = null;
-    corpo.append(barra, noFeedTicker, rolo);
+    corpo.append(barra, noFeedTicker);
+    if(rolo) corpo.appendChild(rolo);
     pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
@@ -50494,6 +50525,45 @@ TO.icones = (function(){
   const ROT_MSG = {provocacao:_t('Provocação'), convite:_t('Convite'), agradecimento:_t('Agradecimento'),
                    juntos:_t('Estamos juntos'), recusa:_t('Recusa'), cobranca:_t('Cobrança'), recado:_t('Recado'),
                    pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada')};
+  /* UM RECADO DE OUTRA TORCIDA: quem mandou, o tipo, quando e o texto; o
+     pedido de casa e a trégua com os botões da resposta. O jogo 3D põe o
+     mesmo cartão no balão do enviado dela (recados3d.js) */
+  const recadoPedeResposta = m => !!m && !m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua');
+  function cartaoRecadoDeTorcida(e, m){
+    const P2 = TO.planejamento;
+    const corDe = id => { const o = TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
+    const q = m.quando || {};
+    const dia = TO.feed.NOME_DIA ? (TO.feed.NOME_DIA[q.dia] || '') : '';
+    const quando = q.semana ? `${q.ano} · ${_t('sem. {n}', {n:q.semana})}${dia ? ' · '+_t(dia) : ''}` : '';
+    const art = el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
+      `<div class="mt-cab">${chipTorcida(m.de, corDe(m.de))}<b>${linkTorcida(m.de, m.nome)}</b>`+
+      `<span class="tag">${ROT_MSG[m.tipo]||m.tipo}</span><span class="quando">${quando}</span></div>`+
+      `<p>${m.texto}</p>`});
+    /* as que pedem resposta: recepção (quatro níveis) e trégua */
+    if(recadoPedeResposta(m)){
+      const bts = el('div',{class:'rec-botoes'});
+      const opcoes = m.tipo === 'pedido'
+        ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
+            nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
+        : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
+           {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
+      for(const o of opcoes){
+        const b = el('button',{class:'rec-bt', html:`${o.rot}<small>${o.nota}</small>`});
+        b.onclick = ()=>{
+          const r = TO.feed.responderMensagemDe(e, m.id, o.id);
+          if(!r.ok) return;
+          TO.estado.salvar(); redesenhar();
+        };
+        bts.appendChild(b);
+      }
+      art.appendChild(bts);
+    } else if(m.resposta){
+      art.appendChild(el('div',{class:'msg-efeitos', html:
+        _t('Você respondeu: <b>{resp}</b>', {resp:m.tipo==='pedido' ? (P2.recepcaoDe(m.resposta).rot) : (m.resposta==='aceitar'?_t('Aceitar a trégua'):_t('Recusar'))})+
+        (m.consequencia ? ` · ${m.consequencia}` : '')}));
+    }
+    return art;
+  }
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */
@@ -50509,40 +50579,7 @@ TO.icones = (function(){
     const c = cartao(_t('Mensagens de outras torcidas'), _tn(lista.length, '{n} recado', '{n} recados'));
     if(!lista.length)
       c.corpo.innerHTML = `<div class="em-construcao">${_t('Ninguém mandou recado ainda.')}</div>`;
-    const corDe = id => { const o = TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
-    for(const m of lista.slice(0, 120)){
-      const q = m.quando || {};
-      const dia = TO.feed.NOME_DIA ? (TO.feed.NOME_DIA[q.dia] || '') : '';
-      const quando = q.semana ? `${q.ano} · ${_t('sem. {n}', {n:q.semana})}${dia ? ' · '+_t(dia) : ''}` : '';
-      const art = el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
-        `<div class="mt-cab">${chipTorcida(m.de, corDe(m.de))}<b>${linkTorcida(m.de, m.nome)}</b>`+
-        `<span class="tag">${ROT_MSG[m.tipo]||m.tipo}</span><span class="quando">${quando}</span></div>`+
-        `<p>${m.texto}</p>`});
-      /* as que pedem resposta: recepção (quatro níveis) e trégua */
-      if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
-        const bts = el('div',{class:'rec-botoes'});
-        const opcoes = m.tipo === 'pedido'
-          ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
-              nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
-          : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
-             {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
-        for(const o of opcoes){
-          const b = el('button',{class:'rec-bt', html:`${o.rot}<small>${o.nota}</small>`});
-          b.onclick = ()=>{
-            const r = TO.feed.responderMensagemDe(e, m.id, o.id);
-            if(!r.ok) return;
-            TO.estado.salvar(); redesenhar();
-          };
-          bts.appendChild(b);
-        }
-        art.appendChild(bts);
-      } else if(m.resposta){
-        art.appendChild(el('div',{class:'msg-efeitos', html:
-          _t('Você respondeu: <b>{resp}</b>', {resp:m.tipo==='pedido' ? (P2.recepcaoDe(m.resposta).rot) : (m.resposta==='aceitar'?_t('Aceitar a trégua'):_t('Recusar'))})+
-          (m.consequencia ? ` · ${m.consequencia}` : '')}));
-      }
-      c.corpo.appendChild(art);
-    }
+    for(const m of lista.slice(0, 120)) c.corpo.appendChild(cartaoRecadoDeTorcida(e, m));
     cx.appendChild(c);
     /* lido: ao pintar */
     if(TO.feed.lerMensagens && lista.some(m=>!m.lida)){
@@ -56206,6 +56243,11 @@ TO.icones = (function(){
      botão. Nesses dois a pergunta vira este cartão — e ela é só sobre
      COMO brigar: a ação já foi executada e o custo já saiu. */
   function comEscolhaDeBriga(fn, vias, podeFicar){
+    /* NO JOGO 3D A PERGUNTA É UM RECADO NA LINHA DO DIA (o dono, 28/09/2026:
+       "As mensagens sempre vão ser via balões de alguém falando com o
+       jogador"): com a linha do dia andando, o cartão entra nela — e a
+       linha está no balão do líder do nosso bonde (recados3d.js) */
+    if(TO.semFeed && ITN && ITN.recados) return escolhaNaLinha(fn, vias, podeFicar);
     const corpo = el('div');
     /* A INVASÃO NO ESTÁDIO EM 3D (dia3d.js): os caminhos da nossa torcida
        até o setor rival — cada um abre a briga por ali —, o simular e o
@@ -56248,6 +56290,38 @@ TO.icones = (function(){
     return fechar;
   }
 
+
+  function escolhaNaLinha(fn, vias, podeFicar){
+    const cx = el('div',{class:'itn-cartao sofrido escolha'});
+    const bts = el('div',{class:'bts'});
+    const fechar = ()=>cx.remove();
+    const opcao = (rot, classe, simular, via)=>{
+      const bt = el('button',{class:'itn-bt'+(classe ? ' '+classe : ''), texto:rot});
+      if(simular) bt.title = _t('Roda o duelo sem abrir a cena. As consequências são as mesmas.');
+      bt.onclick = ()=>{ fechar(); fn(simular, via); };
+      bts.appendChild(bt);
+    };
+    if(vias && vias.length){
+      cx.appendChild(el('div',{class:'voz', texto:_t('Invadir o setor deles?')+' · '+_t('só a nossa torcida decide')}));
+      cx.appendChild(el('p',{texto:_t('A arquibancada ferveu. A {rival} está do outro lado do isolamento da PM: a nossa torcida pode quebrar a grade e invadir, ou ficar no lugar. Simular roda o duelo na hora — as consequências são as mesmas.', {rival:vias[0].nome})}));
+      for(const v of vias)
+        opcao(v.via === 'corredor' ? _t('Invadir pelo corredor') : _t('Invadir pela arquibancada'), 'acao', false, v);
+      opcao(_t('Simular a invasão'), 'simular', true, vias[0]);
+      opcao(_t('Ficar no lugar'), '', null, null);
+    } else {
+      cx.appendChild(el('div',{class:'voz', texto:_t('Como vai ser')}));
+      cx.appendChild(el('p',{texto:_t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
+      opcao(_t('Descer pra briga'), 'acao', false);
+      opcao(_t('Simular'), 'simular', true);
+      if(podeFicar) opcao(_t('Ficar no lugar'), '', null);
+    }
+    cx.appendChild(bts);
+    /* logo embaixo da linha, antes da partida: a pergunta não pode ficar
+       escondida no pé do balão */
+    ITN.recados.insertBefore(cx, ITN.recados.firstChild);
+    requestAnimationFrame(()=>{ try{ cx.scrollIntoView({block:'nearest'}); }catch(_){} });
+    return fechar;
+  }
 
   function abrirPalco(op){
     if(!simularProxima) { montarCena(op); return; }
@@ -57317,8 +57391,20 @@ TO.icones = (function(){
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
     /* o cartão de uma mensagem (o mesmo do feed, com os botões que
-       respondem): o jogo 3D põe no balão da sala do presidente */
+       respondem): o jogo 3D põe no balão de quem vem falar */
     cartaoMensagem: cartaoSeguro,
+    /* o estado visível de uma mensagem (o balão do jogo 3D só refaz o
+       cartão quando ele muda, como a lista do feed) e a linha do dia de
+       jogo que está andando nela (o balão mostra só a linha enquanto o
+       dia anda) */
+    estadoDaMsg: (e, m) => estadoDaMsg(e, m),
+    /* o recado de outra torcida (Notícias → Mensagens), no balão do enviado dela */
+    cartaoRecadoDeTorcida, recadoPedeResposta, atualizarBadges,
+    linhaDoDia: m => (ITN && ITN.msg && m && ITN.msg.id === m.id) ? ITN.raiz : null,
+    msgDaLinha: () => (ITN && ITN.msg) || null,
+    /* um recado a mais na linha do dia que está andando (a pergunta de onde
+       a caravana desce, dia3d.js): devolve quem tira ele, ou null sem linha */
+    recadoNaLinha: no => { if(!ITN || !ITN.recados || !no) return null; ITN.recados.insertBefore(no, ITN.recados.firstChild); return ()=>no.remove(); },
     /* a data de hoje por extenso (o relógio do jogo 3D escreve junto da hora) */
     pintarTopo,
     abrirPerfilTorcida, abrirPerfilCidade,

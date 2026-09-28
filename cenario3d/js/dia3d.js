@@ -179,10 +179,31 @@ export function criarDia3d(api, vida, g = {}) {
     const recebe = aj && aj.nivel && aj.nivel !== 'nada' && (!aj.mapa || aj.mapa === j.mapaAdv);
     const sede = recebe ? (api.planta.torcidas ? api.planta.torcidas() : []).find(t => t.id === aj.aliado && t.porta) : null;
     if (!sede) return Promise.resolve({ inicio: 'entrada', aj: null });
+    const escolta = (aj.nivel === 'escolta' || aj.nivel === 'churrasco') && aj.escolta > 0;
+    /* A PERGUNTA É UM RECADO NA LINHA DO DIA (o dono, 28/09/2026: "As
+       mensagens sempre vão ser via balões de alguém falando com o
+       jogador"): o cartão entra na linha, que está no balão (recados3d.js);
+       sem a linha, a caixa de sempre */
+    const naLinha = TO.tela && TO.tela.recadoNaLinha;
+    if (naLinha) return new Promise(ok => {
+      const cx = document.createElement('div');
+      cx.className = 'itn-cartao investida escolha';
+      cx.innerHTML = `<div class="voz">Caravana · ${esc(j.cidadeAdv || '')} · onde a caravana desce?</div>
+        <p>A ${esc(aj.nome)} recebe a gente${escolta ? ` e manda ${aj.escolta} da escolta com o nosso bonde` : ''}. Descer na sede dela é chegar em casa de aliado, longe da PM da entrada; descer na entrada é ir direto, pela avenida.</p>
+        <div class="bts"><button class="itn-bt acao" data-ini="aliado">Na sede da ${esc(aj.nome)}</button><button class="itn-bt" data-ini="entrada">Na entrada da cidade</button></div>`;
+      let tirar = null;
+      cx.addEventListener('click', ev => {
+        const b = ev.target.closest('[data-ini]');
+        if (!b) return;
+        if (tirar) tirar();
+        ok({ inicio: b.dataset.ini, aj: b.dataset.ini === 'aliado' ? aj : null });
+      });
+      tirar = naLinha(cx);
+      if (!tirar) ok({ inicio: 'entrada', aj: null });
+    });
     return new Promise(ok => {
       const fundo = document.createElement('div');
       fundo.className = 'j3d-dia-modal';
-      const escolta = (aj.nivel === 'escolta' || aj.nivel === 'churrasco') && aj.escolta > 0;
       fundo.innerHTML = `<div class="j3d-dia-caixa" role="dialog" aria-label="Onde a caravana desce">
           <p class="j3d-dia-sobre">Caravana · ${esc(j.cidadeAdv || '')}</p>
           <h3>Onde a caravana desce?</h3>
@@ -448,9 +469,31 @@ export function criarDia3d(api, vida, g = {}) {
     if (g.travarPraca) g.travarPraca(false);
   }
 
+  /* QUEM FALA COM O JOGADOR NO DIA DE JOGO (os recados em balão,
+     recados3d.js): o líder do nosso bonde — o balão fica em cima do nome
+     do bonde (o rótulo anda com o líder, mais alto na arquibancada, por
+     causa do bandeirão; ele some e volta com a arrumação dos rótulos, mas
+     a posição é sempre a do líder), ou da cabeça dele sem o rótulo */
+  const PF = {};
+  function falante() {
+    if (!D || !D.plano || !D.nosso || D.emCena || !dia || !dia.plano) return null;
+    const b = D.nosso, d = b.gente && b.gente[0] && b.gente[0].d;
+    if (!d) return null;
+    const r = b.rotulo ? b.rotulo.position : null;
+    if (r) { PF.x = r.x; PF.y = r.y + 0.9 * M; PF.z = r.z; }
+    else { PF.x = d.x; PF.y = (d.alt || 0) + 2.1 * M; PF.z = d.y; }
+    return PF;
+  }
+  /* a câmera no nosso bonde (na partida, o nosso setor) */
+  function verNossa() {
+    if (!D || !dia || !D.nosso) return;
+    if (D.partida || D.fase === 'jogo') verNossoSetor(); else dia.seguirBonde(D.nosso);
+  }
+
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar,
-    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao,
+    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa,
+    get falante() { return falante(); },
     get ativo() { return !!(D && D.plano && dia && dia.plano); },
     get montando() { return !!D && !D.plano; },
     get hora() { return D && dia && dia.plano ? dia.t : null; },

@@ -28,7 +28,8 @@
    - A SALA DO PRESIDENTE: ele sentado na mesa dele; cada mensagem que
      cai senta alguém na cadeira da frente (quem fala: o diretor, o
      olheiro, o repórter, o enviado de outra torcida) e o cartão dela vira
-     o balão em cima dessa cadeira, com os mesmos botões do feed. A
+     o balão em cima dessa cadeira, com os mesmos botões do feed (o balão
+     e a fila dos recados são do mensageiro, recados3d.js). A
      REUNIÃO DA DIRETORIA é a mesma do jogo (a pauta, os balões, as
      decisões), com a diretoria sentada na mesa de reunião da sede.
    - A RUA: gente comum andando nas calçadas (algumas de camisa de
@@ -109,17 +110,17 @@ function criarRelogio(C) {
            definir(min) { agora = alvo = clamp(min, 0, FIM); virada = null; } };
 }
 
-/* A PARTE DA TELA QUE A CIDADE MOSTRA: da coluna de ícones até o feed
-   (quando aberto) — é ali que a câmera põe a sala e o balão fica */
-function areaLivre() {
-  const W = innerWidth, menu = document.querySelector('.feed-menu'), rolo = document.querySelector('.feed-rolo');
+/* A PARTE DA TELA QUE A CIDADE MOSTRA: da coluna de ícones até a borda
+   da direita (o feed saiu da tela, 28/09/2026) — é ali que a câmera põe a
+   sala e o balão fica */
+export function areaLivre() {
+  const W = innerWidth, menu = document.querySelector('.feed-menu');
   const x0 = menu ? Math.max(0, menu.getBoundingClientRect().right) : 0;
-  const aberto = rolo && !document.body.classList.contains('feed-fechado') && W > 760;
-  const x1 = aberto ? Math.min(W, rolo.getBoundingClientRect().left) : W;
-  return { x0, x1, meio: (x0 + x1) / 2, W };
+  return { x0, x1: W, meio: (x0 + W) / 2, W };
 }
 /* voar até (x, z) pondo o ponto no meio da parte livre da tela: o alvo
-   da câmera anda pro lado (pra direita da tela, se o feed está aberto) */
+   da câmera anda pro lado (pra direita da tela, a coluna de ícones come
+   a esquerda) */
 function voarNaAreaLivre(Cn, M, x, z, dist, el) {
   /* com a briga na cidade a câmera é dela (vai atrás do líder) */
   if (Cn.vida && Cn.vida.palco && Cn.vida.palco.seguir) return;
@@ -348,7 +349,7 @@ export function criarVida(api) {
   }
   function desligarSede() {
     if (sede) C().vida.abrirPortas({ x0: sede.caixa.x0 - M, x1: sede.caixa.x1 + M, z0: sede.caixa.z0 - M, z1: sede.caixa.z1 + M }, false);
-    sede = null; fecharBalao(true);
+    sede = null;
   }
   /* a cada quadro: quem anda anda; de tempos em tempos alguém chega ou vai */
   function quadroSede(dt) {
@@ -388,9 +389,11 @@ export function criarVida(api) {
   }
 
   /* =====================================================
-     A SALA DO PRESIDENTE: o recado e o balão
+     A SALA DO PRESIDENTE: quem traz o recado
+     O balão é do mensageiro (recados3d.js): ele pede aqui quem senta na
+     cadeira da frente da mesa do presidente, e o balão fica em cima dessa
+     cabeça enquanto a mensagem está no ar
      ===================================================== */
-  let balao = null, msgBalao = null, vistoFeed = 0, tiraRecado = 0, desligarAncora = null;
   /* quem vem falar: pela voz da mensagem */
   function quemTraz(m) {
     const e = E(), c = coresDoJogador(), voz = m.voz || '';
@@ -405,14 +408,16 @@ export function criarVida(api) {
     const mb = olheiro || pega(dir, m.kind || 'x') || pega((e.membros || []).filter(x => !x.preso && !x.presidente), 'm' + m.id);
     return mb ? membroDisco(mb) : disco({ nome: 'membro ' + m.id, spawn: 'sede', torcida: c.nome, cor: c.cor, cor2: c.cor2, cor3: c.cor3 });
   }
+  /* senta quem traz a mensagem `m` na cadeira da frente (e o presidente
+     vira pra ele); devolve o disco de quem fala, ou null sem a sala */
   function sentarRecado(m) {
-    if (!sede || !sede.presidente) return;
+    if (!sede || !sede.presidente || reuniao3d) return null;
     const l = sede.porTipo('recado').find(x => !x.ocupado || (x.ocupado && x.ocupado.recado)) || sede.porTipo('recado')[0];
-    if (!l) return;
+    if (!l) return null;
     /* quem estava levanta e vai embora */
     if (sede.recado) { const q = sede.recado; q.recado = false; sede.recado = null; mandarAndar(q, null, q.d.x, q.d.y); }
     if (l.ocupado && !l.ocupado.recado) { const q = l.ocupado; mandarAndar(q, null, q.d.x, q.d.y); }
-    const p = { m: null, d: quemTraz(m), recado: true };
+    const p = { m: null, d: quemTraz(m), recado: true, msg: m.id };
     sentarNo(p, l);
     p.d.jeito = 'sentado'; p.d.gestoForcado = undefined;
     p.d.falando = true; p.d.olhaPara = sede.presidente.d;
@@ -421,106 +426,14 @@ export function criarVida(api) {
     const pd = sede.presidente.d, lp = sede.presidente.lugar;
     if (lp && lp.rumoConversa != null) pd.rumo = lp.rumoConversa;
     pd.olhaPara = p.d; pd.jeito = 'sentado';
+    return p.d;
   }
+  /* o recado acabou: quem falou levanta e vai embora, o presidente volta pro trabalho */
   function soltarRecado() {
     if (!sede) return;
     const pd = sede.presidente && sede.presidente.d, lp = sede.presidente && sede.presidente.lugar;
     if (pd) { pd.olhaPara = null; pd.jeito = 'trabalho'; if (lp) pd.rumo = lp.rumo; }
     if (sede.recado) { const q = sede.recado; q.recado = false; q.d.falando = false; q.d.olhaPara = null; sede.recado = null; mandarAndar(q, null, q.d.x, q.d.y); }
-  }
-  /* O BALÃO: o cartão da mensagem (o mesmo do feed, com os botões) em
-     cima de quem veio falar; sem a sala na tela, ele encosta no alto */
-  function abrirBalao(m) {
-    const e = E();
-    if (!e || !TO.tela || !TO.tela.cartaoMensagem) return;
-    if (!balao) {
-      balao = document.createElement('div');
-      balao.className = 'j3d-balao';
-      balao.innerHTML = '<button class="j3d-balao-x" title="Fechar o balão (a mensagem fica no feed)" aria-label="Fechar o balão">×</button><div class="j3d-balao-corpo"></div><button class="j3d-balao-ir" hidden>Ir pra sala do presidente</button>';
-      document.body.appendChild(balao);
-      balao.querySelector('.j3d-balao-x').onclick = () => fecharBalao();
-      balao.querySelector('.j3d-balao-ir').onclick = () => irPraSala();
-    }
-    msgBalao = m;
-    pintarBalao();
-    balao.hidden = false;
-    sentarRecado(m);
-    tiraRecado = 0;
-    if (!desligarAncora) desligarAncora = C().vida.aCadaQuadro(ancorarBalao);
-  }
-  function pintarBalao() {
-    if (!balao || !msgBalao) return;
-    const e = E(), corpo = balao.querySelector('.j3d-balao-corpo');
-    /* o cartão mais novo da mensagem (a resposta muda ele) */
-    const m = (e.feed || []).find(x => x.id === msgBalao.id) || msgBalao;
-    msgBalao = m;
-    corpo.innerHTML = '';
-    const hora = m.hora ? `<div class="j3d-balao-hora">${esc(m.hora)}</div>` : '';
-    corpo.insertAdjacentHTML('beforeend', hora);
-    corpo.appendChild(TO.tela.cartaoMensagem(e, m));
-    balao.classList.toggle('decisao', m.peso === 'decisao' && !m.respondido);
-  }
-  function fecharBalao(ja) {
-    if (balao) balao.hidden = true;
-    msgBalao = null;
-    if (desligarAncora) { desligarAncora(); desligarAncora = null; }
-    if (ja) return;
-    soltarRecado();
-  }
-  const PQ = {}, PQ2 = {};
-  function ancorarBalao() {
-    if (!balao || balao.hidden || !msgBalao) return;
-    const alvo = sede && sede.recado && sede.recado.d;
-    const ir = balao.querySelector('.j3d-balao-ir');
-    let x = null, y = null;
-    if (alvo) {
-      const q = C().vida.projetar(alvo.x, alvo.alt + 1.45 * M, alvo.y, PQ);
-      if (q.frente && q.x > 40 && q.x < innerWidth - 40 && q.y > 70 && q.y < innerHeight - 20) { x = q.x; y = q.y; }
-    }
-    const larg = balao.offsetWidth || 320, alto = balao.offsetHeight || 120, A = areaLivre();
-    /* debaixo do feed não vale: é como fora da tela */
-    if (x != null && (x < A.x0 + 10 || x > A.x1 - 10)) x = null;
-    if (x == null) {
-      /* a sala fora da tela: o balão encosta no alto, com o botão que volta pra ela */
-      balao.classList.add('solto'); ir.hidden = !sede;
-      balao.style.left = Math.round(clamp(A.meio - larg / 2, A.x0 + 8, A.x1 - larg - 8)) + 'px'; balao.style.top = '92px';
-      return;
-    }
-    balao.classList.remove('solto'); ir.hidden = true;
-    /* O PRESIDENTE À VISTA: o balão abre pro lado contrário ao dele (o rabo
-       fica na cabeça de quem fala, perto da ponta do balão) */
-    let meio = x;
-    const pres = sede && sede.presidente && sede.presidente.d;
-    if (pres) {
-      const qp = C().vida.projetar(pres.x, pres.alt + 1.2 * M, pres.y, PQ2);
-      if (qp.frente && Math.abs(qp.x - x) < larg * 0.6 && qp.y < y + 40) meio = qp.x >= x ? x - larg / 2 + 34 : x + larg / 2 - 34;
-    }
-    const left = clamp(meio - larg / 2, A.x0 + 8, Math.max(A.x0 + 8, A.x1 - larg - 8));
-    const top = Math.max(70, y - alto - 14);
-    balao.style.left = Math.round(left) + 'px'; balao.style.top = Math.round(top) + 'px';
-    balao.style.setProperty('--rabo', Math.round(clamp(x - left, 16, larg - 16)) + 'px');
-  }
-  /* o feed: a mensagem que acabou de cair vira balão */
-  function olharFeed(dt) {
-    const e = E();
-    if (!e || !e.feed) return;
-    const topo = e.feed[0];
-    if (topo && topo.id !== vistoFeed) {
-      vistoFeed = topo.id;
-      /* a notícia de treta não passa pelo feed (vai pra Notícias) */
-      if (topo.kind !== 'confronto' && ligada && !reuniao3d && !document.body.classList.contains('em-cena')) abrirBalao(topo);
-    }
-    /* a decisão respondida e a notícia lida saem sozinhas */
-    if (msgBalao) {
-      const m = (e.feed || []).find(x => x.id === msgBalao.id);
-      if (m && m.respondido !== msgBalao.respondido) pintarBalao();
-      const fica = m && m.peso === 'decisao' && !m.respondido;
-      if (!fica) {
-        tiraRecado += dt;
-        const quanto = m && m.peso === 'decisao' ? 2.5 : 7;
-        if (tiraRecado > quanto && !TO.feed.pendentes(e)) fecharBalao();
-      } else tiraRecado = 0;
-    }
   }
 
   /* =====================================================
@@ -846,7 +759,8 @@ export function criarVida(api) {
         if (!sede) return false;
         montado = true; mapa = new Map(); sala = null;
         reuniao3d = R;
-        fecharBalao();
+        /* (quem trazia o recado levanta: o balão espera a reunião acabar) */
+        soltarRecado();
         document.body.classList.add('palco3d');
         import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js').then(m => { THREE = m; if (sala && sala.extras) porCadeirasExtras(sala.extras, THREE); }).catch(() => {});
         /* quem é da diretoria sai do lugar da sede (vai estar na mesa) */
@@ -940,7 +854,6 @@ export function criarVida(api) {
     if (!ligada) return;
     tAcc += dt;
     quadroSede(dt);
-    olharFeed(dt);
     quadroRua(dt);
     /* os discos do quadro */
     const lista = [];
@@ -958,7 +871,6 @@ export function criarVida(api) {
     ligada = true;
     ligarSede(T);
     rua = montarRua();
-    vistoFeed = (E() && E().feed && E().feed[0] && E().feed[0].id) || 0;
     Cn.vida.vida = vida;
     /* a sede do jogador sem o telhado (e o alto das paredes): de cima, os
        cômodos. O telhado se acha pela sala do presidente (no barracão o
@@ -1059,6 +971,13 @@ export function criarVida(api) {
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
     get ritmo() { return relogio.ritmo; },
+    /* o mensageiro (recados3d.js): quem senta pra falar, quem levanta, e
+       as cabeças do balão (quem fala e o presidente, que ele evita cobrir) */
+    sentarRecado: m => ligada ? sentarRecado(m) : null,
+    soltarRecado: () => soltarRecado(),
+    get recado() { return sede && sede.recado ? sede.recado : null; },
+    get presidente() { return sede && sede.presidente ? sede.presidente.d : null; },
+    get reuniao() { return !!reuniao3d; },
     /* o palco da cena que tem lugar na sede em 3D: a reunião */
     palcoDe(local, cfg) {
       /* (com o dia de jogo no ar, a vida da praça fica desligada e as brigas dele montam aqui) */
@@ -1076,7 +995,7 @@ export function criarVida(api) {
     /* pro teste */
     get estado() {
       return { ligada, praca, hora: relogio.hora, sede: sede && { pessoas: sede.pessoas.length, andando: sede.pessoas.filter(p => p.estado === 'andando').length,
-               presidente: !!sede.presidente, recado: !!sede.recado, lugares: sede.lugares.length }, balao: !!(balao && !balao.hidden), msgBalao: msgBalao && msgBalao.id,
+               presidente: !!sede.presidente, recado: !!sede.recado, lugares: sede.lugares.length },
                povo: rua ? rua.povo.length : 0, bares: rua ? rua.bares.map(b => ({ n: b.n, dono: b.dono, gente: b.gente.length, chegando: b.gente.filter(g => g.estado === 'chegando').length })) : [],
                aneis: rua ? rua.aneis.length : 0, reuniao: !!reuniao3d, discos: J.discos.length };
     },
