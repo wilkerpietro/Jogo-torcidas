@@ -717,3 +717,134 @@ na hora deles). `CEL=1` roda no tamanho de celular, com toque.
 - As cores do hóspede são as da torcida dele: aliada com as cores parecidas
   com as nossas (a Bamor e a TUF, azul, vermelho e branco) quase não se
   distingue dos nossos dentro da sede.
+
+## 16. A torcida inteira no dia de jogo, o ataque na esquina e na porta da sede, e os recados na vez deles (28/09/2026)
+
+O dono: "Dia de jogo se eu tenho mais de 100 aptos com a TUF e o jogo só
+coloca 40 na rota do estádio até a arquibancada. Tem que ser os 100 aptos,
+tanto pra mim como pras torcidas IA. A mensagem que surge no itinerário de
+ataque à minha torcida seja na pista ou concentração deve ser mais natural:
+se for na pista, minha torcida vai normalmente fazer sua rota e em alguma
+esquina vai ser abordada pelo adversário, gerando a mensagem de aviso. Se
+for na concentração eles vem atacar em frente a sede, antes da torcida
+partir. Os recados não aparecem na tela, ficam somente em Notícias >
+Mensagens."
+
+- **Um boneco por torcedor.** O plano do dia (`dia_de_jogo.js`) punha um
+  boneco pra cada dois torcedores (`FATOR_GENTE` 0,5) e no máximo 40 por
+  torcida (`MAX_BONDE`): os 150 aptos da TUF viravam 40 bonecos. Agora é
+  um por um, pra todas as torcidas do jogo (a do jogador, as da IA, a
+  escolta do aliado), até os lugares com caminho do setor dela na
+  arquibancada. As rotas de dentro dos estádios (`rotas_estadios.mjs` →
+  `js/diajogo/rotas_estadios.js`) saíram de novo com 400 lugares por setor
+  (eram 100; o arquivo foi de 77 KB pra 278 KB): os dois setores do
+  visitante do estádio de 10 mil só têm 168 lugares e um do de 40 mil tem
+  211 — o visitante maior que isso fica com o setor cheio. 400 é também a
+  trava por torcida (`MAX_BONDE`). A PM segue a regra do dono, um PM pra
+  cada 4 torcedores do jogo, agora contando gente de verdade: no clássico
+  de Fortaleza, 410 torcedores e 103 PMs (eram 136 bonecos e 34 PMs).
+- **Só na rua e na calçada.** O dono, com a foto da concentração: "alguns
+  membros das torcidas estão dentro de terrenos baldios e casas, organize
+  pra eles ficarem somente nas calçadas e ruas, porque senão eles ficam
+  presos aí dentro". A grade da rota do dia de jogo agora sabe o que é
+  chão de rua: o asfalto, a calçada das quadras e a calçada pintada das
+  avenidas (a planta, `naRuaOuCalcada`), mais o terreno do estádio (a
+  esplanada e os portões) — `R.publico`. A rodinha da concentração só fica
+  nele (a roda inteira, o meio e a volta), a faixa do bonde andando só se
+  espalha nele, e andar fora dele (o lote, o terreno baldio, o quintal, a
+  sede por dentro, a praça, a viela) custa 8 vezes mais pras rotas
+  (`PRIVADO`), e a reta que enxuga a rota não corta caminho por eles: as
+  rotas só passam por lá se não tem outro jeito. No mapa de Fortaleza, das
+  137 mil células de 1 m que o corpo alcança, 100 mil são chão de rua (a
+  conta leva uns 0,1 s por plano); no clássico, nenhuma rodinha fica fora
+  dele, e das rotas (330 a 780 m) sobra 0 a 3 m fora — o metro da boca do
+  portão e a quina de um meio-fio.
+- **A concentração do tamanho da torcida.** Com 150 na porta, as rodinhas
+  se espalhavam longe. Agora a roda só fica onde se chega andando da porta,
+  pela rua e pela calçada, sem volta grande (`alcanceDaPorta`), a faixa
+  abre ao longo da fachada (a rua) e só um tanto pra fora, e a torcida
+  grande junta mais (as rodas a 1 m uma da outra a partir de 150 pessoas, a
+  1,8 m até 40, e rodas de até 8).
+- **O ataque na pista, numa esquina.** A briga mandada pelo jogo na rua cai
+  numa ESQUINA da rota do alvo: um ponto dela de onde saem pelo menos três
+  ruas de 18 m (`ESQUINA`) nos quatro rumos da grade do mapa (`ehEsquina`);
+  quem ataca espera escondido na transversal. Sem esquina que sirva, o ponto
+  é o de antes. No jogo 3D (`dia3d.js`, `atacados`) a cidade anda como num
+  dia sem nada: o nosso bonde faz a rota dele; perto da esquina o relógio
+  cai pra 2× com a câmera atrás do bonde, olhando a esquina; a rival sai
+  correndo da transversal e SÓ AÍ o aviso aparece, com ela à vista: "A
+  Cearamor tava escondida na esquina e saiu correndo pra cima do bonde!".
+- **O ataque na concentração, na porta da sede, antes de sair.** O ponto é
+  a frente da porta, onde a torcida está nas rodinhas, e a hora é antes da
+  saída do bonde (a briga acaba e sobra 1,5 min, `REAGRUPA_PORTA`, pra
+  juntar quem ficou de pé antes da hora de sair). Quem ataca sai da sede
+  dele, dobra a última esquina (espera só `ESPERA_PORTA` s) e cai em cima
+  da concentração; cada um vai no nosso mais perto de onde ele vem
+  (`parear`, refeito quando as rodinhas estão postas), e os nossos brigam
+  ali mesmo, na rodinha. O aviso vem quando a rival dobra a esquina
+  correndo: "Chefe, a Cearamor dobrou a esquina e tá vindo correndo pra
+  porta da sede! Vão cair em cima da concentração antes da gente sair pro
+  estádio." Os botões são os do jogo ("Pra cima deles", "Simular",
+  "Recuar pra sede"); o combate jogado (`caminhada.js`) abre na porta da
+  sede ("Na porta da sede, antes de sair pro estádio").
+- **O aviso no alto.** Enquanto o aviso espera a resposta, o balão sobe pro
+  alto da tela (em cima do líder do bonde ele podia tampar justamente o
+  lado de onde a rival vinha) e a câmera põe a briga na metade de baixo.
+  No celular em pé a tela é estreita e o balão do aviso tampa quase a
+  metade de cima, e o painel do dia o pé: a câmera mede a faixa que sobra
+  entre os dois (`faixa`, pelo tamanho de verdade do balão e do painel) e
+  se afasta até caber nela a tocaia com as primeiras filas de quem ataca,
+  o ponto e a nossa porta com as rodinhas (na pista, o líder chegando na
+  esquina) — de trás de quem ataca (a rival sobe pela tela até a gente),
+  ou de lado, se assim tudo cabe bem mais perto (`emPe`); quando o aviso
+  aparece, ela acerta pela faixa que ele deixou de verdade. De longe assim
+  (70 a 90 m) o boneco fica pequeno no celular: quem é quem se lê pela
+  cor da camisa, pelo anel no chão e pela placa de cada torcida. O cartão
+  da parada, com os botões, rola pra dentro do balão (no celular ele caía
+  embaixo da dobra).
+- **Depois do aviso.** A briga que a cidade mostra (a simulada, a de quem
+  não desceu) passa a 2× no jogo (a 1× eram 45 s de tela), a velocidade
+  que o jogador escolheu volta depois, e o nosso bonde que brigou na ida
+  faz a caminhada até o portão (antes ele ia da briga pro estádio a 60×);
+  a linha do dia diz "a caminho do estádio · na cidade" enquanto ele anda.
+- **A investida marcada** (a gente atacando) usa os mesmos lugares: a porta
+  da sede deles antes de saírem (na concentração) e a esquina (na pista),
+  com o texto do cartão também do que se vê.
+- **Os recados de outras torcidas.** O balão mostrava primeiro toda
+  mensagem da nossa torcida — até as que chegavam DEPOIS do recado — e só
+  então o recado de outra torcida. Num dia cheio a vez dele não chegava: o
+  jogador lia em Notícias → Mensagens, ele ficava lido e saía da fila sem
+  ter aparecido. Agora a fila é por ordem de chegada (só a decisão em
+  aberto passa na frente), e o jogo carregado traz os recados não lidos
+  dos últimos três dias (antes, só os de hoje).
+
+**Como testar** (em `scratchpad/recados/`, Playwright na pasta do Pages):
+`recado_fila.js` (com o tempo parado caem uma notícia, um recado da
+Cearamor e outra notícia: o balão mostra os três nessa ordem, e o recado
+fica lido), `ataque3d.js` com `ALVO=pista` ou `ALVO=concentracao` e
+`RESP=quieto`, `RESP=simular` ou `RESP=descer` (TUF × Ceará em Fortaleza
+com o ataque marcado da Cearamor: o bonde de 150, onde e quando o aviso
+aparece, a briga, a caminhada e a partida), `custo_dia.js` (o custo do
+quadro do dia de jogo do cenário com a gente toda). `CEL=1` no tamanho de
+celular, com toque.
+
+**Medido** (no navegador de teste, sem placa de vídeo: os números absolutos
+são piores que num PC; a proporção é o que vale): o clássico de Fortaleza
+foi de 136 bonecos e 34 PMs pra 410 e 103; o plano monta no mesmo tempo
+(2 a 3 s); com a arquibancada cheia, a conta dos bonecos por quadro foi de
+uns 8 ms pra uns 21 ms, e as chamadas de desenho subiram na mesma
+proporção.
+
+**Limites (sinceros):**
+- Mais gente pesa. Cada boneco ainda é um corpo com esqueleto (não tem
+  multidão instanciada nem boneco de papelão de longe): no celular fraco o
+  dia de jogo fica mais lento, principalmente com a câmera na arquibancada.
+- Torcida com mais de 400 aptos anda com 400; o visitante maior que o
+  setor (168 lugares no estádio de 10 mil) fica com o setor cheio.
+- A esquina é achada pela forma da rua (três ruas saindo do ponto). Numa
+  rota sem esquina que sirva, a briga cai no meio da rua, como antes, e o
+  aviso diz "numa transversal".
+- "Recuar pra sede" não põe a torcida pra dentro da sede: ela fica na
+  porta e apanha sem reagir (a conta é a do jogo).
+- A hora da linha do dia ("Ida ao estádio · 11:00") é a do jogo de feed; a
+  cidade 3D anda no horário dela (a saída pro estádio perto das 15h).

@@ -535,16 +535,18 @@ export function criarDia3d(api, vida, g = {}) {
   function fase(p, cont) {
     if (!D || !D.plano || !dia || !dia.plano) { cont(); return; }
     const pl = D.plano, nosso = D.nosso;
+    D.avisoNoAlto = false;
     D.fase = p.jogo ? 'jogo' : p.id === 'volta' ? 'volta' : 'ida';
     pintar();
     if (D.fase === 'ida') {
       const ev = (p.eventos || [])[0];
+      if (ev && D.briga && ev === D.evBriga && D.briga.v === nosso) { atacados(D.briga, cont); return; }
       if (ev && D.briga && ev === D.evBriga) {
         const br = D.briga, somosA = br.a === nosso;
-        rodarAte(br.tIni - 7, D.vezes, somosA ? `A caminho da tocaia contra a ${br.v.t.sigla}…` : 'A caminho do estádio…', () => {
+        rodarAte(br.tIni - 7, D.vezes, somosA ? (br.naPorta ? `A caminho da sede da ${br.v.t.sigla}…` : `A caminho da tocaia contra a ${br.v.t.sigla}…`) : 'A caminho do estádio…', () => {
           dia.seguirBonde(null);
           C().voarPara(br.P[0], br.P[1], 38 * M, 0.9, undefined, 0);
-          status(somosA ? `A ${br.v.t.sigla} está chegando no ponto.` : `A ${br.a.t.sigla} caiu em cima da gente!`, !somosA);
+          status(somosA ? (br.naPorta ? `A concentração da ${br.v.t.sigla} tá na porta da sede dela.` : `A ${br.v.t.sigla} está chegando no ponto.`) : `A ${br.a.t.sigla} caiu em cima da gente!`, !somosA);
           cont();
         });
         return;
@@ -560,12 +562,154 @@ export function criarDia3d(api, vida, g = {}) {
       return;
     }
     if (D.fase === 'jogo') {
-      const alvo = Math.max(dia.t, Math.min(pl.bola - 60, tudoNoLugar() + 15));
-      rodarAte(alvo, 60, 'As torcidas entrando no estádio…', () => { status('A bola vai rolar.'); verNossoSetor(); cont(); });
+      const entrar = () => {
+        const alvo = Math.max(dia.t, Math.min(pl.bola - 60, tudoNoLugar() + 15));
+        rodarAte(alvo, 60, 'As torcidas entrando no estádio…', () => { status('A bola vai rolar.'); verNossoSetor(); cont(); });
+      };
+      /* DEPOIS DA BRIGA DA IDA: a briga que ainda está no ar (a simulada, a
+         que ninguém desceu) acaba de se ver, e o nosso bonde que ainda não
+         chegou no portão (o ataque na concentração, na esquina) faz a
+         caminhada — sem isso ele ia do chão da briga pro estádio a 60× */
+      const br = D.briga;
+      const andar = () => {
+        if (nosso && dia.t < nosso.chega - 20) { dia.seguirBonde(nosso); rodarAte(nosso.chega - 20, D.vezes, 'A caminhada até o estádio, com quem ficou de pé…', entrar); }
+        else entrar();
+      };
+      /* (a velocidade de antes volta depois dela: a 2× é só a da briga) */
+      if (br && br.aplicado && dia.t < br.tFim + 3) { const vz = D.vezes; rodarAte(br.tFim + 3, 2, null, () => { if (D) D.vezes = vz; andar(); }); return; }
+      andar();
       return;
     }
     status('Fim de jogo: as torcidas saindo.');
     cont();
+  }
+  /* O ATAQUE QUE A GENTE SOFRE NA IDA (conserto de 28/09/2026, o dono: "se
+     for na pista, minha torcida vai normalmente fazer sua rota e em alguma
+     esquina vai ser abordada pelo adversário, gerando a mensagem de aviso.
+     Se for na concentração eles vem atacar em frente a sede, antes da
+     torcida partir"). A cidade anda como num dia sem nada: na pista, o
+     nosso bonde faz a rota dele até perto da esquina (dia_de_jogo.js
+     escolhe a esquina e esconde a rival na transversal); na concentração,
+     a torcida fica nas rodinhas na porta da sede e a rival vem da sede
+     dela. Perto da hora, o relógio desacelera com a câmera na esquina (ou
+     na porta), a rival sai correndo, e só aí o aviso aparece — com ela à
+     vista, em cima da gente */
+  function atacados(br, cont) {
+    const porta = !!br.naPorta;
+    /* a câmera na hora: da rua, de frente pra porta da sede (a concentração
+       e a rua dos dois lados); atrás do bonde, olhando a esquina que vem */
+    /* (o ponto da briga fica na metade de baixo da tela: o aviso sobe pro
+       alto dela e não tampa a rival chegando) */
+    /* NO CELULAR EM PÉ a tela é estreita e quem vem pelo lado fica fora
+       dela: a câmera fica atrás de quem ataca, olhando o ponto — a rival
+       sobe pela tela até a gente. O balão do aviso tampa o alto da tela e
+       o painel do dia o pé: a distância e o alvo saem da faixa que sobra
+       entre os dois (a tocaia no pé dela, a nossa gente no alto) */
+    const faixa = () => {
+      const alto = innerHeight || 1;
+      let s0 = 0.5, s1 = 0.82;
+      const bl = document.querySelector('.j3d-balao.solto:not([hidden])'), hud = document.querySelector('.j3d-dia:not([hidden])');
+      if (bl) { const r = bl.getBoundingClientRect(); if (r.height > 0) s0 = r.bottom / alto + 0.02; }
+      if (hud) { const r = hud.getBoundingClientRect(); if (r.height > 0) s1 = r.top / alto - 0.02; }
+      s1 = clamp(s1, 0.4, 0.97);
+      s0 = clamp(Math.min(s0, s1 - 0.22), 0.08, 0.8);
+      return [s0, s1];
+    };
+    const emPe = (cam, [s0, s1]) => {
+      /* o que tem que caber: a tocaia (com as primeiras filas de quem
+         ataca), o ponto e, do nosso lado, a porta com as rodinhas em volta
+         (na concentração) ou o líder do bonde chegando na esquina (na pista) */
+      const H = {}, pts = [];
+      br.a.rua.ponto(br.sQ, H);
+      pts.push([H.x, H.z, 2 * M], [br.P[0], br.P[1], 4 * M]);
+      const q = br.v.porta;
+      if (porta && q) pts.push([q.x, q.y, 5 * M]);
+      else if (!porta) { const V = {}; br.v.rua.ponto(Math.max(0, br.sV - 10 * M), V); pts.push([V.x, V.z, 3 * M]); }
+      /* (a conta da lente: o raio da altura s da tela desce el + atan((2s−1)·tg)
+         do horizonte e bate no chão a h·cotg disso do pé da câmera; o alvo
+         da câmera fica na altura do olho, 1,6 m) */
+      const el = 0.9, tg = Math.tan((cam && cam.fov || 42) * Math.PI / 360), larg = (cam && cam.aspect || 0.5) * 0.85 * tg;
+      const fi = s => el + Math.atan((2 * s - 1) * tg), fm = fi((s0 + s1) / 2), cot = a => Math.cos(a) / Math.sin(a);
+      const prof = Math.sin(el) * (cot(fi(s0)) - cot(fi(s1))), deLado = Math.sin(el) / Math.sin(fm) * Math.cos(fm - el) * larg;
+      /* olhando pelo rumo (ux, uz): a distância que faz tudo caber, e onde fica o alvo */
+      const medir = (ux, uz) => {
+        let p0 = Infinity, p1 = -Infinity, q0 = Infinity, q1 = -Infinity;
+        for (const [x, z, m] of pts) {
+          const a = (x - br.P[0]) * ux + (z - br.P[1]) * uz, b = (z - br.P[1]) * ux - (x - br.P[0]) * uz;
+          p0 = Math.min(p0, a - m); p1 = Math.max(p1, a + m); q0 = Math.min(q0, b - m); q1 = Math.max(q1, b + m);
+        }
+        const d = clamp(Math.max((p1 - p0) / prof, (q1 - q0) / 2 / deLado), 40 * M, 120 * M), h = d * Math.sin(el) + 1.6 * M;
+        /* o que tem que caber no meio da faixa: o pé da câmera fica a g1 (o
+           chão no pé da faixa) mais a metade da sobra antes do começo */
+        const g0 = h * cot(fi(s0)), g1 = h * cot(fi(s1)), sobra = (g0 - g1) - (p1 - p0);
+        return { ux, uz, d, a: p0 - g1 - sobra / 2 + d * Math.cos(el), b: (q0 + q1) / 2 };
+      };
+      /* de trás de quem ataca (a rival sobe pela tela até a gente), ou de
+         lado, se assim tudo cabe bem mais perto */
+      let ux = br.P[0] - H.x, uz = br.P[1] - H.z;
+      const l = Math.hypot(ux, uz) || 1;
+      ux /= l; uz /= l;
+      let v = medir(ux, uz);
+      for (const w of [medir(-uz, ux), medir(uz, -ux)]) if (w.d < v.d * 0.85) v = w;
+      C().voarPara(br.P[0] + v.ux * v.a - v.uz * v.b, br.P[1] + v.uz * v.a + v.ux * v.b, v.d, el, Math.atan2(-v.ux, -v.uz), 0);
+    };
+    const enquadrar = () => {
+      if (!D || !dia) return;
+      dia.seguirBonde(null);
+      const Cn = C(), cam = Cn.vida && Cn.vida.camera, retrato = cam ? cam.aspect < 0.95 : innerWidth < innerHeight;
+      /* (antes do aviso, a faixa que ele vai deixar) */
+      if (retrato) { emPe(cam, [0.5, 0.82]); return; }
+      if (porta && D.nosso && D.nosso.porta) {
+        const q = D.nosso.porta, az = Math.atan2(q.fx, q.fy);
+        C().voarPara(br.P[0] - Math.sin(az) * 5 * M, br.P[1] - Math.cos(az) * 5 * M, 42 * M, 0.85, az, 0);
+        return;
+      }
+      const Q = {};
+      br.v.rua.ponto(Math.max(0, br.sV - 10 * M), Q);
+      const tx = Q.tx, tz = Q.tz;
+      C().voarPara(br.P[0] + tx * 4 * M, br.P[1] + tz * 4 * M, 40 * M, 0.8, Math.atan2(-tx, -tz), 0);
+    };
+    /* (a briga não desacelera sozinha no meio: o aviso é que para o relógio) */
+    br.vista = true;
+    const perto = br.tIni - (porta ? 24 : 16), aviso = br.tIni - 1.2, vz = D.vezes;
+    rodarAte(Math.max(dia.t, perto), D.vezes, porta ? 'A concentração na porta da sede…' : 'A caminho do estádio…', () => {
+      if (!D) return;
+      enquadrar();
+      /* (a 2× só a chegada: a velocidade do jogador volta depois do aviso) */
+      rodarAte(Math.max(dia.t, aviso), 2, porta ? 'A concentração na porta da sede…' : 'O bonde chegando na esquina…', () => {
+        if (!D) return;
+        D.vezes = vz; pintar();
+        status(porta ? `A ${br.a.t.sigla} dobrou a esquina e vem pra porta da sede!` : `A ${br.a.t.sigla} saiu da esquina pra cima do bonde!`, true);
+        /* o aviso no alto da tela (a câmera está na briga), até a resposta */
+        D.avisoNoAlto = true;
+        cont();
+        /* no celular em pé, com o aviso posto: a faixa que ele deixou de verdade */
+        setTimeout(() => {
+          if (!D || !D.avisoNoAlto) return;
+          const Cn = C(), cam = Cn && Cn.vida && Cn.vida.camera;
+          if (cam && cam.aspect < 0.95) emPe(cam, faixa());
+        }, 160);
+      });
+    });
+  }
+  /* O AVISO DO ATAQUE (o cartão da linha do dia, main.js): o que o líder
+     do bonde diz na hora, com a rival à vista — no lugar do texto do jogo
+     de feed ("caiu em cima da nossa concentração… Foi em Concentração") */
+  function avisoDoAtaque(ev) {
+    if (!D || D.ia || !D.briga || ev !== D.evBriga) return null;
+    const br = D.briga;
+    /* a investida marcada: a gente é quem chega */
+    if (br.a === D.nosso) {
+      const alvo = br.v.t.nome;
+      return br.naPorta ? { voz: `Investida marcada · ${alvo}`, texto: `Chegamos na esquina da sede da ${alvo}. A concentração deles tá toda na porta, antes de sair pro estádio — é agora.` }
+                        : { voz: `Investida marcada · ${alvo}`, texto: `A gente tá na ${br.esquina ? 'esquina' : 'transversal'}, escondido, e o bonde da ${alvo} tá vindo pela rua. É agora.` };
+    }
+    if (br.v !== D.nosso) return null;
+    const nome = br.a.t.nome;
+    if (br.naPorta) return { voz: `Na porta da sede · ${nome}`,
+      texto: `Chefe, a ${nome} dobrou a esquina e tá vindo correndo pra porta da sede! Vão cair em cima da concentração antes da gente sair pro estádio.` };
+    return { voz: `Na caminhada · ${nome}`,
+      texto: `A ${nome} tava escondida ${br.esquina ? 'na esquina' : 'numa transversal'} e saiu correndo pra cima do bonde! A gente tá a caminho do estádio, no meio da rua.` };
   }
   /* A PARTIDA: o relógio do dia anda com o minuto dela */
   function partida(m) {
@@ -594,13 +738,14 @@ export function criarDia3d(api, vida, g = {}) {
   }
   function depoisDaCena(ev, res) {
     if (!D || !dia || !dia.plano) return;
-    D.emCena = false;
+    D.emCena = false; D.avisoNoAlto = false;
     dia.esconder(false);
     const br = D.briga;
     if (br && ev && ev === D.evBriga && !br.aplicado && res) {
       br.aplicar(resultadoDaBriga(br, res));
-      if (D.jogada) { br.vista = true; dia.irPara(Math.max(dia.t, br.tFim + 3)); status(res.ganhamos ? 'Saímos por cima na rua. Seguindo pro estádio.' : 'Apanhamos na rua. Quem sobrou segue pro estádio.', !res.ganhamos); }
-      else { br.vista = false; dia.irPara(Math.min(dia.t, br.tIni - 10)); dia.rodar(10); status('A briga na rua (o resultado do duelo simulado).'); }
+      const onde = br.naPorta ? 'na porta da sede' : 'na rua';
+      if (D.jogada) { br.vista = true; dia.irPara(Math.max(dia.t, br.tFim + 3)); status(res.ganhamos ? (br.naPorta ? 'Seguramos a porta da sede. Quem ficou de pé sai pro estádio na hora.' : 'Saímos por cima na rua. Seguindo pro estádio.') : `Apanhamos ${onde}. Quem sobrou segue pro estádio.`, !res.ganhamos); }
+      else { br.vista = false; dia.irPara(Math.min(dia.t, br.tIni - 10)); dia.rodar(10); status(`A briga ${onde} (o resultado do duelo simulado).`); }
       D.jogada = false;
     }
     if (D.nosso) dia.seguirBonde(D.nosso);
@@ -609,12 +754,13 @@ export function criarDia3d(api, vida, g = {}) {
   /* ninguém desceu: a rival bate e a gente não reage (um em dez no chão) */
   function naoDesceu(ev) {
     if (!D || !dia || !dia.plano) return;
+    D.avisoNoAlto = false;
     const br = D.briga;
     if (!br || ev !== D.evBriga || br.aplicado) return;
     const somosA = br.a === D.nosso;
     br.aplicar(somosA ? { venceA: false, ferA: Math.round(br.nA * 0.1) } : { venceA: true, ferV: Math.round(br.nV * 0.1) });
     br.vista = false; dia.irPara(Math.min(dia.t, br.tIni - 10)); dia.rodar(10);
-    status('Ninguém desceu: a rival bateu e a gente não reagiu.', true);
+    status(br.naPorta ? 'Ninguém desceu: a rival bateu em quem estava na porta da sede e a gente não reagiu.' : 'Ninguém desceu: a rival bateu e a gente não reagiu.', true);
   }
 
   /* ======================================================
@@ -625,7 +771,7 @@ export function criarDia3d(api, vida, g = {}) {
     if (!D || !D.plano || !D.briga) return null;
     const br = D.briga;
     if (br.a.t.id !== a || br.v.t.id !== v) return null;
-    D.jogada = true; D.emCena = true;
+    D.jogada = true; D.emCena = true; D.avisoNoAlto = false;
     /* (a câmera é da briga: o dia para de seguir o nosso bonde) */
     dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas([a, v]);
     return { plano: D.plano, comDia: dia.semAsDaBriga([a, v]), aoDesmontar: voltouDoPalco };
@@ -744,7 +890,7 @@ export function criarDia3d(api, vida, g = {}) {
      a posição é sempre a do líder), ou da cabeça dele sem o rótulo */
   const PF = {};
   function falante() {
-    if (!D || D.ia || !D.plano || !D.nosso || D.emCena || !dia || !dia.plano) return null;
+    if (!D || D.ia || !D.plano || !D.nosso || D.emCena || D.avisoNoAlto || !dia || !dia.plano) return null;
     const b = D.nosso, d = b.gente && b.gente[0] && b.gente[0].d;
     if (!d) return null;
     const r = b.rotulo ? b.rotulo.position : null;
@@ -760,13 +906,15 @@ export function criarDia3d(api, vida, g = {}) {
 
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
-    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa,
+    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque,
     get falante() { return falante(); },
     get ativo() { return !!(D && D.plano && dia && dia.plano); },
     /* o jogo da cidade no ar (ou montando): os recados esperam a volta pra sede */
     get jogoDaCidade() { return !!(D && D.ia); },
     get montando() { return !!D && !D.plano; },
     get hora() { return D && dia && dia.plano ? dia.t : null; },
+    /* o nosso bonde ainda longe do portão (a briga da ida atrasou a caminhada) */
+    get nossoNaRua() { return !!(D && D.nosso && dia && dia.plano && dia.t < D.nosso.chega - 20); },
     /* pro teste */
     get estado() {
       if (!D) return null;

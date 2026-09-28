@@ -1380,6 +1380,8 @@ function montarCalcadas() {
   /* onde tem laje (pro poste de hoje, a árvore e o prop subirem nela) */
   const idxLaje = IndiceRet(rets.concat(C.pols.map(pl => ({ ...pl.r, pl }))), r => r);
   C.naLaje = (x, y) => idxLaje(x, y).some(r => r.pl ? dentro(x, y, r.pl.fora) && !(r.pl.dentro && dentro(x, y, r.pl.dentro)) : noRet(r, x, y));
+  /* (o chão da rua, pro dia de jogo: o asfalto e a calçada pintada das avenidas) */
+  C.ehAsfalto = ehAsfalto; C.naCalcadaPintada = naCalcadaPintada;
 
   /* A GRADE DE PROTEÇÃO entre a cidade e o mato (a da foto do dono, a da
      Aerolândia): a tela verde de poste em poste em cima da mureta de
@@ -5124,6 +5126,12 @@ function apiDoCenario() {
     },
     resumo: () => resumoDaTela(),
     pecas: pecasDoCenario, pintarChao, vegetacao,
+    /* O CHÃO DA RUA (o dono, 28/09/2026: "alguns membros das torcidas estão
+       dentro de terrenos baldios e casas, organize pra eles ficarem somente
+       nas calçadas e ruas"): o asfalto, a calçada das quadras e a calçada
+       pintada das avenidas — não o lote, o terreno baldio, o quintal nem a
+       casa. Sem as calçadas montadas (a planta sem proposta), tudo vale */
+    naRuaOuCalcada(x, y) { const C = CALCADAS; return !C || !C.ehAsfalto || C.ehAsfalto(x, y) || C.naLaje(x, y) || C.naCalcadaPintada(x, y); },
     /* o mapa 2D inteiro, com os rótulos, num canvas de fora (o mapa da cidade do jogo 3D) */
     pintarMapa,
     /* o relógio da bandeira da sede (o cenário anda ele a cada quadro) */

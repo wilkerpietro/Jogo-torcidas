@@ -2100,7 +2100,8 @@
     const D3 = TO.jogo3d && TO.jogo3d.dia;
     if(D3 && D3.ativo){
       ITN.travado = true;
-      itnDizer(p.jogo ? _t('as torcidas entrando no estádio') : _t('a caminho · na cidade'), true);
+      /* (o nosso bonde que brigou na ida ainda está na rua quando a linha chega no jogo) */
+      itnDizer(p.jogo ? (D3.nossoNaRua ? _t('a caminho do estádio · na cidade') : _t('as torcidas entrando no estádio')) : _t('a caminho · na cidade'), true);
       const este = ITN;
       D3.fase(p, ()=>{
         if(ITN !== este || ITN.it.paradas[ITN.ponto] !== p) return;
@@ -2146,7 +2147,11 @@
     if(!ev){ ITN.travado = false; itnDizer(_t('seguindo')); itnAgenda(1200); return; }
     ITN.travado = true;
     itnDizer(_t('recado na parada · esperando você responder'), true);
-    ITN.recados.appendChild(itnCartao(p, ev));
+    const cartao = itnCartao(p, ev);
+    ITN.recados.appendChild(cartao);
+    /* no celular o balão é baixo: o cartão novo (com os botões) rola pra
+       dentro dele, em vez de ficar embaixo da dobra */
+    requestAnimationFrame(()=>{ try{ cartao.scrollIntoView({block:'nearest'}); }catch(_){} });
   }
 
   /* ---------- o cartão de cada recado ---------- */
@@ -2159,6 +2164,10 @@
     if(ev.tipo === 'investida'){
       voz = _t('Diretor de rua · investida marcada no planejamento');
       texto = _t('Hoje é o dia. A {nome} vai estar em {onde}, e a gente vai pra cima.', {nome:ev.nome, onde});
+      /* (na cidade em 3D, o que se vê na hora: dia3d.js) */
+      const D3i = TO.jogo3d && TO.jogo3d.dia;
+      const v3i = D3i && D3i.ativo && D3i.avisoDoAtaque ? D3i.avisoDoAtaque(ev) : null;
+      if(v3i){ voz = v3i.voz; texto = v3i.texto; }
       bts = [{rot:_t('Ir pra cima'), briga:true}];
     } else if(ev.tipo === 'emboscada'){
       voz = _t('Emboscada · {nome}', {nome:ev.nome});
@@ -2172,6 +2181,12 @@
       voz = _t('Caiu em cima da gente · {nome}', {nome:ev.nome});
       texto = (cfg.texto ? cfg.texto(ev.nome)
                          : _t('A {nome} caiu em cima da gente.', {nome:ev.nome})) + ' ' + _t('Foi em {onde}.', {onde});
+      /* NA CIDADE EM 3D o aviso é o que se vê (dia3d.js, conserto de
+         28/09/2026): o líder do bonde grita na hora em que a rival aparece
+         — na esquina da caminhada, ou dobrando a esquina pra porta da sede */
+      const D3 = TO.jogo3d && TO.jogo3d.dia;
+      const v3 = D3 && D3.ativo && D3.avisoDoAtaque ? D3.avisoDoAtaque(ev) : null;
+      if(v3){ voz = v3.voz; texto = v3.texto; }
       bts = [{rot:cfg.brigar || _t('Pra cima deles'), briga:true},
              {rot:cfg.fugir  || _t('Deixar quieto'),  briga:false}];
     }

@@ -56,7 +56,7 @@ const THREE = await import(path.join(R, 'vendor/three/three.module.min.js'));
 const { ESTADIOS_JOGO, montarEstadioJogo, marcaDoEstadio } = await import(path.join(R, 'js/diajogo/estadios3d.js'));
 const { Subsolo } = await import(path.join(R, 'ferramentas/planta_html/subsolo.js'));
 
-const RAIO = 0.25, PASSO = 0.1, DEGRAU = 0.55, FAIXA = [0.55, 1.9], BOCA = 8, LIVRE = 14, NVAGAS = 100, AMOSTRA = 0.05;
+const RAIO = 0.25, PASSO = 0.1, DEGRAU = 0.55, FAIXA = [0.55, 1.9], BOCA = 8, LIVRE = 14, NVAGAS = 400, AMOSTRA = 0.05;
 const SAIDA = path.join(R, 'js/diajogo/rotas_estadios.js');
 /* a marca do modelo (estadios3d.js): se ela não bate com a do estádio do mapa, a rota é de outro estádio */
 export const marcaDe = marcaDoEstadio;
