@@ -298,8 +298,10 @@ torcidas nascem — a rua de onde o alvo veio, a de onde ele mesmo veio, a
 rota dele pro estádio ou, se todas saem do tabuleiro colado em alguém, o
 ponto da beira ligado à tocaia mais longe de todo mundo.
 
-**O que ficou de fora:** a briga FORA DE CASA (a praça de outra torcida)
-segue na foto 2D: a cidade 3D do jogo é só a do jogador.
+**Fora de casa** (desde a seção 13): com o dia de jogo no ar na cidade do
+jogo, a briga da caminhada fora de casa abre na cidade deles, no plano do
+dia — o mesmo cenário da briga em casa. Sem o dia no ar (a sub-sede, a
+praça sem mapa 3D), segue na foto 2D.
 
 ## 12. A arquibancada viva e a briga no estádio (28/09/2026)
 
@@ -341,10 +343,12 @@ pra poder cair).
   vazio da PM, entre duas divisórias (na arquibancada e no corredor de
   baixo). A PM deixa guardas lá (3 na arquibancada, 2 no corredor, do
   efetivo do jogo, até 30% do que sobra da revista).
-- **A invasão:** uma por jogo, de uma torcida que não brigou na rua; a
-  chance é 40% da de procurar na rua a rival que está do outro lado do
-  isolamento (sem rival dela ali, sozinha ela não vai; mandada pelo
-  painel, vai mesmo assim e a PM empurra de volta). Pela arquibancada (a
+- **A invasão:** uma por jogo. **A IA não invade mais sozinha** (seção 13:
+  no jogo, a invasão é a da torcida do jogador, jogada no combate); o
+  painel da planta ainda manda ("Ninguém invade sozinho" é o padrão; "As
+  torcidas decidem" é o sorteio antigo: 40% da chance de procurar na rua a
+  rival que está do outro lado do isolamento, e sem rival dela ali ela não
+  vai). Quem brigou na rua invade também. Pela arquibancada (a
   divisória mais perto, andando nas fileiras sem passar em poço de
   vomitório) ou pelo corredor (desce pelo vomitório dela e anda no
   corredor). Uns 60% da torcida correm pra grade e empurram 15 s; a grade
@@ -357,9 +361,9 @@ pra poder cair).
   relógio para nela e a câmera vai até lá; no corredor, o corte do cenário
   abre o que fica em cima).
 - **O painel** diz o papel de cada torcida no estádio, a decisão e a
-  invasão, e manda nela: "No estádio: as torcidas decidem / Ninguém
-  invade / Invade pela arquibancada / Invade pelo corredor" e "O cordão:
-  sorteio / A PM segura / A torcida fura o cordão".
+  invasão, e manda nela: "No estádio: ninguém invade sozinho / As
+  torcidas decidem (sorteio) / Invade pela arquibancada / Invade pelo
+  corredor" e "O cordão: sorteio / A PM segura / A torcida fura o cordão".
 
 **Limites:** no estádio de 10 mil o mandante fica na outra arquibancada —
 sozinho o visitante não tenta; mandado pelo painel, ele vai, mas do outro
@@ -367,3 +371,96 @@ lado do isolamento não tem ninguém.
 A grade que cai só cai na cena (quem anda a pé no cenário continua
 barrado por ela). O pano do bandeirão atravessa gente e os outros panos
 (não tem colisão entre eles).
+
+## 13. O dia de jogo ligado ao jogo (28/09/2026)
+
+O dono: "Vamos ligar o dia de jogo com arquibancada e invasão no cenário
+3d. A invasão deve ser controlável pela torcida do jogador somente. Que
+brigou na rua pode invadir no estádio também. As brigas fora de casa
+devem respeitar o mesmo cenário das brigas em casa, com o jogador sendo
+visitante podendo iniciar a rota ou na entrada ou na casa do aliado".
+
+`ferramentas/planta_html/dia3d.js` (o controlador) e
+`ferramentas/planta_html/invasao.js` (a invasão jogada), com ganchos em
+`js/main.js` (a linha do dia) e `jogo3d.js`.
+
+- **A linha do dia de jogo manda.** Quando o itinerário abre (o "Iniciar
+  partida" do feed), a cidade do jogo — a nossa em casa, a deles fora —
+  monta o dia de jogo do cenário com o jogo de verdade: o mandante e o
+  visitante, a hora da bola (`proximoJogo.hora`), quem foi (a presença da
+  partida, com o número de cada torcida) e o nosso bonde (o efetivo da
+  linha). As outras torcidas da IA não atacam ninguém na rua (a briga da
+  rua é só a do itinerário) nem invadem no estádio.
+- **As fases andam na cidade.** Ida: a caminhada de todas as torcidas até
+  o estádio, com a PM, os cordões e a revista, a 30× (o painel embaixo tem
+  1×/10×/30×/60×, "Pular", e a câmera: a nossa torcida, o estádio, a
+  cidade). Se a fase tem a briga da caminhada (o ataque sofrido ou a
+  investida marcada, na concentração ou na pista), o dia é planejado com
+  ela dentro: a cidade anda até os dois bondes se encontrarem, e só aí o
+  cartão da linha aparece. **Descer** abre o combate no mesmo ponto (o
+  plano é o do dia) com os outros bondes parados em volta; **Simular** e
+  **ninguém descer** a cidade mostra a 1× (o resultado do duelo manda em
+  quem ganha e em quem fica no chão; sem descer, a rival bate e 10% dos
+  nossos caem). Depois a caminhada segue. O jogo: o resto da entrada a
+  60× até todo mundo no lugar, e a partida — **a 1× na cidade** (dá pra
+  ver a arquibancada e decidir; o botão da velocidade continua valendo) —
+  com o relógio do dia no minuto dela e a câmera do campo olhando a nossa
+  torcida. Volta: o dia fecha e a cidade volta a ser a praça do jogador.
+- **A invasão é só da nossa torcida, e é escolha.** Na partida o painel
+  mostra "Invadir o setor da X: pela arquibancada / pelo corredor" quando
+  a nossa torcida tem caminho até um isolamento com rival do outro lado (a
+  até 40 m da segunda grade). A do 1º escalão costuma sentar longe do
+  visitante (no Castelão, a TUF fica a ~100 m do isolamento): ela
+  atravessa o anel até a grade e o combate começa lá. O clima tenso não
+  força mais a briga na cidade 3D: pergunta "Invadir o setor deles?"
+  (invadir por um caminho, simular ou ficar no lugar — ficando, a PM
+  acalma e a bola volta). Uma briga de arquibancada por jogo, como antes;
+  a conta é a da tabela do estádio (`fecharEstadio`), contra a rival do
+  outro lado do isolamento — as outras torcidas do nosso clube não descem.
+- **A invasão jogada** (`invasao.js`): o combate do jogo em cima da
+  arquibancada de verdade. O tabuleiro (43 × 29 m) é a arquibancada
+  DESENROLADA: o x anda ao longo do anel (em metros na fileira do meio),
+  do nosso setor pro da rival; o y é a profundidade, com a mureta embaixo
+  (a câmera fica do lado do campo, olhando a arquibancada). A máscara é o
+  degrau fora dos poços dos vomitórios (no corredor, a faixa entre as
+  paredes); as duas divisórias do isolamento são as GRADES do combate, em
+  módulos de 1,5 m que quebram um a um, desenhadas com o gradil do próprio
+  estádio (a divisória do modelo sai enquanto a cena está no ar), subindo
+  com os degraus, balançando na pancada e caindo quando o módulo zera. A
+  PM são os guardas do isolamento; a tropa entra pela frente, vindo do
+  campo. O fim da briga é o líder voltar pro túnel do nosso lado. As
+  outras torcidas ficam no estádio em volta (paradas no lugar, com a
+  bateria e os bandeirões); as duas da briga saem do dia enquanto o
+  combate desenha as delas.
+- **Fora de casa**, a cidade troca pra do adversário (a praça dele no mapa
+  3D) e, se a aliada respondeu que recebe no pedido de ajuda do
+  planejamento e tem sede no mapa, o jogador escolhe onde a caravana
+  desce: **na sede da aliada** (com a escolta dela junto, se ela escolta)
+  ou **na entrada da cidade** (pelo pórtico). Sem aliada que receba, desce
+  na entrada. A briga da caminhada fora é a mesma da de casa (o combate no
+  plano do dia, na cidade deles).
+
+**Como testar:** `scratchpad/dia/dia.js` (Playwright): novo jogo com a TUF,
+o jogo de hoje montado na mão (Fortaleza × Ceará em casa; `FORA=1`, um
+jogo em Belo Horizonte com a Máfia Azul recebendo), o ataque da rival na
+pista, a linha aberta com `TO.tela.abrirItinerario`, e o dia inteiro: a
+concentração, a caminhada, o encontro, a briga jogada, a entrada, a
+partida, a invasão pela arquibancada e a volta. `scratchpad/inv/todas.js`
+confere, praça por praça, os caminhos de invasão de cada torcida e o
+tabuleiro (a grade do combate em cima da divisória do modelo).
+
+**Limites (sinceros):**
+- A linha do feed mostra as horas dela (a concentração 5 h antes da bola)
+  e a cidade mostra as do plano (a caminhada começa ~1 h antes): são dois
+  relógios.
+- O resultado da invasão não tira ninguém da arquibancada no 3D (a conta
+  vai pro jogo; os bonecos continuam no lugar).
+- A briga dos arredores (a investida marcada nos arredores) continua na
+  cena 2D dos arredores; a cidade só anda até lá.
+- A emboscada na estrada (fora de casa) é a do palco à parte da caravana;
+  a caminhada na cidade deles vem depois, na fase do jogo.
+- Sem mapa 3D pra praça do jogo, sem torcida do mandante com sede no mapa
+  ou em campo neutro, o dia segue só na linha do feed.
+- No swiftshader do teste a cidade roda a 1–2 quadros por segundo; o
+  "Pular" existe porque a caminhada inteira a 30× leva uns 40 s de verdade.
+

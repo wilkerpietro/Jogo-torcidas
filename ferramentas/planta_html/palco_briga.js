@@ -32,7 +32,12 @@ const VISTAS = { perto: { dist: 21, el: 1.1 }, alto: { dist: 44, el: 1.3 } };
    piso ali), predio: {x, z} (o prédio que perde o telhado), peca (o grupo
    que entra na cena e sai no fim), semLonge (o chão de longe da praça sai
    junto: o palco à parte, na estrada), livre (a câmera sai da área da
-   praça), vistas ({perto, alto}: {dist, el}), aoDesmontar() } */
+   praça), vistas ({perto, alto}: {dist, el}), aoDesmontar(),
+   e (a invasão no estádio, invasao.js) eixos(x, y) → {u, v} (os eixos
+   do tabuleiro naquele ponto: o tabuleiro que segue a curva do anel),
+   aCadaQuadro(j, THREE, grupo) (o que o palco desenha a mais: o gradil),
+   aoLimpar(), semGrades (o boneco não desenha as grades do combate) e
+   comDia(discos) (os bonecos do dia de jogo que ficam em volta) } */
 export function palcoDeBriga(o) {
   const { C, M } = o, K = o.escala || 1, VIS = o.vistas || VISTAS;
   let montado = false, THREE = null, grupo = null, modo = 'perto', seguindo = false;
@@ -55,7 +60,16 @@ export function palcoDeBriga(o) {
   const O0 = o.noMundo(0, 0);
   const doMundo = o.doMundo || ((wx, wz) => { const dx = wx - O0[0], dz = wz - O0[1]; return [(dx * o.u[0] + dz * o.u[1]) / K, (dx * o.v[0] + dz * o.v[1]) / K]; });
   const rumoDe = (vx, vy) => Math.atan2(vx * o.u[0] + vy * o.v[0], vx * o.u[1] + vy * o.v[1]);
-  const rumo = d => typeof d.rumo === 'number' ? rumoDe(Math.sin(d.rumo), Math.cos(d.rumo)) : undefined;
+  /* (no tabuleiro que curva, o rumo de cada um é o dos eixos onde ele está) */
+  const EX = {};
+  const rumo = d => {
+    if (typeof d.rumo !== 'number') return undefined;
+    if (!o.eixos) return rumoDe(Math.sin(d.rumo), Math.cos(d.rumo));
+    const e = o.eixos(d.x, d.y, EX), vx = Math.sin(d.rumo), vy = Math.cos(d.rumo);
+    return Math.atan2(vx * e.u[0] + vy * e.v[0], vx * e.u[1] + vy * e.v[1]);
+  };
+  /* os eixos perto do líder (o teclado e o arrasto da bomba) */
+  const eixosDoLider = () => { const l = o.eixos ? lider() : null; return l ? o.eixos(l.x, l.y, EX) : o; };
   /* A CÂMERA: o alvo vai atrás do líder (macio); a distância e a
      inclinação são da vista, e a roda e o arrasto do cenário continuam
      valendo (girar em volta dele, chegar mais perto) */
@@ -255,6 +269,7 @@ export function palcoDeBriga(o) {
       C.vida.palco = {
         get J() { return J() || { t: 0, discos: [], policiais: [], projeteis: [], grades: [] }; },
         pos, rumo, rumoDe, seguir, semAnel: false, comVida: false, livre: !!o.livre, escala: K,
+        semGrades: !!o.semGrades, comDia: o.comDia || null,
         /* o cone do corte: da cabeça do líder até a câmera */
         alvoDoCorte: () => { const l = lider(); return l ? pos(l.x, l.y, l, PC) : null; }
       };
@@ -292,6 +307,7 @@ export function palcoDeBriga(o) {
       desenharObjetivo(j);
       desenharLider();
       desenharMira(j);
+      if (o.aCadaQuadro) { try { o.aCadaQuadro(j, THREE, grupo); } catch (e) { console.error('palco da briga:', e); } }
     },
     /* A MIRA COM O MOUSE: o ponto do tabuleiro debaixo do ponto da tela
        (px CSS) — o raio da câmera até o chão na altura do líder —, ou
@@ -308,8 +324,8 @@ export function palcoDeBriga(o) {
        tela é a direita da câmera; pra baixo, pra perto dela */
     deltaDaTela(dx, dy) {
       const az = C.orb.az, fx = -Math.sin(az), fz = -Math.cos(az), rx = Math.cos(az), rz = -Math.sin(az);
-      const wx = rx * dx - fx * dy, wz = rz * dx - fz * dy;
-      return { x: wx * o.u[0] + wz * o.u[1], y: wx * o.v[0] + wz * o.v[1] };
+      const wx = rx * dx - fx * dy, wz = rz * dx - fz * dy, e = eixosDoLider();
+      return { x: wx * e.u[0] + wz * e.u[1], y: wx * e.v[0] + wz * e.v[1] };
     },
     /* o WASD em relação à câmera: pra frente é pra onde ela olha */
     vetorDoTeclado(t) {
@@ -320,8 +336,8 @@ export function palcoDeBriga(o) {
       if (t['s'] || t['arrowdown']) dy--;
       if (!dx && !dy) return null;
       const az = C.orb.az, fx = -Math.sin(az), fz = -Math.cos(az), rx = Math.cos(az), rz = -Math.sin(az);
-      const wx = fx * dy + rx * dx, wz = fz * dy + rz * dx;
-      const x = wx * o.u[0] + wz * o.u[1], y = wx * o.v[0] + wz * o.v[1], m = Math.hypot(x, y) || 1;
+      const wx = fx * dy + rx * dx, wz = fz * dy + rz * dx, e = eixosDoLider();
+      const x = wx * e.u[0] + wz * e.u[1], y = wx * e.v[0] + wz * e.v[1], m = Math.hypot(x, y) || 1;
       return { x: x / m, y: y / m };
     },
     trocarCamera() { vista(modo === 'perto' ? 'alto' : 'perto', false); return modo; },
@@ -336,6 +352,7 @@ export function palcoDeBriga(o) {
       if (rotulo) { rotulo.remove(); rotulo = null; }
       if (mira) { mira.dica.remove(); mira = null; }
       escondidos = [];
+      if (o.aoLimpar) { try { o.aoLimpar(); } catch (e) { console.error('palco da briga:', e); } }
       if (grupo) {
         grupo.removeFromParent();
         grupo.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); });

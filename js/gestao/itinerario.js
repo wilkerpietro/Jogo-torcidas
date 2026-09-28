@@ -357,6 +357,8 @@ TO.itinerario = (function(){
 
     return {
       casa, viaja,
+      /* o jogo desta linha (o jogo 3D monta o dia na cidade dele: dia3d.js) */
+      jogo: j,
       escolta,
       efetivo: efetivoInicial(E, msg, escolta),
       hora: j.hora || '21:00',

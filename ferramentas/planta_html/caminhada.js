@@ -38,13 +38,16 @@ let guardado = null;
 
 /* `o`: { casa, fora (os clubes do jogo), a, v (as torcidas: quem ataca e
    quem é atacado), onde ('praca' | 'rua'), nosso (o id da torcida do
-   jogador), nossoLado ('mandante' | 'visitante', o lado dela no combate) }.
+   jogador), nossoLado ('mandante' | 'visitante', o lado dela no combate),
+   plano (o do dia de jogo que já está no ar, com a briga dentro) }.
    Devolve { cena, noMundo, doMundo, u, v, chao, escala, plano, br } ou
    { erro } */
 export function brigaNaCaminhada(ctx, o) {
   const M = ctx.M;
   const chave = [ctx.P && ctx.P.cidade ? ctx.P.cidade() : '', o.casa, o.fora, o.a, o.v, o.onde].join('|');
-  let plano = guardado && guardado.chave === chave ? guardado.plano : null;
+  /* O DIA DE JOGO NO AR (o jogo 3D, dia3d.js): o plano é o do dia que está
+     passando na cidade — a briga cai onde os dois bondes se encontram */
+  let plano = o.plano || (guardado && guardado.chave === chave ? guardado.plano : null);
   if (!plano) {
     plano = planejar(ctx, { casa: o.casa, fora: o.fora, ia: 'paz', gente: 1, briga: { a: o.a, v: o.v, onde: o.onde } });
     guardado = { chave, plano };

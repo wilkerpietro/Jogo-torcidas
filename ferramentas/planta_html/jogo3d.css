@@ -230,3 +230,52 @@ body.jogo3d.palco-briga .cen-fps{bottom:54px}
 .j3d-mapa-legenda i.sede{background:#d4731c;border:2px solid #fff}
 .j3d-mapa-legenda i.cam{background:#fff;border:2px solid #111}
 @media (max-width:760px){ .j3d-mapa-dica{display:none} .j3d-mapa-legenda{bottom:12px} }
+
+/* =========================================================
+   O DIA DE JOGO NA CIDADE (28/09/2026, dia3d.js): o painel embaixo, no
+   meio da cidade — a hora do dia, a fase da linha, o que está passando,
+   a velocidade, o pular, a câmera e, na partida, a invasão da nossa
+   torcida; e a pergunta de onde a caravana desce (jogo fora)
+   ========================================================= */
+.j3d-dia{position:fixed;z-index:25;left:50%;bottom:12px;transform:translateX(-50%);width:min(560px, calc(100vw - 120px));
+  padding:8px 12px 9px;border-radius:8px;background:rgba(18,18,20,.9);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 4px 18px rgba(0,0,0,.45);color:var(--texto, #eee);font:500 12.5px/1.35 var(--corpo, sans-serif);pointer-events:auto}
+.j3d-dia[hidden]{display:none}
+body.jogo3d.feed-fechado .j3d-dia{width:min(620px, calc(100vw - 80px))}
+.j3d-dia-topo{display:flex;align-items:baseline;gap:10px}
+.j3d-dia-hora{font:700 18px/1 var(--mono, monospace);color:#f3e6c4;letter-spacing:.04em}
+.j3d-dia-fase{font-family:var(--titulo, sans-serif);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco, #aaa);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.j3d-dia-estado{margin:4px 0 6px;color:#ddd}
+.j3d-dia-estado.ruim{color:#ff8a7a;font-weight:600}
+.j3d-dia-bts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.j3d-dia button{font:600 11.5px/1 var(--titulo, sans-serif);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  padding:6px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.22);background:rgba(40,40,44,.95);color:#eee}
+.j3d-dia button:hover:not(:disabled){border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.j3d-dia button:disabled{opacity:.4;cursor:default}
+.j3d-dia-vezes{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:1px}
+.j3d-dia-vezes button{border:0;background:none;padding:5px 7px}
+.j3d-dia-vezes button[aria-pressed="true"]{background:var(--ouro, #d9a441);color:#111}
+.j3d-dia-invadir{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.12)}
+.j3d-dia-invadir[hidden]{display:none}
+.j3d-dia-invadir span{color:#ffb3a8;font-weight:600}
+.j3d-dia button.perigo{background:var(--rubro, #8a1f1f);border-color:#c0392b;color:#fff}
+.j3d-dia button.perigo:hover{background:var(--rubro-vivo, #b3261e);color:#fff}
+/* numa cena (a briga, a reunião), num painel ou no mapa, o painel do dia sai */
+body.jogo3d.em-cena .j3d-dia, body.jogo3d.palco-briga .j3d-dia, body.jogo3d.com-painel .j3d-dia,
+body.jogo3d.j3d-mapa-aberto .j3d-dia, body.jogo3d:not(.j3d-em-jogo) .j3d-dia{display:none}
+/* a pergunta do jogo fora: onde a caravana desce */
+.j3d-dia-modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+.j3d-dia-caixa{width:min(440px, calc(100vw - 32px));padding:16px 18px;border-radius:10px;background:var(--painel, #161616);
+  border:1px solid rgba(255,255,255,.18);color:var(--texto, #eee);font:500 13.5px/1.45 var(--corpo, sans-serif);box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.j3d-dia-caixa h3{margin:2px 0 8px;font:700 19px/1.2 var(--titulo, sans-serif);letter-spacing:.04em}
+.j3d-dia-caixa p{margin:0 0 12px;color:#ddd}
+.j3d-dia-sobre{margin:0 !important;font:600 11px/1.2 var(--titulo, sans-serif) !important;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco, #aaa) !important}
+.j3d-dia-caixa .j3d-dia-bts{gap:8px}
+.j3d-dia-caixa button{font:700 12px/1 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:9px 12px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.25);background:rgba(40,40,44,.95);color:#eee}
+.j3d-dia-caixa button.acao{background:var(--ouro, #d9a441);border-color:var(--ouro, #d9a441);color:#111}
+@media (max-width:760px){
+  .j3d-dia{width:calc(100vw - 16px);bottom:calc(46vh + 30px)}
+  body.jogo3d.feed-fechado .j3d-dia{bottom:8px;width:calc(100vw - 16px)}
+}

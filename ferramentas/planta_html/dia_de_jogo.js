@@ -476,6 +476,18 @@ export function planejar(ctx, escolha = {}) {
   const t0 = performance.now(), tempos = {};
   const marca = k => { tempos[k] = Math.round(performance.now() - t0); };
   const torcidas = P.torcidas().filter(t => t.clubeId);
+  /* O JOGO DE VERDADE (o jogo 3D, 28/09/2026; o dono: "Vamos ligar o dia
+     de jogo com arquibancada e invasão no cenário 3d"): quem joga (o
+     mandante e o visitante da partida), a hora da bola, QUEM FOI (a
+     presença da partida: a torcida e quantos dela, a mesma linha do
+     cartão do jogo) e o BONDE DO JOGADOR (`nosso`: quantos, e — no jogo
+     fora — se a caravana desce na entrada da cidade ou na sede do
+     aliado que a hospeda, o que o jogador escolhe) */
+  const doJogo = !!escolha.jogo;
+  const bola = Number.isFinite(escolha.bola) ? escolha.bola : BOLA;
+  const presenca = Array.isArray(escolha.presenca) ? new Map(escolha.presenca.filter(x => x && x.id && x.n > 0).map(x => [x.id, x])) : null;
+  const nosso = escolha.nosso || null;
+  const foi = t => !presenca || presenca.has(t.id) || (nosso && nosso.id === t.id);
   const clubes = P.clubes(), estadios = P.estadios();
   const rel = (a, b) => P.relacao ? P.relacao(a, b) : 'Neutro';
   /* OS JOGOS POSSÍVEIS: dois clubes da praça com torcida com sede; os
@@ -521,7 +533,7 @@ export function planejar(ctx, escolha = {}) {
     const vontade = clamp(0.72 - 2 * 0.09 + moral * 0.4, 0.08, 0.95);
     return Math.min(v, Math.max(CARAVANA_MIN, Math.round(v * vontade * 0.6)));
   };
-  const quemVem = id => (P.torcidasDoClube ? P.torcidasDoClube(id) : []).filter(t => caravana(t) >= CARAVANA_MIN);
+  const quemVem = id => (P.torcidasDoClube ? P.torcidasDoClube(id) : []).filter(t => presenca ? foi(t) : caravana(t) >= CARAVANA_MIN);
   const deFora = (P.clubesDeFora ? P.clubesDeFora() : []).filter(c => quemVem(c.id).length).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
   if (!lista.length) return { erro: 'Nesta praça nenhum clube tem torcida com sede no mapa: não dá pra montar o jogo.' };
   /* o de fora que vem quando não se escolhe (a praça de um clube só): o de
@@ -542,6 +554,9 @@ export function planejar(ctx, escolha = {}) {
     const par = pares[clamp(escolha.par || 0, 0, pares.length - 1)];
     [casa, fora] = escolha.inverter ? [par[1], par[0]] : par;
   } else casa = lista[0];
+  /* (o jogo de verdade não troca de adversário: sem o mandante com sede aqui, ou sem o visitante, o dia não monta) */
+  if (doJogo && (!casa || casa.id !== escolha.casa)) return { erro: 'O mandante do jogo não tem torcida com sede nesta praça: o dia de jogo não monta em 3D.' };
+  if (doJogo && (!fora || fora.id !== escolha.fora)) return { erro: 'O visitante do jogo não tem torcida que venha: o dia de jogo não monta em 3D.' };
   if (!fora) fora = lista.find(c => c.id !== casa.id) || deFora.slice().sort((a, b) => rixa(casa.id, b.id) - rixa(casa.id, a.id))[0] || null;
   if (!fora) return { erro: 'Não achei adversário pro ' + casa.nome + ': nenhum clube de fora tem torcida que venha.' };
   const foraDaqui = lista.includes(fora);
@@ -588,33 +603,56 @@ export function planejar(ctx, escolha = {}) {
   const lados = [{ lado: 'mandante', clube: casa, l: 'm' }, { lado: 'visitante', clube: fora, l: 'v' }];
   const vagasUsadas = {};
   const bondes = [];
+  /* O ANFITRIÃO DO JOGADOR (o jogo 3D, 28/09/2026; o dono: "com o jogador
+     sendo visitante podendo iniciar a rota ou na entrada ou na casa do
+     aliado"): não é sorteio — é a ajuda que ele pediu no planejamento (a
+     aliada que respondeu que recebe: hospedar, ou hospedar e escoltar) e
+     a escolha dele na chegada (descer na entrada da cidade ou na sede
+     dela). Da aliada do clube mandante, só a casa */
+  function anfitriaoDoJogador() {
+    if (!nosso || nosso.inicio !== 'aliado' || !nosso.aliado) return null;
+    const h = torcidas.find(x => x.id === nosso.aliado && x.porta);
+    if (!h) return null;
+    const doMandante = h.clubeId === casa.id;
+    const escolta = !doMandante && nosso.nivel !== 'hospedar' && (nosso.escolta || 0) > 0;
+    return { t: h, grau: 2, pct: null, tirou: 0, forcada: true, doMandante, doJogador: true, decisao: escolta ? 'escolta' : 'hospedar',
+             escoltaMembros: Math.max(1, Math.round(nosso.escolta || 10)) };
+  }
   /* AS ESCOLTAS SE RESOLVEM ANTES (`naRuaEm`): quem escolta sai do
      efetivo de quem empresta e anda no bonde do visitante */
   const hospDe = {}, devido = {};
   for (const L of lados) {
     if (lista.includes(L.clube)) continue;
     for (const t of quemVem(L.clube.id)) {
-      const h = hospDe[t.id] = anfitriao(t);
+      const h = hospDe[t.id] = nosso && t.id === nosso.id ? anfitriaoDoJogador() : anfitriao(t);
       if (h && h.decisao === 'escolta') devido[h.t.id] = (devido[h.t.id] || 0) + h.escoltaMembros;
     }
   }
+  const ehNosso = t => !!nosso && t.id === nosso.id;
   for (const L of lados) {
     const daqui = lista.includes(L.clube);
-    const ts = (daqui ? comSede(L.clube.id) : quemVem(L.clube.id)).sort((a, b) => (b.poder || 0) - (a.poder || 0) || (b.membros || 0) - (a.membros || 0));
+    const ts = daqui ? comSede(L.clube.id).filter(foi) : quemVem(L.clube.id);
+    /* (a torcida do jogador sem sede no mapa — o nível 0 — sai da entrada da cidade) */
+    if (daqui && nosso && !ts.some(ehNosso)) { const t = torcidas.find(x => ehNosso(x) && x.clubeId === L.clube.id); if (t) ts.push(t); }
+    ts.sort((a, b) => (b.poder || 0) - (a.poder || 0) || (b.membros || 0) - (a.membros || 0));
     const disponiveis = setoresDoLado(L.l);
     ts.forEach((t, r) => {
       const setor = disponiveis[Math.min(r, disponiveis.length - 1)], S = rotas.setores[setor];
       const jaUsadas = vagasUsadas[setor] || 0;
-      /* quem vai: todo mundo de pé menos a escolta emprestada (a da praça) ou a caravana (a de fora) */
-      const naRua = daqui ? Math.max(4, dePe(t) - (devido[t.id] || 0)) : caravana(t);
+      /* quem vai: todo mundo de pé menos a escolta emprestada (a da praça) ou a caravana (a de fora);
+         no jogo de verdade, a presença da partida (e o bonde do jogador, o que sobrou da linha do dia) */
+      const pres = presenca && presenca.get(t.id);
+      const naRua = ehNosso(t) && nosso.n > 0 ? Math.round(nosso.n)
+                  : pres ? Math.max(1, Math.round(pres.n) - (daqui ? (devido[t.id] || 0) : 0))
+                  : daqui ? Math.max(4, dePe(t) - (devido[t.id] || 0)) : caravana(t);
       const hosp = daqui ? null : hospDe[t.id], recebe = !!hosp && hosp.decisao !== 'nada';
       const nEsc = hosp && hosp.decisao === 'escolta' ? bonecos(hosp.escoltaMembros, 2) : 0;
       const n = Math.min(bonecos(naRua, 5) + nEsc, S.vagas.length - jaUsadas);
       if (n <= 1) return;
       vagasUsadas[setor] = jaUsadas + n;
       bondes.push({ t, lado: L.lado, clube: L.clube, escalao: r + 1, setor, S, portao: rotas.portoes[S.portao], nPortao: S.portao, vaga0: jaUsadas, n, cor: corDaFita(t),
-                    naRua, deFora: !daqui, anfitriao: hosp,
-                    inicio: daqui ? { tipo: 'sede', porta: t.porta } : recebe ? { tipo: 'aliado', porta: hosp.t.porta, t: hosp.t } : { tipo: 'entrada', porta: null },
+                    naRua, deFora: !daqui, anfitriao: hosp, nossa: ehNosso(t),
+                    inicio: daqui && t.porta ? { tipo: 'sede', porta: t.porta } : recebe ? { tipo: 'aliado', porta: hosp.t.porta, t: hosp.t } : { tipo: 'entrada', porta: null },
                     escolta: nEsc ? { t: hosp.t, membros: hosp.escoltaMembros, n: Math.min(nEsc, n - 1) } : null });
     });
   }
@@ -962,7 +1000,7 @@ export function planejar(ctx, escolha = {}) {
      antes), e a saída do visitante adianta enquanto um bonde rival passa
      perto de outro na cidade, ou chega num CRUZAMENTO das rotas sem
      MARGEM de tempo do outro */
-  const alvo = b => BOLA - (b.lado === 'visitante' ? 55 : 40) * 60 + (b.escalao - 1) * 5 * 60;
+  const alvo = b => bola - (b.lado === 'visitante' ? 55 : 40) * 60 + (b.escalao - 1) * 5 * 60;
   const vivos = bondes.filter(b => b.rua);
   for (const b of vivos) { b.paradas = []; b.sai = alvo(b) - b.rua.L / M / MARCHA; }
   /* A CABEÇA DO BONDE: anda a MARCHA desde a saída; em cada parada
@@ -1463,6 +1501,20 @@ export function planejar(ctx, escolha = {}) {
     a.feridos = br.ferA; v.feridos = br.ferV;
     a.presos = br.presA; v.presos = br.presV;
     br.rnd = rnd;
+    /* O RESULTADO DE FORA (o jogo 3D, dia3d.js: a briga jogada no combate,
+       a simulada ou a que ninguém desceu): quem ganhou e quantos caíram e
+       foram presos de cada lado, em torcedores — refaz quem fica no chão */
+    br.aplicar = o => {
+      if (o.venceA != null) br.venceA = !!o.venceA;
+      const lim = (x, n) => clamp(Math.round(x || 0), 0, Math.max(0, n - 1));
+      br.ferA = lim(o.ferA, nA); br.presA = lim(o.presA, nA - br.ferA);
+      br.ferV = lim(o.ferV, nV); br.presV = lim(o.presV, nV - br.ferV);
+      [br.caemV, br.rendemV] = caem(v, br.ferV, br.presV, nV, m => br.quantosEm[m] > 0);
+      [br.caemA, br.rendemA] = caem(a, br.ferA, br.presA, nA, m => br.alvoDe[m] >= 0);
+      a.feridos = br.ferA; v.feridos = br.ferV;
+      a.presos = br.presA; v.presos = br.presV;
+      br.aplicado = true;
+    };
   }
   if (brigas.length) {
     for (const i of new Set(brigas.flatMap(x => [x.a.nPortao, x.v.nPortao]))) entradaDo(i);
@@ -1493,14 +1545,14 @@ export function planejar(ctx, escolha = {}) {
   const plano = {
     casa, fora, foraDaqui, pares: pares.map(p => p[0].nome + ' × ' + p[1].nome), par: escolha.par || 0, lista, deFora,
     estadio: est, centroEst, mundo, portoes, bondes, vivos, R, zona, noArredor, divisa, raio, bocas, cordoes, pm, menor, travessias, cabeca, atras, paradaEm, ladoEm, M, rotaVelha, longeDe, tentativas, tAbre, portoesQueAbrem: [...new Set(vivos.filter(b => b.peloCorredor).map(b => b.portao.nome))],
-    brigas, revistaDo, torcedores, efetivo, comEscoltaPM, modoIA,
+    brigas, revistaDo, torcedores, efetivo, comEscoltaPM, modoIA, bola, doJogo, doJogador: vivos.find(b => b.nossa) || null,
     inicio: Math.min(...vivos.map(b => b.sai)) - 120, fimTudo: Math.max(...vivos.map(b => b.fim), ...brigas.map(x => x.tFim + REAGRUPA)), tempos
   };
   /* A ARQUIBANCADA VIVA E A BRIGA NO ESTÁDIO (arquibancada.js): os papéis
      de cada um no lugar, os guardas do isolamento e a invasão; o dia vai
      até a bola rolar (e até a invasão acabar) */
   try {
-    plano.arq = planejarArquibancada(plano, { M, BOLA, DENTRO, FATOR: 1 / FATOR_GENTE, sorte, fichaMedia, chanceDe, escolha, efetivo,
+    plano.arq = planejarArquibancada(plano, { M, BOLA: bola, DENTRO, FATOR: 1 / FATOR_GENTE, sorte, fichaMedia, chanceDe, escolha, efetivo,
       revistas: Object.values(revistaDo).reduce((s, n) => s + n, 0), BAIXAS, CHANCE_FAVORITO, brigas });
   } catch (e) { console.error('dia de jogo, arquibancada:', e); plano.arq = null; }
   if (plano.arq) plano.fimTudo = Math.max(plano.fimTudo, plano.arq.fim);
@@ -1548,6 +1600,12 @@ export function criarDiaDeJogo(ctx) {
   raiz.appendChild(painel);
 
   let plano = null, escolha = { par: 0, inverter: false, gente: 1 }, t = 0, rodando = false, vezes = 30, lenta = null, seguir = null, verRotas = true;
+  /* O DIA DO JOGO DE VERDADE (o jogo 3D, dia3d.js): o plano vem do jogo
+     (`jogo(escolha)`), o painel da planta fica fechado e quem anda o
+     relógio é o itinerário do dia */
+  let modoJogo = false;
+  /* na partida, só os rótulos das torcidas (os da revista, dos cordões e das brigas saem) */
+  let soTorcidas = false;
   let grupo = null, discos = [], policiais = [], arq = null;
   const J = { discos: [], policiais: [], projeteis: [], grades: [], paz: true, t: 0 };
   const Q = {}, Q2 = {};
@@ -1709,7 +1767,10 @@ export function criarDiaDeJogo(ctx) {
   function montar() {
     desmontar();
     plano = planejar(ctx, escolha);
-    if (plano.erro) { painel.innerHTML = cabecalho() + `<p class="cj-aviso ruim">${esc(plano.erro)}</p><div class="cj-ctrl"><button class="cen-bt" data-jogo="padrao">Voltar pro jogo da praça</button></div>`; ligarPainel(); return false; }
+    if (plano.erro) {
+      if (modoJogo) return false;
+      painel.innerHTML = cabecalho() + `<p class="cj-aviso ruim">${esc(plano.erro)}</p><div class="cj-ctrl"><button class="cen-bt" data-jogo="padrao">Voltar pro jogo da praça</button></div>`; ligarPainel(); return false;
+    }
     grupo = new THREE.Group(); grupo.name = 'dia-de-jogo';
     ctx.doMapa().add(grupo);
     const p = plano, R = p.R, grades = [];
@@ -1958,7 +2019,7 @@ export function criarDiaDeJogo(ctx) {
     t = p.inicio;
     J.discos = discos; J.policiais = policiais;
     atualizar(0);
-    desenharPainel();
+    if (!modoJogo) desenharPainel();
     return true;
   }
   function desmontar() {
@@ -2304,7 +2365,7 @@ export function criarDiaDeJogo(ctx) {
         <button class="cen-bt" data-jogo="sortear">Sortear de novo</button>
       </div>
       <div class="cj-ctrl">
-        <select data-jogo="invade" aria-label="A briga no estádio"><option value="sorteio"${(escolha.estadio || 'sorteio') === 'sorteio' ? ' selected' : ''}>No estádio: as torcidas decidem</option><option value="nao"${escolha.estadio === 'nao' ? ' selected' : ''}>Ninguém invade</option><option value="arquibancada"${escolha.estadio === 'arquibancada' ? ' selected' : ''}>Invade pela arquibancada</option><option value="corredor"${escolha.estadio === 'corredor' ? ' selected' : ''}>Invade pelo corredor</option></select>
+        <select data-jogo="invade" aria-label="A briga no estádio"><option value="nao"${(escolha.estadio || 'nao') === 'nao' ? ' selected' : ''}>No estádio: ninguém invade sozinho</option><option value="sorteio"${escolha.estadio === 'sorteio' ? ' selected' : ''}>As torcidas decidem (sorteio)</option><option value="arquibancada"${escolha.estadio === 'arquibancada' ? ' selected' : ''}>Invade pela arquibancada</option><option value="corredor"${escolha.estadio === 'corredor' ? ' selected' : ''}>Invade pelo corredor</option></select>
         <select data-jogo="cordao" aria-label="O cordão da PM"><option value="sorteio"${(escolha.cordao || 'sorteio') === 'sorteio' ? ' selected' : ''}>O cordão: sorteio</option><option value="segura"${escolha.cordao === 'segura' ? ' selected' : ''}>A PM segura</option><option value="fura"${escolha.cordao === 'fura' ? ' selected' : ''}>A torcida fura o cordão</option></select>
       </div>`;
   }
@@ -2459,6 +2520,8 @@ export function criarDiaDeJogo(ctx) {
     ctx.pedir();
   }
   function fechar() {
+    /* (o dia do jogo de verdade só fecha por quem abriu: `sair`) */
+    if (modoJogo) return;
     painel.hidden = true; rodando = false; seguir = null;
     if (lenta) { vezes = lenta.vezes; lenta = null; }
     desmontar();
@@ -2505,7 +2568,7 @@ export function criarDiaDeJogo(ctx) {
     const sprites = grupo.children.filter(o => o.isSprite).sort((a, b) => (a.userData.prio || 0) - (b.userData.prio || 0));
     caixas.length = 0;
     for (const o of sprites) {
-      if (o.userData.escondido) { o.visible = false; continue; }
+      if (o.userData.escondido || (soTorcidas && (o.userData.prio || 0) !== 0)) { o.visible = false; continue; }
       const dd = cam.position.distanceTo(o.position), k = clamp(dd / (110 * M), 0.5, 8);
       const w = o.scale.x / o.scale.y;
       o.scale.set(o.userData.alto * M * k * w, o.userData.alto * M * k, 1);
@@ -2520,12 +2583,61 @@ export function criarDiaDeJogo(ctx) {
       if (o.visible) caixas.push([cx, cy, hw, hh]);
     }
   }
+  /* ======================================================
+     O DIA DO JOGO DE VERDADE (dia3d.js): monta com a escolha do jogo e
+     entrega o relógio a quem chama
+     ====================================================== */
+  function jogo(esc) {
+    painel.hidden = true; painel.innerHTML = '';
+    rodando = false; seguir = null; lenta = null; verRotas = false;
+    modoJogo = true;
+    escolha = { ...esc };
+    if (!montar()) { const erro = plano && plano.erro ? plano : { erro: 'o plano do dia não montou' }; plano = null; return erro; }
+    mostrarRotas();
+    return plano;
+  }
+  function sair() {
+    if (!modoJogo) return;
+    modoJogo = false; rodando = false; seguir = null; lenta = null; verRotas = true; soTorcidas = false;
+    desmontar();
+    ctx.aoFechar && ctx.aoFechar();
+    ctx.pedir();
+  }
   return {
     abrir, fechar, quadro, ajustarRotulos, J,
+    jogo, sair,
+    get modoJogo() { return modoJogo; },
+    set soTorcidas(v) { soTorcidas = !!v; },
+    /* o relógio: a hora (s do dia), rodar a `v`× e parar */
+    get t() { return t; },
+    /* (a partida manda no relógio: o minuto dela vira a hora do dia) */
+    set t(h) { t = h; },
+    get vezes() { return vezes; },
+    rodar(v) { if (!plano) return; if (v) vezes = v; lenta = null; rodando = true; ctx.pedir(); },
+    parar() { rodando = false; if (lenta) { vezes = lenta.vezes; lenta = null; } },
+    /* a câmera: atrás de um bonde (null solta), o estádio, o plano todo */
+    seguirBonde(b) { seguir = b || null; semFoco(); if (seguir) { const d = seguir.gente[0].d; ctx.voarPara(d.x, d.y, 45 * M, 0.95, undefined, d.alt || 0); } },
+    get seguindo() { return seguir; },
+    verEstadio: () => { if (plano) { seguir = null; verEstadio(); } },
+    verPlano: () => { if (plano) { seguir = null; verPlano(); } },
+    /* com a briga do jogo por cima (o palco dela), os rótulos do dia saem
+       (os panos, os bandeirões e as grades da PM ficam); `tudo`, o dia inteiro */
+    esconder(v, tudo = false) {
+      if (!grupo) return;
+      if (tudo) { grupo.visible = !v; return; }
+      grupo.visible = true;
+      for (const o of grupo.children) if (o.isSprite && v) o.visible = false;
+    },
+    /* os bonecos do dia que não são de `ids` (as torcidas da briga, que o combate desenha) */
+    semAsDaBriga(ids) { const fora = new Set(ids); return discos => discos.filter(d => !fora.has(d.spawn)); },
+    /* as torcidas da briga sem os objetos do dia (o bandeirão, o instrumento, o pano no ombro): null devolve */
+    ocultarTorcidas(ids) { if (arq && arq.ocultar) arq.ocultar(ids || []); },
+    /* em que pé está cada um (a sede, andando, na briga, entrando, no lugar) */
+    estadoDo: (b, m = 0) => plano ? estadoDe(b, m) : null,
     /* o corte do cenário: o corredor da invasão, embaixo da arquibancada */
     alvoDoCorte: () => (arq && !painel.hidden ? arq.alvoDoCorte(t) : null),
     get arquibancada() { return arq; },
-    get aberto() { return !painel.hidden; },
+    get aberto() { return modoJogo || !painel.hidden; },
     get rodando() { return rodando; },
     get plano() { return plano; },
     /* pro teste: pula pra hora h (segundos do dia) e diz onde está cada um */
@@ -2548,6 +2660,6 @@ export function criarDiaDeJogo(ctx) {
                erros: plano.bondes.filter(b => !b.rua).map(b => b.t.sigla + ': ' + (b.erro || '')),
                arquibancada: arq ? arq.estado(t) : null };
     },
-    limpar() { rodando = false; seguir = null; desmontar(); painel.hidden = true; }
+    limpar() { rodando = false; seguir = null; modoJogo = false; desmontar(); painel.hidden = true; }
   };
 }

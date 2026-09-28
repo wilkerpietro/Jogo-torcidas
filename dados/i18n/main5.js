@@ -318,6 +318,20 @@ TO.i18n.registrar({
   'Sem consequência além dos feridos.': {es:'Sin consecuencias aparte de los heridos.', en:'No consequences beyond the injured.'},
   'Consequências': {es:'Consecuencias', en:'Consequences'},
 
+  /* ---------- o dia de jogo na cidade em 3D (dia3d.js) e a invasão da nossa torcida ---------- */
+  'montando o dia na cidade': {es:'armando el día en la ciudad', en:'setting up the day in the city'},
+  'a caminho · na cidade': {es:'en camino · en la ciudad', en:'on the way · in the city'},
+  'as torcidas entrando no estádio': {es:'las barras entrando al estadio', en:'the crews filing into the stadium'},
+  'Invadir o setor deles?': {es:'¿Invadir su sector?', en:'Storm their section?'},
+  'só a nossa torcida decide': {es:'solo nuestra barra decide', en:'only our crew decides'},
+  'A arquibancada ferveu. A {rival} está do outro lado do isolamento da PM: a nossa torcida pode quebrar a grade e invadir, ou ficar no lugar. Simular roda o duelo na hora — as consequências são as mesmas.':
+    {es:'La tribuna hierve. {rival} está del otro lado del cordón de la policía: nuestra barra puede romper la reja e invadir, o quedarse en su lugar. Simular resuelve el duelo al instante — las consecuencias son las mismas.',
+     en:'The stands are boiling. {rival} is on the other side of the police buffer: our crew can break the fence and storm in, or stay put. Simulate settles the fight on the spot — same consequences.'},
+  'Invadir pela arquibancada': {es:'Invadir por la tribuna', en:'Storm across the stand'},
+  'Invadir pelo corredor': {es:'Invadir por el pasillo', en:'Storm through the concourse'},
+  'Simular a invasão': {es:'Simular la invasión', en:'Simulate the charge'},
+  'Ficar no lugar': {es:'Quedarse en su lugar', en:'Stay put'},
+
   /* ---------- salvar ---------- */
   'NÃO SALVOU · {motivo}': {es:'NO SE GUARDÓ · {motivo}', en:'NOT SAVED · {motivo}'},
   'Salvo.': {es:'Guardado.', en:'Saved.'},
