@@ -484,7 +484,8 @@ tabuleiro (a grade do combate em cima da divisória do modelo).
 - O resultado da invasão não tira ninguém da arquibancada no 3D (a conta
   vai pro jogo; os bonecos continuam no lugar).
 - A briga dos arredores (a investida marcada nos arredores) continua na
-  cena 2D dos arredores; a cidade só anda até lá.
+  cena 2D dos arredores; a cidade só anda até lá. (Foi pro 3D depois, no
+  cordão da PM: seção 23.)
 - A emboscada na estrada (fora de casa) é a do palco à parte da caravana;
   a caminhada na cidade deles vem depois, na fase do jogo.
 - Sem mapa 3D pra praça do jogo, sem torcida do mandante com sede no mapa
@@ -1633,7 +1634,7 @@ inteiro no mapa; a arquibancada que estende faixa mesmo sem a torcida ter
 faixa; a tecla C, que na briga 3D troca a câmera em vez de chamar; o aviso
 pago do olheiro, que pela regra do canto (seção 19) fica só em Notícias; e a
 briga dos arredores do estádio, a mais comum do jogo, que ainda abre a foto
-2D.
+2D (feita na seção 23).
 
 **Limites (sinceros):**
 - O compasso da disputa é fixo (850 ms por cobrança, o do cartão) e não segue
@@ -1697,9 +1698,9 @@ dia_de_jogo.js). A arquibancada estendia faixa e bandeira sempre, tivesse a
 torcida ou não — contradizia o relatório da briga. Agora:
 - **quem perdeu a faixa (ou a bandeira) chega sem ela** — a nossa pelo
   patrimônio, a das IAs pela ficha viva do mundo;
-- **a última faixa que a torcida tomou pendura de cabeça pra baixo** do lado da
-  dela, 80% do tamanho (o troféu, como o Patrimônio do jogo de feed mostra as
-  tomadas), estendida por mais dois da torcida;
+- ~~a última faixa que a torcida tomou pendura de cabeça pra baixo do lado da
+  dela~~ — **saiu no mesmo dia, a pedido do dono** (seção 23): a mureta mostra
+  só as peças que a torcida tem;
 - **a peça perdida numa briga do dia sai da mureta** (o patrimônio é conferido
   a cada 2 s);
 - na **invasão pela arquibancada**, a faixa de cada lado é a do combate (a que
@@ -1746,7 +1747,8 @@ TUF; rival: Cearamor), numa partida nova, com o relógio parado pelo teste:
   tomadas, o jogo em casa (Fortaleza × Ceará): a arquibancada planejou a
   TUF sem faixa, com a bandeira e com a tomada da Cearamor (6 m, pendurada às
   15h21); na foto, a nossa bandeira e a faixa da Cearamor de cabeça pra baixo
-  na mureta. A invasão pela arquibancada: três peças na cena (a nossa bandeira,
+  na mureta (a pendurada de cabeça pra baixo saiu depois: seção 23). A
+  invasão pela arquibancada: três peças na cena (a nossa bandeira,
   a faixa e a bandeira da Cearamor), as penduradas das duas torcidas escondidas
   durante a briga, e as três na tela com a câmera do alto. Fim forçado com a
   Cearamor caída: "Tomamos a faixa da Cearamor +5 · −10" e "Tomamos a bandeira
@@ -1769,11 +1771,9 @@ TUF; rival: Cearamor), numa partida nova, com o relógio parado pelo teste:
   dona e sai sem pichação.
 - O tapume não bloqueia o passo: numa briga no próprio bar ele e os cacos saem
   da cena enquanto ela dura.
-- **No estádio só a última faixa tomada** pendura (não todas, nem as bandeiras
-  tomadas), e só quando a torcida leva 6 ou mais pro estádio. A peça tomada no
-  próprio dia sai da mureta da dona na hora, mas só aparece de cabeça pra baixo
-  na mureta de quem tomou no próximo jogo (a arquibancada é montada no começo
-  do dia). A bandeira da mureta ainda depende de a torcida levar 8 ou mais; na
+- A peça tomada no próprio dia sai da mureta da dona na hora (a tomada não
+  pendura mais na de quem tomou: seção 23). A bandeira da mureta ainda depende
+  de a torcida levar 8 ou mais; na
   briga da invasão ela aparece pela régua do combate (o patrimônio) — com 7 no
   estádio, a torcida briga com bandeira que não estava pendurada.
 - **A sede não mostra as faixas tomadas** (troféu na parede): ficou pra depois
@@ -1784,3 +1784,146 @@ TUF; rival: Cearamor), numa partida nova, com o relógio parado pelo teste:
   em Notícias › Mensagens.
 - Testado só no Chromium do teste (SwiftShader); no celular, só a regra de
   largura do canto, que é a mesma dos outros avisos.
+
+## 23. A briga dos arredores em 3D e a faixa tomada fora da mureta (29/09/2026)
+
+O dono: "pode fazer a briga dos arredores em 3D. remova a parte 'A última
+faixa que a torcida tomou fica pendurada de cabeça pra baixo ao lado da
+dela'."
+
+**1. A faixa tomada saiu da mureta** (arquibancada.js). A mureta de cada
+torcida estende só as peças que ela tem (a faixa e a bandeira do patrimônio);
+a tomada não pendura mais de cabeça pra baixo do lado da dela. O resto da
+seção 22 fica: quem perdeu chega sem a peça, a perdida no dia sai da mureta
+e, na invasão pela arquibancada, as penduradas das duas torcidas saem
+enquanto a briga dura.
+
+**2. A briga dos arredores em 3D** (arredores3d.js, dia_de_jogo.js,
+dia3d.js, vida3d.js). Era a briga mais comum do jogo e ainda abria na foto
+2D: a investida marcada pros arredores do estádio ("Arredores" é o padrão do
+planejamento). Agora ela cai no estádio de verdade, no **cordão da PM**.
+
+- **O lugar:** o plano do dia (dia_de_jogo.js, `planejarArredores`) escolhe
+  o cordão divisório — a grade e a fila de PMs de escudo na divisa entre a
+  zona do mandante e a do visitante — mais perto das rotas das duas torcidas
+  (a da rival pesa o dobro).
+- **As duas vão até ele:** o nosso bonde desvia pelo nosso lado (a rota
+  sede → cordão → portão, sem pisar na divisa nem na zona da outra) e espera
+  colado na grade (3 m dela; do lado do visitante, 6 m, porque a fila de PMs
+  fica desse lado); a rival também desvia pelo lado dela e para na grade (quem
+  vê a outra torcida do outro lado do cordão vai provocar). A nossa chega 2
+  minutos antes; a briga dura 45 s no relógio do dia. A rota da paz de cada
+  uma fica desenhada fina, pra comparar.
+- **Na cidade:** perto da hora a câmera vai pro cordão (do nosso lado,
+  olhando o deles, de alto o bastante pra rival não ficar embaixo do balão),
+  o relógio desacelera com a rival chegando e o cartão da linha cai com ela à
+  vista: "A gente tá colado no cordão da PM, nos arredores do estádio. A X
+  parou do outro lado da grade, na frente dos PMs — é agora." ("Ir pra cima"
+  ou "Simular").
+- **A cena** (arredores3d.js): o tabuleiro do combate (43 × 29 m, a escala
+  das outras brigas da cidade) em volta do cordão, com o x do nosso lado pro
+  deles; a máscara é a da caminhada (a rua e a calçada onde o corpo cabe, fora
+  do estádio, só o chão ligado a quem briga). **As grades da PM que caem no
+  tabuleiro** (o cordão e as ruas fechadas do plano) viram a grade do combate,
+  em módulos de 2 m, esticadas 35 cm em cada ponta pra encostar na parede; as
+  do dia saem enquanto a briga dura e o palco desenha as do combate com o
+  mesmo modelo — o módulo que apanha balança e o que cai deita. **Os PMs** do
+  cordão (os do dia que caem no tabuleiro, até 12, os mais perto do meio)
+  viram os postos da PM do combate. Cada bonde nasce em dois grupos (a cabeça
+  e o grosso, 9 m atrás na rua dele); cada lado sai pelo caminho do portão
+  dele ("Seguir pro portão"). A rival não tem caminho até a gente sem passar
+  pela grade, então vai nela (o combate já faz isso quando não há volta); o
+  primeiro módulo no chão rompe o cordão e a tropa de choque vem, como na
+  foto do 2D. O resto é o do jogo de feed: os efetivos, as bombas, a PM, o
+  relatório.
+- **Depois:** quem caiu e quem foi preso (a conta do combate, ou a do duelo
+  simulado) fica no chão ali, dos dois lados da grade — os da frente de cada
+  bonde; os outros seguem pro portão e o dia vai pro jogo.
+- **Sem cordão que sirva** (nenhum com lugar e caminho pras duas, cada uma do
+  seu lado) ou com um bonde que só anda no corredor que abre depois
+  (`peloCorredor`), a investida fica como antes: a cidade anda até os
+  arredores e a briga abre na foto.
+- **A investida no jogo de outros clubes** nos arredores (o jogo da cidade no
+  fundo: o nosso bonde anda da sede até um ponto da rota da rival 60 m antes
+  do portão dela) também abre em 3D, com o mesmo tabuleiro em volta do ponto
+  do encontro — sem cordão, porque a gente não tem lado no jogo dos outros; a
+  nossa saída é a rua de onde a gente veio.
+
+**3. O relógio da briga é o da cidade** (ponte.js, palco_briga.js). O HUD da
+briga começava sempre às 18h (a noite da foto dos arredores); no palco 3D ele
+começa na hora da cidade (o dia de jogo, a estrada ou o relógio da vida) e
+anda no ritmo de sempre. Vale pra todas as brigas em 3D.
+
+**Teste** (Playwright + SwiftShader, jogo.html do Pages, Fortaleza, Leões da
+TUF; rival: Cearamor, a maior torcida do Ceará), numa partida nova, com o jogo
+do dia montado pelo teste (Fortaleza × Ceará às 16h, a investida marcada pros
+arredores contra a Cearamor):
+- **O plano:** o cordão escolhido fica a 3 m de onde a TUF espera e a 7 m de
+  onde a Cearamor para; a TUF sai da sede às 14h57, chega na grade às 15h02,
+  a Cearamor chega às 15h04 e a briga vai até 15h05. **Antes do desvio da
+  rival**, a primeira versão só levava o nosso bonde: a rota da Cearamor
+  passava a 39 m do cordão, ela nunca chegava perto da grade e o palco não
+  achava onde pôr o bonde dela — daí as duas desviarem.
+- **O cartão e a câmera:** o cartão "Investida marcada · Cearamor" com "Ir pra
+  cima" e "Simular"; na foto, a grade atravessando a rua, a fila de PMs do
+  lado do visitante, a TUF colada do nosso lado e a Cearamor parada do outro.
+  Na primeira versão o balão tampava a rival; a câmera subiu (58 m, 57°) e
+  ela ficou inteira abaixo dele.
+- **A briga jogada:** a cena `arredores@3d` (base `arredores`) com 10 módulos
+  de grade, 10 PMs, 71 da TUF e 45 da Cearamor, 9 módulos da grade do dia
+  escondidos no tabuleiro e nenhum portão selado. Em poucos segundos a
+  Cearamor foi pra grade (a vida do módulo mais batido caiu a 26%); numa das
+  rodadas ela derrubou um módulo e o HUD marcou "TROPA CHEGA EM 5.1S" — o
+  cordão rompido do 2D. O V troca a câmera ("o cordão inteiro, do alto"); o
+  relógio da briga marcou 15:07, a hora da cidade. Fim forçado pelo teste: o
+  relatório fechou, o resultado entrou no dia, a cena saiu e o dia seguiu até
+  a partida, com a TUF no lugar.
+- **A briga simulada:** "VITÓRIA NOS ARREDORES"; o duelo derrubou 7 da TUF (e
+  3 presos) e 12 da Cearamor (e 3 presos); o painel do dia foi de 70 × 45 pra
+  60 × 30, e depois da hora da briga os 10 da TUF e os 15 da Cearamor estavam
+  no chão a menos de 25 m do meio do cordão, dos dois lados da grade.
+- **O lado visitante:** o mesmo jogo com a TUF fora (Ceará × Fortaleza, no
+  estádio do Ceará, na mesma praça): a TUF espera a 7 m do cordão, atrás da
+  fila de PMs, e a Cearamor (mandante, 150 — o efetivo que o jogo de feed dá
+  pra torcida da casa) chega a 3 m; a cena abriu com 12 PMs e a grade de 10
+  módulos, a grade apanhou e o dia seguiu até a partida.
+- **A investida no jogo dos outros:** só o tabuleiro (o mesmo construtor, com
+  o plano do dia no ar e o caminho da nossa sede até 60 m antes do portão da
+  rival): monta sem cordão, com 7 PMs, e a nossa saída ("A RUA DE FUGA") a
+  15 m do nosso bonde.
+- **A faixa tomada fora da mureta:** a parte do estádio do teste da rodada
+  anterior, refeita (sem faixa própria e com uma faixa da Cearamor nas nossas
+  tomadas): a arquibancada planejou a TUF sem faixa, com a bandeira e **sem a
+  tomada pendurada** (o estado da arquibancada nem tem mais esse campo); na
+  foto, a bandeira e os bandeirões da TUF e nada de cabeça pra baixo. A
+  invasão pela arquibancada seguiu igual (as três peças na cena, as
+  penduradas das duas escondidas durante a briga e de volta no fim, a faixa
+  tomada da Cearamor saindo da mureta dela).
+- Nenhum erro de página em nenhuma rodada.
+- **O que o teste não cobre:** o jogo do teste é inventado, fora da agenda da
+  temporada, e o jogo de feed procura a rival na rua da agenda (`naRuaEm`) —
+  com ele, "o bonde deles não apareceu". O teste faz `resolverIda` devolver o
+  encontro que ele devolveria num jogo de verdade (o 'planejada' dos
+  arredores); o resto do caminho é o do jogo. A investida no jogo de outros
+  clubes não foi jogada inteira (só o tabuleiro), e o fim da briga jogada foi
+  forçado (ninguém cai de verdade nesse fim; quem cai foi conferido no
+  simulado).
+
+**Limites (sinceros):**
+- **As duas torcidas desviam da rota da paz até o cordão.** É o que faz a
+  briga acontecer ali, mas o plano da PM do dia (as travessias, a conta de
+  encontros na cidade) foi feito com as rotas da paz: a rota nova pode cruzar
+  outra torcida na cidade sem a PM ter fechado a rua.
+- **A rival para na grade 45 s no relógio do dia**; a briga no palco dura o
+  que durar, com o dia parado.
+- **Sem cordão que sirva, a briga volta pra foto do 2D** (o cordão tem de ter
+  lugar e caminho pras duas, cada uma do seu lado; o bonde que só anda no
+  corredor que abre depois não entra).
+- **Na investida no jogo dos outros, o tabuleiro não tem grade:** a grade do
+  dia que cai nele sai enquanto a briga dura (sem lado nosso no jogo, a gente
+  não sabe de que lado da grade chegaria).
+- O desenho da briga simulada na cidade é só quem cai e quem é preso, nos dois
+  lados da grade; ninguém se atraca por cima dela.
+- A grade do combate é a do segmento do cordão (a reta que o plano ajusta às
+  células da divisa); onde a divisa faz curva, pode sobrar vão numa ponta.
+- Testado só no Chromium do teste (SwiftShader), na tela deitada.

@@ -712,7 +712,10 @@ TO.diaJogo.ponte = (function(){
     const el=id=>$(id);
 
     if(el('djRelogio')){
-      const m=18*60+Math.floor(J.t*0.6);
+      /* a hora da cena: a da cidade, no palco 3D (`horaIni`, em minutos do
+         dia, que o palco põe); nas cenas da foto, a noite de sempre, às 18h */
+      const h0 = typeof D.horaIni === 'number' ? D.horaIni : 18*60;
+      const m=(h0+Math.floor(J.t*0.6))%1440;
       el('djRelogio').textContent=
         `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
     }

@@ -18,9 +18,10 @@ cidade com gente, dia de jogo inteiro (bondes, PM, fila, arquibancada), a
 caminhada com ataque na concentração e na pista, a invasão no estádio, a
 estrada da caravana, a festa na casa de piscina, o bote no bar e a treta
 marcada. O que falta se concentra em três lugares: **a briga dos arredores do
-estádio** (a mais comum do jogo, ainda na foto 2D), **as consequências que não
-aparecem na cidade** (bar quebrado, faixa tomada, sede ampliada) e **o que o
-cartão da partida contava e o placar de TV não conta**.
+estádio** (a mais comum do jogo, ainda na foto 2D — feita depois, na terceira
+rodada: seção 23 do `JOGO_3D.md`), **as consequências que não aparecem na
+cidade** (bar quebrado, faixa tomada, sede ampliada) e **o que o cartão da
+partida contava e o placar de TV não conta**.
 
 ---
 
@@ -58,18 +59,37 @@ do `docs/JOGO_3D.md`.
   roda da porta pela metade e o bar marcado no Mapa da cidade ("BAR QUEBRADO ·
   N DIAS"). Quem quebrou passou a ficar guardado (`danoPor`).
 - **Faixa perdida ou tomada no estádio** (`arquibancada.js`): a mureta estende
-  só o que a torcida tem; a última faixa tomada pendura de cabeça pra baixo do
-  lado da dela; a perdida numa briga do dia sai da mureta. A sede continua sem
-  as tomadas (esforço M, não entrou).
+  só o que a torcida tem; a perdida numa briga do dia sai da mureta. (A última
+  faixa tomada pendurava de cabeça pra baixo do lado da dela — saiu na rodada
+  seguinte, a pedido do dono.) A sede continua sem as tomadas (esforço M, não
+  entrou).
 - **Tecla C**: o C chama; a câmera foi pro V.
 - **Aviso pago do olheiro**: vira aviso no canto direito, em destaque, 10 s.
 
 ---
 
+## Resolvido na terceira rodada (29/09/2026, "pode fazer a briga dos arredores em 3D")
+
+Detalhes e testes na seção 23 do `docs/JOGO_3D.md`.
+
+- **A briga dos arredores em 3D** (`arredores3d.js`, `dia_de_jogo.js`,
+  `dia3d.js`, `vida3d.js`): a investida marcada pros arredores cai no **cordão
+  da PM** do plano do dia (a grade e a fila de PMs na divisa das zonas), no
+  cordão mais perto da rota da rival. O nosso bonde desvia até ele pelo nosso
+  lado e espera colado na grade; a rival para do outro lado; o cartão cai com
+  ela à vista, e a briga abre ali, com a grade de verdade (quebrável: o
+  primeiro módulo no chão rompe o cordão e chama a tropa de choque, como no
+  2D) e os PMs do cordão. Quem cai fica no chão no cordão; o dia segue. A
+  investida no jogo de outros clubes nos arredores também abre em 3D (no
+  caminho da rival, sem cordão).
+- **A faixa tomada de cabeça pra baixo saiu da mureta** (pedido do dono).
+- **O relógio da briga 3D** começa na hora da cidade (era sempre 18h, a noite
+  da foto dos arredores).
+
 ## O que eu faria primeiro
 
-Ordem por impacto sobre esforço, não por área. Os itens 1 a 5 foram feitos
-(acima); o próximo da fila é o 6.
+Ordem por impacto sobre esforço, não por área. Os itens 1 a 6 foram feitos
+(acima); o próximo da fila é o 7.
 
 | # | O quê | Por quê | Esforço |
 |---|-------|---------|---------|
@@ -78,7 +98,7 @@ Ordem por impacto sobre esforço, não por área. Os itens 1 a 5 foram feitos
 | 3 | ~~**Faixa perdida ou tomada no estádio**~~ (feito; a sede, não) | A arquibancada 3D estende faixa e bandeira sempre, tenha a torcida faixa ou não; as tomadas não aparecem em lugar nenhum. Contradiz o relatório da briga. | P (estádio) / M (sede) |
 | 4 | ~~**Tecla C na briga 3D**~~ (feito: câmera no V) | No PC o C troca a câmera e não chama mais os parceiros; o botão da tela continua dizendo "Chamar C". Precisa só decidir a tecla da câmera (sugestão: V). | P |
 | 5 | ~~**Aviso pago do olheiro**~~ (feito) | Pela sua regra da seção 19, só jornal vai pro canto direito; o aviso de ataque da Inteligência (R$ 100 ou R$ 400 por dia) fica só em Notícias › Mensagens. Vale uma exceção pra ele. | P |
-| 6 | **Briga dos arredores em 3D** | É a briga mais comum: "arredores" é o padrão do planejamento e da política. A cidade anda até o estádio e aí abre a foto 2D. | M (versão na caminhada) / G (fiel ao 2D: cordão, grades, portão) |
+| 6 | ~~**Briga dos arredores em 3D**~~ (feito: a versão fiel ao 2D, no cordão da PM) | É a briga mais comum: "arredores" é o padrão do planejamento e da política. A cidade anda até o estádio e aí abre a foto 2D. | M (versão na caminhada) / G (fiel ao 2D: cordão, grades, portão) |
 | 7 | **Sede nível 2 a 6 e anexos** | São as compras mais caras do jogo e o 3D só tem três estados (sem sede, barracão, sede grande). | M (anexos, nível da IA) / G (modelo por nível) |
 
 ---
@@ -130,7 +150,8 @@ Ordem por impacto sobre esforço, não por área. Os itens 1 a 5 foram feitos
    pulsando; no bolo de gente o líder demora mais pra achar. **P.**
 9. **Bomba em chão alto** — os estilhaços quicam numa altura fixa e
    atravessam o degrau da arquibancada. Só visual. **P.**
-10. **Relógio da briga** — a treta e o bar de dia mostram 18:xx. Cosmético. **P.**
+10. ~~**Relógio da briga**~~ — feito junto com os arredores (seção 23 do
+    `JOGO_3D.md`): no palco 3D o relógio começa na hora da cidade. **P.**
 
 Igual nos dois (mesmo código): PM com cassetete e escudo, presos, caídos,
 pedra e bomba, HUD de pressão, carga, placar, 1×/2×, pad e o relatório do fim.
@@ -139,8 +160,10 @@ pedra e bomba, HUD de pressão, carga, placar, 1×/2×, pad e o relatório do fi
 
 Em ordem de frequência no jogo.
 
-1. **Investida nos arredores** (a mais comum) — `palcoDe` não conhece
-   `'arredores'` (`vida3d.js` 1204–1217; `JOGO_3D.md` 486). **M–G.**
+1. ~~**Investida nos arredores**~~ (a mais comum) — feito: o cordão da PM
+   no estádio 3D (seção 23 do `JOGO_3D.md`). Continua na foto quando o plano
+   não acha cordão que sirva (sem cordão perto das duas rotas, ou com o bonde
+   que anda no corredor que abre depois). **M–G.**
 2. **Investida de surpresa** — quando o alvo planejado não veio, o jogo troca
    por outra rival e lugar sorteado; em casa sai uma caminhada 3D avulsa (em
    outro lugar), ou foto 2D se o sorteio cair nos arredores. **P** pra
@@ -149,9 +172,10 @@ Em ordem de frequência no jogo.
    sem o rival presente, cai na foto da arquibancada. **M.**
 4. **Brigas de jogo fora sem dia 3D na praça deles** (campo neutro, exterior,
    mandante sem mapa) — concentração, pista e ataque sofrido. **G.**
-5. **Investida em jogo alheio da praça** — nos arredores cai no 2D; na
+5. **Investida em jogo alheio da praça** — nos arredores agora é 3D, no ponto
+   do encontro (sem cordão: a gente não tem lado no jogo dos outros); na
    concentração ou na pista sai 3D avulso, longe de onde o bonde chegou. **P**
-   (ganchos) + item 1.
+   (ganchos).
 6. **Treta marcada em praça sem beco comprido ou campinho** — raro. **M.**
 7. **Ataque à sede rival** — o bar vai pro 3D; a sede cai no 2D. **M** (um
    `briga_sede.js` no molde do `briga_bar.js`).
@@ -170,8 +194,8 @@ do nosso bar, casa de piscina, reunião com sede.
 1. ~~**Bar quebrado por 45 dias**~~ (nosso e das IAs) — feito: tapume,
    cacos, roda pela metade e o risco no Mapa da cidade. **P.**
 2. **Faixa e bandeira perdidas ou tomadas** — o estádio foi feito (a mureta
-   segue o patrimônio, a tomada pendura de cabeça pra baixo); a sede ainda não
-   mostra as tomadas. **M** (sede).
+   segue o patrimônio; a tomada pendurada de cabeça pra baixo saiu a pedido do
+   dono); a sede ainda não mostra as tomadas. **M** (sede).
 3. **Sede nível 2 a 6, anexos e ampliações** — incluindo a IA (`t.sede++` nunca
    chega à planta). **M / G.**
 4. **Torcida sem sede (nível 0)** — o ponto de encontro das pequenas não tem

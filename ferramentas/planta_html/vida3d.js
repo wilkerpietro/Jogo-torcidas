@@ -1441,6 +1441,10 @@ export function criarVida(api) {
       if (!ligada && !noDia) return null;
       /* A INVASÃO NO ESTÁDIO (invasao.js): a briga da arquibancada, com o dia no ar, é a invasão da nossa torcida */
       if (/^estadio-(10|20|40)$/.test(local) && cfg && cfg.invasao3d && noDia) return D3.palcoDaInvasao(cfg);
+      /* A BRIGA DOS ARREDORES (arredores3d.js): a nossa investida no cordão
+         da PM, com o dia no ar, ou a do jogo da cidade no fundo; sem cordão
+         nem investida montada no 3D, a cena da foto */
+      if (local === 'arredores' && cfg && cfg.bondes && !cfg.reuniao && D3 && D3.palcoDosArredores) return D3.palcoDosArredores(cfg);
       if (local === 'casa-piscina') return palcoDaFesta();
       if (local === 'emb-posto' || local === 'emb-onibus') return palcoDaCaravana(local);
       if (/^(praca|rua|rua-media|rua-nobre)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaCaminhada(local, cfg);

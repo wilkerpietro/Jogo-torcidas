@@ -40,6 +40,15 @@ const VISTAS = { perto: { dist: 21, el: 1.1 }, alto: { dist: 44, el: 1.3 } };
    comDia(discos) (os bonecos do dia de jogo que ficam em volta) } */
 export function palcoDeBriga(o) {
   const { C, M } = o, K = o.escala || 1, VIS = o.vistas || VISTAS;
+  /* A HORA NO RELÓGIO DA BRIGA (o HUD do jogo de feed, ponte.js): a da
+     cidade — o dia de jogo no ar (ou a estrada), senão o relógio da vida da
+     praça. Sem ela o relógio da briga começava às 18h, a noite da foto dos
+     arredores, com a cidade às 15h (a varredura 2D × 3D) */
+  {
+    const T = window.TO && TO.jogo3d, h = T && T.dia ? T.dia.hora : null, rel = T && T.vida && T.vida.relogio;
+    const min = typeof h === 'number' ? h / 60 : rel && typeof rel.minuto === 'number' ? rel.minuto : null;
+    if (o.cena && typeof min === 'number' && isFinite(min)) o.cena.horaIni = ((Math.floor(min) % 1440) + 1440) % 1440;
+  }
   let montado = false, THREE = null, grupo = null, modo = 'perto', seguindo = false;
   const PE = {}, PC = {};
   const J = () => (window.TO && TO.diaJogo && TO.diaJogo.J) || null;

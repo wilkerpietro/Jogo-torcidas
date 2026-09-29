@@ -61,6 +61,7 @@
    ========================================================= */
 import { cenaDaInvasao, gradesDaInvasao } from './invasao.js';
 import { palcoDeBriga } from './palco_briga.js';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -453,6 +454,9 @@ export function criarDia3d(api, vida, g = {}) {
       if (TO.tela && TO.tela.horasDaLinha) TO.tela.horasDaLinha({ ida: p.inicio, jogo: p.bola, volta: p.bola + DURACAO_S });
       D.briga = esc0.briga && p.brigas && p.brigas[0] && p.brigas[0].a.t.id === esc0.briga.a && p.brigas[0].v.t.id === esc0.briga.v ? p.brigas[0] : null;
       D.evBriga = D.briga ? esc0.briga.ev : null;
+      /* a investida nos arredores que o plano achou (sem cordão que sirva, a briga fica no jogo de feed) */
+      D.arr = esc0.arredores && p.arredores && p.arredores.a.t.id === esc0.arredores.a && p.arredores.v.t.id === esc0.arredores.v ? p.arredores : null;
+      D.evArr = D.arr ? esc0.arredores.ev : null;
       /* o dia começa um pouco antes de o primeiro bonde sair */
       dia.parar(); dia.irPara(p.inicio);
       if (D.nosso) dia.seguirBonde(D.nosso); else dia.verPlano();
@@ -748,6 +752,14 @@ export function criarDia3d(api, vida, g = {}) {
     if (ev.tipo === 'investida') return { a: e.torcida.id, v: ev.torcida, onde, ev };
     return null;
   }
+  /* A INVESTIDA NOS ARREDORES (a fase da ida; arredores3d.js): a nossa,
+     marcada pros arredores do estádio — cai no cordão da PM */
+  function arredoresDaIda(it, e) {
+    const f = (it.paradas || []).find(p => p.id === 'ida');
+    const ev = f && (f.eventos || [])[0];
+    if (!ev || !ev.torcida || ev.naCidade === false || ev.ponto !== 'arredores' || ev.tipo !== 'investida') return null;
+    return { a: e.torcida.id, v: ev.torcida, ev };
+  }
   function escolhaDoDia(e, j, msg, it, ini) {
     const meu = e.torcida.clubeId, casa = j.casa ? meu : j.advId, fora = j.casa ? j.advId : meu;
     const pres = ((msg && msg.dados && msg.dados.presenca) || []).filter(p => p && p.id && p.n > 0).map(p => ({ id: p.id, n: p.n }));
@@ -756,11 +768,12 @@ export function criarDia3d(api, vida, g = {}) {
     const r = TO.tela && TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
     const nosso = { id: e.torcida.id, n: r && r.nos != null ? r.nos : it.efetivo ? it.efetivo.nos : null, inicio: ini ? ini.inicio : 'sede',
                     aliado: aj ? aj.aliado : null, nivel: aj ? (aj.nivel === 'hospedar' ? 'hospedar' : 'escolta') : null, escolta: aj ? aj.escolta || 0 : 0 };
-    const briga = brigaDaIda(it, e);
+    const briga = brigaDaIda(it, e), arr = briga ? null : arredoresDaIda(it, e);
     return { jogo: true, casa, fora, bola: segDe(j.hora), presenca: pres.length ? pres : null, nosso, ia: 'paz', estadio: 'nao', gente: 1,
              /* em casa, quem recebe os visitantes de fora é o que o jogo diz (o aliado que a gente hospeda sai da nossa porta) */
              hospedes: j.casa ? hospedesDoJogo(e, casa, fora) : null,
-             briga: briga ? { a: briga.a, v: briga.v, onde: briga.onde, ev: briga.ev } : null };
+             briga: briga ? { a: briga.a, v: briga.v, onde: briga.onde, ev: briga.ev } : null,
+             arredores: arr };
   }
 
   /* ======================================================
@@ -947,14 +960,14 @@ export function criarDia3d(api, vida, g = {}) {
     if (!alvo || !alvo.rua || !porta) return;
     const onde = inv.como === 'ida' ? (inv.olheiro === 'praca' ? 'concentracao' : 'pista') : 'arredores';
     const Q = {};
-    let P, tEnc;
+    let P, tEnc, sAlvo = 8 * M;
     if (onde === 'concentracao') {
       /* na porta da sede deles, com a concentração ainda nas rodinhas */
       alvo.rua.ponto(Math.min(alvo.rua.L, 8 * M), Q);
       P = [Q.x, Q.z]; tEnc = alvo.sai - 4 * 60;
     } else {
       /* na rota deles: na pista, perto da metade; nos arredores, antes da boca do portão */
-      const sAlvo = onde === 'pista' ? alvo.rua.L * 0.45 : Math.max(0, alvo.rua.L - 60 * M);
+      sAlvo = onde === 'pista' ? alvo.rua.L * 0.45 : Math.max(0, alvo.rua.L - 60 * M);
       alvo.rua.ponto(sAlvo, Q);
       P = [Q.x, Q.z];
       /* a hora em que a cabeça deles passa ali (a conta do plano, ao contrário) */
@@ -976,7 +989,7 @@ export function criarDia3d(api, vida, g = {}) {
       cor: cc.cor, cor2: cc.cor2, cor3: cc.cor3, lado: 'mandante', lider: i === 0, vivo: true, x: porta.x, y: porta.y, alt: 0, rumo: 0, passada: 1.15, derrubado: 0, golpe: 0, apanhou: 0,
       atordoado: 0, esquivou: 0, tremor: 0, defendendo: 0, hostil: 0, inimigoPerto: 0, chamou: -99, linha: 'frente', mundo: true } });
     const filas = Math.ceil(n / lado);
-    D.inv = { alvo, onde, P, tEnc, tSai, tJunta, tr, gente, filas, chave: og.chave, fase: 'espera', viu: false, tVolta: null, sVolta: 0,
+    D.inv = { alvo, onde, P, sAlvo, tEnc, tSai, tJunta, tr, gente, filas, chave: og.chave, fase: 'espera', viu: false, tVolta: null, sVolta: 0,
               camera: null, voouEm: 0, seguir: true, deixou: null, chegouVista: false };
     /* a decisão do planejamento cai na hora do encontro, com o texto do que se vê */
     retimarGuerra(e, og.chave, tEnc, alvo, onde);
@@ -1146,6 +1159,7 @@ export function criarDia3d(api, vida, g = {}) {
         });
         return;
       }
+      if (ev && D.arr && ev === D.evArr) { noCordao(D.arr, cont); return; }
       /* a emboscada na estrada vem antes da cidade: a caminhada fica pro jogo */
       if (ev && ev.tipo === 'emboscada') { status('Na estrada, a caminho da cidade.'); cont(); return; }
       if (ev && ev.ponto === 'arredores' && nosso) {
@@ -1165,7 +1179,7 @@ export function criarDia3d(api, vida, g = {}) {
          que ninguém desceu) acaba de se ver, e o nosso bonde que ainda não
          chegou no portão (o ataque na concentração, na esquina) faz a
          caminhada — sem isso ele ia do chão da briga pro estádio a 60× */
-      const br = D.briga;
+      const br = D.briga || D.arr;
       const andar = () => {
         if (nosso && dia.t < nosso.chega - 20) { dia.seguirBonde(nosso); rodarAte(nosso.chega - 20, D.vezes, 'A caminhada até o estádio, com quem ficou de pé…', entrar); }
         else entrar();
@@ -1177,6 +1191,32 @@ export function criarDia3d(api, vida, g = {}) {
     }
     status('Fim de jogo: as torcidas saindo.');
     cont();
+  }
+  /* A INVESTIDA NOS ARREDORES (arredores3d.js; o dono, 29/09/2026: "pode
+     fazer a briga dos arredores em 3D"): o nosso bonde desviou até o
+     cordão da PM e espera colado na grade, do nosso lado. Perto da hora, a
+     câmera vai pro cordão (do nosso lado, olhando o deles) e o relógio
+     desacelera com a rival chegando do outro lado; o cartão da linha cai
+     com ela à vista, parada na frente da PM */
+  function noCordao(A, cont) {
+    const rival = A.v.t.sigla;
+    rodarAte(Math.max(dia.t, A.tIni - 40), D.vezes, `A caminho do cordão da PM, pra pegar a ${rival}…`, () => {
+      if (!D) return;
+      dia.seguirBonde(null);
+      /* (de mais alto e mais longe: o balão do cartão tampa o terço de cima da
+         tela e o painel do dia o pé; na faixa do meio cabem a frente das duas,
+         uns 12 m de cada lado da grade) */
+      C().voarPara(A.P[0] + A.u[0] * 4 * M, A.P[1] + A.u[1] * 4 * M, 58 * M, 1.0, Math.atan2(-A.u[0], -A.u[1]), 0);
+      /* (a 2× só a chegada deles: a velocidade do jogador volta com o cartão) */
+      const vz = D.vezes;
+      rodarAte(Math.max(dia.t, A.tIni + 2), 2, `A ${rival} chegando do outro lado do cordão…`, () => {
+        if (!D) return;
+        D.vezes = vz; pintar();
+        status(`A ${rival} tá parada do outro lado da grade, na frente da PM.`, true);
+        D.avisoNoAlto = true;
+        cont();
+      });
+    });
   }
   /* O ATAQUE QUE A GENTE SOFRE NA IDA (conserto de 28/09/2026, o dono: "se
      for na pista, minha torcida vai normalmente fazer sua rota e em alguma
@@ -1291,6 +1331,10 @@ export function criarDia3d(api, vida, g = {}) {
      do bonde diz na hora, com a rival à vista — no lugar do texto do jogo
      de feed ("caiu em cima da nossa concentração… Foi em Concentração") */
   function avisoDoAtaque(ev) {
+    if (D && !D.ia && D.arr && ev === D.evArr) {
+      const alvo = D.arr.v.t.nome;
+      return { voz: `Investida marcada · ${alvo}`, texto: `A gente tá colado no cordão da PM, nos arredores do estádio. A ${alvo} parou do outro lado da grade, na frente dos PMs — é agora.` };
+    }
     if (!D || D.ia || !D.briga || ev !== D.evBriga) return null;
     const br = D.briga;
     /* a investida marcada: a gente é quem chega */
@@ -1406,6 +1450,14 @@ export function criarDia3d(api, vida, g = {}) {
       else { br.vista = false; dia.irPara(Math.min(dia.t, br.tIni - 10)); dia.rodar(10); status(`A briga ${onde} (o resultado do duelo simulado).`); }
       D.jogada = false;
     }
+    /* A BRIGA NO CORDÃO: quem caiu e quem foi preso fica no chão ali, dos dois lados da grade */
+    const A = D.arr;
+    if (A && ev && ev === D.evArr && !A.aplicado && res) {
+      A.aplicar(resultadoDaBriga(A, res));
+      if (D.arrJogada) { dia.irPara(Math.max(dia.t, A.tFim + 3)); status(res.ganhamos ? 'Saímos por cima no cordão. Quem ficou de pé segue pro portão.' : 'Apanhamos no cordão. Quem sobrou segue pro portão.', !res.ganhamos); }
+      else { dia.irPara(Math.min(dia.t, A.tIni - 10)); dia.rodar(10); status('A briga no cordão da PM (o resultado do duelo simulado).'); }
+      D.arrJogada = false;
+    }
     if (D.nosso) dia.seguirBonde(D.nosso);
     pintar();
   }
@@ -1500,6 +1552,56 @@ export function criarDia3d(api, vida, g = {}) {
       aoDesmontar: voltouDoPalco });
     pintar();
     return { local: B.cena.id, renderizador: R };
+  }
+  /* A BRIGA DOS ARREDORES NO PALCO (vida3d.js, palcoDe 'arredores';
+     arredores3d.js): a nossa investida no cordão da PM (o nosso dia), ou a
+     investida no jogo de outros clubes, no caminho da rival pro portão (o
+     jogo da cidade no fundo). O dia para, os bondes das torcidas da briga
+     somem da rua (os bonecos dela são os do combate), as grades da PM no
+     tabuleiro dão lugar às do combate (que caem) e os PMs são os do cordão */
+  function palcoDosArredores(cfg) {
+    if (!D || !D.plano || !dia || !dia.plano || !cfg) return null;
+    const Cn = C();
+    if (!Cn || !Cn.vida || !Cn.vida.contextoDoDia) return null;
+    const pl = D.plano, nosso = (cfg.bondes || []).find(b => b.nossa), Q = {};
+    const nossoLado = nosso && nosso.lado === 'visitante' ? 'visitante' : 'mandante';
+    let o = null, ids = null;
+    if (!D.fundo && D.arr && D.arr.v.t.id === cfg.rivalId) {
+      const A = D.arr;
+      /* (as grades de pé a esta hora: o cordão do corredor que abre pro mandante sai na hora dele) */
+      const dePe = q => !(q.abre && pl.tAbre != null && dia.t >= pl.tAbre);
+      o = { P: A.P, u: A.u, nosso: { rua: A.a.rua, s: A.sA }, deles: { rua: A.v.rua, s: A.sV }, nossoLado, fundo: false,
+            segmentos: pl.pm.cordoes.filter(dePe).concat(pl.pm.fechadas.filter(dePe)).map(q => ({ a: q.a, b: q.b })) };
+      ids = [A.a.t.id, A.v.t.id];
+    } else if (D.fundo && D.inv && D.inv.onde === 'arredores' && D.inv.alvo.t.id === cfg.rivalId) {
+      const I = D.inv;
+      I.tr.ponto(Math.max(0, I.tr.L - 2 * M), Q);
+      /* (no jogo dos outros a gente não tem lado: o tabuleiro não tem cordão) */
+      o = { P: I.P, u: [Q.tx, Q.tz], nosso: { rua: I.tr, s: Math.max(0, I.tr.L - 6 * M), volta: true }, deles: { rua: I.alvo.rua, s: Math.max(0, I.sAlvo - 10 * M) },
+            nossoLado, fundo: true, segmentos: [] };
+      ids = [I.alvo.t.id];
+    }
+    if (!o) return null;
+    o.pms = ((dia.J && dia.J.policiais) || []).filter(pm => pm.vivo !== false).map(pm => ({ x: pm.x, z: pm.y }));
+    const ctx = Cn.vida.contextoDoDia();
+    let B;
+    try { B = brigaNosArredores(ctx, pl, o); }
+    catch (err) { console.error('a briga dos arredores:', err); return null; }
+    if (!B || B.erro) { console.warn('a briga dos arredores não montou:', B && B.erro); return null; }
+    TO.dados.cenas[B.cena.id] = B.cena;
+    D.ultimosArredores = B; D.emCena = true; D.avisoNoAlto = false;
+    if (!D.fundo) D.arrJogada = true;
+    dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas(ids);
+    B.gradesEscondidas = dia.esconderGrades ? dia.esconderGrades(B.noTabuleiro) : 0;
+    let grades = null;
+    const R = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
+      vistas: { perto: { dist: 19, el: 1.08 }, alto: { dist: 40, el: 1.25 } }, rotAlto: o.fundo ? 'a rua deles, do alto' : 'o cordão inteiro, do alto',
+      semGrades: true, comDia: dia.semAsDaBriga(ids),
+      aCadaQuadro: (j, THREE, grupo) => { if (!grades) grades = gradesDoCordao(ctx, B, THREE, grupo, dia.grade); grades.quadro(j); },
+      aoLimpar: () => { if (grades) grades.limpar(); grades = null; },
+      aoDesmontar: () => { if (dia && dia.esconderGrades) dia.esconderGrades(null); voltouDoPalco(); } });
+    /* (o palco que não sobe — sem WebGL — deixa a briga pra cena da foto: o dia volta como estava) */
+    return { local: B.cena.id, renderizador: R, falhou: () => { if (dia && dia.esconderGrades) dia.esconderGrades(null); if (D) D.arrJogada = !D.fundo; voltouDoPalco(); } };
   }
 
   /* ======================================================
@@ -1624,7 +1726,7 @@ export function criarDia3d(api, vida, g = {}) {
 
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
-    ganchosDaCaminhada, ganchosDaBriga, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
+    ganchosDaCaminhada, ganchosDaBriga, palcoDaInvasao, palcoDosArredores, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
     antesDaBriga, brigaNaEstrada, cidadeRefeita,
     /* a caravana ainda na estrada (ou a cidade do jogo montando na chegada): a linha espera */
     get naEstrada() { return naEstrada(); },
@@ -1658,6 +1760,11 @@ export function criarDia3d(api, vida, g = {}) {
                praca: D.nome, fora: D.fora, fase: D.fase, hora: dia && dia.plano ? hhmm(dia.t) : null, t: dia && dia.plano ? dia.t : null, corrida: D.corrida ? hhmm(D.corrida.alvo) : null,
                plano: !!D.plano, nosso: b ? { sigla: b.t.sigla, n: b.n, naRua: b.naRua, inicio: b.inicio.tipo + (b.inicio.t ? ':' + b.inicio.t.sigla : ''), lado: b.lado, setor: b.setor, estado: dia.estadoDo(b, 0) } : null,
                briga: D.briga ? { a: D.briga.a.t.sigla, v: D.briga.v.t.sigla, ini: hhmm(D.briga.tIni), aplicada: !!D.briga.aplicado, venceA: D.briga.venceA } : null,
+               arredores: D.arr ? { a: D.arr.a.t.sigla, v: D.arr.v.t.sigla, ini: hhmm(D.arr.tIni), fim: hhmm(D.arr.tFim), aplicada: !!D.arr.aplicado, venceA: D.arr.venceA,
+                                    caemA: D.arr.caemA || 0, caemV: D.arr.caemV || 0 } : null,
+               tabuleiroArredores: D.ultimosArredores ? { id: D.ultimosArredores.cena.id, local: D.ultimosArredores.cena.local, grades: D.ultimosArredores.cena.grades.map(x => x.modulos),
+                                                          pm: D.ultimosArredores.cena.pmPostos.length, spawns: D.ultimosArredores.cena.spawns.map(x => x.id + ':' + x.x + ',' + x.y),
+                                                          entradas: D.ultimosArredores.cena.entradas.map(x => x.id + ':' + x.x + ',' + x.y), escondidas: D.ultimosArredores.gradesEscondidas } : null,
                vias: viasDaInvasao(), invadiu: D.invadiu, partida: !!D.partida, emCena: !!D.emCena,
                invasao: D.ultimaInvasao ? { via: D.ultimaInvasao.via, rival: D.ultimaInvasao.rival, grades: D.ultimaInvasao.cena.grades.map(x => x.modulos), pm: D.ultimaInvasao.cena.pmPostos.length } : null };
     },
