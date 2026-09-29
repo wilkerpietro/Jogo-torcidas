@@ -60,8 +60,8 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=11dc713d99';
-import { ATLAS } from './modelos_atlas.js?v=11dc713d99';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=b16589b7e1';
+import { ATLAS } from './modelos_atlas.js?v=b16589b7e1';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -2019,6 +2019,45 @@ function placaDoBar(W, esquina) {
   const alt = Math.min(0.54, m.h1 - 0.02 - (m.yV + 0.08) - 0.13), larg = Math.min(3.3, m.x1 - m.xi0 - 0.5, alt * 5.2);
   const u = ((m.xi0 + m.x1) / 2 - W / 2) * (esquina === 'esq' ? -1 : 1);
   return { y: (m.yV + 0.08 + m.h1 - 0.02) / 2 * M, larg: larg * M, alt: (larg / 5.2) * M, u: u * M };
+}
+/* O PLANO DO BAR DA TORCIDA (a briga no bar do jogo 3D, briga_bar.js; o
+   dono, 29/09/2026: "a cena do bar sempre vai ser no respectivo bar da
+   torcida atacada, no mapa do jogo"): os pontos do térreo no referencial
+   do lote (m; x de quem olha a fachada, de 0 a W; z negativo pra dentro),
+   com as mesmas contas de `barTorcidaDireita` e espelhado quando a esquina
+   é a da esquerda — o salão por dentro, a varanda, as portas de enrolar
+   (as duas da frente e a do lado da esquina), o lado do cliente no
+   balcão, e a parede de fora da esquina, a que dá pra transversal */
+export function planoDoBar(W, D, esquina) {
+  const { x1, e, xi0, xi1 } = medidasDoBar(W);
+  const z1 = -REC_MODELO.bartorcida, z0 = -D + 0.04;
+  const pa = clamp((z1 - z0) * 0.3, 1.3, 1.7), zS = z1 - pa;
+  const zi0 = z0 + e, zi1 = zS - e, iw = xi1 - xi0, di = zi1 - zi0;
+  const dwS = Math.min(1.6, di - 1.25), dw = Math.min(2.4, (iw - 0.9) / 2);
+  const cL = clamp(iw * 0.5, 2.2, 3.2), zc1 = zi0 + 0.95 + 0.55;
+  const esp = esquina === 'esq', X = x => esp ? W - x : x;
+  const faixaX = (a, b) => esp ? [W - b, W - a] : [a, b];
+  const ponto = (x, z) => ({ x: X(x), z });
+  /* o trecho livre da parede da esquina: do fundo até a porta do lado */
+  const ladoAte = dwS >= 1.1 ? zi1 - 0.2 - dwS : zi1;
+  return {
+    W, D, esquina: esp ? 'esq' : 'dir',
+    /* +1: a esquina fica pro lado do x que cresce; −1, pro outro */
+    ladoDaEsquina: esp ? -1 : 1,
+    salao: { x: faixaX(xi0, xi1), z: [zi0, zi1] },
+    varanda: { x: faixaX(xi0, x1), z: [zS, z1] },
+    portas: [[xi0 + 0.25, xi0 + 0.25 + dw], [xi1 - 0.25 - dw, xi1 - 0.25]].map(([a, b]) => ({ ...ponto((a + b) / 2, zS - e / 2), larg: b - a })),
+    portaLado: dwS >= 1.1 ? { ...ponto(x1 - e / 2, zi1 - 0.2 - dwS / 2), larg: dwS } : null,
+    /* do lado do cliente, depois das banquetas */
+    balcao: ponto(xi0 + cL * 0.55, zc1 + 0.95),
+    /* o meio do salão, entre o balcão e a porta; e o meio da varanda, entre as duas mesas */
+    meioDoSalao: ponto(xi0 + iw * 0.4, (zc1 + zi1) / 2 + 0.3),
+    meioDaVaranda: ponto((xi0 + x1) / 2, (zS + z1) / 2),
+    /* a parede de fora da esquina: o meio do trecho livre e o comprimento dele */
+    paredeDaEsquina: { ...ponto(x1, (zi0 + ladoAte) / 2), comp: Math.max(0, ladoAte - zi0) },
+    /* o meio do térreo (o prédio que perde a laje e o apartamento na câmera de cima) */
+    meio: ponto((xi0 + xi1) / 2, (zi0 + z1) / 2)
+  };
 }
 /* a tinta da torcida no reboco: o preto puro vira buraco no Lambert e o
    branco puro estoura, então os dois vão um pouco pra dentro */

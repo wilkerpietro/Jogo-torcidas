@@ -14267,6 +14267,8 @@ TO.relacoes = (function(){
         if(U.rng() > chance) continue;
 
         const alvo = podeRua ? U.escolher(ALVOS) : {id:'bar', cena:'bar'};
+        /* o bar só apanha se existe (o dono, 29/09/2026: sem bar, não dá pra atacar assim) */
+        if(alvo.id === 'bar' && TO.acoes && TO.acoes.temBar && !TO.acoes.temBar(E, E.torcida.id)) continue;
         const dia = alvo.id === 'bar'
           ? diaDoAtaque(E, o.id) : (E.proximoJogo.dia || 6);
         if(alvo.id === 'bar' && dia < E.data.dia) continue;  // hash já passou
@@ -24227,6 +24229,25 @@ TO.acoes = (function(){
     return (id && lista.find(x=>x.id === id)) || lista[0];
   };
 
+  /* QUEM NÃO TEM BAR NÃO TEM BAR PRA ATACAR (o dono, 29/09/2026:
+     "Torcidas que ainda não tem bar não dá pra atacar assim"). O pino de
+     bar das outras torcidas é sorteado no mapa pra todas (mapa.js), mas o
+     bote no bar só existe contra quem tem um de verdade: o do jogador no
+     patrimônio, o da IA no mundo vivo dela — e, com o jogo em 3D, o bar no
+     mapa da praça, que é onde a cena acontece (jogo3d.js, `temBar`). */
+  function temBar(E, id){
+    if(!id) return false;
+    if(id === E.torcida.id){
+      const p = TO.financeiro && TO.financeiro.patrimonio ? TO.financeiro.patrimonio(E) : E.patrimonio;
+      if(!p || !(p.bares||[]).length) return false;
+    } else {
+      const m = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E)[id] : null;
+      if(m && Array.isArray(m.bares) && !m.bares.length) return false;
+    }
+    const no3d = TO.jogo3d && TO.jogo3d.temBar ? TO.jogo3d.temBar(id) : null;
+    return no3d !== false;
+  }
+
   function alvosDeAtaque(E){
     const mo = TO.mapa && TO.mapa.modelo(E);
     if(!mo) return [];
@@ -24236,6 +24257,7 @@ TO.acoes = (function(){
       if(p.tipo !== 'sede' && p.tipo !== 'bar') continue;
       const o = TO.mundo.torcida(p.torcida);
       if(!o) continue;
+      if(p.tipo === 'bar' && !temBar(E, o.id)) continue;
       const rel = TO.relacoes.nivel(E, o.id);
       fora.push({
         id: `${o.id}|${p.tipo}`, torcidaId:o.id, tipo:p.tipo, deQuem:o.nome,
@@ -25153,7 +25175,7 @@ TO.acoes = (function(){
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
-          alvosDeAtaque, efetivoDaZona, bondeDaZona, zonaDoMembro,
+          alvosDeAtaque, temBar, efetivoDaZona, bondeDaZona, zonaDoMembro,
           clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
 })();
@@ -34191,6 +34213,10 @@ TO.feed = (function(){
         const PAT = TO.patrimonio;
         if(!PAT.faixasDe(E).nossas.length && !PAT.bandeirasDe(E).nossas.length) return;
       }
+      /* SEM BAR NÃO HÁ ATAQUE AO BAR (o dono, 29/09/2026: "Torcidas que
+         ainda não tem bar não dá pra atacar assim"): a torcida que ainda
+         não comprou o dela passa o trimestre sem essa visita */
+      else if(TO.acoes.temBar && !TO.acoes.temBar(E, E.torcida.id)) return;
       const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
       const zona = casa ? zonas[TO.mapa.hash(ev.chave + '|z') % zonas.length] : null;
       if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
@@ -41620,7 +41646,8 @@ TO.diaJogo.combate = (function(){
       const lado = q === 'nos' ? meu : outro;
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
-      const chave = D.id === 'bar' ? 'bar' : /^casa-piscina/.test(D.id) ? 'casa' : 'praca';
+      /* (o bar do jogo 3D é 'bar@3d', no bar de verdade do mapa: a mesma chance da foto) */
+      const chave = /^bar(@|$)/.test(D.id) ? 'bar' : /^casa-piscina/.test(D.id) ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){
@@ -56360,7 +56387,9 @@ TO.icones = (function(){
       /* treta marcada é mano a mano: sem pedra, sem bomba, sem braço
          automático — de lado nenhum (decisão do dono) */
       config: { escalacao: aptos.slice(0, n), intencao:'atacar', bombas:0,
-                semArmas:true, bondes, efetivoRival:n, local },
+                semArmas:true, bondes, efetivoRival:n, local,
+                /* o jogo 3D sorteia o lugar da treta na favela por ela */
+                treta:{rival:d.rival, bairro:d.bairro || '', tam:n, lnt:!!d.lnt} },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||_t('Rival'),
                              bairro:d.bairro, cena:local, n,
@@ -57021,6 +57050,8 @@ TO.icones = (function(){
                 fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
+                /* o que se ataca (o jogo 3D monta o bar deles no mapa; a sede segue na cena de sempre) */
+                alvoTipo: cena.alvo && cena.alvo.tipo,
                 /* a praça da ação, quando não é a nossa (a sub-sede de fora) */
                 foraDeCasa: cena.foraDeCasa || null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
@@ -57148,7 +57179,7 @@ TO.icones = (function(){
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
-                faixaDefensor:'nos', rivalId: atq.torcida,
+                faixaDefensor:'nos', rivalId: atq.torcida, alvoTipo: atq.alvo || 'bar',
                 /* a praça do ataque, quando não é a nossa (o jogo fora) */
                 foraDeCasa: atq.mapa && atq.mapa !== e.torcida.mapa ? atq.mapa : null,
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },

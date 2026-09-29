@@ -37,8 +37,10 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=11dc713d99';
-import { brigaNaCaminhada } from './caminhada.js?v=11dc713d99';
+import { palcoDeBriga } from './palco_briga.js?v=b16589b7e1';
+import { brigaNaCaminhada } from './caminhada.js?v=b16589b7e1';
+import { brigaNoBar } from './briga_bar.js?v=b16589b7e1';
+import { brigaNaTreta } from './briga_treta.js?v=b16589b7e1';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -1114,6 +1116,78 @@ export function criarVida(api) {
     return { local: B.cena.id, renderizador: Rd };
   }
   let ultimaCaminhada = null;
+  /* A BRIGA NO BAR (a cena 'bar' do jogo de feed; briga_bar.js; o dono,
+     29/09/2026: "a cena do bar sempre vai ser no respectivo bar da torcida
+     atacada, no mapa do jogo"): o nosso bote no bar deles (o bar é do
+     rival), o ataque deles no nosso (o bar é nosso) e a investida do dia de
+     jogo no "bar deles" — sempre no bar da dona, na praça em 3D. O ataque à
+     SEDE rival também abre a cena do bar no jogo de feed: esse segue na
+     cena de sempre (o palco dele não é um bar). Sem o bar da dona no mapa
+     (a torcida sem bar, a praça sem vaga pra ele), a cena de sempre também
+     — o jogo de feed já não deixa atacar bar de quem não tem (acoes.js,
+     `temBar`), então isso é a rede de baixo, não o caminho */
+  function palcoDoBar(cfg) {
+    const Cn = C(), e = E();
+    if (!cfg || !Cn || !Cn.vida || !Cn.vida.contextoDoDia || !e || !e.torcida || !TO.dados || !TO.dados.cenas) return null;
+    if (cfg.alvoTipo && cfg.alvoTipo !== 'bar') return null;
+    const nossoBar = cfg.faixaDefensor === 'nos';
+    const dono = nossoBar ? e.torcida.id : cfg.rivalId;
+    const D3 = TO.jogo3d && TO.jogo3d.dia, noDia = !!(D3 && D3.ativo);
+    /* (a praça de fora — a sub-sede, o jogo fora — só está em 3D com o dia de jogo lá) */
+    if (!dono || (cfg.foraDeCasa && !noDia)) return null;
+    const bar = barDaBriga(dono, nossoBar ? cfg.rivalId : e.torcida.id);
+    if (!bar) { console.warn('a briga no bar: a torcida ' + dono + ' não tem bar no mapa'); return null; }
+    /* quem ataca: o nosso lado no nosso bote, o outro no ataque deles */
+    const nosso = (cfg.bondes || []).find(b => b.nossa), ladoNosso = nosso && nosso.lado === 'visitante' ? 'visitante' : 'mandante';
+    const ladoAtaca = nossoBar ? (ladoNosso === 'mandante' ? 'visitante' : 'mandante') : ladoNosso;
+    let B = null;
+    try { B = brigaNoBar(Cn.vida.contextoDoDia(), bar, { ladoAtaca, nosAtacamos: !nossoBar, nossoBar }); }
+    catch (err) { console.error('a briga no bar:', err); return null; }
+    if (!B || B.erro) { console.warn('a briga no bar não montou:', B && B.erro); return null; }
+    /* (com o dia de jogo no ar, ele para e os bondes das duas somem da rua enquanto a briga dura) */
+    const G = noDia && D3.ganchosDaBriga ? D3.ganchosDaBriga([e.torcida.id, cfg.rivalId].filter(Boolean)) : null;
+    TO.dados.cenas[B.cena.id] = B.cena;
+    ultimoBar = B;
+    const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
+                              predio: B.predio, vistas: { perto: { dist: 17, el: 1.1 }, alto: { dist: 34, el: 1.3 } },
+                              rotAlto: 'o bar e a esquina, do alto', comDia: G ? G.comDia : null,
+                              aoDesmontar: () => { if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } } });
+    return { local: B.cena.id, renderizador: Rd };
+  }
+  let ultimoBar = null;
+  /* A TRETA MARCADA (as cenas 'treta-*' do jogo de feed; briga_treta.js):
+     na favela da praça — o 5×5 num beco, o 7×7 e o 10×10 no campinho de
+     terra —, com o lugar sorteado pela treta (o bairro, o rival, o
+     tamanho). O resto é do jogo de feed: os mesmos efetivos, sem arma nem
+     bomba, os dois lados acordados, a aposta. Sem beco ou campinho que
+     sirva, a cena de sempre */
+  function palcoDaTreta(local, cfg) {
+    const Cn = C();
+    if (!Cn || !Cn.vida || !Cn.vida.contextoDoDia || !TO.dados || !TO.dados.cenas) return null;
+    const t = cfg.treta || {};
+    let B = null;
+    try { B = brigaNaTreta(Cn.vida.contextoDoDia(), local, { chave: [t.bairro || '', t.rival || '', t.tam || '', t.lnt ? 'lnt' : ''].join('|') }); }
+    catch (err) { console.error('a treta marcada:', err); return null; }
+    if (!B || B.erro) { console.warn('a treta marcada não montou:', B && B.erro); return null; }
+    TO.dados.cenas[B.cena.id] = B.cena;
+    ultimaTreta = B;
+    const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
+                              vistas: { perto: { dist: 16, el: 1.1 }, alto: { dist: 32, el: 1.3 } },
+                              rotAlto: B.lugar.tipo === 'beco' ? 'o beco inteiro, do alto' : 'o campinho inteiro, do alto',
+                              aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+    return { local: B.cena.id, renderizador: Rd };
+  }
+  let ultimaTreta = null;
+  /* o bar da dona que a briga pega: o mais perto da sede de quem ataca (é
+     de lá que o bonde sai); sem a sede dele no mapa, o primeiro dela */
+  function barDaBriga(dono, atacante) {
+    const bs = (api.planta && api.planta.bares ? api.planta.bares() : []).filter(b => b.dono === dono && b.lote && b.W && b.D);
+    if (!bs.length) return null;
+    const s = atacante && api.sedeDe ? api.sedeDe(atacante) : null;
+    if (!s) return bs.sort((a, b) => a.n - b.n)[0];
+    const d = b => Math.hypot(b.porta.x - s.x, b.porta.y - s.y);
+    return bs.sort((a, b) => d(a) - d(b))[0];
+  }
   /* a luz corre mesmo com a vida desligada (no menu, o dia parado nas 10h) */
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
@@ -1136,6 +1210,8 @@ export function criarVida(api) {
       if (local === 'casa-piscina') return palcoDaFesta();
       if (local === 'emb-posto' || local === 'emb-onibus') return palcoDaCaravana(local);
       if (/^(praca|rua|rua-media|rua-nobre)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaCaminhada(local, cfg);
+      if (local === 'bar' && cfg && !cfg.reuniao) return palcoDoBar(cfg);
+      if (/^treta-(beco|galpao|campo)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaTreta(local, cfg);
       if (!sede || !cfg || !cfg.reuniao || !/^sede-|^praca$/.test(local)) return null;
       return { renderizador: palcoDaReuniao() };
     },
@@ -1151,7 +1227,9 @@ export function criarVida(api) {
                aneis: rua ? rua.aneis.length : 0, reuniao: !!reuniao3d, discos: J.discos.length };
     },
     get sede() { return sede; }, get rua() { return rua; },
-    /* pro teste: a última briga na caminhada (o plano, o ponto, a cena) */
-    get caminhada() { return ultimaCaminhada; }
+    /* pro teste: a última briga na caminhada (o plano, o ponto, a cena) e a última no bar */
+    get caminhada() { return ultimaCaminhada; },
+    get noBar() { return ultimoBar; },
+    get treta() { return ultimaTreta; }
   };
 }

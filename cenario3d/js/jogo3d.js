@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=11dc713d99';
-import { criarVida, horaTxt } from './vida3d.js?v=11dc713d99';
-import { criarMapaDaCidade } from './mapa3d.js?v=11dc713d99';
-import { criarDia3d } from './dia3d.js?v=11dc713d99';
-import { criarRecados } from './recados3d.js?v=11dc713d99';
+import { CASCA } from './jogo_casca.js?v=b16589b7e1';
+import { criarVida, horaTxt } from './vida3d.js?v=b16589b7e1';
+import { criarMapaDaCidade } from './mapa3d.js?v=b16589b7e1';
+import { criarDia3d } from './dia3d.js?v=b16589b7e1';
+import { criarRecados } from './recados3d.js?v=b16589b7e1';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=11dc713d99'), carregarCss('css/jogo3d.css?v=11dc713d99')]);
+  await Promise.all([carregarCss('css/jogo.css?v=b16589b7e1'), carregarCss('css/jogo3d.css?v=b16589b7e1')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=11dc713d99').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=b16589b7e1').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=11dc713d99');
+  await carregarScript('js/jogo.js?v=b16589b7e1');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=11dc713d99').catch(() => {});
-  await import('./bonecos3_global.js?v=11dc713d99');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=b16589b7e1').catch(() => {});
+  await import('./bonecos3_global.js?v=b16589b7e1');
   ligar(api);
   return TO.tela;
 }
@@ -189,6 +189,16 @@ function ligar(api) {
     irPraSala() {
       if (dia3d.ativo) { dia3d.verNossa(); return; }
       if (vida.ligada && vida.sede) vida.irPraSala(); else irPraSede();
+    },
+    /* A TORCIDA TEM BAR NO MAPA? (o dono, 29/09/2026: "Torcidas que ainda
+       não tem bar não dá pra atacar assim"): o bote no bar é no bar dela,
+       na praça em 3D (briga_bar.js) — sem ele, não há onde. null quando a
+       praça na tela não é a da torcida do jogador (montando, ou o dia de
+       jogo noutra praça): aí quem responde é o save */
+    temBar(id) {
+      const e = E(), C = api.cenario;
+      if (!id || !e || !e.torcida || !C || C.montando || !pracaDoJogo || C.praca !== pracaDoJogo || pracaDoJogo !== nomeDaPraca(e.torcida.mapa)) return null;
+      return baresDoJogador(id).length > 0;
     },
     vida, mapa, dia: dia3d, recados,
     /* (pro teste: a praça e a planta — os bares, as sedes) */

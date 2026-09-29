@@ -59,8 +59,8 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=11dc713d99';
-import { palcoDeBriga } from './palco_briga.js?v=11dc713d99';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=b16589b7e1';
+import { palcoDeBriga } from './palco_briga.js?v=b16589b7e1';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -395,7 +395,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=11dc713d99');
+    const { criarEstrada } = await import('./estrada3d.js?v=b16589b7e1');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -749,7 +749,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=11dc713d99');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=b16589b7e1');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1272,6 +1272,16 @@ export function criarDia3d(api, vida, g = {}) {
     dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas([a, v]);
     return { plano: D.plano, comDia: dia.semAsDaBriga([a, v]), aoDesmontar: voltouDoPalco };
   }
+  /* A BRIGA NUM PALCO DA CIDADE COM O DIA NO AR que não é a da caminhada
+     (a do bar deles, briga_bar.js): o dia para, a câmera é da briga e os
+     bondes das torcidas dela somem da rua enquanto ela dura (os bonecos da
+     briga são os do combate); no fim, a câmera volta pro nosso bonde */
+  function ganchosDaBriga(ids) {
+    if (!D || !D.plano || !dia) return null;
+    D.emCena = true; D.avisoNoAlto = false;
+    dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas(ids);
+    return { comDia: dia.semAsDaBriga(ids), aoDesmontar: voltouDoPalco };
+  }
   function voltouDoPalco() {
     if (!D || !dia) return;
     D.emCena = false;
@@ -1434,7 +1444,7 @@ export function criarDia3d(api, vida, g = {}) {
 
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
-    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
+    ganchosDaCaminhada, ganchosDaBriga, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
     antesDaBriga, brigaNaEstrada, cidadeRefeita,
     /* a caravana ainda na estrada (ou a cidade do jogo montando na chegada): a linha espera */
     get naEstrada() { return naEstrada(); },
