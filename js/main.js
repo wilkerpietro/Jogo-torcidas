@@ -3277,9 +3277,28 @@
     }
 
     /* ---------- a montagem ---------- */
+    /* A ROLAGEM E O FOCO NÃO SE PERDEM AO REPINTAR (o dono, 29/09/2026: "Toda
+       vida que clico em diminuir ou aumentar quantidade de bombas ou de
+       envolvidos em caravana ou briga no planejamento a tela volta pro topo.
+       Corrija isso."). O `pintar` refaz a caixa inteira, então quem rola — o
+       item (pra baixo), a pauta e as abas de praça (no celular, de lado) —
+       nasce de novo com a rolagem no zero, e o botão apertado morre junto (o
+       teclado perdia o lugar a cada aperto). Antes de refazer guarda a
+       rolagem de cada um e o lugar do foco; depois devolve, já com a caixa
+       desenhada (se o conteúdo novo é mais curto, o navegador segura no fim
+       dele). O foco volta pro botão que ficou no mesmo lugar, ou pro irmão
+       dele se aquele desligou (o + que bateu no teto). Outro item da pauta,
+       ou outra praça, é outro conteúdo: esse começa do alto. */
+    const ROLAM = ['.plj-pracas', '.plj-lista', '.plj-det'];
+    let vista = {cidade:null, sel:null};
+    const lugarDe = no => { const l = []; for(let n = no; n !== caixa; n = n.parentNode) l.unshift(Array.from(n.parentNode.children).indexOf(n)); return l; };
     function pintar(){
       const {pt, itens} = pauta();
       if(!itens.some(x=>x.chave === sel)) sel = (itens.find(x=>x.tipo==='nosso' && !x.r.passou) || itens.find(x=>!(x.r && x.r.passou)) || itens[0] || {}).chave || null;
+      /* (a primeira pintura, com a caixa ainda fora da página, não tem o que guardar) */
+      const noAr = caixa.isConnected, ativo = document.activeElement;
+      const rolagem = noAr ? ROLAM.map(s=>{ const n = caixa.querySelector(s); return [s, n ? n.scrollTop : 0, n ? n.scrollLeft : 0]; }) : [];
+      const focado = noAr && ativo !== caixa && caixa.contains(ativo) ? {lugar:lugarDe(ativo), tag:ativo.tagName, cls:ativo.classList[0]} : null;
       caixa.innerHTML = '';
       /* o alto: a semana e o que a torcida tem */
       const d0 = TO.estado.dataDaSemana(ano, semana, 1), d6 = TO.estado.dataDaSemana(ano, semana, 7);
@@ -3354,6 +3373,19 @@
       }
       pe.appendChild(bts);
       caixa.appendChild(pe);
+      if(noAr){
+        /* o foco primeiro e a rolagem por último: se o navegador não segurar
+           o `preventScroll`, é a rolagem devolvida que fica */
+        let n = focado && focado.lugar.reduce((x, i)=>x && x.children[i], caixa);
+        if(n && n.disabled) n = n.parentNode.querySelector('button:not(:disabled)');
+        if(n && n.tagName === focado.tag && n.classList[0] === focado.cls) n.focus({preventScroll:true});
+        const zera = {'.plj-det': cidade !== vista.cidade || sel !== vista.sel, '.plj-lista': cidade !== vista.cidade};
+        for(const [s, t, l] of rolagem){
+          const no = caixa.querySelector(s);
+          if(no && !zera[s]){ no.scrollTop = t; no.scrollLeft = l; }
+        }
+      }
+      vista = {cidade, sel};
     }
     pintar();
     document.body.appendChild(fundo);
