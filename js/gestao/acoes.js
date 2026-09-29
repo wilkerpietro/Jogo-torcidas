@@ -165,6 +165,25 @@ TO.acoes = (function(){
     return (id && lista.find(x=>x.id === id)) || lista[0];
   };
 
+  /* QUEM NÃO TEM BAR NÃO TEM BAR PRA ATACAR (o dono, 29/09/2026:
+     "Torcidas que ainda não tem bar não dá pra atacar assim"). O pino de
+     bar das outras torcidas é sorteado no mapa pra todas (mapa.js), mas o
+     bote no bar só existe contra quem tem um de verdade: o do jogador no
+     patrimônio, o da IA no mundo vivo dela — e, com o jogo em 3D, o bar no
+     mapa da praça, que é onde a cena acontece (jogo3d.js, `temBar`). */
+  function temBar(E, id){
+    if(!id) return false;
+    if(id === E.torcida.id){
+      const p = TO.financeiro && TO.financeiro.patrimonio ? TO.financeiro.patrimonio(E) : E.patrimonio;
+      if(!p || !(p.bares||[]).length) return false;
+    } else {
+      const m = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E)[id] : null;
+      if(m && Array.isArray(m.bares) && !m.bares.length) return false;
+    }
+    const no3d = TO.jogo3d && TO.jogo3d.temBar ? TO.jogo3d.temBar(id) : null;
+    return no3d !== false;
+  }
+
   function alvosDeAtaque(E){
     const mo = TO.mapa && TO.mapa.modelo(E);
     if(!mo) return [];
@@ -174,6 +193,7 @@ TO.acoes = (function(){
       if(p.tipo !== 'sede' && p.tipo !== 'bar') continue;
       const o = TO.mundo.torcida(p.torcida);
       if(!o) continue;
+      if(p.tipo === 'bar' && !temBar(E, o.id)) continue;
       const rel = TO.relacoes.nivel(E, o.id);
       fora.push({
         id: `${o.id}|${p.tipo}`, torcidaId:o.id, tipo:p.tipo, deQuem:o.nome,
@@ -1091,7 +1111,7 @@ TO.acoes = (function(){
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
-          alvosDeAtaque, efetivoDaZona, bondeDaZona, zonaDoMembro,
+          alvosDeAtaque, temBar, efetivoDaZona, bondeDaZona, zonaDoMembro,
           clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
 })();

@@ -1256,6 +1256,8 @@ TO.relacoes = (function(){
         if(U.rng() > chance) continue;
 
         const alvo = podeRua ? U.escolher(ALVOS) : {id:'bar', cena:'bar'};
+        /* o bar só apanha se existe (o dono, 29/09/2026: sem bar, não dá pra atacar assim) */
+        if(alvo.id === 'bar' && TO.acoes && TO.acoes.temBar && !TO.acoes.temBar(E, E.torcida.id)) continue;
         const dia = alvo.id === 'bar'
           ? diaDoAtaque(E, o.id) : (E.proximoJogo.dia || 6);
         if(alvo.id === 'bar' && dia < E.data.dia) continue;  // hash já passou

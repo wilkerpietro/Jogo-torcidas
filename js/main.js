@@ -9760,7 +9760,9 @@
       /* treta marcada é mano a mano: sem pedra, sem bomba, sem braço
          automático — de lado nenhum (decisão do dono) */
       config: { escalacao: aptos.slice(0, n), intencao:'atacar', bombas:0,
-                semArmas:true, bondes, efetivoRival:n, local },
+                semArmas:true, bondes, efetivoRival:n, local,
+                /* o jogo 3D sorteia o lugar da treta na favela por ela */
+                treta:{rival:d.rival, bairro:d.bairro || '', tam:n, lnt:!!d.lnt} },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||_t('Rival'),
                              bairro:d.bairro, cena:local, n,
@@ -10421,6 +10423,8 @@
                 fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
+                /* o que se ataca (o jogo 3D monta o bar deles no mapa; a sede segue na cena de sempre) */
+                alvoTipo: cena.alvo && cena.alvo.tipo,
                 /* a praça da ação, quando não é a nossa (a sub-sede de fora) */
                 foraDeCasa: cena.foraDeCasa || null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
@@ -10548,7 +10552,7 @@
       config: { escalacao: aptos, intencao:'atacar', paz:false, bombas:p.bombas,
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
-                faixaDefensor:'nos', rivalId: atq.torcida,
+                faixaDefensor:'nos', rivalId: atq.torcida, alvoTipo: atq.alvo || 'bar',
                 /* a praça do ataque, quando não é a nossa (o jogo fora) */
                 foraDeCasa: atq.mapa && atq.mapa !== e.torcida.mapa ? atq.mapa : null,
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },

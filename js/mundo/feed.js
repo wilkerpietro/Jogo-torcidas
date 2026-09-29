@@ -3719,6 +3719,10 @@ TO.feed = (function(){
         const PAT = TO.patrimonio;
         if(!PAT.faixasDe(E).nossas.length && !PAT.bandeirasDe(E).nossas.length) return;
       }
+      /* SEM BAR NÃO HÁ ATAQUE AO BAR (o dono, 29/09/2026: "Torcidas que
+         ainda não tem bar não dá pra atacar assim"): a torcida que ainda
+         não comprou o dela passa o trimestre sem essa visita */
+      else if(TO.acoes.temBar && !TO.acoes.temBar(E, E.torcida.id)) return;
       const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
       const zona = casa ? zonas[TO.mapa.hash(ev.chave + '|z') % zonas.length] : null;
       if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&

@@ -1272,6 +1272,16 @@ export function criarDia3d(api, vida, g = {}) {
     dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas([a, v]);
     return { plano: D.plano, comDia: dia.semAsDaBriga([a, v]), aoDesmontar: voltouDoPalco };
   }
+  /* A BRIGA NUM PALCO DA CIDADE COM O DIA NO AR que não é a da caminhada
+     (a do bar deles, briga_bar.js): o dia para, a câmera é da briga e os
+     bondes das torcidas dela somem da rua enquanto ela dura (os bonecos da
+     briga são os do combate); no fim, a câmera volta pro nosso bonde */
+  function ganchosDaBriga(ids) {
+    if (!D || !D.plano || !dia) return null;
+    D.emCena = true; D.avisoNoAlto = false;
+    dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas(ids);
+    return { comDia: dia.semAsDaBriga(ids), aoDesmontar: voltouDoPalco };
+  }
   function voltouDoPalco() {
     if (!D || !dia) return;
     D.emCena = false;
@@ -1434,7 +1444,7 @@ export function criarDia3d(api, vida, g = {}) {
 
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
-    ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
+    ganchosDaCaminhada, ganchosDaBriga, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
     antesDaBriga, brigaNaEstrada, cidadeRefeita,
     /* a caravana ainda na estrada (ou a cidade do jogo montando na chegada): a linha espera */
     get naEstrada() { return naEstrada(); },

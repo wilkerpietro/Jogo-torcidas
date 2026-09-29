@@ -190,6 +190,16 @@ function ligar(api) {
       if (dia3d.ativo) { dia3d.verNossa(); return; }
       if (vida.ligada && vida.sede) vida.irPraSala(); else irPraSede();
     },
+    /* A TORCIDA TEM BAR NO MAPA? (o dono, 29/09/2026: "Torcidas que ainda
+       não tem bar não dá pra atacar assim"): o bote no bar é no bar dela,
+       na praça em 3D (briga_bar.js) — sem ele, não há onde. null quando a
+       praça na tela não é a da torcida do jogador (montando, ou o dia de
+       jogo noutra praça): aí quem responde é o save */
+    temBar(id) {
+      const e = E(), C = api.cenario;
+      if (!id || !e || !e.torcida || !C || C.montando || !pracaDoJogo || C.praca !== pracaDoJogo || pracaDoJogo !== nomeDaPraca(e.torcida.mapa)) return null;
+      return baresDoJogador(id).length > 0;
+    },
     vida, mapa, dia: dia3d, recados,
     /* (pro teste: a praça e a planta — os bares, as sedes) */
     get api() { return api; }

@@ -5136,6 +5136,8 @@ function apiDoCenario() {
        pintada das avenidas — não o lote, o terreno baldio, o quintal nem a
        casa. Sem as calçadas montadas (a planta sem proposta), tudo vale */
     naRuaOuCalcada(x, y) { const C = CALCADAS; return !C || !C.ehAsfalto || C.ehAsfalto(x, y) || C.naLaje(x, y) || C.naCalcadaPintada(x, y); },
+    /* só o asfalto (a briga no bar acha o meio da rua da frente e o da transversal por ele) */
+    ehAsfalto(x, y) { if (!CALCADAS) montarCalcadas(); const C = CALCADAS; return !!(C && C.ehAsfalto && C.ehAsfalto(x, y)); },
     /* o mapa 2D inteiro, com os rótulos, num canvas de fora (o mapa da cidade do jogo 3D) */
     pintarMapa,
     /* o relógio da bandeira da sede (o cenário anda ele a cada quadro) */
@@ -5230,8 +5232,18 @@ function apiDoCenario() {
         const l = x.b.lote, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, f = l.frente;
         const porta = f === 'n' ? { x: cx, y: l.y0 - fora, fx: 0, fy: -1 } : f === 's' ? { x: cx, y: l.y1 + fora, fx: 0, fy: 1 }
           : f === 'o' ? { x: l.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: l.x1 + fora, y: cy, fx: 1, fy: 0 };
-        return { n: x.b.n, nome: x.b.nome || '', dono: x.dono ? x.dono.id : null, porta, lote: { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1 } };
+        /* (a frente e a esquina do lote, e a testada e o fundo em m: a briga no bar monta o salão com elas) */
+        const nS = f === 'n' || f === 's';
+        return { n: x.b.n, nome: x.b.nome || '', dono: x.dono ? x.dono.id : null, porta, lote: { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1, frente: f, esquina: l.esquina || 'dir' },
+                 W: (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, D: (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M };
       });
+    },
+    /* AS FAVELAS DA PRAÇA (a treta marcada do jogo 3D, briga_treta.js): os
+       becos (a linha do meio e a largura) e o campinho de terra de cada uma */
+    favelas() {
+      return (PROP && PROP.favelas || []).map(f => ({ id: f.id, nome: f.nome,
+        becos: (f.becos || []).map(b => ({ pts: b.map(p => [p[0], p[1]]), w: b.w || 44 })),
+        campinho: f.campinho ? { x0: f.campinho.x0, x1: f.campinho.x1, y0: f.campinho.y0, y1: f.campinho.y1 } : null }));
     },
     /* OS ANÉIS DE CALÇADA das quadras (o retângulo de fora e o do miolo):
        o povo da praça anda no meio deles */

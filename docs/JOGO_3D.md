@@ -1448,3 +1448,113 @@ com o teste dele; as branches foram juntadas depois.
   no celular deitado (que o jogo atual nem gera).
 - No planejamento, as telas antigas de caravana e de ataque só perdem o foco
   do teclado a cada toque (a rolagem delas já se mantinha).
+
+## 20. O bote no bar e a treta marcada em 3D (29/09/2026)
+
+O dono: "Algumas cenas como bote no bar e briga marcada apostada ainda não
+funcionam no 3d. Veja os detalhes da Briga no bar conforme era no 2d como
+quantos de cada lado, faixa ou bandeira estendida, perdedor se for o
+defensor o bar rende menos por um tempo, etc. a cena do bar sempre vai ser
+no respectivo bar da torcida atacada, no mapa do jogo. Torcidas que ainda
+não tem bar não dá pra atacar assim. Aplique os detalhes da treta marcada
+também".
+
+As duas cenas caíam na foto 2D porque o `palcoDe` do jogo 3D (vida3d.js)
+não conhecia 'bar' nem 'treta-*'. Agora conhece:
+
+- **O bar é o do mapa.** A cena 'bar' vira `palcoDoBar` (vida3d.js) →
+  `brigaNoBar` (briga_bar.js, novo). O bar é da torcida atacada: a rival no
+  nosso bote, a gente no ataque deles; entre os bares dela no mapa
+  (`planta.bares()`), o mais perto da sede de quem ataca. O tabuleiro do
+  combate (1536 × 1024 px) é um retângulo da cidade na escala da caminhada
+  (√0,3: 43 × 29 m), com o x ao longo da rua da frente e o y da fachada pra
+  rua; a fachada fica abaixo do meio, pra transversal subir inteira acima do
+  bar. A máscara é a grade do passo do cenário (as paredes, o balcão, as
+  mesas e as portas de enrolar levantadas são os riscos do próprio modelo)
+  na rua, na calçada e dentro do lote do bar, só o que se alcança andando.
+  Os pontos do salão saem de `planoDoBar` (casas3d.js, novo), com as mesmas
+  contas do modelo do bar (`barTorcidaDireita`), espelhado com a esquina.
+- **Os papéis são os da foto.** Quem ataca desce a transversal em duas
+  turmas (1º e 2º escalão) e o objetivo é o BALCÃO DO BAR, lá dentro; quem
+  defende está de guarda no salão (DONOS DA CASA) e na varanda (NA VARANDA,
+  a cena reparte o bonde entre os dois), de costas pra rua até alguém pisar
+  na FRENTE DO BAR (4,6 m) ou aparecer na porta; a saída dele é o FIM DA
+  RUA; a PM vem pelas duas pontas da rua da frente. A faixa ou a bandeira de
+  quem defende (no bar, bandeira 70% das vezes: combate.js agora lê
+  'bar@3d' como bar) fica estendida na parede de fora da esquina, virada pra
+  transversal. A câmera de cima tira a laje e o apartamento: vê-se o salão.
+  O texto do botão é "Tomar o bar" no nosso ataque e "Largar o bar" na
+  defesa (a foto usava o do ataque nos dois casos).
+- **Os números e as consequências são os do jogo de feed** (main.js e
+  acoes.js, sem mudança): no nosso bote, até 60 nossos contra 35% do efetivo
+  de pé deles, até 40 no salão; no ataque deles, um quarto dos nossos aptos
+  (até 40) contra o que o serviço pede (até 60). Ganhando o bote: R$ 60 por
+  membro de pé deles + 22% do caixa deles (galpão ×0,7, cofre ×0,5) e o bar
+  deles quebrado (metade da receita por 45 dias). Perdendo a defesa: R$ 60
+  por membro da torcida deles + 10% do nosso caixa (galpão e cofre
+  protegem), o nosso bar quebrado 45 dias, moral −3 e prestígio −0,7. Faixa
+  ou bandeira tomada vai pro relatório e pro patrimônio de quem tomou.
+- **Sem bar, sem bote.** `TO.acoes.temBar(E, id)`: o bar do jogador vem do
+  patrimônio, o da IA do mundo vivo dela e, com o jogo em 3D, do mapa da
+  praça (`TO.jogo3d.temBar`: no mapa só tem bar quem tem sede, a regra da
+  planta). A lista de alvos do "Atacar bar ou sede rival" e o bote que a
+  diretoria propõe só oferecem bar de quem tem um (a sede continua na
+  lista); o ataque do trimestre ao nosso bar não acontece sem bar nosso
+  (feed.js), nem o da sub-sede inimiga (relacoes.js). Exemplo: na praça de
+  Curitiba, a Ultras 92 (nível 0, sem sede no mapa) não tem bar pra ser
+  atacado; o jogador com sede 1 que não comprou bar também não.
+- **A treta marcada na favela.** 'treta-beco', 'treta-galpao' e
+  'treta-campo' viram `palcoDaTreta` (vida3d.js) → `brigaNaTreta`
+  (briga_treta.js, novo). O mapa 3D não tem bairro (a nota da planta), então
+  o lugar sai de um sorteio fixo da treta (o bairro, o rival, o tamanho e a
+  LNT): o 5×5 num BECO de favela (entre os oito becos de 20 m ou mais da
+  praça, o trecho do meio, até 40 m), o 7×7 e o 10×10 no CAMPINHO DE TERRA
+  de uma favela (a cidade 3D não tem pátio de galpão). A saída de cada bonde
+  é a ponta do outro (furar pra fora). O resto é do jogo de feed: o mesmo
+  efetivo dos dois lados, a linha de frente primeiro, sem pedra nem bomba,
+  os dois lados acordados e o deles vindo, a aposta na roda (quem ganha leva
+  a dos dois), relação −2 (a régua `REL.treta`), prestígio +3/+4/+5 pro
+  vencedor e a variante da LNT.
+- A planta ganhou na API: `bares()` com a frente, a esquina, a testada e o
+  fundo do lote; `favelas()` (os becos e o campinho); `ehAsfalto()`. O dia
+  de jogo ganhou `ganchosDaBriga` (a investida no "bar deles" com o dia no
+  ar para o dia e esconde os bondes das duas).
+
+**Como foi testado** (Playwright + SwiftShader, PC 1280×720 e celular
+390×844): em Fortaleza (mapa grande, TUF), o bote no bar da Aliança (60
+contra 8, eles debandaram: "VITÓRIA NO BAR RIVAL", R$ 1.376 do caixa deles,
+o bar deles em cacos por 45 dias), o ataque da Cearamor no nosso bar (45
+contra 39, repartidos 20 no salão e 19 na varanda, a nossa bandeira na
+parede; perdendo: −R$ 9.600, o bar quebrado 45 dias, a bandeira perdida), e
+as tretas de 5 (beco da Favela do Sudoeste, 2,5 m de largura), 7 e 10
+(campinho da Favela do Alto): relatório com a aposta, sem arma nem bomba;
+com o líder guiado até o canto do outro lado, o 7×7 fecha em "sua torcida
+saiu do campinho por cima", prestígio +4 e +R$ 2.000. Em Curitiba (mapa
+médio), a Ultras 92 sem bar no mapa nem no save (`temBar` falso) e o bote
+no bar dos Dragões Alviverdes; no Interior do RS (mapa pequeno), o bar com
+a esquina do outro lado (o tabuleiro espelhado) e a vitória 60 × 18 (R$
+3.440). Sem erro de página em nenhum. A máscara de cada cena foi desenhada e
+conferida (o lote, a transversal, o balcão, a faixa, o gatilho).
+
+**Limites (sinceros):**
+- O bar do mapa é pequeno: o salão tem uns 6 × 4 m nos lotes de 5 a 6 m de
+  fundo. 40 a 60 pessoas não cabem lá dentro; a briga vaza pra varanda e
+  pra calçada, e o balcão fica entupido (o líder só chega nele depois que os
+  donos da casa caem ou correm). O salão da foto 2D era bem maior.
+- Sem o gradil da calçada da foto (a grade que segurava a investida e
+  quebrava): o bar 3D não tem gradil, e a grade do combate desenhada pela
+  cidade sai fora de escala. Ficou de fora.
+- Com o jogador parado, o ataque espera: os donos só acordam quando alguém
+  pisa na frente do bar ou quando a turma deles sai pra recolher a faixa,
+  como na foto.
+- O ataque à SEDE rival (que no jogo de feed também abre a foto do bar)
+  continua na cena 2D: o palco dele não é um bar, e montar o salão da sede
+  como tabuleiro fica pra outra rodada.
+- O 7×7 e o 10×10 usam o mesmo tipo de lugar (o campinho). O recado da
+  treta ainda fala "em {bairro}" (o bairro do jogo de feed), e o lugar 3D é
+  uma favela da praça. A treta acontece na hora em que o dia está (não vira
+  noite).
+- A investida do dia de jogo no ponto "bar deles" (o planejamento antigo)
+  não foi exercitada: o dia de jogo 3D de hoje só planeja a concentração e a
+  pista.
+- Testado só no Chromium do teste (SwiftShader).
