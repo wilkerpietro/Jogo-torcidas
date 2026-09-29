@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=de9317a9c0';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=de9317a9c0';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=7b632a106a';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=7b632a106a';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -1643,8 +1643,112 @@ export function planejar(ctx, escolha = {}) {
       br.aplicado = true;
     };
   }
-  if (brigas.length) {
-    for (const i of new Set(brigas.flatMap(x => [x.a.nPortao, x.v.nPortao]))) entradaDo(i);
+  /* A INVESTIDA NOS ARREDORES (o jogo 3D, 29/09/2026; o dono: "pode fazer
+     a briga dos arredores em 3D"): a investida que o jogador marcou pros
+     arredores do estádio cai no CORDÃO DA PM — a grade e a fila de PMs de
+     escudo na divisa das zonas —, no cordão mais perto das rotas das duas
+     (a da rival pesa mais). As duas desviam até ele, cada uma pelo lado
+     dela (a rota da saída → cordão → portão, sem pisar na divisa nem na
+     zona da outra): a rival chega e para na grade (quem vê a outra torcida
+     do outro lado do cordão vai pra grade provocar), e a nossa chega
+     ESPERA_CORDAO s antes e espera colada nela; cada uma fica a DA_GRADE m
+     da grade (do lado do visitante fica a fila de PMs, então ele espera
+     mais longe). A briga dura BRIGA s no plano; quem ganha, quem cai e quem
+     é preso vem de fora, do combate (`aplicar`). O bonde que anda no
+     corredor que abre depois (`peloCorredor`) não entra: a hora dele
+     depende da do último visitante, e a conta não fecha */
+  const ESPERA_CORDAO = 120, DA_GRADE = { mandante: 3, visitante: 6 };
+  function planejarArredores(m) {
+    const a = vivos.find(b => b.t.id === m.a), v = vivos.find(b => b.t.id === m.v);
+    if (!a || !v || a === v || a.lado === v.lado || a.peloCorredor || v.peloCorredor || !cordoes.length) return null;
+    const custoDe = b => { const c = custoDo(b.lado, false); for (let K = 0; K < N; K++) if (fechadaCel[K]) c[K] = Infinity; return c; };
+    const custoA = custoDe(a), custoV = custoDe(v);
+    /* o ponto da rua do bonde mais perto de (x, z): { d (m), s } */
+    const maisPerto = (b, x, z) => {
+      let md = Infinity, sm = 0;
+      for (let s = 0; s <= b.rua.L; s += M) { b.rua.ponto(s, Q); const d = (Q.x - x) ** 2 + (Q.z - z) ** 2; if (d < md) { md = d; sm = s; } }
+      return { d: Math.sqrt(md) / M, s: sm };
+    };
+    /* onde o bonde espera: do lado dele (sgB, no rumo n do cordão), a DA_GRADE m da grade, perto do meio */
+    const lugarNoCordao = (b, c, nx, nz, sgB, custoB) => {
+      const zB = b.lado === 'visitante' ? 1 : 0, d0 = DA_GRADE[b.lado];
+      for (const dd of [d0, d0 + 1.5, d0 + 3, d0 - 1, d0 + 5]) for (const lat of [0, 1.5, -1.5, 3, -3, 4.5, -4.5]) {
+        const K = R.celula(c.meio[0] + (nx * sgB * dd + c.dir[0] * lat) * M, c.meio[1] + (nz * sgB * dd + c.dir[1] * lat) * M);
+        if (K < 0 || !R.anda[K] || divisa[K] || zona[K] !== zB || R.folga[K] < FOLGA_MIN || (R.publico && !R.publico[K]) || !(custoB[K] < Infinity)) continue;
+        return K;
+      }
+      return -1;
+    };
+    /* a rota passando por K: as células e o índice de K nelas */
+    const desvio = (b, K, custoB) => {
+      const c1 = B.buscar([b.K0], custoB, K), c2 = c1 && B.buscar([K], custoB, portoes[b.nPortao].K);
+      return c1 && c2 ? { cels: c1.concat(c2.slice(1)), k: c1.length - 1 } : null;
+    };
+    /* o cordão: perto da rua da rival antes de tudo (é o desvio dela que o plano da PM não esperava) */
+    const cands = cordoes.map(c => {
+      const V = maisPerto(v, c.meio[0], c.meio[1]), A = maisPerto(a, c.meio[0], c.meio[1]);
+      return { c, nota: V.d * 2 + A.d * 0.5 };
+    }).sort((p, q) => p.nota - q.nota);
+    for (const { c } of cands.slice(0, 6)) {
+      const nx = -c.dir[1], nz = c.dir[0];
+      /* o lado do visitante (como na montagem da PM): a célula dele mais perto do meio */
+      const Kv = R.celula(c.meio[0] + nx * 2 * M, c.meio[1] + nz * 2 * M), sVis = Kv >= 0 && zona[Kv] === 1 ? 1 : -1;
+      const sg = a.lado === 'visitante' ? sVis : -sVis;
+      const KA = lugarNoCordao(a, c, nx, nz, sg, custoA), KV = KA < 0 ? -1 : lugarNoCordao(v, c, nx, nz, -sg, custoV);
+      if (KA < 0 || KV < 0) continue;
+      const rA = desvio(a, KA, custoA), rV = rA && desvio(v, KV, custoV);
+      if (!rA || !rV) continue;
+      /* AS ROTAS NOVAS (a da paz fica guardada, fina, pra comparar) */
+      a.ruaPaz = a.rua; a.saiPaz = a.sai; a.cels = rA.cels;
+      const sA = fazerRua(a, rA.cels, pode[a.lado], rA.k);
+      v.ruaPaz = v.rua; v.saiPaz = v.sai; v.cels = rV.cels;
+      const sV = fazerRua(v, rV.cels, pode[v.lado], rV.k);
+      for (const b of [a, v]) { prepararFaixa(b); prepararRaias(b); }
+      /* A HORA: a rival sai na hora dela e chega na grade quando chega; a nossa, ESPERA_CORDAO s antes */
+      v.paradas = [];
+      const tIni = quando(v, sV), tFim = tIni + BRIGA;
+      v.paradas = [{ s: sV, ate: tFim }];
+      a.paradas = [{ s: sA, ate: tFim }];
+      a.sai = tIni - ESPERA_CORDAO - sA / M / MARCHA;
+      a.adiantou = 0; a.esperou = 0;
+      a.decisao = { alvo: v, chance: 100, tirou: 0, ataca: true, porque: 'arredores' };
+      const [xa, za] = R.centro(KA), [xv, zv] = R.centro(KV);
+      const rnd = sorte('arredores|' + a.t.id + '|' + v.t.id);
+      const arr = { a, v, c, P: [c.meio[0], c.meio[1]], espera: [xa, za], esperaV: [xv, zv], u: [-sg * nx, -sg * nz], sA, sV, dV: Math.hypot(xv - c.meio[0], zv - c.meio[1]) / M, tIni, tFim,
+                    nA: a.naRua, nV: v.naRua + (v.escolta ? v.escolta.membros : 0), aplicado: false, venceA: null };
+      /* O RESULTADO DE FORA (dia3d.js: a briga jogada no combate ou a
+         simulada): quem ganhou e quantos caíram e foram presos de cada
+         lado, em torcedores. Cai quem estava na frente do bonde (colado na
+         grade), no lugar dele, na hora da briga; o preso se rende no fim */
+      arr.aplicar = o => {
+        if (o.venceA != null) arr.venceA = !!o.venceA;
+        const cair = (b, fer, pres, n) => {
+          const k = fer > 0 ? clamp(Math.round(fer * b.n / Math.max(1, n)), 1, b.n - 1) : 0;
+          const kp = pres > 0 ? clamp(Math.round(pres * b.n / Math.max(1, n)), 1, Math.max(0, b.n - 1 - k)) : 0;
+          const idx = b.povo.map((q, i) => i).filter(i => i > 0).sort((p, q) => b.povo[p].o - b.povo[q].o).slice(0, Math.max(k + kp, Math.ceil(b.n * 0.6)));
+          for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+          b.ferido = new Uint8Array(b.n);
+          b.tCai = new Float64Array(b.n).fill(Infinity);
+          for (const i of idx.slice(0, k)) { b.ferido[i] = 1; b.tCai[i] = tIni + 6 + rnd() * (BRIGA - 12); }
+          for (const i of idx.slice(k, k + kp)) { b.ferido[i] = 2; b.tCai[i] = tFim - 3 - rnd() * 6; }
+          return [k, kp];
+        };
+        const lim = (x, n) => clamp(Math.round(x || 0), 0, Math.max(0, n - 1));
+        arr.ferA = lim(o.ferA, arr.nA); arr.presA = lim(o.presA, arr.nA - arr.ferA);
+        arr.ferV = lim(o.ferV, arr.nV); arr.presV = lim(o.presV, arr.nV - arr.ferV);
+        [arr.caemA, arr.rendemA] = cair(a, arr.ferA, arr.presA, arr.nA);
+        [arr.caemV, arr.rendemV] = cair(v, arr.ferV, arr.presV, arr.nV);
+        a.feridos = arr.ferA; v.feridos = arr.ferV; a.presos = arr.presA; v.presos = arr.presV;
+        arr.aplicado = true;
+      };
+      return arr;
+    }
+    a.naoAchou = { arredores: 'nenhum cordão com lugar e caminho pras duas, cada uma do seu lado' };
+    return null;
+  }
+  const arredores = escolha.arredores ? planejarArredores(escolha.arredores) : null;
+  if (brigas.length || arredores) {
+    for (const i of new Set(brigas.flatMap(x => [x.a.nPortao, x.v.nPortao]).concat(arredores ? [arredores.a.nPortao, arredores.v.nPortao] : []))) entradaDo(i);
     /* o corredor que abre espera o último visitante (a briga pode ter atrasado) */
     if (tAbre != null) {
       const t2 = Math.max(...vivos.filter(b => b.lado === 'visitante').map(ultimo)) + 60;
@@ -1672,7 +1776,7 @@ export function planejar(ctx, escolha = {}) {
   const plano = {
     casa, fora, foraDaqui, pares: pares.map(p => p[0].nome + ' × ' + p[1].nome), par: escolha.par || 0, lista, deFora,
     estadio: est, centroEst, mundo, portoes, bondes, vivos, R, zona, noArredor, divisa, raio, bocas, cordoes, pm, menor, travessias, cabeca, atras, paradaEm, ladoEm, M, rotaVelha, longeDe, tentativas, tAbre, portoesQueAbrem: [...new Set(vivos.filter(b => b.peloCorredor).map(b => b.portao.nome))],
-    brigas, revistaDo, torcedores, efetivo, comEscoltaPM, modoIA, bola, doJogo, doJogador: vivos.find(b => b.nossa) || null,
+    brigas, arredores, revistaDo, torcedores, efetivo, comEscoltaPM, modoIA, bola, doJogo, doJogador: vivos.find(b => b.nossa) || null,
     inicio: Math.min(...vivos.map(b => b.sai)) - 120, fimTudo: Math.max(...vivos.map(b => b.fim), ...brigas.map(x => x.tFim + REAGRUPA)), tempos
   };
   /* A ARQUIBANCADA VIVA E A BRIGA NO ESTÁDIO (arquibancada.js): os papéis
@@ -1839,10 +1943,24 @@ export function criarDiaDeJogo(ctx) {
   }
 
   /* uma lista de grades ({x, z, ang, esc}) numa malha de instâncias */
+  /* (as malhas de grade do dia e a lista de cada uma: a briga no cordão tira as do tabuleiro dela) */
+  const malhasDeGrades = [];
+  function porGrades(im, lista, sai) {
+    const mt = new THREE.Matrix4(), q4 = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), eixo = new THREE.Vector3(0, 1, 0);
+    let n = 0;
+    lista.forEach((g, i) => {
+      const fora = !!(sai && sai(g.x, g.z));
+      if (fora) n++;
+      q4.setFromAxisAngle(eixo, g.ang); sc.set(fora ? 1e-4 : g.esc, fora ? 1e-4 : 1, fora ? 1e-4 : 1); ps.set(g.x, ctx.chaoDaRua(g.x, g.z), g.z); mt.compose(ps, q4, sc); im.setMatrixAt(i, mt);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    return n;
+  }
   function malhaDeGrades(lista) {
     if (!lista.length) return null;
-    const im = new THREE.InstancedMesh(geoGrade, matGrade, lista.length), mt = new THREE.Matrix4(), q4 = new THREE.Quaternion(), sc = new THREE.Vector3(), ps = new THREE.Vector3(), eixo = new THREE.Vector3(0, 1, 0);
-    lista.forEach((g, i) => { q4.setFromAxisAngle(eixo, g.ang); sc.set(g.esc, 1, 1); ps.set(g.x, ctx.chaoDaRua(g.x, g.z), g.z); mt.compose(ps, q4, sc); im.setMatrixAt(i, mt); });
+    const im = new THREE.InstancedMesh(geoGrade, matGrade, lista.length);
+    porGrades(im, lista, null);
+    malhasDeGrades.push({ im, lista });
     return im;
   }
 
@@ -2221,7 +2339,7 @@ export function criarDiaDeJogo(ctx) {
       });
       grupo.removeFromParent();
     }
-    grupo = null; discos = []; policiais = []; plano = null;
+    grupo = null; discos = []; policiais = []; plano = null; malhasDeGrades.length = 0;
     J.discos = discos; J.policiais = policiais;
   }
 
@@ -2839,6 +2957,13 @@ export function criarDiaDeJogo(ctx) {
     semAsDaBriga(ids) { const fora = new Set(ids); return discos => discos.filter(d => !fora.has(d.spawn)); },
     /* as torcidas da briga sem os objetos do dia (o bandeirão, o instrumento, o pano no ombro): null devolve */
     ocultarTorcidas(ids, o) { if (arq && arq.ocultar) arq.ocultar(ids || [], o); },
+    /* A BRIGA NO CORDÃO (arredores3d.js): as grades da PM que caem no
+       tabuleiro dela saem enquanto ela dura — quem desenha a grade ali é o
+       combate, que derruba módulo; `sai(x, z)` diz quais, null devolve
+       todas. Devolve quantas saíram */
+    esconderGrades(sai) { let n = 0; for (const { im, lista } of malhasDeGrades) n += porGrades(im, lista, sai || null); return n; },
+    /* a geometria e o material do módulo de grade da PM (2 m, de pé), pra quem desenha a mesma grade */
+    get grade() { return { geo: geoGrade, mat: matGrade }; },
     /* em que pé está cada um (a sede, andando, na briga, entrando, no lugar) */
     estadoDo: (b, m = 0) => plano ? estadoDe(b, m) : null,
     /* o corte do cenário: o corredor da invasão, embaixo da arquibancada */
@@ -2856,6 +2981,8 @@ export function criarDiaDeJogo(ctx) {
                jogo: plano.casa.nome + ' × ' + plano.fora.nome, deFora: !plano.foraDaqui, ia: plano.modoIA,
                pm: { cordoes: plano.pm.cordoes.length, revistas: plano.pm.revistas.map(rv => rv.portao.nome + ':' + rv.n).join(','), fechadas: plano.pm.fechadas.length, pms: policiais.length, grades: plano.nGrades, efetivo: plano.efetivo },
                brigas: plano.brigas.map(br => ({ a: br.a.t.sigla, v: br.v.t.sigla, ini: hora(br.tIni), P: [Math.round(br.P[0]), Math.round(br.P[1])], vence: br.venceA ? br.a.t.sigla : br.v.t.sigla, nA: br.nA, nV: br.nV, ferA: br.ferA, ferV: br.ferV, presA: br.presA, presV: br.presV, caemA: br.caemA, caemV: br.caemV, rendemA: br.rendemA, rendemV: br.rendemV, fA: Math.round(br.fA), fV: Math.round(br.fV), favorita: br.favoritoA ? br.a.t.sigla : br.v.t.sigla })),
+               arredores: plano.arredores ? (A => ({ a: A.a.t.sigla, v: A.v.t.sigla, ini: hora(A.tIni), fim: hora(A.tFim), P: [Math.round(A.P[0]), Math.round(A.P[1])], espera: [Math.round(A.espera[0]), Math.round(A.espera[1])],
+                                                     dV: Math.round(A.dV), sai: hora(A.a.sai), chegaA: hora(A.a.sai + A.sA / M / MARCHA), aplicado: A.aplicado, venceA: A.venceA, caemA: A.caemA || 0, caemV: A.caemV || 0, rendemA: A.rendemA || 0, rendemV: A.rendemV || 0 }))(plano.arredores) : null,
                longeDe: plano.longeDe, tentativas: plano.tentativas, abre: plano.tAbre != null ? hora(plano.tAbre) : null,
                travessias: plano.travessias.map(v => ({ antes: v.antes.map(b => b.t.sigla).join('+'), depois: v.depois.map(b => b.t.sigla).join('+'), d: Math.round(v.d), libera: hora(v.libera), chega: hora(v.chega), folga: Math.round(v.folga / 60) })),
                bondes: plano.vivos.map(b => ({ sigla: b.t.sigla, lado: b.lado, escalao: b.escalao, setor: b.setor, portao: b.portao.nome, n: b.n, m: Math.round(b.comprimento), sai: hora(b.sai), chega: hora(b.chega), fim: hora(b.fim), adiantou: b.adiantou || 0, esperou: b.esperou || 0,

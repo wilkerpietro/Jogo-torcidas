@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=de9317a9c0';
-import { brigaNaCaminhada } from './caminhada.js?v=de9317a9c0';
-import { brigaNoBar } from './briga_bar.js?v=de9317a9c0';
-import { brigaNaTreta } from './briga_treta.js?v=de9317a9c0';
-import { planoDoBar } from './casas3d.js?v=de9317a9c0';
+import { palcoDeBriga } from './palco_briga.js?v=7b632a106a';
+import { brigaNaCaminhada } from './caminhada.js?v=7b632a106a';
+import { brigaNoBar } from './briga_bar.js?v=7b632a106a';
+import { brigaNaTreta } from './briga_treta.js?v=7b632a106a';
+import { planoDoBar } from './casas3d.js?v=7b632a106a';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -1441,6 +1441,10 @@ export function criarVida(api) {
       if (!ligada && !noDia) return null;
       /* A INVASÃO NO ESTÁDIO (invasao.js): a briga da arquibancada, com o dia no ar, é a invasão da nossa torcida */
       if (/^estadio-(10|20|40)$/.test(local) && cfg && cfg.invasao3d && noDia) return D3.palcoDaInvasao(cfg);
+      /* A BRIGA DOS ARREDORES (arredores3d.js): a nossa investida no cordão
+         da PM, com o dia no ar, ou a do jogo da cidade no fundo; sem cordão
+         nem investida montada no 3D, a cena da foto */
+      if (local === 'arredores' && cfg && cfg.bondes && !cfg.reuniao && D3 && D3.palcoDosArredores) return D3.palcoDosArredores(cfg);
       if (local === 'casa-piscina') return palcoDaFesta();
       if (local === 'emb-posto' || local === 'emb-onibus') return palcoDaCaravana(local);
       if (/^(praca|rua|rua-media|rua-nobre)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaCaminhada(local, cfg);
