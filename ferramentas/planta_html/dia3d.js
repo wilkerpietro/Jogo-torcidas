@@ -1489,7 +1489,8 @@ export function criarDia3d(api, vida, g = {}) {
     TO.dados.cenas[B.cena.id] = B.cena;
     D.ultimaInvasao = B; D.invadiu = true; D.emCena = true;
     const ids = [D.nosso.t.id, c.alvo.b.t.id];
-    dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas(ids);
+    /* (pela arquibancada, a faixa de cada lado é a do combate, na mureta: a pendurada das duas sai) */
+    dia.parar(); dia.seguirBonde(null); dia.esconder(true); dia.ocultarTorcidas(ids, { panos: B.via === 'arquibancada' });
     let grades = null;
     const R = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, eixos: B.eixos, chao: B.chao, escala: B.escala,
       vistas: { perto: { dist: 16, el: 1.0 }, alto: { dist: 32, el: 1.12 } }, rotAlto: 'o isolamento inteiro, do alto',

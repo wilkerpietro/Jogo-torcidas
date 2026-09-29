@@ -396,6 +396,10 @@ body.jogo3d.j3d-mapa-aberto .j3d-dia, body.jogo3d:not(.j3d-em-jogo) .j3d-dia{dis
 .j3d-aviso.gol{border-left-color:#3fae5a;background:rgba(18,30,20,.95)}
 .j3d-aviso.gol .j3d-aviso-cab b{color:#8fe3a3}
 .j3d-aviso.gol > p{color:#fff;font-weight:700}
+/* o aviso pago do olheiro (recados3d.js): o ataque que vem, em destaque */
+.j3d-aviso.olheiro{border-left:4px solid #e0a82e;background:rgba(36,28,10,.96);box-shadow:0 0 0 1px rgba(224,168,46,.35), 0 6px 18px rgba(0,0,0,.45)}
+.j3d-aviso.olheiro .j3d-aviso-cab b{color:#f5c95a}
+.j3d-aviso.olheiro > p{color:#fff}
 .j3d-aviso-bt{margin-top:6px;cursor:pointer;padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.25);background:rgba(40,40,44,.95);color:#eee;
   font:700 10.5px/1 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase}
 .j3d-aviso-bt:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}

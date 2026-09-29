@@ -2838,7 +2838,7 @@ export function criarDiaDeJogo(ctx) {
     /* os bonecos do dia que não são de `ids` (as torcidas da briga, que o combate desenha) */
     semAsDaBriga(ids) { const fora = new Set(ids); return discos => discos.filter(d => !fora.has(d.spawn)); },
     /* as torcidas da briga sem os objetos do dia (o bandeirão, o instrumento, o pano no ombro): null devolve */
-    ocultarTorcidas(ids) { if (arq && arq.ocultar) arq.ocultar(ids || []); },
+    ocultarTorcidas(ids, o) { if (arq && arq.ocultar) arq.ocultar(ids || [], o); },
     /* em que pé está cada um (a sede, andando, na briga, entrando, no lugar) */
     estadoDo: (b, m = 0) => plano ? estadoDe(b, m) : null,
     /* o corte do cenário: o corredor da invasão, embaixo da arquibancada */
