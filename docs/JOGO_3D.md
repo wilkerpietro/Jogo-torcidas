@@ -1598,3 +1598,51 @@ havia placar nenhum: a partida sumia inteira da tela.
   Corinthians × Coritiba, ATL × ATL nos Atléticos, SAO × SAO em São Paulo ×
   São Caetano; quando batem, entra a sigla do clube no dado (SCCP × CFC,
   CAM × ACG, SPFC × ADSC). Vale pro placar e pro quadro da disputa.
+
+**Teste** (Playwright + SwiftShader): o jogo de hoje, Fortaleza × Ceará em
+casa, 1 × 1 com gols aos 30' e aos 70', e a disputa 4 × 3 em dez cobranças
+(casa ✓ fora ✓ casa ✓ fora ✗ casa ✗ fora ✓ casa ✓ fora ✓ casa ✓ fora ✗), com o
+clima travado pra a arquibancada não abrir no meio.
+- **Com a cidade (PC, 1280 × 720):** o dia no ar; os avisos dos dois gols e
+  o "Vai pros pênaltis"; o placar em PÊN com a série enchendo (na 5ª
+  cobrança, FOR ●●⊘ 2 e CEA ●⊘ 1, "Fortaleza — perdeu!"); no fim, FIM, as
+  bolas 4 × 3 certas, "Fortaleza passa nos pênaltis, por 4 a 3." e o aviso
+  de quem passou. Medido a cada 0,25 s sem foto: o dia fechou 2,0 s depois
+  do FIM (antes, o placar sumia junto) e o placar seguiu na tela, lendo a
+  partida solta, até 7,9 s depois do FIM, e saiu. Sem erro de página.
+- **Campo neutro (PC e celular 390 × 844):** o dia 3D não abre e o placar
+  anda sozinho desde a bola rolando, com as cores e as siglas; a mesma série
+  e o mesmo fim; o placar ficou os 8 s depois do FIM e saiu (visto já
+  escondido 8,3 s depois no PC e 8,4 s no celular, com a foto no meio); os
+  dois avisos; sem erro de página. No celular o quadro cabe embaixo do
+  placar; o recado final quebrava em "por 4 / a 3", e agora "por 4 a 3" não
+  quebra.
+- **Siglas:** SCCP × CFC, CAM × ACG, SPFC × ADSC, FOR × CEA (a função rodada
+  à parte).
+- A primeira rodada do teste parou aos 61': o clima tenso pausou o jogo e
+  abriu a pergunta da invasão, que o teste não respondia. É o jogo certo; o
+  teste passou a travar o clima.
+
+**A varredura** está inteira em `docs/VARREDURA_2D_3D.md`: placar e
+partida, motor de briga, cenas que ainda caem na foto 2D, gestão e
+patrimônio, o que não vale levar pro 3D e os riscos achados. O que pesa mais,
+na ordem de impacto sobre esforço: a faixa que não entra na briga da
+concentração nem na invasão (o motor liga a faixa pelo nome da cena, e as
+cenas 3D se chamam `caminhada@3d` e `invasao@3d`); o bar quebrado que segue
+inteiro no mapa; a arquibancada que estende faixa mesmo sem a torcida ter
+faixa; a tecla C, que na briga 3D troca a câmera em vez de chamar; o aviso
+pago do olheiro, que pela regra do canto (seção 19) fica só em Notícias; e a
+briga dos arredores do estádio, a mais comum do jogo, que ainda abre a foto
+2D.
+
+**Limites (sinceros):**
+- O compasso da disputa é fixo (850 ms por cobrança, o do cartão) e não segue
+  a velocidade da partida: a 4× o jogo dura uns 6 s e a disputa de dez
+  cobranças uns 9 s.
+- Quem apita continua sendo o cartão escondido. A partida solta tem rede de
+  segurança pro placar; o dia da cidade e a linha do itinerário não têm (ver
+  os riscos na varredura).
+- No placar da partida solta, o toque não leva a câmera a lugar nenhum (não há
+  estádio na tela).
+- Sem cidade, o clima tenso abre a pergunta 2D de sempre (não mudou).
+- Testado só no Chromium do teste (SwiftShader).
