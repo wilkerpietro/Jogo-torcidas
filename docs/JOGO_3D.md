@@ -428,8 +428,8 @@ visitante podendo iniciar a rota ou na entrada ou na casa do aliado".
   **ninguém descer** a cidade mostra a 1× (o resultado do duelo manda em
   quem ganha e em quem fica no chão; sem descer, a rival bate e 10% dos
   nossos caem). Depois a caminhada segue. O jogo: o resto da entrada a
-  60× até todo mundo no lugar, e a partida — **a 1× na cidade** (dá pra
-  ver a arquibancada e decidir; o botão da velocidade continua valendo) —
+  60× até todo mundo no lugar, e a partida — **a 4×** (era a 1× na cidade
+  até 29/09/2026: seção 19; o botão do placar de TV anda 4× → 1× → 2×) —
   com o relógio do dia no minuto dela e a câmera do campo olhando a nossa
   torcida. Volta: o dia fecha e a cidade volta a ser a praça do jogador.
 - **A invasão é só da nossa torcida, e é escolha.** Na partida o painel
@@ -887,7 +887,9 @@ do itinerário não ficarem ocupando a tela do jogo assim."
   botão (o olheiro, o jornal, o resultado, a obra…) aparece como um aviso
   pequeno no canto de cima, à direita (embaixo da barra do topo), como era
   o feed: até 4 empilhados, cada um some sozinho em 4,2 s (quem passa o
-  mouse em cima segura; clicando, abre a mensagem inteira, com ×). O aviso
+  mouse em cima segura; clicando, abre a mensagem inteira, com ×) — **desde
+  29/09/2026 só a manchete de jornal aparece no canto, em recorte, e fica
+  7,5 s: seção 19**. O aviso
   não segura o relógio. O balão no meio da tela ficou só pra decisão (os
   botões), que para o tempo até a resposta, como sempre. O jogo carregado
   não repete avisos velhos.
@@ -1225,3 +1227,71 @@ segundo):
   cidade que monta na chegada é a mesma de sempre.
 - A seção 17 ("o jogo da cidade no fundo" com a janela lenta) vale agora
   só pro dia em que o planejamento marcou investida.
+
+## 19. Ajustes da jogatina: a partida a 4×, o canto só de jornal e o que veio junto (29/09/2026)
+
+O dono, jogando: "Não gosto muito de scrollbar nas mensagens de decisão,
+principalmente os verticais. Tente ajustar pra evitar ao máximo o
+scrollbar. O tempo padrão que corre a partida é 4x. As mensagens de jornal
+que devem aparecer no canto direito são as do Gazeta dos sports e futebol e
+porrada, com o layout de manchete de jornal, com aquele padrão que existia
+no feed. Toda vida que clico em diminuir ou aumentar quantidade de bombas
+ou de envolvidos em caravana ou briga no planejamento a tela volta pro
+topo. Corrija isso. Quase todas as vezes que preciso abrir outro mapa
+devido a caravanas o jogo buga e recarrega automaticamente."
+
+Cada ponto foi tratado por um agente numa cópia separada do repositório,
+com o teste dele; as branches foram juntadas depois.
+
+- **A partida corre a 4× na cidade também.** A partida do dia de jogo em 3D
+  nascia a 1× (`itnPartida`, main.js: `vel || (em3d ? 1 : 4)`, e o botão do
+  placar de TV nascia "1×"). Agora nasce a 4×, o padrão da casa desde
+  08/09, como no feed 2D. A conta é a de sempre: `MIN_POR_SEG` = 4 minutos
+  de jogo por segundo a 1×, então 4× são 16 min/s. Os 90' levam 5,6 s (uns
+  6,4 s de apito a apito), contra 11,3 s a 2× e 22,5 s a 1×. O botão do
+  placar anda 4× → 1× → 2× → 4× (o anel de `alternarVelPartida`, o mesmo do
+  feed) e o espaço pausa como antes. A partida que um save já guardou em
+  andamento (`minAcum` existe) segue na velocidade guardada; só a partida
+  nova nasce a 4×. Não mudaram: a velocidade geral (o 1×/2× da barra de
+  cima, que vale pro dia e pra briga), a briga da invasão (só pausa a
+  partida; o `vel` não é tocado) e o jogo da cidade no fundo (anda pelo
+  relógio do dia, sem `vel`). O relógio da partida é de parede (`minAcum` +
+  `t0`), então a 4× nada pula em máquina lenta; mas a tela conta por quadro,
+  e com a partida em ~6 s e o dia fechando ~2 s depois do apito o último gol
+  podia ficar sem aviso e o relógio da praça recomeçar de uma hora velha:
+  por isso `D3.apito` avisa os gols que faltam e põe o relógio do dia no fim
+  (bola + 90' + intervalo). **O que isso custa:** o botão "Invadir" do
+  painel fica na tela uns 6 s (eram uns 23); pausar no espaço ou pôr o
+  placar em 1× antes dá calma, e o clima tenso segue pausando e perguntando
+  sozinho (em jogo de rival forte ele chega em 2–5 s de bola rolando).
+- **O canto direito é só de jornal.** O canto (`recados3d.js`) deixou de
+  mostrar todo texto sem decisão. Agora só a mensagem de jornal vira aviso,
+  em RECORTE compacto: a Gazeta dos Sports (`rodada`) e o Futebol e Porrada
+  (`confronto`, a treta nossa, `lnt-fundacao`/`lnt-fim` e `obra`), e o
+  almanaque cujo jornal for um dos dois (hoje todo almanaque sai em "O
+  Almanaque", então nenhum aparece). O recorte é o papel `.gz` do feed, com o
+  nome do jornal, o chapéu, a manchete, o olho e, na Gazeta, o placar grande,
+  sem o quadro do lado e sem o botão do jornal completo. Vem de
+  `TO.tela.recorteDeJornal(e, m)` (main.js): o mesmo nó do cartão da
+  mensagem, dos mesmos moldes, com o quadro cortado; o estilo é
+  `css/gazeta.css`, `.gz-canto` (330 px no PC, 250 no celular). O filtro é
+  `ehJornal(m)`, uma tabela tipo → jornal, fácil de ampliar. Status, dica,
+  aniversário etc. não aparecem mais no canto (seguem em Notícias); o gol e o
+  jogo da cidade do dia de jogo continuam no cartão escuro.
+  **A treta nossa nunca aparecia:** `chegouUma` a ignorava ("não passa pelo
+  feed"), mas `dropar` (feed.js) a põe em `E.feed` como as outras. Agora ela
+  sai no canto quando o relógio a solta, na hora dela no dia da praça (0,5 a
+  3,6 s depois de criada, a 1×); no dia de jogo as brigas do itinerário saem
+  numa manchete só, quando o dia fecha (`fecharLote`, como já era). O recorte
+  fica 7,5 s (5,8 s a 2×), contados em segundos de parede (no máximo 1 s por
+  quadro; antes o aviso contava o quadro do jogo, 0,25 s, e na máquina lenta
+  ficava 2 a 4 vezes mais). O mouse em cima segura; o clique ou o toque abre o
+  cartão inteiro (com o quadro e o "Mostrar jornal completo"); ele não segura
+  o relógio. Só dois recortes de cada vez: numa rajada ficam a treta nossa,
+  depois a Gazeta, depois o resto (o mais novo no empate; o que está sob o
+  mouse ou aberto não é trocado). O recorte que encosta no balão de uma
+  decisão (o celular, e o PC quando quem fala está à direita) espera escondido
+  e sem correr até o balão sair. O cartão aberto tem 600 px pro jornal, cresce
+  até o que couber na tela e só rola em último caso, com barra fina e nunca de
+  lado. Um bug antigo saiu junto: o `p` do aviso escuro vazava pro papel do
+  jornal aberto (texto cinza claro cortado em 3 linhas).
