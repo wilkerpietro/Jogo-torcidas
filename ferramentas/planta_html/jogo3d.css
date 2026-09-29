@@ -107,10 +107,23 @@ body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
   filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));
 }
 .j3d-balao[hidden]{display:none}
+/* SEM ROLAGEM (o dono, 29/09/2026: "Não gosto muito de scrollbar nas
+   mensagens de decisão, principalmente os verticais. Tente ajustar pra
+   evitar ao máximo o scrollbar."): o corpo cresce até o que a tela deixa
+   livre — o recados3d.js alarga o balão e aperta o cartão (.c1 .c2 .c3,
+   mais abaixo) antes de tudo — e só quando nada disso coube ele ganha um
+   teto (--corpo-max) e rola: fino, no tom do balão, e nunca de lado. O
+   teto de reserva é pro caso de o script não medir */
 .j3d-balao-corpo{
-  max-height:min(46vh, 420px);overflow:auto;background:var(--painel, #161616);
+  max-height:var(--corpo-max, calc(100vh - 150px));overflow-x:hidden;overflow-y:auto;background:var(--painel, #161616);
   border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:2px;
+  scrollbar-width:thin;scrollbar-color:rgba(243,230,196,.38) transparent;
 }
+.j3d-balao-corpo::-webkit-scrollbar{width:6px}
+.j3d-balao-corpo::-webkit-scrollbar-track{background:transparent}
+.j3d-balao-corpo::-webkit-scrollbar-thumb{background:rgba(243,230,196,.38);border-radius:3px}
+/* (e no último caso, o do corpo que rola, os botões da decisão ficam colados embaixo, à vista, com o resto rolando por trás) */
+.j3d-balao-corpo .msg > .msg-bts{position:sticky;bottom:0;z-index:1;background:var(--painel, #161616);box-shadow:0 -7px 6px -4px var(--painel, #161616)}
 .j3d-balao-corpo .msg{border:0;border-left:3px solid var(--linha);background:transparent}
 .j3d-balao.decisao .j3d-balao-corpo{border-color:var(--ouro, #e0b040)}
 .j3d-balao.decisao .j3d-balao-corpo .msg{border-left-color:var(--ouro, #e0b040)}
@@ -162,7 +175,7 @@ body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
 .j3d-balao-x:hover{background:var(--rubro, #8a1f1f);color:#fff}
 .j3d-balao-x[hidden]{display:none}
 /* a sala fora da tela: o balão encosta no alto, sem rabo, com o botão que volta */
-.j3d-balao.solto::after,.j3d-balao.solto::before{display:none}
+.j3d-balao.solto::after,.j3d-balao.solto::before,.j3d-balao.sobre::after,.j3d-balao.sobre::before{display:none}
 .j3d-balao-ir{
   display:block;width:100%;margin-top:6px;cursor:pointer;padding:6px 10px;
   background:rgba(20,20,22,.92);color:#f3e6c4;border:1px solid rgba(255,255,255,.2);
@@ -175,8 +188,72 @@ body.jogo3d:not(.j3d-em-jogo) .j3d-balao, body.jogo3d.com-painel .j3d-balao, bod
 body.jogo3d.em-cena .j3d-balao, body.jogo3d.palco-briga .j3d-balao, body.jogo3d.palco3d .j3d-balao{display:none}
 @media (max-width:760px){
   .j3d-balao{width:min(320px, 92vw)}
-  .j3d-balao-corpo{max-height:34vh}
 }
+/* NUNCA DE LADO: a tabela de quem põe gente no estádio (a decisão da
+   partida) era uma linha só, com uma coluna por torcida e a rolagem
+   horizontal dela; no balão as colunas quebram em linhas */
+.j3d-balao .rolo-presenca{overflow:visible}
+.j3d-balao .tab-presenca, .j3d-balao .tab-presenca tbody, .j3d-balao .tab-presenca tr{display:flex;flex-wrap:wrap;width:100%}
+.j3d-balao .tab-presenca td{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex:1 1 44%;white-space:normal}
+/* O BALÃO APERTADO (o dono, 29/09/2026: "Não gosto muito de scrollbar nas
+   mensagens de decisão"): quando a decisão não cabe na tela nem com o
+   balão mais largo, o recados3d.js aperta o cartão em três níveis, um por
+   cima do outro, medindo de novo a cada um — .c1 os espaços, .c2 a letra,
+   .c3 os botões, a tabela e a hora. Nada some: só encolhe (a nota de cada
+   botão, que é a consequência, fica inteira) */
+/* c1: os espaços */
+.j3d-balao.c1 .j3d-balao-hora{padding-top:2px}
+.j3d-balao.c1 .msg{padding:6px 9px}
+.j3d-balao.c1 .msg-cab{margin-bottom:0}
+.j3d-balao.c1 .msg-txt{line-height:1.3}
+.j3d-balao.c1 .msg-bts{margin-top:5px;gap:5px}
+.j3d-balao.c1 .msg-bts .bt{padding:4px 9px}
+.j3d-balao.c1 .msg-efeitos, .j3d-balao.c1 .msg-resp{margin-top:3px}
+.j3d-balao.c1 .tab-olheiro{margin-top:5px}
+.j3d-balao.c1 .tab-olheiro td{padding:4px 7px}
+.j3d-balao.c1 .bloco-recepcao{margin-top:5px;padding:5px 8px}
+.j3d-balao.c1 .rec-titulo{margin-bottom:3px}
+.j3d-balao.c1 .rec-aliado{margin-bottom:4px}
+.j3d-balao.c1 .rec-nome{margin-bottom:2px}
+.j3d-balao.c1 .rolo-presenca{margin-top:5px}
+.j3d-balao.c1 .tab-presenca td{padding:3px 8px}
+.j3d-balao.c1 .sem-curto .sem-resumo{margin-top:5px;gap:2px}
+.j3d-balao.c1 .sem-curto .sem-abrir{margin-top:6px}
+.j3d-balao.c1 .sem-curto .sem-resumo .sem-dia{height:28px}
+.j3d-balao.c1 .itn-cartao{padding:7px 10px 8px}
+.j3d-balao.c1 .itn-cartao .voz{margin-bottom:3px}
+.j3d-balao.c1 .itn-cartao .custo{margin-top:4px;padding-top:4px}
+.j3d-balao.c1 .itn-cartao .bts{margin-top:6px;gap:5px}
+.j3d-balao.c1 .itn-bt{padding:5px 9px}
+.j3d-balao.c1 .j3d-balao-pe{margin-top:3px;padding:2px 6px 2px 10px}
+.j3d-balao.c1 .j3d-balao-ir{margin-top:3px;padding:4px 10px}
+/* c2: a letra */
+.j3d-balao.c2 .msg-txt{font-size:12.5px}
+.j3d-balao.c2 .msg-bts .bt{font-size:11.5px;letter-spacing:.08em}
+.j3d-balao.c2 .msg-bts .bt.simular{font-size:9.5px;letter-spacing:.02em}
+.j3d-balao.c2 .msg-bts .bt small{font-size:9.5px}
+.j3d-balao.c2 .tab-olheiro{font-size:11.5px}
+.j3d-balao.c2 .tab-olheiro .to-jogo small{font-size:9.5px}
+.j3d-balao.c2 .rec-nome{font-size:11.5px}
+.j3d-balao.c2 .rec-bt{font-size:10.5px}
+.j3d-balao.c2 .rec-bt small{font-size:9px}
+.j3d-balao.c2 .tab-presenca{font-size:11px}
+.j3d-balao.c2 .sem-curto .sem-resumo li{font-size:12px}
+.j3d-balao.c2 .sem-curto .sem-resumo .sem-dia{height:24px;font-size:12px}
+.j3d-balao.c2 .itn-cartao p{font-size:12px}
+.j3d-balao.c2 .itn-bt{font-size:9.5px;letter-spacing:.06em}
+/* c3: a hora na linha de quem fala, os botões dois por linha, a tabela mais densa */
+.j3d-balao.c3 .j3d-balao-corpo{position:relative}
+.j3d-balao.c3 .j3d-balao-hora{position:absolute;top:6px;right:12px;padding:0}
+.j3d-balao.c3 .msg-cab{padding-right:46px}
+.j3d-balao.c3 .msg-bts:has(> .bt:nth-child(3)) .bt, .j3d-balao.c3 .itn-cartao .bts:has(> .itn-bt:nth-child(3)) .itn-bt{flex:1 1 calc(50% - 5px)}
+.j3d-balao.c3 .tab-olheiro td{padding:3px 5px}
+.j3d-balao.c3 .rec-botoes{gap:3px}
+.j3d-balao.c3 .rec-bt{padding:3px 6px}
+.j3d-balao.c3 .sem-curto .sem-resumo .sem-dia{height:20px;font-size:11px}
+.j3d-balao.c3 .sem-curto .sem-resumo{gap:2px}
+.j3d-balao.c3 .sem-curto .sem-cab{padding:3px 9px}
+.j3d-balao.c3 .sem-curto .sem-abrir{padding:5px 12px}
 
 /* A REUNIÃO NA SALA DA SEDE: o palco da cena fica transparente — a
    cidade aparece atrás, com a diretoria na mesa de reunião —, e sobram
@@ -276,7 +353,9 @@ body.jogo3d.j3d-mapa-aberto .j3d-dia, body.jogo3d:not(.j3d-em-jogo) .j3d-dia{dis
    a linha do dia no ar ela é um recado no balão (recados3d.js) */
 .j3d-dia-modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
 .j3d-dia-caixa{width:min(440px, calc(100vw - 32px));padding:16px 18px;border-radius:10px;background:var(--painel, #161616);
-  border:1px solid rgba(255,255,255,.18);color:var(--texto, #eee);font:500 13.5px/1.45 var(--corpo, sans-serif);box-shadow:0 10px 40px rgba(0,0,0,.6)}
+  border:1px solid rgba(255,255,255,.18);color:var(--texto, #eee);font:500 13.5px/1.45 var(--corpo, sans-serif);box-shadow:0 10px 40px rgba(0,0,0,.6);
+  /* (o dono, 29/09/2026, sem scrollbar: a caixa cabe até no celular deitado, 202 px de 390; se a tela for mais baixa que isso, rola — fino, é só a reserva) */
+  max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(243,230,196,.38) transparent}
 .j3d-dia-caixa h3{margin:2px 0 8px;font:700 19px/1.2 var(--titulo, sans-serif);letter-spacing:.04em}
 .j3d-dia-caixa p{margin:0 0 12px;color:#ddd}
 .j3d-dia-sobre{margin:0 !important;font:600 11px/1.2 var(--titulo, sans-serif) !important;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco, #aaa) !important}
