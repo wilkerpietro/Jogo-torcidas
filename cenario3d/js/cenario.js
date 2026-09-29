@@ -36,9 +36,9 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=c21cd3cee8';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=c21cd3cee8';
-import { Subsolo } from './subsolo.js?v=c21cd3cee8';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=de9317a9c0';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=de9317a9c0';
+import { Subsolo } from './subsolo.js?v=de9317a9c0';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -1892,8 +1892,8 @@ void main() {
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=c21cd3cee8', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=c21cd3cee8');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=de9317a9c0', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=de9317a9c0');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2007,7 +2007,7 @@ void main() {
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=c21cd3cee8');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=de9317a9c0');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -2569,7 +2569,7 @@ void main() {
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=c21cd3cee8'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=de9317a9c0'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -2621,6 +2621,8 @@ void main() {
     get camera() { return cam; },
     /* a cena (o jogo 3D põe nela o que é dele: as cadeiras a mais da reunião) */
     get cena() { return doMapa; },
+    /* o three.js do cenário (o jogo 3D monta com ele o que põe na cena: o tapume do bar quebrado) */
+    get THREE() { return THREE; },
     /* o CORTE num material de fora (o palco à parte da caravana, a festa):
        o que passa da cabeça do boneco, entre ele e a câmera, fica ralo */
     cortavel: m => cortavel(m, false),

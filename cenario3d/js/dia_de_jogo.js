@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=c21cd3cee8';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=c21cd3cee8';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=de9317a9c0';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=de9317a9c0';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -2838,7 +2838,7 @@ export function criarDiaDeJogo(ctx) {
     /* os bonecos do dia que não são de `ids` (as torcidas da briga, que o combate desenha) */
     semAsDaBriga(ids) { const fora = new Set(ids); return discos => discos.filter(d => !fora.has(d.spawn)); },
     /* as torcidas da briga sem os objetos do dia (o bandeirão, o instrumento, o pano no ombro): null devolve */
-    ocultarTorcidas(ids) { if (arq && arq.ocultar) arq.ocultar(ids || []); },
+    ocultarTorcidas(ids, o) { if (arq && arq.ocultar) arq.ocultar(ids || [], o); },
     /* em que pé está cada um (a sede, andando, na briga, entrando, no lugar) */
     estadoDo: (b, m = 0) => plano ? estadoDe(b, m) : null,
     /* o corte do cenário: o corredor da invasão, embaixo da arquibancada */

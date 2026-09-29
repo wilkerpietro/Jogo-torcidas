@@ -49,7 +49,7 @@
    (`E.ouvido3d`, a mais nova ouvida): carregar o jogo não repete recado,
    e decisão em aberto volta sempre.
    ========================================================= */
-import { areaLivre } from './vida3d.js?v=c21cd3cee8';
+import { areaLivre } from './vida3d.js?v=de9317a9c0';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -62,6 +62,9 @@ const AVISO_S = 4.2, AVISOS_MAX = 4;
 /* o recorte de jornal pede mais leitura que o aviso (s, a 1×) e só cabem
    dois de cada vez: o dia da praça passa em 3,6 s, e vêm rajadas */
 const RECORTE_S = 7.5, RECORTES_MAX = 2;
+/* o aviso pago do olheiro (é o que o expediente de Inteligência compra):
+   fica mais que o aviso comum — é o ataque que vem, e ele é pago (s, a 1×) */
+const OLHEIRO_S = 10;
 /* o saldo de um recado da linha do dia (a briga que passou) fica esse tanto (s) */
 const SALDO_S = 3.2;
 
@@ -147,7 +150,7 @@ export function criarRecados(api, vida, dia3d) {
     topo = feed[0];
     /* (uma rajada, a de um dia inteiro que caiu de uma vez: só os recortes mais importantes viram aviso; no empate, os mais novos) */
     const cabem = novos.filter(m => ehJornal(m) && !pendente(m)).sort((a, b) => pesoDoJornal(a) - pesoDoJornal(b)).slice(0, RECORTES_MAX);
-    for (let k = novos.length - 1; k >= 0; k--) chegouUma(e, novos[k], cabem.includes(novos[k]));
+    for (let k = novos.length - 1; k >= 0; k--) chegouUma(e, novos[k], cabem.includes(novos[k]) || ehOlheiro(novos[k]));
   }
   function chegouUma(e, m, avisa) {
     if (!m) return;
@@ -198,6 +201,13 @@ export function criarRecados(api, vida, dia3d) {
   const JORNAIS_DO_CANTO = new Set(['Gazeta dos Sports', 'Futebol e Porrada']);
   const jornalDe = m => m.kind === 'almanaque' ? m.dados && m.dados.pagina && m.dados.pagina.jornal : JORNAL_DO_TIPO[m.kind];
   const ehJornal = m => !!m && JORNAIS_DO_CANTO.has(jornalDe(m));
+  /* A EXCEÇÃO DO OLHEIRO (a varredura 2D × 3D, 29/09/2026): o aviso da
+     campana (feed.js, `avisoDoOlheiro`: "me passaram a fita de que os
+     caras da X vão atacar...") é o que a diária de Inteligência paga — R$
+     100 ou R$ 400 por dia —, e só no arquivo de Notícias ninguém via a
+     tempo. Ele vira aviso no canto, com a cara de recado do olheiro, e fica
+     mais que o aviso comum; o resto que não é jornal segue só no arquivo */
+  const ehOlheiro = m => !!m && m.kind === 'campana' && !pendente(m);
   /* a importância do recorte numa rajada: a treta nossa (todo `confronto`
      é nosso), a Gazeta do nosso clube (a edição só sai em dia de jogo
      dele), o resto */
@@ -232,12 +242,13 @@ export function criarRecados(api, vida, dia3d) {
     if (rec && !abrirVaga(m)) return null;
     const voz = rec ? String((rec.querySelector('.nome-jornal') || {}).textContent || '') : (o && o.voz) || (m && TO.tela && TO.tela.vozDaMsg ? TO.tela.vozDaMsg(m) : '');
     const hora = (o && o.hora) || (m && m.hora) || '';
+    const olheiro = !rec && ehOlheiro(m);
     const n = document.createElement('div');
-    n.className = 'j3d-aviso' + (m && m.tipo ? ' ' + m.tipo : '') + (o && o.classe ? ' ' + o.classe : '') + (rec ? ' recorte jornal' : '') + (m ? ' abre' : '');
+    n.className = 'j3d-aviso' + (m && m.tipo ? ' ' + m.tipo : '') + (o && o.classe ? ' ' + o.classe : '') + (rec ? ' recorte jornal' : '') + (olheiro ? ' olheiro' : '') + (m ? ' abre' : '');
     if (rec) n.appendChild(rec);
-    else n.innerHTML = `<div class="j3d-aviso-cab"><b>${esc(voz)}</b>${hora ? `<time>${esc(hora)}</time>` : ''}</div><p>${esc(txt)}</p>` +
+    else n.innerHTML = `<div class="j3d-aviso-cab"><b>${esc(voz)}${olheiro ? ' · Inteligência' : ''}</b>${hora ? `<time>${esc(hora)}</time>` : ''}</div><p>${esc(txt)}</p>` +
       (o && o.botao ? `<button class="j3d-aviso-bt">${esc(o.botao.rot)}</button>` : '');
-    const a = { n, m, o, peso: rec ? pesoDoJornal(m) : null, resta: (rec ? RECORTE_S : AVISO_S) / (vel() > 1 ? 1.3 : 1), fixo: false, pairando: false, saindo: false };
+    const a = { n, m, o, olheiro, peso: rec ? pesoDoJornal(m) : null, resta: (rec ? RECORTE_S : olheiro ? OLHEIRO_S : AVISO_S) / (vel() > 1 ? 1.3 : 1), fixo: false, pairando: false, saindo: false };
     n.addEventListener('pointerenter', ev => { if (ev.pointerType === 'mouse') a.pairando = true; });
     n.addEventListener('pointerleave', () => { a.pairando = false; });
     n.addEventListener('click', ev => {
@@ -249,9 +260,9 @@ export function criarRecados(api, vida, dia3d) {
     avisos.push(a);
     avisados.push({ id: m ? m.id : null, kind: m ? m.kind : (o && o.classe) || 'aviso', voz, texto: txt.slice(0, 100) });
     if (avisados.length > 120) avisados.shift();
-    /* a pilha é curta: o mais velho que não está aberto sai */
+    /* a pilha é curta: o mais velho que não está aberto sai (o do olheiro por último) */
     const soltos = avisos.filter(x => !x.fixo && !x.saindo);
-    while (soltos.length > AVISOS_MAX) tirarAviso(soltos.shift());
+    while (soltos.length > AVISOS_MAX) { const k = soltos.findIndex(x => !x.olheiro); tirarAviso(soltos.splice(k >= 0 ? k : 0, 1)[0]); }
     return a;
   }
   /* o toque abre o cartão inteiro da mensagem (a tabela, o jornal, os links), até o × */

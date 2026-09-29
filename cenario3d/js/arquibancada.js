@@ -122,6 +122,39 @@ function semente(txt) {
 }
 const dist3 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
+/* O QUE A TORCIDA TEM PRA ESTENDER (a varredura 2D × 3D, 29/09/2026): no
+   jogo 3D a faixa e a bandeira da mureta são as do patrimônio — a torcida
+   que perdeu a dela numa briga chega sem ela (a arquibancada estendia
+   sempre, e contradizia o relatório da briga), e a que tomou a de alguém
+   pendura a última que tomou DE CABEÇA PRA BAIXO do lado da sua, como o
+   Patrimônio do jogo de feed mostra as tomadas. Sem o jogo por baixo (a
+   planta, o dia de jogo do botão do cenário) ou com uma torcida que o
+   mundo do jogo não conhece: null, e ela estende as suas, como antes */
+function panosDoJogo(id) {
+  const G = typeof window !== 'undefined' ? window.TO : null;
+  const E = G && G.estado && G.estado.E, PAT = G && G.patrimonio;
+  if (!id || !E || !E.torcida || !PAT || !PAT.faixasDe || !PAT.faixasIA) return null;
+  try {
+    let faixas, bandeiras, tomadas;
+    if (id === E.torcida.id) {
+      faixas = PAT.faixasDe(E).nossas.length; bandeiras = PAT.bandeirasDe(E).nossas.length; tomadas = PAT.faixasDe(E).tomadas || [];
+    } else {
+      const t = PAT.faixasIA(E, id);
+      if (!t) return null;
+      faixas = t.faixas; bandeiras = t.bandeiras; tomadas = t.faixasTomadas || [];
+    }
+    const ult = tomadas.filter(x => x && x.de).slice(-1)[0] || null;
+    return { faixa: faixas > 0, bandeira: bandeiras > 0, tomada: ult ? donoDaTomada(G, ult) : null };
+  } catch (e) { return null; }
+}
+/* a torcida dona da faixa tomada, no jeito que a tela da faixa pinta */
+function donoDaTomada(G, x) {
+  const o = G.mundo && G.mundo.torcida ? G.mundo.torcida(x.de) : null;
+  const c = o && G.mundo.coresDaTorcida ? G.mundo.coresDaTorcida(o) : {};
+  return { id: x.de, nome: (o && o.nome) || x.nome || '', sigla: o && G.mundo.siglaTorcida ? G.mundo.siglaTorcida(o) : '', clubeId: (o && o.clubeId) || null,
+           cor: c.cor || '#555555', cor2: c.cor2 || null, cor3: c.cor3 || null };
+}
+
 /* ======================================================
    A TRILHA NO TEMPO de quem se mexe (a pessoa, o PM): pontos do mundo
    com a hora de chegar em cada um, em reta entre eles; `modo`, o que ele
@@ -251,7 +284,7 @@ export function planejarArquibancada(p, aux) {
     if (!P || erro > 1.2) continue;
     const A = P.A, n = b.n;
     const T = { b, A, P, gente, uk: new Array(n).fill(null), vaga: new Array(n).fill(null), chegada: new Float64Array(n).fill(Infinity),
-                papel: new Array(n).fill(null), inst: new Array(n).fill(null), trilhos: new Array(n).fill(null), band: [], faixa: null, bandeira: null, puxador: null };
+                papel: new Array(n).fill(null), inst: new Array(n).fill(null), trilhos: new Array(n).fill(null), band: [], faixa: null, bandeira: null, tomada: null, puxador: null };
     gente.forEach((g, i) => { T.uk[g.m] = uks[i]; T.vaga[g.m] = g.dentro.pts[g.dentro.pts.length - 1]; T.chegada[g.m] = g.passa + g.dentro.L / (DENTRO * M); });
     const us = uks.map(x => x.u).sort((a, c) => a - c), ks = uks.map(x => x.k).sort((a, c) => a - c);
     T.uLo = us[0]; T.uHi = us[us.length - 1]; T.uC = us[us.length >> 1];
@@ -331,9 +364,11 @@ export function planejarArquibancada(p, aux) {
       tomar(m); T.papel[m] = 'bandeirao';
       T.band.push({ m, j, fase: rnd() * 6.28, amp: 0.75 + rnd() * 0.25, periodo: 2.0 + rnd() * 0.8, param: { a: 0 } });
     }
-    /* quem estende o pano: os que chegam primeiro */
+    /* quem estende o pano: os que chegam primeiro — e só o pano que a
+       torcida tem (o patrimônio, no jogo 3D: `panosDoJogo`) */
+    const PT = panosDoJogo(b.t.id), temF = !PT || PT.faixa, temB = !PT || PT.bandeira, tomada = PT ? PT.tomada : null;
     const ordem = [...livres].sort((x, y) => T.chegada[x] - T.chegada[y]);
-    const cF = n >= 4 ? ordem.slice(0, 2) : [], cB = n >= 8 ? ordem.slice(2, 4) : [];
+    const cF = n >= 4 && temF ? ordem.slice(0, 2) : [], cB = n >= 8 && temB ? ordem.slice(2, 4) : [], cT = n >= 6 && tomada ? ordem.slice(4, 6) : [];
     const yPar = A.c.y0 + (A.c.par || 1), yChao = A.c.yChao ?? A.c.yBase ?? 0;
     if (cF.length === 2) {
       let lugar = null;
@@ -345,6 +380,16 @@ export function planejarArquibancada(p, aux) {
       const perto = T.faixa ? T.faixa.uc + (T.faixa.du / 2 + (Hb / 2 + 0.6) / T.faixa.mU) * (rnd() < 0.5 ? -1 : 1) : T.uC;
       const lugar = lugarNaMureta(T, Hb, perto);
       if (lugar) { T.bandeira = estender(T, cB, lugar, Hb, 'bandeira'); cB.forEach(tomar); }
+    }
+    /* A FAIXA TOMADA, de cabeça pra baixo: do outro lado da faixa (o
+       lado que a bandeira deixou), um pouco menor que ela */
+    if (cT.length === 2) {
+      const ref = T.faixa ? T.faixa.uc : T.uC;
+      const ladoB = T.bandeira ? (Math.sign(T.bandeira.uc - ref) || 1) : (rnd() < 0.5 ? -1 : 1);
+      const w0 = T.faixa ? Math.min(6, Math.max(3.5, T.faixa.w * 0.8)) : clamp(3.5 + 0.12 * n, 4, 6);
+      let lugar = null;
+      for (let w = w0; w >= 3 && !lugar; w -= 0.5) lugar = lugarNaMureta(T, w, T.faixa ? ref - ladoB * (T.faixa.du / 2 + (w / 2 + 0.6) / T.faixa.mU) : ref);
+      if (lugar) { T.tomada = estender(T, cT, lugar, Math.min(H_FAIXA, yPar - 0.1 - yChao - 0.15), 'tomada'); T.tomada.de = tomada; cT.forEach(tomar); }
     }
     /* o puxador: na frente da torcida, de costas pro jogo */
     const up = T.faixa ? T.faixa.uc : T.uC, nq = A.fam.ponto(A.c.d0, up);
@@ -787,7 +832,7 @@ export function planejarArquibancada(p, aux) {
   }
 
   /* o fim de tudo: a bola rolando e o que a invasão pede */
-  const fim = Math.max(BOLA + 6 * 60, inv ? inv.tFim + 30 : 0, ...lista.map(T => Math.max(T.faixa ? T.faixa.tSolta + 30 : 0, T.bandeira ? T.bandeira.tSolta + 30 : 0)));
+  const fim = Math.max(BOLA + 6 * 60, inv ? inv.tFim + 30 : 0, ...lista.map(T => Math.max(T.faixa ? T.faixa.tSolta + 30 : 0, T.bandeira ? T.bandeira.tSolta + 30 : 0, T.tomada ? T.tomada.tSolta + 30 : 0)));
   /* OS CAMINHOS DA INVASÃO DE UMA TORCIDA (a do jogador, no jogo 3D:
      invasao.js monta o combate em cima de um deles): pela arquibancada e
      pelo corredor, dos dois lados, o mais barato primeiro; `soComRival`
@@ -976,6 +1021,8 @@ export function criarArquibancada(ctx, p, grupo, aux) {
     const t = T.b.t;
     if (T.faixa) panos.push({ T, F: T.faixa, malha: tira(telaDaFaixa(t, T.faixa.w, T.faixa.H)), estado: -1 });
     if (T.bandeira) panos.push({ T, F: T.bandeira, malha: tira(telaDaBandeira(t)), estado: -1 });
+    /* (a tomada: a faixa da dona, girada meia volta — de cabeça pra baixo) */
+    if (T.tomada) { const tx = telaDaFaixa(T.tomada.de, T.tomada.w, T.tomada.H); tx.center.set(0.5, 0.5); tx.rotation = Math.PI; panos.push({ T, F: T.tomada, malha: tira(tx), estado: -1 }); }
   }
   /* o pano no tempo t: enrolado (some), desenrolando nas mãos, descendo, pendurado */
   function atualizarPano(pn, t, tr) {
@@ -1010,6 +1057,7 @@ export function criarArquibancada(ctx, p, grupo, aux) {
     T.gente.forEach(g => { if (T.papel[g.m] === 'bateria') tocadores.push({ T, m: g.m, tipo: T.inst[g.m] }); });
     if (T.faixa) enrolados.push({ T, m: T.faixa.quem[0], F: T.faixa, comp: 1.5 });
     if (T.bandeira) enrolados.push({ T, m: T.bandeira.quem[0], F: T.bandeira, comp: 1.2 });
+    if (T.tomada) enrolados.push({ T, m: T.tomada.quem[0], F: T.tomada, comp: 1.4, t: T.tomada.de });
   }
   const MED = { surdo: { r: 0.25, h: 0.46, y: 0.92, frente: 0.36, lado: 0, deita: 0.45 }, caixa: { r: 0.17, h: 0.15, y: 1.0, frente: 0.3, lado: 0, deita: 0.55 }, repique: { r: 0.14, h: 0.32, y: 1.02, frente: 0.2, lado: -0.2, deita: 1.0 } };
   const corpoInst = tocadores.length ? guardar(new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 14), new THREE.MeshLambertMaterial({ color: '#ffffff' }), tocadores.length)) : null;
@@ -1018,7 +1066,7 @@ export function criarArquibancada(ctx, p, grupo, aux) {
   const corDoCasco = t => { const { c1, c2 } = coresDe(t); return luz(c1) > 175 ? c2 : c1; };
   if (corpoInst) { const cor = new THREE.Color(); tocadores.forEach((q, i) => { cor.set(corDoCasco(q.T.b.t)); corpoInst.setColorAt(i, cor); }); corpoInst.instanceColor.needsUpdate = true; corpoInst.frustumCulled = peleInst.frustumCulled = false; }
   const rolo = enrolados.length ? guardar(new THREE.InstancedMesh(new THREE.CylinderGeometry(1, 1, 1, 10), new THREE.MeshLambertMaterial({ color: '#ffffff' }), enrolados.length)) : null;
-  if (rolo) { const cor = new THREE.Color(); enrolados.forEach((q, i) => { cor.set(corDoCasco(q.T.b.t)); rolo.setColorAt(i, cor); }); rolo.instanceColor.needsUpdate = true; rolo.frustumCulled = false; }
+  if (rolo) { const cor = new THREE.Color(); enrolados.forEach((q, i) => { cor.set(corDoCasco(q.t || q.T.b.t)); rolo.setColorAt(i, cor); }); rolo.instanceColor.needsUpdate = true; rolo.frustumCulled = false; }
   const ESCONDE = new THREE.Matrix4().makeScale(0, 0, 0);
 
   /* ---- os bandeirões: o bambu (instâncias) e o pano de cada um ---- */
@@ -1174,9 +1222,25 @@ export function criarArquibancada(ctx, p, grupo, aux) {
      ====================================================== */
   /* as torcidas numa briga do jogo (o combate desenha os bonecos delas, dia3d.js): os instrumentos, o pano enrolado e os bandeirões delas saem */
   const ocultas = new Set();
+  let panosOcultos = false, conferidoEm = -99;
   const escondido = d => !d || !d.vivo || d.noChao || d.jeito === 'revista' || (ocultas.size > 0 && ocultas.has(d.spawn));
   function quadro(t, tr, dt) {
-    for (const pn of panos) atualizarPano(pn, t, tr);
+    /* A FAIXA QUE SE PERDEU HOJE: tomada numa briga do dia (a invasão, a
+       caminhada), ela sai da mureta — o patrimônio é conferido a cada 2 s */
+    if (Math.abs(tr - conferidoEm) > 2) {
+      conferidoEm = tr;
+      for (const pn of panos) {
+        if (pn.perdido || pn.F.tipo === 'tomada') continue;
+        const PT = panosDoJogo(pn.T.b.t.id);
+        if (PT && !(pn.F.tipo === 'bandeira' ? PT.bandeira : PT.faixa)) pn.perdido = true;
+      }
+    }
+    for (const pn of panos) {
+      /* (a invasão pela arquibancada põe a faixa de cada lado na mureta, a
+         do combate, que se toma: a da torcida da briga sai enquanto ela dura) */
+      if (pn.perdido || (panosOcultos && ocultas.has(pn.T.b.t.id))) { pn.malha.visible = false; continue; }
+      atualizarPano(pn, t, tr);
+    }
     /* os instrumentos: na cintura, na frente do corpo */
     if (corpoInst) {
       tocadores.forEach((q, i) => {
@@ -1344,6 +1408,7 @@ export function criarArquibancada(ctx, p, grupo, aux) {
     const inst = [['surdo', 'surdos'], ['caixa', 'caixas'], ['repique', 'repiques']].map(([k, pl]) => { const n = conta(k); return n ? `${n} ${n === 1 ? k : pl}` : ''; }).filter(Boolean).join(', ');
     const partes = [];
     if (T.faixa || T.bandeira) partes.push([T.faixa ? `faixa de ${T.faixa.w.toFixed(1).replace('.', ',')} m` : '', T.bandeira ? 'bandeira' : ''].filter(Boolean).join(' e ') + ' na mureta');
+    if (T.tomada) partes.push(`a faixa tomada da ${T.tomada.de.nome || 'rival'} de cabeça pra baixo`);
     if (nb.length) partes.push(`bateria de ${nb.length} (nível ${T.nivel} da sede: ${inst})`);
     if (T.band.length) partes.push(`${T.band.length} bandeir${T.band.length === 1 ? 'ão' : 'ões'} de bambu`);
     partes.push(T.puxador.cima ? 'o puxador em cima da mureta' : 'o puxador na frente da torcida');
@@ -1414,12 +1479,14 @@ export function criarArquibancada(ctx, p, grupo, aux) {
   function estado(t) {
     const porT = A.lista.map(T => ({ sigla: T.b.t.sigla, setor: T.b.setor, nivel: T.nivel, bateria: T.gente.filter(g => T.papel[g.m] === 'bateria').length,
       inst: T.gente.filter(g => T.inst[g.m]).map(g => T.inst[g.m][0]).join(''), bandeiroes: T.band.length, faixa: T.faixa ? { w: +T.faixa.w.toFixed(1), abre: hora(T.faixa.tJunta), pendura: hora(T.faixa.tSolta) } : null,
-      bandeira: T.bandeira ? { H: +T.bandeira.H.toFixed(2), pendura: hora(T.bandeira.tSolta) } : null, puxador: T.puxador.cima ? 'mureta' : 'fileira',
+      bandeira: T.bandeira ? { H: +T.bandeira.H.toFixed(2), pendura: hora(T.bandeira.tSolta) } : null,
+      tomada: T.tomada ? { de: T.tomada.de.id, w: +T.tomada.w.toFixed(1), pendura: hora(T.tomada.tSolta) } : null,
+      perdidos: panos.filter(pn => pn.T === T && pn.perdido).map(pn => pn.F.tipo), puxador: T.puxador.cima ? 'mureta' : 'fileira',
       linhas: [T.kMin, T.kMax], decisao: A.decisoes.get(T.b) ? { ...A.decisoes.get(T.b) } : null }));
-    return { torcidas: porT, guardas: A.nGuardas, isolamentos: A.buffers.length,
+    return { torcidas: porT, guardas: A.nGuardas, isolamentos: A.buffers.length, panosOcultos: panosOcultos ? [...ocultas] : null,
       invasao: inv ? { via: inv.via, a: inv.a.t.sigla, v: inv.v ? inv.v.t.sigla : null, rival: inv.rival ? inv.rival.t.sigla : null, ini: hora(inv.t0), grade: hora(inv.tQ1), fim: hora(inv.tFim), fura: inv.fura, pFura: +inv.pFura.toFixed(2),
         nAtk: inv.nAtk, nFront: inv.nFront, nPM: inv.nPM, cordao: cordao.length, gente: inv.gente, grades: inv.grades.map(g => g.i), originais: [...originais.values()].reduce((s, l) => s + l.length, 0) } : null };
   }
   return { controla, pessoa, noLugar, gesto, quadro, linha, texto, statusDe, foco, alvoDoCorte, limpar, estado, get invasao() { return inv; },
-           ocultar(ids) { ocultas.clear(); for (const id of ids || []) ocultas.add(id); } };
+           ocultar(ids, o) { ocultas.clear(); for (const id of ids || []) ocultas.add(id); panosOcultos = !!(o && o.panos); } };
 }

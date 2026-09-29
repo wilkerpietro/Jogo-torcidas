@@ -60,8 +60,8 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=c21cd3cee8';
-import { ATLAS } from './modelos_atlas.js?v=c21cd3cee8';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=de9317a9c0';
+import { ATLAS } from './modelos_atlas.js?v=de9317a9c0';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;

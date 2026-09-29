@@ -624,6 +624,9 @@ TO.i18n.registrar({
   'Bomba':    {es:'Bomba',    en:'Bomb'},
   'Recuar':   {es:'Retroceder', en:'Fall back'},
   'Fugir':    {es:'Huir',     en:'Flee'},
+  'Câmera':   {es:'Cámara',   en:'Camera'},
+  'Perto do líder ou a cena inteira do alto':
+    {es:'Cerca del líder o la escena entera desde arriba', en:'Close to the leader or the whole scene from above'},
   'Entrar pelo portão': {es:'Entrar por el portón', en:'Go in through the gate'},
   'Fim da noite':       {es:'Fin de la noche',     en:'End of the night'},
   'Voltar pra sede':    {es:'Volver a la sede',    en:'Back to HQ'},
@@ -4110,12 +4113,12 @@ TO.i18n.registrar({
   '<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação':
     {es:'<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formación',
      en:'<kbd>WASD</kbd> leader · <kbd>1</kbd>–<kbd>4</kbd> formation'},
-  '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima':
-    {es:'<kbd>WASD</kbd> líder (hacia donde mira la cámara) · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender · <kbd>2</kbd> piedra · <kbd>3</kbd> bomba · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · <kbd>C</kbd> cámara · arrastrar gira · rueda acerca',
-     en:'<kbd>WASD</kbd> leader (where the camera looks) · <kbd>Q</kbd> hit · <kbd>E</kbd> block · <kbd>2</kbd> stone · <kbd>3</kbd> bomb · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · <kbd>C</kbd> camera · drag to rotate · wheel to zoom'},
-  '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima':
-    {es:'<kbd>WASD</kbd> líder (hacia donde mira la cámara) · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender · <kbd>2</kbd> piedra · <kbd>3</kbd> mira de la bomba (clic tira) · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · <kbd>C</kbd> cámara · arrastrar gira · rueda acerca',
-     en:'<kbd>WASD</kbd> leader (where the camera looks) · <kbd>Q</kbd> hit · <kbd>E</kbd> block · <kbd>2</kbd> stone · <kbd>3</kbd> bomb aim (click throws) · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · <kbd>C</kbd> camera · drag to rotate · wheel to zoom'},
+  '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima':
+    {es:'<kbd>WASD</kbd> líder (hacia donde mira la cámara) · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> llamar · <kbd>2</kbd> piedra · <kbd>3</kbd> bomba · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · <kbd>V</kbd> cámara · arrastrar gira · rueda acerca',
+     en:'<kbd>WASD</kbd> leader (where the camera looks) · <kbd>Q</kbd> hit · <kbd>E</kbd> block · <kbd>F</kbd> grab · <kbd>C</kbd> rally · <kbd>2</kbd> stone · <kbd>3</kbd> bomb · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · <kbd>V</kbd> camera · drag to rotate · wheel to zoom'},
+  '<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima':
+    {es:'<kbd>WASD</kbd> líder (hacia donde mira la cámara) · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> llamar · <kbd>2</kbd> piedra · <kbd>3</kbd> mira de la bomba (clic tira) · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · <kbd>V</kbd> cámara · arrastrar gira · rueda acerca',
+     en:'<kbd>WASD</kbd> leader (where the camera looks) · <kbd>Q</kbd> hit · <kbd>E</kbd> block · <kbd>F</kbd> grab · <kbd>C</kbd> rally · <kbd>2</kbd> stone · <kbd>3</kbd> bomb aim (click throws) · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · <kbd>V</kbd> camera · drag to rotate · wheel to zoom'},
   '<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena':
     {es:'<kbd>WASD</kbd> líder · <kbd>Q</kbd> golpear · <kbd>E</kbd> defender (mantener) · <kbd>F</kbd> agarrar · <kbd>C</kbd> llamar · <kbd>2</kbd> piedra · <kbd>3</kbd> mira de la bomba (clic tira) · <kbd>R</kbd> retroceder · <kbd>X</kbd> huir · ruedita = zoom · <kbd>F2</kbd> editor de escena',
      en:'<kbd>WASD</kbd> leader · <kbd>Q</kbd> hit · <kbd>E</kbd> block (hold) · <kbd>F</kbd> grab · <kbd>C</kbd> rally · <kbd>2</kbd> stone · <kbd>3</kbd> bomb aim (click throws) · <kbd>R</kbd> fall back · <kbd>X</kbd> flee · wheel = zoom · <kbd>F2</kbd> scene editor'},
@@ -15329,7 +15332,7 @@ TO.relacoes = (function(){
          a mesma régua do nosso (dono, 10/09/2026) */
       const bd = tDono && FIN().barMaisVisado(tDono.bares);
       if(bd){
-        FIN().danificarBar(bd, (E.data && E.data.absoluto) || 0);
+        FIN().danificarBar(bd, (E.data && E.data.absoluto) || 0, atk.id);
         reg.barQuebrado = true;
         /* bar quebrado é notícia de rua (dono, 19/09/2026) */
         if(TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, o.id))
@@ -22334,11 +22337,15 @@ TO.financeiro = (function(){
      nosso e pro das IAs — os dois lados guardam bar como objeto de
      lista. Despesa NÃO cai: conserto de vidro e mesa é o que dói. */
   const DANO_BAR = {dias:45, corte:0.5};
-  function danificarBar(b, abs){
+  function danificarBar(b, abs, por){
     if(!b) return null;
     /* ataque em cima de ataque não empilha, RENOVA: o prazo passa a
        contar do estrago de agora */
     b.danoAte = (abs || 0) + DANO_BAR.dias;
+    /* quem quebrou (o jogo 3D, 29/09/2026): o mapa 3D põe o tapume no
+       bar do dono que fica do lado de quem atacou — o mesmo que a briga
+       do bote usa */
+    b.danoPor = por || null;
     return b;
   }
   /* o bar mais caro é o que o rival quebra: é o que tem o que quebrar */
@@ -24582,7 +24589,7 @@ TO.acoes = (function(){
         const F = TO.financeiro;
         const meu = F.barMaisVisado((E.patrimonio||{}).bares);
         if(meu){
-          F.danificarBar(meu, (E.data && E.data.absoluto) || 0);
+          F.danificarBar(meu, (E.data && E.data.absoluto) || 0, (alvo && alvo.torcidaId) || null);
           linhas.push(_t('o bar ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
           /* a cidade toma conhecimento (dono, 19/09/2026): o cartão do
              feed pergunta se a gente responde na porta deles */
@@ -24700,7 +24707,7 @@ TO.acoes = (function(){
         const F = TO.financeiro;
         const dele = m && F.barMaisVisado(m.bares);
         if(dele){
-          F.danificarBar(dele, (E.data && E.data.absoluto) || 0);
+          F.danificarBar(dele, (E.data && E.data.absoluto) || 0, E.torcida.id);
           linhas.push(_t('o bar deles ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
         }
       }
@@ -41609,11 +41616,30 @@ TO.diaJogo.combate = (function(){
      meio a meio; no estádio, faixa E bandeira lado a lado — e TODO
      setor de toda torcida presente estende as suas. */
   const CHANCE_BANDEIRA = {bar:0.7, praca:0.5, casa:0.5};
+  /* A CENA DA FOTO QUE A CENA 3D FAZ (conserto de 29/09/2026, a varredura
+     2D × 3D): a faixa olhava só o id da cena, e as cenas do jogo 3D têm o
+     id delas ('caminhada@3d', 'invasao@3d') — a briga da concentração e a
+     invasão da arquibancada ficavam sem faixa, e ninguém tomava nem
+     perdia faixa nelas. O `base` da cena 3D diz qual cena da foto ela faz
+     ('praca' na concentração, 'estadio' na invasão; 'rua' na pista, que
+     no jogo de feed também não tem faixa) */
+  function cenaDaFaixa(){
+    const id = D.id || '', b = D.base || '';
+    if(/^estadio-/.test(id) || b === 'estadio') return 'estadio';
+    if(/^bar(@|$)/.test(id) || b === 'bar') return 'bar';
+    if(/^casa-piscina/.test(id)) return 'casa';
+    if(CENAS_FAIXA.test(id) || b === 'praca') return 'praca';
+    return null;
+  }
   function montarFaixas(J, cfg){
-    if(!cfg || !D.id || !CENAS_FAIXA.test(D.id)) return [];
+    const cena = cenaDaFaixa();
+    if(!cfg || !cena) return [];
+    /* (a cena 3D diz onde a faixa pendura; a que não diz — a invasão pelo
+       corredor, debaixo da arquibancada — não tem onde estender) */
+    if(D.tres && !(D.faixas && Object.keys(D.faixas).length)) return [];
     const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
     if(!PAT || !E) return [];
-    const estadio = /^estadio-/.test(D.id);
+    const estadio = cena === 'estadio';
     const fora = [];
     if(estadio){
       /* um par por SETOR: cada bonde com torcida conhecida estende */
@@ -41647,7 +41673,7 @@ TO.diaJogo.combate = (function(){
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
       /* (o bar do jogo 3D é 'bar@3d', no bar de verdade do mapa: a mesma chance da foto) */
-      const chave = /^bar(@|$)/.test(D.id) ? 'bar' : /^casa-piscina/.test(D.id) ? 'casa' : 'praca';
+      const chave = cena === 'bar' ? 'bar' : cena === 'casa' ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){
@@ -44748,6 +44774,9 @@ TO.diaJogo.ponte = (function(){
     if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
       btP.firstChild.textContent=(r>0?_t('Pedra {s}s', {s:r.toFixed(1)}):_t('Pedra'))+' ';}
     const btQ=el('djBtBater'); if(btQ) btQ.style.display = '';
+    /* (a câmera só troca no palco 3D que tem duas: a reunião tem uma só) */
+    const btV=el('djBtCamera');
+    if(btV){ const v = tres && T && T.trocarCamera && (T.MODOS||[]).length > 1 ? '' : 'none'; if(btV.style.display !== v) btV.style.display = v; }
     if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
       btB.firstChild.textContent=(r>0?_t('Bomba {s}s', {s:r.toFixed(1)}):_t('Bomba'))+' ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
@@ -44918,9 +44947,9 @@ TO.diaJogo.ponte = (function(){
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
       : tres && miraNoPalco()
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
       : tres
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
       : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
   }
 
@@ -44949,6 +44978,7 @@ TO.diaJogo.ponte = (function(){
     liga('djBtBater', ()=>{ if(J) C.bater(J, liderVivo()); });
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djBtFugir', mandarCorrer);
+    liga('djBtCamera', trocarCamera3d);
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
   }
@@ -45304,6 +45334,12 @@ TO.diaJogo.ponte = (function(){
      mesmo canvas e na mesma janela: com duas cenas abertas, uma tecla
      Q jogava duas pedras, a rodinha dava zoom dobrado e o F2 abria e
      fechava o editor no mesmo aperto (que foi como isto apareceu). */
+  /* a câmera da briga em 3D (o V e o botão "Câmera V" da barra) */
+  function trocarCamera3d(){
+    if(!(tres && T && J && T.trocarCamera)) return;
+    const nm = T.trocarCamera(), md = (T.MODOS||[]).find(m=>m.nome===nm);
+    C.aviso(J, md && md.rot ? md.rot : 'câmera '+nm, '#e0b040');
+  }
   let entradaLigada=false;
   function ligarEntrada(){
     if(entradaLigada) return;
@@ -45312,9 +45348,11 @@ TO.diaJogo.ponte = (function(){
       const k=e.key.toLowerCase();
       teclas[k]=true;
       if(k==='f2'){e.preventDefault(); alternarEditor(); return;}
-      if(k==='c' && tres && T && J){
-        const nm = T.trocarCamera(), md = (T.MODOS||[]).find(m=>m.nome===nm);
-        C.aviso(J, md && md.rot ? md.rot : 'câmera '+nm, '#e0b040'); return; }
+      /* A CÂMERA DO 3D NO V (a varredura 2D × 3D, 29/09/2026): ela ficava
+         no C e roubava o "chamar" — no PC não dava pra chamar pelo
+         teclado, e o botão da tela seguia dizendo "Chamar C". O C volta a
+         chamar, como no jogo de feed */
+      if(k==='v' && tres && T && J){ trocarCamera3d(); return; }
       if(ED.ativo){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);

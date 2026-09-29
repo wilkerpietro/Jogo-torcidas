@@ -281,22 +281,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=c21cd3cee8';
-import { montarModelos } from './js/modelos3d.js?v=c21cd3cee8';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=c21cd3cee8';
-import { ATLAS } from './js/modelos_atlas.js?v=c21cd3cee8';
-import { Construtor, sorteio } from './js/construtor3d.js?v=c21cd3cee8';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=c21cd3cee8';
-import { montarSede } from './js/sede3d.js?v=c21cd3cee8';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=c21cd3cee8';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=c21cd3cee8';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=c21cd3cee8';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=c21cd3cee8';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=c21cd3cee8';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=c21cd3cee8';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=c21cd3cee8';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=c21cd3cee8';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=c21cd3cee8';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=de9317a9c0';
+import { montarModelos } from './js/modelos3d.js?v=de9317a9c0';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=de9317a9c0';
+import { ATLAS } from './js/modelos_atlas.js?v=de9317a9c0';
+import { Construtor, sorteio } from './js/construtor3d.js?v=de9317a9c0';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=de9317a9c0';
+import { montarSede } from './js/sede3d.js?v=de9317a9c0';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=de9317a9c0';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=de9317a9c0';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=de9317a9c0';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=de9317a9c0';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=de9317a9c0';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=de9317a9c0';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=de9317a9c0';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=de9317a9c0';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=de9317a9c0';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -313,19 +313,19 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=c21cd3cee8');
-  await carregarScript('dados/times.js?v=c21cd3cee8');
-  await carregarScript('dados/cena_estadio.js?v=c21cd3cee8');
-  await carregarScript('dados/cidades.js?v=c21cd3cee8');
-  await carregarScript('dados/estadios.js?v=c21cd3cee8');
-  await carregarScript('dados/escudos.js?v=c21cd3cee8');
+  await carregarScript('dados/torcidas.js?v=de9317a9c0');
+  await carregarScript('dados/times.js?v=de9317a9c0');
+  await carregarScript('dados/cena_estadio.js?v=de9317a9c0');
+  await carregarScript('dados/cidades.js?v=de9317a9c0');
+  await carregarScript('dados/estadios.js?v=de9317a9c0');
+  await carregarScript('dados/escudos.js?v=de9317a9c0');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=c21cd3cee8').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=de9317a9c0').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -5369,7 +5369,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=c21cd3cee8');
+    const { montarJogo } = await import('./js/jogo3d.js?v=de9317a9c0');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5408,7 +5408,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=c21cd3cee8');
+      const { criarCenario } = await import('./js/cenario.js?v=de9317a9c0');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
