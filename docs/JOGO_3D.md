@@ -1318,3 +1318,44 @@ com o teste dele; as branches foram juntadas depois.
   102→0 e 379→0; pauta 227→0; abas 850→0; num teste o clique caiu no fundo
   escuro e fechou o popup); depois, a rolagem fica igual (±0 px) nos 20
   cliques de cada contador, na pauta e nas abas, sem erro no console.
+- **As mensagens de decisão sem barra de rolagem.** O balão de decisão
+  (`.j3d-balao`, `recados3d.js`) tinha um teto de 46% da altura da tela
+  (34% no celular) com rolagem por dentro, sem olhar o espaço livre nem o
+  conteúdo. No celular deitado (844x390, mais largo que os 760 px da regra
+  do celular) o teto era de 179 px: 46 de 56 medidas rolavam e os botões da
+  decisão ficavam abaixo da dobra; a tabela de presença da partida tinha
+  ainda rolagem horizontal própria (173 a 602 px). Agora, depois de
+  desenhar o cartão, `ajustar()` (chamada dentro de `ancorar()`, e só
+  refaz a conta quando o cartão ou a tela mudam) mede o balão contra o
+  espaço livre — da barra/placar de cima até a borda de baixo, ou até o
+  painel do dia de jogo — e escolhe o jeito que cabe, do que menos mexe pro
+  que mais mexe: (1) a largura: a da folha (360 px) e, se passa do
+  "conforto" (46% da altura, entre 300 e 420 px), os degraus 440/520/600/680
+  px (teto de 520 no PC; 680 se a tela tem menos de 560 px de altura, o
+  celular deitado); (2) a compactação, cumulativa, medindo de novo a cada
+  nível: `.c1` os espaços, `.c2` a letra, `.c3` a hora na linha de quem
+  fala, os botões em duas colunas e a tabela mais densa — nada some, só
+  encolhe; (3) só se nada couber, o corpo rola (`--corpo-max`): fino, no tom
+  do balão, nunca de lado, com os botões da decisão colados embaixo
+  (`position:sticky`). O cartão que já cabia fica idêntico. Se o balão não
+  cabe em cima da cabeça de quem fala, ele encosta no alto e cobre quem fala,
+  sem o rabo (`.sobre`). A tabela de presença da partida quebra em linhas, e
+  a caixa `.j3d-dia-caixa` (modal) ganhou um teto de reserva. **Medido** no
+  jogo real (28 tipos de decisão com os botões reais, 1280x720, 1366x768,
+  1024x600, 1920x1080, celular em pé 390x844 e deitado 844x390): com
+  rolagem, antes → depois — PC 40 → 0; celular em pé 18 → 0; celular
+  deitado 46 → 2; botão fora da vista, 28 → 0, 10 → 0 e 36 → 2; balão fora
+  da tela, 0 → 0 nas três. No dia de jogo (a linha no balão e a caixa
+  modal) nada rola nem antes nem depois, salvo o celular deitado (1 → 0).
+  **O que ainda rola:** só o cartão antigo do olheiro (tabela + aliados) no
+  celular deitado, 51–77 px, com os botões à vista; esse cartão nem é
+  gerado pelo jogo atual (`SUGESTOES_DO_OLHEIRO` está desligado em
+  `feed.js`), só aparece em save antigo. **O que isso custa:** o balão mais
+  largo e mais alto cobre quem fala em vários casos (36 de 83 medidas no PC,
+  17 de 56 no celular em pé, 28 de 56 no deitado); se ficar demais, é baixar
+  o teto de largura (520) ou o "conforto" (46%) em `ajustar()`. **Como
+  testar:** no jogo (`jogo.html?cenario&teste`) fazer cair as decisões mais
+  compridas — entrevista, semana cheia, a partida com todas as torcidas — nos
+  tamanhos acima e conferir que o balão aparece inteiro, com os botões, sem
+  barra (`document.querySelector('.j3d-balao-corpo')` com `scrollHeight <=
+  clientHeight`; a classe do balão, `c1`..`c3`, diz o quanto apertou).
