@@ -1558,3 +1558,43 @@ conferida (o lote, a transversal, o balcão, a faixa, o gatilho).
   não foi exercitada: o dia de jogo 3D de hoje só planeja a concentração e a
   pista.
 - Testado só no Chromium do teste (SwiftShader).
+
+## 21. Os pênaltis no placar de TV, a partida sem cidade e a varredura 2D × 3D (29/09/2026)
+
+O dono: "faça uma varredura nos motores de placar, briga, e outras coisas do
+jogo 2d que ainda não foram implementadas na versão 3d. quando um jogo é
+necessário penaltis não tá dando pra visualizar no tempo real do jogo".
+
+**Por que não se via.** No jogo de feed a disputa mora no cartão da partida
+(main.js, `cenaDePenaltis`): o relógio para em 90', as duas fileiras de
+bolas enchem uma cobrança a cada 850 ms e o apito só vem depois da última.
+No 3D esse cartão fica escondido (quem mostra a partida é o placar de TV,
+seção 17), e o placar não lia a disputa: ficava uns 9 s parado em "90'" e
+acabava em FIM com o empate, sem dizer quem passou. E no jogo sem a cidade
+do jogo (campo neutro — as finais —, fora do país, praça que não montou) não
+havia placar nenhum: a partida sumia inteira da tela.
+
+**O que mudou** (dia3d.js, jogo3d.css, main.js):
+- **A disputa no placar de TV.** O relógio mostra PÊN; embaixo do placar, o
+  quadro "Disputa de pênaltis": as siglas, as bolas (verde fez, vermelha
+  riscada perdeu, vazia a que não bateu), o placar da série e o recado da
+  última cobrança ("Fortaleza — na rede!", "Ceará — perdeu!"). No fim, FIM e
+  "Fortaleza passa nos pênaltis, por 4 a 3.". O compasso continua sendo o do
+  cartão escondido (`penDesde`, `penAte` e `penFim`, guardados na mensagem):
+  o placar só lê. Dois avisos no canto direito, junto dos gols: "Fim do tempo
+  normal: … Vai pros pênaltis." e quem passou.
+- **A partida solta.** Sem o dia da cidade, o itinerário chama o
+  `D3.partida` do mesmo jeito, e o placar de TV anda sozinho lendo a mensagem
+  (os clubes, as cores e as siglas vêm do jogo que o itinerário abriu). Os
+  gols e a disputa viram aviso como no dia. Rede de segurança: se ninguém
+  apitar (o cartão escondido saiu da página), o placar mostra FIM sozinho 4 s
+  depois de o jogo acabar.
+- **O resultado fica na tela.** O dia fecha uns 2 s depois do apito e levava
+  o placar junto; agora o placar fica até 8 s depois do apito (`FICA_MS`) e
+  sai sozinho. Na volta pela estrada (o alto da tela é dela) o resultado vai
+  escrito no painel: "Fim de jogo (Ceará 1 × 1 Fortaleza; Fortaleza passou
+  nos pênaltis, por 4 a 3): a caravana pega a estrada de volta…".
+- **As siglas que batem.** As três primeiras letras davam COR × COR em
+  Corinthians × Coritiba, ATL × ATL nos Atléticos, SAO × SAO em São Paulo ×
+  São Caetano; quando batem, entra a sigla do clube no dado (SCCP × CFC,
+  CAM × ACG, SPFC × ADSC). Vale pro placar e pro quadro da disputa.

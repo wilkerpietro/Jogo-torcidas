@@ -469,6 +469,24 @@ body.jogo3d.em-cena .j3d-avisos, body.jogo3d.palco-briga .j3d-avisos{display:non
 .j3d-placar-bts button:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
 body.jogo3d:not(.j3d-em-jogo) .j3d-placar, body.jogo3d.com-painel .j3d-placar, body.jogo3d.j3d-mapa-aberto .j3d-placar,
 body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:none}
+/* A DISPUTA DE PÊNALTIS (dia3d.js, `pintarPenaltis`): embaixo do placar, no
+   mesmo preto de TV — as siglas, as bolas (verde quem fez, vermelho com o
+   risco quem perdeu, vazia a que não bateu), o placar da série e o recado */
+.j3d-placar-pen{display:grid;grid-template-columns:auto auto auto;align-items:center;column-gap:8px;row-gap:3px;padding:5px 10px 6px;border-radius:4px;
+  background:#0d0f14;border:1px solid rgba(255,255,255,.14);color:#f3f1ea;font-family:var(--titulo, 'Barlow Condensed', sans-serif)}
+.j3d-placar-pen[hidden]{display:none}
+.j3d-pen-titulo{grid-column:1 / -1;text-align:center;font:700 9.5px/1.2 var(--titulo, sans-serif);letter-spacing:.18em;text-transform:uppercase;color:var(--ouro, #d9a441)}
+.j3d-pen-sig{font-weight:800;font-size:13px;letter-spacing:.08em}
+.j3d-pen-bolas{display:flex;gap:4px}
+.j3d-pen-bolas i{position:relative;display:block;width:12px;height:12px;border-radius:50%;box-sizing:border-box;border:1.5px solid rgba(255,255,255,.32)}
+.j3d-pen-bolas i.fez{background:#3fbf6a;border-color:#3fbf6a}
+.j3d-pen-bolas i.errou{background:#c8102e;border-color:#c8102e}
+.j3d-pen-bolas i.errou::after{content:'';position:absolute;left:50%;top:1px;bottom:1px;width:1.5px;margin-left:-.75px;background:#fff;transform:rotate(45deg)}
+.j3d-pen-n{min-width:14px;text-align:right;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.j3d-pen-recado{grid-column:1 / -1;text-align:center;font:600 11.5px/1.25 var(--texto, sans-serif);color:#cfd3dc;max-width:280px}
+.j3d-pen-recado.fez{color:#8fe3a8}
+.j3d-pen-recado.errou{color:#ff9aa8}
+.j3d-pen-recado.fim{color:#ffd35a}
 
 /* A FAIXA DAS FASES (o painel de baixo do dia de jogo): ida, jogo e volta
    com a hora da cidade, a de agora acesa, e o efetivo dos dois lados */
@@ -493,6 +511,12 @@ body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:non
   .j3d-placar-time b{font-size:15px}
   .j3d-placar-gols b{font-size:17px}
   .j3d-placar-rel{min-width:42px;font-size:13px}
+  .j3d-placar-pen{padding:4px 8px 5px;column-gap:6px}
+  .j3d-pen-bolas{gap:3px}
+  .j3d-pen-bolas i{width:10px;height:10px}
+  .j3d-pen-sig{font-size:12px}
+  .j3d-pen-n{font-size:14px}
+  .j3d-pen-recado{font-size:10.5px;max-width:230px}
   .j3d-dia{padding:6px 9px 7px}
   .j3d-dia-hora{font-size:15px}
   /* (no celular em pé as três fases, a hora e o efetivo cabem numa linha só) */

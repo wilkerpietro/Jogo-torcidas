@@ -2419,14 +2419,18 @@
        placar de TV (dia3d.js: 4× → 1× → 2× → 4×), e o clima tenso pausa e
        pergunta sozinho. A partida que um save já guardou em andamento (o
        minAcum existe) fica na velocidade que ele guardou */
-    const D3 = TO.jogo3d && TO.jogo3d.dia, em3d = !!(D3 && D3.ativo);
+    const D3 = TO.jogo3d && TO.jogo3d.dia;
     if(m.dados.minAcum === undefined){
       m.dados.minAcum = 0; m.dados.t0 = Date.now();
       m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
     }
-    if(em3d) D3.partida(m);
+    /* SEM A CIDADE DO JOGO O PLACAR DE TV ANDA SOZINHO (o dono, 29/09/2026,
+       sobre os pênaltis que não se viam): o jogo de campo neutro, o de fora do
+       país ou a praça que não montou ficavam sem nada na tela (o cartão daqui
+       fica escondido no 3D). O dia3d.js lê a partida direto da mensagem */
+    if(D3 && D3.partida) D3.partida(m);
     const caixa = widgetPartida(m, ()=>{
-      if(em3d && D3.ativo) D3.apito();
+      if(D3 && D3.apito) D3.apito();
       /* apito final: a linha volta a andar, e o aviso da trava sai */
       atualizarFeed(); pintarTopo();
       if(ITN && ITN.recados)
