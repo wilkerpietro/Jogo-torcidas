@@ -41,8 +41,8 @@
    detalhadas (detalhe3d.js) e juntada por material.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import * as K from './detalhe3d.js?v=4c330697b2';
-import { METRO } from './construtor3d.js?v=4c330697b2';
+import * as K from './detalhe3d.js?v=a99de7cb05';
+import { METRO } from './construtor3d.js?v=a99de7cb05';
 
 const M = METRO;
 export const TABULEIRO = { W: 1536, H: 1024, CEL: 8 };
@@ -67,8 +67,10 @@ function caixasDoCarro(c) {
   }
   return out;
 }
-/* O POSTO: o pátio de x 82 a 1448 e de y 22 a 885, a rodovia de 885 a 1135 */
-function planoDoPosto() {
+/* O POSTO: o pátio de x 82 a 1448 e de y 22 a 885, a rodovia de 885 a 1135.
+   `op.naEstrada` (a emboscada na rodovia da viagem, estrada3d.js): o
+   carro que saía pra pista sai do plano — o ônibus entra no pátio por ali */
+function planoDoPosto(op = {}) {
   const P = {
     nome: 'Posto', patio: { x0: 82, x1: 1448, y0: 22, y1: 885 }, pista: { y0: 885, y1: 1135 },
     muroEsq: { x: 78.5, y0: 12, y1: 872, portao: [385, 535] }, muroDir: { x: 1451.5, y0: 12, y1: 862 }, muroFundo: { y: 18.5, x0: 75, x1: 1455 },
@@ -76,7 +78,7 @@ function planoDoPosto() {
     deposito: { x0: 997, x1: 1225, y0: 22, y1: 262 },
     ilha: { comp: 5.4, larg: 1.3 }, ilhas: [{ x: 604, y: 521 }, { x: 948, y: 521 }],
     onibus: { x: 815, y: 738, comp: 12, frente: -1, cor: '#efefeb', cor2: '#b3261e', cor3: '#1f2e44' },
-    carros: [{ x: 1118, y: 860, dir: [0.53, 0.85], tipo: 'sedan', cor: '#c3c6ca' }],
+    carros: op.naEstrada ? [] : [{ x: 1118, y: 860, dir: [0.53, 0.85], tipo: 'sedan', cor: '#c3c6ca' }],
     canteiro: { x0: 452, x1: 1078, y0: 828, y1: 884 }, poste: { x: 765, y: 858 },
     pneus: [[97, 292, 3], [97, 326, 4], [97, 360, 3], [470, 42, 3], [503, 40, 4], [536, 45, 2]],
     tambores: [[1436, 367, '#e0b83a'], [1436, 397, '#2f5f9e'], [100, 37, '#34465a'], [126, 44, '#2d3b4d']],
@@ -123,7 +125,7 @@ function planoDoPosto() {
 /* A ESTRADA: a pista de y 385 a 642, as calçadas até os muros (em cima
    em 155, embaixo em 865), com o portão aberto de cada lado e o de
    chapa fechado do lado dele */
-function planoDaEstrada() {
+function planoDaEstrada(op = {}) {
   const P = {
     nome: 'Estrada', pista: { y0: 385, y1: 642 }, calcadas: [{ y0: 158, y1: 385 }, { y0: 642, y1: 862 }],
     muroCima: { y: 155, trechos: [[-2200, 665], [895, 3700]], chapa: [805, 895], vao: [665, 805] },
@@ -185,7 +187,7 @@ function placas(r, lado, y, mat, rnd) {
 }
 /* A FAIXA PINTADA ao longo dos pontos (m, [x, z]), com a tinta gasta
    repetindo a cada 2 m */
-function faixaPintada(pts, larg, mat, y = 0.03) {
+export function faixaPintada(pts, larg, mat, y = 0.03) {
   const pos = [], uv = [], idx = [];
   let acc = 0;
   for (let i = 0; i < pts.length; i++) {
@@ -210,7 +212,7 @@ function curva(p0, c, p1, n = 18) {
 }
 /* O CHÃO DE LONGE: a terra até o horizonte, com a cor mudando devagar
    por vértice (a mancha de capim, a terra mais escura); fora da junção */
-function chaoDeLonge(tam, seg, rnd) {
+export function chaoDeLonge(tam, seg, rnd) {
   const g = new THREE.PlaneGeometry(tam, tam, seg, seg); g.rotateX(-PI / 2);
   const p = g.attributes.position, uv = g.attributes.uv, cor = [];
   for (let i = 0; i < p.count; i++) {
@@ -232,7 +234,7 @@ const decal = (g, chave, tex, w, d, x, z, ry, y = 0.035, cor = '#ffffff', op = 1
 const setaNoChao = (g, x, y, dir, comp, larg) => g.add(K.folhaNoChao(X(larg), X(comp), K.decalque('seta', K.TEX.seta(), '#f4f2ea', 0.9), X(x), 0.036, X(y), Math.atan2(-dir[0], -dir[1])));
 /* O POSTE DA REDE (o de concreto, com a cruzeta e os isoladores); os fios
    saem dos isoladores (`userData.fios`, no grupo) */
-function posteDeRede(alt = 9) {
+export function posteDeRede(alt = 9) {
   const g = new THREE.Group();
   g.add(K.cilindro(0.17, 0.1, alt, K.fosco('#aaa79f'), 6));
   g.add(K.caixa(0.12, 0.12, 2.0, K.pintado('madeiraCruzeta', K.TEX.madeira(), { cor: '#8a6a4a' }), 0, alt - 0.7, 0));
@@ -243,7 +245,7 @@ function posteDeRede(alt = 9) {
   return g;
 }
 /* os fios de poste em poste (a barriga no meio), em linhas */
-function fiosEntre(postes, cai = 0.7) {
+export function fiosEntre(postes, cai = 0.7) {
   const pts = [];
   for (let i = 0; i + 1 < postes.length; i++) {
     const a = postes[i], b = postes[i + 1];
@@ -261,7 +263,7 @@ function fiosEntre(postes, cai = 0.7) {
   return new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: '#2b2b2b' }));
 }
 /* A CERCA DE ARAME (os mourões e os quatro fios), ao longo de x */
-function cerca(x0, x1, z, rnd, alt = 1.3) {
+export function cerca(x0, x1, z, rnd, alt = 1.3) {
   const g = new THREE.Group(), md = K.pintado('madeiraMourao', K.TEX.madeira(), { cor: '#7a6048' }), pts = [];
   for (let x = x0; x <= x1; x += 2.6) g.add(K.caixa(0.1, alt + (rnd() - 0.5) * 0.15, 0.1, md, x + (rnd() - 0.5) * 0.2, 0, z + (rnd() - 0.5) * 0.12, rnd()));
   for (let k = 0; k < 4; k++) { const y = 0.3 + k * (alt - 0.4) / 3; pts.push(x0, y, z, x1, y, z); }
@@ -270,7 +272,7 @@ function cerca(x0, x1, z, rnd, alt = 1.3) {
   return g;
 }
 /* o capim espalhado num retângulo (m) */
-function capim(g, r, n, rnd, alt = 0.5) {
+export function capim(g, r, n, rnd, alt = 0.5) {
   for (let i = 0; i < n; i++) g.add(K.em(K.touceira(alt * (0.6 + rnd() * 0.8), rnd), r.x0 + rnd() * (r.x1 - r.x0), -0.02, r.z0 + rnd() * (r.z1 - r.z0)));
 }
 /* a ilhota de meio-fio (o canteiro): o contorno de ponta redonda, deitado */
@@ -414,7 +416,7 @@ function depositoDoPosto(rnd) {
 /* =======================================================
    A MONTAGEM DO POSTO (em m: x = px / PXM, z = y / PXM)
    ======================================================= */
-function montarPosto(g, P, rnd) {
+function montarPosto(g, P, rnd, op = {}) {
   const pt = (o, x, y, ry = 0, alt = 0) => { o.position.set(X(x), alt, X(y)); o.rotation.y = ry; g.add(o); return o; };
   const pa = P.patio;
   /* O PÁTIO: as placas de 3 m, de muro a muro e do fundo até a pista */
@@ -451,7 +453,7 @@ function montarPosto(g, P, rnd) {
   for (const il of P.ilhas) pt(K.ilhaDeBombas(P.ilha.comp, P.ilha.larg, 2), il.x, il.y);
   /* O ÔNIBUS DA CARAVANA E O CARRO SAINDO PRA PISTA */
   const o = P.onibus;
-  pt(K.onibus({ comp: o.comp, cor: o.cor, cor2: o.cor2, cor3: o.cor3, itinerario: 'FRETADO · CARAVANA' }), o.x, o.y, o.frente > 0 ? 0 : PI);
+  if (!op.semOnibus) pt(K.onibus({ comp: o.comp, cor: o.cor, cor2: o.cor2, cor3: o.cor3, itinerario: 'FRETADO · CARAVANA' }), o.x, o.y, o.frente > 0 ? 0 : PI);
   for (const c of P.carros) pt(K.carro({ tipo: c.tipo, cor: c.cor }), c.x, c.y, -Math.atan2(c.dir[1], c.dir[0]));
   /* OS MIÚDOS: os pneus, os tambores, o carretel, as mangueiras, os ralos */
   for (const [x, y, n] of P.pneus) pt(K.pilhaDePneus(n, 0.45, rnd), x, y, 0, 0.02);
@@ -497,7 +499,7 @@ function montarPosto(g, P, rnd) {
 /* =======================================================
    A MONTAGEM DA ESTRADA
    ======================================================= */
-function montarEstrada(g, P, rnd) {
+function montarEstrada(g, P, rnd, op = {}) {
   const pt = (o, x, y, ry = 0, alt = 0) => { o.position.set(X(x), alt, X(y)); o.rotation.y = ry; g.add(o); return o; };
   const px0 = X(-2200), px1 = X(3700), pz0 = X(P.pista.y0), pz1 = X(P.pista.y1), pm = (pz0 + pz1) / 2;
   /* A PISTA: o asfalto, as bordas brancas (com o vão dos portões), a
@@ -563,7 +565,7 @@ function montarEstrada(g, P, rnd) {
   pt(K.galpaoZinco(26, 12, 5.8, { cor: '#c9c4b9', ferrugem: 0.45, porta: 4 }), -900, 1120, PI);
   /* O ÔNIBUS VERDE PARADO E OS DOIS CARROS BRANCOS FECHANDO ELE */
   const o = P.onibus;
-  pt(K.onibus({ comp: o.comp, cor: o.cor, cor2: o.cor2, cor3: o.cor3, itinerario: 'EXCURSÃO · CARAVANA' }), o.x, o.y, o.frente > 0 ? 0 : PI);
+  if (!op.semOnibus) pt(K.onibus({ comp: o.comp, cor: o.cor, cor2: o.cor2, cor3: o.cor3, itinerario: 'EXCURSÃO · CARAVANA' }), o.x, o.y, o.frente > 0 ? 0 : PI);
   for (const c of P.carros) pt(K.carro({ tipo: c.tipo, cor: c.cor }), c.x, c.y, -Math.atan2(c.dir[1], c.dir[0]));
   /* OS POSTES DA REDE na calçada de cima, o capim no pé dos muros, o mato longe */
   const postes = [];
@@ -581,23 +583,31 @@ function montarEstrada(g, P, rnd) {
    ======================================================= */
 /* `tipo`: 'emb-posto' ou 'emb-onibus'; `O`: [x, z] do mundo onde fica o
    canto de cima à esquerda do tabuleiro. Devolve o grupo pronto (as
-   peças juntadas por material, em unidades do mundo) */
-export function montarCaravana(tipo, O) {
-  const P = PLANOS[tipo](), rnd = K.sorteio(tipo === 'emb-posto' ? 7 : 11);
+   peças juntadas por material, em unidades do mundo). `op` (a emboscada
+   encaixada na rodovia da viagem, estrada3d.js): `giro` (o tabuleiro
+   girado em volta de O, rad), `semLonge` (o chão até o horizonte é o da
+   rodovia), `semOnibus` (o ônibus é o da viagem, que chega andando) e
+   `naEstrada` (o plano sem o carro saindo do posto) */
+export function montarCaravana(tipo, O, op = {}) {
+  const P = PLANOS[tipo](op), rnd = K.sorteio(tipo === 'emb-posto' ? 7 : 11);
   const g = new THREE.Group();
-  if (tipo === 'emb-posto') montarPosto(g, P, rnd); else montarEstrada(g, P, rnd);
+  if (tipo === 'emb-posto') montarPosto(g, P, rnd, op); else montarEstrada(g, P, rnd, op);
   g.scale.setScalar(M);
   const junto = K.juntar(g, 'caravana: ' + tipo);
   g.traverse(o => { if (o.geometry) o.geometry.dispose(); });
   const saida = new THREE.Group();
   saida.name = 'palco da caravana: ' + tipo;
   saida.position.set(O[0], 0, O[1]);
+  saida.rotation.y = op.giro || 0;
   saida.add(junto);
+  saida.userData.triangulos = junto.userData.triangulos;
   /* o chão até o horizonte (a cor por vértice: fica fora da junção) */
-  const longe = chaoDeLonge(1600, 64, rnd);
-  longe.scale.setScalar(M); longe.position.set(X(768) * M, -0.1 * M, X(512) * M);
-  saida.add(longe);
-  saida.userData.triangulos = junto.userData.triangulos + 64 * 64 * 2;
+  if (!op.semLonge) {
+    const longe = chaoDeLonge(1600, 64, rnd);
+    longe.scale.setScalar(M); longe.position.set(X(768) * M, -0.1 * M, X(512) * M);
+    saida.add(longe);
+    saida.userData.triangulos += 64 * 64 * 2;
+  }
   saida.userData.plano = P;
   return saida;
 }
@@ -605,9 +615,11 @@ export function montarCaravana(tipo, O) {
 /* =======================================================
    A BRIGA (a cena do combate, com a máscara)
    ======================================================= */
-export function cenaDaCaravana(tipo, O) {
+/* `op`: o mesmo de `montarCaravana` (o `giro` do tabuleiro em volta de O
+   e o plano da rodovia): o tabuleiro no mundo segue a peça */
+export function cenaDaCaravana(tipo, O, op = {}) {
   const { W: TW, H: TH, CEL } = TABULEIRO, COLS = TW / CEL, ROWS = TH / CEL;
-  const P = PLANOS[tipo]();
+  const P = PLANOS[tipo](op);
   const malha = new Uint8Array(COLS * ROWS).fill(1);
   /* o que barra: a célula cujo meio cai no sólido (engrossado até uma célula) */
   const barrar = r => {
@@ -626,10 +638,13 @@ export function cenaDaCaravana(tipo, O) {
   }
   const cena = Object.assign({ tres: true, largura: TW, altura: TH, celula: CEL, imagem: null, mascara: linhas.join(';'),
                                blocos: [], enfeites: [], varais: [], grades: [], pintura: null }, P.cena);
-  const noMundo = (x, y) => [O[0] + x * ESCALA, O[1] + y * ESCALA];
-  const doMundo = (x, z) => [(x - O[0]) / ESCALA, (z - O[1]) / ESCALA];
+  /* (o giro é o do Three em volta do eixo de cima: o x do tabuleiro vai
+     pra (cos, −sen) e o y pra (sen, cos)) */
+  const g = op.giro || 0, cg = Math.cos(g), sg = Math.sin(g);
+  const noMundo = (x, y) => [O[0] + (x * cg + y * sg) * ESCALA, O[1] + (y * cg - x * sg) * ESCALA];
+  const doMundo = (x, z) => { const dx = (x - O[0]) / ESCALA, dz = (z - O[1]) / ESCALA; return [dx * cg - dz * sg, dx * sg + dz * cg]; };
   /* o chão (m): o concreto do pátio e o asfalto; em cima do canteiro, o meio-fio */
   const cn = P.canteiro;
   const chao = (x, y) => cn && x > cn.x0 + 12 && x < cn.x1 - 12 && y > cn.y0 + 2 && y < cn.y1 - 2 ? 0.155 : 0.02;
-  return { cena, noMundo, doMundo, u: [1, 0], v: [0, 1], origem: O, escala: ESCALA, chao, plano: P, malha, COLS, ROWS };
+  return { cena, noMundo, doMundo, u: [cg, -sg], v: [sg, cg], origem: O, escala: ESCALA, chao, plano: P, malha, COLS, ROWS };
 }

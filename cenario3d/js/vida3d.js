@@ -37,8 +37,8 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=4c330697b2';
-import { brigaNaCaminhada } from './caminhada.js?v=4c330697b2';
+import { palcoDeBriga } from './palco_briga.js?v=a99de7cb05';
+import { brigaNaCaminhada } from './caminhada.js?v=a99de7cb05';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -454,8 +454,8 @@ export function criarVida(api) {
      manhã a caravana dele está dentro da sede, com a camisa dele, nas
      camas do alojamento, no sofá, nas rodas e nas mesas (até 12; o
      vaivém dos nossos não mexe neles). Duas horas e meia antes da bola
-     eles saem pela porta, um atrás do outro. Vendo o jogo na cidade
-     (dia3d.js), o bonde deles parte da nossa porta
+     eles saem pela porta, um atrás do outro (receber é coisa planejada
+     pra um jogo da cidade: a saída deles segura o relógio uns segundos)
      ===================================================== */
   const SAIDA_ANTES = 150;
   const LUGAR_DE_HOSPEDE = { cama: 9, sofa: 7, roda: 6, mesa: 5, banco: 5, churrasco: 4, balcao: 3, sinuca: 2, pebolim: 2, espera: 1 };
@@ -1054,6 +1054,11 @@ export function criarVida(api) {
      palco à parte, longe da praça — o posto ou a pista com o ônibus —, e a
      câmera salta pra lá; no fim ela volta pra sala do presidente */
   function palcoDaCaravana(local) {
+    /* A EMBOSCADA NA RODOVIA DA VIAGEM (dia3d.js e estrada3d.js): a briga é
+       na peça encaixada na estrada, onde o ônibus parou */
+    const D3 = TO.jogo3d && TO.jogo3d.dia;
+    const naEstrada = D3 && D3.brigaNaEstrada ? D3.brigaNaEstrada(local) : null;
+    if (naEstrada) return naEstrada;
     const Pc = api.planta.palcoDaCaravana ? api.planta.palcoDaCaravana(local) : null;
     if (!Pc || !TO.dados || !TO.dados.cenas) return null;
     const B = Pc.briga;
@@ -1113,9 +1118,6 @@ export function criarVida(api) {
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
     set temJogoHoje(f) { temJogoHoje = typeof f === 'function' ? f : () => false; },
-    /* o jogo da cidade no fundo (dia3d.js): os hóspedes saem da sede na hora
-       em que o bonde deles aparece na nossa porta (min do dia) */
-    hospedesSaem(min) { if (sede && sede.hospedes) for (const a of sede.hospedes) if (!a.saindo) a.saida = min; },
     get ritmo() { return relogio.ritmo; },
     /* o mensageiro (recados3d.js): quem senta pra falar, quem levanta, e
        as cabeças do balão (quem fala e o presidente, que ele evita cobrir) */

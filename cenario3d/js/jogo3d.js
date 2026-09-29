@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=4c330697b2';
-import { criarVida, horaTxt } from './vida3d.js?v=4c330697b2';
-import { criarMapaDaCidade } from './mapa3d.js?v=4c330697b2';
-import { criarDia3d } from './dia3d.js?v=4c330697b2';
-import { criarRecados } from './recados3d.js?v=4c330697b2';
+import { CASCA } from './jogo_casca.js?v=a99de7cb05';
+import { criarVida, horaTxt } from './vida3d.js?v=a99de7cb05';
+import { criarMapaDaCidade } from './mapa3d.js?v=a99de7cb05';
+import { criarDia3d } from './dia3d.js?v=a99de7cb05';
+import { criarRecados } from './recados3d.js?v=a99de7cb05';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=4c330697b2'), carregarCss('css/jogo3d.css?v=4c330697b2')]);
+  await Promise.all([carregarCss('css/jogo.css?v=a99de7cb05'), carregarCss('css/jogo3d.css?v=a99de7cb05')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=4c330697b2').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=a99de7cb05').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=4c330697b2');
+  await carregarScript('js/jogo.js?v=a99de7cb05');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=4c330697b2').catch(() => {});
-  await import('./bonecos3_global.js?v=4c330697b2');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=a99de7cb05').catch(() => {});
+  await import('./bonecos3_global.js?v=a99de7cb05');
   ligar(api);
   return TO.tela;
 }
@@ -111,16 +111,18 @@ function ligar(api) {
   };
 
   /* OS JOGOS DA CIDADE (o jogo 3D, 28/09/2026). Primeiro o olheiro avisava e
-     perguntava se o jogador queria ver o dia na cidade; o dono, jogando: "o
-     jogo não pergunta se eu quero acompanhar o que acontece em dia de
-     outros jogos na mesma cidade, o itinerário delas acontece de forma
-     automática no jogo". Agora, no dia de um jogo de dois outros clubes na
-     nossa praça (o calendário da praça: js/mundo/praca.js), o dia dele
-     monta NO FUNDO da vida da praça (dia3d.js, `jogoNoFundo`): os bondes
-     vão pro estádio enquanto as horas passam, a nossa torcida fica na sede
-     (ou vai pra investida que o planejamento marcou). Dia de jogo nosso,
-     não: a cidade é da nossa linha. E o mandante precisa de torcida com
-     sede no mapa (sem ela o dia não monta). Um jogo por dia (o primeiro) */
+     perguntava se o jogador queria ver o dia na cidade; depois o dia de todo
+     jogo de dois outros clubes na nossa praça montava no fundo, com o
+     relógio mais lento. O dono, jogando: "remova esse acompanhamento de
+     perto do dia de outros jogos na cidade, só vai tornar o jogo mais
+     demorado. só vai parar o tempo caso tenhamos planejado algo pra algum
+     jogo na cidade". Agora o jogo da cidade só monta (dia3d.js,
+     `jogoNoFundo`) quando o planejamento da semana marcou uma investida
+     nele (o alvo, na concentração ou na pista): o nosso bonde sai da nossa
+     porta e os bondes deles aparecem na hora. Sem investida, nada monta: o
+     jogo corre só no resultado, e o dia passa no ritmo de sempre. Dia de
+     jogo nosso, não: a cidade é da nossa linha. E o mandante precisa de
+     torcida com sede no mapa (sem ela o dia não monta). Um jogo por dia */
   const minutoDe = h => { const m = /^(\d\d?):(\d\d)/.exec(String(h || '')); return m ? +m[1] * 60 + +m[2] : null; };
   const hhmmDe = min => String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(Math.round(min) % 60).padStart(2, '0');
   /* A PARTIDA CAI PERTO DA HORA DO JOGO (o dono, 28/09/2026: "corrija a hora
@@ -158,14 +160,25 @@ function ligar(api) {
       /* (a planta tem de estar na nossa praça, com a vida ligada: é dela que sai quem tem sede no mapa) */
       const nossa = nomeDaPraca(e.torcida.mapa);
       if (!nossa || !api.cenario || api.cenario.praca !== nossa || !vida.ligada) return;
+      /* só os jogos de hoje com a nossa investida marcada (e ainda não jogada) */
+      const PL = TO.planejamento;
+      if (!PL || !PL.outrosJogosNaCidade || !PL.investidaDe) return;
+      const marcados = PL.outrosJogosNaCidade(e, e.data.semana).filter(o => {
+        if ((o.dia || 6) !== e.data.dia) return false;
+        const inv = PL.investidaDe(e, o.chave);
+        return !!(inv && inv.alvo && !inv.jogada);
+      });
+      if (!marcados.length) return;
       const meu = e.torcida.clubeId;
       const comSede = new Set((api.planta && api.planta.torcidas ? api.planta.torcidas() : []).filter(t => t.porta && t.clubeId).map(t => t.clubeId));
-      const j = TO.praca.jogosDaPraca(e).filter(x => x.dia === e.data.dia && x.casa.id !== meu && x.vis.id !== meu && comSede.has(x.casa.id))[0];
+      const j = TO.praca.jogosDaPraca(e).filter(x => x.dia === e.data.dia && x.casa.id !== meu && x.vis.id !== meu && comSede.has(x.casa.id) &&
+                                                     marcados.some(o => o.casa.id === x.casa.id && o.vis.id === x.vis.id))[0];
+      if (!j) return;
       jogoDaCidadeDe = chave;
-      if (j) dia3d.jogoNoFundo({ casa: j.casa, vis: j.vis, hora: j.hora || '16:00', comp: j.comp, estadio: j.casa.estadio || '' });
+      dia3d.jogoNoFundo({ casa: j.casa, vis: j.vis, hora: j.hora || '16:00', comp: j.comp, estadio: j.casa.estadio || '' });
     } catch (err) { console.error('jogo 3D, os jogos da cidade:', err); }
   }
-  /* o dia com jogo da cidade no fundo não é dia vazio (o relógio não pula ele) */
+  /* o dia com a nossa investida num jogo da cidade não é dia vazio (o relógio não pula ele) */
   vida.temJogoHoje = () => dia3d.jogoNoFundoHoje;
   TO.jogo3d = {
     get ritmo() { return ritmo; },

@@ -191,6 +191,35 @@ export function cenaDaInvasao(ctx, plano, c, o = {}) {
     { id: 'tunel_' + nossoLado, rot: 'O NOSSO TÚNEL', lado: nossoLado, x: Math.round(tNos[0]), y: Math.round(tNos[1]), raio: 44, dir: [-1, 0] },
     { id: 'tunel_' + outroLado, rot: 'O TÚNEL DELES', lado: outroLado, x: Math.round(tEles[0]), y: Math.round(tEles[1]), raio: 44, dir: [1, 0] }
   ];
+  /* A FUGA É PRO VOMITÓRIO MAIS PERTO (o dono, 28/09/2026: "o ato de
+     correr quando estiver no estádio vai ser sempre pro vomitório mais
+     próximo e depois surge no local padrão da torcida"): cada vomitório
+     do anel no tabuleiro, fora do isolamento, é um ponto de fuga — na
+     arquibancada, a boca dele (o degrau na frente do poço); no corredor,
+     o pé dele, onde ele desce. Quem corre vai pro mais perto de onde
+     está (combate.js, `fugaNaMaisPerto`) e some no túnel; quando a cena
+     fecha, a torcida volta inteira pro setor dela (dia3d.js,
+     `voltouDoPalco`) */
+  const fugas = [];
+  {
+    const pecas = [...new Set([T.A, X && X.A].filter(Boolean))];
+    const xMin = Math.min(x1, x2) - 2 / pxM, xMax = Math.max(x1, x2) + 2 / pxM;
+    for (const Pc of pecas) for (const vm of Pc.vomitorios || []) {
+      const um = (vm.ua + vm.ub) / 2;
+      const dBoca = vm.k0 > 0 ? Pc.dk(vm.k0) - Pc.c.prof * 0.5 : Pc.dk(Math.min(Pc.n, vm.k1 + 1)) + Pc.c.prof * 0.5;
+      let x, y;
+      if (arq && Pc === A) { x = xDeU(G.perto(fam, um, uMid)); y = yDeD(dBoca); }
+      else {
+        /* (o vomitório no modelo, levado pro anel do tabuleiro) */
+        const q = Pc.fam.ponto(dBoca, um), r = fam.uDe(q[0], q[1]);
+        x = xDeU(G.perto(fam, r.u, uMid)); y = arq ? yDeD(clamp(r.d, dA + 0.3, dB - 0.3)) : yDeD(dMid);
+      }
+      if (!(x > 40 && x < TAB.W - 40) || (x > xMin && x < xMax)) continue;
+      const p = soltar(x, y);
+      if (!livre(p[0], p[1]) || fugas.some(f => Math.hypot(f.x - p[0], f.y - p[1]) < 30)) continue;
+      fugas.push({ x: Math.round(p[0]), y: Math.round(p[1]), raio: 40 });
+    }
+  }
   /* A PM: os guardas do isolamento (os do dia, onde estão) e, sem eles, dois no meio */
   const pmPostos = [];
   for (const e of (c.B && c.B.guardas) || []) if (e.via === c.via) {
@@ -216,6 +245,8 @@ export function cenaDaInvasao(ctx, plano, c, o = {}) {
        ninguém corre do tamanho do outro, cai-se a metade do setor, quem
        não vê ninguém marcha pro rival e a PM não recua */
     semFugaPorMinoria: true, debandadaEm: 50, marchaAoInimigo: true, semRecuoPM: true,
+    /* (sem vomitório no tabuleiro, a fuga é a de sempre: o túnel do setor, as bordas) */
+    fugas: fugas.length ? fugas : undefined, fugaNaMaisPerto: fugas.length > 0,
     tropaEm: { x: Math.round(tropa[0]), y: Math.round(tropa[1]) },
     saida: { perto: 'Voltar pro setor', longe: 'O nosso túnel (leve o líder)', feito: 'sua torcida invadiu o isolamento e voltou pro setor', dica: 'Quebre a grade, passe o cordão da PM e leve o líder de volta pro túnel do setor.' },
     spawns, entradas, pmPostos, faixas
@@ -224,7 +255,7 @@ export function cenaDaInvasao(ctx, plano, c, o = {}) {
   const fw = noMundo((x1 + x2) / 2, (yG0 + yG1) / 2);
   return { cena, noMundo, doMundo, u: E0.u, v: E0.v, eixos, chao, escala: K, via: c.via, x1, x2, yG0, yG1, pxM,
            divisorias: [c.D1, c.D2], foco: { x: fw[0], z: fw[1], y: chao((x1 + x2) / 2, (yG0 + yG1) / 2) * M },
-           malha, COLS, ROWS, rival: X ? X.b.t.id : null };
+           malha, COLS, ROWS, rival: X ? X.b.t.id : null, fugas };
 }
 
 /* ======================================================
