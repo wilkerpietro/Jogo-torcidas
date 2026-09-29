@@ -37,10 +37,10 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=b16589b7e1';
-import { brigaNaCaminhada } from './caminhada.js?v=b16589b7e1';
-import { brigaNoBar } from './briga_bar.js?v=b16589b7e1';
-import { brigaNaTreta } from './briga_treta.js?v=b16589b7e1';
+import { palcoDeBriga } from './palco_briga.js?v=c21cd3cee8';
+import { brigaNaCaminhada } from './caminhada.js?v=c21cd3cee8';
+import { brigaNoBar } from './briga_bar.js?v=c21cd3cee8';
+import { brigaNaTreta } from './briga_treta.js?v=c21cd3cee8';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;

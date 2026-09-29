@@ -59,8 +59,8 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=b16589b7e1';
-import { palcoDeBriga } from './palco_briga.js?v=b16589b7e1';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=c21cd3cee8';
+import { palcoDeBriga } from './palco_briga.js?v=c21cd3cee8';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -71,6 +71,16 @@ const espera = () => new Promise(r => requestAnimationFrame(() => r()));
 const naVia = v => v === 'corredor' ? 'pelo corredor' : 'pela arquibancada';
 /* a sigla da TV (FOR, CEA, CAM): as três primeiras letras do nome, sem acento */
 const siglaTV = nome => String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || '???';
+/* as duas siglas do jogo: as tr\u00eas primeiras letras (FOR \u00d7 CEA); quando elas
+   batem (Corinthians \u00d7 Coritiba dava COR \u00d7 COR, Atl\u00e9tico Mineiro \u00d7 Atl\u00e9tico/GO
+   dava ATL \u00d7 ATL), a sigla do clube no dado (SCCP \u00d7 CFC, CAM \u00d7 ACG) */
+function siglasTV(casa, fora) {
+  const a = siglaTV(casa && casa.nome), b = siglaTV(fora && fora.nome);
+  if (a !== b) return [a, b];
+  const doDado = t => String((t && t.sigla) || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+  const da = doDado(casa), db = doDado(fora);
+  return da && db && da !== db ? [da, db] : [a, b];
+}
 const corDoClube = (t, i) => (t && Array.isArray(t.cores) && t.cores[i]) || (i ? '#d8d8d8' : '#5a5a5a');
 /* a partida na cidade: 90 minutos e o intervalo de 15 (o apito final, na hora do dia) */
 const INTERVALO_S = 15 * 60, DURACAO_S = (90 * 60) + INTERVALO_S;
@@ -196,10 +206,14 @@ export function criarDia3d(api, vida, g = {}) {
         <span class="j3d-placar-time fora"><b></b><i></i></span>
         <span class="j3d-placar-rel"></span>
       </div>
+      <div class="j3d-placar-pen" hidden><span class="j3d-pen-titulo">Disputa de pênaltis</span>
+        <b class="j3d-pen-sig casa"></b><span class="j3d-pen-bolas casa"></span><b class="j3d-pen-n casa">0</b>
+        <b class="j3d-pen-sig fora"></b><span class="j3d-pen-bolas fora"></span><b class="j3d-pen-n fora">0</b>
+        <span class="j3d-pen-recado"></span></div>
       <div class="j3d-placar-pe"><span class="j3d-placar-clima"></span><span class="j3d-placar-bts"><button data-placar="pausa" title="Pausar e seguir a partida (espaço)">❚❚</button><button data-placar="vel" title="A velocidade da partida (4× → 1× → 2×)">4×</button></span></div>`;
     document.body.appendChild(placar);
     placar.addEventListener('click', ev => {
-      const b = ev.target.closest('[data-placar]'), m = D && D.partida;
+      const F = fonte(), b = ev.target.closest('[data-placar]'), m = F && F.partida;
       /* o toque na faixa leva a câmera: o jogo da cidade, pro estádio dele; o nosso, pra nossa torcida */
       if (!b) { if (D && dia && dia.plano) { if (D.fundo) dia.verEstadio(); else verNossa(); } return; }
       if (!m || !TO.jogoAoVivo || !TO.jogoAoVivo.pausar) return;
@@ -209,24 +223,70 @@ export function criarDia3d(api, vida, g = {}) {
     placar.querySelector('.j3d-placar-tv').title = 'Ver na cidade';
     return placar;
   }
+  /* A PARTIDA SEM A CIDADE DO JOGO E O RESULTADO QUE FICA NA TELA (o dono,
+     29/09/2026, sobre os pênaltis que não se viam): o placar de TV lia só o
+     dia da cidade, e o jogo sem ele — o de campo neutro (a final), o de fora
+     do país, a praça que não montou — sumia inteiro da tela, com o cartão
+     2D escondido embaixo; e o dia fecha uns 2 s depois do apito, levando o
+     placar com quem passou nos pênaltis. `solta` é a partida lida direto da
+     mensagem, com os mesmos campos do dia que o placar usa (j, partida,
+     partidaVista, apitado, golVisto, penAviso): nasce na bola rolando sem o
+     dia, ou no fechamento do dia com o jogo ainda na tela, e sai FICA_MS
+     depois do apito */
+  let solta = null, soltaLaco = 0, jogoAberto = null;
+  const FICA_MS = 8000;
+  /* de onde o placar lê: o dia da cidade (o nosso), senão a partida solta */
+  const fonte = () => (D && !D.fundo ? D : (solta || D));
   /* o que o placar mostra agora: os dois clubes, os gols, o relógio */
   function estadoDoPlacar() {
-    if (!D) return null;
+    const F = fonte();
+    if (!F) return null;
     /* (o jogo da cidade no fundo não tem placar: só a nossa investida aparece dele) */
-    if (D.fundo) return null;
+    if (F.fundo) return null;
     /* (na estrada o alto da tela é da estrada: o placar da partida volta na cidade) */
-    if (D.estrada) return null;
-    const j = D.j;
+    if (F.estrada) return null;
+    const j = F.j;
     if (!j || !j.mandante || !j.visitante) return null;
-    const m = D.partida || D.partidaVista, d = m && m.dados;
+    const m = F.partida || F.partidaVista, d = m && m.dados;
     const min = d && TO.jogoAoVivo ? TO.jogoAoVivo.minuto(d) : null;
     if (!d || min == null) return { casa: j.mandante, fora: j.visitante, gc: 0, gf: 0, pre: true, rel: j.hora || '', clima: null, bts: false };
-    const fim = !!D.apitado || (m.respondido && !D.partida);
+    const fim = !!F.apitado || (m.respondido && !F.partida);
     const ate = fim ? 999 : Math.floor(min);
     let gc = 0, gf = 0;
     for (const gl of d.gols || []) if (gl.min <= ate) { if (gl.lado === 'c') gc++; else gf++; }
-    const rel = fim ? 'FIM' : `${Math.max(1, Math.ceil(min))}'`;
-    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 4, gols: d.gols || [], ate };
+    const pen = serieDePenaltis(d, fim);
+    const rel = fim ? 'FIM' : pen ? 'PÊN' : `${Math.max(1, Math.ceil(min))}'`;
+    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 4, gols: d.gols || [], ate, pen };
+  }
+  /* A DISPUTA DE PÊNALTIS NO PLACAR DE TV (o dono, 29/09/2026: "quando um
+     jogo é necessário penaltis não tá dando pra visualizar no tempo real do
+     jogo"): no feed 2D a série mora no cartão da partida (main.js,
+     `cenaDePenaltis`: as duas fileiras de bolas enchendo, uma cobrança a
+     cada 850 ms, com o relógio parado em 90'), e esse cartão fica escondido
+     no 3D (o placar de TV é quem mostra a partida). O compasso continua
+     sendo o do cartão, que roda escondido e é quem apita no fim da série:
+     `penDesde` (quando a série começou), `penAte` (quantas já saíram) e
+     `penFim`, guardados na mensagem. Aqui só se lê. Sem série (o jogo que
+     não foi pros pênaltis), ou antes dela começar, null */
+  const PEN_PASSO_MS = 850;
+  function serieDePenaltis(d, fim) {
+    const cb = d && d.pen && Array.isArray(d.pen.cobrancas) ? d.pen.cobrancas : null;
+    if (!cb || !cb.length) return null;
+    if (!fim && !d.penFim && d.penDesde == null) return null;
+    const n = fim || d.penFim ? cb.length
+      : Math.min(cb.length, Math.max(0, d.penAte != null ? d.penAte : Math.floor((Date.now() - d.penDesde) / PEN_PASSO_MS)));
+    /* as duas fileiras com as mesmas vagas (5, ou mais se a série alongou), como no cartão */
+    const vagas = Math.max(5, cb.filter(k => k.lado === 'c').length, cb.filter(k => k.lado === 'f').length);
+    const lados = { c: [], f: [] };
+    let pc = 0, pf = 0;
+    for (let i = 0; i < n; i++) {
+      const k = cb[i];
+      lados[k.lado === 'c' ? 'c' : 'f'].push(!!k.marcou);
+      if (k.marcou) { if (k.lado === 'c') pc++; else pf++; }
+    }
+    const acabou = n >= cb.length && (fim || !!d.penFim);
+    return { n, total: cb.length, vagas, lados, pc, pf, ultimo: n ? cb[n - 1] : null, acabou,
+             venceC: d.pen.c > d.pen.f, placar: { c: d.pen.c, f: d.pen.f } };
   }
   const ROT_CLIMA = ['Tranquilo', 'Esquentando', 'Tenso'];
   /* (o placar fica embaixo da barra do jogo e da fita das manchetes, que no celular são mais altas) */
@@ -246,14 +306,14 @@ export function criarDia3d(api, vida, g = {}) {
     montarPlacar();
     const topo = topoDaBarra() + 'px';
     if (placar.style.top !== topo) placar.style.top = topo;
-    const sig = JSON.stringify([st.casa.nome, st.fora.nome, st.gc, st.gf, st.pre, st.rel, st.clima, st.bts, st.pausada, st.vel]);
+    const sig = JSON.stringify([st.casa.nome, st.fora.nome, st.gc, st.gf, st.pre, st.rel, st.clima, st.bts, st.pausada, st.vel, st.pen && [st.pen.n, st.pen.acabou]]);
     placar.hidden = false;
     if (sig === placarVisto) return;
     placarVisto = sig;
     const tv = placar.querySelector('.j3d-placar-tv');
-    const [c, f] = tv.querySelectorAll('.j3d-placar-time');
-    c.querySelector('b').textContent = siglaTV(st.casa.nome); c.querySelector('i').style.background = corDoClube(st.casa, 0); c.title = st.casa.nome;
-    f.querySelector('b').textContent = siglaTV(st.fora.nome); f.querySelector('i').style.background = corDoClube(st.fora, 0); f.title = st.fora.nome;
+    const [c, f] = tv.querySelectorAll('.j3d-placar-time'), [sc, sf] = siglasTV(st.casa, st.fora);
+    c.querySelector('b').textContent = sc; c.querySelector('i').style.background = corDoClube(st.casa, 0); c.title = st.casa.nome;
+    f.querySelector('b').textContent = sf; f.querySelector('i').style.background = corDoClube(st.fora, 0); f.title = st.fora.nome;
     const g = tv.querySelector('.j3d-placar-gols');
     g.classList.toggle('pre', st.pre);
     g.querySelector('.gc').textContent = st.pre ? '' : st.gc;
@@ -262,6 +322,7 @@ export function criarDia3d(api, vida, g = {}) {
     rel.textContent = st.rel;
     rel.classList.toggle('fim', st.rel === 'FIM');
     rel.classList.toggle('vivo', !st.pre && st.rel !== 'FIM' && st.rel !== 'INT');
+    pintarPenaltis(st);
     const pe = placar.querySelector('.j3d-placar-pe'), cl = placar.querySelector('.j3d-placar-clima');
     pe.hidden = st.clima == null && !st.bts;
     cl.hidden = st.clima == null;
@@ -273,18 +334,68 @@ export function criarDia3d(api, vida, g = {}) {
       bts.querySelector('[data-placar="vel"]').textContent = `${st.vel}×`;
     }
   }
+  /* o quadro da disputa, embaixo do placar: as siglas, as bolas (verde quem
+     fez, vermelho quem perdeu, vazia a que ainda não bateu ou não precisou),
+     o placar da série e o recado da última cobrança — no fim, quem passou */
+  function pintarPenaltis(st) {
+    const q = placar.querySelector('.j3d-placar-pen'), p = st.pen;
+    q.hidden = !p;
+    if (!p) return;
+    const sig = siglasTV(st.casa, st.fora);
+    for (const [lado, clube] of [['casa', st.casa], ['fora', st.fora]]) {
+      const k = lado === 'casa' ? 'c' : 'f', feitas = p.lados[k];
+      q.querySelector('.j3d-pen-sig.' + lado).textContent = sig[k === 'c' ? 0 : 1]; q.querySelector('.j3d-pen-sig.' + lado).title = clube.nome;
+      q.querySelector('.j3d-pen-n.' + lado).textContent = k === 'c' ? p.pc : p.pf;
+      const bolas = q.querySelector('.j3d-pen-bolas.' + lado);
+      while (bolas.children.length < p.vagas) bolas.appendChild(document.createElement('i'));
+      [...bolas.children].forEach((b, i) => { b.className = i < feitas.length ? (feitas[i] ? 'fez' : 'errou') : ''; });
+    }
+    const r = q.querySelector('.j3d-pen-recado');
+    if (p.acabou) {
+      const venc = p.venceC ? st.casa : st.fora, alto = Math.max(p.placar.c, p.placar.f), baixo = Math.min(p.placar.c, p.placar.f);
+      /* ("por 4 a 3" não quebra no meio: no celular o recado vira duas linhas) */
+      r.textContent = `${venc.nome} passa nos pênaltis, por\u00a0${alto}\u00a0a\u00a0${baixo}.`; r.className = 'j3d-pen-recado fim';
+    } else if (p.ultimo) {
+      const quem = p.ultimo.lado === 'c' ? st.casa : st.fora;
+      r.textContent = p.ultimo.marcou ? `${quem.nome} — na rede!` : `${quem.nome} — perdeu!`; r.className = 'j3d-pen-recado ' + (p.ultimo.marcou ? 'fez' : 'errou');
+    } else { r.textContent = 'Vai bater…'; r.className = 'j3d-pen-recado'; }
+  }
+  /* o resultado numa linha: "Ceará 1 × 1 Fortaleza; Fortaleza passou nos pênaltis, por 4 a 3" */
+  function resultadoEmTexto() {
+    const st = estadoDoPlacar();
+    if (!st || st.pre) return '';
+    let t = `${st.casa.nome} ${st.gc} × ${st.gf} ${st.fora.nome}`;
+    const p = st.pen;
+    if (p && p.acabou) t += `; ${(p.venceC ? st.casa : st.fora).nome} passou nos pênaltis, por ${Math.max(p.placar.c, p.placar.f)} a ${Math.min(p.placar.c, p.placar.f)}`;
+    return t;
+  }
+  /* a disputa vira aviso no começo e no fim (o lado direito, como os gols) */
+  function avisarPenaltis(st, casa, fora) {
+    const F = fonte();
+    if (!F || !st || !st.pen) return;
+    if (!F.penAviso) {
+      F.penAviso = 1;
+      avisar({ voz: 'Pênaltis', texto: `Fim do tempo normal: ${casa.nome} ${st.gc} × ${st.gf} ${fora.nome}. Vai pros pênaltis.`, classe: 'gol' });
+    }
+    if (st.pen.acabou && F.penAviso < 2) {
+      F.penAviso = 2;
+      const p = st.pen, venc = p.venceC ? casa : fora, alto = Math.max(p.placar.c, p.placar.f), baixo = Math.min(p.placar.c, p.placar.f);
+      avisar({ voz: 'Pênaltis', texto: `${venc.nome} passa nos pênaltis, por\u00a0${alto}\u00a0a\u00a0${baixo}.`, classe: 'gol' });
+    }
+  }
   /* O GOL VIRA AVISO (no lado direito, como as notícias) */
   const avisar = o => { const R = TO.jogo3d && TO.jogo3d.recados; if (R && R.avisar) R.avisar(o); };
   function avisarGols(gols, ate, casa, fora) {
-    if (!D) return;
-    D.golVisto = D.golVisto || 0;
+    const F = fonte();
+    if (!F) return;
+    F.golVisto = F.golVisto || 0;
     let c = 0, f = 0;
     const vistos = gols.filter(gl => gl.min <= ate);
     for (let i = 0; i < vistos.length; i++) {
       const gl = vistos[i];
       if (gl.lado === 'c') c++; else f++;
-      if (i < D.golVisto) continue;
-      D.golVisto = i + 1;
+      if (i < F.golVisto) continue;
+      F.golVisto = i + 1;
       const de = gl.lado === 'c' ? casa : fora;
       avisar({ voz: `Gol · ${Math.round(gl.min)}'`, texto: `Gol do ${de.nome}! ${casa.nome} ${c} × ${f} ${fora.nome}`, classe: 'gol' });
     }
@@ -296,6 +407,8 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrir(o) {
     if (D) fechar();
     const e = E(), it = o && o.it, j = it && it.jogo;
+    /* (os clubes do jogo ficam guardados mesmo sem o dia: o placar da partida solta usa as cores e as siglas deles) */
+    jogoAberto = j && j.mandante && j.visitante ? { j, msg: o.msg } : null;
     if (!e || !e.torcida || !j || j.neutro) return false;
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.diaDeJogo) return false;
@@ -395,7 +508,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=b16589b7e1');
+    const { criarEstrada } = await import('./estrada3d.js?v=c21cd3cee8');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -467,7 +580,9 @@ export function criarDia3d(api, vida, g = {}) {
     D.voltou = true; D.naFase = true; D.fase = 'volta';
     /* (o dia da cidade fica parado e escondido: os rótulos dos bondes não ficam por cima da estrada) */
     if (dia) { dia.parar(); dia.seguirBonde(null); dia.esconder(true, true); }
-    status(`Fim de jogo: a caravana pega a estrada de volta (${D.nome} → ${v.cidades[v.cidades.length - 1].nome}).`);
+    /* (o placar de TV sai quando a estrada monta: o resultado fica escrito no painel) */
+    const res = resultadoEmTexto();
+    status(`Fim de jogo${res ? ` (${res})` : ''}: a caravana pega a estrada de volta (${D.nome} → ${v.cidades[v.cidades.length - 1].nome}).`);
     abrirEstrada(v, eu).then(ok => {
       if (D !== eu) return;
       if (!ok) { cont(); return; }
@@ -749,7 +864,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=b16589b7e1');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=c21cd3cee8');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1193,15 +1308,16 @@ export function criarDia3d(api, vida, g = {}) {
   }
   /* A PARTIDA: o relógio do dia anda com o minuto dela */
   function partida(m) {
-    if (!D || !D.plano) return;
+    if (!D || D.fundo || !D.plano || !dia || !dia.plano) { partidaSolta(m); return; }
+    soltarPartida();
     D.partida = m; D.fase = 'jogo';
     dia.parar(); dia.soTorcidas = true;
     status('Bola rolando. A invasão é com você: o painel mostra por onde a nossa torcida chega no setor rival.');
     pintar();
   }
   function apito() {
-    if (!D) return;
-    D.partidaVista = D.partida; D.partida = null; D.apitado = true;
+    if (!D || D.fundo) { apitoSolto(); return; }
+    D.partidaVista = D.partida; D.partida = null; D.apitado = true; D.apitoEm = Date.now();
     status('Fim de jogo.');
     pintar(); pintarPlacar();
     /* O QUE O QUADRO AINDA NÃO FEZ SAI NO APITO (a partida a 4×, o padrão do
@@ -1212,6 +1328,59 @@ export function criarDia3d(api, vida, g = {}) {
     if (dia && dia.plano && D.plano) dia.t = D.plano.bola + DURACAO_S;
     const st = D.j && estadoDoPlacar();
     if (st && st.gols) avisarGols(st.gols, st.ate, D.j.mandante, D.j.visitante);
+    if (st) avisarPenaltis(st, D.j.mandante, D.j.visitante);
+  }
+
+  /* A PARTIDA SOLTA (sem o dia da cidade): o placar de TV anda sozinho, lendo a
+     mensagem, com os gols e a disputa de pênaltis virando aviso como no dia.
+     Os clubes vêm do jogo que o itinerário abriu (cores e siglas); sem ele,
+     os nomes da mensagem */
+  function partidaSolta(m) {
+    const d = m && m.dados;
+    if (!d) return;
+    const j = jogoAberto && jogoAberto.msg === m ? jogoAberto.j : { mandante: { nome: d.casa }, visitante: { nome: d.fora } };
+    solta = { j, partida: m, partidaVista: null, apitado: false, golVisto: 0, penAviso: 0, sai: 0, fimVisto: 0 };
+    ligarSolta();
+  }
+  function ligarSolta() {
+    if (!soltaLaco) soltaLaco = setInterval(quadroSolto, 250);
+    quadroSolto();
+  }
+  function quadroSolto() {
+    if (!solta) { soltarPartida(); return; }
+    /* (o nosso dia da cidade abriu: o placar é dele) */
+    if (D && !D.fundo) { soltarPartida(); return; }
+    const agora = Date.now();
+    if (solta.sai && agora >= solta.sai) { soltarPartida(); return; }
+    /* A PARTIDA QUE NINGUÉM APITOU: quem apita é o cartão da partida, que roda
+       escondido (main.js, widgetPartida) e para se sair da página; sem esta
+       rede o placar ficava parado em 90' (ou em PÊN) pra sempre */
+    const m = solta.partida, d = m && m.dados;
+    if (d) {
+      const min = TO.jogoAoVivo ? TO.jogoAoVivo.minuto(d) : null, cb = d.pen && d.pen.cobrancas;
+      const serie = cb && cb.length ? (d.penFim || (d.penDesde != null && agora - d.penDesde > (cb.length + 2) * PEN_PASSO_MS)) : true;
+      const acabou = m.respondido || (min != null && min >= 90 && !d.pausada && serie);
+      if (!acabou) solta.fimVisto = 0;
+      else if (!solta.fimVisto) solta.fimVisto = agora;
+      else if (agora - solta.fimVisto > 4000) { apitoSolto(); return; }
+    }
+    pintarPlacar();
+    const st = estadoDoPlacar();
+    if (st && st.gols) avisarGols(st.gols, st.ate, solta.j.mandante, solta.j.visitante);
+    if (st) avisarPenaltis(st, solta.j.mandante, solta.j.visitante);
+  }
+  function apitoSolto() {
+    if (!solta || !solta.partida) return;
+    solta.partidaVista = solta.partida; solta.partida = null; solta.apitado = true;
+    solta.sai = Date.now() + FICA_MS;
+    quadroSolto();
+  }
+  function soltarPartida() {
+    if (soltaLaco) { clearInterval(soltaLaco); soltaLaco = 0; }
+    if (!solta) return;
+    solta = null;
+    /* (o placar só sai se o nosso dia não estiver no ar: aí quem pinta é ele) */
+    if (placar && !(D && !D.fundo)) { placar.hidden = true; placarVisto = ''; }
   }
 
   /* ======================================================
@@ -1376,6 +1545,7 @@ export function criarDia3d(api, vida, g = {}) {
       ultimo = agora; pintarHora(); pintarFases(); pintarPlacar();
       const st = D.j && estadoDoPlacar();
       if (st && st.gols) avisarGols(st.gols, st.ate, D.j.mandante, D.j.visitante);
+      if (st) avisarPenaltis(st, D.j.mandante, D.j.visitante);
       if (D.partida && !D.invadiu) { const n = viasDaInvasao().length, i = hud && hud.querySelector('.j3d-dia-invadir'); if (i && i.hidden === !!n) pintar(); }
     }
   }
@@ -1386,6 +1556,15 @@ export function criarDia3d(api, vida, g = {}) {
   function fechar() {
     if (!D) return;
     const eraFundo = !!D.fundo, tDia = dia && dia.plano ? dia.t : null, estrada = D.estrada;
+    /* O RESULTADO FICA NA TELA: o dia fecha uns 2 s depois do apito, e o placar
+       (com quem passou nos pênaltis) ia junto — agora ele vira a partida solta e
+       fica até FICA_MS depois do apito. A partida que ainda rola quando o dia
+       cai (a placa de vídeo perdeu o contexto) segue no placar do mesmo jeito.
+       Na volta pela estrada, não: o alto da tela é dela */
+    if (!eraFundo && !estrada && D.j && (D.partida || D.apitado)) {
+      solta = { j: D.j, partida: D.partida, partidaVista: D.partidaVista, apitado: !!D.apitado, golVisto: D.golVisto || 0, penAviso: D.penAviso || 0,
+                sai: D.apitado ? (D.apitoEm || Date.now()) + FICA_MS : 0, fimVisto: 0 };
+    }
     D = null;
     if (estrada) estrada.desmontar();
     soltarEspera();
@@ -1396,7 +1575,7 @@ export function criarDia3d(api, vida, g = {}) {
     if (dia) { dia.soTorcidas = false; dia.esconder(false, true); dia.sair(); }
     if (Cn && Cn.vida) Cn.vida.diaNoFundo = false;
     if (hud) hud.hidden = true;
-    if (placar) placar.hidden = true;
+    if (solta) ligarSolta(); else if (placar) placar.hidden = true;
     for (const m of document.querySelectorAll('.j3d-dia-modal')) m.remove();
     if (eraFundo) return;
     /* O NOSSO DIA DE JOGO: o dia da praça segue da hora em que ele acabou
@@ -1481,6 +1660,8 @@ export function criarDia3d(api, vida, g = {}) {
                vias: viasDaInvasao(), invadiu: D.invadiu, partida: !!D.partida, emCena: !!D.emCena,
                invasao: D.ultimaInvasao ? { via: D.ultimaInvasao.via, rival: D.ultimaInvasao.rival, grades: D.ultimaInvasao.cena.grades.map(x => x.modulos), pm: D.ultimaInvasao.cena.pmPostos.length } : null };
     },
+    /* (pro teste: a partida solta, sem o dia da cidade ou com o resultado ficando na tela) */
+    get solta() { return solta ? { partida: !!solta.partida, apitado: solta.apitado, fica: solta.sai ? Math.max(0, solta.sai - Date.now()) : null, clubes: [solta.j.mandante.nome, solta.j.visitante.nome] } : null; },
     get dia() { return dia; }, get plano() { return D && D.plano; }
   };
 }
