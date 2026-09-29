@@ -734,6 +734,9 @@ TO.diaJogo.ponte = (function(){
     if(btP && !J.semArmas){const r=C.restaCd(J,'pedra'); btP.disabled=r>0;
       btP.firstChild.textContent=(r>0?_t('Pedra {s}s', {s:r.toFixed(1)}):_t('Pedra'))+' ';}
     const btQ=el('djBtBater'); if(btQ) btQ.style.display = '';
+    /* (a câmera só troca no palco 3D que tem duas: a reunião tem uma só) */
+    const btV=el('djBtCamera');
+    if(btV){ const v = tres && T && T.trocarCamera && (T.MODOS||[]).length > 1 ? '' : 'none'; if(btV.style.display !== v) btV.style.display = v; }
     if(btB && !J.semArmas){const r=C.restaCd(J,'bomba'); btB.disabled=J.bombas<=0||r>0;
       btB.firstChild.textContent=(r>0?_t('Bomba {s}s', {s:r.toFixed(1)}):_t('Bomba'))+' ';}
     if(el('djQtdBomba')) el('djQtdBomba').textContent=J.bombas;
@@ -935,6 +938,7 @@ TO.diaJogo.ponte = (function(){
     liga('djBtBater', ()=>{ if(J) C.bater(J, liderVivo()); });
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
     liga('djBtFugir', mandarCorrer);
+    liga('djBtCamera', trocarCamera3d);
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
   }
@@ -1290,6 +1294,12 @@ TO.diaJogo.ponte = (function(){
      mesmo canvas e na mesma janela: com duas cenas abertas, uma tecla
      Q jogava duas pedras, a rodinha dava zoom dobrado e o F2 abria e
      fechava o editor no mesmo aperto (que foi como isto apareceu). */
+  /* a câmera da briga em 3D (o V e o botão "Câmera V" da barra) */
+  function trocarCamera3d(){
+    if(!(tres && T && J && T.trocarCamera)) return;
+    const nm = T.trocarCamera(), md = (T.MODOS||[]).find(m=>m.nome===nm);
+    C.aviso(J, md && md.rot ? md.rot : 'câmera '+nm, '#e0b040');
+  }
   let entradaLigada=false;
   function ligarEntrada(){
     if(entradaLigada) return;
@@ -1302,9 +1312,7 @@ TO.diaJogo.ponte = (function(){
          no C e roubava o "chamar" — no PC não dava pra chamar pelo
          teclado, e o botão da tela seguia dizendo "Chamar C". O C volta a
          chamar, como no jogo de feed */
-      if(k==='v' && tres && T && J){
-        const nm = T.trocarCamera(), md = (T.MODOS||[]).find(m=>m.nome===nm);
-        C.aviso(J, md && md.rot ? md.rot : 'câmera '+nm, '#e0b040'); return; }
+      if(k==='v' && tres && T && J){ trocarCamera3d(); return; }
       if(ED.ativo){
         if(k==='[') ED.pincel=Math.max(4,ED.pincel-4);
         if(k===']') ED.pincel=Math.min(80,ED.pincel+4);

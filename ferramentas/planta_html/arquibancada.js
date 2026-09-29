@@ -1483,7 +1483,7 @@ export function criarArquibancada(ctx, p, grupo, aux) {
       tomada: T.tomada ? { de: T.tomada.de.id, w: +T.tomada.w.toFixed(1), pendura: hora(T.tomada.tSolta) } : null,
       perdidos: panos.filter(pn => pn.T === T && pn.perdido).map(pn => pn.F.tipo), puxador: T.puxador.cima ? 'mureta' : 'fileira',
       linhas: [T.kMin, T.kMax], decisao: A.decisoes.get(T.b) ? { ...A.decisoes.get(T.b) } : null }));
-    return { torcidas: porT, guardas: A.nGuardas, isolamentos: A.buffers.length,
+    return { torcidas: porT, guardas: A.nGuardas, isolamentos: A.buffers.length, panosOcultos: panosOcultos ? [...ocultas] : null,
       invasao: inv ? { via: inv.via, a: inv.a.t.sigla, v: inv.v ? inv.v.t.sigla : null, rival: inv.rival ? inv.rival.t.sigla : null, ini: hora(inv.t0), grade: hora(inv.tQ1), fim: hora(inv.tFim), fura: inv.fura, pFura: +inv.pFura.toFixed(2),
         nAtk: inv.nAtk, nFront: inv.nFront, nPM: inv.nPM, cordao: cordao.length, gente: inv.gente, grades: inv.grades.map(g => g.i), originais: [...originais.values()].reduce((s, l) => s + l.length, 0) } : null };
   }

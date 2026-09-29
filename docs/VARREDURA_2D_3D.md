@@ -42,19 +42,42 @@ cartão da partida contava e o placar de TV não conta**.
 
 Detalhes e testes na seção 21 do `docs/JOGO_3D.md`.
 
+## Resolvido na rodada seguinte (29/09/2026, "pode fazer a próxima rodada nessa ordem")
+
+Os cinco primeiros da tabela abaixo, na ordem; detalhes e testes na seção 22
+do `docs/JOGO_3D.md`.
+
+- **Faixa e bandeira na concentração e na invasão** (`combate.js`,
+  `cenaDaFaixa`): a cena 3D diz pelo `base` qual cena da foto ela faz. Testado:
+  a bandeira da rival exposta na concentração dela, tomada no fim (+2/−5 de
+  prestígio, a peça muda de dono); a nossa exposta e perdida quando atacam a
+  nossa; na invasão pela arquibancada, três peças na cena (a nossa bandeira e a
+  faixa e a bandeira da rival), as duas da rival tomadas no fim.
+- **Bar quebrado aparece quebrado** (`vida3d.js`, `mapa3d.js`): tapume em
+  metade da varanda com a sigla de quem quebrou pichada, cacos na calçada, a
+  roda da porta pela metade e o bar marcado no Mapa da cidade ("BAR QUEBRADO ·
+  N DIAS"). Quem quebrou passou a ficar guardado (`danoPor`).
+- **Faixa perdida ou tomada no estádio** (`arquibancada.js`): a mureta estende
+  só o que a torcida tem; a última faixa tomada pendura de cabeça pra baixo do
+  lado da dela; a perdida numa briga do dia sai da mureta. A sede continua sem
+  as tomadas (esforço M, não entrou).
+- **Tecla C**: o C chama; a câmera foi pro V.
+- **Aviso pago do olheiro**: vira aviso no canto direito, em destaque, 10 s.
+
 ---
 
 ## O que eu faria primeiro
 
-Ordem por impacto sobre esforço, não por área.
+Ordem por impacto sobre esforço, não por área. Os itens 1 a 5 foram feitos
+(acima); o próximo da fila é o 6.
 
 | # | O quê | Por quê | Esforço |
 |---|-------|---------|---------|
-| 1 | **Faixa e bandeira na briga da concentração e na invasão** | Regressão: o motor só liga a faixa pelo nome da cena, e as cenas 3D se chamam `caminhada@3d` e `invasao@3d`. No 2D a faixa tomada vale −10/+5 de prestígio e muda de dono no patrimônio; no 3D ninguém toma nem perde faixa nessas brigas. | P (+ teste) |
-| 2 | **Bar quebrado aparece quebrado** | Depois do bote no bar (agora em 3D), o bar fica 45 dias "quebrado no ataque" no patrimônio, mas no mapa ele segue inteiro e cheio no dia seguinte. | P |
-| 3 | **Faixa perdida ou tomada no estádio e na sede** | A arquibancada 3D estende faixa e bandeira sempre, tenha a torcida faixa ou não; as tomadas não aparecem em lugar nenhum. Contradiz o relatório da briga. | P (estádio) / M (sede) |
-| 4 | **Tecla C na briga 3D** | No PC o C troca a câmera e não chama mais os parceiros; o botão da tela continua dizendo "Chamar C". Precisa só decidir a tecla da câmera (sugestão: V). | P |
-| 5 | **Aviso pago do olheiro** | Pela sua regra da seção 19, só jornal vai pro canto direito; o aviso de ataque da Inteligência (R$ 100 ou R$ 400 por dia) fica só em Notícias › Mensagens. Vale uma exceção pra ele. | P |
+| 1 | ~~**Faixa e bandeira na briga da concentração e na invasão**~~ (feito) | Regressão: o motor só liga a faixa pelo nome da cena, e as cenas 3D se chamam `caminhada@3d` e `invasao@3d`. No 2D a faixa tomada vale −10/+5 de prestígio e muda de dono no patrimônio; no 3D ninguém toma nem perde faixa nessas brigas. | P (+ teste) |
+| 2 | ~~**Bar quebrado aparece quebrado**~~ (feito) | Depois do bote no bar (agora em 3D), o bar fica 45 dias "quebrado no ataque" no patrimônio, mas no mapa ele segue inteiro e cheio no dia seguinte. | P |
+| 3 | ~~**Faixa perdida ou tomada no estádio**~~ (feito; a sede, não) | A arquibancada 3D estende faixa e bandeira sempre, tenha a torcida faixa ou não; as tomadas não aparecem em lugar nenhum. Contradiz o relatório da briga. | P (estádio) / M (sede) |
+| 4 | ~~**Tecla C na briga 3D**~~ (feito: câmera no V) | No PC o C troca a câmera e não chama mais os parceiros; o botão da tela continua dizendo "Chamar C". Precisa só decidir a tecla da câmera (sugestão: V). | P |
+| 5 | ~~**Aviso pago do olheiro**~~ (feito) | Pela sua regra da seção 19, só jornal vai pro canto direito; o aviso de ataque da Inteligência (R$ 100 ou R$ 400 por dia) fica só em Notícias › Mensagens. Vale uma exceção pra ele. | P |
 | 6 | **Briga dos arredores em 3D** | É a briga mais comum: "arredores" é o padrão do planejamento e da política. A cidade anda até o estádio e aí abre a foto 2D. | M (versão na caminhada) / G (fiel ao 2D: cordão, grades, portão) |
 | 7 | **Sede nível 2 a 6 e anexos** | São as compras mais caras do jogo e o 3D só tem três estados (sem sede, barracão, sede grande). | M (anexos, nível da IA) / G (modelo por nível) |
 
@@ -88,10 +111,8 @@ Ordem por impacto sobre esforço, não por área.
 
 ## Motor de briga
 
-1. **Faixa na concentração e na invasão** — ver "O que eu faria primeiro", item
-   1 (`combate.js` 3739: `CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina)/`
-   testa só o `id` da cena; `caminhada.js` 228 e `invasao.js` 239 já trazem
-   `base: 'praca'` e `base: 'estadio'`). **P.**
+1. ~~**Faixa na concentração e na invasão**~~ — feito (seção 22 do
+   `JOGO_3D.md`): `cenaDaFaixa` lê o `base` da cena 3D. **P.**
 2. **Seta de borda apontando o bonde rival** — no 2D (`ponte.js` 439–492); no
    3D não existe. Com a câmera a 16–21 m do líder, o rival sai do quadro e nada
    indica o lado. **P.**
@@ -99,7 +120,7 @@ Ordem por impacto sobre esforço, não por área.
    está pra cair pra escolher alvo ou recuar. **M.**
 4. **Vida da grade na invasão** — o gradil balança e tomba, mas não mostra
    quanto falta pra romper. **P.**
-5. **Tecla C** — ver "O que eu faria primeiro", item 4 (`ponte.js` 1301–1303). **P.**
+5. ~~**Tecla C**~~ — feito: o C chama e a câmera é o V. **P.**
 6. **Portões e saídas dos dois lados** — só o anel do nosso objetivo aparece;
    não se vê por onde o rival foge. **P.**
 7. **"De olho" na caminhada** — no 2D o alvo só reage quando o bonde chega
@@ -146,10 +167,11 @@ do nosso bar, casa de piscina, reunião com sede.
 
 ## Outros sistemas (gestão, patrimônio, recados)
 
-1. **Bar quebrado por 45 dias** (nosso e das IAs) — `financeiro.js` 60–84
-   (`danoAte`); nada disso chega à planta. **P.**
-2. **Faixa e bandeira perdidas ou tomadas** — ver "O que eu faria primeiro",
-   item 3 (`arquibancada.js` 334–348). **P / M.**
+1. ~~**Bar quebrado por 45 dias**~~ (nosso e das IAs) — feito: tapume,
+   cacos, roda pela metade e o risco no Mapa da cidade. **P.**
+2. **Faixa e bandeira perdidas ou tomadas** — o estádio foi feito (a mureta
+   segue o patrimônio, a tomada pendura de cabeça pra baixo); a sede ainda não
+   mostra as tomadas. **M** (sede).
 3. **Sede nível 2 a 6, anexos e ampliações** — incluindo a IA (`t.sede++` nunca
    chega à planta). **M / G.**
 4. **Torcida sem sede (nível 0)** — o ponto de encontro das pequenas não tem
@@ -157,9 +179,10 @@ do nosso bar, casa de piscina, reunião com sede.
 5. **Loja e subsede na praça** — a planta só conhece bar e sede; é a mesma
    queixa que você fez do bar na seção 15. **M.**
 6. **Recados que só ficam em Notícias › Mensagens** — o aviso pago do olheiro
-   (item 5 da tabela), loja vendida por dívida, receita da festa, abertura da
-   LNT, fim da Conmebol e do ano. Pela sua regra da seção 19, o canto é só de
-   jornal; o que vale abrir exceção é decisão sua. **P.**
+   já vai pro canto (feito); seguem só no arquivo: loja vendida por dívida,
+   receita da festa, abertura da LNT, fim da Conmebol e do ano. Pela sua regra
+   da seção 19, o canto é só de jornal; o que vale abrir exceção é decisão
+   sua. **P.**
 7. **Festas de aniversário e do título** — a sede 3D só reage à festa do
    expediente; no dia do aniversário ou do título ela fica normal. **M.**
 8. **Presos e feridos** — só somem da sede; hospital e delegacia existem na

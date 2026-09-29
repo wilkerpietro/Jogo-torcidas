@@ -372,5 +372,11 @@ export function palcoDeBriga(o) {
     }
   };
   R.projetar.chave = () => { const c = C.vida.camera; return [c.position.x.toFixed(1), c.position.y.toFixed(1), c.position.z.toFixed(1), innerWidth, innerHeight].join('|'); };
+  /* pro teste: os panos das faixas no mundo e na tela (px CSS; `frente`: na frente da câmera) */
+  Object.defineProperty(R, 'panos', { get: () => [...panos].map(([F, p]) => {
+    const q = p.mesh.position, t = C.vida.projetar(q.x, q.y, q.z, {});
+    return { tipo: F.tipo, lado: F.lado, torcida: F.torcidaId, visivel: p.mesh.visible, comImagem: !!p.mat.map,
+             tela: { x: Math.round(t.x), y: Math.round(t.y), frente: t.frente }, larg: +(p.mesh.scale.x / M).toFixed(2), alt: +(p.mesh.scale.y / M).toFixed(2) };
+  }) });
   return R;
 }

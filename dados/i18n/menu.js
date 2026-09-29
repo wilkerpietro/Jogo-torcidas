@@ -103,6 +103,9 @@ TO.i18n.registrar({
   'Bomba':    {es:'Bomba',    en:'Bomb'},
   'Recuar':   {es:'Retroceder', en:'Fall back'},
   'Fugir':    {es:'Huir',     en:'Flee'},
+  'Câmera':   {es:'Cámara',   en:'Camera'},
+  'Perto do líder ou a cena inteira do alto':
+    {es:'Cerca del líder o la escena entera desde arriba', en:'Close to the leader or the whole scene from above'},
   'Entrar pelo portão': {es:'Entrar por el portón', en:'Go in through the gate'},
   'Fim da noite':       {es:'Fin de la noche',     en:'End of the night'},
   'Voltar pra sede':    {es:'Volver a la sede',    en:'Back to HQ'},

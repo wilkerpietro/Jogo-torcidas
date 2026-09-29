@@ -1646,3 +1646,141 @@ briga dos arredores do estádio, a mais comum do jogo, que ainda abre a foto
   estádio na tela).
 - Sem cidade, o clima tenso abre a pergunta 2D de sempre (não mudou).
 - Testado só no Chromium do teste (SwiftShader).
+
+## 22. A faixa na concentração e na invasão, o C que chama, o bar quebrado, a faixa no estádio e o aviso do olheiro (29/09/2026)
+
+O dono: "pode fazer a próxima rodada nessa ordem" — os cinco primeiros itens
+da varredura (seção 21 e `docs/VARREDURA_2D_3D.md`), nessa ordem.
+
+**1. A faixa na briga da concentração e na invasão** (combate.js). O motor
+ligava a faixa pelo id da cena (`CENAS_FAIXA`: bar, praça, estádio, casa de
+piscina), e as cenas do 3D têm o id delas — `caminhada@3d`, `invasao@3d` —:
+nessas duas brigas ninguém expunha, tomava nem perdia faixa ou bandeira. Agora
+`cenaDaFaixa()` olha também o `base` da cena 3D (qual cena da foto ela faz:
+`praca` na concentração, `estadio` na invasão; `rua`, a pista, segue sem
+faixa, como no jogo de feed). A cena 3D que não diz onde a faixa pendura (a
+invasão pelo corredor, debaixo da arquibancada) fica sem faixa. O resto é o de
+sempre do jogo de feed: quem é atacado expõe (meio a meio faixa ou bandeira na
+concentração; na invasão, cada torcida a que ela tem), dois correm pra
+recolher, e se o lado dela cai inteiro a peça é tomada — a faixa vale −10 pra
+quem perde e +5 pra quem toma (a bandeira, −5/+2), e a peça muda de dono no
+patrimônio.
+
+**2. O C chama; a câmera é o V** (ponte.js, index.html, i18n). Na briga 3D o
+C trocava a câmera e roubava o "chamar" (no PC não dava pra chamar pelo
+teclado, e o botão da tela continuava dizendo "Chamar C"). A câmera foi pro V,
+e a barra de botões da briga ganhou o botão **"Câmera V"**, que só aparece no
+palco 3D (no clique também troca: perto do líder ↔ a cena inteira do alto).
+A dica das teclas das páginas de bancada diz "F agarrar · C chamar · … · V
+câmera" nas três línguas.
+
+**3. O bar quebrado aparece quebrado** (financeiro.js, vida3d.js, mapa3d.js,
+cenario.js). Enquanto dura o conserto (os 45 dias de metade da receita):
+- **metade da varanda de tapume** — o compensado pregado, com dois sarrafos
+  de través — e, pichada nele, **a sigla de quem quebrou** na cor dela;
+- **os cacos na calçada**: vidro, garrafas deitadas, duas cadeiras de plástico
+  tombadas e o engradado virado;
+- **a roda da porta pela metade** (o bar fatura a metade);
+- no **Mapa da cidade**, um X vermelho na porta e "BAR QUEBRADO · N DIAS".
+O save não diz qual lote do mapa é o bar quebrado (a praça põe os bares pela
+conta de quantos a torcida tem), então é o mesmo que a briga do bote pega: o
+bar do dono mais perto da sede de quem quebrou. Pra isso o `danificarBar`
+passou a guardar quem quebrou (`danoPor`: o bote no bar deles, o ataque deles
+no nosso e o saque entre duas IAs). Bar quebrado antes desta versão não tem
+`danoPor`: fica o primeiro bar da dona e o tapume sai sem pichação. Durante uma
+briga no próprio bar o tapume e os cacos saem (o combate anda por ali) e
+voltam no fim. O conserto acabou, o tapume some sozinho (a rua confere o save
+a cada 2 s).
+
+**4. A faixa no estádio é a do patrimônio** (arquibancada.js, dia3d.js,
+dia_de_jogo.js). A arquibancada estendia faixa e bandeira sempre, tivesse a
+torcida ou não — contradizia o relatório da briga. Agora:
+- **quem perdeu a faixa (ou a bandeira) chega sem ela** — a nossa pelo
+  patrimônio, a das IAs pela ficha viva do mundo;
+- **a última faixa que a torcida tomou pendura de cabeça pra baixo** do lado da
+  dela, 80% do tamanho (o troféu, como o Patrimônio do jogo de feed mostra as
+  tomadas), estendida por mais dois da torcida;
+- **a peça perdida numa briga do dia sai da mureta** (o patrimônio é conferido
+  a cada 2 s);
+- na **invasão pela arquibancada**, a faixa de cada lado é a do combate (a que
+  se toma); a pendurada das duas torcidas da briga sai enquanto ela dura e
+  volta no fim.
+Sem o jogo por baixo (a planta, o dia de jogo do botão do cenário) ou com uma
+torcida que o mundo do jogo não conhece, tudo estende as suas, como antes.
+
+**5. O aviso pago do olheiro vai pro canto** (recados3d.js, jogo3d.css). Pela
+regra da seção 19 o canto direito é só de jornal, e o aviso da campana ("Fala
+presida, me passaram a fita de que os caras da X vão atacar…") — que é o que a
+diária de Inteligência compra, R$ 100 ou R$ 400 por dia — ficava só em
+Notícias › Mensagens, onde ninguém via a tempo. Ele é a exceção: aviso no
+canto, com a borda dourada e "Olheiro · Inteligência", fica 10 s (o comum, 4,2)
+e é o último a sair quando a pilha enche. O toque abre o cartão inteiro, como
+os outros.
+
+**Teste** (Playwright + SwiftShader, jogo.html do Pages, Fortaleza, Leões da
+TUF; rival: Cearamor), numa partida nova, com o relógio parado pelo teste:
+- **Bar quebrado:** o bar da Cearamor quebrado por nós e o nosso quebrado por
+  ela (`danificarBar` direto no save). Os dois tapumes na cena em menos de 2 s
+  (16 peças cada); o da Cearamor no mesmo bar que a briga do bote pegaria (o
+  mais perto da nossa sede). Fotos: o BAR DO TOC com o tapume e "TUF" pichado
+  em azul, e o BAR DO TUF com "TOC" em preto, os cacos, as cadeiras tombadas e
+  o engradado. Às 13h, com a câmera perto, 1 na roda da porta de cada bar
+  quebrado e 3 no bar inteiro do lado (a conta sorteia 3 a 5 e corta pela
+  metade). O Mapa da cidade marcou "BAR QUEBRADO · 45 DIAS" e "· 15 DIAS".
+- **Olheiro:** o aviso da campana (`avisoDoOlheiro`, alvo o nosso bar) no
+  canto direito, "Olheiro · Inteligência", visível; saiu sozinho depois de uns
+  10 s.
+- **Concentração, o nosso ataque:** a cena `caminhada@3d` (base `praca`) com a
+  bandeira da Cearamor estendida atravessada na rua, na frente do bonde dela
+  (o lugar que a caminhada já marcava pro pano, `caminhada.js`); o V trocou a câmera
+  (dist. 369 → 777, perto → alto); o C chamou (`chamouEm` marcou o nosso lado);
+  a barra mostra "Chamar C" e o botão "Câmera V", e o clique nele trocou a
+  câmera. Fim forçado com o lado dela
+  todo caído: relatório "Tomamos a bandeira da Cearamor — +2 de prestígio pra
+  nós · −5 pra eles"; no save, a bandeira dela saiu (1 → 0) e entrou nas
+  nossas tomadas.
+- **Concentração, o ataque deles:** a nossa bandeira exposta; fim forçado com
+  o nosso lado caído: "perdemos a nossa bandeira pra Cearamor", e a bandeira
+  saiu das nossas (1 → 0) e entrou nas tomadas dela.
+- **Estádio:** sem faixa nenhuma no patrimônio e com uma faixa da Cearamor nas
+  tomadas, o jogo em casa (Fortaleza × Ceará): a arquibancada planejou a
+  TUF sem faixa, com a bandeira e com a tomada da Cearamor (6 m, pendurada às
+  15h21); na foto, a nossa bandeira e a faixa da Cearamor de cabeça pra baixo
+  na mureta. A invasão pela arquibancada: três peças na cena (a nossa bandeira,
+  a faixa e a bandeira da Cearamor), as penduradas das duas torcidas escondidas
+  durante a briga, e as três na tela com a câmera do alto. Fim forçado com a
+  Cearamor caída: "Tomamos a faixa da Cearamor +5 · −10" e "Tomamos a bandeira
+  da Cearamor +2 · −5"; no save, a Cearamor ficou com 0 faixa e 0 bandeira;
+  na mureta, a faixa dela saiu (perdida) e as penduradas voltaram.
+- Nenhum erro de página em nenhuma rodada.
+- **O que o teste pegou no caminho:** a primeira foto do bar saiu da sala do
+  presidente (a câmera não tinha voado: o teste mexia na órbita em vez de usar
+  o voo da câmera) e a segunda, com a câmera baixa, deu na fachada do hospital
+  do outro lado da rua; o teste passou a esperar o voo chegar e a olhar de mais
+  alto. E a checagem da dica das teclas achou que, no jogo, essa dica não
+  existe (ela é das páginas de bancada): no jogo 3D o V não aparecia em lugar
+  nenhum — daí o botão "Câmera V" na barra.
+
+**Limites (sinceros):**
+- **Qual bar do mapa** está quebrado é uma escolha nossa, não um dado do save:
+  o do dono mais perto da sede de quem quebrou. Com dois bares da mesma
+  torcida quebrados por torcidas diferentes, cada um cai no mais perto de quem
+  quebrou; bar quebrado antes desta versão (sem `danoPor`) cai no primeiro da
+  dona e sai sem pichação.
+- O tapume não bloqueia o passo: numa briga no próprio bar ele e os cacos saem
+  da cena enquanto ela dura.
+- **No estádio só a última faixa tomada** pendura (não todas, nem as bandeiras
+  tomadas), e só quando a torcida leva 6 ou mais pro estádio. A peça tomada no
+  próprio dia sai da mureta da dona na hora, mas só aparece de cabeça pra baixo
+  na mureta de quem tomou no próximo jogo (a arquibancada é montada no começo
+  do dia). A bandeira da mureta ainda depende de a torcida levar 8 ou mais; na
+  briga da invasão ela aparece pela régua do combate (o patrimônio) — com 7 no
+  estádio, a torcida briga com bandeira que não estava pendurada.
+- **A sede não mostra as faixas tomadas** (troféu na parede): ficou pra depois
+  (esforço médio).
+- Na invasão, a faixa do combate fica virada pra arquibancada (quem briga
+  precisa ver e alcançar), não pro campo como as penduradas.
+- O aviso do olheiro some em 10 s como os outros; quem não viu tem a mensagem
+  em Notícias › Mensagens.
+- Testado só no Chromium do teste (SwiftShader); no celular, só a regra de
+  largura do canto, que é a mesma dos outros avisos.
