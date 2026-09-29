@@ -2621,6 +2621,8 @@ void main() {
     get camera() { return cam; },
     /* a cena (o jogo 3D põe nela o que é dele: as cadeiras a mais da reunião) */
     get cena() { return doMapa; },
+    /* o three.js do cenário (o jogo 3D monta com ele o que põe na cena: o tapume do bar quebrado) */
+    get THREE() { return THREE; },
     /* o CORTE num material de fora (o palco à parte da caravana, a festa):
        o que passa da cabeça do boneco, entre ele e a câmera, fica ralo */
     cortavel: m => cortavel(m, false),

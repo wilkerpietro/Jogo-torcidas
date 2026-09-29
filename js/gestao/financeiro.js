@@ -64,11 +64,15 @@ TO.financeiro = (function(){
      nosso e pro das IAs — os dois lados guardam bar como objeto de
      lista. Despesa NÃO cai: conserto de vidro e mesa é o que dói. */
   const DANO_BAR = {dias:45, corte:0.5};
-  function danificarBar(b, abs){
+  function danificarBar(b, abs, por){
     if(!b) return null;
     /* ataque em cima de ataque não empilha, RENOVA: o prazo passa a
        contar do estrago de agora */
     b.danoAte = (abs || 0) + DANO_BAR.dias;
+    /* quem quebrou (o jogo 3D, 29/09/2026): o mapa 3D põe o tapume no
+       bar do dono que fica do lado de quem atacou — o mesmo que a briga
+       do bote usa */
+    b.danoPor = por || null;
     return b;
   }
   /* o bar mais caro é o que o rival quebra: é o que tem o que quebrar */

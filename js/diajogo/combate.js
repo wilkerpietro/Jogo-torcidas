@@ -3744,11 +3744,30 @@ TO.diaJogo.combate = (function(){
      meio a meio; no estádio, faixa E bandeira lado a lado — e TODO
      setor de toda torcida presente estende as suas. */
   const CHANCE_BANDEIRA = {bar:0.7, praca:0.5, casa:0.5};
+  /* A CENA DA FOTO QUE A CENA 3D FAZ (conserto de 29/09/2026, a varredura
+     2D × 3D): a faixa olhava só o id da cena, e as cenas do jogo 3D têm o
+     id delas ('caminhada@3d', 'invasao@3d') — a briga da concentração e a
+     invasão da arquibancada ficavam sem faixa, e ninguém tomava nem
+     perdia faixa nelas. O `base` da cena 3D diz qual cena da foto ela faz
+     ('praca' na concentração, 'estadio' na invasão; 'rua' na pista, que
+     no jogo de feed também não tem faixa) */
+  function cenaDaFaixa(){
+    const id = D.id || '', b = D.base || '';
+    if(/^estadio-/.test(id) || b === 'estadio') return 'estadio';
+    if(/^bar(@|$)/.test(id) || b === 'bar') return 'bar';
+    if(/^casa-piscina/.test(id)) return 'casa';
+    if(CENAS_FAIXA.test(id) || b === 'praca') return 'praca';
+    return null;
+  }
   function montarFaixas(J, cfg){
-    if(!cfg || !D.id || !CENAS_FAIXA.test(D.id)) return [];
+    const cena = cenaDaFaixa();
+    if(!cfg || !cena) return [];
+    /* (a cena 3D diz onde a faixa pendura; a que não diz — a invasão pelo
+       corredor, debaixo da arquibancada — não tem onde estender) */
+    if(D.tres && !(D.faixas && Object.keys(D.faixas).length)) return [];
     const PAT = TO.patrimonio, E = TO.estado && TO.estado.E;
     if(!PAT || !E) return [];
-    const estadio = /^estadio-/.test(D.id);
+    const estadio = cena === 'estadio';
     const fora = [];
     if(estadio){
       /* um par por SETOR: cada bonde com torcida conhecida estende */
@@ -3782,7 +3801,7 @@ TO.diaJogo.combate = (function(){
       const id = q === 'nos' ? E.torcida.id : cfg.rivalId;
       if(!id) continue;
       /* (o bar do jogo 3D é 'bar@3d', no bar de verdade do mapa: a mesma chance da foto) */
-      const chave = /^bar(@|$)/.test(D.id) ? 'bar' : /^casa-piscina/.test(D.id) ? 'casa' : 'praca';
+      const chave = cena === 'bar' ? 'bar' : cena === 'casa' ? 'casa' : 'praca';
       const querBandeira = U.rng() < (CHANCE_BANDEIRA[chave] || 0);
       const ordemTipos = querBandeira ? ['bandeira','faixa'] : ['faixa','bandeira'];
       for(const tipo of ordemTipos){

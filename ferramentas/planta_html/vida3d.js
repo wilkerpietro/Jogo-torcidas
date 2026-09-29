@@ -41,6 +41,7 @@ import { palcoDeBriga } from './palco_briga.js';
 import { brigaNaCaminhada } from './caminhada.js';
 import { brigaNoBar } from './briga_bar.js';
 import { brigaNaTreta } from './briga_treta.js';
+import { planoDoBar } from './casas3d.js';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -787,11 +788,15 @@ export function criarVida(api) {
     }
     while (rua.povo.length > quer + 4) rua.povo.pop();
     for (const p of rua.povo) andarPedestre(p, dt);
+    /* o bar quebrado: o tapume e os cacos pelo que o save diz */
+    if (tAcc - quebradosEm > 2) { quebradosEm = tAcc; try { conferirQuebrados(); } catch (err) { console.error('o bar quebrado:', err); } }
     /* os bares perto: a roda na porta e quem chega */
     for (const b of rua.bares) {
       const longe = Math.hypot(b.porta.x - cx, b.porta.y - cz) > raio * 1.4;
       if (longe) { b.gente = []; continue; }
-      const n = noBarDaHora(h) + (hashTxt(b.n + '|' + ((E() && E().data.absoluto) || 0)) % 3);
+      let n = noBarDaHora(h) + (hashTxt(b.n + '|' + ((E() && E().data.absoluto) || 0)) % 3);
+      /* (o bar quebrado tem metade do movimento: fatura a metade) */
+      if (quebrados.has(b.n)) n = Math.floor(n / 2);
       const naRoda = b.gente.filter(g => g.estado === 'na roda').length;
       if (!b.gente.length && n) encherBar(b, Math.max(1, n - 1));
       b.proxChega -= dt;
@@ -829,6 +834,231 @@ export function criarVida(api) {
       }
       b.gente = b.gente.filter(g => !g.fim);
     }
+  }
+
+  /* =====================================================
+     O BAR QUEBRADO (a varredura 2D × 3D, 29/09/2026). A ordem do dono de
+     10/09 ("bar atacado diminui 50% da receita por 45 dias, no sentido
+     dele ter sido danificado pelo ataque") só existia no patrimônio
+     (`danoAte`, financeiro.js): no mapa o bar seguia inteiro e cheio no
+     dia seguinte ao bote. Agora, enquanto o conserto dura, metade da
+     varanda fica de TAPUME (o compensado pregado onde quebraram, com a
+     sigla de quem quebrou pichada nele), a calçada tem os cacos (vidro,
+     garrafa, cadeira de plástico tombada, o engradado virado) e a roda da
+     porta tem metade da gente — a outra metade da varanda segue aberta,
+     que o bar fatura a metade.
+     QUAL BAR DO MAPA: o patrimônio não diz qual lote é (a praça põe os
+     bares pela conta de quantos a torcida tem), então é o mesmo que a
+     briga do bote pega — o do dono mais perto da sede de quem quebrou
+     (`danoPor`), ou o primeiro dela (`barDaBriga`)
+     ===================================================== */
+  const quebrados = new Map();          // o n do bar na planta → { g, por, dono, dias }
+  let quebradosEm = -99;
+  /* o que o save diz: dono → [{ dias, por }] (o nosso e o das IAs) */
+  function danosDoJogo() {
+    const e = E(), F = TO.financeiro, fora = new Map();
+    if (!e || !e.data || !e.torcida) return fora;
+    const abs = e.data.absoluto || 0;
+    const juntar = (dono, bares) => {
+      for (const b of bares || []) {
+        const dias = F && F.diasDeDano ? F.diasDeDano(b, abs) : Math.max(0, ((b && b.danoAte) || 0) - abs);
+        if (!(dias > 0)) continue;
+        if (!fora.has(dono)) fora.set(dono, []);
+        fora.get(dono).push({ dias, por: b.danoPor || null });
+      }
+    };
+    juntar(e.torcida.id, (e.patrimonio || {}).bares);
+    const mundo = e.mundoTorcidas || {};
+    for (const id in mundo) if (id !== e.torcida.id && mundo[id]) juntar(id, mundo[id].bares);
+    return fora;
+  }
+  /* o n do bar da planta → { bar, dias, por, dono } */
+  function quebradosNoMapa() {
+    const P = api.planta, bs = P && P.bares ? P.bares().filter(b => b.dono && b.lote && b.W && b.D) : [];
+    const fora = new Map();
+    for (const [dono, danos] of danosDoJogo()) {
+      const livres = bs.filter(b => b.dono === dono);
+      danos.sort((a, b) => b.dias - a.dias);
+      for (const d of danos) {
+        if (!livres.length) break;
+        const s = d.por && api.sedeDe ? api.sedeDe(d.por) : null;
+        const longe = b => s ? Math.hypot(b.porta.x - s.x, b.porta.y - s.y) : b.n;
+        livres.sort((a, b) => longe(a) - longe(b));
+        const bar = livres.shift();
+        fora.set(bar.n, { bar, dias: d.dias, por: d.por, dono });
+      }
+    }
+    return fora;
+  }
+  /* põe e tira os tapumes pelo que o save diz (a cada 2 s de rua, na
+     volta da praça e no fim da briga no bar) */
+  function conferirQuebrados() {
+    const Cn = C(), T3 = Cn && Cn.vida && Cn.vida.THREE, cena = Cn && Cn.vida && Cn.vida.cena;
+    if (!T3 || !cena) return;
+    const agora = quebradosNoMapa();
+    /* (a briga no bar em cima dele: o tapume e os cacos saem enquanto ela dura) */
+    const emBriga = n => !!(Cn.vida.palco && ultimoBar && ultimoBar.bar && ultimoBar.bar.n === n);
+    for (const [n, q] of quebrados) {
+      const a = agora.get(n);
+      /* (a praça montou de novo: o tapume foi junto com o mapa velho) */
+      if (!a || a.por !== q.por || a.dono !== q.dono || q.g.parent !== cena) { tirarQuebrado(q); quebrados.delete(n); }
+      else { q.dias = a.dias; q.g.visible = !emBriga(n); }
+    }
+    for (const [n, a] of agora) {
+      if (quebrados.has(n)) continue;
+      let g = null;
+      try { g = montarQuebrado(T3, a); } catch (err) { console.error('o bar quebrado:', err); }
+      if (!g) continue;
+      g.visible = !emBriga(n);
+      cena.add(g);
+      quebrados.set(n, { g, por: a.por, dono: a.dono, dias: a.dias });
+    }
+  }
+  function tirarQuebrado(q) {
+    q.g.removeFromParent();
+    q.g.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && o.material.userData.proprio) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
+  }
+  /* as tintas (uma de cada, pra todos os bares) */
+  const tintasQ = {};
+  const tintaQ = (T3, cor) => tintasQ[cor] || (tintasQ[cor] = new T3.MeshLambertMaterial({ color: cor }));
+  /* a sigla de quem quebrou: a da praça (a de torcida, com as cores dela) ou a dos dados */
+  function quemQuebrou(id) {
+    if (!id) return null;
+    const P = api.planta, t = P && P.torcidas ? P.torcidas().find(x => x.id === id) : null;
+    if (t) return { sigla: t.sigla, cor: t.cor, cor2: t.cor2 };
+    const d = ((TO.dados && TO.dados.torcidas) || []).find(x => x.id === id);
+    if (!d) return null;
+    const cs = d.cores || [];
+    return { sigla: String(d.siglaTorcida || d.nome || '').toUpperCase(), cor: cs[0] || '#c8342b', cor2: cs[1] || '#111111' };
+  }
+  /* a pichação: a sigla em spray, com o contorno e o escorrido */
+  function pichacao(T3, quem, rnd) {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+    const x = cv.getContext('2d'), txt = String(quem.sigla || '').slice(0, 9);
+    /* a tinta que aparece no compensado claro: a cor 1, ou a 2 se a 1 é clara demais */
+    const lum = c => { const n = parseInt(String(c || '#000').slice(1), 16); return (n >> 16 & 255) * 0.3 + (n >> 8 & 255) * 0.59 + (n & 255) * 0.11; };
+    const tinta = lum(quem.cor) < 170 ? quem.cor : lum(quem.cor2) < 170 ? quem.cor2 : '#1d1d1d';
+    const borda = lum(tinta) < 110 ? '#f3efe4' : '#161616';
+    let tam = 170;
+    x.font = `900 ${tam}px Impact, "Arial Black", sans-serif`;
+    while (x.measureText(txt).width > 470 && tam > 60) { tam -= 10; x.font = `900 ${tam}px Impact, "Arial Black", sans-serif`; }
+    x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineJoin = 'round';
+    x.save(); x.translate(256, 118); x.rotate((rnd() - 0.5) * 0.14);
+    x.lineWidth = 12; x.strokeStyle = borda; x.strokeText(txt, 0, 0);
+    x.fillStyle = tinta; x.fillText(txt, 0, 0);
+    /* o escorrido da tinta embaixo das letras */
+    const larg = Math.min(470, x.measureText(txt).width);
+    for (let k = 0; k < 9; k++) {
+      const px = -larg / 2 + rnd() * larg, py = tam * 0.3, h = 12 + rnd() * 50;
+      x.fillRect(px, py, 3 + rnd() * 3, h);
+    }
+    x.restore();
+    const tex = new T3.CanvasTexture(cv); tex.colorSpace = T3.SRGBColorSpace; tex.anisotropy = 4;
+    const mat = new T3.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.08, depthWrite: false });
+    mat.userData.proprio = true; mat.userData.doMapa = true;
+    return mat;
+  }
+  /* uma cadeira de plástico tombada de lado, sem um pé */
+  function cadeiraTombada(T3, mat) {
+    const c = new T3.Group();
+    const peca = (w, h, d, x, y, z) => { const m = new T3.Mesh(new T3.BoxGeometry(w * M, h * M, d * M), mat); m.position.set(x * M, y * M, z * M); c.add(m); };
+    peca(0.42, 0.04, 0.42, 0, 0.51, 0);
+    peca(0.42, 0.46, 0.04, 0, 0.76, -0.19);
+    for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1]]) peca(0.035, 0.42, 0.035, dx * 0.19, 0.3, dz * 0.19);
+    /* de lado: a largura vira a altura */
+    c.rotation.z = Math.PI / 2; c.position.y = 0.23 * M;
+    const g = new T3.Group(); g.add(c);
+    return g;
+  }
+  function montarQuebrado(T3, a) {
+    const b = a.bar, l = b.lote, W = b.W, D = b.D, Cn = C();
+    const PL = planoDoBar(W, D, l.esquina);
+    /* O LOTE NO MUNDO: o referencial do modelo (casas3d.js, `frameDoLote`;
+       o mesmo da briga no bar): x de quem olha a fachada, z = 0 na divisa
+       da frente, pra fora da casa o z cresce */
+    const f = l.frente, mx = (l.x0 + l.x1) / 2, mz = (l.y0 + l.y1) / 2;
+    const F = f === 'n' ? { fx: mx, fz: l.y0, rx: -1, rz: 0, nx: 0, nz: -1 } : f === 's' ? { fx: mx, fz: l.y1, rx: 1, rz: 0, nx: 0, nz: 1 }
+      : f === 'o' ? { fx: l.x0, fz: mz, rx: 0, rz: 1, nx: -1, nz: 0 } : { fx: l.x1, fz: mz, rx: 0, rz: -1, nx: 1, nz: 0 };
+    const doLote = (x, z) => [F.fx + ((x - W / 2) * F.rx + z * F.nx) * M, F.fz + ((x - W / 2) * F.rz + z * F.nz) * M];
+    const chao = (x, z) => { const [wx, wz] = doLote(x, z); return Cn.vida.chao(wx, wz); };
+    /* o grupo no canto do lote, girado com ele: o filho vai em (x·M, y, z·M) */
+    const g = new T3.Group(); g.name = 'bar quebrado';
+    const [ox, oz] = doLote(0, 0);
+    g.position.set(ox, 0, oz); g.rotation.y = Math.atan2(-F.rz, F.rx);
+    let semente = hashTxt('quebrado|' + b.n + '|' + (a.por || ''));
+    const rnd = () => { semente = (semente + 0x6D2B79F5) >>> 0; let t = semente; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const caixa = (w, h, d, x, y, z, mat) => { const m = new T3.Mesh(new T3.BoxGeometry(w * M, h * M, d * M), mat); m.position.set(x * M, y, z * M); g.add(m); return m; };
+
+    /* O TAPUME: da ponta de longe da esquina até ~60% do vão livre da
+       varanda (a esquina tem o pilar de 26 cm); rente à frente dela */
+    const s = PL.ladoDaEsquina, [va, vb] = PL.varanda.x, zF = PL.varanda.z[1];
+    const livreA = s > 0 ? va : va + 0.26, livreB = s > 0 ? vb - 0.26 : vb;
+    const comp = (livreB - livreA) * 0.6;
+    const t0 = s > 0 ? livreA : livreB - comp;
+    const yB = Math.max(chao(t0 + comp / 2, zF - 0.4), chao(t0 + comp / 2, zF + 0.4));
+    const nT = Math.max(2, Math.ceil(comp / 1.1)), wT = comp / nT;
+    const COMPENSADO = ['#b8976a', '#c3a477', '#a98b5e'];
+    for (let k = 0; k < nT; k++) {
+      const h = 2.02 + rnd() * 0.16;
+      const m = caixa(wT - 0.012, h, 0.025, t0 + wT * (k + 0.5), yB + (h / 2 - 0.04) * M, zF + 0.03, tintaQ(T3, COMPENSADO[k % 3]));
+      m.rotation.z = (rnd() - 0.5) * 0.025;
+    }
+    /* os dois sarrafos pregados de través */
+    for (const hy of [0.38, 1.72]) caixa(comp + 0.06, 0.07, 0.03, t0 + comp / 2, yB + hy * M, zF + 0.058, tintaQ(T3, '#7a5c3c'));
+    /* a sigla de quem quebrou, pichada no compensado */
+    const quem = quemQuebrou(a.por);
+    if (quem && quem.sigla) {
+      const pw = Math.min(comp * 0.92, 2.8), ph = pw / 2;
+      const m = new T3.Mesh(new T3.PlaneGeometry(pw * M, ph * M), pichacao(T3, quem, rnd));
+      m.position.set((t0 + comp / 2) * M, yB + 1.08 * M, (zF + 0.078) * M);
+      m.renderOrder = 2;
+      g.add(m);
+    }
+
+    /* OS CACOS NA CALÇADA, na frente do tapume e da porta: o vidro (das
+       garrafas e da porta do freezer), as garrafas, as cadeiras, o engradado */
+    const xa = Math.min(t0, t0 + comp) - 0.3, xb = Math.max(t0, t0 + comp) + 0.9;
+    const noChao = (x, z) => chao(x, z);
+    {
+      const pos = [];
+      for (let k = 0; k < 46; k++) {
+        const x = xa + rnd() * (xb - xa), z = 0.2 + Math.pow(rnd(), 1.4) * 1.9, y = noChao(x, z) / M + 0.006;
+        const r = 0.03 + rnd() * 0.07, a0 = rnd() * Math.PI * 2;
+        for (let j = 0; j < 3; j++) { const aj = a0 + j * 2.1 + (rnd() - 0.5) * 0.8, rj = r * (0.5 + rnd() * 0.7); pos.push((x + Math.cos(aj) * rj) * M, y * M, (z + Math.sin(aj) * rj) * M); }
+      }
+      const geo = new T3.BufferGeometry();
+      geo.setAttribute('position', new T3.Float32BufferAttribute(pos, 3));
+      geo.computeVertexNormals();
+      const vidro = tintasQ.vidro || (tintasQ.vidro = new T3.MeshLambertMaterial({ color: '#dcefee', emissive: '#3a4a4a', side: T3.DoubleSide }));
+      g.add(new T3.Mesh(geo, vidro));
+    }
+    /* as garrafas deitadas (âmbar e verde) */
+    for (let k = 0; k < 5; k++) {
+      const x = xa + rnd() * (xb - xa), z = 0.3 + rnd() * 1.5;
+      const m = new T3.Mesh(new T3.CylinderGeometry(0.035 * M, 0.035 * M, 0.23 * M, 7), tintaQ(T3, k % 3 ? '#6b3a17' : '#2f5a2a'));
+      /* (deitada: o z tomba o cilindro, o y gira ele no chão) */
+      m.rotation.set(0, rnd() * Math.PI, Math.PI / 2);
+      m.position.set(x * M, noChao(x, z) + 0.035 * M, z * M);
+      g.add(m);
+    }
+    /* duas cadeiras de plástico tombadas */
+    for (let k = 0; k < 2; k++) {
+      const x = xa + 0.4 + rnd() * Math.max(0.2, xb - xa - 0.8), z = 0.55 + rnd() * 1.0;
+      const c = cadeiraTombada(T3, tintaQ(T3, '#efeee8'));
+      c.position.set(x * M, noChao(x, z), z * M); c.rotation.y = rnd() * Math.PI * 2;
+      g.add(c);
+    }
+    /* o engradado de cerveja virado */
+    {
+      const x = xa + rnd() * (xb - xa), z = 0.4 + rnd() * 1.1;
+      const m = caixa(0.42, 0.3, 0.34, x, noChao(x, z) + 0.15 * M, z, tintaQ(T3, '#b8322a'));
+      m.rotation.y = rnd() * Math.PI; m.rotation.z = (rnd() - 0.5) * 0.3;
+    }
+    g.userData.bar = b.n;
+    return g;
   }
 
   /* =====================================================
@@ -1014,6 +1244,7 @@ export function criarVida(api) {
     ligada = true;
     ligarSede(T);
     rua = montarRua();
+    quebradosEm = -99;
     Cn.vida.vida = vida;
     /* a sede do jogador sem o telhado (e o alto das paredes): de cima, os
        cômodos. O telhado se acha pela sala do presidente (no barracão o
@@ -1151,7 +1382,10 @@ export function criarVida(api) {
     const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
                               predio: B.predio, vistas: { perto: { dist: 17, el: 1.1 }, alto: { dist: 34, el: 1.3 } },
                               rotAlto: 'o bar e a esquina, do alto', comDia: G ? G.comDia : null,
-                              aoDesmontar: () => { if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } } });
+                              aoDesmontar: () => { if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } quebradosEm = -99; } });
+    /* (o tapume e os cacos desse bar saem enquanto a briga dura) */
+    const q = quebrados.get(bar.n);
+    if (q) q.g.visible = false;
     return { local: B.cena.id, renderizador: Rd };
   }
   let ultimoBar = null;
@@ -1227,6 +1461,17 @@ export function criarVida(api) {
                aneis: rua ? rua.aneis.length : 0, reuniao: !!reuniao3d, discos: J.discos.length };
     },
     get sede() { return sede; }, get rua() { return rua; },
+    /* pro teste: os bares quebrados no mapa (o n da planta, o dono, quem quebrou, os dias que faltam) */
+    get quebrados() {
+      const cena = C() && C().vida && C().vida.cena;
+      return [...quebrados].map(([n, q]) => ({ n, dono: q.dono, por: q.por, dias: q.dias, visivel: q.g.visible, naCena: q.g.parent === cena, filhos: q.g.children.length }));
+    },
+    conferirQuebrados: () => conferirQuebrados(),
+    /* os bares quebrados pelo save, com a porta no mundo (o mapa da cidade marca eles) */
+    get baresQuebrados() {
+      try { return [...quebradosNoMapa()].map(([n, a]) => ({ n, dono: a.dono, por: a.por, dias: a.dias, porta: a.bar.porta })); }
+      catch (err) { return []; }
+    },
     /* pro teste: a última briga na caminhada (o plano, o ponto, a cena) e a última no bar */
     get caminhada() { return ultimaCaminhada; },
     get noBar() { return ultimoBar; },

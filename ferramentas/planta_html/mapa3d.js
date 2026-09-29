@@ -76,6 +76,18 @@ export function criarMapaDaCidade(api) {
       rotulo('A SUA SEDE', x, y - 38, (T && T.cor) || '#d4731c');
       ctx.restore();
     }
+    /* OS BARES QUEBRADOS (vida3d.js; o estrago de 45 dias do bote no bar):
+       o risco vermelho na porta e os dias que faltam pro conserto */
+    const V3 = window.TO && TO.jogo3d && TO.jogo3d.vida;
+    for (const q of (V3 && V3.baresQuebrados) || []) {
+      if (!q.porta) continue;
+      const [x, y] = naTela(q.porta.x, q.porta.y);
+      ctx.save();
+      ctx.strokeStyle = '#e0392b'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x - 6, y - 6); ctx.lineTo(x + 6, y + 6); ctx.moveTo(x + 6, y - 6); ctx.lineTo(x - 6, y + 6); ctx.stroke();
+      rotulo('BAR QUEBRADO · ' + q.dias + (q.dias === 1 ? ' DIA' : ' DIAS'), x, y - 18, '#e0392b');
+      ctx.restore();
+    }
     const C = api.cenario;
     if (C && C.orb) {
       /* a câmera: o ponto que ela olha e o leque pra onde ela olha */

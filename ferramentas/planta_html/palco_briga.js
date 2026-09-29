@@ -23,7 +23,7 @@
    ========================================================= */
 const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 
-/* as duas câmeras (C troca): perto do líder e a casa inteira do alto (m e rad) */
+/* as duas câmeras (V troca — o C é o chamar, como no jogo de feed): perto do líder e a casa inteira do alto (m e rad) */
 const VISTAS = { perto: { dist: 21, el: 1.1 }, alto: { dist: 44, el: 1.3 } };
 
 /* `o`: { C (o cenário), M (unidades por metro), cena (a do combate),

@@ -518,7 +518,7 @@ TO.acoes = (function(){
         const F = TO.financeiro;
         const meu = F.barMaisVisado((E.patrimonio||{}).bares);
         if(meu){
-          F.danificarBar(meu, (E.data && E.data.absoluto) || 0);
+          F.danificarBar(meu, (E.data && E.data.absoluto) || 0, (alvo && alvo.torcidaId) || null);
           linhas.push(_t('o bar ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
           /* a cidade toma conhecimento (dono, 19/09/2026): o cartão do
              feed pergunta se a gente responde na porta deles */
@@ -636,7 +636,7 @@ TO.acoes = (function(){
         const F = TO.financeiro;
         const dele = m && F.barMaisVisado(m.bares);
         if(dele){
-          F.danificarBar(dele, (E.data && E.data.absoluto) || 0);
+          F.danificarBar(dele, (E.data && E.data.absoluto) || 0, E.torcida.id);
           linhas.push(_t('o bar deles ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
         }
       }

@@ -2318,7 +2318,7 @@ TO.relacoes = (function(){
          a mesma régua do nosso (dono, 10/09/2026) */
       const bd = tDono && FIN().barMaisVisado(tDono.bares);
       if(bd){
-        FIN().danificarBar(bd, (E.data && E.data.absoluto) || 0);
+        FIN().danificarBar(bd, (E.data && E.data.absoluto) || 0, atk.id);
         reg.barQuebrado = true;
         /* bar quebrado é notícia de rua (dono, 19/09/2026) */
         if(TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, o.id))

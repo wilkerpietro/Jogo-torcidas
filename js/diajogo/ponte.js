@@ -904,9 +904,9 @@ TO.diaJogo.ponte = (function(){
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
       : tres && miraNoPalco()
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
       : tres
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
       : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
   }
 
@@ -1298,7 +1298,11 @@ TO.diaJogo.ponte = (function(){
       const k=e.key.toLowerCase();
       teclas[k]=true;
       if(k==='f2'){e.preventDefault(); alternarEditor(); return;}
-      if(k==='c' && tres && T && J){
+      /* A CÂMERA DO 3D NO V (a varredura 2D × 3D, 29/09/2026): ela ficava
+         no C e roubava o "chamar" — no PC não dava pra chamar pelo
+         teclado, e o botão da tela seguia dizendo "Chamar C". O C volta a
+         chamar, como no jogo de feed */
+      if(k==='v' && tres && T && J){
         const nm = T.trocarCamera(), md = (T.MODOS||[]).find(m=>m.nome===nm);
         C.aviso(J, md && md.rot ? md.rot : 'câmera '+nm, '#e0b040'); return; }
       if(ED.ativo){
