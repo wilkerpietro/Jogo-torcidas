@@ -293,10 +293,16 @@ body.jogo3d.j3d-mapa-aberto .j3d-dia, body.jogo3d:not(.j3d-em-jogo) .j3d-dia{dis
    mensagens que não geram botões de decisão se tornam avisos do lado
    direito, na ideia do que era o feed anteriormente, mas somem
    rapidamente"): o cartão curto do feed de antes — quem fala, a hora, o
-   texto em três linhas —, que some sozinho; o toque abre o cartão inteiro
+   texto em três linhas —, que some sozinho; o toque abre o cartão inteiro.
+   Desde 29/09/2026 o canto é só de manchete de jornal (o dono: "As
+   mensagens de jornal que devem aparecer no canto direito são as do
+   Gazeta dos sports e futebol e porrada, com o layout de manchete de
+   jornal, com aquele padrão que existia no feed"): o `.recorte` é o papel
+   do jornal (css/gazeta.css, `.gz-canto`); o cartão escuro fica pro gol e
+   pro jogo da cidade, que não são mensagem do feed
    ========================================================= */
-.j3d-avisos{position:fixed;z-index:21;right:12px;top:70px;width:min(300px, 72vw);display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.j3d-aviso{pointer-events:auto;box-sizing:border-box;background:rgba(20,20,22,.94);border:1px solid rgba(255,255,255,.14);border-left:3px solid var(--ouro, #d9a441);
+.j3d-avisos{position:fixed;z-index:21;right:12px;top:70px;bottom:12px;width:min(300px, 72vw);display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.j3d-aviso{pointer-events:auto;box-sizing:border-box;flex:none;background:rgba(20,20,22,.94);border:1px solid rgba(255,255,255,.14);border-left:3px solid var(--ouro, #d9a441);
   border-radius:6px;padding:6px 10px 7px;box-shadow:0 4px 14px rgba(0,0,0,.4);color:var(--texto, #eee);animation:j3dAvisoEntra .22s ease-out}
 .j3d-aviso.abre{cursor:pointer}
 .j3d-aviso.abre:hover{border-color:rgba(255,255,255,.3);border-left-color:var(--ouro, #d9a441)}
@@ -304,19 +310,36 @@ body.jogo3d.j3d-mapa-aberto .j3d-dia, body.jogo3d:not(.j3d-em-jogo) .j3d-dia{dis
 .j3d-aviso-cab b{font:700 10.5px/1.2 var(--titulo, sans-serif);letter-spacing:.12em;text-transform:uppercase;color:#f3e6c4;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .j3d-aviso-cab time{flex:none;font:500 10px/1 var(--mono, monospace);color:var(--fraco, #999)}
-.j3d-aviso p{margin:0;font:500 12.5px/1.35 var(--corpo, sans-serif);color:#ddd;
+.j3d-aviso > p{margin:0;font:500 12.5px/1.35 var(--corpo, sans-serif);color:#ddd;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .j3d-aviso.ruim{border-left-color:var(--vermelho, #c0392b)}
 .j3d-aviso.boa{border-left-color:var(--verde, #3fae5a)}
 .j3d-aviso.gol{border-left-color:#3fae5a;background:rgba(18,30,20,.95)}
 .j3d-aviso.gol .j3d-aviso-cab b{color:#8fe3a3}
-.j3d-aviso.gol p{color:#fff;font-weight:700}
+.j3d-aviso.gol > p{color:#fff;font-weight:700}
 .j3d-aviso-bt{margin-top:6px;cursor:pointer;padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.25);background:rgba(40,40,44,.95);color:#eee;
   font:700 10.5px/1 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase}
 .j3d-aviso-bt:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
 .j3d-aviso.saindo{opacity:0;transform:translateX(24px);transition:opacity .25s, transform .25s}
-/* aberto: o cartão inteiro da mensagem (a tabela, o jornal, os links), até o × */
-.j3d-aviso.aberto{cursor:default;position:relative;width:min(380px, 88vw);align-self:flex-end;max-height:min(62vh, 540px);overflow:auto;padding:4px}
+/* o recorte de jornal: o papel é o aviso, sem o cartão escuro em volta; uma
+   sombra e um fio escuro separam ele do fundo da cidade */
+.j3d-aviso.recorte{width:min(330px, 88vw);align-self:flex-end;padding:0;background:none;border:0;border-radius:0;box-shadow:none}
+.j3d-aviso.recorte .gz{box-shadow:0 6px 18px rgba(0,0,0,.5), 0 0 0 1px rgba(20,16,12,.7)}
+.j3d-aviso.recorte:hover .gz{box-shadow:0 8px 22px rgba(0,0,0,.6), 0 0 0 1px rgba(20,16,12,.95)}
+/* o balão da decisão encostou no recorte (o celular): ele espera escondido, sem correr (recados3d.js, `cedeAoBalao`) */
+.j3d-aviso.cede{opacity:0;pointer-events:none;transition:opacity .15s}
+/* aberto: o cartão inteiro da mensagem (a tabela, o jornal, os links), até o ×.
+   Cresce até o que couber na tela (a pilha vai da barra de cima até o pé; os
+   outros avisos não tomam o lugar dele, vão pra baixo) e só rola em último
+   caso, com a barra fina e discreta; nunca de lado (o dono, 29/09/2026: não
+   gosta de barra de rolagem) */
+.j3d-aviso.aberto{cursor:default;position:relative;width:min(380px, 88vw);align-self:flex-end;flex:none;max-height:100%;padding:4px;
+  overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.3) transparent}
+.j3d-aviso.aberto::-webkit-scrollbar{width:6px}
+.j3d-aviso.aberto::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
+.j3d-aviso.aberto::-webkit-scrollbar-track{background:transparent}
+/* o jornal aberto tem duas colunas (a manchete e o quadro): pede mais largura que o aviso de texto */
+.j3d-aviso.aberto.jornal{width:min(600px, calc(100vw - 72px))}
 .j3d-aviso.aberto .msg{border:0;background:transparent}
 .j3d-aviso-x{position:sticky;top:0;float:right;z-index:2;width:22px;height:22px;border-radius:11px;cursor:pointer;margin:2px 2px 0 6px;
   background:#222;color:#ddd;border:1px solid rgba(255,255,255,.3);font:600 14px/1 var(--corpo, sans-serif);padding:0}
@@ -326,7 +349,9 @@ body.jogo3d:not(.j3d-em-jogo) .j3d-avisos, body.jogo3d.com-painel .j3d-avisos, b
 body.jogo3d.em-cena .j3d-avisos, body.jogo3d.palco-briga .j3d-avisos{display:none}
 @media (max-width:760px){
   .j3d-avisos{right:8px;width:min(250px, 66vw)}
-  .j3d-aviso p{-webkit-line-clamp:2;font-size:12px}
+  .j3d-aviso > p{-webkit-line-clamp:2;font-size:12px}
+  .j3d-aviso.recorte{width:100%}
+  .j3d-aviso.aberto.jornal{width:min(380px, 88vw)}
 }
 
 /* =========================================================

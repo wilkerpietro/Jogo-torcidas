@@ -482,3 +482,35 @@
 .gz.pp .placar-grande .time.venceu{font-weight:700;color:#161616;
   box-shadow:inset 0 -3px 0 rgba(180,30,30,.5)}
 .gz.pp .placar-grande .n.venceu{font-weight:800}
+
+/* =========================================================
+   O RECORTE DO CANTO (o jogo 3D, 29/09/2026; o dono: "As mensagens de
+   jornal que devem aparecer no canto direito são as do Gazeta dos sports
+   e futebol e porrada, com o layout de manchete de jornal, com aquele
+   padrão que existia no feed"). O mesmo recorte do feed, numa coluna só e
+   sem o quadro do lado nem o botão do jornal completo (main.js,
+   `recorteDeJornal`): o canto tem 330 px (250 no celular) e o feed tinha
+   até 720. Só o que MUDA mora aqui — o papel, a tinta e as fontes são os
+   de sempre —, e a tipografia desce um degrau: a manchete do Futebol e
+   Porrada, com 42 px, tomava o canto inteiro.
+   ========================================================= */
+.gz.gz-canto{margin-top:0; padding:6px 10px 8px}
+.gz.gz-canto .nome-jornal{font-size:16px; white-space:nowrap}
+.gz.gz-canto.pp .nome-jornal{font-size:19px}
+.gz.gz-canto .gz-topo{display:block; border-bottom:0}
+.gz.gz-canto .gz-manchete{padding:5px 0 0}
+.gz.gz-canto .gz-manchete h2{font-size:19px}
+.gz.gz-canto .gz-manchete .olho{font-size:11.5px; max-width:none}
+/* o placar grande em grade: nome comprido quebra na coluna dele, e não passa da borda do canto */
+.gz.gz-canto .placar-grande{display:grid; grid-template-columns:1fr auto auto 1fr; gap:0 8px; align-items:baseline}
+.gz.gz-canto .placar-grande .time:first-child{text-align:right}
+/* (o canto encolhe pra 250 px com o resto do jogo 3D, jogo3d.css: 760 px) */
+@media (max-width:760px){
+  .gz.gz-canto{padding:5px 8px 7px}
+  .gz.gz-canto .nome-jornal{font-size:14px}
+  .gz.gz-canto.pp .nome-jornal{font-size:16px}
+  .gz.gz-canto .gz-manchete h2{font-size:16px}
+  .gz.gz-canto .gz-manchete .olho{font-size:11px}
+  .gz.gz-canto .placar-grande .time{font-size:13px}
+  .gz.gz-canto .placar-grande .n{font-size:20px}
+}

@@ -3749,6 +3749,25 @@
     return art;
   }
 
+  /* O RECORTE DO CANTO DIREITO (o jogo 3D, 29/09/2026; o dono: "As
+     mensagens de jornal que devem aparecer no canto direito são as do
+     Gazeta dos sports e futebol e porrada, com o layout de manchete de
+     jornal, com aquele padrão que existia no feed"). É o recorte do feed —
+     o nó que o próprio `cartaoMensagem` monta, dos mesmos moldes: o nome do
+     jornal, o chapéu, a manchete, o olho e, na Gazeta, o placar grande —,
+     só que numa coluna: sem o quadro do lado (a classificação, o quadro da
+     noite), sem as outras tretas da noite e sem o botão do jornal completo,
+     que ficam no cartão aberto. Devolve null pro que não é jornal e pra
+     mensagem de save antigo, sem a página. Quem escolhe os jornais que vão
+     pro canto é o recados3d.js. */
+  function recorteDeJornal(e, m){
+    const rec = m ? cartaoSeguro(e, m).querySelector('.gz') : null;
+    if(!rec) return null;
+    for(const x of rec.querySelectorAll('.gz-recorte, .alm-quadro, .pp-quadro, .pp-nossas, .gz-resto, .gz-abre')) x.remove();
+    rec.classList.add('gz-canto');
+    return rec;
+  }
+
   /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
      aqui é abrir tela, que é a única coisa que a tela sabe fazer. */
   /* A DECISÃO QUE ESPERA A TELA (correção do dono, 21/08/2026): as
@@ -11122,6 +11141,8 @@
     /* o cartão de uma mensagem (o mesmo do feed, com os botões que
        respondem): o jogo 3D põe no balão de quem vem falar */
     cartaoMensagem: cartaoSeguro,
+    /* o recorte de jornal compacto de uma mensagem (o aviso do canto direito) */
+    recorteDeJornal,
     /* o estado visível de uma mensagem (o balão do jogo 3D só refaz o
        cartão quando ele muda, como a lista do feed) e a linha do dia de
        jogo que está andando nela (o balão mostra só a linha enquanto o
