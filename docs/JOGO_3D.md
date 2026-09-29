@@ -1295,3 +1295,26 @@ com o teste dele; as branches foram juntadas depois.
   até o que couber na tela e só rola em último caso, com barra fina e nunca de
   lado. Um bug antigo saiu junto: o `p` do aviso escuro vazava pro papel do
   jornal aberto (texto cinza claro cortado em 3 linhas).
+- **O planejamento não volta mais pro topo.** A causa: o `pintar()` do
+  popup (`abrirPlanejamento`, main.js) refazia a caixa inteira a cada
+  clique, e quem rola — o item (`.plj-det`), a pauta (`.plj-lista`) e as
+  abas de praça (`.plj-pracas`; no celular a pauta e as abas rolam de lado)
+  — nascia de novo com a rolagem no zero; o botão apertado também morria e o
+  foco do teclado ia junto. Não era só dos contadores (− / + de "Vão na
+  caravana", "Efetivo" e "Bombas"): todo cartão, item da pauta e aba tinha o
+  mesmo defeito. Agora o `pintar()` guarda a rolagem de cada um e o lugar do
+  foco antes de refazer e devolve depois de desenhar (se o conteúdo novo é
+  mais curto, o navegador segura no fim dele). O foco volta pro botão que
+  ficou no mesmo lugar, ou pro irmão dele quando aquele desliga (o + que
+  bateu no teto passa o foco pro −), com o anel do teclado dentro do botão
+  (`css/planejamento.css`). Outro item da pauta ou outra praça é outro
+  conteúdo e começa do alto; a pauta e as abas mantêm a posição. Nenhum
+  outro gatilho repinta o popup (`estado.mudou`, `atualizarFeed`,
+  `pintarTopo`, `salvar` e os timers não tocam nele). As telas antigas
+  `abrirCaravana` e `abrirAtaque` mantêm a rolagem (o corpo é refeito dentro
+  do mesmo elemento que rola) e só perdem o foco do teclado a cada toque —
+  não corrigi. **Medido** (PC e celular emulado, jogo em casa e fora): antes,
+  18 dos 20 cliques em − / + caíam em outro lugar depois do 1º clique (item
+  102→0 e 379→0; pauta 227→0; abas 850→0; num teste o clique caiu no fundo
+  escuro e fechou o popup); depois, a rolagem fica igual (±0 px) nos 20
+  cliques de cada contador, na pauta e nas abas, sem erro no console.
