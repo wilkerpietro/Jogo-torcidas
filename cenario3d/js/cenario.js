@@ -36,9 +36,9 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=a99de7cb05';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=a99de7cb05';
-import { Subsolo } from './subsolo.js?v=a99de7cb05';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=11dc713d99';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=11dc713d99';
+import { Subsolo } from './subsolo.js?v=11dc713d99';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -481,6 +481,30 @@ export function criarCenario(P) {
      ====================================================== */
   const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: true, powerPreference: 'high-performance' });
   rend.shadowMap.enabled = false;
+  /* A PLACA PODE DESISTIR (o dono, 29/09/2026: "quase todas as vezes que
+     preciso abrir outro mapa devido a caravanas o jogo buga e recarrega
+     automaticamente"; ele joga sem placa de vídeo). Se o processo de GPU
+     cai, ou o navegador toma o contexto WebGL, o three.js refaz o estado
+     dele quando o contexto volta, mas a cidade não volta: o forno larga o
+     array de cada malha depois de subir pra placa, e o chão fecha o bitmap
+     (é o que segura a memória). Medido no navegador de teste, derrubando o
+     processo de GPU e perdendo o contexto: a cidade sumia (0 chamadas de
+     desenho), o laço lançava "Cannot read properties of null (reading
+     'byteLength')" e, no meio de um dia de jogo, a linha ficava presa pra
+     sempre — só recarregando a página. Agora a perda avisa na caixa e a
+     volta REMONTA a praça que estava na tela. O jogo 3D (jogo3d.js) escuta
+     o aviso pra cuidar do dia dele e da vida da praça; sozinho, o cenário só
+     remonta. (Não provei que é isso que acontece no PC do dono.) */
+  tela.addEventListener('webglcontextlost', ev => {
+    ev.preventDefault();
+    console.warn('cenário: a placa perdeu o contexto WebGL');
+    carga.hidden = false; aviso('A placa de vídeo do navegador perdeu a cidade. Esperando ela voltar…', 0.02);
+  }, false);
+  tela.addEventListener('webglcontextrestored', () => {
+    console.warn('cenário: o contexto WebGL voltou, remontando ' + P.cidade());
+    doMapa.visible = false;
+    if (window.dispatchEvent(new CustomEvent('cenario-placa-voltou', { cancelable: true }))) montar(P.cidade(), P.modo());
+  }, false);
   const cena = new THREE.Scene();
   cena.background = CEU.clone();
   cena.fog = new THREE.Fog(CEU.clone(), 1000, 100000);
@@ -1034,21 +1058,32 @@ void main() {
      de 2048 px, em prateleiras; a malha do decalque aponta pro quadro */
   function FolhasDeDecalque(escala) {
     const folhas = [], quadros = [];
-    let atual = null;
-    function nova() {
+    let atual = null, atualR = null;
+    function nova(repinta) {
       const cv = document.createElement('canvas'); cv.width = cv.height = FOLHA_DECAL;
-      const f = { cv, c: cv.getContext('2d'), x: VAO_DECAL, y: VAO_DECAL, alt: 0, tex: null, i: folhas.length };
-      folhas.push(f); atual = f; return f;
+      const f = { cv, c: cv.getContext('2d'), x: VAO_DECAL, y: VAO_DECAL, alt: 0, tex: null, i: folhas.length, repinta };
+      folhas.push(f); if (repinta) atualR = f; else atual = f; return f;
     }
-    function lugar(fonte) {
+    /* `repinta`: o canvas de origem muda depois (o escudo, quando o PNG
+       chega) e a folha copia de novo. O resto não fica: a folha já tem a
+       cópia dele, e guardar o canvas de cada letreiro e de cada pichação
+       deixava mais de mil deles vivos por cidade — 130 MP (uns 500 MB) no
+       pico da montagem e 40 a 55 MP pelo tempo todo em que a cidade ficava
+       no ar, e cada cópia (aos 0,7 s e aos 2,5 s) subia as dez folhas de
+       2048 px de novo pra placa. Medido em 29/09/2026 (o dono: "quase todas
+       as vezes que preciso abrir outro mapa devido a caravanas o jogo buga
+       e recarrega automaticamente"); no navegador de teste as imagens na
+       GPU caíram de 439 MB pra 103 MB. Quem repinta vai pra folha só de
+       quem repinta, e só ela sobe de novo */
+    function lugar(fonte, repinta = true) {
       const w = Math.max(8, Math.round(fonte.width * escala)), h = Math.max(8, Math.round(fonte.height * escala));
-      let f = atual || nova();
+      let f = (repinta ? atualR : atual) || nova(repinta);
       if (f.x + w + VAO_DECAL > FOLHA_DECAL) { f.x = VAO_DECAL; f.y += f.alt + VAO_DECAL; f.alt = 0; }
-      if (f.y + h + VAO_DECAL > FOLHA_DECAL) f = nova();
+      if (f.y + h + VAO_DECAL > FOLHA_DECAL) f = nova(repinta);
       const q = { f, x: f.x, y: f.y, w, h, fonte };
       f.x += w + VAO_DECAL; f.alt = Math.max(f.alt, h);
       f.c.drawImage(fonte, q.x, q.y, w, h);
-      quadros.push(q);
+      if (repinta) quadros.push(q);
       return q;
     }
     function texturas() {
@@ -1056,6 +1091,8 @@ void main() {
         if (f.tex) { f.tex.needsUpdate = true; continue; }
         const t = new THREE.CanvasTexture(f.cv);
         t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+        /* a folha sem quadro que repinta já está pronta: o canvas dela sai depois de subir */
+        if (!f.repinta) t.onUpdate = () => { f.cv.width = f.cv.height = 1; t.onUpdate = null; };
         f.tex = t;
       }
     }
@@ -1065,7 +1102,7 @@ void main() {
        decalques saem da memória */
     function recopiar(final) {
       for (const q of quadros) { q.f.c.clearRect(q.x, q.y, q.w, q.h); q.f.c.drawImage(q.fonte, q.x, q.y, q.w, q.h); }
-      for (const f of folhas) if (f.tex) {
+      for (const f of folhas) if (f.tex && f.repinta) {
         if (final) f.tex.onUpdate = () => { f.cv.width = f.cv.height = 1; f.tex.onUpdate = null; };
         f.tex.needsUpdate = true;
       }
@@ -1100,7 +1137,7 @@ void main() {
       const mc = m.color || cor.setRGB(1, 1, 1);
       let q = null;
       if (chave === 'decal') {
-        q = decal.lugar(m.map.image);
+        q = decal.lugar(m.map.image, !m.map.userData.umaVez);
         chave = 'decal|' + q.f.i;
       }
       for (let k = 0; k < n; k++) {
@@ -1366,6 +1403,12 @@ void main() {
       tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = aniso;
       tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true;
       tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      /* sobe pra placa já, um ladrilho por vez: o bitmap fecha na hora (o
+         `onUpdate`) e o primeiro quadro da cidade não sobe o chão inteiro
+         de uma vez. (No navegador de teste, o maior intervalo entre quadros
+         depois da montagem era de 7 a 22 s; com isto e as folhas abaixo,
+         de 5 a 7 s — não separei quanto é de cada uma.) */
+      rend.initTexture(tex);
       const g = new THREE.BufferGeometry(), x1 = Math.min(x0 + lado, ar.x1), y1 = Math.min(y0 + lado, ar.y1);
       const uX = u0 + (u1 - u0) * (x1 - x0) / lado, uY = u0 + (u1 - u0) * (y1 - y0) / lado;
       g.setAttribute('position', new THREE.Float32BufferAttribute([x0, 0, y0, x0, 0, y1, x1, 0, y1, x1, 0, y0], 3));
@@ -1594,16 +1637,42 @@ void main() {
     coisas = [null]; fecharFicha();
     portas = [];
   }
+  /* O TEMPO DO JOGO ESPERA A PRAÇA MONTAR (o dono, 29/09/2026: "quase todas
+     as vezes que preciso abrir outro mapa devido a caravanas o jogo buga e
+     recarrega automaticamente"): a volta da caravana solta o relógio na hora
+     em que a praça de casa começa a montar (30 a 60 s no navegador de
+     teste; sem placa de vídeo, bem mais). Medido: com a barra em "Montando
+     a cidade… 771 de 3.808", o relógio já tinha derrubado uma mensagem da
+     fila (e travado numa decisão) — o jogo andava atrás da barra, sem
+     ninguém pra ver. O relógio fica parado até a última montagem acabar */
+  const tempoDoJogo = (f, motivo) => { const T = window.TO && TO.tela; if (T && T[f]) T[f](motivo); };
   /* MONTAR: a praça inteira; a montagem que chega depois cancela a de
      antes (`vivo`), e o erro aparece na caixa em vez de travar a tela */
-  async function montar(nome, modo) {
+  async function montar(nome, modo, tentativa = 0) {
     const minha = ++vez, vivo = () => minha === vez;
     montando = true;
+    tempoDoJogo('pausarTempo', 'praca-montando');
     try { await montarPraca(nome, modo, vivo); }
-    catch (e) { console.error('cenário:', e); if (vivo()) { carga.hidden = false; aviso('Não deu pra montar ' + nome + ': ' + e.message, 1); } }
+    catch (e) {
+      console.error('cenário:', e);
+      /* FALTOU MEMÓRIA (o navegador negou o array, RangeError): antes a cidade
+         ficava morta atrás da caixa de erro, só recarregando a página
+         (simulado em 29/09/2026 no navegador de teste: a montagem da sede,
+         na volta da caravana, é a de maior pico de memória). A montagem que
+         falhou já soltou o que tinha, e o navegador limpa o lixo da cidade de
+         antes ao negar o array: tenta de novo, uma vez. Sem prova de que é
+         isso que acontece no PC do dono. */
+      if (vivo() && tentativa < 1 && e instanceof RangeError) {
+        aviso('Faltou memória pra montar ' + nome + '. Tentando de novo…', 0.02);
+        await new Promise(r => setTimeout(r, 1500));
+        if (vivo()) return montar(nome, modo, tentativa + 1);
+      }
+      if (vivo()) { carga.hidden = false; aviso('Não deu pra montar ' + nome + ': ' + e.message, 1); }
+    }
     finally {
       if (vivo()) {
         montando = false; medidor.desde = 0; $('.cen-bt-ape').disabled = !grade; $('.cen-bt-jogo').disabled = !grade; pedir();
+        tempoDoJogo('retomarTempo', 'praca-montando');
         /* quem estava a pé (a troca de qualidade remonta) volta pro mesmo lugar */
         if (voltarAPe) { const v = voltarAPe; voltarAPe = null; entrarAPe(v); }
       }
@@ -1665,6 +1734,10 @@ void main() {
     doMapa.add(cidade3d);
     montarPortas(forno.vivos);
     coisas = forno.coisas;
+    /* as folhas dos decalques sobem pra placa já, uma por vez (o primeiro
+       quadro da cidade não sobe todas de uma vez, e o canvas de cada uma
+       sai da memória na hora — o `onUpdate` das que não repintam) */
+    for (const f of forno.decal.folhas) { rend.initTexture(f.tex); await espera(); if (!vivo()) return; }
     /* 3. o mato em volta */
     aviso('Plantando o mato…', 0.92);
     await espera();
@@ -1819,8 +1892,8 @@ void main() {
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=a99de7cb05', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=a99de7cb05');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=11dc713d99', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=11dc713d99');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -1934,7 +2007,7 @@ void main() {
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=a99de7cb05');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=11dc713d99');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -2496,7 +2569,7 @@ void main() {
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=a99de7cb05'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=11dc713d99'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },

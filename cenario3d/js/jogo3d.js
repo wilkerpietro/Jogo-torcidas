@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=a99de7cb05';
-import { criarVida, horaTxt } from './vida3d.js?v=a99de7cb05';
-import { criarMapaDaCidade } from './mapa3d.js?v=a99de7cb05';
-import { criarDia3d } from './dia3d.js?v=a99de7cb05';
-import { criarRecados } from './recados3d.js?v=a99de7cb05';
+import { CASCA } from './jogo_casca.js?v=11dc713d99';
+import { criarVida, horaTxt } from './vida3d.js?v=11dc713d99';
+import { criarMapaDaCidade } from './mapa3d.js?v=11dc713d99';
+import { criarDia3d } from './dia3d.js?v=11dc713d99';
+import { criarRecados } from './recados3d.js?v=11dc713d99';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=a99de7cb05'), carregarCss('css/jogo3d.css?v=a99de7cb05')]);
+  await Promise.all([carregarCss('css/jogo.css?v=11dc713d99'), carregarCss('css/jogo3d.css?v=11dc713d99')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=a99de7cb05').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=11dc713d99').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=a99de7cb05');
+  await carregarScript('js/jogo.js?v=11dc713d99');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=a99de7cb05').catch(() => {});
-  await import('./bonecos3_global.js?v=a99de7cb05');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=11dc713d99').catch(() => {});
+  await import('./bonecos3_global.js?v=11dc713d99');
   ligar(api);
   return TO.tela;
 }
@@ -290,7 +290,7 @@ function ligar(api) {
   };
   const baresDoJogador = id => api.planta && api.planta.bares ? api.planta.bares().filter(b => b.dono === id) : [];
   let barMostrado = null;
-  const conferirPraca = () => {
+  const conferirPraca = forcar => {
     const e = E();
     if (!e || !e.torcida || pracaTravada) return;
     /* com um painel aberto (a compra do bar, a obra da sede), a praça
@@ -301,7 +301,7 @@ function ligar(api) {
     /* a sede da torcida do jogador é a do save (o nível dela), não a da tabela */
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
-    const refazer = mudouNivel || mudouBares;
+    const refazer = mudouNivel || mudouBares || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
     /* os bares que ela tinha na praça: o que aparecer a mais é o novo */
@@ -359,5 +359,21 @@ function ligar(api) {
     C.pausar(cobre);
   };
   new MutationObserver(conferirCobertura).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  /* A PLACA DESISTIU E VOLTOU (o dono, 29/09/2026: "quase todas as vezes que
+     preciso abrir outro mapa devido a caravanas o jogo buga e recarrega
+     automaticamente"): o cenário avisa quando o contexto WebGL volta, antes
+     de remontar a praça que estava na tela. O dia em 3D não sobrevive à
+     cidade refeita (a linha segue sem ele; medido, sem isto ela ficava presa
+     em "a caminho · na cidade" com a cidade vazia) e a vida liga de novo na
+     praça do jogador; no menu (sem partida na tela), o cenário remonta
+     sozinho */
+  addEventListener('cenario-placa-voltou', ev => {
+    const e = E();
+    if (!e || !e.torcida || !jogo || jogo.classList.contains('oculto')) return;
+    ev.preventDefault();
+    dia3d.cidadeRefeita();
+    pracaDoJogo = null; vida.desligar();
+    conferirPraca(true);
+  });
   conferirTela();
 }

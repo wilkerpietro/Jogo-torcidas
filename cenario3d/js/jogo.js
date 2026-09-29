@@ -49012,13 +49012,17 @@ TO.icones = (function(){
     /* AQUI a bola rola, e só aqui (correção do dono, 20/08/2026): o
        botão do feed abriu o dia, não o jogo. */
     m.dados.iniciada = true;
-    /* NA CIDADE EM 3D A PARTIDA COMEÇA A 1× (dia3d.js): dá tempo de ver a
-       arquibancada e de mandar a torcida invadir; o botão da velocidade
-       continua valendo */
+    /* A PARTIDA COMEÇA A 4× TAMBÉM NA CIDADE EM 3D (o dono, 29/09/2026: "O
+       tempo padrão que corre a partida é 4x."): ela começava a 1× aqui
+       (28/09/2026), pra dar tempo de ver a arquibancada e de mandar a
+       torcida invadir. Quem quer calma segura no espaço ou no botão do
+       placar de TV (dia3d.js: 4× → 1× → 2× → 4×), e o clima tenso pausa e
+       pergunta sozinho. A partida que um save já guardou em andamento (o
+       minAcum existe) fica na velocidade que ele guardou */
     const D3 = TO.jogo3d && TO.jogo3d.dia, em3d = !!(D3 && D3.ativo);
     if(m.dados.minAcum === undefined){
       m.dados.minAcum = 0; m.dados.t0 = Date.now();
-      m.dados.vel = m.dados.vel || (em3d ? 1 : 4); m.dados.pausada = false;
+      m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
     }
     if(em3d) D3.partida(m);
     const caixa = widgetPartida(m, ()=>{
@@ -49873,9 +49877,28 @@ TO.icones = (function(){
     }
 
     /* ---------- a montagem ---------- */
+    /* A ROLAGEM E O FOCO NÃO SE PERDEM AO REPINTAR (o dono, 29/09/2026: "Toda
+       vida que clico em diminuir ou aumentar quantidade de bombas ou de
+       envolvidos em caravana ou briga no planejamento a tela volta pro topo.
+       Corrija isso."). O `pintar` refaz a caixa inteira, então quem rola — o
+       item (pra baixo), a pauta e as abas de praça (no celular, de lado) —
+       nasce de novo com a rolagem no zero, e o botão apertado morre junto (o
+       teclado perdia o lugar a cada aperto). Antes de refazer guarda a
+       rolagem de cada um e o lugar do foco; depois devolve, já com a caixa
+       desenhada (se o conteúdo novo é mais curto, o navegador segura no fim
+       dele). O foco volta pro botão que ficou no mesmo lugar, ou pro irmão
+       dele se aquele desligou (o + que bateu no teto). Outro item da pauta,
+       ou outra praça, é outro conteúdo: esse começa do alto. */
+    const ROLAM = ['.plj-pracas', '.plj-lista', '.plj-det'];
+    let vista = {cidade:null, sel:null};
+    const lugarDe = no => { const l = []; for(let n = no; n !== caixa; n = n.parentNode) l.unshift(Array.from(n.parentNode.children).indexOf(n)); return l; };
     function pintar(){
       const {pt, itens} = pauta();
       if(!itens.some(x=>x.chave === sel)) sel = (itens.find(x=>x.tipo==='nosso' && !x.r.passou) || itens.find(x=>!(x.r && x.r.passou)) || itens[0] || {}).chave || null;
+      /* (a primeira pintura, com a caixa ainda fora da página, não tem o que guardar) */
+      const noAr = caixa.isConnected, ativo = document.activeElement;
+      const rolagem = noAr ? ROLAM.map(s=>{ const n = caixa.querySelector(s); return [s, n ? n.scrollTop : 0, n ? n.scrollLeft : 0]; }) : [];
+      const focado = noAr && ativo !== caixa && caixa.contains(ativo) ? {lugar:lugarDe(ativo), tag:ativo.tagName, cls:ativo.classList[0]} : null;
       caixa.innerHTML = '';
       /* o alto: a semana e o que a torcida tem */
       const d0 = TO.estado.dataDaSemana(ano, semana, 1), d6 = TO.estado.dataDaSemana(ano, semana, 7);
@@ -49950,6 +49973,19 @@ TO.icones = (function(){
       }
       pe.appendChild(bts);
       caixa.appendChild(pe);
+      if(noAr){
+        /* o foco primeiro e a rolagem por último: se o navegador não segurar
+           o `preventScroll`, é a rolagem devolvida que fica */
+        let n = focado && focado.lugar.reduce((x, i)=>x && x.children[i], caixa);
+        if(n && n.disabled) n = n.parentNode.querySelector('button:not(:disabled)');
+        if(n && n.tagName === focado.tag && n.classList[0] === focado.cls) n.focus({preventScroll:true});
+        const zera = {'.plj-det': cidade !== vista.cidade || sel !== vista.sel, '.plj-lista': cidade !== vista.cidade};
+        for(const [s, t, l] of rolagem){
+          const no = caixa.querySelector(s);
+          if(no && !zera[s]){ no.scrollTop = t; no.scrollLeft = l; }
+        }
+      }
+      vista = {cidade, sel};
     }
     pintar();
     document.body.appendChild(fundo);
@@ -50343,6 +50379,25 @@ TO.icones = (function(){
                                       m.kind, m.chave || m.id);
     }
     return art;
+  }
+
+  /* O RECORTE DO CANTO DIREITO (o jogo 3D, 29/09/2026; o dono: "As
+     mensagens de jornal que devem aparecer no canto direito são as do
+     Gazeta dos sports e futebol e porrada, com o layout de manchete de
+     jornal, com aquele padrão que existia no feed"). É o recorte do feed —
+     o nó que o próprio `cartaoMensagem` monta, dos mesmos moldes: o nome do
+     jornal, o chapéu, a manchete, o olho e, na Gazeta, o placar grande —,
+     só que numa coluna: sem o quadro do lado (a classificação, o quadro da
+     noite), sem as outras tretas da noite e sem o botão do jornal completo,
+     que ficam no cartão aberto. Devolve null pro que não é jornal e pra
+     mensagem de save antigo, sem a página. Quem escolhe os jornais que vão
+     pro canto é o recados3d.js. */
+  function recorteDeJornal(e, m){
+    const rec = m ? cartaoSeguro(e, m).querySelector('.gz') : null;
+    if(!rec) return null;
+    for(const x of rec.querySelectorAll('.gz-recorte, .alm-quadro, .pp-quadro, .pp-nossas, .gz-resto, .gz-abre')) x.remove();
+    rec.classList.add('gz-canto');
+    return rec;
   }
 
   /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
@@ -57718,6 +57773,8 @@ TO.icones = (function(){
     /* o cartão de uma mensagem (o mesmo do feed, com os botões que
        respondem): o jogo 3D põe no balão de quem vem falar */
     cartaoMensagem: cartaoSeguro,
+    /* o recorte de jornal compacto de uma mensagem (o aviso do canto direito) */
+    recorteDeJornal,
     /* o estado visível de uma mensagem (o balão do jogo 3D só refaz o
        cartão quando ele muda, como a lista do feed) e a linha do dia de
        jogo que está andando nela (o balão mostra só a linha enquanto o

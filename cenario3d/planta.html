@@ -281,22 +281,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=a99de7cb05';
-import { montarModelos } from './js/modelos3d.js?v=a99de7cb05';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=a99de7cb05';
-import { ATLAS } from './js/modelos_atlas.js?v=a99de7cb05';
-import { Construtor, sorteio } from './js/construtor3d.js?v=a99de7cb05';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=a99de7cb05';
-import { montarSede } from './js/sede3d.js?v=a99de7cb05';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=a99de7cb05';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=a99de7cb05';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=a99de7cb05';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=a99de7cb05';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=a99de7cb05';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=a99de7cb05';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=a99de7cb05';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=a99de7cb05';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=a99de7cb05';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=11dc713d99';
+import { montarModelos } from './js/modelos3d.js?v=11dc713d99';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=11dc713d99';
+import { ATLAS } from './js/modelos_atlas.js?v=11dc713d99';
+import { Construtor, sorteio } from './js/construtor3d.js?v=11dc713d99';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=11dc713d99';
+import { montarSede } from './js/sede3d.js?v=11dc713d99';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=11dc713d99';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=11dc713d99';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=11dc713d99';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=11dc713d99';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=11dc713d99';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=11dc713d99';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=11dc713d99';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=11dc713d99';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=11dc713d99';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -313,19 +313,19 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=a99de7cb05');
-  await carregarScript('dados/times.js?v=a99de7cb05');
-  await carregarScript('dados/cena_estadio.js?v=a99de7cb05');
-  await carregarScript('dados/cidades.js?v=a99de7cb05');
-  await carregarScript('dados/estadios.js?v=a99de7cb05');
-  await carregarScript('dados/escudos.js?v=a99de7cb05');
+  await carregarScript('dados/torcidas.js?v=11dc713d99');
+  await carregarScript('dados/times.js?v=11dc713d99');
+  await carregarScript('dados/cena_estadio.js?v=11dc713d99');
+  await carregarScript('dados/cidades.js?v=11dc713d99');
+  await carregarScript('dados/estadios.js?v=11dc713d99');
+  await carregarScript('dados/escudos.js?v=11dc713d99');
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=a99de7cb05').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=11dc713d99').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -3731,6 +3731,9 @@ function texturaPixo(texto, tinta, asp, deTorcida) {
    pé, de 0,8 a 1,7 m */
 const PIXO_ALT = { torcida: 1.55, recado: 0.9 }, PIXO_Y = { torcida: 0.98, recado: 1.25 };
 function placaNoMundo(g, lug, tex, alfa) {
+  /* o canvas é só desta placa: o forno do cenário não precisa guardar ele
+     depois de copiar pra folha de decalques (menos o do escudo, que repinta) */
+  if (!tex.userData.repinta) tex.userData.umaVez = true;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(lug.larg, lug.alt),
                            new THREE.MeshLambertMaterial({ map: tex, transparent: !!alfa, alphaTest: alfa ? 0.35 : 0, side: THREE.DoubleSide }));
   m.position.set(lug.x, lug.y, lug.z);
@@ -4250,6 +4253,7 @@ function texturaEscudo(p) {
      inteiro, na proporção dele e centrado (o jeito do bairro3d do jogo);
      sem ele, fica o gerado */
   if (p.img) {
+    tx.userData.repinta = true;
     const im = new Image();
     im.onload = () => {
       c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0;
@@ -5353,7 +5357,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=a99de7cb05');
+    const { montarJogo } = await import('./js/jogo3d.js?v=11dc713d99');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5363,8 +5367,16 @@ async function abrirJogo3d() {
          nome deixava essas seis sem cidade em 3D (conserto de 28/09/2026:
          o jogo fora em São Paulo abria com a cidade do jogador na tela) */
       pracaDe: mapa => (mapa && nomes.find(n => slugDe(n) === mapa)) || null,
-      abrirPraca(nome, forcar) {
-        try { localStorage.setItem('jogo3d-praca', nome); } catch (e) {}
+      abrirPraca(nome, forcar, visita) {
+        /* `visita`: a praça de fora de uma caravana não é a que o jogo abre da
+           próxima vez — se a página cai no meio da viagem, o menu abre a
+           cidade do jogador, não a de lá (o dono, 29/09/2026: "quase todas
+           as vezes que preciso abrir outro mapa devido a caravanas o jogo
+           buga e recarrega automaticamente"). Medido, derrubando a aba com a
+           praça de lá montando: a praça lembrada pro boot era "Manaus" (e o
+           `abrirJogo3d` monta a lembrada atrás do menu, antes de o
+           "Continuar" voltar pra cidade da sede) */
+        if (!visita) try { localStorage.setItem('jogo3d-praca', nome); } catch (e) {}
         /* `forcar`: a mesma praça, montada de novo (a sede do jogador mudou de nível) */
         if (forcar && cenario && cenario.praca === nome) return cenario.montar(nome, mapaDoPorte(nome));
         return abrirCenario(nome, mapaDoPorte(nome));
@@ -5384,7 +5396,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=a99de7cb05');
+      const { criarCenario } = await import('./js/cenario.js?v=11dc713d99');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }

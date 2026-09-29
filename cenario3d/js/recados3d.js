@@ -19,12 +19,20 @@
      tela (a câmera noutro canto, a praça sem sede), o balão encosta no
      alto, com o botão que leva a câmera até ele. A decisão fica até ser
      respondida (o relógio do jogo espera por ela, como no feed);
-   - A NOTÍCIA (sem botão de decisão): um AVISO no lado direito da tela,
-     o cartão curto do feed de antes — quem fala, a hora e o texto — que
-     some sozinho em uns quatro segundos (o mouse em cima segura; um
-     toque abre o cartão inteiro, com a tabela, o jornal e os links, e
-     ele fica até o ×). O relógio NÃO espera aviso: as horas correm até a
-     próxima decisão;
+   - A MANCHETE DE JORNAL (29/09/2026; o dono: "As mensagens de jornal que
+     devem aparecer no canto direito são as do Gazeta dos sports e futebol
+     e porrada, com o layout de manchete de jornal, com aquele padrão que
+     existia no feed"): um AVISO no lado direito da tela, o recorte do
+     feed em versão compacta — o nome do jornal, o chapéu, a manchete, o
+     olho e, na Gazeta, o placar —, só da Gazeta dos Sports (a rodada) e do
+     Futebol e Porrada (a treta nossa, a LNT, a obra). Some sozinho em uns
+     oito segundos (o mouse em cima segura; um toque abre o cartão inteiro,
+     com a tabela, o jornal completo e os links, e ele fica até o ×). Só
+     dois de cada vez: numa rajada ficam a treta nossa, depois a Gazeta,
+     depois o resto. O relógio NÃO espera aviso: as horas correm até a
+     próxima decisão. O resto do que não pede decisão (status, dica,
+     aniversário, o olheiro...) não aparece: fica em Notícias, no arquivo
+     do feed;
    - OS RECADOS DE OUTRAS TORCIDAS (a provocação, o convite, o pedido de
      casa, a trégua): não aparecem na tela. Ficam em Notícias → Mensagens,
      com o número vermelho no ícone (main.js), e os que pedem resposta
@@ -36,12 +44,12 @@
      embaixo do placar; respondida, o saldo fica uns segundos e ele sai.
    UMA DECISÃO DE CADA VEZ: elas entram numa fila, na ordem em que caíram.
    Painel, mapa, cena, reunião e modal escondem o balão e seguram a fila;
-   fechou, ele volta de onde estava. A notícia de treta segue fora, como
-   no feed (Notícias → Tretas). O que já foi ouvido fica no save
+   fechou, ele volta de onde estava. A treta nossa sai no recorte do Futebol
+   e Porrada (e segue em Notícias → Tretas). O que já foi ouvido fica no save
    (`E.ouvido3d`, a mais nova ouvida): carregar o jogo não repete recado,
    e decisão em aberto volta sempre.
    ========================================================= */
-import { areaLivre } from './vida3d.js?v=a99de7cb05';
+import { areaLivre } from './vida3d.js?v=11dc713d99';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -51,6 +59,9 @@ const FOLGA = 0.45;
 const RESPONDIDA = 2.5;
 /* o aviso: quanto fica na tela (s, a 1×) e quantos cabem na pilha */
 const AVISO_S = 4.2, AVISOS_MAX = 4;
+/* o recorte de jornal pede mais leitura que o aviso (s, a 1×) e só cabem
+   dois de cada vez: o dia da praça passa em 3,6 s, e vêm rajadas */
+const RECORTE_S = 7.5, RECORTES_MAX = 2;
 /* o saldo de um recado da linha do dia (a briga que passou) fica esse tanto (s) */
 const SALDO_S = 3.2;
 
@@ -71,7 +82,7 @@ export function criarRecados(api, vida, dia3d) {
   const mostrados = [];
   let balao = null, corpo = null, pe = null, maisEl = null, proxBt = null, xBt = null, irBt = null, tempoEl = null, tempoBar = null;
   /* os avisos do lado direito */
-  let pilha = null;
+  let pilha = null, tAviso = 0;
   const avisos = [], avisados = [];
   /* quando o saldo de cada cartão da linha do dia apareceu */
   const saldoVisto = new WeakMap();
@@ -125,19 +136,21 @@ export function criarRecados(api, vida, dia3d) {
     if (frente) fila.unshift(m); else fila.push(m);
   }
   /* o que caiu desde a última olhada (a mensagem nova entra sempre por cima,
-     em `E.feed`): a decisão vai pra fila do balão, a notícia vira aviso */
+     em `E.feed`): a decisão vai pra fila do balão, a manchete de jornal
+     vira recorte no canto (a treta nossa também: `dropar`, feed.js, põe
+     ela em `E.feed` como as outras, só o rolo do feed é que a esconde) */
   function olhar(e) {
     const feed = e.feed || [];
     if (!feed.length || feed[0] === topo) return;
     const novos = [];
     for (const m of feed) { if (m === topo || novos.length > 400) break; novos.push(m); }
     topo = feed[0];
-    /* (uma rajada grande, a de um dia inteiro que caiu de uma vez: só as últimas viram aviso) */
-    for (let k = novos.length - 1; k >= 0; k--) chegouUma(e, novos[k], k < AVISOS_MAX);
+    /* (uma rajada, a de um dia inteiro que caiu de uma vez: só os recortes mais importantes viram aviso; no empate, os mais novos) */
+    const cabem = novos.filter(m => ehJornal(m) && !pendente(m)).sort((a, b) => pesoDoJornal(a) - pesoDoJornal(b)).slice(0, RECORTES_MAX);
+    for (let k = novos.length - 1; k >= 0; k--) chegouUma(e, novos[k], cabem.includes(novos[k]));
   }
   function chegouUma(e, m, avisa) {
-    /* a notícia de treta não passa pelo feed (vai pra Notícias → Tretas) */
-    if (!m || m.kind === 'confronto') return;
+    if (!m) return;
     if (pendente(m)) { por(m); return; }
     if (avisa) avisar(e, m);
     ouvido(m);
@@ -174,20 +187,57 @@ export function criarRecados(api, vida, dia3d) {
     const t = String(m.texto || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     return t || TITULO[m.kind] || '';
   }
+  /* O CANTO É DE JORNAL (o dono, 29/09/2026: "As mensagens de jornal que
+     devem aparecer no canto direito são as do Gazeta dos sports e futebol
+     e porrada"): só a manchete de jornal vira aviso. Qual jornal imprime
+     cada tipo de mensagem (o almanaque diz o dele na própria página) e
+     quais jornais o canto mostra: pra ampliar, é acrescentar o tipo ou o
+     jornal aqui. Todo almanaque hoje sai em "O Almanaque", então nenhum
+     aparece; um que saísse na Gazeta ou no Futebol e Porrada apareceria */
+  const JORNAL_DO_TIPO = { rodada: 'Gazeta dos Sports', confronto: 'Futebol e Porrada', 'lnt-fundacao': 'Futebol e Porrada', 'lnt-fim': 'Futebol e Porrada', obra: 'Futebol e Porrada' };
+  const JORNAIS_DO_CANTO = new Set(['Gazeta dos Sports', 'Futebol e Porrada']);
+  const jornalDe = m => m.kind === 'almanaque' ? m.dados && m.dados.pagina && m.dados.pagina.jornal : JORNAL_DO_TIPO[m.kind];
+  const ehJornal = m => !!m && JORNAIS_DO_CANTO.has(jornalDe(m));
+  /* a importância do recorte numa rajada: a treta nossa (todo `confronto`
+     é nosso), a Gazeta do nosso clube (a edição só sai em dia de jogo
+     dele), o resto */
+  const pesoDoJornal = m => m.kind === 'confronto' ? 0 : m.kind === 'rodada' ? 1 : 2;
+  /* o recorte compacto da mensagem (main.js); null sem a página (save antigo) */
+  function recorteDe(e, m) {
+    try { return TO.tela && TO.tela.recorteDeJornal ? TO.tela.recorteDeJornal(e, m) : null; }
+    catch (err) { console.error('o aviso: o recorte não montou', err); return null; }
+  }
+  /* só dois recortes na pilha: com ela cheia, o novo entra se for mais
+     importante que o pior dela (no empate, o mais novo), e o pior sai; quem
+     está sendo lido (o mouse em cima) e o cartão aberto ficam */
+  function abrirVaga(m) {
+    const vivos = avisos.filter(x => x.peso != null && !x.fixo && !x.saindo);
+    if (vivos.length < RECORTES_MAX) return true;
+    let pior = null;
+    for (const x of vivos) if (!x.pairando && (!pior || x.peso > pior.peso)) pior = x;
+    if (!pior || pesoDoJornal(m) > pior.peso) return false;
+    tirarAviso(pior);
+    return true;
+  }
   /* `m`: a mensagem do feed (o toque abre o cartão dela), ou null com
      `o` = { voz, texto, hora, classe, botao: { rot, fn } } (o dia de jogo:
-     o gol, o jogo da cidade começando) */
+     o gol, o jogo da cidade começando). A mensagem de jornal sai em
+     RECORTE, o do feed em versão compacta (main.js, `recorteDeJornal`); sem
+     a página dele (save antigo), cai no cartão escuro de texto */
   function avisar(e, m, o = null) {
     montar();
-    const txt = (o && o.texto) || (m ? textoDoAviso(m) : '');
+    const rec = m && ehJornal(m) ? recorteDe(e, m) : null;
+    const txt = rec ? String((rec.querySelector('h2') || rec).textContent).trim() : (o && o.texto) || (m ? textoDoAviso(m) : '');
     if (!txt) return null;
-    const voz = (o && o.voz) || (m && TO.tela && TO.tela.vozDaMsg ? TO.tela.vozDaMsg(m) : '');
+    if (rec && !abrirVaga(m)) return null;
+    const voz = rec ? String((rec.querySelector('.nome-jornal') || {}).textContent || '') : (o && o.voz) || (m && TO.tela && TO.tela.vozDaMsg ? TO.tela.vozDaMsg(m) : '');
     const hora = (o && o.hora) || (m && m.hora) || '';
     const n = document.createElement('div');
-    n.className = 'j3d-aviso' + (m && m.tipo ? ' ' + m.tipo : '') + (o && o.classe ? ' ' + o.classe : '') + (m ? ' abre' : '');
-    n.innerHTML = `<div class="j3d-aviso-cab"><b>${esc(voz)}</b>${hora ? `<time>${esc(hora)}</time>` : ''}</div><p>${esc(txt)}</p>` +
+    n.className = 'j3d-aviso' + (m && m.tipo ? ' ' + m.tipo : '') + (o && o.classe ? ' ' + o.classe : '') + (rec ? ' recorte jornal' : '') + (m ? ' abre' : '');
+    if (rec) n.appendChild(rec);
+    else n.innerHTML = `<div class="j3d-aviso-cab"><b>${esc(voz)}</b>${hora ? `<time>${esc(hora)}</time>` : ''}</div><p>${esc(txt)}</p>` +
       (o && o.botao ? `<button class="j3d-aviso-bt">${esc(o.botao.rot)}</button>` : '');
-    const a = { n, m, o, resta: AVISO_S / (vel() > 1 ? 1.3 : 1), fixo: false, pairando: false, saindo: false };
+    const a = { n, m, o, peso: rec ? pesoDoJornal(m) : null, resta: (rec ? RECORTE_S : AVISO_S) / (vel() > 1 ? 1.3 : 1), fixo: false, pairando: false, saindo: false };
     n.addEventListener('pointerenter', ev => { if (ev.pointerType === 'mouse') a.pairando = true; });
     n.addEventListener('pointerleave', () => { a.pairando = false; });
     n.addEventListener('click', ev => {
@@ -209,6 +259,8 @@ export function criarRecados(api, vida, dia3d) {
     const e = E();
     a.fixo = true;
     a.n.classList.add('aberto');
+    /* (o recorte deixa de ser o papel solto: o cartão aberto é o escuro, com o jornal dentro) */
+    a.n.classList.remove('recorte');
     a.n.innerHTML = '<button class="j3d-aviso-x" title="Fechar" aria-label="Fechar">×</button>';
     try { a.n.appendChild(TO.tela.cartaoMensagem(e, a.m)); }
     catch (err) { console.error('o aviso: o cartão não montou', err); a.n.insertAdjacentHTML('beforeend', `<p>${esc(textoDoAviso(a.m))}</p>`); }
@@ -226,13 +278,41 @@ export function criarRecados(api, vida, dia3d) {
     const b = document.body.classList;
     return b.contains('j3d-em-jogo') && !b.contains('em-cena') && !b.contains('palco-briga') && !b.contains('com-painel') && !b.contains('j3d-mapa-aberto');
   }
+  /* O BALÃO DA DECISÃO MANDA NO CANTO: o recorte de jornal é alto, e no
+     celular o balão (largo) e a pilha (à direita) dividem o alto da tela — o
+     jornal ficava por cima dos botões da decisão, que o relógio espera. Com
+     o balão encostando num recorte, os recortes esperam escondidos, sem
+     correr, até ele sair (o cartão aberto fica: foi o jogador que abriu). No
+     PC o balão fica longe da pilha e os dois aparecem juntos */
+  function cedeAoBalao() {
+    if (!balao || balao.hidden) return false;
+    const b = balao.getBoundingClientRect();
+    return avisos.some(a => {
+      if (a.peso == null || a.fixo || a.saindo) return false;
+      const r = a.n.getBoundingClientRect();
+      return r.right > b.left && r.left < b.right && r.bottom > b.top && r.top < b.bottom;
+    });
+  }
+  /* o aviso conta o tempo da parede (no máximo 1 s por quadro) e não o do
+     quadro do jogo (no máximo 0,25 s): na máquina lenta, a de 1 a 3 quadros
+     por segundo, o recorte de 7,5 s ficava no ar de 10 a 30 s */
   function quadroAvisos(dt) {
+    const agora = performance.now(), passo = Math.max(dt, tAviso ? Math.min(1, (agora - tAviso) / 1000) : 0);
+    tAviso = agora;
     const pode = podeAvisar();
     if (!pode) return;
-    /* a pilha embaixo da barra do jogo (e do placar, no dia de jogo) */
+    /* a pilha embaixo da barra do jogo (e do placar, no dia de jogo) e em
+       cima do painel do dia de jogo, se ele está na tela: o cartão aberto
+       cresce até onde a tela deixa */
     const y = Math.round(topoLivre());
     if (pilha.style.top !== y + 'px') pilha.style.top = y + 'px';
-    for (const a of avisos.slice()) if (!a.fixo && !a.saindo && !a.pairando) { a.resta -= dt; if (a.resta <= 0) tirarAviso(a); }
+    const painel = document.querySelector('.j3d-dia'), baixo = (painel && !painel.hidden ? Math.round(innerHeight - painel.getBoundingClientRect().top + 8) : 12) + 'px';
+    if (pilha.style.bottom !== baixo) pilha.style.bottom = baixo;
+    const cede = cedeAoBalao();
+    for (const a of avisos.slice()) {
+      if (a.peso != null && !a.fixo) a.n.classList.toggle('cede', cede);
+      if (!a.fixo && !a.saindo && !a.pairando && !(cede && a.peso != null)) { a.resta -= passo; if (a.resta <= 0) tirarAviso(a); }
+    }
   }
 
   /* ======================================================
@@ -297,7 +377,8 @@ export function criarRecados(api, vida, dia3d) {
   }
   function pintar0(e, k) {
     const m = atual, primeira = chave === null, eraFixo = fixo;
-    chave = k; sumiu = false;
+    /* (o cartão novo se mede e se ancora no mesmo quadro: sem um quadro do cartão novo no jeito do velho) */
+    chave = k; sumiu = false; ajuste = null; ancorado = 0;
     corpo.innerHTML = '';
     /* a linha do dia de jogo: o nó inteiro vai pro balão (a partida roda
        dentro dele), mas só o cartão que pede resposta aparece */
@@ -345,6 +426,7 @@ export function criarRecados(api, vida, dia3d) {
     ancorar();
   }
   function esconder() {
+    ajuste = null;
     if (balao && !balao.hidden) balao.hidden = true;
     if (desligarAncora) { desligarAncora(); desligarAncora = null; cAncora = null; }
   }
@@ -384,6 +466,65 @@ export function criarRecados(api, vida, dia3d) {
     }
     return y + 8;
   }
+  /* ATÉ ONDE O BALÃO DESCE: a borda de baixo da tela, ou o painel do dia
+     de jogo (que fica por cima dele) */
+  function baixoLivre(yTopo) {
+    let y = innerHeight - 10;
+    const d = document.querySelector('.j3d-dia:not([hidden])');
+    if (d) { const r = d.getBoundingClientRect(); if (r.height > 0 && r.top > yTopo + 80) y = Math.min(y, r.top - 8); }
+    return y;
+  }
+
+  /* ======================================================
+     O BALÃO CABE, SEM ROLAGEM (o dono, 29/09/2026: "Não gosto muito de
+     scrollbar nas mensagens de decisão, principalmente os verticais. Tente
+     ajustar pra evitar ao máximo o scrollbar."): o corpo do balão tinha um
+     teto de 46% da tela e rolava por dentro — a decisão mais comprida (a
+     entrevista, a tabela do olheiro) deixava os botões pra baixo da dobra.
+     Agora ele cresce até o que a tela deixa livre; desenhado o cartão, o
+     balão mede e escolhe o jeito que cabe, do que menos mexe pro que mais
+     mexe:
+     1) a largura: a mais estreita que deixa o balão dentro do conforto
+        (o teto de antes, 46% da tela, e nunca menos de 300 px) — até uns
+        520 px, e mais na tela baixa, a do celular deitado;
+     2) a compactação, em três níveis (jogo3d.css: c1 os espaços, c2 a
+        letra, c3 a hora, os botões e a tabela), medindo de novo a cada um,
+        até caber na tela;
+     3) só se nada disso couber, o corpo rola — fino, no tom do balão, e
+        nunca de lado
+     ====================================================== */
+  const DEGRAUS = [440, 520, 600, 680];
+  let ajuste = null;
+  /* as larguras que o balão pode ter: a da folha (null) e cada degrau mais largo, até o teto */
+  function larguras(cabe) {
+    balao.style.width = '';
+    const base = balao.offsetWidth, teto = Math.min(cabe, innerHeight < 560 ? 680 : 520), ls = [null];
+    for (const w of DEGRAUS) if (w > base + 30 && w <= teto) ls.push(w);
+    if (teto > base + 30 && ls[ls.length - 1] !== teto) ls.push(teto);
+    return ls;
+  }
+  function aplicar(larg, nivel) {
+    balao.style.width = larg ? larg + 'px' : '';
+    for (let n = 1; n <= 3; n++) balao.classList.toggle('c' + n, nivel >= n);
+  }
+  function ajustar(cabe, yTopo, yBaixo) {
+    /* (o balão escondido por um painel ou uma cena, sem ter saído do ar: nada a medir) */
+    if (!balao.offsetWidth) return;
+    const livre = Math.floor(yBaixo - yTopo), lim = cabe + '|' + livre;
+    const assin = () => balao.offsetWidth + 'x' + balao.offsetHeight + '|' + corpo.scrollHeight;
+    /* (o cartão e a tela iguais: o jeito de antes serve) */
+    if (ajuste && ajuste.lim === lim && ajuste.assin === assin()) return;
+    balao.style.setProperty('--corpo-max', 'none');
+    const ls = larguras(cabe), conforto = Math.min(livre, Math.max(Math.round(innerHeight * 0.46), 300), 420), alto = () => balao.offsetHeight;
+    let coube = false;
+    for (const l of ls) { aplicar(l, 0); if (alto() <= conforto) { coube = true; break; } }
+    /* (nenhuma largura leva ao conforto: fica a mais larga, se cabe na tela) */
+    coube = coube || alto() <= livre;
+    for (let n = 1; !coube && n <= 3; n++) { aplicar(ls[ls.length - 1], n); coube = alto() <= livre; }
+    /* o teto do corpo, só se nada coube: o que sobra da tela, fora o resto do balão (o pé, o botão) */
+    if (!coube) balao.style.setProperty('--corpo-max', Math.max(80, livre - (alto() - corpo.offsetHeight)) + 'px');
+    ajuste = { lim, assin: assin() };
+  }
   const PQ = {}, PP = {};
   function registrarAncora() {
     const Cn = C();
@@ -396,9 +537,8 @@ export function criarRecados(api, vida, dia3d) {
     ancorado = performance.now();
     const Cn = C(), A = areaLivre();
     /* (o balão nunca é mais largo que a parte livre da tela: no celular em pé, a coluna de ícones come a esquerda e ele passava da borda da direita) */
-    const cabe = Math.max(220, Math.floor(A.x1 - A.x0 - 16)) + 'px';
-    if (balao.style.maxWidth !== cabe) balao.style.maxWidth = cabe;
-    const larg = balao.offsetWidth || 340, alto = balao.offsetHeight || 140;
+    const cabe = Math.max(220, Math.floor(A.x1 - A.x0 - 16));
+    if (balao.style.maxWidth !== cabe + 'px') balao.style.maxWidth = cabe + 'px';
     let alvo = null, volta = null, x = null, y = null;
     /* (no dia de jogo a decisão fica sempre no alto, embaixo do placar: em
        cima do líder ela tampava justamente o lado de onde a rival vinha) */
@@ -411,16 +551,20 @@ export function criarRecados(api, vida, dia3d) {
       const q = Cn.vida.projetar(alvo.x, alvo.y, alvo.z, PQ);
       if (q.frente && q.x > A.x0 + 10 && q.x < A.x1 - 10 && q.y > 70 && q.y < innerHeight - 20) { x = q.x; y = q.y; }
     }
+    /* (o botão que leva a câmera até quem fala conta na altura do balão: ele entra antes da medida) */
+    irBt.hidden = x != null || !volta;
+    if (x == null && volta && irBt.textContent !== volta) irBt.textContent = volta;
+    const yTopo = topoLivre();
+    ajustar(cabe, yTopo, baixoLivre(yTopo));
+    const larg = balao.offsetWidth || 340, alto = balao.offsetHeight || 140;
     if (x == null) {
       /* quem fala fora da tela: o balão encosta no alto, com o botão que leva a câmera até ele */
-      balao.classList.add('solto');
-      irBt.hidden = !volta;
-      if (volta && irBt.textContent !== volta) irBt.textContent = volta;
+      balao.classList.add('solto'); balao.classList.remove('sobre');
       balao.style.left = Math.round(clamp(A.meio - larg / 2, A.x0 + 8, Math.max(A.x0 + 8, A.x1 - larg - 8))) + 'px';
-      balao.style.top = Math.round(topoLivre()) + 'px';
+      balao.style.top = Math.round(yTopo) + 'px';
       return;
     }
-    balao.classList.remove('solto'); irBt.hidden = true;
+    balao.classList.remove('solto');
     /* O PRESIDENTE À VISTA: o balão abre pro lado contrário ao dele (o rabo
        fica na cabeça de quem fala, perto da ponta do balão) */
     let meio = x;
@@ -430,7 +574,9 @@ export function criarRecados(api, vida, dia3d) {
       if (qp.frente && Math.abs(qp.x - x) < larg * 0.6 && qp.y < y + 40) meio = qp.x >= x ? x - larg / 2 + 34 : x + larg / 2 - 34;
     }
     const left = clamp(meio - larg / 2, A.x0 + 8, Math.max(A.x0 + 8, A.x1 - larg - 8));
-    const top = Math.max(topoLivre(), y - alto - 14);
+    const top = Math.max(yTopo, y - alto - 14);
+    /* (cobrindo quem fala, o rabo não aponta pra ninguém) */
+    balao.classList.toggle('sobre', top + alto > y - 10);
     balao.style.left = Math.round(left) + 'px'; balao.style.top = Math.round(top) + 'px';
     balao.style.setProperty('--rabo', Math.round(clamp(x - left, 16, larg - 16)) + 'px');
   }
@@ -559,7 +705,7 @@ export function criarRecados(api, vida, dia3d) {
       return { atual: atual && { id: atual.id, kind: atual.kind, peso: atual.peso || 'info' }, fila: fila.map(m => m.id), visivel: !!(balao && !balao.hidden),
                solto: !!(balao && balao.classList.contains('solto')), linha: eraLinha, fixo, preso, lido: +lido.toFixed(2), lim: lim === Infinity ? null : +lim.toFixed(2),
                ouvido: E() ? E().ouvido3d : null, mostrados: mostrados.slice(-60), quemFala: dia3d.ativo ? 'linha' : vida.recado ? 'sede' : null,
-               avisos: avisos.filter(a => !a.saindo).map(a => ({ kind: a.m ? a.m.kind : 'aviso', aberto: a.fixo, texto: a.n.textContent.slice(0, 80) })),
+               avisos: avisos.filter(a => !a.saindo).map(a => ({ kind: a.m ? a.m.kind : 'aviso', aberto: a.fixo, recorte: a.peso != null, resta: +a.resta.toFixed(2), texto: a.n.textContent.slice(0, 80) })),
                avisados: avisados.slice(-60) };
     },
     get balao() { return balao; }

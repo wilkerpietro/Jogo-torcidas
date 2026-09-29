@@ -100,7 +100,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=a99de7cb05';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=11dc713d99';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2806,11 +2806,19 @@ let escalaDoTabuleiro = () => 1;
      ficam marcados `_propria` e são liberados aqui; geometria e
      material compartilhados (a camisa por desenho, o cache `mats`)
      ficam, porque a próxima cena usa de novo. Sem isto cada briga
-     deixava uns 400 materiais na GPU do celular. */
+     deixava uns 400 materiais na GPU do celular.
+     A TEXTURA DOS OSSOS TAMBÉM (o dono, 29/09/2026: "quase todas as vezes
+     que preciso abrir outro mapa devido a caravanas o jogo buga e recarrega
+     automaticamente"): cada esqueleto cria a sua no primeiro quadro e o
+     three.js só a devolve pra placa no `dispose` dele. Medido no dia de
+     jogo fora: ~240 texturas de osso ficavam na placa por viagem (uma por
+     boneco que passou pela cidade), e a conta só crescia com a viagem
+     seguinte. */
   function liberar(fg){
     fg.corpo.raiz.traverse(o=>{
       const m = o.material;
       if(m && m._propria) m.dispose();
+      if(o.isSkinnedMesh && o.skeleton) o.skeleton.dispose();
     });
   }
 
@@ -3128,7 +3136,7 @@ let escalaDoTabuleiro = () => 1;
          quadro da cena nova acha que todo mundo andou quinhentos
          pixels e a multidão inteira nasce em pose de corrida */
       limpar(){
-        for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); figuras.delete(d); }
+        for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
       },
       get comModelo(){ return !!modeloGLB; },
       get quantas(){ return figuras.size; },

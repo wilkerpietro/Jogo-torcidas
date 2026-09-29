@@ -59,8 +59,8 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=a99de7cb05';
-import { palcoDeBriga } from './palco_briga.js?v=a99de7cb05';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=11dc713d99';
+import { palcoDeBriga } from './palco_briga.js?v=11dc713d99';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -179,7 +179,9 @@ export function criarDia3d(api, vida, g = {}) {
      O PLACAR DE TV (no alto): as siglas com a cor de cada clube, os gols
      e o relógio da partida — antes da bola, a hora dela; no fim, FIM. No
      nosso jogo, o clima do estádio e a pausa e a velocidade da partida
-     (as mesmas portas da barra de minutos do feed); no jogo da cidade no
+     (as mesmas portas da barra de minutos do feed; a partida começa a 4×,
+     o padrão da casa — o dono, 29/09/2026: "O tempo padrão que corre a
+     partida é 4x." —, e o botão anda 4× → 1× → 2×); no jogo da cidade no
      fundo, o minuto é o do relógio do dia
      ====================================================== */
   let placar = null, placarVisto = '';
@@ -194,7 +196,7 @@ export function criarDia3d(api, vida, g = {}) {
         <span class="j3d-placar-time fora"><b></b><i></i></span>
         <span class="j3d-placar-rel"></span>
       </div>
-      <div class="j3d-placar-pe"><span class="j3d-placar-clima"></span><span class="j3d-placar-bts"><button data-placar="pausa" title="Pausar e seguir a partida (espaço)">❚❚</button><button data-placar="vel" title="A velocidade da partida">1×</button></span></div>`;
+      <div class="j3d-placar-pe"><span class="j3d-placar-clima"></span><span class="j3d-placar-bts"><button data-placar="pausa" title="Pausar e seguir a partida (espaço)">❚❚</button><button data-placar="vel" title="A velocidade da partida (4× → 1× → 2×)">4×</button></span></div>`;
     document.body.appendChild(placar);
     placar.addEventListener('click', ev => {
       const b = ev.target.closest('[data-placar]'), m = D && D.partida;
@@ -224,7 +226,7 @@ export function criarDia3d(api, vida, g = {}) {
     let gc = 0, gf = 0;
     for (const gl of d.gols || []) if (gl.min <= ate) { if (gl.lado === 'c') gc++; else gf++; }
     const rel = fim ? 'FIM' : `${Math.max(1, Math.ceil(min))}'`;
-    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 1, gols: d.gols || [], ate };
+    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 4, gols: d.gols || [], ate };
   }
   const ROT_CLIMA = ['Tranquilo', 'Esquentando', 'Tenso'];
   /* (o placar fica embaixo da barra do jogo e da fita das manchetes, que no celular são mais altas) */
@@ -393,7 +395,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=a99de7cb05');
+    const { criarEstrada } = await import('./estrada3d.js?v=11dc713d99');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -554,8 +556,10 @@ export function criarDia3d(api, vida, g = {}) {
       const Cn = C();
       if (Cn.praca === nome && !Cn.montando) return true;
       status(`Carregando o mapa de ${nome}…`);
-      /* montando a mesma praça (a remontagem da sede ou dos bares): só espera */
-      if (Cn.praca !== nome || !Cn.montando) await api.abrirPraca(nome);
+      /* montando a mesma praça (a remontagem da sede ou dos bares): só espera.
+         A praça de fora é visita: não vira a que o jogo abre da próxima vez
+         (o dono, 29/09/2026: "o jogo buga e recarrega automaticamente") */
+      if (Cn.praca !== nome || !Cn.montando) await api.abrirPraca(nome, false, !!eu.fora);
       while (D === eu && C().montando) await dorme(150);
       if (D !== eu) return false;
       if (C().praca === nome) { status(D.fora ? `A caravana chegando em ${nome}…` : 'A PM montando o plano do dia…'); return true; }
@@ -745,7 +749,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=a99de7cb05');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=11dc713d99');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1005,6 +1009,8 @@ export function criarDia3d(api, vida, g = {}) {
     return fim;
   }
   function fase(p, cont) {
+    /* (a linha espera esta fase acabar: se o dia em 3D cai no meio, `cidadeRefeita` chama a espera no lugar dele) */
+    if (D && !D.fundo) { const c0 = cont, eu = D; cont = () => { if (D === eu && D.pendente === cont) D.pendente = null; c0(); }; D.pendente = cont; }
     if (D && D.estrada && !D.fundo && !p.jogo && p.id !== 'volta') { faseNaEstrada(p, cont); return; }
     if (D && D.fora && !D.fundo && p.id === 'volta' && !D.voltou && D.plano && voltaPelaEstrada(p, cont)) return;
     if (!D || !D.plano || !dia || !dia.plano) { cont(); return; }
@@ -1198,6 +1204,14 @@ export function criarDia3d(api, vida, g = {}) {
     D.partidaVista = D.partida; D.partida = null; D.apitado = true;
     status('Fim de jogo.');
     pintar(); pintarPlacar();
+    /* O QUE O QUADRO AINDA NÃO FEZ SAI NO APITO (a partida a 4×, o padrão do
+       dono de 29/09/2026, dura uns 6 s e o dia fecha uns 2 s depois dela): o
+       relógio do dia e o aviso de gol andam por quadro da tela, e na máquina
+       lenta o último quadro vinha de antes do fim — o relógio da praça
+       recomeçava de uma hora velha e o último gol ficava sem aviso */
+    if (dia && dia.plano && D.plano) dia.t = D.plano.bola + DURACAO_S;
+    const st = D.j && estadoDoPlacar();
+    if (st && st.gols) avisarGols(st.gols, st.ate, D.j.mandante, D.j.visitante);
   }
 
   /* ======================================================
@@ -1382,6 +1396,20 @@ export function criarDia3d(api, vida, g = {}) {
     if (g.travarPraca) g.travarPraca(false);
   }
 
+  /* A CIDADE FOI REFEITA POR BAIXO DO DIA (a placa de vídeo perdeu o
+     contexto e a praça remontou: cenario.js, jogo3d.js): o plano do dia
+     não sobrevive à montagem, que limpa o dia da cidade — ele sai do ar e a
+     linha segue como sempre, sem a cidade em 3D. Medido, sem isto: a linha
+     ficava em "a caminho · na cidade" pra sempre, com o relógio preso
+     pelo "itinerario" */
+  function cidadeRefeita() {
+    if (!D) return;
+    const c = D.pendente;
+    D.pendente = null;
+    fechar();
+    if (c) c();
+  }
+
   /* QUEM FALA COM O JOGADOR NO DIA DE JOGO (os recados em balão,
      recados3d.js): o líder do nosso bonde — o balão fica em cima do nome
      do bonde (o rótulo anda com o líder, mais alto na arquibancada, por
@@ -1407,7 +1435,7 @@ export function criarDia3d(api, vida, g = {}) {
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
     ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
-    antesDaBriga, brigaNaEstrada,
+    antesDaBriga, brigaNaEstrada, cidadeRefeita,
     /* a caravana ainda na estrada (ou a cidade do jogo montando na chegada): a linha espera */
     get naEstrada() { return naEstrada(); },
     quandoChegar(f) { if (typeof f === 'function') esperas.push(f); },
