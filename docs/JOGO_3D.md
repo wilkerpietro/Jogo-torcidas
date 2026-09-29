@@ -1359,3 +1359,92 @@ com o teste dele; as branches foram juntadas depois.
   tamanhos acima e conferir que o balão aparece inteiro, com os botões, sem
   barra (`document.querySelector('.j3d-balao-corpo')` com `scrollHeight <=
   clientHeight`; a classe do balão, `c1`..`c3`, diz o quanto apertou).
+- **Abrir outro mapa pela caravana: o que se achou e o que se corrigiu.**
+  O dono: "quase todas as vezes que preciso abrir outro mapa devido a
+  caravanas o jogo buga e recarrega automaticamente". **A queda da aba e a
+  recarga da página NÃO foram reproduzidas** (Chromium com SwiftShader, o
+  mais perto que se tem de "sem placa de vídeo": a memória da "GPU" também
+  fica na RAM). O que ficou provado: no jogo só existe `location.reload()`
+  na troca de idioma (`i18n.js`), sem service worker nem handler global de
+  erro; a memória faz platô entre uma viagem e a seguinte (não há
+  vazamento crescente); cada caravana monta DUAS cidades inteiras (a de lá
+  e a de casa, na volta), com a barra "Montando a cidade… N de 3.808" —
+  8 a 20 s com a máquina vazia, 25 a 55 s carregada, bem mais no PC do dono
+  — e o pico de RSS do navegador todo é de 2,2 a 2,6 GB por montagem (a
+  remontagem da casa é a maior; GPU ~1,2 GB, página ~1 GB), o que é
+  plausível de faltar numa máquina de 4 GB, sem prova. O "recarrega" que o
+  dono vê pode ser essa remontagem inteira, ou a aba morrendo — não dá pra
+  dizer. Foram corrigidas quatro quebras reais do fluxo, provadas no
+  navegador de teste, e cortada uma parte da memória: (1) **a placa perde
+  o contexto WebGL** (o processo de GPU cai): antes a cidade sumia, o laço
+  lançava `Cannot read properties of null (reading 'byteLength')` e, no meio
+  do dia de jogo, a linha ficava presa em "a caminho · na cidade" pra
+  sempre; agora `cenario.js` avisa na caixa e, quando o contexto volta,
+  REMONTA a praça que estava na tela, e `jogo3d.js` (evento
+  `cenario-placa-voltou`) põe o dia de jogo pra fora (`dia3d.cidadeRefeita`:
+  o plano do dia não sobrevive à cidade refeita, e a linha segue sem a
+  cidade em 3D); (2) **o relógio do jogo corria atrás da barra "Montando a
+  cidade…"** (na volta da caravana, com a barra em 771 de 3.808, já tinha
+  derrubado uma mensagem da fila e travado numa decisão): agora a montagem
+  segura o tempo (`praca-montando`); (3) **vazavam ~245 texturas de osso por
+  viagem** (cada esqueleto cria a sua e o three.js só a devolve à placa no
+  `dispose`): `liberar` em `bonecos3.js` agora dispõe o esqueleto e
+  `limpar()` chama `liberar`; (4) **se a montagem falha por falta de
+  memória** (`RangeError`), a cidade ficava morta atrás da caixa de erro:
+  agora tenta de novo uma vez ("Faltou memória pra montar X. Tentando de
+  novo…"). E na memória: as folhas de decalque (letreiros, pichações,
+  escudos) guardavam o canvas de cada uma — mais de mil por cidade, 130 MP
+  no pico — e subiam as dez folhas de 2048 px de novo aos 0,7 s e aos
+  2,5 s; agora só o que repinta (o escudo com PNG) fica com o canvas, o
+  resto sobe uma vez e o canvas sai (`FolhasDeDecalque`; o chão e as folhas
+  sobem pra placa na hora, um ladrilho por vez, `initTexture`). Medido nas
+  duas viagens completas, antes → depois: RSS em regime −50 a −260 MB
+  (média ~6%); imagens na placa 439 → 103 MB; pico do processo de GPU
+  −300 MB; pico do RSS total −3 a 8% em 3 das 4 montagens e +2% em uma —
+  **o pico de 2,2 a 2,5 GB continua**; o tempo de montagem é o mesmo; a
+  aparência não mudou (9 vistas de portas, letreiros, pichações e escudos:
+  0 pixel diferente em 7, 190 e 102 px de borda de árvore nas outras 2).
+  Mais: a praça de fora é "visita" (`abrirPraca(nome, forcar, visita)`): não
+  vira a praça lembrada pro boot (antes, se a aba caía com Manaus montando,
+  o menu abria Manaus atrás do "Continuar"). **O que ficou sem prova de
+  ocorrência no PC do dono:** o tratamento do contexto perdido, a
+  retentativa em `RangeError` e a "visita" (marcadas assim nos comentários).
+  **Não implementado:** liberar os arrays do mato depois de subir (só saem
+  12 MB), mudar a qualidade padrão em placa por software (Leve corta 130 a
+  200 MB, Mínima 200 a 250 MB), e o desperdício de "Fortaleza cancelada +
+  Fortaleza" no novo jogo/Continuar (20 a 40 s de montagem descartada). Pra
+  baixar o pico de verdade seria preciso mexer na geração do mato e das
+  peças (transitório de ~+400 MB no mato). **Componentes** (aumento de RSS
+  entre fronteiras, Fortaleza | Manaus): chão +107 | +81 MB de textura na
+  placa; peças (forno) +339 | +125 MB; juntar malhas +122 | +27; mato +212 |
+  +358 MB (o maior transitório, heap JS +172 | +273); regime da cidade: GPU
+  ~1,1 a 1,2 GB, página ~0,6 GB, heap JS ~370 MB. **O que ajudaria a
+  fechar o caso:** o navegador e a versão do dono, a RAM, a mensagem exata
+  ("Ah, não!", tela em branco, volta ao menu), o Gerenciador de Tarefas do
+  Chrome (Shift+Esc) e `chrome://crashes`; e, se for falta de RAM, a
+  qualidade Leve/Mínima e menos abas. **Como testar:** abrir
+  `jogo.html?cenario&cidade=Fortaleza&teste`, começar a partida, abrir um
+  jogo fora com estrada e medir o RSS do navegador e o `renderer.info` a
+  cada etapa; pra placa, `gl.getExtension('WEBGL_lose_context').loseContext()`
+  e `restoreContext()` (ou `Browser.crashGpuProcess` por CDP) e conferir que
+  a praça remonta sozinha, inclusive no meio do dia; pro relógio, conferir
+  `TO.tela.pausasDoTempo` igual a `['praca-montando']` durante a remontagem
+  da casa; pro vazamento, contar as texturas do WebGL contra as do JS depois
+  de duas viagens (esperado: 9 órfãs).
+
+**Limites (sinceros):**
+- Nenhum dos cinco pontos foi testado num PC de verdade sem placa de vídeo
+  nem em outro navegador que não o Chromium do teste (SwiftShader, PC e
+  celular emulado). O do mapa é o de menor certeza: a causa do relato do
+  dono não foi reproduzida.
+- A partida a 4× dura uns 6,5 s de apito a apito; a janela do botão
+  "Invadir" do painel também (eram uns 23 s). O clima tenso segue pausando e
+  perguntando sozinho.
+- O canto direito só tem jornal; status, dica e aniversário só aparecem em
+  Notícias. Hoje nenhum almanaque aparece no canto (todos saem em "O
+  Almanaque").
+- O balão de decisão mais largo e mais alto cobre quem fala em vários casos
+  (sem o rabo); ainda rola, por poucos pixels, só o cartão antigo do olheiro
+  no celular deitado (que o jogo atual nem gera).
+- No planejamento, as telas antigas de caravana e de ataque só perdem o foco
+  do teclado a cada toque (a rolagem delas já se mantinha).
