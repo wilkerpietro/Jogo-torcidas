@@ -290,7 +290,7 @@ function ligar(api) {
   };
   const baresDoJogador = id => api.planta && api.planta.bares ? api.planta.bares().filter(b => b.dono === id) : [];
   let barMostrado = null;
-  const conferirPraca = () => {
+  const conferirPraca = forcar => {
     const e = E();
     if (!e || !e.torcida || pracaTravada) return;
     /* com um painel aberto (a compra do bar, a obra da sede), a praça
@@ -301,7 +301,7 @@ function ligar(api) {
     /* a sede da torcida do jogador é a do save (o nível dela), não a da tabela */
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
-    const refazer = mudouNivel || mudouBares;
+    const refazer = mudouNivel || mudouBares || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
     /* os bares que ela tinha na praça: o que aparecer a mais é o novo */
@@ -359,5 +359,21 @@ function ligar(api) {
     C.pausar(cobre);
   };
   new MutationObserver(conferirCobertura).observe(document.body, { attributes: true, subtree: true, attributeFilter: ['class'] });
+  /* A PLACA DESISTIU E VOLTOU (o dono, 29/09/2026: "quase todas as vezes que
+     preciso abrir outro mapa devido a caravanas o jogo buga e recarrega
+     automaticamente"): o cenário avisa quando o contexto WebGL volta, antes
+     de remontar a praça que estava na tela. O dia em 3D não sobrevive à
+     cidade refeita (a linha segue sem ele; medido, sem isto ela ficava presa
+     em "a caminho · na cidade" com a cidade vazia) e a vida liga de novo na
+     praça do jogador; no menu (sem partida na tela), o cenário remonta
+     sozinho */
+  addEventListener('cenario-placa-voltou', ev => {
+    const e = E();
+    if (!e || !e.torcida || !jogo || jogo.classList.contains('oculto')) return;
+    ev.preventDefault();
+    dia3d.cidadeRefeita();
+    pracaDoJogo = null; vida.desligar();
+    conferirPraca(true);
+  });
   conferirTela();
 }

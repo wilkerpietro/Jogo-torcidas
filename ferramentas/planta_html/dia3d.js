@@ -556,8 +556,10 @@ export function criarDia3d(api, vida, g = {}) {
       const Cn = C();
       if (Cn.praca === nome && !Cn.montando) return true;
       status(`Carregando o mapa de ${nome}…`);
-      /* montando a mesma praça (a remontagem da sede ou dos bares): só espera */
-      if (Cn.praca !== nome || !Cn.montando) await api.abrirPraca(nome);
+      /* montando a mesma praça (a remontagem da sede ou dos bares): só espera.
+         A praça de fora é visita: não vira a que o jogo abre da próxima vez
+         (o dono, 29/09/2026: "o jogo buga e recarrega automaticamente") */
+      if (Cn.praca !== nome || !Cn.montando) await api.abrirPraca(nome, false, !!eu.fora);
       while (D === eu && C().montando) await dorme(150);
       if (D !== eu) return false;
       if (C().praca === nome) { status(D.fora ? `A caravana chegando em ${nome}…` : 'A PM montando o plano do dia…'); return true; }
@@ -1007,6 +1009,8 @@ export function criarDia3d(api, vida, g = {}) {
     return fim;
   }
   function fase(p, cont) {
+    /* (a linha espera esta fase acabar: se o dia em 3D cai no meio, `cidadeRefeita` chama a espera no lugar dele) */
+    if (D && !D.fundo) { const c0 = cont, eu = D; cont = () => { if (D === eu && D.pendente === cont) D.pendente = null; c0(); }; D.pendente = cont; }
     if (D && D.estrada && !D.fundo && !p.jogo && p.id !== 'volta') { faseNaEstrada(p, cont); return; }
     if (D && D.fora && !D.fundo && p.id === 'volta' && !D.voltou && D.plano && voltaPelaEstrada(p, cont)) return;
     if (!D || !D.plano || !dia || !dia.plano) { cont(); return; }
@@ -1392,6 +1396,20 @@ export function criarDia3d(api, vida, g = {}) {
     if (g.travarPraca) g.travarPraca(false);
   }
 
+  /* A CIDADE FOI REFEITA POR BAIXO DO DIA (a placa de vídeo perdeu o
+     contexto e a praça remontou: cenario.js, jogo3d.js): o plano do dia
+     não sobrevive à montagem, que limpa o dia da cidade — ele sai do ar e a
+     linha segue como sempre, sem a cidade em 3D. Medido, sem isto: a linha
+     ficava em "a caminho · na cidade" pra sempre, com o relógio preso
+     pelo "itinerario" */
+  function cidadeRefeita() {
+    if (!D) return;
+    const c = D.pendente;
+    D.pendente = null;
+    fechar();
+    if (c) c();
+  }
+
   /* QUEM FALA COM O JOGADOR NO DIA DE JOGO (os recados em balão,
      recados3d.js): o líder do nosso bonde — o balão fica em cima do nome
      do bonde (o rótulo anda com o líder, mais alto na arquibancada, por
@@ -1417,7 +1435,7 @@ export function criarDia3d(api, vida, g = {}) {
   return {
     abrir, fase, partida, apito, depoisDaCena, naoDesceu, fechar, abrirJogoDaCidade, brigaRegistrada,
     ganchosDaCaminhada, palcoDaInvasao, viasDaInvasao, verNossa, avisoDoAtaque, jogoNoFundo,
-    antesDaBriga, brigaNaEstrada,
+    antesDaBriga, brigaNaEstrada, cidadeRefeita,
     /* a caravana ainda na estrada (ou a cidade do jogo montando na chegada): a linha espera */
     get naEstrada() { return naEstrada(); },
     quandoChegar(f) { if (typeof f === 'function') esperas.push(f); },
