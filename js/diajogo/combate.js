@@ -2329,9 +2329,14 @@ TO.diaJogo.combate = (function(){
   function rotaDeFuga(J, d){
     /* O PONTO DE FUGA É O SPAWN (pedido do dono, 09/09/2026): quem
        debanda corre pra entrada por onde chegou, em toda cena; só cai
-       nas outras bocas se dali não houver rota */
+       nas outras bocas se dali não houver rota.
+       NO ESTÁDIO É O VOMITÓRIO MAIS PERTO (o dono, 28/09/2026): a cena
+       que marca `fugaNaMaisPerto` (a invasão do jogo 3D, invasao.js, com
+       os vomitórios como pontos de fuga) pula a entrada de origem e a
+       boca do lado: cada um corre pro ponto mais perto dele que não passa
+       por dentro do inimigo */
     const ini = centroDoInimigo(J, d.lado);
-    {
+    if(!D.fugaNaMaisPerto){
       const e = D.entradas.find(x=>x.id===d.entrada) ||
                 D.entradas.find(x=>x.lado===d.lado);
       /* a entrada de origem continua sendo a primeira escolha — mas só
@@ -2344,7 +2349,7 @@ TO.diaJogo.combate = (function(){
     }
     const evita = (d.fugaEvita && d.fugaEvita.ate > J.t) ? d.fugaEvita.chave : null;
     /* a boca do MEU lado primeiro: é o que separa as duas debandadas */
-    const minha = saidasPorLado(J)[d.lado] || null;
+    const minha = D.fugaNaMaisPerto ? null : (saidasPorLado(J)[d.lado] || null);
     const acha = (qualCampo, pulaEvitada, soDoLado, soContraria)=>{
       let melhor=null, md=Infinity;
       for(const o of camposDeFuga(J)){

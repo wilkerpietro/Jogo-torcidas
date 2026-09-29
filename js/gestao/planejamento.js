@@ -865,8 +865,10 @@ TO.planejamento = (function(){
   /* Passagem, pedágio e comida de estrada: cobra por cabeça e por
      trecho. Setenta pessoas e dois trechos dão os R$ 3.000 do GDD §7.3,
      e levar menos gente pra economizar vira decisão legítima. */
-  function estimativaCaravana(E, jogo){
-    const r = rotaEscolhida(E, jogo);
+  function estimativaCaravana(E, jogo, rotaId){
+    /* (com `rotaId`, a conta pela estrada pedida — o popup do planejamento
+       põe no cartão de cada estrada o que ela custaria à torcida) */
+    const r = (rotaId && rotas(E, jogo).find(x=>x.id === rotaId)) || rotaEscolhida(E, jogo);
     if(!r) return null;
     const aptos = TO.membros.aptosParaOEstadio(E);
     const moral = E.indicadores.moral/20;

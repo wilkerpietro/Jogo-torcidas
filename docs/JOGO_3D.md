@@ -1031,3 +1031,197 @@ cena fechou quando eles debandaram (14 a 20 s de briga).
   "aceleração de gráficos" ligada (Configurações → Sistema) e o driver da
   placa de vídeo instalado resolvem isso de fora do jogo.
 - Testado só em Fortaleza, no navegador de teste (PC e celular em pé).
+
+## 18. A fuga pro vomitório, a estrada da caravana, os jogos da cidade só com investida e o planejamento em popup (29/09/2026)
+
+O dono: "o ato de correr quando estiver no estádio vai ser sempre pro
+vomitório mais próximo e depois surge no local padrão da torcida. crie uma
+cena de caravana que vai basicamente ser uma estrada em linha reta que vai
+ter curvas na margem direita da pista com setas apontando quais cidades
+estamos passando próximo (são as que definimos na rota do itinerário). em
+algum momento alguma torcida pode nos atacar nessa cena quando estivermos
+passando na cidade caso isso realmente esteja programado no itinerário.
+adapte as duas cenas de caravana para aparecerem durante a estrada.
+[exemplo: Fortaleza a Manaus com a Terror Bicolor atacando quando passar
+em Belém: o ônibus percorre a viagem em linha reta com as placas das
+cidades na ordem da viagem (Maranhão, Belém e depois Manaus); em Belém a
+torcida atacante está na margem da estrada, o ônibus para, os membros
+descem e começa a hostilidade; definido o conflito, a torcida viajante
+entra de novo no ônibus e o itinerário segue com os que não foram
+feridos.] remova esse acompanhamento de perto do dia de outros jogos na
+cidade, só vai tornar o jogo mais demorado. só vai parar o tempo caso
+tenhamos planejado algo pra algum jogo na cidade. transforme o
+planejamento da semana em um popup mais bem elaborado pra facilitar a
+tomada de decisão, refazendo todo o layout numa nova proposta."
+
+- **Correr no estádio é pro vomitório mais perto.** Na invasão
+  (`ferramentas/planta_html/invasao.js`) os pontos de fuga da cena são os
+  vomitórios das duas peças de arquibancada que o tabuleiro pega (a boca
+  de cada um, fora da faixa da grade), e a cena liga `fugaNaMaisPerto`:
+  quem debanda (`js/diajogo/combate.js`, `rotaDeFuga`) não volta mais pela
+  entrada de onde veio nem procura a boca do próprio lado — corre pro
+  vomitório mais perto dele que não passa por dentro do inimigo, e some
+  ali. Fechada a cena, o dia de jogo põe a torcida de volta no setor dela
+  (o lugar do plano do dia), como já fazia.
+- **A estrada da caravana** (`ferramentas/planta_html/estrada3d.js`, novo).
+  Fora de casa, com estrada na rota (o planejamento, `rotaEscolhida`; de
+  avião não tem estrada), a fase da ida da linha do dia é a viagem: um
+  palco à parte, longe da praça (a cidade some enquanto ela está na
+  tela), com uma rodovia reta de mão dupla — asfalto, faixa amarela,
+  acostamento, cerca, postes com fio, árvores, capim — e o ônibus da
+  torcida (o branco com as cores dela e o letreiro "CARAVANA · destino")
+  na mão da direita. Cada praça da rota, na ordem da viagem, tem o trecho
+  dela: a placa verde de aviso com o nome ("BELÉM · próxima saída"), a
+  saída — uma alça que abre em curva pra direita — com a placa "SAÍDA" e
+  a seta, e a cidade lá no fundo (prédios, a caixa d'água, a igreja). A
+  última é o destino: o ônibus pega a saída dela e a viagem acaba; aí a
+  praça do jogo carrega e o dia segue como antes (onde a caravana desce,
+  a caminhada, a partida). O sol anda com a viagem (a hora da saída até a
+  da chegada, a do itinerário), o painel mostra a hora e a praça da vez, e
+  o "Pular" leva o ônibus até perto da próxima parada. Na volta (depois do
+  apito), a mesma estrada ao contrário, até em casa.
+- **A emboscada é na praça marcada, numa das duas cenas do dono.** A
+  emboscada que o itinerário marcou numa praça da rota
+  (`emboscadaNaPraca`) acontece no trecho dela: a peça da cena
+  (`js/diajogo/caravana3d.js`, o posto ou a pista fechada) entra encaixada
+  na rodovia, na mesma escala e com o tabuleiro da briga girado junto
+  (`montarCaravana`/`cenaDaCaravana` ganharam o `giro`, e o plano do posto
+  perde o carro que saía pro pátio, por onde o ônibus entra). No POSTO o
+  ônibus sai da pista, entra no pátio e para na frente das bombas, com
+  eles esperando na saída do pátio; na PISTA FECHADA ele para no meio da
+  pista, do lado dos dois carros brancos atravessados, com eles na
+  calçada, atrás. O recado da linha aparece com o ônibus parado e eles à
+  vista ("Descer pra treta", "Simular", "Mandar seguir viagem"). Descendo
+  (ou simulando), a torcida desce pela porta do ônibus, um atrás do outro,
+  e se espalha de frente pra eles; a briga é a de sempre, no mesmo lugar.
+  Definida a briga, quem ficou de pé (inclusive quem correu dela) volta
+  pro ônibus, os caídos ficam no chão, os deles vão embora pela beira, e
+  a viagem segue — o efetivo da linha já sem as baixas, e o bonde que
+  chega na cidade do jogo é esse (antes o plano do dia usava o efetivo da
+  saída). Sem descer, o ônibus sai de novo e eles ficam na beira.
+- **A linha espera a caravana.** Enquanto o ônibus está na estrada (ou a
+  cidade do jogo carrega na chegada), a linha do dia não passa pra fase
+  seguinte (`naEstrada`/`quandoChegar` do dia 3D, main.js `itnProximo`).
+  A lista de paradas detalhadas do itinerário (`detalhadas`) virava a
+  lista das três fases por engano (a mesma lista esvaziada) — conserto
+  pequeno em `itinerario.js`, é dela que a estrada lê as praças.
+- **Os jogos de outros clubes na praça só aparecem com investida.** O
+  jogo da cidade (seção 15 e 17) montava no fundo todo dia de jogo alheio,
+  com o relógio mais lento na janela dele. Agora ele só monta quando o
+  planejamento marcou uma investida nele (a concentração ou a pista): o
+  nosso bonde junta na porta, sai, e os bondes do jogo aparecem nessa
+  hora; o relógio desacelera só na chegada do nosso bonde. Sem investida
+  não monta nada, não tem aviso, e o dia passa no ritmo de sempre (o jogo
+  corre só no resultado e na aba Brigas das Notícias).
+- **O planejamento da semana virou um popup** (main.js,
+  `abrirPlanejamento`; `css/planejamento.css`, novo). O cartão de segunda
+  ficou curto — a semana, uma linha por jogo com o que está decidido e o
+  botão "Abrir o planejamento" (o "Fechar o planejamento" continua no
+  cabeçalho dele). O popup: no alto, a semana e o que a torcida tem pra
+  gastar (caixa, aptos pro estádio, bombas no estoque); à esquerda, a
+  pauta da semana em ordem de dia — os nossos jogos, os jogos de outros
+  clubes na praça e os aliados que chegam —, cada um com uma etiqueta de
+  cor do que está decidido ("em paz", "em cima da X · na pista",
+  "atacar: falta o alvo", "investida contra X"); à direita, o item
+  escolhido: o jogo com os escudos, **quem vai estar na rua** (a nossa
+  gente e cada torcida do dia em barra, com a faixa da estimativa e o
+  hostil em vermelho) e as decisões em seções numeradas, com as escolhas
+  em cartões grandes — a caravana (quantos vão, a estrada com o que ela
+  custa à torcida com a gente de agora — o mesmo número do "custa" e do
+  pé; o cartão antigo mostrava o frete cheio, que não batia com nada — e a
+  barra do risco de emboscada, o trajeto praça por praça com as hostis
+  marcadas, a aliada que recebe), a rua (ir em paz ou atacar; contra
+  quem, com a faixa e a relação; onde, com o que cada ponto quer dizer; o
+  efetivo; as bombas), a investida nos outros jogos e a recepção dos
+  aliados (o custo e o efeito na relação de cada opção); no pé, o que a
+  semana custa (os compromissos do planejamento), o que falta decidir e
+  os botões "Decidir depois" e "Fechar o planejamento" (desligado
+  enquanto falta alguma coisa). O popup para o tempo enquanto está
+  aberto, fecha no × e no Esc, e abre também pelo ícone novo
+  "Planejamento" do menu lateral (fechado o plano, ele abre só pra ver).
+  No celular ele ocupa a tela inteira e a pauta vira uma fita de abas em
+  cima. As regras não mudaram: o popup escreve o plano pelas mesmas
+  funções do cartão de antes (`js/gestao/planejamento.js`;
+  `estimativaCaravana` aceita a estrada pedida, pro preço de cada cartão).
+- **Na estrada, o alto da tela é dela.** O relógio da barra de cima anda
+  com a hora da viagem (antes ficava parado na hora da saída, 07:00, e na
+  volta na do apito, 17:39, com a faixa marcando outra), e o placar de TV
+  da partida some enquanto o ônibus roda (volta na cidade). O 1×/2× do
+  jogo vale na estrada também (o ônibus e a gente descendo e subindo).
+- **Os lados.** O dono escreveu "curvas na margem direita" e, no exemplo,
+  "curvas à esquerda". A estrada segue a mão brasileira: o ônibus na mão
+  da direita, e as saídas, as placas e a emboscada na beira da direita.
+  Trocar o lado é o sinal de `l` (metros pra direita) nas saídas, em
+  `estrada3d.js`.
+
+**Como testar** (em `scratchpad/recados/`, Playwright na pasta do Pages):
+`estrada3d.js` — uma caravana Fortaleza → Manaus pela rota
+Maranhão–Belém com a Terror Bicolor marcada em Belém; `CENA=posto` ou
+`CENA=onibus` (a cena da emboscada), `RESP=descer`, `simular` ou `seguir`
+(a resposta ao recado), `VOLTA=1` (a emboscada na volta, depois do jogo),
+`SEM_EMB=1` (a viagem sem emboscada), `CEL=1` (celular em pé). Ele loga a
+posição do ônibus, a praça da vez, o recado, a descida, a briga, o
+embarque, o efetivo da linha, a cidade montando e a volta pra casa, e
+fotografa cada passo. `fuga3d.js` (`VIA=corredor` ou `arquibancada`): a
+invasão do estádio, quem corre pra qual vomitório e onde some, e a
+torcida de volta no setor. `planejamento3d.js` (`FORA=1` pro jogo fora,
+`CEL=1`): o cartão curto, o popup, atacar, fechar o plano e reabrir pelo
+menu. `fundo3d.js` com `INV=nao` (o jogo de outros clubes na praça sem
+investida: nada monta e o dia passa) ou `INV=ida`/`praca` (com
+investida, monta como antes).
+
+**Medido** (no navegador de teste, sem placa de vídeo, 1 a 7 quadros por
+segundo):
+- Estrada, posto e "Descer pra treta": o ônibus passou por Maranhão,
+  saiu da pista em Belém, parou no pátio (a 386 m da saída de casa) com os
+  22 deles esperando; desceram 36 dos nossos pela porta; a briga (perdida:
+  "sua torcida foi corrida do lugar"), o relatório, os de pé de volta no
+  ônibus, a saída de Manaus, a cidade montada e a caminhada — sem erro.
+- Estrada, pista fechada e "Descer pra treta": parou no meio da pista, do
+  lado dos carros; ganhamos (35 deles e 21 nossos no chão), os de pé
+  embarcaram e o bonde que chegou na cidade foi de 129 (150 − 21).
+- "Simular" no posto: a linha seguiu com 136. "Mandar seguir viagem" na
+  volta: o ônibus saiu do pátio, passou por Maranhão, pegou a saída de
+  Fortaleza e o dia fechou em casa.
+- Fuga no estádio: pelo corredor, 113 dos 115 discos miram o vomitório
+  mais perto (os outros 2 teriam de passar por dentro do inimigo); os 28
+  que correram sumiram todos na boca de um vomitório. Pela arquibancada,
+  93 de 115 (22 dos nossos com a rival entre eles e o vomitório mais
+  perto vão pro outro); os 17 que correram sumiram na boca. Nos dois, a
+  torcida voltou pro setor (m1, "no lugar") quando a cena fechou.
+- Planejamento, PC e celular em pé: o popup abre pelo cartão curto e pelo
+  menu, para o tempo enquanto está aberto, o "Atacar" muda a etiqueta do
+  jogo na pauta na hora ("em cima da Narraça · na pista"), o "Fechar o
+  planejamento" responde a mensagem ("Caravana: 83 para Manaus. Plano: em
+  cima da Narraça.") e reaberto pelo menu ele só mostra (selo "plano
+  fechado"); nada transborda no celular.
+- O jogo de outros clubes na praça sem investida (Floresta × Fluminense
+  de Feira, trazido pro dia seguinte no teste): nada montou (nem o jogo,
+  nem janela no relógio, nem aviso) e o dia do jogo passou em 9 s, até o
+  dia 4. Na estrada, o relógio de cima marcou a hora da viagem (09:37 nos
+  dois) e o placar de TV ficou escondido.
+
+**Limites (sinceros):**
+- A viagem é um time-lapse: a estrada de três praças tem uns 600 m e o
+  ônibus anda a 28 m/s — a ida inteira leva uns 25 s a 1×, e o sol vai da
+  hora da saída à da chegada nesse tempo. As distâncias entre as placas
+  são simbólicas (190 m por praça), não as da rodovia.
+- A estrada só existe quando a rota é por estrada. De avião a linha segue
+  como antes (sem cena de viagem), e a volta pela estrada só aparece
+  quando a ida foi por ela.
+- Os nomes das praças no recado vêm do dado do itinerário, às vezes sem
+  acento ("Foi em Belem"); as placas usam o nome da planta ("BELÉM").
+- A fuga "pro vomitório mais perto" é o mais perto que não passa por
+  dentro do inimigo (a régua do dono de 17/09): quem tem a rival entre
+  ele e o vomitório mais perto corre pro outro. Na arquibancada o
+  tabuleiro da invasão pega só um pedaço do anel, então são poucos
+  vomitórios em jogo (2 nas fotos).
+- O cabeçalho do cartão curto da semana no celular fica apertado (a data,
+  o selo e o botão numa linha só).
+- O relógio de cima e a data: a data da barra continua sendo a do jogo
+  (a ida de véspera aparece com a data do dia do jogo), como antes.
+- A máquina sem placa de vídeo continua lenta em tudo (1–7 quadros por
+  segundo no teste): a estrada é leve (50–100 mil triângulos), mas a
+  cidade que monta na chegada é a mesma de sempre.
+- A seção 17 ("o jogo da cidade no fundo" com a janela lenta) vale agora
+  só pro dia em que o planejamento marcou investida.

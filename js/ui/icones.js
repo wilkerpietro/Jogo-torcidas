@@ -25,6 +25,9 @@ TO.icones = (function(){
     calendario:env('<rect x="3.5" y="5" width="17" height="15.5" rx="1.5"/><path d="M3.5 10h17"/>'+
                    '<path d="M8 3v4"/><path d="M16 3v4"/>'+
                    '<path d="M8 14h2"/><path d="M13 14h2"/><path d="M8 17.5h2"/><path d="M13 17.5h2"/>'),
+    /* a prancheta do planejamento da semana (29/09/2026) */
+    prancheta: env('<rect x="5" y="4.5" width="14" height="16.5" rx="1.5"/><path d="M9 4.5V3h6v1.5"/>'+
+                   '<path d="m8.5 10 1.5 1.5 2.5-3"/><path d="M14 10.5h2"/><path d="m8.5 15.5 1.5 1.5 2.5-3"/><path d="M14 16h2"/>'),
     medalha:   env('<circle cx="12" cy="15" r="5"/><path d="m8.5 10.5-2.5-7"/><path d="m15.5 10.5 2.5-7"/><path d="M9 3.5h6"/>'),
 
     membros:   env('<circle cx="12" cy="7" r="3.2"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>'),

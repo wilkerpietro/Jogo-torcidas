@@ -335,7 +335,9 @@ TO.itinerario = (function(){
          Object.assign(jogo, {simbolo:'estadio'}),
          fase('volta', _t('Volta do estádio'), _t('saída dos portões e pista'), depois, 'cidade')];
     if(escolta) jogo.comEscolta = true;
-    const detalhadas = paradas;
+    /* (a cópia: `paradas` vira as três fases logo abaixo, e as
+       detalhadas — a estrada praça por praça — servem à viagem em 3D) */
+    const detalhadas = paradas.slice();
     paradas.length = 0; paradas.push(...fases);
 
     /* ---- os marcos de virada de dia ---- */
