@@ -2412,13 +2412,17 @@
     /* AQUI a bola rola, e só aqui (correção do dono, 20/08/2026): o
        botão do feed abriu o dia, não o jogo. */
     m.dados.iniciada = true;
-    /* NA CIDADE EM 3D A PARTIDA COMEÇA A 1× (dia3d.js): dá tempo de ver a
-       arquibancada e de mandar a torcida invadir; o botão da velocidade
-       continua valendo */
+    /* A PARTIDA COMEÇA A 4× TAMBÉM NA CIDADE EM 3D (o dono, 29/09/2026: "O
+       tempo padrão que corre a partida é 4x."): ela começava a 1× aqui
+       (28/09/2026), pra dar tempo de ver a arquibancada e de mandar a
+       torcida invadir. Quem quer calma segura no espaço ou no botão do
+       placar de TV (dia3d.js: 4× → 1× → 2× → 4×), e o clima tenso pausa e
+       pergunta sozinho. A partida que um save já guardou em andamento (o
+       minAcum existe) fica na velocidade que ele guardou */
     const D3 = TO.jogo3d && TO.jogo3d.dia, em3d = !!(D3 && D3.ativo);
     if(m.dados.minAcum === undefined){
       m.dados.minAcum = 0; m.dados.t0 = Date.now();
-      m.dados.vel = m.dados.vel || (em3d ? 1 : 4); m.dados.pausada = false;
+      m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
     }
     if(em3d) D3.partida(m);
     const caixa = widgetPartida(m, ()=>{

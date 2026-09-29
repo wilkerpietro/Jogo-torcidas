@@ -179,7 +179,9 @@ export function criarDia3d(api, vida, g = {}) {
      O PLACAR DE TV (no alto): as siglas com a cor de cada clube, os gols
      e o relógio da partida — antes da bola, a hora dela; no fim, FIM. No
      nosso jogo, o clima do estádio e a pausa e a velocidade da partida
-     (as mesmas portas da barra de minutos do feed); no jogo da cidade no
+     (as mesmas portas da barra de minutos do feed; a partida começa a 4×,
+     o padrão da casa — o dono, 29/09/2026: "O tempo padrão que corre a
+     partida é 4x." —, e o botão anda 4× → 1× → 2×); no jogo da cidade no
      fundo, o minuto é o do relógio do dia
      ====================================================== */
   let placar = null, placarVisto = '';
@@ -194,7 +196,7 @@ export function criarDia3d(api, vida, g = {}) {
         <span class="j3d-placar-time fora"><b></b><i></i></span>
         <span class="j3d-placar-rel"></span>
       </div>
-      <div class="j3d-placar-pe"><span class="j3d-placar-clima"></span><span class="j3d-placar-bts"><button data-placar="pausa" title="Pausar e seguir a partida (espaço)">❚❚</button><button data-placar="vel" title="A velocidade da partida">1×</button></span></div>`;
+      <div class="j3d-placar-pe"><span class="j3d-placar-clima"></span><span class="j3d-placar-bts"><button data-placar="pausa" title="Pausar e seguir a partida (espaço)">❚❚</button><button data-placar="vel" title="A velocidade da partida (4× → 1× → 2×)">4×</button></span></div>`;
     document.body.appendChild(placar);
     placar.addEventListener('click', ev => {
       const b = ev.target.closest('[data-placar]'), m = D && D.partida;
@@ -224,7 +226,7 @@ export function criarDia3d(api, vida, g = {}) {
     let gc = 0, gf = 0;
     for (const gl of d.gols || []) if (gl.min <= ate) { if (gl.lado === 'c') gc++; else gf++; }
     const rel = fim ? 'FIM' : `${Math.max(1, Math.ceil(min))}'`;
-    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 1, gols: d.gols || [], ate };
+    return { casa: j.mandante, fora: j.visitante, gc, gf, pre: false, rel, clima: fim ? null : (d.clima ? d.clima.nivel : 0), bts: !fim, pausada: !!d.pausada, vel: d.vel || 4, gols: d.gols || [], ate };
   }
   const ROT_CLIMA = ['Tranquilo', 'Esquentando', 'Tenso'];
   /* (o placar fica embaixo da barra do jogo e da fita das manchetes, que no celular são mais altas) */
@@ -1198,6 +1200,14 @@ export function criarDia3d(api, vida, g = {}) {
     D.partidaVista = D.partida; D.partida = null; D.apitado = true;
     status('Fim de jogo.');
     pintar(); pintarPlacar();
+    /* O QUE O QUADRO AINDA NÃO FEZ SAI NO APITO (a partida a 4×, o padrão do
+       dono de 29/09/2026, dura uns 6 s e o dia fecha uns 2 s depois dela): o
+       relógio do dia e o aviso de gol andam por quadro da tela, e na máquina
+       lenta o último quadro vinha de antes do fim — o relógio da praça
+       recomeçava de uma hora velha e o último gol ficava sem aviso */
+    if (dia && dia.plano && D.plano) dia.t = D.plano.bola + DURACAO_S;
+    const st = D.j && estadoDoPlacar();
+    if (st && st.gols) avisarGols(st.gols, st.ate, D.j.mandante, D.j.visitante);
   }
 
   /* ======================================================
