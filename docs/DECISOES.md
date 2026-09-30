@@ -8218,6 +8218,8 @@ Todo dia, nos jogos do país (`rivalidadesDoDia`): **clássico principal** com v
 
 O dono sentiu falta dos recados das zonas depois do ataque à casa de piscina. Dois ajustes no jogo 2D: largar a resenha atacada ("Largar a resenha", sem descer) montava a defesa sem a zona (`alvoDaDefesa`), e aí nenhuma zona postava — agora a zona vai junto; e a resposta da zona que perdeu, que saía em 40% das vezes, sai sempre nas brigas de casa de piscina com a gente — a zona que venceu zoa, a que perdeu responde. O jogo 3D (`cenario3d/jogo.html`) tem cópia própria do código e ainda não tem o feed das torcidas.
 
+Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. O post da zona que vence a briga da resenha virou comemoração de verdade (tipo `comemoracao`), com três versões pra quem atacou e venceu, três pra quem defendeu e segurou, e — quando a faixa ou a bandeira trocou de dono na cena — duas que exibem o troféu ("Resenha encerrada e faixa no bolso! A Zona Oeste da MOFI vai ter que pintar outra."). A peça tomada chega ao feed pelo `acoes.js` (`panoDaNoite`, lido do resultado da cena), porque a faixa só é aplicada depois do registro da briga.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

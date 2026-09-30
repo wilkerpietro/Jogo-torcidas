@@ -308,5 +308,30 @@ TO.i18n.registrar({
      en:'Bye, {clube}! Enjoy life {naDivisao}. {nome} send a hug to {deles}: see you in a few years.'},
   'Caiu! {clube} vai conhecer {naDivisao}, e a {nome} vai lembrar disso por muito tempo.':
     {es:'¡Se fue al descenso! {clube} va a conocer {naDivisao}, y la {nome} se va a acordar de esto por mucho tiempo.',
-     en:'Down they go! {clube} will get to know {naDivisao}, and {nome} will remember this for a long time.'}
+     en:'Down they go! {clube} will get to know {naDivisao}, and {nome} will remember this for a long time.'},
+  /* ---------- a zona se gaba da resenha ---------- */
+  'A {nome} foi na resenha da {perdedor} e voltou com a bandeira deles. Já está pendurada na nossa sede. Quem quiser, vem buscar!':
+    {es:'La {nome} fue a la juntada de la {perdedor} y volvió con su bandera. Ya está colgada en nuestra sede. ¡El que la quiera, que venga a buscarla!',
+     en:'The {nome} went to the {perdedor} party and came back with their flag. It is already hanging in our HQ. Anyone who wants it can come and get it!'},
+  'Resenha encerrada e bandeira no bolso! A {perdedor} vai ter que costurar outra. Assinado: {nome}.':
+    {es:'¡Juntada terminada y bandera en el bolsillo! La {perdedor} va a tener que coser otra. Firmado: {nome}.',
+     en:'Party over and their flag in our pocket! The {perdedor} will have to sew a new one. Signed: the {nome}.'},
+  'A {nome} foi na resenha da {perdedor} e voltou com a faixa deles. Já está pendurada na nossa sede. Quem quiser, vem buscar!':
+    {es:'La {nome} fue a la juntada de la {perdedor} y volvió con su trapo. Ya está colgado en nuestra sede. ¡El que lo quiera, que venga a buscarlo!',
+     en:'The {nome} went to the {perdedor} party and came back with their banner. It is already hanging in our HQ. Anyone who wants it can come and get it!'},
+  'Resenha encerrada e faixa no bolso! A {perdedor} vai ter que pintar outra. Assinado: {nome}.':
+    {es:'¡Juntada terminada y trapo en el bolsillo! La {perdedor} va a tener que pintar otro. Firmado: {nome}.',
+     en:'Party over and their banner in our pocket! The {perdedor} will have to paint a new one. Signed: the {nome}.'},
+  'Hoje a {nome} fez a festa na casa de piscina da {perdedor}: chegamos com {n}, ninguém segurou e a resenha acabou no grito!':
+    {es:'Hoy la {nome} hizo la fiesta en la casa quinta de la {perdedor}: llegamos con {n}, nadie aguantó ¡y la juntada terminó a los gritos!',
+     en:'Today the {nome} partied at the {perdedor} pool house: we turned up with {n}, nobody held the line and the party ended in shouting!'},
+  'Resenha da {perdedor}? Só se for a que a {nome} encerrou hoje. Passamos, e ninguém ficou pra contar história.':
+    {es:'¿Juntada de la {perdedor}? Solo la que la {nome} terminó hoy. Pasamos, y nadie se quedó para contarla.',
+     en:'The {perdedor} party? Only the one the {nome} shut down today. We came through, and nobody stayed to tell the tale.'},
+  'A {perdedor} achou que ia levar a nossa faixa e saiu sem nada. Na casa da {nome} a resenha continua!':
+    {es:'La {perdedor} creyó que se iba a llevar nuestro trapo y se fue sin nada. ¡En la casa de la {nome} la juntada sigue!',
+     en:'The {perdedor} thought they would take our banner and left with nothing. At the {nome} house the party goes on!'},
+  'Tentaram, mas a {nome} segurou a resenha inteira. A {perdedor} voltou pra casa sem faixa e sem moral.':
+    {es:'Lo intentaron, pero la {nome} aguantó la juntada entera. La {perdedor} volvió a casa sin trapo y sin moral.',
+     en:'They tried, but the {nome} held the whole party. The {perdedor} went home with no banner and no pride.'}
 });

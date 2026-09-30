@@ -551,6 +551,7 @@ TO.acoes = (function(){
              bairro: alvo.bairro || ''},
       /* a zona da resenha: é ela que posta no feed (30/09/2026) */
       zona: alvo.zona || null,
+      pano: panoDaNoite(res),
       a: nossoLado(E, alvo, res, seguramos),
       b: ladoDeles(E, alvo, res, seguramos),
       efeitos});
@@ -561,6 +562,12 @@ TO.acoes = (function(){
                                            : _t('PERDEMOS A CASA'))};
   }
 
+  /* a peça (faixa ou bandeira) que trocou de dono na cena: o feed das
+     torcidas se gaba dela (30/09/2026) */
+  function panoDaNoite(res){
+    const f = ((res && (res.faixas || (res.faixa ? [res.faixa] : []))) || []).find(x => x && x.tomada);
+    return f ? {tipo: f.tipo || 'faixa', nossa: !!f.nossa} : null;
+  }
   function nossoLado(E, alvo, res, ganhamos){
     const meu = (res && res.nossoLado) || 'mandante';
     const membros = (res && res.membros) || [];
@@ -649,6 +656,7 @@ TO.acoes = (function(){
       torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: true,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
       zona: alvo.zona || null,
+      pano: panoDaNoite(res),
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),

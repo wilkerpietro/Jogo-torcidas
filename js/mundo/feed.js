@@ -722,11 +722,25 @@ TO.feed = (function(){
     if(cena === 'casa-piscina' && d.zona){
       const V = d.ganhamos ? nos : eles, Dr = d.ganhamos ? eles : nos;
       const atacouVenceu = !!d.ganhamos === !!d.atacamos;
-      const P = {nome:zonaDe(V.nome, d.zona), perdedor:zonaDe(Dr.nome, d.zona)};
-      mensagemDe(E, V.id, atacouVenceu
-        ? _t('A {nome} passou na resenha da {perdedor} e ninguém segurou. Resenha encerrada mais cedo!', P)
-        : _t('A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!', P),
-        'zoeira', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
+      const P = {nome:zonaDe(V.nome, d.zona), perdedor:zonaDe(Dr.nome, d.zona), n:V.n, m:Dr.n};
+      /* A ZONA SE GABA (dono, 30/09/2026): a vitória na resenha é post
+         de comemoração — e a faixa ou a bandeira tomada é o troféu */
+      const pano = d.pano && d.pano.nossa === !d.ganhamos ? d.pano : null;
+      const h = H(`zona-casa-txt|${abs}|${V.id}`);
+      const op = pano ? (pano.tipo === 'bandeira' ? [
+          _t('A {nome} foi na resenha da {perdedor} e voltou com a bandeira deles. Já está pendurada na nossa sede. Quem quiser, vem buscar!', P),
+          _t('Resenha encerrada e bandeira no bolso! A {perdedor} vai ter que costurar outra. Assinado: {nome}.', P)] : [
+          _t('A {nome} foi na resenha da {perdedor} e voltou com a faixa deles. Já está pendurada na nossa sede. Quem quiser, vem buscar!', P),
+          _t('Resenha encerrada e faixa no bolso! A {perdedor} vai ter que pintar outra. Assinado: {nome}.', P)])
+        : atacouVenceu ? [
+          _t('A {nome} passou na resenha da {perdedor} e ninguém segurou. Resenha encerrada mais cedo!', P),
+          _t('Hoje a {nome} fez a festa na casa de piscina da {perdedor}: chegamos com {n}, ninguém segurou e a resenha acabou no grito!', P),
+          _t('Resenha da {perdedor}? Só se for a que a {nome} encerrou hoje. Passamos, e ninguém ficou pra contar história.', P)]
+        : [
+          _t('A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!', P),
+          _t('A {perdedor} achou que ia levar a nossa faixa e saiu sem nada. Na casa da {nome} a resenha continua!', P),
+          _t('Tentaram, mas a {nome} segurou a resenha inteira. A {perdedor} voltou pra casa sem faixa e sem moral.', P)];
+      mensagemDe(E, V.id, op[h % op.length], 'comemoracao', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
       /* e a zona que perdeu sempre responde: a conversa é das duas */
       mensagemDe(E, Dr.id, atacouVenceu
           ? _t('Pegaram a nossa resenha desprevenida. A {perdedor} não esquece, e a volta vai ser na casa de vocês.', P)
