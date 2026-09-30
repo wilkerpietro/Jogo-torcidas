@@ -739,8 +739,15 @@ export function onibus(o = {}) {
   for (const s of [-1, 1]) g.add(caixa(0.05, 1.1, 0.14, luz('#c3231d'), x0 - bis - 0.035, 0.8, s * (W / 2 - 0.12)));
   for (let i = 0; i < 7; i++) g.add(caixa(0.04, 0.05, W - 0.8, preto, x0 - bis - 0.03, 0.72 + i * 0.11, 0));
   g.add(caixa(0.22, 0.3, W + 0.02, fosco('#2a2c2e'), x0 - 0.02, 0.42, 0));
-  /* os retrovisores de orelha (o braço curvo e o espelho pra frente) */
+  /* os retrovisores de orelha (o braço curvo e o espelho pra frente); na
+     garagem apertada (`o.espelhos: 'recolhidos'`), dobrados pra trás,
+     colados no vidro do lado */
   for (const s of [-1, 1]) {
+    if (o.espelhos === 'recolhidos') {
+      g.add(caixa(0.07, 0.5, 0.05, preto, x1 - 0.18, H - 0.95, s * (W / 2 + 0.025)));
+      g.add(caixa(0.46, 0.22, 0.04, preto, x1 - 0.5, H - 1.3, s * (W / 2 + 0.03)));
+      continue;
+    }
     g.add(tubo([[x1 - 0.25, H - 0.55, s * (W / 2 - 0.05)], [x1 + 0.2, H - 0.45, s * (W / 2 + 0.18)], [x1 + 0.42, H - 0.8, s * (W / 2 + 0.26)]], 0.03, preto, 10, 5));
     g.add(caixa(0.12, 0.44, 0.22, preto, x1 + 0.44, H - 1.3, s * (W / 2 + 0.28)));
   }

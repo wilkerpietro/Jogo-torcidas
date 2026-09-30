@@ -74,7 +74,7 @@
    (em ferramentas/planta_html) prova que em toda sede dos três mapas
    um corpo de 70 cm entra em todo cômodo; mexeu na mobília, rode ele.
    ========================================================= */
-import { Construtor, METRO, arSplit } from './construtor3d.js?v=a865a037df';
+import { Construtor, METRO, arSplit } from './construtor3d.js?v=498dcc0f3c';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -113,17 +113,29 @@ export function eixosDaSede(a, frente) {
 /* =======================================================
    A PLANTA DA SEDE — a conta do sedeDaTorcida, em u e v
    ======================================================= */
-const TIPO = { SECRETARIA: 'secretaria', BAR: 'bar', BANHEIRO: 'banheiro', ALMOXARIFADO: 'almoxarifado',
-               ALOJAMENTO: 'alojamento', DIRETORIA: 'diretoria', 'DEPÓSITO': 'deposito',
-               'PATRIMÔNIO': 'patrimonio', 'PRESIDÊNCIA': 'presidencia' };
+const TIPO = { BAR: 'bar', 'PATRIMÔNIO': 'patrimonio', 'PRESIDÊNCIA': 'presidencia', HOSPEDAGEM: 'hospedagem',
+               MARKETING: 'marketing', 'SETOR CRIATIVO': 'criativo', GARAGEM: 'garagem', ACADEMIA: 'academia', VARANDA: 'varanda' };
+/* O NÍVEL QUE A FATIA COMPORTA: o terreno estreito demais pro nível pedido
+   fica com o de baixo (o 5 só cabe no quarteirão inteiro, uns 30 m; o 3 e
+   o 4, no terreno de 22 m; o 2, na fatia de 16 m) */
+const FRENTE_MIN = { 2: 12, 3: 17, 4: 19.5, 5: 28.5 };
+export function nivelQueCabe(L, nivel) {
+  let N = Math.max(1, Math.min(5, Math.round(nivel || 1)));
+  while (N > 1 && L < FRENTE_MIN[N] * M) N--;
+  return N;
+}
 export function planoDaSede(L, A, nivel, lado = 'mandante') {
-  const N = nivel === 1 ? 1 : 3;
+  const N = nivelQueCabe(L, nivel);
+  return N === 1 ? planoNivel1(L, A, lado) : N === 5 ? planoNivel5(L, A) : planoNovo(L, A, N);
+}
+function planoNivel1(L, A, lado) {
+  const N = 1;
   const m = v => Math.round(v * M);
   const PAR = 9, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
-  const MURO = N === 1 ? 66 : 74, ALT_EXT = N === 1 ? 60 : 66, ALT = m(N === 1 ? 2.60 : 2.75);
+  const MURO = 66, ALT_EXT = 60, ALT = m(2.60);
   const DF = Math.min(96, Math.max(58, A * 0.30)), DB = Math.min(104, Math.max(60, A * 0.32));
   const vF = MF + DF, vB = A - DB, uDiv = Math.round(L * 0.58);
-  const eixo = N === 1 ? (PAR + uDiv) / 2 : L / 2, g0 = eixo - PORTAO / 2, g1 = eixo + PORTAO / 2;
+  const eixo = (PAR + uDiv) / 2, g0 = eixo - PORTAO / 2, g1 = eixo + PORTAO / 2;
   const paredes = [], comodos = [], portas = [];
   const parede = (u0, u1, v0, v1, alt, o = {}) => {
     const w = Object.assign({ u0, u1, v0, v1, alt, ao: u1 - u0 >= v1 - v0 ? 'u' : 'v', vaos: [] }, o);
@@ -147,90 +159,363 @@ export function planoDaSede(L, A, nivel, lado = 'mandante') {
 
   const fachada = parede(0, L, F0, MF, MURO, { fachada: true, ext: true });
   porta(fachada, eixo, PORTAO, { tipo: 'portao', vidro: true, abre: 1, b1: 53 });
-  let teto, mastro;
-  if (N === 3) {
-    const oeste = parede(0, PAR, 0, A, ALT_EXT, { ext: true });
-    const leste = parede(L - PAR, L, 0, A, ALT_EXT, { ext: true });
-    parede(g0 - PAR, g0, MF, vF, ALT);
-    parede(g1, g1 + PAR, MF, vF, ALT);
-    const nomesF = lado === 'mandante' ? ['SECRETARIA', 'BAR', 'BANHEIRO', 'ALMOXARIFADO']
-                                       : ['SECRETARIA', 'BANHEIRO', 'BAR', 'ALMOXARIFADO'];
-    let iF = 0;
-    for (const [a, b] of [[PAR, g0 - PAR], [g1 + PAR, L - PAR]]) {
-      if (b - a < 70) continue;
-      const parte = b - a > 150;
-      const w = parede(a, b, vF - PAR, vF, ALT, { divisa: true });
-      const centros = parte ? [a + (b - a) * 0.25, a + (b - a) * 0.75] : [(a + b) / 2];
-      const nomes = parte ? [nomesF[iF], nomesF[iF + 1]] : [nomesF[iF]];
-      centros.forEach((c, k) => porta(w, c, VAO, { abre: -1, nome: nomes[k] }));
-      const md = (a + b) / 2;
-      if (parte) parede(md - PAR / 2, md + PAR / 2, MF, vF - PAR, ALT);
-      const faixas = parte ? [[a, md - PAR / 2], [md + PAR / 2, b]] : [[a, b]];
-      faixas.forEach(([u0, u1], k) => {
-        const c = comodo(nomes[k], u0, u1, MF, vF - PAR, { lado: 'v1', c: centros[k], w: VAO });
-        /* a janela do balcão do bar, pro salão: do lado contrário à
-           dobradiça, que é o da folha aberta */
-        if (c.tipo === 'bar') {
-          const j0 = centros[k] + VAO / 2 + 5, j1 = u1 - 5;
-          if (j1 - j0 > 10) w.vaos.push({ a0: j0, a1: j1, b0: 1.0 * M, b1: 2.05 * M, tipo: 'balcao' });
-        }
-      });
-      iF += parte ? 2 : 1;
-    }
-    comodo('CORREDOR', g0, g1, MF, vF, { lado: 'v0', c: eixo, w: PORTAO }, 'corredor');
-    comodo('SALÃO', PAR, L - PAR, vF, vB, null, 'salao');
-    const fundo = parede(PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
-    const n = L > 400 ? 3 : 2, passo = (L - 2 * PAR) / n;
-    for (let i = 0; i < n; i++) {
-      const a = PAR + i * passo, b = a + passo;
-      const nome = i === 0 ? 'ALOJAMENTO' : i === n - 1 ? 'DEPÓSITO' : 'DIRETORIA';
-      const w = parede(a, b, vB, vB + PAR, ALT, { divisa: true });
-      porta(w, (a + b) / 2, VAO, { abre: 1, nome });
-      if (i) parede(a - PAR / 2, a + PAR / 2, vB, A - PAR, ALT);
-      comodo(nome, a + (i ? PAR / 2 : 0), b - (i < n - 1 ? PAR / 2 : 0), vB + PAR, A - PAR, { lado: 'v0', c: (a + b) / 2, w: VAO });
-    }
-    /* AS JANELAS: a de grade na frente de cada sala (o banheiro leva a de
-       tijolo de vidro e o almoxarifado o basculante), o vitrô alto no
-       salão, e basculante e janela nos cômodos do fundo */
-    for (const c of comodos) {
-      const um = (c.u0 + c.u1) / 2;
-      if (c.v0 === MF && c.tipo !== 'corredor') {
-        if (c.tipo === 'banheiro') janela(fachada, um - 0.5 * M, 0.8, 1.42, 2.2, 'tijolo_vidro');
-        else if (c.tipo === 'almoxarifado') janela(fachada, um, 0.6, 1.6, 2.2, 'basc');
-        else janela(fachada, um, 1.4, 1.0, 2.2, 'jan_grade');
-      }
-      if (c.v1 === A - PAR) {
-        if (c.tipo === 'diretoria') janela(fundo, c.u0 + (c.u1 - c.u0) * 0.78, 1.2, 1.1, 2.1, 'jan_grade');
-        else janela(fundo, um, 0.6, c.tipo === 'deposito' ? 2.15 : 1.95, c.tipo === 'deposito' ? 2.75 : 2.55, 'basc');
-      }
-    }
-    for (const w of [oeste, leste]) janela(w, (vF + vB) / 2, 1.6, 2.25, 2.95, 'vitro_alto');
-    janela(oeste, (vB + PAR + A - PAR) / 2, 0.6, 1.9, 2.5, 'basc');
-    teto = [{ u0: 0, u1: L, v0: MF, v1: A, agua: 'duas' }];
-    mastro = { u: L - 1.4 * M, v: (F0 + MF) / 2, base: MURO, alt: 3.2 * M };
-  } else {
-    parede(0, PAR, 0, A, ALT_EXT, { ext: true });
-    const leste = parede(L - PAR, L, 0, A, ALT_EXT, { ext: true });
-    const fundo = parede(PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
-    const vDiv = MF + Math.round((A - MF - PAR) * 0.46);
-    const uS0 = uDiv + PAR, uS1 = L - PAR, vPa0 = MF, vPa1 = vDiv, vPr0 = vDiv + PAR, vPr1 = A - PAR;
-    /* a parede entre o pátio e as salas é a fachada delas pro pátio: no
-       modelo ela sobe até o telhado (na planta para em 2,60, e dali pra
-       cima ninguém anda) */
-    const salas = parede(uDiv, uS0, MF, A - PAR, ALT, { fachadaPatio: true, altModelo: MURO - 1 });
-    porta(salas, (vPa0 + vPa1) / 2, VAO, { abre: 1, nome: 'PATRIMÔNIO' });
-    porta(salas, (vPr0 + vPr1) / 2, VAO, { abre: 1, nome: 'PRESIDÊNCIA' });
-    parede(uS0, uS1, vDiv, vPr0, ALT);
-    comodo('PÁTIO', PAR, uDiv, MF, A - PAR, { lado: 'v0', c: eixo, w: PORTAO }, 'patio');
-    comodo('PATRIMÔNIO', uS0, uS1, vPa0, vPa1, { lado: 'u0', c: (vPa0 + vPa1) / 2, w: VAO });
-    comodo('PRESIDÊNCIA', uS0, uS1, vPr0, vPr1, { lado: 'u0', c: (vPr0 + vPr1) / 2, w: VAO });
-    janela(leste, vPr0 + (vPr1 - vPr0) * 0.28, 1.1, 1.2, 2.2, 'jan_grade');
-    janela(fundo, uS0 + (uS1 - uS0) * 0.62, 1.1, 1.15, 2.05, 'jan_grade');
-    teto = [{ u0: uDiv, u1: L, v0: MF, v1: A, agua: 'uma' }];
-    mastro = { u: uDiv - 16, v: MF + 20, base: 0, alt: 112 };
-  }
+  parede(0, PAR, 0, A, ALT_EXT, { ext: true });
+  const leste = parede(L - PAR, L, 0, A, ALT_EXT, { ext: true });
+  const fundo = parede(PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
+  const vDiv = MF + Math.round((A - MF - PAR) * 0.46);
+  const uS0 = uDiv + PAR, uS1 = L - PAR, vPa0 = MF, vPa1 = vDiv, vPr0 = vDiv + PAR, vPr1 = A - PAR;
+  /* a parede entre o pátio e as salas é a fachada delas pro pátio: no
+     modelo ela sobe até o telhado (na planta para em 2,60, e dali pra
+     cima ninguém anda) */
+  const salas = parede(uDiv, uS0, MF, A - PAR, ALT, { fachadaPatio: true, altModelo: MURO - 1 });
+  porta(salas, (vPa0 + vPa1) / 2, VAO, { abre: 1, nome: 'PATRIMÔNIO' });
+  porta(salas, (vPr0 + vPr1) / 2, VAO, { abre: 1, nome: 'PRESIDÊNCIA' });
+  parede(uS0, uS1, vDiv, vPr0, ALT);
+  comodo('PÁTIO', PAR, uDiv, MF, A - PAR, { lado: 'v0', c: eixo, w: PORTAO }, 'patio');
+  comodo('PATRIMÔNIO', uS0, uS1, vPa0, vPa1, { lado: 'u0', c: (vPa0 + vPa1) / 2, w: VAO });
+  comodo('PRESIDÊNCIA', uS0, uS1, vPr0, vPr1, { lado: 'u0', c: (vPr0 + vPr1) / 2, w: VAO });
+  janela(leste, vPr0 + (vPr1 - vPr0) * 0.28, 1.1, 1.2, 2.2, 'jan_grade');
+  janela(fundo, uS0 + (uS1 - uS0) * 0.62, 1.1, 1.15, 2.05, 'jan_grade');
+  const teto = [{ u0: uDiv, u1: L, v0: MF, v1: A, agua: 'uma' }];
+  const mastro = { u: uDiv - 16, v: MF + 20, base: 0, alt: 112 };
   return { N, L, A, PAR, MF, F0, VAO, PORTAO, ALT_PORTA, MURO, ALT_EXT, ALT, vF, vB, uDiv, eixo, g0, g1,
            paredes, comodos, portas, teto, mastro, lado };
+}
+
+/* =======================================================
+   OS NÍVEIS 2 A 4 (o dono, 30/09/2026): "O pátio sempre vai ser a maior
+   área da sede, os compartimentos ficam ao redor dele." O terreno é o
+   quarteirão de sempre, de 12,8 m de fundo, então o pátio pega o fundo
+   inteiro e os cômodos ficam em COLUNAS dos dois lados dele, cada um com
+   a porta pro pátio (a coluna de cá, A, e a de lá, B); o BAR é o da
+   frente da coluna A, com a porta pra rua e sem porta pro pátio; a
+   GARAGEM, na ponta oeste, pega o fundo inteiro também (o ônibus entra
+   de ré) e só abre pra rua.
+
+     nível 2 (fatia de 16,2 m)  pátio (treino improvisado) · B: marketing,
+                                patrimônio, presidência
+     nível 3 (terreno, 22 m)    A: bar, hospedagem · pátio (o treino
+                                maior) · B: marketing, patrimônio,
+                                presidência
+     nível 4 (terreno, 22 m)    garagem de 1 ônibus · A: bar, hospedagem
+                                maior · pátio, com a ACADEMIA no fundo
+                                dele (o treino sai do pátio e vira sala)
+                                · B: marketing, patrimônio, presidência
+                                com mais coisa
+
+   O nível 5 é de dois andares (planoNivel5, mais abaixo). O pátio fica
+   sempre maior que a garagem e que qualquer cômodo. O que muda por nível
+   de uma coluna pra outra é o fundo de cada cômodo (em m; 0 fica com o
+   resto); `academia` é o fundo da academia, no fundo do pátio.
+   ======================================================= */
+const NIVEIS = {
+  2: { baias: 0, colA: 0, colB: 5.4, A: [], B: [['MARKETING', 2.8], ['PATRIMÔNIO', 3.2], ['PRESIDÊNCIA', 0]] },
+  3: { baias: 0, colA: 3.6, colB: 4.6, A: [['BAR', 4.3], ['HOSPEDAGEM', 0]], B: [['MARKETING', 2.7], ['PATRIMÔNIO', 3.1], ['PRESIDÊNCIA', 0]] },
+  4: { baias: 1, colA: 3.9, colB: 4.4, A: [['BAR', 4.3], ['HOSPEDAGEM', 0]], B: [['MARKETING', 2.5], ['PATRIMÔNIO', 2.6], ['PRESIDÊNCIA', 0]], academia: 3.4 }
+};
+/* O CANTEIRO DE UMA PLANTA: as listas e quem põe parede, porta, janela e
+   cômodo nelas (a medida em unidade de planta; a da janela em m) */
+function canteiro(ALT_PORTA) {
+  const paredes = [], comodos = [], portas = [];
+  const parede = (u0, u1, v0, v1, alt, o = {}) => {
+    const w = Object.assign({ u0, u1, v0, v1, alt, ao: u1 - u0 >= v1 - v0 ? 'u' : 'v', vaos: [] }, o);
+    paredes.push(w);
+    return w;
+  };
+  const porta = (w, c, larg, o = {}) => {
+    const tipo = o.tipo || 'porta';
+    w.vaos.push({ a0: c - larg / 2, a1: c + larg / 2, b0: 0, b1: o.b1 || ALT_PORTA + 2, tipo });
+    if (tipo === 'porta' || tipo === 'portao') portas.push({ ao: w.ao, c, w: larg, parede: w, abre: o.abre || 1, vidro: !!o.vidro, nome: o.nome || null, tipo });
+  };
+  const janela = (w, c, larg, b0, b1, k) =>
+    w.vaos.push({ a0: c - larg * M / 2, a1: c + larg * M / 2, b0: b0 * M, b1: b1 * M, tipo: 'janela', k });
+  const comodo = (nome, u0, u1, v0, v1, pt, tipo) => {
+    const c = { tipo: tipo || TIPO[nome], nome, u0, u1, v0, v1, porta: pt };
+    comodos.push(c);
+    return c;
+  };
+  return { paredes, comodos, portas, parede, porta, janela, comodo };
+}
+function planoNovo(L, A, N) {
+  const m = v => Math.round(v * M);
+  const PAR = 9, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
+  const MURO = 72, ALT_EXT = 64, ALT = m(2.75);
+  /* a garagem é um galpão mais alto: o ônibus tem 3,9 m com o ar em cima */
+  const G_ALT = m(4.9), G_MURO = m(5.3), G_PORTA = m(4.3);
+  const V0 = MF, V1 = A - PAR, U1 = L - PAR;
+  const { paredes, comodos, portas, parede, porta, janela, comodo } = canteiro(ALT_PORTA), janelasPatio = [];
+  const K = NIVEIS[N], baia = m(3.6);
+  /* AS FAIXAS AO LONGO DA FACHADA: garagem, coluna A, pátio, coluna B */
+  let u = PAR;
+  const gar = K.baias ? { u0: u, u1: u + K.baias * baia } : null;
+  if (gar) u = gar.u1 + PAR;
+  const colA = K.colA ? { u0: u, u1: u + m(K.colA) } : null;
+  if (colA) u = colA.u1 + PAR;
+  const colB = { u0: U1 - m(K.colB), u1: U1 };
+  const pat = { u0: u, u1: colB.u0 - PAR };
+  const eixo = Math.round((pat.u0 + pat.u1) / 2), g0 = eixo - PORTAO / 2, g1 = eixo + PORTAO / 2;
+  /* onde o pátio acaba (no nível 4, na parede da academia): a porta de cada
+     sala abre no trecho dele */
+  const vPat1 = K.academia ? V1 - m(K.academia) - PAR : V1;
+
+  /* ---- a casca: a fachada (a da garagem mais alta), os lados e o fundo ---- */
+  const fachG = gar ? parede(0, gar.u1 + PAR, F0, MF, G_MURO, { fachada: true, ext: true }) : null;
+  const fachada = parede(gar ? gar.u1 + PAR : 0, L, F0, MF, MURO, { fachada: true, ext: true });
+  porta(fachada, eixo, PORTAO, { tipo: 'portao', vidro: true, abre: 1, b1: 53 });
+  parede(0, PAR, 0, A, gar ? G_ALT : ALT_EXT, { ext: true });
+  parede(L - PAR, L, 0, A, ALT_EXT, { ext: true });
+  const fundoG = gar ? parede(PAR, gar.u1 + PAR, A - PAR, A, G_ALT, { ext: true }) : null;
+  const fundo = parede(gar ? gar.u1 + PAR : PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
+
+  /* ---- A GARAGEM: uma baia por ônibus, com o portão de grade (pela grade
+     a rua vê o ônibus), mais largo que o ônibus (2,55 m), e o ônibus de
+     ré, com a frente pra rua ---- */
+  const vagas = [];
+  if (gar) {
+    parede(gar.u1, gar.u1 + PAR, MF, V1, G_ALT);
+    for (let i = 0; i < K.baias; i++) {
+      const c = gar.u0 + (i + 0.5) * baia;
+      porta(fachG, c, Math.min(baia - m(0.2), m(3.2)), { tipo: 'garagem', b1: G_PORTA });
+      vagas.push({ u: c, v0: MF, v1: V1 });
+    }
+    comodo('GARAGEM', gar.u0, gar.u1, MF, V1, { lado: 'v0', c: (gar.u0 + gar.u1) / 2, w: baia }, 'garagem');
+    for (let i = 0; i < K.baias; i++) janela(fundoG, gar.u0 + (i + 0.5) * baia, 1.2, 3.3, 3.9, 'basc');
+  }
+
+  /* ---- AS COLUNAS: os cômodos de frente pro fundo, a parede do pátio
+     (a fachada deles pro pátio, que sobe até o telhado) com a porta de
+     cada um, e as paredes entre eles ---- */
+  const coluna = (col, lista, ladoDaPorta) => {
+    const wP = ladoDaPorta === 'u1' ? parede(col.u1, col.u1 + PAR, MF, V1, ALT, { fachadaPatio: true, altModelo: MURO - 1 })
+                                    : parede(col.u0 - PAR, col.u0, MF, V1, ALT, { fachadaPatio: true, altModelo: MURO - 1 });
+    let v = V0;
+    lista.forEach(([nome, d], i) => {
+      const v1 = d && i < lista.length - 1 ? v + m(d) : V1;
+      const tipo = TIPO[nome];
+      if (tipo === 'bar') {
+        /* O BAR: a porta de enrolar pra rua, do lado de cá (o de lá fica pra
+           mesa do pagode), sem porta pro pátio — só o basculante lá no alto */
+        const larg = Math.min(m(2.0), col.u1 - col.u0 - m(2.2)), c = col.u0 + m(0.25) + larg / 2;
+        porta(fachada, c, larg, { tipo: 'bar', b1: m(2.55) });
+        comodo(nome, col.u0, col.u1, v, v1, { lado: 'v0', c, w: larg }, tipo);
+        janela(wP, (v + v1) / 2, 0.9, 1.75, 2.3, 'basc');
+      } else {
+        /* a porta perto da frente do cômodo (o fundo fica pra mobília), e a
+           janela de grade do lado dela, pro pátio */
+        const cP = Math.min(v + VAO / 2 + m(0.35), (v + v1) / 2, vPat1 - VAO / 2 - m(0.12));
+        porta(wP, cP, VAO, { abre: ladoDaPorta === 'u1' ? -1 : 1, nome });
+        comodo(nome, col.u0, col.u1, v, v1, { lado: ladoDaPorta, c: cP, w: VAO }, tipo);
+        const j = cP + VAO / 2 + m(0.9);
+        if (j + m(0.7) < v1) janelasPatio.push([wP, j, tipo]);
+      }
+      if (i < lista.length - 1) parede(col.u0, col.u1, v1, v1 + PAR, ALT);
+      v = v1 + PAR;
+    });
+    return wP;
+  };
+  if (colA) coluna(colA, K.A, 'u1');
+  coluna(colB, K.B, 'u0');
+  for (const [w, j, tipo] of janelasPatio)
+    if (tipo === 'patrimonio' || tipo === 'garagem') janela(w, j, 0.7, 1.7, 2.3, 'basc');
+    else janela(w, j, 1.1, 1.1, 2.15, 'jan_grade');
+  /* A ACADEMIA (o nível 4), no fundo do pátio: a parede dela é a fachada
+     pro pátio, com a porta no eixo do portão (quem entra na sede vê a
+     academia lá no fundo) e o vidro dos dois lados; o pátio acaba nela */
+  const lp = pat.u1 - pat.u0;
+  if (K.academia) {
+    const vA = V1 - m(K.academia);
+    const wA = parede(pat.u0, pat.u1, vPat1, vA, ALT, { fachadaPatio: true, altModelo: MURO - 1 });
+    porta(wA, eixo, VAO, { abre: 1, nome: 'ACADEMIA' });
+    const lj = Math.min(1.8, (lp / 2 - VAO / 2 - m(1.9)) / M);
+    if (lj > 0.8) for (const d of [-1, 1]) janela(wA, eixo + d * (VAO / 2 + m(0.35) + lj * M / 2), lj, 0.9, 2.2, 'jan_alu4');
+    comodo('ACADEMIA', pat.u0, pat.u1, vA, V1, { lado: 'v0', c: eixo, w: VAO }, 'academia');
+    janela(fundo, (pat.u0 + pat.u1) / 2, Math.min(3.0, lp / M * 0.35), 1.9, 2.5, 'basc');
+  }
+  comodo('PÁTIO', pat.u0, pat.u1, MF, vPat1, { lado: 'v0', c: eixo, w: PORTAO }, 'patio');
+
+  /* ---- as janelas da rua: a da sala da frente da coluna B na fachada, as
+     do fundo dos dois cômodos de trás, e o cobogó no muro do fundo do pátio ---- */
+  /* (o marketing não tem janela pra rua: as paredes dele são dos quadros) */
+  const frenteB = comodos.find(c => c.u0 === colB.u0 && c.v0 === MF);
+  if (frenteB && frenteB.tipo !== 'marketing') janela(fachada, (colB.u0 + colB.u1) / 2, 1.4, 1.0, 2.2, 'jan_grade');
+  for (const col of [colA, colB]) {
+    if (!col) continue;
+    const c = comodos.find(k => k.u0 === col.u0 && k.v1 === V1);
+    if (c && c.tipo !== 'bar' && c.tipo !== 'marketing') janela(fundo, (col.u0 + col.u1) / 2, c.tipo === 'hospedagem' ? 0.8 : 1.2, c.tipo === 'hospedagem' ? 1.6 : 1.15, 2.2, c.tipo === 'hospedagem' ? 'basc' : 'jan_grade');
+  }
+  if (!K.academia && lp > m(4)) janela(fundo, (pat.u0 + pat.u1) / 2, Math.min(3.0, lp / M * 0.35), 1.9, 2.5, 'cobogo');
+
+  /* ---- O TELHADO: fibrocimento em cada bloco coberto (as colunas, a
+     garagem e a academia), com a platibanda em volta — a parede do pátio e
+     as de fora passam dele, e a água cai pro lado de fora. O pátio é
+     descoberto ---- */
+  const teto = [];
+  const aba = (col, cai, alto, queda, v0 = MF, v1 = V1) => teto.push({ u0: col.u0, u1: col.u1, v0, v1, agua: 'plat', cai, y0: alto, y1: alto - queda });
+  if (gar) aba(gar, '-u', G_ALT - 1.5, m(0.5));
+  if (colA) aba(colA, '-u', ALT_EXT - 1.5, m(0.4));
+  aba(colB, '+u', ALT_EXT - 1.5, m(0.4));
+  if (K.academia) aba(pat, '+v', ALT_EXT - 1.5, m(0.35), V1 - m(K.academia), V1);
+
+  /* o mastro no pátio, perto do portão; o letreiro em cima do portão */
+  const mastro = { u: pat.u0 + m(0.7), v: MF + m(1.1), base: 0, alt: m(6.2) };
+  const letreiro = { u: eixo, y: 3.3, alt: 0.55, larg: Math.min((lp - m(0.8)) / M, 5.6) };
+  /* as duas listras da torcida no cimento, no fundo do pátio */
+  const listras = [[pat.u0 + 10, pat.u1 - 10, vPat1 - 20, vPat1 - 13, 'cor2'], [pat.u0 + 10, pat.u1 - 10, vPat1 - 11, vPat1 - 4, 'cor3']];
+  return { N, novo: true, L, A, PAR, MF, F0, VAO, PORTAO, ALT_PORTA, MURO, ALT_EXT, ALT, G_ALT, G_MURO, G_PORTA,
+           eixo, g0, g1, gar, colA, colB, pat, baia, vagas, paredes, comodos, portas, teto, mastro, letreiro, listras, lado: 'mandante' };
+}
+
+/* =======================================================
+   O NÍVEL 5, EM DOIS ANDARES (o dono, 30/09/2026: "Se fizer a sede
+   nível 5 com dois andares não fica melhor? [...] Quando falo dois
+   andares é um térreo e um andar"; e a academia de treino dentro da sede
+   nos níveis 4 e 5). O quarteirão inteiro (uns 30 m):
+     térreo    a GARAGEM de três ônibus (baias de 3,3 m: o motorista
+               desce) · o PÁTIO, descoberto, a maior área da sede (uns
+               146 m²) · a coluna de lá: o BAR (a porta pra rua), o
+               PATRIMÔNIO e a PRESIDÊNCIA, com a porta pro pátio
+     1º andar  em cima da garagem, a ACADEMIA (o ringue, os sacos, os
+               pesos) e a HOSPEDAGEM grande; em cima da coluna de lá, o
+               MARKETING e o SETOR CRIATIVO; e a VARANDA em U em volta do
+               pátio (os dois lados e a passarela da frente, por cima do
+               portão), de onde se entra em cada sala
+   A escada de concreto sobe encostada no muro do fundo do pátio e chega
+   na ponta de trás da varanda de cá. A laje entre os andares (20 cm)
+   aparece na fachada como a faixa entre eles; os pilares seguram a
+   varanda. O 1º andar é outra planta (`andar`), no referencial dela (o
+   piso em 0): quem monta ergue ela até `h1`.
+   ======================================================= */
+export const ANDAR_5 = { h1: 4.7, laje: 0.2, pe: 2.9, plat: 3.4 };   // m: o piso de cima, a laje, o pé-direito e a platibanda de cima
+function planoNivel5(L, A) {
+  const N = 5, m = v => Math.round(v * M);
+  const PAR = 9, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
+  const H1 = m(ANDAR_5.h1), TERREO = H1 - m(ANDAR_5.laje);
+  /* no térreo tudo sobe até o fundo da laje (a garagem pede 4,3 m de pé-direito) */
+  const MURO = TERREO, ALT_EXT = TERREO, ALT = TERREO, G_ALT = TERREO, G_MURO = TERREO, G_PORTA = m(4.0);
+  const V1 = A - PAR, U1 = L - PAR;
+  const T = canteiro(ALT_PORTA);
+  const baia = m(3.3), nB = 3, VAR = m(1.4), BR = m(1.8), ESC = m(1.1);
+  const gar = { u0: PAR, u1: PAR + nB * baia };
+  const colB = { u0: U1 - m(6.0), u1: U1 };
+  const pat = { u0: gar.u1 + PAR, u1: colB.u0 - PAR };
+  const eixo = Math.round((pat.u0 + pat.u1) / 2), g0 = eixo - PORTAO / 2, g1 = eixo + PORTAO / 2;
+
+  /* ---- O TÉRREO: a casca até a laje ---- */
+  const fachada = T.parede(0, L, F0, MF, TERREO, { fachada: true, ext: true });
+  T.porta(fachada, eixo, PORTAO, { tipo: 'portao', vidro: true, abre: 1, b1: 53 });
+  const oeste = T.parede(0, PAR, 0, A, TERREO, { ext: true });
+  const leste = T.parede(L - PAR, L, 0, A, TERREO, { ext: true });
+  const fundo = T.parede(PAR, L - PAR, A - PAR, A, TERREO, { ext: true });
+  /* a garagem: três baias, o portão de grade de cada uma (3 m, o ônibus
+     passa com folga), o basculante alto no fundo e no lado */
+  const vagas = [];
+  T.parede(gar.u1, gar.u1 + PAR, MF, V1, TERREO);
+  for (let i = 0; i < nB; i++) {
+    const c = gar.u0 + (i + 0.5) * baia;
+    T.porta(fachada, c, baia - m(0.3), { tipo: 'garagem', b1: G_PORTA });
+    vagas.push({ u: c, v0: MF, v1: V1 });
+    T.janela(fundo, c, 1.2, 3.3, 3.9, 'basc');
+  }
+  for (const f of [0.3, 0.7]) T.janela(oeste, MF + (V1 - MF) * f, 1.4, 3.2, 3.9, 'basc');
+  T.comodo('GARAGEM', gar.u0, gar.u1, MF, V1, { lado: 'v0', c: (gar.u0 + gar.u1) / 2, w: baia }, 'garagem');
+  /* a coluna de lá: o bar na frente (a porta de enrolar pra rua, a janela do
+     lado), o patrimônio e a presidência com a porta pro pátio */
+  const wB = T.parede(colB.u0 - PAR, colB.u0, MF, V1, TERREO, { fachadaPatio: true });
+  const vBar = MF + m(4.0), larg = m(2.2), cBar = colB.u0 + m(0.3) + larg / 2;
+  T.porta(fachada, cBar, larg, { tipo: 'bar', b1: m(2.55) });
+  T.comodo('BAR', colB.u0, colB.u1, MF, vBar, { lado: 'v0', c: cBar, w: larg }, 'bar');
+  T.janela(wB, (MF + vBar) / 2, 0.9, 1.75, 2.3, 'basc');
+  T.janela(leste, (MF + vBar) / 2 + m(0.4), 1.2, 1.1, 2.1, 'jan_grade');
+  T.parede(colB.u0, colB.u1, vBar, vBar + PAR, TERREO);
+  const vPa0 = vBar + PAR, vPa1 = vPa0 + m(2.7), vPr0 = vPa1 + PAR;
+  for (const [nome, v0, v1] of [['PATRIMÔNIO', vPa0, vPa1], ['PRESIDÊNCIA', vPr0, V1]]) {
+    const cP = Math.min(v0 + VAO / 2 + m(0.35), (v0 + v1) / 2);
+    T.porta(wB, cP, VAO, { abre: 1, nome });
+    T.comodo(nome, colB.u0, colB.u1, v0, v1, { lado: 'u0', c: cP, w: VAO });
+    const j = cP + VAO / 2 + m(0.9);
+    if (j + m(0.7) < v1) nome === 'PATRIMÔNIO' ? T.janela(wB, j, 0.7, 1.7, 2.3, 'basc') : T.janela(wB, j, 1.1, 1.1, 2.15, 'jan_grade');
+  }
+  T.parede(colB.u0, colB.u1, vPa1, vPa1 + PAR, TERREO);
+  T.janela(leste, (vPa0 + vPa1) / 2, 0.7, 1.7, 2.3, 'basc');
+  T.janela(leste, (vPr0 + V1) / 2, 1.2, 1.1, 2.1, 'jan_grade');
+  T.janela(fundo, (colB.u0 + colB.u1) / 2, 1.2, 1.15, 2.2, 'jan_grade');
+  T.comodo('PÁTIO', pat.u0, pat.u1, MF, V1, { lado: 'v0', c: eixo, w: PORTAO }, 'patio');
+
+  /* ---- a laje (a do 1º andar: os dois blocos, a varanda dos lados e a
+     passarela da frente), os pilares da varanda e a escada ---- */
+  const lajes = [{ u0: 0, u1: pat.u0 + VAR, v0: F0, v1: A }, { u0: pat.u1 - VAR, u1: L, v0: F0, v1: A },
+                 { u0: pat.u0 + VAR, u1: pat.u1 - VAR, v0: F0, v1: MF + BR }];
+  const pl = m(0.13);
+  const pilares = [], uW = pat.u0 + VAR - pl, uE = pat.u1 - VAR + pl, vB = MF + BR - pl;
+  for (const v of [vB, (vB + V1 - ESC) / 2, V1 - ESC - m(0.2)]) pilares.push({ u: uW, v });
+  for (const v of [vB, (vB + V1) / 2, V1 - pl]) pilares.push({ u: uE, v });
+  for (const du of [-m(2.6), m(2.6)]) pilares.push({ u: eixo + du, v: vB });
+  const escada = { u0: pat.u0 + VAR, u1: pat.u0 + VAR + m(7.0), v0: V1 - ESC, v1: V1, sobe: '-u', y1: H1 };
+
+  /* ---- O 1º ANDAR, no referencial dele (o piso em 0) ---- */
+  const S = canteiro(ALT_PORTA), PE = m(ANDAR_5.pe), PLAT = m(ANDAR_5.plat);
+  const fachada2 = S.parede(0, L, F0, MF, PLAT, { fachada: true, ext: true });
+  const oeste2 = S.parede(0, PAR, 0, A, PLAT, { ext: true });
+  const leste2 = S.parede(L - PAR, L, 0, A, PLAT, { ext: true });
+  const fundoW = S.parede(PAR, pat.u0, A - PAR, A, PLAT, { ext: true });
+  const fundoE = S.parede(colB.u0 - PAR, L - PAR, A - PAR, A, PLAT, { ext: true });
+  /* a mureta no fim de cada varanda, no fundo */
+  S.parede(pat.u0, pat.u0 + VAR, A - PAR, A, m(1.1), { ext: true });
+  S.parede(pat.u1 - VAR, pat.u1, A - PAR, A, m(1.1), { ext: true });
+  /* o bloco de cá (em cima da garagem): a academia na frente, a hospedagem
+     no fundo; a parede deles pra varanda, com as portas e as janelas */
+  const vDivA = MF + m(6.2), wA = S.parede(gar.u1, pat.u0, MF, V1, PLAT, { fachadaPatio: true });
+  S.parede(gar.u0, gar.u1, vDivA, vDivA + PAR, PE);
+  const cAc = MF + m(2.4), cHo = vDivA + PAR + VAO / 2 + m(0.35);
+  S.porta(wA, cAc, VAO, { abre: -1, nome: 'ACADEMIA' });
+  S.porta(wA, cHo, VAO, { abre: -1, nome: 'HOSPEDAGEM' });
+  S.comodo('ACADEMIA', gar.u0, gar.u1, MF, vDivA, { lado: 'u1', c: cAc, w: VAO }, 'academia');
+  S.comodo('HOSPEDAGEM', gar.u0, gar.u1, vDivA + PAR, V1, { lado: 'u1', c: cHo, w: VAO });
+  for (const f of [0.55, 0.85]) S.janela(wA, MF + (vDivA - MF) * f, 1.2, 1.0, 2.1, 'jan_alu4');
+  S.janela(wA, cHo + VAO / 2 + m(1.4), 1.0, 1.1, 2.1, 'jan_grade');
+  for (const i of [0, 2]) S.janela(fachada2, gar.u0 + (i + 0.5) * baia, 1.6, 0.9, 2.2, 'jan_alu4');
+  for (const f of [0.3, 0.7]) S.janela(oeste2, MF + (vDivA - MF) * f, 1.4, 0.9, 2.2, 'jan_alu4');
+  S.janela(oeste2, (vDivA + V1) / 2, 1.2, 1.1, 2.1, 'jan_grade');
+  for (const f of [0.3, 0.7]) S.janela(fundoW, gar.u0 + (gar.u1 - gar.u0) * f, 0.8, 1.6, 2.2, 'basc');
+  /* o bloco de lá (em cima da coluna): o marketing na frente, o setor
+     criativo, grande, no fundo */
+  const vDivB = MF + m(3.2), wE = S.parede(colB.u0 - PAR, colB.u0, MF, V1, PLAT, { fachadaPatio: true });
+  S.parede(colB.u0, colB.u1, vDivB, vDivB + PAR, PE);
+  const cMk = MF + m(2.2), cCr = vDivB + PAR + VAO / 2 + m(0.35);
+  S.porta(wE, cMk, VAO, { abre: 1, nome: 'MARKETING' });
+  S.porta(wE, cCr, VAO, { abre: 1, nome: 'SETOR CRIATIVO' });
+  S.comodo('MARKETING', colB.u0, colB.u1, MF, vDivB, { lado: 'u0', c: cMk, w: VAO });
+  S.comodo('SETOR CRIATIVO', colB.u0, colB.u1, vDivB + PAR, V1, { lado: 'u0', c: cCr, w: VAO });
+  for (const f of [0.45, 0.8]) S.janela(wE, vDivB + (V1 - vDivB) * f, 1.2, 1.0, 2.1, 'jan_alu4');
+  S.janela(fachada2, (colB.u0 + colB.u1) / 2, 1.2, 1.0, 2.1, 'jan_grade');
+  for (const f of [0.35, 0.72]) S.janela(leste2, vDivB + (V1 - vDivB) * f, 1.6, 0.9, 2.2, 'jan_alu4');
+  S.janela(fundoE, (colB.u0 + colB.u1) / 2, 1.4, 1.0, 2.2, 'jan_alu4');
+  /* a varanda em U: os dois lados e a passarela por cima do portão (a
+     fachada dela é a do letreiro, com duas janelas pequenas nas pontas) */
+  S.comodo('VARANDA', pat.u0, pat.u0 + VAR, MF, V1, null, 'varanda');
+  S.comodo('VARANDA', pat.u1 - VAR, pat.u1, MF, V1, null, 'varanda');
+  S.comodo('VARANDA', pat.u0 + VAR, pat.u1 - VAR, MF, MF + BR, null, 'varanda');
+  for (const u of [pat.u0 + VAR * 0.5, pat.u1 - VAR * 0.5]) S.janela(fachada2, u, 0.8, 1.2, 2.2, 'jan_grade');
+  /* o guarda-corpo na beira da varanda (sem ele na chegada da escada) */
+  const guardas = [{ u0: pat.u0 + VAR, v0: MF + BR, u1: pat.u0 + VAR, v1: V1 - ESC },
+                   { u0: pat.u0 + VAR, v0: MF + BR, u1: pat.u1 - VAR, v1: MF + BR },
+                   { u0: pat.u1 - VAR, v0: MF + BR, u1: pat.u1 - VAR, v1: V1 }];
+  /* o telhado dos dois blocos (a varanda é descoberta) */
+  const teto2 = [{ u0: gar.u0, u1: gar.u1, v0: MF, v1: V1, agua: 'plat', cai: '-u', y0: PLAT - 1.5, y1: PLAT - 1.5 - m(0.45) },
+                 { u0: colB.u0, u1: colB.u1, v0: MF, v1: V1, agua: 'plat', cai: '+u', y0: PLAT - 1.5, y1: PLAT - 1.5 - m(0.45) }];
+  const andar = { N, novo: true, andar: 1, h1: ANDAR_5.h1, L, A, PAR, MF, F0, VAO, PORTAO, ALT_PORTA, MURO: PLAT, ALT_EXT: PLAT, ALT: PE,
+                  eixo, gar, colB, pat, paredes: S.paredes, comodos: S.comodos, portas: S.portas, teto: teto2, guardas, vagas: [], lado: 'mandante' };
+
+  /* o mastro no aberto do pátio (a bandeira passa da fachada de cima), o
+     letreiro grande na passarela, o escudo alto nos lados, as listras na
+     frente da escada */
+  const mastro = { u: pat.u0 + VAR + m(1.0), v: MF + BR + m(1.0), base: 0, alt: m(8.8) };
+  const letreiro = { u: eixo, y: ANDAR_5.h1 + 1.3, alt: 0.85, larg: Math.min((pat.u1 - pat.u0 - 2 * VAR) / M - 0.6, 8.0) };
+  const vL = V1 - ESC - m(0.35);
+  const listras = [[pat.u0 + VAR + 10, pat.u1 - VAR - 10, vL - 20, vL - 13, 'cor2'], [pat.u0 + VAR + 10, pat.u1 - VAR - 10, vL - 11, vL - 4, 'cor3']];
+  return { N, novo: true, dois: true, L, A, PAR, MF, F0, VAO, PORTAO, ALT_PORTA, MURO, ALT_EXT, ALT, G_ALT, G_MURO, G_PORTA, TERREO, H1,
+           eixo, g0, g1, gar, colA: null, colB, pat, baia, vagas, paredes: T.paredes, comodos: T.comodos, portas: T.portas, teto: [],
+           lajes, pilares, escada, andar, mastro, letreiro, listras, escudoLado: { y: ANDAR_5.h1 + 1.7, larg: 1.3 }, lado: 'mandante' };
 }
 
 /* =======================================================
@@ -675,68 +960,6 @@ function banqueta(ctx, Q, s, t, tinta) {
   B.torno(cx, cz, [[0.17, PISO + 0.72], [0.185, PISO + 0.76], [0.1, PISO + 0.785], [0, PISO + 0.79]], 8, 'lisa');
   B.pintar(null);
 }
-/* o vaso sanitário, de costas pra parede `costas` */
-function vaso(ctx, Q, s, t, costas) {
-  const [ds, dt] = { '-s': [1, 0], '+s': [-1, 0], '-t': [0, 1], '+t': [0, -1] }[costas];
-  const cs = s - ds * 0.24, ct = t - dt * 0.24;                    // a caixa acoplada, na parede
-  const ao = ds !== 0;
-  if (ao) qcaixa(ctx, Q, cs - 0.09, cs + 0.09, ct - 0.2, ct + 0.2, PISO + 0.4, PISO + 0.78, { todas: lisa(LOUCA) });
-  else qcaixa(ctx, Q, cs - 0.2, cs + 0.2, ct - 0.09, ct + 0.09, PISO + 0.4, PISO + 0.78, { todas: lisa(LOUCA) });
-  const [cx, cz] = Q.pt(s, t), B = ctx.B;
-  B.pintar(LOUCA);
-  B.torno(cx, cz, [[0.12, PISO], [0.14, PISO + 0.2], [0.2, PISO + 0.38], [0.2, PISO + 0.42], [0.13, PISO + 0.42]], 10, 'lisa');
-  B.pintar('#e6e6e2');
-  B.torno(cx, cz, [[0.2, PISO + 0.42], [0.2, PISO + 0.45], [0.12, PISO + 0.45]], 10, 'lisa');
-  B.pintar(null);
-  ctx.marca(cx - 0.2, cx + 0.2, cz - 0.2, cz + 0.2, LOUCA);
-}
-/* o mictório na parede */
-function mictorio(ctx, Q, lado, a) {
-  naParede(ctx, Q, lado, a - 0.18, a + 0.18, PISO + 0.52, PISO + 1.1, 0.3, { todas: lisa(LOUCA) });
-  naParede(ctx, Q, lado, a - 0.13, a + 0.13, PISO + 0.62, PISO + 1.0, 0.305, { todas: null, frente: lisa('#d9dcda') });
-  naParede(ctx, Q, lado, a - 0.02, a + 0.02, PISO + 1.1, PISO + 1.45, 0.05, { todas: lisa('#c3c7ca') });
-}
-/* o espelho na parede */
-function espelho(ctx, Q, lado, a0, a1, y0, y1) {
-  naParede(ctx, Q, lado, a0 - 0.02, a1 + 0.02, y0 - 0.02, y1 + 0.02, 0.02, { todas: lisa('#b8bcbe') });
-  naParede(ctx, Q, lado, a0, a1, y0, y1, 0.024, { todas: null, frente: lisa('#a9bcc6') });
-}
-/* a pia de cubas na bancada de granito, contra a parede `lado` */
-function pia(ctx, Q, lado, a0, a1, n) {
-  const prof = 0.55, y = PISO + 0.86;
-  naParede(ctx, Q, lado, a0, a1, y - 0.04, y, prof, { todas: lisa(GRANITO) }, GRANITO);
-  naParede(ctx, Q, lado, a0, a1, PISO, y - 0.04, prof - 0.03, { todas: lisa('#cfc9bb'), topo: null, base: null });
-  for (let i = 0; i < n; i++) {
-    const c = a0 + (a1 - a0) * (i + 0.5) / n;
-    naParede(ctx, Q, lado, c - 0.2, c + 0.2, y - 0.001, y + 0.004, prof - 0.1, { todas: null, topo: lisa('#e9ebea') });
-    naParede(ctx, Q, lado, c - 0.14, c + 0.14, y + 0.002, y + 0.006, prof - 0.16, { todas: null, topo: lisa('#8d9496') });
-    naParede(ctx, Q, lado, c - 0.015, c + 0.015, y, y + 0.22, 0.12, { todas: lisa('#c3c7ca') });
-  }
-}
-/* a mesa de sinuca: o móvel de madeira, o pano verde, as bordas, as
-   caçapas, as bolas e o taco */
-function sinuca(ctx, Q, s0, s1, t0, t1) {
-  const y = PISO, h = 0.8, bd = 0.1;
-  for (const [s, t] of [[s0 + 0.12, t0 + 0.12], [s1 - 0.12, t0 + 0.12], [s1 - 0.12, t1 - 0.12], [s0 + 0.12, t1 - 0.12], [(s0 + s1) / 2, t0 + 0.12], [(s0 + s1) / 2, t1 - 0.12]])
-    qcaixa(ctx, Q, s - 0.06, s + 0.06, t - 0.06, t + 0.06, y, y + h - 0.2, { todas: lisa('#4a2d18'), base: null, topo: null });
-  qcaixa(ctx, Q, s0, s1, t0, t1, y + h - 0.2, y + h - 0.04, { todas: lisa('#5c3a22') }, FELTRO);
-  qcaixa(ctx, Q, s0 + bd, s1 - bd, t0 + bd, t1 - bd, y + h - 0.04, y + h - 0.035, { todas: null, topo: lisa(FELTRO) });
-  for (const [a0, a1, b0, b1] of [[s0, s1, t0, t0 + bd], [s0, s1, t1 - bd, t1], [s0, s0 + bd, t0 + bd, t1 - bd], [s1 - bd, s1, t0 + bd, t1 - bd]])
-    qcaixa(ctx, Q, a0, a1, b0, b1, y + h - 0.04, y + h + 0.02, { todas: lisa('#6b4428'), base: null });
-  for (const [s, t] of [[s0 + bd, t0 + bd], [s1 - bd, t0 + bd], [s1 - bd, t1 - bd], [s0 + bd, t1 - bd], [(s0 + s1) / 2, t0 + bd], [(s0 + s1) / 2, t1 - bd]])
-    qcaixa(ctx, Q, s - 0.05, s + 0.05, t - 0.05, t + 0.05, y + h - 0.034, y + h - 0.03, { todas: null, topo: lisa('#141414') });
-  const bolas = ['#f3f1e7', '#e2c21e', '#1f4fb0', '#c8342b', '#4a2a7a', '#e07b1a', '#1f7a3a', '#7a1f1f', '#141414'];
-  const B = ctx.B;
-  bolas.forEach((c, i) => {
-    const s = s0 + (s1 - s0) * (0.3 + 0.07 * (i % 3) + (i === 0 ? -0.15 : 0.12)), t = (t0 + t1) / 2 + ((i % 3) - 1) * 0.07 + (i > 5 ? 0.12 : i > 2 ? 0.06 : 0);
-    const [cx, cz] = Q.pt(s, t), r = 0.028, yb = y + h - 0.035;
-    B.pintar(c);
-    B.torno(cx, cz, [[0.001, yb], [r * 0.87, yb + r * 0.5], [r, yb + r], [r * 0.87, yb + r * 1.5], [0.001, yb + 2 * r]], 6, 'lisa');
-  });
-  B.pintar(null);
-  const tc = (t0 + t1) / 2 - 0.25;
-  qcaixa(ctx, Q, s0 + 0.35, s0 + 1.75, tc - 0.012, tc + 0.012, y + h - 0.02, y + h + 0.004, { todas: lisa('#c9a46b') });
-}
 /* o banco de madeira de ripa */
 function banco(ctx, Q, s0, s1, t0, t1) {
   const ao = s1 - s0 > t1 - t0;
@@ -821,26 +1044,6 @@ function pebolim(ctx, Q, s, t, cor1, cor2) {
     for (let j = 0; j < 3; j++) qcaixa(ctx, Q, ss - 0.012, ss + 0.012, t + 0.16 + j * 0.2 - 0.02, t + 0.16 + j * 0.2 + 0.02, PISO + h - 0.15, PISO + h - 0.03, { todas: lisa(viva(cor)) });
   }
 }
-/* a lojinha: a mesa com a camisa dobrada em pilha e a arara com três */
-function lojinha(ctx, Q, s, D) {
-  const t1 = D - 0.1, t0 = t1 - 0.6, a0 = s - 1.0, a1 = s + 0.4;
-  mesa(ctx, Q, a0, a1, t0, t1, 0.75, BRANCO, '#c9cbcc');
-  const cores = [ctx.c1, ctx.c2, ctx.c1, ctx.c3];
-  cores.forEach((c, i) => {
-    const b = a0 + 0.12 + i * 0.32;
-    for (let k = 0; k < 3; k++) qcaixa(ctx, Q, b, b + 0.28, t0 + 0.14, t0 + 0.44, PISO + 0.75 + k * 0.035, PISO + 0.78 + k * 0.035, { todas: lisa(c) });
-  });
-  /* a arara: dois pés, a barra e as três camisas penduradas */
-  const r0 = s + 0.6, r1 = s + 1.6, tm = D - 0.4;
-  for (const r of [r0, r1]) qcaixa(ctx, Q, r - 0.02, r + 0.02, tm - 0.02, tm + 0.02, PISO, PISO + 1.6, { todas: lisa('#9aa0a4'), base: null });
-  qcaixa(ctx, Q, r0, r1, tm - 0.015, tm + 0.015, PISO + 1.58, PISO + 1.61, { todas: lisa('#9aa0a4') });
-  [ctx.c1, ctx.c2, ctx.c1].forEach((c, i) => {
-    const m = r0 + 0.2 + i * 0.3;
-    qcaixa(ctx, Q, m - 0.12, m + 0.12, tm - 0.012, tm + 0.012, PISO + 0.95, PISO + 1.52, { todas: lisa(viva(c)) });
-    qcaixa(ctx, Q, m - 0.2, m + 0.2, tm - 0.012, tm + 0.012, PISO + 1.36, PISO + 1.52, { todas: lisa(viva(c)) });
-  });
-  ctx.marca(...Q.ret(a0, r1, t0, t1), ctx.c1);
-}
 /* o sofá de dois lugares */
 function sofa(ctx, Q, s0, s1, t0, t1, costas, tinta) {
   qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + 0.42, { todas: lisa(tinta), base: null }, tinta);
@@ -869,285 +1072,6 @@ function mastroComBandeira(ctx, x, z, y0, alt, dx, dz) {
 /* a zona da porta: a folha abre pra dentro e ali ninguém põe móvel */
 const livreDaPorta = Q => [Q.pc - Q.pw / 2 - 0.15, Q.pc + Q.pw / 2 + 0.15];
 const MOBILIA = {
-  secretaria(ctx, Q) {
-    const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
-    /* a mesa de atendimento de frente pra porta: quem trabalha fica
-       entre ela e a fachada, quem chega senta do lado de cá. A FOLHA DA
-       PORTA abre pra dentro, presa do lado esquerdo, e a ponta dela
-       para a 1,5 m da porta: a mesa e as duas cadeiras de quem chega
-       vão pro lado direito, a um metro da ponta da folha (quando as
-       cadeiras ficavam junto dela, o caminho pro fundo da sala era de
-       55 cm), e atrás da mesa ficam 70 cm pra quem trabalha */
-    const ponta = Q.pc - Q.pw / 2 + 0.26;
-    const m1 = W - 0.25, m0 = Math.max(ponta + 0.8, m1 - 1.5);
-    mesa(ctx, Q, m0, m1, D - 1.4, D - 0.7, 0.75, MADEIRA_CLARA, '#6b6f73');
-    computador(ctx, Q, m0 + 0.45, D - 1.25, PISO + 0.75, '+t');
-    papeis(ctx, Q, m1 - 0.35, D - 1.1, PISO + 0.75);
-    cadeiraEscritorio(ctx, Q, (m0 + m1) / 2, D - 0.36, '+t');
-    lugar(ctx, Q, 'secretario', (m0 + m1) / 2, D - 0.36, '-t', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita' });
-    const c0 = Math.max(m0 + 0.35, ponta + 1.0 + 0.21);
-    cadeira(ctx, Q, c0, D - 1.87, '-t', '#2d62c8');
-    lugar(ctx, Q, 'espera', c0, D - 1.87, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'celular' });
-    if (m1 - 0.35 - c0 > 0.6) {
-      cadeira(ctx, Q, m1 - 0.35, D - 1.87, '-t', '#2d62c8');
-      lugar(ctx, Q, 'espera', m1 - 0.35, D - 1.87, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
-    }
-    arquivo(ctx, Q, 0.08, 0.58, D - 0.55, D - 0.08, '-t');
-    estanteAco(ctx, Q, 0.05, 0.45, 1.75, Math.min(D - 0.7, 2.75), 1.9, 5, (i, a0, a1, b0, b1, y) => {
-      const cores = ['#1f4fb0', '#c8342b', '#1f7a3a', '#e0a52a', '#5a5f66'];
-      for (let k = 0; b0 + (k + 1) * 0.1 <= b1; k++)
-        qcaixa(ctx, Q, a0, a1 - 0.05, b0 + k * 0.1, b0 + k * 0.1 + 0.075, y, y + 0.3, { todas: lisa(cores[(i + k) % 5]), base: null });
-    });
-    mural(ctx, Q, '-t', p1 + 0.15, Math.min(W - 0.15, p1 + 1.15), PISO + 1.3, PISO + 2.0);
-    bebedouro(ctx, Q, 0.3, 0.35);
-    arInterno(ctx, Q, '+s', 1.2, PISO + 2.25);
-    bandeiraParede(ctx, Q, '+s', 0.25, 0.95, PISO + 1.35, PISO + 1.95, ctx.cores);
-  },
-  bar(ctx, Q) {
-    const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
-    /* o balcão por trás da janela de balcão, a prateleira de garrafa e o
-       armário na parede do lado, a geladeira e o freezer no fundo */
-    qcaixa(ctx, Q, p1 + 0.02, W, 0.02, 0.62, PISO, PISO + 1.0, { todas: lisa(ctx.c2), topo: lisa(GRANITO), base: null }, ctx.c2);
-    naParede(ctx, Q, '+s', 1.4, D - 0.1, PISO + 1.15, PISO + 2.05, 0.3, { todas: lisa('#5b3b22'), frente: { k: 'prateleira', modo: 'esticar' } });
-    naParede(ctx, Q, '+s', 1.4, D - 0.1, PISO, PISO + 0.9, 0.5, { todas: lisa(MADEIRA), topo: lisa(GRANITO), frente: { k: 'armario', modo: 'esticar' } }, MADEIRA);
-    geladeira(ctx, Q, 0.08, 0.8, D - 0.72, D - 0.06, '-t');
-    freezer(ctx, Q, 0.08, 1.3, D - 1.52, D - 0.86, '+s');
-    engradados(ctx, Q, 0.08, 0.2, 3);
-    engradados(ctx, Q, 0.52, 0.2, 2);
-    engradados(ctx, Q, 0.08, 0.56, 2);
-    /* do lado do salão, as banquetas no balcão */
-    for (let s = p1 + 0.3; s <= W - 0.2; s += 0.5) {
-      banqueta(ctx, Q, s, -ctx.PAR_M - 0.35, ctx.c1);
-      lugar(ctx, Q, 'balcao', s, -ctx.PAR_M - 0.35, '+t', { sentado: true, assento: ASSENTO.banqueta, gesto: 'bebe' });
-    }
-    /* quem serve: atrás do balcão, de frente pra janela */
-    lugar(ctx, Q, 'barman', (p1 + W) / 2, 1.0, '-t', { gesto: 'balcao' });
-  },
-  banheiro(ctx, Q) {
-    const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
-    /* dois boxes contra a fachada, com a divisória e a porta de alumínio:
-       0,90 × 1,25 m (eram 1,00 × 1,45 — a quina do box ficava a 65 cm da
-       ponta da folha da porta, que abre pra dentro, e o caminho pros
-       mictórios era de raspão) */
-    const bx = 0.9, t0 = D - 1.25, fim = W, ini = W - 2 * bx;
-    for (let i = 0; i < 2; i++) {
-      const a = ini + i * bx;
-      vaso(ctx, Q, a + bx / 2, D - 0.42, '+t');
-      if (i === 0) qbloco(ctx, Q, a - 0.02, a + 0.02, t0, D, PISO + 0.12, PISO + 1.95, '#cfd6d8', '#cfd6d8');
-      qbloco(ctx, Q, a + bx - 0.02, a + bx + 0.02, t0, D, PISO + 0.12, PISO + 1.95, '#cfd6d8');
-      qcaixa(ctx, Q, a + 0.02, a + 0.12, t0 - 0.02, t0 + 0.02, PISO + 0.12, PISO + 1.95, { todas: lisa('#cfd6d8') });
-      qcaixa(ctx, Q, a + 0.12, a + bx - 0.02, t0 - 0.015, t0 + 0.015, PISO + 0.14, PISO + 1.94, { todas: lisa('#e3e7e8'), '-t': { k: 'porta_alu', modo: 'esticar' }, '+t': { k: 'porta_alu', modo: 'esticar' } });
-    }
-    ctx.marca(...Q.ret(ini, fim, t0, D), '#dfe3e4');
-    mictorio(ctx, Q, '-s', D - 1.95);
-    mictorio(ctx, Q, '-s', D - 1.3);
-    if (p1 + 1.2 < W) {
-      pia(ctx, Q, '-t', p1 + 0.1, Math.min(W - 0.1, p1 + 1.3), 2);
-      espelho(ctx, Q, '-t', p1 + 0.15, Math.min(W - 0.15, p1 + 1.25), PISO + 1.2, PISO + 1.85);
-    } else {
-      pia(ctx, Q, '+s', 0.3, 1.5, 2);
-      espelho(ctx, Q, '+s', 0.35, 1.45, PISO + 1.2, PISO + 1.85);
-    }
-    const [cx, cz] = Q.pt(0.35, 0.4);
-    ctx.B.pintar('#6d7377');
-    ctx.B.torno(cx, cz, [[0.14, PISO], [0.16, PISO + 0.45], [0.001, PISO + 0.46]], 8, 'lisa');
-    ctx.B.pintar(null);
-  },
-  almoxarifado(ctx, Q) {
-    const { W, D } = Q, cores = ctx.cores;
-    const itens = (i, a0, a1, b0, b1, y) => {
-      if (i === 0) { surdo(ctx, (a0 + a1) / 2 - 0.2, (b0 + b1) / 2, y, 0.19, 0.42, ctx.c1, Q); surdo(ctx, (a0 + a1) / 2 + 0.25, (b0 + b1) / 2, y, 0.16, 0.36, ctx.c3, Q); return; }
-      if (i === 2) { bandeiraEnrolada(ctx, Q, a0, a1, b0, b0 + 0.18, y, ctx.c1, ctx.c2); bandeiraEnrolada(ctx, Q, a0, a1, b1 - 0.18, b1, y, ctx.c2, ctx.c1); return; }
-      for (let s = a0; s + 0.34 <= a1; s += 0.38) caixaPapelao(ctx, Q, s, s + 0.34, b0, b1 - 0.02, y, 0.26 + ((i + s * 7) % 3) * 0.04);
-    };
-    /* OS DOIS ARMÁRIOS DE TELA (o dono, 29/09/2026), um de cada lado da
-       janela, no lugar das estantes do fundo: à esquerda o PATRIMÔNIO (as
-       faixas e as bandeiras da torcida), à direita as TOMADAS (as dos
-       outros, com cadeado). A estante da parede da direita fica */
-    const jw = 0.3, e1 = Math.max(0.9, W / 2 - jw - 0.25), d1 = Math.min(W - 0.9, W / 2 + jw + 0.25);
-    armarioDeTela(ctx, Q, 0.05, e1, D - 0.55, D - 0.05, 2.0, '-t', { tipo: 'patrimonio', placa: 'PATRIMÔNIO' });
-    armarioDeTela(ctx, Q, d1, W - 0.05, D - 0.55, D - 0.05, 2.0, '-t', { tipo: 'tomadas', placa: 'TOMADAS', cadeado: true });
-    lugar(ctx, Q, 'estante', (0.05 + e1) / 2 + 0.2, D - 0.93, '+t', { gesto: 'arruma', armario: 'patrimonio' });
-    lugar(ctx, Q, 'armario', (d1 + W - 0.05) / 2 - 0.2, D - 0.93, '+t', { gesto: 'arruma', armario: 'tomadas' });
-    estanteAco(ctx, Q, W - 0.5, W - 0.05, 1.8, D - 0.62, 2.0, 4, itens);
-    for (const [s, t, r, h, c] of [[0.35, 1.9, 0.28, 0.55, ctx.c1], [0.95, 1.95, 0.25, 0.5, ctx.c3], [0.4, 2.45, 0.22, 0.45, ctx.c2]]) surdo(ctx, s, t, PISO, r, h, c, Q);
-    surdo(ctx, 0.35, 1.9, PISO + 0.555, 0.2, 0.4, ctx.c2, Q);
-    /* os mastros encostados no canto e a bandeira dobrada no chão */
-    for (let k = 0; k < 4; k++) qcaixa(ctx, Q, 0.08 + k * 0.05, 0.11 + k * 0.05, 0.1, 0.13, PISO, PISO + 2.3 - k * 0.1, { todas: lisa('#caa77a'), base: null });
-    bandeiraEnrolada(ctx, Q, 0.25, 1.05, 1.2, 1.42, PISO, cores.cor2 ? ctx.c2 : ctx.c1, ctx.c1);
-  },
-  corredor(ctx, Q) {
-    const { W, D } = Q;
-    qcaixa(ctx, Q, 0.3, W - 0.3, 0.1, 0.8, PISO, PISO + 0.012, { todas: lisa('#4a3f36'), base: null });
-    extintor(ctx, Q, '-s', 1.2);
-    mural(ctx, Q, '+s', 0.8, Math.min(D - 0.4, 2.0), PISO + 1.3, PISO + 2.0);
-  },
-  salao(ctx, Q) {
-    const { W, D } = Q, P = ctx.P;
-    /* as portas das salas nas duas paredes compridas, pra não pôr nada
-       na frente delas */
-    const portasF = ctx.portasDoSalao.frente, portasB = ctx.portasDoSalao.fundo;
-    /* a sinuca na ponta oeste, a mesa comprida na ponta leste */
-    const sw = Math.min(2.4, W * 0.14);
-    sinuca(ctx, Q, 0.9, 0.9 + sw, D / 2 - 0.65, D / 2 + 0.65);
-    /* os dois da sinuca: um na tacada, na lateral de cá; o outro
-       esperando a vez, na cabeceira */
-    lugar(ctx, Q, 'sinuca', 0.9 + sw * 0.62, D / 2 - 0.65 - 0.42, '+t', { gesto: 'sinuca' });
-    lugarPara(ctx, Q, 'sinuca', 0.9 + sw + 0.45, D / 2 + 0.25, 0.9 + sw / 2, D / 2, { gesto: 'escuta' });
-    const m1 = W - 0.9, m0 = m1 - Math.min(3.4, W * 0.18), mt0 = D / 2 - 0.4, mt1 = D / 2 + 0.4;
-    mesa(ctx, Q, m0, m1, mt0, mt1, 0.74, BRANCO, '#c9cbcc');
-    for (let s = m0 + 0.35; s <= m1 - 0.3; s += 0.62) {
-      cadeira(ctx, Q, s, mt0 - 0.38, '-t', BRANCO);
-      cadeira(ctx, Q, s, mt1 + 0.38, '+t', BRANCO);
-      lugar(ctx, Q, 'mesa', s, mt0 - 0.38, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
-      lugar(ctx, Q, 'mesa', s, mt1 + 0.38, '-t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
-    }
-    /* a bateria no pé da faixa, na parede do fundo, entre duas portas */
-    const vaoFundo = ctx.maiorVao(portasB, 0.6, W - 0.6);
-    if (vaoFundo) {
-      const [f0, f1] = vaoFundo, fm = (f0 + f1) / 2;
-      const cores = [ctx.c1, ctx.c2, ctx.c1, ctx.c3];
-      [[-0.9, 0.3, 0.62], [-0.3, 0.27, 0.55], [0.3, 0.27, 0.55], [0.9, 0.24, 0.5]].forEach(([ds, r, h], k) => {
-        const s = fm + ds, t = D - 0.55;
-        for (const [a, b] of [[-1, -1], [1, -1], [0, 1]]) qcaixa(ctx, Q, s + a * r * 0.7 - 0.012, s + a * r * 0.7 + 0.012, t + b * r * 0.7 - 0.012, t + b * r * 0.7 + 0.012, PISO, PISO + 0.35, { todas: lisa('#3a3d40'), base: null });
-        surdo(ctx, s, t, PISO + 0.35, r, h, cores[k], Q);
-        /* o ritmista na frente de cada surdo, de frente pra faixa */
-        lugar(ctx, Q, 'bateria', s, t - r - 0.34, '+t', { gesto: 'surdo' });
-      });
-      ctx.faixa('+t', fm, PISO + 1.45, Math.min(4.6, f1 - f0 - 0.4), 0.85, Q);
-    }
-    /* a TV na parede da frente, perto da sinuca, e os bancos nos
-       lados curtos, onde não há porta */
-    const vaoTV = ctx.maiorVao(portasF.filter(p => p[0] < W / 2), 0.4, W / 2);
-    if (vaoTV) tv(ctx, Q, '-t', (vaoTV[0] + vaoTV[1]) / 2, PISO + 1.75, 1.2);
-    banco(ctx, Q, 0.05, 0.5, 0.9, Math.min(D - 0.9, 3.1));
-    banco(ctx, Q, W - 0.5, W - 0.05, 0.9, Math.min(D - 0.9, 3.1));
-    /* quem senta nos bancos das pontas olha pro salão */
-    for (const t of [1.3, Math.min(D - 1.2, 2.4)]) {
-      lugar(ctx, Q, 'banco', 0.3, t, '+s', { sentado: true, assento: ASSENTO.banco, gesto: t < 2 ? 'celular' : 'conversa' });
-      lugar(ctx, Q, 'banco', W - 0.3, t, '-s', { sentado: true, assento: ASSENTO.banco, gesto: t < 2 ? 'conversa' : 'bebe' });
-    }
-    pilhaCadeiras(ctx, Q, W - 0.4, D - 0.4, 6, BRANCO, '+t');
-    pilhaCadeiras(ctx, Q, W - 0.9, D - 0.4, 4, BRANCO, '+t');
-    /* o pebolim entre a sinuca e o corredor, um de cada lado */
-    const pbS = Math.min(W * 0.3, 0.9 + sw + 1.1), pbT = D / 2 - 0.36;
-    pebolim(ctx, Q, pbS, pbT, ctx.c1, ctx.c2);
-    lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT - 0.42, '+t', { gesto: 'pebolim' });
-    lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT + 0.72 + 0.42, '-t', { gesto: 'pebolim' });
-    /* a roda de conversa no meio do salão, em pé, entre o pebolim e a
-       mesa comprida (onde a folha de nenhuma porta chega) */
-    const rs = (pbS + 1.2 + m0) / 2, rt = D / 2;
-    if (m0 - (pbS + 1.2) > 2.4)
-      for (let k = 0; k < 4; k++) {
-        const a = k * Math.PI / 2 + 0.4, s = rs + Math.cos(a) * 0.62, t = rt + Math.sin(a) * 0.55;
-        lugarPara(ctx, Q, 'roda', s, t, rs, rt, { gesto: 'festa' });
-      }
-    /* a lojinha da torcida no outro vão da parede do fundo: a mesa com a
-       camisa dobrada e a arara com três penduradas */
-    const vaos = [];
-    let a = 0.6;
-    for (const [p0, p1] of portasB.slice().sort((p, q) => p[0] - q[0]).concat([[W - 0.6, W - 0.6]])) { if (p0 - a > 2.2) vaos.push([a + 0.25, p0 - 0.25]); a = p1; }
-    const loja = vaos.filter(v => !vaoFundo || Math.abs((v[0] + v[1]) / 2 - (vaoFundo[0] + vaoFundo[1]) / 2) > 1).sort((p, q) => (q[1] - q[0]) - (p[1] - p[0]))[0];
-    if (loja) {
-      const ls = (loja[0] + loja[1]) / 2;
-      lojinha(ctx, Q, ls, D);
-      lugar(ctx, Q, 'loja', ls - 0.3, D - 1.05, '+t', { gesto: 'arruma' });
-    }
-    /* a bandeira pregada na parede da frente, no vão entre duas salas do lado leste */
-    const vaoBand = ctx.maiorVao(portasF.filter(p => p[0] > W / 2), W / 2, W - 0.5);
-    if (vaoBand) bandeiraParede(ctx, Q, '-t', (vaoBand[0] + vaoBand[1]) / 2 - 1.1, (vaoBand[0] + vaoBand[1]) / 2 + 1.1, PISO + 1.45, PISO + 2.45, ctx.cores);
-  },
-  alojamento(ctx, Q) {
-    const { W, D } = Q, [p0, p1] = livreDaPorta(Q), c = ctx.cores;
-    beliche(ctx, Q, 0.08, 2.08, D - 0.98, D - 0.06, '-s', ctx.c1, ctx.c2);
-    beliche(ctx, Q, W - 2.08, W - 0.08, D - 0.98, D - 0.06, '+s', ctx.c2, ctx.c1);
-    /* sentado na beira da cama de baixo, o pé no chão */
-    lugar(ctx, Q, 'cama', 1.2, D - 0.8, '-t', { sentado: true, assento: ASSENTO.cama, gesto: 'celular' });
-    lugar(ctx, Q, 'cama', W - 1.2, D - 0.8, '-t', { sentado: true, assento: ASSENTO.cama, gesto: 'conversa' });
-    beliche(ctx, Q, 0.06, 1.0, 0.1, Math.min(2.1, D - 1.1), '-t', ctx.c3, ctx.c1);
-    armarioAco(ctx, Q, 2.3, Math.min(W - 2.3, 4.1), D - 0.5, D - 0.05, 1.8, '-t', 4);
-    colchao(ctx, Q, W - 0.98, W - 0.1, 0.2, 2.1, PISO, '+t', ctx.c3);
-    colchao(ctx, Q, W - 1.9, W - 1.02, 0.2, 2.1, PISO, '+t', ctx.c2);
-    for (const [s, t, cor] of [[0.5, D - 0.52, '#3d5a3a'], [W - 1.3, D - 0.5, '#3a3f58']])
-      qcaixa(ctx, Q, s, s + 0.35, t - 0.12, t + 0.12, PISO + 0.43, PISO + 0.68, { todas: lisa(cor), base: null });
-    if (p0 > 2.2) arInterno(ctx, Q, '-t', 1.2, PISO + 2.3);
-  },
-  diretoria(ctx, Q) {
-    const { W, D } = Q, [p0, p1] = livreDaPorta(Q), P = ctx.P;
-    /* A MESA DA PLANTA, a do diretor: 1,40 × 0,70 perto do fundo, do lado
-       oeste (é ela que bloqueia a caminhada; a planta conta da divisória
-       de fora, meia parede antes do cômodo). O computador, a cadeira de
-       escritório entre ela e a parede, as duas de quem vem falar com ele
-       e a estante de troféus na parede do lado */
-    const ms0 = u2(14 - P.PAR / 2), ms1 = ms0 + u2(mm(1.40)), mt1 = D - u2(12), mt0 = mt1 - u2(mm(0.70));
-    mesa(ctx, Q, ms0, ms1, mt0, mt1, 0.75, MADEIRA, '#3a2618');
-    computador(ctx, Q, ms0 + 0.4, mt0 + 0.3, PISO + 0.75, '+t');
-    papeis(ctx, Q, ms1 - 0.35, (mt0 + mt1) / 2, PISO + 0.75);
-    trofeu(ctx, Q, ms1 - 0.12, mt0 + 0.12, PISO + 0.75, 0.3);
-    cadeiraEscritorio(ctx, Q, (ms0 + ms1) / 2, D - 0.31, '+t');
-    cadeira(ctx, Q, ms0 + 0.4, mt0 - 0.36, '-t', '#2b2b2e');
-    cadeira(ctx, Q, ms1 - 0.4, mt0 - 0.36, '-t', '#2b2b2e');
-    /* O PRESIDENTE na cadeira dele, de frente pra porta, e o RECADO: quem
-       traz a mensagem senta numa das duas cadeiras da frente da mesa */
-    lugar(ctx, Q, 'presidente', (ms0 + ms1) / 2, D - 0.31, '-t', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita' });
-    lugar(ctx, Q, 'recado', ms0 + 0.4, mt0 - 0.36, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
-    lugar(ctx, Q, 'recado', ms1 - 0.4, mt0 - 0.36, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'escuta' });
-    const e1 = mt0 - 0.1;
-    qcaixa(ctx, Q, 0.05, 0.45, 0.15, e1, PISO, PISO + 1.9, { todas: lisa(MADEIRA), base: null }, MADEIRA);
-    for (let i = 0; i < 4; i++) {
-      const y = PISO + 0.35 + i * 0.42;
-      qcaixa(ctx, Q, 0.45, 0.47, 0.2, e1 - 0.05, y - 0.02, y, { todas: lisa('#8a6a48') });
-      for (let t = 0.4 + (i % 2) * 0.15; t < e1 - 0.15; t += 0.38) trofeu(ctx, Q, 0.25, t, y, 0.26 + ((i * 3 + t * 5) % 3) * 0.05);
-    }
-    /* a mesa de reunião na metade que sobra, comprida no fundo do
-       cômodo, com as seis cadeiras; a TV na parede do lado */
-    const rs0 = p1 + 0.55, rs1 = Math.min(W - 0.75, rs0 + 0.9), rt0 = 0.75, rt1 = Math.min(D - 0.75, rt0 + 1.7);
-    if (rs1 - rs0 > 0.6) {
-      mesa(ctx, Q, rs0, rs1, rt0, rt1, 0.75, MADEIRA, '#3a2618');
-      /* A MESA DE REUNIÃO: os lugares da diretoria, cada um olhando pro
-         meio da mesa; a cabeceira do fundo é a do presidente, e do lado
-         dela, em pé, é onde ele fala */
-      const mm = [(rs0 + rs1) / 2, (rt0 + rt1) / 2], sent = { sentado: true, assento: ASSENTO.cadeira, gesto: 'escuta' };
-      for (let t = rt0 + 0.4; t <= rt1 - 0.35; t += 0.75) {
-        cadeira(ctx, Q, rs0 - 0.36, t, '-s', '#2b2b2e');
-        cadeira(ctx, Q, rs1 + 0.36, t, '+s', '#2b2b2e');
-        lugarPara(ctx, Q, 'reuniao', rs0 - 0.36, t, mm[0], t, sent);
-        lugarPara(ctx, Q, 'reuniao', rs1 + 0.36, t, mm[0], t, sent);
-      }
-      cadeira(ctx, Q, (rs0 + rs1) / 2, rt1 + 0.36, '+t', '#2b2b2e');
-      cadeira(ctx, Q, (rs0 + rs1) / 2, rt0 - 0.36, '-t', '#2b2b2e');
-      lugar(ctx, Q, 'reuniao', (rs0 + rs1) / 2, rt0 - 0.36, '+t', sent);
-      lugar(ctx, Q, 'reuniaoCabeca', (rs0 + rs1) / 2, rt1 + 0.36, '-t', sent);
-      lugarPara(ctx, Q, 'reuniaoFala', rs1 + 0.2, rt1 + 0.5, mm[0], mm[1], {});
-      lugar(ctx, Q, 'reuniaoMesa', mm[0], mm[1], '+t', {});
-      papeis(ctx, Q, (rs0 + rs1) / 2, (rt0 + rt1) / 2, PISO + 0.75);
-      tv(ctx, Q, '+s', (rt0 + rt1) / 2, PISO + 1.45, 1.1);
-    }
-    /* a bandeira atrás do diretor e o ar na mesma parede, onde a
-       condensadora está do lado de fora */
-    bandeiraParede(ctx, Q, '+t', 0.35, Math.min(ms1 + 0.1, 2.0), PISO + 1.25, PISO + 2.2, ctx.cores);
-    arInterno(ctx, Q, '+t', 2.6, PISO + 2.3);
-  },
-  deposito(ctx, Q) {
-    const { W, D } = Q, [p0, p1] = livreDaPorta(Q);
-    const itens = (i, a0, a1, b0, b1, y) => {
-      if (i % 2) { bandeiraEnrolada(ctx, Q, a0, a1, b0, b0 + 0.2, y, ctx.c1, ctx.c2); caixaPapelao(ctx, Q, a0, a0 + 0.38, b1 - 0.2, b1, y, 0.2); return; }
-      for (let s = a0; s + 0.36 <= a1; s += 0.4) caixaPapelao(ctx, Q, s, s + 0.36, b0, b1 - 0.02, y, 0.24 + ((i + s * 5) % 3) * 0.05);
-    };
-    for (const [a, b] of [[0.08, 1.28], [1.36, 2.56], [W - 2.56, W - 1.36], [W - 1.28, W - 0.08]])
-      estanteAco(ctx, Q, a, b, D - 0.5, D - 0.05, 2.0, 4, itens);
-    lugar(ctx, Q, 'estante', 0.7, D - 0.88, '+t', { gesto: 'arruma' });
-    /* O ARMÁRIO DA PLANTA (é ele que bloqueia a caminhada): a 8 da parede
-       do lado, junto da parede do salão, com os troféus velhos em cima */
-    const ha = u2(mm(2.00));
-    armario(ctx, Q, W - u2(8 + mm(0.45)), W - u2(8), u2(4), u2(4 + mm(1.00)), ha, '-s', ACO, 2);
-    for (let k = 0; k < 3; k++) trofeu(ctx, Q, W - u2(6 + mm(0.40) / 2 + 2), u2(6) + 0.14 + k * 0.28, PISO + ha, 0.24 + (k % 2) * 0.06);
-    /* a faixa dobrada, o colchão empilhado, a caixa e o bumbo velho */
-    for (let k = 0; k < 3; k++) bandeiraEnrolada(ctx, Q, 0.3, 1.5, 1.25 + k * 0.02, 1.95 - k * 0.02, PISO + k * 0.12, [ctx.c1, ctx.c2, ctx.c3][k], ctx.c2);
-    for (let k = 0; k < 4; k++) colchao(ctx, Q, W - 2.5 + k * 0.02, W - 0.7 - k * 0.02, 1.35, 2.25, PISO + k * 0.14, '+s', AZUL_COLCHAO, 0.13);
-    caixaPapelao(ctx, Q, Math.max(1.6, p0 - 0.62), Math.max(2.02, p0 - 0.2), 2.1, 2.5, PISO, 0.38);
-    surdo(ctx, Math.max(1.9, p0 - 0.45), 1.15, PISO, 0.3, 0.6, '#6d5a44', Q);
-  },
   patio(ctx, Q) {
     const { W, D } = Q, P = ctx.P, c = ctx.cores;
     /* A MOBÍLIA DA PLANTA fica onde a planta põe: os três colchões na
@@ -1243,6 +1167,818 @@ const u2 = v => v / M;
 const mm = v => Math.round(v * M);     // o `m()` da planta: metro pra unidade inteira
 
 /* =======================================================
+   A MOBÍLIA DOS NÍVEIS 2 A 5 (o dono, 30/09/2026)
+   -------------------------------------------------------
+   PÁTIO        "área de trânsito entre as salas, ocupa o maior espaço
+                da área da sede. Tem decoração própria como já existe na
+                sede de hoje": a churrasqueira e o tanque no fundo, a
+                caixa d'água no canto, a mesa de plástico, o banco, a
+                faixa no muro do fundo, a bateria (do 3 em diante), o
+                pebolim (4 e 5); no 2, os colchões do aliado (lá não tem
+                hospedagem) e o varal; e o TREINO: improvisado no 2 (a
+                trave de madeira com um saco, o pneu, o colchonete),
+                maior no 3 (o tatame, a trave de aço com dois sacos, o
+                supino e os halteres)
+   PRESIDÊNCIA  "a decoração atual está boa": a mesa com o computador, a
+                cadeira do presidente de frente pra porta, as duas de quem
+                vem falar, o armário, o sofá, o mural, a bandeira e o ar;
+                no 4 e no 5, "com mais detalhes": o tapete, a estante de
+                troféus, os quadros com a camisa, a TV, o frigobar, o
+                cofre, a planta e a mesinha de reunião
+   BAR          "virado pra rua sem se conectar com a sede": o balcão no
+                fundo com a prateleira de garrafa e o armário atrás, a
+                geladeira, o freezer, o engradado, as banquetas, a TV; e a
+                MESA DO PAGODE, que só enche no turno de festa (os
+                instrumentos numa malha à parte, que o jogo mostra na festa)
+   HOSPEDAGEM   "onde os aliados ficam. Quartos, beliches, etc": 2
+                beliches no 3, 3 no 4 e 4 no 5, o armário de aço, o
+                ventilador, a mesa, os colchões extras
+   PATRIMÔNIO   "onde o material fica guardado": os dois armários de tela
+                (o do patrimônio e o das tomadas, os do almoxarifado de
+                antes), a estante, os surdos e os mastros
+   MARKETING    "uma sala com uma pessoa dentro mexendo no computador.
+                Quadros em volta dele com a camisa da torcida"
+   SETOR        "vai produzir novos materiais como bandeirão, faixas,
+   CRIATIVO     bandeiras": a mesa grande com a faixa sendo pintada, as
+                latas de tinta, a máquina de costura, os rolos de pano, o
+                varal com bandeiras secando, o bandeirão dobrado
+   GARAGEM      "mostra os ônibus (se tiver) com portão grande virado pra
+                rua": os ônibus são malha à parte (o jogo põe quantos a
+                torcida tem); aqui, a mancha de óleo, o extintor, o tambor
+   ======================================================= */
+const PLASTICO = '#f1f0ea';
+/* as portas que dão num cômodo pelas paredes do lado (`-s` e `+s`), em `t` */
+function portasNosLados(ctx, Q) {
+  const c = Q.c, out = [];
+  for (const p of ctx.portas) {
+    const w = p.parede;
+    if (w.ao !== 'v') continue;
+    const lado = Math.abs(w.x1 - c.x0) < 0.03 ? '-s' : Math.abs(w.x0 - c.x1) < 0.03 ? '+s' : null;
+    if (lado) out.push({ lado, t0: p.c - p.w / 2 - c.z0, t1: p.c + p.w / 2 - c.z0 });
+  }
+  return out;
+}
+const semPorta = (portas, lado, t0, t1, folga = 0.3) => !portas.some(p => p.lado === lado && p.t1 + folga > t0 && p.t0 - folga < t1);
+/* a trave (dois pés e a viga, ao longo de `s`), de madeira ou de aço */
+function trave(ctx, Q, s0, s1, t, h, tinta) {
+  for (const s of [s0, s1]) qcaixa(ctx, Q, s - 0.05, s + 0.05, t - 0.05, t + 0.05, PISO, PISO + h, { todas: lisa(tinta), base: null }, tinta);
+  qcaixa(ctx, Q, s0 - 0.06, s1 + 0.06, t - 0.05, t + 0.05, PISO + h, PISO + h + 0.1, { todas: lisa(tinta) });
+}
+/* o saco de pancada pendurado na viga: a corrente e o corpo de couro */
+function sacoDePancada(ctx, Q, s, t, yViga, cor) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  qcaixa(ctx, Q, s - 0.008, s + 0.008, t - 0.008, t + 0.008, PISO + 1.55, yViga, { todas: lisa('#8a8f94'), base: null, topo: null });
+  B.pintar(cor);
+  B.torno(cx, cz, [[0.001, PISO + 0.46], [0.15, PISO + 0.47], [0.17, PISO + 0.55], [0.17, PISO + 1.46], [0.14, PISO + 1.54], [0.001, PISO + 1.55]], 10, 'lisa');
+  B.pintar(null);
+  ctx.marca(cx - 0.17, cx + 0.17, cz - 0.17, cz + 0.17, cor);
+}
+/* o pneu velho deitado no chão */
+function pneu(ctx, Q, s, t, y = PISO) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  B.pintar('#1c1c1e');
+  B.torno(cx, cz, [[0.33, y], [0.34, y + 0.1], [0.33, y + 0.2], [0.21, y + 0.21], [0.2, y + 0.12]], 12, 'lisa');
+  B.pintar(null);
+  ctx.marca(cx - 0.34, cx + 0.34, cz - 0.34, cz + 0.34, '#1c1c1e');
+}
+/* o tatame de EVA, as placas de um metro em xadrez de duas cores */
+function tatame(ctx, Q, s0, s1, t0, t1, c1, c2) {
+  const ns = Math.max(1, Math.round(s1 - s0)), nt = Math.max(1, Math.round(t1 - t0)), ps = (s1 - s0) / ns, pt = (t1 - t0) / nt;
+  for (let i = 0; i < ns; i++) for (let j = 0; j < nt; j++)
+    qcaixa(ctx, Q, s0 + i * ps, s0 + (i + 1) * ps, t0 + j * pt, t0 + (j + 1) * pt, PISO, PISO + 0.025, { todas: lisa((i + j) % 2 ? c1 : c2), base: null });
+  ctx.marca(...Q.ret(s0, s1, t0, t1), c1);
+}
+/* o par de halteres no chão */
+function halteres(ctx, Q, s, t) {
+  for (const d of [0, 0.26]) {
+    qcaixa(ctx, Q, s + d - 0.13, s + d + 0.13, t - 0.018, t + 0.018, PISO + 0.05, PISO + 0.086, { todas: lisa('#8a8f94') });
+    for (const e of [-0.1, 0.1]) qcaixa(ctx, Q, s + d + e - 0.035, s + d + e + 0.035, t - 0.07, t + 0.07, PISO, PISO + 0.14, { todas: lisa('#1f2124'), base: null });
+  }
+}
+/* o colchonete de exercício */
+const colchonete = (ctx, Q, s0, s1, t0, t1, cor) => qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + 0.03, { todas: lisa(cor), base: null }, cor);
+/* o supino: o banco estofado ao longo de `t`, os dois pés da barra e a
+   barra com as anilhas */
+function supino(ctx, Q, s, t0, t1) {
+  qcaixa(ctx, Q, s - 0.15, s + 0.15, t0 + 0.2, t1, PISO + 0.38, PISO + 0.46, { todas: lisa('#232326') }, '#232326');
+  for (const t of [t0 + 0.35, t1 - 0.12]) qcaixa(ctx, Q, s - 0.12, s + 0.12, t - 0.03, t + 0.03, PISO, PISO + 0.38, { todas: lisa(ACO_ESCURO), base: null });
+  for (const d of [-0.42, 0.42]) qcaixa(ctx, Q, s + d - 0.03, s + d + 0.03, t0 + 0.1, t0 + 0.16, PISO, PISO + 1.12, { todas: lisa(ACO_ESCURO), base: null });
+  qcaixa(ctx, Q, s - 0.85, s + 0.85, t0 + 0.11, t0 + 0.15, PISO + 1.06, PISO + 1.1, { todas: lisa('#b9bcbe') });
+  for (const d of [-0.72, 0.72]) qcaixa(ctx, Q, s + d - 0.03, s + d + 0.03, t0 - 0.06, t0 + 0.32, PISO + 0.9, PISO + 1.26, { todas: lisa('#1f2124') });
+  ctx.marca(...Q.ret(s - 0.85, s + 0.85, t0, t1), '#232326');
+}
+/* o vaso com a planta (a folhagem em cone) */
+function plantaNoVaso(ctx, Q, s, t) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  B.pintar('#9a5b3a'); B.torno(cx, cz, [[0.15, PISO], [0.19, PISO + 0.38], [0.2, PISO + 0.4]], 8, 'lisa');
+  B.pintar('#3d7a3a'); B.torno(cx, cz, [[0.16, PISO + 0.4], [0.34, PISO + 0.75], [0.24, PISO + 1.15], [0.001, PISO + 1.4]], 7, 'lisa');
+  B.pintar(null);
+  ctx.marca(cx - 0.2, cx + 0.2, cz - 0.2, cz + 0.2, '#3d7a3a');
+}
+/* o tambor de 200 litros */
+function tambor(ctx, Q, s, t, cor) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  B.pintar(cor); B.torno(cx, cz, [[0.29, PISO], [0.29, PISO + 0.88], [0.001, PISO + 0.885]], 12, 'lisa'); B.pintar(null);
+  ctx.marca(cx - 0.29, cx + 0.29, cz - 0.29, cz + 0.29, cor);
+}
+/* a mancha de óleo no chão da garagem */
+const manchaOleo = (ctx, Q, s0, s1, t0, t1) => qcaixa(ctx, Q, s0, s1, t0, t1, PISO + 0.002, PISO + 0.004, { todas: null, topo: lisa('#5f5c56') });
+/* a bateria de pé (quatro surdos no tripé), com o ritmista atrás de cada um, de frente pra `olha` */
+function bateriaDePe(ctx, Q, s0, t, olha, passo = 0.62) {
+  const cores = [ctx.c1, ctx.c2, ctx.c1, ctx.c3], dt = olha === '+t' ? -1 : 1;
+  [[0.3, 0.62], [0.27, 0.55], [0.27, 0.55], [0.24, 0.5]].forEach(([r, h], k) => {
+    const s = s0 + k * passo;
+    for (const [a, b] of [[-1, -1], [1, -1], [0, 1]]) qcaixa(ctx, Q, s + a * r * 0.7 - 0.012, s + a * r * 0.7 + 0.012, t + b * r * 0.7 - 0.012, t + b * r * 0.7 + 0.012, PISO, PISO + 0.35, { todas: lisa('#3a3d40'), base: null });
+    surdo(ctx, s, t, PISO + 0.35, r, h, cores[k], Q);
+    lugar(ctx, Q, 'bateria', s, t + dt * (r + 0.34), olha, { gesto: 'surdo' });
+  });
+}
+/* a mesa de plástico com as cadeiras em volta (lugares de `mesa`) */
+function mesaDePlastico(ctx, Q, s, t, lados, tinta = PLASTICO) {
+  mesa(ctx, Q, s - 0.45, s + 0.45, t - 0.45, t + 0.45, 0.72, tinta, '#d4d6d6');
+  const sent = g => ({ sentado: true, assento: ASSENTO.cadeira, gesto: g }), gestos = ['bebe', 'conversa', 'escuta', 'conversa'];
+  lados.forEach((lado, k) => {
+    const [ds, dt] = { '-s': [-0.72, 0], '+s': [0.72, 0], '-t': [0, -0.72], '+t': [0, 0.72] }[lado];
+    const olha = { '-s': '+s', '+s': '-s', '-t': '+t', '+t': '-t' }[lado];
+    cadeira(ctx, Q, s + ds, t + dt, lado, tinta);
+    lugar(ctx, Q, 'mesa', s + ds, t + dt, olha, sent(gestos[k % 4]));
+  });
+}
+/* a roda de conversa em pé (quatro lugares olhando pro meio) */
+function roda(ctx, Q, s, t, r = 0.6, fase = 0.3) {
+  for (let k = 0; k < 4; k++) {
+    const a = k * Math.PI / 2 + fase;
+    lugarPara(ctx, Q, 'roda', s + Math.cos(a) * r, t + Math.sin(a) * r, s, t, { gesto: 'festa' });
+  }
+}
+/* A ESTANTE DE TROFÉUS: o móvel de madeira na parede `lado`, de a0 a a1,
+   com quatro prateleiras de taça */
+function estanteDeTrofeus(ctx, Q, lado, a0, a1) {
+  naParede(ctx, Q, lado, a0, a1, PISO, PISO + 1.9, 0.4, { todas: lisa(MADEIRA) }, MADEIRA);
+  for (let i = 0; i < 4; i++) {
+    const y = PISO + 0.35 + i * 0.42;
+    naParede(ctx, Q, lado, a0 + 0.04, a1 - 0.04, y - 0.02, y, 0.42, { todas: lisa('#8a6a48') });
+    for (let a = a0 + 0.2 + (i % 2) * 0.12; a < a1 - 0.15; a += 0.34) {
+      const d = 0.2, [s, t] = lado === '+t' ? [a, Q.D - d] : lado === '-t' ? [a, d] : lado === '-s' ? [d, a] : [Q.W - d, a];
+      trofeu(ctx, Q, s, t, y, 0.24 + ((i * 3 + Math.round(a * 5)) % 3) * 0.05);
+    }
+  }
+}
+/* o tapete na cor da torcida, com a borda na segunda */
+function tapete(ctx, Q, s0, s1, t0, t1) {
+  qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + 0.012, { todas: lisa(ctx.c2), base: null });
+  qcaixa(ctx, Q, s0 + 0.12, s1 - 0.12, t0 + 0.12, t1 - 0.12, PISO + 0.012, PISO + 0.016, { todas: null, topo: lisa(viva(ctx.c1)) });
+}
+/* o frigobar e o cofre */
+const frigobar = (ctx, Q, s0, s1, t0, t1) => qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + 0.85, { todas: lisa('#e9ebea'), base: null }, '#e9ebea');
+function cofre(ctx, Q, s0, s1, t0, t1, frente) {
+  qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + 0.7, { todas: lisa('#3f4347'), base: null }, '#3f4347');
+  const sm = (s0 + s1) / 2, tm = (t0 + t1) / 2, [a0, a1, b0, b1] = { '-t': [sm - 0.06, sm + 0.06, t0 - 0.02, t0], '+t': [sm - 0.06, sm + 0.06, t1, t1 + 0.02], '-s': [s0 - 0.02, s0, tm - 0.06, tm + 0.06], '+s': [s1, s1 + 0.02, tm - 0.06, tm + 0.06] }[frente];
+  qcaixa(ctx, Q, a0, a1, b0, b1, PISO + 0.42, PISO + 0.54, { todas: lisa('#b9bcbe') });
+}
+/* o ventilador de coluna */
+function ventilador(ctx, Q, s, t) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  B.pintar('#e9ebea'); B.torno(cx, cz, [[0.16, PISO], [0.001, PISO + 0.03]], 8, 'lisa');
+  B.torno(cx, cz, [[0.02, PISO + 0.03], [0.02, PISO + 1.1]], 6, 'lisa');
+  B.torno(cx, cz, [[0.001, PISO + 1.05], [0.2, PISO + 1.15], [0.2, PISO + 1.35], [0.001, PISO + 1.45]], 10, 'lisa'); B.pintar(null);
+}
+/* o tripé com a câmera e o anel de luz (o marketing grava vídeo) */
+function tripeComLuz(ctx, Q, s, t) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  for (const [a, b] of [[-1, -1], [1, -1], [0, 1]]) qcaixa(ctx, Q, s + a * 0.18 - 0.012, s + a * 0.18 + 0.012, t + b * 0.18 - 0.012, t + b * 0.18 + 0.012, PISO, PISO + 0.5, { todas: lisa(PRETO), base: null });
+  qcaixa(ctx, Q, s - 0.015, s + 0.015, t - 0.015, t + 0.015, PISO + 0.5, PISO + 1.55, { todas: lisa(PRETO), base: null });
+  B.pintar('#f6f4e8'); B.torno(cx, cz, [[0.2, PISO + 1.52], [0.22, PISO + 1.56], [0.2, PISO + 1.6], [0.001, PISO + 1.6]], 14, 'lisa'); B.pintar(null);
+  qcaixa(ctx, Q, s - 0.06, s + 0.06, t - 0.04, t + 0.04, PISO + 1.6, PISO + 1.7, { todas: lisa(PRETO) });
+  ctx.marca(cx - 0.22, cx + 0.22, cz - 0.22, cz + 0.22, PRETO);
+}
+/* a lata de tinta aberta, na cor pedida */
+function lataDeTinta(ctx, Q, s, t, y, cor) {
+  const [cx, cz] = Q.pt(s, t), B = ctx.B;
+  B.pintar('#c3c7ca'); B.torno(cx, cz, [[0.1, y], [0.1, y + 0.19]], 10, 'lisa');
+  B.pintar(cor); B.torno(cx, cz, [[0.095, y + 0.17], [0.001, y + 0.172]], 10, 'lisa'); B.pintar(null);
+}
+/* a máquina de costura na mesa: o corpo, o braço e a base */
+function maquinaDeCostura(ctx, Q, s, t, y, olha) {
+  const ao = olha === '-s' || olha === '+s';
+  const [a0, a1, b0, b1] = ao ? [s - 0.1, s + 0.1, t - 0.22, t + 0.22] : [s - 0.22, s + 0.22, t - 0.1, t + 0.1];
+  qcaixa(ctx, Q, a0, a1, b0, b1, y, y + 0.08, { todas: lisa('#e9e6dc') });
+  const [c0, c1, d0, d1] = ao ? [s - 0.07, s + 0.07, t + 0.1, t + 0.2] : [s + 0.1, s + 0.2, t - 0.07, t + 0.07];
+  qcaixa(ctx, Q, c0, c1, d0, d1, y + 0.08, y + 0.3, { todas: lisa('#e9e6dc') });
+  const [e0, e1, f0, f1] = ao ? [s - 0.07, s + 0.07, t - 0.2, t + 0.2] : [s - 0.2, s + 0.2, t - 0.07, t + 0.07];
+  qcaixa(ctx, Q, e0, e1, f0, f1, y + 0.24, y + 0.32, { todas: lisa('#d23c32') });
+}
+/* O VARAL DE BANDEIRA: o fio ao longo de `s` na altura y, e as bandeiras
+   penduradas secando, nas cores da torcida */
+function varalDeBandeiras(ctx, Q, s0, s1, t, y) {
+  qcaixa(ctx, Q, s0, s1, t - 0.006, t + 0.006, y - 0.01, y, { todas: lisa('#7a6a58') });
+  const cores = [[ctx.c1, ctx.c2], [ctx.c2, ctx.c3], [ctx.c1, ctx.c3]];
+  for (let k = 0, s = s0 + 0.25; s + 0.8 < s1 && k < 3; k++, s += 1.0) {
+    qcaixa(ctx, Q, s, s + 0.8, t - 0.008, t + 0.008, y - 0.62, y - 0.01, { todas: lisa(viva(cores[k][0])) });
+    qcaixa(ctx, Q, s + 0.05, s + 0.75, t - 0.01, t + 0.01, y - 0.4, y - 0.24, { todas: lisa(viva(cores[k][1])) });
+  }
+}
+/* OS INSTRUMENTOS DO PAGODE, na malha à parte (`ctx.Bp`): no colo de quem
+   toca, no lugar dele (s, t, olhando pra `olha`); o jogo só mostra no
+   turno de festa */
+function instrumento(ctx, Q, qual, s, t, olha) {
+  const cg = { B: ctx.Bp, marca() {} }, y = ASSENTO.cadeira;
+  const [fs, ft] = { '+s': [1, 0], '-s': [-1, 0], '+t': [0, 1], '-t': [0, -1] }[olha], ao = fs !== 0;
+  const sp = (s0, s1, t0, t1, y0, y1, cor) => qcaixa(cg, Q, s0, s1, t0, t1, y0, y1, { todas: lisa(cor) });
+  const ps = s + fs * 0.24, pt = t + ft * 0.24;
+  if (qual === 'cavaco') {
+    /* o corpo na barriga, o braço subindo pro lado */
+    if (ao) { sp(ps - 0.04, ps + 0.04, pt - 0.16, pt + 0.16, y + 0.2, y + 0.46, '#8a4f24'); sp(ps - 0.02, ps + 0.02, pt + 0.16, pt + 0.46, y + 0.38, y + 0.44, '#3a2416'); }
+    else { sp(ps - 0.16, ps + 0.16, pt - 0.04, pt + 0.04, y + 0.2, y + 0.46, '#8a4f24'); sp(ps + 0.16, ps + 0.46, pt - 0.02, pt + 0.02, y + 0.38, y + 0.44, '#3a2416'); }
+  } else if (qual === 'pandeiro') {
+    const [cx, cz] = Q.pt(ps, pt);
+    ctx.Bp.pintar('#d8c9a4'); ctx.Bp.torno(cx, cz, [[0.13, y + 0.52], [0.13, y + 0.57], [0.001, y + 0.572]], 12, 'lisa'); ctx.Bp.pintar(null);
+  } else if (qual === 'tanta') {
+    /* o tantã deitado no colo, atravessado */
+    if (ao) sp(ps - 0.15, ps + 0.15, pt - 0.28, pt + 0.28, y + 0.12, y + 0.42, viva(ctx.c1));
+    else sp(ps - 0.28, ps + 0.28, pt - 0.15, pt + 0.15, y + 0.12, y + 0.42, viva(ctx.c1));
+  } else if (qual === 'microfone') {
+    /* (o pedestal fica onde pediram, na frente de quem canta) */
+    sp(s - 0.012, s + 0.012, t - 0.012, t + 0.012, PISO, PISO + 1.45, PRETO);
+    sp(s - 0.03, s + 0.03, t - 0.03, t + 0.03, PISO + 1.45, PISO + 1.55, '#4a4d50');
+    sp(s - 0.16, s + 0.16, t - 0.16, t + 0.16, PISO, PISO + 0.02, PRETO);
+  }
+}
+
+/* O PÁTIO: a porta dele é o portão da rua (`s` ao longo da fachada, `t`
+   da fachada pro fundo); as portas dos cômodos ficam nas paredes do lado
+   e ali nada encosta */
+function patioNovo(ctx, Q) {
+  if (ctx.P.dois) return patio5(ctx, Q);
+  const { W, D } = Q, N = ctx.P.N, portas = portasNosLados(ctx, Q);
+  const g0 = Q.pc - Q.pw / 2 - 0.3, g1 = Q.pc + Q.pw / 2 + 0.3;
+  /* o fundo: a churrasqueira e o tanque no canto de cá, a caixa d'água no
+     de lá, e a faixa da torcida no muro entre eles (embaixo do cobogó) */
+  churrasqueira(ctx, Q, 0.3, 1.6, D - 0.7, D - 0.05, '-t');
+  lugar(ctx, Q, 'churrasco', 0.95, D - 1.08, '+t', { gesto: 'churrasco' });
+  tanque(ctx, Q, 1.8, 2.45, D - 0.58, D - 0.05);
+  /* (no nível 4 a porta da presidência cai no canto do fundo: a caixa
+     d'água sai de lá) */
+  if (N !== 4) caixaDagua(ctx, Q, W - 0.72, D - 0.72, 0.52);
+  /* (no nível 4 o fundo é a parede da academia, com a porta e o vidro: a
+     faixa vai lá no alto, por cima deles) */
+  const lf = N === 4 ? Math.min(3.6, W - 2.2) : Math.min(3.6, W - 5.0);
+  if (lf > 1.4) ctx.faixa('+t', N === 4 ? W / 2 : W / 2 + 0.3, N === 4 ? PISO + 2.25 : PISO + 0.95, lf, N === 4 ? 0.62 : 0.78, Q);
+  /* o banco no muro do lado de cá, onde não tem porta */
+  const tb0 = D - 4.2, tb1 = D - 2.4;
+  if (semPorta(portas, '-s', tb0, tb1)) {
+    banco(ctx, Q, 0.05, 0.5, tb0, tb1);
+    for (let t = tb0 + 0.4; t <= tb1 - 0.35; t += 0.7) lugar(ctx, Q, 'banco', 0.3, t, '+s', { sentado: true, assento: ASSENTO.banco, gesto: t < tb0 + 1 ? 'celular' : 'conversa' });
+  }
+  if (N === 2) {
+    /* NÍVEL 2: os colchões do aliado no muro de cá (não tem hospedagem),
+       o varal, a mesa, e o TREINO IMPROVISADO do lado de lá: a trave de
+       madeira com o saco, o pneu, o colchonete e os halteres */
+    for (let i = 0; i < 3; i++) colchao(ctx, Q, 0.1, 2.0, 2.4 + i * 1.0, 3.3 + i * 1.0, PISO, '-s', [ctx.c1, ctx.c2, ctx.c3][i]);
+    varal(ctx, Q, 3.0, 2.6, 4.9);
+    mesaDePlastico(ctx, Q, W / 2 - 0.9, D - 2.6, ['-s', '+s', '+t']);
+    const sT = W - 2.3;
+    trave(ctx, Q, sT - 1.0, sT + 1.0, 5.2, 2.3, '#8a6a48');
+    sacoDePancada(ctx, Q, sT, 5.2, PISO + 2.3, '#2b2b2e');
+    lugar(ctx, Q, 'treino', sT, 4.55, '+t', { gesto: 'saco' });
+    pneu(ctx, Q, sT + 0.2, 6.7);
+    colchonete(ctx, Q, sT - 1.0, sT + 0.8, 7.4, 8.0, '#2d5fa8');
+    halteres(ctx, Q, sT - 1.3, 6.5);
+    lugar(ctx, Q, 'treino', sT - 1.1, 7.0, '-t', { gesto: 'halter' });
+    roda(ctx, Q, W / 2 - 0.4, 3.6);
+    for (const [s, t, h] of [[g1 + 0.2, 0.35, 0.45], [g1 + 0.65, 0.4, 0.34]]) if (s + h < W - 1.3) caixaPapelao(ctx, Q, s, s + h, t, t + h, PISO, h);
+    return;
+  }
+  if (N === 3) {
+    /* a bateria de pé na frente, do lado de cá do portão */
+    if (g0 > 3.2) bateriaDePe(ctx, Q, g0 - 2.25, 1.35, '+t', 0.62);
+    /* O TREINO DO NÍVEL 3, ocupando o meio do fundo: o tatame, a trave de
+       aço com os dois sacos, o supino e os halteres */
+    const s0 = Math.max(2.8, W / 2 - 2.2), s1 = Math.min(W - 1.4, s0 + 4.2), t1 = D - 1.2, t0 = t1 - 3.8;
+    tatame(ctx, Q, s0, s1, t0, t1, '#2d5fa8', '#1f7a3a');
+    trave(ctx, Q, s0 + 0.4, s0 + 2.6, t1 - 0.25, 2.5, ACO_ESCURO);
+    sacoDePancada(ctx, Q, s0 + 1.0, t1 - 0.25, PISO + 2.5, '#b8322b');
+    sacoDePancada(ctx, Q, s0 + 2.0, t1 - 0.25, PISO + 2.5, '#2b2b2e');
+    lugar(ctx, Q, 'treino', s0 + 1.0, t1 - 0.9, '+t', { gesto: 'saco' });
+    lugar(ctx, Q, 'treino', s0 + 2.0, t1 - 0.9, '+t', { gesto: 'saco' });
+    /* a luta no meio do tatame: dois de frente um pro outro */
+    lugarPara(ctx, Q, 'treino', s0 + 1.1, t0 + 1.2, s0 + 2.2, t0 + 1.2, { gesto: 'guarda' });
+    lugarPara(ctx, Q, 'treino', s0 + 2.2, t0 + 1.2, s0 + 1.1, t0 + 1.2, { gesto: 'guarda' });
+    supino(ctx, Q, s1 - 0.6, t0 + 0.3, t0 + 1.7);
+    halteres(ctx, Q, s1 - 0.7, t1 - 0.5);
+    lugar(ctx, Q, 'treino', s1 - 0.55, t1 - 1.1, '-s', { gesto: 'halter' });
+    mesaDePlastico(ctx, Q, 2.1, 4.4, ['-t', '+s', '+t']);
+    roda(ctx, Q, Math.min(W - 2.2, g1 + 1.2), 3.3);
+    pilhaCadeiras(ctx, Q, W - 1.6, D - 0.45, 6, PLASTICO, '+t');
+    return;
+  }
+  /* NÍVEL 4 (o treino foi pra academia, no fundo): do lado de cá do
+     portão, a bateria na frente e a mesa comprida atrás dela, ao longo do
+     muro; do lado de lá, o pebolim na frente; a roda, as plantas nos
+     cantos da frente e a pilha de cadeira no canto do fundo — o eixo do
+     portão até a porta da academia fica livre */
+  if (g0 > 2.0) bateriaDePe(ctx, Q, 0.45, 2.3, '+t', 0.55);
+  const mt0 = 3.0, mt1 = Math.min(D - 3.2, 4.6), ms0 = 0.95, ms1 = 1.75;
+  if (mt1 - mt0 > 1.0 && g0 > 1.9) {
+    mesa(ctx, Q, ms0, ms1, mt0, mt1, 0.74, PLASTICO, '#c9cbcc');
+    for (let t = mt0 + 0.35; t <= mt1 - 0.3; t += 0.62) {
+      cadeira(ctx, Q, ms0 - 0.38, t, '-s', PLASTICO); cadeira(ctx, Q, ms1 + 0.38, t, '+s', PLASTICO);
+      lugar(ctx, Q, 'mesa', ms0 - 0.38, t, '+s', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+      lugar(ctx, Q, 'mesa', ms1 + 0.38, t, '-s', { sentado: true, assento: ASSENTO.cadeira, gesto: 'bebe' });
+    }
+  }
+  const pbS = Math.max(g1 + 0.05, W - 1.95), pbT = 1.4;
+  if (pbS + 1.2 < W - 0.3) {
+    pebolim(ctx, Q, pbS, pbT, ctx.c1, ctx.c2);
+    lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT - 0.42, '+t', { gesto: 'pebolim' });
+    lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT + 0.72 + 0.42, '-t', { gesto: 'pebolim' });
+  }
+  roda(ctx, Q, Math.min(W - 1.4, g1 + 0.6), 4.3);
+  for (const s of [0.35, W - 0.35]) if (semPorta(portas, s < 1 ? '-s' : '+s', 0.1, 0.9, 0.1)) plantaNoVaso(ctx, Q, s, 0.4);
+  /* (a pilha de cadeira fica no bar: no fundo do pátio do 4 é a porta da academia e a da presidência) */
+}
+
+/* A PRESIDÊNCIA (a porta na parede do pátio, perto da frente do cômodo; `s`
+   ao longo dela, `t` pra dentro): a mesa do presidente de frente pra
+   porta, perto da parede do fundo, com as duas cadeiras de quem vem falar
+   (o RECADO) na frente dela */
+function presidenciaNova(ctx, Q) {
+  const { W, D } = Q, N = ctx.P.N, [, p1] = livreDaPorta(Q);
+  const ms = Math.max(p1 - 0.2, W / 2 - 0.5), mS1 = Math.min(W - 0.9, ms + 1.5), mt1 = D - 0.95, mt0 = mt1 - 0.75, mm = (ms + mS1) / 2;
+  if (N >= 4) tapete(ctx, Q, ms - 0.6, mS1 + 0.5, mt0 - 1.5, D - 0.15);
+  mesa(ctx, Q, ms, mS1, mt0, mt1, 0.76, MADEIRA, '#3a2618');
+  computador(ctx, Q, mm - 0.3, mt1 - 0.25, PISO + 0.76, '+t');
+  papeis(ctx, Q, mS1 - 0.35, (mt0 + mt1) / 2, PISO + 0.76);
+  trofeu(ctx, Q, ms + 0.15, mt0 + 0.15, PISO + 0.76, 0.32);
+  cadeiraEscritorio(ctx, Q, mm, D - 0.45, '+t');
+  lugar(ctx, Q, 'presidente', mm, D - 0.45, '-t', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita' });
+  cadeira(ctx, Q, mm - 0.35, mt0 - 0.45, '-t', '#2b2b2e');
+  cadeira(ctx, Q, mm + 0.4, mt0 - 0.45, '-t', '#2b2b2e');
+  lugar(ctx, Q, 'recado', mm - 0.35, mt0 - 0.45, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+  lugar(ctx, Q, 'recado', mm + 0.4, mt0 - 0.45, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'escuta' });
+  /* atrás dele, a bandeira da torcida e o ar-condicionado */
+  bandeiraParede(ctx, Q, '+t', Math.max(0.3, mm - 0.9), Math.min(W - 0.3, mm + 0.9), PISO + 1.25, PISO + 2.15, ctx.cores);
+  arInterno(ctx, Q, '+t', Math.min(W - 0.6, mS1 + 0.2), PISO + 2.3);
+  /* o armário na parede da frente, o sofá na de trás com a mesinha */
+  armario(ctx, Q, 0.05, 0.5, 1.9, Math.min(D - 1.2, 3.1), 1.8, '+s', MADEIRA, 2);
+  sofa(ctx, Q, W - 0.85, W - 0.08, 0.3, Math.min(2.1, mt0 - 0.2), '+s', '#2f3a4a');
+  lugar(ctx, Q, 'sofa', W - 0.45, 0.8, '-s', { sentado: true, assento: ASSENTO.sofa, gesto: 'celular' });
+  mural(ctx, Q, '-t', p1 + 0.25, Math.min(W - 1.3, p1 + 1.05), PISO + 1.4, PISO + 2.1);
+  if (N < 4) return;
+  /* MAIS DETALHES (o 4 e o 5): a estante de troféus, os quadros com a
+     camisa, a TV, o frigobar, o cofre e a planta */
+  if (D > 4.2) estanteDeTrofeus(ctx, Q, '-s', 3.3, Math.min(D - 0.3, 4.9));
+  ctx.camisa(Q, '+s', 2.7, PISO + 1.6, 0.55, 0.7, 1);
+  if (D > 3.9) ctx.camisa(Q, '+s', 3.5, PISO + 1.6, 0.55, 0.7, 2);
+  tv(ctx, Q, '-t', Math.min(W - 0.75, p1 + 1.95), PISO + 1.55, 1.0);
+  frigobar(ctx, Q, W - 0.62, W - 0.08, mt0 - 0.1, mt0 + 0.42);
+  if (mS1 + 0.75 < W - 0.6) cofre(ctx, Q, mS1 + 0.15, mS1 + 0.7, D - 0.6, D - 0.06, '-t');
+  plantaNoVaso(ctx, Q, W - 0.35, D - 0.35);
+}
+
+/* O BAR PRA RUA (a porta é a de enrolar na fachada, do lado de cá: `s` ao
+   longo da rua, `t` pra dentro): o balcão no fundo com o barman atrás, a
+   prateleira e o armário na parede do fundo, a geladeira no canto, as
+   banquetas na frente do balcão, o freezer e o engradado, a TV na parede
+   — e a MESA DO PAGODE do lado de lá da porta: o cavaquinho, o tantã e o
+   pandeiro em volta dela, e quem canta de pé no microfone (esses lugares
+   só enchem no turno de festa, e os instrumentos só aparecem nele) */
+function barDaRua(ctx, Q) {
+  const { W, D } = Q, pf1 = Q.pc + Q.pw / 2;
+  /* o fundo: o armário e a prateleira na parede (35 cm), a passagem do
+     barman (85 cm) e o balcão (52 cm), com a PORTINHOLA na ponta de cá (a
+     da porta): é por ela que o barman entra; a geladeira no canto de lá */
+  const ARM = 0.35, PASS = 0.85, BAL = 0.52, bt1 = D - ARM - PASS, bt0 = bt1 - BAL, gap = 0.95;
+  qcaixa(ctx, Q, gap, W - 0.05, bt0, bt1, PISO, PISO + 1.0, { todas: lisa(ctx.c2), topo: lisa(GRANITO), base: null }, ctx.c2);
+  naParede(ctx, Q, '+t', 0.1, W - 0.9, PISO + 1.2, PISO + 2.1, 0.26, { todas: lisa('#5b3b22'), frente: { k: 'prateleira', modo: 'esticar' } });
+  naParede(ctx, Q, '+t', 0.1, W - 0.9, PISO, PISO + 0.9, ARM, { todas: lisa(MADEIRA), topo: lisa(GRANITO), frente: { k: 'armario', modo: 'esticar' } }, MADEIRA);
+  geladeira(ctx, Q, W - 0.78, W - 0.08, D - 0.72, D - 0.06, '-s');
+  lugar(ctx, Q, 'barman', Math.min(W - 1.2, Math.max(1.4, W / 2)), bt1 + PASS / 2, '-t', { gesto: 'balcao' });
+  /* A MESA DO PAGODE, na frente e do lado de lá (longe da porta e da portinhola) */
+  const ps = Math.max(pf1 + 0.85, W - 1.0), pt = Math.max(0.95, Math.min(1.1, bt0 - 1.45));
+  mesa(ctx, Q, ps - 0.3, ps + 0.3, pt - 0.3, pt + 0.3, 0.72, '#e8b923', '#9aa0a4');
+  const sent = { sentado: true, assento: ASSENTO.cadeira };
+  for (const [ds, dt, qual, costas] of [[-0.62, 0, 'cavaco', '-s'], [0.62, 0, 'tanta', '+s'], [0, -0.6, 'pandeiro', '-t']]) {
+    const s = ps + ds, t = pt + dt;
+    if (s + 0.22 > W - 0.03 || t - 0.22 < 0.05) continue;
+    cadeira(ctx, Q, s, t, costas, '#d23c32');
+    const olha = { '-s': '+s', '+s': '-s', '+t': '-t', '-t': '+t' }[costas];
+    lugar(ctx, Q, 'pagode', s, t, olha, Object.assign({ gesto: qual }, sent));
+    instrumento(ctx, Q, qual, s, t, olha);
+  }
+  /* quem canta: de pé do lado do balcão da mesa, virado pra rua, e o
+     pedestal do microfone na frente dele */
+  lugar(ctx, Q, 'pagode', ps, pt + 0.68, '-t', { gesto: 'canta' });
+  instrumento(ctx, Q, 'microfone', ps + 0.18, pt + 0.4, '-t');
+  /* as banquetas no balcão, da portinhola até perto da roda do pagode */
+  for (let s = gap + 0.35; s <= W - 0.4; s += 0.55) {
+    if (Math.abs(s - ps) < 0.9) continue;
+    banqueta(ctx, Q, s, bt0 - 0.35, ctx.c1);
+    lugar(ctx, Q, 'balcao', s, bt0 - 0.35, '+t', { sentado: true, assento: ASSENTO.banqueta, gesto: 'bebe' });
+  }
+  /* a TV lá no alto da parede de cá; o freezer e o engradado encostados na
+     parede da rua, entre a porta e o pagode, quando cabe */
+  tv(ctx, Q, '-s', Math.max(0.8, Math.min(bt0 - 0.5, 1.6)), PISO + 1.75, 0.9);
+  const fz0 = pf1 + 0.2, fz1 = fz0 + 0.65;
+  if (fz1 < ps - 0.62 - 0.3) {
+    freezer(ctx, Q, fz0, fz1, 0.08, 0.72, '+t');
+    if (fz1 + 0.75 < ps - 0.92) engradados(ctx, Q, fz1 + 0.25, 0.1, 2);
+  }
+}
+
+/* A HOSPEDAGEM (a porta na parede do pátio, perto da frente; `s` ao
+   longo dela, `t` pra dentro): os beliches — 2 no nível 3, 3 no 4 e 4 no
+   5 — primeiro na parede de lá, depois na do fundo do cômodo e na da
+   frente (atravessados, depois da folha da porta); o armário de aço, o
+   ventilador, a mesa com duas cadeiras e os colchões extras. A cama de
+   baixo de cada beliche é um lugar (o aliado que dorme ali) */
+function hospedagemNova(ctx, Q) {
+  const { W, D } = Q, N = ctx.P.N, [, p1] = livreDaPorta(Q), cores = [ctx.c1, ctx.c2, ctx.c3];
+  const quer = N >= 5 ? 6 : N === 4 ? 3 : 2, tMax = D - 1.05;
+  const camas = [];
+  for (let s = 0.1; s + 2.0 <= W - 0.08 && camas.length < quer; s += 2.1) camas.push({ lado: '+t', a: s });
+  /* (a da parede do fundo do cômodo fica antes da fileira da parede de lá: não encosta nela) */
+  for (let t = 0.3; t + 2.0 <= tMax && camas.length < quer; t += 2.1) camas.push({ lado: '+s', a: t });
+  let naFrente = false;
+  for (let t = 1.9; t + 2.0 <= tMax && camas.length < quer; t += 2.1) { camas.push({ lado: '-s', a: t }); naFrente = true; }
+  camas.forEach((c, k) => {
+    const c1 = cores[k % 3], c2 = cores[(k + 1) % 3];
+    if (c.lado === '+t') {
+      beliche(ctx, Q, c.a, c.a + 2.0, D - 0.98, D - 0.06, k % 2 ? '+s' : '-s', c1, c2);
+      lugar(ctx, Q, 'cama', c.a + 1.0, D - 0.8, '-t', { sentado: true, assento: ASSENTO.cama, gesto: k % 2 ? 'conversa' : 'celular' });
+    } else if (c.lado === '+s') {
+      beliche(ctx, Q, W - 0.98, W - 0.06, c.a, c.a + 2.0, '-t', c1, c2);
+      lugar(ctx, Q, 'cama', W - 0.8, c.a + 1.0, '-s', { sentado: true, assento: ASSENTO.cama, gesto: 'celular' });
+    } else {
+      beliche(ctx, Q, 0.06, 0.98, c.a, c.a + 2.0, '+t', c1, c2);
+      lugar(ctx, Q, 'cama', 0.8, c.a + 1.0, '+s', { sentado: true, assento: ASSENTO.cama, gesto: 'conversa' });
+    }
+  });
+  /* o armário de aço na parede da frente do cômodo (ou, se ela ganhou
+     beliche, na parede da porta, depois da folha) */
+  if (!naFrente) armarioAco(ctx, Q, 0.06, 0.5, 1.9, Math.min(D - 1.1, 3.1), 1.8, '+s', 3);
+  else armarioAco(ctx, Q, p1 + 0.25, p1 + 1.25, 0.06, 0.5, 1.8, '+t', 3);
+  const temPonta = camas.some(c => c.lado === '+s');
+  ventilador(ctx, Q, temPonta ? Math.min(W - 1.3, 3.9) : W - 0.4, D - 1.3);
+  /* a mesa com duas cadeiras no meio */
+  const ms = Math.max(p1 + 0.6, 1.4), mt = Math.min(D - 1.9, 2.1);
+  if (ms + 0.9 < W - (temPonta ? 1.2 : 0.4) && mt > 1.4) {
+    mesa(ctx, Q, ms - 0.4, ms + 0.4, mt - 0.3, mt + 0.3, 0.74, MADEIRA_CLARA, '#6b6f73');
+    cadeira(ctx, Q, ms - 0.7, mt, '-s', PLASTICO); cadeira(ctx, Q, ms + 0.7, mt, '+s', PLASTICO);
+    lugar(ctx, Q, 'mesa', ms - 0.7, mt, '+s', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+    lugar(ctx, Q, 'mesa', ms + 0.7, mt, '-s', { sentado: true, assento: ASSENTO.cadeira, gesto: 'celular' });
+  }
+  /* os colchões extras empilhados, no 4 e no 5 */
+  if (N >= 4) {
+    const cs = naFrente ? W - 2.1 : 0.62;
+    for (let k = 0; k < 3; k++) colchao(ctx, Q, cs + k * 0.02, cs + 0.88 - k * 0.02, D - 1.9, D - 1.1, PISO + k * 0.14, '+s', AZUL_COLCHAO, 0.13);
+  }
+  if (N >= 5) tv(ctx, Q, '-t', W - 0.6, PISO + 1.75, 0.8);
+}
+
+/* O PATRIMÔNIO (a porta na parede do pátio; `t` pra dentro): OS DOIS
+   ARMÁRIOS DE TELA na parede de lá — o do patrimônio da torcida e o das
+   tomadas, com cadeado (o dono, 29/09/2026) — e é clicando neles que o
+   jogo abre a lista do que tem dentro; a estante de aço na parede do
+   fundo do cômodo, os surdos, os mastros e as caixas */
+function patrimonioNovo(ctx, Q) {
+  const { W, D } = Q, [, p1] = livreDaPorta(Q);
+  const aw = Math.min(1.25, (W - 0.2) / 2 - 0.02), a0 = Math.max(0.08, W / 2 - aw - 0.02), am = W / 2;
+  armarioDeTela(ctx, Q, a0, am - 0.02, D - 0.55, D - 0.05, 2.0, '-t', { tipo: 'patrimonio', placa: 'PATRIMÔNIO' });
+  armarioDeTela(ctx, Q, am + 0.02, am + aw + 0.02, D - 0.55, D - 0.05, 2.0, '-t', { tipo: 'tomadas', placa: 'TOMADAS', cadeado: true });
+  for (let s = a0 + 0.2; s < am + aw - 0.1; s += 0.42) trofeu(ctx, Q, s, D - 0.3, PISO + 2.0, 0.26 + ((Math.round(s * 7)) % 3) * 0.05);
+  lugar(ctx, Q, 'estante', (a0 + am) / 2, D - 0.95, '+t', { gesto: 'arruma', armario: 'patrimonio' });
+  lugar(ctx, Q, 'armario', (am + am + aw) / 2, D - 0.95, '+t', { gesto: 'arruma', armario: 'tomadas' });
+  /* a estante de aço na parede do fundo do cômodo (+s), com caixa e bandeira enrolada */
+  if (D - 0.7 - 1.9 > 1.0) estanteAco(ctx, Q, W - 0.45, W - 0.05, 1.9, D - 0.7, 1.9, 4, (i, b0, b1, c0, c1, y) => {
+    if (i === 1) { bandeiraEnrolada(ctx, Q, b0, b1, c0, c0 + 0.8, y, ctx.c1, ctx.c2); bandeiraEnrolada(ctx, Q, b0, b1, c0 + 0.9, Math.min(c1, c0 + 1.7), y, ctx.c2, ctx.c1); return; }
+    for (let t = c0; t + 0.32 <= c1; t += 0.36) caixaPapelao(ctx, Q, b0, b1, t, t + 0.32, y, 0.22);
+  });
+  /* os surdos no chão e os mastros encostados no canto da frente */
+  surdo(ctx, 0.42, 2.25, PISO, 0.3, 0.6, ctx.c1, Q);
+  surdo(ctx, 0.42, 2.25, PISO + 0.6, 0.26, 0.5, ctx.c3, Q);
+  if (D > 4.3) surdo(ctx, 0.4, 2.95, PISO, 0.26, 0.5, ctx.c2, Q);
+  for (let k = 0; k < 3; k++) qcaixa(ctx, Q, W - 0.2 - k * 0.05, W - 0.17 - k * 0.05, 0.1, 0.13, PISO, PISO + 2.2, { todas: lisa('#caa77a'), base: null });
+  if (p1 + 0.6 < W - 0.5) caixaPapelao(ctx, Q, W - 0.75, W - 0.25, 0.45, 0.95, PISO, 0.46);
+}
+
+/* O MARKETING (a porta na parede do pátio; `t` pra dentro): a mesa com os
+   dois monitores na parede de lá, o rapaz sentado de costas pra porta
+   mexendo no computador, e em volta dele os QUADROS COM A CAMISA da
+   torcida (a de jogo, a listrada, a retrô); o tripé com o anel de luz, a
+   estante com a camisa dobrada e o banner de pé */
+function marketingNovo(ctx, Q) {
+  const { W, D } = Q, [, p1] = livreDaPorta(Q), portas = portasNosLados(ctx, Q);
+  const ms0 = Math.max(0.15, W / 2 - 0.8), ms1 = Math.min(W - 0.15, W / 2 + 0.8), mm = (ms0 + ms1) / 2;
+  mesa(ctx, Q, ms0, ms1, D - 0.72, D - 0.05, 0.75, BRANCO, '#6b6f73');
+  computador(ctx, Q, mm - 0.32, D - 0.3, PISO + 0.75, '-t');
+  computador(ctx, Q, mm + 0.32, D - 0.3, PISO + 0.75, '-t');
+  papeis(ctx, Q, ms1 - 0.3, D - 0.45, PISO + 0.75);
+  cadeiraEscritorio(ctx, Q, mm, D - 1.08, '-t');
+  lugar(ctx, Q, 'marketing', mm, D - 1.08, '+t', { sentado: true, assento: ASSENTO.escritorio, gesto: 'digita' });
+  /* os quadros: na parede de lá (em cima da mesa) e nas duas do lado */
+  ctx.camisa(Q, '+t', mm, PISO + 1.75, 0.5, 0.62, 0);
+  const tq = [];
+  for (let t = Math.max(3.05, D - 2.6); t <= D - 1.0 && tq.length < 2; t += 0.8) tq.push(t);
+  tq.forEach((t, k) => { ctx.camisa(Q, '-s', t, PISO + 1.6, 0.5, 0.62, k + 1); ctx.camisa(Q, '+s', t, PISO + 1.6, 0.5, 0.62, (k + 2) % 3); });
+  /* o tripé com a luz num canto da frente; a estante da camisa dobrada no outro */
+  tripeComLuz(ctx, Q, W - 0.45, Math.max(1.85, Math.min(D - 2.4, 2.2)));
+  if (W > 2.4) estanteAco(ctx, Q, 0.05, 0.45, 1.9, Math.min(D - 1.4, 2.9), 1.7, 4, (i, b0, b1, c0, c1, y) => {
+    const cs = [ctx.c1, ctx.c2, ctx.c3, ctx.c1];
+    for (let t = c0, k = 0; t + 0.28 <= c1; t += 0.32, k++)
+      for (let j = 0; j < 3; j++) qcaixa(ctx, Q, b0 + 0.02, b1 - 0.02, t, t + 0.28, y + j * 0.035, y + 0.03 + j * 0.035, { todas: lisa(viva(cs[(i + k) % 4])) });
+  });
+  /* o banner de pé (o rolo e a lona com a cor da torcida) */
+  if (semPorta(portas, '-s', 0, 1)) {
+    const bs = Math.min(W - 0.3, p1 + 0.5);
+    qcaixa(ctx, Q, bs - 0.35, bs + 0.35, 0.12, 0.2, PISO, PISO + 0.08, { todas: lisa('#9aa0a4') });
+    qcaixa(ctx, Q, bs - 0.3, bs + 0.3, 0.155, 0.165, PISO + 0.08, PISO + 1.75, { todas: lisa(viva(ctx.c1)), '-t': lisa(viva(ctx.c1)), '+t': lisa(viva(ctx.c2)) });
+  }
+}
+
+/* O SETOR CRIATIVO (o nível 5; a porta na parede do pátio, `t` pra
+   dentro): a mesa grande no meio com a FAIXA NOVA sendo pintada (a do
+   nome da torcida, deitada), as latas de tinta, quem pinta dos dois lados;
+   a mesa da costura na parede de lá com a máquina e quem costura; os rolos
+   de pano na estante; o varal com as bandeiras secando lá em cima; o
+   bandeirão dobrado no chão e os mastros de bambu no canto */
+function criativoNovo(ctx, Q) {
+  const { W, D } = Q, [, p1] = livreDaPorta(Q);
+  const ms = W / 2, mt0 = 1.9, mt1 = Math.min(D - 1.3, mt0 + 2.3), h = 0.8;
+  mesa(ctx, Q, ms - 0.55, ms + 0.55, mt0, mt1, h, MADEIRA_CLARA, '#6b6f73');
+  qcaixa(ctx, Q, ms - 0.5, ms + 0.5, mt0 + 0.08, mt1 - 0.08, PISO + h, PISO + h + 0.004, { todas: null, topo: lisa('#f1ede2') });
+  ctx.faixaDeitada(Q, ms - 0.42, ms + 0.42, mt0 + 0.2, mt1 - 0.2, PISO + h + 0.008, '+t');
+  for (const [s, t, c] of [[ms + 0.4, mt0 + 0.1, ctx.c1], [ms - 0.42, mt1 - 0.12, ctx.c2]]) lataDeTinta(ctx, Q, s, t, PISO + h, viva(c));
+  lataDeTinta(ctx, Q, ms - 0.85, mt0 + 0.3, PISO, viva(ctx.c3));
+  lugar(ctx, Q, 'criativo', ms - 0.9, (mt0 + mt1) / 2 + 0.3, '+s', { gesto: 'pinta' });
+  lugar(ctx, Q, 'criativo', ms + 0.9, (mt0 + mt1) / 2 - 0.2, '-s', { gesto: 'pinta' });
+  /* a costura na parede de lá */
+  const cs0 = Math.max(0.15, W - 1.6), cs1 = W - 0.1;
+  mesa(ctx, Q, cs0, cs1, D - 0.65, D - 0.05, 0.75, BRANCO, '#6b6f73');
+  maquinaDeCostura(ctx, Q, (cs0 + cs1) / 2, D - 0.35, PISO + 0.75, '-t');
+  cadeira(ctx, Q, (cs0 + cs1) / 2, D - 1.0, '-t', '#2b2b2e');
+  lugar(ctx, Q, 'costura', (cs0 + cs1) / 2, D - 1.0, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'costura' });
+  /* os rolos de pano, na cor da torcida, na estante da parede da frente do cômodo */
+  estanteAco(ctx, Q, 0.05, 0.5, 1.9, Math.min(D - 0.8, 3.6), 1.9, 4, (i, b0, b1, c0, c1, y) => {
+    const cs = [ctx.c1, ctx.c2, ctx.c3];
+    for (let t = c0, k = 0; t + 0.3 <= c1; t += 0.34, k++) bandeiraEnrolada(ctx, Q, b0, b1, t, t + 0.28, y, viva(cs[(i + k) % 3]), '#e9e6dc');
+  });
+  /* o varal das bandeiras secando, atravessado lá no alto */
+  varalDeBandeiras(ctx, Q, 0.6, W - 0.3, D - 1.55, PISO + 2.45);
+  /* o bandeirão dobrado no chão, no canto de lá, e os mastros de bambu */
+  qcaixa(ctx, Q, 0.1, 1.5, D - 0.95, D - 0.1, PISO, PISO + 0.16, { todas: lisa(viva(ctx.c1)) }, ctx.c1);
+  qcaixa(ctx, Q, 0.1, 1.5, D - 0.6, D - 0.5, PISO + 0.16, PISO + 0.165, { todas: null, topo: lisa(viva(ctx.c2)) });
+  for (let k = 0; k < 4; k++) qcaixa(ctx, Q, W - 0.22 - k * 0.05, W - 0.18 - k * 0.05, 0.1, 0.14, PISO, PISO + 2.5 - k * 0.12, { todas: lisa('#caa77a'), base: null });
+}
+
+/* A GARAGEM (a porta é a fachada: `s` ao longo dela, `t` pra dentro): os
+   ônibus não são daqui (o jogo põe os do save, malha à parte, de frente
+   pra rua); aqui a mancha de óleo embaixo de cada um, o tambor de óleo e
+   os pneus no fundo do lado, o extintor na parede */
+const BANCADA_G = 0.35;   // o fundo da bancada da garagem (m)
+function garagemNova(ctx, Q) {
+  const { W, D } = Q, P = ctx.P, n = P.vagas ? P.vagas.length : 1, baia = W / n;
+  for (let i = 0; i < n; i++) {
+    const s = (i + 0.5) * baia;
+    manchaOleo(ctx, Q, s - 0.45, s + 0.35, 2.2, 3.1);
+    manchaOleo(ctx, Q, s - 0.3, s + 0.4, D - 3.4, D - 2.7);
+  }
+  extintor(ctx, Q, '-s', 1.2);
+  /* a bancada de ferramenta no fundo, atrás dos ônibus (a vaga deixa 10 cm
+     entre ela e o para-choque), e o quadro das ferramentas */
+  naParede(ctx, Q, '+t', 0.15, W - 0.15, PISO, PISO + 0.88, BANCADA_G, { todas: lisa('#6b4a2e'), topo: lisa('#8a6a48') }, '#6b4a2e');
+  naParede(ctx, Q, '+t', 0.3, Math.min(W - 0.3, 2.4), PISO + 1.15, PISO + 1.85, 0.02, { todas: lisa('#c9b48f') });
+  for (let s = 0.45; s < Math.min(W - 0.4, 2.3); s += 0.28) naParede(ctx, Q, '+t', s, s + 0.06, PISO + 1.3, PISO + 1.7, 0.05, { todas: lisa(s * 7 % 2 < 1 ? '#c8342b' : '#3a3d40') });
+}
+
+/* =======================================================
+   O NÍVEL 5 EM DOIS ANDARES: a laje, os pilares, a escada e o
+   guarda-corpo (em metro, no referencial do modelo)
+   ======================================================= */
+/* A LAJE do 1º andar: por baixo o forro claro do térreo, por cima o
+   contrapiso (o piso de cada cômodo de cima fica em cima dela) e a borda
+   na cor 2 — na fachada, a faixa entre os dois andares */
+function lajes3d(ctx) {
+  const { B, P, u } = ctx, y1 = u(P.H1), y0 = u(P.TERREO);
+  for (const l of P.lajes)
+    B.caixa(u(l.u0), u(l.u1), y0, y1, u(l.v0), u(l.v1), { todas: lisa(ctx.c2), topo: { k: 'laje', tinta: '#bdb8ad' }, base: lisa(CLARO) });
+}
+/* os PILARES que seguram a varanda, na cor 3 da torcida */
+function pilares3d(ctx) {
+  const { B, P, u } = ctx, y1 = u(P.TERREO), r = 0.13;
+  for (const p of P.pilares) B.caixa(u(p.u) - r, u(p.u) + r, 0, y1, u(p.v) - r, u(p.v) + r, { todas: lisa(ctx.c3), base: null, topo: null });
+}
+/* A ESCADA de concreto, encostada no muro do fundo do pátio: o degrau de
+   uns 18 cm por 28, maciça por baixo, e o corrimão do lado do pátio (o
+   outro lado é o muro); sobe pro lado de `sobe` e chega no piso de cima */
+function escada3d(ctx) {
+  /* (o espelho até 17 cm: o boneco a pé do cenário tem a faixa do corpo de
+     35 cm do pé, e dois espelhos juntos têm de ficar abaixo dela) */
+  /* (a subida é a de piso a piso: do piso do pátio ao da varanda, que fica
+     em cima da laje, `ANDAR_5.h1` acima — todo espelho do mesmo tamanho) */
+  const { B, P, u } = ctx, e = P.escada, h = ANDAR_5.h1, n = Math.ceil(h / 0.17), esp = h / n, nd = n - 1;
+  const x0 = u(e.u0), x1 = u(e.u1), z0 = u(e.v0), z1 = u(e.v1), piso = (x1 - x0) / nd, desce = e.sobe === '-u';
+  const concreto = { todas: { k: 'laje_borda', tinta: '#cfcac0' }, topo: { k: 'laje', tinta: '#bdb8ad' }, base: null };
+  for (let i = 0; i < nd; i++) {
+    /* o degrau i (o de baixo na ponta de onde se sobe) */
+    const a = desce ? x1 - (i + 1) * piso : x0 + i * piso;
+    B.caixa(a, a + piso, 0, PISO + (i + 1) * esp, z0, z1, concreto);
+  }
+  /* o corrimão: um montante a cada três degraus e o tubo inclinado */
+  const zc = z0 + 0.05, alto = 0.9, topoDe = x => PISO + (desce ? x1 - x : x - x0) / piso * esp + esp * 0.5;
+  for (let i = 0; i < nd; i += 3) {
+    const x = desce ? x1 - (i + 0.5) * piso : x0 + (i + 0.5) * piso, y = PISO + (i + 1) * esp;
+    B.caixa(x - 0.025, x + 0.025, y, y + alto, zc - 0.025, zc + 0.025, { todas: lisa(ACO_ESCURO), base: null });
+  }
+  const xa = desce ? x1 - 0.5 * piso : x0 + 0.5 * piso, xb = desce ? x0 + 0.1 : x1 - 0.1;
+  B.pintar(ACO_ESCURO);
+  B.viga([xa, topoDe(xa) + alto - 0.05, zc], [xb, topoDe(xb) + alto - 0.05, zc], 0.05, 0.05, 'lisa');
+  B.pintar(null);
+  ctx.marca(Math.min(x0, x1), Math.max(x0, x1), z0, z1, '#9d998f');
+}
+/* O GUARDA-CORPO da varanda (o 1º andar): a mureta de alvenaria na cor
+   1, a grade preta em cima dela e o corrimão de aço, até 1,1 m */
+function guardas3d(ctx, guardas) {
+  const { B, G, u } = ctx;
+  for (const g of guardas || []) {
+    const x0 = u(Math.min(g.u0, g.u1)), x1 = u(Math.max(g.u0, g.u1)), z0 = u(Math.min(g.v0, g.v1)), z1 = u(Math.max(g.v0, g.v1));
+    const X = x1 - x0 > z1 - z0, e = 0.06;
+    const [a0, a1, b0, b1] = X ? [x0, x1, z0 - e, z0 + e] : [x0 - e, x0 + e, z0, z1];
+    B.caixa(a0, a1, PISO, PISO + 0.35, b0, b1, { todas: lisa(ctx.c1), topo: lisa(ctx.c2) });
+    B.caixa(a0 - 0.01, a1 + 0.01, PISO + 1.05, PISO + 1.1, b0 - 0.015, b1 + 0.015, { todas: lisa(ACO_ESCURO) });
+    const L = X ? a1 - a0 : b1 - b0, n = Math.max(1, Math.ceil(L / 1.5));
+    for (let k = 0; k <= n; k++) {
+      const a = (X ? a0 : b0) + L * k / n;
+      if (X) B.caixa(a - 0.025, a + 0.025, PISO + 0.35, PISO + 1.05, b0 + 0.02, b1 - 0.02, { todas: lisa(ACO_ESCURO), base: null, topo: null });
+      else B.caixa(a0 + 0.02, a1 - 0.02, PISO + 0.35, PISO + 1.05, a - 0.025, a + 0.025, { todas: lisa(ACO_ESCURO), base: null, topo: null });
+    }
+    const F = X ? G.plano([a0, PISO + 0.35, (b0 + b1) / 2], [1, 0, 0], [0, 1, 0]) : G.plano([(a0 + a1) / 2, PISO + 0.35, b0], [0, 0, 1], [0, 1, 0]);
+    G.ladrilhar(F, G.ret(0, L, 0, 0.7), 'preta');
+  }
+}
+
+/* =======================================================
+   A ACADEMIA (os níveis 4 e 5)
+   ======================================================= */
+/* O RINGUE (o nível 5): o tablado com a lona clara e a saia na cor 1, os
+   quatro postes e as três cordas, uma em cada cor da torcida */
+const RINGUE_H = 0.45;
+function ringue(ctx, Q, s0, s1, t0, t1) {
+  const h = RINGUE_H;
+  qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + h, { todas: lisa(ctx.c1), topo: lisa('#e7e2d6'), base: null }, ctx.c1);
+  const r = 0.06, alt = 1.3, cantos = [[s0 + 0.12, t0 + 0.12], [s1 - 0.12, t0 + 0.12], [s1 - 0.12, t1 - 0.12], [s0 + 0.12, t1 - 0.12]];
+  for (const [s, t] of cantos) qcaixa(ctx, Q, s - r, s + r, t - r, t + r, PISO + h, PISO + h + alt, { todas: lisa(ACO_ESCURO), base: null });
+  [0.42, 0.78, 1.14].forEach((y, k) => {
+    const c = { todas: lisa(viva([ctx.c1, ctx.c2, ctx.c3][k])) }, yy = PISO + h + y;
+    qcaixa(ctx, Q, s0 + 0.12, s1 - 0.12, t0 + 0.1, t0 + 0.14, yy, yy + 0.035, c);
+    qcaixa(ctx, Q, s0 + 0.12, s1 - 0.12, t1 - 0.14, t1 - 0.1, yy, yy + 0.035, c);
+    qcaixa(ctx, Q, s0 + 0.1, s0 + 0.14, t0 + 0.12, t1 - 0.12, yy, yy + 0.035, c);
+    qcaixa(ctx, Q, s1 - 0.14, s1 - 0.1, t0 + 0.12, t1 - 0.12, yy, yy + 0.035, c);
+  });
+}
+/* o rack de halteres: duas prateleiras de aço, os pares em fila */
+function rackDeHalteres(ctx, Q, s0, s1, t0, t1) {
+  const aoS = s1 - s0 >= t1 - t0, aco = { todas: lisa(ACO_ESCURO) };
+  for (const y of [0.32, 0.68]) qcaixa(ctx, Q, s0, s1, t0, t1, PISO + y, PISO + y + 0.04, aco);
+  for (const [s, t] of [[s0 + 0.03, t0 + 0.03], [s1 - 0.03, t0 + 0.03], [s1 - 0.03, t1 - 0.03], [s0 + 0.03, t1 - 0.03]])
+    qcaixa(ctx, Q, s - 0.025, s + 0.025, t - 0.025, t + 0.025, PISO, PISO + 0.72, { todas: lisa(ACO_ESCURO), base: null });
+  const L = aoS ? s1 - s0 : t1 - t0, n = Math.max(2, Math.floor((L - 0.1) / 0.2));
+  for (const y of [0.36, 0.72]) for (let k = 0; k < n; k++) {
+    const a = (aoS ? s0 : t0) + 0.1 + (L - 0.2) * (k + 0.5) / n, m = aoS ? (t0 + t1) / 2 : (s0 + s1) / 2, d = 0.05 + (k % 3) * 0.01;
+    if (aoS) qcaixa(ctx, Q, a - d, a + d, m - 0.13, m + 0.13, PISO + y, PISO + y + 0.1, { todas: lisa('#1f2124') });
+    else qcaixa(ctx, Q, m - 0.13, m + 0.13, a - d, a + d, PISO + y, PISO + y + 0.1, { todas: lisa('#1f2124') });
+  }
+  ctx.marca(...Q.ret(s0, s1, t0, t1), ACO_ESCURO);
+}
+/* o espelho de parede */
+const espelho = (ctx, Q, lado, a0, a1, topo = 2.1) =>
+  naParede(ctx, Q, lado, a0, a1, PISO + 0.3, PISO + topo, 0.02, { todas: lisa('#8f9aa0'), frente: lisa('#c7d6dc') });
+/* a esteira: a lona ao longo de `t`, o painel na ponta de t0 */
+function esteira(ctx, Q, s, t0, t1) {
+  qcaixa(ctx, Q, s - 0.36, s + 0.36, t0, t1, PISO, PISO + 0.2, { todas: lisa('#2b2d30'), topo: lisa('#1b1c1e') }, '#2b2d30');
+  for (const d of [-0.32, 0.32]) qcaixa(ctx, Q, s + d - 0.03, s + d + 0.03, t0 + 0.06, t0 + 0.13, PISO + 0.2, PISO + 1.18, { todas: lisa('#3a3c40'), base: null });
+  qcaixa(ctx, Q, s - 0.34, s + 0.34, t0, t0 + 0.22, PISO + 1.1, PISO + 1.26, { todas: lisa('#2b2d30'), '+t': lisa('#3a5a78') });
+}
+function academiaNova(ctx, Q) {
+  const { W, D } = Q, N = ctx.P.N, [p0, p1] = livreDaPorta(Q);
+  if (N >= 5) {
+    /* NO 1º ANDAR DO NÍVEL 5 (a porta na parede da varanda: `s` da
+       fachada pro fundo, `t` pra dentro): o RINGUE no fundo, os três sacos
+       na viga ao longo da fachada, o espelho com o rack de halteres e o
+       supino na parede da hospedagem, as duas esteiras perto da varanda */
+    const rs0 = Math.max(0.9, W / 2 - 2.0), rs1 = Math.min(W - 0.6, rs0 + 4.0), rt1 = D - 0.5, rt0 = rt1 - Math.min(4.0, rs1 - rs0);
+    ringue(ctx, Q, rs0, rs1, rt0, rt1);
+    const rm = (rs0 + rs1) / 2, rtm = (rt0 + rt1) / 2;
+    lugarPara(ctx, Q, 'treino', rm - 0.7, rtm, rm + 0.7, rtm, { gesto: 'guarda', elevado: RINGUE_H });
+    lugarPara(ctx, Q, 'treino', rm + 0.7, rtm, rm - 0.7, rtm, { gesto: 'guarda', elevado: RINGUE_H });
+    /* a viga dos sacos ao longo da fachada, nos dois pés dela */
+    const bt0 = 1.3, bt1 = Math.min(rt0 - 0.9, 4.6);
+    for (const t of [bt0, bt1]) qcaixa(ctx, Q, 0.7, 0.8, t - 0.05, t + 0.05, PISO, PISO + 2.45, { todas: lisa(ACO_ESCURO), base: null }, ACO_ESCURO);
+    qcaixa(ctx, Q, 0.69, 0.81, bt0 - 0.06, bt1 + 0.06, PISO + 2.45, PISO + 2.55, { todas: lisa(ACO_ESCURO) });
+    const cores = ['#b8322b', '#2b2b2e', viva(ctx.c1)];
+    for (let k = 0; k < 3; k++) {
+      const t = bt0 + (bt1 - bt0) * (k + 0.5) / 3;
+      sacoDePancada(ctx, Q, 0.75, t, PISO + 2.45, cores[k]);
+      lugar(ctx, Q, 'treino', 1.4, t, '-s', { gesto: 'saco' });
+    }
+    espelho(ctx, Q, '+s', 1.0, Math.min(rt0 - 0.4, 4.4));
+    rackDeHalteres(ctx, Q, W - 0.48, W - 0.06, 1.2, 2.7);
+    lugar(ctx, Q, 'treino', W - 0.95, 1.95, '+s', { gesto: 'halter' });
+    supino(ctx, Q, W - 1.35, 3.0, Math.min(rt0 - 0.35, 4.6));
+    lugar(ctx, Q, 'treino', W - 1.35, 3.55, '-t', { gesto: 'halter' });
+    for (const s of [p1 + 0.9, p1 + 1.85]) if (s + 0.4 < W - 0.55) esteira(ctx, Q, s, 0.35, 2.1);
+    bebedouro(ctx, Q, Math.max(0.3, p0 - 0.35), 0.25);
+    ventilador(ctx, Q, W - 0.4, D - 0.4);
+    lugar(ctx, Q, 'treino', rs1 + 0.35 < W - 0.3 ? rs1 + 0.3 : rs0 - 0.4, rtm, rs1 + 0.35 < W - 0.3 ? '-s' : '+s', { gesto: 'conversa' });
+    return;
+  }
+  /* NO NÍVEL 4 (o fundo do pátio: a porta no meio, `t` pro fundo): do lado
+     de cá, os dois sacos na viga do fundo e o supino na frente; no meio, o
+     espelho e o rack de halteres na parede do fundo; do lado de lá, o
+     tatame com a dupla na luta; o bebedouro do lado da porta */
+  const sT0 = 0.45, sT1 = Math.min(p0 - 0.25, 2.8), tT = D - 0.55;
+  if (sT1 - sT0 > 1.4) {
+    trave(ctx, Q, sT0, sT1, tT, 2.35, ACO_ESCURO);
+    for (const [s, c] of [[sT0 + (sT1 - sT0) * 0.3, '#b8322b'], [sT0 + (sT1 - sT0) * 0.74, '#2b2b2e']]) {
+      sacoDePancada(ctx, Q, s, tT, PISO + 2.35, c);
+      lugar(ctx, Q, 'treino', s, tT - 0.62, '+t', { gesto: 'saco' });
+    }
+  }
+  if (p0 > 2.2) {
+    supino(ctx, Q, (sT0 + sT1) / 2, 0.35, Math.min(1.65, tT - 1.15));
+    lugar(ctx, Q, 'treino', Math.min(p0 - 0.4, (sT0 + sT1) / 2 + 1.0), 1.05, '-s', { gesto: 'halter' });
+  }
+  espelho(ctx, Q, '+t', p0 - 0.2, p1 + 0.2, 1.8);
+  rackDeHalteres(ctx, Q, p0, p1, D - 0.45, D - 0.06);
+  lugar(ctx, Q, 'treino', (p0 + p1) / 2, D - 1.0, '+t', { gesto: 'halter' });
+  const ts0 = p1 + 0.35, ts1 = W - 0.75;
+  if (ts1 - ts0 > 1.4) {
+    tatame(ctx, Q, ts0, ts1, 0.4, D - 0.3, '#2d5fa8', '#1f7a3a');
+    const tm = (0.4 + D - 0.3) / 2;
+    lugarPara(ctx, Q, 'treino', ts0 + 0.45, tm, ts1 - 0.45, tm, { gesto: 'guarda' });
+    lugarPara(ctx, Q, 'treino', ts1 - 0.45, tm, ts0 + 0.45, tm, { gesto: 'guarda' });
+  }
+  bebedouro(ctx, Q, Math.max(0.3, p0 - 0.35), 0.25);
+  ventilador(ctx, Q, W - 0.35, D - 0.4);
+}
+/* A VARANDA do 1º andar: os vasos nas pontas e, na passarela por cima do
+   portão, quem fica apoiado no guarda-corpo olhando o pátio */
+function varandaNova(ctx, Q) {
+  const { W, D } = Q;
+  if (W > D) {
+    /* a passarela: `s` ao longo dela, `t` da fachada pro pátio */
+    for (const s of [W * 0.3, W * 0.5, W * 0.7]) lugar(ctx, Q, 'roda', s, D - 0.45, '+t', { gesto: s === W * 0.5 ? 'celular' : 'conversa' });
+    return;
+  }
+  /* os lados: o vaso na ponta do fundo — só no de lá (no de cá, a ponta
+     do fundo é onde a escada chega) */
+  if (Math.abs(Q.c.x0 - ctx.u(ctx.P.pat.u0)) > 0.05) plantaNoVaso(ctx, Q, W / 2, D - 0.4);
+}
+
+/* O PÁTIO DO NÍVEL 5 (descoberto no meio, a varanda por cima das beiras,
+   a escada no fundo): a faixa no muro do fundo, por cima da escada; a
+   bateria na frente da escada; a churrasqueira e o tanque no fundo, do
+   lado de onde se sobe; a mesa comprida no meio, o pebolim, a mesa
+   amarela, a roda, o banco no muro da garagem, os vasos e a pilha de
+   cadeira debaixo da varanda */
+function patio5(ctx, Q) {
+  const { W, D } = Q, P = ctx.P, u = ctx.u, VAR = 1.4, e = P.escada;
+  const eS0 = u(e.u0 - P.pat.u0), eS1 = u(e.u1 - P.pat.u0), eT0 = D - u(e.v1 - e.v0);
+  /* a faixa no muro da garagem, debaixo da varanda de cá (é o muro sem porta) */
+  ctx.faixa('-s', Math.min(D - 2.8, 7.0), PISO + 1.45, Math.min(3.8, D - 5.0), 0.8, Q);
+  bateriaDePe(ctx, Q, Math.max(VAR + 0.9, (eS0 + eS1) / 2 - 1.6), eT0 - 1.2, '-t', 0.62);
+  /* (a churrasqueira e o tanque depois do pé da escada, com 1,1 m de chão
+     livre entre eles: é por ali que se chega ao primeiro degrau) */
+  const ch = eS1 + 1.1;
+  churrasqueira(ctx, Q, ch, ch + 1.3, D - 0.7, D - 0.05, '-t');
+  lugar(ctx, Q, 'churrasco', ch + 0.65, D - 1.08, '+t', { gesto: 'churrasco' });
+  if (ch + 2.1 < W - VAR - 0.2) tanque(ctx, Q, ch + 1.45, ch + 2.1, D - 0.58, D - 0.05);
+  /* o banco no muro da garagem, debaixo da varanda */
+  banco(ctx, Q, 0.05, 0.5, 2.6, 4.6);
+  for (let t = 3.0; t <= 4.3; t += 0.7) lugar(ctx, Q, 'banco', 0.3, t, '+s', { sentado: true, assento: ASSENTO.banco, gesto: t < 3.5 ? 'celular' : 'conversa' });
+  /* a mesa comprida no meio */
+  const ml = Math.min(3.4, W - 2 * VAR - 4.0), ms = W / 2 - ml / 2, mt = D / 2 + 0.4;
+  mesa(ctx, Q, ms, ms + ml, mt - 0.4, mt + 0.4, 0.74, PLASTICO, '#c9cbcc');
+  for (let s = ms + 0.35; s <= ms + ml - 0.3; s += 0.62) {
+    cadeira(ctx, Q, s, mt - 0.78, '-t', PLASTICO); cadeira(ctx, Q, s, mt + 0.78, '+t', PLASTICO);
+    lugar(ctx, Q, 'mesa', s, mt - 0.78, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
+    lugar(ctx, Q, 'mesa', s, mt + 0.78, '-t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'bebe' });
+  }
+  /* o pebolim e a mesa amarela do lado de lá, a roda do lado de cá */
+  const pbS = W - VAR - 2.1, pbT = 3.1;
+  pebolim(ctx, Q, pbS, pbT, ctx.c1, ctx.c2);
+  lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT - 0.42, '+t', { gesto: 'pebolim' });
+  lugar(ctx, Q, 'pebolim', pbS + 0.6, pbT + 0.72 + 0.42, '-t', { gesto: 'pebolim' });
+  mesaDePlastico(ctx, Q, W - VAR - 1.6, D / 2 + 1.9, ['-t', '-s', '+t'], '#e3b23c');
+  roda(ctx, Q, VAR + 2.3, D / 2 - 0.6);
+  for (const s of [0.4, W - 0.4]) plantaNoVaso(ctx, Q, s, 0.45);
+  pilhaCadeiras(ctx, Q, W - 0.6, D - 0.45, 6, PLASTICO, '+t');
+}
+
+const MOBILIA_N = { patio: patioNovo, presidencia: presidenciaNova, bar: barDaRua, hospedagem: hospedagemNova, patrimonio: patrimonioNovo,
+                    marketing: marketingNovo, criativo: criativoNovo, garagem: garagemNova, academia: academiaNova, varanda: varandaNova };
+
+/* =======================================================
    AS PAREDES: caixa por trecho, o acabamento de cada lado
    ======================================================= */
 /* as faixas de acabamento de uma face, do chão ao alto: [y0, y1, peça] */
@@ -1252,22 +1988,41 @@ function faixasDaFace(ctx, reg, w) {
     const b = [[0, 0.12, lisa(c1)], [0.12, 0.5, lisa(c3)], [0.5, 2.28, lisa(c1)], [2.28, 2.42, lisa(c2)], [2.42, H, lisa(c1)]];
     return b;
   };
-  if (reg === 'fora') return externa();
+  /* (no 1º andar do nível 5, a de fora sem o rodapé: um filete na cor 2
+     no pé e outro perto do alto) */
+  const deCima = () => [[0, 0.05, lisa(c2)], [0.05, 3.2, lisa(c1)], [3.2, 3.28, lisa(c2)], [3.28, H, lisa(c1)]];
+  if (reg === 'fora') return ctx.andar ? deCima() : externa();
+  if (reg.tipo === 'varanda') return deCima();
   if (reg.tipo === 'patio') return w.fachadaPatio ? externa() : [[0, H, { k: 'bloco', tinta: '#d8d4ca' }]];
+  /* nos níveis 2 a 5, o que a parede do cômodo passa do telhado dele (a
+     platibanda por dentro, a parede da garagem, que é mais alta) é de fora */
+  const P = ctx.P;
+  if (P.novo && reg.tipo !== 'garagem') {
+    const yT = ctx.u(P.ALT_EXT);
+    return faixasDeDentro(ctx, reg).map(([a, b, k]) => [a, Math.min(b, yT), k]).filter(([a, b]) => b > a).concat([[yT, H, lisa(c1)]]);
+  }
+  return faixasDeDentro(ctx, reg);
+}
+/* o acabamento de dentro de cada cômodo, do chão ao alto */
+function faixasDeDentro(ctx, reg) {
+  const { c1 } = ctx, H = 20;
   switch (reg.tipo) {
-    case 'salao': return [[0, 1.15, lisa(c1)], [1.15, 1.25, lisa(c2)], [1.25, H, lisa(CREME)]];
-    case 'corredor': return [[0, 1.0, lisa(c1)], [1.0, 1.08, lisa(c2)], [1.08, H, lisa(CREME)]];
-    case 'banheiro': return [[0, 1.6, { k: 'piso_bar' }], [1.6, H, lisa(BRANCO)]];
     case 'bar': return [[0, 1.1, { k: 'piso_bar' }], [1.1, 1.16, lisa(c1)], [1.16, H, lisa(CREME)]];
-    case 'secretaria': case 'diretoria': case 'presidencia': return [[0, 0.1, lisa(RODAPE)], [0.1, H, lisa(PAREDE_SALA)]];
-    case 'alojamento': return [[0, 0.1, lisa(RODAPE)], [0.1, H, lisa('#e3dcc8')]];
+    case 'presidencia': return [[0, 0.1, lisa(RODAPE)], [0.1, H, lisa(PAREDE_SALA)]];
+    case 'marketing': return [[0, 0.1, lisa(RODAPE)], [0.1, 1.0, lisa(PAREDE_SALA)], [1.0, 1.08, lisa(c1)], [1.08, H, lisa(PAREDE_SALA)]];
+    case 'hospedagem': return [[0, 0.1, lisa(RODAPE)], [0.1, H, lisa('#e3dcc8')]];
+    /* a academia: o rodapé preto alto (de borracha) e a faixa na cor 1 */
+    case 'academia': return [[0, 0.3, lisa('#2d2f33')], [0.3, 1.2, lisa('#e6e3dc')], [1.2, 1.35, lisa(c1)], [1.35, H, lisa('#e6e3dc')]];
+    case 'garagem': return [[0, 1.2, lisa('#77726a')], [1.2, 1.28, lisa(c1)], [1.28, H, { k: 'bloco', tinta: '#cfcbc0' }]];
     default: return [[0, H, { k: 'crua' }]];
   }
 }
 function pisoDe(ctx, c) {
   switch (c.tipo) {
-    case 'salao': return { k: 'lisa', tinta: SALAO };
-    case 'patio': case 'almoxarifado': case 'deposito': case 'patrimonio': return { k: 'laje', tinta: '#c2beb4' };
+    case 'patio': case 'patrimonio': case 'criativo': case 'varanda': return { k: 'laje', tinta: '#c2beb4' };
+    case 'garagem': return { k: 'laje', tinta: '#a19d94' };
+    /* o piso de borracha preta da academia */
+    case 'academia': return { k: 'lisa', tinta: '#2d2f33' };
     default: return { k: 'piso_bar' };
   }
 }
@@ -1347,14 +2102,33 @@ function vao3d(ctx, w, X, v, C0, C1) {
     else B.caixa(c0, c1, v.b0 - 0.04, v.b0, v.a0 - 0.04, v.a1 + 0.04, { todas: { k: 'laje_borda', tinta: '#dcd8cf' }, base: null });
     return;
   }
-  if (v.tipo === 'balcao') {
-    if (X) B.caixa(v.a0, v.a1, v.b0, v.b0 + 0.04, C0 - 0.18, C1 + 0.12, { todas: lisa(MADEIRA) });
-    else B.caixa(C0 - 0.18, C1 + 0.12, v.b0, v.b0 + 0.04, v.a0, v.a1, { todas: lisa(MADEIRA) });
-    return;
-  }
   /* o chão do vão (a soleira) */
   const pts = X ? [[v.a0, C1], [v.a1, C1], [v.a1, C0], [v.a0, C0]] : [[C0, v.a1], [C1, v.a1], [C1, v.a0], [C0, v.a0]];
-  B.tampa(pts, PISO, 'laje_borda', false, { tinta: '#cbc6ba' });
+  B.tampa(pts, PISO, 'laje_borda', false, { tinta: v.tipo === 'garagem' ? '#9d998f' : '#cbc6ba' });
+  /* O PORTÃO DA GARAGEM (a fachada é ao longo de x): o requadro de aço, a
+     guia do portão de correr lá em cima e a folha de GRADE na face da rua
+     — pela grade quem passa vê o ônibus. A sede vaga fica de porta de
+     enrolar abaixada */
+  if (v.tipo === 'garagem' || v.tipo === 'bar') {
+    const fr = C0 + 0.02, aco = { todas: lisa(ACO_ESCURO), base: null };
+    if (v.tipo === 'garagem') {
+      B.caixa(v.a0 - 0.1, v.a0, 0, v.b1 + 0.1, C0 - 0.03, C1, aco);
+      B.caixa(v.a1, v.a1 + 0.1, 0, v.b1 + 0.1, C0 - 0.03, C1, aco);
+      B.caixa(v.a0 - 0.1, v.a1 + 0.1, v.b1, v.b1 + 0.12, C0 - 0.05, C0 + 0.08, aco);
+      if (ctx.aberta) {
+        ctx.G.ladrilhar(ctx.G.plano([v.a0, 0.02, fr + 0.03], [1, 0, 0], [0, 1, 0]), ctx.G.ret(0, v.a1 - v.a0, 0, v.b1 - 0.02), 'preta');
+        B.caixa(v.a0, v.a1, 0, 0.05, fr, fr + 0.05, aco);
+      } else B.esticar(B.plano([v.a0, 0, fr], [1, 0, 0], [0, 1, 0]), 0, v.a1 - v.a0, 0, v.b1, 'enrolar');
+      return;
+    }
+    /* A PORTA DO BAR, de enrolar: aberta (o rolo lá em cima, as duas guias)
+       com a torcida na sede; abaixada na sede vaga */
+    B.caixa(v.a0 - 0.05, v.a0, 0, v.b1, C0 - 0.02, C0 + 0.06, aco);
+    B.caixa(v.a1, v.a1 + 0.05, 0, v.b1, C0 - 0.02, C0 + 0.06, aco);
+    B.caixa(v.a0 - 0.05, v.a1 + 0.05, v.b1 - 0.26, v.b1, C0 + 0.02, C0 + 0.3, { todas: lisa('#8d9296'), base: lisa('#5f6468') });
+    if (!ctx.aberta) B.esticar(B.plano([v.a0, 0, fr], [1, 0, 0], [0, 1, 0]), 0, v.a1 - v.a0, 0, v.b1 - 0.26, 'enrolar');
+    return;
+  }
   const pt = ctx.portas.find(p => p.parede === w && Math.abs(p.c - (v.a0 + v.a1) / 2) < 1e-3);
   if (!pt) return;
   const sentido = pt.abre;
@@ -1441,26 +2215,26 @@ function telhado3d(ctx) {
   const T = ctx.T, P = ctx.P, u = ctx.u;
   for (const t of P.teto) {
     const x0 = u(t.u0), x1 = u(t.u1), z0 = u(t.v0), z1 = u(t.v1), hE = u(P.ALT_EXT);
-    if (t.agua === 'duas') {
-      /* duas águas, a cumeeira paralela à fachada: a da frente some atrás
-         da platibanda, a de trás apoia na parede do fundo */
-      const zm = (z0 + z1) / 2, yf = hE + 0.1, yr = hE + 0.58, yb = hE + 0.02;
-      for (const [za, ya, zb, yb2] of [[z0, yf, zm, yr], [z1, yb, zm, yr]]) {
-        const dz = zb - za, dy = yb2 - ya, L = Math.hypot(dz, dy);
-        T.ladrilhar(T.plano([x0, ya, za], [1, 0, 0], [0, dy / L, dz / L]), T.ret(0, x1 - x0, 0, L), 'fibro');
-      }
-      T.caixa(x0, x1, yr - 0.02, yr + 0.08, zm - 0.12, zm + 0.12, { todas: { k: 'laje_borda', tinta: '#9da1a3' }, base: null });
-      T.caixa(x0, x1, yb - 0.14, yb, z1 - 0.1, z1 + 0.02, { todas: 'calha' });
-      /* os oitões nas paredes do lado, do alto da parede até o telhado */
-      for (const [xa, xb] of [[0, u(P.PAR)], [u(P.L - P.PAR), u(P.L)]]) {
-        const oitao = [[z0, hE], [z0, yf], [zm, yr], [z1, yb], [z1, hE]];
-        for (const xf of [xa, xb]) {
-          const F = T.plano([xf, 0, 0], [0, 0, 1], [0, 1, 0]);
-          T.ladrilhar(F, oitao, 'lisa', { tinta: xf === 0 || xf === u(P.L) ? ctx.c1 : CLARO });
-        }
+    if (t.agua === 'plat') {
+      /* O BLOCO COM PLATIBANDA (os níveis 2 a 5): a folha de fibrocimento
+         entre as paredes, alta do lado do pátio e caindo pro lado de fora,
+         por baixo do alto das paredes em volta (que escondem a borda dela),
+         e a calha no pé da água */
+      const ya = u(t.y0), yb = u(t.y1), dx = x1 - x0, dy = yb - ya, Lr = Math.hypot(dx, dy);
+      if (t.cai === '+v') {
+        /* (a academia do nível 4, no fundo do pátio: a água cai pro fundo) */
+        const dz = z1 - z0, Lz = Math.hypot(dz, dy);
+        T.ladrilhar(T.plano([x1, ya, z0], [-1, 0, 0], [0, dy / Lz, dz / Lz]), T.ret(0, x1 - x0, 0, Lz), 'fibro');
+        T.caixa(x0, x1, yb - 0.14, yb, z1 - 0.14, z1, { todas: 'calha' });
+      } else if (t.cai === '+u') {
+        T.ladrilhar(T.plano([x0, ya, z0], [0, 0, 1], [dx / Lr, dy / Lr, 0]), T.ret(0, z1 - z0, 0, Lr), 'fibro');
+        T.caixa(x1 - 0.14, x1, yb - 0.14, yb, z0, z1, { todas: 'calha' });
+      } else {
+        T.ladrilhar(T.plano([x1, ya, z1], [0, 0, -1], [-dx / Lr, dy / Lr, 0]), T.ret(0, z1 - z0, 0, Lr), 'fibro');
+        T.caixa(x0, x0 + 0.14, yb - 0.14, yb, z0, z1, { todas: 'calha' });
       }
     } else {
-      /* uma água, caindo do pátio pro lado de lá */
+      /* uma água, caindo do pátio pro lado de lá (o barracão do nível 1) */
       const ya = u(P.MURO) - 0.06, yb = hE + 0.02, dx = x1 - x0, dy = yb - ya, L = Math.hypot(dx, dy);
       T.ladrilhar(T.plano([x0, ya, z0], [0, 0, 1], [dx / L, dy / L, 0]), T.ret(0, z1 - z0, 0, L), 'fibro');
       T.caixa(x1 - 0.1, x1 + 0.02, yb - 0.14, yb, z0, z1, { todas: 'calha' });
@@ -1489,63 +2263,111 @@ export function montarSede(sede, destino = {}, opc = {}) {
   const T0 = sede.torcida || null, aberta = !!T0;
   const cor = T0 ? { cor: viva(T0.cor), cor2: viva(T0.cor2 || '#e8e2d0'), cor3: viva(T0.cor3 || T0.cor2 || '#e8e2d0') } : NEUTRO_SEDE;
   const so2d = !!opc.so2d;
-  const B = so2d ? construtorMudo() : Construtor('casas'), G = so2d ? construtorMudo() : Construtor('grades');
-  const Tt = so2d ? construtorMudo() : Construtor('casas');
+  const novoC = folha => so2d ? construtorMudo() : Construtor(folha);
+  const B = novoC('casas'), G = novoC('grades'), Tt = novoC('casas');
   /* o que está guardado nos armários, numa malha à parte (a cidade troca
      só ela quando o patrimônio do save muda) */
-  const Bg = so2d ? construtorMudo() : Construtor('casas');
+  const Bg = novoC('casas');
   const u = v => v / M;
   const conv = r => ({ ...r, x0: u(r.u0), x1: u(r.u1), z0: u(r.v0), z1: u(r.v1) });
-  const paredes = P.paredes.map(w => ({ ...conv(w), orig: w, ao: w.ao, h: u(w.altModelo || w.alt), fachada: w.fachada, fachadaPatio: w.fachadaPatio,
-                                        vaos: w.vaos.map(v => ({ ...v, a0: u(v.a0), a1: u(v.a1), b0: u(v.b0), b1: u(v.b1) })) }));
-  const comodos = P.comodos.map(c => ({ ...conv(c), porta: c.porta ? { lado: c.porta.lado, c: u(c.porta.c), w: u(c.porta.w) } : null }));
-  const paredeDe = new Map(P.paredes.map((w, i) => [w, paredes[i]]));
-  const portas = P.portas.map(p => ({ ...p, c: u(p.c), w: u(p.w), parede: paredeDe.get(p.parede) }));
   const dentro = (r, x, z) => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1;
-  const marcas = [], placas = [];
-  const ctx = {
-    B, G, T: Tt, P, u, aberta, cores: cor, c1: cor.cor, c2: cor.cor2, c3: cor.cor3, paredes, comodos, portas, PAR_M: u(P.PAR),
-    lugares: [], armarios: [],
-    vivas: opc.portasVivas && aberta && !so2d ? [] : null,
-    regiao(x, z) {
-      for (const c of comodos) if (dentro(c, x, z)) return c;
-      for (const w of paredes) if (dentro(w, x, z)) return 'parede';
-      return 'fora';
-    },
-    marca(x0, x1, z0, z1, c) { marcas.push({ x0, x1, z0, z1, cor: c, tipo: 'movel' }); },
-    /* a faixa da torcida com o nome, pregada na parede `lado` do cômodo */
-    faixa(lado, a, y, larg, alt, Q) {
-      if (!T0) return;
-      const off = 0.03, [s, t] = lado === '+t' ? [a, Q.D - off] : lado === '-t' ? [a, off] : lado === '-s' ? [off, a] : [Q.W - off, a];
-      const n = { '+t': '-t', '-t': '+t', '-s': '+s', '+s': '-s' }[lado];
-      const [x, z] = Q.pt(s, t), [nx, nz] = VEC[Q.d(n)];
-      placas.push({ tipo: 'faixa', texto: T0.nome || T0.sigla, fundo: cor.cor, tinta: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
-                    x, y: y + alt / 2, z, nx, nz, larg, alt });
-    },
-    /* a placa de um móvel (a testeira do armário): no ponto (x, z) do
-       modelo, virada pra `olha` do cômodo, nas cores das placas das salas */
-    placa(Q, [x, z], olha, y, larg, alt, texto) {
-      if (!T0) return;
-      const [nx, nz] = VEC[Q.d(olha)];
-      placas.push({ tipo: 'placa', texto, fundo: cor.cor2, tinta: legivel(cor.cor2), x, y, z, nx, nz, larg, alt });
-    },
-    maiorVao(lista, a0, a1) {
-      const oc = lista.slice().sort((p, q) => p[0] - q[0]);
-      let melhor = null, a = a0;
-      for (const [p0, p1] of oc.concat([[a1, a1]])) {
-        if (p0 - 0.25 - a > (melhor ? melhor[1] - melhor[0] : 0.8)) melhor = [a, p0 - 0.25];
-        a = Math.max(a, p1 + 0.25);
+  const marcas = [], placas = [], lugares = [], armarios = [];
+  const vivas = opc.portasVivas && aberta && !so2d ? [] : null;
+  /* O CANTEIRO DE UMA PLANTA (o térreo; no nível 5, também o 1º andar, no
+     referencial dele): as paredes, os cômodos e as portas em metro, e quem
+     escreve em cada construtor. `marcar`: o que vai pra planta baixa */
+  function fazerCtx(Pl, Bx, Gx, Tx, marcar) {
+    const paredes = Pl.paredes.map(w => ({ ...conv(w), orig: w, ao: w.ao, h: u(w.altModelo || w.alt), fachada: w.fachada, fachadaPatio: w.fachadaPatio,
+                                         vaos: w.vaos.map(v => ({ ...v, a0: u(v.a0), a1: u(v.a1), b0: u(v.b0), b1: u(v.b1) })) }));
+    const comodos = Pl.comodos.map(c => ({ ...conv(c), porta: c.porta ? { lado: c.porta.lado, c: u(c.porta.c), w: u(c.porta.w) } : null }));
+    const paredeDe = new Map(Pl.paredes.map((w, i) => [w, paredes[i]]));
+    const portas = Pl.portas.map(p => ({ ...p, c: u(p.c), w: u(p.w), parede: paredeDe.get(p.parede) }));
+    const c = {
+      B: Bx, G: Gx, T: Tx, P: Pl, u, aberta, cores: cor, c1: cor.cor, c2: cor.cor2, c3: cor.cor3, paredes, comodos, portas, PAR_M: u(Pl.PAR),
+      lugares, armarios, vivas, andar: Pl.andar || 0,
+      regiao(x, z) {
+        for (const k of comodos) if (dentro(k, x, z)) return k;
+        for (const w of paredes) if (dentro(w, x, z)) return 'parede';
+        return 'fora';
+      },
+      marca(x0, x1, z0, z1, k) { if (marcar) marcas.push({ x0, x1, z0, z1, cor: k, tipo: 'movel' }); },
+      /* a faixa da torcida com o nome, pregada na parede `lado` do cômodo */
+      faixa(lado, a, y, larg, alt, Q) {
+        if (!T0) return;
+        const off = 0.03, [s, t] = lado === '+t' ? [a, Q.D - off] : lado === '-t' ? [a, off] : lado === '-s' ? [off, a] : [Q.W - off, a];
+        const n = { '+t': '-t', '-t': '+t', '-s': '+s', '+s': '-s' }[lado];
+        const [x, z] = Q.pt(s, t), [nx, nz] = VEC[Q.d(n)];
+        placas.push({ tipo: 'faixa', texto: T0.nome || T0.sigla, fundo: cor.cor, tinta: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
+                      x, y: y + alt / 2, z, nx, nz, larg, alt });
+      },
+      /* a placa de um móvel (a testeira do armário): no ponto (x, z) do
+         modelo, virada pra `olha` do cômodo, nas cores das placas das salas */
+      placa(Q, [x, z], olha, y, larg, alt, texto) {
+        if (!T0) return;
+        const [nx, nz] = VEC[Q.d(olha)];
+        placas.push({ tipo: 'placa', texto, fundo: cor.cor2, tinta: legivel(cor.cor2), x, y, z, nx, nz, larg, alt });
+      },
+      /* O QUADRO COM A CAMISA DA TORCIDA (o marketing, a presidência): na
+         parede `lado` do cômodo, no ponto `a` dela, o centro na altura `y`;
+         quem mostra desenha a camisa nas cores e com o escudo, na moldura.
+         `k` varia o modelo (a de jogo, a listrada, a retrô) */
+      camisa(Q, lado, a, y, larg, alt, k = 0) {
+        if (!T0) return;
+        const off = 0.035, [s, t] = lado === '+t' ? [a, Q.D - off] : lado === '-t' ? [a, off] : lado === '-s' ? [off, a] : [Q.W - off, a];
+        const n = { '+t': '-t', '-t': '+t', '-s': '+s', '+s': '-s' }[lado];
+        const [x, z] = Q.pt(s, t), [nx, nz] = VEC[Q.d(n)];
+        naParede(c, Q, lado, a - larg / 2 - 0.03, a + larg / 2 + 0.03, y - alt / 2 - 0.03, y + alt / 2 + 0.03, 0.03, { todas: lisa('#2b2622') });
+        placas.push({ tipo: 'camisa', k, cor: cor.cor, cor2: cor.cor2, cor3: cor.cor3, texto: T0.sigla, img: T0.escudo || null,
+                      x: x + nx * 0.006, y, z: z + nz * 0.006, nx, nz, larg, alt });
+      },
+      /* a faixa DEITADA (o setor criativo: a faixa nova sendo pintada na mesa):
+         o retângulo (s0..s1, t0..t1) do cômodo, na altura y, o texto correndo em `ao` */
+      faixaDeitada(Q, s0, s1, t0, t1, y, ao) {
+        if (!T0) return;
+        const [x, z] = Q.pt((s0 + s1) / 2, (t0 + t1) / 2), [ax, az] = VEC[Q.d(ao)];
+        const lS = s1 - s0, lT = t1 - t0, larg = ao === '+s' || ao === '-s' ? lS : lT, alt = ao === '+s' || ao === '-s' ? lT : lS;
+        placas.push({ tipo: 'faixa', deitada: true, texto: T0.nome || T0.sigla, fundo: cor.cor, tinta: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
+                      x, y, z, nx: ax, nz: az, larg, alt });
       }
-      return melhor;
+    };
+    return c;
+  }
+  /* os pisos de uma planta (e a planta baixa deles) */
+  const pisos = (c, marcar) => {
+    for (const k of c.comodos) {
+      const f = pisoDe(c, k);
+      c.B.tampa([[k.x0, k.z1], [k.x1, k.z1], [k.x1, k.z0], [k.x0, k.z0]], PISO, f.k, false, { tinta: f.tinta });
+      if (marcar) marcas.push({ x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z1, cor: f.tinta || '#d8d5cf', tipo: 'piso' });
+    }
+  };
+  /* a mobília de uma planta, cômodo por cômodo */
+  const mobiliar = c => {
+    for (const k of c.comodos) {
+      const f = (P.novo ? MOBILIA_N : MOBILIA)[k.tipo];
+      if (f) f(c, quarto(k));
+    }
+  };
+  /* A PLACA DE CADA SALA, na verga, do lado de quem chega (a planta põe
+     ali o mesmo letreiro); `dy`, a altura do andar */
+  const placasDasPortas = (c, dy) => {
+    if (!T0) return;
+    for (const p of c.portas) {
+      if (!p.nome) continue;
+      const w = p.parede, X = w.ao === 'u', sentido = p.abre;
+      const cc = X ? (sentido > 0 ? w.z0 : w.z1) : (sentido > 0 ? w.x0 : w.x1);
+      const off = -sentido * 0.035, vao = w.vaos.find(v => Math.abs((v.a0 + v.a1) / 2 - p.c) < 1e-3), topoVao = vao ? vao.b1 : u(c.P.ALT_PORTA);
+      const hPl = Math.min(u(9), w.h - topoVao - 0.1), lPl = Math.min(hPl * 4.2, p.w + u(10));
+      if (hPl < u(4)) continue;
+      const [x, z] = X ? [p.c, cc + off] : [cc + off, p.c];
+      const [nx, nz] = X ? [0, -sentido] : [-sentido, 0];
+      placas.push({ tipo: 'placa', texto: p.nome, fundo: cor.cor2, tinta: legivel(cor.cor2), x, y: dy + topoVao + 0.05 + hPl / 2, z, nx, nz, larg: lPl, alt: hPl });
     }
   };
 
+  const ctx = fazerCtx(P, B, G, Tt, true);
+  const { paredes, comodos, portas } = ctx;
   /* ---- os pisos ---- */
-  for (const c of comodos) {
-    const f = pisoDe(ctx, c);
-    B.tampa([[c.x0, c.z1], [c.x1, c.z1], [c.x1, c.z0], [c.x0, c.z0]], PISO, f.k, false, { tinta: f.tinta });
-    marcas.push({ x0: c.x0, x1: c.x1, z0: c.z0, z1: c.z1, cor: f.tinta || '#d8d5cf', tipo: 'piso' });
-  }
+  pisos(ctx, true);
   /* a calçada da frente, um dedo acima da calçada da rua */
   B.tampa([[0, u(P.F0)], [u(P.L), u(P.F0)], [u(P.L), 0], [0, 0]], 0.08, 'laje', false, { tinta: CIMENTO });
   /* as duas listras da torcida no piso do salão e no fundo do pátio */
@@ -1553,11 +2375,8 @@ export function montarSede(sede, destino = {}, opc = {}) {
     B.tampa([[x0, z1], [x1, z1], [x1, z0], [x0, z0]], PISO + 0.008, 'lisa', false, { tinta });
     marcas.push({ x0, x1, z0, z1, cor: tinta, tipo: 'piso' });
   };
-  if (P.N === 3) {
-    const mS = u((P.vF + P.vB) / 2), a = u(P.PAR + 26), b = u(P.L - P.PAR - 26);
-    listra(a, b, mS - u(15), mS - u(5), cor.cor2);
-    listra(a, b, mS + u(5), mS + u(15), cor.cor3);
-  } else {
+  if (P.novo) for (const [a, b, z0, z1, k] of P.listras) listra(u(a), u(b), u(z0), u(z1), cor[k]);
+  else {
     const a = u(P.PAR + 10), b = u(P.uDiv - 10), v1 = u(P.A - P.PAR);
     listra(a, b, v1 - u(20), v1 - u(13), cor.cor2);
     listra(a, b, v1 - u(11), v1 - u(4), cor.cor3);
@@ -1574,28 +2393,21 @@ export function montarSede(sede, destino = {}, opc = {}) {
       a = Math.max(a, v.a1);
     }
   }
+  /* ---- o nível 5: a laje do 1º andar, os pilares da varanda e a escada ---- */
+  if (P.dois) {
+    if (!so2d) { lajes3d(ctx); pilares3d(ctx); escada3d(ctx); }
+    const e = P.escada;
+    marcas.push({ x0: u(e.u0), x1: u(e.u1), z0: u(e.v0), z1: u(e.v1), cor: '#9d998f', tipo: 'movel' });
+    for (const p of P.pilares) marcas.push({ x0: u(p.u) - 0.13, x1: u(p.u) + 0.13, z0: u(p.v) - 0.13, z1: u(p.v) + 0.13, cor: '#3d3b37', tipo: 'parede' });
+  }
 
   /* ---- a mobília, cômodo por cômodo (a sede vaga fica vazia) ---- */
+  /* o kit do pagode (os instrumentos na mesa do bar): malha à parte, que o
+     jogo 3D só mostra no turno de festa */
+  const Bp = novoC('casas');
+  ctx.Bp = Bp;
   if (aberta) {
-    const salao = comodos.find(c => c.tipo === 'salao');
-    if (salao) {
-      /* as portas que dão no salão, em `s` (ao longo dele) */
-      const frente = [], fundo = [];
-      for (const p of portas) {
-        const w = p.parede;
-        if (w.ao !== 'u') continue;
-        const a = [p.c - p.w / 2 - salao.x0, p.c + p.w / 2 - salao.x0];
-        if (Math.abs(w.z1 - salao.z0) < 1e-3) frente.push(a);
-        if (Math.abs(w.z0 - salao.z1) < 1e-3) fundo.push(a);
-      }
-      const cor0 = comodos.find(c => c.tipo === 'corredor');
-      if (cor0) frente.push([cor0.x0 - salao.x0, cor0.x1 - salao.x0]);
-      ctx.portasDoSalao = { frente, fundo };
-    }
-    for (const c of comodos) {
-      const f = MOBILIA[c.tipo];
-      if (f) f(ctx, quarto(c));
-    }
+    mobiliar(ctx);
     /* O QUE ESTÁ GUARDADO: o patrimônio da torcida (as faixas e as
        bandeiras dela, na cor dela) no armário do PATRIMÔNIO, e as
        tomadas (na cor de quem era dona) no das TOMADAS. `sede.guardados`
@@ -1607,11 +2419,34 @@ export function montarSede(sede, destino = {}, opc = {}) {
     for (let i = 0; i < (pr.bandeiras || 0); i++) proprias.push({ tipo: 'bandeira', cor: cor.cor2, cor2: cor.cor });
     const tomadas = (gd.tomadas || []).map(t => ({ tipo: t.tipo === 'bandeira' ? 'bandeira' : 'faixa', de: t.de || null,
                                                      cor: viva(t.cor || '#6b6b6b'), cor2: viva(t.cor2 || '#d8d8d8') }));
-    for (const A of ctx.armarios) {
+    for (const A of armarios) {
       const pecas = A.tipo === 'tomadas' ? tomadas : proprias;
       A.pecas = pecas;
       A.guardadas = guardarNoArmario(ctx, Bg, A, pecas);
     }
+  }
+
+  /* ---- O 1º ANDAR (o nível 5): a mesma conta num construtor à parte, no
+     referencial do andar (o piso em 0), e depois erguida até o piso de
+     cima; os lugares, as placas e as portas vivas de lá sobem junto ---- */
+  let cima = null;
+  if (P.andar) {
+    const A2 = P.andar, h1 = A2.h1;
+    const Bu = novoC('casas'), Gu = novoC('grades'), Tu = novoC('casas');
+    const nL = lugares.length, nP = placas.length, nV = vivas ? vivas.length : 0;
+    const ctx2 = fazerCtx(A2, Bu, Gu, Tu, false);
+    ctx2.Bp = construtorMudo();
+    pisos(ctx2, false);
+    if (!so2d) { paredes3d(ctx2); guardas3d(ctx2, A2.guardas); }
+    if (aberta) mobiliar(ctx2);
+    if (!so2d) telhado3d(ctx2);
+    placasDasPortas(ctx2, 0);
+    const erguer = C => { for (let i = 1; i < C.pos.length; i += 3) C.pos[i] += h1; };
+    for (const C of [Bu, Gu, Tu]) erguer(C);
+    for (let i = nL; i < lugares.length; i++) lugares[i].andar = 1;
+    for (let i = nP; i < placas.length; i++) placas[i].y += h1;
+    if (vivas) for (let i = nV; i < vivas.length; i++) { erguer(vivas[i].C); vivas[i].yb = h1; }
+    cima = { ctx: ctx2, Bu, Gu, Tu, h1 };
   }
 
   /* ---- a fachada: mastro, arandelas, o ar do lado de fora ---- */
@@ -1625,26 +2460,31 @@ export function montarSede(sede, destino = {}, opc = {}) {
     }
     telhado3d(ctx);
     const exterior = [];
-    if (P.N === 3) {
-      const d = comodos.find(c => c.tipo === 'diretoria') || comodos.find(c => c.tipo === 'alojamento');
-      if (d) exterior.push(B.plano([d.x0 + 2.2, 1.3, u(P.A) + 0.001], [1, 0, 0], [0, 1, 0]));
-    } else {
-      const pr = comodos.find(c => c.tipo === 'presidencia');
-      if (pr) exterior.push(B.plano([u(P.L) + 0.001, 1.25, pr.z1 - 0.9], [0, 0, -1], [0, 1, 0]));
-    }
+    const pr = comodos.find(c => c.tipo === 'presidencia');
+    if (P.novo) {
+      /* a condensadora da presidência (e a do marketing) na parede do fundo, que dá pra rua de trás */
+      for (const c of [pr, comodos.find(k => k.tipo === 'marketing')])
+        if (c && Math.abs(c.z1 - u(P.A - P.PAR)) < 1e-3) exterior.push(B.plano([(c.x0 + c.x1) / 2 - 0.45, c.tipo === 'marketing' ? 1.9 : 1.3, u(P.A) + 0.001], [1, 0, 0], [0, 1, 0]));
+      /* O BAR PRA RUA: a faixa da cerveja em cima da porta de enrolar */
+      const bar = comodos.find(c => c.tipo === 'bar');
+      if (aberta && bar && bar.porta) {
+        const x0 = Math.max(bar.x0 + 0.05, bar.porta.c - bar.porta.w / 2 - 0.35), x1 = Math.min(bar.x1 - 0.05, bar.porta.c + bar.porta.w / 2 + 0.35);
+        B.esticar(B.plano([x1, 2.63, u(P.F0) - 0.012], [-1, 0, 0], [0, 1, 0]), 0, x1 - x0, 0, 0.36, 'faixa_cerveja');
+      }
+    } else if (pr) exterior.push(B.plano([u(P.L) + 0.001, 1.25, pr.z1 - 0.9], [0, 0, -1], [0, 1, 0]));
     if (aberta) for (const F of exterior) arSplit(B, F, 0, 0);
   }
 
   /* ---- os decalques com texto (quem mostra é quem escreve) ---- */
-  const L = u(P.L), zF = u(P.F0) - 0.035, H = u(P.MURO);
+  const L = u(P.L), zF = u(P.F0) - 0.035;
   if (T0) {
-    /* o nome da torcida na platibanda, em cima da porta (nível 3) ou no
-       meio da fachada (nível 1), e os escudos dos dois lados */
-    /* nível 3: em cima da porta, acima da faixa da verga; nível 1: no
-       trecho das salas, que a porta fica no do pátio */
-    const yL = P.N === 3 ? 3.4 : 2.83, alt = P.N === 3 ? 0.7 : 0.66;
-    const xL = P.N === 3 ? u(P.eixo) : (u(P.g1) + u(4) + L) / 2;
-    const larg = Math.min(P.N === 3 ? 4.2 : (L - u(P.g1) - u(4)) * 0.62, alt * 5.6);
+    /* o nome da torcida na platibanda, em cima do portão (níveis 2 a 5) ou
+       no meio da fachada (nível 1), e os escudos dos dois lados */
+    /* nível 1: no trecho das salas, que a porta fica no do pátio */
+    const LT = P.letreiro;
+    const yL = LT ? LT.y : 2.83, alt = LT ? LT.alt : 0.66;
+    const xL = LT ? u(LT.u) : (u(P.g1) + u(4) + L) / 2;
+    const larg = Math.min(LT ? LT.larg - 2 * alt * 0.95 * 0.8 - 0.2 : (L - u(P.g1) - u(4)) * 0.62, alt * 5.6);
     placas.push({ tipo: 'placa', texto: T0.nome || T0.sigla, fundo: cor.cor2, tinta: legivel(cor.cor2), x: xL, y: yL, z: zF, nx: 0, nz: -1, larg, alt });
     const esc = alt * 0.95, dx = larg / 2 + esc * 0.8;
     placas.push({ tipo: 'escudo', forma: 'bola', cor: cor.cor, cor2: cor.cor2, texto: T0.sigla, corTexto: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
@@ -1654,41 +2494,58 @@ export function montarSede(sede, destino = {}, opc = {}) {
     const cc1 = T0.clubeCor || cor.cor2, cc2 = T0.clubeCor ? T0.clubeCor2 || cor.cor2 : cor.cor3;
     if (T0.clubeSigla || T0.escudoClube) placas.push({ tipo: 'escudo', forma: 'diagonal', cor: cc1, cor2: cc2, texto: T0.clubeSigla || '',
                                      corTexto: '#ffffff', img: T0.escudoClube || null, x: xL + dx, y: yL, z: zF, nx: 0, nz: -1, larg: esc * 0.85, alt: esc * 0.85 });
-    /* e um escudo em cada parede do lado, que também é parede de fora */
-    const zm = P.N === 3 ? u((P.vF + P.vB) / 2) : u(P.A / 2);
-    for (const [x, nx] of [[-0.035, -1], [L + 0.035, 1]])
+    /* e um escudo em cada parede do lado, que também é parede de fora (o da
+       garagem, lá em cima, que ela é mais alta; no nível 5, no 1º andar) */
+    const zm = u(P.A / 2);
+    for (const [x, nx] of [[-0.035, -1], [L + 0.035, 1]]) {
+      const alto = P.escudoLado || (nx < 0 && P.gar ? { y: 3.2, larg: 1.2 } : { y: 1.9, larg: 0.8 });
       placas.push({ tipo: 'escudo', forma: 'bola', cor: cor.cor, cor2: cor.cor2, texto: T0.sigla, corTexto: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
-                    img: T0.escudo || null, x, y: 1.9, z: zm - (P.N === 3 ? 1.9 : 0), nx, nz: 0, larg: 0.8, alt: 0.8 });
-    /* A PLACA DE CADA SALA, na verga, do lado de quem chega (a planta
-       põe ali o mesmo letreiro) */
-    for (const p of portas) {
-      if (!p.nome) continue;
-      const w = p.parede, X = w.ao === 'u', sentido = p.abre;
-      const c = X ? (sentido > 0 ? w.z0 : w.z1) : (sentido > 0 ? w.x0 : w.x1);
-      const off = -sentido * 0.035, vao = w.vaos.find(v => Math.abs((v.a0 + v.a1) / 2 - p.c) < 1e-3), topoVao = vao ? vao.b1 : u(P.ALT_PORTA);
-      const hPl = Math.min(u(9), w.h - topoVao - 0.1), lPl = Math.min(hPl * 4.2, p.w + u(10));
-      if (hPl < u(4)) continue;
-      const [x, z] = X ? [p.c, c + off] : [c + off, p.c];
-      const [nx, nz] = X ? [0, -sentido] : [-sentido, 0];
-      placas.push({ tipo: 'placa', texto: p.nome, fundo: cor.cor2, tinta: legivel(cor.cor2), x, y: topoVao + 0.05 + hPl / 2, z, nx, nz, larg: lPl, alt: hPl });
+                    img: T0.escudo || null, x, y: alto.y, z: zm, nx, nz: 0, larg: alto.larg, alt: alto.larg });
     }
+    /* A PLACA DO BAR em cima da porta de enrolar, na rua */
+    const barC = P.novo && comodos.find(c => c.tipo === 'bar');
+    if (barC && barC.porta) {
+      const lB = Math.min(barC.x1 - barC.x0 - 0.3, 3.0);
+      placas.push({ tipo: 'placa', texto: 'BAR DA ' + T0.sigla, fundo: cor.cor2, tinta: legivel(cor.cor2), x: barC.porta.c, y: 3.3, z: zF, nx: 0, nz: -1, larg: lB, alt: Math.min(0.5, lB / 5) });
+    }
+    /* a garagem: o nome da torcida pintado na testeira, em cima dos portões */
+    if (P.gar) {
+      const gx0 = u(P.gar.u0), gx1 = u(P.gar.u1), lG = Math.min(gx1 - gx0 - 0.4, 7.5);
+      const topo = u(P.G_MURO) - (P.dois ? 0.08 : 0.3), aG = Math.min(0.6, lG / 5.5, topo - u(P.G_PORTA) - 0.2);
+      placas.push({ tipo: 'placa', texto: (T0.nome || T0.sigla), fundo: cor.cor, tinta: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
+                    x: (gx0 + gx1) / 2, y: u(P.G_PORTA) + 0.14 + aG / 2, z: zF, nx: 0, nz: -1, larg: lG, alt: aG });
+    }
+    placasDasPortas(ctx, 0);
   }
 
   /* ---- do modelo pro mundo ---- */
   const y0 = opc.y0 || 0;
   const noMundo = (x, z) => E.pt(x * M, z * M);
+  /* na frente espelhada (sul e oeste), o triângulo troca dois cantos: a
+     face de fora segue de fora (o piso é virado pra cima — é por ele que o
+     passo do cenário acha o chão da sede de dois andares) */
+  const [o0x, o0z] = noMundo(0, 0), [o1x, o1z] = noMundo(1, 0), [o2x, o2z] = noMundo(0, 1);
+  const espelhada = (o1x - o0x) * (o2z - o0z) - (o1z - o0z) * (o2x - o0x) < 0;
   const bloco = C => {
     const n = C.pos.length / 3;
     if (!n) return null;
-    const pos = new Float32Array(n * 3), p = C.pos;
+    const pos = new Float32Array(n * 3), p = C.pos, uv = new Float32Array(C.uv), cor = new Float32Array(C.cor);
     for (let i = 0; i < n; i++) {
       const [wx, wz] = noMundo(p[3 * i], p[3 * i + 2]);
       pos[3 * i] = wx; pos[3 * i + 1] = y0 + p[3 * i + 1] * M; pos[3 * i + 2] = wz;
     }
-    return { pos, uv: new Float32Array(C.uv), cor: new Float32Array(C.cor) };
+    if (espelhada) for (let t = 0; t + 2 < n; t += 3) {
+      const a = t + 1, b = t + 2;
+      for (let k = 0; k < 3; k++) { const q = pos[3 * a + k]; pos[3 * a + k] = pos[3 * b + k]; pos[3 * b + k] = q; }
+      for (let k = 0; k < 2; k++) { const q = uv[2 * a + k]; uv[2 * a + k] = uv[2 * b + k]; uv[2 * b + k] = q; }
+      for (let k = 0; k < 3; k++) { const q = cor[3 * a + k]; cor[3 * a + k] = cor[3 * b + k]; cor[3 * b + k] = q; }
+    }
+    return { pos, uv, cor };
   };
   if (!so2d) {
-    for (const [C, lista] of [[B, 'casas'], [G, 'grades'], [Tt, 'telhado'], [Bg, 'guardados']]) {
+    const listas = [[B, 'casas'], [G, 'grades'], [Tt, 'telhado'], [Bg, 'guardados'], [Bp, 'pagode']];
+    if (cima) listas.push([cima.Bu, 'casas'], [cima.Gu, 'grades'], [cima.Tu, 'telhado']);
+    for (const [C, lista] of listas) {
       const b = bloco(C);
       if (b) (destino[lista] = destino[lista] || []).push(b);
     }
@@ -1700,20 +2557,21 @@ export function montarSede(sede, destino = {}, opc = {}) {
     return { ...p, x, y: y0 + p.y * M, z, ox: dx / n, oz: dz / n, larg: p.larg * M, alt: p.alt * M };
   });
   /* AS PORTAS VIVAS no mundo: a folha fechada, a dobradiça e o giro (em
-     y, o do three.js) que leva a folha fechada até a aberta */
-  if (ctx.vivas) destino.portas = ctx.vivas.map(f => {
+     y, o do three.js) que leva a folha fechada até a aberta; `y0`, o piso
+     dela (a do 1º andar fica lá em cima) */
+  if (vivas) destino.portas = vivas.map(f => {
     const b = bloco(f.C);
     if (!b) return null;
     const [hx, hz] = noMundo(f.hx, f.hz), v0 = dirMundo(...f.fechada), v1 = dirMundo(...f.aberta);
     const n0 = Math.hypot(...v0) || 1;
-    return { bloco: b, hx, hz, larg: f.larg * M, alt: f.alt * M, grupo: f.grupo, vidro: f.vidro, dir: [v0[0] / n0, v0[1] / n0],
+    return { bloco: b, hx, hz, y0: y0 + (f.yb || 0) * M, larg: f.larg * M, alt: f.alt * M, grupo: f.grupo, vidro: f.vidro, dir: [v0[0] / n0, v0[1] / n0],
              ang: Math.atan2(v0[1] * v1[0] - v0[0] * v1[1], v0[0] * v1[0] + v0[1] * v1[1]) };
   }).filter(Boolean);
   const retMundo = r => {
     const [ax, az] = noMundo(r.x0, r.z0), [bx, bz] = noMundo(r.x1, r.z1);
     return { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: Math.min(az, bz), y1: Math.max(az, bz), cor: r.cor, tipo: r.tipo };
   };
-  const tetoMundo = P.teto.map(t => retMundo({ x0: u(t.u0), x1: u(t.u1), z0: u(t.v0), z1: u(t.v1), cor: '#8e8a82', tipo: 'teto' }));
+  const tetoMundo = P.teto.concat(P.andar ? P.andar.teto : []).map(t => retMundo({ x0: u(t.u0), x1: u(t.u1), z0: u(t.v0), z1: u(t.v1), cor: '#8e8a82', tipo: 'teto' }));
   /* A BANDEIRA no mundo: o canto de cima do pano do lado do mastro, o rumo
      do pano (`dx`, `dz`), as cores e o escudo */
   const bm = ctx.bandeira && T0 ? ctx.bandeira : null;
@@ -1725,28 +2583,32 @@ export function montarSede(sede, destino = {}, opc = {}) {
   })() : null;
   /* OS LUGARES no mundo: o meio do corpo (x, z), o rumo (o do three.js:
      atan2 do vetor pra onde ele olha), o chão (`chao`, em unidade de
-     mundo) e o assento (m); `conversa`, quando tem, vira rumo também */
+     mundo; o do 1º andar, lá em cima) e o assento (m); `conversa`, quando
+     tem, vira rumo também */
   const rumoDe = (nx, nz) => { const [dx, dz] = dirMundo(nx, nz); return Math.atan2(dx, dz); };
-  const lugares = ctx.lugares.map((l, i) => {
+  const hCima = cima ? cima.h1 : 0;
+  const lugaresMundo = lugares.map((l, i) => {
     const [x, z] = noMundo(l.x, l.z);
-    const r = { ...l, i, x, z, rumo: rumoDe(l.nx, l.nz), chao: y0 + PISO * M };
+    const r = { ...l, i, x, z, rumo: rumoDe(l.nx, l.nz), chao: y0 + (PISO + (l.andar ? hCima : 0)) * M, andar: l.andar || 0 };
     delete r.nx; delete r.nz;
     if (l.conversa) r.rumoConversa = rumoDe(l.conversa[0], l.conversa[1]);
     delete r.conversa;
     return r;
   });
-  /* o meio de cada cômodo no mundo (a câmera enquadra por ele) */
-  const comodosMundo = comodos.map(c => {
+  /* o meio de cada cômodo no mundo (a câmera enquadra por ele); `andar` e
+     `piso` (m) dizem em que andar ele fica */
+  const comodoMundo = (c, andar) => {
     const [ax, az] = noMundo(c.x0, c.z0), [bx, bz] = noMundo(c.x1, c.z1);
-    return { nome: c.nome, tipo: c.tipo, larg: c.x1 - c.x0, fundo: c.z1 - c.z0,
+    return { nome: c.nome, tipo: c.tipo, larg: c.x1 - c.x0, fundo: c.z1 - c.z0, andar, piso: andar ? hCima : 0,
              x0: Math.min(ax, bx), x1: Math.max(ax, bx), z0: Math.min(az, bz), z1: Math.max(az, bz) };
-  });
+  };
+  const comodosMundo = comodos.map(c => comodoMundo(c, 0)).concat(cima ? cima.ctx.comodos.map(c => comodoMundo(c, 1)) : []);
   /* OS ARMÁRIOS no mundo (a base da INVASÃO DE SEDE, que vem depois: o
      dono, 29/09/2026): o de cada tipo, a caixa dele, pra onde a frente
      olha (`frente`, `rumo`), a BOCA (o ponto no chão, 0,7 m na frente,
      onde quem abre fica), quantas peças cabem e o que tem dentro — as
      tomadas com o id da dona */
-  const armarios = ctx.armarios.map(A => {
+  const armariosMundo = armarios.map(A => {
     const [x0, x1, z0, z1] = A.ret, [ax, az] = noMundo(x0, z0), [bx, bz] = noMundo(x1, z1);
     const [fx, fz] = VEC[A.Q.d(A.frente)], [dx, dz] = dirMundo(fx, fz), n = Math.hypot(dx, dz) || 1;
     const [px, pz] = A.ptDe((A.A0 + A.A1) / 2, -0.7), [bwx, bwz] = noMundo(px, pz);
@@ -1757,8 +2619,45 @@ export function montarSede(sede, destino = {}, opc = {}) {
              frente: [dx / n, dz / n], rumo: Math.atan2(dx / n, dz / n), boca: { x: bwx, z: bwz }, cabe,
              guardadas: A.guardadas || 0, pecas: (A.pecas || []).map(p => ({ tipo: p.tipo, de: p.de || null })) };
   });
+  /* AS VAGAS DA GARAGEM no mundo: o meio do ônibus, pra onde a frente
+     dele olha (a rua: ele entra de ré) e o comprimento que cabe — a frente
+     25 cm atrás do portão, a traseira livre da bancada do fundo (o
+     para-choque passa 13 cm de cada ponta da carroceria) */
+  const vagas = (P.vagas || []).map(g => {
+    const fundo = u(g.v1 - g.v0), comp = Math.min(11.0, fundo - 0.25 - 0.26 - BANCADA_G - 0.1);
+    const [x, z] = noMundo(u(g.u), u(g.v0) + 0.25 + 0.13 + comp / 2), [dx, dz] = dirMundo(0, -1), n = Math.hypot(dx, dz) || 1;
+    return { x, z, chao: y0 + PISO * M, frente: [dx / n, dz / n], comp };
+  });
+  /* AS ENTRADAS no mundo, no meio do vão, na calçada: o portão da sede, a
+     porta do bar (que é da rua) e os portões da garagem */
+  const naRua = c => { const [x, z] = noMundo(u(c), u(P.F0) / 2); return { x, z }; };
+  const vBar = P.novo ? (P.paredes.find(w => w.fachada && w.vaos.some(v => v.tipo === 'bar')) || {}).vaos : null;
+  const vaoBar = vBar ? vBar.find(v => v.tipo === 'bar') : null;
+  const entradas = { portao: naRua(P.eixo), bar: vaoBar ? naRua((vaoBar.a0 + vaoBar.a1) / 2) : null,
+                     garagem: (P.vagas || []).map(g => naRua(g.u)) };
+  /* O 1º ANDAR no mundo (o nível 5): a altura do piso de cima (em unidade
+     de mundo) e a ESCADA — o pé dela no pátio, o alto dela na varanda, e o
+     caminho da varanda até a porta de cada sala de cima (quem sobe anda
+     por ele); `retangulo`: a caixa da sede, pra saber se (x, z) é dela */
+  let andarMundo = null;
+  if (cima) {
+    const e = P.escada, vm = u((e.v0 + e.v1) / 2), yC = y0 + (PISO + hCima) * M;
+    const ponto = (x, z, y) => { const [wx, wz] = noMundo(x, z); return { x: wx, z: wz, y }; };
+    const pe = ponto(u(e.u1) + 0.5, vm, y0 + PISO * M), topo = ponto(u(e.u0) - 0.35, vm, yC);
+    /* da chegada da escada, a varanda de cá corre pra frente; a passarela
+       atravessa; a varanda de lá corre pro fundo */
+    const A2 = P.andar, xW = u(A2.pat.u0) + u(A2.pat.u1 - A2.pat.u0) * 0 + 0.7, xE = u(A2.pat.u1) - 0.7, zBr = u(A2.MF) + 0.9;
+    const portasDeCima = cima.ctx.portas.filter(p => p.nome).map(p => {
+      const w = p.parede, X = w.ao === 'u';
+      /* o ponto na varanda, na frente da porta (o lado de fora da parede) */
+      const fora = X ? [p.c, p.abre > 0 ? w.z0 - 0.5 : w.z1 + 0.5] : [p.abre > 0 ? w.x0 - 0.5 : w.x1 + 0.5, p.c];
+      const dentroP = X ? [p.c, p.abre > 0 ? w.z1 + 0.6 : w.z0 - 0.6] : [p.abre > 0 ? w.x1 + 0.6 : w.x0 - 0.6, p.c];
+      return { nome: p.nome, tipo: TIPO[p.nome] || null, fora: ponto(fora[0], fora[1], yC), dentro: ponto(dentroP[0], dentroP[1], yC), lado: fora[0] < (xW + xE) / 2 ? 'oeste' : 'leste' };
+    });
+    andarMundo = { h1: hCima * M, piso: yC, escada: { pe, topo }, varanda: { oeste: ponto(xW, zBr, yC), leste: ponto(xE, zBr, yC) }, portas: portasDeCima };
+  }
   return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), teto: tetoMundo, bandeira,
-           comodos: comodosMundo, lugares, armarios, nivel: P.N };
+           comodos: comodosMundo, lugares: lugaresMundo, armarios: armariosMundo, vagas, entradas, andar: andarMundo, nivel: P.N };
 }
 /* a cor que se lê sobre a cor da torcida: a primeira das dela que se
    separa do fundo; se nenhuma servir, preto ou branco */

@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=a865a037df';
-import { brigaNaCaminhada } from './caminhada.js?v=a865a037df';
-import { brigaNoBar } from './briga_bar.js?v=a865a037df';
-import { brigaNaTreta } from './briga_treta.js?v=a865a037df';
-import { planoDoBar } from './casas3d.js?v=a865a037df';
+import { palcoDeBriga } from './palco_briga.js?v=498dcc0f3c';
+import { brigaNaCaminhada } from './caminhada.js?v=498dcc0f3c';
+import { brigaNoBar } from './briga_bar.js?v=498dcc0f3c';
+import { brigaNaTreta } from './briga_treta.js?v=498dcc0f3c';
+import { planoDoBar } from './casas3d.js?v=498dcc0f3c';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -52,6 +52,12 @@ const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&am
    menos ela é quanto o disco sobe do chão (a cadeira de plástico, de
    53 cm, fica quase no chão; a banqueta do balcão, de 88, levanta ele) */
 const QUADRIL_M = 0.5;
+/* os gestos que o lugar impõe (o móvel manda: o computador, a sinuca, o
+   saco de pancada, o halter, a guarda no ringue, o pincel na faixa, a
+   máquina de costura, os instrumentos do pagode e quem canta); os
+   outros — a conversa, o celular, a lata — o jeito sorteia */
+const GESTOS_DO_LUGAR = new Set(['digita', 'sinuca', 'pebolim', 'surdo', 'churrasco', 'arruma', 'balcao', 'saco', 'halter', 'guarda', 'pinta', 'costura',
+                                 'cavaco', 'pandeiro', 'tanta', 'canta']);
 /* o disco de um boneco da vida: o que o bonecos3.js lê (o resto, zero) */
 function disco(o) {
   return Object.assign({ vivo: true, lider: false, passada: 1.1, derrubado: 0, golpe: 0, apanhou: 0, atordoado: 0, esquivou: 0,
@@ -186,34 +192,61 @@ function voarNaAreaLivre(Cn, M, x, z, dist, el) {
    ANDAR: A GRADE DE PERTO E O CAMINHO (A*)
    ======================================================= */
 /* a grade de um retângulo do mundo, de `passo` em `passo` m: onde um
-   corpo de `raio` m cabe (a grade do passo do cenário: parede, móvel) */
-function gradeLocal(C, M, r, passo = 0.25, raio = 0.2) {
+   corpo de `raio` m cabe (a grade do passo do cenário: parede, móvel;
+   `cabe`, outra conta — o 1º andar da sede de dois andares) */
+function gradeLocal(C, M, r, passo = 0.25, raio = 0.2, cabe = null) {
   const p = passo * M, nx = Math.max(1, Math.ceil((r.x1 - r.x0) / p)), nz = Math.max(1, Math.ceil((r.z1 - r.z0) / p));
-  const livre = new Uint8Array(nx * nz);
+  const livre = new Uint8Array(nx * nz), pode = cabe || ((x, z, rr) => C.vida.cabe(x, z, rr));
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++)
-    livre[j * nx + i] = C.vida.cabe(r.x0 + (i + 0.5) * p, r.z0 + (j + 0.5) * p, raio) ? 1 : 0;
+    livre[j * nx + i] = pode(r.x0 + (i + 0.5) * p, r.z0 + (j + 0.5) * p, raio) ? 1 : 0;
+  /* as ilhas de chão livre (o caminho não corta quina: as 4 vizinhas
+     bastam): o miolo do ringue, a bolha atrás da mesa do pagode... */
+  const ilha = new Int32Array(nx * nz), fila = new Int32Array(nx * nz);
+  let nIlhas = 0;
+  for (let k0 = 0; k0 < nx * nz; k0++) {
+    if (!livre[k0] || ilha[k0]) continue;
+    ilha[k0] = ++nIlhas;
+    let ini = 0, fim = 0;
+    fila[fim++] = k0;
+    while (ini < fim) {
+      const k = fila[ini++], i = k % nx, j = (k - i) / nx;
+      for (const q of [i > 0 ? k - 1 : -1, i < nx - 1 ? k + 1 : -1, j > 0 ? k - nx : -1, j < nz - 1 ? k + nx : -1])
+        if (q >= 0 && livre[q] && !ilha[q]) { ilha[q] = nIlhas; fila[fim++] = q; }
+    }
+  }
   const cel = (x, z) => { const i = Math.floor((x - r.x0) / p), j = Math.floor((z - r.z0) / p); return i < 0 || j < 0 || i >= nx || j >= nz ? -1 : j * nx + i; };
   const centro = k => ({ x: r.x0 + (k % nx + 0.5) * p, z: r.z0 + (Math.floor(k / nx) + 0.5) * p });
-  /* a célula livre mais perto de (x, z), até `ate` m */
-  function perto(x, z, ate = 1.2) {
+  /* a célula livre mais perto de (x, z), até `ate` m (da ilha `na`, se dada) */
+  function perto(x, z, ate = 1.2, na = 0) {
     const k0 = cel(x, z);
-    if (k0 >= 0 && livre[k0]) return k0;
+    if (k0 >= 0 && livre[k0] && (!na || ilha[k0] === na)) return k0;
     const i0 = Math.floor((x - r.x0) / p), j0 = Math.floor((z - r.z0) / p), R = Math.ceil(ate / passo);
     let melhor = -1, md = Infinity;
     for (let j = j0 - R; j <= j0 + R; j++) for (let i = i0 - R; i <= i0 + R; i++) {
-      if (i < 0 || j < 0 || i >= nx || j >= nz || !livre[j * nx + i]) continue;
+      if (i < 0 || j < 0 || i >= nx || j >= nz || !livre[j * nx + i] || (na && ilha[j * nx + i] !== na)) continue;
       const c = centro(j * nx + i), d = (c.x - x) ** 2 + (c.z - z) ** 2;
       if (d < md) { md = d; melhor = j * nx + i; }
     }
     return melhor;
   }
-  return { nx, nz, livre, r, p, cel, centro, perto };
+  return { nx, nz, livre, ilha, r, p, passo, cel, centro, perto };
 }
 /* o caminho de A até B na grade (8 vizinhos, sem cortar quina), já
-   alisado (de cada ponto, o mais longe que se vê em linha reta) */
-function caminhoNaGrade(G, ax, az, bx, bz) {
-  const a = G.perto(ax, az), b = G.perto(bx, bz);
+   alisado (de cada ponto, o mais longe que se vê em linha reta); `ateB`,
+   até onde a célula livre pode ficar do ponto B (o lugar em cima do
+   ringue fica longe do chão livre). Se A e B caem em ilhas diferentes: o
+   caminho acaba no chão da ilha de A mais perto de B (o miolo do ringue é
+   chão livre pra conta, mas cercado pelo tablado: sobe-se nele da beira;
+   a cadeira do pagode no canto, atrás da mesa), ou, se não tem, quem sai
+   de uma ilha levanta pro chão da ilha de B mais perto dele, até 2 m */
+function caminhoNaGrade(G, ax, az, bx, bz, ateB = 1.2) {
+  let a = G.perto(ax, az), b = G.perto(bx, bz, ateB);
   if (a < 0 || b < 0) return null;
+  if (G.ilha[a] !== G.ilha[b]) {
+    const b2 = G.perto(bx, bz, ateB, G.ilha[a]);
+    if (b2 >= 0) b = b2;
+    else { const a2 = G.perto(ax, az, 2.0, G.ilha[b]); if (a2 < 0) return null; a = a2; }
+  }
   const { nx, nz, livre } = G, N = nx * nz;
   const g = new Float32Array(N).fill(Infinity), pai = new Int32Array(N).fill(-1), fechado = new Uint8Array(N);
   const bi = b % nx, bj = Math.floor(b / nx);
@@ -315,6 +348,11 @@ export function criarVida(api) {
     const porTipo = t => lugares.filter(l => l.tipo === t);
     const s = {
       T, S3, r, lugares, porTipo, G: null, pessoas: [], presidente: null, recado: null,
+      /* A SEDE DE DOIS ANDARES (o nível 5): a escada, o piso de cima e o
+         andar que a câmera mostra (0, o térreo, cortado na altura da
+         cabeça; 1, o 1º andar) — a grade de cima, a primeira vez que
+         alguém anda nele */
+      andar: S3.andar || null, vendo: 0, Gc: null, pagode: false,
       porta: T.porta ? { x: T.porta.x, z: T.porta.y } : { x: (a.x0 + a.x1) / 2, z: a.y1 + 3 * M },
       /* o retângulo da sede (a câmera e as portas) */
       caixa: { x0: a.x0, x1: a.x1, z0: a.y0, z1: a.y1 }
@@ -326,32 +364,64 @@ export function criarVida(api) {
   }
   /* a grade de andar da sede (a primeira vez que alguém anda nela) */
   const gradeDaSede = () => { if (!sede.G && C().vida.grade) sede.G = gradeLocal(C(), M, sede.r); return sede.G; };
-  const altDe = l => l.chao + (l.sentado ? Math.max(0, (l.assento - QUADRIL_M)) * M : 0);
+  const gradeDeCima = () => {
+    if (!sede.andar || !C().vida.cabeEm) return null;
+    if (!sede.Gc) { const y = sede.andar.piso; sede.Gc = gradeLocal(C(), M, sede.r, 0.25, 0.2, (x, z, raio) => C().vida.cabeEm(x, z, y, raio)); }
+    return sede.Gc;
+  };
+  /* O CAMINHO NA SEDE, de um andar pro outro: no andar de saída até a
+     ponta da escada, a escada inteira (em linha reta, do pé ao alto: quem
+     anda por ela acha cada degrau com o chão a um degrau do pé) e, no
+     outro andar, da outra ponta até o destino */
+  function rotaNaSede(deX, deZ, de, paraX, paraZ, para, ate = 1.2) {
+    const grade = a => a ? gradeDeCima() : gradeDaSede();
+    if (!sede.andar || de === para) { const G = grade(para); return G ? caminhoNaGrade(G, deX, deZ, paraX, paraZ, ate) : null; }
+    const { pe, topo } = sede.andar.escada, [a, b] = de ? [topo, pe] : [pe, topo];
+    const G1 = grade(de), G2 = grade(para);
+    const r1 = G1 && caminhoNaGrade(G1, deX, deZ, a.x, a.z), r2 = G2 && caminhoNaGrade(G2, b.x, b.z, paraX, paraZ, ate);
+    return r1 && r2 ? r1.concat([{ x: a.x, z: a.z }, { x: b.x, z: b.z }], r2) : null;
+  }
+  /* o chão de quem anda (na escada, o degrau a um degrau do pé dele; lá em
+     cima, na sede de dois andares, ninguém cai pro térreo: sem chão a um
+     degrau do pé — quem desce do ringue —, procura meio metro abaixo e,
+     sem nada, fica na altura de agora) */
+  const chaoDe = (x, z, y) => {
+    const Cv = C().vida;
+    if (!Cv.chaoEm) return Cv.chao(x, z);
+    const c = Cv.chaoEm(x, z, y);
+    if (!(sede && sede.andar && y > sede.andar.piso - 0.6 * M && y - c > 0.35 * M)) return c;
+    const c2 = Cv.chaoEm(x, z, y - 0.45 * M);
+    return y - c2 > 0.8 * M ? y : c2;
+  };
+  /* (o lugar elevado — o ringue da academia — soma a altura dele) */
+  const altDe = l => l.chao + ((l.elevado || 0) + (l.sentado ? Math.max(0, (l.assento - QUADRIL_M)) : 0)) * M;
   function sentarNo(p, l) {
     const d = p.d;
     d.x = l.x; d.y = l.z; d.alt = altDe(l); d.rumo = l.rumo; d.sentado = !!l.sentado;
     d.jeito = l.sentado ? (l.gesto === 'digita' ? 'trabalho' : 'sentado') : 'sede';
-    /* o gesto do móvel (a sinuca, o surdo, o pebolim...) é o do lugar; o de
-       conversa varia (o jeito sorteia) */
-    d.gestoForcado = ['digita', 'sinuca', 'pebolim', 'surdo', 'churrasco', 'arruma', 'balcao'].includes(l.gesto) ? l.gesto : undefined;
+    /* o gesto do móvel (a sinuca, o surdo, o pebolim, o saco de pancada,
+       o instrumento do pagode...) é o do lugar; o de conversa varia (o
+       jeito sorteia) */
+    d.gestoForcado = GESTOS_DO_LUGAR.has(l.gesto) ? l.gesto : undefined;
     if (l.tipo === 'roda') d.jeito = 'sede';
-    p.lugar = l; l.ocupado = p; p.estado = 'no lugar';
+    p.lugar = l; l.ocupado = p; p.estado = 'no lugar'; p.andar = l.andar || 0;
   }
   function levantar(p) {
     const d = p.d;
     if (p.lugar) { p.lugar.ocupado = null; p.lugar = null; }
     d.sentado = false; d.rumo = undefined; d.jeito = undefined; d.gestoForcado = undefined; d.olhaPara = null; d.falando = false;
-    d.alt = C().vida.chao(d.x, d.y);
+    d.alt = chaoDe(d.x, d.y, d.alt || 0);
   }
   /* alguém vai do ponto (x, z) até o lugar l (ou até a porta: l nulo, e some) */
   function mandarAndar(p, l, deX, deZ) {
-    const G = gradeDaSede();
     const ax = l ? l.x : sede.porta.x, az = l ? l.z : sede.porta.z;
-    const rota = G ? caminhoNaGrade(G, deX, deZ, ax, az) : null;
+    /* (quem chega da rua ou sai pra ela está no térreo; o lugar diz o andar
+       dele; o lugar elevado — o ringue — se alcança da beira dele) */
+    const rota = rotaNaSede(deX, deZ, p.andar || 0, ax, az, l ? l.andar || 0 : 0, l && l.elevado ? 3.0 : 1.2);
     if (!rota) { if (l) sentarNo(p, l); else p.sai = true; return; }
     levantar(p);
     p.d.x = deX; p.d.y = deZ;
-    p.rota = rota.concat([{ x: ax, z: az }]); p.iRota = 1; p.vel = 1.15 + frac(p.d.nome + 'v') * 0.35;
+    p.rota = rota.concat([{ x: ax, z: az }]); p.iRota = 0; p.vel = 1.15 + frac(p.d.nome + 'v') * 0.35;
     p.destino = l; if (l) l.ocupado = p;
     p.estado = 'andando';
   }
@@ -373,17 +443,47 @@ export function criarVida(api) {
     return (e.membros || []).filter(m => !m.preso && !m.ferido && !m.filial && !(pres && m.id === pres.id) && !dentro.has(m.id));
   }
   /* os lugares que o turno prefere (o treino de bateria: os surdos; o recrutamento: a secretaria) */
+  /* (o pagode do bar — os músicos na mesa dele — só no turno de festa;
+     o treino da academia é todo dia, e o padrinho enche ela; a campanha
+     do PIX é do marketing, que quase sempre tem o rapaz no computador) */
   function lugaresDoTurno(acao) {
-    const livres = sede.lugares.filter(l => !l.ocupado && !/^(presidente|recado|reuniao)/.test(l.tipo));
+    const livres = sede.lugares.filter(l => !l.ocupado && !/^(presidente|recado|reuniao)/.test(l.tipo) && (l.tipo !== 'pagode' || acao === 'festa'));
+    const h = relogio.hora;
     const peso = l => (acao === 'bateria' && l.tipo === 'bateria' ? 8 : 0) + (acao === 'recrutar' && /secretario|espera/.test(l.tipo) ? 6 : 0) +
-      (acao === 'festa' && /roda|mesa|balcao|churrasco|banco/.test(l.tipo) ? 4 : 0) + (acao === 'reuniao' && l.tipo === 'reuniao' ? 5 : 0) +
-      (l.tipo === 'secretario' ? 3 : 0) + (l.tipo === 'barman' ? 2 : 0) + 1 + frac(l.i + '|' + (E() && E().data.absoluto)) * 2;
+      (acao === 'festa' && /roda|mesa|balcao|churrasco|banco/.test(l.tipo) ? 4 : 0) + (acao === 'festa' && l.tipo === 'pagode' ? 9 : 0) +
+      (acao === 'reuniao' && l.tipo === 'reuniao' ? 5 : 0) + (acao === 'padrinho' && l.tipo === 'treino' ? 7 : 0) + (acao === 'pix' && l.tipo === 'marketing' ? 6 : 0) +
+      (l.tipo === 'secretario' ? 3 : 0) + (l.tipo === 'marketing' && h >= 9 && h < 21 ? 3 : 0) + (l.tipo === 'treino' && h >= 7 && h < 21 ? 1 : 0) +
+      (l.tipo === 'barman' ? 2 : 0) + 1 + frac(l.i + '|' + (E() && E().data.absoluto)) * 2;
     return livres.sort((x, y) => peso(y) - peso(x));
+  }
+  /* O PAGODE DO BAR: os instrumentos na mesa no turno de festa (e quem
+     tocava sai dali quando ela acaba) */
+  function conferirPagode(acao) {
+    const v = acao === 'festa';
+    if (!sede || sede.pagode === v) return;
+    sede.pagode = v;
+    if (api.pagodeDoJogo && sede.T) api.pagodeDoJogo(sede.T.id, v);
+    if (!v) for (const p of sede.pessoas) if (p.lugar && p.lugar.tipo === 'pagode' && p.estado === 'no lugar') mandarAndar(p, null, p.lugar.x, p.lugar.z);
+  }
+  /* O ANDAR QUE A CÂMERA MOSTRA (a sede de dois andares): o térreo, com a
+     sede cortada na altura da cabeça de quem está nele (quem está lá em
+     cima não aparece), ou o 1º andar, cortado na altura da cabeça de
+     quem está nele (o térreo aparece pelo vão do pátio) */
+  function verAndar(n) {
+    const Cn = C();
+    if (!sede || !sede.andar || !Cn || !Cn.vida) return 0;
+    sede.vendo = n ? 1 : 0;
+    const lp = sede.porTipo('presidente')[0];
+    const x = lp ? lp.x : (sede.caixa.x0 + sede.caixa.x1) / 2, z = lp ? lp.z : (sede.caixa.z0 + sede.caixa.z1) / 2;
+    const chao = Cn.vida.chao(x, z);
+    sede.telhado = Cn.vida.abrirPredio(x, z, sede.vendo ? (sede.andar.piso - chao) / M + 2.2 : 2.2);
+    return sede.vendo;
   }
   function ligarSede(T) {
     desligarSede();
     sede = montarSede(T);
     if (!sede) return;
+    conferirPagode(alvoDaSede().acao);
     /* as portas da sede abertas (a folha fechada não é parede pra quem anda: aberta, ninguém atravessa ela) */
     C().vida.abrirPortas({ x0: sede.caixa.x0 - M, x1: sede.caixa.x1 + M, z0: sede.caixa.z0 - M, z1: sede.caixa.z1 + M }, true);
     /* o presidente na cadeira dele */
@@ -407,7 +507,10 @@ export function criarVida(api) {
     sede.proxTroca = 4;
   }
   function desligarSede() {
-    if (sede) C().vida.abrirPortas({ x0: sede.caixa.x0 - M, x1: sede.caixa.x1 + M, z0: sede.caixa.z0 - M, z1: sede.caixa.z1 + M }, false);
+    if (sede) {
+      C().vida.abrirPortas({ x0: sede.caixa.x0 - M, x1: sede.caixa.x1 + M, z0: sede.caixa.z0 - M, z1: sede.caixa.z1 + M }, false);
+      if (sede.pagode && api.pagodeDoJogo && sede.T) api.pagodeDoJogo(sede.T.id, false);
+    }
     sede = null;
   }
   /* a cada quadro: quem anda anda; de tempos em tempos alguém chega ou vai */
@@ -415,9 +518,17 @@ export function criarVida(api) {
     if (!sede) return;
     for (const p of sede.pessoas) {
       if (p.estado !== 'andando') continue;
-      if (andarPor(p, dt, M)) {
-        if (p.destino) sentarNo(p, p.destino); else p.sai = true;
-      } else p.d.alt = C().vida.chao(p.d.x, p.d.y);
+      /* (em passos de até 12 cm: na escada, o chão de cada passo é o degrau
+         a um degrau do pé, e o quadro lento não pula dois de uma vez) */
+      const n = Math.max(1, Math.ceil(p.vel * dt / 0.12));
+      for (let k = 0; k < n; k++) {
+        if (andarPor(p, dt / n, M)) { if (p.destino) sentarNo(p, p.destino); else p.sai = true; break; }
+        /* (no último trecho até o lugar elevado — o ringue —, sobe no
+           tablado quando passa da beira dele; já em cima, anda nele) */
+        const y0 = p.d.alt || 0, l = p.destino;
+        const alto = l && l.elevado && p.iRota >= p.rota.length - 1 && y0 < l.chao + 0.2 * M ? chaoDe(p.d.x, p.d.y, y0 + l.elevado * M) : -Infinity;
+        p.d.alt = alto > y0 + 0.2 * M ? alto : chaoDe(p.d.x, p.d.y, y0);
+      }
     }
     sede.pessoas = sede.pessoas.filter(p => !p.sai);
     quadroHospedes();
@@ -426,6 +537,7 @@ export function criarVida(api) {
     if (sede.proxTroca > 0) return;
     sede.proxTroca = 3 + Math.random() * 5;
     const alvo = alvoDaSede();
+    conferirPagode(alvo.acao);
     const quem = sede.pessoas.filter(p => !p.presidente && !p.recado && !p.hospede);
     const cabem = lugaresDoTurno(alvo.acao);
     const quer = Math.round((quem.length + cabem.length) * alvo.frac);
@@ -1237,6 +1349,7 @@ export function criarVida(api) {
      ===================================================== */
   function irPraSala() {
     if (!sede) return;
+    if (sede.vendo) verAndar(0);
     const Cn = C(), lp = sede.porTipo('presidente')[0], lr = sede.porTipo('recado')[0];
     /* o meio entre o presidente e a cadeira do recado */
     const x = lr ? (lp.x + lr.x) / 2 : lp.x, z = lr ? (lp.z + lr.z) / 2 : lp.z;
@@ -1260,11 +1373,72 @@ export function criarVida(api) {
     quadroRua(dt);
     /* os discos do quadro */
     const lista = [];
-    if (sede) for (const p of sede.pessoas) lista.push(p.d);
+    /* (com o térreo na tela, a sede de dois andares está cortada na altura
+       da cabeça: quem passou dela — lá em cima, no alto da escada — some) */
+    const teto = sede && sede.andar && !sede.vendo ? sede.andar.piso - 2.4 * M : Infinity;
+    if (sede) for (const p of sede.pessoas) if (!(p.d.alt > teto)) lista.push(p.d);
     if (rua) { for (const p of rua.povo) lista.push(p.d); for (const b of rua.bares) for (const g of b.gente) lista.push(g.d); }
     J.discos = lista;
   }
   const vida = { J, quadro };
+  /* =====================================================
+     O ARMÁRIO DO PATRIMÔNIO (o dono, 30/09/2026: "Clicar no armário do
+     material abre pop-up da lista do que tem dentro"): o clique na praça
+     que acerta um dos armários da sede do jogador — o do patrimônio e o
+     das tomadas, com cadeado — abre a lista, do save: as faixas e as
+     bandeiras da torcida e as bombas do estoque; as faixas e bandeiras
+     tomadas, de quem eram e quando
+     ===================================================== */
+  function armarioNoRaio(r) {
+    if (!sede || !sede.S3.armarios) return null;
+    let melhor = null, tMin = Infinity;
+    for (const A of sede.S3.armarios) {
+      /* (com o 1º andar na tela, o térreo está coberto) */
+      if (sede.andar && sede.vendo && A.chao < sede.andar.piso - M) continue;
+      const lo = [A.x0, A.chao, A.z0], hi = [A.x1, A.chao + A.alt, A.z1];
+      let t0 = 0, t1 = Infinity, ok = true;
+      for (let k = 0; k < 3 && ok; k++) {
+        const o = r.o[k], d = r.d[k];
+        if (Math.abs(d) < 1e-9) { if (o < lo[k] || o > hi[k]) ok = false; continue; }
+        let a = (lo[k] - o) / d, b = (hi[k] - o) / d;
+        if (a > b) { const q = a; a = b; b = q; }
+        t0 = Math.max(t0, a); t1 = Math.min(t1, b);
+        if (t0 > t1) ok = false;
+      }
+      if (ok && t0 < tMin) { tMin = t0; melhor = A; }
+    }
+    return melhor;
+  }
+  let popArmario = null;
+  function fecharArmario() { if (popArmario) { popArmario.remove(); popArmario = null; } }
+  function abrirArmario(A) {
+    const e = E(), PAT = TO.patrimonio;
+    if (!e || !PAT || !PAT.faixasDe) return false;
+    fecharArmario();
+    const fx = PAT.faixasDe(e), bd = PAT.bandeirasDe(e), n = (k, um, varios) => `${k} ${k === 1 ? um : varios}`;
+    let titulo, corpo;
+    if (A.tipo === 'tomadas') {
+      titulo = 'O armário das tomadas';
+      const lista = (fx.tomadas || []).map(x => ({ ...x, tipo: 'Faixa' })).concat((bd.tomadas || []).map(x => ({ ...x, tipo: 'Bandeira' })));
+      corpo = lista.length
+        ? '<ul>' + lista.map(x => `<li><b>${esc(x.tipo)}</b> da ${esc(x.nome || x.de || 'torcida rival')}${x.quando ? ` <small>· tomada em ${esc(x.quando.ano)}, semana ${esc(x.quando.semana)}</small>` : ''}</li>`).join('') + '</ul>'
+        : '<p>Vazio: a torcida ainda não tomou faixa nem bandeira de ninguém.</p>';
+    } else {
+      titulo = 'O armário do patrimônio';
+      const nf = (fx.nossas || []).length, nb = (bd.nossas || []).length, bombas = PAT.bombas ? PAT.bombas(e) : 0;
+      corpo = `<ul><li><b>${n(nf, 'faixa', 'faixas')}</b> da torcida <small>· é a que ela expõe quando é atacada</small></li>` +
+        `<li><b>${n(nb, 'bandeira', 'bandeiras')}</b> <small>· quadradas, com o escudo</small></li>` +
+        `<li><b>${n(bombas, 'bomba', 'bombas')}</b> no estoque <small>· o que o bonde leva pro jogo</small></li></ul>`;
+    }
+    popArmario = document.createElement('div');
+    popArmario.className = 'j3d-armario'; popArmario.setAttribute('role', 'dialog');
+    popArmario.innerHTML = `<button class="j3d-armario-x" aria-label="Fechar" title="Fechar">×</button><h3>${titulo}</h3>${corpo}` +
+      `<p class="j3d-armario-pe">${A.tipo === 'tomadas' ? 'Com cadeado: se a sede for invadida, é o que o rival vem buscar.' : 'Tudo o que se compra no Patrimônio fica aqui.'}</p>`;
+    popArmario.querySelector('.j3d-armario-x').onclick = fecharArmario;
+    document.body.appendChild(popArmario);
+    return true;
+  }
+  const aoClicar = r => { const A = armarioNoRaio(r); return A ? abrirArmario(A) : false; };
   /* LIGAR: a praça montada, a torcida do jogador (o id) */
   function ligar(torcidaId) {
     const Cn = C();
@@ -1276,6 +1450,7 @@ export function criarVida(api) {
     rua = montarRua();
     quebradosEm = -99;
     Cn.vida.vida = vida;
+    Cn.vida.aoClicar = aoClicar;
     /* a sede do jogador sem o telhado (e o alto das paredes): de cima, os
        cômodos. O telhado se acha pela sala do presidente (no barracão o
        meio da sede cai no pátio, que é descoberto) */
@@ -1283,6 +1458,7 @@ export function criarVida(api) {
       const lp = sede.porTipo('presidente')[0];
       const x = lp ? lp.x : (sede.caixa.x0 + sede.caixa.x1) / 2, z = lp ? lp.z : (sede.caixa.z0 + sede.caixa.z1) / 2;
       sede.telhado = Cn.vida.abrirPredio(x, z, 2.2);
+      sede.vendo = 0;
     }
     return true;
   }
@@ -1291,7 +1467,8 @@ export function criarVida(api) {
     ligada = false;
     const Cn = C();
     desligarSede(); rua = null; J.discos = [];
-    if (Cn && Cn.vida) { Cn.vida.vida = null; Cn.vida.abrirPredio(null); }
+    fecharArmario();
+    if (Cn && Cn.vida) { Cn.vida.vida = null; Cn.vida.abrirPredio(null); if (Cn.vida.aoClicar === aoClicar) Cn.vida.aoClicar = null; }
   }
   /* a sede do jogador volta a ficar aberta (o palco da briga abriu outro prédio) */
   function reabrirSede() {
@@ -1300,6 +1477,7 @@ export function criarVida(api) {
     const lp = sede.porTipo('presidente')[0];
     const x = lp ? lp.x : (sede.caixa.x0 + sede.caixa.x1) / 2, z = lp ? lp.z : (sede.caixa.z0 + sede.caixa.z1) / 2;
     sede.telhado = Cn.vida.abrirPredio(x, z, 2.2);
+    sede.vendo = 0;
   }
   /* A BRIGA NA CASA DA FESTA (a cena 'casa-piscina' do jogo de feed, na
      rua de veraneio da praça): o tabuleiro do combate em cima da casa da
@@ -1455,6 +1633,33 @@ export function criarVida(api) {
   /* a luz corre mesmo com a vida desligada (no menu, o dia parado nas 10h) */
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
+    /* A SEDE DE DOIS ANDARES: o andar que a câmera mostra (0 o térreo, 1 o
+       1º andar); `temAndar`, se a sede do jogador tem o 1º andar */
+    verAndar: n => verAndar(n),
+    /* pro teste: manda a pessoa k da sede pro lugar i, pela rota de verdade
+       (pela escada, se o lugar é do outro andar); devolve se ela saiu andando */
+    mandar(k, i) {
+      if (!sede) return false;
+      const p = sede.pessoas[k], l = sede.lugares[i];
+      if (!p || !l || l.ocupado || p.presidente) return false;
+      const x = p.lugar ? p.lugar.x : p.d.x, z = p.lugar ? p.lugar.z : p.d.y;
+      mandarAndar(p, l, x, z);
+      return p.estado === 'andando';
+    },
+    /* pro teste: a rota de (x, z, andar) até o lugar i, por partes */
+    rotaTeste(x, z, andar, i) {
+      if (!sede) return null;
+      const l = sede.lugares[i], ate = l.elevado ? 3.0 : 1.2, G0 = gradeDaSede(), G1 = gradeDeCima();
+      const cel = (G, px, pz, a) => { if (!G) return null; const k = G.perto(px, pz, a); return k < 0 ? -1 : k; };
+      const e = sede.andar && sede.andar.escada;
+      return { lugar: { tipo: l.tipo, andar: l.andar || 0, elevado: l.elevado || 0 }, deCel: cel(andar ? G1 : G0, x, z, 1.2), paraCel: cel(l.andar ? G1 : G0, l.x, l.z, ate),
+               pe: e ? cel(G0, e.pe.x, e.pe.z, 1.2) : null, topo: e ? cel(G1, e.topo.x, e.topo.z, 1.2) : null,
+               rota: (rotaNaSede(x, z, andar, l.x, l.z, l.andar || 0, ate) || []).length };
+    },
+    /* pro teste: o armário que o raio acerta e o pop-up dele */
+    armarioNoRaio: r => armarioNoRaio(r), abrirArmario: A => abrirArmario(A), get popArmario() { return popArmario; },
+    get andarVisto() { return sede && sede.andar ? sede.vendo : null; },
+    get temAndar() { return !!(sede && sede.andar); },
     set temJogoHoje(f) { temJogoHoje = typeof f === 'function' ? f : () => false; },
     get ritmo() { return relogio.ritmo; },
     /* o mensageiro (recados3d.js): quem senta pra falar, quem levanta, e

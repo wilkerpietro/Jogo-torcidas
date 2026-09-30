@@ -36,9 +36,9 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=a865a037df';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=a865a037df';
-import { Subsolo } from './subsolo.js?v=a865a037df';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=498dcc0f3c';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=498dcc0f3c';
+import { Subsolo } from './subsolo.js?v=498dcc0f3c';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -66,6 +66,10 @@ const APE = { anda: 2.2, corre: 6, raio: 0.25, olho: 1.0, vao: 13, el: 1.25 };
    conferidor dos estádios: a fileira da arquibancada tem de 40 a 52 cm, e
    ele sobe uma por uma (com a faixa da rua, de 35 cm, a fileira era parede) */
 const ESTADIO_PASSO = { degrau: 0.55, faixa: [0.55, 1.9] };
+/* NA SEDE DE DOIS ANDARES (o nível 5), o passo é o do metrô: o degrau de
+   30 cm (a escada dela tem espelho de 18 cm) e a faixa da rua (de 35 cm a
+   1,80 m do pé) — no térreo ele bate no mesmo que batia na grade da rua,
+   e no andar de cima, no que está lá em cima. Só o banco não se pisa */
 /* O CORTE: o que fica entre a câmera e o boneco, acima da cabeça, some
    (a copa, o beiral, o prédio do lado), e o prédio em que ele está
    DENTRO perde o que passa de 2,20 m (o telhado, a laje, o alto da
@@ -932,7 +936,18 @@ export function criarCenario(P) {
     const id = pixel[0] + pixel[1] * 256 + pixel[2] * 65536;
     return coisas[id] || null;
   }
+  const raioDoClique = new THREE.Raycaster(), telaDoClique = new THREE.Vector2();
   function clicar(sx, sy) {
+    /* o clique que a vida pega antes da ficha (o armário do patrimônio da
+       sede do jogador, no jogo 3D): o raio da câmera pelo ponto, no mundo */
+    if (vidaApi.aoClicar) {
+      const r = tela.getBoundingClientRect();
+      posicionar();
+      telaDoClique.set((sx - r.left) / r.width * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
+      raioDoClique.setFromCamera(telaDoClique, cam);
+      const o = raioDoClique.ray.origin, d = raioDoClique.ray.direction;
+      if (vidaApi.aoClicar({ o: [o.x, o.y, o.z], d: [d.x, d.y, d.z] })) return;
+    }
     const c = pegar(sx, sy);
     if (!c) { fecharFicha(); return; }
     selecao = c;
@@ -1112,7 +1127,7 @@ void main() {
     return { lugar, texturas, recopiar, jogarFora, folhas };
   }
 
-  function Forno(ar, escalaDecal, grade, sub, piso, andares) {
+  function Forno(ar, escalaDecal, grade, sub, piso, andares, sobrados) {
     const LADO = BLOCO_M * M;
     const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
     const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null], vivos = [];
@@ -1209,6 +1224,9 @@ void main() {
       if (sub && tipo === 'metro') for (const p of barram) sub.juntar(p.P3, p.n);
       else if (piso) for (const p of barram) piso.juntar(p.P3, p.n);
       if (andares && grupo.userData.dentroDoEstadio) for (const p of barram) andares.juntar(p.P3, p.n);
+      /* a sede de dois andares vai inteira pro subsolo dos sobrados (o
+         boneco sobe a escada dela) */
+      if (sobrados && grupo.userData.dentroDaSede) for (const p of barram) sobrados.juntar(p.P3, p.n);
       const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
       for (const p of pedacos) {
         const k = i + ',' + j + '|' + p.chave;
@@ -1708,13 +1726,15 @@ void main() {
     const gradeNova = GradeDoPasso(area, M), pisoNovo = PisoDaRua(area.x0, area.y0, area.x1, area.y1, M);
     const estacoes = P.metro ? P.metro() : [], subNovo = estacoes.length ? Subsolo(M, estacoes) : null;
     const andaresNovos = Subsolo(M, [], ESTADIO_PASSO), dentroNovos = [];
-    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo, andaresNovos), porTipo = {};
+    const sobradosNovos = Subsolo(M, []), sedesNovas = [];
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo, andaresNovos, sobradosNovos), porTipo = {};
     let i = 0, tFatia = agora();
     for (const pc of pecas) {
       const g = new THREE.Group();
       try { pc.montar(g); } catch (e) { console.error('cenário: não montei', pc.tipo, e); }
       forno.assar(g, pc.it, pc.tipo);
       if (g.userData.dentroDoEstadio) dentroNovos.push(g.userData.dentroDoEstadio);
+      if (g.userData.dentroDaSede) sedesNovas.push(g.userData.dentroDaSede);
       porTipo[pc.tipo] = (porTipo[pc.tipo] || 0) + 1;
       i++;
       if (agora() - tFatia > 40) {
@@ -1763,14 +1783,16 @@ void main() {
       for (const e of estacoes) doMapa.add(terraDaEstacao(e));
     }
     const tAndares = agora();
-    andaresNovos.fechar();
+    andaresNovos.fechar(); sobradosNovos.fechar();
     grade = gradeNova; sub = subNovo; piso = pisoNovo;
     andares = dentroNovos.length ? andaresNovos : null; dentroDosEstadios = dentroNovos;
+    sobrados = sedesNovas.length ? sobradosNovos : null; dentroDosSobrados = sedesNovas;
     montado = { nome, decal: forno.decal };
     numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000, tempos,
                 folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade), piso: piso.n }),
                 subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(tAndares - tSub) } : null,
-                andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null };
+                andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null,
+                sobrados: sobrados ? { sedes: sedesNovas.length, triangulos: sobrados.n } : null };
     /* o escudo em PNG chega depois: a folha copia de novo */
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
     setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
@@ -1866,6 +1888,9 @@ void main() {
      dentro de cada um: ali o chão e a parede são os deles */
   let andares = null, dentroDosEstadios = [];
   const noEstadio = (x, z) => !!andares && dentroDosEstadios.some(f => f(x, z));
+  /* os ANDARES DAS SEDES de dois andares (o nível 5), do mesmo jeito */
+  let sobrados = null, dentroDosSobrados = [];
+  const noSobrado = (x, z) => !!sobrados && dentroDosSobrados.some(f => f(x, z));
   /* debaixo de alguma coisa, no estádio: o que é deitado em cima da cabeça
      dele (o forro, a laje, a arquibancada por cima do corredor), ali e 30
      cm pra cada lado (debaixo da viga de 30 cm do portão do de 10 mil ele
@@ -1892,8 +1917,8 @@ void main() {
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=a865a037df', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=a865a037df');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=498dcc0f3c', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=498dcc0f3c');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2007,7 +2032,7 @@ void main() {
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=a865a037df');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=498dcc0f3c');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -2069,6 +2094,7 @@ void main() {
      rua (a laje da calçada, 7 cm; o piso da sede) ou o da estação do
      metrô (a praça da entrada fica 8 cm acima da rua) */
   function naRua(x, z, yPe = 0) {
+    if (noSobrado(x, z)) { const y = sobrados.chao(x, z, yPe); return y === y ? y : 0; }
     if (noEstadio(x, z)) { const y = andares.chao(x, z, yPe); return y === y ? y : 0; }
     if (!sub || !sub.estacaoEm(x, z)) return piso ? piso.chao(x, z, yPe) : 0;
     const y = sub.chao(x, z, 0);
@@ -2121,7 +2147,7 @@ void main() {
       m.material = matPorta.get(m.material);
       m.rotation.y = 0; m.updateMatrix();
       doMapa.add(m);
-      portas.push({ m, hx: d.hx, hz: d.hz, larg: d.larg, dir: d.dir, ang: d.ang, grupo: d.grupo, vidro: d.vidro, a: 0, alvo: 0 });
+      portas.push({ m, hx: d.hx, hz: d.hz, y0: d.y0 || 0, larg: d.larg, dir: d.dir, ang: d.ang, grupo: d.grupo, vidro: d.vidro, a: 0, alvo: 0 });
     }
   }
   /* a ponta da folha com o giro `a` (o do three.js em y) */
@@ -2136,20 +2162,25 @@ void main() {
     PQ[0] = ax + dx * t; PQ[1] = az + dz * t;
     return PQ;
   };
-  const longe = (p, x, z, r) => Math.abs(x - p.hx) > p.larg + r + 2 || Math.abs(z - p.hz) > p.larg + r + 2;
-  function empurrarPortas(c, r) {
+  /* (a folha de outro andar — a do 1º andar da sede de dois andares, pra
+     quem está no térreo — não conta: `y` é o pé) */
+  const longe = (p, x, z, r, y = 0) => Math.abs(x - p.hx) > p.larg + r + 2 || Math.abs(z - p.hz) > p.larg + r + 2 || Math.abs(y - p.y0) > 1.5 * M;
+  function empurrarPortas(c, r, y = 0) {
+    let mexeu = false;
     for (const p of portas) {
-      if (longe(p, c.x, c.z, r)) continue;
+      if (longe(p, c.x, c.z, r, y)) continue;
       const [bx, bz] = pontaDa(p, p.a), [qx, qz] = maisPertoNa(p.hx, p.hz, bx, bz, c.x, c.z);
       const dx = c.x - qx, dz = c.z - qz, d = Math.hypot(dx, dz);
       if (d >= r) continue;
       if (d > 1e-6) { c.x = qx + dx / d * r; c.z = qz + dz / d * r; }
       else { const ex = bx - p.hx, ez = bz - p.hz, L = Math.hypot(ex, ez) || 1; c.x += -ez / L * r; c.z += ex / L * r; }
+      mexeu = true;
     }
+    return mexeu;
   }
-  function cabePortas(x, z, r) {
+  function cabePortas(x, z, r, y = 0) {
     for (const p of portas) {
-      if (longe(p, x, z, r)) continue;
+      if (longe(p, x, z, r, y)) continue;
       const [bx, bz] = pontaDa(p, p.a), [qx, qz] = maisPertoNa(p.hx, p.hz, bx, bz, x, z);
       if ((qx - x) ** 2 + (qz - z) ** 2 < r * r) return false;
     }
@@ -2160,7 +2191,7 @@ void main() {
     if (!ape || ape.y < -0.5 * M) return null;
     let melhor = null, md = PORTA_ALCANCE_M * M;
     for (const p of portas) {
-      if (longe(p, ape.x, ape.z, md)) continue;
+      if (longe(p, ape.x, ape.z, md, ape.y)) continue;
       const [bx, bz] = pontaDa(p, p.a), [qx, qz] = maisPertoNa(p.hx, p.hz, bx, bz, ape.x, ape.z);
       const d = Math.hypot(ape.x - qx, ape.z - qz) - APE.raio * M;
       if (d < md) { md = d; melhor = p; }
@@ -2199,7 +2230,10 @@ void main() {
       const passo = PORTA_VEL * dt, d = p.alvo - p.a;
       p.a = Math.abs(d) <= passo ? p.alvo : p.a + Math.sign(d) * passo;
       /* a folha que abre em cima do boneco o empurra */
-      if (ape) { const c = { x: ape.x, z: ape.z }; empurrarPortas(c, APE.raio * M); if (grade.cabe(c.x, c.z, APE.raio * M * 0.97)) { ape.x = c.x; ape.z = c.z; } }
+      if (ape) {
+        const c = { x: ape.x, z: ape.z }, r = APE.raio * M * 0.97;
+        if (empurrarPortas(c, APE.raio * M, ape.y) && (noSobrado(c.x, c.z) ? sobrados.cabe(c.x, c.z, ape.y, r) : grade.cabe(c.x, c.z, r))) { ape.x = c.x; ape.z = c.z; }
+      }
       p.m.rotation.y = p.a;
       p.m.updateMatrix();
     }
@@ -2298,6 +2332,19 @@ void main() {
     const tenta = (ax, az) => {
       if (sub && (ape.y < -0.05 * M || sub.noPoco(ape.x + ax, ape.z + az))) {
         if (!sub.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
+      /* na sede de dois andares: o chão e a parede do andar do pé, e a
+         folha das portas desse andar */
+      if (sobrados && (noSobrado(ape.x + ax, ape.z + az) || noSobrado(ape.x, ape.z))) {
+        if (!sobrados.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        if (empurrarPortas(corpo, r, corpo.y)) {
+          const y = sobrados.chao(corpo.x, corpo.z, ape.y);
+          if (y !== y || !sobrados.cabe(corpo.x, corpo.z, y, r * 0.97)) return false;
+          corpo.y = y;
+        }
+        if (!cabePortas(corpo.x, corpo.z, r * 0.97, corpo.y)) return false;
         ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
         return true;
       }
@@ -2560,6 +2607,9 @@ void main() {
      ====================================================== */
   const vPro = new THREE.Vector3();
   const vidaApi = {
+    /* o clique na praça antes da ficha: `aoClicar({ o, d })` recebe o raio
+       da câmera (origem e direção, no mundo) e devolve se pegou o clique */
+    aoClicar: null,
     /* os bonecos (o modelo do jogo), carregados uma vez */
     chamarPovo: () => chamarBoneco(),
     get povo() { return povo; },
@@ -2569,7 +2619,7 @@ void main() {
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=a865a037df'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=498dcc0f3c'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -2597,6 +2647,19 @@ void main() {
     chao: (x, z) => piso ? piso.chao(x, z, 0) : 0,
     /* onde o corpo cabe (a grade do passo), com o raio em m */
     cabe: (x, z, r = 0.25) => !!grade && grade.cabe(x, z, r * M),
+    /* NA SEDE DE DOIS ANDARES: o chão a um degrau de `y` (o pé de agora:
+       quem sobe a escada acha o degrau seguinte) e onde o corpo cabe no
+       andar de `y` (com chão debaixo: o vão do pátio não é andar). Fora
+       dela, o chão e a grade da rua */
+    chaoEm(x, z, y = 0) {
+      if (noSobrado(x, z)) { const c = sobrados.chao(x, z, y); if (c === c) return c; }
+      return piso ? piso.chao(x, z, 0) : 0;
+    },
+    cabeEm(x, z, y = 0, r = 0.25) {
+      if (!noSobrado(x, z)) return !!grade && grade.cabe(x, z, r * M);
+      const c = sobrados.chao(x, z, y);
+      return c === c && Math.abs(c - y) < 0.12 * M && sobrados.cabe(x, z, c, r * M);
+    },
     get grade() { return grade; },
     /* o ponto do mundo na tela: px CSS a partir do canto da tela do
        cenário, e se está na frente da câmera */
@@ -2652,6 +2715,7 @@ void main() {
                   mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
                   get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, aberto: !!ape.aberto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
                   get grade() { return grade; }, get sub() { return sub; }, get piso() { return piso; }, get andares() { return andares; }, noEstadio: (x, z) => noEstadio(x, z), get povo() { return povo; },
-                  porta: () => alternarPorta(), get portas() { return portas.map(p => ({ hx: p.hx, hz: p.hz, larg: p.larg, a: p.a, alvo: p.alvo, ang: p.ang, grupo: p.grupo, vidro: p.vidro })); },
+                  get sobrados() { return sobrados; }, noSobrado: (x, z) => noSobrado(x, z),
+                  porta: () => alternarPorta(), get portas() { return portas.map(p => ({ hx: p.hx, hz: p.hz, y0: p.y0, larg: p.larg, a: p.a, alvo: p.alvo, ang: p.ang, grupo: p.grupo, vidro: p.vidro })); },
                   perto: () => { const p = portaPerto(); return p && { hx: p.hx, hz: p.hz, grupo: p.grupo, alvo: p.alvo }; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
 }
