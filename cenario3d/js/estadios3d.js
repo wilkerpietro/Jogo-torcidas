@@ -2762,7 +2762,7 @@ export function cortarEstadio(obj, y) {
    (o Lambert sai metálico no exportador), em metros */
 const PBR = new Map();
 export async function glbDoEstadio(obj) {
-  const { GLTFExporter } = await import('./GLTFExporter.js?v=5c6e3e5e1f');
+  const { GLTFExporter } = await import('./GLTFExporter.js?v=9ef06bee20');
   const copia = obj.clone(true);
   const tirar = [];
   copia.traverse(o => {

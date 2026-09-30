@@ -282,23 +282,23 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=5c6e3e5e1f';
-import { montarModelos } from './js/modelos3d.js?v=5c6e3e5e1f';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=5c6e3e5e1f';
-import { ATLAS } from './js/modelos_atlas.js?v=5c6e3e5e1f';
-import { Construtor, sorteio } from './js/construtor3d.js?v=5c6e3e5e1f';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=5c6e3e5e1f';
-import { montarSede, nivelQueCabe } from './js/sede3d.js?v=5c6e3e5e1f';
-import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=5c6e3e5e1f';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=5c6e3e5e1f';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=5c6e3e5e1f';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=5c6e3e5e1f';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=5c6e3e5e1f';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=5c6e3e5e1f';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=5c6e3e5e1f';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=5c6e3e5e1f';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=5c6e3e5e1f';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=5c6e3e5e1f';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=9ef06bee20';
+import { montarModelos } from './js/modelos3d.js?v=9ef06bee20';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=9ef06bee20';
+import { ATLAS } from './js/modelos_atlas.js?v=9ef06bee20';
+import { Construtor, sorteio } from './js/construtor3d.js?v=9ef06bee20';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=9ef06bee20';
+import { montarSede, nivelQueCabe } from './js/sede3d.js?v=9ef06bee20';
+import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=9ef06bee20';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=9ef06bee20';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=9ef06bee20';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=9ef06bee20';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=9ef06bee20';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=9ef06bee20';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=9ef06bee20';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=9ef06bee20';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=9ef06bee20';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=9ef06bee20';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -315,21 +315,21 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=5c6e3e5e1f');
-  await carregarScript('dados/times.js?v=5c6e3e5e1f');
-  await carregarScript('dados/cena_estadio.js?v=5c6e3e5e1f');
-  await carregarScript('dados/cidades.js?v=5c6e3e5e1f');
-  await carregarScript('dados/estadios.js?v=5c6e3e5e1f');
-  await carregarScript('dados/escudos.js?v=5c6e3e5e1f');
+  await carregarScript('dados/torcidas.js?v=9ef06bee20');
+  await carregarScript('dados/times.js?v=9ef06bee20');
+  await carregarScript('dados/cena_estadio.js?v=9ef06bee20');
+  await carregarScript('dados/cidades.js?v=9ef06bee20');
+  await carregarScript('dados/estadios.js?v=9ef06bee20');
+  await carregarScript('dados/escudos.js?v=9ef06bee20');
   /* o manifesto das faixas de verdade (a arte do dono, 29/09/2026): a arquibancada estende a da torcida */
-  await carregarScript('dados/faixas.js?v=5c6e3e5e1f').catch(() => {});
+  await carregarScript('dados/faixas.js?v=9ef06bee20').catch(() => {});
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=5c6e3e5e1f').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=9ef06bee20').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -5832,7 +5832,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=5c6e3e5e1f');
+    const { montarJogo } = await import('./js/jogo3d.js?v=9ef06bee20');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5875,7 +5875,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=5c6e3e5e1f');
+      const { criarCenario } = await import('./js/cenario.js?v=9ef06bee20');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
@@ -5888,7 +5888,7 @@ if (PARAMS.has('teste')) window.__planta.assalto = async (tipo, cfg = {}) => {
   const C = cenario, loja = apiDoCenario().lojas().find(l => l.tipo === tipo);
   if (!C || !loja) return { erro: 'sem cenário ou sem a loja ' + tipo };
   await C.vida.chamarPovo();
-  const { iniciarAssalto } = await import('./js/assalto3d.js?v=5c6e3e5e1f');
+  const { iniciarAssalto } = await import('./js/assalto3d.js?v=9ef06bee20');
   const equipe = Array.from({ length: cfg.n || 10 }, (_, i) => ({ id: 'm' + i, nome: ['Negão', 'Ruivo', 'Baixinho', 'Magrão', 'Alemão', 'Cabeça', 'Tico', 'Zóio', 'Bola', 'Formiga'][i % 10] }));
   const A = { banco: [95, 80, 90, 60, 85, 90], joalheria: [75, 70, 70, 40, 75, 70], supermercado: [45, 60, 45, 85, 45, 50], posto: [25, 55, 30, 50, 40, 30], mercadinho: [15, 35, 15, 45, 30, 15], roupas: [10, 40, 20, 50, 35, 15] }[tipo];
   const alvo = { id: tipo, nome: loja.nome, recompensa: A[0], exposicao: A[1], seguranca: A[2], movimentacao: A[3], atencao: A[4], dificuldade: A[5] };

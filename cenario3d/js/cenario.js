@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=5c6e3e5e1f';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=5c6e3e5e1f';
-import { Subsolo } from './subsolo.js?v=5c6e3e5e1f';
-import { ATLAS } from './modelos_atlas.js?v=5c6e3e5e1f';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=9ef06bee20';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=9ef06bee20';
+import { Subsolo } from './subsolo.js?v=9ef06bee20';
+import { ATLAS } from './modelos_atlas.js?v=9ef06bee20';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -2210,8 +2210,8 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=5c6e3e5e1f', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=5c6e3e5e1f');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=9ef06bee20', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=9ef06bee20');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2327,7 +2327,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=5c6e3e5e1f');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=9ef06bee20');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -2916,7 +2916,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=5c6e3e5e1f'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=9ef06bee20'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },

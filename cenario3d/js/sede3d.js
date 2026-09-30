@@ -74,7 +74,7 @@
    (em ferramentas/planta_html) prova que em toda sede dos três mapas
    um corpo de 70 cm entra em todo cômodo; mexeu na mobília, rode ele.
    ========================================================= */
-import { Construtor, METRO, arSplit } from './construtor3d.js?v=5c6e3e5e1f';
+import { Construtor, METRO, arSplit } from './construtor3d.js?v=9ef06bee20';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
