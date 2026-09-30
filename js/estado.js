@@ -435,6 +435,8 @@ TO.estado = (function(){
           if(meu) E.elencoVirada = {ano:anoQueFecha, de:meu.de, para:meu.para};
         }
         const mov = TO.competicoes.aplicarSobeDesce(E);
+        /* o feed das torcidas comemora e reclama no dia seguinte (30/09/2026) */
+        E.sobeDesceNoFeed = mov;
         /* a torcida do clube nas cidades é viva (dono, 02/09/2026):
            fase do ano + crescimento vegetativo das praças */
         TO.mundo.evoluirTorcedores(E, mov);

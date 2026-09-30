@@ -8208,6 +8208,12 @@ Mais uma leva no feed de Notícias → Mensagens (`feed.cidadeNoFeed`, um passo 
 
 No texto corrido, praça chamada "Zona Norte" deixou de virar link — lá é quase sempre a zona de uma torcida.
 
+## Rivalidade no feed: goleada, clássico, título, acesso e queda (pedido do dono, 30/09/2026)
+
+**O clássico principal** de cada clube não existia nos dados; sai das torcidas (`feed.rivalDoClube`): é o clube que mais aparece entre os "maiores rivais" das torcidas dele, com peso extra pro da mesma praça (Ceará × Fortaleza, Potiguar × Baraúnas). Quem fala por um clube é a nossa torcida pelo nosso e a maior torcida pelos outros.
+
+Todo dia, nos jogos do país (`rivalidadesDoDia`): **clássico principal** com vencedor — a torcida de quem ganhou comemora zoando ("O CLÁSSICO É NOSSO!…") e a de quem perdeu reclama; **goleada** (3 gols ou mais de diferença) — a torcida do rival do goleado provoca ("Alguém avisa a X que levar 4 do Central dói?") e a do goleado reclama ("Vexame!…"). Até dois casos por dia, os mais perto primeiro, com a chance pela distância (o nosso clube sempre; 85% na praça, 50% a uma estrada, 25% a duas, 5% mais longe). **Título** (`titulosDoDia`, uma vez por competição): a torcida do campeão comemora — competição nacional sempre, estadual pela distância. **Virada do ano** (`viradaDoAno`, a lista `E.sobeDesceNoFeed` que o `estado.js` deixa no sobe-e-desce): quem subiu comemora, quem caiu reclama e o rival de quem caiu provoca ("Tchau, Ceará! Boa viagem pela Série C…"); até seis clubes, os mais perto. Os textos não põem artigo antes de nome de clube, como o resto do jogo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -257,5 +257,56 @@ TO.i18n.registrar({
      en:'The {nome} held today. But the {perdedor} knows the way to your place.'},
   'Caravana confirmada! A {nome} estará {emCidade} {dia} pro jogo do {clube}{comp}. Quem vai, confirma presença com a diretoria!':
     {es:'¡Caravana confirmada! La {nome} va a estar {emCidade} {dia} para el partido de {clube}{comp}. ¡El que va, confirma con la directiva!',
-     en:'Away trip confirmed! {nome} will be {emCidade} {dia} for the {clube} match{comp}. If you are going, confirm with the board!'}
+     en:'Away trip confirmed! {nome} will be {emCidade} {dia} for the {clube} match{comp}. If you are going, confirm with the board!'},
+  /* ---------- rivalidade: clássico, goleada, título, acesso, queda ---------- */
+  'Comemoração': {es:'Festejo', en:'Celebration'},
+  'Reclamação':  {es:'Queja',   en:'Complaint'},
+  'O CLÁSSICO É NOSSO! {clube} {gv} x {gd} {rival}{comp}. A cidade tem dono, e a {deles} que aguente a zoeira até o próximo.':
+    {es:'¡EL CLÁSICO ES NUESTRO! {clube} {gv} x {gd} {rival}{comp}. La ciudad tiene dueño, y que la {deles} se banque la cargada hasta el próximo.',
+     en:'THE DERBY IS OURS! {clube} {gv}–{gd} {rival}{comp}. The city has an owner, and {deles} can put up with the banter until the next one.'},
+  'Quem manda na cidade? {clube} {gv} x {gd} {rival}{comp}. A {nome} faz a festa e manda um abraço pra {deles}!':
+    {es:'¿Quién manda en la ciudad? {clube} {gv} x {gd} {rival}{comp}. ¡La {nome} hace la fiesta y le manda un abrazo a la {deles}!',
+     en:'Who runs this city? {clube} {gv}–{gd} {rival}{comp}. {nome} throws the party and sends a hug to {deles}!'},
+  'Perder o clássico pro {clube} é inaceitável. {gv} a {gd}{comp}, e a gente engolindo zoeira a semana inteira. Exigimos respeito à camisa do {rival}!':
+    {es:'Perder el clásico con {clube} es inaceptable. {gv} a {gd}{comp}, y nosotros tragándonos la cargada toda la semana. ¡Exigimos respeto a la camiseta de {rival}!',
+     en:'Losing the derby to {clube} is unacceptable. {gv}–{gd}{comp}, and we have to swallow the banter all week. We demand respect for the {rival} shirt!'},
+  'Vergonha. {rival} entrou no clássico com medo e saiu com {gd} a {gv}. A {deles} não aceita time sem sangue em clássico.':
+    {es:'Vergüenza. {rival} entró al clásico con miedo y salió con {gd} a {gv}. La {deles} no acepta un equipo sin sangre en un clásico.',
+     en:'Shameful. {rival} went into the derby scared and came out {gd}–{gv}. {deles} will not accept a team with no fight in a derby.'},
+  'Alguém avisa a {deles} que levar {gv} do {vencedor} dói? Semana difícil pro {clube}. Que fase!':
+    {es:'¿Alguien le avisa a la {deles} que comerse {gv} de {vencedor} duele? Semana difícil para {clube}. ¡Qué momento!',
+     en:'Can someone tell {deles} that shipping {gv} to {vencedor} hurts? Tough week for {clube}. What a slump!'},
+  '{gv} a {gd}! {clube} virou saco de pancada{comp}. A {nome} está rindo até agora.':
+    {es:'¡{gv} a {gd}! {clube} se volvió bolsa de boxeo{comp}. La {nome} todavía se está riendo.',
+     en:'{gv}–{gd}! {clube} have become a punching bag{comp}. {nome} are still laughing.'},
+  'Vexame! {gd} a {gv} pro {vencedor}{comp}. A {deles} exige vergonha na cara do elenco do {clube}.':
+    {es:'¡Papelón! {gd} a {gv} con {vencedor}{comp}. La {deles} le exige vergüenza al plantel de {clube}.',
+     en:'Disgrace! {gd}–{gv} against {vencedor}{comp}. {deles} demand some shame from the {clube} squad.'},
+  'Levar {gv} do {vencedor} não dá. {clube} precisa de explicação, e a {deles} quer ouvir de quem manda no clube.':
+    {es:'Comerse {gv} de {vencedor} no puede ser. {clube} debe una explicación, y la {deles} quiere escucharla de los que mandan en el club.',
+     en:'Shipping {gv} to {vencedor} is not on. {clube} owe an explanation, and {deles} want to hear it from whoever runs the club.'},
+  'É CAMPEÃO! {clube} levanta {comp} de {ano}! A {nome} faz a festa: obrigado, elenco, a taça é nossa!':
+    {es:'¡ES CAMPEÓN! ¡{clube} levanta {comp} de {ano}! La {nome} hace la fiesta: gracias, plantel, ¡la copa es nuestra!',
+     en:'CHAMPIONS! {clube} lift {comp} of {ano}! {nome} throw the party: thank you, lads, the trophy is ours!'},
+  'CAMPEÃO! Deu {clube} {naComp}! A {nome} vai pra rua comemorar. Quem duvidou, que engula o grito!':
+    {es:'¡CAMPEÓN! ¡Ganó {clube} {naComp}! La {nome} sale a la calle a festejar. ¡El que dudó, que se trague el grito!',
+     en:'CHAMPIONS! {clube} win {naComp}! {nome} take to the streets to celebrate. Doubters, swallow your words!'},
+  'ACESSO! {clube} vai jogar {naDivisao}! A {nome} agradece a cada um que empurrou o time o ano inteiro. Ano que vem tem mais!':
+    {es:'¡ASCENSO! ¡{clube} va a jugar {naDivisao}! La {nome} le agradece a cada uno que empujó al equipo todo el año. ¡El año que viene hay más!',
+     en:'PROMOTED! {clube} will play {naDivisao}! {nome} thank everyone who pushed the team all year. More to come next year!'},
+  'SUBIU! {clube} está {naDivisao} e a {nome} não cabe em si. Foi na raça, foi na arquibancada!':
+    {es:'¡SUBIÓ! {clube} está {naDivisao} y la {nome} no cabe en sí. ¡Fue con garra, fue en la tribuna!',
+     en:'UP WE GO! {clube} are {naDivisao} and {nome} are over the moon. It was guts, it was the stands!'},
+  'Rebaixado. {clube} vai jogar {naDivisao} e a {nome} não vai aceitar calada. Diretoria, a conta chegou.':
+    {es:'Descendido. {clube} va a jugar {naDivisao} y la {nome} no se va a quedar callada. Directiva, llegó la cuenta.',
+     en:'Relegated. {clube} will play {naDivisao} and {nome} will not keep quiet. Board, the bill has arrived.'},
+  'Ano de vergonha. {clube} caiu, e a {nome} quer os responsáveis longe do clube. A camisa não merecia isso.':
+    {es:'Año de vergüenza. {clube} descendió, y la {nome} quiere a los responsables lejos del club. La camiseta no merecía esto.',
+     en:'A year of shame. {clube} went down, and {nome} want those responsible out of the club. The shirt did not deserve this.'},
+  'Tchau, {clube}! Boa viagem {pelaDivisao}. A {nome} manda um abraço pra {deles}: a gente se vê daqui a uns anos.':
+    {es:'¡Chau, {clube}! Buen viaje {pelaDivisao}. La {nome} le manda un abrazo a la {deles}: nos vemos en unos años.',
+     en:'Bye, {clube}! Enjoy life {naDivisao}. {nome} send a hug to {deles}: see you in a few years.'},
+  'Caiu! {clube} vai conhecer {naDivisao}, e a {nome} vai lembrar disso por muito tempo.':
+    {es:'¡Se fue al descenso! {clube} va a conocer {naDivisao}, y la {nome} se va a acordar de esto por mucho tiempo.',
+     en:'Down they go! {clube} will get to know {naDivisao}, and {nome} will remember this for a long time.'}
 });

@@ -543,12 +543,172 @@ TO.feed = (function(){
         'convite', {publico:true, chave:`convite-nosso|${aniv.getFullYear()}`});
   }
 
+  /* =======================================================
+     A RIVALIDADE NO FEED (pedido do dono, 30/09/2026)
+     A torcida do rival provoca quando o outro é goleado ou rebaixado;
+     quem ganha o clássico principal comemora zoando; quem sofre
+     reclama em público. E a torcida comemora o acesso, o clássico e
+     o título. O CLÁSSICO PRINCIPAL não existe nos dados: sai das
+     torcidas — o clube rival de um clube é o que mais aparece entre
+     os "maiores rivais" das torcidas dele (a Aliança, do Ceará, tem
+     como maiores rivais duas torcidas do Fortaleza: Ceará × Fortaleza).
+     ======================================================= */
+  let _rivalDoClube = null;
+  function rivalDoClube(id){
+    if(!_rivalDoClube){
+      _rivalDoClube = new Map();
+      const conta = new Map();
+      for(const o of M().jogaveis()){
+        if(!o.clubeId || o.incompleta) continue;
+        for(const rid of (o.maioresRivais || [])){
+          const r = M().torcida(rid);
+          if(!r || !r.clubeId || r.clubeId === o.clubeId) continue;
+          const c = conta.get(o.clubeId) || new Map();
+          c.set(r.clubeId, (c.get(r.clubeId) || 0) + 1 + (r.mapa === o.mapa ? 0.5 : 0));
+          conta.set(o.clubeId, c);
+        }
+      }
+      for(const [cl, c] of conta)
+        _rivalDoClube.set(cl, [...c.entries()].sort((a,b)=>b[1]-a[1])[0][0]);
+    }
+    return _rivalDoClube.get(id) || null;
+  }
+  const ehClassico = (a, b) => rivalDoClube(a) === b || rivalDoClube(b) === a;
+  /* quem fala por um clube: a nossa torcida pelo nosso, a maior pelos outros */
+  const vozDoClube = (E, id) => id === E.torcida.clubeId ? M().torcida(E.torcida.id) : torcidaMaior(E, id);
+  function pertoDeNos(E, ids){
+    if(ids.includes(E.torcida.clubeId)) return -1;
+    return Math.min(...ids.map(id => saltosDaNossa(E, (M().time(id) || {}).mapa)));
+  }
+  const CHANCE_RIVAL = s => s < 0 ? 1 : s === 0 ? 0.85 : s === 1 ? 0.5 : s === 2 ? 0.25 : 0.05;
+
+  /* o clássico e a goleada de hoje: até dois casos por dia, os mais perto */
+  function rivalidadesDoDia(E, jogos){
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash, casos = [];
+    for(const j of (jogos || [])){
+      if(j.gc == null || j.gf == null || j.gc === j.gf) continue;
+      const V = j.gc > j.gf ? j.c : j.f, D = V === j.c ? j.f : j.c;
+      const gv = Math.max(j.gc, j.gf), gd = Math.min(j.gc, j.gf);
+      let caso = null;
+      if(ehClassico(V, D)) caso = {tipo:'classico', V, D, ids:[V, D]};
+      else if(gv - gd >= 3){
+        const R = rivalDoClube(D);
+        if(R && R !== V) caso = {tipo:'goleada', V, D, R, ids:[D, R]};
+      }
+      if(!caso) continue;
+      caso.s = pertoDeNos(E, caso.ids);
+      if((H(`rival-dia|${abs}|${j.c}|${j.f}`) % 1000) >= CHANCE_RIVAL(caso.s) * 1000) continue;
+      Object.assign(caso, {gv, gd, comp:pelaCompeticao(j.compNome || j.comp), chave:`${abs}|${j.c}|${j.f}`});
+      casos.push(caso);
+    }
+    casos.sort((a,b) => a.s - b.s);
+    for(const c of casos.slice(0, 2)){
+      const oV = vozDoClube(E, c.V), oD = vozDoClube(E, c.D);
+      const h = H(`rival-txt|${c.chave}`);
+      if(c.tipo === 'classico'){
+        const P = {nome:oV && oV.nome, deles:oD && oD.nome, clube:nomeClube(c.V), rival:nomeClube(c.D),
+                   gv:c.gv, gd:c.gd, comp:c.comp};
+        if(oV){
+          const op = [
+            _t('O CLÁSSICO É NOSSO! {clube} {gv} x {gd} {rival}{comp}. A cidade tem dono, e a {deles} que aguente a zoeira até o próximo.', P),
+            _t('Quem manda na cidade? {clube} {gv} x {gd} {rival}{comp}. A {nome} faz a festa e manda um abraço pra {deles}!', P)];
+          mensagemDe(E, oV.id, op[h % op.length], 'comemoracao', {publico:true, chave:`classico-v|${c.chave}`});
+        }
+        if(oD){
+          const op = [
+            _t('Perder o clássico pro {clube} é inaceitável. {gv} a {gd}{comp}, e a gente engolindo zoeira a semana inteira. Exigimos respeito à camisa do {rival}!', P),
+            _t('Vergonha. {rival} entrou no clássico com medo e saiu com {gd} a {gv}. A {deles} não aceita time sem sangue em clássico.', P)];
+          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`classico-d|${c.chave}`});
+        }
+      } else {
+        const oR = vozDoClube(E, c.R);
+        const P = {nome:oR && oR.nome, deles:oD && oD.nome, clube:nomeClube(c.D), vencedor:nomeClube(c.V),
+                   gv:c.gv, gd:c.gd, comp:c.comp};
+        if(oR){
+          const op = [
+            _t('Alguém avisa a {deles} que levar {gv} do {vencedor} dói? Semana difícil pro {clube}. Que fase!', P),
+            _t('{gv} a {gd}! {clube} virou saco de pancada{comp}. A {nome} está rindo até agora.', P)];
+          mensagemDe(E, oR.id, op[h % op.length], 'provocacao', {publico:true, chave:`goleada-r|${c.chave}`});
+        }
+        if(oD){
+          const op = [
+            _t('Vexame! {gd} a {gv} pro {vencedor}{comp}. A {deles} exige vergonha na cara do elenco do {clube}.', P),
+            _t('Levar {gv} do {vencedor} não dá. {clube} precisa de explicação, e a {deles} quer ouvir de quem manda no clube.', P)];
+          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`goleada-d|${c.chave}`});
+        }
+      }
+    }
+  }
+
+  /* o título: a torcida do campeão comemora (uma vez por competição) */
+  function titulosDoDia(E){
+    if(!E.temporada) return;
+    E.titulosNoFeed = E.titulosNoFeed || {};
+    const H = TO.mapa.hash;
+    for(const comp of (E.temporada.competicoes || [])){
+      if(!comp.campeao) continue;
+      const chave = `${E.temporada.ano}|${comp.id || comp.nome}`;
+      if(E.titulosNoFeed[chave]) continue;
+      E.titulosNoFeed[chave] = true;
+      const s = pertoDeNos(E, [comp.campeao]);
+      const nacional = !comp.regional && !/Estadual|Paulist|Carioc|Mineir|Gauch|Paranaense|Catarinense/.test(comp.nome || '');
+      if(!nacional && (H(`titulo|${chave}`) % 1000) >= CHANCE_RIVAL(s) * 1000) continue;
+      const o = vozDoClube(E, comp.campeao);
+      if(!o) continue;
+      const P = {nome:o.nome, clube:nomeClube(comp.campeao), comp:TO.genero.o('competicao', comp.nome),
+                 naComp:TO.genero.em('competicao', comp.nome), ano:E.temporada.ano};
+      const op = [
+        _t('É CAMPEÃO! {clube} levanta {comp} de {ano}! A {nome} faz a festa: obrigado, elenco, a taça é nossa!', P),
+        _t('CAMPEÃO! Deu {clube} {naComp}! A {nome} vai pra rua comemorar. Quem duvidou, que engula o grito!', P)];
+      mensagemDe(E, o.id, op[H(`titulo-txt|${chave}`) % op.length], 'comemoracao', {publico:true, chave:`titulo|${chave}`});
+    }
+  }
+
+  /* a virada do ano: quem subiu comemora, quem caiu reclama, e o
+     rival de quem caiu provoca (a lista vem de `estado.js`) */
+  function viradaDoAno(E){
+    const mov = E.sobeDesceNoFeed;
+    if(!Array.isArray(mov)) return;
+    E.sobeDesceNoFeed = null;
+    const H = TO.mapa.hash, abs = E.data.absoluto || 0;
+    const casos = mov.map(m => ({m, s:pertoDeNos(E, [m.id, rivalDoClube(m.id)].filter(Boolean))}))
+      .filter(c => (H(`virada|${abs}|${c.m.id}`) % 1000) < CHANCE_RIVAL(c.s) * 1000 * 1.5)
+      .sort((a,b) => a.s - b.s).slice(0, 6);
+    for(const {m} of casos){
+      const sobe = TO.competicoes.subiu(m.de, m.para);
+      const o = vozDoClube(E, m.id);
+      const div = competicaoCurta(m.para);
+      const P = {nome:o && o.nome, clube:nomeClube(m.id), naDivisao:TO.genero.em('competicao', div),
+                 pelaDivisao:TO.genero.por('competicao', div)};
+      const h = H(`virada-txt|${abs}|${m.id}`);
+      if(sobe){
+        if(o) mensagemDe(E, o.id, [
+          _t('ACESSO! {clube} vai jogar {naDivisao}! A {nome} agradece a cada um que empurrou o time o ano inteiro. Ano que vem tem mais!', P),
+          _t('SUBIU! {clube} está {naDivisao} e a {nome} não cabe em si. Foi na raça, foi na arquibancada!', P)][h % 2],
+          'comemoracao', {publico:true, chave:`acesso|${m.ano}|${m.id}`});
+        continue;
+      }
+      if(o) mensagemDe(E, o.id, [
+        _t('Rebaixado. {clube} vai jogar {naDivisao} e a {nome} não vai aceitar calada. Diretoria, a conta chegou.', P),
+        _t('Ano de vergonha. {clube} caiu, e a {nome} quer os responsáveis longe do clube. A camisa não merecia isso.', P)][h % 2],
+        'reclamacao', {publico:true, chave:`queda|${m.ano}|${m.id}`});
+      const R = rivalDoClube(m.id), oR = R && vozDoClube(E, R);
+      if(oR) mensagemDe(E, oR.id, [
+        _t('Tchau, {clube}! Boa viagem {pelaDivisao}. A {nome} manda um abraço pra {deles}: a gente se vê daqui a uns anos.', Object.assign({deles:o ? o.nome : P.clube}, P, {nome:oR.nome})),
+        _t('Caiu! {clube} vai conhecer {naDivisao}, e a {nome} vai lembrar disso por muito tempo.', Object.assign({}, P, {nome:oR.nome}))][(h >> 3) % 2],
+        'provocacao', {publico:true, chave:`queda-r|${m.ano}|${m.id}`});
+    }
+  }
+
   function cidadeNoFeed(E, ctx){
     passo('convocação',  ()=>convocacoesDeHoje(E, ctx.jogos || []));
     passo('gazeta da cidade', ()=>gazetaDaCidade(E, ctx.jogos || []));
     passo('protestos',   ()=>protestosDaSemana(E));
     passo('resenha',     ()=>resenhaDaSemana(E));
     passo('nosso perfil',()=>nossoPerfilHoje(E));
+    passo('rivalidade',  ()=>rivalidadesDoDia(E, ctx.jogos || []));
+    passo('títulos',     ()=>titulosDoDia(E));
+    passo('virada',      ()=>viradaDoAno(E));
   }
 
   /* --- a zoeira das zonas na casa de piscina, e a nossa quando
