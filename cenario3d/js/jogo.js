@@ -5590,6 +5590,108 @@ TO.i18n.registrar({
 
 ;
 
+/* ===== dados/i18n/graficos.js ===== */
+/* Dicionário da fatia "gráficos" — ver docs/I18N.md.
+   Chave: o texto em português, exatamente como está no código (com os
+   {marcadores}). Valor: {es, en}.
+   Cobre o menu Gráficos do jogo 3D (pedido do dono, 30/09/2026: "crie
+   mecanismos de melhorar o FPS em computadores fracos, em um menu de
+   configuração de gráfico"): o painel em js/ui/graficos.js, o item da
+   coluna e as Configurações do menu em js/main.js e o aviso da primeira
+   vez sem placa de vídeo (ferramentas/planta_html/jogo3d.js). */
+TO.i18n.registrar({
+  /* =========================================================
+     O PAINEL (graficos.js)
+     ========================================================= */
+  'Gráficos': {es:'Gráficos', en:'Graphics'},
+  'Predefinição': {es:'Preajuste', en:'Preset'},
+  'Personalizada': {es:'Personalizado', en:'Custom'},
+  'Mínima': {es:'Mínima', en:'Lowest'},
+  'Leve': {es:'Ligera', en:'Light'},
+  'Normal': {es:'Normal', en:'Normal'},
+  'Alta': {es:'Alta', en:'High'},
+  'Recomendada pra este computador: {p}.': {es:'Recomendado para esta computadora: {p}.', en:'Recommended for this computer: {p}.'},
+  'Quando a textura muda junto, a cidade monta de novo.': {es:'Cuando la textura cambia también, la ciudad se arma de nuevo.', en:'When the textures change too, the city is rebuilt.'},
+  'Voltar ao recomendado': {es:'Volver a lo recomendado', en:'Back to recommended'},
+  '{p}% da resolução': {es:'{p}% de la resolución', en:'{p}% resolution'},
+  '(a cidade está parada atrás de outra tela)': {es:'(la ciudad está detenida detrás de otra pantalla)', en:'(the city is paused behind another screen)'},
+  'Sem placa de vídeo: o navegador desenha no processador ({placa}).': {es:'Sin tarjeta de video: el navegador dibuja con el procesador ({placa}).', en:'No graphics card: the browser is drawing on the processor ({placa}).'},
+
+  'Resolução da imagem': {es:'Resolución de la imagen', en:'Image resolution'},
+  'Automática': {es:'Automática', en:'Automatic'},
+  'É o que mais pesa sem placa de vídeo: menos resolução deixa a imagem borrada e o jogo muito mais leve. A automática desce e sobe sozinha atrás do fps escolhido embaixo.':
+    {es:'Es lo que más pesa sin tarjeta de video: menos resolución deja la imagen borrosa y el juego mucho más liviano. La automática baja y sube sola para alcanzar los fps elegidos abajo.',
+     en:'This is the heaviest part without a graphics card: lower resolution makes the image blurry and the game much lighter. Automatic goes down and up by itself to reach the fps chosen below.'},
+  'A automática mira em': {es:'La automática apunta a', en:'Automatic aims for'},
+
+  'Suavizar as bordas': {es:'Suavizar los bordes', en:'Smooth the edges'},
+  'Automático': {es:'Automático', en:'Automatic'},
+  'Tira o serrilhado das bordas; sem placa de vídeo custa caro (o automático desliga). Só vale quando o jogo abrir de novo.':
+    {es:'Quita el serrucho de los bordes; sin tarjeta de video cuesta caro (el automático lo apaga). Solo vale cuando el juego se abra de nuevo.',
+     en:'Removes jagged edges; without a graphics card it is expensive (automatic turns it off). Only applies when the game opens again.'},
+  'Liga quando o jogo abrir de novo (recarregue a página).': {es:'Se enciende cuando el juego se abra de nuevo (recargue la página).', en:'Turns on when the game opens again (reload the page).'},
+  'Desliga quando o jogo abrir de novo (recarregue a página).': {es:'Se apaga cuando el juego se abra de nuevo (recargue la página).', en:'Turns off when the game opens again (reload the page).'},
+
+  'Limite de fps': {es:'Límite de fps', en:'Fps limit'},
+  'Sem limite': {es:'Sin límite', en:'No limit'},
+  'Não aumenta o fps: deixa o processador livre pro resto do jogo e esquenta menos o computador.':
+    {es:'No aumenta los fps: deja el procesador libre para el resto del juego y calienta menos la computadora.',
+     en:'It does not raise the fps: it leaves the processor free for the rest of the game and keeps the computer cooler.'},
+
+  'Iluminação': {es:'Iluminación', en:'Lighting'},
+  'Completa': {es:'Completa', en:'Full'},
+  'Simples': {es:'Simple', en:'Simple'},
+  'A simples faz a conta da luz nos cantos de cada face, e não em cada pixel: nas paredes e no chão fica igual. Ganho pequeno, uns 6 a 10%.':
+    {es:'La simple calcula la luz en las esquinas de cada cara y no en cada píxel: en las paredes y el piso queda igual. Ganancia pequeña, un 6 a 10%.',
+     en:'Simple computes the light at the corners of each face instead of every pixel: walls and floors look the same. Small gain, about 6 to 10%.'},
+
+  'Luzes da noite': {es:'Luces de la noche', en:'Night lights'},
+  'Acesas': {es:'Encendidas', en:'On'},
+  'Apagadas': {es:'Apagadas', en:'Off'},
+  'Os postes, os refletores, as janelas e os cômodos acesos. Apagadas, a noite fica só escura (uns 10% mais leve).':
+    {es:'Los postes, los reflectores, las ventanas y las habitaciones encendidas. Apagadas, la noche queda solo oscura (un 10% más liviano).',
+     en:'Street lamps, floodlights, windows and lit rooms. Off, the night is just dark (about 10% lighter).'},
+
+  'Distância de visão': {es:'Distancia de visión', en:'View distance'},
+  'Longe': {es:'Lejos', en:'Far'},
+  'Média': {es:'Media', en:'Medium'},
+  'Perto': {es:'Cerca', en:'Near'},
+  'Com a câmera longe (a cidade vista de cima), a névoa chega antes e menos quarteirões são desenhados.':
+    {es:'Con la cámara lejos (la ciudad vista desde arriba), la niebla llega antes y se dibujan menos manzanas.',
+     en:'With the camera far away (the city seen from above), the fog comes sooner and fewer blocks are drawn.'},
+
+  'Gente na rua': {es:'Gente en la calle', en:'People on the street'},
+  'Muita': {es:'Mucha', en:'Many'},
+  'Pouca': {es:'Poca', en:'Few'},
+
+  'Bonecos': {es:'Muñecos', en:'Characters'},
+  'Detalhados': {es:'Detallados', en:'Detailed'},
+  'Leves': {es:'Livianos', en:'Light'},
+  'Leves: todo mundo com o modelo de longe, menos o seu líder.': {es:'Livianos: todos con el modelo de lejos, menos tu líder.', en:'Light: everyone uses the far model, except your leader.'},
+
+  'Texturas': {es:'Texturas', en:'Textures'},
+  'O chão, os letreiros e a nitidez deles vistos de lado. Trocar monta a cidade de novo.':
+    {es:'El piso, los carteles y su nitidez vistos de costado. Cambiarlo arma la ciudad de nuevo.',
+     en:'The ground, the signs and how sharp they look from the side. Changing it rebuilds the city.'},
+
+  'Medidor de fps': {es:'Medidor de fps', en:'Fps meter'},
+  'Mostrar': {es:'Mostrar', en:'Show'},
+  'Esconder': {es:'Ocultar', en:'Hide'},
+
+  /* =========================================================
+     AS CONFIGURAÇÕES DO MENU (main.js) E O AVISO (jogo3d.js)
+     ========================================================= */
+  'Abrir as opções de gráfico': {es:'Abrir las opciones de gráficos', en:'Open the graphics options'},
+  'A resolução, a suavização, a luz, a gente na rua e as texturas da cidade em 3D. No computador sem placa de vídeo, é aqui que o jogo fica leve.':
+    {es:'La resolución, el suavizado, la luz, la gente en la calle y las texturas de la ciudad en 3D. En la computadora sin tarjeta de video, aquí es donde el juego se vuelve liviano.',
+     en:'Resolution, smoothing, lighting, people on the street and the textures of the 3D city. On a computer without a graphics card, this is where the game gets light.'},
+  'Sem placa de vídeo: os gráficos começaram no mínimo. Dá pra mudar em <b>Gráficos</b>, no menu da esquerda.':
+    {es:'Sin tarjeta de video: los gráficos empezaron en el mínimo. Se puede cambiar en <b>Gráficos</b>, en el menú de la izquierda.',
+     en:'No graphics card: the graphics started at the lowest setting. You can change it in <b>Graphics</b>, in the left menu.'}
+});
+
+;
+
 /* ===== dados/nomes.js ===== */
 /* =========================================================
    BANCO DE NOMES — GDD §5.5
@@ -46972,6 +47074,9 @@ TO.icones = (function(){
     /* a prancheta do planejamento da semana (29/09/2026) */
     prancheta: env('<rect x="5" y="4.5" width="14" height="16.5" rx="1.5"/><path d="M9 4.5V3h6v1.5"/>'+
                    '<path d="m8.5 10 1.5 1.5 2.5-3"/><path d="M14 10.5h2"/><path d="m8.5 15.5 1.5 1.5 2.5-3"/><path d="M14 16h2"/>'),
+    /* os gráficos do jogo 3D (30/09/2026): a tela com o ponteiro do velocímetro */
+    graficos:  env('<rect x="3" y="4" width="18" height="12.5" rx="1.5"/><path d="M8.5 20.5h7"/><path d="M12 16.5v4"/>'+
+                   '<path d="M7.5 13a4.5 4.5 0 0 1 9 0"/><path d="m12 13 2.4-2.6"/>'),
     medalha:   env('<circle cx="12" cy="15" r="5"/><path d="m8.5 10.5-2.5-7"/><path d="m15.5 10.5 2.5-7"/><path d="M9 3.5h6"/>'),
 
     membros:   env('<circle cx="12" cy="7" r="3.2"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>'),
@@ -47019,6 +47124,163 @@ TO.icones = (function(){
 
   /* devolve o SVG cru, pra injetar com innerHTML */
   return { get(nome){ return I[nome] || I.estrela; }, todos:I };
+})();
+
+;
+
+/* ===== js/ui/graficos.js ===== */
+/* =========================================================
+   OS GRÁFICOS DO JOGO 3D (o dono, 30/09/2026: "crie mecanismos de
+   melhorar o FPS em computadores fracos, em um menu de configuração de
+   gráfico"; ele joga sem placa de vídeo, a 4 ou 5 fps na sala do
+   presidente).
+
+   O painel mexe nas opções de gráfico do cenário 3D
+   (ferramentas/planta_html/cenario.js, `graficos`, com as medidas de
+   quanto cada uma rende). Cada opção vale na hora e a cidade continua
+   desenhando atrás — o painel não cobre a tela, então o fps que muda é o
+   que se vê no alto do painel. Enquanto ele está aberto, o relógio do
+   jogo para (mexer em gráfico não é deixar o dia correr).
+
+   Abre pelo ícone da coluna (main.js, `graficos`), pelas Configurações
+   do menu principal e pelo clique no medidor de fps. Só existe no jogo
+   3D: no jogo de feed não há cidade pra desenhar.
+   ========================================================= */
+window.TO = window.TO || {};
+
+TO.graficos = (function(){
+  let raiz = null, relogio = 0;
+  const G = ()=> TO.jogo3d && TO.jogo3d.graficos;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]));
+
+  /* as predefinições (os nomes das do cenário) */
+  const PREDEFS = ()=>[['minima', _t('Mínima')], ['leve', _t('Leve')], ['normal', _t('Normal')], ['alta', _t('Alta')]];
+  /* as opções, na ordem do painel: a chave do cenário, o rótulo, os valores
+     (com o rótulo de cada um) e a nota. `so`: só aparece quando vale */
+  const OPCOES = ()=>[
+    {k:'resolucao', rot:_t('Resolução da imagem'),
+     vals:[['auto', _t('Automática')], [1, '100%'], [0.85, '85%'], [0.7, '70%'], [0.5, '50%'], [0.35, '35%']],
+     nota:_t('É o que mais pesa sem placa de vídeo: menos resolução deixa a imagem borrada e o jogo muito mais leve. A automática desce e sobe sozinha atrás do fps escolhido embaixo.')},
+    {k:'alvo', rot:_t('A automática mira em'), so:o=>o.resolucao === 'auto',
+     vals:[[20, '20 fps'], [30, '30 fps'], [45, '45 fps'], [60, '60 fps']]},
+    {k:'suavizar', rot:_t('Suavizar as bordas'),
+     vals:[['auto', _t('Automático')], ['sim', _t('Sim')], ['nao', _t('Não')]],
+     nota:_t('Tira o serrilhado das bordas; sem placa de vídeo custa caro (o automático desliga). Só vale quando o jogo abrir de novo.')},
+    {k:'fpsMax', rot:_t('Limite de fps'),
+     vals:[[0, _t('Sem limite')], [60, '60'], [30, '30']],
+     nota:_t('Não aumenta o fps: deixa o processador livre pro resto do jogo e esquenta menos o computador.')},
+    {k:'luz', rot:_t('Iluminação'),
+     vals:[['completa', _t('Completa')], ['simples', _t('Simples')]],
+     nota:_t('A simples faz a conta da luz nos cantos de cada face, e não em cada pixel: nas paredes e no chão fica igual. Ganho pequeno, uns 6 a 10%.')},
+    {k:'luzes', rot:_t('Luzes da noite'),
+     vals:[[true, _t('Acesas')], [false, _t('Apagadas')]],
+     nota:_t('Os postes, os refletores, as janelas e os cômodos acesos. Apagadas, a noite fica só escura (uns 10% mais leve).')},
+    {k:'distancia', rot:_t('Distância de visão'),
+     vals:[[1, _t('Longe')], [0.7, _t('Média')], [0.45, _t('Perto')]],
+     nota:_t('Com a câmera longe (a cidade vista de cima), a névoa chega antes e menos quarteirões são desenhados.')},
+    {k:'gente', rot:_t('Gente na rua'),
+     vals:[[1, _t('Muita')], [0.65, _t('Média')], [0.35, _t('Pouca')]]},
+    {k:'bonecos', rot:_t('Bonecos'),
+     vals:[['normal', _t('Detalhados')], ['leve', _t('Leves')]],
+     nota:_t('Leves: todo mundo com o modelo de longe, menos o seu líder.')},
+    {k:'texturas', rot:_t('Texturas'),
+     vals:[['alta', _t('Alta')], ['normal', _t('Normal')], ['leve', _t('Leve')], ['minima', _t('Mínima')]],
+     nota:_t('O chão, os letreiros e a nitidez deles vistos de lado. Trocar monta a cidade de novo.')},
+    {k:'medidor', rot:_t('Medidor de fps'),
+     vals:[[true, _t('Mostrar')], [false, _t('Esconder')]]}
+  ];
+  const nomeDaPredef = p => (PREDEFS().find(x=>x[0] === p) || [p, _t('Personalizada')])[1];
+
+  /* o que se mede agora, no alto do painel */
+  function pintarMedida(){
+    const g = G(), cx = raiz && raiz.querySelector('.j3d-graf-medida');
+    if(!g || !cx) return;
+    const s = g.estado;
+    const fps = s.fps ? Math.round(s.fps) : '—';
+    const cls = !s.fps ? '' : s.fps >= 50 ? 'bom' : s.fps >= 28 ? 'meio' : 'ruim';
+    let h = `<b class="${cls}">${fps}</b> fps`+
+      (s.ms ? ` · ${s.ms.toFixed(0)} ms` : '')+
+      ` · ${_t('{p}% da resolução', {p:Math.round(s.escala*100)})} <small>(${s.largura} × ${s.altura} px)</small>`;
+    if(s.pausado) h += `<small>${_t('(a cidade está parada atrás de outra tela)')}</small>`;
+    if(s.semPlaca) h += `<small class="aviso">${_t('Sem placa de vídeo: o navegador desenha no processador ({placa}).', {placa:esc(s.placa || '?')})}</small>`;
+    cx.innerHTML = h;
+  }
+
+  function pintar(){
+    const g = G();
+    if(!raiz || !g) return;
+    const o = g.opcoes, s = g.estado, rec = g.recomendada;
+    const corpo = raiz.querySelector('.j3d-graf-corpo');
+    const topo = corpo.scrollTop;
+    let h = `<div class="j3d-graf-bloco"><div class="j3d-graf-rot">${_t('Predefinição')}`+
+      (o.predef === 'pessoal' ? ` <em>${_t('Personalizada')}</em>` : '')+`</div><div class="j3d-graf-bts">`+
+      PREDEFS().map(([id, nome])=>`<button type="button" data-predef="${id}" aria-pressed="${o.predef === id}">${nome}</button>`).join('')+
+      `</div><div class="j3d-graf-nota">${_t('Recomendada pra este computador: {p}.', {p:nomeDaPredef(rec)})} `+
+      `${_t('Quando a textura muda junto, a cidade monta de novo.')}</div></div>`;
+    for(const op of OPCOES()){
+      if(op.so && !op.so(o)) continue;
+      h += `<div class="j3d-graf-bloco"><div class="j3d-graf-rot">${op.rot}</div><div class="j3d-graf-bts">`+
+        op.vals.map(([v, r])=>`<button type="button" data-k="${op.k}" data-v='${JSON.stringify(v)}' aria-pressed="${o[op.k] === v}">${r}</button>`).join('')+
+        `</div>`;
+      let nota = op.nota || '';
+      if(op.k === 'suavizar' && s.suavizando !== s.suavizarPedido)
+        nota = `<b>${s.suavizarPedido ? _t('Liga quando o jogo abrir de novo (recarregue a página).') : _t('Desliga quando o jogo abrir de novo (recarregue a página).')}</b> ` + nota;
+      if(nota) h += `<div class="j3d-graf-nota">${nota}</div>`;
+      h += `</div>`;
+    }
+    corpo.innerHTML = h;
+    corpo.scrollTop = topo;
+    pintarMedida();
+  }
+
+  function abrir(){
+    const g = G();
+    if(!g) return;
+    if(raiz){ pintar(); return; }
+    /* um painel do jogo aberto fecha (os dois não cabem lado a lado) */
+    if(document.body.classList.contains('com-painel') && TO.tela && TO.tela.fecharPainel) TO.tela.fecharPainel();
+    raiz = document.createElement('aside');
+    raiz.className = 'j3d-graf';
+    raiz.setAttribute('role', 'dialog');
+    raiz.setAttribute('aria-label', _t('Gráficos'));
+    raiz.innerHTML = `<header><h2>${_t('Gráficos')}</h2><button type="button" class="j3d-graf-x" aria-label="${_t('Fechar')}">×</button></header>`+
+      `<p class="j3d-graf-medida"></p><div class="j3d-graf-corpo"></div>`+
+      `<footer><button type="button" class="bt j3d-graf-rec">${_t('Voltar ao recomendado')}</button>`+
+      `<button type="button" class="bt destaque j3d-graf-fechar">${_t('Fechar')}</button></footer>`;
+    document.body.appendChild(raiz);
+    raiz.addEventListener('click', ev=>{
+      const b = ev.target.closest('button');
+      if(!b) return;
+      const g = G();
+      if(b.classList.contains('j3d-graf-x') || b.classList.contains('j3d-graf-fechar')){ fechar(); return; }
+      if(!g) return;
+      if(b.classList.contains('j3d-graf-rec')) g.predefinir(g.recomendada);
+      else if(b.dataset.predef) g.predefinir(b.dataset.predef);
+      else if(b.dataset.k){ let v; try{ v = JSON.parse(b.dataset.v); }catch(e){ return; } g.definir({[b.dataset.k]: v}); }
+      pintar();
+    });
+    /* o relógio do jogo para enquanto ele está aberto */
+    if(TO.tela && TO.tela.pausarTempo) TO.tela.pausarTempo('graficos');
+    pintar();
+    relogio = setInterval(pintarMedida, 500);
+    document.addEventListener('keydown', teclaEsc, true);
+  }
+  function teclaEsc(ev){ if(ev.key === 'Escape' && raiz){ ev.stopPropagation(); fechar(); } }
+  function fechar(){
+    if(!raiz) return;
+    clearInterval(relogio); relogio = 0;
+    document.removeEventListener('keydown', teclaEsc, true);
+    raiz.remove(); raiz = null;
+    if(TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('graficos');
+  }
+
+  return {
+    abrir, fechar,
+    alternar(){ if(raiz) fechar(); else abrir(); },
+    get aberto(){ return !!raiz; },
+    /* se o jogo tem os gráficos (a cidade em 3D) */
+    get existe(){ return !!G(); }
+  };
 })();
 
 ;
@@ -47534,7 +47796,18 @@ TO.icones = (function(){
     cx.appendChild(grade);
     cx.appendChild(el('p',{class:'nota', texto:
       _t('O idioma vale pro jogo inteiro neste navegador. As mensagens que um save já tinha continuam na língua em que foram escritas.')}));
-    modal(_t('Configurações'), '', cx, [], 'estreita');
+    /* OS GRÁFICOS (30/09/2026), no jogo 3D: o painel abre por cima do
+       menu, com a cidade desenhando atrás */
+    let fecharCfg = null;
+    if(TO.graficos && TO.graficos.existe){
+      cx.appendChild(el('div',{class:'fase-rot', texto:_t('Gráficos')}));
+      const bG = el('button',{class:'bt', texto:_t('Abrir as opções de gráfico')});
+      bG.onclick = ()=>{ if(fecharCfg) fecharCfg(); TO.graficos.abrir(); };
+      cx.appendChild(bG);
+      cx.appendChild(el('p',{class:'nota', texto:
+        _t('A resolução, a suavização, a luz, a gente na rua e as texturas da cidade em 3D. No computador sem placa de vídeo, é aqui que o jogo fica leve.')}));
+    }
+    fecharCfg = modal(_t('Configurações'), '', cx, [], 'estreita');
   }
 
   /* o cofre visto do menu: as vagas, o arquivo e o texto, antes de
@@ -47923,6 +48196,10 @@ TO.icones = (function(){
        salvar estava atrás de um Ctrl+S que ninguém adivinha, e uma
        partida de cinco anos precisa de porta com placa. */
     {id:'jogo',        rot:_t('Jogo'),        ic:'disquete'},
+    /* OS GRÁFICOS (o dono, 30/09/2026: "crie mecanismos de melhorar o FPS
+       em computadores fracos, em um menu de configuração de gráfico"). Só
+       com a cidade em 3D: o painel (js/ui/graficos.js) mexe no cenário */
+    {id:'graficos',    rot:_t('Gráficos'),    ic:'graficos', acao:'graficos', so3d:true},
     /* VOLTAR AO MENU PRINCIPAL (pedido do dono, 21/09/2026). Não é
        página: é saída. Fica no fim da coluna, depois do cofre, e
        `acao` é o que separa os dois — item com `acao` executa, item
@@ -47932,7 +48209,8 @@ TO.icones = (function(){
   /* o que um item de `acao` faz */
   const ACAO_NAV = {menu: () => sairParaMenu(),
                     planejamento: () => abrirPlanejamento(),
-                    mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); }};
+                    mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); },
+                    graficos: () => { if(TO.graficos) TO.graficos.alternar(); }};
   /* o item que só existe com a cidade em 3D */
   const temNoMenu = n => !n.so3d || !!(TO.jogo3d && TO.jogo3d.abrirMapa);
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da

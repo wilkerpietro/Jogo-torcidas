@@ -36,28 +36,82 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=9ef06bee20';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=9ef06bee20';
-import { Subsolo } from './subsolo.js?v=9ef06bee20';
-import { ATLAS } from './modelos_atlas.js?v=9ef06bee20';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=c41040cf8a';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=c41040cf8a';
+import { Subsolo } from './subsolo.js?v=c41040cf8a';
+import { ATLAS } from './modelos_atlas.js?v=c41040cf8a';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
 const PX_CHAO = 1024, SOBRA = 2;
-/* A QUALIDADE: pixels por metro no chão, o teto da densidade de pixel
-   da tela e a escala do texto na folha de decalque (o canvas do letreiro
-   tem 512 × 128; na folha normal, 256 × 64). SEM SOMBRA: o cenário não
+/* AS TEXTURAS (era "a qualidade"): pixels por metro no chão e a escala do
+   texto na folha de decalque (o canvas do letreiro tem 512 × 128; na folha
+   normal, 256 × 64). Trocar remonta a praça. SEM SOMBRA: o cenário não
    desenha sombra nenhuma (o sol só dá a luz de cada face). A sombra custa
    desenhar a cena mais uma vez por quadro (o mapa de sombra), e o dono
    pediu pra ver o fps sem ela */
-/* A MÍNIMA é pra placa de vídeo fraca (a integrada de dez anos atrás):
-   a tela desenhada com 0,6 pixel por pixel (sai borrada, e custa um terço) */
+/* (`aniso`: o teto da filtragem anisotrópica — a textura do chão vista de
+   lado fica nítida, e custa várias leituras da textura por pixel, caras
+   quando o processador desenha) */
 const QUALIDADES = {
-  minima: { nome: 'Mínima', pxm: 3, dpr: 0.6, decal: 0.3 },
-  leve:   { nome: 'Leve', pxm: 4, dpr: 1, decal: 0.35 },
-  normal: { nome: 'Normal', pxm: 6, dpr: 1.5, decal: 0.5 },
-  alta:   { nome: 'Alta', pxm: 8, dpr: 2, decal: 0.62 }
+  minima: { nome: 'Mínima', pxm: 3, decal: 0.3, aniso: 1 },
+  leve:   { nome: 'Leve', pxm: 4, decal: 0.35, aniso: 2 },
+  normal: { nome: 'Normal', pxm: 6, decal: 0.5, aniso: 8 },
+  alta:   { nome: 'Alta', pxm: 8, decal: 0.62, aniso: 8 }
 };
+/* ======================================================
+   OS GRÁFICOS (o dono, 30/09/2026: "crie mecanismos de melhorar o FPS em
+   computadores fracos, em um menu de configuração de gráfico"; ele joga
+   sem placa de vídeo — o navegador desenha no processador, a 4 ou 5 fps
+   na sala do presidente). Medido no navegador de teste sem placa
+   (SwiftShader, 1366 × 768, a sala do presidente, 130 mil triângulos): o
+   JavaScript do quadro gasta uns 4 ms; o resto é DESENHAR, e o desenho
+   custa quase tudo pelo número de pixels e pelo trabalho de cada pixel.
+   Cada alavanca, sozinha, no fps de lá (a mesma vista, de dia):
+   - a suavização de bordas (MSAA) desligada: de 1,6 a 2,5;
+   - a metade da resolução: de 1,6 a 3,8; com a suavização desligada, 6,5;
+     um quarto da resolução, 12,8;
+   - sem a cidade na tela (só os bonecos): 35 — a cidade é o grosso;
+   - a luz simples (a conta no vértice, abaixo): de 6,5 a 7,0 (uns 6% de
+     dia, 10% de noite) — menos do que o material básico prometia (8,6);
+   - as luzes da noite apagadas: uns 11% de dia, 13% de noite;
+   - blocos do forno menores (menos triângulos na vista): quase nada (7%),
+     e não entrou (mais chamadas de desenho na vista de cima).
+   Daí as opções (per-viewer, no navegador: 'cenario-graficos'):
+   - `teto`: o teto da densidade de pixel (a tela de celular tem 2 ou 3);
+   - `resolucao`: a fração da tela que se desenha (a imagem é ampliada),
+     ou 'auto': ela desce e sobe sozinha atrás do `alvo` de fps;
+   - `suavizar`: a suavização de bordas ('auto': desligada sem placa de
+     vídeo). É do contexto do WebGL: só vale quando a página abre de novo;
+   - `fpsMax`: o limite de quadros (0 = sem limite): não sobe o fps, mas
+     deixa o processador livre pro resto do jogo e esquenta menos;
+   - `distancia`: o quanto se vê (a névoa e o longe da câmera): na vista
+     de cima da praça, menos quarteirões desenhados;
+   - `luz`: 'completa' (a conta da luz em cada pixel) ou 'simples' (a conta
+     em cada vértice: na parede e no chão, que são planos, sai igual);
+   - `luzes`: as luzes da noite (o poste, o refletor, a janela, o cômodo);
+   - `gente`: quanta gente anda na rua (vida3d.js), de 0,35 a 1;
+   - `bonecos`: 'leve' põe todo mundo no nível de longe (o de quem joga
+     fica no de perto);
+   - `texturas`: a de cima (QUALIDADES);
+   - `medidor`: o medidor de fps no canto.
+   As predefinições juntam tudo; mexer numa opção vira "personalizada".
+   ====================================================== */
+const PREDEFS = {
+  minima: { texturas: 'minima', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 30, distancia: 0.45, luz: 'simples', luzes: false, gente: 0.35, bonecos: 'leve' },
+  leve:   { texturas: 'leve', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 60, distancia: 0.7, luz: 'simples', luzes: true, gente: 0.65, bonecos: 'leve' },
+  normal: { texturas: 'normal', teto: 1.5, resolucao: 1, alvo: 30, suavizar: 'auto', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' },
+  alta:   { texturas: 'alta', teto: 2, resolucao: 1, alvo: 30, suavizar: 'sim', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' }
+};
+/* os valores que cada opção aceita (o que vem do navegador é conferido) */
+const VALORES_GRAF = {
+  texturas: Object.keys(QUALIDADES), teto: [1, 1.5, 2], resolucao: ['auto', 1, 0.85, 0.7, 0.5, 0.35], alvo: [20, 30, 45, 60],
+  suavizar: ['auto', 'sim', 'nao'], fpsMax: [0, 60, 30], distancia: [1, 0.7, 0.45], luz: ['completa', 'simples'], luzes: [true, false],
+  gente: [1, 0.65, 0.35], bonecos: ['normal', 'leve'], medidor: [true, false]
+};
+/* a resolução automática não desce daqui (a imagem ficaria um borrão) */
+const RES_MIN = 0.35;
+const CHAVE_GRAF = 'cenario-graficos';
 /* A PÉ (o boneco do jogo na rua, visto DE CIMA): as velocidades (m/s), o
    raio do corpo pra colisão, a altura pra onde a câmera olha, quantos
    metros cabem no lado menor da tela (a roda e a pinça mudam) e a
@@ -350,6 +404,8 @@ const CSS = `
 .cen-num { display: block; margin-top: 4px; font: 11px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; }
 .cen-fps { position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 5px 9px; border-radius: 7px; pointer-events: none;
   font: 600 12px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; color: #f2f3ef; background: rgba(20,22,21,.8); }
+.cen-fps[hidden] { display: none !important; }
+.cen-fps.pede { pointer-events: auto; cursor: pointer; }
 .cen-fps b { font-size: 15px; }
 .cen-fps b.bom { color: #7fd67a; } .cen-fps b.meio { color: #f0c64a; } .cen-fps b.ruim { color: #ff7b6b; }
 .cen-fps small { display: block; font-weight: 400; color: #c9ccc6; }
@@ -450,7 +506,7 @@ export function criarCenario(P) {
         <button class="cen-bt so-ape cen-bt-sede" data-acao="sede"><span class="longo">Ir pra sede</span><span class="curto">Sede</span></button>
         <button class="cen-bt so-ape" data-acao="rosto"><span class="longo">Outro boneco</span><span class="curto">Outro</span></button>
         <label title="A hora do dia: de noite, os postes, as janelas, os refletores dos estádios e o que é coberto acendem"><span class="rot">Hora</span> <select class="cen-hora" aria-label="A hora do dia"><option value="">Dia</option><option value="6">6 h</option><option value="17.5">17 h 30</option><option value="18.5">18 h 30</option><option value="20">20 h</option><option value="22">22 h</option><option value="1">1 h</option></select></label>
-        <label><span class="rot">Qualidade</span> <select class="cen-q" aria-label="Qualidade">${Object.entries(QUALIDADES).map(([k, q]) => `<option value="${k}">${q.nome}</option>`).join('')}</select></label>
+        <label title="As predefinições dos gráficos: a resolução, a suavização, a luz, a gente na rua e as texturas (o jogo 3D tem o menu Gráficos com cada opção)"><span class="rot">Gráficos</span> <select class="cen-q" aria-label="Gráficos">${Object.keys(PREDEFS).map(k => `<option value="${k}">${QUALIDADES[k].nome}</option>`).join('')}<option value="pessoal" disabled>Personalizada</option></select></label>
         <button class="cen-bt so-voo" data-acao="escolher">Praças</button>
         <button class="cen-bt so-voo" data-acao="planta">Planta 2D</button>
         <a class="cen-bt so-voo cen-bt-jogo3d" href="jogo.html" title="O jogo Torcida Organizada por cima da praça em 3D: o menu, a barra de cima, os painéis, o feed e os dias passando">Jogo 3D</a>
@@ -487,16 +543,67 @@ export function criarCenario(P) {
   }
   function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-  /* a qualidade guardada; sem ela, a leve no celular e a normal no resto */
-  let qualidade = null;
-  try { qualidade = localStorage.getItem('cenario-qualidade'); } catch (e) {}
-  if (!QUALIDADES[qualidade]) qualidade = matchMedia('(pointer: coarse)').matches ? 'leve' : 'normal';
-  selQ.value = qualidade;
+  /* QUEM VAI DESENHAR, antes de criar o desenhista: a suavização de bordas
+     é do contexto do WebGL (não muda depois), e sem placa de vídeo ela
+     sai desligada. Um contexto de prova, jogado fora na hora: o nome da
+     placa (o SwiftShader, o "Microsoft Basic Render Driver", o llvmpipe
+     desenham no processador) e o aviso do navegador de que o contexto
+     seria lento (`failIfMajorPerformanceCaveat`) */
+  const PROVA = (() => {
+    const r = { nome: '', semPlaca: false };
+    const soltar = gl => { try { const x = gl && gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } catch (e) {} };
+    try {
+      const cv = document.createElement('canvas');
+      const gl = cv.getContext('webgl2') || cv.getContext('webgl');
+      if (gl) {
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        r.nome = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+        r.semPlaca = /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(r.nome);
+        soltar(gl);
+        if (!r.semPlaca) {
+          const cv2 = document.createElement('canvas');
+          const g2 = cv2.getContext('webgl2', { failIfMajorPerformanceCaveat: true }) || cv2.getContext('webgl', { failIfMajorPerformanceCaveat: true });
+          if (!g2) r.semPlaca = true; else soltar(g2);
+        }
+      }
+    } catch (e) {}
+    return r;
+  })();
+  /* AS OPÇÕES GUARDADAS (neste navegador). A primeira vez, a predefinição
+     sai da máquina: sem placa de vídeo, a mínima; no celular, a leve; no
+     resto, a normal. (A caixa "Qualidade" de antes guardava só a textura:
+     quem tinha escolhido uma fica com a predefinição do mesmo nome) */
+  let predefAuto = false;
+  const GRAF = (() => {
+    let g = null, antiga = null;
+    try { g = JSON.parse(localStorage.getItem(CHAVE_GRAF) || 'null'); } catch (e) { g = null; }
+    if (!g || typeof g !== 'object') {
+      try { antiga = localStorage.getItem('cenario-qualidade'); } catch (e) {}
+      const p = PREDEFS[antiga] ? antiga : recomendada();
+      predefAuto = !PREDEFS[antiga];
+      g = { predef: p, ...PREDEFS[p] };
+    }
+    const base = PREDEFS[g.predef] || PREDEFS.normal;
+    for (const k in VALORES_GRAF) if (!VALORES_GRAF[k].includes(g[k])) g[k] = k === 'medidor' ? true : base[k];
+    if (!PREDEFS[g.predef] && g.predef !== 'pessoal') g.predef = 'pessoal';
+    /* a última resolução que o automático achou (a próxima abertura começa dela) */
+    if (!(g.escalaAuto >= RES_MIN && g.escalaAuto <= 1)) g.escalaAuto = PROVA.semPlaca ? 0.6 : 1;
+    return g;
+  })();
+  function recomendada() { return PROVA.semPlaca ? 'minima' : matchMedia('(pointer: coarse)').matches ? 'leve' : 'normal'; }
+  function salvarGraficos() { try { localStorage.setItem(CHAVE_GRAF, JSON.stringify(GRAF)); } catch (e) {} }
+  /* a suavização que o contexto tem (a pedida só vale na próxima abertura) */
+  const suavizarDe = v => v === 'auto' ? !PROVA.semPlaca : v === 'sim';
+  const SUAVIZANDO = suavizarDe(GRAF.suavizar);
+  let qualidade = GRAF.texturas;
+  /* a filtragem anisotrópica da textura: o teto dela, o das texturas escolhidas e o da placa */
+  const anisoDe = teto => Math.max(1, Math.min(teto, QUALIDADES[qualidade].aniso, rend.capabilities.getMaxAnisotropy()));
+  selQ.value = GRAF.predef;
 
   /* ======================================================
      O 3D
      ====================================================== */
-  const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: true, powerPreference: 'high-performance' });
+  const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: SUAVIZANDO, powerPreference: 'high-performance' });
   rend.shadowMap.enabled = false;
   /* A PLACA PODE DESISTIR (o dono, 29/09/2026: "quase todas as vezes que
      preciso abrir outro mapa devido a caravanas o jogo buga e recarrega
@@ -551,10 +658,15 @@ export function criarCenario(P) {
      `clientHeight` a cada quadro, depois que o painel mudou um texto, faz o
      navegador refazer o leiaute da página inteira ali no meio */
   let altoTela = 0;
+  /* A RESOLUÇÃO: a densidade de pixel da tela (até o teto) vezes a fração
+     que se desenha — a escolhida, ou a do automático */
+  let escalaAuto = GRAF.escalaAuto;
+  const escalaAgora = () => GRAF.resolucao === 'auto' ? escalaAuto : +GRAF.resolucao;
+  const razaoDePixel = () => Math.max(0.2, Math.min(window.devicePixelRatio || 1, GRAF.teto) * escalaAgora());
   function ajustarTela() {
     const r = tela.getBoundingClientRect();
     altoTela = r.height;
-    rend.setPixelRatio(Math.min(window.devicePixelRatio || 1, QUALIDADES[qualidade].dpr));
+    rend.setPixelRatio(razaoDePixel());
     rend.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
     cam.aspect = Math.max(1, r.width) / Math.max(1, r.height);
     pedir();
@@ -601,11 +713,20 @@ export function criarCenario(P) {
        de cima, a tela só mostra umas dezenas de metros em volta dele: o
        longe fica curto, sem névoa, e o que passa dele nem vai pra placa */
     const mis = (a, b) => a + (b - a) * kv, longe = d * 3 + 60 * M;
+    /* (A DISTÂNCIA DE VISÃO dos gráficos encurta a névoa e o longe junto:
+       o que passa da névoa nem vai pra placa) */
+    const kd = GRAF.distancia, fogo = (d * 5 + 40000) * kd;
     cam.near = mis(clamp(d * 0.02, 0.5, 400), Math.max(0.3 * M, d * 0.03));
-    cam.far = mis(d * 6 + 60000, longe);
+    cam.far = mis(kd < 1 ? fogo * 1.05 : d * 6 + 60000, longe);
     cam.updateProjectionMatrix();
-    cena.fog.near = mis(d * 1.6 + 1500, longe * 2);
-    cena.fog.far = mis(d * 5 + 40000, longe * 3);
+    cena.fog.near = mis((d * 1.6 + 1500) * kd, longe * 2);
+    cena.fog.far = mis(fogo, longe * 3);
+    /* A CÚPULA DO CÉU só quando o céu aparece: com a câmera olhando pra
+       baixo mais que a metade da lente (a sala do presidente, a pé, a
+       vista de cima), nenhum raio da tela sobe acima do horizonte, e a
+       cúpula era uma tela inteira de pixels desenhada à toa por baixo da
+       cidade (o fundo, da cor da névoa, fica) */
+    if (ceuDaHora) ceuDaHora.visible = orb.el - THREE.MathUtils.degToRad(cam.fov) / 2 < 0.03;
     /* o sol: só a direção conta (luz sem sombra) */
     sol.target.position.set(c.x, 0, c.z);
     sol.position.copy(sol.target.position).addScaledVector(solAgora, 1000);
@@ -692,8 +813,12 @@ export function criarCenario(P) {
   const depoisDaCamera = new Set();
   function quadro(t) {
     pedido = 0;
+    /* O LIMITE DE FPS dos gráficos: o quadro que chega antes da hora passa
+       (e o próximo vem no seguinte da tela) */
+    if (GRAF.fpsMax && ultimo && !montando && t - ultimo < 1000 / GRAF.fpsMax - 3) { pedir(); return; }
     /* o tempo de verdade (a máquina lenta pula quadro, mas chega na hora) */
     const dt = ultimo ? Math.min(0.2, (t - ultimo) / 1000) : 0.016;
+    if (ultimo && !montando) ajustarResolucao((t - ultimo) / 1000);
     ultimo = t;
     if (ape) andarAPe(dt);
     /* o palco que tem câmera (a briga do jogo 3D): ela vai atrás do líder,
@@ -720,6 +845,37 @@ export function criarCenario(P) {
     contar();
     if (!montando) pedir();
   }
+  /* A RESOLUÇÃO AUTOMÁTICA: a cada 1,5 s desenhando, a mediana do tempo
+     entre quadros (um soluço do jogo — a virada do dia, a montagem de uma
+     cena — não conta como máquina lenta). Abaixo de 88% do alvo, ela desce
+     o que falta de uma vez (o quadro custa mais ou menos o número de
+     pixels, a escala ao quadrado); folgada (20% acima do alvo, ou batendo
+     no limite de fps), sobe 12% — depois de 3 s folgados, e mais devagar a
+     cada subida que não aguentou (a imagem não fica pulsando entre duas
+     resoluções). Em passos de 5%, entre RES_MIN e 1 */
+  const AUTO = { dts: [], t: 0, bons: 0, falhas: 0, subiuEm: -1e9, relogio: 0 };
+  function ajustarResolucao(dt) {
+    if (GRAF.resolucao !== 'auto' || pausado || raiz.hidden) { AUTO.dts.length = 0; AUTO.t = 0; return; }
+    if (dt > 1) { AUTO.dts.length = 0; AUTO.t = 0; return; }
+    AUTO.dts.push(dt); AUTO.t += dt; AUTO.relogio += dt;
+    if (AUTO.t < 1.5 || AUTO.dts.length < 3) return;
+    const ord = AUTO.dts.slice().sort((a, b) => a - b), fps = 1 / ord[ord.length >> 1];
+    AUTO.dts.length = 0; AUTO.t = 0;
+    const alvo = GRAF.alvo, lim = GRAF.fpsMax || Infinity;
+    let nova = escalaAuto;
+    if (fps < Math.min(alvo, lim) * 0.88 && escalaAuto > RES_MIN) {
+      nova = Math.max(RES_MIN, escalaAuto * Math.max(0.7, Math.sqrt(fps / alvo)));
+      if (AUTO.relogio - AUTO.subiuEm < 6) AUTO.falhas = Math.min(6, AUTO.falhas + 1);
+      AUTO.bons = 0;
+    } else if (escalaAuto < 1 && fps >= Math.min(alvo * 1.2, lim * 0.95)) {
+      if (++AUTO.bons >= 2 + 2 * AUTO.falhas) { nova = Math.min(1, escalaAuto * 1.12); AUTO.bons = 0; AUTO.subiuEm = AUTO.relogio; }
+    } else AUTO.bons = 0;
+    nova = clamp(Math.round(nova * 20) / 20, RES_MIN, 1);
+    if (nova !== escalaAuto) {
+      escalaAuto = nova; GRAF.escalaAuto = nova;
+      ajustarTela(); salvarGraficos();
+    }
+  }
   /* O MEDIDOR: quadros por segundo e milissegundos por quadro, na média de
      meio segundo; o tempo do processador pra mandar o quadro; as chamadas
      de desenho e os triângulos do quadro */
@@ -744,14 +900,20 @@ export function criarCenario(P) {
     if (montando) { medidor.desde = 0; fpsEl.innerHTML = '<b>—</b> fps<small>montando a praça…</small>'; return; }
     if (passou < 500 || !medidor.quadros) return;
     const fps = medidor.quadros * 1000 / passou, ms = passou / medidor.quadros, r = rend.info.render;
+    ultimaMedida = { fps, ms, chamadas: r.calls, triangulos: r.triangles, cpu: medidor.cpu / medidor.quadros };
+    medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0;
+    if (fpsEl.hidden) return;
     const classe = fps >= 50 ? 'bom' : fps >= 28 ? 'meio' : 'ruim';
-    fpsEl.innerHTML = `<b class="${classe}">${Math.round(fps)}</b> fps · ${ms.toFixed(1).replace('.', ',')} ms` +
-      `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${(medidor.cpu / medidor.quadros).toFixed(1).replace('.', ',')} ms</small>` +
+    /* (a resolução, quando não é a da tela inteira: o automático mexe nela) */
+    const res = escalaAgora() < 1 ? ` · ${Math.round(escalaAgora() * 100)}% da resolução` : '';
+    fpsEl.innerHTML = `<b class="${classe}">${Math.round(fps)}</b> fps · ${ms.toFixed(1).replace('.', ',')} ms${res}` +
+      `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${ultimaMedida.cpu.toFixed(1).replace('.', ',')} ms</small>` +
       (dia && dia.aberto ? `<small>dia de jogo: ${dia.J.discos.length + dia.J.policiais.length} bonecos, ${(custoDia.povo + custoDia.dia).toFixed(1).replace('.', ',')} ms</small>` : '') +
       (placa.semPlaca ? `<small class="cen-aviso">Sem placa de vídeo: o navegador desenha no processador (${esc(placa.curto)})</small>`
         : placa.curto ? `<small>${esc(placa.curto)}</small>` : '');
-    medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0;
   }
+  let ultimaMedida = null;
+  fpsEl.hidden = !GRAF.medidor;
 
   /* ANDAR NO TECLADO: WASD e setas no chão, Q/E gira, R/F inclina; com
      Shift, o dobro */
@@ -1171,17 +1333,28 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
   /* A NOITE NUM MATERIAL: a luz dos mapas (tudo); `o.janelas`, a máscara
      da folha (e o número de cada vão, `aSorte`); `o.lum`, a força da
      lâmpada que o material é */
+  /* os materiais com a noite (a troca de uma opção de luz recompila todos) */
+  const materiaisDaNoite = new Set();
   function comNoite(mat, o = {}) {
     /* (só no material que tem luz: o básico — a lâmpada acesa do kit, o anel — já brilha sozinho) */
     if (!mat || !(mat.isMeshLambertMaterial || mat.isMeshPhongMaterial || mat.isMeshStandardMaterial)) return mat;
     const antes = mat.onBeforeCompile;
     const u = o.janelas ? { uJanelas: { value: o.janelas } } : {};
     if (o.lum) u.uLum = { value: o.lum };
+    /* (os gráficos decidem na hora de compilar: as luzes da noite apagadas
+       tiram a conta do mapa da luz e da janela; a luz simples leva a conta
+       do sol e do céu pro vértice — no Lambert. Trocar a opção recompila:
+       `refazerMateriais`) */
     mat.onBeforeCompile = (sh, r) => {
       if (antes) antes.call(mat, sh, r);
+      const acesas = GRAF.luzes !== false, janelas = acesas && !!o.janelas;
+      /* (o material cortável já leva a posição no mundo pro pixel, vCorteP,
+         e o chão, vChaoP: a noite usa a mesma — uma variável interpolada a
+         menos por pixel) */
+      const mesmaP = acesas && !sh.instancing && (/varying vec3 vCorteP;/.test(sh.vertexShader) ? 'vCorteP' : /varying vec3 vChaoP;/.test(sh.vertexShader) ? 'vChaoP' : '');
       Object.assign(sh.uniforms, NOITE, u);
-      sh.vertexShader = sh.vertexShader
-        .replace('void main() {', `varying vec3 vNoiteP;\nvarying vec3 vNoiteN;\n${o.janelas ? 'attribute float aSorte;\nvarying float vSorte;\n' : ''}void main() {`)
+      if (acesas) sh.vertexShader = sh.vertexShader
+        .replace('void main() {', `${mesmaP ? '' : 'varying vec3 vNoiteP;\n'}varying vec3 vNoiteN;\n${janelas ? 'attribute float aSorte;\nvarying float vSorte;\n' : ''}void main() {`)
         .replace('#include <project_vertex>', `#include <project_vertex>
   {
     vec4 np = vec4( transformed, 1.0 );
@@ -1190,15 +1363,15 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
       np = instanceMatrix * np; nn = mat3( instanceMatrix ) * nn;
     #endif
     np = modelMatrix * np;
-    vNoiteP = np.xyz;
+    ${mesmaP ? '' : 'vNoiteP = np.xyz;'}
     vNoiteN = normalize( mat3( modelMatrix ) * nn );
-    ${o.janelas ? 'vSorte = aSorte;' : ''}
+    ${janelas ? 'vSorte = aSorte;' : ''}
   }`);
       sh.fragmentShader = sh.fragmentShader
-        .replace('void main() {', `${NOITE_GLSL}${o.janelas ? 'uniform sampler2D uJanelas;\nvarying float vSorte;\n' : ''}${o.lum ? 'uniform float uLum;\n' : ''}void main() {`)
+        .replace('void main() {', `${acesas ? (mesmaP ? NOITE_GLSL.replace('varying vec3 vNoiteP;', '#define vNoiteP ' + mesmaP) : NOITE_GLSL) : 'uniform float uNoite;\n'}${janelas ? 'uniform sampler2D uJanelas;\nvarying float vSorte;\n' : ''}${o.lum ? 'uniform float uLum;\n' : ''}void main() {`)
         .replace('#include <color_fragment>', `#include <color_fragment>
   vec3 noiteBrilho = vec3( 0.0 );
-  ${o.janelas ? `if ( uNoite > 0.001 ) {
+  ${janelas ? `if ( uNoite > 0.001 ) {
     vec2 mj = texture2D( uJanelas, vMapUv ).rg;
     if ( mj.r > 0.5 ) {
       vec3 t = diffuseColor.rgb;
@@ -1211,13 +1384,99 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
   }` : ''}
   ${o.lum ? 'noiteBrilho += diffuseColor.rgb * uLum;' : ''}
   noiteBrilho *= uNoite;`)
-        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += noiteBrilho;')
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += noiteBrilho;');
+      if (acesas) sh.fragmentShader = sh.fragmentShader
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
   reflectedLight.indirectDiffuse += luzDaNoite( vNoiteP, normalize( vNoiteN ) * ( gl_FrontFacing ? 1.0 : -1.0 ) ) * diffuseColor.rgb;`);
+      if (GRAF.luz === 'simples' && mat.isMeshLambertMaterial) luzNoVertice(sh);
     };
     const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
-    mat.customProgramCacheKey = () => chave + '|noite' + (o.janelas ? 'J' : '') + (o.lum ? 'L' : '');
+    mat.customProgramCacheKey = () => chave + '|noite' + (o.janelas ? 'J' : '') + (o.lum ? 'L' : '') + (GRAF.luzes !== false ? '' : '-apagada') + (GRAF.luz === 'simples' && mat.isMeshLambertMaterial ? '-vertice' : '');
+    /* (a referência fraca deixa o material da praça de antes ir embora; sem WeakRef, o navegador antigo, fica a forte) */
+    materiaisDaNoite.add(typeof WeakRef === 'function' ? new WeakRef(mat) : { deref: () => mat });
     return mat;
+  }
+  function refazerMateriais() {
+    for (const w of materiaisDaNoite) { const m = w.deref(); if (m) m.needsUpdate = true; else materiaisDaNoite.delete(w); }
+    pedir();
+  }
+  /* A LUZ SIMPLES (os gráficos): o Lambert faz a conta do sol e do céu em
+     cada pixel. Aqui ela vai pro vértice, com as mesmas luzes da cena (o
+     céu e o chão da luz de hemisfério e o sol, que mudam com a hora), e o
+     pixel só multiplica a cor pela luz que chegou nele. Na parede, no chão
+     e no telhado, que são planos (a normal é a mesma no triângulo inteiro),
+     sai igual; muda no que é curvo (o boneco, a copa redonda). A face de
+     trás (o material de dois lados) tem a conta dela. A noite (o poste, o
+     cômodo, a janela) continua no pixel */
+  function luzNoVertice(sh) {
+    sh.vertexShader = sh.vertexShader
+      .replace('void main() {', `uniform vec3 ambientLightColor;
+#if NUM_DIR_LIGHTS > 0
+struct DirectionalLight {
+vec3 direction;
+vec3 color;
+};
+uniform DirectionalLight directionalLights[ NUM_DIR_LIGHTS ];
+#endif
+#if NUM_HEMI_LIGHTS > 0
+struct HemisphereLight {
+vec3 direction;
+vec3 skyColor;
+vec3 groundColor;
+};
+uniform HemisphereLight hemisphereLights[ NUM_HEMI_LIGHTS ];
+#endif
+varying vec3 vLuzF;
+#ifdef DOUBLE_SIDED
+varying vec3 vLuzT;
+#endif
+void main() {`)
+      .replace('#include <fog_vertex>', `#include <fog_vertex>
+  {
+    vec3 nL = normalize( transformedNormal );
+    vec3 luzF = ambientLightColor, luzT = ambientLightColor;
+    #if NUM_HEMI_LIGHTS > 0
+    #pragma unroll_loop_start
+    for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+      luzF += mix( hemisphereLights[ i ].groundColor, hemisphereLights[ i ].skyColor, 0.5 * dot( nL, hemisphereLights[ i ].direction ) + 0.5 );
+      luzT += mix( hemisphereLights[ i ].groundColor, hemisphereLights[ i ].skyColor, 0.5 - 0.5 * dot( nL, hemisphereLights[ i ].direction ) );
+    }
+    #pragma unroll_loop_end
+    #endif
+    #if NUM_DIR_LIGHTS > 0
+    #pragma unroll_loop_start
+    for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+      luzF += directionalLights[ i ].color * max( dot( nL, directionalLights[ i ].direction ), 0.0 );
+      luzT += directionalLights[ i ].color * max( - dot( nL, directionalLights[ i ].direction ), 0.0 );
+    }
+    #pragma unroll_loop_end
+    #endif
+    vLuzF = luzF;
+    #ifdef DOUBLE_SIDED
+    vLuzT = luzT;
+    #endif
+  }`);
+    /* (o pixel não usa mais a normal nem a posição na câmera: as duas
+       variáveis que o triângulo interpola em cada pixel saem — no
+       desenho sem placa, é o que pesa) */
+    sh.vertexShader = sh.vertexShader
+      .replace('varying vec3 vViewPosition;', 'vec3 vViewPosition;')
+      .replace('#include <normal_pars_vertex>', '')
+      .replace('#include <normal_vertex>', '');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('void main() {', 'varying vec3 vLuzF;\n#ifdef DOUBLE_SIDED\nvarying vec3 vLuzT;\n#endif\nvoid main() {')
+      .replace('#include <normal_pars_fragment>', '')
+      .replace('#include <lights_lambert_pars_fragment>', '')
+      .replace('#include <normal_fragment_begin>', '')
+      .replace('#include <normal_fragment_maps>', '')
+      .replace('#include <lights_lambert_fragment>', '')
+      .replace('#include <lights_fragment_begin>', '')
+      .replace('#include <lights_fragment_maps>', '')
+      .replace('#include <lights_fragment_end>', `#ifdef DOUBLE_SIDED
+  reflectedLight.indirectDiffuse += ( gl_FrontFacing ? vLuzF : vLuzT ) * BRDF_Lambert( diffuseColor.rgb );
+#else
+  reflectedLight.indirectDiffuse += vLuzF * BRDF_Lambert( diffuseColor.rgb );
+#endif`);
   }
 
   /* a cor do material entra no vértice (em linear, como o three.js
@@ -1311,7 +1570,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
       for (const f of folhas) {
         if (f.tex) { f.tex.needsUpdate = true; continue; }
         const t = new THREE.CanvasTexture(f.cv);
-        t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+        t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = anisoDe(4);
         /* a folha sem quadro que repinta já está pronta: o canvas dela sai depois de subir */
         if (!f.repinta) t.onUpdate = () => { f.cv.width = f.cv.height = 1; t.onUpdate = null; };
         f.tex = t;
@@ -1586,7 +1845,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
         for (const dx of [-T, 0, T]) for (const dy of [-T, 0, T]) { c.beginPath(); c.arc(x + dx, y + dy, r, 0, 7); c.fill(); }
       }
     grao = new THREE.CanvasTexture(cv);
-    grao.wrapS = grao.wrapT = THREE.RepeatWrapping; grao.colorSpace = THREE.NoColorSpace; grao.anisotropy = 4;
+    grao.wrapS = grao.wrapT = THREE.RepeatWrapping; grao.colorSpace = THREE.NoColorSpace; grao.anisotropy = anisoDe(4);
     return grao;
   }
   /* O CAPIM DE PERTO: o chão pintado tem 3 a 8 pixels por metro, e o mato
@@ -1611,7 +1870,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     }
     c.globalAlpha = 1;
     capim = new THREE.CanvasTexture(cv);
-    capim.wrapS = capim.wrapT = THREE.RepeatWrapping; capim.colorSpace = THREE.NoColorSpace; capim.anisotropy = 4;
+    capim.wrapS = capim.wrapT = THREE.RepeatWrapping; capim.colorSpace = THREE.NoColorSpace; capim.anisotropy = anisoDe(4);
     return capim;
   }
   const MATO_U = { uCapim: { value: null }, uCapimEscala: { value: 1 / (1.6 * M) }, uMatoM: { value: null }, uMatoC: { value: new THREE.Vector4(0, 0, 1, 1) }, uMatoK: { value: 0 } };
@@ -1686,7 +1945,9 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     const W = PX_CHAO + 2 * SOBRA;
     const cv = document.createElement('canvas'); cv.width = cv.height = W;
     const c2 = cv.getContext('2d');
-    const aniso = Math.min(8, rend.capabilities.getMaxAnisotropy());
+    const aniso = anisoDe(8);
+    /* (o grão e o capim ficam de uma montagem pra outra: a filtragem acompanha as texturas) */
+    for (const x of [grao, capim]) if (x && x.anisotropy !== anisoDe(4)) { x.anisotropy = anisoDe(4); x.needsUpdate = true; }
     const u0 = SOBRA / W, u1 = (SOBRA + PX_CHAO) / W;
     let feitos = 0;
     const deMato = [];
@@ -1751,7 +2012,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     };
     const material = (cv, repete) => {
       const tex = new THREE.CanvasTexture(cv);
-      tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = anisoDe(4);
       tex.wrapS = repete ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping; tex.wrapT = THREE.RepeatWrapping;
       const m = new THREE.MeshLambertMaterial({ map: tex });
       m.userData.doMapa = true;
@@ -2176,7 +2437,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
   const toque = matchMedia('(pointer: coarse)').matches;
   raiz.classList.toggle('toque', toque);
   const selCamisa = $('.cen-camisa');
-  let grade = null, sub = null, piso = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null;
+  let grade = null, sub = null, piso = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null, modBonecos = null;
   /* os ANDARES DOS ESTÁDIOS (um subsolo com os triângulos deles) e o que é
      dentro de cada um: ali o chão e a parede são os deles */
   let andares = null, dentroDosEstadios = [];
@@ -2210,13 +2471,16 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=9ef06bee20', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=9ef06bee20');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=c41040cf8a', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=c41040cf8a');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
       /* (a luz da noite também nos bonecos: o poste, o refletor, o cômodo) */
       mod.cfg.remendo = m => comNoite(m);
+      /* (os bonecos leves dos gráficos: todo mundo no nível de longe) */
+      mod.cfg.nivelLeve = GRAF.bonecos === 'leve';
+      modBonecos = mod;
       /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
          tem altura: a do pé que se vê (no metrô, embaixo da rua) */
       const PE = { x: 0, y: 0, z: 0 }, PQ = { x: 0, y: 0, z: 0 };
@@ -2327,7 +2591,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=9ef06bee20');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=c41040cf8a');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -2832,16 +3096,78 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
   for (const b of raiz.querySelectorAll('.cen-mapas button')) b.onclick = () => montar(P.cidade(), b.dataset.mapa);
   /* a hora do dia (a ferramenta; o jogo 3D manda a dele a cada quadro) */
   $('.cen-hora').onchange = ev => { const v = ev.target.value; luzDaHora(v === '' ? null : +v); };
-  selQ.onchange = () => {
-    qualidade = selQ.value;
-    try { localStorage.setItem('cenario-qualidade', qualidade); } catch (e) {}
-    ajustarTela();
-    /* a pé: volta pro mesmo lugar, virado pro mesmo lado e com o mesmo
-       zoom, depois de remontar */
-    if (ape) voltarAPe = { x: ape.x, z: ape.z, y: ape.y, az: orb.az, vao: ape.vao };
-    /* o chão muda de resolução: remonta a praça (o forno junta de novo) */
-    if (montado) montar(P.cidade(), P.modo());
+  /* a caixa da ferramenta: as predefinições dos gráficos */
+  selQ.onchange = () => predefinir(selQ.value);
+
+  /* ======================================================
+     AS OPÇÕES DE GRÁFICO NA HORA (o menu Gráficos do jogo 3D, a caixa da
+     ferramenta): cada uma vale já, menos a suavização (só quando a página
+     abre de novo) e as texturas, que remontam a praça — quem tem o jogo
+     por cima remonta do jeito dele (`aoTrocarTexturas`: a vida da sede
+     sai e volta junto)
+     ====================================================== */
+  let aoTrocarTexturas = null, aoPedirGraficos = null;
+  function aplicarGraficos(mudou) {
+    if (mudou.has('resolucao') || mudou.has('teto') || mudou.has('alvo') || mudou.has('fpsMax')) { AUTO.dts.length = 0; AUTO.t = 0; AUTO.falhas = 0; AUTO.bons = 0; ajustarTela(); }
+    if (mudou.has('luz') || mudou.has('luzes')) refazerMateriais();
+    if (mudou.has('bonecos') && modBonecos) modBonecos.cfg.nivelLeve = GRAF.bonecos === 'leve';
+    if (mudou.has('medidor')) { fpsEl.hidden = !GRAF.medidor; medidor.desde = 0; }
+    if (mudou.has('texturas')) {
+      qualidade = GRAF.texturas;
+      if (montado && !montando) {
+        if (aoTrocarTexturas) aoTrocarTexturas();
+        else {
+          /* a pé: volta pro mesmo lugar, virado pro mesmo lado e com o
+             mesmo zoom, depois de remontar */
+          if (ape) voltarAPe = { x: ape.x, z: ape.z, y: ape.y, az: orb.az, vao: ape.vao };
+          montar(P.cidade(), P.modo());
+        }
+      }
+    }
+    pedir();
+  }
+  /* a predefinição que as opções de agora são (ou a personalizada) */
+  const predefDasOpcoes = () => Object.keys(PREDEFS).find(n => Object.keys(PREDEFS[n]).every(k => GRAF[k] === PREDEFS[n][k])) || 'pessoal';
+  function definirGraficos(novas) {
+    const mudou = new Set();
+    for (const k in novas) {
+      const v = novas[k];
+      if (!(k in VALORES_GRAF) || !VALORES_GRAF[k].includes(v) || GRAF[k] === v) continue;
+      GRAF[k] = v; mudou.add(k);
+    }
+    GRAF.predef = predefDasOpcoes();
+    selQ.value = GRAF.predef;
+    salvarGraficos();
+    if (mudou.size) aplicarGraficos(mudou);
+    return mudou;
+  }
+  function predefinir(nome) { return PREDEFS[nome] ? definirGraficos(PREDEFS[nome]) : new Set(); }
+  const graficosApi = {
+    get opcoes() { return { ...GRAF }; },
+    /* quanta gente na rua (a vida da praça lê a cada quadro) */
+    get gente() { return GRAF.gente; },
+    get predefs() { return JSON.parse(JSON.stringify(PREDEFS)); },
+    get valores() { return VALORES_GRAF; },
+    /* uma opção ({ chave: valor }, várias de uma vez); devolve as que mudaram */
+    definir: novas => definirGraficos(novas),
+    predefinir,
+    /* a predefinição desta máquina, e se foi ela que abriu (a primeira vez, sem escolha guardada) */
+    get recomendada() { return recomendada(); },
+    get automatica() { return predefAuto; },
+    /* o que se mede agora: o fps, as chamadas, a resolução, a placa */
+    get estado() {
+      const m = ultimaMedida || {};
+      return { fps: m.fps || 0, ms: m.ms || 0, chamadas: m.chamadas || 0, triangulos: m.triangulos || 0, cpu: m.cpu || 0,
+               escala: escalaAgora(), largura: tela.width, altura: tela.height, pausado, montando,
+               semPlaca: placa.semPlaca || PROVA.semPlaca, placa: placa.curto || PROVA.nome,
+               suavizando: SUAVIZANDO, suavizarPedido: suavizarDe(GRAF.suavizar) };
+    },
+    /* quem remonta a praça quando a textura muda (o jogo 3D) */
+    set aoTrocarTexturas(f) { aoTrocarTexturas = typeof f === 'function' ? f : null; },
+    /* o clique no medidor de fps abre os gráficos (o jogo 3D diz como) */
+    set aoPedir(f) { aoPedirGraficos = typeof f === 'function' ? f : null; fpsEl.classList.toggle('pede', !!aoPedirGraficos); fpsEl.title = aoPedirGraficos ? 'Abrir as opções de gráfico' : ''; }
   };
+  fpsEl.addEventListener('click', () => { if (aoPedirGraficos) aoPedirGraficos(); });
   raiz.querySelector('.cen-topo').addEventListener('click', ev => {
     const b = ev.target.closest('button[data-acao]');
     if (!b) return;
@@ -2916,7 +3242,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=9ef06bee20'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=c41040cf8a'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -2995,7 +3321,7 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
     }
   };
 
-  return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi,
+  return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi, graficos: graficosApi,
            /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
            get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
            /* se a praça ainda está montando (quem abre a de fora espera o fim dela: dia3d.js) */

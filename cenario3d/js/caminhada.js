@@ -27,7 +27,7 @@
    estádio (a rua dele, pra frente); o de quem ataca, sumir pela rua de
    onde veio. A PM chega pelas duas pontas da rua do alvo.
    ========================================================= */
-import { planejar } from './dia_de_jogo.js?v=9ef06bee20';
+import { planejar } from './dia_de_jogo.js?v=c41040cf8a';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma das emboscadas da caravana)

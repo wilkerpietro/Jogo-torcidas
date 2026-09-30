@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=9ef06bee20';
-import { criarVida, horaTxt } from './vida3d.js?v=9ef06bee20';
-import { criarMapaDaCidade } from './mapa3d.js?v=9ef06bee20';
-import { criarDia3d } from './dia3d.js?v=9ef06bee20';
-import { criarRecados } from './recados3d.js?v=9ef06bee20';
+import { CASCA } from './jogo_casca.js?v=c41040cf8a';
+import { criarVida, horaTxt } from './vida3d.js?v=c41040cf8a';
+import { criarMapaDaCidade } from './mapa3d.js?v=c41040cf8a';
+import { criarDia3d } from './dia3d.js?v=c41040cf8a';
+import { criarRecados } from './recados3d.js?v=c41040cf8a';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=9ef06bee20'), carregarCss('css/jogo3d.css?v=9ef06bee20')]);
+  await Promise.all([carregarCss('css/jogo.css?v=c41040cf8a'), carregarCss('css/jogo3d.css?v=c41040cf8a')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=9ef06bee20').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=c41040cf8a').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=9ef06bee20');
+  await carregarScript('js/jogo.js?v=c41040cf8a');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=9ef06bee20').catch(() => {});
-  await import('./bonecos3_global.js?v=9ef06bee20');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=c41040cf8a').catch(() => {});
+  await import('./bonecos3_global.js?v=c41040cf8a');
   ligar(api);
   return TO.tela;
 }
@@ -210,6 +210,9 @@ function ligar(api) {
     /* (pro teste: o controle da cena no ar — o J, o robô, o fim) */
     get controleDoAssalto() { return assaltoNoAr; },
     vida, mapa, dia: dia3d, recados,
+    /* OS GRÁFICOS (30/09/2026): as opções de gráfico do cenário (o painel
+       é js/ui/graficos.js) */
+    get graficos() { return api.cenario ? api.cenario.graficos || null : null; },
     /* (pro teste: a praça e a planta — os bares, as sedes) */
     get api() { return api; }
   };
@@ -223,7 +226,7 @@ function ligar(api) {
     if (!loja) return { erro: 'a praça não tem ' + op.alvo };
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
-    const { iniciarAssalto } = await import('./assalto3d.js?v=9ef06bee20');
+    const { iniciarAssalto } = await import('./assalto3d.js?v=c41040cf8a');
     /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
     const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
     const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;
@@ -356,9 +359,11 @@ function ligar(api) {
     try { if (vida.conferirGuardados) vida.conferirGuardados(true); } catch (err) { console.error('os armários:', err); }
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
+    /* (a textura dos gráficos que mudou com a praça ocupada: remonta agora) */
+    const mudouTexturas = texturasPendentes; texturasPendentes = false;
     /* os ônibus da garagem (os níveis 4 e 5) são os do save, na hora */
     try { if (api.onibusDoJogo && TO.financeiro && TO.financeiro.onibusDe) api.onibusDoJogo(e.torcida.id, TO.financeiro.onibusDe(e)); } catch (err) { console.error('os ônibus:', err); }
-    const refazer = mudouNivel || mudouBares || !!forcar;
+    const refazer = mudouNivel || mudouBares || mudouTexturas || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
     /* os bares que ela tinha na praça: o que aparecer a mais é o novo */
@@ -376,10 +381,48 @@ function ligar(api) {
     }, () => {});
   };
 
+  /* AS TEXTURAS DOS GRÁFICOS mudaram: a praça monta de novo, com a vida
+     da sede desligada e ligada de novo (a do jogador, pelo caminho de
+     sempre). Com o dia de jogo ou o assalto no ar, espera eles acabarem
+     (a praça volta pra do jogador e monta com a textura nova); no menu,
+     só remonta a que está atrás dele */
+  let texturasPendentes = false;
+  const trocarTexturas = () => {
+    const C = api.cenario;
+    if (!C || !C.praca) return;
+    const emJogo = !!jogo && !jogo.classList.contains('oculto');
+    if (!emJogo) { api.abrirPraca(C.praca, true); return; }
+    texturasPendentes = true;
+    if (pracaTravada || dia3d.ativo || dia3d.montando || assaltoNoAr) return;
+    conferirPraca();
+  };
+  const ligarGraficos = () => {
+    const C = api.cenario;
+    if (!C || !C.graficos) return false;
+    C.graficos.aoTrocarTexturas = trocarTexturas;
+    /* o clique no medidor de fps abre o painel */
+    C.graficos.aoPedir = () => { if (TO.graficos) TO.graficos.alternar(); };
+    return true;
+  };
+  if (!ligarGraficos()) api.pronta && api.pronta.then(ligarGraficos, () => {});
+  /* A PRIMEIRA VEZ SEM PLACA DE VÍDEO: os gráficos começaram na mínima
+     sozinhos (o cenário vê a placa antes de desenhar). Um aviso, uma vez
+     por navegador, dizendo onde muda */
+  let avisouGraficos = false;
+  const avisarGraficos = () => {
+    const C = api.cenario, g = C && C.graficos;
+    if (avisouGraficos || !g || !g.automatica || !g.estado.semPlaca) return;
+    avisouGraficos = true;
+    try { if (localStorage.getItem('jogo3d-aviso-graficos')) return; localStorage.setItem('jogo3d-aviso-graficos', '1'); } catch (err) { return; }
+    const _tr = (s, v) => window._t ? _t(s, v) : s;
+    avisar(_tr('Sem placa de vídeo: os gráficos começaram no mínimo. Dá pra mudar em <b>Gráficos</b>, no menu da esquerda.'));
+  };
+
   /* dentro da partida (a casca do jogo à mostra) ou no menu */
   const conferirTela = () => {
     const emJogo = !!jogo && !jogo.classList.contains('oculto');
     document.body.classList.toggle('j3d-em-jogo', emJogo);
+    if (emJogo) setTimeout(avisarGraficos, 2500);
     if (!emJogo && (dia3d.ativo || dia3d.montando)) dia3d.fechar();
     if (emJogo) conferirPraca();
     else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }

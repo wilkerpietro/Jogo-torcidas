@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=9ef06bee20';
-import { brigaNaCaminhada } from './caminhada.js?v=9ef06bee20';
-import { brigaNoBar } from './briga_bar.js?v=9ef06bee20';
-import { brigaNaTreta } from './briga_treta.js?v=9ef06bee20';
-import { planoDoBar } from './casas3d.js?v=9ef06bee20';
+import { palcoDeBriga } from './palco_briga.js?v=c41040cf8a';
+import { brigaNaCaminhada } from './caminhada.js?v=c41040cf8a';
+import { brigaNoBar } from './briga_bar.js?v=c41040cf8a';
+import { brigaNaTreta } from './briga_treta.js?v=c41040cf8a';
+import { planoDoBar } from './casas3d.js?v=c41040cf8a';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -889,7 +889,9 @@ export function criarVida(api) {
     /* o povo: quanto mais longe a câmera, maior o círculo (e o teto) */
     const raio = clamp(dist * 0.9, 55 * M, 170 * M);
     const mov = h < 6 ? 0.1 : h < 8 ? 0.4 : h < 12 ? 0.75 : h < 14 ? 0.9 : h < 18 ? 0.8 : h < 21 ? 0.85 : h < 22.5 ? 0.45 : 0.15;
-    const quer = Math.round(clamp(Math.PI * (raio / M) ** 2 * 0.0024, 14, 64) * mov);
+    /* (a gente na rua dos gráficos: o PC fraco anima e desenha menos gente) */
+    const gente = Cn.graficos ? Cn.graficos.gente : 1;
+    const quer = Math.round(clamp(Math.PI * (raio / M) ** 2 * 0.0024, 14, 64) * mov * gente);
     /* quem saiu do círculo some; quem falta nasce (um por vez) */
     rua.povo = rua.povo.filter(p => Math.hypot(p.d.x - cx, p.d.y - cz) < raio * 1.25);
     rua.proxNasce -= dt;
@@ -911,6 +913,8 @@ export function criarVida(api) {
       let n = noBarDaHora(h) + (hashTxt(b.n + '|' + ((E() && E().data.absoluto) || 0)) % 3);
       /* (o bar quebrado tem metade do movimento: fatura a metade) */
       if (quebrados.has(b.n)) n = Math.floor(n / 2);
+      /* (menos gente nos gráficos: a roda menor, mas o bar aberto não fica vazio) */
+      if (gente < 1 && n) n = Math.max(1, Math.round(n * gente));
       const naRoda = b.gente.filter(g => g.estado === 'na roda').length;
       if (!b.gente.length && n) encherBar(b, Math.max(1, n - 1));
       b.proxChega -= dt;
