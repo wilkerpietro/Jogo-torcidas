@@ -143,12 +143,6 @@ TO.i18n.registrar({
   'Ao todo, {k} brigas pelo país hoje.': {es:'En total, {k} peleas por el país hoy.', en:'In all, {k} fights around the country today.'},
 
   /* ---------- a zoeira de quem venceu ---------- */
-  'A bandeira da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!':
-    {es:'La bandera de la {perdedor} ahora vive en la sede de la {nome}. ¡El que la quiera, que venga a buscarla {emCidade}!',
-     en:'The {perdedor} flag now lives at the {nome} HQ. Anyone who wants it can come and get it {emCidade}!'},
-  'A faixa da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!':
-    {es:'El trapo de la {perdedor} ahora vive en la sede de la {nome}. ¡El que lo quiera, que venga a buscarlo {emCidade}!',
-     en:'The {perdedor} banner now lives at the {nome} HQ. Anyone who wants it can come and get it {emCidade}!'},
   'Treta marcada é pra quem aguenta. A {perdedor} topou, apareceu {emCidade} e saiu no prejuízo: {n} contra {m}, e deu {nome}.':
     {es:'La pelea pactada es para el que aguanta. La {perdedor} aceptó, apareció {emCidade} y salió perdiendo: {n} contra {m}, y ganó la {nome}.',
      en:'A pre-arranged brawl is for those who can take it. {perdedor} agreed, showed up {emCidade} and came off worse: {n} against {m}, and {nome} won.'},
@@ -340,5 +334,9 @@ TO.i18n.registrar({
     {es:'EL FÚTBOL DE LA CIUDAD · {time} empata con {adv} {g1} a {g2}, {onde}, {rodada}.', en:'CITY FOOTBALL · {time} draw {g1}–{g2} with {adv} {onde}, {rodada}.'},
   'Dia de {clube} x {adv}{comp}! A {nome} vai dominar a pista e a arquibancada mostrando que a cidade é nossa. {grito}':
     {es:'¡Día de {clube} contra {adv}{comp}! La {nome} va a dominar la calle y la tribuna para mostrar que la ciudad es nuestra. {grito}',
-     en:'{clube} v {adv} day{comp}! {nome} will own the road and the stands to show this city is ours. {grito}'}
+     en:'{clube} v {adv} day{comp}! {nome} will own the road and the stands to show this city is ours. {grito}'},
+  'A partir de hoje a faixa da {perdedor} é nossa. A cidade é nossa!':
+    {es:'Desde hoy el trapo de la {perdedor} es nuestro. ¡La ciudad es nuestra!', en:'As of today the {perdedor} banner is ours. This city is ours!'},
+  'A partir de hoje a bandeira da {perdedor} é nossa. A cidade é nossa!':
+    {es:'Desde hoy la bandera de la {perdedor} es nuestra. ¡La ciudad es nuestra!', en:'As of today the {perdedor} flag is ours. This city is ours!'}
 });

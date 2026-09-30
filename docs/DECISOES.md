@@ -8226,6 +8226,10 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - **A Gazeta diz em casa ou fora e a rodada ou a fase da competição**: "Ceará vence Goiás por 2 a 0, em casa, pela 12ª rodada da Série B." A posição que vem depois é a da tabela da competição DO JOGO (antes era a da liga do clube, e o jogo da Copa do Nordeste dava a posição de outra tabela).
 - **A convocação é só pra jogo em casa** e agora é postada pelo perfil oficial da torcida, com o texto do dono: "Dia de Ceará x Brasil de Pelotas pela Série B! A Cearamor vai dominar a pista e a arquibancada mostrando que a cidade é nossa. UH CEARAMOR!" — a nossa também.
 
+## Toda briga vira post, e a faixa tomada com o texto do dono (30/09/2026)
+
+"Qualquer tipo de briga gera mensagem na rede social": a zoeira deixou de ser sorteada pela distância e de ter teto de uma por dia — toda briga entre torcidas do nosso país (treta marcada, bar, ataque-surpresa, estrada, dia de jogo, subsedes) vira post de quem venceu, na ordem das mais perto; as de outro país, 5% das vezes. Em 60 dias de TUF: 133 brigas no país, todas com post, perto de 3 zoeiras por dia. As brigas que ainda não viraram post são contadas pelo `E.brigasIATotal` (`E.brigasNoFeedAte`), e não pela data — a guerra das subsedes roda no fechamento da semana, depois do passo do feed. O feed guarda 300 posts (eram 200) e a tela mostra os 200 mais novos. A faixa ou bandeira tomada numa briga do mundo agora sai com o texto do dono: "A partir de hoje a faixa da Jovem Garra Tricolor é nossa. A cidade é nossa!".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

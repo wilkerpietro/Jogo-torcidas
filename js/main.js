@@ -3895,7 +3895,7 @@
     };
     /* o perfil do jornal (30/09/2026): as iniciais na cor da capa */
     const JORNAL_AV = {gazeta:'GS', porrada:'FP'};
-    for(const m of lista.slice(0, 120)){
+    for(const m of lista.slice(0, 200)){
       const jornal = m.jornal && (TO.feed.JORNAIS || {})[m.jornal];
       const o = jornal ? {} : (TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome});
       /* post de save antigo nasceu sem curtida: a conta sai agora e fica */

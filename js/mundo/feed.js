@@ -103,10 +103,10 @@ TO.feed = (function(){
     if(!m.publico) try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
     return m;
   }
-  /* 200 posts no máximo; o que sai primeiro é o público mais velho —
+  /* 300 posts no máximo; o que sai primeiro é o público mais velho —
      pedido e trégua esperando resposta não somem por causa de zoeira */
   function aparar(E){
-    while(E.mensagens.length > 200){
+    while(E.mensagens.length > 300){
       let i = -1;
       for(let k = E.mensagens.length - 1; k >= 0; k--) if(E.mensagens[k].publico){ i = k; break; }
       E.mensagens.splice(i >= 0 ? i : E.mensagens.length - 1, 1);
@@ -247,7 +247,6 @@ TO.feed = (function(){
     }
     return _saltos.get(k);
   }
-  const CHANCE_ZOEIRA = [0.7, 0.35, 0.15, 0.06];
   /* (o rótulo pode ter sido gravado já traduzido: vale nas duas formas) */
   const eh = (j, k) => j === k || j === _t(k);
   const tipoDaBriga = reg => {
@@ -278,9 +277,10 @@ TO.feed = (function(){
     P.onde = ondeDaBriga(reg);
     const venceuQuemAtacou = !!reg.ganhouA;
     const pano = reg.pano && reg.pano.para === P.nome ? reg.pano : null;
+    /* texto do dono (30/09/2026) */
     if(pano) return pano.tipo === 'bandeira'
-      ? _t('A bandeira da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!', P)
-      : _t('A faixa da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!', P);
+      ? _t('A partir de hoje a bandeira da {perdedor} é nossa. A cidade é nossa!', P)
+      : _t('A partir de hoje a faixa da {perdedor} é nossa. A cidade é nossa!', P);
     const t = tipoDaBriga(reg);
     let op;
     if(t === 'jogo') op = [
@@ -304,13 +304,22 @@ TO.feed = (function(){
     return op[h % op.length];
   }
   function brigasDoMundoHoje(E){
-    const hoje = (E.brigasIA || []).filter(r => r.ano === E.data.ano && r.semana === E.data.semana &&
-      r.dia === E.data.dia && r.a && r.b && r.a.id !== E.torcida.id && r.b.id !== E.torcida.id);
+    /* as brigas que ainda não viraram post — pelo contador de brigas da
+       IA, e não pela data: a guerra das subsedes roda no fechamento da
+       semana, depois deste passo, e pela data ela ficaria sem post */
+    const total = E.brigasIATotal || 0;
+    if(E.brigasNoFeedAte == null || E.brigasNoFeedAte > total) E.brigasNoFeedAte = total;
+    const novas = Math.min(total - E.brigasNoFeedAte, (E.brigasIA || []).length);
+    E.brigasNoFeedAte = total;
+    const hoje = (E.brigasIA || []).slice(0, novas).filter(r =>
+      r.a && r.b && r.a.id !== E.torcida.id && r.b.id !== E.torcida.id);
     if(!hoje.length) return;
     const R = TO.relacoes, H = TO.mapa.hash, abs = E.data.absoluto || 0;
     const nossoPais = R.paisDaTorcida(E.torcida.id);
     const pais = id => R.paisDaTorcida(id);
-    /* a zoeira: a mais perto do dia */
+    /* A ZOEIRA DE TODA BRIGA (dono, 30/09/2026): "qualquer tipo de briga
+       gera mensagem na rede social" — toda briga entre torcidas do nosso
+       país vira post de quem venceu; as de outro país, de vez em quando */
     const cands = [];
     for(const r of hoje){
       if(!r.vencedor) continue;
@@ -318,13 +327,12 @@ TO.feed = (function(){
       if(pais(V.id) !== pais(D.id)) continue;
       const mapaV = (M().torcida(V.id)||{}).mapa, mapaD = (M().torcida(D.id)||{}).mapa;
       const s = Math.min(saltosDaNossa(E, mapaV), saltosDaNossa(E, mapaD));
-      const chance = pais(V.id) !== nossoPais ? 0.01 : (CHANCE_ZOEIRA[s] != null ? CHANCE_ZOEIRA[s] : 0.02);
       const h = H(`zoeira|${abs}|${V.id}|${D.id}`);
-      if((h % 1000) >= chance * 1000) continue;
+      if(pais(V.id) !== nossoPais && (h % 1000) >= 50) continue;
       cands.push({r, V, D, s, h});
     }
     cands.sort((x, y) => x.s - y.s);
-    for(const c of cands.slice(0, 1)){
+    for(const c of cands){
       const {r, V, D} = c;
       const h = H(`zoeira-texto|${abs}|${V.id}|${D.id}`);
       const P = {nome:V.nome, perdedor:D.nome, n:V.n, m:D.n, jogo:r.jogo || '',
