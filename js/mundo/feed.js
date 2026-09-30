@@ -79,7 +79,7 @@ TO.feed = (function(){
     if(extra.em && extra.em > (E.data.absoluto||0)){
       E.mensagensAgendadas = E.mensagensAgendadas || [];
       E.mensagensAgendadas.push({de:torcidaId, texto, tipo:tipo||'recado', em:extra.em,
-        extra:{chave:extra.chave || null, dados:extra.dados || null}});
+        extra:{chave:extra.chave || null, dados:extra.dados || null, publico:!!extra.publico}});
       return null;
     }
     /* a mesma torcida não repete o mesmo recado no mesmo dia (duas
@@ -92,10 +92,22 @@ TO.feed = (function(){
                quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
                        abs:E.data.absoluto||0}, lida:false};
     m.curtidas = curtidasDe(E, torcidaId, m.id);
+    /* post PÚBLICO (a zoeira entre as outras): está no feed, mas não é
+       recado pra gente — não acende o número vermelho nem avisa */
+    if(extra.publico){ m.publico = true; m.lida = true; }
     E.mensagens.unshift(m);
-    if(E.mensagens.length > 200) E.mensagens.length = 200;
-    try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
+    aparar(E);
+    if(!m.publico) try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
     return m;
+  }
+  /* 200 posts no máximo; o que sai primeiro é o público mais velho —
+     pedido e trégua esperando resposta não somem por causa de zoeira */
+  function aparar(E){
+    while(E.mensagens.length > 200){
+      let i = -1;
+      for(let k = E.mensagens.length - 1; k >= 0; k--) if(E.mensagens[k].publico){ i = k; break; }
+      E.mensagens.splice(i >= 0 ? i : E.mensagens.length - 1, 1);
+    }
   }
   const mensagensNaoLidas = E => (caixas(E), E.mensagens.filter(m=>!m.lida).length);
   function lerMensagens(E){ caixas(E); for(const m of E.mensagens) m.lida = true; }
@@ -155,6 +167,186 @@ TO.feed = (function(){
   /* "no sábado", "na quarta" — o dia que ainda vem */
   const NO_DIA = [null, _t('na segunda'), _t('na terça'), _t('na quarta'), _t('na quinta'),
                   _t('na sexta'), _t('no sábado'), _t('no domingo')];
+
+  /* =======================================================
+     OS PERFIS DOS JORNAIS (pedido do dono, 30/09/2026)
+     A Gazeta dos Sports e o Futebol e Porrada postam as matérias
+     como se tivessem perfil próprio: quando a notícia cai no feed,
+     o jornal posta o chapéu, a manchete e o olho dela, com o
+     caminho pra ler a página inteira. A Gazeta posta o nosso jogo
+     e o almanaque; o Porrada, as nossas brigas, as obras e a LNT —
+     e, de vez em quando, a maior briga do dia pelo país.
+     ======================================================= */
+  const JORNAIS = {
+    gazeta:  {nome:'Gazeta dos Sports', arroba:'@gazetadossports'},
+    porrada: {nome:'Futebol e Porrada', arroba:'@futeboleporrada'}
+  };
+  const semTags = t => String(t || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  /* a curtida do jornal: a média das curtidas de quem a matéria cita */
+  function curtidasDoJornal(E, ids, semente){
+    const v = (ids || []).filter(Boolean).map(id => curtidasDe(E, id, semente));
+    return v.length ? Math.round(v.reduce((a,b)=>a+b, 0) / v.length) : 0;
+  }
+  function postDoJornal(E, jornal, texto, extra){
+    caixas(E);
+    const J = JORNAIS[jornal];
+    if(!J || !texto) return null;
+    extra = extra || {};
+    if(extra.chave && E.mensagens.some(x=>x.chave === extra.chave)) return null;
+    const m = {id: E.feedSeq++, de:null, jornal, nome:J.nome, texto, tipo:'noticia',
+               chave: extra.chave || null, dados: extra.dados || null, resposta:null,
+               quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+                       abs:E.data.absoluto||0}, lida:true, publico:true};
+    m.curtidas = curtidasDoJornal(E, extra.citadas || [E.torcida.id], m.id);
+    E.mensagens.unshift(m);
+    aparar(E);
+    return m;
+  }
+  /* a notícia do feed que acabou de cair vira post do jornal dela */
+  function postDaMateria(E, m){
+    if(!m) return;
+    const P = TO.porrada, G = TO.gazeta;
+    let jornal = null, pg = null;
+    if(m.kind === 'rodada' && G){ jornal = 'gazeta'; pg = G.montar(E, m); }
+    else if(m.kind === 'almanaque'){ jornal = 'gazeta'; pg = (m.dados||{}).pagina; }
+    else if(m.kind === 'confronto' && P){ jornal = 'porrada'; pg = P.montar(E, m); }
+    else if((m.kind === 'lnt-fundacao' || m.kind === 'lnt-fim') && P && P.montarLNT){ jornal = 'porrada'; pg = P.montarLNT(E, m); }
+    else if(m.kind === 'obra' && P && P.montarObra){ jornal = 'porrada'; pg = P.montarObra(E, m); }
+    if(!jornal || !pg || !pg.manchete) return;
+    const chapeu = semTags(pg.chapeu), manchete = semTags(pg.manchete), olho = semTags(pg.olho);
+    const texto = (chapeu ? chapeu.toUpperCase() + ' · ' : '') + manchete +
+                  (/[.!?]$/.test(manchete) ? '' : '.') + (olho ? ' ' + olho : '');
+    const d = m.dados || {};
+    postDoJornal(E, jornal, texto, {chave:`jornal|${m.id}`,
+      dados:{materia:m.id, aba: m.kind === 'confronto' ? 'tretas' : 'arquivo'},
+      citadas:[E.torcida.id, d.torcidaId || (d.b||{}).id].filter(Boolean)});
+  }
+
+  /* =======================================================
+     AS BRIGAS DO MUNDO NO FEED (pedido do dono, 30/09/2026)
+     Quem vence uma briga entre as outras posta zoando quem perdeu —
+     torcidas do mesmo país, e primeiro as da nossa praça e das
+     vizinhas: na nossa cidade quase sempre, a uma estrada muitas
+     vezes, longe quase nunca. Uma zoeira por dia no máximo, a mais
+     perto; às vezes quem apanhou responde. E o Porrada posta, em um
+     dia de cada três, a maior briga do dia pelo país (ou pelo mundo).
+     ======================================================= */
+  const _saltos = new Map();
+  function saltosDaNossa(E, mapa){
+    const nossa = E.torcida.mapa;
+    if(!mapa) return 9;
+    if(mapa === nossa) return 0;
+    const k = nossa + '>' + mapa;
+    if(!_saltos.has(k)){
+      let s = 9;
+      try{ s = PL().saltosEntre(E, nossa, mapa); }catch(_){}
+      _saltos.set(k, s);
+    }
+    return _saltos.get(k);
+  }
+  const CHANCE_ZOEIRA = [0.7, 0.35, 0.15, 0.06];
+  const tipoDaBriga = reg => {
+    const j = String(reg.jogo || '');
+    if(/×/.test(j)) return 'jogo';
+    if(j === 'treta marcada') return 'treta';
+    if(j === 'ataque ao bar') return 'bar';
+    if(j === 'ataque-surpresa') return 'surpresa';
+    if(j === 'emboscada na estrada') return 'estrada';
+    return 'rua';
+  };
+  function textoDaZoeira(reg, P, h){
+    const venceuQuemAtacou = !!reg.ganhouA;
+    const pano = reg.pano && reg.pano.para === P.nome ? reg.pano : null;
+    if(pano) return pano.tipo === 'bandeira'
+      ? _t('A bandeira da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!', P)
+      : _t('A faixa da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!', P);
+    const t = tipoDaBriga(reg);
+    let op;
+    if(t === 'jogo') op = [
+      _t('Dia de {jogo} e a {perdedor} achou que ia fazer a festa {emCidade}. Saíram correndo antes do apito. Respeita a {nome}!', P),
+      _t('No {jogo} quem jogou bonito foi a {nome}: {n} contra {m}, e a {perdedor} voltou pra casa mais cedo.', P)];
+    else if(t === 'treta') op = [
+      _t('Treta marcada é pra quem aguenta. A {perdedor} topou, apareceu {emCidade} e saiu no prejuízo: {n} contra {m}, e deu {nome}.', P)];
+    else if(t === 'bar') op = venceuQuemAtacou
+      ? [_t('Passamos no bar da {perdedor} {emCidade} e ninguém segurou. A {nome} mandou lembranças!', P)]
+      : [_t('A {perdedor} veio tomar o nosso bar {emCidade} e voltou correndo. Aqui é a casa da {nome}!', P)];
+    else if(t === 'surpresa') op = venceuQuemAtacou
+      ? [_t('Pegamos a {perdedor} de surpresa {emCidade}. Nem deu tempo de correr. Abraço da {nome}!', P)]
+      : [_t('A {perdedor} tentou pegar a gente de surpresa {emCidade} e tomou o troco na hora. A {nome} não dorme!', P)];
+    else if(t === 'estrada') op = venceuQuemAtacou
+      ? [_t('Emboscada na estrada: a caravana da {perdedor} não chegou inteira. Assinado, {nome}.', P)]
+      : [_t('Armaram emboscada na estrada pra gente e se deram mal. A {perdedor} que aprenda: a {nome} viaja pronta.', P)];
+    else op = [];
+    /* "tragam mais gente" só quando eles vieram em menor número */
+    if(P.m < P.n) op.push(_t('Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {emCidade}, e deu {nome}.', P));
+    op.push(_t('A {perdedor} veio com {m} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.', P));
+    return op[h % op.length];
+  }
+  function brigasDoMundoHoje(E){
+    const hoje = (E.brigasIA || []).filter(r => r.ano === E.data.ano && r.semana === E.data.semana &&
+      r.dia === E.data.dia && r.a && r.b && r.a.id !== E.torcida.id && r.b.id !== E.torcida.id);
+    if(!hoje.length) return;
+    const R = TO.relacoes, H = TO.mapa.hash, abs = E.data.absoluto || 0;
+    const nossoPais = R.paisDaTorcida(E.torcida.id);
+    const pais = id => R.paisDaTorcida(id);
+    /* a zoeira: a mais perto do dia */
+    const cands = [];
+    for(const r of hoje){
+      if(!r.vencedor) continue;
+      const V = r.ganhouA ? r.a : r.b, D = r.ganhouA ? r.b : r.a;
+      if(pais(V.id) !== pais(D.id)) continue;
+      const mapaV = (M().torcida(V.id)||{}).mapa, mapaD = (M().torcida(D.id)||{}).mapa;
+      const s = Math.min(saltosDaNossa(E, mapaV), saltosDaNossa(E, mapaD));
+      const chance = pais(V.id) !== nossoPais ? 0.01 : (CHANCE_ZOEIRA[s] != null ? CHANCE_ZOEIRA[s] : 0.02);
+      const h = H(`zoeira|${abs}|${V.id}|${D.id}`);
+      if((h % 1000) >= chance * 1000) continue;
+      cands.push({r, V, D, s, h});
+    }
+    cands.sort((x, y) => x.s - y.s);
+    for(const c of cands.slice(0, 1)){
+      const {r, V, D} = c;
+      const h = H(`zoeira-texto|${abs}|${V.id}|${D.id}`);
+      const P = {nome:V.nome, perdedor:D.nome, n:V.n, m:D.n, jogo:r.jogo || '',
+                 emCidade:TO.genero.em('cidade', r.cidade || nomeDaPraca((M().torcida(V.id)||{}).mapa))};
+      mensagemDe(E, V.id, textoDaZoeira(r, P, h), 'zoeira', {publico:true, chave:`zoeira|${abs}|${V.id}|${D.id}`});
+      /* às vezes quem apanhou responde */
+      if((h >> 5) % 100 < 30){
+        const op = V.n > D.n
+          ? [_t('Ganharam na covardia, {n} contra {m}. A {perdedor} não esquece, {nome}. A volta vem.', P),
+             _t('Fácil ganhar com {n} contra {m}, né, {nome}? Marca um dia de igual pra igual com a {perdedor} e vamos ver.', P)]
+          : [_t('Hoje foi de vocês, {nome}. Aproveitem, porque a {perdedor} volta e a conta vem cara.', P),
+             _t('Uma briga não é a guerra, {nome}. A {perdedor} já está se organizando.', P)];
+        const txt = op[(h >> 9) % op.length];
+        mensagemDe(E, D.id, txt, 'resposta', {publico:true, chave:`resposta|${abs}|${D.id}|${V.id}`});
+      }
+    }
+    /* o Porrada: a maior briga do dia, um dia em três; do país
+       primeiro, a do mundo quando o país ficou quieto */
+    if(H(`porrada-dia|${abs}`) % 100 >= 35) return;
+    const tam = r => (r.a.n || 0) + (r.b.n || 0);
+    const doPais = hoje.filter(r => pais(r.a.id) === nossoPais && r.vencedor).sort((x, y) => tam(y) - tam(x));
+    const doMundo = hoje.filter(r => r.vencedor).sort((x, y) => tam(y) - tam(x));
+    const r = doPais[0] || doMundo[0];
+    if(!r) return;
+    const V = r.ganhouA ? r.a : r.b, D = r.ganhouA ? r.b : r.a;
+    const t = tipoDaBriga(r);
+    const P = {vencedor:V.nome, perdedor:D.nome, nV:V.n, nD:D.n,
+               feridos:(r.a.feridos || 0) + (r.b.feridos || 0), jogo:r.jogo || '',
+               emCidade:TO.genero.em('cidade', r.cidade || ''), k:doPais.length};
+    const chapeu = doPais[0] ? _t('PORRADA PELO PAÍS') : _t('PORRADA PELO MUNDO');
+    const como = t === 'jogo' ? _t('A {vencedor} levou a melhor sobre a {perdedor} {emCidade}, no dia de {jogo}.', P)
+      : t === 'treta' ? _t('A {vencedor} levou a melhor sobre a {perdedor} numa treta marcada {emCidade}.', P)
+      : t === 'bar' ? _t('A {vencedor} levou a melhor no ataque ao bar {emCidade}, contra a {perdedor}.', P)
+      : t === 'surpresa' ? _t('A {vencedor} levou a melhor sobre a {perdedor} num ataque-surpresa {emCidade}.', P)
+      : t === 'estrada' ? _t('A {vencedor} levou a melhor sobre a {perdedor} numa emboscada na estrada.', P)
+      : _t('A {vencedor} levou a melhor sobre a {perdedor} {emCidade}.', P);
+    let texto = `${chapeu} · ${como} ` + _t('Foram {nV} contra {nD}, com {feridos} feridos.', P);
+    if(r.pano) texto += ' ' + (r.pano.tipo === 'bandeira'
+      ? _t('E a bandeira da {perdedor} trocou de dono.', P)
+      : _t('E a faixa da {perdedor} trocou de dono.', P));
+    if(doPais[0] && doPais.length > 1) texto += ' ' + _t('Ao todo, {k} brigas pelo país hoje.', P);
+    postDoJornal(E, 'porrada', texto, {chave:`porrada-dia|${abs}`, dados:{aba:'brigas'}, citadas:[V.id, D.id]});
+  }
 
   /* =======================================================
      O LOTE DE BRIGAS DO DIA DE JOGO (pedido do dono, 08/09/2026)
@@ -352,6 +544,7 @@ TO.feed = (function(){
     }
     if(!m) return null;
     E.feed.unshift(m);
+    try{ postDaMateria(E, m); }catch(err){ if(window.console) console.error('[feed] post do jornal', err); }
     /* A NOTÍCIA DE TRETA NÃO PASSA PELO FEED (pedido do dono, 08/09/2026):
        ela continua na história (é dela que o Futebol e Porrada e o
        arquivo lêem), mas quem a mostra é Notícias → Tretas. Nasce
@@ -550,6 +743,7 @@ TO.feed = (function(){
     passo('placar',         ()=>placarDoDia(E, ctx.jogos || []));
     passo('almanaque',      ()=>almanaqueDoDia(E));
     passo('dica',           ()=>dicaDeHoje(E));
+    passo('brigas do mundo no feed', ()=>brigasDoMundoHoje(E));
   }
 
   /* =======================================================
@@ -5171,7 +5365,7 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
-          curtidasDe, publicarAgendadas,
+          curtidasDe, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,

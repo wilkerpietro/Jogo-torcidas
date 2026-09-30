@@ -3837,7 +3837,8 @@
      Abrir a aba dá tudo por lido, e o número do ícone some. */
   const ROT_MSG = {provocacao:_t('Provocação'), convite:_t('Convite'), agradecimento:_t('Agradecimento'),
                    juntos:_t('Estamos juntos'), recusa:_t('Recusa'), cobranca:_t('Cobrança'), recado:_t('Recado'),
-                   pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada')};
+                   pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada'),
+                   zoeira:_t('Zoeira'), resposta:_t('Resposta'), noticia:_t('Notícia')};
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */
@@ -3880,20 +3881,30 @@
     };
     const arroba = o => '@' + U.identificador(TO.mundo.siglaTorcida(o) || o.nome || '').replace(/-/g, '');
     const coracao = TO.icones.get('coracao');
+    /* o perfil do jornal (30/09/2026): as iniciais na cor da capa */
+    const JORNAL_AV = {gazeta:'GS', porrada:'FP'};
     for(const m of lista.slice(0, 120)){
-      const o = TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome};
+      const jornal = m.jornal && (TO.feed.JORNAIS || {})[m.jornal];
+      const o = jornal ? {} : (TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome});
       /* post de save antigo nasceu sem curtida: a conta sai agora e fica */
-      if(m.curtidas == null && TO.feed.curtidasDe) m.curtidas = TO.feed.curtidasDe(e, m.de, m.id);
-      const cidade = (TO.mundo.cidade(o.mapa)||{}).nome || '';
-      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
-        `<header class="post-cab">${avatar(m.de)}`+
-          `<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}</b>`+
-          `<small>${arroba(o)}${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`+
+      if(m.curtidas == null && TO.feed.curtidasDe && !jornal) m.curtidas = TO.feed.curtidasDe(e, m.de, m.id);
+      const cidade = jornal ? '' : ((TO.mundo.cidade(o.mapa)||{}).nome || '');
+      const quem = jornal
+        ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal]||''}</span></span>`+
+          `<span class="post-quem"><b>${escHTML(jornal.nome)}</b><small>${jornal.arroba}</small></span>`
+        : `${avatar(m.de)}<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}</b>`+
+          `<small>${arroba(o)}${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`;
+      const ler = jornal && (m.dados||{}).aba
+        ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
+      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':''), html:
+        `<header class="post-cab">${quem}`+
           `<span class="post-quando">${haQuanto(m.quando || {})}</span></header>`+
         `<p class="post-texto">${linkificarNomes(m.texto)}</p>`+
         `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
           `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
-          `<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`});
+          `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`});
+      const bLer = art.querySelector('.post-ler');
+      if(bLer) bLer.onclick = ()=>{ subNoticias = bLer.dataset.aba; redesenhar(); };
       /* as que pedem resposta: recepção (quatro níveis) e trégua */
       if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
         const bts = el('div',{class:'rec-botoes'});

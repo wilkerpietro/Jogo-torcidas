@@ -8188,6 +8188,14 @@ Notícias → Mensagens virou feed de rede social. Cada recado de outra torcida 
 
 **O post que fala do passado sai depois**: o agradecimento pela recepção sai no dia seguinte ao jogo, e o da festa no dia seguinte à festa (antes saía no dia em que a gente respondia, antes da festa). Fica em `E.mensagensAgendadas` e cai no passo "posts do dia" (`feed.publicarAgendadas`). Os textos novos estão em `dados/i18n/social.js`, em espanhol e inglês; as mensagens que um save já tinha continuam como nasceram.
 
+## As brigas do mundo e os jornais no feed das torcidas (pedido do dono, 30/09/2026)
+
+O feed das torcidas (Notícias → Mensagens) ganhou três tipos de post que não são recado pra nós — são públicos: aparecem no feed mas nascem lidos, não acendem o número vermelho nem o aviso do ícone, e são os primeiros a sair quando o feed passa de 200 posts (pedido e trégua esperando resposta não somem por causa deles).
+
+**A zoeira de quem venceu.** No fim do dia (`feed.brigasDoMundoHoje`, depois das brigas da IA), quem venceu uma briga entre outras torcidas do MESMO país posta zoando quem perdeu. Primeiro as da nossa praça e das vizinhas, pelos saltos de estrada (`planejamento.saltosEntre`): 70% na nossa praça, 35% a uma estrada, 15% a duas, 6% a três, 2% mais longe, 1% em outro país; uma zoeira por dia no máximo, a mais perto. O texto depende da briga — dia de jogo, treta marcada, bar (quem atacou ou quem segurou), ataque-surpresa, emboscada na estrada, faixa ou bandeira tomada ("A faixa da X agora mora na sede da Y") — e "tragam mais gente" só sai quando eles vieram em menor número. Em 30% das vezes quem apanhou responde ("Ganharam na covardia, 45 contra 11…"). Em 120 dias de TUF: cerca de 48 zoeiras e 16 respostas.
+
+**Os perfis dos jornais.** A Gazeta dos Sports e o Futebol e Porrada têm perfil (avatar com as iniciais nas cores da capa, @gazetadossports e @futeboleporrada). Quando a notícia cai no feed (`dropar` → `postDaMateria`), o jornal posta o chapéu, a manchete e o olho dela, com "Ler a matéria" que abre a aba certa de Notícias: a Gazeta posta o nosso jogo e o almanaque; o Porrada, as nossas brigas, as obras e a LNT. E em um dia de cada três o Porrada posta a maior briga do dia pelo país (sem briga no país, a do mundo), com o placar de gente, os feridos, a faixa que trocou de dono e quantas brigas houve. A curtida do jornal é a média das curtidas de quem a matéria cita.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

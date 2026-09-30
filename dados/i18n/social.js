@@ -109,5 +109,90 @@ TO.i18n.registrar({
      en:'We took a beating together, but {nossa} came down with us. A brother is the one who shows up in the bad times. Cheers, {nossa}!'},
   'A {nome} vem a público lamentar: nosso pessoal apanhou {emCidade} e a {nossa}, que se diz aliada, não desceu. Viemos de longe confiando. Fica registrado.':
     {es:'La {nome} lamenta públicamente: a nuestra gente le pegaron {emCidade} y la {nossa}, que se dice aliada, no bajó. Vinimos de lejos confiando. Queda registrado.',
-     en:'{nome} publicly regrets: our people took a beating {emCidade} and {nossa}, who call themselves allies, did not show up. We came a long way trusting you. Noted.'}
+     en:'{nome} publicly regrets: our people took a beating {emCidade} and {nossa}, who call themselves allies, did not show up. We came a long way trusting you. Noted.'},
+  /* ---------- os perfis dos jornais e as brigas do mundo ---------- */
+  'Zoeira':   {es:'Cargada', en:'Banter'},
+  'Resposta': {es:'Respuesta', en:'Reply'},
+  'Notícia':  {es:'Noticia', en:'News'},
+  'Ler a matéria': {es:'Leer la nota', en:'Read the story'},
+  'PORRADA PELO PAÍS':  {es:'PIÑAS POR EL PAÍS',  en:'SCRAPS AROUND THE COUNTRY'},
+  'PORRADA PELO MUNDO': {es:'PIÑAS POR EL MUNDO', en:'SCRAPS AROUND THE WORLD'},
+  'A {vencedor} levou a melhor sobre a {perdedor} {emCidade}, no dia de {jogo}.':
+    {es:'La {vencedor} le ganó a la {perdedor} {emCidade}, el día de {jogo}.',
+     en:'{vencedor} got the better of {perdedor} {emCidade}, on the day of {jogo}.'},
+  'A {vencedor} levou a melhor sobre a {perdedor} numa treta marcada {emCidade}.':
+    {es:'La {vencedor} le ganó a la {perdedor} en una pelea pactada {emCidade}.',
+     en:'{vencedor} got the better of {perdedor} in a pre-arranged brawl {emCidade}.'},
+  'A {vencedor} levou a melhor no ataque ao bar {emCidade}, contra a {perdedor}.':
+    {es:'La {vencedor} ganó en el ataque al bar {emCidade}, contra la {perdedor}.',
+     en:'{vencedor} came out on top in the bar attack {emCidade}, against {perdedor}.'},
+  'A {vencedor} levou a melhor sobre a {perdedor} num ataque-surpresa {emCidade}.':
+    {es:'La {vencedor} le ganó a la {perdedor} en un golpe sorpresa {emCidade}.',
+     en:'{vencedor} got the better of {perdedor} in a surprise raid {emCidade}.'},
+  'A {vencedor} levou a melhor sobre a {perdedor} numa emboscada na estrada.':
+    {es:'La {vencedor} le ganó a la {perdedor} en una emboscada en la ruta.',
+     en:'{vencedor} got the better of {perdedor} in an ambush on the road.'},
+  'A {vencedor} levou a melhor sobre a {perdedor} {emCidade}.':
+    {es:'La {vencedor} le ganó a la {perdedor} {emCidade}.',
+     en:'{vencedor} got the better of {perdedor} {emCidade}.'},
+  'Foram {nV} contra {nD}, com {feridos} feridos.':
+    {es:'Fueron {nV} contra {nD}, con {feridos} heridos.', en:'It was {nV} against {nD}, with {feridos} injured.'},
+  'E a bandeira da {perdedor} trocou de dono.': {es:'Y la bandera de la {perdedor} cambió de dueño.', en:'And the {perdedor} flag changed hands.'},
+  'E a faixa da {perdedor} trocou de dono.':    {es:'Y el trapo de la {perdedor} cambió de dueño.',   en:'And the {perdedor} banner changed hands.'},
+  'Ao todo, {k} brigas pelo país hoje.': {es:'En total, {k} peleas por el país hoy.', en:'In all, {k} fights around the country today.'},
+
+  /* ---------- a zoeira de quem venceu ---------- */
+  'A bandeira da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!':
+    {es:'La bandera de la {perdedor} ahora vive en la sede de la {nome}. ¡El que la quiera, que venga a buscarla {emCidade}!',
+     en:'The {perdedor} flag now lives at the {nome} HQ. Anyone who wants it can come and get it {emCidade}!'},
+  'A faixa da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!':
+    {es:'El trapo de la {perdedor} ahora vive en la sede de la {nome}. ¡El que lo quiera, que venga a buscarlo {emCidade}!',
+     en:'The {perdedor} banner now lives at the {nome} HQ. Anyone who wants it can come and get it {emCidade}!'},
+  'Dia de {jogo} e a {perdedor} achou que ia fazer a festa {emCidade}. Saíram correndo antes do apito. Respeita a {nome}!':
+    {es:'Día de {jogo} y la {perdedor} pensó que iba a hacer la fiesta {emCidade}. Salieron corriendo antes del pitazo. ¡Respeten a la {nome}!',
+     en:'{jogo} day and {perdedor} thought they would party {emCidade}. They legged it before the whistle. Respect {nome}!'},
+  'No {jogo} quem jogou bonito foi a {nome}: {n} contra {m}, e a {perdedor} voltou pra casa mais cedo.':
+    {es:'En el {jogo} la que jugó lindo fue la {nome}: {n} contra {m}, y la {perdedor} volvió temprano a casa.',
+     en:'At {jogo} the ones who played well were {nome}: {n} against {m}, and {perdedor} went home early.'},
+  'Treta marcada é pra quem aguenta. A {perdedor} topou, apareceu {emCidade} e saiu no prejuízo: {n} contra {m}, e deu {nome}.':
+    {es:'La pelea pactada es para el que aguanta. La {perdedor} aceptó, apareció {emCidade} y salió perdiendo: {n} contra {m}, y ganó la {nome}.',
+     en:'A pre-arranged brawl is for those who can take it. {perdedor} agreed, showed up {emCidade} and came off worse: {n} against {m}, and {nome} won.'},
+  'Passamos no bar da {perdedor} {emCidade} e ninguém segurou. A {nome} mandou lembranças!':
+    {es:'Pasamos por el bar de la {perdedor} {emCidade} y nadie aguantó. ¡La {nome} les manda saludos!',
+     en:'We dropped by the {perdedor} bar {emCidade} and nobody held the line. {nome} sends its regards!'},
+  'A {perdedor} veio tomar o nosso bar {emCidade} e voltou correndo. Aqui é a casa da {nome}!':
+    {es:'La {perdedor} vino a tomar nuestro bar {emCidade} y volvió corriendo. ¡Acá es la casa de la {nome}!',
+     en:'{perdedor} came to take our bar {emCidade} and ran back home. This is {nome} territory!'},
+  'Pegamos a {perdedor} de surpresa {emCidade}. Nem deu tempo de correr. Abraço da {nome}!':
+    {es:'Agarramos a la {perdedor} de sorpresa {emCidade}. Ni tiempo de correr tuvieron. ¡Un abrazo de la {nome}!',
+     en:'We caught {perdedor} by surprise {emCidade}. They did not even have time to run. Love from {nome}!'},
+  'A {perdedor} tentou pegar a gente de surpresa {emCidade} e tomou o troco na hora. A {nome} não dorme!':
+    {es:'La {perdedor} quiso agarrarnos de sorpresa {emCidade} y recibió el vuelto en el acto. ¡La {nome} no duerme!',
+     en:'{perdedor} tried to catch us by surprise {emCidade} and got paid back on the spot. {nome} never sleeps!'},
+  'Emboscada na estrada: a caravana da {perdedor} não chegou inteira. Assinado, {nome}.':
+    {es:'Emboscada en la ruta: la caravana de la {perdedor} no llegó entera. Firmado, {nome}.',
+     en:'Ambush on the road: the {perdedor} away trip did not arrive in one piece. Signed, {nome}.'},
+  'Armaram emboscada na estrada pra gente e se deram mal. A {perdedor} que aprenda: a {nome} viaja pronta.':
+    {es:'Nos armaron una emboscada en la ruta y les salió mal. Que la {perdedor} aprenda: la {nome} viaja preparada.',
+     en:'They set up an ambush for us on the road and it backfired. {perdedor} should learn: {nome} travels ready.'},
+  'Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {emCidade}, e deu {nome}.':
+    {es:'Mensaje para la {perdedor}: la próxima traigan más gente. Fueron {n} contra {m} {emCidade}, y ganó la {nome}.',
+     en:'Message for {perdedor}: bring more people next time. It was {n} against {m} {emCidade}, and {nome} won.'},
+  'A {perdedor} veio com {m} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.':
+    {es:'La {perdedor} vino con {m} y volvió a casa contando los heridos. Hoy {emCidade} la calle fue de la {nome}.',
+     en:'{perdedor} came with {m} and went home counting the injured. Today {emCidade} the street belonged to {nome}.'},
+
+  /* ---------- a resposta de quem apanhou ---------- */
+  'Ganharam na covardia, {n} contra {m}. A {perdedor} não esquece, {nome}. A volta vem.':
+    {es:'Ganaron a lo cobarde, {n} contra {m}. La {perdedor} no olvida, {nome}. La vuelta llega.',
+     en:'You won the cowardly way, {n} against {m}. {perdedor} does not forget, {nome}. Payback is coming.'},
+  'Fácil ganhar com {n} contra {m}, né, {nome}? Marca um dia de igual pra igual com a {perdedor} e vamos ver.':
+    {es:'Fácil ganar con {n} contra {m}, ¿no, {nome}? Pongan un día de igual a igual con la {perdedor} y vamos a ver.',
+     en:'Easy winning {n} against {m}, right, {nome}? Set a day, even numbers, against {perdedor} and let us see.'},
+  'Uma briga não é a guerra, {nome}. A {perdedor} já está se organizando.':
+    {es:'Una pelea no es la guerra, {nome}. La {perdedor} ya se está organizando.',
+     en:'One fight is not the war, {nome}. {perdedor} is already getting organised.'},
+  'Hoje foi de vocês, {nome}. Aproveitem, porque a {perdedor} volta e a conta vem cara.':
+    {es:'Hoy fue de ustedes, {nome}. Disfrútenlo, porque la {perdedor} vuelve y la cuenta llega cara.',
+     en:'Today was yours, {nome}. Enjoy it, because {perdedor} will be back and the bill will be steep.'}
 });
