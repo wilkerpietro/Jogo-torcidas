@@ -1,9 +1,12 @@
 /* =========================================================
    A SEDE NOVA BATE COM A SEDE DA PLANTA?
    ---------------------------------------------------------
-   O modelo da sede (js/diajogo/sede3d.js) refaz a conta do
-   `sedeDaTorcida` da planta. Este teste confere, nas duas sedes que a
-   planta põe na cidade (a de nível 3 da 2,9 e a de nível 1 da 5,2):
+   O modelo da sede de nível 1 (js/diajogo/sede3d.js) refaz a conta do
+   `sedeDaTorcida` da planta. Este teste confere, na sede de nível 1 que a
+   planta põe na cidade (a da 5,2). Os níveis 2 a 5 são desenho novo do
+   modelo (o dono, 30/09/2026: "Descarte o atual modelo de sede nível 3")
+   e não têm par na planta — a sede de nível 3 da 2,9 fica de fora; quem
+   confere esses é o conferir_passagem.mjs:
 
    - PAREDE POR PAREDE: as do modelo, partidas nos vãos de porta com a
      regra do `comVaos` (pedaço de até 3 some), são as da planta (tirando
@@ -29,7 +32,7 @@ const { planoDaSede, eixosDaSede, montarSede } = await import(path.join(R, 'js/d
 
 const igual = (a, b, tol = 0.01) => a.every((v, i) => Math.abs(v - b[i]) < tol);
 let falhas = 0;
-for (const q of K.QUADRAS.filter(q => q.equip && q.equip.tipo === 'sede')) {
+for (const q of K.QUADRAS.filter(q => q.equip && q.equip.tipo === 'sede' && q.equip.nivel === 1)) {
   const e = q.equip, E = eixosDaSede(e.area, e.frente);
   const pl = planoDaSede(E.L, E.A, e.nivel, e.lado);
   const ret = (u0, u1, v0, v1) => { const [ax, ay] = E.pt(u0, v0), [bx, by] = E.pt(u1, v1); return [Math.min(ax, bx), Math.max(ax, bx), Math.min(ay, by), Math.max(ay, by)]; };
