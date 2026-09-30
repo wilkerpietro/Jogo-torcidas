@@ -91,6 +91,27 @@ body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
 /* =========================================================
    A VIDA DA PRAÇA (27/09/2026, vida3d.js)
    ========================================================= */
+/* o pop-up do armário do patrimônio (o clique no armário da sede) */
+.j3d-armario{
+  position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:min(380px, 90vw);max-height:70vh;overflow:auto;box-sizing:border-box;
+  padding:14px 16px 12px;border-radius:8px;background:rgba(20,20,22,.97);border:1px solid rgba(243,230,196,.3);border-top:3px solid var(--ouro, #e0b040);
+  color:#e8e2d2;box-shadow:0 10px 30px rgba(0,0,0,.55);font-size:14px;line-height:1.4;
+}
+.j3d-armario h3{margin:0 24px 8px 0;font-family:var(--titulo);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:#f3e6c4}
+.j3d-armario ul{margin:0;padding:0 0 0 18px}
+.j3d-armario li{margin:3px 0}
+.j3d-armario small{color:#a9a393}
+.j3d-armario-pe{margin:10px 0 0;font-size:12px;color:#a9a393}
+.j3d-armario-x{position:absolute;right:8px;top:6px;border:0;background:none;color:#f3e6c4;font-size:20px;cursor:pointer;line-height:1}
+/* o andar da sede de dois andares (o nível 5): o botão embaixo, no meio
+   (o painel do dia de jogo, que fica ali, não aparece junto com ele) */
+#j3dAndar{
+  position:fixed;z-index:22;left:50%;bottom:14px;transform:translateX(-50%);padding:7px 14px;border-radius:6px;cursor:pointer;
+  font-family:var(--titulo);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:#f3e6c4;background:rgba(20,20,22,.9);border:1px solid rgba(243,230,196,.35);box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+#j3dAndar:hover{border-color:var(--ouro, #e0b040)}
+#j3dAndar[hidden]{display:none}
 /* o relógio do dia, na barra de cima, antes da data */
 #j3dHora{
   font-family:var(--mono);font-size:15px;font-weight:600;color:#f3e6c4;letter-spacing:.04em;

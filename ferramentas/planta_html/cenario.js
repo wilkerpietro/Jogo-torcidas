@@ -936,7 +936,18 @@ export function criarCenario(P) {
     const id = pixel[0] + pixel[1] * 256 + pixel[2] * 65536;
     return coisas[id] || null;
   }
+  const raioDoClique = new THREE.Raycaster(), telaDoClique = new THREE.Vector2();
   function clicar(sx, sy) {
+    /* o clique que a vida pega antes da ficha (o armário do patrimônio da
+       sede do jogador, no jogo 3D): o raio da câmera pelo ponto, no mundo */
+    if (vidaApi.aoClicar) {
+      const r = tela.getBoundingClientRect();
+      posicionar();
+      telaDoClique.set((sx - r.left) / r.width * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
+      raioDoClique.setFromCamera(telaDoClique, cam);
+      const o = raioDoClique.ray.origin, d = raioDoClique.ray.direction;
+      if (vidaApi.aoClicar({ o: [o.x, o.y, o.z], d: [d.x, d.y, d.z] })) return;
+    }
     const c = pegar(sx, sy);
     if (!c) { fecharFicha(); return; }
     selecao = c;
@@ -2596,6 +2607,9 @@ void main() {
      ====================================================== */
   const vPro = new THREE.Vector3();
   const vidaApi = {
+    /* o clique na praça antes da ficha: `aoClicar({ o, d })` recebe o raio
+       da câmera (origem e direção, no mundo) e devolve se pegou o clique */
+    aoClicar: null,
     /* os bonecos (o modelo do jogo), carregados uma vez */
     chamarPovo: () => chamarBoneco(),
     get povo() { return povo; },
@@ -2633,6 +2647,19 @@ void main() {
     chao: (x, z) => piso ? piso.chao(x, z, 0) : 0,
     /* onde o corpo cabe (a grade do passo), com o raio em m */
     cabe: (x, z, r = 0.25) => !!grade && grade.cabe(x, z, r * M),
+    /* NA SEDE DE DOIS ANDARES: o chão a um degrau de `y` (o pé de agora:
+       quem sobe a escada acha o degrau seguinte) e onde o corpo cabe no
+       andar de `y` (com chão debaixo: o vão do pátio não é andar). Fora
+       dela, o chão e a grade da rua */
+    chaoEm(x, z, y = 0) {
+      if (noSobrado(x, z)) { const c = sobrados.chao(x, z, y); if (c === c) return c; }
+      return piso ? piso.chao(x, z, 0) : 0;
+    },
+    cabeEm(x, z, y = 0, r = 0.25) {
+      if (!noSobrado(x, z)) return !!grade && grade.cabe(x, z, r * M);
+      const c = sobrados.chao(x, z, y);
+      return c === c && Math.abs(c - y) < 0.12 * M && sobrados.cabe(x, z, c, r * M);
+    },
     get grade() { return grade; },
     /* o ponto do mundo na tela: px CSS a partir do canto da tela do
        cenário, e se está na frente da câmera */

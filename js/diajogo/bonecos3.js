@@ -1803,6 +1803,68 @@ let escalaDoTabuleiro = () => 1;
         p.ombro[o] = -0.5; p.cotovelo[o] = -1.2; p.ombroZ[o] = 0.25; p.maoZ[o] = 0.4;
         break;
       }
+      /* ---- a academia da sede (os níveis 4 e 5, 30/09/2026) ---- */
+      case 'saco': {           // no saco de pancada: a guarda alta e, no tempo dele, um jab e um direto
+        const c = (t*1.35 + f.fase) % 1, b = c < 0.5 ? lado : o, k = (c % 0.5)/0.5;
+        const ext = k < 0.35 ? Math.sin(k/0.35*Math.PI) : 0;
+        p.ombro = [-1.3, -1.2]; p.cotovelo = [-2.35, -2.3]; p.ombroZ = [0.22, 0.28]; p.maoZ = [0.15, 0.15]; p.punho = [1, 1];
+        p.ombro[b] = -1.3 - 0.35*ext; p.cotovelo[b] = -2.35 + 2.2*ext; p.ombroZ[b] = 0.22 - 0.17*ext;
+        p.gira += (b === lado ? -0.2 : 0.2)*ext; p.inclina = 0.18 + 0.06*ext; p.olhaX = 0.18;
+        p.coxa = [-0.25, 0.2]; p.joelho = [0.35, 0.25]; p.y += 0.25*Math.abs(Math.sin(t*5 + f.fase));
+        break;
+      }
+      case 'halter': {         // a rosca com o halter: um braço sobe enquanto o outro desce
+        const a = Math.sin(t*1.9 + f.fase), b1 = 0.5 + 0.5*a, b2 = 0.5 - 0.5*a;
+        p.ombro = [-0.15, -0.15]; p.ombroZ = [0.12, 0.12]; p.maoZ = [0.1, 0.1]; p.punho = [1, 1];
+        p.cotovelo = [-0.2 - 2.1*b1, -0.2 - 2.1*b2];
+        p.olhaX = 0.1; p.inclina -= 0.03;
+        break;
+      }
+      case 'guarda': {         // no ringue: a guarda, o gingado e o jab de vez em quando
+        const w2 = t*(5.0 + (e.gingado || 0)*0.8) + f.fase, q = Math.abs(Math.sin(w2));
+        const c = (t*0.55 + f.fase*0.3) % 1, ext = c < 0.12 ? Math.sin(c/0.12*Math.PI) : 0;
+        p.ombro = [-1.3, -1.2]; p.cotovelo = [-2.35, -2.3]; p.ombroZ = [0.22, 0.28]; p.maoZ = [0.15, 0.15]; p.punho = [1, 1];
+        p.ombro[o] = -1.3 - 0.32*ext; p.cotovelo[o] = -2.35 + 2.25*ext;
+        p.inclina = 0.2; p.olhaX = 0.2; p.gira += 0.12*Math.sin(w2*0.5);
+        p.coxa = [-0.3, 0.25]; p.joelho = [0.4, 0.3]; p.y += 0.5*q - 0.8;
+        break;
+      }
+      /* ---- o setor criativo (o nível 5) ---- */
+      case 'pinta': {          // debruçado na faixa estendida, o pincel indo e vindo
+        const a = Math.sin(t*2.6 + f.fase);
+        p.inclina = 0.5; p.olhaX = 0.45;
+        p.ombro[lado] = -1.05 + 0.12*a; p.cotovelo[lado] = -0.7 + 0.35*a; p.ombroZ[lado] = 0.3 + 0.15*a; p.punho[lado] = 1;
+        p.ombro[o] = -0.8; p.cotovelo[o] = -0.6; p.ombroZ[o] = 0.35; p.maoZ[o] = 0.2; p.punho[o] = 0;
+        p.coxa = [-0.2, 0.1]; p.joelho = [0.25, 0.15];
+        break;
+      }
+      case 'costura': {        // na máquina: as duas mãos guiando o pano, a cabeça baixa
+        const a = Math.sin(t*1.4 + f.fase);
+        p.ombro = [-0.6, -0.6]; p.ombroZ = [0.28, 0.28]; p.cotovelo = [-1.05 + 0.08*a, -1.05 - 0.08*a]; p.maoZ = [0.3, 0.3]; p.punho = [0, 0];
+        p.olhaX = 0.42; p.inclina += 0.14;
+        break;
+      }
+      /* ---- o pagode do bar (a festa na sede) ---- */
+      case 'cavaco': {         // o cavaquinho no peito: a mão forte palhetando, a outra no braço dele, aberta pro lado
+        const a = Math.sin(t*14 + f.fase);
+        p.ombro[lado] = -0.55 + 0.05*a; p.cotovelo[lado] = -1.55 + 0.12*a; p.ombroZ[lado] = 0.3; p.maoZ[lado] = 0.45; p.punho[lado] = 0;
+        p.ombro[o] = -0.95; p.cotovelo[o] = -1.0; p.ombroZ[o] = 0.55; p.maoZ[o] = 0.1; p.punho[o] = 0.6;
+        p.olhaX = 0.2; p.olhaY = 0.15*(lado ? 1 : -1); p.gira += 0.05*Math.sin(t*2.2 + f.fase);
+        break;
+      }
+      case 'pandeiro': {       // o pandeiro erguido numa mão, a outra batendo no tempo
+        p.ombro[o] = -1.35; p.cotovelo[o] = -1.35; p.ombroZ[o] = 0.35; p.maoZ[o] = 0.3; p.punho[o] = 0.7;
+        p.ombro[lado] = -1.05 - 0.2*bate; p.cotovelo[lado] = -1.55 + 0.35*bate; p.ombroZ[lado] = 0.35; p.maoZ[lado] = 0.35; p.punho[lado] = 0;
+        p.olhaX = 0.05; p.gira += 0.06*Math.sin(w*0.5);
+        break;
+      }
+      case 'tanta': {          // o tantã no colo: as duas mãos batendo, uma de cada vez
+        const a1 = Math.max(0, Math.sin(w)), a2 = Math.max(0, Math.sin(w + Math.PI));
+        p.ombro = [-0.55 - 0.18*a1, -0.55 - 0.18*a2]; p.cotovelo = [-1.25 + 0.3*a1, -1.25 + 0.3*a2];
+        p.ombroZ = [0.3, 0.3]; p.maoZ = [0.3, 0.3]; p.punho = [0, 0];
+        p.inclina += 0.1; p.olhaX = 0.25;
+        break;
+      }
     }
   }
   /* levar pancada: cabeça vai, tronco vai atrás, um passo pra trás */

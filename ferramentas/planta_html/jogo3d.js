@@ -313,6 +313,8 @@ function ligar(api) {
     try { if (vida.conferirGuardados) vida.conferirGuardados(true); } catch (err) { console.error('os armários:', err); }
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
+    /* os ônibus da garagem (os níveis 4 e 5) são os do save, na hora */
+    try { if (api.onibusDoJogo && TO.financeiro && TO.financeiro.onibusDe) api.onibusDoJogo(e.torcida.id, TO.financeiro.onibusDe(e)); } catch (err) { console.error('os ônibus:', err); }
     const refazer = mudouNivel || mudouBares || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
@@ -340,11 +342,36 @@ function ligar(api) {
     else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }
     if (!emJogo) mapa.fechar();
   };
+  /* A SEDE DE DOIS ANDARES (o nível 5): o botão que troca o andar que a
+     câmera mostra — o térreo (a presidência, o bar, a garagem, o pátio)
+     ou o 1º andar (a academia, a hospedagem, o marketing, o setor
+     criativo e a varanda) —, só com a vida na sede e sem o dia de jogo */
+  const btAndar = document.createElement('button');
+  btAndar.id = 'j3dAndar'; btAndar.hidden = true;
+  document.body.appendChild(btAndar);
+  let andarVisto = null;
+  btAndar.onclick = () => {
+    if (!vida.temAndar) return;
+    const n = vida.verAndar(vida.andarVisto ? 0 : 1);
+    if (n) vida.irPraSede(); else vida.irPraSala();
+    pintarAndar();
+  };
+  const pintarAndar = () => {
+    const v = vida.ligada && vida.temAndar && !dia3d.ativo && document.body.classList.contains('j3d-em-jogo') ? vida.andarVisto : null;
+    if (v === andarVisto) return;
+    andarVisto = v;
+    btAndar.hidden = v == null;
+    if (v != null) {
+      btAndar.textContent = v ? 'Ver o térreo' : 'Ver o 1º andar';
+      btAndar.title = v ? 'A presidência, o bar, a garagem e o pátio' : 'A academia, a hospedagem, o marketing, o setor criativo e a varanda';
+    }
+  };
   /* o quadro do jogo 3D: a hora da barra e os recados em balão */
   let tAntes = 0;
   const laco = t => {
     const dt = tAntes ? Math.min(0.25, Math.max(0, (t - tAntes) / 1000)) : 0.016;
     tAntes = t;
+    pintarAndar();
     if (vida.ligada || dia3d.hora != null) pintarHora();
     try { recados.quadro(dt); } catch (err) { console.error('jogo 3D, os recados:', err); }
     requestAnimationFrame(laco);

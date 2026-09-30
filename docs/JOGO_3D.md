@@ -2091,3 +2091,161 @@ nível 3):
 - A tela é a rede da folha das grades (9 cm de malha): mais aberta que um
   armário de verdade, pra dar pra ver dentro de longe.
 - Testado só no Chromium do teste (SwiftShader), na tela deitada.
+
+## 26. A sede em cinco níveis, o 5 em dois andares e a academia (30/09/2026)
+
+**O pedido** (o dono): "Crie agora os 5 níveis de sede: Nível 1: do jeito que
+está / Nível 2: pátio, presidência, patrimônio, sala de treino improvisada no
+pátio, marketing / Nível 3: pátio, presidência, hospedagem, patrimônio, sala
+de treino ocupando mais espaço no pátio, bar com porta pra ele direto da rua,
+marketing / Nível 4: pátio, presidência com mais detalhes dentro, hospedagem
+maior, patrimônio, bar com porta pra rua, garagem (cabendo um ônibus e se a
+torcida tiver ônibus), marketing / Nível 5: pátio, presidência, hospedagem
+grande, patrimônio, bar com porta pra rua, garagem cabendo até 3 ônibus,
+setor criativo (onde pode ser criado material, faixas, etc), marketing
+[...] O pátio sempre vai ser a maior área da sede, os compartimentos ficam ao
+redor dele. [...] Descarte o atual modelo de sede nível 3." Depois: "Se
+fizer a sede nível 5 com dois andares não fica melhor? Eu esqueci de
+mencionar a área de treino virando uma academia de treino dentro da sede nos
+níveis 4 e 5." e "Quando falo dois andares é um térreo e um andar."
+
+**Os cinco modelos** (`js/diajogo/sede3d.js`; m², no terreno do catálogo):
+
+| Nível | Terreno | O que tem |
+|---|---|---|
+| 1 · o barracão | 12,9 × 9,3 m (o canto do terreno) | pátio 58, presidência 18, patrimônio 17 — o de antes, sem mudança |
+| 2 | 16,2 × 12,8 m (a fatia de 16,2 m) | pátio 110 com o treino improvisado (saco pendurado, colchonete), presidência 26, patrimônio 17, marketing 15 |
+| 3 | 22,1 × 12,8 m (o terreno inteiro) | pátio 141 com o treino maior, presidência 23, hospedagem 25 (2 beliches), bar 16 com a porta de enrolar pra rua, patrimônio 14, marketing 12 |
+| 4 | 22,1 × 12,8 m | pátio 62, **academia 27** no fundo do pátio, garagem 42 (1 ônibus), hospedagem 27 (3 beliches), presidência 25 (mais cheia), bar 17, patrimônio 12, marketing 11 |
+| 5 · dois andares | 30,6 × 12,8 m (**o quarteirão inteiro**) | térreo: pátio 150 (descoberto no meio), garagem 116 (3 baias de 3,3 m), presidência 25, bar 24, patrimônio 16 · 1º andar: **academia 61** (ringue, sacos, supino, rack, esteiras), hospedagem 50 (6 beliches), setor criativo 48, marketing 19 e a varanda em U (51) |
+
+- **O pátio** é a maior área em todos (no 4, 62 m² contra os 42 da garagem).
+  Os cômodos ficam em volta dele, cada um com a porta pro pátio; o bar só
+  tem a porta de enrolar pra rua e a garagem só os portões de grade.
+- **O bar** (3 a 5): o balcão com a portinhola, a geladeira, o barman, as
+  banquetas, a TV, o freezer; a **mesa do pagode** fica montada no canto e
+  os instrumentos e o microfone são uma peça viva que só aparece na festa.
+- **A garagem** (4 e 5): o ônibus do kit de detalhe (o da caravana), branco
+  com as faixas nas cores da torcida e a sigla no letreiro, de ré, com os
+  retrovisores dobrados; só aparecem os que a torcida tem.
+- **O marketing:** a mesa com dois monitores, o rapaz sentado no computador
+  e os quadros com a camisa da torcida em volta (a de jogo, a listrada, a
+  retrô).
+- **O setor criativo** (5): a mesa grande com a faixa sendo pintada, a
+  costura, os rolos de pano, as latas de tinta, o cavalete.
+- **A academia** (4 e 5): no 4, os sacos na viga, o supino, o rack de
+  halteres, o espelho e o tatame, no fundo do pátio; no 5, o ringue com as
+  cordas nas três cores da torcida, os três sacos, o espelho com o rack, o
+  supino e as esteiras.
+- **O nível 5 em dois andares:** a laje dos dois blocos (em cima da garagem
+  e da coluna do bar), a varanda em U em volta do pátio com o guarda-corpo
+  (mureta, grade e corrimão), os pilares na cor 3, e **a escada de concreto**
+  encostada no muro do fundo do pátio, do pátio pra varanda: 28 degraus de
+  17 cm (a subida é de piso a piso, 4,70 m). O letreiro vai pra fachada de
+  cima, e o mastro passa dela.
+- **Na frente espelhada** (sul e oeste), o triângulo troca dois cantos: o
+  piso segue virado pra cima (é por ele que o passo acha o chão).
+
+**Na planta** (`ferramentas/planta_html/index.html`): o 2 mora numa fatia de
+16,2 m do terreno, o 3 e o 4 no terreno inteiro e o 5 no **quarteirão
+inteiro** (as casas do resto somem); sem quarteirão largo o bastante, a
+torcida de nível 5 fica com o modelo do 4. O catálogo tem os cinco, com
+**"Festa na sede: o pagode no bar"**, o número de ônibus e, no 5, **"Só o
+térreo" / "O 1º andar" / "Os dois andares"** (a sede cortada na altura da
+cabeça de quem está naquele andar).
+
+**No cenário a pé** (`cenario.js`, `subsolo.js`): a sede de dois andares vai
+inteira pra um subsolo de andares só dela (o degrau de 30 cm e a faixa do
+corpo da rua, a do metrô): o boneco **sobe a escada, anda na varanda e entra
+nas salas de cima**. Cada porta viva sabe o piso dela (`y0`): a de cima não
+barra quem está embaixo, e o F abre a do andar do pé. O corte da câmera segue
+o pé (em cima, some o que passa da cabeça lá em cima).
+
+**No jogo 3D** (`vida3d.js`, `jogo3d.js`, `bonecos3.js`):
+- **Quem vai pro 1º andar sobe a escada:** o caminho na grade do térreo até
+  o pé dela, a escada em linha reta (cada degrau achado pelo chão a um degrau
+  do pé) e a grade de cima (o 1º andar, com chão debaixo) até o lugar. O
+  passo de cada quadro anda em pedaços de até 12 cm: com o navegador lento
+  (2 quadros por segundo no teste), um quadro inteiro pulava dois degraus e
+  o boneco caía pro chão do térreo no meio da escada. Lá em cima, ninguém
+  cai pro térreo: quem desce do ringue (45 cm, mais que um degrau) acha o
+  chão meio metro abaixo.
+- **O botão "Ver o 1º andar" / "Ver o térreo"** (canto de baixo, só na sede
+  de dois andares): o térreo é cortado na altura da cabeça, e quem está lá em
+  cima não aparece; no 1º andar, o corte sobe, e o térreo aparece pelo vão
+  do pátio. A sala do presidente (os recados) volta sempre pro térreo.
+- **O pagode no turno de festa:** com o expediente em "Festa na sede", os
+  instrumentos aparecem na mesa do bar e os músicos sentam (cavaquinho,
+  tantã, pandeiro) com quem canta de pé; acabou a festa, eles saem.
+- **Os ônibus da garagem são os do save** (`TO.financeiro.onibusDe`).
+- **Os gestos novos:** o saco de pancada (a guarda e o jab/direto), a rosca
+  com halter, a guarda no ringue (em cima do tablado), o pincel na faixa, a
+  costura, o cavaquinho, o pandeiro e o tantã.
+- **O armário do patrimônio:** o clique num dos armários da sede do jogador
+  abre a lista do save — no do patrimônio, as faixas, as bandeiras e as
+  bombas do estoque; no das tomadas, cada faixa e bandeira tomada, de quem
+  era e quando.
+- Os pesos dos turnos: o treino da academia é todo dia (o padrinho enche),
+  a campanha do PIX leva gente pro marketing, e o computador do marketing
+  quase sempre tem alguém.
+- **As ilhas da grade do caminho:** o chão livre fica separado em ilhas (o
+  miolo do ringue, cercado pelo tablado; o canto atrás da mesa do pagode).
+  Quem vai pra um lugar numa ilha anda até o chão mais perto dele e entra
+  de lá; quem levanta de uma ilha sai pro chão mais perto. Antes, quem não
+  achava caminho aparecia direto no lugar.
+
+**Os testes:**
+- `conferir_passagem.mjs` monta os cinco níveis em todas as sedes dos três
+  mapas e das praças; no 5, **sobe a escada com o passo do cenário** e confere
+  cada sala e varanda de cima. Resultado: **todo cômodo se alcança do portão**
+  (o bar pela porta dele, da rua).
+- `conferir_sede.mjs` (o barracão, nível 1): o modelo bate com a planta.
+- **No cenário a pé** (Chromium do teste, São Paulo, a Gaviões no nível 5):
+  o boneco sai do pé da escada, sobe os 28 degraus (0,09 → 4,79 m), anda na
+  varanda, abre a porta da academia (o F acha a porta de cima), entra, sai e
+  desce de volta pro pátio; as 4 portas de cima ficam com o piso em 4,70 m.
+- **No jogo 3D** (o jogo novo, Fortaleza, a Aliança posta no nível 5, com 3
+  ônibus e o expediente de festa): a sede de dois andares monta, o pagode
+  aparece na mesa do bar com os 4 lugares dele ocupados, os 3 ônibus
+  aparecem, o botão troca "Ver o 1º andar" / "Ver o térreo" (e o corte), e o
+  armário do patrimônio abre a lista (1 faixa, 1 bandeira, 4 bombas); o das
+  tomadas também é achado pelo clique. **Andando:** quem estava no pátio
+  subiu os 28 degraus (0,09 → 4,79 m) e foi pro treino da academia; quem
+  estava no canto do pagode subiu a escada (passou por 1,94 m) e **subiu no
+  ringue pela beira** (5,24 m) e, depois, desceu do tablado e da escada até
+  o pátio (5,24 → 4,79 → 0,09 m); quem estava em cima desceu (4,79 → 0,09
+  m) e foi pro balcão do bar pela rua. **Os 66 lugares da sede se alcançam
+  nos dois sentidos** (da porta até cada um e de cada um até o pátio). E
+  um boneco a 3 m/s (dois degraus por quadro) subiu a escada inteira sem
+  cair.
+- Nenhum erro de página.
+
+**Limites (sinceros):**
+- **O nível 5 precisa do quarteirão inteiro** e largo (uns 30 m de frente).
+  Onde a torcida de nível 5 não tem um, a sede dela fica com o modelo do 4.
+- **O pátio do 4 é menor que o do 3** (62 contra 141 m²): os dois usam o
+  mesmo terreno, e no 4 entram a garagem e a academia. Continua sendo a
+  maior área da sede, mas o 4 fica mais apertado que o 3 — pra mudar isso,
+  o 4 teria de ganhar um terreno maior no mapa.
+- **O ônibus tem 10,7 m** (o de verdade tem 12 a 14): foi o que coube na
+  baia sem a garagem comer o pátio.
+- **A regra do jogo e o 3D não batem nos ônibus:** o jogo deixa ter 1
+  ônibus no nível 2 e 2 no 3 e no 4 (`TETO_SEDE`), mas só o 4 (uma vaga) e o
+  5 (três) têm garagem. O ônibus que não cabe na garagem existe no save e
+  não aparece. Não mexi na regra (é sua).
+- **O nível 6 do jogo (o Complexo) usa o modelo do 5.**
+- **No jogo, com o térreo na tela, quem está lá em cima não aparece** (a
+  sede está cortada na altura da cabeça); com o 1º andar, o térreo debaixo
+  dos blocos fica coberto — só o pátio aparece pelo vão.
+- **Quem sobe a escada no jogo anda no meio dela, em linha reta:** dois que
+  se cruzam na escada se atravessam (a vida não tem colisão entre bonecos).
+- **O canto atrás da mesa do pagode (no 5) e o miolo do ringue** não se
+  alcançam andando no cenário (a conta do passo dá o bar com 90–91% e a
+  academia com 89–90%); no jogo, o boneco entra neles pela beira e passa
+  pela cadeira ou pela corda por um instante.
+- **O armário abre o pop-up só no jogo 3D e só na sede do jogador** (no
+  cenário da planta, o clique mostra a ficha, como antes). O clique acerta a
+  caixa do armário: não tem parede no caminho do raio.
+- **As outras torcidas** usam o mesmo modelo do nível delas, mas só a sede
+  do jogador tem vida por dentro.
+- Testado só no Chromium do teste (SwiftShader), na tela deitada.

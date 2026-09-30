@@ -5526,7 +5526,7 @@ function apiDoCenario() {
            lugares de gente, os armários, as entradas (o portão, a porta do
            bar pra rua, os portões da garagem) e as vagas dos ônibus, no mundo */
         const sede3d = mt ? { nivel: mt.nivel, lugares: mt.lugares, comodos: mt.comodos, armarios: mt.armarios || [], area: { ...a }, frente: s.frente,
-                              entradas: mt.entradas || null, vagas: mt.vagas || [], onibus: s.onibus || 0 } : null;
+                              entradas: mt.entradas || null, vagas: mt.vagas || [], onibus: s.onibus || 0, andar: mt.andar || null } : null;
         return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta, sede3d, escudo: T.escudo || null,
                  clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais,
                  cargos: T.t.cargos || null, irmandade: T.t.irmandade || [], aliados: T.t.aliados || [] };

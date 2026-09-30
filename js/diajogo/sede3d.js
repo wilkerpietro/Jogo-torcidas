@@ -1717,7 +1717,7 @@ function criativoNovo(ctx, Q) {
   mesa(ctx, Q, cs0, cs1, D - 0.65, D - 0.05, 0.75, BRANCO, '#6b6f73');
   maquinaDeCostura(ctx, Q, (cs0 + cs1) / 2, D - 0.35, PISO + 0.75, '-t');
   cadeira(ctx, Q, (cs0 + cs1) / 2, D - 1.0, '-t', '#2b2b2e');
-  lugar(ctx, Q, 'costura', (cs0 + cs1) / 2, D - 1.0, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'digita' });
+  lugar(ctx, Q, 'costura', (cs0 + cs1) / 2, D - 1.0, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'costura' });
   /* os rolos de pano, na cor da torcida, na estante da parede da frente do cômodo */
   estanteAco(ctx, Q, 0.05, 0.5, 1.9, Math.min(D - 0.8, 3.6), 1.9, 4, (i, b0, b1, c0, c1, y) => {
     const cs = [ctx.c1, ctx.c2, ctx.c3];
