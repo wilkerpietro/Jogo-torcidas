@@ -455,6 +455,7 @@ TO.feed = (function(){
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bote do dia',    ()=>boteDeHoje(E));
+    passo('assalto do dia', ()=>assaltoDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
@@ -486,10 +487,18 @@ TO.feed = (function(){
     if(!n) return;
     const ini = 8*60, fim = 21*60 + 30, pedaco = (fim - ini) / n;
     doDia.forEach((m, i) => {
+      if(m.horaFixa) return;
       const h = TO.mapa.hash(`${hoje}|${m.kind || 'msg'}|${i}`);
       const min = Math.round(ini + pedaco*(i + 0.15 + 0.7*((h % 1000)/1000)));
       m.hora = `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
     });
+    /* a hora marcada (a operação do assalto, 30/09/2026) fica onde está,
+       e a fila do dia anda na ordem das horas */
+    if(doDia.some(m => m.horaFixa)){
+      const minDe = m => { const r = /^(\d\d?):(\d\d)/.exec(m.hora || ''); return r ? +r[1]*60 + +r[2] : 0; };
+      doDia.sort((a, b) => minDe(a) - minDe(b));
+      E.feedFila = doDia.concat(E.feedFila.filter(m => !(m.quando && m.quando.abs === hoje)));
+    }
   }
 
   /* =======================================================
@@ -3018,17 +3027,35 @@ TO.feed = (function(){
     return {presidente: ficha(pres), diretores, pautas};
   }
 
-  /* O CARTÃO DA REUNIÃO: DIA 5, TODO MÊS (pedido do dono, 22/09/2026).
+  /* O CARTÃO DA REUNIÃO: TODO MÊS (pedido do dono, 22/09/2026) — no
+     dia 5 até 30/09/2026; desde então num dia sorteado do mês
+     (`diaDaReuniao`, logo abaixo).
      Foi mensal, virou bimestral (12/09) e volta a ser mensal: agora é a
      REUNIÃO DA DIRETORIA, e não só de diplomacia — é nela que os botes
      do mês são propostos, com dia e alvo. O que nasce entre uma e outra
      continua guardado em `E.reuniao.pauta` e espera a próxima; nada
      vira cartão solto. */
+  /* O DIA DA REUNIÃO (pedido do dono, 30/09/2026): "manter a reunião
+     da diretoria mensal, mas em um dia aleatório de cada mês". O dia
+     sai do hash do mês e da torcida — o mesmo save dá sempre o mesmo
+     dia, e o calendário já mostra —, entre o dia 2 e o 27. Caindo num
+     jogo nosso ou numa viagem, a mesa senta no primeiro dia comum
+     depois. As listas que iam "até a véspera da próxima mesa" (as
+     festas das aliadas, os nossos aniversários) vão até a véspera da
+     próxima de verdade. A marca do mês é a do ano do calendário: o ano
+     do jogo (364 dias) vira um dia antes, e em 31 de dezembro a mesa
+     do mês sentaria de novo. */
+  const diaDaReuniao = (E, ano, mes) => 2 + TO.mapa.hash(`reuniao|dia|${ano}|${mes}|${E.torcida.id}`) % 26;
+  function vesperaDaProximaReuniao(E, hoje){
+    const ano = hoje.getFullYear() + (hoje.getMonth() === 11 ? 1 : 0), mes = (hoje.getMonth() + 1) % 12;
+    return new Date(ano, mes, diaDaReuniao(E, ano, mes) - 1, 23, 59);
+  }
   function reuniaoDeHoje(E){
     const Rn = caixaReuniao(E);
     const d = dataDeHoje(E);
-    if(d.getDate() !== 5) return null;
-    const marca = `${E.data.ano}|${mesDe(E)}`;
+    if(d.getDate() < diaDaReuniao(E, d.getFullYear(), d.getMonth())) return null;
+    if(!diaComumFeed(E, E.data.dia)) return null;
+    const marca = `${d.getFullYear()}|${mesDe(E)}`;
     if(Rn.ultima === marca) return null;
     Rn.ultima = marca;
     /* CONVITE SEM RESPOSTA É FESTA FURADA (22/09/2026): a lista de
@@ -3097,7 +3124,7 @@ TO.feed = (function(){
      ======================================================= */
   function pautaFestas(E){
     const hoje = dataDeHoje(E);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
+    const fim = vesperaDaProximaReuniao(E, hoje);
     const lista = [];
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
@@ -3407,7 +3434,7 @@ TO.feed = (function(){
      cai da mesa até a véspera da próxima (dia 4 do mês seguinte). */
   function pautaAniversarios(E){
     const hoje = dataDeHoje(E);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
+    const fim = vesperaDaProximaReuniao(E, hoje);
     const meus = [];
     if(E.torcida.fundacao)
       meus.push({tipo:'torcida', id:E.torcida.id, fundacao:E.torcida.fundacao, fonte:E.torcida});
@@ -3459,9 +3486,12 @@ TO.feed = (function(){
     return {
       chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:_t('Diretoria'), quem:dir.id,
       rot:_t('Alvos de assalto'),
-      texto:_t('Chefe, mapeei uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?'),
+      /* O PLANEJAMENTO (pedido do dono, 30/09/2026): o botão abre a tela
+         do plano — o alvo, a equipe, o jeito, a hora e o dia —, e a
+         operação vai pro calendário. Nada se sorteia aqui. */
+      texto:_t('Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o seu risco. Escolhe o alvo, a equipe, o jeito e o dia, que a gente põe no calendário.'),
       botoes:[
-        {id:'ver',  rot:_t('Ver os alvos'),  acao:'assalto-ver'},
+        {id:'ver',  rot:_t('Planejar o assalto'), acao:'assalto-planejar'},
         {id:'nada', rot:_t('Deixar quieto'), acao:'assalto-nao', nota:_t('sem efeito')}
       ]
     };
@@ -3470,11 +3500,82 @@ TO.feed = (function(){
   function fecharPautaAssalto(E, idItem, r){
     const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
     if(!it || it.decidido) return {ok:false};
+    /* a operação marcada pela tela do planejamento */
+    if(r && r.op){
+      it.decidido = {botao:'ver', rot:_t('Assalto marcado')};
+      it.consequencia = textoDaOperacao(r.op);
+      return {ok:true};
+    }
     it.decidido = {botao:'ver', rot: r.caiu ? _t('Deu ruim') : _t('Assalto feito')};
     it.consequencia = r.caiu ? _tn(r.n, '{n} preso por {pena} dias — e o dinheiro ficou lá.',
                                         '{n} presos por {pena} dias — e o dinheiro ficou lá.', {pena:r.pena})
                              : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)});
     return {ok:true};
+  }
+
+  /* a operação numa linha: o dia, o alvo, a equipe, o jeito e a hora */
+  function textoDaOperacao(o){
+    const A = TO.acoes, f = A.fichaDoAssalto(o.alvo, o.n, o.horario);
+    if(!f) return '';
+    return _t('Marcado pra {dia}, {data}: {alvo} · {n} membros · {jeito} · {hora}. Está no calendário.',
+              {dia:_t(o.nomeDia || ''), data:o.dataTxt || '', alvo:_t(f.a.nome), n:o.n,
+               jeito:_t((A.ABORDAGENS[o.abordagem] || A.ABORDAGENS.rapido).nome).toLowerCase(),
+               hora:_t(f.H.nome).toLowerCase()});
+  }
+
+  /* O DIA DA OPERAÇÃO (pedido do dono, 30/09/2026): "OPERAÇÃO EM
+     ANDAMENTO" — o alvo, a equipe, a recompensa potencial, a exposição
+     e a suspeita (ainda zeradas: ela não começou) e o estado. No jogo
+     3D o jogador comanda a equipe dentro da loja; em qualquer um dá pra
+     deixar a equipe fazer (a conta de acoes.js) ou cancelar. Dia de
+     jogo ou de viagem empurra a operação pro próximo dia livre, como o
+     bote. O cartão cai na hora marcada (abertura, tarde ou fechamento). */
+  function assaltoDeHoje(E){
+    if(TO.acoes.esfriarCalor) TO.acoes.esfriarCalor(E);
+    const lista = E.assaltos || [];
+    for(const o of lista){
+      if(o.feito || o.cancelado || o.aberto || o.ano !== E.data.ano || o.semana !== E.data.semana || o.dia !== E.data.dia) continue;
+      if(!diaComumFeed(E, E.data.dia)){
+        const prox = proximoDiaLivre(E, o);
+        if(prox){ Object.assign(o, prox); continue; }
+      }
+      const A = TO.acoes, f = A.fichaDoAssalto(o.alvo, o.n, o.horario);
+      if(!f){ o.cancelado = true; continue; }
+      const aptos = E.membros.filter(TO.membros.disponivel).length;
+      if(aptos < o.n){
+        o.cancelado = true;
+        propor(E, {kind:'assalto', peso:'info', tipo:'ruim', voz:'diretor',
+          texto:_t('A operação {local} caiu: faltou gente — só {n} disponíveis pra uma equipe de {m}.', {local:f.a.no, n:aptos, m:o.n})});
+        continue;
+      }
+      o.aberto = true;
+      const R = A.riscoDoAssalto(E, o);
+      const botoes = [];
+      if(TO.semFeed) botoes.push({id:'comandar', rot:_t('Comandar a equipe'), acao:'assalto-3d',
+                                  nota:_t('você leva a equipe pra dentro da loja')});
+      botoes.push({id:'equipe', rot:_t('Deixar a equipe fazer'), acao:'assalto-simular',
+                   nota:_t('risco {r} · a equipe se vira sem você', {r:A.rotuloDoRisco(R.policia).toLowerCase()})});
+      botoes.push({id:'cancelar', rot:_t('Cancelar a operação'), acao:'assalto-cancelar', nota:_t('sem efeito')});
+      propor(E, {
+        kind:'assalto-dia', peso:'decisao', voz:'diretor', horaFixa:true, hora:f.H.hora,
+        chave:`assalto|dia|${o.id}`,
+        texto:_t('OPERAÇÃO EM ANDAMENTO — {alvo}. A equipe de {n} está no carro, na esquina: {jeito}, {quando}. Recompensa potencial de {valor}.',
+                 {alvo:_t(f.a.nome), n:o.n, jeito:_t(A.ABORDAGENS[o.abordagem].nome).toLowerCase(),
+                  quando:f.H.quando, valor:U.dinheiro(f.potencial)}),
+        dados:{op:o.id, alvo:o.alvo, n:o.n, abordagem:o.abordagem, horario:o.horario, potencial:f.potencial},
+        botoes
+      });
+    }
+  }
+  /* a operação do cartão de hoje */
+  const operacaoDe = (E, m) => (E.assaltos || []).find(o=>o.id === (m && m.dados && m.dados.op)) || null;
+  /* deixar a equipe fazer: a conta e o fim, na hora */
+  function assaltoSimulado(E, o){
+    const A = TO.acoes;
+    const grupo = A.equipeDoAssalto(E, o);
+    if(!grupo){ o.cancelado = true; return {texto:_t('Faltou gente: a operação caiu.')}; }
+    const r = A.simularAssalto(E, o, grupo);
+    return A.fecharAssalto(E, o, r) || {texto:''};
   }
 
   /* a mesa levanta: o que não foi decidido fica pra próxima */
@@ -4606,6 +4707,27 @@ TO.feed = (function(){
         /* a lista de alvos também dá pra fechar sem assaltar */
         return {ok:true, abrir:{tela:'tela-assalto', msg:m,
                                 cancelavel:true, botao:idBotao}};
+      /* O DIA DA OPERAÇÃO (30/09/2026): comandar abre a loja em 3D e só
+         responde no fim dela (`confirmarDecisao`); deixar a equipe fazer
+         e cancelar resolvem aqui */
+      case 'assalto-3d': {
+        const o = operacaoDe(E, m);
+        if(!o || o.feito || o.cancelado){ marcar(); return {ok:true}; }
+        return {ok:true, abrir:{tela:'assalto-3d', msg:m, args:{op:o.id}, cancelavel:true, botao:idBotao}};
+      }
+      case 'assalto-simular': {
+        marcar();
+        const o = operacaoDe(E, m);
+        if(!o || o.feito || o.cancelado) return {ok:true};
+        m.consequencia = assaltoSimulado(E, o).texto;
+        return {ok:true};
+      }
+      case 'assalto-cancelar': {
+        marcar();
+        const o = operacaoDe(E, m);
+        if(o && !o.feito){ o.cancelado = true; m.consequencia = _t('Operação cancelada. A equipe voltou pra sede.'); }
+        return {ok:true};
+      }
       case 'iniciar-partida':
         /* O DIA COMEÇA, A BOLA NÃO (correção do dono, 20/08/2026): este
            botão abre o ITINERÁRIO — concentração, pista, arredores. A
@@ -5116,7 +5238,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, assaltoDeHoje, assaltoSimulado, textoDaOperacao, diaDaReuniao,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
@@ -5124,7 +5246,7 @@ TO.feed = (function(){
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
           statusDeHoje, eixosDoDia, reuniaoDeHoje,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
-          mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, alvoDoBar, alvoDaCasa,
+          mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, proximoDiaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje,

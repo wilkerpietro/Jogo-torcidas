@@ -200,10 +200,53 @@ function ligar(api) {
       if (!id || !e || !e.torcida || !C || C.montando || !pracaDoJogo || C.praca !== pracaDoJogo || pracaDoJogo !== nomeDaPraca(e.torcida.mapa)) return null;
       return baresDoJogador(id).length > 0;
     },
+    /* O ASSALTO EM 3D (30/09/2026, assalto3d.js): a operação do dia na loja
+       da nossa praça. O tempo do jogo está parado (main.js), a vida some
+       da tela enquanto o palco é do assalto, e no fim a câmera volta pra
+       sala do presidente. Devolve o fim da cena (assalto.js, `J.fim`), ou
+       { erro } quando a loja não pode abrir aqui — aí a equipe faz sozinha */
+    assalto: (op, grupo) => assaltoEm3d(op, grupo),
+    get assaltoNoAr() { return !!assaltoNoAr; },
+    /* (pro teste: o controle da cena no ar — o J, o robô, o fim) */
+    get controleDoAssalto() { return assaltoNoAr; },
     vida, mapa, dia: dia3d, recados,
     /* (pro teste: a praça e a planta — os bares, as sedes) */
     get api() { return api; }
   };
+  let assaltoNoAr = null;
+  async function assaltoEm3d(op, grupo) {
+    const e = E(), C = api.cenario, A = TO.acoes;
+    if (!e || !C || !C.vida || C.montando || dia3d.ativo || assaltoNoAr) return { erro: 'a cidade não está livre' };
+    const nossa = nomeDaPraca(e.torcida.mapa);
+    if (!nossa || C.praca !== nossa) return { erro: 'a praça na tela não é a da torcida' };
+    const loja = (api.planta && api.planta.lojas ? api.planta.lojas() : []).find(l => l.tipo === op.alvo);
+    if (!loja) return { erro: 'a praça não tem ' + op.alvo };
+    const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
+    try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
+    const { iniciarAssalto } = await import('./assalto3d.js');
+    /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
+    const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
+    const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;
+    const cfg = {
+      alvo: { id: op.alvo, nome: loja.nome, recompensa: P.recompensa, exposicao: P.exposicao, seguranca: P.seguranca,
+              movimentacao: P.movimentacao, atencao: f.atencao, dificuldade: P.dificuldade },
+      equipe: grupo.map(m => ({ id: m.id, nome: TO.membros.nomeDe(m) })),
+      dentro: f.dentro, abordagem: op.abordagem, horario: op.horario, noite: op.horario === 'fechamento',
+      calor: A.calorDe(e), potencial: f.potencial, distDelegacia: dist, semente: (TO.mapa.hash(op.id) % 100000) + 1
+    };
+    return new Promise(ok => {
+      let ctl = null;
+      const fim = r => {
+        assaltoNoAr = null;
+        if (vida.ligada) { vida.reabrirSede(); vida.irPraSala(); }
+        ok(r);
+      };
+      try { ctl = iniciarAssalto({ C, ctx: C.vida.contextoDoDia(), loja, cfg, aoFim: fim }); }
+      catch (err) { console.error('o assalto em 3D:', err); ok({ erro: String(err && err.message || err) }); return; }
+      if (!ctl || ctl.erro) { ok({ erro: (ctl && ctl.erro) || 'o tabuleiro da loja não montou' }); return; }
+      assaltoNoAr = ctl;
+    });
+  }
   /* o relógio do dia na barra de cima, do lado da data */
   const relogio = document.createElement('div');
   relogio.id = 'j3dHora';

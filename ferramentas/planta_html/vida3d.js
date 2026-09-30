@@ -1633,6 +1633,8 @@ export function criarVida(api) {
   /* a luz corre mesmo com a vida desligada (no menu, o dia parado nas 10h) */
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
+    /* o telhado da sede aberto de novo (a cena que abriu outro prédio acabou: o assalto) */
+    reabrirSede: () => { if (ligada) reabrirSede(); },
     /* A SEDE DE DOIS ANDARES: o andar que a câmera mostra (0 o térreo, 1 o
        1º andar); `temAndar`, se a sede do jogador tem o 1º andar */
     verAndar: n => verAndar(n),

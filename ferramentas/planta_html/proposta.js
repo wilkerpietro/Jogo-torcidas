@@ -1300,6 +1300,104 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
               tunel: Math.hypot(P3[0] - P0[0], P3[1] - P0[1]) };
   }
 
+  /* ---- AS LOJAS DO ASSALTO (o dono, 30/09/2026: "o assalto ser
+     executado pelo jogador com todos os ambientes sendo entráveis"): o
+     banco, a joalheria, o supermercado e o posto no terreno da PONTA de
+     uma quadra, do fundo inteiro (de rua a rua: a frente numa rua, a
+     porta do lado na rua da ponta, o fundo na de trás); o mercadinho e a
+     loja de roupas na fileira da esquina, como o bar. Uma por quadra, e
+     cada tipo numa distância do meio da cidade (o banco e a joalheria no
+     centro, o posto na beira), longe de estádio e umas das outras. O
+     modelo e a planta de cada uma: js/diajogo/lojas3d.js ---- */
+  /* (as largas primeiro: no mapa pequeno, quadra larga é pouca) */
+  const LOJAS = [
+    { tipo: 'supermercado', larg: 16.4, inteiro: true, alvo: 0.45 }, { tipo: 'posto', larg: 16.4, inteiro: true, alvo: 0.8 },
+    { tipo: 'banco', larg: 14.2, inteiro: true, alvo: 0.05 }, { tipo: 'joalheria', larg: 8.6, inteiro: true, alvo: 0.2 },
+    { tipo: 'roupas', larg: 8.2, inteiro: false, alvo: 0.32 }, { tipo: 'mercadinho', larg: 7.4, inteiro: false, alvo: 0.62 }
+  ];
+  const NOMES_LOJA = {
+    banco: ['BANCO POPULAR', 'BANCO DO POVO', 'BANCO CENTRAL DA VILA'], joalheria: ['JOALHERIA OURO FINO', 'JOIAS BRILHANTE', 'JOALHERIA IMPERIAL'],
+    supermercado: ['SUPERMERCADO BOM PREÇO', 'SUPERMERCADO ECONOMIA', 'SUPERMERCADO DA VILA'], posto: ['AUTO POSTO ESTRELA', 'POSTO CAMINHO', 'AUTO POSTO AVENIDA'],
+    mercadinho: ['MERCADINHO SÃO JORGE', 'MERCEARIA DO ZÉ', 'MERCADINHO BOA VISTA'], roupas: ['MODAS & CIA', 'BOUTIQUE ESTILO', 'LOJA DA MODA']
+  };
+  const FUNDO_LOJA = { banco: '#1f4e8c', joalheria: '#2b2b2e', supermercado: '#c62828', posto: '#2e7d32', mercadinho: '#2f7a46', roupas: '#8e3a7a' };
+  const lojas = [];
+  {
+    /* o meio da cidade: o meio das quadras */
+    const todas = quadras.concat(deHojeSem);
+    const cxM = todas.reduce((a, q) => a + (q.x0 + q.x1) / 2, 0) / todas.length, cyM = todas.reduce((a, q) => a + (q.y0 + q.y1) / 2, 0) / todas.length;
+    const raioM = Math.max(1, ...todas.map(q => Math.hypot((q.x0 + q.x1) / 2 - cxM, (q.y0 + q.y1) / 2 - cyM)));
+    const usadas = new Set();
+    /* as pontas candidatas: quadra de fileiras (o quintal no meio), sem equipamento, terreno, estação ou bar */
+    const pontas = [];
+    const lotesDe = (q, hoje) => hoje ? q.lotes.filter(l => !lotesTirados.has(l)).concat(lotesExtra.filter(l => l.quadra && l.quadra.i === q.i && l.quadra.j === q.j)) : q.lotes;
+    for (const [lista, hoje] of [[quadras, false], [deHojeSem, true]]) for (const q of lista) {
+      if (q.equip || q.mantem || q.terreno || q.estacao || q.parte) continue;
+      const ls = lotesDe(q, hoje);
+      if (!ls.length || ls.some(l => l.ang)) continue;
+      const Ly = q.iy1 - q.iy0, Lx = q.ix1 - q.ix0;
+      if (Ly < 190 || Ly > 300 || Lx < 400) continue;
+      if (ls.some(l => l.modelo === 'bartorcida')) continue;
+      for (const ponta of ['o', 'l']) pontas.push({ q, hoje, ponta, id: q.id || (q.i + ',' + q.j), ls });
+    }
+    const sorteLoja = (t, k) => { let h = 2166136261 >>> 0; const s2 = t + '|' + k + '|' + (cfg.id || ''); for (let i = 0; i < s2.length; i++) { h ^= s2.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; };
+    LOJAS.forEach((Lj, n) => {
+      const w = Math.round(Lj.larg * M);
+      let melhor = null, nota = Infinity;
+      for (const P of pontas) {
+        if (usadas.has(P.id)) continue;
+        const { q, ponta } = P, leste = ponta === 'l';
+        if (q.ix1 - q.ix0 < w + 100) continue;
+        /* a fileira da esquina: a do norte ou a do sul (a do fundo raso, como a do bar) */
+        const prof = Math.max(88, ...P.ls.filter(l => !l.ang && (l.frente === 'n' || l.frente === 's')).map(l => l.y1 - l.y0));
+        const fr = (sorteLoja(Lj.tipo, P.id) % 2) ? 'n' : 's';
+        const area = { x0: leste ? q.ix1 - w : q.ix0, x1: leste ? q.ix1 : q.ix0 + w,
+                       y0: Lj.inteiro || fr === 'n' ? q.iy0 : q.iy1 - prof, y1: Lj.inteiro || fr === 's' ? q.iy1 : q.iy0 + prof };
+        if (pertoDeEstadio(area)) continue;
+        /* nada de lote especial no terreno (a casa grande da favela, o bar, a sede) */
+        if (P.ls.some(l => l.modelo && cruza(bbLote(l), area, -2))) continue;
+        const cx = (area.x0 + area.x1) / 2, cy = (area.y0 + area.y1) / 2, d = Math.hypot(cx - cxM, cy - cyM) / raioM;
+        /* longe das outras lojas: menos de 180 m pesa muito */
+        const perto = lojas.reduce((a, o) => a + Math.max(0, 180 * M - Math.hypot(o.x - cx, o.y - cy)) / (180 * M), 0);
+        const v = Math.abs(d - Lj.alvo) + perto * 2 + (P.hoje ? 0.08 : 0) + (sorteLoja(Lj.tipo, P.id + ponta) % 1000) / 1e5;
+        if (v < nota) { nota = v; melhor = { P, area, fr }; }
+      }
+      if (!melhor) return;
+      const { P, area, fr } = melhor, { q, hoje, ponta } = P, leste = ponta === 'l';
+      usadas.add(P.id);
+      /* o corte: o lote que cai no terreno sai; o que só encosta é aparado (se sobra casa) */
+      const tira = l => {
+        if (hoje && !l.proposta) lotesTirados.add(l);
+        else { const lst = hoje ? lotesExtra : q.lotes; const i = lst.indexOf(l); if (i >= 0) lst.splice(i, 1); }
+      };
+      for (const l of P.ls.slice()) {
+        const b = bbLote(l);
+        if (!cruza(b, area, -0.5)) continue;
+        tira(l);
+        if (l.ang || l.modelo) continue;
+        /* a sobra do lado de dentro da quadra */
+        const resto = leste ? { ...l, x1: Math.min(l.x1, area.x0) } : { ...l, x0: Math.max(l.x0, area.x1) };
+        if (resto.x1 - resto.x0 < 56 || resto.y1 - resto.y0 < 56) continue;
+        delete resto._plano; if (resto.muro) delete resto.muro;
+        resto.proposta = true; resto.aparado = true;
+        if (hoje) { resto.quadra = { i: q.i, j: q.j, hoje: true }; lotesExtra.push(resto); } else q.lotes.push(resto);
+      }
+      if (Lj.inteiro && !hoje && q.quintal) {
+        q.quintal = leste ? { ...q.quintal, x1: Math.min(q.quintal.x1, area.x0) } : { ...q.quintal, x0: Math.max(q.quintal.x0, area.x1) };
+        if (q.quintal.x1 - q.quintal.x0 < 20) q.quintal = null;
+      }
+      /* a esquina na mão de quem olha a fachada (a conta do bar) */
+      const esquina = (fr === 'n') === !leste ? 'dir' : 'esq';
+      const nomes = NOMES_LOJA[Lj.tipo], nome = nomes[sorteLoja(Lj.tipo, 'nome') % nomes.length];
+      const lote = { tipo: 'loja', modelo: 'loja_' + Lj.tipo, frente: fr, esquina, ...area, alt: par8(4.4 * M), cor: '#d9d6cf', proposta: true,
+                     placa: nome, placaFundo: FUNDO_LOJA[Lj.tipo], placaTinta: '#ffffff',
+                     loja: { tipo: Lj.tipo, n: n + 1, nome }, quadra: { i: q.i, j: q.j, hoje: hoje || undefined } };
+      (hoje ? lotesExtra : q.lotes).push(lote);
+      lojas.push({ tipo: Lj.tipo, n: n + 1, nome, lote, quadra: P.id, hoje, x: (area.x0 + area.x1) / 2, y: (area.y0 + area.y1) / 2,
+                   inteiro: Lj.inteiro, noCentro: +(Math.hypot((area.x0 + area.x1) / 2 - cxM, (area.y0 + area.y1) / 2 - cyM) / raioM).toFixed(2) });
+    });
+  }
+
   /* ---- OS ESPAÇOS DE SEDE: os sete terrenos e as duas sedes de hoje
      (a 2,9 é a fatia de nível 3; a 5,2, a de nível 1 — ali só cabe a
      sede pequena). A página é que diz quem mora em cada um. ---- */
@@ -1629,7 +1727,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        estádio de hoje, que virou casa */
     estadios: copias, estadioDeHoje,
     quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, condominios, substitui, terrenos, veraneio,
-    bares, baresHoje: BARES_HOJE, sedesHojeSaem, estadiosAqui, lotesExtra, lotesTirados, espacosSede, metro,
+    bares, baresHoje: BARES_HOJE, sedesHojeSaem, estadiosAqui, lotesExtra, lotesTirados, espacosSede, metro, lojas,
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB, colX, linY: linYx,
     contagem: { quadras: quadras.length, residenciais: residenciais.length, equipamentos: quadras.length - residenciais.length,
                 porTipo: conta, lotesNovos, lotesExtra: lotesExtra.length, lotesTirados: lotesTirados.size,

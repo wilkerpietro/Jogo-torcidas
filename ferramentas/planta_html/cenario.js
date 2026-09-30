@@ -87,7 +87,7 @@ const SUB_FOLGA = 1.5, TERRA_M = -12;
 const LIMPO_M = 3;
 /* o que é prédio (a câmera não entra na parede dele); o resto (o poste,
    a árvore, o carro, o prop, a peça da praia) só barra o corpo */
-const PREDIOS = new Set(['casa', 'favela', 'bar', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
+const PREDIOS = new Set(['casa', 'favela', 'bar', 'loja', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
 /* o lado do BLOCO do forno (m): a malha junta tudo o que cai nele; o
    bloco é também o que a câmera descarta fora da vista */
 const BLOCO_M = 96;

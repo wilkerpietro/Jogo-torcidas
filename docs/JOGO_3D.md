@@ -2274,8 +2274,8 @@ cada material (`comNoite` em `cenario.js`), e só quando `uNoite > 0`:
   entrável: a sede, os bares, os corredores dos estádios, o metrô.
 - **As janelas das casas não entráveis:** o vidro das células de janela das
   folhas de textura (pelo nome da célula no `ATLAS`) acende com o vidro
-  escuro e azulado; **45% das janelas** (uma sorte por janela, o atributo
-  `aSorte`) ficam acesas, as outras escuras.
+  escuro e azulado; uma sorte por janela (o atributo `aSorte`) diz qual
+  acende: **metade até as 22h**, 30% à meia-noite, 12% de madrugada.
 - **As lâmpadas que brilham sozinhas:** os painéis dos refletores (a folha
   dos estádios), a luminária da calçada e a luz do metrô ganham brilho
   próprio à noite (o balde `|lum` do forno).
@@ -2288,8 +2288,8 @@ refletor, e à noite ele ficava aceso sem ter de onde vir a luz. Agora são
 virado pro campo (`mastroDeLuz` em `estadios3d.js`). O de 10 (postes de
 concreto) e o de 20 (torres de treliça) já tinham.
 
-**A hora:** a luz entra com o céu — começa na boca da noite (17h30–18h30) e
-fica inteira das 19h às 5h (os tons da noite ficaram mais escuros que os de
+**A hora:** a luz entra com o céu — começa às 17h20, fica inteira das 18h40
+às 5h e apaga até as 6h20 (os tons da noite ficaram mais escuros que os de
 antes). No cenário da planta, o seletor **Hora** (Dia, 6 h, 17 h 30, 18 h
 30, 20 h, 22 h, 1 h) mostra cada uma; no jogo 3D, é o relógio da vida.
 
@@ -2308,3 +2308,156 @@ lâmpadas continuam nos mesmos baldes do forno).
 - Testado no Chromium do teste (SwiftShader): as fotos de cima, da rua, do
   bairro, da sede por dentro e dos quatro estádios de São Paulo às 21h, sem
   erro de shader.
+
+## 28. O assalto jogado: o plano, o calendário e a loja em 3D (30/09/2026)
+
+**O pedido** (o dono): "preciso criar uma mecânica de assaltos pra parar de
+funcionar de forma sorteada, apesar de cada uma das opções realmente
+apresentar mais riscos, mas pro assalto ser executado pelo jogador com todos
+os ambientes sendo entráveis com a mecânica de assalto com o objetivo de ser
+rápido ou furtivo pra não chamar a atenção da polícia, inspirado na forma
+que se assalta no GTA V" — com o roteiro que ele trouxe: planejamento →
+execução → exposição → suspeita → alerta → resultado; as barras de Exposição
+e Suspeita e a Situação (Normal, Suspeita, Alerta) na tela; o alvo descrito
+pelas características (exposição, segurança, movimentação, atenção,
+dificuldade, recompensa potencial); equipe maior leva mais e aparece mais; o
+dado em segundo plano; a reunião mensal num dia aleatório; a operação no
+calendário.
+
+### O caminho no jogo
+
+1. **A reunião da diretoria** é mensal num **dia sorteado do mês** (do 2 ao
+   27, pelo hash do mês e da torcida: `diaDaReuniao` em `feed.js`); caindo
+   num jogo nosso ou numa viagem, senta no primeiro dia comum depois. O
+   calendário marca o dia ("Reunião"). As listas que iam "até a véspera da
+   próxima mesa" (as festas das aliadas, os nossos aniversários) vão até a
+   véspera da próxima de verdade.
+2. **A pauta "Alvos de assalto"** (nove meses em doze, como antes) tem o
+   botão **Planejar o assalto**, que abre a tela do plano:
+   - **o alvo**, cada um com seis barras: Exposição, Segurança, Movimentação
+     (fluxo), Atenção, Dificuldade e Recompensa potencial;
+   - **a equipe**: os dois tamanhos da tabela do dono (2/5, 5/10 ou 10/20) —
+     quantos entram com o líder e quantos ficam na rua e no carro, e o
+     potencial de cada tamanho;
+   - **a abordagem**: *Furtivo* (entra como cliente, pega sem ninguém ver:
+     pouca exposição e butim menor; se alguém percebe, vira correria) ou
+     *Rápido* (anuncia, rende todo mundo e leva o máximo: o alarme toca e a
+     polícia vem);
+   - **o horário**: *Abertura* (9h10: pouca gente, caixa vazio, ×0,75 no
+     potencial), *Tarde* (15h30: loja cheia) ou *Fechamento* (19h35: o caixa
+     do dia, ×1,1, rua escura e polícia mais longe — mas quem trabalha olha
+     a porta, +15 de atenção);
+   - **o dia**: os livres das próximas duas semanas (sem jogo, sem viagem,
+     sem outra operação);
+   - embaixo, o **risco estimado** (Baixo, Médio, Alto), a chance de alguém
+     perceber (no furtivo), a da polícia chegar a tempo deixando a equipe
+     fazer, e a **atenção da polícia sobre a torcida**.
+3. **O calendário** mostra a operação no dia ("Assalto marcado · alvo ·
+   hora"; depois, "Assalto feito · butim").
+4. **No dia**, na hora marcada, cai o cartão **OPERAÇÃO EM ANDAMENTO**, com a
+   ficha do roteiro — Alvo, Equipe, Recompensa potencial, Exposição e
+   Suspeita (zeradas até a ordem; no fim, as da operação) e Estado ("Na
+   esquina, esperando a ordem", depois Feita, Deu ruim, Abortada ou
+   Cancelada) — e os botões:
+   - **Comandar a equipe** (só no jogo 3D): a loja abre em 3D e o jogador
+     leva o líder;
+   - **Deixar a equipe fazer**: a conta (`simularAssalto`), sem cena;
+   - **Cancelar a operação**.
+   Faltando gente no dia, a operação cai sozinha (um recado da diretoria);
+   jogo ou viagem no dia empurram pro próximo dia livre, como o bote.
+
+### A loja em 3D (`assalto3d.js` + o motor `assalto.js`)
+
+**As seis lojas entráveis** (`js/diajogo/lojas3d.js`): banco (14,2 m de
+frente), joalheria (8,6 m), supermercado (16,4 m), posto de gasolina (com a
+cobertura das bombas), mercadinho e loja de roupas — com balcão, caixa,
+vitrines, gôndolas, geladeiras, cofre, sala da gerência, depósito, a porta
+dos fundos e a porta de lado. A planta (`proposta.js`) põe as seis em toda
+praça (conferido nas 30), nas pontas das quadras; o letreiro da loja vai na
+fachada. `conferir_lojas.mjs` confere, com a conta de colisão do cenário,
+que cada ponto do assalto (saque, postos, clientes, fundos, saídas) se
+alcança da calçada.
+
+**O motor** (JavaScript puro, sem three.js; `conferir_assalto.mjs` roda sem
+navegador) põe na loja quem trabalha (caixa, gerente, segurança com ronda),
+os clientes (pela movimentação e pela hora), quem passa na calçada, as
+câmeras e o saque. Cada um olha (alcance e ângulo por papel, com parede no
+meio: raio na grade de 25 cm) e junta **desconfiança** pelo que vê — anunciar
+pesa mais, pegar coisa, estar na área restrita, correr, o bando junto, ficar
+45 s sem comprar nada. Com 0,4 ele desconfia (o **?** em cima da cabeça);
+com 1, dá o **alerta** (o **!**): liga pra polícia (4 s) ou aperta o botão
+do alarme (o alarme silencioso adianta a polícia 8 s).
+
+- **A Exposição** sobe com tudo que é visto e desce devagar sem ninguém
+  olhando; **a Suspeita** é a maior desconfiança da loja; **a Situação** vai
+  de Normal a Suspeita, Alerta e Polícia no local.
+- **A polícia** chega no tempo que a conta dá — a distância da delegacia
+  mais perto, a segurança da loja, a atenção da polícia sobre a torcida e o
+  horário (de 18 a 95 s) —, com reforço a cada 15 s (até 4 viaturas de 2
+  PMs). Quem ela alcança, cai. Os **olheiros** na rua avisam quanto falta.
+- **O saque**: cada ponto tem o seu tempo (a vitrine, o caixa, o cofre, que
+  precisa de mais gente junto); segurar **E** pega, e cada um da equipe perto
+  ajuda. No furtivo, pegar com gente olhando é o que mais pesa.
+- **A fuga**: E perto do carro foge; quem está a 10 m entra junto; quem
+  ficou longe foge a pé e larga metade; o preso perde o que levava.
+- **Os comandos**: WASD anda (em relação à câmera), Shift corre, E age
+  (segurado), Q anuncia, Z distrai (quem conversa prende o olhar do outro
+  por 25 s), X manda a equipe esperar/seguir, V troca a câmera, Esc aborta
+  (com confirmação). No celular, o joystick e os botões.
+- **O HUD**: o nome da loja, o jeito, a hora e o tempo; as barras de
+  Exposição e Suspeita; a Situação; o butim sobre o potencial; a equipe
+  (dentro, fora, presos); a polícia (a caminho, o tempo que falta se tem
+  olheiro, quantos PMs); "quantas pessoas te olhando" e as câmeras; a dica
+  do que fazer e a barra de progresso do que se está pegando; os avisos.
+- **O fim**: o painel do resultado (butim, presos, exposição, alerta,
+  polícia no local, câmeras, tempo) e **Voltar pro jogo**. A luz da praça
+  vai pra hora do plano durante a cena e volta pra do relógio no fim; a
+  câmera volta pra sala do presidente.
+
+### O resultado no save (`acoes.js`, `fecharAssalto`)
+
+O mesmo pra cena jogada e pra conta: o butim entra no caixa ("Assalto —
+alvo"); cada preso pega a pena da tabela do dono (banco 180 dias, joalheria e
+supermercado 120, posto 90, mercadinho 45, loja de roupas 30); a diretoria
+manda o recado; e, se fez barulho (alarme ou gente presa), sai a página do
+**Futebol e Porrada** ("Assalto ao supermercado em …: o alarme tocou e o
+bando sumiu"). A operação guarda o resultado (`E.assaltos[i].resultado`).
+
+**A atenção da polícia sobre a torcida** (`E.calorPolicia`, 0 a 100) sobe a
+cada assalto — +2 no furtivo limpo; alarme +8, polícia no local +6, cada
+preso +3, câmera que gravou +6 e a exposição/10 — e esfria 1,5 por dia. Ela
+encurta o caminho da viatura na cena e aumenta o risco na conta.
+
+**Deixar a equipe fazer** usa o mesmo plano: a chance de alguém perceber (no
+furtivo: a atenção de quem trabalha, o movimento da hora, o tamanho da
+equipe, a ficha de quem foi), a da polícia chegar a tempo (a régua antiga do
+dono, de 5% na loja de roupas a 50% no banco, mexida pela hora, pela
+atenção da polícia, pela ficha e pelo tamanho) e o butim (no rápido, 65–95%
+do potencial menos a dificuldade; no furtivo, 30–55%; percebido, 15–40%).
+Chegando a polícia, cai parte de quem estava dentro — e às vezes (35% no
+rápido, 20% no furtivo percebido) o bonde inteiro é cercado, como na régua
+antiga. A equipe é sorteada entre os disponíveis do dia (a régua do dono de
+17/08: não é a elite que vai).
+
+### Limites (sinceros)
+
+- **O vidro é vidro só pro olhar do povo**: quem passa na calçada vê a
+  equipe pela vitrine (e dá o alerta), mas no desenho a vitrine é uma
+  textura — do nível da rua o jogador não enxerga o lado de dentro (de cima,
+  o teto da loja se abre).
+- **A polícia é simples**: a viatura não aparece, os PMs surgem na calçada
+  e correm atrás de quem está mais perto; não atiram, não cercam a quadra,
+  não perseguem o carro.
+- **O povo da loja também é simples**: desconfia, dá o alerta, liga, foge,
+  levanta as mãos quando rendido; não reage nem troca de lugar por conta
+  própria além da ronda do segurança.
+- **O HUD da cena é só em português** (como o resto das cenas 3D); as telas
+  do jogo (planejamento, calendário, cartões, recados, jornal) estão nas três
+  línguas.
+- **No jogo de feed (2D) não há cena**: o cartão só oferece deixar a equipe
+  fazer ou cancelar. Se a loja não abre em 3D (a praça na tela não é a da
+  torcida, um dia de jogo no ar), a equipe faz sozinha e o jogo avisa.
+- **A atenção da polícia só pesa nos assaltos**: ela não mexe (ainda) no dia
+  de jogo, na revista do portão nem nas outras brigas.
+- Save antigo: o cartão "Ver os alvos" da reunião e o `tela-assalto` de
+  antes abrem a tela nova do planejamento.

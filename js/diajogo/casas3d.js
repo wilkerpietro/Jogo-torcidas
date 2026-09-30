@@ -62,6 +62,8 @@
    ========================================================= */
 import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js';
 import { ATLAS } from './modelos_atlas.js';
+/* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -124,7 +126,7 @@ function medidas(l) {
    lanchonete recua o que o toldinho da porta de enrolar avança. O bar
    da torcida (o de esquina, embaixo do apartamento) é modelo também. */
 const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04,
-                     bartorcida: 0.04 };
+                     bartorcida: 0.04, ...REC_LOJA };
 
 export function planoDaCasa(l, K) {
   if (l._plano !== undefined) return l._plano;
@@ -135,6 +137,8 @@ export function planoDaCasa(l, K) {
           semManchas: l.modelo !== 'f2' && l.modelo !== 'varal' };
     /* o letreiro BAR DO X do bar da torcida vai no frontão da varanda */
     if (l.modelo === 'bartorcida' && l.placa) p.placa = placaDoBar(W, l.esquina);
+    /* o nome da loja do assalto vai na platibanda (no posto, na testeira da cobertura) */
+    if (TIPOS_LOJA[l.modelo] && l.placa) p.placa = placaDaLoja(l.modelo.slice(5), W, D, l.esquina || 'dir');
     l._plano = p;
     return p;
   }
@@ -2447,7 +2451,7 @@ function baldio(B, p, l, conta, G) {
 }
 
 const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4, baldio,
-                bartorcida: barTorcida };
+                bartorcida: barTorcida, ...TIPOS_LOJA };
 
 /* =======================================================
    A MONTAGEM DE UMA CASA, direto no acumulador do mundo

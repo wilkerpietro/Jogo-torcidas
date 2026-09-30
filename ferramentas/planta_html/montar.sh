@@ -18,7 +18,7 @@ R=$(cd "$(dirname "$0")/../.." && pwd)
 A=${1:-/tmp/planta_html}
 mkdir -p "$A/dados" "$A/js" "$A/img/texturas/modelos"
 cp "$R/ferramentas/planta_html/index.html" "$A/"
-cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$R/ferramentas/planta_html/vida3d.js" "$R/ferramentas/planta_html/palco_briga.js" "$R/ferramentas/planta_html/mapa3d.js" "$R/ferramentas/planta_html/caminhada.js" "$R/ferramentas/planta_html/arredores3d.js" "$R/ferramentas/planta_html/briga_bar.js" "$R/ferramentas/planta_html/briga_treta.js" "$R/ferramentas/planta_html/arquibancada.js" "$R/ferramentas/planta_html/invasao.js" "$R/ferramentas/planta_html/dia3d.js" "$R/ferramentas/planta_html/recados3d.js" "$R/ferramentas/planta_html/estrada3d.js" "$A/js/"
+cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$R/ferramentas/planta_html/vida3d.js" "$R/ferramentas/planta_html/palco_briga.js" "$R/ferramentas/planta_html/mapa3d.js" "$R/ferramentas/planta_html/caminhada.js" "$R/ferramentas/planta_html/arredores3d.js" "$R/ferramentas/planta_html/briga_bar.js" "$R/ferramentas/planta_html/briga_treta.js" "$R/ferramentas/planta_html/arquibancada.js" "$R/ferramentas/planta_html/invasao.js" "$R/ferramentas/planta_html/dia3d.js" "$R/ferramentas/planta_html/recados3d.js" "$R/ferramentas/planta_html/estrada3d.js" "$R/ferramentas/planta_html/assalto.js" "$R/ferramentas/planta_html/assalto3d.js" "$A/js/"
 # as rotas de dentro dos estádios do dia de jogo (GERADO por rotas_estadios.mjs)
 cp "$R/js/diajogo/rotas_estadios.js" "$A/js/"
 cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/estadios.js" "$R/dados/escudos.js" "$R/dados/faixas.js" "$A/dados/"
@@ -56,7 +56,7 @@ with open(os.path.join(A, 'dados/escudos_embutidos.js'), 'w', encoding='utf-8') 
 PY
 n=$(grep -n '^TO.dados.cenaEstadio = (function(){' "$R/dados/cena_estadio.js" | cut -d: -f1)
 head -n $((n - 1)) "$R/dados/cena_estadio.js" > "$A/dados/cena_estadio.js"
-for f in construtor3d detalhe3d casas3d sede3d veraneio3d caravana3d metro3d equip3d equip_antigo3d modelos3d props3d modelos_atlas arvores_lowpoly mato3d praia3d; do
+for f in construtor3d detalhe3d casas3d lojas3d sede3d veraneio3d caravana3d metro3d equip3d equip_antigo3d modelos3d props3d modelos_atlas arvores_lowpoly mato3d praia3d; do
   sed "s#'../../vendor/three/three.module.min.js'#'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js'#" \
     "$R/js/diajogo/$f.js" > "$A/js/$f.js"
 done

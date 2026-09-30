@@ -501,6 +501,10 @@ let lotesVeraneio = [];
 /* os palcos da caravana (montados uma vez, na primeira emboscada) */
 const PALCOS_CARAVANA = {};
 const ehBar = l => l.modelo === 'bartorcida';
+/* as lojas do assalto (lojas3d.js): o banco, a joalheria, o supermercado, o posto, o mercadinho e a loja de roupas */
+const ehLoja = l => !!(l && l.loja && l.modelo && l.modelo.startsWith('loja_'));
+const COR_LOJA = { banco: '#1f4e8c', joalheria: '#2b2b2e', supermercado: '#c62828', posto: '#2e7d32', mercadinho: '#2f7a46', roupas: '#8e3a7a' };
+const NOME_TIPO_LOJA = { banco: 'Banco', joalheria: 'Joalheria', supermercado: 'Supermercado', posto: 'Posto de gasolina', mercadinho: 'Mercadinho', roupas: 'Loja de roupas' };
 
 /* as torcidas da cidade: a praça do jogo (`mapa` da torcida) é o nome
    da cidade sem acento; a cor é a mesma conta da planta */
@@ -2614,6 +2618,12 @@ function desenhar() {
       ctx.strokeStyle = T ? T.cor2 : '#3d3a35'; ctx.lineWidth = px(2.2); ctx.stroke();
       continue;
     }
+    if (ehLoja(it.l)) {
+      /* a loja do assalto: a cor da marca, a borda amarela */
+      pol(it.pol, COR_LOJA[it.l.loja.tipo] || '#555');
+      ctx.strokeStyle = '#f2c230'; ctx.lineWidth = px(2.2); ctx.stroke();
+      continue;
+    }
     pol(it.pol, COR_LOTE[it.l.tipo] || '#f0f');
     ctx.strokeStyle = '#123a3d'; ctx.lineWidth = px(0.9); ctx.stroke();
     if (it.l.tipo === 'muro') riscarMuro(it.l);
@@ -2940,6 +2950,7 @@ function desenharGrade(vis) {
 
 function rotuloDoLote(l) {
   if (ehBar(l)) return l.torcida ? 'bar ' + l.torcida.rot : 'bar fechado';
+  if (ehLoja(l)) return NOME_TIPO_LOJA[l.loja.tipo].toLowerCase();
   const pc = planoSeguro(l);
   const m = l.muro || (pc && pc.tipo && pc.tipo !== 'favela' && pc.tipo !== 'baldio' ? pc.tipo.toUpperCase() : '');
   if (pc && pc.tipo === 'baldio') return 'baldio ' + (l.frente || '');
@@ -2992,6 +3003,8 @@ function desenharRotulos(vis, prop) {
         const T = x.b.lote.torcida;
         if (T || s >= 0.25) etiqueta(T ? 'Bar do ' + T.rot : 'Bar fechado', x.b.x, x.b.y + (x.b.lote.frente === 'n' ? -60 : 60));
       }
+      /* as lojas do assalto: o nome da loja na fachada */
+      if (s >= 0.1) for (const lj of PROP.lojas || []) etiqueta(NOME_TIPO_LOJA[lj.tipo] + ' · ' + lj.nome, lj.x, lj.y + (lj.lote.frente === 'n' ? -70 : 70));
       for (const it of porticos) etiqueta(it.p.id === 'norte' ? 'Entrada norte' : 'Entrada sul', it.p.x - it.p.dir[0] * 260, it.p.y - it.p.dir[1] * 260);
     }
   }
@@ -3169,6 +3182,7 @@ function avenidaCorta(q) {
 function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return null; } }
 function tituloDe(it) {
   if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar do ' + it.l.torcida.rot : 'Bar fechado';
+  if (it.tipo === 'lote' && ehLoja(it.l)) return it.l.loja.nome;
   if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga';
   if (it.tipo === 'estacao' || it.tipo === 'veraneio') return it.nome;
   if (it.tipo === 'lote') {
@@ -3246,6 +3260,23 @@ function fichaDe(it) {
     ]) + (T ? `<p class="nota">Aberto: o térreo é da torcida — ${coresDe(T)} na parede, no pilar e no frontão, e o letreiro no fundo da segunda cor. Dentro vai o que o bar grande tinha: o xadrez azul e creme, o balcão em L com as banquetas, o armário com a garrafa, a cervejeira, os dois freezers com a TV, o engradado, as mesas de madeira e a porta do banheiro. Em cima, o apartamento.</p>`
             : `<p class="nota">Nenhuma torcida de ${esc(cidade)} usa este bar: ele fica neutro, de porta de enrolar abaixada, com o ALUGA-SE. O apartamento de cima continua morado.</p>`)
       + (x && x.b.noLugarDoBarGrande ? '<p class="nota">É a quadra do bar grande de hoje (13,9 × 8,8 m): a fatia dele vira casa, e o bar pequeno fica na esquina.</p>' : '');
+  }
+  if (it.tipo === 'lote' && ehLoja(it.l)) {
+    /* A LOJA DO ASSALTO: o que ela é, o tamanho e o que tem dentro (a planta de lojas3d.js) */
+    const l = it.l, lj = l.loja, nS = l.frente === 'n' || l.frente === 's';
+    const onde = it.qh ? 'quadra ' + it.qh.i + ',' + it.qh.j : 'quadra nova ' + nomeQuadraNova(it.qn);
+    const DENTRO = {
+      banco: 'a fachada de vidro com a porta giratória, os três caixas eletrônicos, a fila, os três guichês com o vidro blindado, dois seguranças; atrás, o corredor dos caixas, a gerência (a mesa, o gravador das câmeras) e a sala do cofre-forte. A saída de emergência dá na rua de lado.',
+      joalheria: 'as vitrines de vidro em U com a atendente atrás de cada lado, o caixa no fundo do salão, o segurança na porta; a porta restrita leva ao escritório (o cofre, o gravador) e à oficina do ourives, com a saída pra rua de lado.',
+      supermercado: 'os três caixas na frente, as quatro gôndolas altas (quem anda entre elas some da vista), as geladeiras, o fiscal de loja; no fundo, o estoque com a doca pra rua de lado e a gerência com o cofre.',
+      posto: 'a pista com a cobertura e as duas ilhas de bomba (os frentistas), o totem; no fundo, a loja de conveniência com o caixa, as prateleiras, as geladeiras e o depósito com o cofre.',
+      mercadinho: 'as portas de enrolar na frente e no lado da esquina, o balcão do dono com o caixa e o cigarro, as prateleiras, a geladeira e o cofrinho no canto do fundo.',
+      roupas: 'a vitrine com os manequins, as araras, a prateleira da parede, o provador e o caixa no fundo.'
+    };
+    return `<p class="sobre">Alvo de assalto · ${esc(onde)}${chip}</p><h2>${esc(lj.nome)}</h2>` + linhas([
+      ['Tipo', NOME_TIPO_LOJA[lj.tipo], true], ['Frente para', FRENTE[l.frente]], ['Esquina', l.esquina === 'dir' ? 'à direita da fachada' : 'à esquerda da fachada'],
+      ['Testada', metros(nS ? l.x1 - l.x0 : l.y1 - l.y0)], ['Fundo', metros(nS ? l.y1 - l.y0 : l.x1 - l.x0)]
+    ]) + `<p class="nota">Por dentro: ${DENTRO[lj.tipo]}</p><p class="nota">No jogo 3D, é aqui que o assalto marcado na reunião acontece: o jogador entra com a equipe e decide se vai no furtivo ou no rápido.</p>`;
   }
   if (it.tipo === 'espaco') {
     const e = it.e, a = e.area, T = it.dono, sd = it.sede;
@@ -5079,7 +5110,7 @@ function objetoDeEstudo(q, g) {
 function pecasDoCenario() {
   const out = [], poe = (tipo, it, montar) => out.push({ tipo, it, montar });
   for (const it of lotes) if (!it.sobProposta && !it.sobSede) poe(it.l.favela ? 'favela' : 'casa', it, g => objetoDoLote(it.l, g));
-  for (const it of lotesNovos) if (!it.sobSede) poe(ehBar(it.l) ? 'bar' : 'casa', it, g => objetoDoLote(it.l, g));
+  for (const it of lotesNovos) if (!it.sobSede) poe(ehBar(it.l) ? 'bar' : ehLoja(it.l) ? 'loja' : 'casa', it, g => objetoDoLote(it.l, g));
   for (const it of lotesFavelaNova) if (!it.sobSede) poe('favela', it, g => objetoDoLote(it.l, g));
   for (const it of marcosDeHoje().concat(marcosNovos)) poe('marco', it, g => objetoDoMarco(it, g));
   for (const it of espacos) poe('sede', it, g => objetoDoEspaco(it, g, { telhado: true, portasVivas: true }));
@@ -5650,6 +5681,25 @@ function apiDoCenario() {
                  W: (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, D: (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M };
       });
     },
+    /* AS LOJAS DO ASSALTO (assalto3d.js): o tipo, o nome, o lote (a frente,
+       a esquina) com a testada e o fundo em m, e a calçada da porta */
+    lojas() {
+      const fora = 1.6 * M;
+      return (PROP && PROP.lojas || []).map(lj => {
+        const l = lj.lote, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, f = l.frente, nS = f === 'n' || f === 's';
+        const porta = f === 'n' ? { x: cx, y: l.y0 - fora, fx: 0, fy: -1 } : f === 's' ? { x: cx, y: l.y1 + fora, fx: 0, fy: 1 }
+          : f === 'o' ? { x: l.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: l.x1 + fora, y: cy, fx: 1, fy: 0 };
+        return { tipo: lj.tipo, n: lj.n, nome: lj.nome, porta, lote: { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1, frente: f, esquina: l.esquina || 'dir' },
+                 W: (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, D: (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M };
+      });
+    },
+    /* AS DELEGACIAS DA PRAÇA (a polícia do assalto sai dela): o meio da quadra e a frente */
+    delegacias() {
+      const lista = [];
+      for (const q of (PROP && PROP.quadras) || []) if (q.equip && q.equip.tipo === 'delegacia') lista.push({ nome: q.equip.nome, x: (q.x0 + q.x1) / 2, y: (q.y0 + q.y1) / 2, frente: q.equip.frente });
+      for (const it of equipamentos || []) if (it.q && it.q.equip && it.q.equip.tipo === 'delegacia' && !it.somePelaProposta) lista.push({ nome: it.nome, x: (it.bb.x0 + it.bb.x1) / 2, y: (it.bb.y0 + it.bb.y1) / 2, frente: it.q.equip.frente });
+      return lista;
+    },
     /* AS FAVELAS DA PRAÇA (a treta marcada do jogo 3D, briga_treta.js): os
        becos (a linha do meio e a largura) e o campinho de terra de cada uma */
     favelas() {
@@ -5823,6 +5873,20 @@ async function abrirCenario(nome, modo) {
 }
 $('bt-cenario').onclick = () => abrirCenario(cidade, estado.modo);
 if (PARAMS.has('teste')) { window.__planta.abrirCenario = abrirCenario; Object.defineProperty(window.__planta, 'cenario', { get: () => cenario }); }
+/* pro teste: o assalto (assalto3d.js) numa loja da praça aberta, sem o jogo de feed */
+if (PARAMS.has('teste')) window.__planta.assalto = async (tipo, cfg = {}) => {
+  const C = cenario, loja = apiDoCenario().lojas().find(l => l.tipo === tipo);
+  if (!C || !loja) return { erro: 'sem cenário ou sem a loja ' + tipo };
+  await C.vida.chamarPovo();
+  const { iniciarAssalto } = await import('./js/assalto3d.js');
+  const equipe = Array.from({ length: cfg.n || 10 }, (_, i) => ({ id: 'm' + i, nome: ['Negão', 'Ruivo', 'Baixinho', 'Magrão', 'Alemão', 'Cabeça', 'Tico', 'Zóio', 'Bola', 'Formiga'][i % 10] }));
+  const A = { banco: [95, 80, 90, 60, 85, 90], joalheria: [75, 70, 70, 40, 75, 70], supermercado: [45, 60, 45, 85, 45, 50], posto: [25, 55, 30, 50, 40, 30], mercadinho: [15, 35, 15, 45, 30, 15], roupas: [10, 40, 20, 50, 35, 15] }[tipo];
+  const alvo = { id: tipo, nome: loja.nome, recompensa: A[0], exposicao: A[1], seguranca: A[2], movimentacao: A[3], atencao: A[4], dificuldade: A[5] };
+  window.__assalto = iniciarAssalto({ C, ctx: C.vida.contextoDoDia(), loja,
+    cfg: Object.assign({ alvo, equipe, dentro: 5, abordagem: 'rapido', horario: 'tarde', calor: 20, potencial: 30000, semente: 7 }, cfg, { equipe }),
+    aoFim: r => { window.__assaltoFim = r; } });
+  return window.__assalto.erro ? { erro: window.__assalto.erro } : { ok: true, loja };
+};
 
 /* ======================================================
    AS NOTAS DA PROPOSTA

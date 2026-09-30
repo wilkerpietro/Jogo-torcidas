@@ -3604,6 +3604,27 @@
       art.appendChild(bloco);
     }
 
+    /* A FICHA DA OPERAÇÃO (o roteiro do dono, 30/09/2026): "OPERAÇÃO EM
+       ANDAMENTO — Alvo, Equipe, Recompensa potencial, Exposição, Suspeita,
+       Estado". Antes da ordem, a exposição e a suspeita estão zeradas; no
+       fim, ficam as da operação */
+    if(m.kind === 'assalto-dia' && m.dados){
+      const o = (e.assaltos || []).find(x=>x.id === m.dados.op) || null;
+      const a = TO.acoes.ASSALTOS.find(x=>x.id === m.dados.alvo);
+      const r = o && o.resultado;
+      const estado = o && o.cancelado ? _t('Cancelada')
+        : r ? (r.abortou ? _t('Abortada') : r.presos && r.presos.length ? _t('Deu ruim') : _t('Feita'))
+        : _t('Na esquina, esperando a ordem');
+      const lin = (k, v, cls) => `<span>${k}</span><b${cls ? ` class="${cls}"` : ''}>${v}</b>`;
+      art.appendChild(el('div',{class:'op-ficha', html:
+        lin(_t('Alvo'), a ? _t(a.nome) : '—')+
+        lin(_t('Equipe'), _tn(m.dados.n || 0, '{n} membro', '{n} membros'))+
+        lin(_t('Recompensa potencial'), U.dinheiro(m.dados.potencial || 0))+
+        lin(_t('Exposição'), String(r ? r.exposicao : 0))+
+        lin(_t('Suspeita'), String(r ? (r.suspeita != null ? r.suspeita : (r.alerta ? 100 : 0)) : 0))+
+        lin(_t('Estado'), estado, r ? (r.presos && r.presos.length ? 'ruim' : 'boa') : '')}));
+    }
+
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
       art.appendChild(el('div',{class:'msg-efeitos',
@@ -3833,6 +3854,7 @@
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'tela-reuniao') abrirReuniaoEmCena(m);
       else if(t === 'tela-assalto') abrirAssalto();
+      else if(t === 'assalto-3d') abrirAssalto3d(m, a.op);
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
@@ -5159,62 +5181,162 @@
   }
 
   /* =======================================================
-     A TELA DO ASSALTO (tabela do dono, 17/08/2026)
-     Duas perguntas: qual alvo, quantos vão. Os membros são
-     sorteados entre os disponíveis; o dado é um só pro bonde
-     inteiro — partilha pra todos ou cadeia pra todos.
+     O PLANEJAMENTO DO ASSALTO (pedido do dono, 30/09/2026)
+     Era a tela do sorteio (tabela do dono, 17/08/2026: qual alvo,
+     quantos vão, e um dado só pro bonde inteiro). Agora é o plano:
+     o alvo, cada um com as suas barras — exposição, segurança,
+     movimentação, atenção, dificuldade e recompensa potencial —, o
+     tamanho da equipe, a abordagem (furtivo ou rápido), o horário e o
+     dia. Embaixo, o risco que o plano carrega e a atenção da polícia
+     sobre a torcida hoje. "Marcar a operação" põe no calendário
+     (`TO.acoes.planejarAssalto`); no dia, o cartão "OPERAÇÃO EM
+     ANDAMENTO" pergunta quem comanda. `aoMarcar(op)`: quem abriu a
+     tela (a pauta da reunião, o cartão antigo) fecha a decisão.
      ======================================================= */
-  function abrirAssalto(aoFeito){
-    const e = E();
-    const A = TO.acoes.ASSALTOS;
+  function abrirAssalto(aoMarcar){
+    const e = E(), A = TO.acoes, L = A.ASSALTOS;
     const disp = e.membros.filter(TO.membros.disponivel).length;
-    let alvo = A[A.length-1].id;              // abre no mais leve
-    let efetivo = null;
-    const corpo = el('div');
+    const dias = A.diasParaAssalto(e, 14);
+    const pode = L.filter(a=>disp >= a.efetivos[0]);
+    /* abre no alvo mais leve, furtivo, no fechamento, no primeiro dia livre */
+    const pl = {alvo:(pode[pode.length-1] || L[L.length-1]).id, n:null,
+                abordagem:'furtivo', horario:'fechamento', quando:dias[0] || null};
+    const corpo = el('div',{class:'plano-assalto'});
+    const corDaBarra = (id, v) => id === 'recompensa' ? '#e6b93c'
+      : v >= 70 ? '#d9534f' : v >= 40 ? '#e89a3c' : '#6cbf6a';
+    const barra = (c, v) => `<div class="pa-barra" title="${c.nome}: ${c.nota}"><span>${c.curto || c.nome}</span>`+
+      `<i><b style="width:${U.limitar(v,0,100)}%;background:${corDaBarra(c.id, v)}"></b></i></div>`;
 
     const pintar = ()=>{
+      /* a rolagem fica onde estava (régua de 21/09: mexer numa opção não joga a tela pro topo) */
+      const rolo = corpo.closest('.moldura') && corpo.parentElement;
+      const topo = rolo ? rolo.scrollTop : 0;
       corpo.innerHTML = '';
-      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Qual o alvo')}));
-      corpo.appendChild(opcoes(A.map(a=>({
-        id:a.id, rot:_t(a.nome),
-        nota:_t('{min} a {max} · {p}% de cadeia · pena de {d} dias', {
-               min:U.dinheiro(a.ganho[a.efetivos[0]][0]),
-               max:U.dinheiro(a.ganho[a.efetivos[1]][1]),
-               p:Math.round(a.chance*100), d:a.pena}),
-        desabilitada: disp < a.efetivos[0]
-      })), alvo, id=>{ alvo = id; efetivo = null; pintar(); }));
+      const a = L.find(x=>x.id === pl.alvo);
+      if(pl.n === null || !a.efetivos.includes(pl.n) || disp < pl.n) pl.n = a.efetivos.find(n=>disp >= n) || a.efetivos[0];
 
-      const a = A.find(x=>x.id === alvo);
-      if(efetivo === null && disp >= a.efetivos[0]) efetivo = a.efetivos[0];
-      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
-      corpo.appendChild(opcoes(a.efetivos.map(n=>({
-        id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
-        nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
-            : _t('{min} a {max}', {min:U.dinheiro(a.ganho[n][0]), max:U.dinheiro(a.ganho[n][1])}),
-        desabilitada: disp < n
-      })), efetivo !== null ? String(efetivo) : null,
-          id=>{ efetivo = parseInt(id, 10); pintar(); }));
-      corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">${_t('Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.', {n:efetivo || '—'})}</span>`}));
+      /* 1 · o alvo */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O alvo')}));
+      const lista = el('div',{class:'pa-alvos'});
+      for(const x of L){
+        const P = A.PERFIL_ASSALTO[x.id], off = disp < x.efetivos[0];
+        const b = el('button',{class:'pa-alvo'+(x.id === pl.alvo ? ' on' : '')+(off ? ' off' : '')});
+        b.disabled = off;
+        b.innerHTML = `<div class="pa-cab"><b>${_t(x.nome)}</b><span>${_t('{min} a {max}', {min:U.dinheiro(x.ganho[x.efetivos[0]][1]), max:U.dinheiro(x.ganho[x.efetivos[1]][1])})}</span></div>`+
+          `<div class="pa-barras">${A.CARACTERISTICAS.map(c=>barra(c, P[c.id])).join('')}</div>`+
+          (off ? `<small class="pa-falta">${_t('precisa de {n} disponíveis', {n:x.efetivos[0]})}</small>` : '');
+        b.onclick = ()=>{ pl.alvo = x.id; pl.n = null; pintar(); };
+        lista.appendChild(b);
+      }
+      corpo.appendChild(lista);
+
+      /* 2 · a equipe */
+      const f0 = A.fichaDoAssalto(pl.alvo, pl.n, pl.horario);
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A equipe')}));
+      corpo.appendChild(opcoes(a.efetivos.map(n=>{
+        const f = A.fichaDoAssalto(pl.alvo, n, pl.horario);
+        return {id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
+                nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
+                    : _t('{dentro} entram com o líder, {fora} na rua e no carro · potencial de {valor}',
+                         {dentro:f.dentro, fora:n - f.dentro, valor:U.dinheiro(f.potencial)}),
+                desabilitada: disp < n};
+      }), String(pl.n), id=>{ pl.n = parseInt(id, 10); pintar(); }));
+      corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${
+        _t('Equipe maior leva mais e chama mais atenção. Quem vai é sorteado entre os disponíveis no dia.')}</span>`}));
+
+      /* 3 · o jeito */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A abordagem')}));
+      corpo.appendChild(opcoes(Object.values(A.ABORDAGENS).map(o=>({id:o.id, rot:o.nome, nota:o.nota})),
+        pl.abordagem, id=>{ pl.abordagem = id; pintar(); }));
+
+      /* 4 · a hora */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O horário')}));
+      corpo.appendChild(opcoes(Object.values(A.HORARIOS_ASSALTO).map(h=>({id:h.id, rot:`${h.nome} · ${h.hora}`, nota:h.nota})),
+        pl.horario, id=>{ pl.horario = id; pintar(); }));
+
+      /* 5 · o dia */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O dia')}));
+      if(!dias.length) corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${_t('Nenhum dia livre nas próximas duas semanas: jogo, viagem ou outra operação em todos.')}</span>`}));
+      else {
+        const cx = el('div',{class:'pa-dias'});
+        for(const d of dias){
+          const on = pl.quando && d.semana === pl.quando.semana && d.dia === pl.quando.dia;
+          const b = el('button',{class:'pa-dia'+(on ? ' on' : ''), html:`<b>${_t(d.nomeDia).slice(0,3)}</b><span>${d.dataTxt}</span>`});
+          b.onclick = ()=>{ pl.quando = d; pintar(); };
+          cx.appendChild(b);
+        }
+        corpo.appendChild(cx);
+      }
+
+      /* 6 · o risco do plano */
+      const R = A.riscoDoAssalto(e, pl);
+      const calor = A.calorDe(e);
+      const res = el('div',{class:'pa-resumo'});
+      res.innerHTML =
+        `<div class="pa-linha"><span>${_t('Recompensa potencial')}</span><b>${U.dinheiro(f0.potencial)}</b></div>`+
+        `<div class="pa-linha"><span>${_t('Risco estimado')}</span><b class="pa-risco ${R.policia >= 0.45 ? 'alto' : R.policia >= 0.2 ? 'medio' : 'baixo'}">${A.rotuloDoRisco(R.policia)}</b></div>`+
+        (pl.abordagem === 'furtivo'
+          ? `<div class="pa-linha"><span>${_t('Chance de alguém perceber')}</span><b>~${Math.round(R.notado*100)}%</b></div>` : '')+
+        `<div class="pa-linha"><span>${_t('Polícia chegar a tempo, deixando a equipe fazer')}</span><b>~${Math.round(R.policia*100)}%</b></div>`+
+        medidor(_t('Atenção da polícia sobre a torcida'), calor, 100, calor >= 60 ? '#d9534f' : calor >= 30 ? '#e89a3c' : '#6cbf6a')+
+        `<p class="fraco pa-nota">${_t('A polícia está {nivel} com a torcida. Cada assalto que faz barulho — alarme, câmera, polícia no local, gente presa — aumenta isso, e ela chega mais rápido no próximo. Esfria sozinha, dia a dia.', {nivel:A.nivelDoCalor(calor)})}</p>`+
+        `<p class="fraco pa-nota">${TO.semFeed
+          ? _t('No dia, você comanda a equipe dentro da loja — ou deixa ela fazer sozinha.')
+          : _t('No dia, a equipe faz sozinha: o resultado sai do plano, da ficha de quem foi e da atenção da polícia.')}</p>`;
+      corpo.appendChild(res);
+      if(rolo) rolo.scrollTop = topo;
     };
     pintar();
 
-    modal(_t('Assalto'), _t('a diretoria mapeou os alvos'), corpo, [
-      [_t('Assaltar'), ()=>{
-        if(efetivo === null){ aviso(_t('Escolhe o efetivo.'), 'ruim'); return; }
-        const r = TO.acoes.executarAssalto(e, alvo, efetivo);
+    modal(_t('Planejar o assalto'), _t('a diretoria mapeou os alvos da praça'), corpo, [
+      [_t('Marcar a operação'), ()=>{
+        if(!pl.quando){ aviso(_t('Sem dia livre pra operação.'), 'ruim'); return; }
+        const r = A.planejarAssalto(e, pl);
         if(!r.ok){ aviso(r.msg, 'ruim'); return; }
-        aviso(r.caiu ? _t('Deu ruim: {n} presos por {d} dias.', {n:r.n, d:r.pena})
-                     : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)}),
-              r.caiu ? 'ruim' : 'boa');
-        /* assalto feito responde a mensagem que abriu a lista — ou,
-           vindo da reunião, fecha a pauta */
-        if(aoFeito) aoFeito(r); else confirmarDecisao(_t('Ver os alvos — assalto feito'));
+        aviso(TO.feed.textoDaOperacao(r.op), 'boa');
+        if(aoMarcar) aoMarcar(r.op); else confirmarDecisao(_t('Assalto marcado'));
         TO.estado.salvar();
         pintarTopo();
         atualizarFeed();
       }]
-    ]);
+    ], 'larga');
+  }
+
+  /* O DIA DA OPERAÇÃO EM 3D (30/09/2026): "Comandar a equipe" abre a loja
+     na praça (TO.jogo3d.assalto, assalto3d.js) e o tempo do jogo espera a
+     cena inteira. Sem a loja em 3D (o jogo de feed, a praça trocada), a
+     equipe faz sozinha — a mesma conta do "Deixar a equipe fazer" */
+  let assaltoNoAr = false;
+  async function abrirAssalto3d(m, opId){
+    const e = E(), A = TO.acoes;
+    const op = (e.assaltos || []).find(o=>o.id === opId);
+    const encerrar = (rot, txt, tipo)=>{
+      const msg = m && (e.feed || []).find(x=>x.id === m.id);
+      if(msg && txt) msg.consequencia = txt;
+      confirmarDecisao(rot);
+      if(txt) aviso(txt, tipo || '');
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+    };
+    if(!op || op.feito || op.cancelado){ encerrar(_t('Operação encerrada')); return; }
+    const grupo = A.equipeDoAssalto(e, op);
+    if(!grupo){ op.cancelado = true; encerrar(_t('Faltou gente'), _t('Faltou gente: a operação caiu.'), 'ruim'); return; }
+    const J3 = TO.jogo3d && TO.jogo3d.assalto;
+    let r = null;
+    if(J3 && !assaltoNoAr){
+      assaltoNoAr = true;
+      pausarTempo('assalto');
+      try{ r = await J3(op, grupo); }
+      catch(err){ console.error('o assalto em 3D:', err); r = null; }
+      assaltoNoAr = false;
+      retomarTempo('assalto');
+    }
+    if(!r || r.erro){
+      if(r && r.erro) console.warn('o assalto em 3D não abriu:', r.erro);
+      if(J3) aviso(_t('A loja não abriu em 3D: a equipe fez sozinha.'), 'ruim');
+      r = A.simularAssalto(e, op, grupo);
+    }
+    const f = A.fecharAssalto(e, op, r) || {texto:''};
+    encerrar(r.abortou ? _t('Operação abortada') : _t('Operação feita'), f.texto, f.presos || !f.butim ? 'ruim' : 'boa');
   }
 
   /* =======================================================
@@ -8232,6 +8354,9 @@
     /* os botes marcados na reunião (dono, 22/09/2026) */
     const botes = new Map();
     for(const b of (e.botes||[])) if(b.ano === e.data.ano) botes.set(`${b.semana}/${b.dia}`, b);
+    /* as operações de assalto marcadas (o planejamento, 30/09/2026) */
+    const assaltos = new Map();
+    for(const o of (e.assaltos||[])) if(o.ano === e.data.ano && !o.cancelado) assaltos.set(`${o.semana}/${o.dia}`, o);
     for(const j of C.agendaDoClube(e, e.torcida.clubeId)){
       agenda.set(`${j.semana}/${j.dia}`, j);
       /* jogo fora, em outra cidade: a véspera e o dia seguinte são da
@@ -8260,13 +8385,38 @@
     for(let k=0;k<celulas;k++){
       const d = new Date(inicio);
       d.setDate(inicio.getDate() + k);
-      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas, botes));
+      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas, botes, assaltos));
     }
     q.appendChild(grade);
     return q;
   }
 
-  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas, botes){
+  /* O DIA DA REUNIÃO NO CALENDÁRIO (30/09/2026): a mesa é num dia sorteado
+     do mês (feed.js, `diaDaReuniao`); caindo em jogo ou viagem, senta no
+     primeiro dia livre depois — o calendário mostra esse */
+  const reuniaoDoMes = new Map();
+  function diaDaReuniaoEm(e, ano, mes){
+    const F = TO.feed;
+    if(!F || !F.diaDaReuniao) return null;
+    const chave = `${e.torcida.id}|${e.data.absoluto || 0}|${ano}|${mes}`;
+    if(reuniaoDoMes.has(chave)) return reuniaoDoMes.get(chave);
+    if(reuniaoDoMes.size > 40) reuniaoDoMes.clear();
+    const k = diaDaReuniaoCru(e, ano, mes);
+    reuniaoDoMes.set(chave, k);
+    return k;
+  }
+  function diaDaReuniaoCru(e, ano, mes){
+    const F = TO.feed;
+    const ult = new Date(ano, mes + 1, 0).getDate();
+    for(let k = F.diaDaReuniao(e, ano, mes); k <= ult; k++){
+      const sd = TO.estado.semanaDiaDe(new Date(ano, mes, k));
+      if(!sd) return null;
+      if(sd.ano !== e.data.ano || !F.diaLivre || F.diaLivre(e, sd.semana, sd.dia)) return k;
+    }
+    return null;
+  }
+
+  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas, botes, assaltos){
     const sd = TO.estado.semanaDiaDe(d);
     const cel = el('div',{class:'dia'});
     const classes = [];
@@ -8295,6 +8445,16 @@
         cel.appendChild(el('span',{class:'rot', html:
           `${IC.get('onibus')}${_t('Caravana')}`}));
         cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
+      }else if(assaltos && assaltos.get(`${sd.semana}/${sd.dia}`)){
+        const o = assaltos.get(`${sd.semana}/${sd.dia}`);
+        const a = TO.acoes.ASSALTOS.find(x=>x.id === o.alvo) || {nome:''};
+        const h = TO.acoes.HORARIOS_ASSALTO[o.horario] || {};
+        classes.push('assalto');
+        cel.appendChild(el('span',{class:'rot assalto-rot', html:
+          `${IC.get('dinheiro') || ''}${o.feito ? _t('Assalto feito') : _t('Assalto marcado')}`}));
+        cel.appendChild(el('span',{class:'sub', texto: o.feito && o.resultado
+          ? `${_t(a.nome)} · ${U.dinheiro(o.resultado.butim)}`
+          : `${_t(a.nome)} · ${h.hora || ''}`}));
       }else if(botes && botes.get(`${sd.semana}/${sd.dia}`)){
         const b = botes.get(`${sd.semana}/${sd.dia}`);
         classes.push('bote');
@@ -8315,6 +8475,8 @@
         }
       }
     }
+    if(sd && d.getMonth() === mesAtual && d.getDate() === diaDaReuniaoEm(e, d.getFullYear(), d.getMonth()))
+      cel.appendChild(el('span',{class:'reu-dia', html:`${IC.get('conversa') || ''}${_t('Reunião')}`}));
     cel.className = 'dia ' + classes.join(' ');
     return cel;
   }
@@ -8588,7 +8750,7 @@
         bt.innerHTML = `<span>${b.rot}</span>`+(b.nota?`<small>${b.nota}</small>`:'');
         bt.onclick = ()=>{
           /* os alvos de assalto abrem a tela por cima; o resultado dela fecha a pauta */
-          if(b.acao === 'assalto-ver'){ abrirAssalto(r=>{ F.fecharPautaAssalto(e, it.id, r); depois(); }); return; }
+          if(b.acao === 'assalto-ver' || b.acao === 'assalto-planejar'){ abrirAssalto(op=>{ F.fecharPautaAssalto(e, it.id, {op}); depois(); }); return; }
           F.decidirPauta(e, it.id, b.id); depois();
         };
         bts.appendChild(bt);
@@ -8797,7 +8959,7 @@
     pintar();
     const d = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
     const fechar = modal(_t('Reunião da diretoria'),
-      _t('{mes} de {ano} · dia 5', {mes:_t(MESES_R[d.getMonth()]), ano:d.getFullYear()}), cx,
+      _t('{mes} de {ano} · dia {dia}', {mes:_t(MESES_R[d.getMonth()]), ano:d.getFullYear(), dia:d.getDate()}), cx,
       [[_t('Encerrar a reunião'), ()=>{
         const r = TO.feed.fecharReuniao(e);
         confirmarDecisao(r.decididos ? _tn(r.decididos, '{n} decidido', '{n} decididos') : _t('nada a decidir'));
@@ -9627,6 +9789,8 @@
     if(pausasT.has('itinerario') && !ITN){
       pausasT.delete('itinerario'); curas.push(_t('pausa de itinerário sem linha'));
     }
+    /* a operação de assalto em 3D segura o tempo enquanto está no ar */
+    if(pausasT.has('assalto') && !assaltoNoAr){ pausasT.delete('assalto'); curas.push(_t('pausa de assalto sem assalto')); }
     /* os hóspedes saindo da sede em 3D (vida3d.js) seguram o tempo uns segundos */
     if(pausasT.has('hospedes')){
       const V3 = TO.jogo3d && TO.jogo3d.vida;
@@ -11212,6 +11376,8 @@
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
+    /* o planejamento do assalto e a operação do dia em 3D (30/09/2026) */
+    abrirAssalto, abrirAssalto3d, get assaltoNoAr(){ return assaltoNoAr; },
     abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
     abrirBrigaDoTutorial,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
