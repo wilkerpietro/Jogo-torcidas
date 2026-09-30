@@ -13,6 +13,10 @@ TO.i18n.registrar({
   'há {n} dias': {es:'hace {n} días', en:'{n} days ago'},
   '{n} curtida':  {es:'{n} me gusta', en:'{n} like'},
   '{n} curtidas': {es:'{n} me gusta', en:'{n} likes'},
+  '{n} comentário':  {es:'{n} comentario',  en:'{n} comment'},
+  '{n} comentários': {es:'{n} comentarios', en:'{n} comments'},
+  '{n} compartilhamento':  {es:'{n} compartido',  en:'{n} share'},
+  '{n} compartilhamentos': {es:'{n} compartidos', en:'{n} shares'},
 
   /* ---------- o dia que passou e o dia que vem ---------- */
   'na última segunda': {es:'el lunes pasado',     en:'last Monday'},
@@ -194,5 +198,64 @@ TO.i18n.registrar({
      en:'One fight is not the war, {nome}. {perdedor} is already getting organised.'},
   'Hoje foi de vocês, {nome}. Aproveitem, porque a {perdedor} volta e a conta vem cara.':
     {es:'Hoy fue de ustedes, {nome}. Disfrútenlo, porque la {perdedor} vuelve y la cuenta llega cara.',
-     en:'Today was yours, {nome}. Enjoy it, because {perdedor} will be back and the bill will be steep.'}
+     en:'Today was yours, {nome}. Enjoy it, because {perdedor} will be back and the bill will be steep.'},
+  /* ---------- a cidade no feed: Gazeta, protesto, zonas, nosso perfil ---------- */
+  'Protesto':   {es:'Protesta',    en:'Protest'},
+  'Convocação': {es:'Convocatoria', en:'Call-up'},
+  'Resenha':    {es:'Juntada',     en:'Get-together'},
+  'Zona {zona}':          {es:'Zona {zona}',          en:'{zona} Zone'},
+  'Zona {zona} da {nome}':{es:'Zona {zona} de la {nome}', en:'{nome} {zona} Zone'},
+  'CLÁSSICO DA CIDADE · {A} {ga} x {gb} {B}{comp}.':
+    {es:'CLÁSICO DE LA CIUDAD · {A} {ga} x {gb} {B}{comp}.', en:'CITY DERBY · {A} {ga}–{gb} {B}{comp}.'},
+  'O FUTEBOL DA CIDADE · {time} vence {adv} por {g1} a {g2}{comp}.':
+    {es:'EL FÚTBOL DE LA CIUDAD · {time} le gana a {adv} por {g1} a {g2}{comp}.', en:'CITY FOOTBALL · {time} beat {adv} {g1}–{g2}{comp}.'},
+  'O FUTEBOL DA CIDADE · {time} perde para {adv} por {g2} a {g1}{comp}.':
+    {es:'EL FÚTBOL DE LA CIUDAD · {time} pierde con {adv} por {g2} a {g1}{comp}.', en:'CITY FOOTBALL · {time} lose to {adv} {g2}–{g1}{comp}.'},
+  'O FUTEBOL DA CIDADE · {time} e {adv} empatam em {g1} a {g2}{comp}.':
+    {es:'EL FÚTBOL DE LA CIUDAD · {time} y {adv} empatan {g1} a {g2}{comp}.', en:'CITY FOOTBALL · {time} and {adv} draw {g1}–{g2}{comp}.'},
+  'Nos pênaltis, deu {v}.': {es:'En los penales, ganó {v}.', en:'{v} won on penalties.'},
+  'Com o resultado, {time} fica em {pos}º lugar.':
+    {es:'Con el resultado, {time} queda {pos}.º en la tabla.', en:'With the result, {time} sit {pos}th in the table.'},
+  '{d} derrotas nos últimos {j} jogos.': {es:'{d} derrotas en los últimos {j} partidos.', en:'{d} defeats in the last {j} matches.'},
+  '{d} derrotas nos últimos {j} jogos e o time na zona de rebaixamento.':
+    {es:'{d} derrotas en los últimos {j} partidos y el equipo en zona de descenso.', en:'{d} defeats in the last {j} matches and the team in the relegation zone.'},
+  'Chega de vexame! A {nome} cobra publicamente jogadores e comissão técnica do {clube}: {d} derrotas nos últimos {j} jogos não é o time que a gente carrega no peito. Queremos raça em campo!':
+    {es:'¡Basta de papelones! La {nome} les exige públicamente a los jugadores y al cuerpo técnico de {clube}: {d} derrotas en los últimos {j} partidos no es el equipo que llevamos en el pecho. ¡Queremos garra en la cancha!',
+     en:'Enough embarrassment! {nome} publicly calls out the {clube} players and coaching staff: {d} defeats in the last {j} matches is not the team we carry in our hearts. We want fight on the pitch!'},
+  'Recado da {nome} pro elenco do {clube}: a arquibancada não vai aceitar mais uma sequência dessas. {d} derrotas em {j} jogos. Honrem a camisa!':
+    {es:'Mensaje de la {nome} al plantel de {clube}: la tribuna no va a aceptar otra racha así. {d} derrotas en {j} partidos. ¡Honren la camiseta!',
+     en:'Message from {nome} to the {clube} squad: the stands will not accept another run like this. {d} defeats in {j} matches. Honour the shirt!'},
+  'FORA, DIRETORIA! A {nome} exige a saída imediata da diretoria do {clube}. {sit} Não dá mais pra aceitar esse descaso com o clube.':
+    {es:'¡FUERA LA DIRECTIVA! La {nome} exige la salida inmediata de la directiva de {clube}. {sit} No se puede aceptar más este abandono del club.',
+     en:'BOARD OUT! {nome} demands the immediate resignation of the {clube} board. {sit} We cannot accept this neglect of the club any longer.'},
+  'A paciência acabou. A {nome} convoca a torcida do {clube}: é hora de a diretoria entregar os cargos. {sit}':
+    {es:'Se acabó la paciencia. La {nome} convoca a la hinchada de {clube}: es hora de que la directiva deje sus cargos. {sit}',
+     en:'Patience has run out. {nome} calls on the {clube} fans: it is time for the board to step down. {sit}'},
+  'Convocação! Hoje tem {clube} x {adv}{comp}, às {hora}. A Zona {zona} se concentra na praça três horas antes. Ninguém fica em casa!':
+    {es:'¡Convocatoria! Hoy juega {clube} contra {adv}{comp}, a las {hora}. La Zona {zona} se concentra en la plaza tres horas antes. ¡Nadie se queda en casa!',
+     en:'Call-up! {clube} v {adv} today{comp}, at {hora}. The {zona} Zone gathers at the square three hours before. Nobody stays home!'},
+  'Dia de {clube} x {adv}{comp}! A Zona {zona} se concentra na praça três horas antes do jogo. Ninguém fica em casa!':
+    {es:'¡Día de {clube} contra {adv}{comp}! La Zona {zona} se concentra en la plaza tres horas antes del partido. ¡Nadie se queda en casa!',
+     en:'{clube} v {adv} day{comp}! The {zona} Zone gathers at the square three hours before kick-off. Nobody stays home!'},
+  'Sábado tem resenha da Zona {zona} na casa de piscina. Só quem é de verdade: traz a camisa e a disposição!':
+    {es:'El sábado hay juntada de la Zona {zona} en la casa quinta. Solo los de verdad: traigan la camiseta y las ganas.',
+     en:'Saturday the {zona} Zone throws a party at the pool house. Only the real ones: bring the shirt and the attitude!'},
+  'Resenha confirmada! A Zona {zona} se reúne no sábado na casa de piscina. Churrasco, bateria e a nossa gente.':
+    {es:'¡Juntada confirmada! La Zona {zona} se reúne el sábado en la casa quinta. Asado, bombos y nuestra gente.',
+     en:'Party confirmed! The {zona} Zone meets on Saturday at the pool house. Barbecue, drums and our people.'},
+  'A {nome} passou na resenha da {perdedor} e ninguém segurou. Resenha encerrada mais cedo!':
+    {es:'La {nome} pasó por la juntada de la {perdedor} y nadie aguantó. ¡Juntada terminada antes de hora!',
+     en:'The {nome} dropped in on the {perdedor} party and nobody held the line. Party over early!'},
+  'A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!':
+    {es:'La {perdedor} vino a invadir nuestra juntada y volvió corriendo. Acá es la {nome}, ¡y acá no entra nadie!',
+     en:'The {perdedor} came to storm our party and ran back home. This is the {nome}, and nobody gets in here!'},
+  'Pegaram a nossa resenha desprevenida. A {perdedor} não esquece, e a volta vai ser na casa de vocês.':
+    {es:'Agarraron nuestra juntada desprevenida. La {perdedor} no olvida, y la vuelta va a ser en la casa de ustedes.',
+     en:'You caught our party off guard. The {perdedor} does not forget, and payback will be at your place.'},
+  'Hoje a {nome} segurou. Mas a {perdedor} conhece o caminho da casa de vocês.':
+    {es:'Hoy la {nome} aguantó. Pero la {perdedor} conoce el camino a la casa de ustedes.',
+     en:'The {nome} held today. But the {perdedor} knows the way to your place.'},
+  'Caravana confirmada! A {nome} estará {emCidade} {dia} pro jogo do {clube}{comp}. Quem vai, confirma presença com a diretoria!':
+    {es:'¡Caravana confirmada! La {nome} va a estar {emCidade} {dia} para el partido de {clube}{comp}. ¡El que va, confirma con la directiva!',
+     en:'Away trip confirmed! {nome} will be {emCidade} {dia} for the {clube} match{comp}. If you are going, confirm with the board!'}
 });

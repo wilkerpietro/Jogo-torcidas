@@ -8196,6 +8196,18 @@ O feed das torcidas (Notícias → Mensagens) ganhou três tipos de post que nã
 
 **Os perfis dos jornais.** A Gazeta dos Sports e o Futebol e Porrada têm perfil (avatar com as iniciais nas cores da capa, @gazetadossports e @futeboleporrada). Quando a notícia cai no feed (`dropar` → `postDaMateria`), o jornal posta o chapéu, a manchete e o olho dela, com "Ler a matéria" que abre a aba certa de Notícias: a Gazeta posta o nosso jogo e o almanaque; o Porrada, as nossas brigas, as obras e a LNT. E em um dia de cada três o Porrada posta a maior briga do dia pelo país (sem briga no país, a do mundo), com o placar de gente, os feridos, a faixa que trocou de dono e quantas brigas houve. A curtida do jornal é a média das curtidas de quem a matéria cita.
 
+## A cidade, as zonas e o nosso perfil no feed das torcidas (pedido do dono, 30/09/2026)
+
+Mais uma leva no feed de Notícias → Mensagens (`feed.cidadeNoFeed`, um passo do dia depois das brigas do mundo), toda pública (não conta como não lida):
+
+- **A Gazeta noticia os outros times da nossa praça.** Todo jogo de clube da nossa cidade que não é o nosso vira post da Gazeta ("O FUTEBOL DA CIDADE · Ceará perde para CRB por 2 a 0 pela Série B. Com o resultado, Ceará fica em 14º lugar."), o clássico da cidade com chapéu próprio e os pênaltis quando houver; até três por dia.
+- **Time em má fase, torcida protesta.** Toda segunda, clube com 3 derrotas nos últimos 5 jogos (`ultimosResultados`, que varre a temporada — não havia forma pra clube qualquer) ganha post da maior torcida dele cobrando o elenco; na má fase extrema — 4 derrotas sem vitória, ou 3 com o time na zona de queda — a torcida pede a saída da diretoria ("FORA, DIRETORIA!"). O nosso clube protesta pelo nosso perfil; os outros, com chance pela distância (80% na nossa praça, 45% a uma estrada, 20% a duas, 5% mais longe), no máximo dois por semana e um por clube a cada três semanas (`E.protestos`).
+- **Os perfis das zonas.** "Leões da TUF · Zona Sul" (@tuf.zonasul) é perfil. As zonas convocam pro jogo em casa (a nossa sempre, uma das outras torcidas da praça às vezes), chamam pra resenha de sábado na casa de piscina, e se zoam nas brigas de casa de piscina — quem vence posta ("A Zona Norte da MOFI veio invadir a nossa resenha e voltou correndo…"), quem perde às vezes responde; pra isso o `acoes.js` passa a zona da resenha ao `registrarConfronto`. Na zoeira do mundo, metade dos botes no bar e dos ataques-surpresa é postada pela zona que foi.
+- **O nosso perfil posta.** A caravana confirmada dois dias antes do jogo fora, o convite do nosso aniversário uma semana antes (a frase do dono), a zoeira quando vencemos uma briga que valeu, o agradecimento público no dia seguinte a quem recebeu a nossa caravana, o protesto do nosso clube e a convocação das nossas zonas. No feed, o nosso post tem a faixa dourada.
+- **Comentários e compartilhamentos**, ao lado da curtida, só de enfeite: saem das curtidas, na proporção do tipo (zoeira e protesto rendem comentário, notícia e convite rendem compartilhamento), com sorte fixa por post; não ficam no save.
+
+No texto corrido, praça chamada "Zona Norte" deixou de virar link — lá é quase sempre a zona de uma torcida.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -367,6 +367,21 @@ TO.planejamento = (function(){
       };
       TO.feed.mensagemDe(E, aliadoId, TXT[r.nivel] || TXT.nada,
                          r.nivel === 'nada' ? 'recusa' : 'juntos');
+      /* e o NOSSO perfil agradece em público no dia seguinte ao jogo
+         (feed, 30/09/2026) — a mesma frase de quem a gente recebe */
+      if(r.nivel !== 'nada'){
+        const Q = {nome:E.torcida.nome, nossa:o.nome, quando:F.noUltimoDia(j.dia || 6),
+                   emCidade:F.emPraca(j.mapaAdv), emCidadeDela:F.emPraca(E.torcida.mapa),
+                   clube:P.clube, comp:P.comp};
+        const OBRIGADO = {
+          hospedar: _t('A {nome} vem agradecer publicamente a receptividade da {nossa} {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Nossa parceria segue firme: quando precisarem da gente {emCidadeDela}, serão bem recebidos também!', Q),
+          escolta:  _t('A {nome} agradece publicamente à {nossa} pela escolta {quando}: estivemos {emCidade} acompanhando o nosso {clube}{comp}, e o bonde de vocês andou com a gente até o portão. Isso não se esquece. Quando precisarem da gente {emCidadeDela}, é só chamar!', Q),
+          churrasco:_t('Que recepção! A {nome} agradece à {nossa} pelo churrasco e pela caminhada junto {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Isso é irmandade. Quando estiverem {emCidadeDela}, a casa é de vocês!', Q)
+        };
+        const faltam = Math.max(0, (j.dia || 6) - (E.data.dia || 1));
+        TO.feed.mensagemDe(E, E.torcida.id, OBRIGADO[r.nivel] || OBRIGADO.hospedar, 'agradecimento',
+          {publico:true, em:(E.data.absoluto || 0) + faltam + 1, chave:`obrigado-nosso|${j.chave || ''}|${aliadoId}`});
+      }
     }
     return p.ajuda;
   }

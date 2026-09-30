@@ -1040,6 +1040,8 @@ table.dados tr.selecionada td{background:#252525}
 .post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
 .post-curtidas{display:inline-flex;align-items:center;gap:6px}
 .post-curtidas svg{width:15px;height:15px;color:#e0566b;fill:#e0566b}
+.post-conta{display:inline-flex;align-items:center;gap:5px;color:var(--fraco)}
+.post-conta svg{width:15px;height:15px}
 .post-tag{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
 .post-torcida .rec-botoes,.post-torcida .msg-efeitos{margin-top:10px}
 /* os perfis dos jornais: a Gazeta no papel, o Porrada no vermelho da capa */
@@ -1049,6 +1051,10 @@ table.dados tr.selecionada td{background:#252525}
 .post-torcida.tipo-zoeira .post-texto,.post-torcida.tipo-resposta .post-texto{color:#f0d9a8}
 .post-ler{background:none;border:0;padding:0;font-family:var(--mono);font-size:10.5px;color:var(--ouro,#d9a441);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .post-ler:hover{color:#fff}
+/* o perfil da zona e o nosso próprio perfil */
+.post-zona{font-weight:600;color:var(--fraco)}
+.post-torcida.do-nosso{box-shadow:inset 3px 0 0 var(--ouro,#d9a441);padding-left:11px}
+.post-torcida.tipo-protesto .post-texto{color:#f3c9a0}
 .pp-nossas{margin-top:8px;border-top:1px solid var(--fio-jornal,#4a463c);padding-top:6px}
 .pp-nossas .gz-secao{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco);margin-bottom:4px}
 .pp-nossas small{font-family:var(--mono);font-size:10px;color:var(--fraco)}

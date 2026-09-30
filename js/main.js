@@ -3838,7 +3838,9 @@
   const ROT_MSG = {provocacao:_t('Provocação'), convite:_t('Convite'), agradecimento:_t('Agradecimento'),
                    juntos:_t('Estamos juntos'), recusa:_t('Recusa'), cobranca:_t('Cobrança'), recado:_t('Recado'),
                    pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada'),
-                   zoeira:_t('Zoeira'), resposta:_t('Resposta'), noticia:_t('Notícia')};
+                   zoeira:_t('Zoeira'), resposta:_t('Resposta'), noticia:_t('Notícia'),
+                   protesto:_t('Protesto'), convocacao:_t('Convocação'), resenha:_t('Resenha'),
+                   caravana:_t('Caravana')};
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */
@@ -3880,7 +3882,17 @@
       return `<span class="post-avatar" style="background:${cr.cor || '#555'};color:${cr.cor2 || '#fff'}"><span class="sigla">${escHTML(sg)}</span></span>`;
     };
     const arroba = o => '@' + U.identificador(TO.mundo.siglaTorcida(o) || o.nome || '').replace(/-/g, '');
-    const coracao = TO.icones.get('coracao');
+    const coracao = TO.icones.get('coracao'), balao = TO.icones.get('conversa'), repost = TO.icones.get('repost');
+    /* COMENTÁRIOS E COMPARTILHAMENTOS (pedido do dono, 30/09/2026): só
+       enfeite, sem clique. Saem das curtidas, na proporção do tipo —
+       zoeira e protesto dão briga nos comentários, notícia e convite
+       rodam mais — com uma sorte fixa por post */
+    const RODA = {comentario:{provocacao:.13, zoeira:.13, resposta:.12, treta:.12, protesto:.16, noticia:.06},
+                  compartilha:{noticia:.13, protesto:.11, convite:.09, zoeira:.07, provocacao:.06}};
+    const enfeite = (m, qual, pad) => {
+      const f = (RODA[qual][m.tipo] || pad) * (0.7 + (TO.mapa.hash(`${qual}|${m.id}`) % 61) / 100);
+      return Math.round((m.curtidas || 0) * f);
+    };
     /* o perfil do jornal (30/09/2026): as iniciais na cor da capa */
     const JORNAL_AV = {gazeta:'GS', porrada:'FP'};
     for(const m of lista.slice(0, 120)){
@@ -3892,16 +3904,23 @@
       const quem = jornal
         ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal]||''}</span></span>`+
           `<span class="post-quem"><b>${escHTML(jornal.nome)}</b><small>${jornal.arroba}</small></span>`
-        : `${avatar(m.de)}<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}</b>`+
-          `<small>${arroba(o)}${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`;
+        : `${avatar(m.de)}<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}`+
+          /* o perfil da zona: "Leões da TUF · Zona Sul" (30/09/2026) */
+          `${m.zona ? ` <span class="post-zona">· ${escHTML(_t('Zona {zona}', {zona:_t(m.zona)}))}</span>` : ''}</b>`+
+          `<small>${arroba(o)}${m.zona ? '.' + U.identificador(_t('Zona {zona}', {zona:_t(m.zona)})).replace(/-/g, '') : ''}`+
+          `${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`;
       const ler = jornal && (m.dados||{}).aba
         ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
-      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':''), html:
+      const nosso = !jornal && m.de === e.torcida.id;
+      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':''), html:
         `<header class="post-cab">${quem}`+
           `<span class="post-quando">${haQuanto(m.quando || {})}</span></header>`+
         `<p class="post-texto">${linkificarNomes(m.texto)}</p>`+
         `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
           `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
+          (()=>{ const c = enfeite(m, 'comentario', .05), r = enfeite(m, 'compartilha', .04);
+            return `<span class="post-conta" title="${escHTML(_tn(c, '{n} comentário', '{n} comentários', {n:U.numero(c)}))}">${balao}${U.numero(c)}</span>`+
+                   `<span class="post-conta" title="${escHTML(_tn(r, '{n} compartilhamento', '{n} compartilhamentos', {n:U.numero(r)}))}">${repost}${U.numero(r)}</span>`; })()+
           `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`});
       const bLer = art.querySelector('.post-ler');
       if(bLer) bLer.onclick = ()=>{ subNoticias = bLer.dataset.aba; redesenhar(); };
@@ -5443,8 +5462,10 @@
     if(_rxNomes) return _rxNomes;
     _alvoPorNome = {};
     const clubes = new Set((TO.dados.times||[]).map(t=>t.nome));
+    /* praça chamada "Zona Norte" fica fora: no texto corrido "Zona Norte"
+       é quase sempre a zona de uma torcida (feed das torcidas, 30/09/2026) */
     for(const c of (TO.dados.cidades||[]))
-      if(c.nome && !clubes.has(c.nome))
+      if(c.nome && !clubes.has(c.nome) && !/^Zona /.test(c.nome))
         _alvoPorNome[c.nome] = {tipo:'c', id:c.id};
     for(const o of TO.mundo.jogaveis())
       if(!o.incompleta && o.nome)

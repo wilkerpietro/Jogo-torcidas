@@ -549,6 +549,8 @@ TO.acoes = (function(){
       atacamos: false, cobranca: !!alvo.cobranca,
       local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
              bairro: alvo.bairro || ''},
+      /* a zona da resenha: é ela que posta no feed (30/09/2026) */
+      zona: alvo.zona || null,
       a: nossoLado(E, alvo, res, seguramos),
       b: ladoDeles(E, alvo, res, seguramos),
       efeitos});
@@ -646,6 +648,7 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: true,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
+      zona: alvo.zona || null,
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),

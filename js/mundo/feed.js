@@ -79,7 +79,8 @@ TO.feed = (function(){
     if(extra.em && extra.em > (E.data.absoluto||0)){
       E.mensagensAgendadas = E.mensagensAgendadas || [];
       E.mensagensAgendadas.push({de:torcidaId, texto, tipo:tipo||'recado', em:extra.em,
-        extra:{chave:extra.chave || null, dados:extra.dados || null, publico:!!extra.publico}});
+        extra:{chave:extra.chave || null, dados:extra.dados || null, publico:!!extra.publico,
+               zona:extra.zona || null}});
       return null;
     }
     /* a mesma torcida não repete o mesmo recado no mesmo dia (duas
@@ -95,6 +96,8 @@ TO.feed = (function(){
     /* post PÚBLICO (a zoeira entre as outras): está no feed, mas não é
        recado pra gente — não acende o número vermelho nem avisa */
     if(extra.publico){ m.publico = true; m.lida = true; }
+    /* o perfil da ZONA da torcida (30/09/2026): "Leões da TUF · Zona Sul" */
+    if(extra.zona) m.zona = extra.zona;
     E.mensagens.unshift(m);
     aparar(E);
     if(!m.publico) try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
@@ -308,7 +311,13 @@ TO.feed = (function(){
       const h = H(`zoeira-texto|${abs}|${V.id}|${D.id}`);
       const P = {nome:V.nome, perdedor:D.nome, n:V.n, m:D.n, jogo:r.jogo || '',
                  emCidade:TO.genero.em('cidade', r.cidade || nomeDaPraca((M().torcida(V.id)||{}).mapa))};
-      mensagemDe(E, V.id, textoDaZoeira(r, P, h), 'zoeira', {publico:true, chave:`zoeira|${abs}|${V.id}|${D.id}`});
+      /* bote no bar e ataque-surpresa são coisa de zona: metade das
+         vezes quem posta é a zona que foi */
+      const tb = tipoDaBriga(r);
+      const zona = (tb === 'bar' || tb === 'surpresa') && (h >> 3) % 2 ? ZONAS_T[(h >> 6) % 4] : null;
+      if(zona) P.nome = zonaDe(V.nome, zona);
+      mensagemDe(E, V.id, textoDaZoeira(r, P, h), 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`});
+      if(zona) P.nome = V.nome;
       /* às vezes quem apanhou responde */
       if((h >> 5) % 100 < 30){
         const op = V.n > D.n
@@ -346,6 +355,232 @@ TO.feed = (function(){
       : _t('E a faixa da {perdedor} trocou de dono.', P));
     if(doPais[0] && doPais.length > 1) texto += ' ' + _t('Ao todo, {k} brigas pelo país hoje.', P);
     postDoJornal(E, 'porrada', texto, {chave:`porrada-dia|${abs}`, dados:{aba:'brigas'}, citadas:[V.id, D.id]});
+  }
+
+  /* =======================================================
+     A CIDADE NO FEED (pedido do dono, 30/09/2026)
+     - a Gazeta posta os jogos dos OUTROS times da nossa praça;
+     - torcida de time em má fase protesta em público (3 derrotas
+       nos últimos 5), e na má fase extrema (4 derrotas sem vitória,
+       ou 3 com o time na zona de queda) pede a saída da diretoria —
+       a nossa pelo nosso perfil, as outras primeiro na nossa praça
+       e nas vizinhas;
+     - as ZONAS das torcidas têm perfil: convocam pro jogo, chamam
+       pra resenha e se zoam nos ataques às casas de piscina;
+     - o nosso perfil posta como os outros: a caravana, o convite do
+       nosso aniversário, a zoeira de quem vence com a gente.
+     ======================================================= */
+  const ZONAS_T = ['Norte', 'Sul', 'Leste', 'Oeste'];
+  const zonaDe = (nome, zona) => _t('Zona {zona} da {nome}', {zona:_t(zona), nome});
+  const nomeClube = id => (M().time(id) || {}).nome || id;
+  const golsDe = (j, id) => j.c === id ? j.gc : j.gf;
+  const torcidaMaior = (E, clubeId) => M().torcidasDe(clubeId).filter(o=>!o.incompleta)
+    .sort((a,b)=>membrosHoje(E, b.id) - membrosHoje(E, a.id))[0] || null;
+  function ligaDo(E, id){
+    const cs = ((E.temporada || {}).competicoes || []).filter(c => !c.copa && (c.clubes||[]).includes(id));
+    return cs.find(c => /Série|Serie|Primera|Liga/.test(c.nome || '')) || cs[0] || null;
+  }
+  function posicaoDe(E, id){
+    const c = ligaDo(E, id);
+    try{ return c ? (TO.competicoes.posicaoNaTabela(E, c.id, id) || 0) : 0; }catch(_){ return 0; }
+  }
+  function naZonaDeQueda(E, id){
+    const c = ligaDo(E, id), pos = posicaoDe(E, id);
+    if(!c || !pos || !TO.competicoes.emJogo) return false;
+    const t = TO.competicoes.emJogo(c) || {};
+    const nTab = (c.grupos && c.grupos.length > 1)
+      ? (c.grupos.find(g => g.includes(id)) || c.clubes).length : (c.clubes || []).length;
+    return !!(t.caem && pos > nTab - t.caem);
+  }
+  /* os últimos resultados de qualquer clube, do mais novo pro mais velho */
+  function ultimosResultados(E, id, n){
+    const fora = [];
+    for(const comp of ((E.temporada || {}).competicoes || []))
+      for(const et of [...(comp.rodadas || []), ...(comp.mata || [])])
+        for(const j of (et.jogos || [])){
+          if((j.c !== id && j.f !== id) || j.gc == null || j.gf == null) continue;
+          const g = golsDe(j, id), h = j.c === id ? j.gf : j.gc;
+          fora.push({ord:(j.s || et.semana || 0) * 10 + (j.d || et.dia || 0), r: g > h ? 'V' : g < h ? 'D' : 'E'});
+        }
+    return fora.sort((a,b)=>b.ord - a.ord).slice(0, n).map(x=>x.r);
+  }
+
+  /* --- a Gazeta e os outros times da cidade --- */
+  function gazetaDaCidade(E, jogos){
+    const meu = E.torcida.clubeId, nossa = E.torcida.mapa, abs = E.data.absoluto || 0;
+    const mapa = id => (M().time(id) || {}).mapa;
+    const daCidade = (jogos || []).filter(j => j.gc != null && j.gf != null && j.c !== meu && j.f !== meu &&
+      (mapa(j.c) === nossa || mapa(j.f) === nossa));
+    for(const j of daCidade.slice(0, 3)){
+      const classico = mapa(j.c) === nossa && mapa(j.f) === nossa;
+      const time = mapa(j.c) === nossa ? j.c : j.f, adv = time === j.c ? j.f : j.c;
+      const g1 = golsDe(j, time), g2 = golsDe(j, adv);
+      const P = {time:nomeClube(time), adv:nomeClube(adv), g1, g2, A:nomeClube(j.c), B:nomeClube(j.f),
+                 ga:j.gc, gb:j.gf, comp:pelaCompeticao(j.compNome || j.comp)};
+      let texto = classico ? _t('CLÁSSICO DA CIDADE · {A} {ga} x {gb} {B}{comp}.', P)
+        : g1 > g2 ? _t('O FUTEBOL DA CIDADE · {time} vence {adv} por {g1} a {g2}{comp}.', P)
+        : g1 < g2 ? _t('O FUTEBOL DA CIDADE · {time} perde para {adv} por {g2} a {g1}{comp}.', P)
+        : _t('O FUTEBOL DA CIDADE · {time} e {adv} empatam em {g1} a {g2}{comp}.', P);
+      if(j.pen && j.venceu && M().time(j.venceu)) texto += ' ' + _t('Nos pênaltis, deu {v}.', {v:nomeClube(j.venceu)});
+      else if(!j.fase){
+        const pos = posicaoDe(E, time);
+        if(pos) texto += ' ' + _t('Com o resultado, {time} fica em {pos}º lugar.', {time:P.time, pos});
+      }
+      const citadas = M().torcidasDe(time).map(o=>o.id).slice(0, 2);
+      postDoJornal(E, 'gazeta', texto, {chave:`gazeta-cidade|${abs}|${j.c}|${j.f}`,
+        citadas: citadas.length ? citadas : [E.torcida.id]});
+    }
+  }
+
+  /* --- a convocação das zonas pro jogo em casa --- */
+  function convocacoesDeHoje(E, jogos){
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash, nossa = E.torcida.mapa;
+    const j = E.proximoJogo;
+    if(j && j.casa && j.dia === E.data.dia){
+      const zona = ZONAS_T[H(`convoca|${abs}`) % 4];
+      const P = {clube:nomeClube(E.torcida.clubeId), adv:(j.visitante || {}).nome || '', hora:j.hora || '',
+                 comp:pelaCompeticao(j.competicao), zona:_t(zona)};
+      mensagemDe(E, E.torcida.id, _t('Convocação! Hoje tem {clube} x {adv}{comp}, às {hora}. A Zona {zona} se concentra na praça três horas antes. Ninguém fica em casa!', P),
+        'convocacao', {publico:true, zona, chave:`convoca|${abs}|${E.torcida.id}`});
+    }
+    let n = 0;
+    for(const g of (jogos || [])){
+      if(n >= 1 || g.c === E.torcida.clubeId || (M().time(g.c) || {}).mapa !== nossa) continue;
+      if(H(`convoca-outra|${abs}|${g.c}`) % 100 >= 50) continue;
+      const o = torcidaMaior(E, g.c);
+      if(!o) continue;
+      const zona = ZONAS_T[H(`convoca-zona|${abs}|${o.id}`) % 4];
+      const P = {clube:nomeClube(g.c), adv:nomeClube(g.f), comp:pelaCompeticao(g.compNome || g.comp), zona:_t(zona)};
+      mensagemDe(E, o.id, _t('Dia de {clube} x {adv}{comp}! A Zona {zona} se concentra na praça três horas antes do jogo. Ninguém fica em casa!', P),
+        'convocacao', {publico:true, zona, chave:`convoca|${abs}|${o.id}`});
+      n++;
+    }
+  }
+
+  /* --- a resenha da sexta: uma zona da nossa praça chama --- */
+  function resenhaDaSemana(E){
+    if(E.data.dia !== 5) return;
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash;
+    if(H(`resenha|${abs}`) % 100 >= 60) return;
+    const daPraca = M().torcidasEm(E.torcida.mapa).filter(o => !o.incompleta);
+    if(!daPraca.length) return;
+    const o = H(`resenha-quem|${abs}`) % 3 === 0
+      ? M().torcida(E.torcida.id) : daPraca[H(`resenha-qual|${abs}`) % daPraca.length];
+    if(!o) return;
+    const zona = ZONAS_T[H(`resenha-zona|${abs}`) % 4];
+    const op = [
+      _t('Sábado tem resenha da Zona {zona} na casa de piscina. Só quem é de verdade: traz a camisa e a disposição!', {zona:_t(zona)}),
+      _t('Resenha confirmada! A Zona {zona} se reúne no sábado na casa de piscina. Churrasco, bateria e a nossa gente.', {zona:_t(zona)})];
+    mensagemDe(E, o.id, op[(H(`resenha-txt|${abs}`) >> 2) % op.length], 'resenha',
+      {publico:true, zona, chave:`resenha|${abs}|${o.id}`});
+  }
+
+  /* --- o protesto do time em má fase (segunda-feira) --- */
+  function protestosDaSemana(E){
+    if(E.data.dia !== 1 || !E.temporada) return;
+    E.protestos = E.protestos || {};
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash, R = TO.relacoes;
+    const nossoPais = R.paisDaTorcida(E.torcida.id), meu = E.torcida.clubeId;
+    const clubes = new Set();
+    for(const o of M().jogaveis())
+      if(o.clubeId && !o.incompleta && R.paisDaTorcida(o.id) === nossoPais) clubes.add(o.clubeId);
+    const cands = [];
+    for(const id of clubes){
+      if(E.protestos[id] && abs - E.protestos[id] < 21) continue;
+      const ult = ultimosResultados(E, id, 5);
+      if(ult.length < 5) continue;
+      const d = ult.filter(r => r === 'D').length, v = ult.filter(r => r === 'V').length;
+      if(d < 3) continue;
+      const queda = naZonaDeQueda(E, id);
+      const extrema = (d >= 4 && !v) || (queda && d >= 3);
+      const s = id === meu ? -1 : saltosDaNossa(E, (M().time(id) || {}).mapa);
+      const chance = s < 0 ? 1 : s === 0 ? 0.8 : s === 1 ? 0.45 : s === 2 ? 0.2 : 0.05;
+      if((H(`protesto|${abs}|${id}`) % 1000) >= chance * 1000) continue;
+      cands.push({id, d, v, queda, extrema, s});
+    }
+    cands.sort((a,b) => a.s - b.s);
+    for(const c of cands.slice(0, 2)){
+      const o = c.id === meu ? M().torcida(E.torcida.id) : torcidaMaior(E, c.id);
+      if(!o) continue;
+      const P = {nome:o.nome, clube:nomeClube(c.id), d:c.d, j:5};
+      const sit = c.queda ? _t('{d} derrotas nos últimos {j} jogos e o time na zona de rebaixamento.', P)
+                          : _t('{d} derrotas nos últimos {j} jogos.', P);
+      const h = H(`protesto-txt|${abs}|${c.id}`);
+      const op = c.extrema ? [
+        _t('FORA, DIRETORIA! A {nome} exige a saída imediata da diretoria do {clube}. {sit} Não dá mais pra aceitar esse descaso com o clube.', Object.assign({sit}, P)),
+        _t('A paciência acabou. A {nome} convoca a torcida do {clube}: é hora de a diretoria entregar os cargos. {sit}', Object.assign({sit}, P))
+      ] : [
+        _t('Chega de vexame! A {nome} cobra publicamente jogadores e comissão técnica do {clube}: {d} derrotas nos últimos {j} jogos não é o time que a gente carrega no peito. Queremos raça em campo!', P),
+        _t('Recado da {nome} pro elenco do {clube}: a arquibancada não vai aceitar mais uma sequência dessas. {d} derrotas em {j} jogos. Honrem a camisa!', P)
+      ];
+      mensagemDe(E, o.id, op[(h >> 3) % op.length], 'protesto',
+        {publico:true, chave:`protesto|${abs}|${c.id}`});
+      E.protestos[c.id] = abs;
+    }
+  }
+
+  /* --- o nosso perfil: a caravana e o convite do nosso aniversário --- */
+  function nossoPerfilHoje(E){
+    const abs = E.data.absoluto || 0, nos = E.torcida;
+    const j = E.proximoJogo;
+    if(j && !j.casa && j.dia && E.data.dia === Math.max(1, j.dia - 2) && j.mapaAdv){
+      mensagemDe(E, nos.id, _t('Caravana confirmada! A {nome} estará {emCidade} {dia} pro jogo do {clube}{comp}. Quem vai, confirma presença com a diretoria!',
+        {nome:nos.nome, emCidade:emPraca(j.mapaAdv), dia:NO_DIA[j.dia] || NO_DIA[6],
+         clube:nomeClube(nos.clubeId), comp:pelaCompeticao(j.competicao)}),
+        'caravana', {publico:true, chave:`caravana|${j.chave || abs}`});
+    }
+    const o = M().torcida(nos.id) || nos;
+    const fund = o.fundacao || nos.fundacao;
+    if(!fund) return;
+    const hoje = dataDeHoje(E);
+    let aniv = dataDoAniversario(nos.id, hoje.getFullYear(), nos);
+    if(aniv < hoje) aniv = dataDoAniversario(nos.id, hoje.getFullYear() + 1, nos);
+    const falta = Math.round((aniv - hoje) / 864e5);
+    const idade = aniv.getFullYear() - fund;
+    if(falta === 7 && idade > 0)
+      mensagemDe(E, nos.id, _t('Passando aqui pra convidar todos os nossos aliados pra nossa festa de comemoração dos nossos {n} anos de história! Vai ser {data} aqui {emCidade}. Contamos com a presença de vocês.',
+        {n:idade, data:fmtDia(aniv), emCidade:emPraca(nos.mapa)}),
+        'convite', {publico:true, chave:`convite-nosso|${aniv.getFullYear()}`});
+  }
+
+  function cidadeNoFeed(E, ctx){
+    passo('convocação',  ()=>convocacoesDeHoje(E, ctx.jogos || []));
+    passo('gazeta da cidade', ()=>gazetaDaCidade(E, ctx.jogos || []));
+    passo('protestos',   ()=>protestosDaSemana(E));
+    passo('resenha',     ()=>resenhaDaSemana(E));
+    passo('nosso perfil',()=>nossoPerfilHoje(E));
+  }
+
+  /* --- a zoeira das zonas na casa de piscina, e a nossa quando
+     vencemos (chamadas de registrarConfronto) --- */
+  const jogoDaCena = c => /^treta-/.test(c) ? 'treta marcada' : c === 'bar' ? 'ataque ao bar'
+    : /^emb-/.test(c) ? 'emboscada na estrada' : '';
+  function postsDaNossaBriga(E, d, a, b, cena, vale){
+    if(!d.torcidaId || !b.nome) return;
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash;
+    const nos = {id:E.torcida.id, nome:E.torcida.nome, n:a.n || 0}, eles = {id:d.torcidaId, nome:b.nome, n:b.n || 0};
+    if(cena === 'casa-piscina' && d.zona){
+      const V = d.ganhamos ? nos : eles, Dr = d.ganhamos ? eles : nos;
+      const atacouVenceu = !!d.ganhamos === !!d.atacamos;
+      const P = {nome:zonaDe(V.nome, d.zona), perdedor:zonaDe(Dr.nome, d.zona)};
+      mensagemDe(E, V.id, atacouVenceu
+        ? _t('A {nome} passou na resenha da {perdedor} e ninguém segurou. Resenha encerrada mais cedo!', P)
+        : _t('A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!', P),
+        'zoeira', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
+      if(H(`zona-casa-resp|${abs}|${Dr.id}`) % 100 < 40)
+        mensagemDe(E, Dr.id, atacouVenceu
+          ? _t('Pegaram a nossa resenha desprevenida. A {perdedor} não esquece, e a volta vai ser na casa de vocês.', P)
+          : _t('Hoje a {nome} segurou. Mas a {perdedor} conhece o caminho da casa de vocês.', P),
+          'resposta', {publico:true, zona:d.zona, chave:`zona-casa-resp|${abs}|${Dr.id}`});
+      return;
+    }
+    /* a nossa zoeira: briga que valeu, e a gente venceu */
+    if(!d.ganhamos || !vale) return;
+    const reg = {jogo:jogoDaCena(cena), ganhouA:!!d.atacamos};
+    const P = {nome:nos.nome, perdedor:eles.nome, n:nos.n, m:eles.n, jogo:'',
+               emCidade:TO.genero.em('cidade', cidadeDeHoje(E))};
+    mensagemDe(E, nos.id, textoDaZoeira(reg, P, H(`nossa-zoeira|${abs}|${eles.id}`)), 'zoeira',
+      {publico:true, chave:`nossa-zoeira|${abs}|${eles.id}`});
   }
 
   /* =======================================================
@@ -744,6 +979,7 @@ TO.feed = (function(){
     passo('almanaque',      ()=>almanaqueDoDia(E));
     passo('dica',           ()=>dicaDeHoje(E));
     passo('brigas do mundo no feed', ()=>brigasDoMundoHoje(E));
+    passo('a cidade no feed', ()=>cidadeNoFeed(E, ctx));
   }
 
   /* =======================================================
@@ -4723,6 +4959,7 @@ TO.feed = (function(){
     const swingRegua = Math.max(0, ...(d.efeitos || [])
       .filter(x => x.ind === 'prestigio')
       .map(x => Math.abs(x.delta || 0) * 5));
+    passo('posts da nossa briga', ()=>postsDaNossaBriga(E, d, a, b, cena, swingRegua >= PROVOCA_REGUA));
     if(d.torcidaId && b.nome && swingRegua >= PROVOCA_REGUA){
       /* textos aprovados pelo dono (18/08/2026) */
       /* (o recado virou post público, 30/09/2026: quem apanhou é citado) */
