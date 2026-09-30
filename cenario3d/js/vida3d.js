@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=200d9711fc';
-import { brigaNaCaminhada } from './caminhada.js?v=200d9711fc';
-import { brigaNoBar } from './briga_bar.js?v=200d9711fc';
-import { brigaNaTreta } from './briga_treta.js?v=200d9711fc';
-import { planoDoBar } from './casas3d.js?v=200d9711fc';
+import { palcoDeBriga } from './palco_briga.js?v=5c6e3e5e1f';
+import { brigaNaCaminhada } from './caminhada.js?v=5c6e3e5e1f';
+import { brigaNoBar } from './briga_bar.js?v=5c6e3e5e1f';
+import { brigaNaTreta } from './briga_treta.js?v=5c6e3e5e1f';
+import { planoDoBar } from './casas3d.js?v=5c6e3e5e1f';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;

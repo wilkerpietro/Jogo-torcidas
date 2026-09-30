@@ -32,8 +32,8 @@
    guarda-sol, da lona e da tábua, o nome, a canga, o que está solto na
    areia e o jeito de cada cadeira.
    ========================================================= */
-import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js?v=200d9711fc';
-import { montarArvoreLowpoly } from './arvores_lowpoly.js?v=200d9711fc';
+import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js?v=5c6e3e5e1f';
+import { montarArvoreLowpoly } from './arvores_lowpoly.js?v=5c6e3e5e1f';
 
 const ALTO = [0, 1, 0];
 const escolha = (rnd, lista) => lista[Math.floor(rnd() * lista.length) % lista.length];

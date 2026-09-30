@@ -49,7 +49,7 @@
    (`E.ouvido3d`, a mais nova ouvida): carregar o jogo não repete recado,
    e decisão em aberto volta sempre.
    ========================================================= */
-import { areaLivre } from './vida3d.js?v=200d9711fc';
+import { areaLivre } from './vida3d.js?v=5c6e3e5e1f';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
