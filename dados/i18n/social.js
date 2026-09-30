@@ -120,7 +120,6 @@ TO.i18n.registrar({
   'Notícia':  {es:'Noticia', en:'News'},
   'Ler a matéria': {es:'Leer la nota', en:'Read the story'},
   'PORRADA PELO PAÍS':  {es:'PIÑAS POR EL PAÍS',  en:'SCRAPS AROUND THE COUNTRY'},
-  'PORRADA PELO MUNDO': {es:'PIÑAS POR EL MUNDO', en:'SCRAPS AROUND THE WORLD'},
   'A {vencedor} levou a melhor sobre a {perdedor} numa treta marcada {emCidade}.':
     {es:'La {vencedor} le ganó a la {perdedor} en una pelea pactada {emCidade}.',
      en:'{vencedor} got the better of {perdedor} in a pre-arranged brawl {emCidade}.'},
@@ -338,5 +337,20 @@ TO.i18n.registrar({
   'A partir de hoje a faixa da {perdedor} é nossa. A cidade é nossa!':
     {es:'Desde hoy el trapo de la {perdedor} es nuestro. ¡La ciudad es nuestra!', en:'As of today the {perdedor} banner is ours. This city is ours!'},
   'A partir de hoje a bandeira da {perdedor} é nossa. A cidade é nossa!':
-    {es:'Desde hoy la bandera de la {perdedor} es nuestra. ¡La ciudad es nuestra!', en:'As of today the {perdedor} flag is ours. This city is ours!'}
+    {es:'Desde hoy la bandera de la {perdedor} es nuestra. ¡La ciudad es nuestra!', en:'As of today the {perdedor} flag is ours. This city is ours!'},
+
+  /* ---------- o menu do post: parar de seguir / mostrar menos ---------- */
+  'Opções do post': {es:'Opciones de la publicación', en:'Post options'},
+  'Parar de seguir': {es:'Dejar de seguir', en:'Unfollow'},
+  'Mostrar menos': {es:'Mostrar menos', en:'Show less'},
+  'some tudo o que {nome} publica': {es:'desaparece todo lo que publica {nome}', en:'hides everything {nome} posts'},
+  'menos posts de {assunto}': {es:'menos publicaciones de {assunto}', en:'fewer posts about {assunto}'},
+  'Você não segue <b>{nome}</b>.': {es:'No sigues a <b>{nome}</b>.', en:'You don\'t follow <b>{nome}</b>.'},
+  'Menos posts de <b>{assunto}</b>.': {es:'Menos publicaciones de <b>{assunto}</b>.', en:'Fewer posts about <b>{assunto}</b>.'},
+  'Desfazer': {es:'Deshacer', en:'Undo'},
+  'torcidas distantes': {es:'barras lejanas', en:'distant firms'},
+  'brigas': {es:'peleas', en:'fights'},
+  'futebol': {es:'fútbol', en:'football'},
+  'agenda das torcidas': {es:'agenda de las barras', en:'firm events'},
+  'outros posts': {es:'otras publicaciones', en:'other posts'}
 });

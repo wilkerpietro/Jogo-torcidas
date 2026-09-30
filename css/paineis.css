@@ -1044,6 +1044,16 @@ table.dados tr.selecionada td{background:#252525}
 .post-conta svg{width:15px;height:15px}
 .post-tag{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
 .post-torcida .rec-botoes,.post-torcida .msg-efeitos{margin-top:10px}
+/* o menu do post: parar de seguir e mostrar menos (dono, 30/09/2026) */
+.post-torcida{position:relative}
+.post-menu{align-self:flex-start;margin:-4px -4px 0 2px;padding:0 6px;background:none;border:0;color:var(--apagado);font-size:17px;line-height:1;cursor:pointer;border-radius:4px}
+.post-menu:hover{color:#e4e0d8;background:#ffffff12}
+.post-menu-lista{position:absolute;top:34px;right:0;z-index:5;min-width:220px;max-width:calc(100% - 8px);background:#1c1c1c;border:1px solid #3a3a3a;border-radius:6px;box-shadow:0 6px 18px #0009;padding:4px;display:flex;flex-direction:column}
+.post-menu-op{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:none;border:0;color:#e4e0d8;font-size:13px;padding:8px 10px;border-radius:4px;cursor:pointer}
+.post-menu-op small{font-size:11px;color:var(--apagado)}
+.post-menu-op:hover{background:#ffffff10}
+.feed-prefs{display:flex;flex-direction:column;gap:4px;padding:8px 10px;margin:0 0 6px;border:1px dashed var(--sulco);border-radius:6px;font-size:12px;color:var(--fraco)}
+.feed-pref-bt{background:none;border:0;color:var(--dourado,#d6b25e);font-size:12px;cursor:pointer;text-decoration:underline;padding:0 2px}
 /* os perfis dos jornais: a Gazeta no papel, o Porrada no vermelho da capa */
 .post-avatar.jornal-gazeta{background:#E7E1D0;color:#17130F;border-color:#A2977F}
 .post-avatar.jornal-porrada{background:#8E2A1E;color:#fff;border-color:#5e1b13}

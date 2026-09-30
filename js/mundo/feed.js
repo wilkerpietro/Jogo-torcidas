@@ -114,6 +114,67 @@ TO.feed = (function(){
   }
   const mensagensNaoLidas = E => (caixas(E), E.mensagens.filter(m=>!m.lida).length);
   function lerMensagens(E){ caixas(E); for(const m of E.mensagens) m.lida = true; }
+  /* =======================================================
+     PARAR DE SEGUIR E MOSTRAR MENOS (pedido do dono, 30/09/2026)
+     O menu do post (⋯, à direita do cabeçalho). Só vale pro post
+     PÚBLICO — o recado que é pra gente (pedido de casa, trégua,
+     convite) chega sempre. `E.feedPrefs.naoSigo` guarda o perfil
+     (a torcida, a zona dela ou o jornal); `E.feedPrefs.menos` guarda
+     a NATUREZA do post e quantas vezes o jogador pediu menos dela:
+     post de torcida distante é "longe" inteiro (o exemplo do dono:
+     a zoeira de Pelotas pra quem é de Fortaleza), o de perto vai
+     pelo assunto (brigas, futebol, agenda), o jornal por jornal.
+     Cada pedido esconde mais: seis, oito, depois 19 em cada 20 —
+     sempre os mesmos posts (sorte fixa por post), e desfazível.
+     ======================================================= */
+  const ASSUNTO = {zoeira:'brigas', resposta:'brigas', provocacao:'brigas', treta:'brigas',
+                   comemoracao:'futebol', reclamacao:'futebol', protesto:'futebol',
+                   convocacao:'futebol', noticia:'futebol',
+                   caravana:'agenda', resenha:'agenda', convite:'agenda',
+                   agradecimento:'agenda', juntos:'agenda'};
+  const CORTE_MENOS = [0, 60, 80, 95];
+  function prefs(E){
+    E.feedPrefs = E.feedPrefs || {};
+    E.feedPrefs.naoSigo = E.feedPrefs.naoSigo || {};
+    E.feedPrefs.menos = E.feedPrefs.menos || {};
+    return E.feedPrefs;
+  }
+  const perfilDe = m => m.jornal ? 'j:' + m.jornal : 't:' + m.de + (m.zona ? ':' + m.zona : '');
+  function naturezaDe(E, m){
+    if(m.jornal) return 'jornal:' + m.jornal;
+    if(m.de === E.torcida.id) return null;
+    const t = M().torcida(m.de) || {};
+    if(saltosDaNossa(E, t.mapa) > 1) return 'longe';
+    return ASSUNTO[m.tipo] || 'outros';
+  }
+  const podeEsconder = (E, m) => !!m.publico && m.de !== E.torcida.id;
+  function oculto(E, m){
+    if(!podeEsconder(E, m) || !E.feedPrefs) return false;
+    const P = E.feedPrefs;
+    if(P.naoSigo && P.naoSigo[perfilDe(m)]) return true;
+    const n = P.menos && P.menos[naturezaDe(E, m)];
+    if(!n) return false;
+    return TO.mapa.hash(`menos|${m.id}`) % 100 < CORTE_MENOS[Math.min(3, n)];
+  }
+  function pararDeSeguir(E, idMsg){
+    const m = (E.mensagens || []).find(x => x.id === idMsg);
+    if(!m || !podeEsconder(E, m)) return {ok:false};
+    const k = perfilDe(m);
+    prefs(E).naoSigo[k] = {nome:m.jornal ? (JORNAIS[m.jornal] || {}).nome : m.nome, zona:m.zona || null};
+    return {ok:true, perfil:k};
+  }
+  function voltarASeguir(E, perfil){ delete prefs(E).naoSigo[perfil]; return {ok:true}; }
+  function mostrarMenos(E, idMsg){
+    const m = (E.mensagens || []).find(x => x.id === idMsg);
+    if(!m || !podeEsconder(E, m)) return {ok:false};
+    const nat = naturezaDe(E, m);
+    if(!nat) return {ok:false};
+    const P = prefs(E);
+    P.menos[nat] = Math.min(3, (P.menos[nat] || 0) + 1);
+    return {ok:true, natureza:nat, nivel:P.menos[nat]};
+  }
+  function mostrarNormal(E, nat){ delete prefs(E).menos[nat]; return {ok:true}; }
+
   /* os posts marcados pra depois caem no dia deles, na ordem em que nasceram */
   function publicarAgendadas(E){
     const fila = E.mensagensAgendadas;
@@ -247,6 +308,21 @@ TO.feed = (function(){
     }
     return _saltos.get(k);
   }
+  /* OS NOSSOS MAIORES RIVAIS (dono, 30/09/2026): o que acontece com
+     eles — briga ganha ou perdida, clássico, título, queda — aparece no
+     feed mesmo quando a regra da distância deixaria de fora */
+  function nossosRivais(E){
+    const o = M().torcida(E.torcida.id) || {};
+    return new Set((o.maioresRivais || []).filter(id => id !== E.torcida.id));
+  }
+  function rivalDoClubeNosso(E, clubeId){
+    if(!clubeId || clubeId === E.torcida.clubeId) return null;
+    for(const id of nossosRivais(E)){
+      const t = M().torcida(id);
+      if(t && t.clubeId === clubeId) return t;
+    }
+    return null;
+  }
   /* (o rótulo pode ter sido gravado já traduzido: vale nas duas formas) */
   const eh = (j, k) => j === k || j === _t(k);
   const tipoDaBriga = reg => {
@@ -274,7 +350,7 @@ TO.feed = (function(){
          : t === 'surpresa' ? _t('no ataque-surpresa') : t === 'estrada' ? _t('na estrada') : _t('na rua');
   }
   function textoDaZoeira(reg, P, h){
-    P.onde = ondeDaBriga(reg);
+    P.onde = reg.onde || ondeDaBriga(reg);
     const venceuQuemAtacou = !!reg.ganhouA;
     const pano = reg.pano && reg.pano.para === P.nome ? reg.pano : null;
     /* texto do dono (30/09/2026) */
@@ -298,6 +374,9 @@ TO.feed = (function(){
       ? [_t('Emboscada na estrada: a caravana da {perdedor} não chegou inteira. Assinado, {nome}.', P)]
       : [_t('Armaram emboscada na estrada pra gente e se deram mal. A {perdedor} que aprenda: a {nome} viaja pronta.', P)];
     else op = [];
+    /* a emboscada é na estrada, não na cidade do jogo: sem o genérico
+       do "hoje em {cidade} a rua foi da..." */
+    if(t === 'estrada') return op[h % op.length];
     /* "tragam mais gente" só quando eles vieram em menor número */
     if(P.m < P.n) op.push(_t('Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {onde}, {emCidade}, e deu {nome}.', P));
     op.push(_t('A {perdedor} veio com {m} {onde} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.', P));
@@ -318,18 +397,20 @@ TO.feed = (function(){
     const nossoPais = R.paisDaTorcida(E.torcida.id);
     const pais = id => R.paisDaTorcida(id);
     /* A ZOEIRA DE TODA BRIGA (dono, 30/09/2026): "qualquer tipo de briga
-       gera mensagem na rede social" — toda briga entre torcidas do nosso
-       país vira post de quem venceu; as de outro país, de vez em quando */
-    const cands = [];
+       gera mensagem na rede social" — toda briga em que uma das torcidas é
+       da nossa praça ou de uma vizinha (uma estrada) vira post de quem
+       venceu; as de longe e as de outro país não aparecem */
+    const cands = [], rivais = nossosRivais(E);
     for(const r of hoje){
       if(!r.vencedor) continue;
       const V = r.ganhouA ? r.a : r.b, D = r.ganhouA ? r.b : r.a;
-      if(pais(V.id) !== pais(D.id)) continue;
+      if(pais(V.id) !== pais(D.id) || pais(V.id) !== nossoPais) continue;
       const mapaV = (M().torcida(V.id)||{}).mapa, mapaD = (M().torcida(D.id)||{}).mapa;
       const s = Math.min(saltosDaNossa(E, mapaV), saltosDaNossa(E, mapaD));
-      const h = H(`zoeira|${abs}|${V.id}|${D.id}`);
-      if(pais(V.id) !== nossoPais && (h % 1000) >= 50) continue;
-      cands.push({r, V, D, s, h});
+      /* briga de um dos nossos maiores rivais passa em qualquer distância */
+      const rival = rivais.has(V.id) || rivais.has(D.id);
+      if(s > 1 && !rival) continue;
+      cands.push({r, V, D, s:rival ? -1 : s, rivalPerdeu:rivais.has(D.id)});
     }
     cands.sort((x, y) => x.s - y.s);
     for(const c of cands){
@@ -344,8 +425,8 @@ TO.feed = (function(){
       if(zona) P.nome = zonaDe(V.nome, zona);
       mensagemDe(E, V.id, textoDaZoeira(r, P, h), 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`});
       if(zona) P.nome = V.nome;
-      /* às vezes quem apanhou responde */
-      if((h >> 5) % 100 < 30){
+      /* às vezes quem apanhou responde (o nosso rival, quase sempre) */
+      if((h >> 5) % 100 < (c.rivalPerdeu ? 70 : 30)){
         const op = V.n > D.n
           ? [_t('Ganharam na covardia, {n} contra {m}. A {perdedor} não esquece, {nome}. A volta vem.', P),
              _t('Fácil ganhar com {n} contra {m}, né, {nome}? Marca um dia de igual pra igual com a {perdedor} e vamos ver.', P)]
@@ -355,20 +436,21 @@ TO.feed = (function(){
         mensagemDe(E, D.id, txt, 'resposta', {publico:true, chave:`resposta|${abs}|${D.id}|${V.id}`});
       }
     }
-    /* o Porrada: a maior briga do dia, um dia em três; do país
-       primeiro, a do mundo quando o país ficou quieto */
+    /* o Porrada: a maior briga do dia no país, um dia em três (as de
+       outro país não aparecem — dono, 30/09/2026) */
     if(H(`porrada-dia|${abs}`) % 100 >= 35) return;
     const tam = r => (r.a.n || 0) + (r.b.n || 0);
-    const doPais = hoje.filter(r => pais(r.a.id) === nossoPais && r.vencedor).sort((x, y) => tam(y) - tam(x));
-    const doMundo = hoje.filter(r => r.vencedor).sort((x, y) => tam(y) - tam(x));
-    const r = doPais[0] || doMundo[0];
+    /* só as brigas que o feed mostra: as de longe não aparecem nem no jornal */
+    const doPais = cands.map(c => c.r).sort((x, y) => tam(y) - tam(x));
+    const r = doPais[0];
     if(!r) return;
     const V = r.ganhouA ? r.a : r.b, D = r.ganhouA ? r.b : r.a;
     const t = tipoDaBriga(r);
     const P = {vencedor:V.nome, perdedor:D.nome, nV:V.n, nD:D.n,
                feridos:(r.a.feridos || 0) + (r.b.feridos || 0), jogo:r.jogo || '',
-               emCidade:TO.genero.em('cidade', r.cidade || ''), k:doPais.length};
-    const chapeu = doPais[0] ? _t('PORRADA PELO PAÍS') : _t('PORRADA PELO MUNDO');
+               emCidade:TO.genero.em('cidade', r.cidade || ''),
+               k:hoje.filter(x => pais(x.a.id) === nossoPais && x.vencedor).length};
+    const chapeu = _t('PORRADA PELO PAÍS');
     P.onde = ondeDaBriga(r);
     const como = t === 'jogo' ? _t('A {vencedor} levou a melhor sobre a {perdedor} {onde} {emCidade}, no dia de {jogo}.', P)
       : t === 'treta' ? _t('A {vencedor} levou a melhor sobre a {perdedor} numa treta marcada {emCidade}.', P)
@@ -380,7 +462,7 @@ TO.feed = (function(){
     if(r.pano) texto += ' ' + (r.pano.tipo === 'bandeira'
       ? _t('E a bandeira da {perdedor} trocou de dono.', P)
       : _t('E a faixa da {perdedor} trocou de dono.', P));
-    if(doPais[0] && doPais.length > 1) texto += ' ' + _t('Ao todo, {k} brigas pelo país hoje.', P);
+    if(P.k > 1) texto += ' ' + _t('Ao todo, {k} brigas pelo país hoje.', P);
     postDoJornal(E, 'porrada', texto, {chave:`porrada-dia|${abs}`, dados:{aba:'brigas'}, citadas:[V.id, D.id]});
   }
 
@@ -614,9 +696,12 @@ TO.feed = (function(){
   }
   const ehClassico = (a, b) => rivalDoClube(a) === b || rivalDoClube(b) === a;
   /* quem fala por um clube: a nossa torcida pelo nosso, a maior pelos outros */
-  const vozDoClube = (E, id) => id === E.torcida.clubeId ? M().torcida(E.torcida.id) : torcidaMaior(E, id);
+  const vozDoClube = (E, id) => id === E.torcida.clubeId ? M().torcida(E.torcida.id)
+    : (rivalDoClubeNosso(E, id) || torcidaMaior(E, id));
   function pertoDeNos(E, ids){
     if(ids.includes(E.torcida.clubeId)) return -1;
+    /* clube de um dos nossos maiores rivais: sai sempre */
+    if(ids.some(id => rivalDoClubeNosso(E, id))) return -0.5;
     return Math.min(...ids.map(id => saltosDaNossa(E, (M().time(id) || {}).mapa)));
   }
   const CHANCE_RIVAL = s => s < 0 ? 1 : s === 0 ? 0.85 : s === 1 ? 0.5 : s === 2 ? 0.25 : 0.05;
@@ -754,7 +839,8 @@ TO.feed = (function(){
      vencemos (chamadas de registrarConfronto) --- */
   const jogoDaCena = c => /^treta-/.test(c) ? 'treta marcada' : c === 'bar' ? 'ataque ao bar'
     : /^emb-/.test(c) ? 'emboscada na estrada' : '';
-  function postsDaNossaBriga(E, d, a, b, cena, vale){
+  function postsDaNossaBriga(E, d, a, b, cena, vale, extra){
+    extra = extra || {};
     if(!d.torcidaId || !b.nome) return;
     const abs = E.data.absoluto || 0, H = TO.mapa.hash;
     const nos = {id:E.torcida.id, nome:E.torcida.nome, n:a.n || 0}, eles = {id:d.torcidaId, nome:b.nome, n:b.n || 0};
@@ -787,13 +873,45 @@ TO.feed = (function(){
           'resposta', {publico:true, zona:d.zona, chave:`zona-casa-resp|${abs}|${Dr.id}`});
       return;
     }
-    /* a nossa zoeira: briga que valeu, e a gente venceu */
-    if(!d.ganhamos || !vale) return;
-    const reg = {jogo:jogoDaCena(cena), ganhouA:!!d.atacamos};
-    const P = {nome:nos.nome, perdedor:eles.nome, n:nos.n, m:eles.n, jogo:'',
+    /* A BRIGA COM A GENTE NO FEED (dono, 30/09/2026): toda briga nossa
+       vira post público de quem venceu, perto ou longe de casa — a
+       nossa zoeira quando ganhamos; a DELES quando perdemos (a emboscada
+       na estrada da caravana, o bar invadido) —, e quem perdeu responde.
+       Empate não tem dono da rua: ninguém posta. */
+    if(extra.empatou) return;
+    const tregua = TO.relacoes.emTregua && TO.relacoes.emTregua(E, eles.id);
+    const V = d.ganhamos ? nos : eles, Dr = d.ganhamos ? eles : nos;
+    const reg = {jogo:jogoDaCena(cena), ganhouA:!!d.ganhamos === !!d.atacamos,
+                 onde:extra.onde || '', pano:d.pano && d.pano.nossa === !d.ganhamos
+                   ? {tipo:d.pano.tipo, para:V.nome} : null};
+    const P = {nome:V.nome, perdedor:Dr.nome, n:V.n, m:Dr.n, jogo:'',
                emCidade:TO.genero.em('cidade', cidadeDeHoje(E))};
-    mensagemDe(E, nos.id, textoDaZoeira(reg, P, H(`nossa-zoeira|${abs}|${eles.id}`)), 'zoeira',
-      {publico:true, chave:`nossa-zoeira|${abs}|${eles.id}`});
+    const h = H(`nossa-zoeira|${abs}|${eles.id}`);
+    const Q = {nome:eles.nome, nossa:nos.nome};
+    /* quando ELES vencem briga que valeu, metade das vezes o post é o
+       deboche aprovado pelo dono (18/08/2026) em vez da zoeira do lugar */
+    const DEBOCHE = [
+      _t('Hoje a {nossa} conheceu de perto o bonde da {nome}. Anota a placa aí: teu terror tem nome!', Q),
+      _t('Correram igual galinha! Cadê a {nossa}? Ninguém sabe, ninguém viu. Hoje a rua foi da {nome}.', Q),
+      _t('Contamos os da {nossa} que correram hoje: faltou dedo pra contar. Da próxima, fiquem em casa.', Q)
+    ];
+    const texto = !d.ganhamos && vale && !reg.pano && (h >> 4) % 2
+      ? DEBOCHE[(h >> 5) % DEBOCHE.length] : textoDaZoeira(reg, P, h);
+    if(d.ganhamos || !tregua)
+      mensagemDe(E, V.id, texto, 'zoeira',
+        {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`});
+    /* a resposta de quem perdeu: a deles sempre que a briga valeu
+       prestígio (os textos de volta aprovados pelo dono, 18/08/2026),
+       e às vezes nas miúdas; a nossa resposta fica com o jogador */
+    if(!d.ganhamos || tregua) return;
+    if(!vale && (h >> 7) % 100 >= 40) return;
+    const VOLTA = [
+      _t('A {nossa} que aproveite o dia de hoje, porque isso não fica assim. O bonde da {nome} volta pesado.', Q),
+      _t('Recado pra {nossa}: podem ficar tranquilos que a cobrança vem, e vem cara!', Q),
+      _t('Riram hoje, vão chorar depois. A {nome} não esquece: o revide vai ser pesado.', Q)
+    ];
+    mensagemDe(E, eles.id, VOLTA[H(`provoca|${abs}|${eles.id}`) % VOLTA.length], 'resposta',
+      {publico:true, chave:`nossa-zoeira-resp|${abs}|${eles.id}`});
   }
 
   /* =======================================================
@@ -5172,29 +5290,8 @@ TO.feed = (function(){
     const swingRegua = Math.max(0, ...(d.efeitos || [])
       .filter(x => x.ind === 'prestigio')
       .map(x => Math.abs(x.delta || 0) * 5));
-    passo('posts da nossa briga', ()=>postsDaNossaBriga(E, d, a, b, cena, swingRegua >= PROVOCA_REGUA));
-    if(d.torcidaId && b.nome && swingRegua >= PROVOCA_REGUA){
-      /* textos aprovados pelo dono (18/08/2026) */
-      /* (o recado virou post público, 30/09/2026: quem apanhou é citado) */
-      const P = {nome:b.nome, nossa:E.torcida.nome};
-      const DEBOCHE = [
-        _t('Hoje a {nossa} conheceu de perto o bonde da {nome}. Anota a placa aí: teu terror tem nome!', P),
-        _t('Correram igual galinha! Cadê a {nossa}? Ninguém sabe, ninguém viu. Hoje a rua foi da {nome}.', P),
-        _t('Contamos os da {nossa} que correram hoje: faltou dedo pra contar. Da próxima, fiquem em casa.', P)
-      ];
-      const VOLTA = [
-        _t('A {nossa} que aproveite o dia de hoje, porque isso não fica assim. O bonde da {nome} volta pesado.', P),
-        _t('Recado pra {nossa}: podem ficar tranquilos que a cobrança vem, e vem cara!', P),
-        _t('Riram hoje, vão chorar depois. A {nome} não esquece: o revide vai ser pesado.', P)
-      ];
-      const lista = d.ganhamos ? VOLTA : DEBOCHE;
-      const fala = lista[TO.mapa.hash(
-        `provoca|${E.data.absoluto}|${d.torcidaId}`) % lista.length];
-      /* AS PROVOCAÇÕES SAÍRAM DO FEED (pedido do dono, 08/09/2026): vão
-         pra caixa de mensagens entre torcidas */
-      if(!(TO.relacoes.emTregua && TO.relacoes.emTregua(E, d.torcidaId)))
-        mensagemDe(E, d.torcidaId, fala, 'provocacao');
-    }
+    passo('posts da nossa briga', ()=>postsDaNossaBriga(E, d, a, b, cena, swingRegua >= PROVOCA_REGUA,
+      {empatou:!!empatou, onde}));
   }
 
   const NOMES_CENA = {
@@ -5818,6 +5915,7 @@ TO.feed = (function(){
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
+          oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,

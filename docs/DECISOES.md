@@ -8230,6 +8230,24 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 
 "Qualquer tipo de briga gera mensagem na rede social": a zoeira deixou de ser sorteada pela distância e de ter teto de uma por dia — toda briga entre torcidas do nosso país (treta marcada, bar, ataque-surpresa, estrada, dia de jogo, subsedes) vira post de quem venceu, na ordem das mais perto; as de outro país, 5% das vezes. Em 60 dias de TUF: 133 brigas no país, todas com post, perto de 3 zoeiras por dia. As brigas que ainda não viraram post são contadas pelo `E.brigasIATotal` (`E.brigasNoFeedAte`), e não pela data — a guerra das subsedes roda no fechamento da semana, depois do passo do feed. O feed guarda 300 posts (eram 200) e a tela mostra os 200 mais novos. A faixa ou bandeira tomada numa briga do mundo agora sai com o texto do dono: "A partir de hoje a faixa da Jovem Garra Tricolor é nossa. A cidade é nossa!".
 
+## Fuga no meio da rua, na ponta da cena (pedido do dono, 30/09/2026)
+
+"Todos os pontos de fuga nas pontas da cena e sempre no meio da rua": na casa de praia o boneco corria pra beira da piscina e sumia ali. Dois motivos: o spawn é o ponto de fuga preferido (regra de 09/09/2026), e a entrada da zona na casa de piscina é a própria piscina (como a porta do bar, a porta de aço do comércio, o gramado e o portão do CT); e a leitura automática das bocas pegava vão entre lojas, beira de calçada e borda do quintal.
+- **Cada cena aberta tem as saídas marcadas no eixo da rua**, onde a rua cruza a borda da foto (`RUA`, em `dados/cenas.js`): arredores, praça, as três ruas, bar, comércio, CT, casa de piscina, as cinco sedes, o beco e as duas emboscadas. Marcação do editor (F2) com pontos continua mandando.
+- **O spawn só vale como fuga se estiver na ponta da cena** (até 60 px da borda). Entrada no miolo (piscina, porta do bar) deixa de ser destino de quem corre; quem entrou por ela foge pela rua. Nos arredores o portão do estádio continua valendo, porque ali sumir é entrar no jogo.
+- **A leitura automática, na cena sem marcação, só vale na borda.** A cena fechada (galpão, campo de terra, estádios), onde o chão não chega na borda, segue com as bocas que tem.
+- Teste: em dez cenas todos os discos debandados somem a menos de 60 px da borda; na casa de piscina nenhum vai pra piscina.
+
+## Feed: só as brigas de perto, as nossas e as dos nossos rivais; parar de seguir e mostrar menos (pedido do dono, 30/09/2026)
+
+- **Briga de longe não aparece**: a zoeira só sai quando uma das torcidas é da nossa cidade ou de uma vizinha (uma estrada), ou quando é um dos **nossos maiores rivais**, em qualquer distância. Briga de outro país nunca aparece, e o Porrada do dia só escolhe entre as brigas que o feed mostra (o total "pelo país" continua no texto). Quando quem apanha é um rival nosso, ele responde 70% das vezes (os outros, 30%).
+- **O que acontece com os nossos maiores rivais sempre sai**: clássico, goleada, título, acesso e queda do clube de um rival nosso passam sem sorteio de distância, e quem fala pelo clube é a torcida rival nossa (não a maior do clube).
+- **Toda briga nossa vira post público de quem venceu, perto ou longe de casa**. Perdemos a emboscada na estrada pra Os Imbatíveis? Os Imbatíveis postam ("Emboscada na estrada: a caravana da Leões da TUF não chegou inteira. Assinado, Os Imbatíveis."); em briga que valeu prestígio, metade das vezes o post é o deboche aprovado em 18/08/2026. Ganhamos? A nossa zoeira sai sempre (antes só em briga que valeu), e quem apanhou responde com a promessa de volta (sempre na briga que valeu, 40% nas miúdas). A frase diz o lugar da cena ("no posto", "no bar", "na arquibancada"). Empate não gera post, e torcida em trégua com a gente não posta zoeira. O recado privado de provocação depois da briga deixou de existir: virou esses posts.
+- **Menu do post (⋯, à direita do cabeçalho)**, só nos posts públicos:
+  - "Parar de seguir" some com tudo o que aquele perfil publica (a torcida, a zona dela ou o jornal).
+  - "Mostrar menos" diminui os posts daquela natureza. Torcida distante (duas estradas ou mais) é uma natureza só, "torcidas distantes", como no exemplo do dono; as de perto vão pelo assunto (brigas, futebol, agenda das torcidas); o jornal vai por jornal. Cada clique esconde mais: 60%, 80%, 95%, e é sempre o mesmo post que some (sorte fixa por post).
+  - As escolhas ficam num quadrinho no topo do feed, cada uma com "Desfazer", e são guardadas no save (`E.feedPrefs`). Recado que é pra gente (pedido de casa, trégua, convite) nunca some.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -2323,7 +2323,13 @@ TO.diaJogo.combate = (function(){
                 D.entradas.find(x=>x.lado===d.lado);
       /* a entrada de origem continua sendo a primeira escolha — mas só
          enquanto voltar por ela não for entrar no meio deles */
-      if(e && rumoAoInimigo(d.x, d.y, e, ini) < FUGA_PRA_CIMA){
+      /* ...e só se ela fica na PONTA da cena (pedido do dono, 30/09/2026):
+         entrada no miolo (a piscina da casa de praia, a porta do bar)
+         fazia o boneco sumir no meio do cenário. Nos arredores o
+         portão do estádio segue valendo — ali sumir é entrar no jogo */
+      const naPonta = e && (fugaPelaEntrada() || e.x <= 60 || e.y <= 60 ||
+                            e.x >= A.W - 60 || e.y >= A.H - 60);
+      if(naPonta && rumoAoInimigo(d.x, d.y, e, ini) < FUGA_PRA_CIMA){
         const c = A.campoDaEntrada(e.id, J.grades, J.versaoGrades);
         if(!c.passo(d.x,d.y).semRota)
           return {destino:{x:e.x, y:e.y, raio:e.raio||34, entrada:e.id}, campo:c};
