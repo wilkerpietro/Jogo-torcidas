@@ -727,8 +727,8 @@ TO.feed = (function(){
         ? _t('A {nome} passou na resenha da {perdedor} e ninguém segurou. Resenha encerrada mais cedo!', P)
         : _t('A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!', P),
         'zoeira', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
-      if(H(`zona-casa-resp|${abs}|${Dr.id}`) % 100 < 40)
-        mensagemDe(E, Dr.id, atacouVenceu
+      /* e a zona que perdeu sempre responde: a conversa é das duas */
+      mensagemDe(E, Dr.id, atacouVenceu
           ? _t('Pegaram a nossa resenha desprevenida. A {perdedor} não esquece, e a volta vai ser na casa de vocês.', P)
           : _t('Hoje a {nome} segurou. Mas a {perdedor} conhece o caminho da casa de vocês.', P),
           'resposta', {publico:true, zona:d.zona, chave:`zona-casa-resp|${abs}|${Dr.id}`});
@@ -5728,6 +5728,8 @@ TO.feed = (function(){
                 : a.alvo === 'bar' ? 'bar' : a.alvo,
             cena: a.cena,
             bairro: '',
+            /* a zona da resenha atacada: é ela que aparece no feed */
+            zona: a.zona || null,
             efetivo: a.efetivo || TO.acoes.efetivoDePe(E, o) || 30,
             nossos: a.alvo === 'emboscada' && est ? est.vao
                    : TO.membros.aptosParaOEstadio(E).length,
