@@ -121,9 +121,6 @@ TO.i18n.registrar({
   'Ler a matéria': {es:'Leer la nota', en:'Read the story'},
   'PORRADA PELO PAÍS':  {es:'PIÑAS POR EL PAÍS',  en:'SCRAPS AROUND THE COUNTRY'},
   'PORRADA PELO MUNDO': {es:'PIÑAS POR EL MUNDO', en:'SCRAPS AROUND THE WORLD'},
-  'A {vencedor} levou a melhor sobre a {perdedor} {emCidade}, no dia de {jogo}.':
-    {es:'La {vencedor} le ganó a la {perdedor} {emCidade}, el día de {jogo}.',
-     en:'{vencedor} got the better of {perdedor} {emCidade}, on the day of {jogo}.'},
   'A {vencedor} levou a melhor sobre a {perdedor} numa treta marcada {emCidade}.':
     {es:'La {vencedor} le ganó a la {perdedor} en una pelea pactada {emCidade}.',
      en:'{vencedor} got the better of {perdedor} in a pre-arranged brawl {emCidade}.'},
@@ -152,12 +149,6 @@ TO.i18n.registrar({
   'A faixa da {perdedor} agora mora na sede da {nome}. Quem quiser, vem buscar {emCidade}!':
     {es:'El trapo de la {perdedor} ahora vive en la sede de la {nome}. ¡El que lo quiera, que venga a buscarlo {emCidade}!',
      en:'The {perdedor} banner now lives at the {nome} HQ. Anyone who wants it can come and get it {emCidade}!'},
-  'Dia de {jogo} e a {perdedor} achou que ia fazer a festa {emCidade}. Saíram correndo antes do apito. Respeita a {nome}!':
-    {es:'Día de {jogo} y la {perdedor} pensó que iba a hacer la fiesta {emCidade}. Salieron corriendo antes del pitazo. ¡Respeten a la {nome}!',
-     en:'{jogo} day and {perdedor} thought they would party {emCidade}. They legged it before the whistle. Respect {nome}!'},
-  'No {jogo} quem jogou bonito foi a {nome}: {n} contra {m}, e a {perdedor} voltou pra casa mais cedo.':
-    {es:'En el {jogo} la que jugó lindo fue la {nome}: {n} contra {m}, y la {perdedor} volvió temprano a casa.',
-     en:'At {jogo} the ones who played well were {nome}: {n} against {m}, and {perdedor} went home early.'},
   'Treta marcada é pra quem aguenta. A {perdedor} topou, apareceu {emCidade} e saiu no prejuízo: {n} contra {m}, e deu {nome}.':
     {es:'La pelea pactada es para el que aguanta. La {perdedor} aceptó, apareció {emCidade} y salió perdiendo: {n} contra {m}, y ganó la {nome}.',
      en:'A pre-arranged brawl is for those who can take it. {perdedor} agreed, showed up {emCidade} and came off worse: {n} against {m}, and {nome} won.'},
@@ -179,12 +170,6 @@ TO.i18n.registrar({
   'Armaram emboscada na estrada pra gente e se deram mal. A {perdedor} que aprenda: a {nome} viaja pronta.':
     {es:'Nos armaron una emboscada en la ruta y les salió mal. Que la {perdedor} aprenda: la {nome} viaja preparada.',
      en:'They set up an ambush for us on the road and it backfired. {perdedor} should learn: {nome} travels ready.'},
-  'Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {emCidade}, e deu {nome}.':
-    {es:'Mensaje para la {perdedor}: la próxima traigan más gente. Fueron {n} contra {m} {emCidade}, y ganó la {nome}.',
-     en:'Message for {perdedor}: bring more people next time. It was {n} against {m} {emCidade}, and {nome} won.'},
-  'A {perdedor} veio com {m} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.':
-    {es:'La {perdedor} vino con {m} y volvió a casa contando los heridos. Hoy {emCidade} la calle fue de la {nome}.',
-     en:'{perdedor} came with {m} and went home counting the injured. Today {emCidade} the street belonged to {nome}.'},
 
   /* ---------- a resposta de quem apanhou ---------- */
   'Ganharam na covardia, {n} contra {m}. A {perdedor} não esquece, {nome}. A volta vem.':
@@ -205,17 +190,9 @@ TO.i18n.registrar({
   'Resenha':    {es:'Juntada',     en:'Get-together'},
   'Zona {zona}':          {es:'Zona {zona}',          en:'{zona} Zone'},
   'Zona {zona} da {nome}':{es:'Zona {zona} de la {nome}', en:'{nome} {zona} Zone'},
-  'CLÁSSICO DA CIDADE · {A} {ga} x {gb} {B}{comp}.':
-    {es:'CLÁSICO DE LA CIUDAD · {A} {ga} x {gb} {B}{comp}.', en:'CITY DERBY · {A} {ga}–{gb} {B}{comp}.'},
-  'O FUTEBOL DA CIDADE · {time} vence {adv} por {g1} a {g2}{comp}.':
-    {es:'EL FÚTBOL DE LA CIUDAD · {time} le gana a {adv} por {g1} a {g2}{comp}.', en:'CITY FOOTBALL · {time} beat {adv} {g1}–{g2}{comp}.'},
-  'O FUTEBOL DA CIDADE · {time} perde para {adv} por {g2} a {g1}{comp}.':
-    {es:'EL FÚTBOL DE LA CIUDAD · {time} pierde con {adv} por {g2} a {g1}{comp}.', en:'CITY FOOTBALL · {time} lose to {adv} {g2}–{g1}{comp}.'},
-  'O FUTEBOL DA CIDADE · {time} e {adv} empatam em {g1} a {g2}{comp}.':
-    {es:'EL FÚTBOL DE LA CIUDAD · {time} y {adv} empatan {g1} a {g2}{comp}.', en:'CITY FOOTBALL · {time} and {adv} draw {g1}–{g2}{comp}.'},
   'Nos pênaltis, deu {v}.': {es:'En los penales, ganó {v}.', en:'{v} won on penalties.'},
   'Com o resultado, {time} fica em {pos}º lugar.':
-    {es:'Con el resultado, {time} queda {pos}.º en la tabla.', en:'With the result, {time} sit {pos}th in the table.'},
+    {es:'Con el resultado, {time} queda {pos}.º en la tabla.', en:'With the result, {time} sit in position {pos} in the table.'},
   '{d} derrotas nos últimos {j} jogos.': {es:'{d} derrotas en los últimos {j} partidos.', en:'{d} defeats in the last {j} matches.'},
   '{d} derrotas nos últimos {j} jogos e o time na zona de rebaixamento.':
     {es:'{d} derrotas en los últimos {j} partidos y el equipo en zona de descenso.', en:'{d} defeats in the last {j} matches and the team in the relegation zone.'},
@@ -231,12 +208,6 @@ TO.i18n.registrar({
   'A paciência acabou. A {nome} convoca a torcida do {clube}: é hora de a diretoria entregar os cargos. {sit}':
     {es:'Se acabó la paciencia. La {nome} convoca a la hinchada de {clube}: es hora de que la directiva deje sus cargos. {sit}',
      en:'Patience has run out. {nome} calls on the {clube} fans: it is time for the board to step down. {sit}'},
-  'Convocação! Hoje tem {clube} x {adv}{comp}, às {hora}. A Zona {zona} se concentra na praça três horas antes. Ninguém fica em casa!':
-    {es:'¡Convocatoria! Hoy juega {clube} contra {adv}{comp}, a las {hora}. La Zona {zona} se concentra en la plaza tres horas antes. ¡Nadie se queda en casa!',
-     en:'Call-up! {clube} v {adv} today{comp}, at {hora}. The {zona} Zone gathers at the square three hours before. Nobody stays home!'},
-  'Dia de {clube} x {adv}{comp}! A Zona {zona} se concentra na praça três horas antes do jogo. Ninguém fica em casa!':
-    {es:'¡Día de {clube} contra {adv}{comp}! La Zona {zona} se concentra en la plaza tres horas antes del partido. ¡Nadie se queda en casa!',
-     en:'{clube} v {adv} day{comp}! The {zona} Zone gathers at the square three hours before kick-off. Nobody stays home!'},
   'Sábado tem resenha da Zona {zona} na casa de piscina. Só quem é de verdade: traz a camisa e a disposição!':
     {es:'El sábado hay juntada de la Zona {zona} en la casa quinta. Solo los de verdad: traigan la camiseta y las ganas.',
      en:'Saturday the {zona} Zone throws a party at the pool house. Only the real ones: bring the shirt and the attitude!'},
@@ -333,5 +304,41 @@ TO.i18n.registrar({
      en:'The {perdedor} thought they would take our banner and left with nothing. At the {nome} house the party goes on!'},
   'Tentaram, mas a {nome} segurou a resenha inteira. A {perdedor} voltou pra casa sem faixa e sem moral.':
     {es:'Lo intentaron, pero la {nome} aguantó la juntada entera. La {perdedor} volvió a casa sin trapo y sin moral.',
-     en:'They tried, but the {nome} held the whole party. The {perdedor} went home with no banner and no pride.'}
+     en:'They tried, but the {nome} held the whole party. The {perdedor} went home with no banner and no pride.'},
+  /* ---------- onde foi, em casa ou fora, a rodada, e o grito ---------- */
+  'na pista':           {es:'en la calle',       en:'on the road'},
+  'na treta marcada':   {es:'en la pelea pactada', en:'in the pre-arranged brawl'},
+  'no ataque ao bar':   {es:'en el ataque al bar', en:'in the bar attack'},
+  'no ataque-surpresa': {es:'en el golpe sorpresa', en:'in the surprise raid'},
+  'em casa':            {es:'de local',          en:'at home'},
+  'em campo neutro':    {es:'en cancha neutral', en:'at a neutral ground'},
+  'pela {n}ª rodada {daComp}': {es:'por la fecha {n} {daComp}', en:'in round {n} {daComp}'},
+  '{pelaFase} {daComp}': {es:'{pelaFase} {daComp}', en:'{pelaFase} {daComp}'},
+  'UH {nome}!': {es:'¡DALE {nome}!', en:'COME ON {nome}!'},
+  'A {perdedor} veio com {m} {onde} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.':
+    {es:'La {perdedor} vino con {m} {onde} y volvió a casa contando los heridos. Hoy {emCidade} la calle fue de la {nome}.',
+     en:'{perdedor} turned up with {m} {onde} and went home counting the injured. Today {emCidade} the street belonged to {nome}.'},
+  'Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {onde}, {emCidade}, e deu {nome}.':
+    {es:'Mensaje para la {perdedor}: la próxima traigan más gente. Fueron {n} contra {m} {onde}, {emCidade}, y ganó la {nome}.',
+     en:'Message for {perdedor}: bring more people next time. It was {n} against {m} {onde}, {emCidade}, and {nome} won.'},
+  'Dia de {jogo} e a {perdedor} achou que ia fazer a festa {onde} {emCidade}. Saíram correndo antes do apito. Respeita a {nome}!':
+    {es:'Día de {jogo} y la {perdedor} pensó que iba a hacer la fiesta {onde} {emCidade}. Salieron corriendo antes del pitazo. ¡Respeten a la {nome}!',
+     en:'{jogo} day and {perdedor} thought they would party {onde} {emCidade}. They legged it before the whistle. Respect {nome}!'},
+  'No {jogo} quem jogou bonito foi a {nome}: {n} contra {m} {onde}, e a {perdedor} voltou pra casa mais cedo.':
+    {es:'En el {jogo} la que jugó lindo fue la {nome}: {n} contra {m} {onde}, y la {perdedor} volvió temprano a casa.',
+     en:'At {jogo} the ones who played well were {nome}: {n} against {m} {onde}, and {perdedor} went home early.'},
+  'A {vencedor} levou a melhor sobre a {perdedor} {onde} {emCidade}, no dia de {jogo}.':
+    {es:'La {vencedor} le ganó a la {perdedor} {onde} {emCidade}, el día de {jogo}.',
+     en:'{vencedor} got the better of {perdedor} {onde} {emCidade}, on the day of {jogo}.'},
+  'CLÁSSICO DA CIDADE · {A} {ga} x {gb} {B}, {rodada}.':
+    {es:'CLÁSICO DE LA CIUDAD · {A} {ga} x {gb} {B}, {rodada}.', en:'CITY DERBY · {A} {ga}–{gb} {B}, {rodada}.'},
+  'O FUTEBOL DA CIDADE · {time} vence {adv} por {g1} a {g2}, {onde}, {rodada}.':
+    {es:'EL FÚTBOL DE LA CIUDAD · {time} le gana a {adv} por {g1} a {g2}, {onde}, {rodada}.', en:'CITY FOOTBALL · {time} beat {adv} {g1}–{g2} {onde}, {rodada}.'},
+  'O FUTEBOL DA CIDADE · {time} perde para {adv} por {g2} a {g1}, {onde}, {rodada}.':
+    {es:'EL FÚTBOL DE LA CIUDAD · {time} pierde con {adv} por {g2} a {g1}, {onde}, {rodada}.', en:'CITY FOOTBALL · {time} lose to {adv} {g2}–{g1} {onde}, {rodada}.'},
+  'O FUTEBOL DA CIDADE · {time} empata com {adv} em {g1} a {g2}, {onde}, {rodada}.':
+    {es:'EL FÚTBOL DE LA CIUDAD · {time} empata con {adv} {g1} a {g2}, {onde}, {rodada}.', en:'CITY FOOTBALL · {time} draw {g1}–{g2} with {adv} {onde}, {rodada}.'},
+  'Dia de {clube} x {adv}{comp}! A {nome} vai dominar a pista e a arquibancada mostrando que a cidade é nossa. {grito}':
+    {es:'¡Día de {clube} contra {adv}{comp}! La {nome} va a dominar la calle y la tribuna para mostrar que la ciudad es nuestra. {grito}',
+     en:'{clube} v {adv} day{comp}! {nome} will own the road and the stands to show this city is ours. {grito}'}
 });

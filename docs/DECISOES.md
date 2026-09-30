@@ -8220,6 +8220,12 @@ O dono sentiu falta dos recados das zonas depois do ataque à casa de piscina. D
 
 Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. O post da zona que vence a briga da resenha virou comemoração de verdade (tipo `comemoracao`), com três versões pra quem atacou e venceu, três pra quem defendeu e segurou, e — quando a faixa ou a bandeira trocou de dono na cena — duas que exibem o troféu ("Resenha encerrada e faixa no bolso! A Zona Oeste da MOFI vai ter que pintar outra."). A peça tomada chega ao feed pelo `acoes.js` (`panoDaNoite`, lido do resultado da cena), porque a faixa só é aplicada depois do registro da briga.
 
+## Onde foi a briga, em casa ou fora, e a convocação do perfil oficial (pedido do dono, 30/09/2026)
+
+- **A zoeira e o Porrada dizem onde foi a briga**: na treta marcada, no ataque ao bar, no ataque-surpresa, na estrada — e, na briga de dia de jogo, na concentração, na pista, nos arredores do estádio ou na arquibancada. O registro da briga de jogo não guarda o ponto; ele sai fixo por briga, pelo hash dela (`feed.ondeDaBriga`), três de cada dez em cada um dos três pontos da rua e um na arquibancada. De quebra: o rótulo da briga da IA é gravado traduzido, e em espanhol e inglês a zoeira não reconhecia o tipo (tudo virava "na rua") — agora reconhece nas duas formas.
+- **A Gazeta diz em casa ou fora e a rodada ou a fase da competição**: "Ceará vence Goiás por 2 a 0, em casa, pela 12ª rodada da Série B." A posição que vem depois é a da tabela da competição DO JOGO (antes era a da liga do clube, e o jogo da Copa do Nordeste dava a posição de outra tabela).
+- **A convocação é só pra jogo em casa** e agora é postada pelo perfil oficial da torcida, com o texto do dono: "Dia de Ceará x Brasil de Pelotas pela Série B! A Cearamor vai dominar a pista e a arquibancada mostrando que a cidade é nossa. UH CEARAMOR!" — a nossa também.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

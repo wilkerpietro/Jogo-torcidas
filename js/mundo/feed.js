@@ -248,16 +248,34 @@ TO.feed = (function(){
     return _saltos.get(k);
   }
   const CHANCE_ZOEIRA = [0.7, 0.35, 0.15, 0.06];
+  /* (o rótulo pode ter sido gravado já traduzido: vale nas duas formas) */
+  const eh = (j, k) => j === k || j === _t(k);
   const tipoDaBriga = reg => {
     const j = String(reg.jogo || '');
     if(/×/.test(j)) return 'jogo';
-    if(j === 'treta marcada') return 'treta';
-    if(j === 'ataque ao bar') return 'bar';
-    if(j === 'ataque-surpresa') return 'surpresa';
-    if(j === 'emboscada na estrada') return 'estrada';
+    if(eh(j, 'treta marcada')) return 'treta';
+    if(eh(j, 'ataque ao bar')) return 'bar';
+    if(eh(j, 'ataque-surpresa')) return 'surpresa';
+    if(eh(j, 'emboscada na estrada')) return 'estrada';
     return 'rua';
   };
+  /* ONDE FOI A BRIGA (dono, 30/09/2026): o registro da briga de dia de
+     jogo não guarda o ponto; ele sai fixo por briga — concentração,
+     pista, arredores ou arquibancada —, pelo hash dela */
+  const PONTOS_DO_JOGO = ['concentracao', 'concentracao', 'concentracao', 'pista', 'pista', 'pista',
+                          'arredores', 'arredores', 'arredores', 'arquibancada'];
+  function ondeDaBriga(reg){
+    const t = tipoDaBriga(reg);
+    if(t === 'jogo'){
+      const k = PONTOS_DO_JOGO[TO.mapa.hash(`onde|${reg.ano}|${reg.semana}|${reg.dia}|${(reg.a||{}).id}|${(reg.b||{}).id}`) % PONTOS_DO_JOGO.length];
+      return k === 'concentracao' ? _t('na concentração') : k === 'pista' ? _t('na pista')
+           : k === 'arredores' ? _t('nos arredores do estádio') : _t('na arquibancada');
+    }
+    return t === 'bar' ? _t('no ataque ao bar') : t === 'treta' ? _t('na treta marcada')
+         : t === 'surpresa' ? _t('no ataque-surpresa') : t === 'estrada' ? _t('na estrada') : _t('na rua');
+  }
   function textoDaZoeira(reg, P, h){
+    P.onde = ondeDaBriga(reg);
     const venceuQuemAtacou = !!reg.ganhouA;
     const pano = reg.pano && reg.pano.para === P.nome ? reg.pano : null;
     if(pano) return pano.tipo === 'bandeira'
@@ -266,8 +284,8 @@ TO.feed = (function(){
     const t = tipoDaBriga(reg);
     let op;
     if(t === 'jogo') op = [
-      _t('Dia de {jogo} e a {perdedor} achou que ia fazer a festa {emCidade}. Saíram correndo antes do apito. Respeita a {nome}!', P),
-      _t('No {jogo} quem jogou bonito foi a {nome}: {n} contra {m}, e a {perdedor} voltou pra casa mais cedo.', P)];
+      _t('Dia de {jogo} e a {perdedor} achou que ia fazer a festa {onde} {emCidade}. Saíram correndo antes do apito. Respeita a {nome}!', P),
+      _t('No {jogo} quem jogou bonito foi a {nome}: {n} contra {m} {onde}, e a {perdedor} voltou pra casa mais cedo.', P)];
     else if(t === 'treta') op = [
       _t('Treta marcada é pra quem aguenta. A {perdedor} topou, apareceu {emCidade} e saiu no prejuízo: {n} contra {m}, e deu {nome}.', P)];
     else if(t === 'bar') op = venceuQuemAtacou
@@ -281,8 +299,8 @@ TO.feed = (function(){
       : [_t('Armaram emboscada na estrada pra gente e se deram mal. A {perdedor} que aprenda: a {nome} viaja pronta.', P)];
     else op = [];
     /* "tragam mais gente" só quando eles vieram em menor número */
-    if(P.m < P.n) op.push(_t('Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {emCidade}, e deu {nome}.', P));
-    op.push(_t('A {perdedor} veio com {m} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.', P));
+    if(P.m < P.n) op.push(_t('Recado pra {perdedor}: da próxima vez tragam mais gente. Foi {n} contra {m} {onde}, {emCidade}, e deu {nome}.', P));
+    op.push(_t('A {perdedor} veio com {m} {onde} e voltou pra casa contando os feridos. Hoje {emCidade} a rua foi da {nome}.', P));
     return op[h % op.length];
   }
   function brigasDoMundoHoje(E){
@@ -343,7 +361,8 @@ TO.feed = (function(){
                feridos:(r.a.feridos || 0) + (r.b.feridos || 0), jogo:r.jogo || '',
                emCidade:TO.genero.em('cidade', r.cidade || ''), k:doPais.length};
     const chapeu = doPais[0] ? _t('PORRADA PELO PAÍS') : _t('PORRADA PELO MUNDO');
-    const como = t === 'jogo' ? _t('A {vencedor} levou a melhor sobre a {perdedor} {emCidade}, no dia de {jogo}.', P)
+    P.onde = ondeDaBriga(r);
+    const como = t === 'jogo' ? _t('A {vencedor} levou a melhor sobre a {perdedor} {onde} {emCidade}, no dia de {jogo}.', P)
       : t === 'treta' ? _t('A {vencedor} levou a melhor sobre a {perdedor} numa treta marcada {emCidade}.', P)
       : t === 'bar' ? _t('A {vencedor} levou a melhor no ataque ao bar {emCidade}, contra a {perdedor}.', P)
       : t === 'surpresa' ? _t('A {vencedor} levou a melhor sobre a {perdedor} num ataque-surpresa {emCidade}.', P)
@@ -415,15 +434,25 @@ TO.feed = (function(){
       const classico = mapa(j.c) === nossa && mapa(j.f) === nossa;
       const time = mapa(j.c) === nossa ? j.c : j.f, adv = time === j.c ? j.f : j.c;
       const g1 = golsDe(j, time), g2 = golsDe(j, adv);
+      /* em casa ou fora, e a rodada ou a fase de qual competição (dono, 30/09/2026) */
+      const nomeComp = competicaoCurta(j.compNome || j.comp);
+      const daComp = TO.genero.d('competicao', nomeComp);
+      const rodada = j.fase
+        ? _t('{pelaFase} {daComp}', {pelaFase:TO.genero.por('fase', j.fase), daComp})
+        : j.rodada ? _t('pela {n}ª rodada {daComp}', {n:j.rodada, daComp})
+        : TO.genero.por('competicao', nomeComp);
       const P = {time:nomeClube(time), adv:nomeClube(adv), g1, g2, A:nomeClube(j.c), B:nomeClube(j.f),
-                 ga:j.gc, gb:j.gf, comp:pelaCompeticao(j.compNome || j.comp)};
-      let texto = classico ? _t('CLÁSSICO DA CIDADE · {A} {ga} x {gb} {B}{comp}.', P)
-        : g1 > g2 ? _t('O FUTEBOL DA CIDADE · {time} vence {adv} por {g1} a {g2}{comp}.', P)
-        : g1 < g2 ? _t('O FUTEBOL DA CIDADE · {time} perde para {adv} por {g2} a {g1}{comp}.', P)
-        : _t('O FUTEBOL DA CIDADE · {time} e {adv} empatam em {g1} a {g2}{comp}.', P);
+                 ga:j.gc, gb:j.gf, rodada,
+                 onde: j.neutro ? _t('em campo neutro') : time === j.c ? _t('em casa') : _t('fora de casa')};
+      let texto = classico ? _t('CLÁSSICO DA CIDADE · {A} {ga} x {gb} {B}, {rodada}.', P)
+        : g1 > g2 ? _t('O FUTEBOL DA CIDADE · {time} vence {adv} por {g1} a {g2}, {onde}, {rodada}.', P)
+        : g1 < g2 ? _t('O FUTEBOL DA CIDADE · {time} perde para {adv} por {g2} a {g1}, {onde}, {rodada}.', P)
+        : _t('O FUTEBOL DA CIDADE · {time} empata com {adv} em {g1} a {g2}, {onde}, {rodada}.', P);
       if(j.pen && j.venceu && M().time(j.venceu)) texto += ' ' + _t('Nos pênaltis, deu {v}.', {v:nomeClube(j.venceu)});
-      else if(!j.fase){
-        const pos = posicaoDe(E, time);
+      else if(!j.fase && j.comp){
+        /* a posição na tabela DA competição do jogo, não da liga do clube */
+        let pos = 0;
+        try{ pos = TO.competicoes.posicaoNaTabela(E, j.comp, time) || 0; }catch(_){}
         if(pos) texto += ' ' + _t('Com o resultado, {time} fica em {pos}º lugar.', {time:P.time, pos});
       }
       const citadas = M().torcidasDe(time).map(o=>o.id).slice(0, 2);
@@ -435,13 +464,15 @@ TO.feed = (function(){
   /* --- a convocação das zonas pro jogo em casa --- */
   function convocacoesDeHoje(E, jogos){
     const abs = E.data.absoluto || 0, H = TO.mapa.hash, nossa = E.torcida.mapa;
+    /* só jogo EM CASA, e quem posta é o perfil oficial da torcida
+       (texto do dono, 30/09/2026) */
+    const grito = o => _t('UH {nome}!', {nome:String(o.nome || '').toUpperCase()});
     const j = E.proximoJogo;
     if(j && j.casa && j.dia === E.data.dia){
-      const zona = ZONAS_T[H(`convoca|${abs}`) % 4];
-      const P = {clube:nomeClube(E.torcida.clubeId), adv:(j.visitante || {}).nome || '', hora:j.hora || '',
-                 comp:pelaCompeticao(j.competicao), zona:_t(zona)};
-      mensagemDe(E, E.torcida.id, _t('Convocação! Hoje tem {clube} x {adv}{comp}, às {hora}. A Zona {zona} se concentra na praça três horas antes. Ninguém fica em casa!', P),
-        'convocacao', {publico:true, zona, chave:`convoca|${abs}|${E.torcida.id}`});
+      const P = {clube:nomeClube(E.torcida.clubeId), adv:(j.visitante || {}).nome || '',
+                 comp:pelaCompeticao(j.competicao), nome:E.torcida.nome, grito:grito(E.torcida)};
+      mensagemDe(E, E.torcida.id, _t('Dia de {clube} x {adv}{comp}! A {nome} vai dominar a pista e a arquibancada mostrando que a cidade é nossa. {grito}', P),
+        'convocacao', {publico:true, chave:`convoca|${abs}|${E.torcida.id}`});
     }
     let n = 0;
     for(const g of (jogos || [])){
@@ -449,10 +480,10 @@ TO.feed = (function(){
       if(H(`convoca-outra|${abs}|${g.c}`) % 100 >= 50) continue;
       const o = torcidaMaior(E, g.c);
       if(!o) continue;
-      const zona = ZONAS_T[H(`convoca-zona|${abs}|${o.id}`) % 4];
-      const P = {clube:nomeClube(g.c), adv:nomeClube(g.f), comp:pelaCompeticao(g.compNome || g.comp), zona:_t(zona)};
-      mensagemDe(E, o.id, _t('Dia de {clube} x {adv}{comp}! A Zona {zona} se concentra na praça três horas antes do jogo. Ninguém fica em casa!', P),
-        'convocacao', {publico:true, zona, chave:`convoca|${abs}|${o.id}`});
+      const P = {clube:nomeClube(g.c), adv:nomeClube(g.f), comp:pelaCompeticao(g.compNome || g.comp),
+                 nome:o.nome, grito:grito(o)};
+      mensagemDe(E, o.id, _t('Dia de {clube} x {adv}{comp}! A {nome} vai dominar a pista e a arquibancada mostrando que a cidade é nossa. {grito}', P),
+        'convocacao', {publico:true, chave:`convoca|${abs}|${o.id}`});
       n++;
     }
   }
