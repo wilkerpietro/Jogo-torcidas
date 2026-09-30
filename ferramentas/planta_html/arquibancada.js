@@ -135,9 +135,9 @@ function panosDoJogo(id) {
   const E = G && G.estado && G.estado.E, PAT = G && G.patrimonio;
   if (!id || !E || !E.torcida || !PAT || !PAT.faixasDe || !PAT.faixasIA) return null;
   try {
-    if (id === E.torcida.id) return { faixa: PAT.faixasDe(E).nossas.length > 0, bandeira: PAT.bandeirasDe(E).nossas.length > 0 };
+    if (id === E.torcida.id) { const n = PAT.faixasDe(E).nossas.length; return { faixa: n > 0, nFaixas: n, bandeira: PAT.bandeirasDe(E).nossas.length > 0 }; }
     const t = PAT.faixasIA(E, id);
-    return t ? { faixa: t.faixas > 0, bandeira: t.bandeiras > 0 } : null;
+    return t ? { faixa: t.faixas > 0, nFaixas: t.faixas, bandeira: t.bandeiras > 0 } : null;
   } catch (e) { return null; }
 }
 
@@ -359,7 +359,21 @@ export function planejarArquibancada(p, aux) {
     if (cF.length === 2) {
       let lugar = null;
       for (let w = clamp(3.5 + 0.18 * n, 4.5, 11); w >= 3.5 && !lugar; w -= 1) lugar = lugarNaMureta(T, w, T.uC);
-      if (lugar) { T.faixa = estender(T, cF, lugar, Math.min(H_FAIXA, yPar - 0.1 - yChao - 0.15), 'faixa'); cF.forEach(tomar); }
+      if (lugar) {
+        /* A FAIXA DE VERDADE (a arte do dono, 29/09/2026): uma das que a
+           torcida tem, na proporção da arte — a altura sai da largura (e,
+           se a mureta não deixa, a largura encolhe), pra não esticar */
+        const k = Math.floor(semente('faixa|' + b.t.id)() * Math.max(1, (PT && PT.nFaixas) || 1)), real = faixaRealDe(b.t, k);
+        let H = Math.min(H_FAIXA, yPar - 0.1 - yChao - 0.15);
+        if (real) {
+          H = Math.min(H, lugar.w / real.prop);
+          const f = Math.min(1, H * real.prop / lugar.w);
+          if (f < 1) lugar = { ...lugar, w: lugar.w * f, du: lugar.du * f };
+        }
+        T.faixa = estender(T, cF, lugar, H, 'faixa');
+        T.faixa.k = k;
+        cF.forEach(tomar);
+      }
     }
     if (cB.length === 2) {
       const Hb = clamp(yPar - 0.1 - yChao - 0.2, 1.2, 2.2);
@@ -887,9 +901,21 @@ const luz = hex => { const n = parseInt(String(hex || '#888').slice(1), 16); ret
 const coresDe = t => { const c1 = t.cor || '#555', c2 = t.cor2 && t.cor2.toLowerCase() !== c1.toLowerCase() ? t.cor2 : (luz(c1) > 128 ? '#141414' : '#f4f4f4'); return { c1, c2, c3: t.cor3 || null }; };
 function tela(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 function textura(cv) { const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4; return tx; }
-/* A FAIXA: fundo primário, borda e letra na secundária, o escudo da torcida à esquerda e o do clube à direita */
-function telaDaFaixa(t, w, h) {
-  const H = 128, Wd = clamp(Math.round(H * w / h), 256, 1400), cv = tela(Wd, H), x = cv.getContext('2d');
+/* A FAIXA DE VERDADE da torcida (a arte do dono, 29/09/2026): a tira
+   img/faixas/<id>.webp, a faixa k na linha k (128 px), e o manifesto
+   dados/faixas.js com a largura de cada uma (ver js/gestao/patrimonio.js);
+   sem ela, a gerada (abaixo) */
+function faixaRealDe(t, k = 0) {
+  const L = t && t.id && window.TO && TO.dados && TO.dados.faixasReais && TO.dados.faixasReais[t.id];
+  if (!Array.isArray(L) || !L.length) return null;
+  const i = ((k % L.length) + L.length) % L.length, caminho = 'img/faixas/' + t.id + '.webp';
+  return { src: (window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho, w: L[i], h: 128, y: 128 * i, n: L.length, prop: L[i] / 128 };
+}
+/* A FAIXA: fundo primário, borda e letra na secundária, o escudo da torcida à esquerda e o do clube à direita
+   (a de verdade entra por cima quando a tira chega) */
+function telaDaFaixa(t, w, h, k = 0) {
+  const real = faixaRealDe(t, k);
+  const H = 128, Wd = real ? real.w : clamp(Math.round(H * w / h), 256, 1400), cv = tela(Wd, H), x = cv.getContext('2d');
   const { c1, c2 } = coresDe(t), E = H * 0.72, mg = H * 0.12;
   const esc = { t: null, c: null };
   const pinta = () => {
@@ -907,8 +933,13 @@ function telaDaFaixa(t, w, h) {
   };
   pinta();
   const tx = textura(cv);
-  imagem(escudoDe('t', t.id, t.escudo), im => { esc.t = im; pinta(); tx.needsUpdate = true; });
-  imagem(escudoDe('c', t.clubeId, null), im => { esc.c = im; pinta(); tx.needsUpdate = true; });
+  let deVerdade = false;
+  if (real) imagem(real.src, im => {
+    const e = (im.naturalHeight || im.height) / (128 * real.n) || 1;
+    deVerdade = true; x.clearRect(0, 0, Wd, H); x.drawImage(im, 0, real.y * e, real.w * e, real.h * e, 0, 0, Wd, H); tx.needsUpdate = true;
+  });
+  imagem(escudoDe('t', t.id, t.escudo), im => { esc.t = im; if (!deVerdade) { pinta(); tx.needsUpdate = true; } });
+  imagem(escudoDe('c', t.clubeId, null), im => { esc.c = im; if (!deVerdade) { pinta(); tx.needsUpdate = true; } });
   return tx;
 }
 /* A BANDEIRA: quadrada, a borda de fora secundária, a de dentro terciária, o fundo primário e o escudo no meio (sem escudo, a sigla) */
@@ -995,7 +1026,7 @@ export function criarArquibancada(ctx, p, grupo, aux) {
   const panos = [];
   for (const T of A.lista) {
     const t = T.b.t;
-    if (T.faixa) panos.push({ T, F: T.faixa, malha: tira(telaDaFaixa(t, T.faixa.w, T.faixa.H)), estado: -1 });
+    if (T.faixa) panos.push({ T, F: T.faixa, malha: tira(telaDaFaixa(t, T.faixa.w, T.faixa.H, T.faixa.k)), estado: -1 });
     if (T.bandeira) panos.push({ T, F: T.bandeira, malha: tira(telaDaBandeira(t)), estado: -1 });
   }
   /* o pano no tempo t: enrolado (some), desenrolando nas mãos, descendo, pendurado */

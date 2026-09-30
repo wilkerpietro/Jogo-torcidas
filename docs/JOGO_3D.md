@@ -1776,8 +1776,9 @@ TUF; rival: Cearamor), numa partida nova, com o relógio parado pelo teste:
   de a torcida levar 8 ou mais; na
   briga da invasão ela aparece pela régua do combate (o patrimônio) — com 7 no
   estádio, a torcida briga com bandeira que não estava pendurada.
-- **A sede não mostra as faixas tomadas** (troféu na parede): ficou pra depois
-  (esforço médio).
+- ~~**A sede não mostra as faixas tomadas**~~ (troféu na parede): ficou pra
+  depois (esforço médio) — feito na seção 25: o armário das tomadas no
+  almoxarifado.
 - Na invasão, a faixa do combate fica virada pra arquibancada (quem briga
   precisa ver e alcançar), não pro campo como as penduradas.
 - O aviso do olheiro some em 10 s como os outros; quem não viu tem a mensagem
@@ -1926,4 +1927,167 @@ arredores contra a Cearamor):
   lados da grade; ninguém se atraca por cima dela.
 - A grade do combate é a do segmento do cordão (a reta que o plano ajusta às
   células da divisa); onde a divisa faz curva, pode sobrar vão numa ponta.
+- Testado só no Chromium do teste (SwiftShader), na tela deitada.
+
+## 24. As faixas de verdade das torcidas (29/09/2026)
+
+**O pedido** (o dono, com três .rar de faixas, `clubs_parte1..3`): "atualize
+as faixas das torcidas pra ser conforme essas, vai ter uns times faltando,
+esses que faltam vão ser genéricos ainda."
+
+**O que veio nos .rar:** 420 PNG em 86 pastas, uma por clube
+(`clubs/corinthians/gaviões 3.png`, `clubs/avai/5.png`). Quase todas com
+1024 × 128 px (8:1); 25 menores (≈ 510 × 62) e umas com a arte mais estreita
+que a tela (margem transparente dos lados). O nome do arquivo é a torcida e o
+número; o arquivo que é só o número é da torcida do clube.
+
+**O que foi feito:**
+- **`ferramentas/importar_faixas.py`**: a tabela `MAPA` (pasta do dono → id
+  da torcida; os nomes com erro de digitação, como "ceararmor", entram na
+  mesma torcida) e, pra cada torcida, uma **tira** `img/faixas/<id>.webp`
+  com as faixas dela empilhadas (128 px de altura cada, na largura da arte:
+  a margem transparente sai, o que sobra de transparente vira a cor média do
+  pano, e nada é esticado), mais o manifesto **`dados/faixas.js`**
+  (`TO.dados.faixasReais[id]` = a largura de cada faixa, na ordem). A ordem é
+  a do número do arquivo: a faixa 1 é a que a torcida tem desde o começo.
+  **95 torcidas** ganharam faixa de verdade (**352 faixas, 6,5 MB**); **44**
+  seguem com a gerada (cor e nome). **16 pastas** são de clubes sem torcida
+  no jogo e ficaram de fora (Aimoré, Boa, Brusque, Concórdia, Esportivo,
+  Jacuipense, Juventus-SC, Luverdense, Macaé, Novo Hamburgo, Oeste, São
+  Luiz, São Bento, Tubarão, Tupi e União Frederiquense) — quando a torcida
+  entrar em `dados/torcidas.js`, é pôr a linha no `MAPA` e rodar de novo com
+  a pasta do .rar (`pip install libarchive-c` abre o RAR5).
+- **`js/gestao/patrimonio.js`**: a faixa k da torcida é a arte k dela (dando
+  a volta quando ela tem mais faixa que arte); a tela sai na **proporção da
+  arte** (com a mesma margem do pano ondulado da gerada), a gerada vai na
+  tela enquanto a tira não chega — e fica, se a tira não carregar. Quem pediu
+  a URL (o Patrimônio, a Loja) é avisado a cada imagem que chega até a última
+  (antes, o aviso do primeiro escudo esvaziava a fila e o segundo não
+  chegava). Novas: `faixaReal(o, k)` e `proporcaoDaFaixa(o, k)`.
+- **A cena de briga** (`combate.js`): a faixa na parede tem a altura da
+  proporção da arte (a gerada seguia com 1/6 do comprimento); a peça guarda
+  **qual faixa era** (`variante`), e a tomada leva isso pro patrimônio de
+  quem tomou (`acoes.js`) — o Patrimônio mostra a arte certa da tomada.
+  **A briga 3D** (`palco_briga.js`) sobe a textura de novo quando a tela
+  muda (a arte chegando depois).
+- **O estádio 3D** (`arquibancada.js`): a faixa estendida na mureta é uma
+  das que a torcida tem (sorteada pela semente do dia), na proporção da arte:
+  a altura sai da largura (11 m de faixa → 1,37 m de pano); se a mureta não
+  deixa, a largura encolhe.
+- **A tela do Patrimônio e da Loja** (`css/paineis.css`): a faixa tem a
+  altura fixa (56 px) e a largura da arte (antes, 180 × 56 pra todas).
+- **Os pacotes:** o jogo (`index.html` da raiz) e a planta carregam
+  `dados/faixas.js`; o `montar.sh` copia as tiras pra `img/faixas/` (o Pages
+  e o artefato pedem a tira na hora que a faixa aparece).
+
+**Testado** (Chromium do teste, jogo 3D do Pages, Fortaleza, TUF):
+- o manifesto: 95 torcidas, 352 faixas; a TUF com 6 (1024 px cada); a faixa
+  7 da TUF volta pra arte 2; a Aliança sem arte (gerada);
+- **Patrimônio:** as 3 faixas da TUF com a arte (tela 1024 × 159), as
+  tomadas da Cearamor e da MOFI com a arte delas, a da Aliança gerada
+  (400 × 124); a Loja mostra a próxima da TUF (a 4ª arte);
+- **briga 3D na concentração da Cearamor:** a faixa dela na parede com a
+  arte (tela 1021 × 159, pano 4,2 × 0,65 m); tomada no fim, o patrimônio
+  guardou a variante;
+- **estádio (Fortaleza × Ceará):** a faixa da TUF na mureta com a arte
+  (textura 1024 × 128, pano 11 × 1,37 m);
+- as tiras pedidas foram só as das torcidas da cena (TUF, Cearamor, MOFI);
+  nenhum erro de página.
+
+**Limites (sinceros):**
+- **O pacote de arquivo único do jogo 2D** (`empacotar_jogo.py`) não embute
+  as tiras: ele está em 13,3 MB de um teto de 16,5, e as faixas são 6,5 MB.
+  Nele, a faixa segue a gerada (sem erro: a tira não chega e a gerada fica).
+- **A faixa perdida sai do fim da lista** (como antes): se a torcida tem
+  três e perde a do meio na briga, a arte que some do Patrimônio é a última.
+- 25 faixas vieram menores (≈ 510 × 62) e ficam mais borradas de perto.
+- **As bandeiras** seguem as geradas (escudo no meio): o pedido foi das faixas.
+
+## 25. Os armários do almoxarifado: as tomadas e o patrimônio (29/09/2026)
+
+**O pedido** (o dono): "as faixas tomadas vão estar armazenadas dentro do
+armário do almoxarifado, e em outro armário o patrimonio próprio. esse
+detalhe vai fazer parte de uma mecanica de invasão de sede que vai acontecer
+de maneira rara no jogo futuramente."
+
+**O que foi feito:**
+- **Os dois armários** (`js/diajogo/sede3d.js`, `armarioDeTela`): armário de
+  aço de duas portas de **tela** (dá pra ver o que está dentro), com o
+  montante do meio, três prateleiras (quatro nichos de cada lado, o fundo e
+  as prateleiras claros por dentro), a testeira com a **placa** (nas cores
+  das placas das salas) e, no das tomadas, o **cadeado**.
+  - **Sede grande (nível 2+), ALMOXARIFADO:** no lugar das duas estantes do
+    fundo, um de cada lado da janela — à esquerda o **PATRIMÔNIO**, à direita
+    as **TOMADAS**. A estante da parede da direita fica (encurtada 2 cm pra
+    não encostar).
+  - **Barracão (nível 1), PATRIMÔNIO:** o armário comprido da planta virou
+    os dois, **no mesmo retângulo** (é o móvel que barra a caminhada da
+    planta: `conferir_sede.mjs` segue batendo), com os troféus em cima.
+  - Um lugar de gente na frente de cada um (`estante`/`armario`, gesto
+    `arruma`): os membros da sede vão lá mexer.
+- **O que está guardado** (`guardarNoArmario`): cada peça dobrada em pilha no
+  nicho — a faixa (da largura do nicho até 62 cm, 6 cm de altura) na cor 1
+  da dona com a dobra na cor 2; a bandeira mais estreita e mais fina. As
+  pilhas enchem pela altura do peito primeiro. O PATRIMÔNIO tem as faixas e
+  as bandeiras da torcida; as TOMADAS, as dos outros, **cada uma na cor de
+  quem era dona**. Sem o jogo (o cenário sozinho), o de começo de todo mundo:
+  uma faixa e uma bandeira, nenhuma tomada.
+- **Segue o save, na hora** (`vida3d.js`, `conferirGuardados`; `jogo3d.js`;
+  `index.html`, `guardadosDoJogo`): o do jogador (`faixasDe`/`bandeirasDe`:
+  as nossas e as tomadas) e o mundo vivo da IA (`faixasIA`: quantas ela tem e
+  as que tomou). Antes de a praça montar vai o de todas as torcidas; com a
+  praça montada, a cada 2 s de rua, as da praça. O que está guardado é **uma
+  malha só, viva**, por sede (o forno do cenário não junta ela com a cidade):
+  mudou o save, troca só a geometria dela — **a cidade não remonta**.
+
+**A base da invasão de sede** (o que já existe pra mecânica que vem depois;
+a invasão em si **não** foi feita):
+- `montarSede(...).armarios` e `api.planta.torcidas()[i].sede3d.armarios`:
+  cada armário com o **tipo** (`patrimonio`/`tomadas`), o cômodo, a caixa no
+  mundo, a altura, pra onde a frente olha (`frente`, `rumo`), a **boca** (o
+  ponto no chão, 0,7 m na frente, onde quem abre fica), **quantas peças
+  cabem** (`cabe`), quantas estão lá (`guardadas`) e **o que tem dentro**
+  (`pecas`: faixa ou bandeira e, nas tomadas, o id da dona).
+- `api.guardadosDoJogo(id, g)`: quem mudar o patrimônio no fim da invasão
+  (a rival levando as dela de volta, ou as nossas) só chama isto — o armário
+  troca na hora.
+- Os lugares `estante`/`armario` (com o campo `armario`) dizem onde um boneco
+  fica pra "arrombar" cada um.
+- Uma sugestão pra regra, quando for feita (decisão sua): a invasão rara leva
+  primeiro, do armário das tomadas, as peças da própria torcida invasora
+  (recupera o que perdeu) e, se sobrar gente e tempo, do patrimônio da dona
+  da sede; o cadeado custa uns segundos de quem está na boca.
+
+**Testado** (Chromium do teste, jogo 3D do Pages, Fortaleza, TUF — sede de
+nível 3):
+- a sede da TUF abre com os dois armários (cabem 56 peças em cada, nesta
+  sede) e o de começo (1 faixa e 1 bandeira no PATRIMÔNIO);
+- com o save da TUF em 4 faixas, 2 bandeiras e as tomadas (3 faixas: da
+  Cearamor, da MOFI e da Aliança; 1 bandeira da Cearamor), a conferência
+  trocou 1 torcida: **PATRIMÔNIO 6 peças, TOMADAS 4, cada tomada com a dona
+  certa**; a malha viva passou de 40 pra 200 triângulos sem remontar a
+  cidade; conferir de novo sem mudança não troca nada;
+- **a sede da rival** (Cearamor, nível 3) com uma faixa da TUF nas tomadas
+  dela: a ficha mostra `f:leoes_da_tuf` no armário das tomadas;
+- **a briga de verdade:** ataque na concentração da Cearamor, a faixa dela
+  tomada no fim; depois do relatório, a vida da praça conferiu e o armário
+  das tomadas foi de **4 pra 5** (duas da Cearamor);
+- `conferir_sede.mjs`: o modelo bate com a planta (o móvel que barra no
+  lugar); `conferir_passagem.mjs`: **todo cômodo se alcança do portão** em
+  todas as sedes dos três mapas e das praças (o almoxarifado com 89–90% do
+  chão alcançável; o patrimônio do barracão, 97%);
+- nenhum erro de página.
+
+**Limites (sinceros):**
+- **Através da tela as peças aparecem como pilhas coloridas** (a cor da
+  dona), não com a arte da faixa (a arte de verdade da seção 24 aparece no
+  Patrimônio, na briga e no estádio; dentro do armário, não).
+- **A capacidade é de 56 peças por armário** nesta sede grande (112 na maior;
+  56 no barracão); o que passar disso não aparece (a ficha diz `guardadas` e
+  o total em `pecas`).
+- **A sede da IA de outra praça** só pega o save quando a praça dela monta.
+- **O telhado das sedes das outras torcidas fica** (a câmera de cima não vê o
+  almoxarifado delas); a da torcida do jogador, com o corte da câmera, vê.
+- A tela é a rede da folha das grades (9 cm de malha): mais aberta que um
+  armário de verdade, pra dar pra ver dentro de longe.
 - Testado só no Chromium do teste (SwiftShader), na tela deitada.

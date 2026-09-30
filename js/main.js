@@ -6539,7 +6539,7 @@
     for(const f of fx.tomadas){
       const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
       const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(imgFaixa(o, 'faixa-img virada', _t('Faixa da {nome}, tomada em {ano}', {nome:f.nome, ano:(f.quando||{}).ano||''})));
+      cx.appendChild(imgFaixa(o, 'faixa-img virada', _t('Faixa da {nome}, tomada em {ano}', {nome:f.nome, ano:(f.quando||{}).ano||''}), f.variante || 0));
       cx.appendChild(el('small',{html:`${_t('da {torcida}', {torcida:linkTorcida(f.de, f.nome)})}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
       tomadas.appendChild(cx);
     }
@@ -10929,7 +10929,7 @@
     const f0 = pecas.find(f=>f.tipo === 'faixa') || pecas[0];
     const o = TO.mundo.torcida(f0.torcidaId);
     if(!B || !B.fotoDoTrofeu || !o){ foto.remove(); return cx; }
-    const src = f0.tipo === 'bandeira' ? PAT.imagemDaBandeira(o, null) : PAT.imagemDaFaixa(o, null, 'faixa', 0);
+    const src = f0.tipo === 'bandeira' ? PAT.imagemDaBandeira(o, null) : PAT.imagemDaFaixa(o, null, 'faixa', f0.variante || 0);
     if(!src){ foto.remove(); return cx; }
     const im = new Image();
     im.onload = ()=>{

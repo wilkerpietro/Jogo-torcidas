@@ -61,8 +61,8 @@ do `docs/JOGO_3D.md`.
 - **Faixa perdida ou tomada no estádio** (`arquibancada.js`): a mureta estende
   só o que a torcida tem; a perdida numa briga do dia sai da mureta. (A última
   faixa tomada pendurava de cabeça pra baixo do lado da dela — saiu na rodada
-  seguinte, a pedido do dono.) A sede continua sem as tomadas (esforço M, não
-  entrou).
+  seguinte, a pedido do dono.) A sede passou a mostrar as tomadas na quarta
+  rodada (os armários do almoxarifado, abaixo).
 - **Tecla C**: o C chama; a câmera foi pro V.
 - **Aviso pago do olheiro**: vira aviso no canto direito, em destaque, 10 s.
 
@@ -86,6 +86,21 @@ Detalhes e testes na seção 23 do `docs/JOGO_3D.md`.
 - **O relógio da briga 3D** começa na hora da cidade (era sempre 18h, a noite
   da foto dos arredores).
 
+## Resolvido na quarta rodada (29/09/2026, os armários e as faixas de verdade)
+
+Detalhes e testes nas seções 24 e 25 do `docs/JOGO_3D.md`.
+
+- **As tomadas na sede** (`sede3d.js`, `vida3d.js`): dois armários de aço de
+  porta de tela no almoxarifado (no barracão, no cômodo do patrimônio) — um
+  com o patrimônio da torcida (as faixas e as bandeiras dela), outro com as
+  tomadas, cada peça na cor da dona. Segue o save (o do jogador e o mundo
+  vivo da IA) e troca na hora, sem remontar a cidade. É a base da invasão de
+  sede, que vem depois (a ficha de cada armário: onde fica, a boca, o que tem
+  dentro, de quem).
+- **As faixas de verdade** (`patrimonio.js`, `arquibancada.js`, `combate.js`):
+  a arte que o dono mandou, em 95 torcidas (352 faixas); as 44 sem arte
+  seguem com a gerada.
+
 ## O que eu faria primeiro
 
 Ordem por impacto sobre esforço, não por área. Os itens 1 a 6 foram feitos
@@ -95,7 +110,7 @@ Ordem por impacto sobre esforço, não por área. Os itens 1 a 6 foram feitos
 |---|-------|---------|---------|
 | 1 | ~~**Faixa e bandeira na briga da concentração e na invasão**~~ (feito) | Regressão: o motor só liga a faixa pelo nome da cena, e as cenas 3D se chamam `caminhada@3d` e `invasao@3d`. No 2D a faixa tomada vale −10/+5 de prestígio e muda de dono no patrimônio; no 3D ninguém toma nem perde faixa nessas brigas. | P (+ teste) |
 | 2 | ~~**Bar quebrado aparece quebrado**~~ (feito) | Depois do bote no bar (agora em 3D), o bar fica 45 dias "quebrado no ataque" no patrimônio, mas no mapa ele segue inteiro e cheio no dia seguinte. | P |
-| 3 | ~~**Faixa perdida ou tomada no estádio**~~ (feito; a sede, não) | A arquibancada 3D estende faixa e bandeira sempre, tenha a torcida faixa ou não; as tomadas não aparecem em lugar nenhum. Contradiz o relatório da briga. | P (estádio) / M (sede) |
+| 3 | ~~**Faixa perdida ou tomada no estádio**~~ (feito; a sede também, na quarta rodada) | A arquibancada 3D estende faixa e bandeira sempre, tenha a torcida faixa ou não; as tomadas não aparecem em lugar nenhum. Contradiz o relatório da briga. | P (estádio) / M (sede) |
 | 4 | ~~**Tecla C na briga 3D**~~ (feito: câmera no V) | No PC o C troca a câmera e não chama mais os parceiros; o botão da tela continua dizendo "Chamar C". Precisa só decidir a tecla da câmera (sugestão: V). | P |
 | 5 | ~~**Aviso pago do olheiro**~~ (feito) | Pela sua regra da seção 19, só jornal vai pro canto direito; o aviso de ataque da Inteligência (R$ 100 ou R$ 400 por dia) fica só em Notícias › Mensagens. Vale uma exceção pra ele. | P |
 | 6 | ~~**Briga dos arredores em 3D**~~ (feito: a versão fiel ao 2D, no cordão da PM) | É a briga mais comum: "arredores" é o padrão do planejamento e da política. A cidade anda até o estádio e aí abre a foto 2D. | M (versão na caminhada) / G (fiel ao 2D: cordão, grades, portão) |
@@ -193,9 +208,10 @@ do nosso bar, casa de piscina, reunião com sede.
 
 1. ~~**Bar quebrado por 45 dias**~~ (nosso e das IAs) — feito: tapume,
    cacos, roda pela metade e o risco no Mapa da cidade. **P.**
-2. **Faixa e bandeira perdidas ou tomadas** — o estádio foi feito (a mureta
+2. ~~**Faixa e bandeira perdidas ou tomadas**~~ — feito: o estádio (a mureta
    segue o patrimônio; a tomada pendurada de cabeça pra baixo saiu a pedido do
-   dono); a sede ainda não mostra as tomadas. **M** (sede).
+   dono) e a sede (os dois armários do almoxarifado: o patrimônio e as
+   tomadas, seção 25 do `JOGO_3D.md`). **M** (sede).
 3. **Sede nível 2 a 6, anexos e ampliações** — incluindo a IA (`t.sede++` nunca
    chega à planta). **M / G.**
 4. **Torcida sem sede (nível 0)** — o ponto de encontro das pequenas não tem

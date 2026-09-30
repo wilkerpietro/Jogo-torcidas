@@ -309,6 +309,8 @@ function ligar(api) {
     if (document.body.classList.contains('com-painel') && pracaDoJogo) return;
     const nome = nomeDaPraca(e.torcida.mapa);
     /* a sede da torcida do jogador é a do save (o nível dela), não a da tabela */
+    /* o que cada torcida guarda nos armários do almoxarifado (a sede monta com o do save) */
+    try { if (vida.conferirGuardados) vida.conferirGuardados(true); } catch (err) { console.error('os armários:', err); }
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
     const refazer = mudouNivel || mudouBares || !!forcar;

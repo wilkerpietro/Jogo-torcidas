@@ -1010,7 +1010,8 @@ table.dados tr.selecionada td{background:#252525}
 .faixas-rot{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);margin:6px 0 5px}
 .faixas-lista{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
 /* o pano ondulado tem margem transparente: sem borda nem caixa de sombra (dono, 09/09/2026) */
-.faixa-img{width:180px;height:56px;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));image-rendering:auto}
+/* (a faixa de verdade é mais comprida que a gerada: a altura fica, a largura segue a arte; sem espaço, encolhe sem deformar) */
+.faixa-img{width:auto;height:56px;max-width:100%;object-fit:contain;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));image-rendering:auto}
 .faixa-img.virada{transform:rotate(180deg)}
 .faixa-tomada{display:flex;flex-direction:column;gap:3px;align-items:center}
 .faixa-tomada small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
