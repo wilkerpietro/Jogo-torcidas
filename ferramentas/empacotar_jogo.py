@@ -11,7 +11,7 @@ dentro dela —
     (`img/cenas/praca.webp`), têm o caminho TROCADO no próprio texto do
     arquivo por um `data:` — é a substituição literal, e por isso elas
     contam como "embutidas";
-  * escudos, bandeiras e fotos de cidade são pedidos em tempo de
+  * escudos, bandeiras, faixas e fotos de cidade são pedidos em tempo de
     execução, com o id montado na hora (`img/escudos/clube-<id>.png`).
     Esses não dá pra trocar no texto: vão pro dicionário
     `window.__EMBUTIDOS`, que é onde o `IMG()` do jogo procura antes de
@@ -41,7 +41,7 @@ TIPOS = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
          '.webp': 'image/webp', '.svg': 'image/svg+xml', '.gif': 'image/gif'}
 
 # as pastas cujas imagens o jogo monta em tempo de execução
-DINAMICAS = ['img/escudos', 'img/bandeiras', 'img/cidades']
+DINAMICAS = ['img/escudos', 'img/bandeiras', 'img/cidades', 'img/faixas']
 
 # A ARTE CABE NO ARQUIVO (empacotamento, 16/09/2026)
 # As fotos originais somam 12,5 MB depois do base64 e o artifact para em

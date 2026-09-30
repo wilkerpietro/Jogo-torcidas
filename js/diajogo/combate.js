@@ -535,7 +535,12 @@ TO.diaJogo.combate = (function(){
       J.total = {mandante:J.discos.filter(d=>d.lado==='mandante').length,
                  visitante:J.discos.filter(d=>d.lado==='visitante').length};
     }
-    if(D.cadeiras && D.cadeiras.length) sentarNaRoda(J);
+    /* SÓ A REUNIÃO SENTA (correção do dono, 30/09/2026): a praça ganhou
+       as cadeiras da reunião da torcida sem sede, e toda briga nela — o
+       ataque à concentração, a treta da praça — sentava o nosso bonde
+       em C e tirava da cena quem não coube. As cadeiras são da cena; a
+       roda é da reunião. */
+    if(cfg.reuniao && D.cadeiras && D.cadeiras.length) sentarNaRoda(J);
     return J;
   }
 
@@ -3801,8 +3806,13 @@ TO.diaJogo.combate = (function(){
             x: U.limitar(cx, 60, A.W-60), y: U.limitar(cy-30, 24, A.H-24),
             w: bandeira ? 19 : 76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
             equipeN: bandeira ? 1 : 2, semente: (U.rng()*6.28),
-            tChegou:null, tEscolha:0, tomadaPor:null,
+            tChegou:null, tEscolha:0, tomadaPor:null, variante,
             img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, tipo, variante) : null};
+    /* A FAIXA DE VERDADE (a arte do dono, 29/09/2026) tem a proporção
+       dela: a altura sai da tela (que já traz a margem do pano), não do
+       1/6 da gerada */
+    const telaReal = !bandeira && F.img && F.img.proporcao ? F.img : null;
+    if(telaReal) F.h = Math.max(8, Math.round(F.w * telaReal.height / telaReal.width));
     /* ESTENDIDA NA PAREDE (dono, 09/09/2026): a cena diz onde fica a
        parede (ou o alambrado) de cada lado ou de cada setor; a faixa
        pendura ali, e a bandeira fica ao lado dela na mesma parede */
@@ -3827,8 +3837,9 @@ TO.diaJogo.combate = (function(){
         F.x = lugar.x; F.y = lugar.y;
         /* a tela da faixa tem margem transparente em cima e embaixo
            (o pano ondula): a altura sobe na mesma proporção pra que o
-           tecido visível continue com 1/6 do comprimento */
-        F.w = len; F.h = Math.round(len/6 * 1.24);
+           tecido visível continue com 1/6 do comprimento (a de verdade,
+           na proporção da arte dela) */
+        F.w = len; F.h = telaReal ? Math.round(len * telaReal.height / telaReal.width) : Math.round(len/6 * 1.24);
       }
     }
     return F;
@@ -3921,7 +3932,8 @@ TO.diaJogo.combate = (function(){
       const inimigoVenceu = inimigo==='mandante' ? venceuMandante : !venceuMandante;
       if(!donaViva && inimigoVenceu){ tomada = true; por = inimigo; }
     }
-    return {tomada, por, tipo:F.tipo || 'faixa', lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado};
+    return {tomada, por, tipo:F.tipo || 'faixa', lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado,
+            variante:F.variante || 0};
   }
   function fimDasFaixas(J, venceuMandante){
     return (J.faixas || []).map(F=>fimDeUmaFaixa(J, F, venceuMandante)).filter(Boolean);
@@ -4111,7 +4123,7 @@ TO.diaJogo.combate = (function(){
   function desenhar(J,c,opc){
     semNomeDoLider = !!(opc && opc.semNomeDoLider);
     A.desenharFundo(c);
-    A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t},opc||{}));
+    A.desenharSobreposicoes(c,J.grades,Object.assign({t:J.t, reuniao:!!J.reuniao},opc||{}));
     desenharFaixas(c, J);
     /* `semCorpo`: os bonecos da vista de cima (tres.js) desenham gente,
        PM e projétil num canvas por cima; aqui fica só nome e vida */

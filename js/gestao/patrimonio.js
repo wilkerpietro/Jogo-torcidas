@@ -612,24 +612,27 @@ TO.patrimonio = (function(){
      cada fatia desce conforme a distância ao pregador mais perto, a
      barra de baixo cai um pouco mais que o topo, e o declive pinta a
      dobra — sombra leve descendo do pregador, brilho subindo pro outro. */
-  const FAIXA_HP = 124, PANO_MARGEM = (FAIXA_HP - FAIXA_H)/2;
+  const FAIXA_HP = 124;
+  /* (a tela da faixa de verdade é da largura dela: a arte lisa e as
+     margens do pano vêm do tamanho da tela, não das constantes) */
   function ondularPano(lisa, c, semente){
-    const x = c.getContext('2d');
+    const x = c.getContext('2d'), LW = lisa.width, LH = lisa.height, k = LH / FAIXA_H;
     x.clearRect(0, 0, c.width, c.height);
     let sd = 0; for(const ch of String(semente || '')) sd = (sd*31 + ch.charCodeAt(0)) >>> 0;
     /* quanto cai entre os pregadores: 6 a 9 px no topo, e a barra de
-       baixo cai mais 3 a 5 px — varia um pouco por faixa */
-    const queda = 6 + (sd % 4), extra = 3 + ((sd >> 2) % 3);
-    const N = 100, fw = FAIXA_W/N;
+       baixo cai mais 3 a 5 px — varia um pouco por faixa (em 100 px de
+       arte; a mais alta cai na mesma proporção) */
+    const queda = (6 + (sd % 4))*k, extra = (3 + ((sd >> 2) % 3))*k;
+    const N = 100, fw = LW/N, margem = (c.height - LH)/2;
     /* 0 nos pregadores (t = 0, 0,5 e 1), 1 no meio de cada vão — em
        cosseno, que chega redondo no pregador: o seno partido em dois
        vãos fazia um bico no meio com costura de sombra */
     const cai = t => (1 - Math.cos(4*Math.PI*t))/2;
     for(let i=0;i<N;i++){
       const t = (i+0.5)/N, s = cai(t);
-      const dy = queda*s, hh = FAIXA_H + extra*s;
-      const y0 = PANO_MARGEM + dy;
-      x.drawImage(lisa, i*fw, 0, fw, FAIXA_H, i*fw - 0.5, y0, fw + 1, hh);
+      const dy = queda*s, hh = LH + extra*s;
+      const y0 = margem + dy;
+      x.drawImage(lisa, i*fw, 0, fw, LH, i*fw - 0.5, y0, fw + 1, hh);
       const decl = (cai(t + 0.01) - cai(t - 0.01))/0.02;
       const a = Math.max(-0.14, Math.min(0.14, decl*0.035));
       x.fillStyle = a > 0 ? `rgba(0,0,0,${a})` : `rgba(255,255,255,${-a*0.55})`;
@@ -655,40 +658,85 @@ TO.patrimonio = (function(){
     let h = 0; for(const ch of String(o.id || o.nome || '')) h = (h*31 + ch.charCodeAt(0)) >>> 0;
     return opcoes[(h + (k||0)) % opcoes.length];
   }
+  /* a arte lisa de uma tela: a auxiliar, do tamanho da arte (a da faixa
+     de verdade é a largura dela e 128 de altura; a gerada, 400 × 100) */
+  function lisaDe(c){
+    if(!c._lisa){
+      const l = document.createElement('canvas');
+      l.width = c.largArte || FAIXA_W; l.height = c.altArte || FAIXA_H;
+      c._lisa = l;
+    }
+    return c._lisa;
+  }
   function pintarFaixa(c, o, escudos, variante){
     /* a arte lisa vai numa tela auxiliar; o pano ondulado é o que sai */
-    const lisa = c._lisa || (c._lisa = (()=>{ const l = document.createElement('canvas'); l.width = FAIXA_W; l.height = FAIXA_H; return l; })());
+    const lisa = lisaDe(c);
     pintarFaixaLisa(lisa, o, escudos, variante);
     ondularPano(lisa, c, `${o.id || o.nome}|${variante||0}`);
   }
   function pintarFaixaLisa(c, o, escudos, variante){
-    const x = c.getContext('2d');
+    const x = c.getContext('2d'), W = c.width, H = c.height, k = H / FAIXA_H;
     const cores = (TO.mundo && TO.mundo.coresDaTorcida) ? TO.mundo.coresDaTorcida(o) : {};
     const c1 = cores.cor || '#555', c2 = cores.cor2 || (c1.toLowerCase() === '#ffffff' ? '#141414' : '#f4f4f4');
-    x.clearRect(0, 0, FAIXA_W, FAIXA_H);
-    x.fillStyle = c1; x.fillRect(0, 0, FAIXA_W, FAIXA_H);
-    x.strokeStyle = c2; x.lineWidth = 4; x.strokeRect(2, 2, FAIXA_W-4, FAIXA_H-4);
-    const E = 72, M = 12;
+    x.clearRect(0, 0, W, H);
+    x.fillStyle = c1; x.fillRect(0, 0, W, H);
+    x.strokeStyle = c2; x.lineWidth = 4*k; x.strokeRect(2*k, 2*k, W-4*k, H-4*k);
+    const E = 72*k, M = 12*k;
     const temT = !!(escudos && escudos.t), temC = !!(escudos && escudos.c);
-    if(temT) x.drawImage(escudos.t, M, (FAIXA_H-E)/2, E, E);
-    if(temC) x.drawImage(escudos.c, FAIXA_W-M-E, (FAIXA_H-E)/2, E, E);
-    const esq = temT ? M+E+8 : 14, dir = temC ? FAIXA_W-M-E-8 : FAIXA_W-14;
+    if(temT) x.drawImage(escudos.t, M, (H-E)/2, E, E);
+    if(temC) x.drawImage(escudos.c, W-M-E, (H-E)/2, E, E);
+    const esq = temT ? M+E+8*k : 14*k, dir = temC ? W-M-E-8*k : W-14*k;
     const larg = dir - esq;
     const dz = dizerDaFaixa(o, variante);
     const nome = dz.grande;
-    const yG = dz.pequeno ? FAIXA_H/2 + 8 : FAIXA_H/2;
-    let px = dz.pequeno ? 40 : 44;
+    const yG = dz.pequeno ? H/2 + 8*k : H/2;
+    let px = (dz.pequeno ? 40 : 44)*k;
     x.textAlign = 'center'; x.textBaseline = 'middle';
     do { x.font = `700 ${px}px "Barlow Condensed", system-ui, sans-serif`; px -= 2; }
     while(x.measureText(nome).width > larg && px > 12);
-    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillText(nome, (esq+dir)/2 + 1.5, yG + 1.5);
+    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillText(nome, (esq+dir)/2 + 1.5*k, yG + 1.5*k);
     x.fillStyle = c2; x.fillText(nome, (esq+dir)/2, yG);
     if(dz.pequeno){
-      let ps = 16;
+      let ps = 16*k;
       do { x.font = `600 ${ps}px "Barlow Condensed", system-ui, sans-serif`; ps -= 1; }
       while(x.measureText(dz.pequeno).width > larg && ps > 9);
-      x.fillStyle = c2; x.globalAlpha = 0.9; x.fillText(dz.pequeno, (esq+dir)/2, 22); x.globalAlpha = 1;
+      x.fillStyle = c2; x.globalAlpha = 0.9; x.fillText(dz.pequeno, (esq+dir)/2, 22*k); x.globalAlpha = 1;
     }
+  }
+  /* AS FAIXAS DE VERDADE (pedido do dono, 29/09/2026: "atualize as
+     faixas das torcidas pra ser conforme essas, vai ter uns times
+     faltando, esses que faltam vão ser genéricos ainda"): a arte que o
+     dono mandou, uma TIRA por torcida (img/faixas/<id>.webp, a faixa k
+     na linha k, 128 px de altura; ferramentas/importar_faixas.py) e o
+     manifesto `TO.dados.faixasReais[id]`, a largura de cada uma. A
+     faixa k da torcida é a arte k dela (dando a volta quando ela tem
+     mais faixa que arte), na proporção da arte, sem esticar; a torcida
+     fora do manifesto segue com a gerada (as cores e o nome). */
+  const ALT_REAL = 128;
+  function faixaReal(o, variante){
+    const L = o && o.id && TO.dados && TO.dados.faixasReais && TO.dados.faixasReais[o.id];
+    if(!Array.isArray(L) || !L.length) return null;
+    const n = L.length, k = (((variante || 0) % n) + n) % n;
+    const caminho = `img/faixas/${o.id}.webp`;
+    return {src: (typeof window !== 'undefined' && window.__EMBUTIDOS && window.__EMBUTIDOS[caminho]) || caminho,
+            k, n, w: L[k], h: ALT_REAL, y: ALT_REAL*k, proporcao: L[k]/ALT_REAL};
+  }
+  /* quanto a faixa k é mais comprida que alta (a arte, sem a margem do
+     pano) — null: a gerada, que cada cena põe na proporção dela */
+  const proporcaoDaFaixa = (o, variante) => { const r = faixaReal(o, variante); return r ? r.proporcao : null; };
+  /* a tira carrega uma vez por torcida (a cena, o Patrimônio e a loja
+     pedem juntos) */
+  const tiras = new Map();
+  function carregarTira(src, pronta, falhou){
+    let t = tiras.get(src);
+    if(!t){
+      t = {img: new Image(), ok: false, erro: false, fila: []};
+      tiras.set(src, t);
+      t.img.onload = ()=>{ t.ok = true; const f = t.fila; t.fila = []; f.forEach(q=>q[0](t.img)); };
+      t.img.onerror = ()=>{ t.erro = true; const f = t.fila; t.fila = []; f.forEach(q=>q[1] && q[1]()); };
+      t.img.src = src;
+    }
+    if(t.ok) pronta(t.img); else if(t.erro){ if(falhou) falhou(); } else t.fila.push([pronta, falhou]);
   }
   /* a bandeira: quadrada, fundo primário, borda de fora secundária, de
      dentro terciária (sem terciária, a secundária escurecida) e o
@@ -721,43 +769,77 @@ TO.patrimonio = (function(){
     if(telasFaixa.has(chave)) return telasFaixa.get(chave);
     if(typeof document === 'undefined') return null;
     const bandeira = tipo === 'bandeira';
+    const real = bandeira ? null : faixaReal(o, variante);
     const c = document.createElement('canvas');
-    c.width = bandeira ? BAND_W : FAIXA_W; c.height = bandeira ? BAND_W : FAIXA_HP;
-    c.versao = 1; c.avisos = [];
+    if(real){
+      /* a de verdade: a tela na proporção da arte, com a margem do pano
+         na mesma razão da gerada (124 pra 100) */
+      c.largArte = real.w; c.altArte = real.h;
+      c.width = real.w; c.height = Math.round(real.h * FAIXA_HP / FAIXA_H);
+      c.proporcao = real.proporcao;
+    } else {
+      c.width = bandeira ? BAND_W : FAIXA_W; c.height = bandeira ? BAND_W : FAIXA_HP;
+    }
+    /* `pendentes`: as imagens que ainda vão chegar (a tira, os escudos) —
+       quem pediu a URL é avisado a cada uma, até a última */
+    c.versao = 1; c.avisos = []; c.pendentes = 0;
     const pinta = (esc) => bandeira ? pintarBandeira(c, o, esc) : pintarFaixa(c, o, esc, variante);
-    const dado = TO.dados && TO.dados[bandeira ? 'bandeiras' : 'faixas'];
+    const dado = !real && TO.dados && TO.dados[bandeira ? 'bandeiras' : 'faixas'];
     const pronta = dado && dado[o.id];
     if(pronta){
       /* arte do dono, quando chegar: entra inteira no lugar */
       const im = new Image();
+      c.pendentes++;
       im.onload = ()=>{ const x = c.getContext('2d'); x.clearRect(0,0,c.width,c.height);
-        x.drawImage(im, 0, 0, c.width, c.height); c.versao++; avisar(c); };
+        x.drawImage(im, 0, 0, c.width, c.height); c.pendentes--; c.versao++; avisar(c); };
+      im.onerror = ()=>{ c.pendentes--; avisar(c); };
       im.src = pronta;
     }
+    /* (a gerada vai na tela enquanto a de verdade não chega — e fica,
+       se a tira não carregar) */
     pinta(null);
+    if(real && typeof Image !== 'undefined'){
+      c.pendentes++;
+      carregarTira(real.src, im => {
+        /* (a tira pode vir encolhida — um pacote que a comprime —: o
+           recorte vai na escala dela) */
+        const l = lisaDe(c), x = l.getContext('2d'), e = (im.naturalHeight || im.height) / (ALT_REAL * real.n) || 1;
+        x.clearRect(0, 0, l.width, l.height);
+        x.drawImage(im, 0, real.y * e, real.w * e, real.h * e, 0, 0, l.width, l.height);
+        ondularPano(l, c, `${o.id}|${variante}`);
+        c.real = true; c.pendentes--; c.versao++; avisar(c);
+      }, () => { c.pendentes--; avisar(c); });
+    }
     const escudos = {};
     for(const [t, id] of [['t', o.id], ['c', o.clubeId]]){
       if(bandeira && t === 'c') continue;
       const src = escudoSrc(t, id);
       if(!src || typeof Image === 'undefined') continue;
       const im = new Image();
-      im.onload = ()=>{ escudos[t] = im; if(!pronta){ pinta(escudos); c.versao++; avisar(c); } };
-      im.onerror = ()=>{};
+      c.pendentes++;
+      im.onload = ()=>{ escudos[t] = im; c.pendentes--; if(!pronta && !c.real){ pinta(escudos); c.versao++; } avisar(c); };
+      im.onerror = ()=>{ c.pendentes--; avisar(c); };
       im.src = src;
     }
     telasFaixa.set(chave, c);
     return c;
   }
+  /* avisa quem pediu a URL (o Patrimônio, a loja) da versão nova; a fila
+     só esvazia quando não falta chegar mais nada */
   function avisar(c){
-    const fila = c.avisos || []; c.avisos = [];
-    for(const f of fila){ try{ f(c.toDataURL('image/png')); }catch(_){} }
+    const fila = c.avisos || [];
+    if(!c.pendentes) c.avisos = [];
+    if(!fila.length) return;
+    let url = null;
+    try{ url = c.toDataURL('image/png'); }catch(_){}
+    if(url) for(const f of fila){ try{ f(url); }catch(_){} }
   }
   /* a faixa como URL (Patrimônio). `aoAtualizar(url)` é chamado quando
      os escudos chegarem depois. */
   function imagemDaFaixa(o, aoAtualizar, tipo, variante){
     const c = telaDaFaixa(o, tipo, variante);
     if(!c) return null;
-    if(aoAtualizar) c.avisos.push(aoAtualizar);
+    if(aoAtualizar && c.pendentes > 0) c.avisos.push(aoAtualizar);
     try{ return c.toDataURL('image/png'); }catch(_){ return null; }
   }
   const imagemDaBandeira = (o, aoAtualizar) => imagemDaFaixa(o, aoAtualizar, 'bandeira');
@@ -972,6 +1054,7 @@ TO.patrimonio = (function(){
   }
 
   return {FAIXA, BANDEIRA, faixasDe, bandeirasDe, imagemDaFaixa, imagemDaBandeira, imagemDaFaixaObj, dizerDaFaixa, faixasIA,
+          faixaReal, proporcaoDaFaixa,
           SEDE, TETO, PONTO, FABRICA, FILIAL,
           filiaisDe, temFilialEm, cidadesCandidatas,
           linhas, opcoes, comprar,

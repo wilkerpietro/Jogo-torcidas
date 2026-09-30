@@ -19,8 +19,6 @@ TO.i18n.registrar({
   'Roda o duelo sem abrir a cena. As consequências são as mesmas.':
     {es:'Resuelve el duelo sin abrir la escena. Las consecuencias son las mismas.', en:'Runs the fight without opening the scene. Same consequences.'},
   'Presença na festa da {nome}': {es:'Presencia en la fiesta de {nome}', en:"Went to {nome}'s party"},
-  'Valeu pela presença, irmão. A festa ficou completa com o bonde de vocês. Casa aberta sempre.':
-    {es:'Gracias por venir, hermano. La fiesta quedó completa con su banda. Casa abierta siempre.', en:'Cheers for turning up, mate. The party was complete with your crew. Door is always open.'},
   'Furamos o aniversário da {nome}': {es:'Faltamos al aniversario de {nome}', en:"We skipped {nome}'s anniversary"},
   '{n} festa': {es:'{n} fiesta', en:'{n} party'},
   '{n} festas': {es:'{n} fiestas', en:'{n} parties'},
@@ -32,8 +30,6 @@ TO.i18n.registrar({
   '{n} furadas: −{r} de relação com cada uma · Prestígio −{p}.': {es:'{n} faltazos: −{r} de relación con cada una · Prestigio −{p}.', en:'{n} no-shows: −{r} relationship with each · Prestige −{p}.'},
   'Efetivo': {es:'Efectivo', en:'Headcount'},
   'Bombas': {es:'Bombas', en:'Bombs'},
-  'Muito sangue esse ano. {n} vezes a gente se pegou, e dos dois lados tem gente no hospital. Trégua até o fim da temporada?':
-    {es:'Mucha sangre este año. {n} veces nos agarramos, y de los dos lados hay gente en el hospital. ¿Tregua hasta el final de la temporada?', en:"Too much blood this year. {n} times we've gone at it, and both sides have lads in hospital. Truce till the end of the season?"},
 
   /* ---------- a vida da filial ---------- */
   'Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou o bar da {nome}. São {n} dos nossos na cidade. Manda descer?':

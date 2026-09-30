@@ -3850,18 +3850,50 @@
     const P2 = TO.planejamento;
     /* A PAUTA DA SEMANA SAIU DAQUI (pedido do dono, 10/09/2026): virou
        o cartão de segunda-feira do feed, com uma aba por praça */
-    const c = cartao(_t('Mensagens de outras torcidas'), _tn(lista.length, '{n} recado', '{n} recados'));
+    /* O FEED DAS TORCIDAS (pedido do dono, 30/09/2026): os recados
+       viraram posts de rede social — quem posta, de onde, há quanto
+       tempo, o texto com as menções clicáveis e as curtidas (a gente
+       dela e a das aliadas, `feed.curtidasDe`). Os que pedem resposta
+       (pedido de casa, trégua) trazem os botões embaixo do post. */
+    const c = cartao(_t('Feed das torcidas'), _tn(lista.length, '{n} post', '{n} posts'));
+    c.corpo.classList.add('feed-social');
     if(!lista.length)
-      c.corpo.innerHTML = `<div class="em-construcao">${_t('Ninguém mandou recado ainda.')}</div>`;
-    const corDe = id => { const o = TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
+      c.corpo.innerHTML = `<div class="em-construcao">${_t('Nenhuma torcida postou nada ainda.')}</div>`;
+    const hoje = e.data.absoluto || 0;
+    const haQuanto = q => {
+      const d = hoje - (q.abs || 0);
+      if(d <= 0) return _t('hoje');
+      if(d === 1) return _t('ontem');
+      if(d < 7) return _t('há {n} dias', {n:d});
+      const dt = TO.estado.dataDaSemana ? TO.estado.dataDaSemana(q.ano, q.semana, q.dia) : null;
+      if(!dt) return `${q.ano}`;
+      const dm = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+      return q.ano !== e.data.ano ? `${dm}/${q.ano}` : dm;
+    };
+    const avatar = id => {
+      const src = escudoDe('t', id);
+      if(src) return `<span class="post-avatar"><img src="${src}" alt=""></span>`;
+      const o = TO.mundo.torcida(id) || {};
+      const cr = TO.mundo.coresDaTorcida(o);
+      const sg = String(TO.mundo.siglaTorcida(o) || o.nome || '?').slice(0, 4);
+      return `<span class="post-avatar" style="background:${cr.cor || '#555'};color:${cr.cor2 || '#fff'}"><span class="sigla">${escHTML(sg)}</span></span>`;
+    };
+    const arroba = o => '@' + U.identificador(TO.mundo.siglaTorcida(o) || o.nome || '').replace(/-/g, '');
+    const coracao = TO.icones.get('coracao');
     for(const m of lista.slice(0, 120)){
-      const q = m.quando || {};
-      const dia = TO.feed.NOME_DIA ? (TO.feed.NOME_DIA[q.dia] || '') : '';
-      const quando = q.semana ? `${q.ano} · ${_t('sem. {n}', {n:q.semana})}${dia ? ' · '+_t(dia) : ''}` : '';
-      const art = el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
-        `<div class="mt-cab">${chipTorcida(m.de, corDe(m.de))}<b>${linkTorcida(m.de, m.nome)}</b>`+
-        `<span class="tag">${ROT_MSG[m.tipo]||m.tipo}</span><span class="quando">${quando}</span></div>`+
-        `<p>${m.texto}</p>`});
+      const o = TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome};
+      /* post de save antigo nasceu sem curtida: a conta sai agora e fica */
+      if(m.curtidas == null && TO.feed.curtidasDe) m.curtidas = TO.feed.curtidasDe(e, m.de, m.id);
+      const cidade = (TO.mundo.cidade(o.mapa)||{}).nome || '';
+      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
+        `<header class="post-cab">${avatar(m.de)}`+
+          `<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}</b>`+
+          `<small>${arroba(o)}${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`+
+          `<span class="post-quando">${haQuanto(m.quando || {})}</span></header>`+
+        `<p class="post-texto">${linkificarNomes(m.texto)}</p>`+
+        `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
+          `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
+          `<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`});
       /* as que pedem resposta: recepção (quatro níveis) e trégua */
       if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
         const bts = el('div',{class:'rec-botoes'});
@@ -6101,7 +6133,7 @@
     for(const f of fx.tomadas){
       const o = TO.mundo.torcida(f.de) || {id:f.de, nome:f.nome};
       const cx = el('div',{class:'faixa-tomada'});
-      cx.appendChild(imgFaixa(o, 'faixa-img virada', _t('Faixa da {nome}, tomada em {ano}', {nome:f.nome, ano:(f.quando||{}).ano||''})));
+      cx.appendChild(imgFaixa(o, 'faixa-img virada', _t('Faixa da {nome}, tomada em {ano}', {nome:f.nome, ano:(f.quando||{}).ano||''}), f.variante || 0));
       cx.appendChild(el('small',{html:`${_t('da {torcida}', {torcida:linkTorcida(f.de, f.nome)})}${(f.quando||{}).ano ? ` · ${f.quando.ano}` : ''}`}));
       tomadas.appendChild(cx);
     }
@@ -9647,11 +9679,13 @@
       res.prestigio = 0;
     }
     /* a aliada agradece a escolta (mensagens entre torcidas, 08/09/2026) */
-    if(enc && enc.escoltaAliado && TO.feed.mensagemDe)
+    if(enc && enc.escoltaAliado && TO.feed.mensagemDe){
+      const P = {nome:(TO.mundo.torcida(enc.escoltaAliado)||{}).nome || '', nossa:e.torcida.nome};
       TO.feed.mensagemDe(e, enc.escoltaAliado, res.ganhamos
-        ? _t('Voltamos inteiros por causa do bonde de vocês no portão. Isso a gente não esquece.')
-        : _t('Apanhamos juntos, mas vocês desceram. Irmão é quem aparece na hora ruim. Valeu.'),
+        ? _t('A {nome} agradece à {nossa}: voltamos inteiros pra casa porque o bonde de vocês estava com a gente no portão. Isso a gente não esquece!', P)
+        : _t('Apanhamos juntos, mas a {nossa} desceu com a gente. Irmão é quem aparece na hora ruim. Valeu, {nossa}!', P),
         'agradecimento');
+    }
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
       /* o encontro da rua também é briga: o registro (e a mensagem de
@@ -10337,7 +10371,7 @@
     const f0 = pecas.find(f=>f.tipo === 'faixa') || pecas[0];
     const o = TO.mundo.torcida(f0.torcidaId);
     if(!B || !B.fotoDoTrofeu || !o){ foto.remove(); return cx; }
-    const src = f0.tipo === 'bandeira' ? PAT.imagemDaBandeira(o, null) : PAT.imagemDaFaixa(o, null, 'faixa', 0);
+    const src = f0.tipo === 'bandeira' ? PAT.imagemDaBandeira(o, null) : PAT.imagemDaFaixa(o, null, 'faixa', f0.variante || 0);
     if(!src){ foto.remove(); return cx; }
     const im = new Image();
     im.onload = ()=>{

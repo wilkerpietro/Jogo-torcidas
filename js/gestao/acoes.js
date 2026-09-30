@@ -271,8 +271,10 @@ TO.acoes = (function(){
     if(tomamos && !fx.nossa){
       const t = PAT.faixasIA(E, fx.torcidaId);
       if(t) t[contaIA(t)] = Math.max(0, t[contaIA(t)] - 1);
+      /* (`variante`: qual das faixas dela era — a arte de verdade que
+         aparece no Patrimônio) */
       listaNossa().tomadas.push({de:fx.torcidaId, nome:fx.nome,
-        quando:{ano:E.data.ano, semana:E.data.semana}});
+        quando:{ano:E.data.ano, semana:E.data.semana}, variante:fx.variante || 0});
       TO.estado.mexerIndicador(E, 'prestigio', V.ganho/5, bandeira
         ? _t('Tomamos a bandeira da {nome}', {nome:fx.nome})
         : _t('Tomamos a faixa da {nome}', {nome:fx.nome}));
@@ -288,7 +290,7 @@ TO.acoes = (function(){
       if(nossas.length) nossas.pop();
       const o = outroId ? TO.mundo.torcida(outroId) : null;
       const t = outroId ? PAT.faixasIA(E, outroId) : null;
-      if(t) t[tomadasIA(t)].push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano});
+      if(t) t[tomadasIA(t)].push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano, variante:fx.variante || 0});
       TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5,
         o ? (bandeira ? _t('Perdemos a nossa bandeira pra {nome}', {nome:o.nome})
                       : _t('Perdemos a nossa faixa pra {nome}', {nome:o.nome}))
@@ -307,7 +309,7 @@ TO.acoes = (function(){
       const dona = PAT.faixasIA(E, fx.torcidaId);
       const quem = tomamos ? null : PAT.faixasIA(E, outroId);
       if(dona) dona[contaIA(dona)] = Math.max(0, dona[contaIA(dona)] - 1);
-      if(quem) quem[tomadasIA(quem)].push({de:fx.torcidaId, nome:fx.nome, ano:E.data.ano});
+      if(quem) quem[tomadasIA(quem)].push({de:fx.torcidaId, nome:fx.nome, ano:E.data.ano, variante:fx.variante || 0});
       if(quem){ R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5); R.mover(E, outroId, 'prestigio', V.ganho/5); }
       return null;
     }

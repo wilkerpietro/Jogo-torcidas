@@ -352,13 +352,18 @@ TO.planejamento = (function(){
     p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
                relacao:ganho, moral: Math.round(moral*5),
                mapa:j.mapaAdv, chave:j.chave};
-    /* a resposta chega como mensagem dela (mensagens entre torcidas) */
+    /* a resposta chega como post dela (feed de rede social, 30/09/2026):
+       a aliada anuncia que recebe a nossa caravana — ou avisa que não dá */
     if(TO.feed && TO.feed.mensagemDe){
+      const F = TO.feed.frase;
+      const P = {nome:o.nome, nossa:E.torcida.nome, emCidade:F.emPraca(j.mapaAdv),
+                 dia:F.noDia(j.dia || 6), clube:(M().time(E.torcida.clubeId)||{}).nome || E.torcida.clube || '',
+                 comp:F.pelaCompeticao(j.competicao)};
       const TXT = {
-        hospedar: _t('Estamos juntos. A sede fica aberta pra caravana de vocês — colchão, banho e café. Chega cedo.'),
-        escolta:  _t('Estamos juntos. Dormem na sede e o nosso bonde anda com vocês até o portão. Aqui ninguém encosta.'),
-        churrasco:_t('Estamos juntos. Churrasco na sede quando chegarem, e a gente sobe pro estádio de bonde junto. Cidade de vocês.'),
-        nada:     _t('Irmão, dessa vez não vai dar. Semana pesada por aqui. Fica pra próxima.')
+        hospedar: _t('Bem-vindos, irmãos! A caravana da {nossa} estará {emCidade} {dia} pro jogo do {clube}{comp}, e a sede da {nome} vai estar aberta pra eles: colchão, banho e café. Cheguem cedo!', P),
+        escolta:  _t('Bem-vindos, irmãos! A caravana da {nossa} estará {emCidade} {dia} pro jogo do {clube}{comp}. Vão dormir na sede da {nome}, e o nosso bonde anda com eles até o portão. Aqui ninguém encosta.', P),
+        churrasco:_t('Bem-vindos, irmãos! A caravana da {nossa} estará {emCidade} {dia} pro jogo do {clube}{comp}. Vai ter churrasco na sede da {nome} quando chegarem, e a gente sobe pro estádio de bonde junto. A cidade é de vocês!', P),
+        nada:     _t('A {nome} avisa aos irmãos da {nossa} que dessa vez não vai dar pra receber a caravana {emCidade} {dia}. Semana pesada por aqui. Fica pra próxima!', P)
       };
       TO.feed.mensagemDe(E, aliadoId, TXT[r.nivel] || TXT.nada,
                          r.nivel === 'nada' ? 'recusa' : 'juntos');
@@ -660,16 +665,24 @@ TO.planejamento = (function(){
             : relRec), -100, 100);
       if(nivel !== 'nada') TO.relacoes.marcarAjuda(E, a.id);
       p.pago = p.pago || {}; p.pago[a.id] = true;
-      /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
+      /* o aliado agradece — ou cobra — em post público no dia seguinte
+         (feed de rede social, pedido do dono, 30/09/2026: "A Motofolia
+         vem agradecer publicamente a receptividade da Leões da TUF no
+         último sábado…") */
       if(TO.feed && TO.feed.mensagemDe){
+        const F = TO.feed.frase;
+        const P = {nome:a.torcida.nome, nossa:E.torcida.nome, quando:F.noUltimoDia(a.dia),
+                   emCidade:F.emPraca(E.torcida.mapa), emCidadeDela:F.emPraca(a.torcida.mapa),
+                   clube:a.clube.nome, comp:F.pelaCompeticao(a.comp)};
         const TXT = {
-          hospedar: _t('Obrigado pela casa, irmão. Colchão no salão e café de manhã: ninguém recebe assim. Vocês têm crédito com a gente.'),
-          escolta:  _t('Andar até o portão com o bonde de vocês do lado foi outra coisa. Fica registrado: o que precisar, é só chamar.'),
-          churrasco:_t('Que recepção. Carne, bebida e o bonde junto — isso é irmandade. Quando vierem, a casa é de vocês.'),
-          nada:     _t('Passamos pela cidade de vocês e ninguém apareceu. Anotado.')
+          hospedar: _t('A {nome} vem agradecer publicamente a receptividade da {nossa} {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Nossa parceria segue firme: quando precisarem da gente {emCidadeDela}, serão bem recebidos também!', P),
+          escolta:  _t('A {nome} agradece publicamente à {nossa} pela escolta {quando}: estivemos {emCidade} acompanhando o nosso {clube}{comp}, e o bonde de vocês andou com a gente até o portão. Isso não se esquece. Quando precisarem da gente {emCidadeDela}, é só chamar!', P),
+          churrasco:_t('Que recepção! A {nome} agradece à {nossa} pelo churrasco e pela caminhada junto {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Isso é irmandade. Quando estiverem {emCidadeDela}, a casa é de vocês!', P),
+          nada:     _t('A {nome} esteve {emCidade} {quando} acompanhando o nosso {clube}{comp}, e a {nossa}, que se diz aliada, nem apareceu. Fica registrado.', P)
         };
         TO.feed.mensagemDe(E, a.id, TXT[nivel] || TXT.nada,
-                           nivel === 'nada' ? 'cobranca' : 'agradecimento');
+                           nivel === 'nada' ? 'cobranca' : 'agradecimento',
+                           {em:(E.data.absoluto||0) + 1});
       }
     }
   }

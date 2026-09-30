@@ -70,7 +70,18 @@ TO.feed = (function(){
     if(!o || !texto) return null;
     extra = extra || {};
     /* chave: a mesma mensagem não sai duas vezes (pedido da semana, trégua do ano) */
-    if(extra.chave && E.mensagens.some(x=>x.chave === extra.chave)) return null;
+    if(extra.chave && (E.mensagens.some(x=>x.chave === extra.chave) ||
+       (E.mensagensAgendadas||[]).some(x=>(x.extra||{}).chave === extra.chave))) return null;
+    /* O POST DE DEPOIS (feed de rede social, pedido do dono, 30/09/2026):
+       o agradecimento pela recepção sai no dia seguinte ao jogo, o da
+       festa no dia seguinte à festa — "no último sábado" só é verdade
+       depois do sábado. `em` é o dia absoluto em que o post aparece. */
+    if(extra.em && extra.em > (E.data.absoluto||0)){
+      E.mensagensAgendadas = E.mensagensAgendadas || [];
+      E.mensagensAgendadas.push({de:torcidaId, texto, tipo:tipo||'recado', em:extra.em,
+        extra:{chave:extra.chave || null, dados:extra.dados || null}});
+      return null;
+    }
     /* a mesma torcida não repete o mesmo recado no mesmo dia (duas
        brigas com ela no mesmo dia davam a mesma provocação em dobro) */
     const abs = E.data.absoluto||0;
@@ -80,6 +91,7 @@ TO.feed = (function(){
                chave: extra.chave || null, dados: extra.dados || null, resposta:null,
                quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
                        abs:E.data.absoluto||0}, lida:false};
+    m.curtidas = curtidasDe(E, torcidaId, m.id);
     E.mensagens.unshift(m);
     if(E.mensagens.length > 200) E.mensagens.length = 200;
     try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
@@ -87,6 +99,62 @@ TO.feed = (function(){
   }
   const mensagensNaoLidas = E => (caixas(E), E.mensagens.filter(m=>!m.lida).length);
   function lerMensagens(E){ caixas(E); for(const m of E.mensagens) m.lida = true; }
+  /* os posts marcados pra depois caem no dia deles, na ordem em que nasceram */
+  function publicarAgendadas(E){
+    const fila = E.mensagensAgendadas;
+    if(!Array.isArray(fila) || !fila.length) return;
+    const hoje = E.data.absoluto || 0;
+    E.mensagensAgendadas = fila.filter(x=>x.em > hoje);
+    for(const x of fila) if(x.em <= hoje) mensagemDe(E, x.de, x.texto, x.tipo, x.extra);
+  }
+
+  /* AS CURTIDAS (pedido do dono, 30/09/2026): o post de uma torcida é
+     curtido pela gente dela e pela das aliadas — "a TUF tem 150 membros
+     e os aliados somam 400, vai ter em torno de 300 curtidas". A conta
+     é 55% da soma, com ±15% de sorte por post (fixa: o hash do post).
+     Aliada é relação de 20 pra cima, a régua das festas, ou irmã de
+     clube; os membros são os de hoje (a IA cresce e encolhe). A conta
+     é feita quando o post nasce e fica nele. */
+  const ALIADA = 20, FATOR_CURTIDA = 0.55;
+  function membrosHoje(E, id){
+    if(id === E.torcida.id) return (E.membros||[]).length;
+    const t = (TO.relacoes.mundo(E)||{})[id];
+    return Math.max(0, Math.round((t && t.membros) || (M().torcida(id)||{}).membros || 0));
+  }
+  function relacaoEntre(E, a, b){
+    if(a === E.torcida.id) return TO.relacoes.nivel(E, b);
+    if(b === E.torcida.id) return TO.relacoes.nivel(E, a);
+    return TO.relacoes.relacaoDelas(E, a, b);
+  }
+  function curtidasDe(E, id, semente){
+    let soma = membrosHoje(E, id);
+    for(const o of M().jogaveis()){
+      if(o.id === id || o.incompleta) continue;
+      const irma = M().saoIrmas && M().saoIrmas(id, o.id);
+      if(irma || relacaoEntre(E, id, o.id) >= ALIADA) soma += membrosHoje(E, o.id);
+    }
+    const sorte = 0.85 + (TO.mapa.hash(`curtidas|${semente}|${id}`) % 31)/100;
+    return Math.max(1, Math.round(soma * FATOR_CURTIDA * sorte));
+  }
+
+  /* O JEITO DE POST (feed de rede social, pedido do dono, 30/09/2026):
+     os recados viraram posts públicos — quem posta fala da praça dela,
+     do clube, da competição e do dia. As peças de frase moram aqui. */
+  const nomeDaPraca = mapa => ((M().cidade(mapa)||{}).nome) || mapa || '';
+  const emPraca = mapa => TO.genero.em('cidade', nomeDaPraca(mapa));
+  /* "Brasileirão Série D" vira "Série D", como se fala */
+  const competicaoCurta = nome => String(nome || '').replace(/^Brasileirão\s+/, '');
+  /* (em inglês a competição vai com "in the": "in the Série D") */
+  const pelaCompeticao = nome => !nome ? ''
+    : ' ' + (TO.i18n.idioma === 'en' ? TO.genero.em : TO.genero.por)('competicao', competicaoCurta(nome));
+  /* "no último sábado", "na última quarta": o dia da semana tem gênero */
+  const NO_ULTIMO = [null, _t('na última segunda'), _t('na última terça'), _t('na última quarta'),
+                     _t('na última quinta'), _t('na última sexta'), _t('no último sábado'),
+                     _t('no último domingo')];
+  const noUltimoDia = dia => NO_ULTIMO[dia] || NO_ULTIMO[6];
+  /* "no sábado", "na quarta" — o dia que ainda vem */
+  const NO_DIA = [null, _t('na segunda'), _t('na terça'), _t('na quarta'), _t('na quinta'),
+                  _t('na sexta'), _t('no sábado'), _t('no domingo')];
 
   /* =======================================================
      O LOTE DE BRIGAS DO DIA DE JOGO (pedido do dono, 08/09/2026)
@@ -342,7 +410,17 @@ TO.feed = (function(){
         TO.relacoes.nivel(E, torcidaId) + item.ganho));
       TO.relacoes.marcarAjuda(E, torcidaId);
       item.resposta = 'ir';
-      mensagemDe(E, torcidaId, _t('Valeu pela presença, irmão. A festa ficou completa com o bonde de vocês. Casa aberta sempre.'), 'agradecimento');
+      /* o agradecimento é post do dia seguinte à festa */
+      const hojeD = dataDeHoje(E);
+      let dFesta = new Date(hojeD.getFullYear(), (item.mes||1) - 1, item.dia||1);
+      if(dFesta - hojeD < -180*864e5) dFesta = new Date(hojeD.getFullYear() + 1, (item.mes||1) - 1, item.dia||1);
+      const faltam = Math.max(0, Math.round((dFesta - hojeD) / 864e5));
+      mensagemDe(E, torcidaId, item.idade
+        ? _t('A {nome} agradece de coração a presença dos irmãos da {nossa} na festa dos nossos {n} anos! Vocês deixaram a noite completa. Aqui a casa é sempre de vocês.',
+             {nome:item.nome, nossa:E.torcida.nome, n:item.idade})
+        : _t('A {nome} agradece de coração a presença dos irmãos da {nossa} na nossa festa de aniversário! Vocês deixaram a noite completa. Aqui a casa é sempre de vocês.',
+             {nome:item.nome, nossa:E.torcida.nome}),
+        'agradecimento', {em:(E.data.absoluto||0) + faltam + 1});
     } else {
       E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
         TO.relacoes.nivel(E, torcidaId) - REL.furarAniversario));
@@ -417,7 +495,8 @@ TO.feed = (function(){
       if(TO.relacoes.nivel(E, id) > TO.relacoes.QUENTE) continue;
       const o = M().torcida(id);
       if(!o) continue;
-      mensagemDe(E, id, _t('Muito sangue esse ano. {n} vezes a gente se pegou, e dos dois lados tem gente no hospital. Trégua até o fim da temporada?', {n:c.n}), 'tregua',
+      mensagemDe(E, id, _t('Muito sangue em {ano}. Foram {n} brigas contra a {nossa}, e tem gente no hospital dos dois lados. A {nome} propõe publicamente uma trégua até o fim da temporada. A resposta é com vocês.',
+          {ano:E.data.ano, n:c.n, nossa:E.torcida.nome, nome:o.nome}), 'tregua',
         {chave:`tregua|${E.data.ano}|${id}`, dados:{ano:E.data.ano}});
     }
   }
@@ -439,6 +518,7 @@ TO.feed = (function(){
 
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
+    passo('posts do dia',   ()=>publicarAgendadas(E));
     passo('tréguas',        ()=>treguasDoDia(E));
     passo('status',         ()=>statusDeHoje(E));
     passo('eixos',          ()=>eixosDoDia(E));
@@ -2451,8 +2531,9 @@ TO.feed = (function(){
        recepção saiu da mensagem do olheiro. */
     for(const a of PL().aliadosNaCidade(E, E.data.semana)){
       if(diaDoOlheiro(a.dia) !== hoje) continue;
-      mensagemDe(E, a.id, _t('Fala irmão, vamos a {cidade} {dia} pro jogo do {clube}, uns {n} de bonde. Tem como receber a gente? Qualquer coisa já ajuda.',
-        {cidade:cidadeNossa, dia:NOME_DIA[a.dia], clube:a.clube.nome, n:a.estimativa}), 'pedido',
+      mensagemDe(E, a.id, _t('Caravana confirmada! A {nome} estará {emCidade} {dia} pro jogo do {clube}{comp}, uns {n} de bonde. Contamos com os irmãos da {nossa} pra receber a gente!',
+        {nome:a.torcida.nome, emCidade:emPraca(E.torcida.mapa), dia:NO_DIA[a.dia] || NO_DIA[6],
+         clube:a.clube.nome, comp:pelaCompeticao(a.comp), n:a.estimativa, nossa:E.torcida.nome}), 'pedido',
         {chave:`pedido|${E.data.ano}|${E.data.semana}|${a.id}`,
          dados:{n:a.estimativa, dia:a.dia, clube:a.clube.nome}});
     }
@@ -3096,8 +3177,8 @@ TO.feed = (function(){
     if(!lista.length) return null;
     lista.sort((a,b)=>(a.mes*40 + a.dia) - (b.mes*40 + b.dia));
     for(const a of lista)
-      mensagemDe(E, a.torcida, _t('Fala irmão, dia {data} comemoramos {n} anos de história. A presença de vocês seria uma honra pra gente.',
-        {data:a.data, n:a.idade}), 'convite');
+      mensagemDe(E, a.torcida, _t('Passando aqui pra convidar todos os nossos aliados pra nossa festa de comemoração dos nossos {n} anos de história! Vai ser {data} aqui {emCidade}. Contamos com a presença de vocês.',
+        {data:a.data, n:a.idade, emCidade:emPraca((M().torcida(a.torcida)||{}).mapa)}), 'convite');
     return {
       chave:`festas|${E.data.ano}|${mesDe(E)}`, rot:_t('Convites de festa'), voz:_t('Diretoria'),
       tipo:'festas', festas:lista, botoes:[],
@@ -3758,8 +3839,8 @@ TO.feed = (function(){
       ]
     });
     /* o recado do rival, na caixa de mensagens (dono, 08/09/2026) */
-    mensagemDe(E, rival.id, _t('Hoje à noite, em {bairro}, {n} contra {n}. {valor} na roda. Aparece.',
-      {bairro:b.nome, n:tam, valor:U.dinheiro(aposta)}), 'treta', {chave:`treta-msg|${ev.chave}`});
+    mensagemDe(E, rival.id, _t('Recado pra {nossa}: hoje à noite, em {bairro}, {n} contra {n}, com {valor} na roda. Quem é de verdade aparece.',
+      {nossa:E.torcida.nome, bairro:b.nome, n:tam, valor:U.dinheiro(aposta)}), 'treta', {chave:`treta-msg|${ev.chave}`});
   }
 
   /* -------------------------------------------------------
@@ -4450,15 +4531,17 @@ TO.feed = (function(){
       .map(x => Math.abs(x.delta || 0) * 5));
     if(d.torcidaId && b.nome && swingRegua >= PROVOCA_REGUA){
       /* textos aprovados pelo dono (18/08/2026) */
+      /* (o recado virou post público, 30/09/2026: quem apanhou é citado) */
+      const P = {nome:b.nome, nossa:E.torcida.nome};
       const DEBOCHE = [
-        _t('Anota a placa aí, teu terror tem nome!'),
-        _t('Correram igual galinha, cadê vocês? Ninguém sabe ninguém viu.'),
-        _t('Contamos os que correram: faltou dedo pra contar. Fica em casa da próxima.')
+        _t('Hoje a {nossa} conheceu de perto o bonde da {nome}. Anota a placa aí: teu terror tem nome!', P),
+        _t('Correram igual galinha! Cadê a {nossa}? Ninguém sabe, ninguém viu. Hoje a rua foi da {nome}.', P),
+        _t('Contamos os da {nossa} que correram hoje: faltou dedo pra contar. Da próxima, fiquem em casa.', P)
       ];
       const VOLTA = [
-        _t('Aproveita, porque isso não fica assim. Nosso bonde volta pesado.'),
-        _t('Fica tranquilo que a cobrança vem cara!'),
-        _t('Riram hoje, choram depois. O revide é pesado.')
+        _t('A {nossa} que aproveite o dia de hoje, porque isso não fica assim. O bonde da {nome} volta pesado.', P),
+        _t('Recado pra {nossa}: podem ficar tranquilos que a cobrança vem, e vem cara!', P),
+        _t('Riram hoje, vão chorar depois. A {nome} não esquece: o revide vai ser pesado.', P)
       ];
       const lista = d.ganhamos ? VOLTA : DEBOCHE;
       const fala = lista[TO.mapa.hash(
@@ -4655,7 +4738,8 @@ TO.feed = (function(){
         if(d.aliado){
           E.relacoes[d.aliado] = U.limitar(
             (E.relacoes[d.aliado]||0) - TO.relacoes.REL.largarAliado, -100, 100);
-          mensagemDe(E, d.aliado, _t('Nosso pessoal apanhou na cidade de vocês e ninguém desceu. A gente veio de longe confiando. Anotado.'), 'cobranca');
+          mensagemDe(E, d.aliado, _t('A {nome} vem a público lamentar: nosso pessoal apanhou {emCidade} e a {nossa}, que se diz aliada, não desceu. Viemos de longe confiando. Fica registrado.',
+            {nome:(M().torcida(d.aliado)||{}).nome || '', emCidade:emPraca(E.torcida.mapa), nossa:E.torcida.nome}), 'cobranca');
         }
         marcar();
         return {ok:true};
@@ -4816,7 +4900,8 @@ TO.feed = (function(){
       case 'aniv-ir': {
         marcar();
         const id = (m.dados||{}).torcida;
-        mensagemDe(E, id, _t('Valeu pela presença, irmão. A festa ficou completa com o bonde de vocês. Casa aberta sempre.'), 'agradecimento');
+        mensagemDe(E, id, _t('A {nome} agradece de coração a presença dos irmãos da {nossa} na nossa festa de aniversário! Vocês deixaram a noite completa. Aqui a casa é sempre de vocês.',
+          {nome:(m.dados||{}).nome || '', nossa:E.torcida.nome}), 'agradecimento', {em:(E.data.absoluto||0) + 1});
         TO.estado.lancar(E, _t('Presença na festa da {nome}', {nome:(m.dados||{}).nome}), -2000);
         E.relacoes = E.relacoes || {};
         const ganhoF = TO.relacoes.ganhoRepetido(E, E.torcida.id, id, 'festa',
@@ -5086,6 +5171,8 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
+          curtidasDe, publicarAgendadas,
+          frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,

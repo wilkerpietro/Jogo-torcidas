@@ -1010,7 +1010,8 @@ table.dados tr.selecionada td{background:#252525}
 .faixas-rot{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);margin:6px 0 5px}
 .faixas-lista{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start}
 /* o pano ondulado tem margem transparente: sem borda nem caixa de sombra (dono, 09/09/2026) */
-.faixa-img{width:180px;height:56px;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));image-rendering:auto}
+/* (a faixa de verdade é mais comprida que a gerada: a altura fica, a largura segue a arte; sem espaço, encolhe sem deformar) */
+.faixa-img{width:auto;height:56px;max-width:100%;object-fit:contain;display:block;filter:drop-shadow(0 3px 5px rgba(0,0,0,.5));image-rendering:auto}
 .faixa-img.virada{transform:rotate(180deg)}
 .faixa-tomada{display:flex;flex-direction:column;gap:3px;align-items:center}
 .faixa-tomada small{font-family:var(--mono);font-size:9.5px;color:var(--fraco)}
@@ -1020,15 +1021,27 @@ table.dados tr.selecionada td{background:#252525}
 .tab-olheiro tr.to-acoes .to-estado{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
 .tab-olheiro tr.to-acoes .rec-botoes{margin-top:0}
 
-/* as mensagens de outras torcidas (Notícias → Mensagens) */
-.msg-torcida{padding:9px 0;border-bottom:1px solid var(--sulco)}
-.msg-torcida:last-child{border-bottom:0}
-.msg-torcida.nova{box-shadow:inset 3px 0 0 var(--rubro-vivo);padding-left:9px}
-.msg-torcida .mt-cab{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:12.5px}
-.msg-torcida .mt-cab .quando{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--apagado)}
-.msg-torcida p{font-size:13px;line-height:1.45;color:#d8d4cd}
-.msg-torcida.tipo-provocacao p{color:#e8b0b0}
-.msg-torcida.tipo-juntos p,.msg-torcida.tipo-agradecimento p{color:#cfe6d3}
+/* o feed das torcidas (Notícias → Mensagens), com cara de rede social
+   (dono, 30/09/2026): avatar, quem posta, o texto e as curtidas */
+.feed-social{max-width:680px}
+.post-torcida{padding:13px 0 11px;border-bottom:1px solid var(--sulco)}
+.post-torcida:last-child{border-bottom:0}
+.post-torcida.nova{box-shadow:inset 3px 0 0 var(--rubro-vivo);padding-left:11px}
+.post-cab{display:flex;align-items:center;gap:10px;margin-bottom:8px;min-width:0}
+.post-avatar{width:38px;height:38px;flex:0 0 38px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#1b1b1b;border:1px solid #333}
+.post-avatar img{width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box}
+.post-avatar .sigla{font:700 10.5px/1 var(--mono);letter-spacing:.02em}
+.post-quem{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.post-quem b{font-size:13.5px}
+.post-quem small{font-family:var(--mono);font-size:10px;color:var(--apagado);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-quando{margin-left:auto;align-self:flex-start;font-family:var(--mono);font-size:10px;color:var(--apagado);white-space:nowrap}
+.post-texto{font-size:13.5px;line-height:1.55;color:#e4e0d8;margin:0 0 9px;overflow-wrap:anywhere}
+.post-torcida.tipo-provocacao .post-texto,.post-torcida.tipo-treta .post-texto{color:#efc2c2}
+.post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
+.post-curtidas{display:inline-flex;align-items:center;gap:6px}
+.post-curtidas svg{width:15px;height:15px;color:#e0566b;fill:#e0566b}
+.post-tag{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
+.post-torcida .rec-botoes,.post-torcida .msg-efeitos{margin-top:10px}
 .pp-nossas{margin-top:8px;border-top:1px solid var(--fio-jornal,#4a463c);padding-top:6px}
 .pp-nossas .gz-secao{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco);margin-bottom:4px}
 .pp-nossas small{font-family:var(--mono);font-size:10px;color:var(--fraco)}

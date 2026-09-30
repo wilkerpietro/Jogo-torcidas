@@ -31,7 +31,10 @@ TO.dados.genero = {
         'Argentina Primera Nacional', 'Bolívia Primera',
         'Chile Primera', 'Chile Primera B', 'Colômbia Primera A',
         'Colômbia Primera B', 'Equador Serie A', 'Paraguai Primera',
-        'Peru Liga 1', 'Uruguai Primera', 'Venezuela Primera'],
+        'Peru Liga 1', 'Uruguai Primera', 'Venezuela Primera',
+        /* o jeito curto, sem o "Brasileirão" — "pela Série D" (feed das
+           torcidas, 30/09/2026) */
+        'Série A', 'Série B', 'Série C', 'Série D'],
     m: ['Brasileirão Série A', 'Brasileirão Série B',
         'Brasileirão Série C', 'Brasileirão Série D',
         'Cariocão', 'Catarinense', 'Gauchão', 'Mineiro',

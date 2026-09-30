@@ -111,9 +111,6 @@ TO.i18n.registrar({
   'Vingar': {es:'Vengarnos', en:'Get revenge'},
   'Bolar o ataque': {es:'Armar el ataque', en:'Plan the hit'},
   'Deixar quieto': {es:'Dejarlo quieto', en:'Leave it'},
-  'Fala irmão, vamos a {cidade} {dia} pro jogo do {clube}, uns {n} de bonde. Tem como receber a gente? Qualquer coisa já ajuda.':
-    {es:'Qué tal hermano, vamos a {cidade} el {dia} al partido de {clube}, una banda de unos {n}. ¿Nos pueden recibir? Cualquier cosa ya ayuda.',
-     en:"Alright mate, we're coming to {cidade} on {dia} for the {clube} match, a crew of about {n}. Can you put us up? Anything helps."},
   'fora de casa': {es:'de visitante', en:'away'},
   /* ---------- mudança de status ---------- */
   'Fala, {nos}. Faz tempo que a gente não se pega na rua, e da nossa parte a treta esfriou. Dá pra tratar como neutro daqui pra frente. Fechado?':
@@ -208,9 +205,6 @@ TO.i18n.registrar({
   'Reunião da diretoria — {mes}. Nada na mesa este mês.': {es:'Reunión de directiva — {mes}. Nada en la mesa este mes.', en:'Board meeting — {mes}. Nothing on the table this month.'},
   'Sentar com a diretoria': {es:'Sentarse con la directiva', en:'Sit down with the board'},
   /* ---------- os convites de festa na reunião ---------- */
-  'Fala irmão, dia {data} comemoramos {n} anos de história. A presença de vocês seria uma honra pra gente.':
-    {es:'Qué tal hermano, el {data} festejamos {n} años de historia. La presencia de ustedes sería un honor para nosotros.',
-     en:"Alright mate, on {data} we celebrate {n} years of history. Having you there would be an honour for us."},
   'Convites de festa': {es:'Invitaciones a fiestas', en:'Party invitations'},
   'Diretoria': {es:'Directiva', en:'Board'},
   'Os convites chegaram: {n} aliada faz aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?':
