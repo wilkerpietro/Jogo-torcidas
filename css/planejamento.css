@@ -146,10 +146,10 @@
 
 /* ---- o cartão de segunda, curto (a mensagem 'semana') ---- */
 .sem-curto .sem-resumo{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
-.sem-curto .sem-resumo li{display:flex;align-items:baseline;gap:8px;font-size:13px;flex-wrap:wrap}
+.sem-curto .sem-resumo li{display:flex;align-items:center;justify-content:flex-start;text-align:left;gap:8px;font-size:13px;flex-wrap:wrap}
 .sem-curto .sem-resumo li.passou{opacity:.5}
 .sem-curto .sem-resumo li.nosso b{color:var(--ouro)}
-.sem-curto .sem-resumo .sem-dia{min-width:34px;font-family:var(--titulo);font-weight:700;letter-spacing:.06em;color:var(--fraco)}
+.sem-curto .sem-resumo .sem-dia{flex:none;width:40px;min-width:40px;font-family:var(--titulo);font-weight:700;letter-spacing:.06em;color:var(--fraco)}
 .sem-curto .sem-resumo small{color:var(--fraco)}
 .sem-curto .sem-resumo em{font-style:normal;color:var(--fraco);font-size:12px}
 .sem-curto .sem-abrir{margin-top:10px;width:100%}
