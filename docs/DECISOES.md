@@ -8248,6 +8248,14 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
   - "Mostrar menos" diminui os posts daquela natureza. Torcida distante (duas estradas ou mais) é uma natureza só, "torcidas distantes", como no exemplo do dono; as de perto vão pelo assunto (brigas, futebol, agenda das torcidas); o jornal vai por jornal. Cada clique esconde mais: 60%, 80%, 95%, e é sempre o mesmo post que some (sorte fixa por post).
   - As escolhas ficam num quadrinho no topo do feed, cada uma com "Desfazer", e são guardadas no save (`E.feedPrefs`). Recado que é pra gente (pedido de casa, trégua, convite) nunca some.
 
+## O nosso perfil posta no ritmo dos outros (pedido do dono, 30/09/2026)
+
+"Falta a gente fazer postagens no feed com a mesma frequência dos demais; tomei uma faixa no bar da Cearamor e não gerou nenhuma postagem." A faixa do bar já saía desde o commit anterior ("A partir de hoje a faixa da Cearamor é nossa. A cidade é nossa!", com a Cearamor respondendo). Antes dele, a nossa zoeira só saía em briga que valesse muito prestígio e não olhava a faixa. Além disso, o perfil oficial da nossa torcida agora posta:
+- **O resultado de todo jogo do clube**: vitória (goleada, em casa ou fora de casa, citando a cidade), empate e derrota (esta como reclamação). Clássico e goleada sofrida ficam só com o post da rivalidade, que já saía.
+- **A chegada da caravana** no dia do jogo fora: "A Leões da TUF já está no Rio Grande do Norte! Hoje a arquibancada visitante tem dono. Vamos, Fortaleza!"
+- **A vida da casa**: sede ampliada, bar, loja e subsede inaugurados, faixa e bandeira novas, e cada marco de membros (de 50 em 50 até mil, depois de 100 em 100). A casa é lida por diferença contra a foto do dia anterior (`E.nossaFotoNoFeed`), sem gancho em cada compra.
+- Em 90 dias de TUF sem jogar cena, o nosso perfil foi de 9 para 19 posts, o mais ativo das torcidas (a mais ativa das outras fez 13).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

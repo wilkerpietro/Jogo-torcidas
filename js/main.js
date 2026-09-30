@@ -3840,7 +3840,8 @@
                    pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada'),
                    zoeira:_t('Zoeira'), resposta:_t('Resposta'), noticia:_t('Notícia'),
                    protesto:_t('Protesto'), convocacao:_t('Convocação'), resenha:_t('Resenha'),
-                   caravana:_t('Caravana'), comemoracao:_t('Comemoração'), reclamacao:_t('Reclamação')};
+                   caravana:_t('Caravana'), comemoracao:_t('Comemoração'), reclamacao:_t('Reclamação'),
+                   resultado:_t('Resultado'), inauguracao:_t('Inauguração')};
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */

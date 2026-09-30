@@ -824,6 +824,103 @@ TO.feed = (function(){
     }
   }
 
+  /* =======================================================
+     O NOSSO PERFIL NO RITMO DOS OUTROS (pedido do dono, 30/09/2026)
+     "Falta a gente postar com a mesma frequência dos demais": além da
+     convocação, da caravana, da resenha e da zoeira de briga, o perfil
+     oficial da nossa torcida posta o resultado de todo jogo do clube,
+     a chegada na cidade do jogo fora, e a vida da casa — sede ampliada,
+     bar, loja e subsede inaugurados, faixa e bandeira novas, e cada
+     marco de membros. A casa é lida por diferença contra a foto do dia
+     anterior (`E.nossaFotoNoFeed`), sem gancho em cada compra.
+     ======================================================= */
+  function nossoJogoNoFeed(E, jogos){
+    const meu = E.torcida.clubeId, abs = E.data.absoluto || 0, H = TO.mapa.hash;
+    const j = (jogos || []).find(x => (x.c === meu || x.f === meu) && x.gc != null && x.gf != null);
+    if(!j) return;
+    /* clássico e goleada sofrida já têm o post da rivalidade */
+    const ja = E.mensagens.some(m => m.de === E.torcida.id && (m.quando || {}).abs === abs &&
+      /^(classico|goleada)/.test(m.chave || ''));
+    if(ja) return;
+    const adv = j.c === meu ? j.f : j.c, g1 = golsDe(j, meu), g2 = golsDe(j, adv);
+    const fora = j.f === meu && !j.neutro;
+    const P = {nome:E.torcida.nome, clube:nomeClube(meu), adv:nomeClube(adv), g1, g2,
+               comp:pelaCompeticao(j.compNome || j.comp),
+               emCidade:emPraca((M().time(adv) || {}).mapa)};
+    const h = H(`nosso-jogo|${abs}|${adv}`);
+    let op, tipo = 'resultado';
+    if(g1 > g2 && g1 - g2 >= 3) op = [
+      _t('Atropelo! {clube} {g1} x {g2} {adv}{comp}. Jogando assim, a {nome} vai junto até o fim!', P),
+      _t('{g1} a {g2}! Que noite, {clube}! A {nome} canta até perder a voz.', P)];
+    else if(g1 > g2) op = fora ? [
+      _t('Fora de casa também é nosso! {clube} {g1} x {g2} {adv}{comp}, e a {nome} fez barulho {emCidade}.', P),
+      _t('Vitória longe de casa! {clube} {g1} x {g2} {adv}{comp}. Valeu cada quilômetro de estrada da {nome}.', P)] : [
+      _t('VITÓRIA! {clube} {g1} x {g2} {adv}{comp}. A {nome} fez a parte dela na arquibancada, e o time respondeu em campo.', P),
+      _t('Três pontos em casa! {clube} {g1} x {g2} {adv}{comp}. Obrigado a cada um da {nome} que empurrou o time.', P)];
+    else if(g1 === g2) op = [
+      _t('Empate em {g1} a {g2} com {adv}{comp}. Dava pra mais, {clube}. A {nome} segue apoiando, mas quer mais na próxima.', P),
+      _t('{clube} {g1} x {g2} {adv}{comp}. Um ponto é pouco pro tamanho dessa camisa. A {nome} cobra atitude.', P)];
+    else { tipo = 'reclamacao'; op = [
+      _t('Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.', P),
+      _t('Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.', P)]; }
+    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`});
+  }
+
+  /* no dia do jogo fora: a caravana chegou */
+  function nossaChegadaHoje(E){
+    const j = E.proximoJogo, abs = E.data.absoluto || 0;
+    if(!j || j.casa || j.dia !== E.data.dia || !j.mapaAdv) return;
+    const P = {nome:E.torcida.nome, emCidade:emPraca(j.mapaAdv), clube:nomeClube(E.torcida.clubeId)};
+    const op = [
+      _t('A {nome} já está {emCidade}! Hoje a arquibancada visitante tem dono. Vamos, {clube}!', P),
+      _t('Caravana na área! A {nome} chegou {emCidade} e vai fazer a festa no setor visitante.', P)];
+    mensagemDe(E, E.torcida.id, op[TO.mapa.hash(`chegada|${abs}`) % op.length], 'caravana',
+      {publico:true, chave:`chegada|${j.chave || abs}`});
+  }
+
+  const MARCO = n => n < 1000 ? 50 : 100;
+  function fotoDaCasa(E){
+    const p = TO.financeiro.patrimonio(E), PT = TO.patrimonio;
+    const fx = PT && PT.faixasDe ? PT.faixasDe(E) : null;
+    return {sede:E.torcida.sedeNivel || 0, bares:(p.bares || []).length, lojas:(p.lojas || []).length,
+            filiais:(p.filiais || []).map(f => f.cidade),
+            faixas:fx ? fx.nossas.length : 0, bandeiras:PT && PT.bandeirasDe ? PT.bandeirasDe(E).nossas.length : 0,
+            membros:(E.membros || []).length};
+  }
+  function nossaCasaNoFeed(E){
+    const antes = E.nossaFotoNoFeed, agora = fotoDaCasa(E);
+    E.nossaFotoNoFeed = agora;
+    if(!antes) return;
+    const abs = E.data.absoluto || 0, p = TO.financeiro.patrimonio(E), nos = E.torcida;
+    const P = {nome:nos.nome, clube:nomeClube(nos.clubeId), emCidade:emPraca(nos.mapa)};
+    const posta = (texto, chave) => mensagemDe(E, nos.id, texto, 'inauguracao', {publico:true, chave:`${chave}|${abs}`});
+    if(agora.sede > antes.sede)
+      posta(_t('A {nome} ampliou a sede {emCidade}! Mais espaço pra reunião, pra bateria e pra nossa gente. Obrigado a todo mundo que colaborou.', P), 'sede');
+    if(agora.bares > antes.bares){
+      const b = p.bares[p.bares.length - 1] || {};
+      posta(b.bairro ? _t('Inauguração! A {nome} abriu bar novo no bairro {bairro}. Cerveja gelada e só a nossa gente. Chega junto!', Object.assign({bairro:b.bairro}, P))
+                     : _t('Inauguração! A {nome} abriu bar novo. Cerveja gelada e só a nossa gente. Chega junto!', P), 'bar-novo');
+    }
+    if(agora.lojas > antes.lojas){
+      const l = p.lojas[p.lojas.length - 1] || {};
+      posta(l.bairro ? _t('Loja nova da {nome} no bairro {bairro}! Camisa, boné e faixa: vista a torcida.', Object.assign({bairro:l.bairro}, P))
+                     : _t('Loja nova da {nome}! Camisa, boné e faixa: vista a torcida.', P), 'loja-nova');
+    }
+    const novaFilial = agora.filiais.find(c => !antes.filiais.includes(c));
+    if(novaFilial)
+      posta(_t('A {nome} agora tem subsede {emOutra}! A nossa bandeira fincada em mais uma cidade.',
+        Object.assign({emOutra:emPraca(novaFilial)}, P)), 'subsede');
+    if(agora.faixas > antes.faixas)
+      posta(_t('Faixa nova da {nome} pronta! Estreia no próximo jogo do {clube}.', P), 'faixa-nova');
+    if(agora.bandeiras > antes.bandeiras)
+      posta(_t('Bandeira nova da {nome} pronta! Vai tremular no próximo jogo do {clube}.', P), 'bandeira-nova');
+    const m0 = Math.floor(antes.membros / MARCO(antes.membros)), m1 = Math.floor(agora.membros / MARCO(agora.membros));
+    if(agora.membros > antes.membros && m1 > m0 && agora.membros >= 50){
+      const n = m1 * MARCO(agora.membros);
+      posta(_t('Somos {n}! A {nome} chegou a {n} membros. Bem-vindos, novatos: aqui é família.', Object.assign({n}, P)), 'marco');
+    }
+  }
+
   function cidadeNoFeed(E, ctx){
     passo('convocação',  ()=>convocacoesDeHoje(E, ctx.jogos || []));
     passo('gazeta da cidade', ()=>gazetaDaCidade(E, ctx.jogos || []));
@@ -833,6 +930,9 @@ TO.feed = (function(){
     passo('rivalidade',  ()=>rivalidadesDoDia(E, ctx.jogos || []));
     passo('títulos',     ()=>titulosDoDia(E));
     passo('virada',      ()=>viradaDoAno(E));
+    passo('nosso jogo',  ()=>nossoJogoNoFeed(E, ctx.jogos || []));
+    passo('nossa chegada', ()=>nossaChegadaHoje(E));
+    passo('nossa casa',  ()=>nossaCasaNoFeed(E));
   }
 
   /* --- a zoeira das zonas na casa de piscina, e a nossa quando

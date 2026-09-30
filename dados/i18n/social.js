@@ -352,5 +352,53 @@ TO.i18n.registrar({
   'brigas': {es:'peleas', en:'fights'},
   'futebol': {es:'fútbol', en:'football'},
   'agenda das torcidas': {es:'agenda de las barras', en:'firm events'},
-  'outros posts': {es:'otras publicaciones', en:'other posts'}
+  'outros posts': {es:'otras publicaciones', en:'other posts'},
+
+  /* ---------- o nosso perfil no ritmo dos outros ---------- */
+  'A {nome} agora tem subsede {emOutra}! A nossa bandeira fincada em mais uma cidade.':
+    {es:'¡La {nome} ya tiene filial {emOutra}! Nuestra bandera clavada en una ciudad más.', en:'{nome} now has a branch {emOutra}! Our flag planted in one more city.'},
+  'A {nome} ampliou a sede {emCidade}! Mais espaço pra reunião, pra bateria e pra nossa gente. Obrigado a todo mundo que colaborou.':
+    {es:'¡La {nome} amplió la sede {emCidade}! Más lugar para las reuniones, para la murga y para nuestra gente. Gracias a todos los que colaboraron.', en:'{nome} has expanded the clubhouse {emCidade}! More room for meetings, for the drums and for our people. Thanks to everyone who chipped in.'},
+  'A {nome} já está {emCidade}! Hoje a arquibancada visitante tem dono. Vamos, {clube}!':
+    {es:'¡La {nome} ya está {emCidade}! Hoy la tribuna visitante tiene dueño. ¡Vamos, {clube}!', en:'{nome} is already {emCidade}! Today the away end has an owner. Come on, {clube}!'},
+  'Atropelo! {clube} {g1} x {g2} {adv}{comp}. Jogando assim, a {nome} vai junto até o fim!':
+    {es:'¡Paliza! {clube} {g1} x {g2} {adv}{comp}. Jugando así, la {nome} acompaña hasta el final.', en:'Thrashing! {clube} {g1} x {g2} {adv}{comp}. Playing like this, {nome} is with you all the way!'},
+  'Bandeira nova da {nome} pronta! Vai tremular no próximo jogo do {clube}.':
+    {es:'¡Bandera nueva de la {nome} lista! Va a flamear en el próximo partido de {clube}.', en:'New {nome} flag ready! It will fly at the next {clube} match.'},
+  'Caravana na área! A {nome} chegou {emCidade} e vai fazer a festa no setor visitante.':
+    {es:'¡Caravana en la zona! La {nome} llegó {emCidade} y va a hacer la fiesta en la tribuna visitante.', en:'Away trip has landed! {nome} has arrived {emCidade} and is going to party in the away end.'},
+  'Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.':
+    {es:'Derrota: {clube} {g1} x {g2} {adv}{comp}. No es el resultado que la {nome} esperaba. Cabeza en alto, que en el próximo partido la tribuna va a estar ahí de nuevo.', en:'Defeat: {clube} {g1} x {g2} {adv}{comp}. Not the result {nome} was hoping for. Heads up: the stands will be there again next match.'},
+  'Empate em {g1} a {g2} com {adv}{comp}. Dava pra mais, {clube}. A {nome} segue apoiando, mas quer mais na próxima.':
+    {es:'Empate {g1} a {g2} con {adv}{comp}. Daba para más, {clube}. La {nome} sigue alentando, pero quiere más en el próximo.', en:'{g1}-{g2} draw with {adv}{comp}. There was more in it, {clube}. {nome} keeps backing the team, but wants more next time.'},
+  'Faixa nova da {nome} pronta! Estreia no próximo jogo do {clube}.':
+    {es:'¡Trapo nuevo de la {nome} listo! Se estrena en el próximo partido de {clube}.', en:'New {nome} banner ready! It debuts at the next {clube} match.'},
+  'Fora de casa também é nosso! {clube} {g1} x {g2} {adv}{comp}, e a {nome} fez barulho {emCidade}.':
+    {es:'¡De visitante también es nuestro! {clube} {g1} x {g2} {adv}{comp}, y la {nome} hizo ruido {emCidade}.', en:'Away from home, still ours! {clube} {g1} x {g2} {adv}{comp}, and {nome} made noise {emCidade}.'},
+  'Inauguração':
+    {es:'Inauguración', en:'Opening'},
+  'Inauguração! A {nome} abriu bar novo no bairro {bairro}. Cerveja gelada e só a nossa gente. Chega junto!':
+    {es:'¡Inauguración! La {nome} abrió un bar nuevo en el barrio {bairro}. Cerveza fría y solo nuestra gente. ¡Vengan!', en:'Grand opening! {nome} has opened a new bar in {bairro}. Cold beer and only our people. Come along!'},
+  'Inauguração! A {nome} abriu bar novo. Cerveja gelada e só a nossa gente. Chega junto!':
+    {es:'¡Inauguración! La {nome} abrió un bar nuevo. Cerveza fría y solo nuestra gente. ¡Vengan!', en:'Grand opening! {nome} has opened a new bar. Cold beer and only our people. Come along!'},
+  'Loja nova da {nome} no bairro {bairro}! Camisa, boné e faixa: vista a torcida.':
+    {es:'¡Tienda nueva de la {nome} en el barrio {bairro}! Camiseta, gorra y trapo: vestí la barra.', en:'New {nome} shop in {bairro}! Shirts, caps and banners: wear the colours.'},
+  'Loja nova da {nome}! Camisa, boné e faixa: vista a torcida.':
+    {es:'¡Tienda nueva de la {nome}! Camiseta, gorra y trapo: vestí la barra.', en:'New {nome} shop! Shirts, caps and banners: wear the colours.'},
+  'Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.':
+    {es:'Mala noche. {clube} {g1} x {g2} {adv}{comp}. La {nome} exige una reacción ya en el próximo partido.', en:'Bad night. {clube} {g1} x {g2} {adv}{comp}. {nome} demands a reaction in the very next match.'},
+  'Resultado':
+    {es:'Resultado', en:'Result'},
+  'Somos {n}! A {nome} chegou a {n} membros. Bem-vindos, novatos: aqui é família.':
+    {es:'¡Somos {n}! La {nome} llegó a {n} miembros. Bienvenidos, nuevos: acá somos familia.', en:'We are {n}! {nome} has reached {n} members. Welcome, newcomers: this is family.'},
+  'Três pontos em casa! {clube} {g1} x {g2} {adv}{comp}. Obrigado a cada um da {nome} que empurrou o time.':
+    {es:'¡Tres puntos en casa! {clube} {g1} x {g2} {adv}{comp}. Gracias a cada uno de la {nome} que empujó al equipo.', en:'Three points at home! {clube} {g1} x {g2} {adv}{comp}. Thanks to every one of {nome} who pushed the team on.'},
+  'VITÓRIA! {clube} {g1} x {g2} {adv}{comp}. A {nome} fez a parte dela na arquibancada, e o time respondeu em campo.':
+    {es:'¡VICTORIA! {clube} {g1} x {g2} {adv}{comp}. La {nome} hizo su parte en la tribuna, y el equipo respondió en la cancha.', en:'WIN! {clube} {g1} x {g2} {adv}{comp}. {nome} did its part in the stands, and the team answered on the pitch.'},
+  'Vitória longe de casa! {clube} {g1} x {g2} {adv}{comp}. Valeu cada quilômetro de estrada da {nome}.':
+    {es:'¡Victoria lejos de casa! {clube} {g1} x {g2} {adv}{comp}. Valió cada kilómetro de ruta de la {nome}.', en:'Win away from home! {clube} {g1} x {g2} {adv}{comp}. Worth every mile {nome} travelled.'},
+  '{clube} {g1} x {g2} {adv}{comp}. Um ponto é pouco pro tamanho dessa camisa. A {nome} cobra atitude.':
+    {es:'{clube} {g1} x {g2} {adv}{comp}. Un punto es poco para el tamaño de esta camiseta. La {nome} exige actitud.', en:'{clube} {g1} x {g2} {adv}{comp}. One point is not enough for a shirt this big. {nome} demands attitude.'},
+  '{g1} a {g2}! Que noite, {clube}! A {nome} canta até perder a voz.':
+    {es:'¡{g1} a {g2}! ¡Qué noche, {clube}! La {nome} canta hasta quedarse sin voz.', en:'{g1}-{g2}! What a night, {clube}! {nome} will sing until we lose our voices.'}
 });
