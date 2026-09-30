@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=498dcc0f3c';
-import { brigaNaCaminhada } from './caminhada.js?v=498dcc0f3c';
-import { brigaNoBar } from './briga_bar.js?v=498dcc0f3c';
-import { brigaNaTreta } from './briga_treta.js?v=498dcc0f3c';
-import { planoDoBar } from './casas3d.js?v=498dcc0f3c';
+import { palcoDeBriga } from './palco_briga.js?v=200d9711fc';
+import { brigaNaCaminhada } from './caminhada.js?v=200d9711fc';
+import { brigaNoBar } from './briga_bar.js?v=200d9711fc';
+import { brigaNaTreta } from './briga_treta.js?v=200d9711fc';
+import { planoDoBar } from './casas3d.js?v=200d9711fc';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -1633,6 +1633,8 @@ export function criarVida(api) {
   /* a luz corre mesmo com a vida desligada (no menu, o dia parado nas 10h) */
   return {
     ligar, desligar, quadro, irPraSala, irPraSede, relogio,
+    /* o telhado da sede aberto de novo (a cena que abriu outro prédio acabou: o assalto) */
+    reabrirSede: () => { if (ligada) reabrirSede(); },
     /* A SEDE DE DOIS ANDARES: o andar que a câmera mostra (0 o térreo, 1 o
        1º andar); `temAndar`, se a sede do jogador tem o 1º andar */
     verAndar: n => verAndar(n),

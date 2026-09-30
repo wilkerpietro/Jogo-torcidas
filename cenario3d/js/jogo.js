@@ -5459,6 +5459,137 @@ TO.i18n.registrar({
 
 ;
 
+/* ===== dados/i18n/assalto.js ===== */
+/* Dicionário da fatia "assalto" — ver docs/I18N.md.
+   Chave: o texto em português, exatamente como está no código (com os
+   {marcadores}). Valor: {es, en}.
+   Cobre o assalto planejado (pedido do dono, 30/09/2026): a ficha dos
+   alvos e a conta em js/gestao/acoes.js, a reunião num dia sorteado e
+   o cartão do dia da operação em js/mundo/feed.js, e a tela do
+   planejamento, o calendário e a volta da cena 3D em js/main.js. */
+TO.i18n.registrar({
+  /* =========================================================
+     A FICHA DOS ALVOS (acoes.js)
+     ========================================================= */
+  'ao banco': {es:'al banco', en:'at the bank'},
+  'à joalheria': {es:'a la joyería', en:'at the jewellery store'},
+  'ao supermercado': {es:'al supermercado', en:'at the supermarket'},
+  'ao posto de gasolina': {es:'a la gasolinera', en:'at the gas station'},
+  'ao mercadinho': {es:'al almacén', en:'at the corner shop'},
+  'à loja de roupas': {es:'a la tienda de ropa', en:'at the clothing store'},
+  'Exposição': {es:'Exposición', en:'Exposure'},
+  'quanta gente vê de fora: vitrine, rua, câmera': {es:'cuánta gente ve desde afuera: vidriera, calle, cámara', en:'how many people can see in: shop window, street, camera'},
+  'vigia, alarme, câmera e porta travada': {es:'guardia, alarma, cámara y puerta trabada', en:'guard, alarm, camera and locked door'},
+  'Movimentação': {es:'Movimiento', en:'Foot traffic'},
+  'Fluxo': {es:'Flujo', en:'Traffic'},
+  'clientes e quem passa: olhos e reféns': {es:'clientes y transeúntes: ojos y rehenes', en:'customers and passers-by: eyes and hostages'},
+  'Atenção': {es:'Atención', en:'Alertness'},
+  'o quanto quem trabalha lá desconfia': {es:'cuánto desconfía quien trabaja ahí', en:'how suspicious the staff are'},
+  'Dificuldade': {es:'Dificultad', en:'Difficulty'},
+  'cofre, vitrine e o tempo pra pegar': {es:'caja fuerte, vitrina y el tiempo para agarrar', en:'safe, display cases and the time it takes to grab'},
+  'Recompensa potencial': {es:'Recompensa potencial', en:'Potential reward'},
+  'Recompensa': {es:'Recompensa', en:'Reward'},
+  'o máximo que o alvo rende': {es:'lo máximo que rinde el objetivo', en:'the most the target can yield'},
+  'Abertura': {es:'Apertura', en:'Opening'},
+  'na abertura': {es:'a la apertura', en:'at opening time'},
+  'pouca gente, e gente com sono — mas o caixa ainda está vazio': {es:'poca gente, y gente con sueño — pero la caja todavía está vacía', en:'few people, and sleepy ones — but the till is still empty'},
+  'à tarde': {es:'a la tarde', en:'in the afternoon'},
+  'loja cheia: mais olhos em cima e mais gente pra render': {es:'tienda llena: más ojos encima y más gente para reducir', en:'packed store: more eyes on you and more people to hold down'},
+  'Fechamento': {es:'Cierre', en:'Closing'},
+  'no fechamento': {es:'al cierre', en:'at closing time'},
+  'o caixa do dia inteiro e a rua escura — mas no fechamento todo mundo olha a porta': {es:'la caja de todo el día y la calle oscura — pero al cierre todos miran la puerta', en:"the whole day's takings and a dark street — but at closing everyone watches the door"},
+  'Furtivo': {es:'Sigiloso', en:'Stealthy'},
+  'entra como cliente e pega sem ninguém ver: pouca exposição e butim menor — se alguém perceber, vira correria': {es:'entra como cliente y agarra sin que nadie vea: poca exposición y botín menor — si alguien se da cuenta, se arma la corrida', en:'walk in as customers and take it without anyone seeing: little exposure and a smaller haul — if someone notices, it turns into a scramble'},
+  'Rápido': {es:'Rápido', en:'Fast'},
+  'anuncia o assalto, rende todo mundo e leva o máximo: o alarme toca e a polícia vem': {es:'anuncia el asalto, reduce a todos y se lleva lo máximo: suena la alarma y viene la policía', en:'announce the robbery, hold everyone down and take the most: the alarm goes off and the police come'},
+  'na cola': {es:'encima', en:'on your tail'},
+  'de olho': {es:'atenta', en:'watching'},
+  'desconfiada': {es:'desconfiada', en:'suspicious'},
+  'tranquila': {es:'tranquila', en:'calm'},
+  'escolhe a abordagem': {es:'elegí el enfoque', en:'pick the approach'},
+  'escolhe o dia': {es:'elegí el día', en:'pick the day'},
+
+  /* =========================================================
+     O FIM DA OPERAÇÃO (acoes.js)
+     ========================================================= */
+  'A operação {local} foi abortada, e {n} ficou pra trás: pena de {pena} dias.': {es:'La operación {local} fue abortada, y {n} quedó atrás: condena de {pena} días.', en:'The operation {local} was aborted, and {n} got left behind: {pena}-day sentence.'},
+  'A operação {local} foi abortada, e {n} ficaram pra trás: pena de {pena} dias.': {es:'La operación {local} fue abortada, y {n} quedaron atrás: condena de {pena} días.', en:'The operation {local} was aborted, and {n} got left behind: {pena}-day sentences.'},
+  'A operação {local} foi abortada. Ninguém caiu, ninguém levou nada.': {es:'La operación {local} fue abortada. Nadie cayó, nadie se llevó nada.', en:'The operation {local} was aborted. Nobody got caught, nobody took anything.'},
+  'Deu ruim {local}: {n} preso por {pena} dias, e o dinheiro ficou lá.': {es:'Salió mal {local}: {n} preso por {pena} días, y la plata se quedó ahí.', en:'It went wrong {local}: {n} jailed for {pena} days, and the money stayed there.'},
+  'Deu ruim {local}: {n} presos por {pena} dias, e o dinheiro ficou lá.': {es:'Salió mal {local}: {n} presos por {pena} días, y la plata se quedó ahí.', en:'It went wrong {local}: {n} jailed for {pena} days, and the money stayed there.'},
+  'Voltaram {local} com {valor} — mas {n} caiu: pena de {pena} dias.': {es:'Volvieron {local} con {valor} — pero {n} cayó: condena de {pena} días.', en:'They came back {local} with {valor} — but {n} got caught: {pena}-day sentence.'},
+  'Voltaram {local} com {valor} — mas {n} caíram: pena de {pena} dias.': {es:'Volvieron {local} con {valor} — pero {n} cayeron: condena de {pena} días.', en:'They came back {local} with {valor} — but {n} got caught: {pena}-day sentences.'},
+  'Voltaram {local} com {valor}. O alarme tocou, mas ninguém caiu.': {es:'Volvieron {local} con {valor}. Sonó la alarma, pero nadie cayó.', en:'They came back {local} with {valor}. The alarm went off, but nobody got caught.'},
+  'Voltaram {local} com {valor}. Ninguém chamou a polícia — mas a câmera gravou a equipe.': {es:'Volvieron {local} con {valor}. Nadie llamó a la policía — pero la cámara grabó al equipo.', en:'They came back {local} with {valor}. Nobody called the police — but the camera caught the crew.'},
+  'Voltaram {local} com {valor}. Ninguém viu, ninguém sabe.': {es:'Volvieron {local} con {valor}. Nadie vio, nadie sabe.', en:'They came back {local} with {valor}. Nobody saw, nobody knows.'},
+  'Um preso no assalto {ao} em {cidade}': {es:'Un preso en el asalto {ao} en {cidade}', en:'One arrested in robbery {ao} in {cidade}'},
+  '{n} presos no assalto {ao} em {cidade}': {es:'{n} presos en el asalto {ao} en {cidade}', en:'{n} arrested in robbery {ao} in {cidade}'},
+  'Bando assalta {loja} em {cidade} e escapa da polícia por pouco': {es:'Banda asalta {loja} en {cidade} y se escapa de la policía por poco', en:'Gang robs {loja} in {cidade} and narrowly escapes the police'},
+  'Assalto {ao} em {cidade}: o alarme tocou e o bando sumiu': {es:'Asalto {ao} en {cidade}: sonó la alarma y la banda desapareció', en:'Robbery {ao} in {cidade}: the alarm went off and the gang vanished'},
+  'A polícia fala em integrantes de torcida organizada.': {es:'La policía habla de integrantes de una barra.', en:'Police say members of an organised supporters group were involved.'},
+  'As câmeras gravaram a ação; a polícia analisa as imagens.': {es:'Las cámaras grabaron la acción; la policía analiza las imágenes.', en:'Cameras recorded the robbery; police are going through the footage.'},
+  'Ninguém foi identificado.': {es:'Nadie fue identificado.', en:'Nobody has been identified.'},
+  'O prejuízo passa de {valor}.': {es:'El perjuicio supera {valor}.', en:'The losses exceed {valor}.'},
+  'O bando saiu sem nada.': {es:'La banda se fue sin nada.', en:'The gang left empty-handed.'},
+  'Polícia': {es:'Policía', en:'Police'},
+
+  /* =========================================================
+     A REUNIÃO E O DIA DA OPERAÇÃO (feed.js)
+     ========================================================= */
+  'Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o seu risco. Escolhe o alvo, a equipe, o jeito e o dia, que a gente põe no calendário.': {es:'Jefe, marqué unos objetivos en la plaza — del almacén al banco, cada uno con su riesgo. Elegí el objetivo, el equipo, el modo y el día, que lo ponemos en el calendario.', en:"Boss, I've scoped out some targets in town — from the corner shop to the bank, each with its own risk. Pick the target, the crew, the approach and the day, and we'll put it on the calendar."},
+  'Planejar o assalto': {es:'Planear el asalto', en:'Plan the robbery'},
+  'Assalto marcado': {es:'Asalto marcado', en:'Robbery scheduled'},
+  'Marcado pra {dia}, {data}: {alvo} · {n} membros · {jeito} · {hora}. Está no calendário.': {es:'Marcado para el {dia}, {data}: {alvo} · {n} miembros · {jeito} · {hora}. Está en el calendario.', en:'Scheduled for {dia}, {data}: {alvo} · {n} members · {jeito} · {hora}. It is on the calendar.'},
+  'A operação {local} caiu: faltou gente — só {n} disponíveis pra uma equipe de {m}.': {es:'La operación {local} se cayó: faltó gente — solo {n} disponibles para un equipo de {m}.', en:'The operation {local} fell through: not enough people — only {n} available for a crew of {m}.'},
+  'Comandar a equipe': {es:'Comandar al equipo', en:'Lead the crew'},
+  'você leva a equipe pra dentro da loja': {es:'vos llevás al equipo adentro del local', en:'you take the crew into the store'},
+  'Deixar a equipe fazer': {es:'Dejar que el equipo lo haga', en:'Let the crew handle it'},
+  'risco {r} · a equipe se vira sem você': {es:'riesgo {r} · el equipo se arregla sin vos', en:'{r} risk · the crew manages without you'},
+  'Cancelar a operação': {es:'Cancelar la operación', en:'Call off the operation'},
+  'OPERAÇÃO EM ANDAMENTO — {alvo}. A equipe de {n} está no carro, na esquina: {jeito}, {quando}. Recompensa potencial de {valor}.': {es:'OPERACIÓN EN CURSO — {alvo}. El equipo de {n} está en el auto, en la esquina: {jeito}, {quando}. Recompensa potencial de {valor}.', en:'OPERATION UNDER WAY — {alvo}. The crew of {n} is in the car, around the corner: {jeito}, {quando}. Potential reward of {valor}.'},
+  'Faltou gente: a operação caiu.': {es:'Faltó gente: la operación se cayó.', en:'Not enough people: the operation fell through.'},
+  'Equipe': {es:'Equipo', en:'Crew'},
+  'Suspeita': {es:'Sospecha', en:'Suspicion'},
+  'Na esquina, esperando a ordem': {es:'En la esquina, esperando la orden', en:'Around the corner, waiting for the order'},
+  'Cancelada': {es:'Cancelada', en:'Called off'},
+  'Abortada': {es:'Abortada', en:'Aborted'},
+  'Feita': {es:'Hecha', en:'Done'},
+  'Operação cancelada. A equipe voltou pra sede.': {es:'Operación cancelada. El equipo volvió a la sede.', en:'Operation called off. The crew went back to headquarters.'},
+
+  /* =========================================================
+     A TELA DO PLANEJAMENTO, O CALENDÁRIO E A VOLTA DO 3D (main.js)
+     ========================================================= */
+  'a diretoria mapeou os alvos da praça': {es:'la directiva marcó los objetivos de la plaza', en:'the board has scoped out targets in town'},
+  'O alvo': {es:'El objetivo', en:'The target'},
+  'precisa de {n} disponíveis': {es:'necesita {n} disponibles', en:'needs {n} available'},
+  'A equipe': {es:'El equipo', en:'The crew'},
+  '{dentro} entram com o líder, {fora} na rua e no carro · potencial de {valor}': {es:'{dentro} entran con el líder, {fora} en la calle y en el auto · potencial de {valor}', en:'{dentro} go in with the leader, {fora} on the street and in the car · potential {valor}'},
+  'Equipe maior leva mais e chama mais atenção. Quem vai é sorteado entre os disponíveis no dia.': {es:'Un equipo más grande se lleva más y llama más la atención. Quién va se sortea entre los disponibles del día.', en:"A bigger crew takes more and draws more attention. Who goes is drawn from the members available on the day."},
+  'A abordagem': {es:'El enfoque', en:'The approach'},
+  'O horário': {es:'El horario', en:'The time'},
+  'O dia': {es:'El día', en:'The day'},
+  'Nenhum dia livre nas próximas duas semanas: jogo, viagem ou outra operação em todos.': {es:'Ningún día libre en las próximas dos semanas: partido, viaje u otra operación en todos.', en:'No free day in the next two weeks: a match, a trip or another operation on every one.'},
+  'Risco estimado': {es:'Riesgo estimado', en:'Estimated risk'},
+  'Chance de alguém perceber': {es:'Probabilidad de que alguien se dé cuenta', en:'Chance someone notices'},
+  'Polícia chegar a tempo, deixando a equipe fazer': {es:'Que llegue la policía a tiempo, si el equipo lo hace solo', en:'Police arriving in time, if the crew handles it'},
+  'Atenção da polícia sobre a torcida': {es:'Atención de la policía sobre la barra', en:'Police attention on the firm'},
+  'A polícia está {nivel} com a torcida. Cada assalto que faz barulho — alarme, câmera, polícia no local, gente presa — aumenta isso, e ela chega mais rápido no próximo. Esfria sozinha, dia a dia.': {es:'La policía está {nivel} con la barra. Cada asalto que hace ruido — alarma, cámara, policía en el lugar, gente presa — lo aumenta, y llega más rápido la próxima vez. Se enfría sola, día a día.', en:"The police are {nivel} about the firm. Every robbery that makes noise — alarm, camera, police on the scene, people arrested — raises it, and they get there faster next time. It cools off on its own, day by day."},
+  'No dia, você comanda a equipe dentro da loja — ou deixa ela fazer sozinha.': {es:'El día, vos comandás al equipo adentro del local — o lo dejás hacerlo solo.', en:'On the day, you lead the crew inside the store — or let them handle it alone.'},
+  'No dia, a equipe faz sozinha: o resultado sai do plano, da ficha de quem foi e da atenção da polícia.': {es:'El día, el equipo lo hace solo: el resultado sale del plan, de la ficha de quienes fueron y de la atención de la policía.', en:'On the day, the crew handles it alone: the result comes from the plan, the stats of who went and the police attention.'},
+  'Marcar a operação': {es:'Marcar la operación', en:'Schedule the operation'},
+  'Sem dia livre pra operação.': {es:'Sin día libre para la operación.', en:'No free day for the operation.'},
+  'Operação encerrada': {es:'Operación terminada', en:'Operation over'},
+  'Faltou gente': {es:'Faltó gente', en:'Not enough people'},
+  'A loja não abriu em 3D: a equipe fez sozinha.': {es:'El local no abrió en 3D: el equipo lo hizo solo.', en:'The store did not open in 3D: the crew handled it alone.'},
+  'Operação abortada': {es:'Operación abortada', en:'Operation aborted'},
+  'Operação feita': {es:'Operación hecha', en:'Operation done'},
+  'Reunião': {es:'Reunión', en:'Meeting'},
+  '{mes} de {ano} · dia {dia}': {es:'{mes} de {ano} · día {dia}', en:'{mes} {ano} · day {dia}'},
+  'pausa de assalto sem assalto': {es:'pausa de asalto sin asalto', en:'robbery pause with no robbery'}
+});
+
+;
+
 /* ===== dados/nomes.js ===== */
 /* =========================================================
    BANCO DE NOMES — GDD §5.5
@@ -25274,22 +25405,22 @@ TO.acoes = (function(){
      os valores de ganho continuam os mesmos */
   const ASSALTOS = [
     {id:'banco',        nome:_t('Banco'),             art:'no', efetivos:[10, 20],
-     no:_t('no banco'), doLocal:_t('do banco'),
+     no:_t('no banco'), doLocal:_t('do banco'), ao:_t('ao banco'),
      ganho:{10:[30000, 50000], 20:[60000, 120000]}, chance:0.50, pena:180},
     {id:'joalheria',    nome:_t('Joalheria'),         art:'na', efetivos:[10, 20],
-     no:_t('na joalheria'), doLocal:_t('da joalheria'),
+     no:_t('na joalheria'), doLocal:_t('da joalheria'), ao:_t('à joalheria'),
      ganho:{10:[10000, 20000], 20:[30000, 40000]},  chance:0.35, pena:120},
     {id:'supermercado', nome:_t('Supermercado'),      art:'no', efetivos:[5, 10],
-     no:_t('no supermercado'), doLocal:_t('do supermercado'),
+     no:_t('no supermercado'), doLocal:_t('do supermercado'), ao:_t('ao supermercado'),
      ganho:{5:[5000, 10000],   10:[10000, 15000]},  chance:0.35, pena:120},
     {id:'posto',        nome:_t('Posto de gasolina'), art:'no', efetivos:[5, 10],
-     no:_t('no posto de gasolina'), doLocal:_t('do posto de gasolina'),
+     no:_t('no posto de gasolina'), doLocal:_t('do posto de gasolina'), ao:_t('ao posto de gasolina'),
      ganho:{5:[2000, 3000],    10:[4000, 5000]},    chance:0.20, pena:90},
     {id:'mercadinho',   nome:_t('Mercadinho'),        art:'no', efetivos:[2, 5],
-     no:_t('no mercadinho'), doLocal:_t('do mercadinho'),
+     no:_t('no mercadinho'), doLocal:_t('do mercadinho'), ao:_t('ao mercadinho'),
      ganho:{2:[1000, 2000],    5:[3000, 4000]},     chance:0.10, pena:45},
     {id:'roupas',       nome:_t('Loja de roupas'),    art:'na', efetivos:[2, 5],
-     no:_t('na loja de roupas'), doLocal:_t('da loja de roupas'),
+     no:_t('na loja de roupas'), doLocal:_t('da loja de roupas'), ao:_t('à loja de roupas'),
      ganho:{2:[500, 1000],     5:[2000, 3000]},     chance:0.05, pena:30}
   ];
 
@@ -25321,6 +25452,253 @@ TO.acoes = (function(){
                {n, local:a.doLocal, valor:U.dinheiro(v)})
     });
     return {ok:true, caiu:false, n, valor:v, alvo:a.nome};
+  }
+
+  /* =======================================================
+     O ASSALTO PLANEJADO (pedido do dono, 30/09/2026)
+     "preciso criar uma mecânica de assaltos pra parar de funcionar
+     de forma sorteada [...] pro assalto ser executado pelo jogador
+     [...] com o objetivo de ser rápido ou furtivo pra não chamar a
+     atenção da polícia, inspirado na forma que se assalta no GTA V."
+
+     O dado deixa de decidir sozinho. A reunião traz os alvos; o
+     jogador escolhe o alvo, o tamanho da equipe, a abordagem
+     (furtivo ou rápido), o horário (abertura, tarde ou fechamento) e
+     o dia — a operação vai pro calendário (`E.assaltos`). No dia, ou
+     ele comanda a equipe dentro da loja em 3D (assalto3d.js: quem
+     está lá dentro vê, desconfia e dá o alerta), ou deixa a equipe
+     fazer (`simularAssalto`: a mesma régua, em conta). O fim pesa a
+     recompensa potencial, a dificuldade do alvo, a exposição, a
+     atenção da polícia sobre a torcida (`E.calorPolicia`) e o
+     desempenho de quem foi; o acaso fica em segundo plano.
+     `executarAssalto` (o sorteio de antes) fica pra quem ainda o
+     chama, mas nenhuma tela usa mais.
+     ======================================================= */
+  /* as características de cada alvo, de 0 a 100 (as barras da tela), e
+     quantos entram com o líder na equipe menor e na maior — o resto
+     fica de olheiro na rua ou no carro */
+  const PERFIL_ASSALTO = {
+    banco:        {recompensa:95, exposicao:80, seguranca:90, movimentacao:60, atencao:85, dificuldade:90, dentro:[6, 8]},
+    joalheria:    {recompensa:75, exposicao:70, seguranca:70, movimentacao:40, atencao:75, dificuldade:70, dentro:[5, 6]},
+    supermercado: {recompensa:45, exposicao:60, seguranca:45, movimentacao:85, atencao:45, dificuldade:50, dentro:[4, 6]},
+    posto:        {recompensa:25, exposicao:55, seguranca:30, movimentacao:50, atencao:40, dificuldade:30, dentro:[3, 5]},
+    mercadinho:   {recompensa:15, exposicao:35, seguranca:15, movimentacao:45, atencao:30, dificuldade:15, dentro:[2, 3]},
+    roupas:       {recompensa:10, exposicao:40, seguranca:20, movimentacao:50, atencao:35, dificuldade:15, dentro:[2, 3]}
+  };
+  /* as barras, na ordem da tela */
+  const CARACTERISTICAS = [
+    {id:'exposicao',    nome:_t('Exposição'),    nota:_t('quanta gente vê de fora: vitrine, rua, câmera')},
+    {id:'seguranca',    nome:_t('Segurança'),    nota:_t('vigia, alarme, câmera e porta travada')},
+    {id:'movimentacao', nome:_t('Movimentação'), curto:_t('Fluxo'), nota:_t('clientes e quem passa: olhos e reféns')},
+    {id:'atencao',      nome:_t('Atenção'),      nota:_t('o quanto quem trabalha lá desconfia')},
+    {id:'dificuldade',  nome:_t('Dificuldade'),  nota:_t('cofre, vitrine e o tempo pra pegar')},
+    {id:'recompensa',   nome:_t('Recompensa potencial'), curto:_t('Recompensa'), nota:_t('o máximo que o alvo rende')}
+  ];
+  /* o horário mexe no caixa (`pot`), na atenção de quem trabalha, no
+     movimento da loja e na polícia (`pm`: a chance de ela chegar a tempo) */
+  const HORARIOS_ASSALTO = {
+    abertura:   {id:'abertura',   nome:_t('Abertura'),   hora:'09:10', quando:_t('na abertura'), pot:0.75, atencao:-10, clientes:0.55, pm:0.9,
+                 nota:_t('pouca gente, e gente com sono — mas o caixa ainda está vazio')},
+    tarde:      {id:'tarde',      nome:_t('Tarde'),      hora:'15:30', quando:_t('à tarde'), pot:1.00, atencao:0,   clientes:1.25, pm:1.15,
+                 nota:_t('loja cheia: mais olhos em cima e mais gente pra render')},
+    fechamento: {id:'fechamento', nome:_t('Fechamento'), hora:'19:35', quando:_t('no fechamento'), pot:1.10, atencao:15,  clientes:0.5,  pm:0.85,
+                 nota:_t('o caixa do dia inteiro e a rua escura — mas no fechamento todo mundo olha a porta')}
+  };
+  const ABORDAGENS = {
+    furtivo: {id:'furtivo', nome:_t('Furtivo'),
+              nota:_t('entra como cliente e pega sem ninguém ver: pouca exposição e butim menor — se alguém perceber, vira correria')},
+    rapido:  {id:'rapido', nome:_t('Rápido'),
+              nota:_t('anuncia o assalto, rende todo mundo e leva o máximo: o alarme toca e a polícia vem')}
+  };
+  /* A ATENÇÃO DA POLÍCIA SOBRE A TORCIDA (0–100): sobe com cada
+     assalto — mais com alarme, gravação, polícia no local e preso —,
+     esfria 1,5 por dia e encurta o caminho da viatura no próximo */
+  const calorDe = E => U.limitar(Math.round(E.calorPolicia || 0), 0, 100);
+  function esfriarCalor(E){
+    if(E.calorPolicia > 0) E.calorPolicia = Math.max(0, Math.round((E.calorPolicia - 1.5)*10)/10);
+  }
+  const nivelDoCalor = c => c >= 60 ? _t('na cola') : c >= 30 ? _t('de olho') : c >= 10 ? _t('desconfiada') : _t('tranquila');
+  /* o desempenho de quem vai: a ficha (força e defesa, de 1 a 20) */
+  const qualidadeDe = grupo => grupo && grupo.length
+    ? U.limitar(grupo.reduce((s,m)=>s + ((m.forca||1) + (m.defesa||1))/2, 0) / grupo.length / 20, 0, 1) : 0.4;
+
+  /* o alvo como a operação vê: a ficha, a hora mexendo na atenção e o
+     potencial pro tamanho da equipe (o teto da faixa da tabela do dono) */
+  function fichaDoAssalto(alvoId, n, horario){
+    const a = ASSALTOS.find(x=>x.id === alvoId);
+    if(!a) return null;
+    const P = PERFIL_ASSALTO[alvoId], H = HORARIOS_ASSALTO[horario] || HORARIOS_ASSALTO.tarde;
+    const tam = a.efetivos.includes(n) ? n : a.efetivos[0];
+    const grande = tam >= a.efetivos[1];
+    const faixa = a.ganho[tam];
+    return {a, P, H, n:tam, grande, faixa,
+            potencial: Math.round(faixa[1] * H.pot / 100) * 100,
+            dentro: Math.min(tam, P.dentro[grande ? 1 : 0]),
+            atencao: U.limitar(P.atencao + H.atencao, 0, 100)};
+  }
+
+  /* O RISCO DE UM PLANO (a tela e a conta usam o mesmo): no furtivo, a
+     chance de alguém perceber; e a da polícia chegar a tempo de pegar
+     alguém. A base é a régua do dono de antes (`chance`, de 5% na loja de
+     roupas a 50% no banco), mexida pela hora, pela atenção da polícia,
+     pelo tamanho da equipe e pela ficha de quem vai. `q`: a qualidade da
+     equipe (sem ela, a média de quem está disponível) */
+  function riscoDoAssalto(E, plano, q){
+    const f = fichaDoAssalto(plano.alvo, plano.n, plano.horario);
+    if(!f) return null;
+    const calor = calorDe(E), at = f.atencao/100, mov = f.P.movimentacao/100;
+    if(q == null) q = qualidadeDe(E.membros.filter(TO.membros.disponivel));
+    const notado = plano.abordagem === 'furtivo'
+      ? U.limitar(0.12 + 0.55*at*(0.55 + 0.45*mov*f.H.clientes) + (f.grande ? 0.1 : 0) - 0.3*q, 0.06, 0.85)
+      : 1;
+    const pmAlerta = U.limitar(f.a.chance * f.H.pm * (1 + (calor - 20)/100) * (1.25 - 0.5*q) * (f.grande ? 1.15 : 1), 0.02, 0.9);
+    /* no furtivo que ninguém percebe, a polícia só vem pela gravação ou
+       pela denúncia, depois — e bem menos */
+    const policia = plano.abordagem === 'furtivo' ? notado*pmAlerta*1.1 + (1 - notado)*pmAlerta*0.12 : pmAlerta;
+    return {notado, pmAlerta, policia:U.limitar(policia, 0.01, 0.9), ficha:f, calor, q};
+  }
+  const rotuloDoRisco = p => p >= 0.45 ? _t('Alto') : p >= 0.2 ? _t('Médio') : _t('Baixo');
+
+  /* os dias livres dos próximos `dias`: sem jogo do clube, sem viagem e
+     sem outra operação marcada no mesmo dia (a partir de depois de amanhã) */
+  function diasParaAssalto(E, dias){
+    const fora = [];
+    const hoje = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
+    for(let k = 2; k <= (dias || 14); k++){
+      const d = new Date(hoje); d.setDate(d.getDate() + k);
+      const sd = TO.estado.semanaDiaDe(d);
+      if(!sd || sd.semana > 52) continue;
+      if(TO.feed && TO.feed.diaLivre && !TO.feed.diaLivre(E, sd.semana, sd.dia)) continue;
+      if((E.assaltos||[]).some(o=>!o.feito && !o.cancelado && o.ano === sd.ano && o.semana === sd.semana && o.dia === sd.dia)) continue;
+      fora.push({ano:sd.ano, semana:sd.semana, dia:sd.dia,
+                 dataTxt:`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`,
+                 nomeDia: TO.feed && TO.feed.NOME_DIA ? TO.feed.NOME_DIA[sd.dia] : ''});
+    }
+    return fora;
+  }
+
+  /* marcar a operação (a tela do planejamento chama no Confirmar) */
+  function planejarAssalto(E, plano){
+    const f = fichaDoAssalto(plano.alvo, plano.n, plano.horario);
+    if(!f) return {ok:false, msg:_t('alvo inválido')};
+    if(!ABORDAGENS[plano.abordagem]) return {ok:false, msg:_t('escolhe a abordagem')};
+    if(!plano.quando) return {ok:false, msg:_t('escolhe o dia')};
+    E.assaltos = E.assaltos || [];
+    const op = {id:'as' + (E.data.absoluto || 0) + '-' + (E.assaltos.length + 1),
+                alvo:f.a.id, n:f.n, abordagem:plano.abordagem, horario:f.H.id,
+                ano:plano.quando.ano, semana:plano.quando.semana, dia:plano.quando.dia,
+                dataTxt:plano.quando.dataTxt, nomeDia:plano.quando.nomeDia,
+                feito:false, cancelado:false,
+                marcadoEm:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia}};
+    E.assaltos.push(op);
+    /* a lista não cresce pra sempre: fica o que é do ano e o que ainda vai acontecer */
+    if(E.assaltos.length > 24) E.assaltos = E.assaltos.filter(o=>!o.feito && !o.cancelado || o.ano >= E.data.ano).slice(-24);
+    return {ok:true, op};
+  }
+
+  /* a equipe do dia: sorteada entre os disponíveis (a régua do dono de
+     17/08 segue: não é a elite que vai), o líder o de melhor ficha */
+  function equipeDoAssalto(E, op){
+    const aptos = E.membros.filter(TO.membros.disponivel);
+    if(aptos.length < op.n) return null;
+    const grupo = U.embaralhar([...aptos]).slice(0, op.n);
+    grupo.sort((a,b)=>((b.forca||0)+(b.defesa||0)) - ((a.forca||0)+(a.defesa||0)));
+    return grupo;
+  }
+
+  /* DEIXAR A EQUIPE FAZER: a mesma régua da cena em 3D, em conta. Devolve
+     o fim no mesmo formato da cena (assalto.js, `J.fim`) */
+  function simularAssalto(E, op, grupo){
+    const q = qualidadeDe(grupo);
+    const R = riscoDoAssalto(E, op, q), f = R.ficha;
+    const dif = f.P.dificuldade/100, seg = f.P.seguranca/100, at = f.atencao/100;
+    const rapido = op.abordagem !== 'furtivo';
+    const notado = rapido || U.rng() < R.notado;
+    const policia = U.rng() < (notado ? R.pmAlerta * (rapido ? 1 : 1.1) : R.pmAlerta * 0.12);
+    /* no furtivo a equipe sozinha não abre o cofre nem limpa tudo: leva
+       menos, e bem menos se alguém percebe e vira correria */
+    let frac = rapido ? U.entre(0.65, 0.95) * (1 - 0.25*dif) + 0.1*q
+             : !notado ? U.entre(0.3, 0.55) * (1 - 0.2*dif) + 0.08*q
+             : U.entre(0.15, 0.4) + 0.05*q;
+    let presos = [];
+    if(policia){
+      /* a polícia chegou a tempo: cai parte de quem estava dentro — e às
+         vezes o bonde inteiro é cercado, carro e olheiros junto (a régua
+         antiga do dono, "se cair, cai todo mundo", continua possível) */
+      const dentro = grupo.slice(0, f.dentro);
+      if(U.rng() < (rapido ? 0.35 : 0.2)){ presos = grupo.map(m=>m.id); frac = 0; }
+      else {
+        const k = Math.max(1, Math.round(dentro.length * (rapido ? U.entre(0.5, 1) : U.entre(0.3, 0.8))));
+        presos = U.embaralhar([...dentro]).slice(0, k).map(m=>m.id);
+        frac *= (1 - k/Math.max(1, dentro.length)) * 0.85;
+      }
+    }
+    const butim = Math.max(0, Math.round(f.potencial * U.limitar(frac, 0, 1) / 10) * 10);
+    const exposicao = Math.round(rapido ? 70 + 30*U.rng() : notado ? 50 + 35*U.rng() : 8 + 30*at*U.rng());
+    return {modo:'simulado', alvo:op.alvo, motivo: presos.length && presos.includes(grupo[0].id) ? 'lider-preso' : 'fugiu',
+            fugiu:!presos.includes(grupo[0].id), abortou:false, butim, potencial:f.potencial, pego:butim,
+            presos, exposicao, suspeitaMax: notado ? 100 : Math.round(20 + 50*at*U.rng()),
+            alerta:notado, policia, tempo: Math.round(rapido ? U.entre(60, 150) : U.entre(120, 300)),
+            camerasDesligadas:false, gravado: notado ? U.rng() < seg : U.rng() < seg*0.25, anunciado:rapido};
+  }
+
+  /* O FIM DA OPERAÇÃO, jogada ou simulada: o dinheiro, a cadeia, a
+     atenção da polícia, o recado da diretoria e, se fez barulho, o
+     Futebol e Porrada. `r`: o fim da cena (assalto.js) ou da conta */
+  function fecharAssalto(E, op, r){
+    const a = ASSALTOS.find(x=>x.id === op.alvo);
+    if(!a || op.feito) return null;
+    op.feito = true;
+    const butim = Math.max(0, Math.round(r.butim || 0));
+    if(butim > 0) TO.estado.lancar(E, _t('Assalto — {alvo}', {alvo:a.nome}), butim);
+    const presos = [];
+    for(const id of r.presos || []){
+      const m = E.membros.find(x=>x.id === id);
+      if(!m || m.preso) continue;
+      TO.membros.prender(E, m, a.pena, _t('Preso no assalto — {alvo}', {alvo:a.nome}));
+      presos.push(m);
+    }
+    const antes = calorDe(E);
+    const sobe = r.abortou && !r.alerta ? 1
+      : (r.alerta ? 8 : 2) + (r.policia ? 6 : 0) + 3*presos.length + (r.gravado ? 6 : 0) + Math.round((r.exposicao || 0)/10);
+    E.calorPolicia = U.limitar(antes + sobe, 0, 100);
+    op.resultado = {modo:r.modo || '3d', butim, potencial:r.potencial || 0, presos:presos.map(m=>m.id),
+                    exposicao:Math.round(r.exposicao || 0), suspeita:Math.round(r.suspeitaMax || 0), alerta:!!r.alerta, policia:!!r.policia,
+                    gravado:!!r.gravado, abortou:!!r.abortou, tempo:Math.round(r.tempo || 0),
+                    calor:[antes, calorDe(E)]};
+    const n = presos.length;
+    const texto = r.abortou && !butim
+      ? (n ? _tn(n, 'A operação {local} foi abortada, e {n} ficou pra trás: pena de {pena} dias.',
+                    'A operação {local} foi abortada, e {n} ficaram pra trás: pena de {pena} dias.', {local:a.no, pena:a.pena})
+           : _t('A operação {local} foi abortada. Ninguém caiu, ninguém levou nada.', {local:a.no}))
+      : !butim
+        ? _tn(n, 'Deu ruim {local}: {n} preso por {pena} dias, e o dinheiro ficou lá.',
+                 'Deu ruim {local}: {n} presos por {pena} dias, e o dinheiro ficou lá.', {local:a.no, pena:a.pena})
+      : n ? _tn(n, 'Voltaram {local} com {valor} — mas {n} caiu: pena de {pena} dias.',
+                   'Voltaram {local} com {valor} — mas {n} caíram: pena de {pena} dias.', {local:a.doLocal, valor:U.dinheiro(butim), pena:a.pena})
+      : r.alerta
+        ? _t('Voltaram {local} com {valor}. O alarme tocou, mas ninguém caiu.', {local:a.doLocal, valor:U.dinheiro(butim)})
+      : r.gravado
+        ? _t('Voltaram {local} com {valor}. Ninguém chamou a polícia — mas a câmera gravou a equipe.', {local:a.doLocal, valor:U.dinheiro(butim)})
+        : _t('Voltaram {local} com {valor}. Ninguém viu, ninguém sabe.', {local:a.doLocal, valor:U.dinheiro(butim)});
+    if(TO.feed) TO.feed.propor(E, {kind:'assalto', peso:'info', tipo: n || !butim ? 'ruim' : 'boa', voz:'diretor', texto,
+                                   dados:{alvo:op.alvo, butim, presos:n, calor:calorDe(E)}});
+    /* o barulho vira jornal: alarme, polícia no local ou gente presa */
+    if(TO.feed && (r.alerta || n)){
+      const cidade = (TO.mundo.cidade && TO.mundo.cidade(E.torcida.mapa) || {}).nome || '';
+      const ao = a.ao, loja = _t(a.nome).toLowerCase();
+      const manchete = n ? _tn(n, 'Um preso no assalto {ao} em {cidade}', '{n} presos no assalto {ao} em {cidade}', {ao, cidade})
+        : r.policia ? _t('Bando assalta {loja} em {cidade} e escapa da polícia por pouco', {loja, cidade})
+        : _t('Assalto {ao} em {cidade}: o alarme tocou e o bando sumiu', {ao, cidade});
+      const olho = (n ? _t('A polícia fala em integrantes de torcida organizada.') + ' '
+                      : r.gravado ? _t('As câmeras gravaram a ação; a polícia analisa as imagens.') + ' '
+                      : _t('Ninguém foi identificado.') + ' ')
+        + (butim ? _t('O prejuízo passa de {valor}.', {valor:U.dinheiro(butim)}) : _t('O bando saiu sem nada.'));
+      TO.feed.propor(E, {kind:'almanaque', peso:'info', voz:'jornal', tipo:'ruim',
+                         chave:`assalto|${op.id}`, texto:`${_t('Polícia')}: ${manchete}. ${olho}`,
+                         dados:{pagina:{jornal:'Futebol e Porrada', tom:'', chapeu:_t('Polícia'), manchete, olho}}});
+    }
+    return {ok:true, butim, presos:n, texto, calor:calorDe(E)};
   }
 
   /* =======================================================
@@ -25375,6 +25753,10 @@ TO.acoes = (function(){
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
+          PERFIL_ASSALTO, CARACTERISTICAS, HORARIOS_ASSALTO, ABORDAGENS,
+          fichaDoAssalto, riscoDoAssalto, rotuloDoRisco, diasParaAssalto, planejarAssalto,
+          equipeDoAssalto, simularAssalto, fecharAssalto, qualidadeDe,
+          calorDe, esfriarCalor, nivelDoCalor,
           alvosDeAtaque, temBar, efetivoDaZona, bondeDaZona, zonaDoMembro,
           clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
@@ -31149,6 +31531,7 @@ TO.feed = (function(){
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bote do dia',    ()=>boteDeHoje(E));
+    passo('assalto do dia', ()=>assaltoDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
@@ -31180,10 +31563,18 @@ TO.feed = (function(){
     if(!n) return;
     const ini = 8*60, fim = 21*60 + 30, pedaco = (fim - ini) / n;
     doDia.forEach((m, i) => {
+      if(m.horaFixa) return;
       const h = TO.mapa.hash(`${hoje}|${m.kind || 'msg'}|${i}`);
       const min = Math.round(ini + pedaco*(i + 0.15 + 0.7*((h % 1000)/1000)));
       m.hora = `${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`;
     });
+    /* a hora marcada (a operação do assalto, 30/09/2026) fica onde está,
+       e a fila do dia anda na ordem das horas */
+    if(doDia.some(m => m.horaFixa)){
+      const minDe = m => { const r = /^(\d\d?):(\d\d)/.exec(m.hora || ''); return r ? +r[1]*60 + +r[2] : 0; };
+      doDia.sort((a, b) => minDe(a) - minDe(b));
+      E.feedFila = doDia.concat(E.feedFila.filter(m => !(m.quando && m.quando.abs === hoje)));
+    }
   }
 
   /* =======================================================
@@ -33712,17 +34103,35 @@ TO.feed = (function(){
     return {presidente: ficha(pres), diretores, pautas};
   }
 
-  /* O CARTÃO DA REUNIÃO: DIA 5, TODO MÊS (pedido do dono, 22/09/2026).
+  /* O CARTÃO DA REUNIÃO: TODO MÊS (pedido do dono, 22/09/2026) — no
+     dia 5 até 30/09/2026; desde então num dia sorteado do mês
+     (`diaDaReuniao`, logo abaixo).
      Foi mensal, virou bimestral (12/09) e volta a ser mensal: agora é a
      REUNIÃO DA DIRETORIA, e não só de diplomacia — é nela que os botes
      do mês são propostos, com dia e alvo. O que nasce entre uma e outra
      continua guardado em `E.reuniao.pauta` e espera a próxima; nada
      vira cartão solto. */
+  /* O DIA DA REUNIÃO (pedido do dono, 30/09/2026): "manter a reunião
+     da diretoria mensal, mas em um dia aleatório de cada mês". O dia
+     sai do hash do mês e da torcida — o mesmo save dá sempre o mesmo
+     dia, e o calendário já mostra —, entre o dia 2 e o 27. Caindo num
+     jogo nosso ou numa viagem, a mesa senta no primeiro dia comum
+     depois. As listas que iam "até a véspera da próxima mesa" (as
+     festas das aliadas, os nossos aniversários) vão até a véspera da
+     próxima de verdade. A marca do mês é a do ano do calendário: o ano
+     do jogo (364 dias) vira um dia antes, e em 31 de dezembro a mesa
+     do mês sentaria de novo. */
+  const diaDaReuniao = (E, ano, mes) => 2 + TO.mapa.hash(`reuniao|dia|${ano}|${mes}|${E.torcida.id}`) % 26;
+  function vesperaDaProximaReuniao(E, hoje){
+    const ano = hoje.getFullYear() + (hoje.getMonth() === 11 ? 1 : 0), mes = (hoje.getMonth() + 1) % 12;
+    return new Date(ano, mes, diaDaReuniao(E, ano, mes) - 1, 23, 59);
+  }
   function reuniaoDeHoje(E){
     const Rn = caixaReuniao(E);
     const d = dataDeHoje(E);
-    if(d.getDate() !== 5) return null;
-    const marca = `${E.data.ano}|${mesDe(E)}`;
+    if(d.getDate() < diaDaReuniao(E, d.getFullYear(), d.getMonth())) return null;
+    if(!diaComumFeed(E, E.data.dia)) return null;
+    const marca = `${d.getFullYear()}|${mesDe(E)}`;
     if(Rn.ultima === marca) return null;
     Rn.ultima = marca;
     /* CONVITE SEM RESPOSTA É FESTA FURADA (22/09/2026): a lista de
@@ -33791,7 +34200,7 @@ TO.feed = (function(){
      ======================================================= */
   function pautaFestas(E){
     const hoje = dataDeHoje(E);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
+    const fim = vesperaDaProximaReuniao(E, hoje);
     const lista = [];
     for(const o of M().jogaveis()){
       if(o.id === E.torcida.id || o.incompleta || !o.fundacao) continue;
@@ -34101,7 +34510,7 @@ TO.feed = (function(){
      cai da mesa até a véspera da próxima (dia 4 do mês seguinte). */
   function pautaAniversarios(E){
     const hoje = dataDeHoje(E);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
+    const fim = vesperaDaProximaReuniao(E, hoje);
     const meus = [];
     if(E.torcida.fundacao)
       meus.push({tipo:'torcida', id:E.torcida.id, fundacao:E.torcida.fundacao, fonte:E.torcida});
@@ -34153,9 +34562,12 @@ TO.feed = (function(){
     return {
       chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:_t('Diretoria'), quem:dir.id,
       rot:_t('Alvos de assalto'),
-      texto:_t('Chefe, mapeei uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?'),
+      /* O PLANEJAMENTO (pedido do dono, 30/09/2026): o botão abre a tela
+         do plano — o alvo, a equipe, o jeito, a hora e o dia —, e a
+         operação vai pro calendário. Nada se sorteia aqui. */
+      texto:_t('Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o seu risco. Escolhe o alvo, a equipe, o jeito e o dia, que a gente põe no calendário.'),
       botoes:[
-        {id:'ver',  rot:_t('Ver os alvos'),  acao:'assalto-ver'},
+        {id:'ver',  rot:_t('Planejar o assalto'), acao:'assalto-planejar'},
         {id:'nada', rot:_t('Deixar quieto'), acao:'assalto-nao', nota:_t('sem efeito')}
       ]
     };
@@ -34164,11 +34576,82 @@ TO.feed = (function(){
   function fecharPautaAssalto(E, idItem, r){
     const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
     if(!it || it.decidido) return {ok:false};
+    /* a operação marcada pela tela do planejamento */
+    if(r && r.op){
+      it.decidido = {botao:'ver', rot:_t('Assalto marcado')};
+      it.consequencia = textoDaOperacao(r.op);
+      return {ok:true};
+    }
     it.decidido = {botao:'ver', rot: r.caiu ? _t('Deu ruim') : _t('Assalto feito')};
     it.consequencia = r.caiu ? _tn(r.n, '{n} preso por {pena} dias — e o dinheiro ficou lá.',
                                         '{n} presos por {pena} dias — e o dinheiro ficou lá.', {pena:r.pena})
                              : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)});
     return {ok:true};
+  }
+
+  /* a operação numa linha: o dia, o alvo, a equipe, o jeito e a hora */
+  function textoDaOperacao(o){
+    const A = TO.acoes, f = A.fichaDoAssalto(o.alvo, o.n, o.horario);
+    if(!f) return '';
+    return _t('Marcado pra {dia}, {data}: {alvo} · {n} membros · {jeito} · {hora}. Está no calendário.',
+              {dia:_t(o.nomeDia || ''), data:o.dataTxt || '', alvo:_t(f.a.nome), n:o.n,
+               jeito:_t((A.ABORDAGENS[o.abordagem] || A.ABORDAGENS.rapido).nome).toLowerCase(),
+               hora:_t(f.H.nome).toLowerCase()});
+  }
+
+  /* O DIA DA OPERAÇÃO (pedido do dono, 30/09/2026): "OPERAÇÃO EM
+     ANDAMENTO" — o alvo, a equipe, a recompensa potencial, a exposição
+     e a suspeita (ainda zeradas: ela não começou) e o estado. No jogo
+     3D o jogador comanda a equipe dentro da loja; em qualquer um dá pra
+     deixar a equipe fazer (a conta de acoes.js) ou cancelar. Dia de
+     jogo ou de viagem empurra a operação pro próximo dia livre, como o
+     bote. O cartão cai na hora marcada (abertura, tarde ou fechamento). */
+  function assaltoDeHoje(E){
+    if(TO.acoes.esfriarCalor) TO.acoes.esfriarCalor(E);
+    const lista = E.assaltos || [];
+    for(const o of lista){
+      if(o.feito || o.cancelado || o.aberto || o.ano !== E.data.ano || o.semana !== E.data.semana || o.dia !== E.data.dia) continue;
+      if(!diaComumFeed(E, E.data.dia)){
+        const prox = proximoDiaLivre(E, o);
+        if(prox){ Object.assign(o, prox); continue; }
+      }
+      const A = TO.acoes, f = A.fichaDoAssalto(o.alvo, o.n, o.horario);
+      if(!f){ o.cancelado = true; continue; }
+      const aptos = E.membros.filter(TO.membros.disponivel).length;
+      if(aptos < o.n){
+        o.cancelado = true;
+        propor(E, {kind:'assalto', peso:'info', tipo:'ruim', voz:'diretor',
+          texto:_t('A operação {local} caiu: faltou gente — só {n} disponíveis pra uma equipe de {m}.', {local:f.a.no, n:aptos, m:o.n})});
+        continue;
+      }
+      o.aberto = true;
+      const R = A.riscoDoAssalto(E, o);
+      const botoes = [];
+      if(TO.semFeed) botoes.push({id:'comandar', rot:_t('Comandar a equipe'), acao:'assalto-3d',
+                                  nota:_t('você leva a equipe pra dentro da loja')});
+      botoes.push({id:'equipe', rot:_t('Deixar a equipe fazer'), acao:'assalto-simular',
+                   nota:_t('risco {r} · a equipe se vira sem você', {r:A.rotuloDoRisco(R.policia).toLowerCase()})});
+      botoes.push({id:'cancelar', rot:_t('Cancelar a operação'), acao:'assalto-cancelar', nota:_t('sem efeito')});
+      propor(E, {
+        kind:'assalto-dia', peso:'decisao', voz:'diretor', horaFixa:true, hora:f.H.hora,
+        chave:`assalto|dia|${o.id}`,
+        texto:_t('OPERAÇÃO EM ANDAMENTO — {alvo}. A equipe de {n} está no carro, na esquina: {jeito}, {quando}. Recompensa potencial de {valor}.',
+                 {alvo:_t(f.a.nome), n:o.n, jeito:_t(A.ABORDAGENS[o.abordagem].nome).toLowerCase(),
+                  quando:f.H.quando, valor:U.dinheiro(f.potencial)}),
+        dados:{op:o.id, alvo:o.alvo, n:o.n, abordagem:o.abordagem, horario:o.horario, potencial:f.potencial},
+        botoes
+      });
+    }
+  }
+  /* a operação do cartão de hoje */
+  const operacaoDe = (E, m) => (E.assaltos || []).find(o=>o.id === (m && m.dados && m.dados.op)) || null;
+  /* deixar a equipe fazer: a conta e o fim, na hora */
+  function assaltoSimulado(E, o){
+    const A = TO.acoes;
+    const grupo = A.equipeDoAssalto(E, o);
+    if(!grupo){ o.cancelado = true; return {texto:_t('Faltou gente: a operação caiu.')}; }
+    const r = A.simularAssalto(E, o, grupo);
+    return A.fecharAssalto(E, o, r) || {texto:''};
   }
 
   /* a mesa levanta: o que não foi decidido fica pra próxima */
@@ -35300,6 +35783,27 @@ TO.feed = (function(){
         /* a lista de alvos também dá pra fechar sem assaltar */
         return {ok:true, abrir:{tela:'tela-assalto', msg:m,
                                 cancelavel:true, botao:idBotao}};
+      /* O DIA DA OPERAÇÃO (30/09/2026): comandar abre a loja em 3D e só
+         responde no fim dela (`confirmarDecisao`); deixar a equipe fazer
+         e cancelar resolvem aqui */
+      case 'assalto-3d': {
+        const o = operacaoDe(E, m);
+        if(!o || o.feito || o.cancelado){ marcar(); return {ok:true}; }
+        return {ok:true, abrir:{tela:'assalto-3d', msg:m, args:{op:o.id}, cancelavel:true, botao:idBotao}};
+      }
+      case 'assalto-simular': {
+        marcar();
+        const o = operacaoDe(E, m);
+        if(!o || o.feito || o.cancelado) return {ok:true};
+        m.consequencia = assaltoSimulado(E, o).texto;
+        return {ok:true};
+      }
+      case 'assalto-cancelar': {
+        marcar();
+        const o = operacaoDe(E, m);
+        if(o && !o.feito){ o.cancelado = true; m.consequencia = _t('Operação cancelada. A equipe voltou pra sede.'); }
+        return {ok:true};
+      }
       case 'iniciar-partida':
         /* O DIA COMEÇA, A BOLA NÃO (correção do dono, 20/08/2026): este
            botão abre o ITINERÁRIO — concentração, pista, arredores. A
@@ -35810,7 +36314,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto, assaltoDeHoje, assaltoSimulado, textoDaOperacao, diaDaReuniao,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,
@@ -35818,7 +36322,7 @@ TO.feed = (function(){
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
           statusDeHoje, eixosDoDia, reuniaoDeHoje,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
-          mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, alvoDoBar, alvoDaCasa,
+          mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, proximoDiaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, naoDesceu, responderEntrevista, assuntoClubeDeHoje,
@@ -50472,6 +50976,27 @@ TO.icones = (function(){
       art.appendChild(bloco);
     }
 
+    /* A FICHA DA OPERAÇÃO (o roteiro do dono, 30/09/2026): "OPERAÇÃO EM
+       ANDAMENTO — Alvo, Equipe, Recompensa potencial, Exposição, Suspeita,
+       Estado". Antes da ordem, a exposição e a suspeita estão zeradas; no
+       fim, ficam as da operação */
+    if(m.kind === 'assalto-dia' && m.dados){
+      const o = (e.assaltos || []).find(x=>x.id === m.dados.op) || null;
+      const a = TO.acoes.ASSALTOS.find(x=>x.id === m.dados.alvo);
+      const r = o && o.resultado;
+      const estado = o && o.cancelado ? _t('Cancelada')
+        : r ? (r.abortou ? _t('Abortada') : r.presos && r.presos.length ? _t('Deu ruim') : _t('Feita'))
+        : _t('Na esquina, esperando a ordem');
+      const lin = (k, v, cls) => `<span>${k}</span><b${cls ? ` class="${cls}"` : ''}>${v}</b>`;
+      art.appendChild(el('div',{class:'op-ficha', html:
+        lin(_t('Alvo'), a ? _t(a.nome) : '—')+
+        lin(_t('Equipe'), _tn(m.dados.n || 0, '{n} membro', '{n} membros'))+
+        lin(_t('Recompensa potencial'), U.dinheiro(m.dados.potencial || 0))+
+        lin(_t('Exposição'), String(r ? r.exposicao : 0))+
+        lin(_t('Suspeita'), String(r ? (r.suspeita != null ? r.suspeita : (r.alerta ? 100 : 0)) : 0))+
+        lin(_t('Estado'), estado, r ? (r.presos && r.presos.length ? 'ruim' : 'boa') : '')}));
+    }
+
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
     if(m.consequencia)
       art.appendChild(el('div',{class:'msg-efeitos',
@@ -50701,6 +51226,7 @@ TO.icones = (function(){
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'tela-reuniao') abrirReuniaoEmCena(m);
       else if(t === 'tela-assalto') abrirAssalto();
+      else if(t === 'assalto-3d') abrirAssalto3d(m, a.op);
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
@@ -52027,62 +52553,162 @@ TO.icones = (function(){
   }
 
   /* =======================================================
-     A TELA DO ASSALTO (tabela do dono, 17/08/2026)
-     Duas perguntas: qual alvo, quantos vão. Os membros são
-     sorteados entre os disponíveis; o dado é um só pro bonde
-     inteiro — partilha pra todos ou cadeia pra todos.
+     O PLANEJAMENTO DO ASSALTO (pedido do dono, 30/09/2026)
+     Era a tela do sorteio (tabela do dono, 17/08/2026: qual alvo,
+     quantos vão, e um dado só pro bonde inteiro). Agora é o plano:
+     o alvo, cada um com as suas barras — exposição, segurança,
+     movimentação, atenção, dificuldade e recompensa potencial —, o
+     tamanho da equipe, a abordagem (furtivo ou rápido), o horário e o
+     dia. Embaixo, o risco que o plano carrega e a atenção da polícia
+     sobre a torcida hoje. "Marcar a operação" põe no calendário
+     (`TO.acoes.planejarAssalto`); no dia, o cartão "OPERAÇÃO EM
+     ANDAMENTO" pergunta quem comanda. `aoMarcar(op)`: quem abriu a
+     tela (a pauta da reunião, o cartão antigo) fecha a decisão.
      ======================================================= */
-  function abrirAssalto(aoFeito){
-    const e = E();
-    const A = TO.acoes.ASSALTOS;
+  function abrirAssalto(aoMarcar){
+    const e = E(), A = TO.acoes, L = A.ASSALTOS;
     const disp = e.membros.filter(TO.membros.disponivel).length;
-    let alvo = A[A.length-1].id;              // abre no mais leve
-    let efetivo = null;
-    const corpo = el('div');
+    const dias = A.diasParaAssalto(e, 14);
+    const pode = L.filter(a=>disp >= a.efetivos[0]);
+    /* abre no alvo mais leve, furtivo, no fechamento, no primeiro dia livre */
+    const pl = {alvo:(pode[pode.length-1] || L[L.length-1]).id, n:null,
+                abordagem:'furtivo', horario:'fechamento', quando:dias[0] || null};
+    const corpo = el('div',{class:'plano-assalto'});
+    const corDaBarra = (id, v) => id === 'recompensa' ? '#e6b93c'
+      : v >= 70 ? '#d9534f' : v >= 40 ? '#e89a3c' : '#6cbf6a';
+    const barra = (c, v) => `<div class="pa-barra" title="${c.nome}: ${c.nota}"><span>${c.curto || c.nome}</span>`+
+      `<i><b style="width:${U.limitar(v,0,100)}%;background:${corDaBarra(c.id, v)}"></b></i></div>`;
 
     const pintar = ()=>{
+      /* a rolagem fica onde estava (régua de 21/09: mexer numa opção não joga a tela pro topo) */
+      const rolo = corpo.closest('.moldura') && corpo.parentElement;
+      const topo = rolo ? rolo.scrollTop : 0;
       corpo.innerHTML = '';
-      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Qual o alvo')}));
-      corpo.appendChild(opcoes(A.map(a=>({
-        id:a.id, rot:_t(a.nome),
-        nota:_t('{min} a {max} · {p}% de cadeia · pena de {d} dias', {
-               min:U.dinheiro(a.ganho[a.efetivos[0]][0]),
-               max:U.dinheiro(a.ganho[a.efetivos[1]][1]),
-               p:Math.round(a.chance*100), d:a.pena}),
-        desabilitada: disp < a.efetivos[0]
-      })), alvo, id=>{ alvo = id; efetivo = null; pintar(); }));
+      const a = L.find(x=>x.id === pl.alvo);
+      if(pl.n === null || !a.efetivos.includes(pl.n) || disp < pl.n) pl.n = a.efetivos.find(n=>disp >= n) || a.efetivos[0];
 
-      const a = A.find(x=>x.id === alvo);
-      if(efetivo === null && disp >= a.efetivos[0]) efetivo = a.efetivos[0];
-      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
-      corpo.appendChild(opcoes(a.efetivos.map(n=>({
-        id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
-        nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
-            : _t('{min} a {max}', {min:U.dinheiro(a.ganho[n][0]), max:U.dinheiro(a.ganho[n][1])}),
-        desabilitada: disp < n
-      })), efetivo !== null ? String(efetivo) : null,
-          id=>{ efetivo = parseInt(id, 10); pintar(); }));
-      corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">${_t('Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.', {n:efetivo || '—'})}</span>`}));
+      /* 1 · o alvo */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O alvo')}));
+      const lista = el('div',{class:'pa-alvos'});
+      for(const x of L){
+        const P = A.PERFIL_ASSALTO[x.id], off = disp < x.efetivos[0];
+        const b = el('button',{class:'pa-alvo'+(x.id === pl.alvo ? ' on' : '')+(off ? ' off' : '')});
+        b.disabled = off;
+        b.innerHTML = `<div class="pa-cab"><b>${_t(x.nome)}</b><span>${_t('{min} a {max}', {min:U.dinheiro(x.ganho[x.efetivos[0]][1]), max:U.dinheiro(x.ganho[x.efetivos[1]][1])})}</span></div>`+
+          `<div class="pa-barras">${A.CARACTERISTICAS.map(c=>barra(c, P[c.id])).join('')}</div>`+
+          (off ? `<small class="pa-falta">${_t('precisa de {n} disponíveis', {n:x.efetivos[0]})}</small>` : '');
+        b.onclick = ()=>{ pl.alvo = x.id; pl.n = null; pintar(); };
+        lista.appendChild(b);
+      }
+      corpo.appendChild(lista);
+
+      /* 2 · a equipe */
+      const f0 = A.fichaDoAssalto(pl.alvo, pl.n, pl.horario);
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A equipe')}));
+      corpo.appendChild(opcoes(a.efetivos.map(n=>{
+        const f = A.fichaDoAssalto(pl.alvo, n, pl.horario);
+        return {id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
+                nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
+                    : _t('{dentro} entram com o líder, {fora} na rua e no carro · potencial de {valor}',
+                         {dentro:f.dentro, fora:n - f.dentro, valor:U.dinheiro(f.potencial)}),
+                desabilitada: disp < n};
+      }), String(pl.n), id=>{ pl.n = parseInt(id, 10); pintar(); }));
+      corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${
+        _t('Equipe maior leva mais e chama mais atenção. Quem vai é sorteado entre os disponíveis no dia.')}</span>`}));
+
+      /* 3 · o jeito */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A abordagem')}));
+      corpo.appendChild(opcoes(Object.values(A.ABORDAGENS).map(o=>({id:o.id, rot:o.nome, nota:o.nota})),
+        pl.abordagem, id=>{ pl.abordagem = id; pintar(); }));
+
+      /* 4 · a hora */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O horário')}));
+      corpo.appendChild(opcoes(Object.values(A.HORARIOS_ASSALTO).map(h=>({id:h.id, rot:`${h.nome} · ${h.hora}`, nota:h.nota})),
+        pl.horario, id=>{ pl.horario = id; pintar(); }));
+
+      /* 5 · o dia */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O dia')}));
+      if(!dias.length) corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${_t('Nenhum dia livre nas próximas duas semanas: jogo, viagem ou outra operação em todos.')}</span>`}));
+      else {
+        const cx = el('div',{class:'pa-dias'});
+        for(const d of dias){
+          const on = pl.quando && d.semana === pl.quando.semana && d.dia === pl.quando.dia;
+          const b = el('button',{class:'pa-dia'+(on ? ' on' : ''), html:`<b>${_t(d.nomeDia).slice(0,3)}</b><span>${d.dataTxt}</span>`});
+          b.onclick = ()=>{ pl.quando = d; pintar(); };
+          cx.appendChild(b);
+        }
+        corpo.appendChild(cx);
+      }
+
+      /* 6 · o risco do plano */
+      const R = A.riscoDoAssalto(e, pl);
+      const calor = A.calorDe(e);
+      const res = el('div',{class:'pa-resumo'});
+      res.innerHTML =
+        `<div class="pa-linha"><span>${_t('Recompensa potencial')}</span><b>${U.dinheiro(f0.potencial)}</b></div>`+
+        `<div class="pa-linha"><span>${_t('Risco estimado')}</span><b class="pa-risco ${R.policia >= 0.45 ? 'alto' : R.policia >= 0.2 ? 'medio' : 'baixo'}">${A.rotuloDoRisco(R.policia)}</b></div>`+
+        (pl.abordagem === 'furtivo'
+          ? `<div class="pa-linha"><span>${_t('Chance de alguém perceber')}</span><b>~${Math.round(R.notado*100)}%</b></div>` : '')+
+        `<div class="pa-linha"><span>${_t('Polícia chegar a tempo, deixando a equipe fazer')}</span><b>~${Math.round(R.policia*100)}%</b></div>`+
+        medidor(_t('Atenção da polícia sobre a torcida'), calor, 100, calor >= 60 ? '#d9534f' : calor >= 30 ? '#e89a3c' : '#6cbf6a')+
+        `<p class="fraco pa-nota">${_t('A polícia está {nivel} com a torcida. Cada assalto que faz barulho — alarme, câmera, polícia no local, gente presa — aumenta isso, e ela chega mais rápido no próximo. Esfria sozinha, dia a dia.', {nivel:A.nivelDoCalor(calor)})}</p>`+
+        `<p class="fraco pa-nota">${TO.semFeed
+          ? _t('No dia, você comanda a equipe dentro da loja — ou deixa ela fazer sozinha.')
+          : _t('No dia, a equipe faz sozinha: o resultado sai do plano, da ficha de quem foi e da atenção da polícia.')}</p>`;
+      corpo.appendChild(res);
+      if(rolo) rolo.scrollTop = topo;
     };
     pintar();
 
-    modal(_t('Assalto'), _t('a diretoria mapeou os alvos'), corpo, [
-      [_t('Assaltar'), ()=>{
-        if(efetivo === null){ aviso(_t('Escolhe o efetivo.'), 'ruim'); return; }
-        const r = TO.acoes.executarAssalto(e, alvo, efetivo);
+    modal(_t('Planejar o assalto'), _t('a diretoria mapeou os alvos da praça'), corpo, [
+      [_t('Marcar a operação'), ()=>{
+        if(!pl.quando){ aviso(_t('Sem dia livre pra operação.'), 'ruim'); return; }
+        const r = A.planejarAssalto(e, pl);
         if(!r.ok){ aviso(r.msg, 'ruim'); return; }
-        aviso(r.caiu ? _t('Deu ruim: {n} presos por {d} dias.', {n:r.n, d:r.pena})
-                     : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)}),
-              r.caiu ? 'ruim' : 'boa');
-        /* assalto feito responde a mensagem que abriu a lista — ou,
-           vindo da reunião, fecha a pauta */
-        if(aoFeito) aoFeito(r); else confirmarDecisao(_t('Ver os alvos — assalto feito'));
+        aviso(TO.feed.textoDaOperacao(r.op), 'boa');
+        if(aoMarcar) aoMarcar(r.op); else confirmarDecisao(_t('Assalto marcado'));
         TO.estado.salvar();
         pintarTopo();
         atualizarFeed();
       }]
-    ]);
+    ], 'larga');
+  }
+
+  /* O DIA DA OPERAÇÃO EM 3D (30/09/2026): "Comandar a equipe" abre a loja
+     na praça (TO.jogo3d.assalto, assalto3d.js) e o tempo do jogo espera a
+     cena inteira. Sem a loja em 3D (o jogo de feed, a praça trocada), a
+     equipe faz sozinha — a mesma conta do "Deixar a equipe fazer" */
+  let assaltoNoAr = false;
+  async function abrirAssalto3d(m, opId){
+    const e = E(), A = TO.acoes;
+    const op = (e.assaltos || []).find(o=>o.id === opId);
+    const encerrar = (rot, txt, tipo)=>{
+      const msg = m && (e.feed || []).find(x=>x.id === m.id);
+      if(msg && txt) msg.consequencia = txt;
+      confirmarDecisao(rot);
+      if(txt) aviso(txt, tipo || '');
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+    };
+    if(!op || op.feito || op.cancelado){ encerrar(_t('Operação encerrada')); return; }
+    const grupo = A.equipeDoAssalto(e, op);
+    if(!grupo){ op.cancelado = true; encerrar(_t('Faltou gente'), _t('Faltou gente: a operação caiu.'), 'ruim'); return; }
+    const J3 = TO.jogo3d && TO.jogo3d.assalto;
+    let r = null;
+    if(J3 && !assaltoNoAr){
+      assaltoNoAr = true;
+      pausarTempo('assalto');
+      try{ r = await J3(op, grupo); }
+      catch(err){ console.error('o assalto em 3D:', err); r = null; }
+      assaltoNoAr = false;
+      retomarTempo('assalto');
+    }
+    if(!r || r.erro){
+      if(r && r.erro) console.warn('o assalto em 3D não abriu:', r.erro);
+      if(J3) aviso(_t('A loja não abriu em 3D: a equipe fez sozinha.'), 'ruim');
+      r = A.simularAssalto(e, op, grupo);
+    }
+    const f = A.fecharAssalto(e, op, r) || {texto:''};
+    encerrar(r.abortou ? _t('Operação abortada') : _t('Operação feita'), f.texto, f.presos || !f.butim ? 'ruim' : 'boa');
   }
 
   /* =======================================================
@@ -55100,6 +55726,9 @@ TO.icones = (function(){
     /* os botes marcados na reunião (dono, 22/09/2026) */
     const botes = new Map();
     for(const b of (e.botes||[])) if(b.ano === e.data.ano) botes.set(`${b.semana}/${b.dia}`, b);
+    /* as operações de assalto marcadas (o planejamento, 30/09/2026) */
+    const assaltos = new Map();
+    for(const o of (e.assaltos||[])) if(o.ano === e.data.ano && !o.cancelado) assaltos.set(`${o.semana}/${o.dia}`, o);
     for(const j of C.agendaDoClube(e, e.torcida.clubeId)){
       agenda.set(`${j.semana}/${j.dia}`, j);
       /* jogo fora, em outra cidade: a véspera e o dia seguinte são da
@@ -55128,13 +55757,38 @@ TO.icones = (function(){
     for(let k=0;k<celulas;k++){
       const d = new Date(inicio);
       d.setDate(inicio.getDate() + k);
-      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas, botes));
+      grade.appendChild(celulaDoDia(e, d, mes, hoje, agenda, caravanas, botes, assaltos));
     }
     q.appendChild(grade);
     return q;
   }
 
-  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas, botes){
+  /* O DIA DA REUNIÃO NO CALENDÁRIO (30/09/2026): a mesa é num dia sorteado
+     do mês (feed.js, `diaDaReuniao`); caindo em jogo ou viagem, senta no
+     primeiro dia livre depois — o calendário mostra esse */
+  const reuniaoDoMes = new Map();
+  function diaDaReuniaoEm(e, ano, mes){
+    const F = TO.feed;
+    if(!F || !F.diaDaReuniao) return null;
+    const chave = `${e.torcida.id}|${e.data.absoluto || 0}|${ano}|${mes}`;
+    if(reuniaoDoMes.has(chave)) return reuniaoDoMes.get(chave);
+    if(reuniaoDoMes.size > 40) reuniaoDoMes.clear();
+    const k = diaDaReuniaoCru(e, ano, mes);
+    reuniaoDoMes.set(chave, k);
+    return k;
+  }
+  function diaDaReuniaoCru(e, ano, mes){
+    const F = TO.feed;
+    const ult = new Date(ano, mes + 1, 0).getDate();
+    for(let k = F.diaDaReuniao(e, ano, mes); k <= ult; k++){
+      const sd = TO.estado.semanaDiaDe(new Date(ano, mes, k));
+      if(!sd) return null;
+      if(sd.ano !== e.data.ano || !F.diaLivre || F.diaLivre(e, sd.semana, sd.dia)) return k;
+    }
+    return null;
+  }
+
+  function celulaDoDia(e, d, mesAtual, hoje, agenda, caravanas, botes, assaltos){
     const sd = TO.estado.semanaDiaDe(d);
     const cel = el('div',{class:'dia'});
     const classes = [];
@@ -55163,6 +55817,16 @@ TO.icones = (function(){
         cel.appendChild(el('span',{class:'rot', html:
           `${IC.get('onibus')}${_t('Caravana')}`}));
         cel.appendChild(el('span',{class:'sub', texto:`${cv.rot} · ${cv.cidade}`}));
+      }else if(assaltos && assaltos.get(`${sd.semana}/${sd.dia}`)){
+        const o = assaltos.get(`${sd.semana}/${sd.dia}`);
+        const a = TO.acoes.ASSALTOS.find(x=>x.id === o.alvo) || {nome:''};
+        const h = TO.acoes.HORARIOS_ASSALTO[o.horario] || {};
+        classes.push('assalto');
+        cel.appendChild(el('span',{class:'rot assalto-rot', html:
+          `${IC.get('dinheiro') || ''}${o.feito ? _t('Assalto feito') : _t('Assalto marcado')}`}));
+        cel.appendChild(el('span',{class:'sub', texto: o.feito && o.resultado
+          ? `${_t(a.nome)} · ${U.dinheiro(o.resultado.butim)}`
+          : `${_t(a.nome)} · ${h.hora || ''}`}));
       }else if(botes && botes.get(`${sd.semana}/${sd.dia}`)){
         const b = botes.get(`${sd.semana}/${sd.dia}`);
         classes.push('bote');
@@ -55183,6 +55847,8 @@ TO.icones = (function(){
         }
       }
     }
+    if(sd && d.getMonth() === mesAtual && d.getDate() === diaDaReuniaoEm(e, d.getFullYear(), d.getMonth()))
+      cel.appendChild(el('span',{class:'reu-dia', html:`${IC.get('conversa') || ''}${_t('Reunião')}`}));
     cel.className = 'dia ' + classes.join(' ');
     return cel;
   }
@@ -55456,7 +56122,7 @@ TO.icones = (function(){
         bt.innerHTML = `<span>${b.rot}</span>`+(b.nota?`<small>${b.nota}</small>`:'');
         bt.onclick = ()=>{
           /* os alvos de assalto abrem a tela por cima; o resultado dela fecha a pauta */
-          if(b.acao === 'assalto-ver'){ abrirAssalto(r=>{ F.fecharPautaAssalto(e, it.id, r); depois(); }); return; }
+          if(b.acao === 'assalto-ver' || b.acao === 'assalto-planejar'){ abrirAssalto(op=>{ F.fecharPautaAssalto(e, it.id, {op}); depois(); }); return; }
           F.decidirPauta(e, it.id, b.id); depois();
         };
         bts.appendChild(bt);
@@ -55665,7 +56331,7 @@ TO.icones = (function(){
     pintar();
     const d = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
     const fechar = modal(_t('Reunião da diretoria'),
-      _t('{mes} de {ano} · dia 5', {mes:_t(MESES_R[d.getMonth()]), ano:d.getFullYear()}), cx,
+      _t('{mes} de {ano} · dia {dia}', {mes:_t(MESES_R[d.getMonth()]), ano:d.getFullYear(), dia:d.getDate()}), cx,
       [[_t('Encerrar a reunião'), ()=>{
         const r = TO.feed.fecharReuniao(e);
         confirmarDecisao(r.decididos ? _tn(r.decididos, '{n} decidido', '{n} decididos') : _t('nada a decidir'));
@@ -56495,6 +57161,8 @@ TO.icones = (function(){
     if(pausasT.has('itinerario') && !ITN){
       pausasT.delete('itinerario'); curas.push(_t('pausa de itinerário sem linha'));
     }
+    /* a operação de assalto em 3D segura o tempo enquanto está no ar */
+    if(pausasT.has('assalto') && !assaltoNoAr){ pausasT.delete('assalto'); curas.push(_t('pausa de assalto sem assalto')); }
     /* os hóspedes saindo da sede em 3D (vida3d.js) seguram o tempo uns segundos */
     if(pausasT.has('hospedes')){
       const V3 = TO.jogo3d && TO.jogo3d.vida;
@@ -58080,6 +58748,8 @@ TO.icones = (function(){
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
+    /* o planejamento do assalto e a operação do dia em 3D (30/09/2026) */
+    abrirAssalto, abrirAssalto3d, get assaltoNoAr(){ return assaltoNoAr; },
     abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
     abrirBrigaDoTutorial,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
