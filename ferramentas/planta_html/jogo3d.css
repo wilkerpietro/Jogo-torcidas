@@ -552,3 +552,35 @@ body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:non
   .j3d-dia-estado{font-size:11.5px;margin:2px 0 4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .j3d-dia button{padding:5px 7px;font-size:10.5px}
 }
+
+/* ---------- OS GRÁFICOS (30/09/2026, js/ui/graficos.js) ----------
+   o painel à direita, que não cobre a cidade: o fps que muda com cada
+   opção é o que se vê atrás dele (e no alto dele). Por cima do menu
+   principal e da casca do jogo; embaixo do mapa da cidade */
+.j3d-graf{position:fixed;z-index:58;right:12px;top:58px;width:min(390px, calc(100vw - 24px));max-height:calc(100vh - 72px);
+  display:flex;flex-direction:column;box-sizing:border-box;background:rgba(22,22,24,.96);border:1px solid var(--linha, #2c2c2c);
+  border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);color:var(--texto, #eee);font:13px/1.4 var(--corpo, sans-serif);pointer-events:auto}
+.j3d-graf header{display:flex;align-items:center;gap:8px;padding:9px 12px 7px;border-bottom:1px solid var(--linha, #2c2c2c)}
+.j3d-graf h2{flex:1;margin:0;font:600 17px/1.1 var(--titulo, sans-serif);letter-spacing:.1em;text-transform:uppercase}
+.j3d-graf-x{width:26px;height:26px;border-radius:13px;border:1px solid var(--linha, #2c2c2c);background:#26262a;color:inherit;font-size:16px;line-height:1;cursor:pointer}
+.j3d-graf-medida{margin:0;padding:8px 12px;font:600 12.5px/1.4 var(--mono, monospace);font-variant-numeric:tabular-nums;background:#111113;border-bottom:1px solid var(--linha, #2c2c2c)}
+.j3d-graf-medida b{font-size:16px}
+.j3d-graf-medida b.bom{color:#7fd67a} .j3d-graf-medida b.meio{color:#f0c64a} .j3d-graf-medida b.ruim{color:#ff7b6b}
+.j3d-graf-medida small{display:block;font-weight:400;color:var(--fraco, #999)}
+.j3d-graf-medida small.aviso{color:#ffb4a8;font-weight:600}
+.j3d-graf-corpo{flex:1;min-height:0;overflow-y:auto;padding:4px 12px 8px}
+.j3d-graf-bloco{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.j3d-graf-bloco:last-child{border-bottom:0}
+.j3d-graf-rot{font:600 11.5px/1.2 var(--titulo, sans-serif);letter-spacing:.12em;text-transform:uppercase;color:var(--fraco, #999);margin-bottom:6px}
+.j3d-graf-rot em{font-style:normal;color:#f0c64a;letter-spacing:.06em;margin-left:6px}
+.j3d-graf-bts{display:flex;flex-wrap:wrap;gap:5px}
+.j3d-graf-bts button{flex:1 1 auto;min-width:0;padding:6px 5px;border-radius:5px;border:1px solid #3a3a40;background:#232327;color:var(--texto, #eee);
+  font:500 12.5px/1.2 var(--corpo, sans-serif);cursor:pointer;white-space:nowrap}
+.j3d-graf-bts button:hover{border-color:#6a6a74}
+.j3d-graf-bts button[aria-pressed="true"]{background:var(--rubro, #9d2222);border-color:var(--rubro-vivo, #d24141);color:#fff;font-weight:600}
+.j3d-graf-nota{margin-top:6px;font-size:11.5px;line-height:1.4;color:var(--fraco, #999)}
+.j3d-graf-nota b{color:#f0c64a;font-weight:600}
+.j3d-graf footer{display:flex;gap:8px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--linha, #2c2c2c)}
+@media (max-width:560px){
+  .j3d-graf{top:auto;bottom:8px;right:8px;width:calc(100vw - 16px);max-height:62vh}
+}

@@ -162,7 +162,18 @@
     cx.appendChild(grade);
     cx.appendChild(el('p',{class:'nota', texto:
       _t('O idioma vale pro jogo inteiro neste navegador. As mensagens que um save já tinha continuam na língua em que foram escritas.')}));
-    modal(_t('Configurações'), '', cx, [], 'estreita');
+    /* OS GRÁFICOS (30/09/2026), no jogo 3D: o painel abre por cima do
+       menu, com a cidade desenhando atrás */
+    let fecharCfg = null;
+    if(TO.graficos && TO.graficos.existe){
+      cx.appendChild(el('div',{class:'fase-rot', texto:_t('Gráficos')}));
+      const bG = el('button',{class:'bt', texto:_t('Abrir as opções de gráfico')});
+      bG.onclick = ()=>{ if(fecharCfg) fecharCfg(); TO.graficos.abrir(); };
+      cx.appendChild(bG);
+      cx.appendChild(el('p',{class:'nota', texto:
+        _t('A resolução, a suavização, a luz, a gente na rua e as texturas da cidade em 3D. No computador sem placa de vídeo, é aqui que o jogo fica leve.')}));
+    }
+    fecharCfg = modal(_t('Configurações'), '', cx, [], 'estreita');
   }
 
   /* o cofre visto do menu: as vagas, o arquivo e o texto, antes de
@@ -551,6 +562,10 @@
        salvar estava atrás de um Ctrl+S que ninguém adivinha, e uma
        partida de cinco anos precisa de porta com placa. */
     {id:'jogo',        rot:_t('Jogo'),        ic:'disquete'},
+    /* OS GRÁFICOS (o dono, 30/09/2026: "crie mecanismos de melhorar o FPS
+       em computadores fracos, em um menu de configuração de gráfico"). Só
+       com a cidade em 3D: o painel (js/ui/graficos.js) mexe no cenário */
+    {id:'graficos',    rot:_t('Gráficos'),    ic:'graficos', acao:'graficos', so3d:true},
     /* VOLTAR AO MENU PRINCIPAL (pedido do dono, 21/09/2026). Não é
        página: é saída. Fica no fim da coluna, depois do cofre, e
        `acao` é o que separa os dois — item com `acao` executa, item
@@ -560,7 +575,8 @@
   /* o que um item de `acao` faz */
   const ACAO_NAV = {menu: () => sairParaMenu(),
                     planejamento: () => abrirPlanejamento(),
-                    mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); }};
+                    mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); },
+                    graficos: () => { if(TO.graficos) TO.graficos.alternar(); }};
   /* o item que só existe com a cidade em 3D */
   const temNoMenu = n => !n.so3d || !!(TO.jogo3d && TO.jogo3d.abrirMapa);
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da

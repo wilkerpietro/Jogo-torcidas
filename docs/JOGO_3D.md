@@ -2461,3 +2461,144 @@ antiga. A equipe é sorteada entre os disponíveis do dia (a régua do dono de
   de jogo, na revista do portão nem nas outras brigas.
 - Save antigo: o cartão "Ver os alvos" da reunião e o `tela-assalto` de
   antes abrem a tela nova do planejamento.
+
+## 29. O menu Gráficos: o jogo leve no computador sem placa de vídeo (30/09/2026)
+
+**O pedido** (o dono): "crie mecanismos de melhorar o FPS em computadores
+fracos, em um menu de configuração de gráfico". Nos prints dele, o Jogo 3D
+a 4–5 fps na sala do presidente, com o aviso do medidor "Sem placa de vídeo:
+o navegador desenha no processador (Microsoft Basic Render Driver)", 130 mil
+triângulos e 40 chamadas de desenho.
+
+### Onde o quadro gasta (medido antes de mexer)
+
+No navegador de teste sem placa (SwiftShader, janela de 1366 × 768, a sala
+do presidente da Leões da TUF em Fortaleza): **1,6 fps** de dia e **0,7 de
+noite** com o relógio do jogo andando (como se joga: a virada do dia e as
+mensagens travam quadros no meio); com o relógio parado (a medida limpa, a
+que as tabelas abaixo usam), 2,5 e 1,9. O JavaScript do quadro (a vida, os
+bonecos, os balões) gasta uns 4 ms; o resto é o desenho, e o desenho custa
+quase tudo pelo **número de pixels** e pelo **trabalho de cada pixel**. Cada
+alavanca sozinha, na mesma vista (janelas de 8 a 10 s, com ruído — servem
+pra comparar ordem de grandeza):
+
+| o que mudou | fps de dia |
+|---|---|
+| nada (suavização ligada, 100%) | 1,6 |
+| sem a suavização de bordas (MSAA) | 2,5 |
+| metade da resolução | 3,8 |
+| metade da resolução, sem suavização | 6,5 |
+| um quarto da resolução, sem suavização | 12,8 |
+| sem a cidade na tela (só os bonecos) | 35 |
+| a luz simples (conta no vértice) | +6% de dia, +10% de noite |
+| as luzes da noite apagadas | +11% de dia, +13% de noite |
+| blocos do forno de 48 m em vez de 96 (menos triângulos) | +7% (não entrou) |
+
+O HUD do jogo (a barra, a coluna, os balões) não pesa: escondido, o fps
+não mudou.
+
+### O menu
+
+- **Onde abre**: o ícone novo da coluna da esquerda (a tela com o ponteiro,
+  "Gráficos", só no jogo 3D), as **Configurações** do menu principal (botão
+  "Abrir as opções de gráfico") e o **clique no medidor de fps**.
+- **Ao vivo**: o painel fica à direita e não cobre a cidade — cada opção
+  vale na hora e o fps que muda aparece no alto do painel (com a
+  resolução em pixels e o aviso de "sem placa de vídeo"). Enquanto ele está
+  aberto, o **relógio do jogo para** (pausa `graficos`).
+- **Predefinições**: Mínima, Leve, Normal e Alta, e a "recomendada pra este
+  computador". Mexer numa opção vira "Personalizada"; voltar a bater com
+  uma predefinição mostra ela de novo. "Voltar ao recomendado" aplica a da
+  máquina.
+- **As opções** (guardadas no navegador, `cenario-graficos`; valem pra
+  ferramenta do cenário também):
+  - **Resolução da imagem**: Automática, 100, 85, 70, 50 ou 35%. A
+    **automática** mede a mediana do tempo entre quadros a cada 1,5 s (um
+    soluço do jogo não conta) e desce o que falta de uma vez (o quadro custa
+    mais ou menos os pixels) até 35%; sobra fps, sobe 12% por vez, mais
+    devagar a cada subida que não aguentou (a imagem não fica pulsando). A
+    que ela achou fica guardada pra próxima abertura. **A automática mira
+    em** 20, 30, 45 ou 60 fps.
+  - **Suavizar as bordas**: Automático (desligada sem placa de vídeo), Sim
+    ou Não. É do contexto do WebGL: **só vale quando o jogo abre de novo**
+    — o painel avisa.
+  - **Limite de fps**: sem limite, 60 ou 30. Não aumenta o fps; deixa o
+    processador livre pro resto do jogo e esquenta menos.
+  - **Iluminação**: Completa (a conta do sol e do céu em cada pixel) ou
+    Simples (no vértice: nas paredes e no chão, que são planos, sai igual; o
+    pixel perde duas variáveis interpoladas).
+  - **Luzes da noite**: acesas ou apagadas (apagadas, os shaders nem têm a
+    conta do poste, do refletor, da janela e do cômodo; a lente da
+    luminária continua acesa).
+  - **Distância de visão**: longe, média ou perto (a névoa e o longe da
+    câmera; na vista de cima da praça).
+  - **Gente na rua**: muita, média ou pouca (os pedestres e a roda na porta
+    dos bares da vida da praça; a gente da sede, do dia de jogo e das brigas
+    não muda — é o jogo).
+  - **Bonecos**: detalhados ou leves (todo mundo no modelo de longe, menos
+    o líder).
+  - **Texturas**: alta, normal, leve ou mínima (os pixels por metro do chão,
+    o letreiro e a **filtragem anisotrópica**, 8× / 8× / 2× / 1×). Trocar
+    **remonta a praça**: com a partida no ar, a vida da sede desliga e liga
+    de novo pelo caminho de sempre; com o dia de jogo ou o assalto no ar,
+    espera eles acabarem.
+  - **Medidor de fps**: mostrar ou esconder. Com a resolução abaixo de
+    100%, ele diz quanto ("· 35% da resolução").
+- **A primeira vez sem placa de vídeo**: o cenário abre um contexto de
+  prova antes de criar o desenhista (o nome da placa e o
+  `failIfMajorPerformanceCaveat` do navegador) e, sem escolha guardada,
+  começa na **Mínima** — já sem a suavização, que não dá pra desligar
+  depois sem recarregar. O jogo avisa uma vez por navegador: "Sem placa de
+  vídeo: os gráficos começaram no mínimo…".
+- Quem tinha escolhido a qualidade na caixa antiga da ferramenta
+  (`cenario-qualidade`) fica com a predefinição do mesmo nome. Na
+  ferramenta, a caixa virou "Gráficos" (as quatro predefinições).
+
+### De graça pra todo mundo (sem opção)
+
+- **A cúpula do céu** só é desenhada quando o céu aparece: com a câmera
+  olhando pra baixo mais que a metade da lente (a sala do presidente, a pé,
+  a vista de cima) ela era uma tela inteira de pixels desenhada à toa por
+  baixo da cidade.
+- **Uma variável interpolada a menos** nos materiais da cidade e do chão: a
+  noite usava a posição no mundo que o corte (e o chão) já levavam pro
+  pixel.
+
+### O que rende (medido depois, a mesma vista)
+
+Relógio parado, janelas de 15 s, a versão de antes e a nova montadas do
+mesmo jeito e medidas pelo mesmo roteiro (um jogo novo da Leões da TUF; a
+sala, a sala às 21 h e a praça vista de 450 m):
+
+| predefinição | sala, dia | sala, noite | a praça de cima (450 m) |
+|---|---|---|---|
+| antes (o de ontem, com suavização, 100%) | 2,5 | 1,9 | 0,96 |
+| Normal (sem placa: sem suavização) | 3,2 | 2,3 | 1,7 |
+| Leve (automática → 35%) | 10,2 | 10,1 | 2,1 |
+| Mínima (automática → 35%) | 16,6 | 15,6 | 3,0 |
+
+Na sala, a Leve rende uns 4× o de antes e a Mínima uns 6,5× (8× de noite).
+No PC do dono o desenho é mais rápido que o do navegador de teste (lá,
+4–5 fps onde aqui deu 1,6 com o relógio andando): se a proporção se
+mantiver, a Mínima fica na casa dos 30 fps na sala e a Leve perto dos 20.
+**Não medi no PC dele** — é conta, não medida.
+
+### Limites (sinceros)
+
+- **A imagem a 35% é borrada.** É o preço do fps no computador sem placa
+  — o HUD, que é HTML, continua nítido. Quem prefere nitidez escolhe a
+  resolução fixa (50 ou 70%) e aceita menos fps.
+- **A vista de cima da praça inteira continua pesada** (1,1 milhão de
+  triângulos, 400 chamadas): ali o custo é de triângulo, não de pixel, e a
+  distância de visão pouco corta (a praça cabe na névoa). Uma versão de
+  longe da cidade (o prédio virando caixa, como no jogo de feed antigo)
+  resolveria, e não foi feita.
+- **A iluminação simples rende pouco** (6–10%): o material básico, sem
+  conta nenhuma, prometia mais, mas o resto do pixel (a textura, a cor, a
+  névoa, o corte do telhado) pesa igual.
+- **A suavização só muda recarregando a página**; a automática já nasce
+  desligada sem placa.
+- **As cenas à parte** (a festa, a caravana, o assalto, a briga no palco)
+  têm materiais e texturas próprios: herdam a resolução, o limite de fps e
+  os bonecos leves (e a luz simples nos bonecos); a luz simples, as luzes
+  da noite e as texturas são da cidade.

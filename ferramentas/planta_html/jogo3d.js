@@ -210,6 +210,9 @@ function ligar(api) {
     /* (pro teste: o controle da cena no ar — o J, o robô, o fim) */
     get controleDoAssalto() { return assaltoNoAr; },
     vida, mapa, dia: dia3d, recados,
+    /* OS GRÁFICOS (30/09/2026): as opções de gráfico do cenário (o painel
+       é js/ui/graficos.js) */
+    get graficos() { return api.cenario ? api.cenario.graficos || null : null; },
     /* (pro teste: a praça e a planta — os bares, as sedes) */
     get api() { return api; }
   };
@@ -356,9 +359,11 @@ function ligar(api) {
     try { if (vida.conferirGuardados) vida.conferirGuardados(true); } catch (err) { console.error('os armários:', err); }
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
+    /* (a textura dos gráficos que mudou com a praça ocupada: remonta agora) */
+    const mudouTexturas = texturasPendentes; texturasPendentes = false;
     /* os ônibus da garagem (os níveis 4 e 5) são os do save, na hora */
     try { if (api.onibusDoJogo && TO.financeiro && TO.financeiro.onibusDe) api.onibusDoJogo(e.torcida.id, TO.financeiro.onibusDe(e)); } catch (err) { console.error('os ônibus:', err); }
-    const refazer = mudouNivel || mudouBares || !!forcar;
+    const refazer = mudouNivel || mudouBares || mudouTexturas || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
     /* os bares que ela tinha na praça: o que aparecer a mais é o novo */
@@ -376,10 +381,48 @@ function ligar(api) {
     }, () => {});
   };
 
+  /* AS TEXTURAS DOS GRÁFICOS mudaram: a praça monta de novo, com a vida
+     da sede desligada e ligada de novo (a do jogador, pelo caminho de
+     sempre). Com o dia de jogo ou o assalto no ar, espera eles acabarem
+     (a praça volta pra do jogador e monta com a textura nova); no menu,
+     só remonta a que está atrás dele */
+  let texturasPendentes = false;
+  const trocarTexturas = () => {
+    const C = api.cenario;
+    if (!C || !C.praca) return;
+    const emJogo = !!jogo && !jogo.classList.contains('oculto');
+    if (!emJogo) { api.abrirPraca(C.praca, true); return; }
+    texturasPendentes = true;
+    if (pracaTravada || dia3d.ativo || dia3d.montando || assaltoNoAr) return;
+    conferirPraca();
+  };
+  const ligarGraficos = () => {
+    const C = api.cenario;
+    if (!C || !C.graficos) return false;
+    C.graficos.aoTrocarTexturas = trocarTexturas;
+    /* o clique no medidor de fps abre o painel */
+    C.graficos.aoPedir = () => { if (TO.graficos) TO.graficos.alternar(); };
+    return true;
+  };
+  if (!ligarGraficos()) api.pronta && api.pronta.then(ligarGraficos, () => {});
+  /* A PRIMEIRA VEZ SEM PLACA DE VÍDEO: os gráficos começaram na mínima
+     sozinhos (o cenário vê a placa antes de desenhar). Um aviso, uma vez
+     por navegador, dizendo onde muda */
+  let avisouGraficos = false;
+  const avisarGraficos = () => {
+    const C = api.cenario, g = C && C.graficos;
+    if (avisouGraficos || !g || !g.automatica || !g.estado.semPlaca) return;
+    avisouGraficos = true;
+    try { if (localStorage.getItem('jogo3d-aviso-graficos')) return; localStorage.setItem('jogo3d-aviso-graficos', '1'); } catch (err) { return; }
+    const _tr = (s, v) => window._t ? _t(s, v) : s;
+    avisar(_tr('Sem placa de vídeo: os gráficos começaram no mínimo. Dá pra mudar em <b>Gráficos</b>, no menu da esquerda.'));
+  };
+
   /* dentro da partida (a casca do jogo à mostra) ou no menu */
   const conferirTela = () => {
     const emJogo = !!jogo && !jogo.classList.contains('oculto');
     document.body.classList.toggle('j3d-em-jogo', emJogo);
+    if (emJogo) setTimeout(avisarGraficos, 2500);
     if (!emJogo && (dia3d.ativo || dia3d.montando)) dia3d.fechar();
     if (emJogo) conferirPraca();
     else if (vida.ligada) { vida.desligar(); pracaDoJogo = null; }

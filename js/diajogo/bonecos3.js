@@ -1187,7 +1187,10 @@ let escalaDoTabuleiro = () => 1;
     const nv = c.nivel, junto = c.junto;
     if(!nv || !junto || !nv.perto) return;
     let longe = false;
-    if(camNivel && alturaNivel > 0 && !lider){
+    /* OS BONECOS LEVES dos gráficos do cenário (30/09/2026, o dono joga sem
+       placa de vídeo): todo mundo no nível de longe, menos o líder */
+    if(cfg.nivelLeve && !lider) longe = true;
+    else if(camNivel && alturaNivel > 0 && !lider){
       const h = ALTURA_CAIXAS * c.raiz.scale.y;
       /* projectionMatrix[5]: 1/tan(meio campo) na perspectiva (com o zoom),
          2/altura da vista na ortográfica */
@@ -2736,7 +2739,7 @@ let escalaDoTabuleiro = () => 1;
      boneco de 30 px não sente a diferença; a placa do celular sente
      — 1,5× é 2,25 vezes mais pixel que 1×. */
   const DPR_NIVEIS = [1.5, 1.0, 0.75];
-  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true};
+  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true, nivelLeve:false};
   let quadroN = 0;
   /* o relógio de verdade das figuras (o do jogo, J.t, pode correr acelerado: o dia de jogo) */
   let tAnim = 0;
