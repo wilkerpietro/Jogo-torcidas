@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=7b632a106a';
-import { brigaNaCaminhada } from './caminhada.js?v=7b632a106a';
-import { brigaNoBar } from './briga_bar.js?v=7b632a106a';
-import { brigaNaTreta } from './briga_treta.js?v=7b632a106a';
-import { planoDoBar } from './casas3d.js?v=7b632a106a';
+import { palcoDeBriga } from './palco_briga.js?v=a865a037df';
+import { brigaNaCaminhada } from './caminhada.js?v=a865a037df';
+import { brigaNoBar } from './briga_bar.js?v=a865a037df';
+import { brigaNaTreta } from './briga_treta.js?v=a865a037df';
+import { planoDoBar } from './casas3d.js?v=a865a037df';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -790,6 +790,8 @@ export function criarVida(api) {
     for (const p of rua.povo) andarPedestre(p, dt);
     /* o bar quebrado: o tapume e os cacos pelo que o save diz */
     if (tAcc - quebradosEm > 2) { quebradosEm = tAcc; try { conferirQuebrados(); } catch (err) { console.error('o bar quebrado:', err); } }
+    /* os armários do almoxarifado: o que cada torcida guarda, pelo save */
+    if (tAcc - guardadosEm > 2) { guardadosEm = tAcc; try { conferirGuardados(); } catch (err) { console.error('os armários:', err); } }
     /* os bares perto: a roda na porta e quem chega */
     for (const b of rua.bares) {
       const longe = Math.hypot(b.porta.x - cx, b.porta.y - cz) > raio * 1.4;
@@ -853,7 +855,35 @@ export function criarVida(api) {
      (`danoPor`), ou o primeiro dela (`barDaBriga`)
      ===================================================== */
   const quebrados = new Map();          // o n do bar na planta → { g, por, dono, dias }
-  let quebradosEm = -99;
+  let quebradosEm = -99, guardadosEm = -99;
+  /* O QUE CADA TORCIDA GUARDA NOS ARMÁRIOS DO ALMOXARIFADO (o dono,
+     29/09/2026: "as faixas tomadas vão estar armazenadas dentro do
+     armário do almoxarifado, e em outro armário o patrimonio próprio"):
+     o patrimônio (as faixas e as bandeiras que ela tem) e as tomadas (de
+     quem) — a do jogador, do save; as da IA, do mundo vivo. Trocou, a
+     praça troca só a malha do que está guardado naquela sede. A cada 2 s
+     de rua (como o bar quebrado) só as torcidas da praça; `todas`, as
+     do mundo inteiro (antes de a praça montar: jogo3d.js). Devolve
+     quantas mudaram */
+  function conferirGuardados(todas) {
+    const e = E(), PAT = TO.patrimonio;
+    if (!e || !e.torcida || !api.guardadosDoJogo || !PAT || !PAT.faixasDe || !PAT.faixasIA) return 0;
+    const lista = (l, tipo) => (l || []).map(x => ({ tipo, de: x.de || null }));
+    let n = 0;
+    const fx = PAT.faixasDe(e), bd = PAT.bandeirasDe(e);
+    if (api.guardadosDoJogo(e.torcida.id, { proprias: { faixas: fx.nossas.length, bandeiras: bd.nossas.length },
+                                            tomadas: lista(fx.tomadas, 'faixa').concat(lista(bd.tomadas, 'bandeira')) })) n++;
+    const P = api.planta, mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(e) : {};
+    const ids = todas ? Object.keys(mundo) : (P && P.torcidas ? P.torcidas().map(t => t.id) : []);
+    for (const id of ids) {
+      if (id === e.torcida.id || !mundo[id]) continue;
+      const f = PAT.faixasIA(e, id);
+      if (!f) continue;
+      if (api.guardadosDoJogo(id, { proprias: { faixas: Math.max(0, f.faixas | 0), bandeiras: Math.max(0, f.bandeiras | 0) },
+                                   tomadas: lista(f.faixasTomadas, 'faixa').concat(lista(f.bandeirasTomadas, 'bandeira')) })) n++;
+    }
+    return n;
+  }
   /* o que o save diz: dono → [{ dias, por }] (o nosso e o das IAs) */
   function danosDoJogo() {
     const e = E(), F = TO.financeiro, fora = new Map();
@@ -1471,6 +1501,8 @@ export function criarVida(api) {
       return [...quebrados].map(([n, q]) => ({ n, dono: q.dono, por: q.por, dias: q.dias, visivel: q.g.visible, naCena: q.g.parent === cena, filhos: q.g.children.length }));
     },
     conferirQuebrados: () => conferirQuebrados(),
+    /* os armários do almoxarifado pelo save (`todas`: as torcidas do mundo inteiro) */
+    conferirGuardados: todas => conferirGuardados(todas),
     /* os bares quebrados pelo save, com a porta no mundo (o mapa da cidade marca eles) */
     get baresQuebrados() {
       try { return [...quebradosNoMapa()].map(([n, a]) => ({ n, dono: a.dono, por: a.por, dias: a.dias, porta: a.bar.porta })); }

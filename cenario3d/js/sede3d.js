@@ -74,7 +74,7 @@
    (em ferramentas/planta_html) prova que em toda sede dos três mapas
    um corpo de 70 cm entra em todo cômodo; mexeu na mobília, rode ele.
    ========================================================= */
-import { Construtor, METRO, arSplit } from './construtor3d.js?v=7b632a106a';
+import { Construtor, METRO, arSplit } from './construtor3d.js?v=a865a037df';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -83,7 +83,8 @@ const PISO = 0.09;   // o piso, na altura do `piso` da planta (1,7 unidade)
 const CLARO = '#d9d3c4', CREME = '#ede6d4', BRANCO = '#f3f2ee', LOUCA = '#f4f4f1', MADEIRA = '#7a4e2e',
       MADEIRA_CLARA = '#a47a4e', ACO = '#8e959b', ACO_ESCURO = '#565d63', PRETO = '#26282b', GRANITO = '#3b3936',
       OURO = '#d4a93a', PAPELAO = '#b88a50', FELTRO = '#2e7a3a', TELA = '#2f6a3c', CIMENTO = '#a8a396',
-      SALAO = '#b7b2a4', RODAPE = '#8a7d6a', PAREDE_SALA = '#efe8d6', AZUL_COLCHAO = '#5a7fb0';
+      SALAO = '#b7b2a4', RODAPE = '#8a7d6a', PAREDE_SALA = '#efe8d6', AZUL_COLCHAO = '#5a7fb0', ACO_ARMARIO = '#6f7a82',
+      ACO_DENTRO = '#c3c8cb';
 export const NEUTRO_SEDE = { cor: '#d6d1c4', cor2: '#c4beb0', cor3: '#8f8a7f' };
 
 /* a tinta da torcida no reboco: o preto puro vira buraco no Lambert e o
@@ -406,6 +407,110 @@ function armarioAco(ctx, Q, s0, s1, t0, t1, h, frente, n) {
       qcaixa(ctx, Q, a, b, c0, c1, PISO + 0.06, PISO + h - 0.4, esp2);
     }
   }
+}
+/* O ARMÁRIO DE TELA (o dono, 29/09/2026: "as faixas tomadas vão estar
+   armazenadas dentro do armário do almoxarifado, e em outro armário o
+   patrimonio próprio. esse detalhe vai fazer parte de uma mecanica de
+   invasão de sede que vai acontecer de maneira rara no jogo
+   futuramente"): o armário de aço de duas portas de TELA — dá pra ver o
+   que está guardado —, com o montante do meio, três prateleiras (quatro
+   nichos de cada lado), a testeira com a placa (TOMADAS ou PATRIMÔNIO)
+   e, no das tomadas, o cadeado. O que vai dentro não é desenhado aqui:
+   o armário marca os nichos dele em `ctx.armarios`, e
+   `guardarNosArmarios` enche numa malha à parte (a cidade troca só ela
+   quando o patrimônio do save muda). `o`: { tipo, placa, cadeado } */
+function armarioDeTela(ctx, Q, s0, s1, t0, t1, h, frente, o) {
+  const ao = frente === '-s' || frente === '+s';
+  const A0 = ao ? t0 : s0, A1 = ao ? t1 : s1, P = ao ? s1 - s0 : t1 - t0;
+  /* (ao longo da frente `a`, fundo `d` a partir da frente) → (s, t) do cômodo */
+  const st = (a0, a1, d0, d1) => frente === '-t' ? [a0, a1, t0 + d0, t0 + d1] : frente === '+t' ? [a0, a1, t1 - d1, t1 - d0]
+                               : frente === '-s' ? [s0 + d0, s0 + d1, a0, a1] : [s1 - d1, s1 - d0, a0, a1];
+  const ptDe = (a, d) => frente === '-t' ? Q.pt(a, t0 + d) : frente === '+t' ? Q.pt(a, t1 - d) : frente === '-s' ? Q.pt(s0 + d, a) : Q.pt(s1 - d, a);
+  const cx = (a0, a1, d0, d1, y0, y1, spec) => { const [p0, p1, q0, q1] = st(a0, a1, d0, d1); return qcaixa(ctx, Q, p0, p1, q0, q1, y0, y1, spec); };
+  const e = 0.02, chapa = { todas: lisa(ACO_ARMARIO), base: null }, y0 = PISO, yT = PISO + h, rod = 0.08, testeira = 0.2;
+  const yA = y0 + rod, yB = yT - testeira, NIV = 4, am = (A0 + A1) / 2;
+  /* o corpo: o fundo, os lados, o tampo, o rodapé e a testeira (o fundo e
+     as prateleiras claros por dentro: atrás da tela, o escuro engolia as
+     peças) */
+  cx(A0, A1, P - e, P, y0, yT, { todas: lisa(ACO_DENTRO), base: null });
+  cx(A0, A0 + e, 0, P - e, y0, yT, chapa);
+  cx(A1 - e, A1, 0, P - e, y0, yT, chapa);
+  cx(A0, A1, 0, P, yT - e, yT, { todas: lisa(ACO_ARMARIO) });
+  cx(A0 + e, A1 - e, 0, P - e, y0, yA, chapa);
+  cx(A0 + e, A1 - e, 0, 0.015, yB, yT - e, chapa);
+  /* as prateleiras e o montante do meio (as duas portas, os dois lados) */
+  const prat = [];
+  for (let i = 0; i <= NIV; i++) {
+    const y = yA + (yB - yA) * i / NIV;
+    if (i > 0 && i < NIV) cx(A0 + e, A1 - e, 0.015, P - e, y - 0.016, y, { todas: lisa(ACO_DENTRO) });
+    prat.push(y);
+  }
+  cx(am - 0.016, am + 0.016, 0, P - e, yA, yB, chapa);
+  /* AS PORTAS DE TELA: o quadro de chapa e a tela (a rede da folha das
+     grades, miúda), um dedo na frente do corpo */
+  const lados = [[A0 + e, am - 0.016], [am + 0.016, A1 - e]], fr = 0.03, q0 = -0.022, q1 = -0.004;
+  const quadro = { todas: lisa(ACO_ESCURO), base: null };
+  for (const [a0, a1] of lados) {
+    cx(a0, a1, q0, q1, yA, yA + fr, quadro); cx(a0, a1, q0, q1, yB - fr, yB, quadro);
+    cx(a0, a0 + fr, q0, q1, yA, yB, quadro); cx(a1 - fr, a1, q0, q1, yA, yB, quadro);
+    const [pa, pb] = ptDe(a0 + fr, -0.013), [qa, qb] = ptDe(a1 - fr, -0.013), L = Math.hypot(qa - pa, qb - pb);
+    if (L > 0.05) {
+      const F = ctx.G.plano([pa, 0, pb], [(qa - pa) / L, 0, (qb - pb) / L], [0, 1, 0]);
+      /* (a malha de 9 cm da folha, clara: a miúda, de longe, virava pano preto e escondia o que está dentro) */
+      ctx.G.ladrilhar(F, [[0, yA + fr], [L, yA + fr], [L, yB - fr], [0, yB - fr]], 'rede', { tw: 1.0, th: 1.0, tinta: '#a9b0b5' });
+    }
+  }
+  /* os puxadores, perto do meio; o cadeado no das tomadas */
+  const yp = yA + (yB - yA) * 0.46;
+  for (const a of [am - 0.07, am + 0.055]) cx(a, a + 0.015, -0.05, q0, yp, yp + 0.14, { todas: lisa('#c9c6bd') });
+  if (o.cadeado) {
+    cx(am - 0.034, am + 0.034, -0.075, -0.03, yp - 0.07, yp - 0.005, { todas: lisa('#c49a2c') });
+    cx(am - 0.022, am - 0.012, -0.058, -0.047, yp - 0.005, yp + 0.04, { todas: lisa('#a3a8ac') });
+    cx(am + 0.012, am + 0.022, -0.058, -0.047, yp - 0.005, yp + 0.04, { todas: lisa('#a3a8ac') });
+    cx(am - 0.022, am + 0.022, -0.058, -0.047, yp + 0.03, yp + 0.042, { todas: lisa('#a3a8ac') });
+  }
+  /* a placa na testeira, e o armário inteiro na planta baixa */
+  if (o.placa) ctx.placa(Q, ptDe(am, -0.006), frente, yB + (testeira - e) / 2, Math.min(1.0, (A1 - A0) * 0.62), 0.13, o.placa);
+  ctx.marca(...Q.ret(s0, s1, t0, t1), ACO_ARMARIO);
+  /* os NICHOS, de cima pra baixo na ordem de encher (a altura do peito
+     primeiro, que é o que se vê), cada um com a largura e a altura livres */
+  const nichos = [];
+  for (const i of [2, 3, 1, 0]) for (const [a0, a1] of lados)
+    nichos.push({ a0: a0 + 0.025, a1: a1 - 0.025, y: prat[i], yTopo: prat[i + 1] - 0.03, d0: 0.03, d1: P - e - 0.03 });
+  ctx.armarios.push({ tipo: o.tipo, Q, st, ptDe, frente, nichos, A0, A1, P, h, ret: Q.ret(s0, s1, t0, t1), comodo: Q.c.tipo });
+}
+/* O QUE ESTÁ GUARDADO: cada peça dobrada no nicho, em pilhas — a faixa
+   (da largura do nicho até 62 cm, 30 de fundo, 6 de altura) na cor 1 da
+   dona com a dobra na 2, a bandeira (70% da largura) igual e mais fina. As pilhas enchem o nicho da
+   esquerda pra direita, de baixo pra cima; o que não cabe no armário
+   fica de fora (e a conta diz quantas ficaram). `pecas`: [{ tipo, cor,
+   cor2 }]. Devolve quantas couberam. */
+function guardarNoArmario(ctx, B, A, pecas) {
+  const Q = A.Q, cg = { B, marca() {} };
+  let k = 0;
+  for (const n of A.nichos) {
+    const larg = n.a1 - n.a0, colunas = Math.max(1, Math.floor(larg / 0.45)), passo = larg / colunas;
+    for (let c = 0; c < colunas && k < pecas.length; c++) {
+      let y = n.y;
+      while (k < pecas.length) {
+        const p = pecas[k], faixa = p.tipo !== 'bandeira', wf = Math.max(0.3, Math.min(0.62, passo - 0.05));
+        const w = faixa ? wf : wf * 0.7, dd = faixa ? 0.3 : 0.26, hh = faixa ? 0.06 : 0.045;
+        if (y + hh > n.yTopo) break;
+        /* (a pilha arrumada à mão: cada uma um tico fora do lugar) */
+        const j1 = ((k * 37) % 7 - 3) * 0.005, j2 = ((k * 53) % 5 - 2) * 0.006;
+        const am = n.a0 + passo * (c + 0.5) + j1, dm = (n.d0 + n.d1) / 2 + j2;
+        const a0 = am - Math.min(w, passo - 0.03) / 2, a1 = am + Math.min(w, passo - 0.03) / 2, d0 = dm - Math.min(dd, n.d1 - n.d0) / 2, d1 = dm + Math.min(dd, n.d1 - n.d0) / 2;
+        const [s0, s1, t0, t1] = A.st(a0, a1, d0, d1);
+        qcaixa(cg, Q, s0, s1, t0, t1, y, y + hh, { todas: lisa(p.cor || '#777'), base: null });
+        /* a dobra na frente, na cor 2 */
+        const [u0, u1, v0, v1] = A.st(a0 + 0.02, a1 - 0.02, d0 - 0.004, d0);
+        qcaixa(cg, Q, u0, u1, v0, v1, y + hh * 0.3, y + hh * 0.7, { todas: lisa(p.cor2 || '#ddd'), base: null });
+        y += hh + 0.004; k++;
+      }
+    }
+    if (k >= pecas.length) break;
+  }
+  return k;
 }
 /* o arquivo de aço de quatro gavetas */
 function arquivo(ctx, Q, s0, s1, t0, t1, frente) {
@@ -855,12 +960,16 @@ const MOBILIA = {
       if (i === 2) { bandeiraEnrolada(ctx, Q, a0, a1, b0, b0 + 0.18, y, ctx.c1, ctx.c2); bandeiraEnrolada(ctx, Q, a0, a1, b1 - 0.18, b1, y, ctx.c2, ctx.c1); return; }
       for (let s = a0; s + 0.34 <= a1; s += 0.38) caixaPapelao(ctx, Q, s, s + 0.34, b0, b1 - 0.02, y, 0.26 + ((i + s * 7) % 3) * 0.04);
     };
-    /* uma estante de cada lado da janela, e outra na parede da direita */
-    const jw = 0.3;
-    estanteAco(ctx, Q, 0.05, Math.max(0.9, W / 2 - jw - 0.25), D - 0.5, D - 0.05, 2.0, 4, itens);
-    lugar(ctx, Q, 'estante', (0.05 + Math.max(0.9, W / 2 - jw - 0.25)) / 2 + 0.2, D - 0.88, '+t', { gesto: 'arruma' });
-    estanteAco(ctx, Q, Math.min(W - 0.9, W / 2 + jw + 0.25), W - 0.05, D - 0.5, D - 0.05, 2.0, 4, itens);
-    estanteAco(ctx, Q, W - 0.5, W - 0.05, 1.8, D - 0.6, 2.0, 4, itens);
+    /* OS DOIS ARMÁRIOS DE TELA (o dono, 29/09/2026), um de cada lado da
+       janela, no lugar das estantes do fundo: à esquerda o PATRIMÔNIO (as
+       faixas e as bandeiras da torcida), à direita as TOMADAS (as dos
+       outros, com cadeado). A estante da parede da direita fica */
+    const jw = 0.3, e1 = Math.max(0.9, W / 2 - jw - 0.25), d1 = Math.min(W - 0.9, W / 2 + jw + 0.25);
+    armarioDeTela(ctx, Q, 0.05, e1, D - 0.55, D - 0.05, 2.0, '-t', { tipo: 'patrimonio', placa: 'PATRIMÔNIO' });
+    armarioDeTela(ctx, Q, d1, W - 0.05, D - 0.55, D - 0.05, 2.0, '-t', { tipo: 'tomadas', placa: 'TOMADAS', cadeado: true });
+    lugar(ctx, Q, 'estante', (0.05 + e1) / 2 + 0.2, D - 0.93, '+t', { gesto: 'arruma', armario: 'patrimonio' });
+    lugar(ctx, Q, 'armario', (d1 + W - 0.05) / 2 - 0.2, D - 0.93, '+t', { gesto: 'arruma', armario: 'tomadas' });
+    estanteAco(ctx, Q, W - 0.5, W - 0.05, 1.8, D - 0.62, 2.0, 4, itens);
     for (const [s, t, r, h, c] of [[0.35, 1.9, 0.28, 0.55, ctx.c1], [0.95, 1.95, 0.25, 0.5, ctx.c3], [0.4, 2.45, 0.22, 0.45, ctx.c2]]) surdo(ctx, s, t, PISO, r, h, c, Q);
     surdo(ctx, 0.35, 1.9, PISO + 0.555, 0.2, 0.4, ctx.c2, Q);
     /* os mastros encostados no canto e a bandeira dobrada no chão */
@@ -1086,7 +1195,13 @@ const MOBILIA = {
     /* o da planta: o armário comprido na parede leste (com os troféus em
        cima), a estante de aço na fachada, as caixas */
     const ha = u2(mm(2.00));
-    armario(ctx, Q, u2(6), W - u2(6), D - u2(2 + mm(0.45)), D - u2(2), ha, '-t', '#6f7a82', 4);
+    /* (o comprido da planta vira OS DOIS ARMÁRIOS DE TELA, o dono,
+       29/09/2026: o patrimônio da torcida à esquerda, as tomadas à
+       direita — no mesmo retângulo, que é o que barra quem anda) */
+    const a0 = u2(6), a1 = W - u2(6), b0 = D - u2(2 + mm(0.45)), b1 = D - u2(2), am = (a0 + a1) / 2;
+    armarioDeTela(ctx, Q, a0, am - 0.01, b0, b1, ha, '-t', { tipo: 'patrimonio', placa: 'PATRIMÔNIO' });
+    armarioDeTela(ctx, Q, am + 0.01, a1, b0, b1, ha, '-t', { tipo: 'tomadas', placa: 'TOMADAS', cadeado: true });
+    ctx.marca(...Q.ret(a0, a1, b0, b1), ACO_ARMARIO);
     for (let s = 0.5; s < W - 0.4; s += 0.42) trofeu(ctx, Q, s, D - u2(4 + mm(0.40) / 2), PISO + ha, 0.28 + ((s * 7) % 3) * 0.05);
     estanteAco(ctx, Q, u2(2), u2(2 + mm(0.38)), u2(4), D - u2(28), u2(mm(1.90)), 4, (i, a0, a1, b0, b1, y) => {
       if (i === 1) { bandeiraEnrolada(ctx, Q, a0, a1, b0, b0 + 0.9, y, ctx.c1, ctx.c2); bandeiraEnrolada(ctx, Q, a0, a1, b0 + 1.0, b0 + 1.9, y, ctx.c2, ctx.c1); return; }
@@ -1094,7 +1209,8 @@ const MOBILIA = {
     });
     surdo(ctx, 1.05, 2.35, PISO, 0.3, 0.6, ctx.c1, Q);
     surdo(ctx, 1.05, 2.35, PISO + 0.6, 0.26, 0.5, ctx.c3, Q);
-    lugar(ctx, Q, 'estante', W / 2, D - u2(2 + mm(0.45)) - 0.45, '+t', { gesto: 'arruma' });
+    lugar(ctx, Q, 'estante', W / 2 - 0.5, D - u2(2 + mm(0.45)) - 0.45, '+t', { gesto: 'arruma', armario: 'patrimonio' });
+    lugar(ctx, Q, 'armario', W / 2 + 0.5, D - u2(2 + mm(0.45)) - 0.45, '+t', { gesto: 'arruma', armario: 'tomadas' });
     surdo(ctx, 1.75, 2.75, PISO, 0.26, 0.5, ctx.c2, Q);
     for (let k = 0; k < 3; k++) qcaixa(ctx, Q, W - 0.2 - k * 0.05, W - 0.17 - k * 0.05, 0.1, 0.13, PISO, PISO + 2.2, { todas: lisa('#caa77a'), base: null });
     caixaPapelao(ctx, Q, W - 0.7, W - 0.2, 0.5, 1.0, PISO, 0.48);
@@ -1375,6 +1491,9 @@ export function montarSede(sede, destino = {}, opc = {}) {
   const so2d = !!opc.so2d;
   const B = so2d ? construtorMudo() : Construtor('casas'), G = so2d ? construtorMudo() : Construtor('grades');
   const Tt = so2d ? construtorMudo() : Construtor('casas');
+  /* o que está guardado nos armários, numa malha à parte (a cidade troca
+     só ela quando o patrimônio do save muda) */
+  const Bg = so2d ? construtorMudo() : Construtor('casas');
   const u = v => v / M;
   const conv = r => ({ ...r, x0: u(r.u0), x1: u(r.u1), z0: u(r.v0), z1: u(r.v1) });
   const paredes = P.paredes.map(w => ({ ...conv(w), orig: w, ao: w.ao, h: u(w.altModelo || w.alt), fachada: w.fachada, fachadaPatio: w.fachadaPatio,
@@ -1386,7 +1505,7 @@ export function montarSede(sede, destino = {}, opc = {}) {
   const marcas = [], placas = [];
   const ctx = {
     B, G, T: Tt, P, u, aberta, cores: cor, c1: cor.cor, c2: cor.cor2, c3: cor.cor3, paredes, comodos, portas, PAR_M: u(P.PAR),
-    lugares: [],
+    lugares: [], armarios: [],
     vivas: opc.portasVivas && aberta && !so2d ? [] : null,
     regiao(x, z) {
       for (const c of comodos) if (dentro(c, x, z)) return c;
@@ -1402,6 +1521,13 @@ export function montarSede(sede, destino = {}, opc = {}) {
       const [x, z] = Q.pt(s, t), [nx, nz] = VEC[Q.d(n)];
       placas.push({ tipo: 'faixa', texto: T0.nome || T0.sigla, fundo: cor.cor, tinta: legivelSobre(cor.cor, [cor.cor2, cor.cor3]),
                     x, y: y + alt / 2, z, nx, nz, larg, alt });
+    },
+    /* a placa de um móvel (a testeira do armário): no ponto (x, z) do
+       modelo, virada pra `olha` do cômodo, nas cores das placas das salas */
+    placa(Q, [x, z], olha, y, larg, alt, texto) {
+      if (!T0) return;
+      const [nx, nz] = VEC[Q.d(olha)];
+      placas.push({ tipo: 'placa', texto, fundo: cor.cor2, tinta: legivel(cor.cor2), x, y, z, nx, nz, larg, alt });
     },
     maiorVao(lista, a0, a1) {
       const oc = lista.slice().sort((p, q) => p[0] - q[0]);
@@ -1469,6 +1595,22 @@ export function montarSede(sede, destino = {}, opc = {}) {
     for (const c of comodos) {
       const f = MOBILIA[c.tipo];
       if (f) f(ctx, quarto(c));
+    }
+    /* O QUE ESTÁ GUARDADO: o patrimônio da torcida (as faixas e as
+       bandeiras dela, na cor dela) no armário do PATRIMÔNIO, e as
+       tomadas (na cor de quem era dona) no das TOMADAS. `sede.guardados`
+       vem do save (o jogo 3D); sem ele, o que toda torcida tem no começo:
+       uma faixa e uma bandeira, nenhuma tomada */
+    const gd = sede.guardados || {}, pr = gd.proprias || { faixas: 1, bandeiras: 1 };
+    const proprias = [];
+    for (let i = 0; i < (pr.faixas || 0); i++) proprias.push({ tipo: 'faixa', cor: cor.cor, cor2: cor.cor2 });
+    for (let i = 0; i < (pr.bandeiras || 0); i++) proprias.push({ tipo: 'bandeira', cor: cor.cor2, cor2: cor.cor });
+    const tomadas = (gd.tomadas || []).map(t => ({ tipo: t.tipo === 'bandeira' ? 'bandeira' : 'faixa', de: t.de || null,
+                                                     cor: viva(t.cor || '#6b6b6b'), cor2: viva(t.cor2 || '#d8d8d8') }));
+    for (const A of ctx.armarios) {
+      const pecas = A.tipo === 'tomadas' ? tomadas : proprias;
+      A.pecas = pecas;
+      A.guardadas = guardarNoArmario(ctx, Bg, A, pecas);
     }
   }
 
@@ -1546,7 +1688,7 @@ export function montarSede(sede, destino = {}, opc = {}) {
     return { pos, uv: new Float32Array(C.uv), cor: new Float32Array(C.cor) };
   };
   if (!so2d) {
-    for (const [C, lista] of [[B, 'casas'], [G, 'grades'], [Tt, 'telhado']]) {
+    for (const [C, lista] of [[B, 'casas'], [G, 'grades'], [Tt, 'telhado'], [Bg, 'guardados']]) {
       const b = bloco(C);
       if (b) (destino[lista] = destino[lista] || []).push(b);
     }
@@ -1599,8 +1741,24 @@ export function montarSede(sede, destino = {}, opc = {}) {
     return { nome: c.nome, tipo: c.tipo, larg: c.x1 - c.x0, fundo: c.z1 - c.z0,
              x0: Math.min(ax, bx), x1: Math.max(ax, bx), z0: Math.min(az, bz), z1: Math.max(az, bz) };
   });
+  /* OS ARMÁRIOS no mundo (a base da INVASÃO DE SEDE, que vem depois: o
+     dono, 29/09/2026): o de cada tipo, a caixa dele, pra onde a frente
+     olha (`frente`, `rumo`), a BOCA (o ponto no chão, 0,7 m na frente,
+     onde quem abre fica), quantas peças cabem e o que tem dentro — as
+     tomadas com o id da dona */
+  const armarios = ctx.armarios.map(A => {
+    const [x0, x1, z0, z1] = A.ret, [ax, az] = noMundo(x0, z0), [bx, bz] = noMundo(x1, z1);
+    const [fx, fz] = VEC[A.Q.d(A.frente)], [dx, dz] = dirMundo(fx, fz), n = Math.hypot(dx, dz) || 1;
+    const [px, pz] = A.ptDe((A.A0 + A.A1) / 2, -0.7), [bwx, bwz] = noMundo(px, pz);
+    let cabe = 0;
+    for (const nc of A.nichos) cabe += Math.max(1, Math.floor((nc.a1 - nc.a0) / 0.45)) * Math.max(0, Math.floor((nc.yTopo - nc.y) / 0.064));
+    return { tipo: A.tipo, comodo: A.comodo, x0: Math.min(ax, bx), x1: Math.max(ax, bx), z0: Math.min(az, bz), z1: Math.max(az, bz),
+             x: (ax + bx) / 2, z: (az + bz) / 2, chao: y0 + PISO * M, alt: A.h * M, larg: (A.A1 - A.A0) * M, prof: A.P * M,
+             frente: [dx / n, dz / n], rumo: Math.atan2(dx / n, dz / n), boca: { x: bwx, z: bwz }, cabe,
+             guardadas: A.guardadas || 0, pecas: (A.pecas || []).map(p => ({ tipo: p.tipo, de: p.de || null })) };
+  });
   return { plano: P, placas: placasMundo, planta2d: marcas.map(retMundo), teto: tetoMundo, bandeira,
-           comodos: comodosMundo, lugares, nivel: P.N };
+           comodos: comodosMundo, lugares, armarios, nivel: P.N };
 }
 /* a cor que se lê sobre a cor da torcida: a primeira das dela que se
    separa do fundo; se nenhuma servir, preto ou branco */

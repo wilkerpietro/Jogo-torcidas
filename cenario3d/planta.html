@@ -281,22 +281,22 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=7b632a106a';
-import { montarModelos } from './js/modelos3d.js?v=7b632a106a';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=7b632a106a';
-import { ATLAS } from './js/modelos_atlas.js?v=7b632a106a';
-import { Construtor, sorteio } from './js/construtor3d.js?v=7b632a106a';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=7b632a106a';
-import { montarSede } from './js/sede3d.js?v=7b632a106a';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=7b632a106a';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=7b632a106a';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=7b632a106a';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=7b632a106a';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=7b632a106a';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=7b632a106a';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=7b632a106a';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=7b632a106a';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=7b632a106a';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=a865a037df';
+import { montarModelos } from './js/modelos3d.js?v=a865a037df';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=a865a037df';
+import { ATLAS } from './js/modelos_atlas.js?v=a865a037df';
+import { Construtor, sorteio } from './js/construtor3d.js?v=a865a037df';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=a865a037df';
+import { montarSede } from './js/sede3d.js?v=a865a037df';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=a865a037df';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=a865a037df';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=a865a037df';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=a865a037df';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=a865a037df';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=a865a037df';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=a865a037df';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=a865a037df';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=a865a037df';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -313,19 +313,21 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=7b632a106a');
-  await carregarScript('dados/times.js?v=7b632a106a');
-  await carregarScript('dados/cena_estadio.js?v=7b632a106a');
-  await carregarScript('dados/cidades.js?v=7b632a106a');
-  await carregarScript('dados/estadios.js?v=7b632a106a');
-  await carregarScript('dados/escudos.js?v=7b632a106a');
+  await carregarScript('dados/torcidas.js?v=a865a037df');
+  await carregarScript('dados/times.js?v=a865a037df');
+  await carregarScript('dados/cena_estadio.js?v=a865a037df');
+  await carregarScript('dados/cidades.js?v=a865a037df');
+  await carregarScript('dados/estadios.js?v=a865a037df');
+  await carregarScript('dados/escudos.js?v=a865a037df');
+  /* o manifesto das faixas de verdade (a arte do dono, 29/09/2026): a arquibancada estende a da torcida */
+  await carregarScript('dados/faixas.js?v=a865a037df').catch(() => {});
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=7b632a106a').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=a865a037df').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -679,6 +681,9 @@ const NIVEL_DO_JOGO = {};
    os bares dela entrarem primeiro */
 const BARES_DO_JOGO = {};
 let TORCIDA_DO_JOGO = null;
+/* O QUE CADA TORCIDA GUARDA NOS ARMÁRIOS (o jogo 3D, 29/09/2026):
+   `guardadosDoJogo` põe aqui; a sede lê em `guardadosDe` */
+const GUARDADOS_DO_JOGO = {};
 /* O ESCUDO DE VERDADE: o mesmo PNG do jogo, pela mesma regra da planta
    (`caminhoDoEscudo` de dados/cena_estadio.js): dados/escudos.js é o
    manifesto do que existe em img/escudos/ (clube-<id>.png e
@@ -830,15 +835,32 @@ function sedeDoEspaco(x) {
   const pequeno = e.cabe === 1 || (!!T && T.nivel === 1);
   const area = pequeno && e.cabe > 1 ? fatiaDoNivel1(e.area, e.frente) : e.area;
   return { area, frente: e.frente, nivel: pequeno ? 1 : 3, lado: 'mandante', resto: area !== e.area ? e.area : null,
-           torcida: T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.sigla, nome: T.nomeCompleto,
+           torcida: T ? { id: T.id, cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.sigla, nome: T.nomeCompleto,
                           clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2,
-                          escudo: T.escudo, escudoClube: T.escudoClube } : null };
+                          escudo: T.escudo, escudoClube: T.escudoClube } : null,
+           guardados: T ? guardadosDe(T.id) : null };
+}
+/* O QUE A TORCIDA GUARDA NOS ARMÁRIOS DO ALMOXARIFADO (o dono,
+   29/09/2026): o patrimônio dela (quantas faixas e bandeiras) e as
+   tomadas (de quem, faixa ou bandeira), como o jogo diz — o save do
+   jogador e o mundo vivo da IA (`guardadosDoJogo`). A tomada leva a cor
+   da dona pro armário. Sem o jogo, o do começo de todo mundo: uma faixa
+   e uma bandeira, nenhuma tomada (o modelo põe sozinho) */
+function guardadosDe(id) {
+  const g = GUARDADOS_DO_JOGO[id];
+  if (!g) return null;
+  const tds = TO.dados.torcidas || [];
+  return { proprias: { faixas: g.proprias ? g.proprias.faixas | 0 : 1, bandeiras: g.proprias ? g.proprias.bandeiras | 0 : 1 },
+           tomadas: (g.tomadas || []).map(x => {
+             const t = tds.find(o => o.id === x.de), c = t ? coresDaTorcida(t) : {};
+             return { tipo: x.tipo, de: x.de || null, cor: c.cor || '#6b6b6b', cor2: c.cor2 || '#d8d8d8' };
+           }) };
 }
 /* a sede de hoje (a da planta, com a torcida da partida que ela põe lá) */
 function sedeDoEquip(eq) {
   const T = eq.torcida;
   return { area: eq.area, frente: eq.frente, nivel: eq.nivel, lado: eq.lado || 'mandante', resto: null,
-           torcida: T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.rot || T.nome, nome: T.nomeCompleto || T.rot,
+           torcida: T ? { id: T.id, cor: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.rot || T.nome, nome: T.nomeCompleto || T.rot,
                           clubeSigla: T.clubeSigla, clubeCor: T.clubeCor, clubeCor2: T.clubeCor2,
                           escudo: caminhoDoEscudo('t', T.id), escudoClube: caminhoDoEscudo('c', T.clubeId) } : null };
 }
@@ -4055,6 +4077,12 @@ function objetoDaSede(sd, g, o = {}) {
     else placaNoMundo(g, lug, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, p.tipo === 'faixa'));
   }
   if (r.bandeira) bandeiraNoMastro(g, r.bandeira);
+  /* O QUE ESTÁ GUARDADO nos armários do almoxarifado: uma malha só, viva
+     (`peca`: o forno do cenário não junta ela com a cidade, e ela entra
+     no corte da câmera), marcada com a torcida — quando o save muda, o
+     `guardadosDoJogo` troca só a geometria dela */
+  const mg = malhaGuardados(destino.guardados, sd.torcida && sd.torcida.id);
+  if (mg) g.add(mg);
   /* AS PORTAS VIVAS (o cenário a pé): cada folha numa malha só dela, com
      a origem na dobradiça — o cenário não junta ela com o resto e gira
      ela no F. `grupo` é único no mapa (as duas folhas do portão, juntas) */
@@ -4067,6 +4095,18 @@ function objetoDaSede(sd, g, o = {}) {
     m.userData.porta = { hx: p.hx, hz: p.hz, larg: p.larg, dir: p.dir, ang: p.ang, grupo: id + ':' + p.grupo, vidro: p.vidro };
     g.add(m);
   }
+}
+let matGuardados = null;
+function malhaGuardados(blocos, id) {
+  if (!blocos || !blocos.length || !id) return null;
+  const m = malhaDeBlocos(blocos, 'casas');
+  if (!m) return null;
+  /* (o material dele: o corte da câmera mexe no material da peça viva) */
+  m.material = matGuardados || (matGuardados = material('casas').clone());
+  m.castShadow = false;
+  m.name = 'guardados';
+  m.userData.peca = true; m.userData.guardados = id;
+  return m;
 }
 /* A BANDEIRA DA SEDE, no mastro: o escudo da torcida no meio, o fundo na
    cor 1 dela e a borda nas cores 2 e 3 (a faixa de fora na 2, o filete
@@ -5203,7 +5243,7 @@ function apiDoCenario() {
         /* a sede de dentro (o jogo 3D): o modelo (1, o barracão; 3, a sede
            grande), os cômodos e os lugares de gente, no mundo */
         const mt = T.sede && T.sede.montagem;
-        const sede3d = mt ? { nivel: mt.nivel, lugares: mt.lugares, comodos: mt.comodos, area: { ...a }, frente: s.frente } : null;
+        const sede3d = mt ? { nivel: mt.nivel, lugares: mt.lugares, comodos: mt.comodos, armarios: mt.armarios || [], area: { ...a }, frente: s.frente } : null;
         return { id: T.id, nome: T.nome, sigla: T.sigla, cor: T.cor, cor2: T.cor2, cor3: coresDaTorcida(T.t).cor3, porta, sede3d, escudo: T.escudo || null,
                  clubeId: T.t.clubeId || null, clube: T.clube || '', poder: T.poder, membros: T.membros, moral: T.t.moral ?? 50, nivel: T.nivel, bairro: T.t.bairroSede || '', rivais,
                  cargos: T.t.cargos || null, irmandade: T.t.irmandade || [], aliados: T.t.aliados || [] };
@@ -5231,6 +5271,44 @@ function apiDoCenario() {
       if (n == null) delete BARES_DO_JOGO[id]; else BARES_DO_JOGO[id] = Math.max(0, Math.round(+n) || 0);
       if (doJogador) TORCIDA_DO_JOGO = id;
       return antes !== conta();
+    },
+    /* O QUE A TORCIDA GUARDA NOS ARMÁRIOS DO ALMOXARIFADO (o dono,
+       29/09/2026: "as faixas tomadas vão estar armazenadas dentro do
+       armário do almoxarifado, e em outro armário o patrimonio
+       próprio"): `g` = { proprias: { faixas, bandeiras }, tomadas: [{
+       tipo, de }] }, o do save (null volta o do começo). Com a praça
+       montada, a sede dela troca SÓ a malha do que está guardado (não
+       remonta a cidade), e a ficha da sede (os armários de `torcidas()`)
+       sai de novo. Devolve se mudou */
+    guardadosDoJogo(id, g) {
+      const chave = g ? JSON.stringify(g) : '';
+      const antes = GUARDADOS_DO_JOGO[id] ? JSON.stringify(GUARDADOS_DO_JOGO[id]) : '';
+      if (chave === antes) return false;
+      if (g) GUARDADOS_DO_JOGO[id] = JSON.parse(chave); else delete GUARDADOS_DO_JOGO[id];
+      const x = espacos.find(q => q.dono && q.dono.id === id && q.sede);
+      if (!x) return true;
+      x.sede.guardados = guardadosDe(id);
+      x.montagem = plantaDaSede(x.sede);
+      /* a malha viva, na praça montada */
+      const cena = cenario && !cenario.montando && cenario.vida && cenario.vida.cena;
+      if (!cena) return true;
+      const destino = {};
+      montarSede(x.sede, destino, {});
+      const velha = [];
+      cena.traverse(o => { if (o.isMesh && o.userData.guardados === id) velha.push(o); });
+      const nova = malhaGuardados(destino.guardados, id);
+      if (velha.length && nova) {
+        const m = velha[0];
+        m.geometry.dispose(); m.geometry = nova.geometry;
+        for (const o of velha.slice(1)) { o.removeFromParent(); o.geometry.dispose(); }
+      } else if (velha.length) for (const o of velha) { o.removeFromParent(); o.geometry.dispose(); }
+      else if (nova) {
+        const cv = cenario.vida;
+        if (cv.cortavel && !nova.material.userData.cortavel) { cv.cortavel(nova.material); nova.material.userData.cortavel = true; nova.material.needsUpdate = true; }
+        cena.add(nova);
+      }
+      if (cenario.pedir) cenario.pedir();
+      return true;
     },
     /* OS BARES DAS TORCIDAS (a vida da praça): o lote, o dono (o id da
        torcida, ou nulo: fechado) e a porta — o meio da frente, 1,6 m pra
@@ -5369,7 +5447,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=7b632a106a');
+    const { montarJogo } = await import('./js/jogo3d.js?v=a865a037df');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5400,7 +5478,9 @@ async function abrirJogo3d() {
       /* o nível da sede do save (vale na próxima montagem da praça) */
       nivelDoJogo: (id, n) => apiDoCenario().nivelDoJogo(id, n),
       /* quantos bares a torcida tem no save (idem) */
-      baresDoJogo: (id, n, doJogador) => apiDoCenario().baresDoJogo(id, n, doJogador)
+      baresDoJogo: (id, n, doJogador) => apiDoCenario().baresDoJogo(id, n, doJogador),
+      /* o que a torcida guarda nos armários do almoxarifado (troca na hora, com a praça montada) */
+      guardadosDoJogo: (id, g) => apiDoCenario().guardadosDoJogo(id, g)
     });
   } catch (e) { console.error(e); alert('O jogo não carregou: ' + e.message); }
 }
@@ -5408,7 +5488,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=7b632a106a');
+      const { criarCenario } = await import('./js/cenario.js?v=a865a037df');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }

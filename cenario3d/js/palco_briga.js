@@ -116,7 +116,10 @@ export function palcoDeBriga(o) {
       t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
       texturas.set(F.img, t);
     }
-    if (!t.version && (F.img.naturalWidth || F.img.width)) t.needsUpdate = true;
+    /* (a tela da faixa é redesenhada quando a arte de verdade ou os
+       escudos chegam — `versao` sobe — e a textura sobe de novo) */
+    const v = F.img.versao || 0;
+    if ((!t.version || t.userData.versao !== v) && (F.img.naturalWidth || F.img.width)) { t.userData.versao = v; t.needsUpdate = true; }
     return t;
   }
   function panoDe(F) {
@@ -385,7 +388,8 @@ export function palcoDeBriga(o) {
   Object.defineProperty(R, 'panos', { get: () => [...panos].map(([F, p]) => {
     const q = p.mesh.position, t = C.vida.projetar(q.x, q.y, q.z, {});
     return { tipo: F.tipo, lado: F.lado, torcida: F.torcidaId, visivel: p.mesh.visible, comImagem: !!p.mat.map,
-             tela: { x: Math.round(t.x), y: Math.round(t.y), frente: t.frente }, larg: +(p.mesh.scale.x / M).toFixed(2), alt: +(p.mesh.scale.y / M).toFixed(2) };
+             tela: { x: Math.round(t.x), y: Math.round(t.y), frente: t.frente }, larg: +(p.mesh.scale.x / M).toFixed(2), alt: +(p.mesh.scale.y / M).toFixed(2),
+             mundo: [q.x, q.y, q.z].map(v => +v.toFixed(1)), rumo: +p.mesh.rotation.y.toFixed(3) };
   }) });
   return R;
 }
