@@ -149,11 +149,19 @@ let escalaDoTabuleiro = () => 1;
   const dado = (s,n) => hash(s)%n;
 
   /* ---------- materiais e geometrias compartilhados ---------- */
+  /* O REMENDO DO DONO DA CENA (`cfg.remendo`: o cenário da planta põe
+     nele a luz da noite, 30/09/2026): cada material de figura passa por
+     ele uma vez (e compila de novo, se já tinha compilado) */
+  const remendados = new WeakSet();
+  function remendar(m){
+    if(m && cfg.remendo && !remendados.has(m)){ remendados.add(m); cfg.remendo(m); m.needsUpdate = true; }
+    return m;
+  }
   const mats = new Map();
   function mat(hex, opc){
     const k = hex + (opc?JSON.stringify(opc):'');
     let m = mats.get(k);
-    if(!m){ m = new THREE.MeshLambertMaterial(Object.assign({color:new THREE.Color(hex)}, opc||{})); mats.set(k,m); }
+    if(!m){ m = remendar(new THREE.MeshLambertMaterial(Object.assign({color:new THREE.Color(hex)}, opc||{}))); mats.set(k,m); }
     return m;
   }
   const geo = {};
@@ -624,7 +632,7 @@ let escalaDoTabuleiro = () => 1;
         const mt = o.material;
         const novo = new THREE.MeshLambertMaterial({color: mt.color ? mt.color.clone() : new THREE.Color('#ccc'),
           map: mt.map || null, transparent: !!mt.transparent, opacity: mt.opacity!==undefined ? mt.opacity : 1});
-        novo.name = mt.name; o.material = novo;
+        novo.name = mt.name; o.material = remendar(novo);
         o.frustumCulled = false;
       }
     });
@@ -1064,7 +1072,7 @@ let escalaDoTabuleiro = () => 1;
       }
       if(cores[nome]){
         let m = matsFig.get(nome);
-        if(!m){ m = o.material.clone(); m.color.set(cores[nome]); m._propria = true; matsFig.set(nome, m); }
+        if(!m){ m = remendar(o.material.clone()); m.color.set(cores[nome]); m._propria = true; matsFig.set(nome, m); }
         o.material = m;
       }
     });
@@ -2285,7 +2293,7 @@ let escalaDoTabuleiro = () => 1;
       c.raiz.traverse(o=>{
         if(!o.isMesh || o === c.sombra || o === c.anel || o === c.anelFundo) return;
         let m = vistos.get(o.material);
-        if(!m){ m = o.material.clone(); m._propria = true; vistos.set(o.material, m); c.matsProprios.push(m); }
+        if(!m){ m = remendar(o.material.clone()); m._propria = true; vistos.set(o.material, m); c.matsProprios.push(m); }
         o.material = m;
       });
     }
@@ -3181,6 +3189,9 @@ let escalaDoTabuleiro = () => 1;
     /* a resolução adaptativa é do canvas de quem é dono do
        renderizador; aqui ela não tem o que ajustar */
     cfg.resolucaoAdaptativa = false;
+    for(const m of [matVertices, matVerticesTransp, matCamisaVC, matJunto, ...mats.values()]) remendar(m);
+    if(modeloGLB) modeloGLB.traverse(o => { if(o.isMesh) remendar(o.material); });
+    if(modeloLonge) modeloLonge.traverse(o => { if(o.isMesh) remendar(o.material); });
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
     ativo = true;
     carregarGLB();

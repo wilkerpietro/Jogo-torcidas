@@ -39,6 +39,7 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 import { plantarMato, montarMato, LONGE_M } from './mato3d.js';
 import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js';
 import { Subsolo } from './subsolo.js';
+import { ATLAS } from './modelos_atlas.js';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -124,6 +125,9 @@ const SOLIDO = 1, AGUA = 2, ALCANCE = 4, MATO = 8;
 function GradeDoPasso(ar, M) {
   const c = CEL_M * M, nx = Math.ceil((ar.x1 - ar.x0) / c), nz = Math.ceil((ar.y1 - ar.y0) / c);
   const g = new Uint8Array(nx * nz), teto = new Uint16Array(nx * nz);
+  /* (a ALTURA do teto de cada célula, em decímetros: a do telhado mais alto
+     que a cobre, na beira mais baixa dele — o mapa do teto da luz da noite) */
+  let tetoY = new Uint8Array(nx * nz);
   const Y0 = FAIXA_M[0] * M, Y1 = FAIXA_M[1] * M, YT = TETO_M * M;
   const ox = ar.x0, oz = ar.y0;
   const paredes = Paredes(ox, oz, ar.x1, ar.y1, 2 * M);
@@ -163,10 +167,15 @@ function GradeDoPasso(ar, M) {
       const i0 = Math.max(0, Math.floor((Math.min(ax, bx, cx) - ox) / c)), i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx, cx) - ox) / c));
       const j0 = Math.max(0, Math.floor((Math.min(az, bz, cz) - oz) / c)), j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz, cz) - oz) / c));
       const lado = (px, pz, qx, qz, rx, rz) => (qx - px) * (rz - pz) - (qz - pz) * (rx - px);
+      const dm = Math.max(1, Math.min(255, Math.round(Math.min(ya, yb, yc) / M * 10)));
       for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
         const px = ox + (i + 0.5) * c, pz = oz + (j + 0.5) * c;
         const d1 = lado(ax, az, bx, bz, px, pz), d2 = lado(bx, bz, cx, cz, px, pz), d3 = lado(cx, cz, ax, az, px, pz);
-        if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) teto[j * nx + i] = id;
+        if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) {
+          const k = j * nx + i;
+          teto[k] = id;
+          if (tetoY && dm > tetoY[k]) tetoY[k] = dm;
+        }
       }
     }
   }
@@ -292,7 +301,10 @@ function GradeDoPasso(ar, M) {
   /* a grade crua (o dia de jogo acha o caminho das torcidas nela): as
      marcas de cada célula, o tamanho e onde começa */
   const crua = () => ({ g, nx, nz, ox, oz, c, SOLIDO, AGUA, ALCANCE, MATO });
-  return { assar, agua, mato, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz, crua };
+  /* o MAPA DO TETO (a luz da noite dentro dos prédios), uma vez: a altura
+     do teto de cada célula, e ele sai da memória daqui */
+  function mapaDoTeto() { const d = tetoY; tetoY = null; return d ? { dados: d, nx, nz, ox, oz, c } : null; }
+  return { assar, agua, mato, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz, crua, mapaDoTeto };
 }
 const agora = () => performance.now();
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
@@ -437,6 +449,7 @@ export function criarCenario(P) {
         <label class="so-ape"><span class="rot">Camisa</span> <select class="cen-camisa" aria-label="A camisa do boneco"></select></label>
         <button class="cen-bt so-ape cen-bt-sede" data-acao="sede"><span class="longo">Ir pra sede</span><span class="curto">Sede</span></button>
         <button class="cen-bt so-ape" data-acao="rosto"><span class="longo">Outro boneco</span><span class="curto">Outro</span></button>
+        <label title="A hora do dia: de noite, os postes, as janelas, os refletores dos estádios e o que é coberto acendem"><span class="rot">Hora</span> <select class="cen-hora" aria-label="A hora do dia"><option value="">Dia</option><option value="6">6 h</option><option value="17.5">17 h 30</option><option value="18.5">18 h 30</option><option value="20">20 h</option><option value="22">22 h</option><option value="1">1 h</option></select></label>
         <label><span class="rot">Qualidade</span> <select class="cen-q" aria-label="Qualidade">${Object.entries(QUALIDADES).map(([k, q]) => `<option value="${k}">${q.nome}</option>`).join('')}</select></label>
         <button class="cen-bt so-voo" data-acao="escolher">Praças</button>
         <button class="cen-bt so-voo" data-acao="planta">Planta 2D</button>
@@ -610,20 +623,31 @@ export function criarCenario(P) {
   const COR_DIA = { ceu: new THREE.Color('#cfdde6'), hemiC: new THREE.Color(0xe3edf5), hemiT: new THREE.Color(0x6d695d), sol: new THREE.Color(0xfff1da) };
   const HORA_TONS = [
     /* hora, céu (horizonte), tinta da cúpula, luz do céu, chão, força do céu, sol, força do sol */
-    [0,    '#1f2a3e', '#2c3a55', '#8b9cc8', '#2a2833', 0.95, '#9fb4e0', 0.7],
-    [5,    '#243049', '#33425f', '#93a4cc', '#2c2a34', 0.95, '#a6badf', 0.7],
+    /* (a noite mais escura desde que tem luz de poste, janela e refletor, 30/09/2026) */
+    [0,    '#141b28', '#1f2a40', '#7384b0', '#201e27', 0.48, '#9fb4e0', 0.28],
+    [5,    '#18212f', '#243149', '#7d8fbc', '#24222c', 0.52, '#a6badf', 0.3],
     [6,    '#e7b995', '#c9b3b0', '#d8c2b8', '#4e443c', 0.85, '#ffb37a', 1.1],
     [7.5,  '#d6dfe4', '#e8eef2', '#dfe8ef', '#645f54', 1.15, '#ffe2bd', 1.9],
     [9,    '#cfdde6', '#ffffff', '#e3edf5', '#6d695d', 1.25, '#fff1da', 2.2],
     [15.5, '#cfdde6', '#ffffff', '#e3edf5', '#6d695d', 1.25, '#fff1da', 2.2],
     [17,   '#e3cfb3', '#f0dcc8', '#ecd9c4', '#6a5a48', 1.1,  '#ffc98e', 1.8],
     [18,   '#e08a5c', '#b88a86', '#dcb09a', '#4f4038', 1.0,  '#ff9a5c', 1.3],
-    [19,   '#34405e', '#414d70', '#95a0c8', '#2e2a34', 1.0,  '#aab8e0', 0.75],
-    [24,   '#1f2a3e', '#2c3a55', '#8b9cc8', '#2a2833', 0.95, '#9fb4e0', 0.7]
+    [19,   '#263049', '#343f5f', '#8591bb', '#28242e', 0.7, '#aab8e0', 0.42],
+    [24,   '#141b28', '#1f2a40', '#7384b0', '#201e27', 0.48, '#9fb4e0', 0.28]
   ].map(([h, a, b, c, d, e, f, g]) => ({ h, ceu: new THREE.Color(a), cupula: new THREE.Color(b), hemiC: new THREE.Color(c), hemiT: new THREE.Color(d), fh: e, sol: new THREE.Color(f), fs: g }));
   let horaDoDia = null;
+  /* A NOITE DA HORA: as luzes acendem no fim da tarde (das 17 h 20 às 18 h
+     40) e apagam de manhã (das 5 h às 6 h 20); as janelas acesas vão de
+     metade cedo a um terço à meia-noite e um oitavo de madrugada */
+  function noiteDaHora(x) {
+    if (x == null) return { noite: 0, acesas: 0.45 };
+    const noite = x >= 18.67 || x <= 5 ? 1 : x > 17.33 ? suave((x - 17.33) / 1.34) : x < 6.33 ? 1 - suave((x - 5) / 1.33) : 0;
+    const acesas = x >= 22 ? 0.5 - 0.2 * (x - 22) / 2 : x >= 12 ? 0.5 : x < 5 ? 0.3 - 0.18 * x / 5 : 0.12;
+    return { noite, acesas };
+  }
   function luzDaHora(h) {
     horaDoDia = h == null ? null : ((+h % 24) + 24) % 24;
+    { const n = noiteDaHora(horaDoDia); NOITE.uNoite.value = n.noite; NOITE.uAcesas.value = n.acesas; }
     if (horaDoDia == null) {
       solAgora.copy(SOL);
       hemi.color.copy(COR_DIA.hemiC); hemi.groundColor.copy(COR_DIA.hemiT); hemi.intensity = 1.25;
@@ -1051,6 +1075,151 @@ void main() {
     return mat;
   }
 
+  /* ======================================================
+     A NOITE (o dono, 30/09/2026: "preciso que a noite tenha as luzes dos
+     postes, refletores de estádios e janelas das casas não entráveis
+     acesos, assim como os ambientes entráveis tenham luz interior
+     também"). Nenhuma luz do three.js: cada uma pesa em todo pixel de
+     tudo e, trocando quantas são, o three recompila todos os materiais
+     (e o dono joga sem placa de vídeo). A luz da noite é UMA conta a mais
+     em cada material, lida de dois mapas vistos de cima:
+     - o MAPA DA LUZ (um pixel por metro): a poça de cada poste, quente,
+       mais forte embaixo dele e sumindo com a altura (acende o chão, a
+       calçada e o pé da fachada), e, no canal alfa, a luz branca dos
+       refletores do estádio (o campo e a arquibancada inteiros);
+     - o MAPA DO TETO (a grade do passo, meio metro): o que é coberto pelo
+       telhado de um prédio, com a altura dele. Debaixo do telhado, e
+       abaixo dele, é DENTRO: à noite, a luz da lâmpada (o cômodo da sede,
+       o bar, a varanda, a cobertura do posto, o corredor do estádio). A
+       face de fora da parede olha o mapa 80 cm pra fora (na direção da
+       normal) e fica no escuro;
+     - a JANELA: nas folhas dos prédios, a célula de janela (pelo nome, no
+       atlas) acende o vidro — o que é escuro e azulado nela — de parte das
+       janelas, sorteada janela por janela (cada vão ganha um número, no
+       forno): cedo, muitas; de madrugada, poucas;
+     - a LÂMPADA: a lente da luminária do poste (a célula dela na folha
+       dos props), o refletor do estádio e a lâmpada do corredor (o brilho
+       que o material deles tinha, e o forno perdia) acendem.
+     Tudo vezes `uNoite` (0 de dia, 1 de noite), que sai da hora do dia.
+     ====================================================== */
+  const vazia = () => { const t = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1); t.needsUpdate = true; return t; };
+  const NOITE = {
+    uNoite: { value: 0 }, uAcesas: { value: 0.45 }, uNoiteM: { value: M },
+    uLuzMapa: { value: vazia() }, uLuzC: { value: new THREE.Vector4(0, 0, 1, 1) },
+    uTetoMapa: { value: vazia() }, uTetoC: { value: new THREE.Vector4(0, 0, 1, 1) }
+  };
+  const NOITE_GLSL = `uniform float uNoite, uAcesas, uNoiteM;
+uniform sampler2D uLuzMapa, uTetoMapa;
+uniform vec4 uLuzC, uTetoC;
+varying vec3 vNoiteP;
+varying vec3 vNoiteN;
+vec3 luzDaNoite( vec3 p, vec3 n ) {
+  if ( uNoite < 0.001 ) return vec3( 0.0 );
+  vec4 L = texture2D( uLuzMapa, ( p.xz - uLuzC.xy ) * uLuzC.zw );
+  float cima = max( n.y, 0.0 ), baixo = max( -n.y, 0.0 );
+  /* o poste (a uns 7 m): forte no chão, pouco na parede, some acima
+     de uns 9 m */
+  float alto = clamp( 1.25 - p.y / ( 7.0 * uNoiteM ), 0.0, 1.0 );
+  vec3 luz = L.rgb * 1.5 * alto * ( 0.3 + 0.7 * cima - 0.25 * baixo );
+  /* o refletor: o estádio inteiro, de cima */
+  luz += vec3( 0.95, 0.97, 1.0 ) * L.a * ( 0.75 + 0.25 * cima );
+  /* dentro: coberto e abaixo do telhado, olhando 80 cm pra onde a face
+     olha (a parede de fora olha pra rua, que não tem teto) */
+  vec2 q = p.xz + n.xz * ( 0.8 * uNoiteM );
+  float teto = texture2D( uTetoMapa, ( q - uTetoC.xy ) * uTetoC.zw ).r * 25.5 * uNoiteM;
+  if ( teto > 0.0 && p.y < teto - 0.15 * uNoiteM ) luz += vec3( 1.0, 0.86, 0.66 ) * 1.05;
+  return luz * uNoite;
+}
+`;
+  /* A JANELA E A LÂMPADA DAS FOLHAS: uma máscara pequena por folha (1/4 do
+     tamanho), com a célula de janela em vermelho (acende o vidro dela) e a
+     que é lâmpada em verde (acende inteira). Pelo nome da célula */
+  const JANELA_CEL = /^(jan|janela|janelinha|janelinhas|basc|basculante|vitro|vidraca|vidro|vitrine|tijolo_vidro|col_janela|hosp_modulo|dp_janela|esc_janela|posto_vitrine|shop_vidro|porta_vidro|cortina|janela_pol|porta_shop|porta_pol|modulo|terreo_vidro|terreo_porta|sacada|losango|oculo|faixa[0-9]|faixa_lat|parede|vermelho$|t1_jan|t1_vidro|t1_terreo|t2_jan|t2_sacada|t2_terreo)/;
+  const LAMPADA_CEL = /^(luminaria_lente)$/;
+  const mascaras = new Map();
+  function folhaDoMapa(src) {
+    const m = /\/([a-z0-9_]+)\.(jpg|png)$/i.exec(src || '');
+    return m ? m[1].replace(/_v[0-9]$/, '') : null;
+  }
+  function mascaraDaFolha(folha) {
+    if (mascaras.has(folha)) return mascaras.get(folha);
+    const A = ATLAS[folha];
+    let t = null;
+    if (A && folha !== 'metro' && folha !== 'grades') {
+      const W = Math.max(8, Math.round(A.larg / 4)), H = Math.max(8, Math.round(A.alt / 4));
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const c = cv.getContext('2d');
+      c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+      let n = 0;
+      for (const [k, r] of Object.entries(A.cel)) {
+        const lamp = LAMPADA_CEL.test(k), jan = !lamp && JANELA_CEL.test(k);
+        if (!lamp && !jan) continue;
+        c.fillStyle = lamp ? '#00ff00' : '#ff0000';
+        /* (a célula com v0 embaixo; o canvas sobe com flipY: a linha de cima é v = 1) */
+        const x0 = Math.floor(r[0] * W), x1 = Math.ceil(r[2] * W), y0 = Math.floor((1 - r[3]) * H), y1 = Math.ceil((1 - r[1]) * H);
+        c.fillRect(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0));
+        n++;
+      }
+      if (n) {
+        t = new THREE.CanvasTexture(cv);
+        t.colorSpace = THREE.NoColorSpace; t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+      }
+    }
+    mascaras.set(folha, t);
+    return t;
+  }
+  /* A NOITE NUM MATERIAL: a luz dos mapas (tudo); `o.janelas`, a máscara
+     da folha (e o número de cada vão, `aSorte`); `o.lum`, a força da
+     lâmpada que o material é */
+  function comNoite(mat, o = {}) {
+    /* (só no material que tem luz: o básico — a lâmpada acesa do kit, o anel — já brilha sozinho) */
+    if (!mat || !(mat.isMeshLambertMaterial || mat.isMeshPhongMaterial || mat.isMeshStandardMaterial)) return mat;
+    const antes = mat.onBeforeCompile;
+    const u = o.janelas ? { uJanelas: { value: o.janelas } } : {};
+    if (o.lum) u.uLum = { value: o.lum };
+    mat.onBeforeCompile = (sh, r) => {
+      if (antes) antes.call(mat, sh, r);
+      Object.assign(sh.uniforms, NOITE, u);
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', `varying vec3 vNoiteP;\nvarying vec3 vNoiteN;\n${o.janelas ? 'attribute float aSorte;\nvarying float vSorte;\n' : ''}void main() {`)
+        .replace('#include <project_vertex>', `#include <project_vertex>
+  {
+    vec4 np = vec4( transformed, 1.0 );
+    vec3 nn = objectNormal;
+    #ifdef USE_INSTANCING
+      np = instanceMatrix * np; nn = mat3( instanceMatrix ) * nn;
+    #endif
+    np = modelMatrix * np;
+    vNoiteP = np.xyz;
+    vNoiteN = normalize( mat3( modelMatrix ) * nn );
+    ${o.janelas ? 'vSorte = aSorte;' : ''}
+  }`);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {', `${NOITE_GLSL}${o.janelas ? 'uniform sampler2D uJanelas;\nvarying float vSorte;\n' : ''}${o.lum ? 'uniform float uLum;\n' : ''}void main() {`)
+        .replace('#include <color_fragment>', `#include <color_fragment>
+  vec3 noiteBrilho = vec3( 0.0 );
+  ${o.janelas ? `if ( uNoite > 0.001 ) {
+    vec2 mj = texture2D( uJanelas, vMapUv ).rg;
+    if ( mj.r > 0.5 ) {
+      vec3 t = diffuseColor.rgb;
+      float lum = dot( t, vec3( 0.2126, 0.7152, 0.0722 ) );
+      float vidro = smoothstep( 0.2, 0.05, lum ) * smoothstep( -0.01, 0.015, t.b - t.r * 0.95 );
+      vec3 corJ = fract( vSorte * 13.7 ) > 0.8 ? vec3( 0.6, 0.72, 1.0 ) : vec3( 1.0, 0.72, 0.4 );
+      noiteBrilho += corJ * vidro * step( vSorte, uAcesas ) * 1.5;
+    }
+    if ( mj.g > 0.5 ) noiteBrilho += vec3( 1.0, 0.9, 0.72 ) * 2.4;
+  }` : ''}
+  ${o.lum ? 'noiteBrilho += diffuseColor.rgb * uLum;' : ''}
+  noiteBrilho *= uNoite;`)
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += noiteBrilho;')
+        .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+  reflectedLight.indirectDiffuse += luzDaNoite( vNoiteP, normalize( vNoiteN ) * ( gl_FrontFacing ? 1.0 : -1.0 ) ) * diffuseColor.rgb;`);
+    };
+    const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
+    mat.customProgramCacheKey = () => chave + '|noite' + (o.janelas ? 'J' : '') + (o.lum ? 'L' : '');
+    return mat;
+  }
+
   /* a cor do material entra no vértice (em linear, como o three.js
      guarda), multiplicada pela do vértice quando ele tem */
   const matsDoForno = new Map();
@@ -1062,11 +1231,48 @@ void main() {
   }
   function materialDoForno(chave, m) {
     if (matsDoForno.has(chave)) return matsDoForno.get(chave);
-    const mat = cortavel(new THREE.MeshLambertMaterial({
+    /* (a noite: a lâmpada, ou a janela da folha; a estação do metrô, que é
+       embaixo da terra, fica acesa de noite como de dia) */
+    const lum = /\|lum:([0-9.]+)$/.exec(chave), folha = m.map ? folhaDoMapa(m.map.userData.src) : null;
+    const mat = comNoite(cortavel(new THREE.MeshLambertMaterial({
       map: m.map || null, vertexColors: true, side: m.side, transparent: m.transparent, opacity: m.transparent ? m.opacity : 1,
-      alphaTest: m.alphaTest || 0, depthWrite: m.depthWrite, flatShading: !!m.flatShading, alphaToCoverage: !!m.alphaToCoverage }), true);
+      alphaTest: m.alphaTest || 0, depthWrite: m.depthWrite, flatShading: !!m.flatShading, alphaToCoverage: !!m.alphaToCoverage }), true),
+      { janelas: !lum && folha ? mascaraDaFolha(folha) : null, lum: lum ? +lum[1] : folha === 'metro' ? 0.35 : 0 });
     matsDoForno.set(chave, mat);
     return mat;
+  }
+  /* A FORÇA DA LÂMPADA de um material (o brilho dele): 0, não é lâmpada */
+  function forcaDaLampada(m) {
+    const e = m.emissive, k = m.emissiveIntensity === undefined ? 1 : m.emissiveIntensity;
+    if (!e || !(k > 0)) return 0;
+    const f = Math.max(e.r, e.g, e.b) * k;
+    return f > 0.02 ? Math.round(Math.min(9, f * 4) * 10) / 10 : 0;
+  }
+  /* O NÚMERO DE CADA VÃO (a janela acesa é sorteada por ele): os triângulos
+     seguidos do mesmo polígono — o leque do construtor (o mesmo primeiro
+     vértice) e o par da face da caixa (dois vértices em comum) — levam o
+     número do primeiro vértice dele */
+  function sorteDosVaos(P3, n) {
+    const S = new Uint8Array(n);
+    const igual = (a, b) => P3[3 * a] === P3[3 * b] && P3[3 * a + 1] === P3[3 * b + 1] && P3[3 * a + 2] === P3[3 * b + 2];
+    let ini = 0, valor = 0;
+    for (let t = 0; t * 3 + 2 < n; t++) {
+      const k = 3 * t;
+      let junto = false;
+      if (t > 0) {
+        if (igual(k, k - 3)) junto = true;
+        else { let c = 0; for (let a = 0; a < 3; a++) for (let b = 1; b <= 3; b++) if (igual(k + a, k - b)) c++; junto = c >= 2; }
+      }
+      if (!junto) {
+        ini = k;
+        let h = 2166136261;
+        for (let a = 0; a < 3; a++) { h ^= Math.round(P3[3 * ini + a] * 7) | 0; h = Math.imul(h, 16777619); }
+        h ^= h >>> 13; h = Math.imul(h, 2246822519); h ^= h >>> 16;
+        valor = (h >>> 0) % 255 + 1;
+      }
+      S[k] = S[k + 1] = S[k + 2] = valor;
+    }
+    return S;
   }
 
   /* AS FOLHAS DE DECALQUE: cada canvas de texto vira um quadro numa folha
@@ -1130,7 +1336,7 @@ void main() {
   function Forno(ar, escalaDecal, grade, sub, piso, andares, sobrados) {
     const LADO = BLOCO_M * M;
     const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
-    const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null], vivos = [];
+    const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null], vivos = [], luzes = [];
     const v = new THREE.Vector3(), n3 = new THREE.Matrix3(), cor = new THREE.Color();
     let triangulos = 0, malhas = 0;
     /* uma malha montada vira pedaço de balde: posição no mundo, normal,
@@ -1155,6 +1361,9 @@ void main() {
         q = decal.lugar(m.map.image, !m.map.userData.umaVez);
         chave = 'decal|' + q.f.i;
       }
+      /* (a lâmpada — o material que tinha brilho — vai pro balde dela, que acende de noite) */
+      const lum = forcaDaLampada(m);
+      if (lum) chave += '|lum:' + lum;
       for (let k = 0; k < n; k++) {
         const i = idx ? idx.getX(k) : k;
         v.fromBufferAttribute(pos, i).applyMatrix4(mw);
@@ -1174,7 +1383,9 @@ void main() {
           U2[2 * k] = u; U2[2 * k + 1] = w;
         }
       }
-      return { chave, m, P3, N3, C3, U2, n };
+      /* (na folha que tem janela, o número de cada vão) */
+      const S1 = !lum && temMapa && !q && mascaraDaFolha(folhaDoMapa(m.map.userData.src)) ? sorteDosVaos(P3, n) : null;
+      return { chave, m, P3, N3, C3, U2, S1, n };
     }
     /* ASSAR uma coisa: as malhas dela, no bloco do meio dela (e, na grade
        do passo, o que barra o corpo e, se é prédio, o telhado dela) */
@@ -1212,6 +1423,10 @@ void main() {
         if (o.material && o.material.map && o.material.map.isCanvasTexture && o.material.map.wrapS !== THREE.RepeatWrapping) { o.material.map.dispose(); o.material.dispose(); }
       });
       if (!pedacos.length) return;
+      /* (a noite: o estádio acende os refletores em cima dele inteiro; a
+         coisa que tem lâmpada própria — o pátio da sede — diz onde ela fica) */
+      if (tipo === 'estadio') luzes.push({ area: { x0, z0, x1, z1 } });
+      if (grupo.userData.luzes) for (const l of grupo.userData.luzes) luzes.push(l);
       let id = 0;
       if (it) { id = lista.length; lista.push({ it, caixa: [x0, Math.max(0, y0), z0, x1, Math.max(y1, 4), z1] }); }
       for (const p of pedacos) p.id = id;
@@ -1244,21 +1459,23 @@ void main() {
       for (const b of baldes.values()) {
         let mat;
         if (b.chave.startsWith('decal|')) {
-          const f = decal.folhas[+b.chave.slice(6)];
-          if (!matsDecal.has(f)) {
-            const md = cortavel(new THREE.MeshLambertMaterial({ map: f.tex, alphaTest: 0.35, side: THREE.DoubleSide,
-              vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }), true);
+          /* (o decalque que é lâmpada — o refletor do estádio — tem o material dele) */
+          const [, fi, lumK] = b.chave.split('|'), f = decal.folhas[+fi], lum = lumK ? +lumK.slice(4) : 0, kd = fi + '|' + lum;
+          if (!matsDecal.has(kd)) {
+            const md = comNoite(cortavel(new THREE.MeshLambertMaterial({ map: f.tex, alphaTest: 0.35, side: THREE.DoubleSide,
+              vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }), true), { lum });
             md.userData.doMapa = true;
-            matsDecal.set(f, md);
+            matsDecal.set(kd, md);
           }
-          mat = matsDecal.get(f);
+          mat = matsDecal.get(kd);
         } else mat = materialDoForno(b.chave, b.m);
-        const temUV = !!b.partes[0].U2;
+        const temUV = !!b.partes[0].U2, temSorte = !!b.partes[0].S1;
         const P3 = new Float32Array(b.n * 3), N3 = new Int8Array(b.n * 3), C3 = new Uint8Array(b.n * 3), U2 = temUV ? new Float32Array(b.n * 2) : null;
-        const ID = new Float32Array(b.n);
+        const ID = new Float32Array(b.n), S1 = temSorte ? new Uint8Array(b.n) : null;
         let o = 0;
         for (const p of b.partes) {
           P3.set(p.P3, o * 3); N3.set(p.N3, o * 3); C3.set(p.C3, o * 3); if (U2) U2.set(p.U2, o * 2);
+          if (S1 && p.S1) S1.set(p.S1, o);
           if (p.id) ID.fill(p.id, o, o + p.n);
           o += p.n;
         }
@@ -1268,6 +1485,7 @@ void main() {
         g.setAttribute('normal', new THREE.BufferAttribute(N3, 3, true));
         g.setAttribute('color', new THREE.BufferAttribute(C3, 3, true));
         if (U2) g.setAttribute('uv', new THREE.BufferAttribute(U2, 2));
+        if (S1) g.setAttribute('aSorte', new THREE.BufferAttribute(S1, 1, true));
         g.setAttribute('idCoisa', new THREE.BufferAttribute(ID, 1));
         g.computeBoundingSphere(); g.computeBoundingBox();
         /* depois de subir pra placa de vídeo, a cópia daqui sai */
@@ -1279,7 +1497,72 @@ void main() {
       baldes.clear();
       return grupo;
     }
-    return { assar, tirar, decal, vivos, coisas: lista, get triangulos() { return triangulos; }, get malhas() { return malhas; } };
+    return { assar, tirar, decal, vivos, luzes, coisas: lista, get triangulos() { return triangulos; }, get malhas() { return malhas; } };
+  }
+
+  /* O MAPA DA LUZ da noite (um pixel por metro, até 4.096 de lado): em
+     RGB, a poça quente de cada poste (e da lâmpada própria de uma coisa);
+     em alfa, o refletor do estádio, branco, no estádio inteiro e sumindo
+     em 14 m pra fora dele */
+  const COR_POSTE = [1.0, 0.78, 0.5];
+  function mapaDaLuz(ar, postes, luzes) {
+    const W = clamp(Math.ceil((ar.x1 - ar.x0) / M), 1, 4096), H = clamp(Math.ceil((ar.y1 - ar.y0) / M), 1, 4096);
+    const pw = (ar.x1 - ar.x0) / W, ph = (ar.y1 - ar.y0) / H, F = new Float32Array(W * H * 4);
+    /* a poça: forte embaixo, meia força a uns 5 m, some aos `r` m */
+    const poca = (x, z, r, cor, forca) => {
+      const R = r * M, i0 = Math.max(0, Math.floor((x - R - ar.x0) / pw)), i1 = Math.min(W - 1, Math.ceil((x + R - ar.x0) / pw));
+      const j0 = Math.max(0, Math.floor((z - R - ar.y0) / ph)), j1 = Math.min(H - 1, Math.ceil((z + R - ar.y0) / ph));
+      const meio = 5.5 * M, borda = 1 / (1 + (R / meio) ** 2);
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const d = Math.hypot(ar.x0 + (i + 0.5) * pw - x, ar.y0 + (j + 0.5) * ph - z);
+        if (d >= R) continue;
+        const v = forca * Math.max(0, (1 / (1 + (d / meio) ** 2) - borda) / (1 - borda)), k = (j * W + i) * 4;
+        F[k] += cor[0] * v; F[k + 1] += cor[1] * v; F[k + 2] += cor[2] * v;
+      }
+    };
+    for (const p of postes) poca(p.x, p.z, 16, COR_POSTE, 0.9);
+    for (const l of luzes) {
+      if (l.area) {
+        const a = l.area, m = 14 * M;
+        const i0 = Math.max(0, Math.floor((a.x0 - m - ar.x0) / pw)), i1 = Math.min(W - 1, Math.ceil((a.x1 + m - ar.x0) / pw));
+        const j0 = Math.max(0, Math.floor((a.z0 - m - ar.y0) / ph)), j1 = Math.min(H - 1, Math.ceil((a.z1 + m - ar.y0) / ph));
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+          const x = ar.x0 + (i + 0.5) * pw, z = ar.y0 + (j + 0.5) * ph;
+          const fora = Math.hypot(Math.max(0, a.x0 - x, x - a.x1), Math.max(0, a.z0 - z, z - a.z1));
+          F[(j * W + i) * 4 + 3] = Math.max(F[(j * W + i) * 4 + 3], 0.9 * (1 - suave(fora / m)));
+        }
+      } else poca(l.x, l.z, l.r || 10, l.cor || COR_POSTE, l.forca === undefined ? 0.8 : l.forca);
+    }
+    const B = new Uint8Array(W * H * 4);
+    for (let k = 0; k < B.length; k++) B[k] = Math.round(clamp(F[k], 0, 1) * 255);
+    const t = new THREE.DataTexture(B, W, H, THREE.RGBAFormat, THREE.UnsignedByteType);
+    t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true;
+    t.onUpdate = () => { t.image.data = null; t.onUpdate = null; };
+    return { tex: t, c: new THREE.Vector4(ar.x0, ar.y0, 1 / (W * pw), 1 / (H * ph)), W, H };
+  }
+  /* O MAPA DO TETO (a altura do teto de cada célula da grade, em decímetros;
+     acima de 4.096 células de lado, junta de 2 em 2 pelo teto mais alto) */
+  function mapaDoTetoTex(mt) {
+    let { dados, nx, nz, c } = mt;
+    while (nx > 4096 || nz > 4096) {
+      const mx = Math.ceil(nx / 2), mz = Math.ceil(nz / 2), d = new Uint8Array(mx * mz);
+      for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const k = (j >> 1) * mx + (i >> 1); if (dados[j * nx + i] > d[k]) d[k] = dados[j * nx + i]; }
+      dados = d; nx = mx; nz = mz; c *= 2;
+    }
+    const t = new THREE.DataTexture(dados, nx, nz, THREE.RedFormat, THREE.UnsignedByteType);
+    t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+    t.onUpdate = () => { t.image.data = null; t.onUpdate = null; };
+    return { tex: t, c: new THREE.Vector4(mt.ox, mt.oz, 1 / (nx * c), 1 / (nz * c)) };
+  }
+  /* troca os mapas da noite (e solta os de antes) */
+  function porMapasDaNoite(luz, teto) {
+    for (const [k, novo] of [['uLuzMapa', luz], ['uTetoMapa', teto]]) {
+      const velho = NOITE[k].value;
+      NOITE[k].value = novo ? novo.tex : vazia();
+      if (velho) velho.dispose();
+    }
+    NOITE.uLuzC.value.copy(luz ? luz.c : new THREE.Vector4(0, 0, 1, 1));
+    NOITE.uTetoC.value.copy(teto ? teto.c : new THREE.Vector4(0, 0, 1, 1));
   }
 
   /* ======================================================
@@ -1357,7 +1640,7 @@ void main() {
   }`);
     };
     m.customProgramCacheKey = () => 'chao-grao-poco-capim';
-    return m;
+    return comNoite(m);
   }
   /* uma textura do canvas (e o canvas volta pra ser pintado de novo) */
   async function texturaDoCanvas(cv) {
@@ -1496,6 +1779,7 @@ void main() {
   }`);
     };
     mato.customProgramCacheKey = () => 'longe-mato-capim';
+    comNoite(mato);
     /* o ladrilho de dentro que era só mato (montarChao não pintou) */
     for (const r of deMato) quad(r.x0, r.x1, r.y0, r.y1, mato, uvMundo);
     const costa = P.costa && P.costa();
@@ -1621,7 +1905,7 @@ void main() {
     }
     return { arvores: arvores.length, tri };
   }
-  const matLowpoly = cortavel(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), false);
+  const matLowpoly = comNoite(cortavel(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), false));
   function malhaLowpoly(blocos) {
     if (!blocos || !blocos.length) return null;
     let n = 0;
@@ -1644,6 +1928,7 @@ void main() {
   function aviso(txt, f) { cargaTxt.textContent = txt; cargaBarra.style.width = Math.round(clamp(f, 0, 1) * 100) + '%'; }
   function jogarForaOMapa() {
     MATO_U.uMatoK.value = 0;
+    porMapasDaNoite(null, null);
     cena.remove(doMapa);
     doMapa.traverse(o => {
       if (o.geometry) o.geometry.dispose();
@@ -1752,6 +2037,14 @@ void main() {
     const cidade3d = forno.tirar();
     marca('juntar', tf);
     doMapa.add(cidade3d);
+    /* A NOITE: o mapa da luz (os postes da planta, os refletores dos
+       estádios, as lâmpadas das coisas) e o do teto (a grade do passo) */
+    tf = agora();
+    const postes = P.luzesDaRua ? P.luzesDaRua() : [], mt = gradeNova.mapaDoTeto();
+    const mapaLuz = mapaDaLuz(area, postes, forno.luzes), mapaTeto = mt ? mapaDoTetoTex(mt) : null;
+    porMapasDaNoite(mapaLuz, mapaTeto);
+    const noite = { postes: postes.length, luzes: forno.luzes.length, luz: [mapaLuz.W, mapaLuz.H], teto: mt ? [mt.nx, mt.nz] : null };
+    marca('noite', tf);
     montarPortas(forno.vivos);
     coisas = forno.coisas;
     /* as folhas dos decalques sobem pra placa já, uma por vez (o primeiro
@@ -1788,7 +2081,7 @@ void main() {
     andares = dentroNovos.length ? andaresNovos : null; dentroDosEstadios = dentroNovos;
     sobrados = sedesNovas.length ? sobradosNovos : null; dentroDosSobrados = sedesNovas;
     montado = { nome, decal: forno.decal };
-    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, segundos: (agora() - t0) / 1000, tempos,
+    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, noite, segundos: (agora() - t0) / 1000, tempos,
                 folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade), piso: piso.n }),
                 subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(tAndares - tSub) } : null,
                 andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null,
@@ -1922,6 +2215,8 @@ void main() {
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
+      /* (a luz da noite também nos bonecos: o poste, o refletor, o cômodo) */
+      mod.cfg.remendo = m => comNoite(m);
       /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
          tem altura: a do pé que se vê (no metrô, embaixo da rua) */
       const PE = { x: 0, y: 0, z: 0 }, PQ = { x: 0, y: 0, z: 0 };
@@ -2122,7 +2417,7 @@ void main() {
          inteira, com o material dela (o forno achataria a sombra macia e o
          vidro), e no corte da câmera; não barra quem anda a pé */
       if (m.userData.peca) {
-        if (!m.material.userData.cortavel) { cortavel(m.material, false); m.material.userData.cortavel = true; m.material.needsUpdate = true; }
+        if (!m.material.userData.cortavel) { comNoite(cortavel(m.material, false)); m.material.userData.cortavel = true; m.material.needsUpdate = true; }
         m.updateMatrixWorld(true);
         const w = m.matrixWorld.clone();
         m.removeFromParent();
@@ -2133,7 +2428,7 @@ void main() {
       }
       /* a bandeira: só entra no mapa (e no corte), com o mundo dela */
       if (m.userData.bandeira) {
-        m.material = cortavel(m.material, false);
+        m.material = comNoite(cortavel(m.material, false));
         m.material.userData.doMapa = true;                // (sai com o mapa, textura junto)
         m.updateMatrixWorld(true);
         const w = m.matrixWorld.clone();
@@ -2143,7 +2438,7 @@ void main() {
         continue;
       }
       const d = m.userData.porta;
-      if (!matPorta.has(m.material)) matPorta.set(m.material, cortavel(m.material.clone(), false));
+      if (!matPorta.has(m.material)) matPorta.set(m.material, comNoite(cortavel(m.material.clone(), false)));
       m.material = matPorta.get(m.material);
       m.rotation.y = 0; m.updateMatrix();
       doMapa.add(m);
@@ -2535,6 +2830,8 @@ void main() {
      ====================================================== */
   selCidade.onchange = () => montar(selCidade.value);
   for (const b of raiz.querySelectorAll('.cen-mapas button')) b.onclick = () => montar(P.cidade(), b.dataset.mapa);
+  /* a hora do dia (a ferramenta; o jogo 3D manda a dele a cada quadro) */
+  $('.cen-hora').onchange = ev => { const v = ev.target.value; luzDaHora(v === '' ? null : +v); };
   selQ.onchange = () => {
     qualidade = selQ.value;
     try { localStorage.setItem('cenario-qualidade', qualidade); } catch (e) {}

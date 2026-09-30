@@ -1220,6 +1220,12 @@ function posteDeLuz(O, x, z, h) {
   cilindro(Mp, [x, 0, z], [x, h, z], 0.28, 10, lin('#bdbab2'));
   painel(O, x, h - 1.6, z, 3.4, 1.8, 22);
 }
+/* o mastro de aço em cima da última fileira (o de 40 mil não tem torre):
+   sai de y0, sobe h e leva o painel virado pro campo */
+function mastroDeLuz(O, x, z, y0, h, w = 6.4, alto = 3.8) {
+  cilindro(O.m('pintura'), [x, y0, z], [x, y0 + h, z], 0.32, 8, lin('#6e747a'));
+  painel(O, x, y0 + h - alto / 2 - 0.3, z, w, alto, 24);
+}
 /* as placas de publicidade no anel d (0,9 m de altura), viradas pro campo, com os vãos */
 function placasNoAnel(O, fam, d, vaos) {
   const us = fam.amostras(0, 9, vaos.flatMap(v => [v.ua, v.ub])), A = us.map(u => fam.ponto(d, u)), B = us.map(u => fam.ponto(d + 0.12, u)), L = comprimentos(A);
@@ -2547,6 +2553,9 @@ function montar40(O, S, G, opc) {
   for (const s of [-1, 1]) for (const x of s < 0 ? [-10.3, 6.1] : [-8.8, 4.6]) bilheteria(O, quadro([x + 2.1, s * zB], [0, -s]), 0, 5.3, -2.1, 2.1, 3.2);
   /* A FACHADA: o relevo e o letreiro com o nome em cima do portão 1 e no oeste, no andar de cima */
   const relevo = fachadaDetalhada(O, As, { pilar: [1.0, 0.7], portas: P.map(p => p.E), cor: vezes(tMuro, 1.04), corBase: lin('#77705f') });
+  /* A LUZ: a foto não mostra torre nem refletor; pro jogo à noite, um
+     mastro em cada curva, em cima da mureta de trás do anel de cima */
+  for (const uu of [1.5, 3.5, 5.5, 7.5]) { const q = F.ponto(As.dn + 0.12, uu); mastroDeLuz(O, q[0], q[1], As.yn - 0.4, 11.5); }
   const yLet = ALTO - 1.3 - 0.65 - 3.0;
   for (const [uu, w] of [[2.5, [-1, 0]], [6.5, [1, 0]]]) { const q = F.ponto(dFac, uu); letreiro(O, quadro([q[0], q[1]], w), 0, opc.nome, yLet, 3.0, 2 * (g.B0 - g.r0) - 1.5, { placa: lin('#2c3640'), sai: 0.95 }); }
   /* o chão de baixo (só aparece no corte): debaixo do anel de baixo, na
@@ -2577,7 +2586,7 @@ function montar40(O, S, G, opc) {
             { nome: 'Anel de cima', fileiras: NS, degrau: '0,40 × 0,52 m', lugares: As.lugares() }],
     setores, livre: '', vomitorios: vom.length + vomI.length,
     tipoVom: `com túnel nos dois anéis: ${vom.length} em cima (o poço das fileiras 1 a 4, a escada começa nele e desce até o corredor de cima) e ${vomI.length} embaixo (fileiras 2 a 5, a escada desce até o corredor do chão)`,
-    alturaArq: As.yn + 1.1, luz: 'nenhuma (a foto não mostra torre nem refletor)',
+    alturaArq: As.yn + 1.1, luz: 'quatro mastros de 11,5 m em cima da mureta das curvas (a foto não mostra torre nem refletor; é pro jogo à noite)',
     fachada: `concreto aparente em ${Math.round(ALTO / relevo.andar)} andares de ${m(relevo.andar)} m: ${relevo.pilares} pilares, a faixa de cada laje, o cobogó e o brise, o embasamento e a cimalha; o letreiro com o nome em cima do portão 1 e no oeste; as quatro bilheterias do norte e do sul`,
     entradas: P.map((p, j) => ({ nome: p.nome, lado: p.lado,
       onde: `${p.onde}; o pórtico com a marquise, a faixa de pedestre na pista de ônibus, a fila de ${p.raias} raias e ${p.catracas} catracas no salão, que dá no corredor do chão; dele, a escada interna (${escs[j].onde}) sobe pro corredor de cima`,

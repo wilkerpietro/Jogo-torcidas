@@ -2249,3 +2249,62 @@ o pé (em cima, some o que passa da cabeça lá em cima).
 - **As outras torcidas** usam o mesmo modelo do nível delas, mas só a sede
   do jogador tem vida por dentro.
 - Testado só no Chromium do teste (SwiftShader), na tela deitada.
+
+## 27. A noite acesa: os postes, os refletores, as janelas e os cômodos (30/09/2026)
+
+**O pedido** (o dono): "preciso que a noite tenha as luzes dos postes,
+refletores de estádios e janelas das casas não entráveis acesos, assim como
+os ambientes entráveis tenham luz interior também".
+
+**Sem luz do three.js.** Cada luz de verdade (PointLight, SpotLight) entra
+em todos os materiais e recompila os shaders, e o dono joga sem placa de
+vídeo. A noite é feita em **dois mapas do mundo inteiro**, lidos no shader de
+cada material (`comNoite` em `cenario.js`), e só quando `uNoite > 0`:
+
+- **O mapa da luz** (1 pixel por metro, RGBA): no RGB, a poça quente de cada
+  poste da calçada (`luzesDaRua()` da planta: a lâmpada na ponta do braço, a
+  7 m) — forte no chão, meia força a uns 5 m, some aos 16 m; na parede ela
+  entra fraca e some acima de uns 9 m. No A, o refletor dos estádios: o
+  terreno inteiro de cada estádio e 14 m em volta, de cima.
+- **O mapa do teto** (a grade do passo, 0,5 m): a altura do teto mais baixo
+  de cada célula coberta, em decímetros. **Dentro** é o que está coberto e
+  abaixo do teto, olhando 80 cm pra onde a face olha: o chão e as paredes de
+  dentro dos cômodos acendem (luz de lâmpada, amarelada); a parede de fora
+  olha pra rua, que não tem teto, e fica no escuro. Vale pra tudo que é
+  entrável: a sede, os bares, os corredores dos estádios, o metrô.
+- **As janelas das casas não entráveis:** o vidro das células de janela das
+  folhas de textura (pelo nome da célula no `ATLAS`) acende com o vidro
+  escuro e azulado; **45% das janelas** (uma sorte por janela, o atributo
+  `aSorte`) ficam acesas, as outras escuras.
+- **As lâmpadas que brilham sozinhas:** os painéis dos refletores (a folha
+  dos estádios), a luminária da calçada e a luz do metrô ganham brilho
+  próprio à noite (o balde `|lum` do forno).
+- **Os bonecos** também recebem as duas luzes (o remendo do material em
+  `bonecos3.js`): quem passa debaixo do poste fica iluminado.
+
+**O estádio de 40 mil ganhou refletor:** a foto não mostra torre nem
+refletor, e à noite ele ficava aceso sem ter de onde vir a luz. Agora são
+**quatro mastros de 11,5 m em cima da mureta das curvas**, com o painel
+virado pro campo (`mastroDeLuz` em `estadios3d.js`). O de 10 (postes de
+concreto) e o de 20 (torres de treliça) já tinham.
+
+**A hora:** a luz entra com o céu — começa na boca da noite (17h30–18h30) e
+fica inteira das 19h às 5h (os tons da noite ficaram mais escuros que os de
+antes). No cenário da planta, o seletor **Hora** (Dia, 6 h, 17 h 30, 18 h
+30, 20 h, 22 h, 1 h) mostra cada uma; no jogo 3D, é o relógio da vida.
+
+**O custo:** montar os dois mapas leva uns 0,1 s (281 postes e 4 estádios em
+São Paulo, mapa grande); as chamadas de desenho não mudam (as janelas e as
+lâmpadas continuam nos mesmos baldes do forno).
+
+**Limites (sinceros):**
+- **Não tem sombra:** a luz do poste atravessa a marquise, a árvore e o
+  carro; a do refletor cobre o terreno inteiro do estádio como um tapete.
+- **O dentro é pelo teto:** o que tem teto é aceso por dentro, com ou sem
+  lâmpada (a garagem, o depósito, debaixo da marquise). O pátio descoberto
+  da sede fica só com o poste da rua.
+- **A janela acesa é sorteada por janela, não por casa:** numa casa, uma
+  janela acesa e a do lado apagada.
+- Testado no Chromium do teste (SwiftShader): as fotos de cima, da rua, do
+  bairro, da sede por dentro e dos quatro estádios de São Paulo às 21h, sem
+  erro de shader.

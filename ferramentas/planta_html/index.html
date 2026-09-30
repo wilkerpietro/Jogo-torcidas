@@ -5459,6 +5459,17 @@ function apiDoCenario() {
     },
     resumo: () => resumoDaTela(),
     pecas: pecasDoCenario, pintarChao, vegetacao,
+    /* AS LUZES DA RUA (a noite do cenário, 30/09/2026): a lente da
+       luminária de cada poste — o de hoje e o da calçada nova —, no mundo
+       (o braço da luminária aponta pra rua: +z do poste, girado) */
+    luzesDaRua() {
+      const out = [], braco = 1.175 * M, alto = 7.06 * M;
+      const poe = (x, y, ang, alt) => out.push({ x: x + Math.sin(ang || 0) * braco, z: y + Math.cos(ang || 0) * braco, y: (alt || 0) + alto });
+      const naLaje = (x, y) => !!CALCADAS && CALCADAS.naLaje(x, y);
+      for (const p of pecasSoltas) if (!p.somePelaProposta && p.k === 'poste') poe(p.x, p.y, p.ang, naLaje(p.x, p.y) ? CALCADA_ALT : 0);
+      if (CALCADAS) for (const m of CALCADAS.moveis) if (m.k === 'poste') poe(m.x, m.y, m.ang, CALCADA_ALT);
+      return out;
+    },
     /* O CHÃO DA RUA (o dono, 28/09/2026: "alguns membros das torcidas estão
        dentro de terrenos baldios e casas, organize pra eles ficarem somente
        nas calçadas e ruas"): o asfalto, a calçada das quadras e a calçada
