@@ -123,3 +123,21 @@
   .mb-corpo-cidade .mb-planta{flex:none;height:58vh;min-height:280px}
   .mb-corpo-cidade:has(.mb-planta){overflow:auto}
 }
+
+/* ---- o perfil da cidade na coluna do mapa (01/10/2026) ---- */
+.mb-capa{padding:14px 14px 10px;min-height:92px;display:flex;flex-direction:column;justify-content:flex-end;
+  background:linear-gradient(180deg,#1d2024,#121315);background-size:cover;background-position:center;border:1px solid var(--linha, #2c2c2c)}
+.mb-capa.com-foto{min-height:130px}
+.mb-capa h3{font-family:var(--titulo);font-size:24px;letter-spacing:.06em;text-transform:uppercase;color:#fff;margin:0;text-shadow:0 1px 3px #000}
+.mb-capa small{font-family:var(--mono);font-size:11px;color:#c9c9c4;text-shadow:0 1px 2px #000}
+.mb-lado-abas{display:flex;gap:2px;border-bottom:1px solid var(--linha, #2c2c2c)}
+.mb-lado-abas button{flex:1;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--fraco, #8d8d8d);
+  padding:7px 6px;font-family:var(--titulo);font-size:13px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.mb-lado-abas button[aria-selected="true"]{color:var(--texto, #e9e9e9);border-bottom-color:var(--rubro-vivo, #d24141)}
+.mb-lado-abas button:hover{color:var(--texto, #e9e9e9)}
+.mb-perfil{font-size:13px}
+.mb-perfil .linha-dado{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--sulco, #232323)}
+.mb-perfil table.dados{width:100%}
+.mb-bairro .mb-outras{display:block;opacity:.75;font-size:10.5px}
+/* o perfil de torcida aberto de dentro do mapa fica por cima dele */
+body:has(.mb-painel) .tela-cheia{z-index:75}

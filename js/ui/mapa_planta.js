@@ -253,17 +253,31 @@ TO.mapaPlanta = (function(){
         if(sx < -120 || sx > larg + 120 || sy < -30 || sy > alt + 30) return;
         const t = b.nome.toUpperCase();
         const sub = b.dono ? `${d.siglaDe(b.dono)} ${Math.round(b.v)}%` : _t('em disputa');
+        /* as demais torcidas com barra no bairro, embaixo da dona (o dono,
+           01/10/2026: "a porcentagem das demais torcidas não-dominantes do
+           bairro"), até três */
+        const outras = (b.partes || []).filter(x => x.t !== b.dono && x.v >= 1).slice(0, 3)
+          .map(x => `${d.siglaDe(x.t)} ${Math.round(x.v)}%`).join(' · ');
         ctx.font = fonte(700, 13);
         const w = Math.max(ctx.measureText(t).width, 40);
         /* (de longe, na praça de várias cidades, o nome que não cabe espera
            o zoom: a cor do bairro já diz quem manda) */
-        if(!livre(sx, sy + 6, w + 6, 30)) return;
+        ctx.font = fonte(600, 11);
+        const wo = outras ? ctx.measureText(outras).width : 0;
+        ctx.font = fonte(700, 13);
+        const caixaW = Math.max(w, wo) + 6, caixaH = outras ? 42 : 30;
+        if(!livre(sx, sy + (outras ? 12 : 6), caixaW, caixaH)) return;
         ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = '#ffffff';
         ctx.strokeText(t, sx, sy); ctx.fillText(t, sx, sy);
         ctx.font = fonte(600, 12);
         ctx.strokeText(sub, sx, sy + 14);
         ctx.fillStyle = b.dono === meu ? '#ffe7a0' : b.dono ? '#e8e8e8' : '#b9b9b4'; ctx.fillText(sub, sx, sy + 14);
-        ocupa(sx, sy + 6, w + 6, 30);
+        if(outras){
+          ctx.font = fonte(600, 11);
+          ctx.lineWidth = 3; ctx.strokeText(outras, sx, sy + 27);
+          ctx.fillStyle = '#c9cbc4'; ctx.fillText(outras, sx, sy + 27);
+        }
+        ocupa(sx, sy + (outras ? 12 : 6), caixaW, caixaH);
       });
       /* estádios, equipamentos e marcos: os estádios sempre; o resto de perto */
       ctx.font = fonte(700, 12);

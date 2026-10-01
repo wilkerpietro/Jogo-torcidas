@@ -481,5 +481,6 @@ TO.i18n.registrar({
   /* ---------- a planta da cidade no mapa (js/ui/mapa_planta.js, 01/10/2026) ---------- */
   'Abrindo a planta…': {es:'Abriendo el plano…', en:'Opening the city plan…'},
   'Arraste pra mover · role pra aproximar · clique num bairro pra ver quem manda': {es:'Arrastrá para mover · usá la rueda para acercar · tocá un barrio para ver quién manda', en:'Drag to move · scroll to zoom · click a neighbourhood to see who runs it'},
-  'Sede {sigla}': {es:'Sede {sigla}', en:'{sigla} HQ'}
+  'Sede {sigla}': {es:'Sede {sigla}', en:'{sigla} HQ'},
+  'Bairros': {es:'Barrios', en:'Neighbourhoods'}
 });

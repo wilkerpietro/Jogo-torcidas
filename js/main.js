@@ -6269,13 +6269,18 @@
      lojas, subsedes) e as subsedes de fora com os núcleos.
      ======================================================= */
   let abaPerfilC = 'visao';
-  function abrirPerfilCidade(id){
+  /* O PERFIL DA CIDADE EM PEÇAS (o dono, 01/10/2026: "as informações
+     contidas no perfil da cidade, inclusive a foto, devem encaixar de
+     alguma forma na tela do mapa também, e agora quando clicar no perfil
+     da cidade vai redirecionar pra tela do mapa com a cidade aberta"): o
+     nome, a linha de baixo, a capa e as duas abas, montadas na hora — o
+     mapa (js/ui/mapa_brasil.js) as põe na coluna do lado, e o modal
+     antigo fica só pra quando o mapa não existe. */
+  function perfilDaCidade(id){
     const e = E();
     const c = (TO.dados.cidades||[]).find(x=>x.id === id);
-    if(!e || !c) return;
-    abaPerfilC = 'visao';
+    if(!e || !c) return null;
     TO.relacoes.mundo(e);
-    const corpo = el('div',{class:'perfil-torcida'});
     const linhaD = (rot, val)=>`<div class="linha-dado"><span>${rot}</span>`+
                                `<b>${val}</b></div>`;
 
@@ -6396,40 +6401,65 @@
                       : (typeof bairro === 'string' ? bairro : '—'),
                     rot, tid, tnome});
       };
-      for(const o of TO.mundo.torcidasEm(c.id)){
-        if(o.incompleta) continue;
-        const nossa = o.id === e.torcida.id;
-        const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
-        if(!nossa && !t) continue;
-        if(nossa){
-          const bs = TO.mundo.bairroDaSede(e.torcida);
-          põe(bs ? bs.nome : o.bairroSede,
-              e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'), o.id, o.nome);
-          const pat = TO.financeiro.patrimonio(e);
-          (pat.bares||[]).forEach((b,i)=>põe(
-            b.bairro || bairroFixo(`${o.id}|bar|${i}`),
-            _t('Bar (nível {n})', {n:b.nivel}), o.id, o.nome));
-          (pat.lojas||[]).forEach((l,i)=>põe(
-            l.bairro || bairroFixo(`${o.id}|loja|${i}`),
-            _t('Loja (nível {n})', {n:l.nivel}), o.id, o.nome));
-          (pat.subsedes||[]).forEach((s,i)=>põe(
-            s.bairro || bairroFixo(`${o.id}|subsede|${i}`),
-            _t('Subsede'), o.id, o.nome));
-        } else {
-          põe(o.bairroSede || bairroFixo(`${o.id}|sede`),
-              _t('Sede (nível {n})', {n:t.sede}), o.id, o.nome);
-          (t.bares||[]).forEach((b,i)=>põe(bairroFixo(`${o.id}|bar|${i}`),
-            _t('Bar (nível {n})', {n:b.nivel||1}), o.id, o.nome));
-          (t.lojas||[]).forEach((l,i)=>põe(bairroFixo(`${o.id}|loja|${i}`),
-            _t('Loja (nível {n})', {n:l.nivel||1}), o.id, o.nome));
-          for(let i=0;i<(t.subsedes||0);i++)
-            põe(bairroFixo(`${o.id}|subsede|${i}`), _t('Subsede'), o.id, o.nome);
+      /* O ENDEREÇO É O DO DOMÍNIO (01/10/2026): com os bairros com dona,
+         sede, bar, loja e subsede de cada torcida estão no bairro que o
+         mapa pinta (TO.dominio.estruturas) — a lista e a planta contam a
+         mesma cidade. Sem o domínio, o sorteio fixo de antes. */
+      const Dm = TO.dominio;
+      if(Dm && Dm.estruturas){
+        const nomeT = tid => tid === e.torcida.id ? e.torcida.nome
+                           : ((TO.mundo.torcida(tid)||{}).nome || tid);
+        for(const st of Dm.estruturas(e, c.id)){
+          const b = bairros.find(x=>x.id === st.bairro) || null;
+          const nossa = st.tid === e.torcida.id;
+          const t = nossa ? null : (e.mundoTorcidas||{})[st.tid];
+          const ob = st.obj || {};
+          const rot = st.tipo === 'sede'
+              ? (nossa ? (e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'))
+                       : t && t.sede ? _t('Sede (nível {n})', {n:t.sede}) : _t('Sede'))
+            : st.tipo === 'bar' ? _t('Bar (nível {n})', {n:ob.nivel||1})
+            : st.tipo === 'loja' ? _t('Loja (nível {n})', {n:ob.nivel||1})
+            : st.tipo === 'subsede' ? _t('Subsede')
+            : _t('Subsede de fora (nível {n} · núcleo {m})', {n:ob.nivel||1,
+                 m: nossa ? e.membros.filter(m=>m.filial === c.id).length : (ob.membros||0)});
+          põe(b, rot, st.tid, nomeT(st.tid));
         }
+      } else {
+        for(const o of TO.mundo.torcidasEm(c.id)){
+          if(o.incompleta) continue;
+          const nossa = o.id === e.torcida.id;
+          const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
+          if(!nossa && !t) continue;
+          if(nossa){
+            const bs = TO.mundo.bairroDaSede(e.torcida);
+            põe(bs ? bs.nome : o.bairroSede,
+                e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'), o.id, o.nome);
+            const pat = TO.financeiro.patrimonio(e);
+            (pat.bares||[]).forEach((b,i)=>põe(
+              b.bairro || bairroFixo(`${o.id}|bar|${i}`),
+              _t('Bar (nível {n})', {n:b.nivel}), o.id, o.nome));
+            (pat.lojas||[]).forEach((l,i)=>põe(
+              l.bairro || bairroFixo(`${o.id}|loja|${i}`),
+              _t('Loja (nível {n})', {n:l.nivel}), o.id, o.nome));
+            (pat.subsedes||[]).forEach((s,i)=>põe(
+              s.bairro || bairroFixo(`${o.id}|subsede|${i}`),
+              _t('Subsede'), o.id, o.nome));
+          } else {
+            põe(o.bairroSede || bairroFixo(`${o.id}|sede`),
+                _t('Sede (nível {n})', {n:t.sede}), o.id, o.nome);
+            (t.bares||[]).forEach((b,i)=>põe(bairroFixo(`${o.id}|bar|${i}`),
+              _t('Bar (nível {n})', {n:b.nivel||1}), o.id, o.nome));
+            (t.lojas||[]).forEach((l,i)=>põe(bairroFixo(`${o.id}|loja|${i}`),
+              _t('Loja (nível {n})', {n:l.nivel||1}), o.id, o.nome));
+            for(let i=0;i<(t.subsedes||0);i++)
+              põe(bairroFixo(`${o.id}|subsede|${i}`), _t('Subsede'), o.id, o.nome);
+          }
+        }
+        for(const f of deFora)
+          põe(bairroFixo(`${f.id}|filial`),
+              _t('Subsede de fora (nível {n} · núcleo {m})', {n:f.nivel, m:f.nucleo}),
+              f.id, f.nome);
       }
-      for(const f of deFora)
-        põe(bairroFixo(`${f.id}|filial`),
-            _t('Subsede de fora (nível {n} · núcleo {m})', {n:f.nivel, m:f.nucleo}),
-            f.id, f.nome);
       const ordem = [];
       for(const b of bairros)
         if(b.zona && !ordem.includes(b.zona)) ordem.push(b.zona);
@@ -6448,39 +6478,49 @@
       return cx;
     };
 
+    const nTorcidas = TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length;
+    return {id:c.id, nome:c.nome,
+      sub:`${c.uf || ''}${c.regiao ? ` · ${_t(c.regiao)}` : ''} · `+
+          _tn(nTorcidas, '{n} torcida', '{n} torcidas'),
+      /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): a foto mora em
+         img/cidades/<id>.webp; o manifesto manda — sem foto listada, nem
+         se pede o arquivo (as praças de fora do Brasil não têm) */
+      capa:(TO.dados.capas||{})[c.id] ? IMG('img/cidades/' + c.id + '.webp') : null,
+      abas:[{id:'visao', rot:_t('Visão geral'), montar:abaVisaoC},
+            {id:'torcidas', rot:_t('Torcidas e estruturas'), montar:abaTorcidasC}]};
+  }
+
+  /* o perfil da cidade abre o MAPA com a cidade (01/10/2026); sem o mapa,
+     o modal de antes, com a capa no cabeçalho */
+  function abrirPerfilCidade(id){
+    if(TO.mapaBrasil && TO.mapaBrasil.abrir && (TO.dados.cidades||[]).some(x=>x.id === id)){
+      TO.mapaBrasil.abrir(id);
+      return;
+    }
+    const P = perfilDaCidade(id);
+    if(!P) return;
+    abaPerfilC = 'visao';
+    const corpo = el('div',{class:'perfil-torcida'});
     const pintar = ()=>{
       corpo.innerHTML = '';
       const abas = el('div',{class:'filtros'});
-      for(const [aid, rot] of [['visao','Visão geral'],
-          ['torcidas','Torcidas e estruturas']]){
-        const b = el('button',{class: aid === abaPerfilC ? 'on' : '',
-                               texto: _t(rot)});
-        b.onclick = ()=>{ abaPerfilC = aid; pintar(); };
+      for(const a of P.abas){
+        const b = el('button',{class: a.id === abaPerfilC ? 'on' : '', texto:a.rot});
+        b.onclick = ()=>{ abaPerfilC = a.id; pintar(); };
         abas.appendChild(b);
       }
       corpo.appendChild(abas);
-      corpo.appendChild(abaPerfilC === 'torcidas' ? abaTorcidasC()
-                                                  : abaVisaoC());
+      corpo.appendChild((P.abas.find(a=>a.id === abaPerfilC) || P.abas[0]).montar());
     };
     pintar();
-    const nTorcidas = TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length;
-    modal(c.nome, `${c.uf || ''}${c.regiao ? ` · ${_t(c.regiao)}` : ''} · `+
-      _tn(nTorcidas, '{n} torcida', '{n} torcidas'),
-      corpo);
-    /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): o cabeçalho do
-       perfil vira cartão-postal — a foto mora em img/cidades/<id>.webp
-       e entra por baixo do gradiente; sem arquivo, fica o gradiente
-       escuro de sempre, sem quebrar nada. */
+    modal(P.nome, P.sub, corpo);
     const ov = [...document.querySelectorAll('.tela-cheia')].pop();
     const cab = ov && ov.querySelector('.moldura > header');
-    /* o manifesto manda: sem foto listada, nem se pede o arquivo — as
-       praças de fora do Brasil ainda não têm cartão-postal e não é pra
-       encher o console de 404 por causa disso */
-    if(cab && (TO.dados.capas||{})[c.id]){
+    if(cab && P.capa){
       cab.classList.add('capa-cidade');
       cab.style.backgroundImage =
         'linear-gradient(180deg, rgba(8,9,12,.30), rgba(8,9,12,.86)), '+
-        `url("${IMG('img/cidades/' + c.id + '.webp')}")`;
+        `url("${P.capa}")`;
     }
   }
 
@@ -11130,7 +11170,7 @@
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
     passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
-    abrirPerfilTorcida, abrirPerfilCidade,
+    abrirPerfilTorcida, abrirPerfilCidade, perfilDaCidade,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },

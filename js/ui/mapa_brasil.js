@@ -243,7 +243,10 @@ TO.mapaBrasil = (function(){
       h += `<span style="width:${p.v.toFixed(1)}%;background:${cor}"${claro(cor) ? ' class="claro"' : ''} title="${esc(nome(p.t) + ': ' + Math.round(p.v) + '%')}">${p.v >= 12 ? esc(sigla(p.t)) : ''}</span>`;
     }
     h += `<span class="livre" style="width:${Math.max(0, 100 - soma).toFixed(1)}%"></span><em class="meio"></em></div>`;
-    h += '<ul class="mb-partes">' + b.partes.slice(0, 4).map(p =>
+    /* todas as torcidas com barra no bairro, não só a dona (o dono,
+       01/10/2026: "a porcentagem das demais torcidas não-dominantes do
+       bairro") */
+    h += '<ul class="mb-partes">' + b.partes.filter(p => p.v >= 0.5).map(p =>
       `<li><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${Math.round(p.v)}%</b></li>`).join('') + '</ul>';
     if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa se refaz até 80%.', {nome:nome(b.sede)}))}</p>`;
     /* o que tem nele */
@@ -314,7 +317,9 @@ TO.mapaBrasil = (function(){
         bt.type = 'button';
         bt.className = 'mb-bairro' + (b.dono === meu ? ' nosso' : '') + (opc.escolhido === b.id ? ' escolhido' : '') + (claro(cor) ? ' claro' : '');
         bt.style.setProperty('--cor', cor);
-        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + Math.round(b.v) + '%') : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>`;
+        const outras = b.partes.filter(p => p.t !== b.dono && p.v >= 1).slice(0, 3).map(p => sigla(p.t) + ' ' + Math.round(p.v) + '%').join(' · ');
+        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + Math.round(b.v) + '%') : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>` +
+                       (outras ? `<small class="mb-outras">${esc(outras)}</small>` : '');
         bt.onclick = () => opc.aoEscolher && opc.aoEscolher(b.id);
         zona.appendChild(bt);
       }
@@ -331,7 +336,7 @@ TO.mapaBrasil = (function(){
   function abrir(cid){
     const e = E();
     if(!e) return;
-    vista = {aba: cid ? 'cidade' : 'cidade', cidade: cid || e.torcida.mapa, bairro:null};
+    vista = {aba:'cidade', cidade: cid || e.torcida.mapa, bairro:null, lado:'bairros'};
     if(!raiz){
       raiz = document.createElement('div');
       raiz.className = 'mb-painel';
@@ -368,7 +373,7 @@ TO.mapaBrasil = (function(){
     const corpo = raiz.querySelector('.mb-corpo');
     if(vista.aba === 'brasil'){
       corpo.className = 'mb-corpo mb-corpo-brasil';
-      const escolher = cid => { vista.cidade = cid; vista.bairro = null; vista.aba = 'cidade'; pintar(); };
+      const escolher = cid => { vista.cidade = cid; vista.bairro = null; vista.aba = 'cidade'; vista.lado = 'bairros'; pintar(); };
       const m = document.createElement('div'); m.className = 'mb-mapa';
       m.appendChild(svgDoBrasil({aoEscolher:escolher, escolhida:vista.cidade}));
       corpo.appendChild(m);
@@ -376,7 +381,7 @@ TO.mapaBrasil = (function(){
       return;
     }
     corpo.className = 'mb-corpo mb-corpo-cidade';
-    const aoEscolher = bid => { vista.bairro = bid; pintar(); };
+    const aoEscolher = bid => { vista.bairro = bid; vista.lado = 'bairros'; pintar(); };
     /* A PLANTA DA CIDADE (o dono, 01/10/2026: "o mapa 2d que acabamos de
        construir na versão 3d"): a praça desenhada como no jogo 3D, com a
        dona de cada bairro por cima (js/ui/mapa_planta.js); sem a planta
@@ -388,9 +393,42 @@ TO.mapaBrasil = (function(){
       corpo.appendChild(pl);
     } else corpo.appendChild(quadro(vista.cidade, {escolhido:vista.bairro, aoEscolher}));
     const lado = document.createElement('div'); lado.className = 'mb-lado';
-    lado.appendChild(legenda(vista.cidade));
-    lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar,
-      aoAviso: (t, ok) => { if(TO.tela && TO.tela.aviso) TO.tela.aviso(t, ok ? 'boa' : 'ruim'); }}));
+    /* O PERFIL DA CIDADE MORA AQUI (o dono, 01/10/2026: "as informações
+       contidas no perfil da cidade, inclusive a foto, devem encaixar de
+       alguma forma na tela do mapa"): a capa com a foto, o nome e a linha
+       de baixo em cima da coluna; embaixo, as abas — os bairros (quem
+       domina, o cartão do bairro) e as duas do perfil (main.js,
+       `perfilDaCidade`) */
+    const P = TO.tela && TO.tela.perfilDaCidade ? TO.tela.perfilDaCidade(vista.cidade) : null;
+    if(P){
+      const capa = document.createElement('div');
+      capa.className = 'mb-capa' + (P.capa ? ' com-foto' : '');
+      if(P.capa) capa.style.backgroundImage = `linear-gradient(180deg, rgba(8,9,12,.25), rgba(8,9,12,.88)), url("${P.capa}")`;
+      capa.innerHTML = `<h3>${esc(P.nome)}</h3><small>${esc(P.sub)}</small>`;
+      lado.appendChild(capa);
+      const abas = document.createElement('div');
+      abas.className = 'mb-lado-abas'; abas.setAttribute('role', 'tablist');
+      for(const [id, rot] of [['bairros', _t('Bairros')]].concat(P.abas.map(a => [a.id, a.rot]))){
+        const b = document.createElement('button');
+        b.type = 'button'; b.setAttribute('role', 'tab');
+        b.setAttribute('aria-selected', String(vista.lado === id));
+        b.textContent = rot;
+        b.onclick = () => { vista.lado = id; pintar(); };
+        abas.appendChild(b);
+      }
+      lado.appendChild(abas);
+    }
+    const aba = P && P.abas.find(a => a.id === vista.lado);
+    if(aba){
+      const cx = document.createElement('div');
+      cx.className = 'mb-perfil perfil-torcida';
+      cx.appendChild(aba.montar());
+      lado.appendChild(cx);
+    } else {
+      lado.appendChild(legenda(vista.cidade));
+      lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar,
+        aoAviso: (t, ok) => { if(TO.tela && TO.tela.aviso) TO.tela.aviso(t, ok ? 'boa' : 'ruim'); }}));
+    }
     corpo.appendChild(lado);
   }
 

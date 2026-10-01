@@ -8457,6 +8457,29 @@ Cada bairro tem uma barra de 0 a 100 repartida entre as torcidas; **dona é quem
 
 **A torcida do clube mora nos bairros** (`js/mundo/dominio.js`): o total do clube na praça é o do jogo, e ele se reparte pelo peso de cada bairro — a gente do bairro pela classe (favela 1,3, Baixa 1,15, Média 1, Nobre 0,8), uns 85% na cidade do clube (o bairro de outra cidade pesa 0,08; o clube de fora pesa igual em todo bairro), o reduto da sede de uma organizada do clube ×1,6 e a zona dela ×1,25, e uma variação fixa de até 15%. Bar, loja e subsede rendem de ×0,5 a ×1,5 pela presença do clube no bairro, e o ganho na barra do domínio vale de ×0,4 a ×1,3; a organizada começa nos bairros da cidade dela onde o clube tem mais gente. Detalhes e medidas do mapa: `docs/JOGO_3D.md` §34.
 
+## O perfil da cidade mora no mapa, e as outras torcidas do bairro aparecem (pedido do dono, 01/10/2026)
+
+O dono: "As informações contidas no perfil da cidade, inclusive a foto, devem encaixar de alguma forma na tela do mapa também, e agora quando clicar no perfil da cidade vai redirecionar pra tela do mapa com a cidade aberta." E, no meio do trabalho: "preciso que a porcentagem das demais torcidas não-dominantes do bairro apareçam também."
+
+- **O clique no nome de uma cidade abre o Mapa nela**, em qualquer lugar do jogo (o `.c-link` do feed, das tabelas, dos perfis). O modal antigo só abre se o mapa não existir.
+- **A coluna do lado do mapa** tem em cima a capa da cidade: a foto de `img/cidades/<id>.webp` (quando o manifesto das capas tem), o nome, a UF, a região e o número de torcidas. Embaixo, três abas:
+  - **Bairros:** quem domina e o cartão do bairro (a de antes). O clique num bairro volta pra ela.
+  - **Visão geral** e **Torcidas e estruturas:** as duas do perfil, montadas pelo mesmo código. O `main.js` ganhou `perfilDaCidade(id)` (exportado em `TO.tela`), que devolve o nome, a linha de baixo, a capa e as abas, e é usado pelo mapa e pelo modal.
+- **O endereço das estruturas é o do domínio.** Na lista por zona de "Torcidas e estruturas", sede, bar, loja e subsede de cada torcida saíam de um sorteio fixo próprio, que não batia com o bairro onde o domínio as põe. Agora a lista lê `TO.dominio.estruturas` e conta a mesma cidade que a planta pinta. Sem o domínio, fica o sorteio de antes.
+- **O perfil de torcida aberto de dentro do mapa** fica por cima dele (o modal sobe de z-index 55 pra 75 com o mapa aberto).
+- **As torcidas que não dominam o bairro** aparecem nos três lugares:
+  - na planta, uma terceira linha embaixo da dona com até três delas ("TUF 14% · TFC 5%"), só as de 1% pra cima; no bairro em disputa, as maiores;
+  - no cartão do bairro, todas as que têm barra, e não mais só quatro;
+  - no quadro de bairros por zona (as praças sem planta).
+  De longe, o rótulo que não cabe espera o zoom.
+- **O pacote de arquivo único:** o dono não precisa mais que ele caiba no artifact ("confiro tudo via link"). Fica como está.
+- **Testado** (Playwright):
+  - o `.c-link` de Fortaleza no feed abre o mapa na cidade;
+  - as três abas pintam;
+  - o perfil de torcida aberto lá de dentro fica por cima;
+  - sem erro de página;
+  - i18n sem falta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
