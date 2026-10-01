@@ -244,6 +244,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
         <label><input type="checkbox" id="c-arvores" checked> Árvores</label>
         <label><input type="checkbox" id="c-props" checked> Postes e props</label>
         <label><input type="checkbox" id="c-carros" checked> Carros</label>
+        <label><input type="checkbox" id="c-bairros" checked> Bairros</label>
       </div>
     </div>
   </header>
@@ -282,23 +283,23 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=c41040cf8a';
-import { montarModelos } from './js/modelos3d.js?v=c41040cf8a';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=c41040cf8a';
-import { ATLAS } from './js/modelos_atlas.js?v=c41040cf8a';
-import { Construtor, sorteio } from './js/construtor3d.js?v=c41040cf8a';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=c41040cf8a';
-import { montarSede, nivelQueCabe } from './js/sede3d.js?v=c41040cf8a';
-import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=c41040cf8a';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=c41040cf8a';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=c41040cf8a';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=c41040cf8a';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=c41040cf8a';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=c41040cf8a';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=c41040cf8a';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=c41040cf8a';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=c41040cf8a';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=c41040cf8a';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js?v=4d709b8162';
+import { montarModelos } from './js/modelos3d.js?v=4d709b8162';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=4d709b8162';
+import { ATLAS } from './js/modelos_atlas.js?v=4d709b8162';
+import { Construtor, sorteio } from './js/construtor3d.js?v=4d709b8162';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M } from './js/proposta.js?v=4d709b8162';
+import { montarSede, nivelQueCabe } from './js/sede3d.js?v=4d709b8162';
+import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=4d709b8162';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=4d709b8162';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=4d709b8162';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=4d709b8162';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js?v=4d709b8162';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=4d709b8162';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=4d709b8162';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=4d709b8162';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=4d709b8162';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js?v=4d709b8162';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -315,21 +316,25 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=c41040cf8a');
-  await carregarScript('dados/times.js?v=c41040cf8a');
-  await carregarScript('dados/cena_estadio.js?v=c41040cf8a');
-  await carregarScript('dados/cidades.js?v=c41040cf8a');
-  await carregarScript('dados/estadios.js?v=c41040cf8a');
-  await carregarScript('dados/escudos.js?v=c41040cf8a');
+  await carregarScript('dados/torcidas.js?v=4d709b8162');
+  await carregarScript('dados/times.js?v=4d709b8162');
+  await carregarScript('dados/cena_estadio.js?v=4d709b8162');
+  await carregarScript('dados/cidades.js?v=4d709b8162');
+  await carregarScript('dados/estadios.js?v=4d709b8162');
+  await carregarScript('dados/escudos.js?v=4d709b8162');
   /* o manifesto das faixas de verdade (a arte do dono, 29/09/2026): a arquibancada estende a da torcida */
-  await carregarScript('dados/faixas.js?v=c41040cf8a').catch(() => {});
+  await carregarScript('dados/faixas.js?v=4d709b8162').catch(() => {});
+  /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): as sedes repetidas num
+     bairro saem espalhadas (nos dados, na carga) e os bares ganham o
+     bairro deles — o mesmo módulo do jogo (js/mundo/dominio.js) */
+  await carregarScript('js/dominio.js?v=4d709b8162').catch(() => {});
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=c41040cf8a').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=4d709b8162').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -577,8 +582,14 @@ function escalaDoMapa() {
    distância da maior ao estádio (a praça sem rival fica com a regra
    antiga). São no máximo nove torcidas em nove espaços: a busca passa
    por todas as distribuições que cabem, e devolve as `quantas` melhores */
-function melhoresSedes(S, lista, quantas = 300) {
+/* A ZONA MANDA PRIMEIRO (o domínio dos bairros, 30/09/2026): com os
+   bairros dos dados no mapa, a sede fica no gomo da zona do bairro dela
+   (`zonas`: a zona de cada torcida de S e a de cada espaço). A nota de uma
+   distribuição começa por quantas sedes ficaram fora da zona; entre as
+   que empatam nisso, vale a régua das rivais de sempre. */
+function melhoresSedes(S, lista, quantas = 300, zonas = null) {
   const n = lista.length, k = S.length;
+  const fz = (i, e) => zonas ? zonas.custo(i, e) : 0;
   const c = lista.map(centroDe);
   const d = (i, j) => Math.hypot(c[i][0] - c[j][0], c[i][1] - c[j][1]);
   const E1 = estadios[0] || estadioDeHoje, est = c.map(([x, y]) => Math.hypot(x - P.CX - E1.dx, y - P.CY - E1.dy));
@@ -587,12 +598,13 @@ function melhoresSedes(S, lista, quantas = 300) {
      (as mais fortes primeiro: S vem do maior nível e do maior poder) */
   let q5 = lista.filter(x => x.inteira).length;
   const cabe = S.map(T => { const quer = T.nivel >= 5 && q5-- > 0; return lista.map(x => (T.nivel === 1 || x.e.cabe > 1) && (!quer || !!x.inteira)); });
-  const melhorQue = (a, b) => a.maior !== b.maior ? a.maior > b.maior : a.todas !== b.todas ? a.todas > b.todas : a.soma > b.soma + 1e-6;
+  const melhorQue = (a, b) => Math.abs(a.fora - b.fora) > 1e-6 ? a.fora < b.fora : a.maior !== b.maior ? a.maior > b.maior : a.todas !== b.todas ? a.todas > b.todas : a.soma > b.soma + 1e-6;
   const topo = [];
   const atrib = new Array(k), usado = new Array(n).fill(false);
-  const buscar = (i, soma, maior, todas) => {
+  const buscar = (i, soma, maior, todas, fora) => {
+    if (topo.length === quantas && fora > topo[topo.length - 1].fora + 1e-6) return;
     if (i === k) {
-      const nota = { soma, maior, todas };
+      const nota = { soma, maior, todas, fora };
       if (topo.length === quantas && !melhorQue(nota, topo[topo.length - 1])) return;
       let p = topo.length;
       while (p > 0 && melhorQue(nota, topo[p - 1])) p--;
@@ -613,11 +625,11 @@ function melhoresSedes(S, lista, quantas = 300) {
       }
       /* a distância vai arredondada a 1 m, pra o empate valer entre as quase iguais */
       usado[e] = true; atrib[i] = e;
-      buscar(i + 1, soma + ganho, Math.round(ma / M) * M, Math.round(to / M) * M);
+      buscar(i + 1, soma + ganho, Math.round(ma / M) * M, Math.round(to / M) * M, fora + fz(i, e));
       usado[e] = false;
     }
   };
-  buscar(0, 0, Infinity, Infinity);
+  buscar(0, 0, Infinity, Infinity, 0);
   return topo;
 }
 /* CASAR cada linha com uma coluna pelo menor custo total (o método
@@ -651,15 +663,22 @@ function casar(custo) {
    torcidas com bar que serve (longe da sede e das rivais) e, entre essas
    distribuições, o bar mais perto da própria sede; o que não serve paga
    pelo quanto falta. Devolve quantas torcidas ficaram com bar fora da regra */
-function escolherBares(ts, lp, lr) {
+function escolherBares(ts, lp, lr, mapa) {
   for (const x of bares) x.dono = null;
   for (const T of ts) T.bares = [];
   const dist = (x, [cx, cy]) => Math.hypot(x.b.x - cx, x.b.y - cy) / M;
   const linhas = [];
+  /* O BAR NO BAIRRO DELE (o domínio dos bairros, 30/09/2026): com os
+     bairros da praça montados (`mapa`), cada bar leva o bairro que o jogo
+     diz, e o lote de bar dentro desse bairro ganha de todos os outros —
+     antes mesmo da distância das sedes (o bairro é o que a receita e o
+     mapa do jogo leem) */
+  const alvos = new Map(mapa && SETORES ? ts.map(T => [T, bairrosDosBares(T, mapa)]) : []);
   /* (a torcida do jogador sem sede também tem o bar que comprou: sem a
      casa, ele só foge das rivais) */
   for (const T of ts) if (T.sede || (T.id === TORCIDA_DO_JOGO && BARES_DO_JOGO[T.id] != null)) for (let q = 0; q < (T.nBares ?? 1); q++)
-    linhas.push({ T, casa: T.sede ? centroDe(T.sede) : null, rivais: ts.filter(U => U !== T && U.sede && pesoRival(T, U) > 0).map(U => centroDe(U.sede)) });
+    linhas.push({ T, casa: T.sede ? centroDe(T.sede) : null, rivais: ts.filter(U => U !== T && U.sede && pesoRival(T, U) > 0).map(U => centroDe(U.sede)),
+                  bairro: (alvos.get(T) || [])[q] || null });
   /* os bares da torcida do jogador primeiro: com menos vaga de bar que
      bar pra pôr, quem fica sem é a IA, não o bar que ele comprou */
   if (TORCIDA_DO_JOGO) linhas.sort((a, b) => (b.T.id === TORCIDA_DO_JOGO) - (a.T.id === TORCIDA_DO_JOGO));
@@ -667,7 +686,13 @@ function escolherBares(ts, lp, lr) {
   if (!usadas.length) return 0;
   const perto = (q, b) => q.casa ? dist(b, q.casa) : 0;
   const falta = (q, b) => Math.max(0, q.casa ? 1 - dist(b, q.casa) / lp : 0, ...q.rivais.map(r => 1 - dist(b, r) / lr));
-  const custo = usadas.map(q => lista.map(b => { const f = falta(q, b); return (f > 0 ? 1e5 + 1e4 * f : 0) + perto(q, b); }));
+  const semBairro = (q, b) => {
+    if (!q.bairro || !SETORES) return 0;
+    if (bairroEm(b.b.x, b.b.y) === q.bairro) return 0;
+    const alvo = SETORES.bairros.find(x => x.id === q.bairro);
+    return 2e5 + (alvo ? Math.hypot(b.b.x - alvo.centro.x, b.b.y - alvo.centro.y) / M * 50 : 0);
+  };
+  const custo = usadas.map(q => lista.map(b => { const f = falta(q, b); return semBairro(q, b) + (f > 0 ? 1e5 + 1e4 * f : 0) + perto(q, b); }));
   let fora = 0;
   casar(custo).forEach((j, i) => {
     const q = usadas[i], x = lista[j];
@@ -731,23 +756,38 @@ function distribuirTorcidas() {
   const escala = escalaDoMapa(), lp = BAR_LONGE_SEDE * escala, lr = BAR_LONGE_RIVAL * escala;
   const poe = atrib => { for (const x of espacos) x.dono = null; for (const T of ts) T.sede = null;
     S.forEach((T, i) => { const x = espacos[atrib[i]]; x.dono = T; T.sede = x; }); };
-  const topo = S.length ? melhoresSedes(S, espacos) : [{ atrib: [], maior: Infinity, todas: Infinity }];
+  /* A SEDE NA ZONA DELA (o domínio dos bairros, 30/09/2026): a zona do
+     bairro de cada sede e a do gomo de cada espaço vão pra busca, que
+     põe a zona na frente das rivais; depois, das quase tão boas, fica a
+     que deixa menos bar fora da regra */
+  const Q = PROP ? quadroDasZonas() : null;
+  const zonaDaSede = S.map(T => { const b = bairroDaSedeNosDados(T.t, mapa); return b ? b.zona : null; });
+  const cEsp = espacos.map(centroDe);
+  const CZ = Q ? S.map((T, i) => cEsp.map(c => foraDoGomo(c[0], c[1], zonaDaSede[i], Q))) : null;
+  const zonas = CZ ? { custo: (i, e) => CZ[i][e] } : null;
+  const topo = S.length ? melhoresSedes(S, espacos, 300, zonas) : [{ atrib: [], maior: Infinity, todas: Infinity, fora: 0 }];
   const quase = (a, b) => a === Infinity || b >= a * 0.9;
+  const foraDaZona = atrib => CZ ? S.reduce((n, T, i) => n + CZ[i][atrib[i]], 0) : 0;
   let melhor = topo[0].atrib, menos = Infinity;
   for (const t of topo) {
     if (!quase(topo[0].maior, t.maior) || !quase(topo[0].todas, t.todas)) continue;
+    const z = Math.round(foraDaZona(t.atrib) * 100);
+    if (z * 1000 >= menos) continue;
     poe(t.atrib);
-    const fora = escolherBares(ts, lp, lr);
-    if (fora < menos) { menos = fora; melhor = t.atrib; }
-    if (!fora) break;
+    const nota = z * 1000 + escolherBares(ts, lp, lr);
+    if (nota < menos) { menos = nota; melhor = t.atrib; }
+    if (!nota) break;
   }
   poe(melhor);
-  escolherBares(ts, lp, lr);
+  /* os bairros, com as sedes no lugar; e os bares, cada um no bairro dele */
+  setorizar(ts, mapa);
+  escolherBares(ts, lp, lr, mapa);
   /* o bar leva a torcida pro modelo 3D: a cor, o letreiro e o fundo dele */
   for (const x of bares) {
     const l = x.b.lote, T = x.dono;
     l.torcida = T ? { cor: T.cor, cor2: T.cor2, cor3: T.cor3, rot: T.sigla } : null;
-    l.placa = T ? 'BAR DO ' + T.sigla : undefined;
+    /* "BAR DA {torcida}", no feminino (o dono, 30/09/2026): é o bar DA torcida */
+    l.placa = T ? 'BAR DA ' + T.sigla : undefined;
     l.placaFundo = T ? T.cor2 : undefined;
     l.placaTinta = T ? corLegivel(T.cor2) : undefined;
     l._plano = undefined;
@@ -832,6 +872,338 @@ function pixacaoDe(l) {
   if (l.pixoCidade) return l.pixoCidade.texto ? l.pixoCidade : null;
   return l.pixacao ? { texto: l.pixacao, tinta: l.pixoTinta || null, torcida: null } : null;
 }
+
+/* ======================================================
+   OS BAIRROS DA PRAÇA (o dono, 30/09/2026: "inicie a setorização dos
+   bairros de acordo com os dados que temos e as zonas também"). A praça
+   tem 8, 12 ou 16 bairros nos dados (dados/cidades.js), o mesmo tanto em
+   cada uma das quatro zonas. Aqui cada bairro vira um pedaço do mapa:
+   · AS ZONAS são os quatro gomos a partir do meio do mapa — Norte em
+     cima, Sul embaixo, Leste à direita, Oeste à esquerda —, na régua do
+     tamanho do mapa (cada gomo pega um quarto).
+   · A SEDE de cada torcida fica no bairro dela (o dos dados; duas sedes
+     no mesmo bairro já vêm espalhadas por js/mundo/dominio.js): o espaço
+     de sede dela é a semente do bairro. A escolha dos espaços prefere,
+     entre as boas pras rivais, a que põe cada sede na zona dela.
+   · O BAIRRO DE FAVELA nasce numa favela do mapa na zona dele; OS OUTROS,
+     nos pontos de bar da zona (o bar fica no bairro que o jogo diz), o
+     mais longe possível das sementes que já existem. Depois as sementes
+     soltas vão pro meio do pedaço delas (três voltas), pra os bairros
+     saírem de tamanho parecido.
+   · CADA QUADRA (e cada favela, e cada estádio) é do bairro da semente
+     mais perto — com multa pra semente de outra zona, que segura os
+     gomos; a quadra da sede é sempre do bairro dela. A rua entre duas
+     quadras fica metade pra cada lado: a divisa cai no meio da rua.
+   O resultado mora em SETORES: a grade de rótulos (uma célula de 4 m) e
+   os bairros, com a semente e o centro de cada um. `bairroEm(x, y)` diz
+   o bairro de um ponto.
+   ====================================================== */
+let SETORES = null;
+const CEL_SETOR = 4 * M;
+/* a cor de cada zona na planta (no jogo, quem pinta é a dona do bairro) */
+const COR_ZONA = { Norte: '#4f7cac', Sul: '#b5654a', Leste: '#c9a227', Oeste: '#5e9c5a' };
+/* A RÉGUA DOS GOMOS é a da ÁREA construída, não a da caixa do mapa: o
+   ponto vira (quanto da cidade fica à esquerda dele, quanto fica acima
+   dele), de 0 a 1 — e os gomos saem do meio desse quadrado. Assim cada
+   zona pega perto de um quarto da cidade, seja ela quadrada (o mapa
+   grande) ou uma faixa comprida (o pequeno) */
+let QUADRO_ZONAS = null;
+function quadroDasZonas() {
+  if (QUADRO_ZONAS && QUADRO_ZONAS.prop === PROP) return QUADRO_ZONAS;
+  const us = unidadesDaPraca().filter(u => !u.estadio), L = PROP.limite, N = 256;
+  const hx = new Float64Array(N + 1), hy = new Float64Array(N + 1);
+  const W = Math.max(1, L.x1 - L.x0), H = Math.max(1, L.y1 - L.y0);
+  const espalha = (h, a0, a1, base, larg, peso) => {
+    const i0 = Math.max(0, Math.floor((a0 - base) / larg * N)), i1 = Math.min(N - 1, Math.floor((a1 - base) / larg * N));
+    const n = Math.max(1, i1 - i0 + 1);
+    for (let i = i0; i <= i1; i++) h[i + 1] += peso / n;
+  };
+  for (const u of us) { espalha(hx, u.x0, u.x1, L.x0, W, u.area); espalha(hy, u.y0, u.y1, L.y0, H, u.area); }
+  for (let i = 1; i <= N; i++) { hx[i] += hx[i - 1]; hy[i] += hy[i - 1]; }
+  const tx = hx[N] || 1, ty = hy[N] || 1;
+  for (let i = 0; i <= N; i++) { hx[i] /= tx; hy[i] /= ty; }
+  QUADRO_ZONAS = { prop: PROP, L, N, W, H, qx: hx, qy: hy, dx: 0, dy: 0, giro: 0 };
+  return QUADRO_ZONAS;
+}
+/* a posição de um ponto na régua da área: [u, v] de 0 a 1 */
+function naRegua(x, y, Q) {
+  const f = (q, t) => { t = Math.max(0, Math.min(1, t)) * Q.N; const i = Math.min(Q.N - 1, Math.floor(t)); return q[i] + (q[i + 1] - q[i]) * (t - i); };
+  return [f(Q.qx, (x - Q.L.x0) / Q.W), f(Q.qy, (y - Q.L.y0) / Q.H)];
+}
+/* o gomo de um ponto: o ângulo dele a partir do meio do mapa (na régua
+   do tamanho do mapa), girado do `giro` dos gomos (o ajuste abaixo) */
+const ANG_ZONA = { Leste: 0, Sul: Math.PI / 2, Oeste: Math.PI, Norte: -Math.PI / 2 };
+function anguloNoMapa(x, y, Q) { const [u, v] = naRegua(x, y, Q); return Math.atan2(v - 0.5 - (Q.dy || 0), u - 0.5 - (Q.dx || 0)) - (Q.giro || 0); }
+function zonaNoMapa(x, y, Q) {
+  Q = Q || quadroDasZonas();
+  const a = anguloNoMapa(x, y, Q), c = Math.cos(a), sn = Math.sin(a);
+  return Math.abs(sn) >= Math.abs(c) ? (sn < 0 ? 'Norte' : 'Sul') : (c > 0 ? 'Leste' : 'Oeste');
+}
+/* o quanto um ponto está fora do gomo da zona: 0 dentro, 1 no gomo oposto
+   (a sede fora da zona prefere ficar perto da divisa certa) */
+function foraDoGomo(x, y, zona, Q) {
+  if (!zona || !(zona in ANG_ZONA)) return 0;
+  const a = anguloNoMapa(x, y, Q), d = Math.abs(Math.atan2(Math.sin(a - ANG_ZONA[zona]), Math.cos(a - ANG_ZONA[zona])));
+  return Math.max(0, d - Math.PI / 4) / (Math.PI * 3 / 4);
+}
+/* OS GOMOS SE AJEITAM ÀS SEDES: os espaços de sede do mapa são fixos, e às
+   vezes uma zona tem mais sede que espaço no gomo dela. Com as sedes já
+   postas, o meio dos gomos anda até 15% da cidade atrás do encaixe que
+   deixa menos sede fora. Girar, não gira: girar pra caber duas sedes
+   levava a Zona Leste pra baixo do mapa (medido no mapa pequeno) */
+function ajustarGomos(Q0, pontos) {
+  let melhor = Q0, nota = Infinity;
+  const passos = [-0.15, -0.1, -0.05, 0, 0.05, 0.1, 0.15];
+  for (const dx of passos) for (const dy of passos) {
+    const Q = Object.assign({}, Q0, { dx, dy, giro: 0 });
+    let n = (Math.abs(dx) + Math.abs(dy)) * 0.3;
+    for (const p of pontos) n += foraDoGomo(p.x, p.y, p.zona, Q);
+    if (n < nota - 1e-9) { nota = n; melhor = Q; }
+  }
+  return melhor;
+}
+const bairrosDaPraca = mapa => (((TO.dados.cidades || []).find(x => x.id === mapa) || {}).bairros) || [];
+/* o bairro da sede de uma torcida (o espalhado, quando o domínio está carregado) */
+function bairroDaSedeNosDados(t, mapa) {
+  const D = window.TO && TO.dominio;
+  if (D && D.sedeDe) return D.sedeDe(t.id, mapa);
+  const n = slugDe(t.bairroSede || '');
+  return bairrosDaPraca(mapa).find(b => b.id === n || slugDe(b.nome) === n) || null;
+}
+/* os pedaços do mapa que viram bairro: as quadras (as de hoje que ficam e
+   as novas), as favelas, o atacarejo e os estádios. A quadra de hoje vai
+   pelo contorno dela, não pela célula da grade: a da beira é recortada na
+   guia da avenida da beira, e o resto da célula — a orla, a areia e o
+   mar, ou o mato da praça sem praia — não é bairro (01/10/2026: o mapa
+   do jogo pintava o bairro por cima do mato de São Paulo) */
+function unidadesDaPraca() {
+  const us = [];
+  const poe = (r, extra) => us.push(Object.assign({ x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }, extra || {}));
+  const areaDe = p => { let a = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++) a += (p[j][0] - p[i][0]) * (p[j][1] + p[i][1]); return Math.abs(a) / 2; };
+  for (const q of K.QUADRAS) {
+    if (PROP.substitui.has(q.i + ',' + q.j)) continue;
+    if (!q.pol || q.pol.length < 3) { poe(q); continue; }
+    const a = areaDe(q.pol);
+    if (a < (8 * M) ** 2) continue;                       // (a ponta que sobrou da quadra cortada pela costa)
+    poe(bbox(q.pol), { pol: q.pol, areaReal: a });
+  }
+  for (const q of PROP.quadras) poe(q);
+  for (const f of PROP.favelas) poe(f.bb, { pol: f.poly, favela: f });
+  if (PROP.ficaFavelaDeHoje && PROP.favelaDeHoje) poe(PROP.favelaDeHoje, { favela: 'hoje' });
+  if (PROP.atacadex) poe(PROP.atacadex.bb);
+  for (const e of estadios) poe(e.bb, { estadio: e });
+  for (const u of us) { u.cx = (u.x0 + u.x1) / 2; u.cy = (u.y0 + u.y1) / 2; u.area = Math.max(1, u.areaReal || (u.x1 - u.x0) * (u.y1 - u.y0)); }
+  return us;
+}
+function setorizar(ts, mapa) {
+  SETORES = null;
+  const bs = bairrosDaPraca(mapa);
+  if (!bs.length || !PROP) return;
+  const pontosSede = [];
+  for (const T of ts) {
+    if (!T.sede) continue;
+    const b = bairroDaSedeNosDados(T.t, mapa), a = T.sede.e.area;
+    if (b) pontosSede.push({ x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, zona: b.zona });
+  }
+  const Q = ajustarGomos(quadroDasZonas(), pontosSede), zonaDe = (x, y) => zonaNoMapa(x, y, Q);
+  const us = unidadesDaPraca();
+  const sem = new Map();                     // bairro → { x, y, fixa, b }
+  const longe = cand => {                    // o ponto mais longe das sementes que já existem
+    /* (sem semente nenhuma ainda, fica o do meio dos candidatos) */
+    const mx = cand.reduce((a, p) => a + p.x, 0) / cand.length, my = cand.reduce((a, p) => a + p.y, 0) / cand.length;
+    let melhor = null, nota = -Infinity;
+    for (const p of cand) {
+      let d = Infinity;
+      for (const s of sem.values()) d = Math.min(d, Math.hypot(p.x - s.x, p.y - s.y));
+      if (d === Infinity) d = -Math.hypot(p.x - mx, p.y - my);
+      if (d > nota) { nota = d; melhor = p; }
+    }
+    return melhor;
+  };
+  /* 1 · as sedes */
+  for (const T of ts) {
+    if (!T.sede) continue;
+    const b = bairroDaSedeNosDados(T.t, mapa);
+    if (!b || sem.has(b.id)) continue;
+    const a = T.sede.e.area;
+    sem.set(b.id, { x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, fixa: true, sede: T, b });
+  }
+  /* 2 · o bairro de favela, numa favela da zona dele */
+  const favs = us.filter(u => u.favela).map(u => ({ x: u.cx, y: u.cy, u }));
+  for (const b of bs) {
+    if (sem.has(b.id) || b.classe !== 'Favela') continue;
+    const cand = favs.filter(p => !p.usada && zonaDe(p.x, p.y) === b.zona);
+    if (!cand.length) continue;
+    const p = longe(cand);
+    p.usada = true;
+    sem.set(b.id, { x: p.x, y: p.y, fixa: true, b });
+  }
+  /* 3 · o resto: nos pontos de bar da zona, depois no meio das quadras dela */
+  const pBar = bares.map(x => ({ x: x.b.x, y: x.b.y }));
+  const pQuadra = us.filter(u => !u.estadio && !u.favela).map(u => ({ x: u.cx, y: u.cy }));
+  for (const z of ['Norte', 'Leste', 'Sul', 'Oeste']) for (const b of bs) {
+    if (b.zona !== z || sem.has(b.id)) continue;
+    const naZona = p => !p.usado && zonaDe(p.x, p.y) === b.zona;
+    let cand = pBar.filter(naZona);
+    if (!cand.length) cand = pQuadra.filter(naZona);
+    /* o gomo sem ponto livre: o ponto mais pro lado da zona (não o mais
+       longe de tudo, que jogava o bairro no canto do outro lado) */
+    if (!cand.length) {
+      const livres = pQuadra.filter(p => !p.usado);
+      const nota = p => foraDoGomo(p.x, p.y, b.zona, Q);
+      cand = livres.length ? [livres.sort((a, c) => nota(a) - nota(c))[0]] : pQuadra;
+    }
+    const p = longe(cand);
+    p.usado = true;
+    sem.set(b.id, { x: p.x, y: p.y, fixa: false, b });
+  }
+  const lista = bs.map(b => Object.assign(sem.get(b.id) || { x: (Q.L.x0 + Q.L.x1) / 2, y: (Q.L.y0 + Q.L.y1) / 2, fixa: false }, { b }));
+  /* a quadra da sede é do bairro da sede */
+  const dentro = (u, x, y) => x >= u.x0 && x <= u.x1 && y >= u.y0 && y <= u.y1;
+  const presa = new Map();
+  for (const s of lista) if (s.sede) { const u = us.find(v => dentro(v, s.x, s.y)); if (u) presa.set(u, s); }
+  /* a semente de sede que caiu fora do gomo dela não paga multa: o
+     bairro cresce em volta da sede, do tamanho dos outros */
+  for (const s of lista) s.foraDoGomo = zonaDe(s.x, s.y) !== s.b.zona;
+  const custo = (u, s) => {
+    const d = Math.hypot(u.cx - s.x, u.cy - s.y);
+    return zonaDe(u.cx, u.cy) === s.b.zona || (s.fixa && s.foraDoGomo) ? d : d * 1.6 + 40 * M;
+  };
+  const dar = () => { for (const u of us) { let m = presa.get(u) || null, c = Infinity;
+    if (!m) for (const s of lista) { const k = custo(u, s); if (k < c) { c = k; m = s; } }
+    u.s = m; } };
+  for (let volta = 0; volta < 4; volta++) {
+    dar();
+    if (volta === 3) break;
+    /* as sementes soltas vão pro meio do pedaço delas, sem sair da zona */
+    for (const s of lista) {
+      if (s.fixa) continue;
+      let ax = 0, ay = 0, aw = 0;
+      for (const u of us) if (u.s === s && !u.estadio) { ax += u.cx * u.area; ay += u.cy * u.area; aw += u.area; }
+      if (aw && zonaDe(ax / aw, ay / aw) === s.b.zona) { s.x = ax / aw; s.y = ay / aw; }
+    }
+  }
+  /* NENHUM BAIRRO SEM CHÃO (01/10/2026: no mapa pequeno do Interior do RS
+     a Uruguaiana ficava sem quadra nenhuma — a zona dela tinha mais bairro
+     que pedaço): o bairro vazio toma, do bairro que tem mais pedaços, o
+     pedaço mais perto da semente dele (nunca o da sede nem o estádio) */
+  for (let vez = 0; vez < lista.length; vez++) {
+    const conta = new Map(lista.map(s => [s, 0]));
+    for (const u of us) if (u.s) conta.set(u.s, conta.get(u.s) + 1);
+    const vazio = lista.find(s => !conta.get(s));
+    if (!vazio) break;
+    let melhor = null, d = Infinity;
+    for (const u of us) {
+      if (u.estadio || presa.has(u) || !u.s || conta.get(u.s) < 2) continue;
+      const e = Math.hypot(u.cx - vazio.x, u.cy - vazio.y) + (conta.get(u.s) > 2 ? 0 : 60 * M);
+      if (e < d) { d = e; melhor = u; }
+    }
+    if (!melhor) break;
+    melhor.s = vazio;
+  }
+  /* a grade de rótulos: cada célula de 4 m do pedaço que ela cai; a rua
+     entre dois pedaços fica com o mais perto (até ~28 m de qualquer um) */
+  const L = { x0: Math.min(...us.map(u => u.x0)) - 8 * CEL_SETOR, y0: Math.min(...us.map(u => u.y0)) - 8 * CEL_SETOR,
+              x1: Math.max(...us.map(u => u.x1)) + 8 * CEL_SETOR, y1: Math.max(...us.map(u => u.y1)) + 8 * CEL_SETOR };
+  const nx = Math.ceil((L.x1 - L.x0) / CEL_SETOR), ny = Math.ceil((L.y1 - L.y0) / CEL_SETOR);
+  const rot = new Int16Array(nx * ny).fill(-1);
+  const idx = new Map(lista.map((s, k) => [s, k]));
+  const noPoligono = (x, y, pts) => {
+    let c = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const [xi, yi] = pts[i], [xj, yj] = pts[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c;
+    }
+    return c;
+  };
+  /* os estádios e as favelas primeiro, as quadras por cima (a quadra manda no que é dela) */
+  const ordem = us.slice().sort((a, b) => (b.estadio ? 2 : b.favela ? 1 : 0) - (a.estadio ? 2 : a.favela ? 1 : 0));
+  for (const u of ordem) {
+    const k = idx.get(u.s);
+    const i0 = Math.max(0, Math.floor((u.x0 - L.x0) / CEL_SETOR)), i1 = Math.min(nx - 1, Math.floor((u.x1 - L.x0) / CEL_SETOR));
+    const j0 = Math.max(0, Math.floor((u.y0 - L.y0) / CEL_SETOR)), j1 = Math.min(ny - 1, Math.floor((u.y1 - L.y0) / CEL_SETOR));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const x = L.x0 + (i + 0.5) * CEL_SETOR, y = L.y0 + (j + 0.5) * CEL_SETOR;
+      if (x < u.x0 || x > u.x1 || y < u.y0 || y > u.y1) continue;
+      if (u.pol && !noPoligono(x, y, u.pol)) continue;
+      rot[j * nx + i] = k;
+    }
+  }
+  /* a rua: a célula vazia herda do vizinho rotulado mais perto, em ondas —
+     só pela rua e pela calçada (o mato em volta do estádio e da favela, a
+     areia e o mar não viram bairro) */
+  const C = CALCADAS;
+  const ehRua = (x, y) => x <= K.xLimiteCosta(y) && (!C || C.ehAsfalto(x, y) || C.naLaje(x, y) || C.naCalcadaPintada(x, y));
+  const podeRua = new Map();
+  const rua = v => {
+    let r = podeRua.get(v);
+    if (r === undefined) { const i = v % nx, j = (v - i) / nx; podeRua.set(v, r = ehRua(L.x0 + (i + 0.5) * CEL_SETOR, L.y0 + (j + 0.5) * CEL_SETOR)); }
+    return r;
+  };
+  let frente = [];
+  for (let c = 0; c < rot.length; c++) if (rot[c] >= 0) frente.push(c);
+  for (let onda = 0; onda < 7 && frente.length; onda++) {
+    const prox = [], novos = [];
+    for (const c of frente) {
+      const i = c % nx, j = (c - i) / nx;
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const a = i + di, b = j + dj;
+        if (a < 0 || b < 0 || a >= nx || b >= ny) continue;
+        const v = b * nx + a;
+        if (rot[v] >= 0 || !rua(v)) continue;
+        novos.push([v, rot[c]]);
+      }
+    }
+    for (const [v, k] of novos) if (rot[v] < 0) { rot[v] = k; prox.push(v); }
+    frente = prox;
+  }
+  /* o centro de cada bairro (a célula dele mais perto da média) e de cada zona */
+  const soma = lista.map(() => ({ x: 0, y: 0, n: 0 }));
+  for (let c = 0; c < rot.length; c++) { const k = rot[c]; if (k < 0) continue;
+    const i = c % nx, j = (c - i) / nx; soma[k].x += i; soma[k].y += j; soma[k].n++; }
+  const centro = k => {
+    const m = soma[k];
+    if (!m.n) return { x: lista[k].x, y: lista[k].y };
+    const mi = m.x / m.n, mj = m.y / m.n;
+    let melhor = null, d = Infinity;
+    for (let c = 0; c < rot.length; c++) if (rot[c] === k) {
+      const i = c % nx, j = (c - i) / nx, e = (i - mi) ** 2 + (j - mj) ** 2;
+      if (e < d) { d = e; melhor = [i, j]; }
+    }
+    return { x: L.x0 + (melhor[0] + 0.5) * CEL_SETOR, y: L.y0 + (melhor[1] + 0.5) * CEL_SETOR };
+  };
+  const bairros = lista.map((s, k) => ({ id: s.b.id, nome: s.b.nome, zona: s.b.zona, classe: s.b.classe, k,
+    sede: s.sede ? s.sede.id : null, semente: { x: s.x, y: s.y }, centro: centro(k), celulas: soma[k].n,
+    zonaCerta: zonaDe(s.x, s.y) === s.b.zona }));
+  const zonas = {};
+  for (const z of ['Norte', 'Sul', 'Leste', 'Oeste']) {
+    const bz = bairros.filter(b => b.zona === z && b.celulas);
+    const n = bz.reduce((a, b) => a + b.celulas, 0);
+    zonas[z] = n ? { x: bz.reduce((a, b) => a + b.centro.x * b.celulas, 0) / n, y: bz.reduce((a, b) => a + b.centro.y * b.celulas, 0) / n } : null;
+  }
+  SETORES = { mapa, cel: CEL_SETOR, x0: L.x0, y0: L.y0, nx, ny, rot, bairros, zonas, quadro: Q };
+}
+/* o bairro de um ponto do mapa (o id dos dados), ou null fora da cidade */
+function bairroEm(x, y) {
+  const S = SETORES;
+  if (!S) return null;
+  const i = Math.floor((x - S.x0) / S.cel), j = Math.floor((y - S.y0) / S.cel);
+  if (i < 0 || j < 0 || i >= S.nx || j >= S.ny) return null;
+  const k = S.rot[j * S.nx + i];
+  return k >= 0 ? S.bairros[k].id : null;
+}
+/* os bairros de cada bar da torcida, na ordem dos bares do jogo (o save
+   do jogador, o mundo vivo das IAs; sem o jogo, o bairro padrão) */
+function bairrosDosBares(T, mapa) {
+  const D = window.TO && TO.dominio;
+  if (!D || !D.estruturas) return [];
+  const E = TO.estado && TO.estado.E && TO.estado.E.torcida ? TO.estado.E : null;
+  try { return D.estruturas(E, mapa).filter(s => s.tid === T.id && s.tipo === 'bar').map(s => s.bairro); }
+  catch (e) { return []; }
+}
+/* AS CORES DOS BAIRROS no mapa: sem o jogo, a cor da zona; o jogo põe a
+   da dona de cada bairro (`coresDosBairros`) */
+let CORES_DOS_BAIRROS = null, ROTULO_DO_BAIRRO = null;
 
 /* A SEDE NO ESPAÇO: o modelo novo da sede (js/sede3d.js), que refaz as
    paredes e as portas da sede da planta na fatia do espaço, virada pra
@@ -1850,14 +2222,19 @@ function montarCalcadas() {
     }
   }
   C.pedacos = [...pedacos.values()];
+  C.orla = orlaDaPraca();
   CALCADAS = C;
 }
+/* a calçada da beira da areia é da praça de praia (a de lagoa não tem):
+   duas praças do mesmo mapa podem diferir nisso */
+function orlaDaPraca() { return temPraia() && !temLagoa(); }
 /* troca o mapa (se a variante mudou) e põe as torcidas da praça nele; o
    nome dos estádios é da praça, então sai sempre de novo */
 function usarMapa(modo) {
   const novo = propostaDe(modo);
   const mudou = novo !== PROP;
   if (mudou) { PROP = novo; montarDerivados(); }
+  else if (CALCADAS && CALCADAS.orla !== orlaDaPraca()) montarCalcadas();
   const nomes = nomesDosEstadios();
   for (const e of estadios) e.nome = nomes[e.vaga - 1];
   estadioDeHoje.nome = nomes[0];
@@ -1874,7 +2251,7 @@ let pintandoChao = null;
 const mapa = $('mapa');
 const estado = {
   modo: 'atual', s: 0.1, ox: 0, oy: 0, larg: 1, alt: 1, dpr: 1,
-  camadas: { rotulos: true, grade: true, arvores: true, props: true, carros: true },
+  camadas: { rotulos: true, grade: true, arvores: true, props: true, carros: true, bairros: true },
   sel: null, sobre: null
 };
 const LIM_ATUAL = { x0: 120, y0: 150, x1: 4700, y1: 5420 };
@@ -2643,6 +3020,8 @@ function desenhar() {
     pol(it.pol, COR_FAVELA[it.l.tipo] || COR_FAVELA.casa);
     ctx.strokeStyle = '#222'; ctx.lineWidth = px(0.9); ctx.stroke();
   }
+  /* ---- os bairros: a cor (da zona; no jogo, da dona) e a divisa ---- */
+  if (prop) desenharBairros(vis, px);
   /* ---- árvore, carro, poste e prop ---- */
   if (estado.camadas.arvores) {
     ctx.fillStyle = COR.arvore;
@@ -2966,6 +3345,72 @@ function rotuloDoLote(l) {
   if (pc && pc.tipo === 'baldio') return 'baldio ' + (l.frente || '');
   return (NOME_TIPO[l.tipo] || l.tipo).toLowerCase() + ' ' + (l.frente || '') + (m ? ' ' + m : '');
 }
+/* OS BAIRROS NO MAPA (o dono, 30/09/2026): a cor por cima das quadras,
+   meio transparente — a da zona na planta, a da dona do bairro no jogo
+   (`coresDosBairros`) —, e a divisa no meio da rua: fina entre dois
+   bairros, grossa entre duas zonas */
+function desenharBairros(vis, px) {
+  const S = SETORES;
+  if (!S || !estado.camadas.bairros) return;
+  const cor = S.bairros.map(b => (CORES_DOS_BAIRROS && CORES_DOS_BAIRROS(b.id)) || { cor: COR_ZONA[b.zona] || '#888', alfa: 0.2 });
+  const i0 = Math.max(0, Math.floor((vis.x0 - S.x0) / S.cel) - 1), i1 = Math.min(S.nx - 1, Math.ceil((vis.x1 - S.x0) / S.cel) + 1);
+  const j0 = Math.max(0, Math.floor((vis.y0 - S.y0) / S.cel) - 1), j1 = Math.min(S.ny - 1, Math.ceil((vis.y1 - S.y0) / S.cel) + 1);
+  if (i0 > i1 || j0 > j1) return;
+  const em = (i, j) => S.rot[j * S.nx + i];
+  for (let j = j0; j <= j1; j++) {
+    let i = i0;
+    while (i <= i1) {
+      const k = em(i, j);
+      let e = i + 1;
+      while (e <= i1 && em(e, j) === k) e++;
+      const c = k >= 0 ? cor[k] : null;
+      if (c && c.alfa > 0) {
+        ctx.globalAlpha = c.alfa; ctx.fillStyle = c.cor;
+        ctx.fillRect(S.x0 + i * S.cel, S.y0 + j * S.cel, (e - i) * S.cel + 0.5, S.cel + 0.5);
+      }
+      i = e;
+    }
+  }
+  ctx.globalAlpha = 1;
+  const divisa = grossa => {
+    ctx.beginPath();
+    const zonaDe = k => k >= 0 ? S.bairros[k].zona : null;
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const k = em(i, j);
+      if (i < i1) {
+        const d = em(i + 1, j);
+        if (d !== k && (k >= 0 && d >= 0 && zonaDe(k) !== zonaDe(d)) === grossa) {
+          const x = S.x0 + (i + 1) * S.cel; ctx.moveTo(x, S.y0 + j * S.cel); ctx.lineTo(x, S.y0 + (j + 1) * S.cel);
+        }
+      }
+      if (j < j1) {
+        const d = em(i, j + 1);
+        if (d !== k && (k >= 0 && d >= 0 && zonaDe(k) !== zonaDe(d)) === grossa) {
+          const y = S.y0 + (j + 1) * S.cel; ctx.moveTo(S.x0 + i * S.cel, y); ctx.lineTo(S.x0 + (i + 1) * S.cel, y);
+        }
+      }
+    }
+    ctx.stroke();
+  };
+  ctx.lineCap = 'square';
+  ctx.strokeStyle = 'rgba(15,15,15,.55)'; ctx.lineWidth = px(1.6); divisa(false);
+  ctx.strokeStyle = 'rgba(10,10,10,.85)'; ctx.lineWidth = px(3.2); divisa(true);
+  /* o bairro escolhido no mapa do jogo (`sel` na cor dele): o contorno em ouro */
+  const ks = cor.findIndex(c => c && c.sel);
+  if (ks >= 0) {
+    ctx.beginPath();
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      if (em(i, j) !== ks) continue;
+      const x0 = S.x0 + i * S.cel, y0 = S.y0 + j * S.cel, x1 = x0 + S.cel, y1 = y0 + S.cel;
+      if (i === 0 || em(i - 1, j) !== ks) { ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); }
+      if (i === S.nx - 1 || em(i + 1, j) !== ks) { ctx.moveTo(x1, y0); ctx.lineTo(x1, y1); }
+      if (j === 0 || em(i, j - 1) !== ks) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); }
+      if (j === S.ny - 1 || em(i, j + 1) !== ks) { ctx.moveTo(x0, y1); ctx.lineTo(x1, y1); }
+    }
+    ctx.strokeStyle = '#d9a441'; ctx.lineWidth = px(3); ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+}
 function desenharRotulos(vis, prop) {
   const s = estado.s;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -2983,6 +3428,33 @@ function desenharRotulos(vis, prop) {
   /* os nomes grandes: equipamento, marco e quadra nova */
   ctx.font = '700 12px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
   const ocupados = [];
+  /* OS BAIRROS: o nome no meio de cada um (e, no jogo, a dona com a barra
+     embaixo); de longe, o nome da zona, grande e claro */
+  if (prop && SETORES && estado.camadas.bairros) {
+    const S = SETORES;
+    ctx.save();
+    ctx.lineJoin = 'round';
+    for (const b of S.bairros) {
+      if (!b.celulas) continue;
+      const [sx, sy] = paraTela(b.centro.x, b.centro.y);
+      if (sx < -120 || sx > estado.larg + 120 || sy < -30 || sy > estado.alt + 30) continue;
+      const t = b.nome.toUpperCase();
+      ctx.font = '700 12px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
+      ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,.82)'; ctx.fillStyle = '#ffffff';
+      ctx.strokeText(t, sx, sy); ctx.fillText(t, sx, sy);
+      let w = ctx.measureText(t).width;
+      const sub = ROTULO_DO_BAIRRO ? ROTULO_DO_BAIRRO(b.id) : null;
+      if (sub) {
+        ctx.font = '600 11px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
+        ctx.strokeText(sub, sx, sy + 13); ctx.fillStyle = '#ffe7a0'; ctx.fillText(sub, sx, sy + 13);
+        w = Math.max(w, ctx.measureText(sub).width);
+      }
+      ocupados.push({ x: sx, y: sy + (sub ? 6 : 0), w: w + 6 });
+    }
+    ctx.restore();
+    ctx.font = '700 12px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  }
   const etiqueta = (texto, x, y) => {
     const [sx, y0] = paraTela(x, y);
     if (sx < -80 || sx > estado.larg + 80 || y0 < -20 || y0 > estado.alt + 20) return;
@@ -3011,12 +3483,36 @@ function desenharRotulos(vis, prop) {
       for (const it of estacoes) etiqueta('Metrô ' + it.est.nome, (it.bb.x0 + it.bb.x1) / 2, it.est.entra === 'n' ? it.bb.y0 - 90 : it.bb.y1 + 90);
       if (s >= 0.1) for (const x of bares) {
         const T = x.b.lote.torcida;
-        if (T || s >= 0.25) etiqueta(T ? 'Bar do ' + T.rot : 'Bar fechado', x.b.x, x.b.y + (x.b.lote.frente === 'n' ? -60 : 60));
+        if (T || s >= 0.25) etiqueta(T ? 'Bar da ' + T.rot : 'Bar fechado', x.b.x, x.b.y + (x.b.lote.frente === 'n' ? -60 : 60));
       }
       /* as lojas do assalto: o nome da loja na fachada */
       if (s >= 0.1) for (const lj of PROP.lojas || []) etiqueta(NOME_TIPO_LOJA[lj.tipo] + ' · ' + lj.nome, lj.x, lj.y + (lj.lote.frente === 'n' ? -70 : 70));
       for (const it of porticos) etiqueta(it.p.id === 'norte' ? 'Entrada norte' : 'Entrada sul', it.p.x - it.p.dir[0] * 260, it.p.y - it.p.dir[1] * 260);
     }
+  }
+  /* de longe, o nome da zona, grande e claro — por último, no primeiro
+     lugar perto do meio dela que nenhum rótulo ocupa (01/10/2026: posto
+     antes, ele saía tapado pelos nomes dos bairros e pelas etiquetas) */
+  if (prop && SETORES && estado.camadas.bairros && s < 0.16) {
+    ctx.save();
+    ctx.font = '800 21px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
+    ctx.lineJoin = 'round'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const passos = [[0, -24], [0, -52], [0, 8], [0, -80], [0, 36], [-90, -24], [90, -24], [-90, 8], [90, 8], [0, -108], [0, 64]];
+    for (const z of Object.keys(SETORES.zonas)) {
+      const c = SETORES.zonas[z];
+      if (!c) continue;
+      const t = 'ZONA ' + z.toUpperCase(), w = ctx.measureText(t).width + 8;
+      const [cx, cy] = paraTela(c.x, c.y);
+      const livre = passos.map(([dx, dy]) => [cx + dx, cy + dy]).find(([x, y]) => !ocupados.some(o => Math.abs(o.x - x) < (o.w + w) / 2 + 2 && Math.abs(o.y - y) < 23));
+      if (!livre) continue;
+      const [x, y] = livre;
+      ocupados.push({ x, y, w });
+      ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.fillStyle = 'rgba(255,255,255,.42)';
+      ctx.strokeText(t, x, y); ctx.fillText(t, x, y);
+    }
+    ctx.restore();
+    ctx.font = '700 12px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   }
   if (s < 0.55 && s >= 0.12) {
     ctx.font = '600 11px "IBM Plex Mono", monospace';
@@ -3137,7 +3633,7 @@ function passar(sx, sy) {
   if ((it && it.l) !== (estado.sobre && estado.sobre.l) || it !== estado.sobre) { estado.sobre = it && it.tipo !== 'quadra' ? it : null; pedirDesenho(); }
 }
 
-for (const [id, chave] of [['c-rotulos', 'rotulos'], ['c-grade', 'grade'], ['c-arvores', 'arvores'], ['c-props', 'props'], ['c-carros', 'carros']]) {
+for (const [id, chave] of [['c-rotulos', 'rotulos'], ['c-grade', 'grade'], ['c-arvores', 'arvores'], ['c-props', 'props'], ['c-carros', 'carros'], ['c-bairros', 'bairros']]) {
   $(id).addEventListener('change', ev => { estado.camadas[chave] = ev.target.checked; pedirDesenho(); });
 }
 /* os três mapas e o jogo de hoje (a planta como o jogo usa) */
@@ -3191,7 +3687,7 @@ function avenidaCorta(q) {
 }
 function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return null; } }
 function tituloDe(it) {
-  if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar do ' + it.l.torcida.rot : 'Bar fechado';
+  if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar da ' + it.l.torcida.rot : 'Bar fechado';
   if (it.tipo === 'lote' && ehLoja(it.l)) return it.l.loja.nome;
   if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga';
   if (it.tipo === 'estacao' || it.tipo === 'veraneio') return it.nome;
@@ -5484,6 +5980,96 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
    ====================================================== */
 /* o que o cenário pede da planta: a praça e o mapa, a lista do que
    montar, o chão pintado, a ficha. Ele não decide nada do mapa */
+/* O MAPA DE OUTRA PRAÇA (o mapa do Brasil do jogo 3D, 30/09/2026: "onde
+   podemos ver os mapas 2d de qualquer cidade"): monta a outra praça na
+   planta, faz `fn` e devolve tudo como era — a cidade 3D não fica sabendo
+   (ela não é remontada). O que a montagem troca é guardado antes: as
+   variáveis do mapa da vez e os campos que ela escreve nos lotes, nos
+   espaços de sede e nos bares. Quem chama não pode guardar nada da praça
+   de lá fora de `fn`. */
+/* os campos que a montagem de uma praça escreve em objetos que duram de
+   uma praça pra outra (os lotes de hoje, os do mapa da vez, os espaços de
+   sede, os bares, os estádios) */
+function camposDaPraca() {
+  const out = [], poe = (o, ks) => { if (o) for (const k of ks) out.push([o, k]); };
+  for (const it of lotes) { poe(it, ['sobProposta', 'sobSede']); poe(it.l, ['pixoCidade']); }
+  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano']); }
+  for (const it of lotesFavelaNova) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade']); }
+  for (const e of equipamentos) poe(e, ['somePelaProposta']);
+  for (const q of pecasSoltas) poe(q, ['somePelaProposta']);
+  for (const x of espacos) poe(x, ['dono', 'sede', 'montagem', 'bb', 'pol', 'inteira', 'sobra']);
+  for (const x of bares) poe(x, ['dono']);
+  for (const e of estadios) poe(e, ['nome']);
+  poe(estadioDeHoje, ['nome']);
+  return out;
+}
+const unirCampos = (...listas) => {
+  const vistos = new Map(), out = [];
+  for (const l of listas) for (const [o, k] of l) {
+    let ks = vistos.get(o);
+    if (!ks) vistos.set(o, ks = new Set());
+    if (!ks.has(k)) { ks.add(k); out.push([o, k]); }
+  }
+  return out;
+};
+/* a fotografia da praça montada agora: as variáveis do mapa e o valor de
+   cada campo de `alvos` (tinha ou não tinha); `porFotoDaPraca` volta ela */
+function fotoDaPraca(alvos) {
+  return {
+    G: { cidade, PROP, cobertoPelaProposta, fav0, somePelaProposta, lotesNovos, lotesFavelaNova, marcosNovos, somemNaProposta,
+         bares, espacos, lotesVeraneio, porticos, METRO_P, estacoes, estadios, trocadas, carroSome, LIM_PROPOSTA, MUNDO, CALCADAS,
+         ocupacao, SETORES, TORCIDA_DO_JOGO, sel: estado.sel, sobre: estado.sobre },
+    alvos, v: alvos.map(([o, k]) => [Object.prototype.hasOwnProperty.call(o, k), o[k]])
+  };
+}
+function porFotoDaPraca(F) {
+  const G = F.G;
+  cidade = G.cidade; PROP = G.PROP; cobertoPelaProposta = G.cobertoPelaProposta; fav0 = G.fav0; somePelaProposta = G.somePelaProposta;
+  lotesNovos = G.lotesNovos; lotesFavelaNova = G.lotesFavelaNova; marcosNovos = G.marcosNovos; somemNaProposta = G.somemNaProposta;
+  bares = G.bares; espacos = G.espacos; lotesVeraneio = G.lotesVeraneio; porticos = G.porticos; METRO_P = G.METRO_P; estacoes = G.estacoes;
+  estadios = G.estadios; trocadas = G.trocadas; carroSome = G.carroSome; LIM_PROPOSTA = G.LIM_PROPOSTA; MUNDO = G.MUNDO; CALCADAS = G.CALCADAS;
+  ocupacao = G.ocupacao; SETORES = G.SETORES; TORCIDA_DO_JOGO = G.TORCIDA_DO_JOGO; estado.sel = G.sel; estado.sobre = G.sobre;
+  for (let i = F.alvos.length - 1; i >= 0; i--) { const [o, k] = F.alvos[i], [tinha, v] = F.v[i]; if (tinha) o[k] = v; else delete o[k]; }
+}
+const ehOutraPraca = nome => !!nome && nome !== cidade && CIDADES.some(([n]) => n === nome);
+function comPraca(nome, fn) {
+  if (!ehOutraPraca(nome)) return fn();
+  const aqui = fotoDaPraca(camposDaPraca());
+  estado.sel = null; estado.sobre = null;
+  try {
+    cidade = nome;
+    usarMapa(mapaDoPorte(nome));
+    return fn();
+  } finally { porFotoDaPraca(aqui); }
+}
+/* A OUTRA PRAÇA GUARDADA (o mapa do Brasil do jogo 3D, 01/10/2026): a
+   praça de lá montada UMA vez e desenhada quantas vezes o mapa pedir — o
+   arrasto e o zoom redesenham a planta de lá com os rótulos no tamanho de
+   sempre, em vez de esticar uma imagem. A fotografia de lá guarda as
+   variáveis e os campos que a montagem escreveu (também nos objetos que
+   as duas praças dividem, quando o mapa é o mesmo); `com(fn)` põe a de lá
+   só durante `fn` e volta a de agora — e o que `fn` montar sob demanda
+   fica guardado com a de lá. Fora de `com`, a planta é a da cidade 3D. */
+function pracaGuardada(nome) {
+  if (!ehOutraPraca(nome)) return null;
+  const alvosAqui = camposDaPraca(), aqui = fotoDaPraca(alvosAqui);
+  let la = null;
+  estado.sel = null; estado.sobre = null;
+  try {
+    cidade = nome;
+    usarMapa(mapaDoPorte(nome));
+    la = fotoDaPraca(unirCampos(alvosAqui, camposDaPraca()));
+  } finally { porFotoDaPraca(aqui); }
+  return {
+    nome,
+    com(fn) {
+      const agora = fotoDaPraca(la.alvos);
+      porFotoDaPraca(la);
+      try { return fn(); }
+      finally { la = fotoDaPraca(la.alvos); porFotoDaPraca(agora); }
+    }
+  };
+}
 function apiDoCenario() {
   return {
     M, CIDADES: CIDADES.map(([n]) => n), infoDaCidade, mapaDoPorte, MAPA_DO_PORTE, NOME_MAPA,
@@ -5819,6 +6405,32 @@ function apiDoCenario() {
       });
     },
     tituloDe: it => it ? tituloDe(it) : '', fichaDe: it => it ? fichaDe(it) : '',
+    /* OS BAIRROS DA PRAÇA (o domínio dos bairros, 30/09/2026): o id e o
+       nome dos dados, a zona, a classe, a semente e o centro no mundo */
+    bairros() {
+      return SETORES ? SETORES.bairros.map(b => ({ id: b.id, nome: b.nome, zona: b.zona, classe: b.classe, sede: b.sede,
+        centro: { ...b.centro }, semente: { ...b.semente }, celulas: b.celulas, zonaCerta: b.zonaCerta })) : [];
+    },
+    bairroEm: (x, y) => bairroEm(x, y),
+    /* a grade dos bairros da praça de agora (o mapa de outra praça guarda a dela) */
+    setores: () => SETORES,
+    zonas: () => SETORES ? JSON.parse(JSON.stringify(SETORES.zonas)) : null,
+    /* a cor de cada bairro no mapa (`fn(id)` → { cor, alfa }) e a linha de
+       baixo do nome (`fn(id)` → texto); null volta o da planta */
+    coresDosBairros(fn) { CORES_DOS_BAIRROS = typeof fn === 'function' ? fn : null; },
+    rotuloDoBairro(fn) { ROTULO_DO_BAIRRO = typeof fn === 'function' ? fn : null; },
+    camadaBairros(ligada) { if (ligada != null) estado.camadas.bairros = !!ligada; return estado.camadas.bairros; },
+    /* o mapa de OUTRA praça (o mapa do Brasil): `fn(api)` roda com a praça
+       de lá montada na planta (a 3D fica como está) */
+    comPraca: (nome, fn) => comPraca(nome, () => fn(apiDoCenario())),
+    /* a outra praça montada uma vez: `com(fn)` desenha (ou pergunta) nela
+       quantas vezes quiser — null quando é a praça de agora */
+    pracaGuardada(nome) {
+      const g = pracaGuardada(nome);
+      if (!g) return null;
+      const api = apiDoCenario();
+      return { nome: g.nome, com: fn => g.com(() => fn(api)) };
+    },
     aoFechar() { if (estado.sel) vista.mostrar(estado.sel); pedirDesenho(); }
   };
 }
@@ -5832,7 +6444,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=c41040cf8a');
+    const { montarJogo } = await import('./js/jogo3d.js?v=4d709b8162');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -5875,7 +6487,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=c41040cf8a');
+      const { criarCenario } = await import('./js/cenario.js?v=4d709b8162');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
@@ -5888,7 +6500,7 @@ if (PARAMS.has('teste')) window.__planta.assalto = async (tipo, cfg = {}) => {
   const C = cenario, loja = apiDoCenario().lojas().find(l => l.tipo === tipo);
   if (!C || !loja) return { erro: 'sem cenário ou sem a loja ' + tipo };
   await C.vida.chamarPovo();
-  const { iniciarAssalto } = await import('./js/assalto3d.js?v=c41040cf8a');
+  const { iniciarAssalto } = await import('./js/assalto3d.js?v=4d709b8162');
   const equipe = Array.from({ length: cfg.n || 10 }, (_, i) => ({ id: 'm' + i, nome: ['Negão', 'Ruivo', 'Baixinho', 'Magrão', 'Alemão', 'Cabeça', 'Tico', 'Zóio', 'Bola', 'Formiga'][i % 10] }));
   const A = { banco: [95, 80, 90, 60, 85, 90], joalheria: [75, 70, 70, 40, 75, 70], supermercado: [45, 60, 45, 85, 45, 50], posto: [25, 55, 30, 50, 40, 30], mercadinho: [15, 35, 15, 45, 30, 15], roupas: [10, 40, 20, 50, 35, 15] }[tipo];
   const alvo = { id: tipo, nome: loja.nome, recompensa: A[0], exposicao: A[1], seguranca: A[2], movimentacao: A[3], atencao: A[4], dificuldade: A[5] };
@@ -5997,7 +6609,7 @@ function notasDaProposta() {
   <h3>Os bares e as sedes da torcida</h3>
   <ul>
     <li><b>Longe dos estádios</b>: nenhum espaço de sede e nenhum bar da torcida fica a menos de ${LONGE_DO_ESTADIO_M} m de um estádio (da quadra dele, com a esplanada). O terreno que cai perto sai da lista e entra o próximo; a sede de hoje colada num estádio vira casa. Na tabela das torcidas, a distância de cada sede ao estádio mais perto.</li>
-    <li>O bar da torcida é o pequeno, de esquina: ${metros(LARG_BAR_M * M)} de frente, o térreo nas cores da torcida com a porta de enrolar e o letreiro BAR DO ${esc(ocupacao.torcidas[0] ? ocupacao.torcidas[0].sigla : 'X')}, e o apartamento em cima. Os dois primeiros ficam nas quadras dos bares grandes de hoje (2,8 e 5,1), se não caem perto de estádio; os outros, na esquina mais longe de todo bar já posto.</li>
+    <li>O bar da torcida é o pequeno, de esquina: ${metros(LARG_BAR_M * M)} de frente, o térreo nas cores da torcida com a porta de enrolar e o letreiro BAR DA ${esc(ocupacao.torcidas[0] ? ocupacao.torcidas[0].sigla : 'X')}, e o apartamento em cima. Os dois primeiros ficam nas quadras dos bares grandes de hoje (2,8 e 5,1), se não caem perto de estádio; os outros, na esquina mais longe de todo bar já posto.</li>
     <li>A sede é a do modelo novo, com cada cômodo mobiliado (a lista está na ficha da sede); o botão <b>Telhado</b>, no 3D, tira e põe o telhado. No cenário a pé as portas começam fechadas: o <b>F</b> (ou o botão que aparece perto da porta) abre e fecha.</li>
     <li>Quem ocupa cada um é a torcida da cidade escolhida. Bar que nenhuma torcida usa fica <b>neutro, de porta fechada</b>; espaço de sede sem torcida fica com a <b>sede fechada</b>, em cor de reboco.</li>
     <li><b>As rivais ficam em lados opostos do mapa</b>: a rivalidade é a dos dados das torcidas (a maior rivalidade pesa três vezes a outra; a do mesmo clube não conta), e das distribuições possíveis fica a que deixa as sedes rivais mais longe umas das outras. <b>O bar</b> fica a ${Math.round(BAR_LONGE_SEDE * escalaDoMapa())} m ou mais da sede da torcida e a ${Math.round(BAR_LONGE_RIVAL * escalaDoMapa())} m ou mais da sede de uma rival (o GDD §7.2 pede o bar noutra zona que a sede; no mapa grande, ${BAR_LONGE_SEDE} e ${BAR_LONGE_RIVAL} m, e no médio e no pequeno a distância encolhe com a cidade). Quando o mapa não tem bar que sirva, fica o que chega mais perto da regra. A tabela das torcidas mostra as duas distâncias.</li>

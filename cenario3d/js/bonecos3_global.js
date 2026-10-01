@@ -14,7 +14,7 @@
    DOMContentLoaded: quem usa (a ponte, numa cena aberta pelo jogador)
    chega muito depois.
    ========================================================= */
-import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, bonecos } from './bonecos3_cena.js?v=c41040cf8a';
+import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, bonecos } from './bonecos3_cena.js?v=4d709b8162';
 
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};

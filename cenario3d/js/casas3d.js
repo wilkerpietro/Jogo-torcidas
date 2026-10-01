@@ -60,10 +60,10 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=c41040cf8a';
-import { ATLAS } from './modelos_atlas.js?v=c41040cf8a';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=4d709b8162';
+import { ATLAS } from './modelos_atlas.js?v=4d709b8162';
 /* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
-import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=c41040cf8a';
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=4d709b8162';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -135,7 +135,7 @@ export function planoDaCasa(l, K) {
     const [W, D] = medidas(l);
     p = { tipo: l.modelo, andares: 2, rec: REC_MODELO[l.modelo], W, D, H: l.alt / M, s: sorteDe(l),
           semManchas: l.modelo !== 'f2' && l.modelo !== 'varal' };
-    /* o letreiro BAR DO X do bar da torcida vai no frontão da varanda */
+    /* o letreiro BAR DA X do bar da torcida vai no frontão da varanda */
     if (l.modelo === 'bartorcida' && l.placa) p.placa = placaDoBar(W, l.esquina);
     /* o nome da loja do assalto vai na platibanda (no posto, na testeira da cobertura) */
     if (TIPOS_LOJA[l.modelo] && l.placa) p.placa = placaDaLoja(l.modelo.slice(5), W, D, l.esquina || 'dir');
@@ -1990,7 +1990,7 @@ const m4 = comEspelho((B, p, l, conta, G, r) => {
    casinha da caixa d'água). A entrada do apartamento é a porta cinza do
    lado, com a escada no corredor.
    ABERTO, o térreo é da torcida (`l.torcida`): parede, pilar e frontão
-   na cor 1, o rodapé na 3, a faixa alta na 2, e o letreiro BAR DO X
+   na cor 1, o rodapé na 3, a faixa alta na 2, e o letreiro BAR DA X
    (`l.placa`) no frontão da varanda, no fundo da cor 2. Dentro vai o
    que tinha no bar grande: o chão de xadrez azul e creme, o balcão em
    L com as banquetas, o armário e a prateleira de garrafa atrás dele,

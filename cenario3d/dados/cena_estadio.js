@@ -2223,7 +2223,7 @@ TO.dados.plantaEstadio = (function(){
     faixa(0, L, 0, MF + 1, 4, 10, cor3);
     faixa(0, L, 0, MF + 1, MURO - 18, 11, cor2);
     const [lx, ly] = E.pt(Math.round(L*0.28), 1);
-    p('letreiro', { x: lx, y: ly, ox: E.ox, oz: E.oz, texto: 'BAR DO ' + (T.rot || 'BONDE'),
+    p('letreiro', { x: lx, y: ly, ox: E.ox, oz: E.oz, texto: 'BAR DA ' + (T.rot || 'TORCIDA'),
                     larg: Math.min(L*0.42, 120), altura: Math.min(L*0.42, 120)/4.2, base: 22,
                     fundo: cor2, tinta: corLegivel(cor2) }, false);
 

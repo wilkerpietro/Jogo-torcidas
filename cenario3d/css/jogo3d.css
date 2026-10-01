@@ -321,7 +321,33 @@ body.jogo3d.palco-briga .cen-fps{bottom:54px}
 .j3d-mapa-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #eee);padding:4px 12px;font-size:13px;cursor:pointer;
   font-family:var(--titulo);letter-spacing:.08em;text-transform:uppercase}
 .j3d-mapa-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
-.j3d-mapa-tela{position:relative;flex:1;min-height:0;overflow:hidden}
+/* O MAPA COM OS BAIRROS E O BRASIL (30/09/2026): a planta (ou o Brasil)
+   à esquerda e, à direita, quem domina a cidade e o cartão do bairro */
+.j3d-mapa-abas{display:flex;gap:4px;margin-left:10px}
+.j3d-mapa-abas button{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--fraco, #999);padding:3px 12px;font-size:12.5px;cursor:pointer}
+.j3d-mapa-abas button[aria-selected="true"]{background:var(--rubro, #8a1f1f);border-color:var(--rubro, #8a1f1f);color:#fff}
+.j3d-mapa-corpo{position:relative;flex:1;min-height:0;display:flex}
+.j3d-mapa-painel{flex:1;min-width:0;display:flex;gap:14px;padding:14px;overflow:auto;background:#101312}
+.j3d-mapa-painel[hidden]{display:none}
+.j3d-mapa-painel .mb-mapa{flex:1.4;min-width:0;display:flex;align-items:center;justify-content:center}
+.j3d-mapa-painel .mb-lista{flex:1;min-width:220px;max-width:380px;overflow:auto}
+.j3d-mapa-painel.mb-corpo-quadro{flex-direction:column}
+.j3d-mapa-nota{color:var(--fraco, #999);font-size:13px}
+.j3d-mapa-lado{flex:none;width:320px;overflow:auto;padding:12px;border-left:1px solid var(--linha, #2c2c2c);background:#141414;display:flex;flex-direction:column;gap:10px}
+.j3d-mapa-cidade{font-family:var(--titulo, 'Barlow Condensed', sans-serif);font-size:22px;letter-spacing:.04em;text-transform:uppercase}
+.j3d-mapa-aviso{font-size:12.5px;padding:6px 8px;border-left:3px solid var(--ouro, #d9a441);background:rgba(217,164,65,.08)}
+.j3d-mapa-espera{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;padding:10px 16px;border-radius:6px;
+  background:rgba(12,12,14,.9);color:#fff;font-size:14px;pointer-events:none}
+.j3d-mapa-espera[hidden]{display:none}
+@media (max-width:760px){
+  .j3d-mapa-corpo{flex-direction:column}
+  .j3d-mapa-lado{width:auto;max-height:42%;border-left:0;border-top:1px solid var(--linha, #2c2c2c)}
+  .j3d-mapa-painel{flex-direction:column}
+  .j3d-mapa-painel .mb-lista{max-width:none}
+  .j3d-mapa-abas button{padding:3px 8px}
+}
+.j3d-mapa-tela{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden}
+.j3d-mapa-tela[hidden]{display:none}
 .j3d-mapa-tela canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;display:block}
 .j3d-mapa-tela canvas.arrastando{cursor:grabbing}
 .j3d-mapa-zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:4px}

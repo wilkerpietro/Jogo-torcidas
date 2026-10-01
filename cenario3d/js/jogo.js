@@ -4741,7 +4741,7 @@ TO.i18n.registrar({
   'Arredores do estádio': {es:'Alrededores del estadio', en:'Around the stadium'},
   'ARREDORES': {es:'ALREDEDORES', en:'OUTSIDE'},
   'cordão da PM em peso, mas é onde o rival inteiro está': {es:'cordón policial completo, pero es donde está toda la barra rival', en:'full police cordon, but the whole rival firm is there'},
-  'Bar do rival': {es:'Bar del rival', en:"Rival's bar"},
+  'Bar da rival': {es:'Bar del rival', en:"Rival's bar"},
   'BAR DELES': {es:'SU BAR', en:'THEIR BAR'},
   'poucos lá dentro, mas é humilhação que fica': {es:'pocos adentro, pero es una humillación que queda', en:'few inside, but the humiliation sticks'},
   'Praça de encontro': {es:'Plaza de encuentro', en:'Meeting square'},
@@ -5688,6 +5688,124 @@ TO.i18n.registrar({
   'Sem placa de vídeo: os gráficos começaram no mínimo. Dá pra mudar em <b>Gráficos</b>, no menu da esquerda.':
     {es:'Sin tarjeta de video: los gráficos empezaron en el mínimo. Se puede cambiar en <b>Gráficos</b>, en el menú de la izquierda.',
      en:'No graphics card: the graphics started at the lowest setting. You can change it in <b>Graphics</b>, in the left menu.'}
+});
+
+;
+
+/* ===== dados/i18n/dominio.js ===== */
+/* Dicionário da fatia "domínio dos bairros" — ver docs/I18N.md.
+   Chave: o texto em português, exatamente como está no código (com os
+   {marcadores}). Valor: {es, en}.
+   Cobre o pedido do dono de 30/09/2026 ("inicie a setorização dos bairros
+   de acordo com os dados que temos e as zonas também …"): o domínio dos
+   bairros (js/mundo/dominio.js), o mapa do Brasil e dos bairros
+   (js/ui/mapa_brasil.js e ferramentas/planta_html/mapa3d.js), a ação
+   social no bairro (js/gestao/acoes.js), o bairro na compra do ponto
+   (js/gestao/patrimonio.js) e o corte de 30% no financeiro. */
+TO.i18n.registrar({
+  /* =========================================================
+     OS AVISOS DO DOMÍNIO (dominio.js)
+     ========================================================= */
+  'Tomamos {bairro} ({cidade}) da {de}. O bairro agora é nosso.':
+    {es:'Tomamos {bairro} ({cidade}) de la {de}. El barrio ahora es nuestro.', en:'We took {bairro} ({cidade}) from {de}. The neighborhood is ours now.'},
+  '{bairro} ({cidade}) passou de 50% pra nós. O bairro agora é nosso.':
+    {es:'{bairro} ({cidade}) pasó del 50% para nosotros. El barrio ahora es nuestro.', en:'{bairro} ({cidade}) went past 50% for us. The neighborhood is ours now.'},
+  'Perdemos {bairro} ({cidade}) pra {para}.': {es:'Perdimos {bairro} ({cidade}) ante {para}.', en:'We lost {bairro} ({cidade}) to {para}.'},
+  '{bairro} ({cidade}) caiu abaixo de 50% pra nós: o bairro está em disputa.':
+    {es:'{bairro} ({cidade}) bajó del 50% para nosotros: el barrio está en disputa.', en:'{bairro} ({cidade}) dropped below 50% for us: the neighborhood is contested.'},
+  'A {para} tomou {bairro}{de}.': {es:'{para} tomó {bairro}{de}.', en:'{para} took {bairro}{de}.'},
+  ' da {de}': {es:' de {de}', en:' from {de}'},
+  '{bairro} ficou sem dona: a {de} caiu abaixo de 50%.': {es:'{bairro} se quedó sin dueña: {de} bajó del 50%.', en:'{bairro} has no owner now: {de} dropped below 50%.'},
+  'Dominamos {cidade} (a semana)': {es:'Dominamos {cidade} (la semana)', en:'We rule {cidade} (the week)'},
+  'Sem o domínio de {cidade} (a semana)': {es:'Sin el dominio de {cidade} (la semana)', en:'Without ruling {cidade} (the week)'},
+  'Dominamos {cidade}: {n} de {total} bairros são nossos. +0,1 de prestígio e de moral por dia.':
+    {es:'Dominamos {cidade}: {n} de {total} barrios son nuestros. +0,1 de prestigio y de moral por día.', en:'We rule {cidade}: {n} of {total} neighborhoods are ours. +0.1 prestige and morale per day.'},
+  'A {nome} domina {cidade} com {n} de {total} bairros.': {es:'{nome} domina {cidade} con {n} de {total} barrios.', en:'{nome} rules {cidade} with {n} of {total} neighborhoods.'},
+  'Perdemos o domínio de {cidade}: agora ninguém tem mais bairros que todo mundo.':
+    {es:'Perdimos el dominio de {cidade}: ahora nadie tiene más barrios que todos.', en:'We lost our rule over {cidade}: now nobody has more neighborhoods than everyone else.'},
+  '{cidade} ficou sem dona: empate no número de bairros.': {es:'{cidade} se quedó sin dueña: empate en número de barrios.', en:'{cidade} has no ruler: tie in the number of neighborhoods.'},
+  'bairro da {sigla} −30%': {es:'barrio de {sigla} −30%', en:'{sigla} neighborhood −30%'},
+  'já teve ação social esta semana': {es:'ya hubo acción social esta semana', en:'there was already a community action this week'},
+  'Esse bairro não é da nossa cidade.': {es:'Ese barrio no es de nuestra ciudad.', en:'That neighborhood is not in our city.'},
+  'Ação social em {bairro}: a barra da torcida foi a {v}%.': {es:'Acción social en {bairro}: la barra de la hinchada llegó a {v}%.', en:'Community action in {bairro}: our bar went to {v}%.'},
+
+  /* =========================================================
+     A AÇÃO SOCIAL NO BAIRRO (acoes.js) E A COMPRA DO PONTO (patrimonio.js)
+     ========================================================= */
+  'Ação social no bairro': {es:'Acción social en el barrio', en:'Community action in the neighborhood'},
+  'Bairro': {es:'Barrio', en:'Neighborhood'},
+  'R$ 1.500; soma de 6 a 10% na barra do bairro escolhido — 1 por semana':
+    {es:'R$ 1.500; suma de 6 a 10% en la barra del barrio elegido — 1 por semana', en:'R$ 1,500; adds 6 to 10% to the chosen neighborhood’s bar — 1 per week'},
+  'sem bairros nesta cidade': {es:'sin barrios en esta ciudad', en:'no neighborhoods in this city'},
+  'o melhor alvo é {nome}': {es:'el mejor objetivo es {nome}', en:'the best target is {nome}'},
+  'todos os bairros já são nossos': {es:'todos los barrios ya son nuestros', en:'every neighborhood is already ours'},
+  'Esse bairro não existe mais.': {es:'Ese barrio ya no existe.', en:'That neighborhood no longer exists.'},
+  'zona {zona} · da {sigla} ({v}%) · nossa barra {n}%': {es:'zona {zona} · de {sigla} ({v}%) · nuestra barra {n}%', en:'{zona} zone · {sigla}’s ({v}%) · our bar {n}%'},
+  'zona {zona} · sem dona · nossa barra {n}%': {es:'zona {zona} · sin dueña · nuestra barra {n}%', en:'{zona} zone · no owner · our bar {n}%'},
+  'Onde a barra rende mais: o bairro sem dona e o de dona fraca.': {es:'Donde la barra rinde más: el barrio sin dueña y el de dueña débil.', en:'Where the bar gains most: neighborhoods with no owner or a weak one.'},
+  'sem dona': {es:'sin dueña', en:'no owner'},
+  'nosso ({v}%)': {es:'nuestro ({v}%)', en:'ours ({v}%)'},
+  'da {sigla} ({v}%)': {es:'de {sigla} ({v}%)', en:'{sigla}’s ({v}%)'},
+  'rende 30% menos': {es:'rinde 30% menos', en:'earns 30% less'},
+  '{bairro} (zona {zona}) · {dona}': {es:'{bairro} (zona {zona}) · {dona}', en:'{bairro} ({zona} zone) · {dona}'},
+  '{nota}: a festa rende 30% menos': {es:'{nota}: la fiesta rinde 30% menos', en:'{nota}: the party earns 30% less'},
+
+  /* =========================================================
+     O MAPA: O BRASIL, A LEGENDA, O CARTÃO E O QUADRO (mapa_brasil.js)
+     ========================================================= */
+  'Mapa': {es:'Mapa', en:'Map'},
+  'Mapa do Brasil com as praças do jogo': {es:'Mapa de Brasil con las plazas del juego', en:'Map of Brazil with the game’s cities'},
+  'a {nome} domina ({n} de {total} bairros)': {es:'{nome} domina ({n} de {total} barrios)', en:'{nome} rules ({n} of {total} neighborhoods)'},
+  'ninguém domina': {es:'nadie domina', en:'nobody rules'},
+  'Brasil — {regiao}': {es:'Brasil — {regiao}', en:'Brazil — {regiao}'},
+  'Dominamos {cidade}: {n} de {total} bairros.': {es:'Dominamos {cidade}: {n} de {total} barrios.', en:'We rule {cidade}: {n} of {total} neighborhoods.'},
+  'A {nome} domina {cidade}: {n} de {total} bairros.': {es:'{nome} domina {cidade}: {n} de {total} barrios.', en:'{nome} rules {cidade}: {n} of {total} neighborhoods.'},
+  'Ninguém domina {cidade}: empate no topo, com {n} bairros.': {es:'Nadie domina {cidade}: empate arriba, con {n} barrios.', en:'Nobody rules {cidade}: tie at the top, with {n} neighborhoods.'},
+  'Ninguém domina {cidade}.': {es:'Nadie domina {cidade}.', en:'Nobody rules {cidade}.'},
+  'Dominar a cidade: +0,1 de prestígio e +0,1 de moral por dia.': {es:'Dominar la ciudad: +0,1 de prestigio y +0,1 de moral por día.', en:'Ruling the city: +0.1 prestige and +0.1 morale per day.'},
+  'Somos uma das duas maiores da cidade e não dominamos: −0,1 de prestígio e −0,1 de moral por dia.':
+    {es:'Somos una de las dos más grandes de la ciudad y no dominamos: −0,1 de prestigio y −0,1 de moral por día.', en:'We are one of the two biggest in the city and do not rule it: −0.1 prestige and −0.1 morale per day.'},
+  'maior': {es:'la mayor', en:'biggest'},
+  '2ª maior': {es:'2ª mayor', en:'2nd biggest'},
+  'domina': {es:'domina', en:'rules'},
+  '{n} de {total}': {es:'{n} de {total}', en:'{n} of {total}'},
+  'Sem dona (ninguém passa de 50%)': {es:'Sin dueña (nadie pasa del 50%)', en:'No owner (nobody above 50%)'},
+  'Loja da {nome}': {es:'Tienda de {nome}', en:'{nome} store'},
+  'Subsede da {nome}': {es:'Subsede de {nome}', en:'{nome} branch'},
+  'Subsede de fora da {nome}': {es:'Subsede de afuera de {nome}', en:'{nome} out-of-town branch'},
+  'Clique num bairro do mapa.': {es:'Haga clic en un barrio del mapa.', en:'Click a neighborhood on the map.'},
+  'Zona {zona} · {classe} · receita ×{m}': {es:'Zona {zona} · {classe} · ingresos ×{m}', en:'{zona} zone · {classe} · revenue ×{m}'},
+  'O bairro é nosso ({v}%).': {es:'El barrio es nuestro ({v}%).', en:'The neighborhood is ours ({v}%).'},
+  'A dona é a {nome} ({v}%).': {es:'La dueña es {nome} ({v}%).', en:'The owner is {nome} ({v}%).'},
+  'Sem dona: ninguém passa de 50%.': {es:'Sin dueña: nadie pasa del 50%.', en:'No owner: nobody is above 50%.'},
+  'É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa se refaz até 80%.':
+    {es:'Es el barrio de la sede de {nome}: quien no es de la casa gana la mitad aquí, y la casa se rehace hasta el 80%.', en:'This is {nome}’s headquarters neighborhood: outsiders gain half here, and the home side recovers up to 80%.'},
+  'Os nossos pontos aqui rendem 30% menos: o bairro é da {nome}, rival.': {es:'Nuestros puntos aquí rinden 30% menos: el barrio es de {nome}, rival.', en:'Our places here earn 30% less: the neighborhood belongs to rival {nome}.'},
+  'Ação social aqui ({valor})': {es:'Acción social aquí ({valor})', en:'Community action here ({valor})'},
+  'Ver na cidade 3D': {es:'Ver en la ciudad 3D', en:'See it in the 3D city'},
+  'Zona {zona}': {es:'Zona {zona}', en:'{zona} zone'},
+  'em disputa': {es:'en disputa', en:'contested'},
+
+  /* =========================================================
+     O MAPA DO JOGO 3D (ferramentas/planta_html/mapa3d.js)
+     ========================================================= */
+  'Cidade': {es:'Ciudad', en:'City'},
+  'Fechar o mapa': {es:'Cerrar el mapa', en:'Close the map'},
+  'Afastar': {es:'Alejar', en:'Zoom out'},
+  'A cidade inteira': {es:'La ciudad entera', en:'The whole city'},
+  'Arraste pra mover · role pra aproximar · clique num bairro pra ver quem manda · dois cliques levam a câmera até lá':
+    {es:'Arrastre para mover · ruede para acercar · haga clic en un barrio para ver quién manda · doble clic lleva la cámara hasta allí',
+     en:'Drag to move · scroll to zoom · click a neighborhood to see who rules it · double-click takes the camera there'},
+  'a sua sede': {es:'su sede', en:'your headquarters'},
+  'onde a câmera está': {es:'dónde está la cámara', en:'where the camera is'},
+  'A SUA SEDE': {es:'SU SEDE', en:'YOUR HQ'},
+  'EM DISPUTA': {es:'EN DISPUTA', en:'CONTESTED'},
+  'BAR QUEBRADO · {n} DIAS': {es:'BAR ROTO · {n} DÍAS', en:'BROKEN BAR · {n} DAYS'},
+  'Montando o mapa de {cidade}…': {es:'Armando el mapa de {cidade}…', en:'Building the map of {cidade}…'},
+  'as praças do jogo': {es:'las plazas del juego', en:'the game’s cities'},
+  '· a praça de {cidade} (só o mapa: a cidade 3D continua a de agora)': {es:'· la plaza de {cidade} (solo el mapa: la ciudad 3D sigue siendo la de ahora)', en:'· {cidade} (map only: the 3D city stays the current one)'},
+  '· a praça de {cidade}': {es:'· la plaza de {cidade}', en:'· {cidade}'},
+  'Esta praça não tem planta desenhada: os bairros dela aparecem por zona.': {es:'Esta plaza no tiene plano dibujado: sus barrios aparecen por zona.', en:'This city has no drawn map: its neighborhoods are shown by zone.'}
 });
 
 ;
@@ -11491,6 +11609,870 @@ TO.mundo = (function(){
 
 ;
 
+/* ===== js/mundo/dominio.js ===== */
+/* =========================================================
+   O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026: "inicie a setorização
+   dos bairros de acordo com os dados que temos e as zonas também …
+   Em cada bairro vai apontar qual torcida comanda, e a torcida que
+   comandar mais bairros domina a cidade").
+
+   A BARRA. Cada bairro tem uma barra de 0 a 100 repartida entre as
+   torcidas (o que sobra é de ninguém). Quem passa de 50 é a DONA do
+   bairro; ninguém acima de 50, o bairro está em disputa. Toda ação
+   ganha no bairro soma pontos na barra de quem ganhou e tira de quem
+   perdeu — passou de 50, virou dona.
+
+   A CIDADE. Domina a cidade quem é dona de MAIS bairros que qualquer
+   outra; empate no topo, ninguém domina. Todo dia:
+     · quem domina ganha +0,1 de prestígio e +0,1 de moral (na régua
+       de 0 a 100 que a tela mostra: 0,02 no indicador de 0 a 20);
+     · a primeira e a segunda maior da cidade (pelos membros de hoje)
+       que NÃO dominam perdem 0,1 de cada.
+
+   O COMEÇO. Cada save sorteia o seu padrão (a semente do save), e a
+   mesma semente dá sempre o mesmo padrão. Numa cidade de 16 bairros,
+   a maior e a segunda maior ficam com uns 5 cada (às vezes 4, às
+   vezes 6 — e dá empate, a cidade começa sem dono), e o resto é
+   rateado entre as demais pelos membros de partida. O bairro da SEDE
+   é sempre da torcida dela no começo, com a barra alta, e é o mais
+   difícil de tomar: quem não é da casa ganha metade ali, e a casa se
+   refaz meio ponto por dia até 80. A subsede também segura o bairro
+   dela (um terço de ponto por dia até 65) — é assim que ela chega a
+   dominar.
+
+   DUAS SEDES NO MESMO BAIRRO (nos dados há 3 praças do Brasil e mais
+   de 30 de fora assim): a maior fica; a outra vai pro bairro livre
+   mais parecido — a mesma zona primeiro, depois a zona vizinha. A
+   troca é feita nos DADOS, na carga (`o.bairroSede` e as `sedes` do
+   bairro), pra valer igual no jogo de feed, no jogo 3D e na planta.
+
+   O SAVE só guarda a cidade que mudou (`E.dominio.c`): o padrão de
+   partida sai da semente toda vez que é lido, e a cidade que ninguém
+   tocou não pesa nada no save. A do jogador é gravada na primeira
+   leitura, porque o começo dela considera onde estão o bar, a loja e
+   a subsede que ele já tem.
+
+   A RECEITA. Bar, loja, subsede (e a festa da sede) em bairro cuja
+   dona é RIVAL da torcida rendem 30% menos. Rival é a relação de
+   hoje (Rival ou Maior Rival); vizinha neutra, aliada ou irmã não
+   corta nada.
+   ========================================================= */
+window.TO = window.TO || {};
+
+TO.dominio = (function(){
+  'use strict';
+  /* a tradução é do jogo; na planta sozinha (sem o jogo) o texto sai
+     como está, com os {marcadores} trocados */
+  const sub = (s, p) => String(s).replace(/\{(\w+)\}/g, (m, k) => p && p[k] != null ? p[k] : m);
+  const _t = (s, p) => typeof window._t === 'function' ? window._t(s, p) : sub(s, p);
+
+  /* ---- as réguas (o dono, 30/09/2026) ---- */
+  const DOMINA = 50;                 // mais que isto na barra: dona do bairro
+  const DIA = 0.02;                  // 0,1 na régua de 0 a 100
+  const CORTE = 0.7;                 // receita em bairro de rival: −30%
+  const SEDE_TETO = 80, SEDE_REFAZ = 0.5;       // a sede se refaz até 80
+  const SUBSEDE_TETO = 65, SUBSEDE_REFAZ = 1/3; // a subsede, até 65
+  const RESISTE = 0.5;               // quem não é da casa ganha metade no bairro da sede
+  /* quanto cada ação vale na barra (pontos de 0 a 100) */
+  const GANHO = {
+    treta: {5:10, 7:14, 10:18},      // treta marcada, pelo tamanho
+    rua: 10,                         // ataque na pista, na concentração, na praça
+    arredores: 8,                    // arredores do estádio
+    defesa: 10,                      // quem segurou (ou tomou) o ataque em casa
+    bar: 12, quebrou: 6,             // bote no bar (+6 se o bar quebrou)
+    sede: 12,                        // bote na sede
+    casa: 8,                         // a festa na casa com piscina
+    estrutura: {bar:8, loja:8, subsede:20, filial:15},
+    social: [6, 10],                 // ação social no bairro
+    iaRua: 8, iaBar: 12              // as brigas entre as IAs
+  };
+  /* A AÇÃO SOCIAL NO BAIRRO (a de antes foi aposentada em 24/08/2026;
+     esta é outra, com outro id): uma por semana, com gente na rua */
+  const SOCIAL = {custo:1500, gente:5};
+
+  const ZONAS = ['Norte', 'Leste', 'Sul', 'Oeste'];
+  const VIZINHAS = {Norte:['Leste','Oeste'], Sul:['Leste','Oeste'],
+                    Leste:['Norte','Sul'], Oeste:['Norte','Sul']};
+
+  /* o mesmo hash do mapa (TO.mapa.hash), pra os bairros sorteados por
+     hash baterem com os que o resto do jogo sorteia */
+  function hash(txt){
+    let h = 2166136261;
+    const s = String(txt);
+    for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return h >>> 0;
+  }
+  /* um sorteio próprio, que não mexe no do jogo (mulberry32) */
+  function sorteio(chave){
+    let a = hash(chave) || 1;
+    return () => {
+      a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  const limitar = (v, a, b) => Math.max(a, Math.min(b, v));
+  const um = v => Math.round(v * 10) / 10;
+
+  /* =======================================================
+     OS DADOS: as cidades, as torcidas de cada uma e as sedes já
+     espalhadas. Refeito quando os vetores dos dados mudam (o jogo 3D
+     carrega os dados de novo por cima dos da planta).
+     ======================================================= */
+  let base = null;
+  const memo = new Map();
+  function indice(){
+    const D = (window.TO && TO.dados) || {};
+    const C = D.cidades || [], O = D.torcidas || [];
+    if(base && base.C === C && base.O === O && base.nC === C.length && base.nO === O.length) return base;
+    memo.clear();
+    const cidade = new Map(), torcidas = new Map(), sedes = new Map(), bairros = new Map();
+    for(const c of C){
+      cidade.set(c.id, c);
+      const bm = new Map();
+      for(const b of (c.bairros || [])){ bm.set(b.id, b); bm.set(norm(b.nome), b); }
+      bairros.set(c.id, bm);
+      torcidas.set(c.id, []);
+    }
+    for(const o of O) if(!o.incompleta && torcidas.has(o.mapa)) torcidas.get(o.mapa).push(o);
+    for(const [cid, ts] of torcidas){
+      ts.sort((a, b) => (b.membros || 0) - (a.membros || 0) || String(a.id).localeCompare(String(b.id)));
+      sedes.set(cid, espalhar(cidade.get(cid), bairros.get(cid), ts));
+    }
+    base = {C, O, nC:C.length, nO:O.length, cidade, torcidas, sedes, bairros,
+            comTorcida:[...torcidas.keys()].filter(cid => torcidas.get(cid).length && (cidade.get(cid).bairros || []).length)};
+    return base;
+  }
+
+  /* DUAS SEDES NO MESMO BAIRRO: a maior fica (a lista vem da maior pra
+     menor), a outra vai pro bairro livre mais parecido — a mesma zona,
+     depois a vizinha, depois a oposta; na mesma zona, a mesma classe
+     de bairro; e, entre iguais, a zona com menos sede. A torcida sem
+     bairro nos dados (há uma) cai no bairro livre da zona mais vazia.
+     O resultado é gravado nos dados: `bairroSede` (o de antes fica em
+     `bairroSedeDados`) e a lista `sedes` dos dois bairros. */
+  function espalhar(c, bm, ts){
+    const fora = new Map();
+    const bs = (c && c.bairros) || [];
+    if(!bs.length) return fora;
+    const dono = new Map(), pend = [];
+    for(const t of ts){
+      const b = bm.get(norm(t.bairroSede)) || null;
+      if(b && !dono.has(b.id)){ dono.set(b.id, t); fora.set(t.id, b); }
+      else pend.push({t, orig:b});
+    }
+    for(const {t, orig} of pend){
+      const livres = bs.filter(b => !dono.has(b.id));
+      if(!livres.length) break;
+      const naZona = z => [...fora.values()].filter(x => x.zona === z).length;
+      const nota = b => {
+        let n = 0;
+        if(orig){
+          n += b.zona === orig.zona ? 0 : (VIZINHAS[orig.zona] || []).includes(b.zona) ? 10 : 20;
+          if(b.classe === orig.classe) n -= 3;
+        }
+        return n + 2 * naZona(b.zona) + (hash(t.id + '|' + b.id) % 1000) / 1000;
+      };
+      const b = livres.sort((x, y) => nota(x) - nota(y))[0];
+      dono.set(b.id, t); fora.set(t.id, b);
+      /* grava nos dados (uma vez: quem já foi espalhado não volta) */
+      if(norm(t.bairroSede) !== norm(b.nome)){
+        if(t.bairroSedeDados === undefined) t.bairroSedeDados = t.bairroSede || '';
+        if(orig && Array.isArray(orig.sedes)){
+          const k = orig.sedes.indexOf(t.nome);
+          if(k >= 0) orig.sedes.splice(k, 1);
+        }
+        t.bairroSede = b.nome;
+        if(Array.isArray(b.sedes)){ if(!b.sedes.includes(t.nome)) b.sedes.push(t.nome); }
+        else b.sedes = [t.nome];
+      }
+    }
+    return fora;
+  }
+
+  const cidadeDe = cid => indice().cidade.get(cid) || null;
+  const bairrosDe = cid => (cidadeDe(cid) || {}).bairros || [];
+  /* o bairro pelo id ou pelo nome (com ou sem acento) */
+  function bairro(cid, x){
+    if(!x) return null;
+    if(typeof x === 'object') x = x.id || x.nome;
+    const bm = indice().bairros.get(cid);
+    return (bm && bm.get(norm(x))) || (bm && bm.get(String(x))) || null;
+  }
+  const torcidasDaCidade = cid => indice().torcidas.get(cid) || [];
+  /* o bairro da sede de uma torcida (já espalhado) */
+  function sedeDe(tid, cid){
+    const I = indice();
+    if(!cid){ const o = I.O.find(x => x.id === tid); cid = o && o.mapa; }
+    const m = I.sedes.get(cid);
+    return (m && m.get(tid)) || null;
+  }
+  /* de quem é a sede que fica neste bairro */
+  function casaDe(cid, bid){
+    const m = indice().sedes.get(cid);
+    if(!m) return null;
+    for(const [tid, b] of m) if(b.id === bid) return tid;
+    return null;
+  }
+  const nomeDe = tid => {
+    const eu = TO.estado && TO.estado.E && TO.estado.E.torcida;
+    if(eu && eu.id === tid) return eu.nome;
+    const o = (TO.mundo && TO.mundo.torcida) ? TO.mundo.torcida(tid) : indice().O.find(x => x.id === tid);
+    return o ? o.nome : tid;
+  };
+
+  /* O BAIRRO PADRÃO DE UM PONTO DA IA (bar, loja, subsede sem bairro
+     gravado): fora de todo bairro de sede, na zona da própria sede e
+     depois nas vizinhas — a torcida abre o comércio no território
+     dela. O hash é o de sempre (`id|tipo|i`), então o mesmo ponto fica
+     no mesmo bairro pra sempre. */
+  function bairroPadrao(o, tipo, i){
+    const bs = bairrosDe(o.mapa);
+    if(!bs.length) return null;
+    const s = sedeDe(o.id, o.mapa);
+    if(tipo === 'sede') return s || bs[hash(`${o.id}|sede`) % bs.length];
+    const sedes = new Set([...(indice().sedes.get(o.mapa) || new Map()).values()].map(b => b.id));
+    let cand = bs.filter(b => !sedes.has(b.id));
+    if(!cand.length) cand = bs.slice();
+    if(s){
+      /* a zona da sede; quando ela não tem bairro livre pra tanto ponto,
+         entram as vizinhas */
+      const nivel = b => b.zona === s.zona ? 0 : (VIZINHAS[s.zona] || []).includes(b.zona) ? 1 : 2;
+      const z0 = cand.filter(b => nivel(b) === 0), z1 = cand.filter(b => nivel(b) <= 1);
+      cand = z0.length > i ? z0 : z1.length ? z1 : cand;
+    }
+    return cand[hash(`${o.id}|${tipo}|${i}`) % cand.length];
+  }
+
+  /* =======================================================
+     QUEM TEM O QUÊ, E ONDE (as estruturas de cada torcida na cidade)
+     ======================================================= */
+  const eu = E => E && E.torcida ? E.torcida.id : null;
+  function estruturas(E, cid){
+    const fora = [];
+    const push = (tid, tipo, b, i, obj) => { if(b) fora.push({tid, tipo, bairro:b.id, i, obj:obj || null}); };
+    const I = indice();
+    const mundo = E && TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    for(const o of I.torcidas.get(cid) || []){
+      push(o.id, 'sede', sedeDe(o.id, cid), 0);
+      if(E && o.id === eu(E)){
+        const p = E.patrimonio || {};
+        (p.bares || []).forEach((b, i) => push(o.id, 'bar', bairro(cid, b.bairro), i, b));
+        (p.lojas || []).forEach((l, i) => push(o.id, 'loja', bairro(cid, l.bairro), i, l));
+        (p.subsedes || []).forEach((s, i) => push(o.id, 'subsede', bairro(cid, s.bairro), i, s));
+        continue;
+      }
+      const t = mundo && mundo[o.id];
+      if(!t){ push(o.id, 'bar', bairroPadrao(o, 'bar', 0), 0); continue; }
+      (t.bares || []).forEach((b, i) => push(o.id, 'bar', bairro(cid, b.bairro) || bairroPadrao(o, 'bar', i), i, b));
+      (t.lojas || []).forEach((l, i) => push(o.id, 'loja', bairro(cid, l.bairro) || bairroPadrao(o, 'loja', i), i, l));
+      for(let i = 0; i < (t.subsedes || 0); i++) push(o.id, 'subsede', bairroPadrao(o, 'subsede', i), i);
+    }
+    /* as subsedes de fora (filiais) que ficam NESTA cidade */
+    if(E){
+      const p = E.patrimonio || {};
+      (p.filiais || []).forEach((f, i) => { if(f.cidade === cid) push(eu(E), 'filial', bairroDaFilial(eu(E), cid), i, f); });
+      if(mundo) for(const id in mundo) (mundo[id].filiais || []).forEach((f, i) => {
+        if(f.cidade === cid) push(id, 'filial', bairroDaFilial(id, cid), i, f);
+      });
+    }
+    return fora;
+  }
+  /* o bairro da filial é o mesmo hash que o financeiro usa pra ela */
+  function bairroDaFilial(tid, cid){
+    const bs = bairrosDe(cid);
+    return bs.length ? bs[hash(`${tid}|filial|${cid}`) % bs.length] : null;
+  }
+
+  /* =======================================================
+     O PADRÃO DE PARTIDA (a semente do save + os dados)
+     ======================================================= */
+  const ehRival = (a, b) => {
+    const t = TO.mundo && TO.mundo.relacaoBase ? TO.mundo.relacaoBase(a, b) : 'Neutro';
+    return t === 'Rival' || t === 'Maior Rival';
+  };
+  function inicial(cid, semente, preferidos){
+    const c = cidadeDe(cid), bs = (c && c.bairros) || [], N = bs.length;
+    const ts = torcidasDaCidade(cid);
+    const fora = {b:{}};
+    if(!N || !ts.length) return fora;
+    const r = sorteio(`${semente}|dominio|${cid}`);
+    const sedes = indice().sedes.get(cid) || new Map();
+    const quota = new Map(ts.map(t => [t.id, 0]));
+    /* o tanto de bairros de cada uma */
+    const k = Math.max(1, Math.round(N * 5 / 16));
+    const varia = () => [0, 0, 1, -1][Math.floor(r() * 4)];
+    const temSede = t => sedes.has(t.id) ? 1 : 0;
+    if(ts.length === 1) quota.set(ts[0].id, N);
+    else {
+      const [t1, t2] = ts, resto = ts.slice(2);
+      /* o empate no topo sai em 3 de cada 10 cidades ("podendo começar
+         igualado e sem ninguém dominando"); no resto, uma tem um bairro a
+         mais — e nem sempre é a maior */
+      const empate = r() < 0.3;
+      let k1 = Math.max(1, k + varia());
+      let k2 = empate ? k1 : Math.max(1, k1 + (r() < 0.5 ? 1 : -1));
+      const minResto = resto.reduce((s, t) => s + temSede(t), 0);
+      const cabe = Math.max(2, N - minResto);
+      while(k1 + k2 > cabe && (k1 > 1 || k2 > 1)){
+        if(k1 > k2) k1--; else if(k2 > k1) k2--;
+        else if(empate){ k1--; k2--; } else if(r() < 0.5) k1--; else k2--;
+      }
+      let sobra = N - k1 - k2;
+      const q = resto.map(t => ({t, n:temSede(t)}));
+      sobra -= q.reduce((s, x) => s + x.n, 0);
+      /* o resto é rateado pelos membros de partida, com a sede de cada
+         uma garantida e ninguém chegando no tamanho das duas maiores */
+      const teto = Math.max(1, Math.min(k1, k2) - 1);
+      for(let g = 0; sobra > 0 && g < 200; g++){
+        const cand = q.filter(x => x.n < teto);
+        if(!cand.length) break;
+        cand.sort((a, b) => (b.t.membros || 1) / (b.n + 1) - (a.t.membros || 1) / (a.n + 1) || r() - 0.5);
+        cand[0].n++; sobra--;
+      }
+      /* o que ninguém mais pode levar volta pras duas maiores; no empate,
+         aos pares (o último que sobrar vai pra maior das outras) */
+      let vez = r() < 0.5;
+      while(sobra > 0){
+        if(empate && sobra >= 2){ k1++; k2++; sobra -= 2; continue; }
+        if(empate && q.length){ q.sort((a, b) => (b.t.membros || 0) - (a.t.membros || 0)); q[0].n++; sobra--; continue; }
+        if(vez) k1++; else k2++;
+        vez = !vez; sobra--;
+      }
+      if(!empate && k1 === k2 && k1 > 1){ if(r() < 0.5){ k1++; k2--; } else { k1--; k2++; } }
+      for(const x of q) quota.set(x.t.id, x.n);
+      quota.set(t1.id, k1); quota.set(t2.id, k2);
+    }
+    /* onde: a sede primeiro; depois, em rodadas, cada uma pega o bairro
+       livre mais perto do que já tem (a mesma zona, depois a vizinha),
+       com os pontos dela (`preferidos`) na frente */
+    const dono = new Map(), tem = new Map(ts.map(t => [t.id, []]));
+    for(const t of ts){
+      const b = sedes.get(t.id);
+      if(b && !dono.has(b.id) && quota.get(t.id) > 0){ dono.set(b.id, t.id); tem.get(t.id).push(b); }
+    }
+    const zonasDe = tid => new Set(tem.get(tid).map(b => b.zona));
+    const nota = (tid, b) => {
+      const zs = zonasDe(tid);
+      let n = zs.has(b.zona) ? 0 : [...zs].some(z => (VIZINHAS[z] || []).includes(b.zona)) ? 10 : zs.size ? 20 : 5;
+      if(preferidos && preferidos[tid] && preferidos[tid].has(b.id)) n -= 15;
+      return n + r() * 6;
+    };
+    for(let volta = 0; volta < N * 2; volta++){
+      const querem = ts.filter(t => tem.get(t.id).length < quota.get(t.id));
+      if(!querem.length) break;
+      /* as rodadas começam por quem tem mais a pegar, com a ordem na sorte entre iguais */
+      querem.sort((a, b) => (quota.get(b.id) - tem.get(b.id).length) - (quota.get(a.id) - tem.get(a.id).length) || r() - 0.5);
+      let pegou = false;
+      for(const t of querem){
+        const livres = bs.filter(b => !dono.has(b.id));
+        if(!livres.length) break;
+        if(tem.get(t.id).length >= quota.get(t.id)) continue;
+        const b = livres.map(b => [b, nota(t.id, b)]).sort((x, y) => x[1] - y[1])[0][0];
+        dono.set(b.id, t.id); tem.get(t.id).push(b); pegou = true;
+      }
+      if(!pegou) break;
+    }
+    /* a barra de cada bairro: a dona com 55–75 (a da sede, 80–92) e,
+       em 6 de cada 10, uma segunda de olho (a rival primeiro) */
+    for(const b of bs){
+      const t = dono.get(b.id);
+      if(!t){ fora.b[b.id] = {}; continue; }
+      const naSede = (sedes.get(t) || {}).id === b.id;
+      const v = um(naSede ? 80 + r() * 12 : 55 + r() * 20);
+      const p = {[t]: v};
+      if(r() < 0.6){
+        const outras = ts.filter(o => o.id !== t && !(TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(o.id, t)));
+        const rivais = outras.filter(o => ehRival(o.id, t));
+        const vizinhas = (rivais.length ? rivais : outras).filter(o => tem.get(o.id).some(x => x.zona === b.zona));
+        const lista = vizinhas.length ? vizinhas : (rivais.length ? rivais : outras);
+        if(lista.length){
+          const o = lista[Math.floor(r() * lista.length)];
+          const q = um(Math.min(100 - v - 2, 5 + r() * 20));
+          if(q >= 3) p[o.id] = q;
+        }
+      }
+      fora.b[b.id] = p;
+    }
+    return fora;
+  }
+
+  /* =======================================================
+     O ESTADO NO SAVE
+     ======================================================= */
+  function raiz(E){
+    if(!E.dominio || typeof E.dominio !== 'object') E.dominio = {v:1};
+    const D = E.dominio;
+    D.c = D.c || {}; D.donos = D.donos || {}; D.log = D.log || [];
+    return D;
+  }
+  const semente = E => (E && E.semente) || 1;
+  /* os pontos de cada torcida na cidade do jogador, pra o começo dela */
+  function preferidosDe(E, cid){
+    const pr = {};
+    for(const s of estruturas(E, cid)){
+      if(s.tipo === 'sede') continue;
+      (pr[s.tid] = pr[s.tid] || new Set()).add(s.bairro);
+    }
+    return pr;
+  }
+  /* a cidade pra LER: a gravada, ou o padrão de partida */
+  function daCidade(E, cid){
+    const D = raiz(E);
+    if(D.c[cid]) return D.c[cid];
+    /* a do jogador é gravada na primeira leitura (o começo dela lê os
+       pontos que ele tem hoje, que mudam) */
+    if(E.torcida && cid === E.torcida.mapa){
+      D.c[cid] = inicial(cid, semente(E), preferidosDe(E, cid));
+      return D.c[cid];
+    }
+    const ch = semente(E) + '|' + cid;
+    let g = memo.get(ch);
+    if(!g){ g = inicial(cid, semente(E), preferidosDe(null, cid)); memo.set(ch, g); }
+    return g;
+  }
+  /* a cidade pra MEXER: a cópia vai pro save */
+  function paraMexer(E, cid){
+    const D = raiz(E);
+    if(!D.c[cid]) D.c[cid] = JSON.parse(JSON.stringify(daCidade(E, cid)));
+    D.c[cid].b = D.c[cid].b || {};
+    return D.c[cid];
+  }
+
+  /* as partes de um bairro, da maior pra menor: [{t, v}] */
+  function partes(E, cid, bid){
+    const p = ((daCidade(E, cid).b) || {})[bid] || {};
+    return Object.keys(p).filter(t => p[t] > 0).map(t => ({t, v:p[t]})).sort((a, b) => b.v - a.v || (a.t < b.t ? -1 : 1));
+  }
+  const donaDoObjeto = p => {
+    let m = null;
+    for(const t in p) if(p[t] > DOMINA && (!m || p[t] > p[m])) m = t;
+    return m;
+  };
+  const donaDoBairro = (E, cid, bid) => donaDoObjeto(((daCidade(E, cid).b) || {})[bid] || {});
+
+  /* os bairros da cidade prontos pra tela */
+  function bairros(E, cid){
+    return bairrosDe(cid).map(b => {
+      const ps = partes(E, cid, b.id);
+      const dono = ps.length && ps[0].v > DOMINA ? ps[0].t : null;
+      return {id:b.id, nome:b.nome, zona:b.zona, classe:b.classe, mult:b.mult,
+              dono, v: dono ? ps[0].v : 0, partes:ps, sede:casaDe(cid, b.id)};
+    });
+  }
+  /* quantos bairros cada uma tem, e quem domina a cidade (a que tem
+     mais que todas; empate no topo, ninguém) */
+  function placar(E, cid){
+    const n = {};
+    let semDono = 0;
+    const bs = bairrosDe(cid);
+    const st = daCidade(E, cid).b || {};
+    for(const b of bs){
+      const d = donaDoObjeto(st[b.id] || {});
+      if(d) n[d] = (n[d] || 0) + 1; else semDono++;
+    }
+    const ord = Object.keys(n).sort((a, b) => n[b] - n[a]);
+    const dono = ord.length && (ord.length === 1 || n[ord[0]] > n[ord[1]]) ? ord[0] : null;
+    return {n, semDono, dono, total:bs.length, ordem:ord};
+  }
+  const donaDaCidade = (E, cid) => placar(E, cid).dono;
+
+  /* os membros de hoje de cada torcida (o jogador conta a lista dele) */
+  function membrosDe(E, tid){
+    if(E && E.torcida && tid === E.torcida.id) return (E.membros || []).length;
+    const m = E && E.mundoTorcidas && E.mundoTorcidas[tid];
+    if(m) return m.membros || 0;
+    const o = indice().O.find(x => x.id === tid);
+    return (o && o.membros) || 0;
+  }
+  /* a primeira e a segunda maior da cidade, pelos membros de hoje */
+  function maiores(E, cid){
+    return torcidasDaCidade(cid).map(o => ({id:o.id, n:membrosDe(E, o.id)}))
+      .sort((a, b) => b.n - a.n || (a.id < b.id ? -1 : 1)).slice(0, 2).map(x => x.id);
+  }
+
+  /* rival de verdade, pela relação de HOJE (a mesma régua do rótulo
+     da Diplomacia: abaixo de −15 é Rival). Irmãs nunca. */
+  function rivais(E, a, b){
+    if(!a || !b || a === b) return false;
+    if(TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(a, b)) return false;
+    const R = TO.relacoes, meu = eu(E);
+    if(E && R && (a === meu || b === meu)) return R.nivel(E, a === meu ? b : a) < -15;
+    if(E && R && R.relacaoDelas) return R.relacaoDelas(E, a, b) < -15;
+    return ehRival(a, b);
+  }
+  /* o fator da receita de um ponto: 0,7 em bairro de dona rival */
+  function fator(E, tid, cid, b){
+    const x = bairro(cid, b);
+    if(!E || !x) return 1;
+    const d = donaDoBairro(E, cid, x.id);
+    return d && d !== tid && rivais(E, tid, d) ? CORTE : 1;
+  }
+  /* a nota que a linha do financeiro leva quando corta */
+  function notaDoCorte(E, tid, cid, b){
+    const x = bairro(cid, b);
+    if(!x || fator(E, tid, cid, x) === 1) return '';
+    return _t('bairro da {sigla} −30%', {sigla:siglaDe(donaDoBairro(E, cid, x.id))});
+  }
+  function siglaDe(tid){
+    const o = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : indice().O.find(x => x.id === tid);
+    if(!o) return tid;
+    return (o.siglaTorcida || o.nome || tid);
+  }
+
+  /* =======================================================
+     MEXER NA BARRA
+     `tid` ganha `pts` no bairro; os pontos saem primeiro de `contra`
+     (quem perdeu ali), depois do que é de ninguém, depois das outras
+     (a maior primeiro). No bairro da sede de outra torcida, quem não é
+     da casa ganha metade.
+     ======================================================= */
+  function mexer(E, cid, b, tid, pts, opc){
+    opc = opc || {};
+    const x = bairro(cid, b);
+    if(!E || !x || !tid || !(pts > 0)) return null;
+    const casa = casaDe(cid, x.id);
+    if(casa && casa !== tid) pts *= RESISTE;
+    const st = paraMexer(E, cid);
+    const p = st.b[x.id] = st.b[x.id] || {};
+    const dono0 = donaDoObjeto(p);
+    const antes = p[tid] || 0;
+    const tirar = (id, q) => {
+      const t = Math.min(p[id] || 0, q);
+      p[id] = um((p[id] || 0) - t);
+      if(!(p[id] > 0)) delete p[id];
+      return t;
+    };
+    let ganho = Math.min(pts, 100 - antes), resta = ganho;
+    if(opc.contra && opc.contra !== tid) resta -= tirar(opc.contra, resta);
+    const soma = () => Object.keys(p).reduce((s, k) => s + p[k], 0);
+    resta -= Math.min(Math.max(0, 100 - soma()), resta);
+    for(let g = 0; resta > 0.05 && g < 12; g++){
+      const outras = Object.keys(p).filter(k => k !== tid && p[k] > 0).sort((a, c) => p[c] - p[a]);
+      if(!outras.length) break;
+      resta -= tirar(outras[0], resta);
+    }
+    ganho -= Math.max(0, resta);
+    p[tid] = um(limitar(antes + ganho, 0, 100));
+    const dono1 = donaDoObjeto(p);
+    const r = {cid, bairro:x, tid, contra:opc.contra || null, antes, depois:p[tid], ganho:um(ganho), dono0, dono1};
+    if(dono0 !== dono1) virou(E, r, opc.motivo || '');
+    return r;
+  }
+
+  /* o bairro mudou de dona: fica no registro, e o jogador sabe quando
+     é com ele ou na cidade dele */
+  function virou(E, r, motivo){
+    const D = raiz(E);
+    const abs = (E.data && E.data.absoluto) || 0;
+    D.log.unshift({abs, ano:E.data && E.data.ano, semana:E.data && E.data.semana,
+                   cid:r.cid, bairro:r.bairro.id, de:r.dono0 || null, para:r.dono1 || null, motivo});
+    if(D.log.length > 60) D.log.pop();
+    const meu = eu(E);
+    if(!meu) return;
+    const nb = r.bairro.nome, cidade = (cidadeDe(r.cid) || {}).nome || r.cid;
+    let texto = null;
+    if(r.dono1 === meu)
+      texto = r.dono0 ? _t('Tomamos {bairro} ({cidade}) da {de}. O bairro agora é nosso.', {bairro:nb, cidade, de:nomeDe(r.dono0)})
+                      : _t('{bairro} ({cidade}) passou de 50% pra nós. O bairro agora é nosso.', {bairro:nb, cidade});
+    else if(r.dono0 === meu)
+      texto = r.dono1 ? _t('Perdemos {bairro} ({cidade}) pra {para}.', {bairro:nb, cidade, para:nomeDe(r.dono1)})
+                      : _t('{bairro} ({cidade}) caiu abaixo de 50% pra nós: o bairro está em disputa.', {bairro:nb, cidade});
+    else if(r.cid === E.torcida.mapa)
+      texto = r.dono1 ? _t('A {para} tomou {bairro}{de}.', {para:nomeDe(r.dono1), bairro:nb,
+                          de: r.dono0 ? _t(' da {de}', {de:nomeDe(r.dono0)}) : ''})
+                      : _t('{bairro} ficou sem dona: a {de} caiu abaixo de 50%.', {bairro:nb, de:nomeDe(r.dono0)});
+    if(texto) avisar(E, texto, `dominio|${abs}|${r.cid}|${r.bairro.id}|${r.dono1 || '-'}`);
+  }
+  function avisar(E, texto, chave){
+    if(TO.feed && TO.feed.propor)
+      TO.feed.propor(E, {kind:'dominio', peso:'info', voz:'porrada', chave, texto});
+  }
+
+  /* =======================================================
+     O DIA: a cidade dominada rende, a grande sem cidade sangra, a sede
+     e a subsede se refazem. Chamado por TO.estado.avancarDia.
+     ======================================================= */
+  function refazer(E, cid){
+    const D = raiz(E);
+    const st = D.c[cid];
+    if(!st) return;
+    const I = indice();
+    const sedes = I.sedes.get(cid) || new Map();
+    for(const [tid, b] of sedes){
+      const p = (st.b || {})[b.id] || {};
+      if((p[tid] || 0) < SEDE_TETO) mexer(E, cid, b, tid, Math.min(SEDE_REFAZ, SEDE_TETO - (p[tid] || 0)), {motivo:'sede'});
+    }
+    for(const s of estruturas(E, cid)){
+      if(s.tipo !== 'subsede' && s.tipo !== 'filial') continue;
+      const p = (st.b || {})[s.bairro] || {};
+      if((p[s.tid] || 0) < SUBSEDE_TETO) mexer(E, cid, s.bairro, s.tid, Math.min(SUBSEDE_REFAZ, SUBSEDE_TETO - (p[s.tid] || 0)), {motivo:'subsede'});
+    }
+  }
+  /* o que o dia faz no indicador: o jogador leva direto (o livro de
+     moral e prestígio ganha uma linha por semana, não 7); as IAs, pelo
+     `mover` delas */
+  function noIndicador(E, tid, q){
+    if(tid === eu(E)){
+      const I = E.indicadores, D = raiz(E);
+      D.acum = D.acum || {prestigio:0, moral:0};
+      for(const k of ['prestigio', 'moral']){
+        const a = I[k] || 0;
+        I[k] = limitar(a + q, 0, 20);
+        D.acum[k] = (D.acum[k] || 0) + (I[k] - a);
+      }
+      return;
+    }
+    if(TO.relacoes && TO.relacoes.mover){
+      TO.relacoes.mover(E, tid, 'prestigio', q);
+      TO.relacoes.mover(E, tid, 'moral', q);
+    }
+  }
+  function fecharLivro(E){
+    const D = raiz(E), a = D.acum;
+    if(!a) return;
+    const cidade = (cidadeDe(E.torcida.mapa) || {}).nome || '';
+    for(const k of ['prestigio', 'moral']){
+      const v = Math.round((a[k] || 0) * 100) / 100;
+      if(!v) continue;
+      E.historicoIndicadores = E.historicoIndicadores || [];
+      E.historicoIndicadores.unshift({dia:`${E.data.semana}/${E.data.dia}`, ano:E.data.ano, ind:k, delta:v,
+        motivo: v > 0 ? _t('Dominamos {cidade} (a semana)', {cidade}) : _t('Sem o domínio de {cidade} (a semana)', {cidade})});
+      if(E.historicoIndicadores.length > 300) E.historicoIndicadores.pop();
+    }
+    D.acum = {prestigio:0, moral:0};
+  }
+
+  function dia(E){
+    if(!E || !E.data) return;
+    const D = raiz(E), abs = E.data.absoluto || 0;
+    if(D.dia === abs) return;
+    D.dia = abs;
+    const I = indice(), minha = E.torcida.mapa;
+    for(const cid of I.comTorcida){
+      refazer(E, cid);
+      const pl = placar(E, cid);
+      const dono = pl.dono || null;
+      if(dono) noIndicador(E, dono, DIA);
+      for(const t of maiores(E, cid)) if(t !== dono) noIndicador(E, t, -DIA);
+      const antes = D.donos[cid];
+      D.donos[cid] = dono;
+      if(antes !== undefined && antes !== dono && cid === minha) avisarCidade(E, cid, antes, dono, pl);
+    }
+    /* a IA que está atrás na cidade dela faz ação social (a semana) */
+    if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); }
+  }
+  function avisarCidade(E, cid, antes, dono, pl){
+    const cidade = (cidadeDe(cid) || {}).nome || cid, meu = eu(E);
+    const n = dono ? pl.n[dono] : 0;
+    const texto = dono === meu ? _t('Dominamos {cidade}: {n} de {total} bairros são nossos. +0,1 de prestígio e de moral por dia.', {cidade, n, total:pl.total})
+      : dono ? _t('A {nome} domina {cidade} com {n} de {total} bairros.', {nome:nomeDe(dono), cidade, n, total:pl.total})
+      : antes === meu ? _t('Perdemos o domínio de {cidade}: agora ninguém tem mais bairros que todo mundo.', {cidade})
+      : _t('{cidade} ficou sem dona: empate no número de bairros.', {cidade});
+    avisar(E, texto, `dominio-cidade|${E.data.absoluto}|${cid}|${dono || '-'}`);
+  }
+
+  /* A IA NÃO FICA PARADA: a primeira ou a segunda maior da cidade que
+     não domina faz uma ação social por semana, em 35% das semanas, no
+     bairro sem dona ou de dona fraca mais perto do território dela.
+     Paga do caixa dela. */
+  function semanaDasIAs(E){
+    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    if(!mundo) return;
+    const I = indice(), meu = eu(E);
+    for(const cid of I.comTorcida){
+      const pl = placar(E, cid);
+      for(const tid of maiores(E, cid)){
+        if(tid === meu || tid === pl.dono) continue;
+        const t = mundo[tid];
+        if(!t || (t.caixa || 0) < SOCIAL.custo * 2) continue;
+        const r = sorteio(`${semente(E)}|social|${tid}|${E.data.ano}|${E.data.semana}`);
+        if(r() >= 0.35) continue;
+        const alvo = alvoSocial(E, cid, tid, r);
+        if(!alvo) continue;
+        t.caixa -= SOCIAL.custo;
+        mexer(E, cid, alvo, tid, GANHO.social[0] + r() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
+      }
+    }
+  }
+  /* onde a ação social rende mais: sem dona, ou dona fraca, perto do
+     que a torcida já tem */
+  function alvoSocial(E, cid, tid, r){
+    const bs = bairros(E, cid);
+    const zonas = new Set(bs.filter(b => b.dono === tid).map(b => b.zona));
+    const cand = bs.filter(b => b.dono !== tid && !(b.sede && b.sede !== tid));
+    if(!cand.length) return null;
+    const nota = b => (b.dono ? b.v : 30) - (zonas.has(b.zona) ? 12 : 0) + r() * 8;
+    return cand.sort((a, c) => nota(a) - nota(c))[0].id;
+  }
+
+  /* =======================================================
+     AS AÇÕES QUE MEXEM NA BARRA
+     ======================================================= */
+  /* A BRIGA DO JOGADOR (TO.feed.registrarConfronto): quem ganhou soma
+     no bairro da briga, quem perdeu perde. O bairro vem da briga; sem
+     ele, a concentração é na porta da sede de quem foi atacado e a
+     pista, no bairro do estádio. Arquibancada, invasão, escolta e LNT
+     não são briga de bairro. */
+  function confronto(E, d){
+    if(!E || !d || !d.torcidaId) return null;
+    const meu = eu(E), rival = d.torcidaId;
+    const L = d.local || {};
+    const cena = String(L.cena || '');
+    if(d.lnt || d.aliado || /^estadio|arquibancada|invas|escolta|ct$/.test(cena)) return null;
+    /* empate não mexe (ninguém saiu por cima) */
+    if(d.empatou) return null;
+    let cid = L.cidade || null, b = null;
+    const tenta = (c, x) => { const y = bairro(c, x); if(y){ cid = c; b = y; } return !!y; };
+    if(cid) tenta(cid, L.bairro);
+    if(!b && L.bairro){
+      /* o bairro pode ser da nossa cidade, da do rival (jogo fora) ou
+         ser o nome de uma cidade (a briga da subsede de fora) */
+      const oRival = (TO.mundo && TO.mundo.torcida(rival)) || {};
+      if(!tenta(E.torcida.mapa, L.bairro) && !tenta(oRival.mapa, L.bairro)){
+        const c = indice().C.find(x => norm(x.nome) === norm(L.bairro) || x.id === L.bairro);
+        if(c){ cid = c.id; b = bairroDaFilial(meu, c.id); }
+      }
+    }
+    if(!cid) cid = E.torcida.mapa;
+    const atacado = d.atacamos ? rival : meu;
+    if(!b){
+      if(/praca|concentra/.test(cena) || d.tipoDefesa === 'concentracao') b = sedeDe(atacado, cid) || sedeDe(atacado);
+      else if(/pista|rua/.test(cena) || d.tipoDefesa === 'pista') b = bairroDoEstadio(E, cid);
+      else if(/bar/.test(cena)) b = null;
+    }
+    if(!b) return null;
+    const ganhou = !!d.ganhamos;
+    let pts = /treta/.test(cena) ? (GANHO.treta[d.tam] || GANHO.treta[7])
+            : /arredores/.test(cena) ? GANHO.arredores
+            : /^bar|bote/.test(cena) || d.alvoTipo === 'bar' ? GANHO.bar + (d.quebrou ? GANHO.quebrou : 0)
+            : d.alvoTipo === 'sede' ? GANHO.sede
+            : /casa|festa|piscina/.test(cena) ? GANHO.casa
+            : d.atacamos === false ? GANHO.defesa
+            : GANHO.rua;
+    return ganhou ? mexer(E, cid, b, meu, pts, {contra:rival, motivo:cena || 'briga'})
+                  : mexer(E, cid, b, rival, pts, {contra:meu, motivo:cena || 'briga'});
+  }
+  /* o bairro do estádio principal da cidade (dados/estadios.js) */
+  function bairroDoEstadio(E, cid){
+    const ests = (TO.mundo && TO.mundo.estadiosEm) ? TO.mundo.estadiosEm(cid) : [];
+    for(const e of ests){ const b = bairro(cid, e.bairro); if(b) return b; }
+    const bs = bairrosDe(cid);
+    return bs.length ? bs[hash(`${cid}|estadio`) % bs.length] : null;
+  }
+
+  /* A BRIGA DAS IAs (TO.relacoes.registrarBrigaIA): a vencedora soma no
+     bairro mais exposto da perdedora naquela cidade (o dela de barra
+     mais baixa, fora da sede), ou onde a perdedora tem mais barra */
+  function brigaIA(E, reg){
+    /* a emboscada na estrada não é briga de bairro */
+    if(!E || !reg || !reg.a || !reg.b || reg.tipo === 'estrada') return null;
+    const venc = reg.ganhouA ? reg.a.id : reg.b.id, perd = reg.ganhouA ? reg.b.id : reg.a.id;
+    let cid = reg.mapa;
+    if(!cid){ const c = indice().C.find(x => x.nome === reg.cidade || x.id === reg.cidade); cid = c && c.id; }
+    if(!cid || !bairrosDe(cid).length) return null;
+    const bs = bairros(E, cid);
+    const daPerd = bs.filter(b => b.dono === perd && b.sede !== perd).sort((a, c) => a.v - c.v);
+    let alvo = daPerd[0] || null;
+    if(!alvo){
+      const onde = bs.map(b => ({b, v:(b.partes.find(x => x.t === perd) || {}).v || 0})).filter(x => x.v > 0 && x.b.sede !== perd)
+        .sort((a, c) => c.v - a.v)[0];
+      alvo = onde ? onde.b : null;
+    }
+    if(!alvo) return null;
+    const tam = reg.a.n || 0;
+    const pts = reg.tipo === 'treta' ? (GANHO.treta[tam] || GANHO.treta[7])
+              : reg.tipo === 'bar' ? GANHO.iaBar : GANHO.iaRua;
+    return mexer(E, cid, alvo.id, venc, pts, {contra:perd, motivo:reg.tipo || 'ia'});
+  }
+
+  /* UMA ESTRUTURA NOVA NO BAIRRO (bar, loja, subsede; a filial na
+     cidade dela): a torcida ganha presença ali */
+  function estrutura(E, tid, tipo, cid, b){
+    const pts = GANHO.estrutura[tipo] || 0;
+    if(!pts) return null;
+    if(tipo === 'filial') b = bairroDaFilial(tid, cid);
+    return mexer(E, cid, b, tid, pts, {motivo:'estrutura'});
+  }
+  /* o bairro que a IA escolhe pro ponto novo: um dela (fora da sede),
+     depois um sem dona perto do território, depois o padrão */
+  function bairroNovoIA(E, tid, tipo){
+    const o = (TO.mundo && TO.mundo.torcida(tid)) || indice().O.find(x => x.id === tid);
+    if(!o) return null;
+    const cid = o.mapa, bs = bairros(E, cid);
+    const ja = new Set(estruturas(E, cid).filter(s => s.tid === tid && s.tipo === tipo).map(s => s.bairro));
+    const r = sorteio(`${semente(E)}|novo|${tid}|${tipo}|${E.data ? E.data.absoluto : 0}`);
+    const nota = b => (b.dono === tid ? 0 : !b.dono ? 20 : rivais(E, tid, b.dono) ? 90 : 45) + (ja.has(b.id) ? 25 : 0) + r() * 10;
+    const cand = bs.filter(b => !b.sede);
+    const esc = (cand.length ? cand : bs).sort((a, c) => nota(a) - nota(c))[0];
+    return esc ? bairro(cid, esc.id) : bairroPadrao(o, tipo, 0);
+  }
+  /* a compra da IA: grava o bairro no objeto (bar, loja) e soma a presença */
+  function compraIA(E, tid, tipo, obj){
+    const o = (TO.mundo && TO.mundo.torcida(tid)) || null;
+    if(!o) return null;
+    if(tipo === 'filial') return estrutura(E, tid, 'filial', obj && obj.cidade, null);
+    const b = tipo === 'subsede'
+      ? bairroPadrao(o, 'subsede', Math.max(0, (((E.mundoTorcidas || {})[tid] || {}).subsedes || 1) - 1))
+      : bairroNovoIA(E, tid, tipo);
+    if(obj && b && tipo !== 'subsede') obj.bairro = b.nome;
+    return b ? estrutura(E, tid, tipo, o.mapa, b) : null;
+  }
+
+  /* A AÇÃO SOCIAL NO BAIRRO (do jogador): cesta básica, mutirão, o
+     campinho arrumado — a torcida aparece no bairro sem briga. Uma por
+     semana, na cidade da torcida. */
+  function podeSocial(E){
+    if(!E) return {ok:false, motivo:''};
+    E.acoes = E.acoes || {};
+    if(E.acoes.ultimaSocial === `${E.data.ano}|${E.data.semana}`)
+      return {ok:false, motivo:_t('já teve ação social esta semana')};
+    if((E.dinheiro || 0) < SOCIAL.custo) return {ok:false, motivo:_t('custa {valor}', {valor:dinheiro(SOCIAL.custo)})};
+    const aptos = TO.membros && TO.membros.aptosParaOEstadio ? TO.membros.aptosParaOEstadio(E).length : (E.membros || []).length;
+    if(aptos < SOCIAL.gente) return {ok:false, motivo:_t('gente apta de menos ({n} de {min})', {n:aptos, min:SOCIAL.gente})};
+    return {ok:true};
+  }
+  function social(E, b){
+    const pode = podeSocial(E);
+    if(!pode.ok) return {ok:false, msg:pode.motivo};
+    const cid = E.torcida.mapa, x = bairro(cid, b);
+    if(!x) return {ok:false, msg:_t('Esse bairro não é da nossa cidade.')};
+    E.acoes.ultimaSocial = `${E.data.ano}|${E.data.semana}`;
+    E.dinheiro -= SOCIAL.custo;
+    if(TO.estado && TO.estado.lancarNoResumo) TO.estado.lancarNoResumo(E, 'social', -SOCIAL.custo);
+    const r0 = sorteio(`${semente(E)}|social-nosso|${E.data.absoluto}|${x.id}`);
+    const pts = GANHO.social[0] + r0() * (GANHO.social[1] - GANHO.social[0]);
+    const r = mexer(E, cid, x, eu(E), pts, {motivo:'social'});
+    const v = r ? r.depois : 0;
+    return {ok:true, r, msg:_t('Ação social em {bairro}: a barra da torcida foi a {v}%.', {bairro:x.nome, v:Math.round(v)})};
+  }
+  const dinheiro = v => (TO.util && TO.util.dinheiro) ? TO.util.dinheiro(v) : 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+
+  /* o que o save antigo precisa: a sede do jogador no bairro espalhado */
+  function reparar(E){
+    if(!E || !E.torcida) return;
+    const s = sedeDe(E.torcida.id, E.torcida.mapa);
+    if(s && norm(E.torcida.bairroSede) !== norm(s.nome)) E.torcida.bairroSede = s.nome;
+    raiz(E);
+  }
+
+  /* monta os dados já na carga: a sede espalhada vale pra todo mundo
+     que ler `bairroSede` depois daqui */
+  try{ indice(); }catch(e){ /* sem dados ainda: monta na primeira leitura */ }
+
+  return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS,
+          indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
+          torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
+          donaDoBairro, maiores, membrosDe, rivais, fator, notaDoCorte, siglaDe, nomeDe,
+          mexer, confronto, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
+          podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash,
+          get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};
+})();
+
+;
+
 /* ===== js/mundo/competicoes.js ===== */
 /* =========================================================
    COMPETIÇÕES — temporada, tabelas e calendário (GDD §18)
@@ -13739,9 +14721,14 @@ TO.relacoes = (function(){
      MESMAS mensalidades cheias — as folhas delas entravam na fatia
      errada (~¼ do que o jogador paga) e a assimetria fechou.
      ======================================================= */
-  function bairroIA(o, tipo, i){
+  function bairroIA(o, tipo, i, obj){
     const bs = M().bairrosDe(o.mapa) || [];
     if(!bs.length) return null;
+    /* O PONTO COM BAIRRO GRAVADO fica nele (as compras depois do domínio
+       dos bairros, 30/09/2026); sem gravação, o bairro padrão do domínio
+       (fora das sedes, perto da própria) — o mesmo que o mapa usa */
+    if(obj && obj.bairro){ const b = M().bairro(o.mapa, obj.bairro); if(b) return b; }
+    if(TO.dominio && TO.dominio.bairroPadrao) return TO.dominio.bairroPadrao(o, tipo, i);
     if(tipo === 'sede'){
       const fixo = o.bairroSede && bs.find(x=>x.nome === o.bairroSede);
       if(fixo) return fixo;
@@ -13771,36 +14758,39 @@ TO.relacoes = (function(){
     const fator = fx * (0.7 + ((t.prestigio||0)/20)*0.4
                             + U.limitar(t.membros/150, 0, 1)*0.3);
     const multB = b => b ? M().multiplicador(b) : (t.mult || 1);
+    /* bairro de dona rival corta 30% (o domínio dos bairros, 30/09/2026) */
+    const corte = (cid, b) => (TO.dominio && E && b) ? TO.dominio.fator(E, id, cid, b) : 1;
 
     const hojeAbs = (E && E.data && E.data.absoluto) || 0;
     (t.bares||[]).forEach((b, i)=>{
-      const ba = bairroIA(o, 'bar', i);
+      const ba = bairroIA(o, 'bar', i, b);
       /* bar quebrado no ataque rende metade por 45 dias, pra elas
          também (dono, 10/09/2026) */
       const dd = FIN().diasDeDano ? FIN().diasDeDano(b, hojeAbs) : 0;
       pon(rec, (ba ? _t('Bar — {bairro} (n{nivel})', {bairro:ba.nome, nivel:b.nivel})
                    : _t('Bar (n{nivel})', {nivel:b.nivel}))+
                (dd ? _t(' · quebrado, {d} d', {d:dd}) : ''),
-          R.bar[b.nivel] * multB(ba) * fator
+          R.bar[b.nivel] * multB(ba) * fator * corte(o.mapa, ba)
             * (FIN().multDano ? FIN().multDano(b, hojeAbs) : 1));
     });
     (t.lojas||[]).forEach((l, i)=>{
-      const ba = bairroIA(o, 'loja', i);
+      const ba = bairroIA(o, 'loja', i, l);
       pon(rec, (ba ? _t('Loja — {bairro} (n{nivel})', {bairro:ba.nome, nivel:l.nivel})
                    : _t('Loja (n{nivel})', {nivel:l.nivel}))+
                (t.fabrica ? _t(' · fábrica') : ''),
-          R.loja[l.nivel] * multB(ba) * fator);
+          R.loja[l.nivel] * multB(ba) * fator * corte(o.mapa, ba));
     });
     for(let i=0; i<(t.subsedes||0); i++){
       const ba = bairroIA(o, 'subsede', i);
       pon(rec, ba ? _t('Subsede — {bairro}', {bairro:ba.nome}) : _t('Subsede'),
-          R.subsede * multB(ba) * fator);
+          R.subsede * multB(ba) * fator * corte(o.mapa, ba));
     }
     for(const f of (t.filiais||[]))
       pon(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:(TO.dados.cidades.find(x=>x.id===f.cidade)||{}).nome
                  || f.cidade, nivel:f.nivel}),
           R.subsede * (E && id && FIN().multFilial
-            ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator);
+            ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator
+            * (TO.dominio && E && id ? corte(f.cidade, TO.dominio.bairroDaFilial(id, f.cidade)) : 1));
 
     pon(des, _t('Manutenção da sede (n{n})', {n:t.sede}), FIN().MANUT_SEDE[t.sede]);
     /* a fábrica delas corta os MESMOS 50% do custo da loja */
@@ -14006,9 +14996,15 @@ TO.relacoes = (function(){
     if(pr.trava) return null;
     const t = mundo(E)[id];
     if(tipo === 'sede') t.sede++;
-    else if(tipo === 'filial')
+    else if(tipo === 'filial'){
       (t.filiais = t.filiais || []).push({cidade:pr.cidade, nivel:1, membros:8});
-    else (t[P().PONTO[tipo].plural] = t[P().PONTO[tipo].plural] || []).push({nivel:1});
+      if(TO.dominio) TO.dominio.compraIA(E, id, 'filial', {cidade:pr.cidade});
+    }
+    else {
+      const novo = {nivel:1};
+      (t[P().PONTO[tipo].plural] = t[P().PONTO[tipo].plural] || []).push(novo);
+      if(TO.dominio) TO.dominio.compraIA(E, id, tipo, novo);
+    }
     /* no extrato dela, com o valor do presente — o caixa dela não mexe */
     (t.extrato = t.extrato || []).unshift(
       {q:_t('{ano} s{semana}', {ano:E.data.ano, semana:E.data.semana}),
@@ -14378,8 +15374,11 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'area-treino')
           t.areaTreino = (t.areaTreino || 0) + 1;
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
-        else if(compra.tipo === 'subsede') t.subsedes++;
-        else if(compra.tipo === 'filial')
+        else if(compra.tipo === 'subsede'){
+          t.subsedes++;
+          if(TO.dominio) TO.dominio.compraIA(E, id, 'subsede');
+        }
+        else if(compra.tipo === 'filial'){
           /* a fundação desce com gente da sede (ordem do dono,
              31/08/2026, ampliada em 09/09/2026): 8 destacados — um
              diretor, dois linha de frente e cinco componentes — mudam
@@ -14387,13 +15386,22 @@ TO.relacoes = (function(){
              o núcleo recruta lá, no ritmo dele */
           (t.filiais = t.filiais || []).push(
             {cidade:compra.cidade, nivel:1, membros:8});
+          /* e a subsede de fora ganha presença no bairro dela lá */
+          if(TO.dominio) TO.dominio.compraIA(E, id, 'filial', {cidade:compra.cidade});
+        }
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
           E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;
           TO.competicoes.usarSave(E);
         }
         else if(compra.tipo.startsWith('ampliar:')) compra.alvo.nivel++;
-        else t[P().PONTO[compra.tipo].plural].push({nivel:1});
+        else {
+          /* o ponto novo nasce com bairro (o domínio dos bairros,
+             30/09/2026): um dela, ou um sem dona perto do território */
+          const novo = {nivel:1};
+          t[P().PONTO[compra.tipo].plural].push(novo);
+          if(TO.dominio) TO.dominio.compraIA(E, id, compra.tipo, novo);
+        }
         /* a compra entra no extrato dela (crivo do dono, 31/08/2026) */
         if(compra.custo) lancarIA(E, id,
           ROTULO_COMPRA[compra.tipo] || compra.tipo, -compra.custo);
@@ -15250,6 +16258,11 @@ TO.relacoes = (function(){
       m[lado.id].ultimaBrigaIA = abs;
       desgasteDaNoite(E, lado.id, lado.feridos, lado.presos);
     }
+    /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): a vencedora soma no
+       bairro mais exposto da perdedora naquela cidade */
+    if(TO.dominio){
+      try{ reg.dominio = !!TO.dominio.brigaIA(E, reg); }catch(e){ /* o domínio não derruba a briga */ }
+    }
     return reg;
   }
 
@@ -15443,6 +16456,7 @@ TO.relacoes = (function(){
     const reg = {
       ano: E.data.ano, semana: E.data.semana, dia: E.data.dia,
       cidade: (M().cidade(cidade)||{}).nome || cidade, jogo: jogoRot,
+      mapa: cidade, tipo: opts.tipo || 'rua',
       a: {id:a.id, nome:a.nome, n:nA, feridos:bxA.feridos, presos:bxA.presos},
       b: {id:b.id, nome:b.nome, n:nB, feridos:bxB.feridos, presos:bxB.presos},
       vencedor: ganhouA ? a.nome : b.nome,
@@ -15636,6 +16650,7 @@ TO.relacoes = (function(){
     return registrarBrigaIA(E, {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
       cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:_t('treta marcada'),
+      mapa:o.mapa, tipo:'treta',
       a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
       b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
       vencedor: ganhouA ? o.nome : r.nome, prestigio:display, ganhouA
@@ -15651,7 +16666,7 @@ TO.relacoes = (function(){
     /* ataque de nanica não existe — a mesma régua do nosso bar */
     if(vivoDe(E, atk.id) < vivoDe(E, o.id) * 0.5) return null;
     const reg = brigaIA(E, atk, o, o.mapa, _t('ataque ao bar'),
-                        {tetoA:60, tetoB:40});
+                        {tetoA:60, tetoB:40, tipo:'bar'});
     if(!reg) return null;
     if(reg.ganhouA){
       const tAtk = (E.mundoTorcidas||{})[atk.id];
@@ -15732,7 +16747,7 @@ TO.relacoes = (function(){
         /* o maior rival da praça fecha a pista primeiro */
         const emb = hostis.find(x=>ehMaiorRival(E, o.id, x.id)) || hostis[0];
         if(!emb) continue;
-        const r = brigaIA(E, emb, o, cid, _t('emboscada na estrada'));
+        const r = brigaIA(E, emb, o, cid, _t('emboscada na estrada'), {tipo:'estrada'});
         if(r) fora.push(r);
         break;
       }
@@ -22982,12 +23997,19 @@ TO.financeiro = (function(){
 
     const fator = fatorComercial(E) * multMoral(E);
     const hoje = absDe(E);
+    /* O BAIRRO DE RIVAL CORTA 30% (o dono, 30/09/2026): bar, loja,
+       subsede e subsede de fora em bairro cuja dona é rival rendem 70% —
+       a linha diz de quem é o bairro (js/mundo/dominio.js) */
+    const D = TO.dominio, eu = E.torcida.id;
+    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) : 1;
+    const nota = (cid, b) => { const n = D ? D.notaDoCorte(E, eu, cid, b) : ''; return n ? ' · ' + n : ''; };
+    const minha = E.torcida.mapa;
     for(const b of p.bares){
       const dd = diasDeDano(b, hoje);
       juntar(rec, (b.bairro ? _t('Bar — {bairro} (n{nivel})', {bairro:b.bairro, nivel:b.nivel})
                             : _t('Bar (n{nivel})', {nivel:b.nivel}))+
-                  (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : ''),
-             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje), COM);
+                  (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : '') + nota(minha, b.bairro),
+             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje)*corte(minha, b.bairro), COM);
     }
     /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
        na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
@@ -23001,17 +24023,19 @@ TO.financeiro = (function(){
       juntar(rec, (l.bairro ? _t('Loja — {bairro} (n{nivel})', {bairro:l.bairro, nivel:l.nivel})
                             : _t('Loja (n{nivel})', {nivel:l.nivel}))+
                   (p.fabrica ? ' · ' + _t('fábrica') : '')+
-                  (multClube > 1 ? ' · ' + _t('material oficial') : ''),
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube, COM);
+                  (multClube > 1 ? ' · ' + _t('material oficial') : '') + nota(minha, l.bairro),
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube*corte(minha, l.bairro), COM);
     }
     for(const s of p.subsedes)
-      juntar(rec, s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede'),
-             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM, COM);
+      juntar(rec, (s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede')) + nota(minha, s.bairro),
+             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM*corte(minha, s.bairro), COM);
     /* as FILIAIS (subsede em outra cidade, dono 25/08/2026) rendem a
        mesma régua da subsede, no multiplicador da cidade DELAS */
-    for(const f of (p.filiais||[]))
-      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}),
-             RECEITA.subsede*multFilial(E,f)*fator*SEM, COM);
+    for(const f of (p.filiais||[])){
+      const bf = D ? D.bairroDaFilial(eu, f.cidade) : null;
+      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}) + nota(f.cidade, bf),
+             RECEITA.subsede*multFilial(E,f)*fator*SEM*corte(f.cidade, bf), COM);
+    }
 
     /* --- despesas --- */
     if(MANUT_SEDE[E.torcida.sedeNivel])
@@ -23638,9 +24662,17 @@ TO.patrimonio = (function(){
        impede a tabela de mentir quando o balanço mudar */
     const REC = F().RECEITA, MAN = F().MANUT, INSUMO = F().INSUMO;
     const fora = [];
+    /* o corte de 30% do bairro de rival (dono, 30/09/2026), igual ao
+       do fechamento: a tabela não pode prometer o que o caixa não paga */
+    const D = TO.dominio, eu = E.torcida.id, minha = E.torcida.mapa;
+    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) : 1;
+    const notaCorte = (cid, b) => D ? D.notaDoCorte(E, eu, cid, b) : '';
+    const junta = (a, b) => [a, b].filter(Boolean).join(' · ') || undefined;
 
+    const bSede = (TO.mundo.bairroDaSede(E.torcida)||{}).nome || '';
     fora.push({tipo:'sede', rot:_t('Sede (nível {n})', {n:nivelSede(E)}),
-               bairro:(TO.mundo.bairroDaSede(E.torcida)||{}).nome || '',
+               bairro:bSede,
+               nota: notaCorte(minha, bSede) ? _t('{nota}: a festa rende 30% menos', {nota:notaCorte(minha, bSede)}) : undefined,
                receita:0, despesa:F().MANUT_SEDE[nivelSede(E)]});
     for(const chave of Object.keys(ANEXOS))
       if(p[chave]) fora.push({tipo:'anexo', rot:ANEXOS[chave].rot,
@@ -23658,17 +24690,17 @@ TO.patrimonio = (function(){
       const dd = F().diasDeDano ? F().diasDeDano(b, hojeAbs) : 0;
       fora.push({tipo:'bar',
         rot:_t('Bar (nível {n})', {n:b.nivel}) + (b.gratis ? ' · ' + _t('da sede') : ''), bairro:b.bairro,
-        nota: dd ? _tn(dd, 'quebrado no ataque: metade da receita por mais {n} dia',
-                           'quebrado no ataque: metade da receita por mais {n} dias') : undefined,
-        receita: REC.bar[b.nivel]*mult(b.bairro)*fator*(F().multDano ? F().multDano(b, hojeAbs) : 1),
+        nota: junta(dd ? _tn(dd, 'quebrado no ataque: metade da receita por mais {n} dia',
+                           'quebrado no ataque: metade da receita por mais {n} dias') : '', notaCorte(minha, b.bairro)),
+        receita: REC.bar[b.nivel]*mult(b.bairro)*fator*(F().multDano ? F().multDano(b, hojeAbs) : 1)*corte(minha, b.bairro),
         despesa: MAN.bar[b.nivel]});
     }
     const fab = p.fabrica ? FABRICA : null;
     for(const l of p.lojas) fora.push({tipo:'loja',
       rot:_t('Loja (nível {n})', {n:l.nivel}) +
           (l.semInsumo ? ' · ' + _t('sem insumo') : fab ? ' · ' + _t('fábrica') : ''),
-      bairro:l.bairro,
-      receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator,
+      bairro:l.bairro, nota: notaCorte(minha, l.bairro) || undefined,
+      receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator*corte(minha, l.bairro),
       despesa: (MAN.loja[l.nivel] + REC.loja[l.nivel]*INSUMO)
                * (fab ? 1-fab.corteCusto : 1)});
     for(const f of (p.filiais||[])) fora.push({tipo:'filial',
@@ -23676,10 +24708,12 @@ TO.patrimonio = (function(){
       bairro:F().nomeCidade(f.cidade),
       nucleo: (E.membros||[]).filter(m=>m.filial === f.cidade).length,
       teto: FILIAL.teto[f.nivel],
-      receita: REC.subsede * F().multFilial(E, f) * fator,
+      nota: D ? (notaCorte(f.cidade, D.bairroDaFilial(eu, f.cidade)) || undefined) : undefined,
+      receita: REC.subsede * F().multFilial(E, f) * fator * (D ? corte(f.cidade, D.bairroDaFilial(eu, f.cidade)) : 1),
       despesa: MAN.subsede[f.nivel] || MAN.subsede[1]});
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:_t('Subsede'), bairro:s.bairro,
-      receita: REC.subsede*mult(s.bairro)*fator,
+      nota: notaCorte(minha, s.bairro) || undefined,
+      receita: REC.subsede*mult(s.bairro)*fator*corte(minha, s.bairro),
       despesa: MAN.subsede[s.nivel || 1]});
 
     const frota = F().onibusDe(E);
@@ -23721,6 +24755,29 @@ TO.patrimonio = (function(){
     return fora;
   }
 
+  /* ONDE ABRIR O PONTO NOVO (o domínio dos bairros, 30/09/2026): o
+     jogador escolhe o bairro. A lista começa pelo de sempre (o bairro
+     sorteado fora da zona da sede, GDD §7.2), depois os nossos, os sem
+     dona e os das outras; cada linha diz de quem é o bairro, e o de
+     dona rival avisa o corte de 30% na receita. A estrutura nova soma
+     presença ali (TO.dominio.estrutura). */
+  function bairrosParaAbrir(E, tipo){
+    const D = TO.dominio, cid = E.torcida.mapa, eu = E.torcida.id;
+    const padrao = TO.mundo.bairro(cid, F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1)));
+    const bs = D ? D.bairros(E, cid)
+                 : TO.mundo.bairrosDe(cid).map(b=>({id:b.id, nome:b.nome, zona:b.zona, dono:null}));
+    const ordem = b => (padrao && b.id === padrao.id) ? 0 : b.dono === eu ? 1 : !b.dono ? 2
+                     : (D && D.rivais(E, eu, b.dono)) ? 4 : 3;
+    return bs.slice().sort((a, b)=> ordem(a) - ordem(b) || a.nome.localeCompare(b.nome))
+      .map(b=>{
+        const dona = !b.dono ? _t('sem dona')
+          : b.dono === eu ? _t('nosso ({v}%)', {v:Math.round(b.v)})
+          : _t('da {sigla} ({v}%)', {sigla:D.siglaDe(b.dono), v:Math.round(b.v)});
+        const corte = D && b.dono && b.dono !== eu && D.rivais(E, eu, b.dono) ? ' · ' + _t('rende 30% menos') : '';
+        return {id:b.id, rot:_t('{bairro} (zona {zona}) · {dona}', {bairro:b.nome, zona:_t(b.zona), dona}) + corte};
+      });
+  }
+
   /* =======================================================
      O QUE DÁ PRA COMPRAR
      Cada opção diz o preço e, quando não dá, diz por quê —
@@ -23756,6 +24813,8 @@ TO.patrimonio = (function(){
         nota: n === 0 ? _t('sem sede não há ponto comercial')
                       : _t('{tem} de {max} pela sede nível {n}', {tem, max:teto.qtd, n}),
         custo:cfg.compra,
+        /* ONDE ABRIR (o domínio dos bairros, 30/09/2026) */
+        escolhas: n > 0 ? bairrosParaAbrir(E, tipo) : null,
         trava:trava(cfg.compra, tem>=teto.qtd ? _t('a sede não comporta mais') : null)});
 
       /* ampliar o ponto mais fraco de cada tipo: é o que o jogador
@@ -24308,6 +25367,8 @@ TO.patrimonio = (function(){
     /* a ampliação da subsede e o presente também chegam com a escolha
        colada no id ('ampliar-filial:cidade', 'presente:aliado:tipo') */
     if(!o && id.indexOf('ampliar-filial:') === 0) o = opcoes(E).find(x=>x.id === 'ampliar-filial');
+    /* o ponto novo chega com o bairro escolhido ('comprar:bar:bairro') */
+    if(!o && id.indexOf('comprar:') === 0) o = opcoes(E).find(x=>x.id === id.split(':').slice(0, 2).join(':'));
     if(!o && id.indexOf('presente:') === 0) o = opcoes(E).find(x=>x.id === 'presente');
     if(!o) return {ok:false, msg:_t('Opção que não existe.')};
     if(o.trava) return {ok:false, msg:_t('Não dá: {motivo}.', {motivo:o.trava})};
@@ -24329,6 +25390,8 @@ TO.patrimonio = (function(){
     if(acao==='filial'){
       p.filiais = p.filiais || [];
       p.filiais.push({cidade:tipo, nivel:1});
+      /* a subsede de fora ganha presença no bairro dela lá (o domínio) */
+      if(TO.dominio) TO.dominio.estrutura(E, E.torcida.id, 'filial', tipo, null);
       TO.estado.lancar(E, _t('Subsede em {cidade}', {cidade:F().nomeCidade(tipo)}), -o.custo);
       /* A FUNDAÇÃO DESCE COM GENTE DA SEDE (ordem do dono, 31/08/2026;
          ampliada em 09/09/2026): um diretor, dois linha de frente e
@@ -24419,9 +25482,13 @@ TO.patrimonio = (function(){
       TO.estado.lancar(E, _t('Bombas ×{n}', {n:5}), -o.custo);
     } else if(acao==='comprar'){
       const cfg = PONTO[tipo];
-      const bairro = F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));
+      /* o bairro escolhido na vitrine; sem escolha, o de sempre */
+      const escolhido = extra ? TO.mundo.bairro(E.torcida.mapa, extra) : null;
+      const bairro = escolhido ? escolhido.nome : F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));
       p[cfg.plural].push({nivel:1, bairro});
       TO.estado.lancar(E, cfg.emBairro(bairro), -o.custo);
+      /* A ESTRUTURA NOVA SOMA PRESENÇA NO BAIRRO (o dono, 30/09/2026) */
+      if(TO.dominio) TO.dominio.estrutura(E, E.torcida.id, tipo, E.torcida.mapa, bairro);
       /* subsede nova tem batismo (feed 9.5); bar e loja não — quem se
          reúne na subsede é a torcida, e é isso que vira data */
       if(tipo === 'subsede')
@@ -24660,6 +25727,26 @@ TO.acoes = (function(){
     return (id && lista.find(x=>x.id === id)) || lista[0];
   };
 
+  /* os bairros da nossa cidade que a ação social pode ajudar: os que
+     não são nossos (menos o da sede dos outros, que não se compra com
+     cesta básica), na ordem em que a barra rende mais — o sem dona e o
+     de dona fraca primeiro */
+  function alvosSociais(E){
+    const D = TO.dominio;
+    if(!D || !E || !E.torcida) return [];
+    const eu = E.torcida.id;
+    return D.bairros(E, E.torcida.mapa)
+      .filter(b => b.dono !== eu && !(b.sede && b.sede !== eu))
+      .map(b => {
+        const nosso = (b.partes.find(x => x.t === eu) || {}).v || 0;
+        return {id:b.id, nome:b.nome, tipo:'bairro', bairro:b.nome, zona:b.zona,
+                nosso, dono:b.dono, v:b.v,
+                nota: b.dono ? _t('zona {zona} · da {sigla} ({v}%) · nossa barra {n}%', {zona:_t(b.zona), sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
+                             : _t('zona {zona} · sem dona · nossa barra {n}%', {zona:_t(b.zona), n:Math.round(nosso)})};
+      })
+      .sort((a, b) => (a.dono ? a.v : 0) - (b.dono ? b.v : 0) || b.nosso - a.nosso);
+  }
+
   /* QUEM NÃO TEM BAR NÃO TEM BAR PRA ATACAR (o dono, 29/09/2026:
      "Torcidas que ainda não tem bar não dá pra atacar assim"). O pino de
      bar das outras torcidas é sorteado no mapa pra todas (mapa.js), mas o
@@ -24745,9 +25832,13 @@ TO.acoes = (function(){
       {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:deles.nome})},
       {ind:'moral', delta: dmNossa, dono:_t('nossa')}
     ].filter(x=>x.delta);
+    /* a cidade da briga, quando não é a nossa (o jogo fora): o bairro
+       dela é o do domínio de lá (dono, 30/09/2026) */
+    const cidade = typeof enc.foraDeCasa === 'string' ? enc.foraDeCasa
+                 : enc.foraDeCasa ? ((E.proximoJogo || {}).mapaAdv || null) : null;
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: deles.torcida, ganhamos, atacamos: !enc.sofrido,
-      local:{cena: enc.local || '', bairro: enc.bairro || ''},
+      local:{cena: enc.local || '', bairro: enc.bairro || '', cidade},
       /* a escolta desce com o aliado junto: o carimbo vai pro jornal
          montar a manchete de apoio (pedido do dono, 31/08/2026) */
       aliado: enc.escoltaAliado && enc.junto
@@ -24948,7 +26039,7 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       local:{cena: alvo.cena || 'rua', bairro: alvo.bairro || ''},
-      lnt: alvo.lnt || null,
+      lnt: alvo.lnt || null, tam: alvo.n || 5,
       a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:alvo.n,
           caidos: membros.filter(m=>!m.preso && m.caido).length,
           presos: membros.filter(m=>m.preso).length, venceu:ganhou},
@@ -24994,6 +26085,9 @@ TO.acoes = (function(){
     let perdeu = 0;
     const antes = {moral:E.indicadores.moral, prestigio:E.indicadores.prestigio,
                    relacao: R.nivel(E, alvo.torcidaId)};
+    /* o bar que eles vieram pegar é o bairro da briga (o domínio) */
+    const barAlvo = alvo.tipo === 'bar'
+      ? TO.financeiro.barMaisVisado((E.patrimonio||{}).bares) : null;
     if(!seguramos){
       /* DINHEIRO SÓ MUDA DE MÃO EM BRIGA NO BAR (decisão do dono,
          17/08/2026): é lá que tem gaveta e caixa. Perder na estrada,
@@ -25063,7 +26157,9 @@ TO.acoes = (function(){
       torcidaId: alvo.torcidaId, ganhamos: seguramos,
       atacamos: false, cobranca: !!alvo.cobranca,
       local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
-             bairro: alvo.bairro || ''},
+             bairro: alvo.bairro || (barAlvo && barAlvo.bairro) || '',
+             cidade: alvo.mapa || null},
+      tipoDefesa: alvo.tipo, estrada: naEstrada,
       a: nossoLado(E, alvo, res, seguramos),
       b: ladoDeles(E, alvo, res, seguramos),
       efeitos});
@@ -25104,7 +26200,7 @@ TO.acoes = (function(){
     const R = TO.relacoes;
     const ganhou = !!res.venceu;
     const linhas = [];
-    let levou = 0;
+    let levou = 0, quebrou = false;
     if(ganhou){
       const m = R.mundo(E)[alvo.torcidaId];
       /* DINHEIRO SÓ SAI DE BRIGA NO BAR (decisão do dono, 17/08/2026):
@@ -25132,6 +26228,7 @@ TO.acoes = (function(){
            vale pra gente (dono, 10/09/2026) */
         const F = TO.financeiro;
         const dele = m && F.barMaisVisado(m.bares);
+        quebrou = !!dele;
         if(dele){
           F.danificarBar(dele, (E.data && E.data.absoluto) || 0, E.torcida.id);
           linhas.push(_t('o bar deles ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
@@ -25161,6 +26258,7 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: true,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
+      alvoTipo: alvo.tipo, quebrou,
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
@@ -25292,7 +26390,11 @@ TO.acoes = (function(){
            fraca paga. Abaixo disso é vaquinha, e vaquinha é escolha
            ruim — não é impossibilidade. */
         const custo = custoFesta(E);
-        const receita = Math.round(publico * U.entre(4.8, 6.4));
+        /* a sede em bairro de dona rival: a festa rende 30% menos (o
+           domínio dos bairros, 30/09/2026) — o público tem medo de ir */
+        const corte = TO.dominio ? TO.dominio.fator(E, E.torcida.id, E.torcida.mapa,
+                                                    (TO.mundo.bairroDaSede(E.torcida)||{}).nome) : 1;
+        const receita = Math.round(publico * U.entre(4.8, 6.4) * corte);
         /* festa não fabrica moral (decisão do dono, 17/08/2026): virou
            diária com o Expediente e saturava o indicador em dias. É
            caixa e ponto — moral vem de briga, título e defesa. */
@@ -25469,6 +26571,29 @@ TO.acoes = (function(){
        return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
                               efetivoRival: noAlvo},
                msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})};
+     }},
+
+    /* A AÇÃO SOCIAL NO BAIRRO (o dono, 30/09/2026: "marcar uma ação
+       social no bairro"): cesta básica, mutirão, o campinho arrumado — a
+       torcida aparece no bairro sem briga. Uma por semana, R$ 1.500, soma
+       de 6 a 10 pontos na barra do bairro (js/mundo/dominio.js). Não é a
+       ação social aposentada em 24/08/2026 (id 'social'): é outra, com
+       outro id, e mora no mapa da cidade e aqui. */
+    {id:'social-bairro', nome:_t('Ação social no bairro'), icone:'casa', cena:_t('Bairro'),
+     efeito:_t('R$ 1.500; soma de 6 a 10% na barra do bairro escolhido — 1 por semana'),
+     alvos:alvosSociais, manual:true,
+     disponivel(E){
+       if(!TO.dominio) return {ok:false, motivo:_t('sem bairros nesta cidade')};
+       const d = TO.dominio.podeSocial(E);
+       if(!d.ok) return d;
+       const l = alvosSociais(E);
+       return l.length ? {ok:true, nota:_t('o melhor alvo é {nome}', {nome:l[0].nome})}
+                       : {ok:false, motivo:_t('todos os bairros já são nossos')};
+     },
+     executar(E, opc){
+       const alvo = escolher(alvosSociais(E), opc);
+       if(!alvo) return {ok:false, msg:_t('Esse bairro não existe mais.')};
+       return TO.dominio.social(E, alvo.id);
      }},
 
     {id:'pressionar', nome:_t('Pressionar o clube'), icone:'megafone', cena:_t('CT'),
@@ -25851,7 +26976,7 @@ TO.acoes = (function(){
 
   return {aplicarFaixa, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
           porId, agendaveis, expediente,
-          maximo, restantes, executar, rodarExpediente,
+          maximo, restantes, executar, rodarExpediente, alvosSociais,
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
@@ -25960,7 +27085,7 @@ TO.planejamento = (function(){
      risco:3, prestigio:4, ida:false, x:0.80, y:0.34, acima:false,
      nota:_t('cordão da PM em peso, mas é onde o rival inteiro está')},
     /* os da ida: o bonde deles ainda está na rua, quebrado em pedaços */
-    {id:'bar',       nome:_t('Bar do rival'),         curto:_t('BAR DELES'),
+    {id:'bar',       nome:_t('Bar da rival'),         curto:_t('BAR DELES'),
      risco:2, prestigio:5, ida:true, via:'sul', x:0.21, y:0.46, acima:false,
      nota:_t('poucos lá dentro, mas é humilhação que fica')},
     {id:'praca',     nome:_t('Praça de encontro'),    curto:_t('PRAÇA'),
@@ -28359,6 +29484,10 @@ TO.estado = (function(){
     /* e o resto do mundo vive o dia: expediente das 138, tretas e
        ataques de bar do trimestre delas, surpresas e estrada */
     if(TO.relacoes.mundoDia) TO.relacoes.mundoDia(E, jogos);
+    /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): quem domina a cidade
+       ganha +0,1 de prestígio e de moral por dia; a primeira e a segunda
+       maior que não dominam perdem 0,1 (js/mundo/dominio.js) */
+    if(TO.dominio) TO.dominio.dia(E);
     if(TO.feed) TO.feed.eventosDoDia(E, {jogos, ligas:passoLigas,
                                         conmebol:passoCM});
 
@@ -28766,6 +29895,9 @@ TO.estado = (function(){
     /* save de antes do presidente (22/09/2026): o mais forte da
        diretoria assume, com o nome que já tinha */
     try{ if(TO.membros && TO.membros.garantirPresidente) TO.membros.garantirPresidente(E); }catch(e){}
+    /* o domínio dos bairros (30/09/2026): a sede do jogador no bairro
+       espalhado, quando duas sedes caíam no mesmo bairro */
+    try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
     try{
       if(E.relacoes) delete E.relacoes['undefined'];
       if(E.marcaAjuda) delete E.marcaAjuda['undefined'];
@@ -35620,6 +36752,13 @@ TO.feed = (function(){
        manchete, e agora as duas dizem a mesma coisa. */
     const empatou = !d.ganhamos && (a.caidos||0) === (b.caidos||0) &&
                     ((a.caidos||0) || (b.caidos||0) || (a.n||0));
+    /* O DOMÍNIO DO BAIRRO (o dono, 30/09/2026): quem ganhou soma na barra
+       do bairro da briga e quem perdeu perde ali (js/mundo/dominio.js).
+       A estrada da caravana não é bairro de ninguém. */
+    if(TO.dominio && !d.estrada){
+      try{ d.dominio = TO.dominio.confronto(E, Object.assign({}, d, {empatou:!!empatou})); }
+      catch(e){ d.dominio = null; }
+    }
     /* A DÍVIDA (pedido do dono, 08/09/2026): apanhou deles, fica anotado
        onde e quando; o olheiro cobra a vingança na próxima oportunidade
        do calendário. Ganhar deles quita. E o contador de brigas do ano
@@ -36383,7 +37522,7 @@ TO.feed = (function(){
             tipo: a.alvo === 'emboscada' ? 'emboscada'
                 : a.alvo === 'bar' ? 'bar' : a.alvo,
             cena: a.cena,
-            bairro: '',
+            bairro: '', mapa: a.mapa || null,
             efetivo: a.efetivo || TO.acoes.efetivoDePe(E, o) || 30,
             nossos: a.alvo === 'emboscada' && est ? est.vao
                    : TO.membros.aptosParaOEstadio(E).length,
@@ -47285,6 +48424,377 @@ TO.graficos = (function(){
 
 ;
 
+/* ===== js/ui/mapa_brasil.js ===== */
+/* =========================================================
+   O MAPA DO JOGO: O BRASIL E OS BAIRROS DE CADA CIDADE (o dono,
+   30/09/2026: "quando clicamos em menu>mapa vai ter a opção do mapa do
+   Brasil, onde podemos ver os mapas 2d de qualquer cidade. Em cada
+   bairro vai apontar qual torcida comanda, e a torcida que comandar mais
+   bairros domina a cidade").
+
+   As peças que os dois jogos usam:
+   · `svgDoBrasil`: o contorno do país com as 30 praças, cada uma na cor
+     de quem domina a cidade (cinza: ninguém domina); o clique escolhe;
+   · `legenda`: quem domina a cidade, quantos bairros cada torcida tem e o
+     que isso rende (ou tira) por dia;
+   · `cartaoDoBairro`: a barra de 0 a 100 do bairro, repartida entre as
+     torcidas, o que tem nele (sede, bar, loja, subsede), o corte de 30%
+     quando a dona é rival e a ação social;
+   · `quadro`: os bairros da cidade em quatro zonas (a bússola), pro jogo
+     de feed, que não tem a planta da cidade;
+   · `abrir`: o painel inteiro do jogo de feed (o jogo 3D tem o dele, em
+     ferramentas/planta_html/mapa3d.js, com a planta da cidade).
+   O contorno é simplificado à mão (142 pontos) e as praças ficam na
+   capital (ou na cidade-polo) de cada uma — é um mapa de escolher, não
+   de medir.
+   ========================================================= */
+window.TO = window.TO || {};
+
+TO.mapaBrasil = (function(){
+  const D = () => TO.dominio;
+  const E = () => TO.estado && TO.estado.E;
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const SVG = 'http://www.w3.org/2000/svg';
+  /* o contorno (lat, lon) e a praça de cada mapa do jogo (lat, lon) */
+  const CONTORNO = [[4.3,-51.62],[3.6,-51.1],[2.5,-50.7],[1.7,-50],[0.95,-50.05],[0.05,-50.6],[-0.35,-49.7],[-0.15,-48.95],[-0.55,-48.4],[-1.1,-48.3],[-0.75,-47.6],[-0.8,-46.9],[-1.05,-46.1],[-1.35,-45.3],[-1.75,-44.7],[-2.4,-44.4],[-2.55,-43.6],[-2.8,-42.4],[-2.9,-41.6],[-2.9,-40.8],[-2.85,-40.1],[-3.3,-39.3],[-3.75,-38.45],[-4.4,-37.7],[-4.85,-37.1],[-5.05,-36.3],[-5.15,-35.6],[-5.6,-35.2],[-6.4,-35],[-7.15,-34.8],[-8.05,-34.85],[-8.9,-35.15],[-9.65,-35.7],[-10.5,-36.4],[-10.95,-37.05],[-11.9,-37.7],[-12.9,-38.35],[-13.6,-38.95],[-14.8,-39],[-15.9,-38.9],[-16.9,-39.15],[-17.9,-39.4],[-18.9,-39.7],[-19.7,-39.9],[-20.3,-40.25],[-21,-40.85],[-21.95,-41],[-22.55,-41.95],[-22.95,-42.1],[-23,-43.2],[-23.05,-44.2],[-23.4,-45],[-23.8,-45.6],[-24,-46.4],[-24.6,-47.2],[-25.3,-48.1],[-25.9,-48.5],[-26.7,-48.6],[-27.6,-48.55],[-28.4,-48.8],[-29.35,-49.7],[-30.3,-50.25],[-31.2,-50.85],[-32.05,-52.05],[-32.9,-52.6],[-33.75,-53.4],[-33.1,-53.5],[-32.55,-53.25],[-31.9,-54.2],[-31.35,-55],[-30.9,-55.55],[-30.2,-56.8],[-29.8,-57.1],[-29.1,-56.4],[-28.6,-55.9],[-27.9,-55.2],[-27.25,-53.8],[-26.6,-53.7],[-25.95,-53.85],[-25.55,-54.55],[-24.3,-54.3],[-23.95,-55.3],[-22.6,-55.7],[-22.25,-57.1],[-21.6,-57.95],[-20.2,-58.15],[-19.3,-57.7],[-18.1,-57.5],[-17.4,-58.4],[-16.3,-58.4],[-15.6,-60.2],[-14.4,-60.4],[-13.6,-61.5],[-12.9,-63.1],[-12.3,-64.4],[-11.8,-65.1],[-10.9,-65.35],[-10,-65.3],[-9.8,-66.6],[-10.6,-68],[-11,-68.8],[-10.95,-69.9],[-10,-70.6],[-9.45,-71.4],[-9.1,-72.6],[-8.2,-73.7],[-7.45,-74],[-6.6,-73.4],[-5.2,-72.9],[-4.4,-70.6],[-4.2,-69.95],[-3,-69.7],[-1.2,-69.45],[0,-70.05],[0.75,-69.8],[1.4,-69.5],[1.75,-68],[1.15,-66.9],[0.9,-66],[1.1,-65.3],[0.8,-64.2],[1.5,-64],[2.1,-63.4],[2.5,-64],[3.6,-64.1],[4.1,-63],[4.5,-62.3],[5.2,-60.75],[4.6,-60.1],[3.9,-59.6],[2.9,-59.95],[2,-59.8],[1.4,-58.8],[1.9,-57.2],[1.95,-56.4],[2.35,-55.9],[2.3,-54.8],[2.2,-54.1],[2.7,-53.5],[3.3,-52.7],[3.9,-51.9],[4.3,-51.62]];
+  const PRACAS = {'abc-paulista':[-23.66,-46.53], 'alagoas':[-9.66,-35.73], 'bahia':[-12.97,-38.5], 'belem':[-1.46,-48.49], 'belo-horizonte':[-19.92,-43.94], 'brasilia':[-15.79,-47.88], 'curitiba':[-25.43,-49.27], 'fortaleza':[-3.73,-38.52], 'goiania':[-16.68,-49.25], 'interior-de-minas':[-18.91,-48.27], 'interior-de-pe':[-8.28,-35.97], 'interior-de-sc':[-27.1,-52.61], 'interior-de-sp':[-21.18,-47.81], 'interior-do-ce':[-7.21,-39.31], 'interior-do-pr':[-23.31,-51.16], 'interior-do-rs':[-29.17,-51.18], 'litoral-catarinense':[-26.92,-48.66], 'manaus':[-3.12,-60.02], 'maranhao':[-2.53,-44.3], 'mato-grosso':[-15.6,-56.1], 'paraiba':[-7.12,-34.86], 'porto-alegre':[-30.03,-51.23], 'recife':[-8.05,-34.88], 'regiao-de-campinas':[-22.91,-47.06], 'rio-de-janeiro':[-22.91,-43.17], 'rio-grande-do-norte':[-5.79,-35.21], 'santos':[-23.96,-46.33], 'sao-paulo':[-23.55,-46.63], 'sergipe':[-10.91,-37.07], 'suburbio-carioca':[-22.87,-43.35]};
+
+  /* ---- as cores de cada torcida ---- */
+  const torcida = id => {
+    const e = E();
+    if(e && e.torcida && e.torcida.id === id) return Object.assign({}, (TO.mundo && TO.mundo.torcida(id)) || {}, e.torcida);
+    return (TO.mundo && TO.mundo.torcida(id)) || null;
+  };
+  function hsv(hex){
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+    if(!m) return null;
+    const n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    return {s: mx ? (mx - mn) / mx : 0, v: mx};
+  }
+  /* a cor da torcida no mapa: a mais viva das cores dela (preto e branco
+     todo mundo tem; o que separa uma da outra é a cor de verdade) */
+  function corDe(id){
+    const o = torcida(id);
+    const lista = [...((o && o.cores) || []), o && o.detalhe].filter(Boolean).map(c => String(c).toUpperCase());
+    if(!lista.length) return '#8E3F9C';
+    let melhor = lista[0], nota = -1;
+    for(const c of lista){ const h = hsv(c); if(!h) continue; const k = h.s * (0.35 + h.v); if(k > nota + 0.05){ nota = k; melhor = c; } }
+    return nota < 0.15 ? lista[0] : melhor;
+  }
+  const claro = hex => { const h = hsv(hex); return !!h && h.v > 0.75 && h.s < 0.45; };
+  const sigla = id => D() ? D().siglaDe(id) : id;
+  const nome = id => (torcida(id) || {}).nome || id;
+  /* seis praças vêm sem acento nos dados (a planilha); no mapa, com */
+  const ACENTO = {belem:'Belém', brasilia:'Brasília', goiania:'Goiânia', paraiba:'Paraíba', 'sao-paulo':'São Paulo', 'suburbio-carioca':'Subúrbio Carioca'};
+  const nomeCidade = cid => ACENTO[cid] || ((TO.mundo && TO.mundo.cidade && TO.mundo.cidade(cid)) || {}).nome || cid;
+  const ehBrasil = cid => !!PRACAS[cid];
+
+  /* =======================================================
+     O BRASIL
+     ======================================================= */
+  const COS = Math.cos(15 * Math.PI / 180);
+  const proj = (lat, lon) => [(lon + 75) * COS * 10, (6 - lat) * 10];
+  function svgDoBrasil(opc){
+    opc = opc || {};
+    const e = E(), d = D(), minha = e && e.torcida ? e.torcida.mapa : null;
+    const svg = document.createElementNS(SVG, 'svg');
+    const pts = CONTORNO.map(([la, lo]) => proj(la, lo));
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const x0 = Math.min(...xs) - 8, y0 = Math.min(...ys) - 8;
+    const w = Math.max(...xs) - x0 + 100, h = Math.max(...ys) - y0 + 8;
+    svg.setAttribute('viewBox', `${x0.toFixed(1)} ${y0.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
+    svg.setAttribute('class', 'mb-brasil');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', _t('Mapa do Brasil com as praças do jogo'));
+    const el = (tag, at) => { const x = document.createElementNS(SVG, tag); for(const k in at) x.setAttribute(k, at[k]); return x; };
+    svg.appendChild(el('path', {d:'M' + pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join('L') + 'Z', class:'mb-pais'}));
+    /* as praças: a posição, e os rótulos sem encavalar (primeiro à direita,
+       depois à esquerda, depois descendo) */
+    const lista = Object.keys(PRACAS).filter(cid => !opc.so || opc.so.includes(cid)).map(cid => {
+      const [x, y] = proj(PRACAS[cid][0], PRACAS[cid][1]);
+      const pl = d && e ? d.placar(e, cid) : null;
+      return {cid, x, y, dono: pl ? pl.dono : null, pl};
+    }).sort((a, b) => a.y - b.y);
+    /* os pontos também ocupam: nome nenhum passa por cima de ponto */
+    const ocupado = lista.map(p => ({x0:p.x - 4.5, x1:p.x + 4.5, y0:p.y - 4.5, y1:p.y + 4.5}));
+    const bate = r => ocupado.some(o => r.x0 < o.x1 && r.x1 > o.x0 && r.y0 < o.y1 && r.y1 > o.y0);
+    for(const p of lista){
+      const nomeP = nomeCidade(p.cid), larg = nomeP.length * 4.6 + 4;
+      const minhaP = p.cid === minha;
+      let pos = null;
+      for(let k = 0; k < 8 && !pos; k++){
+        const dy = [0, 0, 9, -9, 18, -18, 27, 36][k];
+        for(const lado of [1, -1]){
+          const x0r = lado > 0 ? p.x + 6 : p.x - 6 - larg, r = {x0:x0r, x1:x0r + larg, y0:p.y - 5 + dy, y1:p.y + 4 + dy};
+          if(!bate(r)){ pos = {r, lado, dy}; break; }
+        }
+      }
+      if(!pos) pos = {r:{x0:p.x + 6, x1:p.x + 6 + larg, y0:p.y - 5, y1:p.y + 4}, lado:1, dy:0};
+      ocupado.push(pos.r);
+      const g = el('g', {class:'mb-praca' + (minhaP ? ' minha' : '') + (opc.escolhida === p.cid ? ' escolhida' : ''), tabindex:'0', role:'button', 'data-cidade':p.cid});
+      const cor = p.dono ? corDe(p.dono) : '#8a8a86';
+      g.appendChild(el('circle', {cx:p.x.toFixed(1), cy:p.y.toFixed(1), r: minhaP ? 5.2 : 3.8, fill:cor, class:'mb-ponto' + (claro(cor) ? ' claro' : '')}));
+      if(pos.dy) g.appendChild(el('line', {x1:p.x.toFixed(1), y1:p.y.toFixed(1), x2:(pos.lado > 0 ? pos.r.x0 : pos.r.x1).toFixed(1), y2:(p.y + pos.dy).toFixed(1), class:'mb-fio'}));
+      const t = el('text', {x:(pos.lado > 0 ? pos.r.x0 + 1 : pos.r.x1 - 1).toFixed(1), y:(p.y + pos.dy + 3).toFixed(1), 'text-anchor': pos.lado > 0 ? 'start' : 'end', class:'mb-nome'});
+      t.textContent = nomeP;
+      g.appendChild(t);
+      const tit = el('title', {});
+      tit.textContent = nomeP + ' — ' + (p.dono ? _t('a {nome} domina ({n} de {total} bairros)', {nome:nome(p.dono), n:p.pl.n[p.dono], total:p.pl.total})
+                                               : _t('ninguém domina'));
+      g.appendChild(tit);
+      const ir = () => opc.aoEscolher && opc.aoEscolher(p.cid);
+      g.addEventListener('click', ir);
+      g.addEventListener('keydown', ev => { if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); ir(); } });
+      svg.appendChild(g);
+    }
+    return svg;
+  }
+
+  /* as praças de fora do Brasil, por país (as barras bravas), e as do
+     Brasil por região — a lista ao lado do mapa */
+  function listaDeCidades(opc){
+    opc = opc || {};
+    const e = E(), d = D(), minha = e && e.torcida ? e.torcida.mapa : null;
+    const caixa = document.createElement('div');
+    caixa.className = 'mb-lista';
+    const grupos = new Map();
+    for(const c of (TO.dados.cidades || [])){
+      if(!(c.bairros || []).length || !(D() && D().torcidasDaCidade(c.id).length)) continue;
+      const g = ehBrasil(c.id) ? _t('Brasil — {regiao}', {regiao:_t(c.regiao || '')}) : _t(c.regiao || c.uf || '');
+      if(!grupos.has(g)) grupos.set(g, []);
+      grupos.get(g).push(c);
+    }
+    const ordem = [...grupos.keys()].sort((a, b) => (b.indexOf(_t('Brasil')) === 0) - (a.indexOf(_t('Brasil')) === 0) || a.localeCompare(b));
+    for(const g of ordem){
+      const h = document.createElement('h4'); h.textContent = g; caixa.appendChild(h);
+      const ul = document.createElement('div'); ul.className = 'mb-lista-grupo';
+      for(const c of grupos.get(g).sort((a, b) => nomeCidade(a.id).localeCompare(nomeCidade(b.id)))){
+        const pl = d && e ? d.placar(e, c.id) : null;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mb-lista-item' + (c.id === minha ? ' minha' : '') + (opc.escolhida === c.id ? ' escolhida' : '');
+        const cor = pl && pl.dono ? corDe(pl.dono) : '#8a8a86';
+        b.innerHTML = `<i style="background:${cor}"></i><span>${esc(nomeCidade(c.id))}</span><small>${pl && pl.dono ? esc(sigla(pl.dono)) : esc(_t('sem dona'))}</small>`;
+        b.onclick = () => opc.aoEscolher && opc.aoEscolher(c.id);
+        ul.appendChild(b);
+      }
+      caixa.appendChild(ul);
+    }
+    return caixa;
+  }
+
+  /* =======================================================
+     A CIDADE: quem domina e quantos bairros cada uma tem
+     ======================================================= */
+  function legenda(cid){
+    const caixa = document.createElement('div');
+    caixa.className = 'mb-legenda';
+    const d = D(), e = E();
+    if(!d || !e) return caixa;
+    const pl = d.placar(e, cid), meu = e.torcida.id, cidade = nomeCidade(cid);
+    const topo = pl.ordem.length ? pl.n[pl.ordem[0]] : 0;
+    const linha = pl.dono
+      ? (pl.dono === meu ? _t('Dominamos {cidade}: {n} de {total} bairros.', {cidade, n:pl.n[pl.dono], total:pl.total})
+                         : _t('A {nome} domina {cidade}: {n} de {total} bairros.', {nome:nome(pl.dono), cidade, n:pl.n[pl.dono], total:pl.total}))
+      : topo ? _t('Ninguém domina {cidade}: empate no topo, com {n} bairros.', {cidade, n:topo})
+             : _t('Ninguém domina {cidade}.', {cidade});
+    let h = `<p class="mb-status">${esc(linha)}</p>`;
+    if(cid === e.torcida.mapa){
+      const grandes = d.maiores(e, cid);
+      if(pl.dono === meu) h += `<p class="mb-efeito bom">${esc(_t('Dominar a cidade: +0,1 de prestígio e +0,1 de moral por dia.'))}</p>`;
+      else if(grandes.includes(meu)) h += `<p class="mb-efeito ruim">${esc(_t('Somos uma das duas maiores da cidade e não dominamos: −0,1 de prestígio e −0,1 de moral por dia.'))}</p>`;
+    }
+    const grandes = d.maiores(e, cid);
+    const ids = [...new Set(d.torcidasDaCidade(cid).map(o => o.id).concat(pl.ordem))]
+      .sort((a, b) => (pl.n[b] || 0) - (pl.n[a] || 0) || d.membrosDe(e, b) - d.membrosDe(e, a));
+    h += '<ul class="mb-torcidas">';
+    for(const id of ids){
+      const n = pl.n[id] || 0, cor = corDe(id);
+      const tags = [];
+      if(id === meu) tags.push(_t('nós'));
+      if(grandes[0] === id) tags.push(_t('maior'));
+      else if(grandes[1] === id) tags.push(_t('2ª maior'));
+      if(pl.dono === id) tags.push(_t('domina'));
+      h += `<li${id === meu ? ' class="nos"' : ''}><i style="background:${cor}"${claro(cor) ? ' class="claro"' : ''}></i>` +
+           `<span>${esc(nome(id))}${tags.length ? ` <small>${esc(tags.join(' · '))}</small>` : ''}</span>` +
+           `<b>${esc(_t('{n} de {total}', {n, total:pl.total}))}</b></li>`;
+    }
+    if(pl.semDono) h += `<li class="sem"><i></i><span>${esc(_t('Sem dona (ninguém passa de 50%)'))}</span><b>${pl.semDono}</b></li>`;
+    h += '</ul>';
+    caixa.innerHTML = h;
+    return caixa;
+  }
+
+  /* o que tem no bairro, em texto */
+  const TIPO = () => ({sede:_t('Sede da {nome}'), bar:_t('Bar da {nome}'), loja:_t('Loja da {nome}'),
+                       subsede:_t('Subsede da {nome}'), filial:_t('Subsede de fora da {nome}')});
+
+  /* =======================================================
+     O BAIRRO: a barra, o que tem nele e o que dá pra fazer
+     ======================================================= */
+  function cartaoDoBairro(cid, bid, opc){
+    opc = opc || {};
+    const caixa = document.createElement('div');
+    caixa.className = 'mb-cartao';
+    const d = D(), e = E();
+    if(!d || !e) return caixa;
+    const b = d.bairros(e, cid).find(x => x.id === bid);
+    if(!b){ caixa.innerHTML = `<p class="mb-nada">${esc(_t('Clique num bairro do mapa.'))}</p>`; return caixa; }
+    const meu = e.torcida.id;
+    const mult = (b.mult != null ? b.mult : 1).toLocaleString(TO.i18n && TO.i18n.lingua ? undefined : 'pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
+    let h = `<h3>${esc(b.nome)}</h3><p class="mb-zona">${esc(_t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
+    h += `<p class="mb-dona">${b.dono
+      ? (b.dono === meu ? esc(_t('O bairro é nosso ({v}%).', {v:Math.round(b.v)})) : esc(_t('A dona é a {nome} ({v}%).', {nome:nome(b.dono), v:Math.round(b.v)})))
+      : esc(_t('Sem dona: ninguém passa de 50%.'))}</p>`;
+    /* a barra de 0 a 100, repartida */
+    h += '<div class="mb-barra" role="img" aria-label="' + esc(b.partes.map(p => sigla(p.t) + ' ' + Math.round(p.v) + '%').join(', ') || _t('ninguém')) + '">';
+    let soma = 0;
+    for(const p of b.partes){
+      soma += p.v;
+      const cor = corDe(p.t);
+      h += `<span style="width:${p.v.toFixed(1)}%;background:${cor}"${claro(cor) ? ' class="claro"' : ''} title="${esc(nome(p.t) + ': ' + Math.round(p.v) + '%')}">${p.v >= 12 ? esc(sigla(p.t)) : ''}</span>`;
+    }
+    h += `<span class="livre" style="width:${Math.max(0, 100 - soma).toFixed(1)}%"></span><em class="meio"></em></div>`;
+    h += '<ul class="mb-partes">' + b.partes.slice(0, 4).map(p =>
+      `<li><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${Math.round(p.v)}%</b></li>`).join('') + '</ul>';
+    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa se refaz até 80%.', {nome:nome(b.sede)}))}</p>`;
+    /* o que tem nele */
+    const est = d.estruturas(e, cid).filter(s => s.bairro === b.id);
+    if(est.length){
+      const T = TIPO();
+      h += '<ul class="mb-estruturas">' + est.map(s => `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}))}</li>`).join('') + '</ul>';
+    }
+    const meus = est.filter(s => s.tid === meu && s.tipo !== 'sede');
+    if(meus.length && b.dono && b.dono !== meu && d.rivais(e, meu, b.dono))
+      h += `<p class="mb-efeito ruim">${esc(_t('Os nossos pontos aqui rendem 30% menos: o bairro é da {nome}, rival.', {nome:nome(b.dono)}))}</p>`;
+    caixa.innerHTML = h;
+    /* o que dá pra fazer (só na nossa cidade) */
+    const pe = document.createElement('div');
+    pe.className = 'mb-acoes';
+    if(cid === e.torcida.mapa && b.dono !== meu && !(b.sede && b.sede !== meu) && TO.acoes && TO.acoes.porId('social-bairro')){
+      const pode = d.podeSocial(e);
+      const bt = document.createElement('button');
+      bt.type = 'button'; bt.className = 'bt';
+      bt.textContent = _t('Ação social aqui ({valor})', {valor: TO.util && TO.util.dinheiro ? TO.util.dinheiro(d.SOCIAL.custo) : 'R$ ' + d.SOCIAL.custo});
+      bt.disabled = !pode.ok;
+      if(!pode.ok) bt.title = pode.motivo || '';
+      bt.onclick = () => {
+        const r = TO.acoes.executar(e, 'social-bairro', {alvo:b.id});
+        if(TO.estado.mudou) try{ TO.estado.mudou(); }catch(_){}
+        if(opc.aoAviso) opc.aoAviso(r.msg || '', r.ok);
+        if(opc.aoMudar) opc.aoMudar();
+      };
+      pe.appendChild(bt);
+      if(!pode.ok){ const m = document.createElement('small'); m.textContent = pode.motivo || ''; pe.appendChild(m); }
+    }
+    if(opc.aoIr){
+      const bt = document.createElement('button');
+      bt.type = 'button'; bt.className = 'bt';
+      bt.textContent = _t('Ver na cidade 3D');
+      bt.onclick = () => opc.aoIr(b);
+      pe.appendChild(bt);
+    }
+    if(pe.childNodes.length) caixa.appendChild(pe);
+    return caixa;
+  }
+
+  /* =======================================================
+     O QUADRO DE BAIRROS (a bússola): Norte em cima, Sul embaixo, Oeste
+     à esquerda, Leste à direita — pro jogo de feed, que não tem planta
+     ======================================================= */
+  function quadro(cid, opc){
+    opc = opc || {};
+    const caixa = document.createElement('div');
+    caixa.className = 'mb-quadro';
+    const d = D(), e = E();
+    if(!d || !e) return caixa;
+    const bs = d.bairros(e, cid), meu = e.torcida.id;
+    for(const z of ['Norte', 'Oeste', 'Leste', 'Sul']){
+      const zona = document.createElement('div');
+      zona.className = 'mb-zona-bloco z-' + z.toLowerCase();
+      zona.innerHTML = `<h4>${esc(_t('Zona {zona}', {zona:_t(z)}))}</h4>`;
+      for(const b of bs.filter(x => x.zona === z)){
+        const cor = b.dono ? corDe(b.dono) : '#6f6f6a';
+        const bt = document.createElement('button');
+        bt.type = 'button';
+        bt.className = 'mb-bairro' + (b.dono === meu ? ' nosso' : '') + (opc.escolhido === b.id ? ' escolhido' : '') + (claro(cor) ? ' claro' : '');
+        bt.style.setProperty('--cor', cor);
+        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + Math.round(b.v) + '%') : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>`;
+        bt.onclick = () => opc.aoEscolher && opc.aoEscolher(b.id);
+        zona.appendChild(bt);
+      }
+      caixa.appendChild(zona);
+    }
+    return caixa;
+  }
+
+  /* =======================================================
+     O PAINEL DO JOGO DE FEED: o Brasil e, escolhida a cidade, o quadro
+     dos bairros com a legenda e o cartão do bairro
+     ======================================================= */
+  let raiz = null, vista = null;
+  function abrir(cid){
+    const e = E();
+    if(!e) return;
+    vista = {aba: cid ? 'cidade' : 'cidade', cidade: cid || e.torcida.mapa, bairro:null};
+    if(!raiz){
+      raiz = document.createElement('div');
+      raiz.className = 'mb-painel';
+      raiz.setAttribute('role', 'dialog');
+      raiz.setAttribute('aria-label', _t('Mapa'));
+      document.body.appendChild(raiz);
+      document.addEventListener('keydown', tecla, true);
+      if(TO.tela && TO.tela.pausarTempo) TO.tela.pausarTempo('mapa');
+    }
+    pintar();
+  }
+  function tecla(ev){ if(ev.key === 'Escape' && raiz){ ev.stopPropagation(); fechar(); } }
+  function fechar(){
+    if(!raiz) return;
+    document.removeEventListener('keydown', tecla, true);
+    raiz.remove(); raiz = null; vista = null;
+    if(TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('mapa');
+    if(TO.tela && TO.tela.redesenhar) try{ TO.tela.redesenhar(); }catch(_){}
+  }
+  function pintar(){
+    if(!raiz || !vista) return;
+    const e = E();
+    raiz.innerHTML = `<header><h2>${esc(_t('Mapa'))}</h2>
+        <div class="mb-abas" role="tablist">
+          <button type="button" role="tab" data-aba="brasil" aria-selected="${vista.aba === 'brasil'}">${esc(_t('Brasil'))}</button>
+          <button type="button" role="tab" data-aba="cidade" aria-selected="${vista.aba === 'cidade'}">${esc(nomeCidade(vista.cidade))}</button>
+        </div>
+        <button type="button" class="mb-x" aria-label="${esc(_t('Fechar'))}">×</button></header>
+      <div class="mb-corpo"></div>`;
+    raiz.querySelector('.mb-x').onclick = fechar;
+    for(const b of raiz.querySelectorAll('[data-aba]')) b.onclick = () => { vista.aba = b.dataset.aba; pintar(); };
+    const corpo = raiz.querySelector('.mb-corpo');
+    if(vista.aba === 'brasil'){
+      corpo.className = 'mb-corpo mb-corpo-brasil';
+      const escolher = cid => { vista.cidade = cid; vista.bairro = null; vista.aba = 'cidade'; pintar(); };
+      const m = document.createElement('div'); m.className = 'mb-mapa';
+      m.appendChild(svgDoBrasil({aoEscolher:escolher, escolhida:vista.cidade}));
+      corpo.appendChild(m);
+      corpo.appendChild(listaDeCidades({aoEscolher:escolher, escolhida:vista.cidade}));
+      return;
+    }
+    corpo.className = 'mb-corpo mb-corpo-cidade';
+    const q = quadro(vista.cidade, {escolhido:vista.bairro, aoEscolher: bid => { vista.bairro = bid; pintar(); }});
+    corpo.appendChild(q);
+    const lado = document.createElement('div'); lado.className = 'mb-lado';
+    lado.appendChild(legenda(vista.cidade));
+    lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar,
+      aoAviso: (t, ok) => { if(TO.tela && TO.tela.aviso) TO.tela.aviso(t, ok ? 'boa' : 'ruim'); }}));
+    corpo.appendChild(lado);
+  }
+
+  return {svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
+          get aberto(){ return !!raiz; }};
+})();
+
+;
+
 /* ===== js/gestao/tutorial.js ===== */
 /* =========================================================
    TUTORIAL — o passo a passo de boas-vindas (dono, 02/09/2026)
@@ -48181,7 +49691,12 @@ TO.graficos = (function(){
        mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
        com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
        planta da praça inteira, e o clique leva a câmera até lá */
-    {id:'mapa3d',      rot:_t('Mapa da cidade'), ic:'mapa', acao:'mapa3d', so3d:true},
+    /* O MAPA COM OS BAIRROS E O BRASIL (o dono, 30/09/2026: "quando
+       clicamos em menu>mapa vai ter a opção do mapa do Brasil"): no 3D é o
+       mapa da planta (mapa3d.js), com a aba Brasil; no jogo de feed, o
+       painel dos bairros por zona (js/ui/mapa_brasil.js) */
+    {id:'mapa3d',      rot:_t('Mapa'), ic:'mapa', acao:'mapa3d', so3d:true},
+    {id:'mapa',        rot:_t('Mapa'), ic:'mapa', acao:'mapaBrasil', so2d:true},
     {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
     {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
     {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
@@ -48210,9 +49725,11 @@ TO.graficos = (function(){
   const ACAO_NAV = {menu: () => sairParaMenu(),
                     planejamento: () => abrirPlanejamento(),
                     mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); },
+                    mapaBrasil: () => { if(TO.mapaBrasil) TO.mapaBrasil.abrir(); },
                     graficos: () => { if(TO.graficos) TO.graficos.alternar(); }};
   /* o item que só existe com a cidade em 3D */
-  const temNoMenu = n => !n.so3d || !!(TO.jogo3d && TO.jogo3d.abrirMapa);
+  const com3d = () => !!(TO.jogo3d && TO.jogo3d.abrirMapa);
+  const temNoMenu = n => (!n.so3d || com3d()) && (!n.so2d || !com3d());
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
@@ -58376,7 +59893,7 @@ TO.graficos = (function(){
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
-                                cena: atq.cena || 'bar', zona: atq.zona || null,
+                                cena: atq.cena || 'bar', zona: atq.zona || null, mapa: atq.mapa || null,
                                 nome:(o&&o.nome)||_t('Rival'),
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
@@ -58392,6 +59909,7 @@ TO.graficos = (function(){
     corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${a.id === 'assalto'
         ? _t('Quanto maior o prêmio, mais segurança na porta.')
+        : a.id === 'social-bairro' ? _t('Onde a barra rende mais: o bairro sem dona e o de dona fraca.')
         : _t('O clima com cada um pesa: quem já está quente reage pior.')}</span>`}));
     /* a praça tem seis joalherias: mostrar as seis é lista inútil. Duas de
        cada tipo já dá escolha de bairro sem virar catálogo. */
@@ -58406,6 +59924,7 @@ TO.graficos = (function(){
       const dir = a.id === 'assalto'
         ? _t('{bairro} · {de} a {ate} · {n} na segurança', {bairro:alvo.bairro,
             de:U.dinheiro(alvo.rende[0]), ate:U.dinheiro(alvo.rende[1]), n:alvo.seguranca})
+        : a.id === 'social-bairro' ? alvo.nota
         : _t('{bairro} · tensão {t} · {n} membros', {bairro:alvo.bairro,
             t:Math.round(alvo.tensao), n:alvo.efetivo});
       b.innerHTML =
