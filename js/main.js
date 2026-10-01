@@ -977,12 +977,110 @@
      mexer no que está na tela e aparece o aviso "novos posts ↑", que
      sobe suave até o topo.
      ======================================================= */
+  /* =======================================================
+     QUEM EU SIGO (pedido do dono, 01/10/2026): "um botão ao lado do
+     nome Rede social pra filtrar quem eu quero seguir — times, jornais
+     ou torcidas". Deixar de seguir uma TORCIDA some com tudo o que ela
+     e as zonas dela postam; um TIME, com as notícias dos jornais sobre
+     ele; um JORNAL, com tudo o que ele publica. A nossa torcida e o
+     nosso clube não saem. A lista abre com quem aparece na nossa rede
+     (por número de posts); a busca alcança o país inteiro.
+     ======================================================= */
+  const semAcento = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function abrirFiltroSocial(){
+    const e = E(), F = TO.feed;
+    if(!e || !F.seguir) return;
+    let aba = 'torcida', busca = '';
+    const corpo = el('div',{class:'filtro-social'});
+    const abas = el('div');
+    const campo = el('input',{class:'campo filtro-busca'});
+    campo.type = 'search';
+    const lista = el('div',{class:'filtro-lista'});
+    const nota = el('p',{class:'filtro-nota'});
+    corpo.append(abas, nota, campo, lista);
+    /* quem aparece na nossa rede, e quantas vezes */
+    const contaTorcidas = new Map(), contaClubes = new Map();
+    for(const m of (e.mensagens || [])){
+      if(m.de && !m.jornal && m.de !== e.torcida.id) contaTorcidas.set(m.de, (contaTorcidas.get(m.de) || 0) + 1);
+      for(const id of (F.clubesDaNoticia ? F.clubesDaNoticia(m) : []))
+        if(id !== e.torcida.clubeId) contaClubes.set(id, (contaClubes.get(id) || 0) + 1);
+    }
+    /* os clubes da nossa praça entram mesmo sem notícia ainda */
+    for(const t of (TO.mundo.todosTimes || []))
+      if(t.mapa === e.torcida.mapa && t.id !== e.torcida.clubeId && !contaClubes.has(t.id)) contaClubes.set(t.id, 0);
+    const linha = (tipo, id, nome, sub, marca)=>{
+      const sigo = F.seguindo(e, tipo, id);
+      const li = el('div',{class:'filtro-item'+(sigo ? '' : ' fora'), html:
+        `${marca}<span class="filtro-nome"><b>${escHTML(nome)}</b>${sub ? `<small>${sub}</small>` : ''}</span>`});
+      const b = el('button',{class:'filtro-bt'+(sigo ? ' sigo' : ''), texto: sigo ? _t('Seguindo') : _t('Seguir')});
+      b.onclick = ()=>{ F.seguir(e, tipo, id, !F.seguindo(e, tipo, id)); TO.estado.salvar(); pintar(); };
+      li.appendChild(b);
+      return li;
+    };
+    const marcaT = id => { const s = escudoDe('t', id); return s ? `<img class="filtro-escudo" src="${s}" alt="">` : avatarPost(id).replace('post-avatar', 'post-avatar filtro-escudo'); };
+    const marcaC = id => { const s = escudoDe('c', id), t = TO.mundo.time(id) || {};
+      return s ? `<img class="filtro-escudo" src="${s}" alt="">`
+               : `<span class="filtro-escudo filtro-chip" style="background:${(t.cores||[])[0] || '#555'}"></span>`; };
+    const posts = n => n ? _tn(n, '{n} post', '{n} posts', {n}) : '';
+    function pintar(){
+      abas.replaceChildren(subabas([{id:'torcida', rot:_t('Torcidas')}, {id:'clube', rot:_t('Times')},
+                                    {id:'jornal', rot:_t('Jornais')}], aba, id=>{ aba = id; busca = ''; campo.value = ''; pintar(); }));
+      nota.textContent = aba === 'torcida' ? _t('Quem você deixa de seguir some da rede, com as zonas dela.')
+                       : aba === 'clube' ? _t('Deixar de seguir um time tira da rede as notícias dos jornais sobre ele.')
+                       : _t('Deixar de seguir um jornal tira da rede tudo o que ele publica.');
+      campo.hidden = aba === 'jornal';
+      campo.placeholder = aba === 'torcida' ? _t('Buscar torcida…') : _t('Buscar time…');
+      lista.replaceChildren();
+      const q = semAcento(busca);
+      if(aba === 'jornal'){
+        for(const [id, J] of Object.entries(F.JORNAIS || {}))
+          lista.appendChild(linha('jornal', id, J.nome, J.arroba,
+            `<span class="post-avatar jornal-${id} filtro-escudo"><span class="sigla">${JORNAL_AV[id] || ''}</span></span>`));
+      } else if(aba === 'torcida'){
+        let ids = q ? TO.mundo.jogaveis().filter(o => !o.incompleta && o.id !== e.torcida.id && semAcento(o.nome).includes(q)).map(o => o.id).slice(0, 60)
+                    : [...contaTorcidas.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]);
+        for(const id of ids){
+          const o = TO.mundo.torcida(id); if(!o) continue;
+          const cid = (TO.mundo.cidade(o.mapa) || {}).nome || '';
+          lista.appendChild(linha('torcida', id, o.nome, [cid, posts(contaTorcidas.get(id))].filter(Boolean).join(' · '), marcaT(id)));
+        }
+      } else {
+        let ids = q ? (TO.mundo.todosTimes || []).filter(t => t.id !== e.torcida.clubeId && semAcento(t.nome).includes(q)).map(t => t.id).slice(0, 60)
+                    : [...contaClubes.entries()].sort((a, b) => b[1] - a[1] || nomeClube(a[0]).localeCompare(nomeClube(b[0]))).map(x => x[0]);
+        for(const id of ids){
+          const t = TO.mundo.time(id); if(!t) continue;
+          lista.appendChild(linha('clube', id, t.nome, [t.cidade, posts(contaClubes.get(id))].filter(Boolean).join(' · '), marcaC(id)));
+        }
+      }
+      if(!lista.children.length)
+        lista.appendChild(el('div',{class:'em-construcao', texto: q ? _t('Ninguém com esse nome.') : _t('Ninguém por aqui ainda.')}));
+      /* quem saiu volta de uma vez */
+      const P = e.feedPrefs || {}, mapa = aba === 'torcida' ? P.torcidas : aba === 'clube' ? P.clubes : P.jornais;
+      const fora = Object.keys(mapa || {}).length;
+      if(fora){
+        const b = el('button',{class:'filtro-todos', texto:_tn(fora, 'Voltar a seguir {n} que saiu', 'Voltar a seguir os {n} que saíram', {n:fora})});
+        b.onclick = ()=>{ F.seguirTodos(e, aba); TO.estado.salvar(); pintar(); };
+        lista.prepend(b);
+      }
+    }
+    campo.oninput = ()=>{ busca = campo.value; pintar(); };
+    pintar();
+    modal(_t('Quem eu sigo'), _t('Rede social'), corpo,
+      [[_t('Pronto'), ()=>{ atualizarSocialLado(true); if(painel === 'noticias') redesenhar(); }]], 'estreita', true);
+  }
+
   const SOCIAL_LADO_MAX = 40;
   let socialLado = null;
   function montarSocialLado(){
     const asd = el('aside',{class:'social-lado'});
     const cab = el('div',{class:'social-lado-cab', html:
       `<span class="social-lado-tit">${TO.icones.get('conversa')}${_t('Rede social')}</span>`});
+    /* o FILTRO de quem eu sigo (dono, 01/10/2026), ao lado do nome */
+    const bFiltro = el('button',{class:'social-lado-filtro', html:TO.icones.get('filtro')});
+    bFiltro.title = _t('Filtrar quem eu sigo');
+    bFiltro.setAttribute('aria-label', _t('Filtrar quem eu sigo'));
+    bFiltro.onclick = ()=>abrirFiltroSocial();
+    cab.querySelector('.social-lado-tit').appendChild(bFiltro);
     const bTudo = el('button',{class:'social-lado-tudo', texto:_t('Ver tudo')});
     bTudo.onclick = ()=>{ subNoticias = 'mensagens'; abrirPainel('noticias'); };
     cab.appendChild(bTudo);
@@ -4125,6 +4223,11 @@
     const visiveis = F.oculto ? lista.filter(m => !F.oculto(e, m)) : lista;
     const c = cartao(_t('Feed das torcidas'), _tn(visiveis.length, '{n} post', '{n} posts'));
     c.corpo.classList.add('feed-social');
+    {
+      const bF = el('button',{class:'bt filtro-abrir', html:`${TO.icones.get('filtro')}${_t('Filtrar quem eu sigo')}`});
+      bF.onclick = ()=>abrirFiltroSocial();
+      c.corpo.appendChild(bF);
+    }
     const pf = e.feedPrefs || {};
     const naoSigo = Object.entries(pf.naoSigo || {}), menos = Object.entries(pf.menos || {});
     if(naoSigo.length || menos.length){

@@ -8346,6 +8346,21 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
   - entrevista e protesto na porta do CT, que só saem em dia sem jogo nosso.
 - **Limite conhecido:** a foto vive na memória. Quem recarrega o jogo no meio do dia da partida vê as telas com o resultado.
 
+## Quem eu sigo: o filtro da rede social (pedido do dono, 01/10/2026)
+
+"Um botão ao lado do nome Rede social para filtrar quem eu quero seguir — times, jornais ou torcidas. Se eu parar de seguir um time, para de mandar notícias do jornal sobre aquele time; se eu parar de seguir a torcida, para de mostrar as postagens dela."
+- **Onde fica.** O funil ao lado de "Rede social" na coluna do feed, e o botão "Filtrar quem eu sigo" no topo de Notícias → Mensagens. Os dois abrem a tela "Quem eu sigo", com três abas: Torcidas, Times e Jornais.
+- **Quem aparece.** A lista abre com quem aparece na nossa rede, ordenado pelo número de posts. Na aba Times entram também os clubes da nossa praça. A busca alcança todas as torcidas e todos os clubes.
+  - Cada linha tem escudo, nome, cidade, número de posts e o botão Seguindo/Seguir.
+  - "Voltar a seguir os N que saíram" desfaz a aba inteira.
+  - A nossa torcida e o nosso clube não aparecem: não dá para deixar de segui-los.
+- **O que some** (`feed.oculto`, prefs em `E.feedPrefs.torcidas | clubes | jornais`):
+  - torcida: tudo o que ela e as zonas dela postam;
+  - time: a notícia de jornal sobre ele, isto é, o clube do foco do cartaz; no clássico sem foco, só se os dois saíram;
+  - jornal: tudo o que ele publica.
+  - Recado que é para a gente (pedido de casa, trégua) nunca some.
+- Testado: depois de deixar de seguir a Tubarões da Fiel e o Floresta, os 4 posts dela e a notícia do Floresta somem da coluna e de Notícias. Os posts de outras torcidas que só citam a Tubarões continuam.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

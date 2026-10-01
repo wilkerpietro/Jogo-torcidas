@@ -139,7 +139,38 @@ TO.feed = (function(){
     E.feedPrefs = E.feedPrefs || {};
     E.feedPrefs.naoSigo = E.feedPrefs.naoSigo || {};
     E.feedPrefs.menos = E.feedPrefs.menos || {};
+    /* o FILTRO da rede (dono, 01/10/2026): quem o jogador deixou de
+       seguir, por torcida (some tudo o que ela e as zonas dela postam),
+       por clube (some a notícia de jornal SOBRE ele) e por jornal */
+    E.feedPrefs.torcidas = E.feedPrefs.torcidas || {};
+    E.feedPrefs.clubes = E.feedPrefs.clubes || {};
+    E.feedPrefs.jornais = E.feedPrefs.jornais || {};
     return E.feedPrefs;
+  }
+  /* "sobre quem" é a notícia do jornal: o clube do foco do cartaz; no
+     clássico sem foco, os dois — e ela só some se os dois saíram */
+  function clubesDaNoticia(m){
+    const c = m && m.card;
+    if(!c || c.t !== 'jogo') return [];
+    return c.foco ? [c.foco] : [c.c, c.f].filter(Boolean);
+  }
+  function seguindo(E, tipo, id){
+    const P = E.feedPrefs || {};
+    const mapa = tipo === 'torcida' ? P.torcidas : tipo === 'clube' ? P.clubes : P.jornais;
+    return !(mapa && mapa[id]);
+  }
+  function seguir(E, tipo, id, sim){
+    if(tipo === 'torcida' && id === E.torcida.id) return {ok:false};
+    if(tipo === 'clube' && id === E.torcida.clubeId) return {ok:false};
+    const P = prefs(E);
+    const mapa = tipo === 'torcida' ? P.torcidas : tipo === 'clube' ? P.clubes : P.jornais;
+    if(sim) delete mapa[id]; else mapa[id] = true;
+    return {ok:true};
+  }
+  function seguirTodos(E, tipo){
+    const P = prefs(E);
+    if(tipo === 'torcida') P.torcidas = {}; else if(tipo === 'clube') P.clubes = {}; else P.jornais = {};
+    return {ok:true};
   }
   const perfilDe = m => m.jornal ? 'j:' + m.jornal : 't:' + m.de + (m.zona ? ':' + m.zona : '');
   function naturezaDe(E, m){
@@ -154,6 +185,12 @@ TO.feed = (function(){
     if(!podeEsconder(E, m) || !E.feedPrefs) return false;
     const P = E.feedPrefs;
     if(P.naoSigo && P.naoSigo[perfilDe(m)]) return true;
+    if(m.jornal && P.jornais && P.jornais[m.jornal]) return true;
+    if(m.de && P.torcidas && P.torcidas[m.de]) return true;
+    if(m.jornal && P.clubes){
+      const cs = clubesDaNoticia(m);
+      if(cs.length && cs.every(id => P.clubes[id])) return true;
+    }
     const n = P.menos && P.menos[naturezaDe(E, m)];
     if(!n) return false;
     return TO.mapa.hash(`menos|${m.id}`) % 100 < CORTE_MENOS[Math.min(3, n)];
@@ -6180,6 +6217,7 @@ TO.feed = (function(){
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
+          seguindo, seguir, seguirTodos, clubesDaNoticia,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,

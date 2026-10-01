@@ -454,5 +454,23 @@ TO.i18n.registrar({
   'Subsede nova da {nome} no bairro {bairro}! Mais um ponto de encontro da nossa gente {emCidade}.':
     {es:'¡Filial nueva de la {nome} en el barrio {bairro}! Otro punto de encuentro de nuestra gente {emCidade}.', en:'New {nome} branch in {bairro}! One more meeting point for our people {emCidade}.'},
   'Subsede nova da {nome}! Mais um ponto de encontro da nossa gente {emCidade}.':
-    {es:'¡Filial nueva de la {nome}! Otro punto de encuentro de nuestra gente {emCidade}.', en:'New {nome} branch! One more meeting point for our people {emCidade}.'}
+    {es:'¡Filial nueva de la {nome}! Otro punto de encuentro de nuestra gente {emCidade}.', en:'New {nome} branch! One more meeting point for our people {emCidade}.'},
+
+  /* ---------- quem eu sigo: o filtro da rede (01/10/2026) ---------- */
+  'Buscar time…': {es:'Buscar equipo…', en:'Search club…'},
+  'Buscar torcida…': {es:'Buscar barra…', en:'Search firm…'},
+  'Deixar de seguir um jornal tira da rede tudo o que ele publica.': {es:'Dejar de seguir un diario saca de la red todo lo que publica.', en:'Unfollowing a newspaper removes everything it publishes from the feed.'},
+  'Deixar de seguir um time tira da rede as notícias dos jornais sobre ele.': {es:'Dejar de seguir un equipo saca de la red las noticias de los diarios sobre él.', en:'Unfollowing a club removes newspaper stories about it from the feed.'},
+  'Filtrar quem eu sigo': {es:'Filtrar a quién sigo', en:'Filter who I follow'},
+  'Jornais': {es:'Diarios', en:'Newspapers'},
+  'Ninguém com esse nome.': {es:'Nadie con ese nombre.', en:'Nobody by that name.'},
+  'Ninguém por aqui ainda.': {es:'Nadie por aquí todavía.', en:'Nobody here yet.'},
+  'Pronto': {es:'Listo', en:'Done'},
+  'Quem eu sigo': {es:'A quién sigo', en:'Who I follow'},
+  'Quem você deixa de seguir some da rede, com as zonas dela.': {es:'A quien dejes de seguir desaparece de la red, con sus zonas.', en:'Whoever you unfollow disappears from the feed, along with their zones.'},
+  'Seguindo': {es:'Siguiendo', en:'Following'},
+  'Seguir': {es:'Seguir', en:'Follow'},
+  'Times': {es:'Equipos', en:'Clubs'},
+  'Voltar a seguir os {n} que saíram': {es:'Volver a seguir a los {n} que salieron', en:'Follow the {n} you removed again'},
+  'Voltar a seguir {n} que saiu': {es:'Volver a seguir a {n} que salió', en:'Follow the {n} you removed again'}
 });

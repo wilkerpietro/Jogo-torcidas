@@ -2669,3 +2669,34 @@ header.capa-cidade{background-size:cover; background-position:center;
 @media (prefers-reduced-motion:reduce){
   .post-envelope{transition:none} .feed-lista > .entrando{animation:none} .social-lado-novos{animation:none}
 }
+
+/* =========================================================
+   QUEM EU SIGO (pedido do dono, 01/10/2026): o filtro da rede social
+   ========================================================= */
+.social-lado-tit{gap:7px}
+.social-lado-filtro{display:inline-grid;place-items:center;width:24px;height:22px;margin-left:4px;padding:0;
+  background:none;border:1px solid var(--linha);border-radius:4px;color:var(--fraco);cursor:pointer}
+.social-lado-filtro:hover{color:#e4e0d8;border-color:#555}
+.social-lado-filtro svg{width:13px;height:13px}
+.filtro-abrir{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px}
+.filtro-abrir svg{width:13px;height:13px}
+.filtro-social{display:flex;flex-direction:column;gap:8px;min-height:380px}
+.filtro-social .subabas{margin-bottom:0}
+.filtro-nota{margin:0;font-size:12px;color:var(--fraco)}
+.filtro-busca{width:100%;box-sizing:border-box;padding:7px 10px}
+.filtro-lista{display:flex;flex-direction:column;height:min(52vh,460px);overflow-y:auto;border:1px solid var(--linha);border-radius:4px}
+.filtro-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--sulco)}
+.filtro-item:last-child{border-bottom:0}
+.filtro-item.fora .filtro-nome,.filtro-item.fora .filtro-escudo{opacity:.45}
+.filtro-escudo{width:28px;height:28px;flex:0 0 28px;object-fit:contain}
+.filtro-escudo.post-avatar{width:28px;height:28px;flex-basis:28px}
+.filtro-chip{border-radius:50%;border:1px solid #fff3}
+.filtro-nome{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
+.filtro-nome b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filtro-nome small{font-size:11px;color:var(--apagado)}
+.filtro-bt{flex:none;min-width:84px;padding:5px 10px;border-radius:14px;border:1px solid var(--linha);
+  background:transparent;color:#e4e0d8;font-size:12px;cursor:pointer}
+.filtro-bt.sigo{background:#2a2a2e;border-color:#3d3d44}
+.filtro-bt:not(.sigo){background:var(--rubro,#8e2a1e);border-color:var(--rubro-vivo,#b33);color:#fff}
+.filtro-todos{align-self:stretch;margin:0;padding:7px 10px;background:#1c1c1f;border:0;border-bottom:1px solid var(--linha);
+  color:var(--dourado,#d6b25e);font-size:12px;text-align:left;cursor:pointer}
