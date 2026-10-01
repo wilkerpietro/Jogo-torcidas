@@ -1104,10 +1104,19 @@ TO.competicoes = (function(){
     if(!ult || ult.jogos.some(j=>j.f && !temJogo(j))) return;
 
     /* decide quem passou */
+    /* DECIDE UMA VEZ SÓ, como no agregado (correção do dono, 01/10/2026):
+       o jogo único é decidido no dia (`jogarDia`), com a disputa que a
+       tela mostra cobrança a cobrança. Aqui, no fechamento da semana, o
+       laço sorteava OUTRA disputa por cima — o card dizia "Fortaleza
+       passa por 4 a 1", a chave guardava 0 × 3 e o Noroeste seguia, e o
+       feed ainda chamava protesto no CT pela queda que não houve. E a
+       ida não vai pros pênaltis: quem decide é o agregado, na volta. */
+    if(ult.perna === 'ida') return;                    // espera a volta
     let vivos;
     if(ult.perna === 'volta') vivos = decidirAgregado(E, comp, ult);
     else {
       for(const j of ult.jogos){
+        if(j.venceu) continue;
         if(!j.f){ j.venceu = j.c; continue; }          // sem adversário, passa direto
         j.venceu = j.gc>j.gf ? j.c : j.gf>j.gc ? j.f
                  : penaltisNoJogo(E, j, j.c, j.f,
@@ -1115,7 +1124,6 @@ TO.competicoes = (function(){
       }
       vivos = ult.jogos.map(j=>j.venceu);
     }
-    if(ult.perna === 'ida') return;                    // espera a volta
 
     const passo = COPA_FASES[comp.faseAtual];
     if(passo.fase === 'Final'){

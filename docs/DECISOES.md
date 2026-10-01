@@ -8393,7 +8393,7 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 
 "A rede social pode ter um botão recolhível para esconder, caso o jogador queira só ver o feed; e as notícias mais importantes (as que envolvem o clube e a torcida, ou provocações diretas ao clube e à torcida) aparecem em mensagens no mesmo canto direito, que somem em 3 s."
 - **Recolher.** O botão » no canto esquerdo do cabeçalho da coluna recolhe a rede numa tira fina na borda direita, com o ícone, "Rede social" na vertical e o número de posts novos desde que ela foi recolhida. Clicar na tira, ou num aviso, abre a rede de novo, já atualizada. A escolha fica guardada no navegador (`to.redeRecolhida`).
-- **O aviso do canto.** Com a rede recolhida, o post novo importante para nós aparece no canto direito como o post inteiro, por pedido do dono no mesmo dia: o mesmo cartão da rede (`montarPost`), com avatar, @, data, texto ou imagem, curtidas, comentários, compartilhamentos, menu ⋯ e "Ler a matéria". Fica 3 s; com o mouse em cima o relógio para, e ao sair ainda fica 1,5 s. Entra e sai deslizando, e os avisos saem um a cada 1,5 s.
+- **O aviso do canto.** Com a rede recolhida, o post novo importante para nós aparece no canto direito como o post inteiro, por pedido do dono no mesmo dia: o mesmo cartão da rede (`montarPost`), com avatar, @, data, texto ou imagem, curtidas, comentários, compartilhamentos, menu ⋯ e "Ler a matéria". Fica 5 s (eram 3 s; o dono pediu 5 s em 01/10/2026); com o mouse em cima o relógio para, e ao sair ainda fica 1,5 s. Entra e sai deslizando, e os avisos saem um a cada 1,5 s.
 - **O que é importante** (`feed.importante`), decidido pelos dados e não pelo texto, porque o nome do clube às vezes é o da cidade:
   - post nosso;
   - jornal com o nosso jogo ou a nossa briga no cartaz;
@@ -8401,6 +8401,18 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
   - post que cita a nossa torcida pelo nome.
 - O estado da rede (o que já foi visto, a fila de avisos, a caixa no `<body>`) vive fora da coluna, porque o feed se repinta inteiro de vez em quando e a coluna nasce de novo.
 - Testado: com a rede recolhida, numa briga nossa e quatro dias, saíram 6 posts. Dois viraram aviso (o Porrada da nossa briga e o nosso post), a tira contou 6, e em 12 s os avisos sumiram.
+
+## Pênaltis: a disputa é sorteada uma vez só (01/10/2026)
+
+O dono: "o duelo de pênaltis foi 4x1 pra gente no tempo real do jogo, está registrado como 0x3 na tela competições e no feed aparece a sugestão de encabeçar o protesto no CT, algo não faz sentido."
+
+- **A causa.** Na copa de jogo único, o mata-mata é decidido no dia (`jogarDia`, em `js/mundo/competicoes.js`). A disputa sorteada ali é guardada no jogo (`j.pen`) e é a que a partida mostra cobrança a cobrança. No fechamento da semana, porém, o `avancarCopa` passava de novo por todos os jogos da fase e sorteava outra disputa nos empates, por cima da primeira. O agregado (`decidirAgregado`) já tinha a trava "decide uma vez só", mas o jogo único não tinha. Assim, a chave guardava o segundo sorteio, que podia dar o outro time: o card dizia "Fortaleza passa por 4 a 1", Competições mostrava 0 × 3 e o Noroeste na fase seguinte. O julgamento de campanha leu a chave, viu a queda para um time 20 de força abaixo e propôs o protesto no CT.
+- **O conserto.** O `avancarCopa` pula o jogo que já tem `venceu`, igual ao agregado. A ida de um ida e volta também deixou de ir para os pênaltis no fechamento: antes, o laço rodava nela antes do `return` que espera a volta. Quem decide é o agregado.
+- **Testado** (Playwright, 200 dias de temporada, conferindo a cada dia o placar dos pênaltis e o vencedor de todo jogo do mata-mata):
+  - código antigo: dez disputas trocadas depois de jogadas, várias com o vencedor invertido (Avaí 4×1 Portuguesa virava 3×4 com a Portuguesa classificada);
+  - código novo: nenhuma troca em 20 disputas, e nenhum pênalti em jogo de ida.
+- **Save já afetado.** O jogo que já foi trocado num save antigo continua como ficou: a chave seguiu com o outro time, e não há como desfazer sem reescrever a fase.
+- **O aviso do canto** (rede recolhida) passou de 3 s para 5 s (`TOAST_VIDA`), a pedido do dono.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

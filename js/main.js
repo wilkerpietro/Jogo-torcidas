@@ -1169,7 +1169,7 @@
     n.textContent = REDE.naoVistos > 99 ? '99+' : String(REDE.naoVistos);
   }
   /* o aviso do canto: quem postou, o começo do texto, 3 s na tela */
-  const TOAST_VIDA = 3000;
+  const TOAST_VIDA = 5000;
   function proximoToast(){
     const e = E();
     if(!e || !REDE.toastFila.length || !redeRecolhida){ REDE.toastTimer = null; return; }
