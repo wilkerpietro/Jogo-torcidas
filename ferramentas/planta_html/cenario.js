@@ -2059,28 +2059,65 @@ void main() {`)
     comNoite(mato);
     /* o ladrilho de dentro que era só mato (montarChao não pintou) */
     for (const r of deMato) quad(r.x0, r.x1, r.y0, r.y1, mato, uvMundo);
-    /* O RIO QUE SAI DA ÁREA (a praça toda de modelo): segue reto pra longe,
-       a água com a margem de capim dos dois lados, um palmo acima do mato
-       de longe — o rio não acaba na beira do chão pintado */
-    for (const r of (P.rios && P.rios()) || []) {
-      for (const [k, kAnt] of [[0, 1], [r.pontos.length - 1, r.pontos.length - 2]]) {
-        const P0 = r.pontos[k], P1 = r.pontos[kAnt];
-        const fora = P0[0] <= ar.x0 + 1 || P0[0] >= ar.x1 - 1 || P0[1] <= ar.y0 + 1 || P0[1] >= ar.y1 - 1;
-        if (!fora) continue;
-        const dx = P0[0] - P1[0], dz = P0[1] - P1[1], L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L, nx = -uz, nz = ux;
-        const faixa = (meia, cor, y) => {
-          const g = new THREE.BufferGeometry(), A = [P1[0], P1[1]], Bf = [P0[0] + ux * G * 0.25, P0[1] + uz * G * 0.25];
-          const c = [[A[0] + nx * meia, A[1] + nz * meia], [A[0] - nx * meia, A[1] - nz * meia], [Bf[0] - nx * meia, Bf[1] - nz * meia], [Bf[0] + nx * meia, Bf[1] + nz * meia]];
-          g.setAttribute('position', new THREE.Float32BufferAttribute(c.flatMap(([x, z]) => [x, y, z]), 3));
-          g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
-          g.setIndex([0, 1, 2, 0, 2, 3]);
-          const mat = new THREE.MeshLambertMaterial({ color: cor, side: THREE.DoubleSide }); mat.userData.doMapa = true; comNoite(mat);
-          const m = new THREE.Mesh(g, mat); m.name = 'longe'; m.frustumCulled = false; grupo.add(m);
-        };
-        faixa(r.larg / 2 + 3.2 * M, '#7d9455', Y + 0.06);
-        faixa(r.larg / 2, '#3f6d78', Y + 0.12);
+    /* O RIO FORA DA ÁREA (a praça toda de modelo): o pedaço dele fora do
+       chão pintado — o que corre na beira do mundo e a ponta que segue
+       reta pra longe — vira a faixa d'água com a margem de capim, um palmo
+       acima do mato de longe. A faixa começa no último ponto dentro da
+       área, por baixo do chão pintado: sem buraco na emenda (antes ela
+       começava no ponto de antes da ponta, a uns 20 m da área, e o rio
+       sumia nesse vão). O rio que deságua no mar: a água para na linha
+       d'água, e a margem de capim na beira da areia */
+    const costaR = P.costa && P.costa();
+    const naArea = p => p[0] > ar.x0 && p[0] < ar.x1 && p[1] > ar.y0 && p[1] < ar.y1;
+    const faixaDoRio = (linhas, cor, y) => {
+      const pos = [], idx = [];
+      for (const { pts, meia } of linhas) for (let k = 1; k < pts.length; k++) {
+        const A = pts[k - 1], B = pts[k], dx = B[0] - A[0], dz = B[1] - A[1], L = Math.hypot(dx, dz);
+        if (L < 1) continue;
+        /* (cada pedaço passa meia largura das pontas: a curva fecha sem fresta) */
+        const ux = dx / L, uz = dz / L, nx = -uz * meia, nz = ux * meia, a = [A[0] - ux * meia, A[1] - uz * meia], b = [B[0] + ux * meia, B[1] + uz * meia], n = pos.length / 3;
+        for (const [x, z] of [[a[0] + nx, a[1] + nz], [a[0] - nx, a[1] - nz], [b[0] - nx, b[1] - nz], [b[0] + nx, b[1] + nz]]) pos.push(x, y, z);
+        /* (a face da frente pra cima: virada pra baixo, o material de dois lados vira a normal e a faixa saía preta, sem luz — o rio de longe da §36 também) */
+        idx.push(n, n + 2, n + 1, n, n + 3, n + 2);
       }
+      if (!idx.length) return;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(pos.map((_, q) => q % 3 === 1 ? 1 : 0), 3));
+      g.setIndex(idx);
+      const mat = new THREE.MeshLambertMaterial({ color: cor, side: THREE.DoubleSide }); mat.userData.doMapa = true; comNoite(mat);
+      const m = new THREE.Mesh(g, mat); m.name = 'longe'; m.frustumCulled = false; grupo.add(m);
+    };
+    /* (a linha até onde ela passa pro leste de `xDe`: a areia, o mar) */
+    const ateA = (pts, xDe) => {
+      const k = pts.findIndex(p => p[0] >= xDe(p[1]));
+      if (k < 0) return pts;
+      if (k === 0) return [];
+      const A = pts[k - 1], B = pts[k], fa = xDe(A[1]) - A[0], fb = xDe(B[1]) - B[0], t = fa / (fa - fb || 1);
+      return pts.slice(0, k).concat([[A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]]);
+    };
+    /* os pedaços de fora da área (com o ponto de dentro de cada lado); a ponta de fora segue reta pra longe (a do mar, não) */
+    const pedacosFora = (pts, ponta0, ponta1, meia, saida) => {
+      const n = pts.length, dentro = pts.map(naArea);
+      const estica = (P0, P1) => { const dx = P0[0] - P1[0], dz = P0[1] - P1[1], L = Math.hypot(dx, dz) || 1; return [P0[0] + dx / L * G * 0.25, P0[1] + dz / L * G * 0.25]; };
+      for (let k = 0; k < n; k++) {
+        if (dentro[k]) continue;
+        let f = k; while (f + 1 < n && !dentro[f + 1]) f++;
+        const run = pts.slice(Math.max(0, k - 1), Math.min(n, f + 2));
+        if (k === 0 && ponta0 && n > 1) run.unshift(estica(pts[0], pts[1]));
+        if (f === n - 1 && ponta1 && n > 1) run.push(estica(pts[n - 1], pts[n - 2]));
+        saida.push({ pts: run, meia });
+        k = f;
+      }
+    };
+    const margens = [], aguas = [];
+    for (const r of (P.rios && P.rios()) || []) {
+      const pts = r.pontos.map(p => [p[0], p[1]]), mar = r.mar && costaR;
+      pedacosFora(mar ? ateA(pts, costaR.areia) : pts, !r.lagoa, !mar, r.larg / 2 + 3.2 * M, margens);
+      pedacosFora(mar ? ateA(pts, costaR.agua) : pts, !r.lagoa, !mar, r.larg / 2, aguas);
     }
+    faixaDoRio(margens, '#7d9455', Y + 0.06);
+    faixaDoRio(aguas, '#3f6d78', Y + 0.12);
     const costa = P.costa && P.costa();
     quad(ar.x0 - G, ar.x0, ar.y0, ar.y1, mato, uvMundo);                      // oeste
     if (!costa) {
@@ -2099,7 +2136,8 @@ void main() {`)
       const c2 = cv.getContext('2d', { willReadFrequently: true });
       const z0 = sentido < 0 ? zBorda - L : zBorda;
       P.pintarChao(c2, xa, z0, s);
-      if (!corMar) { const d = c2.getImageData(cv.width - 2, 2, 1, 1).data; corMar = new THREE.Color().setRGB(d[0] / 255, d[1] / 255, d[2] / 255, THREE.SRGBColorSpace); }
+      /* (a cor do mar: na linha da ponta, 25 m mar adentro — na outra beira da faixa a costa já fez a curva, e caía na areia) */
+      if (!corMar) { const d = c2.getImageData(cv.width - 2, sentido < 0 ? cv.height - 2 : 2, 1, 1).data; corMar = new THREE.Color().setRGB(d[0] / 255, d[1] / 255, d[2] / 255, THREE.SRGBColorSpace); }
       return { xa, x1, z0, L, mat: material(cv, false) };
     };
     const norte = faixa(ar.y0, -1), sul = faixa(ar.y1, 1);

@@ -8180,6 +8180,17 @@ E, no meio da rodada, um defeito apontado com print: **a rua de acesso do estád
 
 **As escolhas que o pedido deixou em aberto** (dá pra mudar depois): a ordem dos equipamentos e os nomes (a paróquia de cada santo, a escola de cada patrono, o distrito numerado); o rio só nas ligações por estrada (Belém e o Litoral Catarinense, ligadas pela avenida antiga, ficam sem rio); a entrada chega numa cidade da ponta do mapa, não necessariamente no centro. Detalhes e medidas: `docs/JOGO_3D.md` §36.
 
+## Maranguape sai, e os rios: no máximo dois, pro mar quando tem mar, sem cidade ilhada (dono, 01/10/2026)
+
+O pedido: "remova maranguape do jogo e crie mais um bairro pra juazeiro do Norte. se um mapa tem mar, os rios vão correr em direção ao mar. cada mapa vai ter no máximo dois rios. o mapa do interior de são paulo ficou estranho com cidades ilhadas."
+
+- **Maranguape sai do jogo** e entra o **Juazeiro do Norte III** (zona Sul, com a classe e o multiplicador do Maranguape: Nobre, 1,5). No mapa do Interior do CE, Itapipoca passa a se ligar direto em Limoeiro do Norte (295 km).
+- **No máximo dois rios por praça** (antes, um por estrada: até 8 no Interior de SP).
+- **Na praça com mar, o rio corre pro mar**: da ponte pra baixo ele só vai pro leste ou de lado, atravessa a avenida da beira e a areia e deságua na linha d'água. Sem mar, ele corre num rumo só (de oeste pra leste ou de norte pra sul), de uma borda do mapa a outra.
+- **Nenhuma cidade ilhada**: a régua é água — rio ou mar — a 60 m de dois lados opostos da cidade, ou de três lados. O segundo rio não pode deixar cidade assim, e toda cidade tem que ter caminho por terra até a beira do mapa. No Interior de SP eram 5 das 9 cidades; agora nenhuma.
+
+**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): o bairro novo é Nobre (herdou a classe do Maranguape: a praça fica com a mesma mistura de classes, e Juazeiro com um bairro Médio, um Baixo e um Nobre); o rio sozinho pode deixar uma cidade com água de três lados se o quarto for terra (sobram 4: Bragança Paulista, Passo Fundo, Parnaíba e Natal); o rio que não tem saída rio acima ainda nasce numa lagoa (Alagoas, Bahia, Sergipe); e o segundo rio não pode correr ao lado do primeiro (a 120 m por mais de 150 m). Detalhes e medidas: `docs/JOGO_3D.md` §37.
+
 ## A zona leva os mais fortes dela, dos dois lados (régua do dono, 22/09/2026)
 
 O dono sentia a IA mais forte na casa de piscina, atacando e defendendo. Medido: a nossa zona era um sorteio da torcida inteira (média 14,9 de força+defesa, seis novatos e nove componentes em vinte) e a zona deles saía do gerador que corta o topo do plantel (25,0, nove frentes e dois diretores) — e, pior, cada um dos cinco pontos da casa recebia o topo de novo. A régua nova é a mesma pros dois lados: cada membro tem a sua zona (hash do id, fixa pra sempre — `acoes.zonaDoMembro`) e o bonde da zona são os mais fortes daquela zona, até o teto (`bondeDaZona`); do lado deles o plantel inteiro é gerado, repartido nas quatro zonas na roda da fila de força, e a zona pedida leva os mais fortes dela (`combate.fichasDaZona`), entregues prontos à cena (`cfg.fichasRival`), cada grupo tirando a sua fatia na ordem. Num jogo novo da TUF contra a MOFI: nossa zona 17,5, a deles 15,2 (o topo do plantel deles daria 25,3). As outras duas causas medidas ficaram anotadas pro dono decidir: a casa favorece quem defende (portão-funil; com fichas iguais o atacante ganha 3 a 5 em 16, seja quem for) e a pedra automática é só da IA (na praça, fichas iguais, nós atacando: 1 em 16 com pedra, 10 em 16 sem).

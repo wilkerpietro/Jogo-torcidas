@@ -447,6 +447,11 @@ export const MAPA_DO_PORTE = { Pequeno: 'pequeno', 'Médio': 'medio', Grande: 'g
    da forma que está atualmente"; a sede e o estádio de Anápolis ficam no
    bairro de Anápolis) */
 export const VAO_CIDADES_M = 50;
+/* A LINHA D'ÁGUA NOS MAPAS: a areia da planta (K.PRAIA, 12,5 m) mais
+   estes px do desenho do jogo — a praia dos mapas fica com ~42 m (a página
+   desenha a areia e o mar com ela, e a boca do rio que vai pro mar chega
+   até ela) */
+export const PRAIA_A_MAIS = 105;
 export const CISOES = {
   'bahia': { centro: 'Salvador', ligacoes: [['Feira de Santana', 'Salvador', 'no', 110]] },
   'belem': { centro: 'Belém', ligacoes: [['Marabá', 'Belém', 's', 530]] },
@@ -473,8 +478,11 @@ export const CISOES = {
                                                           ['Pelotas', 'Caxias do Sul', 's', 370], ['Bagé', 'Pelotas', 'o', 210], ['Uruguaiana', 'Bagé', 'no', 400]] },
   'interior-de-sc': { centro: 'Brusque', ligacoes: [['Itajaí', 'Brusque', 'ne', 40], ['Joinville', 'Itajaí', 'n', 85], ['Criciúma', 'Brusque', 's', 215],
                                                    ['Joaçaba', 'Brusque', 'o', 305], ['Chapecó', 'Joaçaba', 'o', 130]] },
-  'interior-do-ce': { centro: 'Limoeiro do Norte', ligacoes: [['Maranguape', 'Limoeiro do Norte', 'no', 185], ['Itapipoca', 'Maranguape', 'no', 130],
-                                                              ['Sobral', 'Itapipoca', 'o', 105], ['Iguatu', 'Limoeiro do Norte', 'so', 225], ['Juazeiro do Norte', 'Iguatu', 's', 115]] },
+  /* (Maranguape saiu do jogo — o dono, 01/10/2026: "remova maranguape do
+     jogo e crie mais um bairro pra juazeiro do Norte" —: Itapipoca liga
+     direto em Limoeiro do Norte) */
+  'interior-do-ce': { centro: 'Limoeiro do Norte', ligacoes: [['Itapipoca', 'Limoeiro do Norte', 'no', 295], ['Sobral', 'Itapipoca', 'o', 105],
+                                                              ['Iguatu', 'Limoeiro do Norte', 'so', 225], ['Juazeiro do Norte', 'Iguatu', 's', 115]] },
   'interior-de-pe': { centro: 'Salgueiro', ligacoes: [['Petrolina', 'Salgueiro', 'so', 255], ['Santa Cruz do Capibaribe', 'Salgueiro', 'l', 385],
                                                      ['Caruaru', 'Santa Cruz do Capibaribe', 'se', 50]] },
   'interior-de-minas': { centro: 'Patos de Minas', ligacoes: [['Uberlândia', 'Patos de Minas', 'o', 225], ['São João del-Rei', 'Patos de Minas', 'se', 445],
@@ -2559,6 +2567,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     const bmK = avenidas.find(a => a.id === 'beiramar'), lBeira = bmK ? bmK.l : 76;
     const uC = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00C = K.pxm(0, 0)[1];
     const guia = y => K.pxm(K.xCosta((y - y00C) / uC), 0)[0] - K.PRAIA * uC - lBeira;
+    /* a linha d'água dos mapas na altura y (a areia da planta mais PRAIA_A_MAIS): até onde a boca do rio vai */
+    const xAguaCosta = y => K.pxm(K.xCosta((y - y00C) / uC) + PRAIA_A_MAIS, 0)[0];
     const temCosta = !!opc.costa;
     /* A AVENIDA DA BEIRA fica só onde o centro encosta nela: as quadras de
        hoje recortadas pela costa que ficaram (e, depois, a cidade da costa) */
@@ -3034,23 +3044,27 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     }
 
     /* 6c · OS RIOS (o dono, 01/10/2026: "que a decoração de vegetação das
-       demais seja mais bem feita com rios entre uma cidade e outra"). Na
-       praça de cidades-modelo, cada estrada que liga duas cidades passa numa
-       ponte por cima de um rio (o traçado é no passo 8b', com tudo posto): o rio cruza a estrada no meio dela, de
-       través, e corre pelo vão entre as cidades até a borda do mundo ou
-       até encontrar outro rio (vira afluente dele). O caminho é o mais
-       barato numa grade de 4 m: a 10 m das cidades no mínimo e de
-       preferência no meio do vão; estrada, só atravessa de través e longe
-       das pontas (do pórtico e da placa); e nunca pro lado da praia */
+       demais seja mais bem feita com rios entre uma cidade e outra"; e,
+       na segunda leva, "se um mapa tem mar, os rios vão correr em direção
+       ao mar. cada mapa vai ter no máximo dois rios"). Na praça de
+       cidades-modelo, até dois rios, cada um passando entre duas cidades
+       por baixo da ponte da estrada delas (o traçado é no passo 8b', com
+       tudo posto). O caminho é o mais barato numa grade de 4 m: a 8 m das
+       cidades no mínimo e de preferência no meio do vão; estrada, só
+       atravessa de través e longe das pontas (do pórtico e da placa); a
+       costa, só na boca, reto pro mar */
     const LARG_RIO = 6.5 * M;
     const rios = [], pontesRio = [];
     /* A GRADE DA PAISAGEM: a célula de 4 m na caixa do mundo, o que é
-       proibido (a cidade com 10 m em volta, a praia, o que vier em `extras`
-       com a folga dele) e a distância (em células) até o proibido */
-    const gradePaisagem = (extras = []) => {
+       proibido (a cidade com 10 m em volta, a praia — sem `comCosta`, não —,
+       o que vier em `extras` com a folga dele) e a distância (em células)
+       até o proibido */
+    const gradePaisagem = (extras = [], comCosta = true) => {
       /* (a caixa do mundo de verdade: com tudo posto, a rua de veraneio também — ela muda de lugar no passo 8) */
       const bF = bbDe([mundoC, bbDe(postas.map(p => p.r))]);
       const h = 4 * M, B = { x0: bF.x0 - 400, x1: bF.x1 + 400, y0: bF.y0 - 400, y1: bF.y1 + 400 };
+      /* (na praça de praia, a grade vai até o mar: a boca do rio chega nele) */
+      if (temCosta) for (let q = 0; q <= 8; q++) B.x1 = Math.max(B.x1, xAguaCosta(B.y0 + (B.y1 - B.y0) * q / 8) + 20 * M);
       const nx = Math.ceil((B.x1 - B.x0) / h), ny = Math.ceil((B.y1 - B.y0) / h), N = nx * ny;
       const proib = new Uint8Array(N);
       const marca = (r, m) => {
@@ -3060,7 +3074,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       };
       for (const p of postas) marca(p.r, 8 * M);
       for (const [r, m] of extras) marca(r, m);
-      if (temCosta) for (let j = 0; j < ny; j++) { const g = guia(B.y0 + (j + 0.5) * h) - 20 * M; for (let i = 0; i < nx; i++) if (B.x0 + (i + 0.5) * h > g) proib[j * nx + i] = 1; }
+      if (temCosta && comCosta) for (let j = 0; j < ny; j++) { const g = guia(B.y0 + (j + 0.5) * h) - 20 * M; for (let i = 0; i < nx; i++) if (B.x0 + (i + 0.5) * h > g) proib[j * nx + i] = 1; }
       const dist = new Float32Array(N);
       for (let k = 0; k < N; k++) dist[k] = proib[k] ? 0 : 1e9;
       for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
@@ -3294,128 +3308,355 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       }
     }
 
-    /* 8b' · OS RIOS (o passo 6c): depois da rua de veraneio e do beco da favela solta, que o rio não corta, e com o mundo de verdade */
+    /* 8b' · OS RIOS (o passo 6c; o dono, 01/10/2026, a segunda leva: "se
+       um mapa tem mar, os rios vão correr em direção ao mar. cada mapa vai
+       ter no máximo dois rios. o mapa do interior de são paulo ficou
+       estranho com cidades ilhadas"). Depois da rua de veraneio e do beco
+       da favela solta, que o rio não corta, e com o mundo de verdade.
+       NO MÁXIMO DOIS RIOS por praça. Cada um passa entre duas cidades, por
+       baixo da ponte da estrada delas, e corre NUM SENTIDO SÓ: na praça de
+       praia, sempre pro leste, até o MAR (a boca atravessa a areia reto —
+       e a avenida da beira, na ponte, se ela estiver no caminho); sem mar,
+       de oeste a leste ou de norte a sul (o de través da estrada): vem da
+       beira de trás do mundo ou de uma de lado e sai na da frente ou numa
+       de lado, nunca pela mesma por onde entrou. Rio acima, sem como chegar
+       na beira, ele nasce numa lagoa. O rio que nunca volta
+       pra trás não dá a volta em cidade nenhuma — o de antes, um por
+       estrada, com cada metade correndo até a borda ou até outro rio,
+       cercava cidade dos quatro lados no Interior de SP. Entre as
+       estradas, fica o rio mais barato (longe das cidades, de preferência
+       no meio do vão, sem correr colado na beira do mundo) e que divide as
+       cidades mais por igual; o segundo cruza outra estrada, corre a 32 m
+       do primeiro no mínimo e não ao lado dele, deixa cidade entre os dois
+       e não custa mais que o dobro do primeiro */
     if (MODELO) {
       /* (o beco que liga a favela solta à rua — passo 8b — também: o rio não corta ele) */
       const becosLiga = favelas.flatMap(f => (f.becos || []).filter(bc => bc.liga).flatMap(bc => bc.slice(1).map((p, k) => [retSeg({ pontos: [bc[k], p], l: bc.w || 44 }), 4 * M])));
-      const G = gradePaisagem(becosLiga);
+      /* (a distância até o proibido conta a costa — o rio não corre colado nela —; o que ele nunca atravessa, não) */
+      const G = gradePaisagem(becosLiga), S = temCosta ? gradePaisagem(becosLiga, false) : G;
       const { nx, ny, N, h } = G;
-      /* AS ESTRADAS NA GRADE: a célula de estrada (1: de leste a oeste, 2: de
-         norte a sul) só se atravessa de través; perto das pontas (o pórtico e
-         a placa) não se atravessa */
+      const celDe = (x, y) => { const i = G.ci(x), j = G.cj(y); return i >= 0 && j >= 0 && i < nx && j < ny ? j * nx + i : -1; };
+      /* A COSTA: a faixa da guia − 20 m pra leste, que só a boca do rio
+         atravessa (reto pro leste), e o mar, da linha d'água pra lá */
+      const xAgua = xAguaCosta;
+      const naCosta = new Uint8Array(N), noMar = new Uint8Array(N);
+      const iAgua = new Int32Array(ny).fill(nx);             // a primeira célula de mar de cada linha
+      if (temCosta) for (let j = 0; j < ny; j++) {
+        const y = G.cy(j), g = guia(y) - 20 * M, xa = xAgua(y);
+        for (let i = 0; i < nx; i++) { const x = G.cx(i); if (x > g) naCosta[j * nx + i] = 1; if (x > xa) { noMar[j * nx + i] = 1; iAgua[j] = Math.min(iAgua[j], i); } }
+      }
+      /* AS RUAS DE FORA NA GRADE (a estrada, a entrada da praça, a avenida
+         da beira): a célula (1: rua de leste a oeste, 2: de norte a sul) só
+         se atravessa de través; a 10 m das pontas da rua (o pórtico e a
+         placa), não */
       const estr = new Uint8Array(N);
-      for (const a of ruasDeFora()) for (let k = 1; k < a.pontos.length; k++) {
-        const [A, Bp] = [a.pontos[k - 1], a.pontos[k]], hz = Math.abs(Bp[1] - A[1]) < Math.abs(Bp[0] - A[0]), L = Math.hypot(Bp[0] - A[0], Bp[1] - A[1]);
-        const r = retSeg({ pontos: [A, Bp], l: a.l + 2 * M });
-        for (let j = Math.max(0, G.cj(r.y0)); j <= Math.min(ny - 1, G.cj(r.y1)); j++) for (let i = Math.max(0, G.ci(r.x0)); i <= Math.min(nx - 1, G.ci(r.x1)); i++) {
-          const x = G.cx(i), y = G.cy(j), t = hz ? (x - Math.min(A[0], Bp[0])) : (y - Math.min(A[1], Bp[1]));
-          const ponta = t < 10 * M || t > L - 10 * M;
-          estr[j * nx + i] = ponta ? 3 : (hz ? 1 : 2);
+      for (const a of ruasDeFora()) {
+        let Lt = 0;
+        for (let k = 1; k < a.pontos.length; k++) Lt += Math.hypot(a.pontos[k][0] - a.pontos[k - 1][0], a.pontos[k][1] - a.pontos[k - 1][1]);
+        let acc = 0;
+        for (let k = 1; k < a.pontos.length; k++) {
+          const [A, Bp] = [a.pontos[k - 1], a.pontos[k]], L = Math.hypot(Bp[0] - A[0], Bp[1] - A[1]);
+          if (L < 1) continue;
+          const hz = Math.abs(Bp[1] - A[1]) < Math.abs(Bp[0] - A[0]), ux = (Bp[0] - A[0]) / L, uy = (Bp[1] - A[1]) / L;
+          const r = retSeg({ pontos: [A, Bp], l: a.l + 2 * M });
+          for (let j = Math.max(0, G.cj(r.y0)); j <= Math.min(ny - 1, G.cj(r.y1)); j++) for (let i = Math.max(0, G.ci(r.x0)); i <= Math.min(nx - 1, G.ci(r.x1)); i++) {
+            const t = acc + Math.max(0, Math.min(L, (G.cx(i) - A[0]) * ux + (G.cy(j) - A[1]) * uy)), kk = j * nx + i;
+            if (t < 10 * M || t > Lt - 10 * M) estr[kk] = 3;
+            else if (estr[kk] !== 3) estr[kk] = hz ? 1 : 2;
+          }
+          acc += L;
         }
       }
       /* (a 8 m do pórtico e da placa, não: o pórtico e a placa ficam em terra, fora da ponte) */
       for (const p of porticos.concat(placas)) { const i = G.ci(p.x), j = G.cj(p.y); for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny && estr[jj * nx + ii]) estr[jj * nx + ii] = 3; } }
-      const rioCel = new Int16Array(N);                     // a célula do meio de cada rio (o número dele + 1)
-      const pertoRio = new Uint8Array(N);                   // a volta de cada rio (um rio não corre colado no outro)
-      /* O CAMINHO MAIS BARATO da célula k0 (saindo no sentido [si, sj]) até a
-         borda do mundo ou até outro rio; null se não tem */
       const DV = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
-      const caminho = (k0, eu) => {
+      const faixaDoRio = new Uint8Array(N);                 // os 32 m em volta do rio já posto: o outro não corre ali
+      let longeDoOutro = null;                              // a distância (células) até o rio já posto: o outro foge dele
+      /* AS CURVAS: um relevo de mentira (o ruído de 40 m em 40 m, o mesmo
+         em cada praça) que encarece um pouco o chão aqui e ali — o rio
+         contorna as partes altas e serpenteia, em vez de correr reto feito
+         canal pelo mato aberto */
+      /* A BEIRA DO MUNDO: o chão pintado (da planta e do cenário) acaba
+         nela, e o rio não corre colado nela — a 25 m dela, de dentro ou de
+         fora, o passo custa mais; atravessar ela pra sair do mapa, todo
+         rio atravessa uma vez (na praça de praia, o leste é a costa: lá
+         quem manda é a faixa da costa) */
+      const WM = bbDe([mundoC, bbDe(postas.map(p => p.r))]), beiraM = new Float32Array(N);
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const x = G.cx(i), y = G.cy(j), d = Math.min(x - WM.x0, y - WM.y0, WM.y1 - y, temCosta ? Infinity : WM.x1 - x) / h;
+        beiraM[j * nx + i] = d <= 0 ? 1 : Math.exp(-d / 6);
+      }
+      const RQ = 10, rqx = Math.ceil(nx / RQ) + 2;
+      const noh = (I, J) => { let v = Math.imul(sementeP ^ Math.imul(I + 7, 374761393) ^ Math.imul(J + 3, 668265263), 1274126177); v ^= v >>> 15; v = Math.imul(v, 2246822519); v ^= v >>> 13; return (v >>> 0) / 4294967296; };
+      const relevo = new Float32Array(N);
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const I = Math.floor(i / RQ), J = Math.floor(j / RQ), fx = i / RQ - I, fy = j / RQ - J, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+        relevo[j * nx + i] = (noh(I, J) * (1 - sx) + noh(I + 1, J) * sx) * (1 - sy) + (noh(I, J + 1) * (1 - sx) + noh(I + 1, J + 1) * sx) * sy;
+      }
+      /* O CAMINHO MAIS BARATO de k0 num sentido só — `F`, o rumo do rio, e
+         `s`: 1 rio abaixo, −1 rio acima; o passo nunca vai contra, e o de
+         lado custa mais — até `alvo`. Rio abaixo na praça de praia (`boca`),
+         a faixa da costa se passa reto pro leste. Rio acima, sem saída, o
+         rio nasce numa lagoa no lugar mais aberto aonde ele chega */
+      const busca = (k0, F, s, alvo, boca, falta) => {
         /* (Float64: com Float32 o custo guardado arredondava pra baixo, o nó saía do monte maior que ele e não abria — o rio ficava preso) */
-        const custo = new Float64Array(N).fill(Infinity), de = new Int32Array(N).fill(-1);
+        /* (A*: `falta` é o mínimo que ainda custa até o alvo — a distância
+           em células até a beira ou até o mar, e cada passo custa 1 ou mais
+           —, e a busca vai direto pra lá em vez de abrir a grade inteira) */
+        const custo = new Float64Array(N).fill(Infinity), de = new Int32Array(N).fill(-1), fechado = new Uint8Array(N);
         const heap = [];
         const poe = (k, c) => { heap.push([c, k]); let n = heap.length - 1; while (n > 0) { const p = (n - 1) >> 1; if (heap[p][0] <= heap[n][0]) break; [heap[p], heap[n]] = [heap[n], heap[p]]; n = p; } };
         const tira = () => { const t = heap[0], u = heap.pop(); if (heap.length) { heap[0] = u; let n = 0; for (;;) { const a = 2 * n + 1, b = a + 1; let m = n; if (a < heap.length && heap[a][0] < heap[m][0]) m = a; if (b < heap.length && heap[b][0] < heap[m][0]) m = b; if (m === n) break; [heap[m], heap[n]] = [heap[n], heap[m]]; n = m; } } return t; };
-        custo[k0] = 0; poe(k0, 0);
         const volta = k => { const out = []; for (let v = k; v !== -1; v = de[v]) out.push(v); return out.reverse(); };
-        /* (o lugar mais aberto aonde ela chega: sem saída, o rio nasce numa lagoa ali) */
+        custo[k0] = 0; poe(k0, falta(k0));
         let aberto = -1;
         while (heap.length) {
-          const [c, k] = tira();
-          if (c > custo[k]) continue;
+          const k = tira()[1];
+          if (fechado[k]) continue;
+          fechado[k] = 1;
+          const c = custo[k];
+          if (k !== k0 && alvo(k)) return { cel: volta(k), lagoa: false, custo: c };
           const i = k % nx, j = (k / nx) | 0;
-          if (k !== k0 && ((rioCel[k] && rioCel[k] !== eu) || i === 0 || j === 0 || i === nx - 1 || j === ny - 1)) return { cel: volta(k), lagoa: false };
-          if (G.dist[k] >= 3 && i > 3 && j > 3 && i < nx - 4 && j < ny - 4 && (aberto < 0 || G.dist[k] + 0.02 * c > G.dist[aberto] + 0.02 * custo[aberto])) aberto = k;
+          /* (a lagoa longe do outro rio também) */
+          const abre = q => longeDoOutro ? Math.min(G.dist[q], longeDoOutro[q] - 8) : G.dist[q];
+          if (s < 0 && abre(k) >= 3 && i > 3 && j > 3 && i < nx - 4 && j < ny - 4 && (aberto < 0 || abre(k) + 0.02 * c > abre(aberto) + 0.02 * custo[aberto])) aberto = k;
           for (const [di, dj] of DV) {
+            const frente = (di * F[0] + dj * F[1]) * s;
+            if (frente < 0) continue;
             const ii = i + di, jj = j + dj;
             if (ii < 0 || jj < 0 || ii >= nx || jj >= ny) continue;
             const v = jj * nx + ii;
-            if (G.proib[v] || rioCel[v] === eu) continue;
-            const ev = estr[v], eu2 = estr[k];
+            if (S.proib[v] || faixaDoRio[v]) continue;
+            if (naCosta[v] && !(boca && di === 1 && dj === 0)) continue;
+            const ev = estr[v], ek = estr[k];
             if (ev === 3) continue;
-            /* na estrada (e entrando nela), só de través: a de leste a oeste, de norte a sul */
+            /* na rua (e entrando nela), só de través: a de leste a oeste, de norte a sul */
             if (ev && (di && dj || (ev === 1 && di) || (ev === 2 && dj))) continue;
-            if (eu2 && eu2 !== 3 && !ev && (di && dj)) continue;
-            const passo = (di && dj ? 1.414 : 1) * (1 + 8 * Math.exp(-G.dist[v] / 4) + (pertoRio[v] && !rioCel[v] ? 3 : 0)) + (ev && !eu2 ? 30 : 0);
-            if (c + passo < custo[v]) { custo[v] = c + passo; de[v] = k; poe(v, c + passo); }
+            if (ek && ek !== 3 && !ev && (di && dj)) continue;
+            const passo = naCosta[v] ? 1 : (di && dj ? 1.414 : 1) * (frente ? 1 : 1.6) * (1 + 8 * Math.exp(-G.dist[v] / 4) + 1.6 * relevo[v] + 2.5 * beiraM[v] + (longeDoOutro ? 6 * Math.exp(-longeDoOutro[v] / 12) : 0)) + (ev && !ek ? 30 : 0);
+            if (c + passo < custo[v]) { custo[v] = c + passo; de[v] = k; poe(v, c + passo + falta(v)); }
           }
         }
-        return aberto >= 0 && Math.hypot((aberto % nx) - (k0 % nx), ((aberto / nx) | 0) - ((k0 / nx) | 0)) >= 6 ? { cel: volta(aberto), lagoa: true } : null;
+        return s < 0 && aberto >= 0 && Math.hypot((aberto % nx) - (k0 % nx), ((aberto / nx) | 0) - ((k0 / nx) | 0)) >= 6 ? { cel: volta(aberto), lagoa: true, custo: custo[aberto] } : null;
       };
-      /* as ligações: cada cidade com a vizinha dela, pela estrada (a mais comprida primeiro: o rio maior) */
-      const lig = new Map();
-      for (const a of estradas) { const L = Math.hypot(a.pontos[1][0] - a.pontos[0][0], a.pontos[1][1] - a.pontos[0][1]); const o = lig.get(a.para); if (!o || L > o.L) lig.set(a.para, { a, L }); }
-      const ordemLig = [...lig.values()].sort((p, q) => q.L - p.L);
-      const cruzaRio = a => rios.some(r => { const [A, Bp] = a.pontos; for (let t = 0; t <= 1; t += 0.05) if (pertoDaLinha(A[0] + (Bp[0] - A[0]) * t, A[1] + (Bp[1] - A[1]) * t, r.pontos, r.larg / 2)) return true; return false; });
-      for (const { a, L } of ordemLig) {
-        if (L < 40 * M || rios.some(r => r.estrada === a.id) || cruzaRio(a)) continue;
-        const [A, Bp] = a.pontos, ux = (Bp[0] - A[0]) / L, uy = (Bp[1] - A[1]) / L, nxv = -uy, nyv = ux;
-        /* o ponto da travessia: do meio pras pontas, o primeiro com chão livre dos dois lados */
-        let feito = false;
-        /* (a metade de lá não volta pela estrada dela: a estrada da travessia vira barra na busca) */
-        const daEstrada = [];
-        for (const e of estradas) if (e.para === a.para && e.de === a.de) {
-          const r = retSeg({ pontos: e.pontos, l: e.l + 2 * M });
-          for (let j = Math.max(0, G.cj(r.y0)); j <= Math.min(ny - 1, G.cj(r.y1)); j++) for (let i = Math.max(0, G.ci(r.x0)); i <= Math.min(nx - 1, G.ci(r.x1)); i++) if (estr[j * nx + i]) daEstrada.push([j * nx + i, estr[j * nx + i]]);
-        }
-        for (const [k] of daEstrada) estr[k] = 3;
-        for (let dt = 0; dt <= L / 2 - 12 * M && !feito; dt += 1 * M) for (const sgT of [1, -1]) {
-          if (feito || (dt === 0 && sgT < 0)) continue;
+      /* AS TRAVESSIAS: em cada estrada, do meio pras pontas, o primeiro
+         ponto com chão livre dos dois lados; o rumo do rio (na praia,
+         sempre pro leste; sem mar, o de través da estrada) diz qual lado
+         fica rio abaixo — na estrada de leste a oeste da praia, os dois
+         servem */
+      const traves = [];
+      for (const a of estradas) {
+        const [A, Bp] = a.pontos, L = Math.hypot(Bp[0] - A[0], Bp[1] - A[1]);
+        if (L < 40 * M) continue;
+        const ux = (Bp[0] - A[0]) / L, uy = (Bp[1] - A[1]) / L, nxv = -uy, nyv = ux;
+        const F = temCosta || Math.abs(nxv) > Math.abs(nyv) ? [1, 0] : [0, 1];
+        let ponto = null;
+        for (let dt = 0; dt <= L / 2 - 12 * M && !ponto; dt += 1 * M) for (const sgT of [1, -1]) {
+          if (ponto || (dt === 0 && sgT < 0)) continue;
           const t = L / 2 + sgT * dt, C = [A[0] + ux * t, A[1] + uy * t], meio = a.l / 2 + 6 * M;
-          const lados = [1, -1].map(s => [C[0] + nxv * s * meio, C[1] + nyv * s * meio]);
-          const ks = lados.map(([x, y]) => { const i = G.ci(x), j = G.cj(y); return i >= 0 && j >= 0 && i < nx && j < ny ? j * nx + i : -1; });
-          if (ks.some(k => k < 0 || G.proib[k] || estr[k])) continue;
-          const eu = rios.length + 1;
-          /* uma metade, e a outra sem passar por ela */
-          const c1 = caminho(ks[0], eu);
-          if (!c1) continue;
-          const m1 = c1.cel;
-          /* (a célula de outro rio — o encontro — continua dele) */
-          for (const k of m1) if (!rioCel[k]) rioCel[k] = eu;
-          const c2 = caminho(ks[1], eu);
-          if (!c2 || (c1.lagoa && c2.lagoa)) { for (const k of m1) if (rioCel[k] === eu) rioCel[k] = 0; continue; }
-          const metades = [m1, c2.cel], nasce = [c1.lagoa, c2.lagoa];
-          /* a linha: a metade de um lado (do fim até a beira da estrada), a travessia reta, a do outro lado */
-          const pts = k => [G.cx(k % nx), G.cy((k / nx) | 0)];
-          const l1 = suavizar([lados[0]].concat(metades[0].slice(1).map(pts))).reverse(), l2 = suavizar([lados[1]].concat(metades[1].slice(1).map(pts)));
-          const linha = l1.concat([C], l2);
-          /* (a ponta que chega na borda segue 1,5 km pra fora: o rio não acaba na beira do mundo, nem na planta) */
-          const lagoasDele = [];
-          for (const [fim, ant] of [[0, 1], [linha.length - 1, linha.length - 2]]) {
-            const P0 = linha[fim], P1 = linha[ant], k = metades[fim === 0 ? 0 : 1].slice(-1)[0];
-            /* A LAGOA DE ONDE ELE NASCE (a metade sem saída): no lugar mais aberto aonde ela chega */
-            if (nasce[fim === 0 ? 0 : 1]) {
-              const r = Math.min(G.dist[k] * h * 0.75, 15 * M), f1 = sorteioP() * 6.283, f2 = sorteioP() * 6.283;
-              lagoasDele.push({ x: Math.round(P0[0]), y: Math.round(P0[1]), r: Math.round(r),
-                                agua: Array.from({ length: 16 }, (_, q) => { const t = 6.283 * q / 16, ff = 1 + 0.16 * Math.sin(2 * t + f1) + 0.08 * Math.sin(3 * t + f2); return [Math.round(P0[0] + r * ff * Math.cos(t)), Math.round(P0[1] + r * ff * Math.sin(t))]; }) });
-              continue;
-            }
-            if (rioCel[k] && rioCel[k] !== eu) continue;
-            const dx = P0[0] - P1[0], dy = P0[1] - P1[1], Lx = Math.hypot(dx, dy) || 1;
-            const i = k % nx, j = (k / nx) | 0, sx = i === 0 ? -1 : i === nx - 1 ? 1 : 0, sy = j === 0 ? -1 : j === ny - 1 ? 1 : 0;
-            const ex = sx || sy ? [sx, sy] : [dx / Lx, dy / Lx], ext = [P0[0] + ex[0] * 1500 * M, P0[1] + ex[1] * 1500 * M];
-            if (fim === 0) linha.unshift(ext); else linha.push(ext);
-          }
-          const rio = { id: 'rio' + eu, estrada: a.id, larg: eu === 1 ? LARG_RIO * 1.15 : LARG_RIO, pontos: linha.map(p => [Math.round(p[0]), Math.round(p[1])]), lagoas: lagoasDele };
-          rio.agua = anelDaLinha(rio.pontos, rio.larg);
-          rios.push(rio);
-          for (const m of metades) for (const k of m) if (!rioCel[k]) rioCel[k] = eu;
-          for (const m of metades) for (const k of m) { const i = k % nx, j = (k / nx) | 0; for (let dj = -4; dj <= 4; dj++) for (let di = -4; di <= 4; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny) pertoRio[jj * nx + ii] = 1; } }
-          feito = true;
+          const lados = [1, -1].map(sn => [C[0] + nxv * sn * meio, C[1] + nyv * sn * meio]);
+          const ks = lados.map(([x, y]) => celDe(x, y));
+          if (ks.some(k => k < 0 || S.proib[k] || naCosta[k] || estr[k])) continue;
+          ponto = { C, lados, ks };
         }
-        for (const [k, v] of daEstrada) estr[k] = v;
-        if (!feito) avisos.push(`sem rio na estrada ${a.de}–${a.para}`);
+        if (!ponto) continue;
+        const proj = p => p[0] * F[0] + p[1] * F[1], d = proj(ponto.lados[0]) - proj(ponto.lados[1]);
+        for (const baixo of Math.abs(d) > 1 ? [d > 0 ? 0 : 1] : [0, 1]) traves.push({ a, F, ...ponto, baixo });
       }
+      const naBorda = k => { const i = k % nx, j = (k / nx) | 0; return i === 0 || j === 0 || i === nx - 1 || j === ny - 1; };
+      /* as células de um segmento (a travessia da estrada, de um lado ao outro) */
+      const celulasDe = (P, Q) => { const n = Math.ceil(Math.hypot(Q[0] - P[0], Q[1] - P[1]) / (h / 2)), out = []; for (let q = 0; q <= n; q++) { const k = celDe(P[0] + (Q[0] - P[0]) * q / n, P[1] + (Q[1] - P[1]) * q / n); if (k >= 0 && out[out.length - 1] !== k) out.push(k); } return out; };
+      /* O RIO DE UMA TRAVESSIA: rio abaixo e rio acima (a estrada dela vira barra na busca: a metade de lá não volta por ela) */
+      const tracar = tv => {
+        const barra = [], r = retSeg({ pontos: tv.a.pontos, l: tv.a.l + 2 * M });
+        for (let j = Math.max(0, G.cj(r.y0)); j <= Math.min(ny - 1, G.cj(r.y1)); j++) for (let i = Math.max(0, G.ci(r.x0)); i <= Math.min(nx - 1, G.ci(r.x1)); i++) { const k = j * nx + i; if (estr[k]) { barra.push([k, estr[k]]); estr[k] = 3; } }
+        /* AS BORDAS DE SAÍDA (0 norte, 1 sul, 2 oeste, 3 leste): rio abaixo,
+           a da frente do rumo ou uma de lado; rio acima, a de trás ou uma de
+           lado — nunca a mesma da boca (o rio que entra e sai pela mesma
+           borda). Na praia, a boca é o mar e a nascente, qualquer borda de
+           terra */
+        const falta = (k, bs) => { const i = k % nx, j = (k / nx) | 0; let m = Infinity; for (const b of bs) m = Math.min(m, b === 0 ? j : b === 1 ? ny - 1 - j : b === 2 ? i : nx - 1 - i); return m; };
+        const ladoDaBorda = k => { const i = k % nx, j = (k / nx) | 0; return j === 0 ? 0 : j === ny - 1 ? 1 : i === 0 ? 2 : i === nx - 1 ? 3 : -1; };
+        const deBaixo = tv.F[0] ? [3, 0, 1] : [1, 2, 3];
+        const fimBaixo = temCosta ? k => noMar[k] === 1 : k => deBaixo.includes(ladoDaBorda(k));
+        const faltaBaixo = temCosta ? k => 0.95 * Math.max(0, iAgua[(k / nx) | 0] - k % nx) : k => falta(k, deBaixo);
+        const baixo = busca(tv.ks[tv.baixo], tv.F, 1, fimBaixo, temCosta, faltaBaixo);
+        const saiu = baixo && !temCosta ? ladoDaBorda(baixo.cel[baixo.cel.length - 1]) : -1;
+        const deCima = (temCosta ? [0, 1, 2] : tv.F[0] ? [2, 0, 1] : [0, 2, 3]).filter(b => b !== saiu);
+        const fimCima = temCosta ? k => naBorda(k) && !naCosta[k] : k => deCima.includes(ladoDaBorda(k));
+        const faltaCima = k => falta(k, deCima);
+        const cima = baixo ? busca(tv.ks[1 - tv.baixo], tv.F, -1, fimCima, false, faltaCima) : null;
+        for (const [k, v] of barra) estr[k] = v;
+        if (!baixo || !cima) return null;
+        const cel = cima.cel.slice().reverse().concat(celulasDe(tv.lados[1 - tv.baixo], tv.lados[tv.baixo]), baixo.cel);
+        return { tv, baixo, cima, cel, custo: baixo.custo + cima.custo };
+      };
+      /* DE QUE LADO DO RIO FICA CADA CIDADE: as regiões da grade, com o rio
+         (e o mar) de parede; quantas cidades em cada uma, da maior pra menor */
+      const centros = [...new Set(postas.map(p => p.c))].map(c => bbDe(postas.filter(p => p.c === c && !p.r.avenida && !p.r.beira).map(p => p.r)))
+        .filter(Boolean).map(b => celDe((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2)).filter(k => k >= 0);
+      /* A CIDADE ILHADA (a de que o dono não gostou): a que fica com água a
+         60 m de lados opostos (norte e sul, ou leste e oeste) ou de três
+         lados — um rio de cada lado, ou rio, rio e mar. O segundo rio não
+         pode deixar cidade assim */
+      const PERTO = 15;
+      const caixas = [...new Set(postas.map(p => p.c))].map(c => bbDe(postas.filter(p => p.c === c && !p.r.avenida && !p.r.beira).map(p => p.r))).filter(Boolean)
+        .map(b => ({ i0: Math.max(0, G.ci(b.x0)), i1: Math.min(nx - 1, G.ci(b.x1)), j0: Math.max(0, G.cj(b.y0)), j1: Math.min(ny - 1, G.cj(b.y1)) }));
+      const marcaDe = R => R.marca || (R.marca = (() => { const u = new Uint8Array(N); for (const k of R.cel) u[k] = 1; return u; })());
+      /* os lados (1 norte, 2 sul, 4 oeste, 8 leste) da cidade com água da máscara `m` na faixa de 60 m de fora */
+      const ladosCom = (c, m) => {
+        let b = 0;
+        const tem = (i0, i1, j0, j1) => { for (let j = Math.max(0, j0); j <= Math.min(ny - 1, j1); j++) for (let i = Math.max(0, i0); i <= Math.min(nx - 1, i1); i++) if (m[j * nx + i]) return true; return false; };
+        if (tem(c.i0, c.i1, c.j0 - PERTO, c.j0 - 1)) b |= 1;
+        if (tem(c.i0, c.i1, c.j1 + 1, c.j1 + PERTO)) b |= 2;
+        if (tem(c.i0 - PERTO, c.i0 - 1, c.j0, c.j1)) b |= 4;
+        if (tem(c.i1 + 1, c.i1 + PERTO, c.j0, c.j1)) b |= 8;
+        return b;
+      };
+      const ilhada = b => (b & 3) === 3 || (b & 12) === 12 || ((b & 1) + (b >> 1 & 1) + (b >> 2 & 1) + (b >> 3 & 1)) >= 3;
+      const ladosMar = caixas.map(c => ladosCom(c, noMar)), ladosRio = (c, R) => ladosCom(c, marcaDe(R));
+      /* (quantas cidades os rios `rs` deixam ilhadas; o segundo rio não pode chegar perto de cidade que fica ilhada com ele) */
+      const ilhadas = rs => caixas.filter((c, q) => ilhada(rs.reduce((b, R) => b | ladosRio(c, R), ladosMar[q]))).length;
+      const espremida = (A, B) => caixas.some((c, q) => { const lb = ladosRio(c, B); return lb && ilhada(ladosRio(c, A) | lb | ladosMar[q]); });
+      const regioes = (...rs) => {
+        const parede = noMar.slice();
+        for (const R of rs) for (const k of R.cel) parede[k] = 1;
+        const rot = new Int32Array(N).fill(-1), fila = new Int32Array(N);
+        let n = 0;
+        for (const k0 of centros) {
+          if (rot[k0] >= 0 || parede[k0]) continue;
+          let a = 0, b = 0; fila[b++] = k0; rot[k0] = n;
+          while (a < b) {
+            const k = fila[a++], i = k % nx;
+            for (const v of [i > 0 ? k - 1 : -1, i < nx - 1 ? k + 1 : -1, k - nx, k + nx]) if (v >= 0 && v < N && rot[v] < 0 && !parede[v]) { rot[v] = n; fila[b++] = v; }
+          }
+          n++;
+        }
+        const cont = new Map();
+        for (const k of centros) if (rot[k] >= 0) cont.set(rot[k], (cont.get(rot[k]) || 0) + 1);
+        return { rot, n, lados: [...cont.values()].sort((p, q) => q - p) };
+      };
+      /* A NOTA DE UM RIO (menor é melhor): o custo médio de cada passo —
+         longe das cidades e com pouca ponte, o rio comprido não perde por
+         ser comprido —, mais cara pro rio que nasce numa lagoa (o de ponta
+         a ponta fica mais natural) e pro que ilha cidade sozinho (o que
+         contorna a cidade da costa, com o mar do outro lado), e mais
+         barata pro que divide as cidades por igual */
+      const nota = R => R.custo / R.cel.length * (R.cima.lagoa ? 1.6 : 1) * (1 + ilhadas([R])) / (1 + 0.6 * Math.max(0, (regioes(R).lados[1] || 0) - 1));
+      /* a distância (em células) até a máscara: o chanfro de duas passadas */
+      const chanfro = marca => {
+        const d = new Float32Array(N);
+        for (let k = 0; k < N; k++) d[k] = marca(k) ? 0 : 1e9;
+        for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+          const k = j * nx + i; let v = d[k]; if (!v) continue;
+          if (i > 0) v = Math.min(v, d[k - 1] + 1);
+          if (j > 0) { v = Math.min(v, d[k - nx] + 1); if (i > 0) v = Math.min(v, d[k - nx - 1] + 1.414); if (i < nx - 1) v = Math.min(v, d[k - nx + 1] + 1.414); }
+          d[k] = v;
+        }
+        for (let j = ny - 1; j >= 0; j--) for (let i = nx - 1; i >= 0; i--) {
+          const k = j * nx + i; let v = d[k]; if (!v) continue;
+          if (i < nx - 1) v = Math.min(v, d[k + 1] + 1);
+          if (j < ny - 1) { v = Math.min(v, d[k + nx] + 1); if (i < nx - 1) v = Math.min(v, d[k + nx + 1] + 1.414); if (i > 0) v = Math.min(v, d[k + nx - 1] + 1.414); }
+          d[k] = v;
+        }
+        return d;
+      };
+      /* A FAIXA E A DISTÂNCIA DO RIO JÁ POSTO (o outro corre a 32 m dele no mínimo, e foge dele) */
+      const ladoDe = A => {
+        faixaDoRio.fill(0);
+        if (!A) { longeDoOutro = null; return; }
+        for (const k of A.cel) { const i = k % nx, j = (k / nx) | 0; for (let dj = -8; dj <= 8; dj++) for (let di = -8; di <= 8; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny && di * di + dj * dj <= 64) faixaDoRio[jj * nx + ii] = 1; } }
+        const m = marcaDe(A);
+        longeDoOutro = chanfro(k => m[k]);
+      };
+      const cruza = (R, a) => { const r = retSeg({ pontos: a.pontos, l: a.l }); return R.cel.some(k => { const x = G.cx(k % nx), y = G.cy((k / nx) | 0); return x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1; }); };
+      /* O RIO SOZINHO: o de menor nota. O PAR: dos três melhores sozinhos,
+         cada um com o melhor segundo que ele aceita — noutra estrada (uma
+         que o primeiro não cruza), com cidade entre os dois, sem cidade
+         ilhada, sem correr ao lado do primeiro e sem custar mais que o
+         dobro dele —; fica o par de
+         menor nota somada, e o rio sozinho só quando par nenhum serve (o
+         primeiro do meio da fila de cidades não deixa lugar pro segundo:
+         por isso o par se escolhe junto) */
+      const sozinhos = traves.map(tracar).filter(Boolean).map(R => ({ R, n: nota(R) })).sort((p, q) => p.n - q.n);
+      let escolhidos = sozinhos.length ? [sozinhos[0].R] : [], parN = Infinity;
+      if (estradas.length >= 2) for (const { R: A, n: nA } of sozinhos.slice(0, 3)) {
+        ladoDe(A);
+        for (const tv of traves) {
+          if (tv.a === A.tv.a || cruza(A, tv.a)) continue;
+          const B = tracar(tv);
+          if (!B || B.custo > 2 * A.custo) continue;
+          if (regioes(B).lados.length >= 2 && regioes(A, B).lados.length < 3) continue;
+          if (espremida(A, B)) continue;
+          /* (nem os dois rios lado a lado: a 120 m um do outro por mais de 150 m, parecem rio gêmeo) */
+          let junto = 0;
+          for (const k of B.cel) if (longeDoOutro[k] < 30) junto++;
+          if (junto * h > 150 * M) continue;
+          const total = nA + nota(B);
+          if (total < parN) { parN = total; escolhidos = [A, B]; }
+        }
+      }
+      ladoDe(null);
+      if (!sozinhos.length && estradas.length) avisos.push('sem rio na praça');
+      /* (conferência: nenhuma cidade fica cercada de água — a região dela chega na beira do mundo) */
+      if (escolhidos.length) {
+        const { rot, n } = regioes(...escolhidos), solta = new Uint8Array(n);
+        for (let k = 0; k < N; k++) if (rot[k] >= 0 && naBorda(k)) solta[rot[k]] = 1;
+        if (centros.some(k => rot[k] >= 0 && !solta[rot[k]])) avisos.push('cidade ilhada pelos rios');
+      }
+      /* AS CURVAS NO MATO ABERTO: o traçado da grade, mesmo alisado, corre
+         reto onde não tem nada em volta; ali o rio serpenteia (duas ondas
+         somadas, de 95 m e de 41 m), mais quanto mais chão livre ele tem
+         (até 7 m pra cada lado), e endireita perto da cidade, da rua, da
+         ponte, da costa e do outro rio */
+      const livre = escolhidos.length ? chanfro(k => S.proib[k] || estr[k] || naCosta[k]) : null;
+      const serpentear = (linha, larg, dOutro, fase) => {
+        const n = linha.length;
+        if (n < 3) return linha;
+        const s = [0];
+        for (let k = 1; k < n; k++) s.push(s[k - 1] + Math.hypot(linha[k][0] - linha[k - 1][0], linha[k][1] - linha[k - 1][1]));
+        const bruta = linha.map(([x, y]) => { const k = celDe(x, y); if (k < 0) return 0; const d = Math.min(livre[k], dOutro ? dOutro[k] - 3 : Infinity) * h; return Math.max(0, Math.min(7 * M, (d - larg / 2 - 12 * M) * 0.35)); });
+        /* (o menor da volta e depois a média: a onda cresce e some devagar, sem passar da folga de ponto nenhum) */
+        const janela = (v, f, w) => v.map((_, k) => { let a = k, b = k; while (a > 0 && s[k] - s[a - 1] < w) a--; while (b < n - 1 && s[b + 1] - s[k] < w) b++; return f(v.slice(a, b + 1)); });
+        const A = janela(janela(bruta, v => Math.min(...v), 15 * M), v => v.reduce((x, y) => x + y, 0) / v.length, 15 * M);
+        return linha.map((p, k) => {
+          const a = linha[Math.max(0, k - 1)], b = linha[Math.min(n - 1, k + 1)], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+          const off = A[k] * (0.75 * Math.sin(2 * Math.PI * s[k] / (95 * M) + fase) + 0.25 * Math.sin(2 * Math.PI * s[k] / (41 * M) + 2.1 * fase));
+          return [p[0] - dy / L * off, p[1] + dx / L * off];
+        });
+      };
+      /* A LINHA DE CADA RIO: rio acima (da nascente até a beira da
+         estrada), a travessia reta e rio abaixo (até a boca) */
+      const pts = k => [G.cx(k % nx), G.cy((k / nx) | 0)];
+      escolhidos.forEach((R, n) => {
+        const eu = n + 1, tv = R.tv, up = tv.lados[1 - tv.baixo], dn = tv.lados[tv.baixo];
+        const outros = escolhidos.filter(o => o !== R), dOutro = outros.length ? chanfro(k => outros.some(o => marcaDe(o)[k])) : null;
+        const larg = eu === 1 ? LARG_RIO * 1.15 : LARG_RIO;
+        const linha = serpentear(suavizar([up].concat(R.cima.cel.slice(1).map(pts))).reverse().concat([tv.C], suavizar([dn].concat(R.baixo.cel.slice(1).map(pts)))),
+                                 larg, dOutro, (sementeP % 6283) / 1000 + 2.4 * eu);
+        const lagoasDele = [];
+        /* a nascente: a lagoa no lugar mais aberto, ou a beira do mundo; a
+           boca: o mar, ou a beira do mundo — a ponta na beira segue 1,5 km
+           pra fora (o rio não acaba na beira do mundo, nem na planta) */
+        for (const [fim, ant, cels, nasce] of [[0, 1, R.cima.cel, R.cima.lagoa], [linha.length - 1, linha.length - 2, R.baixo.cel, false]]) {
+          const P0 = linha[fim], P1 = linha[ant], k = cels[cels.length - 1];
+          if (nasce) {
+            const r = Math.min(G.dist[k] * h * 0.75, 15 * M), f1 = sorteioP() * 6.283, f2 = sorteioP() * 6.283;
+            lagoasDele.push({ x: Math.round(P0[0]), y: Math.round(P0[1]), r: Math.round(r),
+                              agua: Array.from({ length: 16 }, (_, q) => { const t = 6.283 * q / 16, ff = 1 + 0.16 * Math.sin(2 * t + f1) + 0.08 * Math.sin(3 * t + f2); return [Math.round(P0[0] + r * ff * Math.cos(t)), Math.round(P0[1] + r * ff * Math.sin(t))]; }) });
+            continue;
+          }
+          if (noMar[k]) continue;
+          const dx = P0[0] - P1[0], dy = P0[1] - P1[1], Lx = Math.hypot(dx, dy) || 1;
+          const i = k % nx, j = (k / nx) | 0, sx = i === 0 ? -1 : i === nx - 1 ? 1 : 0, sy = j === 0 ? -1 : j === ny - 1 ? 1 : 0;
+          /* (no canto da grade, pro lado do rumo do rio: na diagonal, a ponta reta de 1,5 km aparecia feito canal) */
+          const ex = sx && sy ? (tv.F[0] ? [sx, 0] : [0, sy]) : sx || sy ? [sx, sy] : [dx / Lx, dy / Lx], ext = [P0[0] + ex[0] * 1500 * M, P0[1] + ex[1] * 1500 * M];
+          if (fim === 0) linha.unshift(ext); else linha.push(ext);
+        }
+        const rio = { id: 'rio' + eu, estrada: tv.a.id, mar: temCosta, larg, pontos: linha.map(p => [Math.round(p[0]), Math.round(p[1])]), lagoas: lagoasDele };
+        rio.agua = anelDaLinha(rio.pontos, rio.larg);
+        rios.push(rio);
+      });
       /* AS PONTES: cada rua de fora (a estrada, a entrada da praça) que passa num rio, de través */
       for (const a of ruasDeFora()) for (let k = 1; k < a.pontos.length; k++) {
         const [A, Bp] = [a.pontos[k - 1], a.pontos[k]], L = Math.hypot(Bp[0] - A[0], Bp[1] - A[1]);

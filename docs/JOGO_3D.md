@@ -3780,3 +3780,167 @@ abrir o mapa da cidade, clicar num bairro, ler o domínio): sem erro.
 - **A entrada da praça chega numa cidade da ponta** (a de cima e a de
   baixo), não necessariamente no centro: a caravana pode descer numa cidade
   pequena e andar pela estrada até o estádio.
+
+## 37. Maranguape sai, Juazeiro do Norte ganha o terceiro bairro, e os rios refeitos: no máximo dois, pro mar quando tem mar, sem cidade ilhada (01/10/2026)
+
+**O pedido** (o dono): "remova maranguape do jogo e crie mais um bairro pra
+juazeiro do Norte. se um mapa tem mar, os rios vão correr em direção ao
+mar. cada mapa vai ter no máximo dois rios. o mapa do interior de são
+paulo ficou estranho com cidades ilhadas."
+
+### Maranguape sai, o Juazeiro do Norte III entra
+
+- **Nos dados** (`dados/fonte/cidades_bairros.json` → `importar_bairros.py`
+  → `dados/cidades.js`): sai o bairro Maranguape (Interior do CE) e entra o
+  **Juazeiro do Norte III** — zona Sul, sem sede, com a classe e o
+  multiplicador do Maranguape (**Nobre**, 1,5): a praça fica com a mesma
+  mistura de classes, e Juazeiro do Norte passa a ter um bairro de cada
+  (Classe Média, Classe Baixa e Nobre). As 30 praças seguem com 353
+  bairros; Juazeiro do Norte fica com 3.
+- **A cisão do Interior do CE** (`CISOES`): Itapipoca, que se ligava em
+  Maranguape, liga direto em Limoeiro do Norte (295 km na placa); Sobral–
+  Itapipoca, Iguatu–Limoeiro do Norte e Juazeiro do Norte–Iguatu ficam.
+  O Interior do CE passa de 5 cidades e 5 estradas pra 5 cidades e 4
+  estradas.
+- **O save antigo**: o domínio é guardado por id de bairro
+  (`js/mundo/dominio.js`). Na praça que o save já gravou, o Juazeiro do
+  Norte III começa sem dona (barra vazia) e a barra do Maranguape fica no
+  save sem ninguém ler; na que não gravou, o começo é sorteado de novo com
+  os bairros de agora.
+- **Fica de fora**: `legado/unity/data.js` ainda tem o Maranguape (é do
+  Unity antigo, que só o `importar_estadios.py` lê pra parear estádios).
+
+### Os rios refeitos (o passo 8b' da cisão)
+
+- **No máximo dois rios por praça.** Antes, um rio por estrada: 8 no
+  Interior de SP, 5 no CE, no RS e em SC — e as cidades ficavam presas
+  entre eles. Agora cada estrada é uma travessia possível; o gerador traça
+  o rio de cada uma, fica com o melhor sozinho e procura o melhor segundo.
+- **Mapa com mar: o rio corre pro mar.** Nas 6 praças de praia com estrada
+  (Alagoas, Maranhão, Paraíba, Rio Grande do Norte, Bahia, Sergipe), da
+  ponte pra baixo o rio só vai pro leste ou de lado (nunca volta pro
+  oeste); a faixa da costa (a avenida da beira e 20 m pra cá dela) ele
+  atravessa reto pro leste, e acaba na linha d'água. Rio acima, ele nasce
+  numa borda de terra (norte, sul ou oeste) ou, sem saída, numa lagoa.
+- **Mapa sem mar: um rumo só.** O rio corre de oeste pra leste ou de norte
+  pra sul (o de través da estrada que ele cruza), sem passo pra trás; nasce
+  na borda de trás ou numa de lado, e sai na da frente ou numa de lado —
+  nunca entra e sai pela mesma borda.
+- **Nenhuma cidade ilhada.** A régua (a do dono, "cidades ilhadas"): a
+  cidade com água — rio ou mar — a 60 m de dois lados opostos, ou de três
+  lados, está ilhada. O segundo rio não pode deixar cidade assim; o rio
+  sozinho que deixa paga o dobro na nota; e no fim a conferência: a região
+  de toda cidade (com os rios e o mar de parede) chega na beira do mundo.
+- **A nota do rio** (menor é melhor): o custo médio de cada passo — longe
+  das cidades, das estradas e do outro rio é barato —, ×1,6 pro que nasce
+  em lagoa, e mais barata pro que divide as cidades por igual. **O par se
+  escolhe junto**: dos três melhores sozinhos, cada um com o melhor segundo
+  que aceita — noutra estrada, com cidade entre os dois, sem cidade ilhada,
+  sem custar mais que o dobro do primeiro e **sem correr ao lado dele** (a
+  120 m um do outro por mais de 150 m parece rio gêmeo).
+- **A beira do mundo**: o chão pintado acaba nela, e o rio não corre
+  colado nela — a 25 m dela, de dentro ou de fora, o passo custa mais
+  (atravessar pra sair do mapa, todo rio atravessa uma vez). No canto da
+  grade, a ponta reta de 1,5 km sai pro lado do rumo do rio (antes saía na
+  diagonal, feito canal).
+- **As curvas**: um relevo de mentira (um ruído de 40 m em 40 m) encarece
+  o chão aqui e ali, e o rio contorna; no mato aberto ele serpenteia (duas
+  ondas somadas, de 95 m e de 41 m, até 7 m pra cada lado) e endireita
+  perto da cidade, da rua, da ponte, da costa e do outro rio.
+
+### Na planta e no cenário
+
+- **A boca no mar**: a margem de capim e o barro do rio só vão em terra
+  (até a avenida da beira); na areia, a água corre entre a areia, e a água
+  para na linha d'água — a espuma da onda passa na frente da boca.
+- **A praia longe do rio**: nada da praia de cidade (quiosque, guarda-sol,
+  canga, barraca, posto, quadra de vôlei, coqueiro) fica na água do rio nem
+  a 3 m da beira dele, cada coisa pelo tamanho dela; a praia guardada
+  (`PRAIAS`) leva os rios na chave. Hoje nenhuma boca cai no trecho da
+  praia de cidade (as 6 ficam de 23 a 277 m das pontas da avenida da
+  beira): a regra é pra quando cair.
+- **O rio fora da área no 3D** (`chaoDeLonge`): o pedaço do rio fora do
+  chão pintado — o que corre na beira do mundo e a ponta que segue reta pra
+  longe — vira a faixa d'água com a margem, por cima do mato de longe, e
+  começa no último ponto dentro da área, por baixo do chão pintado. A boca
+  no mar não segue pra longe, a ponta que nasce em lagoa também não, e na
+  praia a margem para na areia e a água na linha d'água. **Dois consertos
+  do que vinha da §36**: a faixa começava no ponto de antes da ponta, a
+  uns 20 m da área, e o rio sumia nesse vão em toda saída; e ela saía
+  **preta** — os triângulos estavam virados pra baixo, e o material de dois
+  lados vira a normal e fica sem luz.
+- **O mar das praças de praia toda de modelo** (Alagoas, Maranhão, Paraíba
+  e Sergipe; conserto do que vinha da §36): o mundo dessas praças era a
+  caixa das cidades, que acaba na avenida da beira — a areia, a linha
+  d'água e o mar ficavam fora. No mapa, o mar era uma tira de uns 10 m;
+  **no cenário 3D não tinha mar: era areia até o horizonte** (o mar de
+  longe tirava a cor de um ponto que, com a curva da costa, caía na
+  areia). Agora o mundo delas vai até 60 m mar adentro — a areia, a
+  espuma, as ondas e a boca do rio entram no chão pintado — e o mar de
+  longe tira a cor na linha da ponta, 25 m mar adentro.
+- `rios()` (a API da planta pro cenário) dá também `mar` e `lagoa`;
+  `PRAIA_A_MAIS` (os 105 px da areia a mais) é um só, do gerador.
+
+### Medido
+
+| | §36 | agora |
+|---|---|---|
+| rios (praças com rio) | 52 (16) | 24 (16) |
+| máximo de rios numa praça | 8 (Interior de SP) | 2 |
+| rios que deságuam no mar | 0 | 6 (as 6 praças de praia com estrada) |
+| nascendo em lagoa | 6 | 3 (Alagoas, Bahia, Sergipe) |
+| pontes | 52 | 31 |
+| rio dentro das áreas | 20,7 km | 15,2 km |
+| cidades com água a 60 m de lados opostos ou de três lados | 36 | 4 — nenhuma cercada |
+| … no Interior de SP | 5 das 9 | 0 |
+| avisos do gerador | 0 | 0 |
+| gerar a praça (só o gerador, média / a mais lenta) | 0,18 s / 0,43 s (Rio Grande do Norte) | 0,22 s / 0,55 s (Bahia; o Interior de SP, 0,53 s) |
+
+(As duas colunas medidas com os mesmos scripts, `rodada37.mjs` e
+`tempo_gerar.mjs` — o tempo com a segunda rodada, quente, e com o teste do
+navegador rodando ao lado —, no código antigo e no novo.) As 4 que ainda têm água de três lados ficam com o
+quarto lado em terra: Bragança Paulista (o rio desce pelo oeste dela e
+dobra nas duas quinas), Passo Fundo (o rio passa por baixo dela fazendo
+um U), Parnaíba e Natal (o rio de um lado, o mar do outro).
+
+**No navegador** (a cópia de teste montada com `montar.sh`):
+
+- **A pé, chega em tudo?** Nas 18 praças compostas, toda sede, bar,
+  pórtico, favela e quadra das cidades-modelo fica no mesmo pedaço andável:
+  "tudo ligado" nas 18 (as 4 de praia de novo depois do conserto do mar),
+  sem erro da página.
+- **A caravana de fora** (sem aliado que receba): nas 18, ela desce na
+  entrada norte ou na sul e anda de 141 a 809 m até o portão 3, sem erro de
+  rota (como na §36).
+- **O dia de jogo** (o clássico da praça, nas 18 compostas, em Fortaleza e
+  no Recife): os 20 planos montam, os 56 bondes chegam ao portão (rota de
+  117 a 826 m, 388 m na média; o último chega às 15:28) e nenhum erro de
+  bonde nem da página.
+- **Os bairros das 30 praças** (as sedes no bairro dos dados, nenhum bairro
+  vazio, todo bar com bairro): 0 com problema. **O Jogo 3D na Paraíba**
+  (começar, abrir o mapa da cidade, clicar num bairro, ler o domínio): sem
+  erro.
+- **As fotos**: no 3D do Maranhão, a boca do rio atravessa a areia e
+  encontra o mar com a espuma na frente, e o rio que sai pela beira oeste
+  emenda na faixa de longe (azul, sem vão); o mar aparece com as ondas.
+
+### Limites (sinceros)
+
+- **O rio que nasce em lagoa, em Alagoas, na Bahia e em Sergipe, nasce
+  colado na estrada**: rio acima ele não tem saída (o vão entre as duas
+  cidades é fechado embaixo pela rua de veraneio), e a lagoa fica no lugar
+  mais aberto do bolsão, a poucos metros da estrada.
+- **O rio que contorna a cidade da praia corre perto da beira do mapa**:
+  pra chegar no mar ele passa pela ponta da cidade da costa, e no Rio
+  Grande do Norte e em Sergipe corre de 110 a 180 m a menos de 25 m da
+  beira (dentro do chão pintado).
+- **Oito praças ficam com um rio só**: Mato Grosso, Rio Grande do Norte e
+  Bahia têm uma estrada só; no Interior de Minas, em Alagoas, no Maranhão,
+  na Paraíba e em Sergipe o segundo rio não passou nas regras (deixava
+  cidade ilhada, corria ao lado do primeiro ou custava mais que o dobro).
+  E duas seguem sem rio (Belém e o Litoral Catarinense, ligadas pela
+  avenida, como na §36).
+- **O mapa 2D do jogo** (o que é assado do cenário) precisa ser assado de
+  novo pela sessão do 2D pra pegar os rios novos.
+- **O rio continua chão pintado**, como na §36: sem margem em degrau nem
+  água que mexe, e a ponte baixa.
