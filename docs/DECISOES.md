@@ -8315,7 +8315,7 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - Cofre, professor de luta e advogado não viram post: guardar dinheiro e contratar gente não são coisas que a torcida anuncia.
 - A virada do dia continua comparando, para pegar o que entrou por outro caminho. A foto de save antigo, que só guardava a contagem, é convertida sem gerar post falso.
 - **Um post por vez na coluna da rede.** "Um monte de uma vez vira poluição visual." O dia que passa solta vários posts juntos; a coluna põe os novos numa fila, do mais velho para o mais novo, e mostra um a cada 1,8 s, cada um com a entrada suave.
-  - Se a fila passa de 8 (tempo corrido rápido), os mais velhos assentam sem animação.
+  - Ajuste do mesmo dia: o passo caiu para 1,5 s e ninguém é pulado. Quando o tempo para (decisão, painel, pausa), a fila segue andando e a coluna recupera o atraso. O único teto é o da coluna (os 40 mais novos).
   - Notícias → Mensagens continua mostrando tudo de uma vez.
 - Medido: depois de três dias passados de uma vez, a coluna foi de 8 para 14 posts em 12 segundos, um a um.
 

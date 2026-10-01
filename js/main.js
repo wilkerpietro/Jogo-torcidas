@@ -1035,17 +1035,18 @@
     /* UM POR VEZ (dono, 01/10/2026): "um monte de uma vez vira poluição
        visual". O dia que passa solta vários posts de uma vez; aqui eles
        entram numa fila, do mais velho pro mais novo, e caem na coluna
-       um a cada SOCIAL_PASSO ms. Fila que passa de SOCIAL_FILA_MAX (o
-       tempo correu rápido) assenta os mais velhos calados, sem animação. */
+       um a cada SOCIAL_PASSO ms (1,5 s). Ninguém é pulado: quando o
+       tempo para (decisão aberta, painel, pausa), a fila segue andando
+       e a coluna recupera o atraso — "quando o tempo para, recupera
+       bastante o tempo". O único teto é o da coluna (os 40 mais novos). */
     for(let i = vis.length - 1; i >= 0; i--){
       const id = vis[i].id;
       if(!S.vistos.has(id) && !S.fila.includes(id)) S.fila.push(id);
     }
     S.fila = S.fila.filter(id => ids.has(id));
-    while(S.fila.length > SOCIAL_FILA_MAX) soltarPostSocial(S.fila.shift(), false);
     if(S.fila.length && !S.timer) proximoPostSocial();
   }
-  const SOCIAL_PASSO = 1800, SOCIAL_FILA_MAX = 8;
+  const SOCIAL_PASSO = 1500;
   function proximoPostSocial(){
     const S = socialLado;
     if(!S || !S.fila.length || !S.lista.isConnected){ if(S) S.timer = null; return; }
