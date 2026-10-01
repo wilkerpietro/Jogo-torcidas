@@ -205,8 +205,14 @@ TO.cartaz = (function(){
     `</figure>`;
   }
 
+  /* A IMAGEM É DO JORNAL (dono, 01/10/2026): o placar sai na Gazeta dos
+     Sports, a briga no Futebol e Porrada. Post de torcida — o nosso
+     resultado, a zoeira da nossa briga — fica só no texto, mesmo o de
+     save antigo que já guardou os dados do cartaz. */
+  const doJornal = m => (m.card.t === 'jogo' && m.jornal === 'gazeta') ||
+                        (m.card.t === 'briga' && m.jornal === 'porrada');
   function html(m){
-    if(!m || !m.card) return '';
+    if(!m || !m.card || !doJornal(m)) return '';
     try{
       if(m.card.t === 'jogo') return htmlDoJogo(m);
       if(m.card.t === 'briga') return htmlDaBriga(m);
@@ -253,7 +259,7 @@ TO.cartaz = (function(){
   const porFigura = new WeakMap();
   /* a casca chama depois de pôr o cartaz no DOM */
   function ligar(fig, m){
-    if(!fig || !m || !m.card || m.card.t !== 'briga') return;
+    if(!fig || !m || !m.card || m.card.t !== 'briga' || !doJornal(m)) return;
     if(fotos.has(chaveDaFoto(m))) return;
     if(typeof IntersectionObserver === 'undefined'){ pedirFoto(fig, m); return; }
     if(!observador) observador = new IntersectionObserver(ents=>{

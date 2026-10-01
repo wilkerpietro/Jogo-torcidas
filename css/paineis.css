@@ -1065,7 +1065,7 @@ table.dados tr.selecionada td{background:#252525}
 .post-ler:hover{color:#fff}
 /* o perfil da zona e o nosso próprio perfil */
 .post-zona{font-weight:600;color:var(--fraco)}
-.post-torcida.do-nosso{box-shadow:inset 3px 0 0 var(--ouro,#d9a441);padding-left:11px}
+/* a faixa dourada do post nosso saiu (dono, 01/10/2026: "deixa visualmente feio") */
 .post-torcida.tipo-protesto .post-texto{color:#f3c9a0}
 .pp-nossas{margin-top:8px;border-top:1px solid var(--fio-jornal,#4a463c);padding-top:6px}
 .pp-nossas .gz-secao{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco);margin-bottom:4px}

@@ -384,8 +384,8 @@ TO.feed = (function(){
   }
   /* =======================================================
      O CARTAZ DO POST (pedido do dono, 01/10/2026)
-     Os posts da Gazeta, do Porrada e os nossos de jogo e de briga
-     levam uma imagem 2:1 que explica a notícia — escudos e placar no
+     Os posts da Gazeta (o jogo) e do Porrada (a briga) levam uma
+     imagem 2:1 que explica a notícia — escudos e placar no
      jogo; as duas torcidas, os números e a foto dos bonecos no lugar
      da briga. O post guarda só os DADOS (`m.card`); quem desenha é a
      tela (js/ui/cartaz.js), em qualquer idioma.
@@ -932,8 +932,7 @@ TO.feed = (function(){
     else { tipo = 'reclamacao'; op = [
       _t('Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.', P),
       _t('Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.', P)]; }
-    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`,
-      card:cartazDoJogo(j, meu)});
+    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`});
   }
 
   /* no dia do jogo fora: a caravana chegou */
@@ -1069,10 +1068,7 @@ TO.feed = (function(){
       ? DEBOCHE[(h >> 5) % DEBOCHE.length] : textoDaZoeira(reg, P, h);
     if(d.ganhamos || !tregua)
       mensagemDe(E, V.id, texto, 'zoeira',
-        {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`,
-         card:cartazDaBriga({id:nos.id, nome:nos.nome, n:a.n, caidos:a.caidos, presos:a.presos},
-                            {id:eles.id, nome:eles.nome, n:b.n, caidos:b.caidos, presos:b.presos},
-                            !!d.ganhamos, NOMES_CENA[cena] || 'na rua', cena || 'rua', cidadeDeHoje(E))});
+        {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`});
     /* a resposta de quem perdeu: a deles sempre que a briga valeu
        prestígio (os textos de volta aprovados pelo dono, 18/08/2026),
        e às vezes nas miúdas; a nossa resposta fica com o jogador */

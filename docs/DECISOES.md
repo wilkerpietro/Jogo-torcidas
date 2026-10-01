@@ -8298,6 +8298,11 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - Todo o resto mostra a contagem com o coração vazio, em contorno cinza.
 - Em 40 dias de TUF, as aliadas (relação 38 a 80) e os nossos posts saem com o coração cheio; as rivais (−45 e −85) e as notícias dos outros clubes da cidade, com o vazio.
 
+## A imagem é do jornal, e a faixa dourada saiu (correção do dono, 01/10/2026)
+
+- **A imagem é do jornal.** O placar vai no post da Gazeta dos Sports e a briga no do Futebol e Porrada. O nosso post de resultado e a zoeira da nossa briga ficam só no texto. Isso vale também para os posts de save antigo que já guardavam os dados do cartaz (`cartaz.html` olha quem postou).
+- **A faixa dourada do post nosso saiu.** Era o `do-nosso` com sombra interna dourada à esquerda: "deixa visualmente feio". Na coluna da rede, além disso, o texto encostava nela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
