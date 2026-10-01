@@ -8167,6 +8167,19 @@ O corte do mapa do porte em cidades (a decisão acima) foi trocado: **cada cidad
 
 **As escolhas que o pedido deixou em aberto** (dá pra mudar depois): a praça de três cidades ou mais **não tem praia nem baía** — Maceió, Aracaju, João Pessoa e São Luís perdem a praia, e Niterói chega ao Rio por estrada, sem a baía —; e todas as cidades ficam a 50 m da vizinha (nada de "longe" dobrado). Detalhes e medidas: `docs/JOGO_3D.md` §35.
 
+## O bairro 3 × 3, a praia de volta, os rios e as entradas da praça (dono, 01/10/2026)
+
+O pedido: "adicione mais 3 quarteirões pra ficar 3x3 com três quarteirões sendo praças, igreja, delegacia, hospital ou escola. Preciso que as cidades às margens da praia voltem a ser às margens da praia, e que a decoração de vegetação das demais seja mais bem feita com rios entre uma cidade e outra. Preciso que volte a existir a entrada da praça em norte e sul, pra dar a impressão de entrada na praça nas caravanas."
+
+- **Cada bairro das cidades-modelo é um bloco de 3 × 3 quadras**, e **a fileira do meio é de três equipamentos** (na favela, a fileira do lado do centro da cidade): os cinco tipos (praça, escola, igreja, delegacia, hospital) em roda pela cidade, três diferentes por bairro. A escola e o hospital ganharam modelo 3D novo, do tamanho da quadra.
+- **As cidades da praia voltam pra beira-mar** (Maceió, Aracaju, João Pessoa, São Luís e Parnaíba), com a avenida da beira, a areia e o mar, como a cidade de hoje.
+- **Rios entre as cidades**: cada estrada que liga duas cidades atravessa um rio numa ponte; o rio corre pelos vãos até a borda do mapa ou até outro rio (o que fica sem saída nasce numa lagoa). No mato largo, clareiras de pasto, metade com lagoinha.
+- **As entradas norte e sul voltam** na praça de três cidades ou mais: a rua que vem da borda do mapa até uma cidade da ponta, com o pórtico de BEM-VINDO, longe dos estádios, e **a caravana desce nela**.
+
+E, no meio da rodada, um defeito apontado com print: **a rua de acesso do estádio era de duas pistas e passava por cima da rua e da calçada** ("acaba sobrepondo a rua por cima de outras ruas e calçadas, e pra piorar ainda fica feio visualmente"). Agora ela tem a largura da rua e acaba no meio da rua que encontra, em todos os mapas.
+
+**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): a ordem dos equipamentos e os nomes (a paróquia de cada santo, a escola de cada patrono, o distrito numerado); o rio só nas ligações por estrada (Belém e o Litoral Catarinense, ligadas pela avenida antiga, ficam sem rio); a entrada chega numa cidade da ponta do mapa, não necessariamente no centro. Detalhes e medidas: `docs/JOGO_3D.md` §36.
+
 ## A zona leva os mais fortes dela, dos dois lados (régua do dono, 22/09/2026)
 
 O dono sentia a IA mais forte na casa de piscina, atacando e defendendo. Medido: a nossa zona era um sorteio da torcida inteira (média 14,9 de força+defesa, seis novatos e nove componentes em vinte) e a zona deles saía do gerador que corta o topo do plantel (25,0, nove frentes e dois diretores) — e, pior, cada um dos cinco pontos da casa recebia o topo de novo. A régua nova é a mesma pros dois lados: cada membro tem a sua zona (hash do id, fixa pra sempre — `acoes.zonaDoMembro`) e o bonde da zona são os mais fortes daquela zona, até o teto (`bondeDaZona`); do lado deles o plantel inteiro é gerado, repartido nas quatro zonas na roda da fila de força, e a zona pedida leva os mais fortes dela (`combate.fichasDaZona`), entregues prontos à cena (`cfg.fichasRival`), cada grupo tirando a sua fatia na ordem. Num jogo novo da TUF contra a MOFI: nossa zona 17,5, a deles 15,2 (o topo do plantel deles daria 25,3). As outras duas causas medidas ficaram anotadas pro dono decidir: a casa favorece quem defende (portão-funil; com fichas iguais o atacante ganha 3 a 5 em 16, seja quem for) e a pedra automática é só da IA (na praça, fichas iguais, nós atacando: 1 em 16 com pedra, 10 em 16 sem).

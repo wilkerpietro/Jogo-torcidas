@@ -3573,3 +3573,210 @@ uns 60 m de avenida depois do pórtico sul de Cuiabá.)
 - **Cidade de muitos bairros fica comprida**: Campinas, com 10, é uma grade
   de 2 × 5 blocos (60 quadras, uns 245 × 235 m) — quase quadrada, mas a
   maior das 68.
+
+## 36. O bairro 3 × 3, a praia de volta, os rios, as entradas da praça e a rua de acesso do estádio (01/10/2026)
+
+**Os pedidos** (o dono): "adicione mais 3 quarteirões pra ficar 3x3 com três
+quarteirões sendo praças, igreja, delegacia, hospital ou escola. Preciso que
+as cidades às margens da praia voltem a ser às margens da praia, e que a
+decoração de vegetação das demais seja mais bem feita com rios entre uma
+cidade e outra. Preciso que volte a existir a entrada da praça em norte e
+sul, pra dar a impressão de entrada na praça nas caravanas." E, no meio da
+rodada, com um print do mapa: "percebo que a rua a sul do estádio localizado
+na parte superior da imagem é mais larga que as demais e esse problema tem
+em todos os mapas, que acaba sobrepondo a rua por cima de outras ruas e
+calçadas, e pra piorar ainda fica feio visualmente".
+
+### O bairro de 3 × 3 quadras
+
+O bloco de cada bairro das cidades-modelo (`ferramentas/planta_html/proposta.js`,
+AS CIDADES-MODELO) passa de 3 × 2 pra 3 × 3 quadras (uns 119 × 66 m com as
+ruas de dentro). **A fileira do meio é de três equipamentos**; as outras
+duas são o bairro de antes (as casas; no Nobre, as torres e os casarões; a
+favela, nas duas fileiras dela).
+
+- **Na favela, a fileira dos equipamentos é a de dentro** (a do lado do meio
+  da cidade): ela dá a rua pra favela.
+- **Os cinco tipos andam em roda pela cidade** — praça, escola, igreja,
+  delegacia, hospital —: o bairro seguinte continua de onde o anterior
+  parou, então cada bairro tem três diferentes e a cidade de dois bairros já
+  tem os cinco.
+- **A frente olha pro meio da cidade**: a fileira de cima do bloco olha pro
+  norte, a de baixo pro sul, a do meio pro lado do centro; a igreja, que tem
+  a nave comprida, olha pro leste ou pro oeste.
+- **Os nomes andam em roda pela praça**: 1º, 2º, 3º Distrito Policial; a
+  paróquia de cada santo (São José, Nossa Senhora Aparecida, Santo Antônio...);
+  a escola estadual de cada patrono (Rui Barbosa, Castro Alves, Monteiro
+  Lobato...); a praça (da Matriz, da Bandeira, Tiradentes...); o hospital
+  (Municipal, São Lucas, Santa Casa...).
+- **O modelo 3D**: a praça é a Praça da Vila (o calçadão em onda, o
+  chafariz, o parquinho, a academia, a banca), a igreja é a de bairro do
+  norte, a delegacia é o 2º DP (com o número do distrito na marquise). **A
+  escola e o hospital são modelos novos** (`js/diajogo/equip3d.js`,
+  `montarEscola` e `montarHospital`), feitos pra quadra comum (o miolo de
+  30,6 × 12,9 m), com a roupa dos equipamentos antigos do bairro (a folha das
+  casas):
+  - **a escola estadual**: o bloco de dois andares de salas no fundo, com os
+    pilares de concreto marcando os vãos, a fita de vitrô de ferro, o barrado
+    azul e o cobogó da escada; a quadra coberta do lado, de piso verde, com a
+    cobertura de zinco em arco e as duas tabelas; o pátio na frente, com as
+    árvores, o mastro com a bandeira e a passarela coberta do portão até a
+    porta; o muro de barrado com o gradil em cima. Uns 4.100 triângulos.
+  - **o hospital**: a lâmina de três andares (o térreo de recepção e dois de
+    módulo de janela) com a faixa lisa de cima, a cruz vermelha e o nome; o
+    pronto-socorro com a marquise de testeira vermelha e a ambulância
+    embaixo; o estacionamento do lado, com os carros e outra ambulância; a
+    mureta com o gradil branco na frente. Uns 4.000 triângulos (a delegacia
+    tem 6.200, a praça 8.200).
+- **A delegacia vale pro assalto**: a polícia sai da delegacia mais perto
+  (`delegacias()` já pegava todas).
+- **Quantos**: 420 quarteirões de equipamento nas 18 praças compostas — 83
+  praças, 86 escolas, 87 igrejas, 87 delegacias, 77 hospitais (3 por bairro,
+  140 bairros).
+
+### A praia de volta
+
+Na praça de três cidades ou mais, **a cidade do centro das praças de praia
+(Maceió, Aracaju, João Pessoa e São Luís) e a da costa (Parnaíba) voltam pra
+beira-mar**: a cidade nasce no trecho reto do sul da costa do mapa do porte,
+com o lado leste encostado na guia da avenida da beira; a frente dela é o mar
+(o bairro Nobre fica na beira, a favela e o estádio pro lado de dentro, e o
+estádio nunca no lado da praia). A avenida da beira corre ao longo delas, e
+a praia, a areia, o quiosque e a casa de praia voltam (`temPraia()`).
+
+### Os rios entre as cidades
+
+Na praça de cidades-modelo (as 13 de três cidades ou mais e as de duas
+cidades), **cada estrada que liga duas cidades passa numa ponte por cima de
+um rio**:
+
+- **O traçado** (o passo 8b' da cisão): o rio cruza a estrada no meio dela,
+  de través, e corre pelo vão entre as cidades até a borda do mundo ou até
+  encontrar outro rio, que ele vira afluente. É o caminho mais barato numa
+  grade de 4 m: a 8 m das cidades no mínimo e de preferência no meio do vão
+  (o custo cresce perto delas); estrada, ele só atravessa de través, longe
+  das pontas e a 8 m do pórtico e da placa (que ficam em terra); a metade de
+  lá não volta pela estrada dela; e nunca pro lado da praia. **A metade sem
+  saída** (presa entre a cidade da praia e o mar, por exemplo) **nasce numa
+  lagoa** no lugar mais aberto aonde ela chega.
+- **O desenho**: a linha da grade vira curva (Chaikin), o rio tem 6,5 m de
+  água (o primeiro da praça, 7,5 m) e, em volta, o barro da linha d'água e a
+  margem de capim. Na ponta da borda ele segue 1,5 km reto pra fora — na
+  planta e no chão de longe do cenário (a faixa d'água com a margem, por
+  cima do mato de longe): o rio não acaba na beira do chão pintado.
+- **A ponte**: o tabuleiro de concreto 1,3 m mais largo que a pista de cada
+  lado, da água mais 4 m pra cada ponta, com a mureta (a da baía); a grade
+  de proteção da estrada não passa por cima do tabuleiro (lá a mureta
+  segura).
+- **No cenário 3D** a água é chão pintado, como a lagoa e a baía: a grade de
+  andar marca o contorno de cada rio como água (`lagoa().aguas`) e o
+  tabuleiro como chão (`pisa`); o boneco atravessa a ponte e não entra no
+  rio. A água não é mato: a árvore do mato não nasce nela, e a da beira fica
+  de mata ciliar.
+- **Quantos**: 52 rios com 52 pontes (todas as ligações por estrada das 16
+  praças de cidades-modelo), uns 20,7 km de rio dentro das áreas, 6 nascendo
+  em lagoa.
+
+### A vegetação: as clareiras
+
+No mato largo de cada praça de cidades-modelo, **sete clareiras de pasto**
+(de 18 a 30 m de raio), longe das cidades, das ruas, dos rios e da beira do
+mundo, cada uma num lugar sorteado entre os mais abertos (não saem em fila):
+o capim aberto com a beira mais verde e, em uma de cada duas, a lagoinha. No
+3D a árvore do mato fica em volta (a clareira não é mato) e, dentro, uma
+árvore solta aqui e outra ali. 126 clareiras, 72 com lagoinha.
+
+### As entradas norte e sul da praça
+
+Na praça toda de modelo não tinha a avenida de entrada, e a caravana descia
+no pórtico de uma estrada entre duas cidades. **Agora a praça tem a entrada
+norte e a sul**: uma rua reta que vem da borda do mundo e chega na rua de uma
+cidade da ponta de cima (e de baixo), com o pórtico de BEM-VINDO. A rua é uma
+das de norte a sul da grade da cidade, a que segue reta pra fora sem passar
+por nada; entre elas, a mais curta, a mais pro meio da praça e a mais longe
+dos estádios. **A caravana desce nela** (`entradas()` dá só a norte e a sul
+quando elas existem): "A caravana desce na entrada norte". As 26 entradas
+das 13 praças ficam a 112 m ou mais de um estádio.
+
+### A rua de acesso do estádio
+
+**A rua de acesso do portão 1 era de duas pistas** (12 m, o dobro da rua) e
+com a ponta redonda: num vão de rua de 6 m ela passava 6 m por cima da
+calçada e do lote das quadras dos dois lados, e a ponta entrava 6 m na quadra
+do outro lado da rua e no próprio terreno do estádio. Medido nas 30 praças:
+43 das 90 ruas de acesso pintavam asfalto por cima de alguma quadra.
+
+- **Agora o acesso tem a largura da rua** (6,1 m), acaba no meio da rua que
+  ele encontra e é pintado de ponta reta.
+- **A rua de veraneio**: o terreno dela, que não tem rua em volta, às vezes
+  encosta na rua da cidade; a conta do acesso supunha a rua em volta, e a
+  ponta caía meia rua dentro da quadra do outro lado (Fortaleza, Recife, o
+  Rio). Agora o fim é o meio da rua encontrada (`reta().fim`).
+- **A faixa de calçada da avenida não é pintada no acesso**: ela pintava a
+  calçada por cima da outra metade da rua aonde o acesso chega; a calçada é
+  a das quadras.
+- **Medido de novo**: 0 das 90. Nas 12 praças de uma cidade só, o mapa muda
+  só por isso: com o conserto do acesso desligado, as 12 saem iguais às de
+  antes, objeto por objeto (o entorno do estádio e a favela vizinha se
+  acomodam no espaço que a rua larga ocupava).
+
+### Medido
+
+| | §35 | agora |
+|---|---|---|
+| quarteirões das cidades-modelo | 699 (3 × 2 por bairro) | 1.112 (3 × 3), 420 de equipamento |
+| praças de cidades-modelo com praia | 0 | 4 (+ Parnaíba, a da costa) |
+| rios / pontes | 0 / 0 | 52 / 52 |
+| clareiras (com lagoinha) | 0 | 126 (72) |
+| entradas da praça (norte e sul) nas 13 praças de três cidades ou mais | 0 | 26 |
+| ruas de acesso por cima de quadra (30 praças) | 43 de 90 | 0 de 90 |
+| avisos do gerador | 0 | 0 |
+| gerar a praça (só o gerador, média / a mais lenta, as 30) | 0,15 s / 0,36 s (Bahia) | 0,19 s / 0,47 s |
+| trocar de praça na planta (o gerador, o desenho e os bairros), Interior de SP | 1,1 s | 1,0 s |
+
+**O custo dos rios**: o tamanho da ponte se mede andando pela estrada de
+40 em 40 cm e perguntando se o ponto está no rio — e a linha de cada rio,
+depois de alisada, tem até 1.900 pontos. Medindo a linha toda a cada
+pergunta, o Interior de SP (8 rios) gerava em 1,1 s, e a troca de praça
+na planta passava de 2 s. A pergunta agora vai por pedaços de 16
+segmentos com a caixa de cada um (`pertoDaLinha`): só se mede o pedaço
+cuja caixa chega perto do ponto. A resposta é a mesma — as 30 praças
+saem iguais, objeto por objeto, com a conta velha e a nova.
+
+**A pé, no cenário** (a grade de andar do boneco, nas 18 praças compostas):
+as sedes, os bares, os pórticos, as 45 favelas (pelas vielas) e as 1.113
+quadras das cidades-modelo (pela calçada) ficam todos no mesmo pedaço
+andável — o rio não corta caminho (a ponte se pisa) e nenhuma quadra de
+equipamento fica presa. Nenhum erro na página.
+
+**A caravana de fora** (sem aliado que receba; o teste escolhe o visitante
+de outra praça e manda o aliado não receber): nas 18 praças compostas ela
+desce na entrada norte ou na sul — "entrada:norte" ou "entrada:sul" — e
+anda de 141 a 809 m até o portão 3, o do visitante, sem erro de rota.
+
+**O dia de jogo** (o clássico da praça, nas 18 compostas, em Fortaleza e
+no Recife): o plano monta nas 20, os 56 bondes chegam ao portão (rota de
+117 a 842 m, 391 m na média) e nenhum erro de bonde nem da página. Os
+bairros das 30 praças (as sedes no bairro dos dados, nenhum bairro vazio,
+todo bar com bairro): 0 com problema. O Jogo 3D na Paraíba (começar,
+abrir o mapa da cidade, clicar num bairro, ler o domínio): sem erro.
+
+### Limites (sinceros)
+
+- **O rio é chão pintado**, como a lagoa e a baía: no 3D ele não tem
+  margem em degrau nem água que mexe, e a ponte é baixa (o tabuleiro no
+  chão, com a mureta) — sem arco nem pilar.
+- **Belém e o Litoral Catarinense não têm rio**: as duas cidades se ligam
+  pela avenida do mapa do porte (a de entrada, a da beira), e não por
+  estrada. Belém já tem a lagoa.
+- **O rio pode ser comprido**: com as cidades a 50 m umas das outras, o rio
+  de um vão segue pelos vãos até a borda — numa praça de 8 ligações (o
+  Interior de SP) são 8 rios, e o maior corta o mapa de lado a lado.
+- **A clareira é uma mancha de capim com a beira de mato**: sem cerca, sem
+  gado, sem trilha até ela.
+- **A escola e o hospital são da quadra comum** (30 × 13 m de miolo): a
+  quadra coberta da escola é pequena (uns 11 × 8 m) e o hospital tem só três
+  andares.
+- **A entrada da praça chega numa cidade da ponta** (a de cima e a de
+  baixo), não necessariamente no centro: a caravana pode descer numa cidade
+  pequena e andar pela estrada até o estádio.

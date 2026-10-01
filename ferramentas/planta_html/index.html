@@ -287,7 +287,7 @@ import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d
 import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js';
 import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js';
 import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja } from './js/equip3d.js';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js';
 import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
@@ -399,7 +399,9 @@ const COR = {
   /* a avenida duplicada: a guia e a grama do canteiro, a faixa branca das pistas e a amarela da beira do canteiro */
   guia: '#d2cec4', canteiro: '#6f9a55', faixaBranca: '#f1efe7', faixaAmarela: '#e2bf45',
   /* a lagoa: a água doce, o raso, o barro da beira, o capim da margem e o junco */
-  lagoa: '#48675f', raso: '#5a7c70', barro: '#6f6547', margem: '#869f5c', junco: '#3d5a2c'
+  lagoa: '#48675f', raso: '#5a7c70', barro: '#6f6547', margem: '#869f5c', junco: '#3d5a2c',
+  /* o rio entre as cidades e a clareira de pasto do mato (a praça toda de modelo) */
+  rio: '#4b7a83', pasto: '#a4b06a'
 };
 /* o lote de muro é terreno baldio: o chão de terra, com o muro riscado na frente */
 const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#b39a70', barraco: '#c98a5a',
@@ -415,7 +417,8 @@ const COR_CHAO = {
   quintal: '#9b8e6f', fundos: '#6f8a52', pracinha: '#b5afa0', areia: '#e3d2a4', mar: '#2e5a75',
   estadio: '#a39f93', arquibancada: '#8a8780', pista: '#8f8b80', gramado: '#4a8a3c',
   terreno: '#a89c80', lote: '#87816f', ruaAreia: '#cdb98c',
-  guia: '#c3bfb4', canteiro: '#5b7d3f', faixaBranca: '#dcdad2', faixaAmarela: '#d2ad3c'
+  guia: '#c3bfb4', canteiro: '#5b7d3f', faixaBranca: '#dcdad2', faixaAmarela: '#d2ad3c',
+  rio: '#3f6d78', pasto: '#9aa565'
 };
 /* o chão do mato, por vegetação (o fundo; a mata e o cerrado ainda levam o
    ladrilho deles por cima) */
@@ -490,6 +493,8 @@ let cobertoPelaProposta = () => false, fav0 = null, somePelaProposta = () => fal
    outra cidade também (`kSome`). `naOutra`: o ponto está numa cidade de
    fora; `cidadeEm`: a cidade do ponto (nulo no mato) */
 const CIS = () => (PROP && PROP.cisao) || null;
+/* AS PONTES DA PRAÇA: a da baía (o Subúrbio Carioca de antes) e as dos rios */
+const pontesDaPraca = () => { const C = CIS(); return C ? (C.baia ? C.baia.pontes : []).concat(C.pontes || []) : []; };
 /* o dizer do pórtico: na praça cortada em cidades, o da cidade dele (BEM-VINDO A FEIRA DE SANTANA); senão, o da praça */
 const boasVindasDe = p => {
   const C = CIS(), c = C && p && p.cidade ? C.cidades.find(x => x.nome === p.cidade) : null;
@@ -2405,12 +2410,17 @@ const marcosDeHoje = () => (PROP && PROP.atacadex ? marcos.filter(m => !m.atacad
 const outraDe = e => METRO_P.estacoes.find(o => o !== e);
 const painelDe = e => 'partidas_' + outraDe(e).nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const opcEstacao = e => ({ outra: outraDe(e).nome, painel: painelDe(e) });
-/* OS EQUIPAMENTOS NOVOS com modelo: o shopping, a delegacia e a Praça da
-   Vila (a praça ocupa a quadra inteira, calçada junto; os prédios, o miolo) */
-const MONTAR_EQUIP = { shopping: montarShopping, delegacia: montarDelegacia, praca: montarPraca, igreja: montarIgreja };
-const temModelo = q => !!q.equip && (q.equip.tipo === 'shopping' || q.equip.tipo === 'delegacia' || q.equip.tipo === 'igreja' || (q.equip.tipo === 'praca' && q.equip.nome === 'Praça da Vila'));
+/* OS EQUIPAMENTOS NOVOS com modelo: o shopping, a delegacia, a Praça da
+   Vila e a igreja do norte, e os três de cada bairro das cidades-modelo (a
+   praça, a escola, a igreja, a delegacia e o hospital: `modelo`). A praça
+   ocupa a quadra inteira, calçada junto; os prédios, o miolo */
+const MONTAR_EQUIP = { shopping: montarShopping, delegacia: montarDelegacia, praca: montarPraca, igreja: montarIgreja, escola: montarEscola, hospital: montarHospital };
+const temModelo = q => !!q.equip && (q.equip.tipo === 'shopping' || q.equip.tipo === 'delegacia' || q.equip.tipo === 'igreja' ||
+  (q.equip.tipo === 'praca' && (q.equip.nome === 'Praça da Vila' || !!q.equip.modelo)) || ((q.equip.tipo === 'escola' || q.equip.tipo === 'hospital') && !!q.equip.modelo));
 const specDoEquip = q => ({ area: q.equip.tipo === 'praca' ? { x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 } : { x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 },
-                            frente: q.equip.frente || 's', nome: q.equip.nome });
+                            frente: q.equip.frente || 's', nome: q.equip.nome,
+                            ...(q.equip.tipo === 'igreja' && q.equip.nome ? { letreiro: q.equip.nome.toUpperCase() } : {}),
+                            ...(q.equip.sigla ? { sigla: q.equip.sigla } : {}) });
 /* OS ESTÁDIOS: no "Jogo hoje", o do meio da cidade; nos três mapas, os
    das vagas (o 1º é o principal), nas pontas da cidade — o quarteirão do
    estádio de hoje virou casa */
@@ -2460,7 +2470,8 @@ function varianteDe(modo, nome = cidade) {
   const metro = !!cfg.metro && !!(c && c.temMetro);
   /* o terreno de cada estádio e a costa (a praia ou a lagoa: o estádio não passa da avenida da beira; sem o dado, a praia do jogo) */
   const modelos = Array.from({ length: n }, (_, k) => modeloDoEstadio(c && c.estadios[k]));
-  const costa = !c || (!!(c.temPraia || c.temLagoa) && !pracaDeModelo(c));
+  /* (a praça toda de modelo também tem a praia: a cidade da praia encosta nela — só a lagoa ela não tem) */
+  const costa = !c || !!c.temPraia || (!!c.temLagoa && !pracaDeModelo(c));
   const terrenos = modelos.map(id => ({ modelo: id, ...ESTADIOS_JOGO[id].terreno }));
   /* AS CIDADES DA PRAÇA (a praça composta: o mapa cortado em cidades, ver CISOES no gerador) */
   const cisao = cisaoDe(c);
@@ -2497,10 +2508,11 @@ function nomesDosEstadios() {
   return Array.from({ length: 4 }, (_, k) => lista[k] || (k ? 'Estádio ' + (k + 1) : 'Estádio'));
 }
 /* sem o dado, fica a praia do jogo */
-/* (a praça de três cidades ou mais é toda de cidades-modelo: sem praia nem lagoa — o dono, 01/10/2026: "sem se importar com o modelo antigo pra essas cidades") */
+/* (a praça de três cidades ou mais é toda de cidades-modelo: sem a lagoa — o dono, 01/10/2026: "sem se importar com o modelo antigo pra essas cidades" —,
+   mas com a praia: "Preciso que as cidades às margens da praia voltem a ser às margens da praia") */
 const todaDeModelo = new Map();
 const pracaDeModelo = c => { if (!c) return false; if (!todaDeModelo.has(c.id)) { const x = cisaoDe(c); todaDeModelo.set(c.id, !!x && x.modelo === 'todas'); } return todaDeModelo.get(c.id); };
-const temPraia = () => { const c = infoDaCidade(cidade); return !c || (!!c.temPraia && !pracaDeModelo(c)); };
+const temPraia = () => { const c = infoDaCidade(cidade); return !c || !!c.temPraia; };
 /* a praça de rio ou lagoa: a lagoa no lugar da praia e do mar */
 const temLagoa = () => { const c = infoDaCidade(cidade); return !!(c && c.temLagoa) && !pracaDeModelo(c); };
 /* A VEGETAÇÃO EM VOLTA DA CIDADE, a `vegetacao` da praça: 'mata' (a mata
@@ -2806,8 +2818,10 @@ function montarCalcadas() {
   const contornoHoje = K.CONTORNO.map(([a, b]) => K.pxm(a, b)), cbb = bbox(contornoHoje);
   const emVoltaDaNova = IndiceRet(PROP.quadras.map(q => ({ x0: q.x0 - RUA / 2, x1: q.x1 + RUA / 2, y0: q.y0 - RUA / 2, y1: q.y1 + RUA / 2 })), r => r);
   const naCalcadaPintada = (x, y) => ((x > cbb.x0 && x < cbb.x1 && y > cbb.y0 && y < cbb.y1 && dentro(x, y, contornoHoje) && !kSome(x, y)) || emVoltaDaNova(x, y).some(r => noRet(r, x, y))) &&
-    PROP.avenidas.some(a => !a.estrada && PROP.distAvenida(x, y, a) < a.l / 2 + CALC) && !sumiu(x, y);
-  const ocupado = (x, y) => naCosta(x, y) || emQuadra(x, y) || ehAsfalto(x, y) || naFavela(x, y) || PROP.noAtacadex(x, y, 0.6 * M) || naCalcadaPintada(x, y);
+    PROP.avenidas.some(a => !a.estrada && !a.acesso && PROP.distAvenida(x, y, a) < a.l / 2 + CALC) && !sumiu(x, y);
+  /* (o tabuleiro da ponte não leva a grade de proteção: lá a mureta segura) */
+  const pontes = pontesDaPraca(), naPonte = (x, y) => pontes.some(r => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1);
+  const ocupado = (x, y) => naCosta(x, y) || emQuadra(x, y) || ehAsfalto(x, y) || naFavela(x, y) || PROP.noAtacadex(x, y, 0.6 * M) || naCalcadaPintada(x, y) || naPonte(x, y);
   /* a calçada da borda não entra na zona da costa (no mapa sem praia a
      avenida da beira corta a grade na diagonal: do outro lado dela é mato) */
   const semLugar = (x, y) => ocupado(x, y) || (naZonaCosta(x, y) && !naOutra(x, y));
@@ -4022,6 +4036,40 @@ function desenharBaia() {
   ctx.fillStyle = COR.mar; ctx.fill();
   ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 90; ctx.stroke(); ctx.restore();
 }
+/* A PAISAGEM DA PRAÇA TODA DE MODELO (01/10/2026, o dono: "que a
+   decoração de vegetação das demais seja mais bem feita com rios entre
+   uma cidade e outra"): a clareira de pasto no mato largo — o capim
+   aberto, com a beira de capim mais verde e, em uma de cada duas, a
+   lagoinha — e o rio entre as cidades: a margem de capim, o barro da
+   linha d'água, a água e o raso da beira. No chão do cenário 3D vale o
+   mesmo desenho: a água e a clareira não são mato (a árvore do mato não
+   nasce nelas; a da beira do rio fica de mata ciliar) */
+function desenharPaisagem() {
+  const C = CIS();
+  if (!C || (!(C.rios || []).length && !(C.clareiras || []).length)) return;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  for (const k of C.clareiras || []) {
+    caminho(k.pol); ctx.strokeStyle = COR.margem; ctx.lineWidth = 3 * M; ctx.stroke();
+    ctx.fillStyle = COR.pasto; ctx.fill();
+    if (!k.lagoa) continue;
+    caminho(k.lagoa); ctx.strokeStyle = COR.margem; ctx.lineWidth = 120; ctx.stroke();
+    ctx.strokeStyle = COR.barro; ctx.lineWidth = 34; ctx.stroke();
+    ctx.fillStyle = COR.lagoa; ctx.fill();
+    ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 60; ctx.stroke(); ctx.restore();
+  }
+  /* (a lagoa de onde um rio nasce, quando a ponta dele não tem saída) */
+  const lagoas = (C.rios || []).flatMap(r => r.lagoas || []);
+  for (const L of lagoas) { caminho(L.agua); ctx.strokeStyle = COR.margem; ctx.lineWidth = 150; ctx.stroke(); ctx.strokeStyle = COR.barro; ctx.lineWidth = 40; ctx.stroke(); }
+  for (const r of C.rios || []) {
+    caminho(r.pontos, false); ctx.strokeStyle = COR.margem; ctx.lineWidth = r.larg + 6.4 * M; ctx.stroke();
+    ctx.strokeStyle = COR.barro; ctx.lineWidth = r.larg + 1.8 * M; ctx.stroke();
+  }
+  for (const L of lagoas) { caminho(L.agua); ctx.fillStyle = COR.rio; ctx.fill(); ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 2.2 * M; ctx.stroke(); ctx.restore(); }
+  for (const r of C.rios || []) {
+    caminho(r.agua); ctx.fillStyle = COR.rio; ctx.fill();
+    ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 1.6 * M; ctx.stroke(); ctx.restore();
+  }
+}
 function desenharLagoa(px) {
   const L = LAGOA || (LAGOA = montarLagoa());
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -4165,7 +4213,10 @@ function desenhar() {
   if (prop) for (const q of PROP.quadras) ctx.rect(q.x0 - RUA / 2, q.y0 - RUA / 2, q.x1 - q.x0 + RUA, q.y1 - q.y0 + RUA);
   ctx.clip();
   ctx.strokeStyle = COR.calcada;
-  for (const av of avenidas) { if (av.estrada) continue; ctx.lineWidth = av.l + 2 * CALC; caminho(av.pontos, false); ctx.stroke(); }
+  /* (a rua de acesso do estádio e a da rua de veraneio são rua da cidade:
+     a calçada é a das quadras — a faixa dela pintava a calçada por cima da
+     outra metade da rua onde o acesso chega) */
+  for (const av of avenidas) { if (av.estrada || av.acesso) continue; ctx.lineWidth = av.l + 2 * CALC; caminho(av.pontos, false); ctx.stroke(); }
   ctx.restore();
   /* ---- as ruas da grade: só entre células urbanas ---- */
   const bx = K.bordasX, by = K.bordasY, nCol = bx.length / 2, nLin = by.length / 2;
@@ -4213,6 +4264,8 @@ function desenhar() {
   }
   /* ---- a baía (a praça cortada em cidades com uma do outro lado da água) ---- */
   if (prop && CIS() && CIS().baia) desenharBaia();
+  /* ---- os rios e as clareiras (a praça toda de modelo) ---- */
+  if (prop && CIS()) desenharPaisagem();
   /* ---- o campo de várzea ---- */
   for (const f of K.CAMPOS) {
     if (prop && kSome((f.x0 + f.x1) / 2, (f.y0 + f.y1) / 2)) continue;
@@ -4234,7 +4287,7 @@ function desenhar() {
   if (prop && CALCADAS) for (const e of CALCADAS.enchimentos) if (ve(e.r)) pol(e.fora, COR.calcada);
 
   /* ---- a ponte: o tabuleiro de concreto por cima da água, mais largo que a pista, com a mureta dos dois lados ---- */
-  if (prop && CIS() && CIS().baia) for (const r of CIS().baia.pontes) {
+  if (prop && CIS()) for (const r of pontesDaPraca()) {
     ret(r, '#a9a59b');
     const e = MURETA_PONTE.e * M;
     if (Math.abs(r.dir[0]) > 0.5) { ret({ ...r, y1: r.y0 + e }, '#77736b'); ret({ ...r, y0: r.y1 - e }, '#77736b'); }
@@ -4243,8 +4296,12 @@ function desenhar() {
   /* ---- as avenidas por cima ---- */
   for (const av of avenidas) {
     if (av.dupla) { desenharDuplicada(av); continue; }
+    /* (o acesso acaba no meio da rua que ele encontra: de ponta reta — a
+       redonda entrava na calçada e na quadra do outro lado) */
+    if (av.acesso) ctx.lineCap = 'butt';
     ctx.strokeStyle = COR.avenida; ctx.lineWidth = av.l; caminho(av.pontos, false); ctx.stroke();
     ctx.setLineDash([18, 14]); ctx.strokeStyle = COR.eixo; ctx.lineWidth = 1.6; caminho(av.pontos, false); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineCap = 'round';
   }
   /* ---- os pórticos, por cima da estrada ---- */
   if (prop && !chao) for (const it of porticos) {
@@ -5263,9 +5320,20 @@ function fichaDe(it) {
                ['Nave', 'as paredes amarelas com o embasamento de pedra e as pilastras e a cornija brancas, cinco janelas de cada lado, a porta do lado esquerdo e o telhado de telha em duas águas'],
                ['Capela-mor', 'atrás, mais baixa e mais estreita, com o vitral em losango e o telhado dela'],
                ['Adro', 'de pedra portuguesa, com a escadaria de pedra até a porta, os dois canteiros (o oiti e o ipê amarelo), os postes de praça e o quadro dos horários da missa'],
-               ['Em volta', 'o gramado, cercado de mureta amarela e grade nos lados e no fundo']]
+               ['Em volta', 'o gramado, cercado de mureta amarela e grade nos lados e no fundo']],
+      escola: [['Bloco de salas', 'dois andares no fundo do terreno, com os pilares de concreto marcando os vãos, a fita de vitrô de ferro, o friso entre os andares, o barrado azul, a porta de duas folhas e o cobogó da escada'],
+               ['Quadra coberta', 'do lado, de piso verde com as linhas, os pilares de aço, a cobertura de zinco em arco e as duas tabelas de basquete'],
+               ['Pátio', 'na frente, de cimento, com as duas árvores nos canteiros, o mastro com a bandeira do Brasil e a passarela coberta do portão até a porta'],
+               ['Teto', "a caixa d'água azul e a casa da escada"],
+               ['Muro', 'de barrado azul, com o gradil em cima na frente e o portão de correr']],
+      hospital: [['Lâmina', 'três andares: o térreo de recepção, com as portas de vidro e as janelas, e dois andares de janela de fita; os frisos das lajes'],
+                 ['Faixa de cima', 'lisa, com a cruz vermelha nas pontas e o nome do hospital'],
+                 ['Pronto-socorro', 'a marquise de testeira vermelha com PRONTO-SOCORRO, rente à lâmina, e a ambulância embaixo'],
+                 ['Estacionamento', 'do lado: o asfalto com as vagas pintadas, os carros e outra ambulância'],
+                 ['Teto', "a casa de máquinas, a caixa d'água e as condensadoras"],
+                 ['Em volta', 'a mureta com o gradil branco na frente (aberta na entrada, no pronto-socorro e no estacionamento) e o muro nos lados e no fundo']]
     }[e.tipo];
-    const nomes = { shopping: 'Shopping', delegacia: 'Delegacia', praca: 'Praça', igreja: 'Igreja' };
+    const nomes = { shopping: 'Shopping', delegacia: 'Delegacia', praca: 'Praça', igreja: 'Igreja', escola: 'Escola', hospital: 'Hospital' };
     return `<p class="sobre">${nomes[e.tipo]} · quadra nova ${esc(nomeQuadraNova(q))}${chip}</p><h2>${esc(e.nome)}</h2>` + linhas([
       ['Terreno', metros((e.tipo === 'praca' ? q.x1 - q.x0 : q.ix1 - q.ix0)) + ' × ' + metros((e.tipo === 'praca' ? q.y1 - q.y0 : q.iy1 - q.iy0)), true],
       ['Frente para', e.tipo === 'praca' ? 'as quatro ruas' : FRENTE[e.frente]]
@@ -7128,7 +7196,7 @@ function pecasDoCenario() {
   /* a praça cortada em cidades: a placa verde de cada saída e a mureta da ponte */
   if (CIS()) {
     for (const pl of CIS().placas) poe('prop', null, g => objetoDaPlacaEstrada(pl, g));
-    if (CIS().baia) for (const r of CIS().baia.pontes) poe('prop', null, g => objetoDaPonte(r, g));
+    for (const r of pontesDaPraca()) poe('prop', null, g => objetoDaPonte(r, g));
   }
   for (const e of estadios) poe('estadio', e, g => objetoDeEstadio(e, g));
   /* os ambulantes da porta do estádio (js/ambulantes3d.js), de frente pra rua */
@@ -7752,10 +7820,22 @@ function apiDoCenario() {
     sementesDoPasso() { const C = CIS(); return C ? C.estradas.map(a => [(a.pontos[0][0] + a.pontos[a.pontos.length - 1][0]) / 2, (a.pontos[0][1] + a.pontos[a.pontos.length - 1][1]) / 2]) : []; },
     lagoa() {
       /* (a baía do Subúrbio Carioca: a água do mar entre as margens; o tabuleiro da ponte se pisa) */
-      const B = CIS() && CIS().baia;
-      if (!temLagoa()) return B ? { agua: B.agua, ilha: [], pisa: B.pontes.map(r => ({ x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 })) } : null;
+      /* (e os rios e as lagoinhas das clareiras, cada um com o contorno dele: `aguas`; a ponte do rio também se pisa) */
+      const C = CIS(), B = C && C.baia, ret = r => ({ x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 });
+      const aguas = C ? (C.rios || []).flatMap(r => [r.agua].concat((r.lagoas || []).map(L => L.agua))).concat((C.clareiras || []).filter(k => k.lagoa).map(k => k.lagoa)) : [];
+      const pisaRio = C ? (C.pontes || []).map(ret) : [];
+      if (!temLagoa()) return B || aguas.length ? { agua: B ? B.agua : null, ilha: [], pisa: (B ? B.pontes.map(ret) : []).concat(pisaRio), aguas } : null;
       const L = LAGOA || (LAGOA = montarLagoa());
-      return { agua: L.agua, ilha: L.ilha, pisa: [L.trapiche.ponte, L.trapiche.cabeca] };
+      return { agua: L.agua, ilha: L.ilha, pisa: [L.trapiche.ponte, L.trapiche.cabeca].concat(pisaRio), aguas };
+    },
+    /* OS RIOS (a praça toda de modelo): a linha do meio e a largura de cada um — o chão de longe continua o rio pra lá da área */
+    rios() { const C = CIS(); return C && C.rios ? C.rios.map(r => ({ pontos: r.pontos.map(p => [p[0], p[1]]), larg: r.larg })) : []; },
+    /* NA CLAREIRA DE PASTO (fora da lagoinha): o mato 3D põe uma árvore solta aqui e outra ali */
+    noPasto(x, y) {
+      const C = CIS();
+      if (!C || !C.clareiras) return false;
+      for (const k of C.clareiras) if (Math.hypot(x - k.x, y - k.y) < k.r * 1.4 && dentro(x, y, k.pol)) return !(k.lagoa && dentro(x, y, k.lagoa));
+      return false;
     },
     /* as torcidas da praça, na ordem da tabela (a maior primeiro): as
        cores da camisa e, pra quem tem sede, o ponto da calçada na frente
@@ -7998,7 +8078,10 @@ function apiDoCenario() {
       return (a.irmandade || []).includes(idB) || (b.irmandade || []).includes(idA);
     },
     /* as entradas da cidade: os pórticos da estrada (no mundo; `dir`, pra dentro da cidade) */
-    entradas: () => porticos.map(it => ({ id: it.p.id, nome: it.p.nome, x: it.p.x, y: it.p.y, dir: it.p.dir.slice() })),
+    /* (a caravana desce na entrada da praça — a norte ou a sul — quando ela
+       existe; o pórtico de uma estrada entre duas cidades é da cidade, não
+       da praça) */
+    entradas: () => { const ps = porticos.filter(it => it.p.id === 'norte' || it.p.id === 'sul'); return (ps.length ? ps : porticos).map(it => ({ id: it.p.id, nome: it.p.nome, x: it.p.x, y: it.p.y, dir: it.p.dir.slice() })); },
     /* os clubes da praça (dados/cidades.js, na ordem de lá: os daqui
        primeiro), com as cores (dados/times.js) */
     clubes() {
@@ -8242,6 +8325,7 @@ function notasDaProposta() {
     <li>O jogo ainda usa um mapa só, o de hoje ("Jogo hoje"). Os três mapas são da planta em HTML: pra virar jogo, a cena do dia de jogo tem de montar o mapa do porte da praça.</li>
     <li>Os estádios copiados são o mesmo estádio: a cena da torcida teria de aceitar mais de um. E nos três mapas o estádio do jogo sai do meio da cidade: a cena do dia de jogo, que hoje monta a cidade em volta dele, teria de montar o estádio onde o mapa manda.</li>
     <li>O shopping, a delegacia, a Praça da Vila, a igreja do norte e o metrô têm modelo (<code>equip3d.js</code> e <code>metro3d.js</code>), mas só a planta os usa. A sede nova (<code>sede3d.js</code>) também é só visual por enquanto.</li>
+    <li><b>Nas cidades-modelo</b> cada bairro é um bloco de 3 × 3 quadras, e a fileira do meio é de três equipamentos (praça, escola, igreja, delegacia, hospital, em roda pela cidade); a escola e o hospital têm modelo próprio da quadra comum. Entre as cidades ligadas por estrada corre um rio, com a ponte na estrada; no mato largo, as clareiras de pasto com a lagoinha. A praça de três cidades ou mais tem de novo a entrada norte e a sul, com o pórtico — a caravana desce nelas.</li>
     <li>A regra de quem fica com o quê é desta página: cada sede num terreno do lado da zona do bairro dela (um do gerador ou um terreno de reserva), as rivais em lados opostos, e o bar no bairro que o jogo diz (a casa do bairro sem vaga vira o bar). Os bairros e as zonas vêm dos dados das praças; a favela é um bairro sozinho.</li>
   </ul>
   <p class="nota">Clique numa estação do metrô (o M azul), num bar, num espaço de sede, numa casa da favela, numa quadra nova, num estádio ou num pórtico pra ver em 3D.</p>`;

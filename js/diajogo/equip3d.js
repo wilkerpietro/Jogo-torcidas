@@ -834,3 +834,273 @@ export function montarPraca(spec, destino = {}, opc = {}) {
   placa(placas, 'placa_praca', (spec.nome || 'PRAÇA').toUpperCase(), '#e3dfd3', '#2f4f3a', 2.7, 0.38, -1.01, 0, -1, 3.2, 0.5);
   return fechar(E, { equip: B, vidros: V, lowpoly: LP }, destino, placas, marcas);
 }
+
+/* =======================================================
+   A ESCOLA E O HOSPITAL DA CIDADE-MODELO (01/10/2026: "adicione mais
+   3 quarteirões pra ficar 3x3 com três quarteirões sendo praças,
+   igreja, delegacia, hospital ou escola")
+   ---------------------------------------------------------
+   Cabem na quadra comum (o miolo de 30,6 × 12,9 m, a fachada no lado
+   comprido) e vestem a mesma roupa dos equipamentos antigos do bairro
+   (`equip_antigo3d.js`), da folha das casas: a fita de vitrô de ferro da
+   escola, o módulo de janela de fita do hospital, a cruz, a porta de
+   vidro, a porta de duas folhas, o cobogó e o zinco.
+     A ESCOLA ESTADUAL  o bloco de dois andares de salas no fundo, com os
+                        pilares de concreto marcando os vãos, a fita de
+                        vitrô, o barrado azul e o cobogó da escada; a
+                        quadra coberta do lado, de piso verde, com a
+                        cobertura de zinco em arco e as duas tabelas; o
+                        pátio na frente com as árvores, o mastro com a
+                        bandeira e a passarela coberta do portão até a
+                        porta; o muro de barrado com o gradil em cima.
+     O HOSPITAL         a lâmina de três andares (o térreo de recepção e
+                        dois de módulo de janela) com a faixa lisa de cima,
+                        a cruz vermelha e o nome; o pronto-socorro com a
+                        marquise de testeira vermelha e a ambulância
+                        embaixo; o estacionamento do lado, com os carros;
+                        a mureta com o gradil branco na frente; a casa de
+                        máquinas e a caixa d'água no teto.
+   ======================================================= */
+/* a fita de peças de `tw` m num trecho: o vão ladrilhado com o número
+   inteiro de peças que cabe (a peça estica um pouco pra fechar) */
+const fita = (a0, a1, b0, b1, k, tw, extra = {}) => {
+  const n = Math.max(1, Math.round((a1 - a0) / tw));
+  return { a0, a1, b0, b1, k, modo: 'ladrilho', tw: (a1 - a0) / n, th: b1 - b0, oa: a0, ob: b0, ...extra };
+};
+/* o carro de passeio de cor lisa: a carroceria, a cabine de vidro escuro e as rodas */
+function carro(C, x, z, dir, cor, marcas) {
+  const L = 4.2, W = 1.75, h = L / 2;
+  C.caixa(x - h, x + h, 0.3, 0.95, z - W / 2, z + W / 2, { todas: lisa(cor) });
+  const c0 = x + dir * -1.1, c1 = x + dir * 0.9;
+  C.caixa(Math.min(c0, c1), Math.max(c0, c1), 0.95, 1.42, z - W / 2 + 0.1, z + W / 2 - 0.1, { todas: lisa('#1d242b'), topo: lisa(cor) });
+  for (const dx of [-1.3, 1.3]) for (const s of [-1, 1])
+    C.caixa(x + dx - 0.32, x + dx + 0.32, 0, 0.62, z + s * W / 2 - 0.12, z + s * W / 2 + 0.12, { todas: lisa('#141414') });
+  if (marcas) marcas.push({ x0: x - h, x1: x + h, z0: z - W / 2, z1: z + W / 2, cor, tipo: 'movel' });
+}
+/* a ambulância: o furgão branco de faixa vermelha, a cabine mais baixa,
+   o giroflex e a cruz dos dois lados (`K`: o construtor da folha das casas) */
+function ambulancia(C, K, x, z, dir, marcas) {
+  const L = 5.4, W = 2.0, h = L / 2, x0 = x - h, x1 = x + h;
+  const cab = dir > 0 ? [x1 - 1.3, x1] : [x0, x0 + 1.3], bau = dir > 0 ? [x0, x1 - 1.3] : [x0 + 1.3, x1];
+  C.caixa(bau[0], bau[1], 0.35, 2.55, z - W / 2, z + W / 2, { todas: lisa('#f4f4f1') });
+  C.caixa(cab[0], cab[1], 0.35, 1.25, z - W / 2, z + W / 2, { todas: lisa('#f4f4f1') });
+  C.caixa(cab[0], cab[1], 1.25, 2.05, z - W / 2 + 0.06, z + W / 2 - 0.06, { todas: lisa('#1d242b'), topo: lisa('#f4f4f1') });
+  for (const s of [-1, 1]) C.caixa(x0 - 0.01, x1 + 0.01, 0.95, 1.2, z + s * (W / 2 + 0.005) - 0.005, z + s * (W / 2 + 0.005) + 0.005, { todas: lisa('#c3202b') });
+  const gx = dir > 0 ? bau[1] - 0.5 : bau[0] + 0.5;
+  C.caixa(gx - 0.35, gx, 2.55, 2.72, z - 0.6, z + 0.6, { todas: lisa('#d42a2a') });
+  C.caixa(gx, gx + 0.35, 2.55, 2.72, z - 0.6, z + 0.6, { todas: lisa('#2a52d4') });
+  for (const dx of [-1.7, 1.7]) for (const s of [-1, 1])
+    C.caixa(x + dx - 0.36, x + dx + 0.36, 0, 0.72, z + s * W / 2 - 0.13, z + s * W / 2 + 0.13, { todas: lisa('#141414') });
+  const cx = (bau[0] + bau[1]) / 2;
+  K.esticar(K.plano([cx - 0.5, 1.45, z + W / 2 + 0.02], [1, 0, 0], [0, 1, 0]), 0, 1.0, 0, 1.0, 'cruz');
+  K.esticar(K.plano([cx + 0.5, 1.45, z - W / 2 - 0.02], [-1, 0, 0], [0, 1, 0]), 0, 1.0, 0, 1.0, 'cruz');
+  if (marcas) marcas.push({ x0, x1, z0: z - W / 2, z1: z + W / 2, cor: '#f4f4f1', tipo: 'movel' });
+}
+/* o mastro com a bandeira do Brasil, o pano ao vento */
+function mastro(C, x, z, alt) {
+  cilindro(C, x, z, 0, 0.35, 0.3, '#cfcabe', 8, 'concreto_claro');
+  cilindro(C, x, z, 0.35, alt, 0.05, '#c9cdce', 8);
+  const c = C.cel('bandeira_br'), NB = 5, y1 = alt - 0.2;
+  const pano = i => { const t = i / NB; return [x + 0.06 + t * 1.6, y1, z + 0.18 * Math.sin(t * Math.PI * 1.6)]; };
+  for (let i = 0; i < NB; i++) {
+    const a = pano(i), b = pano(i + 1);
+    C.poli([[a[0], a[1] - 1.1, a[2]], [b[0], b[1] - 1.1, b[2]], b, a],
+           [[lerp(c[0], c[2], i / NB), c[1]], [lerp(c[0], c[2], (i + 1) / NB), c[1]], [lerp(c[0], c[2], (i + 1) / NB), c[3]], [lerp(c[0], c[2], i / NB), c[3]]]);
+  }
+}
+/* o muro de barrado de (p) a (q), de `alt` m, com o gradil em cima até `altG` (0: sem gradil) */
+function muroBarrado(K, G, p, q, alt, altG, cor, barrado, marcas) {
+  const x0 = Math.min(p[0], q[0]) - 0.1, x1 = Math.max(p[0], q[0]) + 0.1, z0 = Math.min(p[1], q[1]) - 0.1, z1 = Math.max(p[1], q[1]) + 0.1;
+  K.caixa(x0, x1, 0, alt, z0, z1, { todas: { k: 'lisa', tinta: cor } });
+  K.caixa(x0 - 0.01, x1 + 0.01, 0, Math.min(0.8, alt - 0.2), z0 - 0.01, z1 + 0.01, { todas: { k: 'lisa', tinta: barrado }, topo: null, base: null });
+  if (altG > alt) {
+    const U = unit(sub([q[0], 0, q[1]], [p[0], 0, p[1]])), len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    G.ladrilhar(G.plano([p[0], alt, p[1]], U, [0, 1, 0]), G.ret(0, len, 0, altG - alt), 'gradil');
+  }
+  if (marcas) marcas.push({ x0, x1, z0, z1, cor: '#d8d1bb', tipo: 'movel' });
+}
+
+export function montarEscola(spec, destino = {}, opc = {}) {
+  const E = eixosDoEquip(spec.area, spec.frente);
+  const L = E.L / M, A = E.A / M;
+  const B = Construtor('equip'), K = Construtor('casas'), G = Construtor('grades'), LP = coletor();
+  const placas = [], marcas = [];
+  const CREME = '#efe4c4', AZUL = '#2f5f9a', CINZA = '#cfcabe';
+  /* o pátio de cimento */
+  B.tampa([[0, 0], [L, 0], [L, -A], [0, -A]], 0.08, 'concreto', false);
+  marcas.push({ x0: 0, x1: L, z0: -A, z1: 0, cor: '#bdb6a6', tipo: 'piso' });
+  /* AS MEDIDAS: o bloco de salas no fundo, à esquerda; a quadra coberta à direita */
+  const comQuadra = L >= 24;
+  const bx0 = 0.6, bx1 = comQuadra ? Math.min(18.4, L - 11.6) : L - 0.6;
+  const bz0 = -A + 0.6, bz1 = Math.min(-A + 7.2, -3.2);
+  const H1 = 3.4, H2 = 6.8, HP = 7.5;
+  const porta = (bx0 + bx1) / 2, pa0 = porta - 0.95 - bx0, pa1 = porta + 0.95 - bx0;
+  /* ---- O BLOCO DE SALAS ---- */
+  const planta = [[bx0, bz1], [bx1, bz1], [bx1, bz0], [bx0, bz0]];
+  const vaosDo = (len, i, andar) => {
+    const b0 = 1.0, b1 = 2.5;
+    if (i === 0 && andar === 0) return [fita(0.4, pa0 - 0.5, b0, b1, 'esc_janela', 3), { a0: pa0, a1: pa1, b0: 0, b1: 2.6, k: 'porta_dupla', fundo: 0.15 }, fita(pa1 + 0.5, len - 0.4, b0, b1, 'esc_janela', 3)];
+    /* a escada no lado de fora da quadra: o cobogó de cima a baixo */
+    if (i === 1) return andar === 0 ? [{ a0: 0.6, a1: 2.4, b0: 0.9, b1: H1, k: 'cobogo', modo: 'ladrilho' }] : [{ a0: 0.6, a1: 2.4, b0: 0, b1: H2 - H1 - 0.4, k: 'cobogo', modo: 'ladrilho' }];
+    if (i === 3) return [];
+    return len > 4 ? [fita(0.4, len - 0.4, b0, b1, 'esc_janela', 3)] : [];
+  };
+  for (const [y0, y1, andar] of [[0, H1, 0], [H1, H2, 1]])
+    K.paredes(planta, y0, (F, len, i) => K.fachada(F, len, y1 - y0, 'lisa', vaosDo(len, i, andar).map(v => ({ ...v, fundo: v.fundo === undefined && v.modo !== 'ladrilho' ? 0.1 : v.fundo })), { tinta: CREME }));
+  /* a platibanda, o friso dos andares e o barrado azul em volta */
+  K.paredes(planta, H2, (F, len) => K.ladrilhar(F, K.ret(0, len, 0, HP - H2), 'lisa', { tinta: '#f5efdc' }));
+  K.caixa(bx0 - 0.12, bx1 + 0.12, H1 - 0.12, H1 + 0.1, bz0 - 0.12, bz1 + 0.12, { todas: { k: 'lisa', tinta: '#f7f3e6' }, topo: null });
+  K.caixa(bx0 - 0.15, bx1 + 0.15, HP - 0.02, HP + 0.1, bz0 - 0.15, bz1 + 0.15, { todas: { k: 'lisa', tinta: CINZA } });
+  for (const [a0, a1] of [[bx0 - 0.02, bx0 + pa0 - 0.05], [bx0 + pa1 + 0.05, bx1 + 0.02]])
+    K.caixa(a0, a1, 0.08, 0.9, bz1, bz1 + 0.02, { todas: { k: 'lisa', tinta: AZUL }, topo: null, base: null });
+  K.caixa(bx0 - 0.02, bx0, 0.08, 0.9, bz0, bz1, { todas: { k: 'lisa', tinta: AZUL }, topo: null, base: null });
+  K.caixa(bx0, bx1, 0.08, 0.9, bz0 - 0.02, bz0, { todas: { k: 'lisa', tinta: AZUL }, topo: null, base: null });
+  /* os pilares de concreto que marcam os vãos da frente */
+  for (let x = bx0; x <= bx1 + 0.01; x += (bx1 - bx0) / Math.max(1, Math.round((bx1 - bx0) / 3.2))) {
+    if (Math.abs(x - porta) < 1.3) continue;
+    B.caixa(x - 0.14, x + 0.14, 0.08, HP, bz1, bz1 + 0.16, { todas: 'concreto_claro' });
+  }
+  K.tampa(planta.map(([x, z]) => [x + (x < porta ? 0.25 : -0.25), z + (z > bz0 + 1 ? -0.25 : 0.25)]), HP - 0.5, 'laje', false);
+  marcas.push({ x0: bx0, x1: bx1, z0: bz0, z1: bz1, cor: '#c7bf9f', tipo: 'teto' });
+  /* a caixa d'água e a casa da escada no teto */
+  B.caixa(bx1 - 3.4, bx1 - 0.8, HP - 0.5, HP + 1.6, bz0 + 0.6, bz0 + 2.8, { todas: lisa('#e9e4d4'), topo: 'concreto' });
+  cilindro(B, bx0 + 2.0, bz0 + 1.6, HP - 0.5, HP + 1.5, 0.75, '#3c6fb0', 12);
+  marcas.push({ x0: bx1 - 3.4, x1: bx1 - 0.8, z0: bz0 + 0.6, z1: bz0 + 2.8, cor: '#a59f8a', tipo: 'movel' });
+  /* o nome na platibanda, de frente pra rua */
+  placa(placas, 'letreiro', (spec.nome || 'ESCOLA ESTADUAL').toUpperCase(), '#ffffff', '#183a72', porta, (H2 + HP) / 2, bz1 + 0.18, 0, 1, Math.min(13, bx1 - bx0 - 2), 0.6);
+  /* ---- A PASSARELA COBERTA do portão até a porta ---- */
+  const px0 = porta - 1.25, px1 = porta + 1.25, pz1 = -0.5, ph = 2.75;
+  B.caixa(px0, px1, ph, ph + 0.14, bz1, pz1, { todas: lisa('#e6e1d3') });
+  for (let z = pz1 - 0.3; z > bz1 + 0.6; z -= 2.2) for (const x of [px0 + 0.1, px1 - 0.1]) barra(B, [x, 0, z], [x, ph, z], 0.12, 'lisa', '#5d6a72');
+  marcas.push({ x0: px0, x1: px1, z0: bz1, z1: pz1, cor: '#e6e1d3', tipo: 'teto' });
+  /* o pátio: as árvores nos canteiros e o mastro */
+  const zP = (bz1 + pz1) / 2;
+  if (px0 - bx0 > 4) { canteiro(B, bx0 + 1.6, bx0 + 4.0, zP - 1.2, zP + 1.2, marcas); arvore(LP, bx0 + 2.8, zP, 5.6, 1.9, false, marcas); }
+  if (bx1 - px1 > 6) { canteiro(B, bx1 - 4.4, bx1 - 2.0, zP - 1.2, zP + 1.2, marcas); arvore(LP, bx1 - 3.2, zP, 5.2, 1.8, true, marcas); }
+  mastro(B, px0 - 1.4, -1.6, 6.4);
+  /* ---- A QUADRA COBERTA ---- */
+  if (comQuadra) {
+    const qx0 = bx1 + 1.0, qx1 = L - 0.6, qz0 = -A + 0.6, qz1 = Math.max(-A + 0.6 + 8.0, -1.6);
+    B.tampa([[qx0, qz1], [qx1, qz1], [qx1, qz0], [qx0, qz0]], 0.1, 'lisa', false, { tinta: '#3f7d5c' });
+    marcas.push({ x0: qx0, x1: qx1, z0: qz0, z1: qz1, cor: '#3f7d5c', tipo: 'grama' });
+    const lx0 = qx0 + 0.5, lx1 = qx1 - 0.5, lz0 = qz0 + 0.5, lz1 = qz1 - 0.5, lw = 0.08, xm = (lx0 + lx1) / 2;
+    for (const [a0, a1, b0, b1] of [[lx0, lx1, lz1 - lw, lz1], [lx0, lx1, lz0, lz0 + lw], [lx0, lx0 + lw, lz0, lz1], [lx1 - lw, lx1, lz0, lz1], [xm - lw / 2, xm + lw / 2, lz0, lz1]])
+      B.tampa([[a0, b1], [a1, b1], [a1, b0], [a0, b0]], 0.11, 'lisa', false, { tinta: '#f2f2ee' });
+    B.tampa(Array.from({ length: 16 }, (_, i) => { const t = -2 * Math.PI * i / 16; return [xm + 1.2 * Math.cos(t), (lz0 + lz1) / 2 + 1.2 * Math.sin(t)]; }), 0.105, 'lisa', false, { tinta: '#f2f2ee' });
+    B.tampa(Array.from({ length: 16 }, (_, i) => { const t = -2 * Math.PI * i / 16; return [xm + 1.1 * Math.cos(t), (lz0 + lz1) / 2 + 1.1 * Math.sin(t)]; }), 0.108, 'lisa', false, { tinta: '#3f7d5c' });
+    /* os pilares de aço e a cobertura de zinco em arco (de frente pra fundo) */
+    const HQ = 6.2, flecha = 1.5, N = 10, zA = qz1 + 0.4, zB = qz0 - 0.2;
+    for (const x of [qx0, (qx0 + qx1) / 2, qx1]) for (const z of [qz0, qz1]) barra(B, [x, 0, z], [x, HQ, z], 0.22, 'lisa', '#7b8790');
+    for (const x of [qx0, qx1]) barra(B, [x, HQ, qz0], [x, HQ, qz1], 0.18, 'lisa', '#7b8790');
+    const arco = i => { const t = i / N; return [zA + (zB - zA) * t, HQ + flecha * 4 * t * (1 - t)]; };
+    for (let i = 0; i < N; i++) {
+      const [z0, y0] = arco(i), [z1, y1] = arco(i + 1), len = Math.hypot(z1 - z0, y1 - y0);
+      K.ladrilhar(K.plano([qx0 - 0.4, y0, z0], [1, 0, 0], unit([0, y1 - y0, z1 - z0])), K.ret(0, qx1 - qx0 + 0.8, 0, len), 'zinco', { tinta: '#c9ced1' });
+    }
+    marcas.push({ x0: qx0 - 0.4, x1: qx1 + 0.4, z0: zB, z1: zA, cor: '#aeb5b9', tipo: 'teto' });
+    /* as duas tabelas, nas pontas da quadra */
+    for (const [x, s] of [[lx0 + 0.3, 1], [lx1 - 0.3, -1]]) {
+      const zc = (lz0 + lz1) / 2;
+      barra(B, [x - s * 0.6, 0, zc], [x - s * 0.6, 3.3, zc], 0.12, 'lisa', '#39434a');
+      barra(B, [x - s * 0.6, 3.3, zc], [x, 3.3, zc], 0.08, 'lisa', '#39434a');
+      B.caixa(Math.min(x, x + s * 0.06), Math.max(x, x + s * 0.06), 2.9, 3.95, zc - 0.9, zc + 0.9, { todas: lisa('#f4f4f1') });
+      B.caixa(Math.min(x + s * 0.06, x + s * 0.5), Math.max(x + s * 0.06, x + s * 0.5), 3.05, 3.08, zc - 0.23, zc + 0.23, { todas: lisa('#e0662a') });
+    }
+    /* o alambrado do lado da rua (o lado do fundo e o do bloco ficam abertos) */
+    G.ladrilhar(G.plano([qx1 + 0.1, 0.3, qz1], [0, 0, -1], [0, 1, 0]), G.ret(0, qz1 - qz0, 0, 2.2), 'gradil');
+  }
+  /* ---- O MURO: o de barrado com o gradil em cima na frente (o portão
+     aberto na passarela), e o liso nos lados e no fundo ---- */
+  const e = 0.15;
+  muroBarrado(K, G, [e, -e], [px0 - 0.4, -e], 1.2, 2.2, CREME, AZUL, marcas);
+  muroBarrado(K, G, [px1 + 0.4, -e], [L - e, -e], 1.2, 2.2, CREME, AZUL, marcas);
+  G.ladrilhar(G.plano([px1 + 0.4, 0.1, -e - 0.25], [-1, 0, 0], [0, 1, 0]), G.ret(0, 1.4, 0, 2.0), 'preta');
+  for (const [p, q] of [[[e, -e], [e, -A + e]], [[e, -A + e], [L - e, -A + e]], [[L - e, -A + e], [L - e, -e]]]) muroBarrado(K, G, p, q, 2.0, 0, CREME, AZUL, marcas);
+  return fechar(E, { equip: B, casas: K, grades: G, lowpoly: LP }, destino, placas, marcas);
+}
+
+export function montarHospital(spec, destino = {}, opc = {}) {
+  const E = eixosDoEquip(spec.area, spec.frente);
+  const L = E.L / M, A = E.A / M;
+  const B = Construtor('equip'), K = Construtor('casas'), G = Construtor('grades'), LP = coletor();
+  const placas = [], marcas = [];
+  const BRANCO_H = '#f1f1ec', CINZA_T = '#d9dbd8';
+  /* o chão: o concreto claro na frente e o asfalto do estacionamento */
+  B.tampa([[0, 0], [L, 0], [L, -A], [0, -A]], 0.08, 'concreto_claro', false);
+  marcas.push({ x0: 0, x1: L, z0: -A, z1: 0, cor: '#cfcabe', tipo: 'piso' });
+  const comPatio = L >= 24;
+  const hx0 = 0.6, hx1 = comPatio ? Math.min(19.8, L - 10.2) : L - 0.6;
+  const hz0 = -A + 0.6, hz1 = Math.min(-A + 8.2, -3.6);
+  const HT = 3.2, HM = 9.2, HF = 10.8, HP = 11.2;
+  const planta = [[hx0, hz1], [hx1, hz1], [hx1, hz0], [hx0, hz0]];
+  const ent = hx0 + 3.6;                                      // a entrada da recepção
+  /* ---- A LÂMINA: o térreo de recepção ---- */
+  K.paredes(planta, 0, (F, len, i) => {
+    const v = [];
+    if (i === 0) {
+      v.push({ a0: ent - hx0 - 1.5, a1: ent - hx0 + 1.5, b0: 0, b1: 2.6, k: 'porta_vidro', fundo: 0.14 });
+      for (let a = ent - hx0 + 2.4; a + 1.4 < len - 6.2; a += 2.2) v.push({ a0: a, a1: a + 1.4, b0: 0.9, b1: 2.2, k: 'dp_janela', fundo: 0.1 });
+      v.push({ a0: len - 5.4, a1: len - 2.4, b0: 0, b1: 2.6, k: 'porta_vidro', fundo: 0.14 });
+    } else if (len > 3) for (let a = 0.9; a + 1.4 < len - 0.6; a += 2.4) v.push({ a0: a, a1: a + 1.4, b0: 0.9, b1: 2.2, k: 'dp_janela', fundo: 0.1 });
+    K.fachada(F, len, HT, 'lisa', v, { tinta: CINZA_T });
+  });
+  /* os dois andares de módulo de janela de fita */
+  K.paredes(planta, HT, (F, len) => K.fachada(F, len, HM - HT, 'lisa', [fita(0.25, len - 0.25, 0, HM - HT, 'hosp_modulo', 3)], { tinta: BRANCO_H }));
+  /* a faixa lisa de cima: a cruz e o nome (na frente) */
+  K.paredes(planta, HM, (F, len, i) => {
+    const v = i === 0 || i === 2 ? [{ a0: 0.8, a1: 2.2, b0: 0.12, b1: 1.52, k: 'cruz' }] : [];
+    K.fachada(F, len, HP - HM, 'lisa', v, { tinta: BRANCO_H });
+  });
+  placa(placas, 'letreiro', (spec.nome || 'HOSPITAL MUNICIPAL').toUpperCase(), BRANCO_H, '#b3202a', (hx0 + hx1) / 2 + 1.0, (HM + HF) / 2 + 0.1, hz1 + 0.03, 0, 1, Math.min(13.5, hx1 - hx0 - 4.2), 0.62);
+  /* os frisos das lajes e a platibanda */
+  for (const y of [HT, (HT + HM) / 2, HM]) K.caixa(hx0 - 0.1, hx1 + 0.1, y - 0.08, y + 0.08, hz0 - 0.1, hz1 + 0.1, { todas: { k: 'lisa', tinta: '#c8ccc9' }, topo: null, base: null });
+  K.caixa(hx0 - 0.15, hx1 + 0.15, HP - 0.02, HP + 0.12, hz0 - 0.15, hz1 + 0.15, { todas: { k: 'lisa', tinta: '#b9bdbb' } });
+  K.tampa([[hx0 + 0.25, hz1 - 0.25], [hx1 - 0.25, hz1 - 0.25], [hx1 - 0.25, hz0 + 0.25], [hx0 + 0.25, hz0 + 0.25]], HP - 0.5, 'laje', false);
+  marcas.push({ x0: hx0, x1: hx1, z0: hz0, z1: hz1, cor: '#b7bcbd', tipo: 'teto' });
+  /* a casa de máquinas, a caixa d'água e as condensadoras no teto */
+  B.caixa(hx0 + 2.0, hx0 + 6.2, HP - 0.5, HP + 2.0, hz0 + 1.0, hz0 + 4.0, { todas: lisa('#e3e4e0'), topo: 'concreto' });
+  B.caixa(hx1 - 5.0, hx1 - 2.0, HP + 0.6, HP + 2.4, hz0 + 1.2, hz0 + 3.2, { todas: lisa('#d6dadb'), topo: 'concreto' });
+  for (const x of [hx1 - 5.0, hx1 - 2.6]) barra(B, [x + 0.2, HP - 0.5, hz0 + 2.2], [x + 0.2, HP + 0.6, hz0 + 2.2], 0.15, 'lisa', '#8d9396');
+  for (let i = 0; i < 3; i++) {
+    const x = hx0 + 7.5 + i * 1.4, z = hz1 - 1.6;
+    B.caixa(x, x + 1.0, HP - 0.5, HP + 0.2, z, z + 0.45, { todas: lisa('#e6e6e1'), frente: lisa('#bfc3c5') });
+  }
+  marcas.push({ x0: hx0 + 2.0, x1: hx0 + 6.2, z0: hz0 + 1.0, z1: hz0 + 4.0, cor: '#9ea3a4', tipo: 'movel' });
+  /* ---- O PRONTO-SOCORRO: a marquise de testeira vermelha, rente à
+     lâmina, com a ambulância embaixo ---- */
+  const mx0 = hx1 - 6.6, mx1 = hx1 + (comPatio ? 0.8 : 0), mz0 = hz1, mz1 = Math.min(hz1 + 4.2, -0.9), my = 3.3;
+  B.caixa(mx0, mx1, my, my + 0.25, mz0, mz1, { todas: lisa('#efefea') });
+  B.caixa(mx0 - 0.05, mx1 + 0.05, my - 0.15, my + 0.75, mz1, mz1 + 0.1, { todas: lisa('#c9463c') });
+  for (const x of [mx0 + 0.25, mx1 - 0.25]) barra(B, [x, 0, mz1 - 0.3], [x, my, mz1 - 0.3], 0.2, 'lisa', '#dcdcd6');
+  placa(placas, 'letreiro', 'PRONTO-SOCORRO', '#c9463c', '#ffffff', (mx0 + mx1) / 2, my + 0.3, mz1 + 0.11, 0, 1, Math.min(5.6, mx1 - mx0 - 0.6), 0.42);
+  marcas.push({ x0: mx0, x1: mx1, z0: mz0, z1: mz1, cor: '#c9463c', tipo: 'teto' });
+  ambulancia(B, K, (mx0 + mx1) / 2, (mz0 + mz1) / 2, 1, marcas);
+  /* ---- O ESTACIONAMENTO do lado: o asfalto, as faixas e os carros ---- */
+  if (comPatio) {
+    const ex0 = hx1 + 1.2, ex1 = L - 0.5, ez0 = -A + 0.5, ez1 = -0.9;
+    B.tampa([[ex0, ez1], [ex1, ez1], [ex1, ez0], [ex0, ez0]], 0.09, 'lisa', false, { tinta: '#5a5e62' });
+    marcas.push({ x0: ex0, x1: ex1, z0: ez0, z1: ez1, cor: '#5a5e62', tipo: 'piso' });
+    const vaga = 2.5, nV = Math.floor((ez1 - ez0 - 1.0) / vaga);
+    for (let k = 0; k <= nV; k++) {
+      const z = ez0 + 0.5 + k * vaga;
+      B.tampa([[ex1 - 5.0, z + 0.05], [ex1, z + 0.05], [ex1, z - 0.05], [ex1 - 5.0, z - 0.05]], 0.1, 'lisa', false, { tinta: '#f2f2ee' });
+    }
+    const cores = ['#d9d9d9', '#2b2b2b', '#b8242a', '#2a4f9a', '#8a8f96'];
+    for (let k = 0; k < nV; k++) {
+      if (k === 1) continue;
+      const z = ez0 + 0.5 + (k + 0.5) * vaga;
+      if (k === nV - 1) ambulancia(B, K, ex1 - 2.8, z, -1, marcas);
+      else carro(B, ex1 - 2.5, z, -1, cores[k % cores.length], marcas);
+    }
+  }
+  /* as árvores da frente e a mureta com o gradil branco (as passagens na
+     entrada, no pronto-socorro e no estacionamento) */
+  canteiro(B, hx0 + 0.4, ent - 2.0, -2.6, -0.8, marcas);
+  arvore(LP, (hx0 + 0.4 + ent - 2.0) / 2, -1.7, 5.4, 1.6, false, marcas);
+  const e = 0.15, vaos = [[ent - 1.6, ent + 1.6], [mx0 - 0.3, mx1 + 0.3]].concat(comPatio ? [[hx1 + 1.4, L - 5.6]] : []);
+  let x = e;
+  for (const [a, b] of vaos.sort((p, q) => p[0] - q[0])) { if (a - x > 0.6) muroBarrado(K, G, [x, -e], [a, -e], 0.6, 1.6, '#e8e8e3', '#b9bdbb', marcas); x = Math.max(x, b); }
+  if (L - e - x > 0.6) muroBarrado(K, G, [x, -e], [L - e, -e], 0.6, 1.6, '#e8e8e3', '#b9bdbb', marcas);
+  for (const [p, q] of [[[e, -e], [e, -A + e]], [[e, -A + e], [L - e, -A + e]], [[L - e, -A + e], [L - e, -e]]]) muroBarrado(K, G, p, q, 2.0, 0, '#e8e8e3', '#b9bdbb', marcas);
+  return fechar(E, { equip: B, casas: K, grades: G, lowpoly: LP }, destino, placas, marcas);
+}
