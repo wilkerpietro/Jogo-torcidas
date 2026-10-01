@@ -1184,18 +1184,11 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       }
     }
   };
-  for (const q of quadras) {
-    if (q.entorno) { lotearEntorno(q); continue; }
-    if (q.equip && q.equip.tipo === 'condominio') {
-      const r = q.faixaLotes;
-      if (r) lotear(q, [{ f: 'l', x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 }]);
-      continue;
-    }
-    if (q.equip) continue;
-    /* a quadra de hoje que era toda o prédio dela (o terreno baldio) */
-    if (q.mantem && q.mantem.semCasa) continue;
+  /* as frentes de lote da quadra de casas comum: duas fileiras de costas
+     (a do norte e a do sul) e as pontas, com o quintal no meio; a quadra
+     rasa, uma fileira só */
+  const frentesDaQuadra = q => {
     const largI = q.ix1 - q.ix0, altI = q.iy1 - q.iy0;
-    if (largI < 40 || altI < 40) continue;
     let prof = par8(entre(88, 112, q.i, q.j + (q.sal || 0) * 1000, 1));
     const raso = altI < 2 * prof + 24 || largI < 2 * prof + 24;
     if (raso) prof = Math.min(altI, largI);
@@ -1213,6 +1206,51 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
          { f: 's', x0: q.ix0, x1: q.ix1, y0: q.iy1 - prof, y1: q.iy1 },
          { f: 'o', x0: q.ix0, x1: q.ix0 + prof, y0: q.iy0 + prof, y1: q.iy1 - prof },
          { f: 'l', x0: q.ix1 - prof, x1: q.ix1, y0: q.iy0 + prof, y1: q.iy1 - prof }];
+    return { frentes, raso, prof };
+  };
+  for (const q of quadras) {
+    if (q.entorno) { lotearEntorno(q); continue; }
+    if (q.equip && q.equip.tipo === 'condominio') {
+      const r = q.faixaLotes;
+      if (r) lotear(q, [{ f: 'l', x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 }]);
+      /* A VERSÃO DE CASAS (o dono, 01/10/2026: "os prédios ficam somente
+         em bairros de classe alta"): o terreno das torres e o jardim
+         loteados como uma quadra comum — a planta mostra essas casas, e
+         não as torres, quando o condomínio não cai num bairro Nobre da
+         praça. A fileira do condomínio (a do leste) fica nas duas versões:
+         ela é a ponta leste da quadra de casas. O sal separa o sorteio */
+      const xF = r ? r.x0 : q.ix1;
+      const qc = { i: q.i, j: q.j, sal: (q.sal || 0) + 3, ix0: q.ix0, ix1: xF, iy0: q.iy0, iy1: q.iy1, lotes: [] };
+      const { frentes, raso, prof } = frentesDaQuadra(qc);
+      lotear(qc, r ? frentes.filter(fr => fr.f !== 'l') : frentes);
+      q.casas = { lotes: qc.lotes, quintal: raso ? null : { x0: q.ix0 + prof, x1: r ? xF : xF - prof, y0: q.iy0 + prof, y1: q.iy1 - prof } };
+      continue;
+    }
+    if (q.equip) continue;
+    /* a quadra de hoje que era toda o prédio dela (o terreno baldio) */
+    if (q.mantem && q.mantem.semCasa) {
+      /* AS CASAS NO LUGAR DAS DUAS TORRES DO BALDIO (o dono, 01/10/2026:
+         "os prédios ficam somente em bairros de classe alta"): o terreno
+         murado delas loteado como uma quadra comum, numa lista à parte —
+         a planta mostra essas casas, e não as torres, quando elas não caem
+         num bairro Nobre da praça. O lado que dá pro resto do baldio (o dos
+         bares) não tem frente */
+      const Mr = q.mantem.equip.murado, A = q.mantem.equip.area;
+      if (Mr && A) {
+        const qc = { i: q.i, j: q.j, sal: (q.sal || 0) + 5, ix0: Mr.x0, ix1: Mr.x1, iy0: Mr.y0, iy1: Mr.y1, lotes: [] };
+        const { frentes, raso, prof } = frentesDaQuadra(qc);
+        const semFrente = new Set();
+        if (Mr.x1 < A.x1 - 10) semFrente.add('l');
+        if (Mr.x0 > A.x0 + 10) semFrente.add('o');
+        lotear(qc, frentes.filter(fr => !semFrente.has(fr.f)));
+        q.casasDoBaldio = { lotes: qc.lotes, area: { ...Mr },
+                            quintal: raso ? null : { x0: Mr.x0 + (semFrente.has('o') ? 0 : prof), x1: Mr.x1 - (semFrente.has('l') ? 0 : prof), y0: Mr.y0 + prof, y1: Mr.y1 - prof } };
+      }
+      continue;
+    }
+    const largI = q.ix1 - q.ix0, altI = q.iy1 - q.iy0;
+    if (largI < 40 || altI < 40) continue;
+    const { frentes, raso, prof } = frentesDaQuadra(q);
     lotear(q, frentes);
     if (!raso) q.quintal = { x0: q.ix0 + prof, x1: q.ix1 - prof, y0: q.iy0 + prof, y1: q.iy1 - prof };
     /* a casa nova não pisa no prédio que a quadra refeita guardou */
@@ -1296,7 +1334,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   /* a fatia do bar grande: as fileiras da conta do lotear, no fundo das
      que já existem na quadra, só onde não tem lote (`so`: só dentro dessa
      caixa — a sede de hoje que sai vira casa só no lugar dela) */
-  const viraCasa = (q, sal, marca, so = null) => {
+  const viraCasa = (q, sal, marca, so = null, destino = lotesExtra) => {
     const fundos = q.lotes.filter(l => !l.ang && (l.frente === 'n' || l.frente === 's')).map(l => l.y1 - l.y0);
     const prof = Math.max(88, ...fundos);
     const ocup = q.lotes.map(bbLote);
@@ -1317,7 +1355,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     }
     const qx = { i: q.i, j: q.j, sal, lotes: [] };
     lotear(qx, livres);
-    for (const l of qx.lotes) { l.quadra = { i: q.i, j: q.j, hoje: true }; l[marca] = true; lotesExtra.push(l); }
+    for (const l of qx.lotes) { l.quadra = { i: q.i, j: q.j, hoje: true }; l[marca] = true; destino.push(l); }
   };
   for (const id of BARES_HOJE) {
     const q = deHojeSem.find(q => q.i + ',' + q.j === id);
@@ -1326,6 +1364,17 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   }
   /* a sede de hoje que saiu (colada num estádio) vira casa no lugar dela */
   for (const q of deHojeSem) if (sedesHojeSaem.includes(q.i + ',' + q.j)) viraCasa(q, 8, 'fatiaDaSede', q.equip.area);
+  /* AS CASAS NO LUGAR DO PRÉDIO ALTO DO CENTRO (o dono, 01/10/2026: "os
+     prédios ficam somente em bairros de classe alta"): a fatia dele
+     loteada como a da sede de hoje que sai, numa lista à parte — a planta
+     mostra essas casas, e não o prédio, quando ele não cai num bairro
+     Nobre da praça */
+  const lotesDoPredio = [];
+  for (const q of deHojeSem) if (q.equip && q.equip.tipo === 'marco' && q.equip.modelo === 'predio') viraCasa(q, 9, 'casaDoPredio', q.equip.area, lotesDoPredio);
+  /* (e o terreno murado das duas torres do baldio, quando a quadra dele
+     fica como era; a quadra refeita tem as dela em `casasDoBaldio`) */
+  const lotesDoBaldio = [];
+  for (const q of deHojeSem) if (q.equip && q.equip.tipo === 'baldio' && q.equip.murado) viraCasa(q, 10, 'casaDoBaldio', q.equip.murado, lotesDoBaldio);
   /* as esquinas: o lote da ponta da fileira norte ou sul, rente à quina
      da quadra, com fundo de casa (não de lote de avenida) */
   const esquinas = [];
@@ -1935,7 +1984,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        estádio de hoje, que virou casa */
     estadios: copias, estadioDeHoje,
     quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, condominios, substitui, terrenos, veraneio,
-    bares, baresHoje: BARES_HOJE, sedesHojeSaem, estadiosAqui, lotesExtra, lotesTirados, espacosSede, metro, lojas,
+    bares, baresHoje: BARES_HOJE, sedesHojeSaem, estadiosAqui, lotesExtra, lotesTirados, espacosSede, metro, lojas, lotesDoPredio, lotesDoBaldio,
     /* o entorno de cada estádio: os quarteirões (com os lotes deles em `quadras`) */
     entorno: quadras.filter(q => q.entorno),
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB, colX, linY: linYx,

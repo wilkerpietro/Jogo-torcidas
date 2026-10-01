@@ -200,8 +200,14 @@ export function planoDaCasa(l, K) {
       p = { tipo: 't3', andares: H >= 5 ? 2 : 1, rec: 0.6 };
     } else if (l.tipo === 'sobrado') {
       /* o sobrado do centro velho é casarão; fora dele, o de laje com
-         caixa d'água e, um em quatro, o de tijolo com a escada por fora */
-      p = s('colonial') < (pertoDoCentro(l, K) ? 0.6 : 0.12) ? { tipo: 't5', andares: 2, rec: 0.45 }
+         caixa d'água e, um em quatro, o de tijolo com a escada por fora.
+         O CASARÃO SÓ NO BAIRRO NOBRE (o dono, 01/10/2026: "as casas de
+         classe mais alta também" ficam só nos bairros de classe alta): a
+         planta marca o lote pelo bairro da praça (`l.nobre`) — no Nobre,
+         metade dos sobrados é casarão; fora dele, nenhum. Sem a marca (o
+         jogo, que não tem os bairros da planta), a regra do centro velho */
+      const casarao = l.nobre === undefined ? (pertoDoCentro(l, K) ? 0.6 : 0.12) : l.nobre ? 0.5 : 0;
+      p = s('colonial') < casarao ? { tipo: 't5', andares: 2, rec: 0.45 }
         : s('tijolo2') < 0.28 ? { tipo: 't2', andares: 2, rec: 0.06 } : { tipo: 't4', andares: 2, rec: 0.35 };
     } else if (l.muro) {
       /* a casa de muro: a planta escolheu o lote e o modelo (três de cada, espalhadas) */

@@ -101,7 +101,7 @@ for f in casas.jpg grades.png predio.jpg igreja.jpg loja.jpg adm.jpg casa.jpg at
   cp "$R/img/texturas/modelos/$f" "$A/img/texturas/modelos/"
 done
 # as três variantes de cor da folha das torres (pintar_variantes.py)
-cp "$R/ferramentas/planta_html/texturas/"torres_v*.jpg "$A/img/texturas/modelos/"
+cp "$R/ferramentas/planta_html/texturas/"torres_v*.jpg "$R/ferramentas/planta_html/texturas/"predio_v*.jpg "$A/img/texturas/modelos/"
 # O JOGO EM 3D (?jogo; js/jogo3d.js): o jogo de feed (o index.html da raiz)
 # por cima do cenário. A casca (o HTML sem os scripts) vira um módulo
 # (js/jogo_casca.js); os scripts, na ordem do index.html, um arquivo só

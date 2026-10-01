@@ -3042,3 +3042,156 @@ as reservas, a casa que vira bar) entram na fotografia da praça.
   O número de bares do mapa ("Bares: x de y") agora conta os botecos das
   favelas e as casas que viraram bar, e muda de praça pra praça.
 - **13 bares** continuam fora do bairro do jogo (ver acima).
+
+## 33. As torres só no bairro Nobre, e o casarão também (01/10/2026)
+
+**O pedido** (o dono): "Preciso que os prédios fiquem somente em bairros
+de classe alta, e as casas de classe mais alta também. Quando digo os
+prédios são os prédio altos no formato de torre"
+
+Na planta (`ferramentas/planta_html/index.html`: `torresDaPraca`,
+`lugaresDePredio`, `predioNobre`, a guarda de `favelasNosBairros` e o
+estádio em `repartir`), no gerador (`proposta.js`: as casas que entram no
+lugar de cada torre), em `dados/cena_estadio.js` (o prédio alto com o
+número de andares) e em `js/diajogo/casas3d.js` (o casarão). As cores
+novas do prédio saem de `ferramentas/planta_html/pintar_variantes_predio.py`.
+O mapa "Jogo hoje" (a cidade do jogo de hoje, sem bairros) não mudou.
+
+### Como era
+
+- O gerador põe **3 torres no mapa pequeno, 7 no médio e 9 no grande**: o
+  prédio alto do centro (na quadra de hoje 3,5), as duas do baldio (o
+  Edifício Mirante e o Residencial Bela Vista) e, no médio e no grande,
+  dois e três condomínios de duas torres (na quadra alta, de 44,5 m de
+  fundo). Nas 30 praças, **192 torres, 167 fora de bairro Nobre**.
+- O **casarão colonial** (o T5 de `casas3d.js`, o sobrado de cornija e
+  sacada) saía em 60% dos sobrados perto do centro e em 12% no resto,
+  sem olhar o bairro: **708 casarões, 577 fora do Nobre**.
+
+### A torre fora do bairro Nobre vira casa
+
+- Cada torre do gerador só fica quando o lugar dela cai num bairro Nobre
+  da praça (o condomínio e as duas do baldio contam juntas, pelo meio).
+  Fora dele, o lugar vira casa — o gerador deixa as casas prontas,
+  escondidas enquanto a torre fica:
+  - **o condomínio**: a quadra alta loteada nas frentes, com um quintal
+    no meio;
+  - **o prédio do centro**: uma fileira de casas de cada lado da fatia
+    dele, com o quintal entre as duas;
+  - **o baldio**: casas na frente do terreno murado, com o quintal atrás
+    (o que ficava dentro do muro — a árvore do jardim, a pixação — sai
+    junto).
+- No 2D e no 3D a quadra desenha as casas e o quintal no lugar da torre.
+
+### As torres novas nos bairros Nobres
+
+- O número de torres do gerador (3, 7 ou 9) vai pros bairros Nobres de
+  quadra da praça (o bairro Nobre que é a favela não ganha torre). As que
+  ficaram contam; cada bairro Nobre ganha pelo menos uma, e o resto vai
+  pro que tem mais área por torre.
+- A torre nova é o **prédio alto do centro** (o do condomínio pede a
+  quadra alta, que o bairro quase nunca tem). Ela toma a **quadra comum
+  inteira** (de 22 a 31,5 m de frente: o embasamento de lojas de ponta a
+  ponta) ou, na quadra larga, a **ponta de 20 a 26 m**, cortada numa divisa
+  de lote; a sobra da casa cortada e o fundo da quadra funda viram o
+  jardim do prédio. Uma por quadra, a mais perto do meio do bairro, a
+  25 m ou mais das outras torres do bairro quando dá, e nunca em quadra
+  de equipamento, de estádio, de entorno, de sede ou de metrô, nem em lote
+  de bar, loja, comércio, estacionamento ou favela (a 2 m ou mais do
+  terreno de sede, vago também, e a 10 m ou mais do metrô). As casas
+  debaixo dela somem (de 8 a 10 na quadra comum). As torres saem antes
+  dos bares: nenhum bar cai debaixo de torre nova.
+- **De 10 a 16 andares** (10, 12, 14 ou 16, pelo lugar) e **quatro cores**:
+  a do prédio do centro (embasamento vermelho e painel ocre) e três
+  pintadas na mesma folha — azul-marinho e cinza, verde e terracota,
+  grafite e areia —, **em rodízio na praça** (a torre do lado sai de outra
+  cor; sorteada pelo lugar, uma das quatro saía em quase metade). O nome
+  sai de uma lista de 14 (Edifício Mar Azul, Residencial Brisa do Mar…),
+  sem repetir na praça.
+- Na planta, a torre é o chão de concreto claro com o jardim em verde; a
+  ficha diz "Torre do bairro nobre" e as notas ("As torres e os
+  casarões") contam, na praça, as torres que viraram casa e as novas —
+  e dizem quando a praça fica sem torre.
+
+### O casarão só no bairro Nobre
+
+- Cada lote de casa leva a marca do bairro (`l.nobre`): **no bairro Nobre,
+  metade dos sobrados vira casarão; fora dele, nenhum**. Sem bairros (o
+  mapa de hoje), a regra de antes.
+
+### Os bairros: o Nobre com quadra
+
+Duas regras novas, pra o bairro Nobre ficar com quadra de casa:
+
+- **A guarda do último bairro Nobre** (`favelasNosBairros`): o §32 dava à
+  favela o bairro mais pobre que sobra na zona e, sem outro, o Nobre — no
+  Mato Grosso, no Interior de PE e no de SP, a favela levava o único
+  bairro Nobre, e a praça ficava sem torre e sem casarão. Agora a favela
+  só leva o último bairro Nobre quando guardá-lo não dá torre: a praça é
+  montada com a guarda e, se o Nobre guardado fica sem torre, de novo sem
+  ela (os gomos, as sedes e os bairros também). No **Mato Grosso** a
+  guarda serviu: a Santa Rosa ficou com as quadras e o prédio do centro
+  (1 torre, 6 casarões), e a favela do oeste passou a ser das quadras do
+  Jardim das Américas. No **Interior de PE** e no **de SP** não serviu (o
+  Nobre guardado ficava só com o estádio): a praça sai igual à de antes,
+  e montar ela custa o dobro (0,36 e 0,52 s).
+- **O estádio fora do bairro Nobre** (`repartir`): quando a zona tem outro
+  bairro, dar o estádio ao Nobre custa como 6% de erro (o bairro do
+  estádio fica quase só com ele e o comércio em volta). No **ABC** a Santa
+  Paula e em **BH** o Belvedere deixaram de ser o bairro do estádio
+  (agora a Assunção e o Prado): ficaram com 10 e 13 quadras de casa. O
+  tamanho dos bairros não mudou (a troca é entre pedaços do mesmo
+  tamanho).
+
+### Medido nas 30 praças
+
+| | antes | agora |
+|---|---|---|
+| torres | 192 | 159 |
+| torre fora de bairro Nobre | 167 | **0** |
+| torres novas (o prédio alto) | — | 131 (e 28 do gerador que ficaram) |
+| praças com o número de torres do gerador | 30 | 21 |
+| praças sem torre | 0 | 3 |
+| casarões | 708 | 416 |
+| casarão fora de bairro Nobre | 577 | **0** |
+| cores das torres novas (a do centro, v1, v2, v3) | — | 32, 36, 34, 29 |
+| andares das torres novas (10, 12, 14, 16) | — | 35, 36, 31, 29 |
+| favela que é bairro sozinha | 104 de 118 | 103 de 118 |
+| células do bairro no gomo da zona dele | 91,2% | 91,3% |
+| bairros de quadra: cv e maior ÷ menor | 0,16 e 1,8× | 0,17 e 1,8× |
+| bar fora do bairro do jogo | 13 de 139 | 13 de 139 |
+| sede fora do gomo ou do bairro | 0 | 0 |
+| triângulos na cena (Fortaleza; Rio) | 1.485.083; 1.544.378 | 1.494.232; 1.555.814 |
+
+**O dia de jogo** nas 30 praças: nenhum erro, o clássico de cada praça
+igual, os 88 bondes inteiros na rua (6.595 pessoas) e a hora de chegada
+igual nos 88; três rotas mudaram poucos metros (de −14 a +25 m: no ABC,
+em BH e em Goiânia). **O mapa de outra praça** no jogo 3D (São Paulo e
+Belém; o Interior de PE e o de SP, que montam duas vezes): a planta da
+cidade 3D sai idêntica antes e depois.
+
+### Limites (sinceros)
+
+- **Três praças sem torre nenhuma**: o Interior de PE e o de SP (o único
+  bairro Nobre é a favela; guardado, ele ficava só com o estádio — e
+  também não há casarão) e o Interior do PR (a Foz do Iguaçu não tem
+  quadra de casa livre: é o estádio, dois terrenos de sede, a quadra do
+  bar, a delegacia e uma quadra de outro uso).
+- **Seis com menos torres que o gerador punha**: Mato Grosso 1 de 3,
+  Interior de Minas 1 de 3, Interior do RS 1 de 3, Maranhão 2 de 7,
+  Paraíba 4 de 7 e São Paulo 3 de 9 (o Morumbi tem poucas quadras
+  livres; a Vila Maria, o outro Nobre, é a favela). As torres que faltam
+  não vão pra outro lugar: o pedido é torre só no Nobre.
+- **Quatro bairros Nobres sem torre**: o Santo Agostinho (BH), a
+  Beira-Mar Norte (Litoral Catarinense) e o São Vicente (Santos) ficaram
+  só com o estádio e o entorno (a regra do estádio não deu conta da zona
+  deles), e a Foz do Iguaçu (acima).
+- **A torre nova é sempre o mesmo prédio**, em quatro cores e quatro
+  alturas: de longe, as torres de um bairro se parecem.
+- **A torre toma a quadra comum inteira**: somem de 8 a 10 casas por
+  torre. E o condomínio que virou casa deixa um quintal grande e vazio no
+  meio da quadra alta.
+- **O casarão é a única casa só do Nobre**: o sobrado de tijolo à vista
+  (T2) e as casas de muro continuam em todo bairro, o Nobre também.
+- **A rua das casas de veraneio** (as casas com piscina das pontas do
+  mapa) fica fora dos bairros e não mudou.

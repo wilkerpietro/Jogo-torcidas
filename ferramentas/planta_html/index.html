@@ -487,6 +487,9 @@ const naFavelaDeHoje = (x, y, m = 60) => !!fav0 && x > fav0.x0 - m && x < fav0.x
 const A0 = K.ATACADEX ? bbox(K.ATACADEX.area) : null;
 const noAtacadexDeHoje = (x, y, m = 0) => !!A0 && x > A0.x0 - m && x < A0.x1 + m && y > A0.y0 - m && y < A0.y1 + m;
 let lotesNovos = [], lotesFavelaNova = [], marcosNovos = [];
+/* as torres do mapa como o gerador pôs (os condomínios e o atacarejo) e
+   os lotes que as torres da praça escondem (`torresDaPraca`) */
+let marcosDoMapa = [], escondidosPelasTorres = [];
 /* o pórtico: a planta de chão (os pilares e a viga por cima da estrada) */
 const PORTICO = { xp: 6.4, pilar: 0.9, beiral: 7.9, zb: 1.1 };
 /* o vão de cada pórtico: o da avenida duplicada vai de fora a fora das duas pistas */
@@ -827,7 +830,239 @@ function criarVagasExtras(ts, mapa) {
   }
   if (novos.length) bares = bares.concat(novos);
 }
-function distribuirTorcidas() {
+/* =====================================================================
+   AS TORRES SÓ NO BAIRRO NOBRE (o dono, 01/10/2026: "Preciso que os
+   prédios fiquem somente em bairros de classe alta, e as casas de classe
+   mais alta também. Quando digo os prédios são os prédio altos no
+   formato de torre")
+   ---------------------------------------------------------------------
+   As torres que o gerador põe — os condomínios (duas torres cada, na
+   quadra alta), as duas do baldio e o prédio alto do centro — ficam só
+   quando o lugar delas cai num bairro Nobre da praça; fora dele, o lugar
+   vira casa (as casas que o gerador deixou prontas pra isso). O número
+   de torres que o gerador pôs (3 no mapa pequeno, 7 no médio, 9 no
+   grande) vai pros bairros Nobres: cada um com pelo menos uma, e o resto
+   pro que tem mais área por torre. A torre nova é o prédio alto do
+   centro — o único que cabe numa quadra comum (o do condomínio pede a
+   quadra alta, de 44 m de fundo) —, de 10 a 16 andares, numa de quatro
+   cores (em rodízio na praça), numa quadra de casas perto do meio do
+   bairro, a 25 m ou mais das outras torres do bairro (quando dá) e longe
+   de sede, terreno de sede, bar, loja e metrô; as casas debaixo dela
+   somem. O bairro Nobre que é favela não ganha torre (a guarda de
+   `favelasNosBairros` segura o último bairro Nobre da praça pras
+   quadras, quando isso dá torre). E o CASARÃO COLONIAL (o T5 de
+   casas3d.js) só sai no bairro Nobre: `l.nobre` em cada lote de casa.
+   ===================================================================== */
+const PREDIO_NOBRE = { larg: 20, inteiraAte: 31.5, fundo: [12.3, 17], longe: 25, andares: [10, 12, 14, 16],
+                       folhas: [null, 'predio_v1', 'predio_v2', 'predio_v3'], chao: '#b5afa0' };
+const NOMES_PREDIO = ['Edifício Mar Azul', 'Edifício Jardim Europa', 'Edifício Veneza', 'Residencial Bela Época', 'Edifício Itamaraty',
+                      'Edifício Copacabana', 'Residencial Vila Rica', 'Edifício Sol Nascente', 'Edifício Palmeiras', 'Residencial Brisa do Mar',
+                      'Edifício Monte Carlo', 'Edifício Riviera', 'Edifício Diamante', 'Residencial Alto da Boa Vista'];
+/* o bairro de um ponto do mapa (o dos setores, com a classe), ou null */
+function bairroNoPonto(x, y) {
+  const S = SETORES;
+  if (!S) return null;
+  const i = Math.floor((x - S.x0) / S.cel), j = Math.floor((y - S.y0) / S.cel);
+  if (i < 0 || j < 0 || i >= S.nx || j >= S.ny) return null;
+  const k = S.rot[j * S.nx + i];
+  return k >= 0 ? S.bairros[k] : null;
+}
+const ehNobre = b => !!b && b.classe === 'Nobre' && !b.favela;
+/* as duas torres do baldio (os marcos de hoje do equipamento 'baldio') */
+const torresDoBaldio = () => marcos.filter(m => m.pc && /^torre/.test(m.pc.modelo) && m.q && m.q.equip && m.q.equip.tipo === 'baldio');
+/* o terreno murado do baldio quando as torres dele saíram da praça (o que
+   ficava dentro dele — a árvore do jardim, a pixação do muro — sai junto),
+   senão null */
+function muradoSemTorre(eq) {
+  if (!eq || eq.tipo !== 'baldio' || !eq.murado || !PROP) return null;
+  return marcos.some(m => m.semTorre && m.q && m.q.equip === eq) ? eq.murado : null;
+}
+const dentroDoRet = (o, r) => { const x = o.x !== undefined ? o.x : (o.x0 + o.x1) / 2, y = o.y !== undefined ? o.y : (o.y0 + o.y1) / 2;
+                                return x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1; };
+/* a quadra de hoje cujo prédio alto saiu (a praça o tirou): o quintal do
+   meio da fatia, entre as duas fileiras de casas que entraram; senão null */
+function quintalSemPredio(q) {
+  if (!marcos.some(m => m.q === q && m.semTorre)) return null;
+  const a = q.equip.area, ls = (PROP.lotesDoPredio || []).filter(l => l.frente === 'n' || l.frente === 's');
+  const prof = ls.length ? Math.max(...ls.map(l => l.y1 - l.y0)) : 96;
+  return { x0: a.x0, x1: a.x1, y0: a.y0 + prof, y1: a.y1 - prof };
+}
+const centroDaCaixa = r => [(r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2];
+/* o mapa como o gerador fez: as torres no lugar delas e as casas de
+   troca escondidas (no começo de cada praça, e na praça sem bairros) */
+function torresDoGerador() {
+  marcosNovos = marcosDoMapa;
+  for (const m of marcos) m.semTorre = false;
+  for (const c of PROP.condominios) c.q.semCondominio = false;
+  for (const it of escondidosPelasTorres) it.sobSede = false;
+  escondidosPelasTorres = lotesNovos.filter(it => it.casaDoCondominio || it.casaDoPredio || it.casaDoBaldio);
+  for (const it of escondidosPelasTorres) it.sobSede = true;
+}
+/* as pontas de quadra de casas do bairro `b` onde cabe a torre nova,
+   da mais perto do meio do bairro pra mais longe */
+function lugaresDePredio(b) {
+  const out = [], larg = PREDIO_NOBRE.larg * M;
+  const [fundo0, fundo1] = PREDIO_NOBRE.fundo.map(v => v * M);
+  const perto = (a, r, d) => a.x0 < r.x1 + d && a.x1 > r.x0 - d && a.y0 < r.y1 + d && a.y1 > r.y0 - d;
+  /* (o terreno de sede — o vago também — e o quarteirão da sede de nível 5) */
+  const tomadas = espacosDoMapa.map(x => x.bb).concat(espacos.filter(x => x.dono).map(x => (x.dono.nivel || 0) >= 5 && x.inteira ? x.inteira : x.bb));
+  const metros = estacoes.map(e => e.bb), outros = marcosDeHoje().concat(marcosDoMapa).map(m => m.bb);
+  const deBar = new Set(bares.map(x => x.b.lote));
+  const tenta = (q, hoje, seus) => {
+    const Lx = q.ix1 - q.ix0, Ly = q.iy1 - q.iy0;
+    if (Lx < larg || Ly < fundo0 || Ly > fundo1 || seus.some(it => it.l.ang)) return;
+    /* A QUADRA COMUM (de 22 a 31 m) FICA INTEIRA com a torre — o
+       embasamento de lojas de ponta a ponta. NA QUADRA LARGA, a ponta de
+       uns 20 m: o corte numa divisa de lote (de 19,7 a 26 m da ponta), o
+       que deixa menos sobra da casa cortada na outra fileira (as duas
+       fileiras têm divisas diferentes) — a sobra vira o jardim do prédio */
+    const fatias = [];
+    if (Lx <= PREDIO_NOBRE.inteiraAte * M) fatias.push({ x0: q.ix0, x1: q.ix1 });
+    else {
+      const cortes = [...new Set(seus.flatMap(it => [it.bb.x0, it.bb.x1]))];
+      for (const leste of [true, false]) {
+        let melhor = null;
+        for (const x of cortes) {
+          const w = leste ? q.ix1 - x : x - q.ix0;
+          if (w < 19.7 * M || w > 26 * M) continue;
+          const f = leste ? { x0: x, x1: q.ix1 } : { x0: q.ix0, x1: x };
+          let sobra = 0;
+          for (const it of seus) { const r = it.bb; if (r.x1 > f.x0 + 4 && r.x0 < f.x1 - 4) sobra += Math.max(0, f.x0 - r.x0) + Math.max(0, r.x1 - f.x1); }
+          if (!melhor || sobra < melhor.sobra) melhor = { f, sobra };
+        }
+        if (melhor) fatias.push(melhor.f);
+      }
+    }
+    for (const fx of fatias) {
+      const f = { x0: fx.x0, x1: fx.x1, y0: q.iy0, y1: q.iy1 };
+      const sob = seus.filter(it => perto(it.bb, f, -4));
+      if (!sob.length || sob.some(it => deBar.has(it.l) || ehBar(it.l) || ehLoja(it.l) || it.l.favela || it.l.modelo || it.l.comercio || it.l.tipo === 'estacionamento')) continue;
+      if (tomadas.some(a => perto(f, a, 2 * M)) || metros.some(a => perto(f, a, 10 * M)) || outros.some(a => perto(f, a, 0))) continue;
+      const [cx, cy] = centroDaCaixa(f);
+      if (bairroNoPonto(cx, cy) !== b) continue;
+      const leste = f.x1 >= q.ix1 - 1, frente = (Math.abs(q.i) + Math.abs(q.j) + (leste ? 1 : 0)) % 2 ? 'n' : 's';
+      /* o jardim: a sobra da casa cortada na divisa e, na quadra funda (a
+         metade da quadra alta, de 16,7 m), o fundo atrás do embasamento */
+      const jardins = [];
+      for (const it of sob) {
+        const r = it.bb;
+        if (r.x0 < f.x0 - 1) jardins.push({ x0: r.x0, x1: f.x0, y0: r.y0, y1: r.y1 });
+        if (r.x1 > f.x1 + 1) jardins.push({ x0: f.x1, x1: r.x1, y0: r.y0, y1: r.y1 });
+      }
+      const podio = 12.8 * M;
+      if (Ly > podio + 0.4 * M) jardins.push(frente === 'n' ? { x0: f.x0, x1: f.x1, y0: f.y0 + podio, y1: f.y1 } : { x0: f.x0, x1: f.x1, y0: f.y0, y1: f.y1 - podio });
+      out.push({ q, hoje, f, b, sob, cx, cy, frente, jardins, d: Math.hypot(cx - b.centro.x, cy - b.centro.y),
+                 id: (hoje ? 'h' : 'n') + q.i + ',' + q.j + ':' + (q.sal || 0) + (leste ? 'l' : 'o') });
+    }
+  };
+  for (const q of PROP.quadras) {
+    if (q.equip || q.entorno || q.terreno || q.estadio || q.mantem || q.estacao || q.semSaida || (q.pracinhas && q.pracinhas.length) || (q.fundos && q.fundos.length)) continue;
+    if (bairroNoPonto(...centroDaCaixa({ x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 })) !== b) continue;
+    tenta(q, false, lotesNovos.filter(it => it.qn === q && !it.casaDoCondominio));
+  }
+  for (const q of K.QUADRAS) {
+    if (PROP.substitui.has(q.i + ',' + q.j) || q.equip || q.tipo !== 'quadra' || q.ix0 === undefined || (q.pracinhas && q.pracinhas.length) || q.semSaida) continue;
+    if (!q.polMiolo || q.polMiolo.length !== 4) continue;
+    if (bairroNoPonto(...centroDaCaixa({ x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy1 })) !== b) continue;
+    tenta(q, true, lotes.filter(it => it.q === q && !it.sobProposta).concat(lotesNovos.filter(it => it.qh === q && !it.casaDoPredio)));
+  }
+  return out.sort((a, c) => a.d - c.d);
+}
+/* a torre nova: o prédio alto do centro na fatia, com a altura que o
+   lugar sorteia, a cor da vez (`folha`) e o nome que a praça ainda não usou */
+function predioNobre(c, nome, folha) {
+  const f = c.f, frente = c.frente, W = (f.x1 - f.x0) / M, D = (f.y1 - f.y0) / M;
+  let h = 0;
+  for (const ch of c.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const andares = PREDIO_NOBRE.andares[h % 4];
+  const massa = K.MASSAS.predio(W, D, andares);
+  const volumes = massa.volumes.map(v => Object.assign(K.retDoMarco(f, frente, v), { alt: v.alt * M, base: (v.base || 0) * M }));
+  const pc = { k: 'modelo', modelo: 'predio', frente, fatia: { ...f }, W, D, massa, bloqueia: false, nome, volumes };
+  if (folha) pc.folha = folha;
+  return { tipo: 'marco', pc, pol: retPts(f), bb: { ...f }, nome, volumes, proposta: true, torreNobre: true, bairro: c.b.nome, andares, jardins: c.jardins };
+}
+function torresDaPraca() {
+  torresDoGerador();
+  /* o casarão colonial só no bairro Nobre: a marca em cada lote de casa
+     (sem os bairros, a marca sai e o casarão volta à regra de antes) */
+  const marca = (it, v) => {
+    const l = it.l;
+    if (l.favela || l.nobre === v) return;
+    if (v === undefined) delete l.nobre; else l.nobre = v;
+    l._plano = undefined;
+  };
+  const nobreEm = it => SETORES ? ehNobre(bairroNoPonto(...centroDaCaixa(it.bb))) : undefined;
+  for (const it of lotes) marca(it, nobreEm(it));
+  for (const it of lotesNovos) marca(it, nobreEm(it));
+  if (!SETORES) return;
+  const nobres = SETORES.bairros.filter(b => ehNobre(b) && b.celulas > 0);
+  const torres = new Map(nobres.map(b => [b, []]));         // o centro de cada torre de cada bairro Nobre
+  /* os condomínios: ficam no bairro Nobre; fora dele, as casas */
+  for (const c of PROP.condominios) {
+    const caixa = c.torres.reduce((r, t) => ({ x0: Math.min(r.x0, t.fatia.x0), x1: Math.max(r.x1, t.fatia.x1), y0: Math.min(r.y0, t.fatia.y0), y1: Math.max(r.y1, t.fatia.y1) }),
+                                  { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity });
+    const b = bairroNoPonto(...centroDaCaixa(caixa));
+    if (ehNobre(b)) for (const t of c.torres) torres.get(b).push(centroDaCaixa(t.fatia));
+    else c.q.semCondominio = true;
+  }
+  /* o prédio alto do centro: idem */
+  const predio = marcos.find(m => m.pc && m.pc.modelo === 'predio' && m.q && !PROP.substitui.has(m.q.i + ',' + m.q.j));
+  if (predio) {
+    const b = bairroNoPonto(...centroDaCaixa(predio.bb));
+    if (ehNobre(b)) torres.get(b).push(centroDaCaixa(predio.bb));
+    else predio.semTorre = true;
+  }
+  /* as duas torres do baldio (o Edifício Mirante e o Residencial Bela
+     Vista, na quadra que o mapa guarda de hoje): idem, as duas juntas */
+  const doBaldio = torresDoBaldio();
+  if (doBaldio.length) {
+    const caixa = doBaldio.reduce((r, m) => ({ x0: Math.min(r.x0, m.bb.x0), x1: Math.max(r.x1, m.bb.x1), y0: Math.min(r.y0, m.bb.y0), y1: Math.max(r.y1, m.bb.y1) }),
+                                  { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity });
+    const b = bairroNoPonto(...centroDaCaixa(caixa));
+    if (ehNobre(b)) for (const m of doBaldio) torres.get(b).push(centroDaCaixa(m.bb));
+    else for (const m of doBaldio) m.semTorre = true;
+  }
+  /* as torres que faltam pro número de torres do mapa (as que o gerador
+     pôs: o prédio do centro, as do baldio e as dos condomínios), nos
+     bairros Nobres */
+  let n = [...torres.values()].reduce((a, l) => a + l.length, 0);
+  const alvo = PROP.condominios.reduce((a, c) => a + c.torres.length, 0) + (predio ? 1 : 0) + doBaldio.length, longe = PREDIO_NOBRE.longe * M;
+  const lugares = new Map(nobres.map(b => [b, lugaresDePredio(b)]));
+  const novos = [];
+  const poe = b => {
+    const L = lugares.get(b), ja = torres.get(b), livre = c => !c.usado;
+    const c = L.find(c => livre(c) && ja.every(([x, y]) => Math.hypot(x - c.cx, y - c.cy) >= longe)) || L.find(livre);
+    if (!c) return false;
+    for (const o of L) if (o.q === c.q) o.usado = true;      // uma torre por quadra
+    novos.push(c); ja.push([c.cx, c.cy]);
+    return true;
+  };
+  for (const b of nobres) if (!torres.get(b).length && poe(b)) n++;
+  while (n < alvo) {
+    const cand = nobres.filter(b => lugares.get(b).some(c => !c.usado))
+                       .sort((a, c) => c.celulas / (torres.get(c).length + 1) - a.celulas / (torres.get(a).length + 1));
+    if (!cand.length || !poe(cand[0])) break;
+    n++;
+  }
+  /* o nome de cada torre nova: o da lista, a partir de um ponto que a
+     praça sorteia, sem repetir; e a cor, em rodízio (a torre do lado sai
+     de outra cor: sorteada pelo lugar, uma das quatro saía em metade) */
+  let h = 0;
+  for (const ch of cidade || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const F = PREDIO_NOBRE.folhas;
+  const novas = novos.map((c, k) => predioNobre(c, NOMES_PREDIO[(h + k) % NOMES_PREDIO.length], F[((h >>> 4) + k) % F.length]));
+  marcosNovos = marcosDoMapa.filter(m => !(m.condominio && m.condominio.q.semCondominio)).concat(novas);
+  /* as casas que somem: as de troca do que ficou, e as debaixo das torres novas */
+  const baldioSaiu = doBaldio.length > 0 && doBaldio[0].semTorre;
+  const esc = lotesNovos.filter(it => it.casaDoCondominio ? !it.casaDoCondominio.semCondominio : it.casaDoPredio ? !(predio && predio.semTorre)
+                                   : it.casaDoBaldio ? !baldioSaiu : false);
+  for (const c of novos) for (const it of c.sob) esc.push(it);
+  for (const it of escondidosPelasTorres) it.sobSede = false;
+  escondidosPelasTorres = esc;
+  for (const it of esc) it.sobSede = true;
+  return torres;
+}
+function distribuirTorcidas(guarda = true) {
   const mapa = slugDe(cidade);
   const ts = (TO.dados.torcidas || []).filter(t => t.mapa === mapa).map(t => {
     const c = coresDaTorcida(t), cl = (TO.dados.times || []).find(o => o.id === t.clubeId) || null;
@@ -838,6 +1073,8 @@ function distribuirTorcidas() {
              cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: BARES_DO_JOGO[t.id] ?? (Array.isArray(t.bares) ? t.bares.length : null), sede: null, bares: [] };
   }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
   desfazerVagasExtras();
+  /* (as torres voltam pro lugar do gerador: a praça de antes pode ter tirado alguma) */
+  torresDoGerador();
   /* (o espaço volta à caixa dele: a sede de nível 5 da praça de antes esticou pro quarteirão) */
   for (const x of espacosDoMapa.concat(RESERVAS)) { x.dono = null; x.bb = { ...x.e.area }; x.pol = retPts(x.e.area); }
   for (const x of bares) x.dono = null;
@@ -868,7 +1105,7 @@ function distribuirTorcidas() {
   const zonaDaSede = S.map(T => { const b = bairroDaSedeNosDados(T.t, mapa); return b ? b.zona : null; });
   const comSede = new Set();
   for (const T of S) { const b = bairroDaSedeNosDados(T.t, mapa); if (b) comSede.add(b.id); }
-  const Q = PROP ? gomosDaPraca(mapa, comSede) : null;
+  const Q = PROP ? gomosDaPraca(mapa, comSede, guarda) : null;
   const gomoDe = x => { if (!Q) return null; const [cx, cy] = centroDe(x); return zonaNoMapa(cx, cy, Q); };
   const porZona = {}, doGerador = {};
   for (const z of zonaDaSede) if (z) porZona[z] = (porZona[z] || 0) + 1;
@@ -945,7 +1182,16 @@ function distribuirTorcidas() {
   /* o mapa mostra os espaços do gerador e as reservas que viraram sede */
   espacos = espacosDoMapa.concat(reservas.filter(x => x.dono));
   /* os bairros, com as sedes no lugar; e os bares, cada um no bairro dele */
-  setorizar(ts, mapa);
+  setorizar(ts, mapa, guarda);
+  /* as torres só no bairro Nobre (e o casarão também), antes dos bares:
+     nenhum bar cai debaixo de torre nova */
+  const torres = torresDaPraca();
+  /* A GUARDA QUE NÃO SERVIU: o bairro Nobre que ela tirou da favela ficou
+     sem torre — no mapa pequeno e no médio, a zona de poucos bairros com
+     o estádio do tamanho de um, e o Nobre ficou com o estádio (o Interior
+     de PE e o de SP) —, e a favela, sem bairro dela. A praça inteira de
+     novo sem a guarda: os gomos e as sedes também saem dela */
+  if (guarda && torres && SETORES.guardados.some(b => !(torres.get(b) || []).length)) return distribuirTorcidas(false);
   criarVagasExtras(ts, mapa);
   escolherBares(ts, lp, lr, mapa);
   if (bares.some(x => x.b.extra && !x.dono)) bares = bares.filter(x => !x.b.extra || x.dono);
@@ -973,6 +1219,8 @@ function distribuirTorcidas() {
     /* (a reserva que virou sede: as casas debaixo dela somem) */
     if (x.reserva) for (const it of x.sob) it.sobSede = true;
   }
+  /* (e as casas que as torres da praça escondem) */
+  for (const it of escondidosPelasTorres) it.sobSede = true;
   ocupacao = { torcidas: ts, semSede: ts.filter(T => !T.sede), mapa };
   pixarCidade(ts);
 }
@@ -1216,14 +1464,21 @@ function unidadesDosBairros() {
    ela. `bairros`: [{ id, zona, classe, sede }]; devolve Map(unidade da
    favela → bairro) */
 const ORDEM_CLASSE = { 'Favela': 0, 'Classe Baixa': 1, 'Classe Média': 2, 'Nobre': 3 };
-function favelasNosBairros(us, bairros, zonaDe) {
+function favelasNosBairros(us, bairros, zonaDe, guarda = true) {
   const fora = new Map(), tomado = new Set(), temQuadra = {};
   for (const u of us) if (!u.favela) temQuadra[zonaDe(u)] = true;
+  /* A GUARDA DO BAIRRO NOBRE: o bairro Nobre só quando a praça fica com
+     outro — a favela no lugar do único bairro nobre deixava a praça sem
+     bairro nobre de quadra, sem torre e sem casarão, que só ficam nele.
+     Sem a guarda (`guarda` falso: a praça em que ela não serviu, ver
+     `distribuirTorcidas`), a regra de antes */
+  let nobres = guarda ? bairros.filter(b => b.classe === 'Nobre').length : Infinity;
   for (const u of us.filter(v => v.favela).sort((a, b) => b.peso - a.peso)) {
-    const z = zonaDe(u), sobra = bairros.filter(b => b.zona === z && !tomado.has(b.id)), cand = sobra.filter(b => !b.sede);
+    const z = zonaDe(u), sobra = bairros.filter(b => b.zona === z && !tomado.has(b.id)), cand = sobra.filter(b => !b.sede && (b.classe !== 'Nobre' || nobres > 1));
     if (!cand.length || (temQuadra[z] && sobra.length < 2)) continue;
     cand.sort((a, b) => (ORDEM_CLASSE[a.classe] ?? 2) - (ORDEM_CLASSE[b.classe] ?? 2));
     tomado.add(cand[0].id); fora.set(u, cand[0]);
+    if (cand[0].classe === 'Nobre') nobres--;
   }
   return fora;
 }
@@ -1239,12 +1494,13 @@ function favelasNosBairros(us, bairros, zonaDe) {
    jeito de pôr as favelas da divisa (até 35° dela) é testado com os raios
    presos do lado certo de cada favela; fica o de bairros mais iguais (a
    favela que trocou de zona e o raio longe da diagonal custam um tico).
-   `comSede`: os bairros (id) que terão sede no mapa. Guarda em GOMOS */
+   `comSede`: os bairros (id) que terão sede no mapa; `guarda`: a guarda
+   do bairro Nobre (`favelasNosBairros`). Guarda em GOMOS */
 let GOMOS = null;
-function gomosDaPraca(mapa, comSede) {
+function gomosDaPraca(mapa, comSede, guarda = true) {
   const Q0 = quadroDasZonas(), bs = bairrosDaPraca(mapa);
   if (!bs.length) return Q0;
-  const chave = mapa + '|' + [...comSede].sort().join(',');
+  const chave = mapa + '|' + [...comSede].sort().join(',') + (guarda ? '' : '|sem guarda');
   if (GOMOS && GOMOS.prop === PROP && GOMOS.chave === chave) return GOMOS.Q;
   const us = unidadesDosBairros(), bairros = bs.map(b => ({ id: b.id, zona: b.zona, classe: b.classe, sede: comSede.has(b.id) }));
   const nZ = ORDEM_ZONAS.map(z => bs.filter(b => b.zona === z).length);
@@ -1283,7 +1539,7 @@ function gomosDaPraca(mapa, comSede) {
     let r = c;
     const zf = opcoes.map(o => { const z = o[r % o.length]; r = Math.floor(r / o.length); return z; });
     const zonaFav = new Map(favs.map((u, i) => [u, zf[i]]));
-    const fav = favelasNosBairros(us, bairros, u => ORDEM_ZONAS[u.favela ? zonaFav.get(u) : zonaDe(ang.get(u), RAIOS_BASE)]);
+    const fav = favelasNosBairros(us, bairros, u => ORDEM_ZONAS[u.favela ? zonaFav.get(u) : zonaDe(ang.get(u), RAIOS_BASE)], guarda);
     const n = nZ.slice();
     for (const b of fav.values()) n[ORDEM_ZONAS.indexOf(b.zona)]--;
     if (n.some((v, z) => v < 1)) continue;
@@ -1442,10 +1698,17 @@ function repartir(uz, bz, presa) {
       s.x = m ? m.cx : mx; s.y = m ? m.cy : my; s.posto = true;
     }
   };
+  /* O ESTÁDIO NÃO VAI PRO BAIRRO NOBRE quando a zona tem outro bairro
+     (01/10/2026: a torre e o casarão só ficam no bairro Nobre, e o bairro
+     que leva o estádio fica quase só com ele e o comércio em volta — sem
+     quadra de casa pra torre nem pro casarão): custa como 6% de erro */
+  const iEst = pesada ? uz.indexOf(pesada) : -1, temOutro = bz.some(s => s.b && s.b.classe !== 'Nobre');
+  const nobreNoEstadio = d => iEst >= 0 && temOutro && d && d[iEst] && d[iEst].b && d[iEst].b.classe === 'Nobre' ? 0.06 : 0;
   let fim = null;
   for (let k = -1; k < (pesada ? bz.length : 0); k++) {
     comecar(k);
     const t = tentar();
+    t.nota += nobreNoEstadio(t.dono);
     if (!fim || t.nota < fim.nota - 1e-9) fim = t;
   }
   bz.forEach((s, i) => { s.x = fim.sementes[i][0]; s.y = fim.sementes[i][1]; });
@@ -1528,7 +1791,7 @@ function equilibrar(uz, presa) {
     melhor[0].s = melhor[1];
   }
 }
-function setorizar(ts, mapa) {
+function setorizar(ts, mapa, guarda = true) {
   SETORES = null;
   const bs = bairrosDaPraca(mapa);
   if (!bs.length || !PROP) return;
@@ -1570,7 +1833,11 @@ function setorizar(ts, mapa) {
     if (u && !presa.has(u)) { presa.set(u, s); u.zona = s.zona; }
   }
   /* 2 · A FAVELA é um bairro sozinho */
-  const fav = favelasNosBairros(us, lista.map(s => ({ id: s.b.id, zona: s.zona, classe: s.b.classe, sede: !!s.sede })), u => u.zona);
+  const bl = lista.map(s => ({ id: s.b.id, zona: s.zona, classe: s.b.classe, sede: !!s.sede }));
+  const fav = favelasNosBairros(us, bl, u => u.zona, guarda);
+  /* (os bairros Nobres que a guarda tirou de uma favela) */
+  const guardados = guarda ? [...favelasNosBairros(us, bl, u => u.zona, false).values()]
+    .filter(b => b.classe === 'Nobre' && ![...fav.values()].includes(b)).map(b => daId.get(b.id)) : [];
   for (const [u, b] of fav) { const s = daId.get(b.id); Object.assign(s, { favela: u, x: u.cx, y: u.cy, fixa: true, posto: true }); u.s = s; }
   /* 3 · AS QUADRAS de cada zona entre os bairros de quadra dela, do mesmo
      tamanho. Duas voltas: na segunda, o lote de bar que caiu dentro do
@@ -1771,7 +2038,9 @@ function setorizar(ts, mapa) {
     const n = bz.reduce((a, b) => a + b.celulas, 0);
     zonas[z] = n ? { x: bz.reduce((a, b) => a + b.centro.x * b.celulas, 0) / n, y: bz.reduce((a, b) => a + b.centro.y * b.celulas, 0) / n } : null;
   }
-  SETORES = { mapa, cel: CEL_SETOR, x0: L.x0, y0: L.y0, nx, ny, rot, bairros, zonas, quadro: Q };
+  /* (`guardados`: os bairros Nobres que a guarda tirou de uma favela — ver
+     `distribuirTorcidas`) */
+  SETORES = { mapa, cel: CEL_SETOR, x0: L.x0, y0: L.y0, nx, ny, rot, bairros, zonas, quadro: Q, guardados: guardados.map(s => bairros[idx.get(s)]) };
 }
 /* O NOME DA FAVELA é o do bairro dela (o dono, 01/10/2026: "os nomes
    genéricos atuais (favela do sudoeste, do sul, etc) somem, fica somente o
@@ -1884,8 +2153,9 @@ for (const e of equipamentos) if (e.q.equip.tipo === 'sede') { e.sede = sedeDoEq
    baixa (a entrada na rua e o que fica embaixo) sai do próprio modelo. */
 let porticos = [], METRO_P = null, estacoes = [];
 /* os marcos de hoje que ficam no mapa da vez: o atacarejo sai quando o
-   mapa o leva pra estrada norte (o pequeno o deixa onde está) */
-const marcosDeHoje = () => PROP && PROP.atacadex ? marcos.filter(m => !m.atacadex) : marcos;
+   mapa o leva pra estrada norte (o pequeno o deixa onde está), e o prédio
+   alto do centro, quando ele não cai num bairro Nobre (`torresDaPraca`) */
+const marcosDeHoje = () => (PROP && PROP.atacadex ? marcos.filter(m => !m.atacadex) : marcos).filter(m => !m.semTorre);
 const outraDe = e => METRO_P.estacoes.find(o => o !== e);
 const painelDe = e => 'partidas_' + outraDe(e).nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const opcEstacao = e => ({ outra: outraDe(e).nome, painel: painelDe(e) });
@@ -2066,6 +2336,22 @@ function montarDerivados() {
   }
   lotesNovos = [];
   for (const q of PROP.quadras) for (const l of q.lotes) { const pol = retPts(l); lotesNovos.push({ tipo: 'lote', l, pol, bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, qn: q, proposta: true }); }
+  /* AS TORRES SÓ NO BAIRRO NOBRE (01/10/2026): as casas que o gerador
+     deixou prontas no terreno das torres e no jardim de cada condomínio
+     (`casaDoCondominio`) e na fatia do prédio alto do centro
+     (`casaDoPredio`) — escondidas, como no mapa do gerador, até
+     `torresDaPraca` dizer que a torre sai daquela praça */
+  for (const q of PROP.quadras) if (q.casas) for (const l of q.casas.lotes)
+    lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, qn: q, proposta: true, casaDoCondominio: q, sobSede: true });
+  for (const l of PROP.lotesDoPredio || [])
+    lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true, casaDoPredio: true, sobSede: true,
+                      qh: K.QUADRAS.find(q => q.i === l.quadra.i && q.j === l.quadra.j) });
+  /* (e as do terreno murado das duas torres do baldio: na quadra refeita ou na de hoje) */
+  for (const q of PROP.quadras) if (q.casasDoBaldio) for (const l of q.casasDoBaldio.lotes)
+    lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, qn: q, proposta: true, casaDoBaldio: true, sobSede: true });
+  for (const l of PROP.lotesDoBaldio || [])
+    lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true, casaDoBaldio: true, sobSede: true,
+                      qh: K.QUADRAS.find(q => q.i === l.quadra.i && q.j === l.quadra.j) });
   lotesFavelaNova = [];
   for (const f of PROP.favelas) for (const l of f.lotes) { const pol = K.cantosDoLote(l).slice(0, 4); lotesFavelaNova.push({ tipo: 'lote', l, pol, bb: bbox(pol), favelaNova: f, proposta: true }); }
   marcosNovos = [];
@@ -2073,6 +2359,10 @@ function montarDerivados() {
     marcosNovos.push({ tipo: 'marco', pc, pol: retPts(pc.fatia), bb: { ...pc.fatia }, nome: pc.nome, volumes: pc.volumes, proposta: true, condominio: c });
   if (PROP.atacadex) marcosNovos.push({ tipo: 'marco', atacadex: true, mudou: true, pc: PROP.atacadex.pc, pol: PROP.atacadex.area, bb: PROP.atacadex.bb,
                                         nome: 'Atacadex', volumes: PROP.atacadex.volumes, proposta: true });
+  marcosDoMapa = marcosNovos;
+  escondidosPelasTorres = [];
+  for (const m of marcos) m.semTorre = false;
+  for (const c of PROP.condominios) c.q.semCondominio = false;
   for (const it of lotes) if (PROP.lotesTirados.has(it.l)) it.sobProposta = true;
   for (const l of PROP.lotesExtra)
     lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true,
@@ -3543,8 +3833,20 @@ function desenhar() {
       if (!chao) { ctx.strokeStyle = '#000'; ctx.lineWidth = px(1); ctx.stroke(); }
     }
     if (q.equip && q.equip.tipo !== 'sede' && !(prop && somemNaProposta.has(q.i + ',' + q.j))) {
-      ret(q.equip.area, q.equip.chao || '#9d9a90');
-      for (const o of q.equip.pecas) if (o.k === 'piso') ret(o, o.cor);
+      const qp = prop && quintalSemPredio(q), mr = prop && muradoSemTorre(q.equip);
+      /* (o prédio alto do centro fora do bairro Nobre: as casas na fatia,
+         com o quintal no meio, como no resto da quadra; as torres do
+         baldio, idem no terreno murado delas) */
+      if (qp) ret(qp, COR.quintal);
+      else {
+        ret(q.equip.area, q.equip.chao || '#9d9a90');
+        for (const o of q.equip.pecas) if (o.k === 'piso' && !(mr && dentroDoRet(o, mr))) ret(o, o.cor);
+        if (mr) {
+          ret(mr, COR.miolo);
+          const ls = (PROP.lotesDoBaldio || []).filter(l => l.frente === 'n' || l.frente === 's'), prof = ls.length ? Math.max(...ls.map(l => l.y1 - l.y0)) : 96;
+          ret({ x0: mr.x0 + prof, x1: mr.x1, y0: mr.y0 + prof, y1: mr.y1 - prof }, COR.quintal);
+        }
+      }
     }
     for (const pr of q.pracinhas || []) {
       for (const t of pr.tiras) ret(t, COR.pracinha);
@@ -3638,7 +3940,10 @@ function desenhar() {
   if (!chao) for (const e of equipamentos) {
     if (!ve(e.bb) || (prop && e.somePelaProposta)) continue;
     if (e.montagem) desenharSede(e.sede, e.montagem, px);
-    else desenharPecas(e.q.equip.pecas);
+    else {
+      const mr = prop && muradoSemTorre(e.q.equip);
+      desenharPecas(mr ? e.q.equip.pecas.filter(o => !dentroDoRet(o, mr)) : e.q.equip.pecas);
+    }
   }
   /* (a pracinha de hoje sai com o quarteirão que o mapa refaz, como no cenário) */
   if (!chao) for (const q of K.QUADRAS) if (!(prop && PROP.substitui.has(q.i + ',' + q.j))) for (const pr of q.pracinhas || []) desenharPecas(pr.pecas);
@@ -3646,6 +3951,7 @@ function desenhar() {
   for (const m of prop ? marcosDeHoje().concat(marcosNovos) : marcos) {
     if (!ve(m.bb)) continue;
     if (m.atacadex) pol(m.pol, COR.rua);
+    else if (m.torreNobre) { pol(m.pol, PREDIO_NOBRE.chao); for (const j of m.jardins || []) ret(j, '#6f9a55'); }
     if (!chao) for (const v of m.volumes || []) {
       if (v.base) continue;
       ret(v, v.alt > 400 ? '#9b8cc4' : COR.marco);
@@ -3878,6 +4184,11 @@ function desenharProposta(ve, px) {
     ret(q, COR.calcada);
     const miolo = { x0: q.ix0, y0: q.iy0, x1: q.ix1, y1: q.iy1 };
     if (q.equip && q.equip.tipo === 'estadio') { if (q.estadio.modelo) desenharEstadioNovo(q.estadio, px); else { ret(miolo, COR.estadio); desenharEstadio(q.estadio.dx, q.estadio.dy); } }
+    else if (q.equip && q.equip.tipo === 'condominio' && q.semCondominio) {
+      /* (fora do bairro Nobre: a quadra de casas, com o quintal no meio) */
+      ret(miolo, COR.miolo);
+      if (q.casas && q.casas.quintal) ret(q.casas.quintal, COR.quintal);
+    }
     else if (q.equip && q.equip.tipo === 'condominio') { ret(miolo, q.equip.cor); ret(q.jardim, '#6f9a55'); if (q.faixaLotes) ret(q.faixaLotes, COR.miolo); }
     else if (q.plantaEquip) desenharPlanta(q.plantaEquip, px);
     else if (q.equip) {
@@ -3893,9 +4204,11 @@ function desenharProposta(ve, px) {
     }
     /* a quadra de hoje refeita guarda o chão do prédio que tinha */
     if (q.mantem) {
-      const e = q.mantem.equip;
+      const e = q.mantem.equip, mr = muradoSemTorre(e);
       if (e.tipo !== 'sede') ret(e.area, e.chao || '#9d9a90');
-      for (const o of e.pecas) if (o.k === 'piso') ret(o, o.cor);
+      for (const o of e.pecas) if (o.k === 'piso' && !(mr && dentroDoRet(o, mr))) ret(o, o.cor);
+      /* (as torres do baldio saíram: as casas no terreno murado, com o quintal no meio) */
+      if (mr) { ret(mr, COR.miolo); if (q.casasDoBaldio && q.casasDoBaldio.quintal) ret(q.casasDoBaldio.quintal, COR.quintal); }
     }
   }
   /* os espaços de sede: a sede da torcida que mora ali, em planta (com o
@@ -4629,8 +4942,9 @@ function fichaDe(it) {
     const alto = Math.max(0, ...(it.volumes || []).map(v => v.alt || 0));
     const c = it.condominio;
     const nota = c ? `<p class="nota">O mesmo modelo do ${it.pc.modelo === 'torre1' ? 'Edifício Mirante' : 'Residencial Bela Vista'}, com a folha de textura pintada em outras cores e o nome trocado na placa.</p>`
+               : it.torreNobre ? `<p class="nota">A torre do bairro nobre (${esc(it.bairro)}): o prédio alto do centro, com ${it.andares} andares${it.pc.folha ? ' e a folha de textura pintada em outras cores' : ''}, na ponta de uma quadra de casas — as casas debaixo dele saem. Prédio alto só em bairro de classe Nobre: a praça põe as torres do mapa nos bairros nobres dela.</p>`
                : it.mudou ? '<p class="nota">Saiu do mato a oeste e foi pra estrada de entrada do norte: de frente pra estrada, antes do pórtico. O estacionamento agora tem a borda reta.</p>' : '';
-    return `<p class="sobre">${c ? 'Condomínio novo' : 'Marco modelado peça por peça'}${chip}</p><h2>${esc(it.nome)}</h2>` + linhas([
+    return `<p class="sobre">${c ? 'Condomínio novo' : it.torreNobre ? 'Torre do bairro nobre' : 'Marco modelado peça por peça'}${chip}</p><h2>${esc(it.nome)}</h2>` + linhas([
       ['Terreno', metros(b.x1 - b.x0) + ' × ' + metros(b.y1 - b.y0), true], ['Altura', metros(alto)],
       ['Cores', c ? c.cores : '', true], ['Condomínio', c ? c.t1 + ' e ' + c.t2 : '', true],
       ['Na planta', 'x ' + Math.round((b.x0 + b.x1) / 2) + ' · y ' + Math.round((b.y0 + b.y1) / 2), true]
@@ -5954,7 +6268,8 @@ function objetoDoEquip(eq, g, o) {
   if (eq.tipo === 'sede') { objetoDaSede(sedeDoEquip(eq), g, o); return; }
   const a = eq.area;
   caixa(g, a.x0, a.x1, 0, 1.65, a.y0, a.y1, eq.chao || '#9d9a90');
-  pecasEm3d(eq.pecas, g, modeloDoEquipAntigo(eq, g), o && o.semMarco);
+  const mr = PROP && estado.modo !== 'atual' ? muradoSemTorre(eq) : null;
+  pecasEm3d(mr ? eq.pecas.filter(p => !dentroDoRet(p, mr)) : eq.pecas, g, modeloDoEquipAntigo(eq, g), o && o.semMarco);
 }
 /* as peças do equipamento e da pracinha em 3D, cada uma na caixa dela (ou
    no modelo); `feitas`: as que o modelo do equipamento antigo já desenhou */
@@ -6326,10 +6641,18 @@ function objetoDaQuadra(q, g, nova, prop) {
      como a sobra do quarteirão da sede de nível 5) */
   const esp = (prop && espacos.find(x => x.reserva && x.e.q === q)) || espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && x.e.hoje && x.e.quadra === id);
   const some = new Set(esp ? (esp.reserva ? esp.sob : []).concat(esp.sede && esp.sede.nivel === 5 ? esp.sobra || [] : []).map(it => it.l) : []);
-  for (const l of lotesDela) if (!some.has(l)) objetoDoLote(l, g);
+  /* (as torres da praça: as casas debaixo da torre nova somem; o prédio
+     do centro que saiu dá lugar às casas dele, e a torre nova da quadra entra) */
+  if (prop) for (const it of escondidosPelasTorres) some.add(it.l);
+  const semPredio = prop && !nova && !!q.equip && q.equip.tipo === 'marco' && marcos.some(m => m.q === q && m.semTorre);
+  const semBaldio = prop && !nova && !!muradoSemTorre(q.equip);
+  const casasDoPredio = (semPredio ? PROP.lotesDoPredio || [] : []).concat(semBaldio ? PROP.lotesDoBaldio || [] : []).filter(l => l.quadra.i === q.i && l.quadra.j === q.j);
+  if (nova && q.casasDoBaldio && muradoSemTorre(q.mantem && q.mantem.equip)) casasDoPredio.push(...q.casasDoBaldio.lotes);
+  for (const l of lotesDela.concat(casasDoPredio)) if (!some.has(l)) objetoDoLote(l, g);
+  if (prop) for (const m of marcosNovos) if (m.torreNobre && m.bb.x0 >= q.x0 - 1 && m.bb.x1 <= q.x1 + 1 && m.bb.y0 >= q.y0 - 1 && m.bb.y1 <= q.y1 + 1) objetoDoMarco(m, g);
   if (nova && q.estacao) entradaDaEstacao(q.estacao, g);
   if (esp) objetoDoEspaco(esp, g, { telhado: true });
-  if (q.equip && !nova && !(prop && somemNaProposta.has(id))) objetoDoEquip(q.equip, g, { telhado: true });
+  if (q.equip && !nova && !(prop && somemNaProposta.has(id)) && !semPredio) objetoDoEquip(q.equip, g, { telhado: true });
   if (!nova) for (const a of q.arvores || []) arvore3d(g, a);
 }
 /* A ENTRADA DO METRÔ: só o que fica na rua (a boca da escada, a cobertura
@@ -6684,8 +7007,9 @@ function criarVista(canvas) {
           if (e && temModelo(it.q)) objetoDoEquipNovo(it.q, grupo);
           else if (e && e.tipo === 'condominio') {
             caixa(grupo, it.q.x0, it.q.x1, 0, 1.4, it.q.y0, it.q.y1, '#a9a69b');
-            for (const pc of e.torres) objetoDoMarco({ pc }, grupo);
-            for (const l of it.q.lotes) objetoDoLote(l, grupo);
+            /* (fora do bairro Nobre, as casas no lugar das torres) */
+            if (!it.q.semCondominio) for (const pc of e.torres) objetoDoMarco({ pc }, grupo);
+            for (const l of it.q.semCondominio && it.q.casas ? it.q.lotes.concat(it.q.casas.lotes) : it.q.lotes) objetoDoLote(l, grupo);
           } else if (e && e.tipo === 'estadio') objetoDeEstadio(estadios.find(x => x.copia === it.q.estadio) || it.q.estadio, grupo);
           else if (e) objetoDeEstudo(it.q, grupo);
           else objetoDaQuadra(it.q, grupo, true);
@@ -6853,9 +7177,12 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
    sede, os bares, os estádios) */
 function camposDaPraca() {
   const out = [], poe = (o, ks) => { if (o) for (const k of ks) out.push([o, k]); };
-  for (const it of lotes) { poe(it, ['sobProposta', 'sobSede']); poe(it.l, ['pixoCidade']); }
+  for (const it of lotes) { poe(it, ['sobProposta', 'sobSede']); poe(it.l, ['pixoCidade', 'nobre', '_plano']); }
+  /* (as torres só no bairro Nobre: o prédio do centro e o condomínio que saem) */
+  for (const m of marcos) poe(m, ['semTorre']);
+  if (PROP) for (const c of PROP.condominios) poe(c.q, ['semCondominio']);
   /* (a casa que vira bar no bairro sem vaga: `virarBar`) */
-  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', ...CAMPOS_BAR_EXTRA]); }
+  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'nobre', ...CAMPOS_BAR_EXTRA]); }
   for (const it of lotesFavelaNova) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', ...CAMPOS_BAR_EXTRA]); }
   for (const e of equipamentos) poe(e, ['somePelaProposta']);
   for (const q of pecasSoltas) poe(q, ['somePelaProposta']);
@@ -6878,7 +7205,7 @@ const unirCampos = (...listas) => {
    cada campo de `alvos` (tinha ou não tinha); `porFotoDaPraca` volta ela */
 function fotoDaPraca(alvos) {
   return {
-    G: { cidade, PROP, cobertoPelaProposta, fav0, somePelaProposta, lotesNovos, lotesFavelaNova, marcosNovos, somemNaProposta,
+    G: { cidade, PROP, cobertoPelaProposta, fav0, somePelaProposta, lotesNovos, lotesFavelaNova, marcosNovos, marcosDoMapa, escondidosPelasTorres, somemNaProposta,
          bares, espacos, espacosDoMapa, RESERVAS, lotesVeraneio, porticos, METRO_P, estacoes, estadios, trocadas, carroSome, LIM_PROPOSTA, MUNDO, CALCADAS,
          ocupacao, SETORES, GOMOS, TORCIDA_DO_JOGO, sel: estado.sel, sobre: estado.sobre },
     alvos, v: alvos.map(([o, k]) => [Object.prototype.hasOwnProperty.call(o, k), o[k]])
@@ -6887,7 +7214,8 @@ function fotoDaPraca(alvos) {
 function porFotoDaPraca(F) {
   const G = F.G;
   cidade = G.cidade; PROP = G.PROP; cobertoPelaProposta = G.cobertoPelaProposta; fav0 = G.fav0; somePelaProposta = G.somePelaProposta;
-  lotesNovos = G.lotesNovos; lotesFavelaNova = G.lotesFavelaNova; marcosNovos = G.marcosNovos; somemNaProposta = G.somemNaProposta;
+  lotesNovos = G.lotesNovos; lotesFavelaNova = G.lotesFavelaNova; marcosNovos = G.marcosNovos; marcosDoMapa = G.marcosDoMapa; escondidosPelasTorres = G.escondidosPelasTorres;
+  somemNaProposta = G.somemNaProposta;
   bares = G.bares; espacos = G.espacos; espacosDoMapa = G.espacosDoMapa; RESERVAS = G.RESERVAS; lotesVeraneio = G.lotesVeraneio; porticos = G.porticos; METRO_P = G.METRO_P; estacoes = G.estacoes;
   estadios = G.estadios; trocadas = G.trocadas; carroSome = G.carroSome; LIM_PROPOSTA = G.LIM_PROPOSTA; MUNDO = G.MUNDO; CALCADAS = G.CALCADAS;
   ocupacao = G.ocupacao; SETORES = G.SETORES; GOMOS = G.GOMOS; TORCIDA_DO_JOGO = G.TORCIDA_DO_JOGO; estado.sel = G.sel; estado.sobre = G.sobre;
@@ -7469,6 +7797,13 @@ function notasDaProposta() {
     <li><b>A grade de proteção</b> (a tela verde de poste em poste, em cima da mureta) corre toda a divisa entre a cidade e o mato: atrás da calçada da borda, em volta das favelas (pelo que elas ocupam — as casas, os becos e o campinho —, não pelo contorno desenhado) e do Atacadex, dos dois lados da avenida fora da cidade e na beira da areia. Onde sobrava um fiapo de mato entre duas grades, ele virou calçada. Na praça sem praia, a grade corre do lado de fora da avenida da beira. No cenário a pé o boneco não passa pro mato.</li>
     <li><b>As pichações</b> são das torcidas da praça (o nome, a sigla, a sigla com o ano, o grito do clube), na cor de cada uma, de quem é o bairro (perto da sede dela), e têm a altura do boneco.</li>
   </ul>
+  <h3>As torres e os casarões</h3>
+  <ul>
+    <li><b>Prédio alto só em bairro Nobre</b>: as torres que o mapa põe (os condomínios, as duas do baldio e o prédio alto do centro) ficam onde estão só quando o lugar cai num bairro de classe Nobre da praça; fora dele, o lugar vira casa. O mesmo número de torres vai pros bairros Nobres — cada um com pelo menos uma —, como o prédio alto do centro na ponta ou no meio de uma quadra de casas, de 10 a 16 andares e numa de quatro cores. ${(() => { const n = marcosNovos.filter(m => m.torreNobre).length, f = marcos.filter(m => m.semTorre).length + PROP.condominios.filter(c => c.q.semCondominio).reduce((a, c) => a + c.torres.length, 0);
+      const fica = marcosDeHoje().concat(marcosNovos).filter(m => m.pc && /^(torre|predio)/.test(m.pc.modelo)).length;
+      return !n && !f ? '' : `Nesta praça: ${f} torre${f === 1 ? '' : 's'} do mapa viraram casa e ${n} torre${n === 1 ? '' : 's'} nova${n === 1 ? '' : 's'} nos bairros nobres.` + (fica ? '' : ' A praça fica sem torre: o bairro Nobre dela é a favela, ou não tem quadra de casa livre.'); })()}</li>
+    <li><b>O casarão colonial</b> (o sobrado de cornija e sacada) também só aparece no bairro Nobre: lá, metade dos sobrados é casarão; fora dele, nenhum.</li>
+  </ul>
   <h3>Os bares e as sedes da torcida</h3>
   <ul>
     <li><b>Longe dos estádios</b>: nenhum espaço de sede e nenhum bar da torcida fica a menos de ${LONGE_DO_ESTADIO_M} m de um estádio (da quadra dele, com a esplanada). O terreno que cai perto sai da lista e entra o próximo; a sede de hoje colada num estádio vira casa. Na tabela das torcidas, a distância de cada sede ao estádio mais perto.</li>
@@ -7516,8 +7851,10 @@ aviso.hidden = true;
 if (modoJogo) abrirJogo3d();
 else if (cenarioDireto) abrirCenario(PARAMS.get('cidade') === cidade ? cidade : null, estado.modo);
 else {
-  /* abre com um imóvel na tela: o Residencial Bela Vista */
-  const inicial = marcos.find(m => m.pc && m.pc.modelo === 'torre2') || lotes[0];
+  /* abre com um imóvel na tela: o Residencial Bela Vista — ou, quando ele
+     saiu da praça (fora do bairro Nobre), a primeira torre que ficou */
+  const torres = marcosDeHoje().concat(marcosNovos).filter(m => m.pc && /^(torre|predio)/.test(m.pc.modelo));
+  const inicial = torres.find(m => m.pc.modelo === 'torre2') || torres[0] || lotes[0];
   selecionar(inicial);
 }
 </script>

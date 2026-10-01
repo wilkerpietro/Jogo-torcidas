@@ -3938,12 +3938,14 @@ TO.dados.plantaEstadio = (function(){
       ];
       return m;
     },
-    predio(W, D){
+    /* (`andares`: o prédio do centro tem 12; as torres dos bairros nobres
+       da planta, de 10 a 16 — a ala encostada fica um andar abaixo) */
+    predio(W, D, andares = 12){
       const fz = -0.45, p0 = 0.4, p1 = W - 0.4;
       const t1 = W - 1.6, t0 = t1 - 14.4, tz1 = fz - 1.4, tz0 = tz1 - 9.2;
       const m = { fz, p0, p1, pz0: fz - 11.9, chanfro: 2.2, hTerreo: 4.0, hPodio: 7.4,
-                  t0, t1, tz0, tz1, andares: 12, pe: 2.9,
-                  w0: t0 - 3.3, w1: t0, wz0: fz - 10.15, wz1: tz1 - 1.95, andaresAla: 11 };
+                  t0, t1, tz0, tz1, andares, pe: 2.9,
+                  w0: t0 - 3.3, w1: t0, wz0: fz - 10.15, wz1: tz1 - 1.95, andaresAla: andares - 1 };
       m.hTorre = m.hPodio + m.andares*m.pe + m.pe;
       m.volumes = [
         { x0: p0, x1: p1, z0: m.pz0, z1: fz, alt: 8.2 },
@@ -4843,7 +4845,10 @@ TO.dados.plantaEstadio = (function(){
                    noCampo, andaNoCampo, LOTES, cantosDoLote, MOITAS, naMoita, TRILHAS,
                    CARROS, ARVORES, POSTES, SEDES, sedeDe, BARES, CRUZAMENTOS, SEMAFOROS, FAIXAS,
                    FAVELA, FAVELA_CAIXAS, FAVELA_RUAS, DECALQUES, MARCOS: MARCOS_POSTOS, PREDIOS: PREDIOS_BALDIO, PROPS, noProp, noMarco,
-                   ATACADEX };
+                   ATACADEX,
+                   /* a massa de cada marco e a conta do referencial dele pro
+                      mundo: a planta põe prédio alto nos bairros nobres */
+                   MASSAS, retDoMarco, paraMundoDoMarco };
 
   /* =======================================================
      A DOBRA: tabuleiro → mundo
