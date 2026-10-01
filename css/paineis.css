@@ -1038,7 +1038,8 @@ table.dados tr.selecionada td{background:#252525}
 .post-texto{font-size:13.5px;line-height:1.55;color:#e4e0d8;margin:0 0 9px;overflow-wrap:anywhere}
 .post-torcida.tipo-provocacao .post-texto,.post-torcida.tipo-treta .post-texto{color:#efc2c2}
 .post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
-.post-curtidas{display:inline-flex;align-items:center;gap:6px}
+.post-curtidas{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.post-ler{white-space:nowrap}
 .post-curtidas svg{width:15px;height:15px;color:var(--fraco);fill:none}
 /* vermelho só a curtida NOSSA: post nosso, de aliada ou notícia do clube */
 .post-curtidas.curtido svg{color:#e0566b;fill:#e0566b}
@@ -2729,15 +2730,13 @@ header.capa-cidade{background-size:cover; background-position:center;
 .social-aba svg{width:16px;height:16px}
 .social-aba .vert{writing-mode:vertical-rl;transform:rotate(180deg);font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
 .social-aba-n{min-width:18px;padding:2px 5px;border-radius:9px;background:var(--rubro-vivo,#c0392b);color:#fff;font:700 10px/1.2 var(--mono)}
-.social-toasts{position:fixed;right:50px;top:96px;width:330px;max-width:calc(100vw - 120px);
+.social-toasts{position:fixed;right:50px;top:96px;width:380px;max-width:calc(100vw - 120px);
   display:flex;flex-direction:column;gap:8px;z-index:7;pointer-events:none}
-.social-toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#1b1b1f;
+.social-toast{pointer-events:auto;display:block;padding:0 12px;background:#1b1b1f;max-height:calc(100vh - 130px);overflow-y:auto;
   border:1px solid #3a3a40;border-left:3px solid var(--rubro-vivo,#c0392b);border-radius:8px;box-shadow:0 8px 24px #000b;
-  opacity:0;transform:translateX(14px);transition:opacity .35s ease,transform .35s ease;cursor:pointer}
+  opacity:0;transform:translateX(14px);transition:opacity .35s ease,transform .35s ease}
 .social-toast.vivo{opacity:1;transform:none}
 .social-toast.saindo{opacity:0;transform:translateX(14px)}
-.social-toast .post-avatar{width:32px;height:32px;flex:0 0 32px}
-.social-toast b{display:block;font-size:13px}
-.social-toast p{margin:3px 0 0;font-size:12.5px;line-height:1.4;color:#d9d4cb;display:-webkit-box;-webkit-line-clamp:3;
-  -webkit-box-orient:vertical;overflow:hidden}
+.social-toast .post-torcida{padding:11px 0 9px;border-bottom:0}
+.social-toast .post-torcida.nova{box-shadow:none;padding-left:0}
 @media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }

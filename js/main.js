@@ -1178,17 +1178,25 @@
     if(m) mostrarToast(e, m);
     REDE.toastTimer = REDE.toastFila.length ? setTimeout(proximoToast, SOCIAL_PASSO) : null;
   }
+  /* O AVISO É O POST INTEIRO (dono, 01/10/2026): "prefiro que o recado
+     seja toda a informação da postagem, com curtidas, comentários,
+     retweets, data, o arroba da torcida". O cartão é o mesmo da rede
+     (montarPost). Com o mouse em cima, o relógio dos 3 s para; ao sair,
+     ele ainda fica 1,5 s. */
+  const ctxToast = {menu:{aberto:null}, aoMudar:()=>{},
+                    aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
   function mostrarToast(e, m){
-    const jornal = m.jornal && (TO.feed.JORNAIS || {})[m.jornal];
-    const marca = jornal ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal] || ''}</span></span>`
-                         : avatarPost(m.de);
-    const nome = jornal ? jornal.nome : m.nome + (m.zona ? ' · ' + _t('Zona {zona}', {zona:_t(m.zona)}) : '');
-    const t = el('div',{class:'social-toast', html:`${marca}<div><b>${escHTML(nome)}</b><p>${escHTML(m.texto)}</p></div>`});
-    t.title = _t('Abrir a rede social');
-    t.onclick = ()=>alternarRede(false);
+    const t = el('div',{class:'social-toast feed-social'});
+    t.appendChild(montarPost(e, m, ctxToast));
+    t.addEventListener('click', ev=>{ fecharMenuPost(ctxToast, ev.target); });
     caixaDeToasts().prepend(t);
     requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('vivo')));
-    setTimeout(()=>{ t.classList.remove('vivo'); t.classList.add('saindo'); setTimeout(()=>t.remove(), 450); }, TOAST_VIDA);
+    let relogio = null;
+    const sair = ()=>{ t.classList.remove('vivo'); t.classList.add('saindo'); setTimeout(()=>t.remove(), 450); };
+    const armar = ms => { clearTimeout(relogio); relogio = setTimeout(sair, ms); };
+    t.addEventListener('mouseenter', ()=>clearTimeout(relogio));
+    t.addEventListener('mouseleave', ()=>armar(1500));
+    armar(TOAST_VIDA);
   }
   /* o que muda o desenho de um post que já está na coluna */
   const estadoDoPost = m => `${m.resposta || ''}|${m.consequencia || ''}|${(m.comentarios || []).length}`;

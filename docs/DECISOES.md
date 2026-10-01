@@ -8393,7 +8393,7 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 
 "A rede social pode ter um botão recolhível para esconder, caso o jogador queira só ver o feed; e as notícias mais importantes (as que envolvem o clube e a torcida, ou provocações diretas ao clube e à torcida) aparecem em mensagens no mesmo canto direito, que somem em 3 s."
 - **Recolher.** O botão » no canto esquerdo do cabeçalho da coluna recolhe a rede numa tira fina na borda direita, com o ícone, "Rede social" na vertical e o número de posts novos desde que ela foi recolhida. Clicar na tira, ou num aviso, abre a rede de novo, já atualizada. A escolha fica guardada no navegador (`to.redeRecolhida`).
-- **O aviso do canto.** Com a rede recolhida, o post novo importante para nós aparece num cartão no canto direito, com quem postou e o começo do texto. Fica 3 s, entra e sai deslizando, e os avisos saem um a cada 1,5 s.
+- **O aviso do canto.** Com a rede recolhida, o post novo importante para nós aparece no canto direito como o post inteiro, por pedido do dono no mesmo dia: o mesmo cartão da rede (`montarPost`), com avatar, @, data, texto ou imagem, curtidas, comentários, compartilhamentos, menu ⋯ e "Ler a matéria". Fica 3 s; com o mouse em cima o relógio para, e ao sair ainda fica 1,5 s. Entra e sai deslizando, e os avisos saem um a cada 1,5 s.
 - **O que é importante** (`feed.importante`), decidido pelos dados e não pelo texto, porque o nome do clube às vezes é o da cidade:
   - post nosso;
   - jornal com o nosso jogo ou a nossa briga no cartaz;
