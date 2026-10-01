@@ -8278,6 +8278,17 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
   - A cena no ar é trocada só para desenhar e volta logo depois. Com uma briga rodando (`ponte.rodando`), nada é feito.
   - Briga do mundo: o lugar sai do tipo da briga (bar → bar, estrada → ônibus, dia de jogo → praça, arredores ou arquibancada, pelo mesmo sorteio do texto).
 
+## A rede social ao lado do feed, e o post que entra suave (pedido do dono, 01/10/2026)
+
+"A rede social ficou boa, posicione ela ao lado direito do feed como uma parte secundária; ela continua aparecendo por completo em Notícias → Mensagens. As atualizações de novas postagens vão aparecer de forma suave, num scroll leve quando surge uma nova postagem."
+- **Coluna da direita do feed** (370 px, 420 px em tela larga): os 40 posts mais novos da rede, com imagem, curtidas, menu ⋯ e os botões de resposta. Em cima, "Rede social" e "Ver tudo", que abre Notícias → Mensagens. Abaixo de 1000 px de largura a coluna sai e não gasta nada; a rede segue inteira em Notícias.
+- **Um post só para as duas telas**: o desenho do post saiu de `painelMensagens` para `montarPost(e, m, ctx)` (main.js). Cada tela diz o que fazer depois de um clique (`ctx.aoMudar`, `ctx.aoLer`) e tem o próprio menu ⋯ aberto.
+- **O post novo entra suave**: abre o espaço aos poucos (o envelope cresce de 0 à altura dele em 0,65 s) e aparece num fade, empurrando os de baixo num scroll leve.
+  - Se o jogador rolou a coluna para ler um post mais velho, a leitura não pula: a altura que entrou é compensada e aparece o aviso "novos posts ↑", que sobe suave até o topo.
+  - Post que muda de estado (respondido) é redesenhado no lugar.
+- **No feed principal**, a mensagem que chega (não a da primeira pintura) também entra com um fade descendo.
+- Quem pede menos movimento no sistema (`prefers-reduced-motion`) não vê as animações.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

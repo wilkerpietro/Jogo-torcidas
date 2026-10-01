@@ -955,10 +955,112 @@
       abrirPainel('noticias');
     });
     tickerAss = null;
-    corpo.append(barra, noFeedTicker, rolo);
+    /* A REDE SOCIAL AO LADO DO FEED (pedido do dono, 01/10/2026): parte
+       secundária, na coluna da direita — os posts mais novos, com a
+       imagem, as curtidas e o menu ⋯; a rede inteira continua em
+       Notícias → Mensagens. Abaixo de 1000 px de largura a coluna sai
+       (o feed é o jogo; a rede segue a um toque, em Notícias). */
+    const colunas = el('div',{class:'feed-colunas'});
+    colunas.append(rolo, montarSocialLado());
+    corpo.append(barra, noFeedTicker, colunas);
     pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
+  }
+
+  /* =======================================================
+     A COLUNA DA REDE SOCIAL (01/10/2026)
+     Post novo não aparece de estalo: entra por cima abrindo espaço aos
+     poucos (o envelope cresce de 0 à altura dele) e com um fade — um
+     scroll leve, que empurra os de baixo. Se o jogador rolou a coluna
+     pra ler um post mais velho, a leitura não pula: o post entra sem
+     mexer no que está na tela e aparece o aviso "novos posts ↑", que
+     sobe suave até o topo.
+     ======================================================= */
+  const SOCIAL_LADO_MAX = 40;
+  let socialLado = null;
+  function montarSocialLado(){
+    const asd = el('aside',{class:'social-lado'});
+    const cab = el('div',{class:'social-lado-cab', html:
+      `<span class="social-lado-tit">${TO.icones.get('conversa')}${_t('Rede social')}</span>`});
+    const bTudo = el('button',{class:'social-lado-tudo', texto:_t('Ver tudo')});
+    bTudo.onclick = ()=>{ subNoticias = 'mensagens'; abrirPainel('noticias'); };
+    cab.appendChild(bTudo);
+    const rolo = el('div',{class:'social-lado-rolo'});
+    const lista = el('div',{class:'social-lado-lista feed-social'});
+    const aviso = el('button',{class:'social-lado-novos', texto:_t('novos posts ↑')});
+    aviso.hidden = true;
+    aviso.onclick = ()=>{ rolo.scrollTo({top:0, behavior:'smooth'}); };
+    rolo.addEventListener('scroll', ()=>{ if(rolo.scrollTop < 30) aviso.hidden = true; }, {passive:true});
+    rolo.append(lista);
+    asd.append(cab, aviso, rolo);
+    const ctx = {menu:{aberto:null},
+                 aoMudar:()=>atualizarSocialLado(true),
+                 aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
+    lista.addEventListener('click', ev=>{ fecharMenuPost(ctx, ev.target); });
+    socialLado = {asd, rolo, lista, aviso, ctx, vistos:new Map(), pronto:false};
+    return asd;
+  }
+  /* o que muda o desenho de um post que já está na coluna */
+  const estadoDoPost = m => `${m.resposta || ''}|${m.consequencia || ''}`;
+  function atualizarSocialLado(refazer){
+    const S = socialLado, e = E();
+    if(!S || !e || !S.lista.isConnected) return;
+    /* fora da tela (celular, coluna escondida) não gasta nada */
+    if(!S.asd.offsetParent) { S.pronto = false; return; }
+    const F = TO.feed;
+    const vis = (e.mensagens || []).filter(m => !(F.oculto && F.oculto(e, m))).slice(0, SOCIAL_LADO_MAX);
+    if(refazer || !S.pronto){
+      S.lista.innerHTML = ''; S.vistos.clear();
+      for(const m of vis){
+        const env = el('div',{class:'post-envelope'});
+        env.appendChild(montarPost(e, m, S.ctx));
+        S.lista.appendChild(env);
+        S.vistos.set(m.id, {env, est:estadoDoPost(m)});
+      }
+      if(!vis.length) S.lista.innerHTML = `<div class="em-construcao">${_t('Nenhuma torcida postou nada ainda.')}</div>`;
+      S.pronto = true;
+      return;
+    }
+    const ids = new Set(vis.map(m => m.id));
+    /* o que saiu (escondido, apagado ou além do teto) sai de mansinho */
+    for(const [id, v] of S.vistos) if(!ids.has(id)){ v.env.remove(); S.vistos.delete(id); }
+    const lendo = S.rolo.scrollTop > 40;
+    const novos = [];
+    for(let i = vis.length - 1; i >= 0; i--){
+      const m = vis[i], v = S.vistos.get(m.id);
+      if(v){
+        if(v.est !== estadoDoPost(m)){
+          v.env.replaceChildren(montarPost(e, m, S.ctx));
+          v.est = estadoDoPost(m);
+        }
+        continue;
+      }
+      const env = el('div',{class:'post-envelope'});
+      env.appendChild(montarPost(e, m, S.ctx));
+      /* a posição dele na lista: antes do primeiro mais velho já na tela */
+      const depois = vis.slice(i + 1).map(x => S.vistos.get(x.id)).find(Boolean);
+      if(depois) depois.env.before(env); else S.lista.appendChild(env);
+      S.vistos.set(m.id, {env, est:estadoDoPost(m)});
+      novos.push(env);
+    }
+    if(!novos.length) return;
+    const vazio = S.lista.querySelector('.em-construcao');
+    if(vazio) vazio.remove();
+    if(lendo){
+      /* quem está lendo não perde o lugar: compensa a altura que entrou */
+      const alt = novos.reduce((t, n) => t + n.offsetHeight + 10, 0);
+      S.rolo.scrollTop += alt;
+      S.aviso.hidden = false;
+      return;
+    }
+    for(const env of novos){
+      env.classList.add('fechado', 'abrindo');
+      /* dois quadros: o navegador precisa ver o fechado antes de abrir;
+         o recorte (`abrindo`) sai no fim, pra o menu ⋯ poder vazar */
+      requestAnimationFrame(()=>requestAnimationFrame(()=>env.classList.remove('fechado')));
+      setTimeout(()=>env.classList.remove('abrindo'), 750);
+    }
   }
 
   /* =======================================================
@@ -1231,12 +1333,15 @@
     }
     /* de trás pra frente: cada uma entra por cima da anterior, então a
        última a entrar é a mais nova — que é a que fica no topo */
+    /* a mensagem que CHEGA (não a da primeira pintura) entra suave, com
+       um fade descendo (dono, 01/10/2026) */
+    const chegando = noFeedLista.children.length > 0;
     for(let i = hist.length - 1; i >= 0; i--){
       const m = hist[i], est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
       if(velho && velho.estado === est && velho.no.isConnected) continue;
       const no = cartaoSeguro(e, m);
       if(velho && velho.no.isConnected) velho.no.replaceWith(no);
-      else noFeedLista.prepend(no);
+      else { if(chegando) no.classList.add('entrando'); noFeedLista.prepend(no); }
       feedVistas.set(m.id, {no, estado:est});
     }
     while(noFeedLista.children.length > teto) noFeedLista.lastChild.remove();
@@ -1247,6 +1352,7 @@
     if(feedVistas.size > tetoFeed * 2)
       for(const [id, v] of feedVistas)
         if(!v.no.isConnected) feedVistas.delete(id);
+    atualizarSocialLado();
   }
 
   /* O CABEÇALHO VOLTOU, SÓ COM A ORIGEM (dono, 12/09/2026): quem
@@ -3842,6 +3948,137 @@
                    protesto:_t('Protesto'), convocacao:_t('Convocação'), resenha:_t('Resenha'),
                    caravana:_t('Caravana'), comemoracao:_t('Comemoração'), reclamacao:_t('Reclamação'),
                    resultado:_t('Resultado'), inauguracao:_t('Inauguração')};
+  /* =======================================================
+     O POST DA REDE SOCIAL, UM SÓ PRA DUAS TELAS (01/10/2026)
+     A rede social mora inteira em Notícias → Mensagens e, desde o
+     pedido do dono de hoje, também na coluna da direita do feed, como
+     parte secundária dele. As duas pintam o post por aqui; o que muda
+     é o que acontece depois de um clique (`ctx.aoMudar`, `ctx.aoLer`)
+     e o menu ⋯ aberto, que é de cada tela (`ctx.menu`).
+     ======================================================= */
+  const NAT_POST = {longe:()=>_t('torcidas distantes'), brigas:()=>_t('brigas'), futebol:()=>_t('futebol'),
+                    agenda:()=>_t('agenda das torcidas'), outros:()=>_t('outros posts')};
+  const rotNatureza = n => /^jornal:/.test(n)
+    ? ((TO.feed.JORNAIS || {})[n.slice(7)] || {}).nome || n : (NAT_POST[n] ? NAT_POST[n]() : n);
+  function haQuantoPost(e, q){
+    const d = (e.data.absoluto || 0) - (q.abs || 0);
+    if(d <= 0) return _t('hoje');
+    if(d === 1) return _t('ontem');
+    if(d < 7) return _t('há {n} dias', {n:d});
+    const dt = TO.estado.dataDaSemana ? TO.estado.dataDaSemana(q.ano, q.semana, q.dia) : null;
+    if(!dt) return `${q.ano}`;
+    const dm = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+    return q.ano !== e.data.ano ? `${dm}/${q.ano}` : dm;
+  }
+  function avatarPost(id){
+    const src = escudoDe('t', id);
+    if(src) return `<span class="post-avatar"><img src="${src}" alt=""></span>`;
+    const o = TO.mundo.torcida(id) || {};
+    const cr = TO.mundo.coresDaTorcida(o);
+    const sg = String(TO.mundo.siglaTorcida(o) || o.nome || '?').slice(0, 4);
+    return `<span class="post-avatar" style="background:${cr.cor || '#555'};color:${cr.cor2 || '#fff'}"><span class="sigla">${escHTML(sg)}</span></span>`;
+  }
+  const arrobaPost = o => '@' + U.identificador(TO.mundo.siglaTorcida(o) || o.nome || '').replace(/-/g, '');
+  /* COMENTÁRIOS E COMPARTILHAMENTOS (pedido do dono, 30/09/2026): só
+     enfeite, sem clique. Saem das curtidas, na proporção do tipo —
+     zoeira e protesto dão briga nos comentários, notícia e convite
+     rodam mais — com uma sorte fixa por post */
+  const RODA_POST = {comentario:{provocacao:.13, zoeira:.13, resposta:.12, treta:.12, protesto:.16, noticia:.06},
+                     compartilha:{noticia:.13, protesto:.11, convite:.09, zoeira:.07, provocacao:.06}};
+  const enfeitePost = (m, qual, pad) => {
+    const f = (RODA_POST[qual][m.tipo] || pad) * (0.7 + (TO.mapa.hash(`${qual}|${m.id}`) % 61) / 100);
+    return Math.round((m.curtidas || 0) * f);
+  };
+  /* o perfil do jornal (30/09/2026): as iniciais na cor da capa */
+  const JORNAL_AV = {gazeta:'GS', porrada:'FP'};
+  function fecharMenuPost(ctx, alvo){
+    const ab = ctx.menu.aberto;
+    if(ab && (!alvo || !ab.contains(alvo))){ ab.remove(); ctx.menu.aberto = null; }
+  }
+  function montarPost(e, m, ctx){
+    const F = TO.feed, P2 = TO.planejamento;
+    const coracao = TO.icones.get('coracao'), balao = TO.icones.get('conversa'), repost = TO.icones.get('repost');
+    const jornal = m.jornal && (F.JORNAIS || {})[m.jornal];
+    const o = jornal ? {} : (TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome});
+    /* post de save antigo nasceu sem curtida: a conta sai agora e fica */
+    if(m.curtidas == null && F.curtidasDe && !jornal) m.curtidas = F.curtidasDe(e, m.de, m.id);
+    const cidade = jornal ? '' : ((TO.mundo.cidade(o.mapa)||{}).nome || '');
+    const quem = jornal
+      ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal]||''}</span></span>`+
+        `<span class="post-quem"><b>${escHTML(jornal.nome)}</b><small>${jornal.arroba}</small></span>`
+      : `${avatarPost(m.de)}<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}`+
+        /* o perfil da zona: "Leões da TUF · Zona Sul" (30/09/2026) */
+        `${m.zona ? ` <span class="post-zona">· ${escHTML(_t('Zona {zona}', {zona:_t(m.zona)}))}</span>` : ''}</b>`+
+        `<small>${arrobaPost(o)}${m.zona ? '.' + U.identificador(_t('Zona {zona}', {zona:_t(m.zona)})).replace(/-/g, '') : ''}`+
+        `${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`;
+    const ler = jornal && (m.dados||{}).aba
+      ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
+    const nosso = !jornal && m.de === e.torcida.id;
+    const cartaz = m.card && TO.cartaz ? TO.cartaz.html(m) : '';
+    const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':''), html:
+      `<header class="post-cab">${quem}`+
+        `<span class="post-quando">${haQuantoPost(e, m.quando || {})}</span>`+
+        (F.podeEsconder && F.podeEsconder(e, m)
+          ? `<button class="post-menu" title="${escHTML(_t('Opções do post'))}" aria-label="${escHTML(_t('Opções do post'))}">⋯</button>` : '')+
+        `</header>`+
+      /* A IMAGEM DO POST (pedido do dono, 01/10/2026): com cartaz, a
+         ordem é a do Instagram — a imagem, as curtidas e, embaixo, a
+         legenda com o @ de quem postou na frente */
+      (cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
+      `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
+        `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
+        (()=>{ const c = enfeitePost(m, 'comentario', .05), r = enfeitePost(m, 'compartilha', .04);
+          return `<span class="post-conta" title="${escHTML(_tn(c, '{n} comentário', '{n} comentários', {n:U.numero(c)}))}">${balao}${U.numero(c)}</span>`+
+                 `<span class="post-conta" title="${escHTML(_tn(r, '{n} compartilhamento', '{n} compartilhamentos', {n:U.numero(r)}))}">${repost}${U.numero(r)}</span>`; })()+
+        `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`+
+      (cartaz ? `<p class="post-texto post-legenda"><b class="post-legenda-quem">${escHTML(jornal ? jornal.arroba : arrobaPost(o))}</b> ${linkificarNomes(m.texto)}</p>` : '')});
+    if(cartaz) TO.cartaz.ligar(art.querySelector('.cartaz'), m);
+    const bMenu = art.querySelector('.post-menu');
+    if(bMenu) bMenu.onclick = ev=>{
+      ev.stopPropagation();
+      const jaEra = ctx.menu.aberto && ctx.menu.aberto.parentNode === art;
+      fecharMenuPost(ctx);
+      if(jaEra) return;
+      const nat = F.naturezaDe(e, m);
+      const nomeP = jornal ? jornal.nome : m.nome + (m.zona ? ' · ' + _t('Zona {zona}', {zona:_t(m.zona)}) : '');
+      const menu = el('div',{class:'post-menu-lista'});
+      const op = (rot, nota, fn) => {
+        const b = el('button',{class:'post-menu-op', html:`${rot}<small>${nota}</small>`});
+        b.onclick = ()=>{ fn(); fecharMenuPost(ctx); TO.estado.salvar(); ctx.aoMudar(); };
+        menu.appendChild(b);
+      };
+      op(_t('Parar de seguir'), escHTML(_t('some tudo o que {nome} publica', {nome:nomeP})), ()=>F.pararDeSeguir(e, m.id));
+      if(nat) op(_t('Mostrar menos'), escHTML(_t('menos posts de {assunto}', {assunto:rotNatureza(nat)})), ()=>F.mostrarMenos(e, m.id));
+      art.appendChild(menu); ctx.menu.aberto = menu;
+    };
+    const bLer = art.querySelector('.post-ler');
+    if(bLer) bLer.onclick = ()=>ctx.aoLer(bLer.dataset.aba);
+    /* as que pedem resposta: recepção (quatro níveis) e trégua */
+    if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
+      const bts = el('div',{class:'rec-botoes'});
+      const opcoes = m.tipo === 'pedido'
+        ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
+            nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
+        : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
+           {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
+      for(const op of opcoes){
+        const b = el('button',{class:'rec-bt', html:`${op.rot}<small>${op.nota}</small>`});
+        b.onclick = ()=>{
+          const r = F.responderMensagemDe(e, m.id, op.id);
+          if(!r.ok) return;
+          TO.estado.salvar(); ctx.aoMudar();
+        };
+        bts.appendChild(b);
+      }
+      art.appendChild(bts);
+    } else if(m.resposta){
+      art.appendChild(el('div',{class:'msg-efeitos', html:
+        _t('Você respondeu: <b>{resp}</b>', {resp:m.tipo==='pedido' ? (P2.recepcaoDe(m.resposta).rot) : (m.resposta==='aceitar'?_t('Aceitar a trégua'):_t('Recusar'))})+
+        (m.consequencia ? ` · ${m.consequencia}` : '')}));
+    }
+    return art;
+  }
+
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */
@@ -3866,9 +4103,6 @@
     const visiveis = F.oculto ? lista.filter(m => !F.oculto(e, m)) : lista;
     const c = cartao(_t('Feed das torcidas'), _tn(visiveis.length, '{n} post', '{n} posts'));
     c.corpo.classList.add('feed-social');
-    const NAT = {longe:_t('torcidas distantes'), brigas:_t('brigas'), futebol:_t('futebol'),
-                 agenda:_t('agenda das torcidas'), outros:_t('outros posts')};
-    const rotNatureza = n => /^jornal:/.test(n) ? ((F.JORNAIS || {})[n.slice(7)] || {}).nome || n : (NAT[n] || n);
     const pf = e.feedPrefs || {};
     const naoSigo = Object.entries(pf.naoSigo || {}), menos = Object.entries(pf.menos || {});
     if(naoSigo.length || menos.length){
@@ -3888,121 +4122,11 @@
     }
     if(!lista.length)
       c.corpo.innerHTML = `<div class="em-construcao">${_t('Nenhuma torcida postou nada ainda.')}</div>`;
-    const hoje = e.data.absoluto || 0;
-    const haQuanto = q => {
-      const d = hoje - (q.abs || 0);
-      if(d <= 0) return _t('hoje');
-      if(d === 1) return _t('ontem');
-      if(d < 7) return _t('há {n} dias', {n:d});
-      const dt = TO.estado.dataDaSemana ? TO.estado.dataDaSemana(q.ano, q.semana, q.dia) : null;
-      if(!dt) return `${q.ano}`;
-      const dm = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
-      return q.ano !== e.data.ano ? `${dm}/${q.ano}` : dm;
-    };
-    const avatar = id => {
-      const src = escudoDe('t', id);
-      if(src) return `<span class="post-avatar"><img src="${src}" alt=""></span>`;
-      const o = TO.mundo.torcida(id) || {};
-      const cr = TO.mundo.coresDaTorcida(o);
-      const sg = String(TO.mundo.siglaTorcida(o) || o.nome || '?').slice(0, 4);
-      return `<span class="post-avatar" style="background:${cr.cor || '#555'};color:${cr.cor2 || '#fff'}"><span class="sigla">${escHTML(sg)}</span></span>`;
-    };
-    const arroba = o => '@' + U.identificador(TO.mundo.siglaTorcida(o) || o.nome || '').replace(/-/g, '');
-    const coracao = TO.icones.get('coracao'), balao = TO.icones.get('conversa'), repost = TO.icones.get('repost');
-    /* COMENTÁRIOS E COMPARTILHAMENTOS (pedido do dono, 30/09/2026): só
-       enfeite, sem clique. Saem das curtidas, na proporção do tipo —
-       zoeira e protesto dão briga nos comentários, notícia e convite
-       rodam mais — com uma sorte fixa por post */
-    const RODA = {comentario:{provocacao:.13, zoeira:.13, resposta:.12, treta:.12, protesto:.16, noticia:.06},
-                  compartilha:{noticia:.13, protesto:.11, convite:.09, zoeira:.07, provocacao:.06}};
-    const enfeite = (m, qual, pad) => {
-      const f = (RODA[qual][m.tipo] || pad) * (0.7 + (TO.mapa.hash(`${qual}|${m.id}`) % 61) / 100);
-      return Math.round((m.curtidas || 0) * f);
-    };
-    /* o perfil do jornal (30/09/2026): as iniciais na cor da capa */
-    const JORNAL_AV = {gazeta:'GS', porrada:'FP'};
-    let menuAberto = null;
-    const fecharMenu = ()=>{ if(menuAberto){ menuAberto.remove(); menuAberto = null; } };
-    c.corpo.addEventListener('click', ev=>{ if(menuAberto && !menuAberto.contains(ev.target)) fecharMenu(); });
+    const ctxPost = {menu:{aberto:null}, aoMudar:()=>redesenhar(),
+                     aoLer:aba=>{ subNoticias = aba; redesenhar(); }};
+    c.corpo.addEventListener('click', ev=>{ fecharMenuPost(ctxPost, ev.target); });
     for(const m of visiveis.slice(0, 200)){
-      const jornal = m.jornal && (TO.feed.JORNAIS || {})[m.jornal];
-      const o = jornal ? {} : (TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome});
-      /* post de save antigo nasceu sem curtida: a conta sai agora e fica */
-      if(m.curtidas == null && TO.feed.curtidasDe && !jornal) m.curtidas = TO.feed.curtidasDe(e, m.de, m.id);
-      const cidade = jornal ? '' : ((TO.mundo.cidade(o.mapa)||{}).nome || '');
-      const quem = jornal
-        ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal]||''}</span></span>`+
-          `<span class="post-quem"><b>${escHTML(jornal.nome)}</b><small>${jornal.arroba}</small></span>`
-        : `${avatar(m.de)}<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}`+
-          /* o perfil da zona: "Leões da TUF · Zona Sul" (30/09/2026) */
-          `${m.zona ? ` <span class="post-zona">· ${escHTML(_t('Zona {zona}', {zona:_t(m.zona)}))}</span>` : ''}</b>`+
-          `<small>${arroba(o)}${m.zona ? '.' + U.identificador(_t('Zona {zona}', {zona:_t(m.zona)})).replace(/-/g, '') : ''}`+
-          `${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`;
-      const ler = jornal && (m.dados||{}).aba
-        ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
-      const nosso = !jornal && m.de === e.torcida.id;
-      const cartaz = m.card && TO.cartaz ? TO.cartaz.html(m) : '';
-      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':''), html:
-        `<header class="post-cab">${quem}`+
-          `<span class="post-quando">${haQuanto(m.quando || {})}</span>`+
-          (F.podeEsconder && F.podeEsconder(e, m)
-            ? `<button class="post-menu" title="${escHTML(_t('Opções do post'))}" aria-label="${escHTML(_t('Opções do post'))}">⋯</button>` : '')+
-          `</header>`+
-        /* A IMAGEM DO POST (pedido do dono, 01/10/2026): com cartaz, a
-           ordem é a do Instagram — a imagem, as curtidas e, embaixo, a
-           legenda com o @ de quem postou na frente */
-        (cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
-        `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
-          `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
-          (()=>{ const c = enfeite(m, 'comentario', .05), r = enfeite(m, 'compartilha', .04);
-            return `<span class="post-conta" title="${escHTML(_tn(c, '{n} comentário', '{n} comentários', {n:U.numero(c)}))}">${balao}${U.numero(c)}</span>`+
-                   `<span class="post-conta" title="${escHTML(_tn(r, '{n} compartilhamento', '{n} compartilhamentos', {n:U.numero(r)}))}">${repost}${U.numero(r)}</span>`; })()+
-          `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`+
-        (cartaz ? `<p class="post-texto post-legenda"><b class="post-legenda-quem">${escHTML(jornal ? jornal.arroba : arroba(o))}</b> ${linkificarNomes(m.texto)}</p>` : '')});
-      if(cartaz) TO.cartaz.ligar(art.querySelector('.cartaz'), m);
-      const bMenu = art.querySelector('.post-menu');
-      if(bMenu) bMenu.onclick = ev=>{
-        ev.stopPropagation();
-        const jaEra = menuAberto && menuAberto.parentNode === art;
-        fecharMenu();
-        if(jaEra) return;
-        const nat = F.naturezaDe(e, m);
-        const quem = jornal ? jornal.nome : m.nome + (m.zona ? ' · ' + _t('Zona {zona}', {zona:_t(m.zona)}) : '');
-        const menu = el('div',{class:'post-menu-lista'});
-        const op = (rot, nota, fn) => {
-          const b = el('button',{class:'post-menu-op', html:`${rot}<small>${nota}</small>`});
-          b.onclick = ()=>{ fn(); fecharMenu(); TO.estado.salvar(); redesenhar(); };
-          menu.appendChild(b);
-        };
-        op(_t('Parar de seguir'), escHTML(_t('some tudo o que {nome} publica', {nome:quem})), ()=>F.pararDeSeguir(e, m.id));
-        if(nat) op(_t('Mostrar menos'), escHTML(_t('menos posts de {assunto}', {assunto:rotNatureza(nat)})), ()=>F.mostrarMenos(e, m.id));
-        art.appendChild(menu); menuAberto = menu;
-      };
-      const bLer = art.querySelector('.post-ler');
-      if(bLer) bLer.onclick = ()=>{ subNoticias = bLer.dataset.aba; redesenhar(); };
-      /* as que pedem resposta: recepção (quatro níveis) e trégua */
-      if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
-        const bts = el('div',{class:'rec-botoes'});
-        const opcoes = m.tipo === 'pedido'
-          ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
-              nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
-          : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
-             {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
-        for(const o of opcoes){
-          const b = el('button',{class:'rec-bt', html:`${o.rot}<small>${o.nota}</small>`});
-          b.onclick = ()=>{
-            const r = TO.feed.responderMensagemDe(e, m.id, o.id);
-            if(!r.ok) return;
-            TO.estado.salvar(); redesenhar();
-          };
-          bts.appendChild(b);
-        }
-        art.appendChild(bts);
-      } else if(m.resposta){
-        art.appendChild(el('div',{class:'msg-efeitos', html:
-          _t('Você respondeu: <b>{resp}</b>', {resp:m.tipo==='pedido' ? (P2.recepcaoDe(m.resposta).rot) : (m.resposta==='aceitar'?_t('Aceitar a trégua'):_t('Recusar'))})+
-          (m.consequencia ? ` · ${m.consequencia}` : '')}));
-      }
+      const art = montarPost(e, m, ctxPost);
       c.corpo.appendChild(art);
     }
     cx.appendChild(c);

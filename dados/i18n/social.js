@@ -415,5 +415,10 @@ TO.i18n.registrar({
   '{clube} GOLEIA {o} {onde}': {es:'{clube} GOLEA {o} {onde}', en:'{clube} THRASH {o} {onde}'},
   '{clube} VENCE {o} {onde}': {es:'{clube} VENCE {o} {onde}', en:'{clube} BEAT {o} {onde}'},
   '{clube} É GOLEADO {por} {onde}': {es:'{clube} ES GOLEADO {por} {onde}', en:'{clube} THRASHED {por} {onde}'},
-  '{clube} PERDE {pra} {onde}': {es:'{clube} PIERDE {pra} {onde}', en:'{clube} LOSE {pra} {onde}'}
+  '{clube} PERDE {pra} {onde}': {es:'{clube} PIERDE {pra} {onde}', en:'{clube} LOSE {pra} {onde}'},
+
+  /* ---------- a coluna da rede social no feed (01/10/2026) ---------- */
+  'Rede social': {es:'Red social', en:'Social feed'},
+  'Ver tudo': {es:'Ver todo', en:'See all'},
+  'novos posts ↑': {es:'nuevas publicaciones ↑', en:'new posts ↑'}
 });

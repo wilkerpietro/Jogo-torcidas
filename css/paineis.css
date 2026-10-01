@@ -2629,3 +2629,41 @@ header.capa-cidade{background-size:cover; background-position:center;
 .post-torcida.com-cartaz .post-pe{margin-bottom:6px}
 .post-legenda{margin:0 0 4px}
 .post-legenda-quem{font-weight:700;margin-right:4px;color:#f2eee6}
+
+/* =========================================================
+   A REDE SOCIAL AO LADO DO FEED (pedido do dono, 01/10/2026): a coluna
+   da direita, secundária; a rede inteira segue em Notícias → Mensagens.
+   ========================================================= */
+.feed-colunas{flex:1;min-height:0;display:flex}
+.feed-colunas .feed-rolo{flex:1;min-width:0}
+.social-lado{width:370px;flex:none;display:flex;flex-direction:column;min-height:0;position:relative;
+  background:#111113;border-left:1px solid var(--linha)}
+@media (max-width:1000px){ .social-lado{display:none} }
+@media (min-width:1500px){ .social-lado{width:420px} }
+.social-lado-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;
+  padding:8px 12px;border-bottom:1px solid var(--linha);background:var(--painel)}
+.social-lado-tit{display:flex;align-items:center;gap:7px;font:700 11px/1 var(--mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fraco)}
+.social-lado-tit svg{width:15px;height:15px}
+.social-lado-tudo{background:none;border:0;color:var(--dourado,#d6b25e);font-size:12px;cursor:pointer;
+  text-decoration:underline;padding:0}
+.social-lado-rolo{flex:1;overflow-y:auto;min-height:0;padding:2px 12px 24px}
+.social-lado-lista{max-width:none}
+.social-lado .post-torcida{padding:11px 0 9px}
+.social-lado .post-torcida.nova{padding-left:11px}
+.social-lado .post-texto{font-size:13px}
+.social-lado-novos{position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:4;
+  background:var(--rubro,#8e2a1e);color:#fff;border:0;border-radius:14px;padding:5px 12px;
+  font:600 12px/1 inherit;box-shadow:0 3px 10px #000a;cursor:pointer;animation:avisoNovos .4s ease}
+@keyframes avisoNovos{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
+/* o post novo abre espaço aos poucos e aparece num fade */
+.post-envelope{display:grid;grid-template-rows:1fr;opacity:1;
+  transition:grid-template-rows .65s cubic-bezier(.2,.7,.2,1), opacity .55s ease .1s}
+.post-envelope.fechado{grid-template-rows:0fr;opacity:0}
+.post-envelope.abrindo>*{min-height:0;overflow:hidden}
+/* a mensagem que chega no feed principal */
+.feed-lista > .entrando{animation:msgEntra .55s ease-out}
+@keyframes msgEntra{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .post-envelope{transition:none} .feed-lista > .entrando{animation:none} .social-lado-novos{animation:none}
+}
