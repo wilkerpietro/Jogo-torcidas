@@ -31,9 +31,13 @@
    A SEMENTE troca o que muda de uma praia pra outra: a cor do
    guarda-sol, da lona e da tábua, o nome, a canga, o que está solto na
    areia e o jeito de cada cadeira.
+
+   As ferramentas (o lugar, a barra, o bloco, o guarda-sol, o isopor, a
+   cadeira e a mesa de plástico) servem também os ambulantes da porta do
+   estádio (ambulantes3d.js), na mesma folha.
    ========================================================= */
-import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js?v=4d709b8162';
-import { montarArvoreLowpoly } from './arvores_lowpoly.js?v=4d709b8162';
+import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js?v=a789881def';
+import { montarArvoreLowpoly } from './arvores_lowpoly.js?v=a789881def';
 
 const ALTO = [0, 1, 0];
 const escolha = (rnd, lista) => lista[Math.floor(rnd() * lista.length) % lista.length];
@@ -48,7 +52,7 @@ const placa = (lista, tipo, texto, fundo, tinta, x, y, z, nx, nz, larg, alt) =>
    girado de `giro` em volta do y (o mesmo sentido de `noMundo`).
    `dentro` dá o lugar de uma coisa dentro desta (a cadeira em volta da
    mesa, a mesa no deck). */
-function Lugar(x = 0, z = 0, giro = 0, y = 0) {
+export function Lugar(x = 0, z = 0, giro = 0, y = 0) {
   const c = Math.cos(giro), s = Math.sin(giro);
   const vet = v => [v[0] * c - v[2] * s, v[1], v[0] * s + v[2] * c];
   const pt = p => [x + p[0] * c - p[2] * s, y + p[1], z + p[0] * s + p[2] * c];
@@ -64,7 +68,7 @@ function eixos(d) {
 }
 /* a BARRA de seção quadrada entre dois pontos (o pé, a vareta, o
    corrimão, o estai) */
-function barra(C, p, q, e, k = 'lisa') {
+export function barra(C, p, q, e, k = 'lisa') {
   const [a, b] = eixos(unit(sub(q, p))), h = e / 2, c = C.cel(k);
   const cs = [[-h, -h], [h, -h], [h, h], [-h, h]].map(([s, t]) => soma(esc(a, s), esc(b, t)));
   for (let i = 0; i < 4; i++) {
@@ -74,15 +78,15 @@ function barra(C, p, q, e, k = 'lisa') {
 }
 /* o TUBO redondo entre dois pontos (o cabo, o mastro, o poste): o tubo
    varrido, sem costura de casca (a peça é lisa) */
-const tubo = (C, p, q, r, k = 'metal', lados = 6) => varrer(C, [p, q], [r, r], lados, k, { vPor: 100, rep: 1 });
+export const tubo = (C, p, q, r, k = 'metal', lados = 6) => varrer(C, [p, q], [r, r], lados, k, { vPor: 100, rep: 1 });
 /* o CILINDRO em pé, fechado em cima e embaixo */
-function cilindro(C, L, x, z, y0, y1, r, k = 'lisa', lados = 10) {
+export function cilindro(C, L, x, z, y0, y1, r, k = 'lisa', lados = 10) {
   const p = L.pt([x, y0, z]);
   C.torno(p[0], p[2], [[0.001, p[1]], [r, p[1]], [r, p[1] + y1 - y0], [0.001, p[1] + y1 - y0]], lados, k);
 }
 /* um QUADRILÁTERO qualquer (os quatro cantos no sentido da face) com a
    peça `k` inteira, ou a `parte` dela */
-function pano(C, P, k, parte) {
+export function pano(C, P, k, parte) {
   const c = C.cel(k), [f0, f1, g0, g1] = parte || [0, 1, 0, 1];
   const U0 = lerp(c[0], c[2], f0), U1 = lerp(c[0], c[2], f1), V0 = lerp(c[1], c[3], g0), V1 = lerp(c[1], c[3], g1);
   C.poli(P, [[U0, V0], [U1, V0], [U1, V1], [U0, V1]]);
@@ -100,7 +104,7 @@ function fita(C, esq, dir, k, parte) {
 }
 /* a MALHA de nu × nv quadrados: `ponto(s, t)` dá o ponto de (s, t) em
    [0, 1]², e a peça estica por cima (s → u, t → v) */
-function malha(C, nu, nv, ponto, k, parte) {
+export function malha(C, nu, nv, ponto, k, parte) {
   const c = C.cel(k), [f0, f1, g0, g1] = parte || [0, 1, 0, 1];
   const uv = (s, t) => [lerp(c[0], c[2], lerp(f0, f1, s)), lerp(c[1], c[3], lerp(g0, g1, t))];
   for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
@@ -120,7 +124,7 @@ function paralelepipedo(C, O, A, B, D, k = 'lisa') {
 /* a CAIXA num lugar girado: as seis faces com o plano de cada uma (a
    `caixa` do construtor, que só anda no eixo). `spec` como lá: a peça
    de cada face, {k, modo: 'esticar', parte, tinta}, ou null. */
-function bloco(C, L, x0, x1, y0, y1, z0, z1, spec) {
+export function bloco(C, L, x0, x1, y0, y1, z0, z1, spec) {
   const P = (x, y, z) => L.pt([x, y, z]), X = L.vet([1, 0, 0]), Z = L.vet([0, 0, 1]);
   const mX = esc(X, -1), mZ = esc(Z, -1);
   const F = {
@@ -142,7 +146,7 @@ function bloco(C, L, x0, x1, y0, y1, z0, z1, spec) {
 }
 /* o TORO (a boia, o pneu do costado): em volta de `centro`, no plano de
    U e V; as cores se revezam por quarto */
-function toro(C, centro, U, V, R, r, k, cores, nA = 16, nT = 6) {
+export function toro(C, centro, U, V, R, r, k, cores, nA = 16, nT = 6) {
   const N = unit(pv(U, V)), c = C.cel(k);
   const P = (a, t) => soma(centro, soma(esc(soma(esc(U, Math.cos(a)), esc(V, Math.sin(a))), R + r * Math.cos(t)), esc(N, r * Math.sin(t))));
   for (let i = 0; i < nA; i++) {
@@ -159,7 +163,7 @@ function toro(C, centro, U, V, R, r, k, cores, nA = 16, nT = 6) {
 /* =======================================================
    O QUE SE ESPALHA NA AREIA
    ======================================================= */
-const CORES_SOL = [['#d8453a', '#f4efe6'], ['#2f6fb0', '#f4efe6'], ['#f2c14e', '#2f8f5a'], ['#e8772e', '#f4efe6'],
+export const CORES_SOL = [['#d8453a', '#f4efe6'], ['#2f6fb0', '#f4efe6'], ['#f2c14e', '#2f8f5a'], ['#e8772e', '#f4efe6'],
                    ['#1f9aa8', '#f2c14e'], ['#c23a6b', '#f4efe6']];
 const LONAS = ['lona_vermelha', 'lona_azul', 'lona_laranja', 'lona_verde'];
 const COR_DA_LONA = { lona_vermelha: '#c8322b', lona_azul: '#2f6fb0', lona_laranja: '#e0782e', lona_verde: '#2f8f5a' };
@@ -169,7 +173,7 @@ const CANGAS = ['canga_brasil', 'canga_tiedye', 'canga_listra', 'canga_flor'];
    gomos de tecido nas duas cores, o babado recortado, as varetas e os
    tirantes por baixo. O cabo sai do chão do lugar (ou de `y0`, o tampo
    da mesa que ele atravessa). */
-function guardaSol(C, L, o = {}) {
+export function guardaSol(C, L, o = {}) {
   const R = o.raio || 1, H = o.altura || 2.2, n = o.gomos || 8, cores = o.cores || CORES_SOL[0];
   const inc = o.inclina || 0, rumo = o.rumo || 0;
   const eixo = unit(L.vet([Math.sin(inc) * Math.cos(rumo), Math.cos(inc), Math.sin(inc) * Math.sin(rumo)]));
@@ -233,7 +237,7 @@ function cadeiraDePraia(C, L, lona) {
 }
 /* a CADEIRA DE PLÁSTICO (a do bar): o assento, os quatro pés abertos,
    o encosto e os braços, de uma cor só. De frente pro +z do lugar. */
-function cadeiraPlastica(C, L, cor) {
+export function cadeiraPlastica(C, L, cor) {
   const P = (x, y, z) => L.pt([x, y, z]);
   C.pintar(cor);
   bloco(C, L, -0.22, 0.22, 0.41, 0.45, -0.2, 0.21, { todas: 'lisa' });
@@ -248,7 +252,7 @@ function cadeiraPlastica(C, L, cor) {
 }
 /* a MESA DE BAR (a de plástico da cervejaria): o tampo com a marca e os
    quatro pés */
-function mesaDeBar(C, L, cor = '#f3f1ea') {
+export function mesaDeBar(C, L, cor = '#f3f1ea') {
   const P = (x, y, z) => L.pt([x, y, z]);
   C.pintar(cor);
   bloco(C, L, -0.4, 0.4, 0.68, 0.72, -0.4, 0.4, { topo: { k: 'mesa', modo: 'esticar', tinta: null }, todas: 'lisa' });
@@ -268,7 +272,7 @@ function mesaComGuardaSol(x, L, o = {}) {
   if (o.coco !== false && rnd() < 0.7) esfera(x.B, L.pt([rnd.entre(-0.2, 0.2), 0.83, rnd.entre(0.1, 0.25)]), 0.105, 'coco', 6, 4);
 }
 /* o ISOPOR: a caixa de gelo com a tampa um pouco maior */
-function isopor(C, L, o = {}) {
+export function isopor(C, L, o = {}) {
   const w = o.larg || 0.6, h = 0.4, d = 0.4, lado = { k: 'isopor', modo: 'esticar', parte: [0, 0.28, 0.1, 0.9] };
   bloco(C, L, -w / 2, w / 2, 0, h, -d / 2, d / 2, { frente: { k: 'isopor', modo: 'esticar' }, tras: { k: 'isopor', modo: 'esticar' },
                                                     dir: lado, esq: lado, topo: null, base: null });
@@ -306,7 +310,7 @@ function cocos(C, L, n, rnd) {
   for (let i = 0; i < Math.min(n - baixo.length, cima.length); i++) esfera(C, L.pt([cima[i][0], r * 2.6, cima[i][1]]), r * rnd.entre(0.9, 1.1), 'coco', 6, 4);
 }
 /* a BANQUETA do balcão: o pé redondo, o cano e o assento */
-function banqueta(C, L, cor) {
+export function banqueta(C, L, cor) {
   const p = L.pt([0, 0, 0]);
   C.pintar('#bdb9b0');
   C.torno(p[0], p[2], [[0.001, p[1]], [0.2, p[1]], [0.2, p[1] + 0.03], [0.001, p[1] + 0.03]], 10, 'metal');
@@ -316,7 +320,7 @@ function banqueta(C, L, cor) {
   C.pintar(null);
 }
 /* o CAVALETE do cardápio: as duas tábuas em A, a da frente com o quadro */
-function cavalete(C, L) {
+export function cavalete(C, L) {
   const P = (x, y, z) => L.pt([x, y, z]), h = 1.1, w = 0.8, abre = 0.24, lado = Math.hypot(h, abre);
   C.esticar(C.plano(P(-w / 2, 0, abre), L.vet([1, 0, 0]), unit(L.vet([0, h, -abre]))), 0, w, 0, lado, 'cardapio');
   C.esticar(C.plano(P(w / 2, 0, -abre), L.vet([-1, 0, 0]), unit(L.vet([0, h, abre]))), 0, w, 0, lado, 'madeira_velha');

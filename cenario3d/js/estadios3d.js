@@ -2615,6 +2615,29 @@ export const ESTADIOS_JOGO = {
     terreno: { x0: -G40.xT, x1: G40.xT, z0: -G40.zT, z1: G40.zT, p1: 0, vis: 1 },
     nota: 'A tigela de dois anéis de 15 fileiras: um corredor debaixo de cada anel, ligados pelas escadas internas, vomitórios com túnel nos dois, os três portões com pórtico, o letreiro na fachada de três andares, o fosso e a pista de ônibus.' }
 };
+/* A BOCA DE CADA PORTÃO (1, 2 e 3), em metros no referencial do modelo:
+   onde a rua encosta na entrada [x, z] e o começo da fila [x, z] (o
+   `ponto` da entrada), os mesmos das rotas do dia de jogo
+   (rotas_estadios.js, gerado por rotas_estadios.mjs — se um portão mudar,
+   copie de lá). É a âncora dos ambulantes da porta do estádio: a planta
+   põe os carrinhos dos dois lados dela, longe o bastante pra não fechar a
+   entrada da torcida */
+export const BOCAS_DOS_PORTOES = {
+  'estadio-10': [[48.3, -0.6, 40.3, -0.49], [12.8, 40.4, 10.36, 32.8], [-45.7, -37.9, -39.57, -32.77]],
+  'estadio-20': [[54.1, 0, 46.1, 0], [14.6, 43.2, 12, 35.6], [-54, -10.3, -46.1, -8.81]],
+  'estadio-40': [[57.4, 0, 49.35, 0], [0, -46.8, 0, -38.85], [-50.4, 33.8, -43.72, 29.36]]
+};
+/* AS BILHETERIAS COM A JANELA PRA RUA: o lado do terreno (a normal pra
+   fora, [nx, nz]) e o trecho dele que a frente delas ocupa — a do lado do
+   portão 1 do de 10 mil (a 11,3 m dele, entre o muro e a calçada) e as
+   quatro do norte e do sul do de 40 mil (as do de 20 ficam dentro do
+   muro, viradas pro caminho). A calçada na frente delas é da fila do
+   ingresso: ambulante não para ali */
+export const BILHETERIAS_DA_RUA = {
+  'estadio-10': [[[1, 0], -13.3, -10.3]],
+  'estadio-20': [],
+  'estadio-40': [[[0, -1], -10.3, -6.1], [[0, -1], 6.1, 10.3], [[0, 1], -8.8, -4.6], [[0, 1], 4.6, 8.8]]
+};
 /* o modelo de cada praça pela lotação de verdade (dados/estadios.js):
    abaixo de 15 mil, o de 10; de 15 a 35 mil, o de 20; acima, o de 40 (a
    regra do dono, 27/09/2026) */
@@ -2762,7 +2785,7 @@ export function cortarEstadio(obj, y) {
    (o Lambert sai metálico no exportador), em metros */
 const PBR = new Map();
 export async function glbDoEstadio(obj) {
-  const { GLTFExporter } = await import('./GLTFExporter.js?v=4d709b8162');
+  const { GLTFExporter } = await import('./GLTFExporter.js?v=a789881def');
   const copia = obj.clone(true);
   const tirar = [];
   copia.traverse(o => {

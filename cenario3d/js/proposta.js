@@ -199,6 +199,29 @@ export const LONGE_DO_ESTADIO_M = 50;
    festa no do meio), a rua de areia, os do outro lado (16 × 20) e a folga
    nas pontas — as mesmas medidas de js/diajogo/veraneio3d.js */
 export const VERANEIO_M = { lote: 20, fundo: 30, loteSul: 16, fundoSul: 20, rua: 8, n: 7, margem: 4 };
+/* O ENTORNO DO ESTÁDIO (o dono, 01/10/2026: "adicione casas, comércios
+   (como espetinho, hamburgueria, pizzaria, barzinho, ambulantes na porta
+   do estádio) e outras coisas que fazem sentido com o arredor dos
+   estádios pra não ficar um visual tão vazio, e adicione pequenos
+   terrenos de estacionamentos também, típicos de arredores de estádio").
+   Do outro lado da rua que cerca o estádio, onde era mato, os
+   quarteirões do entorno: duas fileiras de lote de costas (a da frente
+   olha pro estádio), ou uma só quando não cabe, de uns 34 m de comprido,
+   com a rua entre um e outro. Na fileira da frente, o comércio de dia de
+   jogo e o estacionamento de terreno de chão batido, que vão de rua a
+   rua. Medidas em metros. */
+export const ENTORNO_M = { comprido: 34, fileira: 5.8, fileiraSo: 8.6, minimo: 16, comercio: [7.6, 11], estacionamento: [15, 20] };
+export const TIPOS_COMERCIO_ENTORNO = ['espetinho', 'hamburgueria', 'pizzaria', 'barzinho'];
+export const NOMES_COMERCIO_ENTORNO = {
+  espetinho: ['ESPETINHO DO GORDO', 'CHURRASQUINHO DA TIA', 'ESPETO DO TORCEDOR', 'ESPETINHO DA ARENA', 'ESPETINHO 2 IRMÃOS'],
+  hamburgueria: ['HAMBÚRGUER DO ESTÁDIO', 'X-TUDO DO CARECA', 'LANCHE DO GOL', 'BURGUER DA TORCIDA', 'SMASH DA ARQUIBANCADA'],
+  pizzaria: ['PIZZARIA BELLA NAPOLI', 'PIZZARIA DO ESTÁDIO', 'PIZZA DA VILA', 'PIZZARIA FORNO A LENHA', 'PIZZARIA DOM GIOVANNI'],
+  barzinho: ['BAR DO JOGO', 'BOTECO DO TORCEDOR', 'BAR DA ARQUIBANCADA', 'BAR PÉ DE CANA', 'BAR DO PRORROGAÇÃO']
+};
+/* o letreiro de cada comércio (o fundo e a letra) */
+const CORES_LETREIRO_ENTORNO = { espetinho: ['#b5322a', '#fbf3e4'], hamburgueria: ['#1d1d1d', '#f2c230'], pizzaria: ['#2e7d32', '#ffffff'], barzinho: ['#f2c230', '#7a1e14'] };
+/* o preço do estacionamento de dia de jogo, na placa da porta */
+export const PRECOS_ESTACIONAMENTO = [20, 25, 30, 40];
 /* as quadras altas que ganham rua no meio (um corte de norte a sul) */
 const PARTIDAS = ['-3,2', '-1,2', '0,2'];
 /* os pares que viram uma quadra só, por cima da rua (de oeste pra leste) */
@@ -423,6 +446,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const entre = (a, b, ...n) => a + sorte(...n) * (b - a);
   const cruza = (a, b, m) => a.x0 < b.x1 + m && a.x1 > b.x0 - m && a.y0 < b.y1 + m && a.y1 > b.y0 - m;
   const MARGEM = RUA / 2 + 4;
+  const E_M = ENTORNO_M;
 
   /* ---- a avenida de entrada: a banda dela (as duas pistas e o canteiro) ---- */
   const cE = AVENIDA_ENTRADA.coluna, xE = K.COLUNAS[cE].c, CANTEIRO = AVENIDA_ENTRADA.canteiro;
@@ -701,6 +725,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
      cidade (quando a rua dele já não é a da cidade). */
   const acessos = [];
   let veraneio = null;
+  const entornoBlocos = [];
   if (opc.terrenos) {
     const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
     const bm = avenidas.find(a => a.id === 'beiramar'), lBeira = bm ? bm.l : 76;
@@ -886,6 +911,81 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         postos.push(r); linhas = new Map();
       }
     }
+    /* O ENTORNO DO ESTÁDIO (veja ENTORNO_M): de cada lado do estádio, a
+       faixa do outro lado da rua dele, partida em quarteirões. Os do oeste
+       e do leste vão de ponta a ponta (pegam as quinas); os do norte e do
+       sul, só o comprido do estádio. Cada quarteirão tem a rua dele em
+       volta (a da frente é a do estádio); ele não pisa no que o estádio
+       também não pisa (`livre`: a cidade, a favela, o Atacadex, a avenida
+       de entrada, a da beira, os outros estádios e o que já foi posto) nem
+       nos acessos; o que não cabe inteiro encolhe até ENTORNO_M.minimo, e
+       com duas fileiras não cabendo, tenta uma */
+    {
+      const E = ENTORNO_M, RUA_E = RUA;
+      const F2 = 2 * CALC + 2 * E.fileira * M, F1 = 2 * CALC + E.fileiraSo * M;
+      const retDaReta = a => {
+        const [[ax, ay], [bx, by]] = [a.pontos[0], a.pontos[a.pontos.length - 1]], h = a.l / 2;
+        return Math.abs(ax - bx) < 1 ? { x0: ax - h, x1: ax + h, y0: Math.min(ay, by), y1: Math.max(ay, by) }
+                                     : { x0: Math.min(ax, bx), x1: Math.max(ax, bx), y0: ay - h, y1: ay + h };
+      };
+      const retAcessos = () => acessos.map(retDaReta);
+      /* a guia da avenida da beira vale pra toda praça: a de praia tem a
+         areia do outro lado; a sem praia, o mato que a planta pinta por cima */
+      const lesteDaBeira = (ya, yb) => { let m = Infinity; for (let k = 0; k <= 24; k++) m = Math.min(m, guiaDaBeira(ya + (yb - ya) * k / 24)); return m - CALC; };
+      const semAvenida = r => {
+        for (let i = 0; i <= 6; i++) for (let j = 0; j <= 6; j++)
+          if (naAvenida(r.x0 + (r.x1 - r.x0) * i / 6, r.y0 + (r.y1 - r.y0) * j / 6, CALC)) return false;
+        return true;
+      };
+      const cabe = r => livre(r) && r.x1 + RUA_E <= lesteDaBeira(r.y0 - RUA_E, r.y1 + RUA_E) && !retAcessos().some(a => cruza(r, a, 0.5)) && semAvenida(r);
+      const FRENTE = { o: 'l', l: 'o', n: 's', s: 'n' };
+      copias.forEach((e, ke) => {
+        if (!e.area) return;
+        const q = e.area;
+        for (const lado of ['o', 'l', 'n', 's']) {
+          const hz = lado === 'n' || lado === 's';          // o quarteirão corre de oeste a leste
+          /* o comprido da faixa (no eixo dela) e o fundo (do lado do estádio pra fora) */
+          const a0 = hz ? q.x0 : q.y0 - RUA_E - F2, a1 = hz ? q.x1 : q.y1 + RUA_E + F2;
+          const n = Math.max(1, Math.round((a1 - a0 + RUA_E) / (E.comprido * M + RUA_E)));
+          const L = (a1 - a0 - (n - 1) * RUA_E) / n;
+          for (let b = 0; b < n; b++) {
+            const c0 = a0 + b * (L + RUA_E), c1 = c0 + L;
+            const ret = (F, x0, x1) => lado === 'o' ? { x0: q.x0 - RUA_E - F, x1: q.x0 - RUA_E, y0: x0, y1: x1 }
+              : lado === 'l' ? { x0: q.x1 + RUA_E, x1: q.x1 + RUA_E + F, y0: x0, y1: x1 }
+              : lado === 'n' ? { x0: x0, x1: x1, y0: q.y0 - RUA_E - F, y1: q.y0 - RUA_E }
+              : { x0: x0, x1: x1, y0: q.y1 + RUA_E, y1: q.y1 + RUA_E + F };
+            /* o maior pedaço que cabe: inteiro, depois encolhendo por uma
+               ponta, pela outra e pelas duas, de 4 em 4 m */
+            let achou = null;
+            for (const [F, fileiras] of [[F2, 2], [F1, 1]]) {
+              for (let corte = 0; !achou && c1 - c0 - corte >= E.minimo * M; corte += 4 * M)
+                for (const [d0, d1] of [[0, corte], [corte, 0], [corte / 2, corte / 2]]) {
+                  const r = ret(F, c0 + d0, c1 - d1);
+                  if (cabe(r)) { achou = { r, fileiras }; break; }
+                  if (!corte) break;
+                }
+              if (achou) break;
+            }
+            if (!achou) continue;
+            const r = achou.r, id = 'entorno' + (ke + 1) + lado + (b + 1);
+            entornoBlocos.push({ id, i: 60 + ke, j: 60 + ['o', 'l', 'n', 's'].indexOf(lado) * 10 + b, parte: '', ...r,
+                                 entorno: { estadio: e.id, nEstadio: ke, lado, frente: FRENTE[lado], fileiras: achou.fileiras, k: b } });
+            postos.push(r);
+          }
+        }
+      });
+      linhas = new Map();
+      /* O ESTACIONAMENTO DE TERRENO: um em cada dois quarteirões, no
+         máximo três por estádio e pelo menos um (o primeiro de cada lado
+         que tem, pela sorte); só no quarteirão de 24 m ou mais */
+      const porEstadio = new Map();
+      for (const bl of entornoBlocos) { const k = bl.entorno.nEstadio; if (!porEstadio.has(k)) porEstadio.set(k, []); porEstadio.get(k).push(bl); }
+      for (const lista of porEstadio.values()) {
+        const comprido = bl => Math.max(bl.x1 - bl.x0, bl.y1 - bl.y0) >= 24 * M;
+        const ordem = lista.filter(comprido).sort((a, b) => sorte(a.i, a.j, 31) - sorte(b.i, b.j, 31));
+        ordem.slice(0, Math.min(3, Math.max(1, Math.round(ordem.length / 2)))).forEach(bl => { bl.entorno.estacionamento = true; });
+      }
+    }
     avenidas.push(...acessos);
   }
   /* LONGE DO ESTÁDIO: a quadra de cada estádio da praça; a sede e o bar da
@@ -911,6 +1011,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                    lotes: [], estadio: e, equip: { tipo: 'estadio', nome: e.nome, cor: '#9d9a90',
                                                    nota: e.principal ? 'O estádio principal da praça: o quarteirão do estádio do jogo, com a esplanada em volta, na ponta da cidade e longe das entradas.'
                                                                      : 'Cópia do quarteirão do estádio, com a esplanada em volta: o estádio de outro clube da cidade, na ponta da cidade.' } });
+  for (const b of entornoBlocos)
+    quadras.push({ ...b, ix0: b.x0 + CALC, ix1: b.x1 - CALC, iy0: b.y0 + CALC, iy1: b.y1 - CALC, lotes: [], equip: null });
 
   /* ---- os condomínios: o par de prédios na ponta oeste da quadra alta ---- */
   const baldio = K.QUADRAS.find(q => q.equip && q.equip.pecas.some(p => p.k === 'modelo' && p.modelo === 'torre1'));
@@ -987,7 +1089,103 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       }
     });
   };
+  /* O LOTEAMENTO DO ENTORNO DO ESTÁDIO: a fileira da frente olha pro
+     estádio; nela o comércio de dia de jogo (o espetinho, a hamburgueria,
+     a pizzaria e o barzinho, um de cada antes de repetir, em cada estádio)
+     e o estacionamento de terreno, os dois de rua a rua; o resto é casa,
+     de costas pra casa da fileira de trás (a que olha pra rua dos fundos) */
+  const vezDoComercio = new Map(), nomeDoComercio = new Map();
+  const CASAS_ENTORNO = ['casa', 'casa', 'sobrado', 'casa', 'sobrado', 'casa', 'muro', 'casa'];
+  const lotearEntorno = q => {
+    const EN = q.entorno, f = EN.frente, hz = f === 'n' || f === 's';
+    const a0 = hz ? q.ix0 : q.iy0, a1 = hz ? q.ix1 : q.iy1, b0 = hz ? q.iy0 : q.ix0, b1 = hz ? q.iy1 : q.ix1;
+    const naPonta = f === 's' || f === 'l';                  // a frente fica no b1
+    const duas = EN.fileiras === 2, bm = (b0 + b1) / 2;
+    const FR = naPonta ? [duas ? bm : b0, b1] : [b0, duas ? bm : b1];
+    const TR = duas ? (naPonta ? [b0, bm] : [bm, b1]) : null;
+    const atras = { n: 's', s: 'n', o: 'l', l: 'o' }[f];
+    const si = q.i, sj = q.j;
+    const quadra = { i: q.i, j: q.j, proposta: true, entorno: true, ix0: q.ix0, ix1: q.ix1, iy0: q.iy0, iy1: q.iy1 };
+    const lote = (a, larg, [c0, c1], frente, extra) => Object.assign({ frente, proposta: true, entorno: true,
+      x0: hz ? a : c0, x1: hz ? a + larg : c1, y0: hz ? c0 : a, y1: hz ? c1 : a + larg, quadra }, extra);
+    const casa = (a, larg, faixa, frente, k, fi) => {
+      const tipo = CASAS_ENTORNO[Math.floor(sorte(si, sj, fi, k, 3) * CASAS_ENTORNO.length)], T = TIPOS[tipo];
+      const l = lote(a, larg, faixa, frente, { tipo, alt: par8(entre(T.alt[0], T.alt[1], si, sj, fi, k, 4)) || T.alt[0],
+                                                cor: T.cor[hash(si, sj, fi, k, 5) % T.cor.length] });
+      const r = sorte(si, sj, fi, k, 6);
+      if (tipo !== 'muro' && fi === 0 && r < 0.12) l.placa = COMERCIO[hash(si, sj, fi, k, 7) % COMERCIO.length];
+      else if (r < 0.3) l.pixacao = RECADOS[hash(si, sj, fi, k, 8) % RECADOS.length];
+      q.lotes.push(l);
+    };
+    const inteiro = [b0, b1];
+    const ocupado = [];                                        // os trechos de rua a rua (comércio, estacionamento)
+    /* o estacionamento: num ponto sorteado da frente, se o quarteirão tem */
+    let estac = null;
+    if (EN.estacionamento) {
+      const larg = Math.min(par8(entre(E_M.estacionamento[0], E_M.estacionamento[1], si, sj, 41) * M), a1 - a0 - 2 * 72);
+      if (larg >= 12 * M) {
+        const ini = a0 + 72 + sorte(si, sj, 42) * Math.max(0, a1 - a0 - 144 - larg);
+        estac = [par8(ini), par8(ini) + larg];
+      }
+    }
+    /* a fileira da frente */
+    let a = a0, k = 0, nCom = 0;
+    while (a < a1 - 24) {
+      if (estac && a >= estac[0] - 36) {
+        const larg = estac[1] - a;
+        const preco = PRECOS_ESTACIONAMENTO[hash(si, sj, 43) % PRECOS_ESTACIONAMENTO.length];
+        q.lotes.push(lote(a, larg, inteiro, f, { tipo: 'estacionamento', modelo: 'estacionamento', alt: par8(2.2 * M), cor: '#8d8676',
+                                                 placa: 'ESTACIONAMENTO R$ ' + preco, preco, portao: sorte(si, sj, 44) < 0.5 ? 'esq' : 'dir',
+                                                 placaFundo: '#f2f1ec', placaTinta: '#1f4e8c' }));
+        ocupado.push([a, a + larg]);
+        a += larg; k++; estac = null;
+        continue;
+      }
+      const querComercio = nCom < 3 && a1 - a >= E_M.comercio[0] * M && (k === 0 ? sorte(si, sj, k, 51) < 0.55 : sorte(si, sj, k, 52) < 0.34);
+      if (querComercio && !(estac && a + E_M.comercio[1] * M > estac[0] - 36)) {
+        let larg = par8(entre(E_M.comercio[0], E_M.comercio[1], si, sj, k, 53) * M);
+        if (a + larg > a1 - 36) larg = a1 - a;
+        const ve = vezDoComercio.get(EN.nEstadio) ?? (hash(EN.nEstadio, 71) % TIPOS_COMERCIO_ENTORNO.length);
+        vezDoComercio.set(EN.nEstadio, ve + 1);
+        const tipoC = TIPOS_COMERCIO_ENTORNO[ve % TIPOS_COMERCIO_ENTORNO.length], nomes = NOMES_COMERCIO_ENTORNO[tipoC];
+        /* o nome: o próximo da lista daquele comércio, no estádio (o mesmo nome não repete perto) */
+        const chaveNome = EN.nEstadio + '|' + tipoC, vn = nomeDoComercio.get(chaveNome) ?? (hash(EN.nEstadio, tipoC.length, 72) % nomes.length);
+        nomeDoComercio.set(chaveNome, vn + 1);
+        const dois = tipoC !== 'espetinho' && sorte(si, sj, k, 54) < 0.45;
+        const [placaFundo, placaTinta] = CORES_LETREIRO_ENTORNO[tipoC];
+        q.lotes.push(lote(a, larg, inteiro, f, { tipo: 'comercio', comercio: tipoC, modelo: 'com_' + tipoC, placaFundo, placaTinta,
+                                                 placa: nomes[vn % nomes.length],
+                                                 alt: par8((dois ? 6.2 : 3.9) * M), cor: '#e3c9a0' }));
+        ocupado.push([a, a + larg]);
+        a += larg; k++; nCom++;
+        continue;
+      }
+      let larg = par8(entre(72, 144, si, sj, 0, k, 2));
+      if (estac && a + larg > estac[0] - 36) larg = Math.max(48, estac[0] - a);
+      if (a + larg > a1 - 36) larg = a1 - a;
+      casa(a, larg, duas ? FR : inteiro, f, k, 0);
+      a += larg; k++;
+    }
+    /* a fileira de trás: casa, fora dos trechos de rua a rua */
+    if (TR) {
+      const livres = [];
+      let p0 = a0;
+      for (const [o0, o1] of ocupado.sort((x, y) => x[0] - y[0])) { if (o0 - p0 >= 48) livres.push([p0, o0]); p0 = Math.max(p0, o1); }
+      if (a1 - p0 >= 48) livres.push([p0, a1]);
+      let kt = 0;
+      for (const [l0, l1] of livres) {
+        let b = l0;
+        while (b < l1 - 24) {
+          let larg = par8(entre(72, 144, si, sj, 1, kt, 2));
+          if (b + larg > l1 - 36) larg = l1 - b;
+          casa(b, larg, TR, atras, kt, 1);
+          b += larg; kt++;
+        }
+      }
+    }
+  };
   for (const q of quadras) {
+    if (q.entorno) { lotearEntorno(q); continue; }
     if (q.equip && q.equip.tipo === 'condominio') {
       const r = q.faixaLotes;
       if (r) lotear(q, [{ f: 'l', x0: r.x0, x1: r.x1, y0: r.y0, y1: r.y1 }]);
@@ -1421,7 +1619,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        (42 a 66 de frente), cada uma virada pro seu beco.
      A mancha que o dono desenhou recorta as casas do lado do mato. */
   /* (o terreno do estádio de verdade tem a rua dele inteira em volta: ele não é da grade) */
-  for (const q of quadras) q.rua = q.estadio && q.estadio.modelo ? { x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA } : ruaDe(q);
+  for (const q of quadras) q.rua = (q.estadio && q.estadio.modelo) || q.entorno ? { x0: q.x0 - RUA, x1: q.x1 + RUA, y0: q.y0 - RUA, y1: q.y1 + RUA } : ruaDe(q);
   const barra = quadras.map(q => q.rua)
     .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ruaDe(q)))
     .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))).filter(b => {
@@ -1435,6 +1633,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     /* no mapa pequeno o atacarejo e a favela de hoje ficam: a favela nova não pisa neles */
     .concat(!atacadex && A0 ? [(b => ({ x0: b.x0 - 60, x1: b.x1 + 60, y0: b.y0 - 60, y1: b.y1 + 60 }))(bbOf(A0.area))] : [])
     .concat(cfg.favelaDeHoje ? FAV.map(l => bbOf(cantos(l))).map(b => ({ x0: b.x0 - 20, x1: b.x1 + 20, y0: b.y0 - 20, y1: b.y1 + 20 })) : []);
+  const ruasDoEntorno = new Set(quadras.filter(q => q.entorno).map(q => q.rua));
   const livre = (x, y) => !barra.some(r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1) && !naAvenida(x, y, CALC + 10) &&
                           !porticos.some(p => Math.hypot(p.x - x, p.y - y) < 280);
   const faixaX = i => [colX(i)[1], colX(i + 1)[0]];                   // a faixa da rua entre a coluna i e a i+1
@@ -1447,6 +1646,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        parte continua da favela, e a rua em volta do estádio, que está na
        `barra`, segura a casa) */
     if (q.estadio) { if (q.estadio.naGrade) for (let i = q.estadio.i[0]; i <= q.estadio.i[1]; i++) for (let j = q.estadio.j[0]; j <= q.estadio.j[1]; j++) ocupadas.add(i + ',' + j); }
+    else if (q.entorno) { /* (fora da grade) */ }
     else if (q.juntas) for (const id of q.juntas) ocupadas.add(id);
     else ocupadas.add(q.i + ',' + q.j);
   }
@@ -1478,7 +1678,9 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        a favela e a rua */
     const GAP = 340;
     const distPoly = (x, y) => { let d = Infinity; for (let i = 0, j = F.poly.length - 1; i < F.poly.length; j = i++) d = Math.min(d, distSeg(x, y, F.poly[j], F.poly[i])); return d; };
-    const distBarra = (x, y) => { let d = Infinity; for (const r of barra) { const dx = Math.max(r.x0 - x, 0, x - r.x1), dy = Math.max(r.y0 - y, 0, y - r.y1); d = Math.min(d, Math.hypot(dx, dy)); } return d; };
+    /* (a rua do entorno do estádio segura a casa, mas não puxa a favela:
+       sem isso ela crescia até a rua nova e mudava de tamanho) */
+    const distBarra = (x, y) => { let d = Infinity; for (const r of barra) { if (ruasDoEntorno.has(r)) continue; const dx = Math.max(r.x0 - x, 0, x - r.x1), dy = Math.max(r.y0 - y, 0, y - r.y1); d = Math.min(d, Math.hypot(dx, dy)); } return d; };
     const naArea = (x, y) => dentroPol(x, y, F.poly) || distPoly(x, y) + distBarra(x, y) <= GAP;
     const bb0 = bbOf(F.poly), bb = { x0: bb0.x0 - GAP, x1: bb0.x1 + GAP, y0: bb0.y0 - GAP, y1: bb0.y1 + GAP };
     const C = F.caixa, naCaixa = (x, y) => !C || (x >= C.x0 && x <= C.x1 && y >= C.y0 && y <= C.y1);
@@ -1715,9 +1917,15 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   avEntrada.pontos[1][1] = Math.max(avEntrada.pontos[1][1], ...deVerdade.map(e => e.area.y1 + RUA + 500));
   const residenciais = quadras.filter(q => !q.equip);
   const lotesNovos = quadras.reduce((n, q) => n + q.lotes.length, 0);
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  for (const q of quadras.concat(K.QUADRAS)) { x0 = Math.min(x0, q.x0); y0 = Math.min(y0, q.y0); x1 = Math.max(x1, q.x1); y1 = Math.max(y1, q.y1); }
-  for (const f of favelas) for (const [px, py] of f.poly) { x0 = Math.min(x0, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py); }
+  /* o limite do mapa: o de tudo e o da cidade sem o entorno dos estádios
+     (é por ele que a planta divide as zonas: o entorno não mexe nelas) */
+  const limiteDe = lista => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const q of lista) { x0 = Math.min(x0, q.x0); y0 = Math.min(y0, q.y0); x1 = Math.max(x1, q.x1); y1 = Math.max(y1, q.y1); }
+    for (const f of favelas) for (const [px, py] of f.poly) { x0 = Math.min(x0, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py); }
+    return { x0, y0, x1, y1 };
+  };
+  const { x0, y0, x1, y1 } = limiteDe(quadras.concat(K.QUADRAS)), semEntorno = limiteDe(quadras.filter(q => !q.entorno).concat(K.QUADRAS));
   const conta = {};
   for (const q of quadras) if (q.equip) conta[q.equip.tipo] = (conta[q.equip.tipo] || 0) + 1;
   return {
@@ -1728,6 +1936,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     estadios: copias, estadioDeHoje,
     quadras, fora, avenidas, avenidasTiradas, favelas, atacadex, porticos, condominios, substitui, terrenos, veraneio,
     bares, baresHoje: BARES_HOJE, sedesHojeSaem, estadiosAqui, lotesExtra, lotesTirados, espacosSede, metro, lojas,
+    /* o entorno de cada estádio: os quarteirões (com os lotes deles em `quadras`) */
+    entorno: quadras.filter(q => q.entorno),
     coberto, naFavelaNova, noAtacadex, naAvenida, distAvenida, favelaDeHoje: favBB, colX, linY: linYx,
     contagem: { quadras: quadras.length, residenciais: residenciais.length, equipamentos: quadras.length - residenciais.length,
                 porTipo: conta, lotesNovos, lotesExtra: lotesExtra.length, lotesTirados: lotesTirados.size,
@@ -1735,6 +1945,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                 quadrasTrocadas: substitui.size,
                 quadrasHoje: K.QUADRAS.length, lotesHoje: K.QUADRAS.reduce((n, q) => n + q.lotes.length, 0) },
     limite: { x0: x0 - RUA, y0: y0 - RUA, x1, y1 },
+    limiteSemEntorno: { x0: semEntorno.x0 - RUA, y0: semEntorno.y0 - RUA, x1: semEntorno.x1, y1: semEntorno.y1 },
     mundo: { x0: x0 - 400, y0: Math.min(cfg.mundoY0 ?? K.VY0, atacadex ? atacadex.bb.y0 - 300 : Infinity, ...deVerdade.map(e => e.area.y0 - RUA - 300)),
              x1: Math.max(K.VX0 + K.VW, ...deVerdade.map(e => e.area.x1 + RUA + 400)), y1: Math.max(mundoY1, ...deVerdade.map(e => e.area.y1 + RUA + 300)) },
     /* a avenida de entrada: a banda dela (as duas pistas e o canteiro) */

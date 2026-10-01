@@ -60,10 +60,10 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=4d709b8162';
-import { ATLAS } from './modelos_atlas.js?v=4d709b8162';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=a789881def';
+import { ATLAS } from './modelos_atlas.js?v=a789881def';
 /* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
-import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=4d709b8162';
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=a789881def';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -126,7 +126,9 @@ function medidas(l) {
    lanchonete recua o que o toldinho da porta de enrolar avança. O bar
    da torcida (o de esquina, embaixo do apartamento) é modelo também. */
 const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04,
-                     bartorcida: 0.04, ...REC_LOJA };
+                     bartorcida: 0.04, ...REC_LOJA,
+                     /* o entorno do estádio: o recuo do comércio é o salão de fora */
+                     com_espetinho: 3.8, com_hamburgueria: 2.6, com_pizzaria: 2.6, com_barzinho: 3.2, estacionamento: 0.05 };
 
 export function planoDaCasa(l, K) {
   if (l._plano !== undefined) return l._plano;
@@ -139,6 +141,9 @@ export function planoDaCasa(l, K) {
     if (l.modelo === 'bartorcida' && l.placa) p.placa = placaDoBar(W, l.esquina);
     /* o nome da loja do assalto vai na platibanda (no posto, na testeira da cobertura) */
     if (TIPOS_LOJA[l.modelo] && l.placa) p.placa = placaDaLoja(l.modelo.slice(5), W, D, l.esquina || 'dir');
+    /* o comércio do entorno do estádio: o recuo não passa de 45% do fundo; o letreiro na platibanda */
+    if (l.comercio) { p.rec = Math.min(p.rec, D * 0.45); if (l.placa) p.placa = placaDoComercio(W); }
+    if (l.modelo === 'estacionamento' && l.placa) p.placa = placaDoEstacionamento(l, W);
     l._plano = p;
     return p;
   }
@@ -223,6 +228,22 @@ export function planoDaCasa(l, K) {
   }
   l._plano = p;
   return p;
+}
+
+/* O ESTACIONAMENTO DE TERRENO (o entorno do estádio): quais das `n` vagas
+   têm carro, a cor e o feitio de cada um — o desenho da planta usa a
+   mesma conta, pra o carro do mapa ser o do 3D */
+const CORES_CARRO = ['#c8ccd1', '#2b2f36', '#9b1d1d', '#e9e9e6', '#3a5f8f', '#7d7f84', '#b8a07a', '#5b6b3a'];
+export function carrosDoEstacionamento(l, n) {
+  const out = [];
+  for (let k = 0; k < n; k++) {
+    let h = 2166136261;
+    for (const v of [Math.round(l.x0), Math.round(l.y0), k]) { h = Math.imul(h ^ v, 16777619); h ^= h >>> 13; }
+    h >>>= 0;
+    if (h % 100 < 28) continue;
+    out.push({ k, cor: CORES_CARRO[(h >>> 7) % CORES_CARRO.length], feitio: (h >>> 11) % 3 });
+  }
+  return out;
 }
 
 /* =======================================================
@@ -2450,8 +2471,240 @@ function baldio(B, p, l, conta, G) {
   }
 }
 
+/* =======================================================
+   O ENTORNO DO ESTÁDIO (01/10/2026; proposta.js, ENTORNO_M): o comércio
+   de dia de jogo de frente pro estádio e o estacionamento de terreno.
+
+     ESPETINHO     o ponto de uma porta só, a churrasqueira de tijolo na
+                   frente com os espetos na grelha, o isopor, as mesas de
+                   plástico com guarda-sol no recuo;
+     HAMBURGUERIA  a fachada escura, o toldo listrado, o balcão com as
+                   banquetas, a chapa e o cardápio na parede do fundo;
+     PIZZARIA      o forno a lenha de tijolo no fundo, a chaminé saindo
+                   da laje, as mesas de toalha vermelha;
+     BARZINHO      a frente aberta com a cobertura de fibrocimento em
+                   dois pilares e a faixa de cerveja, o balcão, a
+                   geladeira, os engradados, a TV na parede, as mesas;
+     ESTACIONAMENTO o terreno de chão batido murado, o portão largo
+                   aberto, a guarita, as vagas riscadas no fundo e os
+                   carros parados (`carrosDoEstacionamento`, a mesma conta
+                   do desenho da planta).
+
+   O comércio é de rua a rua (o lote de fundo inteiro): o prédio fica no
+   fundo, a frente aberta com a porta de enrolar recolhida embaixo da
+   platibanda (o letreiro vai nela), e o recuo da frente é o salão de
+   fora. Com o lote alto, um andar de moradia em cima.
+   ======================================================= */
+const FACHADA_COMERCIO = {
+  espetinho: ['#c9502e', '#e6c27a', '#d98c3a', '#f0e6cf'],
+  hamburgueria: ['#2b2b2b', '#8c2a1f', '#1d3b5c'],
+  pizzaria: ['#2f6b3a', '#efe6d2', '#a8442f'],
+  barzinho: ['#f0c93a', '#2d62c8', '#e9e4d6', '#3f8f4a']
+};
+const CADEIRAS_COMERCIO = { espetinho: [VERMELHO_CADEIRA, '#f2f1ec'], hamburgueria: ['#1f1f1f', '#d23a2a'], pizzaria: [MADEIRA, '#f2f1ec'], barzinho: ['#f2c230', VERMELHO_CADEIRA] };
+const H_PORTA_COM = 2.7, H_TERREO_COM = 3.6;
+/* o letreiro: na platibanda, em cima da frente aberta */
+export function placaDoComercio(W) {
+  const larg = Math.min(W - 0.9, 3.2);
+  return { y: ((H_PORTA_COM + H_TERREO_COM) / 2) * M, larg: larg * M, alt: larg / 4 * M };
+}
+/* o toldo de lona listrada (a lona lisa, uma listra de cada cor), saindo
+   da parede de plano F de `sai` m e caindo `queda` m; o babado na beira */
+function toldoListrado(B, F, a0, a1, yTopo, sai, queda, cores) {
+  const O = B.noPlano(F, a0, yTopo - queda);
+  const base = [O[0] + F.N[0] * sai, O[1], O[2] + F.N[2] * sai];
+  const L = Math.hypot(sai, queda), V = [-F.N[0] * sai / L, queda / L, -F.N[2] * sai / L];
+  const G = B.plano(base, F.U, V), n = Math.max(2, Math.round((a1 - a0) / 0.42)), w = (a1 - a0) / n;
+  for (let i = 0; i < n; i++) {
+    B.esticar(G, i * w, (i + 1) * w, 0, L, 'lisa', { tinta: cores[i % cores.length] });
+    B.esticar(B.plano([base[0], base[1] - 0.2, base[2]], F.U, [0, 1, 0]), i * w, (i + 1) * w, 0, 0.2, 'lisa', { tinta: cores[i % cores.length] });
+  }
+}
+/* a mesa de fora com as cadeiras (duas ou quatro) e, às vezes, o guarda-sol */
+function mesaDeFora(B, cx, cz, y, cores, quatro, sol) {
+  mesa(B, cx, cz, y, 0.7, cores[2] || BRANCO_BAR);
+  cadeira(B, cx - 0.6, cz, y, 'o', cores[0]);
+  cadeira(B, cx + 0.6, cz, y, 'l', cores[1] || cores[0]);
+  if (quatro) { cadeira(B, cx, cz - 0.6, y, 'n', cores[0]); cadeira(B, cx, cz + 0.6, y, 's', cores[1] || cores[0]); }
+  if (sol) guardaSol(B, cx, cz, y, 1.1, sol);
+}
+function comercio(tipo) {
+  return (B, p, l, conta) => {
+    const { s, W, D } = p;
+    const x0 = 0.05, x1 = W - 0.05, wb = x1 - x0, zF = -p.rec, z0 = -D + 0.05;
+    if (wb < 2.4 || zF - z0 < 2.4) return;
+    const hp = H_PORTA_COM, hT = H_TERREO_COM, dois = p.H >= 5.5, pil = 0.3, e = 0.12;
+    const tinta = escolher(s, 'fachada', FACHADA_COMERCIO[tipo]);
+    const lisa = { k: 'lisa', tinta };
+    /* ---- o prédio: os lados e o fundo, a frente aberta ---- */
+    paredes(B, x0, x1, z0, zF, 0, hT, { dir: { k: 'crua' }, esq: { k: 'crua' }, tras: { k: 'crua', vaos: distribuir(wb, ['basc'], 0.05) } }, null);
+    B.caixa(x0, x0 + pil, 0, hT, zF - 0.16, zF, { todas: lisa, base: null });
+    B.caixa(x1 - pil, x1, 0, hT, zF - 0.16, zF, { todas: lisa, base: null });
+    B.caixa(x0 + pil, x1 - pil, hp, hT, zF - 0.16, zF, { todas: lisa, base: { k: 'crua', escuro: 0.7 } });
+    /* a platibanda é onde vai o letreiro (o decalque do nome) */
+    conta.frentes.push({ x0, x1, y0: hp, y1: hT, z: zF, vaos: [] });
+    conta.portas++;
+    /* a porta de enrolar recolhida, o rolo embaixo da platibanda */
+    B.caixa(x0 + pil, x1 - pil, hp - 0.24, hp, zF - 0.44, zF - 0.16, { todas: { k: 'lisa', tinta: CINZA_ENROLAR }, base: { k: 'lisa', tinta: '#5d6062' } });
+    /* o chão de dentro, o forro e a parede do fundo por dentro */
+    B.caixa(x0 + e, x1 - e, 0, 0.05, z0 + e, zF - 0.16, { topo: 'piso_bar', base: null, frente: 'crua', tras: null, esq: null, dir: null });
+    B.tampa([[x0, zF], [x1, zF], [x1, z0], [x0, z0]], hT - 0.02, 'lisa', true, { tinta: BRANCO_BAR });
+    const iw = wb - 2 * e, zFi = z0 + e;
+    const fundo = [{ a0: iw - 1.2, a1: iw - 0.4, b0: 0, b1: 2.05, k: 'porta_escura', fundo: 0.1 }];
+    if (iw >= 3.4) fundo.push({ a0: 0.5, a1: 1.7, b0: 1.15, b1: 2.15, k: tipo === 'barzinho' ? 'prateleira' : 'promocoes' });
+    if (iw >= 4.6 && tipo !== 'pizzaria') fundo.push({ a0: 1.9, a1: 2.5, b0: 1.5, b1: 2.3, k: 'cartaz_verde' });
+    B.fachada(B.plano([x0 + e, 0, zFi], [1, 0, 0], [0, 1, 0]), iw, hT - 0.02, 'lisa', fundo, { tinta: BRANCO_BAR });
+    /* o balcão, de lado, do fundo até perto da frente */
+    const bz0 = zFi + 0.9, bz1 = Math.min(zF - 0.9, bz0 + Math.max(1.4, (zF - z0) * 0.45));
+    const bx = x1 - e - 1.25;
+    if (bz1 > bz0 + 0.8) {
+      B.caixa(bx, bx + 0.55, 0.05, 1.05, bz0, bz1, { todas: 'azulejo', topo: { k: 'laje_borda', tinta: '#8a8378' }, base: null });
+      /* a geladeira atrás do balcão, encostada no lado */
+      B.caixa(x1 - e - 0.7, x1 - e - 0.02, 0.05, 1.9, bz0 + 0.1, bz0 + 0.8, { frente: { k: 'geladeira', modo: 'esticar' }, todas: { k: 'lisa', tinta: BRANCO_BAR }, base: null });
+    }
+    const cores = CADEIRAS_COMERCIO[tipo], yC = 0.05;
+    /* ---- o recuo da frente: o chão de cimento e o que é de cada um ---- */
+    B.caixa(x0, x1, 0, 0.04, zF, -0.02, { topo: { k: 'laje', tinta: '#cfcac0' }, frente: 'crua', base: null, tras: null, esq: null, dir: null });
+    const fx0 = x0 + 0.5, fx1 = x1 - 0.5, fz = (zF - 0.02) / 2;
+    if (tipo === 'espetinho') {
+      /* a churrasqueira de tijolo na beira do recuo, a grelha e os espetos */
+      const gx = fx0 + 0.75, gz = -0.75;
+      B.caixa(gx - 0.7, gx + 0.7, 0, 0.82, gz - 0.28, gz + 0.28, { todas: 'tijolo', topo: { k: 'laje_borda', tinta: '#3a3633' }, base: null });
+      B.caixa(gx - 0.66, gx + 0.66, 0.82, 0.86, gz - 0.24, gz + 0.24, { todas: { k: 'lisa', tinta: '#2a2725' }, base: null });
+      for (let i = 0; i < 7; i++) {
+        const x = gx - 0.54 + i * 0.18;
+        B.caixa(x - 0.025, x + 0.025, 0.86, 0.92, gz - 0.3, gz + 0.3, { todas: { k: 'lisa', tinta: i % 2 ? '#8c3b23' : '#a8662e' }, base: null });
+      }
+      /* o isopor e a banqueta do espeteiro */
+      B.caixa(gx + 0.85, gx + 1.35, 0, 0.42, gz - 0.2, gz + 0.2, { todas: { k: 'lisa', tinta: '#f4f4f0' }, topo: { k: 'lisa', tinta: '#2d62c8' }, base: null });
+      const n = Math.max(1, Math.floor((fx1 - gx - 1.6) / 1.9));
+      for (let i = 0; i < n; i++) mesaDeFora(B, gx + 1.9 + i * 1.9, fz - 0.15, yC, cores, false, i % 2 ? 'guarda_sol_am' : 'guarda_sol_pb');
+    } else if (tipo === 'hamburgueria') {
+      /* o toldo listrado da frente aberta; dentro, as banquetas no balcão e a chapa */
+      toldoListrado(B, B.plano([x0, 0, zF], [1, 0, 0], [0, 1, 0]), pil, wb - pil, hp + 0.06, 1.0, 0.5, ['#c0392b', '#f2f1ec']);
+      if (bz1 > bz0 + 0.8) {
+        for (let z = bz0 + 0.35; z < bz1 - 0.2; z += 0.62) {
+          B.caixa(bx - 0.5, bx - 0.24, 0.05, 0.72, z - 0.13, z + 0.13, { todas: { k: 'lisa', tinta: '#2b2b2b' }, topo: { k: 'lisa', tinta: '#c0392b' }, base: null });
+        }
+        B.caixa(bx + 0.05, bx + 0.5, 1.05, 1.12, bz0 + 0.2, bz0 + 0.9, { todas: { k: 'lisa', tinta: '#9ea3a7' }, base: null });
+      }
+      const n = Math.max(1, Math.floor((fx1 - fx0) / 2.0));
+      for (let i = 0; i < n; i++) mesaDeFora(B, fx0 + 1.0 + i * 2.0, fz, yC, cores, false, null);
+    } else if (tipo === 'pizzaria') {
+      /* o forno a lenha no canto do fundo, a chaminé subindo pela laje */
+      const ox = x0 + e + 1.05, oz = zFi + 1.05, r = 0.85;
+      B.caixa(ox - 1.0, ox + 1.0, 0.05, 0.95, oz - 0.95, oz + 0.95, { todas: 'tijolo', topo: { k: 'laje_borda', tinta: '#9b8f80' }, base: null });
+      B.torno(ox, oz, [[r, 0.95], [r, 1.2], [r * 0.82, 1.55], [r * 0.45, 1.78], [0, 1.84]], 12, 'tijolo');
+      B.caixa(ox - 0.3, ox + 0.3, 0.98, 1.4, oz + r - 0.08, oz + r + 0.04, { todas: { k: 'lisa', tinta: '#1d1a18' }, base: null });
+      const topoCh = (dois ? hT + 2.8 : hT) + 1.3;
+      B.caixa(ox - 0.22, ox + 0.22, 1.8, topoCh, oz - 0.22, oz + 0.22, { todas: 'tijolo', topo: { k: 'lisa', tinta: '#2a2725' }, base: null });
+      /* o toldo verde curto e as mesas de toalha vermelha */
+      toldoListrado(B, B.plano([x0, 0, zF], [1, 0, 0], [0, 1, 0]), pil, wb - pil, hp + 0.06, 0.8, 0.38, ['#2e7d32', '#f2f1ec', '#c0392b', '#f2f1ec']);
+      const n = Math.max(1, Math.floor((fx1 - fx0) / 2.0));
+      for (let i = 0; i < n; i++) mesaDeFora(B, fx0 + 1.0 + i * 2.0, fz, yC, [cores[0], cores[0], '#b5322a'], zF < -2.9, null);
+    } else {
+      /* o barzinho: a cobertura de fibrocimento em dois pilares, a faixa
+         de cerveja na beira, os engradados e a TV na parede */
+      const yA = hp + 0.04, yB = 2.45, zA = zF + 0.02, zB = -0.12;
+      B.caixa(x0 + 0.05, x0 + 0.25, 0, yB, zB - 0.2, zB, { todas: { k: 'lisa', tinta: BRANCO_BAR }, base: null });
+      B.caixa(x1 - 0.25, x1 - 0.05, 0, yB, zB - 0.2, zB, { todas: { k: 'lisa', tinta: BRANCO_BAR }, base: null });
+      agua(B, x0, x1, zA, yA, zB, yB, 'fibro');
+      B.ladrilhar(B.plano([x0 + 0.25, yB - 0.55, zB + 0.01], [1, 0, 0], [0, 1, 0]), B.ret(0, wb - 0.5, 0, 0.5), 'faixa_cerveja');
+      for (const [dy, dx] of [[0, 0], [0.3, 0], [0.6, 0.03], [0, -0.48]])
+        B.caixa(x0 + e + 0.3 + dx, x0 + e + 0.75 + dx, 0.05 + dy, 0.35 + dy, zFi + 0.2, zFi + 0.5, { todas: { k: 'engradado', modo: 'esticar' }, base: null });
+      B.caixa(x0 + e + 0.02, x0 + e + 0.1, 1.9, 2.5, zFi + 1.6, zFi + 2.6, { todas: { k: 'lisa', tinta: '#1a1a1a' }, base: null });
+      const n = Math.max(1, Math.floor((fx1 - fx0) / 1.9));
+      for (let i = 0; i < n; i++) mesaDeFora(B, fx0 + 0.95 + i * 1.9, fz, yC, cores, zF < -3.0, null);
+    }
+    /* ---- o andar de cima (a moradia do dono) e a laje ---- */
+    let topo = hT;
+    if (dois) {
+      const vf = distribuir(wb, wb >= 5.8 ? ['jan_cortina', 'jan_cortina', 'jan_peq'] : ['jan_cortina', 'jan_peq'], 0.08);
+      paredes(B, x0, x1, z0, zF, hT, hT + 2.8, { frente: { k: 'lisa', tinta, vaos: vf }, dir: { k: 'crua' }, esq: { k: 'crua' },
+                                               tras: { k: 'crua', vaos: distribuir(wb, ['jan_peq'], 0.06) } }, null);
+      topo = hT + 2.8;
+    }
+    faixa(B, x0, x1, z0, zF, topo - 0.02, topo + 0.1, 0.18, 'laje_borda', null);
+    tampo(B, x0, x1, z0, zF, topo + 0.1, 'laje');
+    caixaDagua(B, x0 + 0.9, z0 + 0.9, topo + 0.1, 0.55);
+  };
+}
+
+/* o carro parado na vaga, de frente pro portão: a lata, a cabine de vidro
+   escuro e as quatro rodas; o feitio é sedã (0), hatch (1) ou picape (2) */
+function carroParado(B, cx, zTras, cor, feitio) {
+  const L = feitio === 2 ? 4.9 : feitio === 1 ? 3.9 : 4.4, w = 1.74, zb = zTras, zf = zb + L;
+  for (const zz of [zb + 0.78, zf - 0.78]) for (const xx of [cx - w / 2 + 0.03, cx + w / 2 - 0.25])
+    B.caixa(xx, xx + 0.22, 0.02, 0.64, zz - 0.32, zz + 0.32, { todas: { k: 'lisa', tinta: '#1c1c1c' }, base: null });
+  B.caixa(cx - w / 2, cx + w / 2, 0.34, 0.96, zb, zf, { todas: { k: 'lisa', tinta: cor }, base: null });
+  const c0 = feitio === 2 ? zf - 2.1 : zb + (feitio === 1 ? 0.45 : 0.95), c1 = feitio === 2 ? zf - 0.55 : zf - (feitio === 1 ? 1.05 : 1.3);
+  B.caixa(cx - w / 2 + 0.1, cx + w / 2 - 0.1, 0.96, 1.5, c0, c1, { todas: { k: 'lisa', tinta: '#28323c' }, topo: { k: 'lisa', tinta: cor }, base: null });
+  if (feitio === 2) {
+    B.caixa(cx - w / 2, cx + w / 2, 0.96, 1.2, zb, zb + 0.08, { todas: { k: 'lisa', tinta: cor }, base: null });
+    B.caixa(cx - w / 2, cx - w / 2 + 0.08, 0.96, 1.2, zb, c0, { todas: { k: 'lisa', tinta: cor }, base: null });
+    B.caixa(cx + w / 2 - 0.08, cx + w / 2, 0.96, 1.2, zb, c0, { todas: { k: 'lisa', tinta: cor }, base: null });
+  }
+}
+/* as vagas do estacionamento: 2,5 m de largura e o fundo da vaga (o
+   desenho da planta usa as mesmas) */
+export function vagasDoEstacionamento(W, D) {
+  const larg = 2.5, n = Math.max(0, Math.floor((W - 0.6) / larg));
+  return { larg, n, ini: W / 2 - n * larg / 2, fundo: Math.min(4.8, D * 0.45) };
+}
+/* o portão do estacionamento, no referencial do lote (x de 0 a W): o lado
+   é o que a planta sorteou (`l.portao`), a 0,6 m da quina */
+export function portaoDoEstacionamento(l, W) {
+  const larg = Math.min(5.4, (W - 0.1) * 0.55), naDir = l.portao !== 'esq';
+  const a0 = naDir ? W - 0.05 - 0.6 - larg : 0.05 + 0.6;
+  return { larg, naDir, a0, a1: a0 + larg, guarita: naDir ? a0 - 0.9 : a0 + larg + 0.9 };
+}
+/* a placa do preço, no meio do pedaço comprido do muro da frente */
+export function placaDoEstacionamento(l, W) {
+  const P = portaoDoEstacionamento(l, W), a = P.naDir ? 0.05 : P.a1, b = P.naDir ? P.a0 : W - 0.05;
+  const larg = Math.min(2.6, Math.max(1.0, (b - a) - 0.5));
+  return { y: 1.25 * M, larg: larg * M, alt: larg / 4 * M, u: ((a + b) / 2 - W / 2) * M };
+}
+function estacionamento(B, p, l, conta) {
+  const { s, W, D } = p;
+  const x0 = 0.05, x1 = W - 0.05, z1 = -0.05, z0 = -D + 0.05, hm = 2.1, e = 0.14;
+  /* o chão de terra batida e os muros (o da frente com o portão largo, aberto) */
+  B.tampa([[x0, z1], [x1, z1], [x1, z0], [x0, z0]], 0.03, 'terra');
+  const muro = { todas: 'bloco', topo: 'laje_borda', base: null };
+  B.caixa(x0, x0 + e, 0, hm, z0, z1, muro);
+  B.caixa(x1 - e, x1, 0, hm, z0, z1, muro);
+  B.caixa(x0 + e, x1 - e, 0, hm, z0, z0 + e, muro);
+  /* o portão: no lado que a planta escolheu (`l.portao`, o 2D desenha
+     igual), a 0,6 m da quina; o muro de lá do portão leva a placa */
+  const P = portaoDoEstacionamento(l, W), gw = P.larg, naDir = P.naDir, ga = P.a0, gb = P.a1;
+  const pedacos = [[x0, ga], [gb, x1]].filter(([a, b]) => b - a > 0.2);
+  for (const [a, b] of pedacos) {
+    B.caixa(a, b, 0, hm, z1 - e, z1, { todas: { k: 'lisa', tinta: '#f2f1ec' }, topo: 'laje_borda', base: null });
+    conta.frentes.push({ x0: a, x1: b, y0: 0.2, y1: hm - 0.1, z: z1, vaos: [] });
+  }
+  /* o portão de correr, aberto atrás do pedaço comprido do muro */
+  const [pa, pb] = naDir ? [Math.max(x0 + 0.1, ga - gw * 0.55), ga] : [gb, Math.min(x1 - 0.1, gb + gw * 0.55)];
+  if (pb - pa > 0.3) B.caixa(pa, pb, 0.05, 1.9, z1 - e - 0.12, z1 - e - 0.05, { todas: 'portao_chapa', base: null });
+  conta.portas++;
+  /* a guarita, do lado de dentro, ao lado do portão, com a janela pra ele */
+  const gx0 = naDir ? ga - 1.65 : gb + 0.15, gx1 = gx0 + 1.5, gz1 = z1 - e - 0.4, gz0 = gz1 - 1.5;
+  if (gx0 > x0 + e && gx1 < x1 - e) {
+    const jan = [{ a0: 0.3, a1: 1.1, b0: 1.0, b1: 1.8, k: 'jan_vidro', fundo: 0.05 }];
+    paredes(B, gx0, gx1, gz0, gz1, 0, 2.3, { frente: { k: 'lisa', tinta: '#e8e2d2', vaos: [{ a0: 0.4, a1: 1.1, b0: 1.0, b1: 1.8, k: 'jan_vidro', fundo: 0.05 }] },
+      dir: { k: 'lisa', tinta: '#e8e2d2', vaos: naDir ? jan : [] }, esq: { k: 'lisa', tinta: '#e8e2d2', vaos: naDir ? [] : jan },
+      tras: { k: 'lisa', tinta: '#e8e2d2', vaos: [{ a0: 0.35, a1: 1.15, b0: 0, b1: 2.0, k: 'porta_ferro', fundo: 0.05 }] } }, null);
+    B.caixa(gx0 - 0.15, gx1 + 0.15, 2.3, 2.42, gz0 - 0.15, gz1 + 0.15, { todas: 'laje_borda', topo: 'laje', base: { k: 'crua', escuro: 0.75 } });
+  }
+  /* as vagas riscadas no fundo e os carros */
+  const V = vagasDoEstacionamento(W, D), zv0 = z0 + e, zv1 = zv0 + V.fundo;
+  const branco = { todas: { k: 'lisa', tinta: '#f4f3ee' }, base: null };
+  for (let k = 0; k <= V.n; k++) { const x = V.ini + k * V.larg; B.caixa(x - 0.05, x + 0.05, 0.03, 0.045, zv0, zv1, branco); }
+  for (const c of carrosDoEstacionamento(l, V.n)) carroParado(B, V.ini + (c.k + 0.5) * V.larg, zv0 + 0.25, c.cor, c.feitio);
+}
+
 const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4, baldio,
-                bartorcida: barTorcida, ...TIPOS_LOJA };
+                bartorcida: barTorcida, ...TIPOS_LOJA,
+                com_espetinho: comercio('espetinho'), com_hamburgueria: comercio('hamburgueria'), com_pizzaria: comercio('pizzaria'), com_barzinho: comercio('barzinho'),
+                estacionamento };
 
 /* =======================================================
    A MONTAGEM DE UMA CASA, direto no acumulador do mundo
