@@ -94,6 +94,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 :where(.app, .cen-ficha) .legenda i.sede { background: #1f5aa8; border: 2px solid #f2f1ec; }
 :where(.app, .cen-ficha) .legenda i.sedev { background: #aaa598; border: 2px dashed #57544d; }
 :where(.app, .cen-ficha) .legenda i.metro { background: #1f5aa8; border: 2px solid #f2f1ec; border-radius: 50%; }
+:where(.app, .cen-ficha) .legenda i.comercio { background: linear-gradient(90deg, #c0452f 0 25%, #e08a2c 25% 50%, #3f8f4a 50% 75%, #d9b331 75%); border: 2px solid #2b2118; }
+:where(.app, .cen-ficha) .legenda i.estac { background: repeating-linear-gradient(90deg, #a49d8f 0 3px, #f4f3ee 3px 4px); border: 1px solid #3d3a35; }
+:where(.app, .cen-ficha) .legenda i.ambulante { width: 6px; background: #c8322b; border: 1px solid #1d1a16; box-shadow: 8px 0 0 -1px #f2c230, 8px 0 0 0 #1d1a16; margin-right: 9px; }
 :where(.app, .cen-ficha) .torcidas { width: 100%; border-collapse: collapse; margin: 6px 0 0; font: 13px/1.3 var(--f-texto); }
 :where(.app, .cen-ficha) .torcidas th { text-align: left; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); padding: 0 6px 4px 0; }
 :where(.app, .cen-ficha) .torcidas td { padding: 4px 6px 4px 0; border-top: 1px solid var(--linha); vertical-align: top; font-variant-numeric: tabular-nums; }
@@ -273,7 +276,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro } from './js/casas3d.js';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js';
 import { montarModelos } from './js/modelos3d.js';
 import { moldeDaPeca, comTransformador } from './js/props3d.js';
 import { ATLAS } from './js/modelos_atlas.js';
@@ -289,7 +292,8 @@ import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js';
 import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js';
 import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js';
 import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio } from './js/estadios3d.js';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js';
+import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -343,7 +347,12 @@ const NOME_MODELO = {
   lanche: 'Lanchonete da favela', escada: 'Casa da escada de fora', varal: 'Sobrado do varal',
   garagem: 'Casa das garagens', base: 'Casa do embasamento', baldio: 'Terreno baldio murado'
 };
-const NOME_TIPO = { casa: 'Casa', sobrado: 'Sobrado', galpao: 'Galpão', predio: 'Prédio', muro: 'Muro', barraco: 'Barraco' };
+const NOME_TIPO = { casa: 'Casa', sobrado: 'Sobrado', galpao: 'Galpão', predio: 'Prédio', muro: 'Muro', barraco: 'Barraco',
+                    comercio: 'Comércio', estacionamento: 'Estacionamento' };
+/* O ENTORNO DO ESTÁDIO (proposta.js, ENTORNO_M): o comércio de dia de
+   jogo, na cor de cada um, e o estacionamento de terreno */
+const NOME_COMERCIO = { espetinho: 'Espetinho', hamburgueria: 'Hamburgueria', pizzaria: 'Pizzaria', barzinho: 'Barzinho' };
+const COR_COMERCIO = { espetinho: '#c0452f', hamburgueria: '#e08a2c', pizzaria: '#3f8f4a', barzinho: '#d9b331' };
 const NOME_MARCO = {
   igreja: 'Igreja Matriz', predio: 'Prédio alto do centro', loja: 'Prédio do mercado', adm: 'Centro Administrativo',
   casa: 'Casa de classe média', atacadex: 'Atacadex', torre1: 'Edifício Mirante', torre2: 'Residencial Bela Vista'
@@ -393,7 +402,8 @@ const COR = {
   lagoa: '#48675f', raso: '#5a7c70', barro: '#6f6547', margem: '#869f5c', junco: '#3d5a2c'
 };
 /* o lote de muro é terreno baldio: o chão de terra, com o muro riscado na frente */
-const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#b39a70', barraco: '#c98a5a' };
+const COR_LOTE = { casa: '#dd8888', sobrado: '#cc6666', galpao: '#8899aa', predio: '#7777aa', muro: '#b39a70', barraco: '#c98a5a',
+                   comercio: '#e07b39', estacionamento: '#a49d8f' };
 const COR_FAVELA = { casa: '#d9a066', sobrado: '#c9804e', barraco: '#c98a5a', galpao: '#a88a6a' };
 /* A PALETA DO CHÃO do cenário 3D: as mesmas chaves do desenho, nas cores
    do chão do jogo (estadio_pintura.js) — o asfalto, a calçada de cimento,
@@ -900,7 +910,7 @@ const COR_ZONA = { Norte: '#4f7cac', Sul: '#b5654a', Leste: '#c9a227', Oeste: '#
 let QUADRO_ZONAS = null;
 function quadroDasZonas() {
   if (QUADRO_ZONAS && QUADRO_ZONAS.prop === PROP) return QUADRO_ZONAS;
-  const us = unidadesDaPraca().filter(u => !u.estadio), L = PROP.limite, N = 256;
+  const us = unidadesDaPraca().filter(u => !u.estadio), L = PROP.limiteSemEntorno || PROP.limite, N = 256;
   const hx = new Float64Array(N + 1), hy = new Float64Array(N + 1);
   const W = Math.max(1, L.x1 - L.x0), H = Math.max(1, L.y1 - L.y0);
   const espalha = (h, a0, a1, base, larg, peso) => {
@@ -965,7 +975,11 @@ function bairroDaSedeNosDados(t, mapa) {
    pelo contorno dela, não pela célula da grade: a da beira é recortada na
    guia da avenida da beira, e o resto da célula — a orla, a areia e o
    mar, ou o mato da praça sem praia — não é bairro (01/10/2026: o mapa
-   do jogo pintava o bairro por cima do mato de São Paulo) */
+   do jogo pintava o bairro por cima do mato de São Paulo). O ENTORNO DO
+   ESTÁDIO (os quarteirões de comércio e estacionamento em volta dele)
+   fica de fora: ele é do bairro do estádio dele (`setorizar` pinta no
+   fim), e não mexe nos gomos, nas sementes nem na rua dos outros — as
+   sedes e os bares ficam onde estavam antes do entorno existir */
 function unidadesDaPraca() {
   const us = [];
   const poe = (r, extra) => us.push(Object.assign({ x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1 }, extra || {}));
@@ -977,7 +991,7 @@ function unidadesDaPraca() {
     if (a < (8 * M) ** 2) continue;                       // (a ponta que sobrou da quadra cortada pela costa)
     poe(bbox(q.pol), { pol: q.pol, areaReal: a });
   }
-  for (const q of PROP.quadras) poe(q);
+  for (const q of PROP.quadras) if (!q.entorno) poe(q);
   for (const f of PROP.favelas) poe(f.bb, { pol: f.poly, favela: f });
   if (PROP.ficaFavelaDeHoje && PROP.favelaDeHoje) poe(PROP.favelaDeHoje, { favela: 'hoje' });
   if (PROP.atacadex) poe(PROP.atacadex.bb);
@@ -1124,6 +1138,19 @@ function setorizar(ts, mapa) {
      areia e o mar não viram bairro) */
   const C = CALCADAS;
   const ehRua = (x, y) => x <= K.xLimiteCosta(y) && (!C || C.ehAsfalto(x, y) || C.naLaje(x, y) || C.naCalcadaPintada(x, y));
+  /* O ENTORNO NÃO LEVA A ONDA: antes dele, em volta do estádio só tinha a
+     rua do estádio e a calçada do outro lado dela, e o resto era mato. A
+     onda anda do mesmo jeito: na rua e na calçada do entorno ela só passa
+     até RUA + CALC da quadra do estádio, ou rente a outra quadra da cidade
+     (a rua que já era da cidade) — senão o bairro do estádio crescia, o
+     meio dele andava e os bares de duas praças trocavam de lugar */
+  const ENT = PROP.quadras.filter(q => q.entorno).map(q => {
+    const e = PROP.estadios.find(x => x.id === q.entorno.estadio);
+    return { rua: q.rua, est: e && e.area };
+  });
+  const perto = (r, x, y, d) => x >= r.x0 - d && x <= r.x1 + d && y >= r.y0 - d && y <= r.y1 + d;
+  const daCidade = (x, y) => us.some(u => !u.estadio && perto(u, x, y, RUA + CALC));
+  const ondaPassa = (x, y) => !ENT.some(E => perto(E.rua, x, y, 0) && !(E.est && perto(E.est, x, y, RUA + CALC + 1)) && !daCidade(x, y));
   const podeRua = new Map();
   const rua = v => {
     let r = podeRua.get(v);
@@ -1141,6 +1168,7 @@ function setorizar(ts, mapa) {
         if (a < 0 || b < 0 || a >= nx || b >= ny) continue;
         const v = b * nx + a;
         if (rot[v] >= 0 || !rua(v)) continue;
+        if (ENT.length) { const x = L.x0 + (a + 0.5) * CEL_SETOR, y = L.y0 + (b + 0.5) * CEL_SETOR; if (!ondaPassa(x, y)) continue; }
         novos.push([v, rot[c]]);
       }
     }
@@ -1165,6 +1193,24 @@ function setorizar(ts, mapa) {
   const bairros = lista.map((s, k) => ({ id: s.b.id, nome: s.b.nome, zona: s.b.zona, classe: s.b.classe, k,
     sede: s.sede ? s.sede.id : null, semente: { x: s.x, y: s.y }, centro: centro(k), celulas: soma[k].n,
     zonaCerta: zonaDe(s.x, s.y) === s.b.zona }));
+  /* O ENTORNO DO ESTÁDIO é do bairro do estádio: o quarteirão e a rua dele
+     ganham a cor depois de tudo (sem mexer no meio dos bairros nem na rua
+     de ninguém — só onde não tinha bairro) */
+  for (const q of PROP.quadras) {
+    if (!q.entorno) continue;
+    const ue = us.find(u => u.estadio && u.estadio.copia && u.estadio.copia.id === q.entorno.estadio), k = ue ? idx.get(ue.s) : undefined;
+    if (k === undefined) continue;
+    for (const [r, soRua] of [[q, false], [q.rua, true]]) {
+      const i0 = Math.max(0, Math.floor((r.x0 - L.x0) / CEL_SETOR)), i1 = Math.min(nx - 1, Math.floor((r.x1 - L.x0) / CEL_SETOR));
+      const j0 = Math.max(0, Math.floor((r.y0 - L.y0) / CEL_SETOR)), j1 = Math.min(ny - 1, Math.floor((r.y1 - L.y0) / CEL_SETOR));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const c = j * nx + i, x = L.x0 + (i + 0.5) * CEL_SETOR, y = L.y0 + (j + 0.5) * CEL_SETOR;
+        if (rot[c] >= 0 || x < r.x0 || x > r.x1 || y < r.y0 || y > r.y1) continue;
+        if (soRua && !ehRua(x, y)) continue;
+        rot[c] = k; bairros[k].celulas++;
+      }
+    }
+  }
   const zonas = {};
   for (const z of ['Norte', 'Sul', 'Leste', 'Oeste']) {
     const bz = bairros.filter(b => b.zona === z && b.celulas);
@@ -1307,7 +1353,7 @@ const arvoreSai = a => (somePelaProposta(a.x, a.y, 0) && !dentroDaCidade(a.x, a.
   (!!PROP.atacadex && noAtacadexDeHoje(a.x, a.y, 10)) || naTrocada(a.x, a.y) || naAvenidaTirada(a.x, a.y) || naEntrada(a.x, a.y) || naSede5(a.x, a.y);
 /* dentro do quarteirão que a sede de nível 5 tomou (a árvore do quintal sai) */
 const naSede5 = (x, y) => espacos.some(e => e.sede && e.sede.nivel === 5 && x > e.inteira.x0 && x < e.inteira.x1 && y > e.inteira.y0 && y < e.inteira.y1);
-const nomeQuadraNova = q => q.rotulo || (q.i + ',' + q.j + (q.parte || ''));
+const nomeQuadraNova = q => q.rotulo || (q.entorno ? 'do estádio' : q.i + ',' + q.j + (q.parte || ''));
 /* o carro, o poste e o prop que ficam no atacarejo de hoje (quando ele
    muda de lugar) ou debaixo do mapa novo somem */
 let carroSome = new Set();
@@ -3001,6 +3047,13 @@ function desenhar() {
       ctx.strokeStyle = '#f2c230'; ctx.lineWidth = px(2.2); ctx.stroke();
       continue;
     }
+    if (it.l.tipo === 'estacionamento') { desenharEstacionamento(it.l, px); continue; }
+    if (it.l.tipo === 'comercio') {
+      /* o comércio de dia de jogo: a cor dele, a borda escura grossa */
+      pol(it.pol, COR_COMERCIO[it.l.comercio] || COR_LOTE.comercio);
+      ctx.strokeStyle = '#2b2118'; ctx.lineWidth = px(1.8); ctx.stroke();
+      continue;
+    }
     pol(it.pol, COR_LOTE[it.l.tipo] || '#f0f');
     ctx.strokeStyle = '#123a3d'; ctx.lineWidth = px(0.9); ctx.stroke();
     if (it.l.tipo === 'muro') riscarMuro(it.l);
@@ -3036,6 +3089,8 @@ function desenhar() {
   }
   /* ---- a calçada: a faixa de pedestre (de perto), a árvore, o poste e o resto do mobiliário ---- */
   if (prop && CALCADAS) desenharCalcadas(vis, px);
+  /* ---- os ambulantes da porta do estádio ---- */
+  if (prop) desenharAmbulantes(ve, px);
   /* ---- de longe, o bar vira um ponto na cor da torcida (o lote tem 7 m) ---- */
   if (prop && s < 0.3) for (const x of bares) {
     const T = x.b.lote.torcida, r = px(T ? 6 : 4.5);
@@ -3335,6 +3390,42 @@ function rotuloDoLote(l) {
   if (pc && pc.tipo === 'baldio') return 'baldio ' + (l.frente || '');
   return (NOME_TIPO[l.tipo] || l.tipo).toLowerCase() + ' ' + (l.frente || '') + (m ? ' ' + m : '');
 }
+/* O ESTACIONAMENTO DE TERRENO (o entorno do estádio): o chão de terra
+   batida com brita, as vagas riscadas de branco encostadas no fundo, uns
+   carros parados e a guarita no canto da frente, do lado do portão */
+function desenharEstacionamento(l, px) {
+  const r = { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1 }, f = l.frente, hz = f === 'n' || f === 's';
+  ret(r, COR_LOTE.estacionamento);
+  ctx.strokeStyle = '#3d3a35'; ctx.lineWidth = px(1.2); ctx.strokeRect(r.x0, r.y0, r.x1 - r.x0, r.y1 - r.y0);
+  /* as vagas: 2,5 m de largura e 4,8 de fundo, na beira do fundo do terreno */
+  const larg = 2.5 * M, fundo = Math.min(4.8 * M, (hz ? r.y1 - r.y0 : r.x1 - r.x0) * 0.45);
+  const a0 = hz ? r.x0 : r.y0, a1 = hz ? r.x1 : r.y1, n = Math.floor((a1 - a0 - 0.6 * M) / larg);
+  const ini = (a0 + a1) / 2 - n * larg / 2;
+  const noFundo = f === 'n' ? [r.y1 - fundo, r.y1] : f === 's' ? [r.y0, r.y0 + fundo] : f === 'o' ? [r.x1 - fundo, r.x1] : [r.x0, r.x0 + fundo];
+  ctx.strokeStyle = '#f4f3ee'; ctx.lineWidth = Math.max(px(1), 0.12 * M);
+  ctx.beginPath();
+  for (let k = 0; k <= n; k++) {
+    const a = ini + k * larg;
+    if (hz) { ctx.moveTo(a, noFundo[0]); ctx.lineTo(a, noFundo[1]); } else { ctx.moveTo(noFundo[0], a); ctx.lineTo(noFundo[1], a); }
+  }
+  ctx.stroke();
+  /* uns carros parados e a guarita: a mesma conta do 3D (casas3d.js), com
+     o x do lote virado pro mundo como o 3D vira (a direita de quem olha
+     a fachada: −x no lote de frente pro norte, +y no de frente pro oeste) */
+  const W = (a1 - a0) / M, sinal = f === 'n' || f === 'l' ? -1 : 1, meio = (a0 + a1) / 2;
+  const noMundo = xl => meio + sinal * (xl - W / 2) * M;
+  for (const c of carrosDoEstacionamento(l, n)) {
+    const xc = noMundo(ini2(W, larg / M, n) + (c.k + 0.5) * larg / M), a = xc - (larg / 2 - 0.35 * M), b = xc + (larg / 2 - 0.35 * M);
+    const c0 = noFundo[0] + 0.3 * M, c1 = noFundo[1] - 0.3 * M;
+    ctx.fillStyle = c.cor;
+    if (hz) ctx.fillRect(a, c0, b - a, c1 - c0); else ctx.fillRect(c0, a, c1 - c0, b - a);
+  }
+  const P = portaoDoEstacionamento(l, W), g = 1.5 * M, gc = noMundo(P.guarita);
+  const fr = f === 'n' ? r.y0 + 0.5 * M : f === 's' ? r.y1 - 0.5 * M - g : f === 'o' ? r.x0 + 0.5 * M : r.x1 - 0.5 * M - g;
+  ctx.fillStyle = '#e8e2d2';
+  if (hz) ctx.fillRect(gc - g / 2, fr, g, g); else ctx.fillRect(fr, gc - g / 2, g, g);
+}
+const ini2 = (W, larg, n) => W / 2 - n * larg / 2;
 /* OS BAIRROS NO MAPA (o dono, 30/09/2026): a cor por cima das quadras,
    meio transparente — a da zona na planta, a da dona do bairro no jogo
    (`coresDosBairros`) —, e a divisa no meio da rua: fina entre dois
@@ -3477,6 +3568,16 @@ function desenharRotulos(vis, prop) {
       }
       /* as lojas do assalto: o nome da loja na fachada */
       if (s >= 0.1) for (const lj of PROP.lojas || []) etiqueta(NOME_TIPO_LOJA[lj.tipo] + ' · ' + lj.nome, lj.x, lj.y + (lj.lote.frente === 'n' ? -70 : 70));
+      /* o entorno do estádio: o nome do comércio de dia de jogo e o preço do estacionamento, de perto */
+      if (s >= 0.2) for (const it of lotesNovos) {
+        const l = it.l;
+        if (l.tipo !== 'comercio' && l.tipo !== 'estacionamento') continue;
+        const d = 60, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2;
+        const [fx, fy] = l.frente === 'n' ? [cx, l.y0 - d] : l.frente === 's' ? [cx, l.y1 + d] : l.frente === 'o' ? [l.x0 - d, cy] : [l.x1 + d, cy];
+        etiqueta(l.tipo === 'comercio' ? NOME_COMERCIO[l.comercio] + ' · ' + l.placa : 'Estacionamento · R$ ' + l.preco, fx, fy);
+      }
+      /* os ambulantes da porta do estádio, bem de perto (na rua, na frente deles) */
+      if (s >= 0.35) for (const a of ambulantesDoMapa()) etiqueta(NOME_AMBULANTE[a.tipo], a.x + a.frente[0] * 70, a.y + a.frente[1] * 70);
       for (const it of porticos) etiqueta(it.p.id === 'norte' ? 'Entrada norte' : 'Entrada sul', it.p.x - it.p.dir[0] * 260, it.p.y - it.p.dir[1] * 260);
     }
   }
@@ -3512,7 +3613,7 @@ function desenharRotulos(vis, prop) {
       ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillText('Q ' + q.i + ',' + q.j, sx, sy);
     }
     if (prop) for (const q of PROP.quadras) {
-      if (q.equip) continue;
+      if (q.equip || q.entorno) continue;
       const [sx, sy] = paraTela((q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
       ctx.fillStyle = '#0b4e53'; ctx.fillText('Q ' + nomeQuadraNova(q), sx, sy);
     }
@@ -3664,7 +3765,8 @@ function montarLegenda() {
                  ['Árvore', '#2e7d2e'], ['Poste', COR.poste]];
   $('legenda').innerHTML = itens.map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('') +
     (estado.modo !== 'atual' ? '<span><i class="nova"></i>Quadra nova</span><span><i class="bar"></i>Bar aberto</span><span><i class="barf"></i>Bar fechado</span>' +
-                                  '<span><i class="sede"></i>Sede</span><span><i class="sedev"></i>Sede vaga</span><span><i class="metro"></i>Metrô</span>' : '');
+                                  '<span><i class="sede"></i>Sede</span><span><i class="sedev"></i>Sede vaga</span><span><i class="metro"></i>Metrô</span>' +
+                                  '<span><i class="comercio"></i>Comércio do estádio</span><span><i class="estac"></i>Estacionamento</span><span><i class="ambulante"></i>Ambulante</span>' : '');
 }
 
 /* ======================================================
@@ -4232,6 +4334,20 @@ for (const [id, p] of Object.entries(PECAS_PRAIA)) {
         ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)]
       ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
       `<p class="nota">No tamanho de verdade, em metros; a semente troca as cores, o nome e o que está solto na areia. O texto que muda (o nome, o número do posto) é decalque. <code>js/diajogo/praia3d.js</code>.</p>`;
+    }
+  });
+}
+for (const [id, p] of Object.entries(PECAS_AMBULANTES)) {
+  MODELOS.push({
+    tipo: 'modelo', id: 'ambulante-' + id, secao: 'Os ambulantes', grupo: 'Porta do estádio', nome: p.nome, nota: p.nota, chao: '#b9b5ab', semente: 1, info: null,
+    montar(g) { const destino = {}, r = montarAmbulante(id, {}, destino, this.semente, { cores: [['#c8102e', '#151515'], ['#0f7a3d', '#e9e9e9']] }); this.info = r.info; malhasDoDestino(destino, g, r.placas); if (estado.sel === this) $('ficha').innerHTML = this.ficha(); },
+    ficha() {
+      const i = this.info;
+      return `<p class="sobre">Modelo 3D · ambulante da porta do estádio</p><h2>${esc(this.nome)}</h2>` + linhas([
+        ['Planta', i ? metros(i.larg * M) + ' × ' + metros(i.fundo * M) : '…'], ['Altura', i ? metros(i.altura * M) : '…'],
+        ['Triângulos', i ? String(Math.round(i.triangulos)) : '…'], ['Semente', String(this.semente)]
+      ]) + `<div class="acoes"><button data-acao="semente">Outra semente</button></div><p class="nota">${esc(this.nota)}</p>` +
+      `<p class="nota">No tamanho de verdade, em metros, de frente pro +z (a rua). No mapa, cada portão do estádio tem os dele na calçada, dos dois lados da boca; as camisas do camelô saem nas cores dos clubes da casa (aqui, de exemplo). <code>js/diajogo/ambulantes3d.js</code>.</p>`;
     }
   });
 }
@@ -5630,6 +5746,11 @@ function pecasDoCenario() {
   for (const it of estacoes) poe('metro', it, g => objetoDaEstacao(it, g));
   for (const it of porticos) poe('portico', it, g => objetoDoPortico(it.p, g));
   for (const e of estadios) poe('estadio', e, g => objetoDeEstadio(e, g));
+  /* os ambulantes da porta do estádio (js/ambulantes3d.js), de frente pra rua */
+  for (const a of ambulantesDoMapa()) poe('prop', null, g => {
+    const destino = {}, r = montarAmbulante(a.tipo, { x: a.x, z: a.y, giro: a.giro }, destino, a.sem, { cores: a.cores });
+    malhasDoDestino(destino, g, r.placas);
+  });
   /* o poste e o prop de hoje que ficam na calçada sobem na laje dela */
   const naLaje = (x, y) => !!CALCADAS && CALCADAS.naLaje(x, y);
   for (const p of pecasSoltas) if (!p.somePelaProposta) poe(p.k === 'poste' ? 'poste' : 'prop', p, g => objetoDoProp(naLaje(p.x, p.y) ? { ...p, alt: CALCADA_ALT } : p, g));
@@ -5687,6 +5808,111 @@ function praiaDoMapa() {
   const ya = bm.pontos[0][1], yb = bm.pontos[bm.pontos.length - 1][1], chave = Math.round(ya) + '|' + Math.round(yb);
   if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb));
   return PRAIAS.get(chave);
+}
+/* OS AMBULANTES DA PORTA DO ESTÁDIO (o dono, 01/10/2026: "...ambulantes
+   na porta do estádio"; js/diajogo/ambulantes3d.js): em volta de cada
+   portão, os carrinhos na calçada do estádio — a faixa de 2,5 m entre o
+   terreno e a rua —, de costas pro terreno e de frente pra rua, dos dois
+   lados da entrada (BOCAS_DOS_PORTOES: a boca e o começo da fila, os das
+   rotas do dia de jogo), a AMB.livre m dela ou mais, com AMB.vao m entre
+   um e outro e até AMB.longe m da boca: a fila do portão e a torcida que
+   chega passam livres. O portão 1 (o principal) tem até quatro, o 2 três
+   e o 3 (o do visitante) dois; a frente da bilheteria que dá pra rua
+   (BILHETERIAS_DA_RUA) fica livre pra fila do ingresso — o carrinho pula
+   pro outro lado dela —, e na quina do terreno ou na boca de outro portão
+   a fileira acaba. As camisas e as bandeiras do camelô são as dos clubes
+   da casa (dados/estadios.js) */
+const AMB = { livre: 6, vao: 2.2, quina: 1.5, fundo: 0.25, outraBoca: 6, longe: 20, quantos: [4, 3, 2] };
+const TIPOS_DO_PORTAO = [['espetinho', 'bebidas', 'camelo', 'pipoca'], ['cachorro', 'bebidas', 'espetinho'], ['bebidas', 'pipoca']];
+const NOME_AMBULANTE = { pipoca: 'Pipoca', cachorro: 'Cachorro-quente', espetinho: 'Espetinho', bebidas: 'Bebidas', camelo: 'Camelô' };
+let AMBULANTES = null;
+/* (pro teste: `?semAmbulantes` tira todos — o antes e o depois do dia de jogo) */
+const SEM_AMBULANTES = new URLSearchParams(location.search).has('semAmbulantes');
+/* as cores das camisas: as dos mandantes do estádio, senão as dos clubes da praça */
+function coresDaCasa(nome) {
+  const est = (TO.dados.estadios || []).find(x => x.nome === nome), times = TO.dados.times || [];
+  let ids = est ? est.mandantes || [] : [];
+  if (!ids.length) { const c = infoDaCidade(cidade); ids = times.filter(t => c && t.mapa === c.id).map(t => t.id); }
+  const cores = ids.map(id => times.find(t => t.id === id)).filter(t => t && t.cores && t.cores.length >= 2).map(t => [t.cores[0], t.cores[1]]);
+  return cores.slice(0, 3);
+}
+function ambulantesDoMapa() {
+  if (!PROP || estado.modo === 'atual' || SEM_AMBULANTES) return [];
+  const chave = estadios.map(e => e.nome).join('|');
+  if (AMBULANTES && AMBULANTES.prop === PROP && AMBULANTES.chave === chave) return AMBULANTES.lista;
+  const lista = [];
+  for (const it of estadios) {
+    const e = it.copia, E = e && ESTADIOS_JOGO[e.modelo], BO = e && BOCAS_DOS_PORTOES[e.modelo];
+    if (!E || !BO || !e.centro) continue;
+    const T = E.terreno, W = noTerreno(e), g = e.giro * Math.PI / 180, cg = Math.cos(g), sg = Math.sin(g);
+    /* os quatro lados do terreno (em metros do modelo): a normal pra fora,
+       a coordenada fixa, o vão ao longo e o que já está ocupado nele (a
+       frente das bilheterias, os carrinhos postos) */
+    const lados = [{ n: [1, 0], fixo: T.x1, lo: T.z0, hi: T.z1 }, { n: [-1, 0], fixo: T.x0, lo: T.z0, hi: T.z1 },
+                   { n: [0, 1], fixo: T.z1, lo: T.x0, hi: T.x1 }, { n: [0, -1], fixo: T.z0, lo: T.x0, hi: T.x1 }];
+    for (const L of lados) L.usado = (BILHETERIAS_DA_RUA[e.modelo] || []).filter(([n]) => n[0] === L.n[0] && n[1] === L.n[1]).map(([, t0, t1]) => [t0, t1]);
+    const ao = (L, p) => L.n[0] ? p[1] : p[0], dist = (L, p) => Math.abs((L.n[0] ? p[0] : p[1]) - L.fixo);
+    const cores = coresDaCasa(it.nome);
+    BO.forEach((bp, i) => {
+      const b = [bp[0], bp[1]], pf = [bp[2], bp[3]];
+      /* o lado da boca (e o da quina, se ela está a menos de 4 m dele) e,
+         em cada um, uma frente pra cada lado da entrada (da boca e do
+         começo da fila, o que for mais pra lá) */
+      const ord = lados.slice().sort((p, q) => dist(p, b) - dist(q, b));
+      const frentes = [];
+      for (const L of [ord[0]].concat(dist(ord[1], b) < 4 ? [ord[1]] : [])) {
+        const ta = Math.min(ao(L, b), ao(L, pf)), tb = Math.max(ao(L, b), ao(L, pf));
+        frentes.push({ L, dir: 1, t: tb + AMB.livre, t0: ao(L, b), viva: true }, { L, dir: -1, t: ta - AMB.livre, t0: ao(L, b), viva: true });
+      }
+      const tipos = TIPOS_DO_PORTAO[i] || TIPOS_DO_PORTAO[2];
+      let k = 0, f = 0;
+      while (k < AMB.quantos[i] && frentes.some(x => x.viva)) {
+        const F = frentes[f++ % frentes.length];
+        if (!F.viva) continue;
+        const L = F.L, tipo = tipos[k % tipos.length], PE = PECAS_AMBULANTES[tipo].PE;
+        /* o x da peça corre ao longo do lado: sx diz pra que lado */
+        const sx = L.n[0] ? -L.n[0] : L.n[1], a = Math.min(sx * PE[0], sx * PE[1]), z = Math.max(sx * PE[0], sx * PE[1]);
+        let tc = 0, t0 = 0, t1 = 0, ok = false;
+        for (let tenta = 0; tenta < 6 && F.viva && !ok; tenta++) {
+          tc = F.dir > 0 ? F.t - a : F.t - z; t0 = tc + a; t1 = tc + z;
+          const outra = BO.some((p, j) => j !== i && dist(L, p) < 8 && ao(L, p) > t0 - AMB.outraBoca && ao(L, p) < t1 + AMB.outraBoca);
+          if (t0 < L.lo + AMB.quina || t1 > L.hi - AMB.quina || Math.max(Math.abs(t0 - F.t0), Math.abs(t1 - F.t0)) > AMB.longe || outra) { F.viva = false; break; }
+          /* em cima do que já está ali (a bilheteria, outro carrinho): pula pro outro lado dele */
+          const u = L.usado.find(([u0, u1]) => t0 < u1 + AMB.vao && t1 > u0 - AMB.vao);
+          if (u) { F.t = F.dir > 0 ? u[1] + AMB.vao : u[0] - AMB.vao; continue; }
+          ok = true;
+        }
+        if (!ok) continue;
+        L.usado.push([t0, t1]);
+        F.t = F.dir > 0 ? t1 + AMB.vao : t0 - AMB.vao;
+        /* o meio da peça no modelo (as costas a AMB.fundo m do terreno), no mundo */
+        const d = AMB.fundo - PE[2], mp = L.n[0] ? [L.fixo + L.n[0] * d, tc] : [tc, L.fixo + L.n[1] * d];
+        const [x, y] = W(mp), nx = L.n[0] * cg - L.n[1] * sg, ny = L.n[0] * sg + L.n[1] * cg, giro = Math.atan2(-nx, ny);
+        const c = Math.cos(giro), s = Math.sin(giro), noMundo = (lx, lz) => [x + (lx * c - lz * s) * M, y + (lx * s + lz * c) * M];
+        const pol = [noMundo(PE[0], PE[2]), noMundo(PE[1], PE[2]), noMundo(PE[1], PE[3]), noMundo(PE[0], PE[3])];
+        lista.push({ tipo, x, y, giro, pol, bb: bbox(pol), frente: [nx, ny], estadio: e.id, portao: i + 1, cores,
+                     sem: (Math.abs(Math.round(x * 13 + y * 7)) % 99991) + 1 + k });
+        k++;
+      }
+    });
+  }
+  AMBULANTES = { prop: PROP, chave, lista };
+  return lista;
+}
+/* no mapa: a planta do carrinho na cor dele, com a borda escura; de
+   perto, a copa do guarda-sol por cima, transparente */
+function desenharAmbulantes(ve, px) {
+  for (const a of ambulantesDoMapa()) {
+    if (!ve(a.bb)) continue;
+    const p = PECAS_AMBULANTES[a.tipo];
+    pol(a.pol, p.cor);
+    ctx.strokeStyle = '#1d1a16'; ctx.lineWidth = px(1.4); ctx.stroke();
+    if (!p.sol || estado.s < 0.3) continue;
+    const c = Math.cos(a.giro), sn = Math.sin(a.giro), [lx, lz, r] = p.sol;
+    ctx.beginPath(); ctx.arc(a.x + (lx * c - lz * sn) * M, a.y + (lx * sn + lz * c) * M, r * M, 0, 7);
+    ctx.fillStyle = 'rgba(244,239,230,.45)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(29,26,22,.6)'; ctx.lineWidth = px(1); ctx.stroke();
+  }
 }
 /* o carro estacionado: a caixa na cor dele e a cabine mais escura (a
    conta do jogo, bairro3d) */
@@ -5963,7 +6189,8 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
   get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; }, get lotesVeraneio() { return lotesVeraneio; }, get api() { return apiDoCenario(); },
-  get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm, pecasDoCenario, centrarEm };
+  get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm, pecasDoCenario, centrarEm,
+  ambulantes: () => ambulantesDoMapa() };
 
 /* ======================================================
    O CENÁRIO 3D (js/cenario.js): o mapa inteiro em 3D, por cima da planta
