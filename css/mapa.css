@@ -160,3 +160,14 @@ body:has(.mb-painel) .tela-cheia{z-index:75}
 .mb-painel .mb-partes b{text-align:right}
 .mb-painel .mb-partes li.livre{color:var(--fraco, #8d8d8d)}
 .mb-painel .mb-partes li.livre i{background:repeating-linear-gradient(45deg,#3b3b39 0 3px,#2f2f2d 3px 6px)}
+
+/* ---- as pixações no cartão do bairro (01/10/2026) ---- */
+.mb-painel .mb-cartao h4 small{font-family:var(--corpo);text-transform:none;letter-spacing:0;font-size:11px;margin-left:6px}
+.mb-muros{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mb-muros li{display:grid;grid-template-columns:12px 64px 1fr auto;gap:6px;align-items:center;padding:3px 4px;border-bottom:1px solid var(--sulco, #232323);cursor:pointer}
+.mb-muros li:hover{background:rgba(255,255,255,.04)}
+.mb-muros li.sel{outline:1px solid var(--ouro, #d9a441);background:#221d12}
+.mb-muros li i{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.6)}
+.mb-muros li.livre i{background:transparent;border:1.5px solid #9a9a95}
+.mb-muros li.livre b{color:var(--fraco, #8d8d8d);font-weight:500}
+.mb-muros li small{color:var(--fraco, #8d8d8d);font-size:11px}

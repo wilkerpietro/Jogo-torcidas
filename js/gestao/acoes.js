@@ -144,9 +144,16 @@ TO.acoes = (function(){
     const querem  = Math.round(alcance * 1000 * chance);
     const vaga = TO.membros.capacidade(E) - E.membros.length;
     const regime = regimeRecrutamento(E);
-    const t = TABELA_RECRUTA[regime];
+    const t0 = TABELA_RECRUTA[regime];
+    /* O BAIRRO DO RECRUTAMENTO (dono, 01/10/2026): a chance pesa pela
+       torcida do clube que mora no bairro escolhido na reunião — ×0,7
+       onde quase não tem, ×1,3 no reduto (js/mundo/dominio.js) */
+    const D = TO.dominio;
+    const peso = D && D.pesoDoRecrutamento ? D.pesoDoRecrutamento(E) : 1;
+    const b = D && D.bairroDoRecrutamento ? D.bairroDoRecrutamento(E) : null;
+    const t = {rot:t0.rot, um:Math.min(0.9, t0.um * peso), dois:Math.min(0.5, t0.dois * peso)};
     return {
-      base, alcance, querem, chance, vaga, regime,
+      base, alcance, querem, chance, vaga, regime, peso, bairro: b ? b.nome : null,
       rotRegime: t.rot, um: t.um, dois: t.dois,
       zero: Math.max(0, 1 - t.um - t.dois),
       esperado: t.um + t.dois*2,
@@ -749,17 +756,21 @@ TO.acoes = (function(){
   const LISTA = [
     {
       id:'recrutar', nome:_t('Recrutar'), icone:'megafone', cena:_t('Praça'),
-      efeito:_t('chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube dita a sorte'),
+      efeito:_t('chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube e a torcida do bairro ditam a sorte; +0,2 por dia de domínio no bairro'),
       disponivel(E){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, motivo: nivelDaSede(E) <= 0 ? _t('a esquina não cabe mais gente: construa a sede') : _t('a sede está cheia')};
         if(p.base <= 0) return {ok:false, motivo:_t('não há torcedor fora de organizada')};
-        return {ok:true, nota:_t('{regime}: {um}% de 1 · {dois}% de 2',
-                                 {regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})};
+        return {ok:true, nota: p.bairro
+          ? _t('em {bairro} · {regime}: {um}% de 1 · {dois}% de 2', {bairro:p.bairro, regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})
+          : _t('{regime}: {um}% de 1 · {dois}% de 2', {regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, msg: nivelDaSede(E) <= 0 ? _t('A esquina não cabe mais gente: construa a sede.') : _t('A sede está cheia.'), semCusto:true};
+        /* a torcida na rua recrutando é presença no bairro: +0,2 no domínio
+           dele (uma vez por dia, entre na turma quem entrar) */
+        if(TO.dominio && TO.dominio.recrutouHoje) TO.dominio.recrutouHoje(E);
 
         /* o dado do dono: dois primeiro, um depois, o resto é ninguém */
         const r = U.rng();

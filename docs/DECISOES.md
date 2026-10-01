@@ -8529,6 +8529,41 @@ O dono: "dois alvos por mês definidos em reunião pras torcidas de sede 3 ou 4,
   - 200 dias sem erro;
   - i18n sem falta.
 
+## As pixações nos muros do bairro e o recrutamento por bairro (pedido do dono, 01/10/2026)
+
+O dono: "agora a opção de recrutar vai ser inteligente e definida na reunião qual bairro iremos recrutar. recrutar em um bairro dá 0,2 pontos diários de domínio nele. vamos criar um sistema de pixações no mapa, com quantidade limitada de pixações a fazer e os locais de pixação serem bem definidos pelo mapa, podendo ser de 3 a 5 por bairro, com cada pixação dando buff de 0.2 pontos diários de domínio. Torcida de sede 0 a 2 pode ter 5 pixações pra gastar por mês, nível 3 a 4 8 pixações e nível 5 ou 6 10 pixações. Algumas vitórias de brigas no bairro dão pontos de pixação no geral pra torcida utilizar. as pixações vão ser pequenos pontos no mapa que quando clicados vão mostrar quem é a torcida que pixou aquele espaço. uma torcida IA vai pixar ao longo de todo o mês de forma espalhada, a fim de evitar que as torcidas gastem tudo assim que for creditada a quantidade de pontos de pixação mensalmente. As torcidas IA sempre vão priorizar pixar em bairro que tem chance maior de dominar."
+
+**As pixações** (`js/mundo/dominio.js`):
+- **Os muros:** cada bairro tem de 3 a 5, um número fixo que sai do hash do bairro. Na planta, cada muro é um ponto fixo dentro do bairro, a 2 células da divisa e longe do nome, espalhados pelo bairro.
+- **De quem é:** o muro é livre ou da última torcida que pixou ali. Pixar por cima do muro de outra torcida também gasta uma pixação. O nosso muro não se pixa de novo, nem o de torcida irmã.
+- **O que rende:** cada muro dá +0,2 por dia na barra do bairro pra dona dele, pelo `mexer` de sempre (sai primeiro do que é de ninguém, e no bairro da sede de outra torcida rende metade).
+- **O saldo:**
+  - a cota do mês é 5 (sede 0 a 2), 8 (3 ou 4) ou 10 (5 ou 6), e vence na virada do mês;
+  - a de briga não vence, e a do mês é gasta primeiro;
+  - ganha pixação extra quem vence treta marcada (+1; a de 10 contra 10, +2), bote no bar ou na sede, a reunião da zona na praça ou a resenha da casa de piscina (+1). Vale pra gente e pra IA (treta e bote entre IAs, e a meta de reunião).
+- **A IA espalha pelo mês:** cada dia ela gasta o saldo dividido pelos dias que faltam (a fração vai no sorteio), nos bairros que tem mais chance de virar (a régua das metas do mês). Primeiro num muro livre, depois cobrindo o de uma rival, e por fim reforçando o bairro mais fraco dela. Quando cobrem um muro nosso, a rival se gaba na rede social.
+- **No mapa** (`js/ui/mapa_planta.js`): o muro pixado é um pontinho na cor da torcida. O livre é um aro claro, que aparece de perto ou no bairro escolhido. O clique no ponto escolhe o bairro e o muro, com o muro destacado em dourado.
+- **No cartão do bairro**, a seção "Pixações":
+  - cada muro com a dona e há quanto tempo foi pixado (a linha também seleciona o muro);
+  - quanto os nossos rendem por dia;
+  - o botão "Pixar em {bairro}", "Pixar este muro" ou "Cobrir o pixo da {sigla}" (só na nossa cidade), com o saldo "{n} pixações pra gastar: {c} do mês + {x} das brigas".
+
+**O recrutamento por bairro** (`dominio.bairrosPraRecrutar`, `feed.pautaRecrutamento`, `acoes` recrutar):
+- **Na reunião:** a pauta "Onde a gente recruta" traz os três bairros que mais valem. A conta é onde o clube tem mais torcida morando (é dali que vem novato), pesada pelo que o bairro vale no domínio: sem dona e dona fraca na frente; o nosso folgado e o da sede de outra, atrás. Cada botão diz a fatia do clube no bairro e a nossa barra.
+- **A escolha** vale até a próxima. Sem escolha, vale o primeiro da lista.
+- **O que rende:** todo dia em que o expediente recrutou, +0,2 de domínio no bairro (uma vez por dia, entre gente ou não). A chance de 1 ou 2 novatos pesa pela torcida do clube no bairro, de ×0,7 a ×1,3, e a linha do expediente mostra o bairro.
+- **A IA** também recruta: no começo do mês cada organizada escolhe o melhor bairro dela, pela mesma conta, e soma +0,2 por dia lá.
+
+**O peso no save:** o domínio guarda os muros pixados, o saldo de cada torcida e o bairro de recrutamento da IA. Num jogo de 20 dias são uns 150 KB, e o teto fica perto de 250 KB (um muro por vaga). O dia ficou em uns 70 ms.
+
+**Testado** (Playwright):
+- jogo da TUF (sede 4) por 45 dias: os muros de Fortaleza foram sendo pixados aos poucos (1, 2, 5, 8… ao longo do mês), com a IA concentrada nos bairros mais baratos (Jangurussu virou guerra de muros, com cinco torcidas cobrindo umas às outras);
+- a pauta de recrutamento trouxe Jangurussu (32% Fortaleza), Granja Portugal (40%) e Genibaú;
+- o nosso pixo pelo cartão funcionou;
+- 200 dias sem erro;
+- salvar e carregar mantém as barras;
+- i18n sem falta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -4223,6 +4223,8 @@ TO.feed = (function(){
     /* os alvos do mês (01/10/2026): 1, 2 ou 3 pelo nível da sede, cada
        um num bairro a virar — no lugar dos botes sorteados de bar e casa */
     pautaAlvos(E);
+    /* e o bairro do recrutamento do mês */
+    { const rc = pautaRecrutamento(E); if(rc) pautar(E, rc); }
     /* os convites de festa das aliadas até a próxima reunião */
     { const fe = pautaFestas(E); if(fe) pautar(E, fe); }
     /* a nossa festa de aniversário e a do clube, e os alvos de assalto */
@@ -4523,6 +4525,31 @@ TO.feed = (function(){
     return fora;
   }
 
+  /* ONDE A GENTE RECRUTA (pedido do dono, 01/10/2026: "a opção de
+     recrutar vai ser inteligente e definida na reunião qual bairro iremos
+     recrutar"): a diretoria traz os três bairros que mais valem — onde
+     o clube tem mais torcida morando, pesado pelo que o bairro vale no
+     domínio — e o presidente escolhe. Vale até a próxima escolha; o
+     recrutamento do expediente rende +0,2 por dia de domínio lá. */
+  function pautaRecrutamento(E){
+    const D = TO.dominio;
+    if(!D || !D.bairrosPraRecrutar) return null;
+    const sem = `${E.data.ano}|${mesDe(E)}`;
+    const l = D.bairrosPraRecrutar(E, E.torcida.id, E.torcida.mapa, 3);
+    if(!l.length) return null;
+    const atual = E.recrutamento && E.recrutamento.bairro ? D.bairro(E.torcida.mapa, E.recrutamento.bairro) : null;
+    const clube = (M().time(E.torcida.clubeId) || {}).nome || '';
+    return {
+      chave:`recruta|${sem}`, rot:_t('Onde a gente recruta'), voz:_t('Diretoria'), tipo:'recruta',
+      texto: atual
+        ? _t('Chefe, o recrutamento tá em {atual}. A diretoria olhou os bairros: onde mais tem torcedor do {clube} morando e o que cada um vale pra gente dominar a cidade. Onde a gente recruta este mês?', {atual:atual.nome, clube})
+        : _t('Chefe, a diretoria olhou os bairros: onde mais tem torcedor do {clube} morando e o que cada um vale pra gente dominar a cidade. Onde a gente recruta este mês?', {clube}),
+      botoes: l.map((x, i) => ({id:'b' + i, rot:x.nome, acao:'recruta-bairro', bairro:x.id,
+        nota:_t('{p}% do bairro é do {clube} · nossa barra {n}% · +0,2 por dia', {
+          p:Math.round((D.parteDaTorcida(E.torcida.id, E.torcida.mapa, x.id) || 0) * 100), clube, n:Math.round(x.minha)})}))
+    };
+  }
+
   /* o próximo dia livre depois do marcado: a agenda pode ter posto um
      jogo em cima (o árbitro adia jogo) */
   function proximoDiaLivre(E, b){
@@ -4717,6 +4744,13 @@ TO.feed = (function(){
       case 'assalto-nao':
         it.consequencia = _t('Ficou quieto.');
         return {};
+      case 'recruta-bairro': {
+        const D = TO.dominio, x = D && D.bairro(E.torcida.mapa, b.bairro);
+        if(!x) return {};
+        E.recrutamento = {bairro:x.id, ano:E.data.ano, semana:E.data.semana};
+        it.consequencia = _t('O recrutamento vai pra {bairro} até a próxima escolha: +0,2 por dia no domínio de lá, e a chance de novato pesa pela torcida que mora nele.', {bairro:x.nome});
+        return {};
+      }
       case 'bote-nao':
         TO.estado.mexerIndicador(E, 'prestigio', -0.2, _t('Deixamos o bote quieto'));
         TO.estado.mexerIndicador(E, 'moral', -1, _t('Deixamos o bote quieto'));

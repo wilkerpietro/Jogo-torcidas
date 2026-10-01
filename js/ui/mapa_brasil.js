@@ -270,6 +270,20 @@ TO.mapaBrasil = (function(){
           return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv)}</li>`;
         }).join('') + '</ul>'
       : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;
+    /* AS PIXAÇÕES (01/10/2026): os muros do bairro, de quem é cada um e
+       quanto rendem; o saldo nosso e o botão de pixar (só na nossa cidade) */
+    let ms = [], selMuro = null;
+    if(d.muros){
+      ms = d.muros(e, cid, b.id);
+      selMuro = opc.muro && opc.muro.b === b.id ? ms.find(m => m.i === opc.muro.i) : null;
+      const ha = abs => { const n = (e.data.absoluto || 0) - (abs || 0); return n <= 0 ? _t('hoje') : n === 1 ? _t('ontem') : _t('há {n} dias', {n}); };
+      const nossos = ms.filter(m => m.t === meu).length;
+      h += `<h4>${esc(_t('Pixações'))} <small>${esc(_t('{n} de {total} muros · +0,2 por dia cada', {n:ms.filter(m => m.t).length, total:ms.length}))}</small></h4>`;
+      h += '<ul class="mb-muros">' + ms.map(m =>
+        `<li data-muro="${m.i}" class="${selMuro && selMuro.i === m.i ? 'sel' : ''}${m.t ? '' : ' livre'}"><i${m.t ? ` style="background:${corDe(m.t)}"` : ''}></i>` +
+        `<span>${esc(_t('Muro {n}', {n:m.i + 1}))}</span><b>${m.t ? esc(nome(m.t)) : esc(_t('livre'))}</b><small>${m.t ? esc(ha(m.abs)) : ''}</small></li>`).join('') + '</ul>';
+      if(nossos) h += `<p class="mb-nota">${esc(_t('Os nossos {n} muros aqui rendem +{v} por dia na barra.', {n:nossos, v:(nossos * 0.2).toLocaleString('pt-BR', {maximumFractionDigits:1})}))}</p>`;
+    }
     const meus = est.filter(s => s.tid === meu && s.tipo !== 'sede');
     if(meus.length && b.dono && b.dono !== meu && d.rivais(e, meu, b.dono))
       h += `<p class="mb-efeito ruim">${esc(_t('Os nossos pontos aqui rendem 30% menos: o bairro é da {nome}, rival.', {nome:nome(b.dono)}))}</p>`;
@@ -293,6 +307,27 @@ TO.mapaBrasil = (function(){
       pe.appendChild(bt);
       if(!pode.ok){ const m = document.createElement('small'); m.textContent = pode.motivo || ''; pe.appendChild(m); }
     }
+    if(d.pixar && cid === e.torcida.mapa && ms.length){
+      const sd = d.saldoPix(e, meu);
+      const alvo = selMuro || ms.find(m => !m.t) || ms.find(m => m.t && m.t !== meu);
+      const bt = document.createElement('button');
+      bt.type = 'button'; bt.className = 'bt';
+      bt.textContent = !alvo ? _t('Todos os muros daqui são nossos')
+        : alvo.t === meu ? _t('Esse muro já é nosso')
+        : alvo.t ? _t('Cobrir o pixo da {nome}', {nome:sigla(alvo.t)})
+        : selMuro ? _t('Pixar este muro') : _t('Pixar em {bairro}', {bairro:b.nome});
+      bt.disabled = !alvo || alvo.t === meu || sd.total <= 0;
+      bt.onclick = () => {
+        const r = d.pixar(e, meu, cid, b.id, alvo ? alvo.i : null);
+        if(TO.estado.mudou) try{ TO.estado.mudou(); }catch(_){}
+        if(opc.aoAviso) opc.aoAviso(r.msg || '', r.ok);
+        if(opc.aoMudar) opc.aoMudar();
+      };
+      pe.appendChild(bt);
+      const m = document.createElement('small');
+      m.textContent = _t('{n} pixações pra gastar: {c} do mês + {x} das brigas', {n:sd.total, c:sd.cota, x:sd.extra});
+      pe.appendChild(m);
+    }
     if(opc.aoIr){
       const bt = document.createElement('button');
       bt.type = 'button'; bt.className = 'bt';
@@ -301,6 +336,7 @@ TO.mapaBrasil = (function(){
       pe.appendChild(bt);
     }
     if(pe.childNodes.length) caixa.appendChild(pe);
+    if(opc.aoMuro) for(const li of caixa.querySelectorAll('.mb-muros li')) li.onclick = () => opc.aoMuro(+li.dataset.muro);
     return caixa;
   }
 
@@ -396,14 +432,16 @@ TO.mapaBrasil = (function(){
       return;
     }
     corpo.className = 'mb-corpo mb-corpo-cidade';
-    const aoEscolher = bid => { vista.bairro = bid; vista.lado = 'bairros'; pintar(); };
+    const aoEscolher = bid => { vista.bairro = bid; vista.muro = null; vista.lado = 'bairros'; pintar(); };
+    /* o muro de pixação clicado: o bairro dele, e o muro em destaque */
+    const aoMuro = (bid, i) => { vista.bairro = bid; vista.muro = {b:bid, i}; vista.lado = 'bairros'; pintar(); };
     /* A PLANTA DA CIDADE (o dono, 01/10/2026: "o mapa 2d que acabamos de
        construir na versão 3d"): a praça desenhada como no jogo 3D, com a
        dona de cada bairro por cima (js/ui/mapa_planta.js); sem a planta
        dela, o quadro de bairros por zona */
     const PL = TO.mapaPlanta;
     if(PL && PL.tem(vista.cidade)){
-      const pl = PL.criar(vista.cidade, {escolhido:vista.bairro, aoEscolher, semPlanta: pintar});
+      const pl = PL.criar(vista.cidade, {escolhido:vista.bairro, aoEscolher, aoMuro, muro:vista.muro, semPlanta: pintar});
       raiz._planta = pl;
       corpo.appendChild(pl);
     } else corpo.appendChild(quadro(vista.cidade, {escolhido:vista.bairro, aoEscolher}));
@@ -442,7 +480,8 @@ TO.mapaBrasil = (function(){
     } else {
       /* (o resumo de quem domina a cidade saiu daqui pra dar espaço ao
          bairro — pedido do dono, 01/10/2026; a planta já pinta a dona) */
-      lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar,
+      lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar, muro: vista.muro,
+        aoMuro: i => { vista.muro = {b:vista.bairro, i}; pintar(); },
         aoAviso: (t, ok) => { if(TO.tela && TO.tela.aviso) TO.tela.aviso(t, ok ? 'boa' : 'ruim'); }}));
     }
     corpo.appendChild(lado);

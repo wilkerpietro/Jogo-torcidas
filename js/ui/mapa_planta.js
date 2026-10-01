@@ -90,6 +90,45 @@ TO.mapaPlanta = (function(){
     return c;
   }
 
+  /* OS MUROS DE PIXAÇÃO (01/10/2026): de 3 a 5 por bairro (o número é
+     do domínio, `vagasPix`), cada um num ponto fixo dentro do bairro —
+     espalhados (o mais longe dos já escolhidos, numa amostra fixa das
+     células do bairro) e longe do nome dele no meio */
+  const murosPos = new Map();
+  function posMuros(cid){
+    if(murosPos.has(cid)) return murosPos.get(cid);
+    const p = P(cid), g = p.g, G = grade(cid), H = (TO.dominio && TO.dominio.hash) || (s => s.length);
+    const cel = p.b.map(() => []);
+    for(let j = 0; j < g.ny; j++) for(let i = 0; i < g.nx; i++){ const k = G.em(i, j); if(k >= 0) cel[k].push([i, j]); }
+    const out = new Map();
+    p.b.forEach((pb, k) => {
+      const n = TO.dominio && TO.dominio.vagasPix ? TO.dominio.vagasPix(cid, pb[0]) : 4;
+      const cx = pb[3] != null ? (pb[3] - g.x0) / g.cel : null, cy = pb[4] != null ? (pb[4] - g.y0) / g.cel : null;
+      /* uma amostra fixa das células, sem as perto do nome */
+      /* dentro do bairro de verdade: 2 células de folga da divisa, pra o
+         ponto não ficar em cima da linha entre dois bairros */
+      const dentro = ([i, j]) => { for(let a = -2; a <= 2; a++) for(let c = -2; c <= 2; c++){
+        const ii = i + a, jj = j + c; if(ii < 0 || jj < 0 || ii >= g.nx || jj >= g.ny || G.em(ii, jj) !== k) return false; } return true; };
+      let cs = cel[k].filter(c => dentro(c) && (cx == null || Math.hypot(c[0] - cx, c[1] - cy) > 4));
+      if(cs.length < n) cs = cel[k].filter(dentro);
+      if(cs.length < n) cs = cel[k].slice();
+      cs = cs.map(c => [c, H(`muro|${cid}|${pb[0]}|${c[0]}|${c[1]}`)]).sort((a, b) => a[1] - b[1]).slice(0, 400).map(x => x[0]);
+      const esc = [];
+      if(cs.length) esc.push(cs[0]);
+      while(esc.length < n && esc.length < cs.length){
+        let melhor = null, dm = -1;
+        for(const c of cs){
+          const d = Math.min(...esc.map(e => Math.hypot(e[0] - c[0], e[1] - c[1])));
+          if(d > dm){ dm = d; melhor = c; }
+        }
+        esc.push(melhor);
+      }
+      out.set(pb[0], esc.map(([i, j]) => [g.x0 + (i + 0.5) * g.cel, g.y0 + (j + 0.5) * g.cel]));
+    });
+    murosPos.set(cid, out);
+    return out;
+  }
+
   function imagem(cid, pronta){
     let im = imagens.get(cid);
     if(!im){
@@ -224,6 +263,32 @@ TO.mapaPlanta = (function(){
           ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.fillStyle = '#ffe9a8';
           ctx.strokeText(t, sx, sy - 8); ctx.fillText(t, sx, sy - 8);
           ocupa(sx, sy - 8, ctx.measureText(t).width + 8, 24);
+        }
+      }
+      /* OS MUROS PIXADOS: o ponto na cor de quem pixou; o livre, um aro
+         claro (de perto, ou no bairro escolhido) */
+      if(d.muros){
+        const PM = posMuros(cid), kSel = opc.escolhido;
+        for(const pb of p.b){
+          const pos = PM.get(pb[0]) || [];
+          const ms = d.muros(e, cid, pb[0]);
+          ms.forEach((m, i) => {
+            const pt = pos[i]; if(!pt) return;
+            const [sx, sy] = paraTela(pt[0], pt[1]);
+            if(sx < -10 || sy < -10 || sx > larg + 10 || sy > alt + 10) return;
+            const sel = opc.muro && opc.muro.b === pb[0] && opc.muro.i === i;
+            const rr = perto >= 1.6 ? 5.5 : 4.2;
+            if(m.t){
+              const cor = MB().corDe(m.t);
+              ctx.beginPath(); ctx.arc(sx, sy, rr, 0, Math.PI * 2);
+              ctx.fillStyle = cor; ctx.fill();
+              ctx.lineWidth = 1.4; ctx.strokeStyle = MB().claro(cor) ? '#222' : '#f4f4f0'; ctx.stroke();
+            } else if(perto >= 1.6 || kSel === pb[0] || sel){
+              ctx.beginPath(); ctx.arc(sx, sy, rr - 0.8, 0, Math.PI * 2);
+              ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.stroke();
+            }
+            if(sel){ ctx.beginPath(); ctx.arc(sx, sy, rr + 3.5, 0, Math.PI * 2); ctx.lineWidth = 2.2; ctx.strokeStyle = '#d9a441'; ctx.stroke(); }
+          });
         }
       }
       /* as sedes: o ponto na cor da torcida e a sigla */
@@ -381,7 +446,20 @@ TO.mapaPlanta = (function(){
       vistas.set(cid, V);
       if(ev.type === 'pointerup' && foi && foi.andou <= 4){
         const r = cv.getBoundingClientRect();
-        const k = bairroEm(ev.clientX - r.left, ev.clientY - r.top);
+        const sx = ev.clientX - r.left, sy = ev.clientY - r.top;
+        /* o muro primeiro: o ponto é pequeno, o bairro é grande */
+        if(opc.aoMuro && d.muros){
+          let achou = null, dm = 11;
+          for(const [bid, pos] of posMuros(cid)) pos.forEach((pt, i) => {
+            const [px, py] = paraTela(pt[0], pt[1]), dd = Math.hypot(px - sx, py - sy);
+            if(dd < dm){
+              const m = (d.muros(e, cid, bid) || [])[i];
+              if(m && (m.t || V.s / sFit() >= 1.6 || opc.escolhido === bid)){ dm = dd; achou = {b:bid, i}; }
+            }
+          });
+          if(achou){ opc.aoMuro(achou.b, achou.i); return; }
+        }
+        const k = bairroEm(sx, sy);
         const b = k >= 0 ? deK[k] : null;
         if(b && opc.aoEscolher) opc.aoEscolher(b.id);
       }

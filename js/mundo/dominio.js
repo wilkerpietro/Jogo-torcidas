@@ -843,6 +843,8 @@ TO.dominio = (function(){
     if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); }
     /* as metas do mês de cada organizada da IA (01/10/2026) */
     try{ metasDoDia(E); }catch(e){ /* as metas não derrubam o dia */ }
+    /* os muros pixados rendem, a IA pixa e recruta (01/10/2026) */
+    try{ diaDosMuros(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
   }
   function avisarCidade(E, cid, antes, dono, pl){
     const cidade = (cidadeDe(cid) || {}).nome || cid, meu = eu(E);
@@ -974,6 +976,226 @@ TO.dominio = (function(){
                                  alvo: noBar ? 'bar' : 'reuniao', nome:att.nome, zona});
   }
 
+  /* =======================================================
+     AS PIXAÇÕES (pedido do dono, 01/10/2026: "um sistema de pixações no
+     mapa, com quantidade limitada de pixações a fazer e os locais de
+     pixação bem definidos pelo mapa, de 3 a 5 por bairro, com cada
+     pixação dando buff de 0.2 pontos diários de domínio. Sede 0 a 2: 5
+     pixações pra gastar por mês, nível 3 a 4: 8, nível 5 ou 6: 10.
+     Algumas vitórias de brigas no bairro dão pontos de pixação no geral
+     pra torcida utilizar. A IA vai pixar ao longo de todo o mês de forma
+     espalhada [...] e sempre vai priorizar pixar em bairro que tem chance
+     maior de dominar.")
+
+     · OS LUGARES: cada bairro tem de 3 a 5 muros (o número sai do hash
+       do bairro, fixo pra sempre); a planta desenha cada um num ponto
+       fixo dentro do bairro (js/ui/mapa_planta.js).
+     · O MURO: livre, ou de uma torcida (a última que pixou). Pixar por
+       cima do muro de outra torcida também gasta uma pixação; o nosso
+       muro não se pixa de novo.
+     · O BUFF: cada muro dá 0,2 por dia na barra do bairro pra dona dele,
+       na conta de sempre (`mexer`: tira do que é de ninguém e das
+       outras; no bairro da sede de outra torcida, metade).
+     · O SALDO: a cota do mês (5, 8 ou 10, pelo nível da sede) vence no
+       fim do mês; a de briga (`extra`) não vence. Gasta-se a do mês
+       primeiro. Ganha extra quem vence treta (+1; a de 10 contra 10,
+       +2), bote no bar ou na sede, a reunião da zona na praça e a
+       resenha da casa de piscina (+1) — da gente e da IA.
+     · A IA espalha: a cada dia gasta o saldo dividido pelos dias que
+       faltam no mês (a fração no sorteio), no bairro que ela tem mais
+       chance de virar (a régua das metas), primeiro num muro livre,
+       depois cobrindo o de uma rival.
+     O SAVE: `E.dominio.pix[cid][bairro#n] = 'torcida|dia'` e
+     `E.dominio.pixSaldo[torcida] = [mês, cota, extra]`.
+     ======================================================= */
+  const PIX = {dia:0.2, cota:n => n >= 5 ? 10 : n >= 3 ? 8 : 5};
+  const vagasPix = (cid, bid) => 3 + hash(`pix|${cid}|${bid}`) % 3;
+  function pixCidade(E, cid){
+    const D = raiz(E);
+    D.pix = D.pix || {};
+    return D.pix[cid] = D.pix[cid] || {};
+  }
+  /* os muros do bairro: [{i, t (dona ou null), abs}] */
+  function muros(E, cid, b){
+    const x = bairro(cid, b);
+    if(!x) return [];
+    const P = ((raiz(E).pix || {})[cid]) || {};
+    const out = [];
+    for(let i = 0; i < vagasPix(cid, x.id); i++){
+      const v = P[`${x.id}#${i}`];
+      const [t, abs] = v ? v.split('|') : [null, null];
+      out.push({i, t:t || null, abs: abs ? +abs : null});
+    }
+    return out;
+  }
+  const nivelDaSedeDe = (E, tid) => tid === eu(E) ? (E.torcida.sedeNivel || 0)
+    : (((TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : {})[tid] || {}).sede || 0);
+  /* o saldo de hoje: a cota do mês (renovada na virada) e o de briga */
+  function saldoPix(E, tid){
+    const D = raiz(E), mes = mesDe(E);
+    D.pixSaldo = D.pixSaldo || {};
+    let s = D.pixSaldo[tid];
+    if(!s || s[0] !== mes) s = D.pixSaldo[tid] = [mes, PIX.cota(nivelDaSedeDe(E, tid)), s ? s[2] || 0 : 0];
+    return {cota:s[1], extra:s[2], total:s[1] + s[2], cotaDoMes:PIX.cota(nivelDaSedeDe(E, tid))};
+  }
+  function gastarPix(E, tid){
+    saldoPix(E, tid);
+    const s = raiz(E).pixSaldo[tid];
+    if(s[1] > 0){ s[1]--; return true; }
+    if(s[2] > 0){ s[2]--; return true; }
+    return false;
+  }
+  function ganharPix(E, tid, n){
+    if(!tid || !(n > 0)) return;
+    saldoPix(E, tid);
+    raiz(E).pixSaldo[tid][2] += n;
+  }
+  const irmas = (a, b) => !!(TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(a, b));
+  /* PIXAR: num muro escolhido (`i`) ou no primeiro livre — sem livre, por
+     cima do muro da rival que tem mais muros ali */
+  function pixar(E, tid, cid, b, i){
+    const x = bairro(cid, b);
+    if(!E || !x || !tid) return {ok:false, msg:_t('Esse bairro não existe.')};
+    const ms = muros(E, cid, x);
+    let m = i != null ? ms.find(z => z.i === +i) : null;
+    if(i != null && !m) return {ok:false, msg:_t('Esse muro não existe.')};
+    if(!m){
+      m = ms.find(z => !z.t);
+      if(!m){
+        const conta = {};
+        for(const z of ms) if(z.t) conta[z.t] = (conta[z.t] || 0) + 1;
+        m = ms.filter(z => z.t && z.t !== tid && !irmas(tid, z.t)).sort((a, c) => conta[c.t] - conta[a.t] || a.abs - c.abs)[0];
+      }
+    }
+    if(!m) return {ok:false, msg:_t('Todos os muros de {bairro} já são nossos.', {bairro:x.nome})};
+    if(m.t === tid) return {ok:false, msg:_t('Esse muro já é nosso.')};
+    if(m.t && irmas(tid, m.t)) return {ok:false, msg:_t('Esse muro é de uma torcida irmã.')};
+    if(!gastarPix(E, tid)) return {ok:false, msg:_t('Acabaram as pixações deste mês.')};
+    const de = m.t;
+    pixCidade(E, cid)[`${x.id}#${m.i}`] = `${tid}|${E.data.absoluto || 0}`;
+    /* cobriram o NOSSO muro: a rival se gaba na rede (uma vez por dia) */
+    if(de && de === eu(E) && TO.feed && TO.feed.mensagemDe)
+      TO.feed.mensagemDe(E, tid, _t('Passamos por cima do pixo da {nossa} em {bairro}. O muro agora fala outra língua.',
+        {nossa:nomeDe(de), bairro:x.nome}), 'zoeira', {publico:true, chave:`pixo|${E.data.absoluto}|${tid}|${de}`});
+    return {ok:true, i:m.i, cobriu:de, msg: de
+      ? _t('Pixamos por cima da {de} em {bairro}: +0,2 por dia pra gente ali.', {de:nomeDe(de), bairro:x.nome})
+      : _t('Pixamos um muro em {bairro}: +0,2 por dia pra gente ali.', {bairro:x.nome})};
+  }
+  /* o muro rende: 0,2 por dia pra dona, somados por bairro e torcida */
+  function diaDosMuros(E){
+    const P = raiz(E).pix || {};
+    for(const cid in P){
+      const soma = {};
+      for(const k in P[cid]){
+        const [bid] = k.split('#'), [t] = String(P[cid][k]).split('|');
+        if(!t) continue;
+        const ch = bid + '|' + t;
+        soma[ch] = (soma[ch] || 0) + PIX.dia;
+      }
+      for(const ch in soma){
+        const [bid, t] = ch.split('|');
+        mexer(E, cid, bid, t, soma[ch], {motivo:'pixacao', semTorcida:true});
+      }
+    }
+  }
+  /* quantos dias faltam no mês (contando hoje) */
+  function diasQueFaltam(E){
+    const d = TO.estado && TO.estado.dataDaSemana ? TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia) : null;
+    if(!d) return 30;
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() - d.getDate() + 1;
+  }
+  /* A IA PIXA ESPALHADO, no bairro de mais chance */
+  function iaPixa(E){
+    const I = indice(), meu = eu(E), falta = Math.max(1, diasQueFaltam(E));
+    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    if(!mundo) return;
+    const r = sorteio(`${semente(E)}|pixo|${E.data.absoluto || 0}`);
+    for(const cid of I.comTorcida){
+      let bs = null, pl = null;
+      for(const o of torcidasDaCidade(cid)){
+        if(o.id === meu || !mundo[o.id]) continue;
+        const sd = saldoPix(E, o.id);
+        if(sd.total <= 0) continue;
+        const media = sd.total / falta;
+        let n = Math.floor(media) + (r() < media - Math.floor(media) ? 1 : 0);
+        if(!n) continue;
+        if(!bs){ bs = bairros(E, cid); pl = placar(E, cid); }
+        const lista = alvosDe(E, cid, o.id, 6, bs, pl).map(a => a.b);
+        const minhas = bs.filter(b => b.dono === o.id).sort((a, c) => a.v - c.v);
+        for(const b of lista.concat(minhas)){
+          if(n <= 0) break;
+          while(n > 0){
+            const res = pixar(E, o.id, cid, b.id);
+            if(!res.ok) break;
+            n--;
+          }
+        }
+      }
+    }
+  }
+
+  /* =======================================================
+     O RECRUTAMENTO POR BAIRRO (pedido do dono, 01/10/2026: "a opção de
+     recrutar vai ser inteligente e definida na reunião qual bairro iremos
+     recrutar. recrutar em um bairro dá 0,2 pontos diários de domínio
+     nele")
+     A diretoria lista, na reunião, os três bairros que mais valem: onde
+     o clube tem mais torcida morando (é dali que vem novato) pesado pelo
+     que o bairro vale no domínio (o sem dona e o de dona fraca na frente;
+     o nosso já folgado, atrás). O escolhido fica até a próxima escolha
+     (`E.recrutamento`); sem escolha, vale o primeiro da lista. Todo dia
+     em que o expediente recrutou, +0,2 ali; a chance do novato pesa
+     pela torcida do clube no bairro (×0,7 a ×1,3, acoes.js). A IA
+     recruta no melhor bairro dela, com o mesmo +0,2 por dia.
+     ======================================================= */
+  const RECRUTA_DIA = 0.2;
+  function bairrosPraRecrutar(E, tid, cid, n){
+    tid = tid || eu(E); cid = cid || (tid === eu(E) ? E.torcida.mapa : ((TO.mundo && TO.mundo.torcida(tid)) || {}).mapa);
+    const bs = bairros(E, cid);
+    return bs.map(b => {
+      const pres = presencaDa(tid, cid, b.id), minha = (b.partes.find(p => p.t === tid) || {}).v || 0;
+      const vale = b.dono === tid ? (b.v >= 70 ? 0.4 : 0.8) : !b.dono ? 1.2 : b.v < 65 ? 1.1 : 0.9;
+      return {id:b.id, nome:b.nome, presenca:pres, minha, dono:b.dono, v:b.v,
+              nota:Math.min(pres, 2) * vale * (b.sede && b.sede !== tid ? 0.6 : 1)};
+    }).sort((a, c) => c.nota - a.nota).slice(0, n || 3);
+  }
+  function bairroDoRecrutamento(E){
+    const r = E.recrutamento;
+    if(r && r.bairro && bairro(E.torcida.mapa, r.bairro)) return bairro(E.torcida.mapa, r.bairro);
+    const l = bairrosPraRecrutar(E, eu(E), E.torcida.mapa, 1);
+    return l.length ? bairro(E.torcida.mapa, l[0].id) : null;
+  }
+  /* o peso da torcida do bairro na chance do novato */
+  function pesoDoRecrutamento(E){
+    const b = bairroDoRecrutamento(E);
+    return b ? 0.7 + 0.3 * Math.min(presencaDa(eu(E), E.torcida.mapa, b.id), 2) : 1;
+  }
+  /* o expediente recrutou hoje: +0,2 no bairro (uma vez por dia) */
+  function recrutouHoje(E){
+    const b = bairroDoRecrutamento(E), D = raiz(E), abs = E.data.absoluto || 0;
+    if(!b || D.recrutouEm === abs) return;
+    D.recrutouEm = abs;
+    mexer(E, E.torcida.mapa, b, eu(E), RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
+  }
+  /* a IA recruta no melhor bairro dela (escolhido no começo do mês) */
+  function recrutamentoIA(E){
+    const D = raiz(E), mes = mesDe(E), I = indice(), meu = eu(E);
+    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    if(!mundo) return;
+    if(D.recrutaMes !== mes){
+      D.recrutaMes = mes; D.recrutaIA = {};
+      for(const cid of I.comTorcida) for(const o of torcidasDaCidade(cid)){
+        if(o.id === meu || !mundo[o.id]) continue;
+        const l = bairrosPraRecrutar(E, o.id, cid, 1);
+        if(l.length) D.recrutaIA[o.id] = cid + '#' + l[0].id;
+      }
+    }
+    for(const tid in D.recrutaIA || {}){
+      const [cid, bid] = D.recrutaIA[tid].split('#');
+      mexer(E, cid, bid, tid, RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
+    }
+  }
+
   /* A IA NÃO FICA PARADA: a primeira ou a segunda maior da cidade que
      não domina faz uma ação social por semana, em 35% das semanas, no
      bairro sem dona ou de dona fraca mais perto do território dela.
@@ -1065,6 +1287,11 @@ TO.dominio = (function(){
             : /casa|festa|piscina/.test(cena) ? GANHO.casa
             : d.atacamos === false ? GANHO.defesa
             : GANHO.rua;
+    /* VITÓRIA QUE DÁ PIXAÇÃO (01/10/2026): treta (+1; a de 10, +2), bote
+       no bar ou na sede, a reunião da zona e a casa de piscina (+1) */
+    const pixos = /treta/.test(cena) ? (d.tam >= 10 ? 2 : 1)
+      : (/reuniao|casa|piscina|^bar|bote/.test(cena) || ['bar', 'sede', 'reuniao', 'casa'].includes(d.alvoTipo)) && d.atacamos !== false ? 1 : 0;
+    if(pixos) ganharPix(E, ganhou ? meu : rival, pixos);
     return ganhou ? mexer(E, cid, b, meu, pts, {contra:rival, motivo:cena || 'briga'})
                   : mexer(E, cid, b, rival, pts, {contra:meu, motivo:cena || 'briga'});
   }
@@ -1086,6 +1313,7 @@ TO.dominio = (function(){
     /* O ALVO DO MÊS (01/10/2026): a briga que a IA foi buscar acontece no
        bairro que ela quer virar, e é ali que a barra mexe */
     const F = ALVO_FORCADO;
+    if(reg.tipo === 'treta' || reg.tipo === 'bar' || (F && F.k === 'reuniao')) ganharPix(E, venc, reg.tipo === 'treta' && (reg.a.n || 0) >= 10 ? 2 : 1);
     if(F && F.cid && bairro(F.cid, F.b) && [F.a, F.v].includes(venc) && [F.a, F.v].includes(perd)){
       const tam = reg.a.n || 0;
       const pts = F.k === 'reuniao' ? GANHO.reuniao : F.k === 'bar' ? GANHO.iaBar
@@ -1197,5 +1425,6 @@ TO.dominio = (function(){
           donaDoBairro, maiores, membrosDe, rivais, fator, notaDoCorte, siglaDe, nomeDe,
           mexer, confronto, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
+          PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};
 })();
