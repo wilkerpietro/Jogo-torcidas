@@ -34,7 +34,7 @@
    pra dentro, em METROS. O rumo de quem está dentro: 0 olha pra rua
    (+z), π pro fundo, π/2 pro +x.
    ========================================================= */
-import { METRO } from './construtor3d.js?v=4b75dc0aa2';
+import { METRO } from './construtor3d.js?v=4a5c4ec528';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));

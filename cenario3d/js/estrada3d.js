@@ -41,8 +41,8 @@
    pra direita dela (o z do mundo); O é o mundo no metro 0 da pista.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import * as K from './detalhe3d.js?v=4b75dc0aa2';
-import { montarCaravana, cenaDaCaravana, PLANOS, ESCALA, chaoDeLonge, posteDeRede, fiosEntre, cerca, faixaPintada, capim } from './caravana3d.js?v=4b75dc0aa2';
+import * as K from './detalhe3d.js?v=4a5c4ec528';
+import { montarCaravana, cenaDaCaravana, PLANOS, ESCALA, chaoDeLonge, posteDeRede, fiosEntre, cerca, faixaPintada, capim } from './caravana3d.js?v=4a5c4ec528';
 
 const PI = Math.PI;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;

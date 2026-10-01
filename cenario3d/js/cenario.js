@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=4b75dc0aa2';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=4b75dc0aa2';
-import { Subsolo } from './subsolo.js?v=4b75dc0aa2';
-import { ATLAS } from './modelos_atlas.js?v=4b75dc0aa2';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=4a5c4ec528';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=4a5c4ec528';
+import { Subsolo } from './subsolo.js?v=4a5c4ec528';
+import { ATLAS } from './modelos_atlas.js?v=4a5c4ec528';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -245,12 +245,21 @@ function GradeDoPasso(ar, M) {
       return xs.sort((a, b) => a - b);
     };
     const xs = [], i0 = x => Math.max(0, Math.ceil((x - ox) / c - 0.5)), i1 = x => Math.min(nx - 1, Math.floor((x - ox) / c - 0.5));
+    /* (os rios e as lagoinhas da praça toda de modelo: cada contorno, só nas linhas que ele cruza) */
+    const aguas = ((lagoa && lagoa.aguas) || []).map(pol => { let z0 = Infinity, z1 = -Infinity; for (const p of pol) { z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return { pol, z0, z1 }; });
     for (let j = 0; j < nz; j++) {
       const z = oz + (j + 0.5) * c, lin = j * nx;
       if (costa) for (let i = i0(costa.agua(z)); i < nx; i++) g[lin + i] |= AGUA;
       if (!lagoa) continue;
-      cruza(lagoa.agua, z, xs);
-      for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] |= AGUA;
+      for (const pol of lagoa.agua ? [lagoa.agua] : []) {
+        cruza(pol, z, xs);
+        for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] |= AGUA;
+      }
+      for (const a of aguas) {
+        if (z < a.z0 || z > a.z1) continue;
+        cruza(a.pol, z, xs);
+        for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] |= AGUA;
+      }
       cruza(lagoa.ilha, z, xs);
       for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] &= ~AGUA;
       for (const r of lagoa.pisa) if (z >= r.y0 && z <= r.y1) for (let i = i0(r.x0), e = i1(r.x1); i <= e; i++) g[lin + i] &= ~AGUA;
@@ -2050,6 +2059,28 @@ void main() {`)
     comNoite(mato);
     /* o ladrilho de dentro que era só mato (montarChao não pintou) */
     for (const r of deMato) quad(r.x0, r.x1, r.y0, r.y1, mato, uvMundo);
+    /* O RIO QUE SAI DA ÁREA (a praça toda de modelo): segue reto pra longe,
+       a água com a margem de capim dos dois lados, um palmo acima do mato
+       de longe — o rio não acaba na beira do chão pintado */
+    for (const r of (P.rios && P.rios()) || []) {
+      for (const [k, kAnt] of [[0, 1], [r.pontos.length - 1, r.pontos.length - 2]]) {
+        const P0 = r.pontos[k], P1 = r.pontos[kAnt];
+        const fora = P0[0] <= ar.x0 + 1 || P0[0] >= ar.x1 - 1 || P0[1] <= ar.y0 + 1 || P0[1] >= ar.y1 - 1;
+        if (!fora) continue;
+        const dx = P0[0] - P1[0], dz = P0[1] - P1[1], L = Math.hypot(dx, dz) || 1, ux = dx / L, uz = dz / L, nx = -uz, nz = ux;
+        const faixa = (meia, cor, y) => {
+          const g = new THREE.BufferGeometry(), A = [P1[0], P1[1]], Bf = [P0[0] + ux * G * 0.25, P0[1] + uz * G * 0.25];
+          const c = [[A[0] + nx * meia, A[1] + nz * meia], [A[0] - nx * meia, A[1] - nz * meia], [Bf[0] - nx * meia, Bf[1] - nz * meia], [Bf[0] + nx * meia, Bf[1] + nz * meia]];
+          g.setAttribute('position', new THREE.Float32BufferAttribute(c.flatMap(([x, z]) => [x, y, z]), 3));
+          g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+          g.setIndex([0, 1, 2, 0, 2, 3]);
+          const mat = new THREE.MeshLambertMaterial({ color: cor, side: THREE.DoubleSide }); mat.userData.doMapa = true; comNoite(mat);
+          const m = new THREE.Mesh(g, mat); m.name = 'longe'; m.frustumCulled = false; grupo.add(m);
+        };
+        faixa(r.larg / 2 + 3.2 * M, '#7d9455', Y + 0.06);
+        faixa(r.larg / 2, '#3f6d78', Y + 0.12);
+      }
+    }
     const costa = P.costa && P.costa();
     quad(ar.x0 - G, ar.x0, ar.y0, ar.y1, mato, uvMundo);                      // oeste
     if (!costa) {
@@ -2136,8 +2167,11 @@ void main() {`)
        do mato (LIMPO_M, rente à cidade, à estrada e à favela) fica só com
        a vegetação rasteira do chão — a árvore começa depois dela */
     const ox = ar.x0 * m1, oz = ar.y0 * m1;
+    /* NA CLAREIRA DE PASTO (a praça toda de modelo): uma árvore solta aqui e outra ali, uma a cada vinte lugares */
+    const rara = (x, z) => { const h = Math.sin(x * 7.123 + z * 31.417) * 24634.6345; return h - Math.floor(h) < 0.05; };
     const dentro = (x, z) => {
       const a = x - ox, b = z - oz;
+      if (P.noPasto && !magenta(a, b) && rara(x, z) && P.noPasto(x * M, z * M) && P.noPasto((x + 3) * M, z * M) && P.noPasto((x - 3) * M, z * M) && P.noPasto(x * M, (z + 3) * M) && P.noPasto(x * M, (z - 3) * M)) return true;
       if (!(magenta(a, b) && magenta(a - 2, b) && magenta(a + 2, b) && magenta(a, b - 2) && magenta(a, b + 2))) return false;
       for (let k = 0; k < 8; k++) if (!magenta(a + LIMPO_M * Math.cos(k * Math.PI / 4), b + LIMPO_M * Math.sin(k * Math.PI / 4))) return false;
       return pertoDeAlgo(a, b, x, z);
@@ -2479,8 +2513,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=4b75dc0aa2', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=4b75dc0aa2');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=4a5c4ec528', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=4a5c4ec528');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2599,7 +2633,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=4b75dc0aa2');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=4a5c4ec528');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3250,7 +3284,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=4b75dc0aa2'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=4a5c4ec528'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },

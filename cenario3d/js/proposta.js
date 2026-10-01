@@ -514,11 +514,11 @@ export function cisaoDaPraca(id, bairros, cidadeDoEstadio, bairroDoEstadio = nul
            estadiosBairro: (cidadeDoEstadio || []).map((_, k) => (bairroDoEstadio && bairroDoEstadio[k]) || null),
            modelo: cidades.length >= 3 ? 'todas' : 'pequenas' };
 }
-/* A CIDADE-MODELO DE n BAIRROS: [colunas, linhas] de blocos de 3 × 2
-   quadras (ver AS CIDADES-MODELO no gerador) — até 4 bairros, uma coluna
-   de blocos (o bloco é largo: 119 × 42 m, e a pilha fica quase quadrada);
-   de 5 em diante, duas */
-export const ARRANJO_MODELO = { 1: [1, 1], 2: [1, 2], 3: [1, 3], 4: [1, 4], 5: [2, 3], 6: [2, 3], 7: [2, 4], 8: [2, 4], 9: [2, 5], 10: [2, 5] };
+/* A CIDADE-MODELO DE n BAIRROS: [colunas, linhas] de blocos de 3 × 3
+   quadras (ver AS CIDADES-MODELO no gerador) — até 2 bairros, uma coluna
+   de blocos (o bloco é largo: 119 × 66 m, e a pilha fica quase quadrada);
+   de 3 em diante, duas */
+export const ARRANJO_MODELO = { 1: [1, 1], 2: [1, 2], 3: [2, 2], 4: [2, 2], 5: [2, 3], 6: [2, 3], 7: [2, 4], 8: [2, 4], 9: [2, 5], 10: [2, 5] };
 export const arranjoModelo = n => ARRANJO_MODELO[n] || [2, Math.ceil(n / 2)];
 
 export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
@@ -653,6 +653,52 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
      da vizinha, com a estrada, o pórtico e a placa. */
   const QW = passoX - RUA, QH = PASSO_Y - RUA;                   // a quadra da grade
   const modelos = [];
+  /* A CIDADE DA PRAIA (o dono, 01/10/2026: "Preciso que as cidades às
+     margens da praia voltem a ser às margens da praia"): na praça de praia,
+     a cidade do centro e a da `costa` (Parnaíba) encostam na avenida da
+     beira, como a cidade de hoje encosta. A costa do mapa do porte corre
+     torta no trecho do desenho de hoje e reta pra lá dele: a cidade do
+     centro, na praça toda de modelo, nasce no trecho reto do sul (a costa
+     de norte a sul, a cidade com o lado leste na guia da beira). A frente
+     dela é o mar: o bairro Nobre fica na beira, a favela e o estádio pro
+     lado de dentro, e o estádio nunca no lado da praia */
+  const naPraia = c => !!opc.costa && !!MODELO && (TODAS ? c.nome === CENTRO || !!c.costa : !!c.costa);
+  const uK = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00K = K.pxm(0, 0)[1];
+  const lBeiraK = (K.AVENIDAS.find(a => a.id === 'beiramar') || { l: 76 }).l;
+  const guiaK = y => K.pxm(K.xCosta((y - y00K) / uK), 0)[0] - K.PRAIA * uK - lBeiraK;
+  /* (onde a costa fica reta, ao sul: o primeiro y em que a guia não anda mais) */
+  const yCostaReta = (() => { const g = guiaK(1e7); for (let y = K.VY0; y < K.VY0 + 4 * K.VH; y += 20) if (Math.abs(guiaK(y) - g) < 0.5) return y; return K.VY0 + K.VH; })();
+  /* O EQUIPAMENTO DE UM BAIRRO DA CIDADE-MODELO: o tipo, o nome, a cor da
+     planta, a nota e a frente (o modelo 3D é o da planta: a praça da vila,
+     a igreja de bairro, o distrito policial, e a escola e o hospital de
+     quadra comum de js/diajogo/equip3d.js). Os nomes andam em roda pela
+     praça: um distrito de cada número, uma paróquia de cada santo */
+  const contaEq = {};
+  const NOMES_EQ = {
+    praca: ['Praça da Matriz', 'Praça da Bandeira', 'Praça Tiradentes', 'Praça da Liberdade', 'Praça Rui Barbosa', 'Praça do Coreto',
+            'Praça Santos Dumont', 'Praça da República', 'Praça XV de Novembro', 'Praça São Benedito', 'Praça dos Três Poderes', 'Praça do Rosário'],
+    escola: ['Rui Barbosa', 'Castro Alves', 'Monteiro Lobato', 'Paulo Freire', 'Cecília Meireles', 'Machado de Assis', 'Anísio Teixeira',
+             'Darcy Ribeiro', 'Tiradentes', 'Santos Dumont', 'Rachel de Queiroz', 'Joaquim Nabuco', 'Carlos Drummond', 'Chico Mendes'],
+    igreja: ['São José', 'Nossa Senhora Aparecida', 'Santo Antônio', 'São Francisco de Assis', 'São Pedro', 'Sagrado Coração de Jesus',
+             'São Sebastião', 'Santa Luzia', 'São Benedito', 'Nossa Senhora de Fátima', 'São João Batista', 'Santa Rita de Cássia', 'São Jorge'],
+    hospital: ['Hospital Municipal', 'Hospital São Lucas', 'Santa Casa de Misericórdia', 'Hospital Regional', 'Hospital da Criança',
+               'Hospital São Vicente', 'Hospital Santa Isabel', 'Hospital do Trabalhador', 'Hospital São Camilo', 'Hospital Santa Maria']
+  };
+  const COR_EQ = { praca: '#5f9a4c', escola: '#d9c48a', igreja: '#d8cfb8', delegacia: '#d8cfb6', hospital: '#dfe3e6' };
+  const equipDoBairro = (tipo, b, c, frente) => {
+    const k = contaEq[tipo] = (contaEq[tipo] || 0) + 1, roda = l => l[(k - 1) % l.length];
+    const onde = `no bairro ${b.nome} (${c.nome})`;
+    if (tipo === 'praca') return { tipo, nome: roda(NOMES_EQ.praca), cor: COR_EQ.praca, frente, modelo: true,
+                                   nota: `A praça ${onde}: o calçadão de pedra portuguesa, o chafariz, o parquinho, a academia ao ar livre e a banca.` };
+    if (tipo === 'escola') return { tipo, nome: 'Escola Estadual ' + roda(NOMES_EQ.escola), cor: COR_EQ.escola, frente, modelo: true,
+                                    nota: `A escola ${onde}: o bloco de dois andares de salas, a quadra coberta, o pátio e o muro com o portão.` };
+    if (tipo === 'igreja') return { tipo, nome: 'Paróquia ' + roda(NOMES_EQ.igreja), cor: COR_EQ.igreja, frente, modelo: true,
+                                    nota: `A igreja ${onde}: a nave, a torre sineira do lado e o adro na frente.` };
+    if (tipo === 'delegacia') return { tipo, nome: k + 'º Distrito Policial', sigla: k + 'º DP', cor: COR_EQ.delegacia, frente, modelo: true,
+                                       nota: `A delegacia ${onde}: o prédio de dois andares, a marquise e o pátio das viaturas.` };
+    return { tipo, nome: roda(NOMES_EQ.hospital), cor: COR_EQ.hospital, frente, modelo: true,
+             nota: `O hospital ${onde}: a lâmina de três andares, o pronto-socorro com a ambulância e o estacionamento.` };
+  };
   if (MODELO) {
     const unit = v => { const L = Math.hypot(v[0], v[1]); return L > 1e-6 ? [v[0] / L, v[1] / L] : null; };
     const K0 = [K.VX0 + K.VW / 2, K.VY0 + K.VH / 2];
@@ -673,10 +719,15 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         fora = [-r[1], r[0]];
         if (fora[1] < 0 || (fora[1] === 0 && fora[0] < 0)) fora = [-fora[0], -fora[1]];
       }
-      const n = bs.length, [SC, SR] = arranjoModelo(n), C = 3 * SC, L = 2 * SR;
+      /* (a da praia dá as costas pro lado de dentro: a frente é o mar) */
+      const praia = naPraia(c);
+      if (praia) fora = [-1, 0];
+      const n = bs.length, [SC, SR] = arranjoModelo(n), C = 3 * SC, L = 3 * SR;
       const Wc = C * passoX - RUA, Hc = L * PASSO_Y - RUA;
       /* onde ela nasce: a do centro (na praça toda de modelo) no lugar da cidade de hoje; as outras longe, a oeste */
-      const X0 = Math.round(c.nome === CENTRO ? K0[0] - Wc / 2 : -60000 - 40000 * longe), Y0 = Math.round(K0[1] - Hc / 2);
+      const noCentro = c.nome === CENTRO;
+      const Y0 = Math.round(noCentro && praia ? yCostaReta + 2 * PASSO_Y : K0[1] - Hc / 2);
+      const X0 = Math.round(!noCentro ? -60000 - 40000 * longe : praia ? guiaK(Y0) - Wc : K0[0] - Wc / 2);
       if (c.nome !== CENTRO) longe++;
       const ib = 1000 * (kc + 1), jb = 1000;                     // os ids da grade dela (longe dos da grade de hoje)
       const G = { i0: ib - 1, i1: ib + C, j0: jb - 1, j1: jb + L,
@@ -685,8 +736,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       const cxC = X0 + Wc / 2, cyC = Y0 + Hc / 2;
       const blocos = [];
       for (let r = 0; r < SR; r++) for (let cc = 0; cc < SC; cc++) {
-        const x0 = X0 + 3 * cc * passoX, y0 = Y0 + 2 * r * PASSO_Y;
-        const b = { c: cc, r, x0, x1: x0 + 2 * passoX + QW, y0, y1: y0 + PASSO_Y + QH };
+        const x0 = X0 + 3 * cc * passoX, y0 = Y0 + 3 * r * PASSO_Y;
+        const b = { c: cc, r, x0, x1: x0 + 2 * passoX + QW, y0, y1: y0 + 2 * PASSO_Y + QH };
         b.nota = ((b.x0 + b.x1) / 2 - cxC) * fora[0] + ((b.y0 + b.y1) / 2 - cyC) * fora[1];
         blocos.push(b);
       }
@@ -712,7 +763,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       for (const { k, b } of ests) {
         const u = ocupa.get(b), ja = ladosUsados.get(u) || [];
         const lados = [['o', !temBloco(u.c - 1, u.r)], ['l', !temBloco(u.c + 1, u.r)], ['n', !temBloco(u.c, u.r - 1)], ['s', !temBloco(u.c, u.r + 1)]]
-          .filter(([f, livre]) => livre && !ja.includes(f)).map(([f]) => f)
+          .filter(([f, livre]) => livre && !ja.includes(f) && !(praia && f === 'l')).map(([f]) => f)
           /* (a ponta do bloco antes do lado comprido: o bloco tem 42 m de fundo, e com o estádio no
              lado comprido o bairro inteiro ficava a menos de 50 m dele — sem sede e sem bar) */
           .sort((f, g) => (NORMAL[g][0] * fora[0] + NORMAL[g][1] * fora[1] + (g === 'o' || g === 'l' ? 2 : 0))
@@ -723,14 +774,36 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
           : f === 'n' ? { x0: u.x0, x1: u.x1, y0: u.y0 - 10, y1: u.y0 } : { x0: u.x0, x1: u.x1, y0: u.y1, y1: u.y1 + 10 };
         M0.vagas.push({ k, v: { area, nome: 'Estádio ' + (k + 1), fora: f, deModelo: true, cidade: c.nome, bairro: b.id, ci: ib + 500 + k, cj: jb + 500 } });
       }
+      /* OS EQUIPAMENTOS DO BAIRRO (o dono, 01/10/2026: "adicione mais 3
+         quarteirões pra ficar 3x3 com três quarteirões sendo praças, igreja,
+         delegacia, hospital ou escola"): o bloco tem três fileiras, e a do
+         meio é de três equipamentos — na favela, a fileira de dentro (do
+         lado da cidade), que dá a ela a rua. Os cinco vão em roda pela
+         cidade (praça, escola, igreja, delegacia, hospital): o bairro
+         seguinte continua de onde o anterior parou, e cada bairro tem três
+         diferentes */
+      const RODA_EQUIP = ['praca', 'escola', 'igreja', 'delegacia', 'hospital'];
+      let rodaEq = kc;
       for (const b of bs) {
         const u = ocupa.get(b);
-        const ci0 = ib + 3 * u.c, cj0 = jb + 2 * u.r;
-        const cels = [];
-        for (let a = 0; a < 3; a++) for (let d = 0; d < 2; d++) {
+        const ci0 = ib + 3 * u.c, cj0 = jb + 3 * u.r;
+        const ehFavela = b.classe === 'Favela', cyB = (u.y0 + u.y1) / 2;
+        const dEq = !ehFavela ? 1 : cyB < cyC - 1 ? 2 : cyB > cyC + 1 ? 0 : fora[1] > 0 ? 0 : 2;
+        const eqs = [0, 1, 2].map(k => RODA_EQUIP[(rodaEq + k) % RODA_EQUIP.length]);
+        rodaEq += 3;
+        /* a frente de cada um olha pro meio da cidade: a fileira de cima do
+           bloco olha pro norte, a de baixo pro sul, a do meio pro lado do
+           centro; a igreja (a nave comprida) olha pro leste ou pro oeste */
+        const frenteNS = dEq === 0 ? 'n' : dEq === 2 ? 's' : cyB > cyC + 1 ? 'n' : 's';
+        const cels = [], celsEq = [];
+        for (let a = 0; a < 3; a++) for (let d = 0; d < 3; d++) {
           const [x0, x1] = G.colX(ci0 + a), [y0, y1] = G.linY(cj0 + d);
-          cels.push({ i: ci0 + a, j: cj0 + d, x0, x1, y0, y1, a, d });
+          if (d === dEq) celsEq.push({ i: ci0 + a, j: cj0 + d, x0, x1, y0, y1, a, d,
+                                       equipModelo: equipDoBairro(eqs[a], b, c, eqs[a] === 'igreja' ? ((x0 + x1) / 2 < cxC ? 'l' : 'o') : frenteNS) });
+          else cels.push({ i: ci0 + a, j: cj0 + d, x0, x1, y0, y1, a, d });
         }
+        /* (o equipamento é do bairro: quadra da cidade, sem casa) */
+        for (const q of celsEq) M0.cels.push({ ...q, cidade: c.nome, bairro: b.id });
         const B = { id: b.id, nome: b.nome, classe: b.classe, sedes: b.sedes || 0, bloco: u, favela: b.classe === 'Favela', cels: [] };
         M0.bairros.push(B);
         if (B.favela) {
@@ -745,34 +818,17 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
           for (const q of deSede) { B.cels.push(q); M0.cels.push({ ...q, cidade: c.nome, bairro: b.id, naFavela: true }); }
           let semente = 2166136261;
           for (const ch of c.nome + '|' + b.id) semente = Math.imul(semente ^ ch.charCodeAt(0), 16777619) >>> 0;
-          /* (a `caixa`: a favela não passa do bloco dela, até o meio da rua de fora) */
+          /* (a `caixa`: a favela não passa das duas fileiras dela, até o meio da rua de fora) */
+          const fy0 = Math.min(...cels.map(q => q.y0)), fy1 = Math.max(...cels.map(q => q.y1));
           M0.favelas.push({ id: 'favela-' + b.id, nome: b.nome, semente, cidade: c.nome, bairro: b.id, grade: G,
-                            poly: [[u.x0, u.y0], [u.x1, u.y0], [u.x1, u.y1], [u.x0, u.y1]],
-                            caixa: { x0: u.x0 - RUA / 2, x1: u.x1 + RUA / 2, y0: u.y0 - RUA / 2, y1: u.y1 + RUA / 2 } });
+                            poly: [[u.x0, fy0], [u.x1, fy0], [u.x1, fy1], [u.x0, fy1]],
+                            caixa: { x0: u.x0 - RUA / 2, x1: u.x1 + RUA / 2, y0: fy0 - RUA / 2, y1: fy1 + RUA / 2 } });
         } else for (const q of cels) { B.cels.push(q); M0.cels.push({ ...q, cidade: c.nome, bairro: b.id }); }
       }
-      /* A CIDADE SÓ DE FAVELA (Santa Cruz do Capibaribe, Ipatinga, Teófilo
-         Otoni, Palmeira dos Índios): sem quadra nenhuma, a estrada não tinha
-         rua onde chegar. A quina da favela do lado de cada vizinha (a de onde
-         ela sai e as que saem dela) vira quadra comum, do bairro da favela: a
-         entrada da cidade, onde a estrada chega e a favela encosta */
-      if (bs.every(b => b.classe === 'Favela')) {
-        const viz = [];
-        if (c.de && c.nome !== CENTRO) { const r = RUMO[c.rumo] || [0, 0]; viz.push([-r[0], -r[1]]); }
-        for (const f of CIS.cidades) if (f.de === c.nome && f.nome !== c.nome) viz.push(RUMO[f.rumo] || [0, 0]);
-        for (const v of viz) {
-          let melhor = null, nota = -Infinity;
-          for (const B of M0.bairros) for (const q of B.todas || []) {
-            if (q.a === 1) continue;
-            const s = ((q.x0 + q.x1) / 2 - cxC) * v[0] + ((q.y0 + q.y1) / 2 - cyC) * v[1];
-            if (s > nota + 1e-6) { nota = s; melhor = { B, q }; }
-          }
-          if (melhor && !melhor.B.cels.includes(melhor.q)) {
-            melhor.B.cels.push(melhor.q);
-            M0.cels.push({ ...melhor.q, cidade: c.nome, bairro: melhor.B.id, naFavela: true, entrada: true });
-          }
-        }
-      }
+      /* (a cidade só de favela — Santa Cruz do Capibaribe, Ipatinga, Teófilo
+         Otoni, Palmeira dos Índios — ganhava a quina da favela como quadra
+         comum, pra estrada ter rua onde chegar; com a fileira dos
+         equipamentos, toda cidade tem quadra com rua em volta) */
       /* TODA FAVELA CHEGA NA RUA (01/10/2026: em São Luís, a Cidade
          Operária ficou na quina da cidade, com o mato em volta e a outra
          favela embaixo — a viela dela não chegava em rua nenhuma, e o
@@ -863,7 +919,9 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const cidadeDaCelula = id => corte ? (corte.cidadeDe.get(id) || CENTRO) : null;
   const mundoY1 =Math.max(6100, ...polys.map(p => p[1]), ...VAGAS.map(v => areaDaVaga(v).y1)) + 300;
   for (const a of K.AVENIDAS) {
-    if (TODAS || SEM_AVENIDA.includes(a.id)) continue;
+    /* (na praça toda de modelo, só a beira-mar fica, na praia: o traçado sai na cisão, ao longo da cidade da praia) */
+    if (TODAS) { if (a.id === 'beiramar' && opc.costa) avenidas.push({ id: a.id, l: a.l, pontos: [] }); continue; }
+    if (SEM_AVENIDA.includes(a.id)) continue;
     const p = a.pontos.map(q => q.slice());
     const n = p.length;
     if (a.id === 'norte') { if (cfg.norteAte != null) p[1] = [p[1][0], cfg.norteAte]; }  // a estrada de entrada do norte
@@ -1058,7 +1116,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   }
   /* as quadras das cidades-modelo: a cidade e o bairro de cada uma já vêm dados */
   for (const m of modelos) for (const q of m.cels)
-    nova(q.i, q.j, q.x0, q.x1, q.y0, q.y1, '', { cidade: q.cidade, bairro: q.bairro, deModelo: true, ...(q.naFavela ? { naFavela: true } : {}) });
+    nova(q.i, q.j, q.x0, q.x1, q.y0, q.y1, '', { cidade: q.cidade, bairro: q.bairro, deModelo: true, ...(q.naFavela ? { naFavela: true } : {}),
+                                                  ...(q.equipModelo ? { equipModelo: q.equipModelo } : {}) });
   /* OS ESTÁDIOS, um por vaga ocupada: o quarteirão do estádio de hoje (o
      estádio e a esplanada), deslocado pro meio da vaga. A vaga da caixa
      guarda as células da grade que ela pega (`i`, `j`), pra favela não
@@ -1198,7 +1257,15 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         if (!melhor || s < melhor.s || (s === melhor.s && tipo === 'barra')) melhor = { s, tipo, o };
       }
       if (!melhor || melhor.tipo === 'barra' || melhor.s > max) return null;
-      return { ini: hz ? [a0, pe[1]] : [pe[0], a0], s: melhor.s, alvo: melhor.o };
+      /* `fim`: o meio da rua que a reta encontra (a beira do trecho mais meia
+         rua). Com a beira antes de a0 — o terreno da rua de veraneio, que não
+         tem rua em volta, encostado na rua da cidade —, o a0 + meia rua caía
+         meia rua dentro da quadra */
+      const beira = sg > 0 ? a0 + melhor.s : a0 - melhor.s;
+      let b = beira;
+      for (const [b0, b1, , o] of linha(f, lat, cid)) if (o === melhor.o) b = sg > 0 ? b0 : b1;
+      const m = b + sg * RUA / 2;
+      return { ini: hz ? [a0, pe[1]] : [pe[0], a0], s: melhor.s, alvo: melhor.o, fim: hz ? [m, pe[1]] : [pe[0], m] };
     };
     const PASSO = 40, D_MAX = 7000, B_MAX = 7000, OUTRA_VAGA = 3000;
     /* o terreno de W × H em volta da vaga v: `d` pra fora da beira dela do
@@ -1249,12 +1316,15 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       /* onde fica o (0, 0) do modelo no mundo, com o giro */
       const centro = g === 0 ? [t.x0 - T.x0 * M, t.y0 - T.z0 * M] : g === 90 ? [t.x0 + T.z1 * M, t.y0 - T.x0 * M]
         : g === -90 ? [t.x0 - T.z0 * M, t.y0 + T.x1 * M] : [t.x0 + T.x1 * M, t.y0 + T.z1 * M];
-      /* o acesso: a rua de duas pistas do portão 1 até a primeira rua */
+      /* o acesso: a rua do portão 1 até a primeira rua, da largura das outras
+         (01/10/2026, o dono: "a rua a sul do estádio [...] é mais larga que as
+         demais [...] acaba sobrepondo a rua por cima de outras ruas e
+         calçadas" — era de duas pistas, 12 m, numa fresta de rua de 6 m) */
       const p = pe(q, melhor.fora), d = DIR[melhor.fora], rt = reta(p, melhor.fora, ACESSO_MAX, cid);
       let acesso = null;
       if (rt && rt.s > 0) {
-        acesso = { id: 'acesso' + (k + 1), l: 2 * RUA, reta: true, acesso: true, estadio: e.id,
-                   pontos: [[rt.ini[0] - d[0] * RUA / 2, rt.ini[1] - d[1] * RUA / 2], [rt.ini[0] + d[0] * (rt.s + RUA / 2), rt.ini[1] + d[1] * (rt.s + RUA / 2)]] };
+        acesso = { id: 'acesso' + (k + 1), l: RUA, reta: true, acesso: true, estadio: e.id,
+                   pontos: [[rt.ini[0] - d[0] * RUA / 2, rt.ini[1] - d[1] * RUA / 2], rt.fim] };
         acessos.push(acesso);
       }
       /* OS ACESSOS DE LADO (o dono pediu, 27/09/2026: "Crie mais uma ou duas
@@ -1275,7 +1345,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
           const rt2 = reta(hz ? [p[0], lat] : [lat, p[1]], melhor.fora, ACESSO_LADO_MAX, cid);
           if (!rt2) continue;
           if (rt2.s > 0) extras.push({ id: 'acesso' + (k + 1) + (s === vis ? 'v' : 'm'), l: RUA, reta: true, acesso: true, lateral: true, estadio: e.id,
-                                        pontos: [[rt2.ini[0] - d[0] * RUA / 2, rt2.ini[1] - d[1] * RUA / 2], [rt2.ini[0] + d[0] * (rt2.s + RUA / 2), rt2.ini[1] + d[1] * (rt2.s + RUA / 2)]] });
+                                        pontos: [[rt2.ini[0] - d[0] * RUA / 2, rt2.ini[1] - d[1] * RUA / 2], rt2.fim] });
           break;
         }
       }
@@ -1312,7 +1382,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         let acesso = null;
         if (rt) {
           acesso = { id: 'acessoVeraneio', l: RUA, reta: true, acesso: true, veraneio: true,
-                     pontos: [[p0[0] - d[0] * RUA / 2, p0[1] - d[1] * RUA / 2], [rt.ini[0] + d[0] * (rt.s + RUA / 2), rt.ini[1] + d[1] * (rt.s + RUA / 2)]] };
+                     pontos: [[p0[0] - d[0] * RUA / 2, p0[1] - d[1] * RUA / 2], rt.fim] };
           acessos.push(acesso);
         }
         veraneio = { area: r, rua: ruaV, lotes, fora: f, acesso, festa: lotes.find(l => l.veraneio === 'festa'), nome: 'Rua de veraneio' };
@@ -1414,7 +1484,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     if (atacadex && cruza(c, atacadex.bb, MARGEM)) { fora.push({ ...c, id, motivo: 'atacadex' }); continue; }
     c.id = id;
     c.ix0 = c.x0 + CALC; c.ix1 = c.x1 - CALC; c.iy0 = c.y0 + CALC; c.iy1 = c.y1 - CALC;
-    c.equip = EQUIP[c.i + ',' + c.j] && !c.parte && !c.juntas ? { ...EQUIP[c.i + ',' + c.j] } : null;
+    c.equip = c.equipModelo ? { ...c.equipModelo } : EQUIP[c.i + ',' + c.j] && !c.parte && !c.juntas ? { ...EQUIP[c.i + ',' + c.j] } : null;
+    delete c.equipModelo;
     c.lotes = [];
     quadras.push(c);
   }
@@ -2488,7 +2559,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     const bmK = avenidas.find(a => a.id === 'beiramar'), lBeira = bmK ? bmK.l : 76;
     const uC = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00C = K.pxm(0, 0)[1];
     const guia = y => K.pxm(K.xCosta((y - y00C) / uC), 0)[0] - K.PRAIA * uC - lBeira;
-    const temCosta = !!opc.costa && !TODAS;
+    const temCosta = !!opc.costa;
     /* A AVENIDA DA BEIRA fica só onde o centro encosta nela: as quadras de
        hoje recortadas pela costa que ficaram (e, depois, a cidade da costa) */
     const recortadas = kFicam.filter(q => q.pol && q.pol.length >= 3 && !ehRetPoli(q.pol));
@@ -2514,6 +2585,15 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     if (bmK) {
       if (recortadas.length) {
         beiraY = [Math.min(...recortadas.map(q => q.y0)) - RUA, Math.max(...recortadas.map(q => q.y1)) + RUA];
+        bmK.pontos = linhaDaBeira(beiraY[0], beiraY[1]);
+        for (let k = 1; k < bmK.pontos.length; k++) {
+          const [ax, ay] = bmK.pontos[k - 1], [bx, by] = bmK.pontos[k], h = lBeira / 2 + CALC;
+          pegada.get(CENTRO).push({ x0: Math.min(ax, bx) - h, x1: Math.max(ax, bx) + h, y0: Math.min(ay, by) - h, y1: Math.max(ay, by) + h, beira: true });
+        }
+      } else if (TODAS && temCosta && pegada.get(CENTRO).length) {
+        /* (a praça toda de modelo: a beira corre de ponta a ponta da cidade da praia) */
+        const b = bbDe(pegada.get(CENTRO).filter(r => !r.avenida && !r.beira));
+        beiraY = [b.y0, b.y1];
         bmK.pontos = linhaDaBeira(beiraY[0], beiraY[1]);
         for (let k = 1; k < bmK.pontos.length; k++) {
           const [ax, ay] = bmK.pontos[k - 1], [bx, by] = bmK.pontos[k], h = lBeira / 2 + CALC;
@@ -2910,6 +2990,149 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     }
     porticos.push(...porticosC);
 
+    /* 6b · AS ENTRADAS DA PRAÇA (o dono, 01/10/2026: "Preciso que volte a
+       existir a entrada da praça em norte e sul, pra dar a impressão de
+       entrada na praça nas caravanas"). Na praça toda de modelo não tem a
+       avenida de entrada, e a caravana descia no pórtico de uma estrada
+       entre duas cidades. A entrada norte é uma rua reta que vem da borda
+       do mundo e chega na rua de uma cidade da ponta de cima, com o pórtico
+       de BEM-VINDO; a sul, o mesmo embaixo. A rua é uma das de norte a sul
+       da cidade (a da grade, que segue reta pra fora); entre as que chegam
+       sem passar por nada, a mais curta, a mais pro meio da praça e a mais
+       longe dos estádios (a torcida que chega não desce na porta do
+       estádio) */
+    if (!faixaAv && TODAS) {
+      const estadiosR = quadras.filter(q => q.estadio).map(q => q);
+      const longeEst = (x, y) => Math.min(Infinity, ...estadiosR.map(e => Math.hypot(Math.max(e.x0 - x, 0, x - e.x1), Math.max(e.y0 - y, 0, y - e.y1))));
+      const xMeio = (mundoC.x0 + mundoC.x1) / 2;
+      for (const [id, sg] of [['norte', -1], ['sul', 1]]) {
+        const borda = sg < 0 ? mundoC.y0 - 400 : mundoC.y1 + 400;
+        let melhor = null;
+        for (const c of CIS.cidades) {
+          const rs = soQuadras(ruasDaCidade(c.nome));
+          if (!rs.length) continue;
+          const xs = [...new Set(rs.filter(o => o.q.x0 != null).flatMap(o => [o.q.x0 - RUA / 2, o.q.x1 + RUA / 2]).map(Math.round))];
+          for (const x of xs) {
+            const ponta = pontaV(rs, x, sg);
+            if (ponta === null || (borda - ponta) * sg <= RUA) continue;
+            const seg = [[x, borda], [x, ponta - sg * RUA / 2]];
+            if (corta(seg, null, c.nome)) continue;
+            const yDentro = ponta - sg * RUA / 2, dEst = longeEst(x, yDentro);
+            const custo = Math.abs(borda - ponta) + 0.6 * Math.abs(x - xMeio) + (dEst < 110 * M ? 6 * (110 * M - dEst) : 0);
+            if (!melhor || custo < melhor.custo) melhor = { custo, c: c.nome, seg, x };
+          }
+        }
+        if (!melhor) { avisos.push(`sem entrada ${id} na praça`); continue; }
+        encostar(melhor.seg, 1, melhor.c);
+        const a = { id: 'entrada:' + id, l: RUA, reta: true, entradaPraca: id, cidade: melhor.c, pontos: melhor.seg.map(p => p.slice()) };
+        avenidas.push(a);
+        bloqueia.push({ c: 'estrada', r: retSeg(a) });
+        /* o pórtico 88 unidades pra fora da rua da cidade, de frente pra quem chega */
+        const yP = melhor.seg[1][1] + sg * (RUA / 2 + 88);
+        porticos.push({ id, nome: 'Pórtico da entrada ' + id, x: melhor.x, y: yP, dir: [0, -sg], l: RUA, xp: RUA / 2 / M + 1.2, cidade: melhor.c, entradaPraca: true });
+      }
+    }
+
+    /* 6c · OS RIOS (o dono, 01/10/2026: "que a decoração de vegetação das
+       demais seja mais bem feita com rios entre uma cidade e outra"). Na
+       praça de cidades-modelo, cada estrada que liga duas cidades passa numa
+       ponte por cima de um rio (o traçado é no passo 8b', com tudo posto): o rio cruza a estrada no meio dela, de
+       través, e corre pelo vão entre as cidades até a borda do mundo ou
+       até encontrar outro rio (vira afluente dele). O caminho é o mais
+       barato numa grade de 4 m: a 10 m das cidades no mínimo e de
+       preferência no meio do vão; estrada, só atravessa de través e longe
+       das pontas (do pórtico e da placa); e nunca pro lado da praia */
+    const LARG_RIO = 6.5 * M;
+    const rios = [], pontesRio = [];
+    /* A GRADE DA PAISAGEM: a célula de 4 m na caixa do mundo, o que é
+       proibido (a cidade com 10 m em volta, a praia, o que vier em `extras`
+       com a folga dele) e a distância (em células) até o proibido */
+    const gradePaisagem = (extras = []) => {
+      /* (a caixa do mundo de verdade: com tudo posto, a rua de veraneio também — ela muda de lugar no passo 8) */
+      const bF = bbDe([mundoC, bbDe(postas.map(p => p.r))]);
+      const h = 4 * M, B = { x0: bF.x0 - 400, x1: bF.x1 + 400, y0: bF.y0 - 400, y1: bF.y1 + 400 };
+      const nx = Math.ceil((B.x1 - B.x0) / h), ny = Math.ceil((B.y1 - B.y0) / h), N = nx * ny;
+      const proib = new Uint8Array(N);
+      const marca = (r, m) => {
+        const i0 = Math.max(0, Math.floor((r.x0 - m - B.x0) / h)), i1 = Math.min(nx - 1, Math.floor((r.x1 + m - B.x0) / h));
+        const j0 = Math.max(0, Math.floor((r.y0 - m - B.y0) / h)), j1 = Math.min(ny - 1, Math.floor((r.y1 + m - B.y0) / h));
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) proib[j * nx + i] = 1;
+      };
+      for (const p of postas) marca(p.r, 8 * M);
+      for (const [r, m] of extras) marca(r, m);
+      if (temCosta) for (let j = 0; j < ny; j++) { const g = guia(B.y0 + (j + 0.5) * h) - 20 * M; for (let i = 0; i < nx; i++) if (B.x0 + (i + 0.5) * h > g) proib[j * nx + i] = 1; }
+      const dist = new Float32Array(N);
+      for (let k = 0; k < N; k++) dist[k] = proib[k] ? 0 : 1e9;
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const k = j * nx + i; let d = dist[k]; if (!d) continue;
+        if (i > 0) d = Math.min(d, dist[k - 1] + 1);
+        if (j > 0) { d = Math.min(d, dist[k - nx] + 1); if (i > 0) d = Math.min(d, dist[k - nx - 1] + 1.414); if (i < nx - 1) d = Math.min(d, dist[k - nx + 1] + 1.414); }
+        dist[k] = d;
+      }
+      for (let j = ny - 1; j >= 0; j--) for (let i = nx - 1; i >= 0; i--) {
+        const k = j * nx + i; let d = dist[k]; if (!d) continue;
+        if (i < nx - 1) d = Math.min(d, dist[k + 1] + 1);
+        if (j < ny - 1) { d = Math.min(d, dist[k + nx] + 1); if (i < nx - 1) d = Math.min(d, dist[k + nx + 1] + 1.414); if (i > 0) d = Math.min(d, dist[k + nx - 1] + 1.414); }
+        dist[k] = d;
+      }
+      return { h, B, nx, ny, N, proib, dist, marca, ci: x => Math.floor((x - B.x0) / h), cj: y => Math.floor((y - B.y0) / h), cx: i => B.x0 + (i + 0.5) * h, cy: j => B.y0 + (j + 0.5) * h };
+    };
+    /* (x, y) está a menos de `lim` de uma linha (lista de pontos)? A linha
+       do rio tem mil pontos e a ponte pergunta isso a cada 40 cm da
+       estrada: ela vai em pedaços de 16 segmentos, cada um com a caixa
+       dele, e só se mede o pedaço cuja caixa chega a `lim` do ponto — a
+       mesma resposta de medir a linha toda (o Interior de SP gerava em
+       1,1 s, quase tudo nesta conta) */
+    const PEDACOS = new WeakMap();
+    const pedacosDaLinha = pts => {
+      const P = PEDACOS.get(pts);
+      if (P && P.n === pts.length) return P.lista;
+      const lista = [];
+      for (let k = 1; k < pts.length; k += 16) {
+        const fim = Math.min(pts.length - 1, k + 15);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (let j = k - 1; j <= fim; j++) { const [x, y] = pts[j]; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+        lista.push({ k, fim, x0, y0, x1, y1 });
+      }
+      PEDACOS.set(pts, { n: pts.length, lista });
+      return lista;
+    };
+    const pertoDaLinha = (x, y, pts, lim) => {
+      for (const p of pedacosDaLinha(pts)) {
+        if (x < p.x0 - lim || x > p.x1 + lim || y < p.y0 - lim || y > p.y1 + lim) continue;
+        for (let k = p.k; k <= p.fim; k++) if (distSeg(x, y, pts[k - 1], pts[k]) < lim) return true;
+      }
+      return false;
+    };
+    /* o contorno (anel) de uma linha de largura w: os dois lados pela normal de cada vértice */
+    const anelDaLinha = (pts, w) => {
+      const esq = [], dir = [];
+      for (let k = 0; k < pts.length; k++) {
+        const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)];
+        const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+        esq.push([pts[k][0] + nx * w / 2, pts[k][1] + ny * w / 2]); dir.push([pts[k][0] - nx * w / 2, pts[k][1] - ny * w / 2]);
+      }
+      return esq.concat(dir.reverse());
+    };
+    /* Chaikin: a linha de grade (de 45 em 45°) vira curva, com as pontas no lugar */
+    const suavizar = (pts, n = 3) => {
+      let p = pts;
+      for (let v = 0; v < n; v++) {
+        if (p.length < 3) break;
+        const q = [p[0]];
+        for (let k = 0; k + 1 < p.length; k++) { const [a, b] = [p[k], p[k + 1]]; q.push([0.75 * a[0] + 0.25 * b[0], 0.75 * a[1] + 0.25 * b[1]], [0.25 * a[0] + 0.75 * b[0], 0.25 * a[1] + 0.75 * b[1]]); }
+        q.push(p[p.length - 1]);
+        p = q;
+      }
+      return p;
+    };
+    /* (a semente da praça: o mesmo mapa dá o mesmo rio e a mesma clareira) */
+    let sementeP = 2166136261;
+    for (const ch of String(CIS.id || CENTRO)) sementeP = Math.imul(sementeP ^ ch.charCodeAt(0), 16777619) >>> 0;
+    const sorteioP = (() => { let e = sementeP || 1; return () => { e = (e + 0x6D2B79F5) >>> 0; let t = e; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })();
+    /* (na praça de duas cidades, a avenida de entrada e a da beira do centro também correm pelo mato) */
+    const ruasDeFora = () => avenidas.filter(a => a.estrada || a.entradaPraca || a === avEntrada || a === bmK);
+
     /* 7 · A BAÍA (Niterói): a água entre as duas margens, com a ponte por cima da estrada */
     let baia = null;
     /* (nas cidades-modelo não tem baía: a cidade do outro lado chega pela estrada, como as outras) */
@@ -2958,7 +3181,11 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       /* (nem por cima de avenida: a de entrada vai até a borda do mundo, e em Ponta Grossa a rua de veraneio
          caía atravessada nela — a grade da avenida partia a rua ao meio, e metade ficava fora de alcance) */
       const naAvenidaR = r => avenidas.some(a => a !== veraneio.acesso && a.pontos.some((p, k) => k > 0 && cruza(r, retSeg({ pontos: [a.pontos[k - 1], p], l: a.l }), RUA)));
-      const ocupa = r => bloqueia.some(({ r: o }) => cruza(r, o, RUA)) || (agua && cruza(r, agua, RUA)) || naAvenidaR(r) ||
+      /* (nem na praia: a rua de veraneio fica do lado de terra da guia da beira) */
+      const naPraiaR = r => temCosta && [r.y0, (r.y0 + r.y1) / 2, r.y1].some(y => r.x1 + RUA > guia(y));
+      /* (nem no rio: o terreno e a rua de acesso ficam a 12 m da água) */
+      const noRioR = r => rios.some(rr => rr.pontos.some((p, k) => k > 0 && cruza(r, retSeg({ pontos: [rr.pontos[k - 1], p], l: rr.larg }), 12 * M)));
+      const ocupa = r => bloqueia.some(({ r: o }) => cruza(r, o, RUA)) || (agua && cruza(r, agua, RUA)) || naAvenidaR(r) || naPraiaR(r) || noRioR(r) ||
                          porticos.concat(porticosC).some(p => p.x > r.x0 - 12 * M && p.x < r.x1 + 12 * M && p.y > r.y0 - 12 * M && p.y < r.y1 + 12 * M);
       let melhor = null;
       for (const f of ['o', 'l', 'n', 's']) {
@@ -2976,7 +3203,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
             if (ocupa(r)) continue;
             const fim = hz ? [borda + d[0] * RUA / 2, a] : [a, borda + d[1] * RUA / 2];
             const seg = [[pe[0] - d[0] * RUA / 2, pe[1] - d[1] * RUA / 2], fim];
-            if (corta(seg, null, Xn) || (agua && cruza(retSeg({ pontos: seg, l: RUA }), agua, 0))) continue;
+            if (corta(seg, null, Xn) || (agua && cruza(retSeg({ pontos: seg, l: RUA }), agua, 0)) || noRioR(retSeg({ pontos: seg, l: RUA }))) continue;
             melhor = { f, r, seg, dd };
             break;
           }
@@ -3024,6 +3251,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         if (quadras.some(o => cruzaR(o, r)) || kFicam.some(o => cruzaR(o, r)) || favelas.some(g => g !== f && cruzaR(g.bb, r))) return false;
         if (f.lotes.some(l => cruzaR(l, r))) return false;
         if (baia) { const L = Math.hypot(q[0] - p[0], q[1] - p[1]), N = Math.max(1, Math.ceil(L / 20)); for (let k = 0; k <= N; k++) if (dentroPol(p[0] + (q[0] - p[0]) * k / N, p[1] + (q[1] - p[1]) * k / N, baia.agua)) return false; }
+        /* (nem no rio) */
+        if (rios.length) { const L = Math.hypot(q[0] - p[0], q[1] - p[1]), N = Math.max(1, Math.ceil(L / 20)); for (let k = 0; k <= N; k++) { const x = p[0] + (q[0] - p[0]) * k / N, y = p[1] + (q[1] - p[1]) * k / N; if (rios.some(rr => pertoDaLinha(x, y, rr.pontos, rr.larg / 2 + 2 * M))) return false; } }
         return true;
       };
       let melhor = null;
@@ -3065,6 +3294,194 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       }
     }
 
+    /* 8b' · OS RIOS (o passo 6c): depois da rua de veraneio e do beco da favela solta, que o rio não corta, e com o mundo de verdade */
+    if (MODELO) {
+      /* (o beco que liga a favela solta à rua — passo 8b — também: o rio não corta ele) */
+      const becosLiga = favelas.flatMap(f => (f.becos || []).filter(bc => bc.liga).flatMap(bc => bc.slice(1).map((p, k) => [retSeg({ pontos: [bc[k], p], l: bc.w || 44 }), 4 * M])));
+      const G = gradePaisagem(becosLiga);
+      const { nx, ny, N, h } = G;
+      /* AS ESTRADAS NA GRADE: a célula de estrada (1: de leste a oeste, 2: de
+         norte a sul) só se atravessa de través; perto das pontas (o pórtico e
+         a placa) não se atravessa */
+      const estr = new Uint8Array(N);
+      for (const a of ruasDeFora()) for (let k = 1; k < a.pontos.length; k++) {
+        const [A, Bp] = [a.pontos[k - 1], a.pontos[k]], hz = Math.abs(Bp[1] - A[1]) < Math.abs(Bp[0] - A[0]), L = Math.hypot(Bp[0] - A[0], Bp[1] - A[1]);
+        const r = retSeg({ pontos: [A, Bp], l: a.l + 2 * M });
+        for (let j = Math.max(0, G.cj(r.y0)); j <= Math.min(ny - 1, G.cj(r.y1)); j++) for (let i = Math.max(0, G.ci(r.x0)); i <= Math.min(nx - 1, G.ci(r.x1)); i++) {
+          const x = G.cx(i), y = G.cy(j), t = hz ? (x - Math.min(A[0], Bp[0])) : (y - Math.min(A[1], Bp[1]));
+          const ponta = t < 10 * M || t > L - 10 * M;
+          estr[j * nx + i] = ponta ? 3 : (hz ? 1 : 2);
+        }
+      }
+      /* (a 8 m do pórtico e da placa, não: o pórtico e a placa ficam em terra, fora da ponte) */
+      for (const p of porticos.concat(placas)) { const i = G.ci(p.x), j = G.cj(p.y); for (let dj = -2; dj <= 2; dj++) for (let di = -2; di <= 2; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny && estr[jj * nx + ii]) estr[jj * nx + ii] = 3; } }
+      const rioCel = new Int16Array(N);                     // a célula do meio de cada rio (o número dele + 1)
+      const pertoRio = new Uint8Array(N);                   // a volta de cada rio (um rio não corre colado no outro)
+      /* O CAMINHO MAIS BARATO da célula k0 (saindo no sentido [si, sj]) até a
+         borda do mundo ou até outro rio; null se não tem */
+      const DV = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+      const caminho = (k0, eu) => {
+        /* (Float64: com Float32 o custo guardado arredondava pra baixo, o nó saía do monte maior que ele e não abria — o rio ficava preso) */
+        const custo = new Float64Array(N).fill(Infinity), de = new Int32Array(N).fill(-1);
+        const heap = [];
+        const poe = (k, c) => { heap.push([c, k]); let n = heap.length - 1; while (n > 0) { const p = (n - 1) >> 1; if (heap[p][0] <= heap[n][0]) break; [heap[p], heap[n]] = [heap[n], heap[p]]; n = p; } };
+        const tira = () => { const t = heap[0], u = heap.pop(); if (heap.length) { heap[0] = u; let n = 0; for (;;) { const a = 2 * n + 1, b = a + 1; let m = n; if (a < heap.length && heap[a][0] < heap[m][0]) m = a; if (b < heap.length && heap[b][0] < heap[m][0]) m = b; if (m === n) break; [heap[m], heap[n]] = [heap[n], heap[m]]; n = m; } } return t; };
+        custo[k0] = 0; poe(k0, 0);
+        const volta = k => { const out = []; for (let v = k; v !== -1; v = de[v]) out.push(v); return out.reverse(); };
+        /* (o lugar mais aberto aonde ela chega: sem saída, o rio nasce numa lagoa ali) */
+        let aberto = -1;
+        while (heap.length) {
+          const [c, k] = tira();
+          if (c > custo[k]) continue;
+          const i = k % nx, j = (k / nx) | 0;
+          if (k !== k0 && ((rioCel[k] && rioCel[k] !== eu) || i === 0 || j === 0 || i === nx - 1 || j === ny - 1)) return { cel: volta(k), lagoa: false };
+          if (G.dist[k] >= 3 && i > 3 && j > 3 && i < nx - 4 && j < ny - 4 && (aberto < 0 || G.dist[k] + 0.02 * c > G.dist[aberto] + 0.02 * custo[aberto])) aberto = k;
+          for (const [di, dj] of DV) {
+            const ii = i + di, jj = j + dj;
+            if (ii < 0 || jj < 0 || ii >= nx || jj >= ny) continue;
+            const v = jj * nx + ii;
+            if (G.proib[v] || rioCel[v] === eu) continue;
+            const ev = estr[v], eu2 = estr[k];
+            if (ev === 3) continue;
+            /* na estrada (e entrando nela), só de través: a de leste a oeste, de norte a sul */
+            if (ev && (di && dj || (ev === 1 && di) || (ev === 2 && dj))) continue;
+            if (eu2 && eu2 !== 3 && !ev && (di && dj)) continue;
+            const passo = (di && dj ? 1.414 : 1) * (1 + 8 * Math.exp(-G.dist[v] / 4) + (pertoRio[v] && !rioCel[v] ? 3 : 0)) + (ev && !eu2 ? 30 : 0);
+            if (c + passo < custo[v]) { custo[v] = c + passo; de[v] = k; poe(v, c + passo); }
+          }
+        }
+        return aberto >= 0 && Math.hypot((aberto % nx) - (k0 % nx), ((aberto / nx) | 0) - ((k0 / nx) | 0)) >= 6 ? { cel: volta(aberto), lagoa: true } : null;
+      };
+      /* as ligações: cada cidade com a vizinha dela, pela estrada (a mais comprida primeiro: o rio maior) */
+      const lig = new Map();
+      for (const a of estradas) { const L = Math.hypot(a.pontos[1][0] - a.pontos[0][0], a.pontos[1][1] - a.pontos[0][1]); const o = lig.get(a.para); if (!o || L > o.L) lig.set(a.para, { a, L }); }
+      const ordemLig = [...lig.values()].sort((p, q) => q.L - p.L);
+      const cruzaRio = a => rios.some(r => { const [A, Bp] = a.pontos; for (let t = 0; t <= 1; t += 0.05) if (pertoDaLinha(A[0] + (Bp[0] - A[0]) * t, A[1] + (Bp[1] - A[1]) * t, r.pontos, r.larg / 2)) return true; return false; });
+      for (const { a, L } of ordemLig) {
+        if (L < 40 * M || rios.some(r => r.estrada === a.id) || cruzaRio(a)) continue;
+        const [A, Bp] = a.pontos, ux = (Bp[0] - A[0]) / L, uy = (Bp[1] - A[1]) / L, nxv = -uy, nyv = ux;
+        /* o ponto da travessia: do meio pras pontas, o primeiro com chão livre dos dois lados */
+        let feito = false;
+        /* (a metade de lá não volta pela estrada dela: a estrada da travessia vira barra na busca) */
+        const daEstrada = [];
+        for (const e of estradas) if (e.para === a.para && e.de === a.de) {
+          const r = retSeg({ pontos: e.pontos, l: e.l + 2 * M });
+          for (let j = Math.max(0, G.cj(r.y0)); j <= Math.min(ny - 1, G.cj(r.y1)); j++) for (let i = Math.max(0, G.ci(r.x0)); i <= Math.min(nx - 1, G.ci(r.x1)); i++) if (estr[j * nx + i]) daEstrada.push([j * nx + i, estr[j * nx + i]]);
+        }
+        for (const [k] of daEstrada) estr[k] = 3;
+        for (let dt = 0; dt <= L / 2 - 12 * M && !feito; dt += 1 * M) for (const sgT of [1, -1]) {
+          if (feito || (dt === 0 && sgT < 0)) continue;
+          const t = L / 2 + sgT * dt, C = [A[0] + ux * t, A[1] + uy * t], meio = a.l / 2 + 6 * M;
+          const lados = [1, -1].map(s => [C[0] + nxv * s * meio, C[1] + nyv * s * meio]);
+          const ks = lados.map(([x, y]) => { const i = G.ci(x), j = G.cj(y); return i >= 0 && j >= 0 && i < nx && j < ny ? j * nx + i : -1; });
+          if (ks.some(k => k < 0 || G.proib[k] || estr[k])) continue;
+          const eu = rios.length + 1;
+          /* uma metade, e a outra sem passar por ela */
+          const c1 = caminho(ks[0], eu);
+          if (!c1) continue;
+          const m1 = c1.cel;
+          /* (a célula de outro rio — o encontro — continua dele) */
+          for (const k of m1) if (!rioCel[k]) rioCel[k] = eu;
+          const c2 = caminho(ks[1], eu);
+          if (!c2 || (c1.lagoa && c2.lagoa)) { for (const k of m1) if (rioCel[k] === eu) rioCel[k] = 0; continue; }
+          const metades = [m1, c2.cel], nasce = [c1.lagoa, c2.lagoa];
+          /* a linha: a metade de um lado (do fim até a beira da estrada), a travessia reta, a do outro lado */
+          const pts = k => [G.cx(k % nx), G.cy((k / nx) | 0)];
+          const l1 = suavizar([lados[0]].concat(metades[0].slice(1).map(pts))).reverse(), l2 = suavizar([lados[1]].concat(metades[1].slice(1).map(pts)));
+          const linha = l1.concat([C], l2);
+          /* (a ponta que chega na borda segue 1,5 km pra fora: o rio não acaba na beira do mundo, nem na planta) */
+          const lagoasDele = [];
+          for (const [fim, ant] of [[0, 1], [linha.length - 1, linha.length - 2]]) {
+            const P0 = linha[fim], P1 = linha[ant], k = metades[fim === 0 ? 0 : 1].slice(-1)[0];
+            /* A LAGOA DE ONDE ELE NASCE (a metade sem saída): no lugar mais aberto aonde ela chega */
+            if (nasce[fim === 0 ? 0 : 1]) {
+              const r = Math.min(G.dist[k] * h * 0.75, 15 * M), f1 = sorteioP() * 6.283, f2 = sorteioP() * 6.283;
+              lagoasDele.push({ x: Math.round(P0[0]), y: Math.round(P0[1]), r: Math.round(r),
+                                agua: Array.from({ length: 16 }, (_, q) => { const t = 6.283 * q / 16, ff = 1 + 0.16 * Math.sin(2 * t + f1) + 0.08 * Math.sin(3 * t + f2); return [Math.round(P0[0] + r * ff * Math.cos(t)), Math.round(P0[1] + r * ff * Math.sin(t))]; }) });
+              continue;
+            }
+            if (rioCel[k] && rioCel[k] !== eu) continue;
+            const dx = P0[0] - P1[0], dy = P0[1] - P1[1], Lx = Math.hypot(dx, dy) || 1;
+            const i = k % nx, j = (k / nx) | 0, sx = i === 0 ? -1 : i === nx - 1 ? 1 : 0, sy = j === 0 ? -1 : j === ny - 1 ? 1 : 0;
+            const ex = sx || sy ? [sx, sy] : [dx / Lx, dy / Lx], ext = [P0[0] + ex[0] * 1500 * M, P0[1] + ex[1] * 1500 * M];
+            if (fim === 0) linha.unshift(ext); else linha.push(ext);
+          }
+          const rio = { id: 'rio' + eu, estrada: a.id, larg: eu === 1 ? LARG_RIO * 1.15 : LARG_RIO, pontos: linha.map(p => [Math.round(p[0]), Math.round(p[1])]), lagoas: lagoasDele };
+          rio.agua = anelDaLinha(rio.pontos, rio.larg);
+          rios.push(rio);
+          for (const m of metades) for (const k of m) if (!rioCel[k]) rioCel[k] = eu;
+          for (const m of metades) for (const k of m) { const i = k % nx, j = (k / nx) | 0; for (let dj = -4; dj <= 4; dj++) for (let di = -4; di <= 4; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < nx && jj < ny) pertoRio[jj * nx + ii] = 1; } }
+          feito = true;
+        }
+        for (const [k, v] of daEstrada) estr[k] = v;
+        if (!feito) avisos.push(`sem rio na estrada ${a.de}–${a.para}`);
+      }
+      /* AS PONTES: cada rua de fora (a estrada, a entrada da praça) que passa num rio, de través */
+      for (const a of ruasDeFora()) for (let k = 1; k < a.pontos.length; k++) {
+        const [A, Bp] = [a.pontos[k - 1], a.pontos[k]], L = Math.hypot(Bp[0] - A[0], Bp[1] - A[1]);
+        if (L < 1) continue;
+        const ux = (Bp[0] - A[0]) / L, uy = (Bp[1] - A[1]) / L;
+        for (const r of rios) {
+          let t0 = null;
+          const fecha = t1 => {
+            const a0 = Math.max(0, t0 - 3 * M), a1 = Math.min(L, t1 + 3 * M), hw = a.l / 2 + 1.3 * M;
+            const P = [A[0] + ux * a0, A[1] + uy * a0], Q = [A[0] + ux * a1, A[1] + uy * a1];
+            pontesRio.push({ x0: Math.min(P[0], Q[0]) - Math.abs(uy) * hw, x1: Math.max(P[0], Q[0]) + Math.abs(uy) * hw,
+                             y0: Math.min(P[1], Q[1]) - Math.abs(ux) * hw, y1: Math.max(P[1], Q[1]) + Math.abs(ux) * hw, dir: [ux, uy], l: a.l, rio: r.id });
+            a.ponte = true;
+          };
+          for (let t = 0; t <= L; t += 8) {
+            const dentro = pertoDaLinha(A[0] + ux * t, A[1] + uy * t, r.pontos, r.larg / 2 + 1.2 * M);
+            if (dentro && t0 === null) t0 = t;
+            if (!dentro && t0 !== null) { fecha(t - 8); t0 = null; }
+          }
+          if (t0 !== null) fecha(L);
+        }
+      }
+    }
+
+    /* 8c · AS CLAREIRAS (a vegetação "mais bem feita"): no mato largo
+       entre as cidades, longe delas, das ruas e dos rios, a clareira de
+       pasto — o capim aberto, com uma árvore aqui e outra ali no 3D — e,
+       em uma de cada duas, a lagoinha no meio. Uma de cada vez, no lugar
+       mais longe de tudo, até não caber mais (ou oito) */
+    const clareiras = [];
+    if (MODELO) {
+      const extras = [];
+      for (const a of avenidas) if (a.estrada || a.entradaPraca) extras.push([retSeg(a), 9 * M]);
+      for (const r of rios) for (let k = 1; k < r.pontos.length; k++) extras.push([retSeg({ pontos: [r.pontos[k - 1], r.pontos[k]], l: r.larg }), 9 * M]);
+      for (const r of rios) for (const L of r.lagoas || []) extras.push([{ x0: L.x - L.r * 1.3, x1: L.x + L.r * 1.3, y0: L.y - L.r * 1.3, y1: L.y + L.r * 1.3 }, 9 * M]);
+      if (veraneio) extras.push([veraneio.area, 12 * M]);
+      const G = gradePaisagem(extras), { nx, ny, h } = G;
+      /* (a beira do mundo também: a clareira não encosta nela) */
+      const usado = new Uint8Array(G.N);
+      for (let k = 0; k < G.N; k++) { const i = k % nx, j = (k / nx) | 0; if (i < 3 || j < 3 || i >= nx - 3 || j >= ny - 3) usado[k] = 1; }
+      const MIN = 5;                                      // a folga mínima (células): 20 m
+      /* (a folga de cada célula: até o que não pode e até a beira do mundo) */
+      const folga = k => Math.min(G.dist[k], k % nx, (k / nx) | 0, nx - 1 - k % nx, ny - 1 - ((k / nx) | 0));
+      for (let n = 0; n < 7; n++) {
+        /* (entre as de folga perto da maior, uma no sorteio: as clareiras não saem em fila) */
+        let maior = MIN;
+        for (let k = 0; k < G.N; k++) if (!usado[k] && folga(k) > maior) maior = folga(k);
+        if (maior <= MIN) break;
+        const boas = [];
+        for (let k = 0; k < G.N; k++) if (!usado[k] && folga(k) >= Math.max(MIN, maior * 0.8)) boas.push(k);
+        const best = boas[Math.floor(sorteioP() * boas.length)], bd = folga(best);
+        const cx = G.cx(best % nx), cy = G.cy((best / nx) | 0), r = Math.min(bd * h * 0.75, (18 + 12 * sorteioP()) * M);
+        const f1 = sorteioP() * 6.283, f2 = sorteioP() * 6.283, a1 = 0.12 + 0.1 * sorteioP(), a2 = 0.06 + 0.08 * sorteioP();
+        const forma = (rr, n0 = 18) => Array.from({ length: n0 }, (_, k) => { const t = 6.283 * k / n0, f = 1 + a1 * Math.sin(2 * t + f1) + a2 * Math.sin(3 * t + f2); return [Math.round(cx + rr * f * Math.cos(t)), Math.round(cy + rr * f * Math.sin(t))]; });
+        const pol = forma(r);
+        const lagoa = clareiras.length % 2 === 0 && r > 16 * M ? forma(r * 0.42, 14).map(([x, y]) => [Math.round(x + (sorteioP() - 0.5) * r * 0.2), Math.round(y + (sorteioP() - 0.5) * r * 0.2)]) : null;
+        clareiras.push({ pol, lagoa, x: Math.round(cx), y: Math.round(cy), r: Math.round(r) });
+        /* (a volta dela fica fora da próxima) */
+        const rr = (2 * r + 30 * M) / h, i0 = best % nx, j0 = (best / nx) | 0;
+        for (let dj = -Math.ceil(rr); dj <= Math.ceil(rr); dj++) for (let di = -Math.ceil(rr); di <= Math.ceil(rr); di++) {
+          const ii = i0 + di, jj = j0 + dj;
+          if (ii >= 0 && jj >= 0 && ii < nx && jj < ny && di * di + dj * dj <= rr * rr) usado[jj * nx + ii] = 1;
+        }
+      }
+    }
+
     /* 9 · o que a página precisa: o que saiu do mapa de hoje (pra esconder o que era dele) e onde está cada cidade */
     const kFora = corte ? corte.kFora : new Set();
     const vazios = K.QUADRAS.filter(q => kFora.has(q.i + ',' + q.j)).map(q => caixa(q, RUA * 1.1));
@@ -3095,7 +3512,9 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
              kSome: TODAS ? () => true : (x, y) => saiu(x, y) || naOutra(x, y), modelo: MODELO,
              /* (o mundo é tudo o que ficou posto — a rua de veraneio, recolocada no passo 8, também: com a caixa
                 de antes dela, o cenário 3D cortava a rua de veraneio fora da área dele) */
-             estradas, placas, baia, avisos, mundo: bbDe([mundoC, bbDe(postas.map(p => p.r))].concat(baia ? [bbOf(baia.agua)] : [])), praca: CIS.id || null };
+             estradas, placas, baia, avisos, mundo: bbDe([mundoC, bbDe(postas.map(p => p.r))].concat(baia ? [bbOf(baia.agua)] : [])), praca: CIS.id || null,
+             /* os rios (a linha do meio, a largura e o contorno da água), as pontes deles e as clareiras do mato */
+             rios, pontes: pontesRio, clareiras };
   }
 
   /* ---- O CANTEIRO DA AVENIDA DE ENTRADA: corre ao lado das quadras dela
