@@ -7025,8 +7025,24 @@
     return _paises;
   };
 
+  /* SEM SPOILER (correção do dono, 01/10/2026): "isso ocorre na
+     classificação também em competições". Enquanto o cartão da nossa
+     partida espera o apito final, as telas de resultado leem o mundo
+     como estava de manhã (`TO.estado.antesDoJogo`, a foto tirada antes
+     de o dia ser sorteado): tabela, rodada, chave, campeão, as ligas
+     e as copas de fora. A foto vive só na memória; jogo recarregado no
+     meio da partida mostra o mundo de agora. */
+  function eSemSpoiler(){
+    const e = E();
+    const f = TO.estado.antesDoJogo;
+    if(!e || !f || f.abs !== e.data.absoluto) return e;
+    if(!(TO.feed.partidaPendente && TO.feed.partidaPendente(e))) return e;
+    const p = Object.create(e);
+    p.temporada = f.temporada; p.ligas = f.ligas; p.conmebol = f.conmebol;
+    return p;
+  }
   function pintarCompeticoes(){
-    const e = E(), pg = U.$('.pagina[data-pag="competicoes"]');
+    const e = eSemSpoiler(), pg = U.$('.pagina[data-pag="competicoes"]');
     pg.innerHTML='';
     pg.appendChild(el('div',{class:'titulo-barra', html:`<h1>${_t('Competições')}</h1>`}));
 
@@ -8033,7 +8049,7 @@
   const DIA_LONGO = [_t('Segunda'),_t('Terça'),_t('Quarta'),_t('Quinta'),_t('Sexta'),_t('Sábado'),_t('Domingo')];
 
   function pintarCalendario(){
-    const e = E(), pg = U.$('.pagina[data-pag="calendario"]');
+    const e = eSemSpoiler(), pg = U.$('.pagina[data-pag="calendario"]');
     pg.innerHTML='';
     pg.appendChild(el('div',{class:'titulo-barra', html:`<h1>${_t('Calendário')}</h1>`}));
     pg.appendChild(abasGrandes([

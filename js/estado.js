@@ -528,6 +528,23 @@ TO.estado = (function(){
        torcida agenda a fecha dele em `E.temporada` e é o `jogarDia`
        que a joga; se as ligas andassem primeiro, elas leriam a fecha
        do dia ainda sem placar e sorteariam por cima. */
+    /* SEM SPOILER (correção do dono, 01/10/2026): os jogos do dia são
+       sorteados aqui, o nosso inclusive, horas antes de a bola rolar.
+       No dia em que o nosso clube joga, as competições ficam guardadas
+       como estavam DE MANHÃ — só na memória, fora do save — e as telas
+       de resultado (Competições, Calendário) leem esta foto enquanto o
+       cartão da partida não tiver apito final (main.js, eSemSpoiler). */
+    TO.estado.antesDoJogo = null;
+    try{
+      const jogaHoje = TO.competicoes.agendaDoClube(E, E.torcida.clubeId)
+        .some(j => j.semana === E.data.semana && j.dia === E.data.dia);
+      if(jogaHoje){
+        const copia = o => o == null ? o
+          : (typeof structuredClone === 'function' ? structuredClone(o) : JSON.parse(JSON.stringify(o)));
+        TO.estado.antesDoJogo = {abs:E.data.absoluto, temporada:copia(E.temporada),
+                                 ligas:copia(E.ligas), conmebol:copia(E.conmebol)};
+      }
+    }catch(err){ console.warn('foto de antes do jogo: ' + err.message); }
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
     conferirProximoJogo(E);
 

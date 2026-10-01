@@ -8319,6 +8319,33 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
   - Notícias → Mensagens continua mostrando tudo de uma vez.
 - Medido: depois de três dias passados de uma vez, a coluna foi de 8 para 14 posts em 12 segundos, um a um.
 
+## Sem spoiler: o resultado do dia só aparece depois do apito final (correção do dono, 01/10/2026)
+
+"A rede social gera notícias do placar do jogo antes de eu clicar em Iniciar partida; isso ocorre na classificação também em Competições. Vasculhe outros cantos que possa existir spoiler e resolva."
+
+**A causa.** Os jogos do dia, o nosso inclusive, são sorteados quando o dia abre (`estado.avancarDia` → `competicoes.jogarDia`), e o placar é gravado direto nos jogos guardados. Não há bandeira de "ainda não revelado". O que escondia o nosso jogo era só a fila do feed travada pelo cartão da partida.
+
+**O que mudou** (o mapa dos lugares foi feito com varredura do código):
+- **Rede social e jornais.** Tudo o que depende de resultado do dia fica guardado em `E.feedDepoisDoJogo` enquanto o cartão da nossa partida não tem apito final (`feed.partidaPendente`):
+  - a Gazeta da cidade;
+  - o nosso post de resultado;
+  - clássico e goleada;
+  - título;
+  - protesto.
+  - Sai em `encerrarPartida`, ou no dia seguinte por garantia. O que é de antes do jogo (convocação, chegada da caravana, resenha) sai na hora.
+- **Competições e Calendário.** No dia em que o nosso clube joga, `estado.avancarDia` tira uma foto das competições (`temporada`, `ligas`, `conmebol`) antes de sortear o dia, só na memória, fora do save (`TO.estado.antesDoJogo`). Enquanto a partida está pendente, as duas telas leem essa foto (`main.js`, `eSemSpoiler`):
+  - tabela, rodada, chave do mata-mata, campeão, ligas e copas de fora, Libertadores e Sul-Americana;
+  - a célula de hoje no calendário e a agenda do time.
+  - Testado: com Fortaleza × São Bernardo pendente, a rodada mostra "Fortaleza × São Bernardo" sem placar, a tabela não conta o jogo e o calendário só mostra o adversário. Depois do apito aparecem o "1 × 0" e os 3 pontos.
+- **O campeão da Conmebol do dia.** O cartão "fulano é campeão" ia para a fila antes do cartão da partida e saía antes de a bola rolar. Agora o cartão da partida entra primeiro (passo 'placar' antes de 'mundo'), e o do campeão espera atrás dele.
+- **Já estavam seguros:**
+  - o texto do cartão da partida (a posição na tabela é a de antes de hoje);
+  - o cartão da SEMANA, que não mostra placar;
+  - o ticker e o Arquivo, que só leem o que já saiu da fila;
+  - perfis de torcida e de cidade e o Ranking, que não mostram futebol;
+  - entrevista e protesto na porta do CT, que só saem em dia sem jogo nosso.
+- **Limite conhecido:** a foto vive na memória. Quem recarrega o jogo no meio do dia da partida vê as telas com o resultado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

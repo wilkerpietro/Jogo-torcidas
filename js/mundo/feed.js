@@ -1564,8 +1564,11 @@ TO.feed = (function(){
     passo('caravana da filial', ()=>caravanaDasFiliais(E));
     passo('bote na caravana',   ()=>boteNaCaravanaRival(E));
     passo('hospedagem da filial', ()=>hospedagemDaFilialSemana(E));
-    passo('mundo',          ()=>mundoDeHoje(E, ctx));
+    /* o cartão da nossa partida entra na fila ANTES do mundo: o
+       "fulano é campeão da Libertadores" de hoje esperava na frente
+       dele e saía antes de a bola rolar (sem spoiler, 01/10/2026) */
     passo('placar',         ()=>placarDoDia(E, ctx.jogos || []));
+    passo('mundo',          ()=>mundoDeHoje(E, ctx));
     passo('almanaque',      ()=>almanaqueDoDia(E));
     passo('dica',           ()=>dicaDeHoje(E));
     passo('brigas do mundo no feed', ()=>brigasDoMundoHoje(E));
