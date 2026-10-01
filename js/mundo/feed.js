@@ -717,6 +717,26 @@ TO.feed = (function(){
       {publico:true, zona, chave:`resenha|${abs}|${o.id}`});
   }
 
+  /* O QUE É IMPORTANTE PRA NÓS (dono, 01/10/2026): com a rede recolhida,
+     só isto vira aviso no canto — "as notícias que envolvem o clube e a
+     torcida, ou provocações diretas ao clube e à torcida". O teste é
+     pelos dados, não pelo texto (o nome do clube às vezes é o da
+     cidade): post nosso; jornal com o nosso jogo ou a nossa briga no
+     cartaz; post cuja chave carrega o nosso clube ou a nossa torcida
+     (clássico, goleada, queda, zoeira da nossa briga); e o que cita a
+     nossa torcida pelo nome. */
+  function importante(E, m){
+    if(!m) return false;
+    const nos = E.torcida;
+    if(m.de && m.de === nos.id) return true;
+    const c = m.card;
+    if(c && c.t === 'jogo' && (c.c === nos.clubeId || c.f === nos.clubeId)) return true;
+    if(c && c.t === 'briga' && ((c.a || {}).id === nos.id || (c.b || {}).id === nos.id)) return true;
+    const partes = String(m.chave || '').split('|');
+    if(partes.includes(nos.id) || partes.includes(nos.clubeId)) return true;
+    return String(m.texto || '').indexOf(nos.nome) >= 0;
+  }
+
   /* PROTESTO E RECLAMAÇÃO SÃO DA NOSSA CIDADE (dono, 01/10/2026): a
      cobrança pública da torcida contra o próprio time — o protesto da
      má fase, a reclamação do clássico perdido, da goleada e da queda —
@@ -6240,7 +6260,7 @@ TO.feed = (function(){
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
-          seguindo, seguir, seguirTodos, clubesDaNoticia,
+          seguindo, seguir, seguirTodos, clubesDaNoticia, importante,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
           abrirLote, fecharLote,

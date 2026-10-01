@@ -8389,6 +8389,19 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - A zoeira e a provocação de rival de fora continuam.
 - Em 150 dias de TUF: 9 protestos e reclamações, todos de torcidas de Fortaleza (Cearamor, Falange Coral, Jovem do Floresta e a nossa).
 
+## A rede social recolhível, e o aviso do que é importante (pedido do dono, 01/10/2026)
+
+"A rede social pode ter um botão recolhível para esconder, caso o jogador queira só ver o feed; e as notícias mais importantes (as que envolvem o clube e a torcida, ou provocações diretas ao clube e à torcida) aparecem em mensagens no mesmo canto direito, que somem em 3 s."
+- **Recolher.** O botão » no canto esquerdo do cabeçalho da coluna recolhe a rede numa tira fina na borda direita, com o ícone, "Rede social" na vertical e o número de posts novos desde que ela foi recolhida. Clicar na tira, ou num aviso, abre a rede de novo, já atualizada. A escolha fica guardada no navegador (`to.redeRecolhida`).
+- **O aviso do canto.** Com a rede recolhida, o post novo importante para nós aparece num cartão no canto direito, com quem postou e o começo do texto. Fica 3 s, entra e sai deslizando, e os avisos saem um a cada 1,5 s.
+- **O que é importante** (`feed.importante`), decidido pelos dados e não pelo texto, porque o nome do clube às vezes é o da cidade:
+  - post nosso;
+  - jornal com o nosso jogo ou a nossa briga no cartaz;
+  - post cuja chave carrega o nosso clube ou a nossa torcida (clássico, goleada, queda, zoeira da nossa briga);
+  - post que cita a nossa torcida pelo nome.
+- O estado da rede (o que já foi visto, a fila de avisos, a caixa no `<body>`) vive fora da coluna, porque o feed se repinta inteiro de vez em quando e a coluna nasce de novo.
+- Testado: com a rede recolhida, numa briga nossa e quatro dias, saíram 6 posts. Dois viraram aviso (o Porrada da nossa briga e o nosso post), a tira contou 6, e em 12 s os avisos sumiram.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

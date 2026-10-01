@@ -2708,3 +2708,36 @@ header.capa-cidade{background-size:cover; background-position:center;
 .post-comentario small{display:block;margin-top:2px;font-size:10.5px;color:var(--apagado)}
 .post-com-cor{position:absolute;right:0;top:2px;color:var(--apagado)}
 .post-com-cor svg{width:12px;height:12px;fill:none}
+
+/* =========================================================
+   A REDE RECOLHIDA (pedido do dono, 01/10/2026): a tira fina na borda
+   e os avisos do que é importante, no canto, por 3 s
+   ========================================================= */
+.social-lado-recolher{display:inline-grid;place-items:center;width:24px;height:22px;padding:0;margin-right:6px;
+  background:none;border:1px solid var(--linha);border-radius:4px;color:var(--fraco);cursor:pointer;flex:none}
+.social-lado-recolher:hover{color:#e4e0d8;border-color:#555}
+.social-lado-recolher svg{width:13px;height:13px}
+.social-lado-cab{justify-content:flex-start}
+.social-lado-cab .social-lado-tudo{margin-left:auto}
+.social-aba{display:none}
+.social-lado.recolhida{width:36px}
+.social-lado.recolhida > .social-lado-cab,.social-lado.recolhida > .social-lado-rolo,
+.social-lado.recolhida > .social-lado-novos{display:none}
+.social-lado.recolhida > .social-aba{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;width:100%;
+  padding:12px 0;background:none;border:0;color:var(--fraco);cursor:pointer}
+.social-lado.recolhida > .social-aba:hover{color:#e4e0d8;background:#ffffff08}
+.social-aba svg{width:16px;height:16px}
+.social-aba .vert{writing-mode:vertical-rl;transform:rotate(180deg);font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.social-aba-n{min-width:18px;padding:2px 5px;border-radius:9px;background:var(--rubro-vivo,#c0392b);color:#fff;font:700 10px/1.2 var(--mono)}
+.social-toasts{position:fixed;right:50px;top:96px;width:330px;max-width:calc(100vw - 120px);
+  display:flex;flex-direction:column;gap:8px;z-index:7;pointer-events:none}
+.social-toast{pointer-events:auto;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#1b1b1f;
+  border:1px solid #3a3a40;border-left:3px solid var(--rubro-vivo,#c0392b);border-radius:8px;box-shadow:0 8px 24px #000b;
+  opacity:0;transform:translateX(14px);transition:opacity .35s ease,transform .35s ease;cursor:pointer}
+.social-toast.vivo{opacity:1;transform:none}
+.social-toast.saindo{opacity:0;transform:translateX(14px)}
+.social-toast .post-avatar{width:32px;height:32px;flex:0 0 32px}
+.social-toast b{display:block;font-size:13px}
+.social-toast p{margin:3px 0 0;font-size:12.5px;line-height:1.4;color:#d9d4cb;display:-webkit-box;-webkit-line-clamp:3;
+  -webkit-box-orient:vertical;overflow:hidden}
+@media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }

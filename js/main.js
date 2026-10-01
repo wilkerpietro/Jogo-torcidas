@@ -1099,6 +1099,20 @@
     const bTudo = el('button',{class:'social-lado-tudo', texto:_t('Ver tudo')});
     bTudo.onclick = ()=>{ subNoticias = 'mensagens'; abrirPainel('noticias'); };
     cab.appendChild(bTudo);
+    /* RECOLHER (pedido do dono, 01/10/2026): "um botão recolhível pra
+       esconder, caso o jogador queira só ver o feed". Recolhida, a rede
+       vira uma tira fina na borda (com o número de posts novos) e o que
+       é importante pra nós aparece num aviso no canto, por 3 s. A
+       escolha fica guardada no navegador. */
+    const bRecolher = el('button',{class:'social-lado-recolher', html:TO.icones.get('avancar')});
+    bRecolher.title = _t('Recolher a rede social');
+    bRecolher.setAttribute('aria-label', _t('Recolher a rede social'));
+    bRecolher.onclick = ()=>alternarRede(true);
+    cab.prepend(bRecolher);
+    const tira = el('button',{class:'social-aba', html:
+      `${TO.icones.get('conversa')}<span class="vert">${_t('Rede social')}</span><span class="social-aba-n" hidden></span>`});
+    tira.title = _t('Abrir a rede social');
+    tira.onclick = ()=>alternarRede(false);
     const rolo = el('div',{class:'social-lado-rolo'});
     const lista = el('div',{class:'social-lado-lista feed-social'});
     const aviso = el('button',{class:'social-lado-novos', texto:_t('novos posts ↑')});
@@ -1106,14 +1120,75 @@
     aviso.onclick = ()=>{ rolo.scrollTo({top:0, behavior:'smooth'}); };
     rolo.addEventListener('scroll', ()=>{ if(rolo.scrollTop < 30) aviso.hidden = true; }, {passive:true});
     rolo.append(lista);
-    asd.append(cab, aviso, rolo);
+    asd.append(cab, aviso, rolo, tira);
+    asd.classList.toggle('recolhida', redeRecolhida);
     const ctx = {menu:{aberto:null},
                  aoMudar:()=>atualizarSocialLado(true),
                  aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
     lista.addEventListener('click', ev=>{ fecharMenuPost(ctx, ev.target); });
     if(socialLado && socialLado.timer) clearTimeout(socialLado.timer);
-    socialLado = {asd, rolo, lista, aviso, ctx, vistos:new Map(), fila:[], timer:null, pronto:false};
+    socialLado = {asd, rolo, lista, aviso, ctx, vistos:new Map(), fila:[], timer:null, pronto:false, tira};
+    pintarTira(socialLado);
     return asd;
+  }
+  /* O QUE A REDE JÁ MOSTROU vive fora da coluna: o feed se repinta
+     inteiro de vez em quando (troca de dia, painel que fecha), e a
+     coluna nasce de novo — sem isto, o post novo ia virar "já visto" e
+     o aviso do canto, que mora no <body>, ia junto com a coluna velha */
+  const REDE = {conhecidos:new Set(), iniciado:false, naoVistos:0, toastFila:[], toastTimer:null, toastsEl:null};
+  function caixaDeToasts(){
+    if(!REDE.toastsEl || !REDE.toastsEl.isConnected){
+      REDE.toastsEl = el('div',{class:'social-toasts'});
+      document.body.appendChild(REDE.toastsEl);
+    }
+    return REDE.toastsEl;
+  }
+  let redeRecolhida = false;
+  try{ redeRecolhida = localStorage.getItem('to.redeRecolhida') === '1'; }catch(_){}
+  function alternarRede(recolher){
+    const S = socialLado;
+    redeRecolhida = !!recolher;
+    try{ localStorage.setItem('to.redeRecolhida', redeRecolhida ? '1' : '0'); }catch(_){}
+    if(!S) return;
+    S.asd.classList.toggle('recolhida', redeRecolhida);
+    if(redeRecolhida){
+      /* o que estava na fila da coluna conta como visto: não vira aviso */
+      for(const id of S.fila) REDE.conhecidos.add(id);
+      S.fila = []; if(S.timer){ clearTimeout(S.timer); S.timer = null; }
+      S.pronto = false;
+    } else {
+      REDE.naoVistos = 0; pintarTira(S);
+      REDE.toastFila = []; if(REDE.toastTimer){ clearTimeout(REDE.toastTimer); REDE.toastTimer = null; }
+      caixaDeToasts().replaceChildren();
+      atualizarSocialLado(true);
+    }
+  }
+  function pintarTira(S){
+    const n = S.tira.querySelector('.social-aba-n');
+    n.hidden = !REDE.naoVistos;
+    n.textContent = REDE.naoVistos > 99 ? '99+' : String(REDE.naoVistos);
+  }
+  /* o aviso do canto: quem postou, o começo do texto, 3 s na tela */
+  const TOAST_VIDA = 3000;
+  function proximoToast(){
+    const e = E();
+    if(!e || !REDE.toastFila.length || !redeRecolhida){ REDE.toastTimer = null; return; }
+    const idT = REDE.toastFila.shift();
+    const m = (e.mensagens || []).find(x => x.id === idT);
+    if(m) mostrarToast(e, m);
+    REDE.toastTimer = REDE.toastFila.length ? setTimeout(proximoToast, SOCIAL_PASSO) : null;
+  }
+  function mostrarToast(e, m){
+    const jornal = m.jornal && (TO.feed.JORNAIS || {})[m.jornal];
+    const marca = jornal ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal] || ''}</span></span>`
+                         : avatarPost(m.de);
+    const nome = jornal ? jornal.nome : m.nome + (m.zona ? ' · ' + _t('Zona {zona}', {zona:_t(m.zona)}) : '');
+    const t = el('div',{class:'social-toast', html:`${marca}<div><b>${escHTML(nome)}</b><p>${escHTML(m.texto)}</p></div>`});
+    t.title = _t('Abrir a rede social');
+    t.onclick = ()=>alternarRede(false);
+    caixaDeToasts().prepend(t);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('vivo')));
+    setTimeout(()=>{ t.classList.remove('vivo'); t.classList.add('saindo'); setTimeout(()=>t.remove(), 450); }, TOAST_VIDA);
   }
   /* o que muda o desenho de um post que já está na coluna */
   const estadoDoPost = m => `${m.resposta || ''}|${m.consequencia || ''}|${(m.comentarios || []).length}`;
@@ -1124,6 +1199,25 @@
     if(!S.asd.offsetParent) { S.pronto = false; return; }
     const F = TO.feed;
     const vis = (e.mensagens || []).filter(m => !(F.oculto && F.oculto(e, m))).slice(0, SOCIAL_LADO_MAX);
+    /* o que já estava na rede quando o jogo abriu não é novidade */
+    if(!REDE.iniciado){ for(const m of vis) REDE.conhecidos.add(m.id); REDE.iniciado = true; }
+    if(REDE.conhecidos.size > 3000) REDE.conhecidos = new Set(vis.map(m => m.id));
+    if(redeRecolhida){
+      /* recolhida: a coluna não se desenha; o post novo conta na tira e,
+         se for importante pra nós, vira aviso no canto */
+      S.pronto = false;
+      const novos = [];
+      for(let i = vis.length - 1; i >= 0; i--){
+        const m = vis[i];
+        if(!REDE.conhecidos.has(m.id)){ REDE.conhecidos.add(m.id); novos.push(m); }
+      }
+      if(!novos.length) return;
+      REDE.naoVistos += novos.length; pintarTira(S);
+      for(const m of novos) if(F.importante && F.importante(e, m)) REDE.toastFila.push(m.id);
+      if(REDE.toastFila.length && !REDE.toastTimer) proximoToast();
+      return;
+    }
+    for(const m of vis) REDE.conhecidos.add(m.id);
     if(refazer || !S.pronto){
       S.lista.innerHTML = ''; S.vistos.clear(); S.fila = [];
       if(S.timer){ clearTimeout(S.timer); S.timer = null; }

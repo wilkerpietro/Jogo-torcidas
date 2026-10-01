@@ -472,5 +472,9 @@ TO.i18n.registrar({
   'Seguir': {es:'Seguir', en:'Follow'},
   'Times': {es:'Equipos', en:'Clubs'},
   'Voltar a seguir os {n} que saíram': {es:'Volver a seguir a los {n} que salieron', en:'Follow the {n} you removed again'},
-  'Voltar a seguir {n} que saiu': {es:'Volver a seguir a {n} que salió', en:'Follow the {n} you removed again'}
+  'Voltar a seguir {n} que saiu': {es:'Volver a seguir a {n} que salió', en:'Follow the {n} you removed again'},
+
+  /* ---------- a rede recolhida (01/10/2026) ---------- */
+  'Abrir a rede social': {es:'Abrir la red social', en:'Open the social feed'},
+  'Recolher a rede social': {es:'Ocultar la red social', en:'Collapse the social feed'}
 });
