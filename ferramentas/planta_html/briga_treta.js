@@ -105,7 +105,7 @@ export function brigaNaTreta(ctx, local, o = {}) {
   const beco = tipo === 'beco', dy = beco ? 0 : Math.min(larg * 0.45, 2.2 * pxm);
   const pNos = soltar(xa + (beco ? 110 : 2.2 * pxm), meioY + dy), pDeles = soltar(xb - (beco ? 110 : 2.2 * pxm), meioY - dy);
   const pSaiNos = soltar(xb - (beco ? 26 : 0.9 * pxm), meioY + (beco ? 0 : larg * 0.7)), pSaiDeles = soltar(xa + (beco ? 26 : 0.9 * pxm), meioY - (beco ? 0 : larg * 0.7));
-  if (!pNos || !pDeles || !pSaiNos || !pSaiDeles) return { erro: 'o lugar da treta não é andável (' + L.favela + ')' };
+  if (!pNos || !pDeles || !pSaiNos || !pSaiDeles) return { erro: 'o lugar da treta não é andável (' + (L.favela || 'favela') + ')' };
   /* SÓ O CHÃO LIGADO A QUEM BRIGA; e os dois bondes têm de se alcançar */
   const n = COLS * ROWS, visto = new Uint8Array(n), fila = new Int32Array(n);
   {
@@ -123,7 +123,7 @@ export function brigaNaTreta(ctx, local, o = {}) {
     for (let k = 0; k < n; k++) if (!visto[k]) malha[k] = 0;
   }
   const alcanca = p => malha[Math.floor(p[1] / TAB.CEL) * COLS + Math.floor(p[0] / TAB.CEL)] === 1;
-  if (![pDeles, pSaiNos, pSaiDeles].every(alcanca)) return { erro: 'os dois bondes não se alcançam no lugar da treta (' + L.favela + ')' };
+  if (![pDeles, pSaiNos, pSaiDeles].every(alcanca)) return { erro: 'os dois bondes não se alcançam no lugar da treta (' + (L.favela || 'favela') + ')' };
   const linhas = [];
   for (let j = 0; j < ROWS; j++) {
     const runs = []; let v0 = 0, k = 0;
@@ -133,9 +133,9 @@ export function brigaNaTreta(ctx, local, o = {}) {
   }
   const R = p => ({ x: Math.round(p[0]), y: Math.round(p[1]) });
   const nomes = beco
-    ? { nome: 'Beco', local: 'No beco da ' + L.favela + ', treta marcada', sai: ['FIM DO BECO', 'BOCA DO BECO'],
+    ? { nome: 'Beco', local: 'No beco da favela' + (L.favela ? ' ' + L.favela : '') + ', treta marcada', sai: ['FIM DO BECO', 'BOCA DO BECO'],
         saida: { perto: 'Furar pra fora', longe: 'Fim do beco (leve o líder)', feito: 'sua torcida furou pra fora do beco', dica: 'Leve o líder até a boca do beco do lado de lá.' } }
-    : { nome: 'Campinho', local: 'No campinho de terra da ' + L.favela + ', treta marcada', sai: ['CANTO DE LÁ', 'CANTO DE CÁ'],
+    : { nome: 'Campinho', local: 'No campinho de terra da favela' + (L.favela ? ' ' + L.favela : '') + ', treta marcada', sai: ['CANTO DE LÁ', 'CANTO DE CÁ'],
         saida: { perto: 'Furar pra fora', longe: 'Canto do campinho (leve o líder)', feito: 'sua torcida saiu do campinho por cima', dica: 'Leve o líder até o canto do campinho do lado deles.' } };
   const cena = {
     id: local + '@3d', base: local, tres: true, nome: nomes.nome, local: nomes.local,

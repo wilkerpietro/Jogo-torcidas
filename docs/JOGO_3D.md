@@ -2680,7 +2680,9 @@ maiores de cada cidade que não dominam fazem a ação social delas (35%).
   também sai com um quarto em cada zona). Cada sede vai pro espaço de sede
   da zona do bairro dela, o bairro da sede nasce em volta dela e os outros
   bairros da zona se espalham pelos quarteirões que sobram; cada bar cai
-  dentro do bairro que o jogo diz.
+  dentro do bairro que o jogo diz. (**Corrigido no §32**: isso estava
+  errado — medido depois, 73 dos 139 bares caíam fora do bairro do jogo;
+  e a divisão dos bairros foi refeita.)
 - **O que é bairro**: o quarteirão (o de hoje pelo contorno dele — a
   quadra da beira é recortada na guia da avenida da beira), a favela, o
   atacarejo e o estádio; a rua entre dois bairros fica com o mais perto
@@ -2741,6 +2743,7 @@ maiores de cada cidade que não dominam fazem a ação social delas (35%).
   sedes na Zona Oeste; o Rio, 4 na Leste), parte dos bairros dela fica num
   gomo vizinho (a lista "fora do gomo" do teste: 1 a 3 por praça).
   Alguns bairros saem pequenos (o menor, no ABC Paulista, com uns 800 m²).
+  (Resolvido no §32: os terrenos de reserva e os gomos de cada praça.)
 - **Sedes e bares mudam de lote** em relação à versão de antes: a zona do
   bairro agora vem antes da regra das rivais em lados opostos (que vale
   dentro das distribuições que respeitam a zona).
@@ -2750,3 +2753,292 @@ maiores de cada cidade que não dominam fazem a ação social delas (35%).
 - Duas praças do mesmo mapa e da mesma costa dividem a montagem da
   planta; a de praia e a de lagoa agora refazem as calçadas da beira
   (antes uma herdava a grade da outra).
+
+## 31. Os arredores do estádio: casas, comércio, estacionamentos e ambulantes (01/10/2026)
+
+**O pedido** (o dono): "Após concluída a questão do mapa, adicione casas,
+comércios (como espetinho, hamburgueria, pizzaria, barzinho, ambulantes na
+porta do estádio) e outras coisas que fazem sentido com o arredor dos
+estádios pra não ficar um visual tão vazio, e adicione pequenos terrenos de
+estacionamentos também, típicos de arredores de estádio."
+
+### O entorno (ferramentas/planta_html/proposta.js, `ENTORNO_M`)
+
+- **Onde**: do outro lado da rua que cerca cada estádio, onde era mato,
+  quarteirões de uns 34 m de comprido, cada um com a rua dele em volta. Duas
+  fileiras de lote de costas (2 × 5,8 m; a da frente olha pro estádio, a de
+  trás pra rua dos fundos) ou uma só (8,6 m) quando não cabe. Os do oeste e
+  do leste vão de ponta a ponta do estádio (pegam as quinas); os do norte e
+  do sul, o comprido dele. O quarteirão não pisa no que o estádio também
+  não pisa (a cidade, a favela, o Atacadex, os outros estádios), nem nos
+  acessos do estádio, nem na avenida de entrada ou na da beira (nas praças
+  sem praia também); o que não cabe inteiro encolhe de 4 em 4 m até 16 m.
+- **A fileira da frente**: o **comércio de dia de jogo** — espetinho,
+  hamburgueria, pizzaria e barzinho, um de cada antes de repetir em cada
+  estádio, até três por quarteirão, de 7,6 a 11 m de frente, com o nome da
+  lista (ESPETO DO TORCEDOR, SMASH DA ARQUIBANCADA, PIZZA DA VILA, BOTECO DO
+  TORCEDOR…; o mesmo nome não repete perto) — e o **estacionamento de
+  terreno**, de 15 a 20 m, de rua a rua: um em cada dois quarteirões de 24 m
+  ou mais, de um a três por estádio, com o preço na placa (R$ 20, 25, 30 ou
+  40). O resto é casa, sobrado ou terreno baldio, com placa de comércio
+  pequeno e pixação como nos outros quarteirões.
+- **Nas 30 praças**: 506 quarteirões, 2.763 casas, 441 comércios e 197
+  estacionamentos; nenhum por cima de outra coisa (conferido).
+
+### Em 3D (js/diajogo/casas3d.js)
+
+- **O comércio**: o prédio no fundo do lote, a frente aberta com a porta de
+  enrolar recolhida embaixo da platibanda (o letreiro com o nome vai nela,
+  decalque, nas cores de cada tipo), o piso, o forro, a parede do fundo com
+  a porta, a prateleira e o cartaz, o balcão de azulejo com a geladeira, e
+  no recuo da frente o que é de cada um: o **espetinho** com a churrasqueira
+  de tijolo, os espetos na grelha, o isopor e as mesas de guarda-sol; a
+  **hamburgueria** com o toldo listrado vermelho e branco, as banquetas no
+  balcão e a chapa; a **pizzaria** com o forno a lenha, a chaminé saindo da
+  laje, o toldo verde, branco e vermelho e as mesas de toalha vermelha; o
+  **barzinho** com a cobertura de fibrocimento nos dois pilares, a faixa da
+  cerveja, os engradados e a TV na parede. O lote alto ganha o andar de
+  cima (a moradia do dono).
+- **O estacionamento**: o chão de terra batida, o muro de bloco, o portão
+  largo de correr aberto (do lado que o gerador sorteou), a guarita, as
+  vagas riscadas e os carros parados — o mesmo sorteio no 2D e no 3D
+  (`carrosDoEstacionamento`) —, e a placa com o preço.
+- **No mapa 2D**: o comércio na cor dele com a borda escura; o
+  estacionamento com as vagas, os carros e a guarita; de perto, o nome e o
+  preço. A legenda tem "Comércio do estádio", "Estacionamento" e
+  "Ambulante".
+
+### Os ambulantes (js/diajogo/ambulantes3d.js)
+
+- **Cinco peças**, em metros, de frente pra rua, com as ferramentas e a
+  folha da praia (praia3d.js): o **carrinho de pipoca** (a vitrine com a
+  pipoca à vista, a panela, o telhadinho, as rodas de bicicleta), o
+  **cachorro-quente** (o carrinho de inox, o painel amarelo, as cubas, os
+  três molhos, o guarda-sol), o **espetinho** (a churrasqueira de chapa com
+  a brasa e os espetos, o isopor, a cadeira, o papelão do preço), o
+  **isopor de bebidas** (os isopores no carrinho de mão com as latinhas, o
+  guarda-sol) e o **camelô** (a arara de camisas, as bandeiras no mastro e
+  a mesa dos bonés, **nas cores dos mandantes do estádio** —
+  dados/estadios.js e dados/times.js). De 950 a 1.250 triângulos cada.
+  Estão no catálogo **Modelos 3D** (seção "Os ambulantes").
+- **O lugar**: em cada portão, na calçada do estádio (a faixa de 2,5 m entre
+  o terreno e a rua), de costas pro terreno, dos dois lados da entrada — a
+  boca do portão e o começo da fila (`BOCAS_DOS_PORTOES` em estadios3d.js,
+  os mesmos de rotas_estadios.js) —, a 6 m dela ou mais, 2,2 m entre um e
+  outro e até 20 m da boca. O portão 1 tem até quatro, o 2 até três e o 3
+  (o do visitante) dois. A frente da **bilheteria que dá pra rua**
+  (`BILHETERIAS_DA_RUA`: a do portão 1 do de 10 mil e as quatro do de 40)
+  fica livre: o carrinho pula pro outro lado dela. Na quina do terreno ou
+  na boca de outro portão a fileira acaba.
+- **Nas 30 praças**: 666 ambulantes em 74 estádios (os 9 em todos).
+- No mapa, cada um é a planta dele na cor do tipo; de perto, a copa do
+  guarda-sol e o nome.
+
+### O entorno e os bairros
+
+O entorno é do **bairro do estádio dele**: ele fica fora da conta dos
+gomos (a régua das zonas usa o limite da cidade sem ele,
+`limiteSemEntorno`) e da onda que dá a rua a cada bairro (na rua nova a
+onda só passa até a calçada do outro lado da rua do estádio, como antes);
+o quarteirão e a rua dele ganham a cor do bairro do estádio no fim. A
+favela também não "cresce" até a rua nova do entorno (a rua dele segura
+a casa da favela, mas não puxa). Conferido nas 30 praças contra a versão
+de antes do entorno: nenhuma sede tinha mudado de lugar. Depois, a
+divisão dos bairros foi refeita (§32): o entorno continua de fora dos
+gomos, mas agora pesa no tamanho do bairro do estádio.
+
+### O dia de jogo
+
+Nas 30 praças, o dia de jogo com e sem os ambulantes (conferido antes da
+divisão nova dos bairros do §32): **25 praças idênticas**; nas outras 5,
+uma rota 1 m mais longa ou mais curta (o carrinho na calçada) e um PM a
+mais ou a menos nos cordões. Nenhum erro, todos os bondes chegaram. O
+teste com os bairros novos (as sedes mudaram de lugar) está no §32.
+
+### O custo
+
+- A cena de Fortaleza (3 estádios): 1.372.582 triângulos sem o entorno,
+  1.541.775 com ele (+12%) e 1.564.597 com os ambulantes; a montagem
+  segue em uns 18 s no processador sem placa de vídeo (o mesmo de antes).
+
+### Limites (sinceros)
+
+- **O ambulante não tem vendedor**: é o carrinho, sem boneco do lado. E ele
+  fica lá sempre, não só em dia de jogo.
+- **O comércio é por fora**: o balcão e a parede do fundo se veem pela
+  frente aberta, mas ninguém entra nem é atendido; o estacionamento não
+  recebe o carro de quem vai ao jogo (os carros parados são decoração).
+- **Comércio e estacionamento são lote particular**: no dia de jogo a
+  torcida não corta caminho por dentro deles (custa 8 vezes mais, como
+  qualquer lote); o carrinho do ambulante barra o passo (do boneco a pé e
+  da torcida), na calçada do estádio.
+- **Os bares**: com o entorno, ficaram onde estavam em 28 das 30 praças
+  (em duas praças pequenas, um par trocou de dono dentro do mesmo
+  bairro). A divisão nova dos bairros (§32) mexeu neles de novo.
+- A cena ficou uns 14% mais pesada (o entorno e os ambulantes juntos).
+
+## 32. Os bairros refeitos: a favela sozinha, as zonas no lado certo e o mesmo tamanho (01/10/2026)
+
+**O pedido** (o dono): "vamos começar a corrigir os mapas: as favelas
+sozinhas são um bairro só. os nomes genéricos atuais (favela do sudoeste,
+do sul, etc) somem, fica somente o nome do bairro. tente redistribuir as
+sedes pro bloco de zonas ficar o mais coerente possível (zona sul ficar
+exatamente no sul, oeste no lado oeste, etc) e tente fazer com que os
+bairros tenham tamanhos parecidos um com o outro."
+
+Tudo em `ferramentas/planta_html/index.html` (`gomosDaPraca`,
+`favelasNosBairros`, `setorizar`, `repartir`, `equilibrar`,
+`reservasDeSede`, `criarVagasExtras`); o gerador do mapa (proposta.js) não
+mudou.
+
+### A favela é um bairro sozinho
+
+- Cada favela do mapa, da maior pra menor, toma **um bairro inteiro, só
+  dela**, da zona em que ela fica: o de classe Favela dos dados, senão o
+  mais pobre que sobra (Classe Baixa, depois Média, depois Nobre). Nunca o
+  bairro de uma sede (a sede fica num terreno de quadra, não na favela), e
+  a zona sempre guarda um bairro pras quadras dela.
+- **O nome**: "Favela do Sudoeste", "Favela do Sul" etc. sumiram. No mapa
+  a favela leva o nome do bairro (com a camada **Bairros** ligada, o nome
+  do bairro já fica no meio dela, e o rótulo da favela não se repete). A
+  treta marcada diz "No beco da favela Jangurussu, treta marcada" (antes,
+  "No beco da Favela do Sul"); a lista de casas por favela, nas notas da
+  planta, também.
+- O bairro da favela é pintado pelo contorno dela **e pelos lotes dela**
+  (o boteco da esquina passava do contorno e ficava com a frente sem
+  bairro).
+- **104 das 118 favelas** das 30 praças são bairro sozinhas. As outras 14
+  ficam com as quadras em volta (é o bairro de quadra que pega ela): são as
+  zonas em que todos os bairros que sobram têm sede, ou em que a favela
+  levaria o último bairro das quadras (Messejana em Fortaleza, Londrina no
+  Interior do PR, Botafogo no Rio, Pelotas II no Interior do RS…).
+
+### As zonas no lado certo
+
+- **Os gomos da praça**: as quatro zonas continuam saindo do meio da
+  cidade (a régua da área construída), mas as quatro divisas não são mais
+  as diagonais fixas. Os quartos fixos davam zonas de tamanhos diferentes
+  (no mapa pequeno, a Leste com 35% da cidade e a Norte com 16%), e a zona
+  com duas favelas ficava com um bairro de quadra só, o dobro dos outros.
+  Agora cada divisa anda até a área de quadra de cada zona, dividida pelos
+  bairros de quadra dela, dar o mesmo nas quatro — **sem sair do lugar**:
+  a divisa fica a no máximo 40° da diagonal, cada zona com 50° ou mais, e o
+  meio da zona a no máximo 25° do ponto cardeal (o Sul segue no sul, o
+  Oeste no oeste). A favela que fica perto da divisa (até 35° dela) pode
+  ficar de um lado ou do outro: cada jeito é testado com as divisas presas
+  do lado certo de cada favela, e fica o de bairros mais iguais (a favela
+  sem bairro dela e a divisa longe da diagonal custam um tico). Medido:
+  as divisas andaram em média 14° (no máximo 37°).
+- **A sede no gomo da zona dela**: os espaços de sede do gerador ficavam
+  quase todos no sul e no leste (no mapa médio, nenhum no gomo oeste; no
+  mapa pequeno, nenhum terreno de reserva em lugar nenhum). Agora há os
+  **terrenos de reserva**: a ponta de uma quadra de casas (a oeste ou a
+  leste; 72% da frente, o fundo inteiro), a 50 m ou mais dos estádios, que
+  só vira sede quando uma torcida precisa dela — aí as casas debaixo dela
+  somem; sem sede, ela continua casa e não aparece como sede vaga. Cada
+  zona com sede ganha as reservas que faltam e mais duas, e a escolha da
+  sede (a regra das rivais em lados opostos, como antes) passa a preferir
+  **as sedes da mesma zona espalhadas** (duas sedes coladas espremiam um
+  dos bairros: em Fortaleza, as três sedes do Sul no miolo deixavam um
+  bairro esticado até o estádio do sudoeste).
+- A quadra da sede vai pra zona da sede (na divisa, o meio da quadra caía
+  no gomo vizinho e a sede ficava no bairro errado).
+
+### Bairros do mesmo tamanho
+
+- Dentro de cada zona, as quadras são repartidas entre os bairros de
+  quadra dela **pela mesma área**: cada bairro cresce em volta de uma
+  semente, a semente do bairro grande perde força e a do pequeno ganha até
+  as áreas igualarem, e a semente anda pro meio do pedaço dela (o pedaço
+  sai inteiro e redondo — é um diagrama de potência). A área de cada
+  quadra conta a meia rua em volta (o bairro de muita quadra pequena leva
+  muita rua); a do estádio conta o entorno dele. A quadra da sede é sempre
+  do bairro da sede.
+- **O estádio não se divide**: vários começos são testados (cada bairro
+  começando no estádio), e o bairro que fica com ele leva também a quadra
+  mais perto a 50 m ou mais dele que encosta no estádio e no entorno
+  (onde cabe um bar; a que não encosta ficava solta do outro lado da
+  avenida, e aí o bairro fica sem). A quadra do
+  estádio no mapa novo deixou de contar duas vezes (ela e o estádio,
+  uma em cima da outra).
+- **Bairro em pedaços custa caro** na escolha, e o pedaço que sobra solto
+  passa pro vizinho. No fim, **o acerto na divisa**: a quadra da divisa
+  passa do bairro maior pro vizinho menor enquanto isso aproxima os dois
+  do tamanho certo, sem nunca partir quem cede e sem mexer na quadra da
+  sede, do bar ou do estádio.
+
+### O bar no bairro dele
+
+- O §30 dizia que "cada bar cai dentro do bairro que o jogo diz": **estava
+  errado**. Medido agora, na versão de antes destas mudanças, **73 dos 139
+  bares** das 30 praças caíam fora do bairro do jogo (o gerador espalhou os
+  lotes de bar pela cidade sem saber dos bairros, e o bar sem vaga no
+  bairro dele ia pro lote livre mais perto).
+- Agora o **boteco de cada favela** é vaga de bar da torcida (com dono,
+  vira o bar da torcida, o mesmo modelo do resto da cidade, com o letreiro
+  BAR DA …; sem dono, volta a ser o boteco). E, **quando o jogo põe num
+  bairro mais bares do que ele tem vaga, uma casa do bairro vira o bar**:
+  a casa de quadra nova com frente de 5 a 9,5 m, ou uma casa grande da
+  favela (a lanchonete, a de dois andares, a da garagem, a da base — a
+  casa comum da favela tem 2 a 3,4 m de frente), a 50 m ou mais dos
+  estádios, fora do terreno das sedes, a mais perto do meio do bairro e a
+  30 m de outro bar (12 m na favela). A casa de hoje (a do jogo) não vira
+  bar. A vaga que ninguém toma não vira nada, e a próxima praça desfaz
+  tudo.
+- Resultado: **13 de 139 bares** fora do bairro do jogo (eram 73): doze
+  em bairro de estádio sem casa nova que sirva a 50 m dele, e um na
+  favela da Vila Maria (São Paulo), que teria o quarto bar.
+
+### Medido nas 30 praças
+
+| | antes | agora |
+|---|---|---|
+| sede fora do gomo da zona dela | 63 | **0** |
+| sede fora do bairro dela | 0 | 0 |
+| favela que é bairro sozinha | — (a favela se repartia) | **104 de 118** |
+| variação do tamanho dos bairros (cv, todos) | 0,68 | 0,52 |
+| maior ÷ menor (média por praça, todos) | 14,9× | 9,2× |
+| só os bairros de quadra: cv e maior ÷ menor | — | **0,16 e 1,8×** |
+| bar fora do bairro do jogo | 73 de 139 | **13 de 139** |
+| células do bairro no gomo da zona dele | 72,4% (gomos fixos) | 91,2% (os gomos da praça) |
+| zona num pedaço só (o maior pedaço dela) | — | 93,5% |
+| bairro vazio, bar sem bairro | 0 | 0 |
+| montar uma praça | 0,2 a 0,7 s | 0,1 a 0,8 s (mediana 0,4 s) |
+
+O "todos" inclui os bairros de favela, que são menores (ver os limites).
+Contado pelos quartos fixos de antes, a coerência de agora seria 78,5%:
+as zonas são outras (as divisas andaram), não dá pra comparar 1 a 1.
+
+**O dia de jogo** nas 30 praças, com as sedes nos lugares novos: nenhum
+erro, o clássico de cada praça igual, os 88 bondes na rua inteiros (6.595
+pessoas). Contra a versão de antes (com o entorno): 68 das 88 chegadas
+na mesma hora; a rota mudou de −621 m a +338 m (a sede andou) e a
+chegada, de 25 min mais cedo a 3 min mais tarde.
+
+A planta da cidade 3D sai idêntica antes e depois de abrir o mapa de
+outra praça (São Paulo e Belém, no jogo 3D): os campos novos (os gomos,
+as reservas, a casa que vira bar) entram na fotografia da praça.
+
+### Limites (sinceros)
+
+- **A favela é menor que um bairro de quadra**: tem 2 a 5% da cidade, e o
+  bairro de quadra, 8 a 12%. O bairro de favela fica com um quarto à
+  metade do tamanho dos outros (por isso o "maior ÷ menor" de todos os
+  bairros ainda é 9×). Igualar de verdade só aumentando as favelas no
+  gerador.
+- **14 favelas ficaram com as quadras** (listadas acima): a zona não tinha
+  bairro sobrando.
+- **As zonas não são mais os quatro quartos**: a divisa anda até 40° da
+  diagonal pra igualar os bairros. O Sul continua no sul (o meio da zona a
+  25° do ponto cardeal no máximo), mas não é um quarto exato do mapa.
+- **Zona em pedaços**: a favela do outro lado de um vão, ou o estádio
+  separado das quadras pelo mato, deixam pedaço solto (a pior, 82% da zona
+  no pedaço maior).
+- **No mapa pequeno** o estádio é grande perto de um bairro: os bairros de
+  quadra variam mais (cv até 0,40; maior ÷ menor até 3,8× no Interior do
+  RS).
+- **Sedes e bares mudaram de lote outra vez**: a casa debaixo da sede que
+  foi pra um terreno de reserva some; a casa que virou bar perde a casa.
+  O número de bares do mapa ("Bares: x de y") agora conta os botecos das
+  favelas e as casas que viraram bar, e muda de praça pra praça.
+- **13 bares** continuam fora do bairro do jogo (ver acima).
