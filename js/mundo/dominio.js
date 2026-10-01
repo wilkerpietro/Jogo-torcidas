@@ -866,7 +866,7 @@ TO.dominio = (function(){
     /* as metas do mês de cada organizada da IA (01/10/2026) */
     try{ metasDoDia(E); }catch(e){ /* as metas não derrubam o dia */ }
     /* os muros pixados rendem, a IA pixa e recruta (01/10/2026) */
-    try{ diaDosMuros(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
+    try{ desgaste(E); diaDosMuros(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
   }
   function avisarCidade(E, cid, antes, dono, pl){
     const cidade = (cidadeDe(cid) || {}).nome || cid, meu = eu(E);
@@ -1030,7 +1030,10 @@ TO.dominio = (function(){
      O SAVE: `E.dominio.pix[cid][bairro#n] = 'torcida|dia'` e
      `E.dominio.pixSaldo[torcida] = [mês, cota, extra]`.
      ======================================================= */
-  const PIX = {dia:0.2, cota:n => n >= 5 ? 10 : n >= 3 ? 8 : 5};
+  /* a cota nova do dono (01/10/2026): 2 sem sede, 4 na sede 1 e 2, 8 na
+     3 e 4, 12 na 5 e 6; a líder da cidade leva +2 no mês. O pixo desbota
+     em 60 dias e o muro volta a ficar livre. */
+  const PIX = {dia:0.2, cota:n => n >= 5 ? 12 : n >= 3 ? 8 : n >= 1 ? 4 : 2, lider:2, desbota:60};
   const vagasPix = (cid, bid) => 3 + hash(`pix|${cid}|${bid}`) % 3;
   function pixCidade(E, cid){
     const D = raiz(E);
@@ -1057,8 +1060,13 @@ TO.dominio = (function(){
     const D = raiz(E), mes = mesDe(E);
     D.pixSaldo = D.pixSaldo || {};
     let s = D.pixSaldo[tid];
-    if(!s || s[0] !== mes) s = D.pixSaldo[tid] = [mes, PIX.cota(nivelDaSedeDe(E, tid)), s ? s[2] || 0 : 0];
-    return {cota:s[1], extra:s[2], total:s[1] + s[2], cotaDoMes:PIX.cota(nivelDaSedeDe(E, tid))};
+    if(!s || s[0] !== mes){
+      /* A LÍDER DA CIDADE (+2 no mês): quem é dona de mais bairros na virada */
+      const cid = tid === eu(E) ? E.torcida.mapa : ((TO.mundo && TO.mundo.torcida(tid)) || {}).mapa;
+      const lider = !!cid && bairrosDe(cid).length > 0 && placar(E, cid).dono === tid;
+      s = D.pixSaldo[tid] = [mes, PIX.cota(nivelDaSedeDe(E, tid)) + (lider ? PIX.lider : 0), s ? s[2] || 0 : 0, lider ? 1 : 0];
+    }
+    return {cota:s[1], extra:s[2], total:s[1] + s[2], cotaDoMes:PIX.cota(nivelDaSedeDe(E, tid)), lider:!!s[3]};
   }
   function gastarPix(E, tid){
     saldoPix(E, tid);
@@ -1105,18 +1113,40 @@ TO.dominio = (function(){
   }
   /* o muro rende: 0,2 por dia pra dona, somados por bairro e torcida */
   function diaDosMuros(E){
-    const P = raiz(E).pix || {};
+    const P = raiz(E).pix || {}, hoje = E.data.absoluto || 0;
     for(const cid in P){
       const soma = {};
       for(const k in P[cid]){
-        const [bid] = k.split('#'), [t] = String(P[cid][k]).split('|');
-        if(!t) continue;
+        const [bid] = k.split('#'), [t, abs] = String(P[cid][k]).split('|');
+        /* O PIXO DESBOTA (dono, 01/10/2026): 60 dias depois, o muro está livre */
+        if(!t || hoje - (+abs || 0) >= PIX.desbota){ delete P[cid][k]; continue; }
         const ch = bid + '|' + t;
         soma[ch] = (soma[ch] || 0) + PIX.dia;
       }
       for(const ch in soma){
         const [bid, t] = ch.split('|');
         mexer(E, cid, bid, t, soma[ch], {motivo:'pixacao', semTorcida:true});
+      }
+    }
+  }
+  /* O DESGASTE ACIMA DE 80 (dono, 01/10/2026: "um desgaste diário
+     pequeno acima de 80, essa sobra volta a ser de ninguém"): bairro
+     não fica de dono pra sempre. Quem passa de 80 perde, por dia, 2% do
+     que passa — 0,4 a 100%, 0,2 a 90% —, e isso vira de ninguém. Os
+     muros e a sede ainda seguram (0,2 por muro, 0,5 da sede até 80), mas
+     quem só tem barra e não tem muro desce devagar até 80. */
+  const DESGASTE = {piso:80, taxa:0.02};
+  function desgaste(E){
+    const D = raiz(E);
+    for(const cid in D.c){
+      const st = D.c[cid] && D.c[cid].b;
+      if(!st) continue;
+      for(const bid in st){
+        const p = st[bid];
+        for(const t in p){
+          if(!(p[t] > DESGASTE.piso)) continue;
+          p[t] = um(p[t] - (p[t] - DESGASTE.piso) * DESGASTE.taxa);
+        }
       }
     }
   }

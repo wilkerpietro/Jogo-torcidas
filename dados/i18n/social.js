@@ -557,5 +557,7 @@ TO.i18n.registrar({
   "livre": {es:"libre", en:"free"},
   "{n} de {total} muros · +0,2 por dia cada": {es:"{n} de {total} paredes · +0,2 por día cada una", en:"{n} of {total} walls · +0.2 a day each"},
   "{n} pixações pra gastar: {c} do mês + {x} das brigas": {es:"{n} pintadas para usar: {c} del mes + {x} de las peleas", en:"{n} tags to spend: {c} this month + {x} from fights"},
-  "{p}% do bairro é do {clube} · nossa barra {n}% · +0,2 por dia": {es:"{p}% del barrio es de {clube} · nuestra barra {n}% · +0,2 por día", en:"{p}% of the neighbourhood supports {clube} · our bar {n}% · +0.2 a day"}
+  "{p}% do bairro é do {clube} · nossa barra {n}% · +0,2 por dia": {es:"{p}% del barrio es de {clube} · nuestra barra {n}% · +0,2 por día", en:"{p}% of the neighbourhood supports {clube} · our bar {n}% · +0.2 a day"},
+  "desbota em {n} dias": {es:"se borra en {n} días", en:"fades in {n} days"},
+  "+2 por liderar a cidade": {es:"+2 por liderar la ciudad", en:"+2 for leading the city"}
 });

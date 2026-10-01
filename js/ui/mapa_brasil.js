@@ -281,7 +281,7 @@ TO.mapaBrasil = (function(){
       h += `<h4>${esc(_t('Pixações'))} <small>${esc(_t('{n} de {total} muros · +0,2 por dia cada', {n:ms.filter(m => m.t).length, total:ms.length}))}</small></h4>`;
       h += '<ul class="mb-muros">' + ms.map(m =>
         `<li data-muro="${m.i}" class="${selMuro && selMuro.i === m.i ? 'sel' : ''}${m.t ? '' : ' livre'}"><i${m.t ? ` style="background:${corDe(m.t)}"` : ''}></i>` +
-        `<span>${esc(_t('Muro {n}', {n:m.i + 1}))}</span><b>${m.t ? esc(nome(m.t)) : esc(_t('livre'))}</b><small>${m.t ? esc(ha(m.abs)) : ''}</small></li>`).join('') + '</ul>';
+        `<span>${esc(_t('Muro {n}', {n:m.i + 1}))}</span><b>${m.t ? esc(nome(m.t)) : esc(_t('livre'))}</b><small>${m.t ? esc(ha(m.abs) + ' · ' + _t('desbota em {n} dias', {n:Math.max(1, (d.PIX ? d.PIX.desbota : 60) - ((e.data.absoluto || 0) - (m.abs || 0)))})) : ''}</small></li>`).join('') + '</ul>';
       if(nossos) h += `<p class="mb-nota">${esc(_t('Os nossos {n} muros aqui rendem +{v} por dia na barra.', {n:nossos, v:(nossos * 0.2).toLocaleString('pt-BR', {maximumFractionDigits:1})}))}</p>`;
     }
     const meus = est.filter(s => s.tid === meu && s.tipo !== 'sede');
@@ -325,7 +325,8 @@ TO.mapaBrasil = (function(){
       };
       pe.appendChild(bt);
       const m = document.createElement('small');
-      m.textContent = _t('{n} pixações pra gastar: {c} do mês + {x} das brigas', {n:sd.total, c:sd.cota, x:sd.extra});
+      m.textContent = _t('{n} pixações pra gastar: {c} do mês + {x} das brigas', {n:sd.total, c:sd.cota, x:sd.extra}) +
+        (sd.lider ? ' · ' + _t('+2 por liderar a cidade') : '');
       pe.appendChild(m);
     }
     if(opc.aoIr){

@@ -8583,6 +8583,20 @@ O dono: "arranje uma forma de você iniciar um save sem selecionar uma torcida e
   - **Os muros:** uns 38 ocupados, a guerra concentrada nos bairros baratos de virar (Granja Portugal com cinco donas diferentes nos cinco muros).
   - **O efeito bola de neve:** a barra chega a 100 e trava. Sem desgaste, um bairro de 100% com os muros todos da dona é quase impossível de virar. Fica anotado pro dono decidir (desgaste diário acima de 80, ou o pixo que desbota com o tempo).
 
+## Desgaste acima de 80, o pixo que desbota, a cota nova e o bônus da líder (dono, 01/10/2026)
+
+O dono aprovou as duas saídas pro efeito bola de neve ("aprovo as duas sugestões") e pediu: "Torcida líder de dominar bairros no mapa recebe +2 pontos de pixação por mês. Torcida com sede nível 0 tem só 2 pontos de pixação mensais. Nova redistribuição de pontos de pixação por sede: 2 pra sede 0 / 4 pra 1 e 2 / 8 pra 3 e 4 / 12 pra 5 e 6".
+
+- **O desgaste:** quem passa de 80% num bairro perde, por dia, 2% do que passa de 80 (0,4 a 100%, 0,2 a 90%), e isso vira de ninguém. É proporcional e não fixo porque um desgaste fixo pequeno some debaixo dos muros (cinco muros dão +1 por dia). O desgaste nunca derruba uma dona (para em 80).
+- **O pixo desbota:** 60 dias depois, o muro volta a ficar livre. O cartão do bairro mostra, em cada muro, há quanto tempo foi pixado e em quantos dias desbota.
+- **A cota do mês:** 2 sem sede, 4 na sede 1 e 2, 8 na 3 e 4, 12 na 5 e 6.
+- **A líder:** a dona da cidade (dona de mais bairros) na virada do mês leva +2 pixações naquele mês. O cartão mostra "+2 por liderar a cidade".
+- **Um ano simulado** (`ferramentas/simular_mundo.js`, duas rodadas):
+  - quem domina continua variando: Cearamor com 5 bairros, ou TUF com 7;
+  - nenhum bairro trava em 100%: a dona folgada fica entre 81 e 88%;
+  - 14 a 18 muros pixados no fim do ano (antes eram 38, e quase todos da dona);
+  - 2 ou 3 bairros sem dona, com seis ou sete torcidas na barra (Genibaú, Castelo Encantado, Jangurussu).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
