@@ -425,6 +425,86 @@ export const MAPAS = {
 /* o mapa de cada porte da planilha */
 export const MAPA_DO_PORTE = { Pequeno: 'pequeno', 'Médio': 'medio', Grande: 'grande' };
 
+/* =========================================================
+   AS CIDADES DA PRAÇA (o dono, 01/10/2026: "Deixe as cidades com a
+   metade da proximidade proposta, pra dar uma impressão maior de
+   conurbação. Vamos caso a caso … Agora as sedes das torcidas e os
+   estádios tem que ficar obrigatoriamente na sua cidade")
+   ---------------------------------------------------------
+   A praça composta (o Interior do RS, a Paraíba, o Subúrbio Carioca…)
+   tem bairros de mais de uma cidade (o `cidade` de cada bairro, em
+   dados/cidades.js). O mapa dela é o mapa do porte, CORTADO EM CIDADES:
+   cada cidade fica com um pedaço do tamanho dos bairros dela (o estádio
+   de cada uma vai junto), a cidade do `centro` fica onde está, e as
+   outras saem pro lado de verdade (`rumo`, a partir da cidade `de`), a
+   uns 50 m (`VAO_CIDADES_M`) da vizinha — o dobro na `longe` e o triplo
+   do outro lado da `baia` —, com a estrada curta ligando as duas, o
+   pórtico de BEM-VINDO na entrada de cada uma e a placa com a distância
+   de verdade (`km`: a linha reta vezes 1,2, pra chegar perto da da
+   estrada). A `costa` fica na beira do mar, com a avenida da beira
+   seguindo até ela. Cada ligação: [cidade, de, rumo, km, opções]. A
+   praça que não está aqui fica inteira (Goiânia: o dono pediu, "mantenha
+   da forma que está atualmente"; a sede e o estádio de Anápolis ficam no
+   bairro de Anápolis) */
+export const VAO_CIDADES_M = 50;
+export const CISOES = {
+  'bahia': { centro: 'Salvador', ligacoes: [['Feira de Santana', 'Salvador', 'no', 110]] },
+  'belem': { centro: 'Belém', ligacoes: [['Marabá', 'Belém', 's', 530]] },
+  'regiao-de-campinas': { centro: 'Campinas', ligacoes: [['Jundiaí', 'Campinas', 's', 45], ['Bragança Paulista', 'Campinas', 'l', 65]] },
+  'rio-grande-do-norte': { centro: 'Natal', ligacoes: [['Mossoró', 'Natal', 'o', 295]] },
+  'alagoas': { centro: 'Maceió', ligacoes: [['Arapiraca', 'Maceió', 'o', 120], ['Palmeira dos Índios', 'Arapiraca', 'n', 45]] },
+  'sergipe': { centro: 'Aracaju', ligacoes: [['Itabaiana', 'Aracaju', 'o', 55], ['Lagarto', 'Itabaiana', 'so', 40]] },
+  /* o sertão em fila pela estrada, como a BR-230 */
+  'paraiba': { centro: 'João Pessoa', ligacoes: [['Campina Grande', 'João Pessoa', 'o', 135], ['Patos', 'Campina Grande', 'o', 185],
+                                                 ['Sousa', 'Patos', 'o', 130], ['Cajazeiras', 'Sousa', 'o', 45]] },
+  /* São Luís na ilha, ao norte; o mar é o leste do mapa: Parnaíba desce pela
+     costa, Teresina fica pra dentro, e Imperatriz, longe, a sudoeste */
+  'maranhao': { centro: 'São Luís', ligacoes: [['Parnaíba', 'São Luís', 's', 340, { costa: true }], ['Teresina', 'Parnaíba', 'so', 320],
+                                              ['Imperatriz', 'São Luís', 'so', 580, { longe: true }]] },
+  /* o Rio e a Baixada juntos; Niterói, São Gonçalo e Itaboraí do outro lado
+     da baía, ligados pela ponte */
+  'suburbio-carioca': { centro: 'Rio de Janeiro', ligacoes: [['Niterói', 'Rio de Janeiro', 'l', 15, { baia: true }], ['Volta Redonda', 'Rio de Janeiro', 'o', 105],
+                                                            ['Campos dos Goytacazes', 'Niterói', 'ne', 260, { longe: true }]] },
+  'mato-grosso': { centro: 'Cuiabá', ligacoes: [['Rondonópolis', 'Cuiabá', 'se', 220]] },
+  'litoral-catarinense': { centro: 'Florianópolis', ligacoes: [['Balneário Camboriú', 'Florianópolis', 'n', 80, { costa: true }]] },
+  /* os interiores: a árvore das estradas mais curtas de verdade, a partir
+     da cidade do meio */
+  'interior-do-rs': { centro: 'Caxias do Sul', ligacoes: [['Passo Fundo', 'Caxias do Sul', 'no', 190], ['Erechim', 'Passo Fundo', 'n', 85],
+                                                          ['Pelotas', 'Caxias do Sul', 's', 370], ['Bagé', 'Pelotas', 'o', 210], ['Uruguaiana', 'Bagé', 'no', 400]] },
+  'interior-de-sc': { centro: 'Brusque', ligacoes: [['Itajaí', 'Brusque', 'ne', 40], ['Joinville', 'Itajaí', 'n', 85], ['Criciúma', 'Brusque', 's', 215],
+                                                   ['Joaçaba', 'Brusque', 'o', 305], ['Chapecó', 'Joaçaba', 'o', 130]] },
+  'interior-do-ce': { centro: 'Limoeiro do Norte', ligacoes: [['Maranguape', 'Limoeiro do Norte', 'no', 185], ['Itapipoca', 'Maranguape', 'no', 130],
+                                                              ['Sobral', 'Itapipoca', 'o', 105], ['Iguatu', 'Limoeiro do Norte', 'so', 225], ['Juazeiro do Norte', 'Iguatu', 's', 115]] },
+  'interior-de-pe': { centro: 'Salgueiro', ligacoes: [['Petrolina', 'Salgueiro', 'so', 255], ['Santa Cruz do Capibaribe', 'Salgueiro', 'l', 385],
+                                                     ['Caruaru', 'Santa Cruz do Capibaribe', 'se', 50]] },
+  'interior-de-minas': { centro: 'Patos de Minas', ligacoes: [['Uberlândia', 'Patos de Minas', 'o', 225], ['São João del-Rei', 'Patos de Minas', 'se', 445],
+                                                             ['Ipatinga', 'São João del-Rei', 'ne', 310], ['Teófilo Otoni', 'Ipatinga', 'ne', 250]] },
+  'interior-do-pr': { centro: 'Londrina', ligacoes: [['Maringá', 'Londrina', 'o', 95], ['Ponta Grossa', 'Londrina', 'se', 265], ['Paranaguá', 'Ponta Grossa', 'l', 205],
+                                                    ['Cascavel', 'Maringá', 'so', 275]] },
+  'interior-de-sp': { centro: 'Araraquara', ligacoes: [['Ribeirão Preto', 'Araraquara', 'ne', 95], ['Bauru', 'Araraquara', 'so', 130], ['Novo Horizonte', 'Bauru', 'n', 115],
+                                                      ['Mirassol', 'Novo Horizonte', 'no', 95], ['Limeira', 'Araraquara', 'se', 140], ['Piracicaba', 'Limeira', 'so', 40],
+                                                      ['Itu', 'Piracicaba', 'se', 85], ['Presidente Prudente', 'Novo Horizonte', 'o', 280]] }
+};
+/* "BEM-VINDO A …": a cidade com artigo leva "AO" */
+export const PREPOSICAO_CIDADE = { 'Rio de Janeiro': 'AO' };
+/* as cidades da praça como o gerador recebe (`opc.cisao`): a tabela de
+   cima e, de cada cidade, quantos bairros ela tem (e quantos são favela);
+   `estadios`: a cidade de cada estádio da praça, na ordem dela */
+export function cisaoDaPraca(id, bairros, cidadeDoEstadio) {
+  const T = CISOES[id];
+  if (!T || !bairros || !bairros.length) return null;
+  const conta = new Map();
+  for (const b of bairros) {
+    const c = b.cidade || T.centro, x = conta.get(c) || { n: 0, favelas: 0 };
+    x.n++; if (b.classe === 'Favela') x.favelas++;
+    conta.set(c, x);
+  }
+  const lig = new Map(T.ligacoes.map(([c, de, rumo, km, o]) => [c, { de, rumo, km, ...(o || {}) }]));
+  if (!conta.has(T.centro) || [...conta.keys()].some(c => c !== T.centro && !lig.has(c))) return null;
+  const cidades = [...conta.entries()].map(([nome, x]) => ({ nome, n: x.n, favelas: x.favelas, ...(lig.get(nome) || {}) }));
+  return { id, centro: T.centro, cidades, estadios: (cidadeDoEstadio || []).map(c => c || T.centro) };
+}
+
 export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const K = P.CIDADE, CALC = K.CALC, M = P.METRO;
   /* (os nomes de dentro escondem os de fora, que são os do mapa grande) */
@@ -435,7 +515,25 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   /* as vagas de estádio que a praça ocupa, na ordem do mapa (a primeira é
      a do estádio principal; `opc.estadios` é quantos a praça tem) */
   const nVagas = Math.max(1, Math.min(cfg.estadios.length, opc.estadios ?? cfg.estadios.length));
-  const VAGAS = cfg.estadios.slice(0, nVagas);
+  /* (na praça cortada em cidades, a vaga de cada estádio sai do lado da
+     cidade dele: ver `escolherVagas`) */
+  let VAGAS = cfg.estadios.slice(0, nVagas);
+  /* AS CIDADES DA PRAÇA (`opc.cisao`, de `cisaoDaPraca`): sem ela, uma cidade só */
+  const CIS = opc.cisao && opc.cisao.cidades && opc.cisao.cidades.length > 1 ? opc.cisao : null;
+  const CENTRO = CIS ? CIS.centro : null;
+  const RUMO = { n: [0, -1], s: [0, 1], l: [1, 0], o: [-1, 0], ne: [Math.SQRT1_2, -Math.SQRT1_2], no: [-Math.SQRT1_2, -Math.SQRT1_2],
+                 se: [Math.SQRT1_2, Math.SQRT1_2], so: [-Math.SQRT1_2, Math.SQRT1_2] };
+  const cidadeP = new Map(CIS ? CIS.cidades.map(c => [c.nome, c]) : []);
+  /* o rumo de uma cidade a partir do centro: a soma dos rumos do caminho até ela */
+  const rumoDe = nome => {
+    let x = 0, y = 0;
+    for (let c = cidadeP.get(nome), n = 0; c && c.de && n < 20; c = cidadeP.get(c.de), n++) { const d = RUMO[c.rumo] || [0, 0]; x += d[0]; y += d[1]; }
+    const L = Math.hypot(x, y);
+    return L ? [x / L, y / L] : [0, 0];
+  };
+  const outraCidade = c => !!CIS && !!c && c !== CENTRO;
+  /* o que a cisão não conseguiu fazer direito (vai no PROP.cisao, pra página mostrar) */
+  const avisos = [];
   const par8 = v => Math.round(v / 8) * 8;
   const hash = (...n) => {
     let h = 2166136261;
@@ -493,7 +591,257 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   /* (e as vagas de estádio ocupadas: a caixa de cada uma, a das seis
      células da grade ou a `area` dela) */
   const areaDaVaga = v => v.area ? { ...v.area } : { x0: colX(v.i[0])[0], x1: colX(v.i[1])[1], y0: linYx(v.j[0])[0], y1: linYx(v.j[1])[1] };
-  const mundoY1 = Math.max(6100, ...polys.map(p => p[1]), ...VAGAS.map(v => areaDaVaga(v).y1)) + 300;
+  /* ---- A CISÃO, 1: A VAGA DE CADA ESTÁDIO E O CORTE DO MAPA EM CIDADES ----
+     O estádio de cada cidade de fora vai pra vaga do lado dela (o rumo dela
+     a partir do centro); os do centro, pras vagas que sobram mais longe das
+     cidades de fora. Depois o mapa é cortado (`cortarEmCidades`). A coluna
+     da avenida de entrada só estreita no centro: a avenida é dele. */
+  const colXBase = i => i >= 1 ? [K.bordasX[2 * i], K.bordasX[2 * i + 1]] : [cx0 + (i - 1) * passoX + RUA / 2, cx0 + i * passoX - RUA / 2];
+  const colXDe = (i, cid) => outraCidade(cid) ? colXBase(i) : colX(i);
+  const areaPoli = p => { let a = 0; for (let i = 0, j = p.length - 1; i < p.length; j = i++) a += (p[j][0] - p[i][0]) * (p[j][1] + p[i][1]); return Math.abs(a) / 2; };
+  const ehRetPoli = p => !!p && p.length === 4 && p.every((a, i) => { const b = p[(i + 1) % 4]; return Math.abs(a[0] - b[0]) < 1e-6 || Math.abs(a[1] - b[1]) < 1e-6; });
+  let corte = null;
+  if (CIS) {
+    /* o meio do mapa: o das quadras de hoje e das novas */
+    let sx = 0, sy = 0, sa = 0;
+    const somaR = (r, a) => { sx += (r.x0 + r.x1) / 2 * a; sy += (r.y0 + r.y1) / 2 * a; sa += a; };
+    for (const q of K.QUADRAS) somaR(q, (q.x1 - q.x0) * (q.y1 - q.y0));
+    for (const [ci, faixas] of Object.entries(GRADE)) for (const [ja, jb] of faixas) for (let j = ja; j <= jb; j++) {
+      const [x0, x1] = colX(+ci), [y0, y1] = linY(j); somaR({ x0, x1, y0, y1 }, (x1 - x0) * (y1 - y0));
+    }
+    const meio = [sx / sa, sy / sa];
+    const rumoDaVaga = v => { const a = areaDaVaga(v), x = (a.x0 + a.x1) / 2 - meio[0], y = (a.y0 + a.y1) / 2 - meio[1], L = Math.hypot(x, y) || 1; return [x / L, y / L]; };
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
+    const usadas = new Set(), escolha = [];
+    /* o centro pequeno (os interiores) escolhe primeiro: a vaga mais perto da
+       avenida de entrada, que é dele (ele cresce ao longo dela) */
+    const nTotal = CIS.cidades.reduce((a, c) => a + c.n, 0), cC = cidadeP.get(CENTRO);
+    if (cC && cC.n / nTotal < 0.4) {
+      const longeDaAvenida = v => { const a = areaDaVaga(v); return Math.max(0, a.x0 - ENTRADA.x1, ENTRADA.x0 - a.x1); };
+      for (let k = 0; k < nVagas; k++) {
+        if (outraCidade(CIS.estadios[k])) continue;
+        let m = -1, nota = Infinity;
+        cfg.estadios.forEach((v, i) => { if (!usadas.has(i) && longeDaAvenida(v) < nota - 1) { nota = longeDaAvenida(v); m = i; } });
+        escolha[k] = m; usadas.add(m);
+      }
+    }
+    for (let k = 0; k < nVagas; k++) {
+      const c = CIS.estadios[k];
+      if (!outraCidade(c)) continue;
+      const d = rumoDe(c);
+      let m = -1, nota = -Infinity;
+      cfg.estadios.forEach((v, i) => { if (usadas.has(i)) return; const s = dot(d, rumoDaVaga(v)); if (s > nota + 1e-9) { nota = s; m = i; } });
+      escolha[k] = m; usadas.add(m);
+    }
+    const rumosFora = CIS.cidades.filter(c => outraCidade(c.nome)).map(c => rumoDe(c.nome));
+    for (let k = 0; k < nVagas; k++) {
+      if (escolha[k] !== undefined) continue;
+      let m = -1, nota = Infinity;
+      cfg.estadios.forEach((v, i) => {
+        if (usadas.has(i)) return;
+        const s = rumosFora.length ? Math.max(...rumosFora.map(d => dot(d, rumoDaVaga(v)))) : 0;
+        if (s < nota - 0.05) { nota = s; m = i; }
+      });
+      escolha[k] = m; usadas.add(m);
+    }
+    VAGAS = escolha.map(i => cfg.estadios[i]);
+    corte = cortarEmCidades(meio);
+  }
+  /* O CORTE: as unidades do mapa (cada quadra da grade nova e de hoje — o
+     par juntado conta como uma —, o quarteirão do estádio de hoje, cada
+     favela e cada vaga de estádio ocupada) são repartidas entre as cidades.
+     Cada cidade de fora cresce, unidade a unidade, a partir da vaga do
+     estádio dela (ou da unidade mais na ponta do lado dela), pegando a
+     vizinha mais perto do começo, até ter a área dos bairros dela (a
+     proporção dos bairros no total); a que tem bairro de favela prefere
+     levar uma favela, a que não tem evita. As estações do metrô e as vagas
+     dos estádios do centro são do centro. Quando o centro é grande, as de
+     fora crescem primeiro sem nunca partir o resto em dois (o resto é o
+     centro); quando é pequeno (os interiores), o centro cresce primeiro, a
+     partir da vaga do estádio dele ou do meio do mapa. A quadra de hoje
+     recortada pela costa que vai pra uma cidade de fora não é refeita: some
+     (na praça de praia, a cidade de fora evita ela) */
+  function cortarEmCidades(meio) {
+    const us = [], porId = new Map();
+    const poe = o => { o.k = us.length; o.cx = (o.r.x0 + o.r.x1) / 2; o.cy = (o.r.y0 + o.r.y1) / 2; us.push(o); for (const id of o.ids || []) porId.set(id, o); return o; };
+    const naVagaC = (i, j, r) => VAGAS.some(v => v.area ? cruza(r, v.area, -1) : i >= v.i[0] && i <= v.i[1] && j >= v.j[0] && j <= v.j[1]);
+    const juntaC = new Map();
+    for (const par of JUNTAS) for (const id of par) juntaC.set(id, par);
+    const kq = new Map(K.QUADRAS.map(q => [q.i + ',' + q.j, q]));
+    const metroIds = new Set(METRO ? METRO.estacoes.map(e => e.id) : []);
+    const retDe = id => { const q = kq.get(id); if (q) return { x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 }; const [i, j] = id.split(',').map(Number); const [x0, x1] = colX(i), [y0, y1] = linY(j); return { x0, x1, y0, y1 }; };
+    const areaDe = id => { const q = kq.get(id); if (q && q.pol && q.pol.length >= 3) return areaPoli(q.pol); const r = retDe(id); return (r.x1 - r.x0) * (r.y1 - r.y0); };
+    const todos = [];
+    for (const [ci, faixas] of Object.entries(GRADE)) for (const [ja, jb] of faixas) for (let j = ja; j <= jb; j++) todos.push(ci + ',' + j);
+    for (const q of K.QUADRAS) todos.push(q.i + ',' + q.j);
+    for (const id of todos) {
+      if (porId.has(id)) continue;
+      const par = juntaC.get(id), ids = par ? par.filter(k => todos.includes(k)) : [id];
+      const rs = ids.map(retDe), r = { x0: Math.min(...rs.map(a => a.x0)), x1: Math.max(...rs.map(a => a.x1)), y0: Math.min(...rs.map(a => a.y0)), y1: Math.max(...rs.map(a => a.y1)) };
+      const [i, j] = id.split(',').map(Number);
+      if (!par && !kq.has(id) && naVagaC(i, j, r)) continue;
+      const q = kq.get(id);
+      poe({ ids, r, area: ids.reduce((a, k) => a + areaDe(k), 0), hoje: !!q, costa: !!(q && q.pol && q.pol.length >= 3 && !ehRetPoli(q.pol)),
+            avenida: r.x0 < colX(cE + 1)[1] && r.x1 > colX(cE)[0], fixa: ids.some(k => metroIds.has(k)) ? CENTRO : null });
+    }
+    /* o quarteirão do estádio de hoje (vira quatro quadras) */
+    const c0 = K.celulaEm(P.CX, P.CY);
+    if (c0 && c0.i != null) poe({ ids: [c0.i + ',' + c0.j], r: { x0: P.QEST_X0, x1: P.QEST_X1, y0: P.QEST_Y0, y1: P.QEST_Y1 },
+                                  area: (P.QEST_X1 - P.QEST_X0) * (P.QEST_Y1 - P.QEST_Y0), estadioDeHoje: true, fixa: null });
+    const caixaDe = pts => ({ x0: Math.min(...pts.map(p => p[0])), x1: Math.max(...pts.map(p => p[0])), y0: Math.min(...pts.map(p => p[1])), y1: Math.max(...pts.map(p => p[1])) });
+    FAVELAS.forEach((F, f) => poe({ r: caixaDe(F.poly), area: areaPoli(F.poly), favela: f, fixa: null }));
+    VAGAS.forEach((v, k) => poe({ r: areaDaVaga(v), area: 0, vaga: k, fixa: CIS.estadios[k] || CENTRO }));
+    /* as vizinhas: a folga de uma rua (a avenida de entrada conta), e da favela até a quadra */
+    for (const a of us) a.viz = [];
+    for (let x = 0; x < us.length; x++) for (let y = x + 1; y < us.length; y++) {
+      const a = us[x], b = us[y], lim = a.favela != null || b.favela != null ? 420 : 2.6 * RUA;
+      if (Math.max(a.r.x0 - b.r.x1, b.r.x0 - a.r.x1, a.r.y0 - b.r.y1, b.r.y0 - a.r.y1) <= lim) { a.viz.push(y); b.viz.push(x); }
+    }
+    const A = us.reduce((s, u) => s + u.area, 0), N = CIS.cidades.reduce((s, c) => s + c.n, 0);
+    const alvo = c => A * c.n / N;
+    const centro = cidadeP.get(CENTRO), centroPequeno = alvo(centro) < 0.4 * A;
+    const dono = us.map(u => u.fixa);
+    const areaDe2 = nome => us.reduce((s, u) => s + (dono[u.k] === nome ? u.area : 0), 0);
+    const costaVale = !!opc.costa;
+    /* o resto (as livres e as das cidades que ainda vão crescer) continua inteiro sem a unidade `sem`? */
+    const restoInteiro = (sem, vivas) => {
+      const ok = u => u.k !== sem && (dono[u.k] === null || vivas.has(dono[u.k]));
+      const ini = us.find(ok);
+      if (!ini) return true;
+      const visto = new Uint8Array(us.length), pilha = [ini.k];
+      visto[ini.k] = 1;
+      let n = 1;
+      while (pilha.length) { const k = pilha.pop(); for (const j of us[k].viz) if (!visto[j] && ok(us[j])) { visto[j] = 1; n++; pilha.push(j); } }
+      return n === us.filter(ok).length;
+    };
+    /* uma cidade cresce até a área dela (`vivas`: quem não pode ficar partido) */
+    const crescer = (c, vivas) => {
+      const nome = c.nome, dir = rumoDe(nome);
+      let reg = us.filter(u => dono[u.k] === nome);
+      let semente;
+      if (reg.length) semente = [reg.reduce((s, u) => s + u.cx, 0) / reg.length, reg.reduce((s, u) => s + u.cy, 0) / reg.length];
+      else {
+        /* o começo: a unidade livre mais na ponta do lado dela (o centro: a da
+           avenida mais perto do meio) */
+        let m = null, nota = -Infinity;
+        for (const u of us) {
+          if (dono[u.k] !== null || u.favela != null || (nome === CENTRO && !u.avenida)) continue;
+          const s = nome === CENTRO ? -Math.hypot(u.cx - meio[0], u.cy - meio[1]) : (u.cx - meio[0]) * dir[0] + (u.cy - meio[1]) * dir[1];
+          if (s > nota) { nota = s; m = u; }
+        }
+        if (!m) return;
+        dono[m.k] = nome; reg = [m]; semente = [m.cx, m.cy];
+      }
+      let area = reg.reduce((s, u) => s + u.area, 0), quer = (c.favelas || 0) - reg.filter(u => u.favela != null).length;
+      const meta = alvo(c);
+      for (let volta = 0; volta < us.length && area < meta; volta++) {
+        const cand = [];
+        for (const u of us) {
+          if (dono[u.k] !== null || !u.viz.some(j => dono[j] === nome)) continue;
+          let custo = Math.hypot(u.cx - semente[0], u.cy - semente[1]);
+          if (u.favela != null) custo *= quer > 0 ? 0.5 : 5;
+          if (nome !== CENTRO && u.costa) custo *= costaVale ? 6 : 2;
+          /* (o centro grande fica com a cidade de hoje; o pequeno cresce ao longo da avenida dele) */
+          if (nome !== CENTRO && u.hoje && !centroPequeno) custo *= 3;
+          if (nome === CENTRO && u.avenida) custo *= 0.35;
+          cand.push([custo, u]);
+        }
+        cand.sort((a, b) => a[0] - b[0]);
+        let pega = null;
+        for (const [, u] of cand) { if (!vivas || restoInteiro(u.k, vivas)) { pega = u; break; } }
+        if (!pega) break;
+        /* (sem ela fica mais perto da meta que com ela: para) */
+        if (area > 0 && area + pega.area - meta > meta - area) break;
+        dono[pega.k] = nome; area += pega.area;
+        if (pega.favela != null) quer--;
+      }
+    };
+    const fora = CIS.cidades.filter(c => outraCidade(c.nome));
+    const prof = c => { let n = 0; for (let x = c; x && x.de && n < 20; x = cidadeP.get(x.de)) n++; return n; };
+    const comEstadio = c => CIS.estadios.includes(c.nome);
+    fora.sort((a, b) => (comEstadio(b) - comEstadio(a)) || (prof(b) - prof(a)) || (b.n - a.n));
+    /* (`vivas`: as cidades que ainda vão crescer, e o centro quando ele é o
+       resto — a unidade que partiria o que é delas não sai) */
+    if (centroPequeno) {
+      /* o centro pequeno cresce primeiro, a partir do estádio dele ou do meio do mapa */
+      const vivas = new Set(fora.map(c => c.nome));
+      crescer(centro, vivas);
+      for (const c of fora) { vivas.delete(c.nome); crescer(c, vivas.size ? vivas : null); }
+    } else {
+      const vivas = new Set([CENTRO, ...fora.map(c => c.nome)]);
+      for (const c of fora) { vivas.delete(c.nome); crescer(c, vivas); }
+      /* o centro grande é o resto */
+      for (const u of us) if (dono[u.k] === null) dono[u.k] = CENTRO;
+    }
+    /* o que sobrou vai pra cidade vizinha mais abaixo da meta dela (e, sem vizinha, pro centro) */
+    for (let volta = 0; volta < us.length; volta++) {
+      const soltas = us.filter(u => dono[u.k] === null);
+      if (!soltas.length) break;
+      let mudou = false;
+      for (const u of soltas) {
+        let m = null, r = Infinity;
+        for (const j of u.viz) { const d = dono[j]; if (!d) continue; const x = areaDe2(d) / alvo(cidadeP.get(d)); if (x < r) { r = x; m = d; } }
+        if (m) { dono[u.k] = m; mudou = true; }
+      }
+      if (!mudou) { for (const u of soltas) dono[u.k] = CENTRO; break; }
+    }
+    /* O ACERTO: a unidade da divisa passa da cidade grande demais pra vizinha
+       pequena demais enquanto isso aproxima as duas da meta (o erro de cada
+       uma é relativo, ao quadrado: passa de mão em mão até a que precisa),
+       sem partir a cidade que cede nem mexer no que é fixo (o estádio, o
+       metrô). A quadra de hoje sai do centro grande com custo, a favela só
+       vai pra cidade que quer favela, e a da avenida não sai do centro pequeno */
+    {
+      const areaC = {};
+      for (const c of CIS.cidades) areaC[c.nome] = 0;
+      for (const u of us) areaC[dono[u.k]] = (areaC[dono[u.k]] || 0) + u.area;
+      const querFavela = {};
+      for (const c of CIS.cidades) querFavela[c.nome] = (c.favelas || 0) - us.filter(u => u.favela != null && dono[u.k] === c.nome).length;
+      const rel = (a, c) => { const t = alvo(cidadeP.get(c)); return (a - t) / t; };
+      const inteiroSem = (c, sem) => {
+        const minhas = us.filter(u => dono[u.k] === c && u.k !== sem);
+        if (!minhas.length) return false;
+        const ok = new Set(minhas.map(u => u.k)), visto = new Set([minhas[0].k]), pilha = [minhas[0].k];
+        while (pilha.length) { const k = pilha.pop(); for (const j of us[k].viz) if (ok.has(j) && !visto.has(j)) { visto.add(j); pilha.push(j); } }
+        return visto.size === ok.size;
+      };
+      for (let volta = 0; volta < 600; volta++) {
+        const cand = [];
+        for (const u of us) {
+          if (u.fixa || u.vaga != null) continue;
+          const de = dono[u.k], fa = rel(areaC[de], de), fa2 = rel(areaC[de] - u.area, de);
+          for (const para of new Set(u.viz.map(j => dono[j]).filter(c => c && c !== de))) {
+            const fb = rel(areaC[para], para), fb2 = rel(areaC[para] + u.area, para);
+            let ganho = fa * fa + fb * fb - fa2 * fa2 - fb2 * fb2;
+            if (de === CENTRO && u.hoje && !centroPequeno) ganho -= 0.02;
+            if (de === CENTRO && u.costa) ganho -= costaVale ? 1 : 0.03;
+            if (de === CENTRO && u.avenida && centroPequeno) ganho -= 1;
+            if (u.favela != null && para !== CENTRO && querFavela[para] <= 0) ganho -= 0.05;
+            if (ganho > 0.002) cand.push([ganho, u, de, para]);
+          }
+        }
+        cand.sort((a, b) => b[0] - a[0]);
+        const pega = cand.find(([, u, de]) => inteiroSem(de, u.k));
+        if (!pega) break;
+        const [, u, de, para] = pega;
+        dono[u.k] = para; areaC[de] -= u.area; areaC[para] += u.area;
+        if (u.favela != null) { querFavela[de]++; querFavela[para]--; }
+      }
+    }
+    /* o resultado: a cidade de cada quadra (pelo id), de cada favela e de cada vaga */
+    const cidadeDe = new Map(), kFora = new Set(), somem = new Set(), favelas = [], areas = {};
+    for (const u of us) {
+      const c = dono[u.k];
+      areas[c] = (areas[c] || 0) + u.area;
+      for (const id of u.ids || []) cidadeDe.set(id, c);
+      if (u.favela != null) favelas[u.favela] = c;
+      if (u.hoje && outraCidade(c)) for (const id of u.ids) kFora.add(id);
+    }
+    return { cidadeDe, kFora, somem, favelas, areas, alvos: Object.fromEntries(CIS.cidades.map(c => [c.nome, alvo(c)])),
+             estadioDeHoje: c0 && c0.i != null ? cidadeDe.get(c0.i + ',' + c0.j) : CENTRO };
+  }
+  const cidadeDaCelula = id => corte ? (corte.cidadeDe.get(id) || CENTRO) : null;
+  const mundoY1 =Math.max(6100, ...polys.map(p => p[1]), ...VAGAS.map(v => areaDaVaga(v).y1)) + 300;
   for (const a of K.AVENIDAS) {
     if (SEM_AVENIDA.includes(a.id)) continue;
     const p = a.pontos.map(q => q.slice());
@@ -610,7 +958,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
 
   /* ---- as células ---- */
   const celulas = [];
-  const nova = (i, j, x0, x1, y0, y1, parte, extra) => celulas.push({ i, j, x0, x1, y0, y1, parte: parte || '', ...extra });
+  /* (na praça cortada, cada célula sabe a cidade dela) */
+  const nova = (i, j, x0, x1, y0, y1, parte, extra) => celulas.push({ i, j, x0, x1, y0, y1, parte: parte || '', ...(corte ? { cidade: cidadeDaCelula(i + ',' + j) } : {}), ...extra });
   const avN = avenidas.find(a => a.id === 'norte'), xn = avN ? avN.pontos[0][0] : -1e9, ln = avN ? avN.l : 0;
   /* a célula que cai na vaga (a da caixa: a que entra nela) não vira quadra */
   const naVaga = (v, i, j) => v.area ? cruza({ x0: colX(i)[0], x1: colX(i)[1], y0: linYx(j)[0], y1: linYx(j)[1] }, v.area, -1)
@@ -629,10 +978,15 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   };
   /* (e as da coluna da avenida de entrada, que estreita) */
   const substitui = new Set(K.QUADRAS.filter(q => cortada(q) || q.i === cE).map(q => q.i + ',' + q.j));
+  /* (e, na praça cortada em cidades, a de hoje que foi pra outra cidade: ela
+     é refeita inteira, sem o prédio que tinha — a recortada pela costa
+     também —, e vai embora com a cidade dela) */
+  if (corte) for (const id of corte.kFora) substitui.add(id);
   /* O QUE A QUADRA REFEITA GUARDA: o prédio que ela tinha (o marco, o
      equipamento), com a casa nova fora dele; a quadra que era toda ele
      (o terreno baldio do lado do estádio) não ganha casa nenhuma */
   const mantemDe = id => {
+    if (corte && corte.kFora.has(id)) return null;
     const q = deHoje(id);
     if (!q || !q.equip) return null;
     const e = q.equip;
@@ -652,7 +1006,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     const par = juntaDe.get(id);
     if (par) {
       /* as duas viram uma, por cima da rua que as separava */
-      const rs = par.map(k => { const [a, b] = k.split(',').map(Number); return [colX(a), linY(b)]; });
+      const rs = par.map(k => { const [a, b] = k.split(',').map(Number); return [colXDe(a, cidadeDaCelula(par[0])), linY(b)]; });
       const [a0, b0] = par[0].split(',').map(Number);
       nova(a0, b0, Math.min(...rs.map(r => r[0][0])), Math.max(...rs.map(r => r[0][1])),
            Math.min(...rs.map(r => r[1][0])), Math.max(...rs.map(r => r[1][1])), '',
@@ -663,7 +1017,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       continue;
     }
     feitas.add(id);
-    const [x0, x1] = colX(i), [y0, y1] = linY(j);
+    const [x0, x1] = colXDe(i, cidadeDaCelula(id)), [y0, y1] = linY(j);
     if (PARTIDAS.includes(id)) {
       /* a quadra alta com a rua no meio, de norte a sul */
       const xm = (x0 + x1) / 2;
@@ -693,7 +1047,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     const area = areaDaVaga(v), cel = v.area ? celulasDe(area) : { i: v.i, j: v.j };
     const dx = (area.x0 + area.x1) / 2 - (P.QEST_X0 + P.QEST_X1) / 2, dy = (area.y0 + area.y1) / 2 - (P.QEST_Y0 + P.QEST_Y1) / 2;
     return { id: 'estadio' + (k + 1), vaga: k + 1, nome: v.nome, dx, dy, area, i: cel.i, j: cel.j, principal: k === 0, naGrade: !v.area,
-             qest: { x0: P.QEST_X0 + dx, x1: P.QEST_X1 + dx, y0: P.QEST_Y0 + dy, y1: P.QEST_Y1 + dy } };
+             qest: { x0: P.QEST_X0 + dx, x1: P.QEST_X1 + dx, y0: P.QEST_Y0 + dy, y1: P.QEST_Y1 + dy }, ...(CIS ? { cidade: CIS.estadios[k] || CENTRO } : {}) };
   });
   /* O QUARTEIRÃO DO ESTÁDIO DE HOJE VIRA CASA: quatro quadras, com uma rua
      de norte a sul e uma de leste a oeste no meio (na mesma largura das
@@ -725,6 +1079,32 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
      cidade (quando a rua dele já não é a da cidade). */
   const acessos = [];
   let veraneio = null;
+  /* A RUA DE VERANEIO num terreno r virado pra f (o lado de fora; o acesso
+     sai da ponta da rua de areia pro lado contrário, o da cidade): as
+     medidas, a ponta do acesso e os lotes */
+  const VER = VERANEIO_M, LV_VER = (VER.n * VER.lote + 2 * VER.margem) * M, PV_VER = (VER.fundo + VER.rua + VER.fundoSul + 4) * M;
+  const MEIO_VER = (2 + VER.fundo + VER.rua / 2) * M;
+  const peVeraneio = (r, f) => f === 'o' ? [r.x1, r.y0 + MEIO_VER] : f === 'l' ? [r.x0, r.y0 + MEIO_VER] : f === 'n' ? [r.x0 + MEIO_VER, r.y1] : [r.x0 + MEIO_VER, r.y0];
+  const lotesDoVeraneio = (r, f) => {
+    const V = VER, hz = f === 'o' || f === 'l', lotes = [];
+    let rua;
+    if (hz) {
+      /* a rua de oeste a leste: os lotes grandes em cima (a frente pro sul), os pequenos embaixo */
+      const yN0 = r.y0 + 2 * M, yR0 = yN0 + V.fundo * M, yS0 = yR0 + V.rua * M, x0 = r.x0 + V.margem * M;
+      for (let k = 0; k < V.n; k++) lotes.push({ x0: x0 + k * V.lote * M, x1: x0 + (k + 1) * V.lote * M, y0: yN0, y1: yR0, frente: 's', veraneio: k === (V.n >> 1) ? 'festa' : 'norte', k });
+      const nS = Math.floor((r.x1 - r.x0 - 2 * V.margem * M) / (V.loteSul * M)), xs0 = (r.x0 + r.x1) / 2 - nS * V.loteSul * M / 2;
+      for (let k = 0; k < nS; k++) lotes.push({ x0: xs0 + k * V.loteSul * M, x1: xs0 + (k + 1) * V.loteSul * M, y0: yS0, y1: yS0 + V.fundoSul * M, frente: 'n', veraneio: 'sul', k });
+      rua = { x0: r.x0, x1: r.x1, y0: yR0, y1: yS0 };
+    } else {
+      /* a rua de norte a sul: os lotes grandes no oeste (a frente pro leste), os pequenos no leste */
+      const xW0 = r.x0 + 2 * M, xR0 = xW0 + V.fundo * M, xE0 = xR0 + V.rua * M, y0 = r.y0 + V.margem * M;
+      for (let k = 0; k < V.n; k++) lotes.push({ x0: xW0, x1: xR0, y0: y0 + k * V.lote * M, y1: y0 + (k + 1) * V.lote * M, frente: 'l', veraneio: k === (V.n >> 1) ? 'festa' : 'norte', k });
+      const nS = Math.floor((r.y1 - r.y0 - 2 * V.margem * M) / (V.loteSul * M)), ys0 = (r.y0 + r.y1) / 2 - nS * V.loteSul * M / 2;
+      for (let k = 0; k < nS; k++) lotes.push({ x0: xE0, x1: xE0 + V.fundoSul * M, y0: ys0 + k * V.loteSul * M, y1: ys0 + (k + 1) * V.loteSul * M, frente: 'o', veraneio: 'sul', k });
+      rua = { x0: xR0, x1: xE0, y0: r.y0, y1: r.y1 };
+    }
+    return { lotes, rua };
+  };
   const entornoBlocos = [];
   if (opc.terrenos) {
     const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
@@ -732,9 +1112,11 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     /* a guia oeste da avenida da beira na altura y (pra lá das pontas dela, a mesma distância da costa) */
     const guiaDaBeira = y => K.pxm(K.xCosta((y - y00) / u), 0)[0] - K.PRAIA * u - lBeira;
     const lesteMax = (ya, yb) => { if (!opc.costa) return Infinity; let m = Infinity; for (let k = 0; k <= 24; k++) m = Math.min(m, guiaDaBeira(ya + (yb - ya) * k / 24)); return m - CALC; };
-    const obst = celulas.map(c => ({ x0: c.x0, x1: c.x1, y0: c.y0, y1: c.y1 }))
-      .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1 })))
-      .concat(K.BEIRA.filter(l => !l.favela).map(l => bbOf(cantos(l))))
+    /* (na praça cortada em cidades, cada obstáculo sabe a cidade dele: a reta
+       do acesso de um estádio só chega numa rua da cidade do estádio) */
+    const obst = celulas.map(c => ({ x0: c.x0, x1: c.x1, y0: c.y0, y1: c.y1, cidade: c.cidade }))
+      .concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1, cidade: CENTRO })))
+      .concat(K.BEIRA.filter(l => !l.favela).map(l => ({ ...bbOf(cantos(l)), cidade: CENTRO, ...(CIS ? { barra: true } : {}) })))
       .concat(FAVELAS.map(F => ({ ...bbOf(F.poly), barra: true })))
       .concat(atacadex ? [{ ...atacadex.bb, barra: true }] : []);
     const faixaEntrada = { x0: ENTRADA.x0 - CALC, x1: ENTRADA.x1 + CALC };
@@ -753,15 +1135,19 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        trechos do eixo que são alvo ou barra, em ordem: a conta de cada
        portão vira uma busca na lista; a lista muda quando entra estádio) */
     let linhas = new Map();
-    const linha = (f, lat) => {
-      const ch = f + lat;
+    /* `cid`: a cidade de quem procura (o que é de outra cidade vira barra; a
+       avenida de entrada é do centro) */
+    const linha = (f, lat, cid) => {
+      const ch = f + lat + '|' + (cid || '');
       if (linhas.has(ch)) return linhas.get(ch);
       const hz = f === 'o' || f === 'l', tr = [];
-      const poe = (o, m, tipo) => { const a0 = hz ? o.y0 - m : o.x0 - m, a1 = hz ? o.y1 + m : o.x1 + m; if (lat > a0 && lat < a1) tr.push(hz ? [o.x0 - m, o.x1 + m, tipo] : [o.y0 - m, o.y1 + m, tipo]); };
-      for (const o of obst) poe(o, o.barra ? 0 : RUA, o.barra ? 'barra' : 'alvo');
-      for (const o of postos) poe(o, RUA, 'alvo');
-      if (!hz) tr.push([-1e7, 1e7, lat > ENTRADA.x0 && lat < ENTRADA.x1 ? 'alvo' : 'nada']);
-      else tr.push([ENTRADA.x0, ENTRADA.x1, 'alvo']);
+      const poe = (o, m, tipo) => { const a0 = hz ? o.y0 - m : o.x0 - m, a1 = hz ? o.y1 + m : o.x1 + m; if (lat > a0 && lat < a1) tr.push(hz ? [o.x0 - m, o.x1 + m, tipo, o] : [o.y0 - m, o.y1 + m, tipo, o]); };
+      const tipoDe = o => o.barra || (cid && o.cidade && o.cidade !== cid) ? 'barra' : 'alvo';
+      for (const o of obst) poe(o, o.barra ? 0 : RUA, tipoDe(o));
+      for (const o of postos) poe(o, RUA, tipoDe(o));
+      const avenida = !cid || !outraCidade(cid) ? 'alvo' : 'barra', AV = { cidade: CENTRO, avenida: true };
+      if (!hz) tr.push([-1e7, 1e7, lat > ENTRADA.x0 && lat < ENTRADA.x1 ? avenida : 'nada', AV]);
+      else tr.push([ENTRADA.x0, ENTRADA.x1, avenida, AV]);
       const l = tr.filter(t => t[2] !== 'nada');
       linhas.set(ch, l);
       return l;
@@ -770,30 +1156,30 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        estádio, até a rua da primeira quadra da cidade, a avenida de entrada
        ou a rua de outro estádio; se antes bate em favela ou no Atacadex, ou
        se passa de ACESSO_MAX, o portão 1 não dá pra cidade */
-    const reta = (pe, f, max = ACESSO_MAX) => {
+    const reta = (pe, f, max = ACESSO_MAX, cid = null) => {
       const d = DIR[f], hz = f === 'o' || f === 'l', lat = Math.round(hz ? pe[1] : pe[0]);
       const a0 = (hz ? pe[0] : pe[1]) + (hz ? d[0] : d[1]) * RUA, sg = hz ? d[0] : d[1];
       /* o primeiro trecho que a reta encontra, andando no sentido sg a partir de a0 */
       let melhor = null;
-      for (const [b0, b1, tipo] of linha(f, lat)) {
+      for (const [b0, b1, tipo, o] of linha(f, lat, cid)) {
         const s = sg > 0 ? (b1 <= a0 ? null : Math.max(0, b0 - a0)) : (b0 >= a0 ? null : Math.max(0, a0 - b1));
         if (s === null) continue;
-        if (!melhor || s < melhor.s || (s === melhor.s && tipo === 'barra')) melhor = { s, tipo };
+        if (!melhor || s < melhor.s || (s === melhor.s && tipo === 'barra')) melhor = { s, tipo, o };
       }
       if (!melhor || melhor.tipo === 'barra' || melhor.s > max) return null;
-      return { ini: hz ? [a0, pe[1]] : [pe[0], a0], s: melhor.s };
+      return { ini: hz ? [a0, pe[1]] : [pe[0], a0], s: melhor.s, alvo: melhor.o };
     };
     const PASSO = 40, D_MAX = 7000, B_MAX = 7000, OUTRA_VAGA = 3000;
     /* o terreno de W × H em volta da vaga v: `d` pra fora da beira dela do
        lado da cidade, `b` de lado (a partir do meio dela); `pe(r)`: o portão 1 */
-    const procurar = (v, W, H, pe) => {
+    const procurar = (v, W, H, pe, cid = null) => {
       const a = areaDaVaga(v), f = v.fora, hz = f === 'o' || f === 'l';
       const c = hz ? (a.y0 + a.y1) / 2 : (a.x0 + a.x1) / 2;
       const ret = (d, b) => f === 'o' ? { x0: a.x1 - d - W, x1: a.x1 - d, y0: c + b - H / 2, y1: c + b + H / 2 }
         : f === 'l' ? { x0: a.x0 + d, x1: a.x0 + d + W, y0: c + b - H / 2, y1: c + b + H / 2 }
         : f === 'n' ? { x0: c + b - W / 2, x1: c + b + W / 2, y0: a.y1 - d - H, y1: a.y1 - d }
         : { x0: c + b - W / 2, x1: c + b + W / 2, y0: a.y0 + d, y1: a.y0 + d + H };
-      const serve = r => livre(r) && !!reta(pe(r, f), f);
+      const serve = r => livre(r) && !!reta(pe(r, f), f, ACESSO_MAX, cid);
       let melhor = null;
       for (let d = 0; d <= D_MAX && !(melhor && d >= melhor.custo); d += PASSO)
         for (let k = 0; k * PASSO <= B_MAX; k++) {
@@ -812,21 +1198,28 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       /* o portão 1 na beira do terreno r (que tem a calçada em volta), pra cada lado de fora */
       const pe = (r, f) => f === 'o' ? [r.x1, r.y0 + CALC + (p1 - T.z0) * M] : f === 'l' ? [r.x0, r.y0 + CALC + (T.z1 - p1) * M]
         : f === 'n' ? [r.x0 + CALC + (T.z1 - p1) * M, r.y1] : [r.x0 + CALC + (p1 - T.z0) * M, r.y0];
-      /* a vaga dele primeiro; a de outro estádio só se a dele não tem lugar perto */
-      let melhor = null;
-      for (const j of [k, ...VAGAS.map((_, j) => j).filter(j => j !== k)]) {
-        const v = VAGAS[j], hz = v.fora === 'o' || v.fora === 'l';
-        const r = procurar(v, (hz ? fundo : frente) + 2 * CALC, (hz ? frente : fundo) + 2 * CALC, pe);
-        if (r) r.custo += j === k ? 0 : OUTRA_VAGA;
-        if (r && (!melhor || r.custo < melhor.custo)) melhor = { ...r, vaga: j };
+      /* a vaga dele primeiro; a de outro estádio só se a dele não tem lugar
+         perto (na praça cortada em cidades, só a de outro estádio da cidade
+         dele, e o acesso só chega numa rua da cidade dele; sem lugar assim,
+         vale qualquer rua — e fica o aviso) */
+      let melhor = null, cid = e.cidade || null;
+      for (let volta = 0; volta < 2 && !melhor; volta++, cid = null) {
+        for (const j of [k, ...VAGAS.map((_, j) => j).filter(j => j !== k && (!cid || (copias[j].cidade || null) === cid))]) {
+          const v = VAGAS[j], hz = v.fora === 'o' || v.fora === 'l';
+          const r = procurar(v, (hz ? fundo : frente) + 2 * CALC, (hz ? frente : fundo) + 2 * CALC, pe, cid);
+          if (r) r.custo += j === k ? 0 : OUTRA_VAGA;
+          if (r && (!melhor || r.custo < melhor.custo)) melhor = { ...r, vaga: j, cid };
+        }
+        if (!melhor && cid) avisos.push(`o estádio ${e.nome} (${e.cidade}) não achou lugar com o acesso só na cidade dele`);
       }
       if (!melhor) throw new Error(`o estádio ${k + 1} (${fundo / M} × ${frente / M} m) não coube em vaga nenhuma`);
+      cid = melhor.cid;
       const q = melhor.r, t = { x0: q.x0 + CALC, x1: q.x1 - CALC, y0: q.y0 + CALC, y1: q.y1 - CALC }, g = GIRO[melhor.fora];
       /* onde fica o (0, 0) do modelo no mundo, com o giro */
       const centro = g === 0 ? [t.x0 - T.x0 * M, t.y0 - T.z0 * M] : g === 90 ? [t.x0 + T.z1 * M, t.y0 - T.x0 * M]
         : g === -90 ? [t.x0 - T.z0 * M, t.y0 + T.x1 * M] : [t.x0 + T.x1 * M, t.y0 + T.z1 * M];
       /* o acesso: a rua de duas pistas do portão 1 até a primeira rua */
-      const p = pe(q, melhor.fora), d = DIR[melhor.fora], rt = reta(p, melhor.fora);
+      const p = pe(q, melhor.fora), d = DIR[melhor.fora], rt = reta(p, melhor.fora, ACESSO_MAX, cid);
       let acesso = null;
       if (rt && rt.s > 0) {
         acesso = { id: 'acesso' + (k + 1), l: 2 * RUA, reta: true, acesso: true, estadio: e.id,
@@ -848,7 +1241,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         const L = g === 0 ? [0, s] : g === 90 ? [-s, 0] : g === -90 ? [s, 0] : [0, -s], l = hz ? L[1] : L[0];
         const quina = hz ? (l > 0 ? q.y1 + RUA / 2 : q.y0 - RUA / 2) : (l > 0 ? q.x1 + RUA / 2 : q.x0 - RUA / 2);
         for (let lat = quina; l * (lat - eixo1) >= LONGE_DO_P1 * M; lat -= l * 4 * M) {
-          const rt2 = reta(hz ? [p[0], lat] : [lat, p[1]], melhor.fora, ACESSO_LADO_MAX);
+          const rt2 = reta(hz ? [p[0], lat] : [lat, p[1]], melhor.fora, ACESSO_LADO_MAX, cid);
           if (!rt2) continue;
           if (rt2.s > 0) extras.push({ id: 'acesso' + (k + 1) + (s === vis ? 'v' : 'm'), l: RUA, reta: true, acesso: true, lateral: true, estadio: e.id,
                                         pontos: [[rt2.ini[0] - d[0] * RUA / 2, rt2.ini[1] - d[1] * RUA / 2], [rt2.ini[0] + d[0] * (rt2.s + RUA / 2), rt2.ini[1] + d[1] * (rt2.s + RUA / 2)]] });
@@ -859,6 +1252,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       const cx = (t.x0 + t.x1) / 2, cy = (t.y0 + t.y1) / 2;
       Object.assign(e, { area: q, terreno: t, qest: t, giro: g, centro, fora: melhor.fora, vagaUsada: melhor.vaga + 1, empurrado: melhor.d, deLado: melhor.b,
                          dx: cx - P.CX, dy: cy - P.CY, naGrade: false, modelo: T.modelo, portao1: p, acesso, acessosDeLado: extras });
+      if (e.cidade) q.cidade = e.cidade;
       postos.push(q); linhas = new Map();
     });
     /* A RUA DE VERANEIO (o jogo 3D, 27/09/2026): "crie uma rua de casas de
@@ -871,10 +1265,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
        estádio procura, com a rua reta de acesso da ponta dela até a
        primeira rua da cidade */
     {
-      const V = VERANEIO_M, LV = (V.n * V.lote + 2 * V.margem) * M, PV = (V.fundo + V.rua + V.fundoSul + 4) * M;
-      const meioRua = (2 + V.fundo + V.rua / 2) * M;
-      const pe = (r, f) => f === 'o' ? [r.x1, r.y0 + meioRua] : f === 'l' ? [r.x0, r.y0 + meioRua] : f === 'n' ? [r.x0 + meioRua, r.y1] : [r.x0 + meioRua, r.y0];
-      const candidatas = cfg.estadios.slice(nVagas).map(v => ({ v, vazia: true })).concat(VAGAS.map(v => ({ v, vazia: false })));
+      const LV = LV_VER, PV = PV_VER, pe = peVeraneio;
+      const candidatas = cfg.estadios.filter(v => !VAGAS.includes(v)).map(v => ({ v, vazia: true })).concat(VAGAS.map(v => ({ v, vazia: false })));
       let melhor = null;
       for (const { v, vazia } of candidatas) {
         const hz = v.fora === 'o' || v.fora === 'l';
@@ -882,23 +1274,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         if (r) { r.custo += vazia ? 0 : 3000; if (!melhor || r.custo < melhor.custo) melhor = r; }
       }
       if (melhor) {
-        const r = melhor.r, f = melhor.fora, hz = f === 'o' || f === 'l', lotes = [];
-        let ruaV;
-        if (hz) {
-          /* a rua de oeste a leste: os lotes grandes em cima (a frente pro sul), os pequenos embaixo */
-          const yN0 = r.y0 + 2 * M, yR0 = yN0 + V.fundo * M, yS0 = yR0 + V.rua * M, x0 = r.x0 + V.margem * M;
-          for (let k = 0; k < V.n; k++) lotes.push({ x0: x0 + k * V.lote * M, x1: x0 + (k + 1) * V.lote * M, y0: yN0, y1: yR0, frente: 's', veraneio: k === (V.n >> 1) ? 'festa' : 'norte', k });
-          const nS = Math.floor((r.x1 - r.x0 - 2 * V.margem * M) / (V.loteSul * M)), xs0 = (r.x0 + r.x1) / 2 - nS * V.loteSul * M / 2;
-          for (let k = 0; k < nS; k++) lotes.push({ x0: xs0 + k * V.loteSul * M, x1: xs0 + (k + 1) * V.loteSul * M, y0: yS0, y1: yS0 + V.fundoSul * M, frente: 'n', veraneio: 'sul', k });
-          ruaV = { x0: r.x0, x1: r.x1, y0: yR0, y1: yS0 };
-        } else {
-          /* a rua de norte a sul: os lotes grandes no oeste (a frente pro leste), os pequenos no leste */
-          const xW0 = r.x0 + 2 * M, xR0 = xW0 + V.fundo * M, xE0 = xR0 + V.rua * M, y0 = r.y0 + V.margem * M;
-          for (let k = 0; k < V.n; k++) lotes.push({ x0: xW0, x1: xR0, y0: y0 + k * V.lote * M, y1: y0 + (k + 1) * V.lote * M, frente: 'l', veraneio: k === (V.n >> 1) ? 'festa' : 'norte', k });
-          const nS = Math.floor((r.y1 - r.y0 - 2 * V.margem * M) / (V.loteSul * M)), ys0 = (r.y0 + r.y1) / 2 - nS * V.loteSul * M / 2;
-          for (let k = 0; k < nS; k++) lotes.push({ x0: xE0, x1: xE0 + V.fundoSul * M, y0: ys0 + k * V.loteSul * M, y1: ys0 + (k + 1) * V.loteSul * M, frente: 'o', veraneio: 'sul', k });
-          ruaV = { x0: xR0, x1: xE0, y0: r.y0, y1: r.y1 };
-        }
+        const r = melhor.r, f = melhor.fora, { lotes, rua: ruaV } = lotesDoVeraneio(r, f);
         /* o acesso: a rua reta, de uma pista pra cada lado, da ponta da rua de areia até a cidade */
         const p0 = pe(r, f), d = DIR[f], rt = reta(p0, f);
         let acesso = null;
@@ -908,6 +1284,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
           acessos.push(acesso);
         }
         veraneio = { area: r, rua: ruaV, lotes, fora: f, acesso, festa: lotes.find(l => l.veraneio === 'festa'), nome: 'Rua de veraneio' };
+        /* (na praça cortada, a rua de veraneio é da cidade aonde o acesso dela chega) */
+        if (CIS) { veraneio.cidade = (rt && rt.alvo && rt.alvo.cidade) || CENTRO; r.cidade = veraneio.cidade; }
         postos.push(r); linhas = new Map();
       }
     }
@@ -968,6 +1346,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
             }
             if (!achou) continue;
             const r = achou.r, id = 'entorno' + (ke + 1) + lado + (b + 1);
+            if (e.cidade) r.cidade = e.cidade;
             entornoBlocos.push({ id, i: 60 + ke, j: 60 + ['o', 'l', 'n', 's'].indexOf(lado) * 10 + b, parte: '', ...r,
                                  entorno: { estadio: e.id, nEstadio: ke, lado, frente: FRENTE[lado], fileiras: achou.fileiras, k: b } });
             postos.push(r);
@@ -1007,7 +1386,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
     quadras.push(c);
   }
   for (const e of copias)
-    quadras.push({ i: e.i[0], j: e.j[0], parte: '', id: e.id, ...e.area, ix0: e.area.x0 + CALC, ix1: e.area.x1 - CALC, iy0: e.area.y0 + CALC, iy1: e.area.y1 - CALC,
+    quadras.push({ i: e.i[0], j: e.j[0], parte: '', id: e.id, ...e.area, ...(e.cidade ? { cidade: e.cidade } : {}), ix0: e.area.x0 + CALC, ix1: e.area.x1 - CALC, iy0: e.area.y0 + CALC, iy1: e.area.y1 - CALC,
                    lotes: [], estadio: e, equip: { tipo: 'estadio', nome: e.nome, cor: '#9d9a90',
                                                    nota: e.principal ? 'O estádio principal da praça: o quarteirão do estádio do jogo, com a esplanada em volta, na ponta da cidade e longe das entradas.'
                                                                      : 'Cópia do quarteirão do estádio, com a esplanada em volta: o estádio de outro clube da cidade, na ponta da cidade.' } });
@@ -1071,7 +1450,8 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                     cor: T.cor[hash(si, sj, fi, k, 5) % T.cor.length],
                     quadra: { i: q.i, j: q.j, proposta: true, ix0: q.ix0, ix1: q.ix1, iy0: q.iy0, iy1: q.iy1 } };
         a += larg; k++;
-        if (tocaAvenida(l) || noEstadio(l)) continue;
+        /* (a quadra de outra cidade vai embora: a avenida daqui não corta ela) */
+        if ((!outraCidade(q.cidade) && tocaAvenida(l)) || noEstadio(l)) continue;
         /* o comércio e o recado na parede, na mesma proporção da cidade */
         if (tipo !== 'muro') {
           const r = sorte(si, sj, fi, k, 6);
@@ -1941,12 +2321,625 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const coberto = (x, y, folga = RUA / 2) => quadras.some(q => x > q.x0 - folga && x < q.x1 + folga && y > q.y0 - folga && y < q.y1 + folga);
   const naFavelaNova = (x, y) => favelas.some(f => dentroPol(x, y, f.poly));
 
+  /* ---- A CISÃO, 2: AS CIDADES AFASTADAS, AS ESTRADAS E OS PÓRTICOS ----
+     Com tudo gerado no lugar de antes, cada cidade de fora vai pro lado
+     dela: sai do meio da vizinha (`de`) e anda no `rumo` até ficar a
+     VAO_CIDADES_M (o dobro na `longe`, o triplo na `baia`) de tudo que já
+     está posto — a `costa` encosta na beira do mar, e na praça de praia ou
+     de lagoa ninguém passa da avenida da beira. Na de leste e oeste, a
+     cidade escorrega até uma rua dela ficar em frente a uma rua da vizinha
+     (a estrada sai reta). Tudo dela vai junto: as quadras com os lotes, os
+     estádios com o acesso e o entorno, as favelas, a rua de veraneio, os
+     bares, as lojas, os terrenos e os espaços de sede. Depois: a avenida de
+     entrada e a da beira ficam só no centro (a da beira segue até a cidade
+     da costa), a ESTRADA liga cada cidade à vizinha (reta, ou em L), com o
+     PÓRTICO de BEM-VINDO na entrada de cada uma e a PLACA da distância. */
+  let cisao = null;
+  if (CIS) cisao = afastarCidades();
+  function afastarCidades() {
+    const G = VAO_CIDADES_M * M, nomes = CIS.cidades.map(c => c.nome);
+    const quadraPorId = new Map(quadras.map(q => [q.id, q]));
+    /* 1 · a cidade de cada coisa */
+    for (const q of quadras) if (!q.cidade) q.cidade = CENTRO;
+    favelas.forEach((f, i) => { f.cidade = (corte && corte.favelas[i]) || CENTRO; });
+    const daQuadra = (id, hoje) => hoje ? CENTRO : ((quadraPorId.get(id) || {}).cidade || CENTRO);
+    for (const b of bares) b.cidade = b.lote.favela ? null : daQuadra(b.quadra, b.hoje);
+    for (const lj of lojas) lj.cidade = daQuadra(lj.quadra, lj.hoje);
+    for (const T of terrenos) T.cidade = daQuadra(T.quadra, T.emQuadraDeHoje);
+    for (const e of espacosSede) e.cidade = e.terreno ? e.terreno.cidade : CENTRO;
+    for (const e of copias) if (!e.cidade) e.cidade = CENTRO;
+    if (veraneio && !veraneio.cidade) veraneio.cidade = CENTRO;
+    const cidadeDoAcesso = a => a.veraneio ? veraneio.cidade : ((copias.find(e => e.id === a.estadio) || {}).cidade || CENTRO);
+
+    /* 2 · A PEGADA de cada cidade: a quadra com a rua em volta, a favela, o
+       estádio com a rua dele, a rua de veraneio, os acessos; no centro, as
+       quadras de hoje que ficam e o Atacadex */
+    const pegada = new Map(nomes.map(n => [n, []]));
+    const caixa = (r, m = 0) => ({ x0: r.x0 - m, x1: r.x1 + m, y0: r.y0 - m, y1: r.y1 + m });
+    const poeP = (c, r, m = 0) => (pegada.get(c) || pegada.get(CENTRO)).push(caixa(r, m));
+    const retSeg = a => { const [[ax, ay], [bx, by]] = [a.pontos[0], a.pontos[a.pontos.length - 1]], h = a.l / 2;
+      return { x0: Math.min(ax, bx) - h, x1: Math.max(ax, bx) + h, y0: Math.min(ay, by) - h, y1: Math.max(ay, by) + h }; };
+    for (const q of quadras) poeP(q.cidade, q.rua || q, q.rua ? 0 : RUA);
+    for (const f of favelas) { poeP(f.cidade, f.bb, VIELA); poeP(f.cidade, bbOf(f.poly)); }
+    for (const e of copias) if (e.area) poeP(e.cidade, e.area, RUA);
+    /* (a rua de veraneio não entra: ela é posta de novo depois, ver `recolocarVeraneio`) */
+    for (const a of acessos) if (!a.veraneio) poeP(cidadeDoAcesso(a), retSeg(a));
+    for (const q of K.QUADRAS) if (!substitui.has(q.i + ',' + q.j)) poeP(CENTRO, q.pol && q.pol.length >= 3 ? bbOf(q.pol) : q, RUA);
+    if (atacadex) poeP(CENTRO, atacadex.bb, 60);
+    const bbDe = rs => rs.length ? { x0: Math.min(...rs.map(r => r.x0)), x1: Math.max(...rs.map(r => r.x1)), y0: Math.min(...rs.map(r => r.y0)), y1: Math.max(...rs.map(r => r.y1)) } : null;
+    /* A AVENIDA DE ENTRADA É DO CENTRO: de ponta a ponta das quadras dele
+       que dão nela (e até o Atacadex, que fica na beira dela, ao norte) */
+    const kFicam = K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j));
+    const faixaAv = (() => {
+      const xa = colX(cE)[0], xb = colX(cE + 1)[1], ys0 = [], ys1 = [];
+      for (const q of quadras) if (q.cidade === CENTRO && !q.entorno && !q.estadio && q.x0 < xb && q.x1 > xa) { ys0.push(q.y0); ys1.push(q.y1); }
+      for (const q of kFicam) if (q.x0 < xb && q.x1 > xa) { ys0.push(q.y0); ys1.push(q.y1); }
+      return ys0.length ? { y0: Math.min(...ys0), y1: Math.max(...ys1) } : null;
+    })();
+    if (faixaAv) pegada.get(CENTRO).push({ x0: ENTRADA.x0 - CALC, x1: ENTRADA.x1 + CALC, avenida: true,
+                                           y0: Math.min(faixaAv.y0 - RUA - 400, atacadex ? atacadex.bb.y0 - 200 : Infinity), y1: faixaAv.y1 + RUA + 400 });
+    else avisos.push('o centro não tem quadra na avenida de entrada');
+
+    /* A COSTA (na praça de praia ou de lagoa): a guia oeste da avenida da
+       beira na altura y — ninguém passa dela; a cidade da `costa` encosta */
+    const bmK = avenidas.find(a => a.id === 'beiramar'), lBeira = bmK ? bmK.l : 76;
+    const uC = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00C = K.pxm(0, 0)[1];
+    const guia = y => K.pxm(K.xCosta((y - y00C) / uC), 0)[0] - K.PRAIA * uC - lBeira;
+    const temCosta = !!opc.costa;
+    /* A AVENIDA DA BEIRA fica só onde o centro encosta nela: as quadras de
+       hoje recortadas pela costa que ficaram (e, depois, a cidade da costa) */
+    const recortadas = kFicam.filter(q => q.pol && q.pol.length >= 3 && !ehRetPoli(q.pol));
+    const xDaBeira = y => {
+      const p = bmK.pontos;
+      for (let k = 1; k < p.length; k++) {
+        const [ax, ay] = p[k - 1], [bx, by] = p[k];
+        if ((y - ay) * (y - by) <= 0 && ay !== by) return ax + (bx - ax) * (y - ay) / (by - ay);
+      }
+      return guia(y) + lBeira / 2;
+    };
+    const y0Beira = bmK ? Math.min(...bmK.pontos.map(p => p[1])) : 0, y1Beira = bmK ? Math.max(...bmK.pontos.map(p => p[1])) : 0;
+    /* a linha da beira entre ya e yb: a de antes onde tem (com os vértices dela), a da guia pra lá das pontas */
+    const linhaDaBeira = (ya, yb) => {
+      const pts = [];
+      const xEm = y => y >= y0Beira && y <= y1Beira ? xDaBeira(y) : guia(y) + lBeira / 2;
+      for (let y = ya; y < yb; y += 200) pts.push([xEm(y), y]);
+      pts.push([xEm(yb), yb]);
+      const juntos = pts.concat(bmK.pontos.filter(p => p[1] > ya && p[1] < yb).map(p => p.slice())).sort((a, b) => a[1] - b[1]);
+      return juntos.filter((p, k) => !k || Math.abs(p[1] - juntos[k - 1][1]) > 1);
+    };
+    let beiraY = null;
+    if (bmK) {
+      if (recortadas.length) {
+        beiraY = [Math.min(...recortadas.map(q => q.y0)) - RUA, Math.max(...recortadas.map(q => q.y1)) + RUA];
+        bmK.pontos = linhaDaBeira(beiraY[0], beiraY[1]);
+        for (let k = 1; k < bmK.pontos.length; k++) {
+          const [ax, ay] = bmK.pontos[k - 1], [bx, by] = bmK.pontos[k], h = lBeira / 2 + CALC;
+          pegada.get(CENTRO).push({ x0: Math.min(ax, bx) - h, x1: Math.max(ax, bx) + h, y0: Math.min(ay, by) - h, y1: Math.max(ay, by) + h, beira: true });
+        }
+      } else avenidas.splice(avenidas.indexOf(bmK), 1);
+    }
+    /* quanto a cidade (os retângulos R deslocados de tx, ty) pode andar pro leste sem passar da guia (a quadra encosta nela) */
+    const folgaLeste = (R, tx, ty) => {
+      let m = Infinity;
+      for (const r of R) for (let k = 0; k <= 4; k++) {
+        const y = r.y0 + ty + (r.y1 - r.y0) * k / 4;
+        m = Math.min(m, guia(y) - (r.x1 + tx - (r.avenida ? 0 : RUA)));
+      }
+      return m;
+    };
+
+    /* 3 · ONDE CADA CIDADE FICA: da vizinha, no rumo, até ter o vão */
+    const filhos = new Map(nomes.map(n => [n, []]));
+    for (const c of CIS.cidades) if (c.de && filhos.has(c.de) && c.nome !== CENTRO) filhos.get(c.de).push(c);
+    const ordem = [], fila = [CENTRO], vistas = new Set([CENTRO]);
+    while (fila.length) { const n = fila.shift(); for (const c of filhos.get(n)) if (!vistas.has(c.nome)) { vistas.add(c.nome); ordem.push(c); fila.push(c.nome); } }
+    for (const c of CIS.cidades) if (!vistas.has(c.nome)) { ordem.push({ ...c, de: CENTRO, rumo: c.rumo || 'o' }); vistas.add(c.nome); }
+    const desl = new Map([[CENTRO, [0, 0]]]);
+    const postas = [];                                     // { c, r } já no lugar
+    for (const r of pegada.get(CENTRO)) postas.push({ c: CENTRO, r });
+    const distR = (a, b) => Math.hypot(Math.max(0, a.x0 - b.x1, b.x0 - a.x1), Math.max(0, a.y0 - b.y1, b.y0 - a.y1));
+    const mov = (r, tx, ty) => ({ x0: r.x0 + tx, x1: r.x1 + tx, y0: r.y0 + ty, y1: r.y1 + ty });
+    const bbPostas = n => bbDe(postas.filter(p => p.c === n).map(p => p.r));
+    for (const c of ordem) {
+      const R = pegada.get(c.nome);
+      if (!R || !R.length) { desl.set(c.nome, [0, 0]); continue; }
+      const d = RUMO[c.rumo] || [-1, 0], gap = G * (c.longe ? 2 : 1) * (c.baia ? 3 : 1);
+      const bbC = bbDe(R), bbP = bbPostas(c.de) || bbPostas(CENTRO);
+      const t0 = [(bbP.x0 + bbP.x1) / 2 - (bbC.x0 + bbC.x1) / 2, (bbP.y0 + bbP.y1) / 2 - (bbC.y0 + bbC.y1) / 2];
+      /* (a cidade da costa encosta na guia; as outras só não passam dela) */
+      const naCosta = (tx, ty) => { if (!temCosta) return tx; const f = folgaLeste(R, tx, ty); return c.costa ? tx + f : tx + Math.min(0, f); };
+      const livre = (tx, ty) => {
+        const b = mov(bbC, tx, ty);
+        for (const p of postas) {
+          if (distR(b, p.r) >= gap) continue;
+          for (const r of R) if (distR(mov(r, tx, ty), p.r) < gap - 0.5) return false;
+        }
+        return true;
+      };
+      let s = 0, t = null;
+      for (let k = 0; k < 4000 && !t; k++, s += 60) {
+        const ty = t0[1] + d[1] * s, tx = naCosta(t0[0] + d[0] * s, ty);
+        if (livre(tx, ty)) t = [tx, ty, s];
+      }
+      if (!t) { avisos.push(`${c.nome}: sem lugar`); t = [t0[0] + d[0] * s, t0[1] + d[1] * s, s]; }
+      /* o vão certo: volta de 60 pra trás até o primeiro ponto livre */
+      for (let a = t[2] - 60, b = t[2], k = 0; k < 8 && a >= 0; k++) {
+        const m = (a + b) / 2, ty = t0[1] + d[1] * m, tx = naCosta(t0[0] + d[0] * m, ty);
+        if (livre(tx, ty)) { b = m; t = [tx, ty, m]; } else a = m;
+      }
+      /* A RUA EM FRENTE À RUA: na de leste e oeste, a cidade escorrega na
+         vertical (até meia quadra) até uma rua de leste a oeste dela ficar
+         na linha de uma da vizinha; na de norte e sul, na horizontal */
+      if (c.rumo === 'o' || c.rumo === 'l' || c.rumo === 'n' || c.rumo === 's') {
+        const hz = c.rumo === 'o' || c.rumo === 'l';
+        const ruasDe = (n, t2) => quadras.filter(q => q.cidade === n && !q.entorno && !q.estadio)
+          .flatMap(q => hz ? [q.y0 - RUA / 2 + t2[1], q.y1 + RUA / 2 + t2[1]] : [q.x0 - RUA / 2 + t2[0], q.x1 + RUA / 2 + t2[0]]);
+        const deles = ruasDe(c.de, desl.get(c.de) || [0, 0]).concat(c.de === CENTRO ? K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j))
+          .flatMap(q => hz ? [q.y0 - RUA / 2, q.y1 + RUA / 2] : [q.x0 - RUA / 2, q.x1 + RUA / 2]) : []);
+        const minhas = ruasDe(c.nome, [t[0], t[1]]);
+        const ajustes = [];
+        for (const a of minhas) for (const b of deles) if (Math.abs(b - a) <= PASSO_Y / 2) ajustes.push(b - a);
+        ajustes.sort((a, b) => Math.abs(a) - Math.abs(b));
+        for (const aj of ajustes.slice(0, 40)) {
+          const tx = hz ? t[0] : naCosta(t[0] + aj, t[1]), ty = hz ? t[1] + aj : t[1];
+          const tx2 = hz ? naCosta(tx, ty) : tx;
+          if (livre(tx2, ty)) { t = [tx2, ty, t[2]]; break; }
+        }
+      }
+      desl.set(c.nome, [t[0], t[1]]);
+      for (const r of R) postas.push({ c: c.nome, r: mov(r, t[0], t[1]) });
+    }
+
+    /* 4 · TUDO DE CADA CIDADE VAI JUNTO (cada coisa uma vez só) */
+    const movidos = new WeakSet();
+    const uma = o => { if (!o || movidos.has(o)) return false; movidos.add(o); return true; };
+    const mR = (r, dx, dy) => { if (!uma(r)) return; r.x0 += dx; r.x1 += dx; r.y0 += dy; r.y1 += dy; };
+    const mPt = (p, dx, dy) => { if (!uma(p)) return; p[0] += dx; p[1] += dy; };
+    const mXY = (o, dx, dy) => { if (!uma(o)) return; o.x += dx; o.y += dy; };
+    const mLote = (l, dx, dy) => {
+      if (!uma(l)) return;
+      l.x0 += dx; l.x1 += dx; l.y0 += dy; l.y1 += dy;
+      if (l.cx != null) { l.cx += dx; l.cy += dy; }
+      const qd = l.quadra;
+      if (qd && qd.ix0 != null && uma(qd)) { qd.ix0 += dx; qd.ix1 += dx; qd.iy0 += dy; qd.iy1 += dy; }
+    };
+    const mSeg = (a, dx, dy) => { if (a && uma(a)) for (const p of a.pontos) mPt(p, dx, dy); };
+    for (const q of quadras) {
+      const [dx, dy] = desl.get(q.cidade) || [0, 0];
+      if ((!dx && !dy) || !uma(q)) continue;
+      q.x0 += dx; q.x1 += dx; q.y0 += dy; q.y1 += dy;
+      if (q.ix0 != null) { q.ix0 += dx; q.ix1 += dx; q.iy0 += dy; q.iy1 += dy; }
+      for (const k of ['rua', 'quintal', 'faixaLotes', 'jardim']) if (q[k]) mR(q[k], dx, dy);
+      for (const l of q.lotes) mLote(l, dx, dy);
+      if (q.casas) { for (const l of q.casas.lotes) mLote(l, dx, dy); if (q.casas.quintal) mR(q.casas.quintal, dx, dy); }
+      if (q.casasDoBaldio) { for (const l of q.casasDoBaldio.lotes) mLote(l, dx, dy); for (const k of ['area', 'quintal']) if (q.casasDoBaldio[k]) mR(q.casasDoBaldio[k], dx, dy); }
+      if (q.terreno) mR(q.terreno.area, dx, dy);
+      if (q.equip && q.equip.torres) for (const t of q.equip.torres) { mR(t.fatia, dx, dy); for (const v of t.volumes || []) mR(v, dx, dy); }
+    }
+    for (const e of copias) {
+      const [dx, dy] = desl.get(e.cidade) || [0, 0];
+      if (!dx && !dy) continue;
+      for (const k of ['area', 'terreno', 'qest']) if (e[k]) mR(e[k], dx, dy);
+      for (const k of ['centro', 'portao1']) if (e[k]) mPt(e[k], dx, dy);
+      e.dx += dx; e.dy += dy;
+      mSeg(e.acesso, dx, dy);
+      for (const a of e.acessosDeLado || []) mSeg(a, dx, dy);
+    }
+
+    for (const f of favelas) {
+      const [dx, dy] = desl.get(f.cidade) || [0, 0];
+      if (!dx && !dy) continue;
+      f.poly = f.poly.map(([x, y]) => [x + dx, y + dy]);
+      for (const l of f.lotes) mLote(l, dx, dy);
+      for (const b of f.becos) for (const p of b) mPt(p, dx, dy);
+      for (const a of f.arvores) mXY(a, dx, dy);
+      for (const a of f.moitas) mXY(a, dx, dy);
+      if (f.campinho) mR(f.campinho, dx, dy);
+      mR(f.bb, dx, dy);
+    }
+    for (const T of terrenos) { const [dx, dy] = desl.get(T.cidade) || [0, 0]; if (dx || dy) mR(T.area, dx, dy); }
+    for (const e of espacosSede) { const [dx, dy] = desl.get(e.cidade) || [0, 0]; if (dx || dy) mR(e.area, dx, dy); }
+    for (const b of bares) {
+      const c = b.cidade || (favelas.find(f => f.lotes.includes(b.lote)) || {}).cidade;
+      b.cidade = c || CENTRO;
+      const [dx, dy] = desl.get(b.cidade) || [0, 0];
+      if (dx || dy) { mXY(b, dx, dy); mLote(b.lote, dx, dy); }
+    }
+    for (const lj of lojas) { const [dx, dy] = desl.get(lj.cidade) || [0, 0]; if (dx || dy) { mXY(lj, dx, dy); mLote(lj.lote, dx, dy); } }
+
+    /* 5 · AS AVENIDAS DO CENTRO. A de entrada: entre os pórticos do centro,
+       e de cada ponta segue até a borda do mundo ou até a primeira cidade
+       que estiver no caminho (aí ela vira a estrada dela) */
+    const ondeC = postas.filter(p => p.c === CENTRO && !p.r.avenida).map(p => p.r);
+    const tudo = postas.map(p => p.r);
+    const mundoC = bbDe(tudo);
+    const chegaPelaAvenida = new Map();                   // a cidade de fora aonde a avenida de entrada chega: a ponta dela
+    {
+      porticos.length = 0;
+      if (!faixaAv) avenidas.splice(avenidas.indexOf(avEntrada), 1);
+      else {
+        const meiaVao = ENTRADA.l / 2 / M + 1.0, xP = ENTRADA.xc, yN = faixaAv.y0 - RUA - 88, yS = faixaAv.y1 + RUA + 88;
+        porticos.push({ id: 'norte', nome: 'Pórtico da entrada norte', x: xP, y: yN, dir: [0, 1], l: ENTRADA.l, xp: meiaVao, dupla: true, cidade: CENTRO });
+        porticos.push({ id: 'sul', nome: 'Pórtico da entrada sul', x: xP, y: yS, dir: [0, -1], l: ENTRADA.l, xp: meiaVao, dupla: true, cidade: CENTRO });
+        /* até onde ela vai: a borda do mundo (o Atacadex fica na beira dela) ou a cidade no caminho */
+        const banda = { x0: ENTRADA.x0 - CALC, x1: ENTRADA.x1 + CALC };
+        let topo = Math.min(mundoC.y0 - 400, atacadex ? atacadex.bb.y0 - 400 : Infinity), fundo = mundoC.y1 + 400, cTopo = null, cFundo = null;
+        for (const p of postas) {
+          if (p.c === CENTRO || p.r.x0 >= banda.x1 || p.r.x1 <= banda.x0) continue;
+          if (p.r.y1 <= yN && p.r.y1 - RUA / 2 > topo) { topo = p.r.y1 - RUA / 2; cTopo = p.c; }
+          if (p.r.y0 >= yS && p.r.y0 + RUA / 2 < fundo) { fundo = p.r.y0 + RUA / 2; cFundo = p.c; }
+        }
+        avEntrada.pontos[0][1] = topo; avEntrada.pontos[1][1] = fundo;
+        if (cTopo) chegaPelaAvenida.set(cTopo, { x: xP, y: topo + RUA / 2, dir: [0, -1], l: ENTRADA.l, xp: meiaVao, dupla: true });
+        if (cFundo) chegaPelaAvenida.set(cFundo, { x: xP, y: fundo - RUA / 2, dir: [0, 1], l: ENTRADA.l, xp: meiaVao, dupla: true });
+      }
+    }
+    /* o x da avenida da beira na altura y, já com o trecho novo */
+    const xDaBeiraNova = y => {
+      const p = bmK ? bmK.pontos : [];
+      for (let k = 1; k < p.length; k++) { const [ax, ay] = p[k - 1], [bx, by] = p[k]; if ((y - ay) * (y - by) <= 0 && ay !== by) return ax + (bx - ax) * (y - ay) / (by - ay); }
+      return guia(y) + lBeira / 2;
+    };
+    /* a da beira segue até a cidade da costa (a estrada dela é a própria beira) */
+    if (bmK && beiraY && avenidas.includes(bmK)) {
+      let [ya, yb] = beiraY;
+      for (const c of CIS.cidades) if (c.costa) {
+        const b = bbDe(postas.filter(p => p.c === c.nome).map(p => p.r));
+        if (b) { ya = Math.min(ya, b.y0); yb = Math.max(yb, b.y1); }
+      }
+      if (ya < beiraY[0] || yb > beiraY[1]) bmK.pontos = linhaDaBeira(ya, yb);
+    }
+
+    /* 6 · AS ESTRADAS: de cada cidade até a vizinha (`de`). A estrada sai
+       da rua da borda de uma e chega na rua da borda da outra: reta quando
+       as duas se olham, em L quando estão na diagonal. Nada no meio do
+       caminho (outra cidade, outra estrada) */
+    const ruasDaCidade = n => {
+      const rs = [];
+      for (const q of quadras) if (q.cidade === n) rs.push({ r: q.rua || caixa(q, RUA), q });
+      if (n === CENTRO) {
+        for (const q of kFicam) { const b = q.pol && q.pol.length >= 3 ? bbOf(q.pol) : q; rs.push({ r: caixa(b, RUA), q: b }); }
+        /* (a avenida de entrada e a da beira também são rua do centro: a estrada pode sair delas) */
+        for (const a of [avEntrada, bmK]) if (a && avenidas.includes(a)) for (let k = 1; k < a.pontos.length; k++) {
+          const [ax, ay] = a.pontos[k - 1], [bx, by] = a.pontos[k], h = a.l / 2;
+          rs.push({ r: { x0: Math.min(ax, bx) - h, x1: Math.max(ax, bx) + h, y0: Math.min(ay, by) - h, y1: Math.max(ay, by) + h }, q: {}, avenida: true });
+        }
+      }
+      return rs;
+    };
+    /* O CHÃO DE VERDADE da cidade `n` em (x, y): a quadra com a rua em
+       volta; no centro, também a quadra de hoje — a recortada pela costa
+       vale pelo polígono, não pela caixa — e as avenidas de entrada e da
+       beira, pelo traçado (a caixa de um trecho torto é maior que ele) */
+    const chaoDe = (n, x, y) => {
+      const em = r => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1;
+      for (const q of quadras) if (q.cidade === n && em(q.rua || caixa(q, RUA))) return true;
+      if (n !== CENTRO) return false;
+      for (const q of kFicam) {
+        if (q.pol && q.pol.length >= 3 && !ehRetPoli(q.pol)) { if (dentroPol(x, y, q.pol)) return true; }
+        else if (em(caixa(q.pol && q.pol.length >= 3 ? bbOf(q.pol) : q, RUA))) return true;
+      }
+      return [avEntrada, bmK].some(a => a && avenidas.includes(a) && distAvenida(x, y, a) < a.l / 2);
+    };
+    /* A PONTA NO CHÃO DA CIDADE: a ponta da estrada sai da caixa da rua
+       (`pontaH`/`pontaV`); onde a caixa é maior que a cidade — a quadra
+       recortada pela costa, a avenida da beira torta —, entre a ponta e a
+       rua sobrava mato, e no cenário 3D ninguém passava (Cuiabá, Campinas
+       e o Rio, na ponte de Niterói). A ponta entra na cidade até encostar
+       no chão dela, mais um pouco por cima */
+    const encostar = (seg, k, n) => {
+      const P = seg[k], Q = seg[1 - k], L = Math.hypot(P[0] - Q[0], P[1] - Q[1]) || 1, ux = (P[0] - Q[0]) / L, uy = (P[1] - Q[1]) / L;
+      for (let t = 0; t <= 40 * M; t += 10) {
+        if (!chaoDe(n, P[0] + ux * t, P[1] + uy * t)) continue;
+        if (t > 0) { P[0] += ux * (t + 20); P[1] += uy * (t + 20); }
+        return true;
+      }
+      avisos.push(`a estrada de ${n} não encosta na rua dela`);
+      return false;
+    };
+    const estradas = [], placas = [], porticosC = [];
+    const bloqueia = postas.slice();                   // o que a estrada não atravessa: as pegadas ({ c, r }) e as estradas já postas
+    /* o trecho bate em alguma coisa? A ponta da cidade `ini` (e a da `fim`)
+       entra meia rua na rua dela: perto dessa ponta a cidade dela não conta;
+       o resto do caminho não encosta em nada */
+    const corta = (seg, ini, fim) => {
+      const [[ax, ay], [bx, by]] = seg, L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L;
+      const parte = (t0, t1) => {
+        if (t1 - t0 < 1) return null;
+        const a = [ax + ux * t0, ay + uy * t0], b = [ax + ux * t1, ay + uy * t1], h = RUA / 2 - 2;
+        return { x0: Math.min(a[0], b[0]) - h, x1: Math.max(a[0], b[0]) + h, y0: Math.min(a[1], b[1]) - h, y1: Math.max(a[1], b[1]) + h };
+      };
+      const tudo = parte(0.95 * RUA, L - 0.95 * RUA), rIni = parte(1.6 * RUA, L - 0.95 * RUA), rFim = parte(0.95 * RUA, L - 1.6 * RUA);
+      return bloqueia.some(({ c, r }) => {
+        const t = c === ini ? rIni : c === fim ? rFim : tudo;
+        return !!t && r.x0 < t.x1 && r.x1 > t.x0 && r.y0 < t.y1 && r.y1 > t.y0;
+      });
+    };
+    /* o pórtico na entrada de uma cidade: de frente pra quem chega */
+    const porticoEm = (aqui, la, x, y, dir, l, extra = {}) => porticosC.push({ id: 'cidade:' + aqui + ':' + la, nome: 'Pórtico de ' + aqui, x, y, dir, l,
+                                                                             xp: l / 2 / M + 1.2, cidade: aqui, outra: la, estrada: true, ...extra });
+    /* a ponta da cidade na linha y (o lado `sg` = +1 leste, −1 oeste), só a rua: o x da beira de fora */
+    /* (a rua inteira da estrada, RUA de largura, cabe na faixa de rua da cidade) */
+    const pontaH = (rs, y, sg) => { let v = null; for (const { r } of rs) if (y - RUA / 2 >= r.y0 - 1 && y + RUA / 2 <= r.y1 + 1) v = v === null ? (sg > 0 ? r.x1 : r.x0) : sg > 0 ? Math.max(v, r.x1) : Math.min(v, r.x0); return v; };
+    const pontaV = (rs, x, sg) => { let v = null; for (const { r } of rs) if (x - RUA / 2 >= r.x0 - 1 && x + RUA / 2 <= r.x1 + 1) v = v === null ? (sg > 0 ? r.y1 : r.y0) : sg > 0 ? Math.max(v, r.y1) : Math.min(v, r.y0); return v; };
+    /* (a ponta numa quadra é melhor; na avenida, só se não tiver quadra ali) */
+    const soQuadras = rs => rs.filter(o => !o.avenida);
+    for (const c of ordem) {
+      /* A AVENIDA QUE JÁ LIGA AS DUAS: a de entrada que chega na cidade de
+         fora, ou a da beira que segue até a da costa — o pórtico vai nela */
+      const pelaAv = chegaPelaAvenida.get(c.nome);
+      if (pelaAv) {
+        const p = pelaAv;
+        porticoEm(c.nome, CENTRO, p.x, p.y - p.dir[1] * 88, p.dir, p.l, { dupla: true, xp: p.xp });
+        if (c.de === CENTRO) continue;
+      }
+      if (c.costa && bmK && avenidas.includes(bmK) && (c.de === CENTRO || cidadeP.get(c.de).costa)) {
+        const b = bbDe(postas.filter(p => p.c === c.nome).map(p => p.r)), bP = bbDe(postas.filter(p => p.c === c.de && !p.r.avenida).map(p => p.r));
+        if (b && bP) {
+          const sul = (b.y0 + b.y1) / 2 > (bP.y0 + bP.y1) / 2, y = sul ? b.y0 - 88 : b.y1 + 88;
+          porticoEm(c.nome, c.de, xDaBeiraNova(y), y, [0, sul ? 1 : -1], lBeira);
+          const yP = sul ? bP.y1 + 88 : bP.y0 - 88;
+          porticoEm(c.de, c.nome, xDaBeiraNova(yP), yP, [0, sul ? -1 : 1], lBeira);
+          continue;
+        }
+      }
+      const A = ruasDaCidade(c.de), B = ruasDaCidade(c.nome);
+      if (!A.length || !B.length) continue;
+      const bA = bbDe(soQuadras(A).map(o => o.r)) || bbDe(A.map(o => o.r)), bB = bbDe(B.map(o => o.r));
+      const linhasH = rs => [...new Set(rs.filter(o => o.q.y0 != null).flatMap(o => [o.q.y0 - RUA / 2, o.q.y1 + RUA / 2]).map(Math.round))];
+      const linhasV = rs => [...new Set(rs.filter(o => o.q.x0 != null).flatMap(o => [o.q.x0 - RUA / 2, o.q.x1 + RUA / 2]).map(Math.round))];
+      const opcoes = [];
+      /* reta de leste a oeste */
+      const sgH = (bB.x0 + bB.x1) / 2 < (bA.x0 + bA.x1) / 2 ? -1 : 1;
+      const ysA = linhasH(A), ysB = linhasH(B);
+      for (const y of ysB.concat(ysA)) {
+        const xq = pontaH(soQuadras(A), y, sgH), xa = xq !== null ? xq : pontaH(A, y, sgH), xb = pontaH(B, y, -sgH);
+        if (xa === null || xb === null || (xb - xa) * sgH <= 0) continue;
+        const seg = [[xa - sgH * RUA / 2, y], [xb + sgH * RUA / 2, y]];
+        if (corta(seg, c.de, c.nome)) continue;
+        const reta = ysA.some(v => Math.abs(v - y) < 12) && ysB.some(v => Math.abs(v - y) < 12);
+        opcoes.push({ segs: [seg], custo: Math.abs(xb - xa) + (reta ? 0 : 400) + (xq === null ? 500 : 0) });
+      }
+      /* reta de norte a sul */
+      const sgV = (bB.y0 + bB.y1) / 2 < (bA.y0 + bA.y1) / 2 ? -1 : 1;
+      const xsA = linhasV(A), xsB = linhasV(B);
+      for (const x of xsB.concat(xsA)) {
+        const yq = pontaV(soQuadras(A), x, sgV), ya = yq !== null ? yq : pontaV(A, x, sgV), yb = pontaV(B, x, -sgV);
+        if (ya === null || yb === null || (yb - ya) * sgV <= 0) continue;
+        const seg = [[x, ya - sgV * RUA / 2], [x, yb + sgV * RUA / 2]];
+        if (corta(seg, c.de, c.nome)) continue;
+        const reta = xsA.some(v => Math.abs(v - x) < 12) && xsB.some(v => Math.abs(v - x) < 12);
+        opcoes.push({ segs: [seg], custo: Math.abs(yb - ya) + (reta ? 0 : 400) + (yq === null ? 500 : 0) });
+      }
+      /* em L: sai de uma na horizontal e entra na outra na vertical (e o contrário) */
+      if (!opcoes.length) for (const [P, Q, ysP, xsQ, inv] of [[A, B, ysA, xsB, false], [B, A, ysB, xsA, true]]) {
+        const bP = bbDe(soQuadras(P).map(o => o.r)) || bbDe(P.map(o => o.r)), bQ = bbDe(soQuadras(Q).map(o => o.r)) || bbDe(Q.map(o => o.r));
+        const sh = (bQ.x0 + bQ.x1) / 2 < (bP.x0 + bP.x1) / 2 ? -1 : 1, sv = (bP.y0 + bP.y1) / 2 < (bQ.y0 + bQ.y1) / 2 ? -1 : 1;
+        for (const y of ysP) for (const x of xsQ) {
+          const xp = pontaH(P, y, sh), yq = pontaV(Q, x, sv);
+          if (xp === null || yq === null || (x - xp) * sh <= RUA || (y - yq) * sv <= RUA) continue;
+          const s1 = [[xp - sh * RUA / 2, y], [x + sh * RUA / 2, y]], s2 = [[x, y + sv * RUA / 2], [x, yq - sv * RUA / 2]];
+          if (corta(s1, inv ? c.nome : c.de, null) || corta(s2, null, inv ? c.de : c.nome)) continue;
+          opcoes.push({ segs: inv ? [s2.slice().reverse(), s1.slice().reverse()] : [s1, s2], custo: Math.abs(x - xp) + Math.abs(y - yq) + 600 });
+        }
+      }
+      if (!opcoes.length) { avisos.push(`sem estrada entre ${c.de} e ${c.nome}`); continue; }
+      opcoes.sort((a, b) => a.custo - b.custo);
+      const esc = opcoes[0];
+      encostar(esc.segs[0], 0, c.de);
+      encostar(esc.segs[esc.segs.length - 1], 1, c.nome);
+      esc.segs.forEach((seg, k) => {
+        const a = { id: 'estrada:' + c.nome + ':' + k, l: RUA, reta: true, estrada: true, de: c.de, para: c.nome, ponte: !!c.baia, pontos: seg.map(p => p.slice()) };
+        estradas.push(a); avenidas.push(a);
+        bloqueia.push({ c: 'estrada', r: retSeg(a) });
+      });
+      /* o pórtico na entrada de cada uma, de frente pra quem chega, e a
+         placa de quem sai, com a distância até a outra */
+      const pontas = [[esc.segs[0][0], esc.segs[0][1], c.de, c.nome], [esc.segs[esc.segs.length - 1][1], esc.segs[esc.segs.length - 1][0], c.nome, c.de]];
+      for (const [P0, P1, aqui, la] of pontas) {
+        const L = Math.hypot(P1[0] - P0[0], P1[1] - P0[1]) || 1, ux = (P1[0] - P0[0]) / L, uy = (P1[1] - P0[1]) / L;
+        const fora = RUA / 2 + 88;
+        if (L < fora + 2 * M) continue;
+        porticoEm(aqui, la, P0[0] + ux * fora, P0[1] + uy * fora, [-ux, -uy], RUA);
+        /* a placa: do lado direito de quem sai, 7 m depois do pórtico */
+        const dd = fora + 7 * M;
+        if (L > dd + 2 * M) placas.push({ x: P0[0] + ux * dd - uy * (RUA / 2 + 1.4 * M), y: P0[1] + uy * dd + ux * (RUA / 2 + 1.4 * M), dir: [ux, uy],
+                                          cidade: aqui, linhas: [[la.toUpperCase(), (c.km || '') + (c.km ? ' km' : '')]] });
+      }
+    }
+    porticos.push(...porticosC);
+
+    /* 7 · A BAÍA (Niterói): a água entre as duas margens, com a ponte por cima da estrada */
+    let baia = null;
+    const cb = ordem.find(c => c.baia);
+    if (cb) {
+      const A = postas.filter(p => p.c === cb.de && !p.r.avenida).map(p => p.r), B = postas.filter(p => p.c === cb.nome).map(p => p.r);
+      const bA = bbDe(A), bB = bbDe(B), leste = (bB.x0 + bB.x1) / 2 > (bA.x0 + bA.x1) / 2;
+      const margem = 0.22 * G, ya = Math.min(bA.y0, bB.y0) - 1.2 * G, yb = Math.max(bA.y1, bB.y1) + 1.2 * G;
+      const borda = (rs, y, sg, def) => { let v = null; for (const r of rs) if (y >= r.y0 - 150 && y <= r.y1 + 150) v = v === null ? (sg > 0 ? r.x1 : r.x0) : sg > 0 ? Math.max(v, r.x1) : Math.min(v, r.x0); return v === null ? def : v; };
+      const oeste = [], lesteP = [];
+      for (let y = ya, k = 0; y <= yb + 1; y += 160, k++) {
+        const onda = Math.sin(k * 0.9) * 0.05 * G + Math.sin(k * 0.37 + 1) * 0.08 * G;
+        const xw = leste ? borda(A, y, 1, bA.x1) + margem : borda(B, y, 1, bB.x1) + margem;
+        const xe = leste ? borda(B, y, -1, bB.x0) - margem : borda(A, y, -1, bA.x0) - margem;
+        oeste.push([xw + Math.max(0, onda), y]); lesteP.push([xe + Math.min(0, onda), y]);
+      }
+      const agua = oeste.concat(lesteP.reverse());
+      /* o tabuleiro da ponte: o trecho da estrada por cima da água e da
+         margem (a estrada reta: um retângulo, a pista e 1,3 m de cada lado) */
+      const pontes = [];
+      for (const a of estradas.filter(a => a.ponte)) {
+        const [[ax, ay], [bx, by]] = a.pontos, L = Math.hypot(bx - ax, by - ay) || 1, ux = (bx - ax) / L, uy = (by - ay) / L;
+        let t0 = null, t1 = null;
+        for (let t = 0; t <= L; t += 8) if (dentroPol(ax + ux * t, ay + uy * t, agua)) { if (t0 === null) t0 = t; t1 = t; }
+        if (t0 === null) continue;
+        t0 = Math.max(0, t0 - 110); t1 = Math.min(L, t1 + 110);
+        const h = a.l / 2 + 1.3 * M, p = [ax + ux * t0, ay + uy * t0], q = [ax + ux * t1, ay + uy * t1];
+        pontes.push({ x0: Math.min(p[0], q[0]) - Math.abs(uy) * h, x1: Math.max(p[0], q[0]) + Math.abs(uy) * h,
+                      y0: Math.min(p[1], q[1]) - Math.abs(ux) * h, y1: Math.max(p[1], q[1]) + Math.abs(ux) * h, dir: [ux, uy], l: a.l });
+      }
+      baia = { agua, nome: 'Baía de Guanabara', pontes, ponte: estradas.filter(a => a.ponte).map(a => a.pontos.map(p => p.slice())) };
+    }
+
+    const baiaBB = () => baia ? bbOf(baia.agua) : null;
+
+    /* 8 · A RUA DE VERANEIO DE NOVO: com as cidades no lugar, ela vai pra
+       beira da cidade dela, pro lado que estiver livre — o terreno e a rua
+       de acesso reta até a rua da cidade sem encostar em nada (nem em outra
+       cidade, nem em estrada) —, o mais perto que der; sem lugar, ela vai
+       junto com a cidade, como as outras coisas dela */
+    if (veraneio) {
+      const Xn = veraneio.cidade, rs = ruasDaCidade(Xn), DIRV = { o: [1, 0], l: [-1, 0], n: [0, 1], s: [0, -1] };
+      const ys = [...new Set(rs.filter(o => o.q.y0 != null).flatMap(o => [o.q.y0 - RUA / 2, o.q.y1 + RUA / 2]).map(Math.round))];
+      const xs = [...new Set(rs.filter(o => o.q.x0 != null).flatMap(o => [o.q.x0 - RUA / 2, o.q.x1 + RUA / 2]).map(Math.round))];
+      const agua = baiaBB();
+      /* (nem por cima de avenida: a de entrada vai até a borda do mundo, e em Ponta Grossa a rua de veraneio
+         caía atravessada nela — a grade da avenida partia a rua ao meio, e metade ficava fora de alcance) */
+      const naAvenidaR = r => avenidas.some(a => a !== veraneio.acesso && a.pontos.some((p, k) => k > 0 && cruza(r, retSeg({ pontos: [a.pontos[k - 1], p], l: a.l }), RUA)));
+      const ocupa = r => bloqueia.some(({ r: o }) => cruza(r, o, RUA)) || (agua && cruza(r, agua, RUA)) || naAvenidaR(r) ||
+                         porticos.concat(porticosC).some(p => p.x > r.x0 - 12 * M && p.x < r.x1 + 12 * M && p.y > r.y0 - 12 * M && p.y < r.y1 + 12 * M);
+      let melhor = null;
+      for (const f of ['o', 'l', 'n', 's']) {
+        const hz = f === 'o' || f === 'l', W = hz ? LV_VER : PV_VER, H = hz ? PV_VER : LV_VER, d = DIRV[f];
+        for (const a of hz ? ys : xs) {
+          const borda = hz ? pontaH(soQuadras(rs), a, -d[0]) : pontaV(soQuadras(rs), a, -d[1]);
+          if (borda === null) continue;
+          for (let dd = 2 * RUA; dd <= 1.6 * G; dd += 60) {
+            if (melhor && dd >= melhor.dd) break;
+            const pe = hz ? [borda - d[0] * dd, a] : [a, borda - d[1] * dd];
+            const r = f === 'o' ? { x0: pe[0] - W, x1: pe[0], y0: pe[1] - MEIO_VER, y1: pe[1] - MEIO_VER + H }
+              : f === 'l' ? { x0: pe[0], x1: pe[0] + W, y0: pe[1] - MEIO_VER, y1: pe[1] - MEIO_VER + H }
+              : f === 'n' ? { x0: pe[0] - MEIO_VER, x1: pe[0] - MEIO_VER + W, y0: pe[1] - H, y1: pe[1] }
+              : { x0: pe[0] - MEIO_VER, x1: pe[0] - MEIO_VER + W, y0: pe[1], y1: pe[1] + H };
+            if (ocupa(r)) continue;
+            const fim = hz ? [borda + d[0] * RUA / 2, a] : [a, borda + d[1] * RUA / 2];
+            const seg = [[pe[0] - d[0] * RUA / 2, pe[1] - d[1] * RUA / 2], fim];
+            if (corta(seg, null, Xn) || (agua && cruza(retSeg({ pontos: seg, l: RUA }), agua, 0))) continue;
+            melhor = { f, r, seg, dd };
+            break;
+          }
+        }
+      }
+      if (melhor) {
+        const { f, r, seg } = melhor, { lotes, rua } = lotesDoVeraneio(r, f);
+        encostar(seg, 1, Xn);
+        Object.assign(veraneio, { area: r, rua, lotes, fora: f, festa: lotes.find(l => l.veraneio === 'festa') });
+        if (veraneio.acesso) veraneio.acesso.pontos = seg.map(p => p.slice());
+        else { veraneio.acesso = { id: 'acessoVeraneio', l: RUA, reta: true, acesso: true, veraneio: true, pontos: seg.map(p => p.slice()) }; acessos.push(veraneio.acesso); avenidas.push(veraneio.acesso); }
+        r.cidade = Xn;
+      } else {
+        avisos.push('a rua de veraneio não achou lugar novo: foi junto com a cidade dela');
+        const [dx, dy] = desl.get(Xn) || [0, 0];
+        if (dx || dy) { mR(veraneio.area, dx, dy); mR(veraneio.rua, dx, dy); for (const l of veraneio.lotes) mLote(l, dx, dy); mSeg(veraneio.acesso, dx, dy); }
+      }
+      postas.push({ c: Xn, r: caixa(veraneio.area, RUA) });
+      if (veraneio.acesso) postas.push({ c: Xn, r: retSeg(veraneio.acesso) });
+      bloqueia.push(...postas.slice(-2));
+    }
+
+    /* 8b · A FAVELA SOLTA: a favela que, com a praça cortada, não encosta
+       em rua nenhuma da cidade dela (a quadra vizinha foi pra outra cidade,
+       ou virou a baía) ganha um beco até a rua mais perto: a continuação
+       de um beco dela, reta ou com uma dobra, sem passar por quadra, casa,
+       outra favela nem água (01/10/2026: a de Erechim ficava no mato, a
+       9 m da rua, e o boneco não chegava nela) */
+    const cruzaR = (a, b) => a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+    const lo = (r, A) => A ? r.y0 : r.x0, hi = (r, A) => A ? r.y1 : r.x1;
+    for (const f of favelas) {
+      const X = f.cidade || CENTRO, bb = f.bb;
+      /* (a rua da cidade: a faixa em volta de cada quadra dela e, no centro, as avenidas — `entra`: até onde o beco vai dentro dela) */
+      const ruas = quadras.filter(q => q.cidade === X).map(q => ({ ...(q.rua || caixa(q, RUA)), entra: RUA / 2 }))
+        .concat(X === CENTRO ? K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => ({ ...caixa(q, RUA), entra: RUA / 2 })) : [])
+        .concat(X === CENTRO ? avenidas.filter(a => !a.estrada && !a.acesso && a.pontos.length === 2).map(a => ({ ...retSeg(a), entra: Math.min(a.l / 2, 3 * M) })) : []);
+      /* (encosta: a ponta de um beco dela chega na rua — o contorno desenhado
+         pode chegar perto da rua com o mato no meio, como em Erechim) */
+      const naRua = ([x, y]) => ruas.some(r => x > r.x0 - 20 && x < r.x1 + 20 && y > r.y0 - 20 && y < r.y1 + 20);
+      if (!ruas.length || f.becos.some(b => naRua(b[0]) || naRua(b[b.length - 1]))) continue;
+      const kFicam = K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j));
+      /* o trecho de p a q (de largura w) passa livre? (a ponta que entra na rua pode encostar na quadra dela) */
+      const livre = (p, q, w) => {
+        const h = w / 2, r = { x0: Math.min(p[0], q[0]) - h + 1, x1: Math.max(p[0], q[0]) + h - 1, y0: Math.min(p[1], q[1]) - h + 1, y1: Math.max(p[1], q[1]) + h - 1 };
+        if (quadras.some(o => cruzaR(o, r)) || kFicam.some(o => cruzaR(o, r)) || favelas.some(g => g !== f && cruzaR(g.bb, r))) return false;
+        if (f.lotes.some(l => cruzaR(l, r))) return false;
+        if (baia) { const L = Math.hypot(q[0] - p[0], q[1] - p[1]), N = Math.max(1, Math.ceil(L / 20)); for (let k = 0; k <= N; k++) if (dentroPol(p[0] + (q[0] - p[0]) * k / N, p[1] + (q[1] - p[1]) * k / N, baia.agua)) return false; }
+        return true;
+      };
+      let melhor = null;
+      for (const b of f.becos) for (const [a, c] of [[b[0], b[1]], [b[b.length - 1], b[b.length - 2]]]) {
+        if (!a || !c) continue;
+        const Lb = Math.hypot(a[0] - c[0], a[1] - c[1]) || 1, ux = Math.round((a[0] - c[0]) / Lb), uy = Math.round((a[1] - c[1]) / Lb);
+        if (Math.abs(ux) + Math.abs(uy) !== 1) continue;
+        const A = ux ? 0 : 1, B = 1 - A, sU = ux || uy, h = b.w / 2;
+        for (const r of ruas) {
+          /* reto: o beco segue até a rua */
+          if (a[B] >= lo(r, B) + h && a[B] <= hi(r, B) - h) {
+            const t = sU > 0 ? lo(r, A) - a[A] : a[A] - hi(r, A);
+            if (t >= -1 && t <= 60 * M) {
+              const fimP = a.slice(); fimP[A] += sU * (t + r.entra);
+              if ((!melhor || t + r.entra < melhor.L) && livre(a, fimP, b.w)) melhor = { L: t + r.entra, pts: [a.slice(), fimP], w: b.w };
+            }
+            continue;
+          }
+          /* com uma dobra: segue até ficar na frente da rua e vira pra ela */
+          const cA = Math.min(hi(r, A) - h, Math.max(lo(r, A) + h, a[A] + sU * (h + 12)));
+          const s1 = (cA - a[A]) * sU;
+          if (s1 < h + 10) continue;
+          const sV = (lo(r, B) + hi(r, B)) / 2 > a[B] ? 1 : -1, t2 = sV > 0 ? lo(r, B) - a[B] : a[B] - hi(r, B);
+          if (t2 < -1) continue;
+          const Ltot = s1 + t2 + r.entra;
+          if (Ltot > 60 * M || (melhor && Ltot >= melhor.L)) continue;
+          const p1 = a.slice(); p1[A] = cA;
+          const p2 = p1.slice(); p2[B] += sV * (t2 + r.entra);
+          if (livre(a, p1, b.w) && livre(p1, p2, b.w)) melhor = { L: Ltot, pts: [a.slice(), p1, p2], w: b.w };
+        }
+      }
+      if (!melhor) { avisos.push(`a favela ${f.id} (${X}) ficou sem rua`); continue; }
+      /* (cada trecho vira um beco, com ponto de 16 em 16 como os outros) */
+      for (let k = 1; k < melhor.pts.length; k++) {
+        const p = melhor.pts[k - 1], q = melhor.pts[k], L = Math.hypot(q[0] - p[0], q[1] - p[1]), N = Math.max(1, Math.ceil(L / 16)), nb = [];
+        for (let i = 0; i <= N; i++) nb.push([p[0] + (q[0] - p[0]) * i / N, p[1] + (q[1] - p[1]) * i / N]);
+        nb.w = melhor.w; nb.liga = true;
+        f.becos.push(nb);
+      }
+    }
+
+    /* 9 · o que a página precisa: o que saiu do mapa de hoje (pra esconder o que era dele) e onde está cada cidade */
+    const kFora = corte ? corte.kFora : new Set();
+    const vazios = K.QUADRAS.filter(q => kFora.has(q.i + ',' + q.j)).map(q => caixa(q, RUA * 1.1));
+    const restos = K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j)).map(q => caixa(q, RUA * 1.05))
+      .concat(quadras.filter(q => q.cidade === CENTRO).map(q => q.rua || caixa(q, RUA)));
+    const indice = rs => {
+      const T = 800, B = new Map();
+      rs.forEach((r, n) => { for (let i = Math.floor(r.x0 / T); i <= Math.floor(r.x1 / T); i++) for (let j = Math.floor(r.y0 / T); j <= Math.floor(r.y1 / T); j++) {
+        const k = i * 100003 + j; let l = B.get(k); if (!l) B.set(k, l = []); l.push(n); } });
+      return (x, y) => B.get(Math.floor(x / T) * 100003 + Math.floor(y / T)) || [];
+    };
+    const dentroR = (r, x, y) => x > r.x0 && x < r.x1 && y > r.y0 && y < r.y1;
+    const iV = indice(vazios), iR = indice(restos);
+    const lista = postas.filter(p => p.c !== CENTRO), iO = indice(lista.map(p => p.r));
+    const todas = postas, iT = indice(todas.map(p => p.r));
+    const saiu = (x, y) => iV(x, y).some(n => dentroR(vazios[n], x, y)) && !iR(x, y).some(n => dentroR(restos[n], x, y));
+    const naOutra = (x, y) => iO(x, y).some(n => dentroR(lista[n].r, x, y));
+    const cidadeEm = (x, y) => { for (const n of iT(x, y)) if (dentroR(todas[n].r, x, y)) return todas[n].c; return null; };
+    const cidades = CIS.cidades.map(c => {
+      const [dx, dy] = desl.get(c.nome) || [0, 0], bb = bbDe(postas.filter(p => p.c === c.nome && !p.r.avenida).map(p => p.r));
+      return { nome: c.nome, n: c.n, favelas: c.favelas || 0, de: c.de || null, rumo: c.rumo || null, km: c.km || null, longe: !!c.longe, costa: !!c.costa, baia: !!c.baia,
+               centro: c.nome === CENTRO, dx, dy, bb, area: corte ? corte.areas[c.nome] || 0 : 0, alvo: corte ? corte.alvos[c.nome] : 0,
+               prep: PREPOSICAO_CIDADE[c.nome] || 'A' };
+    });
+    return { centro: CENTRO, cidades, kFora, somem: corte ? corte.somem : new Set(), vazios, restos, saiu, naOutra, cidadeEm, kSome: (x, y) => saiu(x, y) || naOutra(x, y),
+             /* (o mundo é tudo o que ficou posto — a rua de veraneio, recolocada no passo 8, também: com a caixa
+                de antes dela, o cenário 3D cortava a rua de veraneio fora da área dele) */
+             estradas, placas, baia, avisos, mundo: bbDe([mundoC, bbDe(postas.map(p => p.r))].concat(baia ? [bbOf(baia.agua)] : [])), praca: CIS.id || null };
+  }
+
   /* ---- O CANTEIRO DA AVENIDA DE ENTRADA: corre ao lado das quadras dela
      e abre nas ruas que a cruzam (o carro atravessa ali); fora da cidade,
      do começo da avenida até a rua da ponta dela, é contínuo ---- */
   {
     const lados = [];
-    for (const q of quadras.concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j))))
+    /* (na praça cortada, só as quadras do centro: a avenida é dele) */
+    for (const q of quadras.filter(q => !CIS || q.cidade === CENTRO).concat(K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j))))
       if (Math.abs(q.x1 - ENTRADA.x0) < 2 || Math.abs(q.x0 - ENTRADA.x1) < 2) lados.push([q.y0, q.y1]);
     lados.sort((a, b) => a[0] - b[0]);
     const U = [];
@@ -1962,19 +2955,27 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
 
   /* a avenida de entrada vai de ponta a ponta do mundo (que cresceu com os estádios de verdade) */
   const deVerdade = copias.filter(e => e.terreno);
-  avEntrada.pontos[0][1] = Math.min(avEntrada.pontos[0][1], ...deVerdade.map(e => e.area.y0 - RUA - 500));
-  avEntrada.pontos[1][1] = Math.max(avEntrada.pontos[1][1], ...deVerdade.map(e => e.area.y1 + RUA + 500));
+  /* (na praça cortada, `afastarCidades` já pôs as pontas dela) */
+  if (!cisao) {
+    avEntrada.pontos[0][1] = Math.min(avEntrada.pontos[0][1], ...deVerdade.map(e => e.area.y0 - RUA - 500));
+    avEntrada.pontos[1][1] = Math.max(avEntrada.pontos[1][1], ...deVerdade.map(e => e.area.y1 + RUA + 500));
+  }
   const residenciais = quadras.filter(q => !q.equip);
   const lotesNovos = quadras.reduce((n, q) => n + q.lotes.length, 0);
   /* o limite do mapa: o de tudo e o da cidade sem o entorno dos estádios
      (é por ele que a planta divide as zonas: o entorno não mexe nelas) */
-  const limiteDe = lista => {
+  const limiteDe = (lista, favs = favelas) => {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const q of lista) { x0 = Math.min(x0, q.x0); y0 = Math.min(y0, q.y0); x1 = Math.max(x1, q.x1); y1 = Math.max(y1, q.y1); }
-    for (const f of favelas) for (const [px, py] of f.poly) { x0 = Math.min(x0, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py); }
+    for (const f of favs) for (const [px, py] of f.poly) { x0 = Math.min(x0, px); y0 = Math.min(y0, py); y1 = Math.max(y1, py); }
     return { x0, y0, x1, y1 };
   };
-  const { x0, y0, x1, y1 } = limiteDe(quadras.concat(K.QUADRAS)), semEntorno = limiteDe(quadras.filter(q => !q.entorno).concat(K.QUADRAS));
+  /* (na praça cortada: o limite de tudo, com as cidades de fora, sem as quadras de hoje que foram embora; o
+     sem o entorno é só o do centro — é nele que a planta divide as zonas) */
+  const kFica = cisao ? K.QUADRAS.filter(q => !cisao.kFora.has(q.i + ',' + q.j)) : K.QUADRAS;
+  const { x0, y0, x1, y1 } = limiteDe(quadras.concat(kFica)),
+        semEntorno = cisao ? limiteDe(quadras.filter(q => !q.entorno && q.cidade === CENTRO).concat(kFica), favelas.filter(f => f.cidade === CENTRO))
+                           : limiteDe(quadras.filter(q => !q.entorno).concat(K.QUADRAS));
   const conta = {};
   for (const q of quadras) if (q.equip) conta[q.equip.tipo] = (conta[q.equip.tipo] || 0) + 1;
   return {
@@ -1995,8 +2996,13 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
                 quadrasHoje: K.QUADRAS.length, lotesHoje: K.QUADRAS.reduce((n, q) => n + q.lotes.length, 0) },
     limite: { x0: x0 - RUA, y0: y0 - RUA, x1, y1 },
     limiteSemEntorno: { x0: semEntorno.x0 - RUA, y0: semEntorno.y0 - RUA, x1: semEntorno.x1, y1: semEntorno.y1 },
-    mundo: { x0: x0 - 400, y0: Math.min(cfg.mundoY0 ?? K.VY0, atacadex ? atacadex.bb.y0 - 300 : Infinity, ...deVerdade.map(e => e.area.y0 - RUA - 300)),
+    mundo: cisao ? { x0: Math.min(x0 - 400, cisao.mundo.x0 - 400), y0: Math.min(cfg.mundoY0 ?? K.VY0, cisao.mundo.y0 - 400, atacadex ? atacadex.bb.y0 - 300 : Infinity),
+                     x1: Math.max(K.VX0 + K.VW, cisao.mundo.x1 + 400), y1: Math.max(mundoY1, cisao.mundo.y1 + 400) }
+         : { x0: x0 - 400, y0: Math.min(cfg.mundoY0 ?? K.VY0, atacadex ? atacadex.bb.y0 - 300 : Infinity, ...deVerdade.map(e => e.area.y0 - RUA - 300)),
              x1: Math.max(K.VX0 + K.VW, ...deVerdade.map(e => e.area.x1 + RUA + 400)), y1: Math.max(mundoY1, ...deVerdade.map(e => e.area.y1 + RUA + 300)) },
+    /* AS CIDADES DA PRAÇA (nulo na praça de uma cidade só): onde cada uma
+       ficou, as estradas, as placas, a baía, e o que saiu do mapa de hoje */
+    cisao,
     /* a avenida de entrada: a banda dela (as duas pistas e o canteiro) */
     entrada: { ...ENTRADA }
   };
