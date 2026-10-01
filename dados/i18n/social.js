@@ -482,5 +482,18 @@ TO.i18n.registrar({
   'Abrindo a planta…': {es:'Abriendo el plano…', en:'Opening the city plan…'},
   'Arraste pra mover · role pra aproximar · clique num bairro pra ver quem manda': {es:'Arrastrá para mover · usá la rueda para acercar · tocá un barrio para ver quién manda', en:'Drag to move · scroll to zoom · click a neighbourhood to see who runs it'},
   'Sede {sigla}': {es:'Sede {sigla}', en:'{sigla} HQ'},
-  'Bairros': {es:'Barrios', en:'Neighbourhoods'}
+  'Bairros': {es:'Barrios', en:'Neighbourhoods'},
+
+  /* ---------- o cartão do bairro no mapa (01/10/2026) ---------- */
+  '(nível {n})': {es:'(nivel {n})', en:'(level {n})'},
+  'Classe social': {es:'Clase social', en:'Social class'},
+  'Clique num bairro do mapa pra ver os habitantes, a classe social, quem manda e o que tem nele.': {es:'Tocá un barrio del mapa para ver los habitantes, la clase social, quién manda y qué hay en él.', en:'Click a neighbourhood on the map to see its residents, social class, who runs it and what is in it.'},
+  'De ninguém': {es:'De nadie', en:'Nobody\'s'},
+  'Domínio do bairro': {es:'Dominio del barrio', en:'Neighbourhood control'},
+  'Estruturas no bairro': {es:'Estructuras en el barrio', en:'Venues in the neighbourhood'},
+  'Habitantes': {es:'Habitantes', en:'Residents'},
+  'Nenhuma sede, bar, loja ou subsede.': {es:'Ninguna sede, bar, tienda ni subsede.', en:'No HQ, bar, shop or branch.'},
+  'Receita no bairro': {es:'Ingresos en el barrio', en:'Income here'},
+  'Torcedores que moram aqui': {es:'Hinchas que viven acá', en:'Fans who live here'},
+  'Zona': {es:'Zona', en:'Zone'}
 });

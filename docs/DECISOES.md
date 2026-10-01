@@ -8480,6 +8480,23 @@ O dono: "As informações contidas no perfil da cidade, inclusive a foto, devem 
   - sem erro de página;
   - i18n sem falta.
 
+## O cartão do bairro em dados claros, e a coluna sem o resumo da cidade (pedido do dono, 01/10/2026)
+
+O dono: "Quando eu clico no bairro eu prefiro ver as informações claras dele de quantidade de habitantes, classe social e quais as estruturas presentes no bairro. Remova toda essa parte que diz 'A Cearamor domina Fortaleza: 5 de 16 bairros…' pra dar espaço de mostrar os detalhes do bairro."
+
+- **A coluna do mapa perdeu o resumo da cidade**: o "A … domina …", o efeito por dia e a lista de quantos bairros cada torcida tem. A planta já pinta a dona de cada bairro. Na aba Bairros fica só o cartão do bairro escolhido; sem bairro escolhido, a dica pra clicar num. A peça `legenda` continua no `mapa_brasil.js` pro jogo 3D, que a usa.
+- **O cartão do bairro**, de cima pra baixo:
+  - **Os dados:** habitantes, classe social, a zona (ou a cidade, nas praças de várias cidades) e o multiplicador de receita. Os habitantes são os torcedores dos clubes que moram no bairro, a mesma conta da "População" do perfil da cidade repartida por bairro (`torcedoresNoBairro`). Por isso a soma dos bairros dá a população da praça.
+  - **Os torcedores que moram aqui:** os cinco clubes com mais gente, com o número e a porcentagem.
+  - **O domínio do bairro:** a dona (ou "sem dona"), a barra e, embaixo dela, a lista de todas as torcidas com a porcentagem de cada uma.
+  - **As estruturas no bairro:** sede, bar, loja, subsede e subsede de fora de cada torcida, com o nível; sem nenhuma, "Nenhuma sede, bar, loja ou subsede".
+  - **A ação social**, como antes.
+- **A barra ficou com a fatia de ninguém.** O dono primeiro pediu a barra sempre fechada em 100% entre as torcidas. Isso foi feito (a sobra repartida pelas organizadas da praça, sem empurrar ninguém pra dona), mas antes de subir ele voltou atrás: "é melhor voltar os pontos de domínio pra ter uma fatia de ninguém mesmo". O `dominio.js` ficou como estava. A fatia de ninguém aparece listrada na barra e como "De ninguém" na lista. Dona continua sendo quem passa de 50%.
+- **Testado** (Playwright):
+  - a barra de nenhum dos 973 bairros com organizada passa de 100%, no começo e depois de 120 dias;
+  - o clique em Pirambu mostra 217 habitantes, Favela, zona Norte, receita ×0,4, os clubes que moram ali, Aliança 86% / TUF 12% / de ninguém 2% e a sede da Aliança;
+  - i18n sem falta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

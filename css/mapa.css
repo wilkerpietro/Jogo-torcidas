@@ -141,3 +141,22 @@
 .mb-bairro .mb-outras{display:block;opacity:.75;font-size:10.5px}
 /* o perfil de torcida aberto de dentro do mapa fica por cima dele */
 body:has(.mb-painel) .tela-cheia{z-index:75}
+
+/* ---- o cartão do bairro do jogo 2D: dados claros, a barra em 100% e a
+   lista inteira embaixo dela (01/10/2026) ---- */
+.mb-painel .mb-cartao{gap:8px;padding:12px 14px}
+.mb-painel .mb-cartao h4{font-family:var(--titulo);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco, #8d8d8d);margin:6px 0 0}
+.mb-dados{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mb-dado{display:flex;flex-direction:column;gap:1px;padding:6px 8px;background:rgba(255,255,255,.035);border:1px solid var(--sulco, #232323)}
+.mb-dado span{font-size:11px;color:var(--fraco, #8d8d8d);text-transform:uppercase;letter-spacing:.05em}
+.mb-dado b{font-size:15px;font-weight:700}
+.mb-moram{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mb-moram li{display:grid;grid-template-columns:1fr auto 44px;gap:8px;align-items:baseline;padding:2px 0;border-bottom:1px solid var(--sulco, #232323)}
+.mb-moram b{font-family:var(--mono);font-weight:600;text-align:right}
+.mb-moram small{color:var(--fraco, #8d8d8d);font-family:var(--mono);text-align:right}
+.mb-painel .mb-partes{flex-direction:column;flex-wrap:nowrap;gap:2px;font-size:12.5px}
+.mb-painel .mb-partes li{display:grid;grid-template-columns:12px 1fr auto;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--sulco, #232323)}
+.mb-painel .mb-partes li.nos{color:#ffe7a0}
+.mb-painel .mb-partes b{text-align:right}
+.mb-painel .mb-partes li.livre{color:var(--fraco, #8d8d8d)}
+.mb-painel .mb-partes li.livre i{background:repeating-linear-gradient(45deg,#3b3b39 0 3px,#2f2f2d 3px 6px)}
