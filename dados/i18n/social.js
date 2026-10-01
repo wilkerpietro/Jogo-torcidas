@@ -400,5 +400,20 @@ TO.i18n.registrar({
   '{clube} {g1} x {g2} {adv}{comp}. Um ponto é pouco pro tamanho dessa camisa. A {nome} cobra atitude.':
     {es:'{clube} {g1} x {g2} {adv}{comp}. Un punto es poco para el tamaño de esta camiseta. La {nome} exige actitud.', en:'{clube} {g1} x {g2} {adv}{comp}. One point is not enough for a shirt this big. {nome} demands attitude.'},
   '{g1} a {g2}! Que noite, {clube}! A {nome} canta até perder a voz.':
-    {es:'¡{g1} a {g2}! ¡Qué noche, {clube}! La {nome} canta hasta quedarse sin voz.', en:'{g1}-{g2}! What a night, {clube}! {nome} will sing until we lose our voices.'}
+    {es:'¡{g1} a {g2}! ¡Qué noche, {clube}! La {nome} canta hasta quedarse sin voz.', en:'{g1}-{g2}! What a night, {clube}! {nome} will sing until we lose our voices.'},
+
+  /* ---------- o cartaz do post (01/10/2026) ---------- */
+  'Liga Nacional de Torcidas': {es:'Liga Nacional de Barras', en:'National Firms League'},
+  'envolvidos': {es:'involucrados', en:'involved'},
+  'presos': {es:'detenidos', en:'arrested'},
+  'pênaltis {a} × {b}': {es:'penales {a} × {b}', en:'penalties {a} × {b}'},
+  '{a} E {b} NO EMPATE {onde}': {es:'{a} Y {b} EMPATAN {onde}', en:'{a} AND {b} EVEN {onde}'},
+  '{nome} LEVA A MELHOR {onde}': {es:'{nome} SE IMPONE {onde}', en:'{nome} COME OUT ON TOP {onde}'},
+  '{clube} ELIMINA {o} NOS PÊNALTIS': {es:'{clube} ELIMINA {o} EN LOS PENALES', en:'{clube} KNOCK OUT {o} ON PENALTIES'},
+  '{clube} É ELIMINADO {por} NOS PÊNALTIS': {es:'{clube} ES ELIMINADO {por} EN LOS PENALES', en:'{clube} KNOCKED OUT {por} ON PENALTIES'},
+  '{clube} EMPATA {com} {onde}': {es:'{clube} EMPATA {com} {onde}', en:'{clube} DRAW {com} {onde}'},
+  '{clube} GOLEIA {o} {onde}': {es:'{clube} GOLEA {o} {onde}', en:'{clube} THRASH {o} {onde}'},
+  '{clube} VENCE {o} {onde}': {es:'{clube} VENCE {o} {onde}', en:'{clube} BEAT {o} {onde}'},
+  '{clube} É GOLEADO {por} {onde}': {es:'{clube} ES GOLEADO {por} {onde}', en:'{clube} THRASHED {por} {onde}'},
+  '{clube} PERDE {pra} {onde}': {es:'{clube} PIERDE {pra} {onde}', en:'{clube} LOSE {pra} {onde}'}
 });

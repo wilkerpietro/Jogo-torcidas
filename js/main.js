@@ -3941,19 +3941,25 @@
       const ler = jornal && (m.dados||{}).aba
         ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
       const nosso = !jornal && m.de === e.torcida.id;
-      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':''), html:
+      const cartaz = m.card && TO.cartaz ? TO.cartaz.html(m) : '';
+      const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':''), html:
         `<header class="post-cab">${quem}`+
           `<span class="post-quando">${haQuanto(m.quando || {})}</span>`+
           (F.podeEsconder && F.podeEsconder(e, m)
             ? `<button class="post-menu" title="${escHTML(_t('Opções do post'))}" aria-label="${escHTML(_t('Opções do post'))}">⋯</button>` : '')+
           `</header>`+
-        `<p class="post-texto">${linkificarNomes(m.texto)}</p>`+
+        /* A IMAGEM DO POST (pedido do dono, 01/10/2026): com cartaz, a
+           ordem é a do Instagram — a imagem, as curtidas e, embaixo, a
+           legenda com o @ de quem postou na frente */
+        (cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
         `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
           `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
           (()=>{ const c = enfeite(m, 'comentario', .05), r = enfeite(m, 'compartilha', .04);
             return `<span class="post-conta" title="${escHTML(_tn(c, '{n} comentário', '{n} comentários', {n:U.numero(c)}))}">${balao}${U.numero(c)}</span>`+
                    `<span class="post-conta" title="${escHTML(_tn(r, '{n} compartilhamento', '{n} compartilhamentos', {n:U.numero(r)}))}">${repost}${U.numero(r)}</span>`; })()+
-          `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`});
+          `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`+
+        (cartaz ? `<p class="post-texto post-legenda"><b class="post-legenda-quem">${escHTML(jornal ? jornal.arroba : arroba(o))}</b> ${linkificarNomes(m.texto)}</p>` : '')});
+      if(cartaz) TO.cartaz.ligar(art.querySelector('.cartaz'), m);
       const bMenu = art.querySelector('.post-menu');
       if(bMenu) bMenu.onclick = ev=>{
         ev.stopPropagation();
@@ -6939,6 +6945,21 @@
          `com-pais` recua o de baixo pela largura da bandeira, pra que
          os dois campos comecem na mesma coluna */
       'drop-comp' + (nivelComp === 'nacional' ? ' com-pais' : '')));
+
+    /* A LOGO DA COMPETIÇÃO (pedido do dono, 01/10/2026): a marca e o
+       nome por extenso, em cima do corpo — o mapa de arquivos está em
+       dados/competicoes_logos.js. A divisão de fora chega como
+       'liga:Chile Primera B', que já é o nome completo. */
+    {
+      const it = menu.find(m=>m.id===compSel);
+      const nomeLogo = it && (String(compSel).startsWith('liga:') ? compSel.slice(5) : it.rot);
+      const src = it && TO.dados.logoDaCompeticao && TO.dados.logoDaCompeticao(nomeLogo, paisComp);
+      if(src) pg.appendChild(el('div',{class:'comp-marca', html:
+        `<img src="${src}" alt="">`+
+        `<div><b>${escHTML(nomeLogo === 'LNT' ? _t('Liga Nacional de Torcidas') : nomeLogo)}</b>`+
+        `<small>${escHTML(nivelComp === 'internacional' ? 'CONMEBOL'
+                 : nivelComp === 'regional' ? _t('Regional') : _t(paisComp))}</small></div>`}));
+    }
 
     /* ---- o corpo ---- */
     if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }

@@ -41,7 +41,7 @@ TIPOS = {'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
          '.webp': 'image/webp', '.svg': 'image/svg+xml', '.gif': 'image/gif'}
 
 # as pastas cujas imagens o jogo monta em tempo de execução
-DINAMICAS = ['img/escudos', 'img/bandeiras', 'img/cidades', 'img/faixas']
+DINAMICAS = ['img/escudos', 'img/bandeiras', 'img/cidades', 'img/faixas', 'img/competicoes']
 
 # A ARTE CABE NO ARQUIVO (empacotamento, 16/09/2026)
 # As fotos originais somam 12,5 MB depois do base64 e o artifact para em

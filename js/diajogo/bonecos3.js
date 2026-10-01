@@ -2568,7 +2568,164 @@ TO.diaJogo.bonecos3 = (function(){
      cada lado pra mão segurar */
   function passoDoPano(n){ return (n-1)*POSE_PASSO + 34; }
 
-  return {montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
+  /* =======================================================
+     A FOTO DA BRIGA (pedido do dono, 01/10/2026): a imagem do post do
+     Futebol e Porrada — "bonecos da torcida vencedora batendo em
+     bonecos da torcida perdedora", no lugar em que a briga foi. É a
+     mesma receita da foto do troféu: o fundo aéreo da cena num canvas
+     2D, os bonecos num renderizador só desta foto, a mesma câmera de
+     cima. Os vencedores à esquerda, de frente pros perdedores, no pico
+     do golpe (soco ou chute, pelo repertório de cada um); os perdedores
+     à direita, um no chão, um se cobrindo, um cambaleando.
+     A cena no ar é trocada só pra desenhar e volta logo depois; com
+     uma briga rodando, nada é feito (a cena viva não pode mudar).
+     `opc`: {cena, vencedor:{id,cor,cor2,cor3}, perdedor:{…}, pares,
+             largura, altura, vista, semente}
+     ======================================================= */
+  function fotoDaBriga(opc){
+    if(typeof THREE === 'undefined') return Promise.resolve(null);
+    const P = TO.diaJogo.ponte;
+    if(P && P.rodando) return Promise.resolve(null);
+    carregarGLB();
+    const A = TO.diaJogo.arredores;
+    if(!A || !A.usarCena) return Promise.resolve(null);
+    const espera = ()=> new Promise(res=>{
+      const t0 = Date.now();
+      (function v(){
+        if(modeloGLB) return res(true);
+        if(Date.now()-t0 > 6000) return res(false);
+        setTimeout(v, 120);
+      })();
+    });
+    return espera().then(ok=>{
+      if(!ok || (P && P.rodando)) return null;
+      const antes = A.D && A.D.id;
+      const trocou = opc.cena && A.D && A.D.id !== opc.cena;
+      if(trocou) A.usarCena(opc.cena);
+      /* a foto aérea da cena nova ainda pode estar chegando */
+      const fundo = ()=> new Promise(res=>{
+        const t0 = Date.now();
+        (function v(){
+          if(A.imagemOk || !A.D.imagem || Date.now()-t0 > 2500) return res();
+          setTimeout(v, 80);
+        })();
+      });
+      return fundo().then(()=>{
+        let url = null;
+        try{ url = renderizarBriga(opc); }catch(err){ console.warn('foto da briga: '+err.message); }
+        if(trocou && !(P && P.rodando)) A.usarCena(antes || 'arredores');
+        return url;
+      });
+    });
+  }
+
+  /* o lugar da foto: perto do meio da briga, onde os pares cabem em pé */
+  /* os pares lado a lado, na largura do quadro 2:1: o meio da foto
+     é o que sobra entre a manchete de cima e os números de baixo */
+  const PAR_DX = 74;
+  const parOffset = (i, pares) => ({dx:(i - (pares-1)/2) * PAR_DX, dy:(i%2 ? 7 : -5)});
+  function pontoDaBriga(A, pares){
+    const W = A.W || 1536, H = A.H || 1024;
+    const cabe = (x, y)=>{
+      if(!A.cabe) return true;
+      for(let i=0;i<pares;i++){
+        const o = parOffset(i, pares);
+        if(!A.cabe(x+o.dx-18, y+o.dy, 8) || !A.cabe(x+o.dx+16, y+o.dy, 8) || !A.cabe(x+o.dx+30, y+o.dy, 6)) return false;
+      }
+      return true;
+    };
+    for(const c of centrosDaPose(A, 'mandante')){
+      for(let r=0; r<=c.raio; r+=14){
+        for(let a=0; a<360; a+=15){
+          const x = c.x + Math.cos(a*Math.PI/180)*r, y = c.y + Math.sin(a*Math.PI/180)*r;
+          if(x < 80 || x > W-80 || y < 80 || y > H-80) continue;
+          if(cabe(x, y)) return {x, y};
+        }
+      }
+    }
+    return {x:W/2, y:H/2};
+  }
+
+  function renderizarBriga(opc){
+    const A = TO.diaJogo.arredores;
+    const W = opc.largura || 800, H = opc.altura || 400;
+    const pares = Math.max(1, Math.min(4, opc.pares || 3));
+    const c0 = pontoDaBriga(A, pares);
+    const VW = opc.vista || (pares * PAR_DX + 70), VH = VW * H / W;
+    /* o grupo na faixa livre do cartaz — abaixo das torcidas, acima da
+       manchete e dos números —, um pouco acima do meio do quadro */
+    const cx = U.limitar(c0.x + 4, VW/2, (A.W||1536) - VW/2);
+    const cy = U.limitar(c0.y + VH*0.07, VH/2, (A.H||1024) - VH/2);
+    const x0 = cx - VW/2, y0 = cy - VH/2, s = W/VW;
+
+    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+    const x = cv2.getContext('2d');
+    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+    A.desenharFundo(x);
+    x.restore();
+
+    const cvB = document.createElement('canvas'); cvB.width = W; cvB.height = H;
+    let r = null;
+    try{
+      r = new THREE.WebGLRenderer({canvas:cvB, antialias:true, alpha:true, premultipliedAlpha:true, preserveDrawingBuffer:true});
+      r.setPixelRatio(1); r.setClearColor(0x000000, 0);
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
+      const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); sc.add(sol);
+      const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); sc.add(contra);
+      const camF = new THREE.OrthographicCamera(x0, x0+VW, -y0, -(y0+VH), 1, ALTURA_CAM*2);
+      camF.position.set(0, ALTURA_CAM, 0); camF.up.set(0, 0, -1); camF.lookAt(0, 0, 0);
+      camF.updateProjectionMatrix();
+      const el = camF.projectionMatrix.elements, a = 2/(camF.top - camF.bottom);
+      el[9] += a*CISALHA; el[13] += a*CISALHA*ALTURA_CAM;
+      camF.projectionMatrixInverse.copy(camF.projectionMatrix).invert();
+      sc.add(camF);
+
+      const sem = String(opc.semente || '');
+      const boneco = (t, lado, i, papel)=>{
+        const d = {nome:`${sem}|${papel}|${i}`, lado, torcida:t.id, cor:t.cor, cor2:t.cor2, cor3:t.cor3||null};
+        const f = fichaDe(d, i); f.escala = 1;
+        f.varianteForcada = dado(`${sem}|${papel}|var|${i}`, 3);
+        const c = construirCorpoGLB(f, false);
+        if(c.anel) c.anel.visible = false;
+        if(c.anelFundo) c.anelFundo.visible = false;
+        return {f, c};
+      };
+      for(let i=0;i<pares;i++){
+        const o = parOffset(i, pares), ox = o.dx, oy = o.dy;
+        /* o vencedor, no pico do golpe */
+        const v = boneco(opc.vencedor || {}, 'mandante', i, 'v');
+        const pv = poseNeutra();
+        const chute = i === 1 && pares > 1;
+        const at = chute ? {tipo:'chute', dur:0.58, impacto:0.28} : {tipo:'soco', dur:0.36, impacto:0.15};
+        const pico = Math.min(0.6, Math.max(0.3, at.impacto/at.dur + 0.06));
+        at.t = pico * at.dur; at.bateu = false;
+        lutar(pv, v.f, {ataque:at}, 0, 0.4 + i*0.37);
+        aplicarPoseGLB(v.c, pv, v.f.escala * escalaDeCima * 0.86);
+        v.c.raiz.position.set(c0.x + ox - 16, 0, c0.y + oy);
+        v.c.raiz.rotation.y = Math.PI/2;           // de frente pra direita
+        sc.add(v.c.raiz);
+        /* o perdedor: no chão, se cobrindo ou cambaleando */
+        const d = boneco(opc.perdedor || {}, 'visitante', i, 'p');
+        const pd = poseNeutra();
+        const jeito = i % 3;
+        if(jeito === 0){ d.f.jazido = 0; cair(pd, d.f, 2); }
+        else if(jeito === 1) cobrirSe(pd, d.f, 0.6 + i);
+        else cambalear(pd, d.f, 0.9 + i);
+        aplicarPoseGLB(d.c, pd, d.f.escala * escalaDeCima * 0.86);
+        d.c.raiz.position.set(c0.x + ox + (jeito === 0 ? 24 : 15), 0, c0.y + oy);
+        d.c.raiz.rotation.y = -Math.PI/2 + (jeito === 1 ? 0.5 : 0);   // de frente pro vencedor
+        sc.add(d.c.raiz);
+      }
+      sc.updateMatrixWorld(true);
+      r.render(sc, camF);
+      x.drawImage(cvB, 0, 0);
+    }catch(err){ console.warn('foto da briga (bonecos): '+err.message); }
+    finally{ if(r) r.dispose(); }
+    try{ return cv2.toDataURL('image/jpeg', 0.86); }catch(_){ return null; }
+  }
+
+  return {montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
           cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },

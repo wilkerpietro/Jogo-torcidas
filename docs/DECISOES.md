@@ -8256,6 +8256,28 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - **A vida da casa**: sede ampliada, bar, loja e subsede inaugurados, faixa e bandeira novas, e cada marco de membros (de 50 em 50 até mil, depois de 100 em 100). A casa é lida por diferença contra a foto do dia anterior (`E.nossaFotoNoFeed`), sem gancho em cada compra.
 - Em 90 dias de TUF sem jogar cena, o nosso perfil foi de 9 para 19 posts, o mais ativo das torcidas (a mais ativa das outras fez 13).
 
+## As logos das competições e a imagem dos posts (pedido do dono, 01/10/2026)
+
+**Logos das competições.** Nesta sessão a rede só alcança o GitHub (Wikipédia, sites de logo e CDNs de imagem são barrados). Por isso o dono mandou dois pacotes (`campeonatos.rar` e `campeonatos_restantes.rar`), e `ferramentas/importar_logos_competicoes.py` os aplica:
+- tira o fundo branco das logos que vieram com fundo: o branco que encosta na borda vira transparente, com a beirada suavizada, e o branco de dentro fica. A bola da Primera B colombiana mantém o miolo redondo;
+- põe um halo claro nas logos escuras (Libertadores, Sudamericana, Paulistão, Série C…), que sumiriam no fundo do jogo. A Série C veio em SVG com letra verde-escura e foi rasterizada antes;
+- reduz para 320 px no lado maior e grava em `img/competicoes/` com o nome que o jogo usa.
+- O mapa nome → arquivo, com os apelidos ("Brasileirão Série A" e "Série A", "Copa Libertadores" e "Libertadores"), fica em `dados/competicoes_logos.js`.
+- Só a LNT, que não existe fora do jogo, usa um emblema desenhado (`ferramentas/emblemas_competicoes.py`, SVG sem fundo). O script não sobrescreve as oficiais.
+- Na tela Competições, a marca e o nome da competição aparecem em cima do corpo, em qualquer nível e país.
+
+**A imagem do post (2:1).** Os posts da Gazeta e do Futebol e Porrada, o resultado do nosso jogo e a zoeira da nossa briga levam um cartaz. O post guarda só os dados (`m.card`, montado em feed.js), e a imagem é desenhada pela tela (`js/ui/cartaz.js`), em qualquer idioma. A legenda (o texto do post) fica embaixo, depois das curtidas, com o @ de quem postou na frente, como no Instagram.
+- **Jogo:** logo da competição com a rodada ou a fase, escudo, placar e escudo, a marca do jornal e a manchete. O fundo é um estádio visto do gramado, desenhado pelo jogo, com a arquibancada nas cores do mandante, e desfocado.
+- **Manchete do jogo**, como a TV fala, do ponto de vista do clube da notícia: "FERROVIÁRIO PERDE PRO BAHIA FORA DE CASA", "CEARÁ VENCE O TREZE EM CASA". Metade das vezes (sorte fixa por post) a competição entra no lugar do mando: "FERROVIÁRIO VENCE O BAHIA NA SÉRIE D". Há ainda goleia/é goleado (diferença de 3 ou mais), empata com, e elimina/é eliminado nos pênaltis.
+  - O artigo do adversário vem de `TO.genero.clube`: clube é masculino, e `dados/genero.js` lista as exceções femininas (Ponte Preta, Portuguesa, Chapecoense, LDU…). Em espanhol fica "al / ante el / con el / por el"; em inglês, "beat / lose to / draw with / thrashed by".
+  - O texto corrido do jogo continua sem artigo antes de clube; só a manchete da imagem fala assim.
+  - Manchete comprida encolhe a letra para caber.
+- **Briga:** as duas torcidas (logo ou sigla nas cores, a vencedora com aro dourado), a etiqueta do lugar ("NO BAR · FORTALEZA") e a manchete ("LEÕES DA TUF LEVA A MELHOR NO BAR"). Embaixo, envolvidos, feridos e presos, lado a lado.
+  - **O fundo é a foto da briga** (`bonecos3.fotoDaBriga`), com a mesma receita da foto do troféu: o fundo aéreo da cena em que a briga foi, e os bonecos 3D nas cores das torcidas, em pares lado a lado. Os vencedores estão no pico do soco ou do chute; os perdedores, um no chão, um se cobrindo, um cambaleando.
+  - A foto sai quando o cartaz aparece na tela, uma de cada vez, e fica guardada só na memória da sessão (até 80), sem ir para o save. Antes dela, aparece a foto aérea da cena, desfocada.
+  - A cena no ar é trocada só para desenhar e volta logo depois. Com uma briga rodando (`ponte.rodando`), nada é feito.
+  - Briga do mundo: o lugar sai do tipo da briga (bar → bar, estrada → ônibus, dia de jogo → praça, arredores ou arquibancada, pelo mesmo sorteio do texto).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

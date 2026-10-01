@@ -209,6 +209,19 @@ TO.dados.genero = {
         'Sul do Chile', 'Sul do Equador', 'Sul do Peru']
   },
 
+  /* ---------- clubes (só pra manchete do cartaz, 01/10/2026) ----------
+     O texto corrido do jogo continua sem artigo antes de clube; a
+     manchete da imagem do post é que fala como a TV — "Ferroviário perde
+     pro Bahia fora de casa", "Ceará vence o Treze em casa" (pedido do
+     dono). Clube é masculino; a lista é das exceções femininas. */
+  clube: {
+    f: ['Chapecoense', 'Ponte Preta', 'Portuguesa', 'Portuguesa Santista',
+        'Inter de Limeira', 'Tuna Luso', 'Águia de Marabá',
+        'Universidad de Chile', 'U. Católica', 'U. Católica/EQU', 'U. de Concepción',
+        'Unión Española', 'Unión La Calera', 'Unión Magdalena', 'La Serena',
+        'La Equidad', 'LDU Quito', 'Academia Puerto Cabello']
+  },
+
   /* ---------- fases ----------
      Quase todas femininas, duas no plural. O palpite antigo mandava
      tudo que termina em s pro plural feminino e o resto pro singular

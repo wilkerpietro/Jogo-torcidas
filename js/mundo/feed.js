@@ -98,6 +98,8 @@ TO.feed = (function(){
     if(extra.publico){ m.publico = true; m.lida = true; }
     /* o perfil da ZONA da torcida (30/09/2026): "Leões da TUF · Zona Sul" */
     if(extra.zona) m.zona = extra.zona;
+    /* a imagem do post (01/10/2026): os dados do cartaz, desenhado na tela */
+    if(extra.card) m.card = extra.card;
     E.mensagens.unshift(m);
     aparar(E);
     if(!m.publico) try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
@@ -262,6 +264,7 @@ TO.feed = (function(){
                quando:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
                        abs:E.data.absoluto||0}, lida:true, publico:true};
     m.curtidas = curtidasDoJornal(E, extra.citadas || [E.torcida.id], m.id);
+    if(extra.card) m.card = extra.card;
     E.mensagens.unshift(m);
     aparar(E);
     return m;
@@ -281,9 +284,17 @@ TO.feed = (function(){
     const texto = (chapeu ? chapeu.toUpperCase() + ' · ' : '') + manchete +
                   (/[.!?]$/.test(manchete) ? '' : '.') + (olho ? ' ' + olho : '');
     const d = m.dados || {};
+    let card = null;
+    if(m.kind === 'rodada' && d.nosso) card = cartazDoJogo(d.nosso, E.torcida.clubeId);
+    else if(m.kind === 'confronto' && d.a && d.b){
+      const a = d.a, b = d.b;
+      const empate = !d.ganhamos && (a.caidos||0) === (b.caidos||0) && ((a.caidos||0) || (b.caidos||0) || (a.n||0));
+      card = cartazDaBriga(a, b, empate ? null : !!d.ganhamos, NOMES_CENA[d.cena] || 'na rua',
+                           d.cena || 'rua', d.bairro || '');
+    }
     postDoJornal(E, jornal, texto, {chave:`jornal|${m.id}`,
       dados:{materia:m.id, aba: m.kind === 'confronto' ? 'tretas' : 'arquivo'},
-      citadas:[E.torcida.id, d.torcidaId || (d.b||{}).id].filter(Boolean)});
+      citadas:[E.torcida.id, d.torcidaId || (d.b||{}).id].filter(Boolean), card});
   }
 
   /* =======================================================
@@ -349,6 +360,41 @@ TO.feed = (function(){
     return t === 'bar' ? _t('no ataque ao bar') : t === 'treta' ? _t('na treta marcada')
          : t === 'surpresa' ? _t('no ataque-surpresa') : t === 'estrada' ? _t('na estrada') : _t('na rua');
   }
+  /* =======================================================
+     O CARTAZ DO POST (pedido do dono, 01/10/2026)
+     Os posts da Gazeta, do Porrada e os nossos de jogo e de briga
+     levam uma imagem 2:1 que explica a notícia — escudos e placar no
+     jogo; as duas torcidas, os números e a foto dos bonecos no lugar
+     da briga. O post guarda só os DADOS (`m.card`); quem desenha é a
+     tela (js/ui/cartaz.js), em qualquer idioma.
+     ======================================================= */
+  const LUGAR_ONDE = {concentracao:'na concentração', pista:'na pista', arredores:'nos arredores do estádio',
+                      arquibancada:'na arquibancada', bar:'no bar', treta:'na treta marcada',
+                      surpresa:'no ataque-surpresa', estrada:'na estrada', rua:'na rua'};
+  const LUGAR_CENA = {concentracao:'praca', pista:'arredores', arredores:'arredores', arquibancada:'estadio-20',
+                      bar:'bar', treta:'treta-beco', surpresa:'rua', estrada:'emb-onibus', rua:'rua'};
+  function lugarDaBriga(reg){
+    const t = tipoDaBriga(reg);
+    if(t === 'jogo')
+      return PONTOS_DO_JOGO[TO.mapa.hash(`onde|${reg.ano}|${reg.semana}|${reg.dia}|${(reg.a||{}).id}|${(reg.b||{}).id}`) % PONTOS_DO_JOGO.length];
+    return t;
+  }
+  const cartazDoJogo = (j, foco) => ({t:'jogo', c:j.c, f:j.f, gc:j.gc, gf:j.gf,
+    comp:competicaoCurta(j.compNome || j.comp || ''), rod:j.rodada || j.rod || 0, fase:j.fase || '',
+    pen:j.pen ? {c:j.pen.c, f:j.pen.f} : null, venceu:j.venceu || '', foco:foco || null,
+    neutro:!!j.neutro});
+  const ladoDoCartaz = x => ({id:x.id || x.torcidaId || null, nome:x.nome || '', n:x.n || 0,
+    feridos:x.feridos != null ? x.feridos : (x.caidos || 0), presos:x.presos || 0});
+  /* `venceuA`: true, false ou null (empate) */
+  function cartazDaBriga(a, b, venceuA, onde, cena, cidade){
+    return {t:'briga', a:ladoDoCartaz(a || {}), b:ladoDoCartaz(b || {}), venceuA,
+            onde:onde || 'na rua', cena:cena || 'rua', cidade:cidade || ''};
+  }
+  function cartazDaBrigaIA(r){
+    const k = lugarDaBriga(r);
+    return cartazDaBriga(r.a, r.b, r.vencedor ? !!r.ganhouA : null, LUGAR_ONDE[k], LUGAR_CENA[k], r.cidade || '');
+  }
+
   function textoDaZoeira(reg, P, h){
     P.onde = reg.onde || ondeDaBriga(reg);
     const venceuQuemAtacou = !!reg.ganhouA;
@@ -463,7 +509,8 @@ TO.feed = (function(){
       ? _t('E a bandeira da {perdedor} trocou de dono.', P)
       : _t('E a faixa da {perdedor} trocou de dono.', P));
     if(P.k > 1) texto += ' ' + _t('Ao todo, {k} brigas pelo país hoje.', P);
-    postDoJornal(E, 'porrada', texto, {chave:`porrada-dia|${abs}`, dados:{aba:'brigas'}, citadas:[V.id, D.id]});
+    postDoJornal(E, 'porrada', texto, {chave:`porrada-dia|${abs}`, dados:{aba:'brigas'}, citadas:[V.id, D.id],
+      card:cartazDaBrigaIA(r)});
   }
 
   /* =======================================================
@@ -547,7 +594,7 @@ TO.feed = (function(){
       }
       const citadas = M().torcidasDe(time).map(o=>o.id).slice(0, 2);
       postDoJornal(E, 'gazeta', texto, {chave:`gazeta-cidade|${abs}|${j.c}|${j.f}`,
-        citadas: citadas.length ? citadas : [E.torcida.id]});
+        citadas: citadas.length ? citadas : [E.torcida.id], card:cartazDoJogo(j, classico ? null : time)});
     }
   }
 
@@ -863,7 +910,8 @@ TO.feed = (function(){
     else { tipo = 'reclamacao'; op = [
       _t('Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.', P),
       _t('Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.', P)]; }
-    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`});
+    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`,
+      card:cartazDoJogo(j, meu)});
   }
 
   /* no dia do jogo fora: a caravana chegou */
@@ -999,7 +1047,10 @@ TO.feed = (function(){
       ? DEBOCHE[(h >> 5) % DEBOCHE.length] : textoDaZoeira(reg, P, h);
     if(d.ganhamos || !tregua)
       mensagemDe(E, V.id, texto, 'zoeira',
-        {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`});
+        {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`,
+         card:cartazDaBriga({id:nos.id, nome:nos.nome, n:a.n, caidos:a.caidos, presos:a.presos},
+                            {id:eles.id, nome:eles.nome, n:b.n, caidos:b.caidos, presos:b.presos},
+                            !!d.ganhamos, NOMES_CENA[cena] || 'na rua', cena || 'rua', cidadeDeHoje(E))});
     /* a resposta de quem perdeu: a deles sempre que a briga valeu
        prestígio (os textos de volta aprovados pelo dono, 18/08/2026),
        e às vezes nas miúdas; a nossa resposta fica com o jogador */
