@@ -3195,3 +3195,209 @@ cidade 3D sai idêntica antes e depois.
   (T2) e as casas de muro continuam em todo bairro, o Nobre também.
 - **A rua das casas de veraneio** (as casas com piscina das pontas do
   mapa) fica fora dos bairros e não mudou.
+
+## 34. As praças compostas cortadas em cidades (01/10/2026)
+
+**O pedido** (o dono, caso a caso — o texto inteiro está na conversa):
+"Deixe as cidades com a metade da proximidade proposta, pra dar uma
+impressão maior de conurbação. [...] Agora as sedes das torcidas e os
+estádios tem que ficar obrigatoriamente na sua cidade."
+
+Os dados (a cidade de cada bairro, os bairros que mudam, as sedes e os
+estádios na cidade do clube) e a torcida por bairro entraram antes, no
+commit "Cidades das praças compostas e a torcida por bairro"
+(`dados/fonte/cidades_bairros.json`, `js/mundo/dominio.js`). Esta parte é
+o mapa: o gerador (`ferramentas/planta_html/proposta.js`), a planta
+(`index.html`) e o cenário 3D (`cenario.js`).
+
+### O gerador: cortar, afastar e ligar
+
+- **`CISOES`**: as 18 praças que viram mais de uma cidade, cada uma com a
+  cidade do meio (a de hoje, a do jogo) e as ligações — a cidade, de
+  qual outra ela sai, o rumo (n, ne, l, se…), os km da placa e o jeito
+  (`longe`, `costa`, `baia`). Goiânia fica inteira (o pedido: "mantenha
+  da forma que está"). `cisaoDaPraca` monta isso com os bairros dos dados.
+- **A vaga do estádio**: o estádio de cada cidade de fora vai pra vaga do
+  lado dela; os do centro, pras que sobram, longe das de fora.
+- **O corte** (`cortarEmCidades`): as quadras, as favelas e as vagas são
+  repartidas entre as cidades pela proporção dos bairros de cada uma; a
+  cidade de fora cresce a partir do estádio dela (ou da ponta do lado
+  dela), e a que tem bairro de favela prefere levar uma favela. As áreas
+  saem a poucos por cento do alvo em todas as praças.
+- **O afastamento** (`afastarCidades`): cada cidade de fora anda pro rumo
+  dela até ficar a **50 m** (`VAO_CIDADES_M`, a metade dos 80 a 120 m da
+  proposta) da cidade de onde ela sai; a `longe` (Imperatriz, Campos dos
+  Goytacazes) a 100 m; Niterói, do outro lado da baía, a 150 m. O que era
+  da cidade de hoje onde a quadra foi embora — a rua, o poste, a árvore, o
+  carro, o equipamento, o marco, o campo — some do mapa.
+- **As estradas**: uma reta (ou em L) da rua de uma cidade à da outra,
+  sem encostar em nada; a cidade que a avenida de entrada ou a da beira já
+  alcança (Marabá, Balneário Camboriú, Parnaíba) usa a avenida. Na ponta
+  de cada cidade, o **pórtico** com o nome dela ("BEM-VINDO A FEIRA DE
+  SANTANA"; "AO RIO DE JANEIRO") e, do lado direito de quem sai, a
+  **placa verde** com a outra cidade e os km.
+- **A baía** (Subúrbio Carioca): a água do mar entre o Rio e Niterói, e a
+  estrada vira **ponte** — o tabuleiro de concreto por cima da água, com a
+  mureta dos dois lados.
+- **A ponta da estrada no chão da cidade**: a ponta sai da caixa da rua
+  da cidade; no centro, a quadra recortada pela costa e a avenida da beira
+  (torta) têm a caixa maior que elas, e entre a ponta e a rua sobravam 6 a
+  15 m de mato — no 3D ninguém passava, e Rondonópolis, Bragança Paulista,
+  Niterói e Campos ficavam soltas do resto da praça. Agora a ponta entra
+  até encostar no chão de verdade da cidade (`encostar`).
+- **A rua de veraneio** volta pra beira da cidade dela, no lado livre —
+  nunca por cima de avenida (em Ponta Grossa ela caía atravessada na
+  avenida de entrada, e a grade da avenida partia a rua ao meio) —, e o
+  mundo da praça cresce até ela (antes ele era medido sem ela, e o cenário
+  3D cortava a rua de veraneio fora da área dele).
+- **A favela solta** — a que, cortada a praça, não tem beco que chegue
+  numa rua da cidade dela (a quadra vizinha foi pra outra cidade, ou virou
+  baía) — ganha um beco até a rua mais perto, a continuação de um beco
+  dela, reto ou com uma dobra, sem passar por quadra, casa, outra favela
+  nem água. São 8: a do noroeste do mapa pequeno, que o corte deixa numa
+  cidade de fora em seis interiores (Erechim, Criciúma, Maringá,
+  Maranguape, São João del-Rei, Santa Cruz do Capibaribe), e a do norte
+  do Rio (ilhada entre o mato e a baía) e de Campinas.
+
+### A planta: os bairros, as sedes e os estádios na cidade deles
+
+- **A cidade é a zona**: o bairro de outra cidade tem a cidade como zona
+  (`'C:Feira de Santana'`), e as quadras, a favela, o estádio e os
+  terrenos de sede de lá também. Os bairros de uma cidade repartem só o
+  chão dela, do mesmo tamanho, pelas mesmas regras de antes (a favela
+  sozinha, a sede dentro, o estádio inteiro).
+- **O centro sem as quatro zonas**: cortada a praça, o centro pode ficar
+  sem bairro numa zona (João Pessoa só tem Norte e Leste; Caxias do Sul,
+  só Leste). Aí os gomos são só das zonas que ele tem: cada ponto vai pra
+  zona presente de ponto cardeal mais perto, com um peso por zona (até
+  35°) que iguala o tamanho dos bairros (`gomosComPeso`).
+- **A sede só fica na cidade dela** (a do bairro dela nos dados): cada
+  cidade tem os terrenos dela — os do gerador e as reservas —, e a torcida
+  da cidade sem terreno que sobre fica sem sede (a mais fraca primeiro).
+  A reserva agora também sai da quadra estreita e comprida (a ponta de
+  cima ou a de baixo, de frente pro oeste ou pro leste): em Erechim só
+  havia quadra assim, e a Mancha do Ypiranga ficava sem sede.
+- **O estádio no bairro dele**: na cidade de fora com mais de um bairro
+  (Mossoró, Campina Grande, Teresina…) o estádio fica no bairro que os
+  dados dizem; e o Jonas Duarte fica no bairro Anápolis, na Goiânia
+  inteira (`ESTADIO_NO_BAIRRO`), junto com a sede da Independente.
+- **No desenho**: o nome de cada cidade, grande, em cima do miolo dela;
+  "Estrada pra Salvador" no pórtico; a estrada, a ponte, a mureta, a baía
+  e a placa; a ficha do pórtico diz a cidade dele, e a ficha da praça diz
+  as cidades, os bairros, o rumo e os km.
+
+### O cenário 3D
+
+- **A baía é água**: o boneco não entra nela (`api.lagoa()` devolve a
+  baía), e o tabuleiro da ponte se pisa; a **mureta** (1,05 m) segura ele
+  dos lados. A água entra inteira na área do cenário.
+- **A placa verde** em pé, nos dois postes, com o painel de frente pra
+  quem sai da cidade; o pórtico com o nome da cidade dele.
+- **O alcance**: o lugar onde o boneco nasce e por onde o dia de jogo
+  anda era o que se chega da borda da área; no Subúrbio a borda virou mato
+  e baía, e a cidade inteira ficava fora. Agora o meio de cada estrada
+  entre as cidades também é ponto de partida (`semear`).
+- **A grade de proteção** não fecha o beco que liga a favela solta à rua.
+- **O mato da costa não cobre a rua da cidade de fora**: na praça sem
+  praia, a zona da costa de hoje é pintada de mato, menos dentro da caixa
+  de cada cidade de fora. As caixas iam todas num recorte só (par-ímpar),
+  e onde duas se cruzavam o mato voltava: no Interior de PE a caixa de
+  Caruaru cruza a de Santa Cruz do Capibaribe, e a rua que liga as quadras
+  de Santa Cruz virou mato — no 3D o boneco não passava, e a estrada de
+  Caruaru dava num pedaço de Santa Cruz solto do resto. Agora é um recorte
+  por caixa, um em cima do outro (a máscara do mato do cenário sai do
+  mesmo desenho). As caixas se cruzam em mais três praças (Interior de SP,
+  Maranhão, Sergipe), longe da zona da costa.
+
+### Medido
+
+| | |
+|---|---|
+| praças cortadas | 18 (Goiânia inteira) |
+| cidades | 73 |
+| trechos de estrada | 52 (Belém–Marabá e Florianópolis–Balneário Camboriú pela avenida) |
+| pórticos de cidade | 106 |
+| placas de km | 98 |
+| favelas com beco de ligação | 8 |
+| avisos do gerador ("sem estrada", "sem rua") | 0 |
+| células de bairro fora da cidade dele | 0 |
+| sedes fora da cidade do bairro delas | 0 |
+| estádios fora da cidade (ou do bairro) dos dados | 0 |
+| sedes nas 30 praças (antes; agora) | 139; 139 — as mesmas em cada praça |
+| portas de sede e de bar e pórticos alcançáveis andando (18 praças cortadas, mais São Paulo e Manaus) | todas |
+| as cidades ligadas a pé: sedes, bares, pórticos, rua de veraneio e estádios num pedaço só de chão andável (18 praças cortadas, mais Fortaleza e Goiânia) | todas (antes das correções: 3 praças em dois pedaços, e 8 ruas de veraneio fora) |
+| montar a praça na planta (as cortadas) | de 0,25 a 1,6 s (antes de 0,04 a 0,7 s) |
+
+**O boneco a pé** atravessa a ponte do Subúrbio de ponta a ponta (de um
+lado ao outro da baía), e a mureta segura ele dos lados. **Os bairros**:
+o teste das 30 praças (nenhum bairro vazio, toda sede no bairro dos dados,
+todo bar com bairro) passa em todas.
+
+### O dia de jogo
+
+- **A torcida de outra cidade da praça anda pela estrada**: a sede fica na
+  cidade dela e o estádio na do clube, e o bonde sai da sede, pega a
+  estrada e entra na cidade do estádio pelo pórtico. Central × Salgueiro:
+  a TJSALG anda 556 m de Salgueiro ao Lacerdão, em Caruaru, passando por
+  Santa Cruz do Capibaribe. A rota mais comprida é a da torcida do Guarany
+  de Sobral até o Romeirão, em Juazeiro do Norte: 1.141 m. Quem mora
+  longe só sai mais cedo — o último bonde chega às 15:27 (antes, 15:29).
+- **O corredor que abre vale pra quem vem de longe**: a PM traça primeiro
+  o corredor do visitante; a torcida do mandante cujo caminho só chega no
+  portão cruzando esse corredor espera ele abrir. Antes, só a do portão
+  "ilhado" (o corredor passando na frente dele) esperava; a outra ficava
+  sem rota e o bonde sumia. Joinville × Criciúma, no Heriberto Hülse: a
+  estrada de Joinville entra em Criciúma na rua do corredor do visitante;
+  a PM abre às 15:12 e a UT chega às 15:20. O painel diz "o caminho até o
+  portão 1 cruza o corredor do visitante".
+- **Os dois bondes que tinham sumido** na primeira rodada depois do corte
+  (a TJSALG e a UT) eram estes dois casos — a rua partida de Santa Cruz do
+  Capibaribe e o corredor.
+
+| dia de jogo, 20 praças (as 18 cortadas, Goiânia e Fortaleza) | antes do corte | depois |
+|---|---|---|
+| jogos montados (o mesmo clássico em cada praça) | 20 | 20 |
+| bondes | 54 | 54 (os mesmos) |
+| bonecos na rua | 3.205 | 3.205 |
+| bonde sem rota ou erro no plano | 0 | 0 |
+| rota de cada bonde (mediana da diferença) | — | −5 m (de −296 a +793 m) |
+| o último bonde chega | 15:29 | 15:27 |
+
+### Limites (sinceros)
+
+- **As cidades são pedaços da mesma grade**: a cidade de fora é feita das
+  quadras e da favela que o corte deu a ela, no desenho da cidade de hoje
+  — não tem centro, igreja nem praça dela, e algumas saem compridas e
+  estreitas (Erechim é uma faixa de duas quadras; o Rio, sem o leste que
+  virou baía, fica com uma tira ao longo da avenida).
+- **A distância é de brinquedo**: 50 m de mato entre Salvador e Feira de
+  Santana; a placa diz os km, que são **aproximados** (a linha reta com um
+  quinto a mais, não a estrada de verdade). Imperatriz e Campos, "longe",
+  ficam só a 100 m.
+- **Belém–Marabá e Florianópolis–Balneário Camboriú** se ligam pela
+  avenida de entrada ou pela da beira: têm pórtico, mas não têm placa de km.
+- **A baía é um polígono simples**: a margem segue o contorno das
+  quadras, em degraus, e ela é bem maior que o necessário (vai até a borda
+  do mapa). A ponte é a estrada pintada por cima da água, rente ao chão,
+  sem pilar; a grade de proteção da estrada também corre por cima dela.
+- **O centro sem as quatro zonas** fica com os gomos das zonas que ele
+  tem; os nomes das zonas ("ZONA NORTE"…) só aparecem pro centro — a
+  cidade de fora não tem zona no mapa. No Subúrbio Carioca, Nova Iguaçu
+  (Zona Norte) fica no norte do mapa, mas o meio dela cai no gomo vizinho
+  (o único "fora do gomo" das 30 praças).
+- **A sede na reserva estreita** (a quadra comprida de Erechim) tem 9,8 m
+  de fundo: cabe a sede do nível 1 (a Mancha do Ypiranga é nível 1); uma
+  sede maior ali sairia apertada.
+- **O beco de ligação** da favela solta é um beco reto no mato, com a
+  grade dos dois lados: resolve o caminho, mas não é bonito.
+- **A montagem da praça cortada é mais lenta** na planta (até 1,6 s no
+  Litoral Catarinense, antes 0,3 s): o corte, o afastamento e os bairros
+  por cidade.
+- **Ninguém vai de ônibus dentro da praça**: a torcida cuja sede fica numa
+  cidade e o estádio do jogo noutra vai a pé pela estrada (a do Guarany
+  anda 1.141 m de Sobral ao Romeirão; a UT, 892 m de Joinville ao
+  Heriberto Hülse). Com 50 m de mato entre as cidades — a conurbação do
+  pedido — passa; se elas se afastarem, o certo é a torcida descer do
+  ônibus no pórtico da cidade do estádio, como a caravana de fora.
+- **Quem domina o quê** nas praças compostas (o domínio por cidade) ainda
+  espera a resposta do dono: a dona continua contada pela praça inteira.

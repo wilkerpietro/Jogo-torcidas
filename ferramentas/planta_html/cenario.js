@@ -263,6 +263,12 @@ function GradeDoPasso(ar, M) {
      fila circular que cresce se precisar), por cima dos riscos marcados
      nas células — feito na primeira vez que alguém entra a pé, e não na
      montagem, que não precisa dele */
+  /* AS SEMENTES DO ALCANCE (a praça cortada em cidades, 01/10/2026): o
+     meio de cada estrada entre as cidades também é de onde se chega — a
+     borda da área pode ser toda mato e água (no Subúrbio Carioca, a baía
+     vai até ela), e a cidade inteira ficava fora do alcance */
+  let sementes = [];
+  function semear(pts) { sementes = pts || []; alcancou = false; }
   function alcancar() {
     if (alcancou) return;
     alcancou = true;
@@ -282,6 +288,7 @@ function GradeDoPasso(ar, M) {
     };
     for (let i = 0; i < nx; i++) { poe(i); poe((nz - 1) * nx + i); }
     for (let j = 0; j < nz; j++) { poe(j * nx); poe(j * nx + nx - 1); }
+    for (const [x, z] of sementes) { const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c); if (i >= 0 && j >= 0 && i < nx && j < nz) poe(j * nx + i); }
     while (ini < fim) {
       const k = q[ini++ & (q.length - 1)], i = k % nx;
       if (i > 0) poe(k - 1);
@@ -358,7 +365,7 @@ function GradeDoPasso(ar, M) {
   /* o MAPA DO TETO (a luz da noite dentro dos prédios), uma vez: a altura
      do teto de cada célula, e ele sai da memória daqui */
   function mapaDoTeto() { const d = tetoY; tetoY = null; return d ? { dados: d, nx, nz, ox, oz, c } : null; }
-  return { assar, agua, mato, alcancar, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz, crua, mapaDoTeto };
+  return { assar, agua, mato, alcancar, semear, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz, crua, mapaDoTeto };
 }
 const agora = () => performance.now();
 const milhar = n => Math.round(n).toLocaleString('pt-BR');
@@ -2325,6 +2332,7 @@ void main() {`)
     /* a água entra por último na grade do passo */
     const tGrade = agora();
     gradeNova.agua(P.costa && P.costa(), P.lagoa && P.lagoa());
+    gradeNova.semear(P.sementesDoPasso ? P.sementesDoPasso() : []);
     pisoNovo.fechar();
     /* O METRÔ: o poço de cada estação é buraco no chão (e o boneco não
        nasce nele), o subsolo fecha, e a terra em volta da estação fica
