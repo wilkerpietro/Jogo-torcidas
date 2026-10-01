@@ -192,6 +192,19 @@ TO.acoes = (function(){
   function alvosDeAtaque(E){
     const mo = TO.mapa && TO.mapa.modelo(E);
     if(!mo) return [];
+    /* O ENDEREÇO É O DO DOMÍNIO (01/10/2026): o bar e a sede de cada
+       torcida ficam no bairro em que o domínio dos bairros os põe — é
+       lá que o bote soma (ou tira) pontos e é lá que o mapa os mostra.
+       O pino do mapa antigo só vale quando o domínio não está carregado. */
+    const Dm = TO.dominio, cid = E.torcida.mapa;
+    const nomeB = id => { const b = Dm && Dm.bairro(cid, id); return b ? b.nome : null; };
+    const est = Dm ? Dm.estruturas(E, cid) : [];
+    const bairroDoPonto = (tid, tipo) => {
+      if(!Dm) return null;
+      if(tipo === 'sede'){ const b = Dm.sedeDe(tid, cid); return b ? b.nome : null; }
+      const s = est.find(x => x.tid === tid && x.tipo === tipo);
+      return s ? nomeB(s.bairro) : null;
+    };
     const fora = [];
     for(const p of mo.pinos){
       if(p.nossa || !p.torcida) continue;
@@ -203,7 +216,7 @@ TO.acoes = (function(){
         id: `${o.id}|${p.tipo}`, torcidaId:o.id, tipo:p.tipo, deQuem:o.nome,
         nome: p.tipo === 'bar' ? _t('Bar da {nome}', {nome:o.nome})
                                : _t('Sede da {nome}', {nome:o.nome}),
-        artigo:'a', bairro:p.bairro, x:p.x, y:p.y, cor:p.cor,
+        artigo:'a', bairro:bairroDoPonto(o.id, p.tipo) || p.bairro, x:p.x, y:p.y, cor:p.cor,
         relacao: rel,
         efetivo: efetivoDePe(E, o)
       });
@@ -671,6 +684,7 @@ TO.acoes = (function(){
       if(m) m.moral = U.limitar(m.moral - 3, 0, 20);
       if(alvo.tipo === 'sede') linhas.push(_t('faixa deles rasgada na porta'));
       if(alvo.tipo === 'casa') linhas.push(_t('a resenha deles acabou no grito'));
+      if(alvo.tipo === 'reuniao') linhas.push(_t('a reunião deles na praça acabou na correria'));
     }else{
       linhas.push(_t('a gente saiu de lá pior do que entrou'));
     }

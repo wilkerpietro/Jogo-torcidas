@@ -8497,6 +8497,38 @@ O dono: "Quando eu clico no bairro eu prefiro ver as informações claras dele d
   - o clique em Pirambu mostra 217 habitantes, Favela, zona Norte, receita ×0,4, os clubes que moram ali, Aliança 86% / TUF 12% / de ninguém 2% e a sede da Aliança;
   - i18n sem falta.
 
+## Os alvos de domínio do mês, a reunião da zona na praça e a IA que quer a cidade inteira (pedido do dono, 01/10/2026)
+
+O dono: "dois alvos por mês definidos em reunião pras torcidas de sede 3 ou 4, sede nível 0 a 2 é um alvo, 5 a 6 são 3, os alvos podem ser as brigas marcadas, ou a sugestão que já existe de ataque a bar, ataque à reunião na praça (nova cena de briga com até 20 membros de cada lado, todos pertencentes à mesma zona do ataque, na imagem da praça, como se estivessem reunidos em uma reunião de alinhamento do bairro/zona, e sofrem ataque). Aprovo a mecânica de ataque com motivo, e de sem descanso quando domina." Antes: "O objetivo da torcida IA e da nossa é sempre dominar a cidade inteira."
+
+- **Os alvos do mês na reunião da diretoria** (`pautaAlvos`, `js/mundo/feed.js`):
+  - **Quantos:** 1 com sede de nível 0 a 2, 2 com nível 3 ou 4, 3 com nível 5 ou 6.
+  - **Onde:** os bairros mais baratos de virar. A conta é o que falta pra passar de 50% (mais o que a dona tem acima de 50), dividido pelo quanto um ponto nosso rende ali (a torcida do clube no bairro; metade no bairro da sede de outra). A zona onde a gente já manda passa na frente: é o "ataque com motivo".
+  - **Contra quem:** aliadas e irmãs não entram.
+  - **Sem descanso:** os bairros nossos abaixo de 60% também entram, e com a cidade nossa eles vão na frente. Bater em quem cresce ali é segurar o que é nosso.
+  - **O golpe:** o bote no bar da dona, se o bar fica no bairro; senão variam no mês a reunião da zona na praça, a treta marcada (a gente chama, com aposta de mil a seis mil) e a resenha da casa de piscina (se eles têm faixa ou bandeira).
+  - **A fala da diretoria** traz o motivo e o efeito pela conta do domínio: "Aldeota é da Cearamor, com 70%, e a gente tem 22% lá… Ganhando, o bairro fica mais perto de virar", ou "o bairro vira nosso", ou "o bairro fica seguro".
+  - **Os botões:** "Marcar o alvo" põe no calendário (bote, reunião na praça ou treta), e no dia o cartão abre a cena. "Deixar quieto" custa Prestígio −1 e Moral −1.
+  - Os botes sorteados de antes (35% de bar e 35% de casa por mês) saíram: os alvos do mês são os botes.
+- **A reunião da zona na praça** (`praca-reuniao`, `dados/cenas.js`): a praça de sempre, com a mesma foto, chão e fugas, e outro roteiro.
+  - A zona atacada fica em roda no largo do meio, em seis pontos em volta do coreto, e só levanta quando o bonde chega ali.
+  - A zona que ataca chega pela esquina leste.
+  - Até 20 de cada lado, todos da zona do ataque: o nosso bonde é `bondeDaZona` e o deles, `fichasDaZona`, a mesma régua da casa de piscina.
+  - Vale 12 pontos na barra do bairro do alvo, a mesma conta do bote no bar.
+  - Na defesa (a IA vindo na nossa reunião) os papéis se invertem e a gente é a roda.
+  - O olheiro avisa ("vão pegar a reunião da Zona Norte na praça hoje"), e o cartão do dia diz o bairro ("…chegou na praça de Genibaú em cima da reunião da Zona Norte! Querem o bairro.").
+- **As metas da IA** (`metasDoDia`, `js/mundo/dominio.js`):
+  - **Quantos e onde:** no começo de cada mês, cada organizada da IA escolhe os seus alvos, na mesma quantidade pela sede e na mesma conta de bairro barato. Cada alvo ganha um dia do mês e um golpe: o bar, se a dona tem bar no bairro, a reunião na praça ou a treta.
+  - **Contra nós:** se a dona somos nós, é o ataque marcado do dia (a reunião da nossa zona na praça, ou o nosso bar, se ele fica no bairro), com o aviso do olheiro. Fica fora do dia do nosso jogo e de semana que já tem ataque.
+  - **Contra outra IA:** é a briga das duas (`relacoes.brigaIA`), e a barra mexe no bairro do alvo, não no mais fraco da perdedora.
+  - **A dona da cidade não para:** ela também faz a ação social semanal, nos bairros dela abaixo de 60%.
+- **O endereço do bar e da sede dos alvos é o do domínio** (`acoes.alvosDeAtaque`): o bote soma no bairro onde o mapa mostra o bar. Antes vinha do pino do mapa antigo, que caía em outro bairro.
+- **Testado** (Playwright):
+  - jogo da TUF (sede 4) por 70 dias: a reunião trouxe 2 alvos por mês, com o motivo e o golpe variando (casa, treta, reunião). Os marcados foram pro calendário e viraram cartão no dia. A IA virou 29 a 32 bairros pelas metas no mundo, e 5 a 6 vezes veio na reunião da nossa zona;
+  - a cena da reunião abre com a zona da Cearamor (18) em roda no coreto e a nossa (20) na esquina;
+  - 200 dias sem erro;
+  - i18n sem falta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

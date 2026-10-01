@@ -78,6 +78,7 @@ TO.dominio = (function(){
     bar: 12, quebrou: 6,             // bote no bar (+6 se o bar quebrou)
     sede: 12,                        // bote na sede
     casa: 8,                         // a festa na casa com piscina
+    reuniao: 12,                     // a reunião da zona na praça (01/10/2026)
     estrutura: {bar:8, loja:8, subsede:20, filial:15},
     social: [6, 10],                 // ação social no bairro
     iaRua: 8, iaBar: 12              // as brigas entre as IAs
@@ -840,6 +841,8 @@ TO.dominio = (function(){
     }
     /* a IA que está atrás na cidade dela faz ação social (a semana) */
     if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); }
+    /* as metas do mês de cada organizada da IA (01/10/2026) */
+    try{ metasDoDia(E); }catch(e){ /* as metas não derrubam o dia */ }
   }
   function avisarCidade(E, cid, antes, dono, pl){
     const cidade = (cidadeDe(cid) || {}).nome || cid, meu = eu(E);
@@ -849,6 +852,126 @@ TO.dominio = (function(){
       : antes === meu ? _t('Perdemos o domínio de {cidade}: agora ninguém tem mais bairros que todo mundo.', {cidade})
       : _t('{cidade} ficou sem dona: empate no número de bairros.', {cidade});
     avisar(E, texto, `dominio-cidade|${E.data.absoluto}|${cid}|${dono || '-'}`);
+  }
+
+  /* =======================================================
+     AS METAS DA IA (pedido do dono, 01/10/2026: "o objetivo da torcida
+     IA e da nossa é sempre dominar a cidade inteira" — "dois alvos por
+     mês ... sede nível 0 a 2 é um alvo, 5 a 6 são 3"; aprovados o
+     "ataque com motivo" e o "sem descanso quando domina")
+     No começo de cada mês, cada organizada da IA escolhe os bairros
+     mais baratos de virar na cidade dela — o que falta pra passar de
+     50%, dividido pelo quanto um ponto dela rende ali, com desconto pra
+     zona onde ela já manda (o motivo). Quem domina a cidade não para:
+     os bairros dela abaixo de 60% entram na frente. Cada alvo ganha um
+     dia do mês e um golpe: o bote no bar da dona (se o bar fica ali),
+     a reunião da zona na praça ou a treta marcada.
+     No dia: se a dona somos nós, é ataque contra a gente (a reunião
+     da nossa zona na praça, ou o nosso bar, se ele fica no bairro),
+     com o aviso do olheiro e a cena de defesa; se é outra IA, é a
+     briga das duas (`relacoes.brigaIA`), e a barra mexe no bairro do
+     alvo, não no mais fraco da perdedora.
+     ======================================================= */
+  let ALVO_FORCADO = null;
+  const ALVOS_PELA_SEDE = n => n >= 5 ? 3 : n >= 3 ? 2 : 1;
+  function mesDe(E){
+    const d = TO.estado && TO.estado.dataDaSemana ? TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia) : null;
+    return d ? `${d.getFullYear()}|${d.getMonth()}` : `${E.data.ano}|${Math.floor((E.data.semana - 1) / 4.35)}`;
+  }
+  /* os bairros que valem a pena pra `tid` na cidade (a régua do jogador) */
+  function alvosDe(E, cid, tid, n, bs, pl){
+    const zk = b => b.semZona ? 'c:' + b.cidade : b.zona;
+    const minhas = new Set(bs.filter(b => b.dono === tid).map(zk));
+    const amiga = o => o === tid || (TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(tid, o));
+    const domina = pl.dono === tid;
+    const cand = [];
+    for(const b of bs){
+      const minha = (b.partes.find(p => p.t === tid) || {}).v || 0;
+      const f = fatorGanho(E, tid, cid, b) * (b.sede && b.sede !== tid ? RESISTE : 1);
+      if(b.dono === tid){
+        if(b.v >= 60) continue;
+        const r = b.partes.find(p => !amiga(p.t));
+        if(r) cand.push({b, v:r.t, nota:(b.v - 50) / Math.max(0.2, f) * (domina ? 0.5 : 1.3)});
+        continue;
+      }
+      const r = b.dono && !amiga(b.dono) ? b.dono : (b.partes.find(p => !amiga(p.t)) || {}).t;
+      if(!r) continue;
+      const falta = Math.max(0, 50.1 - minha) + (b.dono ? Math.max(0, b.v - 50) : 0);
+      cand.push({b, v:r, nota:falta / Math.max(0.2, f) - (minhas.has(zk(b)) ? 8 : 0)});
+    }
+    return cand.sort((x, y) => x.nota - y.nota).slice(0, n);
+  }
+  function planejarMes(E){
+    const I = indice(), meu = eu(E);
+    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    if(!mundo) return [];
+    const hoje = E.data.absoluto || 0, out = [];
+    const r = sorteio(`${semente(E)}|metas|${mesDe(E)}`);
+    for(const cid of I.comTorcida){
+      const bs = bairros(E, cid), pl = placar(E, cid);
+      if(!bs.length) continue;
+      for(const o of torcidasDaCidade(cid)){
+        if(o.id === meu) continue;
+        const t = mundo[o.id];
+        if(!t) continue;
+        const ests = estruturas(E, cid);
+        for(const a of alvosDe(E, cid, o.id, ALVOS_PELA_SEDE(t.sede || 0), bs, pl)){
+          const barDela = ests.some(s => s.tid === a.v && s.tipo === 'bar' && s.bairro === a.b.id);
+          const k = barDela && r() < 0.6 ? 'bar' : r() < 0.55 ? 'reuniao' : 'treta';
+          out.push({t:o.id, c:cid, b:a.b.id, v:a.v, k, d:hoje + 2 + Math.floor(r() * 25)});
+        }
+      }
+    }
+    return out;
+  }
+  function metasDoDia(E){
+    const D = raiz(E), mes = mesDe(E);
+    if(D.mesIA !== mes){ D.mesIA = mes; D.metas = planejarMes(E); }
+    const hoje = E.data.absoluto || 0, meu = eu(E);
+    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    for(const m of D.metas || []){
+      if(m.feito || m.d > hoje) continue;
+      m.feito = 1;
+      const x = bairro(m.c, m.b), att = TO.mundo && TO.mundo.torcida(m.t);
+      if(!x || !att || !mundo || !mundo[m.t]) continue;
+      /* a vítima é quem está no caminho HOJE: a dona, ou a maior das outras */
+      const ps = partes(E, m.c, x.id).filter(p => p.t !== m.t && !(TO.mundo.saoIrmas && TO.mundo.saoIrmas(m.t, p.t)));
+      const dona = donaDoBairro(E, m.c, x.id);
+      const vit = dona && dona !== m.t ? dona : (ps[0] || {}).t;
+      if(!vit) continue;
+      if(vit === meu){ contraNos(E, m, x, att); continue; }
+      const vo = TO.mundo.torcida(vit);
+      if(!vo || !mundo[vit] || !TO.relacoes.brigaIA) continue;
+      ALVO_FORCADO = {cid:m.c, b:x.id, a:m.t, v:vit, k:m.k};
+      try{
+        TO.relacoes.brigaIA(E, att, vo, m.c, m.k === 'bar' ? _t('ataque ao bar') : '',
+          {tipo: m.k === 'bar' ? 'bar' : m.k === 'treta' ? 'treta' : 'rua'});
+      }catch(e){ /* a meta não derruba o dia */ }
+      finally{ ALVO_FORCADO = null; }
+    }
+    /* o mês velho sai do save */
+    D.metas = (D.metas || []).filter(m => !m.feito);
+  }
+  /* a meta da IA em cima da gente: o ataque marcado de hoje, com o aviso */
+  function contraNos(E, m, x, att){
+    if(m.c !== E.torcida.mapa) return;
+    const a = E.ataqueMarcado;
+    if(a && !a.resolvido && a.semana === E.data.semana) return;
+    /* no dia do nosso jogo a rua é do itinerário */
+    const pj = E.proximoJogo;
+    if(pj && pj.semana === E.data.semana && pj.dia === E.data.dia) return;
+    const nossoBar = (E.patrimonio && E.patrimonio.bares || []).some(b => bairro(m.c, b.bairro) === x);
+    const noBar = m.k === 'bar' && nossoBar;
+    const Z = (TO.mundo && TO.mundo.ZONAS) || ZONAS;
+    const zona = x.zona && Z.includes(x.zona) ? x.zona : Z[hash(`${m.t}|${x.id}`) % Z.length];
+    E.ataqueMarcado = {torcida:m.t, nome:att.nome, alvo: noBar ? 'bar' : 'reuniao',
+                       cena: noBar ? 'bar' : 'praca-reuniao', zona: noBar ? null : zona,
+                       bairro:x.nome, mapa:m.c, ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+                       meta:true};
+    if(TO.relacoes.hostilidade && TO.relacoes.REL) TO.relacoes.hostilidade(E, m.t, TO.relacoes.REL.ataqueMarcado || 8);
+    if(TO.feed && TO.feed.avisoDoOlheiro)
+      TO.feed.avisoDoOlheiro(E, {chave:`meta|${E.data.ano}|${E.data.semana}|${m.t}|${x.id}`,
+                                 alvo: noBar ? 'bar' : 'reuniao', nome:att.nome, zona});
   }
 
   /* A IA NÃO FICA PARADA: a primeira ou a segunda maior da cidade que
@@ -861,6 +984,16 @@ TO.dominio = (function(){
     const I = indice(), meu = eu(E);
     for(const cid of I.comTorcida){
       const pl = placar(E, cid);
+      /* SEM DESCANSO QUANDO DOMINA (01/10/2026): a dona da cidade também
+         trabalha — no bairro dela abaixo de 60% */
+      if(pl.dono && pl.dono !== meu && mundo[pl.dono] && (mundo[pl.dono].caixa || 0) >= SOCIAL.custo * 2){
+        const r0 = sorteio(`${semente(E)}|segura|${pl.dono}|${E.data.ano}|${E.data.semana}`);
+        const fraco = bairros(E, cid).filter(b => b.dono === pl.dono && b.v < 60 && b.sede !== pl.dono).sort((a, c) => a.v - c.v)[0];
+        if(fraco && r0() < 0.35){
+          mundo[pl.dono].caixa -= SOCIAL.custo;
+          mexer(E, cid, fraco.id, pl.dono, GANHO.social[0] + r0() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
+        }
+      }
       for(const tid of maiores(E, cid)){
         if(tid === meu || tid === pl.dono) continue;
         const t = mundo[tid];
@@ -926,6 +1059,7 @@ TO.dominio = (function(){
     const ganhou = !!d.ganhamos;
     let pts = /treta/.test(cena) ? (GANHO.treta[d.tam] || GANHO.treta[7])
             : /arredores/.test(cena) ? GANHO.arredores
+            : /reuniao/.test(cena) || d.alvoTipo === 'reuniao' || d.tipoDefesa === 'reuniao' ? GANHO.reuniao
             : /^bar|bote/.test(cena) || d.alvoTipo === 'bar' ? GANHO.bar + (d.quebrou ? GANHO.quebrou : 0)
             : d.alvoTipo === 'sede' ? GANHO.sede
             : /casa|festa|piscina/.test(cena) ? GANHO.casa
@@ -949,6 +1083,15 @@ TO.dominio = (function(){
     /* a emboscada na estrada não é briga de bairro */
     if(!E || !reg || !reg.a || !reg.b || reg.tipo === 'estrada') return null;
     const venc = reg.ganhouA ? reg.a.id : reg.b.id, perd = reg.ganhouA ? reg.b.id : reg.a.id;
+    /* O ALVO DO MÊS (01/10/2026): a briga que a IA foi buscar acontece no
+       bairro que ela quer virar, e é ali que a barra mexe */
+    const F = ALVO_FORCADO;
+    if(F && F.cid && bairro(F.cid, F.b) && [F.a, F.v].includes(venc) && [F.a, F.v].includes(perd)){
+      const tam = reg.a.n || 0;
+      const pts = F.k === 'reuniao' ? GANHO.reuniao : F.k === 'bar' ? GANHO.iaBar
+                : F.k === 'treta' ? (GANHO.treta[tam] || GANHO.treta[7]) : GANHO.iaRua;
+      return mexer(E, F.cid, F.b, venc, pts, {contra:perd, motivo:'alvo-' + (F.k || 'rua')});
+    }
     let cid = reg.mapa;
     if(!cid){ const c = indice().C.find(x => x.nome === reg.cidade || x.id === reg.cidade); cid = c && c.id; }
     if(!cid || !bairrosDe(cid).length) return null;
@@ -1053,6 +1196,6 @@ TO.dominio = (function(){
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
           donaDoBairro, maiores, membrosDe, rivais, fator, notaDoCorte, siglaDe, nomeDe,
           mexer, confronto, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
-          podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash,
+          podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};
 })();

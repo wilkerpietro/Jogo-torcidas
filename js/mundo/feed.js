@@ -1386,7 +1386,7 @@ TO.feed = (function(){
      ======================================================= */
   const ACOES_DE_BRIGA = new Set([
     'cena-guerra', 'cena-defesa', 'cena-escolta', 'cena-treta',
-    'atacar-bar-rival', 'atacar-casa-rival'
+    'atacar-bar-rival', 'atacar-casa-rival', 'atacar-reuniao-rival'
   ]);
 
   function comSimular(botoes){
@@ -4220,7 +4220,9 @@ TO.feed = (function(){
     const p = pautaPaz(E);         if(p) pautar(E, p);
     const f = pautaAfastar(E);     if(f) pautar(E, f);
     /* os botes do mês: o bar e a casa de piscina, cada um no seu dado */
-    for(const tipo of ['bar','casa']){ const b = pautaBote(E, tipo); if(b) pautar(E, b); }
+    /* os alvos do mês (01/10/2026): 1, 2 ou 3 pelo nível da sede, cada
+       um num bairro a virar — no lugar dos botes sorteados de bar e casa */
+    pautaAlvos(E);
     /* os convites de festa das aliadas até a próxima reunião */
     { const fe = pautaFestas(E); if(fe) pautar(E, fe); }
     /* a nossa festa de aniversário e a do clube, e os alvos de assalto */
@@ -4377,6 +4379,150 @@ TO.feed = (function(){
     };
   }
 
+  /* =======================================================
+     OS ALVOS DO MÊS (pedido do dono, 01/10/2026: "dois alvos por mês
+     definidos em reunião pras torcidas de sede 3 ou 4, sede nível 0 a 2
+     é um alvo, 5 a 6 são 3, os alvos podem ser as brigas marcadas, ou a
+     sugestão que já existe de ataque a bar, ataque à reunião na praça")
+
+     O objetivo é dominar a cidade inteira. A diretoria aponta os
+     bairros mais baratos de virar — o que falta pra gente passar de 50%
+     (mais o que a dona tem acima de 50), dividido pelo quanto um ponto
+     nosso rende ali (a torcida do clube no bairro; no bairro da sede de
+     outra, metade) — e, pra cada um, o golpe que dá: o bote no bar da
+     dona que fica nele, a reunião da zona dela na praça, a treta
+     marcada ou a resenha da casa de piscina. Quem passa na frente é o
+     bairro da zona onde a gente já manda ("ataque com motivo").
+     SEM DESCANSO QUANDO DOMINA: com a cidade nossa, os bairros nossos
+     abaixo de 60% entram na frente — bater em quem está crescendo
+     neles é segurar o que é nosso.
+     Os botes sorteados de antes (35% de bar, 35% de casa) saíram: os
+     alvos do mês são os botes. Cada um é marcado (vai pro calendário
+     e, no dia, abre a cena) ou deixado quieto (−1 de moral).
+     ======================================================= */
+  const ALVOS_PELA_SEDE = nivel => nivel >= 5 ? 3 : nivel >= 3 ? 2 : 1;
+  const GOLPE = {bar:12, reuniao:12, casa:8};
+  function alvosDeDominio(E, quantos){
+    const D = TO.dominio;
+    if(!D) return [];
+    const cid = E.torcida.mapa, meu = E.torcida.id;
+    const bs = D.bairros(E, cid);
+    if(!bs.length) return [];
+    const nossa = D.placar(E, cid).dono === meu;
+    const zk = b => b.semZona ? 'c:' + b.cidade : b.zona;
+    const zonasNossas = new Set(bs.filter(b => b.dono === meu).map(zk));
+    const aceita = tid => tid && tid !== meu && TO.relacoes.nivel(E, tid) < 25 &&
+      !(M().saoIrmas && M().saoIrmas(meu, tid)) && !!M().torcida(tid);
+    const cand = [];
+    for(const b of bs){
+      const nosso = (b.partes.find(p => p.t === meu) || {}).v || 0;
+      const fator = D.fatorGanho(E, meu, cid, b.id) * (b.sede && b.sede !== meu ? 0.5 : 1);
+      if(b.dono === meu){
+        /* o nosso que está fraco: quem mais cresce nele é o alvo */
+        if(b.v >= 60) continue;
+        const r = b.partes.find(p => aceita(p.t));
+        if(!r) continue;
+        cand.push({b, rival:r.t, rv:r.v, nosso, defesa:true,
+                   nota:(b.v - 50) / Math.max(0.2, fator) * (nossa ? 0.5 : 1.3)});
+        continue;
+      }
+      const r = (b.dono && aceita(b.dono)) ? {t:b.dono, v:b.v} : b.partes.find(p => aceita(p.t));
+      if(!r) continue;
+      const falta = Math.max(0, 50.1 - nosso) + (b.dono ? Math.max(0, b.v - 50) : 0);
+      cand.push({b, rival:r.t, rv:r.v, nosso, defesa:false,
+                 nota:falta / Math.max(0.2, fator) - (zonasNossas.has(zk(b)) ? 8 : 0)});
+    }
+    cand.sort((x, y) => x.nota - y.nota);
+    return cand.slice(0, quantos);
+  }
+  /* o golpe que cabe em cada alvo, variando entre os do mês */
+  function golpeDoAlvo(E, a, usados, sem){
+    const D = TO.dominio, cid = E.torcida.mapa, H = TO.mapa.hash;
+    const pode = [];
+    const temBar = D.estruturas(E, cid).some(s => s.tid === a.rival && s.tipo === 'bar' && s.bairro === a.b.id)
+      && (TO.acoes.alvosDeAtaque(E) || []).some(x => x.id === `${a.rival}|bar`);
+    if(temBar) pode.push('bar');
+    const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
+    const zona = a.b.zona && zonas.includes(a.b.zona) ? a.b.zona : zonas[H(`alvo|z|${sem}|${a.b.id}`) % zonas.length];
+    if(TO.acoes.bondeDaZona(E, zona).length >= 4) pode.push('reuniao');
+    if(E.dinheiro >= 1000) pode.push('treta');
+    const pano = TO.patrimonio.faixasIA ? TO.patrimonio.faixasIA(E, a.rival) : null;
+    if(pano && (pano.faixas > 0 || pano.bandeiras > 0) && TO.acoes.bondeDaZona(E, zona).length >= 4) pode.push('casa');
+    if(!pode.length) return null;
+    /* o bar primeiro (é o que mais rende); depois o que ainda não saiu no mês */
+    const ordem = pode.includes('bar') ? ['bar'] : [];
+    const resto = ['reuniao', 'treta', 'casa'].filter(t => pode.includes(t));
+    const k = H(`alvo|g|${sem}|${a.b.id}`) % Math.max(1, resto.length);
+    for(let i = 0; i < resto.length; i++) ordem.push(resto[(k + i) % resto.length]);
+    const tipo = ordem.find(t => !usados.has(t)) || ordem[0];
+    return {tipo, zona, peca: pano && pano.faixas > 0 ? 'faixa' : 'bandeira'};
+  }
+  function pautaAlvos(E){
+    const sem = `${E.data.ano}|${mesDe(E)}`;
+    const n = ALVOS_PELA_SEDE(E.torcida.sedeNivel || 0);
+    const alvos = alvosDeDominio(E, n);
+    const usados = new Set(), fora = [];
+    const H = TO.mapa.hash;
+    alvos.forEach((a, i) => {
+      const g = golpeDoAlvo(E, a, usados, sem);
+      if(!g) return;
+      const quando = diaDoBote(E, `${g.tipo}|${a.b.id}`, sem);
+      if(!quando) return;
+      usados.add(g.tipo);
+      const rival = M().torcida(a.rival);
+      const nome = rival.nome, D = TO.dominio;
+      const q = _t('{dia}, dia {data}', {dia:quando.nomeDia, data:quando.dataTxt});
+      const P = {bairro:a.b.nome, nome, v:Math.round(a.rv), n:Math.round(a.nosso), meu:Math.round(a.b.v),
+                 todo:todoDia(quando.dia), quando:q, zona:_t(g.zona)};
+      /* o motivo: de quem é o bairro e quanto falta */
+      const situacao = a.defesa
+        ? _t('{bairro} é nosso, mas só com {meu}%, e a {nome} já tem {v}% lá', P)
+        : a.b.dono === a.rival
+          ? _t('{bairro} é da {nome}, com {v}%, e a gente tem {n}% lá', P)
+          : _t('{bairro} está sem dona: a {nome} tem {v}% e a gente {n}%', P);
+      /* o que o golpe faz no bairro, pela conta do domínio */
+      const tam = [5, 7, 10][H(`alvo|n|${sem}|${a.b.id}`) % 3];
+      const aposta = Math.min(6, Math.max(1, Math.floor(E.dinheiro / 1000 / 3))) * 1000;
+      const ganho = (g.tipo === 'treta' ? D.GANHO.treta[tam] : GOLPE[g.tipo])
+                    * D.fatorGanho(E, E.torcida.id, E.torcida.mapa, a.b.id) * (a.b.sede && a.b.sede !== E.torcida.id ? 0.5 : 1);
+      const vira = !a.defesa && a.nosso + ganho > 50 && (a.b.dono !== a.rival || a.rv - ganho <= 50);
+      const efeito = a.defesa ? _t('o bairro fica seguro') : vira ? _t('o bairro vira nosso') : _t('o bairro fica mais perto de virar');
+      Object.assign(P, {situacao, efeito, n2:tam, valor:U.dinheiro(aposta)});
+      const texto = g.tipo === 'bar'
+          ? _t('Chefe, {situacao}. O bar deles em {bairro} fica cheio {todo}. Se a gente der o bote {quando} e levar o caixa, {efeito}.', P)
+        : g.tipo === 'reuniao'
+          ? _t('Chefe, {situacao}. A Zona {zona} deles faz reunião de alinhamento na praça {todo}. Se a gente pegar a roda {quando}, {efeito}.', P)
+        : g.tipo === 'treta'
+          ? _t('Chefe, {situacao}. Dá pra chamar a {nome} pra uma treta em {bairro}, {n2} contra {n2}, com {valor} de cada lado, {quando}. Ganhando, {efeito}.', P)
+          : porPeca(g.peca,
+              _t('Chefe, {situacao}. A Zona {zona} deles faz resenha numa casa com piscina em {bairro}, com a faixa estendida. Se a gente der o bote {quando}, leva a faixa e {efeito}.', P),
+              _t('Chefe, {situacao}. A Zona {zona} deles faz resenha numa casa com piscina em {bairro}, com a bandeira estendida. Se a gente der o bote {quando}, leva a bandeira e {efeito}.', P));
+      const ROT = {bar:_t('Alvo do mês: bote no bar'), reuniao:_t('Alvo do mês: reunião na praça'),
+                   treta:_t('Alvo do mês: treta marcada'), casa:_t('Alvo do mês: casa de piscina')};
+      const NOTA = {
+        bar:_t('Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)'),
+        reuniao:_t('Até 20 da Zona {zona} contra até 20 da deles · Prestígio até ±10 · Relação −26 (perdendo, −18)', P),
+        treta:_t('Vencendo leva {valor} · Prestígio +{p} vencendo, −1 perdendo · Relação −2',
+                 {valor:U.dinheiro(aposta * 2), p:tam >= 10 ? 5 : tam >= 7 ? 4 : 3}),
+        casa: porPeca(g.peca,
+               _t('Prestígio até ±10 · tomando a faixa, prestígio a mais · Relação −26 (perdendo, −18)'),
+               _t('Prestígio até ±10 · tomando a bandeira, prestígio a mais · Relação −26 (perdendo, −18)'))};
+      const bote = Object.assign({tipo:g.tipo, dominio:true, torcida:a.rival, rival:a.rival, nome,
+        alvo:`${a.rival}|bar`, bairro:a.b.nome, bairroId:a.b.id, zona:g.zona, peca:g.peca,
+        mapa:E.torcida.mapa, tam, aposta, classe:a.b.classe}, quando);
+      fora.push({
+        chave:`alvo|${sem}|${i}`, rot:ROT[g.tipo], voz:_t('Diretoria'), tipo:'bote', bote, texto,
+        botoes:[
+          {id:'marcar', rot:_t('Marcar o alvo'), acao:'bote-marcar', nota:NOTA[g.tipo]},
+          {id:'nada', rot:_t('Deixar quieto'), acao:'bote-nao', nota:_t('Prestígio −1 · Moral −1')}
+        ]
+      });
+      /* o próximo alvo enxerga este na mesa (dois dias de folga entre eles) */
+      pautar(E, fora[fora.length - 1]);
+    });
+    return fora;
+  }
+
   /* o próximo dia livre depois do marcado: a agenda pode ter posto um
      jogo em cima (o árbitro adia jogo) */
   function proximoDiaLivre(E, b){
@@ -4407,6 +4553,36 @@ TO.feed = (function(){
         if(prox){ Object.assign(b, prox); continue; }
       }
       b.feito = true;
+      if(b.tipo === 'reuniao'){
+        propor(E, {
+          kind:'reuniaorival', peso:'decisao', voz:'diretor',
+          chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|reuniao`,
+          texto:_t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá reunida na praça, em {bairro}. A nossa Zona {zona} desce e desfaz a roda.',
+                   {zona:_t(b.zona || ''), nome:b.nome, bairro:b.bairro || ''}),
+          dados:{rival:b.rival, nome:b.nome, zona:b.zona, bairro:b.bairro, mapa:b.mapa},
+          botoes:[{id:'atacar', rot:_t('Pegar a reunião'), acao:'atacar-reuniao-rival',
+                   nota:_t('Até 20 da Zona {zona} contra até 20 da deles · Prestígio até ±10 · Relação −26 (perdendo, −18)', {zona:_t(b.zona || '')})}]
+        });
+        continue;
+      }
+      if(b.tipo === 'treta'){
+        const multa = Math.round((b.aposta || 0) * 0.2);
+        propor(E, {
+          kind:'treta', peso:'decisao', voz:'diretor', tipo:'ruim',
+          chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|treta`,
+          texto:_t('Hoje é a treta que a gente marcou com a {nome} em {bairro}: {n} contra {n}, {valor} de cada lado. Bora pro problema?',
+                   {nome:b.nome, bairro:b.bairro || '', n:b.tam || 5, valor:U.dinheiro(b.aposta || 0)}),
+          dados:{rival:b.rival, bairro:b.bairro, zona:b.zona, classe:b.classe, tam:b.tam || 5, aposta:b.aposta || 0},
+          botoes:[
+            {id:'bora',  rot:_t('Bora pro problema'), acao:'cena-treta',
+             nota:_t('Vencendo leva {valor} · Prestígio +{p} vencendo, −1 perdendo · Relação −2',
+                     {valor:U.dinheiro((b.aposta || 0) * 2), p:(b.tam || 5) >= 10 ? 5 : (b.tam || 5) >= 7 ? 4 : 3})},
+            {id:'ficar', rot:_t('Ficar de fora'), acao:'ignorar-treta',
+             nota:_t('Prestígio −1 · {valor} de multa (20% da aposta)', {valor:U.dinheiro(multa)})}
+          ]
+        });
+        continue;
+      }
       if(b.tipo === 'bar'){
         propor(E, {
           kind:'barrival', peso:'decisao', voz:'diretor',
@@ -4525,11 +4701,14 @@ TO.feed = (function(){
         if(!E.botes.some(x=>x.ano===b.ano && x.semana===b.semana && x.dia===b.dia && x.tipo===b.tipo))
           E.botes.push(Object.assign({}, b, {feito:false,
             marcadoEm:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia}}));
+        const pm = {dia:b.nomeDia, data:b.dataTxt, nome:b.nome, zona:_t(b.zona || ''), bairro:b.bairro || '', n:b.tam || 5};
         it.consequencia = b.tipo==='bar'
-          ? _t('Marcado pra {dia}, {data}: o bar da {nome}. Está no calendário.',
-               {dia:b.nomeDia, data:b.dataTxt, nome:b.nome})
-          : _t('Marcado pra {dia}, {data}: a resenha da Zona {zona} da {nome}. Está no calendário.',
-               {dia:b.nomeDia, data:b.dataTxt, nome:b.nome, zona:_t(b.zona || '')});
+          ? _t('Marcado pra {dia}, {data}: o bar da {nome}. Está no calendário.', pm)
+          : b.tipo==='reuniao'
+          ? _t('Marcado pra {dia}, {data}: a reunião da Zona {zona} da {nome} na praça, em {bairro}. Está no calendário.', pm)
+          : b.tipo==='treta'
+          ? _t('Marcado pra {dia}, {data}: treta com a {nome} em {bairro}, {n} contra {n}. Está no calendário.', pm)
+          : _t('Marcado pra {dia}, {data}: a resenha da Zona {zona} da {nome}. Está no calendário.', pm);
         return {};
       }
       case 'aniv-festa':
@@ -4746,6 +4925,9 @@ TO.feed = (function(){
       : av.alvo === 'bar'
       ? _t('Fala presida, me passaram a fita de que os caras da {nome} vai atacar o nosso bar hoje. Vale ficar de olho.',
            {nome:av.nome})
+      : av.alvo === 'reuniao'
+      ? _t('Fala presida, me passaram a fita de que os caras da {nome} vão pegar a reunião da Zona {zona} na praça hoje. Vale ficar de olho.',
+           {nome:av.nome, zona:_t(av.zona || 'Sul')})
       : av.alvo === 'casa'
       ? _t('Fala presida, me passaram a fita de que os caras da {nome} vai dar o bote na resenha da Zona {zona} hoje, na casa de piscina. Vale ficar de olho.',
            {nome:av.nome, zona:av.zona || 'Sul'})
@@ -4829,7 +5011,14 @@ TO.feed = (function(){
                    brigar:_t('Descer pra treta'), fugir:_t('Mandar seguir viagem')},
     casa:         {texto:(o,a)=>_t('A {nome} tá invadindo a resenha da Zona {zona} na casa de piscina! Querem levar a nossa faixa.',
                                    {nome:o, zona:(a&&a.zona)||'Sul'}),
-                   brigar:_t('Segurar a casa'), fugir:_t('Largar a resenha')}
+                   brigar:_t('Segurar a casa'), fugir:_t('Largar a resenha')},
+    /* a reunião da zona na praça (01/10/2026) */
+    reuniao:      {texto:(o,a)=>a && a.bairro
+                     ? _t('A {nome} chegou na praça de {bairro} em cima da reunião da Zona {zona}! Querem o bairro.',
+                          {nome:o, zona:_t(a.zona || 'Sul'), bairro:a.bairro})
+                     : _t('A {nome} chegou na praça em cima da reunião da Zona {zona}!',
+                          {nome:o, zona:_t((a&&a.zona)||'Sul')}),
+                   brigar:_t('Segurar a roda'), fugir:_t('Desfazer a reunião')}
   };
 
   function ataqueSofridoHoje(E){
@@ -5658,7 +5847,7 @@ TO.feed = (function(){
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
     'emb-posto':'no posto', 'emb-onibus':'na estrada',
-    'casa-piscina':'na casa de piscina'
+    'casa-piscina':'na casa de piscina', 'praca-reuniao':'na praça'
   };
   /* os valores ficam em português (cabeBairro compara com eles);
      a frase sai traduzida daqui */
@@ -5883,6 +6072,35 @@ TO.feed = (function(){
           alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
                 tipo:'casa', cena:'casa-piscina', zona:d.zona,
                 bairro:d.bairro || '',
+                nossos:zona.length, efetivo:deles}}},
+          simular: !!b.simular}};
+      }
+      /* A REUNIÃO DA ZONA DELES NA PRAÇA (pedido do dono, 01/10/2026): a
+         nossa zona (até 20) chega na praça onde a zona deles (até 20) está
+         reunida em roda. A mesma régua da casa de piscina, na cena
+         `praca-reuniao`; os pontos de domínio caem no bairro do alvo. */
+      case 'atacar-reuniao-rival': {
+        const d = m.dados || {};
+        const rival = M().torcida(d.rival);
+        if(!rival){
+          marcar(_t('Pegar a reunião — não rolou'));
+          m.consequencia = _t('Não rolou: a torcida sumiu do mapa.');
+          return {ok:true};
+        }
+        const zona = TO.acoes.bondeDaZona(E, d.zona);
+        if(zona.length < 4){
+          marcar(_t('Pegar a reunião — não rolou'));
+          m.consequencia = _t('Não rolou: a zona não tem gente de pé.');
+          return {ok:true};
+        }
+        const deles = TO.acoes.efetivoDaZona(E, rival);
+        marcar();
+        return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
+          cena:'praca-reuniao', acao:'atacar',
+          escalacao: zona, efetivoRival: deles,
+          alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
+                tipo:'reuniao', cena:'praca-reuniao', zona:d.zona,
+                bairro:d.bairro || '', mapa:d.mapa || null,
                 nossos:zona.length, efetivo:deles}}},
           simular: !!b.simular}};
       }

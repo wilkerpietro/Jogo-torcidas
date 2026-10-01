@@ -423,7 +423,7 @@ TO.porrada = (function(){
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
     'emb-posto':'no posto', 'emb-onibus':'na estrada',
-    'casa-piscina':'na casa de piscina'
+    'casa-piscina':'na casa de piscina', 'praca-reuniao':'na praça'
   };
   const SEM_BAIRRO = ['estadio-10','estadio-20','estadio-40','emb-onibus'];
   /* cada cena cai num grupo do baralho por cenário; cena sem grupo
@@ -434,7 +434,7 @@ TO.porrada = (function(){
     'emb-posto':'emboscada', 'emb-onibus':'emboscada',
     bar:'bar', comercio:'comercio', loja:'comercio',
     sede:'casa', subsede:'casa', ct:'casa', 'casa-piscina':'casa',
-    praca:'praca',
+    praca:'praca', 'praca-reuniao':'praca',
     rua:'rua', 'rua-media':'rua', 'rua-nobre':'rua',
     arredores:'arredores',
     'treta-beco':'treta', 'treta-galpao':'treta', 'treta-campo':'treta'
@@ -452,7 +452,7 @@ TO.porrada = (function(){
     'treta-beco':'beco', 'treta-galpao':'pátio do galpão',
     'treta-campo':'campo de terra',
     'emb-posto':'posto', 'emb-onibus':'estrada',
-    'casa-piscina':'casa de piscina'
+    'casa-piscina':'casa de piscina', 'praca-reuniao':'praça'
   };
   /* A TABELA FICA EM PORTUGUÊS e a conta do bairro repetido também
      (ela compara com o texto de lá); o que sai pra tela é traduzido.

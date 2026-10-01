@@ -1197,6 +1197,42 @@ TO.dados.cenas = (function(){
     c.fugas = RUA[id].map(([x,y])=>({x, y, raio:34}));
   }
 
+  /* A REUNIÃO DA ZONA NA PRAÇA (pedido do dono, 01/10/2026: "ataque à
+     reunião na praça — nova cena de briga com até 20 membros de cada
+     lado, todos pertencentes à mesma zona do ataque, na imagem da praça,
+     como se estivessem reunidos em uma reunião de alinhamento do
+     bairro/zona, e sofrem ataque"). É a praça de sempre — a mesma foto,
+     o mesmo chão, as mesmas fugas, copiadas depois da foto e da mão —
+     com outro roteiro: a zona atacada (`visitante`) em roda no largo do
+     meio, onde fica o C de cadeiras da reunião da torcida sem sede, e a
+     zona que ataca (`mandante`) chegando pela esquina leste. Quem está
+     na roda só levanta quando o bonde chega no largo (`soZona`). Na
+     defesa (a IA atacando a nossa reunião) os papéis são os mesmos: nós
+     somos o `visitante`, na roda. */
+  if(cenas.praca){
+    const P = cenas.praca, CX = 770, CY = 530, R = 105;
+    const roda = [0, 1, 2, 3, 4, 5].map(k => {
+      const a = k * Math.PI / 3 + Math.PI / 6;
+      return {id:'visitante' + (k + 1), rot: k ? 'NA RODA' : 'QUEM PUXA A REUNIÃO', lado:'visitante',
+              x:Math.round(CX + Math.cos(a) * R), y:Math.round(CY + Math.sin(a) * R * 0.8),
+              guarda:true, entrada:'esquina_oeste'};
+    });
+    cenas['praca-reuniao'] = Object.assign({}, P, {
+      id:'praca-reuniao', base:'praca', nome:'Reunião na praça',
+      local:'Na praça, na reunião da zona',
+      saida:Object.assign({}, P.saida, {feito:'sua torcida desfez a reunião deles na praça'}),
+      espalharBonde:'visitante',
+      spawns:[
+        {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1400, y:512, jogador:true, entrada:'esquina_leste'},
+        {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:1400, y:330, entrada:'esquina_leste'}
+      ].concat(roda),
+      gatilho:{x:CX, y:CY, raio:300, lado:'mandante', soZona:true,
+               rot:'A RODA DA REUNIÃO',
+               espera:'a reunião ainda não te viu',
+               aviso:'gritaram na roda — a zona inteira levantou'}
+    });
+  }
+
   return cenas;
 })();
 

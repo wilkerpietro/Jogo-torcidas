@@ -8443,7 +8443,10 @@
         cel.appendChild(el('span',{class:'rot bote-rot', html:
           `${IC.get('punho') || ''}${b.feito ? _t('Bote feito') : _t('Bote marcado')}`}));
         cel.appendChild(el('span',{class:'sub', texto:
-          b.tipo === 'bar' ? _t('bar da {nome}', {nome:b.nome}) : _t('casa de piscina · {nome}', {nome:b.nome})}));
+          b.tipo === 'bar' ? _t('bar da {nome}', {nome:b.nome})
+          : b.tipo === 'reuniao' ? _t('reunião na praça · {nome}', {nome:b.nome})
+          : b.tipo === 'treta' ? _t('treta · {nome}', {nome:b.nome})
+          : _t('casa de piscina · {nome}', {nome:b.nome})}));
       }else{
         /* OS TRÊS TURNOS NO DIA (pedido do dono, 24/08/2026): a célula
            mostrava só o primeiro turno preenchido, e o calendário
@@ -9961,7 +9964,7 @@
      gerador segue cortando o topo do plantel (a nossa seleção lá é o
      topo também) */
   const fichasDaZonaDeles = (alvo, n) => {
-    if(!alvo || alvo.tipo !== 'casa' || !alvo.torcidaId) return null;
+    if(!alvo || (alvo.tipo !== 'casa' && alvo.tipo !== 'reuniao') || !alvo.torcidaId) return null;
     const C = TO.diaJogo.combate; if(!C || !C.fichasDaZona) return null;
     const Z = TO.mundo.ZONAS || ['Norte','Sul','Leste','Oeste'];
     const zi = Math.max(0, Z.indexOf(alvo.zona));
@@ -10476,7 +10479,8 @@
     /* A RESENHA NA CASA DE PISCINA (dono, 21/09/2026): quem está lá é
        a zona — um quarto da turma de pé, até 20 —, e é ela que
        defende; eles vêm com a zona deles, na mesma régua */
-    const naCasa = atq.alvo === 'casa';
+    /* (a reunião da zona na praça, 01/10/2026: a mesma régua da zona) */
+    const naCasa = atq.alvo === 'casa' || atq.alvo === 'reuniao';
     const bondeZona = naCasa ? TO.acoes.bondeDaZona(e, atq.zona) : null;
     /* teto do dono (18/08/2026): defesa do NOSSO bar bota no máximo
        40 no salão; o atacante traz no máximo 60 (cap logo abaixo) */
@@ -10553,6 +10557,7 @@
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
                                 cena: atq.cena || 'bar', zona: atq.zona || null, mapa: atq.mapa || null,
+                                bairro: atq.bairro || '',
                                 nome:(o&&o.nome)||_t('Rival'),
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
