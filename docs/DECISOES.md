@@ -8361,6 +8361,16 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
   - Recado que é para a gente (pedido de casa, trégua) nunca some.
 - Testado: depois de deixar de seguir a Tubarões da Fiel e o Floresta, os 4 posts dela e a notícia do Floresta somem da coluna e de Notícias. Os posts de outras torcidas que só citam a Tubarões continuam.
 
+## A resposta de quem apanhou vira comentário (pedido do dono, 01/10/2026)
+
+"A mensagem se vangloriando e a mensagem pedindo vingança deixam o feed muito cheio; melhor se a da Aliança aparecesse como um comentário da postagem, igual ao Instagram."
+- Quem apanhou não posta mais: comenta no post de quem venceu (`feed.comentar`, guardado em `m.comentarios`). Vale para as três respostas que existiam:
+  - a da briga do mundo;
+  - a da zona na casa de piscina;
+  - a promessa de volta depois da nossa briga.
+- **Na tela**, os comentários ficam embaixo do post, como no Instagram: o @ em negrito, o texto com as menções clicáveis, o coração vazio à direita e o tempo embaixo. Comentário de torcida que o jogador deixou de seguir não aparece.
+- Em 30 dias de TUF: nenhum post "resposta" solto, 10 posts com comentário.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

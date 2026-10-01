@@ -105,6 +105,21 @@ TO.feed = (function(){
     if(!m.publico) try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
     return m;
   }
+  /* A RESPOSTA VIRA COMENTÁRIO (dono, 01/10/2026): "a mensagem se
+     vangloriando e a mensagem pedindo vingança deixam o feed muito
+     cheio; melhor se a da Aliança aparecesse como um comentário da
+     postagem, igual ao Instagram". Quem apanhou não posta mais: comenta
+     no post de quem venceu (`pai.comentarios`). */
+  function comentar(E, pai, torcidaId, texto, zona){
+    if(!pai || !texto) return null;
+    const o = M().torcida(torcidaId);
+    if(!o) return null;
+    pai.comentarios = pai.comentarios || [];
+    if(pai.comentarios.some(c => c.de === torcidaId && c.texto === texto)) return null;
+    const c = {de:torcidaId, nome:o.nome, texto, zona:zona || null, abs:E.data.absoluto || 0};
+    pai.comentarios.push(c);
+    return c;
+  }
   /* 300 posts no máximo; o que sai primeiro é o público mais velho —
      pedido e trégua esperando resposta não somem por causa de zoeira */
   function aparar(E){
@@ -528,7 +543,7 @@ TO.feed = (function(){
       const tb = tipoDaBriga(r);
       const zona = (tb === 'bar' || tb === 'surpresa') && (h >> 3) % 2 ? ZONAS_T[(h >> 6) % 4] : null;
       if(zona) P.nome = zonaDe(V.nome, zona);
-      mensagemDe(E, V.id, textoDaZoeira(r, P, h), 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`});
+      const pai = mensagemDe(E, V.id, textoDaZoeira(r, P, h), 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`});
       if(zona) P.nome = V.nome;
       /* às vezes quem apanhou responde (o nosso rival, quase sempre) */
       if((h >> 5) % 100 < (c.rivalPerdeu ? 70 : 30)){
@@ -538,7 +553,7 @@ TO.feed = (function(){
           : [_t('Hoje foi de vocês, {nome}. Aproveitem, porque a {perdedor} volta e a conta vem cara.', P),
              _t('Uma briga não é a guerra, {nome}. A {perdedor} já está se organizando.', P)];
         const txt = op[(h >> 9) % op.length];
-        mensagemDe(E, D.id, txt, 'resposta', {publico:true, chave:`resposta|${abs}|${D.id}|${V.id}`});
+        comentar(E, pai, D.id, txt);
       }
     }
     /* o Porrada: a maior briga do dia no país, um dia em três (as de
@@ -1160,12 +1175,11 @@ TO.feed = (function(){
           _t('A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!', P),
           _t('A {perdedor} achou que ia levar a nossa faixa e saiu sem nada. Na casa da {nome} a resenha continua!', P),
           _t('Tentaram, mas a {nome} segurou a resenha inteira. A {perdedor} voltou pra casa sem faixa e sem moral.', P)];
-      mensagemDe(E, V.id, op[h % op.length], 'comemoracao', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
-      /* e a zona que perdeu sempre responde: a conversa é das duas */
-      mensagemDe(E, Dr.id, atacouVenceu
+      const pai = mensagemDe(E, V.id, op[h % op.length], 'comemoracao', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
+      /* e a zona que perdeu sempre responde — no comentário do post dela */
+      comentar(E, pai, Dr.id, atacouVenceu
           ? _t('Pegaram a nossa resenha desprevenida. A {perdedor} não esquece, e a volta vai ser na casa de vocês.', P)
-          : _t('Hoje a {nome} segurou. Mas a {perdedor} conhece o caminho da casa de vocês.', P),
-          'resposta', {publico:true, zona:d.zona, chave:`zona-casa-resp|${abs}|${Dr.id}`});
+          : _t('Hoje a {nome} segurou. Mas a {perdedor} conhece o caminho da casa de vocês.', P), d.zona);
       return;
     }
     /* A BRIGA COM A GENTE NO FEED (dono, 30/09/2026): toda briga nossa
@@ -1192,9 +1206,9 @@ TO.feed = (function(){
     ];
     const texto = !d.ganhamos && vale && !reg.pano && (h >> 4) % 2
       ? DEBOCHE[(h >> 5) % DEBOCHE.length] : textoDaZoeira(reg, P, h);
-    if(d.ganhamos || !tregua)
-      mensagemDe(E, V.id, texto, 'zoeira',
-        {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`});
+    const pai = (d.ganhamos || !tregua)
+      ? mensagemDe(E, V.id, texto, 'zoeira', {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`})
+      : null;
     /* a resposta de quem perdeu: a deles sempre que a briga valeu
        prestígio (os textos de volta aprovados pelo dono, 18/08/2026),
        e às vezes nas miúdas; a nossa resposta fica com o jogador */
@@ -1205,8 +1219,7 @@ TO.feed = (function(){
       _t('Recado pra {nossa}: podem ficar tranquilos que a cobrança vem, e vem cara!', Q),
       _t('Riram hoje, vão chorar depois. A {nome} não esquece: o revide vai ser pesado.', Q)
     ];
-    mensagemDe(E, eles.id, VOLTA[H(`provoca|${abs}|${eles.id}`) % VOLTA.length], 'resposta',
-      {publico:true, chave:`nossa-zoeira-resp|${abs}|${eles.id}`});
+    comentar(E, pai, eles.id, VOLTA[H(`provoca|${abs}|${eles.id}`) % VOLTA.length]);
   }
 
   /* =======================================================

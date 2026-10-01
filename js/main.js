@@ -1101,7 +1101,7 @@
     return asd;
   }
   /* o que muda o desenho de um post que já está na coluna */
-  const estadoDoPost = m => `${m.resposta || ''}|${m.consequencia || ''}`;
+  const estadoDoPost = m => `${m.resposta || ''}|${m.consequencia || ''}|${(m.comentarios || []).length}`;
   function atualizarSocialLado(refazer){
     const S = socialLado, e = E();
     if(!S || !e || !S.lista.isConnected) return;
@@ -4153,6 +4153,22 @@
         `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`+
       (cartaz ? `<p class="post-texto post-legenda"><b class="post-legenda-quem">${escHTML(jornal ? jornal.arroba : arrobaPost(o))}</b> ${linkificarNomes(m.texto)}</p>` : '')});
     if(cartaz) TO.cartaz.ligar(art.querySelector('.cartaz'), m);
+    /* OS COMENTÁRIOS (01/10/2026): a resposta de quem apanhou mora aqui,
+       embaixo do post, como no Instagram — o @ em negrito, o texto, o
+       tempo embaixo. Quem o jogador deixou de seguir não aparece. */
+    const coms = (m.comentarios || []).filter(c => !(e.feedPrefs && e.feedPrefs.torcidas && e.feedPrefs.torcidas[c.de]));
+    if(coms.length){
+      const box = el('div',{class:'post-comentarios'});
+      for(const c of coms){
+        const oc = TO.mundo.torcida(c.de) || {nome:c.nome};
+        const zonaArroba = c.zona ? '.' + U.identificador(_t('Zona {zona}', {zona:_t(c.zona)})).replace(/-/g, '') : '';
+        box.appendChild(el('div',{class:'post-comentario', html:
+          `<p><b class="post-legenda-quem">${escHTML(arrobaPost(oc) + zonaArroba)}</b> ${linkificarNomes(c.texto)}</p>`+
+          `<span class="post-com-cor">${TO.icones.get('coracao')}</span>`+
+          `<small>${haQuantoPost(e, {abs:c.abs})}</small>`}));
+      }
+      art.appendChild(box);
+    }
     const bMenu = art.querySelector('.post-menu');
     if(bMenu) bMenu.onclick = ev=>{
       ev.stopPropagation();
