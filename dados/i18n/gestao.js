@@ -422,7 +422,7 @@ TO.i18n.registrar({
   'Arredores do estádio': {es:'Alrededores del estadio', en:'Around the stadium'},
   'ARREDORES': {es:'ALREDEDORES', en:'OUTSIDE'},
   'cordão da PM em peso, mas é onde o rival inteiro está': {es:'cordón policial completo, pero es donde está toda la barra rival', en:'full police cordon, but the whole rival firm is there'},
-  'Bar do rival': {es:'Bar del rival', en:"Rival's bar"},
+  'Bar da rival': {es:'Bar del rival', en:"Rival's bar"},
   'BAR DELES': {es:'SU BAR', en:'THEIR BAR'},
   'poucos lá dentro, mas é humilhação que fica': {es:'pocos adentro, pero es una humillación que queda', en:'few inside, but the humiliation sticks'},
   'Praça de encontro': {es:'Plaza de encuentro', en:'Meeting square'},

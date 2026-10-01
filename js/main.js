@@ -547,7 +547,12 @@
        mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
        com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
        planta da praça inteira, e o clique leva a câmera até lá */
-    {id:'mapa3d',      rot:_t('Mapa da cidade'), ic:'mapa', acao:'mapa3d', so3d:true},
+    /* O MAPA COM OS BAIRROS E O BRASIL (o dono, 30/09/2026: "quando
+       clicamos em menu>mapa vai ter a opção do mapa do Brasil"): no 3D é o
+       mapa da planta (mapa3d.js), com a aba Brasil; no jogo de feed, o
+       painel dos bairros por zona (js/ui/mapa_brasil.js) */
+    {id:'mapa3d',      rot:_t('Mapa'), ic:'mapa', acao:'mapa3d', so3d:true},
+    {id:'mapa',        rot:_t('Mapa'), ic:'mapa', acao:'mapaBrasil', so2d:true},
     {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
     {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
     {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
@@ -576,9 +581,11 @@
   const ACAO_NAV = {menu: () => sairParaMenu(),
                     planejamento: () => abrirPlanejamento(),
                     mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); },
+                    mapaBrasil: () => { if(TO.mapaBrasil) TO.mapaBrasil.abrir(); },
                     graficos: () => { if(TO.graficos) TO.graficos.alternar(); }};
   /* o item que só existe com a cidade em 3D */
-  const temNoMenu = n => !n.so3d || !!(TO.jogo3d && TO.jogo3d.abrirMapa);
+  const com3d = () => !!(TO.jogo3d && TO.jogo3d.abrirMapa);
+  const temNoMenu = n => (!n.so3d || com3d()) && (!n.so2d || !com3d());
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
@@ -10742,7 +10749,7 @@
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
-                                cena: atq.cena || 'bar', zona: atq.zona || null,
+                                cena: atq.cena || 'bar', zona: atq.zona || null, mapa: atq.mapa || null,
                                 nome:(o&&o.nome)||_t('Rival'),
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
@@ -10758,6 +10765,7 @@
     corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${a.id === 'assalto'
         ? _t('Quanto maior o prêmio, mais segurança na porta.')
+        : a.id === 'social-bairro' ? _t('Onde a barra rende mais: o bairro sem dona e o de dona fraca.')
         : _t('O clima com cada um pesa: quem já está quente reage pior.')}</span>`}));
     /* a praça tem seis joalherias: mostrar as seis é lista inútil. Duas de
        cada tipo já dá escolha de bairro sem virar catálogo. */
@@ -10772,6 +10780,7 @@
       const dir = a.id === 'assalto'
         ? _t('{bairro} · {de} a {ate} · {n} na segurança', {bairro:alvo.bairro,
             de:U.dinheiro(alvo.rende[0]), ate:U.dinheiro(alvo.rende[1]), n:alvo.seguranca})
+        : a.id === 'social-bairro' ? alvo.nota
         : _t('{bairro} · tensão {t} · {n} membros', {bairro:alvo.bairro,
             t:Math.round(alvo.tensao), n:alvo.efetivo});
       b.innerHTML =

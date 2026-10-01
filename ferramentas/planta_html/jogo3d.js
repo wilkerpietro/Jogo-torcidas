@@ -312,7 +312,7 @@ function ligar(api) {
     /* (o jogo que abriu no meio do dia: o jogo da cidade de hoje, no fundo) */
     agendarJogosDaCidade(e);
     if (barNovo && barNovo.porta) {
-      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DO ...") */
+      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DA ...") */
       const q = barNovo.porta;
       C.voarPara(q.x, q.y, 30 * api.M, 0.5, Math.atan2(q.fx, q.fy));
       avisar(`O bar novo da <b>${String(e.torcida.nome || '').replace(/[&<>]/g, '')}</b> abriu as portas.`);

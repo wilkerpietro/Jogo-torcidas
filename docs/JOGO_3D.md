@@ -2602,3 +2602,151 @@ mantiver, a Mínima fica na casa dos 30 fps na sala e a Leve perto dos 20.
   têm materiais e texturas próprios: herdam a resolução, o limite de fps e
   os bonecos leves (e a luz simples nos bonecos); a luz simples, as luzes
   da noite e as texturas são da cidade.
+
+## 30. Os bairros com dona, a cidade dominada e o mapa do Brasil (30/09 e 01/10/2026)
+
+**O pedido** (o dono): "inicie a setorização dos bairros de acordo com os
+dados que temos e as zonas também. quando clicamos em menu>mapa vai ter a
+opção do mapa do Brasil, onde podemos ver os mapas 2d de qualquer cidade.
+Em cada bairro vai apontar qual torcida comanda, e a torcida que comandar
+mais bairros domina a cidade" — com as réguas de prestígio e moral, o
+padrão de partida, a sede como o bairro mais duro de tomar, as ações que
+contam, a barra de 0 a 100 e o corte de 30% na receita em bairro de rival.
+E o nome do bar: "BAR DA {torcida}", no feminino, no mapa e na fachada.
+
+### As réguas (js/mundo/dominio.js, `TO.dominio`)
+
+- **A barra**: cada bairro tem uma barra de 0 a 100 repartida entre as
+  torcidas (o que sobra é de ninguém). **Dona é quem passa de 50**;
+  ninguém acima de 50, o bairro está em disputa. Ação ganha no bairro soma
+  na barra de quem ganhou e tira de quem perdeu.
+- **A cidade**: domina quem é dona de mais bairros que qualquer outra;
+  empate no topo, ninguém domina. **Todo dia** (`TO.dominio.dia`, chamado
+  no `avancarDia`): quem domina ganha **+0,1 de prestígio e +0,1 de
+  moral**; a primeira e a segunda maior da cidade (pelos membros de hoje)
+  que não dominam perdem 0,1 de cada. O "0,1" é na régua de 0 a 100 da
+  tela — no indicador interno, de 0 a 20, é 0,02. A torcida do jogador
+  muda direto nos indicadores (com uma linha por semana no relatório, não
+  uma mensagem por dia); as da IA, pelo `TO.relacoes.mover`.
+- **O corte de 30%**: bar, loja, subsede e filial — e a festa da sede —
+  em bairro cuja dona é **rival** da torcida (Rival ou Maior Rival, a
+  relação de hoje) rendem 30% menos. Aparece no financeiro, no patrimônio
+  ("{nota}: a festa rende 30% menos") e no cartão do bairro.
+- **O começo**: cada save sorteia o seu padrão pela semente do save. Numa
+  cidade de 16 bairros a maior e a segunda maior ficam com uns 5 cada (às
+  vezes 4 ou 6); em 30% das cidades as duas começam **empatadas** (a
+  cidade começa sem dona), e o resto é rateado entre as demais pelos
+  membros de partida, sempre abaixo das duas maiores. Medido nas 94 praças
+  com torcida: umas 27 começam empatadas.
+- **A sede**: o bairro da sede é sempre da torcida dela no começo, com a
+  barra alta, e é o mais difícil de tomar — quem não é da casa ganha
+  **metade** ali, e a casa se refaz **meio ponto por dia até 80**. A
+  **subsede** (e a filial) também segura o bairro dela (um terço de ponto
+  por dia até 65): é assim que ela chega a dominar.
+- **Duas sedes no mesmo bairro** (3 praças do Brasil e mais de 30 de fora
+  nos dados): a maior fica; a outra vai pro bairro livre mais parecido (a
+  mesma zona, depois a vizinha; a mesma classe de bairro). A troca é feita
+  nos dados, na carga, e vale igual no jogo de feed, no 3D e na planta.
+
+### O que mexe na barra (pontos de 0 a 100)
+
+| ação | pontos |
+|---|---|
+| treta marcada (5, 7 ou 10 de cada lado) | 10, 14 ou 18 |
+| ataque na pista, na concentração, na praça | 10 |
+| briga dos arredores do estádio | 8 |
+| segurar (ou tomar) o ataque em casa | 10 |
+| bote no bar (+6 se o bar quebrou) | 12 (18) |
+| bote na sede | 12 |
+| a festa na casa com piscina | 8 |
+| estrutura nova no bairro: bar, loja / subsede / filial | 8 / 20 / 15 |
+| **ação social no bairro** (nova, uma por semana: R$ 1.500 e 5 membros) | 6 a 10 |
+| brigas entre as IAs: na rua / no bar | 8 / 12 |
+
+Quem perde a briga dá os pontos pro outro lado (empate não mexe). O lugar
+é o bairro da briga quando ela tem um; sem ele, a concentração conta no
+bairro da sede de quem foi atacado, a pista no bairro do estádio. Comprar
+bar, loja ou subsede agora pergunta **em que bairro** (o patrimônio lista
+os bairros, com a dona e o aviso do corte). A IA também compra (e o bar
+dela cai no bairro que ela escolheu) e, uma vez por semana, as duas
+maiores de cada cidade que não dominam fazem a ação social delas (35%).
+
+### A planta: os bairros desenhados (ferramentas/planta_html/index.html)
+
+- **Os bairros saem dos dados** (`dados/cidades.js`: o nome, a zona e a
+  classe de cada um). A planta divide a cidade em quatro gomos (Norte,
+  Leste, Sul, Oeste) pela **área construída** (a régua dos gomos é a dos
+  quarteirões, não a da caixa do mapa: a cidade comprida do mapa pequeno
+  também sai com um quarto em cada zona). Cada sede vai pro espaço de sede
+  da zona do bairro dela, o bairro da sede nasce em volta dela e os outros
+  bairros da zona se espalham pelos quarteirões que sobram; cada bar cai
+  dentro do bairro que o jogo diz.
+- **O que é bairro**: o quarteirão (o de hoje pelo contorno dele — a
+  quadra da beira é recortada na guia da avenida da beira), a favela, o
+  atacarejo e o estádio; a rua entre dois bairros fica com o mais perto
+  (até uns 28 m), **só pela rua e pela calçada** — o mato, a areia e o mar
+  não viram bairro (01/10: antes o mapa pintava o bairro por cima do mato
+  de São Paulo e da praia de Fortaleza).
+- **Nenhum bairro sem chão**: o bairro que fica sem quarteirão (a
+  Uruguaiana, no mapa pequeno do Interior do RS) toma o mais perto do
+  bairro que tem mais.
+- O nome de cada bairro no meio dele; de longe, o nome da zona, no
+  primeiro lugar livre perto do meio dela (antes saía tapado pelas
+  etiquetas). A caixa **Bairros** liga e desliga a camada.
+- Conferido nas 30 praças da planta: nenhum bairro vazio, toda sede no
+  bairro dos dados e todo bar dentro de um bairro. Montar uma praça leva
+  0,2 a 0,7 s.
+
+### O mapa do jogo 3D (ferramentas/planta_html/mapa3d.js)
+
+- O item **Mapa** da coluna abre a aba **Cidade**: a planta da praça com
+  cada bairro **na cor da dona** (mais forte quanto maior a barra; cinza
+  em disputa), a sigla e a barra embaixo do nome. Ao lado, quem domina a
+  cidade, quantos bairros cada torcida tem e o efeito do dia. O **clique**
+  escolhe o bairro (contorno dourado) e o cartão mostra a barra de 0 a
+  100 (com o traço dos 50), o que tem nele, a receita do bairro, o corte
+  de 30% quando é o caso e o botão da ação social; **dois cliques** levam a
+  câmera da cidade até lá.
+- A aba **Brasil** mostra o país com as 30 praças na cor de quem domina
+  cada uma, e a lista das praças (Brasil por região e as de fora). Outra
+  praça do Brasil abre a planta dela — **montada uma vez e guardada**
+  (`pracaGuardada`): a planta põe o estado de lá só durante cada desenho e
+  devolve o de agora, então o arrasto e o zoom são os de casa, com os
+  rótulos no tamanho de sempre (01/10: antes era uma imagem esticada, com
+  os nomes ilegíveis). Medido: São Paulo monta em 0,8–0,9 s, Belém em
+  0,6–0,8 s, e cada desenho leva 13–17 ms; a praça já vista volta na hora
+  (as 4 últimas ficam guardadas enquanto o mapa está aberto). **A cidade
+  3D não é remontada**: a planta dela sai idêntica (sedes, bares, lotes,
+  bairros, calçadas) antes e depois de ver outras praças — conferido no
+  teste.
+- As praças de fora do Brasil não têm planta: delas sai o **quadro dos
+  bairros por zona** (a mesma bússola do jogo de feed).
+- **O jogo de feed** tem o item **Mapa** também (`js/ui/mapa_brasil.js`,
+  `css/mapa.css`): o Brasil, a lista das praças e, escolhida uma, o quadro
+  dos bairros com o mesmo cartão — ele não tem a planta.
+- **O bar**: "BAR DA {torcida}" no letreiro da fachada (o 3D e a cena do
+  estádio) e "Bar da {torcida}" nos rótulos do mapa.
+
+### Limites (sinceros)
+
+- **"Ferir membros rivais andando de maneira livre" não existe**: o jogo
+  não tem briga a pé solta na cidade (o boneco a pé do cenário não briga).
+  As outras ações do pedido contam; essa fica pra quando houver o combate
+  livre.
+- **±0,1 por dia pesa**: em um ano são uns 36 pontos (de 0 a 100) de
+  prestígio e de moral. A cidade que começa empatada tira das duas maiores
+  desde o primeiro dia.
+- **A zona nem sempre cabe**: o mapa tem um número fixo de espaços de sede
+  por gomo; quando uma zona tem mais sedes que espaços (São Paulo tem 4
+  sedes na Zona Oeste; o Rio, 4 na Leste), parte dos bairros dela fica num
+  gomo vizinho (a lista "fora do gomo" do teste: 1 a 3 por praça).
+  Alguns bairros saem pequenos (o menor, no ABC Paulista, com uns 800 m²).
+- **Sedes e bares mudam de lote** em relação à versão de antes: a zona do
+  bairro agora vem antes da regra das rivais em lados opostos (que vale
+  dentro das distribuições que respeitam a zona).
+- **O save cresce**: a cidade tocada (pelo jogador ou pela IA) fica
+  gravada — uns 50 KB nas duas primeiras semanas de jogo.
+- As praças de fora do Brasil só têm o quadro, sem planta.
+- Duas praças do mesmo mapa e da mesma costa dividem a montagem da
+  planta; a de praia e a de lagoa agora refazem as calçadas da beira
+  (antes uma herdava a grade da outra).

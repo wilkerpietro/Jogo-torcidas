@@ -165,6 +165,26 @@ TO.acoes = (function(){
     return (id && lista.find(x=>x.id === id)) || lista[0];
   };
 
+  /* os bairros da nossa cidade que a ação social pode ajudar: os que
+     não são nossos (menos o da sede dos outros, que não se compra com
+     cesta básica), na ordem em que a barra rende mais — o sem dona e o
+     de dona fraca primeiro */
+  function alvosSociais(E){
+    const D = TO.dominio;
+    if(!D || !E || !E.torcida) return [];
+    const eu = E.torcida.id;
+    return D.bairros(E, E.torcida.mapa)
+      .filter(b => b.dono !== eu && !(b.sede && b.sede !== eu))
+      .map(b => {
+        const nosso = (b.partes.find(x => x.t === eu) || {}).v || 0;
+        return {id:b.id, nome:b.nome, tipo:'bairro', bairro:b.nome, zona:b.zona,
+                nosso, dono:b.dono, v:b.v,
+                nota: b.dono ? _t('zona {zona} · da {sigla} ({v}%) · nossa barra {n}%', {zona:_t(b.zona), sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
+                             : _t('zona {zona} · sem dona · nossa barra {n}%', {zona:_t(b.zona), n:Math.round(nosso)})};
+      })
+      .sort((a, b) => (a.dono ? a.v : 0) - (b.dono ? b.v : 0) || b.nosso - a.nosso);
+  }
+
   /* QUEM NÃO TEM BAR NÃO TEM BAR PRA ATACAR (o dono, 29/09/2026:
      "Torcidas que ainda não tem bar não dá pra atacar assim"). O pino de
      bar das outras torcidas é sorteado no mapa pra todas (mapa.js), mas o
@@ -250,9 +270,13 @@ TO.acoes = (function(){
       {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:deles.nome})},
       {ind:'moral', delta: dmNossa, dono:_t('nossa')}
     ].filter(x=>x.delta);
+    /* a cidade da briga, quando não é a nossa (o jogo fora): o bairro
+       dela é o do domínio de lá (dono, 30/09/2026) */
+    const cidade = typeof enc.foraDeCasa === 'string' ? enc.foraDeCasa
+                 : enc.foraDeCasa ? ((E.proximoJogo || {}).mapaAdv || null) : null;
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: deles.torcida, ganhamos, atacamos: !enc.sofrido,
-      local:{cena: enc.local || '', bairro: enc.bairro || ''},
+      local:{cena: enc.local || '', bairro: enc.bairro || '', cidade},
       /* a escolta desce com o aliado junto: o carimbo vai pro jornal
          montar a manchete de apoio (pedido do dono, 31/08/2026) */
       aliado: enc.escoltaAliado && enc.junto
@@ -453,7 +477,7 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       local:{cena: alvo.cena || 'rua', bairro: alvo.bairro || ''},
-      lnt: alvo.lnt || null,
+      lnt: alvo.lnt || null, tam: alvo.n || 5,
       a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:alvo.n,
           caidos: membros.filter(m=>!m.preso && m.caido).length,
           presos: membros.filter(m=>m.preso).length, venceu:ganhou},
@@ -499,6 +523,9 @@ TO.acoes = (function(){
     let perdeu = 0;
     const antes = {moral:E.indicadores.moral, prestigio:E.indicadores.prestigio,
                    relacao: R.nivel(E, alvo.torcidaId)};
+    /* o bar que eles vieram pegar é o bairro da briga (o domínio) */
+    const barAlvo = alvo.tipo === 'bar'
+      ? TO.financeiro.barMaisVisado((E.patrimonio||{}).bares) : null;
     if(!seguramos){
       /* DINHEIRO SÓ MUDA DE MÃO EM BRIGA NO BAR (decisão do dono,
          17/08/2026): é lá que tem gaveta e caixa. Perder na estrada,
@@ -568,7 +595,9 @@ TO.acoes = (function(){
       torcidaId: alvo.torcidaId, ganhamos: seguramos,
       atacamos: false, cobranca: !!alvo.cobranca,
       local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
-             bairro: alvo.bairro || ''},
+             bairro: alvo.bairro || (barAlvo && barAlvo.bairro) || '',
+             cidade: alvo.mapa || null},
+      tipoDefesa: alvo.tipo, estrada: naEstrada,
       a: nossoLado(E, alvo, res, seguramos),
       b: ladoDeles(E, alvo, res, seguramos),
       efeitos});
@@ -609,7 +638,7 @@ TO.acoes = (function(){
     const R = TO.relacoes;
     const ganhou = !!res.venceu;
     const linhas = [];
-    let levou = 0;
+    let levou = 0, quebrou = false;
     if(ganhou){
       const m = R.mundo(E)[alvo.torcidaId];
       /* DINHEIRO SÓ SAI DE BRIGA NO BAR (decisão do dono, 17/08/2026):
@@ -637,6 +666,7 @@ TO.acoes = (function(){
            vale pra gente (dono, 10/09/2026) */
         const F = TO.financeiro;
         const dele = m && F.barMaisVisado(m.bares);
+        quebrou = !!dele;
         if(dele){
           F.danificarBar(dele, (E.data && E.data.absoluto) || 0, E.torcida.id);
           linhas.push(_t('o bar deles ficou em cacos: metade da receita por {n} dias', {n:F.DANO_BAR.dias}));
@@ -666,6 +696,7 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: true,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
+      alvoTipo: alvo.tipo, quebrou,
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos:[{ind:'relacao', delta:r1(R.nivel(E,alvo.torcidaId)-antes),
@@ -797,7 +828,11 @@ TO.acoes = (function(){
            fraca paga. Abaixo disso é vaquinha, e vaquinha é escolha
            ruim — não é impossibilidade. */
         const custo = custoFesta(E);
-        const receita = Math.round(publico * U.entre(4.8, 6.4));
+        /* a sede em bairro de dona rival: a festa rende 30% menos (o
+           domínio dos bairros, 30/09/2026) — o público tem medo de ir */
+        const corte = TO.dominio ? TO.dominio.fator(E, E.torcida.id, E.torcida.mapa,
+                                                    (TO.mundo.bairroDaSede(E.torcida)||{}).nome) : 1;
+        const receita = Math.round(publico * U.entre(4.8, 6.4) * corte);
         /* festa não fabrica moral (decisão do dono, 17/08/2026): virou
            diária com o Expediente e saturava o indicador em dias. É
            caixa e ponto — moral vem de briga, título e defesa. */
@@ -974,6 +1009,29 @@ TO.acoes = (function(){
        return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
                               efetivoRival: noAlvo},
                msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})};
+     }},
+
+    /* A AÇÃO SOCIAL NO BAIRRO (o dono, 30/09/2026: "marcar uma ação
+       social no bairro"): cesta básica, mutirão, o campinho arrumado — a
+       torcida aparece no bairro sem briga. Uma por semana, R$ 1.500, soma
+       de 6 a 10 pontos na barra do bairro (js/mundo/dominio.js). Não é a
+       ação social aposentada em 24/08/2026 (id 'social'): é outra, com
+       outro id, e mora no mapa da cidade e aqui. */
+    {id:'social-bairro', nome:_t('Ação social no bairro'), icone:'casa', cena:_t('Bairro'),
+     efeito:_t('R$ 1.500; soma de 6 a 10% na barra do bairro escolhido — 1 por semana'),
+     alvos:alvosSociais, manual:true,
+     disponivel(E){
+       if(!TO.dominio) return {ok:false, motivo:_t('sem bairros nesta cidade')};
+       const d = TO.dominio.podeSocial(E);
+       if(!d.ok) return d;
+       const l = alvosSociais(E);
+       return l.length ? {ok:true, nota:_t('o melhor alvo é {nome}', {nome:l[0].nome})}
+                       : {ok:false, motivo:_t('todos os bairros já são nossos')};
+     },
+     executar(E, opc){
+       const alvo = escolher(alvosSociais(E), opc);
+       if(!alvo) return {ok:false, msg:_t('Esse bairro não existe mais.')};
+       return TO.dominio.social(E, alvo.id);
      }},
 
     {id:'pressionar', nome:_t('Pressionar o clube'), icone:'megafone', cena:_t('CT'),
@@ -1356,7 +1414,7 @@ TO.acoes = (function(){
 
   return {aplicarFaixa, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
           porId, agendaveis, expediente,
-          maximo, restantes, executar, rodarExpediente,
+          maximo, restantes, executar, rodarExpediente, alvosSociais,
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,

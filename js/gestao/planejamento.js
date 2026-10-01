@@ -91,7 +91,7 @@ TO.planejamento = (function(){
      risco:3, prestigio:4, ida:false, x:0.80, y:0.34, acima:false,
      nota:_t('cordão da PM em peso, mas é onde o rival inteiro está')},
     /* os da ida: o bonde deles ainda está na rua, quebrado em pedaços */
-    {id:'bar',       nome:_t('Bar do rival'),         curto:_t('BAR DELES'),
+    {id:'bar',       nome:_t('Bar da rival'),         curto:_t('BAR DELES'),
      risco:2, prestigio:5, ida:true, via:'sul', x:0.21, y:0.46, acima:false,
      nota:_t('poucos lá dentro, mas é humilhação que fica')},
     {id:'praca',     nome:_t('Praça de encontro'),    curto:_t('PRAÇA'),

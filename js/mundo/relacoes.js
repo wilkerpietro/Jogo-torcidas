@@ -384,9 +384,14 @@ TO.relacoes = (function(){
      MESMAS mensalidades cheias — as folhas delas entravam na fatia
      errada (~¼ do que o jogador paga) e a assimetria fechou.
      ======================================================= */
-  function bairroIA(o, tipo, i){
+  function bairroIA(o, tipo, i, obj){
     const bs = M().bairrosDe(o.mapa) || [];
     if(!bs.length) return null;
+    /* O PONTO COM BAIRRO GRAVADO fica nele (as compras depois do domínio
+       dos bairros, 30/09/2026); sem gravação, o bairro padrão do domínio
+       (fora das sedes, perto da própria) — o mesmo que o mapa usa */
+    if(obj && obj.bairro){ const b = M().bairro(o.mapa, obj.bairro); if(b) return b; }
+    if(TO.dominio && TO.dominio.bairroPadrao) return TO.dominio.bairroPadrao(o, tipo, i);
     if(tipo === 'sede'){
       const fixo = o.bairroSede && bs.find(x=>x.nome === o.bairroSede);
       if(fixo) return fixo;
@@ -416,36 +421,39 @@ TO.relacoes = (function(){
     const fator = fx * (0.7 + ((t.prestigio||0)/20)*0.4
                             + U.limitar(t.membros/150, 0, 1)*0.3);
     const multB = b => b ? M().multiplicador(b) : (t.mult || 1);
+    /* bairro de dona rival corta 30% (o domínio dos bairros, 30/09/2026) */
+    const corte = (cid, b) => (TO.dominio && E && b) ? TO.dominio.fator(E, id, cid, b) : 1;
 
     const hojeAbs = (E && E.data && E.data.absoluto) || 0;
     (t.bares||[]).forEach((b, i)=>{
-      const ba = bairroIA(o, 'bar', i);
+      const ba = bairroIA(o, 'bar', i, b);
       /* bar quebrado no ataque rende metade por 45 dias, pra elas
          também (dono, 10/09/2026) */
       const dd = FIN().diasDeDano ? FIN().diasDeDano(b, hojeAbs) : 0;
       pon(rec, (ba ? _t('Bar — {bairro} (n{nivel})', {bairro:ba.nome, nivel:b.nivel})
                    : _t('Bar (n{nivel})', {nivel:b.nivel}))+
                (dd ? _t(' · quebrado, {d} d', {d:dd}) : ''),
-          R.bar[b.nivel] * multB(ba) * fator
+          R.bar[b.nivel] * multB(ba) * fator * corte(o.mapa, ba)
             * (FIN().multDano ? FIN().multDano(b, hojeAbs) : 1));
     });
     (t.lojas||[]).forEach((l, i)=>{
-      const ba = bairroIA(o, 'loja', i);
+      const ba = bairroIA(o, 'loja', i, l);
       pon(rec, (ba ? _t('Loja — {bairro} (n{nivel})', {bairro:ba.nome, nivel:l.nivel})
                    : _t('Loja (n{nivel})', {nivel:l.nivel}))+
                (t.fabrica ? _t(' · fábrica') : ''),
-          R.loja[l.nivel] * multB(ba) * fator);
+          R.loja[l.nivel] * multB(ba) * fator * corte(o.mapa, ba));
     });
     for(let i=0; i<(t.subsedes||0); i++){
       const ba = bairroIA(o, 'subsede', i);
       pon(rec, ba ? _t('Subsede — {bairro}', {bairro:ba.nome}) : _t('Subsede'),
-          R.subsede * multB(ba) * fator);
+          R.subsede * multB(ba) * fator * corte(o.mapa, ba));
     }
     for(const f of (t.filiais||[]))
       pon(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:(TO.dados.cidades.find(x=>x.id===f.cidade)||{}).nome
                  || f.cidade, nivel:f.nivel}),
           R.subsede * (E && id && FIN().multFilial
-            ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator);
+            ? FIN().multFilial(E, f, id) : (t.mult||1)) * fator
+            * (TO.dominio && E && id ? corte(f.cidade, TO.dominio.bairroDaFilial(id, f.cidade)) : 1));
 
     pon(des, _t('Manutenção da sede (n{n})', {n:t.sede}), FIN().MANUT_SEDE[t.sede]);
     /* a fábrica delas corta os MESMOS 50% do custo da loja */
@@ -651,9 +659,15 @@ TO.relacoes = (function(){
     if(pr.trava) return null;
     const t = mundo(E)[id];
     if(tipo === 'sede') t.sede++;
-    else if(tipo === 'filial')
+    else if(tipo === 'filial'){
       (t.filiais = t.filiais || []).push({cidade:pr.cidade, nivel:1, membros:8});
-    else (t[P().PONTO[tipo].plural] = t[P().PONTO[tipo].plural] || []).push({nivel:1});
+      if(TO.dominio) TO.dominio.compraIA(E, id, 'filial', {cidade:pr.cidade});
+    }
+    else {
+      const novo = {nivel:1};
+      (t[P().PONTO[tipo].plural] = t[P().PONTO[tipo].plural] || []).push(novo);
+      if(TO.dominio) TO.dominio.compraIA(E, id, tipo, novo);
+    }
     /* no extrato dela, com o valor do presente — o caixa dela não mexe */
     (t.extrato = t.extrato || []).unshift(
       {q:_t('{ano} s{semana}', {ano:E.data.ano, semana:E.data.semana}),
@@ -1023,8 +1037,11 @@ TO.relacoes = (function(){
         else if(compra.tipo === 'area-treino')
           t.areaTreino = (t.areaTreino || 0) + 1;
         else if(compra.tipo === 'onibus') t.onibus = frotaIA(t) + 1;
-        else if(compra.tipo === 'subsede') t.subsedes++;
-        else if(compra.tipo === 'filial')
+        else if(compra.tipo === 'subsede'){
+          t.subsedes++;
+          if(TO.dominio) TO.dominio.compraIA(E, id, 'subsede');
+        }
+        else if(compra.tipo === 'filial'){
           /* a fundação desce com gente da sede (ordem do dono,
              31/08/2026, ampliada em 09/09/2026): 8 destacados — um
              diretor, dois linha de frente e cinco componentes — mudam
@@ -1032,13 +1049,22 @@ TO.relacoes = (function(){
              o núcleo recruta lá, no ritmo dele */
           (t.filiais = t.filiais || []).push(
             {cidade:compra.cidade, nivel:1, membros:8});
+          /* e a subsede de fora ganha presença no bairro dela lá */
+          if(TO.dominio) TO.dominio.compraIA(E, id, 'filial', {cidade:compra.cidade});
+        }
         else if(compra.tipo === 'elenco'){
           E.investimento = E.investimento || {};
           E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;
           TO.competicoes.usarSave(E);
         }
         else if(compra.tipo.startsWith('ampliar:')) compra.alvo.nivel++;
-        else t[P().PONTO[compra.tipo].plural].push({nivel:1});
+        else {
+          /* o ponto novo nasce com bairro (o domínio dos bairros,
+             30/09/2026): um dela, ou um sem dona perto do território */
+          const novo = {nivel:1};
+          t[P().PONTO[compra.tipo].plural].push(novo);
+          if(TO.dominio) TO.dominio.compraIA(E, id, compra.tipo, novo);
+        }
         /* a compra entra no extrato dela (crivo do dono, 31/08/2026) */
         if(compra.custo) lancarIA(E, id,
           ROTULO_COMPRA[compra.tipo] || compra.tipo, -compra.custo);
@@ -1895,6 +1921,11 @@ TO.relacoes = (function(){
       m[lado.id].ultimaBrigaIA = abs;
       desgasteDaNoite(E, lado.id, lado.feridos, lado.presos);
     }
+    /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): a vencedora soma no
+       bairro mais exposto da perdedora naquela cidade */
+    if(TO.dominio){
+      try{ reg.dominio = !!TO.dominio.brigaIA(E, reg); }catch(e){ /* o domínio não derruba a briga */ }
+    }
     return reg;
   }
 
@@ -2088,6 +2119,7 @@ TO.relacoes = (function(){
     const reg = {
       ano: E.data.ano, semana: E.data.semana, dia: E.data.dia,
       cidade: (M().cidade(cidade)||{}).nome || cidade, jogo: jogoRot,
+      mapa: cidade, tipo: opts.tipo || 'rua',
       a: {id:a.id, nome:a.nome, n:nA, feridos:bxA.feridos, presos:bxA.presos},
       b: {id:b.id, nome:b.nome, n:nB, feridos:bxB.feridos, presos:bxB.presos},
       vencedor: ganhouA ? a.nome : b.nome,
@@ -2281,6 +2313,7 @@ TO.relacoes = (function(){
     return registrarBrigaIA(E, {
       ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
       cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:_t('treta marcada'),
+      mapa:o.mapa, tipo:'treta',
       a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
       b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
       vencedor: ganhouA ? o.nome : r.nome, prestigio:display, ganhouA
@@ -2296,7 +2329,7 @@ TO.relacoes = (function(){
     /* ataque de nanica não existe — a mesma régua do nosso bar */
     if(vivoDe(E, atk.id) < vivoDe(E, o.id) * 0.5) return null;
     const reg = brigaIA(E, atk, o, o.mapa, _t('ataque ao bar'),
-                        {tetoA:60, tetoB:40});
+                        {tetoA:60, tetoB:40, tipo:'bar'});
     if(!reg) return null;
     if(reg.ganhouA){
       const tAtk = (E.mundoTorcidas||{})[atk.id];
@@ -2377,7 +2410,7 @@ TO.relacoes = (function(){
         /* o maior rival da praça fecha a pista primeiro */
         const emb = hostis.find(x=>ehMaiorRival(E, o.id, x.id)) || hostis[0];
         if(!emb) continue;
-        const r = brigaIA(E, emb, o, cid, _t('emboscada na estrada'));
+        const r = brigaIA(E, emb, o, cid, _t('emboscada na estrada'), {tipo:'estrada'});
         if(r) fora.push(r);
         break;
       }

@@ -4442,6 +4442,13 @@ TO.feed = (function(){
        manchete, e agora as duas dizem a mesma coisa. */
     const empatou = !d.ganhamos && (a.caidos||0) === (b.caidos||0) &&
                     ((a.caidos||0) || (b.caidos||0) || (a.n||0));
+    /* O DOMÍNIO DO BAIRRO (o dono, 30/09/2026): quem ganhou soma na barra
+       do bairro da briga e quem perdeu perde ali (js/mundo/dominio.js).
+       A estrada da caravana não é bairro de ninguém. */
+    if(TO.dominio && !d.estrada){
+      try{ d.dominio = TO.dominio.confronto(E, Object.assign({}, d, {empatou:!!empatou})); }
+      catch(e){ d.dominio = null; }
+    }
     /* A DÍVIDA (pedido do dono, 08/09/2026): apanhou deles, fica anotado
        onde e quando; o olheiro cobra a vingança na próxima oportunidade
        do calendário. Ganhar deles quita. E o contador de brigas do ano
@@ -5205,7 +5212,7 @@ TO.feed = (function(){
             tipo: a.alvo === 'emboscada' ? 'emboscada'
                 : a.alvo === 'bar' ? 'bar' : a.alvo,
             cena: a.cena,
-            bairro: '',
+            bairro: '', mapa: a.mapa || null,
             efetivo: a.efetivo || TO.acoes.efetivoDePe(E, o) || 30,
             nossos: a.alvo === 'emboscada' && est ? est.vao
                    : TO.membros.aptosParaOEstadio(E).length,

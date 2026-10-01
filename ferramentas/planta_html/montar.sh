@@ -21,6 +21,9 @@ cp "$R/ferramentas/planta_html/index.html" "$A/"
 cp "$R/ferramentas/planta_html/proposta.js" "$R/ferramentas/planta_html/cenario.js" "$R/ferramentas/planta_html/passo.js" "$R/ferramentas/planta_html/subsolo.js" "$R/ferramentas/planta_html/dia_de_jogo.js" "$R/ferramentas/planta_html/vida3d.js" "$R/ferramentas/planta_html/palco_briga.js" "$R/ferramentas/planta_html/mapa3d.js" "$R/ferramentas/planta_html/caminhada.js" "$R/ferramentas/planta_html/arredores3d.js" "$R/ferramentas/planta_html/briga_bar.js" "$R/ferramentas/planta_html/briga_treta.js" "$R/ferramentas/planta_html/arquibancada.js" "$R/ferramentas/planta_html/invasao.js" "$R/ferramentas/planta_html/dia3d.js" "$R/ferramentas/planta_html/recados3d.js" "$R/ferramentas/planta_html/estrada3d.js" "$R/ferramentas/planta_html/assalto.js" "$R/ferramentas/planta_html/assalto3d.js" "$A/js/"
 # as rotas de dentro dos estádios do dia de jogo (GERADO por rotas_estadios.mjs)
 cp "$R/js/diajogo/rotas_estadios.js" "$A/js/"
+# o domínio dos bairros (as sedes espalhadas e o bairro de cada bar): o
+# mesmo módulo do jogo, que a planta carrega depois dos dados
+cp "$R/js/mundo/dominio.js" "$A/js/dominio.js"
 cp "$R/dados/torcidas.js" "$R/dados/times.js" "$R/dados/cidades.js" "$R/dados/estadios.js" "$R/dados/escudos.js" "$R/dados/faixas.js" "$A/dados/"
 # AS FAIXAS DE VERDADE das torcidas (a arte do dono, 29/09/2026;
 # ferramentas/importar_faixas.py): uma tira .webp por torcida, pedida na
