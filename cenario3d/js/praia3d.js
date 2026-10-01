@@ -36,8 +36,8 @@
    cadeira e a mesa de plástico) servem também os ambulantes da porta do
    estádio (ambulantes3d.js), na mesma folha.
    ========================================================= */
-import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js?v=87b2c574c9';
-import { montarArvoreLowpoly } from './arvores_lowpoly.js?v=87b2c574c9';
+import { Construtor, METRO, lerp, sub, soma, esc, unit, pv, noMundo, placasNoMundo, sorteio, varrer, esfera } from './construtor3d.js?v=4b75dc0aa2';
+import { montarArvoreLowpoly } from './arvores_lowpoly.js?v=4b75dc0aa2';
 
 const ALTO = [0, 1, 0];
 const escolha = (rnd, lista) => lista[Math.floor(rnd() * lista.length) % lista.length];

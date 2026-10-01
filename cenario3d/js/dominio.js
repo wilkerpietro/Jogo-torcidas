@@ -164,16 +164,18 @@ TO.dominio = (function(){
     for(const {t, orig} of pend){
       const livres = bs.filter(b => !dono.has(b.id));
       if(!livres.length) break;
-      const naZona = z => [...fora.values()].filter(x => x.zona === z).length;
+      const naZona = z => [...fora.values()].filter(x => zonaDe(c, x) === z).length;
       const nota = b => {
         let n = 0;
+        const zb = zonaDe(c, b);
         if(orig){
           /* a sede fica na cidade dela (as praças de várias cidades, 01/10/2026) */
           if((b.cidade || '') !== (orig.cidade || '')) n += 100;
-          n += b.zona === orig.zona ? 0 : (VIZINHAS[orig.zona] || []).includes(b.zona) ? 10 : 20;
+          const zo = zonaDe(c, orig);
+          n += zb === zo ? 0 : (VIZINHAS[zo] || []).includes(zb) ? 10 : 20;
           if(b.classe === orig.classe) n -= 3;
         }
-        return n + 2 * naZona(b.zona) + (hash(t.id + '|' + b.id) % 1000) / 1000;
+        return n + 2 * naZona(zb) + (hash(t.id + '|' + b.id) % 1000) / 1000;
       };
       const b = livres.sort((x, y) => nota(x) - nota(y))[0];
       dono.set(b.id, t); fora.set(t.id, b);
@@ -242,7 +244,8 @@ TO.dominio = (function(){
     if(s){
       /* a zona da sede; quando ela não tem bairro livre pra tanto ponto,
          entram as vizinhas */
-      const nivel = b => b.zona === s.zona ? 0 : (VIZINHAS[s.zona] || []).includes(b.zona) ? 1 : 2;
+      const c = cidadeDe(o.mapa), zs = zonaDe(c, s);
+      const nivel = b => { const zb = zonaDe(c, b); return zb === zs ? 0 : (VIZINHAS[zs] || []).includes(zb) ? 1 : 2; };
       const z0 = cand.filter(b => nivel(b) === 0), z1 = cand.filter(b => nivel(b) <= 1);
       cand = z0.length > i ? z0 : z1.length ? z1 : cand;
     }
@@ -490,7 +493,7 @@ TO.dominio = (function(){
     return bairrosDe(cid).map(b => {
       const ps = partes(E, cid, b.id);
       const dono = ps.length && ps[0].v > DOMINA ? ps[0].t : null;
-      return {id:b.id, nome:b.nome, zona:b.zona, classe:b.classe, mult:b.mult, cidade:cidadeDoBairro(cidadeDe(cid), b),
+      return {id:b.id, nome:b.nome, zona:b.zona, semZona:semZonas(cidadeDe(cid)), classe:b.classe, mult:b.mult, cidade:cidadeDoBairro(cidadeDe(cid), b),
               dono, v: dono ? ps[0].v : 0, partes:ps, sede:casaDe(cid, b.id)};
     });
   }
@@ -584,6 +587,17 @@ TO.dominio = (function(){
   const DE_FORA = 0.08, REDUTO_SEDE = 1.6, REDUTO_ZONA = 1.25, VARIA = 0.15;
   const TORCIDA = {receita:{base:0.5, teto:2}, ganho:{base:0.4, teto:1.5}};
   const cidadeDoBairro = (c, b) => (b && b.cidade) || (c && c.nome) || '';
+  /* A PRAÇA SEM ZONA (o dono, 01/10/2026: "essas praças com mais de 2
+     cidades não vão ter mais zonas pra facilitar a criação do design do
+     mapa"): na praça de três cidades ou mais o mapa é de cidades, não de
+     quatro gomos — a zona de um bairro é a cidade dele */
+  const semZonasDe = new Map();
+  function semZonas(c){
+    if(!c || !c.bairros) return false;
+    if(!semZonasDe.has(c)) semZonasDe.set(c, new Set(c.bairros.map(b => cidadeDoBairro(c, b))).size >= 3);
+    return semZonasDe.get(c);
+  }
+  const zonaDe = (c, b) => b ? (semZonas(c) ? 'cidade:' + cidadeDoBairro(c, b) : b.zona) : null;
   const cidadeDoClube = k => { const t = indice().times.get(k); return t ? (t.cidade || '') : ''; };
   /* as cidades da praça (a de mais bairros primeiro) */
   function cidadesDa(cid){
@@ -615,7 +629,7 @@ TO.dominio = (function(){
         let red = 1;
         for(const s of sedesDoClube.get(k) || []){
           if(s.id === b.id) red = Math.max(red, REDUTO_SEDE);
-          else if(s.zona === b.zona && cidadeDoBairro(c, s) === cb) red = Math.max(red, REDUTO_ZONA);
+          else if(zonaDe(c, s) === zonaDe(c, b) && cidadeDoBairro(c, s) === cb) red = Math.max(red, REDUTO_ZONA);
         }
         return v * red * (1 - VARIA + 2 * VARIA * (hash(`${cid}|${k}|${b.id}`) % 10000) / 10000);
       });
@@ -864,10 +878,12 @@ TO.dominio = (function(){
      que a torcida já tem */
   function alvoSocial(E, cid, tid, r){
     const bs = bairros(E, cid);
-    const zonas = new Set(bs.filter(b => b.dono === tid).map(b => b.zona));
+    /* (a zona; na praça sem zona, a cidade) */
+    const zk = b => b.semZona ? 'cidade:' + b.cidade : b.zona;
+    const zonas = new Set(bs.filter(b => b.dono === tid).map(zk));
     const cand = bs.filter(b => b.dono !== tid && !(b.sede && b.sede !== tid));
     if(!cand.length) return null;
-    const nota = b => (b.dono ? b.v : 30) - (zonas.has(b.zona) ? 12 : 0) - 20 * (Math.min(presencaDa(tid, cid, b.id), 1.5) - 1) + r() * 8;
+    const nota = b => (b.dono ? b.v : 30) - (zonas.has(zk(b)) ? 12 : 0) - 20 * (Math.min(presencaDa(tid, cid, b.id), 1.5) - 1) + r() * 8;
     return cand.sort((a, c) => nota(a) - nota(c))[0].id;
   }
 
@@ -1029,6 +1045,7 @@ TO.dominio = (function(){
 
   return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO,
           duas, presenca, presencaDa, clubeDe, fatorTorcida, fatorGanho, torcedoresNoBairro, parteDaTorcida, notaDaTorcida, cidadesDa,
+          semZonas:cid => semZonas(cidadeDe(cid)),
           cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,

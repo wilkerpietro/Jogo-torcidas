@@ -5742,12 +5742,16 @@ TO.i18n.registrar({
   'Esse bairro não existe mais.': {es:'Ese barrio ya no existe.', en:'That neighborhood no longer exists.'},
   'zona {zona} · da {sigla} ({v}%) · nossa barra {n}%': {es:'zona {zona} · de {sigla} ({v}%) · nuestra barra {n}%', en:'{zona} zone · {sigla}’s ({v}%) · our bar {n}%'},
   'zona {zona} · sem dona · nossa barra {n}%': {es:'zona {zona} · sin dueña · nuestra barra {n}%', en:'{zona} zone · no owner · our bar {n}%'},
+  /* (a praça sem zona — três cidades ou mais —: a cidade no lugar da zona) */
+  '{cidade} · da {sigla} ({v}%) · nossa barra {n}%': {es:'{cidade} · de {sigla} ({v}%) · nuestra barra {n}%', en:'{cidade} · {sigla}’s ({v}%) · our bar {n}%'},
+  '{cidade} · sem dona · nossa barra {n}%': {es:'{cidade} · sin dueña · nuestra barra {n}%', en:'{cidade} · no owner · our bar {n}%'},
   'Onde a barra rende mais: o bairro sem dona e o de dona fraca.': {es:'Donde la barra rinde más: el barrio sin dueña y el de dueña débil.', en:'Where the bar gains most: neighborhoods with no owner or a weak one.'},
   'sem dona': {es:'sin dueña', en:'no owner'},
   'nosso ({v}%)': {es:'nuestro ({v}%)', en:'ours ({v}%)'},
   'da {sigla} ({v}%)': {es:'de {sigla} ({v}%)', en:'{sigla}’s ({v}%)'},
   'rende 30% menos': {es:'rinde 30% menos', en:'earns 30% less'},
   '{bairro} (zona {zona}) · {dona}': {es:'{bairro} (zona {zona}) · {dona}', en:'{bairro} ({zona} zone) · {dona}'},
+  '{bairro} · {dona}': {es:'{bairro} · {dona}', en:'{bairro} · {dona}'},
   '{nota}: a festa rende 30% menos': {es:'{nota}: la fiesta rinde 30% menos', en:'{nota}: the party earns 30% less'},
 
   /* =========================================================
@@ -5775,6 +5779,7 @@ TO.i18n.registrar({
   'Subsede de fora da {nome}': {es:'Subsede de afuera de {nome}', en:'{nome} out-of-town branch'},
   'Clique num bairro do mapa.': {es:'Haga clic en un barrio del mapa.', en:'Click a neighborhood on the map.'},
   'Zona {zona} · {classe} · receita ×{m}': {es:'Zona {zona} · {classe} · ingresos ×{m}', en:'{zona} zone · {classe} · revenue ×{m}'},
+  '{classe} · receita ×{m}': {es:'{classe} · ingresos ×{m}', en:'{classe} · revenue ×{m}'},
   'O bairro é nosso ({v}%).': {es:'El barrio es nuestro ({v}%).', en:'The neighborhood is ours ({v}%).'},
   'A dona é a {nome} ({v}%).': {es:'La dueña es {nome} ({v}%).', en:'The owner is {nome} ({v}%).'},
   'Sem dona: ninguém passa de 50%.': {es:'Sin dueña: nadie pasa del 50%.', en:'No owner: nobody is above 50%.'},
@@ -11785,16 +11790,18 @@ TO.dominio = (function(){
     for(const {t, orig} of pend){
       const livres = bs.filter(b => !dono.has(b.id));
       if(!livres.length) break;
-      const naZona = z => [...fora.values()].filter(x => x.zona === z).length;
+      const naZona = z => [...fora.values()].filter(x => zonaDe(c, x) === z).length;
       const nota = b => {
         let n = 0;
+        const zb = zonaDe(c, b);
         if(orig){
           /* a sede fica na cidade dela (as praças de várias cidades, 01/10/2026) */
           if((b.cidade || '') !== (orig.cidade || '')) n += 100;
-          n += b.zona === orig.zona ? 0 : (VIZINHAS[orig.zona] || []).includes(b.zona) ? 10 : 20;
+          const zo = zonaDe(c, orig);
+          n += zb === zo ? 0 : (VIZINHAS[zo] || []).includes(zb) ? 10 : 20;
           if(b.classe === orig.classe) n -= 3;
         }
-        return n + 2 * naZona(b.zona) + (hash(t.id + '|' + b.id) % 1000) / 1000;
+        return n + 2 * naZona(zb) + (hash(t.id + '|' + b.id) % 1000) / 1000;
       };
       const b = livres.sort((x, y) => nota(x) - nota(y))[0];
       dono.set(b.id, t); fora.set(t.id, b);
@@ -11863,7 +11870,8 @@ TO.dominio = (function(){
     if(s){
       /* a zona da sede; quando ela não tem bairro livre pra tanto ponto,
          entram as vizinhas */
-      const nivel = b => b.zona === s.zona ? 0 : (VIZINHAS[s.zona] || []).includes(b.zona) ? 1 : 2;
+      const c = cidadeDe(o.mapa), zs = zonaDe(c, s);
+      const nivel = b => { const zb = zonaDe(c, b); return zb === zs ? 0 : (VIZINHAS[zs] || []).includes(zb) ? 1 : 2; };
       const z0 = cand.filter(b => nivel(b) === 0), z1 = cand.filter(b => nivel(b) <= 1);
       cand = z0.length > i ? z0 : z1.length ? z1 : cand;
     }
@@ -12111,7 +12119,7 @@ TO.dominio = (function(){
     return bairrosDe(cid).map(b => {
       const ps = partes(E, cid, b.id);
       const dono = ps.length && ps[0].v > DOMINA ? ps[0].t : null;
-      return {id:b.id, nome:b.nome, zona:b.zona, classe:b.classe, mult:b.mult, cidade:cidadeDoBairro(cidadeDe(cid), b),
+      return {id:b.id, nome:b.nome, zona:b.zona, semZona:semZonas(cidadeDe(cid)), classe:b.classe, mult:b.mult, cidade:cidadeDoBairro(cidadeDe(cid), b),
               dono, v: dono ? ps[0].v : 0, partes:ps, sede:casaDe(cid, b.id)};
     });
   }
@@ -12205,6 +12213,17 @@ TO.dominio = (function(){
   const DE_FORA = 0.08, REDUTO_SEDE = 1.6, REDUTO_ZONA = 1.25, VARIA = 0.15;
   const TORCIDA = {receita:{base:0.5, teto:2}, ganho:{base:0.4, teto:1.5}};
   const cidadeDoBairro = (c, b) => (b && b.cidade) || (c && c.nome) || '';
+  /* A PRAÇA SEM ZONA (o dono, 01/10/2026: "essas praças com mais de 2
+     cidades não vão ter mais zonas pra facilitar a criação do design do
+     mapa"): na praça de três cidades ou mais o mapa é de cidades, não de
+     quatro gomos — a zona de um bairro é a cidade dele */
+  const semZonasDe = new Map();
+  function semZonas(c){
+    if(!c || !c.bairros) return false;
+    if(!semZonasDe.has(c)) semZonasDe.set(c, new Set(c.bairros.map(b => cidadeDoBairro(c, b))).size >= 3);
+    return semZonasDe.get(c);
+  }
+  const zonaDe = (c, b) => b ? (semZonas(c) ? 'cidade:' + cidadeDoBairro(c, b) : b.zona) : null;
   const cidadeDoClube = k => { const t = indice().times.get(k); return t ? (t.cidade || '') : ''; };
   /* as cidades da praça (a de mais bairros primeiro) */
   function cidadesDa(cid){
@@ -12236,7 +12255,7 @@ TO.dominio = (function(){
         let red = 1;
         for(const s of sedesDoClube.get(k) || []){
           if(s.id === b.id) red = Math.max(red, REDUTO_SEDE);
-          else if(s.zona === b.zona && cidadeDoBairro(c, s) === cb) red = Math.max(red, REDUTO_ZONA);
+          else if(zonaDe(c, s) === zonaDe(c, b) && cidadeDoBairro(c, s) === cb) red = Math.max(red, REDUTO_ZONA);
         }
         return v * red * (1 - VARIA + 2 * VARIA * (hash(`${cid}|${k}|${b.id}`) % 10000) / 10000);
       });
@@ -12485,10 +12504,12 @@ TO.dominio = (function(){
      que a torcida já tem */
   function alvoSocial(E, cid, tid, r){
     const bs = bairros(E, cid);
-    const zonas = new Set(bs.filter(b => b.dono === tid).map(b => b.zona));
+    /* (a zona; na praça sem zona, a cidade) */
+    const zk = b => b.semZona ? 'cidade:' + b.cidade : b.zona;
+    const zonas = new Set(bs.filter(b => b.dono === tid).map(zk));
     const cand = bs.filter(b => b.dono !== tid && !(b.sede && b.sede !== tid));
     if(!cand.length) return null;
-    const nota = b => (b.dono ? b.v : 30) - (zonas.has(b.zona) ? 12 : 0) - 20 * (Math.min(presencaDa(tid, cid, b.id), 1.5) - 1) + r() * 8;
+    const nota = b => (b.dono ? b.v : 30) - (zonas.has(zk(b)) ? 12 : 0) - 20 * (Math.min(presencaDa(tid, cid, b.id), 1.5) - 1) + r() * 8;
     return cand.sort((a, c) => nota(a) - nota(c))[0].id;
   }
 
@@ -12650,6 +12671,7 @@ TO.dominio = (function(){
 
   return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO,
           duas, presenca, presencaDa, clubeDe, fatorTorcida, fatorGanho, torcedoresNoBairro, parteDaTorcida, notaDaTorcida, cidadesDa,
+          semZonas:cid => semZonas(cidadeDe(cid)),
           cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
@@ -24113,7 +24135,9 @@ TO.financeiro = (function(){
     /* na cidade da sede (as praças de várias cidades, 01/10/2026): o bar
        da torcida de Campina Grande não abre em João Pessoa */
     if(sede && sede.cidade){ const mesma = todos.filter(b=>b.cidade === sede.cidade); if(mesma.length) todos = mesma; }
-    const fora = sede ? todos.filter(b=>b.zona !== sede.zona) : todos;
+    /* (fora da zona da sede; na praça sem zona — três cidades ou mais —, a zona é a cidade) */
+    const semZona = !!(TO.dominio && TO.dominio.semZonas && TO.dominio.semZonas(E.torcida.mapa));
+    const fora = sede ? todos.filter(b=>semZona ? b.cidade !== sede.cidade : b.zona !== sede.zona) : todos;
     const lista = fora.length ? fora : todos;
     /* Endereço não se sorteia: a mesma torcida abre o bar sempre no mesmo
        bairro, em toda partida nova. Quem decide é o hash do nome, não o
@@ -24987,7 +25011,9 @@ TO.patrimonio = (function(){
           ? ' · ' + _t('{clube} {p}% · rende ×{f}', {clube:E.torcida.clube || '', p:Math.round(D.parteDaTorcida(eu, cid, b.id) * 100),
                                                      f:D.duas ? D.duas(fT(b)) : fT(b).toFixed(2)})
           : '';
-        return {id:b.id, rot:_t('{bairro} (zona {zona}) · {dona}', {bairro:onde, zona:_t(b.zona), dona}) + torcida + corte};
+        /* (a praça sem zona — três cidades ou mais —: o bairro e a cidade dele, sem zona) */
+        const rot = b.semZona ? _t('{bairro} · {dona}', {bairro:onde, dona}) : _t('{bairro} (zona {zona}) · {dona}', {bairro:onde, zona:_t(b.zona), dona});
+        return {id:b.id, rot:rot + torcida + corte};
       });
   }
 
@@ -25954,8 +25980,12 @@ TO.acoes = (function(){
         const nosso = (b.partes.find(x => x.t === eu) || {}).v || 0;
         return {id:b.id, nome:b.nome, tipo:'bairro', bairro:b.nome, zona:b.zona,
                 nosso, dono:b.dono, v:b.v,
-                nota: b.dono ? _t('zona {zona} · da {sigla} ({v}%) · nossa barra {n}%', {zona:_t(b.zona), sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
-                             : _t('zona {zona} · sem dona · nossa barra {n}%', {zona:_t(b.zona), n:Math.round(nosso)})};
+                /* (a praça sem zona — três cidades ou mais —: a cidade no lugar da zona) */
+                nota: b.semZona
+                  ? (b.dono ? _t('{cidade} · da {sigla} ({v}%) · nossa barra {n}%', {cidade:b.cidade, sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
+                            : _t('{cidade} · sem dona · nossa barra {n}%', {cidade:b.cidade, n:Math.round(nosso)}))
+                  : b.dono ? _t('zona {zona} · da {sigla} ({v}%) · nossa barra {n}%', {zona:_t(b.zona), sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
+                           : _t('zona {zona} · sem dona · nossa barra {n}%', {zona:_t(b.zona), n:Math.round(nosso)})};
       })
       .sort((a, b) => (a.dono ? a.v : 0) - (b.dono ? b.v : 0) || b.nosso - a.nosso);
   }
@@ -48859,7 +48889,8 @@ TO.mapaBrasil = (function(){
     let h = `<h3>${esc(b.nome)}</h3>`;
     /* a cidade do bairro, nas praças de várias cidades (01/10/2026) */
     if(d.cidadesDa && d.cidadesDa(cid).length > 1 && b.cidade) h += `<p class="mb-cidade">${esc(b.cidade)}</p>`;
-    h += `<p class="mb-zona">${esc(_t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
+    /* (a praça sem zona — três cidades ou mais —: a cidade já está em cima) */
+    h += `<p class="mb-zona">${esc(b.semZona ? _t('{classe} · receita ×{m}', {classe:_t(b.classe), m:mult}) : _t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
     /* A TORCIDA DO BAIRRO (01/10/2026): os três clubes com mais gente
        morando nele, e quanto um ponto nosso renderia aqui */
     if(d.torcedoresNoBairro){
