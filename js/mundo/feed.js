@@ -717,6 +717,13 @@ TO.feed = (function(){
       {publico:true, zona, chave:`resenha|${abs}|${o.id}`});
   }
 
+  /* PROTESTO E RECLAMAÇÃO SÃO DA NOSSA CIDADE (dono, 01/10/2026): a
+     cobrança pública da torcida contra o próprio time — o protesto da
+     má fase, a reclamação do clássico perdido, da goleada e da queda —
+     só sai de torcida da nossa praça (a nossa inclusive). A zoeira e a
+     provocação de rival de fora continuam. */
+  const daNossaCidade = (E, o) => !!o && (o.id === E.torcida.id || o.mapa === E.torcida.mapa);
+
   /* --- o protesto do time em má fase (segunda-feira) --- */
   function protestosDaSemana(E){
     if(E.data.dia !== 1 || !E.temporada) return;
@@ -741,9 +748,12 @@ TO.feed = (function(){
       cands.push({id, d, v, queda, extrema, s});
     }
     cands.sort((a,b) => a.s - b.s);
-    for(const c of cands.slice(0, 2)){
+    let postados = 0;
+    for(const c of cands){
+      if(postados >= 2) break;
       const o = c.id === meu ? M().torcida(E.torcida.id) : torcidaMaior(E, c.id);
-      if(!o) continue;
+      if(!o || !daNossaCidade(E, o)) continue;
+      postados++;
       const P = {nome:o.nome, clube:nomeClube(c.id), d:c.d, j:5};
       const sit = c.queda ? _t('{d} derrotas nos últimos {j} jogos e o time na zona de rebaixamento.', P)
                           : _t('{d} derrotas nos últimos {j} jogos.', P);
@@ -859,7 +869,7 @@ TO.feed = (function(){
             _t('Quem manda na cidade? {clube} {gv} x {gd} {rival}{comp}. A {nome} faz a festa e manda um abraço pra {deles}!', P)];
           mensagemDe(E, oV.id, op[h % op.length], 'comemoracao', {publico:true, chave:`classico-v|${c.chave}`});
         }
-        if(oD){
+        if(oD && daNossaCidade(E, oD)){
           const op = [
             _t('Perder o clássico pro {clube} é inaceitável. {gv} a {gd}{comp}, e a gente engolindo zoeira a semana inteira. Exigimos respeito à camisa do {rival}!', P),
             _t('Vergonha. {rival} entrou no clássico com medo e saiu com {gd} a {gv}. A {deles} não aceita time sem sangue em clássico.', P)];
@@ -875,7 +885,7 @@ TO.feed = (function(){
             _t('{gv} a {gd}! {clube} virou saco de pancada{comp}. A {nome} está rindo até agora.', P)];
           mensagemDe(E, oR.id, op[h % op.length], 'provocacao', {publico:true, chave:`goleada-r|${c.chave}`});
         }
-        if(oD){
+        if(oD && daNossaCidade(E, oD)){
           const op = [
             _t('Vexame! {gd} a {gv} pro {vencedor}{comp}. A {deles} exige vergonha na cara do elenco do {clube}.', P),
             _t('Levar {gv} do {vencedor} não dá. {clube} precisa de explicação, e a {deles} quer ouvir de quem manda no clube.', P)];
@@ -933,7 +943,7 @@ TO.feed = (function(){
           'comemoracao', {publico:true, chave:`acesso|${m.ano}|${m.id}`});
         continue;
       }
-      if(o) mensagemDe(E, o.id, [
+      if(o && daNossaCidade(E, o)) mensagemDe(E, o.id, [
         _t('Rebaixado. {clube} vai jogar {naDivisao} e a {nome} não vai aceitar calada. Diretoria, a conta chegou.', P),
         _t('Ano de vergonha. {clube} caiu, e a {nome} quer os responsáveis longe do clube. A camisa não merecia isso.', P)][h % 2],
         'reclamacao', {publico:true, chave:`queda|${m.ano}|${m.id}`});

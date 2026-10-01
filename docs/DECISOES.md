@@ -8379,6 +8379,16 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - A briga nossa (Porrada) já não passava pelo feed desde 08/09/2026; mora em Notícias → Tretas.
 - Em 60 dias de TUF: as 4 primeiras páginas da rodada e o almanaque saíram do feed. Os 5 cartões de jornal que ficaram são os 4 de partida e a entrevista.
 
+## Protesto e reclamação só da nossa cidade (pedido do dono, 01/10/2026)
+
+"Protesto e reclamação de torcidas de outras cidades deixam de aparecer na rede social."
+- A cobrança pública da torcida contra o próprio time só sai de torcida da nossa praça, a nossa inclusive (`daNossaCidade` em feed.js). Vale para:
+  - o protesto da má fase;
+  - a reclamação do clássico perdido, da goleada sofrida e da queda.
+- O protesto continua com no máximo dois por segunda-feira, agora escolhidos só entre os da cidade.
+- A zoeira e a provocação de rival de fora continuam.
+- Em 150 dias de TUF: 9 protestos e reclamações, todos de torcidas de Fortaleza (Cearamor, Falange Coral, Jovem do Floresta e a nossa).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
