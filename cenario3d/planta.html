@@ -285,24 +285,24 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js?v=4a5c4ec528';
-import { montarModelos } from './js/modelos3d.js?v=4a5c4ec528';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=4a5c4ec528';
-import { ATLAS } from './js/modelos_atlas.js?v=4a5c4ec528';
-import { Construtor, sorteio } from './js/construtor3d.js?v=4a5c4ec528';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M, cisaoDaPraca, VAO_CIDADES_M } from './js/proposta.js?v=4a5c4ec528';
-import { montarSede, nivelQueCabe } from './js/sede3d.js?v=4a5c4ec528';
-import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=4a5c4ec528';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=4a5c4ec528';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=4a5c4ec528';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=4a5c4ec528';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js?v=4a5c4ec528';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=4a5c4ec528';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=4a5c4ec528';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=4a5c4ec528';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=4a5c4ec528';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js?v=4a5c4ec528';
-import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js?v=4a5c4ec528';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js?v=b51650b3ce';
+import { montarModelos } from './js/modelos3d.js?v=b51650b3ce';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=b51650b3ce';
+import { ATLAS } from './js/modelos_atlas.js?v=b51650b3ce';
+import { Construtor, sorteio } from './js/construtor3d.js?v=b51650b3ce';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M, cisaoDaPraca, VAO_CIDADES_M, PRAIA_A_MAIS } from './js/proposta.js?v=b51650b3ce';
+import { montarSede, nivelQueCabe } from './js/sede3d.js?v=b51650b3ce';
+import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=b51650b3ce';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=b51650b3ce';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=b51650b3ce';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=b51650b3ce';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js?v=b51650b3ce';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=b51650b3ce';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=b51650b3ce';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=b51650b3ce';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=b51650b3ce';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js?v=b51650b3ce';
+import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js?v=b51650b3ce';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -319,25 +319,25 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=4a5c4ec528');
-  await carregarScript('dados/times.js?v=4a5c4ec528');
-  await carregarScript('dados/cena_estadio.js?v=4a5c4ec528');
-  await carregarScript('dados/cidades.js?v=4a5c4ec528');
-  await carregarScript('dados/estadios.js?v=4a5c4ec528');
-  await carregarScript('dados/escudos.js?v=4a5c4ec528');
+  await carregarScript('dados/torcidas.js?v=b51650b3ce');
+  await carregarScript('dados/times.js?v=b51650b3ce');
+  await carregarScript('dados/cena_estadio.js?v=b51650b3ce');
+  await carregarScript('dados/cidades.js?v=b51650b3ce');
+  await carregarScript('dados/estadios.js?v=b51650b3ce');
+  await carregarScript('dados/escudos.js?v=b51650b3ce');
   /* o manifesto das faixas de verdade (a arte do dono, 29/09/2026): a arquibancada estende a da torcida */
-  await carregarScript('dados/faixas.js?v=4a5c4ec528').catch(() => {});
+  await carregarScript('dados/faixas.js?v=b51650b3ce').catch(() => {});
   /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): as sedes repetidas num
      bairro saem espalhadas (nos dados, na carga) e os bares ganham o
      bairro deles — o mesmo módulo do jogo (js/mundo/dominio.js) */
-  await carregarScript('js/dominio.js?v=4a5c4ec528').catch(() => {});
+  await carregarScript('js/dominio.js?v=b51650b3ce').catch(() => {});
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=4a5c4ec528').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=b51650b3ce').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -2709,6 +2709,14 @@ function montarDerivados() {
     : { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: Math.max(5000, PROP.limite.x1 + 80), y1: Math.max(5980, PROP.limite.y1 + 80) };
   MUNDO = pracaToda() ? { ...PROP.mundo }
     : { x0: Math.min(K.VX0, PROP.mundo.x0), y0: Math.min(K.VY0, PROP.mundo.y0), x1: Math.max(K.VX0 + K.VW, PROP.mundo.x1), y1: Math.max(K.VY0 + K.VH, PROP.mundo.y1) };
+  /* (a praça toda de modelo com praia: o mundo dela é a caixa das cidades,
+     que acaba na avenida da beira — a areia, a linha d'água e o mar ficavam
+     fora: no mapa o mar era uma tira de 10 m, e no chão do cenário não tinha
+     mar, era areia até o horizonte. O mundo vai até 60 m mar adentro) */
+  if (pracaToda() && temPraia() && !temLagoa()) {
+    const ag = costa(-PRAIA_A_MAIS, MUNDO.y0, MUNDO.y1);
+    if (ag.length) MUNDO.x1 = Math.max(MUNDO.x1, Math.max(...ag.map(p => p[0])) + 60 * M);
+  }
   RESERVAS = reservasDeSede();
   montarCalcadas();
 }
@@ -3793,10 +3801,20 @@ function padraoRasteira(veg) {
    guarda-sol e a barraca espalhados em dois terços da areia, o posto a
    um quarto, a quadra no meio, o quiosque e o coqueiro na beira do
    calçadão. Desenho fixo (hash, sem sorteio), montado uma vez por trecho
-   de avenida. */
-const PRAIA_A_MAIS = 105;                 // px do desenho do jogo (45 px = 12,5 m)
+   de avenida. (PRAIA_A_MAIS vem do gerador, proposta.js: o rio que
+   deságua no mar acaba nessa linha d'água.) O RIO QUE CRUZA A AREIA (a
+   praça toda de modelo): nada da praia fica na água dele nem a 3 m da
+   beira — o quiosque, o guarda-sol, a barraca, o posto e a quadra saem
+   de lá. */
 const PRAIAS = new Map();
-function montarPraia(ya, yb) {
+/* a praia do trecho [ya, yb] com os rios da vez (a chave leva os rios: a praça muda, a praia muda) */
+function praiaDe(ya, yb) {
+  const C = CIS(), rios = C && C.rios ? C.rios.filter(r => r.mar) : [];
+  const chave = Math.round(ya) + '|' + Math.round(yb) + '|' + rios.map(r => r.id + ':' + r.pontos.length + ':' + r.pontos[r.pontos.length - 1].join(',')).join(';');
+  if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb, rios));
+  return PRAIAS.get(chave);
+}
+function montarPraia(ya, yb, rios = []) {
   const u = K.pxm(1, 0)[0] - K.pxm(0, 0)[0], y00 = K.pxm(0, 0)[1];
   const xc = y => K.pxm(K.xCosta((y - y00) / u) + PRAIA_A_MAIS, 0)[0];  // a linha d'água
   const larg = (K.PRAIA + PRAIA_A_MAIS) * u;                             // a faixa de areia
@@ -3866,14 +3884,25 @@ function montarPraia(ya, yb) {
     const y = Y0 + 500 + (Y1 - Y0 - 1000) * (k + h(k, 60) * 0.6) / 8;
     barcos.push({ x: xc(y) + 420 + h(k, 61) * 1000, y, a: rumo(y) + (h(k, 62) - 0.5) * 1.2, vela: h(k, 63) < 0.55 });
   }
+  /* (o rio que cruza a areia: fora da água dele e de 3 m da beira, cada coisa pelo tamanho dela) */
+  const perto = (x, y, pts, lim) => {
+    for (let k = 1; k < pts.length; k++) {
+      const [ax, ay] = pts[k - 1], [bx, by] = pts[k];
+      if (Math.max(ax, bx) < x - lim || Math.min(ax, bx) > x + lim || Math.max(ay, by) < y - lim || Math.min(ay, by) > y + lim) continue;
+      const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+      if (Math.hypot(ax + t * dx - x, ay + t * dy - y) < lim) return true;
+    }
+    return false;
+  };
+  const naAgua = (o, raio) => rios.some(r => perto(o.x, o.y, r.pontos, r.larg / 2 + 3 * M + raio));
+  const seca = (lista, raio) => rios.length ? lista.filter(o => !naAgua(o, raio)) : lista;
   return { linha0: linha(0), areia: linha(-larg).concat(linha(0).reverse()), ondas, espuma, calcadao, ondaCalcadao,
-           quiosques, postos, quadras, sois, cangas, barracas, coqueiros, barcos };
+           quiosques: seca(quiosques, 130), postos: seca(postos, 40), quadras: seca(quadras, 110), sois: seca(sois, 25), cangas: seca(cangas, 20),
+           barracas: seca(barracas, 40), coqueiros: seca(coqueiros, 40), barcos };
 }
 function desenharPraia(px, vis, ya, yb, X1) {
   const chao = pintandoChao;
-  const chave = Math.round(ya) + '|' + Math.round(yb);
-  if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb));
-  const P = PRAIAS.get(chave);
+  const P = praiaDe(ya, yb);
   const ve = (o, m = 160) => o.x > vis.x0 - m && o.x < vis.x1 + m && o.y > vis.y0 - m && o.y < vis.y1 + m;
   const linhaMin = w => Math.max(w, px(1));
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
@@ -4069,15 +4098,23 @@ function desenharPaisagem() {
   /* (a lagoa de onde um rio nasce, quando a ponta dele não tem saída) */
   const lagoas = (C.rios || []).flatMap(r => r.lagoas || []);
   for (const L of lagoas) { caminho(L.agua); ctx.strokeStyle = COR.margem; ctx.lineWidth = 150; ctx.stroke(); ctx.strokeStyle = COR.barro; ctx.lineWidth = 40; ctx.stroke(); }
-  for (const r of C.rios || []) {
+  /* O RIO QUE DESÁGUA NO MAR: a margem de capim e o barro só em terra
+     (até a avenida da beira; na areia, a água corre entre a areia) e a
+     água até a linha d'água (a espuma da onda passa na frente da boca) */
+  const comMar = temPraia() && !temLagoa(), XW = MUNDO.x0 - 1e6;
+  const ate = (r, d, f) => {
+    if (!r.mar || !comMar) return f();
+    ctx.save(); caminho(fechado(costa(d), XW)); ctx.clip(); f(); ctx.restore();
+  };
+  for (const r of C.rios || []) ate(r, K.PRAIA + K.ORLA, () => {
     caminho(r.pontos, false); ctx.strokeStyle = COR.margem; ctx.lineWidth = r.larg + 6.4 * M; ctx.stroke();
     ctx.strokeStyle = COR.barro; ctx.lineWidth = r.larg + 1.8 * M; ctx.stroke();
-  }
+  });
   for (const L of lagoas) { caminho(L.agua); ctx.fillStyle = COR.rio; ctx.fill(); ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 2.2 * M; ctx.stroke(); ctx.restore(); }
-  for (const r of C.rios || []) {
+  for (const r of C.rios || []) ate(r, -PRAIA_A_MAIS, () => {
     caminho(r.agua); ctx.fillStyle = COR.rio; ctx.fill();
     ctx.save(); ctx.clip(); ctx.strokeStyle = COR.raso; ctx.lineWidth = 1.6 * M; ctx.stroke(); ctx.restore();
-  }
+  });
 }
 function desenharLagoa(px) {
   const L = LAGOA || (LAGOA = montarLagoa());
@@ -7267,9 +7304,7 @@ function praiaDoMapa() {
   if (!PROP || temLagoa() || !temPraia()) return null;
   const bm = PROP.avenidas.find(a => a.id === 'beiramar');
   if (!bm) return null;
-  const ya = bm.pontos[0][1], yb = bm.pontos[bm.pontos.length - 1][1], chave = Math.round(ya) + '|' + Math.round(yb);
-  if (!PRAIAS.has(chave)) PRAIAS.set(chave, montarPraia(ya, yb));
-  return PRAIAS.get(chave);
+  return praiaDe(bm.pontos[0][1], bm.pontos[bm.pontos.length - 1][1]);
 }
 /* OS AMBULANTES DA PORTA DO ESTÁDIO (o dono, 01/10/2026: "...ambulantes
    na porta do estádio"; js/diajogo/ambulantes3d.js): em volta de cada
@@ -7838,7 +7873,8 @@ function apiDoCenario() {
       return { agua: L.agua, ilha: L.ilha, pisa: [L.trapiche.ponte, L.trapiche.cabeca].concat(pisaRio), aguas };
     },
     /* OS RIOS (a praça toda de modelo): a linha do meio e a largura de cada um — o chão de longe continua o rio pra lá da área */
-    rios() { const C = CIS(); return C && C.rios ? C.rios.map(r => ({ pontos: r.pontos.map(p => [p[0], p[1]]), larg: r.larg })) : []; },
+    /* (`mar`: a boca é no mar — a ponta de baixo não segue pra longe; `lagoa`: ele nasce numa lagoa — nem a de cima) */
+    rios() { const C = CIS(); return C && C.rios ? C.rios.map(r => ({ pontos: r.pontos.map(p => [p[0], p[1]]), larg: r.larg, mar: !!r.mar, lagoa: !!(r.lagoas && r.lagoas.length) })) : []; },
     /* NA CLAREIRA DE PASTO (fora da lagoinha): o mato 3D põe uma árvore solta aqui e outra ali */
     noPasto(x, y) {
       const C = CIS();
@@ -8151,7 +8187,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=4a5c4ec528');
+    const { montarJogo } = await import('./js/jogo3d.js?v=b51650b3ce');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -8194,7 +8230,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=4a5c4ec528');
+      const { criarCenario } = await import('./js/cenario.js?v=b51650b3ce');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
@@ -8207,7 +8243,7 @@ if (PARAMS.has('teste')) window.__planta.assalto = async (tipo, cfg = {}) => {
   const C = cenario, loja = apiDoCenario().lojas().find(l => l.tipo === tipo);
   if (!C || !loja) return { erro: 'sem cenário ou sem a loja ' + tipo };
   await C.vida.chamarPovo();
-  const { iniciarAssalto } = await import('./js/assalto3d.js?v=4a5c4ec528');
+  const { iniciarAssalto } = await import('./js/assalto3d.js?v=b51650b3ce');
   const equipe = Array.from({ length: cfg.n || 10 }, (_, i) => ({ id: 'm' + i, nome: ['Negão', 'Ruivo', 'Baixinho', 'Magrão', 'Alemão', 'Cabeça', 'Tico', 'Zóio', 'Bola', 'Formiga'][i % 10] }));
   const A = { banco: [95, 80, 90, 60, 85, 90], joalheria: [75, 70, 70, 40, 75, 70], supermercado: [45, 60, 45, 85, 45, 50], posto: [25, 55, 30, 50, 40, 30], mercadinho: [15, 35, 15, 45, 30, 15], roupas: [10, 40, 20, 50, 35, 15] }[tipo];
   const alvo = { id: tipo, nome: loja.nome, recompensa: A[0], exposicao: A[1], seguranca: A[2], movimentacao: A[3], atencao: A[4], dificuldade: A[5] };
