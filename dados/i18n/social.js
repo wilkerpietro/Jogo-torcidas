@@ -420,5 +420,39 @@ TO.i18n.registrar({
   /* ---------- a coluna da rede social no feed (01/10/2026) ---------- */
   'Rede social': {es:'Red social', en:'Social feed'},
   'Ver tudo': {es:'Ver todo', en:'See all'},
-  'novos posts ↑': {es:'nuevas publicaciones ↑', en:'new posts ↑'}
+  'novos posts ↑': {es:'nuevas publicaciones ↑', en:'new posts ↑'},
+
+  /* ---------- as conquistas do patrimônio (01/10/2026) ---------- */
+  'A loja da {nome} ganhou ampliação. Mais camisa, mais boné, mais orgulho de vestir a torcida.':
+    {es:'La tienda de la {nome} se amplió. Más camisetas, más gorras, más orgullo de vestir la barra.', en:'The {nome} shop has been expanded. More shirts, more caps, more pride in wearing the colours.'},
+  'A loja da {nome} no bairro {bairro} ganhou ampliação. Mais camisa, mais boné, mais orgulho de vestir a torcida.':
+    {es:'La tienda de la {nome} en el barrio {bairro} se amplió. Más camisetas, más gorras, más orgullo de vestir la barra.', en:'The {nome} shop in {bairro} has been expanded. More shirts, more caps, more pride in wearing the colours.'},
+  'A sede da {nome} ganhou enfermaria: quem se machuca em nome da torcida é cuidado em casa.':
+    {es:'La sede de la {nome} tiene enfermería: el que se lastima por la barra se cura en casa.', en:'The {nome} clubhouse now has a sickbay: whoever gets hurt for the firm is cared for at home.'},
+  'A subsede da {nome} foi ampliada. A família da quebrada não para de crescer.':
+    {es:'La filial de la {nome} se amplió. La familia del barrio no para de crecer.', en:'The {nome} local branch has been expanded. The neighbourhood family keeps on growing.'},
+  'A subsede da {nome} no bairro {bairro} foi ampliada. A família da quebrada não para de crescer.':
+    {es:'La filial de la {nome} en el barrio {bairro} se amplió. La familia del barrio no para de crecer.', en:'The {nome} branch in {bairro} has been expanded. The neighbourhood family keeps on growing.'},
+  'A subsede da {nome} {emOutra} foi ampliada! A família de lá não para de crescer.':
+    {es:'¡La filial de la {nome} {emOutra} se amplió! La familia de allá no para de crecer.', en:'The {nome} branch {emOutra} has been expanded! The family out there keeps on growing.'},
+  'A {nome} agora tem fábrica própria de material! Faixa, bandeira e camisa feitas em casa.':
+    {es:'¡La {nome} ya tiene fábrica propia de material! Trapos, banderas y camisetas hechos en casa.', en:'{nome} now has its own merch factory! Banners, flags and shirts made in-house.'},
+  'A {nome} inaugurou a área de treino na sede! Preparo físico em dia pro que vier.':
+    {es:'¡La {nome} inauguró el área de entrenamiento en la sede! Estado físico al día para lo que venga.', en:'{nome} has opened a training area at the clubhouse! Fit and ready for whatever comes.'},
+  'A área de treino da {nome} foi ampliada. O bonde vai chegar mais preparado do que nunca.':
+    {es:'El área de entrenamiento de la {nome} se amplió. La banda va a llegar más preparada que nunca.', en:'The {nome} training area has been expanded. The crew will turn up better prepared than ever.'},
+  'Busão próprio na garagem! A {nome} agora tem o seu ônibus: caravana com a nossa cara, do jeito que a gente sempre quis.':
+    {es:'¡Micro propio en el garaje! La {nome} ya tiene su ómnibus: caravana con nuestra cara, como siempre quisimos.', en:'Our own coach in the garage! {nome} now has its own bus: away trips our way, just as we always wanted.'},
+  'Galpão novo na sede da {nome}: o material da torcida agora tem casa própria.':
+    {es:'Galpón nuevo en la sede de la {nome}: el material de la barra ya tiene casa propia.', en:'New warehouse at the {nome} clubhouse: the firm’s gear now has a home of its own.'},
+  'Mais um ônibus na frota da {nome}! Agora são {n}: a caravana vai cada vez maior.':
+    {es:'¡Otro micro en la flota de la {nome}! Ya son {n}: la caravana es cada vez más grande.', en:'Another bus in the {nome} fleet! That makes {n}: the away trips keep getting bigger.'},
+  'O bar da {nome} cresceu! Ampliação pronta: mais espaço, mais mesa e a mesma resenha de sempre.':
+    {es:'¡El bar de la {nome} creció! Ampliación lista: más espacio, más mesas y la misma juntada de siempre.', en:'The {nome} bar has grown! Expansion done: more room, more tables and the same old banter.'},
+  'O bar da {nome} no bairro {bairro} cresceu! Ampliação pronta: mais espaço, mais mesa e a mesma resenha de sempre.':
+    {es:'¡El bar de la {nome} en el barrio {bairro} creció! Ampliación lista: más espacio, más mesas y la misma juntada de siempre.', en:'The {nome} bar in {bairro} has grown! Expansion done: more room, more tables and the same old banter.'},
+  'Subsede nova da {nome} no bairro {bairro}! Mais um ponto de encontro da nossa gente {emCidade}.':
+    {es:'¡Filial nueva de la {nome} en el barrio {bairro}! Otro punto de encuentro de nuestra gente {emCidade}.', en:'New {nome} branch in {bairro}! One more meeting point for our people {emCidade}.'},
+  'Subsede nova da {nome}! Mais um ponto de encontro da nossa gente {emCidade}.':
+    {es:'¡Filial nueva de la {nome}! Otro punto de encuentro de nuestra gente {emCidade}.', en:'New {nome} branch! One more meeting point for our people {emCidade}.'}
 });

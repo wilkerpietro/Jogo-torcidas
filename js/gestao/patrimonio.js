@@ -856,7 +856,16 @@ TO.patrimonio = (function(){
     return t;
   }
 
+  /* a compra que deu certo vira post na hora (dono, 01/10/2026): o feed
+     compara o patrimônio com a foto de antes e celebra o que entrou */
   function comprar(E, id){
+    const r = comprarSemPost(E, id);
+    if(r && r.ok && TO.feed && TO.feed.nossaCasaNoFeed){
+      try{ TO.feed.nossaCasaNoFeed(E); }catch(err){ console.warn('post da compra: ' + err.message); }
+    }
+    return r;
+  }
+  function comprarSemPost(E, id){
     if(id === 'faixa'){
       if(E.dinheiro < FAIXA.custo) return {ok:false, msg:_t('Não dá: falta caixa.')};
       faixasDe(E).nossas.push({n: faixasDe(E).nossas.length + 1, desde:(E.data||{}).ano||2026});

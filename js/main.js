@@ -998,7 +998,8 @@
                  aoMudar:()=>atualizarSocialLado(true),
                  aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
     lista.addEventListener('click', ev=>{ fecharMenuPost(ctx, ev.target); });
-    socialLado = {asd, rolo, lista, aviso, ctx, vistos:new Map(), pronto:false};
+    if(socialLado && socialLado.timer) clearTimeout(socialLado.timer);
+    socialLado = {asd, rolo, lista, aviso, ctx, vistos:new Map(), fila:[], timer:null, pronto:false};
     return asd;
   }
   /* o que muda o desenho de um post que já está na coluna */
@@ -1011,7 +1012,8 @@
     const F = TO.feed;
     const vis = (e.mensagens || []).filter(m => !(F.oculto && F.oculto(e, m))).slice(0, SOCIAL_LADO_MAX);
     if(refazer || !S.pronto){
-      S.lista.innerHTML = ''; S.vistos.clear();
+      S.lista.innerHTML = ''; S.vistos.clear(); S.fila = [];
+      if(S.timer){ clearTimeout(S.timer); S.timer = null; }
       for(const m of vis){
         const env = el('div',{class:'post-envelope'});
         env.appendChild(montarPost(e, m, S.ctx));
@@ -1025,43 +1027,62 @@
     const ids = new Set(vis.map(m => m.id));
     /* o que saiu (escondido, apagado ou além do teto) sai de mansinho */
     for(const [id, v] of S.vistos) if(!ids.has(id)){ v.env.remove(); S.vistos.delete(id); }
-    const lendo = S.rolo.scrollTop > 40;
-    const novos = [];
-    for(let i = vis.length - 1; i >= 0; i--){
-      const m = vis[i], v = S.vistos.get(m.id);
-      if(v){
-        if(v.est !== estadoDoPost(m)){
-          v.env.replaceChildren(montarPost(e, m, S.ctx));
-          v.est = estadoDoPost(m);
-        }
-        continue;
-      }
-      const env = el('div',{class:'post-envelope'});
-      env.appendChild(montarPost(e, m, S.ctx));
-      /* a posição dele na lista: antes do primeiro mais velho já na tela */
-      const depois = vis.slice(i + 1).map(x => S.vistos.get(x.id)).find(Boolean);
-      if(depois) depois.env.before(env); else S.lista.appendChild(env);
-      S.vistos.set(m.id, {env, est:estadoDoPost(m)});
-      novos.push(env);
+    /* post que mudou de estado (respondido) é redesenhado no lugar */
+    for(const m of vis){
+      const v = S.vistos.get(m.id);
+      if(v && v.est !== estadoDoPost(m)){ v.env.replaceChildren(montarPost(e, m, S.ctx)); v.est = estadoDoPost(m); }
     }
-    if(!novos.length) return;
+    /* UM POR VEZ (dono, 01/10/2026): "um monte de uma vez vira poluição
+       visual". O dia que passa solta vários posts de uma vez; aqui eles
+       entram numa fila, do mais velho pro mais novo, e caem na coluna
+       um a cada SOCIAL_PASSO ms. Fila que passa de SOCIAL_FILA_MAX (o
+       tempo correu rápido) assenta os mais velhos calados, sem animação. */
+    for(let i = vis.length - 1; i >= 0; i--){
+      const id = vis[i].id;
+      if(!S.vistos.has(id) && !S.fila.includes(id)) S.fila.push(id);
+    }
+    S.fila = S.fila.filter(id => ids.has(id));
+    while(S.fila.length > SOCIAL_FILA_MAX) soltarPostSocial(S.fila.shift(), false);
+    if(S.fila.length && !S.timer) proximoPostSocial();
+  }
+  const SOCIAL_PASSO = 1800, SOCIAL_FILA_MAX = 8;
+  function proximoPostSocial(){
+    const S = socialLado;
+    if(!S || !S.fila.length || !S.lista.isConnected){ if(S) S.timer = null; return; }
+    soltarPostSocial(S.fila.shift(), true);
+    S.timer = S.fila.length ? setTimeout(proximoPostSocial, SOCIAL_PASSO) : null;
+  }
+  function soltarPostSocial(id, animar){
+    const S = socialLado, e = E();
+    if(!S || !e || S.vistos.has(id)) return;
+    const m = (e.mensagens || []).find(x => x.id === id);
+    if(!m || (TO.feed.oculto && TO.feed.oculto(e, m))) return;
     const vazio = S.lista.querySelector('.em-construcao');
     if(vazio) vazio.remove();
-    if(lendo){
+    const env = el('div',{class:'post-envelope'});
+    env.appendChild(montarPost(e, m, S.ctx));
+    S.lista.prepend(env);
+    S.vistos.set(m.id, {env, est:estadoDoPost(m)});
+    /* o teto da coluna: o mais velho sai por baixo */
+    while(S.lista.children.length > SOCIAL_LADO_MAX){
+      const ult = S.lista.lastElementChild;
+      for(const [k, v] of S.vistos) if(v.env === ult) S.vistos.delete(k);
+      ult.remove();
+    }
+    if(S.rolo.scrollTop > 40){
       /* quem está lendo não perde o lugar: compensa a altura que entrou */
-      const alt = novos.reduce((t, n) => t + n.offsetHeight + 10, 0);
-      S.rolo.scrollTop += alt;
+      S.rolo.scrollTop += env.offsetHeight + 10;
       S.aviso.hidden = false;
       return;
     }
-    for(const env of novos){
-      env.classList.add('fechado', 'abrindo');
-      /* dois quadros: o navegador precisa ver o fechado antes de abrir;
-         o recorte (`abrindo`) sai no fim, pra o menu ⋯ poder vazar */
-      requestAnimationFrame(()=>requestAnimationFrame(()=>env.classList.remove('fechado')));
-      setTimeout(()=>env.classList.remove('abrindo'), 750);
-    }
+    if(!animar) return;
+    env.classList.add('fechado', 'abrindo');
+    /* dois quadros: o navegador precisa ver o fechado antes de abrir;
+       o recorte (`abrindo`) sai no fim, pra o menu ⋯ poder vazar */
+    requestAnimationFrame(()=>requestAnimationFrame(()=>env.classList.remove('fechado')));
+    setTimeout(()=>env.classList.remove('abrindo'), 750);
   }
+
 
   /* =======================================================
      O TICKER DE MANCHETES (pedido do dono, 08/09/2026)

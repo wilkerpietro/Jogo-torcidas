@@ -949,36 +949,90 @@ TO.feed = (function(){
 
   const MARCO = n => n < 1000 ? 50 : 100;
   function fotoDaCasa(E){
-    const p = TO.financeiro.patrimonio(E), PT = TO.patrimonio;
+    const p = TO.financeiro.patrimonio(E), PT = TO.patrimonio, F = TO.financeiro;
     const fx = PT && PT.faixasDe ? PT.faixasDe(E) : null;
-    return {sede:E.torcida.sedeNivel || 0, bares:(p.bares || []).length, lojas:(p.lojas || []).length,
-            filiais:(p.filiais || []).map(f => f.cidade),
+    const niveis = l => (l || []).map(x => ({bairro:x.bairro || '', nivel:x.nivel || 1}));
+    return {sede:E.torcida.sedeNivel || 0,
+            bares:niveis(p.bares), lojas:niveis(p.lojas), subsedes:niveis(p.subsedes),
+            filiais:(p.filiais || []).map(f => ({cidade:f.cidade, nivel:f.nivel || 1})),
             faixas:fx ? fx.nossas.length : 0, bandeiras:PT && PT.bandeirasDe ? PT.bandeirasDe(E).nossas.length : 0,
+            onibus:F.onibusDe ? F.onibusDe(E) : 0, fabrica:!!p.fabrica,
+            enfermaria:!!p.enfermaria, galpao:!!p.galpao, treino:p.areaTreino || 0,
             membros:(E.membros || []).length};
   }
+  /* save da versão anterior guardou só o NÚMERO de bares, lojas e
+     filiais: vira lista sem bairro, e a primeira comparação não posta
+     de mentira uma inauguração que já existia */
+  function fotoVelha(f, agora){
+    if(!f) return null;
+    const lista = (v, atual) => Array.isArray(v) ? v
+      : atual.slice(0, typeof v === 'number' ? v : atual.length);
+    return Object.assign({}, agora, f, {
+      bares:lista(f.bares, agora.bares), lojas:lista(f.lojas, agora.lojas),
+      subsedes:lista(f.subsedes || agora.subsedes, agora.subsedes),
+      filiais:Array.isArray(f.filiais) ? f.filiais.map(x => typeof x === 'string' ? {cidade:x, nivel:1} : x) : agora.filiais,
+      onibus:f.onibus != null ? f.onibus : agora.onibus, fabrica:f.fabrica != null ? f.fabrica : agora.fabrica,
+      enfermaria:f.enfermaria != null ? f.enfermaria : agora.enfermaria,
+      galpao:f.galpao != null ? f.galpao : agora.galpao, treino:f.treino != null ? f.treino : agora.treino});
+  }
+  /* A CONQUISTA DO PATRIMÔNIO VIRA POST (pedido do dono, 01/10/2026):
+     bar, loja, subsede e ônibus novos, sede, bar, loja e subsede
+     ampliados, fábrica, enfermaria, galpão e área de treino. A compra
+     chama isto na hora (patrimonio.comprar); a virada do dia também,
+     pra pegar o que entrou por outro caminho. */
   function nossaCasaNoFeed(E){
-    const antes = E.nossaFotoNoFeed, agora = fotoDaCasa(E);
+    const agora = fotoDaCasa(E), antes = fotoVelha(E.nossaFotoNoFeed, agora);
     E.nossaFotoNoFeed = agora;
     if(!antes) return;
-    const abs = E.data.absoluto || 0, p = TO.financeiro.patrimonio(E), nos = E.torcida;
+    const abs = E.data.absoluto || 0, nos = E.torcida;
     const P = {nome:nos.nome, clube:nomeClube(nos.clubeId), emCidade:emPraca(nos.mapa)};
-    const posta = (texto, chave) => mensagemDe(E, nos.id, texto, 'inauguracao', {publico:true, chave:`${chave}|${abs}`});
+    let k = 0;
+    const posta = (texto, chave) => mensagemDe(E, nos.id, texto, 'inauguracao', {publico:true, chave:`${chave}|${abs}|${k++}`});
+    const comBairro = (b, comB, semB) => b ? comB(Object.assign({bairro:b}, P)) : semB(P);
     if(agora.sede > antes.sede)
       posta(_t('A {nome} ampliou a sede {emCidade}! Mais espaço pra reunião, pra bateria e pra nossa gente. Obrigado a todo mundo que colaborou.', P), 'sede');
-    if(agora.bares > antes.bares){
-      const b = p.bares[p.bares.length - 1] || {};
-      posta(b.bairro ? _t('Inauguração! A {nome} abriu bar novo no bairro {bairro}. Cerveja gelada e só a nossa gente. Chega junto!', Object.assign({bairro:b.bairro}, P))
-                     : _t('Inauguração! A {nome} abriu bar novo. Cerveja gelada e só a nossa gente. Chega junto!', P), 'bar-novo');
+    /* os pontos: o que é novo (a lista cresceu) e o que subiu de nível */
+    const pontos = (velho, novo, aoAbrir, aoAmpliar, chave) => {
+      for(let i = velho.length; i < novo.length; i++) aoAbrir(novo[i].bairro, chave + '-novo');
+      for(let i = 0; i < Math.min(velho.length, novo.length); i++)
+        if(novo[i].nivel > velho[i].nivel) aoAmpliar(novo[i].bairro, chave + '-ampliado');
+    };
+    pontos(antes.bares, agora.bares,
+      (b, c)=>posta(comBairro(b, Q=>_t('Inauguração! A {nome} abriu bar novo no bairro {bairro}. Cerveja gelada e só a nossa gente. Chega junto!', Q),
+                                 Q=>_t('Inauguração! A {nome} abriu bar novo. Cerveja gelada e só a nossa gente. Chega junto!', Q)), c),
+      (b, c)=>posta(comBairro(b, Q=>_t('O bar da {nome} no bairro {bairro} cresceu! Ampliação pronta: mais espaço, mais mesa e a mesma resenha de sempre.', Q),
+                                 Q=>_t('O bar da {nome} cresceu! Ampliação pronta: mais espaço, mais mesa e a mesma resenha de sempre.', Q)), c), 'bar');
+    pontos(antes.lojas, agora.lojas,
+      (b, c)=>posta(comBairro(b, Q=>_t('Loja nova da {nome} no bairro {bairro}! Camisa, boné e faixa: vista a torcida.', Q),
+                                 Q=>_t('Loja nova da {nome}! Camisa, boné e faixa: vista a torcida.', Q)), c),
+      (b, c)=>posta(comBairro(b, Q=>_t('A loja da {nome} no bairro {bairro} ganhou ampliação. Mais camisa, mais boné, mais orgulho de vestir a torcida.', Q),
+                                 Q=>_t('A loja da {nome} ganhou ampliação. Mais camisa, mais boné, mais orgulho de vestir a torcida.', Q)), c), 'loja');
+    pontos(antes.subsedes, agora.subsedes,
+      (b, c)=>posta(comBairro(b, Q=>_t('Subsede nova da {nome} no bairro {bairro}! Mais um ponto de encontro da nossa gente {emCidade}.', Q),
+                                 Q=>_t('Subsede nova da {nome}! Mais um ponto de encontro da nossa gente {emCidade}.', Q)), c),
+      (b, c)=>posta(comBairro(b, Q=>_t('A subsede da {nome} no bairro {bairro} foi ampliada. A família da quebrada não para de crescer.', Q),
+                                 Q=>_t('A subsede da {nome} foi ampliada. A família da quebrada não para de crescer.', Q)), c), 'subsede-bairro');
+    for(const f of agora.filiais){
+      const v = antes.filiais.find(x => x.cidade === f.cidade);
+      const Q = Object.assign({emOutra:emPraca(f.cidade)}, P);
+      if(!v) posta(_t('A {nome} agora tem subsede {emOutra}! A nossa bandeira fincada em mais uma cidade.', Q), 'subsede');
+      else if(f.nivel > v.nivel)
+        posta(_t('A subsede da {nome} {emOutra} foi ampliada! A família de lá não para de crescer.', Q), 'subsede-ampliada');
     }
-    if(agora.lojas > antes.lojas){
-      const l = p.lojas[p.lojas.length - 1] || {};
-      posta(l.bairro ? _t('Loja nova da {nome} no bairro {bairro}! Camisa, boné e faixa: vista a torcida.', Object.assign({bairro:l.bairro}, P))
-                     : _t('Loja nova da {nome}! Camisa, boné e faixa: vista a torcida.', P), 'loja-nova');
-    }
-    const novaFilial = agora.filiais.find(c => !antes.filiais.includes(c));
-    if(novaFilial)
-      posta(_t('A {nome} agora tem subsede {emOutra}! A nossa bandeira fincada em mais uma cidade.',
-        Object.assign({emOutra:emPraca(novaFilial)}, P)), 'subsede');
+    if(agora.onibus > antes.onibus)
+      posta(agora.onibus === 1
+        ? _t('Busão próprio na garagem! A {nome} agora tem o seu ônibus: caravana com a nossa cara, do jeito que a gente sempre quis.', P)
+        : _t('Mais um ônibus na frota da {nome}! Agora são {n}: a caravana vai cada vez maior.', Object.assign({n:agora.onibus}, P)), 'onibus');
+    if(agora.fabrica && !antes.fabrica)
+      posta(_t('A {nome} agora tem fábrica própria de material! Faixa, bandeira e camisa feitas em casa.', P), 'fabrica');
+    if(agora.enfermaria && !antes.enfermaria)
+      posta(_t('A sede da {nome} ganhou enfermaria: quem se machuca em nome da torcida é cuidado em casa.', P), 'enfermaria');
+    if(agora.galpao && !antes.galpao)
+      posta(_t('Galpão novo na sede da {nome}: o material da torcida agora tem casa própria.', P), 'galpao');
+    if(agora.treino > antes.treino)
+      posta(antes.treino
+        ? _t('A área de treino da {nome} foi ampliada. O bonde vai chegar mais preparado do que nunca.', P)
+        : _t('A {nome} inaugurou a área de treino na sede! Preparo físico em dia pro que vier.', P), 'treino');
     if(agora.faixas > antes.faixas)
       posta(_t('Faixa nova da {nome} pronta! Estreia no próximo jogo do {clube}.', P), 'faixa-nova');
     if(agora.bandeiras > antes.bandeiras)
@@ -6083,7 +6137,7 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
-          curtidasDe, curtimos, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
+          curtidasDe, curtimos, nossaCasaNoFeed, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,

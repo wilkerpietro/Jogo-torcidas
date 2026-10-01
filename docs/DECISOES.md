@@ -8303,6 +8303,22 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - **A imagem é do jornal.** O placar vai no post da Gazeta dos Sports e a briga no do Futebol e Porrada. O nosso post de resultado e a zoeira da nossa briga ficam só no texto. Isso vale também para os posts de save antigo que já guardavam os dados do cartaz (`cartaz.html` olha quem postou).
 - **A faixa dourada do post nosso saiu.** Era o `do-nosso` com sombra interna dourada à esquerda: "deixa visualmente feio". Na coluna da rede, além disso, o texto encostava nela.
 
+## As conquistas do patrimônio no feed, e a coluna da rede soltando um post por vez (pedido do dono, 01/10/2026)
+
+- **A compra vira post na hora.** `patrimonio.comprar` chama `feed.nossaCasaNoFeed` quando a compra dá certo. A foto do patrimônio (`E.nossaFotoNoFeed`) é comparada com a de antes, e o nosso perfil celebra o que entrou:
+  - bar, loja e subsede de bairro novos, com o bairro;
+  - bar, loja e subsede ampliados;
+  - subsede em outra cidade, aberta ou ampliada;
+  - ônibus ("Busão próprio na garagem!" e depois "Mais um ônibus na frota… agora são N");
+  - sede ampliada, fábrica, enfermaria, galpão e área de treino (inaugurada ou ampliada);
+  - faixa, bandeira e marco de membros, que já existiam.
+- Cofre, professor de luta e advogado não viram post: guardar dinheiro e contratar gente não são coisas que a torcida anuncia.
+- A virada do dia continua comparando, para pegar o que entrou por outro caminho. A foto de save antigo, que só guardava a contagem, é convertida sem gerar post falso.
+- **Um post por vez na coluna da rede.** "Um monte de uma vez vira poluição visual." O dia que passa solta vários posts juntos; a coluna põe os novos numa fila, do mais velho para o mais novo, e mostra um a cada 1,8 s, cada um com a entrada suave.
+  - Se a fila passa de 8 (tempo corrido rápido), os mais velhos assentam sem animação.
+  - Notícias → Mensagens continua mostrando tudo de uma vez.
+- Medido: depois de três dias passados de uma vez, a coluna foi de 8 para 14 posts em 12 segundos, um a um.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
