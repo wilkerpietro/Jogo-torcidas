@@ -8289,6 +8289,15 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - **No feed principal**, a mensagem que chega (não a da primeira pintura) também entra com um fade descendo.
 - Quem pede menos movimento no sistema (`prefers-reduced-motion`) não vê as animações.
 
+## O coração vermelho é a NOSSA curtida (correção do dono, 01/10/2026)
+
+"Não faz sentido uma curtida num post de rival." O coração vermelho passou a ser a curtida da nossa torcida (`feed.curtimos`):
+- vai no post nosso;
+- vai no post de aliada, pela mesma régua das curtidas: irmã de clube ou relação de aliada (20 ou mais);
+- vai na notícia do nosso clube: o jogo dele na Gazeta, ou a briga que a gente venceu no Porrada.
+- Todo o resto mostra a contagem com o coração vazio, em contorno cinza.
+- Em 40 dias de TUF, as aliadas (relação 38 a 80) e os nossos posts saem com o coração cheio; as rivais (−45 e −85) e as notícias dos outros clubes da cidade, com o vazio.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

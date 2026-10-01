@@ -215,6 +215,28 @@ TO.feed = (function(){
     return Math.max(1, Math.round(soma * FATOR_CURTIDA * sorte));
   }
 
+  /* A NOSSA CURTIDA (dono, 01/10/2026): "não faz sentido uma curtida num
+     post de rival". O coração vermelho é a curtida DA NOSSA torcida, e
+     ela só vai em post nosso, de aliada (a mesma régua das curtidas:
+     irmã ou relação de aliada) e em notícia do nosso clube — o jogo
+     dele na Gazeta, ou a briga que a gente venceu no Porrada. O resto
+     mostra a contagem com o coração vazio. */
+  function curtimos(E, m){
+    if(!m) return false;
+    const nos = E.torcida.id, clube = E.torcida.clubeId;
+    if(m.de && m.de === nos) return true;
+    const c = m.card;
+    if(m.jornal){
+      if(c && c.t === 'jogo') return c.c === clube || c.f === clube;
+      if(c && c.t === 'briga')
+        return (c.a.id === nos && c.venceuA === true) || (c.b.id === nos && c.venceuA === false);
+      return false;
+    }
+    if(!m.de) return false;
+    const irma = M().saoIrmas && M().saoIrmas(nos, m.de);
+    return !!irma || relacaoEntre(E, nos, m.de) >= ALIADA;
+  }
+
   /* O JEITO DE POST (feed de rede social, pedido do dono, 30/09/2026):
      os recados viraram posts públicos — quem posta fala da praça dela,
      do clube, da competição e do dia. As peças de frase moram aqui. */
@@ -6065,7 +6087,7 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
-          curtidasDe, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
+          curtidasDe, curtimos, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,

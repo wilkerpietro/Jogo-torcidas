@@ -4025,7 +4025,7 @@
          ordem é a do Instagram — a imagem, as curtidas e, embaixo, a
          legenda com o @ de quem postou na frente */
       (cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
-      `<footer class="post-pe"><span class="post-curtidas">${coracao}`+
+      `<footer class="post-pe"><span class="post-curtidas${F.curtimos && F.curtimos(e, m) ? ' curtido' : ''}">${coracao}`+
         `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
         (()=>{ const c = enfeitePost(m, 'comentario', .05), r = enfeitePost(m, 'compartilha', .04);
           return `<span class="post-conta" title="${escHTML(_tn(c, '{n} comentário', '{n} comentários', {n:U.numero(c)}))}">${balao}${U.numero(c)}</span>`+

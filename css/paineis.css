@@ -1039,7 +1039,9 @@ table.dados tr.selecionada td{background:#252525}
 .post-torcida.tipo-provocacao .post-texto,.post-torcida.tipo-treta .post-texto{color:#efc2c2}
 .post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
 .post-curtidas{display:inline-flex;align-items:center;gap:6px}
-.post-curtidas svg{width:15px;height:15px;color:#e0566b;fill:#e0566b}
+.post-curtidas svg{width:15px;height:15px;color:var(--fraco);fill:none}
+/* vermelho só a curtida NOSSA: post nosso, de aliada ou notícia do clube */
+.post-curtidas.curtido svg{color:#e0566b;fill:#e0566b}
 .post-conta{display:inline-flex;align-items:center;gap:5px;color:var(--fraco)}
 .post-conta svg{width:15px;height:15px}
 .post-tag{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
