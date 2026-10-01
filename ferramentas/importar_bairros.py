@@ -104,6 +104,12 @@ def main():
                 'classe': b.get('classeSocial', ''),
                 'mult': b.get('multiplicadorFaturamento', 1.0),
                 'sedes': b.get('torcidasComSede', []),
+                # A CIDADE DO BAIRRO (01/10/2026): as praças de várias
+                # cidades (Paraíba, Maranhão, os interiores...) viram mapas
+                # de cidades separadas por estrada, e a torcida de cada clube
+                # mora mais na cidade dele. Conurbação conta como uma cidade
+                # só (o ABC, o Rio com a Baixada, Goiânia com Aparecida)
+                'cidade': b.get('cidade', nome),
             })
 
         times = []
@@ -124,6 +130,14 @@ def main():
             'quarteiroes': quart, 'grade': list(lado),
             'populacao': c.get('populacao', 0),
             'temMetro': bool(c.get('temMetro')),
+            # praça à beira do mar: o mapa 3D tem praia a leste; sem ela, mato
+            'temPraia': bool(c.get('temPraia')),
+            # praça de rio ou lagoa (Belém, Manaus, Porto Alegre): água a
+            # leste, com margem de capim e junco em vez de areia
+            'temLagoa': bool(c.get('temLagoa')),
+            # a vegetação em volta da cidade: 'mata' (verde), 'cerrado' ou
+            # 'caatinga' (o mato seco); sem o dado, a planta fica com o de hoje
+            'vegetacao': c.get('vegetacao', ''),
             'estadios': c.get('estadios', []),
             'rodovias': c.get('rodovias', []),
             'multMedio': c.get('multiplicadorFaturamentoMedio', 1.0),
@@ -195,7 +209,30 @@ def main():
                          for b in c['bairros']):
                 nao_acha.append(f"{t['nome']}: bairro '{t['bairroSede']}' "
                                 f"nao existe em {c['nome']}")
+        # a sede fica na cidade do clube (quando a cidade dele é da praça)
+        tt = RAIZ / 'dados/times.js'
+        cidade_do_clube = {}
+        if tt.exists():
+            for l in tt.read_text(encoding='utf-8').splitlines():
+                l = l.strip().rstrip(',')
+                if l.startswith('{"id"'):
+                    x = json.loads(l)
+                    cidade_do_clube[x['id']] = x.get('cidade', '')
+        fora_da_cidade = []
+        for t in torc:
+            c = porcidade.get(t.get('mapa'))
+            if not c or t.get('incompleta'):
+                continue
+            alvo = ident(t.get('bairroSede', ''))
+            b = next((b for b in c['bairros'] if ident(b['nome']) == alvo or b['id'] == alvo), None)
+            cc = cidade_do_clube.get(t.get('clubeId'), '')
+            cidades = {x['cidade'] for x in c['bairros']}
+            if b and cc in cidades and b['cidade'] != cc:
+                fora_da_cidade.append(f"{t['nome']}: sede em {b['cidade']}, clube de {cc}")
         print(f'  torcidas sem bairro-sede: {len(sem_bairro)}')
+        print(f'  sede fora da cidade do clube: {len(fora_da_cidade)}')
+        for x in fora_da_cidade[:8]:
+            print(f'     {x}')
         print(f'  bairro-sede que nao resolve: {len(nao_acha)}')
         for x in nao_acha[:8]:
             print(f'     {x}')

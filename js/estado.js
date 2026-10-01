@@ -557,6 +557,10 @@ TO.estado = (function(){
     /* e o resto do mundo vive o dia: expediente das 138, tretas e
        ataques de bar do trimestre delas, surpresas e estrada */
     if(TO.relacoes.mundoDia) TO.relacoes.mundoDia(E, jogos);
+    /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): quem domina a cidade
+       ganha +0,1 de prestígio e de moral por dia; a primeira e a segunda
+       maior que não dominam perdem 0,1 (js/mundo/dominio.js) */
+    if(TO.dominio) TO.dominio.dia(E);
     if(TO.feed) TO.feed.eventosDoDia(E, {jogos, ligas:passoLigas,
                                         conmebol:passoCM});
 
@@ -964,6 +968,9 @@ TO.estado = (function(){
     /* save de antes do presidente (22/09/2026): o mais forte da
        diretoria assume, com o nome que já tinha */
     try{ if(TO.membros && TO.membros.garantirPresidente) TO.membros.garantirPresidente(E); }catch(e){}
+    /* o domínio dos bairros (30/09/2026): a sede do jogador no bairro
+       espalhado, quando duas sedes caíam no mesmo bairro */
+    try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
     try{
       if(E.relacoes) delete E.relacoes['undefined'];
       if(E.marcaAjuda) delete E.marcaAjuda['undefined'];

@@ -284,10 +284,15 @@ TO.financeiro = (function(){
   /* GDD §7.2: bar, loja e subsede ficam em zona diferente da sede.
      A regra existe pra empurrar a torcida pra fora do próprio quintal. */
   function bairroDeFora(E, semente){
-    const todos = TO.mundo.bairrosDe(E.torcida.mapa);
+    let todos = TO.mundo.bairrosDe(E.torcida.mapa);
     if(!todos.length) return '';
     const sede = TO.mundo.bairroDaSede(E.torcida);
-    const fora = sede ? todos.filter(b=>b.zona !== sede.zona) : todos;
+    /* na cidade da sede (as praças de várias cidades, 01/10/2026): o bar
+       da torcida de Campina Grande não abre em João Pessoa */
+    if(sede && sede.cidade){ const mesma = todos.filter(b=>b.cidade === sede.cidade); if(mesma.length) todos = mesma; }
+    /* (fora da zona da sede; na praça sem zona — três cidades ou mais —, a zona é a cidade) */
+    const semZona = !!(TO.dominio && TO.dominio.semZonas && TO.dominio.semZonas(E.torcida.mapa));
+    const fora = sede ? todos.filter(b=>semZona ? b.cidade !== sede.cidade : b.zona !== sede.zona) : todos;
     const lista = fora.length ? fora : todos;
     /* Endereço não se sorteia: a mesma torcida abre o bar sempre no mesmo
        bairro, em toda partida nova. Quem decide é o hash do nome, não o
@@ -364,12 +369,26 @@ TO.financeiro = (function(){
 
     const fator = fatorComercial(E) * multMoral(E);
     const hoje = absDe(E);
+    /* O BAIRRO DE RIVAL CORTA 30% (o dono, 30/09/2026): bar, loja,
+       subsede e subsede de fora em bairro cuja dona é rival rendem 70% —
+       a linha diz de quem é o bairro (js/mundo/dominio.js) */
+    const D = TO.dominio, eu = E.torcida.id;
+    /* A TORCIDA DO BAIRRO (o dono, 01/10/2026): o ponto rende pelo tanto
+       de torcida do clube no bairro — de ×0,5 (sem torcida) a ×1,5 (o
+       reduto), ×1 no bairro médio da cidade do clube. Vale junto com o
+       corte de rival; a linha diz os dois */
+    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) * (D.fatorTorcida ? D.fatorTorcida(E, eu, cid, b) : 1) : 1;
+    const nota = (cid, b) => {
+      const n = [D ? D.notaDoCorte(E, eu, cid, b) : '', D && D.notaDaTorcida ? D.notaDaTorcida(E, eu, cid, b) : ''].filter(Boolean);
+      return n.length ? ' · ' + n.join(' · ') : '';
+    };
+    const minha = E.torcida.mapa;
     for(const b of p.bares){
       const dd = diasDeDano(b, hoje);
       juntar(rec, (b.bairro ? _t('Bar — {bairro} (n{nivel})', {bairro:b.bairro, nivel:b.nivel})
                             : _t('Bar (n{nivel})', {nivel:b.nivel}))+
-                  (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : ''),
-             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje), COM);
+                  (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : '') + nota(minha, b.bairro),
+             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje)*corte(minha, b.bairro), COM);
     }
     /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
        na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
@@ -383,17 +402,19 @@ TO.financeiro = (function(){
       juntar(rec, (l.bairro ? _t('Loja — {bairro} (n{nivel})', {bairro:l.bairro, nivel:l.nivel})
                             : _t('Loja (n{nivel})', {nivel:l.nivel}))+
                   (p.fabrica ? ' · ' + _t('fábrica') : '')+
-                  (multClube > 1 ? ' · ' + _t('material oficial') : ''),
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube, COM);
+                  (multClube > 1 ? ' · ' + _t('material oficial') : '') + nota(minha, l.bairro),
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube*corte(minha, l.bairro), COM);
     }
     for(const s of p.subsedes)
-      juntar(rec, s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede'),
-             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM, COM);
+      juntar(rec, (s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede')) + nota(minha, s.bairro),
+             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM*corte(minha, s.bairro), COM);
     /* as FILIAIS (subsede em outra cidade, dono 25/08/2026) rendem a
        mesma régua da subsede, no multiplicador da cidade DELAS */
-    for(const f of (p.filiais||[]))
-      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}),
-             RECEITA.subsede*multFilial(E,f)*fator*SEM, COM);
+    for(const f of (p.filiais||[])){
+      const bf = D ? D.bairroDaFilial(eu, f.cidade) : null;
+      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}) + nota(f.cidade, bf),
+             RECEITA.subsede*multFilial(E,f)*fator*SEM*corte(f.cidade, bf), COM);
+    }
 
     /* --- despesas --- */
     if(MANUT_SEDE[E.torcida.sedeNivel])

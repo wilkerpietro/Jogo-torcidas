@@ -529,6 +529,11 @@
     /* o feed com ícone próprio (pedido do dono, 07/09/2026): o
        megafone era um alto-falante genérico e não dizia "início" */
     {id:'feed',        rot:_t('Feed'),        ic:'feed'},
+    /* O MAPA COM OS BAIRROS E O BRASIL (o dono, 30/09/2026, no jogo 3D;
+       no 2D, 01/10/2026: "implementar o mapa 2d que acabamos de construir
+       na versão 3d no jogo"): a planta da praça com a dona de cada
+       bairro e a aba Brasil (js/ui/mapa_brasil.js) */
+    {id:'mapa',        rot:_t('Mapa'),        ic:'mapa', acao:'mapaBrasil'},
     {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
     {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
     {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
@@ -547,7 +552,8 @@
     {id:'sair',        rot:_t('Menu principal'), ic:'saida', acao:'menu'}
   ];
   /* o que um item de `acao` faz */
-  const ACAO_NAV = {menu: () => sairParaMenu()};
+  const ACAO_NAV = {menu: () => sairParaMenu(),
+                    mapaBrasil: () => { if(TO.mapaBrasil) TO.mapaBrasil.abrir(); }};
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
      cidade foi descontinuado e o que ele fazia por simulação virou
      resolução. Todo o resto é painel por cima do feed. */
@@ -4201,7 +4207,8 @@
     const d = (e.data.absoluto || 0) - (q.abs || 0);
     if(d <= 0) return _t('hoje');
     if(d === 1) return _t('ontem');
-    if(d < 7) return _t('há {n} dias', {n:d});
+    /* (o comentário de antes de 01/10/2026 só guardava o dia absoluto) */
+    if(d < 7 || q.semana == null) return _t('há {n} dias', {n:d});
     const dt = TO.estado.dataDaSemana ? TO.estado.dataDaSemana(q.ano, q.semana, q.dia) : null;
     if(!dt) return `${q.ano}`;
     const dm = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
@@ -4282,7 +4289,7 @@
         box.appendChild(el('div',{class:'post-comentario', html:
           `<p><b class="post-legenda-quem">${escHTML(arrobaPost(oc) + zonaArroba)}</b> ${linkificarNomes(c.texto)}</p>`+
           `<span class="post-com-cor">${TO.icones.get('coracao')}</span>`+
-          `<small>${haQuantoPost(e, {abs:c.abs})}</small>`}));
+          `<small>${haQuantoPost(e, c)}</small>`}));
       }
       art.appendChild(box);
     }
@@ -10505,7 +10512,7 @@
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
-                                cena: atq.cena || 'bar', zona: atq.zona || null,
+                                cena: atq.cena || 'bar', zona: atq.zona || null, mapa: atq.mapa || null,
                                 nome:(o&&o.nome)||_t('Rival'),
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
@@ -10521,6 +10528,7 @@
     corpo.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${a.id === 'assalto'
         ? _t('Quanto maior o prêmio, mais segurança na porta.')
+        : a.id === 'social-bairro' ? _t('Onde a barra rende mais: o bairro sem dona e o de dona fraca.')
         : _t('O clima com cada um pesa: quem já está quente reage pior.')}</span>`}));
     /* a praça tem seis joalherias: mostrar as seis é lista inútil. Duas de
        cada tipo já dá escolha de bairro sem virar catálogo. */
@@ -10535,6 +10543,7 @@
       const dir = a.id === 'assalto'
         ? _t('{bairro} · {de} a {ate} · {n} na segurança', {bairro:alvo.bairro,
             de:U.dinheiro(alvo.rende[0]), ate:U.dinheiro(alvo.rende[1]), n:alvo.seguranca})
+        : a.id === 'social-bairro' ? alvo.nota
         : _t('{bairro} · tensão {t} · {n} membros', {bairro:alvo.bairro,
             t:Math.round(alvo.tensao), n:alvo.efetivo});
       b.innerHTML =

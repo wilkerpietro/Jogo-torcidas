@@ -1,0 +1,125 @@
+/* =========================================================
+   O MAPA DO JOGO: o Brasil, a legenda da cidade, o cartão do bairro e
+   o quadro de bairros por zona (js/ui/mapa_brasil.js). O painel do jogo
+   de feed (.mb-painel) é daqui; o do jogo 3D (.j3d-mapa) usa as mesmas
+   peças dentro dele (ferramentas/planta_html/jogo3d.css).
+   ========================================================= */
+
+/* ---- o painel do jogo de feed ---- */
+.mb-painel{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--fundo, #0d0d0d);color:var(--texto, #e9e9e9)}
+.mb-painel > header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--linha, #2c2c2c);background:var(--painel, #171717)}
+.mb-painel > header h2{font-family:var(--titulo);font-size:22px;letter-spacing:.04em;text-transform:uppercase}
+.mb-abas{display:flex;gap:4px;flex:1;min-width:0}
+.mb-abas button{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--fraco, #8d8d8d);padding:5px 12px;font-size:13px;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.mb-abas button[aria-selected="true"]{background:var(--rubro, #9d2222);border-color:var(--rubro, #9d2222);color:#fff}
+.mb-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #e9e9e9);width:34px;height:34px;font-size:20px;cursor:pointer;flex:none}
+.mb-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.mb-corpo{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px;overflow:auto}
+.mb-corpo-brasil .mb-mapa{flex:1.4;min-width:0;display:flex;align-items:center;justify-content:center}
+.mb-corpo-brasil .mb-lista{flex:1;min-width:220px;max-width:380px;overflow:auto}
+.mb-corpo-cidade .mb-quadro{flex:1.3;min-width:0}
+.mb-corpo-cidade .mb-lado{flex:1;min-width:260px;max-width:400px;display:flex;flex-direction:column;gap:12px}
+@media (max-width:760px){
+  .mb-corpo{flex-direction:column;padding:10px}
+  .mb-corpo-brasil .mb-lista,.mb-corpo-cidade .mb-lado{max-width:none;min-width:0}
+}
+
+/* ---- o Brasil ---- */
+.mb-brasil{width:100%;height:100%;max-height:calc(100vh - 120px);display:block}
+.mb-pais{fill:#1f2b22;stroke:#5c7a62;stroke-width:1.2;stroke-linejoin:round}
+.mb-praca{cursor:pointer;outline:none}
+.mb-ponto{stroke:#0d0d0d;stroke-width:1.1}
+.mb-ponto.claro{stroke:#555}
+.mb-praca.minha .mb-ponto{stroke:#fff;stroke-width:1.8}
+.mb-praca.escolhida .mb-ponto{stroke:var(--ouro, #d9a441);stroke-width:2.2}
+.mb-praca:hover .mb-ponto,.mb-praca:focus .mb-ponto{stroke:var(--ouro, #d9a441);stroke-width:2.2}
+.mb-nome{font:600 7.2px var(--corpo);fill:#d8dcd4;paint-order:stroke;stroke:#0d0d0d;stroke-width:2px;pointer-events:none}
+.mb-praca.minha .mb-nome{fill:#fff;font-weight:800}
+.mb-fio{stroke:#6b766c;stroke-width:.6}
+
+/* ---- a lista das cidades ---- */
+.mb-lista h4{font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--fraco, #8d8d8d);margin:12px 0 6px}
+.mb-lista h4:first-child{margin-top:0}
+.mb-lista-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px}
+.mb-lista-item{display:flex;align-items:center;gap:6px;min-width:0;padding:5px 8px;background:var(--painel, #171717);border:1px solid var(--linha, #2c2c2c);
+  color:var(--texto, #e9e9e9);font-size:12.5px;text-align:left;cursor:pointer}
+.mb-lista-item:hover{border-color:var(--ouro, #d9a441)}
+.mb-lista-item.minha{border-color:#6e6e6e}
+.mb-lista-item.escolhida{border-color:var(--ouro, #d9a441);background:#221d12}
+.mb-lista-item i{flex:none;width:10px;height:10px;border-radius:50%;border:1px solid #000}
+.mb-lista-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mb-lista-item small{flex:none;color:var(--fraco, #8d8d8d);font-size:11px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- a legenda da cidade ---- */
+.mb-legenda{display:flex;flex-direction:column;gap:6px}
+.mb-status{font-weight:700;font-size:14px;line-height:1.35}
+.mb-efeito{font-size:12.5px;line-height:1.35;padding:5px 8px;border-left:3px solid var(--linha, #2c2c2c);background:rgba(255,255,255,.03)}
+.mb-efeito.bom{border-left-color:var(--verde, #4aa85c)}
+.mb-efeito.ruim{border-left-color:var(--rubro-vivo, #d24141)}
+.mb-torcidas{list-style:none;display:flex;flex-direction:column;gap:2px}
+.mb-torcidas li{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.mb-torcidas li.nos span{font-weight:700}
+.mb-torcidas i{flex:none;width:12px;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.6)}
+.mb-torcidas i.claro{border-color:#777}
+.mb-torcidas li.sem i{background:repeating-linear-gradient(45deg,#6f6f6a 0 3px,#3a3a38 3px 6px)}
+.mb-torcidas span{flex:1;min-width:0}
+.mb-torcidas small{color:var(--fraco, #8d8d8d);font-size:11px}
+.mb-torcidas b{flex:none;font-family:var(--mono);font-size:12px;font-weight:600}
+
+/* ---- o cartão do bairro ---- */
+.mb-cartao{display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:var(--painel, #171717);border:1px solid var(--linha, #2c2c2c)}
+.mb-cartao h3{font-family:var(--titulo);font-size:20px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1}
+.mb-zona{color:var(--fraco, #8d8d8d);font-size:12px}
+/* a cidade do bairro e a torcida que mora nele (01/10/2026) */
+.mb-cidade{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--fraco, #8d8d8d)}
+.mb-torcida{font-size:12px;margin-top:2px}
+.mb-dona{font-size:13.5px;font-weight:600}
+.mb-nada{color:var(--fraco, #8d8d8d);font-size:13px}
+.mb-barra{position:relative;display:flex;height:20px;background:#2b2b29;border:1px solid #000;overflow:hidden}
+.mb-barra span{display:flex;align-items:center;justify-content:center;font:700 10.5px var(--mono);color:#fff;text-shadow:0 1px 1px #000;white-space:nowrap;overflow:hidden}
+.mb-barra span.claro{color:#111;text-shadow:none}
+.mb-barra span.livre{background:repeating-linear-gradient(45deg,#3b3b39 0 4px,#2f2f2d 4px 8px)}
+.mb-barra .meio{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:var(--ouro, #d9a441);opacity:.9}
+.mb-partes{list-style:none;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#cfcfcf}
+.mb-partes li{display:flex;align-items:center;gap:5px}
+.mb-partes i{width:9px;height:9px;border-radius:2px;border:1px solid rgba(0,0,0,.6)}
+.mb-partes b{font-family:var(--mono);font-weight:600}
+.mb-nota{font-size:12px;color:var(--fraco, #8d8d8d);line-height:1.35}
+.mb-estruturas{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mb-estruturas li{display:flex;align-items:center;gap:6px}
+.mb-estruturas i{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.6)}
+.mb-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
+.mb-acoes small{color:var(--fraco, #8d8d8d);font-size:11.5px}
+
+/* ---- o quadro de bairros (a bússola) ---- */
+.mb-quadro{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"norte norte" "oeste leste" "sul sul";gap:10px;align-content:start}
+.mb-zona-bloco{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--linha, #2c2c2c);background:rgba(255,255,255,.02);align-content:flex-start}
+.mb-zona-bloco h4{flex-basis:100%;font-family:var(--titulo);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco, #8d8d8d)}
+/* a praça de várias cidades: um bloco por cidade, um embaixo do outro (01/10/2026) */
+.mb-quadro.mb-por-cidade{display:flex;flex-direction:column}
+.mb-zona-bloco.z-norte{grid-area:norte}.mb-zona-bloco.z-sul{grid-area:sul}.mb-zona-bloco.z-oeste{grid-area:oeste}.mb-zona-bloco.z-leste{grid-area:leste}
+.mb-bairro{--cor:#6f6f6a;flex:1 1 130px;display:flex;flex-direction:column;gap:2px;min-width:0;padding:7px 9px;text-align:left;cursor:pointer;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--cor) 55%, transparent), color-mix(in srgb, var(--cor) 18%, transparent));
+  border:1px solid color-mix(in srgb, var(--cor) 70%, #000);color:#fff}
+.mb-bairro b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 2px #000}
+.mb-bairro small{font:600 11px var(--mono);opacity:.9;text-shadow:0 1px 2px #000}
+.mb-bairro.nosso{box-shadow:inset 0 0 0 2px #fff}
+.mb-bairro.escolhido{outline:2px solid var(--ouro, #d9a441);outline-offset:1px}
+
+/* ---- a planta da cidade (js/ui/mapa_planta.js, 01/10/2026) ---- */
+.mb-corpo-cidade .mb-planta{flex:1.6;min-width:0;position:relative;min-height:320px;background:#121512;border:1px solid var(--linha, #2c2c2c);overflow:hidden;touch-action:none}
+.mb-planta canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+.mb-planta.arrastando canvas{cursor:grabbing}
+.mb-planta-zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px}
+.mb-planta-zoom button{width:32px;height:32px;background:rgba(23,23,23,.92);border:1px solid var(--linha, #2c2c2c);color:var(--texto, #e9e9e9);font-size:17px;cursor:pointer}
+.mb-planta-zoom button:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.mb-planta-dica{position:absolute;left:10px;bottom:8px;margin:0;padding:3px 8px;background:rgba(13,13,13,.78);color:var(--fraco, #8d8d8d);font-size:11.5px;pointer-events:none}
+.mb-planta-espera{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;color:var(--fraco, #8d8d8d);font-size:13px;pointer-events:none}
+.mb-planta-espera[hidden]{display:none}
+.mb-corpo-cidade:has(.mb-planta){overflow:hidden}
+.mb-corpo-cidade:has(.mb-planta) .mb-lado{overflow:auto}
+@media (max-width:760px){
+  .mb-corpo-cidade .mb-planta{flex:none;height:58vh;min-height:280px}
+  .mb-corpo-cidade:has(.mb-planta){overflow:auto}
+}

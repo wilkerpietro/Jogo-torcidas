@@ -2,7 +2,7 @@
  "meta": {
   "fonte": "Unity — Assets/Scripts/Data/Cidades/*.asset (CityMapData + BairroDados)",
   "total_cidades": 30,
-  "total_bairros": 352,
+  "total_bairros": 353,
   "chaves": "cidade.id + bairro.id (slugs ASCII); a combinação dos dois é única"
  },
  "enums": {
@@ -63,6 +63,9 @@
    },
    "populacao": 2700,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Estadio Bruno Daniel",
@@ -80,7 +83,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "campestre",
@@ -88,7 +92,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "vila_luzita",
@@ -96,7 +101,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "utinga",
@@ -106,7 +112,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Comando Azul"
-     ]
+     ],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "parque_capuava",
@@ -116,7 +123,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Fúria Andreense"
-     ]
+     ],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "comunidade_do_der",
@@ -124,7 +132,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "santa_paula",
@@ -132,7 +141,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "assuncao",
@@ -142,7 +152,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Guerreiros do Tigre"
-     ]
+     ],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "alvarenga",
@@ -150,7 +161,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "tamarutaca",
@@ -158,7 +170,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "ciganos",
@@ -166,7 +179,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     },
     {
      "id": "vila_sao_pedro",
@@ -174,7 +188,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "ABC Paulista"
     }
    ],
    "timesNaCidade": [
@@ -330,6 +345,9 @@
    },
    "populacao": 1500,
    "temMetro": true,
+   "temPraia": false,
+   "temLagoa": true,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Mangueirao",
@@ -347,7 +365,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belém"
     },
     {
      "id": "nazare",
@@ -355,7 +374,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belém"
     },
     {
      "id": "maraba",
@@ -365,7 +385,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Jovem Águia"
-     ]
+     ],
+     "cidade": "Marabá"
     },
     {
      "id": "marco",
@@ -373,7 +394,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belém"
     },
     {
      "id": "pedreira",
@@ -383,7 +405,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Pavilhão 6"
-     ]
+     ],
+     "cidade": "Belém"
     },
     {
      "id": "guama",
@@ -391,7 +414,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belém"
     },
     {
      "id": "marambaia",
@@ -399,7 +423,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belém"
     },
     {
      "id": "telegrafo",
@@ -409,7 +434,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Facção Jovem Paysandu"
-     ]
+     ],
+     "cidade": "Belém"
     },
     {
      "id": "jurunas",
@@ -419,7 +445,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Remista"
-     ]
+     ],
+     "cidade": "Belém"
     },
     {
      "id": "terra_firme",
@@ -429,7 +456,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Movimento Uniformizado Cruzmaltino"
-     ]
+     ],
+     "cidade": "Belém"
     },
     {
      "id": "bengui",
@@ -439,7 +467,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Terror Bicolor"
-     ]
+     ],
+     "cidade": "Belém"
     },
     {
      "id": "sacramenta",
@@ -447,7 +476,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belém"
     }
    ],
    "timesNaCidade": [
@@ -639,6 +669,9 @@
    },
    "populacao": 2500,
    "temMetro": true,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Mineirao",
@@ -656,7 +689,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "belvedere",
@@ -664,7 +698,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "buritis",
@@ -672,7 +707,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "prado",
@@ -680,7 +716,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "pampulha",
@@ -688,7 +725,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "itapoa",
@@ -698,7 +736,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Máfia Azul"
-     ]
+     ],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "venda_nova",
@@ -708,7 +747,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Pavilhão Independente"
-     ]
+     ],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "jaqueline",
@@ -716,7 +756,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "barreiro",
@@ -726,7 +767,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Galoucura"
-     ]
+     ],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "horto",
@@ -736,7 +778,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Seita Verde"
-     ]
+     ],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "aglomerado_da_serra",
@@ -744,7 +787,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "morro_das_pedras",
@@ -752,7 +796,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "mangabeiras",
@@ -760,7 +805,8 @@
      "zona": "Oeste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "santo_agostinho",
@@ -768,7 +814,8 @@
      "zona": "Oeste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "sagrada_familia",
@@ -776,7 +823,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Belo Horizonte"
     },
     {
      "id": "coracao_eucaristico",
@@ -786,7 +834,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Esquadrão Atleticano"
-     ]
+     ],
+     "cidade": "Belo Horizonte"
     }
    ],
    "timesNaCidade": [
@@ -951,6 +1000,9 @@
    },
    "populacao": 3000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "cerrado",
    "quantidadeEstadios": 2,
    "estadios": [
     "Serejão",
@@ -967,7 +1019,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "sudoeste",
@@ -975,7 +1028,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "aguas_claras",
@@ -983,7 +1037,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "samambaia_norte",
@@ -991,7 +1046,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "gama",
@@ -1001,7 +1057,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Ira Jovem do Gama"
-     ]
+     ],
+     "cidade": "Brasília"
     },
     {
      "id": "ceilandia",
@@ -1011,7 +1068,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Camisa 13"
-     ]
+     ],
+     "cidade": "Brasília"
     },
     {
      "id": "guara_ii",
@@ -1019,7 +1077,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "cruzeiro_novo",
@@ -1027,7 +1086,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "taguatinga",
@@ -1037,7 +1097,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Facção Brasiliense"
-     ]
+     ],
+     "cidade": "Brasília"
     },
     {
      "id": "sol_nascente",
@@ -1045,7 +1106,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "vila_estrutural",
@@ -1053,7 +1115,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     },
     {
      "id": "por_do_sol",
@@ -1061,7 +1124,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brasília"
     }
    ],
    "timesNaCidade": [
@@ -1361,6 +1425,9 @@
    },
    "populacao": 1200,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Brinco de Ouro",
@@ -1379,7 +1446,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "guanabara",
@@ -1389,7 +1457,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Jovem Ponte"
-     ]
+     ],
+     "cidade": "Campinas"
     },
     {
      "id": "jundiai",
@@ -1399,7 +1468,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Raça Tricolor"
-     ]
+     ],
+     "cidade": "Jundiaí"
     },
     {
      "id": "santo_antonio",
@@ -1407,7 +1477,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "vila_padre_anchieta",
@@ -1415,7 +1486,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "distrito_industrial",
@@ -1425,7 +1497,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Fúria Independente do Guarani"
-     ]
+     ],
+     "cidade": "Campinas"
     },
     {
      "id": "braganca_paulista",
@@ -1435,7 +1508,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Guerreiros do Leão"
-     ]
+     ],
+     "cidade": "Bragança Paulista"
     },
     {
      "id": "jardim_londres",
@@ -1443,7 +1517,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "vila_brandina",
@@ -1451,7 +1526,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "gramado",
@@ -1459,7 +1535,8 @@
      "zona": "Oeste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "vila_mimosa",
@@ -1467,7 +1544,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     },
     {
      "id": "parque_oziel",
@@ -1475,7 +1553,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campinas"
     }
    ],
    "timesNaCidade": [
@@ -1635,11 +1714,13 @@
     "nivel": 3,
     "tamanho": "Pequeno",
     "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "bairrosEsperados": 8
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "cerrado",
    "quantidadeEstadios": 2,
    "estadios": [
     "Arena Pantanal",
@@ -1648,7 +1729,7 @@
    "rodovias": [
     "Rodovia Centro-Oeste"
    ],
-   "multiplicadorFaturamentoMedio": 0.787,
+   "multiplicadorFaturamentoMedio": 0.863,
    "bairros": [
     {
      "id": "santa_rosa",
@@ -1656,7 +1737,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Cuiabá"
     },
     {
      "id": "jardim_das_americas",
@@ -1666,7 +1748,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Raça Cuiabana"
-     ]
+     ],
+     "cidade": "Cuiabá"
     },
     {
      "id": "bosque_da_saude",
@@ -1674,7 +1757,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Cuiabá"
     },
     {
      "id": "cpa_ii",
@@ -1684,7 +1768,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Boca Suja"
-     ]
+     ],
+     "cidade": "Cuiabá"
     },
     {
      "id": "tijucal",
@@ -1692,7 +1777,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Cuiabá"
     },
     {
      "id": "pedregal",
@@ -1700,7 +1786,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Cuiabá"
     },
     {
      "id": "dr_fabio_leite",
@@ -1708,17 +1795,19 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": [
-      "União Fanática"
-     ]
+     "torcidasComSede": [],
+     "cidade": "Cuiabá"
     },
     {
-     "id": "alto_da_serra",
-     "nome": "Alto da Serra",
-     "zona": "Oeste",
-     "classeSocial": "Favela",
-     "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "id": "rondonopolis",
+     "nome": "Rondonópolis",
+     "zona": "Leste",
+     "classeSocial": "Classe Média",
+     "multiplicadorFaturamento": 1.0,
+     "torcidasComSede": [
+      "União Fanática"
+     ],
+     "cidade": "Rondonópolis"
     }
    ],
    "timesNaCidade": [
@@ -1856,6 +1945,9 @@
    },
    "populacao": 1900,
    "temMetro": true,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena da Baixada",
@@ -1874,7 +1966,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     },
     {
      "id": "ecoville",
@@ -1882,7 +1975,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     },
     {
      "id": "agua_verde",
@@ -1892,7 +1986,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Os Fanáticos"
-     ]
+     ],
+     "cidade": "Curitiba"
     },
     {
      "id": "jardim_das_americas",
@@ -1902,7 +1997,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Império Alviverde"
-     ]
+     ],
+     "cidade": "Curitiba"
     },
     {
      "id": "alto_da_gloria",
@@ -1910,7 +2006,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     },
     {
      "id": "boqueirao",
@@ -1920,7 +2017,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Dragões Alviverdes"
-     ]
+     ],
+     "cidade": "Curitiba"
     },
     {
      "id": "cajuru",
@@ -1930,7 +2028,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Fúria Independente"
-     ]
+     ],
+     "cidade": "Curitiba"
     },
     {
      "id": "fazendinha",
@@ -1940,7 +2039,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Ultras 92"
-     ]
+     ],
+     "cidade": "Curitiba"
     },
     {
      "id": "vila_pinto",
@@ -1948,7 +2048,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     },
     {
      "id": "caximba",
@@ -1956,7 +2057,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     },
     {
      "id": "vila_parolin",
@@ -1964,7 +2066,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     },
     {
      "id": "tatuquara",
@@ -1972,7 +2075,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Curitiba"
     }
    ],
    "timesNaCidade": [
@@ -2137,6 +2241,9 @@
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Orlando Scarpelli",
@@ -2145,7 +2252,7 @@
    "rodovias": [
     "Rodovia Sul 2"
    ],
-   "multiplicadorFaturamentoMedio": 0.833,
+   "multiplicadorFaturamentoMedio": 0.892,
    "bairros": [
     {
      "id": "coqueiros",
@@ -2155,7 +2262,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Mancha Azul"
-     ]
+     ],
+     "cidade": "Florianópolis"
     },
     {
      "id": "corrego_grande",
@@ -2163,7 +2271,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "tapera",
@@ -2171,7 +2280,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "jurere",
@@ -2179,7 +2289,8 @@
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "beira_mar_norte",
@@ -2187,7 +2298,8 @@
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "itacorubi",
@@ -2195,7 +2307,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "bairro_dos_ingleses",
@@ -2203,17 +2316,19 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
-     "id": "capivari",
-     "nome": "Capivari",
+     "id": "balneario_camboriu",
+     "nome": "Balneário Camboriú",
      "zona": "Leste",
-     "classeSocial": "Classe Baixa",
-     "multiplicadorFaturamento": 0.8,
+     "classeSocial": "Nobre",
+     "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Jovem Barra"
-     ]
+     ],
+     "cidade": "Balneário Camboriú"
     },
     {
      "id": "morro_da_cruz",
@@ -2223,7 +2338,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Gaviões Alvinegros"
-     ]
+     ],
+     "cidade": "Florianópolis"
     },
     {
      "id": "morro_do_horacio",
@@ -2231,7 +2347,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "morro_do_mocoto",
@@ -2239,7 +2356,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     },
     {
      "id": "vila_aparecida",
@@ -2247,7 +2365,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Florianópolis"
     }
    ],
    "timesNaCidade": [
@@ -2430,6 +2549,9 @@
    },
    "populacao": 2700,
    "temMetro": true,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Castelão",
@@ -2449,7 +2571,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "MOFI"
-     ]
+     ],
+     "cidade": "Fortaleza"
     },
     {
      "id": "jangurussu",
@@ -2457,7 +2580,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "jardim_das_oliveiras",
@@ -2467,7 +2591,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Jovem Garra Tricolor"
-     ]
+     ],
+     "cidade": "Fortaleza"
     },
     {
      "id": "jose_walter",
@@ -2477,7 +2602,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Cearamor"
-     ]
+     ],
+     "cidade": "Fortaleza"
     },
     {
      "id": "pirambu",
@@ -2487,7 +2613,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Aliança"
-     ]
+     ],
+     "cidade": "Fortaleza"
     },
     {
      "id": "genibau",
@@ -2495,7 +2622,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "antonio_bezerra",
@@ -2505,7 +2633,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Falange Coral"
-     ]
+     ],
+     "cidade": "Fortaleza"
     },
     {
      "id": "monte_castelo",
@@ -2513,7 +2642,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "aldeota",
@@ -2521,7 +2651,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "meireles",
@@ -2529,7 +2660,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "dionisio_torres",
@@ -2537,7 +2669,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "castelo_encantado",
@@ -2545,7 +2678,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "maraponga",
@@ -2553,7 +2687,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "granja_portugal",
@@ -2561,7 +2696,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Fortaleza"
     },
     {
      "id": "bom_jardim",
@@ -2571,7 +2707,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Leões da TUF"
-     ]
+     ],
+     "cidade": "Fortaleza"
     },
     {
      "id": "conjunto_ceara",
@@ -2581,7 +2718,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Jovem do Floresta"
-     ]
+     ],
+     "cidade": "Fortaleza"
     }
    ],
    "timesNaCidade": [
@@ -2782,6 +2920,9 @@
    },
    "populacao": 1500,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "cerrado",
    "quantidadeEstadios": 3,
    "estadios": [
     "Serra Dourada",
@@ -2799,7 +2940,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "setor_marista",
@@ -2807,7 +2949,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "vila_oliveira",
@@ -2815,7 +2958,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "anapolis",
@@ -2825,7 +2969,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Independente do Anápolis"
-     ]
+     ],
+     "cidade": "Anápolis"
     },
     {
      "id": "campinas",
@@ -2835,7 +2980,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Dragões Atleticanos"
-     ]
+     ],
+     "cidade": "Goiânia"
     },
     {
      "id": "setor_jao",
@@ -2843,7 +2989,8 @@
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "jardim_goias",
@@ -2851,7 +2998,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "jardim_novo_mundo",
@@ -2859,7 +3007,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "vila_nova",
@@ -2869,7 +3018,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Esquadrão Vilanovense"
-     ]
+     ],
+     "cidade": "Goiânia"
     },
     {
      "id": "setor_coimbra",
@@ -2879,7 +3029,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Força Jovem Goiás"
-     ]
+     ],
+     "cidade": "Goiânia"
     },
     {
      "id": "setor_vera_cruz",
@@ -2887,7 +3038,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     },
     {
      "id": "setor_madre_germana",
@@ -2895,7 +3047,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Goiânia"
     }
    ],
    "timesNaCidade": [
@@ -3046,11 +3199,13 @@
     "nivel": 3,
     "tamanho": "Pequeno",
     "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "bairrosEsperados": 8
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 1,
    "estadios": [
     "Estadio Regional"
@@ -3058,39 +3213,45 @@
    "rodovias": [
     "Rodovia Sudeste 1"
    ],
-   "multiplicadorFaturamentoMedio": 0.787,
+   "multiplicadorFaturamentoMedio": 0.788,
    "bairros": [
     {
      "id": "uberlandia",
-     "nome": "Uberlândia",
+     "nome": "Uberlândia I",
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Uberlândia"
     },
     {
-     "id": "juiz_de_fora",
-     "nome": "Juiz de Fora",
+     "id": "uberlandia_ii",
+     "nome": "Uberlândia II",
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Uberlândia"
     },
     {
-     "id": "pouso_alegre",
-     "nome": "Pouso Alegre",
-     "zona": "Norte",
+     "id": "patos_de_minas_ii",
+     "nome": "Patos de Minas II",
+     "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [
+      "Poeira Azul"
+     ],
+     "cidade": "Patos de Minas"
     },
     {
-     "id": "governador_valadares",
-     "nome": "Governador Valadares",
-     "zona": "Norte",
+     "id": "sao_joao_del_rei_ii",
+     "nome": "São João del-Rei II",
+     "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São João del-Rei"
     },
     {
      "id": "teofilo_otoni",
@@ -3098,7 +3259,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Teófilo Otoni"
     },
     {
      "id": "ipatinga",
@@ -3106,28 +3268,30 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Ipatinga"
     },
     {
      "id": "patos_de_minas",
-     "nome": "Patos de Minas",
+     "nome": "Patos de Minas I",
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
-      "Independente do Mamoré",
-      "Poeira Azul"
-     ]
+      "Independente do Mamoré"
+     ],
+     "cidade": "Patos de Minas"
     },
     {
      "id": "sao_joao_del_rei",
-     "nome": "São João del-rei",
+     "nome": "São João del-Rei I",
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Esquadrão Alvinegro"
-     ]
+     ],
+     "cidade": "São João del-Rei"
     }
    ],
    "timesNaCidade": [
@@ -3287,11 +3451,13 @@
     "nivel": 3,
     "tamanho": "Pequeno",
     "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "bairrosEsperados": 8
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "caatinga",
    "quantidadeEstadios": 2,
    "estadios": [
     "Cornélio de Barros",
@@ -3300,77 +3466,85 @@
    "rodovias": [
     "Rodovia Nordeste 2"
    ],
-   "multiplicadorFaturamentoMedio": 0.787,
+   "multiplicadorFaturamentoMedio": 0.788,
    "bairros": [
     {
      "id": "petrolina",
-     "nome": "Petrolina",
+     "nome": "Petrolina I",
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Petrolina"
     },
     {
      "id": "caruaru",
-     "nome": "Caruaru",
+     "nome": "Caruaru I",
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Comando Alvinegro"
-     ]
+     ],
+     "cidade": "Caruaru"
     },
     {
-     "id": "cabrobo",
-     "nome": "Cabrobó",
-     "zona": "Norte",
+     "id": "petrolina_ii",
+     "nome": "Petrolina II",
+     "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Petrolina"
     },
     {
-     "id": "exu",
-     "nome": "Exu",
-     "zona": "Norte",
+     "id": "caruaru_ii",
+     "nome": "Caruaru II",
+     "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Caruaru"
     },
     {
      "id": "salgueiro",
-     "nome": "Salgueiro",
+     "nome": "Salgueiro I",
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Jovem do Salgueiro"
-     ]
+     ],
+     "cidade": "Salgueiro"
     },
     {
      "id": "santa_cruz_do_capibaribe",
-     "nome": "Santa Cruz do Capibaribe",
+     "nome": "Santa Cruz do Capibaribe I",
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Fúria Jovem Ypiranga"
-     ]
+     ],
+     "cidade": "Santa Cruz do Capibaribe"
     },
     {
-     "id": "garanhuns",
-     "nome": "Garanhuns",
-     "zona": "Oeste",
+     "id": "salgueiro_ii",
+     "nome": "Salgueiro II",
+     "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salgueiro"
     },
     {
-     "id": "camaragibe",
-     "nome": "Camaragibe",
-     "zona": "Oeste",
+     "id": "santa_cruz_do_capibaribe_ii",
+     "nome": "Santa Cruz do Capibaribe II",
+     "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santa Cruz do Capibaribe"
     }
    ],
    "timesNaCidade": [
@@ -3521,11 +3695,13 @@
     "nivel": 3,
     "tamanho": "Pequeno",
     "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "bairrosEsperados": 9
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Joinville",
@@ -3536,18 +3712,29 @@
     "Rodovia Sul 1",
     "Rodovia Sul 2"
    ],
-   "multiplicadorFaturamentoMedio": 0.988,
+   "multiplicadorFaturamentoMedio": 0.967,
    "bairros": [
     {
      "id": "criciuma",
-     "nome": "Criciúma",
+     "nome": "Criciúma I",
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
-      "Guerrilha Jovem",
+      "Guerrilha Jovem"
+     ],
+     "cidade": "Criciúma"
+    },
+    {
+     "id": "criciuma_ii",
+     "nome": "Criciúma II",
+     "zona": "Sul",
+     "classeSocial": "Classe Baixa",
+     "multiplicadorFaturamento": 0.8,
+     "torcidasComSede": [
       "Os Tigres"
-     ]
+     ],
+     "cidade": "Criciúma"
     },
     {
      "id": "brusque",
@@ -3555,25 +3742,28 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Brusque"
     },
     {
      "id": "joinville",
-     "nome": "Joinville",
+     "nome": "Joinville I",
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "União Tricolor"
-     ]
+     ],
+     "cidade": "Joinville"
     },
     {
-     "id": "jaragua_do_sul",
-     "nome": "Jaraguá do Sul",
+     "id": "joinville_ii",
+     "nome": "Joinville II",
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Joinville"
     },
     {
      "id": "itajai",
@@ -3581,25 +3771,28 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Itajaí"
     },
     {
-     "id": "navegantes",
-     "nome": "Navegantes",
-     "zona": "Leste",
+     "id": "chapeco_ii",
+     "nome": "Chapecó II",
+     "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Chapecó"
     },
     {
      "id": "chapeco",
-     "nome": "Chapecó",
+     "nome": "Chapecó I",
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Jovem Chape"
-     ]
+     ],
+     "cidade": "Chapecó"
     },
     {
      "id": "joacaba",
@@ -3607,7 +3800,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Joaçaba"
     }
    ],
    "timesNaCidade": [
@@ -3767,11 +3961,13 @@
     "nivel": 2,
     "tamanho": "Médio",
     "quarteiroes": 120,
-    "bairrosEsperados": 12,
-    "bairrosPorZonaEsperado": 3
+    "bairrosEsperados": 12
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Maião",
@@ -3792,7 +3988,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Galoucura do Ituano"
-     ]
+     ],
+     "cidade": "Itu"
     },
     {
      "id": "piracicaba",
@@ -3802,53 +3999,59 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Torcida Esquadrão"
-     ]
+     ],
+     "cidade": "Piracicaba"
     },
     {
-     "id": "sorocaba",
-     "nome": "Sorocaba",
-     "zona": "Sul",
+     "id": "ribeirao_preto_ii",
+     "nome": "Ribeirão Preto II",
+     "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Ribeirão Preto"
     },
     {
      "id": "mirassol",
-     "nome": "Mirassol",
+     "nome": "Mirassol I",
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Fúria do Leão"
-     ]
+     ],
+     "cidade": "Mirassol"
     },
     {
      "id": "ribeirao_preto",
-     "nome": "Ribeirão Preto",
+     "nome": "Ribeirão Preto I",
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Fiel Força Tricolor"
-     ]
+     ],
+     "cidade": "Ribeirão Preto"
     },
     {
-     "id": "sao_jose_do_rio_preto",
-     "nome": "São José do Rio Preto",
+     "id": "mirassol_ii",
+     "nome": "Mirassol II",
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Mirassol"
     },
     {
      "id": "novo_horizonte",
-     "nome": "Novo Horizonte",
+     "nome": "Novo Horizonte I",
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Garra do Tigre"
-     ]
+     ],
+     "cidade": "Novo Horizonte"
     },
     {
      "id": "limeira",
@@ -3858,7 +4061,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Interror"
-     ]
+     ],
+     "cidade": "Limeira"
     },
     {
      "id": "araraquara",
@@ -3866,7 +4070,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Araraquara"
     },
     {
      "id": "bauru",
@@ -3876,15 +4081,17 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Sangue Rubro"
-     ]
+     ],
+     "cidade": "Bauru"
     },
     {
-     "id": "marilia",
-     "nome": "Marília",
-     "zona": "Oeste",
+     "id": "novo_horizonte_ii",
+     "nome": "Novo Horizonte II",
+     "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Novo Horizonte"
     },
     {
      "id": "presidente_prudente",
@@ -3892,7 +4099,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Presidente Prudente"
     }
    ],
    "timesNaCidade": [
@@ -4079,11 +4287,13 @@
     "nivel": 3,
     "tamanho": "Pequeno",
     "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "bairrosEsperados": 8
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "caatinga",
    "quantidadeEstadios": 2,
    "estadios": [
     "Junco",
@@ -4096,13 +4306,14 @@
    "bairros": [
     {
      "id": "juazeiro_do_norte",
-     "nome": "Juazeiro do Norte",
+     "nome": "Juazeiro do Norte I",
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Fúria Icasiana"
-     ]
+     ],
+     "cidade": "Juazeiro do Norte"
     },
     {
      "id": "iguatu",
@@ -4112,17 +4323,19 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Fúria Azul do Iguatu"
-     ]
+     ],
+     "cidade": "Iguatu"
     },
     {
      "id": "sobral",
-     "nome": "Sobral",
+     "nome": "Sobral I",
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Força Jovem Guarany"
-     ]
+     ],
+     "cidade": "Sobral"
     },
     {
      "id": "itapipoca",
@@ -4130,7 +4343,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Itapipoca"
     },
     {
      "id": "maranguape",
@@ -4138,7 +4352,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maranguape"
     },
     {
      "id": "limoeiro_do_norte",
@@ -4146,23 +4361,26 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Limoeiro do Norte"
     },
     {
-     "id": "quixada",
-     "nome": "Quixadá",
-     "zona": "Oeste",
+     "id": "juazeiro_do_norte_ii",
+     "nome": "Juazeiro do Norte II",
+     "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Juazeiro do Norte"
     },
     {
-     "id": "crateus",
-     "nome": "Crateús",
-     "zona": "Oeste",
+     "id": "sobral_ii",
+     "nome": "Sobral II",
+     "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Sobral"
     }
    ],
    "timesNaCidade": [
@@ -4331,11 +4549,13 @@
     "nivel": 3,
     "tamanho": "Pequeno",
     "quarteiroes": 64,
-    "bairrosEsperados": 8,
-    "bairrosPorZonaEsperado": 2
+    "bairrosEsperados": 8
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Germano Kruger",
@@ -4345,53 +4565,58 @@
     "Rodovia Sul 1",
     "Rodovia Sudeste 2"
    ],
-   "multiplicadorFaturamentoMedio": 0.838,
+   "multiplicadorFaturamentoMedio": 0.837,
    "bairros": [
     {
-     "id": "uniao_da_vitoria",
-     "nome": "União da Vitória",
-     "zona": "Sul",
+     "id": "maringa_ii",
+     "nome": "Maringá II",
+     "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maringá"
     },
     {
-     "id": "pato_branco",
-     "nome": "Pato Branco",
-     "zona": "Sul",
+     "id": "ponta_grossa_ii",
+     "nome": "Ponta Grossa II",
+     "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Ponta Grossa"
     },
     {
      "id": "maringa",
-     "nome": "Maringá",
+     "nome": "Maringá I",
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Força Maringaense"
-     ]
+     ],
+     "cidade": "Maringá"
     },
     {
      "id": "londrina",
-     "nome": "Londrina",
+     "nome": "Londrina I",
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Falange Azul"
-     ]
+     ],
+     "cidade": "Londrina"
     },
     {
      "id": "ponta_grossa",
-     "nome": "Ponta Grossa",
+     "nome": "Ponta Grossa I",
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Trem Fantasma"
-     ]
+     ],
+     "cidade": "Ponta Grossa"
     },
     {
      "id": "paranagua",
@@ -4399,7 +4624,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Paranaguá"
     },
     {
      "id": "cascavel",
@@ -4407,15 +4633,17 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Cascavel"
     },
     {
-     "id": "foz_do_iguacu",
-     "nome": "Foz do Iguaçu",
-     "zona": "Oeste",
+     "id": "londrina_ii",
+     "nome": "Londrina II",
+     "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Londrina"
     }
    ],
    "timesNaCidade": [
@@ -4580,6 +4808,9 @@
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Bento Freitas",
@@ -4599,7 +4830,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Comando Rubro-Negro"
-     ]
+     ],
+     "cidade": "Pelotas"
     },
     {
      "id": "pelotas_ii",
@@ -4609,7 +4841,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Força Jovem Pelotas"
-     ]
+     ],
+     "cidade": "Pelotas"
     },
     {
      "id": "erechim",
@@ -4619,7 +4852,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Mancha do Ypiranga"
-     ]
+     ],
+     "cidade": "Erechim"
     },
     {
      "id": "passo_fundo",
@@ -4627,7 +4861,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Passo Fundo"
     },
     {
      "id": "caxias_do_sul_i",
@@ -4637,7 +4872,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Mancha Verde Juventude"
-     ]
+     ],
+     "cidade": "Caxias do Sul"
     },
     {
      "id": "caxias_do_sul_ii",
@@ -4647,7 +4883,8 @@
      "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Falange Grená"
-     ]
+     ],
+     "cidade": "Caxias do Sul"
     },
     {
      "id": "uruguaiana",
@@ -4655,7 +4892,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Uruguaiana"
     },
     {
      "id": "bage",
@@ -4663,7 +4901,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Bagé"
     }
    ],
    "timesNaCidade": [
@@ -4841,11 +5080,13 @@
     "nivel": 2,
     "tamanho": "Médio",
     "quarteiroes": 120,
-    "bairrosEsperados": 12,
-    "bairrosPorZonaEsperado": 3
+    "bairrosEsperados": 12
    },
    "populacao": 1000,
    "temMetro": false,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Rei Pelé",
@@ -4862,7 +5103,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maceió"
     },
     {
      "id": "jatiuca",
@@ -4870,7 +5112,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maceió"
     },
     {
      "id": "farol",
@@ -4880,7 +5123,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Mancha Azul do CSA"
-     ]
+     ],
+     "cidade": "Maceió"
     },
     {
      "id": "pajucara",
@@ -4888,7 +5132,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maceió"
     },
     {
      "id": "lourdes",
@@ -4896,15 +5141,17 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maceió"
     },
     {
-     "id": "serraria",
-     "nome": "Serraria",
-     "zona": "Norte",
+     "id": "arapiraca_ii",
+     "nome": "Arapiraca II",
+     "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Arapiraca"
     },
     {
      "id": "tabuleiro_do_martins",
@@ -4912,7 +5159,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maceió"
     },
     {
      "id": "antares",
@@ -4922,7 +5170,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Comando Alvirrubro"
-     ]
+     ],
+     "cidade": "Maceió"
     },
     {
      "id": "vergel_do_lago",
@@ -4932,7 +5181,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Garra"
-     ]
+     ],
+     "cidade": "Maceió"
     },
     {
      "id": "grota_do_arroz",
@@ -4940,17 +5190,19 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Maceió"
     },
     {
      "id": "arapiraca",
-     "nome": "Arapiraca",
+     "nome": "Arapiraca I",
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Mancha Negra do ASA"
-     ]
+     ],
+     "cidade": "Arapiraca"
     },
     {
      "id": "palmeira_dos_indios",
@@ -4958,7 +5210,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Palmeira dos Índios"
     }
    ],
    "timesNaCidade": [
@@ -5114,6 +5367,9 @@
    },
    "populacao": 2200,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": true,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Arena da Amazônia",
@@ -5130,7 +5386,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "ponta_negra",
@@ -5138,7 +5395,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "vila_buriti",
@@ -5148,7 +5406,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Gavirmãos"
-     ]
+     ],
+     "cidade": "Manaus"
     },
     {
      "id": "parque_x_de_novembro",
@@ -5156,7 +5415,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "vieiralves",
@@ -5166,7 +5426,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Narraça"
-     ]
+     ],
+     "cidade": "Manaus"
     },
     {
      "id": "alvorada",
@@ -5176,7 +5437,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Força Azul"
-     ]
+     ],
+     "cidade": "Manaus"
     },
     {
      "id": "sao_jose_operario",
@@ -5184,7 +5446,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "flores",
@@ -5192,7 +5455,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "cidade_de_deus",
@@ -5200,7 +5464,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "jorge_teixeira",
@@ -5208,7 +5473,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     },
     {
      "id": "comunidade_da_sharp",
@@ -5218,7 +5484,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Raça Amazonas"
-     ]
+     ],
+     "cidade": "Manaus"
     },
     {
      "id": "oliveira_machado",
@@ -5226,7 +5493,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Manaus"
     }
    ],
    "timesNaCidade": [
@@ -5377,11 +5645,13 @@
     "nivel": 2,
     "tamanho": "Médio",
     "quarteiroes": 120,
-    "bairrosEsperados": 12,
-    "bairrosPorZonaEsperado": 3
+    "bairrosEsperados": 12
    },
    "populacao": 1400,
    "temMetro": false,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Castelão",
@@ -5399,7 +5669,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Luís"
     },
     {
      "id": "jardim_sao_cristovao",
@@ -5409,7 +5680,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Tubarões da Fiel"
-     ]
+     ],
+     "cidade": "São Luís"
     },
     {
      "id": "imperatriz",
@@ -5419,7 +5691,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Força Jovem Cavalina"
-     ]
+     ],
+     "cidade": "Imperatriz"
     },
     {
      "id": "ponta_d_areia",
@@ -5427,7 +5700,8 @@
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Luís"
     },
     {
      "id": "jardim_renascenca",
@@ -5435,7 +5709,8 @@
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Luís"
     },
     {
      "id": "parque_aracagy",
@@ -5446,25 +5721,28 @@
      "torcidasComSede": [
       "Dragões da Fiel",
       "Motofolia"
-     ]
+     ],
+     "cidade": "São Luís"
     },
     {
      "id": "teresina",
-     "nome": "Teresina",
+     "nome": "Teresina I",
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Esporão do Galo"
-     ]
+     ],
+     "cidade": "Teresina"
     },
     {
-     "id": "altos",
-     "nome": "Altos",
+     "id": "teresina_ii",
+     "nome": "Teresina II",
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Teresina"
     },
     {
      "id": "parnaiba",
@@ -5472,7 +5750,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Parnaíba"
     },
     {
      "id": "jordoa",
@@ -5480,15 +5759,17 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Luís"
     },
     {
-     "id": "vila_passos",
-     "nome": "Vila Passos",
-     "zona": "Oeste",
+     "id": "teresina_iii",
+     "nome": "Teresina III",
+     "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Teresina"
     },
     {
      "id": "anjo_da_guarda",
@@ -5496,7 +5777,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Luís"
     }
    ],
    "timesNaCidade": [
@@ -5661,6 +5943,9 @@
    },
    "populacao": 1250,
    "temMetro": false,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Almeidão",
@@ -5680,7 +5965,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Facção Jovem"
-     ]
+     ],
+     "cidade": "Campina Grande"
     },
     {
      "id": "prata_cg",
@@ -5688,7 +5974,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Campina Grande"
     },
     {
      "id": "pedregal_cg",
@@ -5698,7 +5985,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Torcida Jovem do Galo"
-     ]
+     ],
+     "cidade": "Campina Grande"
     },
     {
      "id": "sao_jose_jp",
@@ -5706,7 +5994,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "João Pessoa"
     },
     {
      "id": "alto_do_mateus_jp",
@@ -5716,7 +6005,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Fúria do Botafogo/PB"
-     ]
+     ],
+     "cidade": "João Pessoa"
     },
     {
      "id": "cruz_das_armas_jp",
@@ -5726,7 +6016,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Jovem do Botafogo/PB"
-     ]
+     ],
+     "cidade": "João Pessoa"
     },
     {
      "id": "bessa_jp",
@@ -5734,7 +6025,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "João Pessoa"
     },
     {
      "id": "timbo_jp",
@@ -5742,7 +6034,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "João Pessoa"
     },
     {
      "id": "mandacaru_jp",
@@ -5750,7 +6043,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "João Pessoa"
     },
     {
      "id": "sousa",
@@ -5760,7 +6054,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Força Alviverde"
-     ]
+     ],
+     "cidade": "Sousa"
     },
     {
      "id": "cajazeiras",
@@ -5768,7 +6063,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Cajazeiras"
     },
     {
      "id": "patos",
@@ -5776,7 +6072,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Patos"
     }
    ],
    "timesNaCidade": [
@@ -6013,6 +6310,9 @@
    },
    "populacao": 1500,
    "temMetro": true,
+   "temPraia": false,
+   "temLagoa": true,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena do Gremio",
@@ -6030,7 +6330,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "bela_vista",
@@ -6038,7 +6339,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "petropolis",
@@ -6046,7 +6348,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "menino_deus",
@@ -6054,7 +6357,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "bom_fim",
@@ -6062,7 +6366,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "restinga",
@@ -6072,7 +6377,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Os Farrapos"
-     ]
+     ],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "sarandi",
@@ -6082,7 +6388,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Camisa 12 do Inter"
-     ]
+     ],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "lomba_do_pinheiro",
@@ -6092,7 +6399,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Nação Independente"
-     ]
+     ],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "morro_santa_tereza",
@@ -6100,7 +6408,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "vila_bom_jesus",
@@ -6108,7 +6417,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "vila_farrapos",
@@ -6118,7 +6428,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Torcida Jovem do Grêmio"
-     ]
+     ],
+     "cidade": "Porto Alegre"
     },
     {
      "id": "vila_nazare",
@@ -6128,7 +6439,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Super Raça Gremista"
-     ]
+     ],
+     "cidade": "Porto Alegre"
     }
    ],
    "timesNaCidade": [
@@ -6320,6 +6632,9 @@
    },
    "populacao": 1600,
    "temMetro": true,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Estadio dos Aflitos",
@@ -6337,7 +6652,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "jardim_jordao",
@@ -6345,7 +6661,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "imbiribeira",
@@ -6355,7 +6672,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Raça Coral"
-     ]
+     ],
+     "cidade": "Recife"
     },
     {
      "id": "jordao",
@@ -6363,7 +6681,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "agua_fria",
@@ -6371,7 +6690,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "arruda",
@@ -6381,7 +6701,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Inferno Coral"
-     ]
+     ],
+     "cidade": "Recife"
     },
     {
      "id": "encruzilhada",
@@ -6389,7 +6710,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "aflitos",
@@ -6399,7 +6721,8 @@
      "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Fanáutico"
-     ]
+     ],
+     "cidade": "Recife"
     },
     {
      "id": "boa_viagem",
@@ -6407,7 +6730,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "ilha_do_retiro",
@@ -6417,7 +6741,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Jovem Sport"
-     ]
+     ],
+     "cidade": "Recife"
     },
     {
      "id": "recife_antigo",
@@ -6425,7 +6750,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "santo_amaro",
@@ -6433,7 +6759,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "iputinga",
@@ -6441,7 +6768,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "torroes",
@@ -6451,7 +6779,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Gang da Ilha"
-     ]
+     ],
+     "cidade": "Recife"
     },
     {
      "id": "prado",
@@ -6459,7 +6788,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     },
     {
      "id": "toto",
@@ -6467,7 +6797,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Recife"
     }
    ],
    "timesNaCidade": [
@@ -6695,6 +7026,9 @@
    },
    "populacao": 6700,
    "temMetro": true,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Maracanã",
@@ -6712,7 +7046,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "ipanema",
@@ -6720,7 +7055,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "rocinha",
@@ -6728,7 +7064,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "jardim_botanico",
@@ -6736,7 +7073,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "sao_januario",
@@ -6746,7 +7084,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Força Jovem Vasco"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "complexo_da_penha",
@@ -6754,7 +7093,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "maracana",
@@ -6762,7 +7102,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "pavuna",
@@ -6772,7 +7113,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Ira Jovem do Vasco"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "flamengo",
@@ -6782,7 +7124,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Jovem Fla"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "botafogo",
@@ -6792,7 +7135,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Torcida Jovem Botafogo"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "laranjeiras",
@@ -6802,7 +7146,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Young Flu"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "lapa",
@@ -6812,7 +7157,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Raça Fla"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "jacarepagua",
@@ -6820,7 +7166,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "freguesia",
@@ -6830,7 +7177,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Fúria Jovem Botafogo"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "realengo",
@@ -6838,7 +7186,8 @@
      "zona": "Oeste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "campo_grande",
@@ -6848,7 +7197,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Força Flu"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     }
    ],
    "timesNaCidade": [
@@ -7274,6 +7624,9 @@
    },
    "populacao": 1200,
    "temMetro": true,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena das Dunas",
@@ -7291,7 +7644,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Natal"
     },
     {
      "id": "ponta_negra",
@@ -7299,7 +7653,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Natal"
     },
     {
      "id": "neopolis",
@@ -7309,7 +7664,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Garra Alvinegra"
-     ]
+     ],
+     "cidade": "Natal"
     },
     {
      "id": "pajucara",
@@ -7319,7 +7675,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Ultras do ABC"
-     ]
+     ],
+     "cidade": "Natal"
     },
     {
      "id": "n_s_da_apresentacao",
@@ -7327,7 +7684,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Natal"
     },
     {
      "id": "lagoa_azul",
@@ -7335,7 +7693,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Natal"
     },
     {
      "id": "alecrim",
@@ -7343,7 +7702,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Natal"
     },
     {
      "id": "tirol",
@@ -7351,7 +7711,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Natal"
     },
     {
      "id": "lagoa_nova",
@@ -7361,7 +7722,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Máfia Vermelha"
-     ]
+     ],
+     "cidade": "Natal"
     },
     {
      "id": "nova_betania_mossoro",
@@ -7371,7 +7733,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Fúria Jovem Baraúnas"
-     ]
+     ],
+     "cidade": "Mossoró"
     },
     {
      "id": "centro_mossoro",
@@ -7379,7 +7742,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Mossoró"
     },
     {
      "id": "belo_horizonte_mossoro",
@@ -7389,7 +7753,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Império Vermelho"
-     ]
+     ],
+     "cidade": "Mossoró"
     }
    ],
    "timesNaCidade": [
@@ -7563,6 +7928,9 @@
    },
    "populacao": 2900,
    "temMetro": true,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Arena Fonte Nova",
@@ -7580,7 +7948,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "pituba",
@@ -7590,7 +7959,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Os Imbatíveis"
-     ]
+     ],
+     "cidade": "Salvador"
     },
     {
      "id": "vitoria",
@@ -7598,7 +7968,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "cabula",
@@ -7606,7 +7977,8 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "pau_da_lima",
@@ -7616,7 +7988,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Bamor"
-     ]
+     ],
+     "cidade": "Salvador"
     },
     {
      "id": "valeria",
@@ -7624,7 +7997,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "imbui",
@@ -7634,7 +8008,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Camisa 12 do Vitória"
-     ]
+     ],
+     "cidade": "Salvador"
     },
     {
      "id": "plataforma",
@@ -7644,7 +8019,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Terror Tricolor"
-     ]
+     ],
+     "cidade": "Salvador"
     },
     {
      "id": "alagados",
@@ -7652,7 +8028,8 @@
      "zona": "Leste",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "graca",
@@ -7660,7 +8037,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "bonfim",
@@ -7668,7 +8046,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Salvador"
     },
     {
      "id": "feira_de_santana",
@@ -7678,7 +8057,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Falange Tricolor"
-     ]
+     ],
+     "cidade": "Feira de Santana"
     }
    ],
    "timesNaCidade": [
@@ -7816,6 +8196,9 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Vila Belmiro",
@@ -7832,7 +8215,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "embare",
@@ -7840,7 +8224,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "aparecida",
@@ -7848,7 +8233,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "morro_de_sao_bento",
@@ -7858,7 +8244,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Força Rubro Verde"
-     ]
+     ],
+     "cidade": "Santos"
     },
     {
      "id": "morro_do_pacheco",
@@ -7866,7 +8253,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "jabaquara",
@@ -7874,7 +8262,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "macuco",
@@ -7882,7 +8271,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "sitio_paecara",
@@ -7892,7 +8282,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Sangue Jovem"
-     ]
+     ],
+     "cidade": "Santos"
     },
     {
      "id": "guaruja",
@@ -7900,7 +8291,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "vila_belmiro",
@@ -7910,7 +8302,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Torcida Jovem"
-     ]
+     ],
+     "cidade": "Santos"
     },
     {
      "id": "gonzaga",
@@ -7918,7 +8311,8 @@
      "zona": "Oeste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     },
     {
      "id": "sao_vicente",
@@ -7926,7 +8320,8 @@
      "zona": "Oeste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Santos"
     }
    ],
    "timesNaCidade": [
@@ -8064,6 +8459,9 @@
    },
    "populacao": 12300,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 4,
    "estadios": [
     "Morumbi",
@@ -8084,7 +8482,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Dragões da Real"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "paraisopolis",
@@ -8092,7 +8491,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "santo_amaro",
@@ -8100,7 +8500,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "grajau",
@@ -8108,7 +8509,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "caninde",
@@ -8118,7 +8520,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Leões da Fabulosa"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "vila_maria",
@@ -8126,7 +8529,8 @@
      "zona": "Norte",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "casa_verde",
@@ -8136,7 +8540,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Pavilhão 9"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "brasilandia",
@@ -8144,7 +8549,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "tatuape",
@@ -8152,7 +8558,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "itaquera",
@@ -8160,7 +8567,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "sao_mateus",
@@ -8170,7 +8578,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Camisa 12"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "mooca",
@@ -8178,7 +8587,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "São Paulo"
     },
     {
      "id": "morumbi",
@@ -8188,7 +8598,8 @@
      "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Independente"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "barra_funda",
@@ -8198,7 +8609,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Mancha Verde"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "bom_retiro",
@@ -8208,7 +8620,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Gaviões"
-     ]
+     ],
+     "cidade": "São Paulo"
     },
     {
      "id": "rio_pequeno",
@@ -8218,7 +8631,8 @@
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "TUP"
-     ]
+     ],
+     "cidade": "São Paulo"
     }
    ],
    "timesNaCidade": [
@@ -8635,6 +9049,9 @@
    },
    "populacao": 800,
    "temMetro": false,
+   "temPraia": true,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 2,
    "estadios": [
     "Batistão",
@@ -8651,7 +9068,8 @@
      "zona": "Sul",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Aracaju"
     },
     {
      "id": "farolandia",
@@ -8659,7 +9077,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Aracaju"
     },
     {
      "id": "coroa_do_meio",
@@ -8667,7 +9086,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Aracaju"
     },
     {
      "id": "santos_dumont",
@@ -8675,7 +9095,8 @@
      "zona": "Norte",
      "classeSocial": "Favela",
      "multiplicadorFaturamento": 0.4,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Aracaju"
     },
     {
      "id": "dom_luciano",
@@ -8685,7 +9106,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Esquadrão Colorado"
-     ]
+     ],
+     "cidade": "Aracaju"
     },
     {
      "id": "porto_d_antas",
@@ -8695,7 +9117,8 @@
      "multiplicadorFaturamento": 0.4,
      "torcidasComSede": [
       "Jovem Confiança"
-     ]
+     ],
+     "cidade": "Aracaju"
     },
     {
      "id": "salgado_filho",
@@ -8705,7 +9128,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Trovão Azul"
-     ]
+     ],
+     "cidade": "Aracaju"
     },
     {
      "id": "sao_jose",
@@ -8713,7 +9137,8 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Aracaju"
     },
     {
      "id": "centro",
@@ -8721,25 +9146,28 @@
      "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Aracaju"
     },
     {
-     "id": "sao_cristovao",
-     "nome": "São Cristóvão",
+     "id": "itabaiana_ii",
+     "nome": "Itabaiana II",
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Itabaiana"
     },
     {
      "id": "itabaiana",
-     "nome": "Itabaiana",
+     "nome": "Itabaiana I",
      "zona": "Oeste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
       "Jovem Tricolor"
-     ]
+     ],
+     "cidade": "Itabaiana"
     },
     {
      "id": "lagarto",
@@ -8747,7 +9175,8 @@
      "zona": "Oeste",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Lagarto"
     }
    ],
    "timesNaCidade": [
@@ -8889,16 +9318,18 @@
     "nivel": 2,
     "tamanho": "Médio",
     "quarteiroes": 120,
-    "bairrosEsperados": 12,
-    "bairrosPorZonaEsperado": 3
+    "bairrosEsperados": 12
    },
    "populacao": 3000,
    "temMetro": false,
+   "temPraia": false,
+   "temLagoa": false,
+   "vegetacao": "mata",
    "quantidadeEstadios": 3,
    "estadios": [
     "Moca Bonita",
     "Giulite Coutinho",
-    "Estádio do Trabalhador"
+    "Raulino de Oliveira"
    ],
    "rodovias": [
     "Rodovia Sudeste 2"
@@ -8911,7 +9342,8 @@
      "zona": "Sul",
      "classeSocial": "Classe Média",
      "multiplicadorFaturamento": 1.0,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Niterói"
     },
     {
      "id": "niteroi",
@@ -8919,7 +9351,8 @@
      "zona": "Sul",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Niterói"
     },
     {
      "id": "itaborai",
@@ -8927,17 +9360,19 @@
      "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Niterói"
     },
     {
-     "id": "mesquita",
-     "nome": "Mesquita",
-     "zona": "Norte",
+     "id": "campos_dos_goytacazes_ii",
+     "nome": "Campos dos Goytacazes II",
+     "zona": "Leste",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
      "torcidasComSede": [
-      "Sangue Americano"
-     ]
+      "Jovem Goyta"
+     ],
+     "cidade": "Campos dos Goytacazes"
     },
     {
      "id": "volta_redonda",
@@ -8947,7 +9382,8 @@
      "multiplicadorFaturamento": 1.0,
      "torcidasComSede": [
       "Jovem do Voltaço"
-     ]
+     ],
+     "cidade": "Volta Redonda"
     },
     {
      "id": "nova_iguacu",
@@ -8955,17 +9391,21 @@
      "zona": "Norte",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
-     "torcidasComSede": []
+     "torcidasComSede": [
+      "Sangue Americano"
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "campos_dos_goytacazes",
-     "nome": "Campos dos Goytacazes",
+     "nome": "Campos dos Goytacazes I",
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Império Americano"
-     ]
+     ],
+     "cidade": "Campos dos Goytacazes"
     },
     {
      "id": "duque_de_caxias",
@@ -8973,7 +9413,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "belford_roxo",
@@ -8981,9 +9422,8 @@
      "zona": "Leste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": [
-      "Jovem Goyta"
-     ]
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "madureira",
@@ -8993,7 +9433,8 @@
      "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Ultras Madureira"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "bangu",
@@ -9003,7 +9444,8 @@
      "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [
       "Super Bangu"
-     ]
+     ],
+     "cidade": "Rio de Janeiro"
     },
     {
      "id": "campo_grande",
@@ -9011,7 +9453,8 @@
      "zona": "Oeste",
      "classeSocial": "Nobre",
      "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": []
+     "torcidasComSede": [],
+     "cidade": "Rio de Janeiro"
     }
    ],
    "timesNaCidade": [

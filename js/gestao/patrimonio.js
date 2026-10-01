@@ -210,9 +210,20 @@ TO.patrimonio = (function(){
        impede a tabela de mentir quando o balanço mudar */
     const REC = F().RECEITA, MAN = F().MANUT, INSUMO = F().INSUMO;
     const fora = [];
+    /* o corte de 30% do bairro de rival (dono, 30/09/2026), igual ao
+       do fechamento: a tabela não pode prometer o que o caixa não paga */
+    const D = TO.dominio, eu = E.torcida.id, minha = E.torcida.mapa;
+    /* (e a torcida do bairro, 01/10/2026: o ponto rende pelo tanto de
+       torcida do clube ali; a festa da sede não) */
+    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) * (D.fatorTorcida ? D.fatorTorcida(E, eu, cid, b) : 1) : 1;
+    const notaCorte = (cid, b) => D ? [D.notaDoCorte(E, eu, cid, b), D.notaDaTorcida ? D.notaDaTorcida(E, eu, cid, b) : ''].filter(Boolean).join(' · ') : '';
+    const notaSede = (cid, b) => D ? D.notaDoCorte(E, eu, cid, b) : '';
+    const junta = (a, b) => [a, b].filter(Boolean).join(' · ') || undefined;
 
+    const bSede = (TO.mundo.bairroDaSede(E.torcida)||{}).nome || '';
     fora.push({tipo:'sede', rot:_t('Sede (nível {n})', {n:nivelSede(E)}),
-               bairro:(TO.mundo.bairroDaSede(E.torcida)||{}).nome || '',
+               bairro:bSede,
+               nota: notaSede(minha, bSede) ? _t('{nota}: a festa rende 30% menos', {nota:notaSede(minha, bSede)}) : undefined,
                receita:0, despesa:F().MANUT_SEDE[nivelSede(E)]});
     for(const chave of Object.keys(ANEXOS))
       if(p[chave]) fora.push({tipo:'anexo', rot:ANEXOS[chave].rot,
@@ -230,17 +241,17 @@ TO.patrimonio = (function(){
       const dd = F().diasDeDano ? F().diasDeDano(b, hojeAbs) : 0;
       fora.push({tipo:'bar',
         rot:_t('Bar (nível {n})', {n:b.nivel}) + (b.gratis ? ' · ' + _t('da sede') : ''), bairro:b.bairro,
-        nota: dd ? _tn(dd, 'quebrado no ataque: metade da receita por mais {n} dia',
-                           'quebrado no ataque: metade da receita por mais {n} dias') : undefined,
-        receita: REC.bar[b.nivel]*mult(b.bairro)*fator*(F().multDano ? F().multDano(b, hojeAbs) : 1),
+        nota: junta(dd ? _tn(dd, 'quebrado no ataque: metade da receita por mais {n} dia',
+                           'quebrado no ataque: metade da receita por mais {n} dias') : '', notaCorte(minha, b.bairro)),
+        receita: REC.bar[b.nivel]*mult(b.bairro)*fator*(F().multDano ? F().multDano(b, hojeAbs) : 1)*corte(minha, b.bairro),
         despesa: MAN.bar[b.nivel]});
     }
     const fab = p.fabrica ? FABRICA : null;
     for(const l of p.lojas) fora.push({tipo:'loja',
       rot:_t('Loja (nível {n})', {n:l.nivel}) +
           (l.semInsumo ? ' · ' + _t('sem insumo') : fab ? ' · ' + _t('fábrica') : ''),
-      bairro:l.bairro,
-      receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator,
+      bairro:l.bairro, nota: notaCorte(minha, l.bairro) || undefined,
+      receita: l.semInsumo ? 0 : REC.loja[l.nivel]*mult(l.bairro)*fator*corte(minha, l.bairro),
       despesa: (MAN.loja[l.nivel] + REC.loja[l.nivel]*INSUMO)
                * (fab ? 1-fab.corteCusto : 1)});
     for(const f of (p.filiais||[])) fora.push({tipo:'filial',
@@ -248,10 +259,12 @@ TO.patrimonio = (function(){
       bairro:F().nomeCidade(f.cidade),
       nucleo: (E.membros||[]).filter(m=>m.filial === f.cidade).length,
       teto: FILIAL.teto[f.nivel],
-      receita: REC.subsede * F().multFilial(E, f) * fator,
+      nota: D ? (notaCorte(f.cidade, D.bairroDaFilial(eu, f.cidade)) || undefined) : undefined,
+      receita: REC.subsede * F().multFilial(E, f) * fator * (D ? corte(f.cidade, D.bairroDaFilial(eu, f.cidade)) : 1),
       despesa: MAN.subsede[f.nivel] || MAN.subsede[1]});
     for(const s of p.subsedes) fora.push({tipo:'subsede', rot:_t('Subsede'), bairro:s.bairro,
-      receita: REC.subsede*mult(s.bairro)*fator,
+      nota: notaCorte(minha, s.bairro) || undefined,
+      receita: REC.subsede*mult(s.bairro)*fator*corte(minha, s.bairro),
       despesa: MAN.subsede[s.nivel || 1]});
 
     const frota = F().onibusDe(E);
@@ -293,6 +306,41 @@ TO.patrimonio = (function(){
     return fora;
   }
 
+  /* ONDE ABRIR O PONTO NOVO (o domínio dos bairros, 30/09/2026): o
+     jogador escolhe o bairro. A lista começa pelo de sempre (o bairro
+     sorteado fora da zona da sede, GDD §7.2), depois os nossos, os sem
+     dona e os das outras; cada linha diz de quem é o bairro, e o de
+     dona rival avisa o corte de 30% na receita. A estrutura nova soma
+     presença ali (TO.dominio.estrutura). */
+  function bairrosParaAbrir(E, tipo){
+    const D = TO.dominio, cid = E.torcida.mapa, eu = E.torcida.id;
+    const padrao = TO.mundo.bairro(cid, F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1)));
+    const bs = D ? D.bairros(E, cid)
+                 : TO.mundo.bairrosDe(cid).map(b=>({id:b.id, nome:b.nome, zona:b.zona, dono:null}));
+    const ordem = b => (padrao && b.id === padrao.id) ? 0 : b.dono === eu ? 1 : !b.dono ? 2
+                     : (D && D.rivais(E, eu, b.dono)) ? 4 : 3;
+    /* A TORCIDA DO BAIRRO (01/10/2026): cada linha diz quanto da gente
+       do bairro é do nosso clube e quanto o ponto rende por isso; dentro
+       de cada grupo, o que rende mais vem primeiro */
+    const fT = b => D && D.fatorTorcida ? D.fatorTorcida(E, eu, cid, b.id) : 1;
+    const varias = D && D.cidadesDa ? D.cidadesDa(cid).length > 1 : false;
+    return bs.slice().sort((a, b)=> ordem(a) - ordem(b) || fT(b) - fT(a) || a.nome.localeCompare(b.nome))
+      .map(b=>{
+        const dona = !b.dono ? _t('sem dona')
+          : b.dono === eu ? _t('nosso ({v}%)', {v:Math.round(b.v)})
+          : _t('da {sigla} ({v}%)', {sigla:D.siglaDe(b.dono), v:Math.round(b.v)});
+        const corte = D && b.dono && b.dono !== eu && D.rivais(E, eu, b.dono) ? ' · ' + _t('rende 30% menos') : '';
+        const onde = varias && b.cidade ? _t('{bairro} ({cidade})', {bairro:b.nome, cidade:b.cidade}) : b.nome;
+        const torcida = D && D.parteDaTorcida
+          ? ' · ' + _t('{clube} {p}% · rende ×{f}', {clube:E.torcida.clube || '', p:Math.round(D.parteDaTorcida(eu, cid, b.id) * 100),
+                                                     f:D.duas ? D.duas(fT(b)) : fT(b).toFixed(2)})
+          : '';
+        /* (a praça sem zona — três cidades ou mais —: o bairro e a cidade dele, sem zona) */
+        const rot = b.semZona ? _t('{bairro} · {dona}', {bairro:onde, dona}) : _t('{bairro} (zona {zona}) · {dona}', {bairro:onde, zona:_t(b.zona), dona});
+        return {id:b.id, rot:rot + torcida + corte};
+      });
+  }
+
   /* =======================================================
      O QUE DÁ PRA COMPRAR
      Cada opção diz o preço e, quando não dá, diz por quê —
@@ -328,6 +376,8 @@ TO.patrimonio = (function(){
         nota: n === 0 ? _t('sem sede não há ponto comercial')
                       : _t('{tem} de {max} pela sede nível {n}', {tem, max:teto.qtd, n}),
         custo:cfg.compra,
+        /* ONDE ABRIR (o domínio dos bairros, 30/09/2026) */
+        escolhas: n > 0 ? bairrosParaAbrir(E, tipo) : null,
         trava:trava(cfg.compra, tem>=teto.qtd ? _t('a sede não comporta mais') : null)});
 
       /* ampliar o ponto mais fraco de cada tipo: é o que o jogador
@@ -889,6 +939,8 @@ TO.patrimonio = (function(){
     /* a ampliação da subsede e o presente também chegam com a escolha
        colada no id ('ampliar-filial:cidade', 'presente:aliado:tipo') */
     if(!o && id.indexOf('ampliar-filial:') === 0) o = opcoes(E).find(x=>x.id === 'ampliar-filial');
+    /* o ponto novo chega com o bairro escolhido ('comprar:bar:bairro') */
+    if(!o && id.indexOf('comprar:') === 0) o = opcoes(E).find(x=>x.id === id.split(':').slice(0, 2).join(':'));
     if(!o && id.indexOf('presente:') === 0) o = opcoes(E).find(x=>x.id === 'presente');
     if(!o) return {ok:false, msg:_t('Opção que não existe.')};
     if(o.trava) return {ok:false, msg:_t('Não dá: {motivo}.', {motivo:o.trava})};
@@ -910,6 +962,8 @@ TO.patrimonio = (function(){
     if(acao==='filial'){
       p.filiais = p.filiais || [];
       p.filiais.push({cidade:tipo, nivel:1});
+      /* a subsede de fora ganha presença no bairro dela lá (o domínio) */
+      if(TO.dominio) TO.dominio.estrutura(E, E.torcida.id, 'filial', tipo, null);
       TO.estado.lancar(E, _t('Subsede em {cidade}', {cidade:F().nomeCidade(tipo)}), -o.custo);
       /* A FUNDAÇÃO DESCE COM GENTE DA SEDE (ordem do dono, 31/08/2026;
          ampliada em 09/09/2026): um diretor, dois linha de frente e
@@ -1000,9 +1054,13 @@ TO.patrimonio = (function(){
       TO.estado.lancar(E, _t('Bombas ×{n}', {n:5}), -o.custo);
     } else if(acao==='comprar'){
       const cfg = PONTO[tipo];
-      const bairro = F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));
+      /* o bairro escolhido na vitrine; sem escolha, o de sempre */
+      const escolhido = extra ? TO.mundo.bairro(E.torcida.mapa, extra) : null;
+      const bairro = escolhido ? escolhido.nome : F().bairroDeFora(E, tipo+'-'+(cont(E,tipo)+1));
       p[cfg.plural].push({nivel:1, bairro});
       TO.estado.lancar(E, cfg.emBairro(bairro), -o.custo);
+      /* A ESTRUTURA NOVA SOMA PRESENÇA NO BAIRRO (o dono, 30/09/2026) */
+      if(TO.dominio) TO.dominio.estrutura(E, E.torcida.id, tipo, E.torcida.mapa, bairro);
       /* subsede nova tem batismo (feed 9.5); bar e loja não — quem se
          reúne na subsede é a torcida, e é isso que vira data */
       if(tipo === 'subsede')

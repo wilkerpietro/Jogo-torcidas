@@ -8414,6 +8414,49 @@ O dono: "o duelo de pênaltis foi 4x1 pra gente no tempo real do jogo, está reg
 - **Save já afetado.** O jogo que já foi trocado num save antigo continua como ficou: a chave seguiu com o outro time, e não há como desfazer sem reescrever a fase.
 - **O aviso do canto** (rede recolhida) passou de 3 s para 5 s (`TOAST_VIDA`), a pedido do dono.
 
+## O mapa da cidade no jogo 2D: a planta do 3D com a dona de cada bairro (pedido do dono, 01/10/2026)
+
+O dono: "preciso implementar o mapa 2d que acabamos de construir na versão 3d no jogo, com toda a questão de população do bairro, torcida por bairro, domínio da praça e do bairro, etc."
+
+- **De onde veio.** O domínio dos bairros e a torcida por bairro foram feitos pela sessão do jogo 3D no branch dela (`claude/stadium-3d-crowd-scene-rkgk8o`), mexendo direto nos fontes do 2D. No nosso branch chegava só a cópia embutida em `cenario3d/js/jogo.js`. Os dois históricos são quase independentes, então o merge direto não serve. Entrou só a diferença dos commits do domínio (61c44f3, dc32cf1, 7946a1c):
+  - aplicada em 3 vias nos nossos `estado.js`, `feed.js`, `acoes.js`, `financeiro.js`, `patrimonio.js`, `planejamento.js`, `relacoes.js` e `main.js`;
+  - com os conflitos resolvidos à mão: a zona da resenha e o pano da noite (nossos) ficam ao lado da cidade, do tipo da defesa, da estrada e do bar quebrado (do domínio);
+  - `js/mundo/dominio.js`, `js/ui/mapa_brasil.js`, `css/mapa.css` e `dados/i18n/dominio.js` vieram inteiros.
+  As regras são as duas seções logo abaixo, trazidas do DECISOES do branch do 3D.
+- **Os dados das cidades** (`dados/fonte/cidades_bairros.json`, `dados/cidades.js`, `dados/estadios.js`, `dados/torcidas.js` e os dois importadores) são os do 3D, que estavam à frente dos nossos (as cidades das praças compostas, o bairro de cada estádio). Ficaram as três mudanças só nossas: Arena Joinville no Interior de SC, Estádio Centenário no Interior do RS e São Paulo sem metrô.
+- **A planta é assada, não copiada.** O desenho da cidade mora num módulo de 8 mil linhas da página do 3D, preso ao three.js. `ferramentas/assar_plantas.js` abre essa página (`cenario3d/planta.html?teste`) no Chromium e guarda de cada uma das 30 praças:
+  - o chão (ruas, quadras, favelas, estádios, praia, metrô), sem bairros, sem rótulos e sem carros, em `img/mapas/<id>.webp`: uns 4,4 milhões de pixels por praça (a comprida fica mais larga, a Paraíba com 5251 × 830), 11 MB no total;
+  - em `dados/plantas.js` (197 KB), a grade dos bairros em corridas, os estádios, equipamentos e marcos, os nomes das cidades e as sedes da planta.
+  Quando o 3D mudar o mapa, é reassar.
+- **O visor** (`js/ui/mapa_planta.js`):
+  - **Por cima do chão, ao vivo:** cada bairro na cor da torcida dona, mais forte quanto maior a barra (cinza quando está em disputa); as divisas finas entre bairros e grossas entre zonas; o nome do bairro com "SIGLA 73%" ou "em disputa"; as sedes na cor da torcida, a nossa com aro de ouro; os estádios sempre e o resto de perto.
+  - **Comandos:** arrastar move, a roda e a pinça aproximam no ponto, o duplo clique aproxima. O clique escolhe o bairro, e o cartão ao lado (o de `mapa_brasil.js`) mostra quem manda, a barra repartida, quem mora no bairro, o que tem nele, o corte de 30% e a ação social. Ao aproximar, o nome que não cabe aparece.
+  - **Fallback:** sem a planta da praça (as das barras bravas, ou o pacote de arquivo único, que não leva `img/mapas`), o painel volta ao quadro de bairros por zona que veio do 3D.
+  - **Menu:** o item "Mapa" fica no menu lateral, logo abaixo do Feed. A aba Brasil é a do 3D.
+- **Dois consertos achados no teste:**
+  - A ação social no bairro cobrava R$ 3.000 em vez de R$ 1.500: `dominio.social` descontava do caixa e o `lancarNoResumo` descontava de novo. O bug existe também no branch do 3D.
+  - O comentário da rede social com mais de 7 dias mostrava "NaN/NaN/undefined" na data: ele só guardava o dia absoluto. Agora guarda ano, semana e dia, e o comentário antigo mostra "há N dias".
+- **Testado** (Playwright):
+  - jogo novo da TUF por 200 dias sem erro: 13 avisos de domínio no feed e nenhuma disputa de pênaltis trocada;
+  - o painel abre em Fortaleza e na Paraíba (5 cidades);
+  - o clique no bairro abre o cartão;
+  - a ação social sobe a barra (0 → 8,5%), cobra R$ 1.500 e não repete na semana;
+  - salvar e carregar mantém as barras;
+  - i18n sem falta em es/en.
+- **O pacote de arquivo único já passava do limite antes** (28,7 MB no commit anterior, para 16,5 MB do artifact); com isto foi a 29,0 MB. Não é do mapa, e fica anotado para o dono decidir o que sai do pacote.
+
+## Os bairros têm dona e a cidade tem dona (dono, 30/09/2026)
+
+Cada bairro tem uma barra de 0 a 100 repartida entre as torcidas; **dona é quem passa de 50**. **Domina a cidade quem é dona de mais bairros** (empate no topo: ninguém domina). Dominar dá **+0,1 de prestígio e +0,1 de moral por dia**; a primeira e a segunda maior da cidade que não dominam perdem **0,1 de cada por dia** (régua de 0 a 100 da tela; 0,02 no indicador de 0 a 20). O começo é sorteado por save: a maior e a segunda maior com uns 5 bairros cada numa cidade de 16 (pode começar empatada, sem dona), o resto rateado pelos membros. **O bairro da sede é sempre da torcida dela no começo e é o mais difícil de tomar** (quem é de fora ganha metade ali; a casa se refaz até 80); duas sedes no mesmo bairro nos dados: a maior fica, a outra é espalhada pro bairro livre mais parecido. **Bar, loja, subsede (e a festa da sede) em bairro de dona rival rendem 30% menos.** A subsede também segura o bairro dela e pode dominar. Contam pra barra: treta marcada, ataque na pista e na concentração, arredores do estádio, bote no bar e na sede, estrutura nova no bairro, **ação social no bairro** (nova: uma por semana, R$ 1.500 e 5 membros) — e as brigas entre as IAs. O bar é **"BAR DA {torcida}"**, no feminino, no mapa e na fachada. Detalhes e medidas: `docs/JOGO_3D.md` §30.
+
+## As praças compostas viram cidades, e a torcida mora no bairro (dono, 01/10/2026)
+
+**Cada bairro tem a cidade dele** (conurbação conta como uma cidade: o ABC, o Rio com a Baixada, Goiânia com Aparecida, Niterói com São Gonçalo e Itaboraí), e **18 praças viram mais de uma cidade no mapa** — cada uma com os bairros, os estádios e as sedes dela, **a 50 m da cidade de onde ela sai** (a metade dos 80 a 120 m da proposta, "pra dar uma impressão maior de conurbação"; a que fica longe, 100 m; Niterói, do outro lado da baía, 150 m), ligadas por estrada (ou pela avenida, quando ela já chega lá), com o **pórtico de BEM-VINDO com o nome da cidade** e a **placa verde com os km** — aproximados: a linha reta entre as cidades com um quinto a mais. **A sede só fica na cidade do bairro dela e o estádio no bairro que os dados dizem**; a torcida de uma cidade sem terreno que sobre fica sem sede (nenhuma ficou: as 139 sedes das 30 praças são as mesmas de antes). Goiânia fica inteira, com o Jonas Duarte e a sede da Independente no bairro Anápolis.
+
+**As interpretações** (onde o pedido deixou espaço): no Subúrbio Carioca, Mesquita sai pra Campos dos Goytacazes ter dois bairros, e a Sangue Americano e o Giulite Coutinho (do America, em Mesquita) vão pra Nova Iguaçu; a Jovem Goyta vai pra Campos; o Raulino de Oliveira entra no lugar do Estádio do Trabalhador. No Interior de Minas saem Juiz de Fora, Pouso Alegre e Governador Valadares, e o Regional fica em Patos de Minas, a cidade do meio. No Maranhão o mar é o leste do mapa: Parnaíba desce pela costa e Teresina fica a sudoeste dela, Imperatriz longe a sudoeste de São Luís. O Interior de SC fica com 9 bairros. Rondonópolis entra Classe Média e Balneário Camboriú, Nobre; o bairro novo "II" herda a classe do primeiro. **O domínio continua pela praça inteira** (o dono, 01/10/2026: "O domínio vai continuar sendo por praça inteira e as cidades se comportam como bairros"): a dona da praça é quem é dona de mais bairros, contados juntos os de todas as cidades dela (na Paraíba, os 6 bairros de João Pessoa e os 3 de Campina Grande entram na mesma conta); a cidade não tem dona separada.
+
+**A torcida do clube mora nos bairros** (`js/mundo/dominio.js`): o total do clube na praça é o do jogo, e ele se reparte pelo peso de cada bairro — a gente do bairro pela classe (favela 1,3, Baixa 1,15, Média 1, Nobre 0,8), uns 85% na cidade do clube (o bairro de outra cidade pesa 0,08; o clube de fora pesa igual em todo bairro), o reduto da sede de uma organizada do clube ×1,6 e a zona dela ×1,25, e uma variação fixa de até 15%. Bar, loja e subsede rendem de ×0,5 a ×1,5 pela presença do clube no bairro, e o ganho na barra do domínio vale de ×0,4 a ×1,3; a organizada começa nos bairros da cidade dela onde o clube tem mais gente. Detalhes e medidas do mapa: `docs/JOGO_3D.md` §34.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
