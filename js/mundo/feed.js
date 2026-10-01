@@ -1044,16 +1044,51 @@ TO.feed = (function(){
     }
   }
 
-  function cidadeNoFeed(E, ctx){
-    passo('convocação',  ()=>convocacoesDeHoje(E, ctx.jogos || []));
-    passo('gazeta da cidade', ()=>gazetaDaCidade(E, ctx.jogos || []));
+  /* =======================================================
+     SEM SPOILER (correção do dono, 01/10/2026): "a rede social gera
+     notícias do placar do jogo antes de eu clicar em Iniciar partida".
+     Os jogos do dia são sorteados quando o dia abre, o nosso inclusive;
+     enquanto o cartão da nossa partida não tiver apito final, o que
+     depende de RESULTADO do dia — a Gazeta da cidade, o nosso post de
+     resultado, clássico e goleada, título, protesto — fica guardado em
+     `E.feedDepoisDoJogo` e sai no fim da partida (encerrarPartida). O
+     que é de antes do jogo (convocação, chegada da caravana, resenha)
+     sai na hora. `partidaPendente` é a mesma pergunta pras telas.
+     ======================================================= */
+  function partidaPendente(E){
+    if(!E || !E.data) return false;
+    caixas(E);
+    const hoje = `partida|${E.data.ano}|${E.data.semana}|${E.data.dia}|`;
+    const pend = m => m && m.kind === 'partida' && !m.respondido && String(m.chave || '').indexOf(hoje) === 0;
+    return E.feed.some(pend) || E.feedFila.some(pend);
+  }
+  const jogoLeve = j => ({c:j.c, f:j.f, gc:j.gc, gf:j.gf, comp:j.comp, compNome:j.compNome,
+                          rodada:j.rodada, fase:j.fase, pen:j.pen || null, venceu:j.venceu || '',
+                          neutro:!!j.neutro});
+  function postsDeResultado(E, jogos){
+    passo('gazeta da cidade', ()=>gazetaDaCidade(E, jogos));
     passo('protestos',   ()=>protestosDaSemana(E));
+    passo('rivalidade',  ()=>rivalidadesDoDia(E, jogos));
+    passo('títulos',     ()=>titulosDoDia(E));
+    passo('nosso jogo',  ()=>nossoJogoNoFeed(E, jogos));
+  }
+  /* o apito final solta o que estava guardado (e o dia seguinte, por
+     garantia, se a partida tiver morrido no caminho) */
+  function soltarDepoisDoJogo(E){
+    const g = E.feedDepoisDoJogo;
+    if(!g) return;
+    E.feedDepoisDoJogo = null;
+    postsDeResultado(E, g.jogos || []);
+  }
+  function cidadeNoFeed(E, ctx){
+    const jogos = ctx.jogos || [];
+    passo('convocação',  ()=>convocacoesDeHoje(E, jogos));
+    if(partidaPendente(E))
+      E.feedDepoisDoJogo = {abs:E.data.absoluto || 0, jogos:jogos.map(jogoLeve)};
+    else postsDeResultado(E, jogos);
     passo('resenha',     ()=>resenhaDaSemana(E));
     passo('nosso perfil',()=>nossoPerfilHoje(E));
-    passo('rivalidade',  ()=>rivalidadesDoDia(E, ctx.jogos || []));
-    passo('títulos',     ()=>titulosDoDia(E));
     passo('virada',      ()=>viradaDoAno(E));
-    passo('nosso jogo',  ()=>nossoJogoNoFeed(E, ctx.jogos || []));
     passo('nossa chegada', ()=>nossaChegadaHoje(E));
     passo('nossa casa',  ()=>nossaCasaNoFeed(E));
   }
@@ -1500,6 +1535,7 @@ TO.feed = (function(){
 
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
+    passo('resultado guardado', ()=>soltarDepoisDoJogo(E));
     passo('posts do dia',   ()=>publicarAgendadas(E));
     passo('tréguas',        ()=>treguasDoDia(E));
     passo('status',         ()=>statusDeHoje(E));
@@ -6128,6 +6164,8 @@ TO.feed = (function(){
                          comp:d.comp ? pelaComp(d.comp) : ''})+
                      (pen ? ' ' + _t('Nos pênaltis, {a} a {b}: quem passa é o {time}.',
                                      {a:Math.max(pen.c,pen.f), b:Math.min(pen.c,pen.f), time:quemPassa}) : '');
+    /* apito final: a rede e a Gazeta podem falar dos resultados do dia */
+    passo('resultado guardado', ()=>soltarDepoisDoJogo(E));
     return {ok:true};
   }
 
@@ -6137,7 +6175,7 @@ TO.feed = (function(){
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
           registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
-          curtidasDe, curtimos, nossaCasaNoFeed, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
+          curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,
           frase:{emPraca, pelaCompeticao, noUltimoDia, noDia: dia => NO_DIA[dia] || NO_DIA[6]},
           tretas, tretasNaoLidas, lerTretas, FREIO_OLHEIRO,
