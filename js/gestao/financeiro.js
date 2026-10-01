@@ -288,9 +288,12 @@ TO.financeiro = (function(){
   /* GDD §7.2: bar, loja e subsede ficam em zona diferente da sede.
      A regra existe pra empurrar a torcida pra fora do próprio quintal. */
   function bairroDeFora(E, semente){
-    const todos = TO.mundo.bairrosDe(E.torcida.mapa);
+    let todos = TO.mundo.bairrosDe(E.torcida.mapa);
     if(!todos.length) return '';
     const sede = TO.mundo.bairroDaSede(E.torcida);
+    /* na cidade da sede (as praças de várias cidades, 01/10/2026): o bar
+       da torcida de Campina Grande não abre em João Pessoa */
+    if(sede && sede.cidade){ const mesma = todos.filter(b=>b.cidade === sede.cidade); if(mesma.length) todos = mesma; }
     const fora = sede ? todos.filter(b=>b.zona !== sede.zona) : todos;
     const lista = fora.length ? fora : todos;
     /* Endereço não se sorteia: a mesma torcida abre o bar sempre no mesmo
@@ -372,8 +375,15 @@ TO.financeiro = (function(){
        subsede e subsede de fora em bairro cuja dona é rival rendem 70% —
        a linha diz de quem é o bairro (js/mundo/dominio.js) */
     const D = TO.dominio, eu = E.torcida.id;
-    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) : 1;
-    const nota = (cid, b) => { const n = D ? D.notaDoCorte(E, eu, cid, b) : ''; return n ? ' · ' + n : ''; };
+    /* A TORCIDA DO BAIRRO (o dono, 01/10/2026): o ponto rende pelo tanto
+       de torcida do clube no bairro — de ×0,5 (sem torcida) a ×1,5 (o
+       reduto), ×1 no bairro médio da cidade do clube. Vale junto com o
+       corte de rival; a linha diz os dois */
+    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) * (D.fatorTorcida ? D.fatorTorcida(E, eu, cid, b) : 1) : 1;
+    const nota = (cid, b) => {
+      const n = [D ? D.notaDoCorte(E, eu, cid, b) : '', D && D.notaDaTorcida ? D.notaDaTorcida(E, eu, cid, b) : ''].filter(Boolean);
+      return n.length ? ' · ' + n.join(' · ') : '';
+    };
     const minha = E.torcida.mapa;
     for(const b of p.bares){
       const dd = diasDeDano(b, hoje);

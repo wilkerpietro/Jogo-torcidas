@@ -216,7 +216,20 @@ TO.mapaBrasil = (function(){
     if(!b){ caixa.innerHTML = `<p class="mb-nada">${esc(_t('Clique num bairro do mapa.'))}</p>`; return caixa; }
     const meu = e.torcida.id;
     const mult = (b.mult != null ? b.mult : 1).toLocaleString(TO.i18n && TO.i18n.lingua ? undefined : 'pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
-    let h = `<h3>${esc(b.nome)}</h3><p class="mb-zona">${esc(_t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
+    let h = `<h3>${esc(b.nome)}</h3>`;
+    /* a cidade do bairro, nas praças de várias cidades (01/10/2026) */
+    if(d.cidadesDa && d.cidadesDa(cid).length > 1 && b.cidade) h += `<p class="mb-cidade">${esc(b.cidade)}</p>`;
+    h += `<p class="mb-zona">${esc(_t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
+    /* A TORCIDA DO BAIRRO (01/10/2026): os três clubes com mais gente
+       morando nele, e quanto um ponto nosso renderia aqui */
+    if(d.torcedoresNoBairro){
+      const top = d.torcedoresNoBairro(cid, b.id).slice(0, 3);
+      if(top.length) h += `<p class="mb-torcida">${esc(_t('Quem mora aqui: {lista}', {lista:top.map(o => o.clube + ' ' + Math.round(o.perc * 100) + '%').join(', ')}))}</p>`;
+      if(d.fatorTorcida){
+        const f = d.fatorTorcida(e, meu, cid, b.id), pc = d.parteDaTorcida ? Math.round(d.parteDaTorcida(meu, cid, b.id) * 100) : null;
+        h += `<p class="mb-torcida">${esc(_t('{clube}: {p}% do bairro · um ponto nosso rende ×{f}', {clube:e.torcida.clube || '', p:pc, f:d.duas ? d.duas(f) : f.toFixed(2)}))}</p>`;
+      }
+    }
     h += `<p class="mb-dona">${b.dono
       ? (b.dono === meu ? esc(_t('O bairro é nosso ({v}%).', {v:Math.round(b.v)})) : esc(_t('A dona é a {nome} ({v}%).', {nome:nome(b.dono), v:Math.round(b.v)})))
       : esc(_t('Sem dona: ninguém passa de 50%.'))}</p>`;
@@ -283,11 +296,18 @@ TO.mapaBrasil = (function(){
     const d = D(), e = E();
     if(!d || !e) return caixa;
     const bs = d.bairros(e, cid), meu = e.torcida.id;
-    for(const z of ['Norte', 'Oeste', 'Leste', 'Sul']){
+    /* AS PRAÇAS DE VÁRIAS CIDADES (01/10/2026): um bloco por cidade (a
+       maior primeiro) no lugar das quatro zonas */
+    const cidades = d.cidadesDa ? d.cidadesDa(cid) : [];
+    const blocos = cidades.length > 1
+      ? cidades.map(c => ({classe:'mb-zona-bloco mb-cidade-bloco', titulo:c.nome, de:x => x.cidade === c.nome}))
+      : ['Norte', 'Oeste', 'Leste', 'Sul'].map(z => ({classe:'mb-zona-bloco z-' + z.toLowerCase(), titulo:_t('Zona {zona}', {zona:_t(z)}), de:x => x.zona === z}));
+    if(cidades.length > 1) caixa.classList.add('mb-por-cidade');
+    for(const B of blocos){
       const zona = document.createElement('div');
-      zona.className = 'mb-zona-bloco z-' + z.toLowerCase();
-      zona.innerHTML = `<h4>${esc(_t('Zona {zona}', {zona:_t(z)}))}</h4>`;
-      for(const b of bs.filter(x => x.zona === z)){
+      zona.className = B.classe;
+      zona.innerHTML = `<h4>${esc(B.titulo)}</h4>`;
+      for(const b of bs.filter(B.de)){
         const cor = b.dono ? corDe(b.dono) : '#6f6f6a';
         const bt = document.createElement('button');
         bt.type = 'button';

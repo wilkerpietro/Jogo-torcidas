@@ -40,6 +40,46 @@ CAPACIDADE = {
 }
 
 
+# A CISÃO DAS PRAÇAS DE VÁRIAS CIDADES (o dono, 01/10/2026: "agora as
+# sedes das torcidas e os estádios tem que ficar obrigatoriamente na sua
+# cidade"). O bairro de cada estádio é o da cidade do clube dele: o legado
+# punha o Jonas Duarte (Anápolis) em Aparecida de Goiânia e o Dutrinha
+# (Mixto, Cuiabá) no Alto da Serra, que virou Rondonópolis; e os bairros
+# que mudaram de nome (Teresina I, Criciúma I...) ou saíram (Mesquita,
+# Pouso Alegre) mudam aqui. O Estádio Regional (sem clube) fica na cidade
+# do meio do Interior de Minas, Patos de Minas.
+BAIRRO = {
+    'albertao': 'Teresina I',
+    'fumeirao': 'Arapiraca I',
+    'etelvino-mendonca': 'Itabaiana I',
+    'jonas-duarte': 'Anápolis',
+    'estadio-regional': 'Patos de Minas I',
+    'dutrinha': 'Tijucal',
+    'giulite-coutinho': 'Nova Iguaçu',
+    'heriberto-hulse': 'Criciúma I',
+    'arena-conda': 'Chapecó I',
+    'arena-joinville': 'Joinville I',
+    'junco': 'Sobral I',
+    'arena-romeirao': 'Juazeiro do Norte I',
+    'cornelio-de-barros': 'Salgueiro I',
+    'lacerdao': 'Caruaru I',
+    'germano-kruger': 'Ponta Grossa I',
+    'estadio-do-cafe': 'Londrina I',
+    'maiao': 'Mirassol I',
+    'santa-cruz': 'Ribeirão Preto I',
+    'jorge-ismael-de-biasi': 'Novo Horizonte I',
+}
+# o id do legado que não é o nosso (o nome da praça, não o da capital)
+RENOMEAR_PRACA = {'cuiaba': 'mato-grosso', 'campinas': 'regiao-de-campinas', 'florianopolis': 'litoral-catarinense',
+                  'maceio': 'alagoas', 'salvador': 'bahia', 'meio_norte': 'maranhao', 'interior_de_mg': 'interior-de-minas'}
+# O Estádio do Trabalhador não é de clube nenhum da praça: o do Volta
+# Redonda é o Raulino de Oliveira (a lotação e o mandante saem de times.js)
+TIRAR = {'estadio-do-trabalhador'}
+NOVOS = [
+    {'nome': 'Raulino de Oliveira', 'mapa': 'suburbio-carioca', 'bairro': 'Volta Redonda'},
+]
+
+
 def identificador(txt):
     """mesma regra dos outros importadores: 'Arena Castelão' -> 'arena-castelao'"""
     txt = unicodedata.normalize('NFD', str(txt or ''))
@@ -83,6 +123,13 @@ def main():
         contem = [cid for bs, cid in por_bairros.items() if chave and chave <= bs]
         if len(contem) == 1:
             de_para[c['id']] = contem[0]
+            continue
+        # (a praça que trocou bairros depois — a cisão das cidades, que
+        # renomeou os bairros dos interiores: pelo id, com a mesma troca de
+        # nome do importar_bairros.py)
+        pelo_id = RENOMEAR_PRACA.get(c['id'], c['id'].replace('_', '-'))
+        if pelo_id in {x['id'] for x in nossas}:
+            de_para[c['id']] = pelo_id
     faltando = [c['id'] for c in cid_legado if c['id'] not in de_para]
     if faltando:
         print(f'  AVISO: {len(faltando)} pracas do legado sem par aqui: {faltando}')
@@ -100,8 +147,10 @@ def main():
         manda_em.setdefault(identificador(t.get('estadio')), []).append(t)
 
     saida = []
-    for e in sorted(estadios, key=lambda x: x['nome']):
-        mapa = de_para.get(e['cidadeId'])
+    legado_e_novos = [e for e in estadios if identificador(e['nome']) not in TIRAR] + \
+        [{'nome': n['nome'], 'mapaNovo': n['mapa'], 'bairroEstadio': n['bairro']} for n in NOVOS]
+    for e in sorted(legado_e_novos, key=lambda x: x['nome']):
+        mapa = e.get('mapaNovo') or de_para.get(e['cidadeId'])
         if not mapa:
             continue
         eid = identificador(e['nome'])
@@ -126,7 +175,7 @@ def main():
             'id': eid,
             'nome': e['nome'],
             'mapa': mapa,
-            'bairro': e.get('bairroEstadio') or '',
+            'bairro': BAIRRO.get(eid) or e.get('bairroEstadio') or '',
             'capacidade': capacidade,
             'mandantes': mandantes,
         }

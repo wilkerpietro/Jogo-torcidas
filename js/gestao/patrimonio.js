@@ -213,14 +213,17 @@ TO.patrimonio = (function(){
     /* o corte de 30% do bairro de rival (dono, 30/09/2026), igual ao
        do fechamento: a tabela não pode prometer o que o caixa não paga */
     const D = TO.dominio, eu = E.torcida.id, minha = E.torcida.mapa;
-    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) : 1;
-    const notaCorte = (cid, b) => D ? D.notaDoCorte(E, eu, cid, b) : '';
+    /* (e a torcida do bairro, 01/10/2026: o ponto rende pelo tanto de
+       torcida do clube ali; a festa da sede não) */
+    const corte = (cid, b) => D ? D.fator(E, eu, cid, b) * (D.fatorTorcida ? D.fatorTorcida(E, eu, cid, b) : 1) : 1;
+    const notaCorte = (cid, b) => D ? [D.notaDoCorte(E, eu, cid, b), D.notaDaTorcida ? D.notaDaTorcida(E, eu, cid, b) : ''].filter(Boolean).join(' · ') : '';
+    const notaSede = (cid, b) => D ? D.notaDoCorte(E, eu, cid, b) : '';
     const junta = (a, b) => [a, b].filter(Boolean).join(' · ') || undefined;
 
     const bSede = (TO.mundo.bairroDaSede(E.torcida)||{}).nome || '';
     fora.push({tipo:'sede', rot:_t('Sede (nível {n})', {n:nivelSede(E)}),
                bairro:bSede,
-               nota: notaCorte(minha, bSede) ? _t('{nota}: a festa rende 30% menos', {nota:notaCorte(minha, bSede)}) : undefined,
+               nota: notaSede(minha, bSede) ? _t('{nota}: a festa rende 30% menos', {nota:notaSede(minha, bSede)}) : undefined,
                receita:0, despesa:F().MANUT_SEDE[nivelSede(E)]});
     for(const chave of Object.keys(ANEXOS))
       if(p[chave]) fora.push({tipo:'anexo', rot:ANEXOS[chave].rot,
@@ -316,13 +319,23 @@ TO.patrimonio = (function(){
                  : TO.mundo.bairrosDe(cid).map(b=>({id:b.id, nome:b.nome, zona:b.zona, dono:null}));
     const ordem = b => (padrao && b.id === padrao.id) ? 0 : b.dono === eu ? 1 : !b.dono ? 2
                      : (D && D.rivais(E, eu, b.dono)) ? 4 : 3;
-    return bs.slice().sort((a, b)=> ordem(a) - ordem(b) || a.nome.localeCompare(b.nome))
+    /* A TORCIDA DO BAIRRO (01/10/2026): cada linha diz quanto da gente
+       do bairro é do nosso clube e quanto o ponto rende por isso; dentro
+       de cada grupo, o que rende mais vem primeiro */
+    const fT = b => D && D.fatorTorcida ? D.fatorTorcida(E, eu, cid, b.id) : 1;
+    const varias = D && D.cidadesDa ? D.cidadesDa(cid).length > 1 : false;
+    return bs.slice().sort((a, b)=> ordem(a) - ordem(b) || fT(b) - fT(a) || a.nome.localeCompare(b.nome))
       .map(b=>{
         const dona = !b.dono ? _t('sem dona')
           : b.dono === eu ? _t('nosso ({v}%)', {v:Math.round(b.v)})
           : _t('da {sigla} ({v}%)', {sigla:D.siglaDe(b.dono), v:Math.round(b.v)});
         const corte = D && b.dono && b.dono !== eu && D.rivais(E, eu, b.dono) ? ' · ' + _t('rende 30% menos') : '';
-        return {id:b.id, rot:_t('{bairro} (zona {zona}) · {dona}', {bairro:b.nome, zona:_t(b.zona), dona}) + corte};
+        const onde = varias && b.cidade ? _t('{bairro} ({cidade})', {bairro:b.nome, cidade:b.cidade}) : b.nome;
+        const torcida = D && D.parteDaTorcida
+          ? ' · ' + _t('{clube} {p}% · rende ×{f}', {clube:E.torcida.clube || '', p:Math.round(D.parteDaTorcida(eu, cid, b.id) * 100),
+                                                     f:D.duas ? D.duas(fT(b)) : fT(b).toFixed(2)})
+          : '';
+        return {id:b.id, rot:_t('{bairro} (zona {zona}) · {dona}', {bairro:onde, zona:_t(b.zona), dona}) + torcida + corte};
       });
   }
 

@@ -110,5 +110,14 @@ TO.i18n.registrar({
   'as praças do jogo': {es:'las plazas del juego', en:'the game’s cities'},
   '· a praça de {cidade} (só o mapa: a cidade 3D continua a de agora)': {es:'· la plaza de {cidade} (solo el mapa: la ciudad 3D sigue siendo la de ahora)', en:'· {cidade} (map only: the 3D city stays the current one)'},
   '· a praça de {cidade}': {es:'· la plaza de {cidade}', en:'· {cidade}'},
-  'Esta praça não tem planta desenhada: os bairros dela aparecem por zona.': {es:'Esta plaza no tiene plano dibujado: sus barrios aparecen por zona.', en:'This city has no drawn map: its neighborhoods are shown by zone.'}
+  'Esta praça não tem planta desenhada: os bairros dela aparecem por zona.': {es:'Esta plaza no tiene plano dibujado: sus barrios aparecen por zona.', en:'This city has no drawn map: its neighborhoods are shown by zone.'},
+  /* =========================================================
+     A TORCIDA DO BAIRRO (01/10/2026): a receita do ponto pelo tanto de
+     torcida do clube no bairro, a cidade do bairro e quem mora nele
+     ========================================================= */
+  'torcida ×{f}': {es:'hinchada ×{f}', en:'fans ×{f}'},
+  '{clube} {p}% · rende ×{f}': {es:'{clube} {p}% · rinde ×{f}', en:'{clube} {p}% · earns ×{f}'},
+  '{bairro} ({cidade})': {es:'{bairro} ({cidade})', en:'{bairro} ({cidade})'},
+  'Quem mora aqui: {lista}': {es:'Quién vive aquí: {lista}', en:'Who lives here: {lista}'},
+  '{clube}: {p}% do bairro · um ponto nosso rende ×{f}': {es:'{clube}: {p}% del barrio · un punto nuestro rinde ×{f}', en:'{clube}: {p}% of the neighborhood · a spot of ours earns ×{f}'},
 });

@@ -44,6 +44,14 @@
    dona é RIVAL da torcida rendem 30% menos. Rival é a relação de
    hoje (Rival ou Maior Rival); vizinha neutra, aliada ou irmã não
    corta nada.
+
+   A TORCIDA DO BAIRRO (o dono, 01/10/2026): cada bairro tem quantos
+   torcedores de cada clube moram nele — o clube da praça mora na
+   cidade dele (as praças de várias cidades: Paraíba, Maranhão, os
+   interiores). Bar, loja e subsede rendem pelo tanto de torcida do
+   clube no bairro, os pontos de uma ação no bairro pesam pelo mesmo
+   tanto, e cada organizada começa nos bairros da cidade dela onde o
+   clube tem mais gente (a cidade sem organizada começa sem dona).
    ========================================================= */
 window.TO = window.TO || {};
 
@@ -113,10 +121,12 @@ TO.dominio = (function(){
   const memo = new Map();
   function indice(){
     const D = (window.TO && TO.dados) || {};
-    const C = D.cidades || [], O = D.torcidas || [];
-    if(base && base.C === C && base.O === O && base.nC === C.length && base.nO === O.length) return base;
+    const C = D.cidades || [], O = D.torcidas || [], TT = D.times || [];
+    if(base && base.C === C && base.O === O && base.TT === TT && base.nC === C.length && base.nO === O.length) return base;
     memo.clear();
     const cidade = new Map(), torcidas = new Map(), sedes = new Map(), bairros = new Map();
+    /* (o clube de cada torcida e a cidade de cada clube: a torcida do bairro) */
+    const porId = new Map(O.map(o => [o.id, o])), times = new Map(TT.map(t => [t.id, t]));
     for(const c of C){
       cidade.set(c.id, c);
       const bm = new Map();
@@ -129,7 +139,7 @@ TO.dominio = (function(){
       ts.sort((a, b) => (b.membros || 0) - (a.membros || 0) || String(a.id).localeCompare(String(b.id)));
       sedes.set(cid, espalhar(cidade.get(cid), bairros.get(cid), ts));
     }
-    base = {C, O, nC:C.length, nO:O.length, cidade, torcidas, sedes, bairros,
+    base = {C, O, TT, nC:C.length, nO:O.length, cidade, torcidas, sedes, bairros, porId, times,
             comTorcida:[...torcidas.keys()].filter(cid => torcidas.get(cid).length && (cidade.get(cid).bairros || []).length)};
     return base;
   }
@@ -158,6 +168,8 @@ TO.dominio = (function(){
       const nota = b => {
         let n = 0;
         if(orig){
+          /* a sede fica na cidade dela (as praças de várias cidades, 01/10/2026) */
+          if((b.cidade || '') !== (orig.cidade || '')) n += 100;
           n += b.zona === orig.zona ? 0 : (VIZINHAS[orig.zona] || []).includes(b.zona) ? 10 : 20;
           if(b.classe === orig.classe) n -= 3;
         }
@@ -224,6 +236,9 @@ TO.dominio = (function(){
     const sedes = new Set([...(indice().sedes.get(o.mapa) || new Map()).values()].map(b => b.id));
     let cand = bs.filter(b => !sedes.has(b.id));
     if(!cand.length) cand = bs.slice();
+    /* na cidade da sede (as praças de várias cidades, 01/10/2026): a
+       torcida de Campina Grande abre o comércio em Campina Grande */
+    if(s){ const mesma = cand.filter(b => (b.cidade || '') === (s.cidade || '')); if(mesma.length) cand = mesma; }
     if(s){
       /* a zona da sede; quando ela não tem bairro livre pra tanto ponto,
          entram as vizinhas */
@@ -281,13 +296,41 @@ TO.dominio = (function(){
     const t = TO.mundo && TO.mundo.relacaoBase ? TO.mundo.relacaoBase(a, b) : 'Neutro';
     return t === 'Rival' || t === 'Maior Rival';
   };
+  /* O COMEÇO POR CIDADE (01/10/2026): numa praça de várias cidades,
+     cada organizada começa na cidade dela (a da sede) — a régua de
+     sempre (a maior e a segunda maior com uns 5 de cada 16, o resto
+     pelos membros) vale dentro de cada cidade, com os bairros dela. A
+     cidade sem organizada começa sem dona (Patos e Cajazeiras na
+     Paraíba, Niterói no Subúrbio). Quem não tem sede fica com a cidade
+     do clube, ou com a maior da praça. */
   function inicial(cid, semente, preferidos){
-    const c = cidadeDe(cid), bs = (c && c.bairros) || [], N = bs.length;
+    const c = cidadeDe(cid), bs = (c && c.bairros) || [];
     const ts = torcidasDaCidade(cid);
     const fora = {b:{}};
-    if(!N || !ts.length) return fora;
+    if(!bs.length || !ts.length) return fora;
     const r = sorteio(`${semente}|dominio|${cid}`);
     const sedes = indice().sedes.get(cid) || new Map();
+    const grupos = new Map();
+    for(const b of bs){
+      const x = cidadeDoBairro(c, b);
+      if(!grupos.has(x)) grupos.set(x, {bs:[], ts:[]});
+      grupos.get(x).bs.push(b);
+    }
+    const maior = cidadesDa(cid)[0].nome;
+    for(const t of ts){
+      const s = sedes.get(t.id);
+      let x = s ? cidadeDoBairro(c, s) : cidadeDoClube(t.clubeId);
+      if(!grupos.has(x)) x = maior;
+      grupos.get(x).ts.push(t);
+    }
+    for(const g of grupos.values()){
+      if(!g.ts.length){ for(const b of g.bs) fora.b[b.id] = {}; continue; }
+      inicialDaCidade(cid, g.bs, g.ts, sedes, r, preferidos, fora);
+    }
+    return fora;
+  }
+  function inicialDaCidade(cid, bs, ts, sedes, r, preferidos, fora){
+    const N = bs.length;
     const quota = new Map(ts.map(t => [t.id, 0]));
     /* o tanto de bairros de cada uma */
     const k = Math.max(1, Math.round(N * 5 / 16));
@@ -341,12 +384,13 @@ TO.dominio = (function(){
       const b = sedes.get(t.id);
       if(b && !dono.has(b.id) && quota.get(t.id) > 0){ dono.set(b.id, t.id); tem.get(t.id).push(b); }
     }
-    const zonasDe = tid => new Set(tem.get(tid).map(b => b.zona));
+    /* cada uma pega o bairro livre onde o clube dela tem MAIS torcida (a
+       presença: o reduto da sede, a zona dela, os bairros de mais gente),
+       com os pontos dela (`preferidos`) na frente (01/10/2026) */
     const nota = (tid, b) => {
-      const zs = zonasDe(tid);
-      let n = zs.has(b.zona) ? 0 : [...zs].some(z => (VIZINHAS[z] || []).includes(b.zona)) ? 10 : zs.size ? 20 : 5;
+      let n = -12 * presencaDa(tid, cid, b);
       if(preferidos && preferidos[tid] && preferidos[tid].has(b.id)) n -= 15;
-      return n + r() * 6;
+      return n + r() * 3;
     };
     for(let volta = 0; volta < N * 2; volta++){
       const querem = ts.filter(t => tem.get(t.id).length < quota.get(t.id));
@@ -446,7 +490,7 @@ TO.dominio = (function(){
     return bairrosDe(cid).map(b => {
       const ps = partes(E, cid, b.id);
       const dono = ps.length && ps[0].v > DOMINA ? ps[0].t : null;
-      return {id:b.id, nome:b.nome, zona:b.zona, classe:b.classe, mult:b.mult,
+      return {id:b.id, nome:b.nome, zona:b.zona, classe:b.classe, mult:b.mult, cidade:cidadeDoBairro(cidadeDe(cid), b),
               dono, v: dono ? ps[0].v : 0, partes:ps, sede:casaDe(cid, b.id)};
     });
   }
@@ -511,6 +555,133 @@ TO.dominio = (function(){
   }
 
   /* =======================================================
+     A TORCIDA DO BAIRRO (o dono, 01/10/2026: "Quero começar a dividir
+     a quantidade da torcida por bairro ... não vai compensar ter
+     bar/loja/subsede em bairro que tem pouca torcida, agora em bairros
+     que tem mais torcida vai arrecadar mais").
+
+     O TOTAL de cada clube na praça é o do jogo (o da planilha, que a
+     virada do ano mexe: TO.mundo.torcedoresDoClubeNa); o que muda é
+     como ele se reparte. O PESO de um bairro pra um clube:
+       · a gente do bairro: favela 1,3, Classe Baixa 1,15, Média 1,
+         Nobre 0,8 (bairro pobre tem mais gente por quarteirão);
+       · a cidade: o clube da praça mora na cidade dele — numa praça de
+         várias cidades, o bairro de outra cidade pesa 0,08 (uns 85% da
+         torcida fica em casa). O clube de fora (Flamengo, Corinthians…)
+         e o da praça de uma cidade só pesam 1 em todo bairro;
+       · o reduto: o bairro da sede de uma organizada do clube, ×1,6; os
+         da mesma zona e da mesma cidade dela, ×1,25;
+       · uma variação fixa de até 15% pra cima ou pra baixo (o hash da
+         praça, do clube e do bairro), a mesma em todo save.
+     A PRESENÇA (P) do clube num bairro é o peso dele ali sobre a média
+     dos bairros da cidade dele (de todos, pro clube de fora): 1 é o
+     bairro médio da casa. Ela não depende do total, só da repartição.
+       · RECEITA de bar, loja e subsede: × (0,5 + 0,5 × P), com P até 2
+         (×0,5 sem torcida, ×1 na média, até ×1,5 no reduto);
+       · GANHO no domínio: × (0,4 + 0,6 × P), com P até 1,5.
+     ======================================================= */
+  const POVO = {'Favela':1.3, 'Classe Baixa':1.15, 'Classe Média':1.0, 'Nobre':0.8};
+  const DE_FORA = 0.08, REDUTO_SEDE = 1.6, REDUTO_ZONA = 1.25, VARIA = 0.15;
+  const TORCIDA = {receita:{base:0.5, teto:2}, ganho:{base:0.4, teto:1.5}};
+  const cidadeDoBairro = (c, b) => (b && b.cidade) || (c && c.nome) || '';
+  const cidadeDoClube = k => { const t = indice().times.get(k); return t ? (t.cidade || '') : ''; };
+  /* as cidades da praça (a de mais bairros primeiro) */
+  function cidadesDa(cid){
+    const c = cidadeDe(cid), n = new Map();
+    for(const b of (c && c.bairros) || []){ const x = cidadeDoBairro(c, b); n.set(x, (n.get(x) || 0) + 1); }
+    return [...n.entries()].sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).map(([nome, bairros]) => ({nome, bairros}));
+  }
+  function pesos(cid){
+    const ch = 'pesos|' + cid;
+    if(memo.has(ch)) return memo.get(ch);
+    const I = indice(), c = I.cidade.get(cid), bs = (c && c.bairros) || [];
+    const daPraca = new Set(bs.map(b => cidadeDoBairro(c, b)));
+    const varias = daPraca.size > 1;
+    const sedesDoClube = new Map();
+    for(const o of I.torcidas.get(cid) || []){
+      const b = (I.sedes.get(cid) || new Map()).get(o.id);
+      if(!b || !o.clubeId) continue;
+      if(!sedesDoClube.has(o.clubeId)) sedesDoClube.set(o.clubeId, []);
+      sedesDoClube.get(o.clubeId).push(b);
+    }
+    const por = new Map();
+    for(const t of (c && c.times) || []){
+      const k = t.clubeId, casa = cidadeDoClube(k);
+      const daCasa = varias && !!t.local && daPraca.has(casa);
+      const w = bs.map(b => {
+        const cb = cidadeDoBairro(c, b);
+        let v = POVO[b.classe] || 1;
+        if(daCasa && cb !== casa) v *= DE_FORA;
+        let red = 1;
+        for(const s of sedesDoClube.get(k) || []){
+          if(s.id === b.id) red = Math.max(red, REDUTO_SEDE);
+          else if(s.zona === b.zona && cidadeDoBairro(c, s) === cb) red = Math.max(red, REDUTO_ZONA);
+        }
+        return v * red * (1 - VARIA + 2 * VARIA * (hash(`${cid}|${k}|${b.id}`) % 10000) / 10000);
+      });
+      const ref = bs.map((b, i) => i).filter(i => !daCasa || cidadeDoBairro(c, bs[i]) === casa);
+      const media = ref.reduce((s, i) => s + w[i], 0) / Math.max(1, ref.length);
+      por.set(k, {w, media, soma:w.reduce((s, v) => s + v, 0), daCasa, casa, time:t});
+    }
+    const r = {bs, idx:new Map(bs.map((b, i) => [b.id, i])), por, varias};
+    memo.set(ch, r);
+    return r;
+  }
+  /* a presença do clube k no bairro (1 = o bairro médio da cidade dele) */
+  function presenca(cid, k, b){
+    const x = bairro(cid, b);
+    if(!x || !k) return 1;
+    const W = pesos(cid), p = W.por.get(k);
+    if(!p || !(p.media > 0)) return 1;
+    return p.w[W.idx.get(x.id)] / p.media;
+  }
+  /* o clube de uma torcida (a do jogador, a dos dados) */
+  function clubeDe(tid){
+    const eu = TO.estado && TO.estado.E && TO.estado.E.torcida;
+    if(eu && eu.id === tid && eu.clubeId) return eu.clubeId;
+    const o = indice().porId.get(tid);
+    return o ? o.clubeId : null;
+  }
+  const presencaDa = (tid, cid, b) => presenca(cid, clubeDe(tid), b);
+  /* o fator da RECEITA de um ponto (bar, loja, subsede, filial) da torcida no bairro */
+  function fatorTorcida(E, tid, cid, b){
+    if(!b) return 1;
+    return TORCIDA.receita.base + (1 - TORCIDA.receita.base) * Math.min(presencaDa(tid, cid, b), TORCIDA.receita.teto);
+  }
+  /* o fator do GANHO na barra (os pontos de uma ação no bairro) */
+  function fatorGanho(E, tid, cid, b){
+    if(!b) return 1;
+    return TORCIDA.ganho.base + (1 - TORCIDA.ganho.base) * Math.min(presencaDa(tid, cid, b), TORCIDA.ganho.teto);
+  }
+  /* quantos torcedores de cada clube moram no bairro (o total de hoje de
+     cada clube na praça, repartido pelos pesos), do maior pro menor */
+  function torcedoresNoBairro(cid, b){
+    const x = bairro(cid, b);
+    if(!x) return [];
+    const W = pesos(cid), i = W.idx.get(x.id), out = [];
+    for(const [k, p] of W.por){
+      const T = TO.mundo && TO.mundo.torcedoresDoClubeNa ? TO.mundo.torcedoresDoClubeNa(cid, k) : (p.time.torcedores || 0);
+      out.push({clubeId:k, clube:p.time.clube || k, sigla:p.time.sigla || '', n:p.soma > 0 ? T * p.w[i] / p.soma : 0});
+    }
+    const tot = out.reduce((s, o) => s + o.n, 0) || 1;
+    for(const o of out) o.perc = o.n / tot;
+    return out.sort((a, c) => c.n - a.n || (a.clubeId < c.clubeId ? -1 : 1));
+  }
+  /* a parte do clube da torcida no bairro (0 a 1) */
+  function parteDaTorcida(tid, cid, b){
+    const k = clubeDe(tid), l = torcedoresNoBairro(cid, b), o = l.find(x => x.clubeId === k);
+    return o ? o.perc : 0;
+  }
+  /* o número de duas casas no idioma do jogo (na planta sozinha, com vírgula) */
+  const duas = v => (TO.util && TO.util.numero) ? TO.util.numero(v, 2) : v.toFixed(2).replace('.', ',');
+  /* a nota curta do fator, pra linha do financeiro: "torcida ×0,87" */
+  function notaDaTorcida(E, tid, cid, b){
+    const f = fatorTorcida(E, tid, cid, b);
+    if(Math.abs(f - 1) < 0.005) return '';
+    return _t('torcida ×{f}', {f:duas(f)});
+  }
+
+  /* =======================================================
      MEXER NA BARRA
      `tid` ganha `pts` no bairro; os pontos saem primeiro de `contra`
      (quem perdeu ali), depois do que é de ninguém, depois das outras
@@ -521,6 +692,10 @@ TO.dominio = (function(){
     opc = opc || {};
     const x = bairro(cid, b);
     if(!E || !x || !tid || !(pts > 0)) return null;
+    /* A TORCIDA DO BAIRRO PESA NO GANHO (01/10/2026): ×0,4 onde o clube
+       quase não tem torcida, ×1 na média da cidade dele, até ×1,3 no
+       reduto. A sede e a subsede se refazem como antes */
+    if(!opc.semTorcida && opc.motivo !== 'sede' && opc.motivo !== 'subsede') pts *= fatorGanho(E, tid, cid, x);
     const casa = casaDe(cid, x.id);
     if(casa && casa !== tid) pts *= RESISTE;
     const st = paraMexer(E, cid);
@@ -692,7 +867,7 @@ TO.dominio = (function(){
     const zonas = new Set(bs.filter(b => b.dono === tid).map(b => b.zona));
     const cand = bs.filter(b => b.dono !== tid && !(b.sede && b.sede !== tid));
     if(!cand.length) return null;
-    const nota = b => (b.dono ? b.v : 30) - (zonas.has(b.zona) ? 12 : 0) + r() * 8;
+    const nota = b => (b.dono ? b.v : 30) - (zonas.has(b.zona) ? 12 : 0) - 20 * (Math.min(presencaDa(tid, cid, b.id), 1.5) - 1) + r() * 8;
     return cand.sort((a, c) => nota(a) - nota(c))[0].id;
   }
 
@@ -792,7 +967,9 @@ TO.dominio = (function(){
     const cid = o.mapa, bs = bairros(E, cid);
     const ja = new Set(estruturas(E, cid).filter(s => s.tid === tid && s.tipo === tipo).map(s => s.bairro));
     const r = sorteio(`${semente(E)}|novo|${tid}|${tipo}|${E.data ? E.data.absoluto : 0}`);
-    const nota = b => (b.dono === tid ? 0 : !b.dono ? 20 : rivais(E, tid, b.dono) ? 90 : 45) + (ja.has(b.id) ? 25 : 0) + r() * 10;
+    /* (a IA também abre onde o clube dela tem torcida: a receita sai disso) */
+    const nota = b => (b.dono === tid ? 0 : !b.dono ? 20 : rivais(E, tid, b.dono) ? 90 : 45) + (ja.has(b.id) ? 25 : 0)
+                      + 30 * (1 - Math.min(presenca(cid, o.clubeId, b.id), 1.5)) + r() * 10;
     const cand = bs.filter(b => !b.sede);
     const esc = (cand.length ? cand : bs).sort((a, c) => nota(a) - nota(c))[0];
     return esc ? bairro(cid, esc.id) : bairroPadrao(o, tipo, 0);
@@ -850,7 +1027,9 @@ TO.dominio = (function(){
      que ler `bairroSede` depois daqui */
   try{ indice(); }catch(e){ /* sem dados ainda: monta na primeira leitura */ }
 
-  return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS,
+  return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO,
+          duas, presenca, presencaDa, clubeDe, fatorTorcida, fatorGanho, torcedoresNoBairro, parteDaTorcida, notaDaTorcida, cidadesDa,
+          cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
           donaDoBairro, maiores, membrosDe, rivais, fator, notaDoCorte, siglaDe, nomeDe,

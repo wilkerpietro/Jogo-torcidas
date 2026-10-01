@@ -422,7 +422,9 @@ TO.relacoes = (function(){
                             + U.limitar(t.membros/150, 0, 1)*0.3);
     const multB = b => b ? M().multiplicador(b) : (t.mult || 1);
     /* bairro de dona rival corta 30% (o domínio dos bairros, 30/09/2026) */
-    const corte = (cid, b) => (TO.dominio && E && b) ? TO.dominio.fator(E, id, cid, b) : 1;
+    /* e a torcida do bairro: rende pelo tanto de torcida do clube ali (01/10/2026) */
+    const corte = (cid, b) => (TO.dominio && E && b) ? TO.dominio.fator(E, id, cid, b)
+      * (TO.dominio.fatorTorcida ? TO.dominio.fatorTorcida(E, id, cid, b) : 1) : 1;
 
     const hojeAbs = (E && E.data && E.data.absoluto) || 0;
     (t.bares||[]).forEach((b, i)=>{
