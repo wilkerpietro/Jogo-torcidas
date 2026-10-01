@@ -8564,6 +8564,25 @@ O dono: "agora a opção de recrutar vai ser inteligente e definida na reunião 
 - salvar e carregar mantém as barras;
 - i18n sem falta.
 
+## Simular o mundo sem escolher torcida, e a barra que passava de 100 (pedido do dono, 01/10/2026)
+
+O dono: "arranje uma forma de você iniciar um save sem selecionar uma torcida e me diga como fica o mapa de fortaleza depois de 1 ano simulado".
+
+- **`ferramentas/simular_mundo.js [cidade] [dias] [pasta]`** (Playwright, com o servidor da raiz no ar):
+  - abre um jogo novo com uma torcida FIGURANTE, a menor organizada de uma praça fora do Brasil (o jogo precisa de uma torcida do jogador pra ter calendário, caixa e feed). Toda decisão dela, no feed e na reunião, fica como "deixar pra lá";
+  - na cidade observada só joga a IA: metas do mês, brigas entre elas, compras, pixações e recrutamento;
+  - no fim grava `<cidade>.json` (o placar, cada bairro com a dona, as partes, o que é de ninguém e os muros) e `<cidade>.png` (o mapa). Um ano leva uns 24 s.
+- **Bug achado na simulação: a barra passava de 100.** Um ano rodado mostrou Genibaú com 112% somados e Monte Castelo com 113%. O `mexer` arredondava cada parte pra uma casa no meio da conta e descontava o valor cheio do que faltava tirar. Com milhares de passos de 0,2 por ano (muros e recrutamento), os centésimos criados se acumulavam. Agora:
+  - a conta corre sem arredondar e fecha uma vez só, no fim (`fecharBarra`): uma casa decimal, nada abaixo de 0,05, e o que passar de 100 sai das outras (a maior primeiro);
+  - o save antigo é limpo na carga (`reparar`);
+  - depois do conserto, nenhuma barra passa de 100 num ano.
+- **No mapa, o nome do bairro manda no espaço.** O ponto das sedes reservava lugar antes e escondia nomes (Monte Castelo, Messejana, Bom Jardim). Agora os nomes vêm primeiro. No bairro disputado por muitas torcidas, se a linha das outras torcidas não cabe, o rótulo fica com o nome e a dona.
+- **O que um ano mostrou em Fortaleza** (duas rodadas; a semente muda a cada jogo):
+  - **Quem domina:** uma vez a Cearamor, com 5 bairros contra 4 da TUF (2 sem dona); na outra, a TUF, com 8, levando a Zona Leste inteira a 100%.
+  - **As pequenas** (Aliança, Falange Coral e Jovem do Floresta, sede 0) seguram o bairro da sede delas (80 a 98%) e só.
+  - **Os muros:** uns 38 ocupados, a guerra concentrada nos bairros baratos de virar (Granja Portugal com cinco donas diferentes nos cinco muros).
+  - **O efeito bola de neve:** a barra chega a 100 e trava. Sem desgaste, um bairro de 100% com os muros todos da dona é quase impossível de virar. Fica anotado pro dono decidir (desgaste diário acima de 80, ou o pixo que desbota com o tempo).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

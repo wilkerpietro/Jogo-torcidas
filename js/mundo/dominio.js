@@ -703,6 +703,23 @@ TO.dominio = (function(){
      (a maior primeiro). No bairro da sede de outra torcida, quem não é
      da casa ganha metade.
      ======================================================= */
+  /* A BARRA FECHA NO MÁXIMO EM 100: uma casa decimal, nada abaixo de
+     0,05, e o que o arredondamento passar de 100 sai de quem não é
+     `tid` (a maior primeiro), por último dele */
+  function fecharBarra(p, tid){
+    for(const k of Object.keys(p)){ p[k] = um(p[k]); if(!(p[k] >= 0.05)) delete p[k]; }
+    let sobra = um(Object.keys(p).reduce((s, k) => s + p[k], 0) - 100);
+    if(sobra > 0){
+      const ord = Object.keys(p).sort((a, c) => (a === tid) - (c === tid) || p[c] - p[a]);
+      for(const k of ord){
+        if(sobra <= 0) break;
+        const t = Math.min(p[k], sobra);
+        p[k] = um(p[k] - t); sobra = um(sobra - t);
+        if(!(p[k] >= 0.05)) delete p[k];
+      }
+    }
+    return p;
+  }
   function mexer(E, cid, b, tid, pts, opc){
     opc = opc || {};
     const x = bairro(cid, b);
@@ -717,10 +734,14 @@ TO.dominio = (function(){
     const p = st.b[x.id] = st.b[x.id] || {};
     const dono0 = donaDoObjeto(p);
     const antes = p[tid] || 0;
+    /* (a conta corre sem arredondar: arredondar a parte e descontar o
+       valor cheio criava ou sumia centésimos, e em milhares de passos de
+       0,2 a barra passava de 100 — 112% em Genibaú num ano simulado,
+       01/10/2026. O arredondamento é um só, no fim, em `fechar`.) */
     const tirar = (id, q) => {
       const t = Math.min(p[id] || 0, q);
-      p[id] = um((p[id] || 0) - t);
-      if(!(p[id] > 0)) delete p[id];
+      p[id] = (p[id] || 0) - t;
+      if(!(p[id] > 1e-9)) delete p[id];
       return t;
     };
     let ganho = Math.min(pts, 100 - antes), resta = ganho;
@@ -733,7 +754,8 @@ TO.dominio = (function(){
       resta -= tirar(outras[0], resta);
     }
     ganho -= Math.max(0, resta);
-    p[tid] = um(limitar(antes + ganho, 0, 100));
+    p[tid] = limitar(antes + ganho, 0, 100);
+    fecharBarra(p, tid);
     const dono1 = donaDoObjeto(p);
     const r = {cid, bairro:x, tid, contra:opc.contra || null, antes, depois:p[tid], ganho:um(ganho), dono0, dono1};
     if(dono0 !== dono1) virou(E, r, opc.motivo || '');
@@ -1409,7 +1431,9 @@ TO.dominio = (function(){
     if(!E || !E.torcida) return;
     const s = sedeDe(E.torcida.id, E.torcida.mapa);
     if(s && norm(E.torcida.bairroSede) !== norm(s.nome)) E.torcida.bairroSede = s.nome;
-    raiz(E);
+    const D = raiz(E);
+    /* a barra que passou de 100 no save de antes do conserto (01/10/2026) */
+    for(const cid in D.c) for(const bid in ((D.c[cid] || {}).b || {})) fecharBarra(D.c[cid].b[bid], null);
   }
 
   /* monta os dados já na carga: a sede espalhada vale pra todo mundo
