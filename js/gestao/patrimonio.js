@@ -335,7 +335,9 @@ TO.patrimonio = (function(){
           ? ' · ' + _t('{clube} {p}% · rende ×{f}', {clube:E.torcida.clube || '', p:Math.round(D.parteDaTorcida(eu, cid, b.id) * 100),
                                                      f:D.duas ? D.duas(fT(b)) : fT(b).toFixed(2)})
           : '';
-        return {id:b.id, rot:_t('{bairro} (zona {zona}) · {dona}', {bairro:onde, zona:_t(b.zona), dona}) + torcida + corte};
+        /* (a praça sem zona — três cidades ou mais —: o bairro e a cidade dele, sem zona) */
+        const rot = b.semZona ? _t('{bairro} · {dona}', {bairro:onde, dona}) : _t('{bairro} (zona {zona}) · {dona}', {bairro:onde, zona:_t(b.zona), dona});
+        return {id:b.id, rot:rot + torcida + corte};
       });
   }
 

@@ -294,7 +294,9 @@ TO.financeiro = (function(){
     /* na cidade da sede (as praças de várias cidades, 01/10/2026): o bar
        da torcida de Campina Grande não abre em João Pessoa */
     if(sede && sede.cidade){ const mesma = todos.filter(b=>b.cidade === sede.cidade); if(mesma.length) todos = mesma; }
-    const fora = sede ? todos.filter(b=>b.zona !== sede.zona) : todos;
+    /* (fora da zona da sede; na praça sem zona — três cidades ou mais —, a zona é a cidade) */
+    const semZona = !!(TO.dominio && TO.dominio.semZonas && TO.dominio.semZonas(E.torcida.mapa));
+    const fora = sede ? todos.filter(b=>semZona ? b.cidade !== sede.cidade : b.zona !== sede.zona) : todos;
     const lista = fora.length ? fora : todos;
     /* Endereço não se sorteia: a mesma torcida abre o bar sempre no mesmo
        bairro, em toda partida nova. Quem decide é o hash do nome, não o

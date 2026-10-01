@@ -179,8 +179,12 @@ TO.acoes = (function(){
         const nosso = (b.partes.find(x => x.t === eu) || {}).v || 0;
         return {id:b.id, nome:b.nome, tipo:'bairro', bairro:b.nome, zona:b.zona,
                 nosso, dono:b.dono, v:b.v,
-                nota: b.dono ? _t('zona {zona} · da {sigla} ({v}%) · nossa barra {n}%', {zona:_t(b.zona), sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
-                             : _t('zona {zona} · sem dona · nossa barra {n}%', {zona:_t(b.zona), n:Math.round(nosso)})};
+                /* (a praça sem zona — três cidades ou mais —: a cidade no lugar da zona) */
+                nota: b.semZona
+                  ? (b.dono ? _t('{cidade} · da {sigla} ({v}%) · nossa barra {n}%', {cidade:b.cidade, sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
+                            : _t('{cidade} · sem dona · nossa barra {n}%', {cidade:b.cidade, n:Math.round(nosso)}))
+                  : b.dono ? _t('zona {zona} · da {sigla} ({v}%) · nossa barra {n}%', {zona:_t(b.zona), sigla:D.siglaDe(b.dono), v:Math.round(b.v), n:Math.round(nosso)})
+                           : _t('zona {zona} · sem dona · nossa barra {n}%', {zona:_t(b.zona), n:Math.round(nosso)})};
       })
       .sort((a, b) => (a.dono ? a.v : 0) - (b.dono ? b.v : 0) || b.nosso - a.nosso);
   }

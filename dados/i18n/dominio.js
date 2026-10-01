@@ -47,12 +47,16 @@ TO.i18n.registrar({
   'Esse bairro não existe mais.': {es:'Ese barrio ya no existe.', en:'That neighborhood no longer exists.'},
   'zona {zona} · da {sigla} ({v}%) · nossa barra {n}%': {es:'zona {zona} · de {sigla} ({v}%) · nuestra barra {n}%', en:'{zona} zone · {sigla}’s ({v}%) · our bar {n}%'},
   'zona {zona} · sem dona · nossa barra {n}%': {es:'zona {zona} · sin dueña · nuestra barra {n}%', en:'{zona} zone · no owner · our bar {n}%'},
+  /* (a praça sem zona — três cidades ou mais —: a cidade no lugar da zona) */
+  '{cidade} · da {sigla} ({v}%) · nossa barra {n}%': {es:'{cidade} · de {sigla} ({v}%) · nuestra barra {n}%', en:'{cidade} · {sigla}’s ({v}%) · our bar {n}%'},
+  '{cidade} · sem dona · nossa barra {n}%': {es:'{cidade} · sin dueña · nuestra barra {n}%', en:'{cidade} · no owner · our bar {n}%'},
   'Onde a barra rende mais: o bairro sem dona e o de dona fraca.': {es:'Donde la barra rinde más: el barrio sin dueña y el de dueña débil.', en:'Where the bar gains most: neighborhoods with no owner or a weak one.'},
   'sem dona': {es:'sin dueña', en:'no owner'},
   'nosso ({v}%)': {es:'nuestro ({v}%)', en:'ours ({v}%)'},
   'da {sigla} ({v}%)': {es:'de {sigla} ({v}%)', en:'{sigla}’s ({v}%)'},
   'rende 30% menos': {es:'rinde 30% menos', en:'earns 30% less'},
   '{bairro} (zona {zona}) · {dona}': {es:'{bairro} (zona {zona}) · {dona}', en:'{bairro} ({zona} zone) · {dona}'},
+  '{bairro} · {dona}': {es:'{bairro} · {dona}', en:'{bairro} · {dona}'},
   '{nota}: a festa rende 30% menos': {es:'{nota}: la fiesta rinde 30% menos', en:'{nota}: the party earns 30% less'},
 
   /* =========================================================
@@ -80,6 +84,7 @@ TO.i18n.registrar({
   'Subsede de fora da {nome}': {es:'Subsede de afuera de {nome}', en:'{nome} out-of-town branch'},
   'Clique num bairro do mapa.': {es:'Haga clic en un barrio del mapa.', en:'Click a neighborhood on the map.'},
   'Zona {zona} · {classe} · receita ×{m}': {es:'Zona {zona} · {classe} · ingresos ×{m}', en:'{zona} zone · {classe} · revenue ×{m}'},
+  '{classe} · receita ×{m}': {es:'{classe} · ingresos ×{m}', en:'{classe} · revenue ×{m}'},
   'O bairro é nosso ({v}%).': {es:'El barrio es nuestro ({v}%).', en:'The neighborhood is ours ({v}%).'},
   'A dona é a {nome} ({v}%).': {es:'La dueña es {nome} ({v}%).', en:'The owner is {nome} ({v}%).'},
   'Sem dona: ninguém passa de 50%.': {es:'Sin dueña: nadie pasa del 50%.', en:'No owner: nobody is above 50%.'},

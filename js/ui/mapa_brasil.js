@@ -219,7 +219,8 @@ TO.mapaBrasil = (function(){
     let h = `<h3>${esc(b.nome)}</h3>`;
     /* a cidade do bairro, nas praças de várias cidades (01/10/2026) */
     if(d.cidadesDa && d.cidadesDa(cid).length > 1 && b.cidade) h += `<p class="mb-cidade">${esc(b.cidade)}</p>`;
-    h += `<p class="mb-zona">${esc(_t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
+    /* (a praça sem zona — três cidades ou mais —: a cidade já está em cima) */
+    h += `<p class="mb-zona">${esc(b.semZona ? _t('{classe} · receita ×{m}', {classe:_t(b.classe), m:mult}) : _t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
     /* A TORCIDA DO BAIRRO (01/10/2026): os três clubes com mais gente
        morando nele, e quanto um ponto nosso renderia aqui */
     if(d.torcedoresNoBairro){

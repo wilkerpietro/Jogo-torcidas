@@ -507,10 +507,28 @@ const centroDaPraca = () => { const C = CIS(); return C ? C.centro : null; };
    cidade do centro segue nos gomos, só com as zonas que os bairros dela
    têm (`gomosDaPraca`). Sem cisão, a zona dos dados */
 const ZONA_CIDADE = 'C:';
-const zonaDeFora = z => typeof z === 'string' && z.startsWith(ZONA_CIDADE);
-const zonaDoBairro = b => { const C = CIS(); return C && b.cidade && b.cidade !== C.centro ? ZONA_CIDADE + b.cidade : b.zona; };
-/* (duas zonas da mesma cidade: dois gomos do centro, ou a mesma cidade de fora) */
-const mesmaCidade = (a, b) => zonaDeFora(a) || zonaDeFora(b) ? a === b : true;
+/* AS CIDADES-MODELO (o gerador, AS CIDADES-MODELO; o dono, 01/10/2026: "essas
+   praças com mais de 2 cidades não vão ter mais zonas"): a cidade desenhada
+   do zero — na praça de três cidades ou mais, todas; na de duas, a pequena.
+   Cada quadra, favela e estádio dela já vem com o bairro (`bairro`), e a
+   zona de um bairro dela é ele mesmo ('B:<cidade>|<bairro>'): a sede fica
+   num terreno do bairro dela, sem gomo nenhum */
+const ZONA_BAIRRO = 'B:';
+const cidadeModelo = nome => { const C = CIS(); if (!C || !C.modelo) return false; const c = C.cidades.find(x => x.nome === (nome || C.centro)); return !!(c && c.modelo); };
+/* (a praça de três cidades ou mais: nem a cidade de hoje, nem gomo, nem praia) */
+const pracaToda = () => { const C = CIS(); return !!C && C.modelo === 'todas'; };
+const zonaDoModelo = (cidade, bairro) => ZONA_BAIRRO + cidade + '|' + bairro;
+const zonaDeFora = z => typeof z === 'string' && (z.startsWith(ZONA_CIDADE) || z.startsWith(ZONA_BAIRRO));
+const zonaDoBairro = b => {
+  const C = CIS();
+  if (C && cidadeModelo(b.cidade || C.centro)) return zonaDoModelo(b.cidade || C.centro, b.id);
+  return C && b.cidade && b.cidade !== C.centro ? ZONA_CIDADE + b.cidade : b.zona;
+};
+/* a cidade de uma zona: a de fora, a do bairro da cidade-modelo, ou (um gomo) a do centro */
+const cidadeDaZona = z => typeof z === 'string' && z.startsWith(ZONA_CIDADE) ? z.slice(ZONA_CIDADE.length)
+  : typeof z === 'string' && z.startsWith(ZONA_BAIRRO) ? z.slice(ZONA_BAIRRO.length, z.indexOf('|')) : (CIS() ? CIS().centro : null);
+/* (duas zonas da mesma cidade: dois gomos do centro, a mesma cidade de fora, ou dois bairros da mesma cidade-modelo) */
+const mesmaCidade = (a, b) => cidadeDaZona(a) === cidadeDaZona(b);
 /* a cidade de um terreno de sede (o do gerador ou a reserva) */
 function cidadeDoEspaco(x) {
   const C = CIS();
@@ -524,6 +542,8 @@ function cidadeDoEspaco(x) {
 }
 /* a zona de uma coisa da cidade `c` no ponto (x, y): a cidade de fora, ou o gomo do centro */
 const zonaNaCidade = (c, x, y, Q) => { const C = CIS(); return C && c && c !== C.centro ? ZONA_CIDADE + c : zonaNoMapa(x, y, Q); };
+/* o bairro (dos dados) de um espaço de sede da cidade-modelo: o do terreno do gerador ou o da quadra da reserva */
+const bairroDoEspaco = x => (x.e.terreno && x.e.terreno.bairro) || (x.e.q && x.e.q.bairro) || null;
 const naFavelaDeHoje = (x, y, m = 60) => !!fav0 && x > fav0.x0 - m && x < fav0.x1 + m && y > fav0.y0 - m && y < fav0.y1 + m;
 const A0 = K.ATACADEX ? bbox(K.ATACADEX.area) : null;
 const noAtacadexDeHoje = (x, y, m = 0) => !!A0 && x > A0.x0 - m && x < A0.x1 + m && y > A0.y0 - m && y < A0.y1 + m;
@@ -896,6 +916,8 @@ function criarVagasExtras(ts, mapa) {
    quadras, quando isso dá torre). E o CASARÃO COLONIAL (o T5 de
    casas3d.js) só sai no bairro Nobre: `l.nobre` em cada lote de casa.
    ===================================================================== */
+/* as torres de cada bairro Nobre da cidade-modelo (o bloco dele tem seis quadras: uma torre por quadra, no máximo) */
+const TORRES_MODELO = 3;
 const PREDIO_NOBRE = { larg: 20, inteiraAte: 31.5, fundo: [12.3, 17], longe: 25, andares: [10, 12, 14, 16],
                        folhas: [null, 'predio_v1', 'predio_v2', 'predio_v3'], chao: '#b5afa0' };
 const NOMES_PREDIO = ['Edifício Mar Azul', 'Edifício Jardim Europa', 'Edifício Veneza', 'Residencial Bela Época', 'Edifício Itamaraty',
@@ -1057,7 +1079,8 @@ function torresDaPraca() {
   }
   /* as duas torres do baldio (o Edifício Mirante e o Residencial Bela
      Vista, na quadra que o mapa guarda de hoje): idem, as duas juntas */
-  const doBaldio = torresDoBaldio();
+  /* (na praça toda de modelo a cidade de hoje saiu: o baldio também) */
+  const doBaldio = pracaToda() ? [] : torresDoBaldio();
   if (doBaldio.length) {
     const caixa = doBaldio.reduce((r, m) => ({ x0: Math.min(r.x0, m.bb.x0), x1: Math.max(r.x1, m.bb.x1), y0: Math.min(r.y0, m.bb.y0), y1: Math.max(r.y1, m.bb.y1) }),
                                   { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity });
@@ -1069,7 +1092,9 @@ function torresDaPraca() {
      pôs: o prédio do centro, as do baldio e as dos condomínios), nos
      bairros Nobres */
   let n = [...torres.values()].reduce((a, l) => a + l.length, 0);
-  const alvo = PROP.condominios.reduce((a, c) => a + c.torres.length, 0) + (predio ? 1 : 0) + doBaldio.length, longe = PREDIO_NOBRE.longe * M;
+  /* (e TORRES_MODELO em cada bairro Nobre da cidade-modelo: o dono, 01/10/2026, "se é classe alta, vai ter casarão e prédios altos") */
+  const alvo = PROP.condominios.reduce((a, c) => a + c.torres.length, 0) + (predio ? 1 : 0) + doBaldio.length
+             + TORRES_MODELO * nobres.filter(b => cidadeModelo(b.cidade)).length, longe = PREDIO_NOBRE.longe * M;
   const lugares = new Map(nobres.map(b => [b, lugaresDePredio(b)]));
   const novos = [];
   const poe = b => {
@@ -1160,9 +1185,15 @@ function distribuirTorcidas(guarda = true) {
   const zonaDaSede = S.map(T => { const b = bairroDaSedeNosDados(T.t, mapa); return b ? zonaDoBairro(b) : null; });
   const comSede = new Set();
   for (const T of S) { const b = bairroDaSedeNosDados(T.t, mapa); if (b) comSede.add(b.id); }
-  const Q = PROP ? gomosDaPraca(mapa, comSede, guarda) : null;
-  /* (o gomo do terreno: na praça cortada, o terreno de outra cidade tem a cidade como zona) */
-  const gomoDe = x => { if (!Q) return null; const [cx, cy] = centroDe(x); return zonaNaCidade(cidadeDoEspaco(x), cx, cy, Q); };
+  /* (a praça toda de modelo não tem gomo: a zona de cada bairro é ele mesmo) */
+  const Q = PROP && !pracaToda() ? gomosDaPraca(mapa, comSede, guarda) : null;
+  /* (o gomo do terreno: na praça cortada, o terreno de outra cidade tem a cidade como zona; na cidade-modelo, o bairro dele) */
+  const gomoDe = x => {
+    const bid = bairroDoEspaco(x), cid = bid && cidadeDoEspaco(x);
+    if (bid && cidadeModelo(cid)) return zonaDoModelo(cid, bid);
+    if (!Q) return null;
+    const [cx, cy] = centroDe(x); return zonaNaCidade(cidadeDoEspaco(x), cx, cy, Q);
+  };
   const porZona = {}, doGerador = {};
   for (const z of zonaDaSede) if (z) porZona[z] = (porZona[z] || 0) + 1;
   for (const x of espacosDoMapa) { const g = gomoDe(x); doGerador[g] = (doGerador[g] || 0) + 1; }
@@ -1191,7 +1222,13 @@ function distribuirTorcidas(guarda = true) {
   for (const g of gomoEsp) cap[g] = (cap[g] || 0) + 1;
   const poe = atrib => { for (const x of lista) x.dono = null; for (const T of ts) T.sede = null;
     S.forEach((T, i) => { const x = lista[atrib[i]]; x.dono = T; T.sede = x; }); };
-  const CZ = Q ? S.map((T, i) => cEsp.map((c, e) => !zonaDaSede[i] || gomoEsp[e] === zonaDaSede[i] ? 0 : 1 + foraDoGomo(c[0], c[1], zonaDaSede[i], Q))) : null;
+  /* (a sede da cidade-modelo fora do bairro dela custa o mesmo, onde quer que fique: lá não tem gomo) */
+  const deBairro = z => typeof z === 'string' && z.startsWith(ZONA_BAIRRO);
+  /* (e a reserva do bairro da cidade-modelo custa meio: o terreno do gerador
+     está lá pra sede dela — a reserva, só quando ele não basta; senão a sede
+     ia pra reserva mais longe da rival e o terreno ficava vago) */
+  const CZ = Q || zonaDaSede.some(deBairro) ? S.map((T, i) => cEsp.map((c, e) => (!zonaDaSede[i] || gomoEsp[e] === zonaDaSede[i] ? 0
+    : !Q || deBairro(zonaDaSede[i]) ? 3 : 1 + foraDoGomo(c[0], c[1], zonaDaSede[i], Q)) + (lista[e].reserva && deBairro(gomoEsp[e]) ? 0.5 : 0))) : null;
   /* (a cidade manda sempre: a sede nunca vai pro terreno de outra cidade) */
   const cidadeEsp = lista.map(cidadeDoEspaco), cidadeS = S.map(cidadeDaSede);
   const naCidade = (i, e) => !C || cidadeEsp[e] === cidadeS[i];
@@ -1389,6 +1426,12 @@ let SETORES = null;
 const CEL_SETOR = 4 * M;
 /* a cor de cada zona na planta (no jogo, quem pinta é a dona do bairro) */
 const COR_ZONA = { Norte: '#4f7cac', Sul: '#b5654a', Leste: '#c9a227', Oeste: '#5e9c5a' };
+/* (a cidade-modelo não tem zona: a cor do bairro dela é a da cidade, na ordem das cidades da praça) */
+const COR_CIDADE = ['#4f7cac', '#b5654a', '#c9a227', '#5e9c5a', '#8e5aa8', '#3c9a9a', '#b5507d', '#7b8a2e', '#a0662f'];
+const corDaZonaDe = b => {
+  if (cidadeModelo(b.cidade)) { const k = CIS().cidades.findIndex(c => c.nome === b.cidade); return COR_CIDADE[Math.max(0, k) % COR_CIDADE.length]; }
+  return COR_ZONA[b.zona];
+};
 /* A RÉGUA DOS GOMOS é a da ÁREA construída, não a da caixa do mapa: o
    ponto vira (quanto da cidade fica à esquerda dele, quanto fica acima
    dele), de 0 a 1 — e os gomos saem do meio desse quadrado. Assim cada
@@ -1520,14 +1563,15 @@ function unidadesDaPraca() {
   /* (a quadra do estádio no mapa novo não é outra unidade: o estádio já é,
      e as duas, uma em cima da outra, contavam o estádio duas vezes; a caixa
      dela, um tico maior, vai pro estádio — senão sobrava um anel sem bairro) */
-  for (const q of PROP.quadras) if (!q.entorno && !q.estadio) poe(q, q.cidade ? { cidade: q.cidade } : null);
+  /* (a quadra da cidade-modelo já vem com o bairro) */
+  for (const q of PROP.quadras) if (!q.entorno && !q.estadio) poe(q, q.cidade || q.bairro ? { ...(q.cidade ? { cidade: q.cidade } : {}), ...(q.bairro ? { bairro: q.bairro } : {}) } : null);
   const quadraDoEstadio = bb => PROP.quadras.find(q => q.estadio && q.x0 < bb.x1 && q.x1 > bb.x0 && q.y0 < bb.y1 && q.y1 > bb.y0);
-  for (const f of PROP.favelas) poe(f.bb, { pol: f.poly, favela: f, areaReal: areaDe(f.poly), ...(f.cidade ? { cidade: f.cidade } : {}) });
+  for (const f of PROP.favelas) poe(f.bb, { pol: f.poly, favela: f, areaReal: areaDe(f.poly), ...(f.cidade ? { cidade: f.cidade } : {}), ...(f.bairro ? { bairro: f.bairro } : {}) });
   if (PROP.ficaFavelaDeHoje && PROP.favelaDeHoje) poe(PROP.favelaDeHoje, { favela: 'hoje', ...(cen ? { cidade: cen } : {}) });
   if (PROP.atacadex) poe(PROP.atacadex.bb);
   for (const e of estadios) {
     const q = quadraDoEstadio(e.bb), r = e.bb;
-    poe(q ? { x0: Math.min(r.x0, q.x0), y0: Math.min(r.y0, q.y0), x1: Math.max(r.x1, q.x1), y1: Math.max(r.y1, q.y1) } : r, { estadio: e });
+    poe(q ? { x0: Math.min(r.x0, q.x0), y0: Math.min(r.y0, q.y0), x1: Math.max(r.x1, q.x1), y1: Math.max(r.y1, q.y1) } : r, { estadio: e, ...(e.copia && e.copia.bairro ? { bairro: e.copia.bairro } : {}) });
   }
   for (const u of us) { u.cx = (u.x0 + u.x1) / 2; u.cy = (u.y0 + u.y1) / 2; u.area = Math.max(1, u.areaReal || (u.x1 - u.x0) * (u.y1 - u.y0)); }
   /* A CIDADE DE CADA UNIDADE (a praça cortada): a que o gerador deu à
@@ -1938,8 +1982,9 @@ function setorizar(ts, mapa, guarda = true) {
   /* os gomos da praça (os que `distribuirTorcidas` usou pra pôr as sedes) */
   const Q = GOMOS && GOMOS.prop === PROP && GOMOS.mapa === mapa ? GOMOS.Q : quadroDasZonas(), zonaDe = (x, y) => zonaNoMapa(x, y, Q);
   const us = unidadesDosBairros();
-  /* (na praça cortada, a unidade de outra cidade tem a cidade como zona, e o bairro de lá também) */
-  for (const u of us) u.zona = zonaNaCidade(u.cidade, u.cx, u.cy, Q);
+  /* (na praça cortada, a unidade de outra cidade tem a cidade como zona, e o bairro de lá também; a da
+     cidade-modelo, o bairro dela) */
+  for (const u of us) u.zona = u.bairro && u.cidade ? zonaDoModelo(u.cidade, u.bairro) : zonaNaCidade(u.cidade, u.cx, u.cy, Q);
   const lista = bs.map(b => ({ b, x: 0, y: 0, w: 0, fixa: false, posto: false, ancora: null, sede: null, favela: null, zona: zonaDoBairro(b) }));
   /* as zonas da praça: os quatro gomos e, na praça cortada, as cidades de fora */
   const ZONAS = [...new Set(ORDEM_ZONAS.concat(lista.map(s => s.zona), us.map(u => u.zona)))];
@@ -1957,11 +2002,21 @@ function setorizar(ts, mapa, guarda = true) {
     const cabe = v => !v.favela && !v.estadio && x >= v.x0 && x <= v.x1 && y >= v.y0 && y <= v.y1;
     return us.find(v => cabe(v) && (!v.pol || noPoligono(x, y, v.pol))) || us.find(cabe) || null;
   };
+  /* 0 · A CIDADE-MODELO: a quadra, a favela e o estádio dela já vêm com o
+     bairro (o gerador desenhou cada bairro no bloco dele); a favela é o
+     bairro dela inteira */
+  const presa = new Map();
+  for (const u of us) {
+    if (!u.bairro) continue;
+    const s = daId.get(u.bairro);
+    if (!s) continue;
+    u.s = s; presa.set(u, s); s.modelo = true;
+    if (u.favela && !s.favela) Object.assign(s, { favela: u, x: u.cx, y: u.cy, fixa: true, posto: true });
+  }
   /* 1 · A SEDE é do bairro dela: o meio do espaço é a âncora do bairro e
      a quadra dele é do bairro. A sede que ficou fora do gomo da zona dela
      (a zona com mais sede que terreno) leva o bairro junto: ele cresce em
      volta dela, no gomo onde ela está */
-  const presa = new Map();
   for (const T of ts) {
     if (!T.sede) continue;
     const b = bairroDaSedeNosDados(T.t, mapa), s = b && daId.get(b.id);
@@ -1971,17 +2026,19 @@ function setorizar(ts, mapa, guarda = true) {
     if (!mesmaCidade(zl, s.zona)) continue;
     Object.assign(s, { x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, posto: true, sede: T });
     s.ancora = { x: s.x, y: s.y };
-    s.zona = zl;
+    /* (o bairro da cidade-modelo fica com a zona dele: a sede já está nele) */
+    if (!s.modelo) s.zona = zl;
     /* (a quadra da sede vai pra zona da sede: na divisa, o meio da quadra
        podia cair no gomo vizinho e a quadra ia pra outro bairro) */
     const u = unidadeEm(s.x, s.y);
     if (u && !presa.has(u)) { presa.set(u, s); u.zona = s.zona; }
   }
-  /* 2 · A FAVELA é um bairro sozinho */
-  const bl = lista.map(s => ({ id: s.b.id, zona: s.zona, classe: s.b.classe, sede: !!s.sede }));
-  const fav = favelasNosBairros(us, bl, u => u.zona, guarda);
+  /* 2 · A FAVELA é um bairro sozinho (a da cidade-modelo já é: fica de fora) */
+  const bl = lista.filter(s => !s.modelo).map(s => ({ id: s.b.id, zona: s.zona, classe: s.b.classe, sede: !!s.sede }));
+  const usL = us.filter(u => !presa.has(u));
+  const fav = favelasNosBairros(usL, bl, u => u.zona, guarda);
   /* (os bairros Nobres que a guarda tirou de uma favela) */
-  const guardados = guarda ? [...favelasNosBairros(us, bl, u => u.zona, false).values()]
+  const guardados = guarda ? [...favelasNosBairros(usL, bl, u => u.zona, false).values()]
     .filter(b => b.classe === 'Nobre' && ![...fav.values()].includes(b)).map(b => daId.get(b.id)) : [];
   for (const [u, b] of fav) { const s = daId.get(b.id); Object.assign(s, { favela: u, x: u.cx, y: u.cy, fixa: true, posto: true }); u.s = s; }
   /* O ESTÁDIO NO BAIRRO DELE (o dono, 01/10/2026: "os estádios tem que
@@ -2058,6 +2115,8 @@ function setorizar(ts, mapa, guarda = true) {
     u.s = m;
   }
   for (const z of ZONAS) {
+    /* (o bairro da cidade-modelo é o bloco dele: nada a juntar nem a equilibrar) */
+    if (typeof z === 'string' && z.startsWith(ZONA_BAIRRO)) continue;
     const uz = us.filter(u => u.zona === z && !(u.s && u.s.favela));
     juntarPedacos(uz, presa);
     equilibrar(uz, presa);
@@ -2201,6 +2260,22 @@ function setorizar(ts, mapa, guarda = true) {
         rot[c] = k; bairros[k].celulas++;
       }
     }
+  }
+  /* O BAR INTEIRO É DO BAIRRO DELE (01/10/2026: em Belém, a frente do
+     boteco da favela do sul caía numa célula sem bairro — a célula de 4 m
+     tem o meio fora do lote, na viela, e a viela não leva a onda): a
+     célula que o lote do bar toca e que ninguém rotulou fica com o bairro
+     do meio do lote */
+  for (const x of bares) {
+    const l = x.b && x.b.lote;
+    if (!l || l.x0 === undefined) continue;
+    const ci = Math.floor(((l.x0 + l.x1) / 2 - L.x0) / CEL_SETOR), cj = Math.floor(((l.y0 + l.y1) / 2 - L.y0) / CEL_SETOR);
+    if (ci < 0 || cj < 0 || ci >= nx || cj >= ny) continue;
+    const k = rot[cj * nx + ci];
+    if (k < 0) continue;
+    const i0 = Math.max(0, Math.floor((l.x0 - L.x0) / CEL_SETOR)), i1 = Math.min(nx - 1, Math.floor((l.x1 - L.x0) / CEL_SETOR));
+    const j0 = Math.max(0, Math.floor((l.y0 - L.y0) / CEL_SETOR)), j1 = Math.min(ny - 1, Math.floor((l.y1 - L.y0) / CEL_SETOR));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) if (rot[j * nx + i] < 0) { rot[j * nx + i] = k; bairros[k].celulas++; }
   }
   const zonas = {};
   for (const z of ['Norte', 'Sul', 'Leste', 'Oeste']) {
@@ -2385,21 +2460,30 @@ function varianteDe(modo, nome = cidade) {
   const metro = !!cfg.metro && !!(c && c.temMetro);
   /* o terreno de cada estádio e a costa (a praia ou a lagoa: o estádio não passa da avenida da beira; sem o dado, a praia do jogo) */
   const modelos = Array.from({ length: n }, (_, k) => modeloDoEstadio(c && c.estadios[k]));
-  const costa = !c || !!(c.temPraia || c.temLagoa);
+  const costa = !c || (!!(c.temPraia || c.temLagoa) && !pracaDeModelo(c));
   const terrenos = modelos.map(id => ({ modelo: id, ...ESTADIOS_JOGO[id].terreno }));
   /* AS CIDADES DA PRAÇA (a praça composta: o mapa cortado em cidades, ver CISOES no gerador) */
   const cisao = cisaoDe(c);
   return { chave: [modo, n, metro ? 'metro' : '-', modelos.join(','), costa ? 'costa' : '-', cisao ? cisao.id : '-'].join('|'), cfg,
            opc: { estadios: n, metro, terrenos, costa, cisao } };
 }
-/* as cidades da praça pro gerador: quantos bairros cada uma tem e a cidade de cada estádio (a do bairro dele) */
+/* as cidades da praça pro gerador: quantos bairros cada uma tem, a cidade e
+   o bairro de cada estádio (o bairro dele nos dados) e quantas sedes cada
+   bairro tem (as do jogo, com as repetidas já espalhadas: a cidade-modelo
+   põe um terreno de sede pra cada uma no bairro dela) */
 function cisaoDe(c) {
   if (!c || !c.bairros) return null;
-  const cidadeDoEstadio = nome => {
-    const e = (TO.dados.estadios || []).find(x => x.nome === nome), b = e && c.bairros.find(x => x.nome === e.bairro);
-    return (b && b.cidade) || null;
+  const bairroDoEstadio = nome => {
+    const e = (TO.dados.estadios || []).find(x => x.nome === nome);
+    return (e && c.bairros.find(x => x.nome === e.bairro)) || null;
   };
-  return cisaoDaPraca(c.id, c.bairros, (c.estadios || []).map(cidadeDoEstadio));
+  const sedes = {};
+  for (const t of (TO.dados.torcidas || []).filter(t => t.mapa === c.id)) {
+    const b = bairroDaSedeNosDados(t, c.id);
+    if (b) sedes[b.id] = (sedes[b.id] || 0) + 1;
+  }
+  return cisaoDaPraca(c.id, c.bairros, (c.estadios || []).map(n => (bairroDoEstadio(n) || {}).cidade || null),
+                      (c.estadios || []).map(n => (bairroDoEstadio(n) || {}).id || null), sedes);
 }
 function propostaDe(modo) {
   const v = varianteDe(modo);
@@ -2413,9 +2497,12 @@ function nomesDosEstadios() {
   return Array.from({ length: 4 }, (_, k) => lista[k] || (k ? 'Estádio ' + (k + 1) : 'Estádio'));
 }
 /* sem o dado, fica a praia do jogo */
-const temPraia = () => { const c = infoDaCidade(cidade); return !c || !!c.temPraia; };
+/* (a praça de três cidades ou mais é toda de cidades-modelo: sem praia nem lagoa — o dono, 01/10/2026: "sem se importar com o modelo antigo pra essas cidades") */
+const todaDeModelo = new Map();
+const pracaDeModelo = c => { if (!c) return false; if (!todaDeModelo.has(c.id)) { const x = cisaoDe(c); todaDeModelo.set(c.id, !!x && x.modelo === 'todas'); } return todaDeModelo.get(c.id); };
+const temPraia = () => { const c = infoDaCidade(cidade); return !c || (!!c.temPraia && !pracaDeModelo(c)); };
 /* a praça de rio ou lagoa: a lagoa no lugar da praia e do mar */
-const temLagoa = () => { const c = infoDaCidade(cidade); return !!(c && c.temLagoa); };
+const temLagoa = () => { const c = infoDaCidade(cidade); return !!(c && c.temLagoa) && !pracaDeModelo(c); };
 /* A VEGETAÇÃO EM VOLTA DA CIDADE, a `vegetacao` da praça: 'mata' (a mata
    verde), 'cerrado' ou 'caatinga' (o mato seco, o de hoje). Sem o dado,
    fica o de hoje */
@@ -2596,8 +2683,11 @@ function montarDerivados() {
       PROP.estadioDeHoje.ruas.some(r => c.x1 > r.x0 - 20 && c.x0 < r.x1 + 20 && c.y1 > r.y0 - 20 && c.y0 < r.y1 + 20); }));
   for (const p of pecasSoltas) p.somePelaProposta = (moveu && noAtacadexDeHoje(p.x, p.y, 20)) || (somePelaProposta(p.x, p.y, 0) && !dentroDaCidadeHoje(p.x, p.y))
     || naTrocada(p.x, p.y) || naAvenidaTirada(p.x, p.y) || naEntrada(p.x, p.y) || kSome(p.x, p.y);
-  LIM_PROPOSTA = { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: Math.max(5000, PROP.limite.x1 + 80), y1: Math.max(5980, PROP.limite.y1 + 80) };
-  MUNDO = { x0: Math.min(K.VX0, PROP.mundo.x0), y0: Math.min(K.VY0, PROP.mundo.y0), x1: Math.max(K.VX0 + K.VW, PROP.mundo.x1), y1: Math.max(K.VY0 + K.VH, PROP.mundo.y1) };
+  /* (na praça toda de modelo, a cidade de hoje saiu: o mapa é só o das cidades dela) */
+  LIM_PROPOSTA = pracaToda() ? { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: PROP.limite.x1 + 80, y1: PROP.limite.y1 + 80 }
+    : { x0: PROP.limite.x0 - 40, y0: PROP.limite.y0 - 40, x1: Math.max(5000, PROP.limite.x1 + 80), y1: Math.max(5980, PROP.limite.y1 + 80) };
+  MUNDO = pracaToda() ? { ...PROP.mundo }
+    : { x0: Math.min(K.VX0, PROP.mundo.x0), y0: Math.min(K.VY0, PROP.mundo.y0), x1: Math.max(K.VX0 + K.VW, PROP.mundo.x1), y1: Math.max(K.VY0 + K.VH, PROP.mundo.y1) };
   RESERVAS = reservasDeSede();
   montarCalcadas();
 }
@@ -3994,8 +4084,11 @@ function desenhar() {
      seco: na mata e no cerrado o ladrilho já tem a planta dele) ---- */
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
   ctx.strokeStyle = COR.trilha; ctx.lineWidth = 16;
-  for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
-  const moitas = (so = null) => { if (!padrao && chao !== 'mascara') for (const m of K.MOITAS) {
+  /* (a trilha ia pra cidade de hoje: na praça toda de modelo ela não existe mais) */
+  if (!(prop && pracaToda())) for (const t of K.TRILHAS) { caminho(t, false); ctx.stroke(); }
+  /* (a moita solta também é da cidade de hoje — um anel em volta dela, no
+     mato seco: na praça toda de modelo ela ficava cercando o nada) */
+  const moitas = (so = null) => { if (!padrao && chao !== 'mascara' && !(prop && pracaToda())) for (const m of K.MOITAS) {
     if (m.x + m.r < vis.x0 || m.x - m.r > vis.x1 || m.y + m.r < vis.y0 || m.y - m.r > vis.y1) continue;
     if ((prop && somePelaProposta(m.x, m.y)) || (so && !so(m.x, m.y))) continue;
     ctx.fillStyle = COR.moita; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * 0.9, m.r * 0.7, 0, 0, 7); ctx.fill();
@@ -4100,7 +4193,8 @@ function desenhar() {
     /* (a cidade de fora que ficou nessa zona não leva o mato por cima: o mato é pintado fora das caixas delas.
        Um recorte por caixa, um em cima do outro: com todas no mesmo par-ímpar, onde duas caixas se cruzam
        o mato voltava — e cobria a rua de Santa Cruz do Capibaribe, no Interior de PE, que ficou partida) */
-    const fora = CIS() ? CIS().cidades.filter(c => !c.centro && c.bb).map(c => c.bb) : [];
+    /* (na praça toda de modelo, a cidade do centro também é desenhada do zero: o mato não passa por cima dela) */
+    const fora = CIS() ? CIS().cidades.filter(c => (!c.centro || pracaToda()) && c.bb).map(c => c.bb) : [];
     ctx.save();
     for (const b of fora) { ctx.beginPath(); ctx.rect(MUNDO.x0 - 1e5, MUNDO.y0 - 1e5, MUNDO.x1 - MUNDO.x0 + 2e5, MUNDO.y1 - MUNDO.y0 + 2e5); ctx.rect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); ctx.clip('evenodd'); }
     pol(zc, fundoMato); if (padrao) pol(zc, padrao);
@@ -4618,7 +4712,7 @@ const ini2 = (W, larg, n) => W / 2 - n * larg / 2;
 function desenharBairros(vis, px) {
   const S = SETORES;
   if (!S || !estado.camadas.bairros) return;
-  const cor = S.bairros.map(b => (CORES_DOS_BAIRROS && CORES_DOS_BAIRROS(b.id)) || { cor: COR_ZONA[b.zona] || '#888', alfa: 0.2 });
+  const cor = S.bairros.map(b => (CORES_DOS_BAIRROS && CORES_DOS_BAIRROS(b.id)) || { cor: corDaZonaDe(b) || '#888', alfa: 0.2 });
   const i0 = Math.max(0, Math.floor((vis.x0 - S.x0) / S.cel) - 1), i1 = Math.min(S.nx - 1, Math.ceil((vis.x1 - S.x0) / S.cel) + 1);
   const j0 = Math.max(0, Math.floor((vis.y0 - S.y0) / S.cel) - 1), j1 = Math.min(S.ny - 1, Math.ceil((vis.y1 - S.y0) / S.cel) + 1);
   if (i0 > i1 || j0 > j1) return;

@@ -3198,6 +3198,13 @@ cidade 3D sai idêntica antes e depois.
 
 ## 34. As praças compostas cortadas em cidades (01/10/2026)
 
+> **Trocado no mesmo dia pelo §35**: o corte do mapa do porte em cidades
+> deu lugar às cidades desenhadas do zero, um bloco de 3 × 2 quadras por
+> bairro. O que segue é o registro do corte; continuam valendo os dados
+> (a cidade de cada bairro, as sedes e os estádios na cidade deles), a
+> torcida por bairro, a estrada com o pórtico e a placa, e o dia de jogo
+> entre as cidades.
+
 **O pedido** (o dono, caso a caso — o texto inteiro está na conversa):
 "Deixe as cidades com a metade da proximidade proposta, pra dar uma
 impressão maior de conurbação. [...] Agora as sedes das torcidas e os
@@ -3399,5 +3406,170 @@ todo bar com bairro) passa em todas.
   Heriberto Hülse). Com 50 m de mato entre as cidades — a conurbação do
   pedido — passa; se elas se afastarem, o certo é a torcida descer do
   ônibus no pórtico da cidade do estádio, como a caravana de fora.
-- **Quem domina o quê** nas praças compostas (o domínio por cidade) ainda
-  espera a resposta do dono: a dona continua contada pela praça inteira.
+- **Quem domina o quê** nas praças compostas: o dono respondeu ("O domínio
+  vai continuar sendo por praça inteira e as cidades se comportam como
+  bairros") — a dona da praça é quem é dona de mais bairros, somados os de
+  todas as cidades dela.
+
+## 35. As cidades desenhadas do zero: um bloco de 3 × 2 quadras por bairro (01/10/2026)
+
+**O pedido** (o dono): "percebo que a sua dificuldade é de encaixar os
+quarteirões pra ficar a mesma quantidade do mapa cheio. acredito que o
+melhor é redesenhar por cidade o mapa, considerando a sua quantidade de
+bairros, sem se importar com o modelo antigo pra essas cidades. se o
+bairro é favela, é uma favela. se é classe baixa ou média, é quarteirão
+normal, se é classe alta, vai ter casarão e prédios altos. o formato das
+cidades pode ser quadrado se for mais fácil, e o importante é que as
+cidades não sejam tão distantes umas das outras pra não ficar demorada a
+gameplay. uma cidade que é só um bairro pode ter um padrão pra todas as
+praças, uma cidade com dois bairros também, e assim vai copiando de uma
+pra outra. essas praças com mais de 2 cidades não vão ter mais zonas pra
+facilitar a criação do design do mapa." Nas duas perguntas que voltaram:
+"Grande fica, pequena vira modelo" (a praça de duas cidades) e "3x2, mas
+um bairro com estádio é 3x2+estádio. A favela também tem área parecida
+com bairro 3x2 (115x42, não precisa ser exato)".
+
+E a decisão que estava pendente desde a §34: "O domínio vai continuar
+sendo por praça inteira e as cidades se comportam como bairros".
+
+### O gerador: as cidades-modelo
+
+O bloco AS CIDADES-MODELO de `ferramentas/planta_html/proposta.js`.
+
+- **Dois jeitos** (`cisaoDaPraca` devolve o `modelo`): na praça de **três
+  cidades ou mais** (`'todas'`, 13 praças) o mapa do porte e a cidade de
+  hoje não entram — cada cidade é desenhada do zero, numa grade só dela, no
+  passo da cidade de hoje (a quadra de 35,6 × 17,8 m, a rua de 6,1 m). Na
+  de **duas** (`'pequenas'`: Belém, Mato Grosso, Litoral Catarinense, Rio
+  Grande do Norte e Bahia), a grande fica com o mapa do porte inteiro — as
+  zonas, a praia, a avenida — e só a pequena é desenhada.
+- **Cada bairro é um bloco de 3 × 2 quadras** (uns 119 × 42 m com as ruas
+  de dentro). O de classe Favela é uma favela do tamanho do bloco (as ruas
+  de dentro viram viela, como na favela de sempre); o Nobre é de quadras, e
+  a planta põe nele as torres e os casarões (§33); Baixa e Média, quarteirão
+  comum.
+- **A cidade é uma grade de blocos quase quadrada** (`arranjoModelo`): uma
+  coluna até 4 bairros, duas a partir de 5 — 1 bairro, 1 × 1; 2, 1 × 2;
+  3, 1 × 3; 5 e 6, 2 × 3; 7 e 8, 2 × 4; 9 e 10, 2 × 5. A mesma quantidade de
+  bairros dá o mesmo desenho em qualquer praça. Nas 18 praças: 35 cidades
+  de 1 bairro, 23 de 2, 4 de 3 (Teresina, Campina Grande, Mossoró,
+  Niterói), 2 de 6 (João Pessoa e o Rio), 1 de 7 (São Luís), 2 de 9 (Maceió
+  e Aracaju) e 1 de 10 (Campinas).
+- **De que lado fica o quê**: a cidade dá as costas pras vizinhas; o
+  bairro do estádio pega o bloco mais pra fora, depois a favela, depois os
+  de classe Baixa e Média; o Nobre fica do lado das vizinhas, onde chega a
+  estrada.
+- **O estádio** sai do lado de fora do bloco do bairro dele, na borda da
+  cidade — na ponta do bloco antes do lado comprido: com o estádio no lado
+  comprido o bairro inteiro ficava a menos de 50 m dele, sem sede e sem bar.
+- **O terreno de sede**: um por sede do bairro, na quadra dele mais longe
+  dos estádios; na favela com sede, a quina dela mais longe dos estádios é
+  quadra comum, com o terreno. **O bar**: uma esquina em cada bairro de
+  quadras (a favela tem o boteco).
+- **A cidade só de favela** (Santa Cruz do Capibaribe, Ipatinga, Teófilo
+  Otoni, Palmeira dos Índios) ganha, no lado de cada vizinha, a quina da
+  favela como quadra comum: a entrada da cidade, onde a estrada chega.
+- **Toda favela chega na rua**: em São Luís a Cidade Operária ficou na
+  quina da cidade, com o mato em volta e a outra favela embaixo — a viela
+  dela não chegava em rua nenhuma, e o boneco não entrava nos dois bares
+  dela. A rua da cidade-modelo é a faixa em volta de cada quadra (a de uma
+  encosta na da vizinha, até na diagonal), e a favela anda pela viela até a
+  rua que passa num lado dela; a que não chega no resto da cidade ganha a
+  quina mais perto dele como quadra comum, do bairro dela (a entrada da
+  favela). Só a Cidade Operária precisou.
+- **O lugar de cada cidade**: a 50 m da vizinha, todas (a que era "longe" —
+  Imperatriz, Campos dos Goytacazes — também). A cidade anda da vizinha no
+  rumo dela até ficar livre, e tenta também 45° e 90° pra cada lado; fica no
+  que dá a **estrada mais curta**, contada de rua a rua (reta quando as duas
+  ruas se olham, em L quando não), com 17 m de castigo a cada 45° de desvio.
+  Contar só a distância até a vizinha enganava: no Mato Grosso, Rondonópolis
+  ficava a 50 m da quina cortada de Cuiabá, onde não tem rua, e a estrada
+  subia 191 m ao lado dela; agora ela fica ao sul, na ponta da avenida de
+  entrada, e a estrada é a própria avenida. No Maranhão, Parnaíba fica a
+  56 m de São Luís, a oeste, em vez de 130 m ao sul.
+- **A estrada em L entra na conta mesmo com a reta** (nas cidades-modelo,
+  com 600 a mais, uns 31 m): a reta às vezes corria ao lado da cidade até
+  achar rua.
+- **O corte saiu do código**: com todas as praças compostas desenhadas
+  assim, ninguém mais usava o corte da §34 (`cortarEmCidades` e a escolha
+  das vagas por ele, umas 240 linhas). Antes de tirar, o gerador foi rodado
+  nas 30 praças com e sem ele: a mesma saída.
+
+### A planta, o cenário e o jogo sem zonas
+
+- **O bairro da cidade-modelo é a zona dele** (`'B:cidade|bairro'`): as
+  unidades dele já vêm com o bairro (o gerador diz), a praça toda de modelo
+  não tem gomo (`pracaToda`), e cada bairro fica com o bloco dele inteiro. A
+  sede que o jogo põe num bairro sem terreno vai pra reserva do bairro dela,
+  e a reserva custa um pouco mais que o terreno (em Pelotas a planta
+  escolhia a reserva por estar mais longe da rival, e o terreno ficava
+  vago).
+- **A cor do bairro** na planta, sem zona, é a da cidade (na ordem das
+  cidades da praça).
+- **Nada da cidade de hoje aparece** na praça de três cidades ou mais: a
+  avenida, as trilhas, a praia, a lagoa, a baía, a caixa do mundo antigo; o
+  mundo é só as cidades e as estradas.
+- **O bar inteiro é do bairro dele**: a célula de 4 m da grade dos bairros
+  que o lote do bar toca e ninguém rotulou fica com o bairro do meio do
+  lote (em Belém a frente do boteco da favela do sul caía numa célula sem
+  bairro, na viela).
+- **No jogo** (`js/mundo/dominio.js`): na praça de três cidades ou mais
+  (`semZonas`), a zona do bairro é a cidade dele — na régua (a sede
+  espalhada, o peso da torcida, o bairro padrão) e na tela (Ações,
+  Patrimônio, Financeiro e o mapa do Brasil mostram a cidade onde
+  mostravam "Zona Norte"). A dona continua contada pela praça inteira.
+
+### Medido
+
+| | o corte (§34) | agora |
+|---|---|---|
+| praças compostas | 18 | 18 (13 todas desenhadas, 5 com a pequena desenhada) |
+| cidades | 73 | 73 (68 desenhadas do zero) |
+| quadras das cidades desenhadas | — | 699 |
+| favelas de bairro de favela | — | 26, mais 15 quinas de favela que viraram quadra (terreno de sede ou entrada) |
+| estádios em cidade desenhada | — | 31 |
+| estrada entre as cidades, somada | 5.316 m | 2.927 m |
+| maior trecho de estrada | 328 m (Interior de SP) | 62 m (Alagoas) |
+| área do mundo das 18 praças | 10,7 km² | 6,5 km² |
+| avisos do gerador ("sem lugar", "sem estrada", "sem rua") | 0 | 0 |
+| as 12 praças de uma cidade só | — | o mesmo mapa do gerador de antes, objeto por objeto |
+| andando a pé (18 praças): portas de sede e de bar, pórticos, estádios, cada favela pela viela e cada quadra-modelo pela calçada, num pedaço só de chão | portas: todas | tudo |
+| bairros (30 praças): vazio, sede fora do bairro dos dados, bar sem bairro | 0 | 0 |
+| gerar a praça (só o gerador) | — | de 39 ms (Paraíba) a 0,6 s (Belém) |
+| montar a praça na planta (com outros testes rodando junto) | de 0,25 a 1,6 s | de 0,3 a 2,1 s (as de duas cidades são as mais lentas: o mapa do porte inteiro e mais a cidade desenhada) |
+
+| dia de jogo, 20 praças (as 18 compostas, Goiânia e Fortaleza) | o corte (§34) | agora |
+|---|---|---|
+| jogos montados (o mesmo clássico em cada praça) | 20 | 20 |
+| bondes | 54 | 54 (os mesmos) |
+| bonecos na rua | 3.205 | 3.205 |
+| bonde sem rota ou erro no plano | 0 | 0 |
+| a rota mais comprida | 1.141 m (a do Guarany, de Sobral ao Romeirão) | 870 m (a mesma) |
+| o último bonde chega | 15:27 | 15:28 |
+
+(Belém, Mato Grosso e Litoral Catarinense se ligam pela avenida de entrada
+ou pela da beira, que não entram na conta da estrada: Rondonópolis fica
+uns 60 m de avenida depois do pórtico sul de Cuiabá.)
+
+### Limites (sinceros)
+
+- **As cidades são quadradinhas e iguais entre si**: a cidade de um bairro
+  é sempre o mesmo bloco de seis quadras, sem centro, igreja nem praça
+  dela, e a do mesmo número de bairros tem o mesmo desenho em toda praça (o
+  pedido). O que muda é a casa, a cor, a torre, a favela e o estádio.
+- **Sem praia, baía nem lagoa na praça de três cidades ou mais**: Maceió,
+  Aracaju, João Pessoa e São Luís perdem a praia (e com ela o quiosque e a
+  casa de praia), e Niterói chega no Rio por estrada, sem a baía e sem a
+  ponte. Foi escolha minha pra o pedido andar; dá pra devolver a costa na
+  borda da cidade que tem praia.
+- **A geografia cede pra estrada ficar curta**: a cidade vai até 90° fora
+  do rumo de verdade — Parnaíba fica a oeste de São Luís; Rondonópolis, ao
+  sul de Cuiabá. A placa continua com os km aproximados de verdade.
+- **Sem zonas no jogo nessas 13 praças**: o que dependia da zona agora
+  depende da cidade. A praça de duas cidades continua com as zonas (na
+  cidade pequena, cada bairro fica no bloco dele).
+- **A entrada da favela** é uma quadra de casas na quina dela; na Cidade
+  Operária, o supermercado de São Luís caiu nela.
+- **Cidade de muitos bairros fica comprida**: Campinas, com 10, é uma grade
+  de 2 × 5 blocos (60 quadras, uns 245 × 235 m) — quase quadrada, mas a
+  maior das 68.
