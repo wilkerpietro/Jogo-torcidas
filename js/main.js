@@ -871,7 +871,22 @@
      Fim da noite já conta a briga; a página do Futebol e Porrada mora em
      Notícias → Tretas. A história (`e.feed`) continua com elas — é só o
      rolo do feed que não as desenha. */
-  const feedVisivel = e => (e.feed || []).filter(m => m.kind !== 'confronto');
+  /* O JORNAL MORA NA REDE (pedido do dono, 01/10/2026): "retire as
+     notícias da Gazeta dos Sports e do Futebol e Porrada do feed, ficou
+     redundante aparecer no feed e na rede social". A matéria que virou
+     post do jornal (`jornal|<id>` em E.mensagens — a rodada, o
+     almanaque, a LNT, a obra) sai do rolo; a página inteira continua em
+     Notícias → Arquivo, aberta pelo "Ler a matéria" do post. Cartão
+     que pede decisão nunca sai: o "Hoje tem… Iniciar partida" fica. */
+  function feedVisivel(e){
+    const naRede = new Set();
+    for(const m of (e.mensagens || [])){
+      const k = m.jornal && String(m.chave || '');
+      if(k && k.indexOf('jornal|') === 0) naRede.add(+k.slice(7));
+    }
+    return (e.feed || []).filter(m => m.kind !== 'confronto' &&
+      !(naRede.has(m.id) && m.peso !== 'decisao'));
+  }
   let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null;
   let feedVistas = new Map();
 

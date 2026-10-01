@@ -8371,6 +8371,14 @@ Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. 
 - **Na tela**, os comentários ficam embaixo do post, como no Instagram: o @ em negrito, o texto com as menções clicáveis, o coração vazio à direita e o tempo embaixo. Comentário de torcida que o jogador deixou de seguir não aparece.
 - Em 30 dias de TUF: nenhum post "resposta" solto, 10 posts com comentário.
 
+## O jornal mora na rede social, não no feed (pedido do dono, 01/10/2026)
+
+"Retire as notícias da Gazeta dos Sports e do Futebol e Porrada do feed; ficou redundante aparecer no feed e na rede social."
+- A matéria que virou post do jornal (a primeira página da rodada, o almanaque, a LNT, a obra) sai do rolo do feed (`feedVisivel` em main.js, pela chave `jornal|<id>` do post). A página inteira continua em Notícias → Arquivo, aberta pelo "Ler a matéria" do post.
+- Cartão que pede decisão nunca sai: o "Hoje tem… Iniciar partida" e a entrevista do Diário da Bola continuam no feed.
+- A briga nossa (Porrada) já não passava pelo feed desde 08/09/2026; mora em Notícias → Tretas.
+- Em 60 dias de TUF: as 4 primeiras páginas da rodada e o almanaque saíram do feed. Os 5 cartões de jornal que ficaram são os 4 de partida e a entrevista.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
