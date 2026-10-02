@@ -1,0 +1,3424 @@
+/* =========================================================
+   O CENÁRIO 3D — o mapa inteiro da praça, montado pela planta
+   ---------------------------------------------------------
+   A planta (index.html) desenha o mapa em 2D e monta cada coisa em 3D
+   quando se clica nela. O cenário monta TUDO de uma vez, com os mesmos
+   montadores e os mesmos filtros, e deixa andar por cima:
+
+   - O CHÃO é o próprio desenho da planta, só com o que é chão (a rua, a
+     calçada, a terra do lote, a areia, a água, o mato), na paleta do
+     chão do jogo (`pintarChao`), em ladrilhos de 1024 px.
+   - O MATO em volta sai do `mato3d.js` do jogo, plantado onde o desenho
+     é mato: a MÁSCARA é o mesmo desenho, com o mato em magenta.
+   - AS COISAS (a casa, o marco, a sede, o equipamento, o estádio, o
+     pórtico, o poste, o prop, a árvore, o carro, a peça da praia) saem
+     de `pecasDoCenario()`, a lista da planta. Cada uma é montada, e as
+     malhas dela vão pro FORNO, que junta tudo o que tem o mesmo material
+     no mesmo bloco de terreno numa malha só: de dezenas de milhares de
+     malhas pra umas centenas de chamadas de desenho.
+   - O LETREIRO, A PIXAÇÃO E O ESCUDO (cada um com o texto num canvas
+     só dele) vão pra folhas de decalque de 2048 px, e a malha deles
+     também junta por bloco.
+   - A PÉ, o boneco do jogo (js/bonecos3.js) anda na rua, na camisa de
+     uma torcida da praça: a GRADE DO PASSO, riscada pelo forno com o
+     que cada coisa tem na altura do corpo, diz onde ele bate, e o PISO
+     DA RUA (o que cada coisa tem de chão embaixo da faixa do corpo: a
+     laje da calçada, o piso da sede) diz em que altura ele pisa. No metrô
+     ele desce a escada até a plataforma: embaixo da rua quem diz onde
+     ele pisa é o SUBSOLO (subsolo.js), com os triângulos da estação. No
+     ESTÁDIO (da fachada pra dentro; no de 10, do muro) ele sobe: quem
+     diz onde ele pisa são os ANDARES DO ESTÁDIO, a mesma conta do
+     subsolo com os triângulos do estádio — a escada interna, o corredor
+     de cima, o túnel do vomitório e a arquibancada, fileira por fileira.
+
+   Nada aqui decide o que vai no mapa: muda a planta, muda o cenário.
+   Em unidades de mundo da planta (x pra leste, y da planta = z do 3D pro
+   sul, 1 m = P.M unidades).
+   ========================================================= */
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js';
+import { Subsolo } from './subsolo.js';
+import { ATLAS } from './modelos_atlas.js';
+
+/* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
+   aparecer), na resolução da qualidade */
+const PX_CHAO = 1024, SOBRA = 2;
+/* AS TEXTURAS (era "a qualidade"): pixels por metro no chão e a escala do
+   texto na folha de decalque (o canvas do letreiro tem 512 × 128; na folha
+   normal, 256 × 64). Trocar remonta a praça. SEM SOMBRA: o cenário não
+   desenha sombra nenhuma (o sol só dá a luz de cada face). A sombra custa
+   desenhar a cena mais uma vez por quadro (o mapa de sombra), e o dono
+   pediu pra ver o fps sem ela */
+/* (`aniso`: o teto da filtragem anisotrópica — a textura do chão vista de
+   lado fica nítida, e custa várias leituras da textura por pixel, caras
+   quando o processador desenha) */
+const QUALIDADES = {
+  minima: { nome: 'Mínima', pxm: 3, decal: 0.3, aniso: 1 },
+  leve:   { nome: 'Leve', pxm: 4, decal: 0.35, aniso: 2 },
+  normal: { nome: 'Normal', pxm: 6, decal: 0.5, aniso: 8 },
+  alta:   { nome: 'Alta', pxm: 8, decal: 0.62, aniso: 8 }
+};
+/* ======================================================
+   OS GRÁFICOS (o dono, 30/09/2026: "crie mecanismos de melhorar o FPS em
+   computadores fracos, em um menu de configuração de gráfico"; ele joga
+   sem placa de vídeo — o navegador desenha no processador, a 4 ou 5 fps
+   na sala do presidente). Medido no navegador de teste sem placa
+   (SwiftShader, 1366 × 768, a sala do presidente, 130 mil triângulos): o
+   JavaScript do quadro gasta uns 4 ms; o resto é DESENHAR, e o desenho
+   custa quase tudo pelo número de pixels e pelo trabalho de cada pixel.
+   Cada alavanca, sozinha, no fps de lá (a mesma vista, de dia):
+   - a suavização de bordas (MSAA) desligada: de 1,6 a 2,5;
+   - a metade da resolução: de 1,6 a 3,8; com a suavização desligada, 6,5;
+     um quarto da resolução, 12,8;
+   - sem a cidade na tela (só os bonecos): 35 — a cidade é o grosso;
+   - a luz simples (a conta no vértice, abaixo): de 6,5 a 7,0 (uns 6% de
+     dia, 10% de noite) — menos do que o material básico prometia (8,6);
+   - as luzes da noite apagadas: uns 11% de dia, 13% de noite;
+   - blocos do forno menores (menos triângulos na vista): quase nada (7%),
+     e não entrou (mais chamadas de desenho na vista de cima).
+   Daí as opções (per-viewer, no navegador: 'cenario-graficos'):
+   - `teto`: o teto da densidade de pixel (a tela de celular tem 2 ou 3);
+   - `resolucao`: a fração da tela que se desenha (a imagem é ampliada),
+     ou 'auto': ela desce e sobe sozinha atrás do `alvo` de fps;
+   - `suavizar`: a suavização de bordas ('auto': desligada sem placa de
+     vídeo). É do contexto do WebGL: só vale quando a página abre de novo;
+   - `fpsMax`: o limite de quadros (0 = sem limite): não sobe o fps, mas
+     deixa o processador livre pro resto do jogo e esquenta menos;
+   - `distancia`: o quanto se vê (a névoa e o longe da câmera): na vista
+     de cima da praça, menos quarteirões desenhados;
+   - `luz`: 'completa' (a conta da luz em cada pixel) ou 'simples' (a conta
+     em cada vértice: na parede e no chão, que são planos, sai igual);
+   - `luzes`: as luzes da noite (o poste, o refletor, a janela, o cômodo);
+   - `gente`: quanta gente anda na rua (vida3d.js), de 0,35 a 1;
+   - `bonecos`: 'leve' põe todo mundo no nível de longe (o de quem joga
+     fica no de perto);
+   - `texturas`: a de cima (QUALIDADES);
+   - `medidor`: o medidor de fps no canto.
+   As predefinições juntam tudo; mexer numa opção vira "personalizada".
+   ====================================================== */
+const PREDEFS = {
+  minima: { texturas: 'minima', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 30, distancia: 0.45, luz: 'simples', luzes: false, gente: 0.35, bonecos: 'leve' },
+  leve:   { texturas: 'leve', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 60, distancia: 0.7, luz: 'simples', luzes: true, gente: 0.65, bonecos: 'leve' },
+  normal: { texturas: 'normal', teto: 1.5, resolucao: 1, alvo: 30, suavizar: 'auto', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' },
+  alta:   { texturas: 'alta', teto: 2, resolucao: 1, alvo: 30, suavizar: 'sim', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' }
+};
+/* os valores que cada opção aceita (o que vem do navegador é conferido) */
+const VALORES_GRAF = {
+  texturas: Object.keys(QUALIDADES), teto: [1, 1.5, 2], resolucao: ['auto', 1, 0.85, 0.7, 0.5, 0.35], alvo: [20, 30, 45, 60],
+  suavizar: ['auto', 'sim', 'nao'], fpsMax: [0, 60, 30], distancia: [1, 0.7, 0.45], luz: ['completa', 'simples'], luzes: [true, false],
+  gente: [1, 0.65, 0.35], bonecos: ['normal', 'leve'], medidor: [true, false]
+};
+/* a resolução automática não desce daqui (a imagem ficaria um borrão) */
+const RES_MIN = 0.35;
+const CHAVE_GRAF = 'cenario-graficos';
+/* A PÉ (o boneco do jogo na rua, visto DE CIMA): as velocidades (m/s), o
+   raio do corpo pra colisão, a altura pra onde a câmera olha, quantos
+   metros cabem no lado menor da tela (a roda e a pinça mudam) e a
+   inclinação da câmera (1,25 rad: quase a pino, com um pouco da fachada) */
+const APE = { anda: 2.2, corre: 6, raio: 0.25, olho: 1.0, vao: 13, el: 1.25 };
+/* NOS ANDARES DO ESTÁDIO, o degrau e a faixa do corpo (m) são os do
+   conferidor dos estádios: a fileira da arquibancada tem de 40 a 52 cm, e
+   ele sobe uma por uma (com a faixa da rua, de 35 cm, a fileira era parede) */
+const ESTADIO_PASSO = { degrau: 0.55, faixa: [0.55, 1.9] };
+/* NA SEDE DE DOIS ANDARES (o nível 5), o passo é o do metrô: o degrau de
+   30 cm (a escada dela tem espelho de 18 cm) e a faixa da rua (de 35 cm a
+   1,80 m do pé) — no térreo ele bate no mesmo que batia na grade da rua,
+   e no andar de cima, no que está lá em cima. Só o banco não se pisa */
+/* O CORTE: o que fica entre a câmera e o boneco, acima da cabeça, some
+   (a copa, o beiral, o prédio do lado), e o prédio em que ele está
+   DENTRO perde o que passa de 2,20 m (o telhado, a laje, o alto da
+   parede): de cima se vê a planta dos cômodos. No estádio, dentro é
+   debaixo de alguma coisa (o corredor, o túnel, a escada); na
+   arquibancada, a céu aberto, nada some */
+const CORTE_M = { raio: 2.2, acima: 2.2, dentro: 2.2 };
+/* EMBAIXO DA RUA (no metrô): a cidade em cima da caixa da estação, com
+   esta folga (m) pra cada lado, some do teto do nível dele pra cima, e a
+   terra em volta aparece (a caixa marrom, do mesmo tamanho) */
+const SUB_FOLGA = 1.5, TERRA_M = -12;
+/* A BEIRA DO MATO (m): a faixa rente ao que não é mato que fica só com a
+   vegetação rasteira (a árvore do mato começa depois dela) */
+const LIMPO_M = 3;
+/* o que é prédio (a câmera não entra na parede dele); o resto (o poste,
+   a árvore, o carro, o prop, a peça da praia) só barra o corpo */
+const PREDIOS = new Set(['casa', 'favela', 'bar', 'loja', 'lojatorcida', 'subsede', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
+/* o lado do BLOCO do forno (m): a malha junta tudo o que cai nele; o
+   bloco é também o que a câmera descarta fora da vista */
+const BLOCO_M = 96;
+/* a folha dos decalques e o vão entre um quadro e outro */
+const FOLHA_DECAL = 2048, VAO_DECAL = 4;
+/* o sol do mapa: de noroeste, alto (a sombra da copa no 2D vai pro sudeste); só luz */
+const SOL = new THREE.Vector3(-0.52, 0.78, -0.36).normalize();
+const CEU = new THREE.Color('#cfdde6'), ZENITE = new THREE.Color('#7fa6c4');
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const espera = () => new Promise(ok => setTimeout(ok, 0));
+
+/* ======================================================
+   A GRADE DO PASSO: onde o boneco pisa
+   ------------------------------------------------------
+   O CORPO bate nos RISCOS DA FAIXA (passo.js): o forno passa por aqui
+   cada coisa que assa, e o que ela tem entre 35 cm e 1,80 m do chão vira
+   risco — a parede, o muro, a folha da porta aberta, o carro, o poste, o
+   tronco, a mesa, a cadeira. O corpo desliza contra eles, exato. (A
+   primeira versão marcava células de meio metro: cada móvel e cada
+   batente engrossavam até meio metro, e 29 cômodos das sedes fechavam.)
+   A GRADE, de meio metro, fica pro resto:
+   - a ÁGUA: o mar pra lá da linha d'água, a lagoa menos a ilhota e o
+     trapiche, que se pisa;
+   - o MATO: o boneco não entra nele (a grade de proteção fecha a divisa
+     com a cidade; onde ela não chega, a beira do mato segura);
+   - o ALCANCE: o que se chega andando da borda da área, com os riscos
+     marcados nas células (de sobra: é só pra escolher onde o boneco
+     nasce, e ele não nasce dentro de casa fechada);
+   - o TETO: o número da coisa (o prédio) cujo telhado cobre a célula —
+     é por ele que a câmera de cima sabe de que prédio tirar o telhado.
+   ====================================================== */
+const CEL_M = 0.5, TETO_M = 2.3;
+const SOLIDO = 1, AGUA = 2, ALCANCE = 4, MATO = 8;
+function GradeDoPasso(ar, M) {
+  const c = CEL_M * M, nx = Math.ceil((ar.x1 - ar.x0) / c), nz = Math.ceil((ar.y1 - ar.y0) / c);
+  const g = new Uint8Array(nx * nz), teto = new Uint16Array(nx * nz);
+  /* (a ALTURA do teto de cada célula, em decímetros: a do telhado mais alto
+     que a cobre, na beira mais baixa dele — o mapa do teto da luz da noite) */
+  let tetoY = new Uint8Array(nx * nz);
+  const Y0 = FAIXA_M[0] * M, Y1 = FAIXA_M[1] * M, YT = TETO_M * M;
+  const ox = ar.x0, oz = ar.y0;
+  const paredes = Paredes(ox, oz, ar.x1, ar.y1, 2 * M);
+  let alcancou = false, ms = 0;
+  /* o risco de (a) a (b), em células: toda célula que a reta atravessa */
+  function riscar(ax, az, bx, bz) {
+    let i = Math.floor(ax), j = Math.floor(az);
+    const dx = bx - ax, dz = bz - az, si = dx > 0 ? 1 : -1, sj = dz > 0 ? 1 : -1;
+    const tdx = dx ? Math.abs(1 / dx) : Infinity, tdz = dz ? Math.abs(1 / dz) : Infinity;
+    let tx = dx ? (dx > 0 ? i + 1 - ax : ax - i) * tdx : Infinity, tz = dz ? (dz > 0 ? j + 1 - az : az - j) * tdz : Infinity;
+    let n = Math.min(40000, Math.abs(Math.floor(bx) - i) + Math.abs(Math.floor(bz) - j));
+    for (;;) {
+      if (i >= 0 && j >= 0 && i < nx && j < nz) g[j * nx + i] |= SOLIDO;
+      if (n-- <= 0) break;
+      if (tx < tz) { tx += tdx; i += si; } else { tz += tdz; j += sj; }
+    }
+  }
+  /* uma coisa assada: os triângulos soltos P (x, y, z), n vértices; `id`
+     é o número dela quando é prédio (0: não cobre nada) */
+  function assar(P, n, id) {
+    const t0 = performance.now();
+    paredes.novaCoisa();
+    riscosDaFaixa(P, n, Y0, Y1, 0.01 * M, paredes.juntar);
+    if (id) cobrir(P, n, id);
+    ms += performance.now() - t0;
+  }
+  /* O TETO: o triângulo todo acima de 2,30 m e deitado (o telhado, a laje,
+     o forro — não a parede) cobre as células cujo meio está debaixo dele */
+  function cobrir(P, n, id) {
+    for (let o = 0; o + 8 < n * 3; o += 9) {
+      const ya = P[o + 1], yb = P[o + 4], yc = P[o + 7];
+      if (ya < YT || yb < YT || yc < YT) continue;
+      const ax = P[o], az = P[o + 2], bx = P[o + 3], bz = P[o + 5], cx = P[o + 6], cz = P[o + 8];
+      const ux = bx - ax, uy = yb - ya, uz = bz - az, vx = cx - ax, vy = yc - ya, vz = cz - az;
+      const ny = uz * vx - ux * vz, nl = Math.hypot(uy * vz - uz * vy, ny, ux * vy - uy * vx);
+      if (!nl || Math.abs(ny) / nl < 0.35) continue;
+      const i0 = Math.max(0, Math.floor((Math.min(ax, bx, cx) - ox) / c)), i1 = Math.min(nx - 1, Math.floor((Math.max(ax, bx, cx) - ox) / c));
+      const j0 = Math.max(0, Math.floor((Math.min(az, bz, cz) - oz) / c)), j1 = Math.min(nz - 1, Math.floor((Math.max(az, bz, cz) - oz) / c));
+      const lado = (px, pz, qx, qz, rx, rz) => (qx - px) * (rz - pz) - (qz - pz) * (rx - px);
+      const dm = Math.max(1, Math.min(255, Math.round(Math.min(ya, yb, yc) / M * 10)));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const px = ox + (i + 0.5) * c, pz = oz + (j + 0.5) * c;
+        const d1 = lado(ax, az, bx, bz, px, pz), d2 = lado(bx, bz, cx, cz, px, pz), d3 = lado(cx, cz, ax, az, px, pz);
+        if ((d1 >= 0 && d2 >= 0 && d3 >= 0) || (d1 <= 0 && d2 <= 0 && d3 <= 0)) {
+          const k = j * nx + i;
+          teto[k] = id;
+          if (tetoY && dm > tetoY[k]) tetoY[k] = dm;
+        }
+      }
+    }
+  }
+  /* a água: o mar pra lá da linha d'água; a lagoa (o contorno), menos a
+     ilhota e o trapiche, que se pisa. Depois dela, os riscos se arrumam */
+  function agua(costa, lagoa) {
+    const cruza = (pol, z, xs) => {
+      xs.length = 0;
+      for (let k = 0, l = pol.length - 1; k < pol.length; l = k++) {
+        const [xa, za] = pol[k], [xb, zb] = pol[l];
+        if ((za > z) !== (zb > z)) xs.push(xa + (z - za) / (zb - za) * (xb - xa));
+      }
+      return xs.sort((a, b) => a - b);
+    };
+    const xs = [], i0 = x => Math.max(0, Math.ceil((x - ox) / c - 0.5)), i1 = x => Math.min(nx - 1, Math.floor((x - ox) / c - 0.5));
+    /* (os rios e as lagoinhas da praça toda de modelo: cada contorno, só nas linhas que ele cruza) */
+    const aguas = ((lagoa && lagoa.aguas) || []).map(pol => { let z0 = Infinity, z1 = -Infinity; for (const p of pol) { z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return { pol, z0, z1 }; });
+    for (let j = 0; j < nz; j++) {
+      const z = oz + (j + 0.5) * c, lin = j * nx;
+      if (costa) for (let i = i0(costa.agua(z)); i < nx; i++) g[lin + i] |= AGUA;
+      if (!lagoa) continue;
+      for (const pol of lagoa.agua ? [lagoa.agua] : []) {
+        cruza(pol, z, xs);
+        for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] |= AGUA;
+      }
+      for (const a of aguas) {
+        if (z < a.z0 || z > a.z1) continue;
+        cruza(a.pol, z, xs);
+        for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] |= AGUA;
+      }
+      cruza(lagoa.ilha, z, xs);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let i = i0(xs[k]), e = i1(xs[k + 1]); i <= e; i++) g[lin + i] &= ~AGUA;
+      for (const r of lagoa.pisa) if (z >= r.y0 && z <= r.y1) for (let i = i0(r.x0), e = i1(r.x1); i <= e; i++) g[lin + i] &= ~AGUA;
+    }
+    const t0 = performance.now();
+    paredes.fechar();
+    ms += performance.now() - t0;
+  }
+  /* o alcance: o que se chega andando da borda (a busca em largura, com a
+     fila circular que cresce se precisar), por cima dos riscos marcados
+     nas células — feito na primeira vez que alguém entra a pé, e não na
+     montagem, que não precisa dele */
+  /* AS SEMENTES DO ALCANCE (a praça cortada em cidades, 01/10/2026): o
+     meio de cada estrada entre as cidades também é de onde se chega — a
+     borda da área pode ser toda mato e água (no Subúrbio Carioca, a baía
+     vai até ela), e a cidade inteira ficava fora do alcance */
+  let sementes = [];
+  function semear(pts) { sementes = pts || []; alcancou = false; }
+  function alcancar() {
+    if (alcancou) return;
+    alcancou = true;
+    const sg = paredes.seg;
+    for (let s = 0; s < paredes.n; s++)
+      riscar((sg[s * 4] - ox) / c, (sg[s * 4 + 1] - oz) / c, (sg[s * 4 + 2] - ox) / c, (sg[s * 4 + 3] - oz) / c);
+    let q = new Int32Array(1 << 18), ini = 0, fim = 0;
+    const poe = k => {
+      if (g[k] & (SOLIDO | AGUA | MATO | ALCANCE)) return;
+      g[k] |= ALCANCE;
+      if (fim - ini === q.length) {
+        const nq = new Int32Array(q.length * 2);
+        for (let t = ini; t < fim; t++) nq[t - ini] = q[t & (q.length - 1)];
+        q = nq; fim -= ini; ini = 0;
+      }
+      q[fim++ & (q.length - 1)] = k;
+    };
+    for (let i = 0; i < nx; i++) { poe(i); poe((nz - 1) * nx + i); }
+    for (let j = 0; j < nz; j++) { poe(j * nx); poe(j * nx + nx - 1); }
+    for (const [x, z] of sementes) { const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c); if (i >= 0 && j >= 0 && i < nx && j < nz) poe(j * nx + i); }
+    while (ini < fim) {
+      const k = q[ini++ & (q.length - 1)], i = k % nx;
+      if (i > 0) poe(k - 1);
+      if (i < nx - 1) poe(k + 1);
+      if (k >= nx) poe(k - nx);
+      if (k < (nz - 1) * nx) poe(k + nx);
+    }
+  }
+  /* o chão debaixo do corpo (um círculo de raio r) é seco e fica na área? */
+  function seco(x, z, r) {
+    const i0 = Math.floor((x - r - ox) / c), i1 = Math.floor((x + r - ox) / c), j0 = Math.floor((z - r - oz) / c), j1 = Math.floor((z + r - oz) / c);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      if (i < 0 || j < 0 || i >= nx || j >= nz) return false;
+      if (!(g[j * nx + i] & (AGUA | MATO))) continue;
+      const px = clamp(x, ox + i * c, ox + (i + 1) * c), pz = clamp(z, oz + j * c, oz + (j + 1) * c);
+      if ((px - x) * (px - x) + (pz - z) * (pz - z) < r * r) return false;
+    }
+    return true;
+  }
+  /* cabe o corpo com o meio em (x, z): nenhum risco a menos de r, chão seco */
+  const cabe = (x, z, r) => seco(x, z, r) && paredes.cabe(x, z, r);
+  /* o lugar alcançável mais perto de (x, z) onde o corpo cabe, até `raio` */
+  function perto(x, z, r, raio) {
+    alcancar();
+    const ci = Math.floor((x - ox) / c), cj = Math.floor((z - oz) / c), R = Math.ceil(raio / c);
+    for (let d = 0; d <= R; d++) {
+      let melhor = null, md = Infinity;
+      for (let j = cj - d; j <= cj + d; j++) for (let i = ci - d; i <= ci + d; i++) {
+        if (Math.max(Math.abs(i - ci), Math.abs(j - cj)) !== d || i < 0 || j < 0 || i >= nx || j >= nz) continue;
+        if (!(g[j * nx + i] & ALCANCE)) continue;
+        const px = ox + (i + 0.5) * c, pz = oz + (j + 0.5) * c, dd = (px - x) ** 2 + (pz - z) ** 2;
+        if (dd < md && cabe(px, pz, r)) { md = dd; melhor = { x: px, z: pz }; }
+      }
+      if (melhor) return melhor;
+    }
+    return null;
+  }
+  /* o prédio cujo telhado cobre (x, z) (0: céu aberto) */
+  function tetoEm(x, z) {
+    const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
+    return i < 0 || j < 0 || i >= nx || j >= nz ? 0 : teto[j * nx + i];
+  }
+  /* o prédio em que (x, z) está DENTRO: coberto ali e a 60 cm pros quatro
+     lados (debaixo do beiral, na calçada, não conta; encostado na parede
+     de dentro, os 60 cm caem dentro da parede, que é coberta) */
+  function dentroDe(x, z) {
+    const id = tetoEm(x, z), d = 0.6 * M;
+    return id && tetoEm(x + d, z) === id && tetoEm(x - d, z) === id && tetoEm(x, z + d) === id && tetoEm(x, z - d) === id ? id : 0;
+  }
+  /* O MATO: `m(x, z)` diz se o meio da célula é mato (a máscara do chão) */
+  function mato(m) {
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) if (m(ox + (i + 0.5) * c, oz + (j + 0.5) * c)) g[j * nx + i] |= MATO;
+  }
+  /* o retângulo (x0, x1, z0, z1) fica fora do alcance: o boneco não nasce
+     ali (o poço do metrô: na rua ele é buraco) */
+  function bloquear(r) {
+    const i0 = Math.max(0, Math.floor((r.x0 - ox) / c)), i1 = Math.min(nx - 1, Math.floor((r.x1 - ox) / c));
+    const j0 = Math.max(0, Math.floor((r.z0 - oz) / c)), j1 = Math.min(nz - 1, Math.floor((r.z1 - oz) / c));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) g[j * nx + i] |= SOLIDO;
+  }
+  /* o que tem na célula de (x, z): SÓLIDO, ÁGUA, ALCANCE (pro teste) */
+  function celula(x, z) {
+    const i = Math.floor((x - ox) / c), j = Math.floor((z - oz) / c);
+    return i < 0 || j < 0 || i >= nx || j >= nz ? -1 : g[j * nx + i];
+  }
+  function conta() {
+    let a = 0, t = 0, mt = 0;
+    for (let k = 0; k < g.length; k++) { if (g[k] & AGUA) a++; if (g[k] & MATO) mt++; if (teto[k]) t++; }
+    return { celulas: g.length, nx, nz, agua: a, mato: mt, cobertas: t, riscos: paredes.n, ms: Math.round(ms) };
+  }
+  /* a grade crua (o dia de jogo acha o caminho das torcidas nela): as
+     marcas de cada célula, o tamanho e onde começa */
+  const crua = () => ({ g, nx, nz, ox, oz, c, SOLIDO, AGUA, ALCANCE, MATO });
+  /* o MAPA DO TETO (a luz da noite dentro dos prédios), uma vez: a altura
+     do teto de cada célula, e ele sai da memória daqui */
+  function mapaDoTeto() { const d = tetoY; tetoY = null; return d ? { dados: d, nx, nz, ox, oz, c } : null; }
+  return { assar, agua, mato, alcancar, semear, bloquear, cabe, perto, tetoEm, dentroDe, celula, conta, paredes, nx, nz, crua, mapaDoTeto };
+}
+const agora = () => performance.now();
+const milhar = n => Math.round(n).toLocaleString('pt-BR');
+
+/* O ESTILO do cenário, por cima da planta, nas variáveis de cor dela */
+const CSS = `
+.cen { position: fixed; inset: 0; z-index: 40; background: #cfdde6; color: var(--tinta); font: 14px/1.4 var(--f-texto); overflow: hidden; }
+.cen[hidden] { display: none !important; }
+.cen-tela { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline: none; }
+.cen-tela.arrastando { cursor: grabbing; }
+.cen-topo { position: absolute; left: 12px; right: 12px; top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--folha) 90%, transparent); border: 1px solid var(--linha);
+  box-shadow: 0 2px 12px rgba(0,0,0,.12); backdrop-filter: blur(6px); }
+.cen-nome { min-width: 0; flex: 1 1 260px; }
+.cen-nome h1 { margin: 0; font: 700 20px/1.1 var(--f-ui); letter-spacing: .01em; }
+.cen-resumo { margin: 2px 0 0; font: 12px/1.3 var(--f-dado); color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.cen-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.cen-ctrl label { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--f-ui); color: var(--tinta-2); }
+.cen-ctrl select { font: 600 14px/1.2 var(--f-ui); color: var(--tinta); background: var(--papel); border: 1px solid var(--linha); border-radius: 8px; padding: 6px 8px; max-width: 200px; }
+.cen-bt { font: 600 14px/1 var(--f-ui); letter-spacing: .02em; color: var(--tinta); background: var(--papel); border: 1px solid var(--linha);
+  border-radius: 8px; padding: 8px 11px; cursor: pointer; }
+.cen-bt:hover { border-color: var(--acento); }
+.cen-bt[aria-pressed="true"], .cen-mapas button[aria-selected="true"] { background: var(--acento); color: var(--folha); border-color: var(--acento); }
+.cen-mapas { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; padding: 2px; background: var(--papel); }
+.cen-mapas button { font: 600 13px/1 var(--f-ui); color: var(--tinta-2); background: none; border: 0; border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.cen-mapas button.porte::after { content: '•'; margin-left: 4px; color: var(--selecao); }
+.cen button:focus-visible, .cen select:focus-visible { outline: 2px solid var(--selecao); outline-offset: 2px; }
+.cen-ficha { position: absolute; left: 12px; bottom: 62px; width: min(360px, calc(100% - 24px)); max-height: min(52vh, 480px); overflow: auto;
+  padding: 12px 14px; border-radius: 10px; background: color-mix(in srgb, var(--folha) 94%, transparent); border: 1px solid var(--linha);
+  box-shadow: 0 2px 14px rgba(0,0,0,.16); }
+.cen-ficha .acoes { display: none; }
+.cen-ficha h2 { margin: 2px 0 8px; font: 700 18px/1.15 var(--f-ui); padding-right: 28px; }
+.cen-ficha .sobre { margin: 0; font: 600 11px/1.2 var(--f-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); }
+.cen-ficha .dados { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 12px; margin: 0; font-size: 13px; }
+.cen-ficha .dados dt { color: var(--tinta-2); }
+.cen-ficha .dados dd { margin: 0; }
+.cen-ficha .nota { font-size: 12.5px; color: var(--tinta-2); }
+.cen-x { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--linha); background: var(--papel);
+  color: var(--tinta); font: 600 18px/1 var(--f-ui); cursor: pointer; }
+.cen-dica { position: absolute; right: 12px; bottom: 12px; max-width: min(430px, calc(100% - 24px)); margin: 0; padding: 7px 10px; border-radius: 8px;
+  font: 12px/1.35 var(--f-texto); color: var(--tinta-2); background: color-mix(in srgb, var(--folha) 88%, transparent); border: 1px solid var(--linha); }
+.cen-dica b { color: var(--tinta); font-weight: 600; }
+.cen-num { display: block; margin-top: 4px; font: 11px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; }
+.cen-fps { position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 5px 9px; border-radius: 7px; pointer-events: none;
+  font: 600 12px/1.3 var(--f-dado); font-variant-numeric: tabular-nums; color: #f2f3ef; background: rgba(20,22,21,.8); }
+.cen-fps[hidden] { display: none !important; }
+.cen-fps.pede { pointer-events: auto; cursor: pointer; }
+.cen-fps b { font-size: 15px; }
+.cen-fps b.bom { color: #7fd67a; } .cen-fps b.meio { color: #f0c64a; } .cen-fps b.ruim { color: #ff7b6b; }
+.cen-fps small { display: block; font-weight: 400; color: #c9ccc6; }
+.cen-fps small.cen-aviso { color: #ffb4a8; font-weight: 600; max-width: 300px; white-space: normal; }
+.cen-hover { position: absolute; pointer-events: none; transform: translate(12px, -30px); padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+  font: 600 13px/1.2 var(--f-ui); color: #f2f3ef; background: rgba(20,22,21,.82); }
+.cen-carga { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(207,221,230,.55); }
+.cen-carga-caixa { width: min(420px, calc(100% - 40px)); padding: 16px 18px; border-radius: 12px; background: var(--folha); border: 1px solid var(--linha);
+  box-shadow: 0 4px 22px rgba(0,0,0,.18); }
+.cen-carga-txt { margin: 0 0 10px; font: 600 15px/1.3 var(--f-ui); }
+.cen-barra { height: 8px; border-radius: 4px; background: var(--papel); overflow: hidden; border: 1px solid var(--linha); }
+.cen-barra i { display: block; height: 100%; width: 0; background: var(--acento); }
+.cen-escolha { position: absolute; inset: 0; overflow: auto; padding: 22px 16px 40px; background: var(--papel); }
+.cen-escolha-miolo { max-width: 1080px; margin: 0 auto; }
+.cen-escolha h1 { margin: 0 0 4px; font: 700 28px/1.1 var(--f-ui); }
+.cen-escolha > div > p { margin: 0 0 14px; color: var(--tinta-2); max-width: 70ch; }
+.cen-escolha h2 { margin: 20px 0 8px; font: 700 17px/1.2 var(--f-ui); }
+.cen-escolha h2 small { font: 500 13px var(--f-texto); color: var(--tinta-2); margin-left: 6px; }
+.cen-praças { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.cen-praças button { width: 100%; text-align: left; border: 1px solid var(--linha); background: var(--folha); border-radius: 9px; padding: 9px 11px;
+  cursor: pointer; font: 600 15px/1.2 var(--f-ui); color: var(--tinta); }
+.cen-praças button:hover { border-color: var(--acento); box-shadow: inset 4px 0 0 var(--acento); }
+.cen-praças small { display: block; margin-top: 3px; font: 400 12px/1.3 var(--f-texto); color: var(--tinta-2); }
+.cen-como { font-size: 13px; }
+.cen-voltar { float: right; margin: 4px 0 8px 12px; }
+.cen.ape .so-voo, .cen:not(.ape) .so-ape { display: none !important; }
+.cen-bt:disabled { opacity: .55; cursor: progress; }
+/* O JOYSTICK: o círculo embaixo à esquerda, com o pino que segue o dedo
+   (ou o mouse); até a borda, corre. A pé ele aparece em qualquer tela */
+.cen-joy { position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: calc(18px + env(safe-area-inset-bottom)); width: 136px; height: 136px;
+  border-radius: 50%; display: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; cursor: grab;
+  background: radial-gradient(circle, rgba(20,22,21,.18) 0 52%, rgba(20,22,21,.42) 53% 100%); border: 2px solid rgba(255,255,255,.5);
+  box-shadow: 0 2px 14px rgba(0,0,0,.25); }
+.cen.ape .cen-joy { display: block; }
+.cen-joy::after { content: ''; position: absolute; inset: 8px; border-radius: 50%; border: 1px dashed rgba(255,255,255,.35); pointer-events: none; }
+.cen-joy-pino { position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%; pointer-events: none;
+  background: rgba(242,243,239,.94); box-shadow: 0 2px 8px rgba(0,0,0,.4); transition: transform .14s ease-out; }
+.cen-joy.ativo { cursor: grabbing; }
+.cen-joy.ativo .cen-joy-pino { transition: none; }
+.cen-joy.correndo .cen-joy-pino { background: var(--acento); }
+/* O BOTÃO DA PORTA: aparece a pé, perto de uma porta da sede, do lado
+   oposto ao joystick */
+.cen-bt-porta { position: absolute; right: calc(18px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); padding: 12px 16px;
+  font-size: 15px; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+.cen-bt-porta[hidden] { display: none; }
+.cen-bt-porta kbd { font: 600 12px/1 var(--f-dado); margin-left: 6px; padding: 2px 5px; border: 1px solid var(--linha); border-radius: 4px; }
+.cen.toque .cen-bt-porta kbd, .cen:not(.ape) .cen-bt-porta { display: none; }
+.cen.ape .cen-dica { bottom: 96px; }
+/* a pé, o fps sobe pra baixo da barra de cima (embaixo é do joystick) e a
+   ficha sobe por cima dele; no toque, o fps fica só com o número */
+.cen.ape .cen-fps { top: calc(var(--topo-alt, 60px) + 16px); bottom: auto; left: 12px; }
+.cen.ape.toque .cen-fps small:not(.cen-aviso) { display: none; }
+.cen.ape.toque .cen-fps small.cen-aviso { max-width: 230px; }
+.cen.ape .cen-ficha { bottom: calc(172px + env(safe-area-inset-bottom)); max-height: 34vh; }
+.cen .curto { display: none; }
+@media (max-width: 760px) {
+  .cen-topo { left: 8px; right: 8px; top: 8px; padding: 7px 9px; gap: 6px 10px; }
+  .cen-nome h1 { font-size: 17px; }
+  .cen-resumo { display: none; }
+  .cen-ctrl { gap: 5px 6px; }
+  .cen-bt { padding: 7px 9px; font-size: 13px; }
+  .cen-mapas button { padding: 6px 8px; }
+  .cen-dica { display: none; }
+  .cen-ficha { left: 8px; bottom: 56px; max-height: 40vh; }
+  /* a pé, a barra de cima numa linha ou duas: sem o nome da praça, com os rótulos curtos */
+  .cen.ape .cen-nome, .cen.ape .cen-ctrl label > .rot { display: none; }
+  .cen.ape .longo { display: none; }
+  .cen.ape .curto { display: inline; }
+  .cen.ape .cen-camisa { max-width: 150px; }
+  .cen-fps { left: 8px; bottom: 8px; }
+}`;
+
+export function criarCenario(P) {
+  const M = P.M;
+  /* a mesma imagem de folha pedida por vários marcos vem uma vez só */
+  THREE.Cache.enabled = true;
+
+  /* ======================================================
+     A PÁGINA
+     ====================================================== */
+  const estilo = document.createElement('style'); estilo.textContent = CSS; document.head.appendChild(estilo);
+  const raiz = document.createElement('div');
+  raiz.className = 'cen'; raiz.hidden = true;
+  raiz.innerHTML = `
+    <canvas class="cen-tela" tabindex="0" aria-label="O cenário 3D da praça: arraste pra andar, botão direito gira, role pra aproximar"></canvas>
+    <header class="cen-topo">
+      <div class="cen-nome"><h1>Cenário 3D</h1><p class="cen-resumo">—</p></div>
+      <div class="cen-ctrl">
+        <label class="so-voo">Praça <select class="cen-cidade"></select></label>
+        <div class="cen-mapas so-voo" role="tablist" aria-label="Qual mapa">
+          <button role="tab" data-mapa="pequeno">Pequeno</button><button role="tab" data-mapa="medio">Médio</button><button role="tab" data-mapa="grande">Grande</button>
+        </div>
+        <button class="cen-bt so-voo" data-acao="cima">Vista de cima</button>
+        <button class="cen-bt so-voo" data-acao="rua">Nível da rua</button>
+        <button class="cen-bt so-voo cen-bt-ape" data-acao="ape" title="Põe o boneco do jogo na rua, no meio da tela, pra andar com ele">A pé</button>
+        <button class="cen-bt cen-bt-jogo" data-acao="jogo" aria-pressed="false" title="O clássico da praça: as torcidas saem das sedes até o lugar delas na arquibancada, com o plano da PM"><span class="longo">Dia de jogo</span><span class="curto">Jogo</span></button>
+        <label class="so-ape"><span class="rot">Camisa</span> <select class="cen-camisa" aria-label="A camisa do boneco"></select></label>
+        <button class="cen-bt so-ape cen-bt-sede" data-acao="sede"><span class="longo">Ir pra sede</span><span class="curto">Sede</span></button>
+        <button class="cen-bt so-ape" data-acao="rosto"><span class="longo">Outro boneco</span><span class="curto">Outro</span></button>
+        <label title="A hora do dia: de noite, os postes, as janelas, os refletores dos estádios e o que é coberto acendem"><span class="rot">Hora</span> <select class="cen-hora" aria-label="A hora do dia"><option value="">Dia</option><option value="6">6 h</option><option value="17.5">17 h 30</option><option value="18.5">18 h 30</option><option value="20">20 h</option><option value="22">22 h</option><option value="1">1 h</option></select></label>
+        <label title="As predefinições dos gráficos: a resolução, a suavização, a luz, a gente na rua e as texturas (o jogo 3D tem o menu Gráficos com cada opção)"><span class="rot">Gráficos</span> <select class="cen-q" aria-label="Gráficos">${Object.keys(PREDEFS).map(k => `<option value="${k}">${QUALIDADES[k].nome}</option>`).join('')}<option value="pessoal" disabled>Personalizada</option></select></label>
+        <button class="cen-bt so-voo" data-acao="escolher">Praças</button>
+        <button class="cen-bt so-voo" data-acao="planta">Planta 2D</button>
+        <a class="cen-bt so-voo cen-bt-jogo3d" href="jogo.html" title="O jogo Torcida Organizada por cima da praça em 3D: o menu, a barra de cima, os painéis, o feed e os dias passando">Jogo 3D</a>
+        <button class="cen-bt so-ape" data-acao="sair"><span class="longo">Sair da rua</span><span class="curto">Sair</span></button>
+      </div>
+    </header>
+    <aside class="cen-ficha" hidden><button class="cen-x" aria-label="Fechar a ficha">×</button><div class="cen-ficha-corpo"></div></aside>
+    <p class="cen-dica"><span class="so-voo"><b>Arraste</b> pra andar · <b>botão direito</b> (ou Shift) gira e inclina · <b>role</b> pra aproximar · <b>WASD</b> anda, <b>Q/E</b> gira · <b>duplo clique</b> voa até o ponto · <b>clique</b> numa coisa pra ver a ficha</span><span class="so-ape">O <b>joystick</b> anda (na borda, corre) · <b>WASD</b> ou as setas também (<b>Shift</b> corre) · <b>arraste</b> a tela pra girar · <b>role</b> aproxima · <b>Q/E</b> giram, <b>R/T</b> inclinam · <b>F</b> abre e fecha a porta · <b>clique</b> numa coisa pra ver a ficha</span><span class="cen-num"></span></p>
+    <div class="cen-joy" role="application" aria-label="Joystick: arraste o pino pra andar; na borda, corre"><div class="cen-joy-pino"></div></div>
+    <button class="cen-bt cen-bt-porta" data-acao="porta" hidden>Abrir a porta <kbd>F</kbd></button>
+    <div class="cen-hover" hidden></div>
+    <p class="cen-fps" aria-live="off"><b>—</b> fps<small>medindo…</small></p>
+    <div class="cen-carga" hidden><div class="cen-carga-caixa" role="status" aria-live="polite"><p class="cen-carga-txt">Montando…</p><div class="cen-barra"><i></i></div></div></div>
+    <section class="cen-escolha" hidden aria-label="Escolha a praça"><div class="cen-escolha-miolo"></div></section>`;
+  document.body.appendChild(raiz);
+  const $ = sel => raiz.querySelector(sel);
+  const tela = $('.cen-tela'), selCidade = $('.cen-cidade'), selQ = $('.cen-q');
+
+  /* as praças por porte: o porte decide o mapa (a planta decide qual) */
+  const PORTES = [['Grande', 'Cidades grandes'], ['Médio', 'Cidades médias'], ['Pequeno', 'Cidades pequenas']];
+  const doPorte = t => P.CIDADES.filter(n => ((P.infoDaCidade(n) || {}).tamanho || 'Grande') === t);
+  selCidade.innerHTML = PORTES.map(([t, rot]) => `<optgroup label="${rot}">` + doPorte(t).map(n => `<option>${esc(n)}</option>`).join('') + '</optgroup>').join('');
+  function montarEscolha() {
+    const linha = n => {
+      const c = P.infoDaCidade(n) || {}, e = (c.estadios || []).length;
+      const tem = [e ? e + (e > 1 ? ' estádios' : ' estádio') : null, c.temLagoa ? 'lagoa' : c.temPraia ? 'praia' : null, c.temMetro ? 'metrô' : null,
+                   { mata: 'mata', cerrado: 'cerrado', caatinga: 'caatinga' }[c.vegetacao] || null].filter(Boolean).join(' · ');
+      return `<li><button data-cidade="${esc(n)}">${esc(n)}<small>${esc(tem)}</small></button></li>`;
+    };
+    $('.cen-escolha-miolo').innerHTML = `<button class="cen-bt cen-voltar" data-acao="voltar" hidden>Voltar ao cenário</button><h1>Cenário 3D das praças</h1>
+      <p>Escolha a praça: abre o mapa do porte dela (o pequeno, o médio ou o grande), montado em 3D com o que a planta tem hoje — as casas, as favelas, os bares e as sedes das torcidas da praça, os estádios, o metrô, a praia ou a lagoa e o mato em volta.</p>
+      <p class="cen-como"><b>Pra andar:</b> arraste o chão; botão direito (ou Shift) gira e inclina; a roda aproxima; WASD e as setas andam. <b>No celular:</b> um dedo arrasta, dois dedos giram, inclinam e aproximam. Toque numa casa, bar, sede ou estádio pra ver a ficha dela. <b>A pé</b>, o F (ou o botão que aparece perto da porta) abre e fecha as portas da sede.</p>` +
+      PORTES.map(([t, rot]) => `<h2>${rot}<small>mapa ${P.NOME_MAPA[P.MAPA_DO_PORTE[t]] || ''}</small></h2><ul class="cen-praças">${doPorte(t).map(linha).join('')}</ul>`).join('');
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+  /* QUEM VAI DESENHAR, antes de criar o desenhista: a suavização de bordas
+     é do contexto do WebGL (não muda depois), e sem placa de vídeo ela
+     sai desligada. Um contexto de prova, jogado fora na hora: o nome da
+     placa (o SwiftShader, o "Microsoft Basic Render Driver", o llvmpipe
+     desenham no processador) e o aviso do navegador de que o contexto
+     seria lento (`failIfMajorPerformanceCaveat`) */
+  const PROVA = (() => {
+    const r = { nome: '', semPlaca: false };
+    const soltar = gl => { try { const x = gl && gl.getExtension('WEBGL_lose_context'); if (x) x.loseContext(); } catch (e) {} };
+    try {
+      const cv = document.createElement('canvas');
+      const gl = cv.getContext('webgl2') || cv.getContext('webgl');
+      if (gl) {
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        r.nome = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+        r.semPlaca = /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(r.nome);
+        soltar(gl);
+        if (!r.semPlaca) {
+          const cv2 = document.createElement('canvas');
+          const g2 = cv2.getContext('webgl2', { failIfMajorPerformanceCaveat: true }) || cv2.getContext('webgl', { failIfMajorPerformanceCaveat: true });
+          if (!g2) r.semPlaca = true; else soltar(g2);
+        }
+      }
+    } catch (e) {}
+    return r;
+  })();
+  /* AS OPÇÕES GUARDADAS (neste navegador). A primeira vez, a predefinição
+     sai da máquina: sem placa de vídeo, a mínima; no celular, a leve; no
+     resto, a normal. (A caixa "Qualidade" de antes guardava só a textura:
+     quem tinha escolhido uma fica com a predefinição do mesmo nome) */
+  let predefAuto = false;
+  const GRAF = (() => {
+    let g = null, antiga = null;
+    try { g = JSON.parse(localStorage.getItem(CHAVE_GRAF) || 'null'); } catch (e) { g = null; }
+    if (!g || typeof g !== 'object') {
+      try { antiga = localStorage.getItem('cenario-qualidade'); } catch (e) {}
+      const p = PREDEFS[antiga] ? antiga : recomendada();
+      predefAuto = !PREDEFS[antiga];
+      g = { predef: p, ...PREDEFS[p] };
+    }
+    const base = PREDEFS[g.predef] || PREDEFS.normal;
+    for (const k in VALORES_GRAF) if (!VALORES_GRAF[k].includes(g[k])) g[k] = k === 'medidor' ? true : base[k];
+    if (!PREDEFS[g.predef] && g.predef !== 'pessoal') g.predef = 'pessoal';
+    /* a última resolução que o automático achou (a próxima abertura começa dela) */
+    if (!(g.escalaAuto >= RES_MIN && g.escalaAuto <= 1)) g.escalaAuto = PROVA.semPlaca ? 0.6 : 1;
+    return g;
+  })();
+  function recomendada() { return PROVA.semPlaca ? 'minima' : matchMedia('(pointer: coarse)').matches ? 'leve' : 'normal'; }
+  function salvarGraficos() { try { localStorage.setItem(CHAVE_GRAF, JSON.stringify(GRAF)); } catch (e) {} }
+  /* a suavização que o contexto tem (a pedida só vale na próxima abertura) */
+  const suavizarDe = v => v === 'auto' ? !PROVA.semPlaca : v === 'sim';
+  const SUAVIZANDO = suavizarDe(GRAF.suavizar);
+  let qualidade = GRAF.texturas;
+  /* a filtragem anisotrópica da textura: o teto dela, o das texturas escolhidas e o da placa */
+  const anisoDe = teto => Math.max(1, Math.min(teto, QUALIDADES[qualidade].aniso, rend.capabilities.getMaxAnisotropy()));
+  selQ.value = GRAF.predef;
+
+  /* ======================================================
+     O 3D
+     ====================================================== */
+  const rend = new THREE.WebGLRenderer({ canvas: tela, antialias: SUAVIZANDO, powerPreference: 'high-performance' });
+  rend.shadowMap.enabled = false;
+  /* A PLACA PODE DESISTIR (o dono, 29/09/2026: "quase todas as vezes que
+     preciso abrir outro mapa devido a caravanas o jogo buga e recarrega
+     automaticamente"; ele joga sem placa de vídeo). Se o processo de GPU
+     cai, ou o navegador toma o contexto WebGL, o three.js refaz o estado
+     dele quando o contexto volta, mas a cidade não volta: o forno larga o
+     array de cada malha depois de subir pra placa, e o chão fecha o bitmap
+     (é o que segura a memória). Medido no navegador de teste, derrubando o
+     processo de GPU e perdendo o contexto: a cidade sumia (0 chamadas de
+     desenho), o laço lançava "Cannot read properties of null (reading
+     'byteLength')" e, no meio de um dia de jogo, a linha ficava presa pra
+     sempre — só recarregando a página. Agora a perda avisa na caixa e a
+     volta REMONTA a praça que estava na tela. O jogo 3D (jogo3d.js) escuta
+     o aviso pra cuidar do dia dele e da vida da praça; sozinho, o cenário só
+     remonta. (Não provei que é isso que acontece no PC do dono.) */
+  tela.addEventListener('webglcontextlost', ev => {
+    ev.preventDefault();
+    console.warn('cenário: a placa perdeu o contexto WebGL');
+    carga.hidden = false; aviso('A placa de vídeo do navegador perdeu a cidade. Esperando ela voltar…', 0.02);
+  }, false);
+  tela.addEventListener('webglcontextrestored', () => {
+    console.warn('cenário: o contexto WebGL voltou, remontando ' + P.cidade());
+    doMapa.visible = false;
+    if (window.dispatchEvent(new CustomEvent('cenario-placa-voltou', { cancelable: true }))) montar(P.cidade(), P.modo());
+  }, false);
+  const cena = new THREE.Scene();
+  cena.background = CEU.clone();
+  cena.fog = new THREE.Fog(CEU.clone(), 1000, 100000);
+  const cam = new THREE.PerspectiveCamera(42, 1, 1, 100000);
+  const hemi = new THREE.HemisphereLight(0xe3edf5, 0x6d695d, 1.25);
+  cena.add(hemi);
+  const sol = new THREE.DirectionalLight(0xfff1da, 2.2);
+  cena.add(sol, sol.target);
+  /* o rumo do sol da vez (a hora do dia do jogo 3D mexe nele; sem jogo, o de sempre) */
+  const solAgora = SOL.clone();
+  /* o céu: a cúpula clara no horizonte (a cor da névoa) e azul no alto */
+  let ceuDaHora = null;
+  {
+    const g = new THREE.SphereGeometry(1, 32, 16), cor = [], p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { const t = clamp(p.getY(i) * 1.6, 0, 1); const c = CEU.clone().lerp(ZENITE, t); cor.push(c.r, c.g, c.b); }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
+    const ceu = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false }));
+    ceu.renderOrder = -10; ceu.frustumCulled = false; ceu.name = 'ceu';
+    cena.add(ceu);
+    ceuDaHora = ceu;
+    ceu.onBeforeRender = () => { ceu.position.copy(cam.position); ceu.scale.setScalar(cam.far * 0.9); ceu.updateMatrixWorld(); };
+  }
+  /* o que é do mapa da vez (o chão, o mato, o forno, a seleção): sai inteiro na troca */
+  let doMapa = new THREE.Group(); cena.add(doMapa);
+
+  /* a altura da tela em pixels CSS, guardada na troca de tamanho: ler
+     `clientHeight` a cada quadro, depois que o painel mudou um texto, faz o
+     navegador refazer o leiaute da página inteira ali no meio */
+  let altoTela = 0;
+  /* A RESOLUÇÃO: a densidade de pixel da tela (até o teto) vezes a fração
+     que se desenha — a escolhida, ou a do automático */
+  let escalaAuto = GRAF.escalaAuto;
+  const escalaAgora = () => GRAF.resolucao === 'auto' ? escalaAuto : +GRAF.resolucao;
+  const razaoDePixel = () => Math.max(0.2, Math.min(window.devicePixelRatio || 1, GRAF.teto) * escalaAgora());
+  function ajustarTela() {
+    const r = tela.getBoundingClientRect();
+    altoTela = r.height;
+    rend.setPixelRatio(razaoDePixel());
+    rend.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
+    cam.aspect = Math.max(1, r.width) / Math.max(1, r.height);
+    pedir();
+  }
+  new ResizeObserver(ajustarTela).observe(tela);
+  new ResizeObserver(() => raiz.style.setProperty('--topo-alt', Math.round($('.cen-topo').getBoundingClientRect().height) + 'px')).observe($('.cen-topo'));
+
+  /* ======================================================
+     A CÂMERA: órbita em volta de um alvo no chão
+     ====================================================== */
+  /* `alto`: quanto o alvo sobe do chão (o dia de jogo segue uma torcida na arquibancada) */
+  const orb = { alvo: new THREE.Vector3(), dist: 6000, az: -0.55, el: 0.85, alto: 0 };
+  let area = { x0: 0, y0: 0, x1: 1000, y1: 1000 };
+  const OLHO = 1.6;                       // m: a altura do olho de quem anda
+  const suave = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+  /* A PÉ, DE CIMA: a distância da câmera que põe `vao` metros no lado
+     menor da tela (no celular em pé, a largura) */
+  const FOV_APE = 40;
+  const distDoVao = vao => vao * M / 2 / (Math.tan(THREE.MathUtils.degToRad(FOV_APE / 2)) * Math.min(1, cam.aspect));
+  function posicionar() {
+    /* a pé (`k` vai de 0 a 1 na chegada): o alvo é o boneco e a câmera
+       olha de cima; `kv`, a lente e o longe de a pé (no pulo de um lugar
+       da rua pro outro, já são os de a pé) */
+    const k = ape ? suave(ape.chegada) : 0, kv = ape && ape.de.pulo ? 1 : k;
+    if (ape && k >= 1) { orb.dist = distDoVao(ape.vao); orb.el = clamp(orb.el, 0.9, 1.5); }
+    else { orb.dist = clamp(orb.dist, 2.5 * M, 2600 * M); orb.el = clamp(orb.el, 0.02, 1.54); }
+    if (ape) {
+      const de = ape.de;
+      orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M + ape.yv * k, de.z + (ape.z - de.z) * k);
+    } else {
+      /* (o palco à parte, longe da praça — a estrada da caravana —, solta a câmera da área) */
+      if (!(palco && palco.livre)) {
+        orb.alvo.x = clamp(orb.alvo.x, area.x0 - 200 * M, area.x1 + 200 * M);
+        orb.alvo.z = clamp(orb.alvo.z, area.y0 - 200 * M, area.y1 + 200 * M);
+      }
+      orb.alvo.y = OLHO * M + orb.alto;
+    }
+    const c = orb.alvo, ce = Math.cos(orb.el), d = orb.dist;
+    cam.position.set(c.x + d * ce * Math.sin(orb.az), c.y + d * Math.sin(orb.el), c.z + d * ce * Math.cos(orb.az));
+    cam.lookAt(c);
+    cam.fov = 42 + (FOV_APE - 42) * kv;
+    /* o perto e o longe acompanham a distância: a profundidade não perde
+       precisão rente ao chão, e a névoa esconde a borda do mundo. A pé,
+       de cima, a tela só mostra umas dezenas de metros em volta dele: o
+       longe fica curto, sem névoa, e o que passa dele nem vai pra placa */
+    const mis = (a, b) => a + (b - a) * kv, longe = d * 3 + 60 * M;
+    /* (A DISTÂNCIA DE VISÃO dos gráficos encurta a névoa e o longe junto:
+       o que passa da névoa nem vai pra placa) */
+    const kd = GRAF.distancia, fogo = (d * 5 + 40000) * kd;
+    cam.near = mis(clamp(d * 0.02, 0.5, 400), Math.max(0.3 * M, d * 0.03));
+    cam.far = mis(kd < 1 ? fogo * 1.05 : d * 6 + 60000, longe);
+    cam.updateProjectionMatrix();
+    cena.fog.near = mis((d * 1.6 + 1500) * kd, longe * 2);
+    cena.fog.far = mis(fogo, longe * 3);
+    /* A CÚPULA DO CÉU só quando o céu aparece: com a câmera olhando pra
+       baixo mais que a metade da lente (a sala do presidente, a pé, a
+       vista de cima), nenhum raio da tela sobe acima do horizonte, e a
+       cúpula era uma tela inteira de pixels desenhada à toa por baixo da
+       cidade (o fundo, da cor da névoa, fica) */
+    if (ceuDaHora) ceuDaHora.visible = orb.el - THREE.MathUtils.degToRad(cam.fov) / 2 < 0.03;
+    /* o sol: só a direção conta (luz sem sombra) */
+    sol.target.position.set(c.x, 0, c.z);
+    sol.position.copy(sol.target.position).addScaledVector(solAgora, 1000);
+    sol.target.updateMatrixWorld();
+  }
+
+  /* ======================================================
+     A HORA DO DIA (o jogo 3D, 27/09/2026): "O dia passa até ocorrer
+     alguma coisa". O sol nasce no leste às 6 h, passa alto pelo norte
+     e se põe no oeste às 18 h; a luz esquenta de manhã cedo e no fim da
+     tarde, e a noite é azul-escura com luar (clara o bastante pra ver a
+     rua). O céu, a névoa e a cúpula vão junto. Sem hora (a ferramenta,
+     a planta), fica o sol de sempre.
+     ====================================================== */
+  const COR_DIA = { ceu: new THREE.Color('#cfdde6'), hemiC: new THREE.Color(0xe3edf5), hemiT: new THREE.Color(0x6d695d), sol: new THREE.Color(0xfff1da) };
+  const HORA_TONS = [
+    /* hora, céu (horizonte), tinta da cúpula, luz do céu, chão, força do céu, sol, força do sol */
+    /* (a noite mais escura desde que tem luz de poste, janela e refletor, 30/09/2026) */
+    [0,    '#141b28', '#1f2a40', '#7384b0', '#201e27', 0.48, '#9fb4e0', 0.28],
+    [5,    '#18212f', '#243149', '#7d8fbc', '#24222c', 0.52, '#a6badf', 0.3],
+    [6,    '#e7b995', '#c9b3b0', '#d8c2b8', '#4e443c', 0.85, '#ffb37a', 1.1],
+    [7.5,  '#d6dfe4', '#e8eef2', '#dfe8ef', '#645f54', 1.15, '#ffe2bd', 1.9],
+    [9,    '#cfdde6', '#ffffff', '#e3edf5', '#6d695d', 1.25, '#fff1da', 2.2],
+    [15.5, '#cfdde6', '#ffffff', '#e3edf5', '#6d695d', 1.25, '#fff1da', 2.2],
+    [17,   '#e3cfb3', '#f0dcc8', '#ecd9c4', '#6a5a48', 1.1,  '#ffc98e', 1.8],
+    [18,   '#e08a5c', '#b88a86', '#dcb09a', '#4f4038', 1.0,  '#ff9a5c', 1.3],
+    [19,   '#263049', '#343f5f', '#8591bb', '#28242e', 0.7, '#aab8e0', 0.42],
+    [24,   '#141b28', '#1f2a40', '#7384b0', '#201e27', 0.48, '#9fb4e0', 0.28]
+  ].map(([h, a, b, c, d, e, f, g]) => ({ h, ceu: new THREE.Color(a), cupula: new THREE.Color(b), hemiC: new THREE.Color(c), hemiT: new THREE.Color(d), fh: e, sol: new THREE.Color(f), fs: g }));
+  let horaDoDia = null;
+  /* A NOITE DA HORA: as luzes acendem no fim da tarde (das 17 h 20 às 18 h
+     40) e apagam de manhã (das 5 h às 6 h 20); as janelas acesas vão de
+     metade cedo a um terço à meia-noite e um oitavo de madrugada */
+  function noiteDaHora(x) {
+    if (x == null) return { noite: 0, acesas: 0.45 };
+    const noite = x >= 18.67 || x <= 5 ? 1 : x > 17.33 ? suave((x - 17.33) / 1.34) : x < 6.33 ? 1 - suave((x - 5) / 1.33) : 0;
+    const acesas = x >= 22 ? 0.5 - 0.2 * (x - 22) / 2 : x >= 12 ? 0.5 : x < 5 ? 0.3 - 0.18 * x / 5 : 0.12;
+    return { noite, acesas };
+  }
+  function luzDaHora(h) {
+    horaDoDia = h == null ? null : ((+h % 24) + 24) % 24;
+    { const n = noiteDaHora(horaDoDia); NOITE.uNoite.value = n.noite; NOITE.uAcesas.value = n.acesas; }
+    if (horaDoDia == null) {
+      solAgora.copy(SOL);
+      hemi.color.copy(COR_DIA.hemiC); hemi.groundColor.copy(COR_DIA.hemiT); hemi.intensity = 1.25;
+      sol.color.copy(COR_DIA.sol); sol.intensity = 2.2;
+      cena.background.copy(COR_DIA.ceu); cena.fog.color.copy(COR_DIA.ceu);
+      if (ceuDaHora) ceuDaHora.material.color.set('#ffffff');
+      pedir();
+      return;
+    }
+    const x = horaDoDia;
+    let i = 0; while (i < HORA_TONS.length - 2 && HORA_TONS[i + 1].h <= x) i++;
+    const a = HORA_TONS[i], b = HORA_TONS[i + 1], k = clamp((x - a.h) / Math.max(1e-6, b.h - a.h), 0, 1);
+    const mis = (ca, cb, o) => o.copy(ca).lerp(cb, k);
+    mis(a.ceu, b.ceu, cena.background); cena.fog.color.copy(cena.background);
+    if (ceuDaHora) mis(a.cupula, b.cupula, ceuDaHora.material.color);
+    mis(a.hemiC, b.hemiC, hemi.color); mis(a.hemiT, b.hemiT, hemi.groundColor);
+    hemi.intensity = a.fh + (b.fh - a.fh) * k;
+    mis(a.sol, b.sol, sol.color); sol.intensity = a.fs + (b.fs - a.fs) * k;
+    /* o rumo: de dia, o arco leste → norte → oeste; de noite, a lua alta no norte */
+    const f = (x - 6) / 12;
+    if (f > 0 && f < 1) solAgora.set(Math.cos(Math.PI * f), Math.max(0.12, Math.sin(Math.PI * f)), -0.36).normalize();
+    else solAgora.set(-0.3, 0.8, -0.5).normalize();
+    pedir();
+  }
+
+  /* pedir um quadro: desenha só quando algo muda */
+  let pedido = 0, ultimo = 0;
+  const teclas = new Set();
+  let voo = null;
+  /* O LAÇO: com o cenário aberto, desenha todo quadro, como um jogo — é o
+     que o medidor de fps mede (parado ou andando dá o mesmo trabalho).
+     Enquanto a praça monta, só desenha quando pede (o quadro contínuo
+     roubaria o tempo da montagem na máquina lenta) */
+  function pedir() { if (!pedido && !raiz.hidden && !pausado) pedido = requestAnimationFrame(quadro); }
+  /* PAUSADO: quem está por cima cobre a tela inteira (no jogo 3D, um
+     painel, uma cena de briga, um modal) e a cidade para de desenhar —
+     o último quadro fica na tela, e as teclas não mexem na câmera */
+  let pausado = false;
+  function pausar(v) { v = !!v; if (v === pausado) return; pausado = v; teclas.clear(); if (!v) { ultimo = 0; pedir(); } }
+  const medidor = { desde: 0, quadros: 0, cpu: 0 };
+  /* quem ancora alguma coisa na tela a cada quadro, com a câmera já no lugar (os balões do jogo 3D) */
+  const depoisDaCamera = new Set();
+  function quadro(t) {
+    pedido = 0;
+    /* O LIMITE DE FPS dos gráficos: o quadro que chega antes da hora passa
+       (e o próximo vem no seguinte da tela) */
+    if (GRAF.fpsMax && ultimo && !montando && t - ultimo < 1000 / GRAF.fpsMax - 3) { pedir(); return; }
+    /* o tempo de verdade (a máquina lenta pula quadro, mas chega na hora) */
+    const dt = ultimo ? Math.min(0.2, (t - ultimo) / 1000) : 0.016;
+    if (ultimo && !montando) ajustarResolucao((t - ultimo) / 1000);
+    ultimo = t;
+    if (ape) andarAPe(dt);
+    /* o palco que tem câmera (a briga do jogo 3D): ela vai atrás do líder,
+       e o teclado é do boneco dele */
+    else if (palco && palco.seguir) { try { palco.seguir(dt, orb); } catch (e) { console.error('cenário, a câmera do palco:', e); } }
+    else if (teclas.size) andar(dt);
+    animarPortas(dt);
+    if (P.tempoBandeira) P.tempoBandeira.value = t / 1000;
+    /* (com a briga do jogo por cima, o dia só anda se ela pede os bonecos dele em volta) */
+    /* (o jogo da cidade ainda escondido, antes da hora dele: nem anda nem se desenha) */
+    const diaNaTela = dia && dia.aberto && diaNoFundo !== 'oculto';
+    if (diaNaTela && (!palco || palco.comDia)) { const t0 = performance.now(); dia.quadro(dt); custoDia.dia += (performance.now() - t0 - custoDia.dia) * 0.1; }
+    if (vida && vida.quadro) { try { vida.quadro(dt); } catch (e) { console.error('cenário, a vida:', e); vida = null; } }
+    if (palco && palco.quadro) { try { palco.quadro(dt); } catch (e) { console.error('cenário, o palco:', e); } }
+    if (voo) voo(dt);
+    posicionar();
+    atualizarCorte();
+    if (diaNaTela && !palco) dia.ajustarRotulos();
+    atualizarPovo(dt);
+    for (const f of depoisDaCamera) { try { f(dt); } catch (e) { console.error('cenário, depois da câmera:', e); } }
+    const t0 = performance.now();
+    rend.render(cena, cam);
+    medir(t, performance.now() - t0);
+    contar();
+    if (!montando) pedir();
+  }
+  /* A RESOLUÇÃO AUTOMÁTICA: a cada 1,5 s desenhando, a mediana do tempo
+     entre quadros (um soluço do jogo — a virada do dia, a montagem de uma
+     cena — não conta como máquina lenta). Abaixo de 88% do alvo, ela desce
+     o que falta de uma vez (o quadro custa mais ou menos o número de
+     pixels, a escala ao quadrado); folgada (20% acima do alvo, ou batendo
+     no limite de fps), sobe 12% — depois de 3 s folgados, e mais devagar a
+     cada subida que não aguentou (a imagem não fica pulsando entre duas
+     resoluções). Em passos de 5%, entre RES_MIN e 1 */
+  const AUTO = { dts: [], t: 0, bons: 0, falhas: 0, subiuEm: -1e9, relogio: 0 };
+  function ajustarResolucao(dt) {
+    if (GRAF.resolucao !== 'auto' || pausado || raiz.hidden) { AUTO.dts.length = 0; AUTO.t = 0; return; }
+    if (dt > 1) { AUTO.dts.length = 0; AUTO.t = 0; return; }
+    AUTO.dts.push(dt); AUTO.t += dt; AUTO.relogio += dt;
+    if (AUTO.t < 1.5 || AUTO.dts.length < 3) return;
+    const ord = AUTO.dts.slice().sort((a, b) => a - b), fps = 1 / ord[ord.length >> 1];
+    AUTO.dts.length = 0; AUTO.t = 0;
+    const alvo = GRAF.alvo, lim = GRAF.fpsMax || Infinity;
+    let nova = escalaAuto;
+    if (fps < Math.min(alvo, lim) * 0.88 && escalaAuto > RES_MIN) {
+      nova = Math.max(RES_MIN, escalaAuto * Math.max(0.7, Math.sqrt(fps / alvo)));
+      if (AUTO.relogio - AUTO.subiuEm < 6) AUTO.falhas = Math.min(6, AUTO.falhas + 1);
+      AUTO.bons = 0;
+    } else if (escalaAuto < 1 && fps >= Math.min(alvo * 1.2, lim * 0.95)) {
+      if (++AUTO.bons >= 2 + 2 * AUTO.falhas) { nova = Math.min(1, escalaAuto * 1.12); AUTO.bons = 0; AUTO.subiuEm = AUTO.relogio; }
+    } else AUTO.bons = 0;
+    nova = clamp(Math.round(nova * 20) / 20, RES_MIN, 1);
+    if (nova !== escalaAuto) {
+      escalaAuto = nova; GRAF.escalaAuto = nova;
+      ajustarTela(); salvarGraficos();
+    }
+  }
+  /* O MEDIDOR: quadros por segundo e milissegundos por quadro, na média de
+     meio segundo; o tempo do processador pra mandar o quadro; as chamadas
+     de desenho e os triângulos do quadro */
+  const fpsEl = $('.cen-fps');
+  /* QUEM DESENHA: o nome da placa de vídeo que o navegador usa. Quando ele
+     desiste da placa (a lista negra do Chrome pega placa velha e driver
+     velho), o WebGL cai no SwiftShader, que desenha no processador — e aí
+     o fps é de um dígito em qualquer máquina. O medidor avisa */
+  const placa = (() => {
+    try {
+      const gl = rend.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
+      const nome = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+      const semPlaca = /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(nome);
+      const curto = nome.replace(/^ANGLE \((.*)\)$/, '$1').replace(/Direct3D.*|vs_\d.*|\(0x[0-9a-f]+\)/gi, '').replace(/\s+/g, ' ').replace(/[ ,]+$/, '').slice(0, 60);
+      return { nome, semPlaca, curto };
+    } catch (e) { return { nome: '', semPlaca: false, curto: '' }; }
+  })();
+  function medir(t, cpu) {
+    medidor.quadros++; medidor.cpu += cpu;
+    if (!medidor.desde) { medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0; return; }
+    const passou = t - medidor.desde;
+    if (montando) { medidor.desde = 0; fpsEl.innerHTML = '<b>—</b> fps<small>montando a praça…</small>'; return; }
+    if (passou < 500 || !medidor.quadros) return;
+    const fps = medidor.quadros * 1000 / passou, ms = passou / medidor.quadros, r = rend.info.render;
+    ultimaMedida = { fps, ms, chamadas: r.calls, triangulos: r.triangles, cpu: medidor.cpu / medidor.quadros };
+    medidor.desde = t; medidor.quadros = 0; medidor.cpu = 0;
+    if (fpsEl.hidden) return;
+    const classe = fps >= 50 ? 'bom' : fps >= 28 ? 'meio' : 'ruim';
+    /* (a resolução, quando não é a da tela inteira: o automático mexe nela) */
+    const res = escalaAgora() < 1 ? ` · ${Math.round(escalaAgora() * 100)}% da resolução` : '';
+    fpsEl.innerHTML = `<b class="${classe}">${Math.round(fps)}</b> fps · ${ms.toFixed(1).replace('.', ',')} ms${res}` +
+      `<small>${r.calls} chamadas · ${milhar(r.triangles / 1000)} mil triângulos · CPU ${ultimaMedida.cpu.toFixed(1).replace('.', ',')} ms</small>` +
+      (dia && dia.aberto ? `<small>dia de jogo: ${dia.J.discos.length + dia.J.policiais.length} bonecos, ${(custoDia.povo + custoDia.dia).toFixed(1).replace('.', ',')} ms</small>` : '') +
+      (placa.semPlaca ? `<small class="cen-aviso">Sem placa de vídeo: o navegador desenha no processador (${esc(placa.curto)})</small>`
+        : placa.curto ? `<small>${esc(placa.curto)}</small>` : '');
+  }
+  let ultimaMedida = null;
+  fpsEl.hidden = !GRAF.medidor;
+
+  /* ANDAR NO TECLADO: WASD e setas no chão, Q/E gira, R/F inclina; com
+     Shift, o dobro */
+  function andar(dt) {
+    const v = Math.max(5 * M, orb.dist * 0.9) * dt * (teclas.has('shift') ? 2.2 : 1);
+    const fx = -Math.sin(orb.az), fz = -Math.cos(orb.az), rx = Math.cos(orb.az), rz = -Math.sin(orb.az);
+    let f = 0, r = 0;
+    if (teclas.has('w') || teclas.has('arrowup')) f += 1;
+    if (teclas.has('s') || teclas.has('arrowdown')) f -= 1;
+    if (teclas.has('d') || teclas.has('arrowright')) r += 1;
+    if (teclas.has('a') || teclas.has('arrowleft')) r -= 1;
+    orb.alvo.x += (fx * f + rx * r) * v; orb.alvo.z += (fz * f + rz * r) * v;
+    if (teclas.has('q')) orb.az += dt * 1.3;
+    if (teclas.has('e')) orb.az -= dt * 1.3;
+    if (teclas.has('r')) orb.el += dt * 0.8;
+    if (teclas.has('f')) orb.el -= dt * 0.8;
+    if (teclas.has('+') || teclas.has('=')) orb.dist *= Math.exp(-dt * 1.6);
+    if (teclas.has('-')) orb.dist *= Math.exp(dt * 1.6);
+  }
+  const TECLAS = new Set(['w', 'a', 's', 'd', 'q', 'e', 'r', 'f', 't', '+', '=', '-', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'shift']);
+  window.addEventListener('keydown', ev => {
+    if (raiz.hidden || pausado || ev.target.closest && ev.target.closest('select, input, textarea')) return;
+    /* na briga do jogo 3D o WASD (e o Q, o E, o R, o F) é do líder */
+    if (palco && palco.seguir) return;
+    const k = ev.key.toLowerCase();
+    if (k === 'escape') { fecharFicha(); return; }
+    if (!TECLAS.has(k) || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    /* a pé, o F abre e fecha a porta mais perto (uma vez por aperto) */
+    if (k === 'f' && ape) { if (!ev.repeat) alternarPorta(); return; }
+    if (k.startsWith('arrow')) ev.preventDefault();
+    teclas.add(k); cancelarVoo(); pedir();
+  });
+  window.addEventListener('keyup', ev => { teclas.delete(ev.key.toLowerCase()); if (ev.key === 'Shift') teclas.delete('shift'); });
+  window.addEventListener('blur', () => teclas.clear());
+
+  /* o ponto do chão debaixo do cursor (a planta chama de y o que aqui é z) */
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), CHAO = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function raioEm(sx, sy) {
+    const r = tela.getBoundingClientRect();
+    ndc.set((sx - r.left) / r.width * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, cam);
+    return ray.ray;
+  }
+  function chaoEm(sx, sy) {
+    const p = raioEm(sx, sy).intersectPlane(CHAO, new THREE.Vector3());
+    if (!p || p.distanceTo(cam.position) > orb.dist * 12 + 2000) return null;
+    return p;
+  }
+  function cancelarVoo() { voo = null; }
+  /* VOAR até um ponto: o alvo e a distância vão juntos, suave */
+  function voarPara(x, z, dist, el, az, alto = 0) {
+    const de = { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az, alto: orb.alto };
+    const para = { x, z, dist: dist ?? orb.dist, el: el ?? orb.el, az: az ?? orb.az, alto };
+    let da = para.az - de.az; da = Math.atan2(Math.sin(da), Math.cos(da));
+    let t = 0;
+    const T = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0.01 : 0.7;
+    voo = dt => {
+      t = Math.min(1, t + dt / T);
+      const f = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      orb.alvo.x = de.x + (para.x - de.x) * f; orb.alvo.z = de.z + (para.z - de.z) * f;
+      orb.dist = Math.exp(Math.log(de.dist) + (Math.log(para.dist) - Math.log(de.dist)) * f);
+      orb.el = de.el + (para.el - de.el) * f; orb.az = de.az + da * f;
+      orb.alto = de.alto + (para.alto - de.alto) * f;
+      if (t >= 1) { voo = null; return false; }
+      return true;
+    };
+    pedir();
+  }
+
+  /* ---- o mouse e o toque ---- */
+  const ptrs = new Map();
+  let gesto = null;                        // { tipo: 'arrasta' | 'gira' | 'dois', ... }
+  tela.addEventListener('contextmenu', ev => ev.preventDefault());
+  tela.addEventListener('pointerdown', ev => {
+    tela.focus({ preventScroll: true });
+    tela.setPointerCapture(ev.pointerId);
+    ptrs.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY });
+    cancelarVoo();
+    if (ptrs.size === 1) {
+      /* a pé, o chão não se arrasta: arrastar gira a câmera em volta dele */
+      const gira = !!ape || ev.button === 2 || ev.button === 1 || ev.shiftKey || ev.ctrlKey;
+      gesto = gira ? { tipo: 'gira', moveu: false } : { tipo: 'arrasta', ponto: chaoEm(ev.clientX, ev.clientY), moveu: false };
+    } else if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      gesto = { tipo: 'dois', d: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), my: (a.y + b.y) / 2, dist: orb.dist, vao: ape ? ape.vao : 0, az: orb.az, el: orb.el, moveu: true };
+    }
+    $('.cen-hover').hidden = true;
+  });
+  tela.addEventListener('pointermove', ev => {
+    const p = ptrs.get(ev.pointerId);
+    if (!p) { if (ev.pointerType === 'mouse') passar(ev.clientX, ev.clientY); return; }
+    const dx = ev.clientX - p.x, dy = ev.clientY - p.y;
+    p.x = ev.clientX; p.y = ev.clientY;
+    if (!gesto) return;
+    if (Math.hypot(p.x - p.x0, p.y - p.y0) > 5) { gesto.moveu = true; tela.classList.add('arrastando'); }
+    if (!gesto.moveu) return;
+    if (gesto.tipo === 'gira') {
+      orb.az -= dx * 0.006; orb.el += dy * 0.005;
+    } else if (gesto.tipo === 'arrasta') {
+      /* PEGAR O CHÃO: o ponto que estava debaixo do dedo continua debaixo dele */
+      const agoraP = gesto.ponto && chaoEm(ev.clientX, ev.clientY);
+      if (agoraP) { orb.alvo.x += gesto.ponto.x - agoraP.x; orb.alvo.z += gesto.ponto.z - agoraP.z; }
+      else {
+        const k = orb.dist / Math.max(200, tela.clientHeight) * 1.6;
+        orb.alvo.x -= (Math.cos(orb.az) * dx + Math.sin(orb.az) * dy) * k;
+        orb.alvo.z -= (-Math.sin(orb.az) * dx + Math.cos(orb.az) * dy) * k;
+      }
+    } else if (gesto.tipo === 'dois' && ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y), ang = Math.atan2(b.y - a.y, b.x - a.x), my = (a.y + b.y) / 2;
+      /* a pé, a pinça muda o quanto cabe na tela */
+      if (ape) ape.vao = clamp(gesto.vao * gesto.d / Math.max(1, d), 5, 80);
+      else orb.dist = gesto.dist * gesto.d / Math.max(1, d);
+      orb.az = gesto.az - (ang - gesto.ang);
+      orb.el = gesto.el + (my - gesto.my) * 0.004;
+    }
+    pedir();
+  });
+  const soltar = ev => {
+    const p = ptrs.get(ev.pointerId);
+    ptrs.delete(ev.pointerId);
+    tela.classList.remove('arrastando');
+    if (gesto && !gesto.moveu && p && ev.type === 'pointerup' && ptrs.size === 0 && ev.button === 0) clicar(ev.clientX, ev.clientY);
+    if (ptrs.size === 1 && gesto && gesto.tipo === 'dois') {
+      const [q] = [...ptrs.values()];
+      gesto = ape ? { tipo: 'gira', moveu: true } : { tipo: 'arrasta', ponto: chaoEm(q.x, q.y), moveu: true };
+    } else if (ptrs.size === 0) gesto = null;
+  };
+  tela.addEventListener('pointerup', soltar);
+  tela.addEventListener('pointercancel', soltar);
+  tela.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    cancelarVoo();
+    const f = Math.exp(clamp(ev.deltaY, -120, 120) * (ev.deltaMode === 1 ? 0.05 : 0.0016));
+    /* a pé, a roda muda o quanto cabe na tela, com o boneco no meio */
+    if (ape) { ape.vao = clamp(ape.vao * f, 5, 80); pedir(); return; }
+    /* aproxima NO CURSOR: o ponto do chão debaixo dele fica onde está */
+    const p = chaoEm(ev.clientX, ev.clientY);
+    const antes = orb.dist;
+    orb.dist = clamp(orb.dist * f, 2.5 * M, 2600 * M);
+    if (p) { const k = 1 - orb.dist / antes; orb.alvo.x += (p.x - orb.alvo.x) * k; orb.alvo.z += (p.z - orb.alvo.z) * k; }
+    pedir();
+  }, { passive: false });
+  tela.addEventListener('dblclick', ev => {
+    if (ape) return;
+    const p = chaoEm(ev.clientX, ev.clientY);
+    if (p) voarPara(p.x, p.z, Math.max(18 * M, orb.dist * 0.4));
+  });
+
+  /* ======================================================
+     O CLIQUE: o número da coisa no pixel
+     ------------------------------------------------------
+     Cada vértice do forno leva o número da coisa de onde veio (1, 2, 3…;
+     0 é o que não tem ficha: o chão, o mato, a árvore). No clique, a cena
+     é desenhada de novo num alvo de 1 × 1 pixel, só com esse número na
+     cor — o que se vê naquele pixel é o que se clicou, exato (a parede,
+     não a caixa em volta do prédio). Com o recorte de 1 pixel, a câmera
+     descarta quase tudo e o desenho sai barato.
+     ====================================================== */
+  let coisas = [null], selecao = null;
+  const caixaSel = new THREE.Box3Helper(new THREE.Box3(), 0xf09c45);
+  caixaSel.visible = false; caixaSel.material.depthTest = false; caixaSel.renderOrder = 5; cena.add(caixaSel);
+  const alvoId = new THREE.WebGLRenderTarget(1, 1), pixel = new Uint8Array(4);
+  /* o clique respeita o corte (o telhado que sumiu não pega o clique, nem
+     a cidade em cima da estação quando ele está no metrô) e o buraco do
+     poço no chão (o chão é a coisa 0) — os uniformes entram com o CORTE,
+     lá embaixo */
+  const matId = new THREE.ShaderMaterial({
+    uniforms: {},
+    vertexShader: `attribute float idCoisa; varying vec3 vId; varying vec3 vCorteP; varying float vCorteId;
+      void main() {
+        vId = vec3(mod(idCoisa, 256.0), mod(floor(idCoisa / 256.0), 256.0), floor(idCoisa / 65536.0)) / 255.0;
+        vCorteId = idCoisa;
+        vec4 p = modelMatrix * vec4(position, 1.0);
+        vCorteP = p.xyz;
+        gl_Position = projectionMatrix * viewMatrix * p;
+      }`,
+    fragmentShader: `varying vec3 vId; varying vec3 vCorteP; varying float vCorteId;
+      CORTE_GLSL
+      void main() {
+        if ( corteSub( vCorteP ) ) discard;
+        if ( uCorte > 0.5 && uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;
+        if ( vCorteId < 0.5 && abs( vCorteP.y ) < 1.0 && noBuraco( vCorteP ) ) discard;
+        gl_FragColor = vec4(vId, 1.0);
+      }`,
+    side: THREE.DoubleSide
+  });
+  function pegar(sx, sy) {
+    if (coisas.length < 2) return null;
+    const r = tela.getBoundingClientRect();
+    posicionar();
+    const fundo = cena.background, cor = rend.getClearColor(new THREE.Color()), alfa = rend.getClearAlpha();
+    const vis = caixaSel.visible, dv = doMapa.getObjectByName('dia-de-jogo');
+    if (dv) dv.visible = false;
+    cena.background = null; cena.overrideMaterial = matId; caixaSel.visible = false;
+    rend.setClearColor(0x000000, 1);
+    cam.setViewOffset(r.width, r.height, Math.floor(sx - r.left), Math.floor(sy - r.top), 1, 1);
+    rend.setRenderTarget(alvoId);
+    rend.render(cena, cam);
+    rend.readRenderTargetPixels(alvoId, 0, 0, 1, 1, pixel);
+    rend.setRenderTarget(null);
+    cam.clearViewOffset();
+    cena.background = fundo; cena.overrideMaterial = null; caixaSel.visible = vis;
+    if (dv) dv.visible = true;
+    rend.setClearColor(cor, alfa);
+    const id = pixel[0] + pixel[1] * 256 + pixel[2] * 65536;
+    return coisas[id] || null;
+  }
+  const raioDoClique = new THREE.Raycaster(), telaDoClique = new THREE.Vector2();
+  function clicar(sx, sy) {
+    /* o clique que a vida pega antes da ficha (o armário do patrimônio da
+       sede do jogador, no jogo 3D): o raio da câmera pelo ponto, no mundo */
+    if (vidaApi.aoClicar) {
+      const r = tela.getBoundingClientRect();
+      posicionar();
+      telaDoClique.set((sx - r.left) / r.width * 2 - 1, -((sy - r.top) / r.height) * 2 + 1);
+      raioDoClique.setFromCamera(telaDoClique, cam);
+      const o = raioDoClique.ray.origin, d = raioDoClique.ray.direction;
+      if (vidaApi.aoClicar({ o: [o.x, o.y, o.z], d: [d.x, d.y, d.z] })) return;
+    }
+    const c = pegar(sx, sy);
+    if (!c) { fecharFicha(); return; }
+    selecao = c;
+    const t = c.caixa;
+    caixaSel.box.min.set(t[0], t[1], t[2]); caixaSel.box.max.set(t[3], t[4], t[5]);
+    caixaSel.visible = true;
+    $('.cen-ficha-corpo').innerHTML = P.fichaDe(c.it) || `<h2>${esc(P.tituloDe(c.it) || '')}</h2>`;
+    $('.cen-ficha').hidden = false;
+    pedir();
+  }
+  function fecharFicha() { selecao = null; caixaSel.visible = false; $('.cen-ficha').hidden = true; pedir(); }
+  $('.cen-x').onclick = fecharFicha;
+  /* o nome do que está debaixo do mouse, quando ele para (a leitura do
+     pixel faz a placa de vídeo esperar: só com o mouse parado) */
+  let passo = 0, ultimoXY = null;
+  function passar(sx, sy) {
+    ultimoXY = [sx, sy];
+    $('.cen-hover').hidden = true;
+    clearTimeout(passo);
+    passo = setTimeout(() => {
+      passo = 0;
+      if (gesto || raiz.hidden || montando) return;
+      const [x, y] = ultimoXY, c = pegar(x, y), h = $('.cen-hover');
+      if (!c || (selecao && c.it === selecao.it)) { h.hidden = true; return; }
+      const r = tela.getBoundingClientRect();
+      h.textContent = P.tituloDe(c.it) || '';
+      h.style.left = (x - r.left) + 'px'; h.style.top = (y - r.top) + 'px';
+      h.hidden = !h.textContent;
+    }, 180);
+  }
+  tela.addEventListener('pointerleave', () => { $('.cen-hover').hidden = true; });
+
+  /* ======================================================
+     O FORNO: junta as malhas por bloco e por material
+     ====================================================== */
+  /* O CORTE NOS MATERIAIS (a pé, de cima): os uniformes são os mesmos
+     objetos em todos, e o quadro só troca o valor. No fragmento:
+     - o que é da coisa `uCorteId` (o prédio em que o boneco está dentro,
+       pelo número de cada vértice) e passa de `uCorteY` some: o telhado,
+       a laje e o alto da parede — de cima se vê a planta dos cômodos;
+     - o que passa de `uCorteAcima` e está dentro do CONE da cabeça dele
+       até a câmera (`uCorteR` de raio em cima da cabeça, fechando até a
+       câmera: só o que fica na frente dele na tela) fica ralo, num
+       pontilhado que some no meio (a copa, o beiral, o prédio alto do lado
+       da câmera): vê-se através */
+  /* - EMBAIXO DA RUA (no metrô), o que passa de `uSubY` dentro do
+       retângulo `uSub` (a caixa da estação, com folga) some: a cidade em
+       cima dela, o chão, o mezanino quando ele está na plataforma;
+     - SEMPRE, o chão tem um buraco em cada POÇO do metrô (`uBuraco`): é
+       por ali que a escada desce */
+  const CORTE = {
+    uCorte: { value: 0 }, uCorteId: { value: 0 }, uCorteY: { value: 0 }, uCorteR: { value: 1 }, uCorteAcima: { value: 0 },
+    uCorteA: { value: new THREE.Vector3() }, uCorteB: { value: new THREE.Vector3() },
+    uSub: { value: new THREE.Vector4() }, uSubY: { value: 1e9 },
+    uBuraco: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) }, uNBuraco: { value: 0 }
+  };
+  const CORTE_GLSL = `uniform float uCorte, uCorteId, uCorteY, uCorteR, uCorteAcima, uSubY;
+uniform vec3 uCorteA, uCorteB;
+uniform vec4 uSub;
+uniform vec4 uBuraco[ 4 ];
+uniform int uNBuraco;
+bool corteSub( vec3 p ) { return uCorte > 0.5 && p.y > uSubY && p.x > uSub.x && p.x < uSub.z && p.z > uSub.y && p.z < uSub.w; }
+float corteBayer( vec2 a ) { a = floor( a ); return fract( a.x / 2.0 + a.y * a.y * 0.75 ); }
+bool corteCone( vec3 p ) {
+  if ( uCorte < 0.5 || p.y <= uCorteAcima ) return false;
+  vec3 ab = uCorteB - uCorteA;
+  float t = clamp( dot( p - uCorteA, ab ) / max( dot( ab, ab ), 1e-3 ), 0.0, 1.0 );
+  float d = length( p - ( uCorteA + ab * t ) ), R = uCorteR * ( 1.0 - 0.85 * t );
+  float k = 1.0 - smoothstep( R * 0.55, R, d );
+  float limiar = corteBayer( 0.5 * gl_FragCoord.xy ) * 0.25 + corteBayer( gl_FragCoord.xy );
+  return k * 0.92 > limiar;
+}
+bool noBuraco( vec3 p ) {
+  for ( int i = 0; i < 4; i++ ) {
+    if ( i >= uNBuraco ) break;
+    vec4 b = uBuraco[ i ];
+    if ( p.x > b.x && p.x < b.z && p.z > b.y && p.z < b.w ) return true;
+  }
+  return false;
+}
+`;
+  matId.fragmentShader = matId.fragmentShader.replace('CORTE_GLSL', CORTE_GLSL);
+  Object.assign(matId.uniforms, CORTE);
+  function cortavel(mat, comId) {
+    const antes = mat.onBeforeCompile;
+    mat.onBeforeCompile = (sh, r) => {
+      if (antes) antes.call(mat, sh, r);
+      Object.assign(sh.uniforms, CORTE);
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', `${comId ? 'attribute float idCoisa;' : ''}\nvarying vec3 vCorteP;\nvarying float vCorteId;\nvoid main() {`)
+        .replace('#include <project_vertex>', `#include <project_vertex>\n  vCorteP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;\n  vCorteId = ${comId ? 'idCoisa' : '0.0'};`);
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', `${CORTE_GLSL}
+varying vec3 vCorteP;
+varying float vCorteId;
+void main() {
+  if ( corteSub( vCorteP ) || corteCone( vCorteP ) ) discard;
+  if ( uCorte > 0.5 && uCorteId > 0.5 && abs( vCorteId - uCorteId ) < 0.5 && vCorteP.y > uCorteY ) discard;`);
+    };
+    const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
+    mat.customProgramCacheKey = () => chave + '|corte' + (comId ? 1 : 0);
+    return mat;
+  }
+
+  /* ======================================================
+     A NOITE (o dono, 30/09/2026: "preciso que a noite tenha as luzes dos
+     postes, refletores de estádios e janelas das casas não entráveis
+     acesos, assim como os ambientes entráveis tenham luz interior
+     também"). Nenhuma luz do three.js: cada uma pesa em todo pixel de
+     tudo e, trocando quantas são, o three recompila todos os materiais
+     (e o dono joga sem placa de vídeo). A luz da noite é UMA conta a mais
+     em cada material, lida de dois mapas vistos de cima:
+     - o MAPA DA LUZ (um pixel por metro): a poça de cada poste, quente,
+       mais forte embaixo dele e sumindo com a altura (acende o chão, a
+       calçada e o pé da fachada), e, no canal alfa, a luz branca dos
+       refletores do estádio (o campo e a arquibancada inteiros);
+     - o MAPA DO TETO (a grade do passo, meio metro): o que é coberto pelo
+       telhado de um prédio, com a altura dele. Debaixo do telhado, e
+       abaixo dele, é DENTRO: à noite, a luz da lâmpada (o cômodo da sede,
+       o bar, a varanda, a cobertura do posto, o corredor do estádio). A
+       face de fora da parede olha o mapa 80 cm pra fora (na direção da
+       normal) e fica no escuro;
+     - a JANELA: nas folhas dos prédios, a célula de janela (pelo nome, no
+       atlas) acende o vidro — o que é escuro e azulado nela — de parte das
+       janelas, sorteada janela por janela (cada vão ganha um número, no
+       forno): cedo, muitas; de madrugada, poucas;
+     - a LÂMPADA: a lente da luminária do poste (a célula dela na folha
+       dos props), o refletor do estádio e a lâmpada do corredor (o brilho
+       que o material deles tinha, e o forno perdia) acendem.
+     Tudo vezes `uNoite` (0 de dia, 1 de noite), que sai da hora do dia.
+     ====================================================== */
+  const vazia = () => { const t = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1); t.needsUpdate = true; return t; };
+  const NOITE = {
+    uNoite: { value: 0 }, uAcesas: { value: 0.45 }, uNoiteM: { value: M },
+    uLuzMapa: { value: vazia() }, uLuzC: { value: new THREE.Vector4(0, 0, 1, 1) },
+    uTetoMapa: { value: vazia() }, uTetoC: { value: new THREE.Vector4(0, 0, 1, 1) }
+  };
+  const NOITE_GLSL = `uniform float uNoite, uAcesas, uNoiteM;
+uniform sampler2D uLuzMapa, uTetoMapa;
+uniform vec4 uLuzC, uTetoC;
+varying vec3 vNoiteP;
+varying vec3 vNoiteN;
+vec3 luzDaNoite( vec3 p, vec3 n ) {
+  if ( uNoite < 0.001 ) return vec3( 0.0 );
+  vec4 L = texture2D( uLuzMapa, ( p.xz - uLuzC.xy ) * uLuzC.zw );
+  float cima = max( n.y, 0.0 ), baixo = max( -n.y, 0.0 );
+  /* o poste (a uns 7 m): forte no chão, pouco na parede, some acima
+     de uns 9 m */
+  float alto = clamp( 1.25 - p.y / ( 7.0 * uNoiteM ), 0.0, 1.0 );
+  vec3 luz = L.rgb * 1.5 * alto * ( 0.3 + 0.7 * cima - 0.25 * baixo );
+  /* o refletor: o estádio inteiro, de cima */
+  luz += vec3( 0.95, 0.97, 1.0 ) * L.a * ( 0.75 + 0.25 * cima );
+  /* dentro: coberto e abaixo do telhado, olhando 80 cm pra onde a face
+     olha (a parede de fora olha pra rua, que não tem teto) */
+  vec2 q = p.xz + n.xz * ( 0.8 * uNoiteM );
+  float teto = texture2D( uTetoMapa, ( q - uTetoC.xy ) * uTetoC.zw ).r * 25.5 * uNoiteM;
+  if ( teto > 0.0 && p.y < teto - 0.15 * uNoiteM ) luz += vec3( 1.0, 0.86, 0.66 ) * 1.05;
+  return luz * uNoite;
+}
+`;
+  /* A JANELA E A LÂMPADA DAS FOLHAS: uma máscara pequena por folha (1/4 do
+     tamanho), com a célula de janela em vermelho (acende o vidro dela) e a
+     que é lâmpada em verde (acende inteira). Pelo nome da célula */
+  const JANELA_CEL = /^(jan|janela|janelinha|janelinhas|basc|basculante|vitro|vidraca|vidro|vitrine|tijolo_vidro|col_janela|hosp_modulo|dp_janela|esc_janela|posto_vitrine|shop_vidro|porta_vidro|cortina|janela_pol|porta_shop|porta_pol|modulo|terreo_vidro|terreo_porta|sacada|losango|oculo|faixa[0-9]|faixa_lat|parede|vermelho$|t1_jan|t1_vidro|t1_terreo|t2_jan|t2_sacada|t2_terreo)/;
+  const LAMPADA_CEL = /^(luminaria_lente)$/;
+  const mascaras = new Map();
+  function folhaDoMapa(src) {
+    const m = /\/([a-z0-9_]+)\.(jpg|png)$/i.exec(src || '');
+    return m ? m[1].replace(/_v[0-9]$/, '') : null;
+  }
+  function mascaraDaFolha(folha) {
+    if (mascaras.has(folha)) return mascaras.get(folha);
+    const A = ATLAS[folha];
+    let t = null;
+    if (A && folha !== 'metro' && folha !== 'grades') {
+      const W = Math.max(8, Math.round(A.larg / 4)), H = Math.max(8, Math.round(A.alt / 4));
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const c = cv.getContext('2d');
+      c.fillStyle = '#000'; c.fillRect(0, 0, W, H);
+      let n = 0;
+      for (const [k, r] of Object.entries(A.cel)) {
+        const lamp = LAMPADA_CEL.test(k), jan = !lamp && JANELA_CEL.test(k);
+        if (!lamp && !jan) continue;
+        c.fillStyle = lamp ? '#00ff00' : '#ff0000';
+        /* (a célula com v0 embaixo; o canvas sobe com flipY: a linha de cima é v = 1) */
+        const x0 = Math.floor(r[0] * W), x1 = Math.ceil(r[2] * W), y0 = Math.floor((1 - r[3]) * H), y1 = Math.ceil((1 - r[1]) * H);
+        c.fillRect(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0));
+        n++;
+      }
+      if (n) {
+        t = new THREE.CanvasTexture(cv);
+        t.colorSpace = THREE.NoColorSpace; t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+      }
+    }
+    mascaras.set(folha, t);
+    return t;
+  }
+  /* A NOITE NUM MATERIAL: a luz dos mapas (tudo); `o.janelas`, a máscara
+     da folha (e o número de cada vão, `aSorte`); `o.lum`, a força da
+     lâmpada que o material é */
+  /* os materiais com a noite (a troca de uma opção de luz recompila todos) */
+  const materiaisDaNoite = new Set();
+  function comNoite(mat, o = {}) {
+    /* (só no material que tem luz: o básico — a lâmpada acesa do kit, o anel — já brilha sozinho) */
+    if (!mat || !(mat.isMeshLambertMaterial || mat.isMeshPhongMaterial || mat.isMeshStandardMaterial)) return mat;
+    const antes = mat.onBeforeCompile;
+    const u = o.janelas ? { uJanelas: { value: o.janelas } } : {};
+    if (o.lum) u.uLum = { value: o.lum };
+    /* (os gráficos decidem na hora de compilar: as luzes da noite apagadas
+       tiram a conta do mapa da luz e da janela; a luz simples leva a conta
+       do sol e do céu pro vértice — no Lambert. Trocar a opção recompila:
+       `refazerMateriais`) */
+    mat.onBeforeCompile = (sh, r) => {
+      if (antes) antes.call(mat, sh, r);
+      const acesas = GRAF.luzes !== false, janelas = acesas && !!o.janelas;
+      /* (o material cortável já leva a posição no mundo pro pixel, vCorteP,
+         e o chão, vChaoP: a noite usa a mesma — uma variável interpolada a
+         menos por pixel) */
+      const mesmaP = acesas && !sh.instancing && (/varying vec3 vCorteP;/.test(sh.vertexShader) ? 'vCorteP' : /varying vec3 vChaoP;/.test(sh.vertexShader) ? 'vChaoP' : '');
+      Object.assign(sh.uniforms, NOITE, u);
+      if (acesas) sh.vertexShader = sh.vertexShader
+        .replace('void main() {', `${mesmaP ? '' : 'varying vec3 vNoiteP;\n'}varying vec3 vNoiteN;\n${janelas ? 'attribute float aSorte;\nvarying float vSorte;\n' : ''}void main() {`)
+        .replace('#include <project_vertex>', `#include <project_vertex>
+  {
+    vec4 np = vec4( transformed, 1.0 );
+    vec3 nn = objectNormal;
+    #ifdef USE_INSTANCING
+      np = instanceMatrix * np; nn = mat3( instanceMatrix ) * nn;
+    #endif
+    np = modelMatrix * np;
+    ${mesmaP ? '' : 'vNoiteP = np.xyz;'}
+    vNoiteN = normalize( mat3( modelMatrix ) * nn );
+    ${janelas ? 'vSorte = aSorte;' : ''}
+  }`);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {', `${acesas ? (mesmaP ? NOITE_GLSL.replace('varying vec3 vNoiteP;', '#define vNoiteP ' + mesmaP) : NOITE_GLSL) : 'uniform float uNoite;\n'}${janelas ? 'uniform sampler2D uJanelas;\nvarying float vSorte;\n' : ''}${o.lum ? 'uniform float uLum;\n' : ''}void main() {`)
+        .replace('#include <color_fragment>', `#include <color_fragment>
+  vec3 noiteBrilho = vec3( 0.0 );
+  ${janelas ? `if ( uNoite > 0.001 ) {
+    vec2 mj = texture2D( uJanelas, vMapUv ).rg;
+    if ( mj.r > 0.5 ) {
+      vec3 t = diffuseColor.rgb;
+      float lum = dot( t, vec3( 0.2126, 0.7152, 0.0722 ) );
+      float vidro = smoothstep( 0.2, 0.05, lum ) * smoothstep( -0.01, 0.015, t.b - t.r * 0.95 );
+      vec3 corJ = fract( vSorte * 13.7 ) > 0.8 ? vec3( 0.6, 0.72, 1.0 ) : vec3( 1.0, 0.72, 0.4 );
+      noiteBrilho += corJ * vidro * step( vSorte, uAcesas ) * 1.5;
+    }
+    if ( mj.g > 0.5 ) noiteBrilho += vec3( 1.0, 0.9, 0.72 ) * 2.4;
+  }` : ''}
+  ${o.lum ? 'noiteBrilho += diffuseColor.rgb * uLum;' : ''}
+  noiteBrilho *= uNoite;`)
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n  totalEmissiveRadiance += noiteBrilho;');
+      if (acesas) sh.fragmentShader = sh.fragmentShader
+        .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
+  reflectedLight.indirectDiffuse += luzDaNoite( vNoiteP, normalize( vNoiteN ) * ( gl_FrontFacing ? 1.0 : -1.0 ) ) * diffuseColor.rgb;`);
+      if (GRAF.luz === 'simples' && mat.isMeshLambertMaterial) luzNoVertice(sh);
+    };
+    const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
+    mat.customProgramCacheKey = () => chave + '|noite' + (o.janelas ? 'J' : '') + (o.lum ? 'L' : '') + (GRAF.luzes !== false ? '' : '-apagada') + (GRAF.luz === 'simples' && mat.isMeshLambertMaterial ? '-vertice' : '');
+    /* (a referência fraca deixa o material da praça de antes ir embora; sem WeakRef, o navegador antigo, fica a forte) */
+    materiaisDaNoite.add(typeof WeakRef === 'function' ? new WeakRef(mat) : { deref: () => mat });
+    return mat;
+  }
+  function refazerMateriais() {
+    for (const w of materiaisDaNoite) { const m = w.deref(); if (m) m.needsUpdate = true; else materiaisDaNoite.delete(w); }
+    pedir();
+  }
+  /* A LUZ SIMPLES (os gráficos): o Lambert faz a conta do sol e do céu em
+     cada pixel. Aqui ela vai pro vértice, com as mesmas luzes da cena (o
+     céu e o chão da luz de hemisfério e o sol, que mudam com a hora), e o
+     pixel só multiplica a cor pela luz que chegou nele. Na parede, no chão
+     e no telhado, que são planos (a normal é a mesma no triângulo inteiro),
+     sai igual; muda no que é curvo (o boneco, a copa redonda). A face de
+     trás (o material de dois lados) tem a conta dela. A noite (o poste, o
+     cômodo, a janela) continua no pixel */
+  function luzNoVertice(sh) {
+    sh.vertexShader = sh.vertexShader
+      .replace('void main() {', `uniform vec3 ambientLightColor;
+#if NUM_DIR_LIGHTS > 0
+struct DirectionalLight {
+vec3 direction;
+vec3 color;
+};
+uniform DirectionalLight directionalLights[ NUM_DIR_LIGHTS ];
+#endif
+#if NUM_HEMI_LIGHTS > 0
+struct HemisphereLight {
+vec3 direction;
+vec3 skyColor;
+vec3 groundColor;
+};
+uniform HemisphereLight hemisphereLights[ NUM_HEMI_LIGHTS ];
+#endif
+varying vec3 vLuzF;
+#ifdef DOUBLE_SIDED
+varying vec3 vLuzT;
+#endif
+void main() {`)
+      .replace('#include <fog_vertex>', `#include <fog_vertex>
+  {
+    vec3 nL = normalize( transformedNormal );
+    vec3 luzF = ambientLightColor, luzT = ambientLightColor;
+    #if NUM_HEMI_LIGHTS > 0
+    #pragma unroll_loop_start
+    for ( int i = 0; i < NUM_HEMI_LIGHTS; i ++ ) {
+      luzF += mix( hemisphereLights[ i ].groundColor, hemisphereLights[ i ].skyColor, 0.5 * dot( nL, hemisphereLights[ i ].direction ) + 0.5 );
+      luzT += mix( hemisphereLights[ i ].groundColor, hemisphereLights[ i ].skyColor, 0.5 - 0.5 * dot( nL, hemisphereLights[ i ].direction ) );
+    }
+    #pragma unroll_loop_end
+    #endif
+    #if NUM_DIR_LIGHTS > 0
+    #pragma unroll_loop_start
+    for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
+      luzF += directionalLights[ i ].color * max( dot( nL, directionalLights[ i ].direction ), 0.0 );
+      luzT += directionalLights[ i ].color * max( - dot( nL, directionalLights[ i ].direction ), 0.0 );
+    }
+    #pragma unroll_loop_end
+    #endif
+    vLuzF = luzF;
+    #ifdef DOUBLE_SIDED
+    vLuzT = luzT;
+    #endif
+  }`);
+    /* (o pixel não usa mais a normal nem a posição na câmera: as duas
+       variáveis que o triângulo interpola em cada pixel saem — no
+       desenho sem placa, é o que pesa) */
+    sh.vertexShader = sh.vertexShader
+      .replace('varying vec3 vViewPosition;', 'vec3 vViewPosition;')
+      .replace('#include <normal_pars_vertex>', '')
+      .replace('#include <normal_vertex>', '');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('void main() {', 'varying vec3 vLuzF;\n#ifdef DOUBLE_SIDED\nvarying vec3 vLuzT;\n#endif\nvoid main() {')
+      .replace('#include <normal_pars_fragment>', '')
+      .replace('#include <lights_lambert_pars_fragment>', '')
+      .replace('#include <normal_fragment_begin>', '')
+      .replace('#include <normal_fragment_maps>', '')
+      .replace('#include <lights_lambert_fragment>', '')
+      .replace('#include <lights_fragment_begin>', '')
+      .replace('#include <lights_fragment_maps>', '')
+      .replace('#include <lights_fragment_end>', `#ifdef DOUBLE_SIDED
+  reflectedLight.indirectDiffuse += ( gl_FrontFacing ? vLuzF : vLuzT ) * BRDF_Lambert( diffuseColor.rgb );
+#else
+  reflectedLight.indirectDiffuse += vLuzF * BRDF_Lambert( diffuseColor.rgb );
+#endif`);
+  }
+
+  /* a cor do material entra no vértice (em linear, como o three.js
+     guarda), multiplicada pela do vértice quando ele tem */
+  const matsDoForno = new Map();
+  function chaveDoMaterial(m) {
+    const mapa = m.map;
+    if (mapa && mapa.isCanvasTexture && mapa.wrapS !== THREE.RepeatWrapping) return 'decal';
+    return [mapa ? 'map:' + (mapa.userData.src || mapa.uuid) : 'cor', m.side, m.transparent ? 1 : 0, m.transparent ? m.opacity : 1,
+            m.alphaTest || 0, m.depthWrite ? 1 : 0, m.flatShading ? 1 : 0, m.alphaToCoverage ? 1 : 0].join('|');
+  }
+  function materialDoForno(chave, m) {
+    if (matsDoForno.has(chave)) return matsDoForno.get(chave);
+    /* (a noite: a lâmpada, ou a janela da folha; a estação do metrô, que é
+       embaixo da terra, fica acesa de noite como de dia) */
+    const lum = /\|lum:([0-9.]+)$/.exec(chave), folha = m.map ? folhaDoMapa(m.map.userData.src) : null;
+    const mat = comNoite(cortavel(new THREE.MeshLambertMaterial({
+      map: m.map || null, vertexColors: true, side: m.side, transparent: m.transparent, opacity: m.transparent ? m.opacity : 1,
+      alphaTest: m.alphaTest || 0, depthWrite: m.depthWrite, flatShading: !!m.flatShading, alphaToCoverage: !!m.alphaToCoverage }), true),
+      { janelas: !lum && folha ? mascaraDaFolha(folha) : null, lum: lum ? +lum[1] : folha === 'metro' ? 0.35 : 0 });
+    matsDoForno.set(chave, mat);
+    return mat;
+  }
+  /* A FORÇA DA LÂMPADA de um material (o brilho dele): 0, não é lâmpada */
+  function forcaDaLampada(m) {
+    const e = m.emissive, k = m.emissiveIntensity === undefined ? 1 : m.emissiveIntensity;
+    if (!e || !(k > 0)) return 0;
+    const f = Math.max(e.r, e.g, e.b) * k;
+    return f > 0.02 ? Math.round(Math.min(9, f * 4) * 10) / 10 : 0;
+  }
+  /* O NÚMERO DE CADA VÃO (a janela acesa é sorteada por ele): os triângulos
+     seguidos do mesmo polígono — o leque do construtor (o mesmo primeiro
+     vértice) e o par da face da caixa (dois vértices em comum) — levam o
+     número do primeiro vértice dele */
+  function sorteDosVaos(P3, n) {
+    const S = new Uint8Array(n);
+    const igual = (a, b) => P3[3 * a] === P3[3 * b] && P3[3 * a + 1] === P3[3 * b + 1] && P3[3 * a + 2] === P3[3 * b + 2];
+    let ini = 0, valor = 0;
+    for (let t = 0; t * 3 + 2 < n; t++) {
+      const k = 3 * t;
+      let junto = false;
+      if (t > 0) {
+        if (igual(k, k - 3)) junto = true;
+        else { let c = 0; for (let a = 0; a < 3; a++) for (let b = 1; b <= 3; b++) if (igual(k + a, k - b)) c++; junto = c >= 2; }
+      }
+      if (!junto) {
+        ini = k;
+        let h = 2166136261;
+        for (let a = 0; a < 3; a++) { h ^= Math.round(P3[3 * ini + a] * 7) | 0; h = Math.imul(h, 16777619); }
+        h ^= h >>> 13; h = Math.imul(h, 2246822519); h ^= h >>> 16;
+        valor = (h >>> 0) % 255 + 1;
+      }
+      S[k] = S[k + 1] = S[k + 2] = valor;
+    }
+    return S;
+  }
+
+  /* AS FOLHAS DE DECALQUE: cada canvas de texto vira um quadro numa folha
+     de 2048 px, em prateleiras; a malha do decalque aponta pro quadro */
+  function FolhasDeDecalque(escala) {
+    const folhas = [], quadros = [];
+    let atual = null, atualR = null;
+    function nova(repinta) {
+      const cv = document.createElement('canvas'); cv.width = cv.height = FOLHA_DECAL;
+      const f = { cv, c: cv.getContext('2d'), x: VAO_DECAL, y: VAO_DECAL, alt: 0, tex: null, i: folhas.length, repinta };
+      folhas.push(f); if (repinta) atualR = f; else atual = f; return f;
+    }
+    /* `repinta`: o canvas de origem muda depois (o escudo, quando o PNG
+       chega) e a folha copia de novo. O resto não fica: a folha já tem a
+       cópia dele, e guardar o canvas de cada letreiro e de cada pichação
+       deixava mais de mil deles vivos por cidade — 130 MP (uns 500 MB) no
+       pico da montagem e 40 a 55 MP pelo tempo todo em que a cidade ficava
+       no ar, e cada cópia (aos 0,7 s e aos 2,5 s) subia as dez folhas de
+       2048 px de novo pra placa. Medido em 29/09/2026 (o dono: "quase todas
+       as vezes que preciso abrir outro mapa devido a caravanas o jogo buga
+       e recarrega automaticamente"); no navegador de teste as imagens na
+       GPU caíram de 439 MB pra 103 MB. Quem repinta vai pra folha só de
+       quem repinta, e só ela sobe de novo */
+    function lugar(fonte, repinta = true) {
+      const w = Math.max(8, Math.round(fonte.width * escala)), h = Math.max(8, Math.round(fonte.height * escala));
+      let f = (repinta ? atualR : atual) || nova(repinta);
+      if (f.x + w + VAO_DECAL > FOLHA_DECAL) { f.x = VAO_DECAL; f.y += f.alt + VAO_DECAL; f.alt = 0; }
+      if (f.y + h + VAO_DECAL > FOLHA_DECAL) f = nova(repinta);
+      const q = { f, x: f.x, y: f.y, w, h, fonte };
+      f.x += w + VAO_DECAL; f.alt = Math.max(f.alt, h);
+      f.c.drawImage(fonte, q.x, q.y, w, h);
+      if (repinta) quadros.push(q);
+      return q;
+    }
+    function texturas() {
+      for (const f of folhas) {
+        if (f.tex) { f.tex.needsUpdate = true; continue; }
+        const t = new THREE.CanvasTexture(f.cv);
+        t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = anisoDe(4);
+        /* a folha sem quadro que repinta já está pronta: o canvas dela sai depois de subir */
+        if (!f.repinta) t.onUpdate = () => { f.cv.width = f.cv.height = 1; t.onUpdate = null; };
+        f.tex = t;
+      }
+    }
+    /* O ESCUDO QUE CHEGA DEPOIS: o PNG do escudo repinta o canvas dele
+       quando carrega; a folha copia de novo. Na última cópia (`final`),
+       depois de subir pra placa de vídeo, o canvas da folha e os dos
+       decalques saem da memória */
+    function recopiar(final) {
+      for (const q of quadros) { q.f.c.clearRect(q.x, q.y, q.w, q.h); q.f.c.drawImage(q.fonte, q.x, q.y, q.w, q.h); }
+      for (const f of folhas) if (f.tex && f.repinta) {
+        if (final) f.tex.onUpdate = () => { f.cv.width = f.cv.height = 1; f.tex.onUpdate = null; };
+        f.tex.needsUpdate = true;
+      }
+      if (final) quadros.length = 0;
+    }
+    function jogarFora() { for (const f of folhas) { if (f.tex) f.tex.dispose(); f.cv.width = f.cv.height = 1; } }
+    return { lugar, texturas, recopiar, jogarFora, folhas };
+  }
+
+  function Forno(ar, escalaDecal, grade, sub, piso, andares, sobrados) {
+    const LADO = BLOCO_M * M;
+    const nx = Math.max(1, Math.ceil((ar.x1 - ar.x0) / LADO)), nz = Math.max(1, Math.ceil((ar.y1 - ar.y0) / LADO));
+    const baldes = new Map(), decal = FolhasDeDecalque(escalaDecal), lista = [null], vivos = [], luzes = [];
+    const v = new THREE.Vector3(), n3 = new THREE.Matrix3(), cor = new THREE.Color();
+    let triangulos = 0, malhas = 0;
+    /* uma malha montada vira pedaço de balde: posição no mundo, normal,
+       uv e cor por vértice (sem índice) */
+    function pedaco(malha) {
+      const m = Array.isArray(malha.material) ? malha.material[0] : malha.material;
+      if (!m || !malha.geometry || !malha.geometry.attributes.position) return null;
+      let chave = chaveDoMaterial(m);
+      const g = malha.geometry;
+      if (!g.attributes.normal) g.computeVertexNormals();
+      const pos = g.attributes.position, nor = g.attributes.normal, uv = g.attributes.uv, col = g.attributes.color, idx = g.index;
+      const n = idx ? idx.count : pos.count;
+      if (!n) return null;
+      const mw = malha.matrixWorld;
+      n3.getNormalMatrix(mw);
+      const P3 = new Float32Array(n * 3), N3 = new Int8Array(n * 3), C3 = new Uint8Array(n * 3);
+      const temMapa = !!m.map, U2 = temMapa ? new Float32Array(n * 2) : null;
+      const usaVC = !!m.vertexColors && !!col;
+      const mc = m.color || cor.setRGB(1, 1, 1);
+      let q = null;
+      if (chave === 'decal') {
+        q = decal.lugar(m.map.image, !m.map.userData.umaVez);
+        chave = 'decal|' + q.f.i;
+      }
+      /* (a lâmpada — o material que tinha brilho — vai pro balde dela, que acende de noite) */
+      const lum = forcaDaLampada(m);
+      if (lum) chave += '|lum:' + lum;
+      for (let k = 0; k < n; k++) {
+        const i = idx ? idx.getX(k) : k;
+        v.fromBufferAttribute(pos, i).applyMatrix4(mw);
+        P3[3 * k] = v.x; P3[3 * k + 1] = v.y; P3[3 * k + 2] = v.z;
+        v.fromBufferAttribute(nor, i).applyMatrix3(n3).normalize();
+        N3[3 * k] = Math.round(v.x * 127); N3[3 * k + 1] = Math.round(v.y * 127); N3[3 * k + 2] = Math.round(v.z * 127);
+        let r = mc.r, gg = mc.g, b = mc.b;
+        if (usaVC) { r *= col.getX(i); gg *= col.getY(i); b *= col.getZ(i); }
+        C3[3 * k] = Math.round(clamp(r, 0, 1) * 255); C3[3 * k + 1] = Math.round(clamp(gg, 0, 1) * 255); C3[3 * k + 2] = Math.round(clamp(b, 0, 1) * 255);
+        if (U2) {
+          let u = uv ? uv.getX(i) : 0, w = uv ? uv.getY(i) : 0;
+          if (q) {
+            /* o quadro na folha (o canvas da folha sobe com flipY, como o do decalque) */
+            u = (q.x + u * q.w) / FOLHA_DECAL;
+            w = 1 - (q.y + (1 - w) * q.h) / FOLHA_DECAL;
+          }
+          U2[2 * k] = u; U2[2 * k + 1] = w;
+        }
+      }
+      /* (na folha que tem janela, o número de cada vão) */
+      const S1 = !lum && temMapa && !q && mascaraDaFolha(folhaDoMapa(m.map.userData.src)) ? sorteDosVaos(P3, n) : null;
+      return { chave, m, P3, N3, C3, U2, S1, n };
+    }
+    /* ASSAR uma coisa: as malhas dela, no bloco do meio dela (e, na grade
+       do passo, o que barra o corpo e, se é prédio, o telhado dela) */
+    function assar(grupo, it, tipo) {
+      grupo.updateMatrixWorld(true);
+      const pedacos = [];
+      /* a folha da porta que abre e fecha fica viva (não junta nem risca: o
+         cenário gira ela e bate nela na hora); a bandeira da sede também
+         (ela tremula) */
+      /* (a DIVISÓRIA do estádio, a grade entre as torcidas, também fica viva
+         — no dia de jogo ela pode cair —, mas segue barrando quem anda nos
+         andares do estádio: os triângulos dela vão pra lá do mesmo jeito) */
+      const soAndar = [];
+      grupo.traverse(o => {
+        if ((o.isMesh || o.isLineSegments) && (o.userData.porta || o.userData.bandeira || o.userData.peca)) {
+          vivos.push(o);
+          if (o.isMesh && o.userData.divisoria && o.geometry && o.geometry.attributes.position) {
+            const g = o.geometry, pos = g.attributes.position, idx = g.index, n = idx ? idx.count : pos.count, P3 = new Float32Array(n * 3);
+            for (let k = 0; k < n; k++) { v.fromBufferAttribute(pos, idx ? idx.getX(k) : k).applyMatrix4(o.matrixWorld); P3[3 * k] = v.x; P3[3 * k + 1] = v.y; P3[3 * k + 2] = v.z; }
+            soAndar.push({ P3, n });
+          }
+        } else if (o.isMesh && o.visible) { const p = pedaco(o); if (p) pedacos.push(p); }
+      });
+      if (andares && grupo.userData.dentroDoEstadio) for (const p of soAndar) andares.juntar(p.P3, p.n);
+      /* a caixa da coisa inteira: o bloco dela e o contorno da seleção */
+      let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
+      for (const p of pedacos) for (let k = 0; k < p.n; k++) {
+        const x = p.P3[3 * k], y = p.P3[3 * k + 1], z = p.P3[3 * k + 2];
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (z < z0) z0 = z; if (z > z1) z1 = z;
+      }
+      /* o que a coisa trouxe e é só dela (o decalque, a geometria) sai */
+      grupo.traverse(o => {
+        if (o.userData.porta || o.userData.bandeira || o.userData.peca) return;
+        if (o.geometry) o.geometry.dispose();
+        if (o.material && o.material.map && o.material.map.isCanvasTexture && o.material.map.wrapS !== THREE.RepeatWrapping) { o.material.map.dispose(); o.material.dispose(); }
+      });
+      if (!pedacos.length) return;
+      /* (a noite: o estádio acende os refletores em cima dele inteiro; a
+         coisa que tem lâmpada própria — o pátio da sede — diz onde ela fica) */
+      if (tipo === 'estadio') luzes.push({ area: { x0, z0, x1, z1 } });
+      if (grupo.userData.luzes) for (const l of grupo.userData.luzes) luzes.push(l);
+      let id = 0;
+      if (it) { id = lista.length; lista.push({ it, caixa: [x0, Math.max(0, y0), z0, x1, Math.max(y1, 4), z1] }); }
+      for (const p of pedacos) p.id = id;
+      /* (o que não barra quem anda — o braço da catraca, que gira — não risca nem vira piso) */
+      const barram = pedacos.filter(p => !p.m.userData.semRisco);
+      if (grade) { const teto = PREDIOS.has(tipo) ? id : 0; for (const p of barram) grade.assar(p.P3, p.n, teto); }
+      /* a estação do metrô vai inteira pro subsolo (onde o boneco desce);
+         o resto deixa o chão dele no piso da rua; o estádio (o que diz o
+         que é dentro dele) vai também pros andares (onde o boneco sobe) */
+      if (sub && tipo === 'metro') for (const p of barram) sub.juntar(p.P3, p.n);
+      else if (piso) for (const p of barram) piso.juntar(p.P3, p.n);
+      if (andares && grupo.userData.dentroDoEstadio) for (const p of barram) andares.juntar(p.P3, p.n);
+      /* a sede de dois andares vai inteira pro subsolo dos sobrados (o
+         boneco sobe a escada dela) */
+      if (sobrados && grupo.userData.dentroDaSede) for (const p of barram) sobrados.juntar(p.P3, p.n);
+      const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
+      for (const p of pedacos) {
+        const k = i + ',' + j + '|' + p.chave;
+        let b = baldes.get(k);
+        if (!b) baldes.set(k, b = { chave: p.chave, m: p.m, partes: [], n: 0, i, j });
+        b.partes.push(p); b.n += p.n;
+        triangulos += p.n / 3;
+      }
+      malhas += pedacos.length;
+    }
+    /* TIRAR DO FORNO: cada balde vira uma malha */
+    function tirar() {
+      decal.texturas();
+      const grupo = new THREE.Group(), matsDecal = new Map();
+      for (const b of baldes.values()) {
+        let mat;
+        if (b.chave.startsWith('decal|')) {
+          /* (o decalque que é lâmpada — o refletor do estádio — tem o material dele) */
+          const [, fi, lumK] = b.chave.split('|'), f = decal.folhas[+fi], lum = lumK ? +lumK.slice(4) : 0, kd = fi + '|' + lum;
+          if (!matsDecal.has(kd)) {
+            const md = comNoite(cortavel(new THREE.MeshLambertMaterial({ map: f.tex, alphaTest: 0.35, side: THREE.DoubleSide,
+              vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }), true), { lum });
+            md.userData.doMapa = true;
+            matsDecal.set(kd, md);
+          }
+          mat = matsDecal.get(kd);
+        } else mat = materialDoForno(b.chave, b.m);
+        const temUV = !!b.partes[0].U2, temSorte = !!b.partes[0].S1;
+        const P3 = new Float32Array(b.n * 3), N3 = new Int8Array(b.n * 3), C3 = new Uint8Array(b.n * 3), U2 = temUV ? new Float32Array(b.n * 2) : null;
+        const ID = new Float32Array(b.n), S1 = temSorte ? new Uint8Array(b.n) : null;
+        let o = 0;
+        for (const p of b.partes) {
+          P3.set(p.P3, o * 3); N3.set(p.N3, o * 3); C3.set(p.C3, o * 3); if (U2) U2.set(p.U2, o * 2);
+          if (S1 && p.S1) S1.set(p.S1, o);
+          if (p.id) ID.fill(p.id, o, o + p.n);
+          o += p.n;
+        }
+        b.partes = null;
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(P3, 3));
+        g.setAttribute('normal', new THREE.BufferAttribute(N3, 3, true));
+        g.setAttribute('color', new THREE.BufferAttribute(C3, 3, true));
+        if (U2) g.setAttribute('uv', new THREE.BufferAttribute(U2, 2));
+        if (S1) g.setAttribute('aSorte', new THREE.BufferAttribute(S1, 1, true));
+        g.setAttribute('idCoisa', new THREE.BufferAttribute(ID, 1));
+        g.computeBoundingSphere(); g.computeBoundingBox();
+        /* depois de subir pra placa de vídeo, a cópia daqui sai */
+        for (const a of Object.values(g.attributes)) a.onUpload(function () { this.array = null; });
+        const malha = new THREE.Mesh(g, mat);
+        malha.matrixAutoUpdate = false;
+        grupo.add(malha);
+      }
+      baldes.clear();
+      return grupo;
+    }
+    return { assar, tirar, decal, vivos, luzes, coisas: lista, get triangulos() { return triangulos; }, get malhas() { return malhas; } };
+  }
+
+  /* O MAPA DA LUZ da noite (um pixel por metro, até 4.096 de lado): em
+     RGB, a poça quente de cada poste (e da lâmpada própria de uma coisa);
+     em alfa, o refletor do estádio, branco, no estádio inteiro e sumindo
+     em 14 m pra fora dele */
+  const COR_POSTE = [1.0, 0.78, 0.5];
+  function mapaDaLuz(ar, postes, luzes) {
+    const W = clamp(Math.ceil((ar.x1 - ar.x0) / M), 1, 4096), H = clamp(Math.ceil((ar.y1 - ar.y0) / M), 1, 4096);
+    const pw = (ar.x1 - ar.x0) / W, ph = (ar.y1 - ar.y0) / H, F = new Float32Array(W * H * 4);
+    /* a poça: forte embaixo, meia força a uns 5 m, some aos `r` m */
+    const poca = (x, z, r, cor, forca) => {
+      const R = r * M, i0 = Math.max(0, Math.floor((x - R - ar.x0) / pw)), i1 = Math.min(W - 1, Math.ceil((x + R - ar.x0) / pw));
+      const j0 = Math.max(0, Math.floor((z - R - ar.y0) / ph)), j1 = Math.min(H - 1, Math.ceil((z + R - ar.y0) / ph));
+      const meio = 5.5 * M, borda = 1 / (1 + (R / meio) ** 2);
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const d = Math.hypot(ar.x0 + (i + 0.5) * pw - x, ar.y0 + (j + 0.5) * ph - z);
+        if (d >= R) continue;
+        const v = forca * Math.max(0, (1 / (1 + (d / meio) ** 2) - borda) / (1 - borda)), k = (j * W + i) * 4;
+        F[k] += cor[0] * v; F[k + 1] += cor[1] * v; F[k + 2] += cor[2] * v;
+      }
+    };
+    for (const p of postes) poca(p.x, p.z, 16, COR_POSTE, 0.9);
+    for (const l of luzes) {
+      if (l.area) {
+        const a = l.area, m = 14 * M;
+        const i0 = Math.max(0, Math.floor((a.x0 - m - ar.x0) / pw)), i1 = Math.min(W - 1, Math.ceil((a.x1 + m - ar.x0) / pw));
+        const j0 = Math.max(0, Math.floor((a.z0 - m - ar.y0) / ph)), j1 = Math.min(H - 1, Math.ceil((a.z1 + m - ar.y0) / ph));
+        for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+          const x = ar.x0 + (i + 0.5) * pw, z = ar.y0 + (j + 0.5) * ph;
+          const fora = Math.hypot(Math.max(0, a.x0 - x, x - a.x1), Math.max(0, a.z0 - z, z - a.z1));
+          F[(j * W + i) * 4 + 3] = Math.max(F[(j * W + i) * 4 + 3], 0.9 * (1 - suave(fora / m)));
+        }
+      } else poca(l.x, l.z, l.r || 10, l.cor || COR_POSTE, l.forca === undefined ? 0.8 : l.forca);
+    }
+    const B = new Uint8Array(W * H * 4);
+    for (let k = 0; k < B.length; k++) B[k] = Math.round(clamp(F[k], 0, 1) * 255);
+    const t = new THREE.DataTexture(B, W, H, THREE.RGBAFormat, THREE.UnsignedByteType);
+    t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true;
+    t.onUpdate = () => { t.image.data = null; t.onUpdate = null; };
+    return { tex: t, c: new THREE.Vector4(ar.x0, ar.y0, 1 / (W * pw), 1 / (H * ph)), W, H };
+  }
+  /* O MAPA DO TETO (a altura do teto de cada célula da grade, em decímetros;
+     acima de 4.096 células de lado, junta de 2 em 2 pelo teto mais alto) */
+  function mapaDoTetoTex(mt) {
+    let { dados, nx, nz, c } = mt;
+    while (nx > 4096 || nz > 4096) {
+      const mx = Math.ceil(nx / 2), mz = Math.ceil(nz / 2), d = new Uint8Array(mx * mz);
+      for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const k = (j >> 1) * mx + (i >> 1); if (dados[j * nx + i] > d[k]) d[k] = dados[j * nx + i]; }
+      dados = d; nx = mx; nz = mz; c *= 2;
+    }
+    const t = new THREE.DataTexture(dados, nx, nz, THREE.RedFormat, THREE.UnsignedByteType);
+    t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+    t.onUpdate = () => { t.image.data = null; t.onUpdate = null; };
+    return { tex: t, c: new THREE.Vector4(mt.ox, mt.oz, 1 / (nx * c), 1 / (nz * c)) };
+  }
+  /* troca os mapas da noite (e solta os de antes) */
+  function porMapasDaNoite(luz, teto) {
+    for (const [k, novo] of [['uLuzMapa', luz], ['uTetoMapa', teto]]) {
+      const velho = NOITE[k].value;
+      NOITE[k].value = novo ? novo.tex : vazia();
+      if (velho) velho.dispose();
+    }
+    NOITE.uLuzC.value.copy(luz ? luz.c : new THREE.Vector4(0, 0, 1, 1));
+    NOITE.uTetoC.value.copy(teto ? teto.c : new THREE.Vector4(0, 0, 1, 1));
+  }
+
+  /* ======================================================
+     O CHÃO: o desenho da planta em ladrilhos
+     ====================================================== */
+  let grao = null;
+  function texturaDoGrao() {
+    if (grao) return grao;
+    /* o grão: manchas miúdas claras e escuras, que emendam na borda (a
+       conta do chao3d.js do jogo, sem o relevo); de longe o mipmap o
+       reduz à média e ele some */
+    const T = 256, cv = document.createElement('canvas'); cv.width = cv.height = T;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#808080'; c.fillRect(0, 0, T, T);
+    let s = 91331;
+    const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    for (const [n, r0, r1, a] of [[40, 18, 44, 0.10], [260, 4, 10, 0.16], [1400, 0.8, 2.2, 0.22]])
+      for (let i = 0; i < n; i++) {
+        const x = rnd() * T, y = rnd() * T, r = r0 + rnd() * (r1 - r0);
+        c.globalAlpha = a; c.fillStyle = rnd() < 0.5 ? '#ffffff' : '#000000';
+        for (const dx of [-T, 0, T]) for (const dy of [-T, 0, T]) { c.beginPath(); c.arc(x + dx, y + dy, r, 0, 7); c.fill(); }
+      }
+    grao = new THREE.CanvasTexture(cv);
+    grao.wrapS = grao.wrapT = THREE.RepeatWrapping; grao.colorSpace = THREE.NoColorSpace; grao.anisotropy = anisoDe(4);
+    return grao;
+  }
+  /* O CAPIM DE PERTO: o chão pintado tem 3 a 8 pixels por metro, e o mato
+     de perto sai borrado. Onde é mato (a MÁSCARA do mato, a mesma com
+     que o mato3d planta, um pixel por metro), o chão ganha este ladrilho
+     de 1,6 m — o fiapo do capim em cinza, que só clareia e escurece a
+     cor pintada — em duas escalas, pra não se ver a repetição */
+  let capim = null;
+  function texturaDoCapim() {
+    if (capim) return capim;
+    const T = 256, cv = document.createElement('canvas'); cv.width = cv.height = T;
+    const c = cv.getContext('2d');
+    c.fillStyle = '#808080'; c.fillRect(0, 0, T, T);
+    let s = 60493;
+    const rnd = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    for (let i = 0; i < 2600; i++) {
+      const x = rnd() * T, y = rnd() * T, a = rnd() * Math.PI * 2, l = 3 + rnd() * 7, v = rnd() < 0.55 ? 40 + rnd() * 50 : 175 + rnd() * 50;
+      c.strokeStyle = `rgb(${v},${v},${v})`; c.lineWidth = 0.8 + rnd() * 0.9; c.globalAlpha = 0.5 + rnd() * 0.4;
+      for (const dx of [-T, 0, T]) for (const dy of [-T, 0, T]) {
+        c.beginPath(); c.moveTo(x + dx, y + dy); c.quadraticCurveTo(x + dx + Math.cos(a) * l * 0.5 + 1.5, y + dy + Math.sin(a) * l * 0.5, x + dx + Math.cos(a) * l, y + dy + Math.sin(a) * l); c.stroke();
+      }
+    }
+    c.globalAlpha = 1;
+    capim = new THREE.CanvasTexture(cv);
+    capim.wrapS = capim.wrapT = THREE.RepeatWrapping; capim.colorSpace = THREE.NoColorSpace; capim.anisotropy = anisoDe(4);
+    return capim;
+  }
+  const MATO_U = { uCapim: { value: null }, uCapimEscala: { value: 1 / (1.6 * M) }, uMatoM: { value: null }, uMatoC: { value: new THREE.Vector4(0, 0, 1, 1) }, uMatoK: { value: 0 } };
+  function materialDoChao(tex, metros) {
+    const m = new THREE.MeshLambertMaterial({ map: tex });
+    if (!MATO_U.uCapim.value) MATO_U.uCapim.value = texturaDoCapim();
+    if (!MATO_U.uMatoM.value) { MATO_U.uMatoM.value = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); MATO_U.uMatoM.value.needsUpdate = true; }
+    const u = { uGrao: { value: texturaDoGrao() }, uEscala: { value: metros / 3.2 } };
+    m.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, u, CORTE, MATO_U);
+      /* o buraco do poço do metrô e, com ele embaixo da rua, o corte */
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', 'varying vec3 vChaoP;\nvoid main() {')
+        .replace('#include <project_vertex>', '#include <project_vertex>\n  vChaoP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {', `uniform sampler2D uGrao, uCapim, uMatoM; uniform float uEscala, uCapimEscala, uMatoK; uniform vec4 uMatoC;\n${CORTE_GLSL}\nvarying vec3 vChaoP;\nvoid main() {\n  if ( noBuraco( vChaoP ) || corteSub( vChaoP ) || corteCone( vChaoP ) ) discard;`)
+        .replace('#include <map_fragment>', `#include <map_fragment>
+  {
+    float gA = texture2D( uGrao, vMapUv * uEscala ).r, gB = texture2D( uGrao, vMapUv * uEscala * 0.21 + 0.37 ).r;
+    diffuseColor.rgb *= 1.0 + ( gA * 0.62 + gB * 0.38 - 0.5 ) * 0.55;
+    float mato = uMatoK * texture2D( uMatoM, clamp( ( vChaoP.xz - uMatoC.xy ) / uMatoC.zw, 0.0, 1.0 ) ).r;
+    if ( mato > 0.01 ) {
+      float cA = texture2D( uCapim, vChaoP.xz * uCapimEscala ).r, cB = texture2D( uCapim, vChaoP.xz * uCapimEscala * 0.43 + 0.29 ).r;
+      diffuseColor.rgb *= 1.0 + ( cA * 0.6 + cB * 0.4 - 0.5 ) * 0.85 * mato;
+    }
+  }`);
+    };
+    m.customProgramCacheKey = () => 'chao-grao-poco-capim';
+    return comNoite(m);
+  }
+  /* uma textura do canvas (e o canvas volta pra ser pintado de novo) */
+  async function texturaDoCanvas(cv) {
+    if (window.createImageBitmap) {
+      try {
+        const bm = await createImageBitmap(cv);
+        const t = new THREE.Texture(bm);
+        t.flipY = false; t.needsUpdate = true;
+        /* a imagem sai da memória depois de subir */
+        t.onUpdate = () => { if (t.image && t.image.close) { t.image.close(); } };
+        return t;
+      } catch (e) { /* cai no canvas */ }
+    }
+    const c2 = document.createElement('canvas'); c2.width = cv.width; c2.height = cv.height;
+    c2.getContext('2d').drawImage(cv, 0, 0);
+    const t = new THREE.CanvasTexture(c2); t.flipY = false;
+    return t;
+  }
+  /* A MÁSCARA DO MATO: o desenho da planta com o mato em magenta, um pixel
+     por metro. Sai antes do chão: o ladrilho que é só mato não é pintado
+     (é o mato de longe, o mesmo ladrilho), e o mato em 3D planta nela */
+  function mascaraDoMato(ar) {
+    const m1 = 1 / M, W = Math.ceil((ar.x1 - ar.x0) * m1), H = Math.ceil((ar.y1 - ar.y0) * m1);
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c2 = cv.getContext('2d', { willReadFrequently: true });
+    P.pintarChao(c2, ar.x0, ar.y0, 1 / M, true);
+    const px = c2.getImageData(0, 0, W, H).data;
+    const dados = new Uint8Array(W * H);
+    for (let k = 0; k < W * H; k++) dados[k] = px[k * 4] > 200 && px[k * 4 + 1] < 60 && px[k * 4 + 2] > 200 ? 255 : 0;
+    cv.width = cv.height = 1;
+    return { W, H, dados, m1 };
+  }
+  /* o retângulo (em unidades) é todo mato na máscara? (com um metro de folga) */
+  const soMato = (masc, ar, x0, y0, x1, y1) => {
+    const i0 = Math.max(0, Math.floor((x0 - ar.x0) * masc.m1) - 1), i1 = Math.min(masc.W - 1, Math.ceil((x1 - ar.x0) * masc.m1) + 1);
+    const j0 = Math.max(0, Math.floor((y0 - ar.y0) * masc.m1) - 1), j1 = Math.min(masc.H - 1, Math.ceil((y1 - ar.y0) * masc.m1) + 1);
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) if (masc.dados[j * masc.W + i] !== 255) return false;
+    return true;
+  };
+  async function montarChao(ar, grupo, avisar, vivo, masc) {
+    const pxm = QUALIDADES[qualidade].pxm, s = pxm / M, lado = PX_CHAO / s;
+    const nx = Math.ceil((ar.x1 - ar.x0) / lado), nz = Math.ceil((ar.y1 - ar.y0) / lado);
+    const W = PX_CHAO + 2 * SOBRA;
+    const cv = document.createElement('canvas'); cv.width = cv.height = W;
+    const c2 = cv.getContext('2d');
+    const aniso = anisoDe(8);
+    /* (o grão e o capim ficam de uma montagem pra outra: a filtragem acompanha as texturas) */
+    for (const x of [grao, capim]) if (x && x.anisotropy !== anisoDe(4)) { x.anisotropy = anisoDe(4); x.needsUpdate = true; }
+    const u0 = SOBRA / W, u1 = (SOBRA + PX_CHAO) / W;
+    let feitos = 0;
+    const deMato = [];
+    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+      if (!vivo()) return deMato;
+      const x0 = ar.x0 + i * lado, y0 = ar.y0 + j * lado;
+      /* o ladrilho só de mato fica pro mato de longe */
+      if (masc && soMato(masc, ar, x0, y0, Math.min(x0 + lado, ar.x1), Math.min(y0 + lado, ar.y1))) {
+        deMato.push({ x0, y0, x1: Math.min(x0 + lado, ar.x1), y1: Math.min(y0 + lado, ar.y1) });
+        avisar(++feitos / (nx * nz));
+        continue;
+      }
+      P.pintarChao(c2, x0 - SOBRA / s, y0 - SOBRA / s, s);
+      const tex = await texturaDoCanvas(cv);
+      tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = aniso;
+      tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true;
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      /* sobe pra placa já, um ladrilho por vez: o bitmap fecha na hora (o
+         `onUpdate`) e o primeiro quadro da cidade não sobe o chão inteiro
+         de uma vez. (No navegador de teste, o maior intervalo entre quadros
+         depois da montagem era de 7 a 22 s; com isto e as folhas abaixo,
+         de 5 a 7 s — não separei quanto é de cada uma.) */
+      rend.initTexture(tex);
+      const g = new THREE.BufferGeometry(), x1 = Math.min(x0 + lado, ar.x1), y1 = Math.min(y0 + lado, ar.y1);
+      const uX = u0 + (u1 - u0) * (x1 - x0) / lado, uY = u0 + (u1 - u0) * (y1 - y0) / lado;
+      g.setAttribute('position', new THREE.Float32BufferAttribute([x0, 0, y0, x0, 0, y1, x1, 0, y1, x1, 0, y0], 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute([u0, u0, u0, uY, uX, uY, uX, u0], 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      const m = new THREE.Mesh(g, materialDoChao(tex, lado / M));
+      m.position.y = -0.3; m.name = 'chao';
+      m.updateMatrix(); m.matrixAutoUpdate = false;
+      grupo.add(m);
+      avisar(++feitos / (nx * nz));
+      await espera();
+    }
+    return deMato;
+  }
+  /* O CHÃO DE LONGE: pra lá da área pintada, até o horizonte, em quatro
+     faixas em volta dela, que NÃO se sobrepõem (plano embaixo de plano,
+     de longe, briga pela profundidade e sai listrado — era o "mato dentro
+     do mar"). Todas na altura do chão pintado:
+     - o MATO é o próprio ladrilho do mato da planta (a copa da mata, o
+       capim do cerrado: 2.400 unidades que repetem sem emenda), com a uv
+       no mundo — emenda com o chão pintado, que tem o mesmo ladrilho;
+     - na praça de praia, a costa segue reta pra lá das pontas (como na
+       planta): ao norte e ao sul, o mato, a FAIXA DA PRAIA (um pedaço da
+       própria praia pintada pela planta — a areia, a areia molhada, a
+       espuma, o raso e a onda — repetido ao longo da costa) e o mar; a
+       leste, só o mar, na cor do mar da planta. */
+  function chaoDeLonge(ar, grupo, deMato = []) {
+    const G = 400000, T = 2400, Y = -0.3;
+    const quad = (x0, x1, z0, z1, mat, uv) => {
+      if (x1 - x0 < 1 || z1 - z0 < 1) return;
+      const g = new THREE.BufferGeometry(), c = [[x0, z0], [x0, z1], [x1, z1], [x1, z0]];
+      g.setAttribute('position', new THREE.Float32BufferAttribute(c.flatMap(([x, z]) => [x, Y, z]), 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0], 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(c.flatMap(([x, z]) => uv(x, z)), 2));
+      g.setIndex([0, 1, 2, 0, 2, 3]);
+      const m = new THREE.Mesh(g, mat); m.name = 'longe'; m.frustumCulled = false;
+      grupo.add(m);
+    };
+    const material = (cv, repete) => {
+      const tex = new THREE.CanvasTexture(cv);
+      tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = anisoDe(4);
+      tex.wrapS = repete ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping; tex.wrapT = THREE.RepeatWrapping;
+      const m = new THREE.MeshLambertMaterial({ map: tex });
+      m.userData.doMapa = true;
+      return m;
+    };
+    /* o ladrilho do mato, pintado longe da cidade, num múltiplo de T */
+    const cvM = document.createElement('canvas'); cvM.width = cvM.height = 512;
+    P.pintarChao(cvM.getContext('2d'), Math.floor((ar.x0 - 4 * T) / T) * T, Math.floor((ar.y0 - 4 * T) / T) * T, 512 / T);
+    const mato = material(cvM, true), uvMundo = (x, z) => [x / T, z / T];
+    /* o mato de longe com o mesmo grão e o mesmo capim do chão pintado
+       (sem eles, a borda da área pintada aparecia, andando perto dela) */
+    mato.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, { uGrao: { value: texturaDoGrao() }, uEscala: { value: T / M / 3.2 } }, MATO_U);
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', 'varying vec3 vLongeP;\nvoid main() {')
+        .replace('#include <project_vertex>', '#include <project_vertex>\n  vLongeP = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {', 'uniform sampler2D uGrao, uCapim; uniform float uEscala, uCapimEscala;\nvarying vec3 vLongeP;\nvoid main() {')
+        .replace('#include <map_fragment>', `#include <map_fragment>
+  {
+    float gA = texture2D( uGrao, vMapUv * uEscala ).r, gB = texture2D( uGrao, vMapUv * uEscala * 0.21 + 0.37 ).r;
+    diffuseColor.rgb *= 1.0 + ( gA * 0.62 + gB * 0.38 - 0.5 ) * 0.55;
+    float cA = texture2D( uCapim, vLongeP.xz * uCapimEscala ).r, cB = texture2D( uCapim, vLongeP.xz * uCapimEscala * 0.43 + 0.29 ).r;
+    diffuseColor.rgb *= 1.0 + ( cA * 0.6 + cB * 0.4 - 0.5 ) * 0.85;
+  }`);
+    };
+    mato.customProgramCacheKey = () => 'longe-mato-capim';
+    comNoite(mato);
+    /* o ladrilho de dentro que era só mato (montarChao não pintou) */
+    for (const r of deMato) quad(r.x0, r.x1, r.y0, r.y1, mato, uvMundo);
+    /* O RIO FORA DA ÁREA (a praça toda de modelo): o pedaço dele fora do
+       chão pintado — o que corre na beira do mundo e a ponta que segue
+       reta pra longe — vira a faixa d'água com a margem de capim, um palmo
+       acima do mato de longe. A faixa começa no último ponto dentro da
+       área, por baixo do chão pintado: sem buraco na emenda (antes ela
+       começava no ponto de antes da ponta, a uns 20 m da área, e o rio
+       sumia nesse vão). O rio que deságua no mar: a água para na linha
+       d'água, e a margem de capim na beira da areia */
+    const costaR = P.costa && P.costa();
+    const naArea = p => p[0] > ar.x0 && p[0] < ar.x1 && p[1] > ar.y0 && p[1] < ar.y1;
+    const faixaDoRio = (linhas, cor, y) => {
+      const pos = [], idx = [];
+      for (const { pts, meia } of linhas) for (let k = 1; k < pts.length; k++) {
+        const A = pts[k - 1], B = pts[k], dx = B[0] - A[0], dz = B[1] - A[1], L = Math.hypot(dx, dz);
+        if (L < 1) continue;
+        /* (cada pedaço passa meia largura das pontas: a curva fecha sem fresta) */
+        const ux = dx / L, uz = dz / L, nx = -uz * meia, nz = ux * meia, a = [A[0] - ux * meia, A[1] - uz * meia], b = [B[0] + ux * meia, B[1] + uz * meia], n = pos.length / 3;
+        for (const [x, z] of [[a[0] + nx, a[1] + nz], [a[0] - nx, a[1] - nz], [b[0] - nx, b[1] - nz], [b[0] + nx, b[1] + nz]]) pos.push(x, y, z);
+        /* (a face da frente pra cima: virada pra baixo, o material de dois lados vira a normal e a faixa saía preta, sem luz — o rio de longe da §36 também) */
+        idx.push(n, n + 2, n + 1, n, n + 3, n + 2);
+      }
+      if (!idx.length) return;
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(pos.map((_, q) => q % 3 === 1 ? 1 : 0), 3));
+      g.setIndex(idx);
+      const mat = new THREE.MeshLambertMaterial({ color: cor, side: THREE.DoubleSide }); mat.userData.doMapa = true; comNoite(mat);
+      const m = new THREE.Mesh(g, mat); m.name = 'longe'; m.frustumCulled = false; grupo.add(m);
+    };
+    /* (a linha até onde ela passa pro leste de `xDe`: a areia, o mar) */
+    const ateA = (pts, xDe) => {
+      const k = pts.findIndex(p => p[0] >= xDe(p[1]));
+      if (k < 0) return pts;
+      if (k === 0) return [];
+      const A = pts[k - 1], B = pts[k], fa = xDe(A[1]) - A[0], fb = xDe(B[1]) - B[0], t = fa / (fa - fb || 1);
+      return pts.slice(0, k).concat([[A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t]]);
+    };
+    /* os pedaços de fora da área (com o ponto de dentro de cada lado); a ponta de fora segue reta pra longe (a do mar, não) */
+    const pedacosFora = (pts, ponta0, ponta1, meia, saida) => {
+      const n = pts.length, dentro = pts.map(naArea);
+      const estica = (P0, P1) => { const dx = P0[0] - P1[0], dz = P0[1] - P1[1], L = Math.hypot(dx, dz) || 1; return [P0[0] + dx / L * G * 0.25, P0[1] + dz / L * G * 0.25]; };
+      for (let k = 0; k < n; k++) {
+        if (dentro[k]) continue;
+        let f = k; while (f + 1 < n && !dentro[f + 1]) f++;
+        const run = pts.slice(Math.max(0, k - 1), Math.min(n, f + 2));
+        if (k === 0 && ponta0 && n > 1) run.unshift(estica(pts[0], pts[1]));
+        if (f === n - 1 && ponta1 && n > 1) run.push(estica(pts[n - 1], pts[n - 2]));
+        saida.push({ pts: run, meia });
+        k = f;
+      }
+    };
+    const margens = [], aguas = [];
+    for (const r of (P.rios && P.rios()) || []) {
+      const pts = r.pontos.map(p => [p[0], p[1]]), mar = r.mar && costaR;
+      pedacosFora(mar ? ateA(pts, costaR.areia) : pts, !r.lagoa, !mar, r.larg / 2 + 3.2 * M, margens);
+      pedacosFora(mar ? ateA(pts, costaR.agua) : pts, !r.lagoa, !mar, r.larg / 2, aguas);
+    }
+    faixaDoRio(margens, '#7d9455', Y + 0.06);
+    faixaDoRio(aguas, '#3f6d78', Y + 0.12);
+    const costa = P.costa && P.costa();
+    quad(ar.x0 - G, ar.x0, ar.y0, ar.y1, mato, uvMundo);                      // oeste
+    if (!costa) {
+      quad(ar.x1, ar.x1 + G, ar.y0, ar.y1, mato, uvMundo);                    // leste
+      quad(ar.x0 - G, ar.x1 + G, ar.y0 - G, ar.y0, mato, uvMundo);            // norte
+      quad(ar.x0 - G, ar.x1 + G, ar.y1, ar.y1 + G, mato, uvMundo);            // sul
+      return;
+    }
+    /* a faixa da praia: 124 m da praia pintada logo pra lá da ponta, da
+       beira de terra da areia até 25 m mar adentro */
+    let corMar = null;
+    const faixa = (zBorda, sentido) => {
+      const xa = costa.areia(zBorda), xw = costa.agua(zBorda), x1 = xw + 25 * M;
+      const s = 0.3, L = T, cv = document.createElement('canvas');
+      cv.width = Math.max(8, Math.ceil((x1 - xa) * s)); cv.height = Math.ceil(L * s);
+      const c2 = cv.getContext('2d', { willReadFrequently: true });
+      const z0 = sentido < 0 ? zBorda - L : zBorda;
+      P.pintarChao(c2, xa, z0, s);
+      /* (a cor do mar: na linha da ponta, 25 m mar adentro — na outra beira da faixa a costa já fez a curva, e caía na areia) */
+      if (!corMar) { const d = c2.getImageData(cv.width - 2, sentido < 0 ? cv.height - 2 : 2, 1, 1).data; corMar = new THREE.Color().setRGB(d[0] / 255, d[1] / 255, d[2] / 255, THREE.SRGBColorSpace); }
+      return { xa, x1, z0, L, mat: material(cv, false) };
+    };
+    const norte = faixa(ar.y0, -1), sul = faixa(ar.y1, 1);
+    const mar = new THREE.MeshLambertMaterial({ color: corMar }); mar.userData.doMapa = true;
+    const nada = () => [0, 0];
+    quad(ar.x1, ar.x1 + G, ar.y0, ar.y1, mar, nada);                          // leste: o mar
+    for (const [f, z0, z1] of [[norte, ar.y0 - G, ar.y0], [sul, ar.y1, ar.y1 + G]]) {
+      quad(ar.x0 - G, f.xa, z0, z1, mato, uvMundo);
+      quad(f.xa, f.x1, z0, z1, f.mat, (x, z) => [(x - f.xa) / (f.x1 - f.xa), (z - f.z0) / f.L]);
+      quad(f.x1, ar.x1 + G, z0, z1, mar, nada);
+    }
+  }
+
+  /* ======================================================
+     O MATO: onde o desenho é mato, o mato3d.js do jogo
+     ====================================================== */
+  function montarMatoDoMapa(ar, grupo, grade, masc) {
+    const m1 = 1 / M;                                   // metro por unidade
+    const { W, H, dados } = masc || mascaraDoMato(ar);
+    /* a máscara vai pro chão: o capim de perto só onde é mato */
+    if (MATO_U.uMatoM.value) MATO_U.uMatoM.value.dispose();
+    const tm = new THREE.DataTexture(dados, W, H, THREE.RedFormat, THREE.UnsignedByteType);
+    tm.magFilter = tm.minFilter = THREE.LinearFilter; tm.unpackAlignment = 1; tm.needsUpdate = true;
+    MATO_U.uMatoM.value = tm;
+    MATO_U.uMatoC.value.set(ar.x0, ar.y0, W * M, H * M);
+    MATO_U.uMatoK.value = 1;
+    /* e o boneco não entra no mato: a célula cujo meio é mato na máscara
+       (a de beira de pixel, meio mato meio calçada, não é) */
+    if (grade) grade.mato((x, z) => {
+      const i = Math.floor((x - ar.x0) * m1), j = Math.floor((z - ar.y0) * m1);
+      return i >= 0 && j >= 0 && i < W && j < H && dados[j * W + i] === 255;
+    });
+    const magenta = (x, y) => {
+      const i = Math.floor(x), j = Math.floor(y);
+      return i >= 0 && j >= 0 && i < W && j < H && dados[j * W + i] === 255;
+    };
+    /* A DISTÂNCIA (m) de cada metro de mato até o que não é mato (a cidade,
+       a estrada, o estádio): a árvore fica até PERTO_M dele, com metade das
+       árvores depois de CHEIO_M. Longe de tudo (o mundo cresceu com os
+       estádios de verdade), o mato é só o chão pintado */
+    const CHEIO_M = 60, PERTO_M = 130, dist = new Float32Array(W * H);
+    for (let k = 0; k < W * H; k++) dist[k] = dados[k] === 255 ? 1e9 : 0;
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const k = j * W + i; let d = dist[k];
+      if (!d) continue;
+      if (i > 0) d = Math.min(d, dist[k - 1] + 1);
+      if (j > 0) { d = Math.min(d, dist[k - W] + 1); if (i > 0) d = Math.min(d, dist[k - W - 1] + 1.414); if (i < W - 1) d = Math.min(d, dist[k - W + 1] + 1.414); }
+      dist[k] = d;
+    }
+    for (let j = H - 1; j >= 0; j--) for (let i = W - 1; i >= 0; i--) {
+      const k = j * W + i; let d = dist[k];
+      if (!d) continue;
+      if (i < W - 1) d = Math.min(d, dist[k + 1] + 1);
+      if (j < H - 1) { d = Math.min(d, dist[k + W] + 1); if (i < W - 1) d = Math.min(d, dist[k + W + 1] + 1.414); if (i > 0) d = Math.min(d, dist[k + W - 1] + 1.414); }
+      dist[k] = d;
+    }
+    const meia = (x, z) => { const h = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return h - Math.floor(h) < 0.5; };
+    /* a distância de um ponto de fora da área: a da beira dela mais o que falta até a beira */
+    const distEm = (a, b) => {
+      const i = Math.min(W - 1, Math.max(0, Math.floor(a))), j = Math.min(H - 1, Math.max(0, Math.floor(b)));
+      return dist[j * W + i] + Math.hypot(Math.max(0, -a, a - W), Math.max(0, -b, b - H));
+    };
+    const pertoDeAlgo = (a, b, x, z) => { const d = distEm(a, b); return d <= CHEIO_M || (d <= PERTO_M && meia(x, z)); };
+    /* longe da beira do que não é mato: 2 m pros quatro lados; e a BEIRA
+       do mato (LIMPO_M, rente à cidade, à estrada e à favela) fica só com
+       a vegetação rasteira do chão — a árvore começa depois dela */
+    const ox = ar.x0 * m1, oz = ar.y0 * m1;
+    /* NA CLAREIRA DE PASTO (a praça toda de modelo): uma árvore solta aqui e outra ali, uma a cada vinte lugares */
+    const rara = (x, z) => { const h = Math.sin(x * 7.123 + z * 31.417) * 24634.6345; return h - Math.floor(h) < 0.05; };
+    const dentro = (x, z) => {
+      const a = x - ox, b = z - oz;
+      if (P.noPasto && !magenta(a, b) && rara(x, z) && P.noPasto(x * M, z * M) && P.noPasto((x + 3) * M, z * M) && P.noPasto((x - 3) * M, z * M) && P.noPasto(x * M, (z + 3) * M) && P.noPasto(x * M, (z - 3) * M)) return true;
+      if (!(magenta(a, b) && magenta(a - 2, b) && magenta(a + 2, b) && magenta(a, b - 2) && magenta(a, b + 2))) return false;
+      for (let k = 0; k < 8; k++) if (!magenta(a + LIMPO_M * Math.cos(k * Math.PI / 4), b + LIMPO_M * Math.sin(k * Math.PI / 4))) return false;
+      return pertoDeAlgo(a, b, x, z);
+    };
+    /* PRA LÁ DO CHÃO PINTADO, um anel de ANEL_M metros com metade das
+       árvores, pra borda do mato não sair reta; no litoral, só do lado de
+       terra da linha d'água */
+    const ANEL_M = 110, costa = P.costa && P.costa();
+    const fora = (x, z) => {
+      if (costa) {
+        const X = x * M, Z = z * M, lim = Z < ar.y0 ? costa.areia(ar.y0) : Z > ar.y1 ? costa.areia(ar.y1) : ar.x1;
+        if (X > Math.min(lim, ar.x1) - 8 * M) return false;
+      }
+      return meia(x, z) && distEm(x - ox, z - oz) <= PERTO_M;
+    };
+    const pode = (x, z) => (x >= ox && x < ox + W && z >= oz && z < oz + H) ? dentro(x, z) : fora(x, z);
+    const lugar = P.vegetacao();
+    const arvores = plantarMato({ x0: ox - ANEL_M, x1: ox + W + ANEL_M, z0: oz - ANEL_M, z1: oz + H + ANEL_M, lugar, semente: 7, pode });
+    const lads = montarMato(arvores, { lado: BLOCO_M });
+    let tri = 0;
+    for (const t of lads) {
+      const perto = malhaLowpoly(t.perto.lowpoly), longe = malhaLowpoly(t.longe.lowpoly);
+      if (!perto || !longe) continue;
+      /* o tronco (e o galho baixo) barra o corpo */
+      if (grade) for (const b of t.perto.lowpoly) grade.assar(b.pos, b.pos.length / 3, 0);
+      const lod = new THREE.LOD(), cx = t.cx * M, cz = t.cz * M;
+      lod.position.set(cx, 0, cz);
+      for (const m of [perto, longe]) { m.position.set(-cx, 0, -cz); m.updateMatrix(); m.matrixAutoUpdate = false; }
+      /* a distância é do meio do bloco: meia diagonal a mais */
+      lod.addLevel(perto, 0); lod.addLevel(longe, (LONGE_M + BLOCO_M * 0.7) * M);
+      grupo.add(lod);
+      tri += t.triLonge;
+    }
+    return { arvores: arvores.length, tri };
+  }
+  const matLowpoly = comNoite(cortavel(new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), false));
+  function malhaLowpoly(blocos) {
+    if (!blocos || !blocos.length) return null;
+    let n = 0;
+    for (const b of blocos) n += b.pos.length;
+    const pos = new Float32Array(n), cor = new Float32Array(n);
+    let o = 0;
+    for (const b of blocos) { pos.set(b.pos, o); cor.set(b.cor, o); o += b.pos.length; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+    g.computeVertexNormals(); g.computeBoundingSphere();
+    return new THREE.Mesh(g, matLowpoly);
+  }
+
+  /* ======================================================
+     MONTAR A PRAÇA
+     ====================================================== */
+  let vez = 0, montado = null, numeros = null, montando = false;
+  const carga = $('.cen-carga'), cargaTxt = $('.cen-carga-txt'), cargaBarra = $('.cen-barra i');
+  function aviso(txt, f) { cargaTxt.textContent = txt; cargaBarra.style.width = Math.round(clamp(f, 0, 1) * 100) + '%'; }
+  function jogarForaOMapa() {
+    MATO_U.uMatoK.value = 0;
+    porMapasDaNoite(null, null);
+    cena.remove(doMapa);
+    doMapa.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && o.name === 'chao') { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+      else if (o.material && o.material.userData.doMapa) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
+    });
+    if (montado && montado.decal) montado.decal.jogarFora();
+    doMapa = new THREE.Group(); cena.add(doMapa);
+    coisas = [null]; fecharFicha();
+    portas = [];
+  }
+  /* O TEMPO DO JOGO ESPERA A PRAÇA MONTAR (o dono, 29/09/2026: "quase todas
+     as vezes que preciso abrir outro mapa devido a caravanas o jogo buga e
+     recarrega automaticamente"): a volta da caravana solta o relógio na hora
+     em que a praça de casa começa a montar (30 a 60 s no navegador de
+     teste; sem placa de vídeo, bem mais). Medido: com a barra em "Montando
+     a cidade… 771 de 3.808", o relógio já tinha derrubado uma mensagem da
+     fila (e travado numa decisão) — o jogo andava atrás da barra, sem
+     ninguém pra ver. O relógio fica parado até a última montagem acabar */
+  const tempoDoJogo = (f, motivo) => { const T = window.TO && TO.tela; if (T && T[f]) T[f](motivo); };
+  /* MONTAR: a praça inteira; a montagem que chega depois cancela a de
+     antes (`vivo`), e o erro aparece na caixa em vez de travar a tela */
+  async function montar(nome, modo, tentativa = 0) {
+    const minha = ++vez, vivo = () => minha === vez;
+    montando = true;
+    tempoDoJogo('pausarTempo', 'praca-montando');
+    try { await montarPraca(nome, modo, vivo); }
+    catch (e) {
+      console.error('cenário:', e);
+      /* FALTOU MEMÓRIA (o navegador negou o array, RangeError): antes a cidade
+         ficava morta atrás da caixa de erro, só recarregando a página
+         (simulado em 29/09/2026 no navegador de teste: a montagem da sede,
+         na volta da caravana, é a de maior pico de memória). A montagem que
+         falhou já soltou o que tinha, e o navegador limpa o lixo da cidade de
+         antes ao negar o array: tenta de novo, uma vez. Sem prova de que é
+         isso que acontece no PC do dono. */
+      if (vivo() && tentativa < 1 && e instanceof RangeError) {
+        aviso('Faltou memória pra montar ' + nome + '. Tentando de novo…', 0.02);
+        await new Promise(r => setTimeout(r, 1500));
+        if (vivo()) return montar(nome, modo, tentativa + 1);
+      }
+      if (vivo()) { carga.hidden = false; aviso('Não deu pra montar ' + nome + ': ' + e.message, 1); }
+    }
+    finally {
+      if (vivo()) {
+        montando = false; medidor.desde = 0; $('.cen-bt-ape').disabled = !grade; $('.cen-bt-jogo').disabled = !grade; pedir();
+        tempoDoJogo('retomarTempo', 'praca-montando');
+        /* quem estava a pé (a troca de qualidade remonta) volta pro mesmo lugar */
+        if (voltarAPe) { const v = voltarAPe; voltarAPe = null; entrarAPe(v); }
+      }
+    }
+  }
+  async function montarPraca(nome, modo, vivo) {
+    raiz.querySelector('.cen-escolha').hidden = true;
+    carga.hidden = false;
+    aviso('Abrindo ' + nome + '…', 0);
+    await espera();
+    P.irPara(nome, modo);
+    atualizarTopo();
+    const t0 = agora();
+    sairDaRua(false);
+    if (dia) { dia.limpar(); limparBonecos(); }
+    grade = null; sub = null; piso = null; CORTE.uNBuraco.value = 0;
+    $('.cen-bt-ape').disabled = true; $('.cen-bt-jogo').disabled = true;
+    jogarForaOMapa();
+    area = P.areaDoCenario();
+    enquadrarCidade(true);
+    /* 1. o chão (os tempos de cada fase vão pros números) */
+    const tempos = {}, marca = (k, t) => { tempos[k] = +((agora() - t) / 1000).toFixed(2); };
+    let tf = agora();
+    const grupoChao = new THREE.Group(); doMapa.add(grupoChao);
+    let masc = mascaraDoMato(area);
+    const deMato = await montarChao(area, grupoChao, f => aviso('Pintando o chão…', f * 0.25), vivo, masc);
+    if (!vivo()) return;
+    chaoDeLonge(area, grupoChao, deMato);
+    marca('chao', tf); tf = agora();
+    pedir();
+    /* 2. as coisas, no forno (e a estação do metrô também no subsolo, e o
+       estádio nos andares dele) */
+    const gradeNova = GradeDoPasso(area, M), pisoNovo = PisoDaRua(area.x0, area.y0, area.x1, area.y1, M);
+    const estacoes = P.metro ? P.metro() : [], subNovo = estacoes.length ? Subsolo(M, estacoes) : null;
+    const andaresNovos = Subsolo(M, [], ESTADIO_PASSO), dentroNovos = [];
+    const sobradosNovos = Subsolo(M, []), sedesNovas = [];
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo, andaresNovos, sobradosNovos), porTipo = {};
+    let i = 0, tFatia = agora();
+    for (const pc of pecas) {
+      const g = new THREE.Group();
+      try { pc.montar(g); } catch (e) { console.error('cenário: não montei', pc.tipo, e); }
+      forno.assar(g, pc.it, pc.tipo);
+      if (g.userData.dentroDoEstadio) dentroNovos.push(g.userData.dentroDoEstadio);
+      if (g.userData.dentroDaSede) sedesNovas.push(g.userData.dentroDaSede);
+      porTipo[pc.tipo] = (porTipo[pc.tipo] || 0) + 1;
+      i++;
+      if (agora() - tFatia > 40) {
+        aviso(`Montando a cidade… ${milhar(i)} de ${milhar(pecas.length)}`, 0.25 + 0.6 * i / pecas.length);
+        await espera();
+        if (!vivo()) return;
+        tFatia = agora();
+      }
+    }
+    marca('cidade', tf); tf = agora();
+    aviso('Juntando as malhas…', 0.86);
+    await espera();
+    if (!vivo()) return;
+    const tri = forno.triangulos, nMalhas = forno.malhas;
+    const cidade3d = forno.tirar();
+    marca('juntar', tf);
+    doMapa.add(cidade3d);
+    /* A NOITE: o mapa da luz (os postes da planta, os refletores dos
+       estádios, as lâmpadas das coisas) e o do teto (a grade do passo) */
+    tf = agora();
+    const postes = P.luzesDaRua ? P.luzesDaRua() : [], mt = gradeNova.mapaDoTeto();
+    const mapaLuz = mapaDaLuz(area, postes, forno.luzes), mapaTeto = mt ? mapaDoTetoTex(mt) : null;
+    porMapasDaNoite(mapaLuz, mapaTeto);
+    const noite = { postes: postes.length, luzes: forno.luzes.length, luz: [mapaLuz.W, mapaLuz.H], teto: mt ? [mt.nx, mt.nz] : null };
+    marca('noite', tf);
+    montarPortas(forno.vivos);
+    coisas = forno.coisas;
+    /* as folhas dos decalques sobem pra placa já, uma por vez (o primeiro
+       quadro da cidade não sobe todas de uma vez, e o canvas de cada uma
+       sai da memória na hora — o `onUpdate` das que não repintam) */
+    for (const f of forno.decal.folhas) { rend.initTexture(f.tex); await espera(); if (!vivo()) return; }
+    /* 3. o mato em volta */
+    aviso('Plantando o mato…', 0.92);
+    await espera();
+    if (!vivo()) return;
+    const grupoMato = new THREE.Group(); doMapa.add(grupoMato);
+    tf = agora();
+    const mato = montarMatoDoMapa(area, grupoMato, gradeNova, masc);
+    masc = null;
+    marca('mato', tf);
+    mato.ladrilhosDeMato = deMato.length;
+    /* a água entra por último na grade do passo */
+    const tGrade = agora();
+    gradeNova.agua(P.costa && P.costa(), P.lagoa && P.lagoa());
+    gradeNova.semear(P.sementesDoPasso ? P.sementesDoPasso() : []);
+    pisoNovo.fechar();
+    /* O METRÔ: o poço de cada estação é buraco no chão (e o boneco não
+       nasce nele), o subsolo fecha, e a terra em volta da estação fica
+       pronta pra quando ele descer */
+    const tSub = agora();
+    if (subNovo) {
+      subNovo.fechar();
+      estacoes.slice(0, 4).forEach((e, k) => { CORTE.uBuraco.value[k].set(e.poco.x0, e.poco.z0, e.poco.x1, e.poco.z1); gradeNova.bloquear(e.poco); });
+      CORTE.uNBuraco.value = Math.min(4, estacoes.length);
+      for (const e of estacoes) doMapa.add(terraDaEstacao(e));
+    }
+    const tAndares = agora();
+    andaresNovos.fechar(); sobradosNovos.fechar();
+    grade = gradeNova; sub = subNovo; piso = pisoNovo;
+    andares = dentroNovos.length ? andaresNovos : null; dentroDosEstadios = dentroNovos;
+    sobrados = sedesNovas.length ? sobradosNovos : null; dentroDosSobrados = sedesNovas;
+    montado = { nome, decal: forno.decal };
+    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, noite, segundos: (agora() - t0) / 1000, tempos,
+                folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade), piso: piso.n }),
+                subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(tAndares - tSub) } : null,
+                andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null,
+                sobrados: sobrados ? { sedes: sedesNovas.length, triangulos: sobrados.n } : null };
+    /* o escudo em PNG chega depois: a folha copia de novo */
+    setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
+    setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
+    carga.hidden = true;
+    if (window.__cenarioPronto) window.__cenarioPronto(numeros);
+  }
+
+  /* A TERRA em volta da estação: uma caixa marrom do tamanho do corte,
+     vista de dentro (o chão dela e as paredes do lado de lá). Na rua ela
+     fica embaixo do chão (só aparece pelo poço, no fundo da escada); com
+     ele no metrô, a cidade em cima some e a estação aparece dentro dela.
+     Ela não é cortada: a parede dela sobe até a rua e fecha a borda do
+     corte (sem ela, entre o chão cortado e o resto via-se o céu) */
+  const matTerra = new THREE.MeshLambertMaterial({ color: '#4d3d2e', side: THREE.BackSide });
+  function terraDaEstacao(e) {
+    const c = e.caixa, f = SUB_FOLGA * M, y0 = TERRA_M * M, y1 = -0.5;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(c.x1 - c.x0 + 2 * f, y1 - y0, c.z1 - c.z0 + 2 * f), matTerra);
+    m.position.set((c.x0 + c.x1) / 2, (y0 + y1) / 2, (c.z0 + c.z1) / 2);
+    m.name = 'terra'; m.updateMatrix(); m.matrixAutoUpdate = false;
+    return m;
+  }
+
+  /* a cidade inteira na tela, de três quartos */
+  function enquadrarCidade(ja) {
+    const L = P.limite(), r = Math.hypot(L.x1 - L.x0, L.y1 - L.y0) / 2;
+    const d = r / Math.sin(THREE.MathUtils.degToRad(cam.fov / 2)) * 0.92, az = -0.5;
+    /* o alvo um pouco pra lá do meio: a cidade desce na tela e sai de
+       baixo da barra de cima */
+    const cx = (L.x0 + L.x1) / 2 - Math.sin(az) * d * 0.035, cz = (L.y0 + L.y1) / 2 - Math.cos(az) * d * 0.035;
+    if (ja) { orb.alvo.set(cx, 0, cz); orb.dist = d; orb.el = 0.72; orb.az = az; orb.alto = 0; pedir(); }
+    else voarPara(cx, cz, d, 0.72, az);
+  }
+  function nivelDaRua() {
+    /* desce onde a câmera está olhando, de frente pra rua */
+    voarPara(orb.alvo.x, orb.alvo.z, 14 * M, 0.07, orb.az);
+  }
+
+  /* ======================================================
+     O TOPO E OS NÚMEROS
+     ====================================================== */
+  function atualizarTopo() {
+    const nome = P.cidade(), modo = P.modo();
+    selCidade.value = nome;
+    const doPorteDela = P.mapaDoPorte(nome);
+    for (const b of raiz.querySelectorAll('.cen-mapas button')) {
+      b.setAttribute('aria-selected', String(b.dataset.mapa === modo));
+      b.classList.toggle('porte', b.dataset.mapa === doPorteDela);
+      b.title = b.dataset.mapa === doPorteDela ? 'O mapa do porte desta praça' : 'Pra comparar: a praça num mapa de outro porte';
+    }
+    $('.cen-nome h1').textContent = nome;
+    $('.cen-resumo').textContent = P.resumo();
+    /* o endereço abre de novo nesta praça (e neste mapa, se não é o do porte) */
+    try {
+      const q = new URLSearchParams(location.search);
+      for (const k of ['cenario', 'cidade', 'mapa']) q.delete(k);
+      const resto = q.toString();
+      history.replaceState(null, '', location.pathname + '?cenario&cidade=' + encodeURIComponent(nome) +
+        (modo !== doPorteDela ? '&mapa=' + modo : '') + (resto ? '&' + resto : '') + location.hash);
+    } catch (e) {}
+  }
+  let ultimaConta = 0;
+  function contar() {
+    if (!numeros) return;
+    const t = agora();
+    if (t - ultimaConta < 500) return;
+    ultimaConta = t;
+    $('.cen-num').textContent = `${milhar(numeros.pecas)} peças · ${milhar(numeros.tri + numeros.mato.tri)} triângulos na cena · montado em ${numeros.segundos.toFixed(1).replace('.', ',')} s`;
+  }
+
+  /* ======================================================
+     A PÉ: o boneco do jogo, na rua
+     ------------------------------------------------------
+     O boneco é o do jogo (js/bonecos3.js, o modelo do Blender), com o
+     mesmo andar e o mesmo correr, na camisa de uma torcida da praça. Ele
+     só carrega quando alguém entra a pé: o modelo tem 2,7 MB. Anda contra
+     os riscos da grade do passo (não atravessa parede, muro, móvel,
+     carro, poste, tronco nem água), e a câmera o segue DE CIMA, quase a
+     pino, com o norte pra cima: arrastar gira, a roda e a pinça mudam
+     quanto cabe na tela. O joystick (o círculo embaixo à esquerda) anda
+     pra onde o pino aponta na tela; na borda, corre. O que fica entre a
+     câmera e ele some (O CORTE), e o prédio em que ele entra perde o
+     telhado. NO METRÔ ele desce a escada (ou a rolante) do poço, passa a
+     catraca e desce pra plataforma: o pé tem altura (`ape.y`), e embaixo
+     da rua quem diz onde ele pisa é o SUBSOLO; a câmera desce junto, e a
+     cidade em cima da estação some (a caixa dela, do teto do nível em que
+     ele está pra cima), com a terra em volta.
+     ====================================================== */
+  const toque = matchMedia('(pointer: coarse)').matches;
+  raiz.classList.toggle('toque', toque);
+  const selCamisa = $('.cen-camisa');
+  let grade = null, sub = null, piso = null, ape = null, povo = null, chamando = null, eu = null, jogo = null, voltarAPe = null, modBonecos = null;
+  /* os ANDARES DOS ESTÁDIOS (um subsolo com os triângulos deles) e o que é
+     dentro de cada um: ali o chão e a parede são os deles */
+  let andares = null, dentroDosEstadios = [];
+  const noEstadio = (x, z) => !!andares && dentroDosEstadios.some(f => f(x, z));
+  /* os ANDARES DAS SEDES de dois andares (o nível 5), do mesmo jeito */
+  let sobrados = null, dentroDosSobrados = [];
+  const noSobrado = (x, z) => !!sobrados && dentroDosSobrados.some(f => f(x, z));
+  /* debaixo de alguma coisa, no estádio: o que é deitado em cima da cabeça
+     dele (o forro, a laje, a arquibancada por cima do corredor), ali e 30
+     cm pra cada lado (debaixo da viga de 30 cm do portão do de 10 mil ele
+     não está dentro; no túnel de 1,2 m do vomitório do de 20, está) */
+  const coberto = (x, z, yPe) => {
+    const d = 0.3 * M, y = yPe + ESTADIO_PASSO.faixa[1] * M;
+    return [[0, 0], [d, 0], [-d, 0], [0, d], [0, -d]].every(([a, b]) => { const t = andares.teto(x + a, z + b, y); return t === t; });
+  };
+  /* o penteado sai da semente (o modelo leve não tem boné nem bandana) */
+  const CABELOS = ['curto', 'raspado', 'degrade', 'black', 'cacheado', 'topete', 'franja', 'entradas', 'moicano', 'comprido', 'rabo', 'coque', 'careca'];
+  /* a camisa é lembrada pela torcida (o id; 'nenhuma' é o "Sem torcida"), não pela posição na lista */
+  let semente = 1 + Math.floor(Math.random() * 997), torcidas = [], camisa = 0, camisaId = null;
+  function carregarScript(src) {
+    return new Promise((ok, falhou) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = () => ok(); s.onerror = () => falhou(new Error('não carregou ' + src));
+      document.head.appendChild(s);
+    });
+  }
+  /* o módulo do boneco e o modelo (em base64, dados/boneco_glb.js: os dois
+     níveis afinados, o de perto e o de longe; o carregador do jogo lê dali
+     sem pedir arquivo nenhum), uma vez só */
+  function chamarBoneco() {
+    if (!chamando) chamando = (async () => {
+      const TO = window.TO || (window.TO = { dados: {} });
+      TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js', import.meta.url).href);
+      const mod = await import('./bonecos3.js');
+      /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
+         chega a um metro dele, e a malha afina menos que no jogo) */
+      mod.cfg.afinarCelulas = 72;
+      /* (a luz da noite também nos bonecos: o poste, o refletor, o cômodo) */
+      mod.cfg.remendo = m => comNoite(m);
+      /* (os bonecos leves dos gráficos: todo mundo no nível de longe) */
+      mod.cfg.nivelLeve = GRAF.bonecos === 'leve';
+      modBonecos = mod;
+      /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
+         tem altura: a do pé que se vê (no metrô, embaixo da rua) */
+      const PE = { x: 0, y: 0, z: 0 }, PQ = { x: 0, y: 0, z: 0 };
+      povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86),
+        /* o pé: o do boneco a pé é o da conta dele; o do dia de jogo vem no disco (`alt`) */
+        pos: (x, y, d) => {
+          if (palco && palco.pos && !(d && d.mundo)) return palco.pos(x, y, d, PE);
+          PE.x = x; PE.y = d && d.alt != null ? d.alt : ape ? ape.yv : 0; PE.z = y; return PE;
+        },
+        /* o rumo do disco do palco pode ser outro (a cadeira da sala da reunião) */
+        rumo: d => palco && palco.rumo && !(d && d.mundo) ? palco.rumo(d) : d.rumo,
+        /* um rumo do tabuleiro (vx, vy) no mundo: a pedra que sai da mão, o PM parado (o palco pode estar girado) */
+        rumoDoTabuleiro: (vx, vy) => palco && palco.rumoDe ? palco.rumoDe(vx, vy) : Math.atan2(vx, vy),
+        /* unidades do mundo por px do tabuleiro (a caravana é menor que 1:1): o raio da bomba no chão */
+        escalaDoTabuleiro: () => palco && palco.escala || 1,
+        /* quem está fora da tela não é animado (o dia de jogo tem uns 150) */
+        noQuadro: (x, z, d) => {
+          if (palco && palco.pos && !(d && d.mundo)) { const q = palco.pos(x, z, d, PQ); esferaPovo.center.set(q.x, q.y + 0.9 * M, q.z); }
+          else esferaPovo.center.set(x, (d && d.alt != null ? d.alt : 0) + 0.9 * M, z);
+          return quadroPovo.intersectsSphere(esferaPovo);
+        },
+        /* a câmera: o boneco pequeno na tela usa o nível de longe (bonecos3.js) */
+        camera: cam, alturaTela: () => altoTela || tela.clientHeight });
+      return povo;
+    })().catch(e => { chamando = null; throw e; });
+    return chamando;
+  }
+  /* ======================================================
+     O DIA DE JOGO (dia_de_jogo.js): o clássico da praça — as torcidas
+     saem das sedes, passam pela PM e vão pro lugar delas na
+     arquibancada. Os bonecos são os do jogo (o mesmo `povo` do a pé; a pé
+     dá pra andar no meio deles)
+     ====================================================== */
+  let dia = null;
+  const quadroPovo = new THREE.Frustum(), mPovo = new THREE.Matrix4(), esferaPovo = new THREE.Sphere(new THREE.Vector3(), 1.4 * M);
+  /* o jogo do quadro: o boneco a pé e os do dia de jogo, num objeto só (a paleta do jogo guarda a conta por objeto) */
+  const jogoDoDia = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true };
+  /* o jogo do quadro da VIDA DA PRAÇA e o do PALCO (o jogo 3D) */
+  const jogoDaVida = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true, semAnel: true };
+  const jogoDoPalco = { t: 0, discos: [], policiais: [], projeteis: [], grades: [], paz: true };
+  /* quem dá os bonecos: a vida ({ J, quadro(dt) }) e o palco ({ J, pos(x, y, d, PE), comVida, quadro(dt) }) */
+  let vida = null, palco = null, corteFixo = null;
+  /* O JOGO DA CIDADE NO FUNDO (o jogo 3D, dia3d.js; o dono, 28/09/2026: "o
+     itinerário delas acontece de forma automática no jogo — enquanto o
+     tempo passa, eles se locomovem rumo ao estádio e a nossa torcida fica
+     na sede"): o dia de jogo de outros clubes roda junto com a vida da
+     praça, e os bonecos dos dois saem no mesmo quadro. `extras`: bonecos
+     de fora (o nosso bonde indo pra investida). 'oculto': o plano já
+     montou, mas a hora dele não chegou — a vida segue sozinha na tela */
+  let diaNoFundo = false, extras = [];
+  const custoDia = { povo: 0, dia: 0 };
+  function atualizarPovo(dt) {
+    const comDia = dia && dia.aberto;
+    if (!povo || !(ape || comDia || vida || palco)) return;
+    const t0 = performance.now();
+    cam.updateMatrixWorld();
+    mPovo.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    quadroPovo.setFromProjectionMatrix(mPovo);
+    /* O PALCO (a cena do jogo desenhada aqui: a reunião na sede, a briga na
+       casa de veraneio): os discos dele, e a vida em volta se ele pedir */
+    if (palco) {
+      const P0 = palco.J;
+      Object.assign(jogoDoPalco, { t: P0.t, policiais: P0.policiais || [], projeteis: P0.projeteis || [], grades: palco.semGrades ? [] : P0.grades || [],
+                                   paz: P0.paz, reuniao: P0.reuniao, falante: P0.falante, bondes_: P0.bondes_, rivalInfo: P0.rivalInfo,
+                                   semAnel: !!palco.semAnel });
+      /* (a briga do dia de jogo: os bonecos do dia que não estão nela ficam em volta — a arquibancada cheia, a rua) */
+      jogoDoPalco.discos = palco.comVida && vida ? P0.discos.concat(vida.J.discos)
+        : palco.comDia && comDia ? P0.discos.concat(palco.comDia(dia.J.discos)) : P0.discos;
+      povo.atualizar(jogoDoPalco, dt);
+      custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
+      return;
+    }
+    /* A VIDA DA PRAÇA (o jogo 3D): a sede, a rua, os bares — e quem anda a
+       pé no meio; com o jogo da cidade no fundo, os bondes, a PM e a
+       arquibancada dele junto (e o nosso bonde da investida) */
+    if (vida && (!comDia || diaNoFundo)) {
+      const V = vida.J;
+      jogoDaVida.t = V.t; jogoDaVida.falante = V.falante || null; jogoDaVida.reuniao = !!V.reuniao;
+      const doDia = comDia && diaNoFundo !== 'oculto';
+      let ds = ape && eu ? [eu].concat(V.discos) : V.discos;
+      if (doDia) ds = ds.concat(dia.J.discos);
+      if (extras.length) ds = ds.concat(extras);
+      jogoDaVida.discos = ds;
+      jogoDaVida.policiais = doDia ? dia.J.policiais : [];
+      povo.atualizar(jogoDaVida, dt);
+      custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
+      return;
+    }
+    if (!comDia) { povo.atualizar(jogo, dt); return; }
+    jogoDoDia.t = dia.J.t;
+    jogoDoDia.discos = ape && eu ? [eu].concat(dia.J.discos) : dia.J.discos;
+    jogoDoDia.policiais = dia.J.policiais;
+    povo.atualizar(jogoDoDia, dt);
+    /* quanto os bonecos custam no processador (a média, pro medidor) */
+    custoDia.povo += (performance.now() - t0 - custoDia.povo) * 0.1;
+  }
+  /* tira da cena os bonecos do dia de jogo (fica o de a pé, se tiver) */
+  function limparBonecos() {
+    if (!povo) return;
+    jogoDoDia.discos = ape && eu ? [eu] : []; jogoDoDia.policiais = [];
+    povo.atualizar(jogoDoDia, 0.016);
+  }
+  async function abrirDiaDeJogo() {
+    if (montando || !grade) return;
+    const bt = $('.cen-bt-jogo');
+    if (dia && dia.aberto) { dia.fechar(); return; }
+    bt.disabled = true;
+    try {
+      if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
+      if (!dia) {
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js');
+        dia = criarDiaDeJogo(contextoDoJogo());
+      }
+      if (montando || !grade) return;
+      carga.hidden = false; aviso('A PM está montando o plano do jogo…', 0.7);
+      await espera(); await espera();
+      try { fecharFicha(); dia.abrir(); } finally { carga.hidden = true; }
+      bt.setAttribute('aria-pressed', String(dia.aberto));
+    } catch (e) {
+      console.error('cenário, dia de jogo:', e);
+      carga.hidden = false; aviso('O dia de jogo não abriu: ' + e.message, 1);
+      setTimeout(() => { if (!montando) carga.hidden = true; }, 3500);
+    } finally { bt.disabled = montando || !grade; }
+  }
+  /* o que o dia de jogo pede do cenário */
+  function contextoDoJogo() {
+    return {
+      M, P, raiz, cam,
+      get grade() { return grade; },
+      noEstadio: (x, z) => noEstadio(x, z),
+      chaoDaRua: (x, z) => piso ? piso.chao(x, z, 0) : 0,
+      chaoDoEstadio: (x, z, y) => andares ? andares.chao(x, z, y) : NaN,
+      doMapa: () => doMapa,
+      voarPara: (x, z, d, el, az, alto) => voarPara(x, z, d, el, az, alto),
+      /* a câmera vai atrás de um ponto (a cabeça do bonde que se segue), na altura dele */
+      seguirPonto: (x, z, y = 0) => { if (voo) return; orb.alvo.x += (x - orb.alvo.x) * 0.25; orb.alvo.z += (z - orb.alvo.z) * 0.25; orb.alto += (y - orb.alto) * 0.25; },
+      pedir,
+      /* (com a vida da praça no ar — o jogo da cidade no fundo —, o quadro seguinte já desenha ela) */
+      aoFechar: () => { $('.cen-bt-jogo').setAttribute('aria-pressed', 'false'); diaNoFundo = false; if (!vida) limparBonecos(); }
+    };
+  }
+  /* o disco do boneco (o que o jogo passa por quadro): a camisa, a
+     semente do rosto e o lugar */
+  function vestir() {
+    const t = torcidas[camisa] || null;
+    eu = { nome: 'na rua ' + semente, spawn: 'cenario', lado: 'mandante', lider: true, vivo: true,
+           torcida: t ? t.nome : 'sem torcida', cor: t ? t.cor : '#E8E4DC', cor2: t ? t.cor2 : '#3A3A3A', cor3: t ? t.cor3 : null,
+           cabecaForcada: CABELOS[semente % CABELOS.length],
+           x: ape ? ape.x : 0, y: ape ? ape.z : 0, rumo: ape ? ape.rumo : 0, passada: 1,
+           derrubado: 0, golpe: 0, apanhou: 0, atordoado: 0, esquivou: 0, tremor: 0, defendendo: 0, hostil: 0,
+           inimigoPerto: 0, chamou: -99, linha: 'frente' };
+    /* um jogo novo a cada roupa: a paleta do calção é por jogo */
+    jogo = { t: jogo ? jogo.t : 0, discos: [eu], policiais: [], projeteis: [], grades: [], paz: true };
+    window.TO.diaJogo.J = jogo;
+    const tem = !!(t && t.porta);
+    $('.cen-bt-sede').disabled = !tem;
+    $('.cen-bt-sede').title = tem ? 'Leva o boneco pra calçada na frente da sede da ' + t.nome : 'Esta torcida não tem sede nesta praça';
+    pedir();
+  }
+  function encherCamisas() {
+    torcidas = P.torcidas ? P.torcidas() : [];
+    selCamisa.innerHTML = torcidas.map((t, i) => `<option value="${i}">${esc(t.nome)}${t.porta ? '' : ' (sem sede)'}</option>`).join('') +
+      `<option value="${torcidas.length}">Sem torcida</option>`;
+    /* a de antes, se é desta praça; senão, a maior com sede */
+    const antes = camisaId === 'nenhuma' ? torcidas.length : torcidas.findIndex(t => t.id === camisaId);
+    camisa = antes >= 0 ? antes : Math.max(0, torcidas.findIndex(t => t.porta));
+    selCamisa.value = String(camisa);
+  }
+  /* o chão da rua em (x, z) pra quem está com o pé em `yPe`: o do piso da
+     rua (a laje da calçada, 7 cm; o piso da sede) ou o da estação do
+     metrô (a praça da entrada fica 8 cm acima da rua) */
+  function naRua(x, z, yPe = 0) {
+    if (noSobrado(x, z)) { const y = sobrados.chao(x, z, yPe); return y === y ? y : 0; }
+    if (noEstadio(x, z)) { const y = andares.chao(x, z, yPe); return y === y ? y : 0; }
+    if (!sub || !sub.estacaoEm(x, z)) return piso ? piso.chao(x, z, yPe) : 0;
+    const y = sub.chao(x, z, 0);
+    return y === y ? y : 0;
+  }
+  /* ======================================================
+     AS PORTAS DA SEDE: abrem e fecham no F
+     ------------------------------------------------------
+     A folha de cada porta da sede (a de madeira das salas, as duas de
+     vidro do portão) vem da planta numa malha só dela, com a origem na
+     dobradiça, FECHADA — o forno não junta ela com o resto. A pé, o F
+     (ou o botão "Abrir a porta", que aparece do lado oposto ao joystick
+     quando tem porta ao alcance) abre a mais perto, em meio segundo, e
+     fecha de novo; as duas do portão andam juntas. O corpo bate na folha
+     onde ela estiver (o risco dela gira junto), e a folha não fecha em
+     cima do boneco.
+     ====================================================== */
+  let portas = [];
+  const PORTA_ALCANCE_M = 1.2, PORTA_VEL = 3.2;              // m da borda do corpo até a folha; rad/s
+  const matPorta = new Map();
+  function montarPortas(vivos) {
+    portas = [];
+    for (const m of vivos) {
+      /* a PEÇA VIVA do kit de detalhe (a festa da casa de praia): entra
+         inteira, com o material dela (o forno achataria a sombra macia e o
+         vidro), e no corte da câmera; não barra quem anda a pé */
+      if (m.userData.peca) {
+        if (!m.material.userData.cortavel) { comNoite(cortavel(m.material, false)); m.material.userData.cortavel = true; m.material.needsUpdate = true; }
+        m.updateMatrixWorld(true);
+        const w = m.matrixWorld.clone();
+        m.removeFromParent();
+        w.decompose(m.position, m.quaternion, m.scale);
+        m.matrixAutoUpdate = true;
+        doMapa.add(m);
+        continue;
+      }
+      /* a bandeira: só entra no mapa (e no corte), com o mundo dela */
+      if (m.userData.bandeira) {
+        m.material = comNoite(cortavel(m.material, false));
+        m.material.userData.doMapa = true;                // (sai com o mapa, textura junto)
+        m.updateMatrixWorld(true);
+        const w = m.matrixWorld.clone();
+        m.removeFromParent();
+        w.decompose(m.position, m.quaternion, m.scale);
+        doMapa.add(m);
+        continue;
+      }
+      const d = m.userData.porta;
+      if (!matPorta.has(m.material)) matPorta.set(m.material, comNoite(cortavel(m.material.clone(), false)));
+      m.material = matPorta.get(m.material);
+      m.rotation.y = 0; m.updateMatrix();
+      doMapa.add(m);
+      portas.push({ m, hx: d.hx, hz: d.hz, y0: d.y0 || 0, larg: d.larg, dir: d.dir, ang: d.ang, grupo: d.grupo, vidro: d.vidro, a: 0, alvo: 0 });
+    }
+  }
+  /* a ponta da folha com o giro `a` (o do three.js em y) */
+  const pontaDa = (p, a) => {
+    const c = Math.cos(a), s = Math.sin(a);
+    return [p.hx + p.larg * (p.dir[0] * c + p.dir[1] * s), p.hz + p.larg * (-p.dir[0] * s + p.dir[1] * c)];
+  };
+  const PQ = [0, 0];
+  const maisPertoNa = (ax, az, bx, bz, x, z) => {
+    const dx = bx - ax, dz = bz - az, L2 = dx * dx + dz * dz;
+    const t = L2 > 0 ? clamp(((x - ax) * dx + (z - az) * dz) / L2, 0, 1) : 0;
+    PQ[0] = ax + dx * t; PQ[1] = az + dz * t;
+    return PQ;
+  };
+  /* (a folha de outro andar — a do 1º andar da sede de dois andares, pra
+     quem está no térreo — não conta: `y` é o pé) */
+  const longe = (p, x, z, r, y = 0) => Math.abs(x - p.hx) > p.larg + r + 2 || Math.abs(z - p.hz) > p.larg + r + 2 || Math.abs(y - p.y0) > 1.5 * M;
+  function empurrarPortas(c, r, y = 0) {
+    let mexeu = false;
+    for (const p of portas) {
+      if (longe(p, c.x, c.z, r, y)) continue;
+      const [bx, bz] = pontaDa(p, p.a), [qx, qz] = maisPertoNa(p.hx, p.hz, bx, bz, c.x, c.z);
+      const dx = c.x - qx, dz = c.z - qz, d = Math.hypot(dx, dz);
+      if (d >= r) continue;
+      if (d > 1e-6) { c.x = qx + dx / d * r; c.z = qz + dz / d * r; }
+      else { const ex = bx - p.hx, ez = bz - p.hz, L = Math.hypot(ex, ez) || 1; c.x += -ez / L * r; c.z += ex / L * r; }
+      mexeu = true;
+    }
+    return mexeu;
+  }
+  function cabePortas(x, z, r, y = 0) {
+    for (const p of portas) {
+      if (longe(p, x, z, r, y)) continue;
+      const [bx, bz] = pontaDa(p, p.a), [qx, qz] = maisPertoNa(p.hx, p.hz, bx, bz, x, z);
+      if ((qx - x) ** 2 + (qz - z) ** 2 < r * r) return false;
+    }
+    return true;
+  }
+  /* a porta ao alcance do boneco (a mais perto) */
+  function portaPerto() {
+    if (!ape || ape.y < -0.5 * M) return null;
+    let melhor = null, md = PORTA_ALCANCE_M * M;
+    for (const p of portas) {
+      if (longe(p, ape.x, ape.z, md, ape.y)) continue;
+      const [bx, bz] = pontaDa(p, p.a), [qx, qz] = maisPertoNa(p.hx, p.hz, bx, bz, ape.x, ape.z);
+      const d = Math.hypot(ape.x - qx, ape.z - qz) - APE.raio * M;
+      if (d < md) { md = d; melhor = p; }
+    }
+    return melhor;
+  }
+  /* ABRIR OU FECHAR a porta mais perto (e a irmã do portão); a folha não
+     fecha se o boneco está no caminho dela */
+  function alternarPorta() {
+    const p = portaPerto();
+    if (!p) return false;
+    const abrir = p.alvo === 0, grupo = portas.filter(q => q.grupo === p.grupo), r = APE.raio * M;
+    if (!abrir) for (const q of grupo) for (let k = 0; k <= 8; k++) {
+      const a = q.a * k / 8, [bx, bz] = pontaDa(q, a), [qx, qz] = maisPertoNa(q.hx, q.hz, bx, bz, ape.x, ape.z);
+      if ((qx - ape.x) ** 2 + (qz - ape.z) ** 2 < r * r) return false;
+    }
+    for (const q of grupo) q.alvo = abrir ? q.ang : 0;
+    pedir();
+    return true;
+  }
+  const btPorta = $('.cen-bt-porta');
+  btPorta.addEventListener('click', ev => { ev.stopPropagation(); alternarPorta(); atualizarBotaoPorta(); devolverTeclado(); });
+  let portaVista = undefined;
+  function atualizarBotaoPorta() {
+    const p = portaPerto();
+    const rot = p ? (p.alvo === 0 ? 'Abrir' : 'Fechar') + (p.vidro ? ' o portão' : ' a porta') : null;
+    if (rot === portaVista) return;
+    portaVista = rot;
+    btPorta.hidden = !rot;
+    if (rot) btPorta.innerHTML = rot + ' <kbd>F</kbd>';
+  }
+  /* a folha gira até onde deve estar */
+  function animarPortas(dt) {
+    for (const p of portas) {
+      if (p.a === p.alvo) continue;
+      const passo = PORTA_VEL * dt, d = p.alvo - p.a;
+      p.a = Math.abs(d) <= passo ? p.alvo : p.a + Math.sign(d) * passo;
+      /* a folha que abre em cima do boneco o empurra */
+      if (ape) {
+        const c = { x: ape.x, z: ape.z }, r = APE.raio * M * 0.97;
+        if (empurrarPortas(c, APE.raio * M, ape.y) && (noSobrado(c.x, c.z) ? sobrados.cabe(c.x, c.z, ape.y, r) : grade.cabe(c.x, c.z, r))) { ape.x = c.x; ape.z = c.z; }
+      }
+      p.m.rotation.y = p.a;
+      p.m.updateMatrix();
+    }
+    if (ape) atualizarBotaoPorta();
+    else if (!btPorta.hidden) { btPorta.hidden = true; portaVista = null; }
+  }
+  /* ENTRAR A PÉ: onde a câmera olha (ou `onde`), no lugar alcançável mais
+     perto em que o corpo cabe; `onde` com `y` embaixo da rua (a troca de
+     qualidade no metrô) volta pro mesmo degrau */
+  async function entrarAPe(onde) {
+    if (ape || montando || !grade) return false;
+    const bt = $('.cen-bt-ape');
+    bt.disabled = true;
+    try {
+      /* no meio da rua, se der: primeiro onde sobra 3 m pra todo lado */
+      const alvo = onde || { x: orb.alvo.x, z: orb.alvo.z };
+      const yEmbaixo = onde && onde.y < -0.05 * M && sub ? sub.chao(onde.x, onde.z, onde.y) : NaN;
+      const lugar = () => yEmbaixo === yEmbaixo ? { x: onde.x, z: onde.z, y: yEmbaixo } : onde ? grade.perto(alvo.x, alvo.z, APE.raio * M, 60 * M)
+        : grade.perto(alvo.x, alvo.z, 3 * M, 60 * M) || grade.perto(alvo.x, alvo.z, 1.5 * M, 150 * M) || grade.perto(alvo.x, alvo.z, APE.raio * M, 400 * M);
+      if (!lugar()) throw new Error('não achei chão livre perto do meio da tela');
+      if (!povo) {
+        carga.hidden = false; aviso('Chamando o boneco…', 0.5);
+        try { await chamarBoneco(); } finally { carga.hidden = true; }
+      }
+      /* a praça pode ter mudado enquanto ele carregava */
+      if (ape || montando || !grade) return false;
+      const p = lugar();
+      if (!p) throw new Error('não achei chão livre perto do meio da tela');
+      encherCamisas();
+      /* de cima, a rua fica de pé ou deitada na tela: o giro da câmera vai
+         pro quarto de volta mais perto (com a cidade inteira na tela, o
+         norte pra cima, como na planta) */
+      const quarto = Math.PI / 2, az = onde && onde.az != null ? onde.az : Math.round(orb.az / quarto) * quarto;
+      const y = p.y != null ? p.y : naRua(p.x, p.z);
+      ape = { x: p.x, z: p.z, y, yv: y, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), vao: (onde && onde.vao) || APE.vao, teto: 0, tetoAte: 0,
+              chegada: 0, de: { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az }, para: { az } };
+      vestir();
+      cancelarVoo(); fecharFicha();
+      raiz.classList.add('ape');
+      tela.focus({ preventScroll: true });
+      pedir();
+      return true;
+    } catch (e) {
+      console.error('cenário, a pé:', e);
+      carga.hidden = false; aviso('O boneco não veio: ' + e.message, 1);
+      setTimeout(() => { if (!montando) carga.hidden = true; }, 3500);
+      return false;
+    } finally { bt.disabled = montando; }
+  }
+  /* SAIR DA RUA: o boneco sai da cena e a câmera sobe por cima de onde ele estava */
+  function sairDaRua(voar = true) {
+    if (!ape) return;
+    const { x, z } = ape;
+    ape = null;
+    raiz.classList.remove('ape');
+    for (const k of ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']) teclas.delete(k);
+    soltarJoy();
+    CORTE.uCorte.value = 0;
+    if (povo && jogo && !(dia && dia.aberto) && !vida && !palco) { jogo.discos = []; povo.atualizar(jogo, 0.016); }
+    if (voar) { orb.alvo.set(x, 0, z); voarPara(x, z, 70 * M, 0.62, orb.az); }
+    pedir();
+  }
+  /* LEVAR o boneco a um ponto (a porta da sede), com a câmera pulando por
+     cima dos telhados até lá */
+  function levarPara(x, z, az) {
+    const p = grade && (grade.perto(x, z, 1.2 * M, 10 * M) || grade.perto(x, z, APE.raio * M, 80 * M));
+    if (!ape || !p) return false;
+    ape.de = { x: ape.x, z: ape.z, dist: orb.dist, el: orb.el, az: orb.az, pulo: true };
+    ape.para = { az };
+    ape.x = p.x; ape.z = p.z; ape.vx = ape.vz = 0; ape.chegada = 0;
+    ape.y = ape.yv = naRua(p.x, p.z);
+    ape.rumo = Math.atan2(-Math.sin(az), -Math.cos(az));
+    if (eu) { eu.x = ape.x; eu.y = ape.z; }
+    pedir();
+    return true;
+  }
+  function irPraSede() {
+    const t = torcidas[camisa];
+    if (!t || !t.porta) return;
+    /* de frente pra porta, com a câmera do lado da rua: de cima, a fachada
+       da sede fica embaixo na tela, com o nome dela */
+    const P0 = t.porta;
+    levarPara(P0.x, P0.y, Math.atan2(P0.fx, P0.fy));
+  }
+  /* O PASSO: o corpo anda de 12 em 12 cm; o que bate num risco o empurra
+     pra fora e ele desliza ao longo dele (passo.js). A água e a borda da
+     área seguram: ali só anda o eixo que dá. Embaixo da rua (ou entrando
+     no poço do metrô), o passo é o do SUBSOLO: o chão a um degrau do pé e
+     a faixa do corpo contada dele. No estádio (o passo que sai de dentro
+     dele ou entra, e todo passo com o pé acima de um degrau do estádio),
+     é o mesmo, com os ANDARES DO ESTÁDIO */
+  const corpo = { x: 0, z: 0, y: 0 };
+  function mover(dx, dz) {
+    const r = APE.raio * M, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / (0.12 * M)));
+    const sx = dx / n, sz = dz / n, W = grade.paredes;
+    const tenta = (ax, az) => {
+      if (sub && (ape.y < -0.05 * M || sub.noPoco(ape.x + ax, ape.z + az))) {
+        if (!sub.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
+      /* na sede de dois andares: o chão e a parede do andar do pé, e a
+         folha das portas desse andar */
+      if (sobrados && (noSobrado(ape.x + ax, ape.z + az) || noSobrado(ape.x, ape.z))) {
+        if (!sobrados.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        if (empurrarPortas(corpo, r, corpo.y)) {
+          const y = sobrados.chao(corpo.x, corpo.z, ape.y);
+          if (y !== y || !sobrados.cabe(corpo.x, corpo.z, y, r * 0.97)) return false;
+          corpo.y = y;
+        }
+        if (!cabePortas(corpo.x, corpo.z, r * 0.97, corpo.y)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
+      if (andares && (ape.y > ESTADIO_PASSO.degrau * M || noEstadio(ape.x + ax, ape.z + az) || noEstadio(ape.x, ape.z))) {
+        if (!andares.passo(corpo, ape.x, ape.z, ape.y, ax, az, r)) return false;
+        ape.x = corpo.x; ape.z = corpo.z; ape.y = corpo.y;
+        return true;
+      }
+      corpo.x = ape.x + ax; corpo.z = ape.z + az;
+      W.empurrar(corpo, r);
+      empurrarPortas(corpo, r);
+      if (!grade.cabe(corpo.x, corpo.z, r * 0.97) || !cabePortas(corpo.x, corpo.z, r * 0.97)) return false;
+      /* a rua o empurrou pra dentro do poço: lá o chão é o do subsolo */
+      if (sub && sub.noPoco(corpo.x, corpo.z)) {
+        const y = sub.chao(corpo.x, corpo.z, ape.y);
+        if (y !== y || !sub.cabe(corpo.x, corpo.z, y, r * 0.97)) return false;
+        ape.y = y;
+      } else ape.y = naRua(corpo.x, corpo.z, ape.y);
+      ape.x = corpo.x; ape.z = corpo.z;
+      return true;
+    };
+    for (let i = 0; i < n; i++) {
+      if (tenta(sx, sz) || tenta(sx, 0) || tenta(0, sz)) continue;
+      ape.vx = ape.vz = 0;
+      break;
+    }
+  }
+  function andarAPe(dt) {
+    const t = teclas;
+    if (t.has('q')) orb.az += dt * 1.6;
+    if (t.has('e')) orb.az -= dt * 1.6;
+    if (t.has('r')) orb.el += dt * 0.8;
+    if (t.has('t')) orb.el -= dt * 0.8;
+    if (t.has('+') || t.has('=')) ape.vao = clamp(ape.vao * Math.exp(-dt * 1.6), 5, 80);
+    if (t.has('-')) ape.vao = clamp(ape.vao * Math.exp(dt * 1.6), 5, 80);
+    /* a chegada: a câmera desce de onde estava até em cima dele (ou pula
+       por cima dos telhados, do lugar de antes pro novo) */
+    if (ape.chegada < 1) {
+      const de = ape.de, alvo = distDoVao(ape.vao), T = de.pulo ? 1.3 : 0.6 + 0.35 * Math.log10(Math.max(1, de.dist / alvo));
+      ape.chegada = Math.min(1, ape.chegada + dt / T);
+      const k = suave(ape.chegada), arco = de.pulo ? Math.sin(Math.PI * k) : 0;
+      orb.dist = Math.exp(Math.log(de.dist) + (Math.log(alvo) - Math.log(de.dist)) * k) * (1 + 3 * arco);
+      orb.el = de.el + (APE.el - de.el) * k;
+      let da = ape.para.az - de.az; da = Math.atan2(Math.sin(da), Math.cos(da));
+      orb.az = de.az + da * k;
+    }
+    /* pra onde: o joystick (na tela, pra cima é pra frente) ou o teclado */
+    let frente, lado, forca = 1, corre;
+    if (joy.ativo && joy.m > 0) { frente = -joy.y; lado = joy.x; forca = joy.m; corre = joy.borda; }
+    else {
+      frente = (t.has('w') || t.has('arrowup') ? 1 : 0) - (t.has('s') || t.has('arrowdown') ? 1 : 0);
+      lado = (t.has('d') || t.has('arrowright') ? 1 : 0) - (t.has('a') || t.has('arrowleft') ? 1 : 0);
+      corre = t.has('shift');
+    }
+    const fx = -Math.sin(orb.az), fz = -Math.cos(orb.az), rx = Math.cos(orb.az), rz = -Math.sin(orb.az);
+    let dx = fx * frente + rx * lado, dz = fz * frente + rz * lado;
+    const L = Math.hypot(dx, dz);
+    if (L) { dx /= L; dz /= L; }
+    const quer = L ? (corre ? APE.corre : APE.anda * forca) * M : 0;
+    const k = Math.min(1, dt * (quer ? 7 : 10));
+    ape.vx += (dx * quer - ape.vx) * k; ape.vz += (dz * quer - ape.vz) * k;
+    const x0 = ape.x, z0 = ape.z;
+    mover(ape.vx * dt, ape.vz * dt);
+    if (L) ape.rumo = Math.atan2(dx, dz);
+    const v = dt > 0 ? Math.hypot(ape.x - x0, ape.z - z0) / dt : 0;
+    /* o pé que se vê (e a câmera) vai atrás do pé da conta, macio: na
+       escada, o degrau de 17 cm não sacode a tela */
+    ape.yv += (ape.y - ape.yv) * Math.min(1, dt * 12);
+    /* o prédio em que ele está dentro (e ainda um instante depois de
+       sair: na porta, o telhado não pisca); embaixo da rua, nenhum. NO
+       ESTÁDIO o telhado do mapa não serve (visto de cima, a arquibancada
+       inteira é telhado, e o corte dela mostrava o corredor embaixo):
+       dentro é debaixo de alguma coisa — o corredor, o túnel, a escada, o
+       salão —, e na arquibancada e no campo, a céu aberto, nada some */
+    const noEst = ape.y > -0.5 * M && noEstadio(ape.x, ape.z);
+    ape.aberto = noEst && !coberto(ape.x, ape.z, ape.y);
+    const dentro = ape.y <= -0.5 * M ? 0 : noEst ? (ape.aberto ? 0 : grade.tetoEm(ape.x, ape.z)) : grade.dentroDe(ape.x, ape.z);
+    if (dentro) { ape.teto = dentro; ape.tetoAte = agora() + 350; }
+    else if (agora() > ape.tetoAte) ape.teto = 0;
+    /* o boneco: o jogo lê o disco e faz o resto (o passo, o parado, a virada) */
+    eu.x = ape.x; eu.y = ape.z; eu.rumo = ape.rumo;
+    eu._cacando = corre && v > APE.anda * M * 1.25;
+    eu.passada = eu._cacando ? 2.1 : 1.15;
+    jogo.t += dt;
+  }
+  /* O CORTE, a cada quadro: do alto da cabeça dele até a câmera (tudo
+     contado do pé que se vê) */
+  function atualizarCorte() {
+    if (!ape) {
+      /* A BRIGA NA CIDADE (o palco do jogo 3D que segue o líder): entre a
+         câmera e ele, o que passa da cabeça fica ralo — a copa do coqueiro,
+         o beiral —, num cone mais largo que o de a pé (a briga é um bolo
+         de gente em volta dele); o prédio que o palco abriu segue aberto */
+      /* (e a invasão do dia de jogo pelo corredor, embaixo da arquibancada) */
+      const pc = palco && palco.alvoDoCorte ? palco.alvoDoCorte() : dia && dia.aberto && dia.alvoDoCorte ? dia.alvoDoCorte() : null;
+      if (pc) {
+        CORTE.uCorte.value = 1;
+        CORTE.uCorteA.value.set(pc.x, pc.y + 1.7 * M, pc.z);
+        CORTE.uCorteB.value.copy(cam.position);
+        CORTE.uCorteR.value = 6 * M;
+        CORTE.uCorteAcima.value = pc.y + CORTE_M.acima * M;
+        CORTE.uCorteId.value = corteFixo ? corteFixo.id : 0; CORTE.uCorteY.value = corteFixo ? corteFixo.y : 1e9;
+        CORTE.uSubY.value = 1e9;
+        return;
+      }
+      /* SEM NINGUÉM A PÉ, o prédio que o jogo abriu (a sede do jogador, no
+         jogo 3D) perde o que passa da altura dele: de cima se vê dentro */
+      if (corteFixo) {
+        CORTE.uCorte.value = 1; CORTE.uCorteId.value = corteFixo.id; CORTE.uCorteY.value = corteFixo.y;
+        CORTE.uCorteAcima.value = 1e9; CORTE.uSubY.value = 1e9;
+      } else CORTE.uCorte.value = 0;
+      return;
+    }
+    const y = ape.yv;
+    CORTE.uCorte.value = 1;
+    CORTE.uCorteA.value.set(ape.x, y + 1.7 * M, ape.z);
+    CORTE.uCorteB.value.copy(cam.position);
+    CORTE.uCorteR.value = CORTE_M.raio * M;
+    /* (na arquibancada, a céu aberto, o cone também sai: de cima, quase a
+       pino, o degrau atrás dele não tapa ninguém, e o buraco que o cone
+       abria nele mostrava o corredor embaixo) */
+    CORTE.uCorteAcima.value = ape.aberto ? 1e9 : y + CORTE_M.acima * M;
+    CORTE.uCorteId.value = ape.chegada >= 1 ? ape.teto : 0;
+    CORTE.uCorteY.value = y + CORTE_M.dentro * M;
+    /* EMBAIXO DA RUA: a cidade em cima da estação some, do teto do nível
+       dele pra cima (com a terra em volta) */
+    const est = sub && ape.y < -1.2 * M ? sub.estacaoEm(ape.x, ape.z, SUB_FOLGA * M) : null;
+    if (est) {
+      const c = est.caixa, f = SUB_FOLGA * M;
+      CORTE.uSub.value.set(c.x0 - f, c.z0 - f, c.x1 + f, c.z1 + f);
+      CORTE.uSubY.value = alturaDoCorte(est.niveis, y / M) * M;
+    } else CORTE.uSubY.value = 1e9;
+  }
+  /* A ALTURA DO CORTE embaixo da rua (m), pelo pé: descendo a escada da
+     rua, o chão da cidade (e o que tem em cima) some logo que a cabeça
+     chega nele; mais embaixo o corte desce com ele até o teto do mezanino;
+     e da metade da escada da plataforma pra baixo (2 m abaixo do
+     mezanino), o mezanino some também, do teto da plataforma pra cima */
+  function alturaDoCorte(N, y) {
+    if (y < N.mezanino - 2.0) return N.tetoPlataforma;
+    return Math.max(N.tetoMezanino, Math.min(-0.05, y + 2.2));
+  }
+  /* depois de escolher, o teclado volta pro boneco (no seletor, o W e as
+     setas trocariam a opção em vez de andar) */
+  const devolverTeclado = () => { if (ape) tela.focus({ preventScroll: true }); };
+  selCamisa.onchange = () => {
+    camisa = +selCamisa.value;
+    camisaId = torcidas[camisa] ? torcidas[camisa].id : 'nenhuma';
+    if (ape) vestir();
+    devolverTeclado();
+  };
+  /* O JOYSTICK: o pino segue o dedo (ou o mouse) dentro do círculo; a
+     direção é a da tela (pra cima é pra frente), a força é o quanto ele
+     saiu do meio (com uma folga no meio, pra o dedo parado não andar), e
+     da borda pra fora ele corre */
+  const joyEl = $('.cen-joy'), pino = $('.cen-joy-pino');
+  const joy = { ativo: false, id: null, x: 0, y: 0, m: 0, borda: false };
+  function mexerJoy(ev) {
+    const r = joyEl.getBoundingClientRect(), R = r.width / 2, lim = R - 12;
+    const ex = ev.clientX - (r.left + R), ey = ev.clientY - (r.top + R), d = Math.hypot(ex, ey);
+    const f = Math.min(1, d / lim), k = d > lim ? lim / d : 1;
+    pino.style.transform = `translate(${(ex * k).toFixed(1)}px, ${(ey * k).toFixed(1)}px)`;
+    joy.x = d ? ex / d : 0; joy.y = d ? ey / d : 0;
+    joy.m = f < 0.18 ? 0 : Math.min(1, (f - 0.18) / 0.7);
+    joy.borda = f > 0.9;
+    joyEl.classList.toggle('correndo', joy.borda);
+  }
+  function soltarJoy(ev) {
+    if (ev && ev.pointerId !== joy.id) return;
+    joy.ativo = false; joy.id = null; joy.x = joy.y = joy.m = 0; joy.borda = false;
+    pino.style.transform = '';
+    joyEl.classList.remove('ativo', 'correndo');
+  }
+  joyEl.addEventListener('pointerdown', ev => {
+    ev.preventDefault(); ev.stopPropagation();
+    if (!ape) return;
+    try { joyEl.setPointerCapture(ev.pointerId); } catch (e) {}
+    joy.ativo = true; joy.id = ev.pointerId;
+    joyEl.classList.add('ativo');
+    mexerJoy(ev); pedir();
+  });
+  joyEl.addEventListener('pointermove', ev => { if (joy.ativo && ev.pointerId === joy.id) { ev.preventDefault(); mexerJoy(ev); } });
+  for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) joyEl.addEventListener(t, soltarJoy);
+  joyEl.addEventListener('contextmenu', ev => ev.preventDefault());
+
+  /* ======================================================
+     OS BOTÕES
+     ====================================================== */
+  selCidade.onchange = () => montar(selCidade.value);
+  for (const b of raiz.querySelectorAll('.cen-mapas button')) b.onclick = () => montar(P.cidade(), b.dataset.mapa);
+  /* a hora do dia (a ferramenta; o jogo 3D manda a dele a cada quadro) */
+  $('.cen-hora').onchange = ev => { const v = ev.target.value; luzDaHora(v === '' ? null : +v); };
+  /* a caixa da ferramenta: as predefinições dos gráficos */
+  selQ.onchange = () => predefinir(selQ.value);
+
+  /* ======================================================
+     AS OPÇÕES DE GRÁFICO NA HORA (o menu Gráficos do jogo 3D, a caixa da
+     ferramenta): cada uma vale já, menos a suavização (só quando a página
+     abre de novo) e as texturas, que remontam a praça — quem tem o jogo
+     por cima remonta do jeito dele (`aoTrocarTexturas`: a vida da sede
+     sai e volta junto)
+     ====================================================== */
+  let aoTrocarTexturas = null, aoPedirGraficos = null;
+  function aplicarGraficos(mudou) {
+    if (mudou.has('resolucao') || mudou.has('teto') || mudou.has('alvo') || mudou.has('fpsMax')) { AUTO.dts.length = 0; AUTO.t = 0; AUTO.falhas = 0; AUTO.bons = 0; ajustarTela(); }
+    if (mudou.has('luz') || mudou.has('luzes')) refazerMateriais();
+    if (mudou.has('bonecos') && modBonecos) modBonecos.cfg.nivelLeve = GRAF.bonecos === 'leve';
+    if (mudou.has('medidor')) { fpsEl.hidden = !GRAF.medidor; medidor.desde = 0; }
+    if (mudou.has('texturas')) {
+      qualidade = GRAF.texturas;
+      if (montado && !montando) {
+        if (aoTrocarTexturas) aoTrocarTexturas();
+        else {
+          /* a pé: volta pro mesmo lugar, virado pro mesmo lado e com o
+             mesmo zoom, depois de remontar */
+          if (ape) voltarAPe = { x: ape.x, z: ape.z, y: ape.y, az: orb.az, vao: ape.vao };
+          montar(P.cidade(), P.modo());
+        }
+      }
+    }
+    pedir();
+  }
+  /* a predefinição que as opções de agora são (ou a personalizada) */
+  const predefDasOpcoes = () => Object.keys(PREDEFS).find(n => Object.keys(PREDEFS[n]).every(k => GRAF[k] === PREDEFS[n][k])) || 'pessoal';
+  function definirGraficos(novas) {
+    const mudou = new Set();
+    for (const k in novas) {
+      const v = novas[k];
+      if (!(k in VALORES_GRAF) || !VALORES_GRAF[k].includes(v) || GRAF[k] === v) continue;
+      GRAF[k] = v; mudou.add(k);
+    }
+    GRAF.predef = predefDasOpcoes();
+    selQ.value = GRAF.predef;
+    salvarGraficos();
+    if (mudou.size) aplicarGraficos(mudou);
+    return mudou;
+  }
+  function predefinir(nome) { return PREDEFS[nome] ? definirGraficos(PREDEFS[nome]) : new Set(); }
+  const graficosApi = {
+    get opcoes() { return { ...GRAF }; },
+    /* quanta gente na rua (a vida da praça lê a cada quadro) */
+    get gente() { return GRAF.gente; },
+    get predefs() { return JSON.parse(JSON.stringify(PREDEFS)); },
+    get valores() { return VALORES_GRAF; },
+    /* uma opção ({ chave: valor }, várias de uma vez); devolve as que mudaram */
+    definir: novas => definirGraficos(novas),
+    predefinir,
+    /* a predefinição desta máquina, e se foi ela que abriu (a primeira vez, sem escolha guardada) */
+    get recomendada() { return recomendada(); },
+    get automatica() { return predefAuto; },
+    /* o que se mede agora: o fps, as chamadas, a resolução, a placa */
+    get estado() {
+      const m = ultimaMedida || {};
+      return { fps: m.fps || 0, ms: m.ms || 0, chamadas: m.chamadas || 0, triangulos: m.triangulos || 0, cpu: m.cpu || 0,
+               escala: escalaAgora(), largura: tela.width, altura: tela.height, pausado, montando,
+               semPlaca: placa.semPlaca || PROVA.semPlaca, placa: placa.curto || PROVA.nome,
+               suavizando: SUAVIZANDO, suavizarPedido: suavizarDe(GRAF.suavizar) };
+    },
+    /* quem remonta a praça quando a textura muda (o jogo 3D) */
+    set aoTrocarTexturas(f) { aoTrocarTexturas = typeof f === 'function' ? f : null; },
+    /* o clique no medidor de fps abre os gráficos (o jogo 3D diz como) */
+    set aoPedir(f) { aoPedirGraficos = typeof f === 'function' ? f : null; fpsEl.classList.toggle('pede', !!aoPedirGraficos); fpsEl.title = aoPedirGraficos ? 'Abrir as opções de gráfico' : ''; }
+  };
+  fpsEl.addEventListener('click', () => { if (aoPedirGraficos) aoPedirGraficos(); });
+  raiz.querySelector('.cen-topo').addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-acao]');
+    if (!b) return;
+    if (b.dataset.acao === 'cima') enquadrarCidade(false);
+    else if (b.dataset.acao === 'rua') nivelDaRua();
+    else if (b.dataset.acao === 'ape') entrarAPe();
+    else if (b.dataset.acao === 'sair') sairDaRua();
+    else if (b.dataset.acao === 'sede') { irPraSede(); devolverTeclado(); }
+    else if (b.dataset.acao === 'rosto') { semente++; if (ape) vestir(); devolverTeclado(); }
+    else if (b.dataset.acao === 'escolher') escolher();
+    else if (b.dataset.acao === 'planta') fechar();
+    else if (b.dataset.acao === 'jogo') abrirDiaDeJogo();
+  });
+  $('.cen-escolha').addEventListener('click', ev => {
+    const b = ev.target.closest('button[data-cidade]');
+    if (b) montar(b.dataset.cidade);
+    else if (ev.target.closest('button[data-acao="voltar"]')) { $('.cen-escolha').hidden = true; pedir(); }
+  });
+  function escolher() {
+    if (!$('.cen-escolha-miolo').childElementCount) montarEscolha();
+    $('.cen-voltar').hidden = !montado;
+    $('.cen-escolha').hidden = false;
+    $('.cen-escolha').scrollTop = 0;
+  }
+
+  /* ======================================================
+     ABRIR E FECHAR
+     ====================================================== */
+  function abrir(nome, modo) {
+    raiz.hidden = false;
+    medidor.desde = 0; ultimo = 0;
+    document.documentElement.style.overflow = 'hidden';
+    ajustarTela();
+    /* sem praça: a lista pra escolher */
+    if (!nome) { escolher(); return Promise.resolve(); }
+    if (montado && montado.nome === nome && P.modo() === (modo || P.mapaDoPorte(nome)) && !montando) { atualizarTopo(); pedir(); return Promise.resolve(); }
+    /* quem abre pode esperar a praça ficar pronta (o jogo 3D espera pra levar a câmera à sede) */
+    return montar(nome, modo);
+  }
+  function fechar() {
+    sairDaRua(false);
+    raiz.hidden = true;
+    document.documentElement.style.overflow = '';
+    teclas.clear();
+    try {
+      const q = new URLSearchParams(location.search);
+      q.delete('cenario'); q.delete('mapa');
+      const resto = q.toString();
+      history.replaceState(null, '', location.pathname + (resto ? '?' + resto : '') + location.hash);
+    } catch (e) {}
+    P.aoFechar && P.aoFechar();
+  }
+  /* a textura que chega depois (a folha do atlas) pede outro quadro */
+  const gerente = THREE.DefaultLoadingManager, antesLoad = gerente.onLoad, antesProg = gerente.onProgress;
+  gerente.onLoad = (...a) => { if (antesLoad) antesLoad(...a); pedir(); };
+  gerente.onProgress = (...a) => { if (antesProg) antesProg(...a); pedir(); };
+
+  /* ======================================================
+     O QUE O JOGO 3D PEDE DO CENÁRIO (27/09/2026): a vida da praça
+     ====================================================== */
+  const vPro = new THREE.Vector3();
+  const vidaApi = {
+    /* o clique na praça antes da ficha: `aoClicar({ o, d })` recebe o raio
+       da câmera (origem e direção, no mundo) e devolve se pegou o clique */
+    aoClicar: null,
+    /* os bonecos (o modelo do jogo), carregados uma vez */
+    chamarPovo: () => chamarBoneco(),
+    get povo() { return povo; },
+    /* a vida: { J: { t, discos, falante, reuniao }, quadro(dt) } (null tira) */
+    set vida(v) { vida = v || null; if (!vida && povo && !palco && !(dia && dia.aberto)) limparBonecos(); pedir(); },
+    get vida() { return vida; },
+    /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
+    async diaDeJogo() {
+      if (!povo) await chamarBoneco();
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      return dia;
+    },
+    get dia() { return dia; },
+    /* o dia de jogo de outros clubes rodando junto com a vida (dia3d.js) */
+    set diaNoFundo(v) { diaNoFundo = v === 'oculto' ? 'oculto' : !!v; pedir(); },
+    get diaNoFundo() { return diaNoFundo; },
+    /* bonecos de fora, desenhados junto com a vida (o nosso bonde da investida) */
+    set extras(a) { extras = Array.isArray(a) ? a : []; pedir(); },
+    get extras() { return extras; },
+    /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
+    set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
+    get palco() { return palco; },
+    /* o prédio em (x, z) sem o que passa de `alto` m do chão (null: todos inteiros) */
+    abrirPredio(x, z, alto = 2.2) {
+      if (x == null || !grade) { corteFixo = null; pedir(); return 0; }
+      const id = grade.tetoEm(x, z) || grade.dentroDe(x, z);
+      corteFixo = id ? { id, y: (piso ? piso.chao(x, z, 0) : 0) + alto * M } : null;
+      pedir();
+      return id;
+    },
+    /* a hora do dia (h, de 0 a 24; null volta o sol de sempre) */
+    hora: h => luzDaHora(h),
+    get horaDoDia() { return horaDoDia; },
+    /* o chão da rua em (x, z) (a calçada, o piso da sede) */
+    chao: (x, z) => piso ? piso.chao(x, z, 0) : 0,
+    /* onde o corpo cabe (a grade do passo), com o raio em m */
+    cabe: (x, z, r = 0.25) => !!grade && grade.cabe(x, z, r * M),
+    /* NA SEDE DE DOIS ANDARES: o chão a um degrau de `y` (o pé de agora:
+       quem sobe a escada acha o degrau seguinte) e onde o corpo cabe no
+       andar de `y` (com chão debaixo: o vão do pátio não é andar). Fora
+       dela, o chão e a grade da rua */
+    chaoEm(x, z, y = 0) {
+      if (noSobrado(x, z)) { const c = sobrados.chao(x, z, y); if (c === c) return c; }
+      return piso ? piso.chao(x, z, 0) : 0;
+    },
+    cabeEm(x, z, y = 0, r = 0.25) {
+      if (!noSobrado(x, z)) return !!grade && grade.cabe(x, z, r * M);
+      const c = sobrados.chao(x, z, y);
+      return c === c && Math.abs(c - y) < 0.12 * M && sobrados.cabe(x, z, c, r * M);
+    },
+    get grade() { return grade; },
+    /* o ponto do mundo na tela: px CSS a partir do canto da tela do
+       cenário, e se está na frente da câmera */
+    projetar(x, y, z, o = {}) {
+      vPro.set(x, y, z).project(cam);
+      const r = tela.getBoundingClientRect();
+      o.x = r.left + (vPro.x + 1) / 2 * r.width; o.y = r.top + (1 - vPro.y) / 2 * r.height;
+      o.frente = vPro.z > -1 && vPro.z < 1;
+      return o;
+    },
+    /* o que o plano do dia de jogo (dia_de_jogo.js) pede do cenário: a
+       briga na caminhada do jogo 3D (caminhada.js) planeja com ele */
+    contextoDoDia: () => contextoDoJogo(),
+    /* o ponto do chão debaixo do ponto da tela (px CSS), no plano de altura
+       y (unidade de mundo), ou null (o céu; longe demais): a mira da bomba */
+    chaoNaTela(sx, sy, y = 0) {
+      const p = raioEm(sx, sy).intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -y), new THREE.Vector3());
+      return p && p.distanceTo(cam.position) < orb.dist * 12 + 2000 ? p : null;
+    },
+    /* quem ancora coisa na tela a cada quadro (os balões) */
+    aCadaQuadro(f) { depoisDaCamera.add(f); return () => depoisDaCamera.delete(f); },
+    get camera() { return cam; },
+    /* a cena (o jogo 3D põe nela o que é dele: as cadeiras a mais da reunião) */
+    get cena() { return doMapa; },
+    /* o three.js do cenário (o jogo 3D monta com ele o que põe na cena: o tapume do bar quebrado) */
+    get THREE() { return THREE; },
+    /* o CORTE num material de fora (o palco à parte da caravana, a festa):
+       o que passa da cabeça do boneco, entre ele e a câmera, fica ralo */
+    cortavel: m => cortavel(m, false),
+    /* abre (ou fecha) as portas vivas cuja dobradiça cai no retângulo */
+    abrirPortas(r, abrir = true) {
+      let n = 0;
+      for (const q of portas) if (q.hx > r.x0 && q.hx < r.x1 && q.hz > r.z0 && q.hz < r.z1) { q.alvo = abrir ? q.ang : 0; n++; }
+      pedir();
+      return n;
+    }
+  };
+
+  return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi, graficos: graficosApi,
+           /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
+           get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
+           /* se a praça ainda está montando (quem abre a de fora espera o fim dela: dia3d.js) */
+           get montando() { return montando; },
+           /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */
+           get dia() { return dia; }, abrirDiaDeJogo, get custoDia() { return { ...custoDia }; },
+           /* pro teste: o que está no pixel (sx, sy) */
+           pegarEm(sx, sy) { const c = pegar(sx, sy); return c ? { tipo: c.it.tipo, titulo: P.tituloDe(c.it) } : null; },
+           /* pro teste: a câmera num lugar */
+           olhar(x, z, dist, el, az, alto = 0) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; orb.alto = alto; pedir(); },
+           /* pro teste: a pé */
+           aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, levar: levarPara,
+                  /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */
+                  mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
+                  get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, aberto: !!ape.aberto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },
+                  get grade() { return grade; }, get sub() { return sub; }, get piso() { return piso; }, get andares() { return andares; }, noEstadio: (x, z) => noEstadio(x, z), get povo() { return povo; },
+                  get sobrados() { return sobrados; }, noSobrado: (x, z) => noSobrado(x, z),
+                  porta: () => alternarPorta(), get portas() { return portas.map(p => ({ hx: p.hx, hz: p.hz, y0: p.y0, larg: p.larg, a: p.a, alvo: p.alvo, ang: p.ang, grupo: p.grupo, vidro: p.vidro })); },
+                  perto: () => { const p = portaPerto(); return p && { hx: p.hx, hz: p.hz, grupo: p.grupo, alvo: p.alvo }; }, cabe: (x, z) => !!grade && grade.cabe(x, z, APE.raio * M) } };
+}

@@ -1,0 +1,235 @@
+/* =========================================================
+   TELA ESTREITA
+   ---------------------------------------------------------
+   Um limiar só, 900px de largura, e nada mais: sem detecção
+   de toque e sem botão de ligar. Acima dele o jogo é o de
+   sempre — lateral fixa, teclado, mouse. O teclado continua
+   valendo em qualquer largura; o que muda aqui é que tudo que
+   dependia de tecla ganha botão, porque no celular não dá pra
+   apertar tecla com o jogo rodando.
+
+   A inversão que o celular pede: a tela principal passa a ser
+   o mapa (ou a cena), e as onze páginas de gestão viram
+   painéis que se abrem por cima. Painel é visita, não destino
+   — fecha e o jogador está de volta no mapa, sem o mapa ter
+   sido remontado.
+   ========================================================= */
+
+/* o ☰, o véu e a gaveta deixaram de existir: a coluna de ícones dentro
+   do mapa é a navegação em qualquer largura */
+
+@media (max-width: 900px){
+
+  /* ---------- casca: uma coluna ---------- */
+  /* `minmax(0,1fr)` e não `1fr`: com `1fr` o canvas do mapa, que é
+     maior que a tela, estica a coluna inteira e o topo e o ticker vão
+     junto — a página passava a rolar de lado por causa dele. */
+  #jogo{
+    grid-template-columns:minmax(0,1fr);
+    grid-template-areas:
+      "tela"
+      "ticker";
+  }
+
+  /* ---------- páginas ---------- */
+  #tela{ padding:0; min-width:0; }
+  .pagina{ padding:10px; min-width:0; }
+  /* A COLUNA DE ÍCONES NO CELULAR.
+     Aqui moravam as regras da HUD do mapa: o viewport que rolava, o
+     recolhível de pontos, a faixa de controles, o pad de WASD e a faixa
+     da torcida sobre o canvas. Saíram com o mapa.
+
+     A coluna do feed encolhe e continua sendo a navegação inteira. Ela
+     é `column wrap`, então em tela deitada — 390px de altura — ela
+     quebra numa segunda coluna em vez de rolar escondida. */
+  .feed-menu{ padding:4px 3px; gap:2px; }
+  .feed-menu .mapa-ic{ width:30px; height:26px; }
+  .feed-menu .mapa-ic svg{ width:15px; height:15px; }
+  .feed-barra{ padding:5px 7px; gap:7px; }
+  .mapa-ic{ width:34px; height:32px; }
+  .mapa-ic svg{ width:18px; height:18px; }
+
+  .cartao, .corpo, .lista-detalhe, .subabas, .abas-grandes{ min-width:0; }
+  .lista-detalhe{ grid-template-columns:1fr !important; }
+  .subabas, .abas-grandes{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #ticker, #tickerCaixa{ min-width:0; max-width:100vw; overflow:hidden; }
+
+  /* Painel sobre o mapa. A página do mapa continua montada e pintada
+     embaixo; o painel é outra `.pagina` marcada como aberta, por cima.
+     Nada é desmontado, então o zoom e o arrasto do mapa ficam onde
+     estavam. */
+  /* sem o `#topo`, o painel começa no alto da tela e só desce os 40px
+     da própria barra de título */
+  body.com-painel .pagina.painel{
+    display:block;
+    position:fixed; z-index:45;
+    inset:0;
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:var(--fundo);
+    padding:10px 10px calc(64px + env(safe-area-inset-bottom));
+    animation:sobe .16s ease-out;
+  }
+  @keyframes sobe{ from{ transform:translateY(14px); opacity:0 } }
+
+  #painelBarra{
+    display:flex; align-items:center; gap:8px;
+    position:fixed; z-index:46; left:0; right:0; top:0;
+    height:40px; padding:0 10px;
+    background:var(--painel); border-bottom:1px solid var(--linha);
+  }
+  body:not(.com-painel) #painelBarra{ display:none; }
+  body.com-painel .pagina.painel{ top:40px; }
+  #painelTitulo{
+    font-family:var(--titulo); font-size:14px; letter-spacing:.11em;
+    text-transform:uppercase; flex:1;
+  }
+  #painelFechar{
+    background:transparent; border:1px solid var(--linha); color:var(--texto);
+    border-radius:3px; padding:4px 12px; font-size:15px; cursor:pointer;
+  }
+
+  /* ---------- tabela larga arrasta pro lado, o resto empilha ---------- */
+  .tabela-rolante, .tabela-larga{
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+  }
+  .comp-duas, .principal-lateral, .duas-colunas, .grade-2{
+    grid-template-columns:1fr !important;
+  }
+  /* a página nunca rola de lado */
+  html, body{ overflow-x:hidden; }
+  #tela, .pagina{ max-width:100vw; }
+
+  /* ---------- cena ---------- */
+  #djGrade{ grid-template-columns:1fr; }
+  #telaDiaJogo{ padding:0; }
+  #djPalco{ max-width:100vw; }
+  /* CELULAR: A CENA É A TELA INTEIRA (pedido do dono, 05/09/2026). O
+     palco cobre a tela e o pad (z 70) fica por cima dele; o canvas tem
+     a resolução da tela (ponte.ajustarCanvasCelular) e o zoom segue o
+     líder. O dedo no canvas é mira e pinça, não rolagem da página. */
+  body.em-cena{ overflow:hidden; }
+  body.em-cena #djPalco{ position:fixed; inset:0; z-index:60; border:0; box-shadow:none;
+    width:auto; max-width:none; background:#0e0e0d;
+    display:flex; flex-direction:column; }
+  body.em-cena #djPalco #djFaixa{ flex:none; }
+  body.em-cena #djPalco #djCanvases{ flex:1 1 auto; min-height:0; }
+  body.em-cena #djPalco canvas{ width:100%; height:100%; max-width:none; max-height:none;
+    border:0; touch-action:none; }
+  body.em-cena #djGrade{ padding:0; max-height:none; }
+  /* NO CELULAR A CENA É SÓ A CENA (decisão do dono, 22/08/2026): a
+     barra de comandos saiu inteira de cima do palco. O botão do
+     portão/saída era o único que ainda ficava lá, com um rótulo comprido
+     — "Canto do campo (leve o líder)" — atravessado no meio da briga.
+     Ele foi pro pad, junto dos outros, onde o dedo já está. */
+  #djComandos{ display:none; }
+  /* a dica de teclas não vale no celular: com a cruz de WASD trocada
+     pela bola de controle, ali não há tecla nenhuma pra apertar */
+  #djDica{ display:none; }
+  /* o botão fixo de avançar dia não entra na cena */
+
+  /* ---------- o pad: o rodapé da cena ----------
+     OS BOTÕES NÃO FICAM NA FRENTE DA BRIGA (pedido do dono, 08/09/2026).
+     O pad deixou de boiar sobre o canvas: é o último bloco da coluna
+     do palco (faixa → cena → pad), com fundo próprio, e o canvas fica
+     com o que sobra da altura. Os nove botões — bater, defender,
+     recuar, agarrar, chamar, fugir, sair, pedra, bomba — dividem UMA
+     linha em partes iguais; a bola de controle vai embaixo dela. */
+  .dj-pad{
+    flex:none; position:relative; z-index:70;
+    display:flex; flex-direction:column; gap:8px;
+    padding:8px calc(8px + env(safe-area-inset-right))
+            calc(8px + env(safe-area-inset-bottom))
+            calc(8px + env(safe-area-inset-left));
+    background:#0e0e0d; border-top:1px solid rgba(255,255,255,.12);
+    touch-action:none; user-select:none; -webkit-user-select:none;
+  }
+  /* CADA PAD NA SUA TELA: `#djPad` é montado uma vez e não é
+     desmontado; fora da cena ele simplesmente não existe na tela. */
+  body:not(.em-cena) #djPad{ display:none; }
+
+  .pad-bt{
+    touch-action:none; user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    background:#1b1b1d; border:1px solid rgba(255,255,255,.16);
+    color:#e8e4da; font-family:var(--titulo); letter-spacing:.02em;
+    border-radius:6px; cursor:pointer;
+  }
+  .pad-bt.apertado{ background:var(--rubro); border-color:var(--rubro-vivo); }
+  .pad-bt.gasto{ opacity:.4; }
+
+  .pad-linhas{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .pad-acoes{ display:flex; gap:4px; }
+  /* a linha de cima é a dos mais usados: quatro botões maiores */
+  .pad-acoes.pad-principais .pad-bt{ height:52px; font-size:12px; letter-spacing:.04em; }
+  /* nove rótulos em 390 px: 38 px por botão. Em Barlow Condensed 9 px
+     "DEFENDER" cabe; se a fonte não carregar, `ajustarRotulosDoPad`
+     (ponte.js) desce o corpo até caber — o rótulo nunca sai cortado */
+  .pad-acoes .pad-bt{
+    flex:1 1 0; min-width:0; height:42px; padding:0 1px;
+    font-size:9px; font-weight:600; line-height:1; letter-spacing:0;
+    font-stretch:condensed; white-space:nowrap; overflow:hidden;
+  }
+  .pad-x{ border-color:var(--vermelho); color:var(--vermelho); }
+  .pad-enter{ border-color:var(--ouro); color:var(--ouro); }
+  .pad-2, .pad-3{ border-color:rgba(232,192,32,.45); }
+  .pad-bola-linha{ display:flex; justify-content:center; }
+  /* DEITADO a tela tem 390 px de altura: a bola vai pro lado da linha
+     de botões, no mesmo rodapé, e a cena fica com o que sobra */
+  @media (orientation: landscape){
+    .dj-pad{ flex-direction:row; align-items:center; gap:10px; }
+    .pad-linhas{ flex:1 1 auto; min-width:0; }
+    .pad-acoes.pad-principais .pad-bt{ height:46px; }
+    .pad-bola-linha{ flex:none; }
+    .pad-bola-linha .pad-bola{ width:88px; height:88px; }
+    .pad-bola-linha .pad-bola-nucleo{ width:44px; height:44px; }
+  }
+
+  /* A BOLA DE CONTROLE, no lugar da cruz de WASD (pedido do dono,
+     22/08/2026): base redonda, quatro setas discretas marcando os
+     pontos cardeais e o núcleo que acompanha o dedo até a borda. O
+     curso do núcleo é de 46px — o mesmo BOLA_RAIO de ponte.js. */
+  .pad-bola{
+    position:relative; width:116px; height:116px; border-radius:50%;
+    pointer-events:auto; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    background:rgba(20,20,22,.72);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:inset 0 0 22px rgba(0,0,0,.5);
+  }
+  .pad-bola.apertado{ border-color:rgba(255,255,255,.38); }
+  .pad-bola-nucleo{
+    position:absolute; left:50%; top:50%;
+    width:58px; height:58px; border-radius:50%;
+    transform:translate(-50%, -50%);
+    background:rgba(150,150,152,.72);
+    border:1px solid rgba(255,255,255,.3);
+    pointer-events:none;
+  }
+  .pad-bola.apertado .pad-bola-nucleo{
+    background:var(--rubro); border-color:var(--rubro-vivo);
+  }
+  /* as setas são só marcação: quem move é o vetor, não elas */
+  .pad-bola-seta{
+    position:absolute; width:9px; height:9px; pointer-events:none;
+    border-top:2px solid rgba(255,255,255,.5);
+    border-right:2px solid rgba(255,255,255,.5);
+  }
+  .seta-n{ top:11px;    left:50%; transform:translateX(-50%) rotate(-45deg) }
+  .seta-s{ bottom:11px; left:50%; transform:translateX(-50%) rotate(135deg) }
+  .seta-l{ right:11px;  top:50%;  transform:translateY(-50%) rotate(45deg) }
+  .seta-o{ left:11px;   top:50%;  transform:translateY(-50%) rotate(-135deg) }
+
+  /* O AVISO DE GIRAR O APARELHO SAIU (decisão do dono, 22/08/2026):
+     ele pedia pra virar o celular "pra ver a briga inteira", e ver a
+     briga inteira deixou de ser o ponto — a câmera agora fica colada no
+     disco do jogador e a seta da borda diz onde eles estão. Aviso que
+     manda fazer o que o jogo não faz mais é só barulho no meio da tela.
+     A regra de deitar o aparelho continua no que importa: a faixa e o
+     pad se ajeitam sozinhos nas duas orientações. */
+}
+
+/* a dica de tecla nos rótulos é ruído no celular */
+@media (max-width: 900px){
+  #djComandos .acao-btn b, .form-btn small{ display:none; }
+}

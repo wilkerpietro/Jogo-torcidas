@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Torcida Organizada - Codex Prototype</title>
+  <link rel="stylesheet" href="./styles.css?v=20260510canvas2">
+</head>
+<body>
+  <!-- Title Screen (Main Menu) -->
+  <div id="titleScreen" class="title-screen">
+    <div class="title-bg">
+      <svg class="title-crowd" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <defs>
+          <radialGradient id="smoke" cx="50%" cy="0%" r="80%">
+            <stop offset="0%" stop-color="rgba(150,30,30,0.55)"/>
+            <stop offset="40%" stop-color="rgba(60,20,20,0.4)"/>
+            <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+          </radialGradient>
+          <radialGradient id="flare1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(255,180,140,0.95)"/>
+            <stop offset="35%" stop-color="rgba(220,80,40,0.7)"/>
+            <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="1600" height="600" fill="url(#smoke)"/>
+        <!-- Distant crowd -->
+        <g fill="#0a0606" opacity="0.85">
+          <path d="M0 600 L0 470 Q40 460 80 465 Q120 470 160 463 Q200 455 240 460 Q280 466 320 458 Q360 450 400 460 Q440 470 480 465 Q520 460 560 467 Q600 472 640 462 Q680 455 720 463 Q760 471 800 460 Q840 452 880 462 Q920 472 960 460 Q1000 450 1040 460 Q1080 470 1120 463 Q1160 458 1200 466 Q1240 472 1280 460 Q1320 450 1360 462 Q1400 472 1440 463 Q1480 456 1520 465 Q1560 472 1600 462 L1600 600 Z"/>
+        </g>
+        <!-- Mid crowd silhouettes -->
+        <g fill="#000">
+          <ellipse cx="120" cy="500" rx="22" ry="40"/>
+          <ellipse cx="200" cy="510" rx="24" ry="42"/>
+          <ellipse cx="280" cy="498" rx="22" ry="40"/>
+          <ellipse cx="370" cy="512" rx="26" ry="44"/>
+          <ellipse cx="450" cy="500" rx="23" ry="40"/>
+          <ellipse cx="540" cy="510" rx="25" ry="44"/>
+          <ellipse cx="630" cy="500" rx="22" ry="40"/>
+          <ellipse cx="720" cy="514" rx="27" ry="46"/>
+          <ellipse cx="820" cy="500" rx="22" ry="40"/>
+          <ellipse cx="910" cy="512" rx="25" ry="44"/>
+          <ellipse cx="1000" cy="500" rx="22" ry="40"/>
+          <ellipse cx="1090" cy="510" rx="25" ry="42"/>
+          <ellipse cx="1180" cy="500" rx="23" ry="40"/>
+          <ellipse cx="1270" cy="513" rx="26" ry="44"/>
+          <ellipse cx="1360" cy="500" rx="22" ry="40"/>
+          <ellipse cx="1450" cy="512" rx="25" ry="44"/>
+          <ellipse cx="1540" cy="500" rx="22" ry="40"/>
+        </g>
+        <!-- Raised arms / flags -->
+        <g stroke="#000" stroke-width="6" fill="none">
+          <path d="M118 470 L110 410"/>
+          <path d="M198 470 L210 405"/>
+          <path d="M368 470 L378 400"/>
+          <path d="M448 470 L440 405"/>
+          <path d="M538 470 L548 395"/>
+          <path d="M718 470 L728 400"/>
+          <path d="M908 470 L900 410"/>
+          <path d="M1088 470 L1098 405"/>
+          <path d="M1268 470 L1260 400"/>
+          <path d="M1448 470 L1456 410"/>
+        </g>
+        <!-- Flares -->
+        <circle cx="280" cy="430" r="120" fill="url(#flare1)" opacity="0.85"/>
+        <circle cx="1180" cy="440" r="140" fill="url(#flare1)" opacity="0.75"/>
+        <circle cx="780" cy="380" r="90" fill="url(#flare1)" opacity="0.55"/>
+      </svg>
+    </div>
+
+    <div class="title-content">
+      <aside class="title-menu">
+        <h1 class="title-logo">
+          <span class="title-stars">★ ★</span>
+          <span class="title-word-white">TORCIDA</span>
+          <span class="title-word-red">ORGANIZADA</span>
+          <span class="title-tagline">★ DESDE 1997 ★</span>
+        </h1>
+        <ul class="title-options" role="menu">
+          <li class="title-option active" data-menu="continuar" role="menuitem">CONTINUAR</li>
+          <li class="title-option" data-menu="novo" role="menuitem">NOVO JOGO</li>
+          <li class="title-option" data-menu="carregar" role="menuitem">CARREGAR JOGO</li>
+          <li class="title-option" data-menu="config" role="menuitem">CONFIGURAÇÕES</li>
+          <li class="title-option" data-menu="conquistas" role="menuitem">CONQUISTAS</li>
+          <li class="title-option" data-menu="creditos" role="menuitem">CRÉDITOS</li>
+          <li class="title-option" data-menu="sair" role="menuitem">SAIR</li>
+        </ul>
+        <div class="title-version">v1.0.0</div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- New Game dialog (Seleção de Torcida) -->
+  <dialog id="newGameDialog" class="ng-dialog">
+    <header class="ng-header">
+      <h2>SELEÇÃO DE TORCIDA</h2>
+      <div class="ng-header-actions">
+        <label class="ng-diff">DIFICULDADE
+          <select id="ngDifficulty">
+            <option value="facil">Fácil</option>
+            <option value="normal" selected>Normal</option>
+            <option value="dificil">Difícil</option>
+          </select>
+        </label>
+        <button id="closeNewGame" class="icon" aria-label="Fechar">×</button>
+      </div>
+    </header>
+
+    <nav class="ng-tabs" role="tablist">
+      <button class="ng-tab active" data-div="all" role="tab">TODAS</button>
+      <button class="ng-tab" data-div="1" role="tab">SÉRIE A</button>
+      <button class="ng-tab" data-div="2" role="tab">SÉRIE B</button>
+      <button class="ng-tab" data-div="3" role="tab">SÉRIE C</button>
+      <button class="ng-tab" data-div="4" role="tab">SÉRIE D</button>
+    </nav>
+
+    <div class="ng-search-wrap">
+      <input id="ngSearch" type="search" placeholder="Buscar torcida, time ou cidade..." autocomplete="off"/>
+    </div>
+
+    <div class="ng-grid">
+      <aside class="ng-side">
+        <div class="ng-side-head">TORCIDAS <span id="ngCount">0</span></div>
+        <div class="ng-list" id="ngList" role="listbox"></div>
+      </aside>
+      <section class="ng-detail" id="ngDetail">
+        <div class="ng-empty">Selecione uma torcida à esquerda.</div>
+      </section>
+    </div>
+  </dialog>
+
+  <div id="app">
+    <aside class="rail">
+      <div class="rail-date">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="1.5"/>
+          <path d="M3 9h18M8 3v4M16 3v4"/>
+        </svg>
+        <div>
+          <strong id="railDateDay">--/--/----</strong>
+          <small id="railDateWeekday">DIA</small>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="Navegação principal">
+        <button class="tab active" data-tab="home" title="Início">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l9-8 9 8M5 9v11h5v-7h4v7h5V9"/></svg>
+          <span>Início</span>
+        </button>
+        <button class="tab" data-tab="torcida" title="Torcida">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 19c0-2 1.6-4.4 5-4.4 1.7 0 3 .8 3.5 2"/></svg>
+          <span>Torcida</span>
+        </button>
+        <button class="tab" data-tab="calendario" title="Calendário">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 9h18M8 3v4M16 3v4M7 13h2M11 13h2M15 13h2M7 17h2M11 17h2"/></svg>
+          <span>Calendário</span>
+        </button>
+        <button class="tab" data-tab="financeiro" title="Financeiro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18"/><circle cx="17" cy="14.5" r="1.6"/></svg>
+          <span>Financeiro</span>
+        </button>
+        <button class="tab" data-tab="mapa" title="Mapa">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 4l-6 2v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>
+          <span>Mapa</span>
+        </button>
+        <button class="tab" data-tab="competicoes" title="Competições">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 4h10v4a5 5 0 0 1-10 0V4zM4 6h3M17 6h3M9 14v3h6v-3M7 21h10"/></svg>
+          <span>Competições</span>
+        </button>
+        <button class="tab" data-tab="diplomacia" title="Diplomacia">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12l4-4 3 2 3-3 4 4-3 3-3-2-4 4-4-4z"/></svg>
+          <span>Diplomacia</span>
+        </button>
+        <button class="tab" data-tab="whatsapp" id="tabWhats" title="WhatsApp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20l1.6-4.4A8 8 0 1 1 9 19.5L4 20z"/></svg>
+          <span>WhatsApp <b id="unreadBadge">0</b></span>
+        </button>
+        <button class="tab" data-tab="noticias" title="Notícias">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M7 9h6M7 12h10M7 15h10"/></svg>
+          <span>Notícias</span>
+        </button>
+        <button class="tab" data-tab="conquistas" title="Conquistas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M8 4h8v5a4 4 0 0 1-8 0V4zM5 6h3M16 6h3M10 13h4l-1 4h-2l-1-4z"/></svg>
+          <span>Conquistas</span>
+        </button>
+      </nav>
+      <div class="rail-actions">
+        <button id="saveGame" class="rail-btn rail-btn-save" title="Salvar partida">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 4h11l3 3v13H5V4z"/><path d="M8 4v5h7V4M8 14h8v6H8z"/></svg>
+          <span>Salvar</span>
+        </button>
+        <button id="openTitle" class="rail-btn rail-btn-menu" title="Voltar ao menu principal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <span>Menu Principal</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="screen">
+      <header class="topheader">
+        <div class="th-brand">
+          <div class="th-flag" id="thFlag" aria-hidden="true"></div>
+          <div class="th-brand-text">
+            <strong class="th-torcida" id="thTorcida">—</strong>
+            <small class="th-city" id="thCity">—</small>
+          </div>
+        </div>
+        <div class="th-stats">
+          <div class="th-stat">
+            <span class="th-stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="M3 10h18"/><circle cx="17" cy="14.5" r="1.6"/></svg>
+            </span>
+            <div>
+              <small>SALDO</small>
+              <strong id="thSaldo">R$ 0,00</strong>
+            </div>
+          </div>
+          <div class="th-stat">
+            <span class="th-stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 19c0-3.3 2.7-6 6-6s6 2.7 6 6M14.5 19c0-2 1.6-4.4 5-4.4 1.7 0 3 .8 3.5 2"/></svg>
+            </span>
+            <div>
+              <small>MEMBROS</small>
+              <strong id="thMembros">0</strong>
+            </div>
+          </div>
+          <div class="th-stat">
+            <span class="th-stat-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3l2.6 5.6 6.1.5-4.6 4.1 1.4 6L12 16.6 6.5 19.2l1.4-6L3.3 9.1l6.1-.5L12 3z"/></svg>
+            </span>
+            <div>
+              <small>PRESTÍGIO</small>
+              <strong id="thPrestigio">0</strong>
+            </div>
+          </div>
+          <button id="advanceDay" class="th-advance">AVANÇAR DIA</button>
+        </div>
+      </header>
+
+      <section id="home" class="panel active"></section>
+      <section id="torcida" class="panel"></section>
+      <section id="calendario" class="panel"></section>
+      <section id="financeiro" class="panel"></section>
+      <section id="mapa" class="panel"></section>
+      <section id="competicoes" class="panel"></section>
+      <section id="diplomacia" class="panel"></section>
+      <section id="whatsapp" class="panel"></section>
+      <section id="noticias" class="panel"></section>
+      <section id="conquistas" class="panel"></section>
+    </main>
+  </div>
+
+  <div class="ticker" id="ticker"></div>
+
+  <dialog id="whatsDialog">
+    <div class="dialog-head">
+      <strong>WhatsApp da Diretoria</strong>
+      <button id="closeWhats" class="icon">×</button>
+    </div>
+    <div id="messages" class="messages"></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="trainDialog" class="ficha-dialog train-dialog">
+    <header class="dialog-head">
+      <strong>TREINO DA TORCIDA</strong>
+      <button id="closeTrain" class="icon" aria-label="Fechar">×</button>
+    </header>
+    <div id="trainBody" class="ficha-body"></div>
+  </dialog>
+
+  <dialog id="planDialog" class="ficha-dialog plan-dialog">
+    <header class="dialog-head">
+      <strong>PLANEJAMENTO</strong>
+      <button id="closePlan" class="icon" aria-label="Fechar">×</button>
+    </header>
+    <div id="planBody" class="ficha-body"></div>
+  </dialog>
+
+  <dialog id="fichaDialog" class="ficha-dialog">
+    <header class="dialog-head">
+      <strong>FICHA DO MEMBRO</strong>
+      <button id="closeFicha" class="icon" aria-label="Fechar">×</button>
+    </header>
+    <div id="fichaBody" class="ficha-body"></div>
+  </dialog>
+
+  <script src="./data.js?v=20260502c"></script>
+  <script src="./app.js?v=20260510canvas"></script>
+</body>
+</html>

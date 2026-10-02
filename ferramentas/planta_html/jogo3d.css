@@ -1,0 +1,612 @@
+/* =========================================================
+   O JOGO EM 3D (27/09/2026): a cidade é a tela, e a casca do
+   jogo de feed (Torcida Organizada) vira HUD por cima dela.
+
+   O dono pediu: "Traga toda a hud pro jogo, como o menu lateral,
+   as informações superiores, o menu inicial, e os dias passando."
+   A casca é a mesma do jogo de feed (os mesmos ids, o mesmo
+   main.js); esta folha só muda ONDE cada pedaço fica:
+   - o cenário 3D ocupa a tela inteira, atrás de tudo;
+   - a barra de cima (a torcida, o caixa, os membros, a data, o ≫
+     e o 1×/2×) e a fita das manchetes ficam no alto;
+   - a coluna de ícones (os painéis) fica na esquerda;
+   - o feed NÃO aparece (o dono, 28/09/2026: "Exclua a exposição do
+     feed na tela. As mensagens sempre vão ser via balões de alguém
+     falando com o jogador"): cada mensagem chega num balão, em cima
+     de quem a traz (recados3d.js);
+   - os painéis, os modais, o relatório e as cenas de briga abrem
+     por cima de tudo, como no jogo de feed;
+   - o menu inicial e a escolha da torcida deixam a cidade aparecer
+     atrás.
+   O que não é HUD não pega o mouse: arrastar no meio da tela move
+   a câmera da cidade.
+   ========================================================= */
+/* O TEMA DO JOGO GANHA O DA PLANTA: a página da planta pinta o body
+   (cor de tinta escura, 14px/1.45 Barlow) e define a --linha dela no
+   :root, depois do CSS do jogo — sem isto o nome da torcida e os números
+   da barra de cima saíam escuros sobre o escuro */
+body.jogo3d{
+  background:#0b0b0d;overflow:hidden;
+  --linha:#2c2c2c;
+  color:var(--texto);font-family:var(--corpo);font-size:13px;line-height:normal;
+}
+/* o cenário atrás de tudo, e sem o topo dele (a praça é a da torcida
+   do jogo; o dia de jogo, os mapas e a planta são coisa da ferramenta) */
+body.jogo3d .cen{z-index:0}
+body.jogo3d .cen-topo,
+body.jogo3d .cen-dica,
+body.jogo3d .cen-escolha{display:none !important}
+/* o medidor de fps e a ficha do que se clica descem pra não ficar
+   embaixo da barra do jogo */
+body.jogo3d .cen-fps{top:auto;bottom:6px;left:50px;right:auto}
+/* no menu o medidor some (fica em cima da versão do jogo) */
+body.jogo3d:not(.j3d-em-jogo) .cen-fps{display:none}
+body.jogo3d .cen-ficha{top:78px}
+
+/* ---------- a casca ---------- */
+body.jogo3d #jogo{
+  position:fixed;inset:0;z-index:20;pointer-events:none;
+  background:transparent;height:auto;min-height:0;display:block;
+}
+body.jogo3d #tela{position:absolute;inset:0;background:transparent}
+body.jogo3d .pagina[data-pag="feed"].on{position:absolute;inset:0;background:transparent}
+body.jogo3d .feed-menu{
+  pointer-events:auto;background:rgba(20,20,22,.9);
+  box-shadow:2px 0 10px rgba(0,0,0,.35);
+}
+body.jogo3d .feed-corpo{pointer-events:none}
+body.jogo3d .feed-barra{
+  pointer-events:auto;background:rgba(26,26,28,.92);
+  box-shadow:0 2px 10px rgba(0,0,0,.35);
+}
+body.jogo3d .feed-ticker{pointer-events:auto;background:rgba(14,14,16,.86)}
+/* O PAINEL ABERTO PEGA O MOUSE E O TOQUE (conserto de 28/09/2026): o #jogo
+   não pega (o arrasto no meio da tela move a câmera) e o pointer-events é
+   herdado — sem isto os painéis do menu (Torcida, Financeiro, Calendário…)
+   e o "Fechar" da barra deles ficavam surdos ao clique, à roda e ao toque,
+   e o jogo parava esperando a resposta de um painel que não respondia */
+body.jogo3d.com-painel .pagina.painel,
+body.jogo3d.com-painel #painelBarra{pointer-events:auto}
+
+/* ---------- o feed não aparece ----------
+   (o main.js nem monta o rolo com `TO.semFeed`; isto é a garantia) */
+body.jogo3d .feed-rolo{display:none !important}
+
+/* ---------- o menu inicial e a escolha: a cidade atrás ---------- */
+body.jogo3d #telaMenu{
+  background:linear-gradient(90deg, rgba(8,8,10,.94) 0, rgba(8,8,10,.78) 34%, rgba(8,8,10,.18) 68%, rgba(8,8,10,0) 100%);
+}
+body.jogo3d #menuFundo{display:none}
+body.jogo3d #menuTitulo{text-align:left;margin-left:6vw}
+body.jogo3d #telaSelecao{background:rgba(9,9,10,.84)}
+/* o letreiro da praça que aparece atrás do menu */
+#j3dPraca{
+  position:fixed;z-index:56;right:18px;bottom:14px;pointer-events:none;
+  font-family:var(--titulo);letter-spacing:.2em;text-transform:uppercase;
+  font-size:12px;color:#d8d8d8;text-shadow:0 1px 6px #000;
+}
+#j3dPraca b{color:#fff;font-size:15px}
+body.jogo3d.j3d-em-jogo #j3dPraca{display:none}
+
+/* =========================================================
+   A VIDA DA PRAÇA (27/09/2026, vida3d.js)
+   ========================================================= */
+/* o pop-up do armário do patrimônio (o clique no armário da sede) */
+.j3d-armario{
+  position:fixed;z-index:40;left:50%;top:50%;transform:translate(-50%,-50%);width:min(380px, 90vw);max-height:70vh;overflow:auto;box-sizing:border-box;
+  padding:14px 16px 12px;border-radius:8px;background:rgba(20,20,22,.97);border:1px solid rgba(243,230,196,.3);border-top:3px solid var(--ouro, #e0b040);
+  color:#e8e2d2;box-shadow:0 10px 30px rgba(0,0,0,.55);font-size:14px;line-height:1.4;
+}
+.j3d-armario h3{margin:0 24px 8px 0;font-family:var(--titulo);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:#f3e6c4}
+.j3d-armario ul{margin:0;padding:0 0 0 18px}
+.j3d-armario li{margin:3px 0}
+.j3d-armario small{color:#a9a393}
+.j3d-armario-pe{margin:10px 0 0;font-size:12px;color:#a9a393}
+.j3d-armario-x{position:absolute;right:8px;top:6px;border:0;background:none;color:#f3e6c4;font-size:20px;cursor:pointer;line-height:1}
+/* o andar da sede de dois andares (o nível 5): o botão embaixo, no meio
+   (o painel do dia de jogo, que fica ali, não aparece junto com ele) */
+#j3dAndar{
+  position:fixed;z-index:22;left:50%;bottom:14px;transform:translateX(-50%);padding:7px 14px;border-radius:6px;cursor:pointer;
+  font-family:var(--titulo);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
+  color:#f3e6c4;background:rgba(20,20,22,.9);border:1px solid rgba(243,230,196,.35);box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+#j3dAndar:hover{border-color:var(--ouro, #e0b040)}
+#j3dAndar[hidden]{display:none}
+/* o relógio do dia, na barra de cima, antes da data */
+#j3dHora{
+  font-family:var(--mono);font-size:15px;font-weight:600;color:#f3e6c4;letter-spacing:.04em;
+  padding:0 10px 0 2px;align-self:center;white-space:nowrap;
+}
+/* O BALÃO DOS RECADOS (recados3d.js): o cartão da mensagem, em cima de
+   quem veio falar — a cadeira da frente da mesa do presidente, na sede;
+   o líder do nosso bonde, no dia de jogo. Fica por baixo da HUD (a
+   barra, os ícones, os painéis) e por cima da cidade; os botões
+   respondem como respondiam no feed */
+.j3d-balao{
+  position:fixed;z-index:19;left:0;top:0;width:min(360px, 86vw);box-sizing:border-box;
+  --rabo:50%;pointer-events:auto;
+  filter:drop-shadow(0 6px 18px rgba(0,0,0,.45));
+}
+.j3d-balao[hidden]{display:none}
+/* SEM ROLAGEM (o dono, 29/09/2026: "Não gosto muito de scrollbar nas
+   mensagens de decisão, principalmente os verticais. Tente ajustar pra
+   evitar ao máximo o scrollbar."): o corpo cresce até o que a tela deixa
+   livre — o recados3d.js alarga o balão e aperta o cartão (.c1 .c2 .c3,
+   mais abaixo) antes de tudo — e só quando nada disso coube ele ganha um
+   teto (--corpo-max) e rola: fino, no tom do balão, e nunca de lado. O
+   teto de reserva é pro caso de o script não medir */
+.j3d-balao-corpo{
+  max-height:var(--corpo-max, calc(100vh - 150px));overflow-x:hidden;overflow-y:auto;background:var(--painel, #161616);
+  border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:2px;
+  scrollbar-width:thin;scrollbar-color:rgba(243,230,196,.38) transparent;
+}
+.j3d-balao-corpo::-webkit-scrollbar{width:6px}
+.j3d-balao-corpo::-webkit-scrollbar-track{background:transparent}
+.j3d-balao-corpo::-webkit-scrollbar-thumb{background:rgba(243,230,196,.38);border-radius:3px}
+/* (e no último caso, o do corpo que rola, os botões da decisão ficam colados embaixo, à vista, com o resto rolando por trás) */
+.j3d-balao-corpo .msg > .msg-bts{position:sticky;bottom:0;z-index:1;background:var(--painel, #161616);box-shadow:0 -7px 6px -4px var(--painel, #161616)}
+.j3d-balao-corpo .msg{border:0;border-left:3px solid var(--linha);background:transparent}
+.j3d-balao.decisao .j3d-balao-corpo{border-color:var(--ouro, #e0b040)}
+.j3d-balao.decisao .j3d-balao-corpo .msg{border-left-color:var(--ouro, #e0b040)}
+.j3d-balao-hora{font-family:var(--mono);font-size:10px;color:var(--fraco);padding:4px 11px 0;letter-spacing:.06em}
+/* com a linha do dia de jogo no balão: quem fala em cima, e a linha inteira */
+.j3d-balao-quem{font-family:var(--titulo);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);padding:5px 11px 3px}
+.j3d-balao.linha{width:min(400px, 92vw)}
+.j3d-balao.linha .j3d-balao-corpo{border-color:var(--ouro, #e0b040)}
+.j3d-balao-corpo .itn-mini{margin:0 4px 4px}
+/* A LINHA DO DIA NO BALÃO SÓ COM A DECISÃO (o dono, 28/09/2026: "a tela
+   com as informações do itinerário não ficarem ocupando a tela do jogo
+   assim"): a parada, os pontinhos e a partida seguem no nó (a partida
+   roda nele), mas quem conta o dia é o placar de TV e a faixa do painel
+   de baixo; no balão fica só o cartão que pede resposta, ou o saldo da
+   briga que acabou de passar (recados3d.js marca com .vivo) */
+.j3d-balao.linha .itn-linha,.j3d-balao.linha .itn-pontos,.j3d-balao.linha .itn-partida-caixa,
+.j3d-balao.linha .itn-trava,.j3d-balao.linha .itn-cartao:not(.vivo){display:none !important}
+.j3d-balao.linha .itn-mini,.j3d-balao.linha .itn-recados{margin:0;padding:0;border:0;background:none}
+.j3d-balao.linha .itn-cartao{margin:0}
+/* a linha no balão é estreita: o efetivo desce pra baixo do nome (como no celular) */
+.j3d-balao .itn-linha{grid-template-columns:34px auto minmax(0,1fr)}
+.j3d-balao .itn-linha .itn-efetivo{grid-column:2 / -1; margin-top:3px; text-align:left}
+.j3d-balao .itn-nome .lugar{display:block; margin:1px 0 0; white-space:normal}
+.j3d-balao .itn-linha .estado, .j3d-balao .itn-efetivo{white-space:normal; overflow:visible}
+.j3d-balao .itn-nome{white-space:normal}
+/* o pé: quantos recados esperam e o "Próximo" */
+.j3d-balao-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;padding:4px 6px 4px 10px;
+  background:rgba(20,20,22,.92);border:1px solid rgba(255,255,255,.16);border-radius:6px}
+.j3d-balao-pe[hidden]{display:none}
+.j3d-balao-mais{font:600 11px/1.2 var(--mono);color:#f3e6c4;letter-spacing:.03em}
+.j3d-balao-prox{cursor:pointer;padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.25);background:rgba(40,40,44,.95);color:#eee;
+  font:700 11px/1 var(--titulo);letter-spacing:.08em;text-transform:uppercase}
+.j3d-balao-prox:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.j3d-balao-prox[hidden]{display:none}
+/* a régua do tempo de leitura (a notícia sai sozinha quando ela acaba;
+   o mouse em cima segura, e o clique dentro prende) */
+.j3d-balao-tempo{display:block;height:2px;margin:3px 10px 0;overflow:hidden;border-radius:1px;background:rgba(255,255,255,.1);pointer-events:none}
+.j3d-balao-tempo[hidden],.j3d-balao.preso .j3d-balao-tempo{display:none}
+.j3d-balao-tempo b{display:block;height:100%;background:rgba(243,230,196,.75);transform-origin:left center}
+/* o rabo aponta pra cabeça de quem fala */
+.j3d-balao::after{content:'';position:absolute;left:var(--rabo);top:100%;transform:translateX(-50%);
+  border:9px solid transparent;border-top-color:rgba(255,255,255,.22)}
+.j3d-balao::before{content:'';position:absolute;left:var(--rabo);top:calc(100% - 1px);transform:translateX(-50%);
+  border:8px solid transparent;border-top-color:var(--painel, #161616);z-index:1}
+.j3d-balao-x{
+  position:absolute;right:-9px;top:-9px;z-index:2;width:22px;height:22px;border-radius:11px;cursor:pointer;
+  background:#222;color:#ddd;border:1px solid rgba(255,255,255,.3);font:600 14px/1 var(--corpo);padding:0;
+}
+.j3d-balao-x:hover{background:var(--rubro, #8a1f1f);color:#fff}
+.j3d-balao-x[hidden]{display:none}
+/* a sala fora da tela: o balão encosta no alto, sem rabo, com o botão que volta */
+.j3d-balao.solto::after,.j3d-balao.solto::before,.j3d-balao.sobre::after,.j3d-balao.sobre::before{display:none}
+.j3d-balao-ir{
+  display:block;width:100%;margin-top:6px;cursor:pointer;padding:6px 10px;
+  background:rgba(20,20,22,.92);color:#f3e6c4;border:1px solid rgba(255,255,255,.2);
+  font-family:var(--titulo);font-size:11px;letter-spacing:.1em;text-transform:uppercase;border-radius:6px;
+}
+.j3d-balao-ir[hidden]{display:none}
+/* sem jogo na tela (o menu, a escolha), com painel ou mapa aberto, numa
+   cena (a briga, a reunião): o balão some e o recado espera na fila */
+body.jogo3d:not(.j3d-em-jogo) .j3d-balao, body.jogo3d.com-painel .j3d-balao, body.jogo3d.j3d-mapa-aberto .j3d-balao,
+body.jogo3d.em-cena .j3d-balao, body.jogo3d.palco-briga .j3d-balao, body.jogo3d.palco3d .j3d-balao{display:none}
+@media (max-width:760px){
+  .j3d-balao{width:min(320px, 92vw)}
+}
+/* NUNCA DE LADO: a tabela de quem põe gente no estádio (a decisão da
+   partida) era uma linha só, com uma coluna por torcida e a rolagem
+   horizontal dela; no balão as colunas quebram em linhas */
+.j3d-balao .rolo-presenca{overflow:visible}
+.j3d-balao .tab-presenca, .j3d-balao .tab-presenca tbody, .j3d-balao .tab-presenca tr{display:flex;flex-wrap:wrap;width:100%}
+.j3d-balao .tab-presenca td{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex:1 1 44%;white-space:normal}
+/* O BALÃO APERTADO (o dono, 29/09/2026: "Não gosto muito de scrollbar nas
+   mensagens de decisão"): quando a decisão não cabe na tela nem com o
+   balão mais largo, o recados3d.js aperta o cartão em três níveis, um por
+   cima do outro, medindo de novo a cada um — .c1 os espaços, .c2 a letra,
+   .c3 os botões, a tabela e a hora. Nada some: só encolhe (a nota de cada
+   botão, que é a consequência, fica inteira) */
+/* c1: os espaços */
+.j3d-balao.c1 .j3d-balao-hora{padding-top:2px}
+.j3d-balao.c1 .msg{padding:6px 9px}
+.j3d-balao.c1 .msg-cab{margin-bottom:0}
+.j3d-balao.c1 .msg-txt{line-height:1.3}
+.j3d-balao.c1 .msg-bts{margin-top:5px;gap:5px}
+.j3d-balao.c1 .msg-bts .bt{padding:4px 9px}
+.j3d-balao.c1 .msg-efeitos, .j3d-balao.c1 .msg-resp{margin-top:3px}
+.j3d-balao.c1 .tab-olheiro{margin-top:5px}
+.j3d-balao.c1 .tab-olheiro td{padding:4px 7px}
+.j3d-balao.c1 .bloco-recepcao{margin-top:5px;padding:5px 8px}
+.j3d-balao.c1 .rec-titulo{margin-bottom:3px}
+.j3d-balao.c1 .rec-aliado{margin-bottom:4px}
+.j3d-balao.c1 .rec-nome{margin-bottom:2px}
+.j3d-balao.c1 .rolo-presenca{margin-top:5px}
+.j3d-balao.c1 .tab-presenca td{padding:3px 8px}
+.j3d-balao.c1 .sem-curto .sem-resumo{margin-top:5px;gap:2px}
+.j3d-balao.c1 .sem-curto .sem-abrir{margin-top:6px}
+.j3d-balao.c1 .sem-curto .sem-resumo .sem-dia{height:28px}
+.j3d-balao.c1 .itn-cartao{padding:7px 10px 8px}
+.j3d-balao.c1 .itn-cartao .voz{margin-bottom:3px}
+.j3d-balao.c1 .itn-cartao .custo{margin-top:4px;padding-top:4px}
+.j3d-balao.c1 .itn-cartao .bts{margin-top:6px;gap:5px}
+.j3d-balao.c1 .itn-bt{padding:5px 9px}
+.j3d-balao.c1 .j3d-balao-pe{margin-top:3px;padding:2px 6px 2px 10px}
+.j3d-balao.c1 .j3d-balao-ir{margin-top:3px;padding:4px 10px}
+/* c2: a letra */
+.j3d-balao.c2 .msg-txt{font-size:12.5px}
+.j3d-balao.c2 .msg-bts .bt{font-size:11.5px;letter-spacing:.08em}
+.j3d-balao.c2 .msg-bts .bt.simular{font-size:9.5px;letter-spacing:.02em}
+.j3d-balao.c2 .msg-bts .bt small{font-size:9.5px}
+.j3d-balao.c2 .tab-olheiro{font-size:11.5px}
+.j3d-balao.c2 .tab-olheiro .to-jogo small{font-size:9.5px}
+.j3d-balao.c2 .rec-nome{font-size:11.5px}
+.j3d-balao.c2 .rec-bt{font-size:10.5px}
+.j3d-balao.c2 .rec-bt small{font-size:9px}
+.j3d-balao.c2 .tab-presenca{font-size:11px}
+.j3d-balao.c2 .sem-curto .sem-resumo li{font-size:12px}
+.j3d-balao.c2 .sem-curto .sem-resumo .sem-dia{height:24px;font-size:12px}
+.j3d-balao.c2 .itn-cartao p{font-size:12px}
+.j3d-balao.c2 .itn-bt{font-size:9.5px;letter-spacing:.06em}
+/* c3: a hora na linha de quem fala, os botões dois por linha, a tabela mais densa */
+.j3d-balao.c3 .j3d-balao-corpo{position:relative}
+.j3d-balao.c3 .j3d-balao-hora{position:absolute;top:6px;right:12px;padding:0}
+.j3d-balao.c3 .msg-cab{padding-right:46px}
+.j3d-balao.c3 .msg-bts:has(> .bt:nth-child(3)) .bt, .j3d-balao.c3 .itn-cartao .bts:has(> .itn-bt:nth-child(3)) .itn-bt{flex:1 1 calc(50% - 5px)}
+.j3d-balao.c3 .tab-olheiro td{padding:3px 5px}
+.j3d-balao.c3 .rec-botoes{gap:3px}
+.j3d-balao.c3 .rec-bt{padding:3px 6px}
+.j3d-balao.c3 .sem-curto .sem-resumo .sem-dia{height:20px;font-size:11px}
+.j3d-balao.c3 .sem-curto .sem-resumo{gap:2px}
+.j3d-balao.c3 .sem-curto .sem-cab{padding:3px 9px}
+.j3d-balao.c3 .sem-curto .sem-abrir{padding:5px 12px}
+
+/* A REUNIÃO NA SALA DA SEDE: o palco da cena fica transparente — a
+   cidade aparece atrás, com a diretoria na mesa de reunião —, e sobram
+   a faixa (o título e o Encerrar) e os balões de fala; arrastar no
+   meio gira a câmera da cidade */
+body.jogo3d.palco3d #telaDiaJogo{background:transparent;pointer-events:none}
+body.jogo3d.palco3d #djPalco{border-color:transparent;box-shadow:none;background:transparent;pointer-events:none}
+body.jogo3d.palco3d #djPrincipal{visibility:hidden}
+body.jogo3d.palco3d #djFaixa,
+body.jogo3d.palco3d .cena-balao,
+body.jogo3d.palco3d #djComandos,
+body.jogo3d.palco3d #djPad{pointer-events:auto}
+
+/* A BRIGA NA CIDADE (a casa da festa na rua de veraneio, palco_briga.js):
+   a cidade é o palco e o HUD da briga (o placar em cima, os comandos
+   embaixo) fica sozinho — a barra do jogo, os ícones, o balão e o relógio
+   do dia saem até a cena fechar */
+body.jogo3d.palco-briga #jogo,
+body.jogo3d.palco-briga #j3dHora{visibility:hidden}
+body.jogo3d.palco-briga .cen-fps{bottom:54px}
+/* o nome do líder (e a vida dele) em cima da cabeça, na briga da cidade */
+.j3d-lider{position:fixed;z-index:30;transform:translate(-50%,-100%);pointer-events:none;white-space:nowrap;text-align:center;
+  font:700 12px/1.1 var(--mono, "IBM Plex Mono", monospace);color:#e0b040;text-shadow:0 1px 2px #000,0 0 3px #000}
+.j3d-lider[hidden]{display:none}
+.j3d-lider i{display:block;width:44px;height:3px;margin:3px auto 0;background:rgba(0,0,0,.65)}
+.j3d-lider i b{display:block;height:100%;background:#e0b040}
+/* a dica da mira da bomba, embaixo da zona dela no chão (palco_briga.js) */
+.j3d-mira{position:fixed;z-index:30;transform:translate(-50%,0);pointer-events:none;white-space:nowrap;
+  font:700 11px/1 var(--mono, "IBM Plex Mono", monospace);color:#ffd35a;background:rgba(0,0,0,.55);padding:3px 6px;border-radius:4px}
+.j3d-mira[hidden]{display:none}
+
+/* =========================================================
+   O MAPA DA CIDADE (28/09/2026, mapa3d.js): a planta da praça por cima
+   de tudo, como um painel — a barra com o título e o fechar, e o mapa
+   na tela toda (arrastar move, a roda aproxima, o clique leva a câmera)
+   ========================================================= */
+.j3d-mapa{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:#0e0e10}
+.j3d-mapa[hidden]{display:none}
+.j3d-mapa-barra{display:flex;align-items:center;gap:8px;height:40px;flex:none;padding:0 12px;
+  background:var(--painel, #161616);border-bottom:1px solid var(--linha, #2c2c2c);
+  font-family:var(--titulo);font-size:14px;letter-spacing:.11em;text-transform:uppercase;color:var(--texto, #eee)}
+.j3d-mapa-barra b{font-weight:700}
+.j3d-mapa-onde{flex:1;color:var(--fraco, #999);font-size:12px;letter-spacing:.08em}
+.j3d-mapa-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #eee);padding:4px 12px;font-size:13px;cursor:pointer;
+  font-family:var(--titulo);letter-spacing:.08em;text-transform:uppercase}
+.j3d-mapa-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+/* O MAPA COM OS BAIRROS E O BRASIL (30/09/2026): a planta (ou o Brasil)
+   à esquerda e, à direita, quem domina a cidade e o cartão do bairro */
+.j3d-mapa-abas{display:flex;gap:4px;margin-left:10px}
+.j3d-mapa-abas button{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--fraco, #999);padding:3px 12px;font-size:12.5px;cursor:pointer}
+.j3d-mapa-abas button[aria-selected="true"]{background:var(--rubro, #8a1f1f);border-color:var(--rubro, #8a1f1f);color:#fff}
+.j3d-mapa-corpo{position:relative;flex:1;min-height:0;display:flex}
+.j3d-mapa-painel{flex:1;min-width:0;display:flex;gap:14px;padding:14px;overflow:auto;background:#101312}
+.j3d-mapa-painel[hidden]{display:none}
+.j3d-mapa-painel .mb-mapa{flex:1.4;min-width:0;display:flex;align-items:center;justify-content:center}
+.j3d-mapa-painel .mb-lista{flex:1;min-width:220px;max-width:380px;overflow:auto}
+.j3d-mapa-painel.mb-corpo-quadro{flex-direction:column}
+.j3d-mapa-nota{color:var(--fraco, #999);font-size:13px}
+.j3d-mapa-lado{flex:none;width:320px;overflow:auto;padding:12px;border-left:1px solid var(--linha, #2c2c2c);background:#141414;display:flex;flex-direction:column;gap:10px}
+.j3d-mapa-cidade{font-family:var(--titulo, 'Barlow Condensed', sans-serif);font-size:22px;letter-spacing:.04em;text-transform:uppercase}
+.j3d-mapa-aviso{font-size:12.5px;padding:6px 8px;border-left:3px solid var(--ouro, #d9a441);background:rgba(217,164,65,.08)}
+.j3d-mapa-espera{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;padding:10px 16px;border-radius:6px;
+  background:rgba(12,12,14,.9);color:#fff;font-size:14px;pointer-events:none}
+.j3d-mapa-espera[hidden]{display:none}
+@media (max-width:760px){
+  .j3d-mapa-corpo{flex-direction:column}
+  .j3d-mapa-lado{width:auto;max-height:42%;border-left:0;border-top:1px solid var(--linha, #2c2c2c)}
+  .j3d-mapa-painel{flex-direction:column}
+  .j3d-mapa-painel .mb-lista{max-width:none}
+  .j3d-mapa-abas button{padding:3px 8px}
+}
+.j3d-mapa-tela{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden}
+.j3d-mapa-tela[hidden]{display:none}
+.j3d-mapa-tela canvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;display:block}
+.j3d-mapa-tela canvas.arrastando{cursor:grabbing}
+.j3d-mapa-zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:4px}
+.j3d-mapa-zoom button{width:34px;height:34px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:rgba(20,20,22,.9);color:#eee;
+  font:600 18px/1 var(--corpo, sans-serif);cursor:pointer}
+.j3d-mapa-zoom button:hover{background:var(--rubro, #8a1f1f);color:#fff}
+.j3d-mapa-dica,.j3d-mapa-legenda{position:absolute;left:12px;margin:0;padding:5px 9px;border-radius:5px;pointer-events:none;
+  background:rgba(12,12,14,.82);color:#ddd;font:500 12px/1.2 var(--corpo, sans-serif)}
+.j3d-mapa-dica{bottom:12px}
+.j3d-mapa-legenda{bottom:44px;display:flex;align-items:center;gap:6px}
+.j3d-mapa-legenda i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px}
+.j3d-mapa-legenda i:first-child{margin-left:0}
+.j3d-mapa-legenda i.sede{background:#d4731c;border:2px solid #fff}
+.j3d-mapa-legenda i.cam{background:#fff;border:2px solid #111}
+@media (max-width:760px){ .j3d-mapa-dica{display:none} .j3d-mapa-legenda{bottom:12px} }
+
+/* =========================================================
+   O DIA DE JOGO NA CIDADE (28/09/2026, dia3d.js): o painel embaixo, no
+   meio da cidade — a hora do dia, a fase da linha, o que está passando,
+   a velocidade, o pular, a câmera e, na partida, a invasão da nossa
+   torcida; e a pergunta de onde a caravana desce (jogo fora)
+   ========================================================= */
+.j3d-dia{position:fixed;z-index:25;left:50%;bottom:12px;transform:translateX(-50%);width:min(620px, calc(100vw - 80px));
+  padding:8px 12px 9px;border-radius:8px;background:rgba(18,18,20,.9);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 4px 18px rgba(0,0,0,.45);color:var(--texto, #eee);font:500 12.5px/1.35 var(--corpo, sans-serif);pointer-events:auto}
+.j3d-dia[hidden]{display:none}
+.j3d-dia-topo{display:flex;align-items:baseline;gap:10px}
+.j3d-dia-hora{font:700 18px/1 var(--mono, monospace);color:#f3e6c4;letter-spacing:.04em}
+.j3d-dia-fase{font-family:var(--titulo, sans-serif);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco, #aaa);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.j3d-dia-estado{margin:4px 0 6px;color:#ddd}
+.j3d-dia-estado.ruim{color:#ff8a7a;font-weight:600}
+.j3d-dia-bts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.j3d-dia button{font:600 11.5px/1 var(--titulo, sans-serif);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  padding:6px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.22);background:rgba(40,40,44,.95);color:#eee}
+.j3d-dia button:hover:not(:disabled){border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.j3d-dia button:disabled{opacity:.4;cursor:default}
+.j3d-dia-vezes{display:inline-flex;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:1px}
+.j3d-dia-vezes button{border:0;background:none;padding:5px 7px}
+.j3d-dia-vezes button[aria-pressed="true"]{background:var(--ouro, #d9a441);color:#111}
+.j3d-dia-invadir{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.12)}
+.j3d-dia-invadir[hidden]{display:none}
+.j3d-dia-invadir span{color:#ffb3a8;font-weight:600}
+.j3d-dia button.perigo{background:var(--rubro, #8a1f1f);border-color:#c0392b;color:#fff}
+.j3d-dia button.perigo:hover{background:var(--rubro-vivo, #b3261e);color:#fff}
+/* numa cena (a briga, a reunião), num painel ou no mapa, o painel do dia sai */
+body.jogo3d.em-cena .j3d-dia, body.jogo3d.palco-briga .j3d-dia, body.jogo3d.com-painel .j3d-dia,
+body.jogo3d.j3d-mapa-aberto .j3d-dia, body.jogo3d:not(.j3d-em-jogo) .j3d-dia{display:none}
+/* a pergunta do jogo fora (onde a caravana desce) na caixa de reserva: com
+   a linha do dia no ar ela é um recado no balão (recados3d.js) */
+.j3d-dia-modal{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55)}
+.j3d-dia-caixa{width:min(440px, calc(100vw - 32px));padding:16px 18px;border-radius:10px;background:var(--painel, #161616);
+  border:1px solid rgba(255,255,255,.18);color:var(--texto, #eee);font:500 13.5px/1.45 var(--corpo, sans-serif);box-shadow:0 10px 40px rgba(0,0,0,.6);
+  /* (o dono, 29/09/2026, sem scrollbar: a caixa cabe até no celular deitado, 202 px de 390; se a tela for mais baixa que isso, rola — fino, é só a reserva) */
+  max-height:calc(100vh - 24px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(243,230,196,.38) transparent}
+.j3d-dia-caixa h3{margin:2px 0 8px;font:700 19px/1.2 var(--titulo, sans-serif);letter-spacing:.04em}
+.j3d-dia-caixa p{margin:0 0 12px;color:#ddd}
+.j3d-dia-sobre{margin:0 !important;font:600 11px/1.2 var(--titulo, sans-serif) !important;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco, #aaa) !important}
+.j3d-dia-caixa .j3d-dia-bts{gap:8px}
+.j3d-dia-caixa button{font:700 12px/1 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase;cursor:pointer;padding:9px 12px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.25);background:rgba(40,40,44,.95);color:#eee}
+.j3d-dia-caixa button.acao{background:var(--ouro, #d9a441);border-color:var(--ouro, #d9a441);color:#111}
+@media (max-width:760px){
+  .j3d-dia{width:calc(100vw - 16px);bottom:8px}
+}
+
+/* =========================================================
+   OS AVISOS DO LADO DIREITO (recados3d.js; o dono, 28/09/2026: "as
+   mensagens que não geram botões de decisão se tornam avisos do lado
+   direito, na ideia do que era o feed anteriormente, mas somem
+   rapidamente"): o cartão curto do feed de antes — quem fala, a hora, o
+   texto em três linhas —, que some sozinho; o toque abre o cartão inteiro.
+   Desde 29/09/2026 o canto é só de manchete de jornal (o dono: "As
+   mensagens de jornal que devem aparecer no canto direito são as do
+   Gazeta dos sports e futebol e porrada, com o layout de manchete de
+   jornal, com aquele padrão que existia no feed"): o `.recorte` é o papel
+   do jornal (css/gazeta.css, `.gz-canto`); o cartão escuro fica pro gol e
+   pro jogo da cidade, que não são mensagem do feed
+   ========================================================= */
+.j3d-avisos{position:fixed;z-index:21;right:12px;top:70px;bottom:12px;width:min(300px, 72vw);display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.j3d-aviso{pointer-events:auto;box-sizing:border-box;flex:none;background:rgba(20,20,22,.94);border:1px solid rgba(255,255,255,.14);border-left:3px solid var(--ouro, #d9a441);
+  border-radius:6px;padding:6px 10px 7px;box-shadow:0 4px 14px rgba(0,0,0,.4);color:var(--texto, #eee);animation:j3dAvisoEntra .22s ease-out}
+.j3d-aviso.abre{cursor:pointer}
+.j3d-aviso.abre:hover{border-color:rgba(255,255,255,.3);border-left-color:var(--ouro, #d9a441)}
+.j3d-aviso-cab{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:2px}
+.j3d-aviso-cab b{font:700 10.5px/1.2 var(--titulo, sans-serif);letter-spacing:.12em;text-transform:uppercase;color:#f3e6c4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.j3d-aviso-cab time{flex:none;font:500 10px/1 var(--mono, monospace);color:var(--fraco, #999)}
+.j3d-aviso > p{margin:0;font:500 12.5px/1.35 var(--corpo, sans-serif);color:#ddd;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.j3d-aviso.ruim{border-left-color:var(--vermelho, #c0392b)}
+.j3d-aviso.boa{border-left-color:var(--verde, #3fae5a)}
+.j3d-aviso.gol{border-left-color:#3fae5a;background:rgba(18,30,20,.95)}
+.j3d-aviso.gol .j3d-aviso-cab b{color:#8fe3a3}
+.j3d-aviso.gol > p{color:#fff;font-weight:700}
+/* o aviso pago do olheiro (recados3d.js): o ataque que vem, em destaque */
+.j3d-aviso.olheiro{border-left:4px solid #e0a82e;background:rgba(36,28,10,.96);box-shadow:0 0 0 1px rgba(224,168,46,.35), 0 6px 18px rgba(0,0,0,.45)}
+.j3d-aviso.olheiro .j3d-aviso-cab b{color:#f5c95a}
+.j3d-aviso.olheiro > p{color:#fff}
+.j3d-aviso-bt{margin-top:6px;cursor:pointer;padding:4px 9px;border-radius:5px;border:1px solid rgba(255,255,255,.25);background:rgba(40,40,44,.95);color:#eee;
+  font:700 10.5px/1 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase}
+.j3d-aviso-bt:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.j3d-aviso.saindo{opacity:0;transform:translateX(24px);transition:opacity .25s, transform .25s}
+/* o recorte de jornal: o papel é o aviso, sem o cartão escuro em volta; uma
+   sombra e um fio escuro separam ele do fundo da cidade */
+.j3d-aviso.recorte{width:min(330px, 88vw);align-self:flex-end;padding:0;background:none;border:0;border-radius:0;box-shadow:none}
+.j3d-aviso.recorte .gz{box-shadow:0 6px 18px rgba(0,0,0,.5), 0 0 0 1px rgba(20,16,12,.7)}
+.j3d-aviso.recorte:hover .gz{box-shadow:0 8px 22px rgba(0,0,0,.6), 0 0 0 1px rgba(20,16,12,.95)}
+/* o balão da decisão encostou no recorte (o celular): ele espera escondido, sem correr (recados3d.js, `cedeAoBalao`) */
+.j3d-aviso.cede{opacity:0;pointer-events:none;transition:opacity .15s}
+/* aberto: o cartão inteiro da mensagem (a tabela, o jornal, os links), até o ×.
+   Cresce até o que couber na tela (a pilha vai da barra de cima até o pé; os
+   outros avisos não tomam o lugar dele, vão pra baixo) e só rola em último
+   caso, com a barra fina e discreta; nunca de lado (o dono, 29/09/2026: não
+   gosta de barra de rolagem) */
+.j3d-aviso.aberto{cursor:default;position:relative;width:min(380px, 88vw);align-self:flex-end;flex:none;max-height:100%;padding:4px;
+  overflow-x:hidden;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.3) transparent}
+.j3d-aviso.aberto::-webkit-scrollbar{width:6px}
+.j3d-aviso.aberto::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:3px}
+.j3d-aviso.aberto::-webkit-scrollbar-track{background:transparent}
+/* o jornal aberto tem duas colunas (a manchete e o quadro): pede mais largura que o aviso de texto */
+.j3d-aviso.aberto.jornal{width:min(600px, calc(100vw - 72px))}
+.j3d-aviso.aberto .msg{border:0;background:transparent}
+.j3d-aviso-x{position:sticky;top:0;float:right;z-index:2;width:22px;height:22px;border-radius:11px;cursor:pointer;margin:2px 2px 0 6px;
+  background:#222;color:#ddd;border:1px solid rgba(255,255,255,.3);font:600 14px/1 var(--corpo, sans-serif);padding:0}
+.j3d-aviso-x:hover{background:var(--rubro, #8a1f1f);color:#fff}
+@keyframes j3dAvisoEntra{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+body.jogo3d:not(.j3d-em-jogo) .j3d-avisos, body.jogo3d.com-painel .j3d-avisos, body.jogo3d.j3d-mapa-aberto .j3d-avisos,
+body.jogo3d.em-cena .j3d-avisos, body.jogo3d.palco-briga .j3d-avisos{display:none}
+@media (max-width:760px){
+  .j3d-avisos{right:8px;width:min(250px, 66vw)}
+  .j3d-aviso > p{-webkit-line-clamp:2;font-size:12px}
+  .j3d-aviso.recorte{width:100%}
+  .j3d-aviso.aberto.jornal{width:min(380px, 88vw)}
+}
+
+/* =========================================================
+   O PLACAR DE TV (dia3d.js; o dono, 28/09/2026: "com o placar do jogo em
+   tempo real parecendo um placar de jogo de futebol na TV"): a faixa
+   escura com a cor de cada clube, as siglas, os gols e o relógio da
+   partida; embaixo, no nosso jogo, o clima do estádio e a pausa e a
+   velocidade da partida
+   ========================================================= */
+.j3d-placar{position:fixed;z-index:24;left:50%;top:78px;transform:translateX(-50%);pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:3px;
+  filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
+.j3d-placar[hidden]{display:none}
+.j3d-placar-tv{cursor:pointer;display:flex;align-items:stretch;height:30px;border-radius:4px;overflow:hidden;background:#0d0f14;border:1px solid rgba(255,255,255,.14);
+  font-family:var(--titulo, 'Barlow Condensed', sans-serif)}
+.j3d-placar-time{display:flex;align-items:center;gap:6px;padding:0 9px;background:linear-gradient(#1b1f29,#12151c)}
+.j3d-placar-time i{display:block;width:5px;height:18px;border-radius:1px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.j3d-placar-time b{font-weight:800;font-size:17px;letter-spacing:.08em;color:#fff}
+.j3d-placar-gols{display:flex;align-items:center;background:#f3f1ea;color:#0d0f14;padding:0 3px}
+.j3d-placar-gols b{min-width:17px;text-align:center;font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.j3d-placar-gols b.gc{border-right:1px solid rgba(0,0,0,.2)}
+.j3d-placar-gols.pre{padding:0 7px}
+.j3d-placar-gols.pre b{display:none}
+.j3d-placar-gols.pre::after{content:'×';font-weight:800;font-size:16px}
+.j3d-placar-rel{display:flex;align-items:center;justify-content:center;min-width:48px;padding:0 9px;background:#c8102e;color:#fff;
+  font:700 15px/1 var(--mono, monospace);letter-spacing:.02em}
+.j3d-placar-rel:not(.vivo){background:#2a2f3b;color:#f3e6c4}
+.j3d-placar-rel.fim{background:#3a3f4b;color:#fff}
+.j3d-placar-pe{display:flex;align-items:center;gap:6px}
+.j3d-placar-pe[hidden],.j3d-placar-clima[hidden],.j3d-placar-bts[hidden]{display:none}
+.j3d-placar-clima{font:700 10px/1 var(--titulo, sans-serif);letter-spacing:.12em;text-transform:uppercase;padding:4px 7px;border-radius:3px;background:rgba(13,15,20,.88);color:#cfe8d4}
+.j3d-placar-clima.clima-1{color:#ffd35a}
+.j3d-placar-clima.clima-2{color:#fff;background:#8a1f1f}
+.j3d-placar-bts{display:flex;gap:3px}
+.j3d-placar-bts button{cursor:pointer;min-width:30px;height:20px;padding:0 6px;border-radius:3px;border:1px solid rgba(255,255,255,.22);background:rgba(13,15,20,.9);color:#eee;
+  font:700 10.5px/1 var(--mono, monospace)}
+.j3d-placar-bts button:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+body.jogo3d:not(.j3d-em-jogo) .j3d-placar, body.jogo3d.com-painel .j3d-placar, body.jogo3d.j3d-mapa-aberto .j3d-placar,
+body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:none}
+/* A DISPUTA DE PÊNALTIS (dia3d.js, `pintarPenaltis`): embaixo do placar, no
+   mesmo preto de TV — as siglas, as bolas (verde quem fez, vermelho com o
+   risco quem perdeu, vazia a que não bateu), o placar da série e o recado */
+.j3d-placar-pen{display:grid;grid-template-columns:auto auto auto;align-items:center;column-gap:8px;row-gap:3px;padding:5px 10px 6px;border-radius:4px;
+  background:#0d0f14;border:1px solid rgba(255,255,255,.14);color:#f3f1ea;font-family:var(--titulo, 'Barlow Condensed', sans-serif)}
+.j3d-placar-pen[hidden]{display:none}
+.j3d-pen-titulo{grid-column:1 / -1;text-align:center;font:700 9.5px/1.2 var(--titulo, sans-serif);letter-spacing:.18em;text-transform:uppercase;color:var(--ouro, #d9a441)}
+.j3d-pen-sig{font-weight:800;font-size:13px;letter-spacing:.08em}
+.j3d-pen-bolas{display:flex;gap:4px}
+.j3d-pen-bolas i{position:relative;display:block;width:12px;height:12px;border-radius:50%;box-sizing:border-box;border:1.5px solid rgba(255,255,255,.32)}
+.j3d-pen-bolas i.fez{background:#3fbf6a;border-color:#3fbf6a}
+.j3d-pen-bolas i.errou{background:#c8102e;border-color:#c8102e}
+.j3d-pen-bolas i.errou::after{content:'';position:absolute;left:50%;top:1px;bottom:1px;width:1.5px;margin-left:-.75px;background:#fff;transform:rotate(45deg)}
+.j3d-pen-n{min-width:14px;text-align:right;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.j3d-pen-recado{grid-column:1 / -1;text-align:center;font:600 11.5px/1.25 var(--texto, sans-serif);color:#cfd3dc;max-width:280px}
+.j3d-pen-recado.fez{color:#8fe3a8}
+.j3d-pen-recado.errou{color:#ff9aa8}
+.j3d-pen-recado.fim{color:#ffd35a}
+
+/* A FAIXA DAS FASES (o painel de baixo do dia de jogo): ida, jogo e volta
+   com a hora da cidade, a de agora acesa, e o efetivo dos dois lados */
+.j3d-dia-topo{flex-wrap:nowrap;min-width:0}
+.j3d-dia-fases{display:flex;align-items:center;gap:0;margin:0;padding:0;list-style:none;min-width:0;flex:1;overflow:hidden}
+.j3d-dia-fases li{display:flex;align-items:baseline;gap:4px;white-space:nowrap;color:var(--fraco, #999);font:600 11px/1.2 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase}
+.j3d-dia-fases li + li::before{content:'›';margin:0 7px;color:#666}
+.j3d-dia-fases li span{font:600 11.5px/1 var(--mono, monospace);letter-spacing:0;text-transform:none}
+.j3d-dia-fases li small{font-size:9.5px;opacity:.8}
+.j3d-dia-fases li.passou{opacity:.55}
+.j3d-dia-fases li.agora{color:#f3e6c4}
+.j3d-dia-fases li.agora b{color:var(--ouro, #d9a441)}
+.j3d-dia-fases li.brigou b::after{content:' ✕';color:#ff8a7a}
+.j3d-dia-efetivo{flex:none;font:600 12px/1 var(--mono, monospace);color:#ddd;white-space:nowrap}
+.j3d-dia-efetivo b{color:#fff}
+.j3d-dia-efetivo small{color:#9fd3a8;margin-left:2px}
+.j3d-dia-efetivo i{font-style:normal;color:#888}
+.j3d-dia-estado{margin:3px 0 5px}
+@media (max-width:760px){
+  .j3d-placar-tv{height:27px}
+  .j3d-placar-time{padding:0 7px}
+  .j3d-placar-time b{font-size:15px}
+  .j3d-placar-gols b{font-size:17px}
+  .j3d-placar-rel{min-width:42px;font-size:13px}
+  .j3d-placar-pen{padding:4px 8px 5px;column-gap:6px}
+  .j3d-pen-bolas{gap:3px}
+  .j3d-pen-bolas i{width:10px;height:10px}
+  .j3d-pen-sig{font-size:12px}
+  .j3d-pen-n{font-size:14px}
+  .j3d-pen-recado{font-size:10.5px;max-width:230px}
+  .j3d-dia{padding:6px 9px 7px}
+  .j3d-dia-hora{font-size:15px}
+  /* (no celular em pé as três fases, a hora e o efetivo cabem numa linha só) */
+  .j3d-dia-fases li{font-size:9.5px;letter-spacing:.02em;gap:3px}
+  .j3d-dia-fases li + li::before{margin:0 3px}
+  .j3d-dia-fases li span{font-size:10px}
+  .j3d-dia-efetivo{font-size:11px}
+  .j3d-dia-estado{font-size:11.5px;margin:2px 0 4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .j3d-dia button{padding:5px 7px;font-size:10.5px}
+}
+
+/* ---------- OS GRÁFICOS (30/09/2026, js/ui/graficos.js) ----------
+   o painel à direita, que não cobre a cidade: o fps que muda com cada
+   opção é o que se vê atrás dele (e no alto dele). Por cima do menu
+   principal e da casca do jogo; embaixo do mapa da cidade */
+.j3d-graf{position:fixed;z-index:58;right:12px;top:58px;width:min(390px, calc(100vw - 24px));max-height:calc(100vh - 72px);
+  display:flex;flex-direction:column;box-sizing:border-box;background:rgba(22,22,24,.96);border:1px solid var(--linha, #2c2c2c);
+  border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);color:var(--texto, #eee);font:13px/1.4 var(--corpo, sans-serif);pointer-events:auto}
+.j3d-graf header{display:flex;align-items:center;gap:8px;padding:9px 12px 7px;border-bottom:1px solid var(--linha, #2c2c2c)}
+.j3d-graf h2{flex:1;margin:0;font:600 17px/1.1 var(--titulo, sans-serif);letter-spacing:.1em;text-transform:uppercase}
+.j3d-graf-x{width:26px;height:26px;border-radius:13px;border:1px solid var(--linha, #2c2c2c);background:#26262a;color:inherit;font-size:16px;line-height:1;cursor:pointer}
+.j3d-graf-medida{margin:0;padding:8px 12px;font:600 12.5px/1.4 var(--mono, monospace);font-variant-numeric:tabular-nums;background:#111113;border-bottom:1px solid var(--linha, #2c2c2c)}
+.j3d-graf-medida b{font-size:16px}
+.j3d-graf-medida b.bom{color:#7fd67a} .j3d-graf-medida b.meio{color:#f0c64a} .j3d-graf-medida b.ruim{color:#ff7b6b}
+.j3d-graf-medida small{display:block;font-weight:400;color:var(--fraco, #999)}
+.j3d-graf-medida small.aviso{color:#ffb4a8;font-weight:600}
+.j3d-graf-corpo{flex:1;min-height:0;overflow-y:auto;padding:4px 12px 8px}
+.j3d-graf-bloco{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.j3d-graf-bloco:last-child{border-bottom:0}
+.j3d-graf-rot{font:600 11.5px/1.2 var(--titulo, sans-serif);letter-spacing:.12em;text-transform:uppercase;color:var(--fraco, #999);margin-bottom:6px}
+.j3d-graf-rot em{font-style:normal;color:#f0c64a;letter-spacing:.06em;margin-left:6px}
+.j3d-graf-bts{display:flex;flex-wrap:wrap;gap:5px}
+.j3d-graf-bts button{flex:1 1 auto;min-width:0;padding:6px 5px;border-radius:5px;border:1px solid #3a3a40;background:#232327;color:var(--texto, #eee);
+  font:500 12.5px/1.2 var(--corpo, sans-serif);cursor:pointer;white-space:nowrap}
+.j3d-graf-bts button:hover{border-color:#6a6a74}
+.j3d-graf-bts button[aria-pressed="true"]{background:var(--rubro, #9d2222);border-color:var(--rubro-vivo, #d24141);color:#fff;font-weight:600}
+.j3d-graf-nota{margin-top:6px;font-size:11.5px;line-height:1.4;color:var(--fraco, #999)}
+.j3d-graf-nota b{color:#f0c64a;font-weight:600}
+.j3d-graf footer{display:flex;gap:8px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--linha, #2c2c2c)}
+@media (max-width:560px){
+  .j3d-graf{top:auto;bottom:8px;right:8px;width:calc(100vw - 16px);max-height:62vh}
+}

@@ -1,0 +1,1176 @@
+
+/* =========================================================
+   CENAS DE BRIGA — praça e rua
+   ---------------------------------------------------------
+   A cena dos arredores nasceu de uma foto aérea. Estas duas
+   são desenhadas, e por isso a geometria e a pintura saem da
+   MESMA lista de blocos: o que bloqueia a passagem é
+   exatamente o que aparece na tela. Não há como o disco andar
+   por cima de um muro que existe só no desenho.
+
+   Mesmo tamanho de tela e mesma célula da cena dos arredores,
+   pra o resto do dia de jogo não precisar saber de nada.
+   ========================================================= */
+TO.dados = TO.dados || {};
+
+TO.dados.cenas = (function(){
+  const W = 1536, H = 1024, CEL = 8;
+
+  const retangulo = b => ({rot:b.tipo, pontos:[
+    [b.x, b.y], [b.x+b.w, b.y], [b.x+b.w, b.y+b.h], [b.x, b.y+b.h]]});
+
+  /* o chão inteiro é pisável; o que tira o chão é a lista de blocos */
+  const montar = cena => Object.assign({
+    largura:W, altura:H, celula:CEL, imagem:null,
+    poligonos:{
+      caminhavel:[{rot:'chão', pontos:[[0,0],[W,0],[W,H],[0,H]]}],
+      bloqueio: cena.blocos.map(retangulo)
+    }
+  }, cena);
+
+  /* =======================================================
+     PRAÇA
+     Praça de bairro de cidade grande do Nordeste: um largo
+     aberto, pouca árvore, coreto no meio e o comércio nas
+     bordas — boteco, quiosque, banca. A rua contorna os
+     quatro lados e uma transversal chega no meio de cada
+     borda: são quatro esquinas, uma por lado. Espaço aberto
+     é o que a briga pede; canteiro fechado só atrapalha.
+     ======================================================= */
+  const blocosPraca = [];
+  const bp = (x,y,w,h,tipo,extra)=>blocosPraca.push(
+    Object.assign({x,y,w,h,tipo}, extra||{}));
+
+  /* A régua da praça, a mesma que cenario.js usa pra pintar:
+     fachada → rua de contorno → largo → rua de contorno → fachada.
+     A boca de cada transversal é o vão no meio de cada borda: são as
+     quatro esquinas, uma por lado. */
+  const P_VAO = 190;              // largura da boca de cada transversal
+  const P_MX = 226, P_MY = 250;   // do canto da tela até a borda do largo
+  const P_FX = 96,  P_FY = 120;   // fundo da fachada (leste-oeste / norte-sul)
+  const P_CX = W/2, P_CY = H/2;
+  const vaoX0 = P_CX - P_VAO/2, vaoX1 = P_CX + P_VAO/2;
+  const vaoY0 = P_CY - P_VAO/2, vaoY1 = P_CY + P_VAO/2;
+
+  bp(0,       0, vaoX0,   P_FY, 'igreja');            // norte-oeste
+  bp(vaoX1,   0, W-vaoX1, P_FY, 'predio');            // norte-leste
+  bp(0,     H-P_FY, vaoX0,   P_FY, 'predio');         // sul-oeste
+  bp(vaoX1, H-P_FY, W-vaoX1, P_FY, 'boteco');         // sul-leste: os botecos
+  bp(0,     P_FY, P_FX, vaoY0-P_FY, 'predio');        // oeste-norte
+  bp(0,     vaoY1, P_FX, H-P_FY-vaoY1, 'predio');     // oeste-sul
+  bp(W-P_FX, P_FY, P_FX, vaoY0-P_FY, 'predio');       // leste-norte
+  bp(W-P_FX, vaoY1, P_FX, H-P_FY-vaoY1, 'sobrado');   // leste-sul
+
+  /* o coreto no centro, oitavado — desenhado como bloco redondo */
+  bp(P_CX-60, P_CY-60, 120, 120, 'coreto', {redondo:true});
+
+  /* pouca árvore: dois canteiros compridos, encostados na borda, e só.
+     O miolo fica limpo — é lá que a briga acontece. */
+  bp(320, 300, 150, 74, 'canteiro');
+  bp(1066, 650, 150, 74, 'canteiro');
+
+  /* o comércio da borda, que é o que dá cara de praça de bairro:
+     quiosque de pipoca, banca de jornal e o carrinho de lanche */
+  bp(320, 660, 128, 72, 'quiosque');
+  bp(1160, 292, 112, 72, 'banca');
+  bp(940, 292, 130, 72, 'quiosque');
+
+  /* carros no meio-fio da rua de contorno, sem tampar as bocas */
+  for(const [cx,cy] of [[200,180],[1244,180],[200,834],[1244,834]])
+    bp(cx, cy, 92, 46, 'carro');
+
+  const praca = montar({
+    id:'praca', nome:'Praça',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:207, y:490, len:150, dir:[-1,0]}, visitante:{x:1306, y:493, len:150, dir:[1,0]}}, pintura:'praca', blocos:blocosPraca,
+    /* A REUNIÃO DA TORCIDA SEM SEDE (decisão do dono, 22/09/2026): a
+       pequena senta na praça do bairro — o C de cadeiras no largo do
+       meio (o retângulo livre da malha, conferido), o presidente à
+       direita */
+    ...(()=>{ const c = cadeirasEmC(620, 440, 920, 620); return {cadeiras:c.cadeiras, presidente:c.presidente}; })(),
+    /* aqui não se entra em estádio nenhum: quem sai da praça sai pela rua */
+    local:'Na praça',
+    /* praça de bairro não tem operação montada: quem responde é a PM
+       do posto, e ela vem a pé (GDD §12) */
+    tropaChoque:false,
+    saida:{perto:'Sair pela rua', longe:'Saída (leve o líder)',
+           feito:'sua torcida saiu da praça com a rua na mão',
+           dica:'Leve o líder até a boca de rua da sua torcida.'},
+    /* postes e mobiliário só de desenho, que o corpo desvia sozinho */
+    enfeites:[
+      {tipo:'poste', x:300, y:290}, {tipo:'poste', x:1236, y:290},
+      {tipo:'poste', x:300, y:734}, {tipo:'poste', x:1236, y:734},
+      {tipo:'orelhao', x:1276, y:420},
+      {tipo:'lixeira', x:700, y:290}, {tipo:'lixeira', x:836, y:734},
+      {tipo:'banco', x:560, y:512, ang:0}, {tipo:'banco', x:976, y:512, ang:0},
+      {tipo:'banco', x:768, y:360, ang:1}, {tipo:'banco', x:768, y:664, ang:1},
+      /* as mesas do boteco da borda sul, viradas pro largo */
+      {tipo:'mesa', x:900, y:742}, {tipo:'mesa', x:1000, y:754},
+      {tipo:'mesa', x:1100, y:742}
+    ],
+    /* varal de bandeirinha atravessando a praça, de poste a poste */
+    varais:[[[300,290],[1236,290]], [[300,734],[1236,734]]],
+    spawns:[
+      /* cada bonde entra por uma esquina; as outras duas ficam livres
+         pra quem quiser flanquear */
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:110, y:512, jogador:true,
+       entrada:'esquina_leste'},
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:768, y:950,
+       entrada:'esquina_leste'},
+      {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1426, y:512,
+       guarda:true, entrada:'esquina_oeste'},
+      {id:'visitante2',rot:'RETAGUARDA',  lado:'visitante',x:768, y:74,
+       guarda:true, entrada:'esquina_oeste'}
+    ],
+    /* Eles estão na praça deles e não vieram atrás de ninguém: só se
+       mexem quando o outro bonde chega perto. Aqui o gatilho é
+       distância e não lugar — praça não tem porta pra vigiar. */
+    gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    /* quatro esquinas, uma em cada borda: as duas do meio são objetivo,
+       as de cima e de baixo servem de fuga e de entrada da PM */
+    entradas:[
+      {id:'esquina_oeste', rot:'ESQUINA OESTE', lado:'visitante', x:48,   y:512, raio:46, dir:[-1,0]},
+      {id:'esquina_leste', rot:'ESQUINA LESTE', lado:'mandante',  x:1488, y:512, raio:46, dir:[1,0]},
+      {id:'esquina_norte', rot:'ESQUINA NORTE', lado:'neutro',    x:768,  y:40,  raio:46, dir:[0,-1]},
+      {id:'esquina_sul',   rot:'ESQUINA SUL',   lado:'neutro',    x:768,  y:984, raio:46, dir:[0,1]}
+    ],
+    /* a viatura para na rua de contorno, longe das bocas */
+    pmPostos:[
+      {x:420, y:185}, {x:1116, y:185}, {x:420, y:839}, {x:1116, y:839}
+    ],
+    /* gradil de canteiro: quebra e vira arma, como no GDD §12 */
+    grades:[
+      {id:'gradil_norte', rot:'GRADIL DO CANTEIRO',
+       de:{x:310,y:290}, ate:{x:480,y:290}, modulos:3, espessura:9},
+      {id:'gradil_sul',   rot:'GRADIL DO CANTEIRO',
+       de:{x:1056,y:640}, ate:{x:1226,y:640}, modulos:3, espessura:9}
+    ]
+  });
+
+  /* =======================================================
+     AS TRÊS RUAS
+     Mesma planta nas três: pista larga atravessando a tela,
+     calçada larga dos dois lados e uma transversal em cada
+     ponta — duas esquinas de cada lado. O que muda é o bairro
+     em volta, porque esbarrão no Pirambu não pode abrir a
+     mesma tela do esbarrão na Aldeota. A tática continua a
+     mesma de propósito; o cenário é que conta de onde é.
+     ======================================================= */
+  const PONTA = 250;              // largura da transversal de cada ponta
+
+  function fazRua(cfg){
+    const blocos = [];
+    const br = (x,y,w,h,tipo,extra)=>blocos.push(
+      Object.assign({x,y,w,h,tipo}, extra||{}));
+
+    /* as duas fileiras, cada uma parando antes das pontas */
+    const fila = (cima)=>{
+      const L = cima ? cfg.norte : cfg.sul;
+      let x = PONTA, i = cima ? 0 : 40;
+      while(x < W-PONTA){
+        const larg = Math.min(L.larg + ((i*97) % L.varia), W-PONTA-x);
+        if(larg < 40) break;
+        const fundo = L.fundo + ((i*53) % 60);
+        br(x, cima ? 0 : H-fundo, larg-8, fundo, L.tipos[i % L.tipos.length], {n:i});
+        x += larg; i++;
+      }
+    };
+    fila(true); fila(false);
+
+    /* as quatro quinas das transversais */
+    const q = cfg.quinas;
+    br(0, 0, PONTA-40, 190, q[0], {n:80});
+    br(W-PONTA+40, 0, PONTA-40, 190, q[1], {n:81});
+    br(0, H-190, PONTA-40, 190, q[2], {n:82});
+    br(W-PONTA+40, H-190, PONTA-40, 190, q[3], {n:83});
+
+    /* o mobiliário do meio-fio: é o que muda de bairro pra bairro */
+    for(const b of cfg.mobilia || []) br(...b);
+    /* carros nas duas faixas de estacionamento */
+    for(const [cx,cy] of cfg.carros) br(cx, cy, 96, 46, 'carro');
+
+    return montar(Object.assign({
+      blocos, tropaChoque:false,
+      saida:{perto:'Furar pra fora', longe:'Boca da rua (leve o líder)',
+             feito:'sua torcida furou o cerco e sumiu na rua',
+             dica:'Leve o líder até a ponta da rua que é sua.'},
+      varais:[],
+      spawns:[
+        /* cada bonde entra por uma ponta; as transversais das quinas dão
+           a volta, então dá pra flanquear em vez de bater de frente */
+        {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
+         entrada:'boca_leste'},
+        {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:120, y:290,
+         entrada:'boca_leste'},
+        {id:'visitante1',rot:'BONDE RIVAL',lado:'visitante',x:1416, y:512,
+         guarda:true, entrada:'boca_oeste'},
+        {id:'visitante2',rot:'RETAGUARDA', lado:'visitante',x:1416, y:740,
+         guarda:true, entrada:'boca_oeste'}
+      ],
+      /* parados na ponta deles até o bonde chegar perto — a mesma
+         regra da praça, porque é a mesma situação */
+      gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+               espera:'eles ainda não se mexeram',
+               aviso:'eles viram o bonde e vieram'},
+      entradas:[
+        {id:'boca_oeste', rot:'BOCA DA RUA', lado:'visitante', x:40,   y:512, raio:48, dir:[-1,0]},
+        {id:'boca_leste', rot:'FIM DA RUA',  lado:'mandante',  x:1496, y:512, raio:48, dir:[1,0]}
+      ],
+      /* a PM fecha as duas pontas, que é onde a rua tem saída */
+      pmPostos:[{x:150, y:700}, {x:1400, y:300}, {x:880, y:430}],
+      grades:[]
+    }, cfg.cena));
+  }
+
+  /* --- periferia: favela e classe baixa --------------------------------
+     Asfalto remendado, muro pichado, boteco com mesa de plástico na
+     porta, caçamba de entulho e quintal de terra batida atrás. */
+  const rua = fazRua({
+    norte:{larg:150, varia:110, fundo:210, tipos:['casa','sobrado','casa','casa']},
+    sul:  {larg:150, varia:110, fundo:200, tipos:['casa','casa','boteco','casa','casa']},
+    quinas:['sobrado','casa','casa','boteco'],
+    mobilia:[[420, 690, 150, 70, 'cacamba'], [980, 286, 150, 70, 'cacamba']],
+    carros:[[320,290],[700,290],[1160,290],[330,700],[760,700],[1150,700]],
+    cena:{
+      id:'rua', nome:'Rua', pintura:'rua', local:'Na rua',
+      enfeites:[
+        {tipo:'poste', x:340, y:330}, {tipo:'poste', x:780, y:330},
+        {tipo:'poste', x:1200, y:330},
+        {tipo:'poste', x:400, y:694}, {tipo:'poste', x:880, y:694},
+        {tipo:'poste', x:1240, y:694},
+        {tipo:'lixeira', x:560, y:330}, {tipo:'lixeira', x:1040, y:694},
+        {tipo:'mesa', x:1180, y:756}, {tipo:'mesa', x:1256, y:768},
+        {tipo:'lombada', x:768, y:512}
+      ],
+      varais:[[[340,330],[400,694]], [[880,694],[1200,330]]]
+    }
+  });
+
+  /* --- classe média ----------------------------------------------------
+     Casa de muro baixo com garagem e jardim na frente, predinho de três
+     andares, padaria na esquina e árvore nova plantada no meio-fio. */
+  const ruaMedia = fazRua({
+    norte:{larg:170, varia:80, fundo:220, tipos:['casa-media','casa-media','predinho']},
+    sul:  {larg:170, varia:80, fundo:214, tipos:['casa-media','predinho','casa-media']},
+    quinas:['padaria','casa-media','casa-media','predinho'],
+    /* a árvore de calçada é obstáculo: é o que muda a briga de bairro */
+    mobilia:[[360, 260, 54, 54, 'arvore-rua'], [700, 260, 54, 54, 'arvore-rua'],
+             [1040, 260, 54, 54, 'arvore-rua'],
+             [470, 706, 54, 54, 'arvore-rua'], [810, 706, 54, 54, 'arvore-rua'],
+             [1150, 706, 54, 54, 'arvore-rua'],
+             [560, 700, 120, 60, 'ponto-onibus']],
+    /* aqui o carro fica na vaga pintada, não em cima da calçada */
+    carros:[[440,344],[820,344],[1160,344],[330,630],[930,630],[1250,630]],
+    cena:{
+      id:'rua-media', nome:'Rua de classe média', pintura:'rua-media',
+      local:'Na rua, bairro de classe média',
+      enfeites:[
+        {tipo:'poste', x:300, y:340}, {tipo:'poste', x:900, y:340},
+        {tipo:'poste', x:1290, y:340},
+        {tipo:'poste', x:380, y:684}, {tipo:'poste', x:990, y:684},
+        {tipo:'poste', x:1300, y:684},
+        {tipo:'lixeira', x:640, y:340}, {tipo:'lixeira', x:1080, y:684},
+        {tipo:'mesa', x:196, y:760}, {tipo:'mesa', x:196, y:840},
+        {tipo:'lombada', x:768, y:512}
+      ]
+    }
+  });
+
+  /* --- classe alta -----------------------------------------------------
+     Muro alto com cerca elétrica, guarita em cada portão, torre com
+     piscina na cobertura e mangueira grande sombreando a calçada. */
+  const ruaNobre = fazRua({
+    norte:{larg:250, varia:60, fundo:230, tipos:['torre','jardim-alto','torre']},
+    sul:  {larg:250, varia:60, fundo:226, tipos:['jardim-alto','torre','jardim-alto']},
+    quinas:['torre','jardim-alto','jardim-alto','torre'],
+    mobilia:[[330, 250, 68, 68, 'arvore-grande'], [700, 250, 68, 68, 'arvore-grande'],
+             [1070, 250, 68, 68, 'arvore-grande'],
+             [420, 706, 68, 68, 'arvore-grande'], [790, 706, 68, 68, 'arvore-grande'],
+             [1160, 706, 68, 68, 'arvore-grande'],
+             [560, 252, 70, 64, 'guarita'], [960, 706, 70, 64, 'guarita']],
+    carros:[[470,344],[860,344],[1230,344],[300,630],[900,630],[1270,630]],
+    cena:{
+      id:'rua-nobre', nome:'Rua de classe alta', pintura:'rua-nobre',
+      local:'Na rua, bairro nobre',
+      enfeites:[
+        {tipo:'poste', x:250, y:346}, {tipo:'poste', x:640, y:346},
+        {tipo:'poste', x:1010, y:346}, {tipo:'poste', x:1380, y:346},
+        {tipo:'poste', x:250, y:678}, {tipo:'poste', x:640, y:678},
+        {tipo:'poste', x:1010, y:678}, {tipo:'poste', x:1380, y:678},
+        {tipo:'lixeira', x:880, y:346}, {tipo:'lixeira', x:1240, y:678}
+      ]
+    }
+  });
+
+  /* =======================================================
+     BAR DA RIVAL
+     Esquina de bairro com o bar da outra torcida. A rua de
+     sempre atravessando o quadro e uma transversal descendo
+     da borda de cima: é ela que faz a esquina, e o bar é o
+     prédio da quina a leste dela.
+
+     O bar aqui não é bloco maciço — é SALÃO. Parede em volta
+     com uma porta virada pra rua, e dentro balcão, sinuca,
+     freezer e pilha de engradado. A briga entra: quem ataca
+     desce a transversal e toma o salão; quem defende está lá
+     dentro e só descobre o ataque quando um rival aparece na
+     frente do bar (D.gatilho), porque olhar através de parede
+     seria trapaça dos dois lados.
+     ======================================================= */
+  const blocosBar = [];
+  const bb = (x,y,w,h,tipo,extra)=>blocosBar.push(
+    Object.assign({x,y,w,h,tipo}, extra||{}));
+
+  /* a transversal: x 885..1050, da borda de cima até a rua */
+  const BAR_X0 = 1050, BAR_X1 = 1420;   // parede oeste e leste do salão
+  const BAR_Y0 = 140,  BAR_Y1 = 450;    // fundo e frente
+  const PAR = 22;                       // espessura da parede
+  const PORTA = [1150, 1215];           // o vão da porta, na parede da frente
+
+  /* as quatro paredes do salão, com o vão da porta na da frente */
+  bb(BAR_X0, BAR_Y0, BAR_X1-BAR_X0, PAR, 'parede-bar');
+  bb(BAR_X0, BAR_Y0, PAR, BAR_Y1-BAR_Y0, 'parede-bar');
+  bb(BAR_X1-PAR, BAR_Y0, PAR, BAR_Y1-BAR_Y0, 'parede-bar');
+  bb(BAR_X0, BAR_Y1-PAR, PORTA[0]-BAR_X0, PAR, 'parede-bar');
+  bb(PORTA[1], BAR_Y1-PAR, BAR_X1-PORTA[1], PAR, 'fachada-bar');
+
+  /* o que tem dentro, e que também é obstáculo */
+  bb(1090, 176, 290, 34, 'balcao');       // balcão encostado no fundo
+  bb(1180, 262, 124, 68, 'sinuca');       // sinuca no meio do salão
+  /* freezer e engradado encostados nas laterais, nunca na frente da
+     porta: o vão é estreito e móvel atravessado ali fecha a invasão */
+  bb(1076, 296, 58, 46, 'freezer');
+  bb(1076, 354, 58, 46, 'freezer');
+  bb(1330, 352, 64, 56, 'engradado');
+
+  /* o sobrado em cima do bar e o vizinho de parede, a leste */
+  bb(1050, 0, 486, 130, 'sobrado', {n:80});
+  bb(1430, 140, 106, 310, 'casa', {n:81});
+
+  /* a vizinhança: casa e sobrado dos dois lados da rua. Em cima a
+     fileira para na transversal; embaixo atravessa, que a esquina é T. */
+  for(let k=0;k<5;k++) bb(k*180, 0, 165, 210 + (k%3)*40, k%3===1?'sobrado':'casa', {n:k});
+  for(let k=0;k<7;k++) bb(k*222, 860, 204, 164, k%4===2?'boteco':'casa', {n:k+20});
+
+  /* o que vira arma: caçamba, carro no meio-fio e engradado de cerveja */
+  bb(620, 690, 150, 70, 'cacamba');
+  for(const [cx,cy] of [[300,300],[700,300],[430,700],[1140,780]])
+    bb(cx, cy, 96, 46, 'carro');
+  /* engradado empilhado na ponta do deck, do lado de fora */
+  bb(1442, 476, 70, 60, 'engradado');
+  bb(1442, 544, 70, 60, 'engradado');
+
+  const bar = montar({
+    id:'bar', nome:'Bar',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    faixas:{mandante:{x:324, y:190, len:130, dir:[-1,0]}, visitante:{x:900, y:500, len:130, dir:[1,0]}}, pintura:'bar', blocos:blocosBar,
+    local:'No bar deles',
+    saida:{perto:'Tomar o bar', longe:'Balcão do bar (leve o líder)',
+           feito:'sua torcida tomou o bar deles',
+           dica:'Leve o líder pra dentro, até o balcão.'},
+    enfeites:[
+      {tipo:'poste', x:520, y:430}, {tipo:'poste', x:980, y:430},
+      {tipo:'poste', x:1340, y:760},
+      {tipo:'lixeira', x:840, y:430},
+      {tipo:'mesa', x:1090, y:505}, {tipo:'mesa', x:1200, y:520},
+      {tipo:'mesa', x:1310, y:500}, {tipo:'mesa', x:1150, y:548},
+      {tipo:'orelhao', x:640, y:434}
+    ],
+    /* a bandeirinha do bar, pendurada de poste a poste na frente dele */
+    varais:[[[980,430],[1340,430]]],
+    spawns:[
+      /* a gente desce a transversal; eles já estão dentro do salão */
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:944, y:132, jogador:true,
+       entrada:'porta_bar'},
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:966, y:250,
+       entrada:'porta_bar'},
+      {id:'visitante1',rot:'DONOS DA CASA',  lado:'visitante', x:1140, y:236, guarda:true,
+       entrada:'fuga_oeste'},
+      {id:'visitante2',rot:'NA MESA DE TRÁS',lado:'visitante', x:1344, y:262, guarda:true,
+       entrada:'fuga_oeste'}
+    ],
+    entradas:[
+      /* o alvo é o balcão, lá no fundo: com o salão caminhável, parar na
+         porta seria tomar a calçada e chamar de bar. Tem de atravessar. */
+      {id:'porta_bar',  rot:'BALCÃO DO BAR', lado:'mandante', x:1240, y:236, raio:44, dir:[0,-1]},
+      {id:'fuga_oeste', rot:'FIM DA RUA',   lado:'visitante', x:40,   y:512, raio:46, dir:[-1,0]}
+    ],
+    /* Eles estão de costas pra rua até alguém aparecer na porta. O
+       gatilho é geográfico de propósito: acordar por linha de visão
+       faria a torcida enxergar através da parede do salão, e acordar
+       no relógio faria eles saberem antes de haver o que saber. */
+    gatilho:{x:1182, y:520, raio:150, lado:'mandante',
+             rot:'FRENTE DO BAR',
+             espera:'os donos da casa ainda não te viram',
+             aviso:'gritaram lá dentro — o bar inteiro veio pra porta'},
+    /* o gradil da calçada é o que segura a investida — e quebra */
+    grades:[
+      {id:'gradil_bar', rot:'GRADIL DA CALÇADA',
+       de:{x:1040, y:568}, ate:{x:1436, y:568}, modulos:6, espessura:9}
+    ],
+    pmPostos:[{x:400, y:512}, {x:760, y:840}, {x:1450, y:770}]
+  });
+
+  /* =======================================================
+     ALVO COMERCIAL
+     Rua de comércio de centro: joalheria com porta de aço,
+     agência bancária com vestíbulo de caixa eletrônico,
+     vitrine de loja de roupa e guarita de segurança. Aqui
+     quem enfrenta a torcida é segurança particular, e a PM
+     chega mais rápido do que em briga de bonde.
+     ======================================================= */
+  const blocosCom = [];
+  const bc = (x,y,w,h,tipo,extra)=>blocosCom.push(
+    Object.assign({x,y,w,h,tipo}, extra||{}));
+
+  /* fileira norte: loja de roupa, joalheria no meio, mercadinho */
+  bc(0,   0, 380, 250, 'vitrine', {rot:'MODAS'});
+  bc(400, 0, 380, 250, 'joalheria');
+  bc(800, 0, 330, 250, 'vitrine', {rot:'MERCADINHO'});
+  bc(1150,0, 386, 250, 'predio');
+  /* fileira sul: a agência, com o vestíbulo do caixa eletrônico */
+  bc(0,    790, 420, 234, 'predio');
+  bc(440,  760, 460, 264, 'banco');
+  bc(920,  790, 616, 234, 'predio');
+  /* guarita, banca e o carro-forte parado no meio-fio */
+  bc(1230, 300, 80, 80, 'guarita');
+  bc(250,  690, 150, 70, 'cacamba');
+  bc(600,  650, 180, 76, 'carroforte');
+  for(const [cx,cy] of [[120,300],[900,300],[1000,660],[1330,660]])
+    bc(cx, cy, 96, 46, 'carro');
+
+  const comercio = montar({
+    id:'comercio', nome:'Comércio', pintura:'comercio', blocos:blocosCom,
+    local:'No comércio',
+    saida:{perto:'Arrombar e levar', longe:'Porta de aço (leve o líder)',
+           feito:'a porta de aço cedeu e a turma levou o que deu',
+           dica:'Leve o líder até a porta de aço da joalheria.'},
+    enfeites:[
+      {tipo:'poste', x:300, y:290}, {tipo:'poste', x:780, y:290},
+      {tipo:'poste', x:1180, y:740}, {tipo:'poste', x:420, y:740},
+      {tipo:'lixeira', x:960, y:290}, {tipo:'lixeira', x:700, y:742},
+      {tipo:'lombada', x:768, y:512}
+    ],
+    varais:[],
+    spawns:[
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:110, y:512, jogador:true,
+       entrada:'porta_aco'},
+      {id:'mandante2', rot:'CAMPANA',    lado:'mandante', x:170, y:640,
+       entrada:'porta_aco'},
+      /* segurança particular: pouca gente, mas armada de cassetete */
+      {id:'visitante1',rot:'SEGURANÇA',  lado:'visitante', x:1290, y:420,
+       entrada:'fuga_leste'},
+      {id:'visitante2',rot:'REFORÇO',    lado:'visitante', x:1400, y:560,
+       entrada:'fuga_leste'}
+    ],
+    entradas:[
+      {id:'porta_aco',  rot:'PORTA DE AÇO', lado:'mandante',  x:590, y:262, raio:50, dir:[0,-1]},
+      {id:'fuga_leste', rot:'FIM DA RUA',   lado:'visitante', x:1496, y:512, raio:46, dir:[1,0]}
+    ],
+    /* a grade de proteção da vitrine: cai depois de muita pancada */
+    grades:[
+      {id:'grade_vitrine', rot:'GRADE DA VITRINE',
+       de:{x:400, y:302}, ate:{x:780, y:302}, modulos:5, espessura:10}
+    ],
+    /* comércio tem câmera e botão de pânico: a PM já está na esquina */
+    pmPostos:[{x:200, y:512}, {x:1350, y:512}, {x:768, y:400}, {x:768, y:640}]
+  });
+
+  /* =======================================================
+     CT DO CLUBE
+     O centro de treinamento: muro alto, portão de chapa,
+     campo de treino, vestiário, arquibancadinha de torcedor
+     e o ônibus da delegação parado. Pressionar o clube é
+     furar o portão e chegar no gramado onde o elenco treina.
+     ======================================================= */
+  const blocosCT = [];
+  const bt2 = (x,y,w,h,tipo,extra)=>blocosCT.push(
+    Object.assign({x,y,w,h,tipo}, extra||{}));
+
+  /* o muro do CT fecha os quatro lados, com o portão a oeste */
+  bt2(0,    0, W, 96, 'muro');
+  bt2(0, H-96, W, 96, 'muro');
+  bt2(0,   96, 60, 300, 'muro');
+  bt2(0,  628, 60, 300, 'muro');
+  bt2(W-60, 96, 60, H-192, 'muro');
+
+  /* vestiário e sala de imprensa, no fundo leste */
+  bt2(1180, 200, 296, 240, 'vestiario');
+  bt2(1180, 580, 296, 240, 'vestiario');
+  /* a arquibancadinha de quem vê o treino */
+  bt2(300, 130, 620, 80, 'arquibancada');
+  /* o ônibus da delegação, parado no saibro de frente pro portão */
+  bt2(130, 690, 210, 96, 'onibus');
+  /* material de treino: o carrinho de bola e os manequins de barreira */
+  bt2(980, 470, 70, 90, 'engradado');
+  for(const [cx,cy] of [[820,300],[880,300],[940,300]])
+    bt2(cx, cy, 26, 26, 'manequim');
+
+  const ct = montar({
+    id:'ct', nome:'CT', pintura:'ct', blocos:blocosCT,
+    local:'No CT do clube',
+    saida:{perto:'Chegar no elenco', longe:'Gramado (leve o líder)',
+           feito:'a torcida chegou no gramado e o elenco ouviu o que tinha de ouvir',
+           dica:'Leve o líder até o meio do gramado.'},
+    enfeites:[
+      {tipo:'poste', x:180, y:420}, {tipo:'poste', x:180, y:620},
+      {tipo:'poste', x:1120, y:420}, {tipo:'poste', x:1120, y:620},
+      {tipo:'lixeira', x:1000, y:640}
+    ],
+    varais:[],
+    spawns:[
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:120, y:512, jogador:true,
+       entrada:'gramado'},
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:150, y:620,
+       entrada:'gramado'},
+      /* seguranças do clube: linha na frente do vestiário */
+      {id:'visitante1',rot:'SEGURANÇA DO CT', lado:'visitante', x:1120, y:420,
+       entrada:'portao_ct'},
+      {id:'visitante2',rot:'ROUPEIRO E CIA',  lado:'visitante', x:1120, y:640,
+       entrada:'portao_ct'}
+    ],
+    entradas:[
+      {id:'gramado',   rot:'MEIO DO GRAMADO', lado:'mandante',  x:700, y:512, raio:60, dir:[1,0]},
+      {id:'portao_ct', rot:'PORTÃO DE CHAPA', lado:'visitante', x:30,  y:512, raio:48, dir:[-1,0]}
+    ],
+    /* o alambrado que separa a área do treino do estacionamento */
+    grades:[
+      {id:'alambrado', rot:'ALAMBRADO DO CAMPO',
+       de:{x:360, y:250}, ate:{x:360, y:790}, modulos:7, espessura:10}
+    ],
+    /* CT tem segurança e a PM demora: é propriedade privada, longe da rua */
+    pmPostos:[{x:120, y:300}, {x:120, y:760}]
+  });
+
+  /* =======================================================
+     O LOTE DE 19/08 (pedido do dono): as tretas com palco
+     próprio, as duas emboscadas de estrada, e os três
+     estádios por capacidade. Todas nascem SEM desenho — o
+     chão é a foto e a máscara vem dela (importar_cena_foto);
+     as coordenadas aqui são aproximadas de propósito, porque
+     o puxador reencosta cada marcador no chão mais perto.
+     ======================================================= */
+  const cenaDeFoto = cfg => montar(Object.assign({
+    blocos:[], enfeites:[], varais:[], grades:[], pintura:null
+  }, cfg));
+
+  /* 5x5: a viela entre os quintais — corredor de ponta a ponta */
+  const tretaBeco = cenaDeFoto({
+    id:'treta-beco', nome:'Beco', local:'No beco, treta marcada',
+    saida:{perto:'Furar pra fora', longe:'Boca do beco (leve o líder)',
+           feito:'sua torcida furou pra fora do beco',
+           dica:'Leve o líder até a boca do beco que é sua.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:140, y:512,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:1400, y:512,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'BOCA DO BECO', lado:'visitante', x:40,   y:512, raio:46, dir:[-1,0]},
+      {id:'boca_leste', rot:'FIM DO BECO',  lado:'mandante',  x:1496, y:512, raio:46, dir:[1,0]}
+    ],
+    pmPostos:[{x:150, y:640}, {x:1400, y:380}]
+  });
+
+  /* 7x7: o pátio murado do galpão */
+  const tretaGalpao = cenaDeFoto({
+    id:'treta-galpao', nome:'Galpão', local:'No pátio do galpão, treta marcada',
+    saida:{perto:'Furar pra fora', longe:'Saída do pátio (leve o líder)',
+           feito:'sua torcida saiu do pátio por cima',
+           dica:'Leve o líder até a saída do pátio.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:350, y:620,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:1050, y:400,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:260, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'CANTO DO PÁTIO', lado:'visitante', x:200,  y:280, raio:46, dir:[-1,0]},
+      {id:'boca_leste', rot:'SAÍDA DO PÁTIO', lado:'mandante',  x:1240, y:700, raio:46, dir:[1,0]}
+    ],
+    pmPostos:[{x:280, y:300}, {x:1180, y:720}]
+  });
+
+  /* 10x10: o campo de terra murado — a arena inteira */
+  const tretaCampo = cenaDeFoto({
+    id:'treta-campo', nome:'Campo de terra', local:'No campo de terra, treta marcada',
+    saida:{perto:'Furar pra fora', longe:'Canto do campo (leve o líder)',
+           feito:'sua torcida saiu do campo por cima',
+           dica:'Leve o líder até o canto do campo.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:480, y:600,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:1050, y:440,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'CANTO NORTE', lado:'visitante', x:330,  y:300, raio:46, dir:[-1,0]},
+      {id:'boca_leste', rot:'CANTO SUL',   lado:'mandante',  x:1200, y:720, raio:46, dir:[1,0]}
+    ],
+    pmPostos:[{x:520, y:280}, {x:1050, y:760}]
+  });
+
+  /* emboscada 1: o pátio do posto — a caravana parada nas bombas e
+     eles descendo por todo lado. Quem defende é o visitante (nós). */
+  /* AS DUAS EMBOSCADAS SÃO A MESMA CENA, com dois cenários: quem é
+     atacado fica em volta do ônibus, no meio da tela, e quem ataca
+     desce por uma ponta, em turma única (régua do dono, 22/08/2026 —
+     antes eram duas pontas). Daí os dois
+     dois spawns do lado emboscado e o `espalharBonde`, que reparte o
+     bonde entre eles em vez de deixar um ponto vazio.
+
+     E ali não se corre de ver o tamanho do outro: emboscada é gente
+     que veio pra isso e caravana que não tem pra onde ir. Corre-se de
+     sangue, pelo preço de sempre (30% no chão).
+
+     QUEM ATACA VEM EM UMA TURMA SÓ (correção do dono, 22/08/2026): o
+     bonde de emboscada desce junto, por um ponto só. O segundo ponto
+     deles saiu das duas cenas, e o `espalharBonde` agora nomeia o lado
+     que se espalha — o emboscado, em volta do ônibus. */
+  const embPosto = cenaDeFoto({
+    id:'emb-posto', nome:'Posto', local:'No posto, na parada da caravana',
+    /* QUEM ARMA EMBOSCADA NÃO RECUA DA PM (correção do dono,
+       23/08/2026). O recuo por alerta foi calibrado pros arredores do
+       estádio, onde existe cordão pra abrir distância. Na estrada não
+       existe cordão: quem fechou a pista escolheu o lugar e a hora, e
+       virava as costas assim que o alerta passava de 78 — medido, em
+       2 de 6 emboscadas o atacante recuava sem levar um soco. A PM
+       segue carregando e prendendo; o que ela não faz é cancelar a
+       emboscada. */
+    espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
+    semRecuoPM:true,
+    saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
+           feito:'a torcida voltou pro ônibus e a caravana seguiu',
+           dica:'Leve o líder de volta pro ônibus.'},
+    spawns:[
+      {id:'mandante1', rot:'ELES, PELA PISTA',  lado:'mandante', x:200,  y:820,
+       entrada:'ent_mandante'},
+      {id:'visitante1',rot:'NÓS, NAS BOMBAS',   lado:'visitante', x:700, y:640,
+       jogador:true, entrada:'ent_visitante'},
+      {id:'visitante2',rot:'NÓS, NO ÔNIBUS',    lado:'visitante', x:830, y:700,
+       entrada:'ent_visitante'}
+    ],
+    entradas:[
+      {id:'ent_mandante',  rot:'PISTA',  lado:'mandante',  x:40,   y:900, raio:48, dir:[-1,0]},
+      {id:'ent_visitante', rot:'ÔNIBUS', lado:'visitante', x:1496, y:880, raio:48, dir:[1,0]}
+    ],
+    pmPostos:[{x:120, y:500}, {x:1380, y:880}]
+  });
+
+  /* emboscada 2: a estrada com o ônibus parado no meio da pista */
+  const embOnibus = cenaDeFoto({
+    id:'emb-onibus', nome:'Estrada', local:'Na estrada, pista fechada',
+    /* mesma razão do posto: na pista não há cordão de onde recuar */
+    espalharBonde:'visitante', semFugaPorMinoria:true, marchaAoInimigo:true,
+    semRecuoPM:true,
+    saida:{perto:'Voltar pro ônibus', longe:'Ônibus (leve o líder)',
+           feito:'a torcida voltou pro ônibus e a caravana seguiu',
+           dica:'Leve o líder de volta pro ônibus.'},
+    spawns:[
+      {id:'mandante1', rot:'ELES, NA PISTA',    lado:'mandante', x:150,  y:500,
+       entrada:'ent_mandante'},
+      {id:'visitante1',rot:'NÓS, NO ÔNIBUS',    lado:'visitante', x:700, y:560,
+       jogador:true, entrada:'ent_visitante'},
+      {id:'visitante2',rot:'NÓS, ATRÁS',        lado:'visitante', x:850, y:600,
+       entrada:'ent_visitante'}
+    ],
+    entradas:[
+      {id:'ent_mandante',  rot:'PISTA OESTE', lado:'mandante',  x:40,   y:512, raio:48, dir:[-1,0]},
+      {id:'ent_visitante', rot:'PISTA LESTE', lado:'visitante', x:1496, y:512, raio:48, dir:[1,0]}
+    ],
+    pmPostos:[{x:400, y:470}, {x:1100, y:540}]
+  });
+
+  /* Os três estádios, com os SETORES das imagens do dono (estadio
+     nivel 1/2/3.jpg, 19/08/2026): a briga é NA ARQUIBANCADA. Cada
+     escalão é uma torcida do clube, da maior pra menor (1º escalão =
+     a maior da praça — e isso vira se outra passar). PM e divisórias
+     (gradil) separam os setores como o dono marcou. As posições são
+     aproximadas: o puxador reencosta tudo no chão da foto. */
+  const fazEstadio = cfg => cenaDeFoto(Object.assign({
+    local:'Na arquibancada', gradesDaFoto:true,
+    /* na bancada ninguém corre do tamanho do outro — está tudo cercado
+       de grade. Corre-se de sangue, e caro: metade do setor no chão
+       (régua do dono, 19/08/2026). */
+    semFugaPorMinoria:true, debandadaEm:50,
+    /* e como está tudo cercado, quem não vê ninguém por perto marcha
+       pro setor do rival e derruba o gradil no caminho — sem isso os
+       setores ficavam a 900 px um do outro sem nunca se encontrarem */
+    marchaAoInimigo:true, semRecuoPM:true,
+    /* na bancada não se "entra pelo portão": o fim da briga é sumir
+       pelo túnel do próprio setor, com o líder no ponto */
+    saida:{perto:'Sair pelo túnel', longe:'Túnel (leve o líder)',
+           feito:'sua torcida saiu pelo túnel com a bancada na mão',
+           dica:'Leve o líder até o túnel do seu setor.'}
+  }, cfg));
+
+  const estadio10 = fazEstadio({
+    id:'estadio-10', nome:'Estádio de 10 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    /* âncoras medidas na borda do gramado (ajuste de 10/09/2026): a
+       quina do mandante 1 é reta neste trecho — o arco que havia não
+       acompanhava o muro */
+    faixas:{mandante1:{x:1232, y:300, len:150, dir:[-1,0]}, mandante2:{x:1000, y:845, len:150, dir:[0,-1]}, mandante3:{x:523, y:844, len:150, dir:[0,-1]},
+            visitante1:{x:515, y:197, len:150, dir:[0,1]}, visitante2:{x:655, y:201, len:150, dir:[0,1]}},
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:300,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:1000, y:865,
+       entrada:'portao_mandante'},
+      {id:'mandante3', rot:'MANDANTE 3º ESCALÃO', lado:'mandante', x:505,  y:838,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:470, y:140,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:640, y:140,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1320, y:480, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:350, y:110, raio:40, dir:[0,-1]}
+    ],
+    pmPostos:[{x:768, y:140}],
+    grades:[
+      {id:'div_norte1', rot:'DIVISÓRIA', de:{x:730, y:96},  ate:{x:730, y:190},
+       modulos:4, espessura:10},
+      {id:'div_norte2', rot:'DIVISÓRIA', de:{x:838, y:96},  ate:{x:838, y:190},
+       modulos:4, espessura:10}
+    ]
+  });
+
+  const estadio20 = fazEstadio({
+    id:'estadio-20', nome:'Estádio de 20 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    /* âncoras medidas na linha das placas (34 px fora do gramado —
+       ajuste de 10/09/2026); atrás do gol a placa faz um degrau, e a
+       faixa encurta pra 110 pra não atravessar o degrau; a quina dos
+       visitantes é um arco de centro (453,320) */
+    faixas:{mandante1:{x:1191, y:516, len:150, dir:[-1,0]}, mandante2:{x:675, y:802, len:110, dir:[0,-1]}, mandante3:{x:875, y:221, len:110, dir:[0,1]},
+            visitante1:{x:349, y:516, len:150, dir:[1,0]}, visitante2:{x:382, y:242, len:150, dir:[0.68,0.73], arco:[453,318]}, visitante3:{x:358, y:274, len:150, dir:[0.89,0.46], arco:[453,323]}},
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1290, y:490,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:675,  y:830,
+       entrada:'portao_mandante'},
+      {id:'mandante3', rot:'MANDANTE 3º ESCALÃO', lado:'mandante', x:875,  y:175,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:275, y:490,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:385, y:165,
+       entrada:'portao_visitante'},
+      {id:'visitante3',rot:'VISITANTE 3º ESCALÃO',lado:'visitante', x:260, y:275,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1310, y:705, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:245, y:390, raio:40, dir:[-1,0]}
+    ],
+    pmPostos:[{x:570, y:185}, {x:230, y:635}],
+    grades:[
+      {id:'div_norte1', rot:'DIVISÓRIA', de:{x:515, y:92},  ate:{x:515, y:225},
+       modulos:5, espessura:10},
+      {id:'div_norte2', rot:'DIVISÓRIA', de:{x:640, y:92},  ate:{x:640, y:225},
+       modulos:5, espessura:10},
+      {id:'div_oeste',  rot:'DIVISÓRIA', de:{x:205, y:570}, ate:{x:330, y:585},
+       modulos:5, espessura:10}
+    ]
+  });
+
+  const estadio40 = fazEstadio({
+    id:'estadio-40', nome:'Estádio de 40 mil',
+    /* onde a faixa fica estendida (dono, 09/09/2026): o ponto é no chão,
+       na frente da parede/alambrado; `dir` aponta pra parede, e o topo
+       da faixa vira pra lá — virada pro campo, ela fica vertical na
+       lateral e deitada atrás do gol */
+    /* âncoras medidas na frente do anel caminhável, amostrada ao longo
+       da curva (ajuste de 10/09/2026): neste trecho de 150 px o anel é
+       reto dentro de 4 px, só o visitante 3 curva */
+    faixas:{mandante1:{x:1252, y:371, len:150, dir:[-0.94,0.33]}, mandante2:{x:521, y:148, len:150, dir:[0.28,0.96]},
+            visitante1:{x:368, y:808, len:110, dir:[0.53,-0.85]}, visitante2:{x:269, y:583, len:150, dir:[0.99,-0.14]}, visitante3:{x:436, y:697, len:150, dir:[0.79,-0.61], arco:[532,623]}},
+    spawns:[
+      {id:'mandante1', rot:'MANDANTE 1º ESCALÃO', lado:'mandante', x:1310, y:360,
+       jogador:true, entrada:'portao_mandante'},
+      {id:'mandante2', rot:'MANDANTE 2º ESCALÃO', lado:'mandante', x:505,  y:125,
+       entrada:'portao_mandante'},
+      {id:'visitante1',rot:'VISITANTE 1º ESCALÃO',lado:'visitante', x:360, y:815,
+       entrada:'portao_visitante'},
+      {id:'visitante2',rot:'VISITANTE 2º ESCALÃO',lado:'visitante', x:215, y:590,
+       entrada:'portao_visitante'},
+      {id:'visitante3',rot:'VISITANTE 3º ESCALÃO',lado:'visitante', x:400, y:718,
+       entrada:'portao_visitante'}
+    ],
+    entradas:[
+      {id:'portao_mandante',  rot:'TÚNEL MANDANTE',  lado:'mandante',
+       x:1350, y:250, raio:40, dir:[1,0]},
+      {id:'portao_visitante', rot:'TÚNEL VISITANTE', lado:'visitante',
+       x:300, y:900, raio:40, dir:[0,1]}
+    ],
+    pmPostos:[{x:170, y:512}, {x:338, y:630}, {x:515, y:753}, {x:445, y:855}],
+    grades:[
+      {id:'div_v23', rot:'DIVISÓRIA', de:{x:280, y:585}, ate:{x:345, y:660},
+       modulos:4, espessura:10},
+      {id:'div_v31', rot:'DIVISÓRIA', de:{x:430, y:700}, ate:{x:490, y:775},
+       modulos:4, espessura:10}
+    ]
+  });
+
+  /* =======================================================
+     QUANDO EXISTE FOTO
+     A cena desenhada é o rascunho; quando a foto aérea chega,
+     ela manda. A imagem vira o chão e a máscara tirada dela
+     (ferramentas/importar_cena_foto.py) vira a colisão — bloco
+     e enfeite desenhados saem, senão apareceria muro em cima
+     de casa que já está na foto.
+
+     Os marcadores são puxados pro chão mais perto: a foto nunca
+     cai exatamente onde a planta imaginou, e spawn dentro de
+     telhado é bonde que nasce presd.
+     ======================================================= */
+  /* A máscara em RLE vira um teste de chão livre — mas não basta estar
+     livre: tem de estar no chão GRANDE. Recorte de cor deixa poço de uma
+     célula solta no meio de telhado, e pincel de editor deixa respingo.
+     Marcador que cai num poço desses nasce emparedado sem nunca tocar
+     muro, que é pior de achar do que nascer dentro da parede. */
+  function puxador(cena, mascara){
+    const C = cena.celula, COLS = cena.largura/C, ROWS = cena.altura/C;
+    const m = new Uint8Array(COLS*ROWS);
+    mascara.split(';').forEach((linha, r)=>{
+      let c = 0, v = 0;
+      for(const n of linha.split(',')){
+        for(let k=0; k<+n && c<COLS; k++, c++) m[r*COLS+c] = v;
+        v ^= 1;
+      }
+    });
+    /* a maior ilha de chão é a rua: é ela que liga boca a boca */
+    const ilha = new Int32Array(COLS*ROWS).fill(-1);
+    const fila = new Int32Array(COLS*ROWS);
+    let maior = -1, maiorTam = 0;
+    for(let i=0, n=0; i<m.length; i++){
+      if(m[i] !== 1 || ilha[i] >= 0) continue;
+      let cabeca = 0, cauda = 0, tam = 0;
+      ilha[i] = n; fila[cauda++] = i;
+      while(cabeca < cauda){
+        const j = fila[cabeca++], c = j % COLS, r = (j - c) / COLS;
+        tam++;
+        if(c > 0)      { const k = j-1;    if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+        if(c < COLS-1) { const k = j+1;    if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+        if(r > 0)      { const k = j-COLS; if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+        if(r < ROWS-1) { const k = j+COLS; if(m[k]===1 && ilha[k]<0){ ilha[k]=n; fila[cauda++]=k; } }
+      }
+      if(tam > maiorTam){ maiorTam = tam; maior = n; }
+      n++;
+    }
+    const livre = (x, y)=>{
+      const c = Math.floor(x/C), r = Math.floor(y/C);
+      return c>=0 && r>=0 && c<COLS && r<ROWS && ilha[r*COLS+c] === maior;
+    };
+    const puxa = p=>{
+      if(livre(p.x, p.y)) return p;
+      for(let raio=C; raio<=460; raio+=C)
+        for(let a=0; a<32; a++){
+          const x = p.x + Math.cos(a*Math.PI/16)*raio;
+          const y = p.y + Math.sin(a*Math.PI/16)*raio;
+          if(livre(x, y)){ p.x = Math.round(x); p.y = Math.round(y); return p; }
+        }
+      return p;
+    };
+    puxa.livre = livre;
+    return puxa;
+  }
+
+  function sobreFoto(cena, f){
+    if(!f) return cena;
+    cena.imagem = f.imagem;
+    cena.mascara = f.mascara;
+    cena.foto = true;
+    delete cena.pintura;                 // quem pinta agora é a foto
+    cena.blocos = []; cena.enfeites = []; cena.varais = [];
+    cena.poligonos = {caminhavel:[], bloqueio:[]};
+    /* railing modelado é coisa de cena desenhada: na foto não dá pra
+       saber onde o gradil está sem marcar na mão. A exceção é a cena
+       que declara gradesDaFoto — as divisórias da arquibancada foram
+       marcadas na mão pelo dono (imagens de 19/08/2026). */
+    if(!cena.gradesDaFoto) cena.grades = [];
+
+    const puxa = puxador(cena, f.mascara);
+    /* a pista da foto não cai na mesma altura da desenhada — mas numa
+       cena de DENTRO (as sedes) não há pista: `semMeio` (22/09/2026) */
+    if(f.meio && !cena.semMeio) for(const s of cena.spawns)
+      if(Math.abs(s.y - cena.altura/2) < 40) s.y = f.meio;
+    /* as bocas são régua de RUA (transversal em cada ponta); a casa
+       de piscina tem a rua inteira caminhável de borda a borda e a
+       boca "mais próxima" (x=420) puxava o fim da rua pro meio dela */
+    if(f.bocas && !cena.semBocas) for(const e of cena.entradas){
+      if(e.x < cena.largura*0.2) e.x = f.bocas[0];
+      if(e.x > cena.largura*0.8) e.x = f.bocas[1];
+      if(f.meio && Math.abs(e.y - cena.altura/2) < 40) e.y = f.meio;
+    }
+    cena.spawns.forEach(puxa);
+    cena.entradas.forEach(puxa);
+    cena.pmPostos.forEach(puxa);
+    return cena;
+  }
+
+  /* =======================================================
+     E QUANDO A MÃO PASSA POR CIMA
+     O importador acerta o grosso e erra o fino: ele corta por
+     cor, então calçada clara vira parede e laje clara vira
+     chão. Quem abre a cena no editor (F2) e pinta a malha
+     manda mais que ele — dados/cenas_editadas.js entra aqui,
+     depois da foto, e o que estiver escrito lá troca.
+     ======================================================= */
+  function sobreEdicao(cena, e){
+    if(!e) return cena;
+    if(e.mascara) cena.mascara = e.mascara;
+    /* cópia, não o mesmo objeto: o marcador da cena é mexido em jogo
+       (reencostado aqui, arrastado no editor) e isso ia comendo por
+       baixo o arquivo que devia ser a fonte */
+    const copia = (o)=>JSON.parse(JSON.stringify(o));
+    /* Marcador com id entra MESCLADO, não trocado: o remendo é do
+       editor e diz onde o marcador fica; a cena é que diz o que ele é.
+       Trocando inteiro, um remendo exportado antes de existir o campo
+       `guarda` apagava o comportamento junto com a posição — e a
+       torcida atacada voltava a sair andando no primeiro segundo. */
+    for(const campo of ['spawns', 'entradas'])
+      if(e[campo]) cena[campo] = cena[campo].map(o=>{
+        const novo = e[campo].find(x=>x.id===o.id);
+        return novo ? Object.assign({}, o, copia(novo)) : o;
+      }).concat(e[campo].filter(x=>!cena[campo].some(o=>o.id===x.id)).map(copia));
+    /* Estes vêm inteiros do editor: quem edita apaga e cria, e mesclar
+       por id devolveria a grade que a mão tirou. `fugas` só existe
+       quando a mão marcou — sem ela a cena segue lendo as bocas da
+       máscara, como sempre. */
+    for(const campo of ['pmPostos', 'grades', 'fugas'])
+      if(e[campo]) cena[campo] = copia(e[campo]);
+    if(e.tropaEm) cena.tropaEm = copia(e.tropaEm);
+    if(e.poligonos) cena.poligonos = copia(e.poligonos);
+    /* a zona que acorda a casa é coordenada como qualquer marcador, e
+       muda junto com eles quando a foto tem outra planta */
+    if(e.gatilho) cena.gatilho = copia(e.gatilho);
+    /* Marcador que veio da mão fica onde a mão pôs — desde que dê pra
+       ficar de pé ali. Quem pinta a malha mexe na planta inteira e nem
+       sempre volta pra arrastar os quatro marcadores atrás: na praça,
+       fechar o quarteirão deixou dois bondes e uma boca dentro de
+       telhado. Então o que sobrar em cima de parede reencosta no chão
+       mais perto, exatamente como quando a foto chegou. */
+    if(e.mascara) {
+      const puxa = puxador(cena, e.mascara);
+      for(const campo of ['spawns', 'entradas', 'pmPostos', 'fugas'])
+        if(cena[campo]) cena[campo].forEach(puxa);
+      if(cena.tropaEm) puxa(cena.tropaEm);
+    }
+    return cena;
+  }
+
+  /* =======================================================
+     CASA DE PISCINA (pedido do dono, 21/09/2026)
+     A resenha de uma zona da torcida numa casa de praia. A foto é
+     zenital: rua de areia embaixo, lote murado no meio — garagem e
+     casa na esquerda, quintal com dois carros, deck com piscina na
+     direita, portão na quina de baixo/direita. A máscara vem da
+     foto com as paredes ditas na mão (importar_cena_foto.py); o
+     acabamento fino fica pro editor (F2), como em toda cena.
+
+     Quem é atacado nasce ESPALHADO pelos cinco pontos (80% no deck,
+     em volta da piscina; 20% dentro da casa) e fica de guarda até o
+     invasor pisar no portão — só o portão acorda a casa (`soZona`):
+     ver alguém pela porta não conta, a resenha está de costas pra
+     rua. A faixa fica estendida no muro do fundo do deck; quem a
+     recolhe corre pro depósito, no canto de dentro da casa
+     (`faixaAbrigo`), e ali se tranca. O atacante entra pelo portão,
+     atravessa o quintal e toma o deck; a passagem atrás da casa
+     liga o deck à porta dos fundos, que dá no hall e na sala.
+     ======================================================= */
+  const casaPiscina = cenaDeFoto({
+    id:'casa-piscina', nome:'Casa de piscina',
+    local:'Na resenha deles, numa casa de piscina',
+    saida:{perto:'Tomar a casa', longe:'Beira da piscina (leve o líder)',
+           feito:'sua torcida tomou a resenha deles',
+           dica:'Leve o líder até a beira da piscina.'},
+    /* o muro do fundo do deck: o ponto é no chão, na frente dele */
+    faixas:{visitante:{x:983, y:210, len:130, dir:[0,-1]}},
+    /* onde quem recolheu a faixa se esconde: o depósito da casa */
+    faixaAbrigo:{x:522, y:429, raio:44, rot:'DEPÓSITO'},
+    /* um bonde só de quem defende, repartido pelos cinco pontos */
+    espalharBonde:'visitante',
+    /* a rua vai de borda a borda: o fim dela é a borda, não uma boca */
+    semBocas:true,
+    spawns:[
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1152, y:760,
+       jogador:true, entrada:'piscina'},
+      /* longe do portão: a 998 a grade do 2º escalão da bancada (sem
+         bonde, os dois spawns dividem o efetivo) nascia dentro da zona
+         do gatilho e a casa acordava no primeiro segundo */
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:1290, y:790,
+       entrada:'piscina'},
+      {id:'visitante1', rot:'DECK, LADO DA CASA', lado:'visitante', x:860, y:237,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante2', rot:'CHURRASQUEIRA', lado:'visitante', x:1114, y:252,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante3', rot:'BEIRA DA PISCINA', lado:'visitante', x:860, y:444,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante4', rot:'ESPREGUIÇADEIRAS', lado:'visitante', x:1106, y:444,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante5', rot:'NA SALA', lado:'visitante', x:737, y:406,
+       guarda:true, entrada:'fim_rua'}
+    ],
+    entradas:[
+      {id:'piscina', rot:'BEIRA DA PISCINA', lado:'mandante', x:998, y:463, raio:56, dir:[0,-1]},
+      {id:'fim_rua', rot:'FIM DA RUA', lado:'visitante', x:40, y:770, raio:46, dir:[-1,0]}
+    ],
+    /* só o portão acorda a casa: nem a distância, nem a linha de visão */
+    gatilho:{x:960, y:655, raio:110, lado:'mandante', soZona:true,
+             rot:'PORTÃO DA CASA',
+             espera:'a resenha ainda não te viu',
+             aviso:'gritaram no portão — a casa inteira veio pra cima'},
+    pmPostos:[{x:80, y:780}, {x:1470, y:780}]
+  });
+
+  /* =======================================================
+     AS SEDES (fotos do dono: nível 1 em 10/09, 2 a 5 em 22/09/2026)
+     Uma cena por nível de sede, sobre a foto de zênite do quarteirão
+     sem telhado — o nível 6 usa a foto do 5. É NELAS que a reunião
+     da diretoria acontece, no pátio (decisão do dono, 22/09/2026, no
+     lugar de uma sala própria): as cadeiras em C QUADRADO — quatro
+     no fundo, quatro em cima, quatro embaixo, a abertura pra direita
+     —, todas viradas pra dentro, e o presidente em pé sozinho do lado
+     direito, virado pra eles. O retângulo do pátio de cada nível foi
+     medido na foto; `cadeirasEmC` distribui as cadeiras nele e diz
+     onde o presidente fica. O combate lê `D.cadeiras` e
+     `D.presidente` (`sentarNaRoda`); o desenho das cadeiras por cima
+     da foto é do `arredores.desenharSobreposicoes`.
+
+     O spawn é o lugar do presidente; a entrada é o portão da rua, que
+     a máscara liga ao pátio pela conectividade — `conferirPortoes`
+     avisa no console se a foto não deixou o portão passar (aí é F2).
+     `semMeio`/`semBocas`: a régua de rua do `sobreFoto` (a pista no
+     meio, as bocas nas pontas) não vale numa cena de dentro.
+     ======================================================= */
+  function cadeirasEmC(x0, y0, x1, y1){
+    /* o C não cresce sem limite num pátio grande: fica centrado */
+    const wMax = 300, hMax = 230;
+    if(x1 - x0 > wMax){ const c = (x0+x1)/2; x0 = c - wMax/2; x1 = c + wMax/2; }
+    if(y1 - y0 > hMax){ const c = (y0+y1)/2; y0 = c - hMax/2; y1 = c + hMax/2; }
+    const w = x1 - x0, h = y1 - y0;
+    const mx = Math.max(14, Math.min(24, w*0.08)), my = Math.max(14, Math.min(24, h*0.10));
+    const xc = x0 + mx;                              // a coluna do fundo
+    const xp = x1 - mx;                              // o presidente
+    const xa0 = xc + Math.max(34, w*0.16), xa1 = xp - Math.max(50, w*0.24);
+    const olhaDireita = Math.atan2(1, 0), olhaBaixo = 0, olhaCima = Math.PI;
+    const R = Math.round;
+    const cadeiras = [];
+    for(let i=0;i<4;i++) cadeiras.push({x:R(xc), y:R(y0 + my + (h - 2*my)*i/3), rumo:olhaDireita});
+    for(let i=0;i<4;i++){
+      const x = R(xa0 + (xa1 - xa0)*i/3);
+      cadeiras.push({x, y:R(y0 + my), rumo:olhaBaixo});
+      cadeiras.push({x, y:R(y1 - my), rumo:olhaCima});
+    }
+    return {cadeiras, presidente:{x:R(xp), y:R((y0+y1)/2), rumo:Math.atan2(-1, 0)}};
+  }
+  const SEDE_SAIDA = {perto:'Sair da sede', longe:'Portão da rua (leve o líder)',
+                      feito:'a reunião acabou',
+                      dica:'A reunião acaba pelo botão de encerrar.'};
+  /* o pátio de cada nível, em pixel da tela (medido na foto, 22/09/2026),
+     e o portão da rua */
+  const SEDES = [
+    {n:1, patio:[430, 200, 770, 540], portao:600},
+    {n:2, patio:[632, 434, 930, 569], portao:765},
+    {n:3, patio:[538, 491, 768, 660], portao:732},
+    {n:4, patio:[452, 499, 646, 680], portao:610},
+    {n:5, patio:[472, 540, 682, 670], portao:585}
+  ];
+  const sedes = {};
+  for(const sd of SEDES){
+    const c = cadeirasEmC(...sd.patio);
+    sedes['sede-'+sd.n] = cenaDeFoto({
+      id:'sede-'+sd.n, nome:`Sede nível ${sd.n}`, local:'Na sede, reunião da diretoria',
+      cadeiras:c.cadeiras, presidente:c.presidente,
+      saida:SEDE_SAIDA, semBocas:true, semMeio:true, tropaChoque:false,
+      spawns:[
+        {id:'mandante1', rot:'DIRETORIA', lado:'mandante', x:c.presidente.x, y:c.presidente.y,
+         jogador:true, entrada:'portao'}
+      ],
+      entradas:[
+        {id:'portao', rot:'PORTÃO DA RUA', lado:'mandante', x:sd.portao, y:880, raio:40, dir:[0,1]}
+      ],
+      pmPostos:[]
+    });
+  }
+
+  const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
+                 bar, comercio, ct, 'casa-piscina':casaPiscina, ...sedes,
+                 'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
+                 'treta-campo':tretaCampo,
+                 'emb-posto':embPosto, 'emb-onibus':embOnibus,
+                 'estadio-10':estadio10, 'estadio-20':estadio20,
+                 'estadio-40':estadio40};
+
+  /* =======================================================
+     AS RUAS EM 3D
+     A foto, logo abaixo, apaga os blocos da cena desenhada — e
+     é dos blocos que a versão 3D levanta parede, telhado e
+     poste. Então cada rua ganha uma cópia ANTES da foto passar,
+     com a mesma planta, os mesmos spawns e a mesma malha que o
+     desenho tinha: `rua-3d` é a rua de periferia vista de
+     perto, e o combate roda nela sem saber que é 3D.
+     ======================================================= */
+  const copia3d = o => JSON.parse(JSON.stringify(o));
+  for(const id of ['rua', 'rua-media', 'rua-nobre']){
+    if(!cenas[id]) continue;
+    const c = copia3d(cenas[id]);
+    c.base = id; c.tres = true;
+    c.id = id + '-3d';
+    c.nome = (cenas[id].nome || id) + ' em 3D';
+    cenas[c.id] = c;
+  }
+
+  /* Quem manda é a ordem: desenho, depois foto, depois mão. As duas
+     últimas varrem o que existir — cena que ganhar foto amanhã entra
+     sozinha, sem ninguém lembrar de acrescentar a linha aqui (o bar
+     ficou uma sessão inteira rodando no desenho por causa disso). */
+  const FOTO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasFoto) || {};
+  for(const id in FOTO) if(cenas[id]) sobreFoto(cenas[id], FOTO[id]);
+
+  const MAO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasEditadas) || {};
+  for(const id in MAO) if(cenas[id]) sobreEdicao(cenas[id], MAO[id]);
+
+  return cenas;
+})();
+
+/* A cena da sede pelo NÍVEL (22/09/2026): `sede-1` a `sede-5`, e o
+   nível 6 (o Complexo) usa a foto do 5 — decisão do dono, 10/09/2026.
+   É por aqui que a reunião da diretoria acha o pátio dela. */
+TO.dados.sedeCenaDoNivel = function(n){
+  const v = Math.round(+n);
+  /* sem sede (nível 0), a reunião é na praça do bairro (dono, 22/09/2026) */
+  if(!(v > 0)) return TO.dados.cenas.praca && TO.dados.cenas.praca.cadeiras ? 'praca' : 'sede-1';
+  const k = Math.max(1, Math.min(5, v));
+  return TO.dados.cenas['sede-'+k] ? 'sede-'+k : 'sede-1';
+};

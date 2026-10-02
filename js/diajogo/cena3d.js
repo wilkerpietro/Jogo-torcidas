@@ -1,0 +1,1765 @@
+/* =========================================================
+   CENA 3D — a mesma briga, vista de perto
+   ---------------------------------------------------------
+   Isto NÃO é um jogo novo. É um segundo desenhista para o
+   mesmo estado: `combate.js` continua sendo dono de tudo que
+   anda, bate, cai e some, em coordenada de imagem (1536×1024),
+   e este arquivo só lê `J` uma vez por quadro e põe em pé.
+
+   As quatro regras que fazem isso funcionar:
+
+   1. O CHÃO SAI DE GRAÇA. `arredores.desenharFundo(ctx)` já
+      sabe pintar qualquer cena — a foto aérea dos arredores ou
+      a pintura procedural da praça/rua/bar. Chamamos ela num
+      canvas fora da tela e usamos o resultado como textura do
+      plano. Zero arte nova.
+
+   2. O QUE BLOQUEIA É O QUE SOBE, E SOBE DA MALHA. Não da
+      lista de polígonos: a lista dos arredores tem 9 retângulos
+      e a foto tem trinta e poucos prédios. Quem sabe onde é
+      parede é `A.malha`, a mesma que a colisão usa. Extrudar a
+      malha garante que não existe parede invisível — se o corpo
+      não passa, o olho vê por quê.
+
+   3. O BONECO É DE CAIXA. Seis peças (cabeça, tronco, dois
+      braços, duas pernas), uma malha instanciada por peça: 400
+      pessoas custam 6 chamadas de desenho, e cada uma anda com
+      a própria fase de passada. Nenhum arquivo de modelo,
+      nenhum osso, nenhuma animação importada. É o lugar do
+      boneco do Blender quando ele existir — a interface é a
+      mesma.
+
+   4. ALTURA É LEITURA, NÃO ESCALA. A cena é uma abstração de
+      tabuleiro: o disco tem raio 7 e o estádio 910 de largura.
+      Por isso há dois conjuntos de altura — `maquete`, baixa,
+      pra ler a briga de cima, e `rua`, alta, pra a câmera de
+      ombro ter parede em volta. Trocar com B.
+
+   Coordenadas: jogo (x, y) → mundo (x, altura, y).
+   ========================================================= */
+import * as THREE from '../../vendor/three/three.module.min.js';
+
+const A = TO.diaJogo.arredores;
+const W = A.W, H = A.H, CEL = A.CEL, COLS = A.COLS, ROWS = A.ROWS;
+
+const MAX_GENTE = 900;
+const MAX_PMS   = 40;
+const MAX_PROJ  = 60;
+const MAX_MODS  = 120;
+
+/* ---------------------------------------------------------
+   O BONECO, EM NÚMERO
+   Altura total ~31. O corpo do jogo tem raio 7 (14 de largura),
+   que é bem mais largo que um ombro nesta foto — a folga entre
+   os bonecos numa multidão vem daí, e é do jogo, não do
+   desenho. Mexer nisso é mexer na colisão, não aqui.
+   --------------------------------------------------------- */
+const B = {
+  /* A PERNA TAMBÉM TEM JOELHO.
+     Perna reta indo e voltando é pêndulo, não passada: o pé varre o
+     chão na volta e o corpo não tem peso. Com joelho, a perna solta
+     dobra pra passar e a perna de apoio fica reta — que é o que faz
+     o quadril subir e descer sozinho. */
+  coxa:   { l: 3.2, a: 6.4, p: 3.2, quadril: 13, lado: 2.1 },
+  canela: { l: 2.9, a: 6.6, p: 2.9 },
+  tronco: { l: 6.6, a: 12,  p: 4.4, centro: 19 },
+  cabeca: { l: 5.4, a: 5.4, p: 5.4, centro: 28.4 },
+  /* O BRAÇO TEM COTOVELO, E ISSO NÃO É CAPRICHO.
+     Com um osso só, guarda e soco são o mesmo gesto com dois
+     ângulos parecidos, e de longe ninguém distingue um do outro.
+     Com dois, guarda é braço baixo e antebraço em pé na frente do
+     rosto, e soco é o antebraço abrindo — leem-se de longe e são
+     coisas diferentes. Custa duas malhas instanciadas a mais. */
+  bracoS: { l: 2.5, a: 6,   p: 2.5, ombro: 24.4, lado: 4.4 },
+  bracoI: { l: 2.2, a: 6.5, p: 2.2 }
+};
+const PELE = [0x8d5f42, 0xa87a56, 0x6f4a34, 0xc09270, 0x53382a];
+
+export function criar(canvas) {
+  const rend = new THREE.WebGLRenderer({ canvas, antialias: true,
+                                         preserveDrawingBuffer: true });
+  rend.setPixelRatio(Math.min(devicePixelRatio, 2));
+  rend.shadowMap.enabled = true;
+  rend.shadowMap.type = THREE.PCFSoftShadowMap;
+  rend.outputColorSpace = THREE.SRGBColorSpace;
+
+  const cena = new THREE.Scene();
+  cena.background = new THREE.Color(0x3d4655);
+  cena.fog = new THREE.Fog(0x3d4655, 780, 2300);
+
+  const cam = new THREE.PerspectiveCamera(52, 1, 1.2, 6000);
+
+  cena.add(new THREE.HemisphereLight(0xccdcec, 0x55503f, 1.55));
+  const sol = new THREE.DirectionalLight(0xfff4e2, 1.30);
+  sol.position.set(W / 2 + 900, 1800, H / 2 - 1100);
+  sol.target.position.set(W / 2, 0, H / 2);
+  sol.castShadow = true;
+  sol.shadow.mapSize.set(2048, 2048);
+  Object.assign(sol.shadow.camera, {
+    left: -1100, right: 1100, top: 1100, bottom: -1100, near: 200, far: 4600 });
+  sol.shadow.bias = -0.0016;
+  cena.add(sol, sol.target);
+
+  /* =======================================================
+     TEXTURAS PROCEDURAIS
+     Fachada e granulado saem de canvas, como a cena 2D já faz
+     com o asfalto. É o que segura a câmera de perto sem
+     nenhum arquivo de imagem novo.
+     ======================================================= */
+  /* =======================================================
+     AS FACHADAS, COM O VOCABULÁRIO DA CENA 2D
+
+     Um azulejo só de "três janelas por módulo" faz toda a cidade
+     virar prédio de escritório. `cenario.js` já tem o vocabulário
+     certo — casa com laje e telha, boteco com toldo listrado,
+     muro pichado, sobrado, galpão de porta de rolo — e a paleta
+     desse bairro. As duas coisas vêm de lá, exportadas, pra não
+     existirem duas periferias diferentes no mesmo jogo.
+
+     Cada tipo tem DUAS texturas, e essa é a diferença que mais
+     conta: o TÉRREO não se repete. Rua é porta de rolo, vitrine,
+     toldo, portão de garagem e pichação na altura do braço; do
+     primeiro andar pra cima é janela e parede. Empilhar o mesmo
+     azulejo do chão ao topo é justamente o que deixava genérico.
+
+     A textura é quase branca de propósito: a cor do prédio entra
+     por cor de vértice, uma por bloco, tirada de `PAREDE`.
+     ======================================================= */
+  const CN = TO.diaJogo.cenario;
+  const TIPOS = ['predio', 'casa', 'comercio', 'sobrado', 'galpao', 'estadio', 'muro'];
+  const H_TERREO = 40;      // ~4 m na régua da foto: pé-direito térreo
+  const H_ANDAR  = 38;      // o andar de cima é sempre mais baixo
+  const PARAPEITO = 5;      // platibanda, a fatia lisa do topo
+  const MOD = 46;           // largura de um módulo de fachada
+
+  function tela(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h === undefined ? w : h;
+    return { c: c, g: c.getContext('2d') };
+  }
+  function comoTextura(c) {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = rend.capabilities.getMaxAnisotropy();
+    return t;
+  }
+  /* a mesma pichação da cena 2D, redesenhada em pé */
+  function pichar(g, x, y, w, h, semente) {
+    const n = 1 + (CN.dado('p3|' + semente, 2));
+    for (let i = 0; i < n; i++) {
+      const s = CN.hash('pich3|' + semente + '|' + i);
+      const px = x + (s % Math.max(1, w - 40));
+      const py = y + ((s >>> 7) % Math.max(1, h - 14));
+      g.save();
+      g.globalAlpha = 0.34;
+      g.strokeStyle = CN.PICHACAO[s % CN.PICHACAO.length];
+      g.lineWidth = 4; g.lineCap = 'round'; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(px, py);
+      for (let k = 1; k < 5; k++) {
+        const q = CN.hash(s + '|' + k);
+        g.lineTo(px + k * 11 + (q % 12), py + ((q >>> 4) % 20) - 10);
+      }
+      g.stroke(); g.restore();
+    }
+  }
+  const base = (g, tom, L, A) => { g.fillStyle = tom || '#e6e2d8';
+    g.fillRect(0, 0, L || 256, A || 256); };
+  const sujeira = (g, larg, alt) => {
+    /* a barra escura do pé da parede: chuva, lama e ônibus */
+    const L = larg || 256, A = alt || 256, y = A * 0.74;
+    const grad = g.createLinearGradient(0, y, 0, A);
+    grad.addColorStop(0, 'rgba(60,52,44,0)');
+    grad.addColorStop(1, 'rgba(60,52,44,.18)');
+    g.fillStyle = grad; g.fillRect(0, y, L, A - y);
+  };
+  const janela = (g, x, y, w, h) => {
+    g.fillStyle = '#8e887c'; g.fillRect(x - 3, y - 3, w + 6, h + 6);   // moldura
+    g.fillStyle = '#2b3138'; g.fillRect(x, y, w, h);                    // vidro
+    g.fillStyle = 'rgba(190,205,220,.22)';                              // reflexo
+    g.beginPath(); g.moveTo(x, y + h); g.lineTo(x + w * 0.55, y);
+    g.lineTo(x + w * 0.9, y); g.lineTo(x + w * 0.35, y + h); g.closePath(); g.fill();
+    g.fillStyle = '#a49c8c'; g.fillRect(x - 5, y + h + 3, w + 10, 5);   // peitoril
+  };
+  const grade = (g, x, y, w, h) => {
+    g.strokeStyle = 'rgba(30,30,28,.75)'; g.lineWidth = 2;
+    for (let i = x + 4; i < x + w; i += 9) {
+      g.beginPath(); g.moveTo(i, y); g.lineTo(i, y + h); g.stroke();
+    }
+  };
+  const toldo = (g, y, a, b) => {
+    for (let x = 0, k = 0; x < 256; x += 26, k++) {
+      g.fillStyle = k % 2 ? a : b;
+      g.fillRect(x, y, 26, 30);
+    }
+    g.fillStyle = 'rgba(0,0,0,.30)'; g.fillRect(0, y + 30, 256, 6);
+  };
+
+  /* ---- TÉRREO, um por tipo ---- */
+  const TERREO = {
+    predio(g) {                       // portaria: vidro, granito e o número
+      base(g, '#dedad0');
+      g.fillStyle = '#5d5a52'; g.fillRect(0, 214, 256, 42);        // granito
+      g.fillStyle = '#2b3138'; g.fillRect(40, 96, 176, 118);       // vidro
+      g.fillStyle = '#8e887c'; g.fillRect(122, 96, 6, 118);        // montante
+      g.fillStyle = 'rgba(190,205,220,.18)';
+      g.beginPath(); g.moveTo(40, 214); g.lineTo(140, 96);
+      g.lineTo(178, 96); g.lineTo(78, 214); g.closePath(); g.fill();
+      g.fillStyle = '#3a3a34'; g.fillRect(96, 58, 64, 22);         // placa do número
+      g.fillStyle = '#c8c2b0'; g.fillRect(102, 64, 52, 10);
+      sujeira(g);
+    },
+    casa(g) {                         // muro, portão de garagem e janela gradeada
+      base(g, '#e2d8c4');
+      g.fillStyle = '#9a8f7c'; g.fillRect(0, 0, 256, 12);          // topo do muro
+      g.fillStyle = '#6d6a60'; g.fillRect(18, 128, 104, 128);      // portão
+      g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 2;
+      for (let y = 146; y < 250; y += 26) {
+        g.beginPath(); g.moveTo(20, y); g.lineTo(120, y); g.stroke();
+      }
+      janela(g, 160, 128, 68, 60); grade(g, 160, 128, 68, 60);
+      sujeira(g);
+    },
+    comercio(g) {                     // vitrine, toldo listrado e letreiro
+      base(g, '#e8e4d6');
+      g.fillStyle = '#3a3a36'; g.fillRect(0, 24, 256, 36);         // letreiro
+      g.fillStyle = '#d8c86a'; g.fillRect(38, 36, 180, 12);
+      toldo(g, 66, '#e8e2d2', '#2f7a3f');
+      g.fillStyle = '#2b3138'; g.fillRect(12, 118, 232, 118);      // vitrine
+      g.fillStyle = 'rgba(200,214,228,.22)';
+      g.beginPath(); g.moveTo(12, 236); g.lineTo(120, 118);
+      g.lineTo(168, 118); g.lineTo(60, 236); g.closePath(); g.fill();
+      g.fillStyle = '#6d6a60'; g.fillRect(0, 236, 256, 20);
+      sujeira(g);
+    },
+    sobrado(g) {                      // porta, janela e azulejo até meia altura
+      base(g, '#dcd6c6');
+      g.fillStyle = '#b9c6c2'; g.fillRect(0, 150, 256, 106);       // barra de azulejo
+      g.strokeStyle = 'rgba(255,255,255,.32)'; g.lineWidth = 1;
+      for (let x = 0; x <= 256; x += 52) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x, 256); g.stroke(); }
+      g.beginPath(); g.moveTo(0, 203); g.lineTo(256, 203); g.stroke();
+      g.fillStyle = '#6b4a32'; g.fillRect(96, 128, 64, 128);       // porta de madeira
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(104, 140, 48, 44);
+      janela(g, 18, 120, 58, 58); grade(g, 18, 120, 58, 58);
+      janela(g, 182, 120, 58, 58); grade(g, 182, 120, 58, 58);
+      sujeira(g);
+    },
+    galpao(g) {                       // porta de rolo e muito pichação
+      base(g, '#d6d2c6');
+      g.fillStyle = '#7c7a72'; g.fillRect(10, 92, 236, 164);       // porta de aço
+      g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = 2;
+      for (let y = 98; y < 254; y += 10) {
+        g.beginPath(); g.moveTo(12, y); g.lineTo(244, y); g.stroke();
+      }
+      g.fillStyle = '#4a4842'; g.fillRect(10, 84, 236, 10);
+      pichar(g, 14, 120, 230, 110, 'galpao');
+      sujeira(g);
+    },
+    muro(g) {                         // muro de lote: cobre-junta e pichação
+      base(g, '#d8cdb6');
+      g.fillStyle = '#a89c86'; g.fillRect(0, 0, 256, 14);          // cobre-muro
+      g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 14, 256, 4);
+      g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 2;          // fiada de bloco
+      for (let y = 40; y < 256; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+      pichar(g, 14, 90, 226, 120, 'muro1');
+      sujeira(g);
+    },
+    /* O MURO DO ESTÁDIO, E ELE É BAIXO.
+       Estádio de bairro visto da calçada não é um paredão de trinta
+       metros: é muro pintado, portão de ferro numerado, a
+       bilheteria com o guichê e a concertina em cima. A arquibancada
+       aparece por cima do muro, e é só isso que se vê da rua.
+       O módulo aqui é 172 e não 46 — com o módulo curto o mesmo
+       portão se repetia a cada dois passos e o muro virava sanfona. */
+    estadio(g) {
+      const L = 512, A = 256;
+      base(g, '#cfc9ba', L, A);
+      /* pilastra a cada meio módulo */
+      g.fillStyle = 'rgba(0,0,0,.09)';
+      for (let x = 0; x < L; x += 128) g.fillRect(x, 0, 14, A);
+      /* a faixa pintada: é o que dá cara de estádio a um muro */
+      g.fillStyle = '#b8492f'; g.fillRect(0, 96, L, 34);
+      g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(0, 130, L, 7);
+      /* portão de ferro, com a placa do número em cima */
+      g.fillStyle = '#3d3f42'; g.fillRect(40, 140, 150, 116);
+      g.strokeStyle = 'rgba(150,152,150,.5)'; g.lineWidth = 4;
+      for (let x = 48; x < 186; x += 13) {
+        g.beginPath(); g.moveTo(x, 146); g.lineTo(x, 254); g.stroke();
+      }
+      g.fillStyle = '#5a5c5e'; g.fillRect(36, 134, 158, 10);
+      g.fillStyle = '#e4dcc4'; g.fillRect(92, 62, 46, 30);        // placa
+      g.fillStyle = '#2a2a28'; g.fillRect(104, 70, 22, 15);       // número
+      /* bilheteria: guichê fundo, balcão e toldo */
+      g.fillStyle = '#b6b0a2'; g.fillRect(300, 150, 118, 106);
+      g.fillStyle = '#1d2024'; g.fillRect(318, 178, 82, 46);
+      g.fillStyle = '#8e887c'; g.fillRect(312, 222, 94, 9);       // balcão
+      g.fillStyle = '#2f6a44'; g.fillRect(294, 140, 130, 14);     // toldo
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(294, 154, 130, 5);
+      /* concertina no alto do muro */
+      g.strokeStyle = 'rgba(70,70,66,.85)'; g.lineWidth = 3;
+      for (let x = 0; x < L; x += 26) {
+        g.beginPath(); g.arc(x + 13, 20, 12, 0.15, Math.PI - 0.15); g.stroke();
+      }
+      g.fillStyle = 'rgba(0,0,0,.14)'; g.fillRect(0, 34, L, 6);
+      pichar(g, 430, 168, 76, 76, 'est');
+      sujeira(g, L, A);
+    }
+  };
+
+  /* ---- ANDARES, um por tipo ---- */
+  const ANDAR = {
+    predio(g) {
+      base(g, '#dedad0');
+      g.fillStyle = '#cdc8bd'; g.fillRect(0, 0, 256, 16);          // laje entre andares
+      for (let i = 0; i < 3; i++) janela(g, 22 + i * 78, 46, 52, 150);
+    },
+    casa(g) {                         // casa é baixa: quase só parede
+      base(g, '#e2d8c4');
+      g.fillStyle = '#cdc0a8'; g.fillRect(0, 0, 256, 12);
+      janela(g, 96, 70, 64, 78); grade(g, 96, 70, 64, 78);
+    },
+    comercio(g) {                     // parede quase cega, ar-condicionado
+      base(g, '#e8e4d6');
+      g.fillStyle = '#cdc8bd'; g.fillRect(0, 0, 256, 14);
+      janela(g, 30, 60, 60, 96);
+      g.fillStyle = '#b6b2a6'; g.fillRect(150, 84, 46, 34);        // condensadora
+      g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = 1.5;
+      for (let y = 90; y < 116; y += 6) { g.beginPath(); g.moveTo(152, y); g.lineTo(194, y); g.stroke(); }
+      g.fillStyle = 'rgba(60,52,44,.10)'; g.fillRect(150, 118, 46, 110);  // escorrido
+    },
+    sobrado(g) {                      // sacada com guarda-corpo
+      base(g, '#dcd6c6');
+      g.fillStyle = '#cdc8bd'; g.fillRect(0, 0, 256, 14);
+      janela(g, 88, 44, 80, 120);
+      g.fillStyle = '#9a948a'; g.fillRect(70, 160, 116, 8);        // piso da sacada
+      g.strokeStyle = '#8e887c'; g.lineWidth = 3;
+      for (let x = 74; x < 186; x += 12) { g.beginPath(); g.moveTo(x, 118); g.lineTo(x, 160); g.stroke(); }
+      g.beginPath(); g.moveTo(70, 120); g.lineTo(186, 120); g.stroke();
+      janela(g, 12, 60, 44, 80); janela(g, 200, 60, 44, 80);
+    },
+    galpao(g) {                       // telha ondulada e um respiro
+      base(g, '#d6d2c6');
+      g.strokeStyle = 'rgba(0,0,0,.16)'; g.lineWidth = 3;
+      for (let x = 0; x < 256; x += 14) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke(); }
+      g.fillStyle = '#3a3a36'; g.fillRect(90, 90, 76, 40);
+      grade(g, 90, 90, 76, 40);
+    },
+    muro(g) {                         // muro alto continua muro
+      base(g, '#d8cdb6');
+      g.strokeStyle = 'rgba(0,0,0,.08)'; g.lineWidth = 2;
+      for (let y = 20; y < 256; y += 34) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+      pichar(g, 10, 40, 236, 170, 'muroA');
+    },
+    /* o muro do estádio é uma faixa só; isto existe pro caso de a
+       arquibancada um dia subir acima dele */
+    estadio(g) {
+      base(g, '#c6c2b8');
+      g.fillStyle = 'rgba(0,0,0,.13)';
+      for (let x = 0; x < 256; x += 64) g.fillRect(x, 0, 16, 256);
+      g.fillStyle = 'rgba(0,0,0,.30)'; g.fillRect(0, 0, 256, 18);
+    }
+  };
+
+  const texTerreo = {}, texAndar = {};
+  for (const t of TIPOS) {
+    const a = t === 'estadio' ? tela(512, 256) : tela(256);
+    TERREO[t](a.g); texTerreo[t] = comoTextura(a.c);
+    const b = tela(256); ANDAR[t](b.g);  texAndar[t]  = comoTextura(b.c);
+  }
+  /* Largura de um módulo de fachada, por tipo. O muro do estádio é
+     comprido e sem porta a cada passo: com o módulo de casa o portão
+     e a bilheteria se repetiam de dois em dois metros. */
+  const MOD_TIPO = { estadio: 172 };
+
+  /* o granulado: a foto aérea tem 1 texel por unidade de mundo e
+     a câmera de ombro amplia isso umas 14 vezes. Sem uma segunda
+     camada por cima, o chão de perto vira borrão. */
+  function texturaGrao() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const d = g.createImageData(128, 128);
+    for (let i = 0; i < d.data.length; i += 4) {
+      const v = 238 + (Math.random() - 0.5) * 34;
+      d.data[i] = d.data[i + 1] = d.data[i + 2] = v;
+      d.data[i + 3] = 255;
+    }
+    g.putImageData(d, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(W / 26, H / 26);
+    return t;
+  }
+
+  /* =======================================================
+     CHÃO
+     ======================================================= */
+  const cvChao = document.createElement('canvas');
+  cvChao.width = W; cvChao.height = H;
+  const ctxChao = cvChao.getContext('2d', { willReadFrequently: true });
+  const texChao = new THREE.CanvasTexture(cvChao);
+  texChao.colorSpace = THREE.SRGBColorSpace;
+  texChao.anisotropy = rend.capabilities.getMaxAnisotropy();
+
+  function repintarChao() {
+    ctxChao.setTransform(1, 0, 0, 1, 0, 0);
+    ctxChao.clearRect(0, 0, W, H);
+    A.desenharFundo(ctxChao);
+    texChao.needsUpdate = true;
+  }
+
+  const chao = new THREE.Mesh(
+    new THREE.PlaneGeometry(W, H),
+    new THREE.MeshLambertMaterial({ map: texChao }));
+  chao.rotation.x = -Math.PI / 2;
+  chao.position.set(W / 2, 0, H / 2);
+  chao.receiveShadow = true;
+  cena.add(chao);
+
+  const grao = new THREE.Mesh(
+    new THREE.PlaneGeometry(W, H),
+    new THREE.MeshBasicMaterial({ map: texturaGrao(),
+      blending: THREE.MultiplyBlending, transparent: true, depthWrite: false }));
+  grao.rotation.x = -Math.PI / 2;
+  grao.position.set(W / 2, 0.35, H / 2);
+  cena.add(grao);
+
+  /* a cidade não acaba na borda da foto: um plano grande, da cor
+     do asfalto, mais a névoa, é o que impede a câmera de ombro de
+     ver o vazio preto quando o bonde nasce colado na borda sul */
+  const texFora = texturaGrao();
+  texFora.repeat.set(W * 5 / 26, H * 6 / 26);
+  const fora = new THREE.Mesh(
+    new THREE.PlaneGeometry(W * 5, H * 6),
+    new THREE.MeshLambertMaterial({ map: texFora, color: 0x3c3b35 }));
+  fora.rotation.x = -Math.PI / 2;
+  fora.position.set(W / 2, -1.2, H / 2);
+  cena.add(fora);
+
+  /* =======================================================
+     PRÉDIOS — extrudados da malha de caminhabilidade
+
+     Passo 1: componentes ligados das células bloqueadas.
+     Passo 2: cada componente vira retângulos (greedy meshing).
+     Passo 3: uma altura e uma cor por componente, tiradas do
+              tamanho e da cor média da própria foto.
+     Passo 4: duas geometrias — telhado (textura do chão,
+              projetada de cima) e parede (fachada em ladrilho,
+              tingida por cor de vértice).
+     ======================================================= */
+  /* Nas cenas desenhadas o bloco já vem com tipo (`rot`), que é o
+     mesmo que `cenario.js` usa pra escolher o pintor. Reaproveitar
+     ele aqui é o que faz a praça e o bar subirem certo em vez de
+     virarem quarteirão de prédio. */
+  /* CLASSE POR NOME, pras cenas desenhadas, onde o bloco já tem tipo */
+  const CLASSE_POR_NOME = [
+    [/est[áa]dio|arquibancada/,                       'estadio'],
+    [/pra[çc]a|canteiro|jardim|[áa]rvore/,            'verde'],
+    [/carro|mesa|banco|lixeira|engradado|ca[çc]amba|onibus|ônibus|carroforte/, 'baixo'],
+    [/muro|parede|fachada|vitrine/,                   'muro'],
+    [/coreto|quiosque|banca|guarita|ponto|balc[ãa]o|freezer|sinuca/, 'comercio'],
+    [/boteco|bar|padaria|joalheria|vestiario|vestiário/, 'comercio'],
+    [/igreja|torre|sobrado/,                          'sobrado'],
+    [/pr[ée]dio|predinho/,                            'predio'],
+    [/casa/,                                          'casa']
+  ];
+
+  /* ALTURA POR CLASSE — E O BAIRRO É DE CASA.
+     A régua anterior tinha um "prédio comum" de 168 e mandava todo
+     quarteirão grande pra lá: o cenário virava centro de cidade.
+     Aqui a altura sai do TIPO, e o tipo é casa na esmagadora
+     maioria. Na régua da foto (~10 cm por unidade) casa térrea dá
+     44, sobrado 78 e prédio 120 — e prédio é 2% do sorteio, o
+     edifício solitário que todo bairro tem.
+     O estádio é 86: o dobro de uma casa e nada mais. Ele era 300 e
+     virava um paredão que dominava o fundo inteiro da cena; da
+     calçada, estádio de bairro é muro com portão, e a arquibancada
+     mal aparece por cima. */
+  const ALTURAS = {
+    maquete: { casa: 24, sobrado: 40, comercio: 28, galpao: 30, predio: 62,
+               estadio: 48, muro: 18, verde: 6, baixo: 12 },
+    rua:     { casa: 44, sobrado: 78, comercio: 52, galpao: 58, predio: 120,
+               estadio: 86, muro: 30, verde: 10, baixo: 14 }
+  };
+  let modo = 'rua';
+
+  const grupoPredios = new THREE.Group();
+  cena.add(grupoPredios);
+
+  /* Altura de cada célula da malha, preenchida quando os prédios
+     são montados. Serve pra câmera: "tem prédio entre mim e o
+     jogador?" é uma pergunta que a malha de caminhabilidade não
+     responde — ela não sabe se o obstáculo tem 16 ou 300 de alto,
+     e canteiro não é parede. */
+  const alturaCel = new Float32Array(COLS * ROWS);
+  function alturaEm(x, z) {
+    const c = Math.floor(x / CEL), r = Math.floor(z / CEL);
+    if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return 0;
+    return alturaCel[r * COLS + c];
+  }
+
+  function limparGrupo(g) {
+    for (const o of [...g.children]) {
+      g.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    }
+  }
+
+  /* ---- componentes ligados das células bloqueadas ---- */
+  function componentes() {
+    const dono = new Int16Array(COLS * ROWS).fill(-1);
+    const comps = [];
+    const fila = new Int32Array(COLS * ROWS);
+    for (let i0 = 0; i0 < COLS * ROWS; i0++) {
+      if (A.malha[i0] || dono[i0] >= 0) continue;
+      const id = comps.length;
+      const cel = [];
+      let ini = 0, fim = 0;
+      fila[fim++] = i0; dono[i0] = id;
+      while (ini < fim) {
+        const i = fila[ini++];
+        cel.push(i);
+        const c = i % COLS, r = (i / COLS) | 0;
+        if (c > 0        && !A.malha[i - 1]    && dono[i - 1]    < 0) { dono[i - 1]    = id; fila[fim++] = i - 1; }
+        if (c < COLS - 1 && !A.malha[i + 1]    && dono[i + 1]    < 0) { dono[i + 1]    = id; fila[fim++] = i + 1; }
+        if (r > 0        && !A.malha[i - COLS] && dono[i - COLS] < 0) { dono[i - COLS] = id; fila[fim++] = i - COLS; }
+        if (r < ROWS - 1 && !A.malha[i + COLS] && dono[i + COLS] < 0) { dono[i + COLS] = id; fila[fim++] = i + COLS; }
+      }
+      comps.push(cel);
+    }
+    return { dono, comps };
+  }
+
+  /* ---- retângulos maximais de um componente (greedy) ---- */
+  function retangulos(dono, id, cels) {
+    let c0 = COLS, c1 = 0, r0 = ROWS, r1 = 0;
+    for (const i of cels) {
+      const c = i % COLS, r = (i / COLS) | 0;
+      if (c < c0) c0 = c;
+      if (c > c1) c1 = c;
+      if (r < r0) r0 = r;
+      if (r > r1) r1 = r;
+    }
+    const lg = c1 - c0 + 1;
+    const usado = new Uint8Array(lg * (r1 - r0 + 1));
+    const meu = (c, r) => c >= c0 && c <= c1 && r >= r0 && r <= r1 &&
+                          dono[r * COLS + c] === id &&
+                          !usado[(r - r0) * lg + (c - c0)];
+    const rets = [];
+    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+      if (!meu(c, r)) continue;
+      let w = 1;
+      while (meu(c + w, r)) w++;
+      let h = 1;
+      cresce: while (true) {
+        for (let k = 0; k < w; k++) if (!meu(c + k, r + h)) break cresce;
+        h++;
+      }
+      for (let dr = 0; dr < h; dr++) for (let dc = 0; dc < w; dc++)
+        usado[(r + dr - r0) * lg + (c + dc - c0)] = 1;
+      rets.push([c * CEL, r * CEL, (c + w) * CEL, (r + h) * CEL]);
+    }
+    return { rets, caixa: [c0 * CEL, r0 * CEL, (c1 + 1) * CEL, (r1 + 1) * CEL] };
+  }
+
+  /* ---- cor média do componente, lida da própria textura ---- */
+  function corMedia(px, cels) {
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let k = 0; k < cels.length; k += 3) {
+      const i = cels[k];
+      const x = Math.min(W - 1, ((i % COLS) + 0.5) * CEL | 0);
+      const y = Math.min(H - 1, (((i / COLS) | 0) + 0.5) * CEL | 0);
+      const o = (y * W + x) * 4;
+      r += px[o]; g += px[o + 1]; b += px[o + 2]; n++;
+    }
+    return n ? [r / n, g / n, b / n] : [140, 135, 128];
+  }
+
+  function nomeDoPoligono(D, caixa) {
+    let melhor = null, maior = 0;
+    for (const p of (D.poligonos && D.poligonos.bloqueio) || []) {
+      const xs = p.pontos.map(q => q[0]), ys = p.pontos.map(q => q[1]);
+      const ax = Math.max(caixa[0], Math.min(...xs)), bx = Math.min(caixa[2], Math.max(...xs));
+      const ay = Math.max(caixa[1], Math.min(...ys)), by = Math.min(caixa[3], Math.max(...ys));
+      const a = Math.max(0, bx - ax) * Math.max(0, by - ay);
+      if (a > maior) { maior = a; melhor = (p.rot || p.nome || '').toLowerCase(); }
+    }
+    return maior > 0 ? melhor : null;
+  }
+
+  /* QUE TIPO DE PRÉDIO É ESTE.
+     Nas cenas desenhadas o bloco já vem com tipo (`rot`), que é o
+     mesmo que `cenario.js` usa pra escolher o pintor — então ali a
+     resposta é exata. Na foto aérea não existe tipo: o que existe é
+     tamanho, e um sorteio com semente na posição, pra o mesmo
+     quarteirão dar sempre o mesmo prédio. */
+  function classeDoBloco(semente) {
+    const k = CN.frac('classe|' + semente);
+    if (k < 0.56) return 'casa';        // o bairro é de casa
+    if (k < 0.78) return 'comercio';    // a padaria, o boteco, a loja de esquina
+    if (k < 0.92) return 'sobrado';     // o de dois andares
+    if (k < 0.98) return 'galpao';      // a oficina, o depósito
+    return 'predio';                    // um só, e é o mais alto da rua
+  }
+  /* a fachada de uma classe que não tem textura própria */
+  const FACHADA = { verde: null, baixo: null };
+  /* `molde` mora lá embaixo, com as instâncias; declarado aqui
+     porque `montarArvores` roda antes dele na leitura */
+
+  /* UMA ALTURA POR QUARTEIRÃO, E ISSO FOI APRENDIDO ERRANDO.
+     A tentativa anterior cortava o quarteirão em lotes de ~78 e dava
+     altura própria a cada um, atrás da ideia de "fileira de casa".
+     Não funciona: a malha não entrega o quarteirão como um retângulo
+     limpo, entrega uma PILHA DE TIRAS (o greedy meshing de um bloco
+     de canto arredondado sai assim). Altura por tira vira escada —
+     três paredes paralelas recuando uma atrás da outra, que é
+     informação demais e não é rua nenhuma.
+     Agora a variação é ENTRE quarteirões: cada bloco tem uma altura,
+     um tipo e uma cor, e as tiras dele são o mesmo volume. */
+
+  /* =======================================================
+     ÁRVORE NO CANTEIRO
+
+     A mancha verde da foto virava uma laje verde de 34 de altura —
+     um palco no meio da avenida. O que está ali é canteiro com
+     árvore: então o canteiro fica rasteiro (10, a altura do
+     meio-fio dele) e a árvore vira volume de verdade.
+
+     Tronco e copa são duas malhas instanciadas; a copa é um
+     icosaedro de vinte faces, esticado e girado por hash pra
+     nenhuma ficar igual à vizinha. Uma árvore a cada ~32 unidades,
+     só em célula cercada de canteiro dos quatro lados — assim
+     nenhuma nasce pendurada no meio-fio.
+     ======================================================= */
+  const VERDES = [0x3f5a2c, 0x4a6634, 0x36502a, 0x557038, 0x2f4726];
+  let iTronco = null, iCopa = null;
+  function montarArvores(verdes) {
+    const postos = [];
+    for (const cels of verdes) {
+      const dentro = new Set(cels);
+      const antes = postos.length;
+      for (const i of cels) {
+        const c = i % COLS, r = (i / COLS) | 0;
+        if (c % 6 || r % 6) continue;
+        if (!dentro.has(i - 1) || !dentro.has(i + 1) ||
+            !dentro.has(i - COLS) || !dentro.has(i + COLS)) continue;
+        const sem = c + '|' + r;
+        if (CN.frac('arv|' + sem) > 0.80) continue;          // nem toda vaga
+        postos.push({
+          x: (c + 0.5) * CEL + (CN.frac('ax|' + sem) - 0.5) * 12,
+          z: (r + 0.5) * CEL + (CN.frac('az|' + sem) - 0.5) * 12,
+          k: 0.78 + CN.frac('ak|' + sem) * 0.55,
+          g: CN.dado('ag|' + sem, VERDES.length),
+          giro: CN.frac('ar|' + sem) * 6.28
+        });
+      }
+      /* canteiro pequeno pode não ter nenhuma célula que passe no
+         crivo — e canteiro sem árvore é só um retângulo verde.
+         Nesse caso entra uma no meio dele, e pronto. */
+      if (postos.length === antes && cels.length >= 8) {
+        let sx = 0, sy = 0;
+        for (const i of cels) { sx += (i % COLS) + 0.5; sy += ((i / COLS) | 0) + 0.5; }
+        const sem = 'meio|' + cels[0];
+        postos.push({ x: sx / cels.length * CEL, z: sy / cels.length * CEL,
+                      k: 0.9, g: CN.dado('ag|' + sem, VERDES.length),
+                      giro: CN.frac('ar|' + sem) * 6.28 });
+      }
+    }
+    if (iTronco) { cena.remove(iTronco); cena.remove(iCopa);
+                   iTronco.geometry.dispose(); iCopa.geometry.dispose();
+                   iTronco.material.dispose(); iCopa.material.dispose(); }
+    if (!postos.length) { iTronco = iCopa = null; return 0; }
+
+    iTronco = new THREE.InstancedMesh(
+      new THREE.CylinderGeometry(1.6, 2.4, 1, 6),
+      new THREE.MeshLambertMaterial({ color: 0x4a3a2c }), postos.length);
+    /* sem `vertexColors`: quem pinta instância é `instanceColor`, e
+       pedir atributo de vértice que a geometria não tem sai preto */
+    iCopa = new THREE.InstancedMesh(
+      new THREE.IcosahedronGeometry(1, 0),
+      new THREE.MeshLambertMaterial({ flatShading: true }),
+      postos.length);
+    iTronco.castShadow = iCopa.castShadow = true;
+    iCopa.receiveShadow = true;
+    const c3 = new THREE.Color();
+    postos.forEach((p, i) => {
+      const tronco = 20 * p.k;
+      molde.position.set(p.x, tronco / 2, p.z);
+      molde.rotation.set(0, 0, 0);
+      molde.scale.set(1, tronco, 1);
+      molde.updateMatrix();
+      iTronco.setMatrixAt(i, molde.matrix);
+      molde.position.set(p.x, tronco + 8 * p.k, p.z);
+      molde.rotation.set(p.giro * 0.3, p.giro, 0);
+      molde.scale.set(12 * p.k, 10 * p.k, 12 * p.k);
+      molde.updateMatrix();
+      iCopa.setMatrixAt(i, molde.matrix);
+      iCopa.setColorAt(i, c3.set(VERDES[p.g]));
+    });
+    cena.add(iTronco); cena.add(iCopa);
+    return postos.length;
+  }
+
+  function montarPredios(D) {
+    limparGrupo(grupoPredios);
+    const px = ctxChao.getImageData(0, 0, W, H).data;
+    const { dono, comps } = componentes();
+    alturaCel.fill(0);
+
+    const pTopo = [], uvTopo = [], iTopo = [];
+    const verdes = [];
+    const cor = new THREE.Color(), corFoto = new THREE.Color();
+    const corTopo = new THREE.Color();
+    const BRANCO = new THREE.Color(1, 1, 1);
+    let nRet = 0;
+
+    /* Um balde por (faixa, tipo). Cada balde vira uma malha com a
+       sua textura — meia dúzia de chamadas de desenho a mais, em
+       troca de a cidade ter mais de uma cara. */
+    const baldes = new Map();
+    function faixa(banda, tipo, a, b, n, y0, y1, u, v, tinta) {
+      if (y1 - y0 < 0.5) return;
+      const k = banda + '|' + tipo;
+      let d = baldes.get(k);
+      if (!d) { d = { pos: [], nor: [], uv: [], cor: [] }; baldes.set(k, d); }
+      const vs = [[a[0], y0, a[1], 0, 0], [b[0], y0, b[1], u, 0],
+                  [b[0], y1, b[1], u, v], [a[0], y1, a[1], 0, v]];
+      for (const i of [0, 1, 2, 0, 2, 3]) {
+        const t = vs[i];
+        d.pos.push(t[0], t[1], t[2]);
+        d.nor.push(n[0], n[1], n[2]);
+        d.uv.push(t[3], t[4]);
+        d.cor.push(tinta.r, tinta.g, tinta.b);
+      }
+    }
+
+    comps.forEach((cels, id) => {
+      if (cels.length < 3) return;                    // cisco da máscara
+      const { rets, caixa } = retangulos(dono, id, cels);
+      const areaPx = cels.length * CEL * CEL;
+      const media = corMedia(px, cels);
+      const mr = media[0], mg = media[1], mb = media[2];
+      /* Verde da foto: mato, copa de árvore, canteiro. As cenas que
+         sobraram no jogo são todas foto com máscara — `blocos` com
+         tipo não existe mais em nenhuma delas —, então este teste é
+         a ÚNICA maneira de saber onde é verde fora dos polígonos
+         nomeados de `cena_arredores.js`.
+         1,05 e não 1,03: afrouxando pra 1,03 na esperança de pegar
+         copa em sombra, o que entrou junto foi o mato que cresce em
+         laje de telhado. O quarteirão virava canteiro e nasciam
+         árvores em cima dos prédios — 81 no lugar de 26. */
+      const verde = mg > mr * 1.05 && mg > mb * 1.05;
+
+      const nome = nomeDoPoligono(D, caixa);
+      const daCena = nome && (CLASSE_POR_NOME.find(par => par[0].test(nome)) || [])[1];
+      /* verde é a mancha de mato que a foto entrega e a lista de
+         blocos não nomeia */
+      const fixa = daCena || (verde ? 'verde' : areaPx < 5200 ? 'baixo' : null);
+      const semBloco = Math.round(caixa[0]) + '|' + Math.round(caixa[1]);
+
+      const classe = fixa || classeDoBloco(semBloco);
+      const alt = ALTURAS[modo][classe];
+      const tipo = (classe in FACHADA) ? FACHADA[classe] : classe;
+
+      /* A COR SAI DA PALETA DO BAIRRO, NÃO DO TELHADO.
+         Tingir pela cor média da foto dava a cidade em
+         cinza-esverdeado, porque telhado de laje suja é isso.
+         `PAREDE` de `cenario.js` é a paleta do pintor 2D — seis tons
+         de reboco de periferia. Uma pitada do telhado entra junto
+         pra o quarteirão não descolar do que está na foto em cima
+         dele. */
+      cor.set(CN.PAREDE[CN.dado('par|' + semBloco, CN.PAREDE.length)]);
+      if (classe === 'verde') cor.multiplyScalar(0.6);
+      else {
+        cor.lerp(corFoto.setRGB(mr / 255, mg / 255, mb / 255), 0.14);
+        cor.multiplyScalar(0.80 + CN.frac('tom|' + semBloco) * 0.26);
+      }
+
+      if (classe === 'verde') verdes.push(cels);
+
+      {
+        for (const ret of rets) {
+          const x0 = ret[0], y0 = ret[1], x1 = ret[2], y1 = ret[3];
+          nRet++;
+
+          for (let r = y0 / CEL; r < y1 / CEL; r++)
+            for (let c = x0 / CEL; c < x1 / CEL; c++) {
+              const i = ((r | 0)) * COLS + (c | 0);
+              if (i >= 0 && i < alturaCel.length) alturaCel[i] = alt;
+            }
+
+          /* --- telhado --- */
+          const base = pTopo.length / 3;
+          const q = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+          for (const t of q) {
+            pTopo.push(t[0], alt, t[1]);
+            uvTopo.push(t[0] / W, 1 - t[1] / H);
+          }
+          iTopo.push(base, base + 2, base + 1, base, base + 3, base + 2);
+
+          /* --- paredes: quatro faces, cada uma em faixas ---
+             térreo (não repete), andar de cima (repete) e a
+             platibanda. É a faixa do térreo que faz a rua deixar
+             de ser genérica: porta, portão, vitrine e pichação na
+             altura do braço não podem se repetir subindo. */
+          const paredes = [
+            [[x0, y0], [x1, y0], [0, 0, -1]],
+            [[x1, y1], [x0, y1], [0, 0, 1]],
+            [[x1, y0], [x1, y1], [1, 0, 0]],
+            [[x0, y1], [x0, y0], [-1, 0, 0]]
+          ];
+          const topo = Math.max(0, alt - PARAPEITO);
+          for (const par of paredes) {
+            const a = par[0], b = par[1], n = par[2];
+            const comp = Math.hypot(b[0] - a[0], b[1] - a[1]);
+            const u = Math.max(0.5, comp / (MOD_TIPO[tipo] || MOD));
+            if (!tipo) {                       // canteiro, carro: sem fachada
+              faixa('platibanda', 'liso', a, b, n, 0, alt, u, 1, cor);
+            } else if (tipo === 'estadio') {
+              /* muro do estádio: uma faixa só, do chão ao topo. A
+                 concertina já está desenhada no alto da textura, e
+                 uma platibanda por cima dela cortaria o arame. */
+              faixa('terreo', tipo, a, b, n, 0, alt, u, 1, cor);
+            } else if (topo <= H_TERREO) {     // casa térrea: só o térreo
+              faixa('terreo', tipo, a, b, n, 0, topo, u, topo / H_TERREO, cor);
+              faixa('platibanda', 'liso', a, b, n, topo, alt, u, 1,
+                    corTopo.copy(cor).lerp(BRANCO, 0.28));
+            } else {
+              faixa('terreo', tipo, a, b, n, 0, H_TERREO, u, 1, cor);
+              faixa('andar', tipo, a, b, n, H_TERREO, topo, u,
+                    (topo - H_TERREO) / H_ANDAR, cor);
+              faixa('platibanda', 'liso', a, b, n, topo, alt, u, 1,
+                    corTopo.copy(cor).lerp(BRANCO, 0.28));
+            }
+          }
+        }
+      }
+    });
+
+    const gT = new THREE.BufferGeometry();
+    gT.setAttribute('position', new THREE.Float32BufferAttribute(pTopo, 3));
+    gT.setAttribute('uv', new THREE.Float32BufferAttribute(uvTopo, 2));
+    gT.setIndex(iTopo);
+    gT.computeVertexNormals();
+    const mT = new THREE.Mesh(gT, new THREE.MeshLambertMaterial({ map: texChao }));
+    mT.castShadow = true; mT.receiveShadow = true;
+    grupoPredios.add(mT);
+
+    const nArv = montarArvores(verdes);
+
+    let nPar = 0;
+    for (const [k, d] of baldes) {
+      const banda = k.split('|')[0], tipo = k.split('|')[1];
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(d.pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(d.nor, 3));
+      g.setAttribute('uv', new THREE.Float32BufferAttribute(d.uv, 2));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(d.cor, 3));
+      const mat = new THREE.MeshLambertMaterial({ vertexColors: true,
+        map: banda === 'terreo' ? texTerreo[tipo]
+           : banda === 'andar'  ? texAndar[tipo] : null });
+      const m = new THREE.Mesh(g, mat);
+      m.castShadow = true; m.receiveShadow = true;
+      grupoPredios.add(m);
+      nPar += d.pos.length / 3;
+    }
+
+    return { blocos: comps.length, retangulos: nRet, fachadas: baldes.size,
+             arvores: nArv,
+             triangulos: (iTopo.length + nPar) / 3 };
+  }
+
+  /* =======================================================
+     PORTÕES
+     ======================================================= */
+  const COR_LADO = { mandante: 0xc0392b, visitante: 0x2a5fa8 };
+  const grupoPortoes = new THREE.Group();
+  cena.add(grupoPortoes);
+
+  function montarPortoes(D) {
+    limparGrupo(grupoPortoes);
+    for (const e of D.entradas || []) {
+      const d = e.dir || [0, -1];
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(7, 62, 54),
+        new THREE.MeshLambertMaterial({ color: COR_LADO[e.lado] || 0x8a6a2a }));
+      m.position.set(e.x, 31, e.y);
+      m.rotation.y = -Math.atan2(d[1], d[0]);
+      m.castShadow = true;
+      grupoPortoes.add(m);
+    }
+  }
+
+  /* =======================================================
+     GENTE — seis peças instanciadas, uma passada por pessoa
+     ======================================================= */
+  const caixa1 = new THREE.BoxGeometry(1, 1, 1);
+  const esfera = new THREE.SphereGeometry(1, 10, 8);
+
+  const instanciar = (geo, n, opc) => {
+    const m = new THREE.InstancedMesh(geo,
+      new THREE.MeshLambertMaterial(opc || {}), n);
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    m.castShadow = true;
+    m.count = 0;
+    m.frustumCulled = false;
+    cena.add(m);
+    return m;
+  };
+
+  const PECAS = ['cabeca', 'tronco',
+                 'bracoSE', 'bracoIE', 'bracoSD', 'bracoID',
+                 'coxaE', 'canelaE', 'coxaD', 'canelaD'];
+  const gente = {}, pm = {};
+  for (const p of PECAS) {
+    gente[p] = instanciar(caixa1, MAX_GENTE);
+    pm[p]    = instanciar(caixa1, MAX_PMS);
+  }
+  const iProj  = instanciar(esfera, MAX_PROJ);
+  const iGrade = instanciar(caixa1, MAX_MODS);
+  iGrade.receiveShadow = true;
+
+  /* o esqueleto: uma árvore de Object3D montada uma vez. Por
+     pessoa a gente muda o quadril, o ombro e a raiz, chama
+     updateMatrixWorld e colhe as seis matrizes. Nenhum osso,
+     nenhum arquivo — e o dia que entrar um boneco do Blender,
+     entra aqui, com a mesma interface. */
+  const raiz = new THREE.Object3D();
+  const juntas = {};
+  function membro(nome, pai, jx, jy, jz, dim, baixo) {
+    const j = new THREE.Object3D();
+    j.position.set(jx, jy, jz);
+    pai.add(j);
+    const m = new THREE.Object3D();
+    m.position.set(0, baixo ? -dim.a / 2 : 0, 0);
+    m.scale.set(dim.l, dim.a, dim.p);
+    j.add(m);
+    juntas[nome] = { j: j, m: m };
+  }
+  membro('tronco', raiz, 0, B.tronco.centro, 0, B.tronco, false);
+  membro('cabeca', raiz, 0, B.cabeca.centro, 0, B.cabeca, false);
+  membro('bracoSE', raiz, -B.bracoS.lado, B.bracoS.ombro, 0, B.bracoS, true);
+  membro('bracoSD', raiz,  B.bracoS.lado, B.bracoS.ombro, 0, B.bracoS, true);
+  /* o cotovelo pendura na ponta do braço, então o antebraço herda
+     o giro do ombro de graça */
+  membro('bracoIE', juntas.bracoSE.j, 0, -B.bracoS.a, 0, B.bracoI, true);
+  membro('bracoID', juntas.bracoSD.j, 0, -B.bracoS.a, 0, B.bracoI, true);
+  membro('coxaE', raiz, -B.coxa.lado, B.coxa.quadril, 0, B.coxa, true);
+  membro('coxaD', raiz,  B.coxa.lado, B.coxa.quadril, 0, B.coxa, true);
+  membro('canelaE', juntas.coxaE.j, 0, -B.coxa.a, 0, B.canela, true);
+  membro('canelaD', juntas.coxaD.j, 0, -B.coxa.a, 0, B.canela, true);
+
+  /* =======================================================
+     O QUE A SIMULAÇÃO NÃO GUARDA
+
+     `combate.js` não tem pose, não tem direção e não tem "estou
+     dando um soco agora". Tem outra coisa, e ela basta:
+
+       d.golpe      0,12 e caindo — acertei alguém neste quadro
+       d.tremor     até 6, caindo a 9/s — levei pancada agora
+       d.hostil     até 4 s — estou em briga, mesmo sem contato
+       d.atordoado  cassetete da PM, 0,7 s
+       p.cooldown   sobe pra 1,9 no quadro em que o PM acerta
+
+     A pose sai daí, e só daí. Nada foi acrescentado ao combate:
+     se o boneco levanta o braço, é porque o dano saiu de verdade.
+     A direção e a fase da passada saem da diferença de posição
+     entre dois quadros — também sem tocar na simulação.
+     ======================================================= */
+  const TAU = Math.PI * 2;
+  const curto = (de, para) => ((para - de + Math.PI * 3) % TAU) - Math.PI;
+  const chegar = (a, b, k) => a + (b - a) * Math.min(1, Math.max(0, k));
+
+  /* ombro (S) e cotovelo (I) de cada pose. Ângulo negativo no
+     ombro joga o braço pra frente; negativo no cotovelo dobra o
+     antebraço pra cima. */
+  const POSE = {
+    guardaS: -0.32, guardaI: -2.05, guardaZ: 0.34,  // punho no queixo
+    socoS:   -1.46, socoI:   -0.14,                 // braço aberto
+    armaS:    0.95, armaI:   -2.35,                 // pedra atrás da cabeça
+    soltaS:  -1.95, soltaI:  -0.20                  // já soltou
+  };
+
+  /* Sai rápido, segura estendido um instante e volta devagar. É o
+     desenho de curva de qualquer soco, e é o que separa "braço
+     subindo e descendo" de "soco". */
+  function curvaSoco(t) {
+    if (t < 0.30) { const k = t / 0.30; return k * k * (3 - 2 * k); }
+    if (t < 0.46) return 1;
+    const k = (t - 0.46) / 0.54;
+    return 1 - k * k;
+  }
+
+  const anda = new Map();
+  function estado(chave, x, z, dt) {
+    let e = anda.get(chave);
+    if (!e) {
+      e = { x: x, z: z, ang: 0, fase: Math.random() * TAU, vel: 0,
+            guarda: 0, soco: 0, socoLado: 0, arremesso: 0, recuo: 0,
+            hesita: 0, foge: 0, caca: 0, agarrado: 0, agarrando: 0, olhar: 0,
+            rumo: null, cdAnt: 0, tremAnt: 0 };
+      anda.set(chave, e);
+    }
+    const dx = x - e.x, dz = z - e.z;
+    const d = Math.hypot(dx, dz);
+    /* 88 e não 60 (a velocidade de todo mundo na cena): com 60 no
+       divisor qualquer deslocamento normal batia no teto e o boneco
+       vivia em pose de corrida. Em 88, andar no passo do bonde dá
+       0,68 e sobra topo pra quem persegue e pra quem foge. */
+    e.vel = dt > 0 ? Math.min(1, (d / dt) / 88) : 0;
+    if (d > 0.05) { e.fase += d * 0.19; e.rumo = Math.atan2(dx, dz); }
+    e.x = x; e.z = z;
+    return e;
+  }
+
+  /* Índice espacial, só pra descobrir pra quem virar o rosto. É o
+     mesmo truque de balde que `combate.js` usa na separação: O(n)
+     pra montar, nove baldes pra consultar. Sem ele, "encarar quem
+     está batendo em mim" seria 400 × 400 por quadro. Só é montado
+     quando existe alguém em briga na cena. */
+  const BALDE = 52;
+  const baldes = new Map();
+  const chave = (x, y) => (Math.floor(x / BALDE) + 64) * 4096 +
+                          (Math.floor(y / BALDE) + 64);
+  function indexar(J) {
+    baldes.clear();
+    const por = o => {
+      const k = chave(o.x, o.y);
+      const l = baldes.get(k);
+      if (l) l.push(o); else baldes.set(k, [o]);
+    };
+    for (const d of J.discos) if (d.vivo) por(d);
+    for (const p of J.policiais) if (p.vivo) por(p);
+  }
+  /* o PM não tem `lado`, então ele é inimigo de todo disco e de
+     mais nenhum PM — que é exatamente a regra da cena */
+  function inimigoPerto(o) {
+    const cx = Math.floor(o.x / BALDE), cy = Math.floor(o.y / BALDE);
+    let md = 68 * 68, alvo = null;
+    for (let r = -1; r <= 1; r++) for (let c = -1; c <= 1; c++) {
+      const l = baldes.get((cx + c + 64) * 4096 + (cy + r + 64));
+      if (!l) continue;
+      for (const q of l) {
+        if (q === o || q.lado === o.lado) continue;
+        const dx = q.x - o.x, dy = q.y - o.y, dd = dx * dx + dy * dy;
+        if (dd < md) { md = dd; alvo = q; }
+      }
+    }
+    return alvo;
+  }
+  const rumoPara = (o, alvo) =>
+    alvo ? Math.atan2(alvo.x - o.x, alvo.y - o.y) : null;
+
+  /* Quem jogou a pedra? A simulação não marca. Mas o projétil tem
+     velocidade constante e guarda o tempo de voo, então a origem
+     volta por `x − vx·t` — e quem está em cima dela é o braço. */
+  const vistos = new WeakSet();
+  function acharArremesso(J) {
+    for (const p of J.projeteis) {
+      if (vistos.has(p)) continue;
+      vistos.add(p);
+      const ox = p.x - p.vx * p.t, oy = p.y - p.vy * p.t;
+      let melhor = null, md = 20 * 20;
+      for (const d of J.discos) {
+        if (!d.vivo || d.lado !== p.lado) continue;
+        const dx = d.x - ox, dy = d.y - oy, dd = dx * dx + dy * dy;
+        if (dd < md) { md = dd; melhor = d; }
+      }
+      const e = melhor && anda.get(melhor);
+      if (e) { e.arremesso = 0.58; e.rumoTiro = Math.atan2(p.vx, p.vy); }
+    }
+  }
+
+  /* avança a máquina de pose de uma pessoa, um quadro */
+  function animar(e, sin, dt, brigando) {
+    const querGuarda = brigando && !sin.fugindo && !sin.entrando;
+    e.guarda = chegar(e.guarda, querGuarda ? 1 : 0, dt * (querGuarda ? 5 : 2));
+
+    if (e.soco > 0) { e.soco += dt * 2.4; if (e.soco >= 1) e.soco = 0; }
+    if (e.soco === 0 && sin.golpe > 0 && e.arremesso <= 0) {
+      e.soco = 0.001; e.socoLado ^= 1;
+    }
+
+    /* O RECUO É EVENTO, NÃO NÍVEL.
+       `tremor` satura em 6 e fica lá enquanto o contato durar, então
+       ler o valor cru deixava a cabeça jogada pra trás a briga
+       inteira — o boneco brigava olhando pro céu. O que interessa é
+       a SUBIDA: cada pancada nova dá um tranco, e o tranco passa. */
+    const tr = sin.tremor || 0;
+    if (tr > e.tremAnt + 0.25) e.recuo = 1;
+    e.tremAnt = tr;
+    e.recuo = Math.max(0, e.recuo - dt * 3.4);
+
+    if (e.arremesso > 0) e.arremesso = Math.max(0, e.arremesso - dt);
+
+    /* =====================================================
+       A FUGA SÃO TRÊS ESTADOS, E A SIMULAÇÃO JÁ OS SEPARA
+
+         correEm != null e !fugindo → quebrou e ainda não virou as
+           costas. São os 2,6 s de rabo que `soltarFuga` inventou de
+           propósito pra o perseguidor ter chance, e que o desenho
+           não mostrava. Recua encarando.
+         fugindo → virou as costas e corre a 1,25×.
+         _cacando → está correndo ATRÁS de quem fugiu, no mesmo passo.
+
+       Eram três coisas desenhadas como "andar mais rápido".
+       ===================================================== */
+    const quebrou = sin.correEm != null && !sin.fugindo;
+    e.hesita = chegar(e.hesita, quebrou ? 1 : 0, dt * 6);
+    e.foge   = chegar(e.foge,   sin.fugindo ? 1 : 0, dt * 5);
+    e.caca   = chegar(e.caca,   sin._cacando ? 1 : 0, dt * 5);
+    /* `agarrado` acumula até 1,2 e nessa marca o sujeito vai ao chão;
+       0,7 no divisor deixa a pose cheia antes da queda */
+    e.agarrado = chegar(e.agarrado, Math.min(1, (sin.agarrado || 0) / 0.7), dt * 9);
+    e.agarrando = chegar(e.agarrando, e.querAgarrar ? 1 : 0, dt * 9);
+
+    /* quem foge olha pra trás de vez em quando; é a olhada que faz
+       correr virar fugir */
+    e.olhar = e.foge > 0.3 ? e.olhar + dt * 1.35 : 0;
+
+    /* Pra onde encarar: andando, pro rumo do passo; parado numa
+       briga, pro sujeito mais perto; arremessando, pro alvo; quem
+       quebrou e ainda não virou as costas, pro inimigo — é ele que
+       anda pra trás. Ninguém soca de lado, e ninguém recua de costas
+       antes de virar. */
+    /* A DIREÇÃO AGORA É DA SIMULAÇÃO, E O DESENHO SÓ LÊ.
+       Enquanto o dano era em volta, o rumo do corpo era enfeite e
+       podia sair daqui. Com o dano preso à frente ele decide quem
+       apanha, e um boneco encarando um lado enquanto fere outro é a
+       tela mentindo sobre a regra. `apontar` (combate.js) é quem
+       manda; a conversão é só de eixo — o jogo mede o ângulo de x
+       pra y, o mundo 3D mede de z pra x.
+       O cálculo antigo fica de reserva pra quando `ang` não existir
+       (cena velha, save antigo, disco forjado num teste). */
+    if (sin.ang !== undefined) { e.ang = Math.PI / 2 - sin.ang; return; }
+    let rumo = e.rumo, pressa = 6;
+    if (e.arremesso > 0 && e.rumoTiro != null) { rumo = e.rumoTiro; }
+    else if (e.hesita > 0.4 && e.inimigo != null) { rumo = e.inimigo; pressa = 4; }
+    else if (e.inimigo != null && (e.vel < 0.3 || sin.golpe > 0)) {
+      rumo = e.inimigo; pressa = sin.golpe > 0 ? 12 : 6;
+    }
+    if (rumo != null) e.ang += curto(e.ang, rumo) * Math.min(1, dt * pressa);
+  }
+
+  const corAux = new THREE.Color();
+  const hexDe = v => typeof v === 'string' ? parseInt(v.replace('#', ''), 16) : v;
+  const corLado = (l, claro) => l === 'visitante'
+    ? (claro ? 0xe8e8e8 : 0x2a5fa8) : (claro ? 0xe8e4dc : 0xc0392b);
+
+  /* =======================================================
+     A PASSADA, COM JOELHO E COM PESO
+
+     Quatro coisas, e cada uma responde por um pedaço do "isto é
+     gente andando" em vez de "isto é caixa deslizando":
+
+     1. AMPLITUDE CRESCE COM A VELOCIDADE. Andar abre 0,30 rad de
+        quadril; correr abre 0,64. É o que separa o bonde subindo a
+        rua do bonde correndo da PM, sem estado novo nenhum — a
+        velocidade sai da diferença de posição entre dois quadros.
+
+     2. O JOELHO SÓ DOBRA NA PERNA SOLTA. Dobra máxima no meio do
+        balanço (quando a perna passa por baixo do corpo) e zero no
+        apoio. É `max(0, −cos fase)`: a perna de apoio fica reta e
+        aguenta o corpo, a solta encolhe pra passar sem varrer o
+        chão. Sem isso o pé atravessa o asfalto meio ciclo inteiro.
+
+     3. O QUADRIL DESCE QUANDO AS PERNAS ABREM. Não é enfeite, é
+        trigonometria: com as pernas abertas em θ o pé fica
+        `L·(1−cos θ)` mais longe do quadril, então o corpo baixa
+        outro tanto. É esta descida — duas por ciclo — que dá peso.
+        A versão anterior subia o tronco com `|cos|` e deixava os
+        pés no lugar, o que é o contrário: corpo flutuando sobre
+        perna rígida.
+
+     4. O TRONCO GINGA E INCLINA. Meio pixel de bamboleio lateral por
+        passo, e o tronco cai pra frente com a velocidade enquanto a
+        cabeça compensa pra o olhar ficar no horizonte.
+     ======================================================= */
+  function porPessoa(alvo, i, e, sin, cores) {
+    const v = e.vel;
+    /* A ABERTURA DO QUADRIL É CONSTANTE, E ISSO NÃO É PREGUIÇA.
+       A fase anda com a DISTÂNCIA (0,19 rad por pixel), então o ciclo
+       fecha a cada 33 px e cada passo cobre 16,5 px de chão. Pra o pé
+       não patinar, a perna tem que abrir o tanto que dá esses 16,5:
+       `asin(16,5 / 26) ≈ 0,66`, e esse número não depende da
+       velocidade. Quem anda devagar dá o mesmo passo mais espaçado —
+       é a cadência que muda, e ela já muda sozinha.
+       O que a velocidade controla é o resto: joelho, braço, inclinação.
+       `forca` só apaga a passada quando a pessoa para de verdade. */
+    const forca = Math.min(1, v / 0.18);
+    const sen = Math.sin(e.fase), cos = Math.cos(e.fase);
+    const abertura = 0.66 * forca;                 // rad de quadril
+    const dobra    = (0.42 + 0.55 * v) * forca;    // rad de joelho
+    const balBraco = (0.40 + 0.45 * v) * forca;
+
+    const oE = juntas.bracoSE.j, oD = juntas.bracoSD.j;   // ombros
+    const cE = juntas.bracoIE.j, cD = juntas.bracoID.j;   // cotovelos
+    const qE = juntas.coxaE.j,   qD = juntas.coxaD.j;     // quadris
+    const jE = juntas.canelaE.j, jD = juntas.canelaD.j;   // joelhos
+
+    raiz.position.set(e.x, 0, e.z);
+    raiz.rotation.set(0, e.ang, 0);
+
+    /* perna: ângulo negativo no quadril joga a coxa pra frente;
+       positivo no joelho dobra o calcanhar pra trás, que é o único
+       lado pra onde joelho dobra */
+    qE.rotation.set(-abertura * sen, 0, 0);
+    qD.rotation.set( abertura * sen, 0, 0);
+    jE.rotation.set(0.06 + dobra * Math.max(0, -cos), 0, 0);
+    jD.rotation.set(0.06 + dobra * Math.max(0,  cos), 0, 0);
+
+    /* braço contrário à perna do mesmo lado, e cotovelo fechando
+       conforme a coisa vira corrida */
+    oE.rotation.set( balBraco * sen, 0, 0);
+    oD.rotation.set(-balBraco * sen, 0, 0);
+    cE.rotation.set(-(0.22 + 1.0 * v), 0, 0);
+    cD.rotation.set(-(0.22 + 1.0 * v), 0, 0);
+
+    /* o peso: quanto o quadril desce por causa da abertura */
+    raiz.position.y = -(B.coxa.a + B.canela.a) *
+                      (1 - Math.cos(abertura * Math.abs(sen)));
+
+    juntas.tronco.j.rotation.set(0.16 * v, 0, -sen * 0.05 * forca);
+    juntas.cabeca.j.rotation.set(-0.10 * v, 0, 0);
+    juntas.tronco.j.position.set(sen * 0.55 * forca, B.tronco.centro, 0);
+    juntas.cabeca.j.position.set(-sen * 0.14 * forca, B.cabeca.centro, 0);
+
+    if (sin.preso) {
+      /* Preso senta no chão com as mãos pra trás. É o outro fim da
+         cena e no 2D ele era só um disco verde apagado.
+         −11 põe a perna deitada encostando no asfalto: o quadril
+         nasce em 13, a perna tem 3,2 de grossura, então o eixo dela
+         precisa cair pra ~1,6. */
+      raiz.position.y = -11.2;
+      qE.rotation.set(-1.48, 0, -0.10); jE.rotation.set(0.12, 0, 0);
+      qD.rotation.set(-1.40, 0,  0.10); jD.rotation.set(0.20, 0, 0);
+      oE.rotation.set(1.05, 0, -0.25); cE.rotation.set(-0.55, 0, 0);
+      oD.rotation.set(1.05, 0,  0.25); cD.rotation.set(-0.55, 0, 0);
+      juntas.tronco.j.rotation.x = -0.12;
+      juntas.cabeca.j.rotation.x =  0.35;   // cabeça baixa
+    } else if (sin.caido) {
+      raiz.rotation.set(-Math.PI / 2, e.ang, 0, 'YXZ');
+      raiz.position.set(e.x, 4.6, e.z);
+      qE.rotation.set(0.28, 0, 0);  jE.rotation.set(0.55, 0, 0);
+      qD.rotation.set(-0.16, 0, 0); jD.rotation.set(0.18, 0, 0);
+      oE.rotation.x = 0.9;  cE.rotation.x = -0.9;
+      oD.rotation.x = -0.6; cD.rotation.x = -0.4;
+    } else {
+      /* ---- QUEBROU E AINDA NÃO VIROU AS COSTAS ----
+         Mãos altas, tronco jogado pra trás, encarando. NÃO anda de
+         costas: a simulação não manda ele recuar nesses 2,6 s — ele
+         continua fazendo o que fazia, e inverter a perna aqui dava
+         moonwalk. O que muda é o corpo, e é o bastante: dá pra ver
+         quem já quebrou antes de ele virar as costas, que é o
+         instante em que o perseguidor cobre o terreno. */
+      if (e.hesita > 0.02) {
+        const h = e.hesita;
+        oE.rotation.set(chegar(oE.rotation.x, -0.55, h), 0,  0.42 * h);
+        oD.rotation.set(chegar(oD.rotation.x, -0.55, h), 0, -0.42 * h);
+        cE.rotation.x = chegar(cE.rotation.x, -2.25, h);
+        cD.rotation.x = chegar(cD.rotation.x, -2.25, h);
+        juntas.tronco.j.rotation.x -= 0.26 * h;
+        juntas.cabeca.j.rotation.x -= 0.14 * h;
+      }
+
+      /* ---- FUGINDO: corre e olha por cima do ombro ----
+         Sem a olhada, fugir e correr atrás são o mesmo desenho. */
+      if (e.foge > 0.02) {
+        const f = e.foge;
+        juntas.tronco.j.rotation.x += 0.32 * f;
+        const olha = Math.max(0, Math.sin(e.olhar)) * f;
+        juntas.cabeca.j.rotation.y = -1.15 * olha;
+        juntas.cabeca.j.rotation.z =  0.24 * olha;
+        juntas.cabeca.j.rotation.x -= 0.16 * f;
+        /* braço bombeando alto e fechado, e não balançando solto */
+        oE.rotation.x =  balBraco * sen * (1 + 0.7 * f);
+        oD.rotation.x = -balBraco * sen * (1 + 0.7 * f);
+        cE.rotation.x = chegar(cE.rotation.x, -1.55, f);
+        cD.rotation.x = chegar(cD.rotation.x, -1.55, f);
+      }
+
+      /* ---- CAÇANDO: mesma velocidade do que foge, pose oposta ----
+         Tronco jogado pra frente e os dois braços esticados, mão
+         pronta pra pegar. É o que transforma dois discos correndo
+         no mesmo passo em perseguição. */
+      if (e.caca > 0.02) {
+        const c = e.caca;
+        juntas.tronco.j.rotation.x += 0.36 * c;
+        oE.rotation.set(chegar(oE.rotation.x, -1.00, c), 0,  0.14 * c);
+        oD.rotation.set(chegar(oD.rotation.x, -1.00, c), 0, -0.14 * c);
+        cE.rotation.x = chegar(cE.rotation.x, -0.50, c);
+        cD.rotation.x = chegar(cD.rotation.x, -0.50, c);
+      }
+
+      /* ---- SEGURANDO ALGUÉM: os dois braços na frente, fechados ---- */
+      if (e.agarrando > 0.02) {
+        const g = e.agarrando;
+        oE.rotation.set(chegar(oE.rotation.x, -1.34, g), 0,  0.20 * g);
+        oD.rotation.set(chegar(oD.rotation.x, -1.34, g), 0, -0.20 * g);
+        cE.rotation.x = chegar(cE.rotation.x, -0.22, g);
+        cD.rotation.x = chegar(cD.rotation.x, -0.22, g);
+        juntas.tronco.j.rotation.x += 0.30 * g;
+      }
+
+      /* ---- COM A MÃO EM CIMA: 1,2 s até ir ao chão ----
+         O tronco é puxado pra trás, as pernas continuam correndo, e
+         a cabeça vira pra ver quem pegou. `d.agarrado` já existia na
+         simulação com esse tempo exato e não aparecia em lugar
+         nenhum — a pessoa fugia normal e caía do nada. */
+      if (e.agarrado > 0.02) {
+        const g = e.agarrado;
+        juntas.tronco.j.rotation.x -= 0.62 * g;
+        juntas.tronco.j.rotation.z += Math.sin(e.fase * 2.4) * 0.18 * g;
+        juntas.cabeca.j.rotation.y += 0.85 * g;
+        juntas.cabeca.j.rotation.x -= 0.20 * g;
+        oE.rotation.set(chegar(oE.rotation.x, 0.85, g), 0, -0.5 * g);
+        oD.rotation.set(chegar(oD.rotation.x, 1.05, g), 0,  0.5 * g);
+        cE.rotation.x = chegar(cE.rotation.x, -0.55, g);
+        cD.rotation.x = chegar(cD.rotation.x, -0.30, g);
+        /* arrastado pra trás: o corpo não acompanha mais o pé */
+        raiz.position.x -= Math.sin(e.ang) * 3.4 * g;
+        raiz.position.z -= Math.cos(e.ang) * 3.4 * g;
+      }
+
+      /* ---- GUARDA: quem está em briga anda com o punho em cima.
+         `hostil` dura 4 s depois do último contato, então o bonde
+         inteiro fica de guarda enquanto a briga corre e larga
+         sozinho quando ela acaba — sem nenhuma flag nova. */
+      const g = e.guarda;
+      if (g > 0.01) {
+        oE.rotation.x = oE.rotation.x * (1 - g) + POSE.guardaS * g;
+        oD.rotation.x = oD.rotation.x * (1 - g) + POSE.guardaS * g;
+        cE.rotation.x = cE.rotation.x * (1 - g) + POSE.guardaI * g;
+        cD.rotation.x = cD.rotation.x * (1 - g) + POSE.guardaI * g;
+        oE.rotation.z =  POSE.guardaZ * g;
+        oD.rotation.z = -POSE.guardaZ * g;
+        juntas.tronco.j.rotation.x = 0.15 * g;
+      }
+
+      /* ---- SOCO */
+      if (e.soco > 0) {
+        const k = curvaSoco(e.soco);
+        const o = e.socoLado ? oD : oE, c = e.socoLado ? cD : cE;
+        o.rotation.x = POSE.guardaS + (POSE.socoS - POSE.guardaS) * k;
+        c.rotation.x = POSE.guardaI + (POSE.socoI - POSE.guardaI) * k;
+        o.rotation.z = (e.socoLado ? -POSE.guardaZ : POSE.guardaZ) * (1 - k * 0.9);
+        /* o tronco vai junto, e o pé entra meio passo: soco de braço
+           só é soco de brinquedo */
+        raiz.rotation.y = e.ang + (e.socoLado ? -1 : 1) * 0.34 * k;
+        juntas.tronco.j.rotation.x = 0.15 + 0.22 * k;
+        raiz.position.x += Math.sin(e.ang) * 2.6 * k;
+        raiz.position.z += Math.cos(e.ang) * 2.6 * k;
+        qE.rotation.x =  0.34 * k; jE.rotation.x = 0.30 * k;
+        qD.rotation.x = -0.30 * k; jD.rotation.x = 0.12 * k;
+      }
+
+      /* ---- ARREMESSO: arma atrás da cabeça e solta à frente */
+      if (e.arremesso > 0) {
+        const p = 1 - e.arremesso / 0.58;
+        const arma = p < 0.42;
+        const k = arma ? p / 0.42 : (p - 0.42) / 0.58;
+        const de = arma ? POSE.guardaS : POSE.armaS;
+        const ate = arma ? POSE.armaS : POSE.soltaS;
+        const dei = arma ? POSE.guardaI : POSE.armaI;
+        const atei = arma ? POSE.armaI : POSE.soltaI;
+        oD.rotation.set(de + (ate - de) * k, 0, -0.18);
+        cD.rotation.set(dei + (atei - dei) * k, 0, 0);
+        oE.rotation.set(-0.5, 0, 0.24); cE.rotation.set(-1.5, 0, 0);
+        raiz.rotation.y = e.ang + (arma ? 0.55 * k : 0.55 - 1.05 * k);
+        juntas.tronco.j.rotation.x = arma ? -0.22 * k : -0.22 + 0.62 * k;
+      }
+
+      /* ---- APANHAR: aditivo, porque se apanha no meio de tudo.
+         Cabeça pra trás, tronco quebrado, braços abrindo, e o
+         tremor que o 2D já desenhava, agora no corpo. */
+      if (e.recuo > 0.02) {
+        const r = e.recuo;
+        juntas.tronco.j.rotation.x -= 0.55 * r;
+        juntas.cabeca.j.rotation.x -= 0.62 * r;
+        juntas.cabeca.j.rotation.z  = (e.socoLado ? 0.3 : -0.3) * r;
+        oE.rotation.x += 0.55 * r; oE.rotation.z -= 0.45 * r;
+        oD.rotation.x += 0.55 * r; oD.rotation.z += 0.45 * r;
+        cE.rotation.x -= 0.40 * r;
+        cD.rotation.x -= 0.40 * r;
+        juntas.tronco.j.position.y -= 1.5 * r;
+        juntas.cabeca.j.position.y -= 2.1 * r;
+        raiz.position.x += (Math.random() - 0.5) * r * 2.4;
+        raiz.position.z += (Math.random() - 0.5) * r * 2.4;
+      }
+
+      /* ---- CASSETETE: 0,7 s de perna bamba */
+      if (sin.atordoado > 0) {
+        const t = sin.atordoado;
+        raiz.rotation.z = Math.sin(t * 26) * 0.20 * Math.min(1, t / 0.3);
+        qE.rotation.x = 0.30; jE.rotation.x = 0.42;
+        qD.rotation.x = -0.22; jD.rotation.x = 0.16;
+      }
+    }
+
+    raiz.updateMatrixWorld(true);
+    for (const nome of PECAS) {
+      alvo[nome].setMatrixAt(i, juntas[nome].m.matrixWorld);
+      alvo[nome].setColorAt(i, corAux.set(cores[nome]));
+    }
+  }
+
+  function fecharCamada(alvo, n) {
+    for (const p of PECAS) {
+      alvo[p].count = n;
+      alvo[p].instanceMatrix.needsUpdate = true;
+      if (alvo[p].instanceColor) alvo[p].instanceColor.needsUpdate = true;
+    }
+  }
+
+  function sincronizarGente(J, dt) {
+    /* O índice só existe se tiver briga ou fuga na cena. Numa noite
+       tranquila isto não custa nada, que é o caso mais comum dos
+       arredores — e é o caso em que ninguém precisa encarar ninguém. */
+    let temAlvo = false;
+    for (const d of J.discos) {
+      if (!d.vivo) continue;
+      if (d.hostil > 0 || d.agarrado > 0 || (d.correEm != null && !d.fugindo)) {
+        temAlvo = true; break;
+      }
+    }
+    if (temAlvo) indexar(J);
+    acharArremesso(J);
+
+    let n = 0;
+    for (const d of J.discos) {
+      if (d.sumiu || d.entrou) continue;
+      if (n >= MAX_GENTE) break;
+      const e = estado(d, d.x, d.y, d.vivo ? dt : 0);
+      if (!d.vivo) e.vel = 0;
+      const brigando = d.vivo && (d.hostil > 0 || d.golpe > 0 || e.arremesso > 0);
+      const quebrou = d.vivo && d.correEm != null && !d.fugindo;
+      /* QUEM ESTÁ SEGURANDO QUEM.
+         `contatos` marca quem apanha (`agarrado`) e não marca quem
+         segura. Mas segurar é bater em quem foge estando em cima: se
+         eu acerto neste quadro (`golpe`) e o inimigo mais perto está
+         com a mão em cima dele, a mão é a minha. Sai do mesmo balde
+         que já responde "pra quem virar o rosto". */
+      const alvo = (temAlvo && (brigando || quebrou || d.agarrado > 0))
+        ? inimigoPerto(d) : null;
+      e.inimigo = rumoPara(d, alvo);
+      e.querAgarrar = !!(alvo && alvo.agarrado > 0.05 && d.golpe > 0);
+      animar(e, d, dt, brigando);
+
+      const camisa = d.cor ? hexDe(d.cor) : corLado(d.lado, false);
+      const calcao = d.cor2 ? hexDe(d.cor2) : corLado(d.lado, true);
+      const pele = PELE[(d.nome.charCodeAt(0) + d.nome.length) % PELE.length];
+      porPessoa(gente, n, e, d, {
+        cabeca: d.lider ? 0xe0b040 : pele,      // o líder usa boné
+        tronco: d.preso ? 0x2c4f3c : camisa,
+        bracoSE: d.preso ? 0x2c4f3c : camisa,   // manga
+        bracoSD: d.preso ? 0x2c4f3c : camisa,
+        bracoIE: pele, bracoID: pele,           // antebraço
+        coxaE: calcao, coxaD: calcao,           // calção
+        canelaE: pele, canelaD: pele            // canela de fora
+      });
+      n++;
+    }
+    fecharCamada(gente, n);
+  }
+
+  function sincronizarPM(J, dt) {
+    let n = 0;
+    for (const p of J.policiais) {
+      if (n >= MAX_PMS) break;
+      const e = estado(p, p.x, p.y, p.vivo ? dt : 0);
+      if (!p.vivo) e.vel = 0;
+      /* O PM não guarda golpe nem tremor. O que ele guarda é o
+         `cooldown`, que salta pra 1,9 no quadro em que o cassetete
+         acerta — a subida dele é a cacetada. */
+      const bateu = p.vivo && p.cooldown > e.cdAnt + 0.01;
+      e.cdAnt = p.cooldown;
+      const sin = { golpe: bateu ? 1 : 0, tremor: 0, atordoado: 0,
+                    caido: !p.vivo, preso: false, ang: p.ang,
+                    correEm: null, fugindo: false, agarrado: 0 };
+      const brigando = p.vivo && (p.carga || bateu || e.soco > 0);
+      e.inimigo = brigando ? rumoPara(p, inimigoPerto(p)) : null;
+      e.querAgarrar = false;
+      animar(e, sin, dt, brigando);
+      porPessoa(pm, n, e, sin, {
+        cabeca: 0x20262b, tronco: 0x1e3a2c,
+        bracoSE: 0x1e3a2c, bracoSD: 0x1e3a2c,
+        bracoIE: 0x2c4a38, bracoID: 0x2c4a38,
+        coxaE: 0x15221a, coxaD: 0x15221a,
+        canelaE: 0x15221a, canelaD: 0x15221a
+      });
+      n++;
+    }
+    fecharCamada(pm, n);
+  }
+
+  const molde = new THREE.Object3D();
+  function por(malha, i, x, y, z, sx, sy, sz, rotY) {
+    molde.position.set(x, y, z);
+    molde.rotation.set(0, rotY || 0, 0);
+    molde.scale.set(sx, sy, sz);
+    molde.updateMatrix();
+    malha.setMatrixAt(i, molde.matrix);
+  }
+
+  /* No 2D a altura da pedra é mentira desenhada. Aqui é altura. */
+  function sincronizarProjeteis(J) {
+    let n = 0;
+    for (const p of J.projeteis) {
+      if (n >= MAX_PROJ || p.morto) continue;
+      const alt = Math.sin((p.t / p.dur) * Math.PI) * 60 + 24;
+      const r = p.tipo === 'pedra' ? 2.4 : 3.2;
+      por(iProj, n, p.x, alt, p.y, r, r, r);
+      iProj.setColorAt(n, corAux.set(p.tipo === 'pedra' ? 0x8d8880 : 0xc8562f));
+      n++;
+    }
+    iProj.count = n;
+    iProj.instanceMatrix.needsUpdate = true;
+    if (iProj.instanceColor) iProj.instanceColor.needsUpdate = true;
+  }
+
+  const GRADE_INTEIRA = new THREE.Color(0x8a8f94);
+  const GRADE_RACHADA = new THREE.Color(0x5a3028);
+  const corGrade = new THREE.Color();
+  function sincronizarGrades(J) {
+    let n = 0;
+    for (const m of J.grades) {
+      if (n >= MAX_MODS || m.hp <= 0) continue;
+      const alta = m.tipo === 'fila' ? 26 : 34;
+      const p = m.hpMax > 1 ? m.hp / m.hpMax : 1;
+      por(iGrade, n, m.x, alta / 2, m.y,
+          m.meia * 2, alta, m.esp * 2, -Math.atan2(m.uy, m.ux));
+      if (m.tipo === 'fila') iGrade.setColorAt(n, corGrade.set(0x9aa0a6));
+      else iGrade.setColorAt(n, corGrade.copy(GRADE_INTEIRA).lerp(GRADE_RACHADA, 1 - p));
+      n++;
+    }
+    iGrade.count = n;
+    iGrade.instanceMatrix.needsUpdate = true;
+    if (iGrade.instanceColor) iGrade.instanceColor.needsUpdate = true;
+  }
+
+  /* =======================================================
+     CÂMERA
+     'ombro' é a de perto, atrás do líder do jogador. As outras
+     continuam existindo porque são elas que mostram o que a de
+     perto esconde: a formação e o cordão.
+     ======================================================= */
+  const CAMERAS = {
+    ombro:   { seguir: true,  dist: 118,  alt: 0.22, fov: 52 },
+    alto:    { seguir: true,  dist: 340,  alt: 0.62, fov: 46 },
+    maquete: { seguir: false, dist: 1520, alt: 0.80, fov: 38 },
+    zenital: { seguir: false, dist: 1420, alt: 1.50, fov: 38 }
+  };
+  let vista = 'ombro';
+  let giro = 0, incl = CAMERAS.ombro.alt, dist = CAMERAS.ombro.dist;
+  let arrastou = 0, primeira = true;
+  const alvo = new THREE.Vector3(W / 2, 0, H / 2);
+  const alvoSuave = new THREE.Vector3(W / 2, 0, H / 2);
+  const posSuave = new THREE.Vector3();
+
+  function irPara(nome) {
+    const c = CAMERAS[nome];
+    if (!c) return;
+    vista = nome; incl = c.alt; dist = c.dist;
+    cam.fov = c.fov; cam.updateProjectionMatrix();
+    if (!c.seguir) giro = 0;
+    primeira = true;
+  }
+
+  function posicionarCamera(lider, dt) {
+    const c = CAMERAS[vista];
+    if (c.seguir && lider) alvo.set(lider.x, 26, lider.y);
+    else alvo.set(W / 2, 0, H / 2);
+    /* a câmera de ombro vai atrás de quem anda, como em qualquer
+       jogo de terceira pessoa: sem isso o jogador anda de lado a
+       cena inteira. Parada enquanto o mouse mandou. */
+    if (c.seguir && lider && arrastou <= 0) {
+      const e = anda.get(lider);
+      if (e && e.vel > 0.15) {
+        const alvoGiro = e.ang + Math.PI;
+        const d = ((alvoGiro - giro + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+        giro += d * Math.min(1, dt * 2.4);
+      }
+    }
+    arrastou = Math.max(0, arrastou - dt);
+    incl = Math.max(0.05, Math.min(1.552, incl));
+    const k = primeira ? 1 : Math.min(1, dt * 7);
+    alvoSuave.lerp(alvo, k);
+    posSuave.set(
+      alvoSuave.x + dist * Math.cos(incl) * Math.sin(giro),
+      alvoSuave.y + dist * Math.sin(incl),
+      alvoSuave.z + dist * Math.cos(incl) * Math.cos(giro));
+    /* A CÂMERA NÃO ENTRA EM PRÉDIO.
+       Caminha do jogador até a posição e compara a altura de cada
+       célula com a altura do olho ali. Achou parede mais alta que o
+       olho: encosta a câmera e sobe por cima dela. Testar contra a
+       malha de caminhabilidade em vez do campo de altura era o
+       errado — canteiro e meio-fio não são passáveis e não tapam
+       nada, e a câmera vivia colada na nuca. */
+    const dx = posSuave.x - alvoSuave.x, dz = posSuave.z - alvoSuave.z;
+    const dy = posSuave.y - alvoSuave.y;
+    for (let k = 1; k <= 14; k++) {
+      const t = k / 14;
+      const alt = alturaEm(alvoSuave.x + dx * t, alvoSuave.z + dz * t);
+      if (alt <= alvoSuave.y + dy * t + 8) continue;
+      /* encolhe só a distância horizontal e MANTÉM a altura do
+         olho. Subir por cima do prédio parece a solução e não é:
+         com prédio de 280 a câmera saltava pra 300 e a cena virava
+         vista de pássaro no meio da briga. Encostar e olhar de cima
+         pra baixo é o que todo jogo de terceira pessoa faz. */
+      const u = Math.max(0.30, (k - 1) / 14);
+      posSuave.x = alvoSuave.x + dx * u;
+      posSuave.z = alvoSuave.z + dz * u;
+      break;
+    }
+    if (posSuave.y < 10) posSuave.y = 10;
+    cam.position.copy(posSuave);
+    cam.lookAt(alvoSuave);
+    primeira = false;
+  }
+
+  let arrastando = false, mx = 0, my = 0;
+  canvas.addEventListener('pointerdown', e => {
+    arrastando = true; mx = e.clientX; my = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  const soltar = e => {
+    arrastando = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  canvas.addEventListener('pointerup', soltar);
+  canvas.addEventListener('pointercancel', soltar);
+  canvas.addEventListener('pointermove', e => {
+    if (!arrastando) return;
+    giro -= (e.clientX - mx) * 0.006;
+    incl += (e.clientY - my) * 0.004;
+    mx = e.clientX; my = e.clientY;
+    arrastou = 1.4;                       // segura o auto-seguir um pouco
+  });
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    dist = Math.max(46, Math.min(3200, dist * (1 + Math.sign(e.deltaY) * 0.09)));
+  }, { passive: false });
+
+  /* =======================================================
+     ROTULOS
+     ======================================================= */
+  let camadaRotulos = null;
+  const rotulos = [];
+  const ligarRotulos = el => { camadaRotulos = el; };
+  const vProj = new THREE.Vector3();
+  function sincronizarRotulos(J) {
+    if (!camadaRotulos) return;
+    const lista = J.discos.filter(d => d.lider && d.vivo && !d.sumiu && !d.entrou);
+    while (rotulos.length < lista.length) {
+      const el = document.createElement('div');
+      el.className = 'rot3d';
+      camadaRotulos.appendChild(el);
+      rotulos.push(el);
+    }
+    const r = canvas.getBoundingClientRect();
+    lista.forEach((d, i) => {
+      vProj.set(d.x, 38, d.y).project(cam);
+      const el = rotulos[i];
+      el.textContent = d.nome;
+      const fora = vProj.z > 1 || Math.abs(vProj.x) > 1.3 || Math.abs(vProj.y) > 1.3;
+      el.style.display = fora ? 'none' : 'block';
+      el.style.left = ((vProj.x * 0.5 + 0.5) * r.width) + 'px';
+      el.style.top = ((-vProj.y * 0.5 + 0.5) * r.height) + 'px';
+    });
+    for (let i = lista.length; i < rotulos.length; i++)
+      rotulos[i].style.display = 'none';
+  }
+
+  /* =======================================================
+     API
+     ======================================================= */
+  /* NÃO SE MONTA CIDADE EM CIMA DO DESENHO DE ESPERA.
+     Enquanto a foto não chega, `desenharFundo` pinta o fallback —
+     fundo #14150f com a malha em cinza. Esse verde-escuro passa no
+     teste de mato (`g > r·1,03`), e o mapa inteiro virava canteiro:
+     oitenta e uma árvores e nenhum prédio. Agora o chão vai pra
+     textura na hora, mas a cidade só sobe quando a imagem estiver
+     de pé. Cena desenhada não espera nada. */
+  let comFoto = false, cenaAtual = null, conta = null;
+
+  function montar(D) {
+    cenaAtual = D;
+    anda.clear();
+    comFoto = !D.imagem;
+    repintarChao();
+    conta = comFoto ? montarPredios(D) : null;
+    montarPortoes(D);
+    irPara(vista);
+    return conta;
+  }
+  function conferirFoto() {
+    if (comFoto || !A.imagemOk) return;
+    comFoto = true;
+    repintarChao();
+    conta = montarPredios(cenaAtual);
+  }
+
+  /* A sombra é o item mais caro da cena: o mapa de 2048² redesenha
+     tudo outra vez todo quadro. Como eu não pude medir isto num GPU
+     de verdade, fica no dedo — se estiver arrastando aí, é o primeiro
+     a desligar. */
+  function trocarSombra() {
+    rend.shadowMap.enabled = !rend.shadowMap.enabled;
+    cena.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+    return rend.shadowMap.enabled;
+  }
+
+  function trocarModo() {
+    modo = modo === 'rua' ? 'maquete' : 'rua';
+    if (comFoto) conta = montarPredios(cenaAtual);
+    return modo;
+  }
+
+  function quadro(J, dt) {
+    conferirFoto();
+    sincronizarGente(J, dt);
+    sincronizarPM(J, dt);
+    sincronizarProjeteis(J);
+    sincronizarGrades(J);
+    const lider = J.discos.find(d => d.lider && d.doJogador && d.vivo)
+               || J.discos.find(d => d.lider && d.vivo);
+    posicionarCamera(lider, dt);
+    sincronizarRotulos(J);
+    rend.render(cena, cam);
+  }
+
+  function redimensionar() {
+    const l = canvas.clientWidth, a = canvas.clientHeight;
+    if (!l || !a) return;
+    rend.setSize(l, a, false);
+    cam.aspect = l / a;
+    cam.updateProjectionMatrix();
+  }
+
+  /* o WASD do jogo é em eixo do mundo; a câmera de ombro precisa
+     que W seja "pra frente da câmera". Como `moverLider` só lê
+     quatro booleanos, giramos a intenção e devolvemos os quatro
+     que mais se parecem com ela — oito direções. O jeito certo,
+     no dia que isto virar jogo, é `moverLider` aceitar um vetor. */
+  function girarEntrada(teclas) {
+    const ix = (teclas.d ? 1 : 0) - (teclas.a ? 1 : 0);
+    const iz = (teclas.s ? 1 : 0) - (teclas.w ? 1 : 0);
+    if (!ix && !iz) return {};
+    const c = Math.cos(giro), s = Math.sin(giro);
+    const wx = ix * c - iz * s, wz = ix * s + iz * c;
+    const lim = Math.max(Math.abs(wx), Math.abs(wz)) * 0.42;
+    return { d: wx > lim, a: wx < -lim, s: wz > lim, w: wz < -lim };
+  }
+
+  return { montar, quadro, redimensionar, irPara, ligarRotulos,
+           trocarModo, trocarSombra, girarEntrada,
+           get sombra() { return rend.shadowMap.enabled; },
+           get modo() { return modo; },
+           get vista() { return vista; },
+           get conta() { return conta; },
+           get info() { return rend.info; },
+           /* expostos pra medir e depurar da consola, não pro jogo */
+           _rend: rend, _cena: cena, _cam: cam, _sol: sol,
+           _cameras: CAMERAS, _alturaEm: alturaEm };
+}
