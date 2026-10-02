@@ -60,10 +60,10 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=cbc9bdea8a';
-import { ATLAS } from './modelos_atlas.js?v=cbc9bdea8a';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=2dbc7cb671';
+import { ATLAS } from './modelos_atlas.js?v=2dbc7cb671';
 /* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
-import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=cbc9bdea8a';
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=2dbc7cb671';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -126,7 +126,7 @@ function medidas(l) {
    lanchonete recua o que o toldinho da porta de enrolar avança. O bar
    da torcida (o de esquina, embaixo do apartamento) é modelo também. */
 const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04,
-                     bartorcida: 0.04, ...REC_LOJA,
+                     bartorcida: 0.04, lojatorcida: 0.04, subsede: 0.04, ...REC_LOJA,
                      /* o entorno do estádio: o recuo do comércio é o salão de fora */
                      com_espetinho: 3.8, com_hamburgueria: 2.6, com_pizzaria: 2.6, com_barzinho: 3.2, estacionamento: 0.05 };
 
@@ -137,8 +137,9 @@ export function planoDaCasa(l, K) {
     const [W, D] = medidas(l);
     p = { tipo: l.modelo, andares: 2, rec: REC_MODELO[l.modelo], W, D, H: l.alt / M, s: sorteDe(l),
           semManchas: l.modelo !== 'f2' && l.modelo !== 'varal' };
-    /* o letreiro BAR DA X do bar da torcida vai no frontão da varanda */
-    if (l.modelo === 'bartorcida' && l.placa) p.placa = placaDoBar(W, l.esquina);
+    /* o letreiro BAR DA X do bar da torcida vai no frontão da varanda (e
+       o LOJA DA X da loja da torcida, que é o mesmo prédio) */
+    if ((l.modelo === 'bartorcida' || l.modelo === 'lojatorcida') && l.placa) p.placa = placaDoBar(W, l.esquina);
     /* o nome da loja do assalto vai na platibanda (no posto, na testeira da cobertura) */
     if (TIPOS_LOJA[l.modelo] && l.placa) p.placa = placaDaLoja(l.modelo.slice(5), W, D, l.esquina || 'dir');
     /* o comércio do entorno do estádio: o recuo não passa de 45% do fundo; o letreiro na platibanda */
@@ -886,7 +887,7 @@ function escadaFundo(B, x0, x1, zFrente, zFundo, altura, k, kLado, tintaLado) {
 }
 /* uma conta à parte: a parede conta porta e janela, mas não entra
    como superfície de decalque (a de trás do quintal, a do fundo do bar) */
-const contaMuda = () => ({ portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [] });
+const contaMuda = () => ({ portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [], placas: [] });
 const somar = (conta, c) => { conta.portas += c.portas; conta.janelas += c.janelas; conta.janelasLado += c.janelasLado; };
 
 /* ---------------- F1: a casa de laje em três níveis ---------------- */
@@ -1278,8 +1279,11 @@ function poste(B, cx, cz, alt) {
 function espelhado(B, G, W, conta, fn) {
   /* o espelho sai no mesmo modo da casa (o chapado da favela low poly) */
   const B2 = Construtor('casas', B.opcoes), G2 = Construtor('grades'), c2 = contaMuda();
+  /* (o vidro transparente da vitrine, quando a casa tem: a loja da torcida) */
+  const V2 = conta.vidros ? Construtor('grades') : null;
+  if (V2) c2.vidros = V2;
   fn(B2, G2, c2);
-  for (const [C, Dst] of [[B2, B], [G2, G]]) {
+  for (const [C, Dst] of [[B2, B], [G2, G]].concat(V2 ? [[V2, conta.vidros]] : [])) {
     for (let i = 0; i < C.pos.length; i += 3) Dst.pos.push(W - C.pos[i], C.pos[i + 1], C.pos[i + 2]);
     for (const v of C.uv) Dst.uv.push(v);
     for (const v of C.cor) Dst.cor.push(v);
@@ -1288,6 +1292,7 @@ function espelhado(B, G, W, conta, fn) {
   for (const f of c2.frentes) conta.frentes.push({ x0: W - f.x1, x1: W - f.x0, y0: f.y0, y1: f.y1, z: f.z,
     vaos: f.vaos.map(v => Object.assign({}, v, { a0: W - v.a1, a1: W - v.a0 })) });
   for (const o of c2.obst) conta.obst.push(Object.assign({}, o, { a0: W - o.a1, a1: W - o.a0 }));
+  if (conta.placas) for (const q of c2.placas) conta.placas.push(Object.assign({}, q, { x: W - q.x, face: q.face === 'dir' ? 'esq' : q.face === 'esq' ? 'dir' : q.face }));
 }
 
 /* ---------------- A CASA DA ESCADA DE FORA ---------------- */
@@ -2172,8 +2177,10 @@ function paredeDoSalao(B, ao, a0, a1, c0, c1, h, vaos, hp, fora, dentro, aberto,
 
 function barTorcida(B, p, l, conta, G) {
   const espelho = l.esquina === 'esq', letras = [];
-  if (espelho) espelhado(B, G, p.W, conta, (B2, G2, c2) => barTorcidaDireita(B2, p, l, c2, G2, letras));
-  else barTorcidaDireita(B, p, l, conta, G, letras);
+  /* (a loja da torcida é o mesmo prédio; sem torcida, ela é o bar fechado, pra alugar) */
+  const desenho = p.tipo === 'lojatorcida' && l.torcida ? lojaTorcidaDireita : barTorcidaDireita;
+  if (espelho) espelhado(B, G, p.W, conta, (B2, G2, c2) => desenho(B2, p, l, c2, G2, letras));
+  else desenho(B, p, l, conta, G, letras);
   /* o que tem letra sai do lado certo mesmo com o bar espelhado */
   for (const t of letras) {
     const a0 = espelho ? p.W - t.x1 : t.x0, a1 = espelho ? p.W - t.x0 : t.x1;
@@ -2292,7 +2299,13 @@ function barTorcidaDireita(B, p, l, conta, G, letras) {
     }
   }
 
-  /* ---- A LAJE entre o bar e o apartamento ---- */
+  apartamentoDoBar(B, G, conta, { s, x0, x1, z0, z1, h1, y2, topo, apto, claro });
+}
+/* A LAJE e O APARTAMENTO em cima do bar da torcida (e da loja da torcida,
+   que é o mesmo prédio): a sacada em cima da frente, as janelas, o
+   ar-condicionado, a platibanda e a casinha da caixa d'água */
+function apartamentoDoBar(B, G, conta, { s, x0, x1, z0, z1, h1, y2, topo, apto, claro }) {
+  /* ---- A LAJE entre o térreo e o apartamento ---- */
   faixa(B, x0, x1, z0, z1, h1, y2, 0.04, 'lisa', claro);
 
   /* ---- O APARTAMENTO ---- */
@@ -2327,6 +2340,552 @@ function barTorcidaDireita(B, p, l, conta, G, letras) {
     B.caixa(x0 + 0.3, x0 + 0.3 + cw, topo, topo + 1.5, z0 + 0.3, z0 + 0.3 + cd, { todas: { k: 'lisa', tinta: claro }, base: null });
     B.caixa(x0 + 0.25, x0 + 0.35 + cw, topo + 1.5, topo + 1.6, z0 + 0.25, z0 + 0.35 + cd, { todas: 'laje_borda', base: null });
   }
+}
+
+/* =======================================================
+   A LOJA DA TORCIDA (o dono, 02/10/2026: "crie um modelo de loja
+   substituindo o bar no mesmo prédio, mas sendo uma loja temática da
+   torcida com as camisas da torcida e do time à venda" — e as duas fotos
+   de referência: a loja da Mancha por dentro e a fachada de uma LOJA
+   OFICIAL). O prédio é o do bar da torcida: o corredor da escada com a
+   porta do apartamento e o apartamento em cima, com a sacada, a
+   platibanda e a caixa d'água. O térreo vira loja:
+   · A FACHADA DE VIDRO rente à calçada (a da foto): a mureta na cor 1, os
+     painéis de vidro de verdade (o vidro transparente: de fora se vê a
+     vitrine e a loja) com o montante branco, a porta aberta do lado da
+     escada e o vidro dobrando a esquina; em cima, a testeira na cor 1 com
+     a luz de LED nas bordas, o escudo da torcida no meio, LOJA de um lado
+     e a sigla do outro (os decalques soltos, `conta.placas`);
+   · A VITRINE: o tablado atrás do vidro e os manequins de camisa da
+     torcida e do time, de bermuda;
+   · POR DENTRO (a foto da Mancha): o piso de tábua; na parede da escada,
+     duas fileiras de camisa no cabide, de lado, e a prateleira de cima;
+     na parede da esquina, uma fileira e a bandeira da torcida; no meio,
+     as duas mesas de cano com tampo de madeira e as pilhas de camisa
+     dobrada, a arara de cano e a coluna com a sigla de cima a baixo; no
+     fundo, a parede na cor 1 com o escudo e as camisas abertas, o balcão
+     do caixa e a porta do estoque; no teto, a tela de arame e os spots.
+   Sem torcida (não acontece: a planta só põe a loja com dono) é o bar
+   fechado, de aluga-se.
+   ======================================================= */
+const PAREDE_LOJA = '#f2efe8', TABUA = '#b9824f', TABUA_JUNTA = '#93623a', CANO_LOJA = '#2a2a2a', CABIDE = '#c47a37',
+      FERRO_LOJA = '#9aa0a6', LED_LOJA = '#f4f9ff', PELE_MANEQUIM = '#ece9e2', MONTANTE = '#f3f3ef', TAMPO_LOJA = '#c49a62';
+/* a fileira de camisa no cabide, de lado (o jeito da foto): a barra corre
+   em z rente à parede de x = `xp`, e as camisas saem dela pro lado `dx`
+   (+1 ou −1), uma colada na outra, cada uma de uma cor da lista */
+function camisasNaBarra(B, xp, dx, za, zb, y, cores, k0 = 0) {
+  const ferro = { todas: { k: 'lisa', tinta: FERRO_LOJA }, base: null };
+  const larg = 0.46, alt = 0.68, passo = 0.1, esp = 0.034;
+  const xa = xp + dx * 0.05, xb = xp + dx * (0.05 + larg), X0 = Math.min(xa, xb), X1 = Math.max(xa, xb), xm = (X0 + X1) / 2;
+  /* os dois braços da parede e a barra */
+  for (const z of [za, zb]) B.caixa(Math.min(xp, xm), Math.max(xp, xm), y - 0.02, y + 0.015, z - 0.015, z + 0.015, ferro);
+  B.caixa(xm - 0.012, xm + 0.012, y - 0.012, y + 0.012, za, zb, ferro);
+  const contraParede = dx > 0 ? 'esq' : 'dir';
+  let i = k0;
+  for (let z = za + 0.07; z < zb - 0.04; z += passo, i++) {
+    const cor = { k: 'lisa', tinta: cores[i % cores.length] };
+    B.caixa(X0, X1, y - 0.06 - alt, y - 0.06, z - esp / 2, z + esp / 2, { todas: cor, base: null, [contraParede]: null });
+    /* o cabide de madeira, em cima da camisa */
+    B.caixa(xm - 0.2, xm + 0.2, y - 0.07, y - 0.045, z - 0.011, z + 0.011, { todas: { k: 'lisa', tinta: CABIDE }, base: null, [contraParede]: null });
+  }
+}
+/* a arara de cano solta no meio da loja: os dois pés, a barra em z e as
+   camisas no cabide, de lado */
+function araraDeCano(B, cx, za, zb, cores, k0 = 0) {
+  const cano = { todas: { k: 'lisa', tinta: CANO_LOJA }, base: null }, h = 1.62;
+  for (const z of [za, zb]) {
+    B.caixa(cx - 0.02, cx + 0.02, 0.05, 0.05 + h, z - 0.02, z + 0.02, cano);
+    B.caixa(cx - 0.28, cx + 0.28, 0.05, 0.09, z - 0.03, z + 0.03, cano);
+  }
+  B.caixa(cx - 0.015, cx + 0.015, 0.05 + h - 0.03, 0.05 + h, za, zb, cano);
+  const larg = 0.46, alt = 0.68, esp = 0.034, y = 0.05 + h;
+  let i = k0;
+  for (let z = za + 0.08; z < zb - 0.05; z += 0.1, i++) {
+    B.caixa(cx - larg / 2, cx + larg / 2, y - 0.06 - alt, y - 0.06, z - esp / 2, z + esp / 2, { todas: { k: 'lisa', tinta: cores[i % cores.length] }, base: null });
+    B.caixa(cx - 0.2, cx + 0.2, y - 0.07, y - 0.045, z - 0.011, z + 0.011, { todas: { k: 'lisa', tinta: CABIDE }, base: null });
+  }
+}
+/* a mesa de cano da foto: os quatro pés de cano preto com o rodízio, o
+   tampo de madeira e a prateleira de baixo, e em cima e embaixo as
+   pilhas de camisa dobrada (cada pilha um modelo, uma cor) */
+function mesaDeCano(B, cx, cz, lx, lz, cores, k0 = 0) {
+  const cano = { todas: { k: 'lisa', tinta: CANO_LOJA }, base: null }, tampo = { todas: { k: 'lisa', tinta: TAMPO_LOJA } };
+  const y = 0.05, h = 0.84, hb = 0.24;
+  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+    const x = cx + sx * (lx / 2 - 0.06), z = cz + sz * (lz / 2 - 0.06);
+    B.caixa(x - 0.022, x + 0.022, y + 0.07, y + h, z - 0.022, z + 0.022, cano);
+    B.caixa(x - 0.045, x + 0.045, y, y + 0.07, z - 0.045, z + 0.045, cano);
+  }
+  B.caixa(cx - lx / 2, cx + lx / 2, y + h, y + h + 0.04, cz - lz / 2, cz + lz / 2, tampo);
+  B.caixa(cx - lx / 2 + 0.04, cx + lx / 2 - 0.04, y + hb, y + hb + 0.03, cz - lz / 2 + 0.04, cz + lz / 2 - 0.04, tampo);
+  const pilha = (x, z, y0, n, k) => B.caixa(x - 0.17, x + 0.17, y0, y0 + n * 0.045, z - 0.14, z + 0.14, { todas: { k: 'lisa', tinta: cores[k % cores.length] }, base: null });
+  let k = k0;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) pilha(cx + sx * lx * 0.24, cz + sz * lz * 0.24, y + h + 0.04, 4 + (k % 3), k++);
+  for (const sx of [-1, 0, 1]) pilha(cx + sx * lx * 0.32, cz, y + hb + 0.03, 3 + (k % 2), k++);
+}
+/* o manequim da vitrine: a base, as pernas, a bermuda, o tronco com a
+   camisa (a faixa do peito, quando a camisa tem), as mangas e os braços,
+   e a cabeça lisa */
+function manequimDaLoja(B, cx, cz, y, camisa, faixa, bermuda) {
+  const pele = { todas: { k: 'lisa', tinta: PELE_MANEQUIM }, base: null };
+  const torno = (perfil, cor, lados = 10) => { B.pintar(cor); B.torno(cx, cz, perfil, lados, 'lisa'); B.pintar(null); };
+  B.caixa(cx - 0.16, cx + 0.16, y, y + 0.025, cz - 0.16, cz + 0.16, { todas: { k: 'lisa', tinta: '#3a3a3a' }, base: null });
+  for (const d of [-0.07, 0.07]) { B.pintar(PELE_MANEQUIM); B.torno(cx + d, cz, [[0.045, y + 0.025], [0.055, y + 0.45], [0.07, y + 0.7]], 6, 'lisa'); B.pintar(null); }
+  torno([[0.15, y + 0.56], [0.16, y + 0.8], [0.15, y + 0.97]], bermuda);
+  torno([[0.15, y + 0.95], [0.16, y + 1.18], [0.185, y + 1.38], [0.2, y + 1.46]], camisa);
+  if (faixa) torno([[0.165, y + 1.2], [0.18, y + 1.3]], faixa);
+  torno([[0.2, y + 1.46], [0.16, y + 1.53], [0.06, y + 1.56], [0, y + 1.565]], camisa);
+  for (const s of [-1, 1]) {
+    const xa = cx + s * 0.19, xb = cx + s * 0.27;
+    B.caixa(Math.min(xa, xb), Math.max(xa, xb), y + 1.28, y + 1.48, cz - 0.06, cz + 0.06, { todas: { k: 'lisa', tinta: camisa }, base: null });
+    const xc = cx + s * 0.2, xd = cx + s * 0.255;
+    B.caixa(Math.min(xc, xd), Math.max(xc, xd), y + 0.88, y + 1.28, cz - 0.04, cz + 0.04, pele);
+  }
+  torno([[0.045, y + 1.565], [0.05, y + 1.63], [0.095, y + 1.67], [0.1, y + 1.78], [0.065, y + 1.85], [0, y + 1.865]], PELE_MANEQUIM, 8);
+}
+/* uma peça lisa (a cor na tinta) no plano F, de (a0, b0) a (a1, b1), `d` à frente dele */
+function retNoPlano(B, F, a0, a1, b0, b1, d, tinta) {
+  const P = (a, b) => [0, 1, 2].map(i => F.O[i] + F.U[i] * a + F.V[i] * b + F.N[i] * d);
+  liso(B, tinta, [P(a0, b0), P(a1, b0), P(a1, b1), P(a0, b1)]);
+}
+function lojaTorcidaDireita(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const T = l.torcida;
+  const c1 = tintaViva(T.cor), c2 = tintaViva(T.cor2 || '#e8e2d0'), c3 = tintaViva(T.cor3 || T.cor2 || '#e8e2d0');
+  const k1 = tintaViva(T.clubeCor || T.cor2 || '#e8e2d0'), k2 = tintaViva(T.clubeCor2 || T.cor || '#262626');
+  /* a roupa à venda: a camisa da torcida (a cor 2 e a cor 1, as que mais
+     vendem) e a do time (as duas cores do clube), uma atrás da outra */
+  const roupas = [c2, c1, c2, k1, c2, c1, k2, c2, c1, k1];
+  const apto = escolher(s, 'apto', CORES_APTO), claro = '#f3f2ee';
+  const { x0, x1, e, we, xe, xi0, xi1, h1, lj } = medidasDoBar(W);
+  const z1 = -p.rec, z0 = -D + 0.04, zi0 = z0 + e, zF = z1;
+  const iw = xi1 - xi0, y2 = h1 + lj, topo = y2 + 2.75;
+  const cor1 = { k: 'lisa', tinta: c1 }, parede = { k: 'lisa', tinta: PAREDE_LOJA }, branco = { k: 'lisa', tinta: MONTANTE };
+  /* a cor forte (a mais escura das duas): a do que vai no reboco claro do
+     lado — a faixa, o rodapé e a sigla do painel (a torcida de cor 1
+     branca sumia na parede) */
+  const luzDe = c => { const n = parseInt(String(c).slice(1), 16); return 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255); };
+  const forte = luzDe(c1) <= luzDe(c2) ? c1 : c2, corForte = { k: 'lisa', tinta: forte };
+  const hv0 = 0.34, hv1 = 2.42;                       // a mureta e o alto do vidro; daí pra cima, a testeira
+  const V = conta.vidros;
+  /* o vidro transparente: o painel na folha das grades (só a geometria) */
+  const vidro = (O, U, w, h) => { if (V) V.esticar(V.plano(O, U, [0, 1, 0]), 0, w, 0, h, 'branca'); };
+
+  /* ---- O CORREDOR DO APARTAMENTO (o do bar) ---- */
+  paredes(B, x0, xe, z0, z1, 0, h1, {
+    frente: { k: 'lisa', tinta: apto, vaos: [{ a0: (we - 0.85) / 2, a1: (we + 0.85) / 2, b0: 0.02, b1: 2.2, k: 'porta_ap', fundo: 0.08 }] },
+    esq: { k: 'lisa', tinta: apto }, tras: { k: 'lisa', tinta: apto }
+  }, conta);
+  B.caixa(x0, xe, 0, 0.12, z1, z1 + 0.035, { frente: 'laje_borda', topo: 'laje_borda', esq: null, dir: null, base: null, tras: null });
+  /* a parede entre o corredor e a loja: a parede clara do lado da loja (a
+     ponta da frente fica atrás do batente branco da porta e da testeira) */
+  B.caixa(xe, xi0, 0, h1, z0, z1, { dir: parede, frente: null, esq: null, tras: { k: 'lisa', tinta: apto }, topo: null, base: null });
+
+  /* ---- O FUNDO: o reboco do prédio por fora; por dentro, a parede na cor 1
+     (a do escudo) com a porta do estoque no canto da esquina ---- */
+  B.caixa(xi0, x1, 0, h1, z0, zi0, { tras: { k: 'lisa', tinta: apto }, dir: { k: 'lisa', tinta: apto }, frente: null, esq: null, topo: null, base: null });
+  const pe0 = iw - 1.05, pe1 = iw - 0.2;
+  B.fachada(B.plano([xi0, 0, zi0], [1, 0, 0], [0, 1, 0]), iw, h1, 'lisa', [{ a0: pe0, a1: pe1, b0: 0, b1: 2.1, k: 'porta_madeira', fundo: 0.06 }], { tinta: c1 });
+
+  /* ---- A PAREDE DA ESQUINA: o reboco do prédio por fora, a clara por
+     dentro, e o vidro dobrando a esquina na frente (o montante branco da
+     quina); o rodapé e a faixa da testeira na cor 1 correm a parede toda,
+     e no meio dela o painel pintado com o escudo e a sigla ---- */
+  const zG0 = Math.max(zi0 + 2.4, zF - 2.1), zG1 = zF - 0.14, reboco = { k: 'lisa', tinta: apto };
+  B.caixa(xi1, x1, 0, h1, zi0, zG0, { dir: reboco, esq: parede, frente: cor1, tras: null, topo: null, base: null });
+  B.caixa(xi1, x1, 0, hv0, zG0, zG1, { dir: reboco, esq: parede, topo: cor1, frente: null, tras: null, base: null });
+  B.caixa(xi1, x1, hv1, h1, zG0, zG1, { dir: reboco, esq: parede, base: branco, frente: null, tras: null, topo: null });
+  B.caixa(x1 - 0.14, x1, 0, h1, zG1, zF, { todas: branco, base: null, topo: null });
+  B.caixa(x1, x1 + 0.012, 0, hv0, z0, zG1, { dir: corForte, topo: corForte, tras: corForte, frente: null, esq: null, base: null });
+  B.caixa(x1, x1 + 0.012, hv1, h1, z0, zG1, { dir: corForte, base: corForte, tras: corForte, frente: null, esq: null, topo: null });
+  B.caixa(x1 + 0.012, x1 + 0.03, hv1, hv1 + 0.025, z0, zG1, { dir: { k: 'lisa', tinta: LED_LOJA }, base: { k: 'lisa', tinta: LED_LOJA }, topo: null, frente: null, tras: null, esq: null });
+  const meioL = (zi0 + zG0) / 2, ladoL = zG0 - zi0;
+  if (ladoL > 3) {
+    const e2 = Math.min(1.5, hv1 - hv0 - 0.4);
+    conta.placas.push({ tipo: 'escudo', x: x1 + 0.035, y: (hv0 + hv1) / 2, z: meioL + Math.min(1.6, ladoL * 0.22), face: 'dir', larg: e2, alt: e2, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+    const larg = Math.min(3.2, ladoL * 0.5), alt = Math.min(0.9, larg / 3);
+    conta.placas.push({ tipo: 'texto', texto: T.rot || '', x: x1 + 0.03, y: (hv0 + hv1) / 2, z: meioL - Math.min(1.2, ladoL * 0.18), face: 'dir', larg, alt, tinta: forte, fundo: null });
+  }
+  vidro([x1 - 0.06, hv0, zG1], [0, 0, -1], zG1 - zG0, hv1 - hv0);
+  B.caixa(x1 - 0.09, x1 - 0.03, hv0, hv1, (zG0 + zG1) / 2 - 0.03, (zG0 + zG1) / 2 + 0.03, { todas: branco, base: null, topo: null });
+
+  /* ---- A FACHADA DE VIDRO: a mureta na cor 1, a porta aberta do lado da
+     escada, os painéis com o montante branco ---- */
+  const xp0 = xi0, xp1 = xi0 + 1.15;                  // a porta (o vão aberto, com o batente)
+  const xv0 = xp1, xv1 = x1 - 0.14;                   // o vidro, da porta até a quina
+  B.caixa(xv0, xv1, 0, hv0, zF - 0.16, zF, { frente: cor1, topo: cor1, tras: parede, esq: null, dir: null, base: null });
+  B.caixa(xe, xp0 + 0.06, 0, hv1, zF - 0.16, zF + 0.004, { todas: branco, base: null, topo: null, esq: null });
+  B.caixa(xp1 - 0.06, xp1 + 0.03, 0, hv1, zF - 0.16, zF, { todas: branco, base: null, topo: null });
+  B.caixa(xp0, xp1, -0.01, 0.05, zF - 0.16, zF, { todas: { k: 'lisa', tinta: '#8c8a84' }, base: null });
+  const nV = Math.max(1, Math.round((xv1 - xv0) / 1.55)), wV = (xv1 - xv0) / nV;
+  for (let i = 0; i < nV; i++) {
+    const q0 = xv0 + i * wV;
+    vidro([q0, hv0, zF - 0.06], [1, 0, 0], wV, hv1 - hv0);
+    if (i) B.caixa(q0 - 0.035, q0 + 0.035, hv0, hv1, zF - 0.1, zF - 0.02, { todas: branco, base: null, topo: null });
+  }
+  conta.portas++;
+
+  /* ---- A TESTEIRA: a faixa na cor 1 por cima do vidro, saltada, com o LED
+     nas bordas; os decalques: LOJA, o escudo no meio e a sigla ---- */
+  const tx0 = xe, tx1 = x1, ty0 = hv1, ty1 = h1, tz0 = zF - 0.16, tz1 = zF + 0.035;
+  B.caixa(tx0, tx1, ty0, ty1, tz0, tz1, { frente: cor1, base: branco, dir: cor1, topo: cor1, esq: cor1, tras: null });
+  const led = { k: 'lisa', tinta: LED_LOJA };
+  B.caixa(tx0, tx1, ty0 - 0.025, ty0, tz1 - 0.05, tz1 + 0.005, { frente: led, base: led, topo: led, dir: led, esq: led, tras: null });
+  B.caixa(tx0, tx1, ty1 - 0.03, ty1, tz1, tz1 + 0.012, { frente: led, topo: led, dir: led, esq: led, base: null, tras: null });
+  const meioT = (tx0 + tx1) / 2, altT = ty1 - ty0, zT = tz1 + 0.006;
+  const escudoT = Math.min(altT * 1.25, 0.82);
+  conta.placas.push({ tipo: 'escudo', x: meioT, y: ty0 + altT / 2, z: zT + 0.004, face: 'frente', larg: escudoT, alt: escudoT, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+  const ladoT = (tx1 - tx0) / 2 - escudoT / 2 - 0.15;
+  if (ladoT > 0.6) {
+    const larg = Math.min(ladoT, altT * 3.2), alt = Math.min(altT * 0.72, larg / 2.4);
+    conta.placas.push({ tipo: 'texto', texto: 'LOJA', x: meioT - escudoT / 2 - 0.08 - ladoT / 2, y: ty0 + altT / 2, z: zT, face: 'frente', larg, alt, tinta: c2, fundo: c1 });
+    conta.placas.push({ tipo: 'texto', texto: T.rot || '', x: meioT + escudoT / 2 + 0.08 + ladoT / 2, y: ty0 + altT / 2, z: zT, face: 'frente', larg, alt, tinta: c2, fundo: c1 });
+  }
+
+  /* ---- O CHÃO DE TÁBUA, o forro, a tela de arame e os spots ---- */
+  B.caixa(xi0, xi1, 0, 0.05, zi0, zF - 0.16, { topo: { k: 'lisa', tinta: TABUA }, frente: null, tras: null, esq: null, dir: null, base: null });
+  for (let x = xi0 + 0.19; x < xi1 - 0.05; x += 0.19)
+    B.caixa(x - 0.006, x + 0.006, 0.05, 0.053, zi0, zF - 0.16, { topo: { k: 'lisa', tinta: TABUA_JUNTA }, base: null, frente: null, tras: null, esq: null, dir: null });
+  B.tampa([[xi0, zF - 0.16], [xi1, zF - 0.16], [xi1, zi0], [xi0, zi0]], h1, 'lisa', true, { tinta: BRANCO_BAR });
+  /* a faixa na cor 1 corrida no alto das paredes de dentro (as vigas verdes da foto) */
+  B.caixa(xi0, xi0 + 0.012, h1 - 0.24, h1, zi0, zF - 0.16, { dir: cor1, base: cor1, esq: null, tras: null, frente: null, topo: null });
+  B.caixa(xi1 - 0.012, xi1, h1 - 0.24, h1, zi0, zG0, { esq: cor1, base: cor1, dir: null, tras: null, frente: null, topo: null });
+  const arame = { todas: { k: 'lisa', tinta: '#2a2a2a' }, topo: null }, ya = h1 - 0.33, ta0 = zi0 + 0.6, ta1 = zF - 1.2;
+  for (let x = xi0 + 0.6; x <= xi1 - 0.6 + 1e-6; x += 0.4) B.caixa(x - 0.006, x + 0.006, ya - 0.012, ya, ta0, ta1, arame);
+  for (let z = ta0; z <= ta1 + 1e-6; z += 0.4) B.caixa(xi0 + 0.6, xi1 - 0.6, ya - 0.024, ya - 0.012, z - 0.006, z + 0.006, arame);
+  const spot = { todas: { k: 'lisa', tinta: '#1d1d1d' } }, luzSpot = { k: 'lisa', tinta: '#fff8dc' };
+  for (const x of [xi0 + 0.75, xi1 - 0.75]) for (let z = zi0 + 1.2; z < zF - 1.4; z += 1.35) {
+    B.caixa(x - 0.05, x + 0.05, h1 - 0.42, h1 - 0.32, z - 0.05, z + 0.05, spot);
+    B.caixa(x - 0.04, x + 0.04, h1 - 0.425, h1 - 0.42, z - 0.04, z + 0.04, { base: luzSpot, topo: null, frente: null, tras: null, esq: null, dir: null });
+  }
+
+  /* ---- A VITRINE: o tablado atrás do vidro e os manequins ---- */
+  const vz0 = zF - 0.98, vz1 = zF - 0.18;
+  B.caixa(xv0 + 0.1, xv1 - 0.06, 0.05, 0.3, vz0, vz1, { topo: { k: 'lisa', tinta: '#f4f2ec' }, tras: cor1, esq: cor1, dir: cor1, frente: null, base: null });
+  const nM = Math.max(2, Math.min(5, Math.floor((xv1 - xv0 - 0.3) / 0.85)));
+  const passoM = (xv1 - xv0 - 0.3) / nM;
+  for (let i = 0; i < nM; i++) {
+    const mx = xv0 + 0.25 + passoM * (i + 0.5), daTorcida = i % 2 === 0;
+    manequimDaLoja(B, mx, (vz0 + vz1) / 2, 0.3, daTorcida ? (i % 4 === 0 ? c2 : c1) : k1, daTorcida ? (i % 4 === 0 ? c1 : c2) : null, daTorcida ? c1 : k2);
+  }
+
+  /* ---- A PAREDE DA ESCADA: duas fileiras de camisa no cabide e a
+     prateleira de cima com as caixas (o boné, a camisa dobrada) ---- */
+  const zr0 = zi0 + 1.75, zr1 = vz0 - 0.35;
+  if (zr1 - zr0 > 1) {
+    camisasNaBarra(B, xi0, 1, zr0, zr1, 2.52, roupas, 0);
+    camisasNaBarra(B, xi0, 1, zr0, zr1, 1.6, roupas, 3);
+    B.caixa(xi0, xi0 + 0.36, 2.66, 2.69, zr0, zr1, { todas: { k: 'lisa', tinta: TAMPO_LOJA }, esq: null });
+    let k = 0;
+    for (let z = zr0 + 0.25; z < zr1 - 0.2; z += 0.55, k++)
+      B.caixa(xi0 + 0.05, xi0 + 0.33, 2.69, 2.69 + (k % 2 ? 0.16 : 0.22), z - 0.16, z + 0.16, { todas: { k: 'lisa', tinta: k % 2 ? c1 : c2 }, base: null, esq: null });
+  }
+
+  /* ---- A PAREDE DA ESQUINA, por dentro: uma fileira de camisa e, em
+     cima, a bandeira da torcida (as listras nas três cores) ---- */
+  const zb0 = zi0 + 1.75, zb1 = zG0 - 0.3;
+  if (zb1 - zb0 > 1) {
+    camisasNaBarra(B, xi1, -1, zb0, zb1, 1.95, roupas, 5);
+    const Fb = B.plano([xi1, 0, zb1], [0, 0, -1], [0, 1, 0]);
+    const N = Fb.N; Fb.N = [-N[0], -N[1], -N[2]];          // (a face de dentro: o plano olha pra −x)
+    const bw = Math.min(2.2, zb1 - zb0 - 0.2), a0 = (zb1 - zb0 - bw) / 2;
+    retNoPlano(B, Fb, a0, a0 + bw, 2.08, 2.74, 0.012, c1);
+    retNoPlano(B, Fb, a0, a0 + bw, 2.3, 2.52, 0.016, c2);
+    retNoPlano(B, Fb, a0, a0 + bw, 2.38, 2.44, 0.02, c3);
+  }
+
+  /* ---- O FUNDO: o balcão do caixa (a frente na cor 1 com a faixa da 2, o
+     tampo de madeira, a caixa registradora e umas camisas dobradas); na
+     parede, o escudo e as camisas abertas (os decalques) ---- */
+  const cL = clamp(iw * 0.42, 1.8, 2.6), bx0 = xi0 + Math.max(0.5, (pe0 - cL) / 2), bx1 = bx0 + cL, bz0 = zi0 + 0.9, bz1 = bz0 + 0.55;
+  B.caixa(bx0, bx1, 0.05, 1.0, bz0, bz1, { frente: cor1, esq: cor1, dir: cor1, tras: { k: 'lisa', tinta: MADEIRA }, topo: null, base: null });
+  B.caixa(bx0, bx1, 0.62, 0.74, bz1, bz1 + 0.006, { frente: { k: 'lisa', tinta: c2 }, topo: null, base: null, tras: null, esq: null, dir: null });
+  B.caixa(bx0 - 0.03, bx1 + 0.03, 1.0, 1.04, bz0 - 0.03, bz1 + 0.04, { todas: { k: 'lisa', tinta: TAMPO_LOJA }, base: null });
+  B.caixa(bx1 - 0.55, bx1 - 0.15, 1.04, 1.18, bz0 + 0.08, bz0 + 0.4, { todas: { k: 'lisa', tinta: '#2e2e30' }, base: null });
+  B.caixa(bx1 - 0.5, bx1 - 0.2, 1.18, 1.36, bz0 + 0.12, bz0 + 0.16, { todas: { k: 'lisa', tinta: '#1a1a1a' }, base: null });
+  B.caixa(bx0 + 0.2, bx0 + 0.54, 1.04, 1.04 + 4 * 0.045, bz0 + 0.12, bz0 + 0.4, { todas: { k: 'lisa', tinta: c2 }, base: null });
+  const meioB = (bx0 + bx1) / 2;
+  conta.placas.push({ tipo: 'escudo', x: meioB, y: 2.28, z: zi0 + 0.02, face: 'frente', larg: 0.78, alt: 0.78, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null, luz: true });
+  const camisaNaParede = (x, k, daTorcida) => conta.placas.push({ tipo: 'camisa', x, y: 1.62, z: zi0 + 0.02, face: 'frente', larg: 0.62, alt: 0.62, k,
+    cor: daTorcida ? c1 : k1, cor2: daTorcida ? c2 : k2, cor3: daTorcida ? c3 : k2, texto: daTorcida ? (T.rot || '') : (T.clubeSigla || ''), img: daTorcida ? (T.escudo || null) : (T.escudoClube || null) });
+  for (const [dx, k, daT] of [[-1.2, 2, true], [-0.48, 1, false], [0.48, 0, true], [1.2, 1, false]]) {
+    const x = meioB + dx;
+    if (x > xi0 + 0.35 && x < xi0 + pe0 - 0.35) camisaNaParede(x, k, daT);
+  }
+
+  /* ---- O MEIO: as duas mesas de cano, a arara e a coluna com a sigla ---- */
+  const fundoLivre = bz1 + 0.9, frenteLivre = vz0 - 0.7, meioX = xi0 + 0.62 + (iw - 1.24) * 0.46;
+  const lx = clamp(iw * 0.24, 1.0, 1.35), lz = 0.75;
+  const cabe = frenteLivre - fundoLivre, zMeio = (fundoLivre + frenteLivre) / 2;
+  /* (as duas mesas a um terço e a dois terços do vão; numa loja rasa, uma só no meio) */
+  const zMesas = cabe > 2.6 ? [fundoLivre + cabe * 0.3, fundoLivre + cabe * 0.7] : cabe > 1.0 ? [zMeio] : [];
+  zMesas.forEach((z, i) => mesaDeCano(B, meioX, z, lx, lz, roupas, 1 + 3 * i));
+  const ax = Math.min(xi1 - 0.85, meioX + lx / 2 + 0.75), aLen = Math.min(1.8, cabe - 0.2);
+  if (cabe > 1.6 && ax - (meioX + lx / 2) > 0.45) araraDeCano(B, ax, zMeio - aLen / 2, zMeio + aLen / 2, roupas, 2);
+  if (cabe > 2.6) {
+    /* a coluna da foto, com a sigla de cima a baixo (o decalque olha pra porta) */
+    const cx = meioX - lx / 2 - 0.45, cz = zMeio;
+    if (cx - 0.2 > xi0 + 0.62) {
+      B.caixa(cx - 0.17, cx + 0.17, 0.05, h1, cz - 0.17, cz + 0.17, { todas: { k: 'lisa', tinta: '#f6f5f0' }, base: null, topo: null });
+      for (const [ya, yb] of [[0.05, 0.3], [h1 - 0.25, h1]]) B.caixa(cx - 0.175, cx + 0.175, ya, yb, cz - 0.175, cz + 0.175, { todas: cor1, base: null, topo: null });
+      conta.placas.push({ tipo: 'coluna', texto: T.rot || '', x: cx, y: (0.3 + h1 - 0.25) / 2, z: cz + 0.176, face: 'frente', larg: 0.3, alt: h1 - 0.55 - 0.1, tinta: c1, fundo: '#f6f5f0' });
+    }
+  }
+
+  /* ---- O APARTAMENTO em cima (o do bar) ---- */
+  apartamentoDoBar(B, G, conta, { s, x0, x1, z0, z1, h1, y2, topo, apto, claro });
+}
+/* OS DECALQUES SOLTOS DO LOTE (a loja da torcida: o escudo e o letreiro
+   da testeira, o escudo e as camisas da parede do fundo, a sigla da
+   coluna), no mundo: o meio, a normal (ox, oz) e o tamanho em unidades —
+   o que o `placaNoMundo` da planta pede. Cada um leva o que a textura
+   dele precisa (tipo, texto, cores, a imagem do escudo) */
+export function placasDoLote(l, p) {
+  if (!p || !p.placas || !p.placas.length) return [];
+  const f = frameDoLote(l);
+  return p.placas.map(q => {
+    const lx = q.x - p.W / 2, lz = q.z;
+    const n = q.face === 'dir' ? [f.rx, f.rz] : q.face === 'esq' ? [-f.rx, -f.rz] : [f.nx, f.nz];
+    return Object.assign({}, q, { x: f.fx + (lx * f.rx + lz * f.nx) * M, y: (p.y0 || 0) + q.y * M, z: f.fz + (lx * f.rz + lz * f.nz) * M,
+                                  ox: n[0], oz: n[1], larg: q.larg * M, alt: q.alt * M });
+  });
+}
+
+/* =======================================================
+   A SUBSEDE DA TORCIDA (o dono, 02/10/2026: "crie também uma subsede do
+   tamanho de uma casa comum, com dois compartimentos apenas (barzinho
+   embutido e pátio)" — e as fotos de referência: as fachadas da Mancha
+   em Rio Claro e em Matão, da Independente em Marília, dos Gaviões em
+   Guarulhos, e a Independente de Sorocaba por dentro). Mora num lote de
+   casa comum do mapa (uns 6 × 5 m: o lote de casa daqui é raso), e só
+   tem as duas coisas:
+   · A FACHADA na calçada: a parede em faixas (o rodapé e a faixa de cima
+     na cor forte da torcida, o meio claro), a porta de enrolar aberta com
+     o toldo na cor forte, o escudo pintado do lado e, na platibanda, o
+     nome da torcida em letra grande com o brilho do LED, e SUBSEDE e o
+     bairro embaixo (os decalques soltos);
+   · O PÁTIO COBERTO (a foto de Sorocaba): o telhado de metal nas
+     treliças com a faixa de telha clara, as paredes de bloco pintado de
+     branco com o rodapé cinza e a faixa da cor forte no alto, o escudo
+     da torcida e o do time pintados grandes, as bandeiras penduradas na
+     treliça, a faixa da subsede no fundo, a mesa e as cadeiras de
+     plástico brancas na faixa livre (a da porta é caminho), os surdos da
+     bateria encostados na fachada e a TV;
+   · O BARZINHO EMBUTIDO no fundo: a porta atrás da porta da rua e o
+     balcão de alvenaria do outro lado (a mureta de azulejo e o tampo de
+     granito saindo pro pátio), e por dentro a prateleira de garrafa, a
+     cervejeira, o freezer e o escudo.
+   `l.subsede.letreiro` é o que a fachada diz (SUBSEDE e o bairro; na
+   filial, SUBSEDE e a praça).
+   ======================================================= */
+function subsedeTorcida(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const T = l.torcida || null;
+  const c1 = T ? tintaViva(T.cor) : NEUTRO_BAR.cor, c2 = T ? tintaViva(T.cor2 || '#e8e2d0') : NEUTRO_BAR.cor2;
+  const c3 = T ? tintaViva(T.cor3 || T.cor2 || '#e8e2d0') : NEUTRO_BAR.cor3;
+  const k1 = T ? tintaViva(T.clubeCor || c1) : c1, k2 = T ? tintaViva(T.clubeCor2 || c2) : c2;
+  const luzDe = c => { const n = parseInt(String(c).slice(1), 16); return 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255); };
+  const forte = luzDe(c1) <= luzDe(c2) ? c1 : c2, fraca = forte === c1 ? c2 : c1;
+  /* a platibanda: a cor fraca, ou o branco quando ela também é escura; a letra na forte, ou na clara */
+  const fundoNome = luzDe(fraca) >= 140 ? fraca : '#f2f1ec', tintaNome = luzDe(fundoNome) - luzDe(forte) > 70 ? forte : '#f2f1ec';
+  const led = luzDe(forte) < 60 ? LED_LOJA : forte;
+  const reboco = { k: 'lisa', tinta: escolher(s, 'reboco', CORES_APTO) }, claro = '#f3f2ee', cinza = '#4a4b4f';
+  const x0 = 0.04, x1 = W - 0.04, z1 = -p.rec, z0 = -D + 0.04, e = 0.15;
+  const hp = 3.5, hf = 4.35, hd = 2.75;                // o pé-direito, o alto da platibanda, o alto da porta
+  const zF = z1, zFi = zF - e;                         // a fachada e a face de dentro dela
+  /* o barzinho no fundo: o balcão, o corredor de quem serve e a
+     prateleira (1,45 a 3,2 m — o lote de casa do mapa tem uns 5 m de
+     fundo, então o pátio fica com uns 3 m) */
+  const fundoBar = clamp((D - 0.4) * 0.34, 1.45, 3.2), zBi = z0 + e + fundoBar, zBr = zBi + e;
+  const compP = zFi - zBr;                             // o fundo do pátio
+  const nome = T ? (T.nome && T.nome.length <= 20 ? T.nome : T.rot || '') : '';
+  /* o letreiro: SUBSEDE e o bairro; o da filial (a subsede de uma torcida
+     de outra praça, o dono: "o letreiro deve ser SUBSEDE {praça} se for
+     filial"), SUBSEDE e a praça — a planta põe pronto em `l.subsede.letreiro` */
+  const sb = l.subsede || {}, letreiro = sb.letreiro || (sb.bairro ? 'SUBSEDE ' + sb.bairro : 'SUBSEDE');
+
+  /* ---- A FACHADA: a porta de enrolar aberta, de um lado (o sorteio) ---- */
+  const dw = Math.min(3.4, (x1 - x0) * 0.46), portaEsq = s('porta') < 0.5;
+  const d0 = portaEsq ? x0 + 0.45 : x1 - 0.45 - dw, d1 = d0 + dw;
+  /* a parede do lado da porta e a do outro lado (a livre: a mesa, os surdos, a TV e o escudo) */
+  const xPorta = portaEsq ? x0 + e : x1 - e, xLivre = portaEsq ? x1 - e : x0 + e, sL = portaEsq ? -1 : 1;
+  const faceLivre = portaEsq ? 'esq' : 'dir', facePorta = portaEsq ? 'dir' : 'esq';
+  const fora = { k: 'lisa', tinta: '#f2f1ec' }, dentroF = { k: 'bloco', tinta: '#efeee9' };
+  for (const [a, b] of [[x0, d0], [d1, x1]]) if (b - a > 0.02) B.caixa(a, b, 0, hp, zFi, zF, { frente: fora, tras: dentroF, esq: fora, dir: fora, topo: null, base: null });
+  B.caixa(d0, d1, hd, hp, zFi, zF, { frente: fora, tras: dentroF, base: fora, esq: null, dir: null, topo: null });
+  /* a porta enrolada lá em cima (a régua de baixo à vista) */
+  B.esticar(B.plano([d0, 0, zF - 0.05], [1, 0, 0], [0, 1, 0]), 0, dw, hd - 0.13, hd, 'enrolar', { parte: [0, 1, 0, 0.05] });
+  conta.portas++;
+  /* as faixas pintadas: o rodapé e a faixa de cima (por cima da porta também) na cor forte — a
+     mais escura das duas da torcida: na Mancha o verde, na Independente o vermelho —, o filete da 3 */
+  const faixaF = (a, b, y0, y1, tinta, sai = 0.008) => B.caixa(a, b, y0, y1, zF, zF + sai, { frente: { k: 'lisa', tinta }, topo: { k: 'lisa', tinta }, base: { k: 'lisa', tinta }, esq: { k: 'lisa', tinta }, dir: { k: 'lisa', tinta }, tras: null });
+  for (const [a, b] of [[x0, d0], [d1, x1]]) if (b - a > 0.02) { faixaF(a, b, 0, 0.95, forte); faixaF(a, b, 0.95, 1.03, c3, 0.01); }
+  faixaF(x0, x1, hd + 0.12, hp, forte);
+  /* a platibanda, com o nome; o LED em cima e embaixo */
+  B.caixa(x0, x1, hp, hf, zF - 0.2, zF + 0.02, { frente: { k: 'lisa', tinta: fundoNome }, topo: { k: 'lisa', tinta: claro }, esq: { k: 'lisa', tinta: fundoNome }, dir: { k: 'lisa', tinta: fundoNome }, tras: reboco, base: null });
+  const ledL = { k: 'lisa', tinta: led };
+  B.caixa(x0, x1, hf - 0.03, hf + 0.01, zF + 0.02, zF + 0.04, { frente: ledL, topo: ledL, base: ledL, esq: ledL, dir: ledL, tras: null });
+  B.caixa(x0, x1, hp - 0.02, hp + 0.01, zF + 0.02, zF + 0.04, { frente: ledL, topo: ledL, base: ledL, esq: ledL, dir: ledL, tras: null });
+  /* o toldo de chapa na cor forte por cima da porta, com a mão-francesa */
+  B.pintar(forte); toldo(B, B.plano([d0, 0, zF], [1, 0, 0], [0, 1, 0]), -0.25, dw + 0.25, hd + 0.1, 0.95, 0.42, 'lisa'); B.pintar(null);
+  for (const x of [d0 - 0.2, d1 + 0.2]) B.caixa(x - 0.02, x + 0.02, hd - 0.32, hd + 0.08, zF, zF + 0.9, { todas: { k: 'lisa', tinta: '#3a3a3a' }, base: null });
+  /* o muro da frente é a frente do lote (o bairro procura lugar de pixação nele) */
+  conta.frentes.push({ x0, x1, y0: 0, y1: hp, z: zF, vaos: [{ a0: d0, a1: d1, b0: 0, b1: hd, k: 'enrolar', fundo: 0.05 }] });
+  /* os decalques da rua: o nome na platibanda, SUBSEDE e o bairro na faixa de cima, o escudo pintado do lado da porta */
+  if (T) {
+    const lp = x1 - x0 - 0.3;
+    conta.placas.push({ tipo: 'texto', texto: nome, x: (x0 + x1) / 2, y: (hp + hf) / 2, z: zF + 0.025, face: 'frente', larg: lp, alt: Math.min(0.72, hf - hp - 0.08), tinta: tintaNome, brilho: led, fundo: null });
+    conta.placas.push({ tipo: 'texto', texto: letreiro, x: (x0 + x1) / 2, y: (hd + 0.12 + hp) / 2, z: zF + 0.012, face: 'frente', larg: Math.min(lp, 5.2), alt: Math.min(0.42, hp - hd - 0.2), tinta: luzDe(forte) > 150 ? '#1d1d1d' : '#f6f3ea', fundo: null });
+    const [pa, pb] = portaEsq ? [d1, x1] : [x0, d0];
+    if (pb - pa > 1.0) {
+      const es = Math.min(1.45, pb - pa - 0.3, hd - 1.15);
+      conta.placas.push({ tipo: 'escudo', x: (pa + pb) / 2, y: 1.05 + 0.1 + es / 2, z: zF + 0.012, face: 'frente', larg: es, alt: es, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+    }
+  }
+
+  /* ---- AS PAREDES DO LADO: o reboco por fora; por dentro, o bloco
+     pintado de branco, o rodapé cinza e a faixa da cor forte no alto. Sobem
+     até a frente do telhado (a platibanda do lado e do fundo esconde o
+     telhado caindo) ---- */
+  const blocoB = { k: 'bloco', tinta: '#efeee9' }, hw = hp + 0.35;
+  B.caixa(x0, x0 + e, 0, hw, z0, zFi, { esq: reboco, dir: blocoB, topo: reboco, frente: null, tras: null, base: null });
+  B.caixa(x1 - e, x1, 0, hw, z0, zFi, { dir: reboco, esq: blocoB, topo: reboco, frente: null, tras: null, base: null });
+  B.caixa(x0 + e, x1 - e, 0, hw, z0, z0 + e, { tras: reboco, frente: blocoB, topo: reboco, esq: null, dir: null, base: null });
+  const pinta = (a, b, y0, y1, za, zb, face, tinta) => B.caixa(a, b, y0, y1, za, zb, { [face]: { k: 'lisa', tinta }, topo: null, base: { k: 'lisa', tinta }, frente: null, tras: null, esq: null, dir: null });
+  for (const [xa, xb, face] of [[x0 + e, x0 + e + 0.008, 'dir'], [x1 - e - 0.008, x1 - e, 'esq']]) {
+    pinta(xa, xb, 0, 0.9, zBr, zFi, face, cinza);
+    pinta(xa, xb, hp - 0.75, hp, zBr, zFi, face, forte);
+  }
+  /* (a face de dentro da fachada: o rodapé dos dois lados da porta, a faixa de cima inteira) */
+  const faixaDentro = (a, b, y0, y1, tinta) => { if (b - a > 0.02) B.caixa(a, b, y0, y1, zFi - 0.008, zFi, { tras: { k: 'lisa', tinta }, base: { k: 'lisa', tinta }, topo: null, frente: null, esq: { k: 'lisa', tinta }, dir: { k: 'lisa', tinta } }); };
+  faixaDentro(x0 + e, d0, 0, 0.9, cinza); faixaDentro(d1, x1 - e, 0, 0.9, cinza);
+  faixaDentro(x0 + e, x1 - e, hp - 0.75, hp, forte);
+
+  /* ---- O CHÃO de cimento queimado ---- */
+  B.caixa(x0 + e, x1 - e, 0, 0.04, zBr, zFi, { topo: { k: 'lisa', tinta: '#cfcbc2' }, frente: null, tras: null, esq: null, dir: null, base: null });
+
+  /* ---- O TELHADO DE METAL nas treliças, caindo pro fundo, com a faixa
+     de telha clara no meio (a luz do dia entra por ela) ---- */
+  const yTf = hp + 0.3, yTb = hp - 0.05;               // o telhado na frente (atrás da platibanda) e no fundo
+  const telhaY = z => yTb + (yTf - yTb) * (z - z0) / (zFi - z0);
+  {
+    const sobe = [0, yTf - yTb, zFi - z0], L = Math.hypot(sobe[1], sobe[2]), V = sobe.map(v => v / L);
+    /* a chapa de cima (a normal pra cima) e a de baixo, cinza, que se vê de dentro */
+    B.esticar(B.plano([x1, yTb, z0], [-1, 0, 0], V), 0, x1 - x0, 0, L, 'zinco');
+    B.esticar(B.plano([x0, yTb - 0.01, z0], [1, 0, 0], V), 0, x1 - x0, 0, L, 'lisa', { tinta: '#a7aaad' });
+    /* a faixa de telha clara no meio, por cima e por baixo */
+    const xm = (x0 + x1) / 2;
+    B.esticar(B.plano([xm + 0.5, yTb + 0.006, z0], [-1, 0, 0], V), 0, 1.0, 0.3, L - 0.3, 'lisa', { tinta: '#d9e0e2' });
+    B.esticar(B.plano([xm - 0.5, yTb - 0.015, z0], [1, 0, 0], V), 0, 1.0, 0.3, L - 0.3, 'lisa', { tinta: '#eef1f2' });
+  }
+  /* as treliças, de lado a lado: o banzo de cima e o de baixo e as diagonais; a lâmpada pendurada */
+  const ferro = { todas: { k: 'lisa', tinta: '#5b5e63' } };
+  const nTr = Math.max(1, Math.round(compP / 2.6)), trs = [];
+  for (let i = 1; i <= nTr; i++) {
+    const z = zBr + compP * i / (nTr + 1), yt = telhaY(z) - 0.06, yb = yt - 0.42;
+    trs.push({ z, yb });
+    B.caixa(x0 + e, x1 - e, yt - 0.06, yt, z - 0.04, z + 0.04, ferro);
+    B.caixa(x0 + e, x1 - e, yb, yb + 0.06, z - 0.04, z + 0.04, ferro);
+    for (let x = x0 + e + 0.5; x < x1 - e - 0.3; x += 0.6) B.caixa(x - 0.025, x + 0.025, yb + 0.06, yt - 0.06, z - 0.02, z + 0.02, ferro);
+    const xm = (x0 + x1) / 2;
+    B.caixa(xm - 0.006, xm + 0.006, yb - 0.5, yb, z - 0.006, z + 0.006, { todas: { k: 'lisa', tinta: '#1d1d1d' } });
+    B.pintar('#e9e6dc'); B.torno(xm, z, [[0.02, yb - 0.5], [0.16, yb - 0.66], [0.17, yb - 0.68], [0, yb - 0.68]], 10, 'lisa'); B.pintar(null);
+  }
+  /* as bandeiras penduradas na treliça (a da torcida e a do time, alternando) */
+  trs.forEach((tr, i) => {
+    const bw = Math.min(1.5, (x1 - x0) * 0.22), xs = [x0 + (x1 - x0) * 0.27, x0 + (x1 - x0) * 0.73];
+    xs.forEach((xc, j) => {
+      const F = B.plano([xc - bw / 2, 0, tr.z + 0.05], [1, 0, 0], [0, 1, 0]);
+      const y0 = tr.yb - 0.95, y1 = tr.yb - 0.02, doTime = (i + j) % 2 === 1;
+      retNoPlano(B, F, 0, bw, y0, y1, 0, doTime ? k1 : c1);
+      if (doTime) for (let k = 1; k < 6; k += 2) retNoPlano(B, F, bw * k / 7, bw * (k + 1) / 7, y0, y1, 0.004, k2);
+      else { retNoPlano(B, F, 0, bw, y0 + (y1 - y0) * 0.36, y0 + (y1 - y0) * 0.64, 0.004, c2); retNoPlano(B, F, 0, bw, y0 + (y1 - y0) * 0.46, y0 + (y1 - y0) * 0.54, 0.008, c3); }
+    });
+  });
+
+  /* ---- OS MURAIS: o escudo da torcida na parede livre (é o que a rua vê
+     pela porta), o do time na do lado da porta ---- */
+  if (T && compP > 1.9) {
+    const es = Math.min(2.1, compP * 0.42, hp - 1.75);
+    conta.placas.push({ tipo: 'escudo', x: xLivre + sL * 0.012, y: 1.1 + es / 2, z: zBr + Math.max(es / 2 + 0.15, compP * 0.36), face: faceLivre,
+                        larg: es, alt: es, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+    if (T.escudoClube) conta.placas.push({ tipo: 'escudo', x: xPorta - sL * 0.012, y: 1.1 + es * 0.42, z: zBr + compP * 0.5, face: facePorta,
+                                           larg: es * 0.84, alt: es * 0.84, fundo: k2, cor: k1, texto: T.clubeSigla || '', img: T.escudoClube });
+  }
+
+  /* ---- OS SURDOS da bateria encostados na fachada, do lado livre; a TV
+     na parede livre, por cima deles ---- */
+  {
+    const sx = xLivre + sL * 0.42, sz = zFi - 0.4;
+    for (const [cx, r, h] of [[sx, 0.3, 0.62], [sx + sL * 0.66, 0.27, 0.56]]) {
+      B.pintar(forte); B.torno(cx, sz, [[r, 0.04], [r, 0.04 + h]], 12, 'lisa'); B.pintar(null);
+      B.pintar('#efeee9'); B.torno(cx, sz, [[r + 0.01, 0.04 + h], [0, 0.04 + h + 0.005]], 12, 'lisa'); B.pintar(null);
+    }
+    if (compP > 1.4) {
+      const tvz = Math.max(zBr + 0.6, zFi - 0.85), xa = xLivre + sL * 0.06, xb = xLivre + sL * 0.066;
+      B.caixa(Math.min(xLivre, xa), Math.max(xLivre, xa), 2.2, 2.75, tvz - 0.45, tvz + 0.45, { todas: { k: 'lisa', tinta: '#141414' }, base: null });
+      B.caixa(Math.min(xa, xb), Math.max(xa, xb), 2.24, 2.71, tvz - 0.41, tvz + 0.41, { [faceLivre]: { k: 'lisa', tinta: TELA }, topo: null, base: null, frente: null, tras: null, [facePorta]: null });
+    }
+  }
+
+  /* ---- AS MESAS E AS CADEIRAS DE PLÁSTICO brancas: perto da rua só na
+     faixa livre (a porta é caminho), no fundo do pátio grande em qualquer
+     lugar; o balcão pede 1,25 m de frente ---- */
+  {
+    const fa = portaEsq ? d1 + 0.1 : x0 + e, fb = portaEsq ? x1 - e : d0 - 0.1;
+    let n = 0;
+    for (let z = zBr + 1.25; z + 0.35 < zFi - 0.75 && n < 6; z += 1.7) {
+      const perto = z > zFi - 2.6, xs = [];
+      if (perto) { if (fb - fa >= 1.7) xs.push((fa + fb) / 2); }
+      else for (let x = x0 + e + 0.85; x <= x1 - e - 0.85 + 1e-6; x += 1.9) xs.push(x);
+      const comSul = z + 0.81 < zFi - 0.72;
+      for (const x of xs) {
+        if (n >= 6) break;
+        mesa(B, x, z, 0.04, 0.7, BRANCO_BAR);
+        cadeira(B, x - 0.6, z, 0.04, 'o', BRANCO_BAR); cadeira(B, x + 0.6, z, 0.04, 'l', BRANCO_BAR);
+        if (comSul) cadeira(B, x, z + 0.6, 0.04, 's', BRANCO_BAR);
+        n++;
+      }
+    }
+  }
+
+  /* ---- O BARZINHO EMBUTIDO, no fundo: a parede de lado a lado com a
+     porta atrás da porta da rua e o balcão de alvenaria do outro lado
+     (a mureta de azulejo e o tampo de granito saindo pro pátio); a
+     faixa da subsede por cima. A parede vai até o telhado ---- */
+  const hb = telhaY(zBr) - 0.02;
+  let px0, px1, bx0, bx1;
+  if (portaEsq) { px0 = x0 + e + 0.3; px1 = px0 + 0.85; bx0 = px1 + 0.3; bx1 = Math.min(x1 - e - 0.3, bx0 + Math.max(2.2, (x1 - x0) * 0.5)); }
+  else { px1 = x1 - e - 0.3; px0 = px1 - 0.85; bx1 = px0 - 0.3; bx0 = Math.max(x0 + e + 0.3, bx1 - Math.max(2.2, (x1 - x0) * 0.5)); }
+  const fB = { k: 'bloco', tinta: '#efeee9' }, dB = { k: 'lisa', tinta: claro };
+  const pecaB = (a, b, y0, y1, extra = {}) => { if (b - a > 0.02) B.caixa(a, b, y0, y1, zBi, zBr, Object.assign({ frente: fB, tras: dB, esq: fB, dir: fB, topo: null, base: null }, extra)); };
+  const cortes = [x0 + e, ...[px0, px1, bx0, bx1].sort((a, b) => a - b), x1 - e];
+  for (let i = 0; i < cortes.length - 1; i++) {
+    const a = cortes[i], b = cortes[i + 1], m = (a + b) / 2;
+    if (m > px0 && m < px1) pecaB(a, b, 2.1, hb, { base: fB });
+    else if (m > bx0 && m < bx1) { pecaB(a, b, 0, 1.0, { frente: 'azulejo' }); pecaB(a, b, 2.25, hb, { base: fB }); }
+    else {
+      pecaB(a, b, 0, hb);
+      if (b - a > 0.02) B.caixa(a, b, 0, 0.9, zBr, zBr + 0.008, { frente: { k: 'lisa', tinta: cinza }, topo: { k: 'lisa', tinta: cinza }, base: null, tras: null, esq: null, dir: null });
+    }
+  }
+  B.caixa(x0 + e, x1 - e, hp - 0.75, Math.min(hp, hb), zBr, zBr + 0.008, { frente: { k: 'lisa', tinta: forte }, base: { k: 'lisa', tinta: forte }, topo: null, tras: null, esq: null, dir: null });
+  B.caixa(bx0 - 0.05, bx1 + 0.05, 1.0, 1.05, zBi - 0.25, zBr + 0.32, { todas: { k: 'lisa', tinta: GRANITO }, base: null });
+  B.fachada(B.plano([px0, 0, zBr - 0.02], [1, 0, 0], [0, 1, 0]), px1 - px0, 2.1, 'lisa', [{ a0: 0, a1: px1 - px0, b0: 0, b1: 2.1, k: 'porta_madeira', fundo: 0.04 }], { tinta: claro });
+  /* a faixa da subsede, de pano, por cima do balcão (a foto de Sorocaba) */
+  if (T) conta.placas.push({ tipo: 'faixa', texto: `${nome} · ${letreiro}`, x: (x0 + x1) / 2, y: 2.62, z: zBr + 0.012, face: 'frente',
+                             larg: Math.min(x1 - x0 - 0.6, 6.0), alt: 0.5, tinta: c1, fundo: luzDe(c1) > 200 ? c2 : '#f6f4ee' });
+  /* dentro: o piso, a prateleira de garrafa por cima do balcão, a cervejeira na ponta, o freezer atrás do balcão e o escudo */
+  xadrez(B, x0 + e, x1 - e, z0 + e, zBi, 0.04, 0.42, XADREZ_CREME, forte);
+  B.fachada(B.plano([x0 + e, 0, z0 + e + 0.002], [1, 0, 0], [0, 1, 0]), x1 - x0 - 2 * e, 2.9, 'lisa',
+            [{ a0: bx0 - (x0 + e) + 0.1, a1: bx1 - (x0 + e) - 0.1, b0: 1.15, b1: 2.05, k: 'prateleira' }], { tinta: claro });
+  const cv0 = portaEsq ? x1 - e - 0.7 : x0 + e + 0.05, cv1 = cv0 + 0.65;
+  B.caixa(cv0, cv1, 0.04, 1.9, z0 + e + 0.05, z0 + e + 0.65, { todas: { k: 'lisa', tinta: '#eef0ef' }, base: null });
+  const fz0 = portaEsq ? bx0 + 0.05 : bx1 - 1.2;
+  freezer(B, fz0, fz0 + 1.15, zBi - 0.72, zBi - 0.08, 0.04, 'frente');
+  if (T) conta.placas.push({ tipo: 'escudo', x: (cv0 + cv1) / 2, y: 2.35, z: z0 + e + 0.02, face: 'frente', larg: 0.6, alt: 0.6, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+  /* o forro do barzinho, embaixo do telhado */
+  B.tampa([[x0 + e, zBi], [x1 - e, zBi], [x1 - e, z0 + e], [x0 + e, z0 + e]], 2.9, 'lisa', true, { tinta: BRANCO_BAR });
 }
 
 /* =======================================================
@@ -2708,7 +3267,7 @@ function estacionamento(B, p, l, conta) {
 }
 
 const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4, baldio,
-                bartorcida: barTorcida, ...TIPOS_LOJA,
+                bartorcida: barTorcida, lojatorcida: barTorcida, subsede: subsedeTorcida, ...TIPOS_LOJA,
                 com_espetinho: comercio('espetinho'), com_hamburgueria: comercio('hamburgueria'), com_pizzaria: comercio('pizzaria'), com_barzinho: comercio('barzinho'),
                 estacionamento };
 
@@ -2744,11 +3303,16 @@ export function montarCasa(l, p, destino, y0 = 0) {
   const favela = OPCOES_CASAS.favelaLowPoly && TIPOS_FAVELA.has(p.tipo);
   const B = Construtor('casas', favela ? { chapado: { paleta: PALETA_FAVELA, branca: 'lisa', rnd: sorteio(Math.floor(p.s('lowpoly') * 4294967295)), treme: 0.06, lados: 6 } } : {});
   const G = Construtor('grades');
-  const conta = { portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [] };
+  /* o vidro transparente (a vitrine da loja da torcida): a folha das
+     grades só pela geometria — o material 'vidros' da planta não tem
+     textura —, numa lista à parte (`destino.vidros`) */
+  const V = Construtor('grades');
+  const conta = { portas: 0, janelas: 0, janelasLado: 0, frentes: [], obst: [], placas: [], vidros: V };
   TIPOS[p.tipo](B, p, l, conta, G);
-  p.frentes = conta.frentes; p.obst = conta.obst; p.y0 = y0;
+  p.frentes = conta.frentes; p.obst = conta.obst; p.placas = conta.placas; p.y0 = y0;
   const f = frameDoLote(l), meio = p.W / 2;
-  for (const [C, lista] of [[B, destino.casas], [G, destino.grades]]) {
+  for (const [C, lista] of [[B, destino.casas], [G, destino.grades], [V, destino.vidros]]) {
+    if (!lista) continue;
     const n = C.pos.length / 3, P = C.pos;
     if (!n) continue;
     const pos = new Float32Array(n * 3);

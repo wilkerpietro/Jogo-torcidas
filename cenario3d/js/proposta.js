@@ -1540,6 +1540,9 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const perto = q => q.j <= 0 && q.i >= 3;                      // o norte perto do estádio: mais denso
   const LISTA_NORTE = ['casa', 'sobrado', 'sobrado', 'predio', 'galpao', 'casa', 'sobrado', 'muro'];
   const LISTA_OESTE = ['casa', 'casa', 'casa', 'casa', 'sobrado', 'sobrado', 'muro', 'galpao'];
+  /* (as casas do espaço de sede sem dono: sem terreno baldio — 02/10/2026,
+     o espaço pequeno da quadra 5,2 saía com quatro baldios em cinco lotes) */
+  const LISTA_CASAS = ['casa', 'casa', 'sobrado', 'casa', 'sobrado', 'galpao', 'casa', 'sobrado'];
   const lotear = (q, frentes) => {
     /* as duas metades da quadra partida (e a quadra juntada) têm o
        mesmo i,j: o sal separa o sorteio de uma do da outra */
@@ -1552,7 +1555,7 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       while (a < a1 - 24) {
         let larg = par8(entre(72, 144, si, sj, fi, k, 2));
         if (a + larg > a1 - 36) larg = a1 - a;
-        const lista = perto(q) ? LISTA_NORTE : LISTA_OESTE;
+        const lista = q.lista || (perto(q) ? LISTA_NORTE : LISTA_OESTE);
         const tipo = lista[Math.floor(sorte(si, sj, fi, k, 3) * lista.length)];
         const T = TIPOS[tipo];
         const l = { frente: fr.f, tipo, proposta: true,
@@ -1768,6 +1771,42 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   const terrenos = [];
   const lotesExtra = [], lotesTirados = new Set();
   const bbLote = l => l.ang ? bbOf(cantos(l)) : l;
+  /* O CORTE DO TERRENO NUMA QUADRA DA PROPOSTA: o lote que cai nele sai, e
+     o reto que passa da divisa fica com o pedaço de fora, se der casa —
+     como na quadra de hoje (02/10/2026: entre a sede e a casa do lado
+     ficava um vão de terra de 1 a 11 m) —; o quintal encolhe até a divisa,
+     e o pedaço dele que cai no terreno fica guardado: sem sede, o terreno
+     é casa, com o quintal no meio */
+  const cortarTerreno = (q, area, leste) => {
+    const fora = l => l.x1 <= area.x0 + 0.5 || l.x0 >= area.x1 - 0.5 || l.y1 <= area.y0 + 0.5 || l.y0 >= area.y1 - 0.5;
+    const restos = [];
+    for (const l of q.lotes) {
+      if (fora(l) || l.ang || l.modelo) continue;
+      const resto = leste ? { ...l, x1: Math.min(l.x1, area.x0) } : { ...l, x0: Math.max(l.x0, area.x1) };
+      if (resto.x1 - resto.x0 < 56) continue;
+      delete resto._plano; if (resto.muro) delete resto.muro;
+      resto.divisa = true;
+      restos.push(resto);
+    }
+    q.lotes = q.lotes.filter(fora).concat(restos);
+    /* (o resto fino demais pra casa — menos de 5,6 m — sai, e o vão fica
+       com a casa do lado da fileira: ela cresce até a divisa) */
+    for (const fr of ['n', 's']) {
+      const lado = q.lotes.filter(l => l.frente === fr && !l.ang && (leste ? l.x1 <= area.x0 + 0.5 : l.x0 >= area.x1 - 0.5));
+      if (!lado.length) continue;
+      const viz = lado.reduce((a, l) => (leste ? l.x1 > a.x1 : l.x0 < a.x0) ? l : a);
+      const vao = leste ? area.x0 - viz.x1 : viz.x0 - area.x1;
+      if (vao > 0.5 && vao < 60 && !viz.modelo) { if (leste) viz.x1 = area.x0; else viz.x0 = area.x1; delete viz._plano; viz.divisa = true; }
+    }
+    let quintal = null;
+    if (q.quintal) {
+      const p = { ...q.quintal, x0: Math.max(q.quintal.x0, area.x0), x1: Math.min(q.quintal.x1, area.x1) };
+      if (p.x1 - p.x0 >= 20) quintal = p;
+      q.quintal = leste ? { ...q.quintal, x1: Math.min(q.quintal.x1, area.x0) } : { ...q.quintal, x0: Math.max(q.quintal.x0, area.x1) };
+      if (q.quintal.x1 - q.quintal.x0 < 20) q.quintal = null;
+    }
+    return quintal;
+  };
   /* a sede de hoje colada num estádio da praça sai (vira casa, mais
      abaixo): no lugar dela, um terreno a mais */
   const sedesDeHoje = K.QUADRAS.filter(q => !substitui.has(q.i + ',' + q.j) && q.equip && q.equip.tipo === 'sede');
@@ -1796,16 +1835,14 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         const resto = leste ? { ...l, x1: Math.min(l.x1, area.x0) } : { ...l, x0: Math.max(l.x0, area.x1) };
         if (resto.x1 - resto.x0 < 56) continue;
         delete resto._plano; if (resto.muro) delete resto.muro;
-        resto.proposta = true; resto.aparado = true; resto.quadra = { i: q.i, j: q.j, hoje: true };
+        resto.proposta = true; resto.divisa = true; resto.quadra = { i: q.i, j: q.j, hoje: true };
         lotesExtra.push(resto);
       }
-    } else {
-      q.lotes = q.lotes.filter(l => l.x1 <= area.x0 + 0.5 || l.x0 >= area.x1 - 0.5 || l.y1 <= area.y0 + 0.5 || l.y0 >= area.y1 - 0.5);
-      if (q.quintal) { q.quintal = { ...q.quintal, x0: Math.max(q.quintal.x0, area.x1) }; if (q.quintal.x1 - q.quintal.x0 < 20) q.quintal = null; }
     }
+    const quintal = hoje ? null : cortarTerreno(q, area, leste);
     const n = terrenos.length + 1;
     const T = { n, nome: 'Terreno para sede ' + n, frente: t.frente, onde: t.onde, area, quadra: hoje ? t.id : q.id, emQuadraDeHoje: hoje,
-                longeDoEstadio: distDoEstadio(area) / M };
+                longeDoEstadio: distDoEstadio(area) / M, quintal };
     if (!hoje) q.terreno = T;                 // (a quadra de hoje é da planta, a mesma pros três mapas: não se mexe nela)
     terrenos.push(T);
   });
@@ -1831,14 +1868,10 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       if (n >= quer) break;
       const { q, area, leste } = c;
       if (q.terreno) continue;
-      q.lotes = q.lotes.filter(l => l.x1 <= area.x0 + 0.5 || l.x0 >= area.x1 - 0.5 || l.y1 <= area.y0 + 0.5 || l.y0 >= area.y1 - 0.5);
-      if (q.quintal) {
-        q.quintal = leste ? { ...q.quintal, x1: Math.min(q.quintal.x1, area.x0) } : { ...q.quintal, x0: Math.max(q.quintal.x0, area.x1) };
-        if (q.quintal.x1 - q.quintal.x0 < 20) q.quintal = null;
-      }
+      const quintal = cortarTerreno(q, area, leste);
       const k = terrenos.length + 1;
       const T = { n: k, nome: 'Terreno para sede ' + k, frente: (q.j % 2) ? 's' : 'n', onde: B.nome, area, quadra: q.id, emQuadraDeHoje: false,
-                  longeDoEstadio: distDoEstadio(area) / M, bairro: B.id, cidade: m.nome };
+                  longeDoEstadio: distDoEstadio(area) / M, bairro: B.id, cidade: m.nome, quintal };
       q.terreno = T; terrenos.push(T); n++;
     }
     if (n < quer) avisos.push(`${m.nome}: o bairro ${B.nome} ficou com ${n} de ${quer} terreno(s) de sede`);
@@ -1860,10 +1893,12 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   /* a fatia do bar grande: as fileiras da conta do lotear, no fundo das
      que já existem na quadra, só onde não tem lote (`so`: só dentro dessa
      caixa — a sede de hoje que sai vira casa só no lugar dela) */
-  const viraCasa = (q, sal, marca, so = null, destino = lotesExtra) => {
-    const fundos = q.lotes.filter(l => !l.ang && (l.frente === 'n' || l.frente === 's')).map(l => l.y1 - l.y0);
+  /* (as casas que cabem na caixa `so` da quadra, fora dos lotes de `ocupa`;
+     a quadra das casas é a da proposta — a de hoje troca depois) */
+  const casasNaCaixa = (q, sal, so = null, ocupa = q.lotes, lista = null) => {
+    const fundos = ocupa.filter(l => !l.ang && (l.frente === 'n' || l.frente === 's')).map(l => l.y1 - l.y0);
     const prof = Math.max(88, ...fundos);
-    const ocup = q.lotes.map(bbLote);
+    const ocup = ocupa.map(bbLote);
     let fileiras = [{ f: 'n', x0: q.ix0, x1: q.ix1, y0: q.iy0, y1: q.iy0 + prof }, { f: 's', x0: q.ix0, x1: q.ix1, y0: q.iy1 - prof, y1: q.iy1 },
                     { f: 'o', x0: q.ix0, x1: q.ix0 + prof, y0: q.iy0 + prof, y1: q.iy1 - prof }, { f: 'l', x0: q.ix1 - prof, x1: q.ix1, y0: q.iy0 + prof, y1: q.iy1 - prof }];
     if (so) fileiras = fileiras.map(fr => ({ ...fr, x0: Math.max(fr.x0, so.x0), x1: Math.min(fr.x1, so.x1), y0: Math.max(fr.y0, so.y0), y1: Math.min(fr.y1, so.y1) }))
@@ -1879,9 +1914,12 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
         a = Math.max(a, t1);
       }
     }
-    const qx = { i: q.i, j: q.j, sal, lotes: [] };
+    const qx = { i: q.i, j: q.j, sal, lotes: [], cidade: q.cidade, ix0: q.ix0, ix1: q.ix1, iy0: q.iy0, iy1: q.iy1, lista };
     lotear(qx, livres);
-    for (const l of qx.lotes) { l.quadra = { i: q.i, j: q.j, hoje: true }; l[marca] = true; destino.push(l); }
+    return { lotes: qx.lotes, prof };
+  };
+  const viraCasa = (q, sal, marca, so = null, destino = lotesExtra) => {
+    for (const l of casasNaCaixa(q, sal, so).lotes) { l.quadra = { i: q.i, j: q.j, hoje: true }; l[marca] = true; destino.push(l); }
   };
   for (const id of BARES_HOJE) {
     const q = deHojeSem.find(q => q.i + ',' + q.j === id);
@@ -2204,6 +2242,30 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
   for (const q of deHojeSem) if (q.equip && q.equip.tipo === 'sede' && !sedesHojeSaem.includes(q.i + ',' + q.j))
     espacosSede.push({ id: 'sede' + q.i + ',' + q.j, nome: 'Sede da quadra ' + q.i + ',' + q.j, area: { ...q.equip.area }, frente: q.equip.frente,
                        cabe: q.equip.nivel === 1 ? 1 : 5, hoje: true, quadra: q.i + ',' + q.j, equip: q.equip });
+  /* AS CASAS DO ESPAÇO SEM SEDE (o dono, 02/10/2026: "exclua essa parte de
+     sede vaga que não tem sentido"): o espaço de sede é casa até uma
+     torcida morar nele. As fileiras da conta do lotear, no espaço e no vão
+     até a casa do lado (a caixa vai até 15 m pra dentro da quadra, e o lote
+     que ficou nela corta), numa lista do espaço — como as casas do prédio
+     alto do centro —, com o pedaço do quintal que cai nele; a planta mostra
+     as casas quando o espaço fica sem dono, e a sede quando tem */
+  for (const e of espacosSede) {
+    const naHoje = e.hoje || e.emQuadraDeHoje;
+    const q = naHoje ? deHoje(e.quadra) : quadras.find(o => o.terreno === e.terreno);
+    if (!q || q.ix0 === undefined) { e.casas = []; e.quintal = null; continue; }
+    const doQuadra = l => l.quadra && l.quadra.i === q.i && l.quadra.j === q.j;
+    const ocupa = naHoje ? q.lotes.filter(l => !lotesTirados.has(l)).concat(lotesExtra.filter(doQuadra)) : q.lotes;
+    const a = e.area, V = 150;
+    const so = { x0: Math.max(q.ix0, a.x0 - V), x1: Math.min(q.ix1, a.x1 + V), y0: a.y0, y1: a.y1 };
+    const { lotes, prof } = casasNaCaixa(q, 11, so, ocupa, LISTA_CASAS);
+    for (const l of lotes) { l.casaDoEspaco = e.id; if (naHoje) l.quadra = { i: q.i, j: q.j, hoje: true }; }
+    e.casas = lotes;
+    /* o quintal: o pedaço do da quadra que o terreno tirou; na sede de
+       hoje (a quadra de hoje não tem quintal debaixo dela), o miolo entre
+       as fileiras — e o terreno na quadra de hoje fica com o quintal dela */
+    const miolo = { x0: Math.max(a.x0, q.ix0 + prof), x1: Math.min(a.x1, q.ix1 - prof), y0: Math.max(a.y0, q.iy0 + prof), y1: Math.min(a.y1, q.iy1 - prof) };
+    e.quintal = e.terreno ? e.terreno.quintal || null : e.hoje && miolo.x1 - miolo.x0 >= 20 && miolo.y1 - miolo.y0 >= 20 ? miolo : null;
+  }
 
   /* ---- AS FAVELAS: primeiro a grade de ruas, casando com a da cidade;
      depois as casas nos quarteirões que ela deixa ----
@@ -2786,7 +2848,13 @@ export function gerarProposta(P, cfg = MAPAS.grande, opc = {}) {
       mR(f.bb, dx, dy);
     }
     for (const T of terrenos) { const [dx, dy] = desl.get(T.cidade) || [0, 0]; if (dx || dy) mR(T.area, dx, dy); }
-    for (const e of espacosSede) { const [dx, dy] = desl.get(e.cidade) || [0, 0]; if (dx || dy) mR(e.area, dx, dy); }
+    for (const e of espacosSede) {
+      const [dx, dy] = desl.get(e.cidade) || [0, 0];
+      if (!dx && !dy) continue;
+      mR(e.area, dx, dy);
+      for (const l of e.casas || []) mLote(l, dx, dy);
+      if (e.quintal) mR(e.quintal, dx, dy);
+    }
     for (const b of bares) {
       const c = b.cidade || (favelas.find(f => f.lotes.includes(b.lote)) || {}).cidade;
       b.cidade = c || CENTRO;
