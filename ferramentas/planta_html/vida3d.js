@@ -312,6 +312,9 @@ export function criarVida(api) {
   const M = api.M;
   const C = () => api.cenario;
   const E = () => TO.estado && TO.estado.E;
+  /* de onde o bonde de uma torcida sai: a porta da sede ou, da torcida sem
+     sede no mapa (o nível 0), a do bar dela */
+  const casaDe = id => api.casaDe ? api.casaDe(id) : api.sedeDe ? api.sedeDe(id) : null;
   /* o dia tem jogo na cidade (o de outros clubes, dia3d.js): não é dia vazio */
   let temJogoHoje = () => false;
   const relogio = criarRelogio({ get vida() { return C().vida; }, temJogo: () => temJogoHoje() });
@@ -1027,7 +1030,7 @@ export function criarVida(api) {
       danos.sort((a, b) => b.dias - a.dias);
       for (const d of danos) {
         if (!livres.length) break;
-        const s = d.por && api.sedeDe ? api.sedeDe(d.por) : null;
+        const s = d.por ? casaDe(d.por) : null;
         const longe = b => s ? Math.hypot(b.porta.x - s.x, b.porta.y - s.y) : b.n;
         livres.sort((a, b) => longe(a) - longe(b));
         const bar = livres.shift();
@@ -1625,11 +1628,12 @@ export function criarVida(api) {
   }
   let ultimaTreta = null;
   /* o bar da dona que a briga pega: o mais perto da sede de quem ataca (é
-     de lá que o bonde sai); sem a sede dele no mapa, o primeiro dela */
+     de lá que o bonde sai; da torcida sem sede, o bar dela); sem nenhum
+     dos dois no mapa, o primeiro dela */
   function barDaBriga(dono, atacante) {
     const bs = (api.planta && api.planta.bares ? api.planta.bares() : []).filter(b => b.dono === dono && b.lote && b.W && b.D);
     if (!bs.length) return null;
-    const s = atacante && api.sedeDe ? api.sedeDe(atacante) : null;
+    const s = atacante ? casaDe(atacante) : null;
     if (!s) return bs.sort((a, b) => a.n - b.n)[0];
     const d = b => Math.hypot(b.porta.x - s.x, b.porta.y - s.y);
     return bs.sort((a, b) => d(a) - d(b))[0];

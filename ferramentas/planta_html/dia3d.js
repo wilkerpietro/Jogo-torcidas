@@ -685,11 +685,22 @@ export function criarDia3d(api, vida, g = {}) {
     }
     throw new Error(`o mapa de ${nome} não carregou`);
   }
+  /* a casa de onde o bonde sai: a sede, ou o ponto de encontro da torcida
+     sem sede (`inicio.tipo` 'ponto'): o bar, sem bar a subsede, sem os
+     dois a esquina do bairro — pros textos da concentração */
+  const casaTipo = b => b && b.inicio && b.inicio.tipo === 'ponto' ? (b.inicio.porta && b.inicio.porta.tipo) || 'bar' : 'sede';
+  const daCasa = b => ({ bar: 'do bar', subsede: 'da subsede', esquina: 'da esquina' })[casaTipo(b)] || 'da sede';
+  const naEsquina = b => casaTipo(b) === 'esquina';
+  /* "na porta da sede", "na porta do bar"; da esquina, "na esquina" */
+  const naPorta = b => naEsquina(b) ? 'na esquina' : 'na porta ' + daCasa(b);
+  const praPorta = (b, daEsquina = 'pra cima da concentração') => naEsquina(b) ? daEsquina : 'pra porta ' + daCasa(b);
+  const chegamosNa = (b, nome) => naEsquina(b) ? `Chegamos na esquina da ${nome}. A concentração deles tá toda ali` : `Chegamos na esquina ${daCasa(b)} da ${nome}. A concentração deles tá toda na porta`;
+  const maiuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
   const inicioTxt = b => {
     const n = b.naRua || b.n;
     if (b.inicio.tipo === 'aliado') return `A caravana na sede da ${b.inicio.t.nome}: ${n} dos nossos${b.escolta ? ` e ${b.escolta.membros} da escolta dela` : ''}.`;
     if (b.inicio.tipo === 'entrada') return D.fora ? `A caravana desce na entrada da cidade: ${n} dos nossos.` : `Saindo da entrada da cidade: ${n} dos nossos.`;
-    return `Concentração na porta da sede: ${n} dos nossos.`;
+    return `Concentração ${naPorta(b)}: ${n} dos nossos.`;
   };
   /* O INÍCIO DO VISITANTE (o dono: "podendo iniciar a rota ou na entrada
      ou na casa do aliado"): com a aliada que recebe (o pedido de ajuda
@@ -956,7 +967,8 @@ export function criarDia3d(api, vida, g = {}) {
     const inv = og && PL.investidaDe(e, og.chave);
     if (!inv || !inv.alvo || inv.jogada) return;
     const alvo = p.vivos.find(b => b.t.id === inv.alvo);
-    const porta = api.sedeDe ? api.sedeDe(e.torcida.id) : null;
+    /* (o bonde junta na porta da sede; a torcida sem sede no mapa, na do bar dela) */
+    const porta = api.casaDe ? api.casaDe(e.torcida.id) : api.sedeDe ? api.sedeDe(e.torcida.id) : null;
     if (!alvo || !alvo.rua || !porta) return;
     const onde = inv.como === 'ida' ? (inv.olheiro === 'praca' ? 'concentracao' : 'pista') : 'arredores';
     const Q = {};
@@ -990,6 +1002,7 @@ export function criarDia3d(api, vida, g = {}) {
       atordoado: 0, esquivou: 0, tremor: 0, defendendo: 0, hostil: 0, inimigoPerto: 0, chamou: -99, linha: 'frente', mundo: true } });
     const filas = Math.ceil(n / lado);
     D.inv = { alvo, onde, P, sAlvo, tEnc, tSai, tJunta, tr, gente, filas, chave: og.chave, fase: 'espera', viu: false, tVolta: null, sVolta: 0,
+              casa: porta.tipo === 'bar' ? 'do bar' : porta.tipo === 'subsede' ? 'da subsede' : 'da sede',
               camera: null, voouEm: 0, seguir: true, deixou: null, chegouVista: false };
     /* a decisão do planejamento cai na hora do encontro, com o texto do que se vê */
     retimarGuerra(e, og.chave, tEnc, alvo, onde);
@@ -1005,7 +1018,7 @@ export function criarDia3d(api, vida, g = {}) {
     if (!m) return;
     m.hora = hhmm(tEnc);
     const nome = alvo.t.nome;
-    m.texto = onde === 'concentracao' ? `Chegamos na esquina da sede da ${nome}. A concentração deles tá toda na porta, antes de sair pro estádio — é agora.`
+    m.texto = onde === 'concentracao' ? `${chegamosNa(alvo, nome)}, antes de sair pro estádio — é agora.`
       : onde === 'pista' ? `A gente tá na rua, esperando o bonde da ${nome} passar a caminho do estádio. Eles tão chegando — é agora.`
       : `A gente tá perto do estádio, no caminho da ${nome}. Eles tão chegando nos arredores — é agora.`;
     /* a fila de hoje na ordem das horas (a decisão não pode esperar atrás de uma mais tarde) */
@@ -1030,8 +1043,8 @@ export function criarDia3d(api, vida, g = {}) {
       I.tr.ponto(Math.min(I.tr.L, 6 * M), QC);
       Cn.voarPara(QC.x, QC.z, 50 * M, 0.95, Math.atan2(-QC.tx, -QC.tz), 0);
       I.voouEm = agora; I.deixou = null;
-      const onde = I.onde === 'concentracao' ? 'na porta da sede deles, antes de saírem' : I.onde === 'pista' ? 'na rota deles pro estádio' : 'perto do estádio';
-      avisar({ voz: 'Investida', texto: `O nosso bonde tá juntando na porta da sede pra ir pra cima da ${I.alvo.t.nome}, ${onde}.` });
+      const onde = I.onde === 'concentracao' ? `${naPorta(I.alvo)} deles, antes de saírem` : I.onde === 'pista' ? 'na rota deles pro estádio' : 'perto do estádio';
+      avisar({ voz: 'Investida', texto: `O nosso bonde tá juntando na porta ${I.casa || 'da sede'} pra ir pra cima da ${I.alvo.t.nome}, ${onde}.` });
       return;
     }
     /* a chegada: o ponto do encontro */
@@ -1151,10 +1164,10 @@ export function criarDia3d(api, vida, g = {}) {
       if (ev && D.briga && ev === D.evBriga && D.briga.v === nosso) { atacados(D.briga, cont); return; }
       if (ev && D.briga && ev === D.evBriga) {
         const br = D.briga, somosA = br.a === nosso;
-        rodarAte(br.tIni - 7, D.vezes, somosA ? (br.naPorta ? `A caminho da sede da ${br.v.t.sigla}…` : `A caminho da tocaia contra a ${br.v.t.sigla}…`) : 'A caminho do estádio…', () => {
+        rodarAte(br.tIni - 7, D.vezes, somosA ? (br.naPorta ? `A caminho ${daCasa(br.v)} da ${br.v.t.sigla}…` : `A caminho da tocaia contra a ${br.v.t.sigla}…`) : 'A caminho do estádio…', () => {
           dia.seguirBonde(null);
           C().voarPara(br.P[0], br.P[1], 38 * M, 0.9, undefined, 0);
-          status(somosA ? (br.naPorta ? `A concentração da ${br.v.t.sigla} tá na porta da sede dela.` : `A ${br.v.t.sigla} está chegando no ponto.`) : `A ${br.a.t.sigla} caiu em cima da gente!`, !somosA);
+          status(somosA ? (br.naPorta ? `A concentração da ${br.v.t.sigla} tá ${naPorta(br.v)} dela.` : `A ${br.v.t.sigla} está chegando no ponto.`) : `A ${br.a.t.sigla} caiu em cima da gente!`, !somosA);
           cont();
         });
         return;
@@ -1307,14 +1320,14 @@ export function criarDia3d(api, vida, g = {}) {
     /* (a briga não desacelera sozinha no meio: o aviso é que para o relógio) */
     br.vista = true;
     const perto = br.tIni - (porta ? 24 : 16), aviso = br.tIni - 1.2, vz = D.vezes;
-    rodarAte(Math.max(dia.t, perto), D.vezes, porta ? 'A concentração na porta da sede…' : 'A caminho do estádio…', () => {
+    rodarAte(Math.max(dia.t, perto), D.vezes, porta ? `A concentração ${naPorta(br.v)}…` : 'A caminho do estádio…', () => {
       if (!D) return;
       enquadrar();
       /* (a 2× só a chegada: a velocidade do jogador volta depois do aviso) */
-      rodarAte(Math.max(dia.t, aviso), 2, porta ? 'A concentração na porta da sede…' : 'O bonde chegando na esquina…', () => {
+      rodarAte(Math.max(dia.t, aviso), 2, porta ? `A concentração ${naPorta(br.v)}…` : 'O bonde chegando na esquina…', () => {
         if (!D) return;
         D.vezes = vz; pintar();
-        status(porta ? `A ${br.a.t.sigla} dobrou a esquina e vem pra porta da sede!` : `A ${br.a.t.sigla} saiu da esquina pra cima do bonde!`, true);
+        status(porta ? `A ${br.a.t.sigla} dobrou a esquina e vem ${praPorta(br.v)}!` : `A ${br.a.t.sigla} saiu da esquina pra cima do bonde!`, true);
         /* o aviso no alto da tela (a câmera está na briga), até a resposta */
         D.avisoNoAlto = true;
         cont();
@@ -1340,13 +1353,13 @@ export function criarDia3d(api, vida, g = {}) {
     /* a investida marcada: a gente é quem chega */
     if (br.a === D.nosso) {
       const alvo = br.v.t.nome;
-      return br.naPorta ? { voz: `Investida marcada · ${alvo}`, texto: `Chegamos na esquina da sede da ${alvo}. A concentração deles tá toda na porta, antes de sair pro estádio — é agora.` }
+      return br.naPorta ? { voz: `Investida marcada · ${alvo}`, texto: `${chegamosNa(br.v, alvo)}, antes de sair pro estádio — é agora.` }
                         : { voz: `Investida marcada · ${alvo}`, texto: `A gente tá na ${br.esquina ? 'esquina' : 'transversal'}, escondido, e o bonde da ${alvo} tá vindo pela rua. É agora.` };
     }
     if (br.v !== D.nosso) return null;
     const nome = br.a.t.nome;
-    if (br.naPorta) return { voz: `Na porta da sede · ${nome}`,
-      texto: `Chefe, a ${nome} dobrou a esquina e tá vindo correndo pra porta da sede! Vão cair em cima da concentração antes da gente sair pro estádio.` };
+    if (br.naPorta) return { voz: `${maiuscula(naPorta(br.v))} · ${nome}`,
+      texto: `Chefe, a ${nome} dobrou a esquina e tá vindo correndo ${praPorta(br.v, 'pra cima da gente')}! Vão cair em cima da concentração antes da gente sair pro estádio.` };
     return { voz: `Na caminhada · ${nome}`,
       texto: `A ${nome} tava escondida ${br.esquina ? 'na esquina' : 'numa transversal'} e saiu correndo pra cima do bonde! A gente tá a caminho do estádio, no meio da rua.` };
   }
@@ -1445,8 +1458,8 @@ export function criarDia3d(api, vida, g = {}) {
     const br = D.briga;
     if (br && ev && ev === D.evBriga && !br.aplicado && res) {
       br.aplicar(resultadoDaBriga(br, res));
-      const onde = br.naPorta ? 'na porta da sede' : 'na rua';
-      if (D.jogada) { br.vista = true; dia.irPara(Math.max(dia.t, br.tFim + 3)); status(res.ganhamos ? (br.naPorta ? 'Seguramos a porta da sede. Quem ficou de pé sai pro estádio na hora.' : 'Saímos por cima na rua. Seguindo pro estádio.') : `Apanhamos ${onde}. Quem sobrou segue pro estádio.`, !res.ganhamos); }
+      const onde = br.naPorta ? naPorta(br.v) : 'na rua';
+      if (D.jogada) { br.vista = true; dia.irPara(Math.max(dia.t, br.tFim + 3)); status(res.ganhamos ? (br.naPorta ? `Seguramos ${naEsquina(br.v) ? 'a esquina' : 'a porta ' + daCasa(br.v)}. Quem ficou de pé sai pro estádio na hora.` : 'Saímos por cima na rua. Seguindo pro estádio.') : `Apanhamos ${onde}. Quem sobrou segue pro estádio.`, !res.ganhamos); }
       else { br.vista = false; dia.irPara(Math.min(dia.t, br.tIni - 10)); dia.rodar(10); status(`A briga ${onde} (o resultado do duelo simulado).`); }
       D.jogada = false;
     }
@@ -1477,7 +1490,7 @@ export function criarDia3d(api, vida, g = {}) {
     const somosA = br.a === D.nosso;
     br.aplicar(somosA ? { venceA: false, ferA: Math.round(br.nA * 0.1) } : { venceA: true, ferV: Math.round(br.nV * 0.1) });
     br.vista = false; dia.irPara(Math.min(dia.t, br.tIni - 10)); dia.rodar(10);
-    status(br.naPorta ? 'Ninguém desceu: a rival bateu em quem estava na porta da sede e a gente não reagiu.' : 'Ninguém desceu: a rival bateu e a gente não reagiu.', true);
+    status(br.naPorta ? `Ninguém desceu: a rival bateu em quem estava ${naPorta(br.v)} e a gente não reagiu.` : 'Ninguém desceu: a rival bateu e a gente não reagiu.', true);
   }
 
   /* ======================================================

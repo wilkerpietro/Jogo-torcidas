@@ -4240,3 +4240,161 @@ nesta). Cada uma ganha um lote no bairro dela:
 - **O mapa 2D precisa ser assado de novo** pela sessão do 2D
   (`ferramentas/assar_plantas.js`): as casas no lugar da sede vaga em todas
   as praças, e a grade dos bairros de Goiânia.
+
+## 40. A sede da IA pelo save; a fábrica e os anexos da sede (02/10/2026)
+
+**O pedido**: "faça o item 2, o nível da sede da IA no 3D. faça o item 6
+também" — os itens da lista do que faltava pro jogo no 3D: o item 2 (o 3D
+punha a sede de cada torcida da IA pela tabela, não pelo save: as 59
+pequenas que o jogo deixa no ponto de encontro, o nível 0, apareciam com
+sede, e a obra que a IA fazia não aparecia) e o item 6 ("Compras do
+patrimônio sem visual: a fábrica (R$ 400 mil) não tem modelo, e os anexos
+da sede (enfermaria, cofre, área de treino) não aparecem"; e o galpão de
+material).
+
+### A sede da IA é a do save (`jogo3d.js`, `conferirIA`)
+
+- **O nível da sede, os bares, a fábrica e os anexos de cada torcida da IA
+  vêm do mundo vivo** (`E.mundoTorcidas`), não da tabela. A pequena que
+  começa no ponto de encontro (até 30 membros: 59 das 139 torcidas dos
+  mapas) fica **sem sede no mapa**, com o bar dela; a que faz a obra
+  aparece com a sede nova. Isso entra **na próxima montagem da praça**
+  (como os bares da IA: remontar a cidade no meio do dia porque a IA
+  comprou alguma coisa seria pesado); **os ônibus da garagem entram na
+  hora** (`TO.relacoes.frotaIA`), porque são peças vivas.
+- **A praça lembrada** (a que monta atrás do menu antes de o save
+  carregar, com a tabela) **remonta quando o jogo entra nela** se não bate
+  com o save — a planta guarda a assinatura do que montou (o modelo da
+  sede, os bares, a fábrica e os anexos de cada torcida, as lojas e as
+  subsedes; `assinaturaDoJogo`, `emDiaComOJogo`).
+- **Quem não tem sede junta no ponto de encontro** (`pontoDeEncontro`, na
+  planta): a calçada do bar dela; sem bar, a da subsede; **sem os dois, a
+  esquina do bairro dela** (a calçada da casa mais perto do meio do bairro
+  da sede nos dados). A esquina é pra torcida do jogador no nível 0, que
+  pela regra do jogo vive sem bar até comprar um ou chegar na sede 2:
+  antes ela não tinha nada no mapa, o bonde dela ficava fora do dia de
+  jogo e o jogo do clube dela caía no clássico da praça.
+- **No dia de jogo** o bonde de quem não tem sede sai do ponto de encontro
+  (`inicio.tipo` 'ponto'), e os textos dizem de onde: "Sai do bar (não tem
+  sede)", "Na esquina do bairro", "A concentração na porta do bar", "A
+  concentração da X tá na esquina dela". A investida do jogador e a câmera
+  "ir pra sede" saem do mesmo lugar (a API ganhou `casaDe`: a sede ou o
+  ponto de encontro); a vida da cidade usa o bar da torcida sem sede como
+  o lugar de onde ela ataca.
+
+### A fábrica (`fabricaTorcida`, `js/diajogo/casas3d.js`)
+
+A fábrica de material do jogo (R$ 400 mil, sede 5: corta pela metade o
+custo das lojas) **é uma confecção de bairro num galpão da quadra nova**:
+
+- **Fora**: o galpão de platibanda na cor clara da torcida (o gelo, se as
+  duas são escuras), o rodapé e a faixa de cima na forte, **FÁBRICA DA
+  {sigla}** na platibanda e **CONFECÇÃO · ESTAMPARIA** por cima do portão;
+  o portão de enrolar aberto, a porta de ferro de quem trabalha e o escudo
+  pintado na parede.
+- **Dentro**: a fileira de máquinas de costura (a mesa, a máquina, a
+  cadeira), o carrossel da estamparia no meio (quatro berços com a camisa
+  esticada), a mesa de corte com o pano estendido, a estante dos rolos, a
+  arara de camisa pronta e as caixas; as calhas de luz fria no teto. O
+  telhado de duas águas fica escondido atrás da platibanda.
+- **No mapa** (`criarFabricas`): quem tem a fábrica no save (o patrimônio
+  do jogador, o mundo vivo da IA) ganha **o galpão livre mais perto da sede
+  dela, no bairro dela** (sem sede, perto do bar): de 4,8 m de frente pra
+  cima, sem estrutura, longe do estádio, o sem comércio antes do com
+  letreiro. O lote vira a confecção no 2D (a letra F) e no 3D; a próxima
+  montagem desfaz. No jogo, a compra remonta a praça e a câmera passa no
+  portão ("A fábrica da X em Y começou a produzir").
+- **Sem o jogo**, a camada "Lojas e subsedes de exemplo" põe uma fábrica na
+  primeira torcida com sede; e o catálogo tem "Estruturas da torcida ›
+  Fábrica da torcida", num lote de galpão de 7,0 × 5,2 m.
+
+### Os anexos da sede (`js/diajogo/sede3d.js`)
+
+O que o save diz que a torcida comprou (`sede.anexos`) entra na mobília do
+cômodo dele:
+
+- **Enfermaria** (sede 4) na hospedagem, no lugar do último beliche: a
+  maca com a cabeceira levantada e a grade, o suporte de soro, o biombo, o
+  armarinho de primeiros socorros com a cruz e a placa ENFERMARIA.
+- **Galpão de material** (sede 3) no patrimônio, no lugar da estante: a
+  gaiola de tela com cadeado, cheia — as caixas de rojão com a faixa de
+  perigo, os sinalizadores, as faixas enroladas na prateleira e os
+  mastros — e a placa MATERIAL.
+- **Cofre blindado** (sede 5) na presidência, no canto do fundo: o cofre
+  de aço de 1,5 m com o volante, o segredo e as dobradiças.
+- **Área de treino** (as três obras, sem nível de sede) num canto livre do
+  pátio de cada nível: o piso de borracha, a placa ÁREA DE TREINO e, a
+  cada obra, mais aparelho — a trave de aço com dois sacos (1), o rack de
+  halteres e a barra fixa (2), o supino e o pneu de virar (3) — com os
+  lugares de treino. O que não cabe no pedaço vira o pequeno (os halteres
+  soltos e o colchonete; o pneu velho e o kettlebell), **cada um num
+  pedaço livre** (antes os dois caíam no mesmo canto, um em cima do
+  outro). No nível 4, a academia também cresce: o terceiro saco na obra 3
+  e a barra fixa a partir da 2.
+- **No pátio do nível 4** a área vai no muro de cá, no lugar da mesa
+  comprida e do banco: o pátio do 4 na cidade tem 7 a 8 m de largura, e a
+  área fica com 1,6 a 2,1 m (antes ela pedia 2,2 m e não aparecia no pátio
+  de 7,6 m). **No nível 3** ela vai até 1,7 m das portas da coluna (antes
+  1,8: no terreno de 21,6 m ela não cabia).
+- **No catálogo**, a ficha da sede ganhou os botões dos anexos (só os que
+  o nível mostra: Enfermaria onde tem hospedagem, Galpão de material do 2
+  pra cima, Cofre blindado do 4 pra cima) e "Área de treino 1/2/3".
+- **No jogo**, comprar um anexo remonta a praça do jogador (é a mobília da
+  sede); os da IA entram na próxima montagem.
+
+### Medido
+
+- **O item 2 no jogo** (Fortaleza, com a Cearamor): a praça do menu subiu
+  com a tabela (Aliança, Jovem do Floresta e Falange Coral no nível 1, com
+  sede) e, com o save, as três ficaram no nível 0, sem sede, com o bar e o
+  ponto de encontro nele; os níveis da IA batem com o save (TUF 4, JGT e
+  MOFI 2). Com a Aliança subindo pro 2 e a TUF comprando 2 ônibus, a volta
+  do menu remontou a praça: a Aliança com a sede de nível 2, os 2 ônibus da
+  TUF na garagem (9 de 9 malhas visíveis). No dia de jogo Ceará ×
+  Ferroviário, a Falange Coral sai do bar.
+- **O jogador no nível 0** (a Falange Coral, sem sede e sem bar): o ponto
+  de encontro é a esquina do bairro, a câmera do começo vai pra lá, e o
+  bonde dela (20) entra no Ceará × Ferroviário — antes ficava fora e o
+  jogo virava o clássico. No painel do dia de jogo da planta, a Aliança sem
+  sede e sem bar saiu com "Na esquina do bairro" e "Sai da esquina do
+  bairro (não tem sede nem bar)".
+- **A fábrica nas 30 praças** (o gancho de teste, uma por torcida com
+  sede): **139 de 139 com galpão**, 9 fora do bairro da sede (sem galpão
+  livre nele), a mais longe a 178 m da sede; a praça volta sem nenhuma. No
+  jogo, a compra pelo Patrimônio pôs a da Cearamor num galpão de 5,8 ×
+  5,8 m no José Walter — a câmera passou no portão, com o aviso "A fábrica
+  da Cearamor em José Walter começou a produzir." — e a da TUF (IA) num de
+  4,9 × 4,9 m no Bom Jardim.
+- **Os anexos em toda sede que os três mapas e as 30 praças podem ter**
+  (27 formatos, montados em node com e sem cada anexo): a enfermaria
+  aparece em todo nível 3, 4 e 5 (1 maca); o galpão de material do 2 ao
+  5; o cofre no 4 e no 5; a área de treino nos cinco níveis (no nível 4,
+  +2, +3 e +4 lugares de treino nas obras 1, 2 e 3; no jogo, a Cearamor
+  com a obra 2 foi de 7 pra 9).
+- **A passagem de 70 cm** (`conferir_passagem.mjs`, que agora monta cada
+  sede sem anexo e com todos os anexos nas três obras da área de treino:
+  108 montagens): todo cômodo se alcança do portão, e nenhum perdeu mais de
+  3 pontos de alcance com os anexos.
+- **Nada mais mudou**: as lojas e subsedes das 30 praças (308 de 308), a
+  loja e a subsede do save, o dia de jogo em seis praças de portes
+  diferentes, a fumaça do Pages e as conferências offline (sede, cidades,
+  lojas do assalto) passando, sem erro.
+
+### Limites (sinceros)
+
+- **O que a IA compra aparece na próxima montagem da praça**, não na hora
+  (só os ônibus são na hora).
+- **A fábrica é um galpão de 5 a 8 m de frente por uns 5 de fundo**: é a
+  confecção de bairro, não um pavilhão industrial; 9 de 139 ficaram fora
+  do bairro da sede, por falta de galpão livre nele.
+- **A área de treino do nível 4 é pequena** (o pátio do 4 é estreito): a
+  trave com os dois sacos e o pequeno; o rack e o supino não cabem lá (a
+  academia do 4 cresce no lugar). E ela leva o banco do pátio.
+- **A esquina não tem modelo**: é a calçada de uma casa do bairro, onde o
+  bonde junta; no mapa não aparece nada da torcida sem sede e sem bar.
+- **A torcida do jogador no nível 0 sem bar não tem o que mostrar na
+  câmera da sede**: ela voa pra esquina; o mapa do jogo não põe alfinete.
+- **Só pelo código, sem teste rodado**: a investida do jogador saindo do
+  bar ou da esquina (o teste da investida usa uma torcida com sede) e o
+  bar que a briga pega quando quem ataca não tem sede (o mais perto do bar
+  dela).

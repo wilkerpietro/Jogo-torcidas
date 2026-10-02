@@ -126,7 +126,7 @@ function medidas(l) {
    lanchonete recua o que o toldinho da porta de enrolar avança. O bar
    da torcida (o de esquina, embaixo do apartamento) é modelo também. */
 const REC_MODELO = { f1: 0.06, f2: 0.04, bar: 0.03, lanche: 0.5, escada: 0.04, varal: 0.04, garagem: 0.32, base: 0.04,
-                     bartorcida: 0.04, lojatorcida: 0.04, subsede: 0.04, ...REC_LOJA,
+                     bartorcida: 0.04, lojatorcida: 0.04, subsede: 0.04, fabrica: 0.04, ...REC_LOJA,
                      /* o entorno do estádio: o recuo do comércio é o salão de fora */
                      com_espetinho: 3.8, com_hamburgueria: 2.6, com_pizzaria: 2.6, com_barzinho: 3.2, estacionamento: 0.05 };
 
@@ -2889,6 +2889,205 @@ function subsedeTorcida(B, p, l, conta, G) {
 }
 
 /* =======================================================
+   A FÁBRICA DA TORCIDA (o item 6 da varredura, 02/10/2026: "a fábrica
+   (R$ 400 mil) não tem modelo"): a fábrica de material do jogo — a que
+   corta pela metade o custo das lojas —, num galpão do bairro da sede.
+   Uma confecção de bairro, no lote de galpão do mapa (5 a 8 m de frente,
+   uns 5 de fundo):
+     FORA    o galpão de platibanda na cor clara da torcida (o gelo, se
+             as duas são escuras), o rodapé e a faixa de cima na forte,
+             FÁBRICA DA {sigla} na platibanda e CONFECÇÃO · ESTAMPARIA
+             por cima do portão; o portão de enrolar aberto, a porta de
+             ferro de quem trabalha e o escudo pintado na parede
+     DENTRO  a fileira de máquinas de costura na parede de lá (a mesa, a
+             máquina, a cadeira), o carrossel da estamparia no meio (os
+             quatro berços com a camisa esticada), a mesa de corte com o
+             pano estendido no fundo, a estante dos rolos de pano, a
+             arara de camisa pronta e as caixas empilhadas; as calhas de
+             luz fria no teto
+   O telhado de fibrocimento de duas águas fica escondido atrás da
+   platibanda (como o do galpão G1).
+   ======================================================= */
+function maquinaDeCosturaF(B, cx, cz, y, olha) {
+  /* a máquina de costura reta em cima da mesa: a base, a coluna, o braço e o volante (de frente pra `olha`, ±z) */
+  const branco = { todas: { k: 'lisa', tinta: '#e6e3da' }, base: null }, preto = { todas: { k: 'lisa', tinta: '#2c2e31' }, base: null };
+  B.caixa(cx - 0.22, cx + 0.22, y, y + 0.06, cz - 0.1, cz + 0.1, branco);
+  B.caixa(cx + 0.12, cx + 0.2, y + 0.06, y + 0.3, cz - 0.07, cz + 0.07, branco);
+  B.caixa(cx - 0.2, cx + 0.2, y + 0.24, y + 0.33, cz - 0.06, cz + 0.06, branco);
+  B.caixa(cx - 0.2, cx - 0.15, y + 0.12, y + 0.26, cz - 0.03, cz + 0.03, preto);
+  B.caixa(cx + 0.2, cx + 0.23, y + 0.16, y + 0.3, cz - 0.06, cz + 0.06, preto);
+  /* o carretel de linha em cima, na cor que se costura */
+  B.caixa(cx + 0.05, cx + 0.08, y + 0.33, y + 0.38, cz - 0.015 * olha, cz + 0.015 * olha, { todas: { k: 'lisa', tinta: '#c8342b' }, base: null });
+}
+function fabricaTorcida(B, p, l, conta, G) {
+  const { s, W, D } = p;
+  const T = l.torcida || null;
+  const c1 = T ? tintaViva(T.cor) : NEUTRO_BAR.cor, c2 = T ? tintaViva(T.cor2 || '#e8e2d0') : NEUTRO_BAR.cor2;
+  const c3 = T ? tintaViva(T.cor3 || T.cor2 || '#e8e2d0') : NEUTRO_BAR.cor3;
+  const luzDe = c => { const n = parseInt(String(c).slice(1), 16); return 0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255); };
+  const forte = luzDe(c1) <= luzDe(c2) ? c1 : c2, fraca = forte === c1 ? c2 : c1;
+  const fundo = luzDe(fraca) >= 140 ? fraca : '#efede6', letra = luzDe(fundo) - luzDe(forte) > 70 ? forte : '#1d1d1d';
+  const fora = { k: 'lisa', tinta: fundo }, blocoB = { k: 'bloco', tinta: '#efeee9' }, cinza = '#4a4b4f', claro = '#f3f2ee';
+  const x0 = 0.04, x1 = W - 0.04, z1 = -p.rec, z0 = -D + 0.04, e = 0.15;
+  /* o pé-direito, o alto da parede do lado (onde o telhado nasce), a subida
+     da cumeeira, o alto da platibanda (esconde ela) e o alto do portão */
+  const hp = 3.9, hw = hp + 0.35, rr = ((x1 - x0) / 2) * Math.tan(10 * Math.PI / 180), hf = Math.max(4.7, hw + rr + 0.2), hd = 3.0;
+  const zF = z1, zFi = zF - e, zB = z0 + e;              // a fachada, a face de dentro dela e o fundo de dentro
+  const xi0 = x0 + e, xi1 = x1 - e, prof = zFi - zB;
+  const cores = [c1, c2, c3, '#f3f2ee'];
+
+  /* ---- A FACHADA: o portão de enrolar aberto de um lado (o sorteio) e a
+     porta de ferro do outro, quando cabe ---- */
+  const larg = x1 - x0, portaEsq = s('porta') < 0.5;
+  const dw = clamp(larg * 0.5, 2.2, 3.6);
+  const d0 = portaEsq ? x0 + 0.35 : x1 - 0.35 - dw, d1 = d0 + dw;
+  const pw = 0.85, cabeP = larg - dw - 0.35 - 0.6 >= pw + 0.3;
+  const p0 = portaEsq ? x1 - 0.45 - pw : x0 + 0.45, p1 = p0 + pw;
+  const vaos = [{ a0: d0 - x0, a1: d1 - x0, b0: 0, b1: hd, k: 'enrolar', fundo: 0.05 }];
+  for (const [a, b] of [[x0, d0], [d1, x1]]) if (b - a > 0.02) {
+    if (cabeP && p0 >= a && p1 <= b) {
+      B.caixa(a, p0, 0, hp, zFi, zF, { frente: fora, tras: blocoB, esq: fora, dir: fora, topo: null, base: null });
+      B.caixa(p1, b, 0, hp, zFi, zF, { frente: fora, tras: blocoB, esq: fora, dir: fora, topo: null, base: null });
+      B.caixa(p0, p1, 2.1, hp, zFi, zF, { frente: fora, tras: blocoB, base: fora, esq: null, dir: null, topo: null });
+    } else B.caixa(a, b, 0, hp, zFi, zF, { frente: fora, tras: blocoB, esq: fora, dir: fora, topo: null, base: null });
+  }
+  B.caixa(d0, d1, hd, hp, zFi, zF, { frente: fora, tras: blocoB, base: fora, esq: null, dir: null, topo: null });
+  /* o portão enrolado lá em cima (a régua de baixo à vista) e a porta de ferro fechada */
+  B.esticar(B.plano([d0, 0, zF - 0.05], [1, 0, 0], [0, 1, 0]), 0, dw, hd - 0.13, hd, 'enrolar', { parte: [0, 1, 0, 0.05] });
+  conta.portas++;
+  if (cabeP) {
+    B.fachada(B.plano([p0, 0, zF - 0.06], [1, 0, 0], [0, 1, 0]), pw, 2.1, 'lisa', [{ a0: 0, a1: pw, b0: 0, b1: 2.1, k: 'porta_ferro', fundo: 0.04 }], { tinta: fundo });
+    B.caixa(p0, p1, 0, 2.1, zFi, zFi + 0.005, { tras: { k: 'lisa', tinta: '#626360' }, frente: null, topo: null, base: null, esq: null, dir: null });
+    vaos.push({ a0: p0 - x0, a1: p1 - x0, b0: 0, b1: 2.1, k: 'porta_ferro', fundo: 0.06 });
+    conta.portas++;
+  }
+  /* as faixas pintadas: o rodapé na forte com o filete da 3, a faixa de cima (por cima do portão também) */
+  const faixaF = (a, b, y0, y1, tinta, sai = 0.008) => B.caixa(a, b, y0, y1, zF, zF + sai, { frente: { k: 'lisa', tinta }, topo: { k: 'lisa', tinta }, base: { k: 'lisa', tinta }, esq: { k: 'lisa', tinta }, dir: { k: 'lisa', tinta }, tras: null });
+  const cheios = [[x0, d0], [d1, x1]].flatMap(([a, b]) => cabeP && p0 >= a && p1 <= b ? [[a, p0], [p1, b]] : [[a, b]]).filter(([a, b]) => b - a > 0.02);
+  for (const [a, b] of cheios) { faixaF(a, b, 0, 0.8, forte); faixaF(a, b, 0.8, 0.88, c3, 0.01); }
+  faixaF(x0, x1, hd + 0.1, hp, forte);
+  /* a platibanda, lisa na cor da parede, com o rufo e o nome */
+  B.caixa(x0, x1, hp, hf, zF - 0.2, zF + 0.02, { frente: fora, topo: { k: 'lisa', tinta: claro }, esq: fora, dir: fora, tras: fora, base: null });
+  B.caixa(x0, x1, hf - 0.06, hf, zF + 0.02, zF + 0.05, { todas: { k: 'lisa', tinta: forte }, tras: null });
+  conta.frentes.push({ x0, x1, y0: 0, y1: hp, z: zF, vaos: vaosAbs(x0, vaos) });
+  if (T) {
+    const lp = larg - 0.3;
+    conta.placas.push({ tipo: 'texto', texto: 'FÁBRICA DA ' + (T.rot || ''), x: (x0 + x1) / 2, y: (hp + hf) / 2, z: zF + 0.025, face: 'frente', larg: lp, alt: Math.min(0.66, hf - hp - 0.2), tinta: letra, fundo: null });
+    conta.placas.push({ tipo: 'texto', texto: 'CONFECÇÃO · ESTAMPARIA', x: (x0 + x1) / 2, y: (hd + 0.1 + hp) / 2, z: zF + 0.012, face: 'frente', larg: Math.min(lp, 4.6), alt: Math.min(0.36, hp - hd - 0.3), tinta: luzDe(forte) > 150 ? '#1d1d1d' : '#f6f3ea', fundo: null });
+    /* o escudo pintado na parede do lado do portão (entre ele e a porta, ou no canto) */
+    const [ea, eb] = portaEsq ? [d1, cabeP ? p0 : x1] : [cabeP ? p1 : x0, d0];
+    if (eb - ea > 1.0) {
+      const es = Math.min(1.3, eb - ea - 0.3, hd - 1.1);
+      conta.placas.push({ tipo: 'escudo', x: (ea + eb) / 2, y: 0.88 + 0.12 + es / 2, z: zF + 0.012, face: 'frente', larg: es, alt: es, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+    }
+  }
+
+  /* ---- AS PAREDES DO LADO E O FUNDO: por fora a cor da fachada, por
+     dentro o bloco branco com o rodapé cinza e a faixa forte no alto; a
+     fileira de vitrô alto nos lados ---- */
+  const vl = vitrosAltos(zFi - z0, hp);
+  paredes(B, x0, x1, z0, zFi, 0, hw, { dir: { k: 'lisa', tinta: fundo, vaos: vl }, esq: { k: 'lisa', tinta: fundo, vaos: vl.map(v => Object.assign({}, v)) }, tras: { k: 'lisa', tinta: fundo } }, conta);
+  /* (a parede de fora é um plano virado pra rua: a face de dentro é outra peça, a do bloco branco) */
+  const so = nome => ({ frente: null, tras: null, esq: null, dir: null, topo: null, base: null, [nome]: blocoB });
+  B.caixa(xi0 - 0.005, xi0, 0, hp, zB, zFi, so('dir'));
+  B.caixa(xi1, xi1 + 0.005, 0, hp, zB, zFi, so('esq'));
+  B.caixa(xi0, xi1, 0, hp, zB - 0.005, zB, so('frente'));
+  const pinta = (a, b, y0, y1, za, zb, face, tinta) => B.caixa(a, b, y0, y1, za, zb, { [face]: { k: 'lisa', tinta }, topo: null, base: null, frente: null, tras: null, esq: null, dir: null });
+  for (const [xa, xb, face] of [[xi0, xi0 + 0.006, 'dir'], [xi1 - 0.006, xi1, 'esq']]) { pinta(xa, xb, 0, 0.9, zB, zFi, face, cinza); pinta(xa, xb, hp - 0.5, hp - 0.2, zB, zFi, face, forte); }
+  pinta(xi0, xi1, 0, 0.9, zB, zB + 0.006, 'frente', cinza);
+  pinta(xi0, xi1, hp - 0.5, hp - 0.2, zB, zB + 0.006, 'frente', forte);
+  /* o chão de cimento queimado */
+  B.caixa(xi0, xi1, 0, 0.04, zB, zFi, { topo: { k: 'lisa', tinta: '#cbc7bd' }, frente: null, tras: null, esq: null, dir: null, base: null });
+
+  /* ---- O TELHADO de fibrocimento de duas águas, a cumeeira no sentido do
+     fundo, atrás da platibanda; o forro de chapa por baixo ---- */
+  {
+    const wb = x1 - x0, yE = hw;
+    aguaX(B, z0, zF - 0.2, x0, yE, W / 2, yE + rr, 'fibro');
+    aguaX(B, z0, zF - 0.2, x1, yE, W / 2, yE + rr, 'fibro');
+    B.ladrilhar(B.plano([x1, 0, z0], [-1, 0, 0], [0, 1, 0]), [[0, yE], [wb, yE], [wb / 2, yE + rr]], 'lisa', { tinta: fundo });
+    B.tampa([[xi0, zFi], [xi1, zFi], [xi1, zB], [xi0, zB]], hp, 'lisa', true, { tinta: '#d9dcdd' });
+    /* as calhas de luz fria, duas por fileira */
+    const luz = { todas: { k: 'lisa', tinta: '#f7f8f2' }, topo: null };
+    for (let z = zFi - 1.0; z > zB + 0.6; z -= 1.8)
+      for (const fx of [0.3, 0.7]) { const cx = xi0 + (xi1 - xi0) * fx; B.caixa(cx - 0.6, cx + 0.6, hp - 0.08, hp - 0.01, z - 0.07, z + 0.07, luz); }
+  }
+
+  /* ---- DENTRO ---- */
+  if (prof < 2.2 || xi1 - xi0 < 2.6) return;
+  /* a parede de lá (a do outro lado do portão): a fileira de máquinas */
+  const xL = portaEsq ? xi1 : xi0, sL = portaEsq ? -1 : 1;
+  const mesaF = (cx, cz, lx, lz, h, tinta) => {
+    const tampoM = { todas: { k: 'lisa', tinta }, base: null }, pe = { todas: { k: 'lisa', tinta: '#5b5e63' }, base: null };
+    B.caixa(cx - lx / 2, cx + lx / 2, h - 0.04, h, cz - lz / 2, cz + lz / 2, tampoM);
+    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) B.caixa(cx + sx * (lx / 2 - 0.05) - 0.025, cx + sx * (lx / 2 - 0.05) + 0.025, 0.04, h - 0.04, cz + sz * (lz / 2 - 0.05) - 0.025, cz + sz * (lz / 2 - 0.05) + 0.025, pe);
+  };
+  const cadeiraF = (cx, cz) => {
+    const pl = { todas: { k: 'lisa', tinta: '#2c2e31' }, base: null };
+    B.caixa(cx - 0.2, cx + 0.2, 0.44, 0.48, cz - 0.2, cz + 0.2, pl);
+    B.caixa(cx - 0.02, cx + 0.02, 0.04, 0.44, cz - 0.02, cz + 0.02, pl);
+    B.caixa(cx - 0.2, cx + 0.2, 0.48, 0.85, cz - sL * 0.2 - 0.02, cz - sL * 0.2 + 0.02, pl);
+  };
+  /* as máquinas olhando a parede: a mesa encostada nela, a costureira de costas pro meio */
+  const xm = xL + sL * 0.33, n = Math.max(1, Math.min(4, Math.floor((prof - 0.9) / 1.15)));
+  for (let i = 0; i < n; i++) {
+    const cz = zFi - 0.75 - i * 1.15;
+    mesaF(xm, cz, 0.6, 1.0, 0.76, '#c9b48f');
+    maquinaDeCosturaF(B, xm, cz, 0.76, sL);
+    cadeiraF(xm + sL * 0.62, cz);
+  }
+  /* o carrossel da estamparia no meio do salão: a coluna, os quatro braços e os berços com a camisa */
+  const xc = (xi0 + xi1) / 2 + (portaEsq ? -0.15 : 0.15), zc = zFi - Math.min(prof * 0.45, 2.0), rB = Math.min(0.8, (prof - 1.9) / 2, (xi1 - xi0) / 2 - 1.05);
+  if (rB > 0.45) {
+    const ferro = { todas: { k: 'lisa', tinta: '#565d63' }, base: null };
+    B.caixa(xc - 0.05, xc + 0.05, 0.04, 1.3, zc - 0.05, zc + 0.05, ferro);
+    B.caixa(xc - 0.25, xc + 0.25, 0.04, 0.1, zc - 0.25, zc + 0.25, ferro);
+    const bracos = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    bracos.forEach(([dx, dz], k) => {
+      const bx = xc + dx * rB, bz = zc + dz * rB;
+      B.caixa(Math.min(xc, bx) - 0.03, Math.max(xc, bx) + 0.03, 0.92, 0.97, Math.min(zc, bz) - 0.03, Math.max(zc, bz) + 0.03, ferro);
+      /* o berço (a tábua) e a camisa esticada nele */
+      B.caixa(bx - 0.24, bx + 0.24, 0.97, 1.0, bz - 0.3, bz + 0.3, { todas: { k: 'lisa', tinta: '#b9824f' }, base: null });
+      B.caixa(bx - 0.21, bx + 0.21, 1.0, 1.012, bz - 0.26, bz + 0.26, { todas: { k: 'lisa', tinta: cores[k % 3] }, base: null });
+      B.caixa(bx - 0.08, bx + 0.08, 1.012, 1.016, bz - 0.06, bz + 0.1, { todas: { k: 'lisa', tinta: k % 3 === 1 ? c1 : c2 }, base: null });
+    });
+    /* a tela de silk levantada em cima de um dos berços */
+    B.caixa(xc + rB - 0.26, xc + rB + 0.26, 1.18, 1.22, zc - 0.32, zc + 0.32, { todas: { k: 'lisa', tinta: '#d8d2b8' }, base: null });
+  }
+  /* O FUNDO, medido da parede do portão (`X`): a mesa de corte com o pano
+     estendido e o rolo, a estante dos rolos de pano e, no canto das
+     máquinas, as caixas empilhadas */
+  const LI = xi1 - xi0, X = a => portaEsq ? xi0 + a : xi1 - a, faixaX = (a, b) => [Math.min(X(a), X(b)), Math.max(X(a), X(b))];
+  const cL = Math.min(2.4, LI - 2.2), zt = zB + 0.55;
+  if (cL > 1.0) {
+    const [ca, cb] = faixaX(0.25, 0.25 + cL), cx = (ca + cb) / 2;
+    mesaF(cx, zt, cL, 0.9, 0.86, '#d8cdb4');
+    B.caixa(ca + 0.3, cb - 0.3, 0.86, 0.87, zt - 0.38, zt + 0.38, { todas: { k: 'lisa', tinta: c1 }, base: null });
+    /* o rolo do pano deitado na ponta de lá da mesa */
+    B.caixa(X(0.25 + cL) - 0.12, X(0.25 + cL) + 0.12, 0.86, 1.04, zt - 0.42, zt + 0.42, { todas: { k: 'lisa', tinta: c2 }, base: null });
+  }
+  const eA = 0.4 + Math.max(cL, 0), eB = Math.min(eA + 1.5, LI - 0.75);
+  if (eB - eA > 0.7) {
+    const [ea, eb] = faixaX(eA, eB), ferro = { todas: { k: 'lisa', tinta: '#7d848a' }, base: null };
+    for (const y of [0.35, 1.0, 1.65]) B.caixa(ea, eb, y, y + 0.03, zB, zB + 0.45, ferro);
+    for (const x of [ea, eb - 0.04]) B.caixa(x, x + 0.04, 0.04, 2.0, zB, zB + 0.45, ferro);
+    let k = 0;
+    for (const y of [0.38, 1.03, 1.68]) for (let x = ea + 0.06; x + 0.22 < eb - 0.04; x += 0.26, k++)
+      B.caixa(x, x + 0.22, y, y + 0.22, zB + 0.02, zB + 0.43, { todas: { k: 'lisa', tinta: cores[k % 4] }, base: null });
+  }
+  {
+    const bx = X(LI - 0.35), bz = zB + 0.35;
+    for (let i = 0; i < 3; i++) B.caixa(bx - 0.28, bx + 0.28, 0.04 + i * 0.42, 0.04 + (i + 1) * 0.42, bz - 0.25, bz + 0.25, { todas: { k: 'lisa', tinta: i % 2 ? '#a77f4c' : '#b88a50' }, base: null });
+  }
+  /* a arara de camisa pronta encostada na parede do lado do portão (a rua vê ela pelo portão) */
+  {
+    const za = zFi - 1.1, zb = Math.max(zB + 1.3, za - 1.4);
+    if (za - zb > 0.6) araraDeCano(B, X(0.35), zb, za, [c1, c2, c3]);
+  }
+  if (T) conta.placas.push({ tipo: 'escudo', x: (xi0 + xi1) / 2, y: 2.5, z: zB + 0.01, face: 'frente', larg: 0.8, alt: 0.8, fundo: c2, cor: c1, texto: T.rot || '', img: T.escudo || null });
+}
+
+/* =======================================================
    O TERRENO BALDIO — o lote de muro
    O muro de 20 cm na divisa da frente, na altura que a planta deu
    (1,9 a 2,5 m): de bloco aparente, de reboco cru ou de reboco pintado
@@ -3267,7 +3466,7 @@ function estacionamento(B, p, l, conta) {
 }
 
 const TIPOS = { t1, t2, t3, t4, t5, favela, f1, f2, bar, lanche, escada, varal, garagem, base, g1, g2, p1, p2, m1, m2, m3, m4, baldio,
-                bartorcida: barTorcida, lojatorcida: barTorcida, subsede: subsedeTorcida, ...TIPOS_LOJA,
+                bartorcida: barTorcida, lojatorcida: barTorcida, subsede: subsedeTorcida, fabrica: fabricaTorcida, ...TIPOS_LOJA,
                 com_espetinho: comercio('espetinho'), com_hamburgueria: comercio('hamburgueria'), com_pizzaria: comercio('pizzaria'), com_barzinho: comercio('barzinho'),
                 estacionamento };
 

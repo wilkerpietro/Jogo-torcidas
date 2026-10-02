@@ -286,7 +286,8 @@ function ligar(api) {
   const irPraSede = () => {
     const e = E(), C = api.cenario;
     if (!e || !C) return;
-    const porta = api.sedeDe(e.torcida.id);
+    /* (a torcida sem sede no mapa, o nível 0: a câmera vai pro ponto de encontro — o bar dela ou, sem bar, a esquina do bairro) */
+    const porta = api.casaDe ? api.casaDe(e.torcida.id) : api.sedeDe(e.torcida.id);
     if (porta) C.voarPara(porta.x, porta.y, 70 * api.M, 0.78, Math.atan2(porta.fx, porta.fy) + Math.PI);
   };
   /* o aviso curto no canto (o mesmo das compras do jogo) */
@@ -312,11 +313,12 @@ function ligar(api) {
     /* (o jogo que abriu no meio do dia: o jogo da cidade de hoje, no fundo) */
     agendarJogosDaCidade(e);
     if (barNovo && barNovo.porta) {
-      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DA ...", a vitrine da loja, a platibanda da subsede) */
+      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DA ...", a vitrine da loja, a platibanda da subsede, o portão da fábrica) */
       const q = barNovo.porta, nome = String(e.torcida.nome || '').replace(/[&<>]/g, '');
       C.voarPara(q.x, q.y, 30 * api.M, 0.5, Math.atan2(q.fx, q.fy));
       if (barNovo.tipo === 'loja') avisar(`A loja nova da <b>${nome}</b> abriu as portas.`);
       else if (barNovo.tipo === 'subsede') avisar(`A subsede nova da <b>${nome}</b>${barNovo.nomeDoBairro ? ' em <b>' + String(barNovo.nomeDoBairro).replace(/[&<>]/g, '') + '</b>' : ''} abriu as portas.`);
+      else if (barNovo.tipo === 'fabrica') avisar(`A fábrica da <b>${nome}</b>${barNovo.nomeDoBairro ? ' em <b>' + String(barNovo.nomeDoBairro).replace(/[&<>]/g, '') + '</b>' : ''} começou a produzir.`);
       else avisar(`O bar novo da <b>${nome}</b> abriu as portas.`);
       const este = barNovo;
       setTimeout(() => { if (este === barMostrado && vida.ligada && !pracaTravada && !dia3d.ativo) vida.irPraSala(); }, 5000);
@@ -347,6 +349,34 @@ function ligar(api) {
     return api.baresDoJogo(e.torcida.id, p && Array.isArray(p.bares) ? p.bares.length : 0, true);
   };
   const baresDoJogador = id => api.planta && api.planta.bares ? api.planta.bares().filter(b => b.dono === id) : [];
+  /* AS SEDES DA IA DO SAVE (02/10/2026, o item 2 da varredura: "o nível da
+     sede da IA no 3D"): a sede de cada torcida da IA é a do mundo vivo, não
+     a da tabela — a pequena que começa no ponto de encontro (o nível 0) fica
+     sem sede no mapa (com o bar dela), e a que fez a obra aparece com a sede
+     nova. Entra na próxima montagem, como os bares dela; os ônibus da
+     garagem, na hora (são peças vivas) */
+  /* A FÁBRICA E OS ANEXOS DA SEDE (o item 6 da varredura, 02/10/2026): o
+     que o save tem — a fábrica de material (um galpão do bairro vira a
+     confecção) e a enfermaria, o galpão de material, o cofre blindado e
+     a área de treino (a mobília da sede) */
+  const anexosDe = p => p ? { enfermaria: !!p.enfermaria, galpao: !!p.galpao, cofre: !!p.cofre, treino: +p.areaTreino || 0 } : null;
+  const conferirIA = e => {
+    const mundo = e.mundoTorcidas || {}, R = TO.relacoes;
+    for (const id in mundo) {
+      const v = mundo[id];
+      if (!v || id === e.torcida.id) continue;
+      if (api.nivelDoJogo && v.sede != null) api.nivelDoJogo(id, v.sede);
+      try { if (api.onibusDoJogo) api.onibusDoJogo(id, R && R.frotaIA ? R.frotaIA(v) : (+v.onibus || 0)); } catch (err) { console.error('os ônibus da IA:', err); }
+      if (api.fabricaDoJogo) api.fabricaDoJogo(id, !!v.fabrica);
+      if (api.anexosDoJogo) api.anexosDoJogo(id, anexosDe(v));
+    }
+  };
+  /* os anexos da sede do jogador: comprou um, a praça remonta (é a mobília da sede) */
+  const conferirAnexos = e => {
+    if (!api.anexosDoJogo) return false;
+    const p = TO.financeiro && TO.financeiro.patrimonio ? TO.financeiro.patrimonio(e) : e.patrimonio;
+    return api.anexosDoJogo(e.torcida.id, anexosDe(p));
+  };
   /* AS LOJAS E AS SUBSEDES DO SAVE (02/10/2026): a praça lê o bairro de
      cada uma direto do jogo (`TO.dominio.estruturas`) quando monta; aqui
      só se vê se as do JOGADOR mudaram (comprou, perdeu), pra remontar —
@@ -358,6 +388,10 @@ function ligar(api) {
     let chave;
     try { chave = D.estruturas(e, e.torcida.mapa).filter(s => s.tid === e.torcida.id && (s.tipo === 'loja' || s.tipo === 'subsede')).map(s => s.tipo + ':' + s.bairro).join('|'); }
     catch (err) { return false; }
+    /* (e a fábrica: a planta acha o galpão dela quando monta) */
+    const p = TO.financeiro && TO.financeiro.patrimonio ? TO.financeiro.patrimonio(e) : e.patrimonio, fab = !!(p && p.fabrica);
+    if (api.fabricaDoJogo) api.fabricaDoJogo(e.torcida.id, fab);
+    chave += '|fabrica:' + (fab ? 1 : 0);
     const mudou = estruturasVistas != null && chave !== estruturasVistas;
     estruturasVistas = chave;
     return mudou;
@@ -377,13 +411,22 @@ function ligar(api) {
     /* o que cada torcida guarda nos armários do almoxarifado (a sede monta com o do save) */
     try { if (vida.conferirGuardados) vida.conferirGuardados(true); } catch (err) { console.error('os armários:', err); }
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
+    conferirIA(e);
     const mudouBares = conferirBares(e);
     const mudouEstruturas = conferirEstruturas(e);
+    const mudouAnexos = conferirAnexos(e);
+    /* A PRAÇA QUE SUBIU COM A TABELA (02/10/2026): a praça lembrada monta
+       atrás do menu antes de o save carregar — com as sedes, os bares e as
+       lojas da tabela. Quando o jogo entra nela (o começo, a volta do dia de
+       jogo, o menu), ela remonta se não bate com o save; no meio do dia, o
+       que a IA compra espera a próxima montagem */
+    const C0 = api.cenario;
+    const velha = nome !== pracaDoJogo && !!C0 && C0.praca === nome && !!api.emDiaComOJogo && !api.emDiaComOJogo();
     /* (a textura dos gráficos que mudou com a praça ocupada: remonta agora) */
     const mudouTexturas = texturasPendentes; texturasPendentes = false;
     /* os ônibus da garagem (os níveis 4 e 5) são os do save, na hora */
     try { if (api.onibusDoJogo && TO.financeiro && TO.financeiro.onibusDe) api.onibusDoJogo(e.torcida.id, TO.financeiro.onibusDe(e)); } catch (err) { console.error('os ônibus:', err); }
-    const refazer = mudouNivel || mudouBares || mudouEstruturas || mudouTexturas || !!forcar;
+    const refazer = mudouNivel || mudouBares || mudouEstruturas || mudouAnexos || mudouTexturas || velha || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
     /* os bares que ela tinha na praça: o que aparecer a mais é o novo */

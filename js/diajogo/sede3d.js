@@ -1106,9 +1106,11 @@ const MOBILIA = {
     banco(ctx, Q, bs0, bs1, D - 0.55, D - 0.12);
     for (let s = bs0 + 0.4; s <= bs1 - 0.35; s += 0.7)
       lugar(ctx, Q, 'banco', s, D - 0.33, '-t', { sentado: true, assento: ASSENTO.banco, gesto: s < bs0 + 1 ? 'celular' : 'conversa' });
-    /* a roda em pé no meio do pátio, longe do caminho do portão */
+    /* a roda em pé no meio do pátio, longe do caminho do portão; com a
+       ÁREA DE TREINO (o anexo do save), o treino no lugar dela */
     const rs = Math.min(W - 1.6, 4.9), rt = D * 0.42;
-    for (let k = 0; k < 4; k++) {
+    if (ctx.anexos.treino) areaDeTreino(ctx, Q, ctx.anexos.treino, Math.max(3.4, W - 3.3), W - 1.1, D * 0.28, Math.min(D - 3.0, D * 0.28 + 2.4), '+s', false);
+    else for (let k = 0; k < 4; k++) {
       const a = k * Math.PI / 2 + 0.3;
       lugarPara(ctx, Q, 'roda', rs + Math.cos(a) * 0.6, rt + Math.sin(a) * 0.6, rs, rt, { gesto: 'festa' });
     }
@@ -1424,9 +1426,15 @@ function patioNovo(ctx, Q) {
      faixa vai lá no alto, por cima deles) */
   const lf = N === 4 ? Math.min(3.6, W - 2.2) : Math.min(3.6, W - 5.0);
   if (lf > 1.4) ctx.faixa('+t', N === 4 ? W / 2 : W / 2 + 0.3, N === 4 ? PISO + 2.25 : PISO + 0.95, lf, N === 4 ? 0.62 : 0.78, Q);
+  /* (no nível 4, a ÁREA DE TREINO do save vai no muro de cá, no lugar da
+     mesa comprida: de 2,8 m da frente, atrás da bateria, até 0,4 m do vão
+     do portão — o pátio do 4 na cidade tem 7 a 8 m de largura, então a
+     zona fica com 1,6 a 2,1 m; ela leva o banco, que cai no mesmo trecho) */
+  const zT = N === 4 && ctx.anexos.treino ? [0.05, Math.min(g0 - 0.1, 2.7), 2.8, Math.min(D - 2.75, 5.05, ...portas.filter(p => p.lado === '-s' && p.t1 > 2.5).map(p => p.t0 - 0.3))] : null;
+  const treino4 = zT && zT[1] - zT[0] >= 1.6 && zT[3] - zT[2] >= 1.6 ? zT : null;
   /* o banco no muro do lado de cá, onde não tem porta */
   const tb0 = D - 4.2, tb1 = D - 2.4;
-  if (semPorta(portas, '-s', tb0, tb1)) {
+  if (semPorta(portas, '-s', tb0, tb1) && !(treino4 && treino4[3] > tb0 - 0.1)) {
     banco(ctx, Q, 0.05, 0.5, tb0, tb1);
     for (let t = tb0 + 0.4; t <= tb1 - 0.35; t += 0.7) lugar(ctx, Q, 'banco', 0.3, t, '+s', { sentado: true, assento: ASSENTO.banco, gesto: t < tb0 + 1 ? 'celular' : 'conversa' });
   }
@@ -1437,14 +1445,18 @@ function patioNovo(ctx, Q) {
     for (let i = 0; i < 3; i++) colchao(ctx, Q, 0.1, 2.0, 2.4 + i * 1.0, 3.3 + i * 1.0, PISO, '-s', [ctx.c1, ctx.c2, ctx.c3][i]);
     varal(ctx, Q, 3.0, 2.6, 4.9);
     mesaDePlastico(ctx, Q, W / 2 - 0.9, D - 2.6, ['-s', '+s', '+t']);
+    /* (a ÁREA DE TREINO do save no lugar do treino improvisado) */
     const sT = W - 2.3;
-    trave(ctx, Q, sT - 1.0, sT + 1.0, 5.2, 2.3, '#8a6a48');
-    sacoDePancada(ctx, Q, sT, 5.2, PISO + 2.3, '#2b2b2e');
-    lugar(ctx, Q, 'treino', sT, 4.55, '+t', { gesto: 'saco' });
-    pneu(ctx, Q, sT + 0.2, 6.7);
-    colchonete(ctx, Q, sT - 1.0, sT + 0.8, 7.4, 8.0, '#2d5fa8');
-    halteres(ctx, Q, sT - 1.3, 6.5);
-    lugar(ctx, Q, 'treino', sT - 1.1, 7.0, '-t', { gesto: 'halter' });
+    if (ctx.anexos.treino) areaDeTreino(ctx, Q, ctx.anexos.treino, W - 3.8, W - 1.4, 4.4, Math.min(D - 3.3, 8.4), '+s', false);
+    else {
+      trave(ctx, Q, sT - 1.0, sT + 1.0, 5.2, 2.3, '#8a6a48');
+      sacoDePancada(ctx, Q, sT, 5.2, PISO + 2.3, '#2b2b2e');
+      lugar(ctx, Q, 'treino', sT, 4.55, '+t', { gesto: 'saco' });
+      pneu(ctx, Q, sT + 0.2, 6.7);
+      colchonete(ctx, Q, sT - 1.0, sT + 0.8, 7.4, 8.0, '#2d5fa8');
+      halteres(ctx, Q, sT - 1.3, 6.5);
+      lugar(ctx, Q, 'treino', sT - 1.1, 7.0, '-t', { gesto: 'halter' });
+    }
     roda(ctx, Q, W / 2 - 0.4, 3.6);
     for (const [s, t, h] of [[g1 + 0.2, 0.35, 0.45], [g1 + 0.65, 0.4, 0.34]]) if (s + h < W - 1.3) caixaPapelao(ctx, Q, s, s + h, t, t + h, PISO, h);
     return;
@@ -1467,6 +1479,9 @@ function patioNovo(ctx, Q) {
     supino(ctx, Q, s1 - 0.6, t0 + 0.3, t0 + 1.7);
     halteres(ctx, Q, s1 - 0.7, t1 - 0.5);
     lugar(ctx, Q, 'treino', s1 - 0.55, t1 - 1.1, '-s', { gesto: 'halter' });
+    /* a ÁREA DE TREINO do save: o pedaço livre do lado de lá, até 1,7 m das
+       portas da coluna (no terreno de 21,6 m o pedaço tem 1,64 m: cabe) */
+    if (ctx.anexos.treino && W - 1.7 - (s1 + 0.45) >= 1.6) areaDeTreino(ctx, Q, ctx.anexos.treino, s1 + 0.45, W - 1.7, t0 - 1.4, D - 1.3, '+s', false);
     mesaDePlastico(ctx, Q, 2.1, 4.4, ['-t', '+s', '+t']);
     roda(ctx, Q, Math.min(W - 2.2, g1 + 1.2), 3.3);
     pilhaCadeiras(ctx, Q, W - 1.6, D - 0.45, 6, PLASTICO, '+t');
@@ -1479,7 +1494,9 @@ function patioNovo(ctx, Q) {
      portão até a porta da academia fica livre */
   if (g0 > 2.0) bateriaDePe(ctx, Q, 0.45, 2.3, '+t', 0.55);
   const mt0 = 3.0, mt1 = Math.min(D - 3.2, 4.6), ms0 = 0.95, ms1 = 1.75;
-  if (mt1 - mt0 > 1.0 && g0 > 1.9) {
+  /* (a ÁREA DE TREINO do save no lugar da mesa comprida, encostada no muro de cá) */
+  if (treino4) areaDeTreino(ctx, Q, ctx.anexos.treino, ...treino4, '-s', true);
+  else if (mt1 - mt0 > 1.0 && g0 > 1.9) {
     mesa(ctx, Q, ms0, ms1, mt0, mt1, 0.74, PLASTICO, '#c9cbcc');
     for (let t = mt0 + 0.35; t <= mt1 - 0.3; t += 0.62) {
       cadeira(ctx, Q, ms0 - 0.38, t, '-s', PLASTICO); cadeira(ctx, Q, ms1 + 0.38, t, '+s', PLASTICO);
@@ -1532,7 +1549,11 @@ function presidenciaNova(ctx, Q) {
   if (D > 3.9) ctx.camisa(Q, '+s', 3.5, PISO + 1.6, 0.55, 0.7, 2);
   tv(ctx, Q, '-t', Math.min(W - 0.75, p1 + 1.95), PISO + 1.55, 1.0);
   frigobar(ctx, Q, W - 0.62, W - 0.08, mt0 - 0.1, mt0 + 0.42);
-  if (mS1 + 0.75 < W - 0.6) cofre(ctx, Q, mS1 + 0.15, mS1 + 0.7, D - 0.6, D - 0.06, '-t');
+  /* O COFRE BLINDADO (o anexo do save): do lado da mesa, no lugar do
+     cofrinho, ou no canto do fundo do outro lado */
+  if (ctx.anexos.cofre && mS1 + 1.0 < W - 0.55) cofreBlindado(ctx, Q, mS1 + 0.15, mS1 + 1.0, D - 0.8, D - 0.06, '-t');
+  else if (ctx.anexos.cofre && ms > 1.5) cofreBlindado(ctx, Q, 0.08, 0.93, D - 0.8, D - 0.06, '-t');
+  else if (mS1 + 0.75 < W - 0.6) cofre(ctx, Q, mS1 + 0.15, mS1 + 0.7, D - 0.6, D - 0.06, '-t');
   plantaNoVaso(ctx, Q, W - 0.35, D - 0.35);
 }
 
@@ -1601,6 +1622,10 @@ function hospedagemNova(ctx, Q) {
   for (let t = 0.3; t + 2.0 <= tMax && camas.length < quer; t += 2.1) camas.push({ lado: '+s', a: t });
   let naFrente = false;
   for (let t = 1.9; t + 2.0 <= tMax && camas.length < quer; t += 2.1) { camas.push({ lado: '-s', a: t }); naFrente = true; }
+  /* A ENFERMARIA (o anexo do save) fica no lugar do último beliche */
+  const enf = ctx.anexos.enfermaria && camas.length >= 2 ? camas.pop() : null;
+  if (enf && enf.lado === '-s') naFrente = true;   // (a parede de cá é da maca: o armário vai pra da porta)
+  if (enf) enfermaria(ctx, Q, enf);
   camas.forEach((c, k) => {
     const c1 = cores[k % 3], c2 = cores[(k + 1) % 3];
     if (c.lado === '+t') {
@@ -1618,7 +1643,7 @@ function hospedagemNova(ctx, Q) {
      beliche, na parede da porta, depois da folha) */
   if (!naFrente) armarioAco(ctx, Q, 0.06, 0.5, 1.9, Math.min(D - 1.1, 3.1), 1.8, '+s', 3);
   else armarioAco(ctx, Q, p1 + 0.25, p1 + 1.25, 0.06, 0.5, 1.8, '+t', 3);
-  const temPonta = camas.some(c => c.lado === '+s');
+  const temPonta = camas.some(c => c.lado === '+s') || !!(enf && enf.lado === '+s');
   ventilador(ctx, Q, temPonta ? Math.min(W - 1.3, 3.9) : W - 0.4, D - 1.3);
   /* a mesa com duas cadeiras no meio */
   const ms = Math.max(p1 + 0.6, 1.4), mt = Math.min(D - 1.9, 2.1);
@@ -1649,8 +1674,11 @@ function patrimonioNovo(ctx, Q) {
   for (let s = a0 + 0.2; s < am + aw - 0.1; s += 0.42) trofeu(ctx, Q, s, D - 0.3, PISO + 2.0, 0.26 + ((Math.round(s * 7)) % 3) * 0.05);
   lugar(ctx, Q, 'estante', (a0 + am) / 2, D - 0.95, '+t', { gesto: 'arruma', armario: 'patrimonio' });
   lugar(ctx, Q, 'armario', (am + am + aw) / 2, D - 0.95, '+t', { gesto: 'arruma', armario: 'tomadas' });
-  /* a estante de aço na parede do fundo do cômodo (+s), com caixa e bandeira enrolada */
-  if (D - 0.7 - 1.9 > 1.0) estanteAco(ctx, Q, W - 0.45, W - 0.05, 1.9, D - 0.7, 1.9, 4, (i, b0, b1, c0, c1, y) => {
+  /* a estante de aço na parede do fundo do cômodo (+s), com caixa e bandeira
+     enrolada; com o GALPÃO DE MATERIAL (o anexo do save), a gaiola de tela
+     cheia no lugar dela (até o meio metro da frente dos armários) */
+  if (ctx.anexos.galpao && D - 1.25 - 1.6 >= 0.9) gaiolaDeMaterial(ctx, Q, W - 0.85, W - 0.05, 1.6, D - 1.25, '-s');
+  else if (D - 0.7 - 1.9 > 1.0) estanteAco(ctx, Q, W - 0.45, W - 0.05, 1.9, D - 0.7, 1.9, 4, (i, b0, b1, c0, c1, y) => {
     if (i === 1) { bandeiraEnrolada(ctx, Q, b0, b1, c0, c0 + 0.8, y, ctx.c1, ctx.c2); bandeiraEnrolada(ctx, Q, b0, b1, c0 + 0.9, Math.min(c1, c0 + 1.7), y, ctx.c2, ctx.c1); return; }
     for (let t = c0; t + 0.32 <= c1; t += 0.36) caixaPapelao(ctx, Q, b0, b1, t, t + 0.32, y, 0.22);
   });
@@ -1897,9 +1925,14 @@ function academiaNova(ctx, Q) {
      espelho e o rack de halteres na parede do fundo; do lado de lá, o
      tatame com a dupla na luta; o bebedouro do lado da porta */
   const sT0 = 0.45, sT1 = Math.min(p0 - 0.25, 2.8), tT = D - 0.55;
+  /* (a ÁREA DE TREINO do save, no 4, também cresce aqui: o terceiro saco no
+     nível 3 da obra, a barra fixa no canto de lá no 2 — o pátio do 4 só
+     tem lugar pra trave dela) */
+  const nT = ctx.anexos.treino || 0;
   if (sT1 - sT0 > 1.4) {
     trave(ctx, Q, sT0, sT1, tT, 2.35, ACO_ESCURO);
-    for (const [s, c] of [[sT0 + (sT1 - sT0) * 0.3, '#b8322b'], [sT0 + (sT1 - sT0) * 0.74, '#2b2b2e']]) {
+    const sacosA = nT >= 3 && sT1 - sT0 > 2.0 ? [[0.2, '#b8322b'], [0.5, '#2b2b2e'], [0.8, viva(ctx.c1)]] : [[0.3, '#b8322b'], [0.74, '#2b2b2e']];
+    for (const [s, c] of sacosA.map(([f, c]) => [sT0 + (sT1 - sT0) * f, c])) {
       sacoDePancada(ctx, Q, s, tT, PISO + 2.35, c);
       lugar(ctx, Q, 'treino', s, tT - 0.62, '+t', { gesto: 'saco' });
     }
@@ -1920,6 +1953,10 @@ function academiaNova(ctx, Q) {
   }
   bebedouro(ctx, Q, Math.max(0.3, p0 - 0.35), 0.25);
   ventilador(ctx, Q, W - 0.35, D - 0.4);
+  if (nT >= 2 && ts1 + 0.25 < W - 0.3 && D > 2.2) {
+    barraFixa(ctx, Q, W - 0.45, W - 0.35, 0.45, D - 1.0);
+    lugar(ctx, Q, 'treino', W - 0.4, (D - 0.55) / 2, '+t', { gesto: 'guarda' });
+  }
 }
 /* A VARANDA do 1º andar: os vasos nas pontas e, na passarela por cima do
    portão, quem fica apoiado no guarda-corpo olhando o pátio */
@@ -1973,6 +2010,294 @@ function patio5(ctx, Q) {
   roda(ctx, Q, VAR + 2.3, D / 2 - 0.6);
   for (const s of [0.4, W - 0.4]) plantaNoVaso(ctx, Q, s, 0.45);
   pilhaCadeiras(ctx, Q, W - 0.6, D - 0.45, 6, PLASTICO, '+t');
+  /* a ÁREA DE TREINO do save: na frente, do lado de cá do portão, entre os pilares e a roda */
+  if (ctx.anexos.treino) areaDeTreino(ctx, Q, ctx.anexos.treino, VAR + 0.4, Math.min(W / 2 - 1.4, VAR + 3.4), 2.1, Math.min(D / 2 - 1.4, 4.5), '-t', false);
+}
+
+/* =======================================================
+   OS ANEXOS DA SEDE (o item 6 da varredura, 02/10/2026: "os anexos da
+   sede (enfermaria, cofre, área de treino) não aparecem"). O que o save
+   diz que a torcida comprou (`sede.anexos`: { enfermaria, galpao, cofre,
+   treino }) entra na mobília do cômodo dele:
+     ENFERMARIA   (sede 4: "ferido volta em 3 a 9 dias") na hospedagem,
+                  no lugar do último beliche: a maca de hospital com a
+                  cabeceira levantada e a grade, o suporte de soro, o
+                  biombo, o armarinho de primeiros socorros com a cruz
+                  vermelha e a placa ENFERMARIA
+     GALPÃO DE    (sede 3: "bomba 15% mais barata e o saque no nosso bar
+     MATERIAL     leva 30% menos") no patrimônio, no lugar da estante: a
+                  gaiola de tela com cadeado, cheia — as caixas de rojão
+                  com a faixa de perigo, os sinalizadores, as faixas
+                  enroladas e os mastros — e a placa MATERIAL
+     COFRE        (sede 5: "metade do prejuízo de qualquer saque fica
+     BLINDADO     guardada") na presidência: o cofre de aço de 1,5 m com
+                  o volante, o segredo e as dobradiças, no canto do fundo
+                  (no lugar do cofrinho, quando tinha)
+     ÁREA DE      (os três níveis da obra: +25, 50 e 75% de gente
+     TREINO       treinando) num canto livre do pátio de cada nível: o piso
+                  de borracha com a borda na cor 1 e a placa ÁREA DE
+                  TREINO, e a cada nível mais aparelho — a trave com dois
+                  sacos (1), o rack de halteres e a barra fixa (2), o
+                  supino e o pneu de virar (3) —, com os lugares de treino
+   ======================================================= */
+/* A MACA de hospital (a cabeça do lado `cabeca`): os pés de aço, o
+   estrado, o colchão com a cabeceira levantada (em degraus), o lençol, o
+   travesseiro e a grade do lado */
+function maca(ctx, Q, s0, s1, t0, t1, cabeca) {
+  const aoS = cabeca === '-s' || cabeca === '+s';
+  const L = aoS ? s1 - s0 : t1 - t0, Lb = aoS ? t1 - t0 : s1 - s0;
+  /* (a ao longo da maca, da cabeça; b atravessado) */
+  const cx = (a0, a1, b0, b1, y0, y1, spec) => {
+    const [A0, A1] = aoS ? (cabeca === '-s' ? [s0 + a0, s0 + a1] : [s1 - a1, s1 - a0]) : (cabeca === '-t' ? [t0 + a0, t0 + a1] : [t1 - a1, t1 - a0]);
+    if (aoS) qcaixa(ctx, Q, A0, A1, t0 + b0, t0 + b1, y0, y1, spec); else qcaixa(ctx, Q, s0 + b0, s0 + b1, A0, A1, y0, y1, spec);
+  };
+  const aco = { todas: lisa('#b9bfc4'), base: null }, h = 0.6, branco = { todas: lisa('#f4f4f1') }, cab = Math.min(0.75, L * 0.38);
+  for (const a of [0.05, L - 0.1]) for (const b of [0.05, Lb - 0.1]) cx(a, a + 0.05, b, b + 0.05, PISO, PISO + h, aco);
+  cx(0, L, 0, Lb, PISO + h - 0.05, PISO + h, { todas: lisa('#8f979d') });
+  cx(cab, L - 0.03, 0.04, Lb - 0.04, PISO + h, PISO + h + 0.12, branco);
+  for (let i = 0; i < 4; i++) { const a = cab * i / 4; cx(a + 0.02, a + cab / 4 + 0.02, 0.04, Lb - 0.04, PISO + h, PISO + h + 0.12 + (4 - i) * 0.1, branco); }
+  cx(L - 0.5, L - 0.05, 0.03, Lb - 0.03, PISO + h + 0.12, PISO + h + 0.16, { todas: lisa('#8fc1a9') });
+  cx(0.06, 0.32, 0.12, Lb - 0.12, PISO + h + 0.52, PISO + h + 0.6, branco);
+  for (const b of [0, Lb - 0.025]) cx(L * 0.3, L * 0.68, b, b + 0.025, PISO + h + 0.12, PISO + h + 0.38, aco);
+  ctx.marca(...Q.ret(s0, s1, t0, t1), '#dfe3e6');
+}
+/* o suporte de soro: o pé de cinco pontas, a haste e a bolsa com o tubo */
+function suporteDeSoro(ctx, Q, s, t) {
+  const aco = { todas: lisa('#b9bfc4'), base: null };
+  qcaixa(ctx, Q, s - 0.25, s + 0.25, t - 0.02, t + 0.02, PISO, PISO + 0.04, aco);
+  qcaixa(ctx, Q, s - 0.02, s + 0.02, t - 0.25, t + 0.25, PISO, PISO + 0.04, aco);
+  qcaixa(ctx, Q, s - 0.012, s + 0.012, t - 0.012, t + 0.012, PISO, PISO + 1.85, aco);
+  qcaixa(ctx, Q, s - 0.14, s + 0.14, t - 0.01, t + 0.01, PISO + 1.82, PISO + 1.85, aco);
+  qcaixa(ctx, Q, s + 0.06, s + 0.16, t - 0.025, t + 0.025, PISO + 1.55, PISO + 1.8, { todas: lisa('#e7eef0') });
+  qcaixa(ctx, Q, s + 0.105, s + 0.115, t - 0.005, t + 0.005, PISO + 0.95, PISO + 1.55, { todas: lisa('#d6e3e7') });
+}
+/* o biombo de três folhas (o pano verde-claro no quadro de aço), em pé ao longo de s ou de t */
+function biombo(ctx, Q, s0, s1, t0, t1) {
+  const aoS = s1 - s0 >= t1 - t0, L = aoS ? s1 - s0 : t1 - t0, f = L / 3, aco = { todas: lisa('#9aa2a8'), base: null }, pano = { todas: lisa('#bfdccb') };
+  for (let i = 0; i < 3; i++) {
+    const a0 = (aoS ? s0 : t0) + i * f + 0.01, a1 = a0 + f - 0.02, d = (i % 2) * 0.06;
+    const [S0, S1, T0, T1] = aoS ? [a0, a1, t0 + d, t0 + d + 0.03] : [s0 + d, s0 + d + 0.03, a0, a1];
+    qcaixa(ctx, Q, S0, S1, T0, T1, PISO + 0.18, PISO + 1.72, pano);
+    for (const a of [a0, a1 - 0.025]) qcaixa(ctx, Q, aoS ? a : S0, aoS ? a + 0.025 : S1, aoS ? T0 : a, aoS ? T1 : a + 0.025, PISO, PISO + 1.78, aco);
+  }
+  ctx.marca(...Q.ret(s0, s1, t0, t1), '#bfdccb');
+}
+/* A ENFERMARIA no lugar de um beliche (`cama`: a parede e onde começa):
+   a maca encostada na mesma parede, a cabeça pro lado que tem folga (lá
+   vai o soro), o biombo atravessado no pé (separa do dormitório), o
+   armarinho da cruz e a placa na parede de cima, e quem visita do lado */
+function enfermaria(ctx, Q, cama) {
+  const { W, D } = Q, ao = cama.lado === '+t';
+  /* a maca: ao longo da parede, 1,9 m × 0,9 */
+  const [s0, s1, t0, t1] = ao ? [cama.a + 0.05, cama.a + 1.95, D - 0.98, D - 0.08]
+                         : cama.lado === '+s' ? [W - 0.98, W - 0.08, cama.a + 0.05, cama.a + 1.95] : [0.08, 0.98, cama.a + 0.05, cama.a + 1.95];
+  /* a cabeça pro fim da fileira (o último beliche: depois dele não tem
+     outro, e o soro cabe lá); o pé fica do lado do beliche vizinho */
+  const cab = ao ? '+s' : '+t', folga = ao ? W - s1 : D - t1;
+  maca(ctx, Q, s0, s1, t0, t1, cab);
+  /* o soro: depois da cabeça, se cabe; senão do lado de fora da maca, na cabeça */
+  let ss, st;
+  if (folga >= 0.55) [ss, st] = ao ? [cab === '+s' ? s1 + 0.28 : s0 - 0.28, t0 + 0.35] : [cama.lado === '+s' ? s0 + 0.35 : s1 - 0.35, cab === '+t' ? t1 + 0.28 : t0 - 0.28];
+  else [ss, st] = ao ? [cab === '+s' ? s1 - 0.25 : s0 + 0.25, t0 - 0.3] : [cama.lado === '+s' ? s0 - 0.3 : s1 + 0.3, cab === '+t' ? t1 - 0.25 : t0 + 0.25];
+  suporteDeSoro(ctx, Q, ss, st);
+  /* o biombo atravessado no pé, da parede até meio metro além da maca */
+  if (ao) { const pe = cab === '+s' ? s0 : s1, x = cab === '+s' ? pe - 0.12 : pe + 0.03; biombo(ctx, Q, x, x + 0.09, t0 - 0.55, D - 0.06); }
+  else { const pe = cab === '+t' ? t0 : t1, z = cab === '+t' ? pe - 0.12 : pe + 0.03; biombo(ctx, Q, cama.lado === '+s' ? s0 - 0.55 : 0.06, cama.lado === '+s' ? W - 0.06 : s1 + 0.55, z, z + 0.09); }
+  /* o armarinho de primeiros socorros na parede, por cima da maca, e a placa */
+  const parede = cama.lado, aPar = ao ? (s0 + s1) / 2 : (t0 + t1) / 2, yA = PISO + 1.45;
+  naParede(ctx, Q, parede, aPar - 0.3, aPar + 0.3, yA, yA + 0.5, 0.2, { todas: lisa('#f3f2ee') }, '#f3f2ee');
+  naParede(ctx, Q, parede, aPar - 0.04, aPar + 0.04, yA + 0.1, yA + 0.4, 0.21, { todas: lisa('#c8342b') });
+  naParede(ctx, Q, parede, aPar - 0.15, aPar + 0.15, yA + 0.21, yA + 0.29, 0.21, { todas: lisa('#c8342b') });
+  const olha = { '+t': '-t', '+s': '-s', '-s': '+s' }[parede];
+  const [px, pz] = parede === '+t' ? Q.pt(aPar, D - 0.02) : parede === '+s' ? Q.pt(W - 0.02, aPar) : Q.pt(0.02, aPar);
+  ctx.placa(Q, [px, pz], olha, PISO + 2.2, 1.1, 0.16, 'ENFERMARIA');
+  /* quem visita o ferido, de pé do lado aberto da maca, perto do pé */
+  const mS = (s0 + s1) / 2, mT = (t0 + t1) / 2;
+  if (ao) lugarPara(ctx, Q, 'enfermaria', cab === '+s' ? s0 + 0.55 : s1 - 0.55, t0 - 0.32, mS, mT, { gesto: 'conversa' });
+  else lugarPara(ctx, Q, 'enfermaria', cama.lado === '+s' ? s0 - 0.35 : s1 + 0.35, cab === '+t' ? t0 + 0.55 : t1 - 0.55, mS, mT, { gesto: 'conversa' });
+}
+/* A GAIOLA DE MATERIAL (o galpão de material, no patrimônio): o quadro de
+   cantoneira, a tela nas três faces de fora e na porta, o cadeado, e
+   dentro as caixas de rojão (o papelão com a faixa amarela e preta), os
+   sinalizadores (o tubo vermelho), as faixas enroladas e os mastros de
+   bambu. `frente`: o lado da porta da gaiola */
+function gaiolaDeMaterial(ctx, Q, s0, s1, t0, t1, frente) {
+  const h = 2.15, aco = { todas: lisa(ACO_ESCURO), base: null };
+  for (const [s, t] of [[s0, t0], [s1 - 0.04, t0], [s1 - 0.04, t1 - 0.04], [s0, t1 - 0.04]]) qcaixa(ctx, Q, s, s + 0.04, t, t + 0.04, PISO, PISO + h, aco);
+  qcaixa(ctx, Q, s0, s1, t0, t1, PISO + h - 0.04, PISO + h, { todas: lisa(ACO_ESCURO), base: null, topo: null });
+  /* a tela nas faces que não são parede: a da frente (com a porta), e as duas pontas */
+  const tela = (lado, a0, a1) => {
+    const [pA, pB] = lado === '-s' ? [Q.pt(s0, a0), Q.pt(s0, a1)] : lado === '+s' ? [Q.pt(s1, a0), Q.pt(s1, a1)] : lado === '-t' ? [Q.pt(a0, t0), Q.pt(a1, t0)] : [Q.pt(a0, t1), Q.pt(a1, t1)];
+    const L = Math.hypot(pB[0] - pA[0], pB[1] - pA[1]);
+    if (L < 0.05) return;
+    const F = ctx.G.plano([pA[0], 0, pA[1]], [(pB[0] - pA[0]) / L, 0, (pB[1] - pA[1]) / L], [0, 1, 0]);
+    ctx.G.ladrilhar(F, [[0, PISO + 0.05], [L, PISO + 0.05], [L, PISO + h - 0.05], [0, PISO + h - 0.05]], 'rede', { tw: 1.0, th: 1.0, tinta: '#a9b0b5' });
+  };
+  const aoS = frente === '-s' || frente === '+s';
+  if (aoS) { tela(frente, t0, t1); tela('-t', s0, s1); tela('+t', s0, s1); } else { tela(frente, s0, s1); tela('-s', t0, t1); tela('+s', t0, t1); }
+  /* a porta de tela (o quadro) com o cadeado, no meio da frente */
+  const pm = aoS ? (t0 + t1) / 2 : (s0 + s1) / 2, fs = frente === '-s' ? s0 - 0.03 : frente === '+s' ? s1 + 0.005 : null, ft = frente === '-t' ? t0 - 0.03 : frente === '+t' ? t1 + 0.005 : null;
+  const quadroP = (a0, a1, y0, y1) => aoS ? qcaixa(ctx, Q, fs, fs + 0.025, a0, a1, y0, y1, aco) : qcaixa(ctx, Q, a0, a1, ft, ft + 0.025, y0, y1, aco);
+  quadroP(pm - 0.4, pm + 0.4, PISO + 0.06, PISO + 0.1); quadroP(pm - 0.4, pm + 0.4, PISO + 1.95, PISO + 1.99);
+  quadroP(pm - 0.4, pm - 0.37, PISO + 0.06, PISO + 1.99); quadroP(pm + 0.37, pm + 0.4, PISO + 0.06, PISO + 1.99);
+  const yc = PISO + 1.0;
+  if (aoS) qcaixa(ctx, Q, fs - (frente === '-s' ? 0.03 : -0.03), fs + 0.025 + (frente === '-s' ? 0 : 0.03), pm + 0.3, pm + 0.37, yc - 0.06, yc, { todas: lisa('#c49a2c') });
+  else qcaixa(ctx, Q, pm + 0.3, pm + 0.37, ft - (frente === '-t' ? 0.03 : -0.03), ft + 0.025 + (frente === '-t' ? 0 : 0.03), yc - 0.06, yc, { todas: lisa('#c49a2c') });
+  /* dentro: as caixas de rojão em pilhas (o papelão, a faixa de perigo), os sinalizadores, as faixas enroladas */
+  const papelao = { todas: lisa(PAPELAO) }, perigo = { todas: lisa('#e3b23c') };
+  const L = aoS ? t1 - t0 : s1 - s0, P = aoS ? s1 - s0 : t1 - t0;
+  /* (a ao longo da gaiola; d da parede pra frente da gaiola) */
+  const cxG = (a0, a1, d0, d1, y0, y1, spec) => {
+    if (aoS) { const [S0, S1] = frente === '-s' ? [s1 - d1, s1 - d0] : [s0 + d0, s0 + d1]; qcaixa(ctx, Q, S0, S1, t0 + a0, t0 + a1, y0, y1, spec); }
+    else { const [T0, T1] = frente === '-t' ? [t1 - d1, t1 - d0] : [t0 + d0, t0 + d1]; qcaixa(ctx, Q, s0 + a0, s0 + a1, T0, T1, y0, y1, spec); }
+  };
+  let k = 0;
+  for (let a = 0.1; a + 0.4 <= L * 0.62; a += 0.45) {
+    const n = 3 + (k % 2);   // (até 1,2 m: a prateleira fica em cima)
+    for (let i = 0; i < n; i++) {
+      const y = PISO + i * 0.3;
+      cxG(a, a + 0.4, 0.06, Math.min(P - 0.12, 0.5), y, y + 0.28, papelao);
+      cxG(a, a + 0.4, Math.min(P - 0.12, 0.5), Math.min(P - 0.12, 0.5) + 0.004, y + 0.09, y + 0.15, perigo);
+    }
+    k++;
+  }
+  /* os sinalizadores em pé, num engradado */
+  const sa = L * 0.66;
+  if (sa + 0.5 < L - 0.1) {
+    cxG(sa, sa + 0.5, 0.08, 0.42, PISO, PISO + 0.22, { todas: lisa('#2b4a8a') });
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) cxG(sa + 0.06 + i * 0.11, sa + 0.1 + i * 0.11, 0.14 + j * 0.13, 0.18 + j * 0.13, PISO + 0.22, PISO + 0.5, { todas: lisa('#c8342b') });
+  }
+  /* a prateleira de cima, de lado a lado, com as faixas e as bandeiras enroladas nas cores da torcida */
+  const yP = PISO + 1.55, dP = Math.min(P - 0.1, 0.55);
+  cxG(0.06, L - 0.2, 0.04, dP, yP - 0.03, yP, { todas: lisa(ACO_ESCURO) });
+  for (let a = 0.12, i = 0; a + 0.22 < L - 0.24; a += 0.26, i++) cxG(a, a + 0.22, 0.08, dP - 0.04, yP, yP + 0.2, { todas: lisa(viva([ctx.c1, ctx.c2, ctx.c3][i % 3])) });
+  /* os mastros de bambu encostados no canto */
+  for (let i = 0; i < 4; i++) cxG(L - 0.12 - i * 0.04, L - 0.09 - i * 0.04, 0.06 + i * 0.03, 0.09 + i * 0.03, PISO, PISO + 2.05 - i * 0.08, { todas: lisa('#caa77a'), base: null });
+  ctx.marca(...Q.ret(s0, s1, t0, t1), ACO_ESCURO);
+  /* a placa MATERIAL em cima da porta */
+  const [px, pz] = aoS ? Q.pt(frente === '-s' ? s0 - 0.04 : s1 + 0.04, pm) : Q.pt(pm, frente === '-t' ? t0 - 0.04 : t1 + 0.04);
+  ctx.placa(Q, [px, pz], frente, PISO + h - 0.13, 0.9, 0.15, 'MATERIAL');
+}
+/* O COFRE BLINDADO: o corpo de aço grosso de 1,5 m, a porta com as
+   dobradiças, o volante de quatro raios, o segredo e a placa do fabricante
+   (a porta virada pra `frente`) */
+function cofreBlindado(ctx, Q, s0, s1, t0, t1, frente) {
+  const h = 1.5, corpo = { todas: lisa('#3b4146') };
+  qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + h, corpo);
+  ctx.marca(...Q.ret(s0, s1, t0, t1), '#3b4146');
+  const aoS = frente === '-s' || frente === '+s', A0 = aoS ? t0 : s0, A1 = aoS ? t1 : s1;
+  /* (a ao longo da frente, y; `sai` pra fora da frente) */
+  const fr = (a0, a1, y0, y1, sai0, sai1, tinta) => {
+    if (frente === '-t') qcaixa(ctx, Q, a0, a1, t0 - sai1, t0 - sai0, y0, y1, { todas: lisa(tinta) });
+    else if (frente === '+t') qcaixa(ctx, Q, a0, a1, t1 + sai0, t1 + sai1, y0, y1, { todas: lisa(tinta) });
+    else if (frente === '-s') qcaixa(ctx, Q, s0 - sai1, s0 - sai0, a0, a1, y0, y1, { todas: lisa(tinta) });
+    else qcaixa(ctx, Q, s1 + sai0, s1 + sai1, a0, a1, y0, y1, { todas: lisa(tinta) });
+  };
+  /* a porta (um dedo pra fora), as três dobradiças, o volante e o segredo */
+  fr(A0 + 0.06, A1 - 0.06, PISO + 0.1, PISO + h - 0.08, 0, 0.025, '#4a5157');
+  for (const y of [0.3, 0.75, 1.2]) fr(A0 + 0.02, A0 + 0.07, PISO + y, PISO + y + 0.12, 0, 0.05, '#2a2e31');
+  const am = (A0 + A1) / 2 + 0.08, ym = PISO + 0.82;
+  fr(am - 0.2, am + 0.2, ym - 0.02, ym + 0.02, 0.025, 0.05, '#c9c6bd');
+  fr(am - 0.02, am + 0.02, ym - 0.2, ym + 0.2, 0.025, 0.05, '#c9c6bd');
+  fr(am - 0.05, am + 0.05, ym - 0.05, ym + 0.05, 0.025, 0.07, '#9aa0a4');
+  fr(am - 0.06, am + 0.06, ym + 0.3, ym + 0.42, 0.025, 0.045, '#d4a93a');
+  fr(am - 0.16, am + 0.16, PISO + h - 0.28, PISO + h - 0.2, 0.025, 0.03, '#d4a93a');
+}
+/* O PISO DE BORRACHA da área de treino: o preto com a borda na cor 1 */
+function pisoDeBorracha(ctx, Q, s0, s1, t0, t1) {
+  qcaixa(ctx, Q, s0, s1, t0, t1, PISO, PISO + 0.025, { todas: lisa('#26282b'), base: null }, '#26282b');
+  const b = 0.08, borda = { todas: lisa(viva(ctx.c1)), base: null };
+  qcaixa(ctx, Q, s0, s1, t0, t0 + b, PISO + 0.025, PISO + 0.03, borda); qcaixa(ctx, Q, s0, s1, t1 - b, t1, PISO + 0.025, PISO + 0.03, borda);
+  qcaixa(ctx, Q, s0, s0 + b, t0, t1, PISO + 0.025, PISO + 0.03, borda); qcaixa(ctx, Q, s1 - b, s1, t0, t1, PISO + 0.025, PISO + 0.03, borda);
+}
+/* a barra fixa: os dois montantes e o tubo, ao longo de s (ou de t) */
+function barraFixa(ctx, Q, s0, s1, t0, t1) {
+  const aoS = s1 - s0 >= t1 - t0, aco = { todas: lisa(ACO_ESCURO), base: null }, h = 2.3;
+  const [p0, p1] = aoS ? [[s0, (t0 + t1) / 2], [s1 - 0.06, (t0 + t1) / 2]] : [[(s0 + s1) / 2, t0], [(s0 + s1) / 2, t1 - 0.06]];
+  for (const [s, t] of [p0, p1]) qcaixa(ctx, Q, s, s + 0.06, t - 0.03, t + 0.03, PISO, PISO + h, aco);
+  if (aoS) qcaixa(ctx, Q, s0, s1, (t0 + t1) / 2 - 0.02, (t0 + t1) / 2 + 0.02, PISO + h - 0.08, PISO + h - 0.04, { todas: lisa('#c9c6bd') });
+  else qcaixa(ctx, Q, (s0 + s1) / 2 - 0.02, (s0 + s1) / 2 + 0.02, t0, t1, PISO + h - 0.08, PISO + h - 0.04, { todas: lisa('#c9c6bd') });
+}
+/* o pneu grande de trator (o de virar), deitado */
+function pneuGrande(ctx, Q, s, t) {
+  qcaixa(ctx, Q, s - 0.55, s + 0.55, t - 0.55, t + 0.55, PISO, PISO + 0.3, { todas: lisa('#1b1c1e') }, '#1b1c1e');
+  qcaixa(ctx, Q, s - 0.25, s + 0.25, t - 0.25, t + 0.25, PISO + 0.3, PISO + 0.302, { todas: lisa('#3a3c40') });
+}
+/* A ÁREA DE TREINO num retângulo livre do cômodo (`n`, o nível da obra,
+   1 a 3): o piso de borracha, a placa e os aparelhos em vagas ao longo do
+   lado maior, com os lugares de quem treina —
+     vaga 1 (nível 1)  a trave de aço com dois sacos, perto do lado `parede`
+     vaga 2 (nível 2)  o rack de halteres, e a barra fixa do outro lado
+     vaga 3 (nível 3)  o supino e o pneu de virar
+   O que não cabe (o pátio pequeno) vira o pequeno: os halteres soltos e o
+   colchonete (2), o pneu velho e o kettlebell (3), cada um num pedaço
+   livre (o resto do lado maior, o fundo da vaga 1).
+   `naParede`: o lado `parede` encosta numa parede (a placa vai nela;
+   senão, pendurada em cima da viga da trave) */
+function areaDeTreino(ctx, Q, n, s0, s1, t0, t1, parede, naParede) {
+  if (!n || s1 - s0 < 1.6 || t1 - t0 < 1.6) return;
+  pisoDeBorracha(ctx, Q, s0, s1, t0, t1);
+  const aoS = s1 - s0 >= t1 - t0, L = aoS ? s1 - s0 : t1 - t0, P = aoS ? t1 - t0 : s1 - s0;
+  /* (a ao longo do lado maior; d atravessado, a partir do lado `parede`) */
+  const ST = (a, d) => aoS ? [s0 + a, parede === '+t' ? t1 - d : t0 + d] : [parede === '+s' ? s1 - d : s0 + d, t0 + a];
+  const rt = (a0, a1, d0, d1) => { const [p, q] = ST(a0, d0), [r, w] = ST(a1, d1); return [Math.min(p, r), Math.max(p, r), Math.min(q, w), Math.max(q, w)]; };
+  const fora = { '-t': '+t', '+t': '-t', '-s': '+s', '+s': '-s' }[parede];
+  const treina = (a, d, aa, da, gesto) => { const [ls, lt] = ST(a, d), [ps, pt] = ST(aa, da); lugarPara(ctx, Q, 'treino', ls, lt, ps, pt, { gesto }); };
+  /* VAGA 1: a trave de aço com dois sacos */
+  const tL = Math.min(2.2, Math.max(1.0, L * 0.45)), a1 = 0.1 + tL;
+  for (const a of [0.15, a1 - 0.05]) qcaixa(ctx, Q, ...rt(a - 0.05, a + 0.05, 0.325, 0.425), PISO, PISO + 2.35, { todas: lisa(ACO_ESCURO), base: null }, ACO_ESCURO);
+  qcaixa(ctx, Q, ...rt(0.08, a1 + 0.02, 0.325, 0.425), PISO + 2.35, PISO + 2.45, { todas: lisa(ACO_ESCURO) });
+  [0.1 + tL * 0.32, 0.1 + tL * 0.72].forEach((a, k) => {
+    const [ss, st] = ST(a, 0.375);
+    sacoDePancada(ctx, Q, ss, st, PISO + 2.35, k ? '#2b2b2e' : '#b8322b');
+    treina(a, 0.95, a, 0.375, 'saco');
+  });
+  {
+    const [ps, pt] = naParede ? ST(Math.min(L / 2, 1.2), 0.02) : ST(0.1 + tL / 2, 0.44), [px, pz] = Q.pt(ps, pt);
+    ctx.placa(Q, [px, pz], fora, naParede ? PISO + 2.35 : PISO + 2.62, Math.min(1.3, tL), 0.17, 'ÁREA DE TREINO');
+  }
+  /* VAGA 2: o rack de halteres e a barra fixa; VAGA 3: o supino e o pneu de virar */
+  const a2 = a1 + 0.1, cabe2 = L - a2 >= 1.1;
+  const a3 = cabe2 ? Math.min(L - 0.1, a2 + 1.1) + 0.15 : a2, cabe3 = aoS ? L - a3 >= 1.0 && P >= 1.75 : L - a3 >= 1.5;
+  /* O PEQUENO, o que não coube na vaga dele, vai pros pedaços que sobram,
+     um pra cada vaga: o resto do lado maior (quando a vaga 2 não coube e a
+     3 não fica lá) e o fundo da vaga 1, do outro lado de quem bate no saco
+     — os dois juntos no mesmo pedaço ficavam um em cima do outro */
+  const sobras = [];
+  if (!cabe2 && !(n >= 3 && cabe3) && L - a2 >= 0.75) sobras.push({ a0: a2, a1: L - 0.08, d0: 0.1, d1: P - 0.08 });
+  if (P - 1.35 >= 0.6) sobras.push({ a0: 0.15, a1: a1 - 0.05, d0: 1.35, d1: P - 0.08 });
+  /* (no pedaço `p`, ao longo do lado maior dele: x ao longo, y atravessado) */
+  const pequeno = (p, k) => {
+    const ao = p.a1 - p.a0 >= p.d1 - p.d0, X = ao ? p.a1 - p.a0 : p.d1 - p.d0, Y = ao ? p.d1 - p.d0 : p.a1 - p.a0;
+    const em = (x, y) => ao ? ST(p.a0 + x, p.d0 + y) : ST(p.a0 + y, p.d0 + x);
+    const ret = (x0, x1, y0, y1) => ao ? rt(p.a0 + x0, p.a0 + x1, p.d0 + y0, p.d0 + y1) : rt(p.a0 + y0, p.a0 + y1, p.d0 + x0, p.d0 + x1);
+    if (k === 2) {
+      /* os halteres soltos e o colchonete */
+      halteres(ctx, Q, ...em(0.2, Y / 2));
+      const c = Math.min(0.3, Y / 2 - 0.04);
+      if (X >= 1.05) colchonete(ctx, Q, ...ret(0.7, Math.min(X - 0.05, 1.6), Y / 2 - c, Y / 2 + c), '#2d5fa8');
+    } else {
+      /* o pneu velho e o kettlebell */
+      pneu(ctx, Q, ...em(Math.max(0.36, X - 0.4), Y / 2));
+      if (X >= 1.3) { const [ks, kt] = em(X - 1.0, Y / 2); qcaixa(ctx, Q, ks - 0.1, ks + 0.1, kt - 0.1, kt + 0.1, PISO, PISO + 0.24, { todas: lisa('#1f2124') }, '#1f2124'); }
+    }
+  };
+  if (n >= 2) {
+    if (cabe2) {
+      const b = Math.min(L - 0.1, a2 + 1.1);
+      rackDeHalteres(ctx, Q, ...rt(a2, b, 0.05, 0.47));
+      treina((a2 + b) / 2, 1.0, (a2 + b) / 2, 0.3, 'halter');
+      if (P >= 2.2) { barraFixa(ctx, Q, ...rt(a2 + 0.05, b - 0.05, P - 0.72, P - 0.62)); treina((a2 + b) / 2, P - 1.15, (a2 + b) / 2, P - 0.67, 'guarda'); }
+    } else if (sobras.length) pequeno(sobras.shift(), 2);
+  }
+  /* (o supino corre em t: no lado maior em s ele vai atravessado) */
+  if (n >= 3) {
+    if (cabe3) {
+      if (aoS) { const [ss] = ST(a3 + 0.5, 0), [, tA] = ST(0, P / 2 - 0.75), [, tB] = ST(0, P / 2 + 0.65); supino(ctx, Q, ss, Math.min(tA, tB), Math.max(tA, tB)); }
+      else { const [ss] = ST(0, P / 2), [, tA] = ST(a3, 0), [, tB] = ST(a3 + 1.4, 0); supino(ctx, Q, ss, Math.min(tA, tB), Math.max(tA, tB)); }
+      if (L - a3 >= 2.4 && P >= 1.3) { const [ps, pt] = ST(a3 + 1.85, P / 2); pneuGrande(ctx, Q, ps, pt); treina(a3 + 1.85, P / 2 + 0.85 > P - 0.1 ? P / 2 - 0.85 : P / 2 + 0.85, a3 + 1.85, P / 2, 'guarda'); }
+    } else if (sobras.length) pequeno(sobras.shift(), 3);
+  }
 }
 
 const MOBILIA_N = { patio: patioNovo, presidencia: presidenciaNova, bar: barDaRua, hospedagem: hospedagemNova, patrimonio: patrimonioNovo,
@@ -2285,6 +2610,8 @@ export function montarSede(sede, destino = {}, opc = {}) {
     const c = {
       B: Bx, G: Gx, T: Tx, P: Pl, u, aberta, cores: cor, c1: cor.cor, c2: cor.cor2, c3: cor.cor3, paredes, comodos, portas, PAR_M: u(Pl.PAR),
       lugares, armarios, vivas, andar: Pl.andar || 0,
+      /* os anexos que o save diz (a enfermaria, o galpão, o cofre, a área de treino) */
+      anexos: (aberta && sede.anexos) || {},
       regiao(x, z) {
         for (const k of comodos) if (dentro(k, x, z)) return k;
         for (const w of paredes) if (dentro(w, x, z)) return 'parede';

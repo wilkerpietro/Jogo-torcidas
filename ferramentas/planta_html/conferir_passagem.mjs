@@ -6,7 +6,8 @@
    monta cada sede que os três mapas podem ter — os cinco níveis (o 1 na
    fatia do canto do terreno e no espaço pequeno, o 2 na fatia de 16,2 m,
    o 3 e o 4 no terreno inteiro, o 5 no quarteirão inteiro, quando ele é
-   largo), cada uma na frente do terreno dela —, risca a faixa
+   largo), cada uma na frente do terreno dela, sem anexo e com os anexos
+   do save (enfermaria, galpão, cofre e a área de treino 1, 2 e 3) —, risca a faixa
    com a mesma conta do cenário e procura, a partir da calçada, por onde
    um corpo de RAIO m de raio passa (de 5 em 5 cm). O boneco tem 25 cm
    de raio; o teste pede 35 (uma passagem de 70 cm), e a folga é pro
@@ -93,10 +94,14 @@ for (const [id, G] of mapas) {
 }
 
 const TORCIDA = { cor: '#1f4fb0', cor2: '#f4f4f1', cor3: '#e0a52a', sigla: 'TESTE', nome: 'TORCIDA TESTE' };
+/* cada sede sai sem anexo e com os quatro anexos do save (a enfermaria,
+   o galpão, o cofre e a área de treino em cada nível da obra): o móvel do
+   anexo também não pode fechar caminho */
+const VARIANTES = [null, 1, 2, 3].map(n => n ? { enfermaria: true, galpao: true, cofre: true, treino: n } : null);
 let falhas = 0;
-for (const cs of casos.values()) {
+for (const cs of casos.values()) for (const anexos of VARIANTES) {
   const destino = {};
-  const r = montarSede({ area: cs.area, frente: cs.frente, nivel: cs.nivel, lado: 'mandante', torcida: TORCIDA }, destino, {});
+  const r = montarSede({ area: cs.area, frente: cs.frente, nivel: cs.nivel, lado: 'mandante', torcida: TORCIDA, anexos }, destino, {});
   const E = eixosDaSede(cs.area, cs.frente);
   const tris = (destino.casas || []).concat(destino.grades || []);
   const mg = 3 * M, x0 = cs.area.x0 - mg, z0 = cs.area.y0 - mg, x1 = cs.area.x1 + mg, z1 = cs.area.y1 + mg;
@@ -176,7 +181,7 @@ for (const cs of casos.values()) {
     }
   }
   falhas += erros;
-  console.log(`nível ${cs.nivel} ${Math.round((cs.area.x1 - cs.area.x0) / M * 10) / 10} × ${Math.round((cs.area.y1 - cs.area.y0) / M * 10) / 10} m, frente ${cs.frente} (${cs.onde}): ${T0.W.n} riscos · ` + linhas.join(' · '));
+  console.log(`nível ${cs.nivel} ${Math.round((cs.area.x1 - cs.area.x0) / M * 10) / 10} × ${Math.round((cs.area.y1 - cs.area.y0) / M * 10) / 10} m, frente ${cs.frente} (${cs.onde})${anexos ? ', com os anexos (treino ' + anexos.treino + ')' : ''}: ${T0.W.n} riscos · ` + linhas.join(' · '));
   if (FOTOS) for (const [A, sufixo] of [[T0, ''], [T1, '_andar']]) {
     if (!A) continue;
     const img = Buffer.alloc(nx * nz * 3);
@@ -192,7 +197,7 @@ for (const cs of casos.values()) {
         if (i >= 0 && j >= 0 && i < nx && j < nz) img.fill(20, (j * nx + i) * 3, (j * nx + i) * 3 + 3);
       }
     }
-    const nome = `nivel${cs.nivel}_${cs.frente}_${Math.round((cs.area.x1 - cs.area.x0))}x${Math.round((cs.area.y1 - cs.area.y0))}${sufixo}.ppm`;
+    const nome = `nivel${cs.nivel}_${cs.frente}_${Math.round((cs.area.x1 - cs.area.x0))}x${Math.round((cs.area.y1 - cs.area.y0))}${anexos ? '_anexos' + anexos.treino : ''}${sufixo}.ppm`;
     fs.writeFileSync(path.join(FOTOS, nome), Buffer.concat([Buffer.from(`P6\n${nx} ${nz}\n255\n`), img]));
   }
 }
