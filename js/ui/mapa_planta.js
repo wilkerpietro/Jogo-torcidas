@@ -307,7 +307,7 @@ TO.mapaPlanta = (function(){
       p.b.forEach((pb, k) => {
         const b = deK[k];
         if(!b || pb[3] == null) return;
-        const [sx, sy] = paraTela(pb[3], pb[4]);
+        let [sx, sy] = paraTela(pb[3], pb[4]);
         if(sx < -120 || sx > larg + 120 || sy < -30 || sy > alt + 30) return;
         const t = b.nome.toUpperCase();
         const sub = b.dono ? `${d.siglaDe(b.dono)} ${Math.round(b.v)}%` : _t('em disputa');
@@ -324,9 +324,26 @@ TO.mapaPlanta = (function(){
         const wo = outras ? ctx.measureText(outras).width : 0;
         ctx.font = fonte(700, 13);
         let caixaW = Math.max(w, wo) + 6, caixaH = q(outras ? 42 : 30);
-        /* sem espaço pras outras torcidas, o nome fica com a dona só */
-        if(outras && !livre(sx, sy + q(12), caixaW, caixaH)){ outras = ''; caixaW = w + 6; caixaH = q(30); }
-        if(!livre(sx, sy + q(outras ? 12 : 6), caixaW, caixaH)) return;
+        /* sem espaço pras outras torcidas, o nome fica com a dona só; e,
+           sem espaço no meio, o nome procura outro ponto DENTRO do bairro
+           (o bairro comprido do 3D, de 02/10/2026, deixava o meio colado no
+           nome do vizinho e o nome sumia) */
+        const pontos = [[0, 0]];
+        for(const [dx, dy] of [[0, 34], [0, -34], [55, 0], [-55, 0], [50, 34], [-50, 34], [50, -34], [-50, -34], [0, 64], [0, -64], [95, 0], [-95, 0]]){
+          const px = sx + q(dx), py = sy + q(dy);
+          if(bairroEm(px, py) === k) pontos.push([q(dx), q(dy)]);
+        }
+        const cabe = (ox, oy, com) => livre(sx + ox, sy + oy + q(com ? 12 : 6), com ? caixaW : w + 6, q(com ? 42 : 30));
+        let achou = null;
+        if(outras && cabe(0, 0, true)) achou = [0, 0, true];
+        else if(cabe(0, 0, false)) achou = [0, 0, false];
+        else for(const [ox, oy] of pontos.slice(1)){
+          if(outras && cabe(ox, oy, true)){ achou = [ox, oy, true]; break; }
+          if(cabe(ox, oy, false)){ achou = [ox, oy, false]; break; }
+        }
+        if(!achou) return;
+        sx += achou[0]; sy += achou[1];
+        if(!achou[2]){ outras = ''; caixaW = w + 6; caixaH = q(30); }
         ctx.lineWidth = q(3.5); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = '#ffffff';
         ctx.strokeText(t, sx, sy); ctx.fillText(t, sx, sy);
         ctx.font = fonte(600, 12);

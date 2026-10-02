@@ -8665,6 +8665,23 @@ O print do dono mostrava quadras de Monte Castelo no meio de Pirambu, em Fortale
   - a grade antes e depois de Fortaleza, Porto Alegre, São Paulo, Brasília, Salvador e Mato Grosso, desenhada bairro a bairro;
   - o mapa no jogo (Playwright) de Fortaleza, Porto Alegre e Brasília, sem erro na página.
 
+## A sede em cima do prédio: os mapas 2D gerados de novo da planta sem enclave (o dono, 02/10/2026: "O marcador da sede deve ficar em cima de onde a sede realmente fica")
+
+A correção dos enclaves feita só no 2D tirava 14 dos 139 pontos de sede de cima do prédio, de ~470 a ~2.070 unidades: o 3D punha a sede num terreno da zona, fora do bloco do bairro dela, e a quadra da sede é que era o enclave. O pedido foi pro 3D (sessão do jogo 3D, `cenario3d: bairro de um pedaço só, com a sede dentro`): o bairro da sede cresce a partir da quadra dela e a grade sai sem enclave.
+
+- **Os 30 mapas gerados de novo** (`ferramentas/assar_plantas.js`) da planta nova:
+  - a ferramenta de enclave do 2D (`plantas_sem_enclaves.py`), que roda no fim, não mexeu em nada;
+  - nenhum ponto de sede andou: as 139 ficam onde a planta põe o prédio;
+  - cada uma cai no pedaço principal do bairro dela;
+  - esse bairro é o mesmo que o domínio do jogo dá pra sede (`TO.dominio.sedeDe`), nas 139.
+- **Pedaço solto:** só os 11 blocos de estádio do outro lado do mato (a rua de acesso não é bairro na grade), cada um colado ao bloco do próprio bairro.
+- **O nome que sumia:** Jardim das Oliveiras e Antônio Bezerra (Fortaleza) ficaram com o meio colado no nome do vizinho, e o mapa escondia o nome que batia em outro. Agora, sem espaço no meio, o nome procura outro ponto DENTRO do bairro (pra baixo, pra cima, pros lados) antes de desistir:
+  - 347 de 353 nomes na vista inicial no computador (eram 333);
+  - os 6 que faltam são das praças compridas de várias cidades, que esperam o zoom, como antes.
+- **Testado:**
+  - Playwright, mapa no jogo de Fortaleza, Porto Alegre e São Paulo, sem erro na página;
+  - a conta dos nomes nas 30 praças, em 1440 e 390 px.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
