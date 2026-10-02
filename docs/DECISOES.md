@@ -8862,6 +8862,22 @@ E mais:
   - a barra da TUF em Bom Jardim (sede) foi de 82,8 pra 89,9 em 20 dias;
   - tomado pela Cearamor, o dia tirou 0,2 de moral a mais (0,72 contra 0,52 do dia anterior), e o aviso saiu.
 
+## Muro, recrutamento e estrutura rendem inteiros no bairro da sede (o dono, 02/10/2026: três muros e o recrutamento em Messejana, sede da MOFI — "somado dá 0,8 de buff... mesmo assim a dominação não fica a meu favor, pelo contrário")
+
+**Os prints:**
+- Messejana com MOFI 85,8 e TUF 14,2;
+- três dias depois, igual;
+- cinco dias depois, MOFI 86,5 e TUF 13,5.
+
+**A causa:** a regra "quem não é da casa ganha metade no bairro da sede" (`RESISTE`) cortava também os ganhos de todo dia.
+- **TUF:** os 3 muros rendiam 0,3 (e o cartão dizia 0,6) e o recrutamento, 0,1. Somava 0,4.
+- **MOFI:** a casa somava os 0,5 inteiros.
+- Reproduzido: MOFI 85,8 → 86,1 e TUF 14,2 → 13,9 em três dias.
+
+**Agora** a metade vale só nas ações (brigas, ação social, estrutura nova). O que rende por dia — muro, recrutamento, estrutura (`DIARIOS`) — vale inteiro.
+- Os mesmos três dias: MOFI 85,8 → 84,9 e TUF 14,2 → 15,1 (+0,3 por dia: 0,8 da TUF contra 0,5 da MOFI).
+- O cartão do bairro da sede diz a regra nova.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

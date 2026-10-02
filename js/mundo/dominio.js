@@ -73,7 +73,8 @@ TO.dominio = (function(){
      é dona do bairro da própria sede perde 0,2 de moral por dia */
   const SEDE_REFAZ = 0.5, SEDE_PERDIDA = 0.2;
   const SUBSEDE_TETO = 65, SUBSEDE_REFAZ = 1/3; // a subsede, até 65
-  const RESISTE = 0.5;               // quem não é da casa ganha metade no bairro da sede
+  const RESISTE = 0.5;               // quem não é da casa ganha metade no bairro da sede (nas ações)
+  const DIARIOS = new Set(['pixacao', 'recrutamento', 'estrutura-dia']);   // os ganhos de todo dia: inteiros
   /* quanto cada ação vale na barra (pontos de 0 a 100) */
   const GANHO = {
     treta: {5:10, 7:14, 10:18},      // treta marcada, pelo tamanho
@@ -754,8 +755,13 @@ TO.dominio = (function(){
        quase não tem torcida, ×1 na média da cidade dele, até ×1,3 no
        reduto. A sede e a subsede se refazem como antes */
     if(!opc.semTorcida && opc.motivo !== 'sede' && opc.motivo !== 'subsede') pts *= fatorGanho(E, tid, cid, x);
+    /* O BAIRRO DA SEDE CORTA PELA METADE SÓ AS AÇÕES (briga, ação social,
+       estrutura nova): o que rende por dia — muro, recrutamento, estrutura
+       — vale inteiro (o dono, 02/10/2026: três muros e o recrutamento na
+       sede da MOFI, 0,8 por dia contra 0,5 da sede, e a barra caía; o
+       muro rendia 0,1 e o cartão dizia 0,2) */
     const casa = casaDe(cid, x.id);
-    if(casa && casa !== tid) pts *= RESISTE;
+    if(casa && casa !== tid && !DIARIOS.has(opc.motivo)) pts *= RESISTE;
     return pts;
   }
   /* A CONTA DA BARRA (pura: a prévia da briga roda numa cópia) */
