@@ -8619,6 +8619,27 @@ O dono: "Atualize no jogo os mapas 2d pra ficar de acordo com o que eu coloquei 
   - os bairros da planta batem com os dados nas 30 praças;
   - um ano simulado no Interior do CE sem erro, com o bairro novo disputado como os outros.
 
+## O mapa no celular (o dono, 02/10/2026: "Os mapas novos ficam impossíveis de navegar pelo celular")
+
+O print do dono mostrava a página inteira ampliada: a dica gigante e cortada à esquerda, os nomes de cidade enormes. No Safari do iPhone a pinça ia pro zoom da página, e não pro do mapa: ele não respeita o `touch-action: none` na pinça. No celular emulado (Chromium, iPhone 13), o resto também atrapalhava: os nomes das cidades encavalavam ("NOVO HORIZONTEIRÃO P…", "BAURUARAQUARA"), as letras eram grandes pra um quadro de 370 px, de perto as etiquetas e as placas de estrada lotavam a tela, e o toque num bairro abria o cartão embaixo do mapa, fora da vista.
+
+- **A pinça é do mapa:**
+  - os gestos do Safari (`gesturestart`/`gesturechange`/`gestureend`) e o `touchstart`/`touchmove` no mapa são parados; quem move e aproxima são os ponteiros, como já era;
+  - com o painel aberto, o viewport ganha `maximum-scale=1, user-scalable=no` (a página que já estava ampliada volta ao normal), e o de antes volta quando o painel fecha;
+  - o toque duplo aproxima (no celular o `dblclick` não vem).
+- **As letras acompanham o quadro:** a escala é a largura do quadro sobre 760, entre 72% e 100%, nos nomes, nas linhas de baixo, nas etiquetas e nas caixas.
+- **Os nomes das cidades** passam pela mesma conta de espaço dos outros rótulos: o que bate em outro espera o zoom.
+- **Em tela estreita** as etiquetas de equipamento e marco só aparecem de mais perto (3× em vez de 2,2×), e a placa "Estrada pra…" só bem de perto (5×; no computador, 3,5×).
+- **A dica do toque** é curta ("Arraste · pinça pra aproximar · toque num bairro") e some no primeiro toque.
+- **O mapa ocupa 62% da altura**, e os botões de zoom ficaram maiores (38 px).
+- **Escolhido o bairro no celular**, a página desce até o cartão.
+- **Testado** (Playwright, iPhone 13 emulado, toques pelo CDP):
+  - a pinça de dois dedos aproxima o mapa e a página fica na escala 1;
+  - o arrasto move o mapa;
+  - o toque em Bauru contorna o bairro e desce até o cartão;
+  - fechando o painel, o viewport volta;
+  - no computador, o mapa segue igual.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

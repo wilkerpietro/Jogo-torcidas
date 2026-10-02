@@ -559,5 +559,6 @@ TO.i18n.registrar({
   "{n} pixações pra gastar: {c} do mês + {x} das brigas": {es:"{n} pintadas para usar: {c} del mes + {x} de las peleas", en:"{n} tags to spend: {c} this month + {x} from fights"},
   "{p}% do bairro é do {clube} · nossa barra {n}% · +0,2 por dia": {es:"{p}% del barrio es de {clube} · nuestra barra {n}% · +0,2 por día", en:"{p}% of the neighbourhood supports {clube} · our bar {n}% · +0.2 a day"},
   "desbota em {n} dias": {es:"se borra en {n} días", en:"fades in {n} days"},
-  "+2 por liderar a cidade": {es:"+2 por liderar la ciudad", en:"+2 for leading the city"}
+  "+2 por liderar a cidade": {es:"+2 por liderar la ciudad", en:"+2 for leading the city"},
+  "Arraste · pinça pra aproximar · toque num bairro": {es:"Arrastrá · pellizcá para acercar · tocá un barrio", en:"Drag · pinch to zoom · tap a neighbourhood"}
 });

@@ -171,3 +171,12 @@ body:has(.mb-painel) .tela-cheia{z-index:75}
 .mb-muros li.livre i{background:transparent;border:1.5px solid #9a9a95}
 .mb-muros li.livre b{color:var(--fraco, #8d8d8d);font-weight:500}
 .mb-muros li small{color:var(--fraco, #8d8d8d);font-size:11px}
+
+/* ---- o mapa no celular (02/10/2026) ---- */
+.mb-planta-dica[hidden]{display:none}
+@media (max-width:760px){
+  .mb-painel{touch-action:pan-y}
+  .mb-corpo-cidade .mb-planta{height:62vh}
+  .mb-planta-dica{font-size:11px;right:auto;max-width:calc(100% - 20px)}
+  .mb-planta-zoom button{width:38px;height:38px;font-size:19px}
+}

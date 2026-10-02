@@ -396,6 +396,12 @@ TO.mapaBrasil = (function(){
       raiz.setAttribute('aria-label', _t('Mapa'));
       document.body.appendChild(raiz);
       document.addEventListener('keydown', tecla, true);
+      /* com o mapa aberto a página não amplia (o Safari do iPhone ampliava
+         a página inteira na pinça, 02/10/2026); a que já estava ampliada
+         volta ao normal. Fechando, o viewport de antes volta. */
+      const vp = document.querySelector('meta[name="viewport"]');
+      if(vp){ raiz._viewport = vp.getAttribute('content'); vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); }
+      raiz.addEventListener('gesturestart', ev => ev.preventDefault());
       if(TO.tela && TO.tela.pausarTempo) TO.tela.pausarTempo('mapa');
     }
     pintar();
@@ -405,6 +411,8 @@ TO.mapaBrasil = (function(){
     if(!raiz) return;
     document.removeEventListener('keydown', tecla, true);
     if(raiz._planta) raiz._planta.desligar();
+    const vp = document.querySelector('meta[name="viewport"]');
+    if(vp && raiz._viewport) vp.setAttribute('content', raiz._viewport);
     raiz.remove(); raiz = null; vista = null;
     if(TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('mapa');
     if(TO.tela && TO.tela.redesenhar) try{ TO.tela.redesenhar(); }catch(_){}
@@ -433,9 +441,16 @@ TO.mapaBrasil = (function(){
       return;
     }
     corpo.className = 'mb-corpo mb-corpo-cidade';
-    const aoEscolher = bid => { vista.bairro = bid; vista.muro = null; vista.lado = 'bairros'; pintar(); };
+    /* no celular o cartão fica embaixo do mapa: escolhido o bairro, a
+       página desce até ele (02/10/2026) */
+    const mostrarCartao = () => {
+      if(!matchMedia('(max-width: 760px)').matches || !raiz) return;
+      const c = raiz.querySelector('.mb-cartao');
+      if(c) requestAnimationFrame(() => c.scrollIntoView({behavior:'smooth', block:'start'}));
+    };
+    const aoEscolher = bid => { vista.bairro = bid; vista.muro = null; vista.lado = 'bairros'; pintar(); mostrarCartao(); };
     /* o muro de pixação clicado: o bairro dele, e o muro em destaque */
-    const aoMuro = (bid, i) => { vista.bairro = bid; vista.muro = {b:bid, i}; vista.lado = 'bairros'; pintar(); };
+    const aoMuro = (bid, i) => { vista.bairro = bid; vista.muro = {b:bid, i}; vista.lado = 'bairros'; pintar(); mostrarCartao(); };
     /* A PLANTA DA CIDADE (o dono, 01/10/2026: "o mapa 2d que acabamos de
        construir na versão 3d"): a praça desenhada como no jogo 3D, com a
        dona de cada bairro por cima (js/ui/mapa_planta.js); sem a planta

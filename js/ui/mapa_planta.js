@@ -149,6 +149,10 @@ TO.mapaPlanta = (function(){
   /* =======================================================
      O VISOR
      ======================================================= */
+  /* tela de toque (o celular): a dica é outra, e some no primeiro toque */
+  const toque = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  let dicaVista = false;
+
   function criar(cid, opc){
     opc = opc || {};
     const p = P(cid), d = D(), e = E();
@@ -160,7 +164,7 @@ TO.mapaPlanta = (function(){
         <button type="button" data-z="mais" aria-label="${_t('Aproximar')}">+</button>
         <button type="button" data-z="menos" aria-label="${_t('Afastar')}">−</button>
         <button type="button" data-z="tudo" aria-label="${_t('A cidade inteira')}">⤢</button></div>
-      <p class="mb-planta-dica">${_t('Arraste pra mover · role pra aproximar · clique num bairro pra ver quem manda')}</p>
+      <p class="mb-planta-dica">${toque ? _t('Arraste · pinça pra aproximar · toque num bairro') : _t('Arraste pra mover · role pra aproximar · clique num bairro pra ver quem manda')}</p>
       <p class="mb-planta-espera">${_t('Abrindo a planta…')}</p>`;
     const cv = caixa.querySelector('canvas'), ctx = cv.getContext('2d');
     const espera = caixa.querySelector('.mb-planta-espera');
@@ -253,16 +257,24 @@ TO.mapaPlanta = (function(){
       const livre = (x, y, w, h) => !ocupados.some(o => Math.abs(o.x - x) < (o.w + w) / 2 && Math.abs(o.y - y) < (o.h + h) / 2);
       const ocupa = (x, y, w, h) => ocupados.push({x, y, w, h});
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-      const fonte = (peso, px) => `${peso} ${px}px "Barlow Condensed", "Arial Narrow", system-ui, sans-serif`;
+      /* NO CELULAR AS LETRAS ENCOLHEM (o dono, 02/10/2026: "os mapas novos
+         ficam impossíveis de navegar pelo celular"): a letra acompanha a
+         largura do quadro, até 72% num celular em pé */
+      const k = Math.max(0.72, Math.min(1, larg / 760)), q = v => v * k;
+      const pequeno = larg < 600;
+      const fonte = (peso, px) => `${peso} ${Math.round(px * k * 10) / 10}px "Barlow Condensed", "Arial Narrow", system-ui, sans-serif`;
       /* os nomes das cidades (a praça de várias cidades), de longe */
       const cidades = p.r.filter(r => r[3] === 'c');
       if(cidades.length && perto < 2.2){
         ctx.font = fonte(800, 20);
         for(const [t, x, y] of cidades){
           const [sx, sy] = paraTela(x, y);
-          ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.fillStyle = '#ffe9a8';
-          ctx.strokeText(t, sx, sy - 8); ctx.fillText(t, sx, sy - 8);
-          ocupa(sx, sy - 8, ctx.measureText(t).width + 8, 24);
+          const w = ctx.measureText(t).width + 8;
+          /* (o nome de cidade que bate em outro espera o zoom) */
+          if(!livre(sx, sy - q(8), w, q(24))) continue;
+          ctx.lineWidth = q(5); ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.fillStyle = '#ffe9a8';
+          ctx.strokeText(t, sx, sy - q(8)); ctx.fillText(t, sx, sy - q(8));
+          ocupa(sx, sy - q(8), w, q(24));
         }
       }
       /* OS MUROS PIXADOS: o ponto na cor de quem pixou; o livre, um aro
@@ -311,21 +323,21 @@ TO.mapaPlanta = (function(){
         ctx.font = fonte(600, 11);
         const wo = outras ? ctx.measureText(outras).width : 0;
         ctx.font = fonte(700, 13);
-        let caixaW = Math.max(w, wo) + 6, caixaH = outras ? 42 : 30;
+        let caixaW = Math.max(w, wo) + 6, caixaH = q(outras ? 42 : 30);
         /* sem espaço pras outras torcidas, o nome fica com a dona só */
-        if(outras && !livre(sx, sy + 12, caixaW, caixaH)){ outras = ''; caixaW = w + 6; caixaH = 30; }
-        if(!livre(sx, sy + (outras ? 12 : 6), caixaW, caixaH)) return;
-        ctx.lineWidth = 3.5; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = '#ffffff';
+        if(outras && !livre(sx, sy + q(12), caixaW, caixaH)){ outras = ''; caixaW = w + 6; caixaH = q(30); }
+        if(!livre(sx, sy + q(outras ? 12 : 6), caixaW, caixaH)) return;
+        ctx.lineWidth = q(3.5); ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.fillStyle = '#ffffff';
         ctx.strokeText(t, sx, sy); ctx.fillText(t, sx, sy);
         ctx.font = fonte(600, 12);
-        ctx.strokeText(sub, sx, sy + 14);
-        ctx.fillStyle = b.dono === meu ? '#ffe7a0' : b.dono ? '#e8e8e8' : '#b9b9b4'; ctx.fillText(sub, sx, sy + 14);
+        ctx.strokeText(sub, sx, sy + q(14));
+        ctx.fillStyle = b.dono === meu ? '#ffe7a0' : b.dono ? '#e8e8e8' : '#b9b9b4'; ctx.fillText(sub, sx, sy + q(14));
         if(outras){
           ctx.font = fonte(600, 11);
-          ctx.lineWidth = 3; ctx.strokeText(outras, sx, sy + 27);
-          ctx.fillStyle = '#c9cbc4'; ctx.fillText(outras, sx, sy + 27);
+          ctx.lineWidth = q(3); ctx.strokeText(outras, sx, sy + q(27));
+          ctx.fillStyle = '#c9cbc4'; ctx.fillText(outras, sx, sy + q(27));
         }
-        ocupa(sx, sy + (outras ? 12 : 6), caixaW, caixaH);
+        ocupa(sx, sy + q(outras ? 12 : 6), caixaW, caixaH);
       });
       /* (as sedes depois dos nomes: o nome do bairro manda no espaço) */
       /* as sedes: o ponto na cor da torcida e a sigla */
@@ -352,14 +364,16 @@ TO.mapaPlanta = (function(){
       for(const [t, x, y, tipo] of p.r){
         if(tipo !== 'e' || t.length < 3) continue;
         const estadio = t === t.toUpperCase();
-        if(!estadio && perto < 2.2) continue;
+        /* no celular, as etiquetas só de mais perto; a placa de estrada, só bem de perto */
+        if(!estadio && perto < (pequeno ? 3 : 2.2)) continue;
+        if(/^Estrada pra /.test(t) && perto < (pequeno ? 5 : 3.5)) continue;
         const [sx, y0] = paraTela(x, y);
         if(sx < -80 || sx > larg + 80 || y0 < -20 || y0 > alt + 20) continue;
         const w = ctx.measureText(t).width + 10;
-        const sy = [0, 18, -18, 36, -36].map(dy => y0 + dy).find(yy => livre(sx, yy, w, 17));
+        const sy = [0, 18, -18, 36, -36].map(dy => y0 + q(dy)).find(yy => livre(sx, yy, w, q(17)));
         if(sy === undefined) continue;
-        ocupa(sx, sy, w, 17);
-        ctx.fillStyle = 'rgba(20,22,21,.8)'; ctx.fillRect(sx - w / 2, sy - 9, w, 18);
+        ocupa(sx, sy, w, q(17));
+        ctx.fillStyle = 'rgba(20,22,21,.8)'; ctx.fillRect(sx - w / 2, sy - q(9), w, q(18));
         ctx.fillStyle = '#f2f3ef'; ctx.fillText(t, sx, sy + 0.5);
       }
     }
@@ -406,9 +420,29 @@ TO.mapaPlanta = (function(){
     cv.addEventListener('dblclick', ev => { const r = cv.getBoundingClientRect(); zoom(2, ev.clientX - r.left, ev.clientY - r.top); });
 
     /* ---- arrastar, pinça e clique ---- */
+    /* A PINÇA É DO MAPA, NÃO DA PÁGINA (02/10/2026): o Safari do iPhone
+       não respeita o `touch-action: none` na pinça e ampliava a página
+       inteira. Os gestos dele e o toque que arrasta param aqui; quem
+       move e aproxima são os ponteiros, logo abaixo. */
+    const pare = ev => { if(ev.cancelable) ev.preventDefault(); };
+    for(const t of ['gesturestart', 'gesturechange', 'gestureend']) caixa.addEventListener(t, pare);
+    cv.addEventListener('touchstart', pare, {passive:false});
+    cv.addEventListener('touchmove', pare, {passive:false});
+    const dica = caixa.querySelector('.mb-planta-dica');
+    if(dicaVista && toque) dica.hidden = true;
+    let ultimoToque = null;
     const dedos = new Map();
     let arrasto = null;
     cv.addEventListener('pointerdown', ev => {
+      if(toque && !dicaVista){ dicaVista = true; dica.hidden = true; }
+      /* o toque duplo aproxima (no celular o dblclick não vem) */
+      if(ev.pointerType === 'touch'){
+        const r0 = cv.getBoundingClientRect(), x = ev.clientX - r0.left, y = ev.clientY - r0.top, agora = Date.now();
+        if(ultimoToque && agora - ultimoToque.t < 320 && Math.hypot(x - ultimoToque.x, y - ultimoToque.y) < 30){
+          ultimoToque = null; zoom(2, x, y); return;
+        }
+        ultimoToque = {t:agora, x, y};
+      }
       cv.setPointerCapture(ev.pointerId);
       const r = cv.getBoundingClientRect();
       dedos.set(ev.pointerId, {x:ev.clientX - r.left, y:ev.clientY - r.top});
