@@ -45,7 +45,18 @@ const SO = process.env.SO ? process.env.SO.split(',') : null;
       const sel = document.querySelector('#sel-cidade'); sel.value = nome;
       P.mudarCidade(nome);
       await new Promise(ok => setTimeout(ok, 300));
-      const L = P.api.limite();
+      let L = P.api.limite();
+      /* A PRAIA DA PRAÇA DE VÁRIAS CIDADES (02/10/2026): o limite da planta
+         para na avenida da beira, e o mar (que o 3D estende 60 m mar
+         adentro, `areaDoCenario`) ficava de fora — Maceió, São Luís, João
+         Pessoa e Aracaju saíam sem praia. Na praça de praia com o limite
+         curto (as de modelo param em 2515; as do mapa do porte já vão até
+         5000, com o mar dentro), o recorte vai até onde o mar acaba. */
+      const cd = TO.dados.cidades.find(c => c.id === cid) || {};
+      if(cd.temPraia && P.api.areaDoCenario){
+        const A = P.api.areaDoCenario();
+        if(L.x1 < 4999 && A.x1 > L.x1) L = Object.assign({}, L, {x1: A.x1});
+      }
       const w = L.x1 - L.x0, h = L.y1 - L.y0, s = Math.min(Math.sqrt(LADO*LADO*0.9 / (w*h)), 6000 / Math.max(w, h));
       const cv = document.createElement('canvas'); cv.width = Math.round(w*s); cv.height = Math.round(h*s);
       const c2 = cv.getContext('2d');

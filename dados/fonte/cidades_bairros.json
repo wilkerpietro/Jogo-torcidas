@@ -4347,15 +4347,6 @@
      "cidade": "Itapipoca"
     },
     {
-     "id": "maranguape",
-     "nome": "Maranguape",
-     "zona": "Leste",
-     "classeSocial": "Nobre",
-     "multiplicadorFaturamento": 1.5,
-     "torcidasComSede": [],
-     "cidade": "Maranguape"
-    },
-    {
      "id": "limoeiro_do_norte",
      "nome": "Limoeiro do Norte",
      "zona": "Leste",
@@ -4370,6 +4361,15 @@
      "zona": "Sul",
      "classeSocial": "Classe Baixa",
      "multiplicadorFaturamento": 0.8,
+     "torcidasComSede": [],
+     "cidade": "Juazeiro do Norte"
+    },
+    {
+     "id": "juazeiro_do_norte_iii",
+     "nome": "Juazeiro do Norte III",
+     "zona": "Sul",
+     "classeSocial": "Nobre",
+     "multiplicadorFaturamento": 1.5,
      "torcidasComSede": [],
      "cidade": "Juazeiro do Norte"
     },

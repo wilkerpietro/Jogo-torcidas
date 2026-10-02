@@ -8597,6 +8597,28 @@ O dono aprovou as duas saídas pro efeito bola de neve ("aprovo as duas sugestõ
   - 14 a 18 muros pixados no fim do ano (antes eram 38, e quase todos da dona);
   - 2 ou 3 bairros sem dona, com seis ou sete torcidas na barra (Genibaú, Castelo Encantado, Jangurussu).
 
+## Os mapas 2D de acordo com o 3D: os bairros 3 × 3, a praia, os rios e Juazeiro do Norte III (pedido do dono, 02/10/2026)
+
+O dono: "Atualize no jogo os mapas 2d pra ficar de acordo com o que eu coloquei no jogo 3d."
+
+- **Os dados:**
+  - **O que veio do 3D:** os dois commits mais recentes do branch do 3D (a71f694 e d29f0ea, "Bairro 3x3 com equipamentos, praia de volta, rios entre as cidades e entradas da praça" e "Maranguape sai, Juazeiro do Norte III, e os rios refeitos") mexeram na fonte dos bairros.
+  - **O bairro trocado:** Maranguape saiu do Interior do CE e entrou Juazeiro do Norte III (zona Sul, Nobre, ×1,5).
+  - **O nosso por cima:** a fonte do 3D foi trazida com as três mudanças só nossas reaplicadas (Arena Joinville, Estádio Centenário e São Paulo sem metrô), e `dados/cidades.js` foi regerado.
+  - **A conferência:** os bairros do jogo batem com os da cópia do 3D em todas as cidades.
+- **As plantas assadas de novo** (`ferramentas/assar_plantas.js`, as 30 praças) a partir da página do 3D atualizada:
+  - os bairros de 3 × 3 quadras com a fileira do meio de equipamentos (praça, escola, igreja, delegacia, hospital), cujos nomes viram etiqueta de perto;
+  - os rios entre as cidades, com ponte, até dois por praça e correndo pro mar;
+  - as lagoas e as clareiras no mato;
+  - as entradas norte e sul;
+  - a rua de acesso do estádio na largura certa.
+- **A praia da praça de várias cidades:** o limite que a planta informa para na avenida da beira, e o mar (que o 3D estende 60 m mar adentro) ficava fora do recorte. Maceió, São Luís, João Pessoa e Aracaju saíam sem praia. Agora, na praça de praia com o limite curto (as de modelo param em 2515), o recorte vai até onde o mar acaba (`areaDoCenario`). As do mapa do porte já iam até 5000, com o mar dentro.
+- **Testado** (Playwright):
+  - Alagoas com a areia e o mar;
+  - o Interior do CE com Juazeiro do Norte III na grade (608 células) e os equipamentos novos nas etiquetas;
+  - os bairros da planta batem com os dados nas 30 praças;
+  - um ano simulado no Interior do CE sem erro, com o bairro novo disputado como os outros.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
