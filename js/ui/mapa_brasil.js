@@ -267,11 +267,21 @@ TO.mapaBrasil = (function(){
     h += est.length
       ? '<ul class="mb-estruturas">' + est.map(s => {
           const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
-          /* a estrutura segura o bairro: +0,1 por dia pra dona (02/10/2026) */
-          const buff = s.tipo !== 'sede' ? ' · ' + _t('+0,1 por dia') : '';
+          /* a estrutura segura o bairro: +0,2 por dia pra dona (02/10/2026) */
+          const buff = s.tipo !== 'sede' ? ' · ' + _t('+0,2 por dia') : '';
           return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv + buff)}</li>`;
         }).join('') + '</ul>'
       : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;
+    /* QUEM RECRUTA AQUI (o dono, 02/10/2026): cada torcida recruta num
+       bairro, e isso soma +0,2 por dia pra ela ali */
+    if(d.recrutandoEm){
+      const rec = [...d.recrutandoEm(e, cid)].filter(([, x]) => x.id === b.id).map(([tid]) => tid);
+      h += `<h4>${esc(_t('Recrutamento'))}</h4>`;
+      h += rec.length
+        ? '<ul class="mb-estruturas">' + rec.map(tid =>
+            `<li><i style="background:${corDe(tid)}"></i>${esc(_t('{nome} recruta aqui', {nome:nome(tid)}) + ' · ' + _t('+0,2 por dia'))}</li>`).join('') + '</ul>'
+        : `<p class="mb-nada">${esc(_t('Nenhuma torcida recruta aqui.'))}</p>`;
+    }
     /* AS PIXAÇÕES (01/10/2026): os muros do bairro, de quem é cada um e
        quanto rendem; o saldo nosso e o botão de pixar (só na nossa cidade) */
     let ms = [], selMuro = null;
@@ -390,10 +400,10 @@ TO.mapaBrasil = (function(){
      dos bairros com a legenda e o cartão do bairro
      ======================================================= */
   let raiz = null, vista = null;
-  function abrir(cid){
+  function abrir(cid, bid){
     const e = E();
     if(!e) return;
-    vista = {aba:'cidade', cidade: cid || e.torcida.mapa, bairro:null, lado:'bairros'};
+    vista = {aba:'cidade', cidade: cid || e.torcida.mapa, bairro:bid || null, lado:'bairros'};
     if(!raiz){
       raiz = document.createElement('div');
       raiz.className = 'mb-painel';

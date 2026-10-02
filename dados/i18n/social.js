@@ -586,5 +586,9 @@ TO.i18n.registrar({
   "{bairro} agora é da {nome}": {es:"{bairro} ahora es de {nome}", en:"{bairro} now belongs to {nome}"},
   "{bairro} ficou sem dona": {es:"{bairro} quedó sin dueña", en:"{bairro} has no owner now"},
   "Na semana, os bairros da cidade: {lista}.": {es:"En la semana, los barrios de la ciudad: {lista}.", en:"This week, the city's neighbourhoods: {lista}."},
-  "+0,1 por dia": {es:"+0,1 por día", en:"+0.1 a day"}
+  "+0,1 por dia": {es:"+0,1 por día", en:"+0.1 a day"},
+  "+0,2 por dia": {es:"+0,2 por día", en:"+0.2 a day"},
+  "Nenhuma torcida recruta aqui.": {es:"Ninguna hinchada recluta acá.", en:"No group is recruiting here."},
+  "Recruta em": {es:"Recluta en", en:"Recruits in"},
+  "{nome} recruta aqui": {es:"{nome} recluta acá", en:"{nome} recruits here"}
 });

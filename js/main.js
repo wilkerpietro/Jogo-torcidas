@@ -6362,8 +6362,11 @@
       const tab = el('table',{class:'dados'});
       tab.appendChild(el('thead', null, [el('tr',{html:
         `<th>${_t('Torcida')}</th><th>${_t('Membros')}</th><th>${_t('Sede')}</th>`+
-        `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`})]));
+        `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`+
+        `<th>${_t('Recruta em')}</th>`})]));
       const tb = el('tbody');
+      /* o bairro em que cada uma recruta (02/10/2026) */
+      const recruta = TO.dominio && TO.dominio.recrutandoEm ? TO.dominio.recrutandoEm(e, c.id) : new Map();
       for(const o of TO.mundo.torcidasEm(c.id)){
         if(o.incompleta) continue;
         const nossa = o.id === e.torcida.id;
@@ -6378,7 +6381,8 @@
           `<td class="num">${nossa ? ((pat.subsedes||[]).length || '—')
             : (t.subsedes || '—')}</td>`+
           `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
-          `<td class="num">${(pat.bares||[]).length || '—'}</td>`}));
+          `<td class="num">${(pat.bares||[]).length || '—'}</td>`+
+          `<td>${recruta.get(o.id) ? escHTML(recruta.get(o.id).nome) : '—'}</td>`}));
       }
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado', html:`<b>${_t('Da casa')}</b>`}));

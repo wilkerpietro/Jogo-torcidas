@@ -8806,6 +8806,22 @@ E mais:
   - um dia passado: o bar da Cearamor em Jangurussu foi de 68,6 pra 68,7;
   - 60 dias: um alvo por reunião, sem erro.
 
+## A estrutura vale 0,2 por dia, e o jogo diz onde cada torcida recruta (o dono, 02/10/2026: "recrutar em um bairro dá 0,2 por dia de dominação e aumente agora a estrutura pra 0,2 por dia também. o jogo vai dizer em qual bairro cada torcida tá recrutando")
+
+- **Recrutamento:** segue com +0,2 por dia no bairro. A IA ganha todo dia no bairro do mês; a nossa torcida, nos dias em que o expediente recruta, no bairro escolhido na reunião.
+- **Estrutura:** cada bar, loja, subsede e filial passa de +0,1 pra +0,2 por dia (`ESTRUTURA_DIA`). O cartão do bairro mostra "+0,2 por dia" em cada uma.
+- **Onde cada uma recruta (`dominio.recrutandoEm`):**
+  - o cartão do bairro ganhou a seção "Recrutamento" ("{torcida} recruta aqui · +0,2 por dia", ou "Nenhuma torcida recruta aqui");
+  - a tabela "Torcidas e estruturas" da cidade ganhou a coluna "Recruta em".
+- **A escolha da IA espalhada (`planejarRecrutamento`):** a escolha crua punha seis das sete organizadas de Fortaleza em Genibaú.
+  - Da maior pra menor, cada uma escolhe entre os 5 melhores bairros dela.
+  - O bairro vale menos a cada torcida que já recruta lá (÷ 1 + 0,7 por torcida, a nossa conta).
+  - Em Fortaleza ficaram seis bairros diferentes pras sete.
+- `mapaBrasil.abrir(cidade, bairro)` abre o mapa com o bairro escolhido.
+- **Testado:**
+  - um dia: o bar da Cearamor em Jangurussu, de 72,8 pra 73;
+  - a seção no cartão e a coluna na tabela, sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

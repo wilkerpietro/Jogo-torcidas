@@ -1195,10 +1195,10 @@ TO.dominio = (function(){
     }
   }
   /* A ESTRUTURA SEGURA O BAIRRO (o dono, 02/10/2026: "ter uma estrutura
-     num bairro dá buff diário de dominação de 0.1 por dia"): cada bar,
-     loja, subsede e filial soma 0,1 por dia pra dona no bairro dela. A
+     num bairro dá buff diário de dominação"): cada bar,
+     loja, subsede e filial soma 0,2 por dia pra dona no bairro dela. A
      sede tem a régua própria (refaz até 80) */
-  const ESTRUTURA_DIA = 0.1;
+  const ESTRUTURA_DIA = 0.2;   // era 0,1; o dono subiu pra 0,2 (02/10/2026), igual ao recrutamento
   function diaDasEstruturas(E){
     for(const cid of indice().comTorcida){
       const soma = {};
@@ -1313,19 +1313,51 @@ TO.dominio = (function(){
     D.recrutouEm = abs;
     mexer(E, E.torcida.mapa, b, eu(E), RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
   }
-  /* a IA recruta no melhor bairro dela (escolhido no começo do mês) */
-  function recrutamentoIA(E){
+  /* ONDE CADA TORCIDA RECRUTA (o dono, 02/10/2026: "o jogo vai dizer em
+     qual bairro cada torcida tá recrutando"): a nossa, o bairro escolhido
+     na reunião; a IA, o do mês (o mesmo que `recrutamentoIA` usa) */
+  function recrutandoEm(E, cid){
+    const out = new Map(), D = raiz(E), meu = eu(E);
+    for(const o of torcidasDaCidade(cid)){
+      let b = null;
+      if(o.id === meu){ if(cid === E.torcida.mapa) b = bairroDoRecrutamento(E); }
+      else {
+        planejarRecrutamento(E);
+        const v = D.recrutaIA && D.recrutaIA[o.id];
+        if(v){ const [c, bid] = v.split('#'); if(c === cid) b = bairro(cid, bid); }
+      }
+      if(b) out.set(o.id, b);
+    }
+    return out;
+  }
+  /* O BAIRRO DO MÊS DE CADA IA, ESPALHADO (02/10/2026): a escolha crua
+     punha seis das sete de Fortaleza em Genibaú. Da maior pra menor, cada
+     uma escolhe entre os 5 melhores bairros dela, e o bairro vale menos a
+     cada torcida que já recruta lá (a nossa conta) */
+  function planejarRecrutamento(E){
     const D = raiz(E), mes = mesDe(E), I = indice(), meu = eu(E);
+    if(D.recrutaMes === mes && D.recrutaIA) return;
     const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
     if(!mundo) return;
-    if(D.recrutaMes !== mes){
-      D.recrutaMes = mes; D.recrutaIA = {};
-      for(const cid of I.comTorcida) for(const o of torcidasDaCidade(cid)){
-        if(o.id === meu || !mundo[o.id]) continue;
-        const l = bairrosPraRecrutar(E, o.id, cid, 1);
-        if(l.length) D.recrutaIA[o.id] = cid + '#' + l[0].id;
+    D.recrutaMes = mes; D.recrutaIA = {};
+    for(const cid of I.comTorcida){
+      const ja = {};
+      if(cid === E.torcida.mapa){ const b = bairroDoRecrutamento(E); if(b) ja[b.id] = 1; }
+      const os = torcidasDaCidade(cid).filter(o => o.id !== meu && mundo[o.id])
+        .sort((a, c) => membrosDe(E, c.id) - membrosDe(E, a.id) || (a.id < c.id ? -1 : 1));
+      for(const o of os){
+        const l = bairrosPraRecrutar(E, o.id, cid, 5);
+        if(!l.length) continue;
+        const x = l.slice().sort((a, c) => c.nota / (1 + 0.7 * (ja[c.id] || 0)) - a.nota / (1 + 0.7 * (ja[a.id] || 0)))[0];
+        ja[x.id] = (ja[x.id] || 0) + 1;
+        D.recrutaIA[o.id] = cid + '#' + x.id;
       }
     }
+  }
+  /* a IA recruta no melhor bairro dela (escolhido no começo do mês) */
+  function recrutamentoIA(E){
+    const D = raiz(E);
+    planejarRecrutamento(E);
     for(const tid in D.recrutaIA || {}){
       const [cid, bid] = D.recrutaIA[tid].split('#');
       mexer(E, cid, bid, tid, RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
@@ -1732,6 +1764,6 @@ TO.dominio = (function(){
           donaDoBairro, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
           mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, ESTRUTURA_DIA, vizinhosDe, vizinhosDoEstadio, bairroDaPista, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
-          PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje,
+          PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje, recrutandoEm, RECRUTA_DIA,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};
 })();
