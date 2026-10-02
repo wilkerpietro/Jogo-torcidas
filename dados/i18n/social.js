@@ -582,5 +582,8 @@ TO.i18n.registrar({
   "{bairro} tá cada vez mais nosso: +{g} na barra.": {es:"{bairro} es cada vez más nuestro: +{g} en la barra.", en:"{bairro} is more and more ours: +{g} on the bar."},
   "Esse muro é de uma torcida aliada.": {es:"Esa pared es de una hinchada aliada.", en:"That wall belongs to an allied group."},
   "Os outros muros daqui são de aliadas": {es:"Las otras paredes de acá son de aliadas", en:"The other walls here belong to allies"},
-  "Muro da {nome}, aliada: não se cobre": {es:"Pared de {nome}, aliada: no se tapa", en:"{nome}'s wall, an ally: we don't cover it"}
+  "Muro da {nome}, aliada: não se cobre": {es:"Pared de {nome}, aliada: no se tapa", en:"{nome}'s wall, an ally: we don't cover it"},
+  "{bairro} agora é da {nome}": {es:"{bairro} ahora es de {nome}", en:"{bairro} now belongs to {nome}"},
+  "{bairro} ficou sem dona": {es:"{bairro} quedó sin dueña", en:"{bairro} has no owner now"},
+  "Na semana, os bairros da cidade: {lista}.": {es:"En la semana, los barrios de la ciudad: {lista}.", en:"This week, the city's neighbourhoods: {lista}."}
 });

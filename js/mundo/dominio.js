@@ -813,10 +813,12 @@ TO.dominio = (function(){
     else if(r.dono0 === meu)
       texto = r.dono1 ? _t('Perdemos {bairro} ({cidade}) pra {para}.', {bairro:nb, cidade, para:nomeDe(r.dono1)})
                       : _t('{bairro} ({cidade}) caiu abaixo de 50% pra nós: o bairro está em disputa.', {bairro:nb, cidade});
-    else if(r.cid === E.torcida.mapa)
-      texto = r.dono1 ? _t('A {para} tomou {bairro}{de}.', {para:nomeDe(r.dono1), bairro:nb,
-                          de: r.dono0 ? _t(' da {de}', {de:nomeDe(r.dono0)}) : ''})
-                      : _t('{bairro} ficou sem dona: a {de} caiu abaixo de 50%.', {bairro:nb, de:nomeDe(r.dono0)});
+    else if(r.cid === E.torcida.mapa){
+      /* O BAIRRO DOS OUTROS VAI PRO RESUMO DA SEMANA (02/10/2026): um
+         cartão por virada enchia o feed; fica a última dona de cada um */
+      D.semanaVirou = (D.semanaVirou || []).filter(x => x.b !== r.bairro.id);
+      D.semanaVirou.push({b:r.bairro.id, de:r.dono0 || null, para:r.dono1 || null});
+    }
     if(texto) avisar(E, texto, `dominio|${abs}|${r.cid}|${r.bairro.id}|${r.dono1 || '-'}`);
   }
   function avisar(E, texto, chave){
@@ -895,11 +897,26 @@ TO.dominio = (function(){
       if(antes !== undefined && antes !== dono && cid === minha) avisarCidade(E, cid, antes, dono, pl);
     }
     /* a IA que está atrás na cidade dela faz ação social (a semana) */
-    if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); }
+    if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); resumoDaSemana(E); }
     /* as metas do mês de cada organizada da IA (01/10/2026) */
     try{ metasDoDia(E); }catch(e){ /* as metas não derrubam o dia */ }
     /* os muros pixados rendem, a IA pixa e recruta (01/10/2026) */
     try{ desgaste(E); diaDosMuros(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
+  }
+  /* os bairros que trocaram de dona na nossa cidade na semana, num cartão só */
+  function resumoDaSemana(E){
+    const D = raiz(E), l = D.semanaVirou || [];
+    D.semanaVirou = [];
+    const cid = E.torcida.mapa;
+    const itens = l.map(v => {
+      const x = bairro(cid, v.b);
+      if(!x || donaDoBairro(E, cid, x.id) !== v.para) return null;     // virou de novo e voltou
+      return v.para ? _t('{bairro} agora é da {nome}', {bairro:x.nome, nome:nomeDe(v.para)})
+                    : _t('{bairro} ficou sem dona', {bairro:x.nome});
+    }).filter(Boolean);
+    if(!itens.length) return;
+    avisar(E, _t('Na semana, os bairros da cidade: {lista}.', {lista:itens.join('; ')}),
+           `dominio-semana|${E.data.ano}|${E.data.semana}`);
   }
   function avisarCidade(E, cid, antes, dono, pl){
     const cidade = (cidadeDe(cid) || {}).nome || cid, meu = eu(E);
@@ -931,6 +948,11 @@ TO.dominio = (function(){
      ======================================================= */
   let ALVO_FORCADO = null;
   const ALVOS_PELA_SEDE = n => n >= 5 ? 3 : n >= 3 ? 2 : 1;
+  /* MENOS BRIGA DE BAIRRO NO MUNDO (o dono, 02/10/2026: "as brigas nos
+     bairros ficaram mais dinâmicas que todo o restante do jogo; o foco é
+     primeiro a logística ao redor do jogo"): a IA busca UM bairro por
+     mês (dois com sede 5 ou 6). A régua do jogador (1/2/3) não muda. */
+  const ALVOS_DA_IA = n => n >= 5 ? 2 : 1;
   function mesDe(E){
     const d = TO.estado && TO.estado.dataDaSemana ? TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia) : null;
     return d ? `${d.getFullYear()}|${d.getMonth()}` : `${E.data.ano}|${Math.floor((E.data.semana - 1) / 4.35)}`;
@@ -972,7 +994,7 @@ TO.dominio = (function(){
         const t = mundo[o.id];
         if(!t) continue;
         const ests = estruturas(E, cid);
-        for(const a of alvosDe(E, cid, o.id, ALVOS_PELA_SEDE(t.sede || 0), bs, pl)){
+        for(const a of alvosDe(E, cid, o.id, ALVOS_DA_IA(t.sede || 0), bs, pl)){
           const barDela = ests.some(s => s.tid === a.v && s.tipo === 'bar' && s.bairro === a.b.id);
           const k = barDela && r() < 0.6 ? 'bar' : r() < 0.55 ? 'reuniao' : 'treta';
           out.push({t:o.id, c:cid, b:a.b.id, v:a.v, k, d:hoje + 2 + Math.floor(r() * 25)});
@@ -1014,6 +1036,10 @@ TO.dominio = (function(){
   /* a meta da IA em cima da gente: o ataque marcado de hoje, com o aviso */
   function contraNos(E, m, x, att){
     if(m.c !== E.torcida.mapa || amigas(E, m.t, eu(E))) return;
+    /* no máximo UM por mês (02/10/2026): eram 5 em dois meses, fora o
+       calendário de ataques do trimestre */
+    const Dr = raiz(E), mes = mesDe(E);
+    if(Dr.contraNos && Dr.contraNos[0] === mes && Dr.contraNos[1] >= 1) return;
     const a = E.ataqueMarcado;
     if(a && !a.resolvido && a.semana === E.data.semana) return;
     /* no dia do nosso jogo a rua é do itinerário */
@@ -1023,6 +1049,7 @@ TO.dominio = (function(){
     const noBar = m.k === 'bar' && nossoBar;
     const Z = (TO.mundo && TO.mundo.ZONAS) || ZONAS;
     const zona = x.zona && Z.includes(x.zona) ? x.zona : Z[hash(`${m.t}|${x.id}`) % Z.length];
+    Dr.contraNos = [mes, (Dr.contraNos && Dr.contraNos[0] === mes ? Dr.contraNos[1] : 0) + 1];
     E.ataqueMarcado = {torcida:m.t, nome:att.nome, alvo: noBar ? 'bar' : 'reuniao',
                        cena: noBar ? 'bar' : 'praca-reuniao', zona: noBar ? null : zona,
                        bairro:x.nome, mapa:m.c, ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,

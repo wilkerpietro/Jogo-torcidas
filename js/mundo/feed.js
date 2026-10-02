@@ -534,7 +534,16 @@ TO.feed = (function(){
       cands.push({r, V, D, s:rival ? -1 : s, rivalPerdeu:rivais.has(D.id)});
     }
     cands.sort((x, y) => x.s - y.s);
-    for(const c of cands){
+    /* MENOS ZOEIRA (o dono, 02/10/2026: "as brigas tendo menos volume no
+       feed, pro foco ser primeiramente na logística ao redor do jogo"):
+       eram mais de uma por dia, mais da metade da rede. Agora só a briga
+       da NOSSA cidade ou de um rival nosso, uma por dia e três por semana;
+       o Porrada segue contando as do país */
+    const ZS = E.zoeiraSemana = (E.zoeiraSemana && E.zoeiraSemana[0] === `${E.data.ano}|${E.data.semana}`)
+      ? E.zoeiraSemana : [`${E.data.ano}|${E.data.semana}`, 0];
+    const postar = ZS[1] < 3 ? cands.filter(c => c.s <= 0).slice(0, 1) : [];
+    ZS[1] += postar.length;
+    for(const c of postar){
       const {r, V, D} = c;
       const h = H(`zoeira-texto|${abs}|${V.id}|${D.id}`);
       const P = {nome:V.nome, perdedor:D.nome, n:V.n, m:D.n, jogo:r.jogo || '',

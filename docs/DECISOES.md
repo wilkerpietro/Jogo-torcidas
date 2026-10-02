@@ -8771,6 +8771,26 @@ E mais:
   - nenhum ataque marcado veio de amiga, e nenhum alvo da pauta era amiga;
   - em 260 tentativas diretas de cobrir muro de amiga (IA e jogador, TUF no muro da JGT), nenhuma passou.
 
+## Menos briga de bairro, o foco na logística do jogo (o dono, 02/10/2026: "as brigas nos bairros ficaram mais dinâmicas que todo o restante do jogo em si. vamos tomar medidas pra diminuir isso, com as brigas tendo menos volume no feed, pro foco ser primeiramente na logística ao redor do jogo")
+
+**A medida antes de mexer (60 dias de TUF, as decisões em branco):**
+- 66 das 126 mensagens da rede eram zoeira de briga das IAs (mais de uma por dia);
+- 5 ataques marcados contra a gente pelas metas de domínio, fora o calendário do trimestre;
+- 6 cartões de "bairro virou" no feed, a maioria de bairros dos outros;
+- cada organizada da IA buscava 1 a 3 bairros por mês (só Fortaleza, umas 14 brigas de bairro por mês).
+
+**O que muda:**
+- **Zoeira:** só a briga da NOSSA cidade ou de um rival nosso; uma por dia, três por semana. As vizinhas a uma estrada saíram. O Porrada segue com a maior do país, um dia em três.
+- **Ataque contra nós pelas metas:** no máximo um por mês (`contraNos`).
+- **Bairro de outra torcida virando:** um cartão só no começo da semana ("Na semana, os bairros da cidade: …"), com a última dona de cada um. O que vira e volta na semana nem entra. O nosso bairro e a dona da cidade seguem avisando na hora.
+- **O ritmo da IA:** um bairro-alvo por mês (dois com sede 5 ou 6). A régua do jogador (1/2/3 pela sede) não muda, nem as brigas do dia de jogo.
+
+**Depois (os mesmos 60 dias):**
+- zoeira: 22;
+- ataques marcados pelas metas: 1;
+- cartões de domínio: 3;
+- brigas das IAs no mundo: de 1.713 pra 1.552.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
