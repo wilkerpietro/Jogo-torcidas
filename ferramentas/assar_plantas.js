@@ -8,7 +8,8 @@
      · o chão (ruas, quadras, favelas, estádios, praia) sem bairros, sem
        rótulos e sem carros, em img/mapas/<id>.webp (uns 4,4 milhões de
        pixels por praça, a comprida mais larga);
-     · em dados/plantas.js, a grade dos bairros, os rótulos (estádios,
+     · em dados/plantas.js, a grade dos bairros (sem enclave: no fim roda
+       ferramentas/plantas_sem_enclaves.py), os rótulos (estádios,
        equipamentos, marcos, os nomes das cidades) e as sedes da planta.
    O jogo pinta por cima, ao vivo, a dona de cada bairro.
 
@@ -128,4 +129,8 @@ function gravar(novas){
   const CAB = fs.readFileSync(arq, 'utf8').split('TO.dados.plantas = ')[0];
   fs.writeFileSync(arq, CAB + 'TO.dados.plantas = ' + JSON.stringify(ord) + ';\n');
   console.log('dados/plantas.js:', Object.keys(ord).length, 'praças');
+  /* bairro é um pedaço só: a quadra no meio de outro bairro e o bloco
+     solto passam pro vizinho (ferramentas/plantas_sem_enclaves.py) */
+  const r = require('child_process').spawnSync('python3', [path.join(__dirname, 'plantas_sem_enclaves.py')], {stdio:'inherit'});
+  if(r.status !== 0) console.log('plantas_sem_enclaves.py falhou: rode à mão');
 }

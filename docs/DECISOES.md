@@ -8640,6 +8640,31 @@ O print do dono mostrava a página inteira ampliada: a dica gigante e cortada à
   - fechando o painel, o viewport volta;
   - no computador, o mapa segue igual.
 
+## Bairro é um pedaço só: o fim dos enclaves no mapa 2D (o dono, 02/10/2026: "Acabe de vez com esses enclaves do bairro dentro de outro, eles sempre tem que ter uniformidade territorial")
+
+O print do dono mostrava quadras de Monte Castelo no meio de Pirambu, em Fortaleza. A divisão vem da planta do 3D: lá a quadra da sede ou do bar fica no bairro que os dados mandam, mesmo cercada por outro, e o estádio de fora fica num bloco solto no mato. Nas plantas assadas havia 45 pedaços soltos: 26 deles dentro de outro bairro (alguns com sede dentro, como a da JGT) e o resto, blocos de estádio do outro lado do mato ou da estrada.
+
+- **`ferramentas/plantas_sem_enclaves.py`** reescreve `dados/plantas.js`:
+  - cada bairro é dividido em pedaços contíguos;
+  - o pedaço principal é o maior que encosta em outro bairro (a ilha do estádio nunca é o bairro, nem quando é maior que o bloco dele);
+  - todo outro pedaço que encosta em bairro passa pro vizinho com quem tem mais divisa;
+  - a ilha cercada de mato vai pro bairro mais perto dela pelo vazio (fica com o dela só quando o bloco do dela é o mais perto);
+  - a conta roda até não sobrar nada, e rodar de novo não muda nada.
+- **O nome do bairro** que caía fora do pedaço dele volta pro meio do pedaço.
+- **A sede que estava num enclave** continua no bairro dela nos dados, e o ponto no mapa vai pra quadra mais perto do bloco principal:
+  - JGT (Fortaleza);
+  - NAÇÃO (Porto Alegre);
+  - P9, TTI, Gaviões e TUP (São Paulo).
+- **O que mudou de mão:**
+  - em Fortaleza, as 60 células de Monte Castelo dentro de Pirambu viraram Pirambu, mais dois pedaços na divisa Maraponga / Jardim das Oliveiras / Bom Jardim;
+  - nas 17 praças com pedaço solto, foram de 8 a 945 células por praça;
+  - sobraram só 11 blocos de estádio, sempre colados no bloco do próprio bairro do outro lado da rua.
+- **O assador roda isso no fim** (`ferramentas/assar_plantas.js`), então a próxima assada já sai sem enclave.
+- **O 3D não mudou:** a planta do `cenario3d/` (da outra sessão) segue com a divisão dela; o domínio, os muros e o cartão no 2D usam a grade nova.
+- **Testado:**
+  - a grade antes e depois de Fortaleza, Porto Alegre, São Paulo, Brasília, Salvador e Mato Grosso, desenhada bairro a bairro;
+  - o mapa no jogo (Playwright) de Fortaleza, Porto Alegre e Brasília, sem erro na página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
