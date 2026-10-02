@@ -10180,7 +10180,17 @@
     const local = String((m.config||{}).local || '');
     const em3d = !!o.briga3d && /^rua(-media|-nobre)?$/.test(local)
               && !!(TO.dados.cenas && TO.dados.cenas[local+'-3d']) && !!TO.diaJogo.tres;
-    const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');
+    const c2 = $('djPrincipal'), sobre = $('djSobre');
+    let c3 = $('djPrincipal3d');
+    /* O CONTEXTO DOS BONECOS CAIU E NÃO VOLTOU (02/10/2026): o canvas
+       perdido não ganha contexto novo, e toda briga seguinte abria com
+       disco. Um canvas novo no lugar dele, e a cena monta os bonecos de novo. */
+    const B3 = TO.diaJogo.bonecos3;
+    if(c3 && B3 && B3.perdeu && B3.perdeu(c3)){
+      const novo = c3.cloneNode(false);
+      c3.replaceWith(novo); c3 = novo;
+      console.warn('bonecos: canvas novo no lugar do que perdeu o contexto');
+    }
     if(c3) c3.hidden = !em3d;
     if(sobre) sobre.hidden = !em3d;
     if(c2) c2.hidden = em3d;

@@ -2181,6 +2181,29 @@ TO.diaJogo.bonecos3 = (function(){
     return true;
   }
 
+  /* AS FOTOS NÃO DERRUBAM OS BONECOS (o dono, 02/10/2026: "algumas cenas
+     de briga estão surgindo com os discos em vez do boneco"). Cada foto
+     de briga do jornal (cartaz.js) e do troféu abria um WebGLRenderer
+     novo, e `dispose()` não fecha o contexto: o Chrome aguenta uns 16 e
+     derruba o MAIS ANTIGO — o dos bonecos da cena —, que não volta; dali
+     em diante toda briga abria com disco. Agora as fotos dividem UM
+     renderizador, num canvas só dele, no tamanho pedido. */
+  let fotoR = null;
+  function rendererDaFoto(cvB){
+    if(fotoR && fotoR.getContext().isContextLost()){ try{ fotoR.dispose(); }catch(_){ } fotoR = null; }
+    if(!fotoR){
+      fotoR = new THREE.WebGLRenderer({canvas:document.createElement('canvas'), antialias:true, alpha:true,
+                                       premultipliedAlpha:true, preserveDrawingBuffer:true});
+    }
+    fotoR.setPixelRatio(1);
+    fotoR.setSize(cvB.width, cvB.height, false);
+    return fotoR;
+  }
+  /* depois da foto, as listas do quadro saem (o renderizador fica) */
+  function soltarFoto(r){
+    try{ r.renderLists.dispose(); }catch(_){ }
+  }
+
   function montar(canvas){
     if(typeof THREE === 'undefined') return false;
     if(renderer && cv === canvas && ativo) return true;
@@ -2479,10 +2502,10 @@ TO.diaJogo.bonecos3 = (function(){
     x.restore();
 
     /* 2. os bonecos, na MESMA câmera de cima da briga */
-    const cvB = document.createElement('canvas'); cvB.width = W; cvB.height = H;
+    const cvB = {width:W, height:H};   // o tamanho; o canvas é o do renderizador das fotos
     let r = null, maosCena = null;
     try{
-      r = new THREE.WebGLRenderer({canvas:cvB, antialias:true, alpha:true, premultipliedAlpha:true, preserveDrawingBuffer:true});
+      r = rendererDaFoto(cvB);
       r.setPixelRatio(1); r.setClearColor(0x000000, 0);
       const sc = new THREE.Scene();
       sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
@@ -2538,9 +2561,9 @@ TO.diaJogo.bonecos3 = (function(){
         maosCena = {esq: ex, dir: dx, y: sy/ps.length};
       }
       r.render(sc, camF);
-      x.drawImage(cvB, 0, 0);
+      x.drawImage(r.domElement, 0, 0);
     }catch(err){ console.warn('foto do troféu (bonecos): '+err.message); }
-    finally{ if(r) r.dispose(); }
+    finally{ if(r) soltarFoto(r); }
 
     /* 3. O PANO NAS MÃOS, DE CABEÇA PRA BAIXO. Faixa tomada se mostra
        invertida — é assim que se exibe o troféu. Ele vai de uma mão da
@@ -2664,10 +2687,10 @@ TO.diaJogo.bonecos3 = (function(){
     A.desenharFundo(x);
     x.restore();
 
-    const cvB = document.createElement('canvas'); cvB.width = W; cvB.height = H;
+    const cvB = {width:W, height:H};   // o tamanho; o canvas é o do renderizador das fotos
     let r = null;
     try{
-      r = new THREE.WebGLRenderer({canvas:cvB, antialias:true, alpha:true, premultipliedAlpha:true, preserveDrawingBuffer:true});
+      r = rendererDaFoto(cvB);
       r.setPixelRatio(1); r.setClearColor(0x000000, 0);
       const sc = new THREE.Scene();
       sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
@@ -2719,9 +2742,9 @@ TO.diaJogo.bonecos3 = (function(){
       }
       sc.updateMatrixWorld(true);
       r.render(sc, camF);
-      x.drawImage(cvB, 0, 0);
+      x.drawImage(r.domElement, 0, 0);
     }catch(err){ console.warn('foto da briga (bonecos): '+err.message); }
-    finally{ if(r) r.dispose(); }
+    finally{ if(r) soltarFoto(r); }
     try{ return cv2.toDataURL('image/jpeg', 0.86); }catch(_){ return null; }
   }
 
@@ -2729,5 +2752,7 @@ TO.diaJogo.bonecos3 = (function(){
           cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },
+          /* o contexto deste canvas caiu e não voltou: quem monta troca o canvas */
+          perdeu:canvas => !!(renderer && cv === canvas && !ativo),
           get _dbg(){ return {scene, cam, camV, renderer, figuras, modeloGLB}; }};
 })();

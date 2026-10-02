@@ -531,6 +531,22 @@ TO.dominio = (function(){
       .sort((a, b) => b.n - a.n || (a.id < b.id ? -1 : 1)).slice(0, 2).map(x => x.id);
   }
 
+  /* AMIGAS NÃO SE ATACAM NEM COBREM O PIXO UMA DA OUTRA (o dono, 02/10/2026:
+     "a Jovem Garra Tricolor chegou na praça de Granja Portugal em cima da
+     reunião da Zona Oeste... Isso não acontece quando as torcidas são
+     aliadas. Nem uma cobrir o pixo da outra"): irmãs do mesmo clube, e
+     quem está em Aliado ou Irmandade HOJE (relação de +20 pra cima, a
+     régua do rótulo da Diplomacia) */
+  const ALIADA = 20;
+  function amigas(E, a, b){
+    if(!a || !b) return false;
+    if(a === b) return true;
+    if(TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(a, b)) return true;
+    const R = TO.relacoes, meu = eu(E);
+    if(!E || !R) return false;
+    if(a === meu || b === meu) return R.nivel(E, a === meu ? b : a) >= ALIADA;
+    return R.relacaoDelas ? R.relacaoDelas(E, a, b) >= ALIADA : false;
+  }
   /* rival de verdade, pela relação de HOJE (a mesma régua do rótulo
      da Diplomacia: abaixo de −15 é Rival). Irmãs nunca. */
   function rivais(E, a, b){
@@ -923,7 +939,7 @@ TO.dominio = (function(){
   function alvosDe(E, cid, tid, n, bs, pl){
     const zk = b => b.semZona ? 'c:' + b.cidade : b.zona;
     const minhas = new Set(bs.filter(b => b.dono === tid).map(zk));
-    const amiga = o => o === tid || (TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(tid, o));
+    const amiga = o => amigas(E, tid, o);
     const domina = pl.dono === tid;
     const cand = [];
     for(const b of bs){
@@ -976,10 +992,12 @@ TO.dominio = (function(){
       const x = bairro(m.c, m.b), att = TO.mundo && TO.mundo.torcida(m.t);
       if(!x || !att || !mundo || !mundo[m.t]) continue;
       /* a vítima é quem está no caminho HOJE: a dona, ou a maior das outras */
-      const ps = partes(E, m.c, x.id).filter(p => p.t !== m.t && !(TO.mundo.saoIrmas && TO.mundo.saoIrmas(m.t, p.t)));
+      /* (a dona era a vítima sem conferir: a JGT atacava a reunião da
+         TUF, irmã dela, porque a TUF era a dona do bairro — 02/10/2026) */
+      const ps = partes(E, m.c, x.id).filter(p => !amigas(E, m.t, p.t));
       const dona = donaDoBairro(E, m.c, x.id);
-      const vit = dona && dona !== m.t ? dona : (ps[0] || {}).t;
-      if(!vit) continue;
+      const vit = dona && !amigas(E, m.t, dona) ? dona : (ps[0] || {}).t;
+      if(!vit || amigas(E, m.t, vit)) continue;
       if(vit === meu){ contraNos(E, m, x, att); continue; }
       const vo = TO.mundo.torcida(vit);
       if(!vo || !mundo[vit] || !TO.relacoes.brigaIA) continue;
@@ -995,7 +1013,7 @@ TO.dominio = (function(){
   }
   /* a meta da IA em cima da gente: o ataque marcado de hoje, com o aviso */
   function contraNos(E, m, x, att){
-    if(m.c !== E.torcida.mapa) return;
+    if(m.c !== E.torcida.mapa || amigas(E, m.t, eu(E))) return;
     const a = E.ataqueMarcado;
     if(a && !a.resolvido && a.semana === E.data.semana) return;
     /* no dia do nosso jogo a rua é do itinerário */
@@ -1111,12 +1129,13 @@ TO.dominio = (function(){
       if(!m){
         const conta = {};
         for(const z of ms) if(z.t) conta[z.t] = (conta[z.t] || 0) + 1;
-        m = ms.filter(z => z.t && z.t !== tid && !irmas(tid, z.t)).sort((a, c) => conta[c.t] - conta[a.t] || a.abs - c.abs)[0];
+        m = ms.filter(z => z.t && !amigas(E, tid, z.t)).sort((a, c) => conta[c.t] - conta[a.t] || a.abs - c.abs)[0];
       }
     }
     if(!m) return {ok:false, msg:_t('Todos os muros de {bairro} já são nossos.', {bairro:x.nome})};
     if(m.t === tid) return {ok:false, msg:_t('Esse muro já é nosso.')};
     if(m.t && irmas(tid, m.t)) return {ok:false, msg:_t('Esse muro é de uma torcida irmã.')};
+    if(m.t && amigas(E, tid, m.t)) return {ok:false, msg:_t('Esse muro é de uma torcida aliada.')};
     if(!gastarPix(E, tid)) return {ok:false, msg:_t('Acabaram as pixações deste mês.')};
     const de = m.t;
     pixCidade(E, cid)[`${x.id}#${m.i}`] = `${tid}|${E.data.absoluto || 0}`;
@@ -1617,7 +1636,7 @@ TO.dominio = (function(){
           cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
-          donaDoBairro, maiores, membrosDe, rivais, fator, notaDoCorte, siglaDe, nomeDe,
+          donaDoBairro, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
           mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje,

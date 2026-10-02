@@ -4448,8 +4448,8 @@ TO.feed = (function(){
     const nossa = D.placar(E, cid).dono === meu;
     const zk = b => b.semZona ? 'c:' + b.cidade : b.zona;
     const zonasNossas = new Set(bs.filter(b => b.dono === meu).map(zk));
-    const aceita = tid => tid && tid !== meu && TO.relacoes.nivel(E, tid) < 25 &&
-      !(M().saoIrmas && M().saoIrmas(meu, tid)) && !!M().torcida(tid);
+    /* aliada e irmã não são alvo (a régua do domínio: +20 pra cima, 02/10/2026) */
+    const aceita = tid => tid && tid !== meu && !D.amigas(E, meu, tid) && !!M().torcida(tid);
     const cand = [];
     for(const b of bs){
       const nosso = (b.partes.find(p => p.t === meu) || {}).v || 0;

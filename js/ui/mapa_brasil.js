@@ -309,14 +309,17 @@ TO.mapaBrasil = (function(){
     }
     if(d.pixar && cid === e.torcida.mapa && ms.length){
       const sd = d.saldoPix(e, meu);
-      const alvo = selMuro || ms.find(m => !m.t) || ms.find(m => m.t && m.t !== meu);
+      /* o pixo da aliada (e da irmã) não se cobre (o dono, 02/10/2026) */
+      const amiga = m => m.t && m.t !== meu && d.amigas && d.amigas(e, meu, m.t);
+      const alvo = selMuro || ms.find(m => !m.t) || ms.find(m => m.t && m.t !== meu && !amiga(m));
       const bt = document.createElement('button');
       bt.type = 'button'; bt.className = 'bt';
-      bt.textContent = !alvo ? _t('Todos os muros daqui são nossos')
+      bt.textContent = !alvo ? (ms.some(m => m.t !== meu) ? _t('Os outros muros daqui são de aliadas') : _t('Todos os muros daqui são nossos'))
         : alvo.t === meu ? _t('Esse muro já é nosso')
+        : amiga(alvo) ? _t('Muro da {nome}, aliada: não se cobre', {nome:sigla(alvo.t)})
         : alvo.t ? _t('Cobrir o pixo da {nome}', {nome:sigla(alvo.t)})
         : selMuro ? _t('Pixar este muro') : _t('Pixar em {bairro}', {bairro:b.nome});
-      bt.disabled = !alvo || alvo.t === meu || sd.total <= 0;
+      bt.disabled = !alvo || alvo.t === meu || amiga(alvo) || sd.total <= 0;
       bt.onclick = () => {
         const r = d.pixar(e, meu, cid, b.id, alvo ? alvo.i : null);
         if(TO.estado.mudou) try{ TO.estado.mudou(); }catch(_){}

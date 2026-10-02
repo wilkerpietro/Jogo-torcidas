@@ -8745,6 +8745,32 @@ E mais:
 - 45 dias de brigas das IAs;
 - `i18n_faltando` em 0.
 
+## Os discos no lugar dos bonecos, e aliada que atacava e cobria o pixo da outra (o dono, 02/10/2026)
+
+**"Algumas cenas de briga estão surgindo com os discos em vez do boneco."**
+- **A causa:** cada foto de briga do jornal (`cartaz.js`, `bonecos3.fotoDaBriga`) e do troféu (`fotoDoTrofeu`) abria um `WebGLRenderer` novo e só chamava `dispose()`, que não fecha o contexto.
+  - O Chrome aguenta uns 16 contextos e derruba o mais antigo — o dos bonecos da cena.
+  - Ele não volta: `montar` via o canvas perdido e devolvia falso, e toda briga dali em diante abria com disco.
+  - Reproduzido: com o mapa de bonecos montado, 24 fotos seguidas e o contexto caía ("Too many active WebGL contexts").
+- **As fotos dividem um renderizador só** (`rendererDaFoto`): num canvas só dele, no tamanho pedido, refeito só se o próprio contexto cair.
+- **O contexto perdido se recupera:** `bonecos3.perdeu(canvas)` diz quando o canvas dos bonecos caiu e não voltou, e `montarCena` põe um canvas novo no lugar antes de abrir a briga.
+- **Testado:**
+  - 24 fotos seguidas e os bonecos seguem ativos;
+  - com o contexto derrubado de propósito (`WEBGL_lose_context`), a briga da pista seguinte abre com boneco ("canvas novo no lugar…");
+  - as fotos do jornal saem iguais (rua 800×400 e bar 600×300 em seguida).
+
+**"A Jovem Garra Tricolor chegou na praça de Granja Portugal em cima da reunião da Zona Oeste! Isso não acontece quando as torcidas são aliadas. Nem uma cobrir o pixo da outra."**
+- **A causa:** a meta do mês da IA tirava as irmãs da lista das outras torcidas do bairro, mas escolhia a DONA do bairro como vítima sem conferir. A TUF era a dona de Granja Portugal, e a JGT, irmã dela, marcava o ataque na reunião.
+- **A régua nova é uma só:** `dominio.amigas` vale pra irmãs do mesmo clube e pra quem está em Aliado ou Irmandade hoje (relação de +20 pra cima, a régua do rótulo da Diplomacia). Ela vale em:
+  - os alvos da IA (`alvosDe`);
+  - a vítima da meta do dia (a dona amiga não é vítima; sem vítima que não seja amiga, a meta cai);
+  - o ataque marcado contra a gente (`contraNos`);
+  - os alvos da nossa pauta (era "relação abaixo de 25");
+  - a pixação, da IA e nossa: nenhum muro de amiga é coberto. O cartão do mapa mostra "Muro da {sigla}, aliada: não se cobre", e o `pixar` recusa ("Esse muro é de uma torcida aliada.").
+- **Testado (120 dias jogando de TUF):**
+  - nenhum ataque marcado veio de amiga, e nenhum alvo da pauta era amiga;
+  - em 260 tentativas diretas de cobrir muro de amiga (IA e jogador, TUF no muro da JGT), nenhuma passou.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
