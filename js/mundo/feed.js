@@ -4446,7 +4446,8 @@ TO.feed = (function(){
      alvos do mês são os botes. Cada um é marcado (vai pro calendário
      e, no dia, abre a cena) ou deixado quieto (−1 de moral).
      ======================================================= */
-  const ALVOS_PELA_SEDE = nivel => nivel >= 5 ? 3 : nivel >= 3 ? 2 : 1;
+  /* um alvo por mês, qualquer sede (o dono, 02/10/2026) */
+  const ALVOS_PELA_SEDE = () => 1;
   const GOLPE = {bar:12, reuniao:12, casa:8};
   function alvosDeDominio(E, quantos){
     const D = TO.dominio;

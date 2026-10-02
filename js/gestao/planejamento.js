@@ -122,8 +122,13 @@ TO.planejamento = (function(){
     /* os arredores são do bairro do estádio (02/10/2026): é lá que a
        briga mexe no domínio, e é lá que o cartão diz que foi */
     const D = TO.dominio, est = D && D.bairroDoEstadio ? D.bairroDoEstadio(E, E.torcida.mapa) : null;
+    /* e a pista (terminal, avenida, viaduto) passa nos vizinhos do bairro do
+       estádio: no Castelão, Bom Jardim, Conjunto Ceará, Granja Portugal */
+    const viz = D && D.vizinhosDoEstadio ? D.vizinhosDoEstadio(E, E.torcida.mapa) : [];
+    let k = 0;
     return PONTOS.map((p, i)=>Object.assign({}, p, {
       bairro: p.id === 'arredores' && est ? est.nome
+            : p.ida && p.id !== 'praca' && viz.length ? viz[(k++) % viz.length].nome
             : bairros.length ? bairros[(i*7) % bairros.length].nome : ''
     }));
   }

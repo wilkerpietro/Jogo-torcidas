@@ -724,7 +724,9 @@ TO.praca = (function(){
     const D = TO.dominio, mapa = j.mapaAdv || o.mapa;
     let bairro = o.bairroSede || '';
     if(D && mapa){
-      const b = onde === 'praca' ? D.sedeDe(o.id, mapa) : D.bairroDoEstadio(E, mapa, j.estadio);
+      const b = onde === 'praca' ? D.sedeDe(o.id, mapa)
+              : onde === 'pista' && D.bairroDaPista ? D.bairroDaPista(E, mapa, j.estadio, `pista|${mapa}|${j.semana || E.data.semana}|${j.dia || E.data.dia}|${o.id}`)
+              : D.bairroDoEstadio(E, mapa, j.estadio);
       if(b) bairro = b.nome;
     }
     return {desfecho:'planejada', fora:true, cidade,

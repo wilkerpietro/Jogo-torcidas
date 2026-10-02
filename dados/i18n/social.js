@@ -585,5 +585,6 @@ TO.i18n.registrar({
   "Muro da {nome}, aliada: não se cobre": {es:"Pared de {nome}, aliada: no se tapa", en:"{nome}'s wall, an ally: we don't cover it"},
   "{bairro} agora é da {nome}": {es:"{bairro} ahora es de {nome}", en:"{bairro} now belongs to {nome}"},
   "{bairro} ficou sem dona": {es:"{bairro} quedó sin dueña", en:"{bairro} has no owner now"},
-  "Na semana, os bairros da cidade: {lista}.": {es:"En la semana, los barrios de la ciudad: {lista}.", en:"This week, the city's neighbourhoods: {lista}."}
+  "Na semana, os bairros da cidade: {lista}.": {es:"En la semana, los barrios de la ciudad: {lista}.", en:"This week, the city's neighbourhoods: {lista}."},
+  "+0,1 por dia": {es:"+0,1 por día", en:"+0.1 a day"}
 });

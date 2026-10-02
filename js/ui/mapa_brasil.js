@@ -267,7 +267,9 @@ TO.mapaBrasil = (function(){
     h += est.length
       ? '<ul class="mb-estruturas">' + est.map(s => {
           const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
-          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv)}</li>`;
+          /* a estrutura segura o bairro: +0,1 por dia pra dona (02/10/2026) */
+          const buff = s.tipo !== 'sede' ? ' · ' + _t('+0,1 por dia') : '';
+          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv + buff)}</li>`;
         }).join('') + '</ul>'
       : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;
     /* AS PIXAÇÕES (01/10/2026): os muros do bairro, de quem é cada um e

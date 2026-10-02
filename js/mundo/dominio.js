@@ -901,7 +901,7 @@ TO.dominio = (function(){
     /* as metas do mês de cada organizada da IA (01/10/2026) */
     try{ metasDoDia(E); }catch(e){ /* as metas não derrubam o dia */ }
     /* os muros pixados rendem, a IA pixa e recruta (01/10/2026) */
-    try{ desgaste(E); diaDosMuros(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
+    try{ desgaste(E); diaDosMuros(E); diaDasEstruturas(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
   }
   /* os bairros que trocaram de dona na nossa cidade na semana, num cartão só */
   function resumoDaSemana(E){
@@ -947,12 +947,14 @@ TO.dominio = (function(){
      alvo, não no mais fraco da perdedora.
      ======================================================= */
   let ALVO_FORCADO = null;
-  const ALVOS_PELA_SEDE = n => n >= 5 ? 3 : n >= 3 ? 2 : 1;
+  /* UM ALVO POR MÊS (o dono, 02/10/2026: "reduza pra um alvo mensal"):
+     era 1/2/3 pela sede, pro jogador e pra IA */
+  const ALVOS_PELA_SEDE = () => 1;
   /* MENOS BRIGA DE BAIRRO NO MUNDO (o dono, 02/10/2026: "as brigas nos
      bairros ficaram mais dinâmicas que todo o restante do jogo; o foco é
      primeiro a logística ao redor do jogo"): a IA busca UM bairro por
      mês (dois com sede 5 ou 6). A régua do jogador (1/2/3) não muda. */
-  const ALVOS_DA_IA = n => n >= 5 ? 2 : 1;
+  const ALVOS_DA_IA = () => 1;
   function mesDe(E){
     const d = TO.estado && TO.estado.dataDaSemana ? TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia) : null;
     return d ? `${d.getFullYear()}|${d.getMonth()}` : `${E.data.ano}|${Math.floor((E.data.semana - 1) / 4.35)}`;
@@ -1192,6 +1194,25 @@ TO.dominio = (function(){
       }
     }
   }
+  /* A ESTRUTURA SEGURA O BAIRRO (o dono, 02/10/2026: "ter uma estrutura
+     num bairro dá buff diário de dominação de 0.1 por dia"): cada bar,
+     loja, subsede e filial soma 0,1 por dia pra dona no bairro dela. A
+     sede tem a régua própria (refaz até 80) */
+  const ESTRUTURA_DIA = 0.1;
+  function diaDasEstruturas(E){
+    for(const cid of indice().comTorcida){
+      const soma = {};
+      for(const s of estruturas(E, cid)){
+        if(s.tipo === 'sede') continue;
+        const ch = s.bairro + '|' + s.tid;
+        soma[ch] = (soma[ch] || 0) + ESTRUTURA_DIA;
+      }
+      for(const ch in soma){
+        const [bid, tid] = ch.split('|');
+        mexer(E, cid, bid, tid, soma[ch], {motivo:'estrutura-dia', semTorcida:true});
+      }
+    }
+  }
   /* O DESGASTE ACIMA DE 80 (dono, 01/10/2026: "um desgaste diário
      pequeno acima de 80, essa sobra volta a ser de ninguém"): bairro
      não fica de dono pra sempre. Quem passa de 80 perde, por dia, 2% do
@@ -1398,7 +1419,12 @@ TO.dominio = (function(){
         const s = sedeDe(atacado, cid);
         b = s && bairrosDe(cid).includes(s) ? s : bairroDoEstadio(E, cid, L.estadio);
       }
-      else if(/^estadio|arquibancada|invas|escolta|pista|rua|arredores/.test(cena) || d.tipoDefesa === 'pista')
+      /* A PISTA É NA VIZINHANÇA DO ESTÁDIO (o dono, 02/10/2026: "se o jogo é
+         no Castelão, que é na Maraponga, a pista pode ser no Bom Jardim, no
+         Conjunto Ceará ou na Granja Portugal") */
+      else if(d.tipoDefesa === 'pista' || /pista/.test(cena) || L.pista)
+        b = bairroDaPista(E, cid, L.estadio, L.chave || `pista|${cid}|${E.data.ano}|${E.data.semana}|${E.data.dia}`);
+      else if(/^estadio|arquibancada|invas|escolta|rua|arredores/.test(cena))
         b = bairroDoEstadio(E, cid, L.estadio);
     }
     if(!b) return null;
@@ -1503,6 +1529,46 @@ TO.dominio = (function(){
     for(const e of ord){ const b = bairro(cid, e.bairro); if(b) return b; }
     const bs = bairrosDe(cid);
     return bs.length ? bs[hash(`${cid}|estadio`) % bs.length] : null;
+  }
+  /* OS VIZINHOS DE UM BAIRRO: quem faz divisa com ele na planta (a grade
+     de dados/plantas.js); sem planta, os da mesma zona */
+  const vizMemo = new Map();
+  function vizinhosDe(cid, bid){
+    const ch = cid + '|' + bid;
+    if(vizMemo.has(ch)) return vizMemo.get(ch);
+    const bs = bairrosDe(cid), x = bairro(cid, bid);
+    let out = [];
+    const P = TO.dados && TO.dados.plantas && TO.dados.plantas[cid];
+    if(x && P && P.g && Array.isArray(P.b)){
+      const k = P.b.findIndex(pb => pb[0] === x.id), g = P.g, viz = new Set();
+      if(k >= 0){
+        let ant = null;
+        for(let j = 0; j < g.ny; j++){
+          const row = [], l = g.l[j] || [];
+          for(let i = 0; i < l.length; i += 2) for(let n = 0; n < l[i + 1]; n++) row.push(l[i]);
+          for(let i = 0; i < row.length; i++){
+            const v = row[i];
+            if(i + 1 < row.length && row[i + 1] !== v && (v === k || row[i + 1] === k)) viz.add(v === k ? row[i + 1] : v);
+            if(ant && ant[i] !== v && (v === k || ant[i] === k)) viz.add(v === k ? ant[i] : v);
+          }
+          ant = row;
+        }
+      }
+      out = [...viz].filter(v => v >= 0 && v !== k).map(v => bairro(cid, P.b[v][0])).filter(Boolean);
+    }
+    if(!out.length && x) out = bs.filter(b => b !== x && b.zona === x.zona);
+    out.sort((a, c) => (a.id < c.id ? -1 : 1));
+    vizMemo.set(ch, out);
+    return out;
+  }
+  /* o bairro da pista: um dos vizinhos do bairro do estádio, pela chave do dia */
+  function vizinhosDoEstadio(E, cid, nome){
+    const est = bairroDoEstadio(E, cid, nome);
+    return est ? vizinhosDe(cid, est.id) : [];
+  }
+  function bairroDaPista(E, cid, nome, chave){
+    const vs = vizinhosDoEstadio(E, cid, nome);
+    return vs.length ? vs[hash(chave || cid) % vs.length] : bairroDoEstadio(E, cid, nome);
   }
   /* A ENTRADA DA PRAÇA (a emboscada na estrada): o bairro mais perto de
      uma das entradas da planta ("Entrada norte", "Estrada pra…"), a
@@ -1664,7 +1730,7 @@ TO.dominio = (function(){
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
           donaDoBairro, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
-          mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
+          mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, ESTRUTURA_DIA, vizinhosDe, vizinhosDoEstadio, bairroDaPista, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};

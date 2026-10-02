@@ -8791,6 +8791,21 @@ E mais:
 - cartões de domínio: 3;
 - brigas das IAs no mundo: de 1.713 pra 1.552.
 
+## Um alvo por mês, a pista na vizinhança do estádio e a estrutura que segura o bairro (o dono, 02/10/2026)
+
+- **"Reduza pra um alvo mensal":** os alvos de domínio da reunião passam a ser um por mês, qualquer que seja a sede. Era 1/2/3, em `feed.js`. A IA também fica em um (era 1, ou 2 com sede 5 ou 6).
+- **"As brigas na pista são em bairros vizinhos ao bairro do estádio"** (o Castelão é na Maraponga; a pista pode ser no Bom Jardim, no Conjunto Ceará ou na Granja Portugal):
+  - `dominio.vizinhosDe` lê a divisa na grade da planta (dados/plantas.js); sem planta, usa os bairros da mesma zona;
+  - a pista cai num dos vizinhos do bairro do estádio, sorteado pelo dia (`bairroDaPista`). A prévia do anúncio e o fim da briga dão o mesmo;
+  - na Maraponga, a planta dá Bom Jardim, Conjunto Ceará, Granja Portugal e Jardim das Oliveiras (que também faz divisa);
+  - a pista em casa (o ataque sofrido do itinerário e os pontos terminal, avenida e viaduto do planejamento) e a pista fora (`encontroDaViagem`) seguem a mesma regra;
+  - os arredores continuam no bairro do estádio.
+- **"Ter uma estrutura num bairro dá buff diário de 0,1":** cada bar, loja, subsede e filial soma +0,1 por dia pra dona no bairro dela (`diaDasEstruturas`, sem o peso da torcida, como os muros). A sede segue com a régua própria (refaz até 80). O cartão do bairro mostra "+0,1 por dia" ao lado de cada uma.
+- **Testado:**
+  - os 40 sorteios de pista do Castelão caíram nos quatro vizinhos;
+  - um dia passado: o bar da Cearamor em Jangurussu foi de 68,6 pra 68,7;
+  - 60 dias: um alvo por reunião, sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
