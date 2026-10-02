@@ -8847,6 +8847,21 @@ E mais:
   - o recrutamento no último bairro da lista gravado;
   - sem erro.
 
+## O bairro da sede sem teto, e perdido custa moral (o dono, 02/10/2026: "o bairro da sede pode ser perdido pela torcida também e isso reduz a moral em 0,2 por dia. não existe mais essa trava de 80% mas o bairro da sede dá 0,5 por dia")
+
+- **A sede soma +0,5 por dia pra dona no bairro dela, sempre** (`refazer`). Era "refaz meio ponto até 80". O desgaste acima de 80 (2% do que passa) continua valendo pra todo bairro.
+- **Quem não é dona do bairro da própria sede perde 0,2 de moral por dia** (`sedesPerdidas`, no dia do domínio). Vale com outra torcida dona ou com o bairro em disputa.
+  - Pra nossa, entra no livro da semana de moral.
+  - Pra IA, pelo `mover` dela.
+- **O bairro da sede entra na briga das IAs:** a perdedora apanha no bairro dela de barra mais baixa, e o da sede não fica mais de fora. Quem não é da casa segue ganhando metade lá (é o que faz a sede ser difícil, e não impossível).
+- **O aviso:**
+  - "Perdemos o bairro da nossa sede, {bairro}, pra {para}: −0,2 de moral por dia até retomar.";
+  - quando cai abaixo de 50% sem dona: "O bairro da nossa sede, {bairro}, caiu abaixo de 50%: …".
+- **O cartão do bairro da sede** diz: "+0,5 por dia" e "se perder o bairro, perde 0,2 de moral por dia".
+- **Testado:**
+  - a barra da TUF em Bom Jardim (sede) foi de 82,8 pra 89,9 em 20 dias;
+  - tomado pela Cearamor, o dia tirou 0,2 de moral a mais (0,72 contra 0,52 do dia anterior), e o aviso saiu.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

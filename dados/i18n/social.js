@@ -633,5 +633,8 @@ TO.i18n.registrar({
   "{n} da linha de frente": {es:"{n} de la primera línea", en:"{n} from the front line"},
   "{n} de pé · descem {m} na cena": {es:"{n} en pie · bajan {m} a la escena", en:"{n} standing · {m} come down to the scene"},
   "{p}% de quem mora em {bairro} torce pro {clube}: é dali que vem novato. A nossa barra lá: {n}%. Recrutando, +0,2 por dia no domínio.": {es:"El {p}% de quienes viven en {bairro} hinchan por {clube}: de ahí salen los novatos. Nuestra barra ahí: {n}%. Reclutando, +0,2 por día de dominio.", en:"{p}% of the people living in {bairro} support {clube}: that's where rookies come from. Our bar there: {n}%. Recruiting there adds +0.2 of control a day."},
-  "{valor} de cada lado": {es:"{valor} de cada lado", en:"{valor} each side"}
+  "{valor} de cada lado": {es:"{valor} de cada lado", en:"{valor} each side"},
+  "Perdemos o bairro da nossa sede, {bairro}, pra {para}: −0,2 de moral por dia até retomar.": {es:"Perdimos el barrio de nuestra sede, {bairro}, ante {para}: −0,2 de moral por día hasta recuperarlo.", en:"We lost our HQ's neighbourhood, {bairro}, to {para}: −0.2 morale a day until we take it back."},
+  "O bairro da nossa sede, {bairro}, caiu abaixo de 50%: −0,2 de moral por dia até retomar.": {es:"El barrio de nuestra sede, {bairro}, cayó por debajo del 50%: −0,2 de moral por día hasta recuperarlo.", en:"Our HQ's neighbourhood, {bairro}, fell below 50%: −0.2 morale a day until we take it back."},
+  "É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa soma +0,5 por dia. Se perder o bairro, a {nome} perde 0,2 de moral por dia.": {es:"Es el barrio de la sede de {nome}: quien no es de la casa gana la mitad acá, y la casa suma +0,5 por día. Si pierde el barrio, {nome} pierde 0,2 de moral por día.", en:"This is {nome}'s HQ neighbourhood: outsiders gain half here, and the home side adds +0.5 a day. If it loses the neighbourhood, {nome} loses 0.2 morale a day."}
 });

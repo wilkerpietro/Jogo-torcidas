@@ -259,7 +259,7 @@ TO.mapaBrasil = (function(){
     h += '<ul class="mb-partes">' + b.partes.filter(p => p.v >= 0.05).map(p =>
       `<li${p.t === meu ? ' class="nos"' : ''}><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${pc(p.v)}</b></li>`).join('') +
       (livre >= 0.05 ? `<li class="livre"><i></i>${esc(_t('De ninguém'))}<b>${pc(livre)}</b></li>` : '') + '</ul>';
-    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa se refaz até 80%.', {nome:nome(b.sede)}))}</p>`;
+    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa soma +0,5 por dia. Se perder o bairro, a {nome} perde 0,2 de moral por dia.', {nome:nome(b.sede)}))}</p>`;
     /* as estruturas presentes */
     const est = d.estruturas(e, cid).filter(s => s.bairro === b.id);
     const T = TIPO();

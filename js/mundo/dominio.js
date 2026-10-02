@@ -23,8 +23,8 @@
    vezes 6 — e dá empate, a cidade começa sem dono), e o resto é
    rateado entre as demais pelos membros de partida. O bairro da SEDE
    é sempre da torcida dela no começo, com a barra alta, e é o mais
-   difícil de tomar: quem não é da casa ganha metade ali, e a casa se
-   refaz meio ponto por dia até 80. A subsede também segura o bairro
+   difícil de tomar: quem não é da casa ganha metade ali, e a casa soma
+   meio ponto por dia, sem teto. Perdido, custa 0,2 de moral por dia. A subsede também segura o bairro
    dela (um terço de ponto por dia até 65) — é assim que ela chega a
    dominar.
 
@@ -66,7 +66,12 @@ TO.dominio = (function(){
   const DOMINA = 50;                 // mais que isto na barra: dona do bairro
   const DIA = 0.02;                  // 0,1 na régua de 0 a 100
   const CORTE = 0.7;                 // receita em bairro de rival: −30%
-  const SEDE_TETO = 80, SEDE_REFAZ = 0.5;       // a sede se refaz até 80
+  /* A SEDE NÃO TEM MAIS TETO (o dono, 02/10/2026: "o bairro da sede pode
+     ser perdido pela torcida também e isso reduz a moral em 0,2 por dia.
+     não existe mais essa trava de 80% mas o bairro da sede dá 0,5 por
+     dia"): +0,5 por dia pra dona da sede no bairro dela, sempre; quem não
+     é dona do bairro da própria sede perde 0,2 de moral por dia */
+  const SEDE_REFAZ = 0.5, SEDE_PERDIDA = 0.2;
   const SUBSEDE_TETO = 65, SUBSEDE_REFAZ = 1/3; // a subsede, até 65
   const RESISTE = 0.5;               // quem não é da casa ganha metade no bairro da sede
   /* quanto cada ação vale na barra (pontos de 0 a 100) */
@@ -810,6 +815,9 @@ TO.dominio = (function(){
     if(r.dono1 === meu)
       texto = r.dono0 ? _t('Tomamos {bairro} ({cidade}) da {de}. O bairro agora é nosso.', {bairro:nb, cidade, de:nomeDe(r.dono0)})
                       : _t('{bairro} ({cidade}) passou de 50% pra nós. O bairro agora é nosso.', {bairro:nb, cidade});
+    else if(r.dono0 === meu && casaDe(r.cid, r.bairro.id) === meu)
+      texto = r.dono1 ? _t('Perdemos o bairro da nossa sede, {bairro}, pra {para}: −0,2 de moral por dia até retomar.', {bairro:nb, para:nomeDe(r.dono1)})
+                      : _t('O bairro da nossa sede, {bairro}, caiu abaixo de 50%: −0,2 de moral por dia até retomar.', {bairro:nb});
     else if(r.dono0 === meu)
       texto = r.dono1 ? _t('Perdemos {bairro} ({cidade}) pra {para}.', {bairro:nb, cidade, para:nomeDe(r.dono1)})
                       : _t('{bairro} ({cidade}) caiu abaixo de 50% pra nós: o bairro está em disputa.', {bairro:nb, cidade});
@@ -837,8 +845,7 @@ TO.dominio = (function(){
     const I = indice();
     const sedes = I.sedes.get(cid) || new Map();
     for(const [tid, b] of sedes){
-      const p = (st.b || {})[b.id] || {};
-      if((p[tid] || 0) < SEDE_TETO) mexer(E, cid, b, tid, Math.min(SEDE_REFAZ, SEDE_TETO - (p[tid] || 0)), {motivo:'sede'});
+      mexer(E, cid, b, tid, SEDE_REFAZ, {motivo:'sede'});
     }
     for(const s of estruturas(E, cid)){
       if(s.tipo !== 'subsede' && s.tipo !== 'filial') continue;
@@ -863,6 +870,21 @@ TO.dominio = (function(){
     if(TO.relacoes && TO.relacoes.mover){
       TO.relacoes.mover(E, tid, 'prestigio', q);
       TO.relacoes.mover(E, tid, 'moral', q);
+    }
+  }
+  /* a moral de quem não é dona do bairro da própria sede: −0,2 por dia */
+  function sedesPerdidas(E){
+    const I = indice(), meu = eu(E);
+    for(const cid of I.comTorcida){
+      for(const [tid, b] of (I.sedes.get(cid) || new Map())){
+        if(donaDoBairro(E, cid, b.id) === tid) continue;
+        if(tid === meu){
+          const In = E.indicadores, D = raiz(E), a = In.moral || 0;
+          In.moral = limitar(a - SEDE_PERDIDA, 0, 20);
+          D.acum = D.acum || {prestigio:0, moral:0};
+          D.acum.moral = (D.acum.moral || 0) + (In.moral - a);
+        } else if(TO.relacoes && TO.relacoes.mover) TO.relacoes.mover(E, tid, 'moral', -SEDE_PERDIDA);
+      }
     }
   }
   function fecharLivro(E){
@@ -896,6 +918,7 @@ TO.dominio = (function(){
       D.donos[cid] = dono;
       if(antes !== undefined && antes !== dono && cid === minha) avisarCidade(E, cid, antes, dono, pl);
     }
+    try{ sedesPerdidas(E); }catch(e){ /* a moral não derruba o dia */ }
     /* a IA que está atrás na cidade dela faz ação social (a semana) */
     if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); resumoDaSemana(E); }
     /* as metas do mês de cada organizada da IA (01/10/2026) */
@@ -1197,7 +1220,7 @@ TO.dominio = (function(){
   /* A ESTRUTURA SEGURA O BAIRRO (o dono, 02/10/2026: "ter uma estrutura
      num bairro dá buff diário de dominação"): cada bar,
      loja, subsede e filial soma 0,2 por dia pra dona no bairro dela. A
-     sede tem a régua própria (refaz até 80) */
+     sede tem a régua própria (+0,5 por dia, sem teto) */
   const ESTRUTURA_DIA = 0.2;   // era 0,1; o dono subiu pra 0,2 (02/10/2026), igual ao recrutamento
   function diaDasEstruturas(E){
     for(const cid of indice().comTorcida){
@@ -1217,7 +1240,7 @@ TO.dominio = (function(){
      pequeno acima de 80, essa sobra volta a ser de ninguém"): bairro
      não fica de dono pra sempre. Quem passa de 80 perde, por dia, 2% do
      que passa — 0,4 a 100%, 0,2 a 90% —, e isso vira de ninguém. Os
-     muros e a sede ainda seguram (0,2 por muro, 0,5 da sede até 80), mas
+     muros e a sede ainda seguram (0,2 por muro, 0,5 da sede), mas
      quem só tem barra e não tem muro desce devagar até 80. */
   const DESGASTE = {piso:80, taxa:0.02};
   function desgaste(E){
@@ -1659,10 +1682,11 @@ TO.dominio = (function(){
       return b ? mexer(E, cid, b.id, venc, GANHO.estrada, {contra:perd, motivo:'estrada'}) : null;
     }
     const bs = bairros(E, cid);
-    const daPerd = bs.filter(b => b.dono === perd && b.sede !== perd).sort((a, c) => a.v - c.v);
+    /* (o bairro da sede também entra: a sede pode ser perdida, 02/10/2026) */
+    const daPerd = bs.filter(b => b.dono === perd).sort((a, c) => a.v - c.v);
     let alvo = daPerd[0] || null;
     if(!alvo){
-      const onde = bs.map(b => ({b, v:(b.partes.find(x => x.t === perd) || {}).v || 0})).filter(x => x.v > 0 && x.b.sede !== perd)
+      const onde = bs.map(b => ({b, v:(b.partes.find(x => x.t === perd) || {}).v || 0})).filter(x => x.v > 0)
         .sort((a, c) => c.v - a.v)[0];
       alvo = onde ? onde.b : null;
     }
@@ -1761,7 +1785,7 @@ TO.dominio = (function(){
           cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
-          donaDoBairro, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
+          donaDoBairro, SEDE_REFAZ, SEDE_PERDIDA, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
           mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, ESTRUTURA_DIA, vizinhosDe, vizinhosDoEstadio, bairroDaPista, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje, recrutandoEm, RECRUTA_DIA,
