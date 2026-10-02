@@ -173,7 +173,10 @@ TO.itinerario = (function(){
          urgente que descer em cima de alguém */
       if(atq && atq.alvo === id)
         o.eventos.push({tipo:'sofrido', torcida:atq.torcida, nome:atq.nome,
-                        ponto:id, abrir:{tela:'defesa', atq}});
+                        ponto:id, abrir:{tela:'defesa',
+                          /* a cidade e o estádio do jogo: a pista é no bairro
+                             dele, a concentração na porta da sede (02/10/2026) */
+                          atq:Object.assign(atq, {mapa:atq.mapa || pracaDoJogo, estadio:j.estadio || null})}});
       /* e a investida que o planejamento marcou, no ponto combinado */
       if(ondeAtaque === id && alvo)
         /* o jogo vai junto no `args` (correção do dono, 22/09/2026): a
@@ -214,7 +217,9 @@ TO.itinerario = (function(){
                           ponto:'emboscada',
                           abrir:{tela:'defesa', atq:{
                             torcida:emb.torcida, nome:emb.nome,
-                            alvo:'emboscada', cena:emb.cena}}}];
+                            alvo:'emboscada', cena:emb.cena,
+                            /* a emboscada é na entrada desta praça (02/10/2026) */
+                            mapa:c, chave:`emb|${c}|ida`}}}];
             /* a campana do olheiro fareja a pista (dono, 24/08/2026):
                a chave repete a da emboscada, então o aviso sai uma vez.
                Em praça com SUB-SEDE nossa o aviso é GARANTIDO (dono,
@@ -272,7 +277,8 @@ TO.itinerario = (function(){
                           ponto:'emboscada',
                           abrir:{tela:'defesa', atq:{
                             torcida:emb.torcida, nome:emb.nome,
-                            alvo:'emboscada', cena:emb.cena}}}];
+                            alvo:'emboscada', cena:emb.cena,
+                            mapa:c, chave:`emb|${c}|volta`}}}];
             if(TO.feed && TO.feed.avisoDoOlheiro)
               TO.feed.avisoDoOlheiro(E, {
                 chave:`emb|${E.data.ano}|${E.data.semana}|${c}|volta`,

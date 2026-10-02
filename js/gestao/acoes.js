@@ -196,6 +196,12 @@ TO.acoes = (function(){
       .sort((a, b) => (a.dono ? a.v : 0) - (b.dono ? b.v : 0) || b.nosso - a.nosso);
   }
 
+  /* a linha do domínio do bairro do alvo (o anúncio da briga, 02/10/2026) */
+  function previaDoAlvo(E, alvo){
+    if(!alvo || !TO.feed || !TO.feed.previaDaBriga) return '';
+    return TO.feed.previaDaBriga(E, {torcidaId:alvo.torcidaId, atacamos:true, alvoTipo:alvo.tipo,
+      local:{cena:alvo.tipo === 'sede' ? 'sede' : 'bar', bairro:alvo.bairro || '', cidade:E.torcida.mapa}}).linha;
+  }
   function alvosDeAtaque(E){
     const mo = TO.mapa && TO.mapa.modelo(E);
     if(!mo) return [];
@@ -421,7 +427,9 @@ TO.acoes = (function(){
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       /* a arquibancada não fica em bairro nenhum (correção do dono,
          21/08/2026): quem nomeia o lugar é a cena */
-      local:{cena: alvo.cena || 'estadio-20', bairro:''},
+      local:{cena: alvo.cena || 'estadio-20', bairro:'',
+             /* (o bairro é o do estádio do jogo: o domínio acha, 02/10/2026) */
+             cidade: alvo.mapa || null, estadio: alvo.estadio || null},
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos});
@@ -600,7 +608,10 @@ TO.acoes = (function(){
       atacamos: false, cobranca: !!alvo.cobranca,
       local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
              bairro: alvo.bairro || (barAlvo && barAlvo.bairro) || '',
-             cidade: alvo.mapa || null},
+             cidade: alvo.mapa || null,
+             /* a estrada: a entrada da praça de passagem; a pista e a
+                concentração: o estádio do jogo (02/10/2026) */
+             chave: alvo.chave || null, estadio: alvo.estadio || null},
       tipoDefesa: alvo.tipo, estrada: naEstrada,
       /* a zona da resenha: é ela que posta no feed (30/09/2026) */
       zona: alvo.zona || null,
@@ -1019,8 +1030,11 @@ TO.acoes = (function(){
                                            '{n} alvos · o de pior relação é {nome}', {nome:q.nome})};
      },
      executar(E, opc){
-       const alvo = escolher(alvosDeAtaque(E), opc);
+       let alvo = escolher(alvosDeAtaque(E), opc);
        if(!alvo) return {ok:false, msg:_t('Esse alvo não existe mais.')};
+       /* O BAR DO ALVO DO MÊS (02/10/2026): a pauta escolheu o bar deles
+          num bairro; a torcida pode ter outro bar antes na lista */
+       if(opc && opc.bairro && alvo.tipo === 'bar') alvo = Object.assign({}, alvo, {bairro:opc.bairro});
        E.acoes.ultimoAtaqueManual = E.data.semana;
        /* teto do dono (18/08/2026): briga de bar é de salão — quem
           defende bota no máximo 40 na cena */
@@ -1028,7 +1042,8 @@ TO.acoes = (function(){
        if(alvo.tipo === 'bar') noAlvo = Math.min(noAlvo, 40);
        return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
                               efetivoRival: noAlvo},
-               msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})};
+               msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})
+                   + (previaDoAlvo(E, alvo) ? ' ' + previaDoAlvo(E, alvo) + '.' : '')};
      }},
 
     /* A AÇÃO SOCIAL NO BAIRRO (o dono, 30/09/2026: "marcar uma ação
@@ -1185,7 +1200,7 @@ TO.acoes = (function(){
     return fora;
   }
 
-  return {aplicarFaixa, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
+  return {aplicarFaixa, previaDoAlvo, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
           porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente, alvosSociais,
           previsaoRecrutamento, TABELA_RECRUTA,

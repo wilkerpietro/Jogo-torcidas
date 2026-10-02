@@ -119,8 +119,12 @@ TO.planejamento = (function(){
   /* o ponto ganha um bairro de verdade da praça, sempre o mesmo */
   function pontosDeAtaque(E){
     const bairros = M().bairrosDe(E.torcida.mapa);
+    /* os arredores são do bairro do estádio (02/10/2026): é lá que a
+       briga mexe no domínio, e é lá que o cartão diz que foi */
+    const D = TO.dominio, est = D && D.bairroDoEstadio ? D.bairroDoEstadio(E, E.torcida.mapa) : null;
     return PONTOS.map((p, i)=>Object.assign({}, p, {
-      bairro: bairros.length ? bairros[(i*7) % bairros.length].nome : ''
+      bairro: p.id === 'arredores' && est ? est.nome
+            : bairros.length ? bairros[(i*7) % bairros.length].nome : ''
     }));
   }
   const pontosDeIda = E => pontosDeAtaque(E).filter(p=>p.ida);

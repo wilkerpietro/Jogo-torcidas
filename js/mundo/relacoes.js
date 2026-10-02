@@ -1924,7 +1924,12 @@ TO.relacoes = (function(){
     /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): a vencedora soma no
        bairro mais exposto da perdedora naquela cidade */
     if(TO.dominio){
-      try{ reg.dominio = !!TO.dominio.brigaIA(E, reg); }catch(e){ /* o domínio não derruba a briga */ }
+      /* o bairro e o ganho ficam na briga: a notícia diz onde foi e quanto
+         mexeu (02/10/2026) */
+      try{
+        const r = TO.dominio.brigaIA(E, reg);
+        reg.dominio = r && r.bairro ? {cid:r.cid, bairro:r.bairro.nome, tid:r.tid, ganho:r.ganho} : null;
+      }catch(e){ /* o domínio não derruba a briga */ }
     }
     return reg;
   }

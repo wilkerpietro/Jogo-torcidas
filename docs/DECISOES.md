@@ -8682,6 +8682,69 @@ A correção dos enclaves feita só no 2D tirava 14 dos 139 pontos de sede de ci
   - Playwright, mapa no jogo de Fortaleza, Porto Alegre e São Paulo, sem erro na página;
   - a conta dos nomes nas 30 praças, em 1440 e 390 px.
 
+## Toda briga tem bairro, e o anúncio diz quanto ela mexe no domínio (o dono, 02/10/2026: "confira se todas as ações de briga do jogo vinculam a algum bairro… reformular todas as mensagens que informam nova briga pra poder dizer o bairro e, além dos efeitos de moral, prestígio e relação, informar quanto mexe na dinâmica de dominação do respectivo bairro")
+
+O exemplo do dono era o itinerário: "A Cearamor fechou a gente na pista, a caminho do estádio! Foi em Pista · Avenida de acesso · a caminho." — sem bairro e sem domínio.
+
+**O levantamento.** De 18 brigas do jogador, 7 não mexiam em bairro nenhum ou mexiam no bairro errado:
+- a emboscada na estrada;
+- a arquibancada;
+- a escolta do aliado;
+- a LNT;
+- a casa de piscina atacada;
+- a concentração fora de casa;
+- a caravana da subsede emboscada.
+
+E mais:
+- o bote no bar do alvo do mês caía no primeiro bar da torcida, não no bar da pauta;
+- "desfazer a reunião" (fugir) caía na sede, não no bairro da reunião;
+- a investida fora de casa ia sempre pro bairro da sede deles, até nos arredores do estádio;
+- o resultado calculava o domínio e não mostrava;
+- nenhum anúncio falava de domínio.
+
+**Uma conta só (js/mundo/dominio.js):**
+- `ondeDaBriga` decide o bairro e os pontos de qualquer briga, e serve tanto pra prévia quanto pro fechamento (`confronto`). Sem bairro na briga:
+  - a estrada cai no bairro mais perto de uma das entradas da praça de passagem ("Entrada norte/sul", "Estrada pra…" da planta), sorteada pela viagem;
+  - arquibancada, pista, arredores e escolta caem no bairro do estádio do jogo;
+  - a concentração cai na porta da sede de quem foi atacado (fora de casa, sem sede nossa lá, no bairro do estádio deles).
+- A LNT, o aliado e a arquibancada deixaram de ficar de fora.
+- Pontos novos:
+  - arquibancada: 6;
+  - estrada: 8.
+- `previaBriga` roda a mesma conta numa cópia da barra (`somarNaBarra`, a parte pura do `mexer`), vencendo e perdendo.
+- `linhaDaPrevia` escreve, por exemplo: "Domínio em Maraponga (a nossa parte: 61,7%): vencendo, sobe pra 70,5%; perdendo, cai pra 52,5% e a Leões da TUF vai de 35,3% pra 44,5%". Quando a barra troca de dona, avisa: "(o bairro vira nosso)" e afins.
+- **As IAs também:**
+  - a emboscada delas cai na entrada da praça;
+  - quem perde sem presença na cidade apanha no bairro do estádio;
+  - de 510 brigas de IA no Brasil em 45 dias, todas caíram num bairro.
+
+**Os anúncios.** O texto ganha o bairro, e o botão de brigar ganha a linha do domínio depois de moral, prestígio e relação:
+- **Itinerário:** "Local: Pista · Avenida de acesso · a caminho. Bairro: Maraponga (Fortaleza)." e "Descendo: Domínio em…". Vale pra pista, concentração, emboscada e investida.
+- **Feed:**
+  - os ataques sofridos (bar, reunião, casa de piscina);
+  - a treta do trimestre;
+  - os alvos do mês na pauta;
+  - os cartões do dia (bar, reunião, treta, casa);
+  - a guerra num jogo alheio;
+  - a escolta;
+  - a LNT (a rodada é num campo de terra de um bairro da nossa cidade);
+  - as duas da subsede;
+  - o ataque manual (na lista de alvos e no "Bonde a caminho");
+  - a arquibancada (na consequência da partida).
+- **O resultado:** a briga diz o bairro de verdade (também na estrada e na arquibancada) e a consequência termina em "Domínio em José Walter (Fortaleza): a nossa parte foi de 90% pra 100% (+10)". Quando quem leva é o rival, diz quanto ele ganhou e onde a nossa parte ficou.
+- **As notícias das IAs:**
+  - quem venceu se gaba do bairro ("Jangurussu tá cada vez mais nosso: +12,4 na barra");
+  - o Porrada diz onde foi e quanto somou.
+
+**De fora (não são briga entre torcidas):** a pressão no CT, o assalto e a briga do tutorial.
+
+**Testado (Playwright):**
+- os 10 tipos que faltavam: a prévia e o fecho, cada um num bairro, com a mensagem certa;
+- 90 dias simulados: todos os anúncios de briga vistos traziam a linha do domínio;
+- o itinerário de um jogo em casa com ataque na pista;
+- 45 dias de brigas das IAs;
+- `i18n_faltando` em 0.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

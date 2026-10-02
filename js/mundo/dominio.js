@@ -74,6 +74,8 @@ TO.dominio = (function(){
     treta: {5:10, 7:14, 10:18},      // treta marcada, pelo tamanho
     rua: 10,                         // ataque na pista, na concentração, na praça
     arredores: 8,                    // arredores do estádio
+    estadio: 6,                      // a arquibancada (02/10/2026)
+    estrada: 8,                      // a emboscada na estrada, na entrada da praça (02/10/2026)
     defesa: 10,                      // quem segurou (ou tomou) o ataque em casa
     bar: 12, quebrou: 6,             // bote no bar (+6 se o bar quebrou)
     sede: 12,                        // bote na sede
@@ -689,6 +691,8 @@ TO.dominio = (function(){
   }
   /* o número de duas casas no idioma do jogo (na planta sozinha, com vírgula) */
   const duas = v => (TO.util && TO.util.numero) ? TO.util.numero(v, 2) : v.toFixed(2).replace('.', ',');
+  /* uma casa, sem o ",0" (a barra nos textos da briga: 34%, 41,5%) */
+  const umaCasa = v => String((TO.util && TO.util.numero) ? TO.util.numero(v, 1) : v.toFixed(1).replace('.', ',')).replace(/[,.]0$/, '');
   /* a nota curta do fator, pra linha do financeiro: "torcida ×0,87" */
   function notaDaTorcida(E, tid, cid, b){
     const f = fatorTorcida(E, tid, cid, b);
@@ -720,19 +724,21 @@ TO.dominio = (function(){
     }
     return p;
   }
-  function mexer(E, cid, b, tid, pts, opc){
+  /* os pontos que a ação vale de verdade no bairro: a torcida do clube
+     ali pesa, e no bairro da sede de outra quem não é da casa ganha
+     metade */
+  function pontosEfetivos(E, cid, x, tid, pts, opc){
     opc = opc || {};
-    const x = bairro(cid, b);
-    if(!E || !x || !tid || !(pts > 0)) return null;
     /* A TORCIDA DO BAIRRO PESA NO GANHO (01/10/2026): ×0,4 onde o clube
        quase não tem torcida, ×1 na média da cidade dele, até ×1,3 no
        reduto. A sede e a subsede se refazem como antes */
     if(!opc.semTorcida && opc.motivo !== 'sede' && opc.motivo !== 'subsede') pts *= fatorGanho(E, tid, cid, x);
     const casa = casaDe(cid, x.id);
     if(casa && casa !== tid) pts *= RESISTE;
-    const st = paraMexer(E, cid);
-    const p = st.b[x.id] = st.b[x.id] || {};
-    const dono0 = donaDoObjeto(p);
+    return pts;
+  }
+  /* A CONTA DA BARRA (pura: a prévia da briga roda numa cópia) */
+  function somarNaBarra(p, tid, pts, contra){
     const antes = p[tid] || 0;
     /* (a conta corre sem arredondar: arredondar a parte e descontar o
        valor cheio criava ou sumia centésimos, e em milhares de passos de
@@ -745,7 +751,7 @@ TO.dominio = (function(){
       return t;
     };
     let ganho = Math.min(pts, 100 - antes), resta = ganho;
-    if(opc.contra && opc.contra !== tid) resta -= tirar(opc.contra, resta);
+    if(contra && contra !== tid) resta -= tirar(contra, resta);
     const soma = () => Object.keys(p).reduce((s, k) => s + p[k], 0);
     resta -= Math.min(Math.max(0, 100 - soma()), resta);
     for(let g = 0; resta > 0.05 && g < 12; g++){
@@ -756,6 +762,17 @@ TO.dominio = (function(){
     ganho -= Math.max(0, resta);
     p[tid] = limitar(antes + ganho, 0, 100);
     fecharBarra(p, tid);
+    return {antes, ganho};
+  }
+  function mexer(E, cid, b, tid, pts, opc){
+    opc = opc || {};
+    const x = bairro(cid, b);
+    if(!E || !x || !tid || !(pts > 0)) return null;
+    pts = pontosEfetivos(E, cid, x, tid, pts, opc);
+    const st = paraMexer(E, cid);
+    const p = st.b[x.id] = st.b[x.id] || {};
+    const dono0 = donaDoObjeto(p);
+    const {antes, ganho} = somarNaBarra(p, tid, pts, opc.contra);
     const dono1 = donaDoObjeto(p);
     const r = {cid, bairro:x, tid, contra:opc.contra || null, antes, depois:p[tid], ganho:um(ganho), dono0, dono1};
     if(dono0 !== dono1) virou(E, r, opc.motivo || '');
@@ -1297,22 +1314,26 @@ TO.dominio = (function(){
   /* =======================================================
      AS AÇÕES QUE MEXEM NA BARRA
      ======================================================= */
-  /* A BRIGA DO JOGADOR (TO.feed.registrarConfronto): quem ganhou soma
-     no bairro da briga, quem perdeu perde. O bairro vem da briga; sem
-     ele, a concentração é na porta da sede de quem foi atacado e a
-     pista, no bairro do estádio. Arquibancada, invasão, escolta e LNT
-     não são briga de bairro. */
-  function confronto(E, d){
+  /* ONDE FOI A BRIGA (o dono, 02/10/2026: "confira se todas as ações de
+     briga do jogo vinculam a algum bairro"): TODA briga do jogador cai
+     num bairro, e é a mesma conta pro anúncio (a prévia) e pro fim
+     (`confronto`). O bairro vem da briga; sem ele:
+       · a estrada (emboscada na caravana): a entrada da praça de
+         passagem por onde a caravana passa;
+       · a arquibancada, a pista, os arredores e a escolta: o bairro do
+         estádio do jogo;
+       · a concentração: a porta da sede de quem foi atacado (fora de
+         casa, sem sede nossa lá, o bairro do estádio deles).
+     A cidade vem da briga; sem ela, a nossa. O bairro também pode ser o
+     nome de uma cidade (a briga da subsede de fora). Empate não mexe. */
+  function ondeDaBriga(E, d){
     if(!E || !d || !d.torcidaId) return null;
     const meu = eu(E), rival = d.torcidaId;
     const L = d.local || {};
     const cena = String(L.cena || '');
-    if(d.lnt || d.aliado || /^estadio|arquibancada|invas|escolta|ct$/.test(cena)) return null;
-    /* empate não mexe (ninguém saiu por cima) */
-    if(d.empatou) return null;
     let cid = L.cidade || null, b = null;
-    const tenta = (c, x) => { const y = bairro(c, x); if(y){ cid = c; b = y; } return !!y; };
-    if(cid) tenta(cid, L.bairro);
+    const tenta = (c, x) => { const y = c && bairro(c, x); if(y){ cid = c; b = y; } return !!y; };
+    if(cid && L.bairro) tenta(cid, L.bairro);
     if(!b && L.bairro){
       /* o bairro pode ser da nossa cidade, da do rival (jogo fora) ou
          ser o nome de uma cidade (a briga da subsede de fora) */
@@ -1322,16 +1343,22 @@ TO.dominio = (function(){
         if(c){ cid = c.id; b = bairroDaFilial(meu, c.id); }
       }
     }
-    if(!cid) cid = E.torcida.mapa;
+    if(!cid || !bairrosDe(cid).length) cid = E.torcida.mapa;
     const atacado = d.atacamos ? rival : meu;
+    const estrada = !!d.estrada || /^emb/.test(cena);
     if(!b){
-      if(/praca|concentra/.test(cena) || d.tipoDefesa === 'concentracao') b = sedeDe(atacado, cid) || sedeDe(atacado);
-      else if(/pista|rua/.test(cena) || d.tipoDefesa === 'pista') b = bairroDoEstadio(E, cid);
-      else if(/bar/.test(cena)) b = null;
+      if(estrada) b = bairroDaEntrada(cid, L.chave || `${rival}|${cid}`);
+      else if(/praca|concentra/.test(cena) || d.tipoDefesa === 'concentracao'){
+        const s = sedeDe(atacado, cid);
+        b = s && bairrosDe(cid).includes(s) ? s : bairroDoEstadio(E, cid, L.estadio);
+      }
+      else if(/^estadio|arquibancada|invas|escolta|pista|rua|arredores/.test(cena) || d.tipoDefesa === 'pista')
+        b = bairroDoEstadio(E, cid, L.estadio);
     }
     if(!b) return null;
-    const ganhou = !!d.ganhamos;
-    let pts = /treta/.test(cena) ? (GANHO.treta[d.tam] || GANHO.treta[7])
+    const pts = estrada ? GANHO.estrada
+            : /treta/.test(cena) ? (GANHO.treta[d.tam] || GANHO.treta[7])
+            : /^estadio|arquibancada/.test(cena) ? GANHO.estadio
             : /arredores/.test(cena) ? GANHO.arredores
             : /reuniao/.test(cena) || d.alvoTipo === 'reuniao' || d.tipoDefesa === 'reuniao' ? GANHO.reuniao
             : /^bar|bote/.test(cena) || d.alvoTipo === 'bar' ? GANHO.bar + (d.quebrou ? GANHO.quebrou : 0)
@@ -1339,28 +1366,134 @@ TO.dominio = (function(){
             : /casa|festa|piscina/.test(cena) ? GANHO.casa
             : d.atacamos === false ? GANHO.defesa
             : GANHO.rua;
+    return {cid, b, pts, cena, meu, rival};
+  }
+
+  /* A BRIGA DO JOGADOR (TO.feed.registrarConfronto): quem ganhou soma
+     no bairro da briga, quem perdeu perde ali */
+  function confronto(E, d){
+    const o = ondeDaBriga(E, d);
+    /* empate não mexe (ninguém saiu por cima) */
+    if(!o || d.empatou) return null;
+    const {cid, b, pts, cena, meu, rival} = o;
+    const ganhou = !!d.ganhamos;
     /* VITÓRIA QUE DÁ PIXAÇÃO (01/10/2026): treta (+1; a de 10, +2), bote
        no bar ou na sede, a reunião da zona e a casa de piscina (+1) */
     const pixos = /treta/.test(cena) ? (d.tam >= 10 ? 2 : 1)
       : (/reuniao|casa|piscina|^bar|bote/.test(cena) || ['bar', 'sede', 'reuniao', 'casa'].includes(d.alvoTipo)) && d.atacamos !== false ? 1 : 0;
     if(pixos) ganharPix(E, ganhou ? meu : rival, pixos);
-    return ganhou ? mexer(E, cid, b, meu, pts, {contra:rival, motivo:cena || 'briga'})
-                  : mexer(E, cid, b, rival, pts, {contra:meu, motivo:cena || 'briga'});
+    const r = ganhou ? mexer(E, cid, b, meu, pts, {contra:rival, motivo:cena || 'briga'})
+                     : mexer(E, cid, b, rival, pts, {contra:meu, motivo:cena || 'briga'});
+    if(r){
+      /* o nosso antes e depois, pro resultado contar */
+      const nosso = (((daCidade(E, cid).b) || {})[r.bairro.id] || {})[meu] || 0;
+      r.nosAntes = ganhou ? r.antes : um(nosso + r.ganho);
+      r.nosDepois = um(nosso);
+    }
+    return r;
   }
-  /* o bairro do estádio principal da cidade (dados/estadios.js) */
-  function bairroDoEstadio(E, cid){
+
+  /* A PRÉVIA (o anúncio da briga): o bairro, e a nossa parte e a deles
+     ali vencendo e perdendo — a mesma conta do fim, numa cópia da barra */
+  function previaBriga(E, d){
+    const o = ondeDaBriga(E, d);
+    if(!o) return null;
+    const {cid, b, pts, meu, rival} = o;
+    const x = bairro(cid, b);
+    if(!x) return null;
+    const barra = Object.assign({}, ((daCidade(E, cid).b) || {})[x.id] || {});
+    const lado = (venc, perd) => {
+      const p = Object.assign({}, barra);
+      const n = pontosEfetivos(E, cid, x, venc, pts, {motivo:'briga'});
+      somarNaBarra(p, venc, n, perd);
+      return {nos:um(p[meu] || 0), eles:um(p[rival] || 0), dona:donaDoObjeto(p)};
+    };
+    return {cid, cidade:(cidadeDe(cid) || {}).nome || cid, bairro:x, pts,
+            antes:{nos:um(barra[meu] || 0), eles:um(barra[rival] || 0), dona:donaDoObjeto(barra)},
+            vencendo:lado(meu, rival), perdendo:lado(rival, meu), meu, rival};
+  }
+  /* a prévia em texto: "Bairro X (Cidade)" e a linha do domínio */
+  function ondeEmTexto(pv){
+    if(!pv) return '';
+    return pv.cidade && pv.cidade !== pv.bairro.nome ? _t('{bairro} ({cidade})', {bairro:pv.bairro.nome, cidade:pv.cidade})
+                                                     : pv.bairro.nome;
+  }
+  function linhaDaPrevia(E, pv){
+    if(!pv) return '';
+    const pc = v => umaCasa(v) + '%';
+    const vira = (r, meu) => r.dona !== pv.antes.dona
+      ? (r.dona === meu ? ' ' + _t('(o bairro vira nosso)')
+         : r.dona ? ' ' + _t('(o bairro vira da {nome})', {nome:nomeDe(r.dona)})
+         : pv.antes.dona === meu ? ' ' + _t('(perdemos o bairro)') : ' ' + _t('(o bairro fica sem dona)'))
+      : '';
+    const P = {bairro:pv.bairro.nome, a:pc(pv.antes.nos), b:pc(pv.vencendo.nos), va:vira(pv.vencendo, pv.meu),
+               e:pc(pv.perdendo.nos), rival:nomeDe(pv.rival), c:pc(pv.antes.eles), d:pc(pv.perdendo.eles), vp:vira(pv.perdendo, pv.meu)};
+    /* perdendo, a nossa parte só cai quando o ponto sai dela */
+    return pv.perdendo.nos < pv.antes.nos - 0.05
+      ? _t('Domínio em {bairro} (a nossa parte: {a}): vencendo, sobe pra {b}{va}; perdendo, cai pra {e} e a {rival} vai de {c} pra {d}{vp}', P)
+      : _t('Domínio em {bairro} (a nossa parte: {a}): vencendo, sobe pra {b}{va}; perdendo, a {rival} vai de {c} pra {d}{vp}', P);
+  }
+  /* o resultado em texto (a mensagem da briga): quanto mexeu e em quem */
+  function linhaDoResultado(E, r){
+    if(!r || !r.bairro) return '';
+    const pc = v => umaCasa(v) + '%';
+    const cidade = (cidadeDe(r.cid) || {}).nome || r.cid;
+    const onde = cidade && cidade !== r.bairro.nome ? _t('{bairro} ({cidade})', {bairro:r.bairro.nome, cidade}) : r.bairro.nome;
+    if(!(r.ganho >= 0.05)) return r.tid === eu(E)
+      ? _t('Domínio em {onde}: a nossa parte já estava em {a}, não tinha o que somar', {onde, a:pc(r.depois)})
+      : _t('Domínio em {onde}: a {nome} já estava no teto ali, a barra não mexeu', {onde, nome:nomeDe(r.tid)});
+    return r.tid === eu(E)
+      ? _t('Domínio em {onde}: a nossa parte foi de {a} pra {b} (+{g})', {onde, a:pc(r.antes), b:pc(r.depois), g:umaCasa(r.ganho)})
+      : _t('Domínio em {onde}: a {nome} ganhou {g} ali; a nossa parte foi de {a} pra {b}', {onde, nome:nomeDe(r.tid), g:umaCasa(r.ganho),
+           a:pc(r.nosAntes != null ? r.nosAntes : 0), b:pc(r.nosDepois != null ? r.nosDepois : 0)});
+  }
+
+  /* o bairro do estádio do jogo (dados/estadios.js): o do nome, quando
+     vem; senão o principal da cidade */
+  function bairroDoEstadio(E, cid, nome){
     const ests = (TO.mundo && TO.mundo.estadiosEm) ? TO.mundo.estadiosEm(cid) : [];
-    for(const e of ests){ const b = bairro(cid, e.bairro); if(b) return b; }
+    const n = norm(nome);
+    const ord = n ? ests.slice().sort((a, c) => (norm(c.nome) === n) - (norm(a.nome) === n)) : ests;
+    for(const e of ord){ const b = bairro(cid, e.bairro); if(b) return b; }
     const bs = bairrosDe(cid);
     return bs.length ? bs[hash(`${cid}|estadio`) % bs.length] : null;
+  }
+  /* A ENTRADA DA PRAÇA (a emboscada na estrada): o bairro mais perto de
+     uma das entradas da planta ("Entrada norte", "Estrada pra…"), a
+     sorteada pela chave da viagem; sem planta, o do estádio */
+  function bairroDaEntrada(cid, chave){
+    const P = TO.dados && TO.dados.plantas && TO.dados.plantas[cid];
+    const bs = bairrosDe(cid);
+    if(!bs.length) return null;
+    if(P && P.g && Array.isArray(P.r)){
+      const ents = P.r.filter(r => r[3] === 'e' && /^(Entrada|Estrada)\b/.test(r[0]));
+      if(ents.length){
+        const [, x, y] = ents[hash(chave) % ents.length];
+        const g = P.g, ci = Math.floor((x - g.x0) / g.cel), cj = Math.floor((y - g.y0) / g.cel);
+        /* (a grade em linhas corridas: acha a célula de bairro mais perto) */
+        let melhor = null, dm = Infinity;
+        for(let j = 0; j < g.ny; j++){
+          const l = g.l[j] || [];
+          for(let k = 0, i = 0; k < l.length; i += l[k + 1], k += 2){
+            if(l[k] < 0) continue;
+            const ii = Math.max(i, Math.min(ci, i + l[k + 1] - 1));
+            const dd = (ii - ci) * (ii - ci) + (j - cj) * (j - cj);
+            if(dd < dm){ dm = dd; melhor = l[k]; }
+          }
+        }
+        const pb = melhor != null && P.b[melhor];
+        const b = pb && bairro(cid, pb[0]);
+        if(b) return b;
+      }
+    }
+    return bairroDoEstadio(null, cid);
   }
 
   /* A BRIGA DAS IAs (TO.relacoes.registrarBrigaIA): a vencedora soma no
      bairro mais exposto da perdedora naquela cidade (o dela de barra
      mais baixa, fora da sede), ou onde a perdedora tem mais barra */
   function brigaIA(E, reg){
-    /* a emboscada na estrada não é briga de bairro */
-    if(!E || !reg || !reg.a || !reg.b || reg.tipo === 'estrada') return null;
+    if(!E || !reg || !reg.a || !reg.b) return null;
     const venc = reg.ganhouA ? reg.a.id : reg.b.id, perd = reg.ganhouA ? reg.b.id : reg.a.id;
     /* O ALVO DO MÊS (01/10/2026): a briga que a IA foi buscar acontece no
        bairro que ela quer virar, e é ali que a barra mexe */
@@ -1375,6 +1508,12 @@ TO.dominio = (function(){
     let cid = reg.mapa;
     if(!cid){ const c = indice().C.find(x => x.nome === reg.cidade || x.id === reg.cidade); cid = c && c.id; }
     if(!cid || !bairrosDe(cid).length) return null;
+    /* A ESTRADA TAMBÉM É BAIRRO (02/10/2026): a emboscada das IAs cai na
+       entrada da praça, como a nossa */
+    if(reg.tipo === 'estrada'){
+      const b = bairroDaEntrada(cid, `emb|${cid}|${venc}|${perd}|${reg.semana || ''}`);
+      return b ? mexer(E, cid, b.id, venc, GANHO.estrada, {contra:perd, motivo:'estrada'}) : null;
+    }
     const bs = bairros(E, cid);
     const daPerd = bs.filter(b => b.dono === perd && b.sede !== perd).sort((a, c) => a.v - c.v);
     let alvo = daPerd[0] || null;
@@ -1383,6 +1522,8 @@ TO.dominio = (function(){
         .sort((a, c) => c.v - a.v)[0];
       alvo = onde ? onde.b : null;
     }
+    /* quem perdeu não tem nada na cidade: a briga foi na rua do estádio */
+    if(!alvo) alvo = bairroDoEstadio(E, cid);
     if(!alvo) return null;
     const tam = reg.a.n || 0;
     const pts = reg.tipo === 'treta' ? (GANHO.treta[tam] || GANHO.treta[7])
@@ -1477,7 +1618,7 @@ TO.dominio = (function(){
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
           donaDoBairro, maiores, membrosDe, rivais, fator, notaDoCorte, siglaDe, nomeDe,
-          mexer, confronto, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
+          mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};

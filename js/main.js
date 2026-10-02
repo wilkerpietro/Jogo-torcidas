@@ -2033,6 +2033,12 @@
        relógio, aos 90. */
     m.consequencia = (m.consequencia || '') +
       ' ' + _t('O clima azedou e a arquibancada se pegou.');
+    /* A ARQUIBANCADA TAMBÉM É BAIRRO (02/10/2026): o do estádio, e a
+       briga mexe na barra dele */
+    const rivalDaBriga = ((d.presenca || []).filter(p => p.id && p.casa !== !!d.somosCasa).sort((a, b) => b.n - a.n)[0] || {}).id;
+    const pvA = rivalDaBriga && TO.feed.previaDaBriga ? TO.feed.previaDaBriga(e, {torcidaId:rivalDaBriga, atacamos:true,
+      local:{cena:'estadio-20', bairro:'', cidade:d.mapa || null, estadio:d.estadio || null}}) : null;
+    if(pvA && pvA.onde) m.consequencia += ' ' + _t('Bairro: {bairro}.', {bairro:pvA.onde}) + (pvA.linha ? ' ' + pvA.linha + '.' : '');
     /* quem ficou quieto entra na consequência mais abaixo, depois de
        a gente saber quem é aliado de quem */
     /* quem abre a arquibancada pausa a partida — vale pra quem chega
@@ -2135,7 +2141,8 @@
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'estadio', alvo:{torcidaId: rivalTop.id,
           nome:(TO.mundo.torcida(rivalTop.id)||{}).nome || rivalTop.nome,
-          nossos:nosT, deles:delesT, efetivo:delesT, cena:local}})
+          nossos:nosT, deles:delesT, efetivo:delesT, cena:local,
+          mapa:d.mapa || null, estadio:d.estadio || null}})
     });
     TO.estado.salvar();
     atualizarFeed();
@@ -2375,22 +2382,29 @@
     let voz, texto, bts;
     /* onde foi: a parada de verdade dentro da fase (dono, 08/09/2026) */
     const onde = ev.lugarTxt || p.nome;
+    /* E O BAIRRO, COM O QUE A BRIGA MEXE NELE (o dono, 02/10/2026: "Foi em
+       Pista · Avenida de acesso · a caminho" não dizia o bairro nem o
+       domínio). A conta é a do fim da briga (TO.dominio.ondeDaBriga). */
+    const pv = itnPrevia(ev);
+    const local = pv && pv.onde ? _t('Local: {onde}. Bairro: {bairro}.', {onde, bairro:pv.onde})
+                                : _t('Local: {onde}.', {onde});
     if(ev.tipo === 'investida'){
       voz = _t('Diretor de rua · investida marcada no planejamento');
-      texto = _t('Hoje é o dia. A {nome} vai estar em {onde}, e a gente vai pra cima.', {nome:ev.nome, onde});
+      texto = _t('Hoje é o dia. A {nome} vai estar em {onde}, e a gente vai pra cima.', {nome:ev.nome, onde})
+              + (pv && pv.onde ? ' ' + _t('Bairro: {bairro}.', {bairro:pv.onde}) : '');
       bts = [{rot:_t('Ir pra cima'), briga:true}];
     } else if(ev.tipo === 'emboscada'){
       voz = _t('Emboscada · {nome}', {nome:ev.nome});
       texto = (S.emboscada ? S.emboscada.texto(ev.nome)
                            : _t('Pegaram a caravana na estrada. A {nome} fechou a pista.', {nome:ev.nome}))
-              + ' ' + _t('Foi em {onde}.', {onde});
+              + ' ' + local;
       bts = [{rot:(S.emboscada||{}).brigar || _t('Descer pra treta'), briga:true},
              {rot:(S.emboscada||{}).fugir  || _t('Mandar seguir viagem'), briga:false}];
     } else {
       const cfg = S[ev.ponto] || S.bar || {};
       voz = _t('Caiu em cima da gente · {nome}', {nome:ev.nome});
       texto = (cfg.texto ? cfg.texto(ev.nome)
-                         : _t('A {nome} caiu em cima da gente.', {nome:ev.nome})) + ' ' + _t('Foi em {onde}.', {onde});
+                         : _t('A {nome} caiu em cima da gente.', {nome:ev.nome})) + ' ' + local;
       bts = [{rot:cfg.brigar || _t('Pra cima deles'), briga:true},
              {rot:cfg.fugir  || _t('Deixar quieto'),  briga:false}];
     }
@@ -2404,6 +2418,8 @@
       {rot:_t('Simular'), briga:true, simular:true});
     cx.appendChild(el('div',{class:'voz', texto:voz}));
     cx.appendChild(el('p',{texto}));
+    if(pv && pv.linha)
+      cx.appendChild(el('div',{class:'custo', texto:_t('Descendo: {linha}.', {linha:pv.linha})}));
     if(ev.tipo !== 'investida')
       cx.appendChild(el('div',{class:'custo',
         html:_t('Ninguém descendo: <b>Moral −3 · Prestígio −3,5 · Relação −6</b>')}));
@@ -2418,6 +2434,26 @@
     });
     cx.appendChild(caixa);
     return cx;
+  }
+
+  /* a briga da parada na forma do `registrarConfronto`, pra prévia do domínio */
+  function itnPrevia(ev){
+    const e = E(), F = TO.feed;
+    if(!F || !F.previaDaBriga || !ev) return null;
+    const atq = (ev.abrir && ev.abrir.atq) || {};
+    if(ev.tipo === 'investida'){
+      const j = ev.abrir && ev.abrir.args && ev.abrir.args.jogo;
+      const o = TO.praca && TO.praca.ondeDaInvestida ? TO.praca.ondeDaInvestida(e, j) : null;
+      if(!o) return null;
+      return F.previaDaBriga(e, {torcidaId:ev.torcida, atacamos:true,
+        local:{cena:o.local || 'rua', bairro:o.bairro || '', cidade:o.cidade || null, estadio:j && j.estadio}});
+    }
+    if(ev.tipo === 'emboscada')
+      return F.previaDaBriga(e, {torcidaId:ev.torcida, atacamos:false, estrada:true, tipoDefesa:'emboscada',
+        local:{cena:atq.cena || 'emb-onibus', cidade:atq.mapa || ev.cidade || null, chave:atq.chave || null}});
+    return F.previaDaBriga(e, {torcidaId:ev.torcida, atacamos:false, tipoDefesa:atq.alvo || ev.ponto,
+      local:{cena:atq.cena || (ev.ponto === 'concentracao' ? 'praca' : 'rua'), bairro:atq.bairro || '',
+             cidade:atq.mapa || null, estadio:atq.estadio || null}});
   }
 
   function itnResponder(p, ev, briga, cx, simular){
@@ -10557,7 +10593,8 @@
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
                                 cena: atq.cena || 'bar', zona: atq.zona || null, mapa: atq.mapa || null,
-                                bairro: atq.bairro || '',
+                                bairro: atq.bairro || '', chave: atq.chave || null,
+                                estadio: atq.estadio || null,
                                 nome:(o&&o.nome)||_t('Rival'),
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
@@ -10590,7 +10627,9 @@
             de:U.dinheiro(alvo.rende[0]), ate:U.dinheiro(alvo.rende[1]), n:alvo.seguranca})
         : a.id === 'social-bairro' ? alvo.nota
         : _t('{bairro} · tensão {t} · {n} membros', {bairro:alvo.bairro,
-            t:Math.round(alvo.tensao), n:alvo.efetivo});
+            t:Math.round(alvo.tensao), n:alvo.efetivo})
+          /* o bote no bar ou na sede mexe no bairro dele (02/10/2026) */
+          + (a.id === 'atacar' && TO.acoes.previaDoAlvo ? (l => l ? '<br>' + l : '')(TO.acoes.previaDoAlvo(e, alvo)) : '');
       b.innerHTML =
         `<span class="ic">${IC.get(a.icone)}</span>
          <span class="txt"><span>${alvo.nome}</span><small>${dir}</small></span>`;
