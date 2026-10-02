@@ -8191,6 +8191,17 @@ O pedido: "remova maranguape do jogo e crie mais um bairro pra juazeiro do Norte
 
 **As escolhas que o pedido deixou em aberto** (dá pra mudar depois): o bairro novo é Nobre (herdou a classe do Maranguape: a praça fica com a mesma mistura de classes, e Juazeiro com um bairro Médio, um Baixo e um Nobre); o rio sozinho pode deixar uma cidade com água de três lados se o quarto for terra (sobram 4: Bragança Paulista, Passo Fundo, Parnaíba e Natal); o rio que não tem saída rio acima ainda nasce numa lagoa (Alagoas, Bahia, Sergipe); e o segundo rio não pode correr ao lado do primeiro (a 120 m por mais de 150 m). Detalhes e medidas: `docs/JOGO_3D.md` §37.
 
+## O bairro é um pedaço só, com a sede dentro (pedido do jogo 2D, dono, 02/10/2026)
+
+O pedido: "a sede tem que ficar DENTRO do bairro dela, e todo bairro tem que ser um território contínuo, sem enclave." O dono: "eles sempre têm que ter uniformidade territorial".
+
+- **Todo bairro é um pedaço só na grade dos bairros** (vizinhança de 4), nas 30 praças. A única exceção é a quadra solta do outro lado do mato, que fica com o bairro mais perto dela pelo vazio — e aí esse bairro é o mais perto dela.
+- **A sede fica dentro do bairro dela**, o bairro dos dados: o bairro cresce a partir da quadra da sede, e o pedaço do bairro que ficava do outro lado de outro se liga a ela pelas quadras do caminho. A sede não muda de terreno nem de bairro. As 14 sedes que caíam fora (JGT, NAÇÃO, P9, TTI, Gaviões, TUP, FJV, TOIC, U92, IAV, C13, TUTB, INDEP, RAÇA) passam; as 139 das 30 praças também.
+- **A rua de acesso do estádio é do bairro do estádio**: o estádio do outro lado do mato chega na cidade por ela.
+- **As zonas ficam no lugar** e os bairros de quadra com tamanhos parecidos — na maioria das praças, iguais ou mais parecidos que antes.
+
+**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): o jeito "a" do pedido (o bairro cresce a partir da sede, em vez de trocar a sede de terreno); onde a contiguidade não deixa igualar (São Paulo: a sede da Casa Verde do outro lado da zona do estádio), o bairro da sede fica maior, com um braço até ela; o bairro do estádio sem quadra a 50 m que sirva fica sem, e o bar dele vai pro lote livre mais perto. Detalhes e medidas: `docs/JOGO_3D.md` §38.
+
 ## A zona leva os mais fortes dela, dos dois lados (régua do dono, 22/09/2026)
 
 O dono sentia a IA mais forte na casa de piscina, atacando e defendendo. Medido: a nossa zona era um sorteio da torcida inteira (média 14,9 de força+defesa, seis novatos e nove componentes em vinte) e a zona deles saía do gerador que corta o topo do plantel (25,0, nove frentes e dois diretores) — e, pior, cada um dos cinco pontos da casa recebia o topo de novo. A régua nova é a mesma pros dois lados: cada membro tem a sua zona (hash do id, fixa pra sempre — `acoes.zonaDoMembro`) e o bonde da zona são os mais fortes daquela zona, até o teto (`bondeDaZona`); do lado deles o plantel inteiro é gerado, repartido nas quatro zonas na roda da fila de força, e a zona pedida leva os mais fortes dela (`combate.fichasDaZona`), entregues prontos à cena (`cfg.fichasRival`), cada grupo tirando a sua fatia na ordem. Num jogo novo da TUF contra a MOFI: nossa zona 17,5, a deles 15,2 (o topo do plantel deles daria 25,3). As outras duas causas medidas ficaram anotadas pro dono decidir: a casa favorece quem defende (portão-funil; com fichas iguais o atacante ganha 3 a 5 em 16, seja quem for) e a pedra automática é só da IA (na praça, fichas iguais, nós atacando: 1 em 16 com pedra, 10 em 16 sem).

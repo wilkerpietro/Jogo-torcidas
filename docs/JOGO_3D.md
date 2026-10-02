@@ -3944,3 +3944,128 @@ um U), Parnaíba e Natal (o rio de um lado, o mar do outro).
   novo pela sessão do 2D pra pegar os rios novos.
 - **O rio continua chão pintado**, como na §36: sem margem em degrau nem
   água que mexe, e a ponte baixa.
+
+## 38. O bairro é um pedaço só, com a sede dentro (02/10/2026)
+
+**O pedido** (do jogo 2D, que assa o mapa dos bairros desta planta): "a sede
+tem que ficar DENTRO do bairro dela, e todo bairro tem que ser um território
+contínuo, sem enclave." E o dono: "eles sempre têm que ter uniformidade
+territorial". O bairro da sede continua o dos dados (o 2D usa esse bairro
+no domínio), `dados/plantas.js` e `img/mapas/` ficam como estão (o 2D assa
+de novo).
+
+### O que estava errado
+
+- **14 sedes fora do bairro delas na grade**: a quadra da sede era presa
+  no bairro dos dados, mas a semente do bairro (no diagrama de potência,
+  `repartir`) andava pro meio da zona pra igualar os tamanhos, e a sede
+  ficava na ponta de uma cunha fina — sem nenhuma quadra no caminho. A
+  quadra da sede virava um enclave no meio de outro bairro (em Fortaleza,
+  a sede da JGT, do Jardim das Oliveiras, no meio do Bom Jardim).
+- **44 pedaços soltos em 17 praças**: "quem encosta em quem" era a caixa
+  das unidades com folga de até 32 m — a quadra que só toca a outra na
+  quina da esquina e as dos dois lados do mato contavam como vizinhas, e o
+  bairro inteiro nessa conta saía em pedaços na grade. E a quadra "de
+  longe" do bairro do estádio (pro bar a 50 m dele) era escolhida pela
+  caixa, às vezes do outro lado de outro bairro.
+
+### O que mudou (`setorizar`)
+
+- **A grade das unidades**: a grade de 4 m sai antes de repartir, com a
+  unidade (quadra, favela, estádio) em cada célula — as mesmas regras de
+  antes: a rua até a unidade mais perto (~28 m, só na rua e na calçada), o
+  entorno do estádio, o lote do bar. O bairro de uma célula é o da unidade
+  dela, e **duas unidades encostam quando duas células delas se tocam pelo
+  lado** (`VIZ_DAS_UNIDADES`) — a mesma vizinhança de 4 que o 2D usa. Daí,
+  bairro inteiro nas unidades é bairro inteiro na grade.
+- **A rua de acesso do estádio é do estádio** (como o entorno): o estádio
+  do outro lado do mato só chega na cidade por ela, e o bloco dele ficava
+  ilhado (em Porto Alegre, ia pra favela mais perto).
+- **`repartir`** ganha dois começos: um com a semente de cada bairro de
+  sede presa na sede (o bairro cresce em volta da quadra dela) e, em cada
+  começo de "bairro k no estádio", o estádio dele de verdade. E devolve
+  todas as tentativas: **`escolherDivisao` passa cada uma por `inteirar` e
+  `equilibrar` e fica com a de menor `notaDaZona`** (o mesmo erro de
+  tamanho + o pedaço redondo, no bairro já inteiro). O diagrama cru não
+  sabia que o bairro ia ser um pedaço só: em São Paulo, o estádio do norte
+  ia pro bairro cuja sede fica do outro lado da zona.
+- **`inteirar`** (no lugar do `juntarPedacos`): o pedaço que fica é o da
+  quadra da sede, senão o maior. O pedaço que importa (o resto do bairro
+  quando a sede ficou do outro lado; o estádio preso; a quadra de longe
+  do estádio; o lote de bar da âncora) se liga ao que fica pelo caminho
+  mais barato de quadras dos vizinhos — nunca a quadra presa de outro
+  bairro, a favela, o estádio nem a cidade-modelo, e o vizinho não pode
+  ficar partido num pedaço que importe pra ele; até meio bairro médio da
+  zona. O resto vai pro vizinho que mais encosta (o da mesma zona
+  primeiro). **A ilha** (o pedaço sem vizinho nenhum) vai pro bairro mais
+  perto dela pelo vazio — a mesma conta do 2D.
+- **`equilibrar`** só mexe nos bairros da zona (o de outra zona com uma
+  quadra ali — a da sede no gomo vizinho — nem entra na conta nem recebe)
+  e confere o bairro inteiro na praça toda, não só na zona.
+- **A quadra de longe do bairro do estádio** (o bar a 50 m): medida como a
+  regra do bar (`criarVagasExtras`: até a área do estádio; a quadra serve
+  quando a ponta dela passa de 50 m mais o fundo de um lote), encostada no
+  pedaço do bairro que tem o estádio e sem ser a única ligação de outras
+  quadras com o bairro delas (em Curitiba, a fileira de cima da zona oeste
+  ia junto). A quadra da sede do bairro já serve. Sem quadra assim, o bar
+  do bairro vai pro lote livre mais perto, como já era.
+- **O estádio no bairro Nobre**: custa 6%, como antes; e o **único Nobre
+  da praça** com o estádio e menos de um terço de bairro de casa custa 30%
+  — no Mato Grosso, o Santa Rosa ficava com o estádio e uma quadra, sem
+  torre; a guarda do Nobre caía e a favela tomava o bairro.
+- **A grade sem enclave**: no fim, a mesma conta do
+  `ferramentas/plantas_sem_enclaves.py` do 2D (o principal é o maior que
+  encosta em outro bairro; o outro pedaço vai pro vizinho de mais divisa;
+  a ilha, pro mais perto pelo vazio), protegendo o pedaço da sede. Ela só
+  pega o que a própria grade parte (8 células, no Belo Horizonte);
+  `SETORES.mexidas` e `SETORES.falhas` contam. O nome do bairro fica no
+  pedaço principal dele.
+
+### Medido nas 30 praças
+
+- **Pedaços**: de 44 pedaços soltos em 17 praças pra 0. Sobram 11 ilhas,
+  todas com o próprio bairro como o mais perto pelo vazio (a exceção que o
+  2D aceita): a quadra solta do outro lado do mato dos mapas grande e
+  médio.
+- **Sedes**: das 14 fora do pedaço principal do bairro dos dados pra 0 —
+  as 139 sedes das 30 praças no pedaço principal, e as 14 da lista do 2D
+  passam uma a uma.
+- **A conferência do 2D**: as 30 praças assadas do `cenario3d/planta.html`
+  do jeito do `assar_plantas.js` e passadas no `plantas_sem_enclaves.py`
+  deles: nenhuma célula, sede ou nome mexido.
+- **Zonas no lugar**: a fração das células de cada praça no gomo da zona
+  do bairro fica igual (0,86 a 0,95); o meio de cada zona andou 21 m no
+  máximo; Norte em cima, Leste à direita em todas.
+- **Tamanhos** (maior ÷ menor bairro de quadra, em células): melhor em 6
+  praças (Brasília 1,27 → 1,16, Santos 1,33 → 1,18, Fortaleza 1,75 → 1,66,
+  Litoral Catarinense, Rio Grande do Norte, ABC), igual em 14 e pior em 10
+  — São Paulo 1,99 → 2,88, Goiânia 1,41 → 1,70, Recife 1,70 → 1,96,
+  Porto Alegre 1,79 → 1,96, Belém 1,72 → 1,96, e um tico em Bahia,
+  Curitiba, Manaus, Maranhão e Mato Grosso.
+- **Bares fora do bairro que o jogo deu**: de 15 pra 8 (de 139).
+- **O resto**: a pé, "tudo ligado" nas 30 praças; o dia de jogo em 8
+  praças sem erro de bonde nem da página; a caravana chega nas 4 testadas;
+  o teste dos bairros (sede no bairro dos dados, nenhum vazio, todo bar
+  com bairro) com 0 problema e o mesmo tempo de montagem (27,9 s → 27,3 s
+  nas 30); o Jogo 3D na Paraíba sem erro; os estádios presos pelos dados
+  (Jonas Duarte em Anápolis, as cidades de fora) no bairro deles.
+
+### Limites (sinceros)
+
+- **São Paulo ficou mais desigual** (Casa Verde 2.195 células, Bom Retiro
+  759): o estádio do norte sozinho pesa mais que um bairro e a sede da
+  Casa Verde fica do outro lado da zona — o bairro inteiro tem que ir do
+  estádio até ela. Antes a conta fechava porque a sede era um enclave. No
+  mesmo tom, mais leve, Goiânia, Recife, Porto Alegre e Belém.
+- **Braço até a sede**: alguns bairros de sede ganharam um braço de uma
+  quadra até ela (o Jardim das Oliveiras em Fortaleza, a Anápolis em
+  Goiânia). É o preço de não mudar a sede de terreno.
+- **A quadra do outro lado do mato** fica com o bairro mais perto dela
+  pelo vazio, que muitas vezes é a favela (Samambaia Norte em Brasília,
+  Vila Pinto em Curitiba): a favela fica com uma quadra solta, como o 2D
+  já fazia.
+- **O bairro do estádio sem quadra a 50 m** acontece quando a única quadra
+  que serviria cortaria outras do bairro delas: o bar dele vai pro lote
+  livre mais perto, em outro bairro.
+- **O mapa 2D precisa ser assado de novo** pela sessão do 2D
+  (`ferramentas/assar_plantas.js`).
