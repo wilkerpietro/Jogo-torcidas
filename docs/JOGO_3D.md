@@ -4069,3 +4069,174 @@ de novo).
   livre mais perto, em outro bairro.
 - **O mapa 2D precisa ser assado de novo** pela sessão do 2D
   (`ferramentas/assar_plantas.js`).
+
+## 39. A sede vaga sai; a loja e a subsede da torcida (02/10/2026)
+
+**O pedido**: "exclua essa parte de sede vaga que não tem sentido. crie um
+modelo de loja substituindo o bar no mesmo prédio, mas sendo uma loja
+temática da torcida com as camisas da torcida e do time à venda. crie
+também uma subsede do tamanho de uma casa comum, com dois compartimentos
+apenas (barzinho embutido e pátio)." Com as fotos de referência: a loja
+da Mancha por dentro, a fachada de uma LOJA OFICIAL, as fachadas das
+subsedes da Mancha (Rio Claro, Matão), da Independente (Marília), dos
+Gaviões (Guarulhos) e a Independente de Sorocaba por dentro. E no meio
+da rodada: "o letreiro deve ser SUBSEDE {praça} se for filial".
+
+### A sede vaga sai
+
+- **O espaço de sede sem dono é casa**: o terreno que o gerador guardava
+  pra uma sede (os terrenos de sede, os espaços das quadras de hoje e das
+  cidades-modelo) e que nenhuma torcida da praça tomou não aparece mais
+  como "sede vaga" — no 2D, no 3D e na ficha ele é a fileira de casas da
+  quadra, como as vizinhas. O gerador (`proposta.js`) já deixa as casas de
+  cada espaço prontas (`casasNaCaixa` com a lista sem muro; o quintal do
+  terreno cortado com a casa) e a planta só esconde as casas debaixo da
+  sede que tem dono (`sobSede`).
+- **A reserva de sede** (a ponta de uma quadra de casas que só vira sede
+  quando precisa) encolhe pro lado de dentro da quadra até não pisar em
+  lote visível pela metade; com menos de 17,5 m ela não serve.
+
+### A loja da torcida (`lojaTorcidaDireita`, `js/diajogo/casas3d.js`)
+
+O prédio do bar da torcida — o corredor da escada com a porta do
+apartamento e o apartamento em cima, com a sacada — com a loja no térreo:
+
+- **A fachada de vidro rente à calçada** (a LOJA OFICIAL da foto): a
+  mureta e a testeira na cor 1, o LED nas bordas, o escudo no meio entre
+  LOJA e a sigla (os decalques soltos do lote, `placasDoLote`); a vitrine
+  com os manequins de camisa e bermuda; o vidro é uma folha transparente
+  (`vidros`), então da rua se vê a loja.
+- **Por dentro** (a loja da Mancha): o piso de tábua, as camisas no
+  cabide em duas fileiras na parede da escada, a bandeira e mais uma
+  fileira na parede da esquina, as mesas de cano com as camisas dobradas,
+  a arara, a coluna com a sigla de cima a baixo, o forro de tela com os
+  spots e o balcão do caixa; na parede do fundo, na cor da torcida, o
+  escudo e as camisas abertas — as da torcida (as cores dela, a sigla, o
+  escudo) e as do time (as cores do clube, a sigla, o escudo dele).
+- **No catálogo**, "Estruturas da torcida › Loja da torcida", no lote do
+  bar do mapa (7,4 × 5,4 m), com "Outra torcida" e "Ver por dentro".
+
+### A subsede (`subsedeTorcida`, `js/diajogo/casas3d.js`)
+
+**O lote de casa comum do mapa é raso**: medido em São Paulo, a casa tem
+de 3 a 7 m de frente (4,9 m no meio) e de 4,5 a 5,8 m de fundo. A
+subsede mora numa casa dessas, das mais largas (5,5 a 9,5 m de frente),
+e tem só os dois cômodos do pedido:
+
+- **A fachada** (Rio Claro, Matão, Marília, Guarulhos): a parede em
+  faixas — o rodapé e a faixa de cima na **cor forte** da torcida (a mais
+  escura das duas: o verde da Mancha, o vermelho da Independente, o preto
+  dos Gaviões), o meio claro —, a porta de enrolar aberta com o toldo de
+  chapa na cor forte e a mão-francesa, o escudo pintado do lado da porta
+  e, na platibanda, o nome da torcida em letra grande com o brilho do LED
+  e, na faixa de cima, **SUBSEDE e o bairro**. **A filial** (a subsede de
+  uma torcida de outra praça) diz **SUBSEDE e a praça**; na praça de
+  várias cidades, a cidade do bairro (SUBSEDE ITU, não SUBSEDE INTERIOR
+  DE SP). A planta põe o texto pronto em `l.subsede.letreiro`.
+- **O pátio coberto** (Sorocaba por dentro): o telhado de metal nas
+  treliças, caindo pro fundo, com a faixa de telha clara; as paredes de
+  bloco pintado de branco com o rodapé cinza e a faixa da cor forte no
+  alto; o escudo da torcida pintado na parede livre (a que a rua vê pela
+  porta) e o do time na do lado da porta; as bandeiras da torcida e do
+  time penduradas na treliça; a lâmpada; a mesa e as cadeiras de plástico
+  brancas na faixa livre (a da porta é caminho); os surdos encostados na
+  fachada e a TV na parede.
+- **O barzinho embutido** no fundo (1,45 a 3,2 m, pelo fundo do lote): a
+  porta atrás da porta da rua e o balcão de alvenaria do outro lado — a
+  mureta de azulejo e o tampo de granito saindo pro pátio —, a faixa de
+  pano da subsede por cima; dentro, o piso xadrez, a prateleira de
+  garrafa, a cervejeira, o freezer atrás do balcão e o escudo.
+- **No catálogo**, "Estruturas da torcida › Subsede da torcida", num lote
+  de 6,6 × 5,2 m, com "Outra torcida", "Filial (de fora)" e "Ver por
+  dentro" (o corte a 2,85 m, por cima do forro do barzinho).
+
+### No mapa: o bairro que o jogo diz (`criarEstruturas`)
+
+O jogo diz o bairro de cada loja, subsede e filial (`TO.dominio.
+estruturas`: o patrimônio do jogador; o mundo vivo da IA, que começa sem
+loja e sem subsede e compra com o tempo; as filiais de outras praças
+nesta). Cada uma ganha um lote no bairro dela:
+
+- **A loja abre primeiro numa vaga de bar sem dono do bairro** (o bar
+  fechado do ALUGA-SE: é o mesmo prédio); sem vaga, uma casa do bairro de
+  5 a 9,5 m de frente vira o prédio do bar com a loja.
+- **A subsede e a filial vão numa casa comum** de 5,5 a 9,5 m de frente e
+  4,4 a 9 m de fundo (a de 6 m ou mais ganha); na favela, uma casa grande
+  (a casa comum lá é estreita demais).
+- **Em degraus**, pra estrutura não sumir do bairro: primeiro fora do
+  entorno do estádio, a 50 m ou mais dele (a regra da sede e do bar) e a
+  15 m de bar, loja e subsede (12 m na favela), o mais perto do meio do
+  bairro; sem lote assim, o entorno vale e ganha o lote mais longe do
+  estádio (10 m ou mais); por último, a distância das outras cai pra 6 m.
+  A torcida do jogador escolhe primeiro.
+- **2D**: o lote na cor da torcida com a borda na segunda (como o bar) e
+  a letra L ou S; de longe, a loja é um quadrado e a subsede um losango;
+  a etiqueta "Loja da X", "Subsede X · Bairro", "Filial X · Praça"; a
+  ficha com o bairro, o letreiro e onde ela abriu. A legenda ganhou as
+  duas.
+- **3D e cenário**: o lote monta o modelo dele (as categorias novas
+  `lojatorcida` e `subsede` contam como prédio pra câmera); a fachada da
+  estrutura não leva pixação.
+- **Jogo 3D** (`jogo3d.js`): a praça remonta quando as lojas e subsedes
+  do jogador mudam (as da IA entram na próxima montagem, como os bares),
+  e a câmera passa na nova ("A loja nova da X abriu as portas", "A
+  subsede nova da X em Y abriu as portas"). A API do cenário ganhou
+  `estruturas()` (o tipo, o dono, o bairro, o lote e a porta na calçada).
+- **A próxima montagem desfaz tudo** (`desfazerEstruturas`: a casa volta
+  a ser casa, a vaga volta a ser bar), e a fotografia da praça
+  (`camposDaPraca`) guarda os campos novos.
+- **O exemplo** (a planta sem o jogo, o Pages e o artefato, onde a IA
+  ainda não comprou nada): a camada **"Lojas e subsedes de exemplo"** põe
+  uma loja e uma subsede pra cada torcida com sede, no bairro que a IA do
+  jogo escolheria (`bairroPadrao`), e a filial de uma torcida de outra
+  praça; a praça monta de novo, e o cenário 3D que abrir depois vem com
+  elas. Com o jogo aberto, vale o save.
+
+### Medido
+
+- **A sede vaga**: nas 30 praças, os 82 espaços sem dono viraram 649 casas;
+  nenhuma casa escondida em espaço sem dono, nenhuma visível debaixo de
+  sede com dono, nenhum lote por cima de outro (igual à medição feita logo
+  depois da mudança).
+- **As estruturas nas 30 praças**, com uma carga de jogo (cada torcida com
+  sede com uma loja e uma subsede no bairro que a IA escolheria, mais uma
+  filial de fora): **308 de 308 com lote no bairro dito** (antes dos
+  degraus, 283: o bairro do estádio só tem casa larga no entorno, e a
+  favela colada no estádio não tinha casa grande longe dele); 18 lojas na
+  vaga do bar fechado e 121 em casa; 43 estruturas a menos de 50 m do
+  estádio; nenhum erro. Na praça de várias cidades, a filial de uma
+  torcida carioca no Interior de SP saiu com "SUBSEDE ITU"; em São Paulo,
+  "SUBSEDE SÃO PAULO".
+- **O save**: a loja e a subsede do jogador gravadas com o NOME do bairro
+  (como o jogo grava) caem nos bairros certos, a API `estruturas()`
+  devolve as duas, e sem o save a praça volta sem nenhuma.
+- **O cenário da Paraíba** com 5 lojas, 6 subsedes e os 8 bares montou em
+  23 s, sem erro.
+- **Nada mais mudou**: os bairros e as zonas iguais à medição anterior
+  (nenhum pedaço solto, nenhuma sede fora do bairro, o meio da zona que
+  mais andou 21 m), os mesmos 8 bares de 139 fora do bairro dado, e as
+  sete conferências offline (lojas do assalto, sede, passagem, assalto,
+  metrô, estádios, cidades) passando.
+- **A conferência do 2D**: as 30 praças assadas do `cenario3d/planta.html`
+  do jeito do `assar_plantas.js` passam no `plantas_sem_enclaves.py` sem
+  mexer em nenhuma célula. Contra o assado de antes desta rodada mudam 10
+  praças, todas pela sede vaga: em 9 a marca de uma sede anda até 13
+  unidades (0,7 m — a reserva encolhe pra dentro da quadra) e em Goiânia a
+  INDEP vai pra outra reserva, e a grade dos bairros muda.
+
+### Limites (sinceros)
+
+- **O lote de casa do mapa é raso** (uns 5 m de fundo): o pátio da
+  subsede fica com uns 3 m — uma mesa, os surdos, a TV. Não é o salão
+  comprido da foto de Sorocaba.
+- **No 2D a estrutura parece um bar**: a cor da torcida, só a letra (L, S)
+  e, de longe, o quadrado ou o losango separam.
+- **43 de 308 ficaram a menos de 50 m do estádio** (o bairro do estádio e
+  a favela colada nele); a regra dos 50 m segue valendo pra sede e bar.
+- **O nível da loja e da subsede e a loja sem insumo não mudam o modelo**
+  (o jogo guarda o nível; o mapa só usa o tipo e o bairro).
+- **A IA começa sem loja e sem subsede**: no Pages e no artefato, sem o
+  jogo, elas só aparecem com a camada de exemplo.
+- **O mapa 2D precisa ser assado de novo** pela sessão do 2D
+  (`ferramentas/assar_plantas.js`): as casas no lugar da sede vaga em todas
+  as praças, e a grade dos bairros de Goiânia.

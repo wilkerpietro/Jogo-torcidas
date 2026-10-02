@@ -312,10 +312,12 @@ function ligar(api) {
     /* (o jogo que abriu no meio do dia: o jogo da cidade de hoje, no fundo) */
     agendarJogosDaCidade(e);
     if (barNovo && barNovo.porta) {
-      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DA ...") */
-      const q = barNovo.porta;
+      /* a câmera na rua, de frente pra fachada (o letreiro "BAR DA ...", a vitrine da loja, a platibanda da subsede) */
+      const q = barNovo.porta, nome = String(e.torcida.nome || '').replace(/[&<>]/g, '');
       C.voarPara(q.x, q.y, 30 * api.M, 0.5, Math.atan2(q.fx, q.fy));
-      avisar(`O bar novo da <b>${String(e.torcida.nome || '').replace(/[&<>]/g, '')}</b> abriu as portas.`);
+      if (barNovo.tipo === 'loja') avisar(`A loja nova da <b>${nome}</b> abriu as portas.`);
+      else if (barNovo.tipo === 'subsede') avisar(`A subsede nova da <b>${nome}</b>${barNovo.nomeDoBairro ? ' em <b>' + String(barNovo.nomeDoBairro).replace(/[&<>]/g, '') + '</b>' : ''} abriu as portas.`);
+      else avisar(`O bar novo da <b>${nome}</b> abriu as portas.`);
       const este = barNovo;
       setTimeout(() => { if (este === barMostrado && vida.ligada && !pracaTravada && !dia3d.ativo) vida.irPraSala(); }, 5000);
       barMostrado = este;
@@ -345,6 +347,23 @@ function ligar(api) {
     return api.baresDoJogo(e.torcida.id, p && Array.isArray(p.bares) ? p.bares.length : 0, true);
   };
   const baresDoJogador = id => api.planta && api.planta.bares ? api.planta.bares().filter(b => b.dono === id) : [];
+  /* AS LOJAS E AS SUBSEDES DO SAVE (02/10/2026): a praça lê o bairro de
+     cada uma direto do jogo (`TO.dominio.estruturas`) quando monta; aqui
+     só se vê se as do JOGADOR mudaram (comprou, perdeu), pra remontar —
+     as da IA entram na próxima montagem, como os bares. Devolve se mudou */
+  let estruturasVistas = null;
+  const conferirEstruturas = e => {
+    const D = TO.dominio;
+    if (!D || !D.estruturas) return false;
+    let chave;
+    try { chave = D.estruturas(e, e.torcida.mapa).filter(s => s.tid === e.torcida.id && (s.tipo === 'loja' || s.tipo === 'subsede')).map(s => s.tipo + ':' + s.bairro).join('|'); }
+    catch (err) { return false; }
+    const mudou = estruturasVistas != null && chave !== estruturasVistas;
+    estruturasVistas = chave;
+    return mudou;
+  };
+  const estruturasDoJogador = id => api.planta && api.planta.estruturas ? api.planta.estruturas().filter(s => s.dono === id) : [];
+  const chaveDaEstrutura = s => s.tipo + ':' + s.lote.x0 + ',' + s.lote.y0;
   let barMostrado = null;
   const conferirPraca = forcar => {
     const e = E();
@@ -359,15 +378,18 @@ function ligar(api) {
     try { if (vida.conferirGuardados) vida.conferirGuardados(true); } catch (err) { console.error('os armários:', err); }
     const mudouNivel = api.nivelDoJogo ? api.nivelDoJogo(e.torcida.id, e.torcida.sedeNivel) : false;
     const mudouBares = conferirBares(e);
+    const mudouEstruturas = conferirEstruturas(e);
     /* (a textura dos gráficos que mudou com a praça ocupada: remonta agora) */
     const mudouTexturas = texturasPendentes; texturasPendentes = false;
     /* os ônibus da garagem (os níveis 4 e 5) são os do save, na hora */
     try { if (api.onibusDoJogo && TO.financeiro && TO.financeiro.onibusDe) api.onibusDoJogo(e.torcida.id, TO.financeiro.onibusDe(e)); } catch (err) { console.error('os ônibus:', err); }
-    const refazer = mudouNivel || mudouBares || mudouTexturas || !!forcar;
+    const refazer = mudouNivel || mudouBares || mudouEstruturas || mudouTexturas || !!forcar;
     if (!nome || (nome === pracaDoJogo && !refazer)) return;
     const C = api.cenario;
     /* os bares que ela tinha na praça: o que aparecer a mais é o novo */
     const tinha = mudouBares && C && C.praca === nome ? new Set(baresDoJogador(e.torcida.id).map(b => b.n)) : null;
+    /* (e as lojas e subsedes: a que aparecer a mais é a nova) */
+    const tinhaEst = mudouEstruturas && C && C.praca === nome ? new Set(estruturasDoJogador(e.torcida.id).map(chaveDaEstrutura)) : null;
     pracaDoJogo = nome;
     const vez = pedida = Symbol();
     vida.desligar();
@@ -376,7 +398,8 @@ function ligar(api) {
        praça de fora — não liga a vida: a praça na tela não é esta) */
     Promise.resolve(ir).then(() => {
       if (vez !== pedida || pracaTravada || !api.cenario || api.cenario.praca !== nome || api.cenario.montando) return;
-      const novo = tinha ? baresDoJogador(e.torcida.id).find(b => !tinha.has(b.n)) : null;
+      const novo = (tinha ? baresDoJogador(e.torcida.id).find(b => !tinha.has(b.n)) : null)
+        || (tinhaEst ? estruturasDoJogador(e.torcida.id).find(s => !tinhaEst.has(chaveDaEstrutura(s))) : null);
       pintarLetreiro(); ligarVida(novo);
     }, () => {});
   };

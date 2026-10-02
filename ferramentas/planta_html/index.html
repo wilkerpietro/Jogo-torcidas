@@ -91,8 +91,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 :where(.app, .cen-ficha) .legenda i.nova { border: 2px dashed #45b6be; background: transparent; }
 :where(.app, .cen-ficha) .legenda i.bar { background: #c8342b; border: 2px solid #f2f1ec; border-radius: 50%; }
 :where(.app, .cen-ficha) .legenda i.barf { background: #8f8a7f; border: 2px solid #3d3a35; border-radius: 50%; }
+/* a loja da torcida (o quadrado) e a subsede (o losango), como no mapa de longe */
+:where(.app, .cen-ficha) .legenda i.lojat { background: #c8342b; border: 2px solid #f2f1ec; border-radius: 1px; }
+:where(.app, .cen-ficha) .legenda i.subs { background: #c8342b; border: 2px solid #f2f1ec; border-radius: 1px; transform: rotate(45deg) scale(.82); }
 :where(.app, .cen-ficha) .legenda i.sede { background: #1f5aa8; border: 2px solid #f2f1ec; }
-:where(.app, .cen-ficha) .legenda i.sedev { background: #aaa598; border: 2px dashed #57544d; }
 :where(.app, .cen-ficha) .legenda i.metro { background: #1f5aa8; border: 2px solid #f2f1ec; border-radius: 50%; }
 :where(.app, .cen-ficha) .legenda i.comercio { background: linear-gradient(90deg, #c0452f 0 25%, #e08a2c 25% 50%, #3f8f4a 50% 75%, #d9b331 75%); border: 2px solid #2b2118; }
 :where(.app, .cen-ficha) .legenda i.estac { background: repeating-linear-gradient(90deg, #a49d8f 0 3px, #f4f3ee 3px 4px); border: 1px solid #3d3a35; }
@@ -238,6 +240,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
         <label><input type="checkbox" id="c-props" checked> Postes e props</label>
         <label><input type="checkbox" id="c-carros" checked> Carros</label>
         <label><input type="checkbox" id="c-bairros" checked> Bairros</label>
+        <label title="Sem o jogo aberto: uma loja e uma subsede pra cada torcida com sede, no bairro que a IA do jogo escolheria, e a filial de uma torcida de outra praça"><input type="checkbox" id="c-exemplo"> Lojas e subsedes de exemplo</label>
       </div>
     </div>
   </header>
@@ -276,7 +279,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, placasDoLote, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js';
 import { montarModelos } from './js/modelos3d.js';
 import { moldeDaPeca, comTransformador } from './js/props3d.js';
 import { ATLAS } from './js/modelos_atlas.js';
@@ -591,6 +594,10 @@ let lotesVeraneio = [];
 /* os palcos da caravana (montados uma vez, na primeira emboscada) */
 const PALCOS_CARAVANA = {};
 const ehBar = l => l.modelo === 'bartorcida';
+/* as estruturas da torcida no mapa (02/10/2026): a loja (o prédio do bar com a loja no térreo) e a subsede (a casa com o pátio e o barzinho) */
+const ehLojaTorcida = l => !!l && l.modelo === 'lojatorcida';
+const ehSubsede = l => !!l && l.modelo === 'subsede';
+const ehEstrutura = l => ehLojaTorcida(l) || ehSubsede(l);
 /* as lojas do assalto (lojas3d.js): o banco, a joalheria, o supermercado, o posto, o mercadinho e a loja de roupas */
 const ehLoja = l => !!(l && l.loja && l.modelo && l.modelo.startsWith('loja_'));
 const COR_LOJA = { banco: '#1f4e8c', joalheria: '#2b2b2e', supermercado: '#c62828', posto: '#2e7d32', mercadinho: '#2f7a46', roupas: '#8e3a7a' };
@@ -857,7 +864,7 @@ function criarVagasExtras(ts, mapa) {
   const fora = new Set();
   for (const x of espacos) {
     if (!x.dono) continue;
-    if (x.reserva) for (const it of x.sob) fora.add(it);
+    for (const it of x.sob || []) fora.add(it);
     if ((x.dono.nivel || 0) >= 5 && x.sobra) for (const it of x.sobra) fora.add(it);
   }
   const ests = PROP.estadios.map(e => e.area).filter(Boolean), longe = LONGE_DO_ESTADIO_M * M;
@@ -866,7 +873,6 @@ function criarVagasExtras(ts, mapa) {
   /* (na favela a casa comum é estreita demais, 2 a 3,4 m: vira bar a casa
      grande — a lanchonete, a de dois andares, a da garagem, a da base —,
      que tem a frente do boteco) */
-  const GRANDES_FAVELA = ['lanche', 'f1', 'f2', 'garagem', 'base'];
   const olha = (it, favela) => {
     const l = it.l;
     if (it.sobSede || fora.has(it) || l.placa || l.comercio || l.ang || l.x0 === undefined) return;
@@ -897,6 +903,154 @@ function criarVagasExtras(ts, mapa) {
     }
   }
   if (novos.length) bares = bares.concat(novos);
+}
+/* =====================================================================
+   AS LOJAS E AS SUBSEDES DO JOGO (o dono, 02/10/2026: "crie um modelo de
+   loja substituindo o bar no mesmo prédio, mas sendo uma loja temática da
+   torcida com as camisas da torcida e do time à venda. crie também uma
+   subsede do tamanho de uma casa comum, com dois compartimentos apenas
+   (barzinho embutido e pátio)"; e "o letreiro deve ser SUBSEDE {praça}
+   se for filial")
+   ---------------------------------------------------------------------
+   O jogo diz o bairro de cada loja, de cada subsede e de cada FILIAL (a
+   subsede de uma torcida de outra praça nesta: `TO.dominio.estruturas` —
+   o patrimônio do jogador, o mundo vivo da IA, que começa sem nenhuma e
+   compra com o tempo). Cada uma ganha um lote no bairro dela, a 15 m ou
+   mais de bar, loja e subsede (12 m na favela, que tem boteco perto de
+   boteco), o mais perto do meio do bairro, fora do terreno das sedes e
+   das torres. A escolha vai em degraus, pra estrutura não sumir do bairro
+   que o jogo diz: primeiro fora das quadras do entorno do estádio e a 50 m
+   ou mais dele (a regra da sede e do bar); sem lote assim, o entorno vale
+   e ganha o lote mais longe do estádio (10 m ou mais) — o bairro do
+   estádio só tem casa larga no entorno (no Rio, Jacarepaguá e Realengo;
+   em BH, o Santo Agostinho) e em São Paulo a Vila Maria e o Tatuapé são
+   favela colada no estádio —; por último, a distância das outras cai pra
+   6 m (o bairro pequeno com muita estrutura):
+   · A LOJA abre primeiro numa vaga de bar que ninguém tomou no bairro (o
+     bar fechado do ALUGA-SE: é o mesmo prédio, com o apartamento em
+     cima); sem vaga, uma casa do bairro de 5 a 9,5 m de frente vira o
+     prédio do bar com a loja (como a casa que vira bar);
+   · A SUBSEDE e a FILIAL vão numa casa comum do bairro, de 5,5 a 9,5 m
+     de frente e 4,4 a 9 m de fundo (a de 6 m ou mais ganha: cabe a porta
+     de enrolar e o escudo), que vira o pátio coberto com o barzinho. O
+     letreiro da subsede diz SUBSEDE e o BAIRRO; o da filial, SUBSEDE e a
+     PRAÇA (na praça de várias cidades, a cidade do bairro: SUBSEDE ITU,
+     não SUBSEDE INTERIOR DE SP).
+   Na favela, quem vira é uma casa grande (a casa comum lá é estreita
+   demais). A torcida do jogador escolhe primeiro. O bairro sem lote
+   nenhum fica sem (a estrutura conta em `estruturas` com `l` nulo). A
+   próxima montagem desfaz tudo (`desfazerEstruturas`: a casa volta a ser
+   casa, a vaga volta a ser bar)
+   ===================================================================== */
+const ESTRUTURA = { loja: { frente: [5, 9.5], fundo: [4, 14] }, subsede: { frente: [5.5, 9.5], fundo: [4.4, 9] }, longe: 15, longeFavela: 12, longeMin: 6, estadioMin: 10 };
+const CAMPOS_ESTRUTURA = ['modelo', 'tipo', 'alt', 'esquina', 'torcida', 'placa', 'placaFundo', 'placaTinta', 'subsede'];
+/* (na favela a casa comum é estreita demais: vira a casa grande; a da escada e a do varal também servem pra loja e subsede) */
+const GRANDES_FAVELA = ['lanche', 'f1', 'f2', 'garagem', 'base'], GRANDES_FAVELA_ESTRUTURA = GRANDES_FAVELA.concat(['escada', 'varal']);
+let estruturas = [];
+/* a torcida que o lote leva pro modelo 3D (a cor, o nome, o escudo, o clube) */
+const torcidaDoLote = T => ({ cor: T.cor, cor2: T.cor2, cor3: T.cor3, rot: T.sigla, nome: T.nomeCompleto || '', clubeCor: T.clubeCor, clubeCor2: T.clubeCor2,
+                              clubeSigla: T.clubeSigla, escudo: T.escudo || null, escudoClube: T.escudoClube || null });
+/* o lugar que o letreiro da filial diz: a cidade do bairro, na praça de várias cidades; senão, a praça */
+function lugarDaFilial(mapa, bairroId) {
+  const D = window.TO && TO.dominio;
+  let c = '';
+  try { if (D && D.cidadeDoBairro) c = D.cidadeDoBairro(mapa, bairroId) || ''; } catch (e) { c = ''; }
+  return c || cidade;
+}
+function virarEstrutura(l, tipo, T, B, mapa) {
+  if (!l.estrutura) l.estrutura = CAMPOS_ESTRUTURA.map(k => [k, Object.prototype.hasOwnProperty.call(l, k), l[k]]);
+  l.torcida = torcidaDoLote(T);
+  if (tipo === 'loja') {
+    l.modelo = 'lojatorcida'; l.tipo = 'sobrado'; l.alt = Math.max(l.alt || 0, Math.round(6.7 * M)); l.esquina = l.esquina || 'dir';
+    l.placa = 'LOJA DA ' + T.sigla; l.placaFundo = T.cor2; l.placaTinta = corLegivel(T.cor2);
+    delete l.subsede;
+  } else {
+    const filial = tipo === 'filial', nomeB = (B && B.nome) || '', praca = filial ? lugarDaFilial(mapa, B && B.id) : '';
+    l.modelo = 'subsede'; l.tipo = 'casa'; l.alt = Math.round(4.4 * M);
+    l.subsede = { bairro: nomeB.toUpperCase(), nome: nomeB, filial, praca, letreiro: ('SUBSEDE ' + (filial ? praca : nomeB)).trim().toUpperCase() };
+    l.placa = 'SUBSEDE ' + T.sigla; delete l.placaFundo; delete l.placaTinta;
+  }
+  l._plano = undefined;
+}
+function desfazerEstruturas() {
+  for (const it of lotesNovos.concat(lotesFavelaNova)) {
+    const l = it.l;
+    if (!l.estrutura) continue;
+    for (const [k, tinha, v] of l.estrutura) { if (tinha) l[k] = v; else delete l[k]; }
+    delete l.estrutura;
+    l._plano = undefined;
+  }
+  estruturas = [];
+}
+function criarEstruturas(ts, mapa) {
+  estruturas = [];
+  if (!SETORES) return;
+  const pedidos = [];
+  for (const T of ts) {
+    if (!(T.sede || T.id === TORCIDA_DO_JOGO)) continue;
+    for (const tipo of ['loja', 'subsede']) bairrosDoJogo(T, mapa, tipo).forEach(b => { if (b) pedidos.push({ T, tipo, bairro: b }); });
+  }
+  /* AS FILIAIS: as torcidas de outras praças com subsede nesta */
+  const idsFilial = new Set(Object.keys(ESTRUTURAS_DE_TESTE).filter(id => ESTRUTURAS_DE_TESTE[id].filial));
+  if (ESTRUTURAS_EXEMPLO && semJogo()) {
+    const fora = (TO.dados.torcidas || []).find(t => t.mapa && t.mapa !== mapa && caminhoDoEscudo('t', t.id));
+    if (fora) idsFilial.add(fora.id);
+  }
+  const D = window.TO && TO.dominio;
+  if (D && D.estruturas) {
+    const E = TO.estado && TO.estado.E && TO.estado.E.torcida ? TO.estado.E : null;
+    try { for (const x of D.estruturas(E, mapa)) if (x.tipo === 'filial') idsFilial.add(x.tid); } catch (e) { /* sem o jogo */ }
+  }
+  for (const id of idsFilial) {
+    let T = ts.find(x => x.id === id);
+    if (!T) { const t = (TO.dados.torcidas || []).find(x => x.id === id); T = t ? torcidaDaPraca(t) : null; }
+    if (T) bairrosDoJogo(T, mapa, 'filial').forEach(b => { if (b) pedidos.push({ T, tipo: 'filial', bairro: b }); });
+  }
+  if (!pedidos.length) return;
+  if (TORCIDA_DO_JOGO) pedidos.sort((a, b) => (b.T.id === TORCIDA_DO_JOGO) - (a.T.id === TORCIDA_DO_JOGO));
+  /* (o que não pode: debaixo da sede e da torre, a sobra do quarteirão do nível 5) */
+  const ests = PROP.estadios.map(e => e.area).filter(Boolean);
+  const distCaixa = (a, b) => Math.hypot(Math.max(0, a.x0 - b.x1, b.x0 - a.x1), Math.max(0, a.y0 - b.y1, b.y0 - a.y1));
+  const ocupados = bares.filter(x => x.dono).map(x => ({ x: x.b.x, y: x.b.y }));
+  const cands = [];
+  const olha = (it, favela) => {
+    const l = it.l;
+    if (it.sobSede || l.placa || l.comercio || l.ang || l.x0 === undefined || l.estrutura || l.barExtra) return;
+    if (favela ? !GRANDES_FAVELA_ESTRUTURA.includes(l.modelo) : (l.modelo || !['casa', 'sobrado'].includes(l.tipo))) return;
+    const nS = l.frente === 'n' || l.frente === 's', W = (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, D = (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M;
+    const x = (l.x0 + l.x1) / 2, y = (l.y0 + l.y1) / 2;
+    const est = ests.length ? Math.min(...ests.map(a => distCaixa(l, a))) / M : 1e9;
+    cands.push({ it, l, x, y, W, D, est, entorno: !favela && !!(it.qn && it.qn.entorno), b: bairroEm(x, y), favela });
+  };
+  for (const it of lotesNovos) olha(it, false);
+  for (const it of lotesFavelaNova) olha(it, true);
+  /* as vagas de bar sem dono (o bar fechado): a loja abre nelas primeiro */
+  const vagas = bares.filter(x => !x.dono && !x.b.extra && !x.b.favela && ehBar(x.b.lote) && !x.b.lote.estrutura)
+                     .map(x => ({ it: x.it || null, l: x.b.lote, x: x.b.x, y: x.b.y, b: bairroEm(x.b.x, x.b.y), bar: x }));
+  for (const p of pedidos) {
+    const B = SETORES.bairros.find(x => x.id === p.bairro);
+    const longe = (c, m) => ocupados.every(o => Math.hypot(o.x - c.x, o.y - c.y) >= m * M);
+    const doMeio = c => B ? Math.hypot(c.x - B.centro.x, c.y - B.centro.y) : 0;
+    let c = null;
+    if (B && p.tipo === 'loja') c = vagas.filter(v => !v.usado && v.b === p.bairro && longe(v, ESTRUTURA.longe)).sort((a, b) => doMeio(a) - doMeio(b))[0] || null;
+    if (B && !c) {
+      const R = ESTRUTURA[p.tipo === 'loja' ? 'loja' : 'subsede'];
+      const doBairro = cands.filter(k => !k.usado && k.b === p.bairro && k.W >= R.frente[0] && k.W <= R.frente[1] && k.D >= R.fundo[0] && k.D <= R.fundo[1]);
+      /* (a subsede: a casa de 6 m ou mais ganha; entre elas, a do meio do bairro) */
+      const nota = k => doMeio(k) + (p.tipo !== 'loja' && k.W < 6 ? 400 * M : 0);
+      /* os degraus: o lote ideal; o entorno, o mais longe do estádio; a distância das outras menor */
+      const espaco = k => longe(k, k.favela ? ESTRUTURA.longeFavela : ESTRUTURA.longe);
+      c = doBairro.filter(k => espaco(k) && !k.entorno && k.est >= LONGE_DO_ESTADIO_M).sort((a, b) => nota(a) - nota(b))[0]
+        || doBairro.filter(k => espaco(k) && k.est >= ESTRUTURA.estadioMin).sort((a, b) => b.est - a.est || nota(a) - nota(b))[0]
+        || doBairro.filter(k => longe(k, ESTRUTURA.longeMin) && k.est >= ESTRUTURA.estadioMin).sort((a, b) => b.est - a.est || nota(a) - nota(b))[0] || null;
+    }
+    if (!c) { estruturas.push({ tipo: p.tipo, T: p.T, bairro: p.bairro, l: null, it: null }); continue; }
+    c.usado = true;
+    virarEstrutura(c.l, p.tipo, p.T, B, mapa);
+    ocupados.push({ x: c.x, y: c.y });
+    estruturas.push({ tipo: p.tipo, T: p.T, bairro: p.bairro, l: c.l, it: c.it, x: c.x, y: c.y, naVagaDeBar: !!c.bar, pertoDoEstadio: c.est !== undefined && c.est < LONGE_DO_ESTADIO_M,
+                      n: estruturas.filter(e => e.tipo === p.tipo).length + 1 });
+  }
 }
 /* =====================================================================
    AS TORRES SÓ NO BAIRRO NOBRE (o dono, 01/10/2026: "Preciso que os
@@ -1135,17 +1289,23 @@ function torresDaPraca() {
   for (const it of esc) it.sobSede = true;
   return torres;
 }
+/* a torcida dos dados como a praça usa (as cores, o clube, o escudo, o nível da sede) */
+function torcidaDaPraca(t) {
+  const c = coresDaTorcida(t), cl = (TO.dados.times || []).find(o => o.id === t.clubeId) || null;
+  const cc = (cl && cl.cores || []).map(x => String(x).toUpperCase());
+  return { t, id: t.id, clubeSigla: (cl && cl.sigla) || t.sigla || '', clubeCor: cc[0] || null, clubeCor2: cc.find(x => x !== cc[0]) || '#E8E2D0', sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
+           clube: t.clube, nivel: NIVEL_DO_JOGO[t.id] ?? t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
+           escudo: caminhoDoEscudo('t', t.id), escudoClube: caminhoDoEscudo('c', t.clubeId),
+           cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: BARES_DO_JOGO[t.id] ?? (Array.isArray(t.bares) ? t.bares.length : null), sede: null, bares: [] };
+}
 function distribuirTorcidas(guarda = true) {
   const mapa = slugDe(cidade);
-  const ts = (TO.dados.torcidas || []).filter(t => t.mapa === mapa).map(t => {
-    const c = coresDaTorcida(t), cl = (TO.dados.times || []).find(o => o.id === t.clubeId) || null;
-    const cc = (cl && cl.cores || []).map(x => String(x).toUpperCase());
-    return { t, id: t.id, clubeSigla: (cl && cl.sigla) || t.sigla || '', clubeCor: cc[0] || null, clubeCor2: cc.find(x => x !== cc[0]) || '#E8E2D0', sigla: String(t.siglaTorcida || t.nome).toUpperCase(), nome: t.nome, nomeCompleto: String(t.nome || t.siglaTorcida).toUpperCase(),
-             clube: t.clube, nivel: NIVEL_DO_JOGO[t.id] ?? t.sedeNivel ?? 1, poder: t.poder || 0, membros: t.membros || 0,
-             escudo: caminhoDoEscudo('t', t.id), escudoClube: caminhoDoEscudo('c', t.clubeId),
-             cor: c.cor, cor2: c.cor2, cor3: c.cor3 || c.cor2, nBares: BARES_DO_JOGO[t.id] ?? (Array.isArray(t.bares) ? t.bares.length : null), sede: null, bares: [] };
-  }).sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
+  const ts = (TO.dados.torcidas || []).filter(t => t.mapa === mapa).map(torcidaDaPraca)
+    .sort((a, b) => b.nivel - a.nivel || b.poder - a.poder || a.sigla.localeCompare(b.sigla));
+  desfazerEstruturas();
   desfazerVagasExtras();
+  /* (as casas que a sede da praça de antes escondia voltam: o espaço sem dono é casa) */
+  for (const x of espacosDoMapa.concat(RESERVAS)) for (const it of (x.sob || []).concat(x.sobra || [])) it.sobSede = false;
   /* (as torres voltam pro lugar do gerador: a praça de antes pode ter tirado alguma) */
   torresDoGerador();
   /* (o espaço volta à caixa dele: a sede de nível 5 da praça de antes esticou pro quarteirão) */
@@ -1289,8 +1449,9 @@ function distribuirTorcidas(guarda = true) {
     if (!nota) break;
   }
   poe(melhor);
-  /* o mapa mostra os espaços do gerador e as reservas que viraram sede */
-  espacos = espacosDoMapa.concat(reservas.filter(x => x.dono));
+  /* o mapa mostra os espaços que viraram sede, os do gerador e as reservas;
+     o espaço sem dono é casa (02/10/2026: a sede vaga saiu) */
+  espacos = espacosDoMapa.filter(x => x.dono).concat(reservas.filter(x => x.dono));
   /* os bairros, com as sedes no lugar; e os bares, cada um no bairro dele */
   setorizar(ts, mapa, guarda);
   /* as torres só no bairro Nobre (e o casarão também), antes dos bares:
@@ -1326,11 +1487,13 @@ function distribuirTorcidas(guarda = true) {
     const a = x.sede.nivel === 5 ? x.inteira : x.e.area;
     x.bb = { ...a }; x.pol = retPts(a);
     if (x.sede.nivel === 5) for (const it of x.sobra) it.sobSede = true;
-    /* (a reserva que virou sede: as casas debaixo dela somem) */
-    if (x.reserva) for (const it of x.sob) it.sobSede = true;
+    /* (o espaço que virou sede — do gerador ou de reserva —: as casas debaixo dela somem) */
+    for (const it of x.sob || []) it.sobSede = true;
   }
   /* (e as casas que as torres da praça escondem) */
   for (const it of escondidosPelasTorres) it.sobSede = true;
+  /* as lojas e as subsedes que o jogo diz, cada uma no bairro dela */
+  criarEstruturas(ts, mapa);
   ocupacao = { torcidas: ts, semSede: ts.filter(T => !T.sede), mapa };
   pixarCidade(ts);
 }
@@ -2718,11 +2881,31 @@ function bairroEm(x, y) {
 }
 /* os bairros de cada bar da torcida, na ordem dos bares do jogo (o save
    do jogador, o mundo vivo das IAs; sem o jogo, o bairro padrão) */
-function bairrosDosBares(T, mapa) {
+function bairrosDosBares(T, mapa) { return bairrosDoJogo(T, mapa, 'bar'); }
+/* os bairros de cada estrutura de um tipo ('bar', 'loja', 'subsede') da
+   torcida, na ordem do jogo. `ESTRUTURAS_DE_TESTE` (a planta sem o jogo:
+   o teste e a demonstração) vale por cima: { id: { loja: [bairro], subsede: [bairro] } } */
+const ESTRUTURAS_DE_TESTE = {};
+/* O EXEMPLO (a planta sem o jogo: o Pages e o artefato, onde a IA ainda
+   não comprou nada): a camada "Lojas e subsedes de exemplo" põe uma loja
+   e uma subsede pra cada torcida com sede, no bairro que a IA do jogo
+   escolheria (`bairroPadrao`), e a filial de uma torcida de outra praça —
+   pra ver os modelos no mapa sem jogar. Com o jogo aberto, vale o save */
+let ESTRUTURAS_EXEMPLO = false;
+const semJogo = () => !(window.TO && TO.estado && TO.estado.E && TO.estado.E.torcida);
+function bairrosDoJogo(T, mapa, tipo) {
+  const t = ESTRUTURAS_DE_TESTE[T.id];
+  if (t && t[tipo]) return t[tipo].slice();
   const D = window.TO && TO.dominio;
   if (!D || !D.estruturas) return [];
+  if (ESTRUTURAS_EXEMPLO && semJogo() && tipo !== 'bar') {
+    try {
+      const b = tipo === 'filial' ? D.bairroDaFilial(T.id, mapa) : T.t ? D.bairroPadrao(T.t, tipo, 0) : null;
+      return b ? [b.id] : [];
+    } catch (e) { return []; }
+  }
   const E = TO.estado && TO.estado.E && TO.estado.E.torcida ? TO.estado.E : null;
-  try { return D.estruturas(E, mapa).filter(s => s.tid === T.id && s.tipo === 'bar').map(s => s.bairro); }
+  try { return D.estruturas(E, mapa).filter(s => s.tid === T.id && s.tipo === tipo).map(s => s.bairro); }
   catch (e) { return []; }
 }
 /* AS CORES DOS BAIRROS no mapa: sem o jogo, a cor da zona; o jogo põe a
@@ -2957,7 +3140,7 @@ function quarteiraoInteiro(e) {
    ela só vira sede quando uma torcida precisa dela pra ficar no gomo da
    zona do bairro dela (ou pra espalhar as sedes da zona), e aí as casas
    debaixo dela somem (como as da sobra da sede de nível 5); sem sede, ela
-   continua casa e não aparece como sede vaga. Fica longe dos estádios
+   continua casa (como o espaço do gerador sem dono). Fica longe dos estádios
    (como os terrenos do gerador), a 12 m ou mais de outro terreno de sede
    e fora do que tem bar, loja, prédio ou metrô. A quadra de hoje de
    contorno torto entra quando o terreno cabe dentro do contorno (antes
@@ -2966,7 +3149,7 @@ const RESERVA_M = { longeDeSede: 12, porGomo: 6 };
 function reservasDeSede() {
   const out = [], longeEst = LONGE_DO_ESTADIO_M * M, longeSede = RESERVA_M.longeDeSede * M;
   const perto = (a, b, d) => a.x0 < b.x1 + d && a.x1 > b.x0 - d && a.y0 < b.y1 + d && a.y1 > b.y0 - d;
-  const tomadas = espacos.map(x => x.e.area), ests = PROP.estadios.map(e => e.area).filter(Boolean);
+  const tomadas = espacosDoMapa.map(x => x.e.area), ests = PROP.estadios.map(e => e.area).filter(Boolean);
   const marcos = marcosDeHoje().concat(marcosNovos).map(m => m.bb), metros = estacoes.map(e => e.bb);
   const sobre = (it, a) => { const b = it.bb, ix = Math.min(b.x1, a.x1) - Math.max(b.x0, a.x0), iy = Math.min(b.y1, a.y1) - Math.max(b.y0, a.y0);
     return ix > 0 && iy > 0 && ix * iy > 0.25 * (b.x1 - b.x0) * (b.y1 - b.y0); };
@@ -2993,7 +3176,24 @@ function reservasDeSede() {
       if (q.pol && ![[area.x0, area.y0], [area.x1, area.y0], [area.x0, area.y1], [area.x1, area.y1]].every(([x, y]) => noPol(x, y, q.pol))) continue;
       if (ests.some(a => perto(area, a, longeEst)) || tomadas.some(a => perto(area, a, longeSede)) || out.some(r => perto(area, r.e.area, longeSede))) continue;
       if (marcos.some(b => perto(area, b, 0)) || metros.some(b => perto(area, b, 10 * M))) continue;
-      const sob = seus.filter(it => sobre(it, area));
+      /* O LOTE QUE SÓ ENCOSTA NA DIVISA DE DENTRO (até um quarto dele no
+         terreno: ele fica) empurra a divisa pra fora dele — a sede não pisa
+         em casa nenhuma (02/10/2026: a sede da reserva de Curitiba ficava
+         0,9 m em cima do bar da torcida, a de São Paulo em cima de um
+         sobrado e de um galpão) */
+      const dentro = area.x0 > q.ix0 + 2 ? 'x0' : area.x1 < q.ix1 - 2 ? 'x1' : area.y0 > q.iy0 + 2 ? 'y0' : 'y1';
+      const pisa = it => it.bb.x0 < area.x1 - 2 && it.bb.x1 > area.x0 + 2 && it.bb.y0 < area.y1 - 2 && it.bb.y1 > area.y0 + 2;
+      let sob = seus.filter(it => sobre(it, area));
+      for (let k = 0; k < 4; k++) {
+        const parciais = seus.filter(it => !sob.includes(it) && pisa(it));
+        if (!parciais.length) break;
+        for (const it of parciais) {
+          if (dentro === 'x0') area.x0 = Math.max(area.x0, it.bb.x1); else if (dentro === 'x1') area.x1 = Math.min(area.x1, it.bb.x0);
+          else if (dentro === 'y0') area.y0 = Math.max(area.y0, it.bb.y1); else area.y1 = Math.min(area.y1, it.bb.y0);
+        }
+        sob = seus.filter(it => sobre(it, area));
+      }
+      if (seus.some(it => !sob.includes(it) && pisa(it)) || (dentro[0] === 'x' ? area.x1 - area.x0 : area.y1 - area.y0) < 340) continue;
       if (!sob.length || sob.some(it => ehBar(it.l) || ehLoja(it.l) || it.l.favela || (it.l.modelo && it.l.modelo !== 'casa'))) continue;
       const n = out.length + 1;
       const e = { id: 'reserva' + n, nome: 'Terreno de reserva ' + n, area, frente, cabe: 5, hoje, quadra: q.i + ',' + q.j, terreno: null, q, reserva: true };
@@ -3059,6 +3259,16 @@ function montarDerivados() {
   for (const l of PROP.lotesExtra)
     lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true,
                       qh: K.QUADRAS.find(q => q.i === l.quadra.i && q.j === l.quadra.j) });
+  /* AS CASAS DO ESPAÇO DE SEDE (o dono, 02/10/2026: "exclua essa parte de
+     sede vaga que não tem sentido"): o espaço sem dono é casa, como o resto
+     da quadra — as casas que o gerador loteou nele (`casas`); a sede da
+     torcida que mora nele esconde elas (`sob`, em distribuirTorcidas) */
+  for (const e of PROP.espacosSede) {
+    const deHoje = e.hoje || e.emQuadraDeHoje;
+    const qn = deHoje ? undefined : PROP.quadras.find(q => q.terreno === e.terreno), qh = deHoje ? K.QUADRAS.find(q => q.i + ',' + q.j === e.quadra) : undefined;
+    for (const l of e.casas || [])
+      lotesNovos.push({ tipo: 'lote', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true, casaDoEspaco: e.id, qn, qh });
+  }
   somemNaProposta = new Set(PROP.baresHoje.concat(PROP.espacosSede.filter(e => e.hoje).map(e => e.quadra), PROP.sedesHojeSaem));
   for (const e of equipamentos) e.somePelaProposta = somemNaProposta.has(e.q.i + ',' + e.q.j) || !!(PROP.cisao && PROP.cisao.kFora.has(e.q.i + ',' + e.q.j));
   /* (a casa que a praça de antes virou bar volta a ser casa antes das reservas) */
@@ -3076,7 +3286,8 @@ function montarDerivados() {
     const n = bares.length + 1;
     bares.push({ b: { n, lote: l, x: (l.x0 + l.x1) / 2, y: (l.y0 + l.y1) / 2, nome: 'Bar ' + n, favela: f.id }, it: lotesFavelaNova.find(it => it.l === l) });
   }
-  espacos = PROP.espacosSede.map(e => ({ tipo: 'espaco', e, pol: retPts(e.area), bb: { ...e.area }, nome: e.nome, proposta: true }));
+  espacos = PROP.espacosSede.map(e => ({ tipo: 'espaco', e, pol: retPts(e.area), bb: { ...e.area }, nome: e.nome, proposta: true,
+                                         sob: lotesNovos.filter(it => it.casaDoEspaco === e.id) }));
   for (const x of espacos) Object.assign(x, quarteiraoInteiro(x.e));
   espacosDoMapa = espacos;
   lotesVeraneio = PROP.veraneio ? PROP.veraneio.lotes.map(l => ({ tipo: 'veraneio', l, pol: retPts(l), bb: { x0: l.x0, y0: l.y0, x1: l.x1, y1: l.y1 }, proposta: true,
@@ -4803,6 +5014,7 @@ function desenhar() {
       ctx.strokeStyle = T ? T.cor2 : '#3d3a35'; ctx.lineWidth = px(2.2); ctx.stroke();
       continue;
     }
+    if (ehEstrutura(it.l)) { desenharEstrutura(it, px); continue; }
     if (ehLoja(it.l)) {
       /* a loja do assalto: a cor da marca, a borda amarela */
       pol(it.pol, COR_LOJA[it.l.loja.tipo] || '#555');
@@ -4822,6 +5034,7 @@ function desenhar() {
   }
   if (prop) for (const it of lotesFavelaNova) {
     if (!ve(it.bb)) continue;
+    if (ehEstrutura(it.l)) { desenharEstrutura(it, px); continue; }
     pol(it.pol, COR_FAVELA[it.l.tipo] || COR_FAVELA.casa);
     ctx.strokeStyle = '#222'; ctx.lineWidth = px(0.9); ctx.stroke();
   }
@@ -4862,10 +5075,21 @@ function desenhar() {
   if (prop) desenharAmbulantes(ve, px);
   /* ---- de longe, o bar vira um ponto na cor da torcida (o lote tem 7 m) ---- */
   if (prop && s < 0.3) for (const x of bares) {
+    if (!ehBar(x.b.lote)) continue;
     const T = x.b.lote.torcida, r = px(T ? 6 : 4.5);
     ctx.beginPath(); ctx.arc(x.b.x, x.b.y, r, 0, 7);
     ctx.fillStyle = T ? T.cor : '#8f8a7f'; ctx.fill();
     ctx.lineWidth = px(2); ctx.strokeStyle = T ? T.cor2 : '#3d3a35'; ctx.stroke();
+  }
+  /* (a loja vira um quadrado e a subsede um losango, na cor da torcida) */
+  if (prop && s < 0.3) for (const e of estruturas) {
+    if (!e.l) continue;
+    const T = e.T, r = px(6.5);
+    ctx.beginPath();
+    if (e.tipo === 'loja') ctx.rect(e.x - r, e.y - r, 2 * r, 2 * r);
+    else { ctx.moveTo(e.x, e.y - r * 1.35); ctx.lineTo(e.x + r * 1.35, e.y); ctx.lineTo(e.x, e.y + r * 1.35); ctx.lineTo(e.x - r * 1.35, e.y); ctx.closePath(); }
+    ctx.fillStyle = T.cor; ctx.fill();
+    ctx.lineWidth = px(2); ctx.strokeStyle = T.cor2; ctx.stroke();
   }
   if (prop) desenharMetro(px, ve);
   /* ---- a seleção e o que está debaixo do mouse ---- */
@@ -5034,18 +5258,19 @@ function desenharProposta(ve, px) {
       if (mr) { ret(mr, COR.miolo); if (q.casasDoBaldio && q.casasDoBaldio.quintal) ret(q.casasDoBaldio.quintal, COR.quintal); }
     }
   }
-  /* os espaços de sede: a sede da torcida que mora ali, em planta (com o
-     resto do terreno de terra, se a sede é a pequena), ou a sede vaga,
-     coberta pelo telhado */
+  /* o espaço de sede sem dono é casa (02/10/2026: a sede vaga saiu): as
+     casas dele vêm com os lotes; aqui, o pedaço do quintal que cai nele */
+  for (const x of espacosDoMapa) if (!x.dono && x.e.quintal && ve(x.e.quintal)) ret(x.e.quintal, COR.quintal);
+  /* os espaços de sede com dono: a sede da torcida que mora ali, em planta
+     (com o resto do terreno de terra, se a sede é a pequena) */
   for (const it of espacos) {
     const a = it.bb;
     if (!ve(a)) continue;
     if (it.sede.resto) ret(it.sede.resto, COR.terreno);
     desenharSede(it.sede, it.montagem, px);
     if (pintandoChao) continue;
-    const T = it.dono;
-    ctx.setLineDash(T ? [] : [px(6), px(4)]); ctx.strokeStyle = T ? T.cor2 : '#57544d'; ctx.lineWidth = px(T ? 3 : 2.4);
-    ctx.strokeRect(a.x0 + 2, a.y0 + 2, a.x1 - a.x0 - 4, a.y1 - a.y0 - 4); ctx.setLineDash([]);
+    ctx.strokeStyle = it.dono.cor2; ctx.lineWidth = px(3);
+    ctx.strokeRect(a.x0 + 2, a.y0 + 2, a.x1 - a.x0 - 4, a.y1 - a.y0 - 4);
   }
   if (pintandoChao) return;
   ctx.setLineDash([px(7), px(5)]); ctx.strokeStyle = COR.nova; ctx.lineWidth = px(2.2);
@@ -5160,6 +5385,7 @@ function desenharGrade(vis) {
 
 function rotuloDoLote(l) {
   if (ehBar(l)) return l.torcida ? 'bar ' + l.torcida.rot : 'bar fechado';
+  if (ehEstrutura(l)) return (ehLojaTorcida(l) ? 'loja ' : 'subsede ') + l.torcida.rot;
   if (ehLoja(l)) return NOME_TIPO_LOJA[l.loja.tipo].toLowerCase();
   const pc = planoSeguro(l);
   const m = l.muro || (pc && pc.tipo && pc.tipo !== 'favela' && pc.tipo !== 'baldio' ? pc.tipo.toUpperCase() : '');
@@ -5169,6 +5395,18 @@ function rotuloDoLote(l) {
 /* O ESTACIONAMENTO DE TERRENO (o entorno do estádio): o chão de terra
    batida com brita, as vagas riscadas de branco encostadas no fundo, uns
    carros parados e a guarita no canto da frente, do lado do portão */
+/* A LOJA E A SUBSEDE DA TORCIDA NO 2D: a cor dela com a borda na segunda
+   (como o bar) e, de perto, a letra do tipo no meio (L, S) */
+function desenharEstrutura(it, px) {
+  const l = it.l, T = l.torcida;
+  pol(it.pol, T.cor);
+  ctx.strokeStyle = T.cor2; ctx.lineWidth = px(2.2); ctx.stroke();
+  const tam = Math.min(it.bb.x1 - it.bb.x0, it.bb.y1 - it.bb.y0) * 0.6;
+  if (tam < px(9)) return;
+  ctx.fillStyle = corLegivel(T.cor); ctx.font = `bold ${Math.round(tam)}px Arial, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(ehLojaTorcida(l) ? 'L' : 'S', (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
+}
 function desenharEstacionamento(l, px) {
   const r = { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1 }, f = l.frente, hz = f === 'n' || f === 's';
   ret(r, COR_LOTE.estacionamento);
@@ -5383,13 +5621,16 @@ function desenharRotulos(vis, prop) {
       for (const q of PROP.quadras) if (q.equip && q.equip.tipo !== 'condominio' && q.equip.tipo !== 'estadio') etiqueta(q.equip.nome, (q.x0 + q.x1) / 2, (q.y0 + q.y1) / 2);
       /* a favela com o nome do bairro dela (com a camada dos bairros ligada, o nome já está no meio dela) */
       if (!(SETORES && estado.camadas.bairros)) for (const f of PROP.favelas) { const n = nomeDaFavela(f); if (n) etiqueta(n, (f.bb.x0 + f.bb.x1) / 2, (f.bb.y0 + f.bb.y1) / 2); }
-      for (const it of espacos) etiqueta(it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga', (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
+      for (const it of espacos) etiqueta('Sede ' + it.dono.sigla, (it.bb.x0 + it.bb.x1) / 2, (it.bb.y0 + it.bb.y1) / 2);
       if (PROP.veraneio) { const r = PROP.veraneio.rua; etiqueta(PROP.veraneio.nome, (r.x0 + r.x1) / 2, (r.y0 + r.y1) / 2); }
       for (const it of estacoes) etiqueta('Metrô ' + it.est.nome, (it.bb.x0 + it.bb.x1) / 2, it.est.entra === 'n' ? it.bb.y0 - 90 : it.bb.y1 + 90);
       if (s >= 0.1) for (const x of bares) {
+        if (!ehBar(x.b.lote)) continue;
         const T = x.b.lote.torcida;
         if (T || s >= 0.25) etiqueta(T ? 'Bar da ' + T.rot : 'Bar fechado', x.b.x, x.b.y + (x.b.lote.frente === 'n' ? -60 : 60));
       }
+      /* a loja e a subsede da torcida */
+      if (s >= 0.1) for (const e of estruturas) if (e.l) etiqueta(tituloDaEstrutura(e.l), e.x, e.y + (e.l.frente === 'n' ? -60 : 60));
       /* as lojas do assalto: o nome da loja na fachada */
       if (s >= 0.1) for (const lj of PROP.lojas || []) etiqueta(NOME_TIPO_LOJA[lj.tipo] + ' · ' + lj.nome, lj.x, lj.y + (lj.lote.frente === 'n' ? -70 : 70));
       /* o entorno do estádio: o nome do comércio de dia de jogo e o preço do estacionamento, de perto */
@@ -5551,6 +5792,8 @@ function passar(sx, sy) {
 for (const [id, chave] of [['c-rotulos', 'rotulos'], ['c-grade', 'grade'], ['c-arvores', 'arvores'], ['c-props', 'props'], ['c-carros', 'carros'], ['c-bairros', 'bairros']]) {
   $(id).addEventListener('change', ev => { estado.camadas[chave] = ev.target.checked; pedirDesenho(); });
 }
+/* (o exemplo muda a praça: ela monta de novo, e o cenário 3D que abrir depois já vem com elas) */
+$('c-exemplo').addEventListener('change', ev => { ESTRUTURAS_EXEMPLO = ev.target.checked; mudarCidade(cidade); });
 /* os três mapas e o jogo de hoje (a planta como o jogo usa) */
 const MODOS = ['pequeno', 'medio', 'grande', 'atual'];
 /* a linha de baixo do título: o que tem no mapa da tela */
@@ -5589,7 +5832,8 @@ function montarLegenda() {
                  ['Árvore', '#2e7d2e'], ['Poste', COR.poste]];
   $('legenda').innerHTML = itens.map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('') +
     (estado.modo !== 'atual' ? '<span><i class="nova"></i>Quadra nova</span><span><i class="bar"></i>Bar aberto</span><span><i class="barf"></i>Bar fechado</span>' +
-                                  '<span><i class="sede"></i>Sede</span><span><i class="sedev"></i>Sede vaga</span><span><i class="metro"></i>Metrô</span>' +
+                                  '<span><i class="lojat"></i>Loja da torcida</span><span><i class="subs"></i>Subsede</span>' +
+                                  '<span><i class="sede"></i>Sede</span><span><i class="metro"></i>Metrô</span>' +
                                   '<span><i class="comercio"></i>Comércio do estádio</span><span><i class="estac"></i>Estacionamento</span><span><i class="ambulante"></i>Ambulante</span>' : '');
 }
 
@@ -5602,10 +5846,17 @@ function avenidaCorta(q) {
   return false;
 }
 function planoSeguro(l) { try { return planoDaCasa(l, K); } catch (e) { return null; } }
+/* "Loja da X" e "Subsede X · Bairro" */
+function tituloDaEstrutura(l) {
+  if (ehLojaTorcida(l)) return 'Loja da ' + l.torcida.rot;
+  const sb = l.subsede || {}, b = sb.filial ? sb.praca : sb.nome;
+  return (sb.filial ? 'Filial ' : 'Subsede ') + l.torcida.rot + (b ? ' · ' + b : '');
+}
 function tituloDe(it) {
   if (it.tipo === 'lote' && ehBar(it.l)) return it.l.torcida ? 'Bar da ' + it.l.torcida.rot : 'Bar fechado';
+  if (it.tipo === 'lote' && ehEstrutura(it.l)) return tituloDaEstrutura(it.l);
   if (it.tipo === 'lote' && ehLoja(it.l)) return it.l.loja.nome;
-  if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : 'Sede vaga';
+  if (it.tipo === 'espaco') return it.dono ? 'Sede ' + it.dono.sigla : it.nome;
   if (it.tipo === 'estacao' || it.tipo === 'veraneio') return it.nome;
   if (it.tipo === 'lote') {
     const pc = planoSeguro(it.l);
@@ -5683,6 +5934,24 @@ function fichaDe(it) {
             : `<p class="nota">Nenhuma torcida de ${esc(cidade)} usa este bar: ele fica neutro, de porta de enrolar abaixada, com o ALUGA-SE. O apartamento de cima continua morado.</p>`)
       + (x && x.b.noLugarDoBarGrande ? '<p class="nota">É a quadra do bar grande de hoje (13,9 × 8,8 m): a fatia dele vira casa, e o bar pequeno fica na esquina.</p>' : '');
   }
+  if (it.tipo === 'lote' && ehEstrutura(it.l)) {
+    /* A LOJA E A SUBSEDE DA TORCIDA: de quem é, o bairro, o lote e o que tem dentro */
+    const l = it.l, e = estruturas.find(x => x.l === l), T = e ? e.T : null, nS = l.frente === 'n' || l.frente === 's';
+    const onde = it.qn ? 'quadra nova ' + nomeQuadraNova(it.qn) : it.favelaNova ? 'favela' : '';
+    const loja = ehLojaTorcida(l), filial = !!(l.subsede && l.subsede.filial), doTipo = e ? estruturas.filter(x => x.tipo === e.tipo && x.l) : [];
+    const B = e && SETORES ? SETORES.bairros.find(b => b.id === e.bairro) : null;
+    const deOnde = filial && T && T.t ? (CIDADES.find(([n]) => slugDe(n) === T.t.mapa) || [T.t.mapa])[0] : '';
+    return `<p class="sobre">${loja ? 'Loja' : filial ? 'Filial' : 'Subsede'} ${e ? e.n : ''} de ${doTipo.length}${onde ? ' · ' + esc(onde) : ''}${chip}</p><h2>${esc(tituloDe(it))}</h2>` + linhas([
+      ['Torcida', (T ? T.nome + ' (' + T.sigla + ')' : l.torcida.rot) + (deOnde ? ', de ' + deOnde : ''), true], ['Clube', T ? T.clube : ''], ['Bairro', B ? B.nome : '', true],
+      ['Letreiro', loja ? l.placa : (l.subsede && l.subsede.letreiro) || '', true],
+      ['Frente para', FRENTE[l.frente]], ['Testada', metros(nS ? l.x1 - l.x0 : l.y1 - l.y0)], ['Fundo', metros(nS ? l.y1 - l.y0 : l.x1 - l.x0)],
+      ['Onde abriu', loja ? (e && e.naVagaDeBar ? 'na vaga do bar fechado (o mesmo prédio)' : 'numa casa do bairro, que virou o prédio do bar') : 'numa casa comum do bairro', true],
+      ...(e && e.pertoDoEstadio ? [['Estádio', 'a menos de 50 m (o bairro não tem lote mais longe)', true]] : [])
+    ]) + (filial ? `<p class="nota">A filial é a subsede de uma torcida de outra praça aqui: o letreiro diz SUBSEDE e ${esc(l.subsede.praca)}.</p>` : '') + (loja
+      ? `<p class="nota">O prédio do bar da torcida com a loja no térreo ${T ? coresDe(T) : ''}: a vitrine de vidro com os manequins, a testeira com o escudo, LOJA e a sigla no LED; dentro, as camisas da torcida e do time no cabide, a mesa de cano com a camisa dobrada, a arara, a coluna com a sigla e o balcão do caixa. Em cima, o apartamento.</p>`
+      : `<p class="nota">A casa comum virou a subsede ${T ? coresDe(T) : ''}: a fachada em faixas com a porta de enrolar, o toldo, o escudo e o nome da torcida com SUBSEDE e o bairro; dentro, só dois cômodos — o pátio coberto (as bandeiras, os escudos pintados, a mesa, os surdos, a TV) e o barzinho embutido no fundo.</p>`)
+      + '<p class="nota">O jogo diz o bairro (o patrimônio do jogador, o mundo vivo da IA); a planta acha o lote dentro dele.</p>';
+  }
   if (it.tipo === 'lote' && ehLoja(it.l)) {
     /* A LOJA DO ASSALTO: o que ela é, o tamanho e o que tem dentro (a planta de lojas3d.js) */
     const l = it.l, lj = l.loja, nS = l.frente === 'n' || l.frente === 's';
@@ -5710,12 +5979,8 @@ function fichaDe(it) {
       ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Onde', e.terreno ? e.terreno.onde : '', true]
     ]) + `<p class="nota">${sd.nivel === 1 ? 'O barracão de nível 1' : 'A sede grande (a de nível 3, que a planta usa do nível 2 em diante)'} nas cores da torcida ${coresDe(T)}, com o nome dela no letreiro da fachada, a placa em cada sala e a faixa ${sd.nivel === 1 ? 'no pátio' : 'no salão'}.${sd.resto ? ' O resto do terreno fica de pátio murado, pra quando a sede crescer.' : ''}</p>`
       + comodosDaSede(it.montagem) + NOTA_DA_SEDE;
-    const zero = ocupacao.semSede.filter(T => T.nivel < 1);
-    return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>Sede vaga</h2>` + linhas([
-      ['Espaço', tam], ['Frente para', FRENTE[e.frente]], ['Cabe', e.cabe === 1 ? 'só a sede de nível 1' : 'sede de qualquer nível', true],
-      ['Onde', e.terreno ? e.terreno.onde : '', true]
-    ]) + `<p class="nota">Nenhuma torcida de ${esc(cidade)} mora aqui${zero.length ? ` (${esc(zero.map(T => T.sigla).join(', '))}, no nível 0, não tem sede)` : ''}: o espaço fica com a ${sd.nivel === 1 ? 'sede de nível 1' : 'sede grande'} fechada — cor de reboco, vazia por dentro, a porta de enrolar abaixada, as portas fechadas e o telhado.</p>`
-      + NOTA_DA_SEDE;
+    /* (o espaço sem dono não aparece: ele é casa — 02/10/2026) */
+    return `<p class="sobre">Espaço de sede · ${esc(onde)}${chip}</p><h2>${esc(it.nome)}</h2><p class="nota">Nenhuma torcida mora aqui: o terreno é casa.</p>`;
   }
   if (it.tipo === 'estacao') {
     const e = it.est, o = outraDe(e), m = METRO_P, a = e.entrada, sl = e.salao;
@@ -6037,6 +6302,90 @@ for (const N of [1, 2, 3, 4, 5]) {
     }
   });
 }
+/* AS ESTRUTURAS DA TORCIDA (o dono, 02/10/2026): a loja da torcida (o
+   prédio do bar com a loja no térreo, das duas fotos de referência) num
+   lote de esquina de exemplo, na torcida da praça — "Outra torcida" passa
+   pras outras torcidas da praça */
+/* (`torcidaDoLote` mora com as estruturas do mapa, lá em cima) */
+function torcidaDoCatalogo(n) {
+  const ts = ocupacao.torcidas || [];
+  if (ts.length) return ts[(n - 1) % ts.length];
+  const e = torcidaDeExemplo();
+  return { ...e, nomeCompleto: e.nome };
+}
+/* (o fundo do lote do bar no mapa: 4,5 a 5,8 m — o lote de esquina da quadra) */
+const FUNDO_BAR_M = 5.4;
+function loteDeExemplo(modelo, W, D, T, placa) {
+  return { x0: 0, x1: Math.round(W * M), y0: 0, y1: Math.round(D * M), frente: 's', tipo: 'sobrado', modelo, esquina: 'dir',
+           alt: Math.round(6.7 * M), cor: '#e9e2d0', proposta: true, torcida: torcidaDoLote(T), placa };
+}
+MODELOS.push({
+  tipo: 'modelo', id: 'loja-torcida', secao: 'Estruturas da torcida', grupo: 'Loja, subsede', nome: 'Loja da torcida',
+  nota: 'O prédio do bar da torcida com a loja no térreo: a vitrine de vidro com os manequins, a testeira com o escudo e o LED, e por dentro as camisas da torcida e do time.',
+  chao: '#b9b8ae', frente: [0, 1], semente: 1, dentro: false, info: null,
+  montar(g) {
+    this.dentro = false;
+    const T = torcidaDoCatalogo(this.semente), W = LARG_BAR_M, D = FUNDO_BAR_M;
+    const l = loteDeExemplo('lojatorcida', W, D, T, 'LOJA DA ' + T.sigla);
+    caixa(g, -1.2 * M, (W + 1.2) * M, 0, 1.2, 0, (D + 2.4) * M, '#b3afa5');
+    objetoDoLote(l, g);
+    const pc = planoSeguro(l);
+    this.info = { T, W, D, placas: pc && pc.placas ? pc.placas.length : 0 };
+    if (estado.sel === this) $('ficha').innerHTML = this.ficha();
+  },
+  ficha() {
+    const i = this.info, sobre = `<p class="sobre">Modelo 3D · estrutura da torcida</p><h2>${esc(this.nome)}</h2>`;
+    if (!i) return sobre + '<p class="nota">Montando a loja…</p>';
+    return sobre + linhas([
+      ['Torcida', `${i.T.sigla}${i.T.nomeCompleto ? ' · ' + i.T.nomeCompleto : ''}`, true], ['Lote', `${emM(i.W)} × ${emM(i.D)}, de esquina`, true],
+      ['Letreiro', `LOJA · o escudo · ${i.T.sigla}`, true], ['Decalques', String(i.placas)]
+    ]) + `<div class="acoes"><button data-acao="semente">Outra torcida</button><button data-acao="dentro" aria-pressed="${this.dentro}">${this.dentro ? 'Com a laje' : 'Ver por dentro'}</button></div>` +
+    `<p class="nota">${esc(this.nota)}</p><p class="nota">O mesmo prédio do bar da torcida — o corredor da escada e o apartamento em cima ficam iguais —, com o térreo de loja, das duas fotos do dono: a fachada de vidro rente à calçada (a mureta e a testeira na cor 1 da torcida, o LED nas bordas, o escudo no meio entre LOJA e a sigla), a vitrine com os manequins de camisa e bermuda, e por dentro o piso de tábua, as camisas no cabide em duas fileiras na parede da escada, a bandeira e mais uma fileira na da esquina, as mesas de cano com a camisa dobrada, a arara, a coluna com a sigla, o balcão do caixa e, na parede do fundo na cor da torcida, o escudo e as camisas abertas — as da torcida (as cores dela, a sigla e o escudo) e as do time (as cores do clube, a sigla e o escudo dele). O vidro é transparente: da rua se vê a vitrine e a loja. <code>js/diajogo/casas3d.js</code>.</p>`;
+  }
+});
+/* A SUBSEDE (o dono, 02/10/2026: "uma subsede do tamanho de uma casa
+   comum, com dois compartimentos apenas (barzinho embutido e pátio)") num
+   lote de casa do mapa — o maior comum, 6,6 m de frente e 5,2 m de fundo —,
+   com o nome de um bairro da praça */
+const LOTE_SUBSEDE = { W: 6.6, D: 5.2 };
+MODELOS.push({
+  tipo: 'modelo', id: 'subsede-torcida', secao: 'Estruturas da torcida', grupo: 'Loja, subsede', nome: 'Subsede da torcida',
+  nota: 'A subsede num lote de casa comum, com só dois cômodos: o pátio coberto, aberto pra rua pela porta de enrolar, e o barzinho embutido no fundo.',
+  /* (o corte de "Ver por dentro" passa por cima do forro do barzinho e por baixo das treliças) */
+  /* `filial`: a subsede de uma torcida de outra praça nesta (o letreiro diz a praça) */
+  chao: '#b9b8ae', frente: [0, 1], semente: 1, dentro: false, filial: false, info: null, corteDentro: 2.85,
+  montar(g) {
+    this.dentro = false;
+    const { W, D } = LOTE_SUBSEDE, mapa = slugDe(cidade);
+    const bs = SETORES ? SETORES.bairros.filter(b => b.nome && !b.favela) : [];
+    const B = bs.length ? bs[(this.semente - 1) % bs.length] : null, nomeB = B ? B.nome : 'Centro';
+    let T = torcidaDoCatalogo(this.semente);
+    if (this.filial) {
+      /* (uma torcida de outra praça, que tenha escudo) */
+      const fora = (TO.dados.torcidas || []).filter(t => t.mapa && t.mapa !== mapa && caminhoDoEscudo('t', t.id));
+      if (fora.length) T = torcidaDaPraca(fora[(this.semente * 7) % fora.length]);
+    }
+    const lugar = this.filial ? lugarDaFilial(mapa, B && B.id) : nomeB;
+    const l = loteDeExemplo('subsede', W, D, T, undefined);
+    l.alt = Math.round(4.4 * M); l.tipo = 'casa'; delete l.esquina;
+    l.subsede = { bairro: nomeB.toUpperCase(), nome: nomeB, filial: this.filial, praca: this.filial ? lugar : '', letreiro: ('SUBSEDE ' + lugar).toUpperCase() };
+    caixa(g, -1.2 * M, (W + 1.2) * M, 0, 1.2, 0, (D + 2.4) * M, '#b3afa5');
+    objetoDoLote(l, g);
+    const pc = planoSeguro(l);
+    const deOnde = this.filial && T.t ? (CIDADES.find(([n]) => slugDe(n) === T.t.mapa) || [T.t.mapa])[0] : '';
+    this.info = { T, W, D, bairro: nomeB, letreiro: l.subsede.letreiro, deOnde, placas: pc && pc.placas ? pc.placas.length : 0 };
+    if (estado.sel === this) $('ficha').innerHTML = this.ficha();
+  },
+  ficha() {
+    const i = this.info, sobre = `<p class="sobre">Modelo 3D · estrutura da torcida</p><h2>${esc(this.nome)}</h2>`;
+    if (!i) return sobre + '<p class="nota">Montando a subsede…</p>';
+    return sobre + linhas([
+      ['Torcida', `${i.T.sigla}${i.T.nomeCompleto ? ' · ' + i.T.nomeCompleto : ''}${i.deOnde ? ' (de ' + i.deOnde + ')' : ''}`, true], ['Lote', `${emM(i.W)} × ${emM(i.D)}, de casa`, true],
+      ['Letreiro', `o nome · ${i.letreiro}`, true], ['Decalques', String(i.placas)]
+    ]) + `<div class="acoes"><button data-acao="semente">Outra torcida</button><button data-acao="filial" aria-pressed="${this.filial}">${this.filial ? 'Subsede da praça' : 'Filial (de fora)'}</button><button data-acao="dentro" aria-pressed="${this.dentro}">${this.dentro ? 'Com o telhado' : 'Ver por dentro'}</button></div>` +
+    `<p class="nota">${esc(this.nota)}</p><p class="nota">Das fotos de referência (as fachadas da Mancha em Rio Claro e em Matão, da Independente em Marília, dos Gaviões em Guarulhos e a Independente de Sorocaba por dentro): a fachada em faixas — o rodapé na cor forte da torcida, o meio branco, a faixa de cima na cor 1 —, a porta de enrolar aberta com o toldo na cor 1, o escudo pintado do lado e, na platibanda, o nome da torcida com o brilho do LED e SUBSEDE com o nome do bairro embaixo (na filial — a subsede de uma torcida de outra praça —, SUBSEDE e o nome da praça, ou da cidade do bairro na praça de várias cidades). Dentro, o pátio coberto de telha de metal nas treliças (com a faixa de telha clara), as paredes de bloco branco com o rodapé cinza e a faixa da cor 1, o escudo da torcida e o do time pintados, as bandeiras penduradas, a mesa de plástico, os surdos e a TV; no fundo, o barzinho com a porta atrás da porta da rua, o balcão de azulejo com o tampo de granito, a faixa de pano da subsede por cima, e por dentro a prateleira, a cervejeira, o freezer e o escudo. <code>js/diajogo/casas3d.js</code>.</p>`;
+  }
+});
 for (const E of Object.values(ESTADIOS_JOGO)) {
   MODELOS.push({
     tipo: 'modelo', id: 'jogo-' + E.id, secao: 'Estádios do jogo', grupo: 'As três cenas do protótipo', nome: E.nome, nota: E.nota,
@@ -6358,6 +6707,40 @@ function texturaPixo(texto, tinta, asp, deTorcida) {
   const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
   return t;
 }
+/* O LETREIRO DA TESTEIRA DA LOJA DA TORCIDA (a foto da LOJA OFICIAL): a
+   letra solta, grossa, na cor da tinta, com o brilho do LED em volta —
+   fundo transparente, a testeira na cor 1 é que aparece atrás. `brilho`
+   é a cor do LED (o nome da subsede brilha na cor da torcida) */
+function texturaLetreiroLoja(texto, tinta, asp, brilho) {
+  const W = 512, H = Math.max(64, Math.round(W / Math.max(1, asp)));
+  const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+  const c = cv2.getContext('2d');
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  let tam = Math.round(H * 0.8); c.font = `bold ${tam}px "Arial Black", "Arial Narrow", Arial, sans-serif`;
+  while (tam > 12 && c.measureText(texto).width > W * 0.92) { tam -= 2; c.font = `bold ${tam}px "Arial Black", "Arial Narrow", Arial, sans-serif`; }
+  c.shadowColor = brilho || 'rgba(255,255,255,.75)'; c.shadowBlur = tam * (brilho ? 0.24 : 0.18);
+  c.fillStyle = tinta || '#f6f3ea'; c.fillText(texto, W / 2, H / 2 + tam * 0.04);
+  c.shadowBlur = 0; c.lineWidth = Math.max(1.5, tam * 0.03); c.strokeStyle = 'rgba(0,0,0,.35)'; c.strokeText(texto, W / 2, H / 2 + tam * 0.04);
+  const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+/* A COLUNA DA LOJA (a foto da Mancha): a sigla de cima a baixo, uma letra
+   embaixo da outra, na tinta da torcida, no fundo claro da coluna */
+function texturaColuna(texto, tinta, fundo, asp) {
+  const W = 96, H = Math.max(192, Math.round(W / Math.max(0.05, asp)));
+  const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+  const c = cv2.getContext('2d');
+  c.fillStyle = fundo || '#f6f5f0'; c.fillRect(0, 0, W, H);
+  const letras = [...String(texto || '').toUpperCase().replace(/\s+/g, '')];
+  if (letras.length) {
+    const passo = Math.min(H / letras.length, W * 1.25), tam = Math.min(W * 0.82, passo * 0.86), y0 = (H - passo * letras.length) / 2;
+    c.font = `bold ${Math.round(tam)}px "Arial Black", "Arial Narrow", Arial, sans-serif`;
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = tinta || '#1a1a1a';
+    letras.forEach((ch, i) => c.fillText(ch, W / 2, y0 + passo * (i + 0.5)));
+  }
+  const t = new THREE.CanvasTexture(cv2); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
 /* O TAMANHO DA PIXAÇÃO, na altura do boneco (1,75 m): a de torcida vai do
    pé da parede (20 cm) até 1,75 m; o recado é a letra de quem escreve em
    pé, de 0,8 a 1,7 m */
@@ -6374,13 +6757,26 @@ function placaNoMundo(g, lug, tex, alfa) {
 }
 function decalques(l, pc, g) {
   const W = pc.W * M;
-  if (l.placa) {
+  /* OS DECALQUES SOLTOS (a loja da torcida: LOJA, o escudo e a sigla na
+     testeira; o escudo e as camisas abertas na parede do fundo; a sigla
+     de cima a baixo na coluna. A subsede: o nome na platibanda, SUBSEDE e
+     o bairro, o escudo da fachada, os murais e a faixa de pano do fundo) */
+  for (const q of placasDoLote(l, pc)) {
+    if (q.tipo === 'escudo') placaNoMundo(g, q, texturaEscudo({ forma: 'bola', cor: q.cor, cor2: q.fundo, texto: q.texto, corTexto: q.fundo, img: q.img }), true);
+    else if (q.tipo === 'camisa') placaNoMundo(g, q, texturaCamisa({ ...q, larg: q.larg, alt: q.alt, semFundo: true }), true);
+    else if (q.tipo === 'texto') placaNoMundo(g, q, texturaLetreiroLoja(q.texto, q.tinta, q.larg / q.alt, q.brilho), true);
+    else if (q.tipo === 'coluna') placaNoMundo(g, q, texturaColuna(q.texto, q.tinta, q.fundo, q.larg / q.alt));
+    else if (q.tipo === 'faixa') placaNoMundo(g, q, texturaPlaca(q.texto, q.tinta, q.fundo, q.larg / q.alt, true));
+  }
+  /* (a testeira da loja da torcida e a platibanda da subsede levam o letreiro delas, nos decalques soltos) */
+  if (l.placa && l.modelo !== 'lojatorcida' && l.modelo !== 'subsede') {
     const pp = pc.placa;
     const larg = pp ? pp.larg : Math.min(W - 12, 110), alt = pp ? pp.alt : Math.min(15, larg / 4.6);
     const lug = lugarDoDecalque(l, pc, larg, alt, { u: (pp && pp.u) || 0, y: pp ? pp.y : Math.max(46 + 6, 52) + alt / 2, min: larg * 0.55 });
     if (lug) placaNoMundo(g, lug, texturaDizer(l.placa, true, l.placaTinta, l.placaFundo));
   }
-  const px = pixacaoDe(l);
+  /* (a fachada da loja e da subsede da torcida é dela: sem pixação) */
+  const px = ehEstrutura(l) ? null : pixacaoDe(l);
   if (px) {
     /* da altura do boneco; no muro do terreno baldio ela toma o muro (a
        regra do jogo). O quadro mais largo que couber na parede livre (sem
@@ -6403,9 +6799,10 @@ function decalques(l, pc, g) {
 function objetoDoLote(l, g) {
   const pc = planoSeguro(l);
   if (pc) {
-    const destino = { casas: [], grades: [] };
+    /* (`vidros`: o vidro transparente da vitrine da loja da torcida) */
+    const destino = { casas: [], grades: [], vidros: [] };
     montarCasa(l, pc, destino, 0);
-    for (const [lista, folha] of [[destino.casas, 'casas'], [destino.grades, 'grades']]) { const m = malhaDeBlocos(lista, folha); if (m) g.add(m); }
+    for (const [lista, folha] of [[destino.casas, 'casas'], [destino.grades, 'grades'], [destino.vidros, 'vidros']]) { const m = malhaDeBlocos(lista, folha); if (m) g.add(m); }
     decalques(l, pc, g);
     return;
   }
@@ -6599,7 +6996,8 @@ function objetoDoTerreno(a, frente, g, o = {}) {
   }
 }
 /* O ESPAÇO DE SEDE: a sede da torcida que mora ali (e o resto do
-   terreno de pátio murado, quando ela é a pequena), ou a sede vaga */
+   terreno de pátio murado, quando ela é a pequena); sem dono, o espaço
+   não monta nada — ele é casa (as casas dele estão nos lotes) */
 function objetoDoEspaco(it, g, o) {
   const sd = it.sede;
   if (sd.resto) objetoDoTerreno(sd.resto, sd.frente, g, { fora: sd.area });
@@ -6625,6 +7023,15 @@ $('ficha').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-acao]');
   const A = estado.sel;
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'semente') { A.semente++; selecionar(A); return; }
+  /* a subsede do catálogo: a da praça (SUBSEDE e o bairro) ou a filial de uma torcida de fora (SUBSEDE e a praça) */
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'filial') { A.filial = !A.filial; selecionar(A); return; }
+  /* a loja do catálogo: o corte embaixo da laje, pra ver por dentro */
+  if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'dentro') {
+    A.dentro = !A.dentro;
+    vista.corte(A.dentro ? (A.corteDentro || 2.6) * M : null);
+    if (A.dentro) vista.orbita(0, 1.05);
+    $('ficha').innerHTML = A.ficha(); return;
+  }
   /* a sede do catálogo: o pagode do bar e os ônibus da garagem, sem remontar */
   if (b && A && A.tipo === 'modelo' && b.dataset.acao === 'festa') {
     A.festa = !A.festa;
@@ -6942,8 +7349,11 @@ function texturaCamisa(p) {
   };
   const escudo = { x: X(0.62), y: Y(0.3), r: S * 0.075 };
   const pintar = im => {
-    c.fillStyle = '#ece7da'; c.fillRect(0, 0, W, H);
-    c.fillStyle = 'rgba(0,0,0,.08)'; c.fillRect(0, 0, W, 4); c.fillRect(0, 0, 4, H);
+    if (p.semFundo) c.clearRect(0, 0, W, H);
+    else {
+      c.fillStyle = '#ece7da'; c.fillRect(0, 0, W, H);
+      c.fillStyle = 'rgba(0,0,0,.08)'; c.fillRect(0, 0, W, 4); c.fillRect(0, 0, 4, H);
+    }
     const k = p.k || 0, base = k === 2 ? p.cor2 : p.cor;
     c.save(); corpo(); c.fillStyle = base; c.fill(); c.clip();
     if (k === 1) { c.fillStyle = p.cor2; for (let v = 0.29; v < 0.8; v += 0.14) c.fillRect(X(v), Y(0), S * 0.07, S); }
@@ -7560,8 +7970,11 @@ function objetoDaQuadra(q, g, nova, prop) {
     : q.lotes.filter(l => !PROP.lotesTirados.has(l)).concat(PROP.lotesExtra.filter(l => l.quadra.i === q.i && l.quadra.j === q.j));
   /* (a sede no terreno de reserva da quadra: as casas debaixo dela somem,
      como a sobra do quarteirão da sede de nível 5) */
-  const esp = (prop && espacos.find(x => x.reserva && x.e.q === q)) || espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && x.e.hoje && x.e.quadra === id);
-  const some = new Set(esp ? (esp.reserva ? esp.sob : []).concat(esp.sede && esp.sede.nivel === 5 ? esp.sobra || [] : []).map(it => it.l) : []);
+  const esp = (prop && espacos.find(x => x.reserva && x.e.q === q)) || espacos.find(x => nova ? x.e.terreno && x.e.terreno === q.terreno : prop && (x.e.hoje || x.e.emQuadraDeHoje) && x.e.quadra === id);
+  const some = new Set(esp ? (esp.sob || []).concat(esp.sede && esp.sede.nivel === 5 ? esp.sobra || [] : []).map(it => it.l) : []);
+  /* (o espaço de sede sem dono da quadra é casa: as casas dele entram) */
+  const casasDoEspaco = !(prop || nova) ? [] : espacosDoMapa.filter(x => !x.dono && (nova ? x.e.terreno && x.e.terreno === q.terreno : (x.e.hoje || x.e.emQuadraDeHoje) && x.e.quadra === id))
+    .flatMap(x => x.sob.filter(it => !it.sobSede).map(it => it.l));
   /* (as torres da praça: as casas debaixo da torre nova somem; o prédio
      do centro que saiu dá lugar às casas dele, e a torre nova da quadra entra) */
   if (prop) for (const it of escondidosPelasTorres) some.add(it.l);
@@ -7569,7 +7982,7 @@ function objetoDaQuadra(q, g, nova, prop) {
   const semBaldio = prop && !nova && !!muradoSemTorre(q.equip);
   const casasDoPredio = (semPredio ? PROP.lotesDoPredio || [] : []).concat(semBaldio ? PROP.lotesDoBaldio || [] : []).filter(l => l.quadra.i === q.i && l.quadra.j === q.j);
   if (nova && q.casasDoBaldio && muradoSemTorre(q.mantem && q.mantem.equip)) casasDoPredio.push(...q.casasDoBaldio.lotes);
-  for (const l of lotesDela.concat(casasDoPredio)) if (!some.has(l)) objetoDoLote(l, g);
+  for (const l of lotesDela.concat(casasDoPredio, casasDoEspaco)) if (!some.has(l)) objetoDoLote(l, g);
   if (prop) for (const m of marcosNovos) if (m.torreNobre && m.bb.x0 >= q.x0 - 1 && m.bb.x1 <= q.x1 + 1 && m.bb.y0 >= q.y0 - 1 && m.bb.y1 <= q.y1 + 1) objetoDoMarco(m, g);
   if (nova && q.estacao) entradaDaEstacao(q.estacao, g);
   if (esp) objetoDoEspaco(esp, g, { telhado: true });
@@ -7610,8 +8023,8 @@ function objetoDeEstudo(q, g) {
 function pecasDoCenario() {
   const out = [], poe = (tipo, it, montar) => out.push({ tipo, it, montar });
   for (const it of lotes) if (!it.sobProposta && !it.sobSede) poe(it.l.favela ? 'favela' : 'casa', it, g => objetoDoLote(it.l, g));
-  for (const it of lotesNovos) if (!it.sobSede) poe(ehBar(it.l) ? 'bar' : ehLoja(it.l) ? 'loja' : 'casa', it, g => objetoDoLote(it.l, g));
-  for (const it of lotesFavelaNova) if (!it.sobSede) poe('favela', it, g => objetoDoLote(it.l, g));
+  for (const it of lotesNovos) if (!it.sobSede) poe(ehBar(it.l) ? 'bar' : ehLoja(it.l) ? 'loja' : ehLojaTorcida(it.l) ? 'lojatorcida' : ehSubsede(it.l) ? 'subsede' : 'casa', it, g => objetoDoLote(it.l, g));
+  for (const it of lotesFavelaNova) if (!it.sobSede) poe(ehLojaTorcida(it.l) ? 'lojatorcida' : ehSubsede(it.l) ? 'subsede' : 'favela', it, g => objetoDoLote(it.l, g));
   for (const it of marcosDeHoje().concat(marcosNovos)) poe('marco', it, g => objetoDoMarco(it, g));
   for (const it of espacos) poe('sede', it, g => objetoDoEspaco(it, g, { telhado: true, portasVivas: true }));
   /* a rua de veraneio: cada lote com a casa dele, e os coqueiros da rua */
@@ -8080,7 +8493,7 @@ const vista = criarVista($('c3d'));
 if (new URLSearchParams(location.search).has('teste')) window.__planta = { estado, paraTela, zoomEm, lotes, pecasSoltas, marcos, equipamentos, K,
   get lotesNovos() { return lotesNovos; }, get lotesFavelaNova() { return lotesFavelaNova; }, get marcosNovos() { return marcosNovos; },
   get porticos() { return porticos; }, get estadios() { return estadios; }, get PROP() { return PROP; },
-  get bares() { return bares; }, get espacos() { return espacos; }, get estacoes() { return estacoes; }, get lotesVeraneio() { return lotesVeraneio; }, get api() { return apiDoCenario(); },
+  get bares() { return bares; }, get estruturas() { return estruturas; }, ESTRUTURAS_DE_TESTE, exemplo(v) { ESTRUTURAS_EXEMPLO = !!v; }, get espacos() { return espacos; }, get estacoes() { return estacoes; }, get lotesVeraneio() { return lotesVeraneio; }, get api() { return apiDoCenario(); },
   get LAGOA() { return LAGOA; }, get CALCADAS() { return CALCADAS; }, montarCalcadas, ocupacao: () => ocupacao, mudarCidade, mudarModo, selecionar, vista, MODELOS, abrirCatalogo, zipDeUm, pecasDoCenario, centrarEm,
   ambulantes: () => ambulantesDoMapa(), get SETORES() { return SETORES; }, get GOMOS() { return GOMOS; }, get RESERVAS() { return RESERVAS; }, get espacosDoMapa() { return espacosDoMapa; }, quadroDasZonas, zonaNoMapa, unidadesDaPraca, unidadesDosBairros,
   /* (o gerador sozinho, pra conferir o mapa de uma praça sem montar a planta) */
@@ -8108,8 +8521,9 @@ function camposDaPraca() {
   for (const m of marcos) poe(m, ['semTorre']);
   if (PROP) for (const c of PROP.condominios) poe(c.q, ['semCondominio']);
   /* (a casa que vira bar no bairro sem vaga: `virarBar`) */
-  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'nobre', ...CAMPOS_BAR_EXTRA]); }
-  for (const it of lotesFavelaNova) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', ...CAMPOS_BAR_EXTRA]); }
+  /* (e a casa ou a vaga que vira loja ou subsede: `virarEstrutura`) */
+  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'nobre', 'estrutura', 'subsede', ...CAMPOS_BAR_EXTRA]); }
+  for (const it of lotesFavelaNova) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'estrutura', 'subsede', ...CAMPOS_BAR_EXTRA]); }
   for (const e of equipamentos) poe(e, ['somePelaProposta']);
   for (const q of pecasSoltas) poe(q, ['somePelaProposta']);
   for (const x of espacosDoMapa.concat(RESERVAS)) poe(x, ['dono', 'sede', 'montagem', 'bb', 'pol', 'inteira', 'sobra']);
@@ -8132,7 +8546,7 @@ const unirCampos = (...listas) => {
 function fotoDaPraca(alvos) {
   return {
     G: { cidade, PROP, cobertoPelaProposta, fav0, somePelaProposta, lotesNovos, lotesFavelaNova, marcosNovos, marcosDoMapa, escondidosPelasTorres, somemNaProposta,
-         bares, espacos, espacosDoMapa, RESERVAS, lotesVeraneio, porticos, METRO_P, estacoes, estadios, trocadas, carroSome, LIM_PROPOSTA, MUNDO, CALCADAS,
+         bares, estruturas, espacos, espacosDoMapa, RESERVAS, lotesVeraneio, porticos, METRO_P, estacoes, estadios, trocadas, carroSome, LIM_PROPOSTA, MUNDO, CALCADAS,
          ocupacao, SETORES, GOMOS, TORCIDA_DO_JOGO, sel: estado.sel, sobre: estado.sobre },
     alvos, v: alvos.map(([o, k]) => [Object.prototype.hasOwnProperty.call(o, k), o[k]])
   };
@@ -8142,7 +8556,7 @@ function porFotoDaPraca(F) {
   cidade = G.cidade; PROP = G.PROP; cobertoPelaProposta = G.cobertoPelaProposta; fav0 = G.fav0; somePelaProposta = G.somePelaProposta;
   lotesNovos = G.lotesNovos; lotesFavelaNova = G.lotesFavelaNova; marcosNovos = G.marcosNovos; marcosDoMapa = G.marcosDoMapa; escondidosPelasTorres = G.escondidosPelasTorres;
   somemNaProposta = G.somemNaProposta;
-  bares = G.bares; espacos = G.espacos; espacosDoMapa = G.espacosDoMapa; RESERVAS = G.RESERVAS; lotesVeraneio = G.lotesVeraneio; porticos = G.porticos; METRO_P = G.METRO_P; estacoes = G.estacoes;
+  bares = G.bares; estruturas = G.estruturas || []; espacos = G.espacos; espacosDoMapa = G.espacosDoMapa; RESERVAS = G.RESERVAS; lotesVeraneio = G.lotesVeraneio; porticos = G.porticos; METRO_P = G.METRO_P; estacoes = G.estacoes;
   estadios = G.estadios; trocadas = G.trocadas; carroSome = G.carroSome; LIM_PROPOSTA = G.LIM_PROPOSTA; MUNDO = G.MUNDO; CALCADAS = G.CALCADAS;
   ocupacao = G.ocupacao; SETORES = G.SETORES; GOMOS = G.GOMOS; TORCIDA_DO_JOGO = G.TORCIDA_DO_JOGO; estado.sel = G.sel; estado.sobre = G.sobre;
   for (let i = F.alvos.length - 1; i >= 0; i--) { const [o, k] = F.alvos[i], [tinha, v] = F.v[i]; if (tinha) o[k] = v; else delete o[k]; }
@@ -8400,7 +8814,8 @@ function apiDoCenario() {
        fora dela, na calçada */
     bares() {
       const fora = 1.6 * M;
-      return bares.filter(x => x.b && x.b.lote).map(x => {
+      /* (a vaga de bar que virou loja da torcida não é bar) */
+      return bares.filter(x => x.b && x.b.lote && ehBar(x.b.lote)).map(x => {
         const l = x.b.lote, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, f = l.frente;
         const porta = f === 'n' ? { x: cx, y: l.y0 - fora, fx: 0, fy: -1 } : f === 's' ? { x: cx, y: l.y1 + fora, fx: 0, fy: 1 }
           : f === 'o' ? { x: l.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: l.x1 + fora, y: cy, fx: 1, fy: 0 };
@@ -8408,6 +8823,20 @@ function apiDoCenario() {
         const nS = f === 'n' || f === 's';
         return { n: x.b.n, nome: x.b.nome || '', dono: x.dono ? x.dono.id : null, porta, lote: { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1, frente: f, esquina: l.esquina || 'dir' },
                  W: (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, D: (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M };
+      });
+    },
+    /* AS LOJAS E AS SUBSEDES DAS TORCIDAS (02/10/2026): o tipo ('loja',
+       'subsede'), o dono (o id da torcida), o bairro (o id), o lote e a
+       porta na calçada, como o bar */
+    estruturas() {
+      const fora = 1.6 * M;
+      return estruturas.filter(e => e.l).map(e => {
+        const l = e.l, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, f = l.frente, nS = f === 'n' || f === 's';
+        const porta = f === 'n' ? { x: cx, y: l.y0 - fora, fx: 0, fy: -1 } : f === 's' ? { x: cx, y: l.y1 + fora, fx: 0, fy: 1 }
+          : f === 'o' ? { x: l.x0 - fora, y: cy, fx: -1, fy: 0 } : { x: l.x1 + fora, y: cy, fx: 1, fy: 0 };
+        const B = SETORES ? SETORES.bairros.find(b => b.id === e.bairro) : null;
+        return { tipo: e.tipo, n: e.n, dono: e.T.id, bairro: e.bairro, nomeDoBairro: B ? B.nome : '', porta,
+                 lote: { x0: l.x0, x1: l.x1, y0: l.y0, y1: l.y1, frente: f }, W: (nS ? l.x1 - l.x0 : l.y1 - l.y0) / M, D: (nS ? l.y1 - l.y0 : l.x1 - l.x0) / M };
       });
     },
     /* AS LOJAS DO ASSALTO (assalto3d.js): o tipo, o nome, o lote (a frente,
@@ -8655,14 +9084,14 @@ const LARG_BAR_M = 7.4;
 function tabelaDaCidade() {
   const ts = ocupacao.torcidas;
   if (!ts.length) return `<p class="nota">Nenhuma torcida nos dados tem ${esc(cidade)} como praça: todos os bares e as sedes ficam fechados.</p>`;
-  const abertos = bares.filter(x => x.dono).length, ocupados = espacos.filter(x => x.dono).length;
+  const abertos = bares.filter(x => x.dono).length;
   const linhasT = ts.map(T => `<tr><td><span class="cores">${[T.cor, T.cor2, T.cor3].filter((c, i, a) => c && a.indexOf(c) === i).map(c => `<i style="background:${c}"></i>`).join('')}</span>${esc(T.sigla)}</td>
     <td>${T.nivel}</td><td>${T.sede ? esc(T.sede.e.hoje ? 'quadra ' + T.sede.e.quadra : T.sede.e.nome.replace('Terreno para sede ', 'terreno ')) : T.nivel < 1 ? 'sem sede (nível 0)' : 'sem espaço'}</td>
     <td>${T.bares.length ? T.bares.map(x => x.b.n + (T.sede ? ` <small>(${Math.round(distDaSede(x, T.sede))} m da sede)</small>` : '')).join(', ') : '—'}</td>
     <td>${rivalMaisPerto(T)}</td>
     <td>${T.sede ? Math.round(doEstadio(T.sede.e.area)) + ' m' : '—'}${T.bares.length ? ` <small>(bar${T.bares.length > 1 ? 'es' : ''}: ${T.bares.map(x => Math.round(doEstadio(x.b.lote)) + ' m').join(', ')})</small>` : ''}</td></tr>`).join('');
   return `<h3>As torcidas de ${esc(cidade)}</h3>
-  <p>${ts.length} torcida${ts.length > 1 ? 's' : ''}: ${abertos} de ${bares.length} bares abertos e ${ocupados} de ${espacos.length} espaços de sede ocupados.</p>
+  <p>${ts.length} torcida${ts.length > 1 ? 's' : ''}: ${abertos} de ${bares.length} bares abertos e ${espacos.length} com sede no mapa.</p>
   <table class="torcidas"><thead><tr><th>Torcida</th><th>Nível</th><th>Sede</th><th>Bar</th><th>Sede rival mais perto</th><th>Do estádio mais perto</th></tr></thead><tbody>${linhasT}</tbody></table>`;
 }
 /* a distância (m) de uma caixa (a sede, o bar) à quadra do estádio mais perto, de caixa a caixa */
@@ -8715,7 +9144,7 @@ function notasDaProposta() {
   return `<p class="sobre">${esc(PROP.mapa.nome)} · cidades de porte ${esc(PROP.mapa.porte.toLowerCase())}</p><h2>${esc(cidade)} no mapa ${NOME_MAPA[modo]}</h2>
   <dl class="numeros">
     <div><dt>Estádios</dt><dd>${Math.min(total, vagas)} de ${vagas}</dd><small>vagas do mapa</small></div>
-    <div><dt>Sedes</dt><dd>${espacos.filter(x => x.dono).length} de ${espacos.length}</dd><small>espaços ocupados</small></div>
+    <div><dt>Sedes</dt><dd>${espacos.length} de ${ocupacao.torcidas.length}</dd><small>torcidas com sede</small></div>
     <div><dt>Bares</dt><dd>${bares.filter(x => x.dono).length} de ${bares.length}</dd><small>abertos</small></div>
     <div><dt>Na favela</dt><dd>${fTotal}</dd><small>em ${nFav} favelas</small></div>
   </dl>
