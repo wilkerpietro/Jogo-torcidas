@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=2dbc7cb671';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=2dbc7cb671';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=d630fefbbe';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=d630fefbbe';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -521,6 +521,13 @@ function naLinha(V, d) {
   return { p: V[V.length - 1], i: V.length - 1 };
 }
 
+/* o ponto de encontro do bonde da torcida sem sede (`inicio.tipo`
+   'ponto'): o bar dela, sem bar a subsede, sem os dois a esquina do bairro */
+const doPonto = b => (b.inicio.porta && b.inicio.porta.tipo) || 'bar';
+const PONTO = { bar: ['o bar', 'Na porta do bar', 'Sai do bar (não tem sede)'], subsede: ['a subsede', 'Na porta da subsede', 'Sai da subsede (não tem sede)'],
+                esquina: ['a esquina do bairro', 'Na esquina do bairro', 'Sai da esquina do bairro (não tem sede nem bar)'] };
+const textoDoPonto = (b, k) => (PONTO[doPonto(b)] || PONTO.bar)[k];
+
 /* ======================================================
    O PLANO: o jogo, as zonas, a PM, as rotas e o horário
    ====================================================== */
@@ -546,7 +553,11 @@ export function planejar(ctx, escolha = {}) {
   /* OS JOGOS POSSÍVEIS: dois clubes da praça com torcida com sede; os
      daqui primeiro (a ordem de dados/cidades.js). E os DE FORA: os clubes
      de outra cidade com torcida que venha (a caravana) */
-  const comSede = id => torcidas.filter(t => t.clubeId === id && t.porta);
+  /* (a casa de cada uma no mapa: a sede, ou — sem sede, o nível 0 do jogo,
+     o ponto de encontro — a calçada do bar dela, `ponto`; é de lá que ela
+     sai pro estádio) */
+  const casaDe = t => t.porta || t.ponto || null;
+  const comSede = id => torcidas.filter(t => t.clubeId === id && casaDe(t));
   const lista = clubes.filter(c => comSede(c.id).length);
   const pares = [];
   for (let i = 0; i < lista.length; i++) for (let j = i + 1; j < lista.length; j++) {
@@ -588,7 +599,7 @@ export function planejar(ctx, escolha = {}) {
   };
   const quemVem = id => (P.torcidasDoClube ? P.torcidasDoClube(id) : []).filter(t => presenca ? foi(t) : caravana(t) >= CARAVANA_MIN);
   const deFora = (P.clubesDeFora ? P.clubesDeFora() : []).filter(c => quemVem(c.id).length).sort((a, b) => a.nome.localeCompare(b.nome, 'pt'));
-  if (!lista.length) return { erro: 'Nesta praça nenhum clube tem torcida com sede no mapa: não dá pra montar o jogo.' };
+  if (!lista.length) return { erro: 'Nesta praça nenhum clube tem torcida com sede (ou bar) no mapa: não dá pra montar o jogo.' };
   /* o de fora que vem quando não se escolhe (a praça de um clube só): o de
      torcida mais rival das do mandante — o clássico da região */
   const rixa = (casaId, foraId) => {
@@ -608,7 +619,7 @@ export function planejar(ctx, escolha = {}) {
     [casa, fora] = escolha.inverter ? [par[1], par[0]] : par;
   } else casa = lista[0];
   /* (o jogo de verdade não troca de adversário: sem o mandante com sede aqui, ou sem o visitante, o dia não monta) */
-  if (doJogo && (!casa || casa.id !== escolha.casa)) return { erro: 'O mandante do jogo não tem torcida com sede nesta praça: o dia de jogo não monta em 3D.' };
+  if (doJogo && (!casa || casa.id !== escolha.casa)) return { erro: 'O mandante do jogo não tem torcida com sede (ou bar) nesta praça: o dia de jogo não monta em 3D.' };
   if (doJogo && (!fora || fora.id !== escolha.fora)) return { erro: 'O visitante do jogo não tem torcida que venha: o dia de jogo não monta em 3D.' };
   if (!fora) fora = lista.find(c => c.id !== casa.id) || deFora.slice().sort((a, b) => rixa(casa.id, b.id) - rixa(casa.id, a.id))[0] || null;
   if (!fora) return { erro: 'Não achei adversário pro ' + casa.nome + ': nenhum clube de fora tem torcida que venha.' };
@@ -702,7 +713,7 @@ export function planejar(ctx, escolha = {}) {
   for (const L of lados) {
     const daqui = lista.includes(L.clube);
     const ts = daqui ? comSede(L.clube.id).filter(foi) : quemVem(L.clube.id);
-    /* (a torcida do jogador sem sede no mapa — o nível 0 — sai da entrada da cidade) */
+    /* (a torcida do jogador sem sede e sem bar no mapa sai da entrada da cidade) */
     if (daqui && nosso && !ts.some(ehNosso)) { const t = torcidas.find(x => ehNosso(x) && x.clubeId === L.clube.id); if (t) ts.push(t); }
     ts.sort((a, b) => (b.poder || 0) - (a.poder || 0) || (b.membros || 0) - (a.membros || 0));
     const disponiveis = setoresDoLado(L.l);
@@ -723,7 +734,7 @@ export function planejar(ctx, escolha = {}) {
       vagasUsadas[setor] = jaUsadas + n;
       bondes.push({ t, lado: L.lado, clube: L.clube, escalao: r + 1, setor, S, portao: rotas.portoes[S.portao], nPortao: S.portao, vaga0: jaUsadas, n, cor: corDaFita(t),
                     naRua, deFora: !daqui, anfitriao: hosp, nossa: ehNosso(t),
-                    inicio: daqui && t.porta ? { tipo: 'sede', porta: t.porta } : recebe ? { tipo: 'aliado', porta: hosp.t.porta, t: hosp.t } : { tipo: 'entrada', porta: null },
+                    inicio: daqui && casaDe(t) ? { tipo: t.porta ? 'sede' : 'ponto', porta: casaDe(t) } : recebe ? { tipo: 'aliado', porta: hosp.t.porta, t: hosp.t } : { tipo: 'entrada', porta: null },
                     escolta: nEsc ? { t: hosp.t, membros: hosp.escoltaMembros, n: Math.min(nEsc, n - 1) } : null });
     });
   }
@@ -814,7 +825,7 @@ export function planejar(ctx, escolha = {}) {
     }
     for (const b of semCasa) if (melhor) { b.inicio.porta = melhor.porta; b.inicio.entrada = melhor.e; }
   }
-  const deOnde = b => b.inicio.tipo === 'entrada' ? 'a entrada da cidade' : b.inicio.tipo === 'aliado' ? 'a sede do aliado' : 'a sede';
+  const deOnde = b => b.inicio.tipo === 'entrada' ? 'a entrada da cidade' : b.inicio.tipo === 'aliado' ? 'a sede do aliado' : b.inicio.tipo === 'ponto' ? textoDoPonto(b, 0) : 'a sede';
   /* o raio: ARREDOR, ou menos se uma sede do jogo fica perto (ela tem de sair de fora deles) */
   let raio = ARREDOR;
   for (const b of bondes) {
@@ -2612,6 +2623,7 @@ export function criarDiaDeJogo(ctx) {
     const ini = b.inicio;
     if (ini.tipo === 'entrada') return `A caravana desce na ${esc(ini.entrada ? ini.entrada.nome.replace(/^Pórtico da /, '') : 'entrada da cidade')} e vai a pé`;
     if (ini.tipo === 'aliado') return `Sai da sede da ${esc(ini.t.sigla)}, que ${b.anfitriao.decisao === 'escolta' ? 'hospedou e escolta' : 'hospedou'}${b.anfitriao.doMandante ? ' (e sai sozinha: a anfitriã é do mandante, só hospeda)' : ''}`;
+    if (ini.tipo === 'ponto') return textoDoPonto(b, 2);
     return `Sai da sede (${esc(b.t.bairro || '—')})`;
   }
   function genteTxt(b) {
@@ -2746,7 +2758,7 @@ export function criarDiaDeJogo(ctx) {
       if (b.ferido && b.tCai) for (let m = 0; m < b.n; m++) if (b.tCai[m] <= t) { if (b.ferido[m] === 2) presos++; else caidos++; }
       const fora = b.ferido ? b.ferido.reduce((s, x) => s + (x ? 0 : 1), 0) : b.n;
       let txt;
-      if (lider === 'na sede') txt = b.inicio.tipo === 'entrada' ? 'Na entrada da cidade, descendo da caravana' : b.inicio.tipo === 'aliado' ? 'Na porta da sede do aliado' : 'Na porta da sede';
+      if (lider === 'na sede') txt = b.inicio.tipo === 'entrada' ? 'Na entrada da cidade, descendo da caravana' : b.inicio.tipo === 'aliado' ? 'Na porta da sede do aliado' : b.inicio.tipo === 'ponto' ? textoDoPonto(b, 1) : 'Na porta da sede';
       else if (ult === 'no lugar') txt = `Todos no lugar, no setor ${b.setor}` + (caidos || presos ? ` (ficaram na rua ${caidos} feridos e ${presos} presos)` : '');
       else if (lider === 'na briga') txt = `Na briga com a ${esc((b.brigou.a === b ? b.brigou.v : b.brigou.a).t.sigla)}` + (caidos || presos ? `: ${caidos} no chão${presos ? `, ${presos} rendidos` : ''}` : '');
       else if (lider === 'na tocaia') txt = `Na tocaia, esperando o bonde da ${b.brigou.v.t.sigla}`;

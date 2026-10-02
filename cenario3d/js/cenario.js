@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=2dbc7cb671';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=2dbc7cb671';
-import { Subsolo } from './subsolo.js?v=2dbc7cb671';
-import { ATLAS } from './modelos_atlas.js?v=2dbc7cb671';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=d630fefbbe';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=d630fefbbe';
+import { Subsolo } from './subsolo.js?v=d630fefbbe';
+import { ATLAS } from './modelos_atlas.js?v=d630fefbbe';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -141,7 +141,7 @@ const SUB_FOLGA = 1.5, TERRA_M = -12;
 const LIMPO_M = 3;
 /* o que é prédio (a câmera não entra na parede dele); o resto (o poste,
    a árvore, o carro, o prop, a peça da praia) só barra o corpo */
-const PREDIOS = new Set(['casa', 'favela', 'bar', 'loja', 'lojatorcida', 'subsede', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
+const PREDIOS = new Set(['casa', 'favela', 'bar', 'loja', 'lojatorcida', 'subsede', 'fabrica', 'marco', 'sede', 'equipamento', 'metro', 'estadio']);
 /* o lado do BLOCO do forno (m): a malha junta tudo o que cai nele; o
    bloco é também o que a câmera descarta fora da vista */
 const BLOCO_M = 96;
@@ -2551,8 +2551,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=2dbc7cb671', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=2dbc7cb671');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=d630fefbbe', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=d630fefbbe');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2671,7 +2671,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=2dbc7cb671');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=d630fefbbe');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3322,7 +3322,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=2dbc7cb671'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=d630fefbbe'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
