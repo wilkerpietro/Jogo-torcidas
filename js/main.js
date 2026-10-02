@@ -8719,7 +8719,8 @@
         `<b>${it.de && TO.mundo.torcida(it.de) && !naCena ? linkTorcida(it.de, it.voz||'') : (it.voz||'')}</b>`+
         (dir && !naCena ? `<span class="quem">${_t('traz o assunto: <b>{nome}</b> · {cargo}', {nome:TO.membros.nomeDe(dir), cargo:_t(TO.membros.cargoNome(dir)).toLowerCase()})}</span>` : '')}));
       c.appendChild(fala('reu-balao', it.texto));
-      if(it.bote){
+      /* (no alvo do mês ainda aberto, quem diz quando e onde é a ficha da escolha) */
+      if(it.bote && !(it.bote.dominio && !it.decidido && F.fichaDoAtaque)){
         const b = it.bote;
         c.appendChild(el('div',{class:'reu-quando', html:
           `<span>${_t('Quando: <b>{dia}, {data}</b>', {dia:_t(b.nomeDia), data:b.dataTxt})}</span>`+
@@ -8767,6 +8768,14 @@
         palco.appendChild(c);
         return c;
       }
+      /* A MESA ESCOLHE (o dono, 02/10/2026): o bairro do recrutamento numa
+         lista, e o ataque do mês por bairro, torcida e forma, com a ficha */
+      if(it.tipo === 'recruta' && F.opcoesDeRecrutamento){
+        c.appendChild(blocoDoRecrutamento(it)); palco.appendChild(c); return c;
+      }
+      if(it.tipo === 'bote' && it.bote && it.bote.dominio && F.fichaDoAtaque){
+        c.appendChild(blocoDoAtaque(it)); palco.appendChild(c); return c;
+      }
       const bts = el('div',{class:'msg-bts'});
       (it.botoes||[]).forEach((b,i)=>{
         const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
@@ -8781,6 +8790,107 @@
       c.appendChild(bts);
       palco.appendChild(c);
       return c;
+    };
+
+    /* as listas da mesa, no molde do pedido a um aliado */
+    const campoDaMesa = (rot, sel)=>{
+      const w = el('label',{class:'reu-campo'});
+      w.appendChild(el('span',{class:'rot', texto:rot}));
+      w.appendChild(sel); return w;
+    };
+    const encher = (sel, lista, valor)=>{
+      sel.innerHTML = '';
+      for(const o of lista){
+        const op = el('option',{value:o.v, texto:o.t});
+        if(o.off) op.disabled = true;
+        sel.appendChild(op);
+      }
+      if(valor != null && lista.some(o => o.v === valor && !o.off)) sel.value = valor;
+    };
+    /* --- onde a gente recruta: qualquer bairro, os sugeridos no topo --- */
+    const blocoDoRecrutamento = (it)=>{
+      const cx = el('div');
+      const l = F.opcoesDeRecrutamento(e);
+      const clube = (TO.mundo.time(e.torcida.clubeId) || {}).nome || '';
+      const sel = el('select',{class:'campo'});
+      encher(sel, l.map(x => ({v:x.id, t:(x.sugerido ? '★ ' : '') + _t('{bairro} · {p}% do {clube} · nossa barra {n}%',
+        {bairro:x.nome, p:x.parte, clube, n:Math.round(x.minha)})})), l[0] && l[0].id);
+      const grade = el('div',{class:'reu-pedido reu-recruta'});
+      grade.appendChild(campoDaMesa(_t('Bairro'), sel));
+      cx.appendChild(grade);
+      const nota = el('div',{class:'eixo-nota'});
+      const pinta = ()=>{
+        const x = l.find(y => y.id === sel.value);
+        nota.textContent = x ? _t('{p}% de quem mora em {bairro} torce pro {clube}: é dali que vem novato. A nossa barra lá: {n}%. Recrutando, +0,2 por dia no domínio.',
+          {p:x.parte, bairro:x.nome, clube, n:Math.round(x.minha)}) + (x.sugerido ? ' ' + _t('A diretoria sugere.') : '') : '';
+      };
+      sel.onchange = pinta; pinta();
+      cx.appendChild(nota);
+      const bts = el('div',{class:'msg-bts'});
+      const bt = el('button',{class:'bt destaque', html:`<span>${_t('Recrutar aqui')}</span>`});
+      bt.onclick = ()=>{ const r = F.escolherRecrutamento(e, it.id, sel.value); if(r.ok) depois(); };
+      bts.appendChild(bt); cx.appendChild(bts);
+      return cx;
+    };
+    /* --- o ataque do mês: bairro, torcida e forma, com a ficha --- */
+    const blocoDoAtaque = (it)=>{
+      const cx = el('div');
+      const est = {bairro:it.bote.bairroId, rival:it.bote.rival, tipo:it.bote.tipo, tam:it.bote.tam || 7};
+      const sB = el('select',{class:'campo'}), sR = el('select',{class:'campo'}),
+            sF = el('select',{class:'campo'}), sT = el('select',{class:'campo'});
+      const grade = el('div',{class:'reu-pedido reu-ataque'});
+      grade.appendChild(campoDaMesa(_t('Bairro'), sB));
+      grade.appendChild(campoDaMesa(_t('Contra'), sR));
+      grade.appendChild(campoDaMesa(_t('Forma do ataque'), sF));
+      const wT = campoDaMesa(_t('Tamanho da treta'), sT);
+      grade.appendChild(wT);
+      cx.appendChild(grade);
+      const ficha = el('div',{class:'reu-ficha'});
+      cx.appendChild(ficha);
+      const bts = el('div',{class:'msg-bts'});
+      const btM = el('button',{class:'bt destaque', html:`<span>${_t('Marcar o ataque')}</span>`});
+      bts.appendChild(btM);
+      const nada = (it.botoes || []).find(b => b.acao === 'bote-nao');
+      if(nada){
+        const btN = el('button',{class:'bt', html:`<span>${nada.rot}</span>`+(nada.nota ? `<small>${nada.nota}</small>` : '')});
+        btN.onclick = ()=>{ F.decidirPauta(e, it.id, nada.id); depois(); };
+        bts.appendChild(btN);
+      }
+      cx.appendChild(bts);
+      const ops = F.opcoesDeAtaque(e);
+      const linha = (rot, txt, cls) => `<div class="reu-ficha-l${cls ? ' ' + cls : ''}"><span>${rot}</span><b>${escHTML(txt)}</b></div>`;
+      const pinta = ()=>{
+        encher(sB, ops.map(o => ({v:o.id, t:_t('{bairro} · nossa barra {n}%', {bairro:o.nome, n:Math.round(o.nosso)})})), est.bairro);
+        est.bairro = sB.value;
+        const o = ops.find(x => x.id === est.bairro) || {rivais:[]};
+        encher(sR, o.rivais.map(r => ({v:r.id, t:_t('{nome} · {v}% lá', {nome:r.nome, v:Math.round(r.v)})})), est.rival);
+        est.rival = sR.value;
+        const fs = F.formasDoAtaque(e, est.bairro, est.rival);
+        if(!fs.some(f => f.tipo === est.tipo && f.pode)){ const p = fs.find(f => f.pode); if(p) est.tipo = p.tipo; }
+        encher(sF, fs.map(f => ({v:f.tipo, t:f.pode ? f.rot : _t('{forma} — {motivo}', {forma:f.rot, motivo:f.motivo}), off:!f.pode})), est.tipo);
+        est.tipo = sF.value;
+        encher(sT, [5, 7, 10].map(n => ({v:String(n), t:_t('{n} contra {n}', {n})})), String(est.tam));
+        wT.hidden = est.tipo !== 'treta';
+        const f = F.fichaDoAtaque(e, est.bairro, est.rival, est.tipo, est.tam);
+        btM.disabled = !f.ok;
+        if(!f.ok){ ficha.innerHTML = linha(_t('Não dá'), f.motivo || '', 'ruim'); return; }
+        ficha.innerHTML =
+          linha(_t('Quando'), `${_t(f.quando.nomeDia)}, ${f.quando.dataTxt}`) +
+          linha(_t('Eles'), _t('{n} de pé · descem {m} na cena', {n:f.dePe, m:f.naCena})) +
+          linha(_t('Nós'), est.tipo === 'treta' ? _t('{n} da linha de frente', {n:f.nossos})
+                         : est.tipo === 'bar' ? _t('{n} aptos pro bonde', {n:f.nossos})
+                         : _t('{n} da Zona {zona} (até 20)', {n:f.nossos, zona:_t(f.forma.zona)})) +
+          (est.tipo === 'treta' ? linha(_t('Aposta'), _t('{valor} de cada lado', {valor:U.dinheiro(f.aposta)})) : '') +
+          linha(_t('Dando certo'), f.certo, 'boa') +
+          linha(_t('Dando errado'), f.errado, 'ruim');
+      };
+      sB.onchange = ()=>{ est.bairro = sB.value; est.rival = null; pinta(); };
+      sR.onchange = ()=>{ est.rival = sR.value; pinta(); };
+      sF.onchange = ()=>{ est.tipo = sF.value; pinta(); };
+      sT.onchange = ()=>{ est.tam = +sT.value; pinta(); };
+      btM.onclick = ()=>{ const r = F.marcarAtaqueDaPauta(e, it.id, est); if(r.ok) depois(); else pinta(); };
+      pinta();
+      return cx;
     };
 
     /* --- o pedido a um aliado (régua do dono, 17/09/2026) ---
@@ -11227,7 +11337,7 @@
      Reimplementar isso no teste seria medir outro jogo — o teste passaria
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
-    passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
+    abrirReuniao, passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
     abrirPerfilTorcida, abrirPerfilCidade, perfilDaCidade,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },

@@ -8822,6 +8822,31 @@ E mais:
   - um dia: o bar da Cearamor em Jangurussu, de 72,8 pra 73;
   - a seção no cartão e a coluna na tabela, sem erro.
 
+## A mesa escolhe o bairro do recrutamento e o ataque do mês (o dono, 02/10/2026: "me dê a opção de escolher o bairro que quero recrutar no dropdown e escolher a forma de atacar alguém na reunião também, escolhendo o bairro e a forma de ataque, mostrando a quantidade disponível deles e o efeito se der certo ou errado")
+
+- **Onde a gente recruta:** no lugar dos três botões, uma lista com todos os bairros da cidade. Os três que a diretoria sugere vêm no topo, com ★.
+  - Cada linha mostra quanto do bairro torce pro clube e a nossa barra lá.
+  - Embaixo, a nota do escolhido: de onde vem novato, a barra e o +0,2 por dia.
+  - "Recrutar aqui" grava (`feed.escolherRecrutamento`).
+- **O alvo do mês:** a diretoria traz a sugestão (o texto), e a mesa escolhe em três listas.
+  - **Bairro:** todo bairro com torcida atacável, com a nossa barra.
+  - **Contra:** as torcidas com barra no bairro, sem aliadas nem irmãs, com a parte de cada uma.
+  - **Forma do ataque:** bote no bar, reunião na praça, treta marcada, casa de piscina. A que não dá aparece riscada, com o motivo: "eles não têm bar aqui", "a nossa Zona … tem menos de 4 aptos", "falta caixa pra aposta", "eles não têm faixa nem bandeira".
+  - **Tamanho da treta:** 5, 7 ou 10, só na treta.
+- **A ficha (`feed.fichaDoAtaque`):**
+  - **Quando:** o dia livre do mês pra esse golpe.
+  - **Eles:** quantos têm de pé e quantos descem na cena. As réguas das cenas: o bar, 35% de pé até 40; a reunião e a casa, a zona deles até 20; a treta, o tamanho.
+  - **Nós:** os aptos do bonde, a nossa zona até 20, ou a linha de frente.
+  - **Aposta:** só na treta.
+  - **Dando certo / Dando errado:** prestígio, caixa, peça e relação, os números dos cartões de sempre, mais o domínio do bairro (a nossa parte e a deles, e se o bairro vira).
+- **"Marcar o ataque"** (`feed.marcarAtaqueDaPauta`) põe o bote escolhido no calendário, como o sugerido. "Deixar quieto" segue igual.
+- A linha "Quando · Contra · Onde" da sugestão sai enquanto a mesa escolhe (a ficha diz isso).
+- **Testado (Playwright):**
+  - a sugestão na ficha;
+  - a troca pra treta 10 contra 10 (ficha e aposta atualizadas) e o bote marcado com bairro, rival e tamanho escolhidos;
+  - o recrutamento no último bairro da lista gravado;
+  - sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

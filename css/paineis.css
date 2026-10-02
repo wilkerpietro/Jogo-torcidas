@@ -2568,6 +2568,18 @@ header.capa-cidade{background-size:cover; background-position:center;
 .reu-campo .rot{font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--fraco)}
 .reu-campo select.campo{padding:8px 10px;font-size:12px}
+/* o ataque do mês escolhido na mesa (02/10/2026): bairro, torcida, forma e a ficha */
+.reu-ataque{grid-template-columns:repeat(4,minmax(0,1fr))}
+.reu-ataque .reu-campo[hidden]{display:none}
+.reu-recruta{grid-template-columns:1fr}
+@media (max-width:720px){ .reu-ataque{grid-template-columns:1fr} }
+.reu-ficha{display:grid;gap:4px;margin:2px 0 10px;padding:9px 11px;border:1px solid var(--linha, #2c2c28);
+  border-radius:6px;background:rgba(255,255,255,.02)}
+.reu-ficha-l{display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:12px;line-height:1.4}
+.reu-ficha-l span{font-family:var(--titulo);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco)}
+.reu-ficha-l.boa b{color:#9fd49a;font-weight:500}
+.reu-ficha-l.ruim b{color:#e8a08a;font-weight:500}
+@media (max-width:720px){ .reu-ficha-l{grid-template-columns:1fr;gap:1px} }
 
 /* =========================================================
    O CARTAZ DO POST (pedido do dono, 01/10/2026): a imagem 2:1 dos

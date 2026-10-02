@@ -4570,6 +4570,126 @@ TO.feed = (function(){
     return fora;
   }
 
+  /* =======================================================
+     O ATAQUE ESCOLHIDO NA REUNIÃO (o dono, 02/10/2026: "escolher a forma
+     de atacar alguém na reunião, escolhendo o bairro e a forma de
+     ataque, mostrando a quantidade disponível deles e o efeito se der
+     certo ou errado"). A diretoria traz o alvo sugerido; a mesa pode
+     trocar o bairro, a torcida e a forma (bar, reunião na praça, treta
+     marcada, casa de piscina). A ficha mostra quantos eles têm de pé,
+     quantos descem na cena, quantos nossos vão, e o que acontece
+     ganhando e perdendo — com a prévia do domínio do bairro.
+     ======================================================= */
+  const FORMAS_DE_ATAQUE = ['bar', 'reuniao', 'treta', 'casa'];
+  const NOME_FORMA = () => ({bar:_t('Bote no bar'), reuniao:_t('Reunião na praça'),
+                             treta:_t('Treta marcada'), casa:_t('Casa de piscina')});
+  /* os bairros da cidade e quem dá pra atacar em cada um (sem amigas) */
+  function opcoesDeAtaque(E){
+    const D = TO.dominio;
+    if(!D) return [];
+    const cid = E.torcida.mapa, meu = E.torcida.id;
+    return D.bairros(E, cid).map(b => {
+      const nosso = (b.partes.find(p => p.t === meu) || {}).v || 0;
+      const rivais = b.partes.filter(p => p.t !== meu && !D.amigas(E, meu, p.t) && M().torcida(p.t))
+        .map(p => ({id:p.t, nome:M().torcida(p.t).nome, v:p.v}));
+      return {id:b.id, nome:b.nome, dono:b.dono, v:b.v, nosso, rivais};
+    }).filter(x => x.rivais.length).sort((a, c) => a.nome.localeCompare(c.nome));
+  }
+  /* as formas de ataque contra `rival` no bairro, com o motivo de cada uma não dar */
+  function formasDoAtaque(E, bid, rival){
+    const D = TO.dominio, cid = E.torcida.mapa, b = D && D.bairro(cid, bid);
+    if(!b || !rival) return [];
+    const zonas = M().ZONAS || ['Norte','Sul','Leste','Oeste'];
+    const zona = b.zona && zonas.includes(b.zona) ? b.zona : zonas[TO.mapa.hash(`alvo|z|${b.id}`) % zonas.length];
+    const bonde = TO.acoes.bondeDaZona(E, zona).length;
+    const temBar = D.estruturas(E, cid).some(s => s.tid === rival && s.tipo === 'bar' && s.bairro === b.id)
+      && (TO.acoes.alvosDeAtaque(E) || []).some(x => x.id === `${rival}|bar`);
+    const pano = TO.patrimonio.faixasIA ? TO.patrimonio.faixasIA(E, rival) : null;
+    const temPano = !!(pano && (pano.faixas > 0 || pano.bandeiras > 0));
+    const pocaZona = _t('a nossa Zona {zona} tem menos de 4 aptos', {zona:_t(zona)});
+    const peca = pano && pano.faixas > 0 ? 'faixa' : 'bandeira';
+    return [
+      {tipo:'bar', pode:temBar, motivo:_t('eles não têm bar aqui')},
+      {tipo:'reuniao', pode:bonde >= 4, motivo:pocaZona},
+      {tipo:'treta', pode:E.dinheiro >= 1000, motivo:_t('falta caixa pra aposta (R$ 1.000)')},
+      {tipo:'casa', pode:temPano && bonde >= 4, motivo: temPano ? pocaZona : _t('eles não têm faixa nem bandeira')}
+    ].map(f => Object.assign(f, {zona, peca, rot:NOME_FORMA()[f.tipo]}));
+  }
+  /* A FICHA DO ATAQUE: o bote pronto pra marcar e os números da mesa */
+  function fichaDoAtaque(E, bid, rival, tipo, tam){
+    const D = TO.dominio, cid = E.torcida.mapa, b = D && D.bairro(cid, bid), o = M().torcida(rival);
+    if(!b || !o) return {ok:false, motivo:_t('Esse alvo não existe.')};
+    if(D.amigas(E, E.torcida.id, rival)) return {ok:false, motivo:_t('A {nome} é aliada: não se ataca.', {nome:o.nome})};
+    const f = formasDoAtaque(E, b.id, rival).find(x => x.tipo === tipo);
+    if(!f) return {ok:false, motivo:_t('Essa forma de ataque não existe.')};
+    if(!f.pode) return {ok:false, motivo:f.motivo, forma:f};
+    const sem = `${E.data.ano}|${mesDe(E)}`;
+    const quando = diaDoBote(E, `${tipo}|${b.id}`, sem);
+    if(!quando) return {ok:false, motivo:_t('não sobra dia livre neste mês'), forma:f};
+    tam = [5, 7, 10].includes(+tam) ? +tam : 7;
+    const aposta = Math.min(6, Math.max(1, Math.floor(E.dinheiro / 1000 / 3))) * 1000;
+    const bote = Object.assign({tipo, dominio:true, torcida:rival, rival, nome:o.nome,
+      alvo:`${rival}|bar`, bairro:b.nome, bairroId:b.id, zona:f.zona, peca:f.peca,
+      mapa:cid, tam, aposta, classe:b.classe}, quando);
+    /* quantos eles têm de pé, e quantos descem na cena (as réguas das cenas) */
+    const dePe = TO.acoes.efetivoDePe(E, o);
+    const naCena = tipo === 'bar' ? Math.min(40, Math.max(4, Math.round(dePe * 0.35)))
+                 : tipo === 'treta' ? tam : TO.acoes.efetivoDaZona(E, o);
+    const nossos = tipo === 'treta' ? tam
+                 : tipo === 'bar' ? TO.membros.aptosParaOEstadio(E).length
+                 : TO.acoes.bondeDaZona(E, f.zona).length;
+    /* o que acontece: os números dos cartões de sempre, e o domínio */
+    const pv = previaDoBote(E, bote).pv;
+    const pc = v => (U.numero ? U.numero(v, 1) : String(Math.round(v * 10) / 10)).replace(/[,.]0$/, '') + '%';
+    const domCerto = pv ? _t('domínio em {bairro}: a nossa parte vai de {a} pra {b}', {bairro:b.nome, a:pc(pv.antes.nos), b:pc(pv.vencendo.nos)})
+                        + (pv.vencendo.dona === E.torcida.id && pv.antes.dona !== E.torcida.id ? ' ' + _t('(o bairro vira nosso)') : '') : '';
+    const domErrado = pv ? (pv.perdendo.nos < pv.antes.nos - 0.05
+        ? _t('domínio em {bairro}: a nossa parte cai pra {e} e a {nome} vai pra {d}', {bairro:b.nome, e:pc(pv.perdendo.nos), nome:o.nome, d:pc(pv.perdendo.eles)})
+        : _t('domínio em {bairro}: a {nome} vai de {c} pra {d}', {bairro:b.nome, nome:o.nome, c:pc(pv.antes.eles), d:pc(pv.perdendo.eles)}))
+        + (pv.antes.dona === E.torcida.id && pv.perdendo.dona !== E.torcida.id ? ' ' + _t('(perdemos o bairro)') : '') : '';
+    const p = tam >= 10 ? 5 : tam >= 7 ? 4 : 3;
+    const certo = tipo === 'bar' ? _t('Prestígio até +10 · R$ 60 por defensor + 22% do caixa deles · Relação −26')
+      : tipo === 'treta' ? _t('Leva {valor} · Prestígio +{p} · Relação −2', {valor:U.dinheiro(aposta * 2), p})
+      : tipo === 'casa' ? porPeca(f.peca, _t('Prestígio até +10 · a faixa deles vem pra nossa sede · Relação −26'),
+                                          _t('Prestígio até +10 · a bandeira deles vem pra nossa sede · Relação −26'))
+      : _t('Prestígio até +10 · a roda deles se desfaz · Relação −26');
+    const errado = tipo === 'treta' ? _t('Perde {valor} · Prestígio −1 · Relação −2', {valor:U.dinheiro(aposta)})
+      : _t('Prestígio até −10 · Relação −18');
+    return {ok:true, bote, forma:f, dePe, naCena, nossos, tam, aposta, quando,
+            certo:[certo, domCerto].filter(Boolean).join(' · '),
+            errado:[errado, domErrado].filter(Boolean).join(' · ')};
+  }
+  /* a mesa marcou o ataque escolhido: o item da pauta vira esse bote */
+  function marcarAtaqueDaPauta(E, idItem, escolha){
+    const it = caixaReuniao(E).pauta.find(x => x.id === idItem);
+    if(!it || it.decidido) return {ok:false};
+    const f = fichaDoAtaque(E, escolha.bairro, escolha.rival, escolha.tipo, escolha.tam);
+    if(!f.ok) return f;
+    it.bote = f.bote;
+    const b = {id:'marcar', acao:'bote-marcar', rot:`${NOME_FORMA()[f.bote.tipo]} · ${f.bote.bairro}`};
+    const r = aplicarPauta(E, it, b);
+    it.decidido = {botao:'marcar', rot:b.rot};
+    return Object.assign({ok:true, item:it}, r || {});
+  }
+  /* O RECRUTAMENTO ESCOLHIDO NA LISTA (02/10/2026): qualquer bairro da
+     cidade, os três sugeridos no topo */
+  function opcoesDeRecrutamento(E){
+    const D = TO.dominio;
+    if(!D || !D.bairrosPraRecrutar) return [];
+    const cid = E.torcida.mapa, n = D.bairrosDe(cid).length;
+    return D.bairrosPraRecrutar(E, E.torcida.id, cid, n).map((x, i) => Object.assign({}, x, {
+      sugerido: i < 3, parte: Math.round((D.parteDaTorcida(E.torcida.id, cid, x.id) || 0) * 100)}));
+  }
+  function escolherRecrutamento(E, idItem, bid){
+    const it = caixaReuniao(E).pauta.find(x => x.id === idItem);
+    if(!it || it.decidido) return {ok:false};
+    const x = TO.dominio && TO.dominio.bairro(E.torcida.mapa, bid);
+    if(!x) return {ok:false};
+    aplicarPauta(E, it, {id:'escolha', acao:'recruta-bairro', bairro:x.id});
+    it.decidido = {botao:'escolha', rot:x.nome};
+    return {ok:true, item:it};
+  }
+
   /* ONDE A GENTE RECRUTA (pedido do dono, 01/10/2026: "a opção de
      recrutar vai ser inteligente e definida na reunião qual bairro iremos
      recrutar"): a diretoria traz os três bairros que mais valem — onde
@@ -6631,7 +6751,8 @@ TO.feed = (function(){
           mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
-          SOFRIDO, previaDaBriga, naoDesceu, responderEntrevista, assuntoClubeDeHoje,
+          SOFRIDO, previaDaBriga, opcoesDeAtaque, formasDoAtaque, fichaDoAtaque, marcarAtaqueDaPauta, FORMAS_DE_ATAQUE,
+          opcoesDeRecrutamento, escolherRecrutamento, naoDesceu, responderEntrevista, assuntoClubeDeHoje,
           entrevistaDeHoje, protestoNoCT,
           registrarObra, obraInteressa, obraDeHoje, barQuebradoRecente,
           veredictoDeHoje, desfechoDaCompeticao, julgarCampanha};
