@@ -277,6 +277,8 @@ TO.dominio = (function(){
         (p.bares || []).forEach((b, i) => push(o.id, 'bar', bairro(cid, b.bairro), i, b));
         (p.lojas || []).forEach((l, i) => push(o.id, 'loja', bairro(cid, l.bairro), i, l));
         (p.subsedes || []).forEach((s, i) => push(o.id, 'subsede', bairro(cid, s.bairro), i, s));
+        /* A FÁBRICA (o 3D a pôs num galpão do bairro da sede, 02/10/2026) */
+        if(p.fabrica) push(o.id, 'fabrica', sedeDe(o.id, cid), 0);
         continue;
       }
       const t = mundo && mundo[o.id];
@@ -284,6 +286,7 @@ TO.dominio = (function(){
       (t.bares || []).forEach((b, i) => push(o.id, 'bar', bairro(cid, b.bairro) || bairroPadrao(o, 'bar', i), i, b));
       (t.lojas || []).forEach((l, i) => push(o.id, 'loja', bairro(cid, l.bairro) || bairroPadrao(o, 'loja', i), i, l));
       for(let i = 0; i < (t.subsedes || 0); i++) push(o.id, 'subsede', bairroPadrao(o, 'subsede', i), i);
+      if(t.fabrica) push(o.id, 'fabrica', sedeDe(o.id, cid), 0);
     }
     /* as subsedes de fora (filiais) que ficam NESTA cidade */
     if(E){

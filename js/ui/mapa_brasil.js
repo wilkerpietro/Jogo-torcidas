@@ -200,8 +200,17 @@ TO.mapaBrasil = (function(){
   }
 
   /* o que tem no bairro, em texto */
+  /* o nível da sede pelo save: o nosso e o do mundo vivo da IA */
+  function nivelDaSede(tid){
+    const e = E();
+    if(!e) return null;
+    if(tid === e.torcida.id) return e.torcida.sedeNivel || 0;
+    const t = (e.mundoTorcidas || {})[tid];
+    return t ? (t.sede || 0) : null;
+  }
   const TIPO = () => ({sede:_t('Sede da {nome}'), bar:_t('Bar da {nome}'), loja:_t('Loja da {nome}'),
-                       subsede:_t('Subsede da {nome}'), filial:_t('Subsede de fora da {nome}')});
+                       subsede:_t('Subsede da {nome}'), filial:_t('Subsede de fora da {nome}'),
+                       fabrica:_t('Fábrica da {nome}')});
 
   /* =======================================================
      O BAIRRO: a barra, o que tem nele e o que dá pra fazer
@@ -266,6 +275,10 @@ TO.mapaBrasil = (function(){
     h += `<h4>${esc(_t('Estruturas no bairro'))}</h4>`;
     h += est.length
       ? '<ul class="mb-estruturas">' + est.map(s => {
+          /* A SEDE DE NÍVEL 0 NÃO TEM PRÉDIO (o 3D, 02/10/2026): a torcida junta
+             no bar, na subsede ou na esquina do bairro */
+          if(s.tipo === 'sede' && nivelDaSede(s.tid) === 0)
+            return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t('Bairro da {nome} (sem sede: junta no bar ou na esquina)', {nome:nome(s.tid)}))}</li>`;
           const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
           /* a estrutura segura o bairro: +0,2 por dia pra dona (02/10/2026) */
           const buff = s.tipo !== 'sede' ? ' · ' + _t('+0,2 por dia') : '';
@@ -518,6 +531,6 @@ TO.mapaBrasil = (function(){
     corpo.appendChild(lado);
   }
 
-  return {svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
+  return {nivelDaSede, svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
           get aberto(){ return !!raiz; }};
 })();

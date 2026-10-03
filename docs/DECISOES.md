@@ -8878,6 +8878,29 @@ E mais:
 - Os mesmos três dias: MOFI 85,8 → 84,9 e TUF 14,2 → 15,1 (+0,3 por dia: 0,8 da TUF contra 0,5 da MOFI).
 - O cartão do bairro da sede diz a regra nova.
 
+## O mapa 2D de acordo com o 3D: sem sede vaga, as estruturas de cada torcida e a sede pelo save (o dono, 03/10/2026: "Atualize o mapa 2d de acordo com o que fiz no 3d")
+
+O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida` e `sede da IA pelo save; fábrica e anexos da sede`).
+
+**As plantas geradas de novo:** as 30 praças saíram da planta nova. O espaço de sede sem dono agora é casa.
+- A camada "Lojas e subsedes de exemplo" vem desligada, e a geração roda sem save: a imagem não leva estrutura de exemplo.
+- A ferramenta de enclave não mexeu em nada.
+- As 139 sedes seguem no pedaço principal do bairro delas e no mesmo bairro que o domínio do jogo dá.
+
+**As estruturas de cada torcida no mapa (`mapa_planta.js`, `posEstruturas`):** como no 3D, o jogo diz onde fica cada bar, loja, subsede, filial e fábrica (`TO.dominio.estruturas`).
+- **O desenho:** um quadradinho na cor da torcida, com a letra B, L, S ou F de perto e a etiqueta ("Bar TUF", "Fábrica TUF") mais de perto. As nossas têm a borda dourada.
+- **A posição:** um ponto fixo dentro do bairro, longe dos muros, da sede, das outras estruturas e da faixa inteira do nome do bairro. O mesmo conjunto cai sempre no mesmo lugar.
+
+**A fábrica:** entra nas estruturas do domínio, no bairro da sede. É a do nosso patrimônio e a do mundo vivo da IA. Como estrutura, rende +0,2 por dia ali. O cartão do bairro diz "Fábrica da {torcida}".
+
+**A sede pelo save:** a torcida de sede nível 0 (a nossa ou a da IA, pelo mundo vivo) fica sem o ponto da sede no mapa, como no 3D. O cartão diz "Bairro da {torcida} (sem sede: junta no bar ou na esquina)". A regra do domínio do bairro da sede (+0,5 por dia, a metade pra quem não é da casa) segue pelos dados.
+
+**Testado (Playwright, TUF com loja, subsede e fábrica):**
+- as 17 estruturas de Fortaleza no mapa, sem cobrir nome de bairro;
+- a Aliança, a TFC e a Jovem do Floresta (nível 0) sem o ponto da sede;
+- as etiquetas de perto;
+- sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

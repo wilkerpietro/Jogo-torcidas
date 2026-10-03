@@ -129,6 +129,49 @@ TO.mapaPlanta = (function(){
     return out;
   }
 
+  /* AS ESTRUTURAS NO MAPA (o 3D, 02/10/2026: a loja, a subsede, a filial e
+     a fábrica ganham lote no bairro que o jogo diz): aqui, um ponto fixo
+     dentro do bairro pra cada uma, longe dos muros, da sede, do nome e das
+     outras — o mesmo conjunto cai sempre nos mesmos lugares */
+  const estPos = new Map();
+  function posEstruturas(cid, bid, lista){
+    const ch = cid + '|' + bid + '|' + lista.map(s => `${s.tid}:${s.tipo}:${s.i || 0}`).join(',');
+    if(estPos.has(ch)) return estPos.get(ch);
+    const p = P(cid), g = p.g, G = grade(cid), k = p.b.findIndex(pb => pb[0] === bid);
+    const H = (TO.dominio && TO.dominio.hash) || (s => s.length);
+    const out = [];
+    if(k >= 0){
+      const dentro = (i, j, m) => { for(let a = -m; a <= m; a++) for(let c = -m; c <= m; c++){
+        const ii = i + a, jj = j + c; if(ii < 0 || jj < 0 || ii >= g.nx || jj >= g.ny || G.em(ii, jj) !== k) return false; } return true; };
+      let cs = [];
+      for(let j = 0; j < g.ny; j++) for(let i = 0; i < g.nx; i++) if(G.em(i, j) === k && dentro(i, j, 2)) cs.push([i, j]);
+      if(!cs.length) for(let j = 0; j < g.ny; j++) for(let i = 0; i < g.nx; i++) if(G.em(i, j) === k) cs.push([i, j]);
+      const paraCel = (x, y) => [(x - g.x0) / g.cel - 0.5, (y - g.y0) / g.cel - 0.5];
+      const evita = (posMuros(cid).get(bid) || []).map(([x, y]) => paraCel(x, y))
+        .concat(p.s.map(s => paraCel(s[2], s[3])));
+      /* o nome do bairro é uma faixa larga (o nome, a dona, as outras):
+         a estrutura desvia dela inteira, não só do meio */
+      if(p.b[k][3] != null){
+        const [lx, ly] = paraCel(p.b[k][3], p.b[k][4]);
+        for(let dx = -12; dx <= 12; dx += 3) for(const dy of [0, 2, 4]) evita.push([lx + dx, ly + dy]);
+      }
+      cs = cs.map(c => [c, H(`est|${cid}|${bid}|${c[0]}|${c[1]}`)]).sort((a, b) => a[1] - b[1]).slice(0, 500).map(x => x[0]);
+      for(const s of lista){
+        let melhor = null, dm = -1;
+        for(const c of cs){
+          const d = evita.length ? Math.min(8, ...evita.map(e => Math.hypot(e[0] - c[0], e[1] - c[1]))) : 8;
+          if(d > dm){ dm = d; melhor = c; }
+          if(dm >= 8) break;
+        }
+        if(!melhor) break;
+        evita.push(melhor);
+        out.push({s, x:g.x0 + (melhor[0] + 0.5) * g.cel, y:g.y0 + (melhor[1] + 0.5) * g.cel});
+      }
+    }
+    estPos.set(ch, out);
+    return out;
+  }
+
   function imagem(cid, pronta){
     let im = imagens.get(cid);
     if(!im){
@@ -359,6 +402,8 @@ TO.mapaPlanta = (function(){
       /* (as sedes depois dos nomes: o nome do bairro manda no espaço) */
       /* as sedes: o ponto na cor da torcida e a sigla */
       for(const [tid, sig, x, y] of p.s){
+        /* a sede de nível 0 não tem prédio (o 3D, 02/10/2026): sem ponto */
+        if(MB().nivelDaSede && MB().nivelDaSede(tid) === 0) continue;
         const [sx, sy] = paraTela(x, y);
         if(sx < -20 || sy < -20 || sx > larg + 20 || sy > alt + 20) continue;
         const cor = MB().corDe(tid), nossa = tid === meu;
@@ -375,6 +420,41 @@ TO.mapaPlanta = (function(){
           }
         }
         ocupa(sx, sy, 14, 14);
+      }
+      /* as estruturas: o quadradinho na cor da torcida com a letra (Bar,
+         Loja, Subsede, Fábrica) e, de perto, a etiqueta */
+      if(d.estruturas){
+        const LETRA = {bar:'B', loja:'L', subsede:'S', filial:'S', fabrica:'F'};
+        const ROT = {bar:s => _t('Bar {sigla}', {sigla:s}), loja:s => _t('Loja {sigla}', {sigla:s}),
+                     subsede:s => _t('Subsede {sigla}', {sigla:s}), filial:s => _t('Subsede {sigla}', {sigla:s}),
+                     fabrica:s => _t('Fábrica {sigla}', {sigla:s})};
+        let ests = [];
+        try{ ests = d.estruturas(e, cid).filter(s => LETRA[s.tipo] && s.bairro); }catch(_){ ests = []; }
+        const porBairro = new Map();
+        for(const s of ests){ if(!porBairro.has(s.bairro)) porBairro.set(s.bairro, []); porBairro.get(s.bairro).push(s); }
+        for(const [bid, l] of porBairro) for(const {s, x, y} of posEstruturas(cid, bid, l)){
+          const [sx, sy] = paraTela(x, y);
+          if(sx < -20 || sy < -20 || sx > larg + 20 || sy > alt + 20) continue;
+          const cor = MB().corDe(s.tid), nossa = s.tid === meu, r = perto >= 1.6 ? 7 : 5.5;
+          ctx.fillStyle = cor; ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+          ctx.lineWidth = nossa ? 2.4 : 1.3; ctx.strokeStyle = nossa ? '#d9a441' : (MB().claro(cor) ? '#333' : '#f2f2f2');
+          ctx.strokeRect(sx - r, sy - r, r * 2, r * 2);
+          if(perto >= 1.2){
+            ctx.font = fonte(800, r >= 7 ? 10 : 8);
+            ctx.fillStyle = MB().claro(cor) ? '#1a1a1a' : '#ffffff';
+            ctx.fillText(LETRA[s.tipo], sx, sy + 0.5);
+          }
+          if(perto >= 2.2){
+            ctx.font = fonte(700, 10);
+            const tx = ROT[s.tipo](d.siglaDe(s.tid)), w = ctx.measureText(tx).width + 8;
+            if(livre(sx, sy + r + 8, w, 14)){
+              ctx.fillStyle = 'rgba(20,22,21,.82)'; ctx.fillRect(sx - w / 2, sy + r + 1, w, 14);
+              ctx.fillStyle = nossa ? '#ffe7a0' : '#f2f3ef'; ctx.fillText(tx, sx, sy + r + 8.5);
+              ocupa(sx, sy + r + 8, w, 14);
+            }
+          }
+          ocupa(sx, sy, r * 2 + 2, r * 2 + 2);
+        }
       }
       /* estádios, equipamentos e marcos: os estádios sempre; o resto de perto */
       ctx.font = fonte(700, 12);
