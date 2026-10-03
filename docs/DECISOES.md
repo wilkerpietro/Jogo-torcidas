@@ -8962,6 +8962,26 @@ O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida
 - Fica de fora: o São Raimundo (Manaus) não está em `times.js` — a Força
   Azul é torcida de um clube que o jogo não tem.
 
+## O Rio Negro sai, o São Raimundo entra (o dono, 03/10/2026: "eu quero tirar o rio negro pra colocar o São Raimundo/AM, por isso que existe a força azul")
+
+- A Força Azul (Manaus) era torcida de um clube que não estava em
+  `times.js`; a praça já listava o São Raimundo entre os clubes locais. O
+  São Raimundo Esporte Clube entra na linha do Rio Negro — mesma praça,
+  Série D, Copa Norte, qualidade 7, mesma vaga nas competições —, com o
+  Estádio da Colina (é o dele, o "Tufão da Colina"; manda junto com o
+  Nacional), azul e branco, fundado em 18/11/1918 (`fundacoes.js`).
+- Sai o escudo do Rio Negro (`img/escudos/clube-rio-negro.png` e a linha
+  de `escudos.js`). O São Raimundo ainda não tem escudo: a UI usa o
+  quadradinho de cor até a imagem chegar.
+- Save antigo: na carga (`estado.adotar`), o texto troca `rio-negro` por
+  `sao-raimundo` e "Rio Negro" por "São Raimundo" antes de virar objeto —
+  tabelas, jogos e feed passam pro clube novo sem quebrar.
+- `importar_planilha.py` faz a mesma troca (`CLUBE_TROCADO`), que a
+  planilha ainda traz o Rio Negro.
+- De passagem: colar um save em JSON cru (sem a marca TO2) tirava todos os
+  espaços do texto, inclusive de dentro dos nomes ("Força Azul" virava
+  "ForçaAzul"). Agora só o base64 perde os espaços.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

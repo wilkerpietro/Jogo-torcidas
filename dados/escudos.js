@@ -111,7 +111,6 @@ TO.dados.escudos = {
   "racing": 1,
   "remo": 1,
   "riestra": 1,
-  "rio-negro": 1,
   "river-plate": 1,
   "river": 1,
   "rosario-central": 1,

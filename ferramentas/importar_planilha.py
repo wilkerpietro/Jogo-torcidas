@@ -43,6 +43,14 @@ REGIONAL_CORRIGIDO = {
 }
 
 
+CLUBE_TROCADO = {
+    'rio-negro': {'id': 'sao-raimundo', 'nome': 'São Raimundo',
+                  'nomeCompleto': 'São Raimundo Esporte Clube', 'sigla': 'SRA',
+                  'alcunha': 'Tufão da Colina', 'estadio': 'Estádio da Colina',
+                  'capacidade': 10000, 'cores': ['#3A79BB', '#e9e9e9'],
+                  'fundacao': 1918, 'mascote': 'Tufão'},
+}
+
 # O ESTÁDIO DE CADA CLUBE É UM DOS DO JOGO (o dono, 03/10/2026: "O avaí
 # joga onde, por exemplo? Ele deve jogar no seu estádio, a Ressacada, veja
 # caso a caso pra corrigir"). A planilha escreve o nome popular ou um
@@ -64,7 +72,7 @@ ESTADIO_CORRIGIDO = {
  'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Jorge Ismael de Biasi','xv-de-piracicaba':'Jorge Ismael de Biasi',
  'noroeste':'Santa Cruz','ituano':'Maião','iguatu':'Arena Romeirão','maringa':'Germano Kruger',
  'caxias':'Estadio Centenario','ypiranga-rs':'Estadio Centenario','pelotas':'Bento Freitas',
- 'nacional':'Estádio da Colina','rio-negro':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
+ 'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
  'treze':'Amigão','sousa':'Almeidão','sergipe':'Batistão','madureira':'Moca Bonita',
  'goytacaz':'Raulino de Oliveira','americano':'Raulino de Oliveira',
  'portuguesa':'Morumbi','sao-jose':'Arena do Gremio',
@@ -160,6 +168,11 @@ def main():
             'divisao': texto(r[15]), 'mapa': ident_mapa(r[16]),
             'regional': REGIONAL_CORRIGIDO.get(ident(r[0]), texto(r[17])),
         })
+        # O RIO NEGRO VIRA O SÃO RAIMUNDO (o dono, 03/10/2026: "eu quero
+        # tirar o rio negro pra colocar o São Raimundo/AM, por isso que
+        # existe a força azul"): mesma praça, mesma divisão, mesma vaga.
+        if times[-1]['id'] == 'rio-negro':
+            times[-1].update(CLUBE_TROCADO['rio-negro'])
 
     # ---------------- torcidas ----------------
     por_time = {t['nome'].lower(): t for t in times}

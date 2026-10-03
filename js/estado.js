@@ -852,9 +852,23 @@ TO.estado = (function(){
   }
 
   /* põe um save de texto de pé, venha de onde vier */
+  /* CLUBE QUE SAIU DO JOGO E O QUE ENTROU NA VAGA DELE (o dono,
+     03/10/2026: "eu quero tirar o rio negro pra colocar o São
+     Raimundo/AM"): o save antigo guarda o id e o nome velhos nas tabelas,
+     nos jogos e no feed — trocados no texto, antes de virar objeto */
+  const CLUBES_TROCADOS = [
+    [/(^|[^a-z0-9-])rio-negro(?![a-z0-9-])/g, '$1sao-raimundo'],
+    [/Atlético Rio Negro Clube/g, 'São Raimundo Esporte Clube'],
+    [/Rio Negro/g, 'São Raimundo'],
+  ];
+  function trocarClubes(txt){
+    for(const [de, para] of CLUBES_TROCADOS) txt = txt.replace(de, para);
+    return txt;
+  }
+
   function adotar(txt, vaga){
     try{
-      const dados = JSON.parse(txt);
+      const dados = JSON.parse(trocarClubes(txt));
       if(dados.versao !== VERSAO) return null;
       E = dados;
       /* de onde esta partida veio, só pra tela marcar a linha */
@@ -909,7 +923,10 @@ TO.estado = (function(){
   }
 
   async function deTexto(txt){
-    txt = String(txt||'').replace(/\s+/g, '');
+    /* o base64 pode vir quebrado em linhas; o JSON cru não: tirar os
+       espaços dele colava os nomes ("Força Azul" virava "ForçaAzul") */
+    txt = String(txt||'').trim();
+    if(txt[0] !== '{') txt = txt.replace(/\s+/g, '');
     if(!txt) return {ok:false, motivo:_t('não veio texto nenhum')};
     try{
       if(txt.indexOf(MARCA_Z) !== 0 && txt.indexOf(MARCA_J) !== 0 && txt[0] !== '{')

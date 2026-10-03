@@ -37,7 +37,7 @@ TO.dados.estadios = [
   {"id": "estadio-regional", "nome": "Estadio Regional", "mapa": "interior-de-minas", "bairro": "Patos de Minas I", "capacidade": 15000, "mandantes": ["athletic", "mamore", "urt"]},
   {"id": "estadio-da-ressacada", "nome": "Estadio da Ressacada", "mapa": "litoral-catarinense", "bairro": "Coqueiros", "capacidade": 17000, "mandantes": ["avai", "barra"]},
   {"id": "estadio-dos-aflitos", "nome": "Estadio dos Aflitos", "mapa": "recife", "bairro": "Aflitos", "capacidade": 19800, "mandantes": ["nautico"], "apelidos": ["Aflitos"]},
-  {"id": "estadio-da-colina", "nome": "Estádio da Colina", "mapa": "manaus", "bairro": "Vila Buriti", "capacidade": 10000, "mandantes": ["nacional", "rio-negro"]},
+  {"id": "estadio-da-colina", "nome": "Estádio da Colina", "mapa": "manaus", "bairro": "Vila Buriti", "capacidade": 10000, "mandantes": ["nacional", "sao-raimundo"]},
   {"id": "estadio-do-cafe", "nome": "Estádio do Café", "mapa": "interior-do-pr", "bairro": "Londrina I", "capacidade": 31000, "mandantes": ["londrina"]},
   {"id": "estadio-do-souza", "nome": "Estádio do Souza", "mapa": "belem", "bairro": "Terra Firme", "capacidade": 8000, "mandantes": ["tuna-luso"]},
   {"id": "etelvino-mendonca", "nome": "Etelvino Mendonca", "mapa": "sergipe", "bairro": "Itabaiana I", "capacidade": 11224, "mandantes": ["itabaiana"]},
