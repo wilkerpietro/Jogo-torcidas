@@ -1,4 +1,4 @@
-/* ESTADIOS — 76 pracas de jogo, com o bairro de cada uma
+/* ESTADIOS — 75 pracas de jogo, com o bairro de cada uma
    GERADO por ferramentas/importar_estadios.py — nao editar a mao.
    Fonte: legado/unity/data.js (prototipo antigo). */
 TO.dados.estadios = [
@@ -42,7 +42,6 @@ TO.dados.estadios = [
   {"id": "estadio-do-cafe", "nome": "Estádio do Café", "mapa": "interior-do-pr", "bairro": "Londrina I", "capacidade": 31000, "mandantes": ["londrina"]},
   {"id": "estadio-do-souza", "nome": "Estádio do Souza", "mapa": "belem", "bairro": "Terra Firme", "capacidade": 8000, "mandantes": []},
   {"id": "etelvino-mendonca", "nome": "Etelvino Mendonca", "mapa": "sergipe", "bairro": "Itabaiana I", "capacidade": 11224, "mandantes": ["itabaiana"]},
-  {"id": "felipe-santiago", "nome": "Felipe Santiago", "mapa": "fortaleza", "bairro": "Conjunto Ceará", "capacidade": 3000, "mandantes": []},
   {"id": "frasqueirao", "nome": "Frasqueirão", "mapa": "rio-grande-do-norte", "bairro": "Ponta Negra", "capacidade": 15082, "mandantes": ["abc"]},
   {"id": "fumeirao", "nome": "Fumeirão", "mapa": "alagoas", "bairro": "Arapiraca I", "capacidade": 15332, "mandantes": ["asa"]},
   {"id": "germano-kruger", "nome": "Germano Kruger", "mapa": "interior-do-pr", "bairro": "Ponta Grossa I", "capacidade": 10632, "mandantes": ["operario-pr"]},

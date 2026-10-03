@@ -8901,6 +8901,27 @@ O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida
 - as etiquetas de perto;
 - sem erro.
 
+## Felipe Santiago fora do jogo; o Floresta manda no Presidente Vargas (o dono, 03/10/2026: "Remova o Felipe Santiago do jogo e faça o floresta mandar no Presidente Vargas")
+
+- Fortaleza fica com dois estádios: Arena Castelão (Fortaleza e Ceará) e
+  Presidente Vargas (Ferroviário e Floresta). O Felipe Santiago saiu de
+  `dados/fonte/cidades_bairros.json` (→ `dados/cidades.js`), de
+  `dados/estadios.js` (75 praças de jogo) e o estádio da Jovem do Floresta
+  passou a ser o Presidente Vargas (`torcidas_relacoes.json` →
+  `dados/torcidas.js`). `dados/times.js` já dizia Presidente Vargas.
+- `estadios.js` é gerado do `legado/`, que não está mais no repositório:
+  a linha foi tirada à mão e `ferramentas/importar_estadios.py` ganhou a
+  mesma regra (`TIRAR`), pra não voltar numa importação futura.
+- A planta de Fortaleza foi reassada sem o estádio. O assador
+  (`ferramentas/assar_plantas.js`) agora serve à planta do 3D os
+  `cidades.js`, `estadios.js` e `torcidas.js` da raiz em vez das cópias de
+  `cenario3d/dados/` — o 2D pode mudar um estádio antes do 3D. Sem o
+  quarteirão do estádio, a cidade se rearranjou (os bairros mudaram de
+  lugar); as sete sedes continuam no bairro certo e não há enclave novo.
+- O 3D (`cenario3d/dados/`, `cenario3d/js/jogo.js`) ainda tem o Felipe
+  Santiago — é da outra sessão; quando ela tirar, a planta dela fica igual
+  a esta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

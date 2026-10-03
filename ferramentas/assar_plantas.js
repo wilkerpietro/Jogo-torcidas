@@ -30,6 +30,12 @@ const SO = process.env.SO ? process.env.SO.split(',') : null;
   const ctx = await nav.newContext({viewport:{width:1400,height:900}});
   await ctx.route(/cdn\.jsdelivr\.net\/npm\/three/, r => r.fulfill({body: fs.readFileSync(THREE_JS), contentType:'application/javascript'}));
   await ctx.route(/fonts\.(googleapis|gstatic)/, r => r.fulfill({body:'', contentType:'text/css'}));
+  // Os dados das praças vêm da raiz, não da cópia do 3D: o 2D pode mudar um
+  // estádio antes do 3D (03/10/2026, o Felipe Santiago saiu do jogo).
+  await ctx.route(/cenario3d\/dados\/(cidades|estadios|torcidas)\.js/, r => {
+    const f = r.request().url().match(/dados\/(\w+)\.js/)[1];
+    r.fulfill({body: fs.readFileSync(path.join(RAIZ, 'dados', f + '.js')), contentType:'application/javascript'});
+  });
   const pg = await ctx.newPage();
   pg.on('pageerror', e=>console.log('ERRO', e.message));
   await pg.goto('http://127.0.0.1:8799/cenario3d/planta.html?teste', {timeout:120000});

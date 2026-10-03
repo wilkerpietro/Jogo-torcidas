@@ -2552,11 +2552,10 @@
    "temPraia": true,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 2,
    "estadios": [
     "Arena Castelão",
-    "Presidente Vargas",
-    "Felipe Santiago"
+    "Presidente Vargas"
    ],
    "rodovias": [
     "Rodovia Nordeste 1"
