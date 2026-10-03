@@ -8930,7 +8930,7 @@ O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida
   `cidades.js`, de `estadios.js` (72) e da regra `TIRAR` do
   `importar_estadios.py`; as plantas de Belém, São Paulo e Porto Alegre
   foram reassadas (sedes no bairro certo, sem enclave novo).
-- O defeito: o estádio do jogo é o `estadio` do clube em `times.js`, e 41
+- O defeito: o estádio do jogo é o `estadio` do clube em `times.js`, e 40
   clubes do Brasil traziam um nome que não estava em `estadios.js` — o
   apelido ("Ressacada", "Ligga Arena", "Bruno José Daniel") ou um estádio
   que o jogo não tem ("Baenão", "Curuzu", "Serrinha", "Arena MRV"). O
