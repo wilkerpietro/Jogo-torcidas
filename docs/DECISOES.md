@@ -8922,6 +8922,46 @@ O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida
   Santiago — é da outra sessão; quando ela tirar, a planta dela fica igual
   a esta.
 
+## Cada clube joga num estádio do jogo; saem Zinho de Oliveira, Canindé e Passo d'Areia (o dono, 03/10/2026: "O avaí joga onde, por exemplo? Ele deve jogar no seu estádio, a Ressacada, veja caso a caso pra corrigir")
+
+- Saíram três estádios: Zinho de Oliveira (Belém; o Águia de Marabá joga
+  no Mangueirão), Canindé (a Portuguesa joga no Morumbi) e Passo d'Areia
+  (o São José joga na Arena do Grêmio). Fora de `cidades_bairros.json` →
+  `cidades.js`, de `estadios.js` (72) e da regra `TIRAR` do
+  `importar_estadios.py`; as plantas de Belém, São Paulo e Porto Alegre
+  foram reassadas (sedes no bairro certo, sem enclave novo).
+- O defeito: o estádio do jogo é o `estadio` do clube em `times.js`, e 41
+  clubes do Brasil traziam um nome que não estava em `estadios.js` — o
+  apelido ("Ressacada", "Ligga Arena", "Bruno José Daniel") ou um estádio
+  que o jogo não tem ("Baenão", "Curuzu", "Serrinha", "Arena MRV"). O
+  `estadiosEm` então inventava um estádio fantasma num bairro sorteado,
+  fora da planta, e o de verdade ficava sem mandante. Agora todo clube
+  aponta o nome exato de um estádio de `estadios.js` (a lotação é a dele)
+  e todo estádio tem mandante. Caso a caso:
+  · o próprio, com o nome certo: Avaí (Ressacada), Athletico (Arena da
+    Baixada), Santo André, São Bernardo, São Caetano, Tuna Luso (Souza),
+    Atlético/GO (Antônio Accioly), Caxias (Centenário), Nacional e Rio
+    Negro (Colina), Treze (Amigão);
+  · sem o seu no jogo, o da praça que a torcida dele já dizia: Remo e
+    Paysandu (Mangueirão), Goiás e Vila Nova (Serra Dourada), Atlético
+    Mineiro (Mineirão), Athletic, Mamoré e URT (Regional), Ceilândia
+    (Bezerrão), Paulista (Nabi Abi Chedid), União Rondonópolis (Dutrinha),
+    Barra (Ressacada), Ypiranga/PE (Cornélio de Barros), Inter de Limeira e
+    XV de Piracicaba (Jorge Ismael de Biasi), Noroeste (Santa Cruz), Ituano
+    (Maião), Iguatu (Romeirão), Maringá (Germano Krüger), Pelotas (Bento
+    Freitas), Ypiranga/RS (Centenário), Moto Club e Imperatriz (Castelão),
+    Sousa (Almeidão), Sergipe (Batistão), Madureira (Moça Bonita);
+  · Goytacaz e Americano: a torcida dizia o Estádio do Trabalhador, que já
+    tinha saído; jogam no Raulino de Oliveira.
+- A tabela está em `ferramentas/importar_planilha.py`
+  (`ESTADIO_CORRIGIDO`); `times.js`, `estadios.js` (mandantes) e o estádio
+  das torcidas (`torcidas_relacoes.json` → `torcidas.js`) foram acertados
+  à mão, porque os importadores não reproduzem mais esses arquivos.
+- `bairroDoEstadio` acha o estádio também pelo apelido: o Botafogo joga no
+  "Nilton Santos", que é o Engenhão, e caía no primeiro estádio do Rio.
+- Fica de fora: o São Raimundo (Manaus) não está em `times.js` — a Força
+  Azul é torcida de um clube que o jogo não tem.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

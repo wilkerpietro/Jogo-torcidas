@@ -1589,7 +1589,10 @@ TO.dominio = (function(){
   function bairroDoEstadio(E, cid, nome){
     const ests = (TO.mundo && TO.mundo.estadiosEm) ? TO.mundo.estadiosEm(cid) : [];
     const n = norm(nome);
-    const ord = n ? ests.slice().sort((a, c) => (norm(c.nome) === n) - (norm(a.nome) === n)) : ests;
+    /* pelo nome ou por um apelido: o Botafogo joga no "Nilton Santos",
+       que é o Engenhão — sem isso caía no primeiro estádio da praça */
+    const eh = e => [e.nome].concat(e.apelidos || []).some(x => norm(x) === n);
+    const ord = n ? ests.slice().sort((a, c) => eh(c) - eh(a)) : ests;
     for(const e of ord){ const b = bairro(cid, e.bairro); if(b) return b; }
     const bs = bairrosDe(cid);
     return bs.length ? bs[hash(`${cid}|estadio`) % bs.length] : null;

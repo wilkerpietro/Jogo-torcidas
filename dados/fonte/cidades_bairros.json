@@ -348,10 +348,9 @@
    "temPraia": false,
    "temLagoa": true,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 2,
    "estadios": [
     "Mangueirao",
-    "Zinho de Oliveira",
     "Estádio do Souza"
    ],
    "rodovias": [
@@ -6312,11 +6311,10 @@
    "temPraia": false,
    "temLagoa": true,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 2,
    "estadios": [
     "Arena do Gremio",
-    "Beira-Rio",
-    "Passo d'Areia"
+    "Beira-Rio"
    ],
    "rodovias": [
     "Rodovia Sul 2"
@@ -8461,12 +8459,11 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 4,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Morumbi",
     "Neo Quimica Arena",
-    "Allianz Parque",
-    "Canindé"
+    "Allianz Parque"
    ],
    "rodovias": [
     "Rodovia Sudeste 2"
