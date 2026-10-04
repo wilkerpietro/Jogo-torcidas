@@ -325,6 +325,9 @@ TO.cartaz = (function(){
     const doClube = id => ({t:'escudo', tipo:'c', id:id || o.clubeId});
     const par = b => b && b !== m.de ? {t:'par', a:m.de, b} : eu;
     const vs = b => b && b !== m.de ? {t:'vs', a:m.de, b} : eu;
+    /* A FAIXA TOMADA (04/10/2026): o troféu de guerra, de cabeça pra baixo */
+    if(a.pano) return {tit:a.pano === 'bandeira' ? [_t('BANDEIRA'), _t('TOMADA!')] : [_t('FAIXA'), _t('TOMADA!')],
+      miolo:vs(a.perd || parteDaChave(m, 3))};
     switch(k){
       case 'convoca': return {tit:[_t('DIA DE'), _t('JOGO')],
         miolo:a.c && a.f ? {t:'confronto', c:a.c, f:a.f} : doClube(),
@@ -361,7 +364,7 @@ TO.cartaz = (function(){
         pins:[a.bairro && {rot:_t('LOCAL'), val:a.bairro}, {rot:_t('HORÁRIO'), val:_t('Hoje à noite')}].filter(Boolean)};
       case 'sede': return {tit:[_t('SEDE'), _t('AMPLIADA')], miolo:eu};
       case 'faixa-nova': return {tit:[_t('FAIXA NOVA')], miolo:eu};
-      case 'bandeira-nova': return {tit:[_t('BANDEIRA'), _t('NOVA')], miolo:eu};
+      case 'bandeira-nova': return {tit:[_t('BANDEIRA NOVA')], miolo:eu};
       case 'marco': return {tit:a.n ? [_t('SOMOS'), U_num(a.n)] : [_t('A FAMÍLIA'), _t('CRESCEU')], miolo:eu};
     }
     if(tipo === 'inauguracao') return {tit:/ampliad/.test(k) ? [_t('AMPLIAÇÃO')] : [_t('INAUGURAÇÃO')], miolo:eu};
@@ -374,6 +377,50 @@ TO.cartaz = (function(){
     if(tipo === 'treta') return {tit:[_t('TRETA'), _t('MARCADA')], miolo:vs(nossa)};
     return {tit:[_t('COMUNICADO')], miolo:eu};
   }
+  /* A FOTO DE FUNDO (04/10/2026): os bonecos fazendo o que o post diz —
+     a cena do lugar, quem aparece e como (`bonecos3.fotoDaCena`). Nem
+     todo post tem (o dono, no mesmo dia): resenha, derrota, nota de
+     agradecimento, treta marcada e convite ficam só com os escudos; a
+     caravana leva a foto da praça de destino, não bonecos; o dia de jogo
+     põe a torcida na arquibancada. */
+  const capaDa = (mapa, nome) => {
+    let id = mapa;
+    if(!id && nome){ const c = (TO.dados.cidades || []).find(x => x.nome === nome || (TO.mundo.cidade(x.id) || {}).nome === nome); id = c && c.id; }
+    return id && (TO.dados.capas || {})[id] ? IMG(`img/cidades/${id}.webp`) : null;
+  };
+  function fotoDoPost(m){
+    const a = m.arte || {}, k = a.k || prefixo(m), tipo = m.tipo, de = m.de;
+    const E = TO.estado && TO.estado.E, nossa = E && E.torcida ? E.torcida.id : null;
+    const g = (id, jeito, n, extra) => Object.assign({id, jeito, n}, extra || {});
+    const festa = cena => ({cena, grupos:[g(de, 'festa', 7)]});
+    const cobra = () => ({cena:'ct', grupos:[g(de, 'protesto', 6)]});
+    const perd = a.perd || (/zoeira$/.test(k) ? parteDaChave(m, 3) : '');
+    if(a.pano && perd) return {cena:a.cena || 'praca', grupos:[g(de, 'faixa', a.pano === 'bandeira' ? 3 : 5)],
+                               faixa:{de:perd, tipo:a.pano}};
+    switch(k){
+      case 'resenha': return null;
+      case 'zoeira': case 'nossa-zoeira': case 'zona-casa':
+        /* (os caídos ficam na frente: a cena sobe menos, pra eles não sumirem no branco do pé) */
+        return perd ? {cena:a.cena || 'rua', subir:0.27, grupos:[g(de, 'gaba', 3), g(perd, 'caido', 3)]}
+                    : {cena:a.cena || 'rua', grupos:[g(de, 'gaba', 4)]};
+      case 'pixo': return {cena:'rua', grupos:[g(de, 'gaba', 4)]};
+      case 'convoca': return {cena:'estadio-20', grupos:[g(de, 'festa', 7)]};
+      case 'chegada': return festa('arredores');
+      case 'caravana': { const img = capaDa(a.mapa, a.cidade); return img ? {img} : null; }
+      case 'nosso-jogo': return tipo === 'reclamacao' || (a.gc != null && a.gc === a.gf) ? null : festa('praca');
+      case 'classico-v': case 'goleada-r': case 'titulo': case 'acesso': case 'queda-r': return festa('praca');
+      case 'classico-d': case 'goleada-d': case 'queda': case 'protesto': return cobra();
+      case 'convite-nosso': case 'obrigado-nosso': case 'treta-msg': return null;
+      case 'sede': return festa('sede-3');
+    }
+    if(tipo === 'convite' || tipo === 'agradecimento' || tipo === 'cobranca' || tipo === 'treta') return null;
+    if(tipo === 'inauguracao') return {cena:/^bar/.test(k) ? 'bar' : /^sede|^faixa|^bandeira|^marco/.test(k) ? 'sede-3' : 'praca',
+                                       grupos:[g(de, 'festa', 5)]};
+    if(tipo === 'comemoracao') return festa('praca');
+    if(tipo === 'reclamacao' || tipo === 'protesto') return cobra();
+    return null;
+  }
+  const chaveDaFotoPost = m => `post|${m.id}`;
   const U_num = n => (TO.util && TO.util.numero) ? TO.util.numero(n) : String(n);
 
   function htmlDoMiolo(x, pal, de){
@@ -401,16 +448,27 @@ TO.cartaz = (function(){
     if(!o || SEM_ARTE.has(m.tipo)) return '';
     const pal = paleta(m.de), ano = anoDe(o), sp = especDaArte(m);
     const arroba = arrobaDe(o);
-    return `<figure class="cartaz cz-arte" style="--e:${pal.escura};--v:${pal.viva}">`+
+    const ft = fotoDoPost(m), kf = chaveDaFotoPost(m), url = ft ? (ft.img || fotos.get(kf)) : null;
+    const pede = ft && !ft.img;
+    return `<figure class="cartaz cz-arte${url ? ' com-foto' : ''}${ft && ft.img ? ' foto-lugar' : ''}" style="--e:${pal.escura};--v:${pal.viva}"${pede ? ` data-ca-foto="${esc(kf)}"` : ''}>`+
       tarja(ano, pal, 'esq')+tarja(ano, pal, 'dir')+
       `<div class="ca-papel">`+
+        `<img class="ca-foto" alt=""${url ? ` src="${url}"` : ''}><div class="ca-veu"></div>`+
         `<div class="ca-marca-dagua">${marcaDaTorcida(m.de, o.nome)}</div>`+
         `<i class="ca-canto ca-c1"></i><i class="ca-canto ca-c2"></i><i class="ca-canto ca-c3"></i><i class="ca-canto ca-c4"></i>`+
         `<div class="ca-aba"></div>`+
         `<div class="ca-topo">${aro('t', m.de, o.nome, pal, 'ca-brasao')}</div>`+
         titulo(sp.tit, pal)+
         (sp.sub ? `<div class="ca-sub" style="color:${pal.escura}">${esc(sp.sub)}</div>` : '')+
-        htmlDoMiolo(sp.miolo || {t:'escudo', tipo:'t', id:m.de}, pal, m.de)+
+        /* COM A FOTO, O FOCO É A FOTO (dono, 04/10/2026: "em alguns casos
+           pode remover os escudos dessa parte inferior pra focar melhor na
+           imagem"): sai o escudo que só repete quem aparece na cena — o
+           da torcida, o par, o "×" da treta e da faixa tomada; fica o que
+           é informação (o placar, o jogo do dia, os anos e as aliadas).
+           Sem foto (sem WebGL), os escudos ficam. */
+        (()=>{ const mi = sp.miolo || {t:'escudo', tipo:'t', id:m.de};
+          const h = htmlDoMiolo(mi, pal, m.de);
+          return ft && /^(escudo|vs|par)$/.test(mi.t) ? h.replace('class="ca-miolo ', 'class="ca-miolo ca-so-sem-foto ') : h; })()+
         etiquetas(sp.pins, pal)+
         `<div class="ca-pe"><span>${esc(arroba)}</span><span>${esc('@loja_online_' + arroba.slice(1))}</span></div>`+
       `</div>`+
@@ -475,21 +533,67 @@ TO.cartaz = (function(){
   let observador = null;
   const porFigura = new WeakMap();
   /* a casca chama depois de pôr o cartaz no DOM */
+  /* a foto da arte: o roteiro do post, as cores de cada grupo e, na
+     faixa tomada, o pano do rival (que pode estar chegando ainda) */
+  const coresDe = id => {
+    const o = TO.mundo.torcida(id);
+    const cr = o && TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
+    return {id, cor:cr.cor, cor2:cr.cor2, cor3:cr.cor3};
+  };
+  function panoPronto(id, tipo){
+    const o = TO.mundo.torcida(id), Pt = TO.patrimonio;
+    if(!o || !Pt || !Pt.imagemDaFaixaObj) return Promise.resolve(null);
+    const c = Pt.imagemDaFaixaObj(o, tipo === 'bandeira' ? 'bandeira' : 'faixa', 0);
+    if(!c) return Promise.resolve(null);
+    return new Promise(res => {
+      const t0 = Date.now();
+      (function v(){ if(!c.pendentes || Date.now() - t0 > 2500) return res(c); setTimeout(v, 80); })();
+    });
+  }
+  function pedirFotoArte(m){
+    const k = chaveDaFotoPost(m);
+    if(fotos.has(k) || pedidas.has(k)) return;
+    const B = TO.diaJogo && TO.diaJogo.bonecos3;
+    const ft = fotoDoPost(m);
+    if(!B || !B.fotoDaCena || !ft || ft.img) return;
+    pedidas.add(k);
+    fila = fila.then(() => ft.faixa ? panoPronto(ft.faixa.de, ft.faixa.tipo) : null)
+      .then(pano => B.fotoDaCena({cena:ft.cena, semente:k, largura:640, altura:800, faixa:pano, subir:ft.subir,
+        grupos:ft.grupos.map(x => Object.assign({}, x, {t:coresDe(x.id)}))}))
+      .then(url => {
+        pedidas.delete(k);
+        if(!url) return;
+        fotos.set(k, url);
+        if(fotos.size > 80) fotos.delete(fotos.keys().next().value);
+        for(const f of document.querySelectorAll(`.cartaz[data-ca-foto="${CSS.escape(k)}"]`)){
+          const im = f.querySelector('.ca-foto');
+          if(im) im.src = url;
+          f.classList.add('com-foto');
+        }
+      })
+      .catch(() => { pedidas.delete(k); });
+  }
   function ligar(fig, m){
-    if(!fig || !m || !m.card || m.card.t !== 'briga' || !doJornal(m)) return;
-    if(fotos.has(chaveDaFoto(m))) return;
+    if(!fig || !m) return;
+    if(fig.classList.contains('cz-arte')){
+      if(!fig.dataset.caFoto || fotos.has(chaveDaFotoPost(m))) return;
+      if(typeof IntersectionObserver === 'undefined'){ pedirFotoArte(m); return; }
+    } else {
+      if(!m.card || m.card.t !== 'briga' || !doJornal(m)) return;
+      if(fotos.has(chaveDaFoto(m))) return;
+    }
     if(typeof IntersectionObserver === 'undefined'){ pedirFoto(fig, m); return; }
     if(!observador) observador = new IntersectionObserver(ents=>{
       for(const e of ents){
         if(!e.isIntersecting) continue;
         observador.unobserve(e.target);
         const mm = porFigura.get(e.target);
-        if(mm) pedirFoto(e.target, mm);
+        if(mm) e.target.classList.contains('cz-arte') ? pedirFotoArte(mm) : pedirFoto(e.target, mm);
       }
     }, {rootMargin:'200px'});
     porFigura.set(fig, m);
     observador.observe(fig);
   }
 
-  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, paleta, ehRival, get fotos(){ return fotos; }};
+  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
 })();

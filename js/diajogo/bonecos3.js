@@ -2748,7 +2748,211 @@ TO.diaJogo.bonecos3 = (function(){
     try{ return cv2.toDataURL('image/jpeg', 0.86); }catch(_){ return null; }
   }
 
-  return {montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
+  /* =======================================================
+     A FOTO DO POST (pedido do dono, 04/10/2026: "imagens de ações dos
+     bonecos da torcida no fundo condizentes com o sentido da postagem…
+     no post da resenha, os membros no fundo na casa com piscina. Na
+     treta vencida, os membros rivais caídos. Crie também da
+     faixa/bandeira tomada com os membros estendendo a faixa de cabeça
+     pra baixo"). O mesmo fotógrafo da briga (`fotoDaBriga`): a cena de
+     cima, o chão da cena e os bonecos GLB numa pose parada. O que muda
+     é o roteiro — `opc.grupos`, cada um com a torcida (cores), quantos
+     e o JEITO:
+       festa    · torcendo, em duas fileiras (jogo, vitória, caravana)
+       resenha  · numa roda, uns sentados no chão, uns de pé conversando
+       gaba     · de pé, provocando (quem venceu a treta)
+       caido    · no chão, na frente de quem venceu
+       protesto · braços pra cima e apontando (cobrança, protesto)
+       bonde    · chamando pra briga (o recado da treta)
+       faixa    · em fila, os braços pra frente, segurando o pano
+     `opc.faixa` (um canvas) vai estendido na frente de quem segura, DE
+     CABEÇA PRA BAIXO, na altura do peito. Retrato 4:5 por padrão.
+     ======================================================= */
+  const JEITOS = {
+    festa:   n => Array.from({length:n}, (_, i) => i < 4
+               ? {dx:(i - 1.5)*21, dy:6} : {dx:(i - 4 - (Math.min(n, 7) - 5)/2)*21, dy:-10}),
+    resenha: n => Array.from({length:n}, (_, i) => { const a = i/n*Math.PI*2 + 0.4;
+               return {dx:Math.cos(a)*30, dy:Math.sin(a)*14, olha:-a + Math.PI/2}; }),
+    gaba:    n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*26, dy:-8})),
+    caido:   n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*26 + 9, dy:0})),
+    protesto:n => Array.from({length:n}, (_, i) => ({dx:((i%3) - 1)*22 + (i >= 3 ? 11 : 0), dy:i >= 3 ? -10 : 6})),
+    bonde:   n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*21, dy:(i%2 ? -7 : 4)})),
+    faixa:   n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*19, dy:0}))
+  };
+  function poseDoJeito(jeito, f, i, sem){
+    const p = poseNeutra(), t = 1.3 + i*0.71;
+    if(jeito === 'festa'){
+      f.varianteForcada = i % 3; f.tGesto = 9;
+      f.gesto = [2, 0, 1, 4, 2, 0, 1][i % 7];
+      torcer(p, f, t, 0);
+    } else if(jeito === 'resenha'){
+      if(i % 3 === 0){ f.varianteForcada = i % 2 ? 1 : 2; sentar(p, f, t); p.ombro = [0.2, -0.6]; p.cotovelo = [-0.4, -1.4]; }
+      else if(i % 3 === 1) falarEmPe(p, f, t);
+      else { f.tGesto = 9; f.gesto = 1; torcer(p, f, t, 0); }
+    } else if(jeito === 'gaba' || jeito === 'bonde'){
+      f.provoca = {t:0.5, dur:1, tipo: jeito === 'bonde' ? [0, 1, 7][i % 3] : [4, 6, 3, 7, 2][i % 5]};
+      provocar(p, f, t, 0);
+    } else if(jeito === 'caido'){
+      f.jazido = [0, 2, 1][i % 3]; f.jazidoLado = i % 2 ? 1 : -1; f.queda = null;
+      cair(p, f, 2);
+    } else if(jeito === 'protesto'){
+      if(i % 2){ f.provoca = {t:0.5, dur:1, tipo:7}; provocar(p, f, t, 0); }
+      else { f.tGesto = 9; f.gesto = 4; torcer(p, f, t, 0); }
+    } else if(jeito === 'faixa'){
+      parado(p, f, t);
+      p.ombro = [-1.25, -1.25]; p.ombroZ = [0.18, 0.18]; p.cotovelo = [-0.35, -0.35]; p.maoZ = [0.2, 0.2]; p.punho = [1, 1];
+      p.inclina = -0.04; p.olhaX = -0.1;
+    } else parado(p, f, t);
+    return p;
+  }
+  function pontoDoGrupo(A, offs){
+    const W = A.W || 1536, H = A.H || 1024;
+    const cabe = (x, y) => !A.cabe || offs.every(o => A.cabe(x + o.dx, y + o.dy, 7));
+    for(const c of centrosDaPose(A, 'mandante')){
+      for(let r = 0; r <= c.raio; r += 14)
+        for(let a = 0; a < 360; a += 20){
+          const x = c.x + Math.cos(a*Math.PI/180)*r, y = c.y + Math.sin(a*Math.PI/180)*r;
+          if(x < 120 || x > W-120 || y < 120 || y > H-120) continue;
+          if(cabe(x, y)) return {x, y};
+        }
+    }
+    return {x:W/2, y:H/2};
+  }
+  function renderizarCena(opc){
+    const A = TO.diaJogo.arredores;
+    const W = opc.largura || 640, H = opc.altura || 800;
+    /* os grupos, um atrás do outro: cada um com o deslocamento dele */
+    const pos = [];
+    let base = 0;
+    for(const g of (opc.grupos || [])){
+      const offs = (JEITOS[g.jeito] || JEITOS.festa)(Math.max(1, Math.min(8, g.n || 4)));
+      for(let i = 0; i < offs.length; i++) pos.push({g, i, dx:offs[i].dx + (g.dx || 0), dy:offs[i].dy + (g.dy || 0), olha:offs[i].olha});
+      base++;
+    }
+    if(!pos.length) return null;
+    const c0 = pontoDoGrupo(A, pos);
+    const minX = Math.min(...pos.map(p => p.dx)), maxX = Math.max(...pos.map(p => p.dx));
+    const VW = opc.vista || Math.max(94, (maxX - minX) + 46), VH = VW * H / W;
+    /* a foto do post vê mais de lado que a da briga: o corpo inteiro, não
+       só a cabeça de cima */
+    const CIS = opc.cisalha || 0.95;
+    /* o grupo um pouco abaixo do meio do quadro: em cima vai o título */
+    const cx = U.limitar(c0.x + (minX + maxX)/2, VW/2, (A.W||1536) - VW/2);
+    const cy = U.limitar(c0.y - VH*(opc.subir != null ? opc.subir : 0.25), VH/2, (A.H||1024) - VH/2);
+    const x0 = cx - VW/2, y0 = cy - VH/2, s = W/VW;
+
+    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+    const x = cv2.getContext('2d');
+    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+    A.desenharFundo(x);
+    x.restore();
+
+    const cvB = {width:W, height:H};
+    let r = null;
+    try{
+      r = rendererDaFoto(cvB);
+      r.setPixelRatio(1); r.setClearColor(0x000000, 0);
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
+      const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); sc.add(sol);
+      const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); sc.add(contra);
+      const camF = new THREE.OrthographicCamera(x0, x0+VW, -y0, -(y0+VH), 1, ALTURA_CAM*2);
+      camF.position.set(0, ALTURA_CAM, 0); camF.up.set(0, 0, -1); camF.lookAt(0, 0, 0);
+      camF.updateProjectionMatrix();
+      const el = camF.projectionMatrix.elements, a = 2/(camF.top - camF.bottom);
+      el[9] += a*CIS; el[13] += a*CIS*ALTURA_CAM;
+      camF.projectionMatrixInverse.copy(camF.projectionMatrix).invert();
+      sc.add(camF);
+      const sem = String(opc.semente || '');
+      /* de trás pra frente na tela: quem está mais embaixo cobre quem está em cima */
+      for(const q of pos.slice().sort((a2, b2) => a2.dy - b2.dy)){
+        const t = q.g.t || {};
+        const d = {nome:`${sem}|${q.g.jeito}|${t.id}|${q.i}`, lado:'mandante', torcida:t.id, cor:t.cor, cor2:t.cor2, cor3:t.cor3||null};
+        const f = fichaDe(d, q.i); f.escala = 1;
+        f.varianteForcada = dado(`${sem}|${q.g.jeito}|var|${q.i}`, 3);
+        const c = construirCorpoGLB(f, false);
+        if(c.anel) c.anel.visible = false;
+        if(c.anelFundo) c.anelFundo.visible = false;
+        /* a sombra de pé vista de lado vira um disco escuro no chão: miúda
+           e clara, e nenhuma em quem está deitado */
+        if(c.sombra){
+          if(q.g.jeito === 'caido') c.sombra.visible = false;
+          else { c.sombra.scale.set(5, 3, 1); c.sombra.material.opacity = 0.16; }
+        }
+        const p = poseDoJeito(q.g.jeito, f, q.i, sem);
+        aplicarPoseGLB(c, p, f.escala * escalaDeCima * 0.86);
+        c.raiz.position.set(c0.x + q.dx, 0, c0.y + q.dy);
+        /* de frente pra câmera (que olha de baixo pra cima da tela), com
+           um giro de cada um; na roda, pro meio; caído, de lado */
+        c.raiz.rotation.y = q.olha != null ? q.olha
+          : q.g.jeito === 'caido' ? (q.i % 2 ? 1.2 : -1.9)
+          : (dado(`${sem}|gira|${q.i}`, 7) - 3) * 0.12 + (q.g.vira || 0);
+        sc.add(c.raiz);
+      }
+      sc.updateMatrixWorld(true);
+      r.render(sc, camF);
+      x.drawImage(r.domElement, 0, 0);
+      /* a faixa tomada: na frente de quem segura, de cabeça pra baixo */
+      const fx = opc.faixa;
+      const quem = pos.filter(q => q.g.jeito === 'faixa');
+      if(fx && fx.width && quem.length){
+        const tela = (wx, wz) => [(wx - x0)*s, (wz - y0)*s];
+        const xs = quem.map(q => c0.x + q.dx), zz = c0.y + quem[0].dy;
+        const [ax, ay] = tela(Math.min(...xs) - 10, zz), [bx] = tela(Math.max(...xs) + 10, zz);
+        /* a altura de um boneco na tela: o corpo sobe com a cisalha */
+        const alt = 31 * CIS * s * escalaDeCima;
+        const larg = bx - ax;
+        const prop = fx.width / fx.height;
+        let fw = larg, fh = larg / prop;
+        if(fh > alt*0.62){ fh = alt*0.62; fw = fh*prop; }
+        const fxc = (ax + bx)/2, fyc = ay - alt*0.42;
+        x.save();
+        x.translate(fxc, fyc); x.rotate(Math.PI + (dado(`${sem}|tor`, 5) - 2)*0.012);
+        x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8*s/3; x.shadowOffsetY = -3;
+        x.drawImage(fx, -fw/2, -fh/2, fw, fh);
+        x.restore();
+      }
+    }catch(err){ console.warn('foto do post (bonecos): '+err.message); }
+    finally{ if(r) soltarFoto(r); }
+    try{ return cv2.toDataURL('image/jpeg', 0.84); }catch(_){ return null; }
+  }
+  function fotoDaCena(opc){
+    if(typeof THREE === 'undefined') return Promise.resolve(null);
+    const P = TO.diaJogo.ponte;
+    if(P && P.rodando) return Promise.resolve(null);
+    carregarGLB();
+    const A = TO.diaJogo.arredores;
+    if(!A || !A.usarCena) return Promise.resolve(null);
+    const espera = ()=> new Promise(res=>{
+      const t0 = Date.now();
+      (function v(){
+        if(modeloGLB) return res(true);
+        if(Date.now()-t0 > 6000) return res(false);
+        setTimeout(v, 120);
+      })();
+    });
+    return espera().then(ok=>{
+      if(!ok || (P && P.rodando)) return null;
+      const antes = A.D && A.D.id;
+      const trocou = opc.cena && A.D && A.D.id !== opc.cena;
+      if(trocou) A.usarCena(opc.cena);
+      const fundo = ()=> new Promise(res=>{
+        const t0 = Date.now();
+        (function v(){
+          if(A.imagemOk || !A.D.imagem || Date.now()-t0 > 2500) return res();
+          setTimeout(v, 80);
+        })();
+      });
+      return fundo().then(()=>{
+        let url = null;
+        try{ url = renderizarCena(opc); }catch(err){ console.warn('foto do post: '+err.message); }
+        if(trocou && !(P && P.rodando)) A.usarCena(antes || 'arredores');
+        return url;
+      });
+    });
+  }
+
+  return {montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, estudo, DESENHOS, paletaDaCena, anelDe, desenhoDaTorcida,
           cfg, dprAtual, conta, get dprNivel(){ return dprNivel; }, get estatMalha(){ return estatMalha; },
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return ativo; },

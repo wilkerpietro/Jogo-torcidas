@@ -2668,6 +2668,28 @@ header.capa-cidade{background-size:cover; background-position:center;
 .ca-papel{position:absolute;top:0;bottom:0;left:6.6cqw;right:6.6cqw;overflow:hidden;
   background:radial-gradient(120% 80% at 50% 45%,#ffffff 0%,#f3f1ed 70%,#e8e5df 100%);
   display:flex;flex-direction:column;align-items:center;padding:24cqw 4cqw 0}
+/* a foto dos bonecos no fundo (04/10/2026), com o degradê do papel por
+   cima: branco no título, a cena aparecendo no meio, branco de novo no
+   rodapé */
+.ca-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s;pointer-events:none}
+.cz-arte.com-foto .ca-foto{opacity:1}
+.ca-veu{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s;
+  background:linear-gradient(180deg,#fff 0%,#fff 22%,rgba(255,255,255,.8) 33%,rgba(255,255,255,.1) 46%,
+    rgba(255,255,255,0) 58%,rgba(255,255,255,0) 76%,rgba(255,255,255,.7) 89%,#fff 94%)}
+.cz-arte.com-foto .ca-veu{opacity:1}
+.cz-arte.com-foto .ca-marca-dagua{display:none}
+.cz-arte.com-foto .ca-miolo{align-items:flex-end;padding-bottom:1.5cqw}
+.cz-arte.com-foto .ca-anos{justify-content:flex-end}
+.cz-arte.com-foto .ca-miolo.ca-so-sem-foto{visibility:hidden}
+.cz-arte.com-foto .ca-miolo .ca-aro{width:21cqw;height:21cqw}
+.cz-arte.com-foto .ca-miolo .ca-aro.ca-maior{width:25cqw;height:25cqw}
+.cz-arte.com-foto .ca-par .ca-aro + .ca-aro{margin-left:-4cqw}
+.cz-arte.com-foto .ca-x{font-size:8cqw}
+.cz-arte.com-foto .ca-gols{font-size:12cqw}
+.cz-arte.com-foto .ca-selo{width:20cqw;height:20cqw}
+.cz-arte.com-foto .ca-selo b{font-size:10cqw}
+.cz-arte.com-foto .ca-selo i{font-size:4cqw}
+.cz-arte.com-foto .ca-grade{grid-template-columns:repeat(8,1fr);width:72cqw;gap:1cqw}
 .ca-marca-dagua{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:78cqw;height:78cqw;opacity:.06;
   filter:grayscale(1);pointer-events:none}
 .ca-marca-dagua .cz-escudo{width:100%;height:100%;filter:none}

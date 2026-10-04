@@ -9050,6 +9050,37 @@ Dois defeitos que se alimentavam:
   NOSSO escudo. Aliada (nota de agradecimento, grade do convite) e o
   próprio clube nunca viram.
 
+## A foto dos bonecos no fundo da arte, e a faixa tomada (o dono, 04/10/2026: "imagens de ações dos bonecos da torcida no fundo condizentes com o sentido da postagem com o degradê do fundo branco sobrepondo… Crie também da faixa/bandeira tomada com os membros estendendo a faixa de cabeça pra baixo, com uma postagem pesada humilhando o rival")
+
+- `bonecos3.fotoDaCena` (o mesmo fotógrafo da foto da briga): a cena de
+  cima e os bonecos GLB parados numa pose, por roteiro — grupos com a
+  torcida e o JEITO (festa, gaba, caído, protesto, faixa…). A câmera é
+  mais de lado que a da briga (vê o corpo inteiro) e mais perto; a sombra
+  de cada um fica miúda e sai de quem está deitado. Retrato 4:5, 640×800.
+- A faixa (ou a bandeira) tomada é a do rival (`patrimonio.imagemDaFaixaObj`,
+  a de verdade quando a torcida tem), estendida na frente de quem segura,
+  na altura do peito, DE CABEÇA PRA BAIXO.
+- Na arte, a foto entra embaixo de um degradê do papel: branco no
+  título, a cena no meio, branco de novo no rodapé. Pedida quando o post
+  aparece na tela, uma de cada vez, guardada na sessão (não vai pro save).
+- Com a foto, sai o escudo que só repete quem está na cena (o da torcida,
+  o "×" da treta vencida e da faixa tomada); fica o que é informação — o
+  placar, o jogo do dia, a caravana. Sem WebGL, os escudos ficam.
+- Quem tem foto, pelas regras do dono: A CIDADE É NOSSA (quem venceu de
+  pé provocando, os rivais caídos aos pés, no lugar da briga); FAIXA e
+  BANDEIRA TOMADA! (sem subtítulo); DIA DE JOGO (a torcida na
+  arquibancada); vitória, clássico, título e acesso (festa na praça);
+  protesto e vexame (cobrança no CT); inauguração (bar ou sede). A
+  CARAVANA CONFIRMADA leva a foto da praça de destino (a capa da cidade),
+  sem bonecos. Ficam SEM foto, só com os escudos: resenha, derrota e
+  empate, nota de agradecimento (os dois aliados), treta marcada (os
+  envolvidos) e convite (os anos e as aliadas).
+- O post do pano tomado ficou pesado: "FAIXA TOMADA! O pano da {perdedor}
+  agora mora na sede da {nome}, de cabeça pra baixo…", "Pano de quem foge
+  a gente estende de cabeça pra baixo…" (e as da bandeira), com a frase do
+  dono de 30/09 entre elas; a zoeira guarda o lugar, quem apanhou e o pano
+  (`m.arte`), e o título da arte vira FAIXA/BANDEIRA TOMADA!.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

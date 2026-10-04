@@ -653,8 +653,7 @@ TO.i18n.registrar({
   "AMPLIADA": {es:"AMPLIADA", en:"EXPANDED"},
   "AMPLIAÇÃO": {es:"AMPLIACIÓN", en:"EXPANSION"},
   "Anos": {es:"Años", en:"Years"},
-  "BANDEIRA": {es:"BANDERA", en:"NEW"},
-  "NOVA": {es:"NUEVA", en:"FLAG"},
+  "BANDEIRA": {es:"BANDERA", en:"FLAG"},
   "CARAVANA": {es:"CARAVANA", en:"AWAY TRIP"},
   "CONFIRMADA": {es:"CONFIRMADA", en:"CONFIRMED"},
   "CHEGAMOS!": {es:"¡LLEGAMOS!", en:"WE'RE HERE!"},
@@ -702,5 +701,16 @@ TO.i18n.registrar({
   "ZONA {zona}": {es:"ZONA {zona}", en:"{zona} ZONE"},
   "{n} ANOS": {es:"{n} AÑOS", en:"{n} YEARS"},
   "É CAMPEÃO!": {es:"¡CAMPEÓN!", en:"CHAMPIONS!"},
-  "É FESTA!": {es:"¡ES FIESTA!", en:"PARTY TIME!"}
+  "É FESTA!": {es:"¡ES FIESTA!", en:"PARTY TIME!"},
+  "BANDEIRA NOVA": {es:"BANDERA NUEVA", en:"NEW FLAG"},
+  "FAIXA": {es:"TRAPO", en:"BANNER"},
+  "TOMADA!": {es:"¡ROBADA!", en:"TAKEN!"},
+  "TROFÉU DE GUERRA": {es:"TROFEO DE GUERRA", en:"WAR TROPHY"},
+  "BANDEIRA TOMADA! A bandeira da {perdedor} agora mora na sede da {nome}, de cabeça pra baixo, que é como bandeira de quem corre fica. Quem quiser de volta sabe onde a gente está.": {es:"¡BANDERA ROBADA! La bandera de {perdedor} ahora vive en la sede de {nome}, dada vuelta, que es como queda la bandera de los que corren. El que la quiera de vuelta sabe dónde estamos.", en:"FLAG TAKEN! {perdedor}'s flag now lives in {nome}'s HQ, upside down, which is how a runner's flag hangs. Whoever wants it back knows where to find us."},
+  "Bandeira de quem foge a gente pendura de cabeça pra baixo. {perdedor}, o símbolo de vocês virou troféu da {nome}. Podem chorar nos comentários.": {es:"La bandera del que se escapa la colgamos dada vuelta. {perdedor}, su símbolo ahora es trofeo de {nome}. Pueden llorar en los comentarios.", en:"A runner's flag gets hung upside down. {perdedor}, your symbol is now a {nome} trophy. Feel free to cry in the comments."},
+  "FAIXA TOMADA na resenha da {perdedor}! O pano de vocês já está de cabeça pra baixo na sede da {nome}. Resenha de quem não segura nem a própria faixa.": {es:"¡TRAPO ROBADO en la juntada de {perdedor}! Su trapo ya está dado vuelta en la sede de {nome}. Juntada de los que no cuidan ni su propio trapo.", en:"BANNER TAKEN at {perdedor}'s hangout! Your banner is already upside down in {nome}'s HQ. A hangout for people who can't even hold on to their own banner."},
+  "FAIXA TOMADA! O pano da {perdedor} agora mora na sede da {nome}, de cabeça pra baixo, que é como pano de quem corre fica. Quem quiser de volta sabe onde a gente está.": {es:"¡TRAPO ROBADO! El trapo de {perdedor} ahora vive en la sede de {nome}, dado vuelta, que es como queda el trapo de los que corren. El que lo quiera de vuelta sabe dónde estamos.", en:"BANNER TAKEN! {perdedor}'s banner now lives in {nome}'s HQ, upside down, which is how a runner's banner hangs. Whoever wants it back knows where to find us."},
+  "Olha o que a {nome} trouxe pra casa: a bandeira da {perdedor}. Chegaram cheios de marra e voltaram sem nada. Vai ficar de ponta-cabeça na nossa parede pra cidade inteira ver.": {es:"Miren lo que {nome} se trajo a casa: la bandera de {perdedor}. Llegaron agrandados y se volvieron sin nada. Va a quedar dada vuelta en nuestra pared para que la vea toda la ciudad.", en:"Look what {nome} brought home: {perdedor}'s flag. They showed up full of swagger and left with nothing. It'll hang upside down on our wall for the whole city to see."},
+  "Olha o que a {nome} trouxe pra casa: a faixa da {perdedor}. Chegaram cheios de marra e voltaram sem o pano. Vai ficar de ponta-cabeça na nossa parede pra cidade inteira ver.": {es:"Miren lo que {nome} se trajo a casa: el trapo de {perdedor}. Llegaron agrandados y se volvieron sin el trapo. Va a quedar dado vuelta en nuestra pared para que lo vea toda la ciudad.", en:"Look what {nome} brought home: {perdedor}'s banner. They showed up full of swagger and left without it. It'll hang upside down on our wall for the whole city to see."},
+  "Pano de quem foge a gente estende de cabeça pra baixo. {perdedor}, a faixa de vocês virou troféu da {nome}. Podem chorar nos comentários.": {es:"El trapo del que se escapa lo colgamos dado vuelta. {perdedor}, su trapo ahora es trofeo de {nome}. Pueden llorar en los comentarios.", en:"A runner's banner gets stretched out upside down. {perdedor}, your banner is now a {nome} trophy. Feel free to cry in the comments."}
 });

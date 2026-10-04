@@ -477,9 +477,17 @@ TO.feed = (function(){
     const venceuQuemAtacou = !!reg.ganhouA;
     const pano = reg.pano && reg.pano.para === P.nome ? reg.pano : null;
     /* texto do dono (30/09/2026) */
-    if(pano) return pano.tipo === 'bandeira'
-      ? _t('A partir de hoje a bandeira da {perdedor} é nossa. A cidade é nossa!', P)
-      : _t('A partir de hoje a faixa da {perdedor} é nossa. A cidade é nossa!', P);
+    /* o pano tomado é humilhação pesada (dono, 04/10/2026: "uma postagem
+       pesada humilhando o rival") — a frase do dono de 30/09 segue entre elas */
+    if(pano) return (pano.tipo === 'bandeira' ? [
+        _t('A partir de hoje a bandeira da {perdedor} é nossa. A cidade é nossa!', P),
+        _t('BANDEIRA TOMADA! A bandeira da {perdedor} agora mora na sede da {nome}, de cabeça pra baixo, que é como bandeira de quem corre fica. Quem quiser de volta sabe onde a gente está.', P),
+        _t('Olha o que a {nome} trouxe pra casa: a bandeira da {perdedor}. Chegaram cheios de marra e voltaram sem nada. Vai ficar de ponta-cabeça na nossa parede pra cidade inteira ver.', P),
+        _t('Bandeira de quem foge a gente pendura de cabeça pra baixo. {perdedor}, o símbolo de vocês virou troféu da {nome}. Podem chorar nos comentários.', P)] : [
+        _t('A partir de hoje a faixa da {perdedor} é nossa. A cidade é nossa!', P),
+        _t('FAIXA TOMADA! O pano da {perdedor} agora mora na sede da {nome}, de cabeça pra baixo, que é como pano de quem corre fica. Quem quiser de volta sabe onde a gente está.', P),
+        _t('Olha o que a {nome} trouxe pra casa: a faixa da {perdedor}. Chegaram cheios de marra e voltaram sem o pano. Vai ficar de ponta-cabeça na nossa parede pra cidade inteira ver.', P),
+        _t('Pano de quem foge a gente estende de cabeça pra baixo. {perdedor}, a faixa de vocês virou troféu da {nome}. Podem chorar nos comentários.', P)])[(h >>> 7) % 4];
     const t = tipoDaBriga(reg);
     let op;
     if(t === 'jogo') op = [
@@ -560,7 +568,10 @@ TO.feed = (function(){
       const dom = r.dominio && r.dominio.bairro && r.dominio.tid === V.id ? r.dominio : null;
       const gaba = dom ? ' ' + _t('{bairro} tá cada vez mais nosso: +{g} na barra.',
         {bairro:dom.bairro, g:U.numero ? U.numero(dom.ganho, 1) : dom.ganho}) : '';
-      const pai = mensagemDe(E, V.id, textoDaZoeira(r, P, h) + gaba, 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`});
+      /* a foto do post (04/10/2026): o lugar da briga, quem apanhou e o pano */
+      const arte = {cena:LUGAR_CENA[lugarDaBriga(r)] || 'rua', perd:D.id,
+                    pano:r.pano && r.pano.para === V.nome ? r.pano.tipo : null};
+      const pai = mensagemDe(E, V.id, textoDaZoeira(r, P, h) + gaba, 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`, arte});
       if(zona) P.nome = V.nome;
       /* às vezes quem apanhou responde (o nosso rival, quase sempre) */
       if((h >> 5) % 100 < (c.rivalPerdeu ? 70 : 30)){
@@ -822,7 +833,7 @@ TO.feed = (function(){
         {nome:nos.nome, emCidade:emPraca(j.mapaAdv), dia:NO_DIA[j.dia] || NO_DIA[6],
          clube:nomeClube(nos.clubeId), comp:pelaCompeticao(j.competicao)}),
         'caravana', {publico:true, chave:`caravana|${j.chave || abs}`,
-         arte:{c:nos.clubeId, f:j.advId || null, cidade:(M().cidade(j.mapaAdv) || {}).nome || '', dia:NO_DIA[j.dia] || NO_DIA[6]}});
+         arte:{c:nos.clubeId, f:j.advId || null, mapa:j.mapaAdv, cidade:(M().cidade(j.mapaAdv) || {}).nome || '', dia:NO_DIA[j.dia] || NO_DIA[6]}});
     }
     const o = M().torcida(nos.id) || nos;
     const fund = o.fundacao || nos.fundacao;
@@ -1221,7 +1232,8 @@ TO.feed = (function(){
           _t('A {nome} foi na resenha da {perdedor} e voltou com a bandeira deles. Já está pendurada na nossa sede. Quem quiser, vem buscar!', P),
           _t('Resenha encerrada e bandeira no bolso! A {perdedor} vai ter que costurar outra. Assinado: {nome}.', P)] : [
           _t('A {nome} foi na resenha da {perdedor} e voltou com a faixa deles. Já está pendurada na nossa sede. Quem quiser, vem buscar!', P),
-          _t('Resenha encerrada e faixa no bolso! A {perdedor} vai ter que pintar outra. Assinado: {nome}.', P)])
+          _t('Resenha encerrada e faixa no bolso! A {perdedor} vai ter que pintar outra. Assinado: {nome}.', P),
+          _t('FAIXA TOMADA na resenha da {perdedor}! O pano de vocês já está de cabeça pra baixo na sede da {nome}. Resenha de quem não segura nem a própria faixa.', P)])
         : atacouVenceu ? [
           _t('A {nome} passou na resenha da {perdedor} e ninguém segurou. Resenha encerrada mais cedo!', P),
           _t('Hoje a {nome} fez a festa na casa de piscina da {perdedor}: chegamos com {n}, ninguém segurou e a resenha acabou no grito!', P),
@@ -1230,7 +1242,8 @@ TO.feed = (function(){
           _t('A {perdedor} veio invadir a nossa resenha e voltou correndo. Aqui é a {nome}, e aqui ninguém entra!', P),
           _t('A {perdedor} achou que ia levar a nossa faixa e saiu sem nada. Na casa da {nome} a resenha continua!', P),
           _t('Tentaram, mas a {nome} segurou a resenha inteira. A {perdedor} voltou pra casa sem faixa e sem moral.', P)];
-      const pai = mensagemDe(E, V.id, op[h % op.length], 'comemoracao', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`});
+      const pai = mensagemDe(E, V.id, op[h % op.length], 'comemoracao', {publico:true, zona:d.zona, chave:`zona-casa|${abs}|${V.id}`,
+        arte:{cena:'casa-piscina', perd:Dr.id, pano:pano ? pano.tipo : null}});
       /* e a zona que perdeu sempre responde — no comentário do post dela */
       comentar(E, pai, Dr.id, atacouVenceu
           ? _t('Pegaram a nossa resenha desprevenida. A {perdedor} não esquece, e a volta vai ser na casa de vocês.', P)
@@ -1262,7 +1275,8 @@ TO.feed = (function(){
     const texto = !d.ganhamos && vale && !reg.pano && (h >> 4) % 2
       ? DEBOCHE[(h >> 5) % DEBOCHE.length] : textoDaZoeira(reg, P, h);
     const pai = (d.ganhamos || !tregua)
-      ? mensagemDe(E, V.id, texto, 'zoeira', {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`})
+      ? mensagemDe(E, V.id, texto, 'zoeira', {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`,
+          arte:{cena:String(cena || 'rua').replace(/-3d$/, ''), perd:Dr.id, pano:reg.pano ? reg.pano.tipo : null}})
       : null;
     /* a resposta de quem perdeu: a deles sempre que a briga valeu
        prestígio (os textos de volta aprovados pelo dono, 18/08/2026),
