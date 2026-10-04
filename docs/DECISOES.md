@@ -9130,6 +9130,32 @@ Dois defeitos que se alimentavam:
   branco — a Gaviões, preta e branca, fica com o título branco. Havendo
   outra cor, ela continua tendo a vez.
 
+## O resultado de cada torcida e o #TBT da quinta (o dono, 04/10/2026: "Não existe post da torcida informando vitória, derrota ou empate do time do coração. Faça um post no estilo de TBT lembrando alguma briga grande que venceu por grande vantagem e lembrando faixas tomadas de rivais também")
+
+- O nosso perfil já postava o resultado do nosso clube (medido: 20 jogos,
+  20 posts). Faltavam as outras: agora a maior torcida de cada clube DA
+  NOSSA PRAÇA, e a dos nossos maiores rivais, posta vitória, empate ou
+  derrota do clube dela no apito final — os mesmos textos e a mesma arte
+  (VITÓRIA!/EMPATE/DERROTA com o placar; o escudo do adversário de cabeça
+  pra baixo). `postDoResultado` serve as duas; clássico e goleada seguem
+  com o post da rivalidade. Uns dois posts por rodada.
+- #TBT, toda quinta, um por semana: uma torcida — a nossa (uma quinta em
+  cada três, quando tem lembrança), uma da nossa praça ou um maior rival
+  nosso — lembra uma briga que venceu com folga (o outro lado com 3
+  feridos a mais e o dobro dos dela, de quatro semanas pra trás) ou uma
+  faixa/bandeira que tomou. Textos: "#TBT de respeito: em abril de 2026
+  em Fortaleza, a Cearamor achou que dava e voltou pra casa contando 11
+  feridos…", "#TBT do troféu: a faixa da Cearamor, tomada em janeiro de
+  2026, segue pendurada de ponta-cabeça na nossa parede…". A arte é #TBT
+  com a data; a foto, a dos vencedores sobre os caídos no lugar da briga,
+  ou a do pano de cabeça pra baixo. A mesma lembrança não volta
+  (`E.tbtUsados`).
+- `E.brigasIA` só segura as 300 últimas brigas do país (poucas semanas):
+  a vitória com folga de quem pode postar o #TBT (a nossa, as da praça,
+  os maiores rivais) também vai pra `E.brigasMemoraveis` (até 120). A
+  tomada de pano da IA passou a guardar a semana; a de save antigo, sem
+  semana, vale como passado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

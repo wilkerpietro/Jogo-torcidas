@@ -359,6 +359,8 @@ TO.cartaz = (function(){
     const doClube = id => ({t:'escudo', tipo:'c', id:id || o.clubeId});
     const par = b => b && b !== m.de ? {t:'par', a:m.de, b} : eu;
     const vs = b => b && b !== m.de ? {t:'vs', a:m.de, b} : eu;
+    /* o #TBT da quinta (04/10/2026): a data da lembrança embaixo */
+    if(k === 'tbt') return {tit:['#TBT'], sub:MAIUS(a.quando || ''), miolo:vs(a.perd)};
     /* A FAIXA TOMADA (04/10/2026): o troféu de guerra, de cabeça pra baixo */
     if(a.pano) return {tit:a.pano === 'bandeira' ? [_t('BANDEIRA'), _t('TOMADA!')] : [_t('FAIXA'), _t('TOMADA!')],
       miolo:vs(a.perd || parteDaChave(m, 3))};
@@ -377,7 +379,7 @@ TO.cartaz = (function(){
         miolo:{t:'anos', n:a.n, id:m.de, grade:aliadasDe(m.de)},
         pins:a.data ? [{rot:_t('DATA'), val:a.data}] : []};
       case 'obrigado-nosso': return {tit:[_t('NOTA DE'), _t('AGRADECIMENTO')], miolo:par(parteDaChave(m, 2))};
-      case 'nosso-jogo':
+      case 'nosso-jogo': case 'resultado':
         return {tit:[tipo === 'reclamacao' ? _t('DERROTA') : a.gc != null && a.gc === a.gf ? _t('EMPATE') : _t('VITÓRIA!')],
                 miolo:placar || doClube()};
       case 'classico-v': return {tit:[_t('O CLÁSSICO'), _t('É NOSSO!')], miolo:placar || doClube()};
@@ -434,8 +436,10 @@ TO.cartaz = (function(){
     const festa = cena => ({cena, grupos:[g(de, 'festa', 7)]});
     const cobra = () => ({cena:'ct', grupos:[g(de, 'protesto', 6)]});
     const perd = a.perd || (/zoeira$/.test(k) ? parteDaChave(m, 3) : '');
-    if(a.pano && perd) return {cena:a.cena || 'praca', grupos:[g(de, 'faixa', a.pano === 'bandeira' ? 3 : 5)],
-                               faixa:{de:perd, tipo:a.pano}};
+    const perdT = perd || a.perd;
+    if(k === 'tbt' && !a.pano && perdT) return {cena:a.cena || 'rua', subir:0.27, grupos:[g(de, 'gaba', 3), g(perdT, 'caido', 3)]};
+    if(a.pano && perdT) return {cena:a.cena || 'praca', grupos:[g(de, 'faixa', a.pano === 'bandeira' ? 3 : 5)],
+                               faixa:{de:perdT, tipo:a.pano}};
     switch(k){
       case 'resenha': return null;
       case 'zoeira': case 'nossa-zoeira': case 'zona-casa':
@@ -446,7 +450,7 @@ TO.cartaz = (function(){
       case 'convoca': return {cena:'estadio-20', grupos:[g(de, 'festa', 7)]};
       case 'chegada': return festa('arredores');
       case 'caravana': { const img = capaDa(a.mapa, a.cidade); return img ? {img} : null; }
-      case 'nosso-jogo': return tipo === 'reclamacao' || (a.gc != null && a.gc === a.gf) ? null : festa('praca');
+      case 'nosso-jogo': case 'resultado': return tipo === 'reclamacao' || (a.gc != null && a.gc === a.gf) ? null : festa('praca');
       case 'classico-v': case 'goleada-r': case 'titulo': case 'acesso': case 'queda-r': return festa('praca');
       case 'classico-d': case 'goleada-d': case 'queda': case 'protesto': return cobra();
       case 'convite-nosso': case 'obrigado-nosso': case 'treta-msg': return null;

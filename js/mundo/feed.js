@@ -147,7 +147,7 @@ TO.feed = (function(){
      Cada pedido esconde mais: seis, oito, depois 19 em cada 20 —
      sempre os mesmos posts (sorte fixa por post), e desfazível.
      ======================================================= */
-  const ASSUNTO = {zoeira:'brigas', resposta:'brigas', provocacao:'brigas', treta:'brigas',
+  const ASSUNTO = {zoeira:'brigas', resposta:'brigas', provocacao:'brigas', treta:'brigas', tbt:'brigas',
                    comemoracao:'futebol', reclamacao:'futebol', protesto:'futebol',
                    convocacao:'futebol', noticia:'futebol',
                    caravana:'agenda', resenha:'agenda', convite:'agenda',
@@ -1021,19 +1021,43 @@ TO.feed = (function(){
      anterior (`E.nossaFotoNoFeed`), sem gancho em cada compra.
      ======================================================= */
   function nossoJogoNoFeed(E, jogos){
-    const meu = E.torcida.clubeId, abs = E.data.absoluto || 0, H = TO.mapa.hash;
+    const meu = E.torcida.clubeId;
     const j = (jogos || []).find(x => (x.c === meu || x.f === meu) && x.gc != null && x.gf != null);
-    if(!j) return;
-    /* clássico e goleada sofrida já têm o post da rivalidade */
-    const ja = E.mensagens.some(m => m.de === E.torcida.id && (m.quando || {}).abs === abs &&
+    if(j) postDoResultado(E, M().torcida(E.torcida.id) || E.torcida, meu, j, 'nosso-jogo');
+  }
+  /* O RESULTADO DE CADA TORCIDA (pedido do dono, 04/10/2026: "Não existe
+     post da torcida informando vitória, derrota ou empate do time do
+     coração"). O nosso perfil já postava o do nosso clube; agora a maior
+     torcida de cada clube DA NOSSA PRAÇA, e a dos nossos maiores rivais,
+     posta o do clube dela — os mesmos textos, a mesma arte (o placar). */
+  function resultadosDasTorcidas(E, jogos){
+    const meu = E.torcida.clubeId, nossa = E.torcida.mapa;
+    const vistos = new Set();
+    for(const j of (jogos || [])){
+      if(j.gc == null || j.gf == null) continue;
+      for(const clube of [j.c, j.f]){
+        if(!clube || clube === meu || vistos.has(clube)) continue;
+        const daPraca = (M().time(clube) || {}).mapa === nossa;
+        if(!daPraca && !rivalDoClubeNosso(E, clube)) continue;
+        const o = rivalDoClubeNosso(E, clube) || torcidaMaior(E, clube);
+        if(!o) continue;
+        vistos.add(clube);
+        postDoResultado(E, o, clube, j, 'resultado');
+      }
+    }
+  }
+  function postDoResultado(E, o, clube, j, prefixo){
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash;
+    /* clássico e goleada já têm o post da rivalidade */
+    const ja = E.mensagens.some(m => m.de === o.id && (m.quando || {}).abs === abs &&
       /^(classico|goleada)/.test(m.chave || ''));
     if(ja) return;
-    const adv = j.c === meu ? j.f : j.c, g1 = golsDe(j, meu), g2 = golsDe(j, adv);
-    const fora = j.f === meu && !j.neutro;
-    const P = {nome:E.torcida.nome, clube:nomeClube(meu), adv:nomeClube(adv), g1, g2,
+    const adv = j.c === clube ? j.f : j.c, g1 = golsDe(j, clube), g2 = golsDe(j, adv);
+    const fora = j.f === clube && !j.neutro;
+    const P = {nome:o.nome, clube:nomeClube(clube), adv:nomeClube(adv), g1, g2,
                comp:pelaCompeticao(j.compNome || j.comp),
                emCidade:emPraca((M().time(adv) || {}).mapa)};
-    const h = H(`nosso-jogo|${abs}|${adv}`);
+    const h = H(`${prefixo}|${abs}|${adv}`);
     let op, tipo = 'resultado';
     if(g1 > g2 && g1 - g2 >= 3) op = [
       _t('Atropelo! {clube} {g1} x {g2} {adv}{comp}. Jogando assim, a {nome} vai junto até o fim!', P),
@@ -1049,8 +1073,110 @@ TO.feed = (function(){
     else { tipo = 'reclamacao'; op = [
       _t('Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.', P),
       _t('Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.', P)]; }
-    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`,
-      arte:{c:meu, f:adv, gc:g1, gf:g2}});
+    const chave = prefixo === 'nosso-jogo' ? `nosso-jogo|${abs}` : `resultado|${abs}|${o.id}`;
+    mensagemDe(E, o.id, op[h % op.length], tipo, {publico:true, chave,
+      arte:{c:clube, f:adv, gc:g1, gf:g2}});
+  }
+
+  /* =======================================================
+     O #TBT DA QUINTA (pedido do dono, 04/10/2026: "Faça um post no
+     estilo de TBT lembrando alguma briga grande que venceu por grande
+     vantagem e lembrando faixas tomadas de rivais também"). Toda quinta,
+     uma torcida — a nossa, uma da nossa praça ou um maior rival nosso —
+     lembra:
+       · uma briga que venceu com folga (o outro lado com 3 feridos a mais
+         e o dobro dos dela), de quatro semanas pra trás (`E.brigasIA`,
+         onde a nossa briga também entra);
+       · ou uma faixa/bandeira que tomou (`faixasTomadas` e
+         `bandeirasTomadas` da IA; as nossas no Patrimônio).
+     As vitórias com folga ficam em `E.brigasMemoraveis` (relacoes.js),
+     porque `E.brigasIA` só segura as últimas semanas.
+     A mesma lembrança não volta (`E.tbtUsados`). A arte é #TBT com a
+     data, e a foto é a da briga (vencedores sobre os caídos) ou a do
+     pano de cabeça pra baixo.
+     ======================================================= */
+  const semanaAbs = (ano, semana) => (ano || 0) * 53 + (semana || 0);
+  function lembrancasDe(E, tid){
+    const agora = semanaAbs(E.data.ano, E.data.semana), out = [];
+    const vistas = new Set();
+    for(const r of (E.brigasMemoraveis || []).concat(E.brigasIA || [])){
+      if(!r.a || !r.b || r.ganhouA == null || !r.ano || vistas.has(r)) continue;
+      vistas.add(r);
+      const V = r.ganhouA ? r.a : r.b, D = r.ganhouA ? r.b : r.a;
+      if(V.id !== tid || !D.id || D.id === tid) continue;
+      if(semanaAbs(r.ano, r.semana) > agora - 4) continue;
+      const fv = V.feridos || 0, fp = D.feridos || 0;
+      if(fp - fv < 3 || fp < 2 * Math.max(1, fv)) continue;
+      out.push({k:`b|${r.ano}|${r.semana}|${r.dia}|${D.id}`, tipo:'briga', r, V, D, fv, fp,
+                peso:fp - fv + (V.n < D.n ? 3 : 0), ano:r.ano, semana:r.semana, dia:r.dia});
+    }
+    const panos = [];
+    if(tid === E.torcida.id && TO.patrimonio){
+      const P2 = TO.patrimonio;
+      for(const [tp, lista] of [['faixa', (P2.faixasDe(E) || {}).tomadas], ['bandeira', (P2.bandeirasDe(E) || {}).tomadas]])
+        for(const x of (lista || [])) panos.push({tp, de:x.de, nome:x.nome, ano:(x.quando || {}).ano, semana:(x.quando || {}).semana});
+    } else if(TO.patrimonio && TO.patrimonio.faixasIA){
+      const t = TO.patrimonio.faixasIA(E, tid) || {};
+      for(const x of (t.faixasTomadas || [])) panos.push({tp:'faixa', de:x.de, nome:x.nome, ano:x.ano});
+      for(const x of (t.bandeirasTomadas || [])) panos.push({tp:'bandeira', de:x.de, nome:x.nome, ano:x.ano});
+    }
+    for(const x of panos){
+      if(!x.de || !x.ano) continue;
+      /* (tomada de save antigo não tem semana: vale, que é do passado) */
+      if(x.semana && semanaAbs(x.ano, x.semana) > agora - 4) continue;
+      out.push({k:`p|${x.tp}|${x.de}|${x.ano}|${x.semana || 0}`, tipo:'pano', tp:x.tp, D:{id:x.de, nome:x.nome},
+                peso:x.tp === 'faixa' ? 9 : 7, ano:x.ano, semana:x.semana});
+    }
+    return out.filter(l => !(E.tbtUsados || []).includes(`${tid}|${l.k}`));
+  }
+  /* `txt` vai na frase ("em março de 2026"), `rot` na arte ("março de 2026") */
+  function quandoDe(l){
+    if(l.semana){
+      const d = TO.estado.dataDaSemana(l.ano, l.semana, l.dia || 1), Q = {mes:MESES[d.getMonth()], ano:d.getFullYear()};
+      return {txt:_t('em {mes} de {ano}', Q), rot:_t('{mes} de {ano}', Q)};
+    }
+    return {txt:_t('em {ano}', {ano:l.ano}), rot:String(l.ano)};
+  }
+  function tbtDaSemana(E){
+    if(E.data.dia !== 4) return;
+    const chave = `tbt|${E.data.ano}|${E.data.semana}`;
+    if(E.mensagens.some(m => m.chave === chave)) return;
+    const H = TO.mapa.hash, nos = E.torcida.id, nossa = E.torcida.mapa;
+    const ids = [nos, ...(M().torcidasEm(nossa) || []).filter(o => o && o.id !== nos && !o.incompleta).map(o => o.id),
+                 ...nossosRivais(E)];
+    const cands = [];
+    for(const id of [...new Set(ids)]){
+      const ls = lembrancasDe(E, id);
+      if(!ls.length) continue;
+      ls.sort((a, b) => b.peso - a.peso);
+      cands.push({id, l:ls[H(`tbt-l|${chave}|${id}`) % Math.min(3, ls.length)]});
+    }
+    if(!cands.length) return;
+    /* a nossa entra em uma quinta de cada três, quando tem lembrança */
+    const nossaC = cands.find(c => c.id === nos);
+    const outras = cands.filter(c => c.id !== nos);
+    const c = nossaC && (!outras.length || H(`tbt-nos|${chave}`) % 3 === 0) ? nossaC
+            : outras[H(`tbt-qual|${chave}`) % outras.length];
+    const o = M().torcida(c.id), l = c.l;
+    if(!o) return;
+    const Q = quandoDe(l);
+    const P = {nome:o.nome, perdedor:l.D.nome, quando:Q.txt, n:(l.V || {}).n || 0, m:l.D.n || 0,
+               fp:l.fp || 0, fv:l.fv || 0,
+               onde:l.r && l.r.cidade ? ' ' + TO.genero.em('cidade', l.r.cidade) : ''};
+    const h = H(`tbt-txt|${chave}`);
+    const texto = l.tipo === 'pano' ? (l.tp === 'bandeira' ? [
+        _t('#TBT: {quando}, o dia em que a bandeira da {perdedor} veio morar na sede da {nome}. Até hoje está lá, de cabeça pra baixo. Saudade, {perdedor}?', P),
+        _t('#TBT do troféu: a bandeira da {perdedor}, tomada {quando}, segue pendurada de ponta-cabeça na nossa parede. Tem coisa que não se devolve.', P)] : [
+        _t('#TBT: {quando}, o dia em que a faixa da {perdedor} veio morar na sede da {nome}. Até hoje está lá, de cabeça pra baixo. Saudade, {perdedor}?', P),
+        _t('#TBT do troféu: a faixa da {perdedor}, tomada {quando}, segue pendurada de ponta-cabeça na nossa parede. Tem coisa que não se devolve.', P)])[h % 2]
+      : [
+        _t('#TBT {quando}{onde}: {n} da {nome} contra {m} da {perdedor}. No fim, {fp} deles no chão e {fv} dos nossos. Tem lembrança que a gente guarda com carinho.', P),
+        _t('#TBT de respeito: {quando}{onde}, a {perdedor} achou que dava e voltou pra casa contando {fp} feridos. A {nome} saiu com {fv}. Quem viu, não esquece.', P),
+        _t('#TBT pra {perdedor} lembrar: {quando}{onde}, {fp} a {fv} em feridos. A rua tem memória, e a da {nome} é boa.', P)][h % 3];
+    const m = mensagemDe(E, o.id, texto, 'tbt', {publico:true, chave, arte:{k:'tbt', perd:l.D.id,
+      quando:Q.rot, pano:l.tipo === 'pano' ? l.tp : null,
+      cena:l.r ? (LUGAR_CENA[lugarDaBriga(l.r)] || 'rua') : 'praca'}});
+    if(m){ E.tbtUsados = (E.tbtUsados || []).concat(`${c.id}|${l.k}`).slice(-200); }
   }
 
   /* no dia do jogo fora: a caravana chegou */
@@ -1189,6 +1315,7 @@ TO.feed = (function(){
     passo('rivalidade',  ()=>rivalidadesDoDia(E, jogos));
     passo('títulos',     ()=>titulosDoDia(E));
     passo('nosso jogo',  ()=>nossoJogoNoFeed(E, jogos));
+    passo('resultado das torcidas', ()=>resultadosDasTorcidas(E, jogos));
   }
   /* o apito final solta o que estava guardado (e o dia seguinte, por
      garantia, se a partida tiver morrido no caminho) */
@@ -1205,6 +1332,7 @@ TO.feed = (function(){
       E.feedDepoisDoJogo = {abs:E.data.absoluto || 0, jogos:jogos.map(jogoLeve)};
     else postsDeResultado(E, jogos);
     passo('resenha',     ()=>resenhaDaSemana(E));
+    passo('tbt',         ()=>tbtDaSemana(E));
     passo('nosso perfil',()=>nossoPerfilHoje(E));
     passo('virada',      ()=>viradaDoAno(E));
     passo('nossa chegada', ()=>nossaChegadaHoje(E));
@@ -6758,7 +6886,7 @@ TO.feed = (function(){
     return {ok:true};
   }
 
-  return {INTERVALO_DROP,
+  return {INTERVALO_DROP, tbtDaSemana, lembrancasDe,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,

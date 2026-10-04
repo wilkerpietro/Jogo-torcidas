@@ -4257,7 +4257,7 @@
                    zoeira:_t('Zoeira'), resposta:_t('Resposta'), noticia:_t('Notícia'),
                    protesto:_t('Protesto'), convocacao:_t('Convocação'), resenha:_t('Resenha'),
                    caravana:_t('Caravana'), comemoracao:_t('Comemoração'), reclamacao:_t('Reclamação'),
-                   resultado:_t('Resultado'), inauguracao:_t('Inauguração')};
+                   resultado:_t('Resultado'), inauguracao:_t('Inauguração'), tbt:'#TBT'};
   /* =======================================================
      O POST DA REDE SOCIAL, UM SÓ PRA DUAS TELAS (01/10/2026)
      A rede social mora inteira em Notícias → Mensagens e, desde o

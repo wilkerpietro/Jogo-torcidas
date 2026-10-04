@@ -1897,7 +1897,7 @@ TO.relacoes = (function(){
           const V = tipo === 'bandeira' ? P().BANDEIRA : P().FAIXA;
           if(tipo === 'bandeira') dona.bandeiras--; else dona.faixas--;
           quem[tipo === 'bandeira' ? 'bandeirasTomadas' : 'faixasTomadas']
-            .push({de:perd.id, nome:perd.nome, ano:E.data.ano});
+            .push({de:perd.id, nome:perd.nome, ano:E.data.ano, semana:E.data.semana});
           mover(E, perd.id, 'prestigio', -V.perda/5);
           mover(E, venc.id, 'prestigio', V.ganho/5);
           reg.pano = {tipo, de:perd.nome, deId:perd.id, para:venc.nome};
@@ -1905,6 +1905,24 @@ TO.relacoes = (function(){
       }
     }
     E.brigasIA.unshift(reg);
+    /* AS BRIGAS QUE FICAM NA MEMÓRIA (o #TBT da quinta, 04/10/2026): a
+       lista de cima guarda as 300 últimas do país — umas poucas semanas.
+       A vitória com folga (o outro lado com 3 feridos a mais e o dobro
+       dos de quem venceu) vai também pra cá, que guarda 120 */
+    if(reg.a && reg.b && reg.ganhouA != null){
+      const V = reg.ganhouA ? reg.a : reg.b, D = reg.ganhouA ? reg.b : reg.a;
+      const fv = V.feridos || 0, fp = D.feridos || 0;
+      /* só de quem pode postar o #TBT: a nossa, as da nossa praça e os
+         nossos maiores rivais */
+      const nos = E.torcida || {}, ov = TO.mundo.torcida(V.id) || {};
+      const daNossa = V.id === nos.id || ov.mapa === nos.mapa ||
+        ((TO.mundo.torcida(nos.id) || {}).maioresRivais || []).includes(V.id);
+      if(daNossa && fp - fv >= 3 && fp >= 2 * Math.max(1, fv)){
+        E.brigasMemoraveis = E.brigasMemoraveis || [];
+        E.brigasMemoraveis.unshift(reg);
+        if(E.brigasMemoraveis.length > 120) E.brigasMemoraveis.pop();
+      }
+    }
     /* a maior treta do ano é medida na hora: o anuário lê no fim, e
        varrer o feed lá na frente não acharia a briga de janeiro */
     if(TO.almanaque && TO.almanaque.anotarTreta) TO.almanaque.anotarTreta(E, reg);
