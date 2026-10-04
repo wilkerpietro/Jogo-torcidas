@@ -9186,6 +9186,20 @@ Dois defeitos que se alimentavam:
   folga também vai pra `E.brigasMemoraveis` — o #TBT da nossa torcida
   passa a lembrar briga, não só pano.
 
+## Da bola, a torcida só posta clássico vencido, rival rebaixado, acesso e título (o dono, 04/10/2026: "Deixe de criar post da torcida informando vitória, derrota ou empate do time do coração e de provocação do rival tomar goleada. Só vai existir a provocação de ganhar um clássico e quando o rival for rebaixado, e de comemoração quando o time subir de divisão ou ser campeão")
+
+- Saíram: o post do resultado de todo jogo (o nosso perfil e o das
+  outras torcidas da praça, de hoje mesmo), a provocação da goleada e o
+  lamento de quem tomou, o lamento de quem perdeu o clássico e o de quem
+  foi rebaixado.
+- Ficam: "O CLÁSSICO É NOSSO!" (quem venceu o clássico), "Tchau, …!" (o
+  rival do rebaixado), "ACESSO!" e "É CAMPEÃO!".
+- Medido numa temporada (365 dias, TUF): 11 clássicos vencidos, 9
+  títulos, 4 acessos, 2 rebaixamentos de rival, e nenhum post de
+  resultado. O protesto da torcida com o time em má fase (pedido de
+  21/09) continua — é cobrança, não resultado. O "é só lazer" segue
+  anotando as visitas no apito final, sem o post do resultado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

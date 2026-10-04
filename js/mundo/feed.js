@@ -899,11 +899,13 @@ TO.feed = (function(){
       const V = j.gc > j.gf ? j.c : j.f, D = V === j.c ? j.f : j.c;
       const gv = Math.max(j.gc, j.gf), gd = Math.min(j.gc, j.gf);
       let caso = null;
+      /* SÓ O CLÁSSICO VENCIDO (dono, 04/10/2026: "Deixe de criar post da
+         torcida informando vitória, derrota ou empate do time do coração e
+         de provocação do rival tomar goleada. Só vai existir a provocação
+         de ganhar um clássico e quando o rival for rebaixado, e de
+         comemoração quando o time subir de divisão ou ser campeão"): a
+         goleada e o lamento de quem perdeu o clássico saíram */
       if(ehClassico(V, D)) caso = {tipo:'classico', V, D, ids:[V, D]};
-      else if(gv - gd >= 3){
-        const R = rivalDoClube(D);
-        if(R && R !== V) caso = {tipo:'goleada', V, D, R, ids:[D, R]};
-      }
       if(!caso) continue;
       caso.s = pertoDeNos(E, caso.ids);
       if((H(`rival-dia|${abs}|${j.c}|${j.f}`) % 1000) >= CHANCE_RIVAL(caso.s) * 1000) continue;
@@ -923,28 +925,6 @@ TO.feed = (function(){
             _t('O CLÁSSICO É NOSSO! {clube} {gv} x {gd} {rival}{comp}. A cidade tem dono, e a {deles} que aguente a zoeira até o próximo.', P),
             _t('Quem manda na cidade? {clube} {gv} x {gd} {rival}{comp}. A {nome} faz a festa e manda um abraço pra {deles}!', P)];
           mensagemDe(E, oV.id, op[h % op.length], 'comemoracao', {publico:true, chave:`classico-v|${c.chave}`, arte:c.arte});
-        }
-        if(oD && daNossaCidade(E, oD)){
-          const op = [
-            _t('Perder o clássico pro {clube} é inaceitável. {gv} a {gd}{comp}, e a gente engolindo zoeira a semana inteira. Exigimos respeito à camisa do {rival}!', P),
-            _t('Vergonha. {rival} entrou no clássico com medo e saiu com {gd} a {gv}. A {deles} não aceita time sem sangue em clássico.', P)];
-          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`classico-d|${c.chave}`, arte:c.arte});
-        }
-      } else {
-        const oR = vozDoClube(E, c.R);
-        const P = {nome:oR && oR.nome, deles:oD && oD.nome, clube:nomeClube(c.D), vencedor:nomeClube(c.V),
-                   gv:c.gv, gd:c.gd, comp:c.comp};
-        if(oR){
-          const op = [
-            _t('Alguém avisa a {deles} que levar {gv} do {vencedor} dói? Semana difícil pro {clube}. Que fase!', P),
-            _t('{gv} a {gd}! {clube} virou saco de pancada{comp}. A {nome} está rindo até agora.', P)];
-          mensagemDe(E, oR.id, op[h % op.length], 'provocacao', {publico:true, chave:`goleada-r|${c.chave}`, arte:c.arte});
-        }
-        if(oD && daNossaCidade(E, oD)){
-          const op = [
-            _t('Vexame! {gd} a {gv} pro {vencedor}{comp}. A {deles} exige vergonha na cara do elenco do {clube}.', P),
-            _t('Levar {gv} do {vencedor} não dá. {clube} precisa de explicação, e a {deles} quer ouvir de quem manda no clube.', P)];
-          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`goleada-d|${c.chave}`, arte:c.arte});
         }
       }
     }
@@ -998,10 +978,7 @@ TO.feed = (function(){
           'comemoracao', {publico:true, chave:`acesso|${m.ano}|${m.id}`});
         continue;
       }
-      if(o && daNossaCidade(E, o)) mensagemDe(E, o.id, [
-        _t('Rebaixado. {clube} vai jogar {naDivisao} e a {nome} não vai aceitar calada. Diretoria, a conta chegou.', P),
-        _t('Ano de vergonha. {clube} caiu, e a {nome} quer os responsáveis longe do clube. A camisa não merecia isso.', P)][h % 2],
-        'reclamacao', {publico:true, chave:`queda|${m.ano}|${m.id}`});
+      /* (o lamento de quem caiu saiu: fica só o "tchau" do rival, 04/10/2026) */
       const R = rivalDoClube(m.id), oR = R && vozDoClube(E, R);
       if(oR) mensagemDe(E, oR.id, [
         _t('Tchau, {clube}! Boa viagem {pelaDivisao}. A {nome} manda um abraço pra {deles}: a gente se vê daqui a uns anos.', Object.assign({deles:o ? o.nome : P.clube}, P, {nome:oR.nome})),
@@ -1014,69 +991,18 @@ TO.feed = (function(){
      O NOSSO PERFIL NO RITMO DOS OUTROS (pedido do dono, 30/09/2026)
      "Falta a gente postar com a mesma frequência dos demais": além da
      convocação, da caravana, da resenha e da zoeira de briga, o perfil
-     oficial da nossa torcida posta o resultado de todo jogo do clube,
-     a chegada na cidade do jogo fora, e a vida da casa — sede ampliada,
+     oficial da nossa torcida posta (o resultado de todo jogo do clube
+     saiu em 04/10/2026) a chegada na cidade do jogo fora, e a vida da casa — sede ampliada,
      bar, loja e subsede inaugurados, faixa e bandeira novas, e cada
      marco de membros. A casa é lida por diferença contra a foto do dia
      anterior (`E.nossaFotoNoFeed`), sem gancho em cada compra.
      ======================================================= */
-  function nossoJogoNoFeed(E, jogos){
-    const meu = E.torcida.clubeId;
-    const j = (jogos || []).find(x => (x.c === meu || x.f === meu) && x.gc != null && x.gf != null);
-    if(j) postDoResultado(E, M().torcida(E.torcida.id) || E.torcida, meu, j, 'nosso-jogo');
-  }
-  /* O RESULTADO DE CADA TORCIDA (pedido do dono, 04/10/2026: "Não existe
-     post da torcida informando vitória, derrota ou empate do time do
-     coração"). O nosso perfil já postava o do nosso clube; agora a maior
-     torcida de cada clube DA NOSSA PRAÇA, e a dos nossos maiores rivais,
-     posta o do clube dela — os mesmos textos, a mesma arte (o placar). */
-  function resultadosDasTorcidas(E, jogos){
-    const meu = E.torcida.clubeId, nossa = E.torcida.mapa;
-    const vistos = new Set();
-    for(const j of (jogos || [])){
-      if(j.gc == null || j.gf == null) continue;
-      for(const clube of [j.c, j.f]){
-        if(!clube || clube === meu || vistos.has(clube)) continue;
-        const daPraca = (M().time(clube) || {}).mapa === nossa;
-        if(!daPraca && !rivalDoClubeNosso(E, clube)) continue;
-        const o = rivalDoClubeNosso(E, clube) || torcidaMaior(E, clube);
-        if(!o) continue;
-        vistos.add(clube);
-        postDoResultado(E, o, clube, j, 'resultado');
-      }
-    }
-  }
-  function postDoResultado(E, o, clube, j, prefixo){
-    const abs = E.data.absoluto || 0, H = TO.mapa.hash;
-    /* clássico e goleada já têm o post da rivalidade */
-    const ja = E.mensagens.some(m => m.de === o.id && (m.quando || {}).abs === abs &&
-      /^(classico|goleada)/.test(m.chave || ''));
-    if(ja) return;
-    const adv = j.c === clube ? j.f : j.c, g1 = golsDe(j, clube), g2 = golsDe(j, adv);
-    const fora = j.f === clube && !j.neutro;
-    const P = {nome:o.nome, clube:nomeClube(clube), adv:nomeClube(adv), g1, g2,
-               comp:pelaCompeticao(j.compNome || j.comp),
-               emCidade:emPraca((M().time(adv) || {}).mapa)};
-    const h = H(`${prefixo}|${abs}|${adv}`);
-    let op, tipo = 'resultado';
-    if(g1 > g2 && g1 - g2 >= 3) op = [
-      _t('Atropelo! {clube} {g1} x {g2} {adv}{comp}. Jogando assim, a {nome} vai junto até o fim!', P),
-      _t('{g1} a {g2}! Que noite, {clube}! A {nome} canta até perder a voz.', P)];
-    else if(g1 > g2) op = fora ? [
-      _t('Fora de casa também é nosso! {clube} {g1} x {g2} {adv}{comp}, e a {nome} fez barulho {emCidade}.', P),
-      _t('Vitória longe de casa! {clube} {g1} x {g2} {adv}{comp}. Valeu cada quilômetro de estrada da {nome}.', P)] : [
-      _t('VITÓRIA! {clube} {g1} x {g2} {adv}{comp}. A {nome} fez a parte dela na arquibancada, e o time respondeu em campo.', P),
-      _t('Três pontos em casa! {clube} {g1} x {g2} {adv}{comp}. Obrigado a cada um da {nome} que empurrou o time.', P)];
-    else if(g1 === g2) op = [
-      _t('Empate em {g1} a {g2} com {adv}{comp}. Dava pra mais, {clube}. A {nome} segue apoiando, mas quer mais na próxima.', P),
-      _t('{clube} {g1} x {g2} {adv}{comp}. Um ponto é pouco pro tamanho dessa camisa. A {nome} cobra atitude.', P)];
-    else { tipo = 'reclamacao'; op = [
-      _t('Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.', P),
-      _t('Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.', P)]; }
-    const chave = prefixo === 'nosso-jogo' ? `nosso-jogo|${abs}` : `resultado|${abs}|${o.id}`;
-    mensagemDe(E, o.id, op[h % op.length], tipo, {publico:true, chave,
-      arte:{c:clube, f:adv, gc:g1, gf:g2}});
-  }
+  /* (O POST DO RESULTADO SAIU — o nosso e o das outras torcidas —, pedido
+     do dono, 04/10/2026: "Deixe de criar post da torcida informando
+     vitória, derrota ou empate do time do coração". Da bola, a torcida
+     só posta o clássico vencido, o "tchau" ao rival rebaixado, o acesso e
+     o título. O anúncio do "é só lazer" continua, e anota as visitas do
+     mesmo jeito.) */
 
   /* =======================================================
      O #TBT DA QUINTA (pedido do dono, 04/10/2026: "Faça um post no
@@ -1400,8 +1326,6 @@ TO.feed = (function(){
     passo('protestos',   ()=>protestosDaSemana(E));
     passo('rivalidade',  ()=>rivalidadesDoDia(E, jogos));
     passo('títulos',     ()=>titulosDoDia(E));
-    passo('nosso jogo',  ()=>nossoJogoNoFeed(E, jogos));
-    passo('resultado das torcidas', ()=>resultadosDasTorcidas(E, jogos));
     passo('anotar lazer', ()=>anotarLazer(E, jogos));
   }
   /* o apito final solta o que estava guardado (e o dia seguinte, por
