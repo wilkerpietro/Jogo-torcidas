@@ -9115,6 +9115,15 @@ Dois defeitos que se alimentavam:
   em "a" pede "NA" (Maraponga, Granja Portugal, Aldeota), o resto "NO"
   (Genibaú, Bom Jardim, José Walter).
 
+## Branco não é cor de texto na arte (o dono, 04/10/2026: "Quando tem branco na segunda ou terceira cor descarte do texto, aplique a outra cor. Fica feio")
+
+- Secundária ou terciária branca (ou quase: os três canais acima de 215)
+  não vai em texto: o título sai inteiro na outra (a JGT, azul com
+  vermelho e branco, fica com o título todo vermelho; a Cearamor, preta
+  com amarelo e branco, todo amarelo), e o texto miúdo também. Se o
+  único par da primária é o branco, o texto vai num tom da primária. As
+  tarjas, os fios e os aros continuam na ordem das cores (não são texto).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

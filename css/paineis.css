@@ -2653,7 +2653,7 @@ header.capa-cidade{background-size:cover; background-position:center;
   unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+20A0-20AB,U+20AD-20C0}
 @font-face{font-family:'UnifrakturCook';font-style:normal;font-weight:400 700;font-display:swap;
   src:url(fontes/unifrakturcook-latin.woff2) format('woff2')}
-.cartaz.cz-arte{aspect-ratio:4/5;background:var(--p);color:var(--s);border-radius:6px;max-width:460px}
+.cartaz.cz-arte{aspect-ratio:4/5;background:var(--p);color:var(--x);border-radius:6px;max-width:460px}
 /* as tarjas: secundária, com o texto na primária (dono, 04/10/2026) */
 .ca-tarja{position:absolute;top:0;bottom:0;width:6.6cqw;background:var(--s);overflow:hidden;z-index:2}
 .ca-tarja.ca-esq{left:0}
@@ -2735,7 +2735,7 @@ header.capa-cidade{background-size:cover; background-position:center;
   background:var(--p);box-shadow:0 0 0 1.1cqw var(--e),0 0 0 1.6cqw var(--v),0 1.2cqw 2cqw #0003}
 .ca-selo b{font:400 15cqw/.9 'Anton','Impact',sans-serif;background:linear-gradient(180deg,var(--v) 0 50%,var(--e) 50% 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent}
-.ca-selo i{font:400 6cqw/1 'UnifrakturCook','UnifrakturMaguntia',serif;color:var(--s);font-style:normal;margin-top:-.6cqw}
+.ca-selo i{font:400 6cqw/1 'UnifrakturCook','UnifrakturMaguntia',serif;color:var(--x);font-style:normal;margin-top:-.6cqw}
 .ca-grade{display:grid;grid-template-columns:repeat(6,1fr);gap:1.4cqw 1.6cqw;width:78cqw}
 .ca-g{display:grid;place-items:center;aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 .4cqw 1cqw #0003}
 .ca-g .cz-escudo{width:92%;height:92%;filter:none}

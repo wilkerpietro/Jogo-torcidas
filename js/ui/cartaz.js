@@ -258,11 +258,18 @@ TO.cartaz = (function(){
     const fundo = cs[0] || '#333333';
     const sec = cs[1] || (lum(fundo) > .5 ? sombra(fundo, .45) : clarear(fundo, .6));
     const ter = cs[2] || sec;
-    /* o texto miúdo (rodapé, etiquetas, subtítulo) vai na das duas que
-       mais contrasta com o fundo: o vermelho da JGT some no azul dela, o
-       branco não */
-    const texto = Math.abs(lum(ter) - lum(fundo)) > Math.abs(lum(sec) - lum(fundo)) ? ter : sec;
-    return {fundo, sec, ter, texto, viva:sec, escura:ter, rgb:rgbDe(fundo)};
+    /* BRANCO NÃO É COR DE TEXTO (dono, 04/10/2026: "quando tem branco na
+       segunda ou terceira cor descarte do texto, aplique a outra cor. Fica
+       feio"): o título e o texto miúdo usam a das duas que não é branca;
+       as duas brancas (ou só branco além da primária), um tom da primária.
+       O texto miúdo (rodapé, etiquetas, subtítulo) vai na que mais
+       contrasta com o fundo. */
+    const branco = c => [0, 2, 4].every(i => parseInt(c.slice(1 + i, 3 + i), 16) > 215);
+    const tom = lum(fundo) > .5 ? sombra(fundo, .45) : clarear(fundo, .55);
+    const cores = [sec, ter].filter((c, i, l) => !branco(c) && l.indexOf(c) === i);
+    const cima = cores[0] || tom, baixo = cores[1] || cima;
+    const texto = cores.length > 1 && Math.abs(lum(baixo) - lum(fundo)) > Math.abs(lum(cima) - lum(fundo)) ? baixo : cima;
+    return {fundo, sec, ter, texto, viva:cima, escura:baixo, rgb:rgbDe(fundo)};
   }
   const varsDe = pal => `--p:${pal.fundo};--s:${pal.sec};--t:${pal.ter};--x:${pal.texto};--pr:${pal.rgb};--e:${pal.escura};--v:${pal.viva}`;
   const arrobaDe = o => '@' + String(TO.mundo.siglaTorcida(o) || o.nome || '')
