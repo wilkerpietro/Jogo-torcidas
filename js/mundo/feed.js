@@ -1214,12 +1214,22 @@ TO.feed = (function(){
   function lazerDeOntem(E){
     const abs = E.data.absoluto || 0, H = TO.mapa.hash;
     const pend = E.lazerPendente || [];
-    const prontos = pend.filter(x => x.abs < abs);
-    E.lazerPendente = pend.filter(x => x.abs >= abs);
+    /* a nossa espera a volta: a emboscada do caminho de casa pode ser no
+       dia seguinte ao jogo — a nossa só decide dois dias depois */
+    const espera = x => x.o === E.torcida.id ? 1 : 0;
+    const prontos = pend.filter(x => x.abs < abs - espera(x));
+    E.lazerPendente = pend.filter(x => x.abs >= abs - espera(x));
     for(const x of prontos){
       const naHora = r => r.ano === x.ano && r.semana === x.semana && (r.dia === x.dia || r.dia === x.dia - 1) && r.mapa === x.mapa;
       let perdeu = false, venceu = null;
       if(x.o === E.torcida.id){
+        /* ENROLADA NA VIAGEM NÃO É LAZER (dono, 04/10/2026: "Se minha
+           torcida participa de uma emboscada seja na ida ou na volta e
+           perde a briga ela não posta que foi lazer, porque se envolveu
+           em confusão na viagem"): emboscada perdida da véspera ao dia
+           seguinte do jogo, com quem for, cancela o post */
+        const naViagem = r => r.emb && r.abs != null && r.abs >= x.abs - 1 && r.abs <= x.abs + 1;
+        if((E.nossasBrigas || []).some(r => naViagem(r) && !r.ganhamos)) continue;
         for(const r of (E.nossasBrigas || []).filter(naHora)){
           if(!x.rivais.includes(r.rival)) continue;
           if(r.ganhamos) venceu = venceu || r.rival; else perdeu = true;
@@ -6267,8 +6277,9 @@ TO.feed = (function(){
       const pracaHoje = (()=>{ const j = E.proximoJogo;
         return j && !j.casa && j.mapaAdv && Math.abs(E.data.dia - (j.dia || 6)) <= 1 ? j.mapaAdv : E.torcida.mapa; })();
       E.nossasBrigas = (E.nossasBrigas || []);
-      E.nossasBrigas.unshift({ano:E.data.ano, semana:E.data.semana, dia:E.data.dia, mapa:pracaHoje,
-                              rival:d.torcidaId, ganhamos:!!d.ganhamos, empatou:!!empatou});
+      E.nossasBrigas.unshift({ano:E.data.ano, semana:E.data.semana, dia:E.data.dia, abs:E.data.absoluto || 0,
+                              mapa:pracaHoje, rival:d.torcidaId, ganhamos:!!d.ganhamos, empatou:!!empatou,
+                              emb:/^emb-/.test(cena)});
       if(E.nossasBrigas.length > 40) E.nossasBrigas.pop();
       const fv = a.caidos || 0, fp = b.caidos || 0;
       if(d.ganhamos && !empatou && fp - fv >= 3 && fp >= 2 * Math.max(1, fv)){

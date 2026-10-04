@@ -9171,6 +9171,13 @@ Dois defeitos que se alimentavam:
   O texto da praia só onde a praça tem praia.
 - Clássico na própria cidade não conta (Sport x Náutico no Recife não é
   visita).
+- ENROLADA NA VIAGEM NÃO É LAZER (o dono, no mesmo dia: "Se minha torcida
+  participa de uma emboscada seja na ida ou na volta e perde a briga ela
+  não posta que foi lazer, porque se envolveu em confusão na viagem"): a
+  nossa emboscada perdida (cena `emb-…`), com quem for, da véspera ao dia
+  seguinte do jogo, cancela o post. Como a da volta pode cair no dia
+  seguinte, a nossa só decide dois dias depois do jogo (`E.nossasBrigas`
+  guarda o dia absoluto e se foi emboscada).
 - A arte: "RECIFE / É SÓ LAZER", a foto da cidade no fundo e o escudo do
   rival de cabeça pra baixo (com a foto da cidade, o escudo fica).
 - As nossas brigas não entram em `E.brigasIA`: agora toda briga nossa vai
