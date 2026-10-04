@@ -4325,7 +4325,8 @@
     const ler = jornal && (m.dados||{}).aba
       ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
     const nosso = !jornal && m.de === e.torcida.id;
-    const cartaz = m.card && TO.cartaz ? TO.cartaz.html(m) : '';
+    /* com cartaz do jornal, ou a arte do post de torcida (04/10/2026) */
+    const cartaz = TO.cartaz ? TO.cartaz.html(m) : '';
     const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':''), html:
       `<header class="post-cab">${quem}`+
         `<span class="post-quando">${haQuantoPost(e, m.quando || {})}</span>`+

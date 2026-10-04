@@ -2640,6 +2640,94 @@ header.capa-cidade{background-size:cover; background-position:center;
 .cz-num small{font:700 1.6cqw/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#ffffffb0}
 .cz-num b{font:900 3cqw/1 'Arial Black','Arial',sans-serif}
 
+/* ---- a arte do post de torcida (04/10/2026): o molde das prints do
+   dono — tarjas com "DESDE <ano>", escudo na aba, título em duas
+   cores, o miolo do tipo e o rodapé com os @. 4:5, papel branco. ---- */
+/* as fontes da arte vêm do próprio jogo (css/fontes/, licença OFL): sem
+   internet o título continua grosso e o "DESDE" continua gótico */
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;
+  src:url(fontes/anton-latin.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;
+  src:url(fontes/anton-latin-ext.woff2) format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+20A0-20AB,U+20AD-20C0}
+@font-face{font-family:'UnifrakturCook';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url(fontes/unifrakturcook-latin.woff2) format('woff2')}
+.cartaz.cz-arte{aspect-ratio:4/5;background:#fff;color:#151515;border-radius:6px;max-width:460px}
+.ca-tarja{position:absolute;top:0;bottom:0;width:6.6cqw;background:var(--e);overflow:hidden;z-index:2}
+.ca-tarja.ca-esq{left:0}
+.ca-tarja.ca-dir{right:0}
+.ca-tarja::before{content:'';position:absolute;inset:0;background:var(--tri) 0 0/100% 15cqw repeat-y}
+.ca-tarja.ca-esq::before{transform:scaleX(-1)}
+.ca-tarja::after{content:'';position:absolute;inset:0 .7cqw;border-left:.25cqw solid #ffffffb0;border-right:.25cqw solid #ffffffb0}
+.ca-tarja span{position:absolute;left:50%;top:-4cqw;transform:translateX(-50%);writing-mode:vertical-rl;white-space:nowrap;
+  font:700 4.3cqw/1 'UnifrakturCook','UnifrakturMaguntia','Old English Text MT',serif;color:#fff;
+  -webkit-text-stroke:.45cqw var(--e);paint-order:stroke fill;letter-spacing:.04em}
+.ca-tarja.ca-esq span{transform:translateX(-50%) rotate(180deg)}
+.ca-tarja i{font-style:normal;display:inline-block;padding:3.4cqw 0}
+.ca-papel{position:absolute;top:0;bottom:0;left:6.6cqw;right:6.6cqw;overflow:hidden;
+  background:radial-gradient(120% 80% at 50% 45%,#ffffff 0%,#f3f1ed 70%,#e8e5df 100%);
+  display:flex;flex-direction:column;align-items:center;padding:24cqw 4cqw 0}
+.ca-marca-dagua{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:78cqw;height:78cqw;opacity:.06;
+  filter:grayscale(1);pointer-events:none}
+.ca-marca-dagua .cz-escudo{width:100%;height:100%;filter:none}
+.ca-canto{position:absolute;width:6cqw;height:6cqw;border:0 solid var(--v)}
+.ca-c1{left:4cqw;top:7cqw;border-left-width:.55cqw;border-top-width:.55cqw}
+.ca-c2{right:4cqw;top:7cqw;border-right-width:.55cqw;border-top-width:.55cqw}
+.ca-c3{left:4cqw;bottom:13cqw;border-left-width:.55cqw;border-bottom-width:.55cqw}
+.ca-c4{right:4cqw;bottom:13cqw;border-right-width:.55cqw;border-bottom-width:.55cqw}
+.ca-aba{position:absolute;left:50%;top:0;width:24cqw;height:6cqw;transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--e) 0 50%,var(--v) 50% 100%);clip-path:polygon(0 0,100% 0,82% 100%,18% 100%)}
+.ca-topo{position:absolute;left:50%;top:2cqw;transform:translateX(-50%)}
+.ca-aro{display:grid;place-items:center;width:30cqw;height:30cqw;border-radius:50%;background:#fff;flex:none;
+  box-shadow:0 0 0 1.1cqw var(--e),0 0 0 1.6cqw var(--v),0 1.4cqw 2.4cqw #0004}
+.ca-aro .cz-escudo{width:76%;height:76%;filter:none}
+.ca-aro .cz-sigla{font-size:5cqw;border:none}
+.ca-aro.ca-brasao{width:19cqw;height:19cqw;box-shadow:0 0 0 .8cqw var(--e),0 0 0 1.2cqw var(--v),0 .8cqw 1.6cqw #0004}
+.ca-aro.ca-brasao .cz-sigla{font-size:3.2cqw}
+.ca-aro.ca-maior{width:40cqw;height:40cqw}
+.ca-aro.ca-maior .cz-sigla{font-size:7cqw}
+.ca-aro.ca-menor{width:24cqw;height:24cqw}
+.ca-titulo{margin:0;display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1;
+  font-family:'Anton','Impact','Arial Narrow Bold','Arial Black',sans-serif;font-weight:400;letter-spacing:.01em;
+  text-transform:uppercase;filter:drop-shadow(0 .35cqw 0 #0002);position:relative}
+/* o acento das maiúsculas (É, Ã) sobe acima da linha: o respiro de cima
+   entra na caixa do recorte, e o corte das duas cores desce junto */
+.ca-titulo span{display:block;padding:.2em .04em 0;margin-top:-.2em;
+  background:linear-gradient(180deg,var(--v) 0 61%,var(--e) 61% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.ca-sub{margin-top:1.2cqw;font:400 4.4cqw/1 'Anton','Impact',sans-serif;letter-spacing:.04em;text-transform:uppercase;position:relative}
+.ca-miolo{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:2cqw;position:relative;width:100%}
+.ca-par .ca-aro{width:34cqw;height:34cqw}
+.ca-par .ca-aro + .ca-aro{margin-left:-7cqw}
+.ca-x{font:400 11cqw/1 'Anton','Impact',sans-serif;background:linear-gradient(180deg,var(--v) 0 53%,var(--e) 53% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.ca-gols{display:flex;align-items:center;gap:1.4cqw;font:400 17cqw/1 'Anton','Impact',sans-serif;
+  background:linear-gradient(180deg,var(--v) 0 53%,var(--e) 53% 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ca-gols i{font-style:normal;font-size:.55em}
+.ca-anos{flex-direction:column;gap:2.6cqw}
+.ca-selo{display:flex;flex-direction:column;align-items:center;justify-content:center;width:30cqw;height:30cqw;border-radius:50%;
+  background:#fff;box-shadow:0 0 0 1.1cqw var(--e),0 0 0 1.6cqw var(--v),0 1.2cqw 2cqw #0003}
+.ca-selo b{font:400 15cqw/.9 'Anton','Impact',sans-serif;background:linear-gradient(180deg,var(--e) 0 50%,var(--v) 50% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.ca-selo i{font:400 6cqw/1 'UnifrakturCook','UnifrakturMaguntia',serif;color:var(--v);font-style:normal;margin-top:-.6cqw}
+.ca-grade{display:grid;grid-template-columns:repeat(6,1fr);gap:1.4cqw 1.6cqw;width:78cqw}
+.ca-g{display:grid;place-items:center;aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 .4cqw 1cqw #0003}
+.ca-g .cz-escudo{width:92%;height:92%;filter:none}
+.ca-g .cz-sigla{width:100%;height:100%;font-size:2.2cqw;border:none}
+.ca-pins{display:flex;justify-content:center;gap:3cqw;width:100%;margin:0 0 2.4cqw;position:relative}
+.ca-etq{display:flex;flex-direction:column;align-items:center;gap:.6cqw;min-width:0;max-width:44cqw}
+.ca-etq small{font:400 3cqw/1 'Anton','Impact',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.ca-etq-cx{display:flex;align-items:center;gap:1.2cqw;background:#fff;padding:1.2cqw 2.4cqw 1.2cqw 1.4cqw;border-radius:1cqw;
+  box-shadow:0 .6cqw 1.6cqw #0003;max-width:100%}
+.ca-etq-cx b{font-family:'Anton','Impact',sans-serif;font-weight:400;color:#151515;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ca-pin{width:4.6cqw;height:6cqw;flex:none}
+.ca-pe{width:76cqw;margin:0 0 4cqw;padding:1.1cqw 0;display:flex;justify-content:space-around;gap:2cqw;position:relative;
+  border-top:.6cqw solid var(--v);border-bottom:.9cqw solid var(--e);
+  font:700 3.2cqw/1 'Barlow Condensed','Archivo Narrow',sans-serif;color:#2a2a2a;letter-spacing:.01em}
+.ca-pe span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-torcida .cz-arte{margin-left:auto;margin-right:auto}
+
 /* a legenda embaixo, como no Instagram */
 .post-torcida.com-cartaz .post-pe{margin-bottom:6px}
 .post-legenda{margin:0 0 4px}

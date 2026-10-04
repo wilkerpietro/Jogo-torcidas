@@ -80,7 +80,7 @@ TO.feed = (function(){
       E.mensagensAgendadas = E.mensagensAgendadas || [];
       E.mensagensAgendadas.push({de:torcidaId, texto, tipo:tipo||'recado', em:extra.em,
         extra:{chave:extra.chave || null, dados:extra.dados || null, publico:!!extra.publico,
-               zona:extra.zona || null}});
+               zona:extra.zona || null, arte:extra.arte || null}});
       return null;
     }
     /* a mesma torcida não repete o mesmo recado no mesmo dia (duas
@@ -100,6 +100,8 @@ TO.feed = (function(){
     if(extra.zona) m.zona = extra.zona;
     /* a imagem do post (01/10/2026): os dados do cartaz, desenhado na tela */
     if(extra.card) m.card = extra.card;
+    /* os números da arte do post (04/10/2026): placar, anos, local */
+    if(extra.arte) m.arte = extra.arte;
     E.mensagens.unshift(m);
     aparar(E);
     if(!m.publico) try{ if(ganchos.aoChegarMensagem) ganchos.aoChegarMensagem(E, m); }catch(_){}
@@ -701,7 +703,8 @@ TO.feed = (function(){
       const P = {clube:nomeClube(E.torcida.clubeId), adv:(j.visitante || {}).nome || '',
                  comp:pelaCompeticao(j.competicao), nome:E.torcida.nome, grito:grito(E.torcida)};
       mensagemDe(E, E.torcida.id, _t('Dia de {clube} x {adv}{comp}! A {nome} vai dominar a pista e a arquibancada mostrando que a cidade é nossa. {grito}', P),
-        'convocacao', {publico:true, chave:`convoca|${abs}|${E.torcida.id}`});
+        'convocacao', {publico:true, chave:`convoca|${abs}|${E.torcida.id}`,
+         arte:{c:E.torcida.clubeId, f:j.advId || null, estadio:j.estadio || '', hora:j.hora || ''}});
     }
     let n = 0;
     for(const g of (jogos || [])){
@@ -712,7 +715,8 @@ TO.feed = (function(){
       const P = {clube:nomeClube(g.c), adv:nomeClube(g.f), comp:pelaCompeticao(g.compNome || g.comp),
                  nome:o.nome, grito:grito(o)};
       mensagemDe(E, o.id, _t('Dia de {clube} x {adv}{comp}! A {nome} vai dominar a pista e a arquibancada mostrando que a cidade é nossa. {grito}', P),
-        'convocacao', {publico:true, chave:`convoca|${abs}|${o.id}`});
+        'convocacao', {publico:true, chave:`convoca|${abs}|${o.id}`,
+         arte:{c:g.c, f:g.f, estadio:(M().time(g.c) || {}).estadio || '', hora:g.hora || ''}});
       n++;
     }
   }
@@ -817,7 +821,8 @@ TO.feed = (function(){
       mensagemDe(E, nos.id, _t('Caravana confirmada! A {nome} estará {emCidade} {dia} pro jogo do {clube}{comp}. Quem vai, confirma presença com a diretoria!',
         {nome:nos.nome, emCidade:emPraca(j.mapaAdv), dia:NO_DIA[j.dia] || NO_DIA[6],
          clube:nomeClube(nos.clubeId), comp:pelaCompeticao(j.competicao)}),
-        'caravana', {publico:true, chave:`caravana|${j.chave || abs}`});
+        'caravana', {publico:true, chave:`caravana|${j.chave || abs}`,
+         arte:{c:nos.clubeId, f:j.advId || null, cidade:(M().cidade(j.mapaAdv) || {}).nome || '', dia:NO_DIA[j.dia] || NO_DIA[6]}});
     }
     const o = M().torcida(nos.id) || nos;
     const fund = o.fundacao || nos.fundacao;
@@ -830,7 +835,7 @@ TO.feed = (function(){
     if(falta === 7 && idade > 0)
       mensagemDe(E, nos.id, _t('Passando aqui pra convidar todos os nossos aliados pra nossa festa de comemoração dos nossos {n} anos de história! Vai ser {data} aqui {emCidade}. Contamos com a presença de vocês.',
         {n:idade, data:fmtDia(aniv), emCidade:emPraca(nos.mapa)}),
-        'convite', {publico:true, chave:`convite-nosso|${aniv.getFullYear()}`});
+        'convite', {publico:true, chave:`convite-nosso|${aniv.getFullYear()}`, arte:{n:idade, data:fmtDia(aniv)}});
   }
 
   /* =======================================================
@@ -891,7 +896,8 @@ TO.feed = (function(){
       if(!caso) continue;
       caso.s = pertoDeNos(E, caso.ids);
       if((H(`rival-dia|${abs}|${j.c}|${j.f}`) % 1000) >= CHANCE_RIVAL(caso.s) * 1000) continue;
-      Object.assign(caso, {gv, gd, comp:pelaCompeticao(j.compNome || j.comp), chave:`${abs}|${j.c}|${j.f}`});
+      Object.assign(caso, {gv, gd, comp:pelaCompeticao(j.compNome || j.comp), chave:`${abs}|${j.c}|${j.f}`,
+                         arte:{c:j.c, f:j.f, gc:j.gc, gf:j.gf}});
       casos.push(caso);
     }
     casos.sort((a,b) => a.s - b.s);
@@ -905,13 +911,13 @@ TO.feed = (function(){
           const op = [
             _t('O CLÁSSICO É NOSSO! {clube} {gv} x {gd} {rival}{comp}. A cidade tem dono, e a {deles} que aguente a zoeira até o próximo.', P),
             _t('Quem manda na cidade? {clube} {gv} x {gd} {rival}{comp}. A {nome} faz a festa e manda um abraço pra {deles}!', P)];
-          mensagemDe(E, oV.id, op[h % op.length], 'comemoracao', {publico:true, chave:`classico-v|${c.chave}`});
+          mensagemDe(E, oV.id, op[h % op.length], 'comemoracao', {publico:true, chave:`classico-v|${c.chave}`, arte:c.arte});
         }
         if(oD && daNossaCidade(E, oD)){
           const op = [
             _t('Perder o clássico pro {clube} é inaceitável. {gv} a {gd}{comp}, e a gente engolindo zoeira a semana inteira. Exigimos respeito à camisa do {rival}!', P),
             _t('Vergonha. {rival} entrou no clássico com medo e saiu com {gd} a {gv}. A {deles} não aceita time sem sangue em clássico.', P)];
-          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`classico-d|${c.chave}`});
+          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`classico-d|${c.chave}`, arte:c.arte});
         }
       } else {
         const oR = vozDoClube(E, c.R);
@@ -921,13 +927,13 @@ TO.feed = (function(){
           const op = [
             _t('Alguém avisa a {deles} que levar {gv} do {vencedor} dói? Semana difícil pro {clube}. Que fase!', P),
             _t('{gv} a {gd}! {clube} virou saco de pancada{comp}. A {nome} está rindo até agora.', P)];
-          mensagemDe(E, oR.id, op[h % op.length], 'provocacao', {publico:true, chave:`goleada-r|${c.chave}`});
+          mensagemDe(E, oR.id, op[h % op.length], 'provocacao', {publico:true, chave:`goleada-r|${c.chave}`, arte:c.arte});
         }
         if(oD && daNossaCidade(E, oD)){
           const op = [
             _t('Vexame! {gd} a {gv} pro {vencedor}{comp}. A {deles} exige vergonha na cara do elenco do {clube}.', P),
             _t('Levar {gv} do {vencedor} não dá. {clube} precisa de explicação, e a {deles} quer ouvir de quem manda no clube.', P)];
-          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`goleada-d|${c.chave}`});
+          mensagemDe(E, oD.id, op[(h >> 3) % op.length], 'reclamacao', {publico:true, chave:`goleada-d|${c.chave}`, arte:c.arte});
         }
       }
     }
@@ -1032,7 +1038,8 @@ TO.feed = (function(){
     else { tipo = 'reclamacao'; op = [
       _t('Derrota: {clube} {g1} x {g2} {adv}{comp}. Não é o resultado que a {nome} esperava. Cabeça erguida, que no próximo jogo a arquibancada vai estar lá de novo.', P),
       _t('Noite ruim. {clube} {g1} x {g2} {adv}{comp}. A {nome} cobra reação já no próximo jogo.', P)]; }
-    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`});
+    mensagemDe(E, E.torcida.id, op[h % op.length], tipo, {publico:true, chave:`nosso-jogo|${abs}`,
+      arte:{c:meu, f:adv, gc:g1, gf:g2}});
   }
 
   /* no dia do jogo fora: a caravana chegou */
@@ -1044,7 +1051,7 @@ TO.feed = (function(){
       _t('A {nome} já está {emCidade}! Hoje a arquibancada visitante tem dono. Vamos, {clube}!', P),
       _t('Caravana na área! A {nome} chegou {emCidade} e vai fazer a festa no setor visitante.', P)];
     mensagemDe(E, E.torcida.id, op[TO.mapa.hash(`chegada|${abs}`) % op.length], 'caravana',
-      {publico:true, chave:`chegada|${j.chave || abs}`});
+      {publico:true, chave:`chegada|${j.chave || abs}`, arte:{cidade:(M().cidade(j.mapaAdv) || {}).nome || ''}});
   }
 
   const MARCO = n => n < 1000 ? 50 : 100;
@@ -1087,7 +1094,7 @@ TO.feed = (function(){
     const abs = E.data.absoluto || 0, nos = E.torcida;
     const P = {nome:nos.nome, clube:nomeClube(nos.clubeId), emCidade:emPraca(nos.mapa)};
     let k = 0;
-    const posta = (texto, chave) => mensagemDe(E, nos.id, texto, 'inauguracao', {publico:true, chave:`${chave}|${abs}|${k++}`});
+    const posta = (texto, chave, arte) => mensagemDe(E, nos.id, texto, 'inauguracao', {publico:true, chave:`${chave}|${abs}|${k++}`, arte:arte || null});
     const comBairro = (b, comB, semB) => b ? comB(Object.assign({bairro:b}, P)) : semB(P);
     if(agora.sede > antes.sede)
       posta(_t('A {nome} ampliou a sede {emCidade}! Mais espaço pra reunião, pra bateria e pra nossa gente. Obrigado a todo mundo que colaborou.', P), 'sede');
@@ -1140,7 +1147,7 @@ TO.feed = (function(){
     const m0 = Math.floor(antes.membros / MARCO(antes.membros)), m1 = Math.floor(agora.membros / MARCO(agora.membros));
     if(agora.membros > antes.membros && m1 > m0 && agora.membros >= 50){
       const n = m1 * MARCO(agora.membros);
-      posta(_t('Somos {n}! A {nome} chegou a {n} membros. Bem-vindos, novatos: aqui é família.', Object.assign({n}, P)), 'marco');
+      posta(_t('Somos {n}! A {nome} chegou a {n} membros. Bem-vindos, novatos: aqui é família.', Object.assign({n}, P)), 'marco', {n});
     }
   }
 
@@ -1535,7 +1542,7 @@ TO.feed = (function(){
              {nome:item.nome, nossa:E.torcida.nome, n:item.idade})
         : _t('A {nome} agradece de coração a presença dos irmãos da {nossa} na nossa festa de aniversário! Vocês deixaram a noite completa. Aqui a casa é sempre de vocês.',
              {nome:item.nome, nossa:E.torcida.nome}),
-        'agradecimento', {em:(E.data.absoluto||0) + faltam + 1});
+        'agradecimento', {em:(E.data.absoluto||0) + faltam + 1, arte:item.idade ? {n:item.idade} : null});
     } else {
       E.relacoes[torcidaId] = Math.max(-100, Math.min(100,
         TO.relacoes.nivel(E, torcidaId) - REL.furarAniversario));
@@ -4330,7 +4337,8 @@ TO.feed = (function(){
     lista.sort((a,b)=>(a.mes*40 + a.dia) - (b.mes*40 + b.dia));
     for(const a of lista)
       mensagemDe(E, a.torcida, _t('Passando aqui pra convidar todos os nossos aliados pra nossa festa de comemoração dos nossos {n} anos de história! Vai ser {data} aqui {emCidade}. Contamos com a presença de vocês.',
-        {data:a.data, n:a.idade, emCidade:emPraca((M().torcida(a.torcida)||{}).mapa)}), 'convite');
+        {data:a.data, n:a.idade, emCidade:emPraca((M().torcida(a.torcida)||{}).mapa)}), 'convite',
+        {arte:{n:a.idade, data:a.data}});
     return {
       chave:`festas|${E.data.ano}|${mesDe(E)}`, rot:_t('Convites de festa'), voz:_t('Diretoria'),
       tipo:'festas', festas:lista, botoes:[],
@@ -5355,7 +5363,8 @@ TO.feed = (function(){
     });
     /* o recado do rival, na caixa de mensagens (dono, 08/09/2026) */
     mensagemDe(E, rival.id, _t('Recado pra {nossa}: hoje à noite, em {bairro}, {n} contra {n}, com {valor} na roda. Quem é de verdade aparece.',
-      {nossa:E.torcida.nome, bairro:b.nome, n:tam, valor:U.dinheiro(aposta)}), 'treta', {chave:`treta-msg|${ev.chave}`});
+      {nossa:E.torcida.nome, bairro:b.nome, n:tam, valor:U.dinheiro(aposta)}), 'treta', {chave:`treta-msg|${ev.chave}`,
+      arte:{bairro:b.nome}});
   }
 
   /* -------------------------------------------------------

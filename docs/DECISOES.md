@@ -9003,6 +9003,40 @@ Dois defeitos que se alimentavam:
   dias com o feed fora de ordem e 14 com matéria de jornal na tela; agora,
   nenhum. (O cartão ganhou `data-id`, pra conferência.)
 
+## A arte dos posts das torcidas (o dono, 04/10/2026, com cinco prints do perfil de uma torcida: "Crie imagens na rede social nesse estilo pra deixar as postagens das torcidas mais legais e realistas")
+
+- Todo post de torcida na rede ganha uma arte 4:5 no molde das prints, e
+  o texto vira a legenda embaixo (como já era com o cartaz do jornal):
+  · as duas tarjas dos lados na cor escura da torcida, com triângulos na
+    cor viva e "DESDE <ano de fundação>" em letra gótica;
+  · o escudo da torcida no alto, numa aba nas duas cores, e as quatro
+    cantoneiras; a marca-d'água do escudo no papel;
+  · o título grosso em duas cores (metade de cima na viva, de baixo na
+    escura): CONVITE!, DIA DE JOGO, NOTA DE AGRADECIMENTO, VITÓRIA!,
+    CARAVANA CONFIRMADA, A CIDADE É NOSSA!, É CAMPEÃO!, TRETA MARCADA,
+    PROTESTO, SOMOS 150…;
+  · o miolo de cada tipo: os dois escudos encostados (agradecimento,
+    nota pública, repúdio), escudo × escudo (zoeira, treta, o jogo do
+    dia), o placar com os escudos dos clubes, o selo dos anos com a grade
+    das aliadas (convite de aniversário), o escudo grande;
+  · as etiquetas com o alfinete (LOCAL, HORÁRIO, DIA, DESTINO, DATA);
+  · o rodapé com o @ da torcida e o @loja_online_ dela, entre dois fios.
+- O post não guarda imagem: a arte sai do tipo, da chave e de `m.arte`,
+  que leva só os números (placar, anos, data, estádio, horário, cidade,
+  bairro da treta), desenhada em HTML por `js/ui/cartaz.js` no idioma da
+  tela. Post de save antigo também ganha arte (sem os números, cai no
+  escudo). Recado que é conversa (pedido de casa, "estamos juntos",
+  recusa, recado) fica só no texto.
+- A paleta: a escura é a mais escura das cores da torcida (preto quando
+  nenhuma é escura); a viva, a mais saturada das outras (torcida preta e
+  branca fica preta e cinza).
+- Fontes: Anton (título) e UnifrakturCook (o "DESDE" e o "Anos"), as duas
+  de licença livre (OFL), servidas pelo próprio jogo em `css/fontes/` —
+  sem internet a arte não perde o peso.
+- Isto revê em parte a decisão de 01/10/2026 ("post de torcida fica só
+  no texto"): o cartaz de placar e de briga continua sendo só do jornal;
+  a torcida ganha a arte dela, que é outra.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

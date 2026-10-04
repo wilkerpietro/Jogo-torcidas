@@ -205,6 +205,196 @@ TO.cartaz = (function(){
     `</figure>`;
   }
 
+  /* =======================================================
+     A ARTE DO POST DE TORCIDA (pedido do dono, 04/10/2026: "Crie
+     imagens na rede social nesse estilo pra deixar as postagens das
+     torcidas mais legais e realistas", com as prints do perfil de uma
+     torcida de Sobral). O molde das prints:
+       · as duas tarjas dos lados, na cor escura, com triângulos na cor
+         viva e o "DESDE <ano>" em letra gótica, de cima a baixo;
+       · o escudo da torcida no alto, numa aba, e as cantoneiras;
+       · o título grosso em duas cores — a metade de cima na viva, a de
+         baixo na escura (PARABÉNS, REUNIÃO GERAL, CONVITE!…);
+       · o miolo de cada tipo de post — os dois escudos encostados, o
+         placar, os anos, a grade das aliadas, o local e o horário em
+         etiquetas com o alfinete;
+       · o rodapé com o @ da torcida e o da loja, entre dois fios.
+     Formato 4:5, o do Instagram. O post não guarda imagem: a arte sai
+     do tipo, da chave e de `m.arte` (os números — placar, anos, local),
+     desenhada aqui em HTML, no idioma da tela.
+     ======================================================= */
+  const lum = c => {
+    const n = String(c || '').replace('#', '');
+    if(n.length !== 6) return .5;
+    const [r, g, b] = [0, 2, 4].map(i => parseInt(n.slice(i, i + 2), 16) / 255);
+    return .2126 * r + .7152 * g + .0722 * b;
+  };
+  const satur = c => {
+    const n = String(c || '').replace('#', '');
+    if(n.length !== 6) return 0;
+    const v = [0, 2, 4].map(i => parseInt(n.slice(i, i + 2), 16));
+    return (Math.max(...v) - Math.min(...v)) / 255;
+  };
+  /* a escura (tarjas, metade de baixo do título) e a viva (triângulos,
+     metade de cima): torcida preta e branca fica preta e cinza */
+  function paleta(id){
+    const o = TO.mundo.torcida(id) || {};
+    const cr = TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
+    const cs = [cr.cor, cr.cor2, cr.cor3].filter(Boolean);
+    let escura = cs.slice().sort((a, b) => lum(a) - lum(b))[0] || '#151515';
+    if(lum(escura) > .42) escura = '#151515';
+    const vivas = cs.filter(c => c !== escura && lum(c) < .8).sort((a, b) => satur(b) - satur(a));
+    let viva = vivas[0] || (lum(cs[0] || '#fff') >= .8 && cs[0] !== escura && satur(cs[0]) > .2 ? cs[0] : null);
+    if(!viva || Math.abs(lum(viva) - lum(escura)) < .06) viva = escura === '#151515' ? '#6b6b6b' : '#151515';
+    return {escura, viva};
+  }
+  const arrobaDe = o => '@' + String(TO.mundo.siglaTorcida(o) || o.nome || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+  const anoDe = o => {
+    const f = o && o.fundacao;
+    return typeof f === 'number' ? f : (String(f || '').match(/(\d{4})/) || [])[1] || '';
+  };
+  const triangulos = viva => `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='60' viewBox='0 0 20 60' preserveAspectRatio='none'><path d='M20 6 L1 30 L20 54 Z' fill='${viva}'/></svg>`)}")`;
+  const tarja = (ano, pal, lado) =>
+    `<div class="ca-tarja ca-${lado}" style="--tri:${triangulos(pal.viva)}"><span>${
+      Array.from({length:6}, () => `<i>${esc(_t('DESDE'))} ${esc(ano)}</i>`).join('')}</span></div>`;
+
+  /* o escudo no aro, como nas prints: branco por dentro, as cores por fora */
+  function aro(tipo, id, nome, pal, cls){
+    const dentro = tipo === 'c' ? marcaDoClube(id) : marcaDaTorcida(id, nome);
+    return `<span class="ca-aro${cls ? ' ' + cls : ''}" style="--e:${pal.escura};--v:${pal.viva}">${dentro}</span>`;
+  }
+  /* o título: cada linha com a viva em cima e a escura embaixo */
+  const titulo = (linhas, pal) => {
+    const maior = Math.max(...linhas.map(l => String(l).length));
+    const tam = Math.min(17, Math.max(7.2, 132 / Math.max(6, maior)));
+    return `<h3 class="ca-titulo" style="--e:${pal.escura};--v:${pal.viva};font-size:${tam.toFixed(2)}cqw">${
+      linhas.map(l => `<span>${esc(l)}</span>`).join('')}</h3>`;
+  };
+  const alfinete = pal => `<svg class="ca-pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 0C5.4 0 0 5.3 0 11.9 0 20.8 12 32 12 32s12-11.2 12-20.1C24 5.3 18.6 0 12 0z" fill="${pal.viva}"/><circle cx="12" cy="11.5" r="4.6" fill="#fff"/><ellipse cx="12" cy="31" rx="7" ry="1.6" fill="${pal.escura}" opacity=".55"/></svg>`;
+  const etiquetas = (pins, pal) => pins && pins.length
+    ? `<div class="ca-pins">${pins.map(p => {
+        const v = String(p.val || '');
+        const tam = Math.min(5.4, Math.max(2.6, 58 / Math.max(8, v.length) / (pins.length > 1 ? 1.5 : 1)));
+        return `<div class="ca-etq"><small style="color:${pal.escura}">${esc(p.rot)}</small>`+
+          `<span class="ca-etq-cx">${alfinete(pal)}<b style="font-size:${tam.toFixed(2)}cqw">${esc(MAIUS(v))}</b></span></div>`;
+      }).join('')}</div>` : '';
+  /* as aliadas pra grade do convite: as da torcida, as que estão de bem
+     com ela no save, com escudo primeiro */
+  function aliadasDe(id){
+    const o = TO.mundo.torcida(id) || {}, E = TO.estado && TO.estado.E;
+    const ids = [...new Set([...(o.irmandade || []), ...(o.aliados || [])])].filter(x => TO.mundo.torcida(x));
+    const amiga = x => !E || !TO.dominio || !TO.dominio.amigas || TO.dominio.amigas(E, id, x);
+    const tem = x => !!escudo('t', x);
+    return ids.filter(amiga).sort((a, b) => tem(b) - tem(a)).slice(0, 12);
+  }
+
+  /* -------- o molde de cada post: título, miolo e etiquetas -------- */
+  const prefixo = m => String(m.chave || '').split('|')[0];
+  const parteDaChave = (m, i) => String(m.chave || '').split('|')[i] || '';
+  const SEM_ARTE = new Set(['pedido', 'juntos', 'recusa', 'recado', 'tregua-ok']);
+  function especDaArte(m){
+    const a = m.arte || {}, k = a.k || prefixo(m), tipo = m.tipo;
+    const E = TO.estado && TO.estado.E, nossa = E && E.torcida ? E.torcida.id : null;
+    const o = TO.mundo.torcida(m.de) || {};
+    const placar = a.gc != null && a.c ? {t:'placar', c:a.c, f:a.f, gc:a.gc, gf:a.gf} : null;
+    const eu = {t:'escudo', tipo:'t', id:m.de};
+    const doClube = id => ({t:'escudo', tipo:'c', id:id || o.clubeId});
+    const par = b => b && b !== m.de ? {t:'par', a:m.de, b} : eu;
+    const vs = b => b && b !== m.de ? {t:'vs', a:m.de, b} : eu;
+    switch(k){
+      case 'convoca': return {tit:[_t('DIA DE'), _t('JOGO')],
+        miolo:a.c && a.f ? {t:'confronto', c:a.c, f:a.f} : doClube(),
+        pins:[a.estadio && {rot:_t('LOCAL'), val:a.estadio}, a.hora && {rot:_t('HORÁRIO'), val:a.hora}].filter(Boolean)};
+      case 'caravana': return {tit:[_t('CARAVANA'), _t('CONFIRMADA')],
+        miolo:a.c && a.f ? {t:'confronto', c:a.c, f:a.f} : eu,
+        pins:[a.cidade && {rot:_t('DESTINO'), val:a.cidade}, a.dia && {rot:_t('DIA'), val:a.dia}].filter(Boolean)};
+      case 'chegada': return {tit:[_t('CHEGAMOS!')], miolo:eu,
+        pins:a.cidade ? [{rot:_t('ONDE'), val:a.cidade}] : []};
+      case 'resenha': return {tit:[_t('RESENHA')], sub:m.zona ? _t('ZONA {zona}', {zona:MAIUS(_t(m.zona))}) : '',
+        miolo:eu, pins:[{rot:_t('LOCAL'), val:_t('Casa de piscina')}, {rot:_t('DIA'), val:_t('Sábado')}]};
+      case 'convite-nosso': case 'convite': return {tit:[_t('CONVITE!')], sub:_t('ALIADOS E AMIZADES'),
+        miolo:{t:'anos', n:a.n, id:m.de, grade:aliadasDe(m.de)},
+        pins:a.data ? [{rot:_t('DATA'), val:a.data}] : []};
+      case 'obrigado-nosso': return {tit:[_t('NOTA DE'), _t('AGRADECIMENTO')], miolo:par(parteDaChave(m, 2))};
+      case 'nosso-jogo':
+        return {tit:[tipo === 'reclamacao' ? _t('DERROTA') : a.gc != null && a.gc === a.gf ? _t('EMPATE') : _t('VITÓRIA!')],
+                miolo:placar || doClube()};
+      case 'classico-v': return {tit:[_t('O CLÁSSICO'), _t('É NOSSO!')], miolo:placar || doClube()};
+      case 'classico-d': return {tit:[_t('VERGONHA')], miolo:placar || doClube()};
+      case 'goleada-r': return {tit:[_t('QUE FASE!')], miolo:placar || doClube()};
+      case 'goleada-d': return {tit:[_t('VEXAME')], miolo:placar || doClube()};
+      case 'titulo': return {tit:[_t('É CAMPEÃO!')], sub:parteDaChave(m, 1), miolo:doClube()};
+      case 'acesso': return {tit:[_t('ACESSO!')], sub:parteDaChave(m, 1), miolo:doClube()};
+      case 'queda': return {tit:[_t('REBAIXADO')], sub:_t('NOTA OFICIAL'), miolo:doClube()};
+      case 'queda-r': return {tit:[_t('TCHAU!')], miolo:doClube(parteDaChave(m, 2))};
+      case 'protesto': return {tit:[_t('PROTESTO')], sub:_t('NOTA OFICIAL'), miolo:doClube(parteDaChave(m, 2))};
+      case 'zoeira': return {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
+      case 'nossa-zoeira': return {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
+      case 'pixo': return {tit:[_t('O MURO'), _t('É NOSSO!')], miolo:vs(parteDaChave(m, 3))};
+      case 'zona-casa': return {tit:[_t('A ZONA'), _t('É NOSSA!')], miolo:eu};
+      case 'tregua': return {tit:[_t('NOTA'), _t('PÚBLICA')], sub:_t('PROPOSTA DE TRÉGUA'), miolo:par(nossa)};
+      case 'treta-msg': return {tit:[_t('TRETA'), _t('MARCADA')], miolo:vs(nossa),
+        pins:[a.bairro && {rot:_t('LOCAL'), val:a.bairro}, {rot:_t('HORÁRIO'), val:_t('Hoje à noite')}].filter(Boolean)};
+      case 'sede': return {tit:[_t('SEDE'), _t('AMPLIADA')], miolo:eu};
+      case 'faixa-nova': return {tit:[_t('FAIXA NOVA')], miolo:eu};
+      case 'bandeira-nova': return {tit:[_t('BANDEIRA'), _t('NOVA')], miolo:eu};
+      case 'marco': return {tit:a.n ? [_t('SOMOS'), U_num(a.n)] : [_t('A FAMÍLIA'), _t('CRESCEU')], miolo:eu};
+    }
+    if(tipo === 'inauguracao') return {tit:/ampliad/.test(k) ? [_t('AMPLIAÇÃO')] : [_t('INAUGURAÇÃO')], miolo:eu};
+    if(tipo === 'agradecimento') return {tit:[_t('NOTA DE'), _t('AGRADECIMENTO')], sub:a.n ? _t('{n} ANOS', {n:a.n}) : '', miolo:par(nossa)};
+    if(tipo === 'cobranca') return {tit:[_t('NOTA DE'), _t('REPÚDIO')], miolo:par(nossa)};
+    if(tipo === 'convite') return {tit:[_t('CONVITE!')], sub:_t('ALIADOS E AMIZADES'), miolo:{t:'anos', n:a.n, id:m.de, grade:aliadasDe(m.de)}};
+    if(tipo === 'comemoracao') return {tit:[_t('É FESTA!')], miolo:eu};
+    if(tipo === 'reclamacao') return {tit:[_t('NOTA OFICIAL')], miolo:doClube()};
+    if(tipo === 'provocacao' || tipo === 'zoeira') return {tit:[_t('RECADO'), _t('DADO')], miolo:eu};
+    if(tipo === 'treta') return {tit:[_t('TRETA'), _t('MARCADA')], miolo:vs(nossa)};
+    return {tit:[_t('COMUNICADO')], miolo:eu};
+  }
+  const U_num = n => (TO.util && TO.util.numero) ? TO.util.numero(n) : String(n);
+
+  function htmlDoMiolo(x, pal){
+    const nomeT = id => (TO.mundo.torcida(id) || {}).nome || '';
+    switch(x.t){
+      case 'par': return `<div class="ca-miolo ca-par">${aro('t', x.a, nomeT(x.a), pal)}${aro('t', x.b, nomeT(x.b), paleta(x.b))}</div>`;
+      case 'vs': return `<div class="ca-miolo ca-vs">${aro('t', x.a, nomeT(x.a), pal)}`+
+        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('t', x.b, nomeT(x.b), paleta(x.b), 'ca-menor')}</div>`;
+      case 'confronto': return `<div class="ca-miolo ca-vs">${aro('c', x.c, '', pal)}`+
+        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('c', x.f, '', pal)}</div>`;
+      case 'placar': return `<div class="ca-miolo ca-placar">${aro('c', x.c, '', pal, 'ca-menor')}`+
+        `<b class="ca-gols" style="--e:${pal.escura};--v:${pal.viva}">${esc(x.gc)}<i>×</i>${esc(x.gf)}</b>${aro('c', x.f, '', pal, 'ca-menor')}</div>`;
+      case 'anos': {
+        const grade = (x.grade || []).map(id => `<span class="ca-g">${marcaDaTorcida(id, nomeT(id))}</span>`).join('');
+        return `<div class="ca-miolo ca-anos">`+
+          (x.n ? `<div class="ca-selo" style="--e:${pal.escura};--v:${pal.viva}"><b>${esc(x.n)}</b><i>${esc(_t('Anos'))}</i></div>` : aro('t', x.id, nomeT(x.id), pal))+
+          (grade ? `<div class="ca-grade">${grade}</div>` : '')+`</div>`;
+      }
+      case 'escudo': return `<div class="ca-miolo ca-um">${aro(x.tipo, x.id, x.tipo === 't' ? nomeT(x.id) : '', pal, 'ca-maior')}</div>`;
+    }
+    return '';
+  }
+  function htmlDaArte(m){
+    const o = TO.mundo.torcida(m.de);
+    if(!o || SEM_ARTE.has(m.tipo)) return '';
+    const pal = paleta(m.de), ano = anoDe(o), sp = especDaArte(m);
+    const arroba = arrobaDe(o);
+    return `<figure class="cartaz cz-arte" style="--e:${pal.escura};--v:${pal.viva}">`+
+      tarja(ano, pal, 'esq')+tarja(ano, pal, 'dir')+
+      `<div class="ca-papel">`+
+        `<div class="ca-marca-dagua">${marcaDaTorcida(m.de, o.nome)}</div>`+
+        `<i class="ca-canto ca-c1"></i><i class="ca-canto ca-c2"></i><i class="ca-canto ca-c3"></i><i class="ca-canto ca-c4"></i>`+
+        `<div class="ca-aba"></div>`+
+        `<div class="ca-topo">${aro('t', m.de, o.nome, pal, 'ca-brasao')}</div>`+
+        titulo(sp.tit, pal)+
+        (sp.sub ? `<div class="ca-sub" style="color:${pal.escura}">${esc(sp.sub)}</div>` : '')+
+        htmlDoMiolo(sp.miolo || {t:'escudo', tipo:'t', id:m.de}, pal)+
+        etiquetas(sp.pins, pal)+
+        `<div class="ca-pe"><span>${esc(arroba)}</span><span>${esc('@loja_online_' + arroba.slice(1))}</span></div>`+
+      `</div>`+
+    `</figure>`;
+  }
+
   /* A IMAGEM É DO JORNAL (dono, 01/10/2026): o placar sai na Gazeta dos
      Sports, a briga no Futebol e Porrada. Post de torcida — o nosso
      resultado, a zoeira da nossa briga — fica só no texto, mesmo o de
@@ -212,10 +402,15 @@ TO.cartaz = (function(){
   const doJornal = m => (m.card.t === 'jogo' && m.jornal === 'gazeta') ||
                         (m.card.t === 'briga' && m.jornal === 'porrada');
   function html(m){
-    if(!m || !m.card || !doJornal(m)) return '';
+    if(!m) return '';
     try{
-      if(m.card.t === 'jogo') return htmlDoJogo(m);
-      if(m.card.t === 'briga') return htmlDaBriga(m);
+      if(m.card && doJornal(m)){
+        if(m.card.t === 'jogo') return htmlDoJogo(m);
+        if(m.card.t === 'briga') return htmlDaBriga(m);
+        return '';
+      }
+      /* o post de torcida ganha a arte dela (04/10/2026) */
+      if(m.de && !m.jornal) return htmlDaArte(m);
     }catch(err){ console.warn('cartaz: ' + err.message); }
     return '';
   }
@@ -274,5 +469,5 @@ TO.cartaz = (function(){
     observador.observe(fig);
   }
 
-  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, get fotos(){ return fotos; }};
+  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, paleta, get fotos(){ return fotos; }};
 })();
