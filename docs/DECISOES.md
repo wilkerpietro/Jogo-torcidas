@@ -9123,6 +9123,12 @@ Dois defeitos que se alimentavam:
   com amarelo e branco, todo amarelo), e o texto miúdo também. Se o
   único par da primária é o branco, o texto vai num tom da primária. As
   tarjas, os fios e os aros continuam na ordem das cores (não são texto).
+- O branco SOZINHO vale (o dono, no mesmo dia: "Pode ser usada a cor
+  branca sozinha se ela for a cor secundária da torcida, numa torcida de
+  cor primária preta e cor secundária branca por exemplo"): quando a
+  torcida não tem outra cor além da primária e do branco, o texto é
+  branco — a Gaviões, preta e branca, fica com o título branco. Havendo
+  outra cor, ela continua tendo a vez.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
