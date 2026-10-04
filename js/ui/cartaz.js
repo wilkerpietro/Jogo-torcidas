@@ -235,32 +235,36 @@ TO.cartaz = (function(){
     const v = [0, 2, 4].map(i => parseInt(n.slice(i, i + 2), 16));
     return (Math.max(...v) - Math.min(...v)) / 255;
   };
-  /* a escura (tarjas, metade de baixo do título) e a viva (triângulos,
-     metade de cima). SÓ AS CORES DA TORCIDA (o dono, 04/10/2026: "algumas
-     torcidas estão colocando a cor preta sem estar no plano de cores da
-     torcida. Isso não pode acontecer"): a escura é a mais escura dela —
-     nenhuma escura, um tom fechado da própria cor —; a viva, a mais
-     saturada das outras, mesmo de luz parecida (o azul e o vermelho da
-     JGT). Uma cor só (mais o branco): dois tons dela. Preta e branca:
-     preto e cinza, a mistura das duas. */
+  /* AS CORES DA ARTE SÃO AS DA TORCIDA, NA ORDEM DELA (o dono, 04/10/2026:
+     "Esse fundo branco tem que ser sempre o fundo na cor primária da
+     torcida, e o texto na cor secundária+terciária quando tiver. As
+     barras do lado na cor secundária e o texto das barras na primária";
+     e antes, no mesmo dia: "algumas torcidas estão colocando a cor preta
+     sem estar no plano de cores da torcida. Isso não pode acontecer").
+     `fundo` é a primária; `sec` e `ter`, a segunda e a terceira (sem
+     terceira, a segunda nas duas metades do título). Torcida de uma cor
+     só: a segunda é um tom dela, nunca preto nem branco de fora.
+     `viva` (metade de cima do título) é a secundária e `escura` (a de
+     baixo) a terciária — os nomes antigos que o resto da arte lê. */
   const sombra = (c, k) => '#' + [0, 2, 4].map(i => Math.round(parseInt(c.slice(1 + i, 3 + i), 16) * k)
     .toString(16).padStart(2, '0')).join('');
   const clarear = (c, k) => '#' + [0, 2, 4].map(i => { const v = parseInt(c.slice(1 + i, 3 + i), 16);
     return Math.round(v + (255 - v) * k).toString(16).padStart(2, '0'); }).join('');
+  const rgbDe = c => [0, 2, 4].map(i => parseInt(c.slice(1 + i, 3 + i), 16)).join(',');
   function paleta(id){
     const o = TO.mundo.torcida(id) || {};
     const cr = TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
     const cs = [cr.cor, cr.cor2, cr.cor3].filter(c => /^#[0-9a-f]{6}$/i.test(c || ''));
-    if(!cs.length) return {escura:'#333333', viva:'#777777'};
-    const base = cs.slice().sort((a, b) => lum(a) - lum(b))[0];
-    let escura = lum(base) > .42 ? sombra(base, .5) : base;
-    let viva = cs.filter(c => c !== base && lum(c) < .9).sort((a, b) => satur(b) - satur(a))[0];
-    if(!viva){
-      if(satur(base) > .2){ viva = base; if(escura === base) escura = sombra(base, .55); }
-      else viva = clarear(escura, .45);
-    }
-    return {escura, viva};
+    const fundo = cs[0] || '#333333';
+    const sec = cs[1] || (lum(fundo) > .5 ? sombra(fundo, .45) : clarear(fundo, .6));
+    const ter = cs[2] || sec;
+    /* o texto miúdo (rodapé, etiquetas, subtítulo) vai na das duas que
+       mais contrasta com o fundo: o vermelho da JGT some no azul dela, o
+       branco não */
+    const texto = Math.abs(lum(ter) - lum(fundo)) > Math.abs(lum(sec) - lum(fundo)) ? ter : sec;
+    return {fundo, sec, ter, texto, viva:sec, escura:ter, rgb:rgbDe(fundo)};
   }
+  const varsDe = pal => `--p:${pal.fundo};--s:${pal.sec};--t:${pal.ter};--x:${pal.texto};--pr:${pal.rgb};--e:${pal.escura};--v:${pal.viva}`;
   const arrobaDe = o => '@' + String(TO.mundo.siglaTorcida(o) || o.nome || '')
     .normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
   const anoDe = o => {
@@ -270,7 +274,7 @@ TO.cartaz = (function(){
   const triangulos = viva => `url("data:image/svg+xml,${encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' width='20' height='60' viewBox='0 0 20 60' preserveAspectRatio='none'><path d='M20 6 L1 30 L20 54 Z' fill='${viva}'/></svg>`)}")`;
   const tarja = (ano, pal, lado) =>
-    `<div class="ca-tarja ca-${lado}" style="--tri:${triangulos(pal.viva)}"><span>${
+    `<div class="ca-tarja ca-${lado}" style="--tri:${triangulos(pal.ter !== pal.sec ? pal.ter : pal.fundo)}"><span>${
       Array.from({length:6}, () => `<i>${esc(_t('DESDE'))} ${esc(ano)}</i>`).join('')}</span></div>`;
 
   /* o escudo no aro, como nas prints: branco por dentro, as cores por fora */
@@ -298,21 +302,21 @@ TO.cartaz = (function(){
   function aro(tipo, id, nome, pal, cls, de){
     const dentro = tipo === 'c' ? marcaDoClube(id) : marcaDaTorcida(id, nome);
     const rival = ehRival(de, tipo, id);
-    return `<span class="ca-aro${cls ? ' ' + cls : ''}${rival ? ' ca-rival' : ''}" style="--e:${pal.escura};--v:${pal.viva}">${dentro}</span>`;
+    return `<span class="ca-aro${cls ? ' ' + cls : ''}${rival ? ' ca-rival' : ''}" style="${varsDe(pal)}">${dentro}</span>`;
   }
   /* o título: cada linha com a viva em cima e a escura embaixo */
   const titulo = (linhas, pal) => {
     const maior = Math.max(...linhas.map(l => String(l).length));
     const tam = Math.min(17, Math.max(7.2, 132 / Math.max(6, maior)));
-    return `<h3 class="ca-titulo" style="--e:${pal.escura};--v:${pal.viva};font-size:${tam.toFixed(2)}cqw">${
+    return `<h3 class="ca-titulo" style="${varsDe(pal)};font-size:${tam.toFixed(2)}cqw">${
       linhas.map(l => `<span>${esc(l)}</span>`).join('')}</h3>`;
   };
-  const alfinete = pal => `<svg class="ca-pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 0C5.4 0 0 5.3 0 11.9 0 20.8 12 32 12 32s12-11.2 12-20.1C24 5.3 18.6 0 12 0z" fill="${pal.viva}"/><circle cx="12" cy="11.5" r="4.6" fill="#fff"/><ellipse cx="12" cy="31" rx="7" ry="1.6" fill="${pal.escura}" opacity=".55"/></svg>`;
+  const alfinete = pal => `<svg class="ca-pin" viewBox="0 0 24 32" aria-hidden="true"><path d="M12 0C5.4 0 0 5.3 0 11.9 0 20.8 12 32 12 32s12-11.2 12-20.1C24 5.3 18.6 0 12 0z" fill="${pal.fundo}"/><circle cx="12" cy="11.5" r="4.6" fill="${pal.texto}"/><ellipse cx="12" cy="31" rx="7" ry="1.6" fill="${pal.fundo}" opacity=".45"/></svg>`;
   const etiquetas = (pins, pal) => pins && pins.length
     ? `<div class="ca-pins">${pins.map(p => {
         const v = String(p.val || '');
         const tam = Math.min(5.4, Math.max(2.6, 58 / Math.max(8, v.length) / (pins.length > 1 ? 1.5 : 1)));
-        return `<div class="ca-etq"><small style="color:${pal.escura}">${esc(p.rot)}</small>`+
+        return `<div class="ca-etq"><small style="color:${pal.texto}">${esc(p.rot)}</small>`+
           `<span class="ca-etq-cx">${alfinete(pal)}<b style="font-size:${tam.toFixed(2)}cqw">${esc(MAIUS(v))}</b></span></div>`;
       }).join('')}</div>` : '';
   /* as aliadas pra grade do convite: as da torcida, as que estão de bem
@@ -326,6 +330,12 @@ TO.cartaz = (function(){
   }
 
   /* -------- o molde de cada post: título, miolo e etiquetas -------- */
+  /* "no Genibaú", "na Maraponga": bairro não tem tabela de gênero; vale a
+     primeira palavra — terminada em "a" é feminina (Maraponga, Granja
+     Portugal, Aldeota), o resto masculino (Genibaú, Bom Jardim, José
+     Walter, Monte Castelo) */
+  const noBairro = b => MAIUS(/a$/i.test(String(b).trim().split(/\s+/)[0] || '')
+    ? _t('na {bairro}', {bairro:b}) : _t('no {bairro}', {bairro:b}));
   const prefixo = m => String(m.chave || '').split('|')[0];
   const parteDaChave = (m, i) => String(m.chave || '').split('|')[i] || '';
   const SEM_ARTE = new Set(['pedido', 'juntos', 'recusa', 'recado', 'tregua-ok']);
@@ -368,8 +378,11 @@ TO.cartaz = (function(){
       case 'queda': return {tit:[_t('REBAIXADO')], sub:_t('NOTA OFICIAL'), miolo:doClube()};
       case 'queda-r': return {tit:[_t('TCHAU!')], miolo:doClube(parteDaChave(m, 2))};
       case 'protesto': return {tit:[_t('PROTESTO')], sub:_t('NOTA OFICIAL'), miolo:doClube(parteDaChave(m, 2))};
-      case 'zoeira': return {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
-      case 'nossa-zoeira': return {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
+      /* a treta vencida diz onde (dono, 04/10/2026: "em vez de A CIDADE É
+         NOSSA é melhor CORRERAM NO GENIBAÚ"); sem bairro, a cidade */
+      case 'zoeira': case 'nossa-zoeira': return a.bairro
+        ? {tit:[_t('CORRERAM'), noBairro(a.bairro)], miolo:vs(parteDaChave(m, 3))}
+        : {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
       case 'pixo': return {tit:[_t('O MURO'), _t('É NOSSO!')], miolo:vs(parteDaChave(m, 3))};
       /* a zona que venceu fala da zona dela (dono, 04/10/2026: "A LESTE É NOSSA") */
       case 'zona-casa': return {tit:m.zona ? [_t('A {zona}', {zona:MAIUS(_t(m.zona))}), _t('É NOSSA!')]
@@ -443,15 +456,15 @@ TO.cartaz = (function(){
     switch(x.t){
       case 'par': return `<div class="ca-miolo ca-par">${aro('t', x.a, nomeT(x.a), pal, '', de)}${aro('t', x.b, nomeT(x.b), paleta(x.b), '', de)}</div>`;
       case 'vs': return `<div class="ca-miolo ca-vs">${aro('t', x.a, nomeT(x.a), pal, '', de)}`+
-        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('t', x.b, nomeT(x.b), paleta(x.b), 'ca-menor', de)}</div>`;
+        `<b class="ca-x" style="${varsDe(pal)}">×</b>${aro('t', x.b, nomeT(x.b), paleta(x.b), 'ca-menor', de)}</div>`;
       case 'confronto': return `<div class="ca-miolo ca-vs">${aro('c', x.c, '', pal, '', de)}`+
-        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('c', x.f, '', pal, '', de)}</div>`;
+        `<b class="ca-x" style="${varsDe(pal)}">×</b>${aro('c', x.f, '', pal, '', de)}</div>`;
       case 'placar': return `<div class="ca-miolo ca-placar">${aro('c', x.c, '', pal, 'ca-menor', de)}`+
-        `<b class="ca-gols" style="--e:${pal.escura};--v:${pal.viva}">${esc(x.gc)}<i>×</i>${esc(x.gf)}</b>${aro('c', x.f, '', pal, 'ca-menor', de)}</div>`;
+        `<b class="ca-gols" style="${varsDe(pal)}">${esc(x.gc)}<i>×</i>${esc(x.gf)}</b>${aro('c', x.f, '', pal, 'ca-menor', de)}</div>`;
       case 'anos': {
         const grade = (x.grade || []).map(id => `<span class="ca-g">${marcaDaTorcida(id, nomeT(id))}</span>`).join('');
         return `<div class="ca-miolo ca-anos">`+
-          (x.n ? `<div class="ca-selo" style="--e:${pal.escura};--v:${pal.viva}"><b>${esc(x.n)}</b><i>${esc(_t('Anos'))}</i></div>` : aro('t', x.id, nomeT(x.id), pal))+
+          (x.n ? `<div class="ca-selo" style="${varsDe(pal)}"><b>${esc(x.n)}</b><i>${esc(_t('Anos'))}</i></div>` : aro('t', x.id, nomeT(x.id), pal))+
           (grade ? `<div class="ca-grade">${grade}</div>` : '')+`</div>`;
       }
       case 'escudo': return `<div class="ca-miolo ca-um">${aro(x.tipo, x.id, x.tipo === 't' ? nomeT(x.id) : '', pal, 'ca-maior', de)}</div>`;
@@ -465,7 +478,7 @@ TO.cartaz = (function(){
     const arroba = arrobaDe(o);
     const ft = fotoDoPost(m), kf = chaveDaFotoPost(m), url = ft ? (ft.img || fotos.get(kf)) : null;
     const pede = ft && !ft.img;
-    return `<figure class="cartaz cz-arte${url ? ' com-foto' : ''}${ft && ft.img ? ' foto-lugar' : ''}" style="--e:${pal.escura};--v:${pal.viva}"${pede ? ` data-ca-foto="${esc(kf)}"` : ''}>`+
+    return `<figure class="cartaz cz-arte${url ? ' com-foto' : ''}${ft && ft.img ? ' foto-lugar' : ''}" style="${varsDe(pal)}"${pede ? ` data-ca-foto="${esc(kf)}"` : ''}>`+
       tarja(ano, pal, 'esq')+tarja(ano, pal, 'dir')+
       `<div class="ca-papel">`+
         `<img class="ca-foto" alt=""${url ? ` src="${url}"` : ''}><div class="ca-veu"></div>`+
@@ -474,7 +487,7 @@ TO.cartaz = (function(){
         `<div class="ca-aba"></div>`+
         `<div class="ca-topo">${aro('t', m.de, o.nome, pal, 'ca-brasao')}</div>`+
         titulo(sp.tit, pal)+
-        (sp.sub ? `<div class="ca-sub" style="color:${pal.escura}">${esc(sp.sub)}</div>` : '')+
+        (sp.sub ? `<div class="ca-sub" style="color:${pal.texto}">${esc(sp.sub)}</div>` : '')+
         /* COM A FOTO, O FOCO É A FOTO (dono, 04/10/2026: "em alguns casos
            pode remover os escudos dessa parte inferior pra focar melhor na
            imagem"): sai o escudo que só repete quem aparece na cena — o

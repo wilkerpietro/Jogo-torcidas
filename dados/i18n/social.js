@@ -713,5 +713,8 @@ TO.i18n.registrar({
   "Olha o que a {nome} trouxe pra casa: a bandeira da {perdedor}. Chegaram cheios de marra e voltaram sem nada. Vai ficar de ponta-cabeça na nossa parede pra cidade inteira ver.": {es:"Miren lo que {nome} se trajo a casa: la bandera de {perdedor}. Llegaron agrandados y se volvieron sin nada. Va a quedar dada vuelta en nuestra pared para que la vea toda la ciudad.", en:"Look what {nome} brought home: {perdedor}'s flag. They showed up full of swagger and left with nothing. It'll hang upside down on our wall for the whole city to see."},
   "Olha o que a {nome} trouxe pra casa: a faixa da {perdedor}. Chegaram cheios de marra e voltaram sem o pano. Vai ficar de ponta-cabeça na nossa parede pra cidade inteira ver.": {es:"Miren lo que {nome} se trajo a casa: el trapo de {perdedor}. Llegaron agrandados y se volvieron sin el trapo. Va a quedar dado vuelta en nuestra pared para que lo vea toda la ciudad.", en:"Look what {nome} brought home: {perdedor}'s banner. They showed up full of swagger and left without it. It'll hang upside down on our wall for the whole city to see."},
   "Pano de quem foge a gente estende de cabeça pra baixo. {perdedor}, a faixa de vocês virou troféu da {nome}. Podem chorar nos comentários.": {es:"El trapo del que se escapa lo colgamos dado vuelta. {perdedor}, su trapo ahora es trofeo de {nome}. Pueden llorar en los comentarios.", en:"A runner's banner gets stretched out upside down. {perdedor}, your banner is now a {nome} trophy. Feel free to cry in the comments."},
-  "A {zona}": {es:"LA {zona}", en:"THE {zona}"}
+  "A {zona}": {es:"LA {zona}", en:"THE {zona}"},
+  "CORRERAM": {es:"CORRIERON", en:"THEY RAN"},
+  "na {bairro}": {es:"en {bairro}", en:"in {bairro}"},
+  "no {bairro}": {es:"en {bairro}", en:"in {bairro}"}
 });

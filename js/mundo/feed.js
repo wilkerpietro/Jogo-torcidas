@@ -569,7 +569,7 @@ TO.feed = (function(){
       const gaba = dom ? ' ' + _t('{bairro} tá cada vez mais nosso: +{g} na barra.',
         {bairro:dom.bairro, g:U.numero ? U.numero(dom.ganho, 1) : dom.ganho}) : '';
       /* a foto do post (04/10/2026): o lugar da briga, quem apanhou e o pano */
-      const arte = {cena:LUGAR_CENA[lugarDaBriga(r)] || 'rua', perd:D.id,
+      const arte = {cena:LUGAR_CENA[lugarDaBriga(r)] || 'rua', perd:D.id, bairro:nomeDoBairro((r.dominio || {}).bairro) || nomeDoBairro(r.bairro),
                     pano:r.pano && r.pano.para === V.nome ? r.pano.tipo : null};
       const pai = mensagemDe(E, V.id, textoDaZoeira(r, P, h) + gaba, 'zoeira', {publico:true, zona, chave:`zoeira|${abs}|${V.id}|${D.id}`, arte});
       if(zona) P.nome = V.nome;
@@ -1215,6 +1215,8 @@ TO.feed = (function(){
      vencemos (chamadas de registrarConfronto) --- */
   const jogoDaCena = c => /^treta-/.test(c) ? 'treta marcada' : c === 'bar' ? 'ataque ao bar'
     : /^emb-/.test(c) ? 'emboscada na estrada' : '';
+  /* o bairro vem como nome (a briga da IA) ou como o objeto do domínio */
+  const nomeDoBairro = x => !x ? '' : typeof x === 'string' ? x : (x.nome || '');
   function postsDaNossaBriga(E, d, a, b, cena, vale, extra){
     extra = extra || {};
     if(!d.torcidaId || !b.nome) return;
@@ -1276,7 +1278,8 @@ TO.feed = (function(){
       ? DEBOCHE[(h >> 5) % DEBOCHE.length] : textoDaZoeira(reg, P, h);
     const pai = (d.ganhamos || !tregua)
       ? mensagemDe(E, V.id, texto, 'zoeira', {publico:true, chave:`nossa-zoeira|${abs}|${V.id}|${Dr.id}`,
-          arte:{cena:String(cena || 'rua').replace(/-3d$/, ''), perd:Dr.id, pano:reg.pano ? reg.pano.tipo : null}})
+          arte:{cena:String(cena || 'rua').replace(/-3d$/, ''), perd:Dr.id, pano:reg.pano ? reg.pano.tipo : null,
+                bairro:nomeDoBairro((d.dominio || {}).bairro) || nomeDoBairro(d.local && d.local.bairro) || ''}})
       : null;
     /* a resposta de quem perdeu: a deles sempre que a briga valeu
        prestígio (os textos de volta aprovados pelo dono, 18/08/2026),

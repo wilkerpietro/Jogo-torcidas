@@ -9096,6 +9096,25 @@ Dois defeitos que se alimentavam:
 - O post da zona que venceu na resenha diz a zona: "A LESTE É NOSSA!"
   (era "A ZONA É NOSSA!").
 
+## A arte na ordem das cores da torcida, e "CORRERAM NO GENIBAÚ" (o dono, 04/10/2026: "Esse fundo branco tem que ser sempre o fundo na cor primária da torcida, e o texto na cor secundária+terciária quando tiver. As barras do lado direito na cor secundária e o texto das barras na primária" e "em vez de ser A CIDADE É NOSSA é melhor CORRERAM NO GENIBAÚ")
+
+- A paleta da arte agora segue a ORDEM das cores da torcida
+  (`coresDaTorcida`): o papel é a primária (e o degradê por cima da foto
+  também); o título, a secundária em cima e a terciária embaixo (sem
+  terceira, a secundária inteira); as tarjas dos dois lados, a
+  secundária, com o "DESDE" na primária; os triângulos, a terciária; os
+  cantos e o fio de cima do rodapé, a secundária; o de baixo, a terciária.
+  Torcida de uma cor só: a segunda é um tom dela. Nada de fora da torcida.
+- O texto miúdo (rodapé com os @, rótulo e valor das etiquetas,
+  subtítulo) vai na das duas — secundária ou terciária — que mais
+  contrasta com o fundo: o vermelho da JGT some no azul dela, o branco
+  (a terceira) não. As etiquetas ficam nessa cor com o texto na primária.
+- A treta vencida diz onde: CORRERAM NO GENIBAÚ (o bairro do domínio da
+  briga, guardado em `m.arte.bairro`); sem bairro, segue A CIDADE É
+  NOSSA!. Bairro não tem tabela de gênero: a primeira palavra terminada
+  em "a" pede "NA" (Maraponga, Granja Portugal, Aldeota), o resto "NO"
+  (Genibaú, Bom Jardim, José Walter).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
