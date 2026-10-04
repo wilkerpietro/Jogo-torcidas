@@ -9081,6 +9081,21 @@ Dois defeitos que se alimentavam:
   dono de 30/09 entre elas; a zoeira guarda o lugar, quem apanhou e o pano
   (`m.arte`), e o título da arte vira FAIXA/BANDEIRA TOMADA!.
 
+## A arte só com as cores da torcida, e "A LESTE É NOSSA!" (o dono, 04/10/2026: "Algumas torcidas estão colocando a cor preta sem estar no plano de cores da torcida. Isso não pode acontecer" e, no post da zona que segurou a resenha, "é melhor A LESTE É NOSSA")
+
+- A paleta da arte punha preto em duas situações: quando a viva e a
+  escura tinham luz parecida (o azul e o vermelho da Jovem Garra
+  Tricolor) e quando a torcida não tinha cor escura. Agora a escura é a
+  mais escura da torcida (nenhuma escura: um tom fechado da própria cor)
+  e a viva, a mais saturada das outras, mesmo de luz parecida — o amarelo
+  do detalhe da Cearamor entra. Torcida de uma cor só (mais o branco):
+  dois tons dela; preta e branca: preto e cinza. O valor das etiquetas e
+  o rodapé, que eram pretos fixos, também vão na escura da torcida.
+  Conferido nas 387 torcidas: as duas cores são sempre dela ou um tom
+  dela.
+- O post da zona que venceu na resenha diz a zona: "A LESTE É NOSSA!"
+  (era "A ZONA É NOSSA!").
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

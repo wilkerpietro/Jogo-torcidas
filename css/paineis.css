@@ -2744,11 +2744,11 @@ header.capa-cidade{background-size:cover; background-position:center;
 .ca-etq small{font:400 3cqw/1 'Anton','Impact',sans-serif;letter-spacing:.06em;text-transform:uppercase}
 .ca-etq-cx{display:flex;align-items:center;gap:1.2cqw;background:#fff;padding:1.2cqw 2.4cqw 1.2cqw 1.4cqw;border-radius:1cqw;
   box-shadow:0 .6cqw 1.6cqw #0003;max-width:100%}
-.ca-etq-cx b{font-family:'Anton','Impact',sans-serif;font-weight:400;color:#151515;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ca-etq-cx b{font-family:'Anton','Impact',sans-serif;font-weight:400;color:var(--e);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ca-pin{width:4.6cqw;height:6cqw;flex:none}
 .ca-pe{width:76cqw;margin:0 0 4cqw;padding:1.1cqw 0;display:flex;justify-content:space-around;gap:2cqw;position:relative;
   border-top:.6cqw solid var(--v);border-bottom:.9cqw solid var(--e);
-  font:700 3.2cqw/1 'Barlow Condensed','Archivo Narrow',sans-serif;color:#2a2a2a;letter-spacing:.01em}
+  font:700 3.2cqw/1 'Barlow Condensed','Archivo Narrow',sans-serif;color:var(--e);letter-spacing:.01em}
 .ca-pe span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .post-torcida .cz-arte{margin-left:auto;margin-right:auto}
 

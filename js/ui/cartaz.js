@@ -236,16 +236,29 @@ TO.cartaz = (function(){
     return (Math.max(...v) - Math.min(...v)) / 255;
   };
   /* a escura (tarjas, metade de baixo do título) e a viva (triângulos,
-     metade de cima): torcida preta e branca fica preta e cinza */
+     metade de cima). SÓ AS CORES DA TORCIDA (o dono, 04/10/2026: "algumas
+     torcidas estão colocando a cor preta sem estar no plano de cores da
+     torcida. Isso não pode acontecer"): a escura é a mais escura dela —
+     nenhuma escura, um tom fechado da própria cor —; a viva, a mais
+     saturada das outras, mesmo de luz parecida (o azul e o vermelho da
+     JGT). Uma cor só (mais o branco): dois tons dela. Preta e branca:
+     preto e cinza, a mistura das duas. */
+  const sombra = (c, k) => '#' + [0, 2, 4].map(i => Math.round(parseInt(c.slice(1 + i, 3 + i), 16) * k)
+    .toString(16).padStart(2, '0')).join('');
+  const clarear = (c, k) => '#' + [0, 2, 4].map(i => { const v = parseInt(c.slice(1 + i, 3 + i), 16);
+    return Math.round(v + (255 - v) * k).toString(16).padStart(2, '0'); }).join('');
   function paleta(id){
     const o = TO.mundo.torcida(id) || {};
     const cr = TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(o) : {};
-    const cs = [cr.cor, cr.cor2, cr.cor3].filter(Boolean);
-    let escura = cs.slice().sort((a, b) => lum(a) - lum(b))[0] || '#151515';
-    if(lum(escura) > .42) escura = '#151515';
-    const vivas = cs.filter(c => c !== escura && lum(c) < .8).sort((a, b) => satur(b) - satur(a));
-    let viva = vivas[0] || (lum(cs[0] || '#fff') >= .8 && cs[0] !== escura && satur(cs[0]) > .2 ? cs[0] : null);
-    if(!viva || Math.abs(lum(viva) - lum(escura)) < .06) viva = escura === '#151515' ? '#6b6b6b' : '#151515';
+    const cs = [cr.cor, cr.cor2, cr.cor3].filter(c => /^#[0-9a-f]{6}$/i.test(c || ''));
+    if(!cs.length) return {escura:'#333333', viva:'#777777'};
+    const base = cs.slice().sort((a, b) => lum(a) - lum(b))[0];
+    let escura = lum(base) > .42 ? sombra(base, .5) : base;
+    let viva = cs.filter(c => c !== base && lum(c) < .9).sort((a, b) => satur(b) - satur(a))[0];
+    if(!viva){
+      if(satur(base) > .2){ viva = base; if(escura === base) escura = sombra(base, .55); }
+      else viva = clarear(escura, .45);
+    }
     return {escura, viva};
   }
   const arrobaDe = o => '@' + String(TO.mundo.siglaTorcida(o) || o.nome || '')
@@ -358,7 +371,9 @@ TO.cartaz = (function(){
       case 'zoeira': return {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
       case 'nossa-zoeira': return {tit:[_t('A CIDADE'), _t('É NOSSA!')], miolo:vs(parteDaChave(m, 3))};
       case 'pixo': return {tit:[_t('O MURO'), _t('É NOSSO!')], miolo:vs(parteDaChave(m, 3))};
-      case 'zona-casa': return {tit:[_t('A ZONA'), _t('É NOSSA!')], miolo:eu};
+      /* a zona que venceu fala da zona dela (dono, 04/10/2026: "A LESTE É NOSSA") */
+      case 'zona-casa': return {tit:m.zona ? [_t('A {zona}', {zona:MAIUS(_t(m.zona))}), _t('É NOSSA!')]
+                                           : [_t('A ZONA'), _t('É NOSSA!')], miolo:eu};
       case 'tregua': return {tit:[_t('NOTA'), _t('PÚBLICA')], sub:_t('PROPOSTA DE TRÉGUA'), miolo:par(nossa)};
       case 'treta-msg': return {tit:[_t('TRETA'), _t('MARCADA')], miolo:vs(nossa),
         pins:[a.bairro && {rot:_t('LOCAL'), val:a.bairro}, {rot:_t('HORÁRIO'), val:_t('Hoje à noite')}].filter(Boolean)};
