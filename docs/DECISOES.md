@@ -8982,6 +8982,27 @@ O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida
   espaços do texto, inclusive de dentro dos nomes ("Força Azul" virava
   "ForçaAzul"). Agora só o base64 perde os espaços.
 
+## Matéria velha e itinerário antigo voltando ao feed (o dono, 04/10/2026: "apareceu umas mensagens no feed do futebol e porrada e do Gazeta dos sports que agora devem aparecer somente via rede social, assim como uns itinerários finalizados de partidas antigas")
+
+Dois defeitos que se alimentavam:
+
+- O filtro do feed escondia a matéria do jornal só enquanto o post dela
+  estivesse na rede social. A rede guarda 300 posts; cheia, apaga os mais
+  velhos, e a matéria voltava. Agora as matérias de jornal (rodada,
+  almanaque, LNT, obra; a treta já saía) ficam fora do feed pelo tipo,
+  sempre — o cartão que pede decisão continua.
+- `atualizarFeed` punha no TOPO todo cartão que precisava ser desenhado e
+  já tinha saído da tela, e cortava sempre o último nó. A matéria que
+  voltava subia pro topo, o corte levava um cartão que ainda estava na
+  janela, e esse voltava no dia seguinte, também no topo — a corrente que
+  trazia itinerários de jogos de semanas atrás como se fossem novos. Agora
+  sai do DOM o que saiu da janela e cada cartão entra na posição dele na
+  história; o fade de chegada só vale pro que entra acima do que já
+  estava na tela.
+- Medido em 300 dias de jogo, com o feed desenhado a cada dia: antes, 49
+  dias com o feed fora de ordem e 14 com matéria de jornal na tela; agora,
+  nenhum. (O cartão ganhou `data-id`, pra conferência.)
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

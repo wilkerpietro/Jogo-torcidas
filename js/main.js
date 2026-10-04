@@ -884,6 +884,14 @@
      almanaque, a LNT, a obra) sai do rolo; a página inteira continua em
      Notícias → Arquivo, aberta pelo "Ler a matéria" do post. Cartão
      que pede decisão nunca sai: o "Hoje tem… Iniciar partida" fica. */
+  /* PELO TIPO, NÃO PELO POST (correção do dono, 04/10/2026): o filtro
+     olhava se o post do jornal ainda estava na rede — e a rede guarda
+     300 posts. Cheia, ela apaga os mais velhos, e a matéria cujo post
+     saiu voltava pro feed (numa partida de 400 dias, em 65 deles havia
+     uma Gazeta no feed). As matérias de jornal saem do feed sempre; o
+     post que a rede ainda tem continua valendo pra qualquer outro tipo. */
+  const MATERIA_DE_JORNAL = new Set(['rodada', 'almanaque',
+                                     'lnt-fundacao', 'lnt-fim', 'obra']);
   function feedVisivel(e){
     const naRede = new Set();
     for(const m of (e.mensagens || [])){
@@ -891,7 +899,7 @@
       if(k && k.indexOf('jornal|') === 0) naRede.add(+k.slice(7));
     }
     return (e.feed || []).filter(m => m.kind !== 'confronto' &&
-      !(naRede.has(m.id) && m.peso !== 'decisao'));
+      (m.peso === 'decisao' || !(MATERIA_DE_JORNAL.has(m.kind) || naRede.has(m.id))));
   }
   let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null;
   let feedVistas = new Map();
@@ -1574,20 +1582,43 @@
       noFeedLista.innerHTML = '';
       feedVistas = new Map();
     }
-    /* de trás pra frente: cada uma entra por cima da anterior, então a
-       última a entrar é a mais nova — que é a que fica no topo */
+    /* A LISTA SEGUE A ORDEM DA HISTÓRIA (correção do dono, 04/10/2026:
+       "apareceu umas mensagens no feed do Futebol e Porrada e da Gazeta…
+       assim como uns itinerários finalizados de partidas antigas"). O
+       laço antigo punha NO TOPO todo cartão que precisava ser desenhado
+       e já tinha saído da tela, e cortava sempre o último nó. Um cartão
+       velho que voltava (a matéria cujo post saiu da rede, o itinerário
+       que fechou) subia pro topo, o corte levava um cartão que ainda
+       estava na janela, e esse voltava no dia seguinte — também no topo:
+       uma corrente que fazia partidas de semanas atrás reaparecerem como
+       novas. Agora sai do DOM o que saiu da janela, e cada cartão entra
+       na posição dele. */
     /* a mensagem que CHEGA (não a da primeira pintura) entra suave, com
-       um fade descendo (dono, 01/10/2026) */
+       um fade descendo (dono, 01/10/2026) — só as que entram acima da
+       primeira que já estava na tela; cartão velho redesenhado não "chega" */
     const chegando = noFeedLista.children.length > 0;
-    for(let i = hist.length - 1; i >= 0; i--){
-      const m = hist[i], est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
-      if(velho && velho.estado === est && velho.no.isConnected) continue;
-      const no = cartaoSeguro(e, m);
-      if(velho && velho.no.isConnected) velho.no.replaceWith(no);
-      else { if(chegando) no.classList.add('entrando'); noFeedLista.prepend(no); }
-      feedVistas.set(m.id, {no, estado:est});
-    }
-    while(noFeedLista.children.length > teto) noFeedLista.lastChild.remove();
+    const naJanela = new Set(hist.map(m => m.id));
+    for(const [id, v] of feedVistas)
+      if(!naJanela.has(id) && v.no.isConnected) v.no.remove();
+    let ref = noFeedLista.firstChild;
+    const jaVista = hist.findIndex(m => feedVistas.has(m.id));
+    hist.forEach((m, i) => {
+      const est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
+      let no = velho && velho.no.isConnected ? velho.no : null;
+      if(!no || velho.estado !== est){
+        const novo = cartaoSeguro(e, m);
+        if(no){
+          if(ref === no) ref = no.nextSibling;
+          no.remove();
+        } else if(chegando && i < jaVista) novo.classList.add('entrando');
+        no = novo;
+        feedVistas.set(m.id, {no, estado:est});
+      }
+      if(no === ref) ref = ref.nextSibling;
+      else noFeedLista.insertBefore(no, ref);
+    });
+    /* o que sobrou depois do último da janela não é de ninguém */
+    while(ref){ const prox = ref.nextSibling; ref.remove(); ref = prox; }
     /* O MAPA DE NÓS NÃO PODE CRESCER COM A PARTIDA. Cada mensagem que
        sai da lista deixava aqui um nó solto que o navegador não libera:
        numa corrida de vinte temporadas são milhares deles, e a aba
@@ -3376,7 +3407,7 @@
 
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
-      (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
+      (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : ''), 'data-id': m.id});
     /* a voz 'torcida' é a própria torcida falando (status, intermediação),
        e a 'eixo' é o eixo de aliança: nesses dois a origem é o nome */
     const quem = m.voz === 'torcida' && m.dados && m.dados.nome
