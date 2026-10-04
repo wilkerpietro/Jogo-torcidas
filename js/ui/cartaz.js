@@ -361,6 +361,8 @@ TO.cartaz = (function(){
     const vs = b => b && b !== m.de ? {t:'vs', a:m.de, b} : eu;
     /* o #TBT da quinta (04/10/2026): a data da lembrança embaixo */
     if(k === 'tbt') return {tit:['#TBT'], sub:MAIUS(a.quando || ''), miolo:vs(a.perd)};
+    /* "RECIFE É SÓ LAZER" (04/10/2026): a cidade do maior rival, e o escudo dele de cabeça pra baixo */
+    if(k === 'lazer') return {tit:[MAIUS(a.cidade || ''), _t('É SÓ LAZER')], miolo:vs(a.perd)};
     /* A FAIXA TOMADA (04/10/2026): o troféu de guerra, de cabeça pra baixo */
     if(a.pano) return {tit:a.pano === 'bandeira' ? [_t('BANDEIRA'), _t('TOMADA!')] : [_t('FAIXA'), _t('TOMADA!')],
       miolo:vs(a.perd || parteDaChave(m, 3))};
@@ -449,7 +451,7 @@ TO.cartaz = (function(){
       case 'pixo': return {cena:'rua', grupos:[g(de, 'gaba', 4)]};
       case 'convoca': return {cena:'estadio-20', grupos:[g(de, 'festa', 7)]};
       case 'chegada': return festa('arredores');
-      case 'caravana': { const img = capaDa(a.mapa, a.cidade); return img ? {img} : null; }
+      case 'caravana': case 'lazer': { const img = capaDa(a.mapa, a.cidade); return img ? {img} : null; }
       case 'nosso-jogo': case 'resultado': return tipo === 'reclamacao' || (a.gc != null && a.gc === a.gf) ? null : festa('praca');
       case 'classico-v': case 'goleada-r': case 'titulo': case 'acesso': case 'queda-r': return festa('praca');
       case 'classico-d': case 'goleada-d': case 'queda': case 'protesto': return cobra();
@@ -511,7 +513,7 @@ TO.cartaz = (function(){
            Sem foto (sem WebGL), os escudos ficam. */
         (()=>{ const mi = sp.miolo || {t:'escudo', tipo:'t', id:m.de};
           const h = htmlDoMiolo(mi, pal, m.de);
-          return ft && /^(escudo|vs|par)$/.test(mi.t) ? h.replace('class="ca-miolo ', 'class="ca-miolo ca-so-sem-foto ') : h; })()+
+          return ft && !ft.img && /^(escudo|vs|par)$/.test(mi.t) ? h.replace('class="ca-miolo ', 'class="ca-miolo ca-so-sem-foto ') : h; })()+
         etiquetas(sp.pins, pal)+
         `<div class="ca-pe"><span>${esc(arroba)}</span><span>${esc('@loja_online_' + arroba.slice(1))}</span></div>`+
       `</div>`+

@@ -9156,6 +9156,29 @@ Dois defeitos que se alimentavam:
   tomada de pano da IA passou a guardar a semana; a de save antigo, sem
   semana, vale como passado.
 
+## "<Cidade> é só lazer" (o dono, 04/10/2026: "Quando uma torcida for numa cidade que possui maior rival e não acontece briga ou vence a briga em território inimigo, a torcida faz um post provocativo de 'Recife é só lazer'… No texto do post deve ter a frase 'entro e saio numa boa'")
+
+- No apito final, cada torcida que posta o resultado (a nossa, as da
+  praça, os maiores rivais) e jogou FORA, em outra praça, numa cidade onde
+  mora um maior rival dela (`maioresRivais`), fica anotada
+  (`E.lazerPendente`). No dia seguinte, com as brigas já contadas: se ela
+  perdeu pra esse rival ali (no dia do jogo ou na véspera), nada; se não
+  houve briga, ou se venceu, ela posta — sempre com "entro e saio numa
+  boa": "Recife é só lazer! A Bamor foi no Recife, passeou, cantou o
+  jogo inteiro e cadê a Jovem Sport? Entro e saio numa boa." / "Juazeiro
+  do Norte é só lazer! A Fúria Icasiana até tentou receber a gente, mas a
+  Leões da TUF bateu, cantou e voltou pra casa: entro e saio numa boa."
+  O texto da praia só onde a praça tem praia.
+- Clássico na própria cidade não conta (Sport x Náutico no Recife não é
+  visita).
+- A arte: "RECIFE / É SÓ LAZER", a foto da cidade no fundo e o escudo do
+  rival de cabeça pra baixo (com a foto da cidade, o escudo fica).
+- As nossas brigas não entram em `E.brigasIA`: agora toda briga nossa vai
+  pra `E.nossasBrigas` (as 40 últimas, com a praça, o dia e o resultado),
+  que é onde o "é só lazer" confere se apanhamos; e a nossa vitória com
+  folga também vai pra `E.brigasMemoraveis` — o #TBT da nossa torcida
+  passa a lembrar briga, não só pano.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

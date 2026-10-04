@@ -1179,6 +1179,82 @@ TO.feed = (function(){
     if(m){ E.tbtUsados = (E.tbtUsados || []).concat(`${c.id}|${l.k}`).slice(-200); }
   }
 
+  /* =======================================================
+     "<CIDADE> É SÓ LAZER" (pedido do dono, 04/10/2026: "Quando uma
+     torcida for numa cidade que possui maior rival e não acontece briga
+     ou vence a briga em território inimigo, a torcida faz um post
+     provocativo de 'Recife é só lazer'… No texto do post deve ter a frase
+     'entro e saio numa boa'"). No apito final, cada torcida que posta o
+     resultado (a nossa, as da praça, os maiores rivais) e jogou FORA, na
+     cidade de um maior rival dela, fica anotada; no dia seguinte, com as
+     brigas do dia já contadas, se ela não perdeu pra esse rival ali (no
+     dia do jogo ou na véspera), posta. As nossas brigas vêm de
+     `E.nossasBrigas`; as das outras, de `E.brigasIA`.
+     ======================================================= */
+  function anotarLazer(E, jogos){
+    const meu = E.torcida.clubeId, nossa = E.torcida.mapa;
+    for(const j of (jogos || [])){
+      if(j.gc == null || j.neutro || !j.c || !j.f) continue;
+      const casa = M().time(j.c) || {};
+      /* visita é em OUTRA praça: o clássico da própria cidade não conta */
+      if(!casa.mapa || (M().time(j.f) || {}).mapa === casa.mapa) continue;
+      let o = null;
+      if(j.f === meu) o = M().torcida(E.torcida.id);
+      else if((M().time(j.f) || {}).mapa === nossa || rivalDoClubeNosso(E, j.f))
+        o = rivalDoClubeNosso(E, j.f) || torcidaMaior(E, j.f);
+      if(!o) continue;
+      const rivais = (o.maioresRivais || []).filter(id => {
+        const r = M().torcida(id); return r && r.mapa === casa.mapa && r.clubeId !== j.f; });
+      if(!rivais.length) continue;
+      E.lazerPendente = (E.lazerPendente || []).filter(x => x.o !== o.id);
+      E.lazerPendente.push({o:o.id, mapa:casa.mapa, cidade:casa.cidade || nomeDaPraca(casa.mapa), rivais,
+                            ano:E.data.ano, semana:E.data.semana, dia:E.data.dia, abs:E.data.absoluto || 0});
+    }
+  }
+  function lazerDeOntem(E){
+    const abs = E.data.absoluto || 0, H = TO.mapa.hash;
+    const pend = E.lazerPendente || [];
+    const prontos = pend.filter(x => x.abs < abs);
+    E.lazerPendente = pend.filter(x => x.abs >= abs);
+    for(const x of prontos){
+      const naHora = r => r.ano === x.ano && r.semana === x.semana && (r.dia === x.dia || r.dia === x.dia - 1) && r.mapa === x.mapa;
+      let perdeu = false, venceu = null;
+      if(x.o === E.torcida.id){
+        for(const r of (E.nossasBrigas || []).filter(naHora)){
+          if(!x.rivais.includes(r.rival)) continue;
+          if(r.ganhamos) venceu = venceu || r.rival; else perdeu = true;
+        }
+      } else {
+        for(const r of (E.brigasIA || []).filter(naHora)){
+          if(!r.a || !r.b || r.ganhouA == null) continue;
+          const lado = r.a.id === x.o ? 'a' : r.b.id === x.o ? 'b' : null;
+          const outro = lado === 'a' ? r.b.id : lado === 'b' ? r.a.id : null;
+          if(!lado || !x.rivais.includes(outro)) continue;
+          if((lado === 'a') === !!r.ganhouA) venceu = venceu || outro; else perdeu = true;
+        }
+      }
+      if(perdeu) continue;
+      const o = M().torcida(x.o);
+      if(!o) continue;
+      const rival = venceu || x.rivais[H(`lazer-r|${x.abs}|${x.o}`) % x.rivais.length];
+      const P = {nome:o.nome, cidade:x.cidade, rival:(M().torcida(rival) || {}).nome || '',
+                 emCidade:TO.genero.em('cidade', x.cidade)};
+      const h = H(`lazer-t|${x.abs}|${x.o}`);
+      /* (a da praia só onde tem praia: Juazeiro do Norte não tem) */
+      const praia = !!(M().cidade(x.mapa) || {}).temPraia;
+      const texto = venceu ? [
+          _t('{cidade} é só lazer! A {rival} até tentou receber a gente, mas a {nome} bateu, cantou e voltou pra casa: entro e saio numa boa.', P),
+          _t('Território inimigo? Só se for pra {rival}. A {nome} foi {emCidade}, resolveu na rua e curtiu o resto do passeio. {cidade} é só lazer: entro e saio numa boa.', P)][h % 2]
+        : [
+          _t('{cidade} é só lazer! A {nome} foi {emCidade}, passeou, cantou o jogo inteiro e cadê a {rival}? Entro e saio numa boa.', P),
+          _t('Passeio, praia e arquibancada cheia. A {rival} sumiu, e a {nome} fez a festa {emCidade} e foi embora: entro e saio numa boa. {cidade} é só lazer!', P),
+          _t('Mais uma visita {emCidade} e nenhum sinal da {rival}. Pra {nome}, {cidade} é só lazer: entro e saio numa boa.', P)]
+          .filter((t, i) => praia || i !== 1)[h % (praia ? 3 : 2)];
+      mensagemDe(E, o.id, texto, 'provocacao', {publico:true, chave:`lazer|${x.abs}|${x.o}`,
+        arte:{k:'lazer', cidade:x.cidade, mapa:x.mapa, perd:rival}});
+    }
+  }
+
   /* no dia do jogo fora: a caravana chegou */
   function nossaChegadaHoje(E){
     const j = E.proximoJogo, abs = E.data.absoluto || 0;
@@ -1316,6 +1392,7 @@ TO.feed = (function(){
     passo('títulos',     ()=>titulosDoDia(E));
     passo('nosso jogo',  ()=>nossoJogoNoFeed(E, jogos));
     passo('resultado das torcidas', ()=>resultadosDasTorcidas(E, jogos));
+    passo('anotar lazer', ()=>anotarLazer(E, jogos));
   }
   /* o apito final solta o que estava guardado (e o dia seguinte, por
      garantia, se a partida tiver morrido no caminho) */
@@ -1333,6 +1410,7 @@ TO.feed = (function(){
     else postsDeResultado(E, jogos);
     passo('resenha',     ()=>resenhaDaSemana(E));
     passo('tbt',         ()=>tbtDaSemana(E));
+    passo('lazer',       ()=>lazerDeOntem(E));
     passo('nosso perfil',()=>nossoPerfilHoje(E));
     passo('virada',      ()=>viradaDoAno(E));
     passo('nossa chegada', ()=>nossaChegadaHoje(E));
@@ -6180,6 +6258,28 @@ TO.feed = (function(){
         b:{id:d.torcidaId, nome:b.nome || _t('Rival'), n:b.n || 0,
            feridos:b.caidos || 0, presos:b.presos || 0}
       });
+    /* AS NOSSAS BRIGAS TAMBÉM FICAM NA MEMÓRIA (04/10/2026): `brigasIA`
+       não guarda as nossas — a vitória com folga vai pra lista do #TBT
+       (`E.brigasMemoraveis`), e toda briga nossa vai pra uma lista leve
+       (`E.nossasBrigas`, as 40 últimas), que o "é só lazer" lê pra saber
+       se apanhamos na casa do rival */
+    if(d.torcidaId){
+      const pracaHoje = (()=>{ const j = E.proximoJogo;
+        return j && !j.casa && j.mapaAdv && Math.abs(E.data.dia - (j.dia || 6)) <= 1 ? j.mapaAdv : E.torcida.mapa; })();
+      E.nossasBrigas = (E.nossasBrigas || []);
+      E.nossasBrigas.unshift({ano:E.data.ano, semana:E.data.semana, dia:E.data.dia, mapa:pracaHoje,
+                              rival:d.torcidaId, ganhamos:!!d.ganhamos, empatou:!!empatou});
+      if(E.nossasBrigas.length > 40) E.nossasBrigas.pop();
+      const fv = a.caidos || 0, fp = b.caidos || 0;
+      if(d.ganhamos && !empatou && fp - fv >= 3 && fp >= 2 * Math.max(1, fv)){
+        E.brigasMemoraveis = E.brigasMemoraveis || [];
+        E.brigasMemoraveis.unshift({ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
+          cidade:cidadeDeHoje(E), mapa:pracaHoje, jogo:jogoDaCena(cena), ganhouA:true,
+          a:{id:E.torcida.id, nome:a.nome || E.torcida.nome, n:a.n || 0, feridos:fv},
+          b:{id:d.torcidaId, nome:b.nome || '', n:b.n || 0, feridos:fp}});
+        if(E.brigasMemoraveis.length > 120) E.brigasMemoraveis.pop();
+      }
+    }
     const noLote = !!(E.loteBrigas && E.loteBrigas.aberto);
     (noLote ? (m=>E.loteBrigas.brigas.push(m)) : (m=>propor(E, m)))({
       kind:'confronto', peso:'info', tipo: d.ganhamos ? 'boa' : 'ruim',
@@ -6886,7 +6986,7 @@ TO.feed = (function(){
     return {ok:true};
   }
 
-  return {INTERVALO_DROP, tbtDaSemana, lembrancasDe,
+  return {INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
