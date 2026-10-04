@@ -9037,6 +9037,19 @@ Dois defeitos que se alimentavam:
   no texto"): o cartaz de placar e de briga continua sendo só do jornal;
   a torcida ganha a arte dela, que é outra.
 
+## O escudo do rival de cabeça pra baixo (o dono, 04/10/2026, com duas prints da TUF: "É cultura da torcida organizada posicionar o escudo do rival, seja o time ou a torcida, de cabeça pra baixo em postagens")
+
+- Na arte do post de torcida, o escudo do rival sai virado 180° e
+  desbotado (cinza e branco), como nas prints — o adversário do dia de
+  jogo, da caravana e do placar, a torcida zoada, a da treta, o clube
+  rival rebaixado.
+- Rival é do ponto de vista de quem posta: a torcida que não é amiga
+  dela (irmã ou relação boa, a mesma regra de `dominio.amigas`), e o
+  clube que não é o dela e não tem torcida amiga dela. Por isso, na
+  zoeira que a rival posta contra nós, quem fica de cabeça pra baixo é o
+  NOSSO escudo. Aliada (nota de agradecimento, grade do convite) e o
+  próprio clube nunca viram.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

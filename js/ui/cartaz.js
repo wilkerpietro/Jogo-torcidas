@@ -261,9 +261,31 @@ TO.cartaz = (function(){
       Array.from({length:6}, () => `<i>${esc(_t('DESDE'))} ${esc(ano)}</i>`).join('')}</span></div>`;
 
   /* o escudo no aro, como nas prints: branco por dentro, as cores por fora */
-  function aro(tipo, id, nome, pal, cls){
+  /* O ESCUDO DO RIVAL VAI DE CABEÇA PRA BAIXO (o dono, 04/10/2026: "É
+     cultura da torcida organizada posicionar o escudo do rival, seja o
+     time ou a torcida, de cabeça pra baixo em postagens" — e, nas prints,
+     desbotado, só no branco e cinza). Rival é do ponto de vista de quem
+     posta: a torcida que não é amiga dela (irmã ou relação boa), o clube
+     que não é o dela e não tem torcida amiga dela. */
+  function amigaDe(de, outra){
+    if(!de || !outra || de === outra) return true;
+    const E = TO.estado && TO.estado.E;
+    if(E && TO.dominio && TO.dominio.amigas) return !!TO.dominio.amigas(E, de, outra);
+    const o = TO.mundo.torcida(de) || {};
+    return (o.irmandade || []).includes(outra) || (o.aliados || []).includes(outra);
+  }
+  function ehRival(de, tipo, id){
+    if(!de || !id) return false;
+    if(tipo === 't') return !amigaDe(de, id);
+    const o = TO.mundo.torcida(de) || {};
+    if(id === o.clubeId) return false;
+    const delas = (TO.mundo.torcidasDe && TO.mundo.torcidasDe(id)) || [];
+    return !delas.some(t => amigaDe(de, t.id));
+  }
+  function aro(tipo, id, nome, pal, cls, de){
     const dentro = tipo === 'c' ? marcaDoClube(id) : marcaDaTorcida(id, nome);
-    return `<span class="ca-aro${cls ? ' ' + cls : ''}" style="--e:${pal.escura};--v:${pal.viva}">${dentro}</span>`;
+    const rival = ehRival(de, tipo, id);
+    return `<span class="ca-aro${cls ? ' ' + cls : ''}${rival ? ' ca-rival' : ''}" style="--e:${pal.escura};--v:${pal.viva}">${dentro}</span>`;
   }
   /* o título: cada linha com a viva em cima e a escura embaixo */
   const titulo = (linhas, pal) => {
@@ -354,23 +376,23 @@ TO.cartaz = (function(){
   }
   const U_num = n => (TO.util && TO.util.numero) ? TO.util.numero(n) : String(n);
 
-  function htmlDoMiolo(x, pal){
+  function htmlDoMiolo(x, pal, de){
     const nomeT = id => (TO.mundo.torcida(id) || {}).nome || '';
     switch(x.t){
-      case 'par': return `<div class="ca-miolo ca-par">${aro('t', x.a, nomeT(x.a), pal)}${aro('t', x.b, nomeT(x.b), paleta(x.b))}</div>`;
-      case 'vs': return `<div class="ca-miolo ca-vs">${aro('t', x.a, nomeT(x.a), pal)}`+
-        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('t', x.b, nomeT(x.b), paleta(x.b), 'ca-menor')}</div>`;
-      case 'confronto': return `<div class="ca-miolo ca-vs">${aro('c', x.c, '', pal)}`+
-        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('c', x.f, '', pal)}</div>`;
-      case 'placar': return `<div class="ca-miolo ca-placar">${aro('c', x.c, '', pal, 'ca-menor')}`+
-        `<b class="ca-gols" style="--e:${pal.escura};--v:${pal.viva}">${esc(x.gc)}<i>×</i>${esc(x.gf)}</b>${aro('c', x.f, '', pal, 'ca-menor')}</div>`;
+      case 'par': return `<div class="ca-miolo ca-par">${aro('t', x.a, nomeT(x.a), pal, '', de)}${aro('t', x.b, nomeT(x.b), paleta(x.b), '', de)}</div>`;
+      case 'vs': return `<div class="ca-miolo ca-vs">${aro('t', x.a, nomeT(x.a), pal, '', de)}`+
+        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('t', x.b, nomeT(x.b), paleta(x.b), 'ca-menor', de)}</div>`;
+      case 'confronto': return `<div class="ca-miolo ca-vs">${aro('c', x.c, '', pal, '', de)}`+
+        `<b class="ca-x" style="--e:${pal.escura};--v:${pal.viva}">×</b>${aro('c', x.f, '', pal, '', de)}</div>`;
+      case 'placar': return `<div class="ca-miolo ca-placar">${aro('c', x.c, '', pal, 'ca-menor', de)}`+
+        `<b class="ca-gols" style="--e:${pal.escura};--v:${pal.viva}">${esc(x.gc)}<i>×</i>${esc(x.gf)}</b>${aro('c', x.f, '', pal, 'ca-menor', de)}</div>`;
       case 'anos': {
         const grade = (x.grade || []).map(id => `<span class="ca-g">${marcaDaTorcida(id, nomeT(id))}</span>`).join('');
         return `<div class="ca-miolo ca-anos">`+
           (x.n ? `<div class="ca-selo" style="--e:${pal.escura};--v:${pal.viva}"><b>${esc(x.n)}</b><i>${esc(_t('Anos'))}</i></div>` : aro('t', x.id, nomeT(x.id), pal))+
           (grade ? `<div class="ca-grade">${grade}</div>` : '')+`</div>`;
       }
-      case 'escudo': return `<div class="ca-miolo ca-um">${aro(x.tipo, x.id, x.tipo === 't' ? nomeT(x.id) : '', pal, 'ca-maior')}</div>`;
+      case 'escudo': return `<div class="ca-miolo ca-um">${aro(x.tipo, x.id, x.tipo === 't' ? nomeT(x.id) : '', pal, 'ca-maior', de)}</div>`;
     }
     return '';
   }
@@ -388,7 +410,7 @@ TO.cartaz = (function(){
         `<div class="ca-topo">${aro('t', m.de, o.nome, pal, 'ca-brasao')}</div>`+
         titulo(sp.tit, pal)+
         (sp.sub ? `<div class="ca-sub" style="color:${pal.escura}">${esc(sp.sub)}</div>` : '')+
-        htmlDoMiolo(sp.miolo || {t:'escudo', tipo:'t', id:m.de}, pal)+
+        htmlDoMiolo(sp.miolo || {t:'escudo', tipo:'t', id:m.de}, pal, m.de)+
         etiquetas(sp.pins, pal)+
         `<div class="ca-pe"><span>${esc(arroba)}</span><span>${esc('@loja_online_' + arroba.slice(1))}</span></div>`+
       `</div>`+
@@ -469,5 +491,5 @@ TO.cartaz = (function(){
     observador.observe(fig);
   }
 
-  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, paleta, get fotos(){ return fotos; }};
+  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, paleta, ehRival, get fotos(){ return fotos; }};
 })();

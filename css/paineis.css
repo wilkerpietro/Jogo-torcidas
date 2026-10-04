@@ -2683,6 +2683,8 @@ header.capa-cidade{background-size:cover; background-position:center;
   box-shadow:0 0 0 1.1cqw var(--e),0 0 0 1.6cqw var(--v),0 1.4cqw 2.4cqw #0004}
 .ca-aro .cz-escudo{width:76%;height:76%;filter:none}
 .ca-aro .cz-sigla{font-size:5cqw;border:none}
+.ca-aro.ca-rival > *{transform:rotate(180deg);filter:grayscale(1) brightness(1.15) contrast(.85);opacity:.82}
+.ca-aro.ca-rival .cz-sigla{background:#9a9a9a !important;color:#fff !important}
 .ca-aro.ca-brasao{width:19cqw;height:19cqw;box-shadow:0 0 0 .8cqw var(--e),0 0 0 1.2cqw var(--v),0 .8cqw 1.6cqw #0004}
 .ca-aro.ca-brasao .cz-sigla{font-size:3.2cqw}
 .ca-aro.ca-maior{width:40cqw;height:40cqw}
