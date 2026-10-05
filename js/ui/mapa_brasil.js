@@ -309,9 +309,7 @@ TO.mapaBrasil = (function(){
         `<span>${esc(_t('Muro {n}', {n:m.i + 1}))}</span><b>${m.t ? esc(nome(m.t)) : esc(_t('livre'))}</b><small>${m.t ? esc(ha(m.abs) + ' · ' + _t('desbota em {n} dias', {n:Math.max(1, (d.PIX ? d.PIX.desbota : 60) - ((e.data.absoluto || 0) - (m.abs || 0)))})) : ''}</small></li>`).join('') + '</ul>';
       if(nossos) h += `<p class="mb-nota">${esc(_t('Os nossos {n} muros aqui rendem +{v} por dia na barra.', {n:nossos, v:(nossos * 0.2).toLocaleString('pt-BR', {maximumFractionDigits:1})}))}</p>`;
     }
-    const meus = est.filter(s => s.tid === meu && s.tipo !== 'sede');
-    if(meus.length && b.dono && b.dono !== meu && d.rivais(e, meu, b.dono))
-      h += `<p class="mb-efeito ruim">${esc(_t('Os nossos pontos aqui rendem 30% menos: o bairro é da {nome}, rival.', {nome:nome(b.dono)}))}</p>`;
+    /* (o aviso de "rendem 30% menos" saiu com o corte, 05/10/2026) */
     caixa.innerHTML = h;
     /* o que dá pra fazer (só na nossa cidade) */
     const pe = document.createElement('div');

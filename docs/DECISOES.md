@@ -9200,6 +9200,18 @@ Dois defeitos que se alimentavam:
   21/09) continua — é cobrança, não resultado. O "é só lazer" segue
   anotando as visitas no apito final, sem o post do resultado.
 
+## Fora: a chegada da caravana, o pixo coberto e o corte de 30% no bairro da rival (o dono, 05/10/2026: "remova os posts 'Caravana na área! A Leões da TUF chegou em Goiania e vai fazer a festa no setor visitante.', 'Passamos por cima do pixo da Leões da TUF em Genibaú. O muro agora fala outra língua.'. Acabe com o debuff de 'Os nossos pontos aqui rendem 30% menos: o bairro é da Falange Coral, rival.'")
+
+- Saiu o post da chegada no dia do jogo fora (`nossaChegadaHoje`, as duas
+  frases). A "CARAVANA CONFIRMADA" de antes da viagem continua.
+- Saiu o post da rival que cobre o nosso muro de pixação; cobrir o muro
+  continua valendo no domínio, só não vira post.
+- O corte de 30% na receita de bar, loja, subsede e festa da sede em
+  bairro de dona rival acabou, pra nós e pras IAs: `dominio.fator` vale 1
+  e `notaDoCorte` não escreve nada (as duas ficam, que o financeiro, o
+  patrimônio, as ações e a IA chamam); o aviso do cartão do bairro saiu.
+  O peso da torcida do bairro na receita (`fatorTorcida`) continua.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

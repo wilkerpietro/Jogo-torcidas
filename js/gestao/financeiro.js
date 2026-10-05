@@ -369,7 +369,7 @@ TO.financeiro = (function(){
 
     const fator = fatorComercial(E) * multMoral(E);
     const hoje = absDe(E);
-    /* O BAIRRO DE RIVAL CORTA 30% (o dono, 30/09/2026): bar, loja,
+    /* O BAIRRO DE RIVAL CORTAVA 30% (o dono, 30/09/2026; acabou em 05/10/2026, o fator vale 1): bar, loja,
        subsede e subsede de fora em bairro cuja dona é rival rendem 70% —
        a linha diz de quem é o bairro (js/mundo/dominio.js) */
     const D = TO.dominio, eu = E.torcida.id;

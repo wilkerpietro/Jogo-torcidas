@@ -859,7 +859,7 @@ TO.acoes = (function(){
            fraca paga. Abaixo disso é vaquinha, e vaquinha é escolha
            ruim — não é impossibilidade. */
         const custo = custoFesta(E);
-        /* a sede em bairro de dona rival: a festa rende 30% menos (o
+        /* a sede em bairro de dona rival: a festa rendia 30% menos (acabou em 05/10/2026; o
            domínio dos bairros, 30/09/2026) — o público tem medo de ir */
         const corte = TO.dominio ? TO.dominio.fator(E, E.torcida.id, E.torcida.mapa,
                                                     (TO.mundo.bairroDaSede(E.torcida)||{}).nome) : 1;

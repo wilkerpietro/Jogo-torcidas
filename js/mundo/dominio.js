@@ -41,9 +41,11 @@
    a subsede que ele já tem.
 
    A RECEITA. Bar, loja, subsede (e a festa da sede) em bairro cuja
-   dona é RIVAL da torcida rendem 30% menos. Rival é a relação de
-   hoje (Rival ou Maior Rival); vizinha neutra, aliada ou irmã não
-   corta nada.
+   dona era RIVAL da torcida rendiam 30% menos — o corte acabou (o dono,
+   05/10/2026: "Acabe com o debuff de 'Os nossos pontos aqui rendem 30%
+   menos: o bairro é da Falange Coral, rival'"): `fator` vale 1 sempre
+   e `notaDoCorte` não escreve nada; ficam as duas, que o financeiro, o
+   patrimônio e a IA chamam.
 
    A TORCIDA DO BAIRRO (o dono, 01/10/2026): cada bairro tem quantos
    torcedores de cada clube moram nele — o clube da praça mora na
@@ -65,7 +67,7 @@ TO.dominio = (function(){
   /* ---- as réguas (o dono, 30/09/2026) ---- */
   const DOMINA = 50;                 // mais que isto na barra: dona do bairro
   const DIA = 0.02;                  // 0,1 na régua de 0 a 100
-  const CORTE = 0.7;                 // receita em bairro de rival: −30%
+  const CORTE = 1;                   // receita em bairro de rival: sem corte desde 05/10/2026
   /* A SEDE NÃO TEM MAIS TETO (o dono, 02/10/2026: "o bairro da sede pode
      ser perdido pela torcida também e isso reduz a moral em 0,2 por dia.
      não existe mais essa trava de 80% mas o bairro da sede dá 0,5 por
@@ -566,19 +568,11 @@ TO.dominio = (function(){
     if(E && R && R.relacaoDelas) return R.relacaoDelas(E, a, b) < -15;
     return ehRival(a, b);
   }
-  /* o fator da receita de um ponto: 0,7 em bairro de dona rival */
-  function fator(E, tid, cid, b){
-    const x = bairro(cid, b);
-    if(!E || !x) return 1;
-    const d = donaDoBairro(E, cid, x.id);
-    return d && d !== tid && rivais(E, tid, d) ? CORTE : 1;
-  }
+  /* o fator da receita de um ponto: era 0,7 em bairro de dona rival; o
+     corte acabou em 05/10/2026 (ver A RECEITA, no alto) */
+  function fator(){ return 1; }
   /* a nota que a linha do financeiro leva quando corta */
-  function notaDoCorte(E, tid, cid, b){
-    const x = bairro(cid, b);
-    if(!x || fator(E, tid, cid, x) === 1) return '';
-    return _t('bairro da {sigla} −30%', {sigla:siglaDe(donaDoBairro(E, cid, x.id))});
-  }
+  function notaDoCorte(){ return ''; }
   function siglaDe(tid){
     const o = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : indice().O.find(x => x.id === tid);
     if(!o) return tid;
@@ -1200,10 +1194,8 @@ TO.dominio = (function(){
     if(!gastarPix(E, tid)) return {ok:false, msg:_t('Acabaram as pixações deste mês.')};
     const de = m.t;
     pixCidade(E, cid)[`${x.id}#${m.i}`] = `${tid}|${E.data.absoluto || 0}`;
-    /* cobriram o NOSSO muro: a rival se gaba na rede (uma vez por dia) */
-    if(de && de === eu(E) && TO.feed && TO.feed.mensagemDe)
-      TO.feed.mensagemDe(E, tid, _t('Passamos por cima do pixo da {nossa} em {bairro}. O muro agora fala outra língua.',
-        {nossa:nomeDe(de), bairro:x.nome}), 'zoeira', {publico:true, chave:`pixo|${E.data.absoluto}|${tid}|${de}`});
+    /* (o post da rival que cobriu o nosso muro — "Passamos por cima do
+       pixo da…" — saiu, pedido do dono, 05/10/2026) */
     return {ok:true, i:m.i, cobriu:de, msg: de
       ? _t('Pixamos por cima da {de} em {bairro}: +0,2 por dia pra gente ali.', {de:nomeDe(de), bairro:x.nome})
       : _t('Pixamos um muro em {bairro}: +0,2 por dia pra gente ali.', {bairro:x.nome})};

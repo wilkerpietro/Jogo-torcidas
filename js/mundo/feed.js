@@ -1191,17 +1191,9 @@ TO.feed = (function(){
     }
   }
 
-  /* no dia do jogo fora: a caravana chegou */
-  function nossaChegadaHoje(E){
-    const j = E.proximoJogo, abs = E.data.absoluto || 0;
-    if(!j || j.casa || j.dia !== E.data.dia || !j.mapaAdv) return;
-    const P = {nome:E.torcida.nome, emCidade:emPraca(j.mapaAdv), clube:nomeClube(E.torcida.clubeId)};
-    const op = [
-      _t('A {nome} já está {emCidade}! Hoje a arquibancada visitante tem dono. Vamos, {clube}!', P),
-      _t('Caravana na área! A {nome} chegou {emCidade} e vai fazer a festa no setor visitante.', P)];
-    mensagemDe(E, E.torcida.id, op[TO.mapa.hash(`chegada|${abs}`) % op.length], 'caravana',
-      {publico:true, chave:`chegada|${j.chave || abs}`, arte:{cidade:(M().cidade(j.mapaAdv) || {}).nome || ''}});
-  }
+  /* (o post da chegada — "Caravana na área! A {nome} chegou em…" — saiu,
+     pedido do dono, 05/10/2026) */
+
 
   const MARCO = n => n < 1000 ? 50 : 100;
   function fotoDaCasa(E){
@@ -1347,7 +1339,6 @@ TO.feed = (function(){
     passo('lazer',       ()=>lazerDeOntem(E));
     passo('nosso perfil',()=>nossoPerfilHoje(E));
     passo('virada',      ()=>viradaDoAno(E));
-    passo('nossa chegada', ()=>nossaChegadaHoje(E));
     passo('nossa casa',  ()=>nossaCasaNoFeed(E));
   }
 
