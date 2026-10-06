@@ -9392,6 +9392,15 @@ O pedido: "exclua essa parte de sede vaga que não tem sentido. crie um modelo d
 
 **As escolhas que o pedido deixou em aberto** (dá pra mudar depois): na praça de várias cidades, a filial diz a cidade do bairro (SUBSEDE ITU, não SUBSEDE INTERIOR DE SP — o nome da praça ali não é nome de cidade); a faixa de cima e o toldo da subsede vão na cor mais escura das duas da torcida (o verde da Mancha, o vermelho da Independente, como nas fotos), não na cor 1; a loja e a subsede podem ficar a menos de 50 m do estádio quando o bairro não tem lote mais longe (no bairro do estádio a casa larga é toda do entorno) — a regra dos 50 m segue valendo pra sede e bar; o pátio da subsede, no lote raso, tem uns 3 m de fundo (uma mesa, os surdos, a TV). Detalhes e medidas: `docs/JOGO_3D.md` §39.
 
+## O post do jornal é a página do jornal (dono, 06/10/2026)
+
+O pedido: "preciso que ajuste os posts do futebol e porrada e gazeta dos sports pra ter aquele layout de página de jornal que já está no jogo. aparece junto com os posts da rede social."
+
+- **O post da Gazeta dos Sports e do Futebol e Porrada na rede social é o recorte do jornal**, o mesmo papel do recorte do canto e das páginas de Notícias: o nome do jornal, o chapéu, a manchete e o olho. Sai o cartaz de Instagram e sai a legenda; ficam o perfil, a hora e o menu em cima, e as curtidas e o "Ler a matéria" embaixo — foi o jornal que postou a página dele.
+- **Com a matéria no histórico, é a página dela** (a nossa treta, o nosso jogo, o almanaque, a LNT, a obra). **Sem matéria** (a maior briga do dia pelo país, o jogo de outro time da cidade, o save antigo), a página sai do post: o chapéu antes do " · ", a manchete do cartaz e o texto do post como corpo.
+- **O que o cartaz mostrava vira coisa de jornal**: no Porrada, a foto da briga com os bonecos abaixo da manchete, com a legenda e o quadro curto da noite (envolvidos, feridos e presos); na Gazeta, o placar grande.
+- Vale na coluna da rede, em Notícias → Mensagens e no aviso do canto com a rede recolhida. Feito no ramo do 3D (`main.js`, `paginaDoPost`); o jogo 2D publicado segue com o cartaz até o próximo sync. Detalhes: `docs/JOGO_3D.md` §42.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

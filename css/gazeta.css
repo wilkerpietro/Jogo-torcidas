@@ -514,3 +514,31 @@
   .gz.gz-canto .placar-grande .time{font-size:13px}
   .gz.gz-canto .placar-grande .n{font-size:20px}
 }
+
+/* =========================================================
+   A PÁGINA NO POST (pedido do dono, 06/10/2026: "ajuste os posts do
+   futebol e porrada e gazeta dos sports pra ter aquele layout de página
+   de jornal que já está no jogo"). O post do jornal na rede social é o
+   recorte do canto (main.js, `paginaDoPost`), com o que o cartaz mostrava
+   virado coisa de jornal: a foto da briga, a legenda e o quadro curto da
+   noite no Futebol e Porrada; o placar grande na Gazeta. Sem a matéria,
+   o olho é o texto inteiro do post (`.corpo`): em pé e na tinta cheia,
+   que itálico cinza não se lê em quatro frases.
+   ========================================================= */
+.gz.gz-post{margin:0 0 9px; box-shadow:0 3px 10px rgba(0,0,0,.45), 0 0 0 1px rgba(20,16,12,.6)}
+.feed-social .gz.gz-post{max-width:560px}
+.gz.gz-post .gz-manchete .olho.corpo{font-style:normal; color:var(--tinta); font-size:12px; line-height:1.38}
+.gz-foto-bloco{margin:6px 0 2px}
+.gz-foto{position:relative; margin:0; aspect-ratio:2/1; overflow:hidden; background:#b9b2a0; border:1px solid var(--tinta)}
+/* a foto impressa: menos cor e um pouco de sépia, pra morar no papel */
+.gz-foto .cz-fundo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
+  filter:saturate(.82) contrast(1.06) sepia(.12)}
+.gz-legenda{margin:3px 0 0; font-size:10.5px; line-height:1.3; font-style:italic; color:var(--tinta-2)}
+.gz-legenda b{font-style:normal}
+.gz-numeros{display:flex; justify-content:space-around; gap:8px; margin:5px 0 0; padding:3px 0;
+  border-top:1px solid var(--tinta); border-bottom:1px solid var(--tinta); font-variant-numeric:tabular-nums}
+.gz-numeros span{display:flex; flex-direction:column; align-items:center; min-width:0}
+.gz-numeros small{font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700; font-size:8.5px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--tinta-2)}
+.gz-numeros b{font-family:Ultra,Georgia,serif; font-weight:400; font-size:15px; line-height:1.15}
+.gz-pen{margin:3px 0 0; font-size:10.5px; font-style:italic; color:var(--tinta-2); text-align:center}

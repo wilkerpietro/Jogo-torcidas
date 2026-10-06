@@ -4497,3 +4497,53 @@ regra pra força de recrutamento e traga pro jogo 3d".
 - **O andar e a provocação só foram vistos em fotos paradas** (o teste roda
   sem placa de vídeo, a 2 a 8 quadros por segundo); a briga do tutorial
   abriu com os bonecos novos, mas ela espera o jogador agir.
+
+## 42. O post do jornal é a página do jornal (06/10/2026)
+
+O pedido: "preciso que ajuste os posts do futebol e porrada e gazeta dos
+sports pra ter aquele layout de página de jornal que já está no jogo. aparece
+junto com os posts da rede social".
+
+- **O que era**: o post da Gazeta dos Sports e do Futebol e Porrada na rede
+  social tinha a cara de Instagram do 2D — o cartaz 2:1 (a foto da briga com
+  os números por cima, ou o placar com o estádio ao fundo) e a legenda
+  embaixo, com o texto inteiro.
+- **O que ficou** (`main.js`, `paginaDoPost`): no lugar do cartaz e da
+  legenda, o **recorte do jornal**, o mesmo papel do recorte do canto e das
+  páginas de Notícias (`css/gazeta.css`, `.gz-canto`) — o nome do jornal, o
+  chapéu, a manchete e o olho. O perfil, a hora e o menu em cima, e as
+  curtidas e o "Ler a matéria" embaixo, continuam: foi o jornal que postou a
+  página dele.
+  - **Com a matéria no histórico** (o post que nasce de uma notícia do feed —
+    a nossa treta, o nosso jogo, o almanaque, a LNT, a obra) é a página dela,
+    a mesma do canto (`recorteDeJornal`).
+  - **Sem matéria** (a maior briga do dia pelo país, o jogo de outro time da
+    cidade — posts que nunca tiveram página —, ou save antigo com o feed
+    aparado) a página sai do post: o chapéu é o que vem antes do " · ", a
+    manchete é a do cartaz ("MOFI LEVA A MELHOR NO ATAQUE-SURPRESA",
+    "FLORESTA VENCE O FLUMINENSE DE FEIRA EM CASA") e o texto do post vira o
+    corpo, em pé e na tinta cheia (o olho itálico e cinza não se lia em
+    quatro frases).
+  - **O que o cartaz mostrava vira coisa de jornal**: no Porrada, a foto da
+    briga com os bonecos logo abaixo da manchete (a mesma foto, pela mesma
+    fila: `cartaz.js`, `fotoDoJornal`), com a legenda — as duas torcidas, o
+    vencedor em negrito, o lugar — e o quadro curto da noite (envolvidos,
+    feridos e presos dos dois lados); na Gazeta, o placar grande, com os
+    pênaltis embaixo quando houve.
+- **Onde aparece**: na coluna da rede social (340 px), em Notícias →
+  Mensagens (a página vai até 560 px) e no aviso do canto com a rede
+  recolhida (o aviso é o post inteiro).
+- **Um defeito de antes, junto**: o rodapé do post de jornal (curtidas,
+  comentários, compartilhamentos, "Ler a matéria" e a etiqueta numa linha só)
+  não cabia nos 340 px da coluna do 3D e empurrava o post inteiro pra fora,
+  com rolagem de lado — o cartaz já aparecia cortado à direita. O envelope do
+  post agora é `minmax(0,1fr)` e o rodapé quebra linha (`paineis.css`).
+- **Conferido no jogo 3D** (Fortaleza, Cearamor, 26 dias passados): 13 posts
+  de jornal em Notícias → Mensagens, todos como página — 9 do Porrada (7 da
+  briga do país, 2 da nossa treta, com a página da matéria), 2 da Gazeta com
+  o placar, 1 do almanaque —, as fotos chegando com os bonecos, nenhum post
+  passando da coluna, sem erro no console.
+- **O que fica igual, de propósito**: o recorte do canto direito
+  (`recados3d.js`) continua saindo quando a matéria cai. Com a rede aberta, a
+  mesma página aparece nos dois lados por alguns segundos; se incomodar, o
+  canto pode deixar os jornais pra rede.

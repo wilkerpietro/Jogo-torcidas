@@ -567,7 +567,8 @@ TO.cartaz = (function(){
         fotos.set(k, url);
         /* a sessão guarda as 80 mais recentes */
         if(fotos.size > 80) fotos.delete(fotos.keys().next().value);
-        for(const f of document.querySelectorAll(`.cartaz[data-cz-foto="${CSS.escape(k)}"]`)){
+        /* (o cartaz e a foto da página do jornal: `fotoDoJornal`) */
+        for(const f of document.querySelectorAll(`[data-cz-foto="${CSS.escape(k)}"]`)){
           const im = f.querySelector('.cz-fundo');
           if(im) im.src = url; else f.insertAdjacentHTML('afterbegin', `<img class="cz-fundo" src="${url}" alt="">`);
           f.classList.add('com-foto');
@@ -575,6 +576,17 @@ TO.cartaz = (function(){
       })
       .catch(()=>{ pedidas.delete(k); });
   }
+  /* A FOTO DA PÁGINA DO JORNAL (pedido do dono, 06/10/2026): o post do
+     Porrada virou a página do jornal (main.js, `paginaDoPost`), e a foto
+     dos bonecos é a foto da matéria — a mesma da arte, pela mesma fila e
+     pela mesma chave. Até ela ficar pronta, a imagem da cena. */
+  function fotoDoJornal(m){
+    if(!m || !m.card || m.card.t !== 'briga' || !doJornal(m)) return '';
+    const k = chaveDaFoto(m), foto = fotos.get(k), src = foto || cenaImg(m.card.cena);
+    return `<figure class="gz-foto${foto ? ' com-foto' : ''}" data-cz-foto="${esc(k)}">`+
+      (src ? `<img class="cz-fundo" src="${src}" alt="">` : '')+`</figure>`;
+  }
+
   let observador = null;
   const porFigura = new WeakMap();
   /* a casca chama depois de pôr o cartaz no DOM */
@@ -640,5 +652,5 @@ TO.cartaz = (function(){
     observador.observe(fig);
   }
 
-  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
+  return {html, ligar, fotoDoJornal, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
 })();

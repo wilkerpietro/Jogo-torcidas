@@ -1043,7 +1043,7 @@ table.dados tr.selecionada td{background:#252525}
 .post-quando{margin-left:auto;align-self:flex-start;font-family:var(--mono);font-size:10px;color:var(--apagado);white-space:nowrap}
 .post-texto{font-size:13.5px;line-height:1.55;color:#e4e0d8;margin:0 0 9px;overflow-wrap:anywhere}
 .post-torcida.tipo-provocacao .post-texto,.post-torcida.tipo-treta .post-texto{color:#efc2c2}
-.post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
+.post-pe{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--fraco)}
 .post-curtidas{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .post-ler{white-space:nowrap}
 .post-curtidas svg{width:15px;height:15px;color:var(--fraco);fill:none}
@@ -2831,7 +2831,10 @@ header.capa-cidade{background-size:cover; background-position:center;
   font:600 12px/1 inherit;box-shadow:0 3px 10px #000a;cursor:pointer;animation:avisoNovos .4s ease}
 @keyframes avisoNovos{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
 /* o post novo abre espaço aos poucos e aparece num fade */
-.post-envelope{display:grid;grid-template-rows:1fr;opacity:1;
+/* (a coluna é `minmax(0,1fr)`: com `auto`, o rodapé do post — curtidas,
+   "Ler a matéria" e a etiqueta numa linha só — passava da coluna estreita
+   do jogo 3D, de 340 px, e o post inteiro ia junto, com rolagem de lado) */
+.post-envelope{display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr);opacity:1;
   transition:grid-template-rows .65s cubic-bezier(.2,.7,.2,1), opacity .55s ease .1s}
 .post-envelope.fechado{grid-template-rows:0fr;opacity:0}
 .post-envelope.abrindo>*{min-height:0;overflow:hidden}
