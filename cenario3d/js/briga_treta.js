@@ -26,6 +26,8 @@
    cabe) dentro do beco (a meia largura dele) ou do campinho (e a volta
    dele, até o muro das casas) — só o que se alcança andando de quem briga.
    ========================================================= */
+import { fugasNosEixos, pontaSemCruzamento } from './fuga_rua.js?v=399d7ad099';
+
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma da caminhada)
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
@@ -68,9 +70,26 @@ export function brigaNaTreta(ctx, local, o = {}) {
     if (!campos.length) return { erro: 'a praça não tem campinho' };
     const f = campos[h % campos.length], c = f.campinho;
     const lx = c.x1 - c.x0, lz = c.y1 - c.y0, deitado = lx >= lz;
-    L = { favela: f.nome, u: deitado ? [1, 0] : [0, 1], c: [(c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2], comp: Math.max(lx, lz), meia: Math.min(lx, lz) / 2, campinho: c,
-          /* (o campinho e a volta dele: a beira de terra até o muro das casas, 1,5 m) */
-          dele: (wx, wz) => wx >= c.x0 - 1.5 * M && wx <= c.x1 + 1.5 * M && wz >= c.y0 - 1.5 * M && wz <= c.y1 + 1.5 * M };
+    /* AS VIELAS DO CAMPINHO (o dono, 06/10/2026: a fuga "somente no meio
+       da rua"): o campinho fica no canto do quarteirão, com a viela do
+       lado e a de cima correndo rente a ele — elas entram na cena, e a
+       fuga é o eixo delas onde saem dela. (O beco que passa a até 2 m da
+       beira do campinho, o eixo reto da primeira à última amostra) */
+    const naBeira = (x, z) => Math.hypot(Math.max(c.x0 - x, 0, x - c.x1), Math.max(c.y0 - z, 0, z - c.y1));
+    const distSeg = (x, z, a, b) => {
+      const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2));
+      return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t);
+    };
+    const vielas = (f.becos || []).map(b => ({ a: b.pts[0], z: b.pts[b.pts.length - 1], w: b.w })).filter(b => {
+      const n = Math.max(1, Math.ceil(Math.hypot(b.z[0] - b.a[0], b.z[1] - b.a[1]) / (0.5 * M)));
+      for (let k = 0; k <= n; k++) if (naBeira(b.a[0] + (b.z[0] - b.a[0]) * k / n, b.a[1] + (b.z[1] - b.a[1]) * k / n) <= b.w / 2 + 2 * M) return true;
+      return false;
+    });
+    L = { favela: f.nome, u: deitado ? [1, 0] : [0, 1], c: [(c.x0 + c.x1) / 2, (c.y0 + c.y1) / 2], comp: Math.max(lx, lz), meia: Math.min(lx, lz) / 2, campinho: c, vielas,
+          /* (o campinho e a volta dele: a beira de terra até o muro das casas, 1,5 m; e as vielas dele, na meia largura mais meio metro) */
+          dele: (wx, wz) => (wx >= c.x0 - 1.5 * M && wx <= c.x1 + 1.5 * M && wz >= c.y0 - 1.5 * M && wz <= c.y1 + 1.5 * M) ||
+                            vielas.some(b => distSeg(wx, wz, b.a, b.z) <= b.w / 2 + 0.5 * M) };
   }
   /* O TABULEIRO: o x ao longo do lugar, o meio dele no meio do tabuleiro */
   const u = L.u, v = [-u[1], u[0]];
@@ -132,6 +151,15 @@ export function brigaNaTreta(ctx, local, o = {}) {
     linhas.push(runs.join(','));
   }
   const R = p => ({ x: Math.round(p[0]), y: Math.round(p[1]) });
+  /* AS FUGAS NO MEIO DO BECO (fuga_rua.js): as duas pontas do eixo do beco;
+     no campinho, o eixo das vielas dele onde elas saem da cena */
+  const B = { malha, COLS, ROWS, W: TAB.W, H: TAB.H, CEL: TAB.CEL };
+  /* (a ponta de viela dentro da cena só é saída quando é ponta aberta: não
+     cai em outra viela da cena — o cruzamento — nem na beira do campinho) */
+  const c0 = L.campinho;
+  const naBocaDoCampinho = (wx, wz) => !!c0 && Math.hypot(Math.max(c0.x0 - wx, 0, wx - c0.x1), Math.max(c0.y0 - wz, 0, wz - c0.y1)) < 3 * M;
+  const fugas = fugasNosEixos(B, beco ? [[[0, meioY], [TAB.W, meioY]]] : (L.vielas || []).map(b => [doMundo(b.a[0], b.a[1]), doMundo(b.z[0], b.z[1])]),
+                              { pontaVale: pontaSemCruzamento(L.vielas || [], noMundo, M, naBocaDoCampinho) });
   const nomes = beco
     ? { nome: 'Beco', local: 'No beco da favela' + (L.favela ? ' ' + L.favela : '') + ', treta marcada', sai: ['FIM DO BECO', 'BOCA DO BECO'],
         saida: { perto: 'Furar pra fora', longe: 'Fim do beco (leve o líder)', feito: 'sua torcida furou pra fora do beco', dica: 'Leve o líder até a boca do beco do lado de lá.' } }
@@ -153,7 +181,8 @@ export function brigaNaTreta(ctx, local, o = {}) {
       { id: 'boca_leste', rot: nomes.sai[0], lado: 'mandante', ...R(pSaiNos), raio: 46, dir: [1, 0] }
     ],
     /* a PM desce pelas duas pontas */
-    pmPostos: [R(soltar(xa + 30, meioY) || pSaiDeles), R(soltar(xb - 30, meioY) || pSaiNos)]
+    pmPostos: [R(soltar(xa + 30, meioY) || pSaiDeles), R(soltar(xb - 30, meioY) || pSaiNos)],
+    ...(fugas.length ? { fugas } : {})
   };
   const chao = (x, y) => { const [wx, wz] = noMundo(x, y); return (ctx.chaoDaRua ? ctx.chaoDaRua(wx, wz) : 0) / M; };
   return { cena, noMundo, doMundo, u, v, chao, escala: K, lugar: { tipo, favela: L.favela, c: L.c, comp: L.comp / M, larg: 2 * L.meia / M },

@@ -27,7 +27,8 @@
    estádio (a rua dele, pra frente); o de quem ataca, sumir pela rua de
    onde veio. A PM chega pelas duas pontas da rua do alvo.
    ========================================================= */
-import { planejar } from './dia_de_jogo.js?v=56086e89a7';
+import { planejar } from './dia_de_jogo.js?v=399d7ad099';
+import { fugasNaRua } from './fuga_rua.js?v=399d7ad099';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma das emboscadas da caravana)
@@ -123,6 +124,9 @@ export function brigaNaCaminhada(ctx, o) {
     }
     if (fim) for (let k = 0; k < n; k++) if (!visto[k]) malha[k] = 0;
   }
+  /* AS FUGAS NO MEIO DA RUA (fuga_rua.js): o eixo de cada rua na borda */
+  const fugas = fugasNaRua({ noMundo, malha, COLS, ROWS, pxm: M / K, W: TAB.W, H: TAB.H, CEL: TAB.CEL },
+                           ctx.P && ctx.P.ehAsfalto ? (wx, wz) => ctx.P.ehAsfalto(wx, wz) : null);
   const linhas = [];
   for (let j = 0; j < ROWS; j++) {
     const runs = []; let v0 = 0, n = 0;
@@ -234,7 +238,8 @@ export function brigaNaCaminhada(ctx, o) {
     saida: somosV
       ? { perto: 'Seguir pro estádio', longe: 'Pro estádio (leve o líder)', feito: 'sua torcida furou a emboscada e seguiu pro estádio', dica: 'Leve o líder pela rua do estádio.' }
       : { perto: 'Sumir na rua', longe: 'Rua de fuga (leve o líder)', feito: 'sua torcida bateu e sumiu na rua de onde veio', dica: 'Leve o líder de volta pela rua de onde veio.' },
-    spawns, entradas, pmPostos, faixas
+    spawns, entradas, pmPostos, faixas,
+    ...(fugas.length ? { fugas } : {})
   };
   const chao = (x, y) => { const [wx, wz] = noMundo(x, y); return (ctx.chaoDaRua ? ctx.chaoDaRua(wx, wz) : 0) / M; };
   return { cena, noMundo, doMundo, u, v: vv, chao, escala: K, plano, br, P, H, malha, COLS, ROWS,

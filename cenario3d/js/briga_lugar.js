@@ -28,7 +28,8 @@
    corpo cabe) no que o lugar deixa (a quadra da praça, o lote da sede, a
    rua e a calçada) — e só o que se alcança andando de quem briga.
    ========================================================= */
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=56086e89a7';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=399d7ad099';
+import { fugasNaRua } from './fuga_rua.js?v=399d7ad099';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma da caminhada)
@@ -111,6 +112,14 @@ function meioDaRua(P, M, x0, z0, dx, dz, ate = 22) {
   }
   return a === null ? 2.5 + 4 : (a + b) / 2;
 }
+/* AS FUGAS NO MEIO DA RUA (fuga_rua.js) do tabuleiro pronto: o eixo de
+   cada rua onde ela cruza a borda; sem rua nenhuma, a cena não declara e
+   fica com a leitura da máscara */
+function fugasDe(T, P) {
+  const f = fugasNaRua({ noMundo: T.noMundo, malha: T.malha, COLS: T.COLS, ROWS: T.ROWS, pxm: T.pxm, W: TAB.W, H: TAB.H, CEL: TAB.CEL },
+                       P && P.ehAsfalto ? (wx, wz) => P.ehAsfalto(wx, wz) : null);
+  return f.length ? { fugas: f } : {};
+}
 
 /* =========================================================
    A PRAÇA DO BAIRRO
@@ -161,8 +170,17 @@ export function brigaNaPraca(ctx, praca, o = {}) {
      liga a elas andando (o canteiro cercado, o quintal do vizinho saem) —,
      e o resto cai nesse chão */
   const pA1 = soltar(ruaFim, mY - 1.2 * pxm);
-  const pSaiA = soltar(TAB.W - 34, mY) || soltar(ruaFim, mY);
-  const pSaiD = soltar(34, mY) || soltar(ruaIni, mY);
+  /* as bocas de saída de cada ponta, NO MEIO DA RUA (o dono, 06/10/2026):
+     no cruzamento, o eixo do braço na borda; na praça, o eixo da rua da
+     ponta (achado no asfalto, da beira da quadra pra fora), sem passar da
+     borda da cena */
+  const eixoDaPonta = (x, sinal) => {
+    if (largo) return sinal > 0 ? TAB.W - 34 : 34;
+    const [wx, wz] = T.noMundo(x, mY), d = meioDaRua(P, M, wx, wz, u[0] * sinal, u[1] * sinal, 14);
+    return Math.max(34, Math.min(TAB.W - 34, x + sinal * d * pxm));
+  };
+  const pSaiA = soltar(eixoDaPonta(xFim, 1), mY) || soltar(ruaFim, mY);
+  const pSaiD = soltar(eixoDaPonta(xIni, -1), mY) || soltar(ruaIni, mY);
   if (!pA1 || !pSaiA || !pSaiD) return { erro: 'a rua da ponta da praça não cabe no tabuleiro (' + lugar.nome + ')' };
   T.ligar([pA1, pSaiA, pSaiD]);
   if (!T.ligado(pA1, pSaiD)) return { erro: 'as duas pontas da praça não se ligam andando (' + lugar.nome + ')' };
@@ -225,7 +243,8 @@ export function brigaNaPraca(ctx, praca, o = {}) {
       ? { perto: 'Sair pela rua', longe: 'Saída (leve o líder)', feito: nosAtacamos ? 'sua torcida desfez a reunião deles ' + (largo ? 'na esquina' : 'na praça') : 'sua torcida saiu ' + (largo ? 'da esquina' : 'da praça') + ' com a rua na mão',
           dica: 'Leve o líder até a boca de rua da sua torcida.' }
       : { perto: 'Sair pela rua', longe: 'Saída (leve o líder)', feito: 'sua torcida saiu ' + (largo ? 'da esquina' : 'da praça') + ' com a rua na mão', dica: 'Leve o líder até a boca de rua da sua torcida.' },
-    spawns, entradas, gatilho, faixas, pmPostos
+    spawns, entradas, gatilho, faixas, pmPostos,
+    ...fugasDe(T, P)
   };
   return { cena, noMundo: T.noMundo, doMundo: T.doMundo, u: T.u, v: T.v, chao: T.chao, escala: T.K, lugar, malha: T.malha, COLS: T.COLS, ROWS: T.ROWS };
 }
@@ -314,7 +333,8 @@ export function brigaNaSede(ctx, Tc, o = {}) {
       ? { perto: 'Tomar a sede', longe: (noPatio ? 'Pátio' : 'Portão') + ' da sede (leve o líder)', feito: 'sua torcida tomou a porta da sede deles',
           dica: noPatio ? 'Leve o líder pelo portão até o pátio da sede.' : 'Leve o líder até o portão da sede.' }
       : { perto: 'Largar a sede', longe: 'Fim da rua (leve o líder)', feito: 'sua torcida largou a sede e saiu pela rua', dica: 'Pra largar a sede, leve o líder até o fim da rua.' },
-    spawns, entradas, faixas, gatilho, pmPostos
+    spawns, entradas, faixas, gatilho, pmPostos,
+    ...fugasDe(Tb, P)
   };
   const centro = patio || [(a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2];
   return { cena, noMundo: Tb.noMundo, doMundo: Tb.doMundo, u: Tb.u, v: Tb.v, chao: Tb.chao, escala: Tb.K,
@@ -380,7 +400,8 @@ export function brigaNoPortao(ctx, est, o = {}) {
     blocos: [], enfeites: [], varais: [], grades: [], pintura: null,
     saida: { perto: 'Chegar no portão', longe: 'Portão do estádio (leve o líder)',
              feito: 'a torcida chegou no portão e o clube ouviu o que tinha de ouvir', dica: 'Leve o líder até o portão do estádio.' },
-    spawns, entradas, pmPostos
+    spawns, entradas, pmPostos,
+    ...fugasDe(Tb, P)
   };
   return { cena, noMundo: Tb.noMundo, doMundo: Tb.doMundo, u: Tb.u, v: Tb.v, chao: Tb.chao, escala: Tb.K,
            lugar: { tipo: 'portao', estadio: est.nome, portao: Pt.nome }, malha: Tb.malha, COLS: Tb.COLS, ROWS: Tb.ROWS };
