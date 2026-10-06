@@ -157,8 +157,11 @@ TO.membros = (function(){
       /* nome de batismo: quando o nome de rua É o nome, os dois batem */
       nome: nomeProprio,
       cargo,
-      forca:  opc.forca  !== undefined ? opc.forca  : U.inteiro(1,3),
-      defesa: opc.defesa !== undefined ? opc.defesa : U.inteiro(1,3),
+      /* O NOVATO RECRUTADO (régua do dono, 06/10/2026): chega com 3 a 8
+         de força e 3 a 8 de defesa, sorteadas cada uma — do moleque cru
+         ao que já chega no teto do cargo. Era 1 a 3. */
+      forca:  opc.forca  !== undefined ? opc.forca  : U.inteiro(3,8),
+      defesa: opc.defesa !== undefined ? opc.defesa : U.inteiro(3,8),
       fracForca:0, fracDefesa:0,
       /* IDADE (régua do dono, 20/08/2026): 16 a 45 na entrada. Dos 35
          em diante a virada do ano cobra o seu; aos 46 ele pendura a

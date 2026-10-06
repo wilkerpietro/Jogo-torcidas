@@ -9334,6 +9334,18 @@ Pedido do dono: "preciso que as torcidas com 3 cores sejam representadas agora c
 - **Custo:** o corte a mais deixa o corpo leve com 6,3 mil triângulos (antes 6,2 mil).
 - **Bancada:** `bonecos.html` aceita `?cor=&cor2=&cor3=`, em hexa sem `#`, para ver a camisa de qualquer torcida.
 
+## Novato recrutado chega com 3 a 8 de força e defesa (06/10/2026)
+
+Pedido do dono: "agora um novato recrutado quando surge na torcida deve surgir variando de 3 a 8 de força a defesa".
+
+- **A mudança:** `TO.membros.criar` sorteia força e defesa, cada uma por conta própria, entre 3 e 8 quando quem chama não passa os valores. Antes era entre 1 e 3.
+- **Onde vale:** em todo novato que entra pela ação Recrutar, na sede ou nas filiais.
+- **O teto:** 8 é o teto do cargo de novato, então um recruta pode chegar já no máximo do cargo.
+- **O que não mudou:**
+  - Os novatos do elenco inicial (`povoarInicial`), que saem com 1 a 4.
+  - Os novatos das torcidas rivais montados na briga (`combate.js`).
+  - Os dois ficaram como estavam porque o pedido falou do novato recrutado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
