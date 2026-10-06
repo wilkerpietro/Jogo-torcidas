@@ -1337,15 +1337,53 @@ table.dados tr.selecionada td{background:#252525}
 .tab-olheiro tr.to-acoes .to-estado{font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
 .tab-olheiro tr.to-acoes .rec-botoes{margin-top:0}
 
-/* as mensagens de outras torcidas (Notícias → Mensagens) */
-.msg-torcida{padding:9px 0;border-bottom:1px solid var(--sulco)}
-.msg-torcida:last-child{border-bottom:0}
-.msg-torcida.nova{box-shadow:inset 3px 0 0 var(--rubro-vivo);padding-left:9px}
-.msg-torcida .mt-cab{display:flex;align-items:center;gap:7px;margin-bottom:4px;font-size:12.5px}
-.msg-torcida .mt-cab .quando{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--apagado)}
-.msg-torcida p{font-size:13px;line-height:1.45;color:#d8d4cd}
-.msg-torcida.tipo-provocacao p{color:#e8b0b0}
-.msg-torcida.tipo-juntos p,.msg-torcida.tipo-agradecimento p{color:#cfe6d3}
+/* o feed das torcidas (Notícias → Mensagens), com cara de rede social
+   (dono, 30/09/2026): avatar, quem posta, o texto e as curtidas */
+.feed-social{max-width:680px}
+.post-torcida{padding:13px 0 11px;border-bottom:1px solid var(--sulco)}
+.post-torcida:last-child{border-bottom:0}
+.post-torcida.nova{box-shadow:inset 3px 0 0 var(--rubro-vivo);padding-left:11px}
+.post-cab{display:flex;align-items:center;gap:10px;margin-bottom:8px;min-width:0}
+.post-avatar{width:38px;height:38px;flex:0 0 38px;border-radius:50%;overflow:hidden;display:grid;place-items:center;background:#1b1b1b;border:1px solid #333}
+.post-avatar img{width:100%;height:100%;object-fit:contain;padding:4px;box-sizing:border-box}
+.post-avatar .sigla{font:700 10.5px/1 var(--mono);letter-spacing:.02em}
+.post-quem{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.post-quem b{font-size:13.5px}
+.post-quem small{font-family:var(--mono);font-size:10px;color:var(--apagado);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-quando{margin-left:auto;align-self:flex-start;font-family:var(--mono);font-size:10px;color:var(--apagado);white-space:nowrap}
+.post-texto{font-size:13.5px;line-height:1.55;color:#e4e0d8;margin:0 0 9px;overflow-wrap:anywhere}
+.post-torcida.tipo-provocacao .post-texto,.post-torcida.tipo-treta .post-texto{color:#efc2c2}
+.post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
+.post-curtidas{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.post-ler{white-space:nowrap}
+.post-curtidas svg{width:15px;height:15px;color:var(--fraco);fill:none}
+/* vermelho só a curtida NOSSA: post nosso, de aliada ou notícia do clube */
+.post-curtidas.curtido svg{color:#e0566b;fill:#e0566b}
+.post-conta{display:inline-flex;align-items:center;gap:5px;color:var(--fraco)}
+.post-conta svg{width:15px;height:15px}
+.post-tag{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--apagado)}
+.post-torcida .rec-botoes,.post-torcida .msg-efeitos{margin-top:10px}
+/* o menu do post: parar de seguir e mostrar menos (dono, 30/09/2026) */
+.post-torcida{position:relative}
+.post-menu{align-self:flex-start;margin:-4px -4px 0 2px;padding:0 6px;background:none;border:0;color:var(--apagado);font-size:17px;line-height:1;cursor:pointer;border-radius:4px}
+.post-menu:hover{color:#e4e0d8;background:#ffffff12}
+.post-menu-lista{position:absolute;top:34px;right:0;z-index:5;min-width:220px;max-width:calc(100% - 8px);background:#1c1c1c;border:1px solid #3a3a3a;border-radius:6px;box-shadow:0 6px 18px #0009;padding:4px;display:flex;flex-direction:column}
+.post-menu-op{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:none;border:0;color:#e4e0d8;font-size:13px;padding:8px 10px;border-radius:4px;cursor:pointer}
+.post-menu-op small{font-size:11px;color:var(--apagado)}
+.post-menu-op:hover{background:#ffffff10}
+.feed-prefs{display:flex;flex-direction:column;gap:4px;padding:8px 10px;margin:0 0 6px;border:1px dashed var(--sulco);border-radius:6px;font-size:12px;color:var(--fraco)}
+.feed-pref-bt{background:none;border:0;color:var(--dourado,#d6b25e);font-size:12px;cursor:pointer;text-decoration:underline;padding:0 2px}
+/* os perfis dos jornais: a Gazeta no papel, o Porrada no vermelho da capa */
+.post-avatar.jornal-gazeta{background:#E7E1D0;color:#17130F;border-color:#A2977F}
+.post-avatar.jornal-porrada{background:#8E2A1E;color:#fff;border-color:#5e1b13}
+.post-avatar.jornal-gazeta .sigla,.post-avatar.jornal-porrada .sigla{font:700 13px/1 Georgia,'Times New Roman',serif;letter-spacing:0}
+.post-torcida.tipo-zoeira .post-texto,.post-torcida.tipo-resposta .post-texto{color:#f0d9a8}
+.post-ler{background:none;border:0;padding:0;font-family:var(--mono);font-size:10.5px;color:var(--ouro,#d9a441);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.post-ler:hover{color:#fff}
+/* o perfil da zona e o nosso próprio perfil */
+.post-zona{font-weight:600;color:var(--fraco)}
+/* a faixa dourada do post nosso saiu (dono, 01/10/2026: "deixa visualmente feio") */
+.post-torcida.tipo-protesto .post-texto{color:#f3c9a0}
 .pp-nossas{margin-top:8px;border-top:1px solid var(--fio-jornal,#4a463c);padding-top:6px}
 .pp-nossas .gz-secao{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco);margin-bottom:4px}
 .pp-nossas small{font-family:var(--mono);font-size:10px;color:var(--fraco)}
@@ -2830,6 +2868,11 @@ header.capa-cidade{background-size:cover; background-position:center;
 .escolha-drop select.campo{width:auto;min-width:190px;max-width:100%;
   padding:7px 10px;flex:0 1 auto}
 .drop-comp{margin-bottom:11px}
+/* a marca da competição em cima do corpo (dono, 01/10/2026) */
+.comp-marca{display:flex;align-items:center;gap:14px;margin:2px 0 14px;padding:10px 14px;background:linear-gradient(90deg,#ffffff0d,transparent);border-left:3px solid var(--dourado,#d6b25e);border-radius:4px}
+.comp-marca img{width:64px;height:64px;object-fit:contain;flex:none;filter:drop-shadow(0 2px 4px #0008)}
+.comp-marca b{display:block;font-size:19px;letter-spacing:.02em}
+.comp-marca small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--apagado);margin-top:3px}
 .drop-comp select.campo{min-width:260px;max-width:440px}
 /* o país das competições: a bandeira do escolhido antes do rótulo */
 .drop-pais{margin-bottom:9px}
@@ -2881,6 +2924,303 @@ header.capa-cidade{background-size:cover; background-position:center;
 .reu-campo .rot{font-family:var(--titulo);font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--fraco)}
 .reu-campo select.campo{padding:8px 10px;font-size:12px}
+/* o ataque do mês escolhido na mesa (02/10/2026): bairro, torcida, forma e a ficha */
+.reu-ataque{grid-template-columns:repeat(4,minmax(0,1fr))}
+.reu-ataque .reu-campo[hidden]{display:none}
+.reu-recruta{grid-template-columns:1fr}
+@media (max-width:720px){ .reu-ataque{grid-template-columns:1fr} }
+.reu-ficha{display:grid;gap:4px;margin:2px 0 10px;padding:9px 11px;border:1px solid var(--linha, #2c2c28);
+  border-radius:6px;background:rgba(255,255,255,.02)}
+.reu-ficha-l{display:grid;grid-template-columns:110px 1fr;gap:10px;font-size:12px;line-height:1.4}
+.reu-ficha-l span{font-family:var(--titulo);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco)}
+.reu-ficha-l.boa b{color:#9fd49a;font-weight:500}
+.reu-ficha-l.ruim b{color:#e8a08a;font-weight:500}
+@media (max-width:720px){ .reu-ficha-l{grid-template-columns:1fr;gap:1px} }
+
+/* =========================================================
+   O CARTAZ DO POST (pedido do dono, 01/10/2026): a imagem 2:1 dos
+   posts de jogo e de briga — js/ui/cartaz.js. Tudo em cqw, pra a
+   arte inteira escalar junto com a largura do post (celular incluso).
+   ========================================================= */
+.cartaz{position:relative;margin:0 0 9px;aspect-ratio:2/1;overflow:hidden;border-radius:8px;background:#0e0e10;
+  container-type:inline-size;color:#fff;box-shadow:0 2px 10px #0007;font-family:var(--fonte, inherit)}
+.cartaz .cz-fundo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.cartaz .cz-veu{position:absolute;inset:0;pointer-events:none}
+.cz-escudo{width:15cqw;height:15cqw;object-fit:contain;filter:drop-shadow(0 .5cqw 1cqw #000a)}
+.cz-sigla{display:grid;place-items:center;border-radius:50%;font:800 3.6cqw/1 var(--mono);letter-spacing:.02em;border:.4cqw solid #ffffff55}
+.cz-manchete{font:900 5.2cqw/1.05 'Arial Black','Arial',sans-serif;letter-spacing:.01em;text-transform:uppercase;text-shadow:0 .3cqw .9cqw #000c}
+
+/* ---- jogo ---- */
+.cz-jogo .cz-fundo{filter:blur(.9cqw) brightness(.62) saturate(1.15);transform:scale(1.08)}
+.cz-jogo .cz-veu{background:linear-gradient(180deg,#000a 0%,#0000 30%,#0000 62%,#000c 100%)}
+.cz-jogo .cz-topo{position:absolute;left:3cqw;right:3cqw;top:2.6cqw;display:flex;align-items:center;gap:1.8cqw}
+.cz-comp{width:8.5cqw;height:8.5cqw;object-fit:contain;filter:drop-shadow(0 .3cqw .8cqw #000c)}
+.cz-etapa{display:flex;flex-direction:column;line-height:1.15}
+.cz-etapa b{font:800 2.6cqw/1.1 sans-serif;letter-spacing:.04em;text-transform:uppercase}
+.cz-etapa small{font:600 2.1cqw/1.2 var(--mono);color:#ffffffcc;letter-spacing:.06em;text-transform:uppercase}
+.cz-marca{margin-left:auto;align-self:flex-start;font:800 1.9cqw/1 var(--mono);letter-spacing:.14em;color:#ffffffd9;
+  padding:.8cqw 1.4cqw;border-radius:.6cqw;background:#0008}
+.cz-gazeta .cz-marca{background:#e7e1d0;color:#17130f}
+.cz-porrada .cz-marca{background:#8e2a1e;color:#fff}
+.cz-placar{position:absolute;left:0;right:0;top:15cqw;display:flex;align-items:center;justify-content:center;gap:4cqw}
+.cz-time{display:flex;flex-direction:column;align-items:center;gap:1cqw;width:22cqw}
+.cz-time span{font:800 2.5cqw/1.1 sans-serif;text-transform:uppercase;text-align:center;text-shadow:0 .2cqw .6cqw #000;letter-spacing:.02em}
+.cz-meio{display:flex;align-items:center;gap:1.6cqw;position:relative}
+.cz-gols{font:900 11cqw/1 'Arial Black','Arial',sans-serif;text-shadow:0 .4cqw 1.2cqw #000c}
+.cz-x{font:700 5cqw/1 sans-serif;color:#ffffffaa}
+.cz-pen{position:absolute;left:50%;top:100%;transform:translateX(-50%);white-space:nowrap;font:700 1.9cqw/1 var(--mono);
+  background:#000a;padding:.6cqw 1.2cqw;border-radius:.6cqw;letter-spacing:.06em}
+.cz-jogo .cz-manchete{position:absolute;left:0;right:0;bottom:0;padding:2.2cqw 3cqw 2.4cqw;text-align:center;
+  background:linear-gradient(90deg,#0000,#000000a0 18%,#000000a0 82%,#0000)}
+.cz-gazeta.cz-jogo .cz-manchete{border-top:.5cqw solid #e7e1d0}
+
+/* ---- briga ---- */
+.cz-briga .cz-fundo{filter:blur(.5cqw) brightness(.7)}
+.cz-briga.com-foto .cz-fundo{filter:none}
+.cz-briga .cz-veu{background:linear-gradient(180deg,#000c 0%,#0005 20%,#0000 30%,#0000 52%,#000c 74%,#000e 100%)}
+.cz-lados{position:absolute;left:2.6cqw;right:2.6cqw;top:2.2cqw;display:flex;align-items:center;gap:2cqw}
+.cz-torcida{display:flex;align-items:center;gap:1.6cqw;flex:1;min-width:0}
+.cz-torcida:last-child{flex-direction:row-reverse;text-align:right}
+.cz-torcida .cz-escudo{width:9.5cqw;height:9.5cqw}
+.cz-torcida span{font:800 2.6cqw/1.1 sans-serif;text-transform:uppercase;text-shadow:0 .2cqw .6cqw #000;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cz-torcida.venceu .cz-escudo{outline:.5cqw solid #f2c14e;outline-offset:.4cqw;border-radius:50%}
+.cz-torcida.venceu span{color:#f2c14e}
+.cz-vs{font:900 4cqw/1 sans-serif;color:#ffffffb0}
+.cz-faixa-topo{white-space:nowrap;font:800 1.8cqw/1 var(--mono);letter-spacing:.14em;padding:.7cqw 1.4cqw;
+  border-radius:.5cqw;background:#8e2a1e;margin-bottom:-.2cqw}
+.cz-base{position:absolute;left:3cqw;right:3cqw;bottom:2.4cqw;display:flex;flex-direction:column;align-items:center;gap:1.2cqw;text-align:center}
+.cz-briga .cz-manchete{font-size:4.6cqw}
+.cz-numeros{display:flex;gap:1.2cqw}
+.cz-num{display:flex;flex-direction:column;align-items:center;gap:.4cqw;min-width:15cqw;padding:.8cqw 1.4cqw;border-radius:.6cqw;background:#000a;border:.2cqw solid #ffffff22}
+.cz-num small{font:700 1.6cqw/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:#ffffffb0}
+.cz-num b{font:900 3cqw/1 'Arial Black','Arial',sans-serif}
+
+/* ---- a arte do post de torcida (04/10/2026): o molde das prints do
+   dono — tarjas com "DESDE <ano>", escudo na aba, título em duas
+   cores, o miolo do tipo e o rodapé com os @. 4:5, papel branco. ---- */
+/* as fontes da arte vêm do próprio jogo (css/fontes/, licença OFL): sem
+   internet o título continua grosso e o "DESDE" continua gótico */
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;
+  src:url(fontes/anton-latin.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2212}
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;
+  src:url(fontes/anton-latin-ext.woff2) format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+20A0-20AB,U+20AD-20C0}
+@font-face{font-family:'UnifrakturCook';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url(fontes/unifrakturcook-latin.woff2) format('woff2')}
+.cartaz.cz-arte{aspect-ratio:4/5;background:var(--p);color:var(--x);border-radius:6px;max-width:460px}
+/* as tarjas: secundária, com o texto na primária (dono, 04/10/2026) */
+.ca-tarja{position:absolute;top:0;bottom:0;width:6.6cqw;background:var(--s);overflow:hidden;z-index:2}
+.ca-tarja.ca-esq{left:0}
+.ca-tarja.ca-dir{right:0}
+.ca-tarja::before{content:'';position:absolute;inset:0;background:var(--tri) 0 0/100% 15cqw repeat-y}
+.ca-tarja.ca-esq::before{transform:scaleX(-1)}
+.ca-tarja::after{content:'';position:absolute;inset:0 .7cqw;border-left:.25cqw solid var(--p);border-right:.25cqw solid var(--p);opacity:.7}
+.ca-tarja span{position:absolute;left:50%;top:-4cqw;transform:translateX(-50%);writing-mode:vertical-rl;white-space:nowrap;
+  font:700 4.3cqw/1 'UnifrakturCook','UnifrakturMaguntia','Old English Text MT',serif;color:var(--p);
+  -webkit-text-stroke:.45cqw var(--s);paint-order:stroke fill;letter-spacing:.04em}
+.ca-tarja.ca-esq span{transform:translateX(-50%) rotate(180deg)}
+.ca-tarja i{font-style:normal;display:inline-block;padding:3.4cqw 0}
+.ca-papel{position:absolute;top:0;bottom:0;left:6.6cqw;right:6.6cqw;overflow:hidden;
+  background:radial-gradient(120% 80% at 50% 45%,rgba(255,255,255,.07) 0%,rgba(255,255,255,0) 60%,rgba(0,0,0,.1) 100%),var(--p);
+  display:flex;flex-direction:column;align-items:center;padding:24cqw 4cqw 0}
+/* a foto dos bonecos no fundo (04/10/2026), com o degradê do papel por
+   cima: branco no título, a cena aparecendo no meio, branco de novo no
+   rodapé */
+.ca-foto{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .5s;pointer-events:none}
+.cz-arte.com-foto .ca-foto{opacity:1}
+.ca-veu{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s;
+  background:linear-gradient(180deg,rgb(var(--pr)) 0%,rgb(var(--pr)) 22%,rgba(var(--pr),.8) 33%,rgba(var(--pr),.1) 46%,
+    rgba(var(--pr),0) 58%,rgba(var(--pr),0) 76%,rgba(var(--pr),.7) 89%,rgb(var(--pr)) 94%)}
+.cz-arte.com-foto .ca-veu{opacity:1}
+.cz-arte.com-foto .ca-marca-dagua{display:none}
+.cz-arte.com-foto .ca-miolo{align-items:flex-end;padding-bottom:1.5cqw}
+.cz-arte.com-foto .ca-anos{justify-content:flex-end}
+.cz-arte.com-foto .ca-miolo.ca-so-sem-foto{visibility:hidden}
+.cz-arte.com-foto .ca-miolo .ca-aro{width:21cqw;height:21cqw}
+.cz-arte.com-foto .ca-miolo .ca-aro.ca-maior{width:25cqw;height:25cqw}
+.cz-arte.com-foto .ca-par .ca-aro + .ca-aro{margin-left:-4cqw}
+.cz-arte.com-foto .ca-x{font-size:8cqw}
+.cz-arte.com-foto .ca-gols{font-size:12cqw}
+.cz-arte.com-foto .ca-selo{width:20cqw;height:20cqw}
+.cz-arte.com-foto .ca-selo b{font-size:10cqw}
+.cz-arte.com-foto .ca-selo i{font-size:4cqw}
+.cz-arte.com-foto .ca-grade{grid-template-columns:repeat(8,1fr);width:72cqw;gap:1cqw}
+.ca-marca-dagua{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);width:78cqw;height:78cqw;opacity:.06;
+  filter:grayscale(1);pointer-events:none}
+.ca-marca-dagua .cz-escudo{width:100%;height:100%;filter:none}
+.ca-canto{position:absolute;width:6cqw;height:6cqw;border:0 solid var(--v)}
+.ca-c1{left:4cqw;top:7cqw;border-left-width:.55cqw;border-top-width:.55cqw}
+.ca-c2{right:4cqw;top:7cqw;border-right-width:.55cqw;border-top-width:.55cqw}
+.ca-c3{left:4cqw;bottom:13cqw;border-left-width:.55cqw;border-bottom-width:.55cqw}
+.ca-c4{right:4cqw;bottom:13cqw;border-right-width:.55cqw;border-bottom-width:.55cqw}
+.ca-aba{position:absolute;left:50%;top:0;width:24cqw;height:6cqw;transform:translateX(-50%);
+  background:linear-gradient(90deg,var(--e) 0 50%,var(--v) 50% 100%);clip-path:polygon(0 0,100% 0,82% 100%,18% 100%)}
+.ca-topo{position:absolute;left:50%;top:2cqw;transform:translateX(-50%)}
+.ca-aro{display:grid;place-items:center;width:30cqw;height:30cqw;border-radius:50%;background:#fff;flex:none;
+  box-shadow:0 0 0 1.1cqw var(--e),0 0 0 1.6cqw var(--v),0 1.4cqw 2.4cqw #0004}
+.ca-aro .cz-escudo{width:76%;height:76%;filter:none}
+.ca-aro .cz-sigla{font-size:5cqw;border:none}
+.ca-aro.ca-rival > *{transform:rotate(180deg);filter:grayscale(1) brightness(1.15) contrast(.85);opacity:.82}
+.ca-aro.ca-rival .cz-sigla{background:#9a9a9a !important;color:#fff !important}
+.ca-aro.ca-brasao{width:19cqw;height:19cqw;box-shadow:0 0 0 .8cqw var(--e),0 0 0 1.2cqw var(--v),0 .8cqw 1.6cqw #0004}
+.ca-aro.ca-brasao .cz-sigla{font-size:3.2cqw}
+.ca-aro.ca-maior{width:40cqw;height:40cqw}
+.ca-aro.ca-maior .cz-sigla{font-size:7cqw}
+.ca-aro.ca-menor{width:24cqw;height:24cqw}
+.ca-titulo{margin:0;display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1;
+  font-family:'Anton','Impact','Arial Narrow Bold','Arial Black',sans-serif;font-weight:400;letter-spacing:.01em;
+  text-transform:uppercase;filter:drop-shadow(0 .35cqw 0 #0002);position:relative}
+/* o acento das maiúsculas (É, Ã) sobe acima da linha: o respiro de cima
+   entra na caixa do recorte, e o corte das duas cores desce junto */
+.ca-titulo span{display:block;padding:.2em .04em 0;margin-top:-.2em;
+  background:linear-gradient(180deg,var(--v) 0 61%,var(--e) 61% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.ca-sub{margin-top:1.2cqw;font:400 4.4cqw/1 'Anton','Impact',sans-serif;letter-spacing:.04em;text-transform:uppercase;position:relative}
+.ca-miolo{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:2cqw;position:relative;width:100%}
+.ca-par .ca-aro{width:34cqw;height:34cqw}
+.ca-par .ca-aro + .ca-aro{margin-left:-7cqw}
+.ca-x{font:400 11cqw/1 'Anton','Impact',sans-serif;background:linear-gradient(180deg,var(--v) 0 53%,var(--e) 53% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.ca-gols{display:flex;align-items:center;gap:1.4cqw;font:400 17cqw/1 'Anton','Impact',sans-serif;
+  background:linear-gradient(180deg,var(--v) 0 53%,var(--e) 53% 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ca-gols i{font-style:normal;font-size:.55em}
+.ca-anos{flex-direction:column;gap:2.6cqw}
+.ca-selo{display:flex;flex-direction:column;align-items:center;justify-content:center;width:30cqw;height:30cqw;border-radius:50%;
+  background:var(--p);box-shadow:0 0 0 1.1cqw var(--e),0 0 0 1.6cqw var(--v),0 1.2cqw 2cqw #0003}
+.ca-selo b{font:400 15cqw/.9 'Anton','Impact',sans-serif;background:linear-gradient(180deg,var(--v) 0 50%,var(--e) 50% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.ca-selo i{font:400 6cqw/1 'UnifrakturCook','UnifrakturMaguntia',serif;color:var(--x);font-style:normal;margin-top:-.6cqw}
+.ca-grade{display:grid;grid-template-columns:repeat(6,1fr);gap:1.4cqw 1.6cqw;width:78cqw}
+.ca-g{display:grid;place-items:center;aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 .4cqw 1cqw #0003}
+.ca-g .cz-escudo{width:92%;height:92%;filter:none}
+.ca-g .cz-sigla{width:100%;height:100%;font-size:2.2cqw;border:none}
+.ca-pins{display:flex;justify-content:center;gap:3cqw;width:100%;margin:0 0 2.4cqw;position:relative}
+.ca-etq{display:flex;flex-direction:column;align-items:center;gap:.6cqw;min-width:0;max-width:44cqw}
+.ca-etq small{font:400 3cqw/1 'Anton','Impact',sans-serif;letter-spacing:.06em;text-transform:uppercase}
+.ca-etq-cx{display:flex;align-items:center;gap:1.2cqw;background:var(--x);padding:1.2cqw 2.4cqw 1.2cqw 1.4cqw;border-radius:1cqw;
+  box-shadow:0 .6cqw 1.6cqw #0003;max-width:100%}
+.ca-etq-cx b{font-family:'Anton','Impact',sans-serif;font-weight:400;color:var(--p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ca-pin{width:4.6cqw;height:6cqw;flex:none}
+.ca-pe{width:76cqw;margin:0 0 4cqw;padding:1.1cqw 0;display:flex;justify-content:space-around;gap:2cqw;position:relative;
+  border-top:.6cqw solid var(--v);border-bottom:.9cqw solid var(--e);
+  font:700 3.2cqw/1 'Barlow Condensed','Archivo Narrow',sans-serif;color:var(--x);letter-spacing:.01em}
+.ca-pe span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-torcida .cz-arte{margin-left:auto;margin-right:auto}
+
+/* a legenda embaixo, como no Instagram */
+.post-torcida.com-cartaz .post-pe{margin-bottom:6px}
+.post-legenda{margin:0 0 4px}
+.post-legenda-quem{font-weight:700;margin-right:4px;color:#f2eee6}
+
+/* =========================================================
+   A REDE SOCIAL AO LADO DO FEED (pedido do dono, 01/10/2026): a coluna
+   da direita, secundária; a rede inteira segue em Notícias → Mensagens.
+   ========================================================= */
+.feed-colunas{flex:1;min-height:0;display:flex}
+.feed-colunas .feed-rolo{flex:1;min-width:0}
+.social-lado{width:370px;flex:none;display:flex;flex-direction:column;min-height:0;position:relative;
+  background:#111113;border-left:1px solid var(--linha)}
+@media (max-width:1000px){ .social-lado{display:none} }
+@media (min-width:1500px){ .social-lado{width:420px} }
+.social-lado-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;
+  padding:8px 12px;border-bottom:1px solid var(--linha);background:var(--painel)}
+.social-lado-tit{display:flex;align-items:center;gap:7px;font:700 11px/1 var(--mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--fraco)}
+.social-lado-tit svg{width:15px;height:15px}
+.social-lado-tudo{background:none;border:0;color:var(--dourado,#d6b25e);font-size:12px;cursor:pointer;
+  text-decoration:underline;padding:0}
+.social-lado-rolo{flex:1;overflow-y:auto;min-height:0;padding:2px 12px 24px}
+.social-lado-lista{max-width:none}
+.social-lado .post-torcida{padding:11px 0 9px}
+.social-lado .post-torcida.nova{padding-left:11px}
+.social-lado .post-texto{font-size:13px}
+.social-lado-novos{position:absolute;top:46px;left:50%;transform:translateX(-50%);z-index:4;
+  background:var(--rubro,#8e2a1e);color:#fff;border:0;border-radius:14px;padding:5px 12px;
+  font:600 12px/1 inherit;box-shadow:0 3px 10px #000a;cursor:pointer;animation:avisoNovos .4s ease}
+@keyframes avisoNovos{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
+/* o post novo abre espaço aos poucos e aparece num fade */
+.post-envelope{display:grid;grid-template-rows:1fr;opacity:1;
+  transition:grid-template-rows .65s cubic-bezier(.2,.7,.2,1), opacity .55s ease .1s}
+.post-envelope.fechado{grid-template-rows:0fr;opacity:0}
+.post-envelope.abrindo>*{min-height:0;overflow:hidden}
+/* a mensagem que chega no feed principal */
+.feed-lista > .entrando{animation:msgEntra .55s ease-out}
+@keyframes msgEntra{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .post-envelope{transition:none} .feed-lista > .entrando{animation:none} .social-lado-novos{animation:none}
+}
+
+/* =========================================================
+   QUEM EU SIGO (pedido do dono, 01/10/2026): o filtro da rede social
+   ========================================================= */
+.social-lado-tit{gap:7px}
+.social-lado-filtro{display:inline-grid;place-items:center;width:24px;height:22px;margin-left:4px;padding:0;
+  background:none;border:1px solid var(--linha);border-radius:4px;color:var(--fraco);cursor:pointer}
+.social-lado-filtro:hover{color:#e4e0d8;border-color:#555}
+.social-lado-filtro svg{width:13px;height:13px}
+.filtro-abrir{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px}
+.filtro-abrir svg{width:13px;height:13px}
+.filtro-social{display:flex;flex-direction:column;gap:8px;min-height:380px}
+.filtro-social .subabas{margin-bottom:0}
+.filtro-nota{margin:0;font-size:12px;color:var(--fraco)}
+.filtro-busca{width:100%;box-sizing:border-box;padding:7px 10px}
+.filtro-lista{display:flex;flex-direction:column;height:min(52vh,460px);overflow-y:auto;border:1px solid var(--linha);border-radius:4px}
+.filtro-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--sulco)}
+.filtro-item:last-child{border-bottom:0}
+.filtro-item.fora .filtro-nome,.filtro-item.fora .filtro-escudo{opacity:.45}
+.filtro-escudo{width:28px;height:28px;flex:0 0 28px;object-fit:contain}
+.filtro-escudo.post-avatar{width:28px;height:28px;flex-basis:28px}
+.filtro-chip{border-radius:50%;border:1px solid #fff3}
+.filtro-nome{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
+.filtro-nome b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filtro-nome small{font-size:11px;color:var(--apagado)}
+.filtro-bt{flex:none;min-width:84px;padding:5px 10px;border-radius:14px;border:1px solid var(--linha);
+  background:transparent;color:#e4e0d8;font-size:12px;cursor:pointer}
+.filtro-bt.sigo{background:#2a2a2e;border-color:#3d3d44}
+.filtro-bt:not(.sigo){background:var(--rubro,#8e2a1e);border-color:var(--rubro-vivo,#b33);color:#fff}
+.filtro-todos{align-self:stretch;margin:0;padding:7px 10px;background:#1c1c1f;border:0;border-bottom:1px solid var(--linha);
+  color:var(--dourado,#d6b25e);font-size:12px;text-align:left;cursor:pointer}
+
+/* os comentários do post, como no Instagram (dono, 01/10/2026) */
+.post-comentarios{display:flex;flex-direction:column;gap:7px;margin:6px 0 2px}
+.post-comentario{position:relative;padding-right:22px}
+.post-comentario p{margin:0;font-size:12.5px;line-height:1.45;color:#d9d4cb;overflow-wrap:anywhere}
+.post-comentario small{display:block;margin-top:2px;font-size:10.5px;color:var(--apagado)}
+.post-com-cor{position:absolute;right:0;top:2px;color:var(--apagado)}
+.post-com-cor svg{width:12px;height:12px;fill:none}
+
+/* =========================================================
+   A REDE RECOLHIDA (pedido do dono, 01/10/2026): a tira fina na borda
+   e os avisos do que é importante, no canto, por 3 s
+   ========================================================= */
+.social-lado-recolher{display:inline-grid;place-items:center;width:24px;height:22px;padding:0;margin-right:6px;
+  background:none;border:1px solid var(--linha);border-radius:4px;color:var(--fraco);cursor:pointer;flex:none}
+.social-lado-recolher:hover{color:#e4e0d8;border-color:#555}
+.social-lado-recolher svg{width:13px;height:13px}
+.social-lado-cab{justify-content:flex-start}
+.social-lado-cab .social-lado-tudo{margin-left:auto}
+.social-aba{display:none}
+.social-lado.recolhida{width:36px}
+.social-lado.recolhida > .social-lado-cab,.social-lado.recolhida > .social-lado-rolo,
+.social-lado.recolhida > .social-lado-novos{display:none}
+.social-lado.recolhida > .social-aba{display:flex;flex-direction:column;align-items:center;gap:10px;flex:1;width:100%;
+  padding:12px 0;background:none;border:0;color:var(--fraco);cursor:pointer}
+.social-lado.recolhida > .social-aba:hover{color:#e4e0d8;background:#ffffff08}
+.social-aba svg{width:16px;height:16px}
+.social-aba .vert{writing-mode:vertical-rl;transform:rotate(180deg);font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.social-aba-n{min-width:18px;padding:2px 5px;border-radius:9px;background:var(--rubro-vivo,#c0392b);color:#fff;font:700 10px/1.2 var(--mono)}
+.social-toasts{position:fixed;right:50px;top:96px;width:380px;max-width:calc(100vw - 120px);
+  display:flex;flex-direction:column;gap:8px;z-index:7;pointer-events:none}
+.social-toast{pointer-events:auto;display:block;padding:0 12px;background:#1b1b1f;max-height:calc(100vh - 130px);overflow-y:auto;
+  border:1px solid #3a3a40;border-left:3px solid var(--rubro-vivo,#c0392b);border-radius:8px;box-shadow:0 8px 24px #000b;
+  opacity:0;transform:translateX(14px);transition:opacity .35s ease,transform .35s ease}
+.social-toast.vivo{opacity:1;transform:none}
+.social-toast.saindo{opacity:0;transform:translateX(14px)}
+.social-toast .post-torcida{padding:11px 0 9px;border-bottom:0}
+.social-toast .post-torcida.nova{box-shadow:none;padding-left:0}
+@media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }
 
 /* ===== css/cenas.css ===== */
 /* =========================================================
@@ -4029,6 +4369,190 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
   .gz.gz-canto .placar-grande .n{font-size:20px}
 }
 
+/* ===== css/mapa.css ===== */
+/* =========================================================
+   O MAPA DO JOGO: o Brasil, a legenda da cidade, o cartão do bairro e
+   o quadro de bairros por zona (js/ui/mapa_brasil.js). O painel do jogo
+   de feed (.mb-painel) é daqui; o do jogo 3D (.j3d-mapa) usa as mesmas
+   peças dentro dele (ferramentas/planta_html/jogo3d.css).
+   ========================================================= */
+
+/* ---- o painel do jogo de feed ---- */
+.mb-painel{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--fundo, #0d0d0d);color:var(--texto, #e9e9e9)}
+.mb-painel > header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--linha, #2c2c2c);background:var(--painel, #171717)}
+.mb-painel > header h2{font-family:var(--titulo);font-size:22px;letter-spacing:.04em;text-transform:uppercase}
+.mb-abas{display:flex;gap:4px;flex:1;min-width:0}
+.mb-abas button{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--fraco, #8d8d8d);padding:5px 12px;font-size:13px;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.mb-abas button[aria-selected="true"]{background:var(--rubro, #9d2222);border-color:var(--rubro, #9d2222);color:#fff}
+.mb-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #e9e9e9);width:34px;height:34px;font-size:20px;cursor:pointer;flex:none}
+.mb-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.mb-corpo{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px;overflow:auto}
+.mb-corpo-brasil .mb-mapa{flex:1.4;min-width:0;display:flex;align-items:center;justify-content:center}
+.mb-corpo-brasil .mb-lista{flex:1;min-width:220px;max-width:380px;overflow:auto}
+.mb-corpo-cidade .mb-quadro{flex:1.3;min-width:0}
+.mb-corpo-cidade .mb-lado{flex:1;min-width:260px;max-width:400px;display:flex;flex-direction:column;gap:12px}
+@media (max-width:760px){
+  .mb-corpo{flex-direction:column;padding:10px}
+  .mb-corpo-brasil .mb-lista,.mb-corpo-cidade .mb-lado{max-width:none;min-width:0}
+}
+
+/* ---- o Brasil ---- */
+.mb-brasil{width:100%;height:100%;max-height:calc(100vh - 120px);display:block}
+.mb-pais{fill:#1f2b22;stroke:#5c7a62;stroke-width:1.2;stroke-linejoin:round}
+.mb-praca{cursor:pointer;outline:none}
+.mb-ponto{stroke:#0d0d0d;stroke-width:1.1}
+.mb-ponto.claro{stroke:#555}
+.mb-praca.minha .mb-ponto{stroke:#fff;stroke-width:1.8}
+.mb-praca.escolhida .mb-ponto{stroke:var(--ouro, #d9a441);stroke-width:2.2}
+.mb-praca:hover .mb-ponto,.mb-praca:focus .mb-ponto{stroke:var(--ouro, #d9a441);stroke-width:2.2}
+.mb-nome{font:600 7.2px var(--corpo);fill:#d8dcd4;paint-order:stroke;stroke:#0d0d0d;stroke-width:2px;pointer-events:none}
+.mb-praca.minha .mb-nome{fill:#fff;font-weight:800}
+.mb-fio{stroke:#6b766c;stroke-width:.6}
+
+/* ---- a lista das cidades ---- */
+.mb-lista h4{font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--fraco, #8d8d8d);margin:12px 0 6px}
+.mb-lista h4:first-child{margin-top:0}
+.mb-lista-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px}
+.mb-lista-item{display:flex;align-items:center;gap:6px;min-width:0;padding:5px 8px;background:var(--painel, #171717);border:1px solid var(--linha, #2c2c2c);
+  color:var(--texto, #e9e9e9);font-size:12.5px;text-align:left;cursor:pointer}
+.mb-lista-item:hover{border-color:var(--ouro, #d9a441)}
+.mb-lista-item.minha{border-color:#6e6e6e}
+.mb-lista-item.escolhida{border-color:var(--ouro, #d9a441);background:#221d12}
+.mb-lista-item i{flex:none;width:10px;height:10px;border-radius:50%;border:1px solid #000}
+.mb-lista-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mb-lista-item small{flex:none;color:var(--fraco, #8d8d8d);font-size:11px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---- a legenda da cidade ---- */
+.mb-legenda{display:flex;flex-direction:column;gap:6px}
+.mb-status{font-weight:700;font-size:14px;line-height:1.35}
+.mb-efeito{font-size:12.5px;line-height:1.35;padding:5px 8px;border-left:3px solid var(--linha, #2c2c2c);background:rgba(255,255,255,.03)}
+.mb-efeito.bom{border-left-color:var(--verde, #4aa85c)}
+.mb-efeito.ruim{border-left-color:var(--rubro-vivo, #d24141)}
+.mb-torcidas{list-style:none;display:flex;flex-direction:column;gap:2px}
+.mb-torcidas li{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.mb-torcidas li.nos span{font-weight:700}
+.mb-torcidas i{flex:none;width:12px;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.6)}
+.mb-torcidas i.claro{border-color:#777}
+.mb-torcidas li.sem i{background:repeating-linear-gradient(45deg,#6f6f6a 0 3px,#3a3a38 3px 6px)}
+.mb-torcidas span{flex:1;min-width:0}
+.mb-torcidas small{color:var(--fraco, #8d8d8d);font-size:11px}
+.mb-torcidas b{flex:none;font-family:var(--mono);font-size:12px;font-weight:600}
+
+/* ---- o cartão do bairro ---- */
+.mb-cartao{display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:var(--painel, #171717);border:1px solid var(--linha, #2c2c2c)}
+.mb-cartao h3{font-family:var(--titulo);font-size:20px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1}
+.mb-zona{color:var(--fraco, #8d8d8d);font-size:12px}
+/* a cidade do bairro e a torcida que mora nele (01/10/2026) */
+.mb-cidade{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--fraco, #8d8d8d)}
+.mb-torcida{font-size:12px;margin-top:2px}
+.mb-dona{font-size:13.5px;font-weight:600}
+.mb-nada{color:var(--fraco, #8d8d8d);font-size:13px}
+.mb-barra{position:relative;display:flex;height:20px;background:#2b2b29;border:1px solid #000;overflow:hidden}
+.mb-barra span{display:flex;align-items:center;justify-content:center;font:700 10.5px var(--mono);color:#fff;text-shadow:0 1px 1px #000;white-space:nowrap;overflow:hidden}
+.mb-barra span.claro{color:#111;text-shadow:none}
+.mb-barra span.livre{background:repeating-linear-gradient(45deg,#3b3b39 0 4px,#2f2f2d 4px 8px)}
+.mb-barra .meio{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:var(--ouro, #d9a441);opacity:.9}
+.mb-partes{list-style:none;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#cfcfcf}
+.mb-partes li{display:flex;align-items:center;gap:5px}
+.mb-partes i{width:9px;height:9px;border-radius:2px;border:1px solid rgba(0,0,0,.6)}
+.mb-partes b{font-family:var(--mono);font-weight:600}
+.mb-nota{font-size:12px;color:var(--fraco, #8d8d8d);line-height:1.35}
+.mb-estruturas{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mb-estruturas li{display:flex;align-items:center;gap:6px}
+.mb-estruturas i{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.6)}
+.mb-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
+.mb-acoes small{color:var(--fraco, #8d8d8d);font-size:11.5px}
+
+/* ---- o quadro de bairros (a bússola) ---- */
+.mb-quadro{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"norte norte" "oeste leste" "sul sul";gap:10px;align-content:start}
+.mb-zona-bloco{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--linha, #2c2c2c);background:rgba(255,255,255,.02);align-content:flex-start}
+.mb-zona-bloco h4{flex-basis:100%;font-family:var(--titulo);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco, #8d8d8d)}
+/* a praça de várias cidades: um bloco por cidade, um embaixo do outro (01/10/2026) */
+.mb-quadro.mb-por-cidade{display:flex;flex-direction:column}
+.mb-zona-bloco.z-norte{grid-area:norte}.mb-zona-bloco.z-sul{grid-area:sul}.mb-zona-bloco.z-oeste{grid-area:oeste}.mb-zona-bloco.z-leste{grid-area:leste}
+.mb-bairro{--cor:#6f6f6a;flex:1 1 130px;display:flex;flex-direction:column;gap:2px;min-width:0;padding:7px 9px;text-align:left;cursor:pointer;
+  background:linear-gradient(90deg, color-mix(in srgb, var(--cor) 55%, transparent), color-mix(in srgb, var(--cor) 18%, transparent));
+  border:1px solid color-mix(in srgb, var(--cor) 70%, #000);color:#fff}
+.mb-bairro b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 2px #000}
+.mb-bairro small{font:600 11px var(--mono);opacity:.9;text-shadow:0 1px 2px #000}
+.mb-bairro.nosso{box-shadow:inset 0 0 0 2px #fff}
+.mb-bairro.escolhido{outline:2px solid var(--ouro, #d9a441);outline-offset:1px}
+
+/* ---- a planta da cidade (js/ui/mapa_planta.js, 01/10/2026) ---- */
+.mb-corpo-cidade .mb-planta{flex:1.6;min-width:0;position:relative;min-height:320px;background:#121512;border:1px solid var(--linha, #2c2c2c);overflow:hidden;touch-action:none}
+.mb-planta canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+.mb-planta.arrastando canvas{cursor:grabbing}
+.mb-planta-zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:4px}
+.mb-planta-zoom button{width:32px;height:32px;background:rgba(23,23,23,.92);border:1px solid var(--linha, #2c2c2c);color:var(--texto, #e9e9e9);font-size:17px;cursor:pointer}
+.mb-planta-zoom button:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.mb-planta-dica{position:absolute;left:10px;bottom:8px;margin:0;padding:3px 8px;background:rgba(13,13,13,.78);color:var(--fraco, #8d8d8d);font-size:11.5px;pointer-events:none}
+.mb-planta-espera{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;color:var(--fraco, #8d8d8d);font-size:13px;pointer-events:none}
+.mb-planta-espera[hidden]{display:none}
+.mb-corpo-cidade:has(.mb-planta){overflow:hidden}
+.mb-corpo-cidade:has(.mb-planta) .mb-lado{overflow:auto}
+@media (max-width:760px){
+  .mb-corpo-cidade .mb-planta{flex:none;height:58vh;min-height:280px}
+  .mb-corpo-cidade:has(.mb-planta){overflow:auto}
+}
+
+/* ---- o perfil da cidade na coluna do mapa (01/10/2026) ---- */
+.mb-capa{padding:14px 14px 10px;min-height:92px;display:flex;flex-direction:column;justify-content:flex-end;
+  background:linear-gradient(180deg,#1d2024,#121315);background-size:cover;background-position:center;border:1px solid var(--linha, #2c2c2c)}
+.mb-capa.com-foto{min-height:130px}
+.mb-capa h3{font-family:var(--titulo);font-size:24px;letter-spacing:.06em;text-transform:uppercase;color:#fff;margin:0;text-shadow:0 1px 3px #000}
+.mb-capa small{font-family:var(--mono);font-size:11px;color:#c9c9c4;text-shadow:0 1px 2px #000}
+.mb-lado-abas{display:flex;gap:2px;border-bottom:1px solid var(--linha, #2c2c2c)}
+.mb-lado-abas button{flex:1;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--fraco, #8d8d8d);
+  padding:7px 6px;font-family:var(--titulo);font-size:13px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.mb-lado-abas button[aria-selected="true"]{color:var(--texto, #e9e9e9);border-bottom-color:var(--rubro-vivo, #d24141)}
+.mb-lado-abas button:hover{color:var(--texto, #e9e9e9)}
+.mb-perfil{font-size:13px}
+.mb-perfil .linha-dado{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--sulco, #232323)}
+.mb-perfil table.dados{width:100%}
+.mb-bairro .mb-outras{display:block;opacity:.75;font-size:10.5px}
+/* o perfil de torcida aberto de dentro do mapa fica por cima dele */
+body:has(.mb-painel) .tela-cheia{z-index:75}
+
+/* ---- o cartão do bairro do jogo 2D: dados claros, a barra em 100% e a
+   lista inteira embaixo dela (01/10/2026) ---- */
+.mb-painel .mb-cartao{gap:8px;padding:12px 14px}
+.mb-painel .mb-cartao h4{font-family:var(--titulo);font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco, #8d8d8d);margin:6px 0 0}
+.mb-dados{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mb-dado{display:flex;flex-direction:column;gap:1px;padding:6px 8px;background:rgba(255,255,255,.035);border:1px solid var(--sulco, #232323)}
+.mb-dado span{font-size:11px;color:var(--fraco, #8d8d8d);text-transform:uppercase;letter-spacing:.05em}
+.mb-dado b{font-size:15px;font-weight:700}
+.mb-moram{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mb-moram li{display:grid;grid-template-columns:1fr auto 44px;gap:8px;align-items:baseline;padding:2px 0;border-bottom:1px solid var(--sulco, #232323)}
+.mb-moram b{font-family:var(--mono);font-weight:600;text-align:right}
+.mb-moram small{color:var(--fraco, #8d8d8d);font-family:var(--mono);text-align:right}
+.mb-painel .mb-partes{flex-direction:column;flex-wrap:nowrap;gap:2px;font-size:12.5px}
+.mb-painel .mb-partes li{display:grid;grid-template-columns:12px 1fr auto;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--sulco, #232323)}
+.mb-painel .mb-partes li.nos{color:#ffe7a0}
+.mb-painel .mb-partes b{text-align:right}
+.mb-painel .mb-partes li.livre{color:var(--fraco, #8d8d8d)}
+.mb-painel .mb-partes li.livre i{background:repeating-linear-gradient(45deg,#3b3b39 0 3px,#2f2f2d 3px 6px)}
+
+/* ---- as pixações no cartão do bairro (01/10/2026) ---- */
+.mb-painel .mb-cartao h4 small{font-family:var(--corpo);text-transform:none;letter-spacing:0;font-size:11px;margin-left:6px}
+.mb-muros{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
+.mb-muros li{display:grid;grid-template-columns:12px 64px 1fr auto;gap:6px;align-items:center;padding:3px 4px;border-bottom:1px solid var(--sulco, #232323);cursor:pointer}
+.mb-muros li:hover{background:rgba(255,255,255,.04)}
+.mb-muros li.sel{outline:1px solid var(--ouro, #d9a441);background:#221d12}
+.mb-muros li i{width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,0,0,.6)}
+.mb-muros li.livre i{background:transparent;border:1.5px solid #9a9a95}
+.mb-muros li.livre b{color:var(--fraco, #8d8d8d);font-weight:500}
+.mb-muros li small{color:var(--fraco, #8d8d8d);font-size:11px}
+
+/* ---- o mapa no celular (02/10/2026) ---- */
+.mb-planta-dica[hidden]{display:none}
+@media (max-width:760px){
+  .mb-painel{touch-action:pan-y}
+  .mb-corpo-cidade .mb-planta{height:62vh}
+  .mb-planta-dica{font-size:11px;right:auto;max-width:calc(100% - 20px)}
+  .mb-planta-zoom button{width:38px;height:38px;font-size:19px}
+}
+
 /* ===== css/planejamento.css ===== */
 /* =========================================================
    O PLANEJAMENTO DA SEMANA, EM POPUP (29/09/2026)
@@ -4216,116 +4740,6 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
   .plj-bts{width:100%;margin-left:0}
   .plj-bt{flex:1;padding:10px 8px;font-size:14px}
 }
-
-/* ===== css/mapa.css ===== */
-/* =========================================================
-   O MAPA DO JOGO: o Brasil, a legenda da cidade, o cartão do bairro e
-   o quadro de bairros por zona (js/ui/mapa_brasil.js). O painel do jogo
-   de feed (.mb-painel) é daqui; o do jogo 3D (.j3d-mapa) usa as mesmas
-   peças dentro dele (ferramentas/planta_html/jogo3d.css).
-   ========================================================= */
-
-/* ---- o painel do jogo de feed ---- */
-.mb-painel{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;background:var(--fundo, #0d0d0d);color:var(--texto, #e9e9e9)}
-.mb-painel > header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--linha, #2c2c2c);background:var(--painel, #171717)}
-.mb-painel > header h2{font-family:var(--titulo);font-size:22px;letter-spacing:.04em;text-transform:uppercase}
-.mb-abas{display:flex;gap:4px;flex:1;min-width:0}
-.mb-abas button{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--fraco, #8d8d8d);padding:5px 12px;font-size:13px;cursor:pointer;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
-.mb-abas button[aria-selected="true"]{background:var(--rubro, #9d2222);border-color:var(--rubro, #9d2222);color:#fff}
-.mb-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #e9e9e9);width:34px;height:34px;font-size:20px;cursor:pointer;flex:none}
-.mb-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
-.mb-corpo{flex:1;min-height:0;display:flex;gap:14px;padding:14px 16px;overflow:auto}
-.mb-corpo-brasil .mb-mapa{flex:1.4;min-width:0;display:flex;align-items:center;justify-content:center}
-.mb-corpo-brasil .mb-lista{flex:1;min-width:220px;max-width:380px;overflow:auto}
-.mb-corpo-cidade .mb-quadro{flex:1.3;min-width:0}
-.mb-corpo-cidade .mb-lado{flex:1;min-width:260px;max-width:400px;display:flex;flex-direction:column;gap:12px}
-@media (max-width:760px){
-  .mb-corpo{flex-direction:column;padding:10px}
-  .mb-corpo-brasil .mb-lista,.mb-corpo-cidade .mb-lado{max-width:none;min-width:0}
-}
-
-/* ---- o Brasil ---- */
-.mb-brasil{width:100%;height:100%;max-height:calc(100vh - 120px);display:block}
-.mb-pais{fill:#1f2b22;stroke:#5c7a62;stroke-width:1.2;stroke-linejoin:round}
-.mb-praca{cursor:pointer;outline:none}
-.mb-ponto{stroke:#0d0d0d;stroke-width:1.1}
-.mb-ponto.claro{stroke:#555}
-.mb-praca.minha .mb-ponto{stroke:#fff;stroke-width:1.8}
-.mb-praca.escolhida .mb-ponto{stroke:var(--ouro, #d9a441);stroke-width:2.2}
-.mb-praca:hover .mb-ponto,.mb-praca:focus .mb-ponto{stroke:var(--ouro, #d9a441);stroke-width:2.2}
-.mb-nome{font:600 7.2px var(--corpo);fill:#d8dcd4;paint-order:stroke;stroke:#0d0d0d;stroke-width:2px;pointer-events:none}
-.mb-praca.minha .mb-nome{fill:#fff;font-weight:800}
-.mb-fio{stroke:#6b766c;stroke-width:.6}
-
-/* ---- a lista das cidades ---- */
-.mb-lista h4{font-family:var(--titulo);font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--fraco, #8d8d8d);margin:12px 0 6px}
-.mb-lista h4:first-child{margin-top:0}
-.mb-lista-grupo{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px}
-.mb-lista-item{display:flex;align-items:center;gap:6px;min-width:0;padding:5px 8px;background:var(--painel, #171717);border:1px solid var(--linha, #2c2c2c);
-  color:var(--texto, #e9e9e9);font-size:12.5px;text-align:left;cursor:pointer}
-.mb-lista-item:hover{border-color:var(--ouro, #d9a441)}
-.mb-lista-item.minha{border-color:#6e6e6e}
-.mb-lista-item.escolhida{border-color:var(--ouro, #d9a441);background:#221d12}
-.mb-lista-item i{flex:none;width:10px;height:10px;border-radius:50%;border:1px solid #000}
-.mb-lista-item span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mb-lista-item small{flex:none;color:var(--fraco, #8d8d8d);font-size:11px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* ---- a legenda da cidade ---- */
-.mb-legenda{display:flex;flex-direction:column;gap:6px}
-.mb-status{font-weight:700;font-size:14px;line-height:1.35}
-.mb-efeito{font-size:12.5px;line-height:1.35;padding:5px 8px;border-left:3px solid var(--linha, #2c2c2c);background:rgba(255,255,255,.03)}
-.mb-efeito.bom{border-left-color:var(--verde, #4aa85c)}
-.mb-efeito.ruim{border-left-color:var(--rubro-vivo, #d24141)}
-.mb-torcidas{list-style:none;display:flex;flex-direction:column;gap:2px}
-.mb-torcidas li{display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
-.mb-torcidas li.nos span{font-weight:700}
-.mb-torcidas i{flex:none;width:12px;height:12px;border-radius:2px;border:1px solid rgba(0,0,0,.6)}
-.mb-torcidas i.claro{border-color:#777}
-.mb-torcidas li.sem i{background:repeating-linear-gradient(45deg,#6f6f6a 0 3px,#3a3a38 3px 6px)}
-.mb-torcidas span{flex:1;min-width:0}
-.mb-torcidas small{color:var(--fraco, #8d8d8d);font-size:11px}
-.mb-torcidas b{flex:none;font-family:var(--mono);font-size:12px;font-weight:600}
-
-/* ---- o cartão do bairro ---- */
-.mb-cartao{display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:var(--painel, #171717);border:1px solid var(--linha, #2c2c2c)}
-.mb-cartao h3{font-family:var(--titulo);font-size:20px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1}
-.mb-zona{color:var(--fraco, #8d8d8d);font-size:12px}
-/* a cidade do bairro e a torcida que mora nele (01/10/2026) */
-.mb-cidade{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--fraco, #8d8d8d)}
-.mb-torcida{font-size:12px;margin-top:2px}
-.mb-dona{font-size:13.5px;font-weight:600}
-.mb-nada{color:var(--fraco, #8d8d8d);font-size:13px}
-.mb-barra{position:relative;display:flex;height:20px;background:#2b2b29;border:1px solid #000;overflow:hidden}
-.mb-barra span{display:flex;align-items:center;justify-content:center;font:700 10.5px var(--mono);color:#fff;text-shadow:0 1px 1px #000;white-space:nowrap;overflow:hidden}
-.mb-barra span.claro{color:#111;text-shadow:none}
-.mb-barra span.livre{background:repeating-linear-gradient(45deg,#3b3b39 0 4px,#2f2f2d 4px 8px)}
-.mb-barra .meio{position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;margin-left:-1px;background:var(--ouro, #d9a441);opacity:.9}
-.mb-partes{list-style:none;display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:#cfcfcf}
-.mb-partes li{display:flex;align-items:center;gap:5px}
-.mb-partes i{width:9px;height:9px;border-radius:2px;border:1px solid rgba(0,0,0,.6)}
-.mb-partes b{font-family:var(--mono);font-weight:600}
-.mb-nota{font-size:12px;color:var(--fraco, #8d8d8d);line-height:1.35}
-.mb-estruturas{list-style:none;display:flex;flex-direction:column;gap:2px;font-size:12.5px}
-.mb-estruturas li{display:flex;align-items:center;gap:6px}
-.mb-estruturas i{width:9px;height:9px;border-radius:50%;border:1px solid rgba(0,0,0,.6)}
-.mb-acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
-.mb-acoes small{color:var(--fraco, #8d8d8d);font-size:11.5px}
-
-/* ---- o quadro de bairros (a bússola) ---- */
-.mb-quadro{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"norte norte" "oeste leste" "sul sul";gap:10px;align-content:start}
-.mb-zona-bloco{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--linha, #2c2c2c);background:rgba(255,255,255,.02);align-content:flex-start}
-.mb-zona-bloco h4{flex-basis:100%;font-family:var(--titulo);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco, #8d8d8d)}
-/* a praça de várias cidades: um bloco por cidade, um embaixo do outro (01/10/2026) */
-.mb-quadro.mb-por-cidade{display:flex;flex-direction:column}
-.mb-zona-bloco.z-norte{grid-area:norte}.mb-zona-bloco.z-sul{grid-area:sul}.mb-zona-bloco.z-oeste{grid-area:oeste}.mb-zona-bloco.z-leste{grid-area:leste}
-.mb-bairro{--cor:#6f6f6a;flex:1 1 130px;display:flex;flex-direction:column;gap:2px;min-width:0;padding:7px 9px;text-align:left;cursor:pointer;
-  background:linear-gradient(90deg, color-mix(in srgb, var(--cor) 55%, transparent), color-mix(in srgb, var(--cor) 18%, transparent));
-  border:1px solid color-mix(in srgb, var(--cor) 70%, #000);color:#fff}
-.mb-bairro b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 2px #000}
-.mb-bairro small{font:600 11px var(--mono);opacity:.9;text-shadow:0 1px 2px #000}
-.mb-bairro.nosso{box-shadow:inset 0 0 0 2px #fff}
-.mb-bairro.escolhido{outline:2px solid var(--ouro, #d9a441);outline-offset:1px}
 
 /* ===== css/mobile.css ===== */
 /* =========================================================

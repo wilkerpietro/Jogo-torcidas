@@ -37,11 +37,11 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=d630fefbbe';
-import { brigaNaCaminhada } from './caminhada.js?v=d630fefbbe';
-import { brigaNoBar } from './briga_bar.js?v=d630fefbbe';
-import { brigaNaTreta } from './briga_treta.js?v=d630fefbbe';
-import { planoDoBar } from './casas3d.js?v=d630fefbbe';
+import { palcoDeBriga } from './palco_briga.js?v=a3fa9607d3';
+import { brigaNaCaminhada } from './caminhada.js?v=a3fa9607d3';
+import { brigaNoBar } from './briga_bar.js?v=a3fa9607d3';
+import { brigaNaTreta } from './briga_treta.js?v=a3fa9607d3';
+import { planoDoBar } from './casas3d.js?v=a3fa9607d3';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -170,10 +170,16 @@ function criarRelogio(C) {
 
 /* A PARTE DA TELA QUE A CIDADE MOSTRA: da coluna de ícones até a borda
    da direita (o feed saiu da tela, 28/09/2026) — é ali que a câmera põe a
-   sala e o balão fica */
+   sala e o balão fica. A coluna da rede social (a do jogo 2D, 06/10/2026),
+   aberta, também come a esquerda */
 export function areaLivre() {
   const W = innerWidth, menu = document.querySelector('.feed-menu');
-  const x0 = menu ? Math.max(0, menu.getBoundingClientRect().right) : 0;
+  let x0 = menu ? Math.max(0, menu.getBoundingClientRect().right) : 0;
+  const rede = document.querySelector('.social-lado');
+  if (rede && rede.offsetParent) {
+    const r = rede.getBoundingClientRect();
+    if (r.width > 0 && r.right < W * 0.6) x0 = Math.max(x0, r.right);
+  }
   return { x0, x1: W, meio: (x0 + W) / 2, W };
 }
 /* voar até (x, z) pondo o ponto no meio da parte livre da tela: o alvo

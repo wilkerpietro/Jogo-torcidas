@@ -14,12 +14,14 @@
    DOMContentLoaded: quem usa (a ponte, numa cena aberta pelo jogador)
    chega muito depois.
    ========================================================= */
-import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, bonecos } from './bonecos3_cena.js?v=d630fefbbe';
+import { montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu, bonecos } from './bonecos3_cena.js?v=a3fa9607d3';
 
 window.TO = window.TO || {};
 TO.diaJogo = TO.diaJogo || {};
+/* (as fotos dos posts da rede social — a da briga e a do post, cartaz.js —
+   e o canvas que perdeu o contexto, main.js: vieram do jogo 2D, 06/10/2026) */
 TO.diaJogo.bonecos3 = {
-  montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu,
+  montar, desenharDeCima, desenharVitrine, limparDeCima, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu,
   get ativo(){ return bonecos.ativo; },
   get escalaDeCima(){ return bonecos.escala; },
   set escalaDeCima(v){ bonecos.escala = v; }
