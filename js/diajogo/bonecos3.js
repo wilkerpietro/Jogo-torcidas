@@ -552,6 +552,11 @@ TO.diaJogo.bonecos3 = (function(){
         let antes = 0, depois = 0;
         modeloGLB.traverse(o=>{
           if(!o.isMesh || !o.geometry) return;
+          /* O CORPO NÃO SE AFINA (06/10/2026): ele já sai do Blender no
+             tamanho do jogo, e a grade de 3,6 cm juntava vértice de pele
+             com vértice de camisa — vinham daí as pontas da camisa, a
+             cintura fina e a faixa do peito em V */
+          if(/^corpo/.test(o.name) || (o.parent && /^corpo/.test(o.parent.name))) return;
           antes += triangulosDe(o.geometry);
           const g = afinarMalha(o.geometry, cfg.afinarCelulas);
           if(g){ o.geometry.dispose(); o.geometry = g; }
@@ -895,7 +900,16 @@ TO.diaJogo.bonecos3 = (function(){
     const raiz = new THREE.Group();
     const modelo = THREE.SkeletonUtils.clone(modeloGLB);
     const on = variantesDe(f, pm);
-    const cores = {pele:f.pele, camisa: pm ? '#233a2c' : f.camisa, faixa: pm ? '#c9d64a' : f.faixa,
+    /* A GOLA E O PUNHO SÃO MATERIAIS DO MODELO (06/10/2026): gola careca
+       pequena em volta do pescoço e punho na boca da manga. Camisa de
+       'gola' pinta os dois na 2ª cor; 'gola-dupla', o punho em duas
+       faixas, a da boca na 3ª; lisa, tudo na cor da camisa. */
+    const des = DESENHOS[f.desenho] || 'lisa';
+    const comGola = !pm && (des === 'gola' || des === 'gola-dupla');
+    const camisaCor = pm ? '#233a2c' : f.camisa;
+    const cores = {pele:f.pele, camisa: camisaCor, faixa: pm ? '#c9d64a' : f.faixa,
+                   gola: comGola ? f.faixa : camisaCor, punho: comGola ? f.faixa : camisaCor,
+                   punho2: des === 'gola-dupla' ? (f.cor3 || f.faixa) : comGola ? f.faixa : camisaCor,
                    calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,
                    bone: f.corBone, sola:'#2a2a2a'};
     const matsFig = new Map();
@@ -904,7 +918,7 @@ TO.diaJogo.bonecos3 = (function(){
       if(VARIANTE.test(o.name)) o.visible = on.has(o.name);
       const nome = o.material.name;
       /* o desenho da camisa (estudo): cor por vértice na malha */
-      if(nome === 'camisa' && !pm && f.desenho > 0 && o.geometry.getAttribute('position')){
+      if(nome === 'camisa' && !pm && f.desenho > 0 && !comGola && o.geometry.getAttribute('position')){
         o.geometry = geometriaCamisa(o.geometry, f.desenho, f.camisa, f.faixa, f.cor3);
         o.material = matCamisaVC;
         return;

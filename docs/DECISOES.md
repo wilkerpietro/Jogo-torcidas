@@ -9226,6 +9226,25 @@ Dois defeitos que se alimentavam:
 - **Bonecos (bonecos3.js).** Com `d.comemorando` e parado, a provocação não pede inimigo a 24–90 px nem sorteio: um gesto atrás do outro (pausa de 0,15–0,75 s), inclusive na multidão do movimento leve, que passa a contar a provocação como agitação.
 - Teste: rua, treta no beco e casa de piscina na bancada (`arredores.html`) com a debandada forçada — deslocamento de 0–19 px depois da debandada (antes, centenas, rumo à entrada), fase `comemorando` por 5 s e então `fim`; sem erro de página.
 
+## O corpo e a camisa do boneco, refeitos (o dono, 06/10/2026: "crie um visual do zero mais polido das camisas dos bonecos. fica muito bugado com algumas pontas da blusa altas, a cintura fina, etc como mostra no print, aprimorando também o modelo do boneco pra ter um modelo ainda mais similar ao corpo humano. a gola da blusa está muito grande também, cobrindo quase todo o ombro")
+
+- **De onde vinham os defeitos.** O corpo era o modificador Skin sobre um esqueleto de pontos (a cintura afinava entre dois pontos, e o ombro ficava quadrado onde os ramos se encontravam). Na chegada, o jogo afinava a malha juntando os vértices numa grade de 3,6 cm (`afinarMalha`), e cada grupo herdava a cor e os pesos do primeiro vértice: daí as pontas da camisa, a faixa do peito em V e a borda serrilhada. A gola do desenho "gola" era pintada por altura (`fy > 0,92`), o que cobria todo o alto do ombro.
+- **O corpo novo (`ferramentas/boneco_blender.py`).** O tronco é um loft de seções medidas (quadril 33 cm, cintura 31 cm sem afinar, peito 34 cm, trapézio caindo do pescoço pro ombro). Braços e pernas são tubos ao longo dos ossos, com panturrilha e antebraço. Deltoide, glúteos, polegar e tênis são volumes próprios. Tudo é fundido num volume só (remalha em voxel de 5,5 mm, alisada) e refeito em quadriláteros pelo QuadriFlow: ~1.060 no modelo leve e ~5.000 no detalhado. O detalhado perde os dedos separados, ficando a mão com polegar.
+- **A roupa por planos.** A bainha é reta em z 0,955 e a faixa do peito fica entre 1,225 e 1,280. A manga é cortada perpendicular ao braço, no meio do úmero. A gola careca é uma elipse de 7,6 × 7,1 cm em volta do pescoço (12 planos tangentes): mais baixa na frente e nas costas, mais alta do lado, sem chegar no ombro. A faixa da gola tem 1,5 cm e o punho 1,7 cm (o último 0,8 cm é o `punho2`). A camisa fica 4 mm por fora da pele e o calção 3 mm, e a borda vira bainha.
+- **Gola e punho são materiais (`gola`, `punho`, `punho2`).** O `construirCorpoGLB` pinta a camisa assim:
+  - **lisa:** tudo na cor da camisa;
+  - **gola:** gola e punho na 2ª cor;
+  - **gola-dupla:** gola e punho na 2ª cor, com a boca do punho na 3ª;
+  - **PM:** tudo na cor da farda.
+
+  A pintura por vértice (`geometriaCamisa`) fica só pros desenhos de estudo.
+- **Pesos por região, não pelo osso mais perto.**
+  - O braço começa fora do tronco: |x| 0,17–0,205 no alto e 0,205–0,235 na altura da mão, pra coxa não ir junto.
+  - O alto do ombro é metade braço, metade tronco; sem isso, o braço cruzado levantava a camisa em ombreira.
+  - Cotovelo, pulso, cintura, pescoço, virilha, joelho e tornozelo misturam numa faixa curta e suave.
+- **O jogo não afina mais o corpo.** `afinarMalha` pula o `corpo`, que já vem no tamanho certo; cabeça e cabelo seguem afinados. Medido na rua: 3.589 triângulos por boneco contra 2.500 antes (+44%), ou ~190 mil com 52 bonecos. Está longe do 1,26 milhão que derrubava o fps em 08/09.
+- **Gerar de novo:** `pip install bpy==4.2.0` (Python 3.11) e depois `python3 ferramentas/boneco_blender.py --leve` e `python3 ferramentas/boneco_blender.py`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

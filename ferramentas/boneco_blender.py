@@ -80,78 +80,135 @@ M = {
   'pulseira':material('pulseira',(0.12, 0.12, 0.12), 0.6),
 }
 
-# ---------------------------------------------------------------- o esqueleto de pontos
-# (x, y, z) em metros; y negativo é a frente. raio = (rx, ry) da seção.
-P = {}
-def ponto(nome, x, y, z, rx, ry=None, mat='pele'):
-    P[nome] = dict(co=Vector((x, y, z)), r=(rx, ry if ry is not None else rx), mat=mat)
+# ---------------------------------------------------------------- O CORPO, REFEITO (pedido do dono, 06/10/2026)
+# "crie um visual do zero mais polido das camisas dos bonecos. fica muito
+# bugado com algumas pontas da blusa altas, a cintura fina, etc ...
+# aprimorando também o modelo do boneco pra ter um modelo ainda mais
+# similar ao corpo humano. a gola da blusa está muito grande também".
+#
+# O corpo de antes era o modificador Skin sobre um esqueleto de pontos:
+# cintura que afinava entre dois pontos, ombro quadrado onde os ramos se
+# encontravam, e uma malha densa que o jogo afinava na chegada juntando
+# vértices numa grade de 3,6 cm — era daí que vinham as pontas da camisa
+# e a faixa em V. Agora:
+#   · o TRONCO é um loft de seções medidas (quadril, cintura, peito,
+#     ombro, trapézio), os membros são tubos ao longo dos ossos, e o
+#     deltoide, os glúteos e o pé são volumes próprios;
+#   · tudo é fundido num volume (remalha em voxel) e refeito em
+#     quadriláteros pelo QuadriFlow, já no tamanho que o jogo desenha —
+#     o jogo não afina mais o corpo;
+#   · a roupa é cortada por planos: bainha reta, manga perpendicular ao
+#     braço, gola careca pequena (só em volta do pescoço) e punho; a
+#     gola e os punhos são materiais próprios (gola, punho, punho2), pra
+#     o desenho da torcida não depender de onde caem os vértices;
+#   · a camisa fica 4 mm por fora da pele (o pano tem espessura);
+#   · os pesos são por região, não pelo osso mais perto: o alto do ombro
+#     é do tronco e passa pro braço só no deltoide.
+QUADS = 1250 if LEVE else 5200
 
-ponto('pelvis',   0, 0.00, 0.97, 0.150, 0.110, 'calca')
-ponto('cintura',  0, 0.00, 1.08, 0.130, 0.100, 'camisa')
-ponto('peito',    0, 0.00, 1.26, 0.170, 0.115, 'camisa')
-ponto('ombros',   0, 0.00, 1.40, 0.165, 0.098, 'camisa')
-ponto('pescoco',  0, 0.00, 1.47, 0.062, 0.062, 'pele')
-ponto('nuca',     0, 0.00, 1.53, 0.054, 0.054, 'pele')
-for lado, sx in (('D', -1), ('E', 1)):
-    ponto('ombro'+lado,   sx*0.215, 0.00, 1.395, 0.062, 0.062, 'camisa')
-    ponto('manga'+lado,   sx*0.245, 0.00, 1.27, 0.052, 0.052, 'camisa')
-    ponto('braco'+lado,   sx*0.255, 0.00, 1.20, 0.046, 0.046, 'pele')
-    ponto('cotovelo'+lado,sx*0.265, 0.00, 1.13, 0.043, 0.043, 'pele')
-    ponto('antebr'+lado,  sx*0.275, 0.00, 1.02, 0.040, 0.040, 'pele')
-    ponto('pulso'+lado,   sx*0.285, 0.00, 0.90, 0.032, 0.026, 'pele')
-    ponto('mao'+lado,     sx*0.290, 0.00, 0.82, 0.042, 0.020, 'pele')
-    ponto('nos'+lado,     sx*0.292, -0.004, 0.785, 0.040, 0.016, 'pele')
-    # dedos: quatro ramos curtos mais o polegar, pra mão ter mão (nos dois modelos)
-    for k, (dx, dy, comp) in enumerate([(-0.030, 0.0, 0.055), (-0.011, -0.002, 0.062), (0.008, -0.002, 0.060), (0.026, 0.0, 0.050)]):
-        ponto('dedo%d%s' % (k, lado), sx*0.292 + dx, dy - 0.004, 0.785 - comp*0.55, 0.0075, 0.0065, 'pele')
-        ponto('ponta%d%s' % (k, lado), sx*0.292 + dx, dy - 0.006, 0.785 - comp, 0.0060, 0.0055, 'pele')
-    ponto('polegar'+lado, sx*0.292 + sx*(-0.030), -0.020, 0.80, 0.0085, 0.0075, 'pele')
-    ponto('polegarp'+lado, sx*0.292 + sx*(-0.038), -0.036, 0.785, 0.0065, 0.0060, 'pele')
-    ponto('quadril'+lado, sx*0.095, 0.00, 0.94, 0.095, 0.095, 'calca')
-    ponto('coxa'+lado,    sx*0.105, 0.00, 0.74, 0.082, 0.085, 'calca')
-    ponto('bermuda'+lado, sx*0.110, 0.00, 0.66, 0.078, 0.080, 'calca')
-    ponto('joelho'+lado,  sx*0.115, 0.00, 0.52, 0.062, 0.066, 'pele')
-    ponto('canela'+lado,  sx*0.118, 0.00, 0.35, 0.058, 0.064, 'pele')
-    ponto('tornoz'+lado,  sx*0.120, 0.00, 0.10, 0.046, 0.052, 'tenis')
-    ponto('pe'+lado,      sx*0.124, -0.07, 0.046, 0.058, 0.038, 'tenis')
-    ponto('ponta'+lado,   sx*0.126, -0.19, 0.036, 0.054, 0.032, 'tenis')
+def anel(bm, c, u, w, ru, rw, seg, ex=2.0):
+    """um anel de `seg` vértices em volta de `c`, superelipse de expoente ex"""
+    vs = []
+    for k in range(seg):
+        a = 2*math.pi*k/seg
+        ca, sa = math.cos(a), math.sin(a)
+        x = math.copysign(abs(ca)**(2.0/ex), ca)*ru
+        y = math.copysign(abs(sa)**(2.0/ex), sa)*rw
+        vs.append(bm.verts.new(c + u*x + w*y))
+    return vs
 
-ARESTAS = [('pelvis','cintura'),('cintura','peito'),('peito','ombros'),('ombros','pescoco'),('pescoco','nuca')]
-for L in ('D','E'):
-    ARESTAS += [('ombros','ombro'+L),('ombro'+L,'manga'+L),('manga'+L,'braco'+L),('braco'+L,'cotovelo'+L),
-                ('cotovelo'+L,'antebr'+L),('antebr'+L,'pulso'+L),('pulso'+L,'mao'+L),('mao'+L,'nos'+L),
-                ('mao'+L,'polegar'+L),('polegar'+L,'polegarp'+L)] + [('nos'+L,'dedo%d%s'%(k,L)) for k in range(4)] + [('dedo%d%s'%(k,L),'ponta%d%s'%(k,L)) for k in range(4)] + [
-                ('pelvis','quadril'+L),('quadril'+L,'coxa'+L),('coxa'+L,'bermuda'+L),('bermuda'+L,'joelho'+L),
-                ('joelho'+L,'canela'+L),('canela'+L,'tornoz'+L),('tornoz'+L,'pe'+L),('pe'+L,'ponta'+L)]
+def loft(bm, secoes, seg=20, horizontal=False):
+    """tubo fechado pelas seções [(centro, ru, rw, ex)]: ru no eixo de lado,
+    rw no eixo da frente. `horizontal`: anéis no plano XY (o tronco)."""
+    aneis = []
+    n = len(secoes)
+    for i, (c, ru, rw, ex) in enumerate(secoes):
+        c = Vector(c)
+        if horizontal: d = Vector((0, 0, 1))
+        else:
+            d = (Vector(secoes[min(i+1, n-1)][0]) - Vector(secoes[max(i-1, 0)][0])).normalized()
+        u = Vector((1, 0, 0)) - d*d.x
+        if u.length < 1e-4: u = Vector((0, 1, 0)) - d*d.y
+        u.normalize()
+        w = d.cross(u).normalized()
+        if w.y > 0: w = -w             # rw aponta pra frente (−y)
+        aneis.append(anel(bm, c, u, -w, ru, rw, seg, ex))
+    for i in range(n-1):
+        for k in range(seg):
+            bm.faces.new((aneis[i][k], aneis[i][(k+1) % seg], aneis[i+1][(k+1) % seg], aneis[i+1][k]))
+    bm.faces.new(list(reversed(aneis[0]))); bm.faces.new(aneis[-1])
 
-# ---------------------------------------------------------------- o corpo (Skin + Subsurf)
-def malha_do_esqueleto():
+def elipsoide(bm, c, rx, ry, rz):
+    r = bmesh.ops.create_uvsphere(bm, u_segments=16, v_segments=10, radius=1.0)
+    for v in r['verts']:
+        v.co = Vector((c[0] + v.co.x*rx, c[1] + v.co.y*ry, c[2] + v.co.z*rz))
+
+def volume_do_corpo():
     bm = bmesh.new()
-    idx = {}
-    for nome, p in P.items():
-        idx[nome] = bm.verts.new(p['co'])
-    bm.verts.ensure_lookup_table()
-    for a, b in ARESTAS:
-        bm.edges.new((idx[a], idx[b]))
-    me = bpy.data.meshes.new('corpo')
-    bm.to_mesh(me); bm.free()
-    ob = bpy.data.objects.new('corpo', me)
-    col.objects.link(ob)
-    # o Skin precisa da camada de vértices dele
-    skin = ob.modifiers.new('Skin', 'SKIN')
-    skin.use_smooth_shade = True
-    ob.data.skin_vertices  # existe depois do modificador
-    sv = ob.data.skin_vertices[0].data
-    for i, nome in enumerate(P.keys()):
-        sv[i].radius = P[nome]['r']
-        if nome == 'pelvis': sv[i].use_root = True
-    sub = ob.modifiers.new('Subsurf', 'SUBSURF')
-    sub.levels = 1 if LEVE else 2; sub.render_levels = sub.levels
+    # o tronco: (z, meia largura, meia profundidade, deslocamento em y, expoente)
+    # y negativo é a frente: o peito vai um pouco pra frente, o quadril pra trás
+    T = [(0.855, 0.120, 0.080, 0.012, 2.2),
+         (0.890, 0.152, 0.098, 0.012, 2.3),
+         (0.940, 0.165, 0.104, 0.008, 2.4),
+         (0.990, 0.163, 0.101, 0.004, 2.4),
+         (1.050, 0.155, 0.099, 0.000, 2.3),     # a cintura: sem afinar
+         (1.120, 0.156, 0.101, -0.004, 2.3),
+         (1.200, 0.163, 0.107, -0.009, 2.4),
+         (1.270, 0.171, 0.111, -0.012, 2.5),    # o peito
+         (1.330, 0.176, 0.107, -0.008, 2.5),
+         (1.375, 0.162, 0.094, 0.000, 2.3),     # a linha do ombro
+         (1.410, 0.128, 0.080, 0.006, 2.1),     # o trapézio, caindo do pescoço pro ombro
+         (1.440, 0.094, 0.066, 0.008, 2.0),
+         (1.462, 0.064, 0.056, 0.008, 2.0)]
+    loft(bm, [((0, y, z), hw, hd, ex) for z, hw, hd, y, ex in T], seg=24, horizontal=True)
+    # o pescoço, que a cabeça cobre por cima
+    loft(bm, [((0, 0.008, 1.43), 0.058, 0.056, 2.0), ((0, 0.008, 1.50), 0.054, 0.053, 2.0), ((0, 0.010, 1.565), 0.050, 0.050, 2.0)], seg=14)
+    for sx in (-1, 1):
+        X = lambda x: sx*x
+        # o deltoide arredonda o ombro: é ele que some no ombro quadrado de antes
+        elipsoide(bm, (X(0.197), 0.002, 1.342), 0.048, 0.052, 0.058)
+        # braço: ombro → cotovelo → pulso, seguindo os ossos
+        loft(bm, [((X(0.210), 0.0, 1.360), 0.045, 0.049, 2.0),
+                  ((X(0.231), 0.0, 1.300), 0.046, 0.049, 2.0),
+                  ((X(0.252), 0.0, 1.200), 0.043, 0.044, 2.0),
+                  ((X(0.265), 0.0, 1.130), 0.037, 0.039, 2.0),
+                  ((X(0.272), -0.002, 1.060), 0.040, 0.041, 2.0),
+                  ((X(0.279), -0.001, 0.975), 0.034, 0.031, 2.0),
+                  ((X(0.285), 0.0, 0.905), 0.028, 0.022, 2.0)], seg=12)
+        # a mão: espalmada, larga em x, fina em y (como os ossos esperam)
+        loft(bm, [((X(0.286), 0.0, 0.900), 0.027, 0.020, 2.0),
+                  ((X(0.288), -0.002, 0.860), 0.038, 0.019, 2.2),
+                  ((X(0.290), -0.003, 0.815), 0.042, 0.018, 2.4),
+                  ((X(0.291), -0.004, 0.778), 0.040, 0.016, 2.6),
+                  ((X(0.292), -0.004, 0.758), 0.033, 0.014, 2.4),
+                  ((X(0.292), -0.004, 0.746), 0.018, 0.009, 2.0)], seg=12)
+        # o polegar, pra frente
+        loft(bm, [((X(0.268), -0.010, 0.865), 0.011, 0.011, 2.0), ((X(0.262), -0.030, 0.835), 0.009, 0.009, 2.0),
+                  ((X(0.262), -0.040, 0.812), 0.007, 0.007, 2.0)], seg=8)
+        # perna: virilha → joelho → tornozelo, com a panturrilha atrás
+        loft(bm, [((X(0.090), 0.006, 0.960), 0.088, 0.092, 2.0),
+                  ((X(0.098), 0.004, 0.840), 0.086, 0.090, 2.0),
+                  ((X(0.105), 0.000, 0.720), 0.077, 0.080, 2.0),
+                  ((X(0.111), -0.002, 0.600), 0.064, 0.066, 2.0),
+                  ((X(0.115), 0.000, 0.520), 0.056, 0.058, 2.0),
+                  ((X(0.116), 0.010, 0.430), 0.056, 0.062, 2.0),
+                  ((X(0.117), 0.008, 0.330), 0.051, 0.056, 2.0),
+                  ((X(0.118), 0.002, 0.220), 0.040, 0.043, 2.0),
+                  ((X(0.120), 0.000, 0.120), 0.034, 0.038, 2.0),
+                  ((X(0.120), 0.004, 0.070), 0.040, 0.046, 2.0)], seg=14)
+        # os glúteos
+        elipsoide(bm, (X(0.072), 0.050, 0.905), 0.080, 0.060, 0.085)
+        # o tênis: do calcanhar à ponta, achatado
+        loft(bm, [((X(0.120), 0.050, 0.050), 0.040, 0.046, 2.6),
+                  ((X(0.121), 0.000, 0.052), 0.047, 0.052, 2.8),
+                  ((X(0.123), -0.080, 0.042), 0.052, 0.042, 2.8),
+                  ((X(0.125), -0.150, 0.034), 0.048, 0.034, 2.6),
+                  ((X(0.126), -0.188, 0.030), 0.034, 0.026, 2.2),
+                  ((X(0.126), -0.202, 0.030), 0.016, 0.014, 2.0)], seg=14)
+    me = bpy.data.meshes.new('corpo'); bm.to_mesh(me); bm.free()
+    ob = bpy.data.objects.new('corpo', me); col.objects.link(ob)
     return ob
 
-corpo = malha_do_esqueleto()
-
-# aplica os modificadores (vira malha de verdade) — por objeto avaliado
 def aplicar_modificadores(ob):
     deps = bpy.context.evaluated_depsgraph_get()
     ev = ob.evaluated_get(deps)
@@ -163,45 +220,123 @@ def aplicar_modificadores(ob):
     for poly in me.polygons: poly.use_smooth = True
     return ob
 
+corpo = volume_do_corpo()
+# funde tudo num volume só e alisa as emendas (axila, virilha, ombro)
+_rm = corpo.modifiers.new('Remesh', 'REMESH'); _rm.mode = 'VOXEL'; _rm.voxel_size = 0.0055
+_sm = corpo.modifiers.new('Smooth', 'SMOOTH'); _sm.factor = 0.6; _sm.iterations = 6
 aplicar_modificadores(corpo)
+_bm = bmesh.new(); _bm.from_mesh(corpo.data)
+bmesh.ops.remove_doubles(_bm, verts=_bm.verts, dist=1e-6)
+bmesh.ops.recalc_face_normals(_bm, faces=_bm.faces)
+_bm.to_mesh(corpo.data); _bm.free()
+# quadriláteros limpos, no tamanho que o jogo desenha
+bpy.context.view_layer.objects.active = corpo
+for o in bpy.context.selected_objects: o.select_set(False)
+corpo.select_set(True)
+bpy.ops.object.quadriflow_remesh(target_faces=QUADS, use_mesh_symmetry=True, use_preserve_sharp=False, use_preserve_boundary=False, smooth_normals=True)
+for poly in corpo.data.polygons: poly.use_smooth = True
+print('corpo: %d faces depois do QuadriFlow' % len(corpo.data.polygons))
 
-# A ROUPA É MATERIAL NA MALHA DO CORPO, COM BORDA RETA: antes de pintar,
-# a malha é CORTADA por planos (`bisect_plane` sem apagar nada) na
-# bainha, na boca da manga, na gola, na faixa, no calção, na meia e no
-# tênis — assim a borda entre dois materiais é uma linha reta e não o
-# serrilhado dos quadriláteros da subdivisão. A camisa como casca
-# separada (versão anterior) rasgava no sovaco quando o braço subia;
-# na malha única, não rasga.
+# ---- A ROUPA, POR PLANOS
+OMBRO = Vector((0.215, 0, 1.395)); COTOVELO = Vector((0.265, 0, 1.13))
+EIXO_BRACO = (OMBRO - COTOVELO).normalized()          # aponta pro ombro
+MANGA = OMBRO.lerp(COTOVELO, 0.50)                     # a boca da manga, no meio do braço
+PUNHO, PUNHO2 = 0.017, 0.008                           # larguras do punho (de cima pra boca)
+# A GOLA CARECA: a abertura é uma elipse em volta do eixo do pescoço
+# (12 planos tangentes, um polígono quase redondo), cortando o trapézio
+# onde ele encontra o pescoço — fica mais baixa na frente e nas costas,
+# mais alta do lado, como a gola de verdade. A faixa da gola vem logo fora.
+GOLA_C, GOLA_RX, GOLA_RY, GOLA_FAIXA, GOLA_LADOS = Vector((0, 0.004, 0)), 0.076, 0.071, 0.015, 12
+def planos_gola(folga):
+    ps = []
+    for k in range(GOLA_LADOS):
+        a = 2*math.pi*k/GOLA_LADOS
+        rx, ry = GOLA_RX + folga, GOLA_RY + folga
+        n = Vector((math.cos(a)/rx, math.sin(a)/ry, 0)).normalized()
+        ps.append((a, Vector((GOLA_C.x + rx*math.cos(a), GOLA_C.y + ry*math.sin(a), 0)), n))
+    return ps
+def dentro_gola(c, folga=0.0):
+    if c.z < 1.37: return False
+    return all((Vector((c.x, c.y, 0)) - q).dot(n) < 0 for _, q, n in planos_gola(folga))
+BAINHA, FAIXA_Z, CALCAO, MEIA, TENIS = 0.955, (1.225, 1.280), 0.600, 0.165, 0.115
+
+def no_braco(c):
+    """o braço (com a mão) — fora do tronco"""
+    return c.z > 0.70 and abs(c.x) > (0.188 if c.z > 1.0 else 0.215)
+def lado(c): return -1 if c.x < 0 else 1
+def eixo(c):
+    s = lado(c)
+    return Vector((s*EIXO_BRACO.x, EIXO_BRACO.y, EIXO_BRACO.z)), Vector((s*MANGA.x, MANGA.y, MANGA.z))
+
 def cortar_corpo():
     bm = bmesh.new(); bm.from_mesh(corpo.data)
-    Zv = Vector((0, 0, 1))
-    def corte(z, filtro=None):
+    def corte(co, no, filtro=None):
         faces = [f for f in bm.faces if (filtro is None or filtro(f.calc_center_median()))]
         geom = list(set(faces) | set(e for f in faces for e in f.edges) | set(v for f in faces for v in f.verts))
-        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=(0, 0, z), plane_no=Zv, clear_outer=False, clear_inner=False)
-    tronco = lambda c: abs(c.x) <= 0.19
-    braco = lambda c: abs(c.x) > 0.19
-    corte(0.985, tronco); corte(1.235, braco); corte(1.445, lambda c: abs(c.x) < 0.11)
-    corte(1.225, tronco); corte(1.285, tronco)
-    corte(0.62); corte(0.115); corte(0.165)
+        bmesh.ops.bisect_plane(bm, geom=geom, plane_co=co, plane_no=no, clear_outer=False, clear_inner=False)
+    Z = Vector((0, 0, 1))
+    tronco = lambda c: not no_braco(c)
+    for s in (-1, 1):
+        n = Vector((s*EIXO_BRACO.x, EIXO_BRACO.y, EIXO_BRACO.z)); m = Vector((s*MANGA.x, MANGA.y, MANGA.z))
+        bracoS = lambda c, s=s: no_braco(c) and lado(c) == s and c.z > 1.0
+        for off in (0.0, PUNHO2, PUNHO):
+            corte(m + n*off, n, bracoS)
+    for folga in (0.0, GOLA_FAIXA):
+        for a, q, n in planos_gola(folga):
+            def setor(c, a=a):
+                if c.z < 1.36 or abs(c.x) > 0.16: return False
+                b = math.atan2((c.y - GOLA_C.y)/GOLA_RY, c.x/GOLA_RX)
+                return abs((b - a + math.pi) % (2*math.pi) - math.pi) < 2*math.pi/GOLA_LADOS
+            corte(q, n, setor)
+    corte(Vector((0, 0, BAINHA)), Z, tronco)
+    corte(Vector((0, 0, FAIXA_Z[0])), Z, tronco); corte(Vector((0, 0, FAIXA_Z[1])), Z, tronco)
+    corte(Vector((0, 0, CALCAO)), Z); corte(Vector((0, 0, MEIA)), Z); corte(Vector((0, 0, TENIS)), Z)
     bm.to_mesh(corpo.data); bm.free()
     for poly in corpo.data.polygons: poly.use_smooth = True
 cortar_corpo()
-for m in ('pele','camisa','faixa','calca','tenis','sola'):
+
+def material_da_face(c, nz):
+    if no_braco(c):
+        n, m = eixo(c)
+        d = (c - m).dot(n)                       # > 0: dentro da manga
+        if d <= 0: return 'pele'
+        return 'punho2' if d < PUNHO2 else 'punho' if d < PUNHO else 'camisa'
+    if dentro_gola(c): return 'pele'
+    if dentro_gola(c, GOLA_FAIXA): return 'gola'
+    if c.z >= BAINHA: return 'faixa' if FAIXA_Z[0] <= c.z <= FAIXA_Z[1] else 'camisa'
+    if c.z >= CALCAO: return 'calca'
+    if c.z >= MEIA: return 'pele'
+    if c.z >= TENIS: return 'meia'
+    return 'sola' if nz < -0.6 else 'tenis'
+
+for m in ('pele', 'camisa', 'faixa', 'calca', 'tenis', 'sola'):
     corpo.data.materials.append(M[m])
 corpo.data.materials.append(material('meia', (0.95, 0.95, 0.93)))
+corpo.data.materials.append(material('gola', (0.92, 0.92, 0.90)))
+corpo.data.materials.append(material('punho', (0.92, 0.92, 0.90)))
+corpo.data.materials.append(material('punho2', (0.10, 0.10, 0.10)))
 IDX = {m.name: k for k, m in enumerate(corpo.data.materials)}
 for poly in corpo.data.polygons:
-    c = poly.center
-    braco = abs(c.x) > 0.19 and c.z > 0.7
-    if braco: m = 'camisa' if c.z > 1.235 else 'pele'
-    elif c.z >= 1.445 and abs(c.x) < 0.11: m = 'pele'
-    elif c.z >= 0.985: m = 'faixa' if 1.225 <= c.z <= 1.285 else 'camisa'
-    elif c.z >= 0.62: m = 'calca'
-    elif c.z >= 0.165: m = 'pele'
-    elif c.z >= 0.115: m = 'meia'
-    else: m = 'sola' if poly.normal.z < -0.6 else 'tenis'
-    poly.material_index = IDX[m]
+    poly.material_index = IDX[material_da_face(poly.center, poly.normal.z)]
+
+# o pano tem espessura: a camisa (e o calção, menos) sai um pouco da pele;
+# vértice de borda sai pela metade, e a borda vira uma bainha
+def engrossar():
+    me = corpo.data
+    PANO = {IDX['camisa']: 0.004, IDX['faixa']: 0.004, IDX['gola']: 0.0045, IDX['punho']: 0.0045,
+            IDX['punho2']: 0.0045, IDX['calca']: 0.003}
+    por_v = [[] for _ in me.vertices]
+    for poly in me.polygons:
+        for vi in poly.vertices: por_v[vi].append(PANO.get(poly.material_index, 0.0))
+    novos = []
+    for v in me.vertices:
+        ls = por_v[v.index]
+        d = min(ls) if ls else 0.0
+        if d == 0.0 and ls: d = max(ls)*0.5
+        novos.append(v.co + v.normal*d)
+    for v, p in zip(me.vertices, novos): v.co = p
+    me.update()
+engrossar()
 
 # ---------------------------------------------------------------- A CABEÇA ESCULPIDA
 # (refeita a pedido do dono, 05/09/2026: "todos os detalhes do rosto
@@ -663,25 +798,52 @@ for L, sx in (('D', -1), ('E', 1)):
 bpy.ops.object.mode_set(mode='OBJECT')
 
 # ---------------------------------------------------------------- pesos no corpo
-# O "automático" do Blender (heat) precisa de janela; aqui os pesos são
-# calculados na mão: cada vértice vai pros DOIS ossos mais próximos
-# (distância ao segmento cabeça→cauda), com peso 1/d², o que dá a
-# transição suave na junta e o osso inteiro no meio do membro.
-def dist_segmento(p, a, b):
-    ab = b - a; t = max(0.0, min(1.0, (p - a).dot(ab) / max(1e-9, ab.dot(ab))))
-    return (p - (a + ab*t)).length
+# POR REGIÃO (06/10/2026). O osso mais perto dava o alto do ombro — e a
+# camisa em cima dele — ao osso do braço: braço subia, a camisa subia em
+# ponta. Agora cada parte do corpo diz de quem é, e as juntas se misturam
+# numa faixa curta e suave:
+#   · braço: fora do tronco (|x| > 0,17–0,205 no alto, > 0,205–0,235 na
+#     altura da mão, pra coxa não ir junto); ombro→cotovelo em z 1,10–1,16,
+#     cotovelo→mão em 0,88–0,92;
+#   · tronco: pelve→tronco em z 1,02–1,14, pescoço em 1,44–1,49, cabeça
+#     acima de 1,50;
+#   · perna: abaixo da virilha (z 0,97→0,86, e longe do meio), quadril→
+#     joelho em 0,50–0,56, joelho→pé em 0,08–0,13.
+def suave(a, b, x):
+    t = max(0.0, min(1.0, (x - a)/(b - a)))
+    return t*t*(3 - 2*t)
+def pesos_do_vertice(c):
+    L = 'D' if c.x < 0 else 'E'
+    ax = abs(c.x)
+    w = {}
+    def soma(n, p):
+        if p > 1e-4: w[n] = w.get(n, 0.0) + p
+    braco = suave(0.170, 0.205, ax) if c.z > 1.0 else suave(0.205, 0.235, ax)
+    if c.z < 0.72: braco = 0.0
+    # o alto do ombro é meio do braço, meio do tronco: sem isso o braço
+    # cruzado na frente levantava a camisa em ombreira
+    braco *= 1 - 0.5*suave(1.33, 1.42, c.z)
+    if braco:
+        o = suave(1.10, 1.16, c.z); m = 1 - suave(0.88, 0.92, c.z)
+        soma('ombro.'+L, braco*o); soma('cotovelo.'+L, braco*(1-o)*(1-m)); soma('mao.'+L, braco*(1-o)*m)
+    resto = 1 - braco
+    perna = suave(0.97, 0.86, c.z) * (suave(0.0, 0.035, ax) if c.z > 0.80 else 1.0)
+    if perna*resto:
+        q = suave(0.50, 0.56, c.z); j = suave(0.08, 0.13, c.z)
+        soma('quadril.'+L, resto*perna*q); soma('joelho.'+L, resto*perna*(1-q)*j); soma('pe.'+L, resto*perna*(1-q)*(1-j))
+    t = resto*(1 - perna)
+    if t:
+        tr = suave(1.02, 1.14, c.z); pe = suave(1.44, 1.49, c.z); ca = suave(1.50, 1.55, c.z)
+        soma('pelvis', t*(1-tr)); soma('tronco', t*tr*(1-pe)); soma('pescoco', t*tr*pe*(1-ca)); soma('cabeca', t*tr*pe*ca)
+    # no máximo quatro ossos por vértice (o glTF guarda quatro)
+    top = sorted(w.items(), key=lambda kv: -kv[1])[:4]
+    tot = sum(p for _, p in top) or 1.0
+    return [(n, p/tot) for n, p in top]
 def pesar(ob):
-    segs = [(b.name, b.head_local.copy(), b.tail_local.copy()) for b in arm_data.bones]
-    grupos = {n: ob.vertex_groups.new(name=n) for n, _, _ in segs}
+    grupos = {b.name: ob.vertex_groups.new(name=b.name) for b in arm_data.bones}
     for v in ob.data.vertices:
-        ds = sorted(((dist_segmento(v.co, a, b), n) for n, a, b in segs), key=lambda x: x[0])[:2]
-        d1, n1 = ds[0]; d2, n2 = ds[1]
-        w1 = 1.0/(d1*d1 + 1e-6); w2 = 1.0/(d2*d2 + 1e-6)
-        # só divide quando o segundo está perto de verdade (junta)
-        if d2 > d1*2.2: w2 = 0.0
-        tot = w1 + w2
-        grupos[n1].add([v.index], w1/tot, 'REPLACE')
-        if w2 > 0: grupos[n2].add([v.index], w2/tot, 'REPLACE')
+        for n, p in pesos_do_vertice(v.co):
+            grupos[n].add([v.index], p, 'REPLACE')
     mod = ob.modifiers.new('Armature', 'ARMATURE'); mod.object = arm
     ob.parent = arm
 pesar(corpo)
