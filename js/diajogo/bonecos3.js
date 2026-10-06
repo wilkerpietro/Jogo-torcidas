@@ -46,7 +46,10 @@ TO.diaJogo.bonecos3 = (function(){
   const ALTURA_CAM = 1000;
 
   /* ---------- paletas ---------- */
-  const PELE   = ['#f2c9a6','#e0b088','#c8916a','#a8704c','#7a4b30','#5a3622','#d9a680','#b8825c'];
+  /* OS NOVE TONS DE PELE (a grade do dono, 06/10/2026): do claro rosado ao
+     marrom escuro. Entram multiplicando o mapa de detalhe da pele (lábio,
+     olho, barba rala — img/pele_detalhe_leve.png), igual no rosto e no corpo. */
+  const PELE   = ['#e6c3ae','#d9b393','#d0a888','#cba383','#b98f6e','#ad8463','#a17656','#825f46','#6b4a36'];
   const CALCA  = ['#2b2f3a','#1e2a44','#3a3a3a','#4a3b2a','#23262b','#565a63','#2f4a6b','#1a1a1a'];
   const CABELO = ['#111111','#2a1a10','#3b2a1a','#000000','#4a3626','#1a1a1a','#5c4030'];
   const TENIS  = ['#f0f0f0','#111111','#e8e8e8','#2b2b2b','#d8d0c0'];
@@ -393,7 +396,7 @@ TO.diaJogo.bonecos3 = (function(){
   }
 
   /* =======================================================
-     O BONECO DO BLENDER (ferramentas/boneco_blender.py → img/boneco.glb,
+     O BONECO DO BLENDER (ferramentas/boneco_base.py → img/boneco.glb,
      embutido em dados/boneco_glb.js). Quando o GLB e o GLTFLoader estão
      carregados, cada figura é um clone do modelo com esqueleto
      (SkeletonUtils.clone); as variantes (cabelo, boné, barba, óculos,
@@ -557,6 +560,10 @@ TO.diaJogo.bonecos3 = (function(){
              com vértice de camisa — vinham daí as pontas da camisa, a
              cintura fina e a faixa do peito em V */
           if(/^corpo/.test(o.name) || (o.parent && /^corpo/.test(o.parent.name))) return;
+          /* a cabeça e o cabelo do modelo leve também já vêm no tamanho
+             (06/10/2026), e afinar desmancharia a UV do rosto; os
+             acessórios (cordão, relógio, anel) seguem afinados */
+          if(/^(cabeca|cabelo_|bone_|bandana|barba_)/.test(o.name) || (o.parent && /^(cabeca|cabelo_)/.test(o.parent.name))) return;
           antes += triangulosDe(o.geometry);
           const g = afinarMalha(o.geometry, cfg.afinarCelulas);
           if(g){ o.geometry.dispose(); o.geometry = g; }
@@ -572,6 +579,16 @@ TO.diaJogo.bonecos3 = (function(){
           const novo = new THREE.MeshLambertMaterial({color: m.color ? m.color.clone() : new THREE.Color('#ccc'),
             map: m.map || null, transparent: !!m.transparent, opacity: m.opacity!==undefined ? m.opacity : 1});
           novo.name = m.name; o.material = novo;
+          if(m.name === 'pele' && m.map){
+            /* O ROSTO NA MESMA COR DO CORPO (o dono, 06/10/2026: "a cor do
+               rosto do boneco deve ser a mesma do corpo"): o GLTFLoader marca
+               a textura como sRGB e a decodifica pra linear, mas a cor por
+               vértice do corpo entra como está — o rosto saía mais escuro e
+               mais vermelho que o pescoço. Lida como linear, o branco da
+               textura é a pele exata do corpo. */
+            m.map.encoding = THREE.LinearEncoding; m.map.needsUpdate = true;
+            texRosto = m.map;
+          }
           o.frustumCulled = false;
         }
       });
@@ -819,6 +836,27 @@ TO.diaJogo.bonecos3 = (function(){
   const geomJuntas = new Map();
   const matJunto = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff});
   matJunto.name = 'junto';
+  /* O ROSTO NA MALHA JUNTADA (06/10/2026): a junção jogava fora a UV e a
+     textura — o boneco do jogo não tinha olho, boca nem sobrancelha. A
+     malha juntada agora leva a UV da cabeça (as outras peças apontam pra
+     um texel branco da nuca) e este material lê a textura do rosto. O
+     alfa da textura diz como ela entra: 255 multiplica a cor do vértice
+     (a pele), 128 é cor própria — o branco do olho e a íris não
+     escurecem em pele escura (ferramentas/boneco_base.py). */
+  let texRosto = null, matJuntoRosto = null;
+  function materialJunto(){
+    if(!texRosto) return matJunto;
+    if(matJuntoRosto) return matJuntoRosto;
+    matJuntoRosto = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff, map:texRosto});
+    matJuntoRosto.name = 'junto';
+    matJuntoRosto.onBeforeCompile = sh => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>',
+        '#ifdef USE_COLOR\n  float kPele = clamp((diffuseColor.a - 0.5) * 2.0, 0.0, 1.0);\n' +
+        '  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vColor, kPele);\n  diffuseColor.a = 1.0;\n#endif');
+    };
+    return matJuntoRosto;
+  }
+  const UV_BRANCO = [0.02, 0.5];      // a nuca: branco, alfa cheio
   function juntarPecas(modelo, chave){
     const base = (()=>{ let b=null; modelo.traverse(o=>{ if(!b && o.isSkinnedMesh) b=o; }); return b; })();
     if(!base) return null;
@@ -829,7 +867,7 @@ TO.diaJogo.bonecos3 = (function(){
     modelo.traverse(o=>{ if(o.isMesh && o.visible && o.geometry && o.geometry.getAttribute('position')) pecas.push(o); });
     let geo = geomJuntas.get(chave);
     if(!geo){
-      const P=[], N=[], C=[], SI=[], SW=[], IDX=[];
+      const P=[], N=[], C=[], SI=[], SW=[], IDX=[], UV=[];
       const invBase = new THREE.Matrix4().copy(base.matrixWorld).invert();
       const m4 = new THREE.Matrix4(), m3 = new THREE.Matrix3(), v = new THREE.Vector3(), n = new THREE.Vector3();
       const cor = new THREE.Color();
@@ -837,6 +875,7 @@ TO.diaJogo.bonecos3 = (function(){
       for(const o of pecas){
         const g = o.geometry, pos = g.getAttribute('position'), nor = g.getAttribute('normal');
         const col = g.getAttribute('color'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+        const uvA = (texRosto && o.material && o.material.map === texRosto) ? g.getAttribute('uv') : null;
         const idx = g.getIndex();
         const nV = pos.count;
         /* transformação: peça pendurada em osso vai pro espaço do corpo */
@@ -860,6 +899,7 @@ TO.diaJogo.bonecos3 = (function(){
           if(nor){ n.fromBufferAttribute(nor, i); if(pendurada) n.applyMatrix3(m3).normalize(); N.push(n.x, n.y, n.z); }
           else N.push(0, 1, 0);
           if(col) C.push(col.getX(i), col.getY(i), col.getZ(i)); else C.push(cor.r, cor.g, cor.b);
+          if(uvA) UV.push(uvA.getX(i), uvA.getY(i)); else UV.push(UV_BRANCO[0], UV_BRANCO[1]);
           if(pendurada){ SI.push(Math.max(0, osso), 0, 0, 0); SW.push(1, 0, 0, 0); }
           else {
             const a = si.getX(i), b = si.getY(i), c = si.getZ(i), d = si.getW(i);
@@ -875,6 +915,7 @@ TO.diaJogo.bonecos3 = (function(){
       geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
       geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
       geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      if(texRosto) geo.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
       geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
       geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
       geo.setIndex(IDX);
@@ -882,7 +923,7 @@ TO.diaJogo.bonecos3 = (function(){
       geomJuntas.set(chave, geo);
       if(geomJuntas.size > 400){ const k0 = geomJuntas.keys().next().value; geomJuntas.get(k0).dispose(); geomJuntas.delete(k0); }
     }
-    const junto = new THREE.SkinnedMesh(geo, matJunto);
+    const junto = new THREE.SkinnedMesh(geo, materialJunto());
     junto.name = 'junto';
     junto.frustumCulled = false;
     junto.bind(base.skeleton, base.bindMatrix);

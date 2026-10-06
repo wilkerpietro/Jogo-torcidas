@@ -9256,6 +9256,33 @@ Dois defeitos que se alimentavam:
   - O post da Raça Coral chegou com "Hospedar e escoltar" aceso (o padrão da ideologia).
   - Sem erro de página.
 
+## O boneco refeito sobre humanos de verdade, com rosto, olhos e os nove tons de pele (o dono, 06/10/2026: "modele o rosto dos bonecos pra ficar algo mais similar ao rosto humano"; "as curvas da cabeça do boneco sejam mais similares as de um homem adulto. a cor do rosto do boneco deve ser a mesma do corpo"; e três modelos de base: "observe esse modelo e use como base pra refazer do zero o boneco", "esse também é bom, com as curvas bem definidas… as curvas que preciso são desse estilo", "muito bom esse modelo também"; e a grade de tons de pele)
+
+- **As bases (`ferramentas/fonte/`).**
+  - `boneco_corpo.glb` é o "proxy human base mesh": dá o corpo, com as curvas que o dono pediu. Tem 76 mil triângulos, sem esqueleto nem UV.
+  - `boneco_cabeca.glb` é o humano base do MetaCreators, no padrão MakeHuman, com pele em domínio público: dá a cabeça (pálpebra, nariz, lábios e orelha modelados), os olhos, o tênis e a textura de pele. O corpo desse modelo vem recortado embaixo da roupa, por isso o corpo vem do outro.
+  - O low-poly de pose T, o primeiro que chegou, ficou de fora: a forma dele é a mais simples dos três.
+- **O gerador novo (`ferramentas/boneco_base.py`)** substitui o `boneco_blender.py` (o corpo de seções, a cabeça de metabolas e o rosto pintado saíram junto). Ele faz, em ordem:
+  1. Escala o corpo pra 1,72 m e o reduz por colapso de arestas.
+  2. Corta o pescoço do corpo acima da crista do trapézio e afina os 5 cm de cima dele, ângulo a ângulo, até o perfil do pescoço da cabeça. Assim a costura (`bridge_edge_loops`) liga dois anéis quase iguais e não dobra.
+  3. Monta os mesmos 16 ossos do jogo nas juntas medidas no corpo, com os pesos automáticos (calor) do Blender. No peito, o braço perde peso até zero perto do meio, e o alto do ombro fica meio braço, meio tronco: o braço cruzado não infla o peitoral.
+  4. Gira braço, antebraço e mão pra pose pendurada e assenta isso como repouso.
+  5. Corta a roupa por planos, como antes: bainha, faixa, manga com punho e `punho2`, gola careca (elipse de 12 planos, só na faixa de altura da gola), bermuda e meia, com o pano 4 mm por fora.
+  6. Usa o tênis do MakeHuman com o cano cortado na altura do tornozelo; o pé do corpo some dentro dele.
+  7. Pinta íris e pupila pela direção de cada face no globo do olho.
+  8. Gera cabelos, barbas, bonés e acessórios da cabeça densa, como antes.
+- **A pele.**
+  - **Mapa de detalhe:** a textura do MakeHuman, dividida pelo tom de fundo dela (com três quartos da barba rala), vira um mapa de detalhe embutido no GLB. A sobrancelha é pintada nele, fio a fio, no UV da cabeça.
+  - **Mesma cor no rosto e no corpo:** o corpo aponta pra um texel liso desse mapa, então rosto e corpo saem no mesmo tom. No jogo, a textura é lida como linear (`LinearEncoding`): lida como sRGB, o rosto escurecia e avermelhava em relação ao pescoço.
+- **Os nove tons (`PELE`, bonecos3.js).** São os tons da grade do dono, do claro rosado ao marrom escuro: `#e6c3ae #d9b393 #d0a888 #cba383 #b98f6e #ad8463 #a17656 #825f46 #6b4a36`. Cada boneco sorteia um, e o mapa de detalhe multiplica por ele. A grade chegou só como imagem na conversa, então os tons foram tirados da imagem a olho.
+- **O jogo.**
+  - A malha juntada (`juntarPecas`) leva a UV da pele, e o material junto lê a textura.
+  - O jogo afina só os acessórios. Corpo, cabeça e cabelo já vêm no tamanho certo; afinar desmancharia a UV.
+  - Medido na rua: 6,4 mil triângulos por boneco, contra 3,6 mil do corpo anterior. São ~330 mil com 52 bonecos, ainda abaixo do 1,26 milhão que derrubava o fps em 08/09.
+  - Modelo leve: 1,5 MB; detalhado (vitrine): 5,4 MB.
+- **Gerar de novo:** com `bpy==4.2.0` e `pillow` no Python 3.11, rodar `python ferramentas/boneco_base.py --leve` e `python ferramentas/boneco_base.py`.
+- **Ainda a acertar:** a cópia do `bonecos3.js` em `cenario3d/` (da outra sessão) lê o mesmo GLB sem a UV da pele. Lá o boneco aparece sem o detalhe do rosto até ela adotar a junção nova.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
