@@ -52868,7 +52868,8 @@ TO.cartaz = (function(){
         fotos.set(k, url);
         /* a sessão guarda as 80 mais recentes */
         if(fotos.size > 80) fotos.delete(fotos.keys().next().value);
-        for(const f of document.querySelectorAll(`.cartaz[data-cz-foto="${CSS.escape(k)}"]`)){
+        /* (o cartaz e a foto da página do jornal: `fotoDoJornal`) */
+        for(const f of document.querySelectorAll(`[data-cz-foto="${CSS.escape(k)}"]`)){
           const im = f.querySelector('.cz-fundo');
           if(im) im.src = url; else f.insertAdjacentHTML('afterbegin', `<img class="cz-fundo" src="${url}" alt="">`);
           f.classList.add('com-foto');
@@ -52876,6 +52877,17 @@ TO.cartaz = (function(){
       })
       .catch(()=>{ pedidas.delete(k); });
   }
+  /* A FOTO DA PÁGINA DO JORNAL (pedido do dono, 06/10/2026): o post do
+     Porrada virou a página do jornal (main.js, `paginaDoPost`), e a foto
+     dos bonecos é a foto da matéria — a mesma da arte, pela mesma fila e
+     pela mesma chave. Até ela ficar pronta, a imagem da cena. */
+  function fotoDoJornal(m){
+    if(!m || !m.card || m.card.t !== 'briga' || !doJornal(m)) return '';
+    const k = chaveDaFoto(m), foto = fotos.get(k), src = foto || cenaImg(m.card.cena);
+    return `<figure class="gz-foto${foto ? ' com-foto' : ''}" data-cz-foto="${esc(k)}">`+
+      (src ? `<img class="cz-fundo" src="${src}" alt="">` : '')+`</figure>`;
+  }
+
   let observador = null;
   const porFigura = new WeakMap();
   /* a casca chama depois de pôr o cartaz no DOM */
@@ -52941,7 +52953,7 @@ TO.cartaz = (function(){
     observador.observe(fig);
   }
 
-  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
+  return {html, ligar, fotoDoJornal, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
 })();
 
 ;
@@ -58881,6 +58893,94 @@ TO.graficos = (function(){
     return rec;
   }
 
+  /* O POST DO JORNAL É A PÁGINA DO JORNAL (pedido do dono, 06/10/2026:
+     "ajuste os posts do futebol e porrada e gazeta dos sports pra ter
+     aquele layout de página de jornal que já está no jogo. aparece junto
+     com os posts da rede social"). No lugar do cartaz de Instagram e da
+     legenda, o recorte do jornal — o papel, o nome do jornal, o chapéu, a
+     manchete e o olho —, do mesmo molde do recorte do canto (acima, e
+     css/gazeta.css, `.gz-canto`). Com a matéria ainda no histórico, é a
+     página dela; sem ela (o feed aparado, save antigo, ou o post que nunca
+     teve matéria: a briga do país, o jogo da cidade), a página sai do
+     próprio post — o chapéu antes do " · ", a manchete do cartaz (ou a
+     primeira frase) e o resto no olho. O que o cartaz mostrava vira o que
+     o jornal imprime: a foto da briga, com os números embaixo, no Porrada;
+     o placar grande na Gazeta. O perfil, a hora e o menu em cima e as
+     curtidas embaixo continuam do post: foi o jornal que postou a página. */
+  function partesDoPost(texto){
+    const t = String(texto || '').trim(), k = t.indexOf(' · ');
+    const cab = k > 0 ? t.slice(0, k) : '';
+    const ok = cab.length <= 60 && cab === cab.toLocaleUpperCase() && /[A-ZÀ-Ý]/.test(cab);
+    return ok ? {chapeu:cab, corpo:t.slice(k + 3).trim()} : {chapeu:'', corpo:t};
+  }
+  function recorteDoPost(m, jornal){
+    const c = m.card || null, C = TO.cartaz;
+    const {chapeu, corpo} = partesDoPost(m.texto);
+    let manchete = '', olho = corpo;
+    /* o post da matéria já abre com a manchete dela; os outros abrem com
+       o lide, comprido demais pra manchete — esses usam a do cartaz */
+    if(c && C && !(m.dados && m.dados.materia != null)){
+      try{
+        manchete = c.t === 'briga' ? C.mancheteDaBriga(c) : c.t === 'jogo' ? C.mancheteDoJogo(c, m.id) : '';
+      }catch(_){ manchete = ''; }
+    }
+    if(!manchete){
+      const f = corpo.match(/^([\s\S]+?[.!?])(?=\s|$)\s*([\s\S]*)$/);
+      manchete = f ? f[1] : corpo;
+      olho = f ? f[2] : '';
+    }
+    const rec = el('article',{class:'gz' + (m.jornal === 'porrada' ? ' pp' : '')});
+    rec.appendChild(el('div',{class:'gz-cabeca', html:`<div class="nome-jornal">${escHTML(jornal.nome)}</div>`}));
+    const topo = el('div',{class:'gz-topo sozinha'});
+    topo.appendChild(el('div',{class:'gz-manchete', html:
+      (chapeu ? `<div class="chapeu">${escHTML(chapeu)}</div>` : '')+
+      `<h2>${escHTML(manchete.replace(/\.$/, ''))}</h2>`+
+      (olho ? `<p class="olho corpo">${linkificarNomes(olho)}</p>` : '')}));
+    rec.appendChild(topo);
+    rec.classList.add('gz-canto');
+    return rec;
+  }
+  function paginaDoPost(e, m){
+    const jornal = (TO.feed.JORNAIS || {})[m.jornal];
+    if(!jornal) return null;
+    const c = m.card || null, d = m.dados || {};
+    const mat = d.materia != null ? (e.feed || []).find(x => x.id === d.materia) : null;
+    let rec = null;
+    try{ rec = mat ? recorteDeJornal(e, mat) : null; }catch(_){ rec = null; }
+    if(!rec) rec = recorteDoPost(m, jornal);
+    rec.classList.add('gz-post');
+    const man = rec.querySelector('.gz-manchete');
+    if(!man || !c) return rec;
+    /* a foto da briga, logo abaixo da manchete, com a legenda e o quadro
+       curto da noite (envolvidos, feridos e presos dos dois lados) */
+    const foto = c.t === 'briga' && TO.cartaz && TO.cartaz.fotoDoJornal ? TO.cartaz.fotoDoJornal(m) : '';
+    if(foto && c.a && c.b){
+      const nomeLado = (x, venceu) => {
+        const n = linkTorcida(x.id, escHTML(x.nome || ''));
+        return venceu ? `<b>${n}</b>` : n;
+      };
+      const onde = [_t(c.onde || 'na rua'), c.cidade || ''].filter(Boolean).join(', ');
+      const num = (rot, va, vb) => `<span><small>${rot}</small><b>${va || 0} × ${vb || 0}</b></span>`;
+      const bloco = el('div',{class:'gz-foto-bloco', html: foto +
+        `<p class="gz-legenda">${nomeLado(c.a, c.venceuA === true)} × ${nomeLado(c.b, c.venceuA === false)}`+
+          ` <span class="onde">· ${escHTML(onde)}</span></p>`+
+        `<div class="gz-numeros">${num(_t('envolvidos'), c.a.n, c.b.n)}${num(_t('feridos'), c.a.feridos, c.b.feridos)}`+
+          `${num(_t('presos'), c.a.presos, c.b.presos)}</div>`});
+      const h2 = man.querySelector('h2');
+      if(h2) h2.after(bloco); else man.appendChild(bloco);
+    }
+    /* o placar grande da Gazeta, quando a página não trouxe o dela */
+    if(c.t === 'jogo' && m.jornal === 'gazeta' && !rec.querySelector('.placar-grande')){
+      const nome = id => escHTML((TO.mundo.time(id) || {}).nome || id || '');
+      const nossa = id => id && id === e.torcida.clubeId ? ' nossa' : '';
+      man.appendChild(el('div',{class:'placar-grande', html:
+        `<span class="time${nossa(c.c)}">${nome(c.c)}</span><span class="n">${c.gc}</span>`+
+        `<span class="n">${c.gf}</span><span class="time${nossa(c.f)}">${nome(c.f)}</span>`}));
+      if(c.pen) man.appendChild(el('p',{class:'gz-pen', texto:penTexto(c)}));
+    }
+    return rec;
+  }
+
   /* O BOTÃO APERTADO. O efeito de estado é do `TO.feed`; o que sobra
      aqui é abrir tela, que é a única coisa que a tela sabe fazer. */
   /* A DECISÃO QUE ESPERA A TELA (correção do dono, 21/08/2026): as
@@ -59419,9 +59519,13 @@ TO.graficos = (function(){
     const ler = jornal && (m.dados||{}).aba
       ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
     const nosso = !jornal && m.de === e.torcida.id;
-    /* com cartaz do jornal, ou a arte do post de torcida (04/10/2026) */
-    const cartaz = TO.cartaz ? TO.cartaz.html(m) : '';
-    const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':''), html:
+    /* o post do jornal é a página do jornal (06/10/2026, `paginaDoPost`);
+       o de torcida leva a arte dela (04/10/2026) */
+    let pagina = null;
+    try{ pagina = jornal ? paginaDoPost(e, m) : null; }
+    catch(err){ if(window.console) console.warn('a página do jornal no post: ' + err.message); }
+    const cartaz = !pagina && TO.cartaz ? TO.cartaz.html(m) : '';
+    const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':'')+(pagina?' com-pagina':''), html:
       `<header class="post-cab">${quem}`+
         `<span class="post-quando">${haQuantoPost(e, m.quando || {})}</span>`+
         (F.podeEsconder && F.podeEsconder(e, m)
@@ -59430,7 +59534,7 @@ TO.graficos = (function(){
       /* A IMAGEM DO POST (pedido do dono, 01/10/2026): com cartaz, a
          ordem é a do Instagram — a imagem, as curtidas e, embaixo, a
          legenda com o @ de quem postou na frente */
-      (cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
+      (pagina ? '' : cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
       `<footer class="post-pe"><span class="post-curtidas${F.curtimos && F.curtimos(e, m) ? ' curtido' : ''}">${coracao}`+
         `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
         (()=>{ const c = enfeitePost(m, 'comentario', .05), r = enfeitePost(m, 'compartilha', .04);
@@ -59438,6 +59542,11 @@ TO.graficos = (function(){
                  `<span class="post-conta" title="${escHTML(_tn(r, '{n} compartilhamento', '{n} compartilhamentos', {n:U.numero(r)}))}">${repost}${U.numero(r)}</span>`; })()+
         `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`+
       (cartaz ? `<p class="post-texto post-legenda"><b class="post-legenda-quem">${escHTML(jornal ? jornal.arroba : arrobaPost(o))}</b> ${linkificarNomes(m.texto)}</p>` : '')});
+    if(pagina){
+      art.querySelector('.post-cab').after(pagina);
+      const ft = pagina.querySelector('.gz-foto');
+      if(ft && TO.cartaz) TO.cartaz.ligar(ft, m);
+    }
     if(cartaz) TO.cartaz.ligar(art.querySelector('.cartaz'), m);
     /* OS COMENTÁRIOS (01/10/2026): a resposta de quem apanhou mora aqui,
        embaixo do post, como no Instagram — o @ em negrito, o texto, o

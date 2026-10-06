@@ -1353,7 +1353,7 @@ table.dados tr.selecionada td{background:#252525}
 .post-quando{margin-left:auto;align-self:flex-start;font-family:var(--mono);font-size:10px;color:var(--apagado);white-space:nowrap}
 .post-texto{font-size:13.5px;line-height:1.55;color:#e4e0d8;margin:0 0 9px;overflow-wrap:anywhere}
 .post-torcida.tipo-provocacao .post-texto,.post-torcida.tipo-treta .post-texto{color:#efc2c2}
-.post-pe{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--fraco)}
+.post-pe{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--fraco)}
 .post-curtidas{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .post-ler{white-space:nowrap}
 .post-curtidas svg{width:15px;height:15px;color:var(--fraco);fill:none}
@@ -3141,7 +3141,10 @@ header.capa-cidade{background-size:cover; background-position:center;
   font:600 12px/1 inherit;box-shadow:0 3px 10px #000a;cursor:pointer;animation:avisoNovos .4s ease}
 @keyframes avisoNovos{from{opacity:0;transform:translate(-50%,-6px)}to{opacity:1;transform:translate(-50%,0)}}
 /* o post novo abre espaço aos poucos e aparece num fade */
-.post-envelope{display:grid;grid-template-rows:1fr;opacity:1;
+/* (a coluna é `minmax(0,1fr)`: com `auto`, o rodapé do post — curtidas,
+   "Ler a matéria" e a etiqueta numa linha só — passava da coluna estreita
+   do jogo 3D, de 340 px, e o post inteiro ia junto, com rolagem de lado) */
+.post-envelope{display:grid;grid-template-rows:1fr;grid-template-columns:minmax(0,1fr);opacity:1;
   transition:grid-template-rows .65s cubic-bezier(.2,.7,.2,1), opacity .55s ease .1s}
 .post-envelope.fechado{grid-template-rows:0fr;opacity:0}
 .post-envelope.abrindo>*{min-height:0;overflow:hidden}
@@ -4368,6 +4371,34 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
   .gz.gz-canto .placar-grande .time{font-size:13px}
   .gz.gz-canto .placar-grande .n{font-size:20px}
 }
+
+/* =========================================================
+   A PÁGINA NO POST (pedido do dono, 06/10/2026: "ajuste os posts do
+   futebol e porrada e gazeta dos sports pra ter aquele layout de página
+   de jornal que já está no jogo"). O post do jornal na rede social é o
+   recorte do canto (main.js, `paginaDoPost`), com o que o cartaz mostrava
+   virado coisa de jornal: a foto da briga, a legenda e o quadro curto da
+   noite no Futebol e Porrada; o placar grande na Gazeta. Sem a matéria,
+   o olho é o texto inteiro do post (`.corpo`): em pé e na tinta cheia,
+   que itálico cinza não se lê em quatro frases.
+   ========================================================= */
+.gz.gz-post{margin:0 0 9px; box-shadow:0 3px 10px rgba(0,0,0,.45), 0 0 0 1px rgba(20,16,12,.6)}
+.feed-social .gz.gz-post{max-width:560px}
+.gz.gz-post .gz-manchete .olho.corpo{font-style:normal; color:var(--tinta); font-size:12px; line-height:1.38}
+.gz-foto-bloco{margin:6px 0 2px}
+.gz-foto{position:relative; margin:0; aspect-ratio:2/1; overflow:hidden; background:#b9b2a0; border:1px solid var(--tinta)}
+/* a foto impressa: menos cor e um pouco de sépia, pra morar no papel */
+.gz-foto .cz-fundo{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
+  filter:saturate(.82) contrast(1.06) sepia(.12)}
+.gz-legenda{margin:3px 0 0; font-size:10.5px; line-height:1.3; font-style:italic; color:var(--tinta-2)}
+.gz-legenda b{font-style:normal}
+.gz-numeros{display:flex; justify-content:space-around; gap:8px; margin:5px 0 0; padding:3px 0;
+  border-top:1px solid var(--tinta); border-bottom:1px solid var(--tinta); font-variant-numeric:tabular-nums}
+.gz-numeros span{display:flex; flex-direction:column; align-items:center; min-width:0}
+.gz-numeros small{font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700; font-size:8.5px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--tinta-2)}
+.gz-numeros b{font-family:Ultra,Georgia,serif; font-weight:400; font-size:15px; line-height:1.15}
+.gz-pen{margin:3px 0 0; font-size:10.5px; font-style:italic; color:var(--tinta-2); text-align:center}
 
 /* ===== css/mapa.css ===== */
 /* =========================================================
