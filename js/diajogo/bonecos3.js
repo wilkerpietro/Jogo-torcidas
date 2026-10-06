@@ -944,11 +944,16 @@ TO.diaJogo.bonecos3 = (function(){
     /* A GOLA E O PUNHO SÃO MATERIAIS DO MODELO (06/10/2026): gola careca
        pequena em volta do pescoço e punho na boca da manga. Camisa de
        'gola' pinta os dois na 2ª cor; 'gola-dupla', o punho em duas
-       faixas, a da boca na 3ª; lisa, tudo na cor da camisa. */
+       faixas, a da boca na 3ª; lisa, tudo na cor da camisa.
+       A FAIXA DO PEITO EM DUAS LISTRAS (pedido do dono, 06/10/2026: "as
+       torcidas com 3 cores sejam representadas agora com a terceira cor
+       também na camisa"): a de cima ('faixa') na 2ª cor, a de baixo
+       ('faixa2') na 3ª; quem tem só duas cores pinta as duas na 2ª. */
     const des = DESENHOS[f.desenho] || 'lisa';
     const comGola = !pm && (des === 'gola' || des === 'gola-dupla');
     const camisaCor = pm ? '#233a2c' : f.camisa;
     const cores = {pele:f.pele, camisa: camisaCor, faixa: pm ? '#c9d64a' : f.faixa,
+                   faixa2: pm ? '#c9d64a' : (f.cor3 || f.faixa),
                    gola: comGola ? f.faixa : camisaCor, punho: comGola ? f.faixa : camisaCor,
                    punho2: des === 'gola-dupla' ? (f.cor3 || f.faixa) : comGola ? f.faixa : camisaCor,
                    calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,

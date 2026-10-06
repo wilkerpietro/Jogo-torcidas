@@ -9320,6 +9320,20 @@ O calção era a pele afastada pela normal, então copiava cada reentrância do 
 - **Malha:** no modelo leve, a faixa do quadril do calção é subdividida uma vez antes de vestir. A redução deixava triângulos de 15 cm ali, e um único vértice afundado desenhava uma linha. Isso custa ~1 mil triângulos (corpo de 5,2 para 6,2 mil; ~7,6 mil por boneco na cena). O detalhado não precisa de subdivisão.
 - **Aresta viva:** a divisa entre pano e pele virou aresta viva. Com a normal suavizada, a pele logo abaixo da barra herdava a sombra da borda do pano em riscos.
 
+## Camisa de três cores: a 3ª cor na faixa do peito (06/10/2026)
+
+Pedido do dono: "preciso que as torcidas com 3 cores sejam representadas agora com a terceira cor também na camisa". Até aqui a 3ª cor só aparecia num fio de 8 mm na boca da manga.
+
+- **A faixa do peito em duas listras.** No gerador (`ferramentas/boneco_base.py`), a faixa ganhou um corte no meio. Ela ficou um pouco mais larga: 7 cm, contra 5,5 cm antes.
+  - A listra de cima é o material `faixa`, na 2ª cor.
+  - A de baixo é o material novo `faixa2`, na 3ª cor.
+- **Torcida de duas cores:** pinta as duas listras na 2ª cor, então o visual dela não muda, só a faixa fica um pouco mais larga.
+- **O punho duplo engrossou.** A `gola-dupla` já é a camisa de toda torcida de três cores. As duas faixas do punho passaram a ter 1,3 cm cada (antes 0,9 cm e 0,8 cm): a de cima na 2ª cor, a da boca na 3ª.
+- **A gola continua na 2ª cor**, como o dono decidiu em 06/09.
+- **No jogo:** `bonecos3.js` pinta `faixa2` com `f.cor3`, ou com a 2ª cor quando a torcida não tem a terceira. O policial pinta as duas listras no amarelo-limão do colete.
+- **Custo:** o corte a mais deixa o corpo leve com 6,3 mil triângulos (antes 6,2 mil).
+- **Bancada:** `bonecos.html` aceita `?cor=&cor2=&cor3=`, em hexa sem `#`, para ver a camisa de qualquer torcida.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

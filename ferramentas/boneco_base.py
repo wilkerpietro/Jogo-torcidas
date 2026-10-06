@@ -75,6 +75,7 @@ M = {
   'pele':    material('pele',    (1.0, 1.0, 1.0)),
   'camisa':  material('camisa',  (0.75, 0.16, 0.14)),
   'faixa':   material('faixa',   (0.92, 0.92, 0.90)),
+  'faixa2':  material('faixa2',  (0.92, 0.92, 0.90)),
   'gola':    material('gola',    (0.92, 0.92, 0.90)),
   'punho':   material('punho',   (0.92, 0.92, 0.90)),
   'punho2':  material('punho2',  (0.10, 0.10, 0.10)),
@@ -451,11 +452,15 @@ OMB = {s: JUN2['ombro.' + ('D' if s < 0 else 'E')][0] for s in (-1, 1)}
 COT = {s: JUN2['cotovelo.' + ('D' if s < 0 else 'E')][0] for s in (-1, 1)}
 EIXO = {s: (OMB[s] - COT[s]).normalized() for s in (-1, 1)}         # aponta pro ombro
 MANGA = {s: OMB[s].lerp(COT[s], 0.48) for s in (-1, 1)}
-PUNHO, PUNHO2 = 0.017, 0.008
+# o punho em duas faixas iguais (1,3 cm cada): a de cima na 2ª cor, a da boca na 3ª
+PUNHO, PUNHO2 = 0.026, 0.013
 BARRA = 0.006           # a altura da borda do pano (o lado de baixo da barra)
 BAINHA = JUN2['pelvis'][0].z + 0.03
 ALT_OMBRO = (OMB[-1].z + OMB[1].z)/2
-FAIXA_Z = (ALT_OMBRO - 0.170, ALT_OMBRO - 0.115)
+# a faixa do peito em duas listras (pedido do dono, 06/10/2026): a de cima na 2ª cor
+# ('faixa'), a de baixo na 3ª ('faixa2'); torcida de duas cores pinta as duas na 2ª
+FAIXA_Z = (ALT_OMBRO - 0.180, ALT_OMBRO - 0.110)
+FAIXA_M = (FAIXA_Z[0] + FAIXA_Z[1])/2
 CALCAO = JUN2['joelho.E'][0].z + 0.10
 MEIA = TOPO_TENIS + 0.05
 # a gola desce na frente (até a fúrcula) e sobe atrás: o centro dela vai 1,2 cm pra frente
@@ -502,6 +507,7 @@ def cortar_roupa():
     tronco = lambda f: not eh_braco_f(f)
     corte(Vector((0, 0, BAINHA)), Z, tronco)
     corte(Vector((0, 0, FAIXA_Z[0])), Z, tronco); corte(Vector((0, 0, FAIXA_Z[1])), Z, tronco)
+    corte(Vector((0, 0, FAIXA_M)), Z, tronco)
     corte(Vector((0, 0, CALCAO)), Z); corte(Vector((0, 0, MEIA)), Z)
     # os anéis de baixo das barras: o vão entre eles e a barra é a borda do pano
     perna_ = lambda f: not eh_braco_f(f) and f.calc_center_median().z < BAINHA
@@ -512,7 +518,7 @@ cortar_roupa()
 braco_v = [peso_braco(v) > 0.5 for v in me.vertices]
 def face_braco(p): return sum(braco_v[i] for i in p.vertices)*2 > len(p.vertices)
 
-for m in ('pele', 'camisa', 'faixa', 'gola', 'punho', 'punho2', 'calca', 'meia'):
+for m in ('pele', 'camisa', 'faixa', 'faixa2', 'gola', 'punho', 'punho2', 'calca', 'meia'):
     me.materials.append(M[m])
 IDX = {m.name: k for k, m in enumerate(me.materials)}
 def material_da_face(p):
@@ -526,7 +532,9 @@ def material_da_face(p):
     if face_braco(p): return 'pele'                                      # a mão perto da coxa
     if dentro_gola(c): return 'pele'
     if dentro_gola(c, GOLA_FAIXA): return 'gola'
-    if c.z >= BAINHA - BARRA: return 'faixa' if FAIXA_Z[0] <= c.z <= FAIXA_Z[1] else 'camisa'
+    if c.z >= BAINHA - BARRA:
+        if not (FAIXA_Z[0] <= c.z <= FAIXA_Z[1]): return 'camisa'
+        return 'faixa' if c.z >= FAIXA_M else 'faixa2'
     if c.z >= CALCAO - BARRA: return 'calca'
     if c.z >= MEIA: return 'pele'
     return 'meia'
@@ -541,7 +549,7 @@ def engrossar():
     da coxa, pra uma perna não entrar na outra). Os anéis logo abaixo das
     duas barras ficam na pele (ou no calção, embaixo da camisa): a face entre
     eles e a barra é a borda do pano, vista por baixo."""
-    ROUPA = {IDX[m] for m in ('camisa', 'faixa', 'gola', 'punho', 'punho2')}
+    ROUPA = {IDX[m] for m in ('camisa', 'faixa', 'faixa2', 'gola', 'punho', 'punho2')}
     CAL = IDX['calca']
     # a redução deixa o fundo do calção com triângulos de 15 cm: um vértice
     # afundado no início do vinco das nádegas puxava uma aresta comprida e

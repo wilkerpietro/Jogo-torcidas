@@ -98,6 +98,8 @@
   if(new URLSearchParams(location.search).has('so')){ const q = new URLSearchParams(location.search).get('estado'); const PAR2 = {troca:'troca2', agarrar:'agarrado'}; ESTADOS = ESTADOS.filter(e=>e[0]===q || e[0]===PAR2[q]); }
   /* ?trio (ou o botão ×3): cada estado com as três variações lado a lado (0, 1, 2) */
   let TRIO = new URLSearchParams(location.search).has('trio');
+  /* ?cor=ffffff&cor2=c0392b&cor3=111111: as cores da torcida (camisa de três cores) */
+  const PARC = new URLSearchParams(location.search);
   let discos = [], pms = [], tr1 = null, tr2 = null;
   function montarEstados(){
   const PASSO = TRIO ? 62 : 46, cols = SO_CABELOS ? 7 : TRIO ? 6 : 8;
@@ -111,7 +113,7 @@
     const n = (TRIO && nome!=='troca' && nome!=='troca2' && nome!=='agarrar' && nome!=='agarrado') ? 3 : 1;
     for(let v=0; v<n; v++){
       const dx = n===1 ? 0 : (v-1)*16;
-      discos.push({nome: (n===1 || v===1) ? nome.toUpperCase() : '', lado: i%2 ? 'visitante':'mandante', cor: i%2?'#1e4fa0':'#c0392b', cor2:'#f0f0f0',
+      discos.push({nome: (n===1 || v===1) ? nome.toUpperCase() : '', lado: i%2 ? 'visitante':'mandante', cor: PARC.get('cor') ? '#'+PARC.get('cor') : i%2?'#1e4fa0':'#c0392b', cor2: PARC.get('cor2') ? '#'+PARC.get('cor2') : '#f0f0f0', cor3: PARC.get('cor3') ? '#'+PARC.get('cor3') : null,
         x:x0+dx, y:z0, x0:x0+dx, r:7, hp:150, hpMax:150, vivo:true, caido:false, preso:false, fugindo:false, fugaBomba:null, ataque:null, defendendo:0, esquivou:0, inimigoPerto:999,
         atordoado:0, apanhou:0, golpe:0, hostil:0, arremesso:null, tremor:0, rumo:0, linha:'frente', lider: nome==='socar' && v===1,
         varianteForcada: n===1 ? null : v, derrubado:0, derrubadoDur:0,
