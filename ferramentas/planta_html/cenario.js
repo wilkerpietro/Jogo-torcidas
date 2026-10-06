@@ -2279,6 +2279,7 @@ void main() {`)
     doMapa = new THREE.Group(); cena.add(doMapa);
     coisas = [null]; fecharFicha();
     portas = [];
+    pixos = null;
   }
   /* O TEMPO DO JOGO ESPERA A PRAÇA MONTAR (o dono, 29/09/2026: "quase todas
      as vezes que preciso abrir outro mapa devido a caravanas o jogo buga e
@@ -2386,6 +2387,7 @@ void main() {`)
     const noite = { postes: postes.length, luzes: forno.luzes.length, luz: [mapaLuz.W, mapaLuz.H], teto: mt ? [mt.nx, mt.nz] : null };
     marca('noite', tf);
     montarPortas(forno.vivos);
+    montarPixos();
     coisas = forno.coisas;
     /* as folhas dos decalques sobem pra placa já, uma por vez (o primeiro
        quadro da cidade não sobe todas de uma vez, e o canvas de cada uma
@@ -2754,6 +2756,150 @@ void main() {`)
   let portas = [];
   const PORTA_ALCANCE_M = 1.2, PORTA_VEL = 3.2;              // m da borda do corpo até a folha; rad/s
   const matPorta = new Map();
+  /* ======================================================
+     OS MUROS DE PIXAÇÃO (o dono, 06/10/2026: "as pixações do save agora
+     devem aparecer nos muros da cidade 3d, sendo somente esses os espaços
+     possíveis de pixação no jogo"). A planta escolhe de 3 a 5 muros por
+     bairro (index.html, `escolherMurosDePixo`: o lugar do pixo na parede,
+     da altura do boneco); aqui eles viram UMA malha viva, fora do forno,
+     com uma folha de 256 × 128 por muro: o muro livre é a parede caiada
+     (a cal nova, de borda irregular, com as passadas do rolo); o
+     muro de uma torcida leva a pixação dela por cima, na tinta dela — o
+     nome, a sigla, a sigla com o ano ou o grito do clube (a planta
+     escolhe, `pixoDaTorcida`) —, desbotando com os dias (o jogo apaga o
+     pixo em 60). Quem diz de quem é cada muro é o jogo (`pixos.fonte`, o
+     save); sem o jogo, todos ficam livres. `pixos.atualizar()` repinta só
+     o quadro que mudou.
+     ====================================================== */
+  const PIXO_CEL = { w: 256, h: 128, cols: 8, borda: 4 };
+  let pixos = null, fontePixos = null;
+  const somaPixo = t => { let h = 7; const s2 = String(t); for (let k = 0; k < s2.length; k++) h = (h * 31 + s2.charCodeAt(k)) >>> 0; return h; };
+  const luzPixo = h => { const n = parseInt(String(h || '#888888').slice(1), 16); return isFinite(n) ? (n >> 16 & 255) * 0.299 + (n >> 8 & 255) * 0.587 + (n & 255) * 0.114 : 128; };
+  function montarPixos() {
+    pixos = null;
+    const lista = P.murosDePixo ? P.murosDePixo() : [];
+    if (!lista.length) return;
+    const C = PIXO_CEL, linhas = Math.ceil(lista.length / C.cols);
+    const cv = document.createElement('canvas');
+    cv.width = C.w * C.cols;
+    cv.height = Math.pow(2, Math.ceil(Math.log2(Math.max(1, linhas) * C.h)));
+    const c = cv.getContext('2d');
+    const n = lista.length, P3 = new Float32Array(n * 18), N3 = new Float32Array(n * 18), U2 = new Float32Array(n * 12);
+    const celulas = lista.map((m, k) => {
+      const L = m.lug, asp = L.larg / Math.max(1, L.alt);
+      /* o quadro do muro na folha: a proporção da parede, dentro da célula */
+      const aw = C.w - 2 * C.borda, ah = C.h - 2 * C.borda;
+      const w = Math.round(asp >= aw / ah ? aw : ah * asp), h = Math.round(asp >= aw / ah ? aw / asp : ah);
+      const x0 = (k % C.cols) * C.w + C.borda + Math.round((aw - w) / 2), y0 = Math.floor(k / C.cols) * C.h + C.borda + Math.round((ah - h) / 2);
+      /* o quadrado de pé, virado pra rua (ox, oz); a direita da parede é (oz, −ox) */
+      const rx = L.oz, rz = -L.ox, hx = rx * L.larg / 2, hz = rz * L.larg / 2, ya = L.y - L.alt / 2, yb = L.y + L.alt / 2;
+      const a = [L.x - hx, ya, L.z - hz], b = [L.x + hx, ya, L.z + hz], cc = [L.x + hx, yb, L.z + hz], d = [L.x - hx, yb, L.z - hz];
+      P3.set([...a, ...b, ...cc, ...a, ...cc, ...d], k * 18);
+      for (let v = 0; v < 6; v++) N3.set([L.ox, 0, L.oz], k * 18 + v * 3);
+      const u0 = x0 / cv.width, u1 = (x0 + w) / cv.width, v0 = 1 - (y0 + h) / cv.height, v1 = 1 - y0 / cv.height;
+      U2.set([u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1], k * 12);
+      return { b: m.b, i: m.i, x: m.x, y: m.y, x0, y0, w, h, assin: null };
+    });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(P3, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(N3, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(U2, 2));
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = anisoDe(4);
+    const mat = comNoite(cortavel(new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.35, side: THREE.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }), false));
+    mat.userData.doMapa = true;
+    const malha = new THREE.Mesh(g, mat);
+    malha.name = 'muros-de-pixacao';
+    malha.updateMatrix(); malha.matrixAutoUpdate = false;
+    doMapa.add(malha);
+    pixos = { cv, c, tex, malha, celulas };
+    pintarPixos(true);
+  }
+  /* a cal do muro: o retângulo de borda irregular (a trincha não acerta a
+     linha) e umas passadas de rolo */
+  function pintarCal(c, q, sem) {
+    let r = sem || 1;
+    const rnd = () => { r = (r * 16807) % 2147483647 || 1; return r / 2147483647; };
+    const { x0, y0, w, h } = q, j = Math.max(2, Math.min(w, h) * 0.05);
+    c.save();
+    c.beginPath();
+    const pts = [];
+    for (let k = 0; k <= 10; k++) pts.push([x0 + w * k / 10, y0 + rnd() * j]);
+    for (let k = 1; k <= 6; k++) pts.push([x0 + w - rnd() * j, y0 + h * k / 6]);
+    for (let k = 9; k >= 0; k--) pts.push([x0 + w * k / 10, y0 + h - rnd() * j]);
+    for (let k = 5; k >= 1; k--) pts.push([x0 + rnd() * j, y0 + h * k / 6]);
+    pts.forEach(([x, y], k) => k ? c.lineTo(x, y) : c.moveTo(x, y));
+    c.closePath();
+    c.fillStyle = '#ebe8de'; c.fill();
+    c.clip();
+    /* as passadas do rolo, de cima a baixo */
+    for (let k = 0; k < 7; k++) {
+      c.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,.35)' : 'rgba(170,160,140,.12)';
+      c.fillRect(x0 + w * rnd(), y0, 4 + w * 0.08 * rnd(), h);
+    }
+    c.restore();
+  }
+  /* a letra da pixação de torcida: alta e fina, inclinada, com o contorno
+     do contraste da tinta e o escorrido embaixo (a de index.html, `texturaPixo`) */
+  function pintarLetra(c, q, texto, tinta, alfa, sem) {
+    const { x0, y0, w, h } = q, sx = 0.56, sy = 1.38;
+    const fonte = t => `bold ${t}px "Arial Narrow", "Liberation Sans Narrow", "Nimbus Sans Narrow", Arial, sans-serif`;
+    const p = String(texto).split(/\s+/).filter(Boolean), quebras = [[texto]];
+    const junta = (a, b) => [p.slice(0, a).join(' '), p.slice(a, b).join(' '), p.slice(b).join(' ')].filter(Boolean);
+    for (let a = 1; a < p.length; a++) { quebras.push(junta(a, p.length)); for (let b = a + 1; b < p.length; b++) quebras.push(junta(a, b)); }
+    let melhor = null;
+    for (const linhas of quebras) {
+      let tam = Math.floor(h * 0.86 / (linhas.length * sy * 1.04));
+      c.font = fonte(tam);
+      const larg = Math.max(...linhas.map(t => c.measureText(t).width)) * sx;
+      if (larg > w * 0.9) tam = Math.floor(tam * w * 0.9 / larg);
+      if (!melhor || tam > melhor.tam) melhor = { linhas, tam };
+    }
+    const { linhas, tam } = melhor, passo = tam * sy * 1.04;
+    let r = sem || 1;
+    const rnd = () => { r = (r * 16807) % 2147483647 || 1; return r / 2147483647; };
+    c.save();
+    c.beginPath(); c.rect(x0, y0, w, h); c.clip();
+    c.globalAlpha = alfa;
+    c.font = fonte(tam); c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+    const contorno = luzPixo(tinta) > 120 ? 'rgba(22,20,18,.9)' : 'rgba(238,236,228,.82)';
+    linhas.forEach((t, i) => {
+      const y = y0 + h / 2 + (i - (linhas.length - 1) / 2) * passo;
+      c.setTransform(sx, 0, -0.12, sy, x0 + w / 2, y);
+      c.lineWidth = Math.max(3, tam * 0.15); c.strokeStyle = contorno; c.strokeText(t, 0, 0);
+      c.fillStyle = tinta; c.fillText(t, 0, 0);
+      const larg = c.measureText(t).width;
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.fillStyle = tinta;
+      for (let k = 0; k < Math.max(2, t.length / 2); k++) {
+        if (rnd() > 0.6) continue;
+        const x = x0 + w / 2 + (rnd() - 0.5) * larg * sx * 0.9, ya = y + tam * sy * 0.36, l = tam * (0.15 + rnd() * 0.5);
+        c.fillRect(x, ya, Math.max(1.2, tam * 0.05), l);
+      }
+    });
+    c.restore();
+  }
+  function pintarPixos(tudo) {
+    if (!pixos) return 0;
+    const D = pixos;
+    let mudou = 0;
+    for (const q of D.celulas) {
+      let st = null;
+      try { st = fontePixos ? fontePixos(q.b, q.i) : null; } catch (e) { st = null; }
+      const idade = st && st.idade != null ? Math.max(0, Math.min(1, st.idade)) : 0;
+      const px = st && st.t && P.pixoDaTorcida ? P.pixoDaTorcida(st.t, `${q.b}#${q.i}|${st.abs || 0}`) : null;
+      const assin = px ? `${st.t}|${px.texto}|${px.tinta}|${Math.round(idade * 4)}` : 'livre';
+      if (!tudo && assin === q.assin) continue;
+      q.assin = assin; mudou++;
+      const c = D.c, sem = somaPixo(`${q.b}#${q.i}`);
+      c.clearRect(q.x0 - PIXO_CEL.borda, q.y0 - PIXO_CEL.borda, q.w + 2 * PIXO_CEL.borda, q.h + 2 * PIXO_CEL.borda);
+      pintarCal(c, q, sem);
+      if (px) pintarLetra(c, q, px.texto, px.tinta || '#1c1c1c', 1 - 0.55 * idade, sem ^ somaPixo(st.t));
+    }
+    if (mudou) { D.tex.needsUpdate = true; pedir(); }
+    return mudou;
+  }
   function montarPortas(vivos) {
     portas = [];
     for (const m of vivos) {
@@ -3408,6 +3554,13 @@ void main() {`)
            get montando() { return montando; },
            /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */
            get dia() { return dia; }, abrirDiaDeJogo, get custoDia() { return { ...custoDia }; },
+           /* OS MUROS DE PIXAÇÃO: o jogo diz de quem é cada um (`fonte(fn)`: fn(bairro, n) →
+              null ou { t, abs, idade }) e pede pra repintar o que mudou (`atualizar`) */
+           pixos: {
+             fonte(fn) { fontePixos = typeof fn === 'function' ? fn : null; return pintarPixos(true); },
+             atualizar: () => pintarPixos(false),
+             get lista() { return pixos ? pixos.celulas.map(q => ({ b: q.b, i: q.i, x: q.x, y: q.y, assin: q.assin })) : []; }
+           },
            /* pro teste: o que está no pixel (sx, sy) */
            pegarEm(sx, sy) { const c = pegar(sx, sy); return c ? { tipo: c.it.tipo, titulo: P.tituloDe(c.it) } : null; },
            /* pro teste: a câmera num lugar */

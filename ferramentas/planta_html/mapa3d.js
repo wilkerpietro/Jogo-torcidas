@@ -108,10 +108,19 @@ export function criarMapaDaCidade(api) {
     const ps = d.partes(e, cid, bid);
     return ps.length && ps[0].v > d.DOMINA ? d.siglaDe(ps[0].t) + ' ' + Math.round(ps[0].v) + '%' : T_('EM DISPUTA');
   }
+  /* O DONO DE CADA MURO DE PIXAÇÃO (06/10/2026): o quadradinho do muro no
+     mapa sai na cor da torcida que pixou (o save); o livre, branco */
+  function donoDoMuro(bid, i) {
+    const d = D(), e = E(), mb = MB();
+    if (!d || !e || !cid || !d.muros) return null;
+    const m = (d.muros(e, cid, bid) || [])[i];
+    return m && m.t ? (mb ? mb.corDe(m.t) : '#d4731c') : null;
+  }
   function ligarCores(v) {
     if (!api.planta.coresDosBairros) return;
     api.planta.coresDosBairros(v ? corDoBairro : null);
     api.planta.rotuloDoBairro(v ? rotuloDoBairro : null);
+    if (api.planta.donosDosMuros) api.planta.donosDosMuros(v ? donoDoMuro : null);
     if (api.planta.camadaBairros) api.planta.camadaBairros(true);
   }
   /* o bairro de um ponto: na planta daqui, ou na guardada da outra */
@@ -201,6 +210,8 @@ export function criarMapaDaCidade(api) {
     const daqui = !outra && cid === cidDoCenario();
     lado.appendChild(mb.cartaoDoBairro(cid, bairroSel, {
       aoIr: daqui && api.cenario && api.cenario.voarPara ? b => { const c = centroDoBairro(b.id); if (c) irPara(c.x, c.y); } : null,
+      /* o muro da lista: a câmera vai até a parede dele, de frente */
+      aoMuro: daqui && api.cenario && api.cenario.voarPara ? i => irProMuro(bairroSel, i) : null,
       aoMudar: () => { pintarLado(); pedir(); },
       aoAviso: t => { avisoLado = t; }
     }));
@@ -323,6 +334,16 @@ export function criarMapaDaCidade(api) {
     const C = api.cenario;
     fechar();
     if (C && C.voarPara) C.voarPara(x, y, 90 * api.M, 1.0);
+  }
+  /* O MURO DE PIXAÇÃO na cidade: a câmera na frente da parede, a uns 9 m,
+     olhando pra ela (o az da câmera é o da normal do muro) */
+  function irProMuro(bid, i) {
+    const C = api.cenario;
+    const m = (api.planta.murosDePixo ? api.planta.murosDePixo() : []).find(x => x.b === bid && x.i === i);
+    if (!m || !C || !C.voarPara) return;
+    fechar();
+    const L = m.lug, M = api.M;
+    C.voarPara(L.x + L.ox * 1.2 * M, L.z + L.oz * 1.2 * M, 9 * M, 0.3, Math.atan2(L.ox, L.oz));
   }
 
   function abrir() {

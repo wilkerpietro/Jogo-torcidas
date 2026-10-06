@@ -4547,3 +4547,154 @@ junto com os posts da rede social".
   (`recados3d.js`) continua saindo quando a matéria cai. Com a rede aberta, a
   mesma página aparece nos dois lados por alguns segundos; se incomodar, o
   canto pode deixar os jornais pra rede.
+
+## 43. Os muros de pixação do save, a TUF tricolor, sem spoiler, a bandeira do presidente e as brigas que abriam a foto (06/10/2026)
+
+O pedido, em cinco partes: "as pixações do save agora devem aparecer nos
+muros da cidade 3d, sendo somente esses os espaços possíveis de pixação no
+jogo. marque de 3 a 5 locais fáceis de pixar, da altura do boneco em todos
+os mapas do jogo pra aumentarmos essa dinamica. / a sede da tuf aparece
+somente com as cores azul e branco mesmo a torcida tendo 3 cores. apure
+isso. / o post do resultado do jogo aparece antes do itinerário do jogo
+acontecer: gera spoiler. resolva isso. / a bandeira que fica na parede e
+acima da mesa do presidente na sede deve ser mais bonita, similar à
+bandeira que colocamos na arquibancada. / as cenas de briga algumas vezes
+abrem o cenário 2d, crie os cenários coerentes dentro do mapa 3d".
+
+### Os muros de pixação
+
+- **O jogo já tinha os muros** (`js/mundo/dominio.js`: de 3 a 5 por bairro,
+  `vagasPix`, o número fixo pelo hash do bairro; no save, de quem é cada um
+  e desde quando). Faltava o lugar de cada um na cidade. A planta agora
+  escolhe as paredes (`index.html`, `escolherMurosDePixo`):
+  - **os candidatos** são os lotes do bairro com parede pra rua, nesta
+    ordem de preferência: o muro do terreno baldio (o muro comprido, o lugar
+    clássico da lata), o muro da casa murada, o galpão, a casa e o sobrado
+    (e a casa da favela), e por último o prédio. Ficam de fora a sede, o
+    bar, a loja e a subsede de torcida, a fábrica, as lojas do assalto, o
+    comércio com letreiro e o estacionamento;
+  - **espalhados**: cada muro novo é o candidato mais longe dos já
+    escolhidos (conta até 60 m); o de categoria pior só ganha se estiver
+    15 m mais longe que o melhor;
+  - **na altura do boneco**: o lugar do pixo é o da pixação de torcida de
+    antes, de 20 cm a 1,75 m do chão, o mais largo que couber na parede
+    livre (sem janela nem porta; o portão de chapa vale). O muro sem esse
+    lugar sai e entra o próximo candidato.
+- **Nas 30 praças: 1.411 muros**, e todo bairro ganhou o número que o jogo
+  diz (`vagasPix`).
+- **A pixação de torcida de enfeite saiu** (a que cada praça sorteava pela
+  sede e pelos bares mais perto): só os muros têm pixação de torcida, a do
+  save. O recado de parede (VENDE-SE, TE AMO MARIA, o grafite da favela)
+  continua, fora dos muros.
+- **A cidade pinta os muros numa camada viva** (`cenario.js`,
+  `montarPixos`): uma folha de 8 colunas com uma célula por muro. O **muro
+  livre** é a caiação branca de rolo (o "espaço pra pixar"); o **pixado** é
+  o dizer da torcida (os mesmos dizeres de antes), as letras altas e finas
+  de pixo com contorno e escorrido, na cor 1 dela, **desbotando** com a
+  idade (`PIX.desbota`, 60 dias). O jogo diz de quem é cada muro
+  (`jogo3d.js`, `donoDoMuro`, pelo `TO.dominio.muros` da praça na tela) e a
+  cada 1,5 s a camada repinta só o que mudou: a pixação nossa pelo cartão
+  do bairro, a da IA na virada do dia, o pixo que venceu.
+- **No mapa da cidade** (menu → mapa), cada muro é um quadradinho na cor de
+  quem pixou (o livre, branco), e a lista de muros do cartão do bairro leva
+  a câmera até a parede (`mapa3d.js`, `irProMuro`).
+- **O que não mudou**: pixar continua sendo a ação do jogo (o cartão do
+  bairro, `TO.dominio.pixar`). Andar com um boneco até o muro e pixar à mão
+  não existe.
+
+### A sede da TUF nas três cores
+
+- **A causa**: a paleta da planta (`coresDaTorcida`) usava só as cores da
+  torcida nos dados, e a TUF vem com duas (branco e azul). O jogo de feed
+  já completava a paleta com as cores do clube (`TO.mundo.coresDaTorcida`);
+  a planta não.
+- **Agora é a mesma regra**: as cores da torcida, depois o detalhe, depois
+  as do clube, **sem gêmeas** (duas cores a menos de 60 de distância RGB
+  contam como uma — sem isso o azul do Fortaleza entrava como terceira cor,
+  gêmeo do azul da TUF, e o vermelho ficava de fora), até três. A TUF ficou
+  branco, azul (#1A40CC) e vermelho (#C8102E): os pilares e os caixilhos da
+  fachada saem vermelhos. Vale pra toda torcida da planta: a sede, o bar, a
+  loja, a camisa dos bonecos e a bandeira.
+
+### Sem spoiler do resultado
+
+- **A causa**: o jogo de feed põe na fila do dia, logo depois do cartão da
+  partida ("Hoje tem…, Iniciar partida", o itinerário), a matéria da Gazeta
+  da rodada — e é essa matéria que vira o post do jornal com o placar. No
+  jogo 3D o cartão é empurrado pra 75 minutos antes da bola (§ do relógio,
+  28/09) e a fila do dia é ordenada pela hora: a matéria, que tinha a hora
+  de logo depois da do cartão de antes, passava **na frente** dele, e o
+  placar caía de manhã.
+- **Agora** (`jogo3d.js`, `horaDaPartida`): quem vinha atrás do cartão e
+  ficaria antes dele ganha a hora do cartão. A ordenação é estável, então
+  elas seguem atrás — e o cartão é decisão, que segura a fila até o apito.
+
+### A bandeira da sala do presidente
+
+- A bandeira pregada na parede (atrás da mesa do presidente nos níveis 2 a
+  5, e na sala do nível 1) era três faixas de cor. Agora é **o pano da
+  torcida com o desenho da bandeira da arquibancada e da do mastro**: o
+  campo na cor 1, a borda na 2, o filete na 3 e o escudo no meio, com as
+  dobras do pano (claro e escuro em colunas e a sombra de cima), pendurado
+  num varão de metal com dois suportes (`sede3d.js`, `panoNaParede`;
+  `index.html`, `texturaBandeira`). Sem dono, as três faixas de antes.
+
+### As brigas que abriam a foto 2D
+
+O levantamento (todas as cenas de briga do jogo de feed contra o roteador do
+3D, `vida3d.js`, `palcoDe`) achou quatro que **sempre** caíam na foto: a
+reunião da zona na praça (o print do dono era essa), o ataque à sede rival,
+a cobrança no clube e a briga do tutorial. As quatro ganharam lugar no mapa
+(`ferramentas/planta_html/briga_lugar.js`), no mesmo molde das outras cenas
+da cidade (o tabuleiro de 43 × 29 m na escala da caminhada, a máscara pela
+grade do passo, só o chão ligado a quem briga). Quantos de cada lado, quem
+tem ficha, o saque, os pontos do bairro e a faixa tomada continuam do jogo
+de feed: só muda o chão.
+
+- **A reunião da zona** (`praca-reuniao`: o nosso bote na reunião deles e o
+  deles na nossa — o "SEGURAR A RODA"): no **bairro da reunião**. Com praça
+  no bairro (as cidades-modelo têm uma em 3 de cada 5 bairros), a zona
+  atacada fica em roda em volta do chafariz, no calçadão. **Sem praça no
+  bairro** — o mapa das capitais tem uma ou duas praças no mapa inteiro —, a
+  reunião é **no cruzamento de ruas mais perto do meio do bairro**
+  (`planta.cruzamentoDoBairro`: três ou quatro braços de asfalto de 12 m),
+  com a roda no meio dele: ela não atravessa a cidade atrás da praça de
+  outro bairro. Quem ataca chega pela rua de uma das pontas (sorteio fixo
+  pelo lugar e pela rival) e sai por onde veio; quem está na roda só
+  levanta quando o bonde chega perto (`soZona`, 8,5 m na praça e 7 m na
+  esquina) e foge pela ponta de lá; a faixa (ou bandeira) da zona atacada
+  fica em pé entre a roda e quem chega; a PM vem a pé pelas ruas de través.
+- **O ataque à sede deles** (a cena `bar` com o alvo `sede`): na **sede da
+  torcida no mapa**. Quem ataca desce a rua da frente (do lado que o
+  sorteio dá); quem defende está no portão (na calçada) e no **pátio**; o
+  objetivo é o pátio, quando se chega nele pelo portão (senão, o portão). O
+  telhado da sede abre e as portas dela ficam abertas enquanto a briga
+  dura; a faixa deles fica no muro da frente, do lado do portão ("faixa
+  deles rasgada na porta").
+- **A cobrança no clube** (`ct`): **o mapa não tem CT**, e o clube mora no
+  estádio dele — a caravana chega no **Portão 1 do estádio do clube** (o do
+  mandante; sem ele no mapa, o principal), os seguranças estão na boca do
+  portão e o objetivo é o portão.
+- **O tutorial** (5 × 5 "na praça") e **a briga de praça que não tem
+  caminhada pra montar** (o encontro sem o jogo do clube rival): no mesmo
+  lugar da reunião (a praça do bairro ou o cruzamento dele), um bonde em
+  cada ponta.
+- **O `main.js` passa o bairro e a zona da briga** (antes eles se perdiam no
+  caminho: `abrirAcaoEmCena`, `abrirAtaqueAoBar`, `abrirConfronto`) e marca
+  o tutorial (`tutorial: true`, com a rival).
+- **Conferido no jogo 3D** (Fortaleza, TUF, contra a Cearamor): as cinco
+  abriram em 3D, sem erro no console — o nosso bote na reunião deles (na
+  esquina do José Walter: Fortaleza tem só a Praça da Vila), o bote deles
+  na nossa (na esquina do Bom Jardim), a sede da Cearamor (nível 4, com o
+  pátio ao alcance), o Portão 1 do Castelão e o tutorial (na esquina do
+  Conjunto Ceará).
+- **O que segue caindo na foto** (de propósito ou por ora):
+  - a briga de qualquer praça **de fora** sem o dia de jogo lá (a sub-sede
+    em outra cidade): a praça de fora não está montada em 3D;
+  - os **arredores** quando o plano do dia não tem esse rival (o ataque
+    surpresa): o cordão da PM é do plano;
+  - a **arquibancada** quando o clima esquenta sem caminho de invasão;
+  - a **reunião da diretoria** da torcida sem sede (não é briga).
+- **Uma diferença de texto**: a notícia da reunião (o Futebol e Porrada)
+  continua dizendo "na praça" mesmo quando a briga foi na esquina — o
+  texto é o do jogo de feed, pela cena.

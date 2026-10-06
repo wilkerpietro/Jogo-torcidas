@@ -608,11 +608,29 @@ const NOME_TIPO_LOJA = { banco: 'Banco', joalheria: 'Joalheria', supermercado: '
 /* as torcidas da cidade: a praça do jogo (`mapa` da torcida) é o nome
    da cidade sem acento; a cor é a mesma conta da planta */
 const slugDe = n => n.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, '-');
+/* A PALETA É A DO JOGO (`TO.mundo.coresDaTorcida`, js/mundo/mundo.js; o
+   dono, 06/10/2026: "a sede da tuf aparece somente com as cores azul e
+   branco mesmo a torcida tendo 3 cores"): a fonte de muitas torcidas é
+   curta — a TUF vem só com branco e azul —, e a paleta se completa com as
+   cores do CLUBE, de onde a camisa vem (o Fortaleza é tricolor). Duas
+   cores quase iguais contam como uma: sem isso o azul do clube entrava
+   como terceira cor, gêmeo do azul da torcida, e o vermelho ficava de fora */
+function coresParecidas(a, b) {
+  const n = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+  const [r1, g1, b1] = n(a), [r2, g2, b2] = n(b);
+  return Math.hypot(r1 - r2, g1 - g2, b1 - b2) < 60;
+}
 function coresDaTorcida(t) {
   const lista = [...(t.cores || []), t.detalhe].filter(Boolean).map(c => String(c).toUpperCase());
-  const cor = lista[0] || '#8E3F9C', cor2 = lista.slice(1).find(c => c !== cor) || '#E8E2D0';
-  const cor3 = lista.slice(1).find(c => c !== cor && c !== cor2) || null;
-  return { cor, cor2, cor3 };
+  const cl = t.clubeId && (TO.dados.times || []).find(o => o.id === t.clubeId);
+  for (const c of (cl && cl.cores) || []) lista.push(String(c).toUpperCase());
+  const d = [];
+  for (const c of lista) {
+    if (!/^#[0-9A-F]{6}$/.test(c) || d.some(x => coresParecidas(x, c))) continue;
+    d.push(c);
+    if (d.length === 3) break;
+  }
+  return { cor: d[0] || '#8E3F9C', cor2: d[1] || '#E8E2D0', cor3: d[2] || null };
 }
 const corLegivel = hex => luz(hex) > 150 ? '#1a1a1a' : '#f6f3ea';
 const NEUTRO = { cor: '#d6d1c4', cor2: '#c4beb0', cor3: '#8f8a7f' };
@@ -1591,49 +1609,143 @@ function dizeresDe(T) {
   return [...new Set(l)];
 }
 function pixarCidade(ts) {
-  const pontos = [];
-  for (const T of ts) {
-    if (T.sede) { const a = T.sede.e.area; pontos.push({ T, x: (a.x0 + a.x1) / 2, y: (a.y0 + a.y1) / 2, peso: 1 }); }
-    for (const x of T.bares || []) pontos.push({ T, x: x.b.x, y: x.b.y, peso: 0.3 });
-  }
-  const dizeres = new Map(ts.map(T => [T, dizeresDe(T)]));
-  const deQuem = (x, y, h) => {
-    if (!ts.length) return null;
-    const peso = new Map(ts.map(T => [T, 0]));
-    for (const p of pontos) peso.set(p.T, peso.get(p.T) + p.peso / Math.max(1, (p.x - x) ** 2 + (p.y - y) ** 2));
-    let tot = 0; for (const v of peso.values()) tot += v;
-    const piso = tot > 0 ? tot * 0.12 / ts.length : 1;
-    let soma = 0; for (const T of ts) { peso.set(T, peso.get(T) + piso); soma += peso.get(T); }
-    let r = h * soma;
-    for (const T of ts) { r -= peso.get(T); if (r <= 0) return T; }
-    return ts[ts.length - 1];
-  };
-  const pixo = (x, y, sem) => {
-    const T = deQuem(x, y, hashC(sem, 31));
-    if (!T) return null;
-    const ds = dizeres.get(T);
-    return ds.length ? { texto: ds[Math.floor(hashC(sem, 32) * ds.length)], tinta: T.cor, torcida: T.sigla } : null;
-  };
-  for (const it of lotes) {
-    const l = it.l;
-    l.pixoCidade = undefined;
-    if (!l.pixo) continue;
-    const x = l.cx ?? (l.x0 + l.x1) / 2, y = l.cy ?? (l.y0 + l.y1) / 2;
-    l.pixoCidade = pixo(x, y, x * 3 + y * 7) || { texto: null };
-  }
-  for (const [lista, fatia] of [[lotesNovos, FATIA_PIXO_NOVA], [lotesFavelaNova, FATIA_PIXO_FAVELA]])
-    for (const it of lista) {
-      const l = it.l;
-      l.pixoCidade = undefined;
-      if (!l.pixacao) continue;
-      const x = (it.bb.x0 + it.bb.x1) / 2, y = (it.bb.y0 + it.bb.y1) / 2;
-      if (hashC(x, y, 33) < fatia) l.pixoCidade = pixo(x, y, x * 5 + y * 3) || undefined;
-    }
+  /* (a pixação de torcida de enfeite saiu em 06/10/2026: os muros de
+     pixação abaixo são os únicos lugares de pixação de torcida, a do save) */
+  for (const lista of [lotes, lotesNovos, lotesFavelaNova]) for (const it of lista) { it.l.pixoCidade = undefined; it.l.muroPixo = undefined; }
+  MUROS_PIXO = escolherMurosDePixo();
 }
 /* a pixação que o lote mostra na praça da vez: { texto, tinta, torcida } */
 function pixacaoDe(l) {
   if (l.pixoCidade) return l.pixoCidade.texto ? l.pixoCidade : null;
   return l.pixacao ? { texto: l.pixacao, tinta: l.pixoTinta || null, torcida: null } : null;
+}
+
+/* ======================================================
+   OS MUROS DE PIXAÇÃO (o dono, 06/10/2026: "as pixações do save agora
+   devem aparecer nos muros da cidade 3d, sendo somente esses os espaços
+   possíveis de pixação no jogo. marque de 3 a 5 locais fáceis de pixar,
+   da altura do boneco em todos os mapas do jogo pra aumentarmos essa
+   dinâmica"). O jogo já tinha os muros (js/mundo/dominio.js: de 3 a 5 por
+   bairro, `vagasPix`, o número fixo pelo hash do bairro; no save, de quem
+   é cada um); faltava o LUGAR de cada um na cidade. Aqui cada bairro
+   ganha os seus, em paredes de verdade:
+   · OS CANDIDATOS são os lotes do bairro com parede pra rua — primeiro o
+     muro do terreno baldio (o muro comprido, o lugar clássico da lata),
+     depois o muro da casa murada, o galpão, a casa e o sobrado (e a casa
+     da favela), e por último o prédio. Ficam de fora a sede, o bar, a
+     loja e a subsede da torcida, a fábrica, a loja do assalto, o comércio
+     com letreiro e o estacionamento.
+   · ESPALHADOS: cada muro novo é o candidato mais longe dos já escolhidos
+     (conta até 60 m), e o de categoria pior só ganha se estiver 15 m mais
+     longe que o melhor.
+   · O LUGAR DO PIXO é o da pixação de torcida de antes — da altura do
+     boneco, de 20 cm do chão a 1,75 m —, o mais largo que couber na parede
+     livre (sem janela nem porta; o portão de chapa vale). O muro que não
+     tem esse lugar fica de fora e o próximo candidato entra.
+   A pixação de torcida de enfeite (a de cada praça, que saía da sede e dos
+   bares mais perto) saiu: só esses muros têm pixação de torcida, a do
+   save. O recado de parede (VENDE-SE, TE AMO MARIA, o grafite da favela)
+   continua, fora dos muros. O lote do muro fica marcado (`muroPixo`): o
+   portão do baldio vai pra ponta e o recado dele sai, e a cidade 3D pinta
+   o muro numa camada viva (js/cenario.js, `montarPixos`), que muda quando
+   o save muda.
+   ====================================================== */
+let MUROS_PIXO = [];
+const MURO_ESPALHA = 60 * M, MURO_CATEGORIA = 15 * M, MURO_ALT_MIN = 1.1 * M;
+/* o hash do jogo (o mesmo do domínio, js/mundo/dominio.js) */
+const fnvMuro = t => { let h = 2166136261; const s2 = String(t); for (let i = 0; i < s2.length; i++) { h ^= s2.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
+/* quantos muros o bairro tem: a conta do jogo (`TO.dominio.vagasPix`); sem o jogo, a mesma */
+const vagasDoBairro = (mapa, bid) => {
+  const D = window.TO && TO.dominio;
+  return D && D.vagasPix ? D.vagasPix(mapa, bid) : 3 + fnvMuro(`pix|${mapa}|${bid}`) % 3;
+};
+function categoriaDoMuro(l) {
+  if (l.tipo === 'muro') return 0;
+  if (l.muro) return 1;
+  if (l.tipo === 'galpao' && !l.favela) return 2;
+  if (l.tipo === 'predio' && !l.favela) return 4;
+  return 3;
+}
+/* o lugar do pixo na parede do lote (em coordenada de mundo, como os
+   decalques), ou null quando não cabe na altura do boneco */
+function lugarDoMuro(l) {
+  const H = l.alt, alt = Math.min(PIXO_ALT.torcida * M, H - 0.3 * M);
+  if (alt < MURO_ALT_MIN) return null;
+  const y = Math.min(PIXO_Y.torcida * M, H - 0.15 * M - alt / 2);
+  const pc = planoSeguro(l);
+  if (!pc) {
+    /* o lote de caixa (o de hoje sem modelo): a frente inteira, como a pixação de antes */
+    if (l.ang) return null;
+    const f = l.frente, parede = (f === 'n' || f === 's' ? l.x1 - l.x0 : l.y1 - l.y0) - 10;
+    const larg = Math.min(parede, alt * 2.4), a = Math.min(alt, larg / 0.9);
+    if (a < MURO_ALT_MIN || larg < 1.4 * M) return null;
+    const n = { n: [0, -1], s: [0, 1], o: [-1, 0], l: [1, 0] }[f] || [0, 1];
+    const x = f === 'o' ? l.x0 + 0.5 : f === 'l' ? l.x1 - 0.5 : (l.x0 + l.x1) / 2, z = f === 'n' ? l.y0 + 0.5 : f === 's' ? l.y1 - 0.5 : (l.y0 + l.y1) / 2;
+    return { x: x + n[0] * 0.8, y: Math.min(PIXO_Y.torcida * M, l.alt - 0.15 * M - a / 2), z: z + n[1] * 0.8, ox: n[0], oz: n[1], larg, alt: a };
+  }
+  /* a parede livre sai da casa montada (as frentes e os vãos dela): monta
+     só a conta, sem guardar a malha, já com o muro marcado (o portão do
+     baldio vai pra ponta) */
+  const antes = l.muroPixo;
+  l.muroPixo = true;
+  try { montarCasa(l, pc, {}, 0); }
+  catch (e) { l.muroPixo = antes; return null; }
+  l.muroPixo = antes;
+  const W = pc.W * M;
+  for (const asp of [2.4, 2.0, 1.6, 1.25]) {
+    const larg = Math.min(alt * asp, W - 0.3 * M);
+    if (larg < 1.4 * M) continue;
+    const lug = lugarDoDecalque(l, pc, larg, larg / asp, { u: 0, y, min: larg * 0.8, portas: true });
+    if (lug && lug.alt >= MURO_ALT_MIN) return lug;
+  }
+  return null;
+}
+function escolherMurosDePixo() {
+  const S = SETORES, out = [];
+  if (!S || !S.bairros) return out;
+  const porBairro = new Map();
+  const juntar = (it, hoje) => {
+    const l = it && it.l;
+    if (!l || it.sobSede || (hoje && it.sobProposta)) return;
+    if (ehBar(l) || ehEstrutura(l) || ehLoja(l) || l.loja || l.placa || l.comercio || l.modelo === 'estacionamento') return;
+    const x = l.cx ?? (l.x0 + l.x1) / 2, y = l.cy ?? (l.y0 + l.y1) / 2, b = bairroEm(x, y);
+    if (!b) return;
+    if (!porBairro.has(b)) porBairro.set(b, []);
+    porBairro.get(b).push({ l, x, y, cat: categoriaDoMuro(l) });
+  };
+  for (const it of lotes) juntar(it, true);
+  for (const it of lotesNovos) juntar(it, false);
+  for (const it of lotesFavelaNova) juntar(it, false);
+  for (const b of S.bairros) {
+    const n = vagasDoBairro(S.mapa, b.id);
+    const cs = (porBairro.get(b.id) || []).map(c => Object.assign(c, { h: fnvMuro(`muro|${S.mapa}|${b.id}|${Math.round(c.x)}|${Math.round(c.y)}`) }))
+      .sort((a, c) => a.cat - c.cat || a.h - c.h);
+    const esc = [];
+    while (esc.length < n && cs.length) {
+      let k = 0, nota = -Infinity;
+      cs.forEach((c, j) => {
+        const d = esc.length ? Math.min(MURO_ESPALHA, ...esc.map(e => Math.hypot(e.x - c.x, e.y - c.y))) : 0;
+        const v = d - c.cat * MURO_CATEGORIA;
+        if (v > nota) { nota = v; k = j; }
+      });
+      const c = cs.splice(k, 1)[0], lug = lugarDoMuro(c.l);
+      if (lug) esc.push(Object.assign(c, { lug }));
+    }
+    esc.forEach((c, i) => {
+      c.l.muroPixo = { b: b.id, i };
+      out.push({ b: b.id, i, x: c.lug.x, y: c.lug.z, lug: c.lug, cat: c.cat, vagas: n });
+    });
+  }
+  return out;
+}
+/* a pixação de uma torcida da praça no muro: o dizer (pela semente: o nome,
+   a sigla, a sigla com o ano, o grito do clube) e a tinta dela */
+function pixoDaTorcida(tid, sem) {
+  let T = ocupacao && ocupacao.torcidas ? ocupacao.torcidas.find(x => x.id === tid) : null;
+  if (!T) { const d = (TO.dados.torcidas || []).find(x => x.id === tid); if (d) T = torcidaDaPraca(d); }
+  if (!T) return null;
+  const ds = dizeresDe(T);
+  return { texto: ds.length ? ds[fnvMuro(sem) % ds.length] : T.sigla, tinta: T.cor, cor2: T.cor2, cor3: T.cor3, sigla: T.sigla };
 }
 
 /* ======================================================
@@ -2981,7 +3093,7 @@ function bairrosDoJogo(T, mapa, tipo) {
 }
 /* AS CORES DOS BAIRROS no mapa: sem o jogo, a cor da zona; o jogo põe a
    da dona de cada bairro (`coresDosBairros`) */
-let CORES_DOS_BAIRROS = null, ROTULO_DO_BAIRRO = null;
+let CORES_DOS_BAIRROS = null, ROTULO_DO_BAIRRO = null, DONO_DO_MURO = null;
 
 /* A SEDE NO ESPAÇO: o modelo novo da sede (js/sede3d.js), que refaz as
    paredes e as portas da sede da planta na fatia do espaço, virada pra
@@ -5584,6 +5696,20 @@ function desenharBairros(vis, px) {
     ctx.strokeStyle = '#d9a441'; ctx.lineWidth = px(3); ctx.stroke();
   }
   ctx.lineCap = 'butt';
+  /* OS MUROS DE PIXAÇÃO (06/10/2026): um quadradinho no pé de cada muro —
+     na cor da torcida dona (o jogo diz, `donosDosMuros`), branco o livre */
+  if (MUROS_PIXO.length) {
+    const r = px(4.5);
+    for (const m of MUROS_PIXO) {
+      if (m.x < vis.x0 - 50 || m.x > vis.x1 + 50 || m.y < vis.y0 - 50 || m.y > vis.y1 + 50) continue;
+      let cor = null;
+      try { cor = DONO_DO_MURO ? DONO_DO_MURO(m.b, m.i) : null; } catch (e) { cor = null; }
+      ctx.fillStyle = cor || '#f4f1e8';
+      ctx.fillRect(m.x - r, m.y - r, 2 * r, 2 * r);
+      ctx.lineWidth = px(1.6); ctx.strokeStyle = 'rgba(12,12,12,.9)';
+      ctx.strokeRect(m.x - r, m.y - r, 2 * r, 2 * r);
+    }
+  }
 }
 /* as cidades da praça cortada, na ficha da praça: quantos bairros cada
    uma tem, pra que lado da outra ela fica e a distância da placa */
@@ -6901,7 +7027,8 @@ function decalques(l, pc, g) {
     if (lug) placaNoMundo(g, lug, texturaDizer(l.placa, true, l.placaTinta, l.placaFundo));
   }
   /* (a fachada da loja e da subsede da torcida é dela: sem pixação) */
-  const px = ehEstrutura(l) ? null : pixacaoDe(l);
+  /* (o muro de pixação é pintado pela camada viva da cidade, js/cenario.js: sem o recado) */
+  const px = ehEstrutura(l) || l.muroPixo ? null : pixacaoDe(l);
   if (px) {
     /* da altura do boneco; no muro do terreno baldio ela toma o muro (a
        regra do jogo). O quadro mais largo que couber na parede livre (sem
@@ -6936,7 +7063,7 @@ function objetoDoLote(l, g) {
     const m = new THREE.Mesh(new THREE.BoxGeometry(l.w - 2, l.alt, l.h - 2), lisa(l.cor || '#b0a794'));
     m.position.set(l.cx, l.alt / 2, l.cy); m.rotation.y = -l.ang; m.castShadow = m.receiveShadow = true; g.add(m);
   } else caixa(g, l.x0 + 1, l.x1 - 1, 0, l.alt, l.y0 + 1, l.y1 - 1, l.cor || '#b0a794');
-  const px = pixacaoDe(l);
+  const px = l.muroPixo ? null : pixacaoDe(l);
   if (px && !l.ang) {
     const f = l.frente, tipo = px.torcida ? 'torcida' : 'recado', parede = (f === 'n' || f === 's' ? l.x1 - l.x0 : l.y1 - l.y0) - 10;
     const alt0 = Math.min(PIXO_ALT[tipo] * M, l.alt - 0.3 * M), larg = Math.min(parede, alt0 * 2.4), alt = Math.min(alt0, larg / 0.9);
@@ -7279,6 +7406,8 @@ function objetoDaSede(sd, g, o = {}) {
     const lug = { x: p.x, y: p.y, z: p.z, ox: p.ox, oz: p.oz, larg: p.larg, alt: p.alt };
     if (p.tipo === 'escudo') placaNoMundo(g, lug, texturaEscudo(p), true);
     else if (p.tipo === 'camisa') placaNoMundo(g, lug, texturaCamisa(p));
+    /* o pano da torcida na parede da presidência (06/10/2026): o desenho da bandeira do mastro */
+    else if (p.tipo === 'bandeira') placaNoMundo(g, lug, texturaBandeira(p));
     else if (p.deitada) placaDeitada(g, lug, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, true));
     else placaNoMundo(g, lug, texturaPlaca(p.texto, p.tinta, p.fundo, p.larg / p.alt, p.tipo === 'faixa'));
   }
@@ -7367,6 +7496,24 @@ function texturaBandeira(b) {
   const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
   const c = cv2.getContext('2d');
   const tx = new THREE.CanvasTexture(cv2); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+  /* (o pano pregado na parede vai pra folha de decalques do cenário: com o
+     escudo chegando depois, a folha copia de novo) */
+  if (b.img) tx.userData.repinta = true;
+  /* AS DOBRAS do pano pendurado (`pano`: o da parede da presidência; o do
+     mastro já ondula no shader): faixas de luz e sombra de cima a baixo,
+     mais fundas perto do varão, onde o pano franze */
+  const dobras = () => {
+    if (!b.pano) return;
+    for (let x = 0; x < W; x++) {
+      const v = Math.sin(x / W * Math.PI * 7 + 0.6) * 0.6 + Math.sin(x / W * Math.PI * 15 + 1.7) * 0.4;
+      const g2 = c.createLinearGradient(0, 0, 0, H);
+      const a = Math.abs(v) * 0.13, cor = v > 0 ? '255,255,255' : '0,0,0';
+      g2.addColorStop(0, `rgba(${cor},${(a * 1.5).toFixed(3)})`); g2.addColorStop(0.35, `rgba(${cor},${a.toFixed(3)})`); g2.addColorStop(1, `rgba(${cor},${(a * 0.6).toFixed(3)})`);
+      c.fillStyle = g2; c.fillRect(x, 0, 1, H);
+    }
+    /* a barra de cima, dobrada no varão */
+    c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(0, 0, W, Math.max(2, H * 0.03));
+  };
   const pintar = im => {
     const e2 = Math.round(H * 0.085), e3 = Math.round(H * 0.04), e = e2 + e3;
     c.fillStyle = b.cor2; c.fillRect(0, 0, W, H);
@@ -7384,6 +7531,7 @@ function texturaBandeira(b) {
       while (t > 10 && c.measureText(b.sigla).width > S * 0.84) { t -= 2; c.font = `bold ${t}px "Arial Narrow", Arial, sans-serif`; }
       c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = b.corTexto; c.fillText(b.sigla, cx, cy + 2);
     }
+    dobras();
     tx.needsUpdate = true;
   };
   pintar(null);
@@ -8644,14 +8792,14 @@ if (new URLSearchParams(location.search).has('teste')) window.__planta = { estad
    sede, os bares, os estádios) */
 function camposDaPraca() {
   const out = [], poe = (o, ks) => { if (o) for (const k of ks) out.push([o, k]); };
-  for (const it of lotes) { poe(it, ['sobProposta', 'sobSede']); poe(it.l, ['pixoCidade', 'nobre', '_plano']); }
+  for (const it of lotes) { poe(it, ['sobProposta', 'sobSede']); poe(it.l, ['pixoCidade', 'muroPixo', 'nobre', '_plano']); }
   /* (as torres só no bairro Nobre: o prédio do centro e o condomínio que saem) */
   for (const m of marcos) poe(m, ['semTorre']);
   if (PROP) for (const c of PROP.condominios) poe(c.q, ['semCondominio']);
   /* (a casa que vira bar no bairro sem vaga: `virarBar`) */
   /* (e a casa ou a vaga que vira loja ou subsede: `virarEstrutura`) */
-  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'nobre', 'estrutura', 'subsede', ...CAMPOS_BAR_EXTRA]); }
-  for (const it of lotesFavelaNova) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'estrutura', 'subsede', ...CAMPOS_BAR_EXTRA]); }
+  for (const it of lotesNovos) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'muroPixo', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'nobre', 'estrutura', 'subsede', ...CAMPOS_BAR_EXTRA]); }
+  for (const it of lotesFavelaNova) { poe(it, ['sobSede']); poe(it.l, ['pixoCidade', 'muroPixo', 'torcida', 'placa', 'placaFundo', 'placaTinta', '_plano', 'barExtra', 'estrutura', 'subsede', ...CAMPOS_BAR_EXTRA]); }
   for (const e of equipamentos) poe(e, ['somePelaProposta']);
   for (const q of pecasSoltas) poe(q, ['somePelaProposta']);
   for (const x of espacosDoMapa.concat(RESERVAS)) poe(x, ['dono', 'sede', 'montagem', 'bb', 'pol', 'inteira', 'sobra']);
@@ -8675,7 +8823,7 @@ function fotoDaPraca(alvos) {
   return {
     G: { cidade, PROP, cobertoPelaProposta, fav0, somePelaProposta, lotesNovos, lotesFavelaNova, marcosNovos, marcosDoMapa, escondidosPelasTorres, somemNaProposta,
          bares, estruturas, espacos, espacosDoMapa, RESERVAS, lotesVeraneio, porticos, METRO_P, estacoes, estadios, trocadas, carroSome, LIM_PROPOSTA, MUNDO, CALCADAS,
-         ocupacao, SETORES, GOMOS, TORCIDA_DO_JOGO, sel: estado.sel, sobre: estado.sobre },
+         ocupacao, SETORES, GOMOS, TORCIDA_DO_JOGO, MUROS_PIXO, sel: estado.sel, sobre: estado.sobre },
     alvos, v: alvos.map(([o, k]) => [Object.prototype.hasOwnProperty.call(o, k), o[k]])
   };
 }
@@ -8686,7 +8834,7 @@ function porFotoDaPraca(F) {
   somemNaProposta = G.somemNaProposta;
   bares = G.bares; estruturas = G.estruturas || []; espacos = G.espacos; espacosDoMapa = G.espacosDoMapa; RESERVAS = G.RESERVAS; lotesVeraneio = G.lotesVeraneio; porticos = G.porticos; METRO_P = G.METRO_P; estacoes = G.estacoes;
   estadios = G.estadios; trocadas = G.trocadas; carroSome = G.carroSome; LIM_PROPOSTA = G.LIM_PROPOSTA; MUNDO = G.MUNDO; CALCADAS = G.CALCADAS;
-  ocupacao = G.ocupacao; SETORES = G.SETORES; GOMOS = G.GOMOS; TORCIDA_DO_JOGO = G.TORCIDA_DO_JOGO; estado.sel = G.sel; estado.sobre = G.sobre;
+  ocupacao = G.ocupacao; SETORES = G.SETORES; GOMOS = G.GOMOS; TORCIDA_DO_JOGO = G.TORCIDA_DO_JOGO; MUROS_PIXO = G.MUROS_PIXO || []; estado.sel = G.sel; estado.sobre = G.sobre;
   for (let i = F.alvos.length - 1; i >= 0; i--) { const [o, k] = F.alvos[i], [tinha, v] = F.v[i]; if (tinha) o[k] = v; else delete o[k]; }
 }
 const ehOutraPraca = nome => !!nome && nome !== cidade && CIDADES.some(([n]) => n === nome);
@@ -9050,6 +9198,61 @@ function apiDoCenario() {
       for (const it of equipamentos || []) if (it.q && it.q.equip && it.q.equip.tipo === 'delegacia' && !it.somePelaProposta) lista.push({ nome: it.nome, x: (it.bb.x0 + it.bb.x1) / 2, y: (it.bb.y0 + it.bb.y1) / 2, frente: it.q.equip.frente });
       return lista;
     },
+    /* AS PRAÇAS DA PRAÇA (a reunião da zona e o encontro na praça do jogo 3D,
+       briga_lugar.js): o nome, o bairro (o id dos dados), a quadra inteira
+       (a praça vai até o meio-fio) e se ela é a do modelo (o calçadão em
+       cruz com o chafariz no meio) */
+    pracas() {
+      const lista = [];
+      for (const q of (PROP && PROP.quadras) || []) {
+        if (!q.equip || q.equip.tipo !== 'praca') continue;
+        const x = (q.x0 + q.x1) / 2, y = (q.y0 + q.y1) / 2;
+        lista.push({ nome: q.equip.nome || 'Praça', bairro: q.bairro || (SETORES ? bairroEm(x, y) : null), x0: q.x0, x1: q.x1, y0: q.y0, y1: q.y1, x, y, modelo: temModelo(q) });
+      }
+      return lista;
+    },
+    /* O CRUZAMENTO DO BAIRRO (a reunião da zona no bairro sem praça,
+       briga_lugar.js): o cruzamento de ruas mais perto do meio do bairro
+       (dentro dele; sem nenhum, o mais perto do meio), com três ou quatro
+       braços de asfalto de 12 m. Devolve { x, y, u (o eixo do braço por onde
+       se chega: o x da cena), bracos } no mapa, ou null */
+    cruzamentoDoBairro(id) {
+      if (!CALCADAS) montarCalcadas();
+      const C = CALCADAS, B = SETORES && SETORES.bairros.find(b => b.id === id);
+      if (!C || !C.ehAsfalto || !B || !B.centro) return null;
+      const asf = (x, y) => C.ehAsfalto(x, y), passo = 0.5 * M, vistos = new Set(), achados = [];
+      /* o asfalto da quina pra fora, numa direção: onde começa (até 1 m de meio-fio) e a largura */
+      const largura = (x, y, dx, dy) => {
+        const em = k => asf(x + dx * (k + 0.5) * passo, y + dy * (k + 0.5) * passo);
+        let k = 0;
+        while (k < 2 && !em(k)) k++;
+        const k0 = k;
+        while (k < 44 && em(k)) k++;
+        return { de: k0 * passo, w: (k - k0) * passo };
+      };
+      for (const a of C.aneis || []) {
+        const f = a.fora;
+        for (const [qx, qy, sx, sy] of [[f.x0, f.y0, -1, -1], [f.x1, f.y0, 1, -1], [f.x0, f.y1, -1, 1], [f.x1, f.y1, 1, 1]]) {
+          /* a rua que passa na quina, de cada lado (medida 1 m pra dentro da quadra vizinha) */
+          const lx = largura(qx, qy - sy * 1 * M, sx, 0), ly = largura(qx - sx * 1 * M, qy, 0, sy);
+          if (lx.w < 4 * M || ly.w < 4 * M) continue;
+          const cx = qx + sx * (lx.de + lx.w / 2), cy = qy + sy * (ly.de + ly.w / 2), k = Math.round(cx / (3 * M)) + ',' + Math.round(cy / (3 * M));
+          if (vistos.has(k)) continue;
+          vistos.add(k);
+          /* os braços: asfalto de 3 a 12 m do meio, nas quatro direções */
+          const bracos = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => [3, 6, 9, 12].every(d => asf(cx + dx * d * M, cy + dy * d * M)));
+          if (bracos.length < 3) continue;
+          achados.push({ x: cx, y: cy, bracos, dentro: bairroEm(cx, cy) === id, d: Math.hypot(cx - B.centro.x, cy - B.centro.y) });
+        }
+      }
+      const lista = achados.filter(p => p.dentro);
+      const melhor = (lista.length ? lista : achados).sort((p, q) => p.d - q.d)[0];
+      if (!melhor) return null;
+      /* o eixo: o que tem os dois braços (quem chega por um, quem foge pelo outro) */
+      const tem = (dx, dy) => melhor.bracos.some(b => b[0] === dx && b[1] === dy);
+      const u = tem(1, 0) && tem(-1, 0) ? [1, 0] : [0, 1];
+      return { x: melhor.x, y: melhor.y, u, bracos: melhor.bracos, noBairro: melhor.dentro };
+    },
     /* AS FAVELAS DA PRAÇA (a treta marcada do jogo 3D, briga_treta.js): o
        nome (o do bairro dela; sem os bairros, null), os becos (a linha do
        meio e a largura) e o campinho de terra de cada uma */
@@ -9170,6 +9373,14 @@ function apiDoCenario() {
         centro: { ...b.centro }, semente: { ...b.semente }, celulas: b.celulas, zonaCerta: b.zonaCerta })) : [];
     },
     bairroEm: (x, y) => bairroEm(x, y),
+    /* OS MUROS DE PIXAÇÃO da praça (06/10/2026): o bairro, o número do muro
+       no bairro (o do save, `TO.dominio.muros`), o ponto no mapa (o pé da
+       parede, x e y da planta) e o lugar do pixo no mundo (o decalque) */
+    murosDePixo: () => MUROS_PIXO.map(m => ({ b: m.b, i: m.i, x: m.x, y: m.y, cat: m.cat, vagas: m.vagas, lug: { ...m.lug } })),
+    /* a pixação de uma torcida no muro: o dizer (pela semente) e a tinta */
+    pixoDaTorcida: (tid, sem) => pixoDaTorcida(tid, sem),
+    /* quem é dono de cada muro no mapa (o jogo põe: `fn(bairro, n)` → a cor, ou null no livre) */
+    donosDosMuros(fn) { DONO_DO_MURO = typeof fn === 'function' ? fn : null; },
     /* a grade dos bairros da praça de agora (o mapa de outra praça guarda a dela) */
     setores: () => SETORES,
     zonas: () => SETORES ? JSON.parse(JSON.stringify(SETORES.zonas)) : null,

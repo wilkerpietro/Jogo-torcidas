@@ -9401,6 +9401,18 @@ O pedido: "preciso que ajuste os posts do futebol e porrada e gazeta dos sports 
 - **O que o cartaz mostrava vira coisa de jornal**: no Porrada, a foto da briga com os bonecos abaixo da manchete, com a legenda e o quadro curto da noite (envolvidos, feridos e presos); na Gazeta, o placar grande.
 - Vale na coluna da rede, em Notícias → Mensagens e no aviso do canto com a rede recolhida. Feito no ramo do 3D (`main.js`, `paginaDoPost`); o jogo 2D publicado segue com o cartaz até o próximo sync. Detalhes: `docs/JOGO_3D.md` §42.
 
+## Os muros de pixação do save, a TUF tricolor, sem spoiler, a bandeira do presidente e as brigas no mapa (dono, 06/10/2026)
+
+O pedido: "as pixações do save agora devem aparecer nos muros da cidade 3d, sendo somente esses os espaços possíveis de pixação no jogo. marque de 3 a 5 locais fáceis de pixar, da altura do boneco em todos os mapas do jogo [...] a sede da tuf aparece somente com as cores azul e branco mesmo a torcida tendo 3 cores. apure isso. o post do resultado do jogo aparece antes do itinerário do jogo acontecer: gera spoiler. resolva isso. a bandeira que fica na parede e acima da mesa do presidente na sede deve ser mais bonita, similar à bandeira que colocamos na arquibancada. as cenas de briga algumas vezes abrem o cenário 2d, crie os cenários coerentes dentro do mapa 3d".
+
+- **Os muros de pixação são os do jogo** (de 3 a 5 por bairro, o número que o domínio já dava) e ficam **em paredes de verdade da cidade**: o muro do terreno baldio primeiro, depois a casa murada, o galpão, a casa, e o prédio por último; espalhados pelo bairro; o pixo **na altura do boneco**. O muro livre aparece caiado (o espaço pra pixar); o pixado mostra o dizer da torcida dona, na cor dela, **desbotando** com os dias. **Só eles têm pixação de torcida** — a de enfeite saiu; o recado de parede (VENDE-SE, TE AMO MARIA, o grafite da favela) fica. Pixar continua sendo a ação do cartão do bairro (não há pixação a pé).
+- **A paleta de toda torcida se completa com as cores do clube**, sem duas cores quase iguais: a TUF é branco, azul e vermelho.
+- **Nada que dependa do resultado passa na frente do cartão da partida** no jogo 3D: quem vinha atrás dele na fila do dia segue atrás, mesmo com o cartão empurrado pra perto da bola.
+- **A bandeira da sala do presidente é o pano da torcida** (o desenho da bandeira da arquibancada: campo, borda, filete e escudo, com as dobras), num varão de metal.
+- **Nenhuma briga da cidade cai mais na foto quando tem lugar no mapa**: a reunião da zona é **no bairro dela** — na praça, quando o bairro tem; senão, **no cruzamento de ruas do meio do bairro** (as capitais têm uma ou duas praças no mapa inteiro, e a reunião não atravessa a cidade); o ataque à sede rival é **na sede dela** (o objetivo é o pátio); a cobrança no clube é **no Portão 1 do estádio do clube** (o mapa não tem CT); o tutorial e a briga de praça sem caminhada vão pro mesmo lugar da reunião.
+
+**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): o CT virou o portão do estádio (modelar um CT é outra rodada); no bairro sem praça a reunião é numa esquina, e a notícia do jornal continua dizendo "na praça"; continuam na foto a briga em praça de fora sem o dia de jogo lá, os arredores sem o rival no plano do dia e a arquibancada sem caminho de invasão. Detalhes: `docs/JOGO_3D.md` §43.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

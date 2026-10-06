@@ -137,7 +137,21 @@ function ligar(api) {
       const m = fila.find(x => x && x.kind === 'partida' && x.quando && x.quando.abs === hoje);
       const bola = j && j.dia === e.data.dia ? minutoDe(j.hora) : null;
       if (!m || bola == null) return;
-      m.hora = hhmmDe(Math.max(8 * 60, bola - 75));
+      const hora = Math.max(8 * 60, bola - 75);
+      m.hora = hhmmDe(hora);
+      /* SEM SPOILER (o dono, 06/10/2026: "o post do resultado do jogo aparece
+         antes do itinerário do jogo acontecer: gera spoiler"): o que entrou
+         na fila DEPOIS do cartão da partida depende do resultado — a matéria
+         da Gazeta da rodada (que vira o post do jornal com o placar), o
+         almanaque do campeão, o fim da Conmebol. `horasEmOrdem` (feed.js) já
+         tinha dado a cada uma a vaga logo depois da do cartão; com o cartão
+         empurrado pra perto da bola, a ordem pela hora punha a Gazeta NA
+         FRENTE dele, e o placar saía de manhã. Agora quem vinha atrás e
+         ficaria antes ganha a hora do cartão: a ordem é estável, então elas
+         seguem atrás dele — e o cartão é decisão, que segura a fila até o
+         apito */
+      for (const x of fila.slice(fila.indexOf(m) + 1))
+        if (x && x.quando && x.quando.abs === hoje && (minutoDe(x.hora) || 0) < hora) x.hora = m.hora;
       const doDia = fila.filter(x => x.quando && x.quando.abs === hoje), resto = fila.filter(x => !(x.quando && x.quando.abs === hoje));
       doDia.sort((a, b) => (minutoDe(a.hora) || 0) - (minutoDe(b.hora) || 0));
       fila.length = 0; fila.push(...doDia, ...resto);
@@ -566,5 +580,29 @@ function ligar(api) {
     pracaDoJogo = null; vida.desligar();
     conferirPraca(true);
   });
+  /* AS PIXAÇÕES DO SAVE NOS MUROS DA CIDADE (o dono, 06/10/2026: "as
+     pixações do save agora devem aparecer nos muros da cidade 3d"): a
+     camada dos muros do cenário (cenario.js, `pixos`) pergunta aqui de quem
+     é cada muro — o save, `TO.dominio.muros` da praça que está na tela — e
+     há quantos dias foi pixado (o pixo desbota em `PIX.desbota` dias). A
+     cada 1,5 s ela repinta só o muro que mudou: a pixação nossa pelo
+     cartão do bairro, a da IA no virar do dia, o pixo que venceu */
+  const slugDaPraca = n => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '-');
+  const donoDoMuro = (b, i) => {
+    const e = E(), D = TO.dominio, C = api.cenario;
+    if (!e || !e.torcida || !D || !D.muros || !C || !C.praca) return null;
+    const m = (D.muros(e, slugDaPraca(C.praca), b) || [])[i];
+    if (!m || !m.t) return null;
+    return { t: m.t, abs: m.abs, idade: ((e.data.absoluto || 0) - (m.abs || 0)) / ((D.PIX && D.PIX.desbota) || 60) };
+  };
+  let cenarioDosPixos = null;
+  setInterval(() => {
+    const C = api.cenario;
+    if (!C || !C.pixos || C.montando) return;
+    try {
+      if (cenarioDosPixos !== C) { cenarioDosPixos = C; C.pixos.fonte(donoDoMuro); }
+      else C.pixos.atualizar();
+    } catch (err) { console.error('jogo 3D, os muros de pixação:', err); }
+  }, 1500);
   conferirTela();
 }
