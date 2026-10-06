@@ -9211,6 +9211,12 @@ Dois defeitos que se alimentavam:
   e `notaDoCorte` não escreve nada (as duas ficam, que o financeiro, o
   patrimônio, as ações e a IA chamam); o aviso do cartão do bairro saiu.
   O peso da torcida do bairro na receita (`fatorTorcida`) continua.
+- "O post do pixo segue existindo" (o dono, 06/10/2026): o código já não
+  cria — o que aparecia era post gravado no save antes da mudança (ou a
+  página ainda com o código velho em cache). Na carga do save
+  (`repararSave`), somem da rede os posts dos tipos que saíram: pixo
+  coberto e chegada (05/10), resultado de jogo, goleada, clássico perdido
+  e rebaixamento próprio (04/10). O "tchau" ao rival rebaixado fica.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

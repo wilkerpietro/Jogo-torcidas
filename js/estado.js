@@ -985,6 +985,19 @@ TO.estado = (function(){
     /* save de antes do presidente (22/09/2026): o mais forte da
        diretoria assume, com o nome que já tinha */
     try{ if(TO.membros && TO.membros.garantirPresidente) TO.membros.garantirPresidente(E); }catch(e){}
+    /* OS POSTS QUE SAÍRAM DO JOGO SAEM DO SAVE (dono, 06/10/2026: "o post
+       do pixo segue existindo"): apagar a criação não apaga o que já está
+       gravado. Na carga, somem da rede os tipos que o dono tirou — o pixo
+       coberto e a chegada da caravana (05/10), o resultado de jogo, a
+       goleada, o clássico perdido e o rebaixamento próprio (04/10) */
+    try{
+      const SAIRAM = new Set(['pixo', 'chegada', 'nosso-jogo', 'resultado',
+                              'goleada-r', 'goleada-d', 'classico-d', 'queda']);
+      const saiu = ch => SAIRAM.has(String(ch || '').split('|')[0]);
+      if(Array.isArray(E.mensagens)) E.mensagens = E.mensagens.filter(m => !saiu(m && m.chave));
+      if(Array.isArray(E.mensagensAgendadas))
+        E.mensagensAgendadas = E.mensagensAgendadas.filter(m => !saiu(((m && m.extra) || {}).chave));
+    }catch(e){ /* a faxina nunca derruba a carga */ }
     /* o domínio dos bairros (30/09/2026): a sede do jogador no bairro
        espalhado, quando duas sedes caíam no mesmo bairro */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
