@@ -1834,6 +1834,8 @@ TO.feed = (function(){
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
        28/08/2026) */
     passo('recepções',      ()=>{ if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E); });
+    /* a ideologia pode mandar pedir apoio em todo jogo fora (06/10/2026) */
+    passo('apoio fora',     ()=>{ if(PL().pedirApoioDaSemana) PL().pedirApoioDaSemana(E); });
     passo('filial',         ()=>filialDeHoje(E));
     passo('olheiro da filial', ()=>filialSugestaoDeHoje(E));
     passo('caravana da filial', ()=>caravanaDasFiliais(E));

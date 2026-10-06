@@ -836,6 +836,10 @@
           id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
     grupo(_t('Outros jogos na cidade'), P.POLITICA_ATAQUE, pol.outros,
           id=>P.definirPolitica(e, 'outros', id));
+    grupo(_t('Apoio nos jogos fora'), P.POLITICA_APOIO, pol.apoio,
+          id=>P.definirPolitica(e, 'apoio', id));
+    grupo(_t('Pixações'), P.POLITICA_PIXO, pol.pixo,
+          id=>P.definirPolitica(e, 'pixo', id));
     cx.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${_t('O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.')}</span>`}));
 
@@ -4384,13 +4388,17 @@
     /* as que pedem resposta: recepção (quatro níveis) e trégua */
     if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
       const bts = el('div',{class:'rec-botoes'});
+      /* O PEDIDO JÁ VEM MARCADO (pedido do dono, 06/10/2026): o botão do
+         nível que vai valer no dia — a escolha da semana ou a ideologia —
+         chega aceso; clicar nele (ou em outro) confirma */
+      const valeHoje = m.tipo === 'pedido' && P2.nivelDe ? P2.nivelDe(e, m.de) : null;
       const opcoes = m.tipo === 'pedido'
         ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
             nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
         : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
            {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
       for(const op of opcoes){
-        const b = el('button',{class:'rec-bt', html:`${op.rot}<small>${op.nota}</small>`});
+        const b = el('button',{class:'rec-bt'+(op.id === valeHoje ? ' on' : ''), html:`${op.rot}<small>${op.nota}</small>`});
         b.onclick = ()=>{
           const r = F.responderMensagemDe(e, m.id, op.id);
           if(!r.ok) return;

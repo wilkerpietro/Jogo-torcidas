@@ -9245,6 +9245,17 @@ Dois defeitos que se alimentavam:
 - **O jogo não afina mais o corpo.** `afinarMalha` pula o `corpo`, que já vem no tamanho certo; cabeça e cabelo seguem afinados. Medido na rua: 3.589 triângulos por boneco contra 2.500 antes (+44%), ou ~190 mil com 52 bonecos. Está longe do 1,26 milhão que derrubava o fps em 08/09.
 - **Gerar de novo:** `pip install bpy==4.2.0` (Python 3.11) e depois `python3 ferramentas/boneco_blender.py --leve` e `python3 ferramentas/boneco_blender.py`.
 
+## Ideologia: pedido de casa marcado, apoio fora e pixação pela diretoria (o dono, 06/10/2026: "quando houver post de pedido de casa já deve vir marcado conforme eu defini na minha ideologia. Na ideologia, também deve existir a opção escolher se deve sempre pedir apoio em jogos fora de casa ou não, porque o jogador pode acabar se esquecendo de ficar pedindo apoio e isso impacta nas relações. também quero deixar opcional na ideologia comandar as pixações ou não, se optar por não comandar as pixaões, a IA do jogo faz automaticamente isso pra gente.")
+
+- **O pedido de casa já vem marcado.** No post da aliada, o botão do nível que vai valer no dia do jogo dela chega aceso (`.rec-bt.on`). Esse nível é a escolha da semana ou, sem ela, a recepção da ideologia (`nivelDe`). Clicar nele, ou em outro, confirma; sem clique, vale o aceso, que é o que `cobrarRecepcoes` já cobrava.
+- **Apoio nos jogos fora (`E.politicas.apoio`).** As opções são `manual` (o padrão, como era: o botão "Pedir ajuda" da caravana) e `sempre`. Com `sempre`, o passo do dia `pedirApoioDaSemana` olha cada jogo fora da semana que ainda não passou e não tem pedido. Pede à aliada de melhor relação da praça (a primeira de `aliadasNaPracaDeles`), pelo mesmo `pedirAjuda` do botão: um pedido por jogo, resposta na hora e post dela no feed. Quando a aliada recusa, continua tirando −7.
+- **Pixações (`E.politicas.pixo`).** As opções são `eu` (o padrão, à mão no mapa) e `ia`. Com `ia`, a nossa torcida entra no `iaPixa` com a régua das outras: gasta o saldo dividido pelos dias que faltam no mês, no bairro de mais chance (`alvosDe`), primeiro em muro livre e depois por cima da rival. Pixar à mão continua possível.
+- Teste com a TUF:
+  - 160 dias com `apoio: sempre`: 9 jogos fora, pedido feito em todos os 7 com aliada na praça (respostas: escolta e churrasco); Bahia e Interior de Minas sem aliada, sem pedido.
+  - `pixo: ia`: 7 muros nossos em 40 dias.
+  - O post da Raça Coral chegou com "Hospedar e escoltar" aceso (o padrão da ideologia).
+  - Sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -1264,6 +1264,7 @@ TO.dominio = (function(){
     if(!d) return 30;
     return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() - d.getDate() + 1;
   }
+  const pixoAutomatico = E => !!(E.politicas && E.politicas.pixo === 'ia');
   /* A IA PIXA ESPALHADO, no bairro de mais chance */
   function iaPixa(E){
     const I = indice(), meu = eu(E), falta = Math.max(1, diasQueFaltam(E));
@@ -1273,7 +1274,9 @@ TO.dominio = (function(){
     for(const cid of I.comTorcida){
       let bs = null, pl = null;
       for(const o of torcidasDaCidade(cid)){
-        if(o.id === meu || !mundo[o.id]) continue;
+        /* a nossa entra quando a ideologia deixa a pixação com a diretoria
+           (pedido do dono, 06/10/2026) — a mesma régua das outras */
+        if(o.id === meu ? !pixoAutomatico(E) : !mundo[o.id]) continue;
         const sd = saldoPix(E, o.id);
         if(sd.total <= 0) continue;
         const media = sd.total / falta;

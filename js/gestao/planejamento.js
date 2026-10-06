@@ -1362,11 +1362,49 @@ TO.planejamento = (function(){
      nota:_t('marca ataque contra qualquer torcida metida no jogo — máximo de briga, de prestígio em disputa e de gente no hospital')}
   ];
 
+  /* PEDIR APOIO E PIXAR TAMBÉM SÃO IDEOLOGIA (pedido do dono, 06/10/2026:
+     "deve existir a opção escolher se deve sempre pedir apoio em jogos
+     fora de casa ou não, porque o jogador pode acabar se esquecendo de
+     ficar pedindo apoio e isso impacta nas relações" e "deixar opcional
+     na ideologia comandar as pixações ou não"). Os dois nascem como o
+     jogo era — pedir à mão e pixar à mão —, e o jogador liga. */
+  const POLITICA_APOIO = [
+    {id:'manual', rot:_t('Pedir só quando eu mandar'),
+     nota:_t('o pedido sai do botão "Pedir ajuda" da caravana, jogo a jogo')},
+    {id:'sempre', rot:_t('Sempre pedir apoio fora de casa'),
+     nota:_t('todo jogo fora, a diretoria pede à aliada de melhor relação na praça — receber soma relação; a recusa tira −7')}
+  ];
+  const POLITICA_PIXO = [
+    {id:'eu',  rot:_t('Eu comando as pixações'),
+     nota:_t('cada muro é escolhido no mapa, à mão')},
+    {id:'ia',  rot:_t('A diretoria pixa sozinha'),
+     nota:_t('o saldo do mês é gasto aos poucos, todo dia, no bairro com mais chance de virar — como as outras torcidas fazem')}
+  ];
   function politicas(E){
     E.politicas = E.politicas || {};
     if(E.politicas.jogo   === undefined) E.politicas.jogo   = 'nunca';
     if(E.politicas.outros === undefined) E.politicas.outros = 'nunca';
+    if(E.politicas.apoio  === undefined) E.politicas.apoio  = 'manual';
+    if(E.politicas.pixo   === undefined) E.politicas.pixo   = 'eu';
     return E.politicas;
+  }
+  /* O APOIO AUTOMÁTICO: roda todo dia; cada jogo fora da semana que
+     ainda não passou e não tem pedido ganha um, à aliada de melhor
+     relação da praça (a primeira de `aliadasNaPracaDeles`) */
+  function pedirApoioDaSemana(E){
+    if(politicas(E).apoio !== 'sempre' || !E.temporada) return [];
+    const meu = M().time(E.torcida.clubeId);
+    if(!meu) return [];
+    const feitos = [];
+    for(const a of TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana) || []){
+      const j = TO.estado.fichaDoJogo(E, a);
+      if(!j || j.casa || (j.dia != null && j.dia < E.data.dia) || ajudaDe(E, j)) continue;
+      const al = aliadasNaPracaDeles(E, j);
+      if(!al.length) continue;
+      const r = pedirAjuda(E, al[0].id, j);
+      if(r) feitos.push(r);
+    }
+    return feitos;
   }
   function definirPolitica(E, qual, id){
     politicas(E)[qual] = id;
@@ -1555,7 +1593,7 @@ TO.planejamento = (function(){
   }
 
   return {plano, tipoDoJogo, salvarPadrao, temPadrao, esquecerPadrao,
-          RELACAO_QUENTE, POLITICA_ATAQUE, politicas, definirPolitica,
+          RELACAO_QUENTE, POLITICA_ATAQUE, POLITICA_APOIO, POLITICA_PIXO, politicas, definirPolitica, pedirApoioDaSemana,
           ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,
