@@ -1134,6 +1134,14 @@ TO.diaJogo.bonecos3 = (function(){
   /* =======================================================
      OS MOVIMENTOS: cada um escreve na pose-alvo `p`
      ======================================================= */
+  /* A MÃO NA CINTURA DO CORPO NOVO (06/10/2026): os ângulos antigos eram do
+     boneco de caixas e do primeiro GLB — no corpo do MakeHuman a mão subia
+     pro peito, o braço abria e levantava e o ombro estufava. Aqui o braço
+     cai aberto e um pouco pra trás, o cotovelo aponta pro lado e a mão
+     assenta na crista do quadril. Os números saíram de uma varredura medindo
+     a mão no esqueleto — e mostraram que NESTE esqueleto `ombroZ` positivo
+     FECHA o braço; abrir é negativo. */
+  const MAO_NA_CINTURA = {ombro:0.05, ombroZ:-0.6, cotovelo:-1.8, maoZ:1.2};
   /* parado: respira, pesa numa perna, olha em volta de vez em quando */
   /* parado: respira, pesa numa perna, olha em volta — cada um no seu
      tempo e na sua postura */
@@ -1155,11 +1163,12 @@ TO.diaJogo.bonecos3 = (function(){
     p.olhaY = 0.35*e.inquieto*Math.sin(t*0.45 + f.fase*2)*olha;
     p.olhaX = 0.05*Math.sin(t*0.8+f.fase) + e.curvado*0.5;
     const v = variante(f, 'parado', t, 6);
+    const C = MAO_NA_CINTURA;
     if(v===1){            // mãos na cintura
-      p.ombro = [0.35, 0.35]; p.ombroZ = [0.62, 0.62]; p.cotovelo = [-1.5, -1.5]; p.maoZ = [1.05, 1.05]; p.punho = [0, 0];
+      p.ombro = [C.ombro, C.ombro]; p.ombroZ = [C.ombroZ, C.ombroZ]; p.cotovelo = [C.cotovelo, C.cotovelo]; p.maoZ = [C.maoZ, C.maoZ]; p.punho = [0, 0];
       p.inclina -= 0.04; p.peito += 0.02;
     } else if(v===2){     // uma mão na cintura, peso numa perna só
-      p.ombro = [0.3, 0.08 - 0.03*ruido(f,t,0.8,1.2)]; p.ombroZ = [0.6, 0.12]; p.cotovelo = [-1.5, -0.35]; p.maoZ = [1.0, 0]; p.punho = [0, 0];
+      p.ombro = [C.ombro, 0.08 - 0.03*ruido(f,t,0.8,1.2)]; p.ombroZ = [C.ombroZ, 0.12]; p.cotovelo = [C.cotovelo, -0.35]; p.maoZ = [C.maoZ, 0]; p.punho = [0, 0];
       p.tomba += 0.06*lado; p.coxa = [0.12*lado, -0.1*lado]; p.joelho = [0.04, 0.22]; p.y -= 0.4;
     } else {              // solto, braços caídos
       p.ombro = [0.08 + 0.03*ruido(f,t,1.1,0.7), 0.08 - 0.03*ruido(f,t,0.8,1.2)];
@@ -1501,7 +1510,7 @@ TO.diaJogo.bonecos3 = (function(){
       case 0:   // uma mão, na altura do peito; a outra na cintura
         p.ombro[1] = -1.5*r; p.ombroZ[1] = 0.1; p.cotovelo[1] = mistura(-0.2, -0.6, chama)*r; p.maoZ[1] = 0.1*r;
         p.pulso[1] = mistura(-0.6, 0.85, chama)*r; p.punho[1] = 0;
-        p.ombro[0] = 0.35*r; p.ombroZ[0] = 0.62*r; p.cotovelo[0] = -1.5*r; p.maoZ[0] = 1.05*r; p.punho[0] = 0;
+        p.ombro[0] = MAO_NA_CINTURA.ombro*r; p.ombroZ[0] = MAO_NA_CINTURA.ombroZ*r; p.cotovelo[0] = MAO_NA_CINTURA.cotovelo*r; p.maoZ[0] = MAO_NA_CINTURA.maoZ*r; p.punho[0] = 0;
         p.inclina = 0.18*r; p.olhaX = -0.1*r; p.tomba = -0.08*r; p.gira = 0.15*r; break;
       case 1:   // as duas mãos baixas, corpo pra frente, queixo pra cima
         p.ombro = [-0.95*r, -0.95*r]; p.ombroZ = [0.4*r, 0.4*r]; p.cotovelo = [mistura(-0.15, -0.55, chama)*r, mistura(-0.15, -0.55, 1-chama)*r];
@@ -1818,8 +1827,9 @@ TO.diaJogo.bonecos3 = (function(){
     const w = t*2.4 + f.fase;
     const a = 0.5 + 0.5*Math.sin(w), b = 0.5 + 0.5*Math.sin(w*0.61 + 2.0);
     p.inclina += 0.05; p.olhaX = -0.06 + 0.04*Math.sin(w*0.7); p.olhaY = 0.25*Math.sin(w*0.29 + f.fase);
-    p.ombro = [0.35, -0.75 - 0.55*a]; p.ombroZ = [0.62, 0.45 + 0.3*b];
-    p.cotovelo = [-1.5, -1.35 + 0.5*a]; p.maoZ = [1.05, 0.2 + 0.35*a]; p.punho = [0, 0];
+    const C = MAO_NA_CINTURA;
+    p.ombro = [C.ombro, -0.75 - 0.55*a]; p.ombroZ = [C.ombroZ, 0.45 + 0.3*b];
+    p.cotovelo = [C.cotovelo, -1.35 + 0.5*a]; p.maoZ = [C.maoZ, 0.2 + 0.35*a]; p.punho = [0, 0];
   }
 
   /* QUEM CAIU FICA A 50% (pedido do dono, 06/09/2026): os materiais

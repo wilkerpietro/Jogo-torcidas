@@ -9294,6 +9294,20 @@ Vistos quadro a quadro de lado na vitrine (`bonecos.html?estado=andar&so&manual`
 - **Cabeça:** gira contra o tronco e segura o olhar pra frente.
 - **Parado:** o peso troca de perna devagar (a cada ~30 s, num ciclo próprio de cada boneco), com o quadril e o ombro acompanhando. Antes era sempre a mesma perna.
 
+## Os três detalhes do boneco novo: ombro, costura do pescoço e calção (o dono, 06/10/2026: "Acerte os 3 detalhes apontados")
+
+- **O ombro que estufava era a pose.** As variantes "mãos na cintura" e "uma mão na cintura" do parado, a mão na cintura da provocação e o presidente falando na reunião usavam ângulos do corpo antigo. No corpo novo, a mão subia pro peito, e o braço abria e levantava, alargando o ombro.
+  - Uma varredura medindo a mão no esqueleto achou a pose certa: `MAO_NA_CINTURA = {ombro:0.05, ombroZ:-0.6, cotovelo:-1.8, maoZ:1.2}`. A mão fica a 2 cm da crista do quadril, com o cotovelo pro lado e um pouco pra trás.
+  - A varredura mostrou ainda que, neste esqueleto, `ombroZ` positivo FECHA o braço.
+  - A mesma medida achou dois erros de junta no gerador. O quadril era extrapolado pela inclinação da coxa e ficava 14 cm atrás e perto demais do meio; agora é o centro da coxa no alto dela. O cotovelo e o punho eram medidas fixas e davam um antebraço de 17 cm; agora seguem a proporção do braço (braço 40%, antebraço 34%, mão 26%).
+- **A linha no pescoço era fresta, não cor.** O importador de glTF separa os vértices nas costuras de UV. Depois de reduzida, a malha abria rachaduras: a de trás do pescoço do MakeHuman aparecia como um risco embaixo da orelha. As faces da costura também nasciam com normal invertida.
+  - Agora o gerador junta os vértices duplicados de toda malha importada e acerta as normais depois da costura. O gerador confere zero bordas abertas acima do pescoço.
+  - O texel liso que o corpo usa ganhou o tom do pescoço da cabeça, pra não haver degrau de cor.
+- **O calção é folgado.** Antes era a pele pintada, 3 mm afastada.
+  - O pano sai 4 mm na cintura e cresce até 2,4 cm na boca da perna. Na parte de dentro da coxa sai menos, pra uma perna não entrar na outra.
+  - A malha do calção é alisada como tecido. Um anel 6 mm abaixo da barra dá a borda vista de baixo.
+  - A barra da camisa abre até 1,1 cm e cai por cima do calção, com a mesma borda. Antes os dois emendavam como um macacão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

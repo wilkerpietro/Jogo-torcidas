@@ -125,6 +125,13 @@ def assentado(o, nome):
     me = bpy.data.meshes.new_from_object(o.evaluated_get(deps), preserve_all_data_layers=True, depsgraph=deps)
     me.transform(o.matrix_world)
     me.name = nome
+    # O IMPORTADOR SEPARA OS VÉRTICES NAS COSTURAS DE UV: a malha vem rachada
+    # (atrás do pescoço do MakeHuman, por exemplo) e, depois de reduzida, a
+    # rachadura abria uma fresta escura. Junta de volta — a UV é por canto de
+    # face e continua a mesma.
+    bm_ = bmesh.new(); bm_.from_mesh(me)
+    bmesh.ops.remove_doubles(bm_, verts=bm_.verts, dist=1e-5)
+    bm_.to_mesh(me); bm_.free()
     novo = bpy.data.objects.new(nome, me); col.objects.link(novo)
     return novo
 
@@ -158,8 +165,11 @@ reduzir(corpo, ALVO_CORPO + 1100)       # a cabeça dele sai daqui a pouco
 JUN = {}
 for L, s in (('D', -1), ('E', 1)):
     perna = lambda p, s=s: p.x*s > 0.015 and abs(p.x) < 0.26
-    coxa = centro(fatia(corpo, 0.74, perna)); joe = centro(fatia(corpo, 0.50, perna))
-    JUN['quadril.'+L] = coxa + (coxa - joe)*((0.93 - 0.74)/(0.74 - 0.50)); JUN['quadril.'+L].z = 0.93
+    # O QUADRIL é o centro da coxa no alto dela (z 0,80): extrapolar pela
+    # inclinação da coxa jogava a junta 14 cm pra trás e pro meio, e a perna
+    # girava em volta da nádega
+    coxa = centro(fatia(corpo, 0.80, perna))
+    JUN['quadril.'+L] = Vector((coxa.x*0.92, coxa.y - 0.005, 0.93))
     JUN['joelho.'+L] = centro(fatia(corpo, 0.50, perna))
     JUN['pe.'+L] = centro(fatia(corpo, 0.09, perna))
     pe = [p for p in V(corpo) if p.z < 0.05 and p.x*s > 0.02]
@@ -172,9 +182,13 @@ for L, s in (('D', -1), ('E', 1)):
     eixo = (c1 - c0).normalized()
     ombro = c0 + eixo*((0.19 - c0.x*s)/(eixo.x*s))
     JUN['ombro.'+L] = ombro
-    JUN['cotovelo.'+L] = ombro + eixo*0.285
+    # COTOVELO E PUNHO PELA PROPORÇÃO DO BRAÇO (braço 40%, antebraço 34%,
+    # mão 26% do ombro à ponta dos dedos): as medidas fixas de antes davam
+    # um antebraço de 17 cm
+    tam = (ponta - ombro).length
+    JUN['cotovelo.'+L] = ombro + eixo*(tam*0.40)
     d2 = (ponta - JUN['cotovelo.'+L]).normalized()
-    JUN['mao.'+L] = ponta - d2*0.185
+    JUN['mao.'+L] = ponta - d2*(tam*0.26)
     JUN['dedos.'+L] = ponta.copy()
 tor = lambda p: abs(p.x) < 0.12
 JUN['pelvis'] = centro(fatia(corpo, 0.95, tor)); JUN['pelvis'].z = 0.93
@@ -301,6 +315,9 @@ for e in bm.edges:
         e.select = True
 bmesh.update_edit_mesh(corpo.data)
 bpy.ops.mesh.bridge_edge_loops(number_cuts=1, interpolation='LINEAR', smoothness=0.0)
+# as faces da costura nascem com a normal de qualquer jeito: acerta todas pra fora
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.normals_make_consistent(inside=False)
 bpy.ops.mesh.select_all(action='DESELECT')
 bpy.ops.object.mode_set(mode='OBJECT')
 for p in corpo.data.polygons: p.use_smooth = True
@@ -309,6 +326,8 @@ for p in corpo.data.polygons:
     if p.center.z < Z_CORTE_CORPO + 0.016 + 0.012:      # a costura e a beira da ilha de UV do pescoço
         for li in p.loop_indices: uv.data[li].uv = UV_LISO
 
+_bm = bmesh.new(); _bm.from_mesh(corpo.data)
+print('bordas abertas acima do pescoço: %d' % sum(1 for e in _bm.edges if e.is_boundary and min(v.co.z for v in e.verts) > Z_CORTE_CORPO - 0.02)); _bm.free()
 # ---- o pé: some dentro do tênis
 bm = bmesh.new(); bm.from_mesh(corpo.data)
 bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.calc_center_median().z < 0.075], context='FACES')
@@ -433,6 +452,7 @@ COT = {s: JUN2['cotovelo.' + ('D' if s < 0 else 'E')][0] for s in (-1, 1)}
 EIXO = {s: (OMB[s] - COT[s]).normalized() for s in (-1, 1)}         # aponta pro ombro
 MANGA = {s: OMB[s].lerp(COT[s], 0.48) for s in (-1, 1)}
 PUNHO, PUNHO2 = 0.017, 0.008
+BARRA = 0.006           # a altura da borda do pano (o lado de baixo da barra)
 BAINHA = JUN2['pelvis'][0].z + 0.03
 ALT_OMBRO = (OMB[-1].z + OMB[1].z)/2
 FAIXA_Z = (ALT_OMBRO - 0.170, ALT_OMBRO - 0.115)
@@ -483,6 +503,10 @@ def cortar_roupa():
     corte(Vector((0, 0, BAINHA)), Z, tronco)
     corte(Vector((0, 0, FAIXA_Z[0])), Z, tronco); corte(Vector((0, 0, FAIXA_Z[1])), Z, tronco)
     corte(Vector((0, 0, CALCAO)), Z); corte(Vector((0, 0, MEIA)), Z)
+    # os anéis de baixo das barras: o vão entre eles e a barra é a borda do pano
+    perna_ = lambda f: not eh_braco_f(f) and f.calc_center_median().z < BAINHA
+    corte(Vector((0, 0, CALCAO - BARRA)), Z, perna_)
+    corte(Vector((0, 0, BAINHA - BARRA)), Z, tronco)
     bm.to_mesh(me); bm.free()
 cortar_roupa()
 braco_v = [peso_braco(v) > 0.5 for v in me.vertices]
@@ -502,8 +526,8 @@ def material_da_face(p):
     if face_braco(p): return 'pele'                                      # a mão perto da coxa
     if dentro_gola(c): return 'pele'
     if dentro_gola(c, GOLA_FAIXA): return 'gola'
-    if c.z >= BAINHA: return 'faixa' if FAIXA_Z[0] <= c.z <= FAIXA_Z[1] else 'camisa'
-    if c.z >= CALCAO: return 'calca'
+    if c.z >= BAINHA - BARRA: return 'faixa' if FAIXA_Z[0] <= c.z <= FAIXA_Z[1] else 'camisa'
+    if c.z >= CALCAO - BARRA: return 'calca'
     if c.z >= MEIA: return 'pele'
     return 'meia'
 for p in me.polygons:
@@ -511,19 +535,51 @@ for p in me.polygons:
     p.use_smooth = True
 
 def engrossar():
-    PANO = {IDX['camisa']: 0.004, IDX['faixa']: 0.004, IDX['gola']: 0.0045, IDX['punho']: 0.0045,
-            IDX['punho2']: 0.0045, IDX['calca']: 0.003}
-    por_v = [[] for _ in me.vertices]
+    """O PANO TEM CORPO (06/10/2026). A camisa fica 4 mm por fora e a barra
+    dela abre até 1,1 cm, por cima do calção. O CALÇÃO É FOLGADO: 4 mm na
+    cintura, crescendo até 2,4 cm na boca da perna (menos na parte de dentro
+    da coxa, pra uma perna não entrar na outra). Os anéis logo abaixo das
+    duas barras ficam na pele (ou no calção, embaixo da camisa): a face entre
+    eles e a barra é a borda do pano, vista por baixo."""
+    ROUPA = {IDX[m] for m in ('camisa', 'faixa', 'gola', 'punho', 'punho2')}
+    CAL = IDX['calca']
+    mats = [set() for _ in me.vertices]
     for p in me.polygons:
-        for vi in p.vertices: por_v[vi].append(PANO.get(p.material_index, 0.0))
+        for vi in p.vertices: mats[vi].add(p.material_index)
+    def folga_calcao(v):
+        t = max(0.0, min(1.0, (BAINHA - BARRA - v.co.z)/max(1e-3, (BAINHA - BARRA) - CALCAO)))
+        d = 0.004 + 0.020*t**1.3
+        dentro = -v.normal.x*(1 if v.co.x > 0 else -1)          # a normal aponta pro meio das pernas
+        if dentro > 0.3: d *= 1 - 0.55*min(1.0, (dentro - 0.3)/0.5)
+        return d
     novos_ = []
     for v in me.vertices:
-        ls = por_v[v.index]
-        d = min(ls) if ls else 0.0
-        if d == 0.0 and ls: d = max(ls)*0.5
+        ms = mats[v.index]
+        z = v.co.z
+        if CAL in ms and z < BAINHA - BARRA + 0.0015 and z > CALCAO - BARRA + 0.0015:
+            d = folga_calcao(v)                                   # o calção, até a barra
+        elif CAL in ms and z >= BAINHA - BARRA - 0.0015 and z < BAINHA - 0.0015:
+            d = 0.004                                              # o anel embaixo da barra da camisa
+        elif ms & ROUPA:
+            d = 0.004
+            if z < BAINHA + 0.06 and not face_braco_v(v.index):   # a barra da camisa abre um pouco
+                d += 0.007*max(0.0, min(1.0, (BAINHA + 0.06 - z)/0.06))
+            if IDX['pele'] in ms: d *= 0.5                         # gola e boca da manga: rampa
+        else:
+            d = 0.0
         novos_.append(v.co + v.normal*d)
     for v, p in zip(me.vertices, novos_): v.co = p
     me.update()
+    # o calção cai como pano: alisa os vértices dele (sem as barras), o que
+    # tira o vinco fundo do gancho e as dobras da pele que ele copiava
+    bm = bmesh.new(); bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    alisar = [bm.verts[i] for i, ms in enumerate(mats)
+              if CAL in ms and ms <= {CAL} and CALCAO + 0.004 < bm.verts[i].co.z < BAINHA - BARRA - 0.004]
+    for _ in range(6):
+        bmesh.ops.smooth_vert(bm, verts=alisar, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=False)
+    bm.to_mesh(me); bm.free(); me.update()
+def face_braco_v(i): return braco_v[i]
 engrossar()
 
 # ------------------------------------------------------------- 5. A PELE
@@ -537,6 +593,25 @@ def pele_de_detalhe():
     base = np.median(a[5:40, 5:40].reshape(-1, 3), axis=0)                            # o fundo liso do atlas
     det = np.clip(a / base * 0.96, 0, 1)
     det = 1 - (1 - det)*0.75            # a barba rala do modelo é forte: três quartos dela
+    # A COSTURA SEM DEGRAU (06/10/2026): o corpo todo aponta pro texel liso
+    # (UV_LISO), e o pescoço da cabeça, pro atlas dele, que ali é um tom
+    # um pouco diferente — de perto aparecia uma linha. O texel liso ganha o
+    # tom médio da pele do pescoço logo acima da costura.
+    uvC0 = cab_densa.uv_layers[0]
+    z_cost = Z_CORTE_CORPO + 0.016
+    amostras = []
+    for p in cab_densa.polygons:
+        if z_cost + 0.006 < p.center.z < z_cost + 0.030:
+            for li in p.loop_indices:
+                u, v = uvC0.data[li].uv
+                x = min(w - 1, max(0, int(u*w))); y = min(h - 1, max(0, int((1 - v)*h)))
+                amostras.append(det[y, x])
+    if amostras:
+        tom = np.median(np.array(amostras), axis=0)
+        cx, cy = int(UV_LISO[0]*w), int((1 - UV_LISO[1])*h)
+        r = max(8, w//64)
+        det[max(0, cy - r):cy + r, max(0, cx - r):cx + r] = tom
+        print('costura: tom do pescoço %s' % [round(float(x), 3) for x in tom])
     im = Image.fromarray((det*255).astype(np.uint8), 'RGB')
     # A SOBRANCELHA: pontos do arco na superfície da cabeça densa → UV pelo vértice mais perto
     uvC = cab_densa.uv_layers[0]
