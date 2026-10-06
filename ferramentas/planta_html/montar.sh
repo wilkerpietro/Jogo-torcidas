@@ -114,6 +114,10 @@ cp "$R/ferramentas/planta_html/texturas/"torres_v*.jpg "$R/ferramentas/planta_ht
 mkdir -p "$A/css" "$A/img/cenas"
 cp "$R/ferramentas/planta_html/jogo3d.js" "$A/js/"
 cp "$R/ferramentas/planta_html/jogo3d.css" "$A/css/"
+# as fontes da arte dos posts da rede social (paineis.css: url(fontes/…),
+# relativo ao css/jogo.css)
+mkdir -p "$A/css/fontes"
+cp "$R/css/fontes/"*.woff2 "$A/css/fontes/"
 # O BONECO DAS CENAS 2D DO JOGO é outra cópia do módulo (bonecos3_cena.js):
 # o bonecos3.js guarda a cena e a câmera de quem o usa num estado só, e o
 # cenário (a vida da praça, a reunião na sala da sede) já está nele — a
