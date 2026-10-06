@@ -563,9 +563,9 @@ TO.relacoes = (function(){
       while(q > 0){ const i = doFim(); if(i < 0) break; pega(i); }
     }
     /* a ficha de nascença sai da MESMA régua do povoarInicial —
-       base por cargo + 0..3 —, só que por hash em vez de dado, pra
-       ser a mesma em qualquer save */
-    const BASE_F = {novato:1, componente:5, frente:10, diretoria:14};
+       TO.membros.FICHA_NOVA, o novato de 3 a 8 —, só que por hash em
+       vez de dado, pra ser a mesma em qualquer save */
+    const FN = TO.membros.FICHA_NOVA;
     const XP_DE = {novato:[0,30], componente:[40,95],
                    frente:[100,290], diretoria:[300,500]};
     const fora = [];
@@ -574,7 +574,8 @@ TO.relacoes = (function(){
       const cfg = TO.membros.CARGOS[c] || {};
       const h = k => H(`${o.nome}|elenco|${i}|${k}`);
       const teto = cfg.teto || 10;
-      const ficha = k => Math.min(teto, (BASE_F[c]||1) + h(k) % 4);
+      const [f0, f1] = FN[c] || FN.novato;
+      const ficha = k => Math.min(teto, f0 + h(k) % (f1 - f0 + 1));
       const [x0, x1] = XP_DE[c] || [0, 40];
       fora.push({
         nome: nomes[i], cargo: c, origem: origem[i],
@@ -1582,7 +1583,11 @@ TO.relacoes = (function(){
      a promoção exige, custa o mesmo dinheiro e a Diretoria tem
      o mesmo teto por nível de sede.
      ======================================================= */
-  const BASE_FICHA = {novato:1, componente:5, frente:10, diretoria:14};
+  /* o piso e a média da ficha de entrada por cargo: a régua de
+     TO.membros.FICHA_NOVA (o novato de 3 a 8, régua do dono de
+     06/10/2026), repetida aqui porque este arquivo carrega antes */
+  const BASE_FICHA = {novato:3, componente:5, frente:10, diretoria:14};
+  const MEDIA_FICHA = {novato:5.5, componente:6.5, frente:11.5, diretoria:15.5};
   const ESCADA = ['novato', 'componente', 'frente', 'diretoria'];
   /* quanto do cargo sobe por semana: promoção é ato de diretoria, não
      enxurrada — um décimo do grupo apto por vez */
@@ -1597,7 +1602,7 @@ TO.relacoes = (function(){
       for(const [c, n] of TO.membros.planoDeCargos(t.membros, o && o.cargos, t.sede))
         cargos[c] = (cargos[c] || 0) + n;
       const xp = {}, desgaste = {};
-      for(const c of ESCADA){ forca[c] = BASE_FICHA[c] + 1.5; xp[c] = 0; desgaste[c] = 0; }
+      for(const c of ESCADA){ forca[c] = MEDIA_FICHA[c]; xp[c] = 0; desgaste[c] = 0; }
       t.quadro = {cargos, forca, xp, desgaste, total: t.membros};
     }
     /* o efetivo mexeu desde ontem: quem entra entra por baixo, e quem
@@ -1608,7 +1613,7 @@ TO.relacoes = (function(){
     if(!q.desgaste){ q.desgaste = {}; for(const c of ESCADA) q.desgaste[c] = 0; }
     if(dif > 0){
       const n = q.cargos.novato;
-      q.forca.novato = (n*q.forca.novato + dif*BASE_FICHA.novato)/(n + dif);
+      q.forca.novato = (n*q.forca.novato + dif*MEDIA_FICHA.novato)/(n + dif);
       q.xp.novato    = (n*q.xp.novato)/(n + dif);   // quem chega chega zerado
       q.cargos.novato += dif;
     } else if(dif < 0){
@@ -1627,7 +1632,7 @@ TO.relacoes = (function(){
   function mediaDoQuadro(q){
     let soma = 0, n = 0;
     for(const c of ESCADA){ soma += q.cargos[c]*q.forca[c]; n += q.cargos[c]; }
-    return n ? soma/n : BASE_FICHA.novato + 1.5;
+    return n ? soma/n : MEDIA_FICHA.novato;
   }
 
   /* O TREINO DELAS, todo dia. As vagas de treino são as da sede (2 no
@@ -1750,11 +1755,10 @@ TO.relacoes = (function(){
     const CARGOS = TO.membros.CARGOS;
     const tamanho = Math.min(Math.max(membrosVivos || o.membros || 60, 1), 250);
     const plano = TO.membros.planoDeCargos(tamanho, o.cargos);
-    const BASE = {novato:1, componente:5, frente:10, diretoria:14};
     let soma = 0, n = 0;
     for(const [cargo, q] of plano){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
-      soma += q * Math.min(teto, (BASE[cargo]||1) + 1.5 + mma);
+      soma += q * Math.min(teto, (MEDIA_FICHA[cargo] || MEDIA_FICHA.novato) + mma);
       n += q;
     }
     return n ? soma/n : 1;

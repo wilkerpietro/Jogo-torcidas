@@ -666,7 +666,9 @@ TO.diaJogo.combate = (function(){
     /* a moral deles vem da moral viva da torcida no mundo (a mesma
        régua do nosso povoarInicial: indicador ±3), não de um 12 fixo */
     const moralBase = Math.round(p.moral !== undefined ? p.moral : 12);
-    const BASE = {novato:1, componente:5, frente:10, diretoria:14};
+    /* a ficha de entrada é a régua de TO.membros.FICHA_NOVA (novato
+       de 3 a 8, régua do dono de 06/10/2026), + o professor */
+    const nova = cargo => TO.membros.fichaNova(cargo) + mma;
     const fora = [];
     for(const [cargo, n] of plano){
       const teto = (CARGOS[cargo] || CARGOS.novato).teto;
@@ -675,14 +677,14 @@ TO.diaJogo.combate = (function(){
       const media = q && q.forca[cargo] != null ? q.forca[cargo] : null;
       const tira = () => media != null
         ? U.limitar(Math.round(media + U.entre(-1.5, 1.5)), 1, teto)
-        : Math.min(teto, (BASE[cargo]||1) + U.inteiro(0,3) + mma);
+        : Math.min(teto, nova(cargo));
       for(let i=0;i<n && fora.length<tamanho;i++)
         fora.push({cargo, forca: tira(), defesa: tira(),
           moral:  U.limitar(moralBase + U.inteiro(-3,3), 1, 20)});
     }
     while(fora.length < tamanho)
-      fora.push({cargo:'novato', forca:1+U.inteiro(0,3)+mma,
-                 defesa:1+U.inteiro(0,3)+mma, moral:moralBase});
+      fora.push({cargo:'novato', forca:Math.min(CARGOS.novato.teto, nova('novato')),
+                 defesa:Math.min(CARGOS.novato.teto, nova('novato')), moral:moralBase});
     return fora.sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
                .slice(0, qtd);
   }

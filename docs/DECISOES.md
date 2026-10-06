@@ -9341,10 +9341,24 @@ Pedido do dono: "agora um novato recrutado quando surge na torcida deve surgir v
 - **A mudança:** `TO.membros.criar` sorteia força e defesa, cada uma por conta própria, entre 3 e 8 quando quem chama não passa os valores. Antes era entre 1 e 3.
 - **Onde vale:** em todo novato que entra pela ação Recrutar, na sede ou nas filiais.
 - **O teto:** 8 é o teto do cargo de novato, então um recruta pode chegar já no máximo do cargo.
-- **O que não mudou:**
-  - Os novatos do elenco inicial (`povoarInicial`), que saem com 1 a 4.
-  - Os novatos das torcidas rivais montados na briga (`combate.js`).
-  - Os dois ficaram como estavam porque o pedido falou do novato recrutado.
+- **Estendido no mesmo dia** ("aplica também nos novatos rivais e no elenco inicial"). A régua virou a tabela `TO.membros.FICHA_NOVA`, com o sorteio em `fichaNova(cargo)`:
+
+  | Cargo | Força e defesa de entrada |
+  |---|---|
+  | Novato | 3 a 8 |
+  | Componente | 5 a 8 |
+  | Linha de frente | 10 a 13 |
+  | Diretoria | 14 a 17 |
+
+  Só a linha do novato mudou; os outros cargos já entravam assim. A régua vale para:
+  - **O elenco inicial** de um jogo novo (`povoarInicial`).
+  - **As fichas rivais na briga** (`combate.fichasDoPerfil`, inclusive o enchimento de novatos). Com professor de MMA é +1, sem passar de 8.
+  - **O elenco nomeado das rivais** (`relacoes.js`). Ele é sorteado por hash, então sai igual em qualquer save.
+  - **O quadro vivo das torcidas da IA** (`relacoes.js`):
+    - O piso do novato passou de 1 para 3.
+    - A média de entrada do novato passou de 2,5 para 5,5. É a média que vale para quem nasce e para quem entra depois.
+    - `relacoes.js` carrega antes de `membros.js`, por isso guarda uma cópia desses números: `BASE_FICHA` e `MEDIA_FICHA`.
+  - **Saves antigos:** os quadros da IA sobem aos poucos, à medida que entra gente nova.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
