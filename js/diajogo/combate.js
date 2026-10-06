@@ -120,7 +120,7 @@ TO.diaJogo.combate = (function(){
       this.correEm=null;    // debandou, mas ainda não virou as costas
       this.agarrado=0;      // segundos de mão em cima enquanto foge
       this.sumiu=false;     // debandou e saiu da cena por uma boca de rua
-      this.voltando=false;  // defendeu, ganhou, e está voltando pro posto
+      this.comemorando=false;  // a briga acabou pro lado dele: parado, provocando
       this.vadiando=false;  // noite tranquila: fica de conversa até a hora
       this.sentado=false;   // na roda da reunião: não anda, não é empurrado
       this.atordoado=0; this.tremor=0; this.golpe=0; this.hostil=0;
@@ -944,16 +944,17 @@ TO.diaJogo.combate = (function(){
      PASSO
      ======================================================= */
   function passo(J,dt,teclas,podeControlar){
-    /* 'voltando' é o respiro entre a briga acabar e a tela de fim:
-       ninguém mais se pega, mas quem defendeu ainda anda de volta */
-    if(J.fase!=='ativo' && J.fase!=='voltando') return;
+    /* 'comemorando' é o respiro entre a briga acabar e a tela de fim:
+       ninguém mais se pega, e quem sobrou de pé fica onde está,
+       provocando (ver `comemorar`) */
+    if(J.fase!=='ativo' && J.fase!=='comemorando') return;
     J.t+=dt;
     J._quadro = (J._quadro||0) + 1;
     refazerGrade(J);      // uma vez por quadro, antes de qualquer busca
-    if(J.fase==='voltando'){
+    if(J.fase==='comemorando'){
       moverDiscos(J,dt);
       separar(J);
-      conferirVolta(J);
+      if(J.t >= J.comemorarAte) J.fase = 'acabando';
       return;
     }
     /* O CRONÔMETRO POR ETAPA (medição de 17/09/2026): com `J._perfil`
@@ -1132,19 +1133,37 @@ TO.diaJogo.combate = (function(){
     if(m>0 && v>0) return;
     const lado = m>0 ? 'mandante' : (v>0 ? 'visitante' : null);
 
-    /* defensor que ganhou volta pra dentro antes de a tela subir: o bar
-       é deles de novo, e ver o bonde voltando pro salão é o que conta
-       isso sem precisar de texto */
-    if(lado==='visitante'){
-      const casa=J.discos.filter(d=>d.lado==='visitante' && d.vivo && d.daCasa);
-      if(casa.length){
-        J.fase='voltando'; J.voltarAte=J.t+9; J.ladoVencedor=lado;
-        for(const d of casa){ d.voltando=true; d.fugindo=false; }
-        logar(J,_t('Eles voltaram pra dentro.'),'a');
-        return;
-      }
-    }
+    /* QUEM GANHOU FICA E PROVOCA (pedido do dono, 06/10/2026). O
+       defensor que ganhava voltava pro salão antes de a tela subir, e
+       o resto, sem rival à vista, andava pra própria entrada — o bonde
+       vencedor saía correndo de volta pro ponto de onde veio. Agora,
+       em toda cena, quem sobrou de pé para onde está e provoca por
+       uns segundos; só então a tela de fim abre. */
+    if(lado && houveBriga(J, OUTRO_LADO[lado])){ comemorar(J, lado); return; }
     acabar(J, lado);
+  }
+
+  /* o outro lado brigou de verdade: caiu alguém dele, ou ele correu */
+  function houveBriga(J, outro){
+    return (J.caidos[outro]||0) > 0 || !!J.debandou[outro];
+  }
+  /* sem nenhum rival de pé encarando — os que restam estão correndo */
+  function semRivalNaBriga(J, lado){
+    const outro = OUTRO_LADO[lado];
+    if(!houveBriga(J, outro)) return false;
+    for(const o of J.discos)
+      if(o.lado === outro && o.vivo && !o.fugindo) return false;
+    return true;
+  }
+  const TEMPO_DE_COMEMORAR = 5;
+  function comemorar(J, lado){
+    acabar(J, lado);
+    J.fase = 'comemorando';
+    J.comemorarAte = J.t + TEMPO_DE_COMEMORAR;
+    for(const d of J.discos){
+      if(!d.vivo || d.lado !== lado) continue;
+      d.comemorando = true; d.entrando = false; d.recuando = false;
+    }
   }
 
   /* =======================================================
@@ -1219,18 +1238,6 @@ TO.diaJogo.combate = (function(){
                 tranquila: J.caidos.mandante + J.caidos.visitante === 0,
                 entrou:true, motivo:_t('sua torcida entrou pelo portão')};
     logar(J, J.acabou.motivo, 'p');
-  }
-
-  function conferirVolta(J){
-    const casa=J.discos.filter(d=>d.voltando && d.vivo);
-    /* catorze discos não cabem todos em volta de dois pontos de spawn:
-       quem emperra contra os próprios companheiros já voltou pra todos
-       os efeitos, senão a tela de fim espera o relógio inteiro */
-    const chegou=casa.every(d=>{
-      const s=D.spawns.find(x=>x.id===d.spawn);
-      return !s || U.dist(d.x,d.y,s.x,s.y)<60 || (d.travado||0)>1.2;
-    });
-    if(chegou || J.t>J.voltarAte) acabar(J, J.ladoVencedor);
   }
 
   function acabar(J, lado){
@@ -1547,6 +1554,9 @@ TO.diaJogo.combate = (function(){
     const fugindo = {mandante:false, visitante:false};
     for(const d of J.discos)
       if(d.vivo && d.fugindo) fugindo[d.lado] = true;
+    /* lado sem rival encarando: quem não está caçando fica e provoca */
+    const venceu = J.fase === 'comemorando' ? null :
+      {mandante: semRivalNaBriga(J,'mandante'), visitante: semRivalNaBriga(J,'visitante')};
     const lider = J.discos.find(d=>d.lider&&d.vivo);
     /* formação é coisa do SEU bonde. Os outros escalões — inclusive os do
        mesmo clube — têm portão próprio e vão sozinhos. */
@@ -1603,6 +1613,27 @@ TO.diaJogo.combate = (function(){
          Sem isto a cena nem acabava: `dePe` contava o líder parado e a
          briga ficava de pé esperando um disco que só o teclado move —
          e o teclado, em fuga, não move ele (ver `moverLider`). */
+      /* A BRIGA ACABOU PRA ESTE LADO: para onde está e provoca. Sem
+         isto, quem ficava sem rival à vista caía no padrão de andar
+         pra própria entrada, e o bonde vencedor corria de volta pro
+         ponto de onde veio. Caçar quem corre ainda vale enquanto
+         houver alguém correndo à vista. */
+      /* o presidente segue no teclado enquanto a cena corre: só provoca
+         quando o jogador o deixa parado (o bonecos3 olha `andando`) */
+      if(d.lider && J.fase !== 'comemorando' && !d.entrando && !d.fugindo){
+        d.comemorando = !!venceu[d.lado]; continue;
+      }
+      if(J.fase === 'comemorando' || (venceu[d.lado] && !d.fugindo && !d.entrando &&
+         !d.comFaixa && !d.faixaIndo &&
+         !(agressivo(J,d) && fugindo[OUTRO_LADO[d.lado]] && inimigoFugindo(J, d, RAIO_CACA)))){
+        if(d.vivo && !d.fugindo) d.comemorando = true;
+        d._cacando = false; d._ramo = 'comemora'; d._alvo = null;
+        d.vx *= 0.7; d.vy *= 0.7;
+        if(hyp(d.vx,d.vy) < 3.5){ d.vx = 0; d.vy = 0; }
+        else { A.mover(d, d.vx*dt, d.vy*dt); A.barrarGrades(d,J.grades); }
+        continue;
+      }
+      d.comemorando = false;
       if(d.lider && !d.entrando && !d.fugindo) continue;
       d._cacando = false;
 
@@ -1761,11 +1792,6 @@ TO.diaJogo.combate = (function(){
           campo = A.campoDoPonto('faixa:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades);
           usarCampo = true;
         } else { ax=tx; ay=ty; }
-      } else if(d.voltando){
-        /* acabou e a casa é deles: volta pro lugar de onde saiu */
-        const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
-        if(U.dist(d.x,d.y,s.x,s.y)<44){ d.vx*=0.8; d.vy*=0.8; d._ramo='voltou'; continue; }
-        campo = campoDoSpawn(s); usarCampo=true;
       } else if(d.fugindo){
         /* debandada é fuga, não recuo: corre até sumir da tela. */
         const rota = rotaDeFuga(J, d);
@@ -3408,7 +3434,6 @@ TO.diaJogo.combate = (function(){
       d.fugindo = true;
       d.correEm = J.t;
       d.entrando = false;
-      d.voltando = false;
       n++;
     }
     if(!n) return 0;

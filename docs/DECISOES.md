@@ -9218,6 +9218,14 @@ Dois defeitos que se alimentavam:
   coberto e chegada (05/10), resultado de jogo, goleada, clássico perdido
   e rebaixamento próprio (04/10). O "tchau" ao rival rebaixado fica.
 
+## Ganhou a briga, fica e provoca (o dono, 06/10/2026: "após vencer a briga, os bonecos correram para o ponto inicial da cena. isso não precisa acontecer, assim que todos os rivais sumirem, nossos bonecos ficam parados e ativa o movimento de provocação. isso deve ocorrer em todas as cenas")
+
+- **Por que corriam de volta.** Rival em fuga continua `vivo`, então a briga seguia aberta; e o disco sem alvo à vista cai no padrão de andar pra própria entrada (`moverDiscos`, último `else`). Na defesa de bar/casa havia ainda a fase `voltando`, que mandava o defensor de volta pro spawn antes da tela de fim.
+- **Agora (combate.js).** `semRivalNaBriga(J, lado)`: o outro lado brigou de verdade (caiu alguém dele ou ele debandou) e não tem mais ninguém de pé encarando. Valendo isso, quem não está caçando um fugitivo à vista para onde está (`_ramo='comemora'`, `d.comemorando`). Caçar quem corre continua valendo enquanto houver alguém correndo dentro do `RAIO_CACA`; o presidente segue no teclado.
+- **Fase `comemorando`.** Quando o último rival some, `comemorar` fecha o resultado (`acabar`, então o `J.acabou` já existe) e segura a cena 5 s com todo mundo parado antes de virar `acabando` e a ponte abrir a tela de fim. Substitui a fase `voltando`, que saiu junto com `conferirVolta` e o `d.voltando`. Vale em toda cena, pros dois lados: quem sobrou de pé é quem provoca.
+- **Bonecos (bonecos3.js).** Com `d.comemorando` e parado, a provocação não pede inimigo a 24–90 px nem sorteio: um gesto atrás do outro (pausa de 0,15–0,75 s), inclusive na multidão do movimento leve, que passa a contar a provocação como agitação.
+- Teste: rua, treta no beco e casa de piscina na bancada (`arredores.html`) com a debandada forçada — deslocamento de 0–19 px depois da debandada (antes, centenas, rumo à entrada), fase `comemorando` por 5 s e então `fim`; sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

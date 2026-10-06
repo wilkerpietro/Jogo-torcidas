@@ -1832,7 +1832,7 @@ TO.diaJogo.bonecos3 = (function(){
     const agitado = !d.vivo || d.derrubado > 0 || !!d.ataque || d.golpe > 0 || d.apanhou > 0 ||
       d.atordoado > 0 || !!d.arremesso || !!d.segurando || !!d.seguradoPor || d.esquivou > 0 ||
       d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3) ||
-      (J.falante === d);
+      (J.falante === d) || (!!d.comemorando && !!f.provoca);
     fg.mudou = true;
     if(leve && !agitado && ((quadroN + i) % 3)){
       const moveu = f.px == null || Math.abs(d.x - f.px) > 0.05 || Math.abs(d.y - f.pz) > 0.05;
@@ -1901,15 +1901,20 @@ TO.diaJogo.bonecos3 = (function(){
       if(d.fugaBomba) cobrir(p);
 
       /* a provocação: inimigo a 24–90 px, sem golpe, sem defesa, parado */
-      const podeProvocar = !leve && !andando && d.inimigoPerto > 24 && d.inimigoPerto < 90 && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso && (d.hostil > 0 || d.linha==='frente');
+      /* GANHOU, PROVOCA (pedido do dono, 06/10/2026): sem rival de pé, o
+         lado que sobrou fica parado provocando — não precisa de inimigo
+         perto, e provoca quase sem pausa, um gesto atrás do outro */
+      const comemora = !!d.comemorando && !andando && !d.ataque && d.atordoado<=0;
+      const podeProvocar = (!leve || comemora) && !andando && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso &&
+        (comemora || (d.inimigoPerto > 24 && d.inimigoPerto < 90 && (d.hostil > 0 || d.linha==='frente')));
       if(f.provoca){
         f.provoca.t += dt;
         if(f.provoca.t >= f.provoca.dur || d.ataque || d.defendendo>0 || d.atordoado>0 || andando) f.provoca = null;
       } else if(podeProvocar){
         f.tProvoca = (f.tProvoca||0) - dt;
         if(f.tProvoca <= 0){
-          f.tProvoca = 1.5 + Math.random()*3;
-          if(Math.random() < f.estilo.provocador*0.6)
+          f.tProvoca = comemora ? 0.15 + Math.random()*0.6 : 1.5 + Math.random()*3;
+          if(comemora || Math.random() < f.estilo.provocador*0.6)
             f.provoca = {t:0, dur:1.4 + Math.random()*1.2,
               tipo: f.varianteForcada!=null ? f.varianteForcada
                   : Math.random() < 0.72 ? (Math.random()<0.5 ? f.estilo.provocaFav : Math.floor(Math.random()*3))
