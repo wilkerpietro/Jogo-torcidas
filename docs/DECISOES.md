@@ -9283,6 +9283,17 @@ Dois defeitos que se alimentavam:
 - **Gerar de novo:** com `bpy==4.2.0` e `pillow` no Python 3.11, rodar `python ferramentas/boneco_base.py --leve` e `python ferramentas/boneco_base.py`.
 - **Ainda a acertar:** a cópia do `bonecos3.js` em `cenario3d/` (da outra sessão) lê o mesmo GLB sem a UV da pele. Lá o boneco aparece sem o detalhe do rosto até ela adotar a junção nova.
 
+## Pente fino no andar e no parado (o dono, 06/10/2026: "faça um pente fino em todos os movimentos dos bonecos pra parecer algo mais natural e humano possível")
+
+Vistos quadro a quadro de lado na vitrine (`bonecos.html?estado=andar&so&manual`), os erros de biomecânica estavam no ciclo do passo (`passo`, bonecos3.js) e no parado:
+
+- **Joelho:** dobrava mais com a perna já esticada à frente. Agora dobra na passagem (a perna de balanço por baixo do corpo, coxa indo pra frente), chega quase reta no calcanhar e dobra de leve no apoio, amortecendo o peso.
+- **Pé:** só a ponta empurrava atrás. Agora o calcanhar pisa (ponta pra cima com a perna à frente), a ponta empurra no fim do apoio e sobe no balanço, pra não arrastar no chão.
+- **Sobe-e-desce:** andando, o corpo subia com as pernas abertas, que é o contrário. Agora é mais alto com as pernas juntas, no apoio. Na corrida o alto continua sendo o voo.
+- **Braço:** balança mais (0,55 em vez de 0,42), contra a perna e um tico atrasado. O cotovelo dobra no braço que vem pra frente (antes dobrava no que ia pra trás).
+- **Cabeça:** gira contra o tronco e segura o olhar pra frente.
+- **Parado:** o peso troca de perna devagar (a cada ~30 s, num ciclo próprio de cada boneco), com o quadril e o ombro acompanhando. Antes era sempre a mesma perna.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

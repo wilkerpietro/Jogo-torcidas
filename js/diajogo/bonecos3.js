@@ -1144,8 +1144,12 @@ TO.diaJogo.bonecos3 = (function(){
     p.inclina = 0.02 + 0.012*r + e.curvado;
     p.tomba = 0.03*e.gingado*Math.sin(t*0.6 + f.fase) + 0.02*ruido(f, t, 0.9, 1.3);
     p.gira = 0.05*e.inquieto*ruido(f, t, 0.5, 0.8);
-    const lado = Math.sin(f.fase) > 0 ? 1 : -1;
-    p.coxa = [0.06*lado, -0.04*lado]; p.joelho = [0.10, 0.06];
+    /* O PESO TROCA DE PERNA (pente fino, 06/10/2026): ninguém fica parado
+       sempre na mesma perna — de tempos em tempos o corpo passa o peso pro
+       outro lado, devagar, e o quadril e o ombro acompanham */
+    const lado = Math.max(-1, Math.min(1, 2.5*Math.sin(t*0.11 + f.fase*3)));
+    p.coxa = [0.06*lado, -0.04*lado]; p.joelho = [0.08 + 0.05*Math.max(0, -lado), 0.08 + 0.05*Math.max(0, lado)];
+    p.tomba += 0.025*lado;
     if(e.pesado){ p.joelho = [0.16, 0.12]; p.y = -0.6; }
     const olha = Math.sin(t*0.13+f.fase) > (0.6 - e.inquieto*0.3) ? 1 : 0.2;
     p.olhaY = 0.35*e.inquieto*Math.sin(t*0.45 + f.fase*2)*olha;
@@ -1178,22 +1182,43 @@ TO.diaJogo.bonecos3 = (function(){
     f.ciclo += vel*freq*dt*6.28*0.36;
     const c = f.ciclo, s = Math.sin(c), s2 = Math.sin(c+Math.PI);
     const amp = (corre ? 0.95 : 0.55) * e.passada * (duro ? 0.9 : 1);
-    const lev = (corre ? 1.1 : 0.7) * e.passada;
+    const lev = (corre ? 1.25 : 0.72) * e.passada;
     p.coxa = [s*amp, s2*amp];
-    /* o joelho dobra na perna que vai pra frente (coxa negativa) */
-    const base = e.pesado ? 0.16 : 0.08;
-    p.joelho = [Math.max(0, -s)*lev + base, Math.max(0, -s2)*lev + base];
-    p.pe = [Math.max(0, s)*0.35, Math.max(0, s2)*0.35];
-    const bs = (corre ? 0.9 : 0.42) * e.balanco * (duro ? 0.35 : v===1 && !corre ? 0.7 : 1);
-    p.ombro = [s2*bs - (corre?0.4:0.05), s*bs - (corre?0.4:0.05)];
-    p.cotovelo = corre ? [-1.5, -1.5] : duro ? [-0.25, -0.25] : [-0.45 - Math.max(0,s2)*0.3*e.balanco, -0.45 - Math.max(0,s)*0.3*e.balanco];
+    /* O JOELHO DE GENTE (pente fino, 06/10/2026): ele dobra mais na
+       PASSAGEM — a perna de balanço passando por baixo do corpo (coxa
+       indo pra frente, cos < 0) —, chega quase reta no calcanhar e
+       dobra de leve no apoio, amortecendo o peso. Antes dobrava mais com
+       a perna já esticada à frente, o que é o contrário. */
+    const base = e.pesado ? 0.14 : 0.06;
+    const joe = (fase) => {
+      const balanco = Math.max(0, -Math.cos(fase)), apoio = Math.max(0, Math.cos(fase))*Math.max(0, -Math.sin(fase));
+      return base + lev*Math.pow(balanco, 1.6) + (corre ? 0.35 : 0.14)*apoio;
+    };
+    p.joelho = [joe(c), joe(c + Math.PI)];
+    /* o pé: ponta empurra quando a perna está atrás, calcanhar pisa (ponta
+       pra cima) quando a perna chega à frente */
+    /* e no balanço a ponta sobe, pra não arrastar no chão */
+    const ponta = fa => { const fs = Math.sin(fa); return Math.pow(Math.max(0, fs), 2)*0.24 - Math.max(0, -fs)*0.14 - 0.45*Math.pow(Math.max(0, -Math.cos(fa)), 1.6); };
+    p.pe = [ponta(c), ponta(c + Math.PI)];
+    /* o braço balança contra a perna, um tico atrasado, e o cotovelo
+       dobra mais quando o braço vem pra frente */
+    const cb = c - 0.25, sb = Math.sin(cb), sb2 = Math.sin(cb + Math.PI);
+    const bs = (corre ? 0.9 : 0.55) * e.balanco * (duro ? 0.35 : v===1 && !corre ? 0.75 : 1);
+    p.ombro = [sb2*bs - (corre?0.4:0.05), sb*bs - (corre?0.4:0.05)];
+    p.cotovelo = corre ? [-1.5 - 0.15*Math.max(0, -sb2), -1.5 - 0.15*Math.max(0, -sb)] : duro ? [-0.25, -0.25]
+               : [-0.32 - Math.max(0, -sb2)*0.45*e.balanco, -0.32 - Math.max(0, -sb)*0.45*e.balanco];
     p.ombroZ = [0.12, 0.12];
     p.gira = -s*(corre?0.22:0.10)*e.balanco*(gingado>1 ? 1.4 : duro ? 0.5 : 1);          // ombros contra o quadril
     p.tomba = Math.sin(c)*(corre?0.05:0.035)*e.gingado*(duro ? 0.4 : gingado);
     p.inclina = (corre ? 0.30 : 0.07) + e.curvado + (duro ? 0.03 : 0);
-    p.y = Math.abs(Math.sin(c))*(corre?1.4:0.6)*e.passada*(gingado>1 ? 1.4 : 1) - (corre?0.6:0) - (e.pesado?0.8:0);
+    /* o sobe-e-desce: andando, o corpo é mais alto com as pernas juntas
+       (no apoio) e mais baixo com elas abertas; correndo é o contrário —
+       o alto é o voo, com as pernas abertas */
+    p.y = (corre ? Math.abs(Math.sin(c))*1.4 - 0.6 : (0.5 + 0.5*Math.cos(2*c))*0.7 - 0.35)
+          *e.passada*(gingado>1 ? 1.4 : 1) - (e.pesado?0.8:0);
     p.olhaX = (corre ? -0.1 : 0.02) + e.curvado*0.4;
-    p.olhaY = 0.06*ruido(f, c*0.3, 1, 1.4);
+    /* a cabeça segura o olhar pra frente: gira contra o tronco */
+    p.olhaY = 0.06*ruido(f, c*0.3, 1, 1.4) - p.gira*0.7;
     if(corre && v===1){ p.ombroZ = [0.45, 0.45]; p.cotovelo = [-1.15, -1.15]; p.ombro[0] -= 0.2; p.ombro[1] -= 0.2; }
     if(corre && v===2){ p.inclina += 0.16; p.olhaX += 0.22; p.cotovelo = [-1.8, -1.8]; p.ombroZ = [0.05, 0.05]; }
     return true;
