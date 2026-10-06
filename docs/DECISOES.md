@@ -9413,6 +9413,16 @@ O pedido: "as pixações do save agora devem aparecer nos muros da cidade 3d, se
 
 **As escolhas que o pedido deixou em aberto** (dá pra mudar depois): o CT virou o portão do estádio (modelar um CT é outra rodada); no bairro sem praça a reunião é numa esquina, e a notícia do jornal continua dizendo "na praça"; continuam na foto a briga em praça de fora sem o dia de jogo lá, os arredores sem o rival no plano do dia e a arquibancada sem caminho de invasão. Detalhes: `docs/JOGO_3D.md` §43.
 
+## A sede parede com parede, a fuga no meio da rua e o bar sem esquina (dono, 06/10/2026)
+
+O pedido: "nas sedes das torcidas as paredes que dividem os compartimentos tem um vão sem sentido entre elas. os compartimentos da sede devem ser parede com parede. corrija isso. isso inclusive vai servir pra deixar as salas mais espaçosas. ajuste os pontos de fuga pra serem somente no meio da rua, se inspirando na forma que executei isso no jogo 2d."
+
+- **A parede entre dois cômodos (e entre o cômodo e o pátio) é de tijolo, 15 cm**; a de 46 cm fica só na casca (a fachada, os lados e o fundo). O "vão" era a parede grossa cortada pela câmera a 2,2 m: as duas faces com o chão no meio. A parede cortada agora aparece cheia, e cada sala ganhou 31 cm por parede (a Academia do nível 4 foi de 7,77 pra 8,70 m).
+- **A fuga é sempre no meio da rua, na ponta da cena**, como no 2D: em toda cena de briga 3D as saídas são o eixo de cada rua onde ela cruza a borda (lido do asfalto da planta), o eixo do beco e das vielas na favela, e o eixo da rua de areia e da rodovia na festa, no posto e na estrada. Nada de sumir na calçada, no recuo de garagem ou no meio do cenário. A invasão do estádio segue com os vomitórios.
+- **O bar da torcida sem esquina** (o boteco da favela, o bar numa casa do meio do quarteirão) passou a ter briga em 3D: o ataque vem pela rua (ou pelo beco) da frente quando não há transversal colada no lote, e o alvo é o ponto do salão que o corpo alcança — no bar mais estreito, a porta do bar. Antes 4 dos 7 bares com dono de Fortaleza caíam na foto 2D.
+
+**O que ficou de fora**: a folga das peças dentro do bar não diminuiu (abriria passagem através de parede fina), por isso o bar mais estreito tem a porta como alvo; as entradas da emboscada na estrada que o dono ajeitou no editor seguem onde estavam. Detalhes: `docs/JOGO_3D.md` §44.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -4698,3 +4698,121 @@ de feed: só muda o chão.
 - **Uma diferença de texto**: a notícia da reunião (o Futebol e Porrada)
   continua dizendo "na praça" mesmo quando a briga foi na esquina — o
   texto é o do jogo de feed, pela cena.
+
+## 44. A sede parede com parede, a fuga no meio da rua e o bar sem esquina (06/10/2026)
+
+O pedido: "nas sedes das torcidas as paredes que dividem os compartimentos
+tem um vão sem sentido entre elas. os compartimentos da sede devem ser
+parede com parede. corrija isso. isso inclusive vai servir pra deixar as
+salas mais espaçosas. ajuste os pontos de fuga pra serem somente no meio da
+rua, se inspirando na forma que executei isso no jogo 2d."
+
+### A sede parede com parede
+
+- **O vão era a parede grossa vista de cima.** Toda parede da sede tinha
+  46 cm (`PAR`, a do muro do terreno), inclusive a que separa dois cômodos e
+  a que separa o cômodo do pátio. Com a câmera cortando a sede a 2,2 m do
+  piso (`abrirPredio`), a tampa de cima da parede some junto e sobravam as
+  duas faces com o chão no meio — o "vão sem sentido".
+- **A parede de dentro agora é de tijolo, 15 cm** (`PAR_DENTRO`,
+  `js/diajogo/sede3d.js`), nos cinco níveis e nos dois andares do nível 5:
+  entre os cômodos, entre o cômodo e o pátio, a da garagem. A casca (a
+  fachada, os lados e o fundo, que são o muro do terreno) segue com 46 cm.
+- **A parede cortada aparece cheia**: uma tampa escura por dentro dela, logo
+  abaixo do corte (a 2,05 m do piso, `MIOLO_Y`), faz o corte parecer o da
+  planta; com o telhado no lugar ela fica escondida dentro da parede.
+- **As salas ganharam o que sobrou** (31 cm por parede): no nível 1 o
+  Patrimônio foi de 4,93 m pra 5,24 m e a Presidência de 4,93 × 5,84 pra
+  5,24 × 6,15 m; no nível 4 a Presidência de 5,58 pra 6,20 m, a Hospedagem de
+  6,87 pra 7,18 e a Academia de 7,77 pra 8,70; no nível 5 a Presidência de
+  4,04 pra 4,66 m, a Hospedagem de 5,02 pra 5,33 e o Setor criativo de 8,01
+  pra 8,32.
+- **Conferido**: os cinco níveis montam nas duas frentes, com a mesma conta
+  de lugares, armários e placas de antes, sem parede em cima de cômodo; no
+  jogo (Fortaleza) os 18 pares de cômodos vizinhos das quatro sedes estão a
+  15 cm um do outro (eram 46), e as fotos com o corte mostram a parede
+  cheia.
+
+### A fuga no meio da rua
+
+- **O que o jogo 2D fez** (30/09/2026, `dados/cenas.js`, `RUA`): cada cena
+  aberta traz as saídas marcadas no eixo de cada rua, onde ela cruza a borda
+  da foto; a leitura automática da máscara só vale na borda; a entrada de
+  origem só é saída quando fica na ponta da cena.
+- **O que o 3D fazia**: as cenas 3D não declaravam `fugas`, e o motor lia as
+  bocas da própria máscara (`arredores.js`, `acharFugas`) — a calçada
+  partida por um poste, o recuo de garagem, o vão entre o carro e o
+  meio-fio viravam saída.
+- **Agora toda cena 3D declara as fugas** (`ferramentas/planta_html/fuga_rua.js`):
+  - **na cidade** (a caminhada, os arredores, o bar, a praça e a esquina, a
+    sede, o portão do estádio): as saídas saem do **asfalto da planta**.
+    Numa linha a 20 px de cada borda do tabuleiro (a distância das do 2D),
+    cada trecho contínuo de asfalto é uma rua saindo da cena e o meio dele é
+    o eixo dela; o trecho que encosta no canto é lido além do tabuleiro (a
+    rua cortada pelo canto não tem o meio puxado pra dentro); a rua que corre
+    ao longo da borda sai pelas outras bordas, e as que desembocam nela vindo
+    de dentro viram saída no eixo delas, na borda. O ponto tem de cair no
+    asfalto e no chão da cena; a rua com o eixo fora da cena (só a beira
+    dela aparecendo) não é saída;
+  - **no beco e no campinho da treta**: as duas pontas do eixo do beco; o
+    campinho ganhou as vielas que correm rente a ele (antes era uma arena
+    fechada, e a leitura automática fazia sair pelo meio de cada lado), e a
+    saída é o eixo delas onde saem da cena. A ponta de viela dentro da cena
+    só vale quando fica na ponta da cena (a até 60 px da borda, a régua do
+    2D) e não é cruzamento com outra viela nem a boca do campinho;
+  - **no boteco da favela** (o bar da torcida que caiu na favela): o eixo
+    dos becos também, com a mesma régua;
+  - **na festa da casa de praia, no posto e na estrada**: o eixo da rua de
+    areia e da rodovia nas duas pontas — no posto e na estrada, os mesmos
+    pontos do 2D.
+  - A praça (não o cruzamento) também teve a boca de saída de cada ponta
+    posta no eixo da rua da ponta (achado no asfalto), como no 2D.
+  - A invasão do estádio segue com os vomitórios.
+- **Conferido no jogo** (Fortaleza, TUF): montadas direto, as cenas da
+  caminhada, dos arredores, dos sete bares, do beco, de dois campinhos, da
+  praça (reunião e encontro), da esquina, de duas sedes, do portão do
+  Castelão, do posto e da estrada têm todas as fugas no eixo das ruas (as
+  imagens da máscara com o asfalto confirmam); e numa briga de verdade com a
+  ordem de correr (a tecla X) no bar da Cearamor, no bar da Jovem Garra, na
+  sede da Cearamor e na reunião, os 14 bonecos de cada uma sumiram todos a
+  ~45 px de uma boca (o raio dela, 34, mais o corpo) — na reunião, pela
+  própria entrada, que fica na ponta da cena no eixo do braço da esquina.
+
+### O bar sem esquina (achado no teste)
+
+O teste das fugas montou os sete bares com dono de Fortaleza e **só três
+montavam**: os outros quatro — o boteco da favela que virou bar da torcida
+e o bar que o jogo pôs numa casa do meio do quarteirão (`virarBar`, que
+marca esquina sem ter rua do lado) — não tinham a "transversal" (a rua do
+lado da esquina) e a briga caía na foto 2D. Consertado em
+`briga_bar.js`:
+
+- **o beco é chão da briga** (a frente do boteco dá pro beco, que não é
+  "rua ou calçada" pra planta);
+- **a transversal só vale colada no lote** (até 5 m: a calçada e o
+  meio-fio), não a rua do quarteirão seguinte; o ataque desce por ela
+  andando pelo meio até onde o chão vai (o beco da favela acaba antes da
+  borda), e **sem ela vem pela rua da frente**, da ponta do lado da
+  "esquina", com a faixa de quem defende em pé na frente da varanda;
+- **o teste de "chega andando" agora é o do motor** (a célula só passa com
+  o corpo: ela e as quatro vizinhas no chão). O de antes deixava passar vão
+  de uma célula, e o motor avisava "PORTÃO SELADO" com o bonde preso;
+- **no bar estreito** (7 m de frente ou menos) o canto do balcão fica
+  fechado pro corpo entre o balcão, as banquetas e o freezer: o alvo é o
+  ponto do salão mais perto do balcão que se alcança; no mais estreito (6,2
+  m, a porta do lado dando na casa do vizinho e as mesas tapando a varanda)
+  o alvo vira a **PORTA DO BAR**. Os donos da casa nascem onde se alcança a
+  rua.
+
+Resultado: os sete bares com dono de Fortaleza montam em 3D, sem "portão
+selado".
+
+### O que ficou de fora
+
+- As **portas da sede** têm a mesma largura de antes (só acompanham a parede
+  nova), e a casca (a fachada, os lados e o fundo) segue com 46 cm.
+- A **folga das peças dentro do bar** (12 cm) não foi reduzida pra abrir o
+  canto do balcão: com menos folga a máscara deixaria passar através de
+  parede fina. Por isso o bar mais estreito tem a porta como alvo.
+- As **entradas da emboscada na estrada** (as que o dono ajeitou no editor)
+  seguem onde estavam: a do lado de cá fica na pista, 2 m fora do eixo.

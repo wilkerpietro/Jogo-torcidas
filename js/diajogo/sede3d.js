@@ -128,10 +128,20 @@ export function planoDaSede(L, A, nivel, lado = 'mandante') {
   const N = nivelQueCabe(L, nivel);
   return N === 1 ? planoNivel1(L, A, lado) : N === 5 ? planoNivel5(L, A) : planoNovo(L, A, N);
 }
+/* A PAREDE DE DENTRO (o dono, 06/10/2026: "nas sedes das torcidas as
+   paredes que dividem os compartimentos tem um vão sem sentido entre elas.
+   os compartimentos da sede devem ser parede com parede"): a parede entre
+   dois cômodos (e entre o cômodo e o pátio) é de tijolo, 15 cm — a de 46 cm
+   (`PAR`) fica só na casca (a fachada, os lados e o fundo, que são o muro do
+   terreno). Com a câmera cortando a sede a 2,2 m, a parede grossa aparecia
+   oca, duas faces com o chão no meio; e as salas ganham o que sobrou */
+const PAR_DENTRO = 3;
+/* a altura (m, do piso) e a cor do miolo da parede cortada (`paredes3d`) */
+const MIOLO_Y = 2.05, MIOLO_COR = '#4a4741';
 function planoNivel1(L, A, lado) {
   const N = 1;
   const m = v => Math.round(v * M);
-  const PAR = 9, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
+  const PAR = 9, PI = PAR_DENTRO, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
   const MURO = 66, ALT_EXT = 60, ALT = m(2.60);
   const DF = Math.min(96, Math.max(58, A * 0.30)), DB = Math.min(104, Math.max(60, A * 0.32));
   const vF = MF + DF, vB = A - DB, uDiv = Math.round(L * 0.58);
@@ -163,7 +173,7 @@ function planoNivel1(L, A, lado) {
   const leste = parede(L - PAR, L, 0, A, ALT_EXT, { ext: true });
   const fundo = parede(PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
   const vDiv = MF + Math.round((A - MF - PAR) * 0.46);
-  const uS0 = uDiv + PAR, uS1 = L - PAR, vPa0 = MF, vPa1 = vDiv, vPr0 = vDiv + PAR, vPr1 = A - PAR;
+  const uS0 = uDiv + PI, uS1 = L - PAR, vPa0 = MF, vPa1 = vDiv, vPr0 = vDiv + PI, vPr1 = A - PAR;
   /* a parede entre o pátio e as salas é a fachada delas pro pátio: no
      modelo ela sobe até o telhado (na planta para em 2,60, e dali pra
      cima ninguém anda) */
@@ -238,7 +248,7 @@ function canteiro(ALT_PORTA) {
 }
 function planoNovo(L, A, N) {
   const m = v => Math.round(v * M);
-  const PAR = 9, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
+  const PAR = 9, PI = PAR_DENTRO, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
   const MURO = 72, ALT_EXT = 64, ALT = m(2.75);
   /* a garagem é um galpão mais alto: o ônibus tem 3,9 m com o ar em cima */
   const G_ALT = m(4.9), G_MURO = m(5.3), G_PORTA = m(4.3);
@@ -248,31 +258,31 @@ function planoNovo(L, A, N) {
   /* AS FAIXAS AO LONGO DA FACHADA: garagem, coluna A, pátio, coluna B */
   let u = PAR;
   const gar = K.baias ? { u0: u, u1: u + K.baias * baia } : null;
-  if (gar) u = gar.u1 + PAR;
+  if (gar) u = gar.u1 + PI;
   const colA = K.colA ? { u0: u, u1: u + m(K.colA) } : null;
-  if (colA) u = colA.u1 + PAR;
+  if (colA) u = colA.u1 + PI;
   const colB = { u0: U1 - m(K.colB), u1: U1 };
-  const pat = { u0: u, u1: colB.u0 - PAR };
+  const pat = { u0: u, u1: colB.u0 - PI };
   const eixo = Math.round((pat.u0 + pat.u1) / 2), g0 = eixo - PORTAO / 2, g1 = eixo + PORTAO / 2;
   /* onde o pátio acaba (no nível 4, na parede da academia): a porta de cada
      sala abre no trecho dele */
-  const vPat1 = K.academia ? V1 - m(K.academia) - PAR : V1;
+  const vPat1 = K.academia ? V1 - m(K.academia) - PI : V1;
 
   /* ---- a casca: a fachada (a da garagem mais alta), os lados e o fundo ---- */
-  const fachG = gar ? parede(0, gar.u1 + PAR, F0, MF, G_MURO, { fachada: true, ext: true }) : null;
-  const fachada = parede(gar ? gar.u1 + PAR : 0, L, F0, MF, MURO, { fachada: true, ext: true });
+  const fachG = gar ? parede(0, gar.u1 + PI, F0, MF, G_MURO, { fachada: true, ext: true }) : null;
+  const fachada = parede(gar ? gar.u1 + PI : 0, L, F0, MF, MURO, { fachada: true, ext: true });
   porta(fachada, eixo, PORTAO, { tipo: 'portao', vidro: true, abre: 1, b1: 53 });
   parede(0, PAR, 0, A, gar ? G_ALT : ALT_EXT, { ext: true });
   parede(L - PAR, L, 0, A, ALT_EXT, { ext: true });
-  const fundoG = gar ? parede(PAR, gar.u1 + PAR, A - PAR, A, G_ALT, { ext: true }) : null;
-  const fundo = parede(gar ? gar.u1 + PAR : PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
+  const fundoG = gar ? parede(PAR, gar.u1 + PI, A - PAR, A, G_ALT, { ext: true }) : null;
+  const fundo = parede(gar ? gar.u1 + PI : PAR, L - PAR, A - PAR, A, ALT_EXT, { ext: true });
 
   /* ---- A GARAGEM: uma baia por ônibus, com o portão de grade (pela grade
      a rua vê o ônibus), mais largo que o ônibus (2,55 m), e o ônibus de
      ré, com a frente pra rua ---- */
   const vagas = [];
   if (gar) {
-    parede(gar.u1, gar.u1 + PAR, MF, V1, G_ALT);
+    parede(gar.u1, gar.u1 + PI, MF, V1, G_ALT);
     for (let i = 0; i < K.baias; i++) {
       const c = gar.u0 + (i + 0.5) * baia;
       porta(fachG, c, Math.min(baia - m(0.2), m(3.2)), { tipo: 'garagem', b1: G_PORTA });
@@ -286,8 +296,8 @@ function planoNovo(L, A, N) {
      (a fachada deles pro pátio, que sobe até o telhado) com a porta de
      cada um, e as paredes entre eles ---- */
   const coluna = (col, lista, ladoDaPorta) => {
-    const wP = ladoDaPorta === 'u1' ? parede(col.u1, col.u1 + PAR, MF, V1, ALT, { fachadaPatio: true, altModelo: MURO - 1 })
-                                    : parede(col.u0 - PAR, col.u0, MF, V1, ALT, { fachadaPatio: true, altModelo: MURO - 1 });
+    const wP = ladoDaPorta === 'u1' ? parede(col.u1, col.u1 + PI, MF, V1, ALT, { fachadaPatio: true, altModelo: MURO - 1 })
+                                    : parede(col.u0 - PI, col.u0, MF, V1, ALT, { fachadaPatio: true, altModelo: MURO - 1 });
     let v = V0;
     lista.forEach(([nome, d], i) => {
       const v1 = d && i < lista.length - 1 ? v + m(d) : V1;
@@ -308,8 +318,8 @@ function planoNovo(L, A, N) {
         const j = cP + VAO / 2 + m(0.9);
         if (j + m(0.7) < v1) janelasPatio.push([wP, j, tipo]);
       }
-      if (i < lista.length - 1) parede(col.u0, col.u1, v1, v1 + PAR, ALT);
-      v = v1 + PAR;
+      if (i < lista.length - 1) parede(col.u0, col.u1, v1, v1 + PI, ALT);
+      v = v1 + PI;
     });
     return wP;
   };
@@ -388,7 +398,7 @@ function planoNovo(L, A, N) {
 export const ANDAR_5 = { h1: 4.7, laje: 0.2, pe: 2.9, plat: 3.4 };   // m: o piso de cima, a laje, o pé-direito e a platibanda de cima
 function planoNivel5(L, A) {
   const N = 5, m = v => Math.round(v * M);
-  const PAR = 9, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
+  const PAR = 9, PI = PAR_DENTRO, MF = 13, F0 = 2.5, VAO = 30, PORTAO = 56, ALT_PORTA = Math.round(2.10 * M);
   const H1 = m(ANDAR_5.h1), TERREO = H1 - m(ANDAR_5.laje);
   /* no térreo tudo sobe até o fundo da laje (a garagem pede 4,3 m de pé-direito) */
   const MURO = TERREO, ALT_EXT = TERREO, ALT = TERREO, G_ALT = TERREO, G_MURO = TERREO, G_PORTA = m(4.0);
@@ -397,7 +407,7 @@ function planoNivel5(L, A) {
   const baia = m(3.3), nB = 3, VAR = m(1.4), BR = m(1.8), ESC = m(1.1);
   const gar = { u0: PAR, u1: PAR + nB * baia };
   const colB = { u0: U1 - m(6.0), u1: U1 };
-  const pat = { u0: gar.u1 + PAR, u1: colB.u0 - PAR };
+  const pat = { u0: gar.u1 + PI, u1: colB.u0 - PI };
   const eixo = Math.round((pat.u0 + pat.u1) / 2), g0 = eixo - PORTAO / 2, g1 = eixo + PORTAO / 2;
 
   /* ---- O TÉRREO: a casca até a laje ---- */
@@ -409,7 +419,7 @@ function planoNivel5(L, A) {
   /* a garagem: três baias, o portão de grade de cada uma (3 m, o ônibus
      passa com folga), o basculante alto no fundo e no lado */
   const vagas = [];
-  T.parede(gar.u1, gar.u1 + PAR, MF, V1, TERREO);
+  T.parede(gar.u1, gar.u1 + PI, MF, V1, TERREO);
   for (let i = 0; i < nB; i++) {
     const c = gar.u0 + (i + 0.5) * baia;
     T.porta(fachada, c, baia - m(0.3), { tipo: 'garagem', b1: G_PORTA });
@@ -420,14 +430,14 @@ function planoNivel5(L, A) {
   T.comodo('GARAGEM', gar.u0, gar.u1, MF, V1, { lado: 'v0', c: (gar.u0 + gar.u1) / 2, w: baia }, 'garagem');
   /* a coluna de lá: o bar na frente (a porta de enrolar pra rua, a janela do
      lado), o patrimônio e a presidência com a porta pro pátio */
-  const wB = T.parede(colB.u0 - PAR, colB.u0, MF, V1, TERREO, { fachadaPatio: true });
+  const wB = T.parede(colB.u0 - PI, colB.u0, MF, V1, TERREO, { fachadaPatio: true });
   const vBar = MF + m(4.0), larg = m(2.2), cBar = colB.u0 + m(0.3) + larg / 2;
   T.porta(fachada, cBar, larg, { tipo: 'bar', b1: m(2.55) });
   T.comodo('BAR', colB.u0, colB.u1, MF, vBar, { lado: 'v0', c: cBar, w: larg }, 'bar');
   T.janela(wB, (MF + vBar) / 2, 0.9, 1.75, 2.3, 'basc');
   T.janela(leste, (MF + vBar) / 2 + m(0.4), 1.2, 1.1, 2.1, 'jan_grade');
-  T.parede(colB.u0, colB.u1, vBar, vBar + PAR, TERREO);
-  const vPa0 = vBar + PAR, vPa1 = vPa0 + m(2.7), vPr0 = vPa1 + PAR;
+  T.parede(colB.u0, colB.u1, vBar, vBar + PI, TERREO);
+  const vPa0 = vBar + PI, vPa1 = vPa0 + m(2.7), vPr0 = vPa1 + PI;
   for (const [nome, v0, v1] of [['PATRIMÔNIO', vPa0, vPa1], ['PRESIDÊNCIA', vPr0, V1]]) {
     const cP = Math.min(v0 + VAO / 2 + m(0.35), (v0 + v1) / 2);
     T.porta(wB, cP, VAO, { abre: 1, nome });
@@ -435,7 +445,7 @@ function planoNivel5(L, A) {
     const j = cP + VAO / 2 + m(0.9);
     if (j + m(0.7) < v1) nome === 'PATRIMÔNIO' ? T.janela(wB, j, 0.7, 1.7, 2.3, 'basc') : T.janela(wB, j, 1.1, 1.1, 2.15, 'jan_grade');
   }
-  T.parede(colB.u0, colB.u1, vPa1, vPa1 + PAR, TERREO);
+  T.parede(colB.u0, colB.u1, vPa1, vPa1 + PI, TERREO);
   T.janela(leste, (vPa0 + vPa1) / 2, 0.7, 1.7, 2.3, 'basc');
   T.janela(leste, (vPr0 + V1) / 2, 1.2, 1.1, 2.1, 'jan_grade');
   T.janela(fundo, (colB.u0 + colB.u1) / 2, 1.2, 1.15, 2.2, 'jan_grade');
@@ -458,19 +468,19 @@ function planoNivel5(L, A) {
   const oeste2 = S.parede(0, PAR, 0, A, PLAT, { ext: true });
   const leste2 = S.parede(L - PAR, L, 0, A, PLAT, { ext: true });
   const fundoW = S.parede(PAR, pat.u0, A - PAR, A, PLAT, { ext: true });
-  const fundoE = S.parede(colB.u0 - PAR, L - PAR, A - PAR, A, PLAT, { ext: true });
+  const fundoE = S.parede(colB.u0 - PI, L - PAR, A - PAR, A, PLAT, { ext: true });
   /* a mureta no fim de cada varanda, no fundo */
   S.parede(pat.u0, pat.u0 + VAR, A - PAR, A, m(1.1), { ext: true });
   S.parede(pat.u1 - VAR, pat.u1, A - PAR, A, m(1.1), { ext: true });
   /* o bloco de cá (em cima da garagem): a academia na frente, a hospedagem
      no fundo; a parede deles pra varanda, com as portas e as janelas */
   const vDivA = MF + m(6.2), wA = S.parede(gar.u1, pat.u0, MF, V1, PLAT, { fachadaPatio: true });
-  S.parede(gar.u0, gar.u1, vDivA, vDivA + PAR, PE);
-  const cAc = MF + m(2.4), cHo = vDivA + PAR + VAO / 2 + m(0.35);
+  S.parede(gar.u0, gar.u1, vDivA, vDivA + PI, PE);
+  const cAc = MF + m(2.4), cHo = vDivA + PI + VAO / 2 + m(0.35);
   S.porta(wA, cAc, VAO, { abre: -1, nome: 'ACADEMIA' });
   S.porta(wA, cHo, VAO, { abre: -1, nome: 'HOSPEDAGEM' });
   S.comodo('ACADEMIA', gar.u0, gar.u1, MF, vDivA, { lado: 'u1', c: cAc, w: VAO }, 'academia');
-  S.comodo('HOSPEDAGEM', gar.u0, gar.u1, vDivA + PAR, V1, { lado: 'u1', c: cHo, w: VAO });
+  S.comodo('HOSPEDAGEM', gar.u0, gar.u1, vDivA + PI, V1, { lado: 'u1', c: cHo, w: VAO });
   for (const f of [0.55, 0.85]) S.janela(wA, MF + (vDivA - MF) * f, 1.2, 1.0, 2.1, 'jan_alu4');
   S.janela(wA, cHo + VAO / 2 + m(1.4), 1.0, 1.1, 2.1, 'jan_grade');
   for (const i of [0, 2]) S.janela(fachada2, gar.u0 + (i + 0.5) * baia, 1.6, 0.9, 2.2, 'jan_alu4');
@@ -479,13 +489,13 @@ function planoNivel5(L, A) {
   for (const f of [0.3, 0.7]) S.janela(fundoW, gar.u0 + (gar.u1 - gar.u0) * f, 0.8, 1.6, 2.2, 'basc');
   /* o bloco de lá (em cima da coluna): o marketing na frente, o setor
      criativo, grande, no fundo */
-  const vDivB = MF + m(3.2), wE = S.parede(colB.u0 - PAR, colB.u0, MF, V1, PLAT, { fachadaPatio: true });
-  S.parede(colB.u0, colB.u1, vDivB, vDivB + PAR, PE);
-  const cMk = MF + m(2.2), cCr = vDivB + PAR + VAO / 2 + m(0.35);
+  const vDivB = MF + m(3.2), wE = S.parede(colB.u0 - PI, colB.u0, MF, V1, PLAT, { fachadaPatio: true });
+  S.parede(colB.u0, colB.u1, vDivB, vDivB + PI, PE);
+  const cMk = MF + m(2.2), cCr = vDivB + PI + VAO / 2 + m(0.35);
   S.porta(wE, cMk, VAO, { abre: 1, nome: 'MARKETING' });
   S.porta(wE, cCr, VAO, { abre: 1, nome: 'SETOR CRIATIVO' });
   S.comodo('MARKETING', colB.u0, colB.u1, MF, vDivB, { lado: 'u0', c: cMk, w: VAO });
-  S.comodo('SETOR CRIATIVO', colB.u0, colB.u1, vDivB + PAR, V1, { lado: 'u0', c: cCr, w: VAO });
+  S.comodo('SETOR CRIATIVO', colB.u0, colB.u1, vDivB + PI, V1, { lado: 'u0', c: cCr, w: VAO });
   for (const f of [0.45, 0.8]) S.janela(wE, vDivB + (V1 - vDivB) * f, 1.2, 1.0, 2.1, 'jan_alu4');
   S.janela(fachada2, (colB.u0 + colB.u1) / 2, 1.2, 1.0, 2.1, 'jan_grade');
   for (const f of [0.35, 0.72]) S.janela(leste2, vDivB + (V1 - vDivB) * f, 1.6, 0.9, 2.2, 'jan_alu4');
@@ -2380,6 +2390,14 @@ function paredes3d(ctx) {
         const pts = X ? [[s0, C1], [s1, C1], [s1, C0], [s0, C0]] : [[C0, s1], [C1, s1], [C1, s0], [C0, s0]];
         B.tampa(pts, y1, topo.k, false, { tinta: topo.tinta });
         if (y0 > 1e-4) B.tampa(pts, y0, 'lisa', true, { tinta: vao && vao.tipo === 'balcao' ? CREME : CLARO });
+        /* O MIOLO DA PAREDE CORTADA (06/10/2026): com a câmera cortando a
+           sede a 2,2 m do piso, a tampa de cima da parede some junto e ela
+           ficava oca — duas faces com o chão no meio, o "vão sem sentido"
+           que o dono viu. Uma tampa escura por dentro, logo abaixo do corte,
+           faz a parede cortada aparecer cheia, como na planta; com o
+           telhado no lugar ela fica escondida dentro da parede */
+        const yc = PISO + MIOLO_Y;
+        if (y0 < yc - 1e-3 && y1 > yc + 0.05) B.tampa(pts, yc, 'lisa', false, { tinta: MIOLO_COR });
       }
       /* a ponta do trecho: ombreira de vão, ou ponta de parede solta */
       for (const [s, lado] of [[s0, -1], [s1, +1]]) {

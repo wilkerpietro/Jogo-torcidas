@@ -486,7 +486,11 @@ export function cenaDaFesta(l, opc = {}) {
     gatilho: { ...pt(PL.gatilho), raio: Math.round(PL.gatilho.raio * M), lado: 'mandante', soZona: true,
                rot: 'PORTÃO DA CASA', espera: 'a resenha ainda não te viu',
                aviso: 'gritaram no portão — a casa inteira veio pra cima' },
-    pmPostos: [{ x: 80, y: Math.round(meioDaRua) }, { x: TW - 80, y: Math.round(meioDaRua) }]
+    pmPostos: [{ x: 80, y: Math.round(meioDaRua) }, { x: TW - 80, y: Math.round(meioDaRua) }],
+    /* A FUGA NO MEIO DA RUA (o dono, 06/10/2026: "somente no meio da
+       rua"): o eixo da rua de areia nas duas pontas, como no jogo de feed —
+       nada de sumir na beira da piscina nem no quintal */
+    fugas: [{ x: 20, y: Math.round(meioDaRua), raio: 34 }, { x: TW - 20, y: Math.round(meioDaRua), raio: 34 }]
   };
   /* o chão de cada ponto do tabuleiro (m): o piso da casa, o deck, a areia */
   const dentro = (r, x, z) => x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1;

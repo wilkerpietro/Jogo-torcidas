@@ -33,6 +33,8 @@
    nossa saída é a rua de onde a gente veio.
    ========================================================= */
 
+import { fugasNaRua } from './fuga_rua.js';
+
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma das outras brigas da cidade)
 const MAX_PM = 12;                      // os postos da PM no combate (os PMs do cordão mais perto do meio)
@@ -178,6 +180,9 @@ export function brigaNosArredores(ctx, plano, o) {
     }
     if (fim) for (let k = 0; k < n; k++) if (!visto[k]) malha[k] = 0;
   }
+  /* AS FUGAS NO MEIO DA RUA (fuga_rua.js): o eixo de cada rua na borda */
+  const fugas = fugasNaRua({ noMundo, malha, COLS, ROWS, pxm: pxM, W: TAB.W, H: TAB.H, CEL: TAB.CEL },
+                           ctx.P && ctx.P.ehAsfalto ? (wx, wz) => ctx.P.ehAsfalto(wx, wz) : null);
   const linhas = [];
   for (let j = 0; j < ROWS; j++) {
     const runs = []; let v0 = 0, n = 0;
@@ -240,7 +245,8 @@ export function brigaNosArredores(ctx, plano, o) {
     saida: fundo
       ? { perto: 'Sumir na rua', longe: 'Rua de fuga (leve o líder)', feito: 'sua torcida bateu e sumiu na rua de onde veio', dica: 'Leve o líder de volta pela rua de onde veio.' }
       : { perto: 'Seguir pro portão', longe: 'Pro portão (leve o líder)', feito: 'sua torcida largou o cordão e seguiu pro portão', dica: 'Leve o líder pela rua do portão da sua torcida.' },
-    spawns, entradas, pmPostos
+    spawns, entradas, pmPostos,
+    ...(fugas.length ? { fugas } : {})
   };
   const chao = (x, y) => { const [wx, wz] = noMundo(x, y); return (ctx.chaoDaRua ? ctx.chaoDaRua(wx, wz) : 0) / M; };
   return { cena, noMundo, doMundo, u, v: vv, chao, escala: K, noTabuleiro, P, malha, COLS, ROWS, pxM };

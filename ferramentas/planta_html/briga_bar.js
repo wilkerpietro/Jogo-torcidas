@@ -36,6 +36,7 @@
    briga.
    ========================================================= */
 import { planoDoBar } from './casas3d.js';
+import { fugasNaRua, fugasNosEixos, pontaSemCruzamento } from './fuga_rua.js';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma da caminhada)
@@ -70,25 +71,48 @@ export function brigaNoBar(ctx, bar, o = {}) {
   const deLote = (x, z) => doMundo(...doLote(x, z));
   const dentro = (x, y, m = 0) => x > m && y > m && x < TAB.W - m && y < TAB.H - m;
 
+  /* OS BECOS POR PERTO (o boteco da favela que virou bar da torcida: a
+     frente dele dá pro beco, e o beco é o chão da briga como a rua é na
+     cidade): o eixo reto de cada um e a largura, os que passam a até 40 m */
+  const distSeg = (x, z, a, b) => {
+    const dx = b[0] - a[0], dz = b[1] - a[1], L2 = dx * dx + dz * dz || 1;
+    const t = Math.max(0, Math.min(1, ((x - a[0]) * dx + (z - a[1]) * dz) / L2));
+    return Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t);
+  };
+  const becos = [];
+  if (P && P.favelas) for (const fv of P.favelas()) for (const b of fv.becos || []) {
+    const a = b.pts[0], z = b.pts[b.pts.length - 1];
+    if (distSeg(mx, mz, a, z) < 40 * M) becos.push({ a, z, w: b.w });
+  }
+  const noBeco = (wx, wz, folga = 0) => becos.some(b => distSeg(wx, wz, b.a, b.z) <= b.w / 2 + folga);
+
   /* A RUA DA FRENTE E A TRANSVERSAL: o meio de cada uma, achado no asfalto
-     (da divisa do lote pra fora, até o asfalto acabar). Sem o asfalto na
-     planta, a conta da rua de 8 m depois de 2,5 m de calçada */
+     (ou no beco) da divisa do lote pra fora, até ele acabar. Sem o asfalto
+     na planta, a conta da rua de 8 m depois de 2,5 m de calçada. A
+     transversal só vale colada no lote (até `ate` m: a calçada e o
+     meio-fio), não a rua do quarteirão seguinte */
   const asfalto = P && P.ehAsfalto ? (wx, wz) => P.ehAsfalto(wx, wz) : null;
-  const meioDaRua = (x0, z0, dx, dz) => {
+  const ehRua = (wx, wz) => (asfalto && asfalto(wx, wz)) || noBeco(wx, wz);
+  const meioDaRua = (x0, z0, dx, dz, ate = Infinity) => {
+    if (!asfalto && !becos.length) return 2.5 + 4;
     let a = null, b = null;
-    if (asfalto) for (let k = 0; k <= 60; k++) {
+    for (let k = 0; k <= 60; k++) {
       const d = k * 0.35, [wx, wz] = [x0 + dx * d * M, z0 + dz * d * M];
-      if (asfalto(wx, wz)) { if (a === null) a = d; b = d; } else if (a !== null) break;
+      if (ehRua(wx, wz)) { if (a === null) { if (d > ate) break; a = d; } b = d; } else if (a !== null) break;
     }
-    return a === null ? 2.5 + 4 : (a + b) / 2;
+    return a === null ? null : (a + b) / 2;
   };
   /* (a rua da frente: do meio da testada; a transversal: da divisa da esquina, no meio do fundo) */
   const [fw0, fz0] = doLote(W / 2, 0);
-  const dFrente = meioDaRua(fw0, fz0, F.nx, F.nz);
+  const dFrente = meioDaRua(fw0, fz0, F.nx, F.nz) ?? 2.5 + 4;
   const xEsq = s > 0 ? W : 0, [ew0, ez0] = doLote(xEsq, -D / 2);
-  const dTrans = meioDaRua(ew0, ez0, F.rx * s, F.rz * s);
+  /* O BAR SEM ESQUINA (06/10/2026: o bar que o jogo pôs numa casa do meio
+     do quarteirão, o boteco da favela): do lado da "esquina" não tem rua
+     colada — o ataque vem pela rua da frente, da ponta do lado de lá */
+  const dTrans = meioDaRua(ew0, ez0, F.rx * s, F.rz * s, 5);
+  const semEsquina = dTrans === null;
   const yRua = by + dFrente * pxm;                         // o meio da rua da frente, no tabuleiro
-  const xTrans = deLote(xEsq, 0)[0] + s * dTrans * pxm;    // o meio da transversal
+  const xTrans = semEsquina ? null : deLote(xEsq, 0)[0] + s * dTrans * pxm;    // o meio da transversal
 
   /* A MÁSCARA: a célula de 8 px anda se o corpo (12 cm; o do combate tem 20
      e encosta na parede) cabe no meio dela, na grade do passo, e ela é rua,
@@ -100,7 +124,7 @@ export function brigaNoBar(ctx, bar, o = {}) {
   const noLote = (wx, wz) => wx >= l.x0 - folga && wx <= l.x1 + folga && wz >= l.y0 - folga && wz <= l.y1 + folga;
   for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
     const [wx, wz] = noMundo((i + 0.5) * TAB.CEL, (j + 0.5) * TAB.CEL);
-    malha[j * COLS + i] = g.cabe(wx, wz, r) && (noLote(wx, wz) || naRua(wx, wz)) && !(ctx.noEstadio && ctx.noEstadio(wx, wz)) ? 1 : 0;
+    malha[j * COLS + i] = g.cabe(wx, wz, r) && (noLote(wx, wz) || naRua(wx, wz) || noBeco(wx, wz, 0.5 * M)) && !(ctx.noEstadio && ctx.noEstadio(wx, wz)) ? 1 : 0;
   }
   const livre = (x, y) => { const i = Math.floor(x / TAB.CEL), j = Math.floor(y / TAB.CEL); return i >= 0 && j >= 0 && i < COLS && j < ROWS && malha[j * COLS + i] === 1; };
   /* o ponto andável mais perto de (x, y), em espiral (px) */
@@ -118,11 +142,42 @@ export function brigaNoBar(ctx, bar, o = {}) {
   const pSalao = soltar(...deLote(PL.meioDoSalao.x, PL.meioDoSalao.z), 60);
   const pVaranda = soltar(...deLote(PL.meioDaVaranda.x, PL.meioDaVaranda.z), 60);
   if (!pBalcao || !pSalao) return { erro: 'o salão do bar não é andável (a porta de enrolar está abaixada?)' };
-  /* quem ataca desce a transversal: o 1º escalão lá em cima, o 2º no meio do caminho pra esquina */
-  const pA1 = soltar(xTrans, 80), pA2 = soltar(xTrans, Math.round((80 + by) / 2));
-  if (!pA1 || !pA2) return { erro: 'a transversal do bar não cabe no tabuleiro' };
+  /* a ponta da rua da frente pro lado `sentido` (±1 no x): andando pelo
+     meio dela a partir do bar até a margem, o último chão achado (o carro
+     parado no meio não corta; 50 px sem chão, sim) — a rua (o beco) que
+     acaba antes da borda acaba aí */
+  const xBar = deLote(W / 2, 0)[0];
+  const pontaDaRua = (sentido, m = 70) => {
+    let ult = null, sem = 0;
+    for (let x = xBar; sentido > 0 ? x <= TAB.W - m : x >= m; x += sentido * 8) {
+      const q = soltar(x, yRua, 40);
+      if (q && Math.abs(q[1] - yRua) < 1.6 * pxm) { ult = q; sem = 0; } else if (++sem > 6) break;
+    }
+    return ult && Math.abs(ult[0] - xBar) >= 6 * pxm ? ult : null;
+  };
+  /* OS DOIS CAMINHOS DO ATAQUE: descendo a transversal (o 1º escalão no
+     fim dela, andando pelo meio a partir da rua da frente até onde o chão
+     vai — o beco da favela acaba antes da borda —, o 2º no meio do caminho
+     pra esquina) ou, sem ela, pela rua da frente, da ponta do lado da
+     "esquina" (o bar fica puxado pro outro lado: é o lado com mais rua), o
+     2º escalão 4,5 m atrás. Vale a transversal quando dela se chega no
+     balcão andando (o teste vem depois da máscara) */
+  const pontaDaTransversal = () => {
+    let ult = null, sem = 0;
+    for (let y = Math.round(yRua); y >= 80; y -= 8) {
+      const q = soltar(xTrans, y, 40);
+      if (q && Math.abs(q[0] - xTrans) < 1.6 * pxm) { ult = q; sem = 0; } else if (++sem > 6) break;
+    }
+    return ult && yRua - ult[1] >= 8 * pxm ? ult : null;
+  };
+  const doisEscaloes = (a1, a2) => a1 && a2 ? [a1, a2] : null;
+  const tA1 = semEsquina ? null : pontaDaTransversal();
+  const pelaTransversal = tA1 && doisEscaloes(tA1, soltar(xTrans, Math.round((tA1[1] + by) / 2)));
+  const fA1 = soltar(s > 0 ? TAB.W - 90 : 90, yRua) || pontaDaRua(s, 90);
+  const pelaFrente = fA1 && doisEscaloes(fA1, soltar(fA1[0] - s * 4.5 * pxm, yRua + 1.2 * pxm));
+  if (!pelaTransversal && !pelaFrente) return { erro: 'nem a transversal nem a rua da frente do bar cabem no tabuleiro' };
   /* o fim da rua da frente, do lado de lá da esquina: a saída de quem defende */
-  const pFuga = soltar(s > 0 ? 70 : TAB.W - 70, yRua) || soltar(s > 0 ? 200 : TAB.W - 200, yRua);
+  const pFuga = soltar(s > 0 ? 70 : TAB.W - 70, yRua) || soltar(s > 0 ? 200 : TAB.W - 200, yRua) || pontaDaRua(-s);
   if (!pFuga) return { erro: 'a rua da frente do bar não cabe no tabuleiro' };
 
   /* SÓ O CHÃO LIGADO A QUEM BRIGA: o que se alcança andando do balcão, do
@@ -135,7 +190,7 @@ export function brigaNoBar(ctx, bar, o = {}) {
       const i = Math.floor(p[0] / TAB.CEL), j = Math.floor(p[1] / TAB.CEL), c = j * COLS + i;
       if (i >= 0 && j >= 0 && i < COLS && j < ROWS && malha[c] && !visto[c]) { visto[c] = 1; fila[fim++] = c; }
     };
-    for (const p of [pBalcao, pSalao, pVaranda, pA1, pA2, pFuga]) semente(p);
+    for (const p of [pBalcao, pSalao, pVaranda, pFuga, ...(pelaTransversal || []), ...(pelaFrente || [])]) semente(p);
     while (ini < fim) {
       const c = fila[ini++], i = c % COLS, j = (c - i) / COLS;
       for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
@@ -147,28 +202,86 @@ export function brigaNoBar(ctx, bar, o = {}) {
     for (let k = 0; k < n; k++) if (!visto[k]) malha[k] = 0;
   }
   /* quem ataca tem de chegar no balcão andando (senão a cena não fecha): a
-     porta de enrolar abaixada, ou um vão estreito demais, fica aqui */
-  const ligado = (a, b) => {
+     porta de enrolar abaixada, ou um vão estreito demais, fica aqui. O
+     andar é o do motor (arredores.js, `construirMalhaCorpo`): a célula só
+     passa com o corpo (5 px pra cada lado) — ela e as quatro vizinhas no
+     chão; o vão de uma ou duas células, que a máscara deixa, o boneco não
+     atravessa (o 'PORTÃO SELADO' do bar na favela, 06/10/2026). A ponta
+     (quem nasce e o alvo) vale a célula de corpo mais perto, a até 6 */
+  const corpo = c => {
+    const i = c % COLS, j = (c - i) / COLS;
+    return i > 0 && j > 0 && i < COLS - 1 && j < ROWS - 1 && malha[c] && malha[c - 1] && malha[c + 1] && malha[c - COLS] && malha[c + COLS];
+  };
+  const celDeCorpo = p => {
+    const ci = Math.floor(p[0] / TAB.CEL), cj = Math.floor(p[1] / TAB.CEL);
+    let melhor = -1, md = Infinity;
+    for (let dj = -6; dj <= 6; dj++) for (let di = -6; di <= 6; di++) {
+      const i = ci + di, j = cj + dj;
+      if (i < 0 || j < 0 || i >= COLS || j >= ROWS || !corpo(j * COLS + i)) continue;
+      const q = di * di + dj * dj;
+      if (q < md) { md = q; melhor = j * COLS + i; }
+    }
+    return melhor;
+  };
+  /* O ALVO QUE O CORPO ALCANÇA (06/10/2026): no bar estreito (a casa do
+     meio do quarteirão que virou bar, o boteco da favela: 7 m de frente ou
+     menos) o canto do balcão fica fechado pro corpo entre o balcão, as
+     banquetas e o freezer, e as mesas tapam a varanda. O alvo de quem
+     ataca vira o ponto do salão mais perto do balcão que se alcança
+     andando de onde ele chega (no bar largo, o próprio balcão); os donos
+     da casa nascem no salão onde se alcança a rua, e a varanda só vale
+     quando dela se sai */
+  const caixa = r => {
+    const a = deLote(r.x[0], r.z[0]), b = deLote(r.x[1], r.z[1]);
+    return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]), y0: Math.min(a[1], b[1]), y1: Math.max(a[1], b[1]) };
+  };
+  const cxSalao = caixa(PL.salao), cxVaranda = caixa(PL.varanda);
+  const alcancavel = (de, perto, cx) => {
+    const c0 = celDeCorpo(de);
+    if (c0 < 0) return null;
     const n = COLS * ROWS, visto = new Uint8Array(n), fila = new Int32Array(n);
-    const cel = p => Math.floor(p[1] / TAB.CEL) * COLS + Math.floor(p[0] / TAB.CEL);
-    const c0 = cel(a), c1 = cel(b);
-    let ini = 0, fim = 0;
-    if (!malha[c0]) return false;
+    let ini = 0, fim = 0, melhor = null, md = Infinity;
     visto[c0] = 1; fila[fim++] = c0;
     while (ini < fim) {
-      const c = fila[ini++];
-      if (c === c1) return true;
-      const i = c % COLS, j = (c - i) / COLS;
+      const c = fila[ini++], i = c % COLS, j = (c - i) / COLS, x = (i + 0.5) * TAB.CEL, y = (j + 0.5) * TAB.CEL;
+      if (x >= cx.x0 && x <= cx.x1 && y >= cx.y0 && y <= cx.y1) {
+        const d = Math.hypot(x - perto[0], y - perto[1]);
+        if (d < md) { md = d; melhor = [x, y]; }
+      }
       for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const ii = i + di, jj = j + dj, k = jj * COLS + ii;
-        if (ii < 0 || jj < 0 || ii >= COLS || jj >= ROWS || visto[k] || !malha[k]) continue;
+        if (ii < 0 || jj < 0 || ii >= COLS || jj >= ROWS || visto[k] || !corpo(k)) continue;
         visto[k] = 1; fila[fim++] = k;
       }
     }
-    return false;
+    return melhor;
   };
-  if (!ligado(pA1, pBalcao)) return { erro: 'da transversal não se chega no balcão andando' };
-  if (!ligado(pSalao, pFuga)) return { erro: 'do salão não se chega no fim da rua andando' };
+  /* (o bar mais estreito — 6 m, a porta do lado dando na casa do vizinho
+     e as mesas tapando a varanda — não abre o salão pro corpo: o alvo vira
+     a PORTA DO BAR, o ponto do lote mais perto do balcão que se alcança) */
+  const cxLote = caixa({ x: [0, W], z: [-D, 0] });
+  let ataque = null, alvo = null, naPorta = false;
+  for (const op of [pelaTransversal, pelaFrente]) {
+    const a = op && alcancavel(op[0], pBalcao, cxSalao);
+    if (a && Math.hypot(a[0] - pBalcao[0], a[1] - pBalcao[1]) <= 3.5 * pxm) { ataque = op; alvo = a; break; }
+  }
+  if (!ataque) for (const op of [pelaTransversal, pelaFrente]) {
+    const a = op && alcancavel(op[0], pBalcao, cxLote);
+    if (a) { ataque = op; alvo = a; naPorta = true; break; }
+  }
+  if (!ataque) return { erro: 'da rua não se chega no bar andando' };
+  const [pA1, pA2] = ataque, viaFrente = ataque === pelaFrente;
+  const pDonos = alcancavel(pFuga, pSalao, cxSalao) || alcancavel(pFuga, pSalao, cxLote);
+  if (!pDonos) return { erro: 'do salão não se chega no fim da rua andando' };
+  const pVar = pVaranda && alcancavel(pFuga, pVaranda, cxVaranda);
+  const pNaVaranda = pVar && Math.hypot(pVar[0] - pVaranda[0], pVar[1] - pVaranda[1]) <= 1.5 * pxm ? pVar : null;
+  /* AS FUGAS NO MEIO DA RUA (fuga_rua.js): o eixo da rua da frente e da
+     transversal (e de quem mais cruzar a borda) — nada de sumir no salão;
+     no boteco da favela, também o eixo dos becos onde eles saem da cena */
+  const Bt = { noMundo, malha, COLS, ROWS, pxm, W: TAB.W, H: TAB.H, CEL: TAB.CEL };
+  const fugas = fugasNaRua(Bt, asfalto);
+  for (const f of becos.length ? fugasNosEixos(Bt, becos.map(b => [doMundo(b.a[0], b.a[1]), doMundo(b.z[0], b.z[1])]), { pontaVale: pontaSemCruzamento(becos, noMundo, M) }) : [])
+    if (!fugas.some(q => Math.hypot(q.x - f.x, q.y - f.y) < 3 * pxm)) fugas.push(f);
   const linhas = [];
   for (let j = 0; j < ROWS; j++) {
     const runs = []; let v0 = 0, n = 0;
@@ -185,20 +298,31 @@ export function brigaNoBar(ctx, bar, o = {}) {
   const spawns = [
     { id: ladoA + '1', rot: '1º ESCALÃO', lado: ladoA, ...R(pA1), jogador: nosAtacamos, entrada: 'balcao' },
     { id: ladoA + '2', rot: '2º ESCALÃO', lado: ladoA, ...R(pA2), entrada: 'balcao' },
-    { id: ladoD + '1', rot: 'DONOS DA CASA', lado: ladoD, ...R(pSalao), guarda: true, jogador: !nosAtacamos, entrada: 'fuga' },
-    ...(pVaranda ? [{ id: ladoD + '2', rot: 'NA VARANDA', lado: ladoD, ...R(pVaranda), guarda: true, entrada: 'fuga' }] : [])
+    { id: ladoD + '1', rot: 'DONOS DA CASA', lado: ladoD, ...R(pDonos), guarda: true, jogador: !nosAtacamos, entrada: 'fuga' },
+    ...(pNaVaranda ? [{ id: ladoD + '2', rot: 'NA VARANDA', lado: ladoD, ...R(pNaVaranda), guarda: true, entrada: 'fuga' }] : [])
   ];
   const entradas = [
     /* o alvo é o balcão, lá no fundo: tem de atravessar o salão */
-    { id: 'balcao', rot: 'BALCÃO DO BAR', lado: ladoA, ...R(pBalcao), raio: 40, dir: [0, -1] },
+    { id: 'balcao', rot: naPorta ? 'PORTA DO BAR' : 'BALCÃO DO BAR', lado: ladoA, ...R(alvo), raio: 40, dir: [0, -1] },
     { id: 'fuga', rot: 'FIM DA RUA', lado: ladoD, ...R(pFuga), raio: 46, dir: [-s, 0] }
   ];
   /* A FAIXA DE QUEM DEFENDE, na parede de fora da esquina (o ponto é na
      calçada da transversal, rente à parede; `dir` aponta pra parede). O
      pano tem 3 m, e a bandeira, quando é ela, fica do lado, na mesma parede */
-  const pe = PL.paredeDaEsquina, lenF = Math.round(Math.min(118, Math.max(70, (pe.comp - 0.6) * pxm)));
-  const pF = soltar(...deLote(pe.x + s * 0.42, pe.z), 40);
-  const faixas = pF ? { [ladoD]: { ...R(pF), len: lenF, dir: [-s, 0] } } : {};
+  const pe = PL.paredeDaEsquina;
+  let faixas = {};
+  if (!viaFrente) {
+    const lenF = Math.round(Math.min(118, Math.max(70, (pe.comp - 0.6) * pxm)));
+    const pF = soltar(...deLote(pe.x + s * 0.42, pe.z), 40);
+    if (pF) faixas = { [ladoD]: { ...R(pF), len: lenF, dir: [-s, 0] } };
+  } else {
+    /* (o ataque pela rua da frente: a parede do lado não dá pra ele — sem
+       esquina, é a do vizinho —, e o pano fica em pé na frente da varanda,
+       virado pra rua por onde o ataque vem) */
+    const va = PL.varanda, lenF = Math.round(Math.min(118, Math.max(70, (Math.abs(va.x[1] - va.x[0]) - 0.8) * pxm)));
+    const pF = soltar(...deLote((va.x[0] + va.x[1]) / 2, va.z[1] + 0.35), 40);
+    if (pF) faixas = { [ladoD]: { ...R(pF), len: lenF, dir: [0, -1] } };
+  }
   /* o gatilho: a calçada da frente do bar, da varanda até a esquina */
   const pG = deLote(W / 2, 1.2);
   const gatilho = { x: Math.round(pG[0]), y: Math.round(pG[1]), raio: Math.round(4.6 * pxm), lado: ladoA,
@@ -214,15 +338,17 @@ export function brigaNoBar(ctx, bar, o = {}) {
     /* quem defende se reparte entre o salão e a varanda */
     espalharBonde: ladoD,
     saida: nosAtacamos
-      ? { perto: 'Tomar o bar', longe: 'Balcão do bar (leve o líder)', feito: 'sua torcida tomou o bar deles', dica: 'Leve o líder pra dentro, até o balcão.' }
+      ? { perto: 'Tomar o bar', longe: (naPorta ? 'Porta' : 'Balcão') + ' do bar (leve o líder)', feito: 'sua torcida tomou o bar deles',
+          dica: naPorta ? 'Leve o líder até a porta do bar.' : 'Leve o líder pra dentro, até o balcão.' }
       : { perto: 'Largar o bar', longe: 'Fim da rua (leve o líder)', feito: 'sua torcida largou o bar e saiu pela rua', dica: 'Pra largar o bar, leve o líder até o fim da rua.' },
-    spawns, entradas, faixas, gatilho, pmPostos
+    spawns, entradas, faixas, gatilho, pmPostos,
+    ...(fugas.length ? { fugas } : {})
   };
   const chao = (x, y) => { const [wx, wz] = noMundo(x, y); return (ctx.chaoDaRua ? ctx.chaoDaRua(wx, wz) : 0) / M; };
   const [px, pz] = doLote(PL.meio.x, PL.meio.z);
   /* (os pontos do salão no tabuleiro: as portas de enrolar, pro teste e pra quem quiser guiar alguém lá dentro) */
   const pontos = { portas: PL.portas.map(p => R(deLote(p.x, p.z))), portaLado: PL.portaLado ? R(deLote(PL.portaLado.x, PL.portaLado.z)) : null,
-                   balcao: R(pBalcao), salao: R(pSalao), varanda: pVaranda ? R(pVaranda) : null };
+                   balcao: R(alvo), salao: R(pDonos), varanda: pNaVaranda ? R(pNaVaranda) : null };
   return { cena, noMundo, doMundo, u, v, chao, escala: K, predio: { x: px, z: pz }, plano: PL, bar, pontos,
            malha, COLS, ROWS, ruas: { frente: dFrente, transversal: dTrans } };
 }

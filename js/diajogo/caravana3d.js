@@ -118,7 +118,10 @@ function planoDoPosto(op = {}) {
       { id: 'ent_mandante', rot: 'PISTA', lado: 'mandante', x: 260, y: 900, raio: 48, dir: [-1, 0] },
       { id: 'ent_visitante', rot: 'ÔNIBUS', lado: 'visitante', x: 1276, y: 880, raio: 48, dir: [1, 0] }
     ],
-    pmPostos: [{ x: 120, y: 500 }, { x: 1380, y: 880 }]
+    pmPostos: [{ x: 120, y: 500 }, { x: 1380, y: 880 }],
+    /* A FUGA NO MEIO DA PISTA (o dono, 06/10/2026: "somente no meio da
+       rua"), as do jogo de feed: o eixo da rodovia nas duas pontas */
+    fugas: [{ x: 20, y: 975, raio: 34 }, { x: 1516, y: 975, raio: 34 }]
   };
   return P;
 }
@@ -154,7 +157,9 @@ function planoDaEstrada(op = {}) {
       { id: 'ent_mandante', rot: 'PISTA OESTE', lado: 'mandante', x: 40, y: 584, raio: 48, dir: [-1, 0] },
       { id: 'ent_visitante', rot: 'PISTA LESTE', lado: 'visitante', x: 1496, y: 584, raio: 48, dir: [1, 0] }
     ],
-    pmPostos: [{ x: 400, y: 470 }, { x: 1100, y: 540 }]
+    pmPostos: [{ x: 400, y: 470 }, { x: 1100, y: 540 }],
+    /* (a fuga no meio da pista, nas duas pontas: as do jogo de feed) */
+    fugas: [{ x: 20, y: 512, raio: 34 }, { x: 1516, y: 512, raio: 34 }]
   };
   return P;
 }
