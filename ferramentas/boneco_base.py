@@ -543,14 +543,111 @@ def engrossar():
     eles e a barra é a borda do pano, vista por baixo."""
     ROUPA = {IDX[m] for m in ('camisa', 'faixa', 'gola', 'punho', 'punho2')}
     CAL = IDX['calca']
+    # a redução deixa o fundo do calção com triângulos de 15 cm: um vértice
+    # afundado no início do vinco das nádegas puxava uma aresta comprida e
+    # desenhava uma linha. Subdivide o calção uma vez antes de vestir.
+    global braco_v
+    # Só no modelo leve (o detalhado já é denso) e só na faixa do quadril,
+    # onde ficam as nádegas e o gancho.
+    if LEVE:
+        bm = bmesh.new(); bm.from_mesh(me)
+        z_quadril = JUN2['pelvis'][0].z - 0.16
+        arestas = list({e for f in bm.faces if f.material_index == CAL and f.calc_center_median().z > z_quadril for e in f.edges})
+        bmesh.ops.subdivide_edges(bm, edges=arestas, cuts=1, use_grid_fill=True)
+        bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4])
+        bm.to_mesh(me); bm.free(); me.update()
+    braco_v = [peso_braco(v) > 0.5 for v in me.vertices]
     mats = [set() for _ in me.vertices]
     for p in me.polygons:
         for vi in p.vertices: mats[vi].add(p.material_index)
+    # O PANO ESTICADO NO QUADRIL (06/10/2026: "ajuste o gancho do calção
+    # também, no fundo o calção marca as nádegas ainda"). O pano não entra
+    # nas reentrâncias do corpo: em cada fatia de 2 cm do quadril, acima do
+    # gancho, os vértices do calção vão pro contorno convexo da fatia — some o
+    # vinco entre as nádegas — e, na frente, entre o gancho e 14 cm acima
+    # dele, o que passa do contorno das laterais volta pra ele — some o volume
+    # marcado do gancho. Abaixo do gancho, cada perna é a sua fatia.
+    def casco(pts):
+        pts = sorted(set(pts))
+        if len(pts) < 3: return pts
+        def cr(o, a, b): return (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0])
+        lo, hi = [], []
+        for q in pts:
+            while len(lo) >= 2 and cr(lo[-2], lo[-1], q) <= 0: lo.pop()
+            lo.append(q)
+        for q in reversed(pts):
+            while len(hi) >= 2 and cr(hi[-2], hi[-1], q) <= 0: hi.pop()
+            hi.append(q)
+        return lo[:-1] + hi[:-1]
+    def raio_no_casco(c, d, poly):
+        # a distância do centro c até a borda do polígono na direção d
+        melhor = None
+        for i in range(len(poly)):
+            a, b = poly[i], poly[(i+1) % len(poly)]
+            ex, ey = b[0]-a[0], b[1]-a[1]
+            den = d[0]*ey - d[1]*ex
+            if abs(den) < 1e-9: continue
+            t = ((a[0]-c[0])*ey - (a[1]-c[1])*ex)/den
+            u = ((a[0]-c[0])*d[1] - (a[1]-c[1])*d[0])/den
+            if t > 0 and -1e-6 <= u <= 1+1e-6: melhor = t if melhor is None else min(melhor, t)
+        return melhor
+    so_calcao = [i for i, ms in enumerate(mats) if CAL in ms and ms <= {CAL}]
+    pts_c = [me.vertices[i].co for i in so_calcao]
+    # o gancho é o fundo do corpo entre as pernas: as faces do meio que olham
+    # pra baixo (a coxa de dentro, encostada, não conta — ela olha pro lado)
+    fundo = [p.center.z for p in me.polygons if p.material_index == CAL and abs(p.center.x) < 0.03
+             and p.normal.z < -0.45 and CALCAO < p.center.z < BAINHA]
+    GANCHO = sorted(fundo)[len(fundo)//2] if fundo else (CALCAO + BAINHA)/2
+    zona = [i for i in so_calcao if CALCAO + 0.006 < me.vertices[i].co.z < BAINHA - BARRA - 0.004]
+    # a camisa embaixo também não entra no vinco da coluna, até a altura do umbigo
+    so_camisa = [i for i, ms in enumerate(mats) if ms & ROUPA and not braco_v[i] and BAINHA - BARRA - 0.002 < me.vertices[i].co.z < BAINHA + 0.22]
+    parte_de = lambda q: 0 if q.z > GANCHO + 0.004 else (1 if q.x > 0 else -1)
+    orig = {i: me.vertices[i].co.copy() for i in so_calcao + so_camisa}
+    ehcam = set(so_camisa)
+    cache = {}
+    novos_xy = {}
+    for i in zona + so_camisa:
+        q = orig[i]; cam = i in ehcam
+        pt = 'c' if cam else parte_de(q)
+        chave = (round(q.z*200), pt)            # janelas a cada 0,5 cm, com ±2,5 cm de altura
+        if chave not in cache:
+            viz = [orig[k] for k in (so_camisa if cam else so_calcao) if abs(orig[k].z - q.z) < 0.025 and (cam or parte_de(orig[k]) == pt)]
+            if len(viz) < 6: cache[chave] = None
+            else:
+                cx = sum(v.x for v in viz)/len(viz); cy = sum(v.y for v in viz)/len(viz)
+                frente_gancho = (not cam) and pt == 0 and q.z < GANCHO + 0.14
+                lat = [v for v in viz if not (frente_gancho and abs(v.x) < 0.06 and v.y < cy - 0.02)]
+                cache[chave] = (cx, cy, casco([(v.x, v.y) for v in (viz)]), casco([(v.x, v.y) for v in (lat if len(lat) >= 3 else viz)]), frente_gancho)
+        dado = cache[chave]
+        if not dado: continue
+        cx, cy, poly, poly_lat, frente_gancho = dado
+        dx, dy = q.x - cx, q.y - cy
+        r = math.hypot(dx, dy)
+        if r < 1e-6 or len(poly) < 3: continue
+        bojo = frente_gancho and abs(q.x) < 0.06 and q.y < cy - 0.02
+        if bojo:
+            R = raio_no_casco((cx, cy), (dx/r, dy/r), poly_lat)
+            if R is None or r <= R: continue
+            alvo = max(R, r - 0.012)                       # aplaina o volume do gancho, no máximo 1,2 cm
+        else:
+            R = raio_no_casco((cx, cy), (dx/r, dy/r), poly)
+            if R is None or r >= R: continue
+            alvo = min(R, r + 0.03)                        # o pano cobre o vinco, até 3 cm
+        novos_xy[i] = (cx + dx/r*alvo, cy + dy/r*alvo)
+    for i, (x, y) in novos_xy.items():
+        me.vertices[i].co.x, me.vertices[i].co.y = x, y
+    me.update()
     def folga_calcao(v):
         t = max(0.0, min(1.0, (BAINHA - BARRA - v.co.z)/max(1e-3, (BAINHA - BARRA) - CALCAO)))
         d = 0.004 + 0.020*t**1.3
         dentro = -v.normal.x*(1 if v.co.x > 0 else -1)          # a normal aponta pro meio das pernas
-        if dentro > 0.3: d *= 1 - 0.55*min(1.0, (dentro - 0.3)/0.5)
+        if dentro > 0.3:
+            # perto do gancho as coxas de dentro se encostam (a costura da
+            # bermuda fica mais baixa que o corpo); mais embaixo, menos folga
+            # dentro, pra uma perna não entrar na outra
+            perto = max(0.0, min(1.0, 1 - (GANCHO - v.co.z)/0.07))
+            if perto > 0: d += 0.022*perto*min(1.0, (dentro - 0.3)/0.4)
+            else: d *= 1 - 0.55*min(1.0, (dentro - 0.3)/0.5)
         return d
     novos_ = []
     for v in me.vertices:
@@ -578,9 +675,23 @@ def engrossar():
               if CAL in ms and ms <= {CAL} and CALCAO + 0.004 < bm.verts[i].co.z < BAINHA - BARRA - 0.004]
     for _ in range(6):
         bmesh.ops.smooth_vert(bm, verts=alisar, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=False)
+    # em volta do gancho o vinco é vertical (a virilha, o fundo das nádegas):
+    # ali o alisamento mexe também na altura
+    gancho_ = [v for v in alisar if GANCHO - 0.06 < v.co.z < GANCHO + 0.12 and abs(v.co.x) < 0.13]
+    for _ in range(10):
+        bmesh.ops.smooth_vert(bm, verts=gancho_, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
     bm.to_mesh(me); bm.free(); me.update()
 def face_braco_v(i): return braco_v[i]
 engrossar()
+# A DIVISA ENTRE PANO E PELE É ARESTA VIVA: as faces da borda do pano são
+# quase verticais e, com a normal suavizada, a pele logo abaixo da barra do
+# calção (e da manga) herdava a sombra delas em riscos
+_bm = bmesh.new(); _bm.from_mesh(me)
+for e in _bm.edges:
+    fs = e.link_faces
+    if len(fs) == 2 and fs[0].material_index != fs[1].material_index and IDX['pele'] in (fs[0].material_index, fs[1].material_index):
+        e.smooth = False
+_bm.to_mesh(me); _bm.free(); me.update()
 
 # ------------------------------------------------------------- 5. A PELE
 def pele_de_detalhe():

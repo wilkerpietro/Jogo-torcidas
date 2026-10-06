@@ -9308,6 +9308,18 @@ Vistos quadro a quadro de lado na vitrine (`bonecos.html?estado=andar&so&manual`
   - A malha do calção é alisada como tecido. Um anel 6 mm abaixo da barra dá a borda vista de baixo.
   - A barra da camisa abre até 1,1 cm e cai por cima do calção, com a mesma borda. Antes os dois emendavam como um macacão.
 
+## O calção não marca o gancho nem as nádegas (o dono, 06/10/2026: "ajuste o gancho do calção também, no fundo o calção marca as nádegas ainda")
+
+O calção era a pele afastada pela normal, então copiava cada reentrância do corpo. Agora o gerador (`engrossar`, boneco_base.py) veste o pano antes de dar a espessura:
+
+- **O pano estica sobre o vinco.** Para cada vértice do calção (e da camisa até 22 cm acima da barra), toma-se a janela de ±2,5 cm de altura em volta dele e o contorno convexo da fatia nessa janela. O vértice que está dentro do contorno sai pra ele, até 3 cm: some o vinco entre as nádegas e o da coluna na barra da camisa. Acima do gancho a fatia é uma só; abaixo, cada perna é a sua.
+- **O volume do gancho é aplainado.** Na frente, até 14 cm acima do gancho, o que passa do contorno das laterais volta pra ele, no máximo 1,2 cm.
+- **O gancho é achado pela face que olha pra baixo** no meio do corpo, não pelo vértice mais baixo perto do centro. Esse critério pegava a coxa de dentro encostada e punha o gancho a 0,67 m, juntando as duas pernas numa fatia só.
+- **Perto do gancho as coxas de dentro se encostam**, como a costura de uma bermuda, que fica mais baixa que o corpo. Mais embaixo, o lado de dentro continua com menos folga.
+- **Alisamento:** em volta do gancho, o alisamento do pano mexe também na altura (a virilha e o fundo das nádegas são vincos verticais).
+- **Malha:** no modelo leve, a faixa do quadril do calção é subdividida uma vez antes de vestir. A redução deixava triângulos de 15 cm ali, e um único vértice afundado desenhava uma linha. Isso custa ~1 mil triângulos (corpo de 5,2 para 6,2 mil; ~7,6 mil por boneco na cena). O detalhado não precisa de subdivisão.
+- **Aresta viva:** a divisa entre pano e pele virou aresta viva. Com a normal suavizada, a pele logo abaixo da barra herdava a sombra da borda do pano em riscos.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
