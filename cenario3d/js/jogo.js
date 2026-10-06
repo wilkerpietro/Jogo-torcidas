@@ -65659,6 +65659,8 @@ TO.graficos = (function(){
                 bondes, efetivoRival: deles.n, local: enc.local,
                 /* a faixa: quem é atacado expõe — sofremos, é a nossa */
                 faixaDefensor: enc.sofrido ? 'nos' : 'eles', rivalId: deles.torcida,
+                /* o bairro do encontro (sem caminhada, o jogo 3D briga na praça dele) */
+                bairro: enc.bairro || '',
                 /* a praça da briga, quando não é a nossa (o jogo 3D tem só a nossa em 3D) */
                 foraDeCasa: enc.foraDeCasa || null },
       aoTerminar: res => fecharDiaDeJogo(res, enc)
@@ -66035,6 +66037,8 @@ TO.graficos = (function(){
       canvas: $('djPrincipal'),
       config: { escalacao: fila, intencao:'atacar', bondes,
                 bombas: 3, efetivoRival: 5, local:'praca',
+                /* (o jogo 3D monta o 5 × 5 na praça do nosso bairro, não numa caminhada) */
+                tutorial: true, rivalId,
                 rival: o ? {nome:o.nome, cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3}
                          : {nome:_t('A rival'), cor:'#1d4f8a', cor2:'#e8e8e8', cor3:null},
                 perfilRival: perfilDe(rivalId) },
@@ -66115,8 +66119,10 @@ TO.graficos = (function(){
                 fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
-                /* o que se ataca (o jogo 3D monta o bar deles no mapa; a sede segue na cena de sempre) */
+                /* o que se ataca (o jogo 3D monta o bar, a sede e a reunião deles no mapa) */
                 alvoTipo: cena.alvo && cena.alvo.tipo,
+                /* o bairro e a zona do alvo (o jogo 3D acha a praça da reunião por eles) */
+                bairro: (cena.alvo && cena.alvo.bairro) || '', zona: (cena.alvo && cena.alvo.zona) || null,
                 /* a praça da ação, quando não é a nossa (a sub-sede de fora) */
                 foraDeCasa: cena.foraDeCasa || null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
@@ -66246,6 +66252,8 @@ TO.graficos = (function(){
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
                 faixaDefensor:'nos', rivalId: atq.torcida, alvoTipo: atq.alvo || 'bar',
+                /* o bairro e a zona atacados (o jogo 3D acha a praça da nossa reunião por eles) */
+                bairro: atq.bairro || '', zona: atq.zona || null,
                 /* a praça do ataque, quando não é a nossa (o jogo fora) */
                 foraDeCasa: atq.mapa && atq.mapa !== e.torcida.mapa ? atq.mapa : null,
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },

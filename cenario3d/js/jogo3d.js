@@ -23,11 +23,11 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=b7ebc9f6b8';
-import { criarVida, horaTxt } from './vida3d.js?v=b7ebc9f6b8';
-import { criarMapaDaCidade } from './mapa3d.js?v=b7ebc9f6b8';
-import { criarDia3d } from './dia3d.js?v=b7ebc9f6b8';
-import { criarRecados } from './recados3d.js?v=b7ebc9f6b8';
+import { CASCA } from './jogo_casca.js?v=56086e89a7';
+import { criarVida, horaTxt } from './vida3d.js?v=56086e89a7';
+import { criarMapaDaCidade } from './mapa3d.js?v=56086e89a7';
+import { criarDia3d } from './dia3d.js?v=56086e89a7';
+import { criarRecados } from './recados3d.js?v=56086e89a7';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,22 +42,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=b7ebc9f6b8'), carregarCss('css/jogo3d.css?v=b7ebc9f6b8')]);
+  await Promise.all([carregarCss('css/jogo.css?v=56086e89a7'), carregarCss('css/jogo3d.css?v=56086e89a7')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=b7ebc9f6b8').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=56086e89a7').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=b7ebc9f6b8');
+  await carregarScript('js/jogo.js?v=56086e89a7');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=b7ebc9f6b8').catch(() => {});
-  await import('./bonecos3_global.js?v=b7ebc9f6b8');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=56086e89a7').catch(() => {});
+  await import('./bonecos3_global.js?v=56086e89a7');
   ligar(api);
   return TO.tela;
 }
@@ -137,7 +137,21 @@ function ligar(api) {
       const m = fila.find(x => x && x.kind === 'partida' && x.quando && x.quando.abs === hoje);
       const bola = j && j.dia === e.data.dia ? minutoDe(j.hora) : null;
       if (!m || bola == null) return;
-      m.hora = hhmmDe(Math.max(8 * 60, bola - 75));
+      const hora = Math.max(8 * 60, bola - 75);
+      m.hora = hhmmDe(hora);
+      /* SEM SPOILER (o dono, 06/10/2026: "o post do resultado do jogo aparece
+         antes do itinerário do jogo acontecer: gera spoiler"): o que entrou
+         na fila DEPOIS do cartão da partida depende do resultado — a matéria
+         da Gazeta da rodada (que vira o post do jornal com o placar), o
+         almanaque do campeão, o fim da Conmebol. `horasEmOrdem` (feed.js) já
+         tinha dado a cada uma a vaga logo depois da do cartão; com o cartão
+         empurrado pra perto da bola, a ordem pela hora punha a Gazeta NA
+         FRENTE dele, e o placar saía de manhã. Agora quem vinha atrás e
+         ficaria antes ganha a hora do cartão: a ordem é estável, então elas
+         seguem atrás dele — e o cartão é decisão, que segura a fila até o
+         apito */
+      for (const x of fila.slice(fila.indexOf(m) + 1))
+        if (x && x.quando && x.quando.abs === hoje && (minutoDe(x.hora) || 0) < hora) x.hora = m.hora;
       const doDia = fila.filter(x => x.quando && x.quando.abs === hoje), resto = fila.filter(x => !(x.quando && x.quando.abs === hoje));
       doDia.sort((a, b) => (minutoDe(a.hora) || 0) - (minutoDe(b.hora) || 0));
       fila.length = 0; fila.push(...doDia, ...resto);
@@ -226,7 +240,7 @@ function ligar(api) {
     if (!loja) return { erro: 'a praça não tem ' + op.alvo };
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
-    const { iniciarAssalto } = await import('./assalto3d.js?v=b7ebc9f6b8');
+    const { iniciarAssalto } = await import('./assalto3d.js?v=56086e89a7');
     /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
     const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
     const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;
@@ -566,5 +580,29 @@ function ligar(api) {
     pracaDoJogo = null; vida.desligar();
     conferirPraca(true);
   });
+  /* AS PIXAÇÕES DO SAVE NOS MUROS DA CIDADE (o dono, 06/10/2026: "as
+     pixações do save agora devem aparecer nos muros da cidade 3d"): a
+     camada dos muros do cenário (cenario.js, `pixos`) pergunta aqui de quem
+     é cada muro — o save, `TO.dominio.muros` da praça que está na tela — e
+     há quantos dias foi pixado (o pixo desbota em `PIX.desbota` dias). A
+     cada 1,5 s ela repinta só o muro que mudou: a pixação nossa pelo
+     cartão do bairro, a da IA no virar do dia, o pixo que venceu */
+  const slugDaPraca = n => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '-');
+  const donoDoMuro = (b, i) => {
+    const e = E(), D = TO.dominio, C = api.cenario;
+    if (!e || !e.torcida || !D || !D.muros || !C || !C.praca) return null;
+    const m = (D.muros(e, slugDaPraca(C.praca), b) || [])[i];
+    if (!m || !m.t) return null;
+    return { t: m.t, abs: m.abs, idade: ((e.data.absoluto || 0) - (m.abs || 0)) / ((D.PIX && D.PIX.desbota) || 60) };
+  };
+  let cenarioDosPixos = null;
+  setInterval(() => {
+    const C = api.cenario;
+    if (!C || !C.pixos || C.montando) return;
+    try {
+      if (cenarioDosPixos !== C) { cenarioDosPixos = C; C.pixos.fonte(donoDoMuro); }
+      else C.pixos.atualizar();
+    } catch (err) { console.error('jogo 3D, os muros de pixação:', err); }
+  }, 1500);
   conferirTela();
 }

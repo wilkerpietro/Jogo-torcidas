@@ -74,7 +74,7 @@
    (em ferramentas/planta_html) prova que em toda sede dos três mapas
    um corpo de 70 cm entra em todo cômodo; mexeu na mobília, rode ele.
    ========================================================= */
-import { Construtor, METRO, arSplit } from './construtor3d.js?v=b7ebc9f6b8';
+import { Construtor, METRO, arSplit } from './construtor3d.js?v=56086e89a7';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -916,8 +916,10 @@ function mural(ctx, Q, lado, a0, a1, y0, y1) {
     naParede(ctx, Q, lado, b0, b0 + w * 0.8, y0 + h * alto, y0 + h * (alto + 0.36), 0.036, { todas: null, frente: lisa(c) });
   });
 }
-/* a bandeira da torcida pregada na parede: as três faixas da cor dela */
+/* a bandeira da torcida pregada na parede: o pano dela (`panoNaParede`,
+   o desenho da bandeira da arquibancada); sem dono, as três faixas da cor */
 function bandeiraParede(ctx, Q, lado, a0, a1, y0, y1, cores) {
+  if (ctx.panoNaParede && ctx.panoNaParede(Q, lado, a0, a1, y0, y1)) return;
   const h = (y1 - y0) / 3;
   [cores.cor, cores.cor2, cores.cor3].forEach((c, i) =>
     naParede(ctx, Q, lado, a0, a1, y1 - (i + 1) * h, y1 - i * h, 0.012, { todas: lisa(viva(c)) }));
@@ -1161,7 +1163,7 @@ const MOBILIA = {
     lugar(ctx, Q, 'recado', rs, rt, '+s', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
     lugar(ctx, Q, 'sofa', 0.85, D - 0.5, '-t', { sentado: true, assento: ASSENTO.sofa, gesto: 'celular' });
     mural(ctx, Q, '-s', 1.34, 2.34, PISO + 1.4, PISO + 2.1);
-    bandeiraParede(ctx, Q, '-s', 2.55, Math.min(D - 0.3, 4.1), PISO + 1.3, PISO + 2.05, ctx.cores);
+    bandeiraParede(ctx, Q, '-s', 2.6, Math.min(D - 0.3, 4.05), PISO + 1.2, PISO + 2.15, ctx.cores);
     arInterno(ctx, Q, '+s', D - 0.95, PISO + 2.15);
   }
 };
@@ -1534,7 +1536,7 @@ function presidenciaNova(ctx, Q) {
   lugar(ctx, Q, 'recado', mm - 0.35, mt0 - 0.45, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'conversa' });
   lugar(ctx, Q, 'recado', mm + 0.4, mt0 - 0.45, '+t', { sentado: true, assento: ASSENTO.cadeira, gesto: 'escuta' });
   /* atrás dele, a bandeira da torcida e o ar-condicionado */
-  bandeiraParede(ctx, Q, '+t', Math.max(0.3, mm - 0.9), Math.min(W - 0.3, mm + 0.9), PISO + 1.25, PISO + 2.15, ctx.cores);
+  bandeiraParede(ctx, Q, '+t', Math.max(0.3, mm - 0.78), Math.min(W - 0.3, mm + 0.78), PISO + 1.15, PISO + 2.2, ctx.cores);
   arInterno(ctx, Q, '+t', Math.min(W - 0.6, mS1 + 0.2), PISO + 2.3);
   /* o armário na parede da frente, o sofá na de trás com a mesinha */
   armario(ctx, Q, 0.05, 0.5, 1.9, Math.min(D - 1.2, 3.1), 1.8, '+s', MADEIRA, 2);
@@ -2646,6 +2648,26 @@ export function montarSede(sede, destino = {}, opc = {}) {
         naParede(c, Q, lado, a - larg / 2 - 0.03, a + larg / 2 + 0.03, y - alt / 2 - 0.03, y + alt / 2 + 0.03, 0.03, { todas: lisa('#2b2622') });
         placas.push({ tipo: 'camisa', k, cor: cor.cor, cor2: cor.cor2, cor3: cor.cor3, texto: T0.sigla, img: T0.escudo || null,
                       x: x + nx * 0.006, y, z: z + nz * 0.006, nx, nz, larg, alt });
+      },
+      /* A BANDEIRA NA PAREDE (o dono, 06/10/2026: "a bandeira que fica na
+         parede e acima da mesa do presidente na sede deve ser mais bonita,
+         similar à bandeira que colocamos na arquibancada"): o pano da
+         torcida com o desenho da bandeira da arquibancada e da do mastro —
+         a borda na cor 2, o filete na 3, o campo na 1 e o escudo no meio,
+         com as dobras do pano (index.html, `texturaBandeira`) —, pendurado
+         num varão de metal com os dois suportes. Sem dono, não há pano
+         (quem chama pinta as três faixas) */
+      panoNaParede(Q, lado, a0, a1, y0, y1) {
+        if (!T0) return false;
+        const larg = a1 - a0, alt = y1 - y0, a = (a0 + a1) / 2;
+        const off = 0.02, [s2, t] = lado === '+t' ? [a, Q.D - off] : lado === '-t' ? [a, off] : lado === '-s' ? [off, a] : [Q.W - off, a];
+        const n = { '+t': '-t', '-t': '+t', '-s': '+s', '+s': '-s' }[lado];
+        const [x, z] = Q.pt(s2, t), [nx, nz] = VEC[Q.d(n)];
+        naParede(c, Q, lado, a0 - 0.07, a1 + 0.07, y1 + 0.01, y1 + 0.035, 0.07, { todas: lisa('#9a9c9f') });
+        for (const p of [a0 - 0.045, a1 + 0.045]) naParede(c, Q, lado, p - 0.012, p + 0.012, y1 - 0.01, y1 + 0.06, 0.075, { todas: lisa('#6e7073') });
+        placas.push({ tipo: 'bandeira', pano: true, cor: cor.cor, cor2: cor.cor2, cor3: cor.cor3 || cor.cor2, img: T0.escudo || null, sigla: T0.sigla || '',
+                      corTexto: legivelSobre(cor.cor2, [cor.cor, cor.cor3]), x: x + nx * 0.006, y: (y0 + y1) / 2, z: z + nz * 0.006, nx, nz, larg, alt });
+        return true;
       },
       /* a faixa DEITADA (o setor criativo: a faixa nova sendo pintada na mesa):
          o retângulo (s0..s1, t0..t1) do cômodo, na altura y, o texto correndo em `ao` */

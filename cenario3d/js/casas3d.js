@@ -60,10 +60,10 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=b7ebc9f6b8';
-import { ATLAS } from './modelos_atlas.js?v=b7ebc9f6b8';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=56086e89a7';
+import { ATLAS } from './modelos_atlas.js?v=56086e89a7';
 /* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
-import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=b7ebc9f6b8';
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=56086e89a7';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -3176,11 +3176,13 @@ function baldio(B, p, l, conta, G) {
   const h = Math.max(0.6, H);
   /* ---- o muro da frente, com o portão de chapa em um de cada quatro ---- */
   const larg = x1 - x0, vaos = [];
-  if (larg >= (l.pixacao ? 6.5 : 4.6) && s('portao') < 0.25) {
+  /* (o muro de pixação do jogo, `muroPixo`, é muro com pixação: o portão vai pra ponta) */
+  const comPixo = !!(l.pixacao || l.muroPixo);
+  if (larg >= (comPixo ? 6.5 : 4.6) && s('portao') < 0.25) {
     /* com pixação, só no muro comprido, e o portão vai pra uma ponta:
        sobra o muro inteiro do outro lado pra lata */
     const wp = Math.min(2.4, larg * 0.42);
-    const a0 = l.pixacao ? (s('ondePortao') < 0.5 ? 0.35 : larg - wp - 0.35) : 0.35 + s('ondePortao') * (larg - wp - 0.7);
+    const a0 = comPixo ? (s('ondePortao') < 0.5 ? 0.35 : larg - wp - 0.35) : 0.35 + s('ondePortao') * (larg - wp - 0.7);
     vaos.push({ a0, a1: a0 + wp, b0: 0, b1: Math.min(2.0, h - 0.12), k: 'portao_chapa', fundo: 0.04 });
   }
   paredes(B, x0, x1, zD, zF, 0, h, { frente: { k, tinta, vaos }, tras: { k: dentro } }, conta);

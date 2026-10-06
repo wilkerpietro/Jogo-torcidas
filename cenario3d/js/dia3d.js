@@ -59,9 +59,9 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=b7ebc9f6b8';
-import { palcoDeBriga } from './palco_briga.js?v=b7ebc9f6b8';
-import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=b7ebc9f6b8';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=56086e89a7';
+import { palcoDeBriga } from './palco_briga.js?v=56086e89a7';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=56086e89a7';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -512,7 +512,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=b7ebc9f6b8');
+    const { criarEstrada } = await import('./estrada3d.js?v=56086e89a7');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -888,7 +888,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=b7ebc9f6b8');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=56086e89a7');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);

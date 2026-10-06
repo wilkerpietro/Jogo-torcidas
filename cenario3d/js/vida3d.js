@@ -37,11 +37,12 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=b7ebc9f6b8';
-import { brigaNaCaminhada } from './caminhada.js?v=b7ebc9f6b8';
-import { brigaNoBar } from './briga_bar.js?v=b7ebc9f6b8';
-import { brigaNaTreta } from './briga_treta.js?v=b7ebc9f6b8';
-import { planoDoBar } from './casas3d.js?v=b7ebc9f6b8';
+import { palcoDeBriga } from './palco_briga.js?v=56086e89a7';
+import { brigaNaCaminhada } from './caminhada.js?v=56086e89a7';
+import { brigaNoBar } from './briga_bar.js?v=56086e89a7';
+import { brigaNaTreta } from './briga_treta.js?v=56086e89a7';
+import { brigaNaPraca, brigaNaSede, brigaNoPortao } from './briga_lugar.js?v=56086e89a7';
+import { planoDoBar } from './casas3d.js?v=56086e89a7';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -1633,6 +1634,97 @@ export function criarVida(api) {
     return { local: B.cena.id, renderizador: Rd };
   }
   let ultimaTreta = null;
+  /* AS BRIGAS QUE ABRIAM A FOTO (briga_lugar.js; o dono, 06/10/2026: "as
+     cenas de briga algumas vezes abrem o cenário 2d, crie os cenários
+     coerentes dentro do mapa 3d"). O lado de cada um vem do jogo de feed:
+     no nosso bote somos o lado do nosso bonde e atacamos; no deles
+     (`faixaDefensor: 'nos'`) quem ataca é o outro lado. Com o dia de jogo no
+     ar, ele para e os bondes das duas somem da rua enquanto a briga dura;
+     a praça de fora (a sub-sede, o jogo fora) só está em 3D com o dia lá */
+  const ladosDa = cfg => {
+    const nosso = (cfg.bondes || []).find(b => b.nossa), ladoNosso = nosso && nosso.lado === 'visitante' ? 'visitante' : 'mandante';
+    const nosAtacamos = cfg.faixaDefensor !== 'nos';
+    return { nosAtacamos, ladoAtaca: nosAtacamos ? ladoNosso : ladoNosso === 'mandante' ? 'visitante' : 'mandante' };
+  };
+  function montarNoLugar(B, cfg, o) {
+    const Cn = C(), e = E(), D3 = TO.jogo3d && TO.jogo3d.dia, noDia = !!(D3 && D3.ativo);
+    const G = noDia && D3.ganchosDaBriga ? D3.ganchosDaBriga([e.torcida.id, cfg.rivalId].filter(Boolean)) : null;
+    TO.dados.cenas[B.cena.id] = B.cena;
+    ultimoLugar = B;
+    const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
+                              predio: B.predio || undefined, vistas: { perto: { dist: 17, el: 1.1 }, alto: { dist: 34, el: 1.28 } },
+                              rotAlto: o.rotAlto, comDia: G ? G.comDia : null,
+                              aoDesmontar: () => { if (o.aoDesmontar) o.aoDesmontar(); if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } } });
+    return { local: B.cena.id, renderizador: Rd, falhou: o.aoDesmontar || undefined };
+  }
+  const prontoPraLugar = cfg => {
+    const Cn = C(), e = E(), D3 = TO.jogo3d && TO.jogo3d.dia, noDia = !!(D3 && D3.ativo);
+    return !!(cfg && Cn && Cn.vida && Cn.vida.contextoDoDia && e && e.torcida && TO.dados && TO.dados.cenas) && !(cfg.foraDeCasa && !noDia);
+  };
+  /* A PRAÇA DO BAIRRO: a reunião da zona ('praca-reuniao') e o encontro
+     na praça (o tutorial; a briga de praça sem caminhada). O bairro é o da
+     briga (pelo nome ou pelo id; sem ele, o da casa de quem é atacado); o
+     lugar é a praça dele — e, sem praça no bairro (o mapa das capitais tem
+     uma ou duas), O CRUZAMENTO de ruas mais perto do meio dele: a reunião
+     não atravessa a cidade atrás da praça de outro bairro. Sem nada disso,
+     a praça mais perto */
+  function pracaDaBriga(cfg, atacados) {
+    const P = api.planta, ps = P && P.pracas ? P.pracas() : [], bs = P && P.bairros ? P.bairros() : [];
+    const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    const perto = (x, y, lista = ps) => lista.slice().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
+    const alvo = norm(cfg.bairro), s = atacados ? casaDe(atacados) : null;
+    let B = alvo ? bs.find(b => norm(b.id) === alvo || norm(b.nome) === alvo) : null;
+    if (!B && s && P.bairroEm) { const id = P.bairroEm(s.x, s.y); B = bs.find(b => b.id === id) || null; }
+    if (B) {
+      const doBairro = ps.filter(p => p.bairro === B.id);
+      if (doBairro.length) return perto(B.centro.x, B.centro.y, doBairro);
+      const X = P.cruzamentoDoBairro ? P.cruzamentoDoBairro(B.id) : null;
+      if (X) return { cruzamento: true, x: X.x, y: X.y, u: X.u, nome: 'esquina', bairro: B.id, nomeDoBairro: B.nome };
+      if (ps.length) return perto(B.centro.x, B.centro.y);
+    }
+    return !ps.length ? null : s ? perto(s.x, s.y) : ps[0];
+  }
+  function palcoDaPraca(local, cfg) {
+    if (!prontoPraLugar(cfg)) return null;
+    const e = E(), reuniao = local === 'praca-reuniao', L = ladosDa(cfg);
+    const pr = pracaDaBriga(cfg, L.nosAtacamos ? cfg.rivalId : e.torcida.id);
+    if (!pr) { console.warn('a briga na praça: o mapa não tem praça nem cruzamento no bairro'); return null; }
+    let B = null;
+    try { B = brigaNaPraca(C().vida.contextoDoDia(), pr, { reuniao, ...L, chave: [pr.nome, pr.bairro || '', cfg.rivalId || '', cfg.zona || ''].join('|') }); }
+    catch (err) { console.error('a briga na praça:', err); return null; }
+    if (!B || B.erro) { console.warn('a briga na praça não montou:', B && B.erro); return null; }
+    return montarNoLugar(B, cfg, { rotAlto: pr.cruzamento ? 'o cruzamento, do alto' : 'a praça inteira, do alto' });
+  }
+  /* A SEDE DELES (o nosso ataque à sede rival: a cena 'bar' com o alvo 'sede') */
+  function palcoDaSede(cfg) {
+    if (!prontoPraLugar(cfg) || !cfg.rivalId) return null;
+    const Tc = (api.planta.torcidas ? api.planta.torcidas() : []).find(t => t.id === cfg.rivalId && t.sede3d);
+    if (!Tc) { console.warn('a briga na sede: a torcida ' + cfg.rivalId + ' não tem sede no mapa'); return null; }
+    let B = null;
+    try { B = brigaNaSede(C().vida.contextoDoDia(), Tc, ladosDa(cfg)); }
+    catch (err) { console.error('a briga na sede:', err); return null; }
+    if (!B || B.erro) { console.warn('a briga na sede não montou:', B && B.erro); return null; }
+    /* (o portão e as portas da sede deles abertos enquanto a briga dura) */
+    const Cn = C(), portas = abrir => { try { if (Cn.vida.abrirPortas) Cn.vida.abrirPortas(B.area, abrir); } catch (err) { /* (sem portas vivas) */ } };
+    portas(true);
+    return montarNoLugar(B, cfg, { rotAlto: 'a sede e a rua, do alto', aoDesmontar: () => portas(false) });
+  }
+  /* A COBRANÇA NO CLUBE ('ct'): o mapa não tem CT; a caravana vai no portão
+     do estádio do clube (o do mandante; sem ele no mapa, o principal — só na
+     nossa praça: com o dia de jogo no ar a cidade pode ser a de fora) */
+  function palcoDoClube(cfg) {
+    if (!prontoPraLugar(cfg)) return null;
+    const e = E(), D3 = TO.jogo3d && TO.jogo3d.dia, noDia = !!(D3 && D3.ativo);
+    const ests = (api.planta.estadios ? api.planta.estadios() : []).filter(x => x.modelo && x.centro);
+    const est = ests.find(x => (x.mandantes || []).includes(e.torcida.clubeId)) || (noDia ? null : ests.find(x => x.principal) || ests[0]);
+    if (!est) { console.warn('a cobrança no clube: o mapa não tem o estádio do clube'); return null; }
+    let B = null;
+    try { B = brigaNoPortao(C().vida.contextoDoDia(), est, ladosDa(cfg)); }
+    catch (err) { console.error('a cobrança no clube:', err); return null; }
+    if (!B || B.erro) { console.warn('a cobrança no clube não montou:', B && B.erro); return null; }
+    return montarNoLugar(B, cfg, { rotAlto: 'o portão do estádio, do alto' });
+  }
+  let ultimoLugar = null;
   /* o bar da dona que a briga pega: o mais perto da sede de quem ataca (é
      de lá que o bonde sai; da torcida sem sede, o bar dela); sem nenhum
      dos dois no mapa, o primeiro dela */
@@ -1698,7 +1790,16 @@ export function criarVida(api) {
       if (local === 'arredores' && cfg && cfg.bondes && !cfg.reuniao && D3 && D3.palcoDosArredores) return D3.palcoDosArredores(cfg);
       if (local === 'casa-piscina') return palcoDaFesta();
       if (local === 'emb-posto' || local === 'emb-onibus') return palcoDaCaravana(local);
-      if (/^(praca|rua|rua-media|rua-nobre)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaCaminhada(local, cfg);
+      /* (a briga de praça sem caminhada pra montar — o tutorial, o encontro sem
+         o jogo do clube rival — cai na praça do bairro, briga_lugar.js) */
+      if (/^(praca|rua|rua-media|rua-nobre)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) {
+        const Pc = cfg.tutorial ? null : palcoDaCaminhada(local, cfg);
+        return Pc || (local === 'praca' ? palcoDaPraca(local, cfg) : null);
+      }
+      /* A REUNIÃO DA ZONA NA PRAÇA, o ATAQUE À SEDE deles e a COBRANÇA NO CLUBE (briga_lugar.js) */
+      if (local === 'praca-reuniao' && cfg && cfg.bondes && !cfg.reuniao) return palcoDaPraca(local, cfg);
+      if (local === 'bar' && cfg && !cfg.reuniao && cfg.alvoTipo === 'sede') return palcoDaSede(cfg);
+      if (local === 'ct' && cfg && cfg.bondes && !cfg.reuniao) return palcoDoClube(cfg);
       if (local === 'bar' && cfg && !cfg.reuniao) return palcoDoBar(cfg);
       if (/^treta-(beco|galpao|campo)$/.test(local) && cfg && cfg.bondes && !cfg.reuniao) return palcoDaTreta(local, cfg);
       if (!sede || !cfg || !cfg.reuniao || !/^sede-|^praca$/.test(local)) return null;
@@ -1732,6 +1833,8 @@ export function criarVida(api) {
     /* pro teste: a última briga na caminhada (o plano, o ponto, a cena) e a última no bar */
     get caminhada() { return ultimaCaminhada; },
     get noBar() { return ultimoBar; },
-    get treta() { return ultimaTreta; }
+    get treta() { return ultimaTreta; },
+    /* pro teste: a última briga das que abriam a foto (a praça, a sede, o portão do clube) */
+    get noLugar() { return ultimoLugar; }
   };
 }
