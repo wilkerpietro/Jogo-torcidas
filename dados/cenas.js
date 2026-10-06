@@ -1161,6 +1161,78 @@ TO.dados.cenas = (function(){
   const MAO = (typeof TO !== 'undefined' && TO.dados && TO.dados.cenasEditadas) || {};
   for(const id in MAO) if(cenas[id]) sobreEdicao(cenas[id], MAO[id]);
 
+  /* FUGA NO MEIO DA RUA, NA PONTA DA CENA (dono, 30/09/2026)
+     A leitura automática das bocas pegava vão entre lojas, a beira da
+     calçada e, na casa de praia, até a borda do quintal — o boneco
+     corria pra lá e sumia no meio do cenário. Cada cena aberta ganha
+     aqui as saídas de verdade: o eixo de cada rua onde ela cruza a
+     borda da foto. Marcação do editor (F2) com pontos continua
+     mandando; lista vazia do editor não conta como marcação. As cenas
+     fechadas (galpão, campo de terra, estádios) seguem com as bocas
+     que a máscara tem, porque nelas o chão não chega na borda. */
+  const RUA = {
+    arredores:     [[268,20],[1256,20],[20,260],[20,668],[1516,264],[1516,660],[700,1004],[836,1004]],
+    praca:         [[20,187],[20,847],[1516,187],[1516,847],[280,96],[1228,96],[280,928],[1228,928]],
+    rua:           [[20,512],[1516,512],[40,96],[40,928],[1495,96],[1495,928]],
+    'rua-media':   [[20,508],[1516,508],[56,96],[56,928],[1470,96],[1470,928]],
+    'rua-nobre':   [[20,536],[1516,536],[73,96],[73,928],[1467,96],[1467,928]],
+    bar:           [[20,845],[1516,845],[460,96],[1130,96]],
+    comercio:      [[20,512],[1516,512]],
+    ct:            [[20,860],[1516,860]],
+    'casa-piscina':[[20,750],[1516,750]],
+    'sede-1':      [[20,780],[1516,780]],
+    'sede-2':      [[20,816],[1516,816]],
+    'sede-3':      [[20,820],[1516,820]],
+    'sede-4':      [[20,840],[1516,840]],
+    'sede-5':      [[20,830],[1516,830]],
+    'treta-beco':  [[20,512],[1516,512]],
+    'emb-posto':   [[20,975],[1516,975]],
+    'emb-onibus':  [[20,512],[1516,512]]
+  };
+  for(const id in RUA){
+    const c = id === 'arredores'
+      ? (typeof TO !== 'undefined' && TO.dados && TO.dados.cenaArredores)
+      : cenas[id];
+    if(!c || (c.fugas && c.fugas.length)) continue;
+    c.fugas = RUA[id].map(([x,y])=>({x, y, raio:34}));
+  }
+
+  /* A REUNIÃO DA ZONA NA PRAÇA (pedido do dono, 01/10/2026: "ataque à
+     reunião na praça — nova cena de briga com até 20 membros de cada
+     lado, todos pertencentes à mesma zona do ataque, na imagem da praça,
+     como se estivessem reunidos em uma reunião de alinhamento do
+     bairro/zona, e sofrem ataque"). É a praça de sempre — a mesma foto,
+     o mesmo chão, as mesmas fugas, copiadas depois da foto e da mão —
+     com outro roteiro: a zona atacada (`visitante`) em roda no largo do
+     meio, onde fica o C de cadeiras da reunião da torcida sem sede, e a
+     zona que ataca (`mandante`) chegando pela esquina leste. Quem está
+     na roda só levanta quando o bonde chega no largo (`soZona`). Na
+     defesa (a IA atacando a nossa reunião) os papéis são os mesmos: nós
+     somos o `visitante`, na roda. */
+  if(cenas.praca){
+    const P = cenas.praca, CX = 770, CY = 530, R = 105;
+    const roda = [0, 1, 2, 3, 4, 5].map(k => {
+      const a = k * Math.PI / 3 + Math.PI / 6;
+      return {id:'visitante' + (k + 1), rot: k ? 'NA RODA' : 'QUEM PUXA A REUNIÃO', lado:'visitante',
+              x:Math.round(CX + Math.cos(a) * R), y:Math.round(CY + Math.sin(a) * R * 0.8),
+              guarda:true, entrada:'esquina_oeste'};
+    });
+    cenas['praca-reuniao'] = Object.assign({}, P, {
+      id:'praca-reuniao', base:'praca', nome:'Reunião na praça',
+      local:'Na praça, na reunião da zona',
+      saida:Object.assign({}, P.saida, {feito:'sua torcida desfez a reunião deles na praça'}),
+      espalharBonde:'visitante',
+      spawns:[
+        {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1400, y:512, jogador:true, entrada:'esquina_leste'},
+        {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:1400, y:330, entrada:'esquina_leste'}
+      ].concat(roda),
+      gatilho:{x:CX, y:CY, raio:300, lado:'mandante', soZona:true,
+               rot:'A RODA DA REUNIÃO',
+               espera:'a reunião ainda não te viu',
+               aviso:'gritaram na roda — a zona inteira levantou'}
+    });
+  }
+
   return cenas;
 })();
 

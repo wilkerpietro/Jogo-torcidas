@@ -153,6 +153,8 @@ TO.genero = (function(){
     const podado = c.replace(/\s*[·(].*$/, '').replace(/\s+\d+$/, '').trim();
     const g = m[c] || m[podado];
     if(g) return g;
+    /* clube fora da lista é masculino, e é o caso comum: sem aviso */
+    if(tipo === 'clube') return 'm';
     const chave = tipo + '/' + nome;
     if(!avisados[chave]){
       avisados[chave] = 1;
@@ -204,8 +206,24 @@ TO.genero = (function(){
     return a ? `${a} ${nomeT}` : nomeT;
   };
 
+  /* O CLUBE NA MANCHETE (01/10/2026): "vence O Bahia", "perde PRO
+     Bahia", "empata COM O Bahia", "goleado PELO Bahia". Em espanhol
+     "al / ante el / con el / por el"; em inglês "beat Bahia, lose TO
+     Bahia, draw WITH Bahia, thrashed BY Bahia". */
+  const CLUBE = {
+    pt: {o:{m:'o', f:'a'}, pra:{m:'pro', f:'pra'}, com:{m:'com o', f:'com a'}, por:{m:'pelo', f:'pela'}},
+    es: {o:{m:'al', f:'a la'}, pra:{m:'ante el', f:'ante la'}, com:{m:'con el', f:'con la'}, por:{m:'por el', f:'por la'}},
+    en: {o:{m:'', f:''}, pra:{m:'to', f:'to'}, com:{m:'with', f:'with'}, por:{m:'by', f:'by'}}
+  };
+  function clube(forma, nome){
+    if(!nome) return '';
+    const lang = (TO.i18n && TO.i18n.idioma) || 'pt';
+    const a = ((CLUBE[lang] || CLUBE.pt)[forma] || {})[de('clube', nome) === 'f' ? 'f' : 'm'];
+    return a ? `${a} ${nome}` : String(nome);
+  }
+
   return {
-    de,
+    de, clube,
     d:   (tipo, nome, vazio) => junta('d',   tipo, nome, vazio),
     em:  (tipo, nome, vazio) => junta('em',  tipo, nome, vazio),
     por: (tipo, nome, vazio) => junta('por', tipo, nome, vazio),

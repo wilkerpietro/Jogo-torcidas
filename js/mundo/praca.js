@@ -750,8 +750,19 @@ TO.praca = (function(){
     /* o nome da cidade já vem resolvido no jogo da semana; `cidade()`
        indexa por id de cidade e o `mapa` da torcida nem sempre é um */
     const cidade = j.cidadeAdv || (M().cidade(o.mapa)||{}).nome || o.cidade || '';
+    /* O BAIRRO É O DO LUGAR (02/10/2026): era sempre o da sede deles, até
+       nos arredores do estádio. Concentração é na porta da sede deles;
+       pista e arredores, no bairro do estádio do jogo */
+    const D = TO.dominio, mapa = j.mapaAdv || o.mapa;
+    let bairro = o.bairroSede || '';
+    if(D && mapa){
+      const b = onde === 'praca' ? D.sedeDe(o.id, mapa)
+              : onde === 'pista' && D.bairroDaPista ? D.bairroDaPista(E, mapa, j.estadio, `pista|${mapa}|${j.semana || E.data.semana}|${j.dia || E.data.dia}|${o.id}`)
+              : D.bairroDoEstadio(E, mapa, j.estadio);
+      if(b) bairro = b.nome;
+    }
     return {desfecho:'planejada', fora:true, cidade,
-      onde:{local, bairro:o.bairroSede||''},
+      onde:{local, bairro, mapa},
       enc:{
         a:{torcida:E.torcida.id, nome:E.torcida.nome,
            sigla:M().siglaTorcida(E.torcida), n:nossos,
@@ -759,7 +770,7 @@ TO.praca = (function(){
            nossa:true},
         b:{torcida:o.id, nome:o.nome, sigla:M().siglaTorcida(o), n:deles,
            cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3, nossa:false},
-        local, bairro:o.bairroSede||'', nossa:true,
+        local, bairro, nossa:true, foraDeCasa: mapa || true,
         /* nos arredores deles, o mando é deles */
         nossoLado: onde === 'arredores' ? 'visitante' : 'mandante'}};
   }
@@ -827,7 +838,16 @@ TO.praca = (function(){
     local: onde.local, bairro: onde.bairro, nossa:true
   });
 
-  return {jogosDaPraca,
+  /* ONDE VAI SER A INVESTIDA MARCADA (o cartão do itinerário, 02/10/2026):
+     em casa, o ponto do planejamento; fora, o da viagem */
+  function ondeDaInvestida(E, j){
+    if(!j) return null;
+    if(!j.casa){ const v = encontroDaViagem(E, j); return v ? {local:v.onde.local, bairro:v.onde.bairro, cidade:v.onde.mapa || j.mapaAdv} : null; }
+    const o = lugarPlanejado(E, MP().modelo(E), PL().plano(E, j));
+    return o ? {local:o.local, bairro:o.bairro, cidade:E.torcida.mapa} : null;
+  }
+
+  return {jogosDaPraca, ondeDaInvestida,
           pontoDe, pontoDoEstadio, pontoDoEstadioDoClube, camposDaPraca,
           pontoDaSede, pontoDoBar,
           RUA_DA_CLASSE, ruaDaClasse, localDe, larguraEm, pontoNoBairro, LARGO,

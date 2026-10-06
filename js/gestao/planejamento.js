@@ -119,8 +119,17 @@ TO.planejamento = (function(){
   /* o ponto ganha um bairro de verdade da praça, sempre o mesmo */
   function pontosDeAtaque(E){
     const bairros = M().bairrosDe(E.torcida.mapa);
+    /* os arredores são do bairro do estádio (02/10/2026): é lá que a
+       briga mexe no domínio, e é lá que o cartão diz que foi */
+    const D = TO.dominio, est = D && D.bairroDoEstadio ? D.bairroDoEstadio(E, E.torcida.mapa) : null;
+    /* e a pista (terminal, avenida, viaduto) passa nos vizinhos do bairro do
+       estádio: no Castelão, Bom Jardim, Conjunto Ceará, Granja Portugal */
+    const viz = D && D.vizinhosDoEstadio ? D.vizinhosDoEstadio(E, E.torcida.mapa) : [];
+    let k = 0;
     return PONTOS.map((p, i)=>Object.assign({}, p, {
-      bairro: bairros.length ? bairros[(i*7) % bairros.length].nome : ''
+      bairro: p.id === 'arredores' && est ? est.nome
+            : p.ida && p.id !== 'praca' && viz.length ? viz[(k++) % viz.length].nome
+            : bairros.length ? bairros[(i*7) % bairros.length].nome : ''
     }));
   }
   const pontosDeIda = E => pontosDeAtaque(E).filter(p=>p.ida);
@@ -352,16 +361,36 @@ TO.planejamento = (function(){
     p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
                relacao:ganho, moral: Math.round(moral*5),
                mapa:j.mapaAdv, chave:j.chave};
-    /* a resposta chega como mensagem dela (mensagens entre torcidas) */
+    /* a resposta chega como post dela (feed de rede social, 30/09/2026):
+       a aliada anuncia que recebe a nossa caravana — ou avisa que não dá */
     if(TO.feed && TO.feed.mensagemDe){
+      const F = TO.feed.frase;
+      const P = {nome:o.nome, nossa:E.torcida.nome, emCidade:F.emPraca(j.mapaAdv),
+                 dia:F.noDia(j.dia || 6), clube:(M().time(E.torcida.clubeId)||{}).nome || E.torcida.clube || '',
+                 comp:F.pelaCompeticao(j.competicao)};
       const TXT = {
-        hospedar: _t('Estamos juntos. A sede fica aberta pra caravana de vocês — colchão, banho e café. Chega cedo.'),
-        escolta:  _t('Estamos juntos. Dormem na sede e o nosso bonde anda com vocês até o portão. Aqui ninguém encosta.'),
-        churrasco:_t('Estamos juntos. Churrasco na sede quando chegarem, e a gente sobe pro estádio de bonde junto. Cidade de vocês.'),
-        nada:     _t('Irmão, dessa vez não vai dar. Semana pesada por aqui. Fica pra próxima.')
+        hospedar: _t('Bem-vindos, irmãos! A caravana da {nossa} estará {emCidade} {dia} pro jogo do {clube}{comp}, e a sede da {nome} vai estar aberta pra eles: colchão, banho e café. Cheguem cedo!', P),
+        escolta:  _t('Bem-vindos, irmãos! A caravana da {nossa} estará {emCidade} {dia} pro jogo do {clube}{comp}. Vão dormir na sede da {nome}, e o nosso bonde anda com eles até o portão. Aqui ninguém encosta.', P),
+        churrasco:_t('Bem-vindos, irmãos! A caravana da {nossa} estará {emCidade} {dia} pro jogo do {clube}{comp}. Vai ter churrasco na sede da {nome} quando chegarem, e a gente sobe pro estádio de bonde junto. A cidade é de vocês!', P),
+        nada:     _t('A {nome} avisa aos irmãos da {nossa} que dessa vez não vai dar pra receber a caravana {emCidade} {dia}. Semana pesada por aqui. Fica pra próxima!', P)
       };
       TO.feed.mensagemDe(E, aliadoId, TXT[r.nivel] || TXT.nada,
                          r.nivel === 'nada' ? 'recusa' : 'juntos');
+      /* e o NOSSO perfil agradece em público no dia seguinte ao jogo
+         (feed, 30/09/2026) — a mesma frase de quem a gente recebe */
+      if(r.nivel !== 'nada'){
+        const Q = {nome:E.torcida.nome, nossa:o.nome, quando:F.noUltimoDia(j.dia || 6),
+                   emCidade:F.emPraca(j.mapaAdv), emCidadeDela:F.emPraca(E.torcida.mapa),
+                   clube:P.clube, comp:P.comp};
+        const OBRIGADO = {
+          hospedar: _t('A {nome} vem agradecer publicamente a receptividade da {nossa} {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Nossa parceria segue firme: quando precisarem da gente {emCidadeDela}, serão bem recebidos também!', Q),
+          escolta:  _t('A {nome} agradece publicamente à {nossa} pela escolta {quando}: estivemos {emCidade} acompanhando o nosso {clube}{comp}, e o bonde de vocês andou com a gente até o portão. Isso não se esquece. Quando precisarem da gente {emCidadeDela}, é só chamar!', Q),
+          churrasco:_t('Que recepção! A {nome} agradece à {nossa} pelo churrasco e pela caminhada junto {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Isso é irmandade. Quando estiverem {emCidadeDela}, a casa é de vocês!', Q)
+        };
+        const faltam = Math.max(0, (j.dia || 6) - (E.data.dia || 1));
+        TO.feed.mensagemDe(E, E.torcida.id, OBRIGADO[r.nivel] || OBRIGADO.hospedar, 'agradecimento',
+          {publico:true, em:(E.data.absoluto || 0) + faltam + 1, chave:`obrigado-nosso|${j.chave || ''}|${aliadoId}`});
+      }
     }
     return p.ajuda;
   }
@@ -663,16 +692,24 @@ TO.planejamento = (function(){
       /* o nível que VALEU (sem caixa, virou 'nada'): o jogo 3D põe o
          aliado recebido na nossa sede no dia, e ele sai de lá pro estádio */
       p.recebido = p.recebido || {}; p.recebido[a.id] = nivel;
-      /* o aliado agradece — ou anota (mensagens entre torcidas, 08/09/2026) */
+      /* o aliado agradece — ou cobra — em post público no dia seguinte
+         (feed de rede social, pedido do dono, 30/09/2026: "A Motofolia
+         vem agradecer publicamente a receptividade da Leões da TUF no
+         último sábado…") */
       if(TO.feed && TO.feed.mensagemDe){
+        const F = TO.feed.frase;
+        const P = {nome:a.torcida.nome, nossa:E.torcida.nome, quando:F.noUltimoDia(a.dia),
+                   emCidade:F.emPraca(E.torcida.mapa), emCidadeDela:F.emPraca(a.torcida.mapa),
+                   clube:a.clube.nome, comp:F.pelaCompeticao(a.comp)};
         const TXT = {
-          hospedar: _t('Obrigado pela casa, irmão. Colchão no salão e café de manhã: ninguém recebe assim. Vocês têm crédito com a gente.'),
-          escolta:  _t('Andar até o portão com o bonde de vocês do lado foi outra coisa. Fica registrado: o que precisar, é só chamar.'),
-          churrasco:_t('Que recepção. Carne, bebida e o bonde junto — isso é irmandade. Quando vierem, a casa é de vocês.'),
-          nada:     _t('Passamos pela cidade de vocês e ninguém apareceu. Anotado.')
+          hospedar: _t('A {nome} vem agradecer publicamente a receptividade da {nossa} {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Nossa parceria segue firme: quando precisarem da gente {emCidadeDela}, serão bem recebidos também!', P),
+          escolta:  _t('A {nome} agradece publicamente à {nossa} pela escolta {quando}: estivemos {emCidade} acompanhando o nosso {clube}{comp}, e o bonde de vocês andou com a gente até o portão. Isso não se esquece. Quando precisarem da gente {emCidadeDela}, é só chamar!', P),
+          churrasco:_t('Que recepção! A {nome} agradece à {nossa} pelo churrasco e pela caminhada junto {quando}, quando estivemos {emCidade} acompanhando o nosso {clube}{comp}. Isso é irmandade. Quando estiverem {emCidadeDela}, a casa é de vocês!', P),
+          nada:     _t('A {nome} esteve {emCidade} {quando} acompanhando o nosso {clube}{comp}, e a {nossa}, que se diz aliada, nem apareceu. Fica registrado.', P)
         };
         TO.feed.mensagemDe(E, a.id, TXT[nivel] || TXT.nada,
-                           nivel === 'nada' ? 'cobranca' : 'agradecimento');
+                           nivel === 'nada' ? 'cobranca' : 'agradecimento',
+                           {em:(E.data.absoluto||0) + 1});
       }
     }
   }
@@ -1343,11 +1380,49 @@ TO.planejamento = (function(){
      nota:_t('marca ataque contra qualquer torcida metida no jogo — máximo de briga, de prestígio em disputa e de gente no hospital')}
   ];
 
+  /* PEDIR APOIO E PIXAR TAMBÉM SÃO IDEOLOGIA (pedido do dono, 06/10/2026:
+     "deve existir a opção escolher se deve sempre pedir apoio em jogos
+     fora de casa ou não, porque o jogador pode acabar se esquecendo de
+     ficar pedindo apoio e isso impacta nas relações" e "deixar opcional
+     na ideologia comandar as pixações ou não"). Os dois nascem como o
+     jogo era — pedir à mão e pixar à mão —, e o jogador liga. */
+  const POLITICA_APOIO = [
+    {id:'manual', rot:_t('Pedir só quando eu mandar'),
+     nota:_t('o pedido sai do botão "Pedir ajuda" da caravana, jogo a jogo')},
+    {id:'sempre', rot:_t('Sempre pedir apoio fora de casa'),
+     nota:_t('todo jogo fora, a diretoria pede à aliada de melhor relação na praça — receber soma relação; a recusa tira −7')}
+  ];
+  const POLITICA_PIXO = [
+    {id:'eu',  rot:_t('Eu comando as pixações'),
+     nota:_t('cada muro é escolhido no mapa, à mão')},
+    {id:'ia',  rot:_t('A diretoria pixa sozinha'),
+     nota:_t('o saldo do mês é gasto aos poucos, todo dia, no bairro com mais chance de virar — como as outras torcidas fazem')}
+  ];
   function politicas(E){
     E.politicas = E.politicas || {};
     if(E.politicas.jogo   === undefined) E.politicas.jogo   = 'nunca';
     if(E.politicas.outros === undefined) E.politicas.outros = 'nunca';
+    if(E.politicas.apoio  === undefined) E.politicas.apoio  = 'manual';
+    if(E.politicas.pixo   === undefined) E.politicas.pixo   = 'eu';
     return E.politicas;
+  }
+  /* O APOIO AUTOMÁTICO: roda todo dia; cada jogo fora da semana que
+     ainda não passou e não tem pedido ganha um, à aliada de melhor
+     relação da praça (a primeira de `aliadasNaPracaDeles`) */
+  function pedirApoioDaSemana(E){
+    if(politicas(E).apoio !== 'sempre' || !E.temporada) return [];
+    const meu = M().time(E.torcida.clubeId);
+    if(!meu) return [];
+    const feitos = [];
+    for(const a of TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana) || []){
+      const j = TO.estado.fichaDoJogo(E, a);
+      if(!j || j.casa || (j.dia != null && j.dia < E.data.dia) || ajudaDe(E, j)) continue;
+      const al = aliadasNaPracaDeles(E, j);
+      if(!al.length) continue;
+      const r = pedirAjuda(E, al[0].id, j);
+      if(r) feitos.push(r);
+    }
+    return feitos;
   }
   function definirPolitica(E, qual, id){
     politicas(E)[qual] = id;
@@ -1536,7 +1611,7 @@ TO.planejamento = (function(){
   }
 
   return {plano, tipoDoJogo, salvarPadrao, temPadrao, esquecerPadrao,
-          RELACAO_QUENTE, POLITICA_ATAQUE, politicas, definirPolitica,
+          RELACAO_QUENTE, POLITICA_ATAQUE, POLITICA_APOIO, POLITICA_PIXO, politicas, definirPolitica, pedirApoioDaSemana,
           ehRival, alvosDaPolitica, aplicarPolitica,
           alvosDoJogo, soAliados, ruaCrua, intencoes, outrosJogosNaCidade,
           recepcaoPadrao, definirRecepcaoPadrao, nivelDe,

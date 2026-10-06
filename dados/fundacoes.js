@@ -70,7 +70,7 @@ TO.dados.fundacoes = {
   'inter-de-limeira':    [15, 8],
   'sampaio-correa':      [25, 3],
   'gama':                [15, 11],
-  'rio-negro':           [13, 11],
+  'sao-raimundo':        [18, 11],
   'moto-club':           [13, 9],
   'asa':                 [25, 9],
   'volta-redonda':       [9, 2],

@@ -7,8 +7,11 @@
    dentro do repositório pra a cena do estádio não inventar um
    segundo boneco.
 
-   O QUE ELE É. Modelo humano feito no Blender
-   (`ferramentas/boneco_blender.py` → `img/boneco.glb`), clonado
+   O QUE ELE É. Modelo humano feito no Blender — desde 06/10/2026 o
+   do jogo 2D refeito sobre humanos de verdade: corpo anatômico, rosto
+   do MakeHuman, olhos e nove tons de pele (`ferramentas/boneco_base.py`
+   → `img/boneco.glb` e `img/boneco_leve.glb`; os dois níveis do jogo 3D
+   saem do leve, `ferramentas/afinar_boneco.mjs`) —, clonado
    com esqueleto por figura, com cabelo, boné, bandana, barba,
    óculos, cordão, relógio, camisa da torcida com listras,
    bermuda ou calça e tênis — tudo sorteado por uma semente que é
@@ -137,7 +140,10 @@ let escalaDoTabuleiro = () => 1;
   const ALTURA_CAM = 1000;
 
   /* ---------- paletas ---------- */
-  const PELE   = ['#f2c9a6','#e0b088','#c8916a','#a8704c','#7a4b30','#5a3622','#d9a680','#b8825c'];
+  /* OS NOVE TONS DE PELE (a grade do dono, 06/10/2026): do claro rosado ao
+     marrom escuro. Entram multiplicando o mapa de detalhe da pele (lábio,
+     olho, barba rala — img/pele_detalhe_leve.png), igual no rosto e no corpo. */
+  const PELE   = ['#e6c3ae','#d9b393','#d0a888','#cba383','#b98f6e','#ad8463','#a17656','#825f46','#6b4a36'];
   const CALCA  = ['#2b2f3a','#1e2a44','#3a3a3a','#4a3b2a','#23262b','#565a63','#2f4a6b','#1a1a1a'];
   const CABELO = ['#111111','#2a1a10','#3b2a1a','#000000','#4a3626','#1a1a1a','#5c4030'];
   const TENIS  = ['#f0f0f0','#111111','#e8e8e8','#2b2b2b','#d8d0c0'];
@@ -493,7 +499,7 @@ let escalaDoTabuleiro = () => 1;
   }
 
   /* =======================================================
-     O BONECO DO BLENDER (ferramentas/boneco_blender.py → img/boneco.glb,
+     O BONECO DO BLENDER (ferramentas/boneco_base.py → img/boneco.glb,
      embutido em dados/boneco_glb.js). Quando o GLB e o GLTFLoader estão
      carregados, cada figura é um clone do modelo com esqueleto
      (SkeletonUtils.clone); as variantes (cabelo, boné, barba, óculos,
@@ -633,6 +639,16 @@ let escalaDoTabuleiro = () => 1;
         const novo = new THREE.MeshLambertMaterial({color: mt.color ? mt.color.clone() : new THREE.Color('#ccc'),
           map: mt.map || null, transparent: !!mt.transparent, opacity: mt.opacity!==undefined ? mt.opacity : 1});
         novo.name = mt.name; o.material = remendar(novo);
+        if(mt.name === 'pele' && mt.map){
+          /* O ROSTO NA MESMA COR DO CORPO (o dono, 06/10/2026, no jogo 2D: "a
+             cor do rosto do boneco deve ser a mesma do corpo"): a textura da
+             pele (o mapa de detalhe do MakeHuman: lábio, olho, sobrancelha)
+             é lida como linear — o branco dela é a pele exata da cor do
+             vértice, nos nove tons. Marcada, a junção leva a UV dela. */
+          mt.map.colorSpace = THREE.LinearSRGBColorSpace; mt.map.needsUpdate = true;
+          mt.map.userData.pele = true;
+          if(!texRosto) texRosto = mt.map;
+        }
         o.frustumCulled = false;
       }
     });
@@ -653,6 +669,12 @@ let escalaDoTabuleiro = () => 1;
       let antes = 0, depois = 0;
       modeloGLB.traverse(o=>{
         if(!o.isMesh || !o.geometry) return;
+        /* O CORPO E A CABEÇA NÃO SE AFINAM NA GRADE (jogo 2D, 06/10/2026):
+           o corpo do MakeHuman juntava vértice de pele com o de camisa (as
+           pontas da camisa, a cintura fina) e a UV do rosto desmanchava; os
+           acessórios seguem afinados */
+        if(/^corpo/.test(o.name) || (o.parent && /^corpo/.test(o.parent.name))) return;
+        if(/^(cabeca|cabelo_|bone_|bandana|barba_|rosto_)/.test(o.name) || (o.parent && /^(cabeca|cabelo_|rosto_)/.test(o.parent.name))) return;
         antes += triangulosDe(o.geometry);
         const g = afinarMalha(o.geometry, cfg.afinarCelulas);
         if(g){ o.geometry.dispose(); o.geometry = g; }
@@ -959,6 +981,32 @@ let escalaDoTabuleiro = () => 1;
   const geomJuntas = new Map();
   const matJunto = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff});
   matJunto.name = 'junto';
+  /* O ROSTO NA MALHA JUNTADA (06/10/2026): a junção jogava fora a UV e a
+     textura — o boneco do jogo não tinha olho, boca nem sobrancelha. A
+     malha juntada agora leva a UV da cabeça (as outras peças apontam pra
+     um texel branco da nuca) e este material lê a textura do rosto. O
+     alfa da textura diz como ela entra: 255 multiplica a cor do vértice
+     (a pele), 128 é cor própria — o branco do olho e a íris não
+     escurecem em pele escura (ferramentas/boneco_base.py). */
+  let texRosto = null, matJuntoRosto = null;   // a textura da pele (a do primeiro nível que chegou)
+  function materialJunto(){
+    if(!texRosto) return matJunto;
+    if(matJuntoRosto) return matJuntoRosto;
+    matJuntoRosto = new THREE.MeshLambertMaterial({vertexColors:true, color:0xffffff, map:texRosto});
+    matJuntoRosto.name = 'junto';
+    /* (no 3D o `#include <color_fragment>` fica: a noite do cenário,
+       `comNoite`, se pendura nele. A conta do alfa vem depois e devolve a
+       cor própria — divide o vértice de volta — onde o alfa é 128; a pele
+       de hoje é JPEG, alfa cheio, e ali nada muda) */
+    matJuntoRosto.onBeforeCompile = sh => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>',
+        '#include <color_fragment>\n#ifdef USE_COLOR\n  float kPele = clamp((diffuseColor.a - 0.5) * 2.0, 0.0, 1.0);\n' +
+        '  diffuseColor.rgb = mix(diffuseColor.rgb / max(vColor, vec3(0.0001)), diffuseColor.rgb, kPele);\n  diffuseColor.a = 1.0;\n#endif');
+    };
+    /* (a noite do cenário encadeia o dela depois deste) */
+    return remendar(matJuntoRosto);
+  }
+  const UV_BRANCO = [0.02, 0.5];      // a nuca: branco, alfa cheio
   const geomJuntasLonge = new Map();
   const guardar = (cache, chave, geo) => {
     cache.set(chave, geo);
@@ -978,7 +1026,7 @@ let escalaDoTabuleiro = () => 1;
     if(!base) return null;
     let geo = geomJuntas.get(chave);
     if(!geo){ geo = geometriaJunta(base, pecas); guardar(geomJuntas, chave, geo); }
-    const junto = new THREE.SkinnedMesh(geo, matJunto);
+    const junto = new THREE.SkinnedMesh(geo, materialJunto());
     junto.name = 'junto';
     junto.frustumCulled = false;
     junto.bind(base.skeleton, base.bindMatrix);
@@ -997,7 +1045,7 @@ let escalaDoTabuleiro = () => 1;
     const idxOsso = new Map(base.skeleton.bones.map((b,i)=>[b.name, i]));
     let geo;
     {
-      const P=[], N=[], C=[], SI=[], SW=[], IDX=[];
+      const P=[], N=[], C=[], SI=[], SW=[], IDX=[], UV=[];
       const invBase = new THREE.Matrix4().copy(base.matrixWorld).invert();
       const m4 = new THREE.Matrix4(), m3 = new THREE.Matrix3(), v = new THREE.Vector3(), n = new THREE.Vector3();
       const cor = new THREE.Color();
@@ -1005,6 +1053,8 @@ let escalaDoTabuleiro = () => 1;
       for(const o of pecas){
         const g = o.geometry, pos = g.getAttribute('position'), nor = g.getAttribute('normal');
         const col = g.getAttribute('color'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+        /* (a pele dos dois níveis: cada GLB traz a sua textura, marcada em `prepararModelo`) */
+        const uvA = (texRosto && o.material && o.material.map && o.material.map.userData.pele) ? g.getAttribute('uv') : null;
         const idx = g.getIndex();
         const nV = pos.count;
         /* transformação: peça pendurada em osso vai pro espaço do corpo */
@@ -1028,6 +1078,7 @@ let escalaDoTabuleiro = () => 1;
           if(nor){ n.fromBufferAttribute(nor, i); if(pendurada) n.applyMatrix3(m3).normalize(); N.push(n.x, n.y, n.z); }
           else N.push(0, 1, 0);
           if(col) C.push(col.getX(i), col.getY(i), col.getZ(i)); else C.push(cor.r, cor.g, cor.b);
+          if(uvA) UV.push(uvA.getX(i), uvA.getY(i)); else UV.push(UV_BRANCO[0], UV_BRANCO[1]);
           if(pendurada){ SI.push(Math.max(0, osso), 0, 0, 0); SW.push(1, 0, 0, 0); }
           else {
             const a = si.getX(i), b = si.getY(i), c = si.getZ(i), d = si.getW(i);
@@ -1043,6 +1094,7 @@ let escalaDoTabuleiro = () => 1;
       geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
       geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
       geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      if(texRosto) geo.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
       geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
       geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
       geo.setIndex(IDX);
@@ -1053,19 +1105,35 @@ let escalaDoTabuleiro = () => 1;
 
   /* VESTIR: as variantes da ficha ligadas, a cor de cada peça e o desenho
      da camisa — o mesmo nos dois níveis do boneco */
+  const comGolaDe = (f, pm) => { const des = DESENHOS[f.desenho] || 'lisa'; return !pm && (des === 'gola' || des === 'gola-dupla'); };
   function coresDe(f, pm){
-    return {pele:f.pele, camisa: pm ? '#233a2c' : f.camisa, faixa: pm ? '#c9d64a' : f.faixa,
-            calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,
-            bone: f.corBone, sola:'#2a2a2a'};
+  /* A GOLA E O PUNHO SÃO MATERIAIS DO MODELO (06/10/2026): gola careca
+     pequena em volta do pescoço e punho na boca da manga. Camisa de
+     'gola' pinta os dois na 2ª cor; 'gola-dupla', o punho em duas
+     faixas, a da boca na 3ª; lisa, tudo na cor da camisa.
+     A FAIXA DO PEITO EM DUAS LISTRAS (pedido do dono, 06/10/2026: "as
+     torcidas com 3 cores sejam representadas agora com a terceira cor
+     também na camisa"): a de cima ('faixa') na 2ª cor, a de baixo
+     ('faixa2') na 3ª; quem tem só duas cores pinta as duas na 2ª. */
+  const des = DESENHOS[f.desenho] || 'lisa';
+  const comGola = !pm && (des === 'gola' || des === 'gola-dupla');
+  const camisaCor = pm ? '#233a2c' : f.camisa;
+  return {pele:f.pele, camisa: camisaCor, faixa: pm ? '#c9d64a' : f.faixa,
+              faixa2: pm ? '#c9d64a' : (f.cor3 || f.faixa),
+              gola: comGola ? f.faixa : camisaCor, punho: comGola ? f.faixa : camisaCor,
+              punho2: des === 'gola-dupla' ? (f.cor3 || f.faixa) : comGola ? f.faixa : camisaCor,
+              calca: pm ? '#1b2620' : f.calca, tenis: pm ? '#111' : f.tenis, cabelo:f.cabelo,
+              bone: f.corBone, sola:'#2a2a2a'};
   }
   function vestir(modelo, f, pm, on, cores, nivel){
+    const comGola = comGolaDe(f, pm);
     const matsFig = new Map();
     modelo.traverse(o=>{
       if(!o.isMesh) return;
       if(VARIANTE.test(o.name)) o.visible = on.has(o.name);
       const nome = o.material.name;
       /* o desenho da camisa (estudo): cor por vértice na malha */
-      if(nome === 'camisa' && !pm && f.desenho > 0 && o.geometry.getAttribute('position')){
+      if(nome === 'camisa' && !pm && f.desenho > 0 && !comGola && o.geometry.getAttribute('position')){
         o.geometry = geometriaCamisa(o.geometry, f.desenho, f.camisa, f.faixa, f.cor3, nivel);
         o.material = matCamisaVC;
         return;
@@ -1308,6 +1376,14 @@ let escalaDoTabuleiro = () => 1;
   /* =======================================================
      OS MOVIMENTOS: cada um escreve na pose-alvo `p`
      ======================================================= */
+  /* A MÃO NA CINTURA DO CORPO NOVO (06/10/2026): os ângulos antigos eram do
+     boneco de caixas e do primeiro GLB — no corpo do MakeHuman a mão subia
+     pro peito, o braço abria e levantava e o ombro estufava. Aqui o braço
+     cai aberto e um pouco pra trás, o cotovelo aponta pro lado e a mão
+     assenta na crista do quadril. Os números saíram de uma varredura medindo
+     a mão no esqueleto — e mostraram que NESTE esqueleto `ombroZ` positivo
+     FECHA o braço; abrir é negativo. */
+  const MAO_NA_CINTURA = {ombro:0.05, ombroZ:-0.6, cotovelo:-1.8, maoZ:1.2};
   /* parado: respira, pesa numa perna, olha em volta de vez em quando */
   /* parado: respira, pesa numa perna, olha em volta — cada um no seu
      tempo e na sua postura */
@@ -1318,18 +1394,23 @@ let escalaDoTabuleiro = () => 1;
     p.inclina = 0.02 + 0.012*r + e.curvado;
     p.tomba = 0.03*e.gingado*Math.sin(t*0.6 + f.fase) + 0.02*ruido(f, t, 0.9, 1.3);
     p.gira = 0.05*e.inquieto*ruido(f, t, 0.5, 0.8);
-    const lado = Math.sin(f.fase) > 0 ? 1 : -1;
-    p.coxa = [0.06*lado, -0.04*lado]; p.joelho = [0.10, 0.06];
+    /* O PESO TROCA DE PERNA (pente fino, 06/10/2026): ninguém fica parado
+       sempre na mesma perna — de tempos em tempos o corpo passa o peso pro
+       outro lado, devagar, e o quadril e o ombro acompanham */
+    const lado = Math.max(-1, Math.min(1, 2.5*Math.sin(t*0.11 + f.fase*3)));
+    p.coxa = [0.06*lado, -0.04*lado]; p.joelho = [0.08 + 0.05*Math.max(0, -lado), 0.08 + 0.05*Math.max(0, lado)];
+    p.tomba += 0.025*lado;
     if(e.pesado){ p.joelho = [0.16, 0.12]; p.y = -0.6; }
     const olha = Math.sin(t*0.13+f.fase) > (0.6 - e.inquieto*0.3) ? 1 : 0.2;
     p.olhaY = 0.35*e.inquieto*Math.sin(t*0.45 + f.fase*2)*olha;
     p.olhaX = 0.05*Math.sin(t*0.8+f.fase) + e.curvado*0.5;
     const v = variante(f, 'parado', t, 6);
+    const C = MAO_NA_CINTURA;
     if(v===1){            // mãos na cintura
-      p.ombro = [0.35, 0.35]; p.ombroZ = [0.62, 0.62]; p.cotovelo = [-1.5, -1.5]; p.maoZ = [1.05, 1.05]; p.punho = [0, 0];
+      p.ombro = [C.ombro, C.ombro]; p.ombroZ = [C.ombroZ, C.ombroZ]; p.cotovelo = [C.cotovelo, C.cotovelo]; p.maoZ = [C.maoZ, C.maoZ]; p.punho = [0, 0];
       p.inclina -= 0.04; p.peito += 0.02;
     } else if(v===2){     // uma mão na cintura, peso numa perna só
-      p.ombro = [0.3, 0.08 - 0.03*ruido(f,t,0.8,1.2)]; p.ombroZ = [0.6, 0.12]; p.cotovelo = [-1.5, -0.35]; p.maoZ = [1.0, 0]; p.punho = [0, 0];
+      p.ombro = [C.ombro, 0.08 - 0.03*ruido(f,t,0.8,1.2)]; p.ombroZ = [C.ombroZ, 0.12]; p.cotovelo = [C.cotovelo, -0.35]; p.maoZ = [C.maoZ, 0]; p.punho = [0, 0];
       p.tomba += 0.06*lado; p.coxa = [0.12*lado, -0.1*lado]; p.joelho = [0.04, 0.22]; p.y -= 0.4;
     } else {              // solto, braços caídos
       p.ombro = [0.08 + 0.03*ruido(f,t,1.1,0.7), 0.08 - 0.03*ruido(f,t,0.8,1.2)];
@@ -1352,22 +1433,43 @@ let escalaDoTabuleiro = () => 1;
     f.ciclo += vel*freq*dt*6.28*0.36;
     const c = f.ciclo, s = Math.sin(c), s2 = Math.sin(c+Math.PI);
     const amp = (corre ? 0.95 : 0.55) * e.passada * (duro ? 0.9 : 1);
-    const lev = (corre ? 1.1 : 0.7) * e.passada;
+    const lev = (corre ? 1.25 : 0.72) * e.passada;
     p.coxa = [s*amp, s2*amp];
-    /* o joelho dobra na perna que vai pra frente (coxa negativa) */
-    const base = e.pesado ? 0.16 : 0.08;
-    p.joelho = [Math.max(0, -s)*lev + base, Math.max(0, -s2)*lev + base];
-    p.pe = [Math.max(0, s)*0.35, Math.max(0, s2)*0.35];
-    const bs = (corre ? 0.9 : 0.42) * e.balanco * (duro ? 0.35 : v===1 && !corre ? 0.7 : 1);
-    p.ombro = [s2*bs - (corre?0.4:0.05), s*bs - (corre?0.4:0.05)];
-    p.cotovelo = corre ? [-1.5, -1.5] : duro ? [-0.25, -0.25] : [-0.45 - Math.max(0,s2)*0.3*e.balanco, -0.45 - Math.max(0,s)*0.3*e.balanco];
+    /* O JOELHO DE GENTE (pente fino, 06/10/2026): ele dobra mais na
+       PASSAGEM — a perna de balanço passando por baixo do corpo (coxa
+       indo pra frente, cos < 0) —, chega quase reta no calcanhar e
+       dobra de leve no apoio, amortecendo o peso. Antes dobrava mais com
+       a perna já esticada à frente, o que é o contrário. */
+    const base = e.pesado ? 0.14 : 0.06;
+    const joe = (fase) => {
+      const balanco = Math.max(0, -Math.cos(fase)), apoio = Math.max(0, Math.cos(fase))*Math.max(0, -Math.sin(fase));
+      return base + lev*Math.pow(balanco, 1.6) + (corre ? 0.35 : 0.14)*apoio;
+    };
+    p.joelho = [joe(c), joe(c + Math.PI)];
+    /* o pé: ponta empurra quando a perna está atrás, calcanhar pisa (ponta
+       pra cima) quando a perna chega à frente */
+    /* e no balanço a ponta sobe, pra não arrastar no chão */
+    const ponta = fa => { const fs = Math.sin(fa); return Math.pow(Math.max(0, fs), 2)*0.24 - Math.max(0, -fs)*0.14 - 0.45*Math.pow(Math.max(0, -Math.cos(fa)), 1.6); };
+    p.pe = [ponta(c), ponta(c + Math.PI)];
+    /* o braço balança contra a perna, um tico atrasado, e o cotovelo
+       dobra mais quando o braço vem pra frente */
+    const cb = c - 0.25, sb = Math.sin(cb), sb2 = Math.sin(cb + Math.PI);
+    const bs = (corre ? 0.9 : 0.55) * e.balanco * (duro ? 0.35 : v===1 && !corre ? 0.75 : 1);
+    p.ombro = [sb2*bs - (corre?0.4:0.05), sb*bs - (corre?0.4:0.05)];
+    p.cotovelo = corre ? [-1.5 - 0.15*Math.max(0, -sb2), -1.5 - 0.15*Math.max(0, -sb)] : duro ? [-0.25, -0.25]
+               : [-0.32 - Math.max(0, -sb2)*0.45*e.balanco, -0.32 - Math.max(0, -sb)*0.45*e.balanco];
     p.ombroZ = [0.12, 0.12];
     p.gira = -s*(corre?0.22:0.10)*e.balanco*(gingado>1 ? 1.4 : duro ? 0.5 : 1);          // ombros contra o quadril
     p.tomba = Math.sin(c)*(corre?0.05:0.035)*e.gingado*(duro ? 0.4 : gingado);
     p.inclina = (corre ? 0.30 : 0.07) + e.curvado + (duro ? 0.03 : 0);
-    p.y = Math.abs(Math.sin(c))*(corre?1.4:0.6)*e.passada*(gingado>1 ? 1.4 : 1) - (corre?0.6:0) - (e.pesado?0.8:0);
+    /* o sobe-e-desce: andando, o corpo é mais alto com as pernas juntas
+       (no apoio) e mais baixo com elas abertas; correndo é o contrário —
+       o alto é o voo, com as pernas abertas */
+    p.y = (corre ? Math.abs(Math.sin(c))*1.4 - 0.6 : (0.5 + 0.5*Math.cos(2*c))*0.7 - 0.35)
+          *e.passada*(gingado>1 ? 1.4 : 1) - (e.pesado?0.8:0);
     p.olhaX = (corre ? -0.1 : 0.02) + e.curvado*0.4;
-    p.olhaY = 0.06*ruido(f, c*0.3, 1, 1.4);
+    /* a cabeça segura o olhar pra frente: gira contra o tronco */
+    p.olhaY = 0.06*ruido(f, c*0.3, 1, 1.4) - p.gira*0.7;
     if(corre && v===1){ p.ombroZ = [0.45, 0.45]; p.cotovelo = [-1.15, -1.15]; p.ombro[0] -= 0.2; p.ombro[1] -= 0.2; }
     if(corre && v===2){ p.inclina += 0.16; p.olhaX += 0.22; p.cotovelo = [-1.8, -1.8]; p.ombroZ = [0.05, 0.05]; }
     return true;
@@ -1969,7 +2071,7 @@ let escalaDoTabuleiro = () => 1;
       case 0:   // uma mão, na altura do peito; a outra na cintura
         p.ombro[1] = -1.5*r; p.ombroZ[1] = 0.1; p.cotovelo[1] = mistura(-0.2, -0.6, chama)*r; p.maoZ[1] = 0.1*r;
         p.pulso[1] = mistura(-0.6, 0.85, chama)*r; p.punho[1] = 0;
-        p.ombro[0] = 0.35*r; p.ombroZ[0] = 0.62*r; p.cotovelo[0] = -1.5*r; p.maoZ[0] = 1.05*r; p.punho[0] = 0;
+        p.ombro[0] = MAO_NA_CINTURA.ombro*r; p.ombroZ[0] = MAO_NA_CINTURA.ombroZ*r; p.cotovelo[0] = MAO_NA_CINTURA.cotovelo*r; p.maoZ[0] = MAO_NA_CINTURA.maoZ*r; p.punho[0] = 0;
         p.inclina = 0.18*r; p.olhaX = -0.1*r; p.tomba = -0.08*r; p.gira = 0.15*r; break;
       case 1:   // as duas mãos baixas, corpo pra frente, queixo pra cima
         p.ombro = [-0.95*r, -0.95*r]; p.ombroZ = [0.4*r, 0.4*r]; p.cotovelo = [mistura(-0.15, -0.55, chama)*r, mistura(-0.15, -0.55, 1-chama)*r];
@@ -2279,8 +2381,9 @@ let escalaDoTabuleiro = () => 1;
     const w = t*2.4 + f.fase;
     const a = 0.5 + 0.5*Math.sin(w), b = 0.5 + 0.5*Math.sin(w*0.61 + 2.0);
     p.inclina += 0.05; p.olhaX = -0.06 + 0.04*Math.sin(w*0.7); p.olhaY = 0.25*Math.sin(w*0.29 + f.fase);
-    p.ombro = [0.35, -0.75 - 0.55*a]; p.ombroZ = [0.62, 0.45 + 0.3*b];
-    p.cotovelo = [-1.5, -1.35 + 0.5*a]; p.maoZ = [1.05, 0.2 + 0.35*a]; p.punho = [0, 0];
+    const C = MAO_NA_CINTURA;
+    p.ombro = [C.ombro, -0.75 - 0.55*a]; p.ombroZ = [C.ombroZ, 0.45 + 0.3*b];
+    p.cotovelo = [C.cotovelo, -1.35 + 0.5*a]; p.maoZ = [C.maoZ, 0.2 + 0.35*a]; p.punho = [0, 0];
   }
 
   /* QUEM CAIU FICA A 50% (pedido do dono, 06/09/2026): os materiais
@@ -2383,7 +2486,7 @@ let escalaDoTabuleiro = () => 1;
     const agitado = !d.vivo || d.derrubado > 0 || !!d.ataque || d.golpe > 0 || d.apanhou > 0 ||
       d.atordoado > 0 || !!d.arremesso || !!d.segurando || !!d.seguradoPor || d.esquivou > 0 ||
       d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3) ||
-      (J.falante === d);
+      (J.falante === d) || (!!d.comemorando && !!f.provoca);
     fg.mudou = true;
     if(leve && !agitado && ((quadroN + i) % 3)){
       /* o tempo do quadro pulado fica guardado: no quadro que conta, o
@@ -2475,15 +2578,20 @@ let escalaDoTabuleiro = () => 1;
       if(d.fugaBomba) cobrir(p);
 
       /* a provocação: inimigo a 24–90 px, sem golpe, sem defesa, parado */
-      const podeProvocar = !leve && !andando && d.inimigoPerto > 24 && d.inimigoPerto < 90 && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso && (d.hostil > 0 || d.linha==='frente');
+      /* GANHOU, PROVOCA (pedido do dono, 06/10/2026): sem rival de pé, o
+         lado que sobrou fica parado provocando — não precisa de inimigo
+         perto, e provoca quase sem pausa, um gesto atrás do outro */
+      const comemora = !!d.comemorando && !andando && !d.ataque && d.atordoado<=0;
+      const podeProvocar = (!leve || comemora) && !andando && !d.ataque && d.defendendo<=0 && d.atordoado<=0 && !d.arremesso &&
+        (comemora || (d.inimigoPerto > 24 && d.inimigoPerto < 90 && (d.hostil > 0 || d.linha==='frente')));
       if(f.provoca){
         f.provoca.t += dt;
         if(f.provoca.t >= f.provoca.dur || d.ataque || d.defendendo>0 || d.atordoado>0 || andando) f.provoca = null;
       } else if(podeProvocar){
         f.tProvoca = (f.tProvoca||0) - dt;
         if(f.tProvoca <= 0){
-          f.tProvoca = 1.5 + Math.random()*3;
-          if(Math.random() < f.estilo.provocador*0.6)
+          f.tProvoca = comemora ? 0.15 + Math.random()*0.6 : 1.5 + Math.random()*3;
+          if(comemora || Math.random() < f.estilo.provocador*0.6)
             f.provoca = {t:0, dur:1.4 + Math.random()*1.2,
               tipo: f.varianteForcada!=null ? f.varianteForcada
                   : Math.random() < 0.72 ? (Math.random()<0.5 ? f.estilo.provocaFav : Math.floor(Math.random()*3))
@@ -2768,6 +2876,29 @@ let escalaDoTabuleiro = () => 1;
     const h = Math.max(200, Math.round(ch*dpr));
     if(cv.width!==w || cv.height!==h){ renderer.setSize(w, h, false); }
     return true;
+  }
+
+  /* AS FOTOS NÃO DERRUBAM OS BONECOS (o dono, 02/10/2026: "algumas cenas
+     de briga estão surgindo com os discos em vez do boneco"). Cada foto
+     de briga do jornal (cartaz.js) e do troféu abria um WebGLRenderer
+     novo, e `dispose()` não fecha o contexto: o Chrome aguenta uns 16 e
+     derruba o MAIS ANTIGO — o dos bonecos da cena —, que não volta; dali
+     em diante toda briga abria com disco. Agora as fotos dividem UM
+     renderizador, num canvas só dele, no tamanho pedido. */
+  let fotoR = null;
+  function rendererDaFoto(cvB){
+    if(fotoR && fotoR.getContext().isContextLost()){ try{ fotoR.dispose(); }catch(_){ } fotoR = null; }
+    if(!fotoR){
+      fotoR = new THREE.WebGLRenderer({canvas:document.createElement('canvas'), antialias:true, alpha:true,
+                                       premultipliedAlpha:true, preserveDrawingBuffer:true});
+    }
+    fotoR.setPixelRatio(1);
+    fotoR.setSize(cvB.width, cvB.height, false);
+    return fotoR;
+  }
+  /* depois da foto, as listas do quadro saem (o renderizador fica) */
+  function soltarFoto(r){
+    try{ r.renderLists.dispose(); }catch(_){ }
   }
 
   function montar(canvas){
@@ -3079,10 +3210,10 @@ let escalaDoTabuleiro = () => 1;
     x.restore();
 
     /* 2. os bonecos, na MESMA câmera de cima da briga */
-    const cvB = document.createElement('canvas'); cvB.width = W; cvB.height = H;
+    const cvB = {width:W, height:H};   // o tamanho; o canvas é o do renderizador das fotos
     let r = null, maosCena = null;
     try{
-      r = new THREE.WebGLRenderer({canvas:cvB, antialias:true, alpha:true, premultipliedAlpha:true, preserveDrawingBuffer:true});
+      r = rendererDaFoto(cvB);
       r.setPixelRatio(1); r.setClearColor(0x000000, 0);
       const sc = new THREE.Scene();
       sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
@@ -3138,9 +3269,9 @@ let escalaDoTabuleiro = () => 1;
         maosCena = {esq: ex, dir: dx, y: sy/ps.length};
       }
       r.render(sc, camF);
-      x.drawImage(cvB, 0, 0);
+      x.drawImage(r.domElement, 0, 0);
     }catch(err){ console.warn('foto do troféu (bonecos): '+err.message); }
-    finally{ if(r) r.dispose(); }
+    finally{ if(r) soltarFoto(r); }
 
     /* 3. O PANO NAS MÃOS, DE CABEÇA PRA BAIXO. Faixa tomada se mostra
        invertida — é assim que se exibe o troféu. Ele vai de uma mão da
@@ -3168,6 +3299,367 @@ let escalaDoTabuleiro = () => 1;
      cada lado pra mão segurar */
   function passoDoPano(n){ return (n-1)*POSE_PASSO + 34; }
 
+  /* =======================================================
+     A FOTO DA BRIGA (pedido do dono, 01/10/2026): a imagem do post do
+     Futebol e Porrada — "bonecos da torcida vencedora batendo em
+     bonecos da torcida perdedora", no lugar em que a briga foi. É a
+     mesma receita da foto do troféu: o fundo aéreo da cena num canvas
+     2D, os bonecos num renderizador só desta foto, a mesma câmera de
+     cima. Os vencedores à esquerda, de frente pros perdedores, no pico
+     do golpe (soco ou chute, pelo repertório de cada um); os perdedores
+     à direita, um no chão, um se cobrindo, um cambaleando.
+     A cena no ar é trocada só pra desenhar e volta logo depois; com
+     uma briga rodando, nada é feito (a cena viva não pode mudar).
+     `opc`: {cena, vencedor:{id,cor,cor2,cor3}, perdedor:{…}, pares,
+             largura, altura, vista, semente}
+     ======================================================= */
+  function fotoDaBriga(opc){
+    if(typeof THREE === 'undefined') return Promise.resolve(null);
+    const P = TO.diaJogo.ponte;
+    if(P && P.rodando) return Promise.resolve(null);
+    carregarGLB();
+    const A = TO.diaJogo.arredores;
+    if(!A || !A.usarCena) return Promise.resolve(null);
+    const espera = ()=> new Promise(res=>{
+      const t0 = Date.now();
+      (function v(){
+        if(modeloGLB) return res(true);
+        if(Date.now()-t0 > 6000) return res(false);
+        setTimeout(v, 120);
+      })();
+    });
+    return espera().then(ok=>{
+      if(!ok || (P && P.rodando)) return null;
+      const antes = A.D && A.D.id;
+      const trocou = opc.cena && A.D && A.D.id !== opc.cena;
+      if(trocou) A.usarCena(opc.cena);
+      /* a foto aérea da cena nova ainda pode estar chegando */
+      const fundo = ()=> new Promise(res=>{
+        const t0 = Date.now();
+        (function v(){
+          if(A.imagemOk || !A.D.imagem || Date.now()-t0 > 2500) return res();
+          setTimeout(v, 80);
+        })();
+      });
+      return fundo().then(()=>{
+        let url = null;
+        try{ url = renderizarBriga(opc); }catch(err){ console.warn('foto da briga: '+err.message); }
+        if(trocou && !(P && P.rodando)) A.usarCena(antes || 'arredores');
+        return url;
+      });
+    });
+  }
+
+  /* o lugar da foto: perto do meio da briga, onde os pares cabem em pé */
+  /* os pares lado a lado, na largura do quadro 2:1: o meio da foto
+     é o que sobra entre a manchete de cima e os números de baixo */
+  const PAR_DX = 74;
+  const parOffset = (i, pares) => ({dx:(i - (pares-1)/2) * PAR_DX, dy:(i%2 ? 7 : -5)});
+  function pontoDaBriga(A, pares){
+    const W = A.W || 1536, H = A.H || 1024;
+    const cabe = (x, y)=>{
+      if(!A.cabe) return true;
+      for(let i=0;i<pares;i++){
+        const o = parOffset(i, pares);
+        if(!A.cabe(x+o.dx-18, y+o.dy, 8) || !A.cabe(x+o.dx+16, y+o.dy, 8) || !A.cabe(x+o.dx+30, y+o.dy, 6)) return false;
+      }
+      return true;
+    };
+    for(const c of centrosDaPose(A, 'mandante')){
+      for(let r=0; r<=c.raio; r+=14){
+        for(let a=0; a<360; a+=15){
+          const x = c.x + Math.cos(a*Math.PI/180)*r, y = c.y + Math.sin(a*Math.PI/180)*r;
+          if(x < 80 || x > W-80 || y < 80 || y > H-80) continue;
+          if(cabe(x, y)) return {x, y};
+        }
+      }
+    }
+    return {x:W/2, y:H/2};
+  }
+
+  function renderizarBriga(opc){
+    const A = TO.diaJogo.arredores;
+    const W = opc.largura || 800, H = opc.altura || 400;
+    const pares = Math.max(1, Math.min(4, opc.pares || 3));
+    const c0 = pontoDaBriga(A, pares);
+    const VW = opc.vista || (pares * PAR_DX + 70), VH = VW * H / W;
+    /* o grupo na faixa livre do cartaz — abaixo das torcidas, acima da
+       manchete e dos números —, um pouco acima do meio do quadro */
+    const cx = U.limitar(c0.x + 4, VW/2, (A.W||1536) - VW/2);
+    const cy = U.limitar(c0.y + VH*0.07, VH/2, (A.H||1024) - VH/2);
+    const x0 = cx - VW/2, y0 = cy - VH/2, s = W/VW;
+
+    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+    const x = cv2.getContext('2d');
+    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+    A.desenharFundo(x);
+    x.restore();
+
+    const cvB = {width:W, height:H};   // o tamanho; o canvas é o do renderizador das fotos
+    let r = null;
+    try{
+      r = rendererDaFoto(cvB);
+      r.setPixelRatio(1); r.setClearColor(0x000000, 0);
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
+      const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); sc.add(sol);
+      const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); sc.add(contra);
+      const camF = new THREE.OrthographicCamera(x0, x0+VW, -y0, -(y0+VH), 1, ALTURA_CAM*2);
+      camF.position.set(0, ALTURA_CAM, 0); camF.up.set(0, 0, -1); camF.lookAt(0, 0, 0);
+      camF.updateProjectionMatrix();
+      const el = camF.projectionMatrix.elements, a = 2/(camF.top - camF.bottom);
+      el[9] += a*CISALHA; el[13] += a*CISALHA*ALTURA_CAM;
+      camF.projectionMatrixInverse.copy(camF.projectionMatrix).invert();
+      sc.add(camF);
+
+      const sem = String(opc.semente || '');
+      const boneco = (t, lado, i, papel)=>{
+        const d = {nome:`${sem}|${papel}|${i}`, lado, torcida:t.id, cor:t.cor, cor2:t.cor2, cor3:t.cor3||null};
+        const f = fichaDe(d, i); f.escala = 1;
+        f.varianteForcada = dado(`${sem}|${papel}|var|${i}`, 3);
+        const c = construirCorpoGLB(f, false);
+        if(c.anel) c.anel.visible = false;
+        if(c.anelFundo) c.anelFundo.visible = false;
+        return {f, c};
+      };
+      for(let i=0;i<pares;i++){
+        const o = parOffset(i, pares), ox = o.dx, oy = o.dy;
+        /* o vencedor, no pico do golpe */
+        const v = boneco(opc.vencedor || {}, 'mandante', i, 'v');
+        const pv = poseNeutra();
+        const chute = i === 1 && pares > 1;
+        const at = chute ? {tipo:'chute', dur:0.58, impacto:0.28} : {tipo:'soco', dur:0.36, impacto:0.15};
+        const pico = Math.min(0.6, Math.max(0.3, at.impacto/at.dur + 0.06));
+        at.t = pico * at.dur; at.bateu = false;
+        lutar(pv, v.f, {ataque:at}, 0, 0.4 + i*0.37);
+        aplicarPoseGLB(v.c, pv, v.f.escala * escalaDeCima * 0.86);
+        v.c.raiz.position.set(c0.x + ox - 16, 0, c0.y + oy);
+        v.c.raiz.rotation.y = Math.PI/2;           // de frente pra direita
+        sc.add(v.c.raiz);
+        /* o perdedor: no chão, se cobrindo ou cambaleando */
+        const d = boneco(opc.perdedor || {}, 'visitante', i, 'p');
+        const pd = poseNeutra();
+        const jeito = i % 3;
+        if(jeito === 0){ d.f.jazido = 0; cair(pd, d.f, 2); }
+        else if(jeito === 1) cobrirSe(pd, d.f, 0.6 + i);
+        else cambalear(pd, d.f, 0.9 + i);
+        aplicarPoseGLB(d.c, pd, d.f.escala * escalaDeCima * 0.86);
+        d.c.raiz.position.set(c0.x + ox + (jeito === 0 ? 24 : 15), 0, c0.y + oy);
+        d.c.raiz.rotation.y = -Math.PI/2 + (jeito === 1 ? 0.5 : 0);   // de frente pro vencedor
+        sc.add(d.c.raiz);
+      }
+      sc.updateMatrixWorld(true);
+      r.render(sc, camF);
+      x.drawImage(r.domElement, 0, 0);
+    }catch(err){ console.warn('foto da briga (bonecos): '+err.message); }
+    finally{ if(r) soltarFoto(r); }
+    try{ return cv2.toDataURL('image/jpeg', 0.86); }catch(_){ return null; }
+  }
+
+  /* =======================================================
+     A FOTO DO POST (pedido do dono, 04/10/2026: "imagens de ações dos
+     bonecos da torcida no fundo condizentes com o sentido da postagem…
+     no post da resenha, os membros no fundo na casa com piscina. Na
+     treta vencida, os membros rivais caídos. Crie também da
+     faixa/bandeira tomada com os membros estendendo a faixa de cabeça
+     pra baixo"). O mesmo fotógrafo da briga (`fotoDaBriga`): a cena de
+     cima, o chão da cena e os bonecos GLB numa pose parada. O que muda
+     é o roteiro — `opc.grupos`, cada um com a torcida (cores), quantos
+     e o JEITO:
+       festa    · torcendo, em duas fileiras (jogo, vitória, caravana)
+       resenha  · numa roda, uns sentados no chão, uns de pé conversando
+       gaba     · de pé, provocando (quem venceu a treta)
+       caido    · no chão, na frente de quem venceu
+       protesto · braços pra cima e apontando (cobrança, protesto)
+       bonde    · chamando pra briga (o recado da treta)
+       faixa    · em fila, os braços pra frente, segurando o pano
+     `opc.faixa` (um canvas) vai estendido na frente de quem segura, DE
+     CABEÇA PRA BAIXO, na altura do peito. Retrato 4:5 por padrão.
+     ======================================================= */
+  const JEITOS = {
+    festa:   n => Array.from({length:n}, (_, i) => i < 4
+               ? {dx:(i - 1.5)*21, dy:6} : {dx:(i - 4 - (Math.min(n, 7) - 5)/2)*21, dy:-10}),
+    resenha: n => Array.from({length:n}, (_, i) => { const a = i/n*Math.PI*2 + 0.4;
+               return {dx:Math.cos(a)*30, dy:Math.sin(a)*14, olha:-a + Math.PI/2}; }),
+    gaba:    n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*26, dy:-8})),
+    caido:   n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*26 + 9, dy:0})),
+    protesto:n => Array.from({length:n}, (_, i) => ({dx:((i%3) - 1)*22 + (i >= 3 ? 11 : 0), dy:i >= 3 ? -10 : 6})),
+    bonde:   n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*21, dy:(i%2 ? -7 : 4)})),
+    faixa:   n => Array.from({length:n}, (_, i) => ({dx:(i - (n-1)/2)*19, dy:0}))
+  };
+  function poseDoJeito(jeito, f, i, sem){
+    const p = poseNeutra(), t = 1.3 + i*0.71;
+    if(jeito === 'festa'){
+      f.varianteForcada = i % 3; f.tGesto = 9;
+      f.gesto = [2, 0, 1, 4, 2, 0, 1][i % 7];
+      torcer(p, f, t, 0);
+    } else if(jeito === 'resenha'){
+      if(i % 3 === 0){ f.varianteForcada = i % 2 ? 1 : 2; sentar(p, f, t); p.ombro = [0.2, -0.6]; p.cotovelo = [-0.4, -1.4]; }
+      else if(i % 3 === 1) falarEmPe(p, f, t);
+      else { f.tGesto = 9; f.gesto = 1; torcer(p, f, t, 0); }
+    } else if(jeito === 'gaba' || jeito === 'bonde'){
+      f.provoca = {t:0.5, dur:1, tipo: jeito === 'bonde' ? [0, 1, 7][i % 3] : [4, 6, 3, 7, 2][i % 5]};
+      provocar(p, f, t, 0);
+    } else if(jeito === 'caido'){
+      f.jazido = [0, 2, 1][i % 3]; f.jazidoLado = i % 2 ? 1 : -1; f.queda = null;
+      cair(p, f, 2);
+    } else if(jeito === 'protesto'){
+      if(i % 2){ f.provoca = {t:0.5, dur:1, tipo:7}; provocar(p, f, t, 0); }
+      else { f.tGesto = 9; f.gesto = 4; torcer(p, f, t, 0); }
+    } else if(jeito === 'faixa'){
+      parado(p, f, t);
+      p.ombro = [-1.25, -1.25]; p.ombroZ = [0.18, 0.18]; p.cotovelo = [-0.35, -0.35]; p.maoZ = [0.2, 0.2]; p.punho = [1, 1];
+      p.inclina = -0.04; p.olhaX = -0.1;
+    } else parado(p, f, t);
+    return p;
+  }
+  function pontoDoGrupo(A, offs){
+    const W = A.W || 1536, H = A.H || 1024;
+    const cabe = (x, y) => !A.cabe || offs.every(o => A.cabe(x + o.dx, y + o.dy, 7));
+    for(const c of centrosDaPose(A, 'mandante')){
+      for(let r = 0; r <= c.raio; r += 14)
+        for(let a = 0; a < 360; a += 20){
+          const x = c.x + Math.cos(a*Math.PI/180)*r, y = c.y + Math.sin(a*Math.PI/180)*r;
+          if(x < 120 || x > W-120 || y < 120 || y > H-120) continue;
+          if(cabe(x, y)) return {x, y};
+        }
+    }
+    return {x:W/2, y:H/2};
+  }
+  function renderizarCena(opc){
+    const A = TO.diaJogo.arredores;
+    const W = opc.largura || 640, H = opc.altura || 800;
+    /* os grupos, um atrás do outro: cada um com o deslocamento dele */
+    const pos = [];
+    let base = 0;
+    for(const g of (opc.grupos || [])){
+      const offs = (JEITOS[g.jeito] || JEITOS.festa)(Math.max(1, Math.min(8, g.n || 4)));
+      for(let i = 0; i < offs.length; i++) pos.push({g, i, dx:offs[i].dx + (g.dx || 0), dy:offs[i].dy + (g.dy || 0), olha:offs[i].olha});
+      base++;
+    }
+    if(!pos.length) return null;
+    const c0 = pontoDoGrupo(A, pos);
+    const minX = Math.min(...pos.map(p => p.dx)), maxX = Math.max(...pos.map(p => p.dx));
+    const VW = opc.vista || Math.max(94, (maxX - minX) + 46), VH = VW * H / W;
+    /* a foto do post vê mais de lado que a da briga: o corpo inteiro, não
+       só a cabeça de cima */
+    const CIS = opc.cisalha || 0.95;
+    /* o grupo um pouco abaixo do meio do quadro: em cima vai o título */
+    const cx = U.limitar(c0.x + (minX + maxX)/2, VW/2, (A.W||1536) - VW/2);
+    const cy = U.limitar(c0.y - VH*(opc.subir != null ? opc.subir : 0.25), VH/2, (A.H||1024) - VH/2);
+    const x0 = cx - VW/2, y0 = cy - VH/2, s = W/VW;
+
+    const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
+    const x = cv2.getContext('2d');
+    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+    A.desenharFundo(x);
+    x.restore();
+
+    const cvB = {width:W, height:H};
+    let r = null;
+    try{
+      r = rendererDaFoto(cvB);
+      r.setPixelRatio(1); r.setClearColor(0x000000, 0);
+      const sc = new THREE.Scene();
+      sc.add(new THREE.HemisphereLight(0xfff4e0, 0x6a5a48, 0.85));
+      const sol = new THREE.DirectionalLight(0xffffff, 0.75); sol.position.set(-0.5, 1, -0.6); sc.add(sol);
+      const contra = new THREE.DirectionalLight(0xa0c0ff, 0.25); contra.position.set(0.6, 0.5, 0.8); sc.add(contra);
+      const camF = new THREE.OrthographicCamera(x0, x0+VW, -y0, -(y0+VH), 1, ALTURA_CAM*2);
+      camF.position.set(0, ALTURA_CAM, 0); camF.up.set(0, 0, -1); camF.lookAt(0, 0, 0);
+      camF.updateProjectionMatrix();
+      const el = camF.projectionMatrix.elements, a = 2/(camF.top - camF.bottom);
+      el[9] += a*CIS; el[13] += a*CIS*ALTURA_CAM;
+      camF.projectionMatrixInverse.copy(camF.projectionMatrix).invert();
+      sc.add(camF);
+      const sem = String(opc.semente || '');
+      /* de trás pra frente na tela: quem está mais embaixo cobre quem está em cima */
+      for(const q of pos.slice().sort((a2, b2) => a2.dy - b2.dy)){
+        const t = q.g.t || {};
+        const d = {nome:`${sem}|${q.g.jeito}|${t.id}|${q.i}`, lado:'mandante', torcida:t.id, cor:t.cor, cor2:t.cor2, cor3:t.cor3||null};
+        const f = fichaDe(d, q.i); f.escala = 1;
+        f.varianteForcada = dado(`${sem}|${q.g.jeito}|var|${q.i}`, 3);
+        const c = construirCorpoGLB(f, false);
+        if(c.anel) c.anel.visible = false;
+        if(c.anelFundo) c.anelFundo.visible = false;
+        /* a sombra de pé vista de lado vira um disco escuro no chão: miúda
+           e clara, e nenhuma em quem está deitado */
+        if(c.sombra){
+          if(q.g.jeito === 'caido') c.sombra.visible = false;
+          else { c.sombra.scale.set(5, 3, 1); c.sombra.material.opacity = 0.16; }
+        }
+        const p = poseDoJeito(q.g.jeito, f, q.i, sem);
+        aplicarPoseGLB(c, p, f.escala * escalaDeCima * 0.86);
+        c.raiz.position.set(c0.x + q.dx, 0, c0.y + q.dy);
+        /* de frente pra câmera (que olha de baixo pra cima da tela), com
+           um giro de cada um; na roda, pro meio; caído, de lado */
+        c.raiz.rotation.y = q.olha != null ? q.olha
+          : q.g.jeito === 'caido' ? (q.i % 2 ? 1.2 : -1.9)
+          : (dado(`${sem}|gira|${q.i}`, 7) - 3) * 0.12 + (q.g.vira || 0);
+        sc.add(c.raiz);
+      }
+      sc.updateMatrixWorld(true);
+      r.render(sc, camF);
+      x.drawImage(r.domElement, 0, 0);
+      /* a faixa tomada: na frente de quem segura, de cabeça pra baixo */
+      const fx = opc.faixa;
+      const quem = pos.filter(q => q.g.jeito === 'faixa');
+      if(fx && fx.width && quem.length){
+        const tela = (wx, wz) => [(wx - x0)*s, (wz - y0)*s];
+        const xs = quem.map(q => c0.x + q.dx), zz = c0.y + quem[0].dy;
+        const [ax, ay] = tela(Math.min(...xs) - 10, zz), [bx] = tela(Math.max(...xs) + 10, zz);
+        /* a altura de um boneco na tela: o corpo sobe com a cisalha */
+        const alt = 31 * CIS * s * escalaDeCima;
+        const larg = bx - ax;
+        const prop = fx.width / fx.height;
+        let fw = larg, fh = larg / prop;
+        if(fh > alt*0.62){ fh = alt*0.62; fw = fh*prop; }
+        const fxc = (ax + bx)/2, fyc = ay - alt*0.42;
+        x.save();
+        x.translate(fxc, fyc); x.rotate(Math.PI + (dado(`${sem}|tor`, 5) - 2)*0.012);
+        x.shadowColor = 'rgba(0,0,0,.45)'; x.shadowBlur = 8*s/3; x.shadowOffsetY = -3;
+        x.drawImage(fx, -fw/2, -fh/2, fw, fh);
+        x.restore();
+      }
+    }catch(err){ console.warn('foto do post (bonecos): '+err.message); }
+    finally{ if(r) soltarFoto(r); }
+    try{ return cv2.toDataURL('image/jpeg', 0.84); }catch(_){ return null; }
+  }
+  function fotoDaCena(opc){
+    if(typeof THREE === 'undefined') return Promise.resolve(null);
+    const P = TO.diaJogo.ponte;
+    if(P && P.rodando) return Promise.resolve(null);
+    carregarGLB();
+    const A = TO.diaJogo.arredores;
+    if(!A || !A.usarCena) return Promise.resolve(null);
+    const espera = ()=> new Promise(res=>{
+      const t0 = Date.now();
+      (function v(){
+        if(modeloGLB) return res(true);
+        if(Date.now()-t0 > 6000) return res(false);
+        setTimeout(v, 120);
+      })();
+    });
+    return espera().then(ok=>{
+      if(!ok || (P && P.rodando)) return null;
+      const antes = A.D && A.D.id;
+      const trocou = opc.cena && A.D && A.D.id !== opc.cena;
+      if(trocou) A.usarCena(opc.cena);
+      const fundo = ()=> new Promise(res=>{
+        const t0 = Date.now();
+        (function v(){
+          if(A.imagemOk || !A.D.imagem || Date.now()-t0 > 2500) return res();
+          setTimeout(v, 80);
+        })();
+      });
+      return fundo().then(()=>{
+        let url = null;
+        try{ url = renderizarCena(opc); }catch(err){ console.warn('foto do post: '+err.message); }
+        if(trocou && !(P && P.rodando)) A.usarCena(antes || 'arredores');
+        return url;
+      });
+    });
+  }
+
 
   /* =======================================================
      MODO CONVIDADO — a cena é de outro desenhista
@@ -3192,7 +3684,7 @@ let escalaDoTabuleiro = () => 1;
     /* a resolução adaptativa é do canvas de quem é dono do
        renderizador; aqui ela não tem o que ajustar */
     cfg.resolucaoAdaptativa = false;
-    for(const m of [matVertices, matVerticesTransp, matCamisaVC, matJunto, ...mats.values()]) remendar(m);
+    for(const m of [matVertices, matVerticesTransp, matCamisaVC, matJunto, matJuntoRosto, ...mats.values()]) remendar(m);
     if(modeloGLB) modeloGLB.traverse(o => { if(o.isMesh) remendar(o.material); });
     if(modeloLonge) modeloLonge.traverse(o => { if(o.isMesh) remendar(o.material); });
     figuras.clear(); projMeshes.clear(); gradeMeshes.clear();
@@ -3233,7 +3725,10 @@ let escalaDoTabuleiro = () => 1;
     return r;
   }
 
-export { montar, desenharDeCima, desenharVitrine, limparDeCima, entrarEm, fotoDoTrofeu,
+  /* o contexto deste canvas caiu e não voltou: quem monta troca o canvas (main.js, 02/10/2026) */
+  function perdeu(canvas){ return !!(renderer && cv === canvas && !ativo); }
+
+export { montar, desenharDeCima, desenharVitrine, limparDeCima, entrarEm, fotoDoTrofeu, fotoDaBriga, fotoDaCena, perdeu,
          paletaDaCena, anelDe, desenhoDaTorcida, DESENHOS, estudo, cfg };
 export const bonecos = {
   get escala(){ return escalaDeCima; }, set escala(v){ escalaDeCima = v; },

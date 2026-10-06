@@ -93,9 +93,6 @@ TO.i18n.registrar({
      en:'Win and take {valor} · Prestige +{p} winning, −1 losing · Relationship −2'},
   'Prestígio −1 · {valor} de multa (20% da aposta)':
     {es:'Prestigio −1 · {valor} de multa (20% de la apuesta)', en:'Prestige −1 · {valor} fine (20% of the stake)'},
-  'Hoje à noite, em {bairro}, {n} contra {n}. {valor} na roda. Aparece.':
-    {es:'Esta noche, en {bairro}, {n} contra {n}. {valor} en juego. Los esperamos.',
-     en:'Tonight, in {bairro}, {n} v {n}. {valor} on the table. Show up.'},
   /* ---------- 3c. a LNT ---------- */
   '{n}ª rodada': {es:'{n}.ª fecha', en:'Round {n}'},
   '1ª Divisão': {es:'1.ª División', en:'Division 1'},
@@ -185,16 +182,6 @@ TO.i18n.registrar({
      en:'{nos} and {eles} went at it {onde}: {n} of ours injured, {deles} on their side.'},
   'A {nome} levou a melhor.': {es:'{nome} se llevó la mejor parte.', en:'{nome} came out on top.'},
   'Ninguém levou a melhor.': {es:'Nadie se llevó la mejor parte.', en:'Nobody came out on top.'},
-  'Anota a placa aí, teu terror tem nome!': {es:'¡Anoten bien: su pesadilla tiene nombre!', en:'Write it down, your nightmare has a name!'},
-  'Correram igual galinha, cadê vocês? Ninguém sabe ninguém viu.':
-    {es:'Corrieron como gallinas, ¿dónde están? Nadie sabe, nadie vio.', en:'Ran like chickens, where are you lot? Nobody knows, nobody saw.'},
-  'Contamos os que correram: faltou dedo pra contar. Fica em casa da próxima.':
-    {es:'Contamos a los que corrieron: nos faltaron dedos. La próxima quédense en casa.',
-     en:"We counted the ones who ran: ran out of fingers. Stay home next time."},
-  'Aproveita, porque isso não fica assim. Nosso bonde volta pesado.':
-    {es:'Disfrútenlo, porque esto no queda así. Nuestra banda vuelve pesada.', en:"Enjoy it, because this isn't over. Our crew's coming back heavy."},
-  'Fica tranquilo que a cobrança vem cara!': {es:'¡Tranquilos, que la revancha les va a salir cara!', en:"Don't worry, payback's going to cost you!"},
-  'Riram hoje, choram depois. O revide é pesado.': {es:'Hoy se ríen, mañana lloran. La revancha va a ser pesada.', en:"Laugh today, cry later. The comeback's going to be heavy."},
   'nos arredores do estádio': {es:'en los alrededores del estadio', en:'around the stadium'},
   'na praça': {es:'en la plaza', en:'in the square'},
   'numa rua de periferia': {es:'en una calle de la periferia', en:'on a street out on the estates'},
@@ -230,9 +217,6 @@ TO.i18n.registrar({
   'Seguir padrão — ir em paz': {es:'Seguir el plan — ir en paz', en:'Follow the default — go in peace'},
   'Seguir padrão — cair em cima da {nome}': {es:'Seguir el plan — ir contra {nome}', en:'Follow the default — go at {nome}'},
   'Seguir padrão — deixar passar': {es:'Seguir el plan — dejar pasar', en:'Follow the default — let it go'},
-  'Nosso pessoal apanhou na cidade de vocês e ninguém desceu. A gente veio de longe confiando. Anotado.':
-    {es:'A los nuestros les pegaron en su ciudad y nadie bajó. Vinimos de lejos confiando. Queda anotado.',
-     en:"Our lads got battered in your city and nobody came down. We came a long way trusting you. Noted."},
   'Atacar o bar — não rolou': {es:'Atacar el bar — no se dio', en:"Hit the bar — didn't happen"},
   'Não rolou: {motivo}': {es:'No se dio: {motivo}', en:"Didn't happen: {motivo}"},
   'Não rolou.': {es:'No se dio.', en:"Didn't happen."},
@@ -250,9 +234,6 @@ TO.i18n.registrar({
   'W.O. na LNT': {es:'W.O. en la LNT', en:'Walkover in the LNT'},
   'Não botamos bonde: perdemos por W.O. Prestígio −2.': {es:'No mandamos a la banda: perdimos por W.O. Prestigio −2.', en:"We didn't send the crew: lost by walkover. Prestige −2."},
   'Deixamos o bar do rival quieto': {es:'Dejamos tranquilo el bar del rival', en:"Left the rival's bar alone"},
-  'Valeu pela presença, irmão. A festa ficou completa com o bonde de vocês. Casa aberta sempre.':
-    {es:'Gracias por venir, hermano. La fiesta quedó completa con su banda. La casa siempre abierta.',
-     en:'Cheers for coming, mate. The party was complete with your crew there. Door is always open.'},
   'Presença na festa da {nome}': {es:'Presencia en la fiesta de {nome}', en:"Going to {nome}'s party"},
   'Fomos. +{n} de relação com a {nome}.': {es:'Fuimos. +{n} de relación con {nome}.', en:'We went. +{n} relationship with {nome}.'},
   'Furamos o aniversário da {nome}': {es:'Faltamos al aniversario de {nome}', en:"Skipped {nome}'s anniversary"},

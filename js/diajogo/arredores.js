@@ -86,7 +86,7 @@ TO.diaJogo.arredores = (function(){
     podarIlhas();            // quintal marcado por engano não é rua
     construirMalhaCorpo();   // onde o corpo cabe, base das rotas
     limparCampos();          // a navegação depende da malha
-    fugas = fugasDaMao() || acharFugas();   // por onde se some, quando se corre
+    fugas = fugasDaMao() || soNaBorda(acharFugas());   // por onde se some, quando se corre
   }
 
   /* =======================================================
@@ -201,6 +201,24 @@ TO.diaJogo.arredores = (function(){
       const q = cabe(f.x, f.y, 9) ? f : pontoLivreMaisProximo(f.x, f.y, 9);
       return {x:Math.round(q.x), y:Math.round(q.y), raio:f.raio||34, mao:true};
     });
+  }
+
+  /* FUGA SÓ NA PONTA DA CENA (dono, 30/09/2026): "todos os pontos de
+     fuga nas pontas da cena e sempre no meio da rua" — na casa de
+     piscina o bonde corria pra beira da piscina e sumia ali. As cenas
+     abertas trazem as saídas marcadas no eixo da rua (`RUA`, em
+     dados/cenas.js); pra cena sem marcação, a leitura automática só
+     vale a até 60 px da borda da IMAGEM — a boca achada na borda da
+     mancha no meio da cena (quintal, pátio) sai da lista. A cena
+     fechada, sem chão chegando na borda (o galpão, o campo de terra, a
+     arquibancada), fica com as que tem. */
+  function naBorda(p){
+    return p.x <= 60 || p.y <= 60 || p.x >= W - 60 || p.y >= H - 60;
+  }
+  function soNaBorda(lista){
+    if(!lista) return lista;
+    const b = lista.filter(naBorda);
+    return b.length ? b : lista;
   }
 
   /* a mais perto de quem está correndo */
@@ -762,8 +780,10 @@ TO.diaJogo.arredores = (function(){
   function desenharSobreposicoes(c, mods, opc){
     opc=opc||{};
     /* as cadeiras da reunião da diretoria (22/09/2026): a foto da sede
-       não as tem, o jogo desenha uma por diretor em cima dela */
-    if(D.cadeiras && TO.diaJogo.cenario && TO.diaJogo.cenario.cadeira)
+       não as tem, o jogo desenha uma por diretor em cima dela — só na
+       reunião (e no editor, pra arrastar); na briga da praça não há
+       cadeira no largo (30/09/2026) */
+    if(D.cadeiras && (opc.reuniao || opc.editor) && TO.diaJogo.cenario && TO.diaJogo.cenario.cadeira)
       for(const k of D.cadeiras) TO.diaJogo.cenario.cadeira(c, k);
 
     /* ---- spawns: invisíveis em jogo. São ponto de partida, não
@@ -898,7 +918,7 @@ TO.diaJogo.arredores = (function(){
     get fugas(){return fugas;}, fugaMaisPerto,
     /* o editor mexe na lista de bocas sem repintar a malha: refazer a
        cena inteira ali jogaria fora o que o pincel acabou de pintar */
-    recarregarFugas(){ fugas = fugasDaMao() || acharFugas(); return fugas; },
+    recarregarFugas(){ fugas = fugasDaMao() || soNaBorda(acharFugas()); return fugas; },
     mover, empurrar, livre, livrePara, raioMalha, atravessaGrade,
     criarCampo, campoDaEntrada, campoDoPonto, limparCampos, celulasDeGrades,
     celulasDeDiscos,

@@ -8154,42 +8154,1220 @@ Num save da TUF o dono forçou a aproximação da Jovem Garra Tricolor com a Inf
 
 O dono viu "ARQUIVO — Mensagem antiga que não pôde ser desenhada" e o jogo parado: era uma decisão cujo cartão estourou ao desenhar (o aviso de 17/09 salvava o feed, mas a decisão continuava sem botão e travando o relógio). Agora o cartão de aviso traz o tipo e a mensagem do erro em letra miúda — no celular não há console — e, sendo decisão sem resposta, os botões dela (respondem pelo caminho de sempre) e um "Deixar pra lá" que marca a resposta e solta o relógio. Uma fumaça de 400 dias em jogo novo (TUF e GAV) não quebrou cartão nenhum: a causa está no save do dono, e o erro à vista é o que vai dizer qual.
 
-## As cidades desenhadas do zero: um bloco de 3 × 2 quadras por bairro (dono, 01/10/2026)
+## A zona leva os mais fortes dela, dos dois lados (régua do dono, 22/09/2026)
 
-O corte do mapa do porte em cidades (a decisão acima) foi trocado: **cada cidade das praças compostas é desenhada do zero pela quantidade de bairros dela**, sem o desenho antigo. O pedido: "acredito que o melhor é redesenhar por cidade o mapa, considerando a sua quantidade de bairros, sem se importar com o modelo antigo pra essas cidades. se o bairro é favela, é uma favela. se é classe baixa ou média, é quarteirão normal, se é classe alta, vai ter casarão e prédios altos. o formato das cidades pode ser quadrado se for mais fácil, e o importante é que as cidades não sejam tão distantes umas das outras pra não ficar demorada a gameplay. uma cidade que é só um bairro pode ter um padrão pra todas as praças, uma cidade com dois bairros também, e assim vai copiando de uma pra outra. essas praças com mais de 2 cidades não vão ter mais zonas pra facilitar a criação do design do mapa."
+O dono sentia a IA mais forte na casa de piscina, atacando e defendendo. Medido: a nossa zona era um sorteio da torcida inteira (média 14,9 de força+defesa, seis novatos e nove componentes em vinte) e a zona deles saía do gerador que corta o topo do plantel (25,0, nove frentes e dois diretores) — e, pior, cada um dos cinco pontos da casa recebia o topo de novo. A régua nova é a mesma pros dois lados: cada membro tem a sua zona (hash do id, fixa pra sempre — `acoes.zonaDoMembro`) e o bonde da zona são os mais fortes daquela zona, até o teto (`bondeDaZona`); do lado deles o plantel inteiro é gerado, repartido nas quatro zonas na roda da fila de força, e a zona pedida leva os mais fortes dela (`combate.fichasDaZona`), entregues prontos à cena (`cfg.fichasRival`), cada grupo tirando a sua fatia na ordem. Num jogo novo da TUF contra a MOFI: nossa zona 17,5, a deles 15,2 (o topo do plantel deles daria 25,3). As outras duas causas medidas ficaram anotadas pro dono decidir: a casa favorece quem defende (portão-funil; com fichas iguais o atacante ganha 3 a 5 em 16, seja quem for) e a pedra automática é só da IA (na praça, fichas iguais, nós atacando: 1 em 16 com pedra, 10 em 16 sem).
 
-- **Cada bairro é um bloco de 3 × 2 quadras** (uns 119 × 42 m com as ruas de dentro); **o bairro com estádio é o bloco mais o estádio** do lado de fora dele; **o bairro de favela é uma favela do tamanho do bloco** ("3x2, mas um bairro com estádio é 3x2+estádio. A favela também tem área parecida com bairro 3x2 (115x42, não precisa ser exato)"). O Nobre é de quadras, com as torres e os casarões; Baixa e Média, quarteirão comum.
-- **A cidade é uma grade quase quadrada de blocos**, e a mesma quantidade de bairros dá sempre o mesmo desenho, em qualquer praça: uma coluna de blocos até 4 bairros, duas a partir de 5.
-- **Praça de três cidades ou mais: todas desenhadas assim, e sem zonas** (13 praças). **Praça de duas cidades: a grande fica com o mapa do porte inteiro, a pequena é desenhada assim** (o dono: "Grande fica, pequena vira modelo"; 5 praças: Belém, Mato Grosso, Litoral Catarinense, Rio Grande do Norte e Bahia).
-- **Sem zonas, o bairro e a cidade tomam o lugar da zona**: no jogo, nas praças de três cidades ou mais, onde aparecia "Zona Norte" aparece a cidade do bairro, e a régua da zona (a sede espalhada, o peso da torcida, o bairro padrão) passa a ser a da cidade.
-- **As cidades ficam perto**: 50 m de mato entre uma e a vizinha em todas (a que era "longe" — Imperatriz, Campos dos Goytacazes — também), e cada uma vai pro lado que deixa a estrada mais curta (até 90° do rumo de verdade). Nenhum trecho de estrada passa de 62 m (antes, até 328 m).
-- **Toda favela chega na rua**: a favela que fica sem rua em volta (na quina da cidade, entre o mato e outra favela) ganha a quina mais perto do resto da cidade como quadra comum, a entrada dela.
+## A torcida pequena começa sem sede (decisões do dono, 22/09/2026)
 
-**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): a praça de três cidades ou mais **não tem praia nem baía** — Maceió, Aracaju, João Pessoa e São Luís perdem a praia, e Niterói chega ao Rio por estrada, sem a baía —; e todas as cidades ficam a 50 m da vizinha (nada de "longe" dobrado). Detalhes e medidas: `docs/JOGO_3D.md` §35.
+Torcida com até 30 membros na fonte — 59 das 139, exatamente as de sede 1 na fonte — começa no **nível 0**, o ponto de encontro: teto de 30 membros (recrutar trava com "a esquina não cabe mais gente: construa a sede"), 2 diretores, zero treino, manutenção zero, sem festa, sem bar, **um turno de expediente (a tarde)**, vivendo de mensalidade, PIX e assalto. A primeira sede é obra do Patrimônio — **"Construir a sede", R$ 30.000** — e traz os 50 membros, o treino, a festa e os três turnos. **O bar grátis passou da sede 1 pra sede 2**, dado uma vez só (não renasce; save antigo fica com o dele). **A reunião da diretoria sem sede senta na praça do bairro**, no largo do meio, sem rival e sem PM na roda (`sedeCenaDoNivel(0) = 'praca'`). **As pequenas da IA também nascem no nível 0** (`relacoes.mundo`), e a escada de obras delas passa pela primeira sede. **O caixa inicial é o saldo da fonte × 4 com piso 4.000**: a fórmula lia `dinheiro`, campo que a fonte não tem, e todo mundo começava com 16.000; com os saldos da fonte (200 a 1.000) todo mundo começa no piso. O plano inteiro, com o que existia antes, está em `docs/PLANO-TORCIDA-PEQUENA.md`. Nas tabelas o nível 0 é uma linha de verdade (`SEDE[0]`, `MANUT_SEDE[0]`, `TETO_SEDE[0]`, `ADVOGADOS_SEDE[0]`, `patrimonio.TETO.*[0]`), e os `|| 1` que viravam a esquina em sede foram embora; `membros.nivelInicialDaSede` é a função única do nível inicial (estado, ficha da seleção, IA).
 
-## O bairro 3 × 3, a praia de volta, os rios e as entradas da praça (dono, 01/10/2026)
+## O jogo em espanhol e em inglês (pedido do dono, 24/09/2026)
 
-O pedido: "adicione mais 3 quarteirões pra ficar 3x3 com três quarteirões sendo praças, igreja, delegacia, hospital ou escola. Preciso que as cidades às margens da praia voltem a ser às margens da praia, e que a decoração de vegetação das demais seja mais bem feita com rios entre uma cidade e outra. Preciso que volte a existir a entrada da praça em norte e sul, pra dar a impressão de entrada na praça nas caravanas."
+O dono pediu o jogo inteiro em espanhol e inglês, com o idioma escolhido em Configurações, na tela inicial. O botão Configurações (que era desabilitado) abre a escolha Português / Español / English; a escolha fica no navegador (`localStorage['to.idioma']`), não no save, e trocar recarrega a página. O português é a chave: todo texto visível passa por `_t('texto {marcador}', {…})` (`js/i18n.js`; `_tn` pro plural; `_t('contexto::texto')` quando a mesma palavra tem dois sentidos), e os dicionários ficam em `dados/i18n/*.js`, um por fatia do código, com es e en lado a lado — cerca de 4.100 chaves. Faltando tradução, cai no português; `ferramentas/i18n_faltando.py` diz o que falta (hoje, nada) e aponta texto solto no código. O HTML estático é traduzido no boot; números seguem o idioma (2,000 em inglês), a moeda continua o real; `TO.genero` dá "del Mineiro" / "of the Mineiro"; fases, status, cargos, países e zonas continuam em português como chave de lógica e são traduzidos na hora de mostrar. Nomes próprios (torcidas, clubes, cidades, bairros, estádios, competições, eixos, jornais) não se traduzem. As mensagens que um save já tinha ficam na língua em que nasceram. O glossário e as regras estão em `docs/I18N.md`: torcida é *barra* / *firm*, faixa é *trapo* / *banner*, diretoria é *directiva* / *board*, bote é *golpe* / *raid*. Conferido em jogo: 60 dias com feed e todos os painéis, o tutorial inteiro, perfis, caravana, ataque, reunião em cena com todos os balões, uma briga, o relatório e a retrospectiva, em es e en, sem português na tela fora os nomes próprios; e a regressão em português toda verde.
 
-- **Cada bairro das cidades-modelo é um bloco de 3 × 3 quadras**, e **a fileira do meio é de três equipamentos** (na favela, a fileira do lado do centro da cidade): os cinco tipos (praça, escola, igreja, delegacia, hospital) em roda pela cidade, três diferentes por bairro. A escola e o hospital ganharam modelo 3D novo, do tamanho da quadra.
-- **As cidades da praia voltam pra beira-mar** (Maceió, Aracaju, João Pessoa, São Luís e Parnaíba), com a avenida da beira, a areia e o mar, como a cidade de hoje.
-- **Rios entre as cidades**: cada estrada que liga duas cidades atravessa um rio numa ponte; o rio corre pelos vãos até a borda do mapa ou até outro rio (o que fica sem saída nasce numa lagoa). No mato largo, clareiras de pasto, metade com lagoinha.
-- **As entradas norte e sul voltam** na praça de três cidades ou mais: a rua que vem da borda do mapa até uma cidade da ponta, com o pórtico de BEM-VINDO, longe dos estádios, e **a caravana desce nela**.
+## O Interior de SP vira praça média (pedido do dono, 24/09/2026)
 
-E, no meio da rodada, um defeito apontado com print: **a rua de acesso do estádio era de duas pistas e passava por cima da rua e da calçada** ("acaba sobrepondo a rua por cima de outras ruas e calçadas, e pra piorar ainda fica feio visualmente"). Agora ela tem a largura da rua e acaba no meio da rua que encontra, em todos os mapas.
+O mapa do Interior de SP passa de Pequeno pra Médio: nível 2, 120 quarteirões (grade 10×12) e 12 bairros, três por zona — a régua das médias. Era a pequena com mais torcidas (7) e mais estádios (3), empatada com praças grandes. A mudança é na fonte (`dados/fonte/cidades_bairros.json`) e o `dados/cidades.js` sai de novo do `ferramentas/importar_bairros.py`. Os quatro bairros novos, um por zona, são cidades do interior paulista como os outros oito: **São José do Rio Preto** (Norte, Nobre), **Sorocaba** (Sul, Classe Baixa), **Araraquara** (Leste, Classe Média) e **Presidente Prudente** (Oeste, Classe Baixa); nenhuma torcida tem sede neles. O multiplicador médio de faturamento da praça vai de 0,975 pra 0,992. O efetivo de rua (torcedores, guardas, PM, choque) é da planilha e não mudou. Junto com o porte vem o crescimento anual de torcedores de praça média (10 a 20 em vez de 5 a 10) e a planta gerada em cruz 5×5. Efeito colateral: os estádios dos clubes sem bairro na fonte (Limeirão, Novelli Júnior, Barão de Serra Negra, Alfredo de Castilho) são postos num bairro sorteado por hash sobre o número de bairros, então mudaram de lugar — já caíam em cidade errada antes (o Limeirão estava em Marília) e continuam caindo; fixar cada um na sua cidade é passo à parte, no `importar_estadios.py`. Save antigo lê a praça nova sem conversão: os bairros vêm dos dados, não do save.
 
-**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): a ordem dos equipamentos e os nomes (a paróquia de cada santo, a escola de cada patrono, o distrito numerado); o rio só nas ligações por estrada (Belém e o Litoral Catarinense, ligadas pela avenida antiga, ficam sem rio); a entrada chega numa cidade da ponta do mapa, não necessariamente no centro. Detalhes e medidas: `docs/JOGO_3D.md` §36.
+## As faixas de verdade no jogo 2D (pedido do dono, 30/09/2026)
 
-## Maranguape sai, e os rios: no máximo dois, pro mar quando tem mar, sem cidade ilhada (dono, 01/10/2026)
+A arte das faixas que o dono mandou pro jogo 3D (95 torcidas, 352 faixas, commit c9a38df) entra no 2D: as tiras em `img/faixas/<torcida>.webp` e o manifesto `dados/faixas.js` (`TO.dados.faixasReais`, a largura de cada faixa na tira de 128 px por linha) são cópias das do `cenario3d/`, e o código é o mesmo do 3D, pra os dois não divergirem — quando o dono mandar faixa nova pro 3D, é copiar as duas coisas. No `patrimonio.js`, a faixa k da torcida é a arte k dela (dando a volta quando há mais faixa que arte), na proporção da arte, ondulada como pano; torcida sem arte segue com a gerada (cores, nome e escudos). A faixa tomada guarda qual das dela era (`variante`), pro Patrimônio mostrar a certa de cabeça pra baixo. Na cena, a altura da faixa sai da proporção da arte (`combate.js`). No Patrimônio a faixa mantém a altura e a largura segue a arte. O empacotador leva `img/faixas` no dicionário das imagens de tempo de execução.
 
-O pedido: "remova maranguape do jogo e crie mais um bairro pra juazeiro do Norte. se um mapa tem mar, os rios vão correr em direção ao mar. cada mapa vai ter no máximo dois rios. o mapa do interior de são paulo ficou estranho com cidades ilhadas."
+## A briga na praça não senta ninguém (correção do dono, 30/09/2026)
 
-- **Maranguape sai do jogo** e entra o **Juazeiro do Norte III** (zona Sul, com a classe e o multiplicador do Maranguape: Nobre, 1,5). No mapa do Interior do CE, Itapipoca passa a se ligar direto em Limoeiro do Norte (295 km).
-- **No máximo dois rios por praça** (antes, um por estrada: até 8 no Interior de SP).
-- **Na praça com mar, o rio corre pro mar**: da ponte pra baixo ele só vai pro leste ou de lado, atravessa a avenida da beira e a areia e deságua na linha d'água. Sem mar, ele corre num rumo só (de oeste pra leste ou de norte pra sul), de uma borda do mapa a outra.
-- **Nenhuma cidade ilhada**: a régua é água — rio ou mar — a 60 m de dois lados opostos da cidade, ou de três lados. O segundo rio não pode deixar cidade assim, e toda cidade tem que ter caminho por terra até a beira do mapa. No Interior de SP eram 5 das 9 cidades; agora nenhuma.
+O dono viu a torcida atacada na concentração reunida em cadeiras. A causa: a praça ganhou as cadeiras da reunião da torcida sem sede (22/09), e o combate sentava o bonde sempre que a cena tinha cadeiras — toda briga na praça (a concentração, o jogo da praça) abria com a diretoria em C no largo e tirava da cena quem não coube (60 viravam 13). Agora só a reunião senta (`cfg.reuniao`), e as cadeiras só são desenhadas na reunião e no editor. A reunião na sede e na praça continua igual.
 
-**As escolhas que o pedido deixou em aberto** (dá pra mudar depois): o bairro novo é Nobre (herdou a classe do Maranguape: a praça fica com a mesma mistura de classes, e Juazeiro com um bairro Médio, um Baixo e um Nobre); o rio sozinho pode deixar uma cidade com água de três lados se o quarto for terra (sobram 4: Bragança Paulista, Passo Fundo, Parnaíba e Natal); o rio que não tem saída rio acima ainda nasce numa lagoa (Alagoas, Bahia, Sergipe); e o segundo rio não pode correr ao lado do primeiro (a 120 m por mais de 150 m). Detalhes e medidas: `docs/JOGO_3D.md` §37.
+## O feed das torcidas (pedido do dono, 30/09/2026)
+
+Notícias → Mensagens virou feed de rede social. Cada recado de outra torcida é um post público: avatar com o escudo (sem escudo, a sigla na cor dela), nome, @ e praça, há quanto tempo (hoje, ontem, há N dias, depois a data), o texto com as menções clicáveis, as curtidas e o tipo. Pedido de casa e trégua continuam com os botões de resposta embaixo do post.
+
+**As curtidas** são 55% da soma dos membros da torcida com os das aliadas dela (relação de 20 pra cima, a régua das festas, ou irmã de clube), com ±15% de sorte fixa por post — a proporção do exemplo do dono (150 + 400 membros → uns 300). A conta é feita quando o post nasce (`feed.curtidasDe`) e fica nele; post de save antigo ganha a conta na primeira vez que aparece. Na TUF de verdade as aliadas são 28 e somam 2.075 membros, então um post dela passa de mil curtidas.
+
+**Os textos** foram todos reescritos como post, no molde dos dois exemplos do dono: quem posta fala em terceira pessoa ou pra todos, cita a nossa torcida pelo nome, a praça, o clube, a competição e o dia. O convite de aniversário ("Passando aqui pra convidar todos os nossos aliados…"), o pedido de casa ("Caravana confirmada! A Motofolia estará em Fortaleza no sábado…"), a resposta ao nosso pedido (hospedar, escoltar, churrasco ou não dá), o agradecimento pela recepção ("A Motofolia vem agradecer publicamente a receptividade da Leões da TUF no último sábado, quando estivemos em Fortaleza acompanhando o nosso Moto Club pela Série D…") e a cobrança de quem não recebeu, o agradecimento da festa, o da escolta e a cobrança de quem largou a escolta, a trégua, a treta marcada e as seis provocações depois da briga. A cidade é o nome da praça do jogo, com o artigo da tabela de gênero ("no Maranhão", "em Fortaleza"); "Brasileirão Série D" vira "Série D". Como não há "fomos a/ao/à" na tabela, o texto diz "estivemos em".
+
+**O post que fala do passado sai depois**: o agradecimento pela recepção sai no dia seguinte ao jogo, e o da festa no dia seguinte à festa (antes saía no dia em que a gente respondia, antes da festa). Fica em `E.mensagensAgendadas` e cai no passo "posts do dia" (`feed.publicarAgendadas`). Os textos novos estão em `dados/i18n/social.js`, em espanhol e inglês; as mensagens que um save já tinha continuam como nasceram.
+
+## As brigas do mundo e os jornais no feed das torcidas (pedido do dono, 30/09/2026)
+
+O feed das torcidas (Notícias → Mensagens) ganhou três tipos de post que não são recado pra nós — são públicos: aparecem no feed mas nascem lidos, não acendem o número vermelho nem o aviso do ícone, e são os primeiros a sair quando o feed passa de 200 posts (pedido e trégua esperando resposta não somem por causa deles).
+
+**A zoeira de quem venceu.** No fim do dia (`feed.brigasDoMundoHoje`, depois das brigas da IA), quem venceu uma briga entre outras torcidas do MESMO país posta zoando quem perdeu. Primeiro as da nossa praça e das vizinhas, pelos saltos de estrada (`planejamento.saltosEntre`): 70% na nossa praça, 35% a uma estrada, 15% a duas, 6% a três, 2% mais longe, 1% em outro país; uma zoeira por dia no máximo, a mais perto. O texto depende da briga — dia de jogo, treta marcada, bar (quem atacou ou quem segurou), ataque-surpresa, emboscada na estrada, faixa ou bandeira tomada ("A faixa da X agora mora na sede da Y") — e "tragam mais gente" só sai quando eles vieram em menor número. Em 30% das vezes quem apanhou responde ("Ganharam na covardia, 45 contra 11…"). Em 120 dias de TUF: cerca de 48 zoeiras e 16 respostas.
+
+**Os perfis dos jornais.** A Gazeta dos Sports e o Futebol e Porrada têm perfil (avatar com as iniciais nas cores da capa, @gazetadossports e @futeboleporrada). Quando a notícia cai no feed (`dropar` → `postDaMateria`), o jornal posta o chapéu, a manchete e o olho dela, com "Ler a matéria" que abre a aba certa de Notícias: a Gazeta posta o nosso jogo e o almanaque; o Porrada, as nossas brigas, as obras e a LNT. E em um dia de cada três o Porrada posta a maior briga do dia pelo país (sem briga no país, a do mundo), com o placar de gente, os feridos, a faixa que trocou de dono e quantas brigas houve. A curtida do jornal é a média das curtidas de quem a matéria cita.
+
+## A cidade, as zonas e o nosso perfil no feed das torcidas (pedido do dono, 30/09/2026)
+
+Mais uma leva no feed de Notícias → Mensagens (`feed.cidadeNoFeed`, um passo do dia depois das brigas do mundo), toda pública (não conta como não lida):
+
+- **A Gazeta noticia os outros times da nossa praça.** Todo jogo de clube da nossa cidade que não é o nosso vira post da Gazeta ("O FUTEBOL DA CIDADE · Ceará perde para CRB por 2 a 0 pela Série B. Com o resultado, Ceará fica em 14º lugar."), o clássico da cidade com chapéu próprio e os pênaltis quando houver; até três por dia.
+- **Time em má fase, torcida protesta.** Toda segunda, clube com 3 derrotas nos últimos 5 jogos (`ultimosResultados`, que varre a temporada — não havia forma pra clube qualquer) ganha post da maior torcida dele cobrando o elenco; na má fase extrema — 4 derrotas sem vitória, ou 3 com o time na zona de queda — a torcida pede a saída da diretoria ("FORA, DIRETORIA!"). O nosso clube protesta pelo nosso perfil; os outros, com chance pela distância (80% na nossa praça, 45% a uma estrada, 20% a duas, 5% mais longe), no máximo dois por semana e um por clube a cada três semanas (`E.protestos`).
+- **Os perfis das zonas.** "Leões da TUF · Zona Sul" (@tuf.zonasul) é perfil. As zonas convocam pro jogo em casa (a nossa sempre, uma das outras torcidas da praça às vezes), chamam pra resenha de sábado na casa de piscina, e se zoam nas brigas de casa de piscina — quem vence posta ("A Zona Norte da MOFI veio invadir a nossa resenha e voltou correndo…"), quem perde às vezes responde; pra isso o `acoes.js` passa a zona da resenha ao `registrarConfronto`. Na zoeira do mundo, metade dos botes no bar e dos ataques-surpresa é postada pela zona que foi.
+- **O nosso perfil posta.** A caravana confirmada dois dias antes do jogo fora, o convite do nosso aniversário uma semana antes (a frase do dono), a zoeira quando vencemos uma briga que valeu, o agradecimento público no dia seguinte a quem recebeu a nossa caravana, o protesto do nosso clube e a convocação das nossas zonas. No feed, o nosso post tem a faixa dourada.
+- **Comentários e compartilhamentos**, ao lado da curtida, só de enfeite: saem das curtidas, na proporção do tipo (zoeira e protesto rendem comentário, notícia e convite rendem compartilhamento), com sorte fixa por post; não ficam no save.
+
+No texto corrido, praça chamada "Zona Norte" deixou de virar link — lá é quase sempre a zona de uma torcida.
+
+## Rivalidade no feed: goleada, clássico, título, acesso e queda (pedido do dono, 30/09/2026)
+
+**O clássico principal** de cada clube não existia nos dados; sai das torcidas (`feed.rivalDoClube`): é o clube que mais aparece entre os "maiores rivais" das torcidas dele, com peso extra pro da mesma praça (Ceará × Fortaleza, Potiguar × Baraúnas). Quem fala por um clube é a nossa torcida pelo nosso e a maior torcida pelos outros.
+
+Todo dia, nos jogos do país (`rivalidadesDoDia`): **clássico principal** com vencedor — a torcida de quem ganhou comemora zoando ("O CLÁSSICO É NOSSO!…") e a de quem perdeu reclama; **goleada** (3 gols ou mais de diferença) — a torcida do rival do goleado provoca ("Alguém avisa a X que levar 4 do Central dói?") e a do goleado reclama ("Vexame!…"). Até dois casos por dia, os mais perto primeiro, com a chance pela distância (o nosso clube sempre; 85% na praça, 50% a uma estrada, 25% a duas, 5% mais longe). **Título** (`titulosDoDia`, uma vez por competição): a torcida do campeão comemora — competição nacional sempre, estadual pela distância. **Virada do ano** (`viradaDoAno`, a lista `E.sobeDesceNoFeed` que o `estado.js` deixa no sobe-e-desce): quem subiu comemora, quem caiu reclama e o rival de quem caiu provoca ("Tchau, Ceará! Boa viagem pela Série C…"); até seis clubes, os mais perto. Os textos não põem artigo antes de nome de clube, como o resto do jogo.
+
+## As zonas sempre conversam depois da casa de piscina (correção do dono, 30/09/2026)
+
+O dono sentiu falta dos recados das zonas depois do ataque à casa de piscina. Dois ajustes no jogo 2D: largar a resenha atacada ("Largar a resenha", sem descer) montava a defesa sem a zona (`alvoDaDefesa`), e aí nenhuma zona postava — agora a zona vai junto; e a resposta da zona que perdeu, que saía em 40% das vezes, sai sempre nas brigas de casa de piscina com a gente — a zona que venceu zoa, a que perdeu responde. O jogo 3D (`cenario3d/jogo.html`) tem cópia própria do código e ainda não tem o feed das torcidas.
+
+Depois o dono explicou que sentiu falta foi da zona **se gabando da vitória**. O post da zona que vence a briga da resenha virou comemoração de verdade (tipo `comemoracao`), com três versões pra quem atacou e venceu, três pra quem defendeu e segurou, e — quando a faixa ou a bandeira trocou de dono na cena — duas que exibem o troféu ("Resenha encerrada e faixa no bolso! A Zona Oeste da MOFI vai ter que pintar outra."). A peça tomada chega ao feed pelo `acoes.js` (`panoDaNoite`, lido do resultado da cena), porque a faixa só é aplicada depois do registro da briga.
+
+## Onde foi a briga, em casa ou fora, e a convocação do perfil oficial (pedido do dono, 30/09/2026)
+
+- **A zoeira e o Porrada dizem onde foi a briga**: na treta marcada, no ataque ao bar, no ataque-surpresa, na estrada — e, na briga de dia de jogo, na concentração, na pista, nos arredores do estádio ou na arquibancada. O registro da briga de jogo não guarda o ponto; ele sai fixo por briga, pelo hash dela (`feed.ondeDaBriga`), três de cada dez em cada um dos três pontos da rua e um na arquibancada. De quebra: o rótulo da briga da IA é gravado traduzido, e em espanhol e inglês a zoeira não reconhecia o tipo (tudo virava "na rua") — agora reconhece nas duas formas.
+- **A Gazeta diz em casa ou fora e a rodada ou a fase da competição**: "Ceará vence Goiás por 2 a 0, em casa, pela 12ª rodada da Série B." A posição que vem depois é a da tabela da competição DO JOGO (antes era a da liga do clube, e o jogo da Copa do Nordeste dava a posição de outra tabela).
+- **A convocação é só pra jogo em casa** e agora é postada pelo perfil oficial da torcida, com o texto do dono: "Dia de Ceará x Brasil de Pelotas pela Série B! A Cearamor vai dominar a pista e a arquibancada mostrando que a cidade é nossa. UH CEARAMOR!" — a nossa também.
+
+## Toda briga vira post, e a faixa tomada com o texto do dono (30/09/2026)
+
+"Qualquer tipo de briga gera mensagem na rede social": a zoeira deixou de ser sorteada pela distância e de ter teto de uma por dia — toda briga entre torcidas do nosso país (treta marcada, bar, ataque-surpresa, estrada, dia de jogo, subsedes) vira post de quem venceu, na ordem das mais perto; as de outro país, 5% das vezes. Em 60 dias de TUF: 133 brigas no país, todas com post, perto de 3 zoeiras por dia. As brigas que ainda não viraram post são contadas pelo `E.brigasIATotal` (`E.brigasNoFeedAte`), e não pela data — a guerra das subsedes roda no fechamento da semana, depois do passo do feed. O feed guarda 300 posts (eram 200) e a tela mostra os 200 mais novos. A faixa ou bandeira tomada numa briga do mundo agora sai com o texto do dono: "A partir de hoje a faixa da Jovem Garra Tricolor é nossa. A cidade é nossa!".
+
+## Fuga no meio da rua, na ponta da cena (pedido do dono, 30/09/2026)
+
+"Todos os pontos de fuga nas pontas da cena e sempre no meio da rua": na casa de praia o boneco corria pra beira da piscina e sumia ali. Dois motivos: o spawn é o ponto de fuga preferido (regra de 09/09/2026), e a entrada da zona na casa de piscina é a própria piscina (como a porta do bar, a porta de aço do comércio, o gramado e o portão do CT); e a leitura automática das bocas pegava vão entre lojas, beira de calçada e borda do quintal.
+- **Cada cena aberta tem as saídas marcadas no eixo da rua**, onde a rua cruza a borda da foto (`RUA`, em `dados/cenas.js`): arredores, praça, as três ruas, bar, comércio, CT, casa de piscina, as cinco sedes, o beco e as duas emboscadas. Marcação do editor (F2) com pontos continua mandando.
+- **O spawn só vale como fuga se estiver na ponta da cena** (até 60 px da borda). Entrada no miolo (piscina, porta do bar) deixa de ser destino de quem corre; quem entrou por ela foge pela rua. Nos arredores o portão do estádio continua valendo, porque ali sumir é entrar no jogo.
+- **A leitura automática, na cena sem marcação, só vale na borda.** A cena fechada (galpão, campo de terra, estádios), onde o chão não chega na borda, segue com as bocas que tem.
+- Teste: em dez cenas todos os discos debandados somem a menos de 60 px da borda; na casa de piscina nenhum vai pra piscina.
+
+## Feed: só as brigas de perto, as nossas e as dos nossos rivais; parar de seguir e mostrar menos (pedido do dono, 30/09/2026)
+
+- **Briga de longe não aparece**: a zoeira só sai quando uma das torcidas é da nossa cidade ou de uma vizinha (uma estrada), ou quando é um dos **nossos maiores rivais**, em qualquer distância. Briga de outro país nunca aparece, e o Porrada do dia só escolhe entre as brigas que o feed mostra (o total "pelo país" continua no texto). Quando quem apanha é um rival nosso, ele responde 70% das vezes (os outros, 30%).
+- **O que acontece com os nossos maiores rivais sempre sai**: clássico, goleada, título, acesso e queda do clube de um rival nosso passam sem sorteio de distância, e quem fala pelo clube é a torcida rival nossa (não a maior do clube).
+- **Toda briga nossa vira post público de quem venceu, perto ou longe de casa**. Perdemos a emboscada na estrada pra Os Imbatíveis? Os Imbatíveis postam ("Emboscada na estrada: a caravana da Leões da TUF não chegou inteira. Assinado, Os Imbatíveis."); em briga que valeu prestígio, metade das vezes o post é o deboche aprovado em 18/08/2026. Ganhamos? A nossa zoeira sai sempre (antes só em briga que valeu), e quem apanhou responde com a promessa de volta (sempre na briga que valeu, 40% nas miúdas). A frase diz o lugar da cena ("no posto", "no bar", "na arquibancada"). Empate não gera post, e torcida em trégua com a gente não posta zoeira. O recado privado de provocação depois da briga deixou de existir: virou esses posts.
+- **Menu do post (⋯, à direita do cabeçalho)**, só nos posts públicos:
+  - "Parar de seguir" some com tudo o que aquele perfil publica (a torcida, a zona dela ou o jornal).
+  - "Mostrar menos" diminui os posts daquela natureza. Torcida distante (duas estradas ou mais) é uma natureza só, "torcidas distantes", como no exemplo do dono; as de perto vão pelo assunto (brigas, futebol, agenda das torcidas); o jornal vai por jornal. Cada clique esconde mais: 60%, 80%, 95%, e é sempre o mesmo post que some (sorte fixa por post).
+  - As escolhas ficam num quadrinho no topo do feed, cada uma com "Desfazer", e são guardadas no save (`E.feedPrefs`). Recado que é pra gente (pedido de casa, trégua, convite) nunca some.
+
+## O nosso perfil posta no ritmo dos outros (pedido do dono, 30/09/2026)
+
+"Falta a gente fazer postagens no feed com a mesma frequência dos demais; tomei uma faixa no bar da Cearamor e não gerou nenhuma postagem." A faixa do bar já saía desde o commit anterior ("A partir de hoje a faixa da Cearamor é nossa. A cidade é nossa!", com a Cearamor respondendo). Antes dele, a nossa zoeira só saía em briga que valesse muito prestígio e não olhava a faixa. Além disso, o perfil oficial da nossa torcida agora posta:
+- **O resultado de todo jogo do clube**: vitória (goleada, em casa ou fora de casa, citando a cidade), empate e derrota (esta como reclamação). Clássico e goleada sofrida ficam só com o post da rivalidade, que já saía.
+- **A chegada da caravana** no dia do jogo fora: "A Leões da TUF já está no Rio Grande do Norte! Hoje a arquibancada visitante tem dono. Vamos, Fortaleza!"
+- **A vida da casa**: sede ampliada, bar, loja e subsede inaugurados, faixa e bandeira novas, e cada marco de membros (de 50 em 50 até mil, depois de 100 em 100). A casa é lida por diferença contra a foto do dia anterior (`E.nossaFotoNoFeed`), sem gancho em cada compra.
+- Em 90 dias de TUF sem jogar cena, o nosso perfil foi de 9 para 19 posts, o mais ativo das torcidas (a mais ativa das outras fez 13).
+
+## As logos das competições e a imagem dos posts (pedido do dono, 01/10/2026)
+
+**Logos das competições.** Nesta sessão a rede só alcança o GitHub (Wikipédia, sites de logo e CDNs de imagem são barrados). Por isso o dono mandou dois pacotes (`campeonatos.rar` e `campeonatos_restantes.rar`), e `ferramentas/importar_logos_competicoes.py` os aplica:
+- tira o fundo branco das logos que vieram com fundo: o branco que encosta na borda vira transparente, com a beirada suavizada, e o branco de dentro fica. A bola da Primera B colombiana mantém o miolo redondo;
+- põe um halo claro nas logos escuras (Libertadores, Sudamericana, Paulistão, Série C…), que sumiriam no fundo do jogo. A Série C veio em SVG com letra verde-escura e foi rasterizada antes;
+- reduz para 320 px no lado maior e grava em `img/competicoes/` com o nome que o jogo usa.
+- O mapa nome → arquivo, com os apelidos ("Brasileirão Série A" e "Série A", "Copa Libertadores" e "Libertadores"), fica em `dados/competicoes_logos.js`.
+- Só a LNT, que não existe fora do jogo, usa um emblema desenhado (`ferramentas/emblemas_competicoes.py`, SVG sem fundo). O script não sobrescreve as oficiais.
+- Na tela Competições, a marca e o nome da competição aparecem em cima do corpo, em qualquer nível e país.
+
+**A imagem do post (2:1).** Os posts da Gazeta e do Futebol e Porrada, o resultado do nosso jogo e a zoeira da nossa briga levam um cartaz. O post guarda só os dados (`m.card`, montado em feed.js), e a imagem é desenhada pela tela (`js/ui/cartaz.js`), em qualquer idioma. A legenda (o texto do post) fica embaixo, depois das curtidas, com o @ de quem postou na frente, como no Instagram.
+- **Jogo:** logo da competição com a rodada ou a fase, escudo, placar e escudo, a marca do jornal e a manchete. O fundo é um estádio visto do gramado, desenhado pelo jogo, com a arquibancada nas cores do mandante, e desfocado.
+- **Manchete do jogo**, como a TV fala, do ponto de vista do clube da notícia: "FERROVIÁRIO PERDE PRO BAHIA FORA DE CASA", "CEARÁ VENCE O TREZE EM CASA". Metade das vezes (sorte fixa por post) a competição entra no lugar do mando: "FERROVIÁRIO VENCE O BAHIA NA SÉRIE D". Há ainda goleia/é goleado (diferença de 3 ou mais), empata com, e elimina/é eliminado nos pênaltis.
+  - O artigo do adversário vem de `TO.genero.clube`: clube é masculino, e `dados/genero.js` lista as exceções femininas (Ponte Preta, Portuguesa, Chapecoense, LDU…). Em espanhol fica "al / ante el / con el / por el"; em inglês, "beat / lose to / draw with / thrashed by".
+  - O texto corrido do jogo continua sem artigo antes de clube; só a manchete da imagem fala assim.
+  - Manchete comprida encolhe a letra para caber.
+- **Briga:** as duas torcidas (logo ou sigla nas cores, a vencedora com aro dourado), a etiqueta do lugar ("NO BAR · FORTALEZA") e a manchete ("LEÕES DA TUF LEVA A MELHOR NO BAR"). Embaixo, envolvidos, feridos e presos, lado a lado.
+  - **O fundo é a foto da briga** (`bonecos3.fotoDaBriga`), com a mesma receita da foto do troféu: o fundo aéreo da cena em que a briga foi, e os bonecos 3D nas cores das torcidas, em pares lado a lado. Os vencedores estão no pico do soco ou do chute; os perdedores, um no chão, um se cobrindo, um cambaleando.
+  - A foto sai quando o cartaz aparece na tela, uma de cada vez, e fica guardada só na memória da sessão (até 80), sem ir para o save. Antes dela, aparece a foto aérea da cena, desfocada.
+  - A cena no ar é trocada só para desenhar e volta logo depois. Com uma briga rodando (`ponte.rodando`), nada é feito.
+  - Briga do mundo: o lugar sai do tipo da briga (bar → bar, estrada → ônibus, dia de jogo → praça, arredores ou arquibancada, pelo mesmo sorteio do texto).
+
+## A rede social ao lado do feed, e o post que entra suave (pedido do dono, 01/10/2026)
+
+"A rede social ficou boa, posicione ela ao lado direito do feed como uma parte secundária; ela continua aparecendo por completo em Notícias → Mensagens. As atualizações de novas postagens vão aparecer de forma suave, num scroll leve quando surge uma nova postagem."
+- **Coluna da direita do feed** (370 px, 420 px em tela larga): os 40 posts mais novos da rede, com imagem, curtidas, menu ⋯ e os botões de resposta. Em cima, "Rede social" e "Ver tudo", que abre Notícias → Mensagens. Abaixo de 1000 px de largura a coluna sai e não gasta nada; a rede segue inteira em Notícias.
+- **Um post só para as duas telas**: o desenho do post saiu de `painelMensagens` para `montarPost(e, m, ctx)` (main.js). Cada tela diz o que fazer depois de um clique (`ctx.aoMudar`, `ctx.aoLer`) e tem o próprio menu ⋯ aberto.
+- **O post novo entra suave**: abre o espaço aos poucos (o envelope cresce de 0 à altura dele em 0,65 s) e aparece num fade, empurrando os de baixo num scroll leve.
+  - Se o jogador rolou a coluna para ler um post mais velho, a leitura não pula: a altura que entrou é compensada e aparece o aviso "novos posts ↑", que sobe suave até o topo.
+  - Post que muda de estado (respondido) é redesenhado no lugar.
+- **No feed principal**, a mensagem que chega (não a da primeira pintura) também entra com um fade descendo.
+- Quem pede menos movimento no sistema (`prefers-reduced-motion`) não vê as animações.
+
+## O coração vermelho é a NOSSA curtida (correção do dono, 01/10/2026)
+
+"Não faz sentido uma curtida num post de rival." O coração vermelho passou a ser a curtida da nossa torcida (`feed.curtimos`):
+- vai no post nosso;
+- vai no post de aliada, pela mesma régua das curtidas: irmã de clube ou relação de aliada (20 ou mais);
+- vai na notícia do nosso clube: o jogo dele na Gazeta, ou a briga que a gente venceu no Porrada.
+- Todo o resto mostra a contagem com o coração vazio, em contorno cinza.
+- Em 40 dias de TUF, as aliadas (relação 38 a 80) e os nossos posts saem com o coração cheio; as rivais (−45 e −85) e as notícias dos outros clubes da cidade, com o vazio.
+
+## A imagem é do jornal, e a faixa dourada saiu (correção do dono, 01/10/2026)
+
+- **A imagem é do jornal.** O placar vai no post da Gazeta dos Sports e a briga no do Futebol e Porrada. O nosso post de resultado e a zoeira da nossa briga ficam só no texto. Isso vale também para os posts de save antigo que já guardavam os dados do cartaz (`cartaz.html` olha quem postou).
+- **A faixa dourada do post nosso saiu.** Era o `do-nosso` com sombra interna dourada à esquerda: "deixa visualmente feio". Na coluna da rede, além disso, o texto encostava nela.
+
+## As conquistas do patrimônio no feed, e a coluna da rede soltando um post por vez (pedido do dono, 01/10/2026)
+
+- **A compra vira post na hora.** `patrimonio.comprar` chama `feed.nossaCasaNoFeed` quando a compra dá certo. A foto do patrimônio (`E.nossaFotoNoFeed`) é comparada com a de antes, e o nosso perfil celebra o que entrou:
+  - bar, loja e subsede de bairro novos, com o bairro;
+  - bar, loja e subsede ampliados;
+  - subsede em outra cidade, aberta ou ampliada;
+  - ônibus ("Busão próprio na garagem!" e depois "Mais um ônibus na frota… agora são N");
+  - sede ampliada, fábrica, enfermaria, galpão e área de treino (inaugurada ou ampliada);
+  - faixa, bandeira e marco de membros, que já existiam.
+- Cofre, professor de luta e advogado não viram post: guardar dinheiro e contratar gente não são coisas que a torcida anuncia.
+- A virada do dia continua comparando, para pegar o que entrou por outro caminho. A foto de save antigo, que só guardava a contagem, é convertida sem gerar post falso.
+- **Um post por vez na coluna da rede.** "Um monte de uma vez vira poluição visual." O dia que passa solta vários posts juntos; a coluna põe os novos numa fila, do mais velho para o mais novo, e mostra um a cada 1,8 s, cada um com a entrada suave.
+  - Ajuste do mesmo dia: o passo caiu para 1,5 s e ninguém é pulado. Quando o tempo para (decisão, painel, pausa), a fila segue andando e a coluna recupera o atraso. O único teto é o da coluna (os 40 mais novos).
+  - Notícias → Mensagens continua mostrando tudo de uma vez.
+- Medido: depois de três dias passados de uma vez, a coluna foi de 8 para 14 posts em 12 segundos, um a um.
+
+## Sem spoiler: o resultado do dia só aparece depois do apito final (correção do dono, 01/10/2026)
+
+"A rede social gera notícias do placar do jogo antes de eu clicar em Iniciar partida; isso ocorre na classificação também em Competições. Vasculhe outros cantos que possa existir spoiler e resolva."
+
+**A causa.** Os jogos do dia, o nosso inclusive, são sorteados quando o dia abre (`estado.avancarDia` → `competicoes.jogarDia`), e o placar é gravado direto nos jogos guardados. Não há bandeira de "ainda não revelado". O que escondia o nosso jogo era só a fila do feed travada pelo cartão da partida.
+
+**O que mudou** (o mapa dos lugares foi feito com varredura do código):
+- **Rede social e jornais.** Tudo o que depende de resultado do dia fica guardado em `E.feedDepoisDoJogo` enquanto o cartão da nossa partida não tem apito final (`feed.partidaPendente`):
+  - a Gazeta da cidade;
+  - o nosso post de resultado;
+  - clássico e goleada;
+  - título;
+  - protesto.
+  - Sai em `encerrarPartida`, ou no dia seguinte por garantia. O que é de antes do jogo (convocação, chegada da caravana, resenha) sai na hora.
+- **Competições e Calendário.** No dia em que o nosso clube joga, `estado.avancarDia` tira uma foto das competições (`temporada`, `ligas`, `conmebol`) antes de sortear o dia, só na memória, fora do save (`TO.estado.antesDoJogo`). Enquanto a partida está pendente, as duas telas leem essa foto (`main.js`, `eSemSpoiler`):
+  - tabela, rodada, chave do mata-mata, campeão, ligas e copas de fora, Libertadores e Sul-Americana;
+  - a célula de hoje no calendário e a agenda do time.
+  - Testado: com Fortaleza × São Bernardo pendente, a rodada mostra "Fortaleza × São Bernardo" sem placar, a tabela não conta o jogo e o calendário só mostra o adversário. Depois do apito aparecem o "1 × 0" e os 3 pontos.
+- **O campeão da Conmebol do dia.** O cartão "fulano é campeão" ia para a fila antes do cartão da partida e saía antes de a bola rolar. Agora o cartão da partida entra primeiro (passo 'placar' antes de 'mundo'), e o do campeão espera atrás dele.
+- **Já estavam seguros:**
+  - o texto do cartão da partida (a posição na tabela é a de antes de hoje);
+  - o cartão da SEMANA, que não mostra placar;
+  - o ticker e o Arquivo, que só leem o que já saiu da fila;
+  - perfis de torcida e de cidade e o Ranking, que não mostram futebol;
+  - entrevista e protesto na porta do CT, que só saem em dia sem jogo nosso.
+- **Limite conhecido:** a foto vive na memória. Quem recarrega o jogo no meio do dia da partida vê as telas com o resultado.
+
+## Quem eu sigo: o filtro da rede social (pedido do dono, 01/10/2026)
+
+"Um botão ao lado do nome Rede social para filtrar quem eu quero seguir — times, jornais ou torcidas. Se eu parar de seguir um time, para de mandar notícias do jornal sobre aquele time; se eu parar de seguir a torcida, para de mostrar as postagens dela."
+- **Onde fica.** O funil ao lado de "Rede social" na coluna do feed, e o botão "Filtrar quem eu sigo" no topo de Notícias → Mensagens. Os dois abrem a tela "Quem eu sigo", com três abas: Torcidas, Times e Jornais.
+- **Quem aparece.** A lista abre com quem aparece na nossa rede, ordenado pelo número de posts. Na aba Times entram também os clubes da nossa praça. A busca alcança todas as torcidas e todos os clubes.
+  - Cada linha tem escudo, nome, cidade, número de posts e o botão Seguindo/Seguir.
+  - "Voltar a seguir os N que saíram" desfaz a aba inteira.
+  - A nossa torcida e o nosso clube não aparecem: não dá para deixar de segui-los.
+- **O que some** (`feed.oculto`, prefs em `E.feedPrefs.torcidas | clubes | jornais`):
+  - torcida: tudo o que ela e as zonas dela postam;
+  - time: a notícia de jornal sobre ele, isto é, o clube do foco do cartaz; no clássico sem foco, só se os dois saíram;
+  - jornal: tudo o que ele publica.
+  - Recado que é para a gente (pedido de casa, trégua) nunca some.
+- Testado: depois de deixar de seguir a Tubarões da Fiel e o Floresta, os 4 posts dela e a notícia do Floresta somem da coluna e de Notícias. Os posts de outras torcidas que só citam a Tubarões continuam.
+
+## A resposta de quem apanhou vira comentário (pedido do dono, 01/10/2026)
+
+"A mensagem se vangloriando e a mensagem pedindo vingança deixam o feed muito cheio; melhor se a da Aliança aparecesse como um comentário da postagem, igual ao Instagram."
+- Quem apanhou não posta mais: comenta no post de quem venceu (`feed.comentar`, guardado em `m.comentarios`). Vale para as três respostas que existiam:
+  - a da briga do mundo;
+  - a da zona na casa de piscina;
+  - a promessa de volta depois da nossa briga.
+- **Na tela**, os comentários ficam embaixo do post, como no Instagram: o @ em negrito, o texto com as menções clicáveis, o coração vazio à direita e o tempo embaixo. Comentário de torcida que o jogador deixou de seguir não aparece.
+- Em 30 dias de TUF: nenhum post "resposta" solto, 10 posts com comentário.
+
+## O jornal mora na rede social, não no feed (pedido do dono, 01/10/2026)
+
+"Retire as notícias da Gazeta dos Sports e do Futebol e Porrada do feed; ficou redundante aparecer no feed e na rede social."
+- A matéria que virou post do jornal (a primeira página da rodada, o almanaque, a LNT, a obra) sai do rolo do feed (`feedVisivel` em main.js, pela chave `jornal|<id>` do post). A página inteira continua em Notícias → Arquivo, aberta pelo "Ler a matéria" do post.
+- Cartão que pede decisão nunca sai: o "Hoje tem… Iniciar partida" e a entrevista do Diário da Bola continuam no feed.
+- A briga nossa (Porrada) já não passava pelo feed desde 08/09/2026; mora em Notícias → Tretas.
+- Em 60 dias de TUF: as 4 primeiras páginas da rodada e o almanaque saíram do feed. Os 5 cartões de jornal que ficaram são os 4 de partida e a entrevista.
+
+## Protesto e reclamação só da nossa cidade (pedido do dono, 01/10/2026)
+
+"Protesto e reclamação de torcidas de outras cidades deixam de aparecer na rede social."
+- A cobrança pública da torcida contra o próprio time só sai de torcida da nossa praça, a nossa inclusive (`daNossaCidade` em feed.js). Vale para:
+  - o protesto da má fase;
+  - a reclamação do clássico perdido, da goleada sofrida e da queda.
+- O protesto continua com no máximo dois por segunda-feira, agora escolhidos só entre os da cidade.
+- A zoeira e a provocação de rival de fora continuam.
+- Em 150 dias de TUF: 9 protestos e reclamações, todos de torcidas de Fortaleza (Cearamor, Falange Coral, Jovem do Floresta e a nossa).
+
+## A rede social recolhível, e o aviso do que é importante (pedido do dono, 01/10/2026)
+
+"A rede social pode ter um botão recolhível para esconder, caso o jogador queira só ver o feed; e as notícias mais importantes (as que envolvem o clube e a torcida, ou provocações diretas ao clube e à torcida) aparecem em mensagens no mesmo canto direito, que somem em 3 s."
+- **Recolher.** O botão » no canto esquerdo do cabeçalho da coluna recolhe a rede numa tira fina na borda direita, com o ícone, "Rede social" na vertical e o número de posts novos desde que ela foi recolhida. Clicar na tira, ou num aviso, abre a rede de novo, já atualizada. A escolha fica guardada no navegador (`to.redeRecolhida`).
+- **O aviso do canto.** Com a rede recolhida, o post novo importante para nós aparece no canto direito como o post inteiro, por pedido do dono no mesmo dia: o mesmo cartão da rede (`montarPost`), com avatar, @, data, texto ou imagem, curtidas, comentários, compartilhamentos, menu ⋯ e "Ler a matéria". Fica 5 s (eram 3 s; o dono pediu 5 s em 01/10/2026); com o mouse em cima o relógio para, e ao sair ainda fica 1,5 s. Entra e sai deslizando, e os avisos saem um a cada 1,5 s.
+- **O que é importante** (`feed.importante`), decidido pelos dados e não pelo texto, porque o nome do clube às vezes é o da cidade:
+  - post nosso;
+  - jornal com o nosso jogo ou a nossa briga no cartaz;
+  - post cuja chave carrega o nosso clube ou a nossa torcida (clássico, goleada, queda, zoeira da nossa briga);
+  - post que cita a nossa torcida pelo nome.
+- O estado da rede (o que já foi visto, a fila de avisos, a caixa no `<body>`) vive fora da coluna, porque o feed se repinta inteiro de vez em quando e a coluna nasce de novo.
+- Testado: com a rede recolhida, numa briga nossa e quatro dias, saíram 6 posts. Dois viraram aviso (o Porrada da nossa briga e o nosso post), a tira contou 6, e em 12 s os avisos sumiram.
+
+## Pênaltis: a disputa é sorteada uma vez só (01/10/2026)
+
+O dono: "o duelo de pênaltis foi 4x1 pra gente no tempo real do jogo, está registrado como 0x3 na tela competições e no feed aparece a sugestão de encabeçar o protesto no CT, algo não faz sentido."
+
+- **A causa.** Na copa de jogo único, o mata-mata é decidido no dia (`jogarDia`, em `js/mundo/competicoes.js`). A disputa sorteada ali é guardada no jogo (`j.pen`) e é a que a partida mostra cobrança a cobrança. No fechamento da semana, porém, o `avancarCopa` passava de novo por todos os jogos da fase e sorteava outra disputa nos empates, por cima da primeira. O agregado (`decidirAgregado`) já tinha a trava "decide uma vez só", mas o jogo único não tinha. Assim, a chave guardava o segundo sorteio, que podia dar o outro time: o card dizia "Fortaleza passa por 4 a 1", Competições mostrava 0 × 3 e o Noroeste na fase seguinte. O julgamento de campanha leu a chave, viu a queda para um time 20 de força abaixo e propôs o protesto no CT.
+- **O conserto.** O `avancarCopa` pula o jogo que já tem `venceu`, igual ao agregado. A ida de um ida e volta também deixou de ir para os pênaltis no fechamento: antes, o laço rodava nela antes do `return` que espera a volta. Quem decide é o agregado.
+- **Testado** (Playwright, 200 dias de temporada, conferindo a cada dia o placar dos pênaltis e o vencedor de todo jogo do mata-mata):
+  - código antigo: dez disputas trocadas depois de jogadas, várias com o vencedor invertido (Avaí 4×1 Portuguesa virava 3×4 com a Portuguesa classificada);
+  - código novo: nenhuma troca em 20 disputas, e nenhum pênalti em jogo de ida.
+- **Save já afetado.** O jogo que já foi trocado num save antigo continua como ficou: a chave seguiu com o outro time, e não há como desfazer sem reescrever a fase.
+- **O aviso do canto** (rede recolhida) passou de 3 s para 5 s (`TOAST_VIDA`), a pedido do dono.
+
+## O mapa da cidade no jogo 2D: a planta do 3D com a dona de cada bairro (pedido do dono, 01/10/2026)
+
+O dono: "preciso implementar o mapa 2d que acabamos de construir na versão 3d no jogo, com toda a questão de população do bairro, torcida por bairro, domínio da praça e do bairro, etc."
+
+- **De onde veio.** O domínio dos bairros e a torcida por bairro foram feitos pela sessão do jogo 3D no branch dela (`claude/stadium-3d-crowd-scene-rkgk8o`), mexendo direto nos fontes do 2D. No nosso branch chegava só a cópia embutida em `cenario3d/js/jogo.js`. Os dois históricos são quase independentes, então o merge direto não serve. Entrou só a diferença dos commits do domínio (61c44f3, dc32cf1, 7946a1c):
+  - aplicada em 3 vias nos nossos `estado.js`, `feed.js`, `acoes.js`, `financeiro.js`, `patrimonio.js`, `planejamento.js`, `relacoes.js` e `main.js`;
+  - com os conflitos resolvidos à mão: a zona da resenha e o pano da noite (nossos) ficam ao lado da cidade, do tipo da defesa, da estrada e do bar quebrado (do domínio);
+  - `js/mundo/dominio.js`, `js/ui/mapa_brasil.js`, `css/mapa.css` e `dados/i18n/dominio.js` vieram inteiros.
+  As regras são as duas seções logo abaixo, trazidas do DECISOES do branch do 3D.
+- **Os dados das cidades** (`dados/fonte/cidades_bairros.json`, `dados/cidades.js`, `dados/estadios.js`, `dados/torcidas.js` e os dois importadores) são os do 3D, que estavam à frente dos nossos (as cidades das praças compostas, o bairro de cada estádio). Ficaram as três mudanças só nossas: Arena Joinville no Interior de SC, Estádio Centenário no Interior do RS e São Paulo sem metrô.
+- **A planta é assada, não copiada.** O desenho da cidade mora num módulo de 8 mil linhas da página do 3D, preso ao three.js. `ferramentas/assar_plantas.js` abre essa página (`cenario3d/planta.html?teste`) no Chromium e guarda de cada uma das 30 praças:
+  - o chão (ruas, quadras, favelas, estádios, praia, metrô), sem bairros, sem rótulos e sem carros, em `img/mapas/<id>.webp`: uns 4,4 milhões de pixels por praça (a comprida fica mais larga, a Paraíba com 5251 × 830), 11 MB no total;
+  - em `dados/plantas.js` (197 KB), a grade dos bairros em corridas, os estádios, equipamentos e marcos, os nomes das cidades e as sedes da planta.
+  Quando o 3D mudar o mapa, é reassar.
+- **O visor** (`js/ui/mapa_planta.js`):
+  - **Por cima do chão, ao vivo:** cada bairro na cor da torcida dona, mais forte quanto maior a barra (cinza quando está em disputa); as divisas finas entre bairros e grossas entre zonas; o nome do bairro com "SIGLA 73%" ou "em disputa"; as sedes na cor da torcida, a nossa com aro de ouro; os estádios sempre e o resto de perto.
+  - **Comandos:** arrastar move, a roda e a pinça aproximam no ponto, o duplo clique aproxima. O clique escolhe o bairro, e o cartão ao lado (o de `mapa_brasil.js`) mostra quem manda, a barra repartida, quem mora no bairro, o que tem nele, o corte de 30% e a ação social. Ao aproximar, o nome que não cabe aparece.
+  - **Fallback:** sem a planta da praça (as das barras bravas, ou o pacote de arquivo único, que não leva `img/mapas`), o painel volta ao quadro de bairros por zona que veio do 3D.
+  - **Menu:** o item "Mapa" fica no menu lateral, logo abaixo do Feed. A aba Brasil é a do 3D.
+- **Dois consertos achados no teste:**
+  - A ação social no bairro cobrava R$ 3.000 em vez de R$ 1.500: `dominio.social` descontava do caixa e o `lancarNoResumo` descontava de novo. O bug existe também no branch do 3D.
+  - O comentário da rede social com mais de 7 dias mostrava "NaN/NaN/undefined" na data: ele só guardava o dia absoluto. Agora guarda ano, semana e dia, e o comentário antigo mostra "há N dias".
+- **Testado** (Playwright):
+  - jogo novo da TUF por 200 dias sem erro: 13 avisos de domínio no feed e nenhuma disputa de pênaltis trocada;
+  - o painel abre em Fortaleza e na Paraíba (5 cidades);
+  - o clique no bairro abre o cartão;
+  - a ação social sobe a barra (0 → 8,5%), cobra R$ 1.500 e não repete na semana;
+  - salvar e carregar mantém as barras;
+  - i18n sem falta em es/en.
+- **O pacote de arquivo único já passava do limite antes** (28,7 MB no commit anterior, para 16,5 MB do artifact); com isto foi a 29,0 MB. Não é do mapa, e fica anotado para o dono decidir o que sai do pacote.
+
+## Os bairros têm dona e a cidade tem dona (dono, 30/09/2026)
+
+Cada bairro tem uma barra de 0 a 100 repartida entre as torcidas; **dona é quem passa de 50**. **Domina a cidade quem é dona de mais bairros** (empate no topo: ninguém domina). Dominar dá **+0,1 de prestígio e +0,1 de moral por dia**; a primeira e a segunda maior da cidade que não dominam perdem **0,1 de cada por dia** (régua de 0 a 100 da tela; 0,02 no indicador de 0 a 20). O começo é sorteado por save: a maior e a segunda maior com uns 5 bairros cada numa cidade de 16 (pode começar empatada, sem dona), o resto rateado pelos membros. **O bairro da sede é sempre da torcida dela no começo e é o mais difícil de tomar** (quem é de fora ganha metade ali; a casa se refaz até 80); duas sedes no mesmo bairro nos dados: a maior fica, a outra é espalhada pro bairro livre mais parecido. **Bar, loja, subsede (e a festa da sede) em bairro de dona rival rendem 30% menos.** A subsede também segura o bairro dela e pode dominar. Contam pra barra: treta marcada, ataque na pista e na concentração, arredores do estádio, bote no bar e na sede, estrutura nova no bairro, **ação social no bairro** (nova: uma por semana, R$ 1.500 e 5 membros) — e as brigas entre as IAs. O bar é **"BAR DA {torcida}"**, no feminino, no mapa e na fachada. Detalhes e medidas: `docs/JOGO_3D.md` §30.
+
+## As praças compostas viram cidades, e a torcida mora no bairro (dono, 01/10/2026)
+
+**Cada bairro tem a cidade dele** (conurbação conta como uma cidade: o ABC, o Rio com a Baixada, Goiânia com Aparecida, Niterói com São Gonçalo e Itaboraí), e **18 praças viram mais de uma cidade no mapa** — cada uma com os bairros, os estádios e as sedes dela, **a 50 m da cidade de onde ela sai** (a metade dos 80 a 120 m da proposta, "pra dar uma impressão maior de conurbação"; a que fica longe, 100 m; Niterói, do outro lado da baía, 150 m), ligadas por estrada (ou pela avenida, quando ela já chega lá), com o **pórtico de BEM-VINDO com o nome da cidade** e a **placa verde com os km** — aproximados: a linha reta entre as cidades com um quinto a mais. **A sede só fica na cidade do bairro dela e o estádio no bairro que os dados dizem**; a torcida de uma cidade sem terreno que sobre fica sem sede (nenhuma ficou: as 139 sedes das 30 praças são as mesmas de antes). Goiânia fica inteira, com o Jonas Duarte e a sede da Independente no bairro Anápolis.
+
+**As interpretações** (onde o pedido deixou espaço): no Subúrbio Carioca, Mesquita sai pra Campos dos Goytacazes ter dois bairros, e a Sangue Americano e o Giulite Coutinho (do America, em Mesquita) vão pra Nova Iguaçu; a Jovem Goyta vai pra Campos; o Raulino de Oliveira entra no lugar do Estádio do Trabalhador. No Interior de Minas saem Juiz de Fora, Pouso Alegre e Governador Valadares, e o Regional fica em Patos de Minas, a cidade do meio. No Maranhão o mar é o leste do mapa: Parnaíba desce pela costa e Teresina fica a sudoeste dela, Imperatriz longe a sudoeste de São Luís. O Interior de SC fica com 9 bairros. Rondonópolis entra Classe Média e Balneário Camboriú, Nobre; o bairro novo "II" herda a classe do primeiro. **O domínio continua pela praça inteira** (o dono, 01/10/2026: "O domínio vai continuar sendo por praça inteira e as cidades se comportam como bairros"): a dona da praça é quem é dona de mais bairros, contados juntos os de todas as cidades dela (na Paraíba, os 6 bairros de João Pessoa e os 3 de Campina Grande entram na mesma conta); a cidade não tem dona separada.
+
+**A torcida do clube mora nos bairros** (`js/mundo/dominio.js`): o total do clube na praça é o do jogo, e ele se reparte pelo peso de cada bairro — a gente do bairro pela classe (favela 1,3, Baixa 1,15, Média 1, Nobre 0,8), uns 85% na cidade do clube (o bairro de outra cidade pesa 0,08; o clube de fora pesa igual em todo bairro), o reduto da sede de uma organizada do clube ×1,6 e a zona dela ×1,25, e uma variação fixa de até 15%. Bar, loja e subsede rendem de ×0,5 a ×1,5 pela presença do clube no bairro, e o ganho na barra do domínio vale de ×0,4 a ×1,3; a organizada começa nos bairros da cidade dela onde o clube tem mais gente. Detalhes e medidas do mapa: `docs/JOGO_3D.md` §34.
+
+## O perfil da cidade mora no mapa, e as outras torcidas do bairro aparecem (pedido do dono, 01/10/2026)
+
+O dono: "As informações contidas no perfil da cidade, inclusive a foto, devem encaixar de alguma forma na tela do mapa também, e agora quando clicar no perfil da cidade vai redirecionar pra tela do mapa com a cidade aberta." E, no meio do trabalho: "preciso que a porcentagem das demais torcidas não-dominantes do bairro apareçam também."
+
+- **O clique no nome de uma cidade abre o Mapa nela**, em qualquer lugar do jogo (o `.c-link` do feed, das tabelas, dos perfis). O modal antigo só abre se o mapa não existir.
+- **A coluna do lado do mapa** tem em cima a capa da cidade: a foto de `img/cidades/<id>.webp` (quando o manifesto das capas tem), o nome, a UF, a região e o número de torcidas. Embaixo, três abas:
+  - **Bairros:** quem domina e o cartão do bairro (a de antes). O clique num bairro volta pra ela.
+  - **Visão geral** e **Torcidas e estruturas:** as duas do perfil, montadas pelo mesmo código. O `main.js` ganhou `perfilDaCidade(id)` (exportado em `TO.tela`), que devolve o nome, a linha de baixo, a capa e as abas, e é usado pelo mapa e pelo modal.
+- **O endereço das estruturas é o do domínio.** Na lista por zona de "Torcidas e estruturas", sede, bar, loja e subsede de cada torcida saíam de um sorteio fixo próprio, que não batia com o bairro onde o domínio as põe. Agora a lista lê `TO.dominio.estruturas` e conta a mesma cidade que a planta pinta. Sem o domínio, fica o sorteio de antes.
+- **O perfil de torcida aberto de dentro do mapa** fica por cima dele (o modal sobe de z-index 55 pra 75 com o mapa aberto).
+- **As torcidas que não dominam o bairro** aparecem nos três lugares:
+  - na planta, uma terceira linha embaixo da dona com até três delas ("TUF 14% · TFC 5%"), só as de 1% pra cima; no bairro em disputa, as maiores;
+  - no cartão do bairro, todas as que têm barra, e não mais só quatro;
+  - no quadro de bairros por zona (as praças sem planta).
+  De longe, o rótulo que não cabe espera o zoom.
+- **O pacote de arquivo único:** o dono não precisa mais que ele caiba no artifact ("confiro tudo via link"). Fica como está.
+- **Testado** (Playwright):
+  - o `.c-link` de Fortaleza no feed abre o mapa na cidade;
+  - as três abas pintam;
+  - o perfil de torcida aberto lá de dentro fica por cima;
+  - sem erro de página;
+  - i18n sem falta.
+
+## O cartão do bairro em dados claros, e a coluna sem o resumo da cidade (pedido do dono, 01/10/2026)
+
+O dono: "Quando eu clico no bairro eu prefiro ver as informações claras dele de quantidade de habitantes, classe social e quais as estruturas presentes no bairro. Remova toda essa parte que diz 'A Cearamor domina Fortaleza: 5 de 16 bairros…' pra dar espaço de mostrar os detalhes do bairro."
+
+- **A coluna do mapa perdeu o resumo da cidade**: o "A … domina …", o efeito por dia e a lista de quantos bairros cada torcida tem. A planta já pinta a dona de cada bairro. Na aba Bairros fica só o cartão do bairro escolhido; sem bairro escolhido, a dica pra clicar num. A peça `legenda` continua no `mapa_brasil.js` pro jogo 3D, que a usa.
+- **O cartão do bairro**, de cima pra baixo:
+  - **Os dados:** habitantes, classe social, a zona (ou a cidade, nas praças de várias cidades) e o multiplicador de receita. Os habitantes são os torcedores dos clubes que moram no bairro, a mesma conta da "População" do perfil da cidade repartida por bairro (`torcedoresNoBairro`). Por isso a soma dos bairros dá a população da praça.
+  - **Os torcedores que moram aqui:** os cinco clubes com mais gente, com o número e a porcentagem.
+  - **O domínio do bairro:** a dona (ou "sem dona"), a barra e, embaixo dela, a lista de todas as torcidas com a porcentagem de cada uma.
+  - **As estruturas no bairro:** sede, bar, loja, subsede e subsede de fora de cada torcida, com o nível; sem nenhuma, "Nenhuma sede, bar, loja ou subsede".
+  - **A ação social**, como antes.
+- **A barra ficou com a fatia de ninguém.** O dono primeiro pediu a barra sempre fechada em 100% entre as torcidas. Isso foi feito (a sobra repartida pelas organizadas da praça, sem empurrar ninguém pra dona), mas antes de subir ele voltou atrás: "é melhor voltar os pontos de domínio pra ter uma fatia de ninguém mesmo". O `dominio.js` ficou como estava. A fatia de ninguém aparece listrada na barra e como "De ninguém" na lista. Dona continua sendo quem passa de 50%.
+- **Testado** (Playwright):
+  - a barra de nenhum dos 973 bairros com organizada passa de 100%, no começo e depois de 120 dias;
+  - o clique em Pirambu mostra 217 habitantes, Favela, zona Norte, receita ×0,4, os clubes que moram ali, Aliança 86% / TUF 12% / de ninguém 2% e a sede da Aliança;
+  - i18n sem falta.
+
+## Os alvos de domínio do mês, a reunião da zona na praça e a IA que quer a cidade inteira (pedido do dono, 01/10/2026)
+
+O dono: "dois alvos por mês definidos em reunião pras torcidas de sede 3 ou 4, sede nível 0 a 2 é um alvo, 5 a 6 são 3, os alvos podem ser as brigas marcadas, ou a sugestão que já existe de ataque a bar, ataque à reunião na praça (nova cena de briga com até 20 membros de cada lado, todos pertencentes à mesma zona do ataque, na imagem da praça, como se estivessem reunidos em uma reunião de alinhamento do bairro/zona, e sofrem ataque). Aprovo a mecânica de ataque com motivo, e de sem descanso quando domina." Antes: "O objetivo da torcida IA e da nossa é sempre dominar a cidade inteira."
+
+- **Os alvos do mês na reunião da diretoria** (`pautaAlvos`, `js/mundo/feed.js`):
+  - **Quantos:** 1 com sede de nível 0 a 2, 2 com nível 3 ou 4, 3 com nível 5 ou 6.
+  - **Onde:** os bairros mais baratos de virar. A conta é o que falta pra passar de 50% (mais o que a dona tem acima de 50), dividido pelo quanto um ponto nosso rende ali (a torcida do clube no bairro; metade no bairro da sede de outra). A zona onde a gente já manda passa na frente: é o "ataque com motivo".
+  - **Contra quem:** aliadas e irmãs não entram.
+  - **Sem descanso:** os bairros nossos abaixo de 60% também entram, e com a cidade nossa eles vão na frente. Bater em quem cresce ali é segurar o que é nosso.
+  - **O golpe:** o bote no bar da dona, se o bar fica no bairro; senão variam no mês a reunião da zona na praça, a treta marcada (a gente chama, com aposta de mil a seis mil) e a resenha da casa de piscina (se eles têm faixa ou bandeira).
+  - **A fala da diretoria** traz o motivo e o efeito pela conta do domínio: "Aldeota é da Cearamor, com 70%, e a gente tem 22% lá… Ganhando, o bairro fica mais perto de virar", ou "o bairro vira nosso", ou "o bairro fica seguro".
+  - **Os botões:** "Marcar o alvo" põe no calendário (bote, reunião na praça ou treta), e no dia o cartão abre a cena. "Deixar quieto" custa Prestígio −1 e Moral −1.
+  - Os botes sorteados de antes (35% de bar e 35% de casa por mês) saíram: os alvos do mês são os botes.
+- **A reunião da zona na praça** (`praca-reuniao`, `dados/cenas.js`): a praça de sempre, com a mesma foto, chão e fugas, e outro roteiro.
+  - A zona atacada fica em roda no largo do meio, em seis pontos em volta do coreto, e só levanta quando o bonde chega ali.
+  - A zona que ataca chega pela esquina leste.
+  - Até 20 de cada lado, todos da zona do ataque: o nosso bonde é `bondeDaZona` e o deles, `fichasDaZona`, a mesma régua da casa de piscina.
+  - Vale 12 pontos na barra do bairro do alvo, a mesma conta do bote no bar.
+  - Na defesa (a IA vindo na nossa reunião) os papéis se invertem e a gente é a roda.
+  - O olheiro avisa ("vão pegar a reunião da Zona Norte na praça hoje"), e o cartão do dia diz o bairro ("…chegou na praça de Genibaú em cima da reunião da Zona Norte! Querem o bairro.").
+- **As metas da IA** (`metasDoDia`, `js/mundo/dominio.js`):
+  - **Quantos e onde:** no começo de cada mês, cada organizada da IA escolhe os seus alvos, na mesma quantidade pela sede e na mesma conta de bairro barato. Cada alvo ganha um dia do mês e um golpe: o bar, se a dona tem bar no bairro, a reunião na praça ou a treta.
+  - **Contra nós:** se a dona somos nós, é o ataque marcado do dia (a reunião da nossa zona na praça, ou o nosso bar, se ele fica no bairro), com o aviso do olheiro. Fica fora do dia do nosso jogo e de semana que já tem ataque.
+  - **Contra outra IA:** é a briga das duas (`relacoes.brigaIA`), e a barra mexe no bairro do alvo, não no mais fraco da perdedora.
+  - **A dona da cidade não para:** ela também faz a ação social semanal, nos bairros dela abaixo de 60%.
+- **O endereço do bar e da sede dos alvos é o do domínio** (`acoes.alvosDeAtaque`): o bote soma no bairro onde o mapa mostra o bar. Antes vinha do pino do mapa antigo, que caía em outro bairro.
+- **Testado** (Playwright):
+  - jogo da TUF (sede 4) por 70 dias: a reunião trouxe 2 alvos por mês, com o motivo e o golpe variando (casa, treta, reunião). Os marcados foram pro calendário e viraram cartão no dia. A IA virou 29 a 32 bairros pelas metas no mundo, e 5 a 6 vezes veio na reunião da nossa zona;
+  - a cena da reunião abre com a zona da Cearamor (18) em roda no coreto e a nossa (20) na esquina;
+  - 200 dias sem erro;
+  - i18n sem falta.
+
+## As pixações nos muros do bairro e o recrutamento por bairro (pedido do dono, 01/10/2026)
+
+O dono: "agora a opção de recrutar vai ser inteligente e definida na reunião qual bairro iremos recrutar. recrutar em um bairro dá 0,2 pontos diários de domínio nele. vamos criar um sistema de pixações no mapa, com quantidade limitada de pixações a fazer e os locais de pixação serem bem definidos pelo mapa, podendo ser de 3 a 5 por bairro, com cada pixação dando buff de 0.2 pontos diários de domínio. Torcida de sede 0 a 2 pode ter 5 pixações pra gastar por mês, nível 3 a 4 8 pixações e nível 5 ou 6 10 pixações. Algumas vitórias de brigas no bairro dão pontos de pixação no geral pra torcida utilizar. as pixações vão ser pequenos pontos no mapa que quando clicados vão mostrar quem é a torcida que pixou aquele espaço. uma torcida IA vai pixar ao longo de todo o mês de forma espalhada, a fim de evitar que as torcidas gastem tudo assim que for creditada a quantidade de pontos de pixação mensalmente. As torcidas IA sempre vão priorizar pixar em bairro que tem chance maior de dominar."
+
+**As pixações** (`js/mundo/dominio.js`):
+- **Os muros:** cada bairro tem de 3 a 5, um número fixo que sai do hash do bairro. Na planta, cada muro é um ponto fixo dentro do bairro, a 2 células da divisa e longe do nome, espalhados pelo bairro.
+- **De quem é:** o muro é livre ou da última torcida que pixou ali. Pixar por cima do muro de outra torcida também gasta uma pixação. O nosso muro não se pixa de novo, nem o de torcida irmã.
+- **O que rende:** cada muro dá +0,2 por dia na barra do bairro pra dona dele, pelo `mexer` de sempre (sai primeiro do que é de ninguém, e no bairro da sede de outra torcida rende metade).
+- **O saldo:**
+  - a cota do mês é 5 (sede 0 a 2), 8 (3 ou 4) ou 10 (5 ou 6), e vence na virada do mês;
+  - a de briga não vence, e a do mês é gasta primeiro;
+  - ganha pixação extra quem vence treta marcada (+1; a de 10 contra 10, +2), bote no bar ou na sede, a reunião da zona na praça ou a resenha da casa de piscina (+1). Vale pra gente e pra IA (treta e bote entre IAs, e a meta de reunião).
+- **A IA espalha pelo mês:** cada dia ela gasta o saldo dividido pelos dias que faltam (a fração vai no sorteio), nos bairros que tem mais chance de virar (a régua das metas do mês). Primeiro num muro livre, depois cobrindo o de uma rival, e por fim reforçando o bairro mais fraco dela. Quando cobrem um muro nosso, a rival se gaba na rede social.
+- **No mapa** (`js/ui/mapa_planta.js`): o muro pixado é um pontinho na cor da torcida. O livre é um aro claro, que aparece de perto ou no bairro escolhido. O clique no ponto escolhe o bairro e o muro, com o muro destacado em dourado.
+- **No cartão do bairro**, a seção "Pixações":
+  - cada muro com a dona e há quanto tempo foi pixado (a linha também seleciona o muro);
+  - quanto os nossos rendem por dia;
+  - o botão "Pixar em {bairro}", "Pixar este muro" ou "Cobrir o pixo da {sigla}" (só na nossa cidade), com o saldo "{n} pixações pra gastar: {c} do mês + {x} das brigas".
+
+**O recrutamento por bairro** (`dominio.bairrosPraRecrutar`, `feed.pautaRecrutamento`, `acoes` recrutar):
+- **Na reunião:** a pauta "Onde a gente recruta" traz os três bairros que mais valem. A conta é onde o clube tem mais torcida morando (é dali que vem novato), pesada pelo que o bairro vale no domínio: sem dona e dona fraca na frente; o nosso folgado e o da sede de outra, atrás. Cada botão diz a fatia do clube no bairro e a nossa barra.
+- **A escolha** vale até a próxima. Sem escolha, vale o primeiro da lista.
+- **O que rende:** todo dia em que o expediente recrutou, +0,2 de domínio no bairro (uma vez por dia, entre gente ou não). A chance de 1 ou 2 novatos pesa pela torcida do clube no bairro, de ×0,7 a ×1,3, e a linha do expediente mostra o bairro.
+- **A IA** também recruta: no começo do mês cada organizada escolhe o melhor bairro dela, pela mesma conta, e soma +0,2 por dia lá.
+
+**O peso no save:** o domínio guarda os muros pixados, o saldo de cada torcida e o bairro de recrutamento da IA. Num jogo de 20 dias são uns 150 KB, e o teto fica perto de 250 KB (um muro por vaga). O dia ficou em uns 70 ms.
+
+**Testado** (Playwright):
+- jogo da TUF (sede 4) por 45 dias: os muros de Fortaleza foram sendo pixados aos poucos (1, 2, 5, 8… ao longo do mês), com a IA concentrada nos bairros mais baratos (Jangurussu virou guerra de muros, com cinco torcidas cobrindo umas às outras);
+- a pauta de recrutamento trouxe Jangurussu (32% Fortaleza), Granja Portugal (40%) e Genibaú;
+- o nosso pixo pelo cartão funcionou;
+- 200 dias sem erro;
+- salvar e carregar mantém as barras;
+- i18n sem falta.
+
+## Simular o mundo sem escolher torcida, e a barra que passava de 100 (pedido do dono, 01/10/2026)
+
+O dono: "arranje uma forma de você iniciar um save sem selecionar uma torcida e me diga como fica o mapa de fortaleza depois de 1 ano simulado".
+
+- **`ferramentas/simular_mundo.js [cidade] [dias] [pasta]`** (Playwright, com o servidor da raiz no ar):
+  - abre um jogo novo com uma torcida FIGURANTE, a menor organizada de uma praça fora do Brasil (o jogo precisa de uma torcida do jogador pra ter calendário, caixa e feed). Toda decisão dela, no feed e na reunião, fica como "deixar pra lá";
+  - na cidade observada só joga a IA: metas do mês, brigas entre elas, compras, pixações e recrutamento;
+  - no fim grava `<cidade>.json` (o placar, cada bairro com a dona, as partes, o que é de ninguém e os muros) e `<cidade>.png` (o mapa). Um ano leva uns 24 s.
+- **Bug achado na simulação: a barra passava de 100.** Um ano rodado mostrou Genibaú com 112% somados e Monte Castelo com 113%. O `mexer` arredondava cada parte pra uma casa no meio da conta e descontava o valor cheio do que faltava tirar. Com milhares de passos de 0,2 por ano (muros e recrutamento), os centésimos criados se acumulavam. Agora:
+  - a conta corre sem arredondar e fecha uma vez só, no fim (`fecharBarra`): uma casa decimal, nada abaixo de 0,05, e o que passar de 100 sai das outras (a maior primeiro);
+  - o save antigo é limpo na carga (`reparar`);
+  - depois do conserto, nenhuma barra passa de 100 num ano.
+- **No mapa, o nome do bairro manda no espaço.** O ponto das sedes reservava lugar antes e escondia nomes (Monte Castelo, Messejana, Bom Jardim). Agora os nomes vêm primeiro. No bairro disputado por muitas torcidas, se a linha das outras torcidas não cabe, o rótulo fica com o nome e a dona.
+- **O que um ano mostrou em Fortaleza** (duas rodadas; a semente muda a cada jogo):
+  - **Quem domina:** uma vez a Cearamor, com 5 bairros contra 4 da TUF (2 sem dona); na outra, a TUF, com 8, levando a Zona Leste inteira a 100%.
+  - **As pequenas** (Aliança, Falange Coral e Jovem do Floresta, sede 0) seguram o bairro da sede delas (80 a 98%) e só.
+  - **Os muros:** uns 38 ocupados, a guerra concentrada nos bairros baratos de virar (Granja Portugal com cinco donas diferentes nos cinco muros).
+  - **O efeito bola de neve:** a barra chega a 100 e trava. Sem desgaste, um bairro de 100% com os muros todos da dona é quase impossível de virar. Fica anotado pro dono decidir (desgaste diário acima de 80, ou o pixo que desbota com o tempo).
+
+## Desgaste acima de 80, o pixo que desbota, a cota nova e o bônus da líder (dono, 01/10/2026)
+
+O dono aprovou as duas saídas pro efeito bola de neve ("aprovo as duas sugestões") e pediu: "Torcida líder de dominar bairros no mapa recebe +2 pontos de pixação por mês. Torcida com sede nível 0 tem só 2 pontos de pixação mensais. Nova redistribuição de pontos de pixação por sede: 2 pra sede 0 / 4 pra 1 e 2 / 8 pra 3 e 4 / 12 pra 5 e 6".
+
+- **O desgaste:** quem passa de 80% num bairro perde, por dia, 2% do que passa de 80 (0,4 a 100%, 0,2 a 90%), e isso vira de ninguém. É proporcional e não fixo porque um desgaste fixo pequeno some debaixo dos muros (cinco muros dão +1 por dia). O desgaste nunca derruba uma dona (para em 80).
+- **O pixo desbota:** 60 dias depois, o muro volta a ficar livre. O cartão do bairro mostra, em cada muro, há quanto tempo foi pixado e em quantos dias desbota.
+- **A cota do mês:** 2 sem sede, 4 na sede 1 e 2, 8 na 3 e 4, 12 na 5 e 6.
+- **A líder:** a dona da cidade (dona de mais bairros) na virada do mês leva +2 pixações naquele mês. O cartão mostra "+2 por liderar a cidade".
+- **Um ano simulado** (`ferramentas/simular_mundo.js`, duas rodadas):
+  - quem domina continua variando: Cearamor com 5 bairros, ou TUF com 7;
+  - nenhum bairro trava em 100%: a dona folgada fica entre 81 e 88%;
+  - 14 a 18 muros pixados no fim do ano (antes eram 38, e quase todos da dona);
+  - 2 ou 3 bairros sem dona, com seis ou sete torcidas na barra (Genibaú, Castelo Encantado, Jangurussu).
+
+## Os mapas 2D de acordo com o 3D: os bairros 3 × 3, a praia, os rios e Juazeiro do Norte III (pedido do dono, 02/10/2026)
+
+O dono: "Atualize no jogo os mapas 2d pra ficar de acordo com o que eu coloquei no jogo 3d."
+
+- **Os dados:**
+  - **O que veio do 3D:** os dois commits mais recentes do branch do 3D (a71f694 e d29f0ea, "Bairro 3x3 com equipamentos, praia de volta, rios entre as cidades e entradas da praça" e "Maranguape sai, Juazeiro do Norte III, e os rios refeitos") mexeram na fonte dos bairros.
+  - **O bairro trocado:** Maranguape saiu do Interior do CE e entrou Juazeiro do Norte III (zona Sul, Nobre, ×1,5).
+  - **O nosso por cima:** a fonte do 3D foi trazida com as três mudanças só nossas reaplicadas (Arena Joinville, Estádio Centenário e São Paulo sem metrô), e `dados/cidades.js` foi regerado.
+  - **A conferência:** os bairros do jogo batem com os da cópia do 3D em todas as cidades.
+- **As plantas assadas de novo** (`ferramentas/assar_plantas.js`, as 30 praças) a partir da página do 3D atualizada:
+  - os bairros de 3 × 3 quadras com a fileira do meio de equipamentos (praça, escola, igreja, delegacia, hospital), cujos nomes viram etiqueta de perto;
+  - os rios entre as cidades, com ponte, até dois por praça e correndo pro mar;
+  - as lagoas e as clareiras no mato;
+  - as entradas norte e sul;
+  - a rua de acesso do estádio na largura certa.
+- **A praia da praça de várias cidades:** o limite que a planta informa para na avenida da beira, e o mar (que o 3D estende 60 m mar adentro) ficava fora do recorte. Maceió, São Luís, João Pessoa e Aracaju saíam sem praia. Agora, na praça de praia com o limite curto (as de modelo param em 2515), o recorte vai até onde o mar acaba (`areaDoCenario`). As do mapa do porte já iam até 5000, com o mar dentro.
+- **Testado** (Playwright):
+  - Alagoas com a areia e o mar;
+  - o Interior do CE com Juazeiro do Norte III na grade (608 células) e os equipamentos novos nas etiquetas;
+  - os bairros da planta batem com os dados nas 30 praças;
+  - um ano simulado no Interior do CE sem erro, com o bairro novo disputado como os outros.
+
+## O mapa no celular (o dono, 02/10/2026: "Os mapas novos ficam impossíveis de navegar pelo celular")
+
+O print do dono mostrava a página inteira ampliada: a dica gigante e cortada à esquerda, os nomes de cidade enormes. No Safari do iPhone a pinça ia pro zoom da página, e não pro do mapa: ele não respeita o `touch-action: none` na pinça. No celular emulado (Chromium, iPhone 13), o resto também atrapalhava: os nomes das cidades encavalavam ("NOVO HORIZONTEIRÃO P…", "BAURUARAQUARA"), as letras eram grandes pra um quadro de 370 px, de perto as etiquetas e as placas de estrada lotavam a tela, e o toque num bairro abria o cartão embaixo do mapa, fora da vista.
+
+- **A pinça é do mapa:**
+  - os gestos do Safari (`gesturestart`/`gesturechange`/`gestureend`) e o `touchstart`/`touchmove` no mapa são parados; quem move e aproxima são os ponteiros, como já era;
+  - com o painel aberto, o viewport ganha `maximum-scale=1, user-scalable=no` (a página que já estava ampliada volta ao normal), e o de antes volta quando o painel fecha;
+  - o toque duplo aproxima (no celular o `dblclick` não vem).
+- **As letras acompanham o quadro:** a escala é a largura do quadro sobre 760, entre 72% e 100%, nos nomes, nas linhas de baixo, nas etiquetas e nas caixas.
+- **Os nomes das cidades** passam pela mesma conta de espaço dos outros rótulos: o que bate em outro espera o zoom.
+- **Em tela estreita** as etiquetas de equipamento e marco só aparecem de mais perto (3× em vez de 2,2×), e a placa "Estrada pra…" só bem de perto (5×; no computador, 3,5×).
+- **A dica do toque** é curta ("Arraste · pinça pra aproximar · toque num bairro") e some no primeiro toque.
+- **O mapa ocupa 62% da altura**, e os botões de zoom ficaram maiores (38 px).
+- **Escolhido o bairro no celular**, a página desce até o cartão.
+- **Testado** (Playwright, iPhone 13 emulado, toques pelo CDP):
+  - a pinça de dois dedos aproxima o mapa e a página fica na escala 1;
+  - o arrasto move o mapa;
+  - o toque em Bauru contorna o bairro e desce até o cartão;
+  - fechando o painel, o viewport volta;
+  - no computador, o mapa segue igual.
+
+## Bairro é um pedaço só: o fim dos enclaves no mapa 2D (o dono, 02/10/2026: "Acabe de vez com esses enclaves do bairro dentro de outro, eles sempre tem que ter uniformidade territorial")
+
+O print do dono mostrava quadras de Monte Castelo no meio de Pirambu, em Fortaleza. A divisão vem da planta do 3D: lá a quadra da sede ou do bar fica no bairro que os dados mandam, mesmo cercada por outro, e o estádio de fora fica num bloco solto no mato. Nas plantas assadas havia 45 pedaços soltos: 26 deles dentro de outro bairro (alguns com sede dentro, como a da JGT) e o resto, blocos de estádio do outro lado do mato ou da estrada.
+
+- **`ferramentas/plantas_sem_enclaves.py`** reescreve `dados/plantas.js`:
+  - cada bairro é dividido em pedaços contíguos;
+  - o pedaço principal é o maior que encosta em outro bairro (a ilha do estádio nunca é o bairro, nem quando é maior que o bloco dele);
+  - todo outro pedaço que encosta em bairro passa pro vizinho com quem tem mais divisa;
+  - a ilha cercada de mato vai pro bairro mais perto dela pelo vazio (fica com o dela só quando o bloco do dela é o mais perto);
+  - a conta roda até não sobrar nada, e rodar de novo não muda nada.
+- **O nome do bairro** que caía fora do pedaço dele volta pro meio do pedaço.
+- **A sede que estava num enclave** continua no bairro dela nos dados, e o ponto no mapa vai pra quadra mais perto do bloco principal:
+  - JGT (Fortaleza);
+  - NAÇÃO (Porto Alegre);
+  - P9, TTI, Gaviões e TUP (São Paulo).
+- **O que mudou de mão:**
+  - em Fortaleza, as 60 células de Monte Castelo dentro de Pirambu viraram Pirambu, mais dois pedaços na divisa Maraponga / Jardim das Oliveiras / Bom Jardim;
+  - nas 17 praças com pedaço solto, foram de 8 a 945 células por praça;
+  - sobraram só 11 blocos de estádio, sempre colados no bloco do próprio bairro do outro lado da rua.
+- **O assador roda isso no fim** (`ferramentas/assar_plantas.js`), então a próxima assada já sai sem enclave.
+- **O 3D não mudou:** a planta do `cenario3d/` (da outra sessão) segue com a divisão dela; o domínio, os muros e o cartão no 2D usam a grade nova.
+- **Testado:**
+  - a grade antes e depois de Fortaleza, Porto Alegre, São Paulo, Brasília, Salvador e Mato Grosso, desenhada bairro a bairro;
+  - o mapa no jogo (Playwright) de Fortaleza, Porto Alegre e Brasília, sem erro na página.
+
+## A sede em cima do prédio: os mapas 2D gerados de novo da planta sem enclave (o dono, 02/10/2026: "O marcador da sede deve ficar em cima de onde a sede realmente fica")
+
+A correção dos enclaves feita só no 2D tirava 14 dos 139 pontos de sede de cima do prédio, de ~470 a ~2.070 unidades: o 3D punha a sede num terreno da zona, fora do bloco do bairro dela, e a quadra da sede é que era o enclave. O pedido foi pro 3D (sessão do jogo 3D, `cenario3d: bairro de um pedaço só, com a sede dentro`): o bairro da sede cresce a partir da quadra dela e a grade sai sem enclave.
+
+- **Os 30 mapas gerados de novo** (`ferramentas/assar_plantas.js`) da planta nova:
+  - a ferramenta de enclave do 2D (`plantas_sem_enclaves.py`), que roda no fim, não mexeu em nada;
+  - nenhum ponto de sede andou: as 139 ficam onde a planta põe o prédio;
+  - cada uma cai no pedaço principal do bairro dela;
+  - esse bairro é o mesmo que o domínio do jogo dá pra sede (`TO.dominio.sedeDe`), nas 139.
+- **Pedaço solto:** só os 11 blocos de estádio do outro lado do mato (a rua de acesso não é bairro na grade), cada um colado ao bloco do próprio bairro.
+- **O nome que sumia:** Jardim das Oliveiras e Antônio Bezerra (Fortaleza) ficaram com o meio colado no nome do vizinho, e o mapa escondia o nome que batia em outro. Agora, sem espaço no meio, o nome procura outro ponto DENTRO do bairro (pra baixo, pra cima, pros lados) antes de desistir:
+  - 347 de 353 nomes na vista inicial no computador (eram 333);
+  - os 6 que faltam são das praças compridas de várias cidades, que esperam o zoom, como antes.
+- **Testado:**
+  - Playwright, mapa no jogo de Fortaleza, Porto Alegre e São Paulo, sem erro na página;
+  - a conta dos nomes nas 30 praças, em 1440 e 390 px.
+
+## Toda briga tem bairro, e o anúncio diz quanto ela mexe no domínio (o dono, 02/10/2026: "confira se todas as ações de briga do jogo vinculam a algum bairro… reformular todas as mensagens que informam nova briga pra poder dizer o bairro e, além dos efeitos de moral, prestígio e relação, informar quanto mexe na dinâmica de dominação do respectivo bairro")
+
+O exemplo do dono era o itinerário: "A Cearamor fechou a gente na pista, a caminho do estádio! Foi em Pista · Avenida de acesso · a caminho." — sem bairro e sem domínio.
+
+**O levantamento.** De 18 brigas do jogador, 7 não mexiam em bairro nenhum ou mexiam no bairro errado:
+- a emboscada na estrada;
+- a arquibancada;
+- a escolta do aliado;
+- a LNT;
+- a casa de piscina atacada;
+- a concentração fora de casa;
+- a caravana da subsede emboscada.
+
+E mais:
+- o bote no bar do alvo do mês caía no primeiro bar da torcida, não no bar da pauta;
+- "desfazer a reunião" (fugir) caía na sede, não no bairro da reunião;
+- a investida fora de casa ia sempre pro bairro da sede deles, até nos arredores do estádio;
+- o resultado calculava o domínio e não mostrava;
+- nenhum anúncio falava de domínio.
+
+**Uma conta só (js/mundo/dominio.js):**
+- `ondeDaBriga` decide o bairro e os pontos de qualquer briga, e serve tanto pra prévia quanto pro fechamento (`confronto`). Sem bairro na briga:
+  - a estrada cai no bairro mais perto de uma das entradas da praça de passagem ("Entrada norte/sul", "Estrada pra…" da planta), sorteada pela viagem;
+  - arquibancada, pista, arredores e escolta caem no bairro do estádio do jogo;
+  - a concentração cai na porta da sede de quem foi atacado (fora de casa, sem sede nossa lá, no bairro do estádio deles).
+- A LNT, o aliado e a arquibancada deixaram de ficar de fora.
+- Pontos novos:
+  - arquibancada: 6;
+  - estrada: 8.
+- `previaBriga` roda a mesma conta numa cópia da barra (`somarNaBarra`, a parte pura do `mexer`), vencendo e perdendo.
+- `linhaDaPrevia` escreve, por exemplo: "Domínio em Maraponga (a nossa parte: 61,7%): vencendo, sobe pra 70,5%; perdendo, cai pra 52,5% e a Leões da TUF vai de 35,3% pra 44,5%". Quando a barra troca de dona, avisa: "(o bairro vira nosso)" e afins.
+- **As IAs também:**
+  - a emboscada delas cai na entrada da praça;
+  - quem perde sem presença na cidade apanha no bairro do estádio;
+  - de 510 brigas de IA no Brasil em 45 dias, todas caíram num bairro.
+
+**Os anúncios.** O texto ganha o bairro, e o botão de brigar ganha a linha do domínio depois de moral, prestígio e relação:
+- **Itinerário:** "Local: Pista · Avenida de acesso · a caminho. Bairro: Maraponga (Fortaleza)." e "Descendo: Domínio em…". Vale pra pista, concentração, emboscada e investida.
+- **Feed:**
+  - os ataques sofridos (bar, reunião, casa de piscina);
+  - a treta do trimestre;
+  - os alvos do mês na pauta;
+  - os cartões do dia (bar, reunião, treta, casa);
+  - a guerra num jogo alheio;
+  - a escolta;
+  - a LNT (a rodada é num campo de terra de um bairro da nossa cidade);
+  - as duas da subsede;
+  - o ataque manual (na lista de alvos e no "Bonde a caminho");
+  - a arquibancada (na consequência da partida).
+- **O resultado:** a briga diz o bairro de verdade (também na estrada e na arquibancada) e a consequência termina em "Domínio em José Walter (Fortaleza): a nossa parte foi de 90% pra 100% (+10)". Quando quem leva é o rival, diz quanto ele ganhou e onde a nossa parte ficou.
+- **As notícias das IAs:**
+  - quem venceu se gaba do bairro ("Jangurussu tá cada vez mais nosso: +12,4 na barra");
+  - o Porrada diz onde foi e quanto somou.
+
+**De fora (não são briga entre torcidas):** a pressão no CT, o assalto e a briga do tutorial.
+
+**Testado (Playwright):**
+- os 10 tipos que faltavam: a prévia e o fecho, cada um num bairro, com a mensagem certa;
+- 90 dias simulados: todos os anúncios de briga vistos traziam a linha do domínio;
+- o itinerário de um jogo em casa com ataque na pista;
+- 45 dias de brigas das IAs;
+- `i18n_faltando` em 0.
+
+## Os discos no lugar dos bonecos, e aliada que atacava e cobria o pixo da outra (o dono, 02/10/2026)
+
+**"Algumas cenas de briga estão surgindo com os discos em vez do boneco."**
+- **A causa:** cada foto de briga do jornal (`cartaz.js`, `bonecos3.fotoDaBriga`) e do troféu (`fotoDoTrofeu`) abria um `WebGLRenderer` novo e só chamava `dispose()`, que não fecha o contexto.
+  - O Chrome aguenta uns 16 contextos e derruba o mais antigo — o dos bonecos da cena.
+  - Ele não volta: `montar` via o canvas perdido e devolvia falso, e toda briga dali em diante abria com disco.
+  - Reproduzido: com o mapa de bonecos montado, 24 fotos seguidas e o contexto caía ("Too many active WebGL contexts").
+- **As fotos dividem um renderizador só** (`rendererDaFoto`): num canvas só dele, no tamanho pedido, refeito só se o próprio contexto cair.
+- **O contexto perdido se recupera:** `bonecos3.perdeu(canvas)` diz quando o canvas dos bonecos caiu e não voltou, e `montarCena` põe um canvas novo no lugar antes de abrir a briga.
+- **Testado:**
+  - 24 fotos seguidas e os bonecos seguem ativos;
+  - com o contexto derrubado de propósito (`WEBGL_lose_context`), a briga da pista seguinte abre com boneco ("canvas novo no lugar…");
+  - as fotos do jornal saem iguais (rua 800×400 e bar 600×300 em seguida).
+
+**"A Jovem Garra Tricolor chegou na praça de Granja Portugal em cima da reunião da Zona Oeste! Isso não acontece quando as torcidas são aliadas. Nem uma cobrir o pixo da outra."**
+- **A causa:** a meta do mês da IA tirava as irmãs da lista das outras torcidas do bairro, mas escolhia a DONA do bairro como vítima sem conferir. A TUF era a dona de Granja Portugal, e a JGT, irmã dela, marcava o ataque na reunião.
+- **A régua nova é uma só:** `dominio.amigas` vale pra irmãs do mesmo clube e pra quem está em Aliado ou Irmandade hoje (relação de +20 pra cima, a régua do rótulo da Diplomacia). Ela vale em:
+  - os alvos da IA (`alvosDe`);
+  - a vítima da meta do dia (a dona amiga não é vítima; sem vítima que não seja amiga, a meta cai);
+  - o ataque marcado contra a gente (`contraNos`);
+  - os alvos da nossa pauta (era "relação abaixo de 25");
+  - a pixação, da IA e nossa: nenhum muro de amiga é coberto. O cartão do mapa mostra "Muro da {sigla}, aliada: não se cobre", e o `pixar` recusa ("Esse muro é de uma torcida aliada.").
+- **Testado (120 dias jogando de TUF):**
+  - nenhum ataque marcado veio de amiga, e nenhum alvo da pauta era amiga;
+  - em 260 tentativas diretas de cobrir muro de amiga (IA e jogador, TUF no muro da JGT), nenhuma passou.
+
+## Menos briga de bairro, o foco na logística do jogo (o dono, 02/10/2026: "as brigas nos bairros ficaram mais dinâmicas que todo o restante do jogo em si. vamos tomar medidas pra diminuir isso, com as brigas tendo menos volume no feed, pro foco ser primeiramente na logística ao redor do jogo")
+
+**A medida antes de mexer (60 dias de TUF, as decisões em branco):**
+- 66 das 126 mensagens da rede eram zoeira de briga das IAs (mais de uma por dia);
+- 5 ataques marcados contra a gente pelas metas de domínio, fora o calendário do trimestre;
+- 6 cartões de "bairro virou" no feed, a maioria de bairros dos outros;
+- cada organizada da IA buscava 1 a 3 bairros por mês (só Fortaleza, umas 14 brigas de bairro por mês).
+
+**O que muda:**
+- **Zoeira:** só a briga da NOSSA cidade ou de um rival nosso; uma por dia, três por semana. As vizinhas a uma estrada saíram. O Porrada segue com a maior do país, um dia em três.
+- **Ataque contra nós pelas metas:** no máximo um por mês (`contraNos`).
+- **Bairro de outra torcida virando:** um cartão só no começo da semana ("Na semana, os bairros da cidade: …"), com a última dona de cada um. O que vira e volta na semana nem entra. O nosso bairro e a dona da cidade seguem avisando na hora.
+- **O ritmo da IA:** um bairro-alvo por mês (dois com sede 5 ou 6). A régua do jogador (1/2/3 pela sede) não muda, nem as brigas do dia de jogo.
+
+**Depois (os mesmos 60 dias):**
+- zoeira: 22;
+- ataques marcados pelas metas: 1;
+- cartões de domínio: 3;
+- brigas das IAs no mundo: de 1.713 pra 1.552.
+
+## Um alvo por mês, a pista na vizinhança do estádio e a estrutura que segura o bairro (o dono, 02/10/2026)
+
+- **"Reduza pra um alvo mensal":** os alvos de domínio da reunião passam a ser um por mês, qualquer que seja a sede. Era 1/2/3, em `feed.js`. A IA também fica em um (era 1, ou 2 com sede 5 ou 6).
+- **"As brigas na pista são em bairros vizinhos ao bairro do estádio"** (o Castelão é na Maraponga; a pista pode ser no Bom Jardim, no Conjunto Ceará ou na Granja Portugal):
+  - `dominio.vizinhosDe` lê a divisa na grade da planta (dados/plantas.js); sem planta, usa os bairros da mesma zona;
+  - a pista cai num dos vizinhos do bairro do estádio, sorteado pelo dia (`bairroDaPista`). A prévia do anúncio e o fim da briga dão o mesmo;
+  - na Maraponga, a planta dá Bom Jardim, Conjunto Ceará, Granja Portugal e Jardim das Oliveiras (que também faz divisa);
+  - a pista em casa (o ataque sofrido do itinerário e os pontos terminal, avenida e viaduto do planejamento) e a pista fora (`encontroDaViagem`) seguem a mesma regra;
+  - os arredores continuam no bairro do estádio.
+- **"Ter uma estrutura num bairro dá buff diário de 0,1":** cada bar, loja, subsede e filial soma +0,1 por dia pra dona no bairro dela (`diaDasEstruturas`, sem o peso da torcida, como os muros). A sede segue com a régua própria (refaz até 80). O cartão do bairro mostra "+0,1 por dia" ao lado de cada uma.
+- **Testado:**
+  - os 40 sorteios de pista do Castelão caíram nos quatro vizinhos;
+  - um dia passado: o bar da Cearamor em Jangurussu foi de 68,6 pra 68,7;
+  - 60 dias: um alvo por reunião, sem erro.
+
+## A estrutura vale 0,2 por dia, e o jogo diz onde cada torcida recruta (o dono, 02/10/2026: "recrutar em um bairro dá 0,2 por dia de dominação e aumente agora a estrutura pra 0,2 por dia também. o jogo vai dizer em qual bairro cada torcida tá recrutando")
+
+- **Recrutamento:** segue com +0,2 por dia no bairro. A IA ganha todo dia no bairro do mês; a nossa torcida, nos dias em que o expediente recruta, no bairro escolhido na reunião.
+- **Estrutura:** cada bar, loja, subsede e filial passa de +0,1 pra +0,2 por dia (`ESTRUTURA_DIA`). O cartão do bairro mostra "+0,2 por dia" em cada uma.
+- **Onde cada uma recruta (`dominio.recrutandoEm`):**
+  - o cartão do bairro ganhou a seção "Recrutamento" ("{torcida} recruta aqui · +0,2 por dia", ou "Nenhuma torcida recruta aqui");
+  - a tabela "Torcidas e estruturas" da cidade ganhou a coluna "Recruta em".
+- **A escolha da IA espalhada (`planejarRecrutamento`):** a escolha crua punha seis das sete organizadas de Fortaleza em Genibaú.
+  - Da maior pra menor, cada uma escolhe entre os 5 melhores bairros dela.
+  - O bairro vale menos a cada torcida que já recruta lá (÷ 1 + 0,7 por torcida, a nossa conta).
+  - Em Fortaleza ficaram seis bairros diferentes pras sete.
+- `mapaBrasil.abrir(cidade, bairro)` abre o mapa com o bairro escolhido.
+- **Testado:**
+  - um dia: o bar da Cearamor em Jangurussu, de 72,8 pra 73;
+  - a seção no cartão e a coluna na tabela, sem erro.
+
+## A mesa escolhe o bairro do recrutamento e o ataque do mês (o dono, 02/10/2026: "me dê a opção de escolher o bairro que quero recrutar no dropdown e escolher a forma de atacar alguém na reunião também, escolhendo o bairro e a forma de ataque, mostrando a quantidade disponível deles e o efeito se der certo ou errado")
+
+- **Onde a gente recruta:** no lugar dos três botões, uma lista com todos os bairros da cidade. Os três que a diretoria sugere vêm no topo, com ★.
+  - Cada linha mostra quanto do bairro torce pro clube e a nossa barra lá.
+  - Embaixo, a nota do escolhido: de onde vem novato, a barra e o +0,2 por dia.
+  - "Recrutar aqui" grava (`feed.escolherRecrutamento`).
+- **O alvo do mês:** a diretoria traz a sugestão (o texto), e a mesa escolhe em três listas.
+  - **Bairro:** todo bairro com torcida atacável, com a nossa barra.
+  - **Contra:** as torcidas com barra no bairro, sem aliadas nem irmãs, com a parte de cada uma.
+  - **Forma do ataque:** bote no bar, reunião na praça, treta marcada, casa de piscina. A que não dá aparece riscada, com o motivo: "eles não têm bar aqui", "a nossa Zona … tem menos de 4 aptos", "falta caixa pra aposta", "eles não têm faixa nem bandeira".
+  - **Tamanho da treta:** 5, 7 ou 10, só na treta.
+- **A ficha (`feed.fichaDoAtaque`):**
+  - **Quando:** o dia livre do mês pra esse golpe.
+  - **Eles:** quantos têm de pé e quantos descem na cena. As réguas das cenas: o bar, 35% de pé até 40; a reunião e a casa, a zona deles até 20; a treta, o tamanho.
+  - **Nós:** os aptos do bonde, a nossa zona até 20, ou a linha de frente.
+  - **Aposta:** só na treta.
+  - **Dando certo / Dando errado:** prestígio, caixa, peça e relação, os números dos cartões de sempre, mais o domínio do bairro (a nossa parte e a deles, e se o bairro vira).
+- **"Marcar o ataque"** (`feed.marcarAtaqueDaPauta`) põe o bote escolhido no calendário, como o sugerido. "Deixar quieto" segue igual.
+- A linha "Quando · Contra · Onde" da sugestão sai enquanto a mesa escolhe (a ficha diz isso).
+- **Testado (Playwright):**
+  - a sugestão na ficha;
+  - a troca pra treta 10 contra 10 (ficha e aposta atualizadas) e o bote marcado com bairro, rival e tamanho escolhidos;
+  - o recrutamento no último bairro da lista gravado;
+  - sem erro.
+
+## O bairro da sede sem teto, e perdido custa moral (o dono, 02/10/2026: "o bairro da sede pode ser perdido pela torcida também e isso reduz a moral em 0,2 por dia. não existe mais essa trava de 80% mas o bairro da sede dá 0,5 por dia")
+
+- **A sede soma +0,5 por dia pra dona no bairro dela, sempre** (`refazer`). Era "refaz meio ponto até 80". O desgaste acima de 80 (2% do que passa) continua valendo pra todo bairro.
+- **Quem não é dona do bairro da própria sede perde 0,2 de moral por dia** (`sedesPerdidas`, no dia do domínio). Vale com outra torcida dona ou com o bairro em disputa.
+  - Pra nossa, entra no livro da semana de moral.
+  - Pra IA, pelo `mover` dela.
+- **O bairro da sede entra na briga das IAs:** a perdedora apanha no bairro dela de barra mais baixa, e o da sede não fica mais de fora. Quem não é da casa segue ganhando metade lá (é o que faz a sede ser difícil, e não impossível).
+- **O aviso:**
+  - "Perdemos o bairro da nossa sede, {bairro}, pra {para}: −0,2 de moral por dia até retomar.";
+  - quando cai abaixo de 50% sem dona: "O bairro da nossa sede, {bairro}, caiu abaixo de 50%: …".
+- **O cartão do bairro da sede** diz: "+0,5 por dia" e "se perder o bairro, perde 0,2 de moral por dia".
+- **Testado:**
+  - a barra da TUF em Bom Jardim (sede) foi de 82,8 pra 89,9 em 20 dias;
+  - tomado pela Cearamor, o dia tirou 0,2 de moral a mais (0,72 contra 0,52 do dia anterior), e o aviso saiu.
+
+## Muro, recrutamento e estrutura rendem inteiros no bairro da sede (o dono, 02/10/2026: três muros e o recrutamento em Messejana, sede da MOFI — "somado dá 0,8 de buff... mesmo assim a dominação não fica a meu favor, pelo contrário")
+
+**Os prints:**
+- Messejana com MOFI 85,8 e TUF 14,2;
+- três dias depois, igual;
+- cinco dias depois, MOFI 86,5 e TUF 13,5.
+
+**A causa:** a regra "quem não é da casa ganha metade no bairro da sede" (`RESISTE`) cortava também os ganhos de todo dia.
+- **TUF:** os 3 muros rendiam 0,3 (e o cartão dizia 0,6) e o recrutamento, 0,1. Somava 0,4.
+- **MOFI:** a casa somava os 0,5 inteiros.
+- Reproduzido: MOFI 85,8 → 86,1 e TUF 14,2 → 13,9 em três dias.
+
+**Agora** a metade vale só nas ações (brigas, ação social, estrutura nova). O que rende por dia — muro, recrutamento, estrutura (`DIARIOS`) — vale inteiro.
+- Os mesmos três dias: MOFI 85,8 → 84,9 e TUF 14,2 → 15,1 (+0,3 por dia: 0,8 da TUF contra 0,5 da MOFI).
+- O cartão do bairro da sede diz a regra nova.
+
+## O mapa 2D de acordo com o 3D: sem sede vaga, as estruturas de cada torcida e a sede pelo save (o dono, 03/10/2026: "Atualize o mapa 2d de acordo com o que fiz no 3d")
+
+O 3D mudou em dois commits (`cenario3d: sede vaga sai; loja e subsede da torcida` e `sede da IA pelo save; fábrica e anexos da sede`).
+
+**As plantas geradas de novo:** as 30 praças saíram da planta nova. O espaço de sede sem dono agora é casa.
+- A camada "Lojas e subsedes de exemplo" vem desligada, e a geração roda sem save: a imagem não leva estrutura de exemplo.
+- A ferramenta de enclave não mexeu em nada.
+- As 139 sedes seguem no pedaço principal do bairro delas e no mesmo bairro que o domínio do jogo dá.
+
+**As estruturas de cada torcida no mapa (`mapa_planta.js`, `posEstruturas`):** como no 3D, o jogo diz onde fica cada bar, loja, subsede, filial e fábrica (`TO.dominio.estruturas`).
+- **O desenho:** um quadradinho na cor da torcida, com a letra B, L, S ou F de perto e a etiqueta ("Bar TUF", "Fábrica TUF") mais de perto. As nossas têm a borda dourada.
+- **A posição:** um ponto fixo dentro do bairro, longe dos muros, da sede, das outras estruturas e da faixa inteira do nome do bairro. O mesmo conjunto cai sempre no mesmo lugar.
+
+**A fábrica:** entra nas estruturas do domínio, no bairro da sede. É a do nosso patrimônio e a do mundo vivo da IA. Como estrutura, rende +0,2 por dia ali. O cartão do bairro diz "Fábrica da {torcida}".
+
+**A sede pelo save:** a torcida de sede nível 0 (a nossa ou a da IA, pelo mundo vivo) fica sem o ponto da sede no mapa, como no 3D. O cartão diz "Bairro da {torcida} (sem sede: junta no bar ou na esquina)". A regra do domínio do bairro da sede (+0,5 por dia, a metade pra quem não é da casa) segue pelos dados.
+
+**Testado (Playwright, TUF com loja, subsede e fábrica):**
+- as 17 estruturas de Fortaleza no mapa, sem cobrir nome de bairro;
+- a Aliança, a TFC e a Jovem do Floresta (nível 0) sem o ponto da sede;
+- as etiquetas de perto;
+- sem erro.
+
+## Felipe Santiago fora do jogo; o Floresta manda no Presidente Vargas (o dono, 03/10/2026: "Remova o Felipe Santiago do jogo e faça o floresta mandar no Presidente Vargas")
+
+- Fortaleza fica com dois estádios: Arena Castelão (Fortaleza e Ceará) e
+  Presidente Vargas (Ferroviário e Floresta). O Felipe Santiago saiu de
+  `dados/fonte/cidades_bairros.json` (→ `dados/cidades.js`), de
+  `dados/estadios.js` (75 praças de jogo) e o estádio da Jovem do Floresta
+  passou a ser o Presidente Vargas (`torcidas_relacoes.json` →
+  `dados/torcidas.js`). `dados/times.js` já dizia Presidente Vargas.
+- `estadios.js` é gerado do `legado/`, que não está mais no repositório:
+  a linha foi tirada à mão e `ferramentas/importar_estadios.py` ganhou a
+  mesma regra (`TIRAR`), pra não voltar numa importação futura.
+- A planta de Fortaleza foi reassada sem o estádio. O assador
+  (`ferramentas/assar_plantas.js`) agora serve à planta do 3D os
+  `cidades.js`, `estadios.js` e `torcidas.js` da raiz em vez das cópias de
+  `cenario3d/dados/` — o 2D pode mudar um estádio antes do 3D. Sem o
+  quarteirão do estádio, a cidade se rearranjou (os bairros mudaram de
+  lugar); as sete sedes continuam no bairro certo e não há enclave novo.
+- O 3D (`cenario3d/dados/`, `cenario3d/js/jogo.js`) ainda tem o Felipe
+  Santiago — é da outra sessão; quando ela tirar, a planta dela fica igual
+  a esta.
+
+## Cada clube joga num estádio do jogo; saem Zinho de Oliveira, Canindé e Passo d'Areia (o dono, 03/10/2026: "O avaí joga onde, por exemplo? Ele deve jogar no seu estádio, a Ressacada, veja caso a caso pra corrigir")
+
+- Saíram três estádios: Zinho de Oliveira (Belém; o Águia de Marabá joga
+  no Mangueirão), Canindé (a Portuguesa joga no Morumbi) e Passo d'Areia
+  (o São José joga na Arena do Grêmio). Fora de `cidades_bairros.json` →
+  `cidades.js`, de `estadios.js` (72) e da regra `TIRAR` do
+  `importar_estadios.py`; as plantas de Belém, São Paulo e Porto Alegre
+  foram reassadas (sedes no bairro certo, sem enclave novo).
+- O defeito: o estádio do jogo é o `estadio` do clube em `times.js`, e 40
+  clubes do Brasil traziam um nome que não estava em `estadios.js` — o
+  apelido ("Ressacada", "Ligga Arena", "Bruno José Daniel") ou um estádio
+  que o jogo não tem ("Baenão", "Curuzu", "Serrinha", "Arena MRV"). O
+  `estadiosEm` então inventava um estádio fantasma num bairro sorteado,
+  fora da planta, e o de verdade ficava sem mandante. Agora todo clube
+  aponta o nome exato de um estádio de `estadios.js` (a lotação é a dele)
+  e todo estádio tem mandante. Caso a caso:
+  · o próprio, com o nome certo: Avaí (Ressacada), Athletico (Arena da
+    Baixada), Santo André, São Bernardo, São Caetano, Tuna Luso (Souza),
+    Atlético/GO (Antônio Accioly), Caxias (Centenário), Nacional e Rio
+    Negro (Colina), Treze (Amigão);
+  · sem o seu no jogo, o da praça que a torcida dele já dizia: Remo e
+    Paysandu (Mangueirão), Goiás e Vila Nova (Serra Dourada), Atlético
+    Mineiro (Mineirão), Athletic, Mamoré e URT (Regional), Ceilândia
+    (Bezerrão), Paulista (Nabi Abi Chedid), União Rondonópolis (Dutrinha),
+    Barra (Ressacada), Ypiranga/PE (Cornélio de Barros), Inter de Limeira e
+    XV de Piracicaba (Jorge Ismael de Biasi), Noroeste (Santa Cruz), Ituano
+    (Maião), Iguatu (Romeirão), Maringá (Germano Krüger), Pelotas (Bento
+    Freitas), Ypiranga/RS (Centenário), Moto Club e Imperatriz (Castelão),
+    Sousa (Almeidão), Sergipe (Batistão), Madureira (Moça Bonita);
+  · Goytacaz e Americano: a torcida dizia o Estádio do Trabalhador, que já
+    tinha saído; jogam no Raulino de Oliveira.
+- A tabela está em `ferramentas/importar_planilha.py`
+  (`ESTADIO_CORRIGIDO`); `times.js`, `estadios.js` (mandantes) e o estádio
+  das torcidas (`torcidas_relacoes.json` → `torcidas.js`) foram acertados
+  à mão, porque os importadores não reproduzem mais esses arquivos.
+- `bairroDoEstadio` acha o estádio também pelo apelido: o Botafogo joga no
+  "Nilton Santos", que é o Engenhão, e caía no primeiro estádio do Rio.
+- Fica de fora: o São Raimundo (Manaus) não está em `times.js` — a Força
+  Azul é torcida de um clube que o jogo não tem.
+
+## O Rio Negro sai, o São Raimundo entra (o dono, 03/10/2026: "eu quero tirar o rio negro pra colocar o São Raimundo/AM, por isso que existe a força azul")
+
+- A Força Azul (Manaus) era torcida de um clube que não estava em
+  `times.js`; a praça já listava o São Raimundo entre os clubes locais. O
+  São Raimundo Esporte Clube entra na linha do Rio Negro — mesma praça,
+  Série D, Copa Norte, qualidade 7, mesma vaga nas competições —, com o
+  Estádio da Colina (é o dele, o "Tufão da Colina"; manda junto com o
+  Nacional), azul e branco, fundado em 18/11/1918 (`fundacoes.js`).
+- Sai o escudo do Rio Negro (`img/escudos/clube-rio-negro.png` e a linha
+  de `escudos.js`). O São Raimundo ainda não tem escudo: a UI usa o
+  quadradinho de cor até a imagem chegar.
+- Save antigo: na carga (`estado.adotar`), o texto troca `rio-negro` por
+  `sao-raimundo` e "Rio Negro" por "São Raimundo" antes de virar objeto —
+  tabelas, jogos e feed passam pro clube novo sem quebrar.
+- `importar_planilha.py` faz a mesma troca (`CLUBE_TROCADO`), que a
+  planilha ainda traz o Rio Negro.
+- De passagem: colar um save em JSON cru (sem a marca TO2) tirava todos os
+  espaços do texto, inclusive de dentro dos nomes ("Força Azul" virava
+  "ForçaAzul"). Agora só o base64 perde os espaços.
+
+## Matéria velha e itinerário antigo voltando ao feed (o dono, 04/10/2026: "apareceu umas mensagens no feed do futebol e porrada e do Gazeta dos sports que agora devem aparecer somente via rede social, assim como uns itinerários finalizados de partidas antigas")
+
+Dois defeitos que se alimentavam:
+
+- O filtro do feed escondia a matéria do jornal só enquanto o post dela
+  estivesse na rede social. A rede guarda 300 posts; cheia, apaga os mais
+  velhos, e a matéria voltava. Agora as matérias de jornal (rodada,
+  almanaque, LNT, obra; a treta já saía) ficam fora do feed pelo tipo,
+  sempre — o cartão que pede decisão continua.
+- `atualizarFeed` punha no TOPO todo cartão que precisava ser desenhado e
+  já tinha saído da tela, e cortava sempre o último nó. A matéria que
+  voltava subia pro topo, o corte levava um cartão que ainda estava na
+  janela, e esse voltava no dia seguinte, também no topo — a corrente que
+  trazia itinerários de jogos de semanas atrás como se fossem novos. Agora
+  sai do DOM o que saiu da janela e cada cartão entra na posição dele na
+  história; o fade de chegada só vale pro que entra acima do que já
+  estava na tela.
+- Medido em 300 dias de jogo, com o feed desenhado a cada dia: antes, 49
+  dias com o feed fora de ordem e 14 com matéria de jornal na tela; agora,
+  nenhum. (O cartão ganhou `data-id`, pra conferência.)
+
+## A arte dos posts das torcidas (o dono, 04/10/2026, com cinco prints do perfil de uma torcida: "Crie imagens na rede social nesse estilo pra deixar as postagens das torcidas mais legais e realistas")
+
+- Todo post de torcida na rede ganha uma arte 4:5 no molde das prints, e
+  o texto vira a legenda embaixo (como já era com o cartaz do jornal):
+  · as duas tarjas dos lados na cor escura da torcida, com triângulos na
+    cor viva e "DESDE <ano de fundação>" em letra gótica;
+  · o escudo da torcida no alto, numa aba nas duas cores, e as quatro
+    cantoneiras; a marca-d'água do escudo no papel;
+  · o título grosso em duas cores (metade de cima na viva, de baixo na
+    escura): CONVITE!, DIA DE JOGO, NOTA DE AGRADECIMENTO, VITÓRIA!,
+    CARAVANA CONFIRMADA, A CIDADE É NOSSA!, É CAMPEÃO!, TRETA MARCADA,
+    PROTESTO, SOMOS 150…;
+  · o miolo de cada tipo: os dois escudos encostados (agradecimento,
+    nota pública, repúdio), escudo × escudo (zoeira, treta, o jogo do
+    dia), o placar com os escudos dos clubes, o selo dos anos com a grade
+    das aliadas (convite de aniversário), o escudo grande;
+  · as etiquetas com o alfinete (LOCAL, HORÁRIO, DIA, DESTINO, DATA);
+  · o rodapé com o @ da torcida e o @loja_online_ dela, entre dois fios.
+- O post não guarda imagem: a arte sai do tipo, da chave e de `m.arte`,
+  que leva só os números (placar, anos, data, estádio, horário, cidade,
+  bairro da treta), desenhada em HTML por `js/ui/cartaz.js` no idioma da
+  tela. Post de save antigo também ganha arte (sem os números, cai no
+  escudo). Recado que é conversa (pedido de casa, "estamos juntos",
+  recusa, recado) fica só no texto.
+- A paleta: a escura é a mais escura das cores da torcida (preto quando
+  nenhuma é escura); a viva, a mais saturada das outras (torcida preta e
+  branca fica preta e cinza).
+- Fontes: Anton (título) e UnifrakturCook (o "DESDE" e o "Anos"), as duas
+  de licença livre (OFL), servidas pelo próprio jogo em `css/fontes/` —
+  sem internet a arte não perde o peso.
+- Isto revê em parte a decisão de 01/10/2026 ("post de torcida fica só
+  no texto"): o cartaz de placar e de briga continua sendo só do jornal;
+  a torcida ganha a arte dela, que é outra.
+
+## O escudo do rival de cabeça pra baixo (o dono, 04/10/2026, com duas prints da TUF: "É cultura da torcida organizada posicionar o escudo do rival, seja o time ou a torcida, de cabeça pra baixo em postagens")
+
+- Na arte do post de torcida, o escudo do rival sai virado 180° e
+  desbotado (cinza e branco), como nas prints — o adversário do dia de
+  jogo, da caravana e do placar, a torcida zoada, a da treta, o clube
+  rival rebaixado.
+- Rival é do ponto de vista de quem posta: a torcida que não é amiga
+  dela (irmã ou relação boa, a mesma regra de `dominio.amigas`), e o
+  clube que não é o dela e não tem torcida amiga dela. Por isso, na
+  zoeira que a rival posta contra nós, quem fica de cabeça pra baixo é o
+  NOSSO escudo. Aliada (nota de agradecimento, grade do convite) e o
+  próprio clube nunca viram.
+
+## A foto dos bonecos no fundo da arte, e a faixa tomada (o dono, 04/10/2026: "imagens de ações dos bonecos da torcida no fundo condizentes com o sentido da postagem com o degradê do fundo branco sobrepondo… Crie também da faixa/bandeira tomada com os membros estendendo a faixa de cabeça pra baixo, com uma postagem pesada humilhando o rival")
+
+- `bonecos3.fotoDaCena` (o mesmo fotógrafo da foto da briga): a cena de
+  cima e os bonecos GLB parados numa pose, por roteiro — grupos com a
+  torcida e o JEITO (festa, gaba, caído, protesto, faixa…). A câmera é
+  mais de lado que a da briga (vê o corpo inteiro) e mais perto; a sombra
+  de cada um fica miúda e sai de quem está deitado. Retrato 4:5, 640×800.
+- A faixa (ou a bandeira) tomada é a do rival (`patrimonio.imagemDaFaixaObj`,
+  a de verdade quando a torcida tem), estendida na frente de quem segura,
+  na altura do peito, DE CABEÇA PRA BAIXO.
+- Na arte, a foto entra embaixo de um degradê do papel: branco no
+  título, a cena no meio, branco de novo no rodapé. Pedida quando o post
+  aparece na tela, uma de cada vez, guardada na sessão (não vai pro save).
+- Com a foto, sai o escudo que só repete quem está na cena (o da torcida,
+  o "×" da treta vencida e da faixa tomada); fica o que é informação — o
+  placar, o jogo do dia, a caravana. Sem WebGL, os escudos ficam.
+- Quem tem foto, pelas regras do dono: A CIDADE É NOSSA (quem venceu de
+  pé provocando, os rivais caídos aos pés, no lugar da briga); FAIXA e
+  BANDEIRA TOMADA! (sem subtítulo); DIA DE JOGO (a torcida na
+  arquibancada); vitória, clássico, título e acesso (festa na praça);
+  protesto e vexame (cobrança no CT); inauguração (bar ou sede). A
+  CARAVANA CONFIRMADA leva a foto da praça de destino (a capa da cidade),
+  sem bonecos. Ficam SEM foto, só com os escudos: resenha, derrota e
+  empate, nota de agradecimento (os dois aliados), treta marcada (os
+  envolvidos) e convite (os anos e as aliadas).
+- O post do pano tomado ficou pesado: "FAIXA TOMADA! O pano da {perdedor}
+  agora mora na sede da {nome}, de cabeça pra baixo…", "Pano de quem foge
+  a gente estende de cabeça pra baixo…" (e as da bandeira), com a frase do
+  dono de 30/09 entre elas; a zoeira guarda o lugar, quem apanhou e o pano
+  (`m.arte`), e o título da arte vira FAIXA/BANDEIRA TOMADA!.
+
+## A arte só com as cores da torcida, e "A LESTE É NOSSA!" (o dono, 04/10/2026: "Algumas torcidas estão colocando a cor preta sem estar no plano de cores da torcida. Isso não pode acontecer" e, no post da zona que segurou a resenha, "é melhor A LESTE É NOSSA")
+
+- A paleta da arte punha preto em duas situações: quando a viva e a
+  escura tinham luz parecida (o azul e o vermelho da Jovem Garra
+  Tricolor) e quando a torcida não tinha cor escura. Agora a escura é a
+  mais escura da torcida (nenhuma escura: um tom fechado da própria cor)
+  e a viva, a mais saturada das outras, mesmo de luz parecida — o amarelo
+  do detalhe da Cearamor entra. Torcida de uma cor só (mais o branco):
+  dois tons dela; preta e branca: preto e cinza. O valor das etiquetas e
+  o rodapé, que eram pretos fixos, também vão na escura da torcida.
+  Conferido nas 387 torcidas: as duas cores são sempre dela ou um tom
+  dela.
+- O post da zona que venceu na resenha diz a zona: "A LESTE É NOSSA!"
+  (era "A ZONA É NOSSA!").
+
+## A arte na ordem das cores da torcida, e "CORRERAM NO GENIBAÚ" (o dono, 04/10/2026: "Esse fundo branco tem que ser sempre o fundo na cor primária da torcida, e o texto na cor secundária+terciária quando tiver. As barras do lado direito na cor secundária e o texto das barras na primária" e "em vez de ser A CIDADE É NOSSA é melhor CORRERAM NO GENIBAÚ")
+
+- A paleta da arte agora segue a ORDEM das cores da torcida
+  (`coresDaTorcida`): o papel é a primária (e o degradê por cima da foto
+  também); o título, a secundária em cima e a terciária embaixo (sem
+  terceira, a secundária inteira); as tarjas dos dois lados, a
+  secundária, com o "DESDE" na primária; os triângulos, a terciária; os
+  cantos e o fio de cima do rodapé, a secundária; o de baixo, a terciária.
+  Torcida de uma cor só: a segunda é um tom dela. Nada de fora da torcida.
+- O texto miúdo (rodapé com os @, rótulo e valor das etiquetas,
+  subtítulo) vai na das duas — secundária ou terciária — que mais
+  contrasta com o fundo: o vermelho da JGT some no azul dela, o branco
+  (a terceira) não. As etiquetas ficam nessa cor com o texto na primária.
+- A treta vencida diz onde: CORRERAM NO GENIBAÚ (o bairro do domínio da
+  briga, guardado em `m.arte.bairro`); sem bairro, segue A CIDADE É
+  NOSSA!. Bairro não tem tabela de gênero: a primeira palavra terminada
+  em "a" pede "NA" (Maraponga, Granja Portugal, Aldeota), o resto "NO"
+  (Genibaú, Bom Jardim, José Walter).
+
+## Branco não é cor de texto na arte (o dono, 04/10/2026: "Quando tem branco na segunda ou terceira cor descarte do texto, aplique a outra cor. Fica feio")
+
+- Secundária ou terciária branca (ou quase: os três canais acima de 215)
+  não vai em texto: o título sai inteiro na outra (a JGT, azul com
+  vermelho e branco, fica com o título todo vermelho; a Cearamor, preta
+  com amarelo e branco, todo amarelo), e o texto miúdo também. Se o
+  único par da primária é o branco, o texto vai num tom da primária. As
+  tarjas, os fios e os aros continuam na ordem das cores (não são texto).
+- O branco SOZINHO vale (o dono, no mesmo dia: "Pode ser usada a cor
+  branca sozinha se ela for a cor secundária da torcida, numa torcida de
+  cor primária preta e cor secundária branca por exemplo"): quando a
+  torcida não tem outra cor além da primária e do branco, o texto é
+  branco — a Gaviões, preta e branca, fica com o título branco. Havendo
+  outra cor, ela continua tendo a vez.
+
+## O resultado de cada torcida e o #TBT da quinta (o dono, 04/10/2026: "Não existe post da torcida informando vitória, derrota ou empate do time do coração. Faça um post no estilo de TBT lembrando alguma briga grande que venceu por grande vantagem e lembrando faixas tomadas de rivais também")
+
+- O nosso perfil já postava o resultado do nosso clube (medido: 20 jogos,
+  20 posts). Faltavam as outras: agora a maior torcida de cada clube DA
+  NOSSA PRAÇA, e a dos nossos maiores rivais, posta vitória, empate ou
+  derrota do clube dela no apito final — os mesmos textos e a mesma arte
+  (VITÓRIA!/EMPATE/DERROTA com o placar; o escudo do adversário de cabeça
+  pra baixo). `postDoResultado` serve as duas; clássico e goleada seguem
+  com o post da rivalidade. Uns dois posts por rodada.
+- #TBT, toda quinta, um por semana: uma torcida — a nossa (uma quinta em
+  cada três, quando tem lembrança), uma da nossa praça ou um maior rival
+  nosso — lembra uma briga que venceu com folga (o outro lado com 3
+  feridos a mais e o dobro dos dela, de quatro semanas pra trás) ou uma
+  faixa/bandeira que tomou. Textos: "#TBT de respeito: em abril de 2026
+  em Fortaleza, a Cearamor achou que dava e voltou pra casa contando 11
+  feridos…", "#TBT do troféu: a faixa da Cearamor, tomada em janeiro de
+  2026, segue pendurada de ponta-cabeça na nossa parede…". A arte é #TBT
+  com a data; a foto, a dos vencedores sobre os caídos no lugar da briga,
+  ou a do pano de cabeça pra baixo. A mesma lembrança não volta
+  (`E.tbtUsados`).
+- `E.brigasIA` só segura as 300 últimas brigas do país (poucas semanas):
+  a vitória com folga de quem pode postar o #TBT (a nossa, as da praça,
+  os maiores rivais) também vai pra `E.brigasMemoraveis` (até 120). A
+  tomada de pano da IA passou a guardar a semana; a de save antigo, sem
+  semana, vale como passado.
+
+## "<Cidade> é só lazer" (o dono, 04/10/2026: "Quando uma torcida for numa cidade que possui maior rival e não acontece briga ou vence a briga em território inimigo, a torcida faz um post provocativo de 'Recife é só lazer'… No texto do post deve ter a frase 'entro e saio numa boa'")
+
+- No apito final, cada torcida que posta o resultado (a nossa, as da
+  praça, os maiores rivais) e jogou FORA, em outra praça, numa cidade onde
+  mora um maior rival dela (`maioresRivais`), fica anotada
+  (`E.lazerPendente`). No dia seguinte, com as brigas já contadas: se ela
+  perdeu pra esse rival ali (no dia do jogo ou na véspera), nada; se não
+  houve briga, ou se venceu, ela posta — sempre com "entro e saio numa
+  boa": "Recife é só lazer! A Bamor foi no Recife, passeou, cantou o
+  jogo inteiro e cadê a Jovem Sport? Entro e saio numa boa." / "Juazeiro
+  do Norte é só lazer! A Fúria Icasiana até tentou receber a gente, mas a
+  Leões da TUF bateu, cantou e voltou pra casa: entro e saio numa boa."
+  O texto da praia só onde a praça tem praia.
+- Clássico na própria cidade não conta (Sport x Náutico no Recife não é
+  visita).
+- ENROLADA NA VIAGEM NÃO É LAZER (o dono, no mesmo dia: "Se minha torcida
+  participa de uma emboscada seja na ida ou na volta e perde a briga ela
+  não posta que foi lazer, porque se envolveu em confusão na viagem"): a
+  nossa emboscada perdida (cena `emb-…`), com quem for, da véspera ao dia
+  seguinte do jogo, cancela o post. Como a da volta pode cair no dia
+  seguinte, a nossa só decide dois dias depois do jogo (`E.nossasBrigas`
+  guarda o dia absoluto e se foi emboscada).
+- A arte: "RECIFE / É SÓ LAZER", a foto da cidade no fundo e o escudo do
+  rival de cabeça pra baixo (com a foto da cidade, o escudo fica).
+- As nossas brigas não entram em `E.brigasIA`: agora toda briga nossa vai
+  pra `E.nossasBrigas` (as 40 últimas, com a praça, o dia e o resultado),
+  que é onde o "é só lazer" confere se apanhamos; e a nossa vitória com
+  folga também vai pra `E.brigasMemoraveis` — o #TBT da nossa torcida
+  passa a lembrar briga, não só pano.
+
+## Da bola, a torcida só posta clássico vencido, rival rebaixado, acesso e título (o dono, 04/10/2026: "Deixe de criar post da torcida informando vitória, derrota ou empate do time do coração e de provocação do rival tomar goleada. Só vai existir a provocação de ganhar um clássico e quando o rival for rebaixado, e de comemoração quando o time subir de divisão ou ser campeão")
+
+- Saíram: o post do resultado de todo jogo (o nosso perfil e o das
+  outras torcidas da praça, de hoje mesmo), a provocação da goleada e o
+  lamento de quem tomou, o lamento de quem perdeu o clássico e o de quem
+  foi rebaixado.
+- Ficam: "O CLÁSSICO É NOSSO!" (quem venceu o clássico), "Tchau, …!" (o
+  rival do rebaixado), "ACESSO!" e "É CAMPEÃO!".
+- Medido numa temporada (365 dias, TUF): 11 clássicos vencidos, 9
+  títulos, 4 acessos, 2 rebaixamentos de rival, e nenhum post de
+  resultado. O protesto da torcida com o time em má fase (pedido de
+  21/09) continua — é cobrança, não resultado. O "é só lazer" segue
+  anotando as visitas no apito final, sem o post do resultado.
+
+## Fora: a chegada da caravana, o pixo coberto e o corte de 30% no bairro da rival (o dono, 05/10/2026: "remova os posts 'Caravana na área! A Leões da TUF chegou em Goiania e vai fazer a festa no setor visitante.', 'Passamos por cima do pixo da Leões da TUF em Genibaú. O muro agora fala outra língua.'. Acabe com o debuff de 'Os nossos pontos aqui rendem 30% menos: o bairro é da Falange Coral, rival.'")
+
+- Saiu o post da chegada no dia do jogo fora (`nossaChegadaHoje`, as duas
+  frases). A "CARAVANA CONFIRMADA" de antes da viagem continua.
+- Saiu o post da rival que cobre o nosso muro de pixação; cobrir o muro
+  continua valendo no domínio, só não vira post.
+- O corte de 30% na receita de bar, loja, subsede e festa da sede em
+  bairro de dona rival acabou, pra nós e pras IAs: `dominio.fator` vale 1
+  e `notaDoCorte` não escreve nada (as duas ficam, que o financeiro, o
+  patrimônio, as ações e a IA chamam); o aviso do cartão do bairro saiu.
+  O peso da torcida do bairro na receita (`fatorTorcida`) continua.
+- "O post do pixo segue existindo" (o dono, 06/10/2026): o código já não
+  cria — o que aparecia era post gravado no save antes da mudança (ou a
+  página ainda com o código velho em cache). Na carga do save
+  (`repararSave`), somem da rede os posts dos tipos que saíram: pixo
+  coberto e chegada (05/10), resultado de jogo, goleada, clássico perdido
+  e rebaixamento próprio (04/10). O "tchau" ao rival rebaixado fica.
+
+## Ganhou a briga, fica e provoca (o dono, 06/10/2026: "após vencer a briga, os bonecos correram para o ponto inicial da cena. isso não precisa acontecer, assim que todos os rivais sumirem, nossos bonecos ficam parados e ativa o movimento de provocação. isso deve ocorrer em todas as cenas")
+
+- **Por que corriam de volta.** Rival em fuga continua `vivo`, então a briga seguia aberta; e o disco sem alvo à vista cai no padrão de andar pra própria entrada (`moverDiscos`, último `else`). Na defesa de bar/casa havia ainda a fase `voltando`, que mandava o defensor de volta pro spawn antes da tela de fim.
+- **Agora (combate.js).** `semRivalNaBriga(J, lado)`: o outro lado brigou de verdade (caiu alguém dele ou ele debandou) e não tem mais ninguém de pé encarando. Valendo isso, quem não está caçando um fugitivo à vista para onde está (`_ramo='comemora'`, `d.comemorando`). Caçar quem corre continua valendo enquanto houver alguém correndo dentro do `RAIO_CACA`; o presidente segue no teclado.
+- **Fase `comemorando`.** Quando o último rival some, `comemorar` fecha o resultado (`acabar`, então o `J.acabou` já existe) e segura a cena 5 s com todo mundo parado antes de virar `acabando` e a ponte abrir a tela de fim. Substitui a fase `voltando`, que saiu junto com `conferirVolta` e o `d.voltando`. Vale em toda cena, pros dois lados: quem sobrou de pé é quem provoca.
+- **Bonecos (bonecos3.js).** Com `d.comemorando` e parado, a provocação não pede inimigo a 24–90 px nem sorteio: um gesto atrás do outro (pausa de 0,15–0,75 s), inclusive na multidão do movimento leve, que passa a contar a provocação como agitação.
+- Teste: rua, treta no beco e casa de piscina na bancada (`arredores.html`) com a debandada forçada — deslocamento de 0–19 px depois da debandada (antes, centenas, rumo à entrada), fase `comemorando` por 5 s e então `fim`; sem erro de página.
+
+## O corpo e a camisa do boneco, refeitos (o dono, 06/10/2026: "crie um visual do zero mais polido das camisas dos bonecos. fica muito bugado com algumas pontas da blusa altas, a cintura fina, etc como mostra no print, aprimorando também o modelo do boneco pra ter um modelo ainda mais similar ao corpo humano. a gola da blusa está muito grande também, cobrindo quase todo o ombro")
+
+- **De onde vinham os defeitos.** O corpo era o modificador Skin sobre um esqueleto de pontos (a cintura afinava entre dois pontos, e o ombro ficava quadrado onde os ramos se encontravam). Na chegada, o jogo afinava a malha juntando os vértices numa grade de 3,6 cm (`afinarMalha`), e cada grupo herdava a cor e os pesos do primeiro vértice: daí as pontas da camisa, a faixa do peito em V e a borda serrilhada. A gola do desenho "gola" era pintada por altura (`fy > 0,92`), o que cobria todo o alto do ombro.
+- **O corpo novo (`ferramentas/boneco_blender.py`).** O tronco é um loft de seções medidas (quadril 33 cm, cintura 31 cm sem afinar, peito 34 cm, trapézio caindo do pescoço pro ombro). Braços e pernas são tubos ao longo dos ossos, com panturrilha e antebraço. Deltoide, glúteos, polegar e tênis são volumes próprios. Tudo é fundido num volume só (remalha em voxel de 5,5 mm, alisada) e refeito em quadriláteros pelo QuadriFlow: ~1.060 no modelo leve e ~5.000 no detalhado. O detalhado perde os dedos separados, ficando a mão com polegar.
+- **A roupa por planos.** A bainha é reta em z 0,955 e a faixa do peito fica entre 1,225 e 1,280. A manga é cortada perpendicular ao braço, no meio do úmero. A gola careca é uma elipse de 7,6 × 7,1 cm em volta do pescoço (12 planos tangentes): mais baixa na frente e nas costas, mais alta do lado, sem chegar no ombro. A faixa da gola tem 1,5 cm e o punho 1,7 cm (o último 0,8 cm é o `punho2`). A camisa fica 4 mm por fora da pele e o calção 3 mm, e a borda vira bainha.
+- **Gola e punho são materiais (`gola`, `punho`, `punho2`).** O `construirCorpoGLB` pinta a camisa assim:
+  - **lisa:** tudo na cor da camisa;
+  - **gola:** gola e punho na 2ª cor;
+  - **gola-dupla:** gola e punho na 2ª cor, com a boca do punho na 3ª;
+  - **PM:** tudo na cor da farda.
+
+  A pintura por vértice (`geometriaCamisa`) fica só pros desenhos de estudo.
+- **Pesos por região, não pelo osso mais perto.**
+  - O braço começa fora do tronco: |x| 0,17–0,205 no alto e 0,205–0,235 na altura da mão, pra coxa não ir junto.
+  - O alto do ombro é metade braço, metade tronco; sem isso, o braço cruzado levantava a camisa em ombreira.
+  - Cotovelo, pulso, cintura, pescoço, virilha, joelho e tornozelo misturam numa faixa curta e suave.
+- **O jogo não afina mais o corpo.** `afinarMalha` pula o `corpo`, que já vem no tamanho certo; cabeça e cabelo seguem afinados. Medido na rua: 3.589 triângulos por boneco contra 2.500 antes (+44%), ou ~190 mil com 52 bonecos. Está longe do 1,26 milhão que derrubava o fps em 08/09.
+- **Gerar de novo:** `pip install bpy==4.2.0` (Python 3.11) e depois `python3 ferramentas/boneco_blender.py --leve` e `python3 ferramentas/boneco_blender.py`.
+
+## Ideologia: pedido de casa marcado, apoio fora e pixação pela diretoria (o dono, 06/10/2026: "quando houver post de pedido de casa já deve vir marcado conforme eu defini na minha ideologia. Na ideologia, também deve existir a opção escolher se deve sempre pedir apoio em jogos fora de casa ou não, porque o jogador pode acabar se esquecendo de ficar pedindo apoio e isso impacta nas relações. também quero deixar opcional na ideologia comandar as pixações ou não, se optar por não comandar as pixaões, a IA do jogo faz automaticamente isso pra gente.")
+
+- **O pedido de casa já vem marcado.** No post da aliada, o botão do nível que vai valer no dia do jogo dela chega aceso (`.rec-bt.on`). Esse nível é a escolha da semana ou, sem ela, a recepção da ideologia (`nivelDe`). Clicar nele, ou em outro, confirma; sem clique, vale o aceso, que é o que `cobrarRecepcoes` já cobrava.
+- **Apoio nos jogos fora (`E.politicas.apoio`).** As opções são `manual` (o padrão, como era: o botão "Pedir ajuda" da caravana) e `sempre`. Com `sempre`, o passo do dia `pedirApoioDaSemana` olha cada jogo fora da semana que ainda não passou e não tem pedido. Pede à aliada de melhor relação da praça (a primeira de `aliadasNaPracaDeles`), pelo mesmo `pedirAjuda` do botão: um pedido por jogo, resposta na hora e post dela no feed. Quando a aliada recusa, continua tirando −7.
+- **Pixações (`E.politicas.pixo`).** As opções são `eu` (o padrão, à mão no mapa) e `ia`. Com `ia`, a nossa torcida entra no `iaPixa` com a régua das outras: gasta o saldo dividido pelos dias que faltam no mês, no bairro de mais chance (`alvosDe`), primeiro em muro livre e depois por cima da rival. Pixar à mão continua possível.
+- Teste com a TUF:
+  - 160 dias com `apoio: sempre`: 9 jogos fora, pedido feito em todos os 7 com aliada na praça (respostas: escolta e churrasco); Bahia e Interior de Minas sem aliada, sem pedido.
+  - `pixo: ia`: 7 muros nossos em 40 dias.
+  - O post da Raça Coral chegou com "Hospedar e escoltar" aceso (o padrão da ideologia).
+  - Sem erro de página.
+
+## O boneco refeito sobre humanos de verdade, com rosto, olhos e os nove tons de pele (o dono, 06/10/2026: "modele o rosto dos bonecos pra ficar algo mais similar ao rosto humano"; "as curvas da cabeça do boneco sejam mais similares as de um homem adulto. a cor do rosto do boneco deve ser a mesma do corpo"; e três modelos de base: "observe esse modelo e use como base pra refazer do zero o boneco", "esse também é bom, com as curvas bem definidas… as curvas que preciso são desse estilo", "muito bom esse modelo também"; e a grade de tons de pele)
+
+- **As bases (`ferramentas/fonte/`).**
+  - `boneco_corpo.glb` é o "proxy human base mesh": dá o corpo, com as curvas que o dono pediu. Tem 76 mil triângulos, sem esqueleto nem UV.
+  - `boneco_cabeca.glb` é o humano base do MetaCreators, no padrão MakeHuman, com pele em domínio público: dá a cabeça (pálpebra, nariz, lábios e orelha modelados), os olhos, o tênis e a textura de pele. O corpo desse modelo vem recortado embaixo da roupa, por isso o corpo vem do outro.
+  - O low-poly de pose T, o primeiro que chegou, ficou de fora: a forma dele é a mais simples dos três.
+- **O gerador novo (`ferramentas/boneco_base.py`)** substitui o `boneco_blender.py` (o corpo de seções, a cabeça de metabolas e o rosto pintado saíram junto). Ele faz, em ordem:
+  1. Escala o corpo pra 1,72 m e o reduz por colapso de arestas.
+  2. Corta o pescoço do corpo acima da crista do trapézio e afina os 5 cm de cima dele, ângulo a ângulo, até o perfil do pescoço da cabeça. Assim a costura (`bridge_edge_loops`) liga dois anéis quase iguais e não dobra.
+  3. Monta os mesmos 16 ossos do jogo nas juntas medidas no corpo, com os pesos automáticos (calor) do Blender. No peito, o braço perde peso até zero perto do meio, e o alto do ombro fica meio braço, meio tronco: o braço cruzado não infla o peitoral.
+  4. Gira braço, antebraço e mão pra pose pendurada e assenta isso como repouso.
+  5. Corta a roupa por planos, como antes: bainha, faixa, manga com punho e `punho2`, gola careca (elipse de 12 planos, só na faixa de altura da gola), bermuda e meia, com o pano 4 mm por fora.
+  6. Usa o tênis do MakeHuman com o cano cortado na altura do tornozelo; o pé do corpo some dentro dele.
+  7. Pinta íris e pupila pela direção de cada face no globo do olho.
+  8. Gera cabelos, barbas, bonés e acessórios da cabeça densa, como antes.
+- **A pele.**
+  - **Mapa de detalhe:** a textura do MakeHuman, dividida pelo tom de fundo dela (com três quartos da barba rala), vira um mapa de detalhe embutido no GLB. A sobrancelha é pintada nele, fio a fio, no UV da cabeça.
+  - **Mesma cor no rosto e no corpo:** o corpo aponta pra um texel liso desse mapa, então rosto e corpo saem no mesmo tom. No jogo, a textura é lida como linear (`LinearEncoding`): lida como sRGB, o rosto escurecia e avermelhava em relação ao pescoço.
+- **Os nove tons (`PELE`, bonecos3.js).** São os tons da grade do dono, do claro rosado ao marrom escuro: `#e6c3ae #d9b393 #d0a888 #cba383 #b98f6e #ad8463 #a17656 #825f46 #6b4a36`. Cada boneco sorteia um, e o mapa de detalhe multiplica por ele. A grade chegou só como imagem na conversa, então os tons foram tirados da imagem a olho.
+- **O jogo.**
+  - A malha juntada (`juntarPecas`) leva a UV da pele, e o material junto lê a textura.
+  - O jogo afina só os acessórios. Corpo, cabeça e cabelo já vêm no tamanho certo; afinar desmancharia a UV.
+  - Medido na rua: 6,4 mil triângulos por boneco, contra 3,6 mil do corpo anterior. São ~330 mil com 52 bonecos, ainda abaixo do 1,26 milhão que derrubava o fps em 08/09.
+  - Modelo leve: 1,5 MB; detalhado (vitrine): 5,4 MB.
+- **Gerar de novo:** com `bpy==4.2.0` e `pillow` no Python 3.11, rodar `python ferramentas/boneco_base.py --leve` e `python ferramentas/boneco_base.py`.
+- **Ainda a acertar:** a cópia do `bonecos3.js` em `cenario3d/` (da outra sessão) lê o mesmo GLB sem a UV da pele. Lá o boneco aparece sem o detalhe do rosto até ela adotar a junção nova.
+
+## Pente fino no andar e no parado (o dono, 06/10/2026: "faça um pente fino em todos os movimentos dos bonecos pra parecer algo mais natural e humano possível")
+
+Vistos quadro a quadro de lado na vitrine (`bonecos.html?estado=andar&so&manual`), os erros de biomecânica estavam no ciclo do passo (`passo`, bonecos3.js) e no parado:
+
+- **Joelho:** dobrava mais com a perna já esticada à frente. Agora dobra na passagem (a perna de balanço por baixo do corpo, coxa indo pra frente), chega quase reta no calcanhar e dobra de leve no apoio, amortecendo o peso.
+- **Pé:** só a ponta empurrava atrás. Agora o calcanhar pisa (ponta pra cima com a perna à frente), a ponta empurra no fim do apoio e sobe no balanço, pra não arrastar no chão.
+- **Sobe-e-desce:** andando, o corpo subia com as pernas abertas, que é o contrário. Agora é mais alto com as pernas juntas, no apoio. Na corrida o alto continua sendo o voo.
+- **Braço:** balança mais (0,55 em vez de 0,42), contra a perna e um tico atrasado. O cotovelo dobra no braço que vem pra frente (antes dobrava no que ia pra trás).
+- **Cabeça:** gira contra o tronco e segura o olhar pra frente.
+- **Parado:** o peso troca de perna devagar (a cada ~30 s, num ciclo próprio de cada boneco), com o quadril e o ombro acompanhando. Antes era sempre a mesma perna.
+
+## Os três detalhes do boneco novo: ombro, costura do pescoço e calção (o dono, 06/10/2026: "Acerte os 3 detalhes apontados")
+
+- **O ombro que estufava era a pose.** As variantes "mãos na cintura" e "uma mão na cintura" do parado, a mão na cintura da provocação e o presidente falando na reunião usavam ângulos do corpo antigo. No corpo novo, a mão subia pro peito, e o braço abria e levantava, alargando o ombro.
+  - Uma varredura medindo a mão no esqueleto achou a pose certa: `MAO_NA_CINTURA = {ombro:0.05, ombroZ:-0.6, cotovelo:-1.8, maoZ:1.2}`. A mão fica a 2 cm da crista do quadril, com o cotovelo pro lado e um pouco pra trás.
+  - A varredura mostrou ainda que, neste esqueleto, `ombroZ` positivo FECHA o braço.
+  - A mesma medida achou dois erros de junta no gerador. O quadril era extrapolado pela inclinação da coxa e ficava 14 cm atrás e perto demais do meio; agora é o centro da coxa no alto dela. O cotovelo e o punho eram medidas fixas e davam um antebraço de 17 cm; agora seguem a proporção do braço (braço 40%, antebraço 34%, mão 26%).
+- **A linha no pescoço era fresta, não cor.** O importador de glTF separa os vértices nas costuras de UV. Depois de reduzida, a malha abria rachaduras: a de trás do pescoço do MakeHuman aparecia como um risco embaixo da orelha. As faces da costura também nasciam com normal invertida.
+  - Agora o gerador junta os vértices duplicados de toda malha importada e acerta as normais depois da costura. O gerador confere zero bordas abertas acima do pescoço.
+  - O texel liso que o corpo usa ganhou o tom do pescoço da cabeça, pra não haver degrau de cor.
+- **O calção é folgado.** Antes era a pele pintada, 3 mm afastada.
+  - O pano sai 4 mm na cintura e cresce até 2,4 cm na boca da perna. Na parte de dentro da coxa sai menos, pra uma perna não entrar na outra.
+  - A malha do calção é alisada como tecido. Um anel 6 mm abaixo da barra dá a borda vista de baixo.
+  - A barra da camisa abre até 1,1 cm e cai por cima do calção, com a mesma borda. Antes os dois emendavam como um macacão.
+
+## O calção não marca o gancho nem as nádegas (o dono, 06/10/2026: "ajuste o gancho do calção também, no fundo o calção marca as nádegas ainda")
+
+O calção era a pele afastada pela normal, então copiava cada reentrância do corpo. Agora o gerador (`engrossar`, boneco_base.py) veste o pano antes de dar a espessura:
+
+- **O pano estica sobre o vinco.** Para cada vértice do calção (e da camisa até 22 cm acima da barra), toma-se a janela de ±2,5 cm de altura em volta dele e o contorno convexo da fatia nessa janela. O vértice que está dentro do contorno sai pra ele, até 3 cm: some o vinco entre as nádegas e o da coluna na barra da camisa. Acima do gancho a fatia é uma só; abaixo, cada perna é a sua.
+- **O volume do gancho é aplainado.** Na frente, até 14 cm acima do gancho, o que passa do contorno das laterais volta pra ele, no máximo 1,2 cm.
+- **O gancho é achado pela face que olha pra baixo** no meio do corpo, não pelo vértice mais baixo perto do centro. Esse critério pegava a coxa de dentro encostada e punha o gancho a 0,67 m, juntando as duas pernas numa fatia só.
+- **Perto do gancho as coxas de dentro se encostam**, como a costura de uma bermuda, que fica mais baixa que o corpo. Mais embaixo, o lado de dentro continua com menos folga.
+- **Alisamento:** em volta do gancho, o alisamento do pano mexe também na altura (a virilha e o fundo das nádegas são vincos verticais).
+- **Malha:** no modelo leve, a faixa do quadril do calção é subdividida uma vez antes de vestir. A redução deixava triângulos de 15 cm ali, e um único vértice afundado desenhava uma linha. Isso custa ~1 mil triângulos (corpo de 5,2 para 6,2 mil; ~7,6 mil por boneco na cena). O detalhado não precisa de subdivisão.
+- **Aresta viva:** a divisa entre pano e pele virou aresta viva. Com a normal suavizada, a pele logo abaixo da barra herdava a sombra da borda do pano em riscos.
+
+## Camisa de três cores: a 3ª cor na faixa do peito (06/10/2026)
+
+Pedido do dono: "preciso que as torcidas com 3 cores sejam representadas agora com a terceira cor também na camisa". Até aqui a 3ª cor só aparecia num fio de 8 mm na boca da manga.
+
+- **A faixa do peito em duas listras.** No gerador (`ferramentas/boneco_base.py`), a faixa ganhou um corte no meio. Ela ficou um pouco mais larga: 7 cm, contra 5,5 cm antes.
+  - A listra de cima é o material `faixa`, na 2ª cor.
+  - A de baixo é o material novo `faixa2`, na 3ª cor.
+- **Torcida de duas cores:** pinta as duas listras na 2ª cor, então o visual dela não muda, só a faixa fica um pouco mais larga.
+- **O punho duplo engrossou.** A `gola-dupla` já é a camisa de toda torcida de três cores. As duas faixas do punho passaram a ter 1,3 cm cada (antes 0,9 cm e 0,8 cm): a de cima na 2ª cor, a da boca na 3ª.
+- **A gola continua na 2ª cor**, como o dono decidiu em 06/09.
+- **No jogo:** `bonecos3.js` pinta `faixa2` com `f.cor3`, ou com a 2ª cor quando a torcida não tem a terceira. O policial pinta as duas listras no amarelo-limão do colete.
+- **Custo:** o corte a mais deixa o corpo leve com 6,3 mil triângulos (antes 6,2 mil).
+- **Bancada:** `bonecos.html` aceita `?cor=&cor2=&cor3=`, em hexa sem `#`, para ver a camisa de qualquer torcida.
+
+## Novato recrutado chega com 3 a 8 de força e defesa (06/10/2026)
+
+Pedido do dono: "agora um novato recrutado quando surge na torcida deve surgir variando de 3 a 8 de força a defesa".
+
+- **A mudança:** `TO.membros.criar` sorteia força e defesa, cada uma por conta própria, entre 3 e 8 quando quem chama não passa os valores. Antes era entre 1 e 3.
+- **Onde vale:** em todo novato que entra pela ação Recrutar, na sede ou nas filiais.
+- **O teto:** 8 é o teto do cargo de novato, então um recruta pode chegar já no máximo do cargo.
+- **Estendido no mesmo dia** ("aplica também nos novatos rivais e no elenco inicial"). A régua virou a tabela `TO.membros.FICHA_NOVA`, com o sorteio em `fichaNova(cargo)`:
+
+  | Cargo | Força e defesa de entrada |
+  |---|---|
+  | Novato | 3 a 8 |
+  | Componente | 5 a 8 |
+  | Linha de frente | 10 a 13 |
+  | Diretoria | 14 a 17 |
+
+  Só a linha do novato mudou; os outros cargos já entravam assim. A régua vale para:
+  - **O elenco inicial** de um jogo novo (`povoarInicial`).
+  - **As fichas rivais na briga** (`combate.fichasDoPerfil`, inclusive o enchimento de novatos). Com professor de MMA é +1, sem passar de 8.
+  - **O elenco nomeado das rivais** (`relacoes.js`). Ele é sorteado por hash, então sai igual em qualquer save.
+  - **O quadro vivo das torcidas da IA** (`relacoes.js`):
+    - O piso do novato passou de 1 para 3.
+    - A média de entrada do novato passou de 2,5 para 5,5. É a média que vale para quem nasce e para quem entra depois.
+    - `relacoes.js` carrega antes de `membros.js`, por isso guarda uma cópia desses números: `BASE_FICHA` e `MEDIA_FICHA`.
+  - **Saves antigos:** os quadros da IA sobem aos poucos, à medida que entra gente nova.
+
+## O dia de jogo em 3D traz três réguas pro jogo (dono, 27/09/2026)
+
+O dia de jogo do cenário 3D (as torcidas da IA saindo das sedes pro estádio, a PM, a revista, a briga na rua; `ferramentas/planta_html/dia_de_jogo.js` no ramo do 3D) usa as contas do jogo, e o dono, olhando ele, mexeu em três:
+- **A procura cai de novo: `BASE_PROCURA` = maior rival 55, rival 25** (era 62/36; o hostil fica em 10). "Baixe a base_procura pra 55% maior rival e 25% rival." A mágoa, a paridade e o teto de 57% ficam como estão (`praca.chanceDeProcurar`).
+- **O aliado da IA decide como recebe o visitante.** O anfitrião que não é a nossa torcida sorteia entre não receber, hospedar e hospedar e escoltar — a irmandade 10/30/60, o aliado 35/45/20 (`praca.HOSPEDA`, `praca.decisaoDoAnfitriao`) —, fixo pro par e pro dia; só com a escolta ele empresta gente (a régua de sempre, 5 a 10% do efetivo dele: a TUF, de 150, empresta de 8 a 15 — "volte a aplicar a regra de 8 a 15"). O dono: "está correto, inclusive registre isso pra ir pro outro html do jogo também". Antes o anfitrião da IA escoltava sempre.
+- **O aliado do mandante só hospeda.** "Em jogo Fortaleza x CSA, o aliado só hospeda a TOMA, e ela sai da sede sozinha pro estádio": no dia ele vai pro estádio pelo clube dele, contra o visitante, então a fatia da escolta vira hospedagem.
+
+E duas que o 3D segue do jogo, conferidas: **os feridos são dos dois lados** (o jogo já registra os da IA — `relacoes.baixasIA` nas nossas brigas, `brigaIA` entre elas —, pela tabela de `simular.js`: quem perde, 25 a 40% no chão e 5 a 12% presos; quem ganha, 8 a 16% e 1 a 4%; o 3D usa a mesma), e **quem vai pra rua** é o `naRuaEm` (a torcida da praça com todo mundo de pé, a de fora na caravana). Só do 3D, por enquanto: a torcida da IA que decide atacar outra da IA no caminho do estádio (a chance é a `BASE_PROCURA` × a paridade), e o bonde escoltado pela PM também pode atacar ("o bonde escoltado pode atacar sim").
 
 ## O bairro é um pedaço só, com a sede dentro (pedido do jogo 2D, dono, 02/10/2026)
 
@@ -8213,55 +9391,6 @@ O pedido: "exclua essa parte de sede vaga que não tem sentido. crie um modelo d
 - **Cada uma fica no bairro que o jogo diz** (o patrimônio do jogador, o mundo vivo da IA, as filiais), longe dos estádios quando o bairro deixa. No Jogo 3D, a praça remonta quando as do jogador mudam e a câmera passa na nova.
 
 **As escolhas que o pedido deixou em aberto** (dá pra mudar depois): na praça de várias cidades, a filial diz a cidade do bairro (SUBSEDE ITU, não SUBSEDE INTERIOR DE SP — o nome da praça ali não é nome de cidade); a faixa de cima e o toldo da subsede vão na cor mais escura das duas da torcida (o verde da Mancha, o vermelho da Independente, como nas fotos), não na cor 1; a loja e a subsede podem ficar a menos de 50 m do estádio quando o bairro não tem lote mais longe (no bairro do estádio a casa larga é toda do entorno) — a regra dos 50 m segue valendo pra sede e bar; o pátio da subsede, no lote raso, tem uns 3 m de fundo (uma mesa, os surdos, a TV). Detalhes e medidas: `docs/JOGO_3D.md` §39.
-
-## A zona leva os mais fortes dela, dos dois lados (régua do dono, 22/09/2026)
-
-O dono sentia a IA mais forte na casa de piscina, atacando e defendendo. Medido: a nossa zona era um sorteio da torcida inteira (média 14,9 de força+defesa, seis novatos e nove componentes em vinte) e a zona deles saía do gerador que corta o topo do plantel (25,0, nove frentes e dois diretores) — e, pior, cada um dos cinco pontos da casa recebia o topo de novo. A régua nova é a mesma pros dois lados: cada membro tem a sua zona (hash do id, fixa pra sempre — `acoes.zonaDoMembro`) e o bonde da zona são os mais fortes daquela zona, até o teto (`bondeDaZona`); do lado deles o plantel inteiro é gerado, repartido nas quatro zonas na roda da fila de força, e a zona pedida leva os mais fortes dela (`combate.fichasDaZona`), entregues prontos à cena (`cfg.fichasRival`), cada grupo tirando a sua fatia na ordem. Num jogo novo da TUF contra a MOFI: nossa zona 17,5, a deles 15,2 (o topo do plantel deles daria 25,3). As outras duas causas medidas ficaram anotadas pro dono decidir: a casa favorece quem defende (portão-funil; com fichas iguais o atacante ganha 3 a 5 em 16, seja quem for) e a pedra automática é só da IA (na praça, fichas iguais, nós atacando: 1 em 16 com pedra, 10 em 16 sem).
-
-## A torcida pequena começa sem sede (decisões do dono, 22/09/2026)
-
-Torcida com até 30 membros na fonte — 59 das 139, exatamente as de sede 1 na fonte — começa no **nível 0**, o ponto de encontro: teto de 30 membros (recrutar trava com "a esquina não cabe mais gente: construa a sede"), 2 diretores, zero treino, manutenção zero, sem festa, sem bar, **um turno de expediente (a tarde)**, vivendo de mensalidade, PIX e assalto. A primeira sede é obra do Patrimônio — **"Construir a sede", R$ 30.000** — e traz os 50 membros, o treino, a festa e os três turnos. **O bar grátis passou da sede 1 pra sede 2**, dado uma vez só (não renasce; save antigo fica com o dele). **A reunião da diretoria sem sede senta na praça do bairro**, no largo do meio, sem rival e sem PM na roda (`sedeCenaDoNivel(0) = 'praca'`). **As pequenas da IA também nascem no nível 0** (`relacoes.mundo`), e a escada de obras delas passa pela primeira sede. **O caixa inicial é o saldo da fonte × 4 com piso 4.000**: a fórmula lia `dinheiro`, campo que a fonte não tem, e todo mundo começava com 16.000; com os saldos da fonte (200 a 1.000) todo mundo começa no piso. O plano inteiro, com o que existia antes, está em `docs/PLANO-TORCIDA-PEQUENA.md`. Nas tabelas o nível 0 é uma linha de verdade (`SEDE[0]`, `MANUT_SEDE[0]`, `TETO_SEDE[0]`, `ADVOGADOS_SEDE[0]`, `patrimonio.TETO.*[0]`), e os `|| 1` que viravam a esquina em sede foram embora; `membros.nivelInicialDaSede` é a função única do nível inicial (estado, ficha da seleção, IA).
-
-## O jogo em espanhol e em inglês (pedido do dono, 24/09/2026)
-
-O dono pediu o jogo inteiro em espanhol e inglês, com o idioma escolhido em Configurações, na tela inicial. O botão Configurações (que era desabilitado) abre a escolha Português / Español / English; a escolha fica no navegador (`localStorage['to.idioma']`), não no save, e trocar recarrega a página. O português é a chave: todo texto visível passa por `_t('texto {marcador}', {…})` (`js/i18n.js`; `_tn` pro plural; `_t('contexto::texto')` quando a mesma palavra tem dois sentidos), e os dicionários ficam em `dados/i18n/*.js`, um por fatia do código, com es e en lado a lado — cerca de 4.100 chaves. Faltando tradução, cai no português; `ferramentas/i18n_faltando.py` diz o que falta (hoje, nada) e aponta texto solto no código. O HTML estático é traduzido no boot; números seguem o idioma (2,000 em inglês), a moeda continua o real; `TO.genero` dá "del Mineiro" / "of the Mineiro"; fases, status, cargos, países e zonas continuam em português como chave de lógica e são traduzidos na hora de mostrar. Nomes próprios (torcidas, clubes, cidades, bairros, estádios, competições, eixos, jornais) não se traduzem. As mensagens que um save já tinha ficam na língua em que nasceram. O glossário e as regras estão em `docs/I18N.md`: torcida é *barra* / *firm*, faixa é *trapo* / *banner*, diretoria é *directiva* / *board*, bote é *golpe* / *raid*. Conferido em jogo: 60 dias com feed e todos os painéis, o tutorial inteiro, perfis, caravana, ataque, reunião em cena com todos os balões, uma briga, o relatório e a retrospectiva, em es e en, sem português na tela fora os nomes próprios; e a regressão em português toda verde.
-
-## O Interior de SP vira praça média (pedido do dono, 24/09/2026)
-
-O mapa do Interior de SP passa de Pequeno pra Médio: nível 2, 120 quarteirões (grade 10×12) e 12 bairros, três por zona — a régua das médias. Era a pequena com mais torcidas (7) e mais estádios (3), empatada com praças grandes. A mudança é na fonte (`dados/fonte/cidades_bairros.json`) e o `dados/cidades.js` sai de novo do `ferramentas/importar_bairros.py`. Os quatro bairros novos, um por zona, são cidades do interior paulista como os outros oito: **São José do Rio Preto** (Norte, Nobre), **Sorocaba** (Sul, Classe Baixa), **Araraquara** (Leste, Classe Média) e **Presidente Prudente** (Oeste, Classe Baixa); nenhuma torcida tem sede neles. O multiplicador médio de faturamento da praça vai de 0,975 pra 0,992. O efetivo de rua (torcedores, guardas, PM, choque) é da planilha e não mudou. Junto com o porte vem o crescimento anual de torcedores de praça média (10 a 20 em vez de 5 a 10) e a planta gerada em cruz 5×5. Efeito colateral: os estádios dos clubes sem bairro na fonte (Limeirão, Novelli Júnior, Barão de Serra Negra, Alfredo de Castilho) são postos num bairro sorteado por hash sobre o número de bairros, então mudaram de lugar — já caíam em cidade errada antes (o Limeirão estava em Marília) e continuam caindo; fixar cada um na sua cidade é passo à parte, no `importar_estadios.py`. Save antigo lê a praça nova sem conversão: os bairros vêm dos dados, não do save.
-
-## O dia de jogo em 3D traz três réguas pro jogo (dono, 27/09/2026)
-
-O dia de jogo do cenário 3D (as torcidas da IA saindo das sedes pro estádio, a PM, a revista, a briga na rua; `ferramentas/planta_html/dia_de_jogo.js` no ramo do 3D) usa as contas do jogo, e o dono, olhando ele, mexeu em três:
-- **A procura cai de novo: `BASE_PROCURA` = maior rival 55, rival 25** (era 62/36; o hostil fica em 10). "Baixe a base_procura pra 55% maior rival e 25% rival." A mágoa, a paridade e o teto de 57% ficam como estão (`praca.chanceDeProcurar`).
-- **O aliado da IA decide como recebe o visitante.** O anfitrião que não é a nossa torcida sorteia entre não receber, hospedar e hospedar e escoltar — a irmandade 10/30/60, o aliado 35/45/20 (`praca.HOSPEDA`, `praca.decisaoDoAnfitriao`) —, fixo pro par e pro dia; só com a escolta ele empresta gente (a régua de sempre, 5 a 10% do efetivo dele: a TUF, de 150, empresta de 8 a 15 — "volte a aplicar a regra de 8 a 15"). O dono: "está correto, inclusive registre isso pra ir pro outro html do jogo também". Antes o anfitrião da IA escoltava sempre.
-- **O aliado do mandante só hospeda.** "Em jogo Fortaleza x CSA, o aliado só hospeda a TOMA, e ela sai da sede sozinha pro estádio": no dia ele vai pro estádio pelo clube dele, contra o visitante, então a fatia da escolta vira hospedagem.
-
-E duas que o 3D segue do jogo, conferidas: **os feridos são dos dois lados** (o jogo já registra os da IA — `relacoes.baixasIA` nas nossas brigas, `brigaIA` entre elas —, pela tabela de `simular.js`: quem perde, 25 a 40% no chão e 5 a 12% presos; quem ganha, 8 a 16% e 1 a 4%; o 3D usa a mesma), e **quem vai pra rua** é o `naRuaEm` (a torcida da praça com todo mundo de pé, a de fora na caravana). Só do 3D, por enquanto: a torcida da IA que decide atacar outra da IA no caminho do estádio (a chance é a `BASE_PROCURA` × a paridade), e o bonde escoltado pela PM também pode atacar ("o bonde escoltado pode atacar sim").
-
-## Os bairros têm dona e a cidade tem dona (dono, 30/09/2026)
-
-Cada bairro tem uma barra de 0 a 100 repartida entre as torcidas; **dona é quem passa de 50**. **Domina a cidade quem é dona de mais bairros** (empate no topo: ninguém domina). Dominar dá **+0,1 de prestígio e +0,1 de moral por dia**; a primeira e a segunda maior da cidade que não dominam perdem **0,1 de cada por dia** (régua de 0 a 100 da tela; 0,02 no indicador de 0 a 20). O começo é sorteado por save: a maior e a segunda maior com uns 5 bairros cada numa cidade de 16 (pode começar empatada, sem dona), o resto rateado pelos membros. **O bairro da sede é sempre da torcida dela no começo e é o mais difícil de tomar** (quem é de fora ganha metade ali; a casa se refaz até 80); duas sedes no mesmo bairro nos dados: a maior fica, a outra é espalhada pro bairro livre mais parecido. **Bar, loja, subsede (e a festa da sede) em bairro de dona rival rendem 30% menos.** A subsede também segura o bairro dela e pode dominar. Contam pra barra: treta marcada, ataque na pista e na concentração, arredores do estádio, bote no bar e na sede, estrutura nova no bairro, **ação social no bairro** (nova: uma por semana, R$ 1.500 e 5 membros) — e as brigas entre as IAs. O bar é **"BAR DA {torcida}"**, no feminino, no mapa e na fachada. Detalhes e medidas: `docs/JOGO_3D.md` §30.
-
-## O entorno do estádio (dono, 01/10/2026)
-
-Em volta de cada estádio, do outro lado da rua que o cerca (onde era mato), entram quarteirões de comércio e casa: na fileira da frente, de frente pro estádio, o **comércio de dia de jogo** — espetinho, hamburgueria, pizzaria e barzinho, um de cada antes de repetir em cada estádio — e o **estacionamento de terreno** (de um a três por estádio, com o preço na placa, de R$ 20 a R$ 40); no resto, casas. Na calçada do estádio, os **ambulantes de cada portão** — pipoca, cachorro-quente, espetinho, isopor de bebidas e o camelô com as camisas e as bandeiras dos mandantes daquele estádio —, até quatro no portão 1, três no 2 e dois no do visitante, a 6 m ou mais da entrada e nunca na frente da bilheteria. **O entorno é do bairro do estádio** e fica fora da conta das zonas (quando entrou, nenhuma sede mudou de lugar; a divisão dos bairros foi refeita logo depois — a decisão abaixo). É cenário: ninguém entra no comércio, o estacionamento não recebe o carro de quem vai ao jogo e o ambulante não tem vendedor. Detalhes e medidas: `docs/JOGO_3D.md` §31.
-
-## Os bairros refeitos: a favela sozinha, as zonas no lado certo e o mesmo tamanho (dono, 01/10/2026)
-
-**Cada favela é um bairro sozinho**, com o nome do bairro (os nomes "Favela do Sudoeste", "do Sul" etc. saíram do mapa e da treta marcada): ela toma um bairro da zona dela, o de classe Favela dos dados ou, sem ele, o mais pobre que sobra — nunca o de uma sede, e a zona sempre guarda um bairro pras quadras (quando não sobra bairro, a favela fica com as quadras vizinhas: 14 das 118). **As zonas ficam no lado certo**: os quatro gomos saem do meio da cidade, e as divisas de cada praça andam (até 40° da diagonal, o meio de cada zona a no máximo 25° do ponto cardeal) até os bairros de quadra saírem do mesmo tamanho; **toda sede fica no gomo da zona do bairro dela** (nenhuma fora, antes eram 63), com os **terrenos de reserva** — a ponta de uma quadra de casas que só vira sede quando precisa — e preferindo as sedes da mesma zona espalhadas. **Os bairros de quadra têm o mesmo tamanho** dentro da folga das quadras (a variação caiu pra 0,16; o maior com 1,8 vez o menor — antes, contando todos os bairros, eram 0,68 e 14,9 vezes), inteiros, com a sede dentro; o estádio não se divide e o bairro dele leva também a quadra encostada a 50 m ou mais. **O bar fica no bairro que o jogo diz**: o boteco da favela é vaga de bar, e a casa do bairro sem vaga vira o bar da torcida (73 de 139 bares caíam fora do bairro; agora 13). O bairro de favela é menor que os outros (a favela é pequena). Detalhes e medidas: `docs/JOGO_3D.md` §32.
-
-## As torres só no bairro Nobre, e o casarão também (dono, 01/10/2026)
-
-**O prédio alto em forma de torre só fica em bairro de classe Nobre**: a torre do mapa (o condomínio, as duas do baldio, o prédio alto do centro) cujo lugar cai fora do bairro Nobre vira casa, e o mesmo número de torres (3 no mapa pequeno, 7 no médio, 9 no grande) vai pros bairros Nobres da praça — cada um com pelo menos uma —, como o prédio alto do centro numa quadra de casas, de 10 a 16 andares, em quatro cores. **O casarão colonial também só sai no bairro Nobre** (lá, metade dos sobrados; fora, nenhum). Pra o Nobre ter quadra: a favela só leva o último bairro Nobre da praça quando guardá-lo não dá torre, e o estádio evita o bairro Nobre quando a zona tem outro. Medido: 159 torres e 416 casarões, nenhum fora do Nobre (antes, 167 torres e 577 casarões fora); 3 praças ficam sem torre (Interior de PE e de SP, onde o Nobre é a favela, e Interior do PR, sem quadra livre) e 6 com menos torres que antes — a torre que não cabe no Nobre não vai pra outro lugar. Detalhes e medidas: `docs/JOGO_3D.md` §33.
-
-## As praças compostas viram cidades, e a torcida mora no bairro (dono, 01/10/2026)
-
-**Cada bairro tem a cidade dele** (conurbação conta como uma cidade: o ABC, o Rio com a Baixada, Goiânia com Aparecida, Niterói com São Gonçalo e Itaboraí), e **18 praças viram mais de uma cidade no mapa** — cada uma com os bairros, os estádios e as sedes dela, **a 50 m da cidade de onde ela sai** (a metade dos 80 a 120 m da proposta, "pra dar uma impressão maior de conurbação"; a que fica longe, 100 m; Niterói, do outro lado da baía, 150 m), ligadas por estrada (ou pela avenida, quando ela já chega lá), com o **pórtico de BEM-VINDO com o nome da cidade** e a **placa verde com os km** — aproximados: a linha reta entre as cidades com um quinto a mais. **A sede só fica na cidade do bairro dela e o estádio no bairro que os dados dizem**; a torcida de uma cidade sem terreno que sobre fica sem sede (nenhuma ficou: as 139 sedes das 30 praças são as mesmas de antes). Goiânia fica inteira, com o Jonas Duarte e a sede da Independente no bairro Anápolis.
-
-**As interpretações** (onde o pedido deixou espaço): no Subúrbio Carioca, Mesquita sai pra Campos dos Goytacazes ter dois bairros, e a Sangue Americano e o Giulite Coutinho (do America, em Mesquita) vão pra Nova Iguaçu; a Jovem Goyta vai pra Campos; o Raulino de Oliveira entra no lugar do Estádio do Trabalhador. No Interior de Minas saem Juiz de Fora, Pouso Alegre e Governador Valadares, e o Regional fica em Patos de Minas, a cidade do meio. No Maranhão o mar é o leste do mapa: Parnaíba desce pela costa e Teresina fica a sudoeste dela, Imperatriz longe a sudoeste de São Luís. O Interior de SC fica com 9 bairros. Rondonópolis entra Classe Média e Balneário Camboriú, Nobre; o bairro novo "II" herda a classe do primeiro. **O domínio continua pela praça inteira** (o dono, 01/10/2026: "O domínio vai continuar sendo por praça inteira e as cidades se comportam como bairros"): a dona da praça é quem é dona de mais bairros, contados juntos os de todas as cidades dela (na Paraíba, os 6 bairros de João Pessoa e os 3 de Campina Grande entram na mesma conta); a cidade não tem dona separada.
-
-**A torcida do clube mora nos bairros** (`js/mundo/dominio.js`): o total do clube na praça é o do jogo, e ele se reparte pelo peso de cada bairro — a gente do bairro pela classe (favela 1,3, Baixa 1,15, Média 1, Nobre 0,8), uns 85% na cidade do clube (o bairro de outra cidade pesa 0,08; o clube de fora pesa igual em todo bairro), o reduto da sede de uma organizada do clube ×1,6 e a zona dela ×1,25, e uma variação fixa de até 15%. Bar, loja e subsede rendem de ×0,5 a ×1,5 pela presença do clube no bairro, e o ganho na barra do domínio vale de ×0,4 a ×1,3; a organizada começa nos bairros da cidade dela onde o clube tem mais gente. Detalhes e medidas do mapa: `docs/JOGO_3D.md` §34.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

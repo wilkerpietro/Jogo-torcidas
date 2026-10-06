@@ -72,6 +72,32 @@ body.jogo3d.com-painel #painelBarra{pointer-events:auto}
    (o main.js nem monta o rolo com `TO.semFeed`; isto é a garantia) */
 body.jogo3d .feed-rolo{display:none !important}
 
+/* ---------- A REDE SOCIAL DO JOGO 2D (sync de 06/10/2026) ----------
+   A coluna da rede (main.js, `montarSocialLado`): os posts das torcidas
+   caindo um a um, o filtro de quem eu sigo, o "Ver tudo" e o recolher. No
+   3D ela fica por cima da cidade na borda da ESQUERDA, ao lado dos ícones
+   (a direita é dos recortes de jornal, `.j3d-avisos`); recolhida, vira a
+   tira com o número de posts novos, e o post importante sai num aviso ao
+   lado dela. Some com o mapa aberto e nas cenas de briga. */
+body.jogo3d .feed-colunas{pointer-events:none}
+body.jogo3d .social-lado{pointer-events:auto;width:340px;background:rgba(17,17,19,.9);
+  border-left:0;border-right:1px solid var(--linha);box-shadow:2px 0 10px rgba(0,0,0,.35)}
+body.jogo3d .social-lado.recolhida{width:36px;background:rgba(20,20,22,.88)}
+body.jogo3d .social-lado-cab{background:rgba(26,26,28,.94)}
+/* o recolher aponta pra borda em que a coluna mora */
+body.jogo3d .social-lado-recolher svg{transform:rotate(180deg)}
+body.jogo3d.j3d-mapa-aberto .social-lado, body.jogo3d.em-cena .social-lado,
+body.jogo3d.palco-briga .social-lado{display:none}
+/* (o medidor de fps, no pé da esquerda, sai de baixo da coluna aberta) */
+body.jogo3d:has(.social-lado:not(.recolhida)) .cen-fps{left:396px}
+@media (max-width:1000px){ body.jogo3d:has(.social-lado:not(.recolhida)) .cen-fps{left:50px} }
+body.jogo3d .social-toasts{left:86px;right:auto;top:96px;z-index:22;width:360px}
+body.jogo3d .social-toast{transform:translateX(-14px)}
+body.jogo3d .social-toast.vivo{transform:none}
+body.jogo3d .social-toast.saindo{transform:translateX(-14px)}
+body.jogo3d.j3d-mapa-aberto .social-toasts, body.jogo3d.em-cena .social-toasts,
+body.jogo3d.palco-briga .social-toasts, body.jogo3d:not(.j3d-em-jogo) .social-toasts{display:none}
+
 /* ---------- o menu inicial e a escolha: a cidade atrás ---------- */
 body.jogo3d #telaMenu{
   background:linear-gradient(90deg, rgba(8,8,10,.94) 0, rgba(8,8,10,.78) 34%, rgba(8,8,10,.18) 68%, rgba(8,8,10,0) 100%);

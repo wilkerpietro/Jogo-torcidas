@@ -147,6 +147,13 @@ def main():
         manda_em.setdefault(identificador(t.get('estadio')), []).append(t)
 
     saida = []
+    # (03/10/2026: o dono tirou o Felipe Santiago, Fortaleza — o Floresta joga
+    # no Presidente Vargas. O legado/ não está mais no repositório; o
+    # estadios.js foi editado à mão com esta mesma regra.)
+    # (03/10/2026, mesma regra: saíram o Zinho de Oliveira, Belém — o
+    # Águia joga no Mangueirão —, o Canindé — a Portuguesa no Morumbi — e o
+    # Passo d'Areia — o São José na Arena do Grêmio.)
+    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira', 'caninde', 'passo-d-areia'}
     legado_e_novos = [e for e in estadios if identificador(e['nome']) not in TIRAR] + \
         [{'nome': n['nome'], 'mapaNovo': n['mapa'], 'bairroEstadio': n['bairro']} for n in NOVOS]
     for e in sorted(legado_e_novos, key=lambda x: x['nome']):

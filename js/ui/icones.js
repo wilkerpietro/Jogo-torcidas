@@ -70,6 +70,13 @@ TO.icones = (function(){
        anda minutos, o outro pula 24 horas, e os dois com o mesmo
        triângulo na mesma tela era pedir clique errado. */
     avancar:   env('<path d="M6 5.5 12.5 12 6 18.5"/><path d="M13 5.5 19.5 12 13 18.5"/>'),
+    /* a curtida do feed das torcidas (30/09/2026) */
+    /* o funil do filtro da rede social (01/10/2026) */
+    filtro:    env('<path d="M4 5h16l-6.2 7.6V19l-3.6 1.6v-8z"/>'),
+    coracao:   env('<path d="M12 20.5s-7.5-4.6-7.5-10.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7.5 2.6c0 5.7-7.5 10.3-7.5 10.3z"/>'),
+    /* o compartilhamento do feed das torcidas: as duas setas em volta */
+    repost:    env('<path d="M4 11V9a2 2 0 0 1 2-2h12"/><path d="m15 4 3 3-3 3"/>'+
+                   '<path d="M20 13v2a2 2 0 0 1-2 2H6"/><path d="m9 20-3-3 3-3"/>'),
     /* pontos do mapa: as camadas que se acendem e se apagam */
     camadas:   env('<path d="m12 3.5 8.5 4.3-8.5 4.3-8.5-4.3z"/>'+
                    '<path d="m4.6 12.4-1.1.6 8.5 4.3 8.5-4.3-1.1-.6"/>'+

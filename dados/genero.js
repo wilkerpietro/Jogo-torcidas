@@ -31,7 +31,10 @@ TO.dados.genero = {
         'Argentina Primera Nacional', 'Bolívia Primera',
         'Chile Primera', 'Chile Primera B', 'Colômbia Primera A',
         'Colômbia Primera B', 'Equador Serie A', 'Paraguai Primera',
-        'Peru Liga 1', 'Uruguai Primera', 'Venezuela Primera'],
+        'Peru Liga 1', 'Uruguai Primera', 'Venezuela Primera',
+        /* o jeito curto, sem o "Brasileirão" — "pela Série D" (feed das
+           torcidas, 30/09/2026) */
+        'Série A', 'Série B', 'Série C', 'Série D'],
     m: ['Brasileirão Série A', 'Brasileirão Série B',
         'Brasileirão Série C', 'Brasileirão Série D',
         'Cariocão', 'Catarinense', 'Gauchão', 'Mineiro',
@@ -204,6 +207,19 @@ TO.dados.genero = {
         'Rio Grande do Norte', 'Rio de Janeiro', 'Suburbio Carioca',
         'Sul da Colômbia', 'Sul de Bogotá', 'Sul de CABA',
         'Sul do Chile', 'Sul do Equador', 'Sul do Peru']
+  },
+
+  /* ---------- clubes (só pra manchete do cartaz, 01/10/2026) ----------
+     O texto corrido do jogo continua sem artigo antes de clube; a
+     manchete da imagem do post é que fala como a TV — "Ferroviário perde
+     pro Bahia fora de casa", "Ceará vence o Treze em casa" (pedido do
+     dono). Clube é masculino; a lista é das exceções femininas. */
+  clube: {
+    f: ['Chapecoense', 'Ponte Preta', 'Portuguesa', 'Portuguesa Santista',
+        'Inter de Limeira', 'Tuna Luso', 'Águia de Marabá',
+        'Universidad de Chile', 'U. Católica', 'U. Católica/EQU', 'U. de Concepción',
+        'Unión Española', 'Unión La Calera', 'Unión Magdalena', 'La Serena',
+        'La Equidad', 'LDU Quito', 'Academia Puerto Cabello']
   },
 
   /* ---------- fases ----------

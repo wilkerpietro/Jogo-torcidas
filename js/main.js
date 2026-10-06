@@ -547,12 +547,13 @@
        mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
        com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
        planta da praça inteira, e o clique leva a câmera até lá */
-    /* O MAPA COM OS BAIRROS E O BRASIL (o dono, 30/09/2026: "quando
-       clicamos em menu>mapa vai ter a opção do mapa do Brasil"): no 3D é o
-       mapa da planta (mapa3d.js), com a aba Brasil; no jogo de feed, o
-       painel dos bairros por zona (js/ui/mapa_brasil.js) */
-    {id:'mapa3d',      rot:_t('Mapa'), ic:'mapa', acao:'mapa3d', so3d:true},
-    {id:'mapa',        rot:_t('Mapa'), ic:'mapa', acao:'mapaBrasil', so2d:true},
+    /* O MAPA COM OS BAIRROS E O BRASIL (o dono, 30/09/2026, no jogo 3D;
+       no 2D, 01/10/2026: "implementar o mapa 2d que acabamos de construir
+       na versão 3d no jogo"): no 3D é o mapa da planta (mapa3d.js), com a
+       aba Brasil; no jogo de feed (`so2d`), a planta da praça assada com a
+       dona de cada bairro e a aba Brasil (js/ui/mapa_brasil.js) */
+    {id:'mapa3d',      rot:_t('Mapa'),        ic:'mapa', acao:'mapa3d', so3d:true},
+    {id:'mapa',        rot:_t('Mapa'),        ic:'mapa', acao:'mapaBrasil', so2d:true},
     {id:'torcida',     rot:_t('Torcida'),     ic:'torcida'},
     {id:'financeiro',  rot:_t('Financeiro'),  ic:'dinheiro'},
     {id:'calendario',  rot:_t('Calendário'),  ic:'calendario'},
@@ -583,7 +584,7 @@
                     mapa3d: () => { if(TO.jogo3d && TO.jogo3d.abrirMapa) TO.jogo3d.abrirMapa(); },
                     mapaBrasil: () => { if(TO.mapaBrasil) TO.mapaBrasil.abrir(); },
                     graficos: () => { if(TO.graficos) TO.graficos.alternar(); }};
-  /* o item que só existe com a cidade em 3D */
+  /* o item que só existe com a cidade em 3D (`so3d`) e o que só existe sem ela (`so2d`) */
   const com3d = () => !!(TO.jogo3d && TO.jogo3d.abrirMapa);
   const temNoMenu = n => (!n.so3d || com3d()) && (!n.so2d || !com3d());
   /* A TELA PRINCIPAL É O FEED, e agora é a única tela do jogo: o mapa da
@@ -876,6 +877,10 @@
           id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
     grupo(_t('Outros jogos na cidade'), P.POLITICA_ATAQUE, pol.outros,
           id=>P.definirPolitica(e, 'outros', id));
+    grupo(_t('Apoio nos jogos fora'), P.POLITICA_APOIO, pol.apoio,
+          id=>P.definirPolitica(e, 'apoio', id));
+    grupo(_t('Pixações'), P.POLITICA_PIXO, pol.pixo,
+          id=>P.definirPolitica(e, 'pixo', id));
     cx.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${_t('O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.')}</span>`}));
 
@@ -917,7 +922,30 @@
      Fim da noite já conta a briga; a página do Futebol e Porrada mora em
      Notícias → Tretas. A história (`e.feed`) continua com elas — é só o
      rolo do feed que não as desenha. */
-  const feedVisivel = e => (e.feed || []).filter(m => m.kind !== 'confronto');
+  /* O JORNAL MORA NA REDE (pedido do dono, 01/10/2026): "retire as
+     notícias da Gazeta dos Sports e do Futebol e Porrada do feed, ficou
+     redundante aparecer no feed e na rede social". A matéria que virou
+     post do jornal (`jornal|<id>` em E.mensagens — a rodada, o
+     almanaque, a LNT, a obra) sai do rolo; a página inteira continua em
+     Notícias → Arquivo, aberta pelo "Ler a matéria" do post. Cartão
+     que pede decisão nunca sai: o "Hoje tem… Iniciar partida" fica. */
+  /* PELO TIPO, NÃO PELO POST (correção do dono, 04/10/2026): o filtro
+     olhava se o post do jornal ainda estava na rede — e a rede guarda
+     300 posts. Cheia, ela apaga os mais velhos, e a matéria cujo post
+     saiu voltava pro feed (numa partida de 400 dias, em 65 deles havia
+     uma Gazeta no feed). As matérias de jornal saem do feed sempre; o
+     post que a rede ainda tem continua valendo pra qualquer outro tipo. */
+  const MATERIA_DE_JORNAL = new Set(['rodada', 'almanaque',
+                                     'lnt-fundacao', 'lnt-fim', 'obra']);
+  function feedVisivel(e){
+    const naRede = new Set();
+    for(const m of (e.mensagens || [])){
+      const k = m.jornal && String(m.chave || '');
+      if(k && k.indexOf('jornal|') === 0) naRede.add(+k.slice(7));
+    }
+    return (e.feed || []).filter(m => m.kind !== 'confronto' &&
+      (m.peso === 'decisao' || !(MATERIA_DE_JORNAL.has(m.kind) || naRede.has(m.id))));
+  }
   let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null;
   let feedVistas = new Map();
 
@@ -1022,12 +1050,345 @@
       abrirPainel('noticias');
     });
     tickerAss = null;
-    corpo.append(barra, noFeedTicker);
-    if(rolo) corpo.appendChild(rolo);
+    /* A REDE SOCIAL AO LADO DO FEED (pedido do dono, 01/10/2026): parte
+       secundária, na coluna da direita — os posts mais novos, com a
+       imagem, as curtidas e o menu ⋯; a rede inteira continua em
+       Notícias → Mensagens. Abaixo de 1000 px de largura a coluna sai
+       (o feed é o jogo; a rede segue a um toque, em Notícias).
+       NO JOGO 3D (sem o rolo do feed) a coluna da rede fica sozinha, por
+       cima da cidade, na borda da esquerda, ao lado dos ícones (a direita
+       é dos recortes de jornal; jogo3d.css). */
+    const colunas = el('div',{class:'feed-colunas'});
+    if(rolo) colunas.append(rolo);
+    colunas.append(montarSocialLado());
+    corpo.append(barra, noFeedTicker, colunas);
     pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
   }
+
+  /* =======================================================
+     A COLUNA DA REDE SOCIAL (01/10/2026)
+     Post novo não aparece de estalo: entra por cima abrindo espaço aos
+     poucos (o envelope cresce de 0 à altura dele) e com um fade — um
+     scroll leve, que empurra os de baixo. Se o jogador rolou a coluna
+     pra ler um post mais velho, a leitura não pula: o post entra sem
+     mexer no que está na tela e aparece o aviso "novos posts ↑", que
+     sobe suave até o topo.
+     ======================================================= */
+  /* =======================================================
+     QUEM EU SIGO (pedido do dono, 01/10/2026): "um botão ao lado do
+     nome Rede social pra filtrar quem eu quero seguir — times, jornais
+     ou torcidas". Deixar de seguir uma TORCIDA some com tudo o que ela
+     e as zonas dela postam; um TIME, com as notícias dos jornais sobre
+     ele; um JORNAL, com tudo o que ele publica. A nossa torcida e o
+     nosso clube não saem. A lista abre com quem aparece na nossa rede
+     (por número de posts); a busca alcança o país inteiro.
+     ======================================================= */
+  const semAcento = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  function abrirFiltroSocial(){
+    const e = E(), F = TO.feed;
+    if(!e || !F.seguir) return;
+    let aba = 'torcida', busca = '';
+    const corpo = el('div',{class:'filtro-social'});
+    const abas = el('div');
+    const campo = el('input',{class:'campo filtro-busca'});
+    campo.type = 'search';
+    const lista = el('div',{class:'filtro-lista'});
+    const nota = el('p',{class:'filtro-nota'});
+    corpo.append(abas, nota, campo, lista);
+    /* quem aparece na nossa rede, e quantas vezes */
+    const contaTorcidas = new Map(), contaClubes = new Map();
+    for(const m of (e.mensagens || [])){
+      if(m.de && !m.jornal && m.de !== e.torcida.id) contaTorcidas.set(m.de, (contaTorcidas.get(m.de) || 0) + 1);
+      for(const id of (F.clubesDaNoticia ? F.clubesDaNoticia(m) : []))
+        if(id !== e.torcida.clubeId) contaClubes.set(id, (contaClubes.get(id) || 0) + 1);
+    }
+    /* os clubes da nossa praça entram mesmo sem notícia ainda */
+    for(const t of (TO.mundo.todosTimes || []))
+      if(t.mapa === e.torcida.mapa && t.id !== e.torcida.clubeId && !contaClubes.has(t.id)) contaClubes.set(t.id, 0);
+    const linha = (tipo, id, nome, sub, marca)=>{
+      const sigo = F.seguindo(e, tipo, id);
+      const li = el('div',{class:'filtro-item'+(sigo ? '' : ' fora'), html:
+        `${marca}<span class="filtro-nome"><b>${escHTML(nome)}</b>${sub ? `<small>${sub}</small>` : ''}</span>`});
+      const b = el('button',{class:'filtro-bt'+(sigo ? ' sigo' : ''), texto: sigo ? _t('Seguindo') : _t('Seguir')});
+      b.onclick = ()=>{ F.seguir(e, tipo, id, !F.seguindo(e, tipo, id)); TO.estado.salvar(); pintar(); };
+      li.appendChild(b);
+      return li;
+    };
+    const marcaT = id => { const s = escudoDe('t', id); return s ? `<img class="filtro-escudo" src="${s}" alt="">` : avatarPost(id).replace('post-avatar', 'post-avatar filtro-escudo'); };
+    const marcaC = id => { const s = escudoDe('c', id), t = TO.mundo.time(id) || {};
+      return s ? `<img class="filtro-escudo" src="${s}" alt="">`
+               : `<span class="filtro-escudo filtro-chip" style="background:${(t.cores||[])[0] || '#555'}"></span>`; };
+    const posts = n => n ? _tn(n, '{n} post', '{n} posts', {n}) : '';
+    function pintar(){
+      abas.replaceChildren(subabas([{id:'torcida', rot:_t('Torcidas')}, {id:'clube', rot:_t('Times')},
+                                    {id:'jornal', rot:_t('Jornais')}], aba, id=>{ aba = id; busca = ''; campo.value = ''; pintar(); }));
+      nota.textContent = aba === 'torcida' ? _t('Quem você deixa de seguir some da rede, com as zonas dela.')
+                       : aba === 'clube' ? _t('Deixar de seguir um time tira da rede as notícias dos jornais sobre ele.')
+                       : _t('Deixar de seguir um jornal tira da rede tudo o que ele publica.');
+      campo.hidden = aba === 'jornal';
+      campo.placeholder = aba === 'torcida' ? _t('Buscar torcida…') : _t('Buscar time…');
+      lista.replaceChildren();
+      const q = semAcento(busca);
+      if(aba === 'jornal'){
+        for(const [id, J] of Object.entries(F.JORNAIS || {}))
+          lista.appendChild(linha('jornal', id, J.nome, J.arroba,
+            `<span class="post-avatar jornal-${id} filtro-escudo"><span class="sigla">${JORNAL_AV[id] || ''}</span></span>`));
+      } else if(aba === 'torcida'){
+        let ids = q ? TO.mundo.jogaveis().filter(o => !o.incompleta && o.id !== e.torcida.id && semAcento(o.nome).includes(q)).map(o => o.id).slice(0, 60)
+                    : [...contaTorcidas.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]);
+        for(const id of ids){
+          const o = TO.mundo.torcida(id); if(!o) continue;
+          const cid = (TO.mundo.cidade(o.mapa) || {}).nome || '';
+          lista.appendChild(linha('torcida', id, o.nome, [cid, posts(contaTorcidas.get(id))].filter(Boolean).join(' · '), marcaT(id)));
+        }
+      } else {
+        let ids = q ? (TO.mundo.todosTimes || []).filter(t => t.id !== e.torcida.clubeId && semAcento(t.nome).includes(q)).map(t => t.id).slice(0, 60)
+                    : [...contaClubes.entries()].sort((a, b) => b[1] - a[1] || nomeClube(a[0]).localeCompare(nomeClube(b[0]))).map(x => x[0]);
+        for(const id of ids){
+          const t = TO.mundo.time(id); if(!t) continue;
+          lista.appendChild(linha('clube', id, t.nome, [t.cidade, posts(contaClubes.get(id))].filter(Boolean).join(' · '), marcaC(id)));
+        }
+      }
+      if(!lista.children.length)
+        lista.appendChild(el('div',{class:'em-construcao', texto: q ? _t('Ninguém com esse nome.') : _t('Ninguém por aqui ainda.')}));
+      /* quem saiu volta de uma vez */
+      const P = e.feedPrefs || {}, mapa = aba === 'torcida' ? P.torcidas : aba === 'clube' ? P.clubes : P.jornais;
+      const fora = Object.keys(mapa || {}).length;
+      if(fora){
+        const b = el('button',{class:'filtro-todos', texto:_tn(fora, 'Voltar a seguir {n} que saiu', 'Voltar a seguir os {n} que saíram', {n:fora})});
+        b.onclick = ()=>{ F.seguirTodos(e, aba); TO.estado.salvar(); pintar(); };
+        lista.prepend(b);
+      }
+    }
+    campo.oninput = ()=>{ busca = campo.value; pintar(); };
+    pintar();
+    modal(_t('Quem eu sigo'), _t('Rede social'), corpo,
+      [[_t('Pronto'), ()=>{ atualizarSocialLado(true); if(painel === 'noticias') redesenhar(); }]], 'estreita', true);
+  }
+
+  const SOCIAL_LADO_MAX = 40;
+  let socialLado = null;
+  function montarSocialLado(){
+    const asd = el('aside',{class:'social-lado'});
+    const cab = el('div',{class:'social-lado-cab', html:
+      `<span class="social-lado-tit">${TO.icones.get('conversa')}${_t('Rede social')}</span>`});
+    /* o FILTRO de quem eu sigo (dono, 01/10/2026), ao lado do nome */
+    const bFiltro = el('button',{class:'social-lado-filtro', html:TO.icones.get('filtro')});
+    bFiltro.title = _t('Filtrar quem eu sigo');
+    bFiltro.setAttribute('aria-label', _t('Filtrar quem eu sigo'));
+    bFiltro.onclick = ()=>abrirFiltroSocial();
+    cab.querySelector('.social-lado-tit').appendChild(bFiltro);
+    const bTudo = el('button',{class:'social-lado-tudo', texto:_t('Ver tudo')});
+    bTudo.onclick = ()=>{ subNoticias = 'mensagens'; abrirPainel('noticias'); };
+    cab.appendChild(bTudo);
+    /* RECOLHER (pedido do dono, 01/10/2026): "um botão recolhível pra
+       esconder, caso o jogador queira só ver o feed". Recolhida, a rede
+       vira uma tira fina na borda (com o número de posts novos) e o que
+       é importante pra nós aparece num aviso no canto, por 3 s. A
+       escolha fica guardada no navegador. */
+    const bRecolher = el('button',{class:'social-lado-recolher', html:TO.icones.get('avancar')});
+    bRecolher.title = _t('Recolher a rede social');
+    bRecolher.setAttribute('aria-label', _t('Recolher a rede social'));
+    bRecolher.onclick = ()=>alternarRede(true);
+    cab.prepend(bRecolher);
+    const tira = el('button',{class:'social-aba', html:
+      `${TO.icones.get('conversa')}<span class="vert">${_t('Rede social')}</span><span class="social-aba-n" hidden></span>`});
+    tira.title = _t('Abrir a rede social');
+    tira.onclick = ()=>alternarRede(false);
+    const rolo = el('div',{class:'social-lado-rolo'});
+    const lista = el('div',{class:'social-lado-lista feed-social'});
+    const aviso = el('button',{class:'social-lado-novos', texto:_t('novos posts ↑')});
+    aviso.hidden = true;
+    aviso.onclick = ()=>{ rolo.scrollTo({top:0, behavior:'smooth'}); };
+    rolo.addEventListener('scroll', ()=>{ if(rolo.scrollTop < 30) aviso.hidden = true; }, {passive:true});
+    rolo.append(lista);
+    asd.append(cab, aviso, rolo, tira);
+    asd.classList.toggle('recolhida', redeRecolhida);
+    const ctx = {menu:{aberto:null},
+                 aoMudar:()=>atualizarSocialLado(true),
+                 aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
+    lista.addEventListener('click', ev=>{ fecharMenuPost(ctx, ev.target); });
+    if(socialLado && socialLado.timer) clearTimeout(socialLado.timer);
+    socialLado = {asd, rolo, lista, aviso, ctx, vistos:new Map(), fila:[], timer:null, pronto:false, tira};
+    pintarTira(socialLado);
+    return asd;
+  }
+  /* O QUE A REDE JÁ MOSTROU vive fora da coluna: o feed se repinta
+     inteiro de vez em quando (troca de dia, painel que fecha), e a
+     coluna nasce de novo — sem isto, o post novo ia virar "já visto" e
+     o aviso do canto, que mora no <body>, ia junto com a coluna velha */
+  const REDE = {conhecidos:new Set(), iniciado:false, naoVistos:0, toastFila:[], toastTimer:null, toastsEl:null};
+  function caixaDeToasts(){
+    if(!REDE.toastsEl || !REDE.toastsEl.isConnected){
+      REDE.toastsEl = el('div',{class:'social-toasts'});
+      document.body.appendChild(REDE.toastsEl);
+    }
+    return REDE.toastsEl;
+  }
+  /* no jogo 3D a escolha é outra (a mesma origem do Pages guarda as duas):
+     a coluna toma a cidade, e na tela estreita ela já nasce recolhida */
+  const CHAVE_REDE = TO.semFeed ? 'to.redeRecolhida3d' : 'to.redeRecolhida';
+  let redeRecolhida = false;
+  try{
+    const v = localStorage.getItem(CHAVE_REDE);
+    redeRecolhida = v == null ? !!(TO.semFeed && window.innerWidth < 1280) : v === '1';
+  }catch(_){}
+  function alternarRede(recolher){
+    const S = socialLado;
+    redeRecolhida = !!recolher;
+    try{ localStorage.setItem(CHAVE_REDE, redeRecolhida ? '1' : '0'); }catch(_){}
+    if(!S) return;
+    S.asd.classList.toggle('recolhida', redeRecolhida);
+    if(redeRecolhida){
+      /* o que estava na fila da coluna conta como visto: não vira aviso */
+      for(const id of S.fila) REDE.conhecidos.add(id);
+      S.fila = []; if(S.timer){ clearTimeout(S.timer); S.timer = null; }
+      S.pronto = false;
+    } else {
+      REDE.naoVistos = 0; pintarTira(S);
+      REDE.toastFila = []; if(REDE.toastTimer){ clearTimeout(REDE.toastTimer); REDE.toastTimer = null; }
+      caixaDeToasts().replaceChildren();
+      atualizarSocialLado(true);
+    }
+  }
+  function pintarTira(S){
+    const n = S.tira.querySelector('.social-aba-n');
+    n.hidden = !REDE.naoVistos;
+    n.textContent = REDE.naoVistos > 99 ? '99+' : String(REDE.naoVistos);
+  }
+  /* o aviso do canto: quem postou, o começo do texto, 3 s na tela */
+  const TOAST_VIDA = 5000;
+  function proximoToast(){
+    const e = E();
+    if(!e || !REDE.toastFila.length || !redeRecolhida){ REDE.toastTimer = null; return; }
+    const idT = REDE.toastFila.shift();
+    const m = (e.mensagens || []).find(x => x.id === idT);
+    if(m) mostrarToast(e, m);
+    REDE.toastTimer = REDE.toastFila.length ? setTimeout(proximoToast, SOCIAL_PASSO) : null;
+  }
+  /* O AVISO É O POST INTEIRO (dono, 01/10/2026): "prefiro que o recado
+     seja toda a informação da postagem, com curtidas, comentários,
+     retweets, data, o arroba da torcida". O cartão é o mesmo da rede
+     (montarPost). Com o mouse em cima, o relógio dos 3 s para; ao sair,
+     ele ainda fica 1,5 s. */
+  const ctxToast = {menu:{aberto:null}, aoMudar:()=>{},
+                    aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
+  function mostrarToast(e, m){
+    const t = el('div',{class:'social-toast feed-social'});
+    t.appendChild(montarPost(e, m, ctxToast));
+    t.addEventListener('click', ev=>{ fecharMenuPost(ctxToast, ev.target); });
+    caixaDeToasts().prepend(t);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('vivo')));
+    let relogio = null;
+    const sair = ()=>{ t.classList.remove('vivo'); t.classList.add('saindo'); setTimeout(()=>t.remove(), 450); };
+    const armar = ms => { clearTimeout(relogio); relogio = setTimeout(sair, ms); };
+    t.addEventListener('mouseenter', ()=>clearTimeout(relogio));
+    t.addEventListener('mouseleave', ()=>armar(1500));
+    armar(TOAST_VIDA);
+  }
+  /* o que muda o desenho de um post que já está na coluna */
+  const estadoDoPost = m => `${m.resposta || ''}|${m.consequencia || ''}|${(m.comentarios || []).length}`;
+  function atualizarSocialLado(refazer){
+    const S = socialLado, e = E();
+    if(!S || !e || !S.lista.isConnected) return;
+    /* fora da tela (celular, coluna escondida) não gasta nada */
+    if(!S.asd.offsetParent) { S.pronto = false; return; }
+    const F = TO.feed;
+    const vis = (e.mensagens || []).filter(m => !(F.oculto && F.oculto(e, m))).slice(0, SOCIAL_LADO_MAX);
+    /* o que já estava na rede quando o jogo abriu não é novidade */
+    if(!REDE.iniciado){ for(const m of vis) REDE.conhecidos.add(m.id); REDE.iniciado = true; }
+    if(REDE.conhecidos.size > 3000) REDE.conhecidos = new Set(vis.map(m => m.id));
+    if(redeRecolhida){
+      /* recolhida: a coluna não se desenha; o post novo conta na tira e,
+         se for importante pra nós, vira aviso no canto */
+      S.pronto = false;
+      const novos = [];
+      for(let i = vis.length - 1; i >= 0; i--){
+        const m = vis[i];
+        if(!REDE.conhecidos.has(m.id)){ REDE.conhecidos.add(m.id); novos.push(m); }
+      }
+      if(!novos.length) return;
+      REDE.naoVistos += novos.length; pintarTira(S);
+      for(const m of novos) if(F.importante && F.importante(e, m)) REDE.toastFila.push(m.id);
+      if(REDE.toastFila.length && !REDE.toastTimer) proximoToast();
+      return;
+    }
+    for(const m of vis) REDE.conhecidos.add(m.id);
+    if(refazer || !S.pronto){
+      S.lista.innerHTML = ''; S.vistos.clear(); S.fila = [];
+      if(S.timer){ clearTimeout(S.timer); S.timer = null; }
+      for(const m of vis){
+        const env = el('div',{class:'post-envelope'});
+        env.appendChild(montarPost(e, m, S.ctx));
+        S.lista.appendChild(env);
+        S.vistos.set(m.id, {env, est:estadoDoPost(m)});
+      }
+      if(!vis.length) S.lista.innerHTML = `<div class="em-construcao">${_t('Nenhuma torcida postou nada ainda.')}</div>`;
+      S.pronto = true;
+      return;
+    }
+    const ids = new Set(vis.map(m => m.id));
+    /* o que saiu (escondido, apagado ou além do teto) sai de mansinho */
+    for(const [id, v] of S.vistos) if(!ids.has(id)){ v.env.remove(); S.vistos.delete(id); }
+    /* post que mudou de estado (respondido) é redesenhado no lugar */
+    for(const m of vis){
+      const v = S.vistos.get(m.id);
+      if(v && v.est !== estadoDoPost(m)){ v.env.replaceChildren(montarPost(e, m, S.ctx)); v.est = estadoDoPost(m); }
+    }
+    /* UM POR VEZ (dono, 01/10/2026): "um monte de uma vez vira poluição
+       visual". O dia que passa solta vários posts de uma vez; aqui eles
+       entram numa fila, do mais velho pro mais novo, e caem na coluna
+       um a cada SOCIAL_PASSO ms (1,5 s). Ninguém é pulado: quando o
+       tempo para (decisão aberta, painel, pausa), a fila segue andando
+       e a coluna recupera o atraso — "quando o tempo para, recupera
+       bastante o tempo". O único teto é o da coluna (os 40 mais novos). */
+    for(let i = vis.length - 1; i >= 0; i--){
+      const id = vis[i].id;
+      if(!S.vistos.has(id) && !S.fila.includes(id)) S.fila.push(id);
+    }
+    S.fila = S.fila.filter(id => ids.has(id));
+    if(S.fila.length && !S.timer) proximoPostSocial();
+  }
+  const SOCIAL_PASSO = 1500;
+  function proximoPostSocial(){
+    const S = socialLado;
+    if(!S || !S.fila.length || !S.lista.isConnected){ if(S) S.timer = null; return; }
+    soltarPostSocial(S.fila.shift(), true);
+    S.timer = S.fila.length ? setTimeout(proximoPostSocial, SOCIAL_PASSO) : null;
+  }
+  function soltarPostSocial(id, animar){
+    const S = socialLado, e = E();
+    if(!S || !e || S.vistos.has(id)) return;
+    const m = (e.mensagens || []).find(x => x.id === id);
+    if(!m || (TO.feed.oculto && TO.feed.oculto(e, m))) return;
+    const vazio = S.lista.querySelector('.em-construcao');
+    if(vazio) vazio.remove();
+    const env = el('div',{class:'post-envelope'});
+    env.appendChild(montarPost(e, m, S.ctx));
+    S.lista.prepend(env);
+    S.vistos.set(m.id, {env, est:estadoDoPost(m)});
+    /* o teto da coluna: o mais velho sai por baixo */
+    while(S.lista.children.length > SOCIAL_LADO_MAX){
+      const ult = S.lista.lastElementChild;
+      for(const [k, v] of S.vistos) if(v.env === ult) S.vistos.delete(k);
+      ult.remove();
+    }
+    if(S.rolo.scrollTop > 40){
+      /* quem está lendo não perde o lugar: compensa a altura que entrou */
+      S.rolo.scrollTop += env.offsetHeight + 10;
+      S.aviso.hidden = false;
+      return;
+    }
+    if(!animar) return;
+    env.classList.add('fechado', 'abrindo');
+    /* dois quadros: o navegador precisa ver o fechado antes de abrir;
+       o recorte (`abrindo`) sai no fim, pra o menu ⋯ poder vazar */
+    requestAnimationFrame(()=>requestAnimationFrame(()=>env.classList.remove('fechado')));
+    setTimeout(()=>env.classList.remove('abrindo'), 750);
+  }
+
 
   /* =======================================================
      O TICKER DE MANCHETES (pedido do dono, 08/09/2026)
@@ -1302,6 +1663,9 @@
 
   function atualizarFeed(){
     const e = E();
+    /* NO JOGO 3D não há lista (TO.semFeed): o que anda é a coluna da rede
+       social, por cima da cidade (sync com o 2D, 06/10/2026) */
+    if(e && TO.semFeed){ atualizarSocialLado(); return; }
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
     const {hist, teto} = janelaDoFeed(e);
     /* ALCANÇAR A DECISÃO ENTERRADA EXIGE REMONTAR (17/09/2026): esticar
@@ -1314,17 +1678,43 @@
       noFeedLista.innerHTML = '';
       feedVistas = new Map();
     }
-    /* de trás pra frente: cada uma entra por cima da anterior, então a
-       última a entrar é a mais nova — que é a que fica no topo */
-    for(let i = hist.length - 1; i >= 0; i--){
-      const m = hist[i], est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
-      if(velho && velho.estado === est && velho.no.isConnected) continue;
-      const no = cartaoSeguro(e, m);
-      if(velho && velho.no.isConnected) velho.no.replaceWith(no);
-      else noFeedLista.prepend(no);
-      feedVistas.set(m.id, {no, estado:est});
-    }
-    while(noFeedLista.children.length > teto) noFeedLista.lastChild.remove();
+    /* A LISTA SEGUE A ORDEM DA HISTÓRIA (correção do dono, 04/10/2026:
+       "apareceu umas mensagens no feed do Futebol e Porrada e da Gazeta…
+       assim como uns itinerários finalizados de partidas antigas"). O
+       laço antigo punha NO TOPO todo cartão que precisava ser desenhado
+       e já tinha saído da tela, e cortava sempre o último nó. Um cartão
+       velho que voltava (a matéria cujo post saiu da rede, o itinerário
+       que fechou) subia pro topo, o corte levava um cartão que ainda
+       estava na janela, e esse voltava no dia seguinte — também no topo:
+       uma corrente que fazia partidas de semanas atrás reaparecerem como
+       novas. Agora sai do DOM o que saiu da janela, e cada cartão entra
+       na posição dele. */
+    /* a mensagem que CHEGA (não a da primeira pintura) entra suave, com
+       um fade descendo (dono, 01/10/2026) — só as que entram acima da
+       primeira que já estava na tela; cartão velho redesenhado não "chega" */
+    const chegando = noFeedLista.children.length > 0;
+    const naJanela = new Set(hist.map(m => m.id));
+    for(const [id, v] of feedVistas)
+      if(!naJanela.has(id) && v.no.isConnected) v.no.remove();
+    let ref = noFeedLista.firstChild;
+    const jaVista = hist.findIndex(m => feedVistas.has(m.id));
+    hist.forEach((m, i) => {
+      const est = estadoDaMsg(e, m), velho = feedVistas.get(m.id);
+      let no = velho && velho.no.isConnected ? velho.no : null;
+      if(!no || velho.estado !== est){
+        const novo = cartaoSeguro(e, m);
+        if(no){
+          if(ref === no) ref = no.nextSibling;
+          no.remove();
+        } else if(chegando && i < jaVista) novo.classList.add('entrando');
+        no = novo;
+        feedVistas.set(m.id, {no, estado:est});
+      }
+      if(no === ref) ref = ref.nextSibling;
+      else noFeedLista.insertBefore(no, ref);
+    });
+    /* o que sobrou depois do último da janela não é de ninguém */
+    while(ref){ const prox = ref.nextSibling; ref.remove(); ref = prox; }
     /* O MAPA DE NÓS NÃO PODE CRESCER COM A PARTIDA. Cada mensagem que
        sai da lista deixava aqui um nó solto que o navegador não libera:
        numa corrida de vinte temporadas são milhares deles, e a aba
@@ -1332,6 +1722,7 @@
     if(feedVistas.size > tetoFeed * 2)
       for(const [id, v] of feedVistas)
         if(!v.no.isConnected) feedVistas.delete(id);
+    atualizarSocialLado();
   }
 
   /* O CABEÇALHO VOLTOU, SÓ COM A ORIGEM (dono, 12/09/2026): quem
@@ -1816,6 +2207,12 @@
        relógio, aos 90. */
     m.consequencia = (m.consequencia || '') +
       ' ' + _t('O clima azedou e a arquibancada se pegou.');
+    /* A ARQUIBANCADA TAMBÉM É BAIRRO (02/10/2026): o do estádio, e a
+       briga mexe na barra dele */
+    const rivalDaBriga = ((d.presenca || []).filter(p => p.id && p.casa !== !!d.somosCasa).sort((a, b) => b.n - a.n)[0] || {}).id;
+    const pvA = rivalDaBriga && TO.feed.previaDaBriga ? TO.feed.previaDaBriga(e, {torcidaId:rivalDaBriga, atacamos:true,
+      local:{cena:'estadio-20', bairro:'', cidade:d.mapa || null, estadio:d.estadio || null}}) : null;
+    if(pvA && pvA.onde) m.consequencia += ' ' + _t('Bairro: {bairro}.', {bairro:pvA.onde}) + (pvA.linha ? ' ' + pvA.linha + '.' : '');
     /* quem ficou quieto entra na consequência mais abaixo, depois de
        a gente saber quem é aliado de quem */
     /* quem abre a arquibancada pausa a partida — vale pra quem chega
@@ -1929,7 +2326,8 @@
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'estadio', alvo:{torcidaId: rivalTop.id,
           nome:(TO.mundo.torcida(rivalTop.id)||{}).nome || rivalTop.nome,
-          nossos:nosT, deles:delesT, efetivo:delesT, cena:local}})
+          nossos:nosT, deles:delesT, efetivo:delesT, cena:local,
+          mapa:d.mapa || null, estadio:d.estadio || null}})
     });
     TO.estado.salvar();
     atualizarFeed();
@@ -2255,32 +2653,40 @@
     let voz, texto, bts;
     /* onde foi: a parada de verdade dentro da fase (dono, 08/09/2026) */
     const onde = ev.lugarTxt || p.nome;
+    /* E O BAIRRO, COM O QUE A BRIGA MEXE NELE (o dono, 02/10/2026: "Foi em
+       Pista · Avenida de acesso · a caminho" não dizia o bairro nem o
+       domínio). A conta é a do fim da briga (TO.dominio.ondeDaBriga). */
+    const pv = itnPrevia(ev);
+    const local = pv && pv.onde ? _t('Local: {onde}. Bairro: {bairro}.', {onde, bairro:pv.onde})
+                                : _t('Local: {onde}.', {onde});
     if(ev.tipo === 'investida'){
       voz = _t('Diretor de rua · investida marcada no planejamento');
-      texto = _t('Hoje é o dia. A {nome} vai estar em {onde}, e a gente vai pra cima.', {nome:ev.nome, onde});
-      /* (na cidade em 3D, o que se vê na hora: dia3d.js) */
+      texto = _t('Hoje é o dia. A {nome} vai estar em {onde}, e a gente vai pra cima.', {nome:ev.nome, onde})
+              + (pv && pv.onde ? ' ' + _t('Bairro: {bairro}.', {bairro:pv.onde}) : '');
+      /* (na cidade em 3D, o que se vê na hora: dia3d.js; o bairro vai junto) */
       const D3i = TO.jogo3d && TO.jogo3d.dia;
       const v3i = D3i && D3i.ativo && D3i.avisoDoAtaque ? D3i.avisoDoAtaque(ev) : null;
-      if(v3i){ voz = v3i.voz; texto = v3i.texto; }
+      if(v3i){ voz = v3i.voz; texto = v3i.texto + (pv && pv.onde ? ' ' + _t('Bairro: {bairro}.', {bairro:pv.onde}) : ''); }
       bts = [{rot:_t('Ir pra cima'), briga:true}];
     } else if(ev.tipo === 'emboscada'){
       voz = _t('Emboscada · {nome}', {nome:ev.nome});
       texto = (S.emboscada ? S.emboscada.texto(ev.nome)
                            : _t('Pegaram a caravana na estrada. A {nome} fechou a pista.', {nome:ev.nome}))
-              + ' ' + _t('Foi em {onde}.', {onde});
+              + ' ' + local;
       bts = [{rot:(S.emboscada||{}).brigar || _t('Descer pra treta'), briga:true},
              {rot:(S.emboscada||{}).fugir  || _t('Mandar seguir viagem'), briga:false}];
     } else {
       const cfg = S[ev.ponto] || S.bar || {};
       voz = _t('Caiu em cima da gente · {nome}', {nome:ev.nome});
       texto = (cfg.texto ? cfg.texto(ev.nome)
-                         : _t('A {nome} caiu em cima da gente.', {nome:ev.nome})) + ' ' + _t('Foi em {onde}.', {onde});
+                         : _t('A {nome} caiu em cima da gente.', {nome:ev.nome})) + ' ' + local;
       /* NA CIDADE EM 3D o aviso é o que se vê (dia3d.js, conserto de
          28/09/2026): o líder do bonde grita na hora em que a rival aparece
-         — na esquina da caminhada, ou dobrando a esquina pra porta da sede */
+         — na esquina da caminhada, ou dobrando a esquina pra porta da sede.
+         O bairro da briga vai junto (02/10/2026). */
       const D3 = TO.jogo3d && TO.jogo3d.dia;
       const v3 = D3 && D3.ativo && D3.avisoDoAtaque ? D3.avisoDoAtaque(ev) : null;
-      if(v3){ voz = v3.voz; texto = v3.texto; }
+      if(v3){ voz = v3.voz; texto = v3.texto + (pv && pv.onde ? ' ' + _t('Bairro: {bairro}.', {bairro:pv.onde}) : ''); }
       bts = [{rot:cfg.brigar || _t('Pra cima deles'), briga:true},
              {rot:cfg.fugir  || _t('Deixar quieto'),  briga:false}];
     }
@@ -2294,6 +2700,8 @@
       {rot:_t('Simular'), briga:true, simular:true});
     cx.appendChild(el('div',{class:'voz', texto:voz}));
     cx.appendChild(el('p',{texto}));
+    if(pv && pv.linha)
+      cx.appendChild(el('div',{class:'custo', texto:_t('Descendo: {linha}.', {linha:pv.linha})}));
     if(ev.tipo !== 'investida')
       cx.appendChild(el('div',{class:'custo',
         html:_t('Ninguém descendo: <b>Moral −3 · Prestígio −3,5 · Relação −6</b>')}));
@@ -2308,6 +2716,26 @@
     });
     cx.appendChild(caixa);
     return cx;
+  }
+
+  /* a briga da parada na forma do `registrarConfronto`, pra prévia do domínio */
+  function itnPrevia(ev){
+    const e = E(), F = TO.feed;
+    if(!F || !F.previaDaBriga || !ev) return null;
+    const atq = (ev.abrir && ev.abrir.atq) || {};
+    if(ev.tipo === 'investida'){
+      const j = ev.abrir && ev.abrir.args && ev.abrir.args.jogo;
+      const o = TO.praca && TO.praca.ondeDaInvestida ? TO.praca.ondeDaInvestida(e, j) : null;
+      if(!o) return null;
+      return F.previaDaBriga(e, {torcidaId:ev.torcida, atacamos:true,
+        local:{cena:o.local || 'rua', bairro:o.bairro || '', cidade:o.cidade || null, estadio:j && j.estadio}});
+    }
+    if(ev.tipo === 'emboscada')
+      return F.previaDaBriga(e, {torcidaId:ev.torcida, atacamos:false, estrada:true, tipoDefesa:'emboscada',
+        local:{cena:atq.cena || 'emb-onibus', cidade:atq.mapa || ev.cidade || null, chave:atq.chave || null}});
+    return F.previaDaBriga(e, {torcidaId:ev.torcida, atacamos:false, tipoDefesa:atq.alvo || ev.ponto,
+      local:{cena:atq.cena || (ev.ponto === 'concentracao' ? 'praca' : 'rua'), bairro:atq.bairro || '',
+             cidade:atq.mapa || null, estadio:atq.estadio || null}});
   }
 
   function itnResponder(p, ev, briga, cx, simular){
@@ -3422,7 +3850,7 @@
 
   function cartaoMensagem(e, m){
     const art = el('article',{class:`msg kind-${m.kind||'msg'} peso-${m.peso}`+
-      (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : '')});
+      (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : ''), 'data-id': m.id});
     /* a voz 'torcida' é a própria torcida falando (status, intermediação),
        e a 'eixo' é o eixo de aliança: nesses dois a origem é o nome */
     const quem = m.voz === 'torcida' && m.dados && m.dados.nome
@@ -4314,35 +4742,152 @@
      Abrir a aba dá tudo por lido, e o número do ícone some. */
   const ROT_MSG = {provocacao:_t('Provocação'), convite:_t('Convite'), agradecimento:_t('Agradecimento'),
                    juntos:_t('Estamos juntos'), recusa:_t('Recusa'), cobranca:_t('Cobrança'), recado:_t('Recado'),
-                   pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada')};
-  /* UM RECADO DE OUTRA TORCIDA: quem mandou, o tipo, quando e o texto; o
-     pedido de casa e a trégua com os botões da resposta. O jogo 3D põe o
-     mesmo cartão no balão do enviado dela (recados3d.js) */
-  const recadoPedeResposta = m => !!m && !m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua');
-  function cartaoRecadoDeTorcida(e, m){
-    const P2 = TO.planejamento;
-    const corDe = id => { const o = TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
-    const q = m.quando || {};
-    const dia = TO.feed.NOME_DIA ? (TO.feed.NOME_DIA[q.dia] || '') : '';
-    const quando = q.semana ? `${q.ano} · ${_t('sem. {n}', {n:q.semana})}${dia ? ' · '+_t(dia) : ''}` : '';
-    const art = el('div',{class:'msg-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo, html:
-      `<div class="mt-cab">${chipTorcida(m.de, corDe(m.de))}<b>${linkTorcida(m.de, m.nome)}</b>`+
-      `<span class="tag">${ROT_MSG[m.tipo]||m.tipo}</span><span class="quando">${quando}</span></div>`+
-      `<p>${m.texto}</p>`});
+                   pedido:_t('Pedido de casa'), tregua:_t('Proposta de trégua'), treta:_t('Treta marcada'),
+                   zoeira:_t('Zoeira'), resposta:_t('Resposta'), noticia:_t('Notícia'),
+                   protesto:_t('Protesto'), convocacao:_t('Convocação'), resenha:_t('Resenha'),
+                   caravana:_t('Caravana'), comemoracao:_t('Comemoração'), reclamacao:_t('Reclamação'),
+                   resultado:_t('Resultado'), inauguracao:_t('Inauguração'), tbt:'#TBT'};
+  /* =======================================================
+     O POST DA REDE SOCIAL, UM SÓ PRA DUAS TELAS (01/10/2026)
+     A rede social mora inteira em Notícias → Mensagens e, desde o
+     pedido do dono de hoje, também na coluna da direita do feed, como
+     parte secundária dele. As duas pintam o post por aqui; o que muda
+     é o que acontece depois de um clique (`ctx.aoMudar`, `ctx.aoLer`)
+     e o menu ⋯ aberto, que é de cada tela (`ctx.menu`).
+     ======================================================= */
+  const NAT_POST = {longe:()=>_t('torcidas distantes'), brigas:()=>_t('brigas'), futebol:()=>_t('futebol'),
+                    agenda:()=>_t('agenda das torcidas'), outros:()=>_t('outros posts')};
+  const rotNatureza = n => /^jornal:/.test(n)
+    ? ((TO.feed.JORNAIS || {})[n.slice(7)] || {}).nome || n : (NAT_POST[n] ? NAT_POST[n]() : n);
+  function haQuantoPost(e, q){
+    const d = (e.data.absoluto || 0) - (q.abs || 0);
+    if(d <= 0) return _t('hoje');
+    if(d === 1) return _t('ontem');
+    /* (o comentário de antes de 01/10/2026 só guardava o dia absoluto) */
+    if(d < 7 || q.semana == null) return _t('há {n} dias', {n:d});
+    const dt = TO.estado.dataDaSemana ? TO.estado.dataDaSemana(q.ano, q.semana, q.dia) : null;
+    if(!dt) return `${q.ano}`;
+    const dm = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+    return q.ano !== e.data.ano ? `${dm}/${q.ano}` : dm;
+  }
+  function avatarPost(id){
+    const src = escudoDe('t', id);
+    if(src) return `<span class="post-avatar"><img src="${src}" alt=""></span>`;
+    const o = TO.mundo.torcida(id) || {};
+    const cr = TO.mundo.coresDaTorcida(o);
+    const sg = String(TO.mundo.siglaTorcida(o) || o.nome || '?').slice(0, 4);
+    return `<span class="post-avatar" style="background:${cr.cor || '#555'};color:${cr.cor2 || '#fff'}"><span class="sigla">${escHTML(sg)}</span></span>`;
+  }
+  const arrobaPost = o => '@' + U.identificador(TO.mundo.siglaTorcida(o) || o.nome || '').replace(/-/g, '');
+  /* COMENTÁRIOS E COMPARTILHAMENTOS (pedido do dono, 30/09/2026): só
+     enfeite, sem clique. Saem das curtidas, na proporção do tipo —
+     zoeira e protesto dão briga nos comentários, notícia e convite
+     rodam mais — com uma sorte fixa por post */
+  const RODA_POST = {comentario:{provocacao:.13, zoeira:.13, resposta:.12, treta:.12, protesto:.16, noticia:.06},
+                     compartilha:{noticia:.13, protesto:.11, convite:.09, zoeira:.07, provocacao:.06}};
+  const enfeitePost = (m, qual, pad) => {
+    const f = (RODA_POST[qual][m.tipo] || pad) * (0.7 + (TO.mapa.hash(`${qual}|${m.id}`) % 61) / 100);
+    return Math.round((m.curtidas || 0) * f);
+  };
+  /* o perfil do jornal (30/09/2026): as iniciais na cor da capa */
+  const JORNAL_AV = {gazeta:'GS', porrada:'FP'};
+  function fecharMenuPost(ctx, alvo){
+    const ab = ctx.menu.aberto;
+    if(ab && (!alvo || !ab.contains(alvo))){ ab.remove(); ctx.menu.aberto = null; }
+  }
+  function montarPost(e, m, ctx){
+    const F = TO.feed, P2 = TO.planejamento;
+    const coracao = TO.icones.get('coracao'), balao = TO.icones.get('conversa'), repost = TO.icones.get('repost');
+    const jornal = m.jornal && (F.JORNAIS || {})[m.jornal];
+    const o = jornal ? {} : (TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome});
+    /* post de save antigo nasceu sem curtida: a conta sai agora e fica */
+    if(m.curtidas == null && F.curtidasDe && !jornal) m.curtidas = F.curtidasDe(e, m.de, m.id);
+    const cidade = jornal ? '' : ((TO.mundo.cidade(o.mapa)||{}).nome || '');
+    const quem = jornal
+      ? `<span class="post-avatar jornal-${m.jornal}"><span class="sigla">${JORNAL_AV[m.jornal]||''}</span></span>`+
+        `<span class="post-quem"><b>${escHTML(jornal.nome)}</b><small>${jornal.arroba}</small></span>`
+      : `${avatarPost(m.de)}<span class="post-quem"><b>${linkTorcida(m.de, m.nome)}`+
+        /* o perfil da zona: "Leões da TUF · Zona Sul" (30/09/2026) */
+        `${m.zona ? ` <span class="post-zona">· ${escHTML(_t('Zona {zona}', {zona:_t(m.zona)}))}</span>` : ''}</b>`+
+        `<small>${arrobaPost(o)}${m.zona ? '.' + U.identificador(_t('Zona {zona}', {zona:_t(m.zona)})).replace(/-/g, '') : ''}`+
+        `${cidade ? ' · '+linkCidadePorNome(cidade) : ''}</small></span>`;
+    const ler = jornal && (m.dados||{}).aba
+      ? `<button class="post-ler" data-aba="${m.dados.aba}">${_t('Ler a matéria')}</button>` : '';
+    const nosso = !jornal && m.de === e.torcida.id;
+    /* com cartaz do jornal, ou a arte do post de torcida (04/10/2026) */
+    const cartaz = TO.cartaz ? TO.cartaz.html(m) : '';
+    const art = el('article',{class:'post-torcida'+(m.lida?'':' nova')+' tipo-'+m.tipo+(jornal?' do-jornal':'')+(nosso?' do-nosso':'')+(cartaz?' com-cartaz':''), html:
+      `<header class="post-cab">${quem}`+
+        `<span class="post-quando">${haQuantoPost(e, m.quando || {})}</span>`+
+        (F.podeEsconder && F.podeEsconder(e, m)
+          ? `<button class="post-menu" title="${escHTML(_t('Opções do post'))}" aria-label="${escHTML(_t('Opções do post'))}">⋯</button>` : '')+
+        `</header>`+
+      /* A IMAGEM DO POST (pedido do dono, 01/10/2026): com cartaz, a
+         ordem é a do Instagram — a imagem, as curtidas e, embaixo, a
+         legenda com o @ de quem postou na frente */
+      (cartaz ? cartaz : `<p class="post-texto">${linkificarNomes(m.texto)}</p>`)+
+      `<footer class="post-pe"><span class="post-curtidas${F.curtimos && F.curtimos(e, m) ? ' curtido' : ''}">${coracao}`+
+        `${_tn(m.curtidas || 0, '{n} curtida', '{n} curtidas', {n:U.numero(m.curtidas || 0)})}</span>`+
+        (()=>{ const c = enfeitePost(m, 'comentario', .05), r = enfeitePost(m, 'compartilha', .04);
+          return `<span class="post-conta" title="${escHTML(_tn(c, '{n} comentário', '{n} comentários', {n:U.numero(c)}))}">${balao}${U.numero(c)}</span>`+
+                 `<span class="post-conta" title="${escHTML(_tn(r, '{n} compartilhamento', '{n} compartilhamentos', {n:U.numero(r)}))}">${repost}${U.numero(r)}</span>`; })()+
+        `${ler}<span class="post-tag">${ROT_MSG[m.tipo]||m.tipo}</span></footer>`+
+      (cartaz ? `<p class="post-texto post-legenda"><b class="post-legenda-quem">${escHTML(jornal ? jornal.arroba : arrobaPost(o))}</b> ${linkificarNomes(m.texto)}</p>` : '')});
+    if(cartaz) TO.cartaz.ligar(art.querySelector('.cartaz'), m);
+    /* OS COMENTÁRIOS (01/10/2026): a resposta de quem apanhou mora aqui,
+       embaixo do post, como no Instagram — o @ em negrito, o texto, o
+       tempo embaixo. Quem o jogador deixou de seguir não aparece. */
+    const coms = (m.comentarios || []).filter(c => !(e.feedPrefs && e.feedPrefs.torcidas && e.feedPrefs.torcidas[c.de]));
+    if(coms.length){
+      const box = el('div',{class:'post-comentarios'});
+      for(const c of coms){
+        const oc = TO.mundo.torcida(c.de) || {nome:c.nome};
+        const zonaArroba = c.zona ? '.' + U.identificador(_t('Zona {zona}', {zona:_t(c.zona)})).replace(/-/g, '') : '';
+        box.appendChild(el('div',{class:'post-comentario', html:
+          `<p><b class="post-legenda-quem">${escHTML(arrobaPost(oc) + zonaArroba)}</b> ${linkificarNomes(c.texto)}</p>`+
+          `<span class="post-com-cor">${TO.icones.get('coracao')}</span>`+
+          `<small>${haQuantoPost(e, c)}</small>`}));
+      }
+      art.appendChild(box);
+    }
+    const bMenu = art.querySelector('.post-menu');
+    if(bMenu) bMenu.onclick = ev=>{
+      ev.stopPropagation();
+      const jaEra = ctx.menu.aberto && ctx.menu.aberto.parentNode === art;
+      fecharMenuPost(ctx);
+      if(jaEra) return;
+      const nat = F.naturezaDe(e, m);
+      const nomeP = jornal ? jornal.nome : m.nome + (m.zona ? ' · ' + _t('Zona {zona}', {zona:_t(m.zona)}) : '');
+      const menu = el('div',{class:'post-menu-lista'});
+      const op = (rot, nota, fn) => {
+        const b = el('button',{class:'post-menu-op', html:`${rot}<small>${nota}</small>`});
+        b.onclick = ()=>{ fn(); fecharMenuPost(ctx); TO.estado.salvar(); ctx.aoMudar(); };
+        menu.appendChild(b);
+      };
+      op(_t('Parar de seguir'), escHTML(_t('some tudo o que {nome} publica', {nome:nomeP})), ()=>F.pararDeSeguir(e, m.id));
+      if(nat) op(_t('Mostrar menos'), escHTML(_t('menos posts de {assunto}', {assunto:rotNatureza(nat)})), ()=>F.mostrarMenos(e, m.id));
+      art.appendChild(menu); ctx.menu.aberto = menu;
+    };
+    const bLer = art.querySelector('.post-ler');
+    if(bLer) bLer.onclick = ()=>ctx.aoLer(bLer.dataset.aba);
     /* as que pedem resposta: recepção (quatro níveis) e trégua */
-    if(recadoPedeResposta(m)){
+    if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
       const bts = el('div',{class:'rec-botoes'});
+      /* O PEDIDO JÁ VEM MARCADO (pedido do dono, 06/10/2026): o botão do
+         nível que vai valer no dia — a escolha da semana ou a ideologia —
+         chega aceso; clicar nele (ou em outro) confirma */
+      const valeHoje = m.tipo === 'pedido' && P2.nivelDe ? P2.nivelDe(e, m.de) : null;
       const opcoes = m.tipo === 'pedido'
         ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
             nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
         : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
            {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
-      for(const o of opcoes){
-        const b = el('button',{class:'rec-bt', html:`${o.rot}<small>${o.nota}</small>`});
+      for(const op of opcoes){
+        const b = el('button',{class:'rec-bt'+(op.id === valeHoje ? ' on' : ''), html:`${op.rot}<small>${op.nota}</small>`});
         b.onclick = ()=>{
-          const r = TO.feed.responderMensagemDe(e, m.id, o.id);
+          const r = F.responderMensagemDe(e, m.id, op.id);
           if(!r.ok) return;
-          TO.estado.salvar(); redesenhar();
+          TO.estado.salvar(); ctx.aoMudar();
         };
         bts.appendChild(b);
       }
@@ -4354,6 +4899,7 @@
     }
     return art;
   }
+
   /* a tabela dos jogos da semana com os botões de cada jogo, e o bloco
      da recepção dos aliados que chegam (o cartão antigo do olheiro,
      vivo em Notícias → Mensagens desde 09/09/2026) */
@@ -4366,10 +4912,49 @@
     const P2 = TO.planejamento;
     /* A PAUTA DA SEMANA SAIU DAQUI (pedido do dono, 10/09/2026): virou
        o cartão de segunda-feira do feed, com uma aba por praça */
-    const c = cartao(_t('Mensagens de outras torcidas'), _tn(lista.length, '{n} recado', '{n} recados'));
+    /* O FEED DAS TORCIDAS (pedido do dono, 30/09/2026): os recados
+       viraram posts de rede social — quem posta, de onde, há quanto
+       tempo, o texto com as menções clicáveis e as curtidas (a gente
+       dela e a das aliadas, `feed.curtidasDe`). Os que pedem resposta
+       (pedido de casa, trégua) trazem os botões embaixo do post. */
+    /* PARAR DE SEGUIR / MOSTRAR MENOS (pedido do dono, 30/09/2026): o
+       que o jogador escondeu some daqui; as escolhas ficam num quadrinho
+       no topo, cada uma com o desfazer */
+    const F = TO.feed;
+    const visiveis = F.oculto ? lista.filter(m => !F.oculto(e, m)) : lista;
+    const c = cartao(_t('Feed das torcidas'), _tn(visiveis.length, '{n} post', '{n} posts'));
+    c.corpo.classList.add('feed-social');
+    {
+      const bF = el('button',{class:'bt filtro-abrir', html:`${TO.icones.get('filtro')}${_t('Filtrar quem eu sigo')}`});
+      bF.onclick = ()=>abrirFiltroSocial();
+      c.corpo.appendChild(bF);
+    }
+    const pf = e.feedPrefs || {};
+    const naoSigo = Object.entries(pf.naoSigo || {}), menos = Object.entries(pf.menos || {});
+    if(naoSigo.length || menos.length){
+      const q = el('div',{class:'feed-prefs'});
+      const linha = (rot, desfazer) => {
+        const li = el('span',{class:'feed-pref', html:`${rot} `});
+        const b = el('button',{class:'feed-pref-bt', texto:_t('Desfazer')});
+        b.onclick = ()=>{ desfazer(); TO.estado.salvar(); redesenhar(); };
+        li.appendChild(b); q.appendChild(li);
+      };
+      for(const [k, v] of naoSigo)
+        linha(_t('Você não segue <b>{nome}</b>.', {nome:escHTML((v && v.nome || '') +
+          (v && v.zona ? ' · ' + _t('Zona {zona}', {zona:_t(v.zona)}) : ''))}), ()=>F.voltarASeguir(e, k));
+      for(const [k] of menos)
+        linha(_t('Menos posts de <b>{assunto}</b>.', {assunto:escHTML(rotNatureza(k))}), ()=>F.mostrarNormal(e, k));
+      c.corpo.appendChild(q);
+    }
     if(!lista.length)
-      c.corpo.innerHTML = `<div class="em-construcao">${_t('Ninguém mandou recado ainda.')}</div>`;
-    for(const m of lista.slice(0, 120)) c.corpo.appendChild(cartaoRecadoDeTorcida(e, m));
+      c.corpo.innerHTML = `<div class="em-construcao">${_t('Nenhuma torcida postou nada ainda.')}</div>`;
+    const ctxPost = {menu:{aberto:null}, aoMudar:()=>redesenhar(),
+                     aoLer:aba=>{ subNoticias = aba; redesenhar(); }};
+    c.corpo.addEventListener('click', ev=>{ fecharMenuPost(ctxPost, ev.target); });
+    for(const m of visiveis.slice(0, 200)){
+      const art = montarPost(e, m, ctxPost);
+      c.corpo.appendChild(art);
+    }
     cx.appendChild(c);
     /* lido: ao pintar */
     if(TO.feed.lerMensagens && lista.some(m=>!m.lida)){
@@ -5983,8 +6568,10 @@
     if(_rxNomes) return _rxNomes;
     _alvoPorNome = {};
     const clubes = new Set((TO.dados.times||[]).map(t=>t.nome));
+    /* praça chamada "Zona Norte" fica fora: no texto corrido "Zona Norte"
+       é quase sempre a zona de uma torcida (feed das torcidas, 30/09/2026) */
     for(const c of (TO.dados.cidades||[]))
-      if(c.nome && !clubes.has(c.nome))
+      if(c.nome && !clubes.has(c.nome) && !/^Zona /.test(c.nome))
         _alvoPorNome[c.nome] = {tipo:'c', id:c.id};
     for(const o of TO.mundo.jogaveis())
       if(!o.incompleta && o.nome)
@@ -6343,13 +6930,18 @@
      lojas, subsedes) e as subsedes de fora com os núcleos.
      ======================================================= */
   let abaPerfilC = 'visao';
-  function abrirPerfilCidade(id){
+  /* O PERFIL DA CIDADE EM PEÇAS (o dono, 01/10/2026: "as informações
+     contidas no perfil da cidade, inclusive a foto, devem encaixar de
+     alguma forma na tela do mapa também, e agora quando clicar no perfil
+     da cidade vai redirecionar pra tela do mapa com a cidade aberta"): o
+     nome, a linha de baixo, a capa e as duas abas, montadas na hora — o
+     mapa (js/ui/mapa_brasil.js) as põe na coluna do lado, e o modal
+     antigo fica só pra quando o mapa não existe. */
+  function perfilDaCidade(id){
     const e = E();
     const c = (TO.dados.cidades||[]).find(x=>x.id === id);
-    if(!e || !c) return;
-    abaPerfilC = 'visao';
+    if(!e || !c) return null;
     TO.relacoes.mundo(e);
-    const corpo = el('div',{class:'perfil-torcida'});
     const linhaD = (rot, val)=>`<div class="linha-dado"><span>${rot}</span>`+
                                `<b>${val}</b></div>`;
 
@@ -6395,8 +6987,11 @@
       const tab = el('table',{class:'dados'});
       tab.appendChild(el('thead', null, [el('tr',{html:
         `<th>${_t('Torcida')}</th><th>${_t('Membros')}</th><th>${_t('Sede')}</th>`+
-        `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`})]));
+        `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`+
+        `<th>${_t('Recruta em')}</th>`})]));
       const tb = el('tbody');
+      /* o bairro em que cada uma recruta (02/10/2026) */
+      const recruta = TO.dominio && TO.dominio.recrutandoEm ? TO.dominio.recrutandoEm(e, c.id) : new Map();
       for(const o of TO.mundo.torcidasEm(c.id)){
         if(o.incompleta) continue;
         const nossa = o.id === e.torcida.id;
@@ -6411,7 +7006,8 @@
           `<td class="num">${nossa ? ((pat.subsedes||[]).length || '—')
             : (t.subsedes || '—')}</td>`+
           `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
-          `<td class="num">${(pat.bares||[]).length || '—'}</td>`}));
+          `<td class="num">${(pat.bares||[]).length || '—'}</td>`+
+          `<td>${recruta.get(o.id) ? escHTML(recruta.get(o.id).nome) : '—'}</td>`}));
       }
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado', html:`<b>${_t('Da casa')}</b>`}));
@@ -6470,40 +7066,65 @@
                       : (typeof bairro === 'string' ? bairro : '—'),
                     rot, tid, tnome});
       };
-      for(const o of TO.mundo.torcidasEm(c.id)){
-        if(o.incompleta) continue;
-        const nossa = o.id === e.torcida.id;
-        const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
-        if(!nossa && !t) continue;
-        if(nossa){
-          const bs = TO.mundo.bairroDaSede(e.torcida);
-          põe(bs ? bs.nome : o.bairroSede,
-              e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'), o.id, o.nome);
-          const pat = TO.financeiro.patrimonio(e);
-          (pat.bares||[]).forEach((b,i)=>põe(
-            b.bairro || bairroFixo(`${o.id}|bar|${i}`),
-            _t('Bar (nível {n})', {n:b.nivel}), o.id, o.nome));
-          (pat.lojas||[]).forEach((l,i)=>põe(
-            l.bairro || bairroFixo(`${o.id}|loja|${i}`),
-            _t('Loja (nível {n})', {n:l.nivel}), o.id, o.nome));
-          (pat.subsedes||[]).forEach((s,i)=>põe(
-            s.bairro || bairroFixo(`${o.id}|subsede|${i}`),
-            _t('Subsede'), o.id, o.nome));
-        } else {
-          põe(o.bairroSede || bairroFixo(`${o.id}|sede`),
-              _t('Sede (nível {n})', {n:t.sede}), o.id, o.nome);
-          (t.bares||[]).forEach((b,i)=>põe(bairroFixo(`${o.id}|bar|${i}`),
-            _t('Bar (nível {n})', {n:b.nivel||1}), o.id, o.nome));
-          (t.lojas||[]).forEach((l,i)=>põe(bairroFixo(`${o.id}|loja|${i}`),
-            _t('Loja (nível {n})', {n:l.nivel||1}), o.id, o.nome));
-          for(let i=0;i<(t.subsedes||0);i++)
-            põe(bairroFixo(`${o.id}|subsede|${i}`), _t('Subsede'), o.id, o.nome);
+      /* O ENDEREÇO É O DO DOMÍNIO (01/10/2026): com os bairros com dona,
+         sede, bar, loja e subsede de cada torcida estão no bairro que o
+         mapa pinta (TO.dominio.estruturas) — a lista e a planta contam a
+         mesma cidade. Sem o domínio, o sorteio fixo de antes. */
+      const Dm = TO.dominio;
+      if(Dm && Dm.estruturas){
+        const nomeT = tid => tid === e.torcida.id ? e.torcida.nome
+                           : ((TO.mundo.torcida(tid)||{}).nome || tid);
+        for(const st of Dm.estruturas(e, c.id)){
+          const b = bairros.find(x=>x.id === st.bairro) || null;
+          const nossa = st.tid === e.torcida.id;
+          const t = nossa ? null : (e.mundoTorcidas||{})[st.tid];
+          const ob = st.obj || {};
+          const rot = st.tipo === 'sede'
+              ? (nossa ? (e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'))
+                       : t && t.sede ? _t('Sede (nível {n})', {n:t.sede}) : _t('Sede'))
+            : st.tipo === 'bar' ? _t('Bar (nível {n})', {n:ob.nivel||1})
+            : st.tipo === 'loja' ? _t('Loja (nível {n})', {n:ob.nivel||1})
+            : st.tipo === 'subsede' ? _t('Subsede')
+            : _t('Subsede de fora (nível {n} · núcleo {m})', {n:ob.nivel||1,
+                 m: nossa ? e.membros.filter(m=>m.filial === c.id).length : (ob.membros||0)});
+          põe(b, rot, st.tid, nomeT(st.tid));
         }
+      } else {
+        for(const o of TO.mundo.torcidasEm(c.id)){
+          if(o.incompleta) continue;
+          const nossa = o.id === e.torcida.id;
+          const t = nossa ? null : (e.mundoTorcidas||{})[o.id];
+          if(!nossa && !t) continue;
+          if(nossa){
+            const bs = TO.mundo.bairroDaSede(e.torcida);
+            põe(bs ? bs.nome : o.bairroSede,
+                e.torcida.sedeNivel > 0 ? _t('Sede (nível {n})', {n:e.torcida.sedeNivel}) : _t('Ponto de encontro (sem sede)'), o.id, o.nome);
+            const pat = TO.financeiro.patrimonio(e);
+            (pat.bares||[]).forEach((b,i)=>põe(
+              b.bairro || bairroFixo(`${o.id}|bar|${i}`),
+              _t('Bar (nível {n})', {n:b.nivel}), o.id, o.nome));
+            (pat.lojas||[]).forEach((l,i)=>põe(
+              l.bairro || bairroFixo(`${o.id}|loja|${i}`),
+              _t('Loja (nível {n})', {n:l.nivel}), o.id, o.nome));
+            (pat.subsedes||[]).forEach((s,i)=>põe(
+              s.bairro || bairroFixo(`${o.id}|subsede|${i}`),
+              _t('Subsede'), o.id, o.nome));
+          } else {
+            põe(o.bairroSede || bairroFixo(`${o.id}|sede`),
+                _t('Sede (nível {n})', {n:t.sede}), o.id, o.nome);
+            (t.bares||[]).forEach((b,i)=>põe(bairroFixo(`${o.id}|bar|${i}`),
+              _t('Bar (nível {n})', {n:b.nivel||1}), o.id, o.nome));
+            (t.lojas||[]).forEach((l,i)=>põe(bairroFixo(`${o.id}|loja|${i}`),
+              _t('Loja (nível {n})', {n:l.nivel||1}), o.id, o.nome));
+            for(let i=0;i<(t.subsedes||0);i++)
+              põe(bairroFixo(`${o.id}|subsede|${i}`), _t('Subsede'), o.id, o.nome);
+          }
+        }
+        for(const f of deFora)
+          põe(bairroFixo(`${f.id}|filial`),
+              _t('Subsede de fora (nível {n} · núcleo {m})', {n:f.nivel, m:f.nucleo}),
+              f.id, f.nome);
       }
-      for(const f of deFora)
-        põe(bairroFixo(`${f.id}|filial`),
-            _t('Subsede de fora (nível {n} · núcleo {m})', {n:f.nivel, m:f.nucleo}),
-            f.id, f.nome);
       const ordem = [];
       for(const b of bairros)
         if(b.zona && !ordem.includes(b.zona)) ordem.push(b.zona);
@@ -6522,39 +7143,49 @@
       return cx;
     };
 
+    const nTorcidas = TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length;
+    return {id:c.id, nome:c.nome,
+      sub:`${c.uf || ''}${c.regiao ? ` · ${_t(c.regiao)}` : ''} · `+
+          _tn(nTorcidas, '{n} torcida', '{n} torcidas'),
+      /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): a foto mora em
+         img/cidades/<id>.webp; o manifesto manda — sem foto listada, nem
+         se pede o arquivo (as praças de fora do Brasil não têm) */
+      capa:(TO.dados.capas||{})[c.id] ? IMG('img/cidades/' + c.id + '.webp') : null,
+      abas:[{id:'visao', rot:_t('Visão geral'), montar:abaVisaoC},
+            {id:'torcidas', rot:_t('Torcidas e estruturas'), montar:abaTorcidasC}]};
+  }
+
+  /* o perfil da cidade abre o MAPA com a cidade (01/10/2026); sem o mapa,
+     o modal de antes, com a capa no cabeçalho */
+  function abrirPerfilCidade(id){
+    if(TO.mapaBrasil && TO.mapaBrasil.abrir && (TO.dados.cidades||[]).some(x=>x.id === id)){
+      TO.mapaBrasil.abrir(id);
+      return;
+    }
+    const P = perfilDaCidade(id);
+    if(!P) return;
+    abaPerfilC = 'visao';
+    const corpo = el('div',{class:'perfil-torcida'});
     const pintar = ()=>{
       corpo.innerHTML = '';
       const abas = el('div',{class:'filtros'});
-      for(const [aid, rot] of [['visao','Visão geral'],
-          ['torcidas','Torcidas e estruturas']]){
-        const b = el('button',{class: aid === abaPerfilC ? 'on' : '',
-                               texto: _t(rot)});
-        b.onclick = ()=>{ abaPerfilC = aid; pintar(); };
+      for(const a of P.abas){
+        const b = el('button',{class: a.id === abaPerfilC ? 'on' : '', texto:a.rot});
+        b.onclick = ()=>{ abaPerfilC = a.id; pintar(); };
         abas.appendChild(b);
       }
       corpo.appendChild(abas);
-      corpo.appendChild(abaPerfilC === 'torcidas' ? abaTorcidasC()
-                                                  : abaVisaoC());
+      corpo.appendChild((P.abas.find(a=>a.id === abaPerfilC) || P.abas[0]).montar());
     };
     pintar();
-    const nTorcidas = TO.mundo.torcidasEm(c.id).filter(o=>!o.incompleta).length;
-    modal(c.nome, `${c.uf || ''}${c.regiao ? ` · ${_t(c.regiao)}` : ''} · `+
-      _tn(nTorcidas, '{n} torcida', '{n} torcidas'),
-      corpo);
-    /* A CAPA DA CIDADE (pedido do dono, 01/09/2026): o cabeçalho do
-       perfil vira cartão-postal — a foto mora em img/cidades/<id>.webp
-       e entra por baixo do gradiente; sem arquivo, fica o gradiente
-       escuro de sempre, sem quebrar nada. */
+    modal(P.nome, P.sub, corpo);
     const ov = [...document.querySelectorAll('.tela-cheia')].pop();
     const cab = ov && ov.querySelector('.moldura > header');
-    /* o manifesto manda: sem foto listada, nem se pede o arquivo — as
-       praças de fora do Brasil ainda não têm cartão-postal e não é pra
-       encher o console de 404 por causa disso */
-    if(cab && (TO.dados.capas||{})[c.id]){
+    if(cab && P.capa){
       cab.classList.add('capa-cidade');
       cab.style.backgroundImage =
         'linear-gradient(180deg, rgba(8,9,12,.30), rgba(8,9,12,.86)), '+
-        `url("${IMG('img/cidades/' + c.id + '.webp')}")`;
+        `url("${P.capa}")`;
     }
   }
 
@@ -7342,8 +7973,24 @@
     return _paises;
   };
 
+  /* SEM SPOILER (correção do dono, 01/10/2026): "isso ocorre na
+     classificação também em competições". Enquanto o cartão da nossa
+     partida espera o apito final, as telas de resultado leem o mundo
+     como estava de manhã (`TO.estado.antesDoJogo`, a foto tirada antes
+     de o dia ser sorteado): tabela, rodada, chave, campeão, as ligas
+     e as copas de fora. A foto vive só na memória; jogo recarregado no
+     meio da partida mostra o mundo de agora. */
+  function eSemSpoiler(){
+    const e = E();
+    const f = TO.estado.antesDoJogo;
+    if(!e || !f || f.abs !== e.data.absoluto) return e;
+    if(!(TO.feed.partidaPendente && TO.feed.partidaPendente(e))) return e;
+    const p = Object.create(e);
+    p.temporada = f.temporada; p.ligas = f.ligas; p.conmebol = f.conmebol;
+    return p;
+  }
   function pintarCompeticoes(){
-    const e = E(), pg = U.$('.pagina[data-pag="competicoes"]');
+    const e = eSemSpoiler(), pg = U.$('.pagina[data-pag="competicoes"]');
     pg.innerHTML='';
     pg.appendChild(el('div',{class:'titulo-barra', html:`<h1>${_t('Competições')}</h1>`}));
 
@@ -7408,6 +8055,21 @@
          `com-pais` recua o de baixo pela largura da bandeira, pra que
          os dois campos comecem na mesma coluna */
       'drop-comp' + (nivelComp === 'nacional' ? ' com-pais' : '')));
+
+    /* A LOGO DA COMPETIÇÃO (pedido do dono, 01/10/2026): a marca e o
+       nome por extenso, em cima do corpo — o mapa de arquivos está em
+       dados/competicoes_logos.js. A divisão de fora chega como
+       'liga:Chile Primera B', que já é o nome completo. */
+    {
+      const it = menu.find(m=>m.id===compSel);
+      const nomeLogo = it && (String(compSel).startsWith('liga:') ? compSel.slice(5) : it.rot);
+      const src = it && TO.dados.logoDaCompeticao && TO.dados.logoDaCompeticao(nomeLogo, paisComp);
+      if(src) pg.appendChild(el('div',{class:'comp-marca', html:
+        `<img src="${src}" alt="">`+
+        `<div><b>${escHTML(nomeLogo === 'LNT' ? _t('Liga Nacional de Torcidas') : nomeLogo)}</b>`+
+        `<small>${escHTML(nivelComp === 'internacional' ? 'CONMEBOL'
+                 : nivelComp === 'regional' ? _t('Regional') : _t(paisComp))}</small></div>`}));
+    }
 
     /* ---- o corpo ---- */
     if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }
@@ -8335,7 +8997,7 @@
   const DIA_LONGO = [_t('Segunda'),_t('Terça'),_t('Quarta'),_t('Quinta'),_t('Sexta'),_t('Sábado'),_t('Domingo')];
 
   function pintarCalendario(){
-    const e = E(), pg = U.$('.pagina[data-pag="calendario"]');
+    const e = eSemSpoiler(), pg = U.$('.pagina[data-pag="calendario"]');
     pg.innerHTML='';
     pg.appendChild(el('div',{class:'titulo-barra', html:`<h1>${_t('Calendário')}</h1>`}));
     pg.appendChild(abasGrandes([
@@ -8484,7 +9146,10 @@
         cel.appendChild(el('span',{class:'rot bote-rot', html:
           `${IC.get('punho') || ''}${b.feito ? _t('Bote feito') : _t('Bote marcado')}`}));
         cel.appendChild(el('span',{class:'sub', texto:
-          b.tipo === 'bar' ? _t('bar da {nome}', {nome:b.nome}) : _t('casa de piscina · {nome}', {nome:b.nome})}));
+          b.tipo === 'bar' ? _t('bar da {nome}', {nome:b.nome})
+          : b.tipo === 'reuniao' ? _t('reunião na praça · {nome}', {nome:b.nome})
+          : b.tipo === 'treta' ? _t('treta · {nome}', {nome:b.nome})
+          : _t('casa de piscina · {nome}', {nome:b.nome})}));
       }else{
         /* OS TRÊS TURNOS NO DIA (pedido do dono, 24/08/2026): a célula
            mostrava só o primeiro turno preenchido, e o calendário
@@ -8719,7 +9384,8 @@
         `<b>${it.de && TO.mundo.torcida(it.de) && !naCena ? linkTorcida(it.de, it.voz||'') : (it.voz||'')}</b>`+
         (dir && !naCena ? `<span class="quem">${_t('traz o assunto: <b>{nome}</b> · {cargo}', {nome:TO.membros.nomeDe(dir), cargo:_t(TO.membros.cargoNome(dir)).toLowerCase()})}</span>` : '')}));
       c.appendChild(fala('reu-balao', it.texto));
-      if(it.bote){
+      /* (no alvo do mês ainda aberto, quem diz quando e onde é a ficha da escolha) */
+      if(it.bote && !(it.bote.dominio && !it.decidido && F.fichaDoAtaque)){
         const b = it.bote;
         c.appendChild(el('div',{class:'reu-quando', html:
           `<span>${_t('Quando: <b>{dia}, {data}</b>', {dia:_t(b.nomeDia), data:b.dataTxt})}</span>`+
@@ -8767,6 +9433,14 @@
         palco.appendChild(c);
         return c;
       }
+      /* A MESA ESCOLHE (o dono, 02/10/2026): o bairro do recrutamento numa
+         lista, e o ataque do mês por bairro, torcida e forma, com a ficha */
+      if(it.tipo === 'recruta' && F.opcoesDeRecrutamento){
+        c.appendChild(blocoDoRecrutamento(it)); palco.appendChild(c); return c;
+      }
+      if(it.tipo === 'bote' && it.bote && it.bote.dominio && F.fichaDoAtaque){
+        c.appendChild(blocoDoAtaque(it)); palco.appendChild(c); return c;
+      }
       const bts = el('div',{class:'msg-bts'});
       (it.botoes||[]).forEach((b,i)=>{
         const bt = el('button',{class:'bt'+(i===0?' destaque':'')});
@@ -8781,6 +9455,107 @@
       c.appendChild(bts);
       palco.appendChild(c);
       return c;
+    };
+
+    /* as listas da mesa, no molde do pedido a um aliado */
+    const campoDaMesa = (rot, sel)=>{
+      const w = el('label',{class:'reu-campo'});
+      w.appendChild(el('span',{class:'rot', texto:rot}));
+      w.appendChild(sel); return w;
+    };
+    const encher = (sel, lista, valor)=>{
+      sel.innerHTML = '';
+      for(const o of lista){
+        const op = el('option',{value:o.v, texto:o.t});
+        if(o.off) op.disabled = true;
+        sel.appendChild(op);
+      }
+      if(valor != null && lista.some(o => o.v === valor && !o.off)) sel.value = valor;
+    };
+    /* --- onde a gente recruta: qualquer bairro, os sugeridos no topo --- */
+    const blocoDoRecrutamento = (it)=>{
+      const cx = el('div');
+      const l = F.opcoesDeRecrutamento(e);
+      const clube = (TO.mundo.time(e.torcida.clubeId) || {}).nome || '';
+      const sel = el('select',{class:'campo'});
+      encher(sel, l.map(x => ({v:x.id, t:(x.sugerido ? '★ ' : '') + _t('{bairro} · {p}% do {clube} · nossa barra {n}%',
+        {bairro:x.nome, p:x.parte, clube, n:Math.round(x.minha)})})), l[0] && l[0].id);
+      const grade = el('div',{class:'reu-pedido reu-recruta'});
+      grade.appendChild(campoDaMesa(_t('Bairro'), sel));
+      cx.appendChild(grade);
+      const nota = el('div',{class:'eixo-nota'});
+      const pinta = ()=>{
+        const x = l.find(y => y.id === sel.value);
+        nota.textContent = x ? _t('{p}% de quem mora em {bairro} torce pro {clube}: é dali que vem novato. A nossa barra lá: {n}%. Recrutando, +0,2 por dia no domínio.',
+          {p:x.parte, bairro:x.nome, clube, n:Math.round(x.minha)}) + (x.sugerido ? ' ' + _t('A diretoria sugere.') : '') : '';
+      };
+      sel.onchange = pinta; pinta();
+      cx.appendChild(nota);
+      const bts = el('div',{class:'msg-bts'});
+      const bt = el('button',{class:'bt destaque', html:`<span>${_t('Recrutar aqui')}</span>`});
+      bt.onclick = ()=>{ const r = F.escolherRecrutamento(e, it.id, sel.value); if(r.ok) depois(); };
+      bts.appendChild(bt); cx.appendChild(bts);
+      return cx;
+    };
+    /* --- o ataque do mês: bairro, torcida e forma, com a ficha --- */
+    const blocoDoAtaque = (it)=>{
+      const cx = el('div');
+      const est = {bairro:it.bote.bairroId, rival:it.bote.rival, tipo:it.bote.tipo, tam:it.bote.tam || 7};
+      const sB = el('select',{class:'campo'}), sR = el('select',{class:'campo'}),
+            sF = el('select',{class:'campo'}), sT = el('select',{class:'campo'});
+      const grade = el('div',{class:'reu-pedido reu-ataque'});
+      grade.appendChild(campoDaMesa(_t('Bairro'), sB));
+      grade.appendChild(campoDaMesa(_t('Contra'), sR));
+      grade.appendChild(campoDaMesa(_t('Forma do ataque'), sF));
+      const wT = campoDaMesa(_t('Tamanho da treta'), sT);
+      grade.appendChild(wT);
+      cx.appendChild(grade);
+      const ficha = el('div',{class:'reu-ficha'});
+      cx.appendChild(ficha);
+      const bts = el('div',{class:'msg-bts'});
+      const btM = el('button',{class:'bt destaque', html:`<span>${_t('Marcar o ataque')}</span>`});
+      bts.appendChild(btM);
+      const nada = (it.botoes || []).find(b => b.acao === 'bote-nao');
+      if(nada){
+        const btN = el('button',{class:'bt', html:`<span>${nada.rot}</span>`+(nada.nota ? `<small>${nada.nota}</small>` : '')});
+        btN.onclick = ()=>{ F.decidirPauta(e, it.id, nada.id); depois(); };
+        bts.appendChild(btN);
+      }
+      cx.appendChild(bts);
+      const ops = F.opcoesDeAtaque(e);
+      const linha = (rot, txt, cls) => `<div class="reu-ficha-l${cls ? ' ' + cls : ''}"><span>${rot}</span><b>${escHTML(txt)}</b></div>`;
+      const pinta = ()=>{
+        encher(sB, ops.map(o => ({v:o.id, t:_t('{bairro} · nossa barra {n}%', {bairro:o.nome, n:Math.round(o.nosso)})})), est.bairro);
+        est.bairro = sB.value;
+        const o = ops.find(x => x.id === est.bairro) || {rivais:[]};
+        encher(sR, o.rivais.map(r => ({v:r.id, t:_t('{nome} · {v}% lá', {nome:r.nome, v:Math.round(r.v)})})), est.rival);
+        est.rival = sR.value;
+        const fs = F.formasDoAtaque(e, est.bairro, est.rival);
+        if(!fs.some(f => f.tipo === est.tipo && f.pode)){ const p = fs.find(f => f.pode); if(p) est.tipo = p.tipo; }
+        encher(sF, fs.map(f => ({v:f.tipo, t:f.pode ? f.rot : _t('{forma} — {motivo}', {forma:f.rot, motivo:f.motivo}), off:!f.pode})), est.tipo);
+        est.tipo = sF.value;
+        encher(sT, [5, 7, 10].map(n => ({v:String(n), t:_t('{n} contra {n}', {n})})), String(est.tam));
+        wT.hidden = est.tipo !== 'treta';
+        const f = F.fichaDoAtaque(e, est.bairro, est.rival, est.tipo, est.tam);
+        btM.disabled = !f.ok;
+        if(!f.ok){ ficha.innerHTML = linha(_t('Não dá'), f.motivo || '', 'ruim'); return; }
+        ficha.innerHTML =
+          linha(_t('Quando'), `${_t(f.quando.nomeDia)}, ${f.quando.dataTxt}`) +
+          linha(_t('Eles'), _t('{n} de pé · descem {m} na cena', {n:f.dePe, m:f.naCena})) +
+          linha(_t('Nós'), est.tipo === 'treta' ? _t('{n} da linha de frente', {n:f.nossos})
+                         : est.tipo === 'bar' ? _t('{n} aptos pro bonde', {n:f.nossos})
+                         : _t('{n} da Zona {zona} (até 20)', {n:f.nossos, zona:_t(f.forma.zona)})) +
+          (est.tipo === 'treta' ? linha(_t('Aposta'), _t('{valor} de cada lado', {valor:U.dinheiro(f.aposta)})) : '') +
+          linha(_t('Dando certo'), f.certo, 'boa') +
+          linha(_t('Dando errado'), f.errado, 'ruim');
+      };
+      sB.onchange = ()=>{ est.bairro = sB.value; est.rival = null; pinta(); };
+      sR.onchange = ()=>{ est.rival = sR.value; pinta(); };
+      sF.onchange = ()=>{ est.tipo = sF.value; pinta(); };
+      sT.onchange = ()=>{ est.tam = +sT.value; pinta(); };
+      btM.onclick = ()=>{ const r = F.marcarAtaqueDaPauta(e, it.id, est); if(r.ok) depois(); else pinta(); };
+      pinta();
+      return cx;
     };
 
     /* --- o pedido a um aliado (régua do dono, 17/09/2026) ---
@@ -10072,7 +10847,7 @@
      gerador segue cortando o topo do plantel (a nossa seleção lá é o
      topo também) */
   const fichasDaZonaDeles = (alvo, n) => {
-    if(!alvo || alvo.tipo !== 'casa' || !alvo.torcidaId) return null;
+    if(!alvo || (alvo.tipo !== 'casa' && alvo.tipo !== 'reuniao') || !alvo.torcidaId) return null;
     const C = TO.diaJogo.combate; if(!C || !C.fichasDaZona) return null;
     const Z = TO.mundo.ZONAS || ['Norte','Sul','Leste','Oeste'];
     const zi = Math.max(0, Z.indexOf(alvo.zona));
@@ -10334,7 +11109,17 @@
     }
     const em3d = !!o.briga3d && /^rua(-media|-nobre)?$/.test(local)
               && !!(TO.dados.cenas && TO.dados.cenas[local+'-3d']) && !!TO.diaJogo.tres;
-    const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');
+    const c2 = $('djPrincipal'), sobre = $('djSobre');
+    let c3 = $('djPrincipal3d');
+    /* O CONTEXTO DOS BONECOS CAIU E NÃO VOLTOU (02/10/2026): o canvas
+       perdido não ganha contexto novo, e toda briga seguinte abria com
+       disco. Um canvas novo no lugar dele, e a cena monta os bonecos de novo. */
+    const B3 = TO.diaJogo.bonecos3;
+    if(c3 && B3 && B3.perdeu && B3.perdeu(c3)){
+      const novo = c3.cloneNode(false);
+      c3.replaceWith(novo); c3 = novo;
+      console.warn('bonecos: canvas novo no lugar do que perdeu o contexto');
+    }
     if(c3) c3.hidden = !em3d;
     if(sobre) sobre.hidden = !em3d;
     if(c2) c2.hidden = em3d;
@@ -10420,11 +11205,13 @@
       res.prestigio = 0;
     }
     /* a aliada agradece a escolta (mensagens entre torcidas, 08/09/2026) */
-    if(enc && enc.escoltaAliado && TO.feed.mensagemDe)
+    if(enc && enc.escoltaAliado && TO.feed.mensagemDe){
+      const P = {nome:(TO.mundo.torcida(enc.escoltaAliado)||{}).nome || '', nossa:e.torcida.nome};
       TO.feed.mensagemDe(e, enc.escoltaAliado, res.ganhamos
-        ? _t('Voltamos inteiros por causa do bonde de vocês no portão. Isso a gente não esquece.')
-        : _t('Apanhamos juntos, mas vocês desceram. Irmão é quem aparece na hora ruim. Valeu.'),
+        ? _t('A {nome} agradece à {nossa}: voltamos inteiros pra casa porque o bonde de vocês estava com a gente no portão. Isso a gente não esquece!', P)
+        : _t('Apanhamos juntos, mas a {nossa} desceu com a gente. Irmão é quem aparece na hora ruim. Valeu, {nossa}!', P),
         'agradecimento');
+    }
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
     if(enc){
       /* o encontro da rua também é briga: o registro (e a mensagem de
@@ -10671,7 +11458,8 @@
     /* A RESENHA NA CASA DE PISCINA (dono, 21/09/2026): quem está lá é
        a zona — um quarto da turma de pé, até 20 —, e é ela que
        defende; eles vêm com a zona deles, na mesma régua */
-    const naCasa = atq.alvo === 'casa';
+    /* (a reunião da zona na praça, 01/10/2026: a mesma régua da zona) */
+    const naCasa = atq.alvo === 'casa' || atq.alvo === 'reuniao';
     const bondeZona = naCasa ? TO.acoes.bondeDaZona(e, atq.zona) : null;
     /* teto do dono (18/08/2026): defesa do NOSSO bar bota no máximo
        40 no salão; o atacante traz no máximo 60 (cap logo abaixo) */
@@ -10750,6 +11538,8 @@
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
                                 cena: atq.cena || 'bar', zona: atq.zona || null, mapa: atq.mapa || null,
+                                bairro: atq.bairro || '', chave: atq.chave || null,
+                                estadio: atq.estadio || null,
                                 nome:(o&&o.nome)||_t('Rival'),
                                 nossos, rateio: est && est.rateio,
                                 efetivo:(o&&o.membros)||40}})
@@ -10782,7 +11572,9 @@
             de:U.dinheiro(alvo.rende[0]), ate:U.dinheiro(alvo.rende[1]), n:alvo.seguranca})
         : a.id === 'social-bairro' ? alvo.nota
         : _t('{bairro} · tensão {t} · {n} membros', {bairro:alvo.bairro,
-            t:Math.round(alvo.tensao), n:alvo.efetivo});
+            t:Math.round(alvo.tensao), n:alvo.efetivo})
+          /* o bote no bar ou na sede mexe no bairro dele (02/10/2026) */
+          + (a.id === 'atacar' && TO.acoes.previaDoAlvo ? (l => l ? '<br>' + l : '')(TO.acoes.previaDoAlvo(e, alvo)) : '');
       b.innerHTML =
         `<span class="ic">${IC.get(a.icone)}</span>
          <span class="txt"><span>${alvo.nome}</span><small>${dir}</small></span>`;
@@ -11366,7 +12158,7 @@
      Reimplementar isso no teste seria medir outro jogo — o teste passaria
      e o jogo continuaria quebrado. Nada aqui é chamado pelo jogo. */
   TO.tela = {
-    passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
+    abrirReuniao, passarUmDia, responderMensagem, pintarFeed, atualizarFeed, redesenhar,
     /* o cartão de uma mensagem (o mesmo do feed, com os botões que
        respondem): o jogo 3D põe no balão de quem vem falar */
     cartaoMensagem: cartaoSeguro,
@@ -11377,8 +12169,7 @@
        jogo que está andando nela (o balão mostra só a linha enquanto o
        dia anda) */
     estadoDaMsg: (e, m) => estadoDaMsg(e, m),
-    /* o recado de outra torcida (Notícias → Mensagens), no balão do enviado dela */
-    cartaoRecadoDeTorcida, recadoPedeResposta, atualizarBadges,
+    atualizarBadges,
     /* quem fala na mensagem, em texto (o aviso rápido do jogo 3D, recados3d.js) */
     vozDaMsg: m => !m ? '' : m.voz === 'torcida' && m.dados && m.dados.nome ? m.dados.nome
       : m.voz === 'eixo' && m.dados && m.dados.nome ? m.dados.nome : (ROT_VOZ[m.voz] || _t('Diplomacia')),
@@ -11395,7 +12186,7 @@
     recadoNaLinha: no => { if(!ITN || !ITN.recados || !no) return null; ITN.recados.insertBefore(no, ITN.recados.firstChild); return ()=>no.remove(); },
     /* a data de hoje por extenso (o relógio do jogo 3D escreve junto da hora) */
     pintarTopo,
-    abrirPerfilTorcida, abrirPerfilCidade,
+    abrirPerfilTorcida, abrirPerfilCidade, perfilDaCidade,
     rodarTempo, pausarTempo, retomarTempo, tempoPausado, opc,
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },

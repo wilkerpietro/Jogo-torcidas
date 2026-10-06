@@ -4398,3 +4398,102 @@ cômodo dele:
   bar ou da esquina (o teste da investida usa uma torcida com sede) e o
   bar que a briga pega quando quem ataca não tem sede (o mais perto do bar
   dela).
+
+## 41. O jogo 3D recebe o que o 2D ganhou desde 27/09: a rede social, os bonecos novos e as regras (06/10/2026)
+
+O pedido: "veja as mudanças que fiz no 2d como redes sociais, novos bonecos,
+regra pra força de recrutamento e traga pro jogo 3d".
+
+### O sync
+
+- O jogo 2D (`origin/claude/game-html-news-feed-sndgh4`) andou 73 commits
+  desde a última sincronização (82bd43d, 27/09). Os dois históricos são
+  independentes, e o código do jogo de feed na raiz deste ramo é o que o 3D
+  empacota (`montar.sh` → `js/jogo.js`).
+- **O método**: arquivo que só o 2D mexeu entrou como está; arquivo que os
+  dois mexeram partiu da versão do 2D e recebeu, commit a commit, as mudanças
+  do 3D desde 27/09 (`git merge-file`), pulando os commits do domínio que o
+  2D já tinha importado. Os conflitos foram resolvidos à mão (`main.js`,
+  `DECISOES.md`, `acoes.js`, `feed.js`, `planejamento.js`, `index.html`).
+- **`dados/plantas.js` vem junto** (a planta assada pelo 2D a partir desta):
+  as regras do domínio usam a grade dela — o bairro da pista é vizinho do
+  estádio, a emboscada cai no bairro da entrada da praça. Sem ela o 3D caía
+  no "mesma zona" e as contas divergiam do 2D. As imagens `img/mapas/` não
+  vêm: o mapa do 3D desenha a planta ao vivo.
+
+### A rede social no 3D
+
+- **A coluna do 2D** (os posts caindo um a um, o filtro "Quem eu sigo", o
+  "Ver tudo", o recolher) fica por cima da cidade, na borda **esquerda**, ao
+  lado dos ícones — a direita é dos recortes de jornal (`.j3d-avisos`). 340
+  px de largura; recolhida, vira a tira com o número de posts novos, e o post
+  importante (nosso, do nosso clube, das nossas brigas) sai num aviso ao lado
+  dela. Some com o mapa aberto e nas cenas de briga; abaixo de 1000 px some,
+  como no 2D (a rede segue em Notícias → Mensagens).
+- **A escolha de recolher é do 3D** (`to.redeRecolhida3d` — o Pages é a
+  mesma origem pros dois jogos): na primeira vez ela nasce aberta em tela de
+  1280 px pra cima e recolhida abaixo disso.
+- **A coluna aberta é parte ocupada da tela** (`areaLivre`, vida3d.js): a
+  câmera centra a sala do presidente e o balão da decisão no que sobra, e o
+  medidor de fps sai de baixo dela.
+- **`atualizarFeed` no 3D** (sem a lista do feed) faz andar só a coluna.
+- **Notícias → Mensagens** é o feed da rede social também no 3D. O cartão
+  antigo dos recados (`cartaoRecadoDeTorcida`) saiu: o post do 2D já traz os
+  botões do pedido de casa e da trégua.
+- **As fotos dos posts** (a briga do Futebol e Porrada, a resenha, a faixa
+  tomada de cabeça pra baixo): o módulo do boneco do 3D ganhou `fotoDaBriga`,
+  `fotoDaCena` e o renderizador único das fotos, e o `perdeu` (o canvas que
+  perdeu o contexto) que o `main.js` novo pergunta.
+
+### Os bonecos novos
+
+- **O modelo do 2D refeito** — corpo anatômico, rosto do MakeHuman, olhos,
+  nove tons de pele, camisa com gola e punho, a faixa do peito em duas
+  listras (a 3ª cor), calção — entra pelo `img/boneco_leve.glb`.
+- **Os dois níveis do 3D saem dele** (`ferramentas/afinar_boneco.mjs`
+  refeito): a pele em duas partes (a cabeça, com o rosto, e o resto do
+  corpo, cada uma com o seu alvo), o erro máximo em milímetros pelo tamanho
+  na tela, o cabelo inflado e empurrado pra fora da cabeça afinada, e a
+  textura da pele em 512 px JPEG (era um PNG de 1 MB).
+- **Os números**: perto, ~3,9 mil triângulos por boneco (era ~3 mil); longe,
+  ~2,3 mil (era ~1,3 mil). Os arquivos: 334 KB e 225 KB.
+- **O movimento novo do 2D** veio junto: o andar com joelho, pé,
+  sobe-e-desce e braço de gente; o parado que troca o peso de perna; a mão na
+  cintura medida no esqueleto novo; quem ganha a briga para e provoca.
+- **O shader do rosto do 2D** trocava o `#include <color_fragment>`, onde a
+  noite do cenário (`comNoite`) se pendura: o shader não compilava e os
+  bonecos sumiam. No 3D o include fica e a conta do alfa vem depois dele.
+- **As bancadas** (`bonecos.html`, `arredores.html`) seguem com a cópia
+  clássica do 2D (`bonecos3_classico.js`), agora a de hoje.
+
+### As regras
+
+- Vêm junto, no `js/jogo.js`: o novato com 3 a 8 de força e de defesa; as
+  pixações nos muros (cota pela sede, a IA espalhada pelo mês, o pixo que
+  desbota); o recrutamento no bairro escolhido na reunião; o alvo do mês; a
+  estrutura que vale +0,2 por dia; o bairro da sede; a ideologia (o pedido de
+  casa já marcado, o apoio fora, a pixação pela diretoria); quem ganha a
+  briga provoca.
+- **No mapa do 3D** o cartão do bairro (o do 2D, `mapa_brasil.js`) traz as
+  pixações, o botão de pixar e quem recruta ali.
+- **Conferido no jogo 3D**: 40 novatos entre 3 e 8; a pixação gasta a cota
+  e o muro fica nosso; o cartão do bairro com as pixações e o recrutamento;
+  a rede social aberta, recolhida e o aviso do post nosso; as fotos dos posts
+  com os bonecos novos; a sala do presidente de perto; o dia de jogo; a
+  briga do tutorial abrindo — sem erro no console.
+
+### Limites (sinceros)
+
+- **As pixações do save não aparecem nos muros da cidade 3D**: a cidade
+  segue com as pixações de enfeite (os nomes das torcidas da praça nos muros,
+  sem ligação com o save); quem pixou o quê só se vê no mapa, no cartão do
+  bairro.
+- **Os bonecos ficaram mais pesados** (+30% no de perto, +75% no de longe):
+  no dia de jogo, 49 bonecos visíveis no nível de longe somaram ~112 mil
+  triângulos (eram ~64 mil). Em máquina fraca, o menu Gráficos (gente,
+  bonecos leves) é quem segura.
+- **A faixa, a gola e os punhos travam a borda** (é o que impede fresta entre
+  a pele e a roupa): o corpo do nível de longe não desce de ~1,8 mil.
+- **O andar e a provocação só foram vistos em fotos paradas** (o teste roda
+  sem placa de vídeo, a 2 a 8 quadros por segundo); a briga do tutorial
+  abriu com os bonecos novos, mas ela espera o jogador agir.

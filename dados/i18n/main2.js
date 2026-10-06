@@ -263,11 +263,6 @@ TO.i18n.registrar({
   'Pedido de casa':   {es:'Pedido de alojamiento', en:'Hosting request'},
   'Proposta de trégua': {es:'Propuesta de tregua', en:'Truce offer'},
   'Treta marcada':    {es:'Pelea pactada',    en:'Brawl arranged'},
-  'Mensagens de outras torcidas': {es:'Mensajes de otras barras', en:'Messages from other firms'},
-  '{n} recado':       {es:'{n} recado',       en:'{n} note'},
-  '{n} recados':      {es:'{n} recados',      en:'{n} notes'},
-  'Ninguém mandou recado ainda.': {es:'Nadie mandó recado todavía.', en:'No one has sent a note yet.'},
-  'sem. {n}':         {es:'sem. {n}',         en:'wk {n}'},
   'Aceitar a trégua': {es:'Aceptar la tregua', en:'Accept the truce'},
   'ninguém procura ninguém até o fim do ano · +15 rel.':
     {es:'nadie busca a nadie hasta fin de año · +15 rel.', en:'nobody goes looking for anybody till year end · +15 rel.'},

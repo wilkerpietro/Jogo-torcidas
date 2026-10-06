@@ -43,6 +43,42 @@ REGIONAL_CORRIGIDO = {
 }
 
 
+CLUBE_TROCADO = {
+    'rio-negro': {'id': 'sao-raimundo', 'nome': 'São Raimundo',
+                  'nomeCompleto': 'São Raimundo Esporte Clube', 'sigla': 'SRA',
+                  'alcunha': 'Tufão da Colina', 'estadio': 'Estádio da Colina',
+                  'capacidade': 10000, 'cores': ['#3A79BB', '#e9e9e9'],
+                  'fundacao': 1918, 'mascote': 'Tufão'},
+}
+
+# O ESTÁDIO DE CADA CLUBE É UM DOS DO JOGO (o dono, 03/10/2026: "O avaí
+# joga onde, por exemplo? Ele deve jogar no seu estádio, a Ressacada, veja
+# caso a caso pra corrigir"). A planilha escreve o nome popular ou um
+# estádio que o jogo não tem ("Ressacada", "Ligga Arena", "Baenão"); o
+# jogo então inventava um estádio fantasma num bairro sorteado, fora da
+# planta, e o de verdade ficava sem mandante. Aqui vai o nome exato de
+# dados/estadios.js (a lotação desses clubes, em times.js, foi acertada à
+# mão com a do estádio — a planilha traz a do estádio antigo). Sem estádio
+# próprio no jogo, o clube manda no da praça que a torcida dele já dizia
+# (Remo, Paysandu e Águia no Mangueirão; Portuguesa no Morumbi; São José
+# na Arena do Grêmio).
+ESTADIO_CORRIGIDO = {
+ 'sao-bernardo':'Estadio Primeiro de Maio','santo-andre':'Estadio Bruno Daniel','sao-caetano':'Estadio Anacleto Campanella',
+ 'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Mangueirao','tuna-luso':'Estádio do Souza',
+ 'atletico-mineiro':'Mineirao','ceilandia':'Bezerrão','paulista-de-jundiai':'Nabi Abi Chedid','uniao-rondonopolis':'Dutrinha',
+ 'athletico':'Arena da Baixada','avai':'Estadio da Ressacada','barra':'Estadio da Ressacada',
+ 'goias':'Serra Dourada','vila-nova':'Serra Dourada','atletico-go':'Antonio Accyoly',
+ 'athletic':'Estadio Regional','mamore':'Estadio Regional','urt':'Estadio Regional',
+ 'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Jorge Ismael de Biasi','xv-de-piracicaba':'Jorge Ismael de Biasi',
+ 'noroeste':'Santa Cruz','ituano':'Maião','iguatu':'Arena Romeirão','maringa':'Germano Kruger',
+ 'caxias':'Estadio Centenario','ypiranga-rs':'Estadio Centenario','pelotas':'Bento Freitas',
+ 'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
+ 'treze':'Amigão','sousa':'Almeidão','sergipe':'Batistão','madureira':'Moca Bonita',
+ 'goytacaz':'Raulino de Oliveira','americano':'Raulino de Oliveira',
+ 'portuguesa':'Morumbi','sao-jose':'Arena do Gremio',
+}
+
+
 def sem_acento(t):
     return ''.join(c for c in unicodedata.normalize('NFD', t)
                    if unicodedata.category(c) != 'Mn')
@@ -125,13 +161,18 @@ def main():
             'id': ident(r[0]), 'nome': texto(r[0]), 'nomeCompleto': texto(r[1]),
             'sigla': texto(r[2]), 'alcunha': texto(r[3]),
             'cidade': texto(r[4]), 'uf': texto(r[5]),
-            'estadio': texto(r[6]), 'capacidade': inteiro(r[7]),
+            'estadio': ESTADIO_CORRIGIDO.get(ident(r[0]), texto(r[6])), 'capacidade': inteiro(r[7]),
             'cores': cores or [PADRAO],
             'fundacao': inteiro(r[12]), 'mascote': texto(r[13]),
             'qualidade': inteiro(r[14]),
             'divisao': texto(r[15]), 'mapa': ident_mapa(r[16]),
             'regional': REGIONAL_CORRIGIDO.get(ident(r[0]), texto(r[17])),
         })
+        # O RIO NEGRO VIRA O SÃO RAIMUNDO (o dono, 03/10/2026: "eu quero
+        # tirar o rio negro pra colocar o São Raimundo/AM, por isso que
+        # existe a força azul"): mesma praça, mesma divisão, mesma vaga.
+        if times[-1]['id'] == 'rio-negro':
+            times[-1].update(CLUBE_TROCADO['rio-negro'])
 
     # ---------------- torcidas ----------------
     por_time = {t['nome'].lower(): t for t in times}

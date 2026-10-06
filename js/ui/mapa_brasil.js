@@ -200,8 +200,17 @@ TO.mapaBrasil = (function(){
   }
 
   /* o que tem no bairro, em texto */
+  /* o nível da sede pelo save: o nosso e o do mundo vivo da IA */
+  function nivelDaSede(tid){
+    const e = E();
+    if(!e) return null;
+    if(tid === e.torcida.id) return e.torcida.sedeNivel || 0;
+    const t = (e.mundoTorcidas || {})[tid];
+    return t ? (t.sede || 0) : null;
+  }
   const TIPO = () => ({sede:_t('Sede da {nome}'), bar:_t('Bar da {nome}'), loja:_t('Loja da {nome}'),
-                       subsede:_t('Subsede da {nome}'), filial:_t('Subsede de fora da {nome}')});
+                       subsede:_t('Subsede da {nome}'), filial:_t('Subsede de fora da {nome}'),
+                       fabrica:_t('Fábrica da {nome}')});
 
   /* =======================================================
      O BAIRRO: a barra, o que tem nele e o que dá pra fazer
@@ -213,48 +222,94 @@ TO.mapaBrasil = (function(){
     const d = D(), e = E();
     if(!d || !e) return caixa;
     const b = d.bairros(e, cid).find(x => x.id === bid);
-    if(!b){ caixa.innerHTML = `<p class="mb-nada">${esc(_t('Clique num bairro do mapa.'))}</p>`; return caixa; }
+    if(!b){ caixa.innerHTML = `<p class="mb-nada">${esc(_t('Clique num bairro do mapa pra ver os habitantes, a classe social, quem manda e o que tem nele.'))}</p>`; return caixa; }
     const meu = e.torcida.id;
+    const num = v => TO.util && TO.util.numero ? TO.util.numero(v) : String(Math.round(v));
     const mult = (b.mult != null ? b.mult : 1).toLocaleString(TO.i18n && TO.i18n.lingua ? undefined : 'pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
     let h = `<h3>${esc(b.nome)}</h3>`;
-    /* a cidade do bairro, nas praças de várias cidades (01/10/2026) */
-    if(d.cidadesDa && d.cidadesDa(cid).length > 1 && b.cidade) h += `<p class="mb-cidade">${esc(b.cidade)}</p>`;
-    /* (a praça sem zona — três cidades ou mais —: a cidade já está em cima) */
-    h += `<p class="mb-zona">${esc(b.semZona ? _t('{classe} · receita ×{m}', {classe:_t(b.classe), m:mult}) : _t('Zona {zona} · {classe} · receita ×{m}', {zona:_t(b.zona), classe:_t(b.classe), m:mult}))}</p>`;
-    /* A TORCIDA DO BAIRRO (01/10/2026): os três clubes com mais gente
-       morando nele, e quanto um ponto nosso renderia aqui */
-    if(d.torcedoresNoBairro){
-      const top = d.torcedoresNoBairro(cid, b.id).slice(0, 3);
-      if(top.length) h += `<p class="mb-torcida">${esc(_t('Quem mora aqui: {lista}', {lista:top.map(o => o.clube + ' ' + Math.round(o.perc * 100) + '%').join(', ')}))}</p>`;
-      if(d.fatorTorcida){
-        const f = d.fatorTorcida(e, meu, cid, b.id), pc = d.parteDaTorcida ? Math.round(d.parteDaTorcida(meu, cid, b.id) * 100) : null;
-        h += `<p class="mb-torcida">${esc(_t('{clube}: {p}% do bairro · um ponto nosso rende ×{f}', {clube:e.torcida.clube || '', p:pc, f:d.duas ? d.duas(f) : f.toFixed(2)}))}</p>`;
-      }
+    /* O BAIRRO EM DADOS CLAROS (o dono, 01/10/2026: "quando eu clico no
+       bairro eu prefiro ver as informações claras dele de quantidade de
+       habitantes, classe social e quais as estruturas presentes"): os
+       habitantes são os torcedores dos clubes que moram nele — a mesma
+       conta da População do perfil da cidade, repartida por bairro */
+    const moram = d.torcedoresNoBairro ? d.torcedoresNoBairro(cid, b.id) : [];
+    const habitantes = Math.round(moram.reduce((t, o) => t + o.n, 0));
+    const varias = d.cidadesDa && d.cidadesDa(cid).length > 1;
+    const dado = (rot, val) => `<div class="mb-dado"><span>${esc(rot)}</span><b>${esc(val)}</b></div>`;
+    h += '<div class="mb-dados">' +
+      dado(_t('Habitantes'), num(habitantes)) +
+      dado(_t('Classe social'), _t(b.classe || '—')) +
+      (varias && b.cidade ? dado(_t('Cidade'), b.cidade) : '') +
+      (!b.semZona && b.zona ? dado(_t('Zona'), _t(b.zona)) : '') +
+      dado(_t('Receita no bairro'), '×' + mult) + '</div>';
+    /* quem mora: os clubes, com a gente de cada um */
+    const top = moram.filter(o => o.n >= 0.5).slice(0, 5);
+    if(top.length){
+      h += `<h4>${esc(_t('Torcedores que moram aqui'))}</h4><ul class="mb-moram">` + top.map(o =>
+        `<li><span>${esc(o.clube)}</span><b>${esc(num(Math.round(o.n)))}</b><small>${Math.round(o.perc * 100)}%</small></li>`).join('') + '</ul>';
     }
+    /* a barra de 0 a 100: a parte de cada torcida e a de ninguém (o dono
+       preferiu manter a fatia de ninguém, 01/10/2026); dona é quem passa
+       de 50% */
+    h += `<h4>${esc(_t('Domínio do bairro'))}</h4>`;
     h += `<p class="mb-dona">${b.dono
       ? (b.dono === meu ? esc(_t('O bairro é nosso ({v}%).', {v:Math.round(b.v)})) : esc(_t('A dona é a {nome} ({v}%).', {nome:nome(b.dono), v:Math.round(b.v)})))
       : esc(_t('Sem dona: ninguém passa de 50%.'))}</p>`;
-    /* a barra de 0 a 100, repartida */
     h += '<div class="mb-barra" role="img" aria-label="' + esc(b.partes.map(p => sigla(p.t) + ' ' + Math.round(p.v) + '%').join(', ') || _t('ninguém')) + '">';
     let soma = 0;
     for(const p of b.partes){
       soma += p.v;
       const cor = corDe(p.t);
-      h += `<span style="width:${p.v.toFixed(1)}%;background:${cor}"${claro(cor) ? ' class="claro"' : ''} title="${esc(nome(p.t) + ': ' + Math.round(p.v) + '%')}">${p.v >= 12 ? esc(sigla(p.t)) : ''}</span>`;
+      h += `<span style="width:${p.v.toFixed(2)}%;background:${cor}"${claro(cor) ? ' class="claro"' : ''} title="${esc(nome(p.t) + ': ' + Math.round(p.v) + '%')}">${p.v >= 12 ? esc(sigla(p.t)) : ''}</span>`;
     }
-    h += `<span class="livre" style="width:${Math.max(0, 100 - soma).toFixed(1)}%"></span><em class="meio"></em></div>`;
-    h += '<ul class="mb-partes">' + b.partes.slice(0, 4).map(p =>
-      `<li><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${Math.round(p.v)}%</b></li>`).join('') + '</ul>';
-    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade aqui, e a casa se refaz até 80%.', {nome:nome(b.sede)}))}</p>`;
-    /* o que tem nele */
+    const livre = Math.max(0, 100 - soma);
+    h += `<span class="livre" style="width:${livre.toFixed(2)}%" title="${esc(_t('De ninguém') + ': ' + Math.round(livre) + '%')}"></span><em class="meio"></em></div>`;
+    const pc = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR') + '%';
+    h += '<ul class="mb-partes">' + b.partes.filter(p => p.v >= 0.05).map(p =>
+      `<li${p.t === meu ? ' class="nos"' : ''}><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${pc(p.v)}</b></li>`).join('') +
+      (livre >= 0.05 ? `<li class="livre"><i></i>${esc(_t('De ninguém'))}<b>${pc(livre)}</b></li>` : '') + '</ul>';
+    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade nas brigas e ações daqui (muro, recrutamento e estrutura rendem inteiros), e a casa soma +0,5 por dia. Se perder o bairro, a {nome} perde 0,2 de moral por dia.', {nome:nome(b.sede)}))}</p>`;
+    /* as estruturas presentes */
     const est = d.estruturas(e, cid).filter(s => s.bairro === b.id);
-    if(est.length){
-      const T = TIPO();
-      h += '<ul class="mb-estruturas">' + est.map(s => `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}))}</li>`).join('') + '</ul>';
+    const T = TIPO();
+    h += `<h4>${esc(_t('Estruturas no bairro'))}</h4>`;
+    h += est.length
+      ? '<ul class="mb-estruturas">' + est.map(s => {
+          /* A SEDE DE NÍVEL 0 NÃO TEM PRÉDIO (o 3D, 02/10/2026): a torcida junta
+             no bar, na subsede ou na esquina do bairro */
+          if(s.tipo === 'sede' && nivelDaSede(s.tid) === 0)
+            return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t('Bairro da {nome} (sem sede: junta no bar ou na esquina)', {nome:nome(s.tid)}))}</li>`;
+          const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
+          /* a estrutura segura o bairro: +0,2 por dia pra dona (02/10/2026) */
+          const buff = s.tipo !== 'sede' ? ' · ' + _t('+0,2 por dia') : '';
+          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv + buff)}</li>`;
+        }).join('') + '</ul>'
+      : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;
+    /* QUEM RECRUTA AQUI (o dono, 02/10/2026): cada torcida recruta num
+       bairro, e isso soma +0,2 por dia pra ela ali */
+    if(d.recrutandoEm){
+      const rec = [...d.recrutandoEm(e, cid)].filter(([, x]) => x.id === b.id).map(([tid]) => tid);
+      h += `<h4>${esc(_t('Recrutamento'))}</h4>`;
+      h += rec.length
+        ? '<ul class="mb-estruturas">' + rec.map(tid =>
+            `<li><i style="background:${corDe(tid)}"></i>${esc(_t('{nome} recruta aqui', {nome:nome(tid)}) + ' · ' + _t('+0,2 por dia'))}</li>`).join('') + '</ul>'
+        : `<p class="mb-nada">${esc(_t('Nenhuma torcida recruta aqui.'))}</p>`;
     }
-    const meus = est.filter(s => s.tid === meu && s.tipo !== 'sede');
-    if(meus.length && b.dono && b.dono !== meu && d.rivais(e, meu, b.dono))
-      h += `<p class="mb-efeito ruim">${esc(_t('Os nossos pontos aqui rendem 30% menos: o bairro é da {nome}, rival.', {nome:nome(b.dono)}))}</p>`;
+    /* AS PIXAÇÕES (01/10/2026): os muros do bairro, de quem é cada um e
+       quanto rendem; o saldo nosso e o botão de pixar (só na nossa cidade) */
+    let ms = [], selMuro = null;
+    if(d.muros){
+      ms = d.muros(e, cid, b.id);
+      selMuro = opc.muro && opc.muro.b === b.id ? ms.find(m => m.i === opc.muro.i) : null;
+      const ha = abs => { const n = (e.data.absoluto || 0) - (abs || 0); return n <= 0 ? _t('hoje') : n === 1 ? _t('ontem') : _t('há {n} dias', {n}); };
+      const nossos = ms.filter(m => m.t === meu).length;
+      h += `<h4>${esc(_t('Pixações'))} <small>${esc(_t('{n} de {total} muros · +0,2 por dia cada', {n:ms.filter(m => m.t).length, total:ms.length}))}</small></h4>`;
+      h += '<ul class="mb-muros">' + ms.map(m =>
+        `<li data-muro="${m.i}" class="${selMuro && selMuro.i === m.i ? 'sel' : ''}${m.t ? '' : ' livre'}"><i${m.t ? ` style="background:${corDe(m.t)}"` : ''}></i>` +
+        `<span>${esc(_t('Muro {n}', {n:m.i + 1}))}</span><b>${m.t ? esc(nome(m.t)) : esc(_t('livre'))}</b><small>${m.t ? esc(ha(m.abs) + ' · ' + _t('desbota em {n} dias', {n:Math.max(1, (d.PIX ? d.PIX.desbota : 60) - ((e.data.absoluto || 0) - (m.abs || 0)))})) : ''}</small></li>`).join('') + '</ul>';
+      if(nossos) h += `<p class="mb-nota">${esc(_t('Os nossos {n} muros aqui rendem +{v} por dia na barra.', {n:nossos, v:(nossos * 0.2).toLocaleString('pt-BR', {maximumFractionDigits:1})}))}</p>`;
+    }
+    /* (o aviso de "rendem 30% menos" saiu com o corte, 05/10/2026) */
     caixa.innerHTML = h;
     /* o que dá pra fazer (só na nossa cidade) */
     const pe = document.createElement('div');
@@ -275,6 +330,31 @@ TO.mapaBrasil = (function(){
       pe.appendChild(bt);
       if(!pode.ok){ const m = document.createElement('small'); m.textContent = pode.motivo || ''; pe.appendChild(m); }
     }
+    if(d.pixar && cid === e.torcida.mapa && ms.length){
+      const sd = d.saldoPix(e, meu);
+      /* o pixo da aliada (e da irmã) não se cobre (o dono, 02/10/2026) */
+      const amiga = m => m.t && m.t !== meu && d.amigas && d.amigas(e, meu, m.t);
+      const alvo = selMuro || ms.find(m => !m.t) || ms.find(m => m.t && m.t !== meu && !amiga(m));
+      const bt = document.createElement('button');
+      bt.type = 'button'; bt.className = 'bt';
+      bt.textContent = !alvo ? (ms.some(m => m.t !== meu) ? _t('Os outros muros daqui são de aliadas') : _t('Todos os muros daqui são nossos'))
+        : alvo.t === meu ? _t('Esse muro já é nosso')
+        : amiga(alvo) ? _t('Muro da {nome}, aliada: não se cobre', {nome:sigla(alvo.t)})
+        : alvo.t ? _t('Cobrir o pixo da {nome}', {nome:sigla(alvo.t)})
+        : selMuro ? _t('Pixar este muro') : _t('Pixar em {bairro}', {bairro:b.nome});
+      bt.disabled = !alvo || alvo.t === meu || amiga(alvo) || sd.total <= 0;
+      bt.onclick = () => {
+        const r = d.pixar(e, meu, cid, b.id, alvo ? alvo.i : null);
+        if(TO.estado.mudou) try{ TO.estado.mudou(); }catch(_){}
+        if(opc.aoAviso) opc.aoAviso(r.msg || '', r.ok);
+        if(opc.aoMudar) opc.aoMudar();
+      };
+      pe.appendChild(bt);
+      const m = document.createElement('small');
+      m.textContent = _t('{n} pixações pra gastar: {c} do mês + {x} das brigas', {n:sd.total, c:sd.cota, x:sd.extra}) +
+        (sd.lider ? ' · ' + _t('+2 por liderar a cidade') : '');
+      pe.appendChild(m);
+    }
     if(opc.aoIr){
       const bt = document.createElement('button');
       bt.type = 'button'; bt.className = 'bt';
@@ -283,6 +363,7 @@ TO.mapaBrasil = (function(){
       pe.appendChild(bt);
     }
     if(pe.childNodes.length) caixa.appendChild(pe);
+    if(opc.aoMuro) for(const li of caixa.querySelectorAll('.mb-muros li')) li.onclick = () => opc.aoMuro(+li.dataset.muro);
     return caixa;
   }
 
@@ -314,7 +395,9 @@ TO.mapaBrasil = (function(){
         bt.type = 'button';
         bt.className = 'mb-bairro' + (b.dono === meu ? ' nosso' : '') + (opc.escolhido === b.id ? ' escolhido' : '') + (claro(cor) ? ' claro' : '');
         bt.style.setProperty('--cor', cor);
-        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + Math.round(b.v) + '%') : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>`;
+        const outras = b.partes.filter(p => p.t !== b.dono && p.v >= 1).slice(0, 3).map(p => sigla(p.t) + ' ' + Math.round(p.v) + '%').join(' · ');
+        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + Math.round(b.v) + '%') : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>` +
+                       (outras ? `<small class="mb-outras">${esc(outras)}</small>` : '');
         bt.onclick = () => opc.aoEscolher && opc.aoEscolher(b.id);
         zona.appendChild(bt);
       }
@@ -328,10 +411,10 @@ TO.mapaBrasil = (function(){
      dos bairros com a legenda e o cartão do bairro
      ======================================================= */
   let raiz = null, vista = null;
-  function abrir(cid){
+  function abrir(cid, bid){
     const e = E();
     if(!e) return;
-    vista = {aba: cid ? 'cidade' : 'cidade', cidade: cid || e.torcida.mapa, bairro:null};
+    vista = {aba:'cidade', cidade: cid || e.torcida.mapa, bairro:bid || null, lado:'bairros'};
     if(!raiz){
       raiz = document.createElement('div');
       raiz.className = 'mb-painel';
@@ -339,6 +422,12 @@ TO.mapaBrasil = (function(){
       raiz.setAttribute('aria-label', _t('Mapa'));
       document.body.appendChild(raiz);
       document.addEventListener('keydown', tecla, true);
+      /* com o mapa aberto a página não amplia (o Safari do iPhone ampliava
+         a página inteira na pinça, 02/10/2026); a que já estava ampliada
+         volta ao normal. Fechando, o viewport de antes volta. */
+      const vp = document.querySelector('meta[name="viewport"]');
+      if(vp){ raiz._viewport = vp.getAttribute('content'); vp.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'); }
+      raiz.addEventListener('gesturestart', ev => ev.preventDefault());
       if(TO.tela && TO.tela.pausarTempo) TO.tela.pausarTempo('mapa');
     }
     pintar();
@@ -347,12 +436,16 @@ TO.mapaBrasil = (function(){
   function fechar(){
     if(!raiz) return;
     document.removeEventListener('keydown', tecla, true);
+    if(raiz._planta) raiz._planta.desligar();
+    const vp = document.querySelector('meta[name="viewport"]');
+    if(vp && raiz._viewport) vp.setAttribute('content', raiz._viewport);
     raiz.remove(); raiz = null; vista = null;
     if(TO.tela && TO.tela.retomarTempo) TO.tela.retomarTempo('mapa');
     if(TO.tela && TO.tela.redesenhar) try{ TO.tela.redesenhar(); }catch(_){}
   }
   function pintar(){
     if(!raiz || !vista) return;
+    if(raiz._planta){ raiz._planta.desligar(); raiz._planta = null; }
     const e = E();
     raiz.innerHTML = `<header><h2>${esc(_t('Mapa'))}</h2>
         <div class="mb-abas" role="tablist">
@@ -366,7 +459,7 @@ TO.mapaBrasil = (function(){
     const corpo = raiz.querySelector('.mb-corpo');
     if(vista.aba === 'brasil'){
       corpo.className = 'mb-corpo mb-corpo-brasil';
-      const escolher = cid => { vista.cidade = cid; vista.bairro = null; vista.aba = 'cidade'; pintar(); };
+      const escolher = cid => { vista.cidade = cid; vista.bairro = null; vista.aba = 'cidade'; vista.lado = 'bairros'; pintar(); };
       const m = document.createElement('div'); m.className = 'mb-mapa';
       m.appendChild(svgDoBrasil({aoEscolher:escolher, escolhida:vista.cidade}));
       corpo.appendChild(m);
@@ -374,15 +467,68 @@ TO.mapaBrasil = (function(){
       return;
     }
     corpo.className = 'mb-corpo mb-corpo-cidade';
-    const q = quadro(vista.cidade, {escolhido:vista.bairro, aoEscolher: bid => { vista.bairro = bid; pintar(); }});
-    corpo.appendChild(q);
+    /* no celular o cartão fica embaixo do mapa: escolhido o bairro, a
+       página desce até ele (02/10/2026) */
+    const mostrarCartao = () => {
+      if(!matchMedia('(max-width: 760px)').matches || !raiz) return;
+      const c = raiz.querySelector('.mb-cartao');
+      if(c) requestAnimationFrame(() => c.scrollIntoView({behavior:'smooth', block:'start'}));
+    };
+    const aoEscolher = bid => { vista.bairro = bid; vista.muro = null; vista.lado = 'bairros'; pintar(); mostrarCartao(); };
+    /* o muro de pixação clicado: o bairro dele, e o muro em destaque */
+    const aoMuro = (bid, i) => { vista.bairro = bid; vista.muro = {b:bid, i}; vista.lado = 'bairros'; pintar(); mostrarCartao(); };
+    /* A PLANTA DA CIDADE (o dono, 01/10/2026: "o mapa 2d que acabamos de
+       construir na versão 3d"): a praça desenhada como no jogo 3D, com a
+       dona de cada bairro por cima (js/ui/mapa_planta.js); sem a planta
+       dela, o quadro de bairros por zona */
+    const PL = TO.mapaPlanta;
+    if(PL && PL.tem(vista.cidade)){
+      const pl = PL.criar(vista.cidade, {escolhido:vista.bairro, aoEscolher, aoMuro, muro:vista.muro, semPlanta: pintar});
+      raiz._planta = pl;
+      corpo.appendChild(pl);
+    } else corpo.appendChild(quadro(vista.cidade, {escolhido:vista.bairro, aoEscolher}));
     const lado = document.createElement('div'); lado.className = 'mb-lado';
-    lado.appendChild(legenda(vista.cidade));
-    lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar,
-      aoAviso: (t, ok) => { if(TO.tela && TO.tela.aviso) TO.tela.aviso(t, ok ? 'boa' : 'ruim'); }}));
+    /* O PERFIL DA CIDADE MORA AQUI (o dono, 01/10/2026: "as informações
+       contidas no perfil da cidade, inclusive a foto, devem encaixar de
+       alguma forma na tela do mapa"): a capa com a foto, o nome e a linha
+       de baixo em cima da coluna; embaixo, as abas — os bairros (quem
+       domina, o cartão do bairro) e as duas do perfil (main.js,
+       `perfilDaCidade`) */
+    const P = TO.tela && TO.tela.perfilDaCidade ? TO.tela.perfilDaCidade(vista.cidade) : null;
+    if(P){
+      const capa = document.createElement('div');
+      capa.className = 'mb-capa' + (P.capa ? ' com-foto' : '');
+      if(P.capa) capa.style.backgroundImage = `linear-gradient(180deg, rgba(8,9,12,.25), rgba(8,9,12,.88)), url("${P.capa}")`;
+      capa.innerHTML = `<h3>${esc(P.nome)}</h3><small>${esc(P.sub)}</small>`;
+      lado.appendChild(capa);
+      const abas = document.createElement('div');
+      abas.className = 'mb-lado-abas'; abas.setAttribute('role', 'tablist');
+      for(const [id, rot] of [['bairros', _t('Bairros')]].concat(P.abas.map(a => [a.id, a.rot]))){
+        const b = document.createElement('button');
+        b.type = 'button'; b.setAttribute('role', 'tab');
+        b.setAttribute('aria-selected', String(vista.lado === id));
+        b.textContent = rot;
+        b.onclick = () => { vista.lado = id; pintar(); };
+        abas.appendChild(b);
+      }
+      lado.appendChild(abas);
+    }
+    const aba = P && P.abas.find(a => a.id === vista.lado);
+    if(aba){
+      const cx = document.createElement('div');
+      cx.className = 'mb-perfil perfil-torcida';
+      cx.appendChild(aba.montar());
+      lado.appendChild(cx);
+    } else {
+      /* (o resumo de quem domina a cidade saiu daqui pra dar espaço ao
+         bairro — pedido do dono, 01/10/2026; a planta já pinta a dona) */
+      lado.appendChild(cartaoDoBairro(vista.cidade, vista.bairro, {aoMudar: pintar, muro: vista.muro,
+        aoMuro: i => { vista.muro = {b:vista.bairro, i}; pintar(); },
+        aoAviso: (t, ok) => { if(TO.tela && TO.tela.aviso) TO.tela.aviso(t, ok ? 'boa' : 'ruim'); }}));
+    }
     corpo.appendChild(lado);
   }
 
-  return {svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
+  return {nivelDaSede, svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
           get aberto(){ return !!raiz; }};
 })();

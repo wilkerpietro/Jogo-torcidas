@@ -2019,6 +2019,8 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           get canvas(){return cv;},
           /* a seta da borda do último quadro, ou null se não teve */
           get seta(){return ultimaSeta;},
+          /* a foto da briga do feed não troca a cena com a briga rodando */
+          get rodando(){return rodando;},
           get J(){return J;}};
 })();
 

@@ -435,6 +435,8 @@ TO.estado = (function(){
           if(meu) E.elencoVirada = {ano:anoQueFecha, de:meu.de, para:meu.para};
         }
         const mov = TO.competicoes.aplicarSobeDesce(E);
+        /* o feed das torcidas comemora e reclama no dia seguinte (30/09/2026) */
+        E.sobeDesceNoFeed = mov;
         /* a torcida do clube nas cidades é viva (dono, 02/09/2026):
            fase do ano + crescimento vegetativo das praças */
         TO.mundo.evoluirTorcedores(E, mov);
@@ -526,6 +528,23 @@ TO.estado = (function(){
        torcida agenda a fecha dele em `E.temporada` e é o `jogarDia`
        que a joga; se as ligas andassem primeiro, elas leriam a fecha
        do dia ainda sem placar e sorteariam por cima. */
+    /* SEM SPOILER (correção do dono, 01/10/2026): os jogos do dia são
+       sorteados aqui, o nosso inclusive, horas antes de a bola rolar.
+       No dia em que o nosso clube joga, as competições ficam guardadas
+       como estavam DE MANHÃ — só na memória, fora do save — e as telas
+       de resultado (Competições, Calendário) leem esta foto enquanto o
+       cartão da partida não tiver apito final (main.js, eSemSpoiler). */
+    TO.estado.antesDoJogo = null;
+    try{
+      const jogaHoje = TO.competicoes.agendaDoClube(E, E.torcida.clubeId)
+        .some(j => j.semana === E.data.semana && j.dia === E.data.dia);
+      if(jogaHoje){
+        const copia = o => o == null ? o
+          : (typeof structuredClone === 'function' ? structuredClone(o) : JSON.parse(JSON.stringify(o)));
+        TO.estado.antesDoJogo = {abs:E.data.absoluto, temporada:copia(E.temporada),
+                                 ligas:copia(E.ligas), conmebol:copia(E.conmebol)};
+      }
+    }catch(err){ console.warn('foto de antes do jogo: ' + err.message); }
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
     conferirProximoJogo(E);
 
@@ -833,9 +852,23 @@ TO.estado = (function(){
   }
 
   /* põe um save de texto de pé, venha de onde vier */
+  /* CLUBE QUE SAIU DO JOGO E O QUE ENTROU NA VAGA DELE (o dono,
+     03/10/2026: "eu quero tirar o rio negro pra colocar o São
+     Raimundo/AM"): o save antigo guarda o id e o nome velhos nas tabelas,
+     nos jogos e no feed — trocados no texto, antes de virar objeto */
+  const CLUBES_TROCADOS = [
+    [/(^|[^a-z0-9-])rio-negro(?![a-z0-9-])/g, '$1sao-raimundo'],
+    [/Atlético Rio Negro Clube/g, 'São Raimundo Esporte Clube'],
+    [/Rio Negro/g, 'São Raimundo'],
+  ];
+  function trocarClubes(txt){
+    for(const [de, para] of CLUBES_TROCADOS) txt = txt.replace(de, para);
+    return txt;
+  }
+
   function adotar(txt, vaga){
     try{
-      const dados = JSON.parse(txt);
+      const dados = JSON.parse(trocarClubes(txt));
       if(dados.versao !== VERSAO) return null;
       E = dados;
       /* de onde esta partida veio, só pra tela marcar a linha */
@@ -890,7 +923,10 @@ TO.estado = (function(){
   }
 
   async function deTexto(txt){
-    txt = String(txt||'').replace(/\s+/g, '');
+    /* o base64 pode vir quebrado em linhas; o JSON cru não: tirar os
+       espaços dele colava os nomes ("Força Azul" virava "ForçaAzul") */
+    txt = String(txt||'').trim();
+    if(txt[0] !== '{') txt = txt.replace(/\s+/g, '');
     if(!txt) return {ok:false, motivo:_t('não veio texto nenhum')};
     try{
       if(txt.indexOf(MARCA_Z) !== 0 && txt.indexOf(MARCA_J) !== 0 && txt[0] !== '{')
@@ -949,6 +985,19 @@ TO.estado = (function(){
     /* save de antes do presidente (22/09/2026): o mais forte da
        diretoria assume, com o nome que já tinha */
     try{ if(TO.membros && TO.membros.garantirPresidente) TO.membros.garantirPresidente(E); }catch(e){}
+    /* OS POSTS QUE SAÍRAM DO JOGO SAEM DO SAVE (dono, 06/10/2026: "o post
+       do pixo segue existindo"): apagar a criação não apaga o que já está
+       gravado. Na carga, somem da rede os tipos que o dono tirou — o pixo
+       coberto e a chegada da caravana (05/10), o resultado de jogo, a
+       goleada, o clássico perdido e o rebaixamento próprio (04/10) */
+    try{
+      const SAIRAM = new Set(['pixo', 'chegada', 'nosso-jogo', 'resultado',
+                              'goleada-r', 'goleada-d', 'classico-d', 'queda']);
+      const saiu = ch => SAIRAM.has(String(ch || '').split('|')[0]);
+      if(Array.isArray(E.mensagens)) E.mensagens = E.mensagens.filter(m => !saiu(m && m.chave));
+      if(Array.isArray(E.mensagensAgendadas))
+        E.mensagensAgendadas = E.mensagensAgendadas.filter(m => !saiu(((m && m.extra) || {}).chave));
+    }catch(e){ /* a faxina nunca derruba a carga */ }
     /* o domínio dos bairros (30/09/2026): a sede do jogador no bairro
        espalhado, quando duas sedes caíam no mesmo bairro */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}

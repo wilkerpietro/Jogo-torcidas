@@ -20,6 +20,13 @@ TO.membros = (function(){
                  xpPromo:null}
   };
   const ACIMA = {novato:'componente', componente:'frente', frente:'diretoria'};
+  /* A FICHA DE ENTRADA por cargo, força e defesa sorteadas cada uma
+     (régua do dono, 06/10/2026): o novato chega com 3 a 8 — o
+     recrutado, o do elenco inicial e o das rivais; os outros cargos
+     seguem com a base do cargo + 0..3. relacoes.js (carregado antes
+     deste) e combate.js usam a mesma régua. */
+  const FICHA_NOVA = {novato:[3,8], componente:[5,8], frente:[10,13], diretoria:[14,17]};
+  const fichaNova = cargo => U.inteiro(...(FICHA_NOVA[cargo] || FICHA_NOVA.novato));
 
   /* =======================================================
      O QUE TIRA FICHA (régua do dono, 20/08/2026)
@@ -157,8 +164,11 @@ TO.membros = (function(){
       /* nome de batismo: quando o nome de rua É o nome, os dois batem */
       nome: nomeProprio,
       cargo,
-      forca:  opc.forca  !== undefined ? opc.forca  : U.inteiro(1,3),
-      defesa: opc.defesa !== undefined ? opc.defesa : U.inteiro(1,3),
+      /* O NOVATO RECRUTADO (régua do dono, 06/10/2026): chega com 3 a 8
+         de força e 3 a 8 de defesa, sorteadas cada uma — do moleque cru
+         ao que já chega no teto do cargo. Era 1 a 3. */
+      forca:  opc.forca  !== undefined ? opc.forca  : fichaNova(cargo),
+      defesa: opc.defesa !== undefined ? opc.defesa : fichaNova(cargo),
       fracForca:0, fracDefesa:0,
       /* IDADE (régua do dono, 20/08/2026): 16 a 45 na entrada. Dos 35
          em diante a virada do ano cobra o seu; aos 46 ele pendura a
@@ -396,12 +406,10 @@ TO.membros = (function(){
     for(const [cargo, n] of plano){
       const c = CARGOS[cargo];
       for(let i=0;i<n;i++){
-        const base = cargo==='novato' ? 1 : cargo==='componente' ? 5
-                   : cargo==='frente' ? 10 : 14;
         E.membros.push(criar(E, {
           cargo,
-          forca:  Math.min(c.teto, base + U.inteiro(0,3)),
-          defesa: Math.min(c.teto, base + U.inteiro(0,3)),
+          forca:  Math.min(c.teto, fichaNova(cargo)),
+          defesa: Math.min(c.teto, fichaNova(cargo)),
           xp: cargo==='novato' ? U.inteiro(0,30)
             : cargo==='componente' ? U.inteiro(40,95)
             : cargo==='frente' ? U.inteiro(100,290) : U.inteiro(300,500)
@@ -830,7 +838,7 @@ TO.membros = (function(){
   }
 
   return {
-    CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE,
+    CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE, FICHA_NOVA, fichaNova,
     criar, nomeDe, nomeCompletoDe, cargoNome, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe, nivelInicialDaSede, PEQUENA_MAX,
     nomearPresidente, garantirPresidente, presidente, nomeSugerido,
     compensacaoDe, PIRAMIDE_COMPENSADA,

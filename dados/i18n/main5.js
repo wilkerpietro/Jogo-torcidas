@@ -221,10 +221,6 @@ TO.i18n.registrar({
   'a briga é a mesma; o comando é que muda': {es:'la pelea es la misma; cambia quién manda', en:"same fight; only who's in charge changes"},
 
   /* ---------- o fim da cena ---------- */
-  'Voltamos inteiros por causa do bonde de vocês no portão. Isso a gente não esquece.':
-    {es:'Volvimos enteros gracias a la banda de ustedes en el portón. Eso no lo olvidamos.', en:'We got home in one piece because of your crew at the gate. We won\'t forget that.'},
-  'Apanhamos juntos, mas vocês desceram. Irmão é quem aparece na hora ruim. Valeu.':
-    {es:'Cobramos juntos, pero ustedes bajaron. Hermano es el que aparece en las malas. Gracias.', en:'We took a beating together, but you showed up. A brother is the one who turns up when it\'s bad. Cheers.'},
   'A rival': {es:'La rival', en:'The rivals'},
 
   'Segurança': {es:'Seguridad', en:'Security'},

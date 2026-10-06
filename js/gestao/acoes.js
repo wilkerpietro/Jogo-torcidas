@@ -144,9 +144,16 @@ TO.acoes = (function(){
     const querem  = Math.round(alcance * 1000 * chance);
     const vaga = TO.membros.capacidade(E) - E.membros.length;
     const regime = regimeRecrutamento(E);
-    const t = TABELA_RECRUTA[regime];
+    const t0 = TABELA_RECRUTA[regime];
+    /* O BAIRRO DO RECRUTAMENTO (dono, 01/10/2026): a chance pesa pela
+       torcida do clube que mora no bairro escolhido na reunião — ×0,7
+       onde quase não tem, ×1,3 no reduto (js/mundo/dominio.js) */
+    const D = TO.dominio;
+    const peso = D && D.pesoDoRecrutamento ? D.pesoDoRecrutamento(E) : 1;
+    const b = D && D.bairroDoRecrutamento ? D.bairroDoRecrutamento(E) : null;
+    const t = {rot:t0.rot, um:Math.min(0.9, t0.um * peso), dois:Math.min(0.5, t0.dois * peso)};
     return {
-      base, alcance, querem, chance, vaga, regime,
+      base, alcance, querem, chance, vaga, regime, peso, bairro: b ? b.nome : null,
       rotRegime: t.rot, um: t.um, dois: t.dois,
       zero: Math.max(0, 1 - t.um - t.dois),
       esperado: t.um + t.dois*2,
@@ -189,6 +196,12 @@ TO.acoes = (function(){
       .sort((a, b) => (a.dono ? a.v : 0) - (b.dono ? b.v : 0) || b.nosso - a.nosso);
   }
 
+  /* a linha do domínio do bairro do alvo (o anúncio da briga, 02/10/2026) */
+  function previaDoAlvo(E, alvo){
+    if(!alvo || !TO.feed || !TO.feed.previaDaBriga) return '';
+    return TO.feed.previaDaBriga(E, {torcidaId:alvo.torcidaId, atacamos:true, alvoTipo:alvo.tipo,
+      local:{cena:alvo.tipo === 'sede' ? 'sede' : 'bar', bairro:alvo.bairro || '', cidade:E.torcida.mapa}}).linha;
+  }
   /* QUEM NÃO TEM BAR NÃO TEM BAR PRA ATACAR (o dono, 29/09/2026:
      "Torcidas que ainda não tem bar não dá pra atacar assim"). O pino de
      bar das outras torcidas é sorteado no mapa pra todas (mapa.js), mas o
@@ -211,6 +224,19 @@ TO.acoes = (function(){
   function alvosDeAtaque(E){
     const mo = TO.mapa && TO.mapa.modelo(E);
     if(!mo) return [];
+    /* O ENDEREÇO É O DO DOMÍNIO (01/10/2026): o bar e a sede de cada
+       torcida ficam no bairro em que o domínio dos bairros os põe — é
+       lá que o bote soma (ou tira) pontos e é lá que o mapa os mostra.
+       O pino do mapa antigo só vale quando o domínio não está carregado. */
+    const Dm = TO.dominio, cid = E.torcida.mapa;
+    const nomeB = id => { const b = Dm && Dm.bairro(cid, id); return b ? b.nome : null; };
+    const est = Dm ? Dm.estruturas(E, cid) : [];
+    const bairroDoPonto = (tid, tipo) => {
+      if(!Dm) return null;
+      if(tipo === 'sede'){ const b = Dm.sedeDe(tid, cid); return b ? b.nome : null; }
+      const s = est.find(x => x.tid === tid && x.tipo === tipo);
+      return s ? nomeB(s.bairro) : null;
+    };
     const fora = [];
     for(const p of mo.pinos){
       if(p.nossa || !p.torcida) continue;
@@ -223,7 +249,7 @@ TO.acoes = (function(){
         id: `${o.id}|${p.tipo}`, torcidaId:o.id, tipo:p.tipo, deQuem:o.nome,
         nome: p.tipo === 'bar' ? _t('Bar da {nome}', {nome:o.nome})
                                : _t('Sede da {nome}', {nome:o.nome}),
-        artigo:'a', bairro:p.bairro, x:p.x, y:p.y, cor:p.cor,
+        artigo:'a', bairro:bairroDoPonto(o.id, p.tipo) || p.bairro, x:p.x, y:p.y, cor:p.cor,
         relacao: rel,
         efetivo: efetivoDePe(E, o)
       });
@@ -421,7 +447,9 @@ TO.acoes = (function(){
       torcidaId: alvo.torcidaId, ganhamos: ganhou,
       /* a arquibancada não fica em bairro nenhum (correção do dono,
          21/08/2026): quem nomeia o lugar é a cena */
-      local:{cena: alvo.cena || 'estadio-20', bairro:''},
+      local:{cena: alvo.cena || 'estadio-20', bairro:'',
+             /* (o bairro é o do estádio do jogo: o domínio acha, 02/10/2026) */
+             cidade: alvo.mapa || null, estadio: alvo.estadio || null},
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
       efeitos});
@@ -600,8 +628,14 @@ TO.acoes = (function(){
       atacamos: false, cobranca: !!alvo.cobranca,
       local:{cena: alvo.cena || (naEstrada ? 'rua' : alvo.tipo),
              bairro: alvo.bairro || (barAlvo && barAlvo.bairro) || '',
-             cidade: alvo.mapa || null},
+             cidade: alvo.mapa || null,
+             /* a estrada: a entrada da praça de passagem; a pista e a
+                concentração: o estádio do jogo (02/10/2026) */
+             chave: alvo.chave || null, estadio: alvo.estadio || null},
       tipoDefesa: alvo.tipo, estrada: naEstrada,
+      /* a zona da resenha: é ela que posta no feed (30/09/2026) */
+      zona: alvo.zona || null,
+      pano: panoDaNoite(res),
       a: nossoLado(E, alvo, res, seguramos),
       b: ladoDeles(E, alvo, res, seguramos),
       efeitos});
@@ -612,6 +646,12 @@ TO.acoes = (function(){
                                            : _t('PERDEMOS A CASA'))};
   }
 
+  /* a peça (faixa ou bandeira) que trocou de dono na cena: o feed das
+     torcidas se gaba dela (30/09/2026) */
+  function panoDaNoite(res){
+    const f = ((res && (res.faixas || (res.faixa ? [res.faixa] : []))) || []).find(x => x && x.tomada);
+    return f ? {tipo: f.tipo || 'faixa', nossa: !!f.nossa} : null;
+  }
   function nossoLado(E, alvo, res, ganhamos){
     const meu = (res && res.nossoLado) || 'mandante';
     const membros = (res && res.membros) || [];
@@ -682,6 +722,7 @@ TO.acoes = (function(){
       if(m) m.moral = U.limitar(m.moral - 3, 0, 20);
       if(alvo.tipo === 'sede') linhas.push(_t('faixa deles rasgada na porta'));
       if(alvo.tipo === 'casa') linhas.push(_t('a resenha deles acabou no grito'));
+      if(alvo.tipo === 'reuniao') linhas.push(_t('a reunião deles na praça acabou na correria'));
     }else{
       linhas.push(_t('a gente saiu de lá pior do que entrou'));
     }
@@ -700,6 +741,8 @@ TO.acoes = (function(){
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: true,
       local:{cena: alvo.cena || alvo.tipo, bairro: alvo.bairro || ''},
+      zona: alvo.zona || null,
+      pano: panoDaNoite(res),
       alvoTipo: alvo.tipo, quebrou,
       a: nossoLado(E, alvo, res, ganhou),
       b: ladoDeles(E, alvo, res, ganhou),
@@ -744,17 +787,21 @@ TO.acoes = (function(){
   const LISTA = [
     {
       id:'recrutar', nome:_t('Recrutar'), icone:'megafone', cena:_t('Praça'),
-      efeito:_t('chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube dita a sorte'),
+      efeito:_t('chance diária de 1–2 novatos (R$ 5 cada) — a fase do clube e a torcida do bairro ditam a sorte; +0,2 por dia de domínio no bairro'),
       disponivel(E){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, motivo: nivelDaSede(E) <= 0 ? _t('a esquina não cabe mais gente: construa a sede') : _t('a sede está cheia')};
         if(p.base <= 0) return {ok:false, motivo:_t('não há torcedor fora de organizada')};
-        return {ok:true, nota:_t('{regime}: {um}% de 1 · {dois}% de 2',
-                                 {regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})};
+        return {ok:true, nota: p.bairro
+          ? _t('em {bairro} · {regime}: {um}% de 1 · {dois}% de 2', {bairro:p.bairro, regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})
+          : _t('{regime}: {um}% de 1 · {dois}% de 2', {regime:p.rotRegime, um:Math.round(p.um*100), dois:Math.round(p.dois*100)})};
       },
       executar(E){
         const p = previsaoRecrutamento(E);
         if(p.vaga <= 0) return {ok:false, msg: nivelDaSede(E) <= 0 ? _t('A esquina não cabe mais gente: construa a sede.') : _t('A sede está cheia.'), semCusto:true};
+        /* a torcida na rua recrutando é presença no bairro: +0,2 no domínio
+           dele (uma vez por dia, entre na turma quem entrar) */
+        if(TO.dominio && TO.dominio.recrutouHoje) TO.dominio.recrutouHoje(E);
 
         /* o dado do dono: dois primeiro, um depois, o resto é ninguém */
         const r = U.rng();
@@ -832,7 +879,7 @@ TO.acoes = (function(){
            fraca paga. Abaixo disso é vaquinha, e vaquinha é escolha
            ruim — não é impossibilidade. */
         const custo = custoFesta(E);
-        /* a sede em bairro de dona rival: a festa rende 30% menos (o
+        /* a sede em bairro de dona rival: a festa rendia 30% menos (acabou em 05/10/2026; o
            domínio dos bairros, 30/09/2026) — o público tem medo de ir */
         const corte = TO.dominio ? TO.dominio.fator(E, E.torcida.id, E.torcida.mapa,
                                                     (TO.mundo.bairroDaSede(E.torcida)||{}).nome) : 1;
@@ -1003,8 +1050,11 @@ TO.acoes = (function(){
                                            '{n} alvos · o de pior relação é {nome}', {nome:q.nome})};
      },
      executar(E, opc){
-       const alvo = escolher(alvosDeAtaque(E), opc);
+       let alvo = escolher(alvosDeAtaque(E), opc);
        if(!alvo) return {ok:false, msg:_t('Esse alvo não existe mais.')};
+       /* O BAR DO ALVO DO MÊS (02/10/2026): a pauta escolheu o bar deles
+          num bairro; a torcida pode ter outro bar antes na lista */
+       if(opc && opc.bairro && alvo.tipo === 'bar') alvo = Object.assign({}, alvo, {bairro:opc.bairro});
        E.acoes.ultimoAtaqueManual = E.data.semana;
        /* teto do dono (18/08/2026): briga de bar é de salão — quem
           defende bota no máximo 40 na cena */
@@ -1012,7 +1062,8 @@ TO.acoes = (function(){
        if(alvo.tipo === 'bar') noAlvo = Math.min(noAlvo, 40);
        return {ok:true, cena:{cena:'bar', acao:'atacar', alvo,
                               efetivoRival: noAlvo},
-               msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})};
+               msg:_t('Bonde a caminho: {nome}, {bairro}.', {nome:alvo.nome, bairro:alvo.bairro})
+                   + (previaDoAlvo(E, alvo) ? ' ' + previaDoAlvo(E, alvo) + '.' : '')};
      }},
 
     /* A AÇÃO SOCIAL NO BAIRRO (o dono, 30/09/2026: "marcar uma ação
@@ -1416,7 +1467,7 @@ TO.acoes = (function(){
     return fora;
   }
 
-  return {aplicarFaixa, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
+  return {aplicarFaixa, previaDoAlvo, LISTA, TURNOS, turnos, REDUCAO, custoDe, efeitoDe, custoFesta,
           porId, agendaveis, expediente,
           maximo, restantes, executar, rodarExpediente, alvosSociais,
           previsaoRecrutamento, TABELA_RECRUTA,
