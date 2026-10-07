@@ -54,39 +54,9 @@
   .subabas, .abas-grandes{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
   #ticker, #tickerCaixa{ min-width:0; max-width:100vw; overflow:hidden; }
 
-  /* Painel sobre o mapa. A página do mapa continua montada e pintada
-     embaixo; o painel é outra `.pagina` marcada como aberta, por cima.
-     Nada é desmontado, então o zoom e o arrasto do mapa ficam onde
-     estavam. */
-  /* sem o `#topo`, o painel começa no alto da tela e só desce os 40px
-     da própria barra de título */
-  body.com-painel .pagina.painel{
-    display:block;
-    position:fixed; z-index:45;
-    inset:0;
-    overflow-y:auto; -webkit-overflow-scrolling:touch;
-    background:var(--fundo);
-    padding:10px 10px calc(64px + env(safe-area-inset-bottom));
-    animation:sobe .16s ease-out;
-  }
-  @keyframes sobe{ from{ transform:translateY(14px); opacity:0 } }
-
-  #painelBarra{
-    display:flex; align-items:center; gap:8px;
-    position:fixed; z-index:46; left:0; right:0; top:0;
-    height:40px; padding:0 10px;
-    background:var(--painel); border-bottom:1px solid var(--linha);
-  }
-  body:not(.com-painel) #painelBarra{ display:none; }
-  body.com-painel .pagina.painel{ top:40px; }
-  #painelTitulo{
-    font-family:var(--titulo); font-size:14px; letter-spacing:.11em;
-    text-transform:uppercase; flex:1;
-  }
-  #painelFechar{
-    background:transparent; border:1px solid var(--linha); color:var(--texto);
-    border-radius:3px; padding:4px 12px; font-size:15px; cursor:pointer;
-  }
+  /* O painel no celular é a caixa do planejamento na tela inteira (o
+     cabeçalho com a seção e os números em cima, a página embaixo,
+     rolando por dentro): mora em css/telas.css desde 07/10/2026. */
 
   /* ---------- tabela larga arrasta pro lado, o resto empilha ---------- */
   .tabela-rolante, .tabela-larga{

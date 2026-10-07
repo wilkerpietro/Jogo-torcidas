@@ -9423,6 +9423,17 @@ O pedido: "nas sedes das torcidas as paredes que dividem os compartimentos tem u
 
 **O que ficou de fora**: a folga das peças dentro do bar não diminuiu (abriria passagem através de parede fina), por isso o bar mais estreito tem a porta como alvo; as entradas da emboscada na estrada que o dono ajeitou no editor seguem onde estavam. Detalhes: `docs/JOGO_3D.md` §44.
 
+## As telas do menu no molde do planejamento (dono, 07/10/2026)
+
+O pedido: "Refaça o layout visual de todas as telas do menu mantendo a estrutura delas, se inspirando no layout criado pra tela de planeamento".
+
+- **Toda tela do menu é a caixa do planejamento**: Torcida, Financeiro, Calendário, Competições, Ranking, Diplomacia, Notícias e Jogo abrem numa caixa de cantos redondos por cima do jogo escurecido (no celular, na tela inteira). No alto, o nome da tela em vermelho miúdo, a seção aberta em letra grande com a data, **os números que a tela pede** (Torcida: membros, aptos, feridos · presos, moral; Financeiro: caixa, receitas, despesas, saldo; Calendário: hoje, próximo jogo, reunião; Competições: posição na liga, próximo jogo, campanha; Ranking: país, América do Sul, pontos; Diplomacia: aliadas, rivais, neutras; Notícias: não lidas, tretas, brigas; Jogo: vagas usadas, último save, se o navegador grava) e o ×. Clicar fora da caixa fecha; Esc e × também; o tempo segue parado com a tela aberta.
+- **A estrutura de cada tela é a mesma**: as abas de cima viram a fita de fichas do planejamento (a aberta em ouro) e grudam no alto ao rolar; os cartões viram as seções com o número na bolinha vermelha; botões, campos, tabelas, a Loja, os modais, o Mapa (2D e 3D) e os Gráficos ganham a mesma mão. Nada mudou de lugar.
+- **O jogo de feed (2D) ganhou a mesma roupa**: as telas são o mesmo código nos dois jogos.
+- Veio junto: as logos das competições passam a aparecer no jogo 3D (o build não levava a pasta).
+
+**O que ficou como estava**: as telas não foram reorganizadas (as tabelas largas seguem rolando de lado no celular); a numeração das seções é só visual. Detalhes: `docs/JOGO_3D.md` §45.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -167,14 +167,16 @@ for f in sorted(usadas):
             d.write(e.read())
 emb = {}
 tipos = {'.png': 'image/png', '.webp': 'image/webp', '.svg': 'image/svg+xml'}
-for pasta in ('img/escudos', 'img/cidades', 'img/bandeiras'):
+# (as logos das competições também: sem elas a tela de Competições e o
+# cartaz do post ficavam com o quadro vazio no 3D, 07/10/2026)
+for pasta in ('img/escudos', 'img/cidades', 'img/bandeiras', 'img/competicoes'):
     for a in sorted(os.listdir(os.path.join(R, pasta))):
         ext = os.path.splitext(a)[1]
         if ext in tipos:
             b = open(os.path.join(R, pasta, a), 'rb').read()
             emb[pasta + '/' + a] = 'data:%s;base64,%s' % (tipos[ext], base64.b64encode(b).decode('ascii'))
 with open(os.path.join(A, 'dados/imagens_jogo.js'), 'w', encoding='utf-8') as s:
-    s.write('/* os escudos, as fotos das praças e as bandeiras do jogo, embutidos (montar.sh): %d imagens */\n' % len(emb))
+    s.write('/* os escudos, as fotos das praças, as bandeiras e as logos das competições do jogo, embutidos (montar.sh): %d imagens */\n' % len(emb))
     s.write('window.__EMBUTIDOS = Object.assign(window.__EMBUTIDOS || {}, ')
     json.dump(emb, s, separators=(',', ':'))
     s.write(');\n')

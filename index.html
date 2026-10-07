@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="css/mapa.css">
 <link rel="stylesheet" href="css/planejamento.css">
 <link rel="stylesheet" href="css/mobile.css">
+<link rel="stylesheet" href="css/telas.css">
 </head>
 <body>
 
@@ -27,9 +28,19 @@
        já diz onde o jogador está. Quem monta tudo isso é `pintarFeed`.
        O ☰ e a gaveta saíram junto: a coluna de ícones é a navegação
        inteira, em qualquer largura. -->
+  <!-- A CASCA DO PAINEL NO MOLDE DO PLANEJAMENTO (07/10/2026): o fundo
+       escuro por cima do jogo e o cabeçalho da caixa — o nome da tela em
+       cima, a seção aberta em letra grande com a data, os números da
+       tela e o ×. Quem preenche é `pintarCasca` (main.js); a roupa mora
+       em css/telas.css. -->
+  <div id="painelFundo"></div>
   <div id="painelBarra">
-    <span id="painelTitulo">—</span>
-    <button id="painelFechar" aria-label="Fechar">Fechar &times;</button>
+    <div class="pnl-titulo">
+      <small id="painelSobre"></small>
+      <h2><span id="painelTitulo">—</span><span id="painelSub"></span></h2>
+    </div>
+    <div id="painelKpis" class="pnl-kpis"></div>
+    <button id="painelFechar" aria-label="Fechar" title="Fechar">&times;</button>
   </div>
 
   <nav id="lateral"></nav>

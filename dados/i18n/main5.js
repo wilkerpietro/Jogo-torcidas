@@ -331,6 +331,24 @@ TO.i18n.registrar({
   /* ---------- o jogo 3D sem feed: a decisão no balão ---------- */
   'Responda o recado do balão — o tempo está parado.': {es:'Responde el recado del globo — el tiempo está detenido.', en:'Answer the message in the bubble — time is stopped.'},
 
+  /* ---------- a casca das telas do menu: os números do cabeçalho (07/10/2026) ---------- */
+  'Aptos': {es:'Aptos', en:'Fit'},
+  'Feridos · presos': {es:'Heridos · presos', en:'Injured · jailed'},
+  'Hoje': {es:'Hoy', en:'Today'},
+  'Próximo jogo': {es:'Próximo partido', en:'Next match'},
+  'Campanha': {es:'Campaña', en:'Record'},
+  'Não lidas': {es:'Sin leer', en:'Unread'},
+  'Vagas usadas': {es:'Ranuras usadas', en:'Slots used'},
+  'Último save': {es:'Último guardado', en:'Last save'},
+  'Navegador': {es:'Navegador', en:'Browser'},
+  'grava': {es:'guarda', en:'saving'},
+  'não grava': {es:'no guarda', en:'not saving'},
+  'Cofre de saves': {es:'Caja de guardados', en:'Save vault'},
+  '{n} de {t}': {es:'{n} de {t}', en:'{n} of {t}'},
+  '{v}V {e}E {d}D': {es:'{v}G {e}E {d}P', en:'{v}W {e}D {d}L'},
+  /* (a do planejamento, que tinha ficado sem) */
+  'Aptos pro estádio': {es:'Aptos para el estadio', en:'Fit for the stadium'},
+
   /* ---------- salvar ---------- */
   'NÃO SALVOU · {motivo}': {es:'NO SE GUARDÓ · {motivo}', en:'NOT SAVED · {motivo}'},
   'Salvo.': {es:'Guardado.', en:'Saved.'},

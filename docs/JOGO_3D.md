@@ -4816,3 +4816,143 @@ selado".
   parede fina. Por isso o bar mais estreito tem a porta como alvo.
 - As **entradas da emboscada na estrada** (as que o dono ajeitou no editor)
   seguem onde estavam: a do lado de cá fica na pista, 2 m fora do eixo.
+
+## 45. As telas do menu no molde do planejamento (07/10/2026)
+
+O pedido: "Refaça o layout visual de todas as telas do menu mantendo a
+estrutura delas, se inspirando no layout criado pra tela de planeamento".
+
+O molde é o popup do planejamento (§18, `css/planejamento.css`): a caixa
+de cantos redondos por cima do jogo escurecido; no alto o nome da tela em
+vermelho miúdo, o assunto em letra grande com o detalhe em cinza ao lado,
+os números que a decisão pede em ladrilhos e o × quadrado; as praças numa
+fita de fichas (a aberta em ouro); as seções em cartões com o número na
+bolinha vermelha; os botões em caixa alta condensada.
+
+**Quais telas.** As oito do menu que abrem painel — Torcida, Financeiro,
+Calendário, Competições, Ranking, Diplomacia, Notícias e Jogo —, mais o
+Mapa (o do jogo 3D, `.j3d-mapa`, e o do jogo de feed, `.mb-painel`), os
+Gráficos do 3D e os modais que essas telas abrem (sair pro menu, perfil do
+membro, perfil de torcida, carregar save…). O planejamento em si não
+mudou. **O jogo de feed (2D) ganhou a mesma roupa**: as telas são o mesmo
+código e o mesmo CSS nos dois jogos.
+
+**A estrutura não mudou.** Nenhuma tela trocou de seção, de ordem, de aba
+ou de botão: os pintores do main.js (`pintarTorcida`, `pintarFinanceiro`…)
+continuam montando o mesmo HTML. A mudança é a casca e a roupa:
+
+- **A casca** (`index.html`, `#painelFundo` e o `#painelBarra` novo;
+  `css/telas.css`, que entra por último e manda nas regras de casca que
+  base.css e mobile.css tinham). No PC o painel é uma caixa de até 1180 px
+  com 18 px de folga em volta, sobre o jogo escurecido (no 3D a cidade
+  aparece atrás, apagada); clicar no escuro fecha, como no planejamento
+  (antes o painel cobria a tela toda e não havia "fora"). Esc e × seguem
+  fechando, e o painel aberto segue parando o tempo.
+- **O cabeçalho** (`pintarCasca`, main.js): em cima o nome da tela
+  (TORCIDA), em letra grande a seção aberta — a aba acesa da fileira de
+  cima, sem a contagem entre parênteses ("Mensagens (3)" vira
+  "Mensagens") — e ao lado a data do jogo ("Segunda, 05/01/2026"). O
+  título que cada tela escrevia no alto da página (`.titulo-pagina`,
+  `.titulo-barra`) continua no HTML e fica escondido: o cabeçalho diz o
+  mesmo. A casca **lê** o que a tela pintou: um `MutationObserver` nas
+  páginas refaz o cabeçalho a cada repintura (a aba trocada, a busca da
+  diplomacia, o botão que repinta só a tela), porque nem toda repintura
+  passa por `redesenhar`. A altura do cabeçalho é medida e escrita em
+  `--pnl-topo` (no celular os números descem pra uma segunda linha).
+- **Os números de cada tela** (os ladrilhos, como caixa, aptos e bombas
+  no planejamento), tirados das mesmas contas que a tela já mostra — um
+  que falhe some sozinho, sem levar a casca junto:
+  - Torcida: membros, aptos, feridos · presos (em vermelho se houver),
+    moral;
+  - Financeiro: caixa, receitas, despesas e saldo da semana (verde ou
+    vermelho);
+  - Calendário: hoje, o próximo jogo do clube (dia × sigla do adversário,
+    de qualquer competição) e a próxima reunião da diretoria;
+  - Competições: a posição na liga do clube (a competição com tabela em
+    que ele mais joga), o próximo jogo e a campanha da temporada (V E D);
+  - Ranking: a posição no país, na América do Sul e os pontos;
+  - Diplomacia: aliadas, rivais e neutras (a mesma conta do cartão);
+  - Notícias: mensagens não lidas, tretas nossas e brigas pelo país;
+  - Jogo: vagas de save usadas, o último save gravado e se o navegador
+    está gravando.
+- **A fileira de abas de cima** de cada tela (as `subabas` da Torcida, do
+  Financeiro, da Diplomacia e das Notícias; as `abas-grandes` do
+  Calendário, das Competições e do Ranking) vira a fita das praças do
+  planejamento — fichas, a aberta em ouro — e **gruda no alto da caixa** ao
+  rolar. As abas de dentro (o filtro da agenda do time) viram fichas
+  menores.
+- **Os cartões viram as seções do planejamento**: fundo um pouco mais
+  claro, cantos redondos, o título em caixa alta condensada com o
+  **número na bolinha vermelha**, a nota da direita em cinza. A numeração é
+  só a ordem de leitura da tela (de cima pra baixo, da esquerda pra
+  direita); cartão dentro de cartão, a rodada e o mês (os que têm setas)
+  ficam sem número. A Loja segue igual: cada prateleira (compra rápida,
+  sede e anexos…) é uma seção numerada, cada produto um cartão.
+- **O resto da roupa**: botões e campos de cantos redondos, os botões em
+  caixa alta condensada como os do pé do planejamento; o cabeçalho das
+  tabelas no rótulo miúdo do planejamento e a linha da nossa torcida com a
+  borda vermelha; o recado na caixa de leitura; a lista da esquerda dos
+  perfis (`.filtros`) como a pauta, com o vermelho na borda da escolhida;
+  os modais com o alto em degradê e o pé escuro.
+- **O Mapa** (2D e 3D) e **os Gráficos** ficam com a estrutura deles — o
+  mapa na tela toda, os gráficos no canto (pra ver o fps mudar atrás) — e
+  ganham o alto do planejamento: o título grande, as abas em ficha de ouro,
+  o × quadrado (o "Fechar ×" do mapa 3D virou só "×", com o nome no
+  `title`); as escolhas dos Gráficos marcadas em ouro e o pé escuro; no
+  miolo do mapa, os blocos das zonas e os cartões de cantos redondos e as
+  abas da lateral em ficha.
+- **No celular** a caixa ocupa a tela inteira, como o planejamento: o
+  cabeçalho com o título e a data em duas linhas e os números numa faixa
+  embaixo — a largura de cada ladrilho vem do número, e o rótulo comprido
+  corta com reticências ("SALDO D…"); a fita de abas rola de lado em vez
+  de quebrar em três linhas (a Torcida quebrava).
+
+**Um conserto que veio junto**: no jogo 3D as logos das competições não
+apareciam — o quadro da competição (Competições) e o cartaz do post do
+jogo ficavam com um buraco, e o navegador pedia `img/competicoes/*.png`,
+que o build do 3D não leva. Agora as 41 logos vão embutidas em
+`dados/imagens_jogo.js` como os escudos (`montar.sh`; o arquivo foi de 5,1
+pra 8,0 MB) e o quadro da competição passa pelo mesmo `IMG` dos escudos.
+
+**Textos novos** (i18n, `dados/i18n/main5.js`): os rótulos dos números,
+"Cofre de saves", "{n} de {t}" e a campanha "{v}V {e}E {d}D" (W D L em
+inglês). Entrou também a tradução de "Aptos pro estádio", o número do
+planejamento que tinha ficado sem.
+
+### Como foi testado
+
+Em `scratchpad/telas/`: `telas.js` abre o jogo (o de feed, ou o 3D com
+`PASTA=` o build do Pages), fotografa cada tela do menu com cada aba e
+sub-aba, a vista da janela e a tela inteira rolada (`CEL=1` celular em
+pé, `SO=` só algumas, `ABAS=0` sem as abas); `funciona.js` confere o
+comportamento; `mapa2d.js` o mapa do jogo de feed.
+
+- 2D no PC: as 8 telas, cada aba delas (Torcida 5, Financeiro 5,
+  Calendário 3, Competições 3, Ranking 2, Diplomacia 5, Notícias 4; o Jogo
+  não tem abas) e as sub-abas da agenda do time, sem erro no console; o
+  antes está em `antes/`.
+- `funciona.js` (português e inglês): o painel para o tempo; o corpo
+  começa onde o cabeçalho acaba (74 px medidos = 74 px da barra); trocar a
+  aba troca o título; a fita de abas fica a 0 px do alto da caixa com a
+  página rolada 600 px; o clique no escuro, o Esc e o × fecham e devolvem o
+  tempo; a busca da diplomacia repinta sem quebrar o cabeçalho; os
+  números das 8 telas; nenhuma das chaves novas falta em inglês.
+- 2D no celular (390 × 844) e 3D no PC e no celular (Torcida,
+  Financeiro, Competições, Jogo, o planejamento, os Gráficos e o Mapa):
+  nada transborda; no 3D a cidade aparece apagada atrás da caixa; a logo da
+  Série B aparece e o 404 sumiu. Sobrou só o 404 de `img/mapas/` no jogo
+  de feed (a foto 2D das cidades, que este repositório não tem).
+
+### O que ficou de fora
+
+- **Nenhuma tela foi reorganizada**: o pedido manteve a estrutura, então
+  telas que já tinham problema de espaço continuam com ele — a tabela de
+  membros e a de relações no celular seguem rolando de lado, e a Loja
+  repete o caixa que o cabeçalho já mostra.
+- A **numeração das seções** é visual. No planejamento ela é a ordem da
+  decisão; nas telas de consulta ela só numera a leitura — se incomodar, é
+  uma regra de CSS pra tirar (`telas.css`, "o número da seção").
+- O **próximo jogo** aparece como "dia × sigla" (15/02 × CC): a sigla do
+  adversário às vezes é curta demais pra reconhecer de cara.
+- No começo da temporada a **posição na liga** é a ordem alfabética da
+  tabela (todo mundo com 0 ponto) — é o que a própria classificação mostra.

@@ -66,7 +66,8 @@ body.jogo3d .feed-ticker{pointer-events:auto;background:rgba(14,14,16,.86)}
    e o "Fechar" da barra deles ficavam surdos ao clique, à roda e ao toque,
    e o jogo parava esperando a resposta de um painel que não respondia */
 body.jogo3d.com-painel .pagina.painel,
-body.jogo3d.com-painel #painelBarra{pointer-events:auto}
+body.jogo3d.com-painel #painelBarra,
+body.jogo3d.com-painel #painelFundo{pointer-events:auto}
 
 /* ---------- o feed não aparece ----------
    (o main.js nem monta o rolo com `TO.semFeed`; isto é a garantia) */
@@ -339,19 +340,23 @@ body.jogo3d.palco-briga .cen-fps{bottom:54px}
    ========================================================= */
 .j3d-mapa{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;background:#0e0e10}
 .j3d-mapa[hidden]{display:none}
-.j3d-mapa-barra{display:flex;align-items:center;gap:8px;height:40px;flex:none;padding:0 12px;
-  background:var(--painel, #161616);border-bottom:1px solid var(--linha, #2c2c2c);
-  font-family:var(--titulo);font-size:14px;letter-spacing:.11em;text-transform:uppercase;color:var(--texto, #eee)}
-.j3d-mapa-barra b{font-weight:700}
-.j3d-mapa-onde{flex:1;color:var(--fraco, #999);font-size:12px;letter-spacing:.08em}
-.j3d-mapa-x{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--texto, #eee);padding:4px 12px;font-size:13px;cursor:pointer;
-  font-family:var(--titulo);letter-spacing:.08em;text-transform:uppercase}
-.j3d-mapa-x:hover{border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+/* (o alto no molde do planejamento, 07/10/2026: o título grande, as abas
+   na ficha de ouro, o lugar em cinza e o × quadrado — css/telas.css) */
+.j3d-mapa-barra{position:relative;display:flex;align-items:center;gap:14px;min-height:62px;flex:none;padding:10px 64px 10px 20px;
+  background:linear-gradient(180deg,#202020,#181818);border-bottom:1px solid var(--linha, #2c2c2c);
+  font-family:var(--corpo);color:var(--texto, #eee)}
+.j3d-mapa-barra b{font-family:var(--titulo);font-size:26px;font-weight:700;letter-spacing:.02em;line-height:1.1}
+.j3d-mapa-onde{flex:1;min-width:0;color:var(--fraco, #999);font-size:13px;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.j3d-mapa-x{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:36px;height:36px;padding:0;
+  border:1px solid var(--linha, #2c2c2c);border-radius:6px;background:#141414;color:var(--texto, #eee);font-size:22px;line-height:1;cursor:pointer}
+.j3d-mapa-x:hover{border-color:var(--rubro-vivo, #d24141)}
 /* O MAPA COM OS BAIRROS E O BRASIL (30/09/2026): a planta (ou o Brasil)
    à esquerda e, à direita, quem domina a cidade e o cartão do bairro */
-.j3d-mapa-abas{display:flex;gap:4px;margin-left:10px}
-.j3d-mapa-abas button{background:transparent;border:1px solid var(--linha, #2c2c2c);color:var(--fraco, #999);padding:3px 12px;font-size:12.5px;cursor:pointer}
-.j3d-mapa-abas button[aria-selected="true"]{background:var(--rubro, #8a1f1f);border-color:var(--rubro, #8a1f1f);color:#fff}
+.j3d-mapa-abas{display:flex;gap:6px;margin-left:4px}
+.j3d-mapa-abas button{background:#141414;border:1px solid var(--linha, #2c2c2c);border-radius:6px;color:var(--texto, #eee);padding:6px 14px;
+  font-family:var(--corpo);font-size:13px;font-weight:600;cursor:pointer}
+.j3d-mapa-abas button:hover{border-color:#4a4a4a}
+.j3d-mapa-abas button[aria-selected="true"]{background:#2a2112;border-color:var(--ouro, #d9a441);color:#fff}
 .j3d-mapa-corpo{position:relative;flex:1;min-height:0;display:flex}
 .j3d-mapa-painel{flex:1;min-width:0;display:flex;gap:14px;padding:14px;overflow:auto;background:#101312}
 .j3d-mapa-painel[hidden]{display:none}
@@ -370,7 +375,9 @@ body.jogo3d.palco-briga .cen-fps{bottom:54px}
   .j3d-mapa-lado{width:auto;max-height:42%;border-left:0;border-top:1px solid var(--linha, #2c2c2c)}
   .j3d-mapa-painel{flex-direction:column}
   .j3d-mapa-painel .mb-lista{max-width:none}
-  .j3d-mapa-abas button{padding:3px 8px}
+  .j3d-mapa-abas button{padding:5px 10px}
+  .j3d-mapa-barra{gap:10px;min-height:54px;padding:8px 56px 8px 12px}
+  .j3d-mapa-barra b{font-size:20px}
 }
 .j3d-mapa-tela{position:relative;flex:1;min-height:0;min-width:0;overflow:hidden}
 .j3d-mapa-tela[hidden]{display:none}
@@ -612,9 +619,13 @@ body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:non
 .j3d-graf{position:fixed;z-index:58;right:12px;top:58px;width:min(390px, calc(100vw - 24px));max-height:calc(100vh - 72px);
   display:flex;flex-direction:column;box-sizing:border-box;background:rgba(22,22,24,.96);border:1px solid var(--linha, #2c2c2c);
   border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);color:var(--texto, #eee);font:13px/1.4 var(--corpo, sans-serif);pointer-events:auto}
-.j3d-graf header{display:flex;align-items:center;gap:8px;padding:9px 12px 7px;border-bottom:1px solid var(--linha, #2c2c2c)}
-.j3d-graf h2{flex:1;margin:0;font:600 17px/1.1 var(--titulo, sans-serif);letter-spacing:.1em;text-transform:uppercase}
-.j3d-graf-x{width:26px;height:26px;border-radius:13px;border:1px solid var(--linha, #2c2c2c);background:#26262a;color:inherit;font-size:16px;line-height:1;cursor:pointer}
+/* (o alto, as escolhas e o pé no molde do planejamento, 07/10/2026) */
+.j3d-graf{overflow:hidden}
+.j3d-graf header{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--linha, #2c2c2c);
+  background:linear-gradient(180deg,#202020,#181818)}
+.j3d-graf h2{flex:1;margin:0;font:700 22px/1.1 var(--titulo, sans-serif);letter-spacing:.02em}
+.j3d-graf-x{width:32px;height:32px;border-radius:6px;border:1px solid var(--linha, #2c2c2c);background:#141414;color:inherit;font-size:20px;line-height:1;cursor:pointer}
+.j3d-graf-x:hover{border-color:var(--rubro-vivo, #d24141)}
 .j3d-graf-medida{margin:0;padding:8px 12px;font:600 12.5px/1.4 var(--mono, monospace);font-variant-numeric:tabular-nums;background:#111113;border-bottom:1px solid var(--linha, #2c2c2c)}
 .j3d-graf-medida b{font-size:16px}
 .j3d-graf-medida b.bom{color:#7fd67a} .j3d-graf-medida b.meio{color:#f0c64a} .j3d-graf-medida b.ruim{color:#ff7b6b}
@@ -629,10 +640,12 @@ body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:non
 .j3d-graf-bts button{flex:1 1 auto;min-width:0;padding:6px 5px;border-radius:5px;border:1px solid #3a3a40;background:#232327;color:var(--texto, #eee);
   font:500 12.5px/1.2 var(--corpo, sans-serif);cursor:pointer;white-space:nowrap}
 .j3d-graf-bts button:hover{border-color:#6a6a74}
-.j3d-graf-bts button[aria-pressed="true"]{background:var(--rubro, #9d2222);border-color:var(--rubro-vivo, #d24141);color:#fff;font-weight:600}
+.j3d-graf-bts button[aria-pressed="true"]{background:#2a2112;border-color:var(--ouro, #d9a441);color:#fff;font-weight:600}
 .j3d-graf-nota{margin-top:6px;font-size:11.5px;line-height:1.4;color:var(--fraco, #999)}
 .j3d-graf-nota b{color:#f0c64a;font-weight:600}
-.j3d-graf footer{display:flex;gap:8px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--linha, #2c2c2c)}
+.j3d-graf footer{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--linha, #2c2c2c);background:#141414}
+.j3d-graf .bt{border:1px solid var(--linha, #2c2c2c);border-radius:6px;background:#1f1f1f;font-weight:600;letter-spacing:.08em}
+.j3d-graf .bt.destaque{background:var(--rubro, #9d2222);border-color:var(--rubro-vivo, #d24141);color:#fff}
 @media (max-width:560px){
   .j3d-graf{top:auto;bottom:8px;right:8px;width:calc(100vw - 16px);max-height:62vh}
 }
