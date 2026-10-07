@@ -290,24 +290,24 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, placasDoLote, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js?v=75671cb934';
-import { montarModelos } from './js/modelos3d.js?v=75671cb934';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=75671cb934';
-import { ATLAS } from './js/modelos_atlas.js?v=75671cb934';
-import { Construtor, sorteio } from './js/construtor3d.js?v=75671cb934';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M, cisaoDaPraca, VAO_CIDADES_M, PRAIA_A_MAIS } from './js/proposta.js?v=75671cb934';
-import { montarSede, nivelQueCabe } from './js/sede3d.js?v=75671cb934';
-import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=75671cb934';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=75671cb934';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=75671cb934';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=75671cb934';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js?v=75671cb934';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=75671cb934';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=75671cb934';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=75671cb934';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=75671cb934';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js?v=75671cb934';
-import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js?v=75671cb934';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, placasDoLote, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js?v=a2fecc9f92';
+import { montarModelos } from './js/modelos3d.js?v=a2fecc9f92';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=a2fecc9f92';
+import { ATLAS } from './js/modelos_atlas.js?v=a2fecc9f92';
+import { Construtor, sorteio } from './js/construtor3d.js?v=a2fecc9f92';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M, cisaoDaPraca, VAO_CIDADES_M, PRAIA_A_MAIS } from './js/proposta.js?v=a2fecc9f92';
+import { montarSede, nivelQueCabe } from './js/sede3d.js?v=a2fecc9f92';
+import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=a2fecc9f92';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=a2fecc9f92';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=a2fecc9f92';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=a2fecc9f92';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js?v=a2fecc9f92';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=a2fecc9f92';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=a2fecc9f92';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=a2fecc9f92';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=a2fecc9f92';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js?v=a2fecc9f92';
+import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js?v=a2fecc9f92';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -324,25 +324,25 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=75671cb934');
-  await carregarScript('dados/times.js?v=75671cb934');
-  await carregarScript('dados/cena_estadio.js?v=75671cb934');
-  await carregarScript('dados/cidades.js?v=75671cb934');
-  await carregarScript('dados/estadios.js?v=75671cb934');
-  await carregarScript('dados/escudos.js?v=75671cb934');
+  await carregarScript('dados/torcidas.js?v=a2fecc9f92');
+  await carregarScript('dados/times.js?v=a2fecc9f92');
+  await carregarScript('dados/cena_estadio.js?v=a2fecc9f92');
+  await carregarScript('dados/cidades.js?v=a2fecc9f92');
+  await carregarScript('dados/estadios.js?v=a2fecc9f92');
+  await carregarScript('dados/escudos.js?v=a2fecc9f92');
   /* o manifesto das faixas de verdade (a arte do dono, 29/09/2026): a arquibancada estende a da torcida */
-  await carregarScript('dados/faixas.js?v=75671cb934').catch(() => {});
+  await carregarScript('dados/faixas.js?v=a2fecc9f92').catch(() => {});
   /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): as sedes repetidas num
      bairro saem espalhadas (nos dados, na carga) e os bares ganham o
      bairro deles — o mesmo módulo do jogo (js/mundo/dominio.js) */
-  await carregarScript('js/dominio.js?v=75671cb934').catch(() => {});
+  await carregarScript('js/dominio.js?v=a2fecc9f92').catch(() => {});
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=75671cb934').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=a2fecc9f92').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -9423,7 +9423,7 @@ async function abrirJogo3d() {
   if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
   const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
   try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=75671cb934');
+    const { montarJogo } = await import('./js/jogo3d.js?v=a2fecc9f92');
     await montarJogo({
       get cenario() { return cenario; },
       pronta, nomes, M,
@@ -9475,7 +9475,7 @@ let cenario = null;
 async function abrirCenario(nome, modo) {
   if (!cenario) {
     try {
-      const { criarCenario } = await import('./js/cenario.js?v=75671cb934');
+      const { criarCenario } = await import('./js/cenario.js?v=a2fecc9f92');
       cenario = criarCenario(apiDoCenario());
     } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
   }
@@ -9488,7 +9488,7 @@ if (PARAMS.has('teste')) window.__planta.assalto = async (tipo, cfg = {}) => {
   const C = cenario, loja = apiDoCenario().lojas().find(l => l.tipo === tipo);
   if (!C || !loja) return { erro: 'sem cenário ou sem a loja ' + tipo };
   await C.vida.chamarPovo();
-  const { iniciarAssalto } = await import('./js/assalto3d.js?v=75671cb934');
+  const { iniciarAssalto } = await import('./js/assalto3d.js?v=a2fecc9f92');
   const equipe = Array.from({ length: cfg.n || 10 }, (_, i) => ({ id: 'm' + i, nome: ['Negão', 'Ruivo', 'Baixinho', 'Magrão', 'Alemão', 'Cabeça', 'Tico', 'Zóio', 'Bola', 'Formiga'][i % 10] }));
   const A = { banco: [95, 80, 90, 60, 85, 90], joalheria: [75, 70, 70, 40, 75, 70], supermercado: [45, 60, 45, 85, 45, 50], posto: [25, 55, 30, 50, 40, 30], mercadinho: [15, 35, 15, 45, 30, 15], roupas: [10, 40, 20, 50, 35, 15] }[tipo];
   const alvo = { id: tipo, nome: loja.nome, recompensa: A[0], exposicao: A[1], seguranca: A[2], movimentacao: A[3], atencao: A[4], dificuldade: A[5] };
