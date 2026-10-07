@@ -59,10 +59,10 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=08dc5e5aee';
-import { palcoDeBriga } from './palco_briga.js?v=08dc5e5aee';
-import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=08dc5e5aee';
-import { criarSeguidores } from './rua3d.js?v=08dc5e5aee';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=aa21047a36';
+import { palcoDeBriga } from './palco_briga.js?v=aa21047a36';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=aa21047a36';
+import { criarSeguidores } from './rua3d.js?v=aa21047a36';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -131,6 +131,8 @@ export function criarDia3d(api, vida, g = {}) {
       if (D.estrada) { if (a === 'pular') pular(); else if (a === 'nossa') D.estrada.verOnibus(); return; }
       if (!dia) return;
       if (b.dataset.ida === 'atacar') { partirPraCima(); return; }
+      if (b.dataset.ida === 'cacar') { cacarProximo(); return; }
+      if (b.dataset.ida === 'parar') { if (IDA) { IDA.cacaAlvo = null; status('A caça parou: a seta volta pro próximo ponto.'); pintarIda(); } return; }
       if (b.dataset.ida === 'pm') { entregarPraPM('A PM pegou o bonde e leva até o portão.'); return; }
       /* (na ida jogada o dia anda no passo de quem anda: 1×, e a câmera é do presidente) */
       if (IDA && IDA.andando && (b.dataset.vezes || a === 'pular' || a === 'nossa' || a === 'estadio' || a === 'plano')) return;
@@ -526,7 +528,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=08dc5e5aee');
+    const { criarEstrada } = await import('./estrada3d.js?v=aa21047a36');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -959,7 +961,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=08dc5e5aee');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=aa21047a36');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1400,6 +1402,8 @@ export function criarDia3d(api, vida, g = {}) {
       IDA.x0 = eu.x; IDA.z0 = eu.y; IDA.nome = eu.nome;
       dia.seguirBonde(null);
       D.vezes = 1; dia.rodar(1);
+      /* (a caçada: quem vem atrás da gente e quem está na porta da sede) */
+      montarCaca().catch(err => console.error('a caçada:', err));
       const cedo = dia.t < b.sai - 30;
       status(cedo ? 'A ida é sua, e saímos antes: tem bonde rival na rua. Leve o bonde pelos pontos (a seta aponta) até o cordão da PM — e, se quiser, vá atrás deles.'
                   : 'A ida é sua: leve o bonde pelos pontos (a seta aponta) até o cordão da PM. Rival à vista dá pra caçar.');
@@ -1409,17 +1413,29 @@ export function criarDia3d(api, vida, g = {}) {
     if (dia.t < tSai) { rodarAte(tSai, D.vezes, 'A concentração na porta: o bonde sai daqui a pouco, com o presidente na frente…', parte); return; }
     parte();
   }
+  /* o bonde rival que dá pra pegar: andando pro estádio ou ainda na
+     concentração dele, nas rodinhas da porta de onde sai (quem vem de fora
+     da cidade só depois de entrar nela); perto do portão, não */
+  const pegavel = v => dia.t <= (v.chega || Infinity) - 20 && (dia.t >= v.sai || !!(v.inicio && v.inicio.tipo !== 'entrada'));
   function rivalPerto(eu) {
     const N = TO.jogo3d && TO.jogo3d.nevoa;
     let melhor = null;
     for (const v of D.plano.vivos) {
       if (v === IDA.b || v.controlado || !rivalDeHoje(v.t.id)) continue;
-      if (dia.t < v.sai || dia.t > (v.chega || Infinity) - 20) continue;
+      if (!pegavel(v)) continue;
       const g = v.gente.find(x => !x.saiu), d = g && g.d;
       if (!d) continue;
       if (N && !N.visivel(d.x, d.y)) continue;
       const dist = Math.hypot(d.x - eu.x, d.y - eu.y);
-      if (dist < PERTO_BONDE * M && (!melhor || dist < melhor.dist)) melhor = { v, d, dist };
+      if (dist < PERTO_BONDE * M && (!melhor || dist < melhor.dist)) melhor = { v, d, dist, sigla: v.t.sigla };
+    }
+    /* (e as turmas da caçada: a da porta e a que vem atrás) */
+    for (const H of IDA.grupos || []) {
+      if (H.estado !== 'parado' && H.estado !== 'caca') continue;
+      const d = H.gente[0].d;
+      if (N && !N.visivel(d.x, d.y)) continue;
+      const dist = Math.hypot(d.x - eu.x, d.y - eu.y);
+      if (dist < PERTO_BONDE * M && (!melhor || dist < melhor.dist)) melhor = { H, d, dist, sigla: H.sigla };
     }
     return melhor;
   }
@@ -1428,9 +1444,18 @@ export function criarDia3d(api, vida, g = {}) {
     if (!IDA || !IDA.andando || !eu || D.emCena || IDA.brigando) { if (seta && (!IDA || !IDA.andando)) seta.alvo(null); return; }
     IDA.seg.quadro(dt, eu);
     const p = IDA.pontos[IDA.i];
-    if (seta && p) { if (!seta.alvoAtual || seta.alvoAtual.id !== p.id) seta.alvo({ id: p.id, x: p.x, z: p.z, rot: p.rot }); seta.pintar({ x: eu.x, z: eu.y }); }
+    /* (a seta: o alvo da caça, se tem; senão o próximo ponto) */
+    const ca = IDA.cacaAlvo;
+    if (ca && ((ca.H && ca.H.estado === 'foi') || (ca.v && (ca.v.controlado || !pegavel(ca.v))))) IDA.cacaAlvo = null;
+    if (seta && IDA.cacaAlvo) {
+      const q = IDA.cacaAlvo.H ? IDA.cacaAlvo.H.gente[0].d : (IDA.cacaAlvo.v.gente.find(x => !x.saiu) || {}).d;
+      if (q) { if (!seta.alvoAtual || seta.alvoAtual.id !== 'caca') seta.alvo({ id: 'caca', x: q.x, z: q.y, rot: 'A ' + IDA.cacaAlvo.sigla }); seta.alvoAtual.x = q.x; seta.alvoAtual.z = q.y; seta.pintar({ x: eu.x, z: eu.y }); }
+    } else if (seta && p) { if (!seta.alvoAtual || seta.alvoAtual.id !== p.id) seta.alvo({ id: p.id, x: p.x, z: p.z, rot: p.rot }); seta.pintar({ x: eu.x, z: eu.y }); }
     /* (o cartão da pista esperando a resposta: o bonde segue o presidente, o dia não anda) */
     if (IDA.pausa) { IDA.alvo = null; pintarIda(); return; }
+    /* a caçada: quem vem atrás, quem está na porta */
+    quadroCaca(dt, eu);
+    if (!IDA || IDA.brigando || IDA.pausa) return;
     if (p && Math.hypot(eu.x - p.x, eu.y - p.z) < raioDoPonto(p)) { chegouNoPonto(p); return; }
     IDA.alvo = rivalPerto(eu);
     pintarIda();
@@ -1457,6 +1482,8 @@ export function criarDia3d(api, vida, g = {}) {
     IDA.andando = false;
     if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false);
     if (seta) seta.alvo(null);
+    /* (a caçada acaba com a PM: as turmas saem do desenho) */
+    if (Cn && Cn.vida) Cn.vida.extras = [];
     b.controlado = false;
     D.idaEntregue = true;
     const tK = tempoEm(b, s3);
@@ -1469,9 +1496,11 @@ export function criarDia3d(api, vida, g = {}) {
     rodarAte(b.chega, D.vezes, 'A PM leva o bonde até o portão…', () => { status('O nosso bonde chegou no portão.'); if (f) f(); });
   }
   /* A BRIGA NO CAMINHO: o bonde rival à vista, no lugar onde o presidente está */
-  function partirPraCima() {
-    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, a = IDA && IDA.alvo, e = D.e;
-    if (!a || !eu || !TO.tela.abrirBrigaLivre) return;
+  function partirPraCima(alvo, nosAtacamos = true) {
+    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, a = alvo || (IDA && IDA.alvo), e = D.e;
+    if (!a || !eu || !TO.tela.abrirBrigaLivre || IDA.brigando || IDA.pausa) return;
+    /* (a turma da caçada: a briga no lugar, por `pegou`) */
+    if (a.H) { pegou(a.H, nosAtacamos); return; }
     const resumo = TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
     const nossos = Math.max(2, resumo && resumo.nos != null ? resumo.nos : IDA.b.gente.filter(g => !g.saiu).length);
     const deles = Math.max(2, a.v.gente.filter(g => !g.saiu).length);
@@ -1479,11 +1508,16 @@ export function criarDia3d(api, vida, g = {}) {
     const P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null;
     const cid = cidadeDoDia(), Dm = TO.dominio, b0 = bid && Dm && cid ? Dm.bairro(cid, bid) : null;
     IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: a.v, nossos, deles };
+    a.v.treguaAte = dia.t + 45;
+    /* (a briga começa com cada um onde estava: o nosso bonde e o deles) */
+    const posicoes = posicoesDa(eu, a.v.gente.filter(g => !g.saiu).map(g => g.d));
     dia.parar();
     if (Cn.aPe.ativo) Cn.aPe.sair(false);
+    const naPorta = dia.t < a.v.sai;
     const ok = TO.tela.abrirBrigaLivre({ rivalId: a.v.t.id, deles, escalacao: fila,
-      ruaLivre: { nos: { x: eu.x, z: eu.y }, eles: { x: a.d.x, z: a.d.y }, bairro: b0 ? b0.nome : '', nosAtacamos: true, rot: 'O BONDE DA ' + String(a.v.t.sigla || '').toUpperCase() },
-      alvo: { bairro: b0 ? b0.nome : '', bid, cidade: cid, nosAtacamos: true } });
+      ruaLivre: { nos: { x: eu.x, z: eu.y }, eles: { x: a.d.x, z: a.d.y }, bairro: b0 ? b0.nome : '', nosAtacamos: !!nosAtacamos, posicoes,
+                  rot: (naPorta ? 'A CONCENTRAÇÃO DA ' : 'O BONDE DA ') + String(a.v.t.sigla || '').toUpperCase() },
+      alvo: { bairro: b0 ? b0.nome : '', bid, cidade: cid, nosAtacamos: !!nosAtacamos } });
     if (!ok) { IDA.brigando = null; voltarDaBrigaDaIda(); }
   }
   /* o bonde da rival da tocaia da pista (se ela está andando no dia) */
@@ -1493,6 +1527,292 @@ export function criarDia3d(api, vida, g = {}) {
     const tid = pi.a === nosId ? pi.v : pi.a;
     return (D.plano.vivos || []).find(v => v.t && v.t.id === tid && v !== D.nosso) || null;
   }
+  /* ======================================================
+     A CAÇADA NA IDA (o dono, 07/10/2026: "Quando faço caminhada em direção
+     ao meu estádio e uma torcida me ataca, eu não gosto da ideia de parar
+     a cena pra surgir outra cena da briga. eu gostaria de que fosse algo
+     natural do rival saindo de um ponto (podendo ser sua sede ou algum
+     local de seu domínio) e indo em direção a mim em minha procura,
+     podendo me encontrar em qualquer ponto do mapa e a cena ocorre
+     naturalmente com ela me atacando. Isso também deve ocorrer em caso
+     oposto, quando eu quero atacar alguma torcida que esteja na cidade ou
+     seja da cidade.")
+     - QUEM CAÇA A GENTE: o ataque que o dia marcou na pista (a tocaia da
+       linha) não espera mais na esquina: 2 s depois de o presidente
+       aparecer, a turma da rival (o número da cena) sai da sede dela ou
+       do meio de um bairro que ela domina — a uma distância que dá pra
+       pegar quem vai a pé direto pro cordão (`distanciaDaLargada`; longe
+       demais, ela já vem vindo pelo caminho de lá) — e vem atrás dele
+       pela rua (`caminhoNaRua`, refeito a cada 2,5 s; a 1 s quando
+       perto), trotando (3,4 m/s) e, a 35 m, correndo (5,5 m/s). No escuro
+       da névoa ela não aparece; o painel diz a distância. Encostou (5 m
+       do presidente ou do bonde), a briga abre ali mesmo, com cada um
+       onde estava (palco_briga.js, `posicoes`), e o recado da linha só
+       fica anotado. Chegando no cordão da PM antes (correndo), a gente
+       despistou: o recado sai da linha sem conta nenhuma.
+     - QUEM A GENTE CAÇA: os bondes das rivais que vão pro estádio (na rua
+       ou ainda nas rodinhas da concentração) e, das rivais da cidade que
+       não vão ao jogo, a turma na porta da sede (de 6 a 14). "Caçar" põe a
+       seta na mais perto (de novo, na seguinte); a 22 m, à vista, "Partir
+       pra cima"; colado nelas (7 m), quem parte pra cima são elas. A
+       briga é no lugar, como a de cima.
+     ====================================================== */
+  const CACA = { trote: 3.4, carga: 5.5, perto: 35, contato: 5, colado: 7, espera: 2, refaz: 2.5, refazPerto: 1, largada: [25, 350], naRua: 60 };
+  /* (o passo do presidente a pé: cenario.js, APE.anda) */
+  const APE_ANDA = 2.2;
+  let caminhoNaRuaFn = null;
+  const corDe = tid => { const T = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : null; return T && TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(T) : { cor: '#444', cor2: '#ddd' }; };
+  function discoDaCaca(T, c, k, x, z, chave) {
+    return { nome: (T ? T.nome : 'rival') + ' ' + (k + 1), spawn: 'caca', tid: T ? T.id : null, torcida: T ? T.nome : '', cor: c.cor, cor2: c.cor2, cor3: c.cor3 || undefined,
+             x, y: z, alt: C().vida.chao(x, z), rumo: 0, vivo: true, passada: 1.1, jeito: 'rua', derrubado: 0, golpe: 0, apanhou: 0, atordoado: 0, esquivou: 0,
+             tremor: 0, defendendo: 0, hostil: 0, inimigoPerto: 0, chamou: -99, linha: 'frente', mundo: true, grupo: chave };
+  }
+  /* os bonecos dos grupos no desenho (os `extras` do cenário: a névoa vale pra eles) */
+  function extrasDaCaca() {
+    const Cn = C();
+    if (!Cn || !Cn.vida) return;
+    Cn.vida.extras = IDA && IDA.grupos ? IDA.grupos.filter(H => H.estado !== 'foi').flatMap(H => H.gente.map(x => x.d)) : [];
+  }
+  function tirarGrupo(H) {
+    if (!H) return;
+    H.estado = 'foi';
+    if (IDA && IDA.cacaAlvo === H) IDA.cacaAlvo = null;
+    extrasDaCaca();
+  }
+  /* A DISTÂNCIA DA LARGADA (m): a que dá pra caça pegar quem vai a pé (2,2
+     m/s) direto pro cordão da PM — ela trota a 3,4 e, nos últimos 35 m,
+     corre a 5,5 —, com folga de 15%; correndo (6 m/s) ainda dá pra
+     despistar. Rota curta (a sede colada no estádio), ela larga a uns 25
+     ou 30 m; rota longa, a até 350 m */
+  function distanciaDaLargada(eu) {
+    /* (o que falta da rota do bonde até o raio do cordão, de onde o presidente está nela) */
+    const b = IDA.b, cord = IDA.pontos[IDA.pontos.length - 1], Q = {};
+    let sEu = 0, m = Infinity;
+    for (let s = 0; s <= cord.s; s += M) { b.rua.ponto(s, Q); const q = Math.hypot(Q.x - eu.x, Q.z - eu.y); if (q < m) { m = q; sEu = s; } }
+    const Lc = Math.max(2, (Math.max(Math.hypot(cord.x - eu.x, cord.z - eu.y), cord.s - sEu) - raioDoPonto(cord)) / M);
+    const T = Lc / APE_ANDA, tCarga = CACA.perto / CACA.carga;
+    const Dh = T <= tCarga ? CACA.carga * T : CACA.perto + CACA.trote * (T - tCarga);
+    return clamp(0.85 * Dh, CACA.largada[0], CACA.largada[1]);
+  }
+  /* DE ONDE A CAÇA SAI: a porta da sede dela ou o meio de um bairro que ela
+     domina — um dos que ficam perto da distância da largada; se todos ficam
+     longe demais, ela saiu do mais perto faz tempo e já vem vindo pelo
+     caminho de lá, a essa distância da gente (`ja`) */
+  function origemDaCaca(tid, eu) {
+    const out = [], porta = api.sedeDe ? api.sedeDe(tid) : null;
+    if (porta) out.push({ x: porta.x + (porta.fx || 0) * 2.5 * M, z: porta.y + (porta.fy || 0) * 2.5 * M, onde: 'sede' });
+    const e = D.e, Dm = TO.dominio, cid = cidadeDoDia(), P = api.planta;
+    let bs = [];
+    try { bs = Dm && cid ? Dm.bairros(e, cid).filter(b => b.dono === tid) : []; } catch (err) { bs = []; }
+    const centros = P && P.bairros ? P.bairros() : [];
+    for (const b of bs) { const c = centros.find(x => x.id === b.id); if (c && c.centro) out.push({ x: c.centro.x, z: c.centro.y, onde: 'bairro', nome: b.nome }); }
+    const quer = distanciaDaLargada(eu), dist = c => Math.hypot(c.x - eu.x, c.z - eu.y) / M;
+    /* (sem sede nem bairro aqui: pela rota da gente, na frente) */
+    if (!out.length) {
+      const b = IDA.b, Q = {};
+      b.rua.ponto(Math.min(b.rua.L, (b.s0 || 0) + quer * M), Q);
+      return { x: Q.x, z: Q.z, onde: 'rua', dist: quer };
+    }
+    const boas = out.filter(c => dist(c) >= quer * 0.5 && dist(c) <= quer * 1.4);
+    if (boas.length) { const c = boas[Math.floor(Math.random() * boas.length)]; return Object.assign(c, { dist: dist(c) }); }
+    const c = out.sort((a, b) => Math.abs(dist(a) - quer) - Math.abs(dist(b) - quer))[0];
+    if (dist(c) < quer) return Object.assign(c, { dist: dist(c) });
+    /* (longe: o ponto do caminho de lá até a gente, a `quer` m da gente) */
+    const tr = caminhoNaRuaFn ? caminhoNaRuaFn(D.plano, c.x, c.z, eu.x, eu.y) : null;
+    if (tr && tr.L > quer * M) { const Q = {}; tr.ponto(tr.L - quer * M, Q); return { x: Q.x, z: Q.z, onde: c.onde, nome: c.nome, ja: true, dist: quer }; }
+    return Object.assign(c, { dist: dist(c) });
+  }
+  function novoGrupo(tid, n, x, z, o = {}) {
+    const T = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : null, c = corDe(tid), chave = 'caca|' + tid + '|' + (o.tipo || 'grupo');
+    const H = { tid, T, nome: T ? T.nome : tid, sigla: T && TO.mundo.siglaTorcida ? TO.mundo.siglaTorcida(T) : tid, n, gente: [], estado: o.estado || 'parado',
+                tipo: o.tipo || 'porta', ev: o.ev || null, x, z, rota: null, s: 0, tPlano: -99, seg: null, saiEm: o.saiEm || 0, onde: o.onde || null };
+    for (let k = 0; k < n; k++) {
+      const a = k / n * Math.PI * 2 + Math.random() * 0.4, r = (o.roda ? 1.2 + Math.random() * 1.0 : 0.6 + Math.random() * 1.6) * M;
+      const d = discoDaCaca(T, c, k, x + Math.cos(a) * r, z + Math.sin(a) * r, chave);
+      if (o.roda) { d.rumo = Math.atan2(x - d.x, z - d.y); d.jeito = 'bar'; }
+      H.gente.push({ d });
+    }
+    return H;
+  }
+  async function montarCaca() {
+    if (!IDA || IDA.grupos) return;
+    IDA.grupos = [];
+    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=aa21047a36')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
+    if (!IDA || !D) return;
+    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, e = D.e, nosId = e.torcida.id;
+    if (!eu) return;
+    const resumo = TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
+    /* QUEM CAÇA: o ataque marcado na pista (a tocaia da linha) */
+    const pi = D.pistaDaIda;
+    if (pi && pi.v === nosId && pi.a && caminhoNaRuaFn) {
+      const o = origemDaCaca(pi.a, eu);
+      /* (a turma que vem é a que a cena vai ter: a conta do ataque, main.js) */
+      const atq = pi.ev && pi.ev.abrir && pi.ev.abrir.atq;
+      let n = atq && TO.tela.delesDoAtaque ? TO.tela.delesDoAtaque(atq) : null;
+      if (!(n > 0)) n = (resumo && resumo.eles) || 12;
+      n = clamp(Math.round(n), 4, CACA.naRua);
+      const H = novoGrupo(pi.a, n, o.x, o.z, { tipo: 'caca', estado: 'espera', ev: pi.ev, saiEm: dia.t + CACA.espera, onde: o.onde });
+      H.origem = o;
+      IDA.grupos.push(H);
+      D.caca = H;
+      /* (a pista vira só um ponto de passagem: a tocaia agora vem atrás da gente) */
+      for (const p of IDA.pontos) if (p.id === 'pista') p.evento = false;
+      IDA.evento = null;
+    }
+    /* QUEM A GENTE CAÇA: a turma na porta da sede de cada rival da cidade (as que não estão na rua no dia) */
+    const cid = cidadeDoDia(), Dm = TO.dominio;
+    let ts = [];
+    try { ts = Dm && Dm.torcidasDaCidade ? Dm.torcidasDaCidade(cid) : []; } catch (err) { ts = []; }
+    const naRua = new Set((D.plano.vivos || []).map(v => v.t && v.t.id));
+    for (const o of ts) {
+      if (!o || o.id === nosId || naRua.has(o.id) || (pi && o.id === pi.a) || !rivalDeHoje(o.id)) continue;
+      const porta = api.sedeDe ? api.sedeDe(o.id) : null;
+      if (!porta) continue;
+      const mb = Dm.membrosDe ? Dm.membrosDe(e, o.id) : 60;
+      const H = novoGrupo(o.id, clamp(Math.round(mb * 0.08), 6, 14), porta.x + (porta.fx || 0) * 3 * M, porta.y + (porta.fy || 0) * 3 * M, { tipo: 'porta', roda: true });
+      IDA.grupos.push(H);
+    }
+    extrasDaCaca();
+  }
+  /* o caminho até o presidente (a grade do plano) */
+  function planejarCaca(H, eu) {
+    const d0 = H.gente[0].d;
+    H.tPlano = dia.t;
+    const tr = caminhoNaRuaFn ? caminhoNaRuaFn(D.plano, d0.x, d0.y, eu.x, eu.y) : null;
+    H.rota = tr; H.s = 0;
+  }
+  function soltarCaca(H, eu) {
+    H.estado = 'caca';
+    planejarCaca(H, eu);
+    const d0 = H.gente[0].d;
+    if (H.rota) { const Q = {}; H.rota.ponto(0, Q); d0.x = Q.x; d0.y = Q.z; }
+    const Cn = C(), resto = H.gente.slice(1).map(x => x.d);
+    H.seg = criarSeguidores(resto, { M, porFila: 3, passo: 1.0, largura: 1.3, folga0: 1.3, cabe: (x, z) => Cn.vida.cabe(x, z, 0.25), chao: (x, z) => Cn.vida.chao(x, z) });
+    H.seg.semear(d0.x, d0.y, d0.x, d0.y, 0);
+    const o = H.origem || {}, de = H.onde === 'sede' ? 'da sede dela' : H.onde === 'bairro' ? 'de um bairro dela' + (o.nome ? ` (${o.nome})` : '') : 'pela rua';
+    status(o.ja ? `A ${H.nome} saiu ${de} atrás da gente e já vem vindo: ${Math.round(o.dist / 10) * 10} m!` : `A ${H.nome} saiu ${de} atrás da gente!`, true);
+    pintar();
+  }
+  function moverCaca(H, eu, dt) {
+    const d0 = H.gente[0].d, Cn = C();
+    const dist = Math.hypot(eu.x - d0.x, eu.y - d0.y) / M;
+    if (!H.rota || dia.t - H.tPlano > (dist < 60 ? CACA.refazPerto : CACA.refaz) || H.s >= H.rota.L - 0.5 * M) planejarCaca(H, eu);
+    const v = dist < CACA.perto ? CACA.carga : CACA.trote, x0 = d0.x, z0 = d0.y;
+    if (H.rota && H.rota.L > 0.5 * M) {
+      H.s = Math.min(H.rota.L, H.s + v * M * dt);
+      const Q = {}; H.rota.ponto(H.s, Q); d0.x = Q.x; d0.y = Q.z;
+    } else {
+      /* (sem caminho: reto, se cabe) */
+      const ux = (eu.x - d0.x) / (dist * M || 1), uz = (eu.y - d0.y) / (dist * M || 1), nx = d0.x + ux * v * M * dt, nz = d0.y + uz * v * M * dt;
+      if (Cn.vida.cabe(nx, nz, 0.25)) { d0.x = nx; d0.y = nz; }
+    }
+    const mx = d0.x - x0, mz = d0.y - z0;
+    if (mx * mx + mz * mz > 1e-6) d0.rumo = Math.atan2(mx, mz);
+    d0.alt = Cn.vida.chao(d0.x, d0.y);
+    d0._cacando = v > 4; d0.passada = v > 4 ? 2.0 : 1.4; d0.jeito = 'rua';
+    if (H.seg) H.seg.quadro(dt, d0);
+  }
+  /* a menor distância (m) da turma até o presidente e o nosso bonde */
+  function distDaGente(H, eu) {
+    const nossos = [eu].concat(IDA.b.gente.filter(g => !g.saiu).slice(0, 12).map(g => g.d));
+    let m = Infinity;
+    for (const x of H.gente.slice(0, 4)) for (const o of nossos) m = Math.min(m, Math.hypot(x.d.x - o.x, x.d.y - o.y));
+    return m / M;
+  }
+  function quadroCaca(dt, eu) {
+    for (const H of IDA.grupos || []) {
+      if (H.estado === 'foi') continue;
+      if (H.estado === 'espera') { if (dia.t >= H.saiEm) soltarCaca(H, eu); continue; }
+      if (H.estado === 'caca') moverCaca(H, eu, dt);
+      const g0 = H.gente[0].d;
+      H.dist = Math.hypot(eu.x - g0.x, eu.y - g0.y) / M;
+      if (H.estado === 'caca' && distDaGente(H, eu) < CACA.contato) { pegou(H, false); return; }
+      if (H.estado === 'parado' && H.dist < CACA.colado) { pegou(H, false); return; }
+    }
+    /* COLADO NUM BONDE RIVAL (andando pro estádio ou nas rodinhas da
+       concentração dele): quem parte pra cima são eles, ali mesmo */
+    for (const v of D.plano.vivos || []) {
+      if (v === IDA.b || v.controlado || !rivalDeHoje(v.t.id) || !pegavel(v)) continue;
+      /* (o bonde com quem a gente acabou de brigar: a volta é ali do lado dele) */
+      if (v.treguaAte && dia.t < v.treguaAte) continue;
+      for (const g of v.gente) {
+        if (g.saiu) continue;
+        const q = Math.hypot(g.d.x - eu.x, g.d.y - eu.y);
+        if (q < CACA.colado * M) { partirPraCima({ v, d: g.d, dist: q, sigla: v.t.sigla }, false); return; }
+      }
+    }
+  }
+  /* os pontos (no mundo) de quem está na briga: o presidente e o nosso bonde; a turma deles */
+  function posicoesDa(eu, eles) {
+    const pt = d => ({ x: d.x, z: d.y });
+    return { nos: [pt(eu)].concat(IDA.b.gente.filter(g => !g.saiu).map(g => pt(g.d))), eles: eles.map(pt) };
+  }
+  /* ENCOSTOU: a briga abre ali (a da linha — quem caçou a gente — pelo recado
+     dela, sem o cartão esperando; a das turmas da cidade, direto) */
+  function pegou(H, nosAtacamos) {
+    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, e = D.e;
+    if (!eu || IDA.brigando || IDA.pausa) return;
+    if (H.ev) {
+      H.pegou = true; H.estado = 'pegou';
+      IDA.natural = { H, posicoes: posicoesDa(eu, H.gente.map(x => x.d)), nosAtacamos: !!nosAtacamos };
+      IDA.pausa = true; IDA.alvo = null;
+      dia.parar();
+      status(`A ${H.nome} achou a gente!`, true);
+      const f = IDA.fim; IDA.fim = null;
+      if (f) f();
+      return;
+    }
+    const resumo = TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
+    const nossos = Math.max(2, resumo && resumo.nos != null ? resumo.nos : IDA.b.gente.filter(g => !g.saiu).length);
+    const fila = TO.membros.aptosParaOEstadio(e).sort((x, y) => (y.forca + y.defesa) - (x.forca + x.defesa)).slice(0, Math.max(2, nossos));
+    const P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null, cid = cidadeDoDia(), Dm = TO.dominio, b0 = bid && Dm && cid ? Dm.bairro(cid, bid) : null;
+    const g0 = H.gente[0].d, posicoes = posicoesDa(eu, H.gente.map(x => x.d));
+    IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: null, H, nossos, deles: H.n };
+    H.estado = 'brigando';
+    extrasDaCaca();
+    dia.parar();
+    if (Cn.aPe.ativo) Cn.aPe.sair(false);
+    const ok = TO.tela.abrirBrigaLivre({ rivalId: H.tid, deles: H.n, escalacao: fila,
+      ruaLivre: { nos: { x: eu.x, z: eu.y }, eles: { x: g0.x, z: g0.y }, bairro: b0 ? b0.nome : '', nosAtacamos: !!nosAtacamos, posicoes,
+                  rot: (H.tipo === 'porta' ? 'A PORTA DA ' : 'A ') + String(H.sigla || '').toUpperCase() },
+      alvo: { bairro: b0 ? b0.nome : '', bid, cidade: cid, nosAtacamos: !!nosAtacamos } });
+    if (!ok) { IDA.brigando = null; H.estado = H.tipo === 'porta' ? 'parado' : 'caca'; extrasDaCaca(); voltarDaBrigaDaIda(); }
+  }
+  /* A LINHA PERGUNTA O QUE FOI DO RECADO (main.js, `itnRecado`): a rival que
+     pegou a gente na rua abre a briga sem o cartão; a que não pegou (a PM
+     levou o bonde antes) sai da linha */
+  function respostaDaLinha(ev) {
+    const H = D && D.caca;
+    if (!H || !ev || ev !== H.ev) return null;
+    if (H.pegou) return 'brigar';
+    tirarGrupo(H);
+    D.caca = null;
+    return 'pular';
+  }
+  /* o alvo da caça (o botão "Caçar"): as turmas e os bondes rivais na rua, do mais perto */
+  function alvosDaCaca(eu) {
+    const out = [];
+    for (const H of IDA.grupos || []) if (H.estado === 'parado' || H.estado === 'caca') out.push({ H, sigla: H.sigla, d: H.gente[0].d });
+    for (const v of D.plano.vivos || []) {
+      if (v === IDA.b || v.controlado || !rivalDeHoje(v.t.id)) continue;
+      if (!pegavel(v)) continue;
+      const g = v.gente.find(x => !x.saiu);
+      if (g) out.push({ v, sigla: v.t.sigla, d: g.d });
+    }
+    for (const a of out) a.dist = Math.hypot(a.d.x - eu.x, a.d.y - eu.y) / M;
+    return out.sort((a, b) => a.dist - b.dist);
+  }
+  function cacarProximo() {
+    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null;
+    if (!IDA || !eu) return;
+    const l = alvosDaCaca(eu);
+    if (!l.length) { status('Nenhuma rival na rua por perto agora.'); return; }
+    const atual = IDA.cacaAlvo, i = atual ? l.findIndex(a => (a.H && a.H === atual.H) || (a.v && a.v === atual.v)) : -1;
+    IDA.cacaAlvo = l[(i + 1) % l.length];
+    status(`Caçando a ${IDA.cacaAlvo.sigla}: a seta aponta pra ela.`);
+    pintarIda();
+  }
+
   /* o palco da briga desmontou (vida3d.js): quando o relatório fechar, o presidente volta */
   function voltouDaBrigaDaIda() { if (IDA) IDA.voltar = true; }
   function conferirVoltaDaIda() {
@@ -1507,10 +1827,12 @@ export function criarDia3d(api, vida, g = {}) {
       const nossas = Math.round((res['caidos' + nl] || 0) + (res['presos' + nl] || 0)), delas = Math.round((res['caidos' + ol] || 0) + (res['presos' + ol] || 0));
       /* (a briga que a linha abriu — a tocaia da pista — já tirou as baixas
          do número dela; aqui só sai quem caiu dos bonecos dos bondes) */
-      const v = br.v || rivalDaPista();
+      /* (a turma da caçada não é bonde do plano: ela sai da rua depois da briga) */
+      const v = br.H ? null : (br.v || rivalDaPista());
       dia.tirarDoBonde(IDA.b, nossas);
       if (v) dia.tirarDoBonde(v, delas);
-      if (!br.doItinerario && v && TO.tela.baixaNaLinha) TO.tela.baixaNaLinha(nossas, v.t.id, delas);
+      if (!br.doItinerario && (v || br.H) && TO.tela.baixaNaLinha) TO.tela.baixaNaLinha(nossas, v ? v.t.id : br.H.tid, delas);
+      if (br.H) tirarGrupo(br.H);
       D.brigouNaIda = true;
     }
     voltarDaBrigaDaIda(br ? br.pos : null);
@@ -1553,12 +1875,18 @@ export function criarDia3d(api, vida, g = {}) {
     const a = IDA && IDA.andando ? IDA.alvo : null;
     /* (com o cartão da pista esperando resposta, só o próximo ponto: a PM e a caça esperam o cartão) */
     const pausa = !!(IDA && IDA.pausa);
-    const sig = (p ? p.id : '') + '|' + (a ? a.v.t.id : '') + '|' + (pausa ? 'p' : '');
+    /* quem vem atrás da gente (a distância, de 10 em 10 m) e quem a gente caça */
+    const H = IDA && IDA.grupos ? IDA.grupos.find(x => x.tipo === 'caca' && x.estado === 'caca') : null;
+    const vem = H && H.dist != null ? `A ${H.sigla} vem atrás: ${Math.max(10, Math.round(H.dist / 10) * 10)} m` : '';
+    const ca = IDA && IDA.cacaAlvo, cacando = ca ? `Caçando a ${ca.sigla}` : '';
+    const sig = (p ? p.id : '') + '|' + (a ? a.sigla : '') + '|' + (pausa ? 'p' : '') + '|' + vem + '|' + cacando;
     row.hidden = !IDA || !IDA.andando;
     if (sig === idaVista) return;
     idaVista = sig;
-    row.innerHTML = !p ? '' : `<span>Próximo ponto: <b>${esc(p.rot)}</b></span>` +
-      (a && !pausa ? `<button data-ida="atacar" class="perigo">Partir pra cima da ${esc(a.v.t.sigla)}</button>` : '') +
+    row.innerHTML = !p ? '' : `<span>${ca ? `<b>${esc(cacando)}</b>` : `Próximo ponto: <b>${esc(p.rot)}</b>`}${vem ? ` · <b class="ruim">${esc(vem)}</b>` : ''}</span>` +
+      (a && !pausa ? `<button data-ida="atacar" class="perigo">Partir pra cima da ${esc(a.sigla)}</button>` : '') +
+      (pausa ? '' : ca ? `<button data-ida="parar" title="A seta volta pro próximo ponto">Parar a caça</button>`
+                       : `<button data-ida="cacar" title="A seta aponta a rival mais perto na rua (de novo, a seguinte)">Caçar</button>`) +
       (pausa ? '' : `<button data-ida="pm" title="A PM pega o bonde onde ele estiver e leva até o portão">Devolver pra PM</button>`);
   }
   /* A INVESTIDA NOS ARREDORES (arredores3d.js; o dono, 29/09/2026: "pode
@@ -1700,6 +2028,11 @@ export function criarDia3d(api, vida, g = {}) {
      do bonde diz na hora, com a rival à vista — no lugar do texto do jogo
      de feed ("caiu em cima da nossa concentração… Foi em Concentração") */
   function avisoDoAtaque(ev) {
+    /* (a caçada que pegou a gente na rua: o recado fica anotado na linha, sem esperar resposta) */
+    if (D && D.caca && ev === D.caca.ev && D.caca.pegou) {
+      const nome = D.caca.nome;
+      return { voz: `Na caminhada · ${nome}`, texto: `A ${nome} saiu atrás da gente e achou o bonde na rua. A briga foi ali mesmo.` };
+    }
     if (D && !D.ia && D.arr && ev === D.evArr) {
       const alvo = D.arr.v.t.nome;
       return { voz: `Investida marcada · ${alvo}`, texto: `A gente tá colado no cordão da PM, nos arredores do estádio. A ${alvo} parou do outro lado da grade, na frente dos PMs — é agora.` };
@@ -2044,7 +2377,7 @@ export function criarDia3d(api, vida, g = {}) {
      ====================================================== */
   function fechar() {
     if (!D) return;
-    if (IDA) { const Cn = C(); if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false); if (IDA.b) IDA.b.controlado = false; const st = setaDaRua(); if (st) st.alvo(null); IDA = null; }
+    if (IDA) { const Cn = C(); if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false); if (Cn && Cn.vida && IDA.grupos) Cn.vida.extras = []; if (IDA.b) IDA.b.controlado = false; const st = setaDaRua(); if (st) st.alvo(null); IDA = null; }
     document.body.classList.remove('j3d-ida');
     const eraFundo = !!D.fundo, tDia = dia && dia.plano ? dia.t : null, estrada = D.estrada;
     /* O RESULTADO FICA NA TELA: o dia fecha uns 2 s depois do apito, e o placar
@@ -2147,9 +2480,25 @@ export function criarDia3d(api, vida, g = {}) {
     /* A IDA JOGADA: no ar (o presidente leva o bonde), a briga que voltou e a rua da tocaia da pista */
     get idaJogada() { return !!(IDA && (IDA.andando || IDA.pausa || IDA.brigando)); },
     voltouDaBriga: () => voltouDaBrigaDaIda(),
+    /* a caçada na ida (main.js pergunta o que foi do recado da tocaia) */
+    respostaDaLinha: ev => respostaDaLinha(ev),
+    /* pro teste: os grupos da caçada */
+    get caca() {
+      if (!IDA || !IDA.grupos) return null;
+      return IDA.grupos.map(H => ({ sigla: H.sigla, tid: H.tid, tipo: H.tipo, estado: H.estado, n: H.gente.length, dist: H.dist != null ? Math.round(H.dist) : null,
+                                    x: H.gente[0].d.x, z: H.gente[0].d.y, onde: H.onde || null, ev: !!H.ev, rota: H.rota ? Math.round(H.rota.L / M) : null }));
+    },
+    soltarCacaAgora() { const H = D && D.caca; if (H && H.estado === 'espera') H.saiEm = dia.t; return !!H; },
+    /* pro teste: pra onde a seta da caça aponta */
+    get alvoDaCaca() {
+      const a = IDA && IDA.cacaAlvo, Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null;
+      const q = !a ? null : a.H ? a.H.gente[0].d : (a.v.gente.find(x => !x.saiu) || {}).d;
+      if (!q) return null;
+      return { sigla: a.sigla, tipo: a.H ? a.H.tipo : 'bonde', naPorta: !!(a.v && dia.t < a.v.sai), x: q.x, z: q.y, dist: eu ? Math.round(Math.hypot(q.x - eu.x, q.y - eu.y) / M) : null };
+    },
     /* pro teste: a ida jogada por dentro, e o presidente levado a um ponto (o bonde atrás dele) */
     get ida() {
-      return IDA ? { andando: IDA.andando, pausa: !!IDA.pausa, i: IDA.i, brigando: !!IDA.brigando, alvo: IDA.alvo ? IDA.alvo.v.t.sigla : null,
+      return IDA ? { andando: IDA.andando, pausa: !!IDA.pausa, i: IDA.i, brigando: !!IDA.brigando, alvo: IDA.alvo ? IDA.alvo.sigla : null,
                      pontos: IDA.pontos.map(p => ({ id: p.id, x: p.x, z: p.z, evento: !!p.evento })), n: IDA.b.gente.filter(g => !g.saiu).length } : null;
     },
     levarNaIda(x, z) {
@@ -2163,6 +2512,18 @@ export function criarDia3d(api, vida, g = {}) {
     ruaDaIda(cfg) {
       const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null;
       if (!IDA || !eu) return null;
+      /* A CAÇADA QUE PEGOU A GENTE: a briga é onde a rival encostou, com cada um onde estava */
+      const N0 = IDA.natural;
+      if (N0) {
+        IDA.natural = null;
+        const H = N0.H, g0 = H.gente[0].d;
+        IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: null, doItinerario: true, H };
+        tirarGrupo(H);
+        if (Cn.aPe.ativo) Cn.aPe.sair(false);
+        const P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null, cid = cidadeDoDia(), Dm = TO.dominio, b0 = bid && Dm && cid ? Dm.bairro(cid, bid) : null;
+        return { nos: { x: eu.x, z: eu.y }, eles: { x: g0.x, z: g0.y }, bairro: b0 ? b0.nome : '', nosAtacamos: N0.nosAtacamos, posicoes: N0.posicoes,
+                 rot: 'A ' + String(H.sigla || '').toUpperCase() };
+      }
       const Q = {};
       /* eles vêm de 14 m pra frente na rota (a esquina) */
       IDA.b.rua.ponto(Math.min(IDA.b.rua.L, (IDA.pontos[0].s || 0) + 14 * M), Q);

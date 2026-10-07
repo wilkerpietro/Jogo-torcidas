@@ -36,6 +36,8 @@ const VISTAS = { perto: { dist: 21, el: 1.1 }, alto: { dist: 44, el: 1.3 } };
    e (a invasão no estádio, invasao.js) eixos(x, y) → {u, v} (os eixos
    do tabuleiro naquele ponto: o tabuleiro que segue a curva do anel),
    aCadaQuadro(j, THREE, grupo) (o que o palco desenha a mais: o gradil),
+   posicoes ({ nos, eles }: a briga começa com cada um onde estava na rua,
+   e o bonde deles vem pra cima),
    aoLimpar(), semGrades (o boneco não desenha as grades do combate) e
    comDia(discos) (os bonecos do dia de jogo que ficam em volta) } */
 export function palcoDeBriga(o) {
@@ -270,6 +272,59 @@ export function palcoDeBriga(o) {
   }
 
   /* =====================================================
+     A BRIGA COMEÇA ONDE ELES ESTÃO (o dono, 07/10/2026: "eu não gosto da
+     ideia de parar a cena pra surgir outra cena da briga [...] a cena
+     ocorre naturalmente com ela me atacando"): com `o.posicoes` ({ nos,
+     eles }: os pontos do mundo de quem vinha andando na rua — o presidente
+     primeiro), cada boneco do combate nasce no lugar de um deles, virado
+     pro outro lado; quem sobra (o combate traz o efetivo inteiro, mais do
+     que se via) entra logo atrás dos seus, e o bonde deles vem pra cima (a
+     treta marcada faz o mesmo, main.js) — sem a ordem, quem chegou caçando
+     dava meia-volta pra saída dele
+     ===================================================== */
+  let posicoesPostas = false;
+  function porNasPosicoes(j) {
+    posicoesPostas = true;
+    const P = o.posicoes, A = TO.diaJogo && TO.diaJogo.arredores;
+    const W = o.cena.largura || 1536, H = o.cena.altura || 1024;
+    const nl = ladoDoJogador();
+    const fora = d => d.sumiu || d.entrou || !d.vivo;
+    const nossos = j.discos.filter(d => d.lado === nl && !fora(d)).sort((a, b) => (b.lider ? 1 : 0) - (a.lider ? 1 : 0));
+    const deles = j.discos.filter(d => d.lado !== nl && !fora(d));
+    const tab = l => (l || []).map(q => doMundo(q.x, q.z));
+    const pn = tab(P.nos), pe = tab(P.eles);
+    const centro = ps => ps.length ? [ps.reduce((a, q) => a + q[0], 0) / ps.length, ps.reduce((a, q) => a + q[1], 0) / ps.length] : null;
+    const cn = centro(pn), ce = centro(pe);
+    const colocar = (ds, ps, eu, outro) => {
+      if (!ps.length || !ds.length) return;
+      let ux = 0, uy = 0;
+      if (eu && outro) { ux = eu[0] - outro[0]; uy = eu[1] - outro[1]; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l; }
+      ds.forEach((d, i) => {
+        let x, y;
+        if (i < ps.length) { x = ps[i][0]; y = ps[i][1]; }
+        else {
+          const k = i - ps.length, base = ps[k % ps.length], fila = 1 + Math.floor(k / ps.length);
+          x = base[0] + ux * fila * 26 + (Math.random() - 0.5) * 24; y = base[1] + uy * fila * 26 + (Math.random() - 0.5) * 24;
+        }
+        x = Math.max(16, Math.min(W - 16, x)); y = Math.max(16, Math.min(H - 16, y));
+        if (A && A.pontoLivreMaisProximo) { const q = A.pontoLivreMaisProximo(x, y, d.r || 7); if (q) { x = q.x; y = q.y; } }
+        d.x = x; d.y = y; d.vx = 0; d.vy = 0;
+        if (outro) d.rumo = Math.atan2(outro[0] - x, outro[1] - y);
+      });
+    };
+    colocar(nossos, pn, cn, ce);
+    colocar(deles, pe, ce, cn);
+    /* QUEM ESTÁ NA RUA BRIGA, quem quer que tenha partido pra cima: o bonde
+       deles vai no nosso. Sem a ordem, quem ficava longe de todo mundo (sem
+       inimigo no raio) andava pra saída do lado dele e "entrava" ali — sumia
+       da rua: medido, 16 dos 30 da concentração da TOC em 3 s */
+    const alvo = [...new Set(j.discos.filter(d => d.doJogador).map(d => d.spawn))][0] || null;
+    for (const sp of [...new Set(deles.map(d => d.spawn))]) j.bondes[sp] = Object.assign(j.bondes[sp] || { id: sp }, { humor: 'atacar', agirEm: 0, alvo });
+    for (const d of deles) { d.guarda = false; d.daCasa = false; }
+    j.acordou = true; j.paz = false;
+  }
+
+  /* =====================================================
      O CONTRATO DA PONTE
      ===================================================== */
   const R = {
@@ -314,6 +369,7 @@ export function palcoDeBriga(o) {
       return true;
     },
     desenhar(j) {
+      if (montado && j && o.posicoes && !posicoesPostas && j.discos && j.discos.length) { try { porNasPosicoes(j); } catch (e) { console.error('palco da briga, as posições:', e); } }
       if (!montado || !j || !grupo) return;
       desenharPanos(j);
       desenharObjetivo(j);

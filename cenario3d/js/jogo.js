@@ -6536,6 +6536,7 @@ TO.i18n.registrar({
   /* a roda da IA atacada pela IA, e a rua que cede a vez (07/10/2026) */
   'A {a} foi pra cima da roda da {b} em {bairro}!': {es:'¡La {a} fue contra la ronda de la {b} en {bairro}!', en:'{a} went after {b}\'s crew in {bairro}!'},
   'roda desfeita': {es:'ronda desarmada', en:'crew run off'},
+  'a {nome} não achou a gente': {es:'la {nome} no nos encontró', en:'{nome} never found us'},
   'Feito: o presidente e o bonde voltaram pra sede.': {es:'Hecho: el presidente y la barra volvieron a la sede.', en:'Done: the president and the crew went back to the HQ.'},
   'A diretoria chamou: o presidente voltou pra sede pra reunião.': {es:'La directiva llamó: el presidente volvió a la sede para la reunión.', en:'The board called: the president went back to the HQ for the meeting.'},
   /* o mapa da cidade (mapa3d.js) */
@@ -45344,6 +45345,7 @@ TO.diaJogo.combate = (function(){
     if(J.fase==='comemorando'){
       moverDiscos(J,dt);
       separar(J);
+      correrLonge(J,dt);
       if(J.t >= J.comemorarAte) J.fase = 'acabando';
       return;
     }
@@ -45379,6 +45381,7 @@ TO.diaJogo.combate = (function(){
     iaRecuo(J);
     if(PF) marca('arremesso+clima+carga+pressao+recuo');
     separar(J);
+    correrLonge(J,dt);
     if(PF) marca('separar');
     checarDebandada(J);
     conferirEntrada(J);
@@ -45549,7 +45552,8 @@ TO.diaJogo.combate = (function(){
   function comemorar(J, lado){
     acabar(J, lado);
     J.fase = 'comemorando';
-    J.comemorarAte = J.t + TEMPO_DE_COMEMORAR;
+    /* (e o último que saiu correndo chega no ponto dele: até 3 s a mais) */
+    J.comemorarAte = J.t + Math.max(TEMPO_DE_COMEMORAR, Math.min(TEMPO_DE_COMEMORAR + 3, correndoAinda(J) + 1));
     for(const d of J.discos){
       if(!d.vivo || d.lado !== lado) continue;
       d.comemorando = true; d.entrando = false; d.recuando = false;
@@ -46199,8 +46203,11 @@ TO.diaJogo.combate = (function(){
           const perto = Math.max(destino.raio||34, 46);
           if(U.dist(d.x,d.y,destino.x,destino.y) < perto){
             /* nos arredores fugir é entrar: some pro estádio, e é isso
-               que o placar de quem entrou tem de contar */
-            if(destino.entrada) entrarNoEstadio(J,d); else sumir(J,d);
+               que o placar de quem entrou tem de contar. Nas outras
+               cenas a entrada de origem é só a boca por onde o bonde
+               veio: quem foge por ela corre (`sumir`, QUEM CORRE NÃO
+               SOME) — antes ele "entrava" ali e sumia da rua */
+            if(destino.entrada && fugaPelaEntrada()) entrarNoEstadio(J,d); else sumir(J,d);
             continue;
           }
           campo = rota.campo; usarCampo=true;
@@ -46811,11 +46818,47 @@ TO.diaJogo.combate = (function(){
   /* usada pelos testes e pelo editor: só o destino, sem o campo */
   function alvoDeFuga(J, d){ const r=rotaDeFuga(J,d); return r && r.destino; }
 
+  /* QUEM CORRE NÃO SOME (o dono, 07/10/2026: "Quando uma torcida corre
+     agora, em todas as cenas de fuga não existirá mais o boneco sumir da
+     tela, ele continua correndo até certo ponto enquanto o atacante
+     provoca de longe"). Quem chega na boca de fuga sai da briga do mesmo
+     jeito — `sumiu`, a conta dos `sumiram`, o fim —, mas o boneco segue
+     correndo no rumo que vinha (`d.longe`), uns 290 a 500 px (8 a 14 m na
+     rua do jogo 3D), e para lá, olhando pra trás; o desenho segue
+     mostrando ele (bonecos3.js). Na cena de cima do jogo de feed isso é
+     fora da tela, como antes */
+  const LONGE = {de:290, ate:500, vel:90};
   function sumir(J,d){
     if(d.sumiu) return;
-    d.sumiu=true; d.vx=d.vy=0;
+    d.sumiu=true;
     J.sumiram[d.lado]=(J.sumiram[d.lado]||0)+1;
+    let vx=d.vx||0, vy=d.vy||0, v=hyp(vx,vy);
+    if(v < 20){
+      const ini = centroDoInimigo(J, d.lado);
+      if(ini){ vx=d.x-ini.x; vy=d.y-ini.y; v=hyp(vx,vy); }
+    }
+    if(v < 1e-3){ d.vx=d.vy=0; return; }
+    d.longe = {vx:vx/v*LONGE.vel, vy:vy/v*LONGE.vel, resta: LONGE.de + Math.random()*(LONGE.ate-LONGE.de), parado:false};
+    d.vx=d.longe.vx; d.vy=d.longe.vy;
   }
+  /* quem saiu correndo da briga segue até o ponto dele e para lá, virado pra ela */
+  function correrLonge(J,dt){
+    for(const d of J.discos){
+      const L = d.longe;
+      if(!L || L.parado) continue;
+      const passo = Math.min(L.resta, LONGE.vel*dt);
+      d.x += L.vx/LONGE.vel*passo; d.y += L.vy/LONGE.vel*passo;
+      d.rumo = Math.atan2(L.vx, L.vy);
+      L.resta -= passo;
+      if(L.resta <= 1e-3){
+        L.parado = true; d.vx = d.vy = 0; d.fugindo = false;
+        const c = centroDoInimigo(J, d.lado);
+        if(c) d.rumo = Math.atan2(c.x - d.x, c.y - d.y);
+      }
+    }
+  }
+  /* quanto falta (s) pro último que corre parar */
+  const correndoAinda = J => J.discos.reduce((m,d)=>d.longe && !d.longe.parado ? Math.max(m, d.longe.resta/LONGE.vel) : m, 0);
 
   /* ---------- polícia ---------- */
   function procurandoConflito(J,d){
@@ -50003,7 +50046,8 @@ TO.diaJogo.tres = (function(){
   }
 
   function boneco(d, i, J, dt){
-    if(d.entrou || d.sumiu) return;
+    /* (quem fugiu corre até o ponto dele e fica: combate.js `correrLonge`) */
+    if(d.entrou || (d.sumiu && !d.longe)) return;
     if(!vistaDeCima && cam.modo===0 && d.vivo && !d.lider && Math.hypot(d.x-cam.olho[0], d.y-cam.olho[2]) < 30) return;
     const f = fichaDe(d, i);
     if(d.lider && !f.bandana && !f.bone) f.bandana = f.faixa;
@@ -50013,7 +50057,7 @@ TO.diaJogo.tres = (function(){
     const tz = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
     const o = {x:d.x+tx, z:d.y+tz, yaw:f.yaw};
 
-    if(!d.vivo){
+    if(!d.vivo && !d.longe){
       if(d.preso){ sentar(p); f.queda = null; }
       else cair(p, f, dt);
       corpo(din, o, p, f);
@@ -58064,9 +58108,24 @@ TO.graficos = (function(){
     const ev = ITN.fila.shift();
     if(!ev){ ITN.travado = false; itnDizer(_t('seguindo')); itnAgenda(1200); return; }
     ITN.travado = true;
+    /* A CAÇADA NA IDA JOGADA (o jogo 3D, dia3d.js; o dono, 07/10/2026: "eu
+       não gosto da ideia de parar a cena pra surgir outra cena da briga"):
+       a cidade já resolveu este recado na hora — a rival que caçou a gente
+       e encostou abre a briga no lugar, sem o cartão esperando (ele fica só
+       anotado na linha); a que não achou a gente antes da PM sai da linha */
+    const D3c = TO.jogo3d && TO.jogo3d.dia;
+    const auto = D3c && D3c.ativo && D3c.respostaDaLinha ? D3c.respostaDaLinha(ev) : null;
+    if(auto === 'pular'){
+      const atq = ev.abrir && ev.abrir.atq;
+      if(atq) atq.resolvido = true;
+      itnDizer(_t('a {nome} não achou a gente', {nome:ev.nome}));
+      setTimeout(itnRecado, 900 / velTempo());
+      return;
+    }
     itnDizer(_t('recado na parada · esperando você responder'), true);
     const cartao = itnCartao(p, ev);
     ITN.recados.appendChild(cartao);
+    if(auto === 'brigar'){ itnResponder(p, ev, true, cartao); return; }
     /* no celular o balão é baixo: o cartão novo (com os botões) rola pra
        dentro dele, em vez de ficar embaixo da dobra */
     requestAnimationFrame(()=>{ try{ cartao.scrollIntoView({block:'nearest'}); }catch(_){} });
@@ -66432,7 +66491,10 @@ TO.graficos = (function(){
      itinerário nada muda — o desconto de lá é dos membros
      feridos e dos lotes de baixas da IA, como sempre foi.
      ======================================================= */
-  const doItinerario = () => !!(ITN && ITN.esperando);
+  /* (`comoNaLinha`: a conta de antes da cena — a caçada da ida jogada,
+     `delesDoAtaque` — com os descontos que a cena da linha vai ter) */
+  let comoNaLinha = false;
+  const doItinerario = () => !!(ITN && (ITN.esperando || comoNaLinha));
   const descontoItn = (tid, n) =>
     doItinerario() && tid && ITN.resta && ITN.resta[tid] !== undefined
       ? Math.max(2, Math.min(n, ITN.resta[tid])) : n;
@@ -67066,7 +67128,10 @@ TO.graficos = (function(){
 
      Quem cobra é o fecho da cena, uma vez só: `ataquesContraNos` já não
      lançou dinheiro nem feriu ninguém para o alvo que tem cena. */
-  function abrirAtaqueAoBar(atq){
+  /* QUANTOS DE CADA LADO no ataque que a gente sofre (a conta de
+     `abrirAtaqueAoBar`, separada pra a caçada da ida jogada, dia3d.js,
+     sair na rua com a mesma turma que a cena vai ter) */
+  function efetivoDoAtaque(atq){
     const e = E();
     const o = TO.mundo.torcida(atq.torcida);
     const naEstrada = atq.alvo === 'emboscada';
@@ -67124,6 +67189,11 @@ TO.graficos = (function(){
     if(naCasa) deles = TO.acoes.efetivoDaZona(e, o || {});
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);
+    return {o, naEstrada, est, naCasa, bondeZona, fila, nossos, deles};
+  }
+  function abrirAtaqueAoBar(atq){
+    const e = E();
+    const {o, naEstrada, est, naCasa, bondeZona, fila, nossos, deles} = efetivoDoAtaque(atq);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
     /* NÓS SOMOS SEMPRE O LADO ATACADO — e nas duas cenas o atacado é o
@@ -67821,6 +67891,12 @@ TO.graficos = (function(){
     msgDaLinha: () => (ITN && ITN.msg && ITN.e === E()) ? ITN.msg : null,
     /* a linha enxuta (o painel do dia de jogo em 3D) e a hora de cada fase pela cidade */
     resumoDaLinha: () => itnResumo(),
+    /* quantos deles vêm no ataque que a gente sofre (a caçada da ida jogada) */
+    delesDoAtaque: atq => {
+      if(!atq || !atq.torcida) return null;
+      comoNaLinha = true;
+      try { return efetivoDoAtaque(atq).deles; } finally { comoNaLinha = false; }
+    },
     /* a briga fora das paradas da linha (a ida jogada do jogo 3D): o
        resultado dela e as baixas que saem do número da linha */
     get ultimoResultado(){ return ultimoResultado; },

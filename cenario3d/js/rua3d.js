@@ -44,7 +44,7 @@
    A SETA NA BORDA (também do dia de jogo): um alvo no mundo vira uma seta
    na beira da área livre da tela, apontando pra ele, com a distância.
    ========================================================= */
-import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=08dc5e5aee';
+import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=aa21047a36';
 
 /* o passo do relógio na rua: ms por minuto do dia, a 1× (o 2× do jogo vale) */
 const RUA_MS_MIN = 600;
@@ -589,6 +589,10 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (!S || S.briga || !eu || !TO.tela.abrirBrigaLivre) return false;
     const e = S.e;
     const pos = { x: eu.x, z: eu.y };
+    /* (a briga começa com cada um onde estava: o presidente, o bonde e a roda nossa; a turma deles) */
+    const pontoDe = d => ({ x: d.x, z: d.y });
+    const posicoes = { nos: [pontoDe(eu)].concat(S.discos.filter(d => !d.fora).map(pontoDe)).concat(extra.nossaRoda ? extra.nossaRoda.gente.map(x => pontoDe(x.d)) : []),
+                       eles: (g.gente || []).map(x => pontoDe(x.d)) };
     const escalacao = [S.pres].concat(S.bonde.filter(m => !m.preso && !m.ferido)).concat(extra.mais || []);
     const deles = extra.deles || (g.gente ? g.gente.length : g.n || 3);
     g.preso = true;
@@ -604,7 +608,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
     const bairro = (g.nomeBairro || (S.bairro && S.bairro.nome) || '');
     const ok = TO.tela.abrirBrigaLivre({
       rivalId: g.tid, deles, escalacao,
-      ruaLivre: { nos: pos, eles: { x: g.x, z: g.z }, bairro, nosAtacamos,
+      ruaLivre: { nos: pos, eles: { x: g.x, z: g.z }, bairro, nosAtacamos, posicoes,
                   rot: g.tipo === 'panfleto' ? 'OS QUE PANFLETAM' : g.tipo === 'roda' ? 'A RODA DA ' + String(g.sigla || '').toUpperCase() : 'QUEM VEIO' },
       alvo: { bairro, bid: g.bid, nosAtacamos, panfleto: g.tipo === 'panfleto' && g.tid !== e.torcida.id && nosAtacamos, contraNos: extra.contraNos || null,
               /* a roda da rival (a chave dela: derrotada, sai da rua hoje) e a nossa atacada */

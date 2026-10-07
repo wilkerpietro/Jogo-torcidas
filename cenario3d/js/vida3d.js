@@ -37,12 +37,12 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=08dc5e5aee';
-import { brigaNaCaminhada } from './caminhada.js?v=08dc5e5aee';
-import { brigaNoBar } from './briga_bar.js?v=08dc5e5aee';
-import { brigaNaTreta } from './briga_treta.js?v=08dc5e5aee';
-import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=08dc5e5aee';
-import { planoDoBar } from './casas3d.js?v=08dc5e5aee';
+import { palcoDeBriga } from './palco_briga.js?v=aa21047a36';
+import { brigaNaCaminhada } from './caminhada.js?v=aa21047a36';
+import { brigaNoBar } from './briga_bar.js?v=aa21047a36';
+import { brigaNaTreta } from './briga_treta.js?v=aa21047a36';
+import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=aa21047a36';
+import { planoDoBar } from './casas3d.js?v=aa21047a36';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -1150,22 +1150,51 @@ export function criarVida(api) {
       }
       return;
     }
-    /* o fim: quem perdeu corre (5 m/s); os de fora que ganharam saem andando (1,6 m/s) depois de um segundo */
+    /* O FIM (o dono, 07/10/2026: "em todas as cenas de fuga não existirá
+       mais o boneco sumir da tela, ele continua correndo até certo ponto
+       enquanto o atacante provoca de longe"): quem perdeu corre (5 m/s)
+       uns 16 m e para lá, virado pra quem ganhou; uns segundos depois sai
+       andando. Os de fora que ganharam provocam e depois vão embora
+       devagar. Ninguém some na tela: cada grupo sai da rua quando está
+       longe da câmera (ou depois de 45 s) */
+    const perdem = f.ganhouFora ? g.gente : f.gente;
+    const cg = (f.ganhouFora ? f.gente : g.gente);
+    const cx = cg.reduce((s, x) => s + x.d.x, 0) / Math.max(1, cg.length), cz = cg.reduce((s, x) => s + x.d.y, 0) / Math.max(1, cg.length);
     for (const x of f.gente.concat(g.gente)) {
-      const v = x.fuga ? 5 : x.volta && f.t > 1 ? 1.6 : 0, u = x.fuga || x.volta;
-      if (!v || !u) continue;
+      const u = x.fuga || x.volta;
+      if (!u) {
+        /* quem ganhou e fica: provoca, virado pra quem correu (uns 4 s depois de eles pararem, volta ao normal) */
+        if (!perdem.includes(x)) x.d.comemorando = f.t < BRIGA_RODA.foge + 4;
+        continue;
+      }
+      let v = 0;
+      if (x.fuga) {
+        if (f.t < BRIGA_RODA.foge) v = 5;
+        else if (f.t < BRIGA_RODA.foge + 5) {
+          if (x.d.fugindo) { x.d.fugindo = false; x.d._cacando = false; x.d.passada = 1.05; x.d.rumo = Math.atan2(cx - x.d.x, cz - x.d.y); }
+        } else { v = 1.3; if (!x.andando) { x.andando = true; x.d.rumo = Math.atan2(u.x, u.z); } }
+      } else if (f.t > (f.ganhouFora ? 4 : 1)) {
+        v = 1.6; x.d.comemorando = false;
+        if (!x.andando) { x.andando = true; x.d.rumo = Math.atan2(u.x, u.z); }
+      } else x.d.comemorando = true;   /* (os de fora que ganharam provocam antes de ir) */
+      if (!v) continue;
       x.d.x += u.x * v * M * dt; x.d.y += u.z * v * M * dt; x.d.alt = Cn.vida.chao(x.d.x, x.d.y);
     }
-    if (f.t < BRIGA_RODA.foge) return;
-    rua.grupos.delete(f.chave);
-    if (f.ganhouFora) rua.grupos.delete(g.chave);
-    else {
-      /* a roda ficou: cada um de volta pro lugar dele na calçada */
+    /* a roda que ganhou volta pro lugar dela quando os de fora já correram */
+    if (!f.ganhouFora && !f.voltou && f.t >= BRIGA_RODA.foge + 1) {
+      f.voltou = true;
       for (const x of g.gente) {
-        x.fuga = null; x.d.fugindo = false; x.d._cacando = false; x.d.passada = 1.05; x.d.derrubado = 0;
+        x.d.comemorando = false; x.d.fugindo = false; x.d._cacando = false; x.d.passada = 1.05; x.d.derrubado = 0;
         if (x.casa) { x.d.x = x.casa.x; x.d.y = x.casa.z; x.d.rumo = x.casa.rumo; x.d.jeito = x.casa.jeito; x.d.alt = Cn.vida.chao(x.d.x, x.d.y); }
       }
       g.preso = false;
+    }
+    /* sai da rua quem está longe da câmera (ou passou do tempo) */
+    const o = Cn.orb && Cn.orb.alvo, longe = grp => !o || grp.gente.every(x => Math.hypot(x.d.x - o.x, x.d.y - o.z) > 60 * M);
+    if (f.t < BRIGA_RODA.foge + 2) return;
+    if ((f.ganhouFora ? longe(f) && longe(g) : longe(f)) || f.t > 45) {
+      rua.grupos.delete(f.chave);
+      if (f.ganhouFora) rua.grupos.delete(g.chave);
     }
   }
   /* o caminho pela calçada de (x, z) até a porta do bar: pelas esquinas (Dijkstra no grafo delas) */
@@ -2089,6 +2118,8 @@ export function criarVida(api) {
     const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
                               vistas: { perto: { dist: 17, el: 1.1 }, alto: { dist: 34, el: 1.28 } }, rotAlto: 'a rua, do alto',
                               comDia: G ? G.comDia : null,
+                              /* (a briga começa com cada um onde estava: rua3d.js, dia3d.js) */
+                              posicoes: r.posicoes || null,
                               aoDesmontar: () => {
                                 if (G) G.aoDesmontar();
                                 const R3 = TO.jogo3d && TO.jogo3d.rua;

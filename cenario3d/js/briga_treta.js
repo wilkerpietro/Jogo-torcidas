@@ -26,7 +26,7 @@
    cabe) dentro do beco (a meia largura dele) ou do campinho (e a volta
    dele, até o muro das casas) — só o que se alcança andando de quem briga.
    ========================================================= */
-import { fugasNosEixos, pontaSemCruzamento } from './fuga_rua.js?v=08dc5e5aee';
+import { fugasNosEixos, pontaSemCruzamento } from './fuga_rua.js?v=aa21047a36';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma da caminhada)

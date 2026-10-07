@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=08dc5e5aee';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=08dc5e5aee';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=aa21047a36';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=aa21047a36';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores

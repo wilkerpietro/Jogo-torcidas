@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=08dc5e5aee';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=aa21047a36';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2505,7 +2505,8 @@ let escalaDoTabuleiro = () => 1;
     const p = poseNeutra();
     let rapidez = 10;                     // quão rápido a pose atual persegue a alvo
 
-    if(!d.vivo){
+    /* (quem saiu correndo da briga — `d.longe`, combate.js — está fora dela, mas de pé: corre e para lá) */
+    if(!d.vivo && !d.longe){
       if(d.preso){ sentar(p, f, t); f.queda = null; rapidez = 6; esmaecer(c, 1); }
       else {
         cair(p, f, dt); rapidez = 14;
@@ -2639,7 +2640,7 @@ let escalaDoTabuleiro = () => 1;
       /* o anel não gira com o corpo: fica deitado no chão, alinhado à tela */
       c.anel.rotation.z = c.anelFundo.rotation.z = -f.yaw;
     }
-    const chao = !d.vivo || d.derrubado > 0;
+    const chao = (!d.vivo && !d.longe) || d.derrubado > 0;
     c.sombra.scale.set(8.5*(chao?1.6:1), 6.5*(chao?1.3:1), 1);
     c.raiz.visible = true;
   }
@@ -2991,7 +2992,8 @@ let escalaDoTabuleiro = () => 1;
       conta.vistos++;
     };
     J.discos.forEach((d,i)=>{
-      if(d.entrou || d.sumiu) return;
+      /* (quem fugiu continua na tela: corre até o ponto dele e fica lá, combate.js `correrLonge`) */
+      if(d.entrou || (d.sumiu && !d.longe)) return;
       /* o ferido some depois do prazo: não anima, e a limpeza abaixo
          tira a figura da cena */
       if(d.caido && J.t - (d.caiuEm||0) >= FICA + SOME) return;
