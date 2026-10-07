@@ -956,6 +956,7 @@ TO.diaJogo.combate = (function(){
     if(J.fase==='comemorando'){
       moverDiscos(J,dt);
       separar(J);
+      correrLonge(J,dt);
       if(J.t >= J.comemorarAte) J.fase = 'acabando';
       return;
     }
@@ -991,6 +992,7 @@ TO.diaJogo.combate = (function(){
     iaRecuo(J);
     if(PF) marca('arremesso+clima+carga+pressao+recuo');
     separar(J);
+    correrLonge(J,dt);
     if(PF) marca('separar');
     checarDebandada(J);
     conferirEntrada(J);
@@ -1161,7 +1163,8 @@ TO.diaJogo.combate = (function(){
   function comemorar(J, lado){
     acabar(J, lado);
     J.fase = 'comemorando';
-    J.comemorarAte = J.t + TEMPO_DE_COMEMORAR;
+    /* (e o último que saiu correndo chega no ponto dele: até 3 s a mais) */
+    J.comemorarAte = J.t + Math.max(TEMPO_DE_COMEMORAR, Math.min(TEMPO_DE_COMEMORAR + 3, correndoAinda(J) + 1));
     for(const d of J.discos){
       if(!d.vivo || d.lado !== lado) continue;
       d.comemorando = true; d.entrando = false; d.recuando = false;
@@ -1811,8 +1814,11 @@ TO.diaJogo.combate = (function(){
           const perto = Math.max(destino.raio||34, 46);
           if(U.dist(d.x,d.y,destino.x,destino.y) < perto){
             /* nos arredores fugir é entrar: some pro estádio, e é isso
-               que o placar de quem entrou tem de contar */
-            if(destino.entrada) entrarNoEstadio(J,d); else sumir(J,d);
+               que o placar de quem entrou tem de contar. Nas outras
+               cenas a entrada de origem é só a boca por onde o bonde
+               veio: quem foge por ela corre (`sumir`, QUEM CORRE NÃO
+               SOME) — antes ele "entrava" ali e sumia da rua */
+            if(destino.entrada && fugaPelaEntrada()) entrarNoEstadio(J,d); else sumir(J,d);
             continue;
           }
           campo = rota.campo; usarCampo=true;
@@ -2423,11 +2429,47 @@ TO.diaJogo.combate = (function(){
   /* usada pelos testes e pelo editor: só o destino, sem o campo */
   function alvoDeFuga(J, d){ const r=rotaDeFuga(J,d); return r && r.destino; }
 
+  /* QUEM CORRE NÃO SOME (o dono, 07/10/2026: "Quando uma torcida corre
+     agora, em todas as cenas de fuga não existirá mais o boneco sumir da
+     tela, ele continua correndo até certo ponto enquanto o atacante
+     provoca de longe"). Quem chega na boca de fuga sai da briga do mesmo
+     jeito — `sumiu`, a conta dos `sumiram`, o fim —, mas o boneco segue
+     correndo no rumo que vinha (`d.longe`), uns 290 a 500 px (8 a 14 m na
+     rua do jogo 3D), e para lá, olhando pra trás; o desenho segue
+     mostrando ele (bonecos3.js). Na cena de cima do jogo de feed isso é
+     fora da tela, como antes */
+  const LONGE = {de:290, ate:500, vel:90};
   function sumir(J,d){
     if(d.sumiu) return;
-    d.sumiu=true; d.vx=d.vy=0;
+    d.sumiu=true;
     J.sumiram[d.lado]=(J.sumiram[d.lado]||0)+1;
+    let vx=d.vx||0, vy=d.vy||0, v=hyp(vx,vy);
+    if(v < 20){
+      const ini = centroDoInimigo(J, d.lado);
+      if(ini){ vx=d.x-ini.x; vy=d.y-ini.y; v=hyp(vx,vy); }
+    }
+    if(v < 1e-3){ d.vx=d.vy=0; return; }
+    d.longe = {vx:vx/v*LONGE.vel, vy:vy/v*LONGE.vel, resta: LONGE.de + Math.random()*(LONGE.ate-LONGE.de), parado:false};
+    d.vx=d.longe.vx; d.vy=d.longe.vy;
   }
+  /* quem saiu correndo da briga segue até o ponto dele e para lá, virado pra ela */
+  function correrLonge(J,dt){
+    for(const d of J.discos){
+      const L = d.longe;
+      if(!L || L.parado) continue;
+      const passo = Math.min(L.resta, LONGE.vel*dt);
+      d.x += L.vx/LONGE.vel*passo; d.y += L.vy/LONGE.vel*passo;
+      d.rumo = Math.atan2(L.vx, L.vy);
+      L.resta -= passo;
+      if(L.resta <= 1e-3){
+        L.parado = true; d.vx = d.vy = 0; d.fugindo = false;
+        const c = centroDoInimigo(J, d.lado);
+        if(c) d.rumo = Math.atan2(c.x - d.x, c.y - d.y);
+      }
+    }
+  }
+  /* quanto falta (s) pro último que corre parar */
+  const correndoAinda = J => J.discos.reduce((m,d)=>d.longe && !d.longe.parado ? Math.max(m, d.longe.resta/LONGE.vel) : m, 0);
 
   /* ---------- polícia ---------- */
   function procurandoConflito(J,d){

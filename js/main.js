@@ -2822,9 +2822,24 @@
     const ev = ITN.fila.shift();
     if(!ev){ ITN.travado = false; itnDizer(_t('seguindo')); itnAgenda(1200); return; }
     ITN.travado = true;
+    /* A CAÇADA NA IDA JOGADA (o jogo 3D, dia3d.js; o dono, 07/10/2026: "eu
+       não gosto da ideia de parar a cena pra surgir outra cena da briga"):
+       a cidade já resolveu este recado na hora — a rival que caçou a gente
+       e encostou abre a briga no lugar, sem o cartão esperando (ele fica só
+       anotado na linha); a que não achou a gente antes da PM sai da linha */
+    const D3c = TO.jogo3d && TO.jogo3d.dia;
+    const auto = D3c && D3c.ativo && D3c.respostaDaLinha ? D3c.respostaDaLinha(ev) : null;
+    if(auto === 'pular'){
+      const atq = ev.abrir && ev.abrir.atq;
+      if(atq) atq.resolvido = true;
+      itnDizer(_t('a {nome} não achou a gente', {nome:ev.nome}));
+      setTimeout(itnRecado, 900 / velTempo());
+      return;
+    }
     itnDizer(_t('recado na parada · esperando você responder'), true);
     const cartao = itnCartao(p, ev);
     ITN.recados.appendChild(cartao);
+    if(auto === 'brigar'){ itnResponder(p, ev, true, cartao); return; }
     /* no celular o balão é baixo: o cartão novo (com os botões) rola pra
        dentro dele, em vez de ficar embaixo da dobra */
     requestAnimationFrame(()=>{ try{ cartao.scrollIntoView({block:'nearest'}); }catch(_){} });
@@ -11190,7 +11205,10 @@
      itinerário nada muda — o desconto de lá é dos membros
      feridos e dos lotes de baixas da IA, como sempre foi.
      ======================================================= */
-  const doItinerario = () => !!(ITN && ITN.esperando);
+  /* (`comoNaLinha`: a conta de antes da cena — a caçada da ida jogada,
+     `delesDoAtaque` — com os descontos que a cena da linha vai ter) */
+  let comoNaLinha = false;
+  const doItinerario = () => !!(ITN && (ITN.esperando || comoNaLinha));
   const descontoItn = (tid, n) =>
     doItinerario() && tid && ITN.resta && ITN.resta[tid] !== undefined
       ? Math.max(2, Math.min(n, ITN.resta[tid])) : n;
@@ -11824,7 +11842,10 @@
 
      Quem cobra é o fecho da cena, uma vez só: `ataquesContraNos` já não
      lançou dinheiro nem feriu ninguém para o alvo que tem cena. */
-  function abrirAtaqueAoBar(atq){
+  /* QUANTOS DE CADA LADO no ataque que a gente sofre (a conta de
+     `abrirAtaqueAoBar`, separada pra a caçada da ida jogada, dia3d.js,
+     sair na rua com a mesma turma que a cena vai ter) */
+  function efetivoDoAtaque(atq){
     const e = E();
     const o = TO.mundo.torcida(atq.torcida);
     const naEstrada = atq.alvo === 'emboscada';
@@ -11882,6 +11903,11 @@
     if(naCasa) deles = TO.acoes.efetivoDaZona(e, o || {});
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);
+    return {o, naEstrada, est, naCasa, bondeZona, fila, nossos, deles};
+  }
+  function abrirAtaqueAoBar(atq){
+    const e = E();
+    const {o, naEstrada, est, naCasa, bondeZona, fila, nossos, deles} = efetivoDoAtaque(atq);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
     /* NÓS SOMOS SEMPRE O LADO ATACADO — e nas duas cenas o atacado é o
@@ -12579,6 +12605,12 @@
     msgDaLinha: () => (ITN && ITN.msg && ITN.e === E()) ? ITN.msg : null,
     /* a linha enxuta (o painel do dia de jogo em 3D) e a hora de cada fase pela cidade */
     resumoDaLinha: () => itnResumo(),
+    /* quantos deles vêm no ataque que a gente sofre (a caçada da ida jogada) */
+    delesDoAtaque: atq => {
+      if(!atq || !atq.torcida) return null;
+      comoNaLinha = true;
+      try { return efetivoDoAtaque(atq).deles; } finally { comoNaLinha = false; }
+    },
     /* a briga fora das paradas da linha (a ida jogada do jogo 3D): o
        resultado dela e as baixas que saem do número da linha */
     get ultimoResultado(){ return ultimoResultado; },

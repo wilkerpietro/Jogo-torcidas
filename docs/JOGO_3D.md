@@ -5397,3 +5397,105 @@ andando ~60 px/s pra beira desde a largada). Na briga em que eles vêm pra
 cima (`abrirBrigaLivre` com `nosAtacamos: false`), o bonde deles caça o
 nosso, como na treta marcada. Medido em 3 rodadas: os 5 vieram pro meio e
 seguiam de pé aos 6 s.
+
+### 47.8 A caçada na ida e quem corre não some (`dia3d.js`, `palco_briga.js`, `combate.js`, `vida3d.js`, `main.js`)
+
+O dono: "Quando faço caminhada em direção ao meu estádio e uma torcida me
+ataca, eu não gosto da ideia de parar a cena pra surgir outra cena da
+briga. eu gostaria de que fosse algo natural do rival saindo de um ponto
+(podendo ser sua sede ou algum local de seu domínio) e indo em direção a
+mim em minha procura, podendo me encontrar em qualquer ponto do mapa e a
+cena ocorre naturalmente com ela me atacando. Isso também deve ocorrer em
+caso oposto, quando eu quero atacar alguma torcida que esteja na cidade ou
+seja da cidade. Quando uma torcida corre agora, em todas as cenas de fuga
+não existirá mais o boneco sumir da tela, ele continua correndo até certo
+ponto enquanto o atacante provoca de longe."
+
+**A rival que caça a gente.** O ataque que o dia marca contra o nosso
+bonde na pista (a tocaia da linha) não espera mais na esquina com o cartão:
+dois segundos depois de o presidente aparecer a pé, a turma dela sai da
+sede dela ou do meio de um bairro que ela domina e vem atrás dele pela rua
+(A* na grade do plano, `caminhoNaRua`, refeito a cada 2,5 s e, perto, a
+cada 1 s), trotando a 3,4 m/s e, nos últimos 35 m, correndo a 5,5. Ela vem
+com a turma que a cena vai ter (a conta do ataque, `efetivoDoAtaque` em
+`main.js`; até 60 na rua, o resto entra atrás na cena). **De onde ela sai**:
+a distância da largada é a que dá pra ela pegar quem vai a pé (2,2 m/s)
+direto pro cordão da PM, com 15% de folga — de 25 m (a sede colada no
+estádio) a 350 m (rota longa); das origens dela, uma que fica perto disso;
+se todas ficam longe, ela saiu da mais perto faz tempo e já vem vindo pelo
+caminho de lá ("A Cearamor saiu de um bairro dela (Benfica) atrás da gente
+e já vem vindo: 90 m!"). No escuro da névoa ela não aparece; o painel diz
+a distância ("A TOC vem atrás: 50 m"). **Encostou** (5 m do presidente ou
+da frente do bonde): a briga abre ali — sem cartão esperando, a linha só
+anota o recado (`respostaDaLinha`) — e cada um começa onde estava
+(`palco_briga.js`, `posicoes`: o presidente, o bonde e a turma dela,
+levados pro tabuleiro; quem a cena traz a mais entra logo atrás dos seus),
+com o bonde dela já vindo pra cima. **Correndo pro cordão** (6 m/s) dá pra
+despistar: a PM leva o bonde e a linha diz "a Cearamor não achou a gente",
+sem briga e sem conta. A pista segue como ponto de passagem.
+
+**A gente caça.** O painel da ida tem "Caçar": a seta aponta a rival mais
+perto — o bonde dela andando pro estádio, ela ainda nas rodinhas da
+concentração (a porta de onde sai; quem vem de fora da cidade só depois de
+entrar nela) ou, das rivais da cidade que não vão ao jogo, a turma na
+porta da sede (de 6 a 14) —; de novo, a seguinte; "Parar a caça" devolve a
+seta pro próximo ponto. A 22 m, com ela à vista, "Partir pra cima"; colado
+nela (7 m), quem parte pra cima são eles. A briga é no lugar, com cada um
+onde estava ("A CONCENTRAÇÃO DA TOC", "O BONDE DA TOC", "A PORTA DA
+MOFI"). Depois da briga com um bonde, 45 s de trégua com ele (a volta é ali
+do lado dele: sem a trégua, a briga reabria sozinha).
+
+**Na briga que começa no lugar, o bonde deles vai pra cima — sempre.** No
+tabuleiro da rua (`brigaNaRua`), quem não tem inimigo no raio e nenhuma
+ordem anda pra saída do lado dele e "entra" ali (some): com cada um onde
+estava na rua, quem ficava a 20 ou 30 m da gente sumia na largada (medido:
+16 dos 30 da concentração da TOC em 3 s). `palco_briga.js` agora dá ao
+bonde deles a ordem de ir no nosso, quem quer que tenha partido pra cima
+(a mesma ordem que a treta marcada dá); quem é minoria ainda corre pela
+régua de sempre.
+
+**Quem corre não some.** Na debandada, quem chega na boca de fuga sai da
+briga como antes (a conta dos que correram, o fim "ELES CORRERAM"), mas o
+boneco segue correndo no rumo que vinha, de 8 a 14 m, e para lá virado pra
+briga (`combate.js`, `d.longe`); quem ganhou provoca, e a comemoração
+espera o último parar (até 3 s a mais). Havia um furo antigo: quem fugia
+pela entrada por onde o bonde chegou (a primeira escolha da fuga desde
+09/09) "entrava no estádio" em qualquer cena — e sumia. Entrar agora é só
+nos arredores do jogo de feed (`fugaPelaEntrada`); nas outras cenas é
+correr. Na roda da IA contra a IA (§47.7), quem perde corre uns 16 m, para
+virado pra quem ganhou e depois sai andando; quem ganhou provoca. Ninguém
+some na tela: o grupo sai da rua quando está longe da câmera.
+
+**Medido** (`scratchpad/ida/caca.js`, novo jogo com a TUF, Fortaleza ×
+Ceará em casa, a tocaia da Cearamor marcada; a rota da TUF é curta: 118 m
+até o portão, o cordão a 31 m). A rival saiu da sede dela a uns 24 m
+("já vem vindo: 30 m!"), com 45 — o mesmo número da cena (antes da conta
+da linha eram 60 na rua contra 45 na cena). Andando pro cordão a 2,2 m/s
+no relógio do jogo, ela pegou a gente em 2 s; a briga abriu com o
+presidente onde estava e nenhum cartão esperando; depois do relatório, a ida
+seguiu. Correndo direto pro cordão: a PM levou o bonde e, uns 7 s depois, a
+linha disse "a Cearamor não achou a gente", sem cartão nem cena. Parado,
+vindo de 260 m de um bairro dela (a regra de antes da largada), ela levou
+85 s. A nossa caçada: "Caçar" pôs a seta na concentração da TOC (157 m);
+a 14 m, "Partir pra cima"; a briga abriu no lugar, 40 contra 30, os 30 de
+pé aos 3,6 s (antes da ordem, 14); de volta a pé ali do lado, a briga não
+reabriu; passada a trégua, colado nela (3 m), ela partiu pra cima. A fuga
+na marra (os 45 da caçada): de 4 a 29 correndo longe ao mesmo tempo, os 41
+que saíram pela boca parados lá no fim, nenhum sumido nem "entrado"; a
+cena acabou aos 21 s. No jogo do feed (2D, a briga do tutorial, 3 vezes):
+"eles correram sem ninguém encostar em ninguém", os 5 contados como quem
+correu, nenhum "entrado". Na roda da IA: os 5 da MOFI correram até 18 m,
+pararam virados pra roda e depois saíram andando (23 m aos 12 s), sem
+sumir; noutra rodada quem perdeu foi a roda (3), que fez o mesmo (32 m aos
+12 s), e os 5 de fora provocaram uns 4 s antes de ir embora. A defesa da nossa roda (9 contra 5) segue igual. Nenhum erro no
+console.
+
+**O que ficou de fora.** No "Ir em paz" continua o cartão da linha (lá o
+jogador não anda; o dia já mostra a rival chegando antes do cartão). Com a
+sede colada no estádio (como a da TUF), a rival larga a uns 25–30 m — é
+quase a tocaia de antes, mas vindo andando até a gente. Nos arredores do
+jogo de feed, fugir continua sendo entrar no estádio. A turma da porta da
+sede só existe pras rivais da cidade que não vão ao jogo (no clássico, as
+rivais estão todas na rua — a caça é o bonde ou a concentração delas). O
+teste andou o presidente pulando de ponto em ponto (o `levar`): a câmera
+fica alta nesse pulo, o que não acontece com o joystick.

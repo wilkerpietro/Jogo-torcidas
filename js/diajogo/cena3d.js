@@ -1428,10 +1428,11 @@ export function criar(canvas) {
 
     let n = 0;
     for (const d of J.discos) {
-      if (d.sumiu || d.entrou) continue;
+      /* (quem fugiu corre até o ponto dele e fica: combate.js `correrLonge`) */
+      if ((d.sumiu && !d.longe) || d.entrou) continue;
       if (n >= MAX_GENTE) break;
-      const e = estado(d, d.x, d.y, d.vivo ? dt : 0);
-      if (!d.vivo) e.vel = 0;
+      const e = estado(d, d.x, d.y, d.vivo || d.longe ? dt : 0);
+      if (!d.vivo && !d.longe) e.vel = 0;
       const brigando = d.vivo && (d.hostil > 0 || d.golpe > 0 || e.arremesso > 0);
       const quebrou = d.vivo && d.correEm != null && !d.fugindo;
       /* QUEM ESTÁ SEGURANDO QUEM.

@@ -1376,7 +1376,8 @@ TO.diaJogo.tres = (function(){
   }
 
   function boneco(d, i, J, dt){
-    if(d.entrou || d.sumiu) return;
+    /* (quem fugiu corre até o ponto dele e fica: combate.js `correrLonge`) */
+    if(d.entrou || (d.sumiu && !d.longe)) return;
     if(!vistaDeCima && cam.modo===0 && d.vivo && !d.lider && Math.hypot(d.x-cam.olho[0], d.y-cam.olho[2]) < 30) return;
     const f = fichaDe(d, i);
     if(d.lider && !f.bandana && !f.bone) f.bandana = f.faixa;
@@ -1386,7 +1387,7 @@ TO.diaJogo.tres = (function(){
     const tz = d.tremor ? (Math.random()-0.5)*d.tremor*0.6 : 0;
     const o = {x:d.x+tx, z:d.y+tz, yaw:f.yaw};
 
-    if(!d.vivo){
+    if(!d.vivo && !d.longe){
       if(d.preso){ sentar(p); f.queda = null; }
       else cair(p, f, dt);
       corpo(din, o, p, f);

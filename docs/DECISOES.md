@@ -9482,6 +9482,16 @@ O pedido: "Faz a IA atacar rodas de outras IAs também. a tela da reunião fica 
 
 **O que ficou de fora ou pela metade**: a briga de roda entre IAs só aparece se a câmera estiver perto dela na hora (longe, a roda só some); a frequência é um número (`RODA.chanceIA`) medido em dias sorteados, não jogando. Detalhes: `docs/JOGO_3D.md` §47.7.
 
+## A caçada na ida e quem corre não some (dono, 07/10/2026)
+
+O pedido: "Quando faço caminhada em direção ao meu estádio e uma torcida me ataca, eu não gosto da ideia de parar a cena pra surgir outra cena da briga. eu gostaria de que fosse algo natural do rival saindo de um ponto (podendo ser sua sede ou algum local de seu domínio) e indo em direção a mim em minha procura, podendo me encontrar em qualquer ponto do mapa e a cena ocorre naturalmente com ela me atacando. Isso também deve ocorrer em caso oposto, quando eu quero atacar alguma torcida que esteja na cidade ou seja da cidade. Quando uma torcida corre agora, em todas as cenas de fuga não existirá mais o boneco sumir da tela, ele continua correndo até certo ponto enquanto o atacante provoca de longe."
+
+- **A rival vem atrás da gente** (a ida jogada): o ataque marcado na pista virou uma turma que sai da sede dela (ou de um bairro dela) logo que o presidente aparece a pé e vem pela rua atrás dele. Encostou, a briga abre ali mesmo, com cada um onde estava, sem o cartão da linha esperando resposta. Ela larga de uma distância que dá pra pegar quem vai andando direto pro cordão da PM; correndo pro cordão dá pra despistar ("a Cearamor não achou a gente"). Vem com o mesmo número que a cena vai ter.
+- **A gente caça**: o botão "Caçar" põe a seta na rival mais perto — o bonde dela andando, ela ainda na concentração ou, das rivais da cidade que não vão ao jogo, a turma na porta da sede. Perto, "Partir pra cima"; colado nela, quem parte pra cima são eles. Briga no lugar.
+- **Quem corre não some**: em toda cena de briga, quem foge segue correndo uns 8 a 14 m e para olhando pra trás, e quem ganhou provoca. Isso pegou um furo antigo: quem fugia pela entrada por onde chegou "entrava no estádio" (sumia) em qualquer cena. E na briga que começa no lugar, o bonde deles agora sempre vai pra cima (antes, quem ficava longe ia pra saída e sumia).
+
+**O que ficou de fora ou pela metade**: no "Ir em paz" continua o cartão da linha (lá o jogador não anda; o dia já mostra a rival chegando antes do cartão). Com a sede colada no estádio, a rival larga a uns 25–30 m — é quase uma tocaia, mas vem andando até a gente. Nos arredores do jogo de feed, fugir continua sendo entrar no estádio. Detalhes: `docs/JOGO_3D.md` §47.8.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
