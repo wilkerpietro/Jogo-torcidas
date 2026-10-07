@@ -49,7 +49,7 @@ export function criarMapaDaCidade(api) {
         <button type="button" role="tab" data-aba="brasil" aria-selected="false">${T_('Brasil')}</button>
       </div>
       <span class="j3d-mapa-onde"></span>
-      <button class="j3d-mapa-x" type="button" aria-label="${T_('Fechar o mapa')}">${T_('Fechar')} ×</button></div>
+      <button class="j3d-mapa-x" type="button" aria-label="${T_('Fechar o mapa')}" title="${T_('Fechar o mapa')}">×</button></div>
     <div class="j3d-mapa-corpo">
       <div class="j3d-mapa-tela"><canvas></canvas>
         <div class="j3d-mapa-zoom"><button type="button" data-z="mais" aria-label="${T_('Aproximar')}">+</button><button type="button" data-z="menos" aria-label="${T_('Afastar')}">−</button><button type="button" data-z="tudo" aria-label="${T_('A cidade inteira')}">⤢</button></div>

@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=399d7ad099';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=ebdde4bb46';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */

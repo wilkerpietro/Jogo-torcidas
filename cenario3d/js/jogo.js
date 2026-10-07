@@ -2232,6 +2232,24 @@ TO.i18n.registrar({
   /* ---------- o jogo 3D sem feed: a decisão no balão ---------- */
   'Responda o recado do balão — o tempo está parado.': {es:'Responde el recado del globo — el tiempo está detenido.', en:'Answer the message in the bubble — time is stopped.'},
 
+  /* ---------- a casca das telas do menu: os números do cabeçalho (07/10/2026) ---------- */
+  'Aptos': {es:'Aptos', en:'Fit'},
+  'Feridos · presos': {es:'Heridos · presos', en:'Injured · jailed'},
+  'Hoje': {es:'Hoy', en:'Today'},
+  'Próximo jogo': {es:'Próximo partido', en:'Next match'},
+  'Campanha': {es:'Campaña', en:'Record'},
+  'Não lidas': {es:'Sin leer', en:'Unread'},
+  'Vagas usadas': {es:'Ranuras usadas', en:'Slots used'},
+  'Último save': {es:'Último guardado', en:'Last save'},
+  'Navegador': {es:'Navegador', en:'Browser'},
+  'grava': {es:'guarda', en:'saving'},
+  'não grava': {es:'no guarda', en:'not saving'},
+  'Cofre de saves': {es:'Caja de guardados', en:'Save vault'},
+  '{n} de {t}': {es:'{n} de {t}', en:'{n} of {t}'},
+  '{v}V {e}E {d}D': {es:'{v}G {e}E {d}P', en:'{v}W {e}D {d}L'},
+  /* (a do planejamento, que tinha ficado sem) */
+  'Aptos pro estádio': {es:'Aptos para el estadio', en:'Fit for the stadium'},
+
   /* ---------- salvar ---------- */
   'NÃO SALVOU · {motivo}': {es:'NO SE GUARDÓ · {motivo}', en:'NOT SAVED · {motivo}'},
   'Salvo.': {es:'Guardado.', en:'Saved.'},
@@ -55394,11 +55412,10 @@ TO.graficos = (function(){
     pausarTempo('painel');
     painel = id;
     fecharGaveta();
-    const rot = (NAV.find(n=>n.id===id)||{}).rot || id;
-    if($('painelTitulo')) $('painelTitulo').textContent = rot;
     pintarTopo();
     pintarPagina(id);
     trocarPagina();
+    pintarCasca();
     montarAtalhos();
   }
   function fecharPainel(){
@@ -55413,6 +55430,148 @@ TO.graficos = (function(){
     /* o tempo volta de onde parou: fechar o painel devolve o feed sem
        perder nem cobrar o tempo em que ele esteve aberto */
     retomarTempo('painel');
+  }
+
+  /* =======================================================
+     A CASCA DOS PAINÉIS NO MOLDE DO PLANEJAMENTO (pedido do dono,
+     07/10/2026: "refaça o layout visual de todas as telas do menu
+     mantendo a estrutura delas, se inspirando no layout criado pra tela
+     de planejamento").
+
+     O painel é a caixa do planejamento: o fundo escuro por cima do
+     jogo e, no alto, o nome da tela em vermelho miúdo, a seção aberta
+     em letra grande com a data do lado, os números que a tela pede à
+     mão (como o caixa, os aptos e as bombas no alto do planejamento) e
+     o ×. Nenhuma tela mudou de estrutura: a casca LÊ o que a tela
+     pintou — a aba acesa da fileira de cima é a seção — e o resto é
+     roupa (css/telas.css). Cada número sai das mesmas contas que a tela
+     já mostra; um que falhe some sozinho, sem levar a casca junto.
+     ======================================================= */
+  const kpiDinheiro = v => (v < 0 ? '−' : '') + U.dinheiro(Math.abs(v));
+  const diaMes = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  /* o próximo jogo do nosso clube na agenda (o de hoje conta), de qualquer competição */
+  function proximoJogoNosso(e){
+    if(!e.temporada || !TO.competicoes.agendaDoClube) return null;
+    const hoje = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
+    for(const j of TO.competicoes.agendaDoClube(e, e.torcida.clubeId)){
+      if(j.jogado) continue;
+      const d = TO.estado.dataDaSemana(e.data.ano, j.semana, j.dia);
+      if(d >= hoje) return {j, d, adv:TO.mundo.time(j.adversario)};
+    }
+    return null;
+  }
+  const textoDoJogo = p => p ? `${diaMes(p.d)} × ${(p.adv && p.adv.sigla) || '—'}` : '—';
+  const KPIS = {
+    torcida(e){
+      const c = TO.membros.contar(e);
+      return [[_t('Membros'), U.numero(c.total)],
+              [_t('Aptos'), U.numero(c.aptos)],
+              [_t('Feridos · presos'), `${c.feridos} · ${c.presos}`, c.feridos + c.presos ? 'negativo' : ''],
+              [_t('Moral'), String(Math.round(e.indicadores.moral*5))]];
+    },
+    financeiro(e){
+      const r = TO.financeiro.resumoDaSemana(e) || {}, s = r.saldo || 0;
+      return [[_t('Caixa'), kpiDinheiro(e.dinheiro), e.dinheiro < 0 ? 'negativo' : ''],
+              [_t('Receitas'), U.dinheiro(r.receita || 0)],
+              [_t('Despesas'), U.dinheiro(r.despesa || 0)],
+              [_t('Saldo da semana'), (s > 0 ? '+' : '') + kpiDinheiro(s), s > 0 ? 'positivo' : s < 0 ? 'negativo' : '']];
+    },
+    calendario(e){
+      const hoje = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
+      /* a reunião do mês; já passada, a do mês que vem */
+      let reu = '—';
+      for(let k = 0; k < 2; k++){
+        const ano = hoje.getFullYear() + (hoje.getMonth() + k > 11 ? 1 : 0), mes = (hoje.getMonth() + k) % 12;
+        const dia = diaDaReuniaoEm(e, ano, mes);
+        if(dia && new Date(ano, mes, dia) >= new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())){
+          reu = diaMes(new Date(ano, mes, dia)); break;
+        }
+      }
+      return [[_t('Hoje'), diaMes(hoje)],
+              [_t('Próximo jogo'), textoDoJogo(proximoJogoNosso(e))],
+              [_t('Reunião'), reu]];
+    },
+    competicoes(e){
+      const C = TO.competicoes, meu = e.torcida.clubeId;
+      const agenda = e.temporada ? C.agendaDoClube(e, meu) : [];
+      /* a liga: a competição com tabela em que o nosso clube mais joga */
+      const conta = {};
+      for(const j of agenda) conta[j.compId] = (conta[j.compId] || 0) + 1;
+      const comps = ((e.temporada || {}).competicoes || []).filter(c => !c.copa && conta[c.id]);
+      comps.sort((a, b) => conta[b.id] - conta[a.id]);
+      const liga = comps[0], pos = liga ? C.posicaoNaTabela(e, liga.id, meu) : 0;
+      let v = 0, em = 0, d = 0;
+      for(const j of agenda) if(j.jogado){
+        if(j.gp > j.gc) v++; else if(j.gp < j.gc) d++; else em++;
+      }
+      return [[liga ? liga.nome : _t('Liga'), pos ? _t('{n}º', {n:pos}) : '—'],
+              [_t('Próximo jogo'), textoDoJogo(proximoJogoNosso(e))],
+              [_t('Campanha'), _t('{v}V {e}E {d}D', {v, e:em, d})]];
+    },
+    ranking(e){
+      const R = TO.relacoes, nos = R.rankingDoPais(e).find(r => r.nossa);
+      const mundo = R.posicaoNoMundo ? R.posicaoNoMundo(e) : 0;
+      return [[_t(R.paisDaTorcida(e.torcida.id)), nos ? _t('{n}º', {n:nos.pos}) : '—'],
+              [_t('América do Sul'), mundo ? _t('{n}º', {n:mundo}) : '—'],
+              [_t('Pontos'), nos ? U.numero(nos.pontos) : '—']];
+    },
+    diplomacia(e){
+      const vals = Object.entries(e.relacoes || {}).filter(([id]) => TO.mundo.torcida(id)).map(([, v]) => v);
+      const al = vals.filter(v => v > 0).length, ri = vals.filter(v => v < 0).length;
+      return [[_t('Aliadas'), String(al), al ? 'positivo' : ''],
+              [_t('Rivais'), String(ri), ri ? 'negativo' : ''],
+              [_t('Neutras'), String(TO.mundo.jogaveis().length - 1 - vals.length)]];
+    },
+    noticias(e){
+      const F = TO.feed;
+      return [[_t('Não lidas'), String(F.mensagensNaoLidas ? F.mensagensNaoLidas(e) : 0)],
+              [_t('Tretas'), String(F.tretas ? F.tretas(e).length : 0)],
+              [_t('Brigas'), String((e.brigasIA || []).length)]];
+    },
+    jogo(e){
+      const vagas = TO.estado.listarSaves(), cheias = vagas.filter(v => !v.vazia);
+      const ult = cheias.map(v => v.quando ? new Date(v.quando) : null).filter(Boolean).sort((a, b) => b - a)[0];
+      const dg = TO.estado.diagnostico();
+      return [[_t('Vagas usadas'), _t('{n} de {t}', {n:cheias.length, t:vagas.length})],
+              [_t('Último save'), ult ? `${diaMes(ult)} ${String(ult.getHours()).padStart(2,'0')}:${String(ult.getMinutes()).padStart(2,'0')}` : '—'],
+              [_t('Navegador'), dg.ok ? _t('grava') : _t('não grava'), dg.ok ? 'positivo' : 'negativo']];
+    }
+  };
+  /* a seção que está na tela: a aba acesa da fileira de cima, sem a
+     contagem entre parênteses (a tela sem abas, o Jogo, é o cofre de saves) */
+  function pintarCasca(){
+    const e = E();
+    if(!e || !painel || !$('painelSobre')) return;
+    const pg = U.$(`.pagina[data-pag="${painel}"]`);
+    const rot = (NAV.find(n=>n.id===painel)||{}).rot || painel;
+    const aba = pg && pg.querySelector(':scope > .titulo-pagina + :is(.subabas, .abas-grandes) button.on,'+
+                                       ':scope > .titulo-barra + :is(.subabas, .abas-grandes) button.on');
+    const secao = aba ? aba.textContent.replace(/\s*\(\d+\)\s*$/, '').trim()
+                : painel === 'jogo' ? _t('Cofre de saves') : rot;
+    const dt = TO.estado.dataTexto();
+    $('painelSobre').textContent = rot;
+    $('painelTitulo').textContent = secao;
+    $('painelSub').textContent = `${dt.semana}, ${dt.curta}`;
+    let kpis = [];
+    try{ kpis = (KPIS[painel] ? KPIS[painel](e) : []).filter(Boolean); }
+    catch(x){ kpis = []; }
+    const cx = $('painelKpis');
+    cx.innerHTML = '';
+    for(const [r, v, cls] of kpis){
+      const s = el('span');
+      s.appendChild(el('small',{texto:r}));
+      s.appendChild(el('b',{class:cls||'', texto:v}));
+      cx.appendChild(s);
+    }
+    medirCasca();
+  }
+  /* o corpo da caixa começa onde o cabeçalho acaba: no celular os números
+     descem pra uma segunda linha, e a altura muda com a tela e a língua */
+  function medirCasca(){
+    const b = $('painelBarra');
+    if(!b || !painel) return;
+    const h = b.offsetHeight;
+    if(h) document.documentElement.style.setProperty('--pnl-topo', h + 'px');
   }
 
   /* A GAVETA, O ☰ E OS ATALHOS DE CANTO SAÍRAM.
@@ -55431,9 +55590,21 @@ TO.graficos = (function(){
   function ligarTelaEstreita(){
     const fecha = $('painelFechar');
     if(fecha) fecha.onclick = fecharPainel;
+    /* o clique no escuro em volta da caixa fecha, como no planejamento */
+    const fundo = $('painelFundo');
+    if(fundo) fundo.onclick = fecharPainel;
     addEventListener('keydown', ev=>{
       if(ev.key === 'Escape' && painel) fecharPainel();
     });
+    /* a tela repintada (a aba trocada, a busca, o botão que repinta só
+       ela) refaz o cabeçalho da casca: quem repinta nem sempre passa por
+       `redesenhar` */
+    if(window.MutationObserver){
+      const obs = new MutationObserver(()=>{ if(painel) pintarCasca(); });
+      U.$$('.pagina').forEach(s=>{ if(s.dataset.pag !== 'feed') obs.observe(s, {childList:true}); });
+    }
+    if(window.ResizeObserver && $('painelBarra'))
+      new ResizeObserver(()=>medirCasca()).observe($('painelBarra'));
     /* a coluna do menu existe em qualquer largura, mas o tamanho do
        ícone muda com a altura da tela: mudar de orientação remonta o
        mapa uma vez, que é onde ela é construída */
@@ -62778,8 +62949,9 @@ TO.graficos = (function(){
       const it = menu.find(m=>m.id===compSel);
       const nomeLogo = it && (String(compSel).startsWith('liga:') ? compSel.slice(5) : it.rot);
       const src = it && TO.dados.logoDaCompeticao && TO.dados.logoDaCompeticao(nomeLogo, paisComp);
+      /* (no jogo 3D as logos vêm embutidas, como os escudos: IMG resolve) */
       if(src) pg.appendChild(el('div',{class:'comp-marca', html:
-        `<img src="${src}" alt="">`+
+        `<img src="${IMG(src)}" alt="">`+
         `<div><b>${escHTML(nomeLogo === 'LNT' ? _t('Liga Nacional de Torcidas') : nomeLogo)}</b>`+
         `<small>${escHTML(nivelComp === 'internacional' ? 'CONMEBOL'
                  : nivelComp === 'regional' ? _t('Regional') : _t(paisComp))}</small></div>`}));
