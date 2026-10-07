@@ -73,6 +73,7 @@ TO.i18n.registrar({
   /* a roda da IA atacada pela IA, e a rua que cede a vez (07/10/2026) */
   'A {a} foi pra cima da roda da {b} em {bairro}!': {es:'¡La {a} fue contra la ronda de la {b} en {bairro}!', en:'{a} went after {b}\'s crew in {bairro}!'},
   'roda desfeita': {es:'ronda desarmada', en:'crew run off'},
+  'Feito: o presidente e o bonde voltaram pra sede.': {es:'Hecho: el presidente y la barra volvieron a la sede.', en:'Done: the president and the crew went back to the HQ.'},
   'A diretoria chamou: o presidente voltou pra sede pra reunião.': {es:'La directiva llamó: el presidente volvió a la sede para la reunión.', en:'The board called: the president went back to the HQ for the meeting.'},
   /* o mapa da cidade (mapa3d.js) */
   'PANFLETAGEM · {sigla}': {es:'VOLANTEO · {sigla}', en:'FLYERING · {sigla}'},

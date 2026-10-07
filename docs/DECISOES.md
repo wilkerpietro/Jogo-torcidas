@@ -9478,6 +9478,8 @@ O pedido: "Faz a IA atacar rodas de outras IAs também. a tela da reunião fica 
 
 - **Ajustes depois do teste do dono**: a briga de fora termina na sede (não volta pra rua); o recado do dia livre saiu, fica só o botão "Sair pra rua"; a defesa da nossa roda abria sem os rivais (nasciam na saída do tabuleiro e sumiam) — agora eles nascem perto e brigam.
 
+- **Toda ação de domínio encerrada volta pra sede**: pixar, panfletar, o assalto sozinho e toda briga na rua terminam com o presidente e o bonde na sede (o botão "Sair pra rua" leva de novo). E na defesa da nossa roda e da panfletagem os rivais agora partem pra cima (antes iam embora pela saída deles e a briga acabava sozinha).
+
 **O que ficou de fora ou pela metade**: a briga de roda entre IAs só aparece se a câmera estiver perto dela na hora (longe, a roda só some); a frequência é um número (`RODA.chanceIA`) medido em dias sorteados, não jogando. Detalhes: `docs/JOGO_3D.md` §47.7.
 
 ## Descartado (decisão do dono, 17/08/2026)

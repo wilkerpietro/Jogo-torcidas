@@ -11706,6 +11706,20 @@
                 perfilRival:perfilDe(o.rivalId) },
       aoTerminar: res => fecharDiaDeJogo(res, null, acao)
     });
+    /* QUEM VEIO PRA CIMA JÁ VEM (o dono, 07/10/2026: a defesa da nossa roda
+       "abriu rápido sem spawnar os rivais e logo deu vitória pra gente"):
+       sem ordem, o bonde deles ia embora pela saída dele. Na briga em que
+       eles atacam (a nossa roda, a nossa panfletagem, quem veio atrapalhar),
+       o bonde deles sai caçando o nosso, como na treta marcada */
+    const J = TO.diaJogo.ponte.J;
+    if(J && o.ruaLivre && o.ruaLivre.nosAtacamos === false){
+      const alvoDeles = [...new Set(J.discos.filter(x=>x.doJogador).map(x=>x.spawn))][0] || null;
+      for(const s2 of [...new Set(J.discos.filter(x=>!x.doJogador).map(x=>x.spawn))])
+        J.bondes[s2] = Object.assign(J.bondes[s2] || {id:s2}, {humor:'atacar', agirEm:0, alvo:alvoDeles});
+      for(const d2 of J.discos) if(!d2.doJogador){ d2.guarda = false; d2.daCasa = false; }
+      J.acordou = true;
+      J.paz = false;
+    }
     return true;
   }
 
@@ -12319,11 +12333,12 @@
     /* (a briga da rua livre do jogo 3D: o fim é da briga, e a volta é pra rua) */
     /* (a briga de fora — o nosso bar atacado com o presidente na rua — volta pra sede) */
     const R3 = TO.jogo3d && TO.jogo3d.rua, S3 = R3 && R3.ativo ? R3.sessao : null;
-    const naRua = !!S3 && !(S3.briga && S3.briga.externa);
+    /* (desde 07/10/2026 toda briga da rua acaba na sede: só o cabeçalho é da briga) */
+    const naRua = false, daRua = !!S3;
     /* (e a da ida jogada: a volta é pro caminho do estádio) */
     const naIda = !naRua && !!(TO.jogo3d && TO.jogo3d.dia && TO.jogo3d.dia.idaJogada);
     const cab = $('telaRelatorio') && $('telaRelatorio').querySelector('header h2');
-    if(cab) cab.textContent = naRua || naIda ? _t('Fim da briga') : _t('Fim da noite');
+    if(cab) cab.textContent = daRua || naIda ? _t('Fim da briga') : _t('Fim da noite');
     $('btFecharRelatorio').textContent = naRua ? _t('Voltar pra rua') : naIda ? _t('Seguir pro estádio') : _t('Voltar pra sede');
     const nossoLado = res.nossoLado === 'visitante' ? 'visitante' : 'mandante';
     const outro = nossoLado === 'mandante' ? 'visitante' : 'mandante';

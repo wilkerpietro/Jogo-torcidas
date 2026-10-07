@@ -5379,3 +5379,21 @@ de fora vinham de 12 a 30 m e, no tabuleiro da rua (`brigaNaRua`), nasciam
 colados na beira — dentro da saída deles — e sumiam na largada. Agora vêm de
 7 a 13 m e cada lado nasce a uns 6 m da beira. Medido: com 9 nossos contra
 5, os 5 seguem de pé na cena depois de 6 s.
+
+**Toda ação encerrada volta pra sede (o dono, 07/10/2026: "depois de uma
+ação de domínio encerrada o jogador sempre volta pra sede").** Pixar e
+panfletar (se a rival não vier atrás; vindo, depois dela ou de ela
+desistir), o assalto sozinho que aconteceu e toda briga na rua — a da rua,
+a defesa da roda e da panfletagem, a de fora — encerram a rua: o aviso
+"Feito: o presidente e o bonde voltaram pra sede." e o relatório da briga
+com "Voltar pra sede". O assalto que não abriu (a loja) não conta: ele
+segue na rua. A trégua da roda (§47.6) fica, mas só pesa no "Partir pra
+cima" de quem sai de novo.
+
+**Os rivais da defesa agora atacam.** A primeira correção (eles nascendo
+longe da beira) não bastava: sem ordem, o bonde deles saía andando pra
+saída dele e a briga acabava com "não sobrou ninguém deles" (medido: os 5
+andando ~60 px/s pra beira desde a largada). Na briga em que eles vêm pra
+cima (`abrirBrigaLivre` com `nosAtacamos: false`), o bonde deles caça o
+nosso, como na treta marcada. Medido em 3 rodadas: os 5 vieram pro meio e
+seguiam de pé aos 6 s.
