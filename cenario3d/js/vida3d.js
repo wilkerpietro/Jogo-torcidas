@@ -37,12 +37,12 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=4e3a9ffc45';
-import { brigaNaCaminhada } from './caminhada.js?v=4e3a9ffc45';
-import { brigaNoBar } from './briga_bar.js?v=4e3a9ffc45';
-import { brigaNaTreta } from './briga_treta.js?v=4e3a9ffc45';
-import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=4e3a9ffc45';
-import { planoDoBar } from './casas3d.js?v=4e3a9ffc45';
+import { palcoDeBriga } from './palco_briga.js?v=b541388326';
+import { brigaNaCaminhada } from './caminhada.js?v=b541388326';
+import { brigaNoBar } from './briga_bar.js?v=b541388326';
+import { brigaNaTreta } from './briga_treta.js?v=b541388326';
+import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=b541388326';
+import { planoDoBar } from './casas3d.js?v=b541388326';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
