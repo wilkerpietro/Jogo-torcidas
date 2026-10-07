@@ -5367,3 +5367,15 @@ e 10 na guarda, a Jovem do Floresta ganhou (a roda ficou, a barra dela no
 bairro 86,2 → 96,6) e a briga entrou nas notícias (tipo roda). Em 60 dias
 sorteados, de 15 a 27 brigas de roda entre IAs na cidade (dois mundos). O
 celular e o jogo do feed sem erro; nenhum erro no console.
+
+**Ajustes do dono (07/10/2026, depois do teste dele).** "Briga de fora com o
+presidente na rua: ele sai do modo a pé antes da cena abrir, a câmera vai
+pra briga e, no fim, ele volta pra sede" — a briga de fora encerra a rua no
+fim (o relatório diz "Voltar pra sede"). "Pare de gerar a mensagem de dia
+livre e deixe o botão no canto" — o recado saiu (`SEM_RECADO` em
+`rua3d.js`); o botão "Sair pra rua" segue no dia livre. E a defesa da nossa
+roda "abriu rápido sem spawnar os rivais e logo deu vitória pra gente": os
+de fora vinham de 12 a 30 m e, no tabuleiro da rua (`brigaNaRua`), nasciam
+colados na beira — dentro da saída deles — e sumiam na largada. Agora vêm de
+7 a 13 m e cada lado nasce a uns 6 m da beira. Medido: com 9 nossos contra
+5, os 5 seguem de pé na cena depois de 6 s.

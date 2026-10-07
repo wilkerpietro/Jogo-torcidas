@@ -9476,6 +9476,8 @@ O pedido: "Faz a IA atacar rodas de outras IAs também. a tela da reunião fica 
 - **O telhado da sede**: toda volta pra sala reabre a sede (a briga na rua e o assalto deixavam ela coberta).
 - **A IA ataca roda de outra IA** (só no jogo 3D, na cidade do jogador): a rival que chega no bairro vai pra cima de uma roda da dona, no máximo duas por dia na cidade, numa hora do dia. É a briga entre IAs de sempre (notícia, feridos, prestígio) e mexe 8 pontos de base no bairro; ganhando quem veio, a roda some da rua no resto do dia. Com a roda perto da câmera, dá pra ver a briga na calçada.
 
+- **Ajustes depois do teste do dono**: a briga de fora termina na sede (não volta pra rua); o recado do dia livre saiu, fica só o botão "Sair pra rua"; a defesa da nossa roda abria sem os rivais (nasciam na saída do tabuleiro e sumiam) — agora eles nascem perto e brigam.
+
 **O que ficou de fora ou pela metade**: a briga de roda entre IAs só aparece se a câmera estiver perto dela na hora (longe, a roda só some); a frequência é um número (`RODA.chanceIA`) medido em dias sorteados, não jogando. Detalhes: `docs/JOGO_3D.md` §47.7.
 
 ## Descartado (decisão do dono, 17/08/2026)

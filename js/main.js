@@ -12317,7 +12317,9 @@
     ctx = ctx || {};
     const e = E();
     /* (a briga da rua livre do jogo 3D: o fim é da briga, e a volta é pra rua) */
-    const naRua = !!(TO.jogo3d && TO.jogo3d.rua && TO.jogo3d.rua.ativo);
+    /* (a briga de fora — o nosso bar atacado com o presidente na rua — volta pra sede) */
+    const R3 = TO.jogo3d && TO.jogo3d.rua, S3 = R3 && R3.ativo ? R3.sessao : null;
+    const naRua = !!S3 && !(S3.briga && S3.briga.externa);
     /* (e a da ida jogada: a volta é pro caminho do estádio) */
     const naIda = !naRua && !!(TO.jogo3d && TO.jogo3d.dia && TO.jogo3d.dia.idaJogada);
     const cab = $('telaRelatorio') && $('telaRelatorio').querySelector('header h2');

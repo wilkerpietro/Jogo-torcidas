@@ -51,6 +51,8 @@ const RUA_MS_MIN = 600;
 const INI = 7 * 60, FIM = 23 * 60;
 /* quantos andam com o presidente */
 const BONDE = 4;
+/* o recado do dia livre (desligado: só o botão no canto) */
+const SEM_RECADO = true;
 /* a largura que cabe na tela a pé (m): mais aberto que o a pé do cenário */
 const VAO = 22;
 /* os alcances (m): o grupo, o muro, a porta da loja */
@@ -249,7 +251,10 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (!e || !e.data) return;
     const chave = `${e.data.ano}|${e.data.semana}|${e.data.dia}`;
     if (livreDe !== chave) { livreDe = chave; livreHoje = diaLivreHoje(e); }
-    if (!livreHoje || S || e.ruaLivre === 'nunca' || !TO.feed || !TO.feed.propor) return;
+    /* O RECADO SAIU (o dono, 07/10/2026: "Pare de gerar a mensagem de dia livre
+       e deixe o botão no canto de sair pra rua pra quando o jogador quiser
+       agir"): o dia livre fica só no botão "Sair pra rua" */
+    if (SEM_RECADO || !livreHoje || S || e.ruaLivre === 'nunca' || !TO.feed || !TO.feed.propor) return;
     const m = TO.feed.propor(e, {
       kind: 'dia-livre', peso: 'decisao', voz: 'diretor', chave: 'dia-livre|' + chave, hora: '07:05',
       texto: T_('Dia livre, presidente: nada marcado pra hoje, nem jogo nem operação. A rua tá aí — dá pra pixar muro, panfletar num bairro, caçar a rival na calçada ou tentar a sorte numa loja. O bonde tá na porta.'),
@@ -610,7 +615,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
   /* A BRIGA DE FORA (vida3d.js `palcoDe`: o nosso bar atacado, a treta, a
      reunião da zona — o que a rua não abriu): o presidente sai do a pé
      antes de a cena montar (a câmera é da briga, não dele) e, no fim
-     dela, volta pra rua no lugar onde estava. Quem vinha atrapalhar
+     dela, volta pra sede (o dono, 07/10/2026). Quem vinha atrapalhar
      desiste */
   function cederAVez() {
     if (!S || S.briga || S.assaltando) return false;
@@ -657,8 +662,9 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (vida.esquecerPanfletos) vida.esquecerPanfletos();
     gastar(DURA.briga);
     if (!S) return;
-    if (v.pos) voltarAPe(v.pos);
-    else encerrar('erro');
+    /* (a briga de fora acaba na sede — o dono, 07/10/2026: "no fim, ele volta pra sede") */
+    if (v.externa || !v.pos) { encerrar('briga'); return; }
+    voltarAPe(v.pos);
   }
 
   /* O ASSALTO SOZINHO: a operação na hora, sem plano nem equipe — só o
@@ -741,7 +747,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
       if (TO.estado.salvar) TO.estado.salvar();
     };
     if (!onde) { naConta(); return; }
-    const vem = vida.pontoDoBairro ? vida.pontoDoBairro(c.bid, onde.x, onde.z, 12, 30) : null;
+    const vem = vida.pontoDoBairro ? vida.pontoDoBairro(c.bid, onde.x, onde.z, 7, 13) : null;
     irDefender(onde, () => {
       if (!S) { naConta(); return; }
       const tres = TO.membros.aptosParaOEstadio(e).filter(m => m !== S.pres && !S.bonde.includes(m)).slice(0, 3);
@@ -820,7 +826,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (!onde && vida.pontoDoBairro) { const p = api.sedeDe ? api.sedeDe(e.torcida.id) : null; onde = vida.pontoDoBairro(c.bid, p ? p.x : 0, p ? p.y : 0, 0, 5000); }
     const naConta = () => rodaNaConta(e, c, null);
     if (!onde) { naConta(); return; }
-    const vem = vida.pontoDoBairro ? vida.pontoDoBairro(c.bid, onde.x, onde.z, 12, 30) : null;
+    const vem = vida.pontoDoBairro ? vida.pontoDoBairro(c.bid, onde.x, onde.z, 7, 13) : null;
     irDefender(onde, () => {
       if (!S) { naConta(); return; }
       /* a roda entra do nosso lado: os da ficha fora do bonde (e some da calçada enquanto a briga dura) */

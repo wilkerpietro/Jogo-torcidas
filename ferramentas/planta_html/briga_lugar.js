@@ -435,7 +435,10 @@ export function brigaNaRua(ctx, o = {}) {
   const naRua = P && P.naRuaOuCalcada ? (wx, wz) => P.naRuaOuCalcada(wx, wz) : () => true;
   const T = tabuleiro(ctx, c, u, naRua);
   const { pxm, soltar, R } = T;
-  const dentroX = x => Math.max(70, Math.min(TAB.W - 70, x)), dentroY = y => Math.max(60, Math.min(TAB.H - 60, y));
+  /* (cada lado nasce a uns 6 m da beira: colado nela, nascia dentro da saída
+     dele e "sumia" na largada — a defesa da nossa roda abria sem ninguém
+     deles, 07/10/2026) */
+  const dentroX = x => Math.max(220, Math.min(TAB.W - 220, x)), dentroY = y => Math.max(60, Math.min(TAB.H - 60, y));
   const pa = T.doMundo(a[0], a[1]), pb = T.doMundo(b[0], b[1]);
   const pA1 = soltar(dentroX(pa[0]), dentroY(pa[1]), 320), pD1 = soltar(dentroX(pb[0]), dentroY(pb[1]), 320);
   if (!pA1 || !pD1) return { erro: 'a rua da briga não cabe no tabuleiro' };
