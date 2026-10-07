@@ -33,7 +33,7 @@
    nossa saída é a rua de onde a gente veio.
    ========================================================= */
 
-import { fugasNaRua } from './fuga_rua.js?v=b541388326';
+import { fugasNaRua } from './fuga_rua.js?v=49e15a2bd7';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma das outras brigas da cidade)

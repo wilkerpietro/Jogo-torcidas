@@ -37,12 +37,12 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=b541388326';
-import { brigaNaCaminhada } from './caminhada.js?v=b541388326';
-import { brigaNoBar } from './briga_bar.js?v=b541388326';
-import { brigaNaTreta } from './briga_treta.js?v=b541388326';
-import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=b541388326';
-import { planoDoBar } from './casas3d.js?v=b541388326';
+import { palcoDeBriga } from './palco_briga.js?v=49e15a2bd7';
+import { brigaNaCaminhada } from './caminhada.js?v=49e15a2bd7';
+import { brigaNoBar } from './briga_bar.js?v=49e15a2bd7';
+import { brigaNaTreta } from './briga_treta.js?v=49e15a2bd7';
+import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=49e15a2bd7';
+import { planoDoBar } from './casas3d.js?v=49e15a2bd7';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -875,8 +875,13 @@ export function criarVida(api) {
   /* =====================================================
      OS GRUPOS DA RUA (o jogo 3D, 07/10/2026)
      - AS RODAS DA DONA: no bairro dominado, a turma da dona fica na
-       calçada (o GTA San Andreas do pedido do dono): uma roda com 50 na
-       barra, até quatro com 100, de três a cinco cada, das 9h à meia-noite;
+       calçada (o GTA San Andreas do pedido do dono): de quatro rodas (logo
+       acima de 50 na barra) a seis (perto de 100) — a conta é do domínio
+       (`TO.dominio.rodasNoBairro`; o dono, 07/10/2026: "Os bairros devem
+       ter mais grupos como esses, variando de 4 a 6 por bairro") —, de
+       três a cinco cada, das 9h à meia-noite, uns 15 m longe uma da outra.
+       A roda derrotada sai da rua no resto do dia (`TO.dominio.
+       rodaDesfeita`);
      - OS TRÊS QUE PANFLETAM (o dono: "Onde a torcida escolher onde quer
        recrutar, seja a do jogador ou IA, terá três membros da respectiva
        torcida panfletando ou discursando em alguma calçada aleatória do
@@ -889,7 +894,9 @@ export function criarVida(api) {
      sorteados pelo dia: o mesmo o dia inteiro. Só os grupos perto da câmera
      ficam na tela (como o povo); a rua livre (rua3d.js) lê `grupos`.
      ===================================================== */
-  const rodasNoBairro = v => v > 50 ? 1 + Math.min(3, Math.floor(3 * (v - 50) / 50 + 1e-6)) : 0;
+  const rodasNoBairro = v => TO.dominio && TO.dominio.rodasNoBairro ? TO.dominio.rodasNoBairro(v)
+    : v > 50 ? 4 + Math.min(2, Math.floor(3 * (v - 50) / 50 + 1e-6)) : 0;
+  const chaveDaRoda = (bid, tid, k, abs) => TO.dominio && TO.dominio.chaveDaRoda ? TO.dominio.chaveDaRoda(bid, tid, k, abs) : `roda|${bid}|${tid}|${k}|${abs}`;
   function aneisDe(bid) {
     const m = rua.porBairro || (rua.porBairro = new Map());
     if (!m.has(bid)) m.set(bid, rua.aneis.filter(a => a.bairro === bid));
@@ -902,6 +909,30 @@ export function criarVida(api) {
     /* a normal pra fora da quadra (a rua) */
     const nx = q.lado === 1 ? 1 : q.lado === 3 ? -1 : 0, nz = q.lado === 0 ? -1 : q.lado === 2 ? 1 : 0;
     return { a, s, x: q.x, z: q.z, nx, nz };
+  }
+  /* OS LUGARES DAS RODAS de um bairro no dia (as seis, pela chave de
+     cada uma): o sorteio da chave e, caindo a menos de ESPACO de outra
+     roda, o sorteio seguinte (até oito tentativas) — seis rodas no mesmo
+     bairro não se amontoam na mesma calçada */
+  const ESPACO = 15 * M;
+  function lugaresDasRodas(bid, dono, abs) {
+    const m = rua.lugaresRoda || (rua.lugaresRoda = new Map()), k0 = `${bid}|${dono}|${abs}`;
+    if (m.has(k0)) return m.get(k0);
+    if (m.size > 400) m.clear();
+    const out = [];
+    for (let k = 0; k < 6; k++) {
+      const chave = chaveDaRoda(bid, dono, k, abs);
+      let L = null;
+      for (let t = 0; t < 8; t++) {
+        const q = lugarDoGrupo(bid, t ? chave + '|' + t : chave);
+        if (!q) break;
+        if (!L) L = q;
+        if (out.every(o => !o || Math.hypot(o.x - q.x, o.z - q.z) >= ESPACO)) { L = q; break; }
+      }
+      out.push(L);
+    }
+    m.set(k0, out);
+    return out;
   }
   let recrutandoVisto = null, recrutandoEm = -99;
   function recrutandoHoje() {
@@ -926,12 +957,15 @@ export function criarVida(api) {
     const dm = domsDaRua();
     if (!dm || !e) return out;
     const abs = e.data.absoluto || 0;
+    const D = TO.dominio;
     if (h >= 9 && h < 23.95) for (const [bid, b] of dm) {
       if (!b.dono) continue;
-      const n = rodasNoBairro(b.v);
+      const n = rodasNoBairro(b.v), Ls = n ? lugaresDasRodas(bid, b.dono, abs) : [];
       for (let k = 0; k < n; k++) {
-        const chave = `roda|${bid}|${b.dono}|${k}|${abs}`, L = lugarDoGrupo(bid, chave);
+        const chave = chaveDaRoda(bid, b.dono, k, abs), L = Ls[k];
         if (!L || Math.hypot(L.x - cx, L.z - cz) > R) continue;
+        /* (a roda derrotada hoje não volta) */
+        if (D && D.rodaDesfeita && D.rodaDesfeita(e, chave)) continue;
         out.push({ chave, tipo: 'roda', tid: b.dono, bid, nomeBairro: b.nome, L, n: 3 + hashTxt(chave + 'n') % 3 });
       }
     }
@@ -2020,6 +2054,13 @@ export function criarVida(api) {
     get naRua() { return naRua; },
     esquecerPanfletos() { recrutandoVisto = null; gruposEm = -99; if (rua) rua.domsEm = -99; },
     tirarGrupo(chave) { if (rua) rua.grupos.delete(chave); },
+    /* a roda do dia pela chave (a nossa atacada: onde ela fica e quantos são, na tela ou não) */
+    rodaDoDia(chave) {
+      const p = String(chave || '').split('|');
+      if (!rua || p.length !== 5 || p[0] !== 'roda') return null;
+      const L = lugaresDasRodas(p[1], p[2], +p[4])[+p[3]];
+      return L ? { x: L.x, z: L.z, nx: L.nx, nz: L.nz, n: 3 + hashTxt(chave + 'n') % 3, g: rua.grupos.get(chave) || null } : null;
+    },
     /* as panfletagens de hoje na praça (o mapa da cidade marca as que se veem): onde fica cada uma */
     panfletagensHoje() {
       const e = E();
