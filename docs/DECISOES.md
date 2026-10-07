@@ -9434,6 +9434,13 @@ O pedido: "Refaça o layout visual de todas as telas do menu mantendo a estrutur
 
 **O que ficou como estava**: as telas não foram reorganizadas (as tabelas largas seguem rolando de lado no celular); a numeração das seções é só visual. Detalhes: `docs/JOGO_3D.md` §45.
 
+## O joystick da briga anda pra onde aponta (dono, 07/10/2026)
+
+O pedido: "O controle de andar em algumas cenas de briga não faz sentido. O boneco não vai na direção apontada pelo joystick."
+
+- **Na briga 3D o joystick e o teclado são da câmera**: empurrar pra cima anda pra onde a câmera olha, pra direita anda pra direita da tela — em qualquer cena e com a câmera girada como for. Antes o joystick usava o norte do tabuleiro da briga (que só coincide com a tela quando a câmera abre alinhada) e o teclado somava as duas direções, então o líder andava torto, de lado ou ao contrário.
+- A briga 2D vista de cima não mudou. Detalhes e medidas: `docs/JOGO_3D.md` §46.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

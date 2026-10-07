@@ -4956,3 +4956,52 @@ comportamento; `mapa2d.js` o mapa do jogo de feed.
   adversário às vezes é curta demais pra reconhecer de cara.
 - No começo da temporada a **posição na liga** é a ordem alfabética da
   tabela (todo mundo com 0 ponto) — é o que a própria classificação mostra.
+
+## 46. O joystick da briga anda pra onde aponta (07/10/2026)
+
+O dono (com a foto de uma briga na rua da sede): "O controle de andar em
+algumas cenas de briga não faz sentido. O boneco não vai na direção
+apontada pelo joystick."
+
+**Por que acontecia "em algumas cenas".** A briga 3D roda no tabuleiro do
+combate (1536 × 1024 px), que fica em cima da cena girado do jeito que a
+rua corre na cidade; a câmera pode estar em qualquer ângulo em volta dele.
+Dois erros no mesmo lugar:
+
+- **A bola de controle ia crua pro tabuleiro.** Ela é a tela — pra cima é
+  pra onde a câmera olha — e o combate usava o vetor dela como direção do
+  tabuleiro. Isso só acerta quando a câmera abre alinhada com o tabuleiro
+  e ninguém gira ela. Na cena que abre com a rua torta na tela (a da foto)
+  ou com a câmera girada, o líder andava pro lado errado; com a câmera de
+  costas, andava ao contrário.
+- **O teclado somava duas direções.** O WASD já era convertido pela câmera
+  (`vetorDoTeclado`), mas o combate somava por cima as teclas cruas do
+  mapa: com a câmera girada o líder andava no meio do caminho entre as
+  duas, e com ela de costas as duas se anulavam e ele andava de lado.
+
+**O conserto.** Na cena 3D a bola passa pelo mesmo `deltaDaTela` que o
+arrasto da bomba já usava (a direita da tela é a direita da câmera; pra
+cima, pra onde ela olha), levado pros eixos do tabuleiro onde o líder
+está — vale também pro tabuleiro que curva com o anel do estádio
+(`ponte.js`, `vetorDaCena`). No combate o vetor da cena manda sozinho, sem
+as teclas cruas por cima (`combate.js`, `moverLider`). A cena de perto do
+jogo de feed (`tres.js`) ganhou o mesmo `deltaDaTela`, com as contas do
+teclado dela: a bola anda como o WASD. A briga 2D vista de cima segue como
+estava (lá a tela é o tabuleiro).
+
+**Medido** (`scratchpad/joy/joy.js`: celular em pé, a bola empurrada e as
+teclas seguradas por 1,6 s, o passo do líder medido na tela; o líder volta
+pro ponto de partida antes de cada medida). Erro entre a direção pedida e
+a andada:
+
+| cena, câmera | antes: bola ↑ / → | antes: W / D | depois: bola ↑ / → | depois: W / D |
+|---|---|---|---|---|
+| praça, girada 0,9 rad | 57° / 46° | 30° / 22° | 0° / 0° | 0° / 0° |
+| praça, de costas (π) | 180° / 180° | 89° / 90° | 0° / 1° | 0° / 1° |
+| praça que abriu com a rua torta | — | — | 0° / 0° | 0° / 0° |
+| bar, girada 0,9 rad | 94° / 61° | 11° / 21° | 12° / 11° | 8° / 8° |
+| bar, de costas (π) | 132° / 168° | 90° / 90° | 0° / 0° | 0° / 0° |
+
+A conversão em si (o vetor levado pro tabuleiro e projetado de volta na
+tela) dá 0 a 2° em todas. Os 8 a 12° que sobram no bar com a câmera girada
+são o líder raspando na parede da rua estreita, não a direção.

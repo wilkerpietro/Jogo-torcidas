@@ -1740,6 +1740,12 @@ TO.diaJogo.tres = (function(){
     const m=Math.hypot(x,y)||1;
     return {x:x/m, y:y/m};
   }
+  /* a tela no chão da cena (a bola de controle, ponte.js): a direita da
+     tela é a direita da câmera; pra cima, pra onde ela olha */
+  function deltaDaTela(sx, sy){
+    const fx=Math.sin(cam.yaw), fz=Math.cos(cam.yaw), rx=-fz, rz=fx;
+    return {x:rx*sx - fx*sy, y:rz*sx - fz*sy};
+  }
 
   /* =======================================================
      A CAMADA DE CIMA — nome, vida, preso, radar
@@ -1970,7 +1976,7 @@ TO.diaJogo.tres = (function(){
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   }
 
-  return {montar, desenhar, desenharDeCima, limparDeCima, vetorDoTeclado, trocarCamera, MODOS,
+  return {montar, desenhar, desenharDeCima, limparDeCima, vetorDoTeclado, deltaDaTela, trocarCamera, MODOS,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return !!gl; }, get cam(){ return cam; }};
 })();

@@ -1303,15 +1303,21 @@ TO.diaJogo.combate = (function(){
     let dx=0,dy=0;
     /* A CENA 3D MANDA UM VETOR, NÃO TECLAS. Lá o W é "pra onde a câmera
        olha", e quem sabe pra onde a câmera olha é o renderizador — ele
-       já converte pro eixo da cena e entrega aqui. Sem vetor, as
-       teclas valem no eixo do mapa, como sempre. */
-    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+       já converte pro eixo da cena e entrega aqui (o teclado e a bola de
+       controle, ponte.js `vetorDaCena`). Sem vetor, as teclas valem no
+       eixo do mapa, como sempre.
+       O VETOR MANDA SOZINHO (07/10/2026): as teclas cruas eram somadas por
+       cima dele, e com a câmera girada o líder andava torto — no meio do
+       caminho entre a câmera e o mapa —, ou de lado, com a câmera de
+       costas pro norte do mapa (as duas direções se anulavam e sobrava o
+       resto). */
     /* A BOLA DE CONTROLE (pedido do dono, 22/08/2026): no celular a
        direção não sai mais de quatro botões, sai de um vetor livre —
        qualquer ângulo, e não só os oito da cruz. Quando o vetor existe
        é ele que manda; o teclado segue exatamente como estava. */
     const eixo = teclas.eixo;
-    if(eixo && (eixo.x || eixo.y)){ dx = eixo.x; dy = eixo.y; }
+    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+    else if(eixo && (eixo.x || eixo.y)){ dx = eixo.x; dy = eixo.y; }
     else {
       if(teclas['a']||teclas['arrowleft'])  dx--;
       if(teclas['d']||teclas['arrowright']) dx++;

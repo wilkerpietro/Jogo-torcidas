@@ -218,6 +218,24 @@ TO.diaJogo.ponte = (function(){
      devagar e parecia não sair do lugar). A aba que perdeu o foco volta
      sem salto grande: no máximo 0,2 s de uma vez */
   const PASSO_MAX = 0.05, PASSOS_MAX = 4;
+  /* A BOLA DE CONTROLE NA CENA 3D (o dono, 07/10/2026: "o controle de andar
+     em algumas cenas de briga não faz sentido. O boneco não vai na direção
+     apontada pelo joystick"). A bola é a TELA — pra cima é pra onde a
+     câmera olha, a direita é a direita dela — e ia crua pro tabuleiro, que
+     só por acaso coincide com a tela: quando a câmera abre alinhada com a
+     cena e ninguém gira ela. Na rua que corre torta na tela, ou com a
+     câmera girada, o líder andava pra outro lado (52° de câmera girada
+     davam 46 a 57° de erro). Quem passa da tela pro tabuleiro é o mesmo
+     `deltaDaTela` do arrasto da bomba; sem ele (o palco da reunião), a
+     bola segue crua, como no jogo de cima. */
+  function vetorDaCena(){
+    const ex = teclas.eixo;
+    if(ex && (ex.x || ex.y) && T.deltaDaTela){
+      const q = T.deltaDaTela(ex.x, ex.y), m = Math.hypot(q.x, q.y);
+      return m ? {x:q.x/m, y:q.y/m} : null;
+    }
+    return T.vetorDoTeclado(teclas);
+  }
   function quadro(agora){
     if(!rodando) return;
     if(cenaSumiu()){ rodando=false; return; }
@@ -226,8 +244,9 @@ TO.diaJogo.ponte = (function(){
     const dt=Math.min(PASSO_MAX, bruto/passos);
     dtQuadro=dt*passos;
     try{
-      /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
-      teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
+      /* na cena de perto o WASD é relativo à câmera: o renderizador resolve
+         (e a bola de controle também — `vetorDaCena`) */
+      teclas.vetor = (tres && T) ? vetorDaCena() : null;
       if(J && !ED.ativo){
         for(let p=0; p<passos && !(J.acabou && J.fase==='acabando'); p++)
           for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);
