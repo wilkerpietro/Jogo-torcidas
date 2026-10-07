@@ -44,7 +44,7 @@
    A SETA NA BORDA (também do dia de jogo): um alvo no mundo vira uma seta
    na beira da área livre da tela, apontando pra ele, com a distância.
    ========================================================= */
-import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=49e15a2bd7';
+import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=75671cb934';
 
 /* o passo do relógio na rua: ms por minuto do dia, a 1× (o 2× do jogo vale) */
 const RUA_MS_MIN = 600;
@@ -299,6 +299,8 @@ export function criarRua(api, vida, dia3d, nevoa) {
     } catch (err) { console.error('a rua livre: o presidente não saiu', err); ok = false; }
     if (!ok || !S) { if (S) { S = null; vida.naRua = false; TO.tela.retomarTempo('rua'); } return false; }
     S.entrando = false;
+    /* (uma briga de fora tomou a tela enquanto ele saía: a pé, só depois dela) */
+    if (S.briga) { if (Cn.aPe.ativo) Cn.aPe.sair(false); montarHud(); return true; }
     montarBonde(x, z);
     montarHud();
     pintarHud(true);
@@ -334,6 +336,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (seta) seta.alvo(null);
     if (motivo === 'noite') { vida.relogio.definir(FIM); avisar(T_('A noite caiu: o presidente e o bonde voltaram pra sede.')); }
     else if (motivo === 'preso') avisar(T_('O presidente caiu na briga: o bonde levou ele de volta pra sede.'));
+    else if (motivo === 'reuniao') avisar(T_('A diretoria chamou: o presidente voltou pra sede pra reunião.'));
     TO.tela.retomarTempo('rua');
     if (vida.ligada && motivo !== 'virou') vida.irPraSala();
     pintarBotaoSair();
@@ -604,6 +607,25 @@ export function criarRua(api, vida, dia3d, nevoa) {
   }
   /* a cena desmontou (vida3d.js): quando o relatório fechar, o presidente volta pra rua */
   function voltouDaBriga() { if (S && S.briga) S.voltando = S.briga; }
+  /* A BRIGA DE FORA (vida3d.js `palcoDe`: o nosso bar atacado, a treta, a
+     reunião da zona — o que a rua não abriu): o presidente sai do a pé
+     antes de a cena montar (a câmera é da briga, não dele) e, no fim
+     dela, volta pra rua no lugar onde estava. Quem vinha atrapalhar
+     desiste */
+  function cederAVez() {
+    if (!S || S.briga || S.assaltando) return false;
+    const eu = lider(), Cn = C();
+    const pos = eu ? { x: eu.x, z: eu.y } : S.ultimo || null;
+    if (S.perigo && S.perigo.g) vida.tirarGrupo(S.perigo.g.chave);
+    S.briga = { g: null, pos, nosAtacamos: false, externa: true };
+    S.acao = null; S.perigo = null;
+    desposar();
+    if (seta) seta.alvo(null);
+    if (Cn && Cn.vida) Cn.vida.extras = [];
+    if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false);
+    return true;
+  }
+  const cenaNoAr = () => { const b = document.body.classList; return b.contains('em-cena') || b.contains('palco-briga'); };
   async function voltarAPe(pos) {
     const Cn = C(), e = S && S.e;
     if (!S || !Cn || !Cn.aPe) return;
@@ -617,6 +639,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (!S) return;
     S.entrando = false;
     if (!ok) { encerrar('erro'); return; }
+    if (S.briga) { if (Cn.aPe.ativo) Cn.aPe.sair(false); return; }
     montarBonde(pos.x, pos.z);
     pintarHud(true);
   }
@@ -633,7 +656,9 @@ export function criarRua(api, vida, dia3d, nevoa) {
     soltarNossaRoda(v.nossaRoda);
     if (vida.esquecerPanfletos) vida.esquecerPanfletos();
     gastar(DURA.briga);
-    if (S) voltarAPe(v.pos);
+    if (!S) return;
+    if (v.pos) voltarAPe(v.pos);
+    else encerrar('erro');
   }
 
   /* O ASSALTO SOZINHO: a operação na hora, sem plano nem equipe — só o
@@ -808,6 +833,26 @@ export function criarRua(api, vida, dia3d, nevoa) {
       if (!brigar(gAtq, false, { deles: c.n, contraRoda: c, mais: roda, nossaRoda: nossa })) { soltarNossaRoda(nossa); naConta(); }
     }, naConta);
   }
+  /* A RODA DA IA ATACADA PELA IA (TO.dominio.rodasIAHoje; o dono, 07/10/2026:
+     "Faz a IA atacar rodas de outras IAs também"): na hora marcada, a
+     briga entre elas se resolve (a notícia, o bairro) e, com a roda perto
+     da câmera, a rua vê a briga (vida3d.js `brigaDeRoda`); com o presidente
+     na rua e a briga na tela, o aviso */
+  function conferirRodasIA(e, min) {
+    const D = TO.dominio;
+    if (!e || !e.data || !D || !D.rodasIAHoje || !naPracaNossa()) return;
+    for (const c of D.rodasIAHoje(e)) {
+      const h = minutoDe(c.hora);
+      if (h == null || min < h) continue;
+      let reg = null;
+      try { reg = D.resolverRodaIA(e, c); } catch (err) { console.error('a roda da IA:', err); }
+      if (!reg) continue;
+      const viu = !!(vida.brigaDeRoda && vida.brigaDeRoda(c, !!reg.ganhouA));
+      if (viu && S) avisar(T_('A {a} foi pra cima da roda da {b} em {bairro}!', { a: c.nome, b: c.nomeDona, bairro: c.bairro }));
+      if (!viu && vida.esquecerPanfletos) vida.esquecerPanfletos();
+      if (TO.estado.salvar) TO.estado.salvar();
+    }
+  }
   /* a nossa roda volta pra calçada (a que perdeu sai no próximo quadro dos grupos: TO.dominio.rodaDesfeita) */
   function soltarNossaRoda(g) {
     if (!g) return;
@@ -908,14 +953,18 @@ export function criarRua(api, vida, dia3d, nevoa) {
         if (livreDe !== chave) { livreDe = chave; livreHoje = diaLivreHoje(e); }
         conferirContraNos(e, S ? S.min : vida.relogio.minuto);
         conferirRodasContraNos(e, S ? S.min : vida.relogio.minuto);
+        conferirRodasIA(e, S ? S.min : vida.relogio.minuto);
       }
       pintarBotaoSair();
     }
     if (!S) return;
     if (S.e !== e) { encerrar('virou'); return; }
+    /* (a briga de fora acabou sem avisar — a cena da foto, sem palco em 3D: a volta é a mesma) */
+    if (S.briga && S.briga.externa && !S.voltando && !cenaNoAr()) S.voltando = S.briga;
     if (S.voltando) { conferirVolta(); return; }
     const eu = lider();
     if (!eu || S.briga || S.assaltando || S.entrando) return;
+    S.ultimo = { x: eu.x, z: eu.y };
     /* o bonde vai atrás; a ação em curso; o relógio */
     if (S.seg) S.seg.quadro(dt, eu);
     if (S.acao) {
@@ -931,7 +980,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
   }
 
   return {
-    quadro, sair, encerrar, conferirDiaLivre, voltouDaBriga, diaLivreHoje,
+    quadro, sair, encerrar, conferirDiaLivre, voltouDaBriga, cederAVez, diaLivreHoje,
     get ativo() { return !!S; },
     get sessao() { return S; },
     /* quem fala no balão, na rua */

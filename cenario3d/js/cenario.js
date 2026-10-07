@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=49e15a2bd7';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=49e15a2bd7';
-import { Subsolo } from './subsolo.js?v=49e15a2bd7';
-import { ATLAS } from './modelos_atlas.js?v=49e15a2bd7';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=75671cb934';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=75671cb934';
+import { Subsolo } from './subsolo.js?v=75671cb934';
+import { ATLAS } from './modelos_atlas.js?v=75671cb934';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -2609,8 +2609,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=49e15a2bd7', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=49e15a2bd7');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=75671cb934', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=75671cb934');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2735,7 +2735,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=49e15a2bd7');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=75671cb934');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3534,7 +3534,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=49e15a2bd7'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=75671cb934'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -3576,6 +3576,8 @@ void main() {`)
     /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
     set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
     get palco() { return palco; },
+    /* (pro teste: o prédio aberto agora — o id dele na grade —, ou 0) */
+    get predioAberto() { return corteFixo ? corteFixo.id : 0; },
     /* o prédio em (x, z) sem o que passa de `alto` m do chão (null: todos inteiros) */
     abrirPredio(x, z, alto = 2.2) {
       if (x == null || !grade) { corteFixo = null; pedir(); return 0; }

@@ -6533,6 +6533,10 @@ TO.i18n.registrar({
      en:'President, {nome} is going after our crew on the corner in {bairro}! It\'s {n} of them against our {m} on the sidewalk.'},
   'A nossa roda em {bairro} segurou a {nome} sozinha.': {es:'Nuestra ronda en {bairro} aguantó sola a la {nome}.', en:'Our crew in {bairro} held off {nome} on their own.'},
   'A {nome} correu com a nossa roda em {bairro}.': {es:'La {nome} corrió a nuestra ronda en {bairro}.', en:'{nome} ran our crew off the corner in {bairro}.'},
+  /* a roda da IA atacada pela IA, e a rua que cede a vez (07/10/2026) */
+  'A {a} foi pra cima da roda da {b} em {bairro}!': {es:'¡La {a} fue contra la ronda de la {b} en {bairro}!', en:'{a} went after {b}\'s crew in {bairro}!'},
+  'roda desfeita': {es:'ronda desarmada', en:'crew run off'},
+  'A diretoria chamou: o presidente voltou pra sede pra reunião.': {es:'La directiva llamó: el presidente volvió a la sede para la reunión.', en:'The board called: the president went back to the HQ for the meeting.'},
   /* o mapa da cidade (mapa3d.js) */
   'PANFLETAGEM · {sigla}': {es:'VOLANTEO · {sigla}', en:'FLYERING · {sigla}'},
   'O PRESIDENTE': {es:'EL PRESIDENTE', en:'THE PRESIDENT'},
@@ -14260,20 +14264,31 @@ TO.dominio = (function(){
      resposta (o jogo fechado no dia), o dia seguinte resolve na conta.
      O jogo do feed (2D) não tem roda na calçada nem como defender: lá
      ninguém ataca roda.
+     A IA CONTRA A IA (o dono, 07/10/2026: "Faz a IA atacar rodas de outras
+     IAs também"): na cidade do jogador, todo dia, cada rival que chega num
+     bairro de outra IA pode ir pra cima de uma roda da dona ali
+     (RODA.chanceIA, pela força dela contra a dona; no máximo RODA.ateIA
+     por dia na cidade), numa hora de RODA.horas. Na hora (o jogo 3D chama
+     `resolverRodaIA`), é a briga entre IAs de sempre (`brigaIA`, tipo
+     roda, no bairro, GANHO.roda pra quem ganha) e, ganhando quem veio, a
+     roda sai da rua no resto do dia; a roda na tela vê a briga (vida3d.js
+     `brigaDeRoda`). Sem o jogo aberto na hora, o dia seguinte resolve.
      ======================================================= */
   /* (a chance é por bairro nosso, por rival que chega nele e por dia, pela
      força dela; no máximo um ataque por dia. Medido em 60 dias sorteados
      com cinco bairros: ver docs/JOGO_3D.md §47.6 — com 0,12 e dois por
      dia saía quase um por dia, e o "Deixar" comia a barra) */
-  const RODA = {chance:0.08, ate:1, horas:[10, 21]};
+  const RODA = {chance:0.08, ate:1, horas:[10, 21], chanceIA:0.03, ateIA:2};
   const rodasNoBairro = v => v > DOMINA ? Math.min(6, 4 + Math.floor(3 * (v - DOMINA) / (100 - DOMINA + 1e-6))) : 0;
   const chaveDaRoda = (bid, tid, k, abs) => `roda|${bid}|${tid}|${k}|${abs}`;
   function rodasDoDia(E){
     const D = raiz(E), abs = (E.data && E.data.absoluto) || 0;
     if(!D.rodas || D.rodas.abs !== abs){
       const velhos = D.rodas ? (D.rodas.contraNos || []).filter(c => !c.resolvido) : [];
-      D.rodas = {abs, desfeitas:{}, contraNos:[], velhos};
+      const velhosIA = D.rodas ? (D.rodas.ia || []).filter(c => !c.resolvido) : [];
+      D.rodas = {abs, desfeitas:{}, contraNos:[], ia:[], velhos, velhosIA};
     }
+    if(!D.rodas.ia) D.rodas.ia = [];
     return D.rodas;
   }
   const rodaDesfeita = (E, chave) => !!(E && E.data && chave && rodasDoDia(E).desfeitas[chave]);
@@ -14288,13 +14303,33 @@ TO.dominio = (function(){
     const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
     /* (os de ontem que ninguém resolveu: na conta) */
     for(const c of R.velhos || []) try{ resolverRodaContraNos(E, c, null); }catch(e){ /* o dia segue */ }
-    R.velhos = [];
+    for(const c of R.velhosIA || []) try{ resolverRodaIA(E, c); }catch(e){ /* o dia segue */ }
+    R.velhos = []; R.velhosIA = [];
     /* (só no jogo 3D: é lá que a roda está na calçada e o recado chega
        na hora; o jogo do feed não tem como defender) */
     if(!mundo || !TO.semFeed) return;
-    /* (dia de jogo ou de viagem: o presidente não tem como ir defender) */
-    if(TO.feed && TO.feed.diaLivre && !TO.feed.diaLivre(E, E.data.semana, E.data.dia)) return;
     const meu = eu(E), cid = E.torcida.mapa, abs = E.data.absoluto || 0;
+    /* A IA CONTRA A IA, na cidade do jogador (todo dia: não depende do nosso calendário) */
+    const rIA = sorteio(`${semente(E)}|rodasIA|${abs}`);
+    for(const b of bairros(E, cid).filter(x => x.dono && x.dono !== meu && mundo[x.dono])){
+      if(R.ia.length >= RODA.ateIA) break;
+      const n = rodasNoBairro(b.v);
+      if(!n) continue;
+      const mD = Math.max(1, membrosDe(E, b.dono));
+      const quem = torcidasDaCidade(cid).filter(o => o.id !== meu && o.id !== b.dono && mundo[o.id] && rivais(E, o.id, b.dono) &&
+        chegaNoBairro(E, o.id, cid, b.id) && membrosDe(E, o.id) >= 10);
+      for(const o of quem.sort((a, c) => membrosDe(E, c.id) - membrosDe(E, a.id))){
+        if(rIA() >= RODA.chanceIA * limitar(membrosDe(E, o.id) / mD, 0.5, 1.6)) continue;
+        const dona = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(b.dono) : null;
+        const k = Math.floor(rIA() * n);
+        const h = RODA.horas[0] + Math.floor(rIA() * (RODA.horas[1] - RODA.horas[0] + 1));
+        R.ia.push({por:o.id, nome:o.nome, dona:b.dono, nomeDona:(dona && dona.nome) || b.dono, cid, bid:b.id, bairro:b.nome, k,
+                   chave:chaveDaRoda(b.id, b.dono, k, abs), hora:String(h).padStart(2, '0') + ':' + (rIA() < 0.5 ? '05' : '50'), n:4 + Math.floor(rIA() * 4)});
+        break;
+      }
+    }
+    /* (dia de jogo ou de viagem: o presidente não tem como ir defender a nossa) */
+    if(TO.feed && TO.feed.diaLivre && !TO.feed.diaLivre(E, E.data.semana, E.data.dia)) return;
     const r = sorteio(`${semente(E)}|rodas|${abs}`);
     const mR = Math.max(1, (E.membros || []).length);
     const nossos = bairros(E, cid).filter(b => b.dono === meu);
@@ -14333,6 +14368,22 @@ TO.dominio = (function(){
     return {ganhamos, dominio:r};
   }
   const rodasContraNosHoje = E => rodasDoDia(E).contraNos.filter(c => !c.resolvido);
+  /* A RODA DA IA ATACADA PELA IA, na hora: a briga entre elas (quem veio
+     é o lado `a`); ganhando quem veio, a roda de hoje sai da rua. Sem
+     gente de pé num dos lados (`brigaIA` devolve nada), não teve briga */
+  function resolverRodaIA(E, c){
+    if(!c || c.resolvido) return null;
+    c.resolvido = true;
+    const T = TO.mundo && TO.mundo.torcida, a = T ? T(c.por) : null, b = T ? T(c.dona) : null;
+    if(!a || !b || !TO.relacoes || !TO.relacoes.brigaIA) return null;
+    const reg = TO.relacoes.brigaIA(E, a, b, c.cid, _t('roda desfeita'),
+      {tetoA:c.n || 5, tetoB:5, tipo:'roda', bairroFixo:{cid:c.cid, b:c.bid, pts:GANHO.roda}});
+    if(!reg) return null;
+    c.ganhouFora = !!reg.ganhouA;
+    if(reg.ganhouA && rodasDoDia(E).ia.includes(c)) marcarRodaDesfeita(E, c.chave, c.por);
+    return reg;
+  }
+  const rodasIAHoje = E => rodasDoDia(E).ia.filter(c => !c.resolvido);
   /* quem chega no bairro: vê ele (dona ou estrutura nele) ou vê um vizinho dele */
   const chegaNoBairro = (E, tid, cid, bid) => vendoBairro(E, tid, cid, bid) || vizinhosDe(cid, bid).some(v => vendoBairro(E, tid, cid, v.id));
 
@@ -14748,7 +14799,7 @@ TO.dominio = (function(){
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje, recrutandoEm, RECRUTA_DIA,
           PANFLETO, panfletagensDoDia, panfletoDesfeito, desfazerPanfleto, resolverContraNos, contraNosHoje, vendoBairro, nossoRecrutaHoje, marcarPanfletoDesfeito,
-          RODA, rodasNoBairro, chaveDaRoda, rodaDesfeita, marcarRodaDesfeita, rodasDaIA, resolverRodaContraNos, rodasContraNosHoje,
+          RODA, rodasNoBairro, chaveDaRoda, rodaDesfeita, marcarRodaDesfeita, rodasDaIA, resolverRodaContraNos, rodasContraNosHoje, resolverRodaIA, rodasIAHoje,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};
 })();
 

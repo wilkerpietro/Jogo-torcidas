@@ -37,12 +37,12 @@
      membros dela na porta, e outros chegando a pé pela calçada.
    ========================================================= */
 
-import { palcoDeBriga } from './palco_briga.js?v=49e15a2bd7';
-import { brigaNaCaminhada } from './caminhada.js?v=49e15a2bd7';
-import { brigaNoBar } from './briga_bar.js?v=49e15a2bd7';
-import { brigaNaTreta } from './briga_treta.js?v=49e15a2bd7';
-import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=49e15a2bd7';
-import { planoDoBar } from './casas3d.js?v=49e15a2bd7';
+import { palcoDeBriga } from './palco_briga.js?v=75671cb934';
+import { brigaNaCaminhada } from './caminhada.js?v=75671cb934';
+import { brigaNoBar } from './briga_bar.js?v=75671cb934';
+import { brigaNaTreta } from './briga_treta.js?v=75671cb934';
+import { brigaNaPraca, brigaNaSede, brigaNoPortao, brigaNaRua } from './briga_lugar.js?v=75671cb934';
+import { planoDoBar } from './casas3d.js?v=75671cb934';
 
 const hashTxt = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; };
 const frac = s => (hashTxt(s) % 10000) / 10000;
@@ -1028,6 +1028,146 @@ export function criarVida(api) {
       try { g.mover(g, dt); } catch (err) { console.error('o grupo da rua:', err); g.mover = null; }
     }
   }
+  /* um ponto da calçada do bairro, longe de (x, z) entre `de` e `ate` m */
+  function pontoNoBairro(bid, x, z, de, ate) {
+    if (!rua) return null;
+    const as = aneisDe(bid).concat(rua.aneis.filter(a => Math.hypot((a.pista.x0 + a.pista.x1) / 2 - x, (a.pista.z0 + a.pista.z1) / 2 - z) < ate * M * 1.5));
+    let melhor = null, nota = -Infinity;
+    for (const a of as) for (let k = 0; k < 12; k++) {
+      const q = pontoDoAnel(a, a.L * k / 12, {}), d = Math.hypot(q.x - x, q.z - z) / M;
+      if (d < de || d > ate) continue;
+      const n = -Math.abs(d - (de + ate) / 2) + Math.random() * 8;
+      if (n > nota) { nota = n; melhor = { x: q.x, z: q.z }; }
+    }
+    return melhor;
+  }
+  /* =====================================================
+     A BRIGA DE RODA ENTRE AS IAS NA TELA (o dono, 07/10/2026: "Faz a IA
+     atacar rodas de outras IAs também"; quem ganha é TO.dominio.
+     resolverRodaIA, na hora marcada): com a roda perto da câmera, os de
+     fora chegam correndo pela calçada, uns segundos de pancada (o soco, a
+     guarda e quem apanha são os do boneco das brigas), dois de quem perde
+     no chão, e quem perdeu corre — a roda derrotada sai da rua no resto do
+     dia; os de fora vão embora por onde vieram. Longe da câmera nada se
+     desenha: a roda só some (ou fica)
+     ===================================================== */
+  const BRIGA_RODA = { vel: 4.6, dura: 5.5, foge: 3.2, chega: 3.2 };
+  function brigaDeRoda(c, ganhouFora) {
+    if (!rua || !c) return false;
+    const g = rua.grupos.get(c.chave);
+    if (!g || g.preso || !g.gente.length) return false;
+    const T = torcidaDaRua(c.por);
+    const de = T ? pontoNoBairro(c.bid, g.x, g.z, 18, 32) : null;
+    if (!de) return false;
+    const chave = 'briga-roda|' + c.chave, n = Math.max(3, Math.min(7, c.n || 5)), Cn = C();
+    const fora = { chave, tipo: 'fora', tid: c.por, bid: c.bid, nome: T.nome, x: de.x, z: de.z, de, gente: [], preso: true, estado: 'vindo',
+                   rota: null, iRota: 0, alvo: g, ganhouFora: !!ganhouFora, t: 0, mover: moverBrigaDeRoda };
+    for (let k = 0; k < n; k++) {
+      const d = disco({ nome: T.nome + ' ' + (k + 1), spawn: 'grupo', tid: T.id, torcida: T.nome, cor: T.cor, cor2: T.cor2, cor3: T.cor3 || undefined,
+                        x: de.x, y: de.z, alt: Cn.vida.chao(de.x, de.z), rumo: 0, jeito: 'rua', passada: 2.0, _cacando: true, grupo: chave });
+      fora.gente.push({ d, k });
+    }
+    g.preso = true;
+    rua.grupos.set(chave, fora);
+    return true;
+  }
+  /* os de fora em fila de três atrás de quem puxa, virados pro rumo */
+  function formarBonde(f, rumo) {
+    const c = Math.cos(rumo), s = Math.sin(rumo), Cn = C();
+    f.gente.forEach((x, k) => {
+      const lx = (k % 3 - 1) * 0.8 * M, lz = -Math.floor(k / 3) * 1.0 * M;
+      x.d.x = f.x + lx * c + lz * s; x.d.y = f.z - lx * s + lz * c; x.d.rumo = rumo;
+      x.d.alt = Cn.vida.chao(x.d.x, x.d.y);
+    });
+  }
+  /* chegaram: um arco na frente da roda, do lado de onde vieram, e todo mundo na guarda */
+  function encostar(f, g) {
+    const Cn = C(), base = Math.atan2(f.x - g.x, f.z - g.z), n = f.gente.length;
+    f.gente.forEach((x, k) => {
+      const a = base + (k - (n - 1) / 2) * 0.42, r = 2.0 * M;
+      x.d.x = g.x + Math.sin(a) * r; x.d.y = g.z + Math.cos(a) * r; x.d.alt = Cn.vida.chao(x.d.x, x.d.y);
+      x.d.rumo = Math.atan2(g.x - x.d.x, g.z - x.d.y); x.d._cacando = false; x.d.passada = 1.1; x.d.hostil = 1; x.d.jeito = undefined;
+    });
+    for (const x of g.gente) { x.d.hostil = 1; x.d.jeito = undefined; x.d.gestoForcado = undefined; x.d.olhaPara = null; x.d.rumo = Math.atan2(f.x - x.d.x, f.z - x.d.y); }
+  }
+  /* a pancada: cada um, de tempo em tempo, solta um soco (ou um chute) em alguém do outro lado */
+  function trocarPancada(as, bs, dt) {
+    const alvos = bs.map(x => x.d).filter(d => d.vivo && !(d.derrubado > 0));
+    for (const x of as) {
+      const d = x.d;
+      if (d.apanhou > 0) d.apanhou = Math.max(0, d.apanhou - dt);
+      if (d.derrubado > 0) { d.derrubado = Math.max(0, d.derrubado - dt); d.ataque = null; continue; }
+      const at = d.ataque;
+      if (at) {
+        at.t += dt;
+        if (!at.bateu && at.t >= at.impacto) { at.bateu = true; if (at.alvo && !(at.alvo.derrubado > 0)) at.alvo.apanhou = 0.3; }
+        if (at.t >= at.dur) d.ataque = null;
+        continue;
+      }
+      if (!alvos.length || Math.random() > dt * 1.4) continue;
+      const alvo = alvos[Math.floor(Math.random() * alvos.length)], chute = Math.random() < 0.2;
+      d.rumo = Math.atan2(alvo.x - d.x, alvo.y - d.y);
+      d.ataque = { tipo: chute ? 'chute' : 'soco', t: 0, dur: chute ? 0.58 : 0.36, impacto: chute ? 0.28 : 0.15, bateu: false, alvo };
+    }
+  }
+  function moverBrigaDeRoda(f, dt) {
+    const g = f.alvo, Cn = C();
+    f.t += dt;
+    if (f.estado === 'vindo') {
+      if (!f.rota) { f.rota = rotaPelaCalcada(f.x, f.z, { porta: { x: g.x, y: g.z } }) || [{ x: g.x, z: g.z }]; f.iRota = 0; }
+      const p = { d: { x: f.x, y: f.z }, rota: f.rota, iRota: f.iRota, vel: BRIGA_RODA.vel };
+      andarPor(p, dt, M);
+      const dx = p.d.x - f.x, dz = p.d.y - f.z;
+      f.x = p.d.x; f.z = p.d.y; f.iRota = p.iRota;
+      formarBonde(f, Math.hypot(dx, dz) > 1e-4 ? Math.atan2(dx, dz) : Math.atan2(g.x - f.x, g.z - f.z));
+      if (Math.hypot(g.x - f.x, g.z - f.z) < BRIGA_RODA.chega * M || f.t > 25) { f.estado = 'briga'; f.t = 0; encostar(f, g); }
+      return;
+    }
+    if (f.estado === 'briga') {
+      trocarPancada(f.gente, g.gente, dt);
+      trocarPancada(g.gente, f.gente, dt);
+      if (f.t > BRIGA_RODA.dura * 0.65 && !f.caiu) {
+        f.caiu = true;
+        const perde = (f.ganhouFora ? g.gente : f.gente).slice().sort(() => Math.random() - 0.5).slice(0, 2);
+        for (const x of perde) { x.d.derrubado = 1.6; x.d.derrubadoDur = 1.6; x.d.ataque = null; }
+      }
+      if (f.t > BRIGA_RODA.dura) {
+        f.estado = 'fim'; f.t = 0;
+        const perdem = f.ganhouFora ? g.gente : f.gente, ganham = f.ganhouFora ? f.gente : g.gente;
+        const cx = ganham.reduce((s, x) => s + x.d.x, 0) / Math.max(1, ganham.length), cz = ganham.reduce((s, x) => s + x.d.y, 0) / Math.max(1, ganham.length);
+        for (const x of f.gente.concat(g.gente)) { x.d.ataque = null; x.d.hostil = 0; x.d.apanhou = 0; }
+        /* quem perdeu corre pra longe de quem ganhou */
+        for (const x of perdem) {
+          const vx = x.d.x - cx, vz = x.d.y - cz, l = Math.hypot(vx, vz) || 1;
+          x.fuga = { x: vx / l, z: vz / l }; x.d.derrubado = 0; x.d.fugindo = true; x.d._cacando = true; x.d.passada = 2.1;
+          x.d.rumo = Math.atan2(vx, vz);
+        }
+        /* os de fora que ganharam vão embora devagar, por onde vieram */
+        if (f.ganhouFora) for (const x of f.gente) {
+          const vx = f.de.x - x.d.x, vz = f.de.z - x.d.y, l = Math.hypot(vx, vz) || 1;
+          x.volta = { x: vx / l, z: vz / l }; x.d.rumo = Math.atan2(vx, vz); x.d.passada = 1.2;
+        }
+      }
+      return;
+    }
+    /* o fim: quem perdeu corre (5 m/s); os de fora que ganharam saem andando (1,6 m/s) depois de um segundo */
+    for (const x of f.gente.concat(g.gente)) {
+      const v = x.fuga ? 5 : x.volta && f.t > 1 ? 1.6 : 0, u = x.fuga || x.volta;
+      if (!v || !u) continue;
+      x.d.x += u.x * v * M * dt; x.d.y += u.z * v * M * dt; x.d.alt = Cn.vida.chao(x.d.x, x.d.y);
+    }
+    if (f.t < BRIGA_RODA.foge) return;
+    rua.grupos.delete(f.chave);
+    if (f.ganhouFora) rua.grupos.delete(g.chave);
+    else {
+      /* a roda ficou: cada um de volta pro lugar dele na calçada */
+      for (const x of g.gente) {
+        x.fuga = null; x.d.fugindo = false; x.d._cacando = false; x.d.passada = 1.05; x.d.derrubado = 0;
+        if (x.casa) { x.d.x = x.casa.x; x.d.y = x.casa.z; x.d.rumo = x.casa.rumo; x.d.jeito = x.casa.jeito; x.d.alt = Cn.vida.chao(x.d.x, x.d.y); }
+      }
+      g.preso = false;
+    }
+  }
   /* o caminho pela calçada de (x, z) até a porta do bar: pelas esquinas (Dijkstra no grafo delas) */
   function rotaPelaCalcada(x0, z0, b) {
     const A = anelPerto(x0, z0), B = anelPerto(b.porta.x, b.porta.y);
@@ -1546,7 +1686,11 @@ export function criarVida(api) {
      ===================================================== */
   function irPraSala() {
     if (!sede) return;
-    if (sede.vendo) verAndar(0);
+    /* (o telhado da sede aberto de novo, sempre: a briga, a loja ou o prédio
+       que outra cena abriu deixam ele fechado — o dono, 07/10/2026: "quando
+       volto pra sede após alguma ação o telhado cobre a visão dos
+       compartimentos") */
+    if (sede.andar) verAndar(0); else reabrirSede();
     const Cn = C(), lp = sede.porTipo('presidente')[0], lr = sede.porTipo('recado')[0];
     /* o meio entre o presidente e a cadeira do recado */
     const x = lr ? (lp.x + lr.x) / 2 : lp.x, z = lr ? (lp.z + lr.z) / 2 : lp.z;
@@ -1554,6 +1698,7 @@ export function criarVida(api) {
   }
   function irPraSede() {
     if (!sede) return;
+    if (!sede.vendo) reabrirSede();
     const Cn = C(), c = sede.caixa;
     voarNaAreaLivre(Cn, M, (c.x0 + c.x1) / 2, (c.z0 + c.z1) / 2, 30 * M, 0.95);
   }
@@ -1672,6 +1817,14 @@ export function criarVida(api) {
     fecharArmario();
     if (Cn && Cn.vida) { Cn.vida.vida = null; Cn.vida.abrirPredio(null); if (Cn.vida.aoClicar === aoClicar) Cn.vida.aoClicar = null; }
   }
+  /* O FIM DE UMA BRIGA QUE A RUA LIVRE NÃO ABRIU (o nosso bar atacado, a
+     treta, a reunião da zona): com o presidente na rua (ela cedeu a vez:
+     rua3d.js `cederAVez`), ele volta pra lá; senão, a sala do presidente */
+  function depoisDaBriga() {
+    const R3 = TO.jogo3d && TO.jogo3d.rua;
+    if (R3 && R3.ativo && R3.voltouDaBriga) { reabrirSede(); R3.voltouDaBriga(); return; }
+    if (ligada) { reabrirSede(); irPraSala(); }
+  }
   /* a sede do jogador volta a ficar aberta (o palco da briga abriu outro prédio) */
   function reabrirSede() {
     const Cn = C();
@@ -1690,7 +1843,7 @@ export function criarVida(api) {
     if (!B || !TO.dados || !TO.dados.cenas) return null;
     TO.dados.cenas[B.cena.id] = B.cena;
     const R = palcoDeBriga({ C: C(), M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, predio: B.casa, rotAlto: 'a casa inteira, do alto',
-                             aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+                             aoDesmontar: () => depoisDaBriga() });
     return { local: B.cena.id, renderizador: R };
   }
   /* A CARAVANA NA ESTRADA (as emboscadas 'emb-posto' e 'emb-onibus'): o
@@ -1710,7 +1863,7 @@ export function criarVida(api) {
     const R = palcoDeBriga({ C: C(), M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, peca: Pc.grupo, livre: true, semLonge: true,
                              escala: B.escala, vistas: { perto: { dist: 19, el: 1.08 }, alto: { dist: 36, el: 1.25 } },
                              rotAlto: local === 'emb-posto' ? 'o posto inteiro, do alto' : 'a estrada, do alto',
-                             aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+                             aoDesmontar: () => depoisDaBriga() });
     return { local: B.cena.id, renderizador: R };
   }
   /* A BRIGA NA CAMINHADA AO ESTÁDIO (as cenas de praça e de rua do jogo
@@ -1753,7 +1906,7 @@ export function criarVida(api) {
                               rotAlto: local === 'praca' ? 'a concentração, do alto' : 'a rua, do alto',
                               /* (com o dia no ar, os outros bondes do dia ficam em volta) */
                               comDia: G ? G.comDia : null,
-                              aoDesmontar: () => { if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } } });
+                              aoDesmontar: () => { if (G) G.aoDesmontar(); else depoisDaBriga(); } });
     return { local: B.cena.id, renderizador: Rd };
   }
   let ultimaCaminhada = null;
@@ -1792,7 +1945,7 @@ export function criarVida(api) {
     const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
                               predio: B.predio, vistas: { perto: { dist: 17, el: 1.1 }, alto: { dist: 34, el: 1.3 } },
                               rotAlto: 'o bar e a esquina, do alto', comDia: G ? G.comDia : null,
-                              aoDesmontar: () => { if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } quebradosEm = -99; } });
+                              aoDesmontar: () => { if (G) G.aoDesmontar(); else depoisDaBriga(); quebradosEm = -99; } });
     /* (o tapume e os cacos desse bar saem enquanto a briga dura) */
     const q = quebrados.get(bar.n);
     if (q) q.g.visible = false;
@@ -1818,7 +1971,7 @@ export function criarVida(api) {
     const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
                               vistas: { perto: { dist: 16, el: 1.1 }, alto: { dist: 32, el: 1.3 } },
                               rotAlto: B.lugar.tipo === 'beco' ? 'o beco inteiro, do alto' : 'o campinho inteiro, do alto',
-                              aoDesmontar: () => { if (ligada) { reabrirSede(); irPraSala(); } } });
+                              aoDesmontar: () => depoisDaBriga() });
     return { local: B.cena.id, renderizador: Rd };
   }
   let ultimaTreta = null;
@@ -1842,7 +1995,7 @@ export function criarVida(api) {
     const Rd = palcoDeBriga({ C: Cn, M, cena: B.cena, noMundo: B.noMundo, doMundo: B.doMundo, u: B.u, v: B.v, chao: B.chao, escala: B.escala,
                               predio: B.predio || undefined, vistas: { perto: { dist: 17, el: 1.1 }, alto: { dist: 34, el: 1.28 } },
                               rotAlto: o.rotAlto, comDia: G ? G.comDia : null,
-                              aoDesmontar: () => { if (o.aoDesmontar) o.aoDesmontar(); if (G) G.aoDesmontar(); else if (ligada) { reabrirSede(); irPraSala(); } } });
+                              aoDesmontar: () => { if (o.aoDesmontar) o.aoDesmontar(); if (G) G.aoDesmontar(); else depoisDaBriga(); } });
     return { local: B.cena.id, renderizador: Rd, falhou: o.aoDesmontar || undefined };
   }
   const prontoPraLugar = cfg => {
@@ -2002,6 +2155,19 @@ export function criarVida(api) {
       /* (com o dia de jogo no ar, a vida da praça fica desligada e as brigas dele montam aqui) */
       const D3 = TO.jogo3d && TO.jogo3d.dia, noDia = !!(D3 && D3.ativo);
       if (!ligada && !noDia) return null;
+      /* O QUE NÃO É DA RUA TOMA A TELA (o dono, 07/10/2026: o nosso bar
+         atacado com o presidente na rua "não abre a cena, já gera a
+         mensagem automática do resultado da briga" — a briga corria longe,
+         com a câmera presa no presidente a pé —, e a reunião da diretoria
+         "fica bugada porque o jogo para onde o jogador estava"): a briga que
+         a rua livre não abriu tira o presidente do a pé antes de a cena
+         montar (no fim ele volta pra rua: `depoisDaBriga`), e a reunião da
+         diretoria encerra a rua (a mesa é na sede) */
+      const R3 = TO.jogo3d && TO.jogo3d.rua;
+      if (R3 && R3.ativo && local !== 'rua-livre') {
+        if (cfg && cfg.reuniao) R3.encerrar('reuniao');
+        else if (R3.cederAVez) R3.cederAVez();
+      }
       /* A INVASÃO NO ESTÁDIO (invasao.js): a briga da arquibancada, com o dia no ar, é a invasão da nossa torcida */
       if (/^estadio-(10|20|40)$/.test(local) && cfg && cfg.invasao3d && noDia) return D3.palcoDaInvasao(cfg);
       /* A BRIGA DOS ARREDORES (arredores3d.js): a nossa investida no cordão
@@ -2078,18 +2244,10 @@ export function criarVida(api) {
     /* o caminho pela calçada de um ponto a outro (pelas esquinas; quem vem atrapalhar anda por ele) */
     rotaNaRua: (x0, z0, x1, z1) => rua ? rotaPelaCalcada(x0, z0, { porta: { x: x1, y: z1 } }) : null,
     /* um ponto da calçada do bairro, longe de (x, z) entre `de` e `ate` m (de onde vem quem atrapalha) */
-    pontoDoBairro(bid, x, z, de = 30, ate = 70) {
-      if (!rua) return null;
-      const as = aneisDe(bid).concat(rua.aneis.filter(a => Math.hypot((a.pista.x0 + a.pista.x1) / 2 - x, (a.pista.z0 + a.pista.z1) / 2 - z) < ate * M * 1.5));
-      let melhor = null, nota = -Infinity;
-      for (const a of as) for (let k = 0; k < 12; k++) {
-        const q = pontoDoAnel(a, a.L * k / 12, {}), d = Math.hypot(q.x - x, q.z - z) / M;
-        if (d < de || d > ate) continue;
-        const n = -Math.abs(d - (de + ate) / 2) + Math.random() * 8;
-        if (n > nota) { nota = n; melhor = { x: q.x, z: q.z }; }
-      }
-      return melhor;
-    },
+    pontoDoBairro: (bid, x, z, de = 30, ate = 70) => pontoNoBairro(bid, x, z, de, ate),
+    /* A BRIGA DE RODA ENTRE AS IAS (rua3d.js, na hora dela): a roda na tela vê a briga */
+    brigaDeRoda: (c, ganhouFora) => brigaDeRoda(c, ganhouFora),
+    rodaNaTela: chave => !!(rua && rua.grupos.get(chave)),
     /* pro teste: os bares quebrados no mapa (o n da planta, o dono, quem quebrou, os dias que faltam) */
     get quebrados() {
       const cena = C() && C().vida && C().vida.cena;
