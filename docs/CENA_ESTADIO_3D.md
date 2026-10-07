@@ -1,0 +1,4775 @@
+# O estádio e a cidade em 3D — a segunda cena
+
+Este documento é o registro da cena `estadio3d.html` refeita do zero: o
+que foi pedido, como foi resolvido, o que foi medido e o que ficou aberto.
+Substitui o documento da primeira versão (histórico em `e3a617d`).
+
+## 1. O que foi pedido
+
+Um estádio de bairro inspirado na foto aérea (bacia retangular de quinas
+redondas, arquibancada única de concreto, sem cobertura), com:
+
+- corredor de acesso **embaixo** da arquibancada, com comércio;
+- **oito vomitórios** furando a arquibancada, como na foto;
+- **três portões**: um atrás de cada gol e um na lateral sul;
+- **oito quarteirões** em volta, o estádio no meio;
+- a torcida nascendo **nas pontas do bairro** e caminhando até o estádio,
+  com briga possível em qualquer lugar — rua, portão, corredor, escada,
+  arquibancada — e a PM tentando evitar;
+- os bonecos, os sinais de combate e o pad de movimento **reaproveitados**
+  sem uma linha mexida: `bonecos3.js`, `boneco.glb`, `sinais3d.js`,
+  `pad3d.js` + `pad3d.css`;
+- `combate.js` intacto.
+
+## 2. A dobra, engolida pelo gramado
+
+`combate.js` é um tabuleiro plano: uma célula, um lugar, sem altura. O
+corredor debaixo da arquibancada existe porque `mundo(x, y)` **dobra o
+tabuleiro**: duas faixas distantes dele caem no mesmo ponto do mundo em
+alturas diferentes. Isso já era assim na primeira versão.
+
+O que mudou é quem paga a conta. Antes, a faixa do corredor empurrava tudo
+que estava do lado de fora pra longe do centro — em curva, porque a dobra é
+radial —, e uma rua reta atravessando isso entortava. Agora **o retângulo
+âncora do tabuleiro é 86 menor por lado que o gramado do mundo** (468 × 244
+contra 640 × 416). Ninguém pisa no gramado, então não custa nada. Fora do
+estádio, **tabuleiro = mundo**: rua reta é rua reta, prédio é retângulo nos
+dois lugares.
+
+| faixa | tabuleiro `d` | mundo `r` | altura | máscara |
+|---|---|---|---|---|
+| pista + placas | 0 → 24 | = d | 0 | bloqueia |
+| **arquibancada** (18 degraus de 8 × 4,6) | 24 → 168 | = d | 6 → 84,2 | anda |
+| parapeito | 168 → 182 | = d | 84 → 110 | bloqueia |
+| **corredor** | 182 → 310 | **96 → 224** | 0 | anda |
+| fachada (arcada, 3 portões) | 310 → 326 | 224 → 240 | 0 → 84 | bloqueia, menos o vão |
+| calçada do estádio | 326 → 358 | 240 → 272 | 0 | anda |
+| bairro | 358 → | = tabuleiro | 0 | anda, menos prédio e carro |
+
+Nos lados retos, "`r = d − 86`" é a identidade. Só nas quatro quinas os dois
+mapas divergem — uma lasca de até 36 unidades na diagonal —, e ela fica
+**bloqueada** (é o canto das torres, com gradil na curva da calçada).
+Ninguém pisa, ninguém vê, e "uma célula, um lugar" continua verdadeiro.
+
+O corredor tem **128 de fundo** (era 72), com pé-direito de 39 na parede de
+dentro e 76 na de fora. Era o que faltava pra câmera de ombro (braço de 105)
+parar de bater em pilar.
+
+## 3. Os vomitórios
+
+Oito, como na foto: dois por lado. A boca é o 11º degrau (r = 112, altura
+56,6) e a escada desce **pra fora**, por baixo da arquibancada, até o chão
+do corredor em r = 192: 80 de tiro pra 57 de queda, 35°, doze degraus.
+Sobe-se de frente pro gramado. A régua da prancha de vomitório está toda lá:
+guarda-corpo a 0,90 m, corrimão a 1,10 m, faixa amarela no nariz, corrimão
+central. O buraco na arquibancada vai de r = 112 a 152 (cinco degraus, ~25%
+da profundidade, como os quadrados escuros da foto); dali pra fora é túnel
+coberto, com a laje voltando por cima.
+
+A regra que não se burla: **o pé da escada cai depois da última fila**
+(192 > 168). A tira do vomitório consome as células da arquibancada no
+caminho, e se a escada acabasse antes da borda sobraria arquibancada que se
+vê e não se pisa. Sobram 32 atrás da escada pra circular no corredor.
+
+Entre a parede de dentro (r = 96) e a boca (r = 112), embaixo da
+arquibancada baixa, é concreto maciço (a "cabeceira"): as células dali são
+a escada, e nada anda embaixo dela.
+
+## 4. A cidade do mapa, e o tabuleiro
+
+A segunda rodada trocou o bairro de oito quarteirões pela **cidade da
+imagem**: um mapa desenhado de 1500 × 1100 px, com o estádio no
+norte-centro, a costa a leste, o mato a oeste e um campo de várzea no
+sul (o segundo, o que ficava ao lado do estádio, virou terreno baldio).
+O mato a oeste deixou de ser só descampado: é onde mora a FAVELA. Um pixel do mapa é **PX = 5,4** unidades — a escala que deixa o
+estádio do mapa do tamanho do quarteirão do estádio (1184 × 960).
+
+**O que se anda e o que se desenha são coisas diferentes.** O tabuleiro
+(a máscara) é um recorte do mapa — px 170–1170 × 90–1100, **5400 × 5456**
+unidades, 675 × 682 = 460 mil células — e o que se desenha vai além dele
+até o mar e o mato de fora (px −60–1560 × −60–1160). Fora do estádio o
+mundo é o próprio tabuleiro, sem dobra nenhuma.
+
+Como a cidade é lida do mapa (`dados/cena_estadio.js`, seção "A cidade"):
+
+- **A grade.** Sete colunas (norte-sul) de 150 px em 150 e onze linhas
+  (leste-oeste) de 86 px em 86, com 22 px de pista; as quatro que
+  encostam no estádio vêm do quarteirão dele, pra bater exatamente.
+  **Era o dobro disso, a cada 70 px e com 12 de pista**: dava quarteirão
+  de 11 m com três casas e rua de 2,9 m, onde o boneco de 1,75 parecia
+  um gigante. A pista está em 5,3 m. O quarteirão passou por 150 × 150
+  e voltou: **quadrado ele tinha 27 m de lado e um vazio no meio** — as
+  duas fileiras de lote têm 4 a 5 m de fundo cada, então sobrava um
+  descampado de 17 m entre os fundos. Agora ele é **comprido e raso**
+  (27 × 13 m): as costas das duas fileiras quase se encontram, o quintal
+  virou uma tira, e são 36 quarteirões com cerca de doze casas cada. O
+  tabuleiro não mudou de tamanho: as mesmas 460 mil células, a mesma
+  textura de chão, a mesma calibragem do combate. Entre ruas há células: dentro do
+  contorno da cidade (um polígono lido do mapa) a célula é um **quarteirão**
+  — calçada de 32 em volta, lotes de frente contínua, quintal no miolo;
+  fora, é mato, praia ou mar. O mapa é tratado com a grade alinhada aos
+  eixos (no desenho ela é girada uns 15°), e a costa fica em diagonal.
+  **A rua só existe entre células urbanas** (`naRua` olha as células
+  encostadas na faixa): a grade acaba no último quarteirão, sem toco de
+  asfalto pelo mato, e a pintura segue a mesma regra, célula por célula.
+- **A costa.** `xCosta(y)`, uma função do mapa: além dela é mar
+  (bloqueia); 45 px pra dentro é praia (anda); mais 14 px é a **avenida
+  beira-mar**, que é uma avenida de verdade (está em `AVENIDAS`), com
+  calçada do lado de terra e casas rotacionadas de frente pro mar.
+- **O quarteirão da orla acaba na costa, na diagonal.** A costa é
+  diagonal e a célula é reta, então cada célula guarda duas coisas: o
+  **polígono do miolo** (`polMiolo`, o miolo recortado pela linha da
+  cidade), que é quem manda na máscara, na casa da avenida e no chão;
+  e o **retângulo** `ix0..ix1`, o maior que cabe nele (recuado até o
+  ponto mais a oeste da costa no trecho), que é o que os lotes axiais
+  usam, porque lote axial é reto. Quem decide se a célula é quarteirão
+  é a **área do polígono**, não o centro da célula: na faixa da orla o
+  centro já cai na areia, e a terra que sobrava virava mato entre o
+  último quarteirão e a praia. Célula mais fina que duas calçadas tem
+  miolo às avessas e não é miolo nenhum — `areaPol` do avesso daria
+  área de verdade, e era isso que punha laje em cima da rua.
+- **As avenidas** são **linhas de vários pontos** com largura — não um
+  segmento: a do sudoeste entra pelo canto, dobra e morre na rua sul do
+  estádio; a do noroeste nasce numa rua da grade e sai da cidade pelo norte;
+  as duas do oeste e a do norte saem da cidade e viram estrada pelo mato
+  até a borda do que se desenha. `distAvenida` mede até o trecho mais
+  perto; a banda é andável (com calçada) e corta os quarteirões de
+  verdade. Fora do contorno da cidade a pintura tira a calçada — é estrada.
+  A frente da avenida é de **casas rotacionadas** (o lote tem ângulo;
+  `dentroLote` gira o ponto), que entram ANTES dos lotes axiais e tentam
+  fundos menores perto da esquina; o lote axial que pisa numa delas ou na
+  calçada da avenida encolhe pro lado da frente (48, 32, 20) antes de
+  sair, e no fundo de 20 vira muro. Quem decide "casa da avenida" é a
+  faixa **sem a ponta redonda** (`naFaixaDaAvenida`): a avenida acaba
+  numa rua, e o quarteirão do outro lado não é dela — com a ponta
+  contando, ele ficava pelado. Mas quem decide **colisão** é a faixa
+  inteira, ponta incluída (`tocaAvenida`), e a conta é a **distância
+  exata entre o retângulo e o eixo** — canto do lote contra o segmento,
+  ponta do segmento contra o lote, zero se eles se cruzam. Testar os
+  quatro cantos e o centro, que era o que havia, deixava passar dois
+  casos: a avenida diagonal mordendo o **meio de uma aresta** sem tocar
+  canto nenhum, e a **ponta redonda** da avenida, que `naFaixaDaAvenida`
+  ignora de propósito. Foi o que pôs uma casa na boca da avenida oeste e
+  outra na da norte.
+- **Três chãos, um sobre o outro** (`bairro3d.js`): a **calçada** (laje de
+  1,4) vai da guia da rua até a guia da avenida; o **chão do lote** (1,6)
+  cobre o miolo e para na calçada da avenida; o **quintal** (10) fica no
+  meio. Sem o do meio, a sobra em cunha que a avenida deixa no quarteirão
+  lia como um descampado de cimento. Os três saem de um recorte convexo
+  (`semAsAvenidas`): o retângulo vai sendo cortado meio-plano a
+  meio-plano por cada banda de avenida que o cruza, o que sobra continua
+  convexo, e sai como prisma.
+- **Três regras que não se quebram**, conferidas por `auditar_geo.js`
+  (roda o `bairro3d.js` no node com um three.js de mentira e olha
+  vértice por vértice): **nada por cima do asfalto**, **casa nenhuma por
+  cima da calçada**, **calçada nenhuma por cima do asfalto**, **nada na
+  orla nem na areia**. O que as
+  garante: o recorte acima; o `limite` do `caixa()`, que corta beiral,
+  janela, porta e placa pelo miolo do quarteirão; o teste do beiral nas
+  casas da avenida; e a copa da árvore menor que meia calçada (tronco no
+  eixo dela, a 16 da guia, copa de raio até 13).
+- **A frente da avenida se fecha com muro.** A avenida é diagonal e o
+  quarteirão é reto, então a sobra é uma cunha: perto da ponta não cabe
+  casa. Tenta casa em cinco larguras e cinco fundos; só depois, muro
+  fino (14 de fundo), que não tem beiral e entra onde casa não entra.
+  Dá 81–88 % da frente ocupada, contra 55 % antes.
+- **O campo de várzea** é uma célula grande aberta com cerca de mourão
+  (bloqueia, com porteira no meio dos lados norte e sul) e traves. A
+  arquibancadinha de três degraus saiu: lia como uma escada solta no
+  meio do campo. O retângulo declarado é só a
+  **intenção** — diz quais células o campo toma; passada a
+  classificação, ele encolhe pra caixa dessas células menos a calçada,
+  e é isso que o faz caber no quarteirão em vez de atravessar a rua e
+  a areia. E rua nenhuma corta campo ao meio: entre duas células de
+  campo `ruaEntre` diz que não há asfalto, na máscara e na pintura.
+- **Quatro deles vieram primeiro.** Praça (no bairro do sul),
+  delegacia (a oeste, no caminho da torcida), hospital (a oeste) e
+  shopping (ao sul). Nenhum encosta no estádio: a vizinhança dele é
+  de casa e comércio, como no mapa. Cada um monta as próprias **peças** a partir do miolo da célula,
+  e a peça diz se bloqueia: a máscara lê as que bloqueiam, o 3D desenha
+  todas, e a pintura repinta as de `piso` — é a mesma lista, então não
+  há como uma desencontrar da outra. Tudo em retângulo reto, que é o que
+  a máscara sabe perguntar rápido. O miolo desses quarteirões é
+  **andável em volta das peças**, ao contrário do quarteirão de casa,
+  que é maciço: são quase 4.000 células a mais pra briga acontecer.
+  A praça tem coreto, fonte, busto, quatro gramados com caminho em cruz,
+  bancos, árvores e postes; o hospital tem bloco de sete andares com
+  grade de janela, ala oeste, marquise do pronto-socorro com ambulância
+  embaixo, cruz na fachada e muro com portão; a delegacia tem pórtico de
+  colunas, mastro com bandeira, guarita e três viaturas nas vagas
+  pintadas; o shopping tem clarabóia e máquina no teto, volume de
+  entrada envidraçado, marquise, totem e estacionamento de três
+  fileiras.
+- **As cunhas viram pracinha.** Onde a avenida corta o quarteirão na
+  diagonal sobra um triângulo pequeno demais pra casa, que ficava como
+  terreno vago. A sobra não é um polígono que dê pra deduzir — é o que
+  resta do miolo depois de tirar lote, quintal e o corredor da avenida
+  —, então ela é achada por **varredura de 8 em 8**, com as manchas
+  grudadas juntadas por preenchimento. Mancha entre 3.600 e 52.000 de
+  área vira pracinha: chão de pedra, canteiro de grama, árvore e, se
+  couber, dois bancos e um poste. Dezenove delas. Nada ali bloqueia: o
+  pedaço continua andável, e é bom que continue — é atalho e é lugar
+  de briga.
+- **A ESCALA É A DO BONECO.** Ele tem **34 unidades** pra 1,75 m, então
+  uma unidade é **5,1 cm** e um metro são **19,4 unidades** — é a
+  constante `METRO`, e é dela que toda medida de móvel tem de sair.
+  (Este parágrafo dizia "39 unidades, 4,5 cm", que não bate com a
+  constante; foi de onde saiu uma leva inteira de mobília 1,8 vez
+  maior que o certo.) Pelas alturas antigas a casa tinha 1,6 m, a
+  porta 0,90, o muro 0,54 e o poste 2,07: o boneco era um gigante entre
+  casinhas, e não passava pela própria porta. Agora está em metros de
+  verdade — porta de 2,10, casa de 3 a 3,6, sobrado de 5 a 6, muro de
+  1,7 a 2,2, árvore de rua de uns 5, poste de 5,2. A planta da cidade
+  (calçada de 1,4 m, rua de 2,9) continua estreita, que é herança da
+  escala do mapa; mexer nela mexeria na grade e na máscara inteiras.
+- **Telhado de duas águas.** Caixa chapada em cima de caixa lia como
+  laje. Agora são duas rampas que se encontram na cumeeira, com as
+  empenas fechando as pontas, e a cumeeira corre no lado maior — que é
+  como se cobre casa de rua. Prédio e sede seguem de laje, que é o
+  certo pra eles. O beiral sai 2 do corpo mas vem cortado pelo miolo do
+  quarteirão, a mesma regra de sempre.
+- **Oito equipamentos**: praça, delegacia, hospital, shopping,
+  **galeria** (o beco de lojas: duas fileiras de lojinhas de frente uma
+  pra outra, com um corredor que atravessa o quarteirão e é gargalo),
+  **escola** (bloco em L, quadra poliesportiva com alambrado e tabela,
+  mastro), **posto de gasolina** (cobertura sobre duas ilhas de bomba,
+  loja de conveniência, totem) e **baldio** (abaixo).
+- **O TERRENO BALDIO, onde era o segundo campo de várzea.** O
+  quarteirão ao lado do estádio (px 568, 305 — miolo de 588 × 864)
+  deixou de ser campo: virou um equipamento `baldio`, o único com
+  `FATIA = 1`, que toma o quarteirão inteiro. Meia quadra de terreno
+  baldio não vira nada.
+  Ele é declarado em **eixo local**: `u` cresce da face MURADA — a que
+  dá as costas pro estádio — pra face virada PRO ESTÁDIO, e `rx(u0,u1)`
+  devolve o retângulo já no sentido do mundo. A mesma planta serve se o
+  quarteirão mudar de lado do mapa (`CX > cx` decide).
+  Na face do estádio vai uma **fileira de bares e lojas** encostadas uma
+  na outra: a frente delas é sempre na guia, com toldo, porta e placa,
+  e ainda sobram 32 de pátio pras mesas na calçada; o FUNDO é que varia
+  (até 30 % do vão), então o telhado deixa de ser uma laje só e o muro
+  dos fundos fica recortado. Uma em cada três leva caixa d'água.
+  São **seis lojas de 6,5 m de frente por 7,9 de fundo**. Eram dez de
+  3,9 m, e dez portas enfileiradas liam como box de camelô, não como o
+  comércio que atende um estádio: a loja engordou, a conta de quantas
+  cabem caiu junto, e com ela vieram porta mais larga, placa maior e
+  mais pé-direito. As
+  costas delas são a quarta parede do baldio: vão entre duas lojas
+  seria furo pra rua, por isso elas não têm vão nenhum.
+  As outras três faces são **muro** (recuado 3 da guia, senão o dizer
+  pintado nele pendurava sobre a calçada). O da frente é inteiro; os
+  dois laterais têm **um vão cada** — o portão de arame no norte, o
+  pedaço caído no sul. Os vãos são de propósito: baldio murado sem
+  buraco não existe, e sem eles o miolo de 5.157 células ficaria
+  inalcançável (a varredura confirma 5.157 de 5.157).
+  Dentro é terra batida com mato em tufo, terra pelada, restos de
+  alicerce, dois pedaços de muro caído e dois carros largados. O mato é
+  **chão pintado** (não custa geometria) e pega mais no pé do muro, que
+  é onde ninguém passa; o entulho é caixa baixa, que o boneco contorna
+  sem ficar preso.
+  **O equipamento divide o quarteirão com as casas.** Ele toma uma
+  FATIA da ponta oeste do miolo — `areaDoEquipamento` dá a cada tipo
+  uma fração (a praça toma o quarteirão inteiro, o posto 48 %), com um
+  mínimo de 260 pra não virar brinquedo —, e o resto do quarteirão é
+  loteado normalmente: o lote que cruza a fatia é o único que sai. Dá
+  de 3 a 10 casas ao lado da escola, do posto, da delegacia. Antes o
+  quarteirão do equipamento era só dele, e uma delegacia sozinha num
+  quarteirão de 27 m lia como prédio público num descampado. A fatia
+  tem chão próprio (o do equipamento), o resto fica com o chão de lote.
+  Na máscara o miolo do quarteirão é maciço como sempre, **menos dentro
+  da fatia**, onde vale a lista de peças: é ali que se anda entre elas.
+  **A parede de equipamento vem ANTES da avenida na máscara.** A banda
+  da avenida — asfalto mais calçada — é andável e vinha antes de tudo,
+  então onde ela cruzava a fatia de um equipamento as paredes dele
+  sumiam e dava pra entrar na sede por fora, atravessando o muro. Peça
+  no asfalto já era recusada na montagem, então o que sobrava era peça
+  na calçada da avenida — e parede é parede, com avenida do lado ou sem
+  ela. A fatia da sede, além disso, passou a recusar quarteirão que a
+  avenida CORTE (`tocaAvenida(area, CALC)`), senão fica um corredor de
+  calçada atravessando o salão.
+  Equipamento cujas peças caiam no asfalto de uma avenida é recusado
+  naquele quarteirão, porque as peças são retas e a avenida é diagonal.
+- **O miolo do quarteirão é fundo de quintal**, não pátio: com o
+  quarteirão grande ele virava um descampado, então entram puxadinho,
+  garagem e laje. Nada disso muda a máscara — o miolo já é maciço.
+- **A fachada.** Porta de 2,10 sempre; o térreo é **vitrine** no
+  comércio (vidro dos dois lados da porta) e janela dos dois lados na
+  casa; frente estreita demais pras duas ganha bandeira em cima da
+  porta. A casa da avenida passou a ter fachada também — antes o
+  desenho dela saía antes, e dava comércio com letreiro em parede lisa.
+  O letreiro fica **acima da porta**, não em cima dela.
+- **A decoração.** Texto não sai de caixa, sai de textura: a planta
+  guarda só o dizer (`l.placa`, `l.pixacao`), e o `bairro3d.js` junta
+  os que apareceram num atlas de 256 × 64 por dizer, uma malha só, com
+  recorte por alfa (sem transparência, sem ordenar). Letreiro de
+  comércio é fundo pintado com borda, acima da porta (que encurta pra
+  17 quando há letreiro); pixação é tinta direta em itálico torto,
+  abaixo da linha das janelas e fora do meio, presa à altura da
+  parede — em muro de 12 ela cabe nos 12. São 34 nomes de comércio e
+  25 dizeres de parede, sorteados com a semente da planta, então a
+  cidade sai igual toda vez. Os letreiros dos equipamentos entram no
+  mesmo atlas. A placa é de uma face só: vista por trás, o texto sairia
+  espelhado. O letreiro de equipamento aceita `placa: false`, que pinta o
+  dizer DIRETO na parede, sem chapa — é o que o muro do baldio pede, onde
+  "VENDE-SE" e "ALUGA-SE" são tinta, não letreiro.
+- **TEXTURA, enfim.** Até aqui a cidade inteira era cor por vértice.
+  Entraram três PNG gerados por `ferramentas/gerar_texturas.py` (sem
+  biblioteca de imagem — o script escreve o PNG na mão, e pode ser
+  rodado de novo quando a escala mudar), em `img/texturas/`:
+  **telha.png** (telha colonial ladrilhável), **tijolo.png** (quatro
+  falhas de reboco com o tijolo à vista, numa 2 × 2 com alfa) e
+  **reboco.png** (chapiscado fino).
+  **O quarteirão inteiro é texturado**: o reboco dá grão à parede, ao
+  muro e à laje da calçada, e a cor do vértice continua mandando no tom
+  de cada casa. A UV de parede NÃO pode ser a mesma do telhado: numa
+  face vertical, mapear por x e z sai numa tira esticada, então `tri()`
+  recebe qual é a normal da face — no topo valem x e z, na parede vale
+  o eixo horizontal dela e a ALTURA. A escala do reboco é mais graúda
+  que a da telha (172 contra 104), senão a parede sai penteada.
+  O TELHADO saiu da malha do quarteirão e foi pra uma malha própria com
+  `map` E `vertexColors`: a textura dá o desenho da telha e a cor do
+  vértice dá o tom da casa, e o Lambert multiplica os dois. A UV é
+  PLANAR, tirada do mundo (`x/104, z/104`), então a telha corre
+  contínua de casa em casa e ladrilha sem costura — a água é rasa e o
+  esticamento na rampa não aparece. A cobertura da sede fica de fora:
+  aquilo é fibrocimento, e a malha dela liga e desliga sozinha.
+  O TIJOLO À VISTA substituiu as manchas de mofo, que saíam como
+  borrão sujo na parede. Agora o decalque é **falha de reboco**: um
+  retalho irregular onde o emboço caiu e aparece a alvenaria em amarração
+  corrida, com lábio de reboco na borda. São quatro, numa 2 × 2 com alfa,
+  uma ou duas por casa, sorteadas com a semente da posição, e ficam
+  **embaixo na parede** — reboco cai por umidade que sobe, não por
+  cima —, só uma das quatro senta alta, sob o beiral. Nunca
+  centralizadas: falha não se alinha com a porta.
+  A primeira versão saiu como papa de argamassa: a erosão aleatória de
+  6 % fazia quase todo pixel ter vizinho de fora a menos de 2 px, e o
+  teste de borda pintava tudo de lábio. A correção foi morder a borda
+  com bolhas SUBTRATIVAS em vez de ruído espalhado, testar vizinhança só
+  na ortogonal e diminuir o tijolo.
+- **A BANDEIRA DO MASTRO TREMULA.** O mastro da sede leva o escudo da
+  torcida num pano de 10 × 4 retalhos, e o pano MEXE: ele não pode
+  entrar na malha dos letreiros, então sai com geometria própria que a
+  cena atualiza por quadro (`tremular` em `estadio3d.js`). A onda são
+  duas senoides que VIAJAM do mastro pra ponta, com amplitude crescendo
+  ao longo do pano — preso na tralha, solto na ponta, que é como
+  bandeira balança — mais um balanço vertical menor, senão o pano lê
+  como cortina de trilho.
+- **O mato**: terreno aberto com moitas sorteadas (bloqueiam, num balde
+  espacial de 256) e trilhas pintadas. A textura do mato, do mar e da
+  praia sai do pintor, não de geometria.
+- **A máscara é "rua recortada de quarteirão sólido"**: mar → campo →
+  carro → **parede de equipamento** → avenida → rua → miolo do quarteirão (bloqueia) / calçada (anda)
+  → moita → o resto anda. Lote é só desenho e altura pra câmera. Cada
+  célula sabe os seus lotes e árvores, e `celulaEm(x, y)` acha a célula
+  por busca binária nas bordas: é o que deixa 460 mil `anda()` custarem
+  0,3 s na carga.
+- **A SEDE É UMA PLANTA, não uma casa pintada.** Era um lote comum com
+  outra cor e uma faixa na fachada — perdido no meio do quarteirão. Agora
+  cada sede toma uma fatia inteira do quarteirão (uns 19 × 11 m) e tem
+  planta de verdade, como a foto que o dono mandou: **muro na rua** com o
+  portão e o nome da torcida, **ala da frente** com quatro cômodos e o
+  corredor do portão no meio, **SALÃO** aberto com mastro, bancos e árvore,
+  e **ala do fundo** com três cômodos.
+  **O telhado se abre quando o jogador entra.** De fora a sede é coberta
+  como qualquer casa — cobertura de galpão de duas águas rasas sobre as
+  paredes externas, com as caixas d'água em cima e a platibanda da
+  fachada passando dela —, e é assim que ela se lê da rua. Quando o
+  líder do jogador cruza a borda da fatia, o telhado some e a planta
+  aparece: cômodo, corredor, salão. É o corte de planta baixa, e custa
+  uma malha por sede (`teto:mandante`, `teto:visitante`), que a cena
+  liga e desliga por quadro. A borda é a da fatia, SEM folga: ela
+  coincide com a guia da calçada e a torcida nasce do lado de fora, e
+  com folga o telhado já abria no spawn. Não pisca, porque entre a
+  calçada e o miolo está a parede: o boneco cruza a borda pelo vão do
+  portão, que é onde a casa se abre mesmo.
+  Poste e árvore não entram: dentro de galpão coberto não há luminária
+  de rua nem pé de árvore. Ficam os bancos e o mastro, que sobe pela
+  frente e passa do telhado. **Moita nenhuma e copa de árvore nenhuma
+  entram na fatia de equipamento** (`naFatiaDeEquipamento`): a copa é um
+  quadrado de meia-largura `r` plantado no eixo da calçada, e a quina
+  dela passava por cima do muro e aparecia como arbusto dentro do salão.
+  **O quintal do quarteirão para na fatia**: ele é do quarteirão inteiro
+  e a fatia fica na ponta oeste dele, então a laje bege de fundo de
+  quintal entrava pela sede e aparecia no corredor do portão.
+  A altura é de casa, não de armazém: fachada de 3,2 m, paredes de fora
+  2,8 e o telhado fechando em 3,5 — era 3,9/3,3/4,3 e lia como um
+  armazém no meio da rua.
+  Na fachada vão dois **ESCUDOS** — o da torcida e o do clube —, mais um
+  em cada parede lateral; e a
+  **PLACA** com o nome da torcida POR EXTENSO, na parede à direita do
+  portão e com o fundo na cor secundária. "Direita" é a de QUEM OLHA DA
+  RUA, não a do eixo local: ao sul e a oeste ela cai no trecho de `u`
+  alto, ao norte e a leste no de `u` baixo, e com o eixo cru saía do
+  lado errado em duas das quatro frentes.
+  Dois detalhes de desenho que custaram uma rodada cada: o escudo se
+  prende a `v = 2,8` e não a `v = 1`, porque ele SAI da parede pra fora
+  e o `limite` do quarteirão cortava as três chapas a zero; e `caixa()`
+  quer os limites em ordem, mas com a normal negativa (`oz = −1`) a
+  chapa saía com `z0 > z1`, o recorte devolvia lado negativo e ela era
+  descartada inteira — escudo nenhum aparecia nas fachadas viradas pro
+  norte nem nas laterais de oeste.
+- **O ESCUDO É O DO JOGO, e vira o PNG quando ele existir.** A primeira
+  versão desenhava um brasão inventado em três fiadas de chapa — e
+  inventar escudo é justamente o que não se faz. O que a cena monta
+  agora são as DUAS regras que o jogo já tinha: o do CLUBE é o `.escudo`
+  da interface (`escudo()` em `js/main.js`) — as duas cores dele
+  divididas em 135°, a primeira até 52% da diagonal, com a sigla do
+  clube em branco e sombra; o da TORCIDA é o pino do mapa
+  (`js/mundo/mapa.js`) — bola na cor principal com a `siglaTorcida` no
+  meio, na cor que LÊ sobre aquele fundo (`corQueLeSobre`: a primeira
+  cor dela que se separa por luminância; se nenhuma servir, preto ou
+  branco). Saem em textura, no mesmo atlas dos letreiros, em vez de em
+  CSS. A célula do atlas é 256 × 64 e o escudo é quadrado, então ele
+  ocupa um quadrado de 64 no meio dela e a UV aponta só pra ele.
+  Por cima disso entra o **PNG de verdade**, que é o MESMO arquivo que o
+  jogo usa: `img/escudos/clube-<clubeId>.png` e
+  `img/escudos/torcida-<id>.png`, 139 de cada, com `dados/escudos.js`
+  como manifesto do que existe — é a convenção de `escudoDe()` em
+  `js/main.js`, não uma inventada aqui. O caminho passa antes por
+  `window.__EMBUTIDOS`, como o `IMG()` do jogo, porque no build de
+  arquivo único o empacotador (`ferramentas/empacotar_jogo.py`) troca
+  essas imagens por `data:` URIs.
+  A imagem carrega depois da cena montada, repinta a célula do atlas e
+  `needsUpdate` põe na tela. Sem o id no manifesto nem arquivo, fica
+  valendo o gerado — nada quebra. Fora do navegador não existe `Image`,
+  então as varreduras no node param no gerado.
+  Os 278 arquivos vieram do branch `claude/game-html-news-feed-sndgh4`,
+  que é onde eles foram importados; este branch não os tinha.
+  **A frente é a cor primária da torcida**, o rodapé e os batentes do
+  portão são a terceira, e a faixa alta, as listras do piso do salão e a
+  bandeira do mastro são a segunda.
+  Tudo é declarado em EIXO LOCAL — `u` ao longo da frente, `v` pra
+  dentro, `v = 0` na calçada — e `eixos()` gira pro mundo: a mesma planta
+  serve pras quatro frentes, e a sede pode nascer virada pro norte, pro
+  sul, pro leste ou pro oeste sem uma linha a mais.
+  As sedes escolhem o quarteirão ANTES dos outros equipamentos (sem sede
+  não há spawn), e o que sobra do quarteirão continua sendo casa. **O
+  miolo da sede é andável**: a torcida nasce na calçada do portão, entra
+  e ocupa o salão e os cômodos. Porta de cômodo nenhuma cai em cima de
+  uma divisória — na primeira montagem caía, e 332 células ficaram sem
+  chegada.
+- **A BEIRA DA ESTRADA fecha o mapa.** As avenidas saem da cidade e viram
+  estrada pelo mato até a borda do que se desenha, e ali a borda era mato
+  pelado: de dentro do bairro dava pra ver o cenário ACABAR. Agora cada
+  estrada leva casa solta na beira — casa, sobrado, galpão e muro de
+  sítio, uns quarenta ao todo —, viradas pra pista como as casas da
+  avenida, rareando conforme se afasta. Elas nascem só no mato, fora do
+  campo, da praia e do mar, longe do asfalto da avenida E da última faixa
+  da grade, bloqueiam na máscara num balde espacial próprio e saem numa
+  malha própria (`beira`), porque fora do contorno não há quarteirão nem
+  pedaço onde caber.
+  Cada casa da frente leva a **calçada** dela: uma laje da guia até a
+  frente, mais larga que a casa, pros pedaços vizinhos se encontrarem e
+  virarem uma calçada só. Na dobra da avenida a guia não é reta — a laje
+  é um retângulo preso ao trecho e o asfalto do trecho seguinte corta
+  por dentro dela —, então a beirada interna recua até a laje sair
+  inteira do asfalto, e quem não sair fica sem calçada mesmo.
+  Há também uma **segunda fileira**, recuada, em pouco menos da metade
+  dos pontos: uma fileira só lê como cenário de papelão.
+- **A BORDA DA CIDADE também é rua.** `ruaEntre` só exige UMA célula
+  urbana ao lado, então na saída do bairro sobra pista com quarteirão de
+  um lado e descampado do outro. Agora a célula de mato encostada numa
+  rua dessas ganha uma fileira de casa na guia de fora, com calçada,
+  virada pra pista. São as mesmas casas da estrada, só que retas: `ang`
+  de 0 ou 90° e `vf` dizendo pra que lado a fachada olha, e o mesmo
+  `lote()` desenha — e elas saem como LOTE RETO, com `frente`, não como
+  a casa girada da estrada: **`ang: 0` é falso em JavaScript**, e todo
+  lugar que pergunta `if(l.ang)` — a começar pelo `lote()` que desenha —
+  mandava a casa de ângulo zero pro caminho do lote reto e ia ler
+  `l.x0`, que ela não tinha. Onze delas não eram desenhadas. Lote reto
+  é lote reto.
+  São 80 construções de beira ao todo, 59 com calçada — as sem são as da
+  segunda fileira, que dão pro fundo do terreno.
+
+- **A FAVELA, o bairro informal do flanco oeste.** A referência que o
+  dono mandou é foto de periferia de verdade, e o que se vê de cima
+  nela é UMA MASSA DE TELHA CERÂMICA: casa colada na casa, parede com
+  parede, e o que sobra de chão é o beco. A primeira tentativa não era
+  isso — era casinha solta espalhada no descampado, com laje cinza no
+  lugar de telha —, então o traçado foi refeito do zero.
+  **Não é passeio aleatório: é QUADRA.** Uma grade de quadras miúdas,
+  TORTA em relação à grade da cidade (a cidade é reta; a favela não
+  nasceu medida), com becos estreitos entre elas; dentro de cada
+  quadra, duas fileiras de costas uma pra outra, casa encostada na
+  casa, cada fileira com a porta virada pro seu beco. O ângulo local é
+  de pouco mais de 90° de propósito: a faixa de mato é alta e
+  estreita, então a quadra COMPRIDA tem de correr no sentido dela,
+  senão ela nasce cortada.
+  Três coisas vêm disso de graça. **Densidade**: sem folga entre casa
+  e casa, o beiral de uma encosta no da outra (o beiral sai 2 do corpo
+  e o corpo recua 2), e de cima lê como a massa contínua da foto.
+  **Caminho garantido**: grade de beco é grade — sempre conexa; o
+  passeio aleatório da versão anterior fechava anel, prendia mato e o
+  conserto comia um terço das casas, e agora o conserto não tira
+  nenhuma. **Contagem**: são **262 casas**.
+  **O VÃO É OU NADA OU BECO.** Entre duas casas ou não há folga (0 a
+  3, parede com parede) ou há uma viela de 40 pra cima. O meio-termo —
+  uma fresta de 10, de 20 — é o que faz célula que ANDA mas que o
+  CORPO não atravessa (o corpo quer as 8 vizinhas livres), e foi de
+  onde saíam todas as ilhas.
+  **A COBERTURA é o que dá a cor da foto**: telha cerâmica de duas
+  águas em ~68% (seis tons, porque telhado de uma cor só vira carpete
+  vermelho), laje nua em ~20% (a casa que ainda vai subir mais um
+  andar) e fibrocimento no resto. A parede segue a mesma lógica:
+  tijolo aparente em 44% — a casa que nunca foi rebocada, que é a
+  maioria na foto —, reboco cru em 24% e pintada no resto, que é a que
+  dá vida ao beco. Um terço levantou o segundo andar e um em dez o
+  terceiro: é o dente de serra de lajes em cima do mar de telha.
+  Para isso o `lote()` passou a aceitar `l.telha`, a cor da cobertura,
+  nos três caminhos (duas águas, uma água e laje) — sem ele a telha
+  era a constante `TELHA` para a cidade inteira.
+  **ONDE ELA CABE.** Não num retângulo limpo: o flanco oeste é cortado
+  por duas estradas (avenida que virou estrada) e pelas casas de beira
+  delas, então a área declarada é a faixa inteira e quem recorta é o
+  teste casa a casa — fora do asfalto E da calçada da estrada, fora de
+  célula de quarteirão e de campo (ali a calçada, o miolo e a cerca já
+  são de outra gente), fora do mar, da praia e da orla, longe da casa
+  de beira. A favela sai em manchas, uma de cada lado das estradas, que
+  é como esse bairro cresce de verdade. Duas dessas réguas entraram
+  depois: a varredura de geometria pegou 233 vértices de casa por cima
+  de calçada.
+  **E A VIELA DESEMBOCA NA RUA.** Mover a CASA até lá não bastou: o
+  traçado do beco continuava parando onde o MATO parava, então entre a
+  última casa e a rua da cidade sobrava um pedaço de viela sem asfalto,
+  e o bairro lia como coisa largada ao lado do mapa em vez de parte
+  dele. O traçado passou a valer onde a CASA vale — a mesma régua de
+  chão — e a ir UM PONTO PARA DENTRO do asfalto: o traço do beco entra
+  na rua, a rua é pintada por cima depois (ela vem no passo 4 da
+  pintura e o beco no passo 1) e as duas viram uma superfície só. Com
+  folga de 70 na divisa da área, pra alcançar a rua que passa logo fora
+  dela. As 21 vielas desembocam.
+  **ELA VAI ATÉ A RUA DE LESTE.** A primeira versão exigia MATO e
+  parava no contorno da cidade — sobrava uma língua de areia vazia
+  entre a última casa e a rua, que foi o que o dono viu na foto. O que
+  está ali é célula `aberto`: descampado de DENTRO do contorno, sem
+  lote e sem calçada. Aceitar `aberto` junto com o mato fecha o vão e
+  encosta o bairro no asfalto. Isso obrigou a um conserto na MÁSCARA:
+  `andaNaCidade` devolvia `true` sem perguntar nada no terreno aberto
+  (era só praia, orla e descampado, onde nunca houve casa), e a casa da
+  favela apareceria lá sem barrar ninguém — agora aquele ramo pergunta
+  `naBeira`, como o do mato.
+  **A ESCALA é a conta mais dura aqui.** A unidade é 4,5 cm (o boneco
+  tem 39), então uma casa de 47 de frente por 51 de fundo é 2,1 × 2,3 m
+  — barraco de um cômodo. É pequeno, e é pequeno porque o mato livre
+  do flanco oeste dá pouco mais de um milhão de unidades²: casa maior
+  cabe menos, e o dono pediu 180. A primeira versão errou isso na
+  direção oposta e feio — casa de 15 a 27 de frente, menor que a caixa
+  d'água que fica em cima dela.
+  **A CAIXA D'ÁGUA AZUL** é o que sobrou de exclusivo daqui: prisma de
+  oito lados numa armação, numa quina do telhado de ~85% das casas, e
+  não bloqueia (está em cima do telhado). O poste de pau e o fio de
+  gato existiram e SAÍRAM a pedido do dono — davam um emaranhado preto
+  por cima do bairro inteiro que competia com o telhado em vez de
+  ajudar. `posteFavela()` e `fio()` saíram do `bairro3d.js` junto com
+  as listas que os alimentavam.
+  **O BECO É ASFALTADO**, também a pedido: era terra batida, e agora é
+  a mesma capa da rua da cidade, num tom um fio mais claro — rua de
+  favela é capa fina jogada por cima, não asfalto grosso e novo —, sem
+  meio-fio e sem faixa.
+  **A TELHA É MIÚDA.** A textura tem 8 canaletas por ladrilho e a
+  escala vale pelo ladrilho inteiro: com os 104 da cidade a canaleta
+  fica com 13 unidades (0,59 m), e uma casa de 57 de frente sai com
+  quatro canaletas — telha de gigante. O telhado da favela foi pra uma
+  malha própria com escala 34, canaleta de 4,25 (0,19 m), que é a
+  medida da telha de verdade. Escala é do TECIDO, não do triângulo,
+  então tinha de ser outra malha.
+  **RNG PRÓPRIO** (`semente(913247)`): a favela sorteia muito, e se
+  bebesse do `rng()` compartilhado toda a cidade gerada depois dela
+  mudaria de sorteio sem eu ter mexido lá. Local, ela não consome um
+  número sequer do sorteio de fora. A armadilha: um laço que já
+  existia (`for(o of BEIRA)`, sorteando árvore perto de casa de beira)
+  passou a rodar também sobre as casas da favela, que entram no mesmo
+  array — ele pula com `if(o.favela) continue` ANTES de gastar o
+  `rng()` de fora.
+  **O MATO DE VOLTA NAS SOBRAS.** As moitas nascem antes da favela, e
+  por isso a área toda ficou proibida pra elas; mas a favela não ocupa
+  a faixa inteira, e descampado sem moita lê como terra arrasada.
+  Depois de gerar, moitas voltam nas sobras com o RNG local — e entram
+  TAMBÉM no balde espacial, senão `naMoita` não as enxergaria e elas
+  ficariam de enfeite, sem bloquear. (Era o mesmo risco que fez a
+  exclusão nascer: moita tirada da lista mas não do balde continua
+  bloqueando invisível.) Elas voltam LONGE — 95 do corpo da casa mais
+  perto, não 22: moita é bloqueio, e moita solta num beco ou na fresta
+  entre a primeira fileira e a borda do mapa SELA a passagem. Foram 743
+  células presas assim.
+  **O DESENCALHA ILHA** continua, de rede de segurança: grade do
+  tamanho da célula, teste de corpo, inundação a partir da borda, e a
+  candidata só sai se TIRAR ELA encolher a ilha — adivinhar por
+  proximidade deixava rodando à toa, tirando um lado do corredor de
+  cada vez.
+  **E ele passou a enxergar o que não é casa.** Modelava só as casas da
+  favela, então dava por conectada uma faixa de 700 células que, na
+  máscara de verdade, a FILEIRA DE CASAS DA ESTRADA fechava por cima —
+  e a borda oeste da grade dele, que ele semeava como saída, é o fim do
+  MAPA, não saída nenhuma. Agora a moita e a casa de beira entram numa
+  camada-base marcada uma vez só (elas não mudam quando a favela perde
+  uma casa), a borda só semeia quando há tabuleiro do lado de fora, e o
+  limite do tabuleiro usa a MESMA comparação que `anda()`, não uma
+  parecida. Ele tira as que precisa e zera: com 262 casas não sobra
+  NENHUMA célula presa dentro da favela (24.977 de 24.977), e o mapa
+  inteiro fica com 11 — menos do que tinha antes de a favela existir.
+
+### 4.12. Os decalques de chão
+
+O dono mandou gerar um pack de imagens e voltou com uma folha de contato
+de **8 × 4 = 32 peças** de chão: capim em tufo, entulho, brita, poça de
+barro, terra rachada, folha seca. Nada de asfalto, nada de parede, nada
+de textura que repete — o gerador entregou só uma família das quarenta
+pedidas em `docs/PACK_TEXTURAS.md`. As 32 valem, então foram as 32.
+
+**Por que não dá pra pintar isso no chão.** O canvas do chão tem 4.096 px
+pra 8.748 unidades de mundo: **0,47 px por unidade**. Um tufo de capim de
+40 unidades (1,8 m) sairia com 19 px de largura. É por isso que o mato do
+baldio, que era retângulo pintado, lia como falha de textura e não como
+mato. Detalhe de chão tem que ser **geometria**: um quadrado deitado com
+a foto recortada por cima.
+
+**O recorte (`ferramentas/importar_decalques.py`).** A folha veio em JPEG,
+fundo preto, sem alfa. O caminho óbvio — "escuro vira transparente" —
+destrói as peças escuras: medido, um limiar de luminância preserva 51 a
+74 % da arte nas quatro células mais escuras (a brita e as poças somem
+junto com o fundo). O script faz **inundação a partir da borda**: só é
+fundo o preto que se alcança andando desde fora da célula, então um miolo
+escuro cercado de arte continua sendo arte — 92 a 97 % preservados nas
+mesmas quatro. Depois tira a franja usando a propriedade do fundo preto
+(alfa pré-multiplicado: `cor / alfa` devolve a cor original da borda),
+**dessatura 0,76** — a cena tem sol próprio, arte com cor forte briga com
+ele — e encaixa cada peça numa célula quadrada de 192 px sem distorcer.
+Saída: `img/texturas/chao.png`, 1536 × 768 RGBA, 1,2 MB. A folha original
+fica em `img/texturas/fonte/chao_pack.png`, pra dar pra refazer.
+
+**Onde eles nascem (`DECALQUES`, em `cena_estadio.js`).** Semente própria
+(`semente(560431)`), pelo mesmo motivo da favela: são milhares de
+sorteios, e no `rng()` compartilhado a cidade inteira mudaria de desenho
+por causa de decoração. São três fontes:
+
+- **1.300 espalhados** por tentativa e erro, em mato, terreno aberto e
+  dentro do baldio. `ondeCabe()` recusa mar, praia, asfalto, calçada de
+  avenida, faixa de beira, campo e quarteirão da cidade — o baldio é a
+  exceção, porque é terreno abandonado e é lá que entulho faz sentido. A
+  mistura muda com o lugar: no mato 66 % capim, no baldio 52 % entulho.
+- **Uma saia debaixo de cada moita** (538). A moita bloqueia o boneco,
+  então tem que continuar sendo volume — mas o cone verde chapado, ao
+  lado de um tufo fotografado, fica ainda mais falso do que era sozinho.
+  A saia é um decalque de mato com 2,1 a 3,0 vezes o raio da moita: o
+  cone vira o corpo do arbusto e a vegetação de verdade aparece em volta.
+- **Folha caída sob umas 45 % das árvores** (11). Só uma peça de folha
+  veio no pack, então ela repete; cada placa nasce com um ângulo
+  sorteado, que é o que disfarça.
+
+Total: **1.822 placas, 3.644 triângulos** — 2,5 % da cena. Uma malha só,
+uma chamada de desenho, `alphaTest` 0,32 (folha de capim é fina e some
+com corte alto) e `DoubleSide`, porque a placa está deitada e o triângulo
+é olhado de cima.
+
+**O que não cabe não nasce.** O chão desenhado acaba na VISTA; uma placa
+que passa da borda fica boiando no vazio, e dá pra ver de longe. `por()`
+testa a diagonal (a placa gira) e descarta — foram 27.
+
+**E o mato pintado do baldio saiu.** Os 34 retângulos verdes que o
+`piso()` desenhava lá dentro existiam porque não havia nada melhor; ao
+lado da foto eles viraram o pior detalhe do terreno. Viraram **variação
+de tom de terra** (`#8f8257`, `#9b8c62`, `#877a52`, `#948553`), que é o
+que chão pintado sabe fazer nessa resolução: manchar. O verde agora vem
+das 141 placas que caem no baldio. Mesmo número de sorteios de propósito
+— aquele trecho usa o `rng()` compartilhado, e tirar uma chamada dali
+moveria as casas da cidade inteira.
+
+A cidade sai em **pedaços de 4 × 4 células** (`bairro3d.js`), que a câmera
+descarta fora do quadro; carros, postes e campos numa malha; moitas em
+outra.
+
+### 4.14. A sede tem NÍVEL, e o nível 1 é o barracão de três cômodos
+
+A sede que existia virou **nível 3**: fatia grande, salão, ala da frente
+e ala do fundo. Ao lado dela entrou a **nível 1**, que é o que uma
+torcida tem antes de crescer — o barracão da foto de referência, com
+três compartimentos.
+
+`SEDES[lado].nivel` é quem decide. No mapa vai uma de cada (mandante 3,
+visitante 1), que é o que deixa as duas à vista pra comparar; no jogo
+quem manda nisso é o progresso da torcida, e trocar é uma linha.
+
+**A diferença começa na FATIA, não na mobília.** A nível 3 pega o
+quarteirão de ponta a ponta na profundidade; a nível 1 é um retângulo
+de **11,2 × 8,1 m** encostado na guia, e o resto do quarteirão continua
+sendo casa. Sem isso ela seria a sede grande com menos parede dentro.
+
+**Os três compartimentos**, no eixo local (`u` corre pela fachada, `v`
+entra pra dentro):
+
+| cômodo | onde | o que tem |
+|---|---|---|
+| pátio | `u` até 58 %, de ponta a ponta | três colchões no chão, caixa d'água de plástico, ralo, o portão encostado, caixa de material, o mastro |
+| patrimônio | os 42 % restantes, metade da frente | armário de aço com quatro troféus em cima, estante de material, caixas |
+| presidente | os 42 % restantes, metade do fundo | mesa com gaveteiro, cadeira de escritório, armário, ar-condicionado, mural |
+
+**Cada sala abre pro PÁTIO pela sua própria porta**, e entre elas a
+parede é cega — como na foto. Não é gosto: com a porta de uma sala
+dando na outra, um cômodo depende do outro pra ser alcançado, e cômodo
+murado já custou 332 células sem chegada nesta cena antes.
+
+**O pátio não tem telhado**, e é isso que faz a sede pequena ler como
+sede pequena: de cima vê-se o cimento, o colchão e a caixa d'água sem
+precisar esconder malha nenhuma. O telhado passou a poder cobrir só um
+pedaço (`teto.area`); a área que a cena ESCONDE continua sendo a da
+sede inteira, senão quem entra pelo portão não abriria a planta.
+
+**A mesa do presidente ficou no CANTO, encostada nas duas paredes.**
+Solta no meio da sala ela abria um bolsão de 21 entre o tampo e a
+parede — largo demais pra sumir, estreito demais pro corpo passar, que
+pede 24. Foram três células presas na primeira montagem, achadas por
+varredura e não a olho. Pelo mesmo motivo o armário encosta na mesa em
+vez de ficar do outro lado dela, que era o que fechava a volta.
+Medido: **352 células de corpo dentro da sede, 352 alcançáveis da rua.**
+
+### 4.15. O mobiliário, e o que ele custa
+
+A sede era casca: parede, piso pintado e mais nada. As peças novas
+(`bairro3d.js`) são caixas como o resto da cena, mas em porção maior —
+uma cadeira de escritório são catorze delas, um armário nove:
+
+`colchao` · `armario` · `estante` · `trofeus` · `mesa` · `cadeira` ·
+`caixote` · `ralo` · `ar` · `mural` · `portao` · `caixadagua`
+
+**A orientação vem da planta**, em `ox`/`oz`: é pra que lado o móvel
+OLHA. Sem isso a porta do armário sai na face encostada na parede e o
+móvel lê como caixote. `naFace()` resolve as quatro orientações numa
+conta só, em vez de quatro trechos iguais.
+
+**Os cômodos do fundo da nível 3 também deixaram de ser caixas
+vazias**: o primeiro virou alojamento (colchão), o último depósito
+(armário e troféus) e o do meio diretoria (mesa e cadeira).
+
+Custo: a sede inteira mobiliada não chega a 1.500 triângulos, e tudo
+entra na malha do quarteirão — **nenhuma chamada de desenho a mais**.
+
+### 4.16. As portas que abrem, e o F que as abre
+
+Todo vão da sede ganhou FOLHA. Na rua é **vidro** — porta de comércio,
+caixilho de alumínio e puxador de tubo, que é o que sede de torcida põe
+na fachada. Por dentro é **madeira**, com os dois painéis rebaixados e
+maçaneta. São 13 folhas nas duas sedes: 4 de vidro e 9 de madeira.
+
+**Porta larga é de duas folhas.** A da fachada tem 2,5 m; uma folha só
+desse tamanho girando não existe. Ela parte no meio, cada metade na sua
+dobradiça, as duas abrindo pro mesmo lado.
+
+**A folha gira, não deforma.** Ela é montada em coordenada local com a
+DOBRADIÇA na origem e a folha deitada no +X; o que abre é
+`rotation.y` do `Group`. A bandeira, que precisa ondular, paga vértice
+por vértice todo quadro; a porta não paga nada — é uma matriz. O curso
+é de um terço de segundo, com aceleração e freada nas pontas
+(`t²(3−2t)`), porque porta que salta de fechada pra aberta num quadro
+lê como teleporte.
+
+A planta entrega `ang0` e `ang1` prontos, que são o `rotation.y` com a
+folha fechada e aberta. Os dois saem de `atan2`, e **o delta vai
+normalizado pra (−π, π]**: dois ângulos a 90° um do outro podem cair
+nos dois lados do ±π, e interpolar cru faria a folha dar a volta por
+270°.
+
+**O F faz duas coisas.** Encostado numa porta (2,1 m, o braço de quem
+vai abrir), ele abre ou fecha; longe de porta, continua sendo o
+AGARRAR do motor de luta, que é o dono antigo da tecla. Tirar o agarrar
+pra pôr porta seria trocar uma mecânica de briga por um enfeite —
+`alternarPorta` devolve `null` quando não há porta ao alcance, e é esse
+`null` que devolve a tecla pro combate.
+
+**A PORTA NÃO BLOQUEIA, NEM FECHADA**, e isso é decisão e não
+esquecimento. A máscara e os campos de fluxo dos quatro spawns saem
+prontos na carga; porta que fecha de verdade pediria refazer os dois a
+cada giro, e o bonde que já estava a caminho ficaria com a rota velha —
+atravessando a folha ou empacando na frente dela. Medido depois das
+portas: a máscara continua 100 % alcançável com as mesmas 8 células
+soltas, e a sede nível 1 com 352 de 352.
+
+### 4.17. A placa que diz o que é cada sala
+
+Toda porta interna ganhou **placa na verga**, com o nome do cômodo.
+Nível 1: PATRIMÔNIO e PRESIDÊNCIA. Nível 3: SECRETARIA, BAR, BANHEIRO e
+ALMOXARIFADO na ala da frente, ALOJAMENTO, DIRETORIA e DEPÓSITO na do
+fundo — e o nome bate com o que há DENTRO de cada um, não é sorteio: o
+do alojamento tem colchão, o do depósito armário e troféus, o da
+diretoria mesa e cadeira.
+
+Não é peça nova: é o `letreiro` que a fachada já usava, com a chapa na
+segunda cor da torcida e a tinta na cor que lê sobre ela. Sai no mesmo
+atlas de dizeres, então **não custa nem textura nem chamada de
+desenho**.
+
+**A placa sai junto com a folha**, no mesmo `folhasNoVao` — quem abre
+um vão com nome ganha porta e placa de uma vez. É isso que faz a regra
+valer pro resto: qualquer cômodo novo que peça porta já nasce com
+placa.
+
+**Ela fica do lado de FORA do cômodo.** A folha abre pra dentro, então
+quem lê está do lado contrário, e é pra lá que a normal aponta. Sem
+isso a placa nasceria dentro da sala, de costas pra quem chega.
+
+**A parede de cômodo subiu pra caber a placa.** Era 48 (2,16 m) com
+folha de 46: sobravam 2 de verga, e placa nenhuma cabe em 2. Com 56
+sobram 10, que é onde a placa mora — e de quebra o pé-direito virou
+2,52 m, que é medida de cômodo de verdade; 2,16 já era baixo demais pro
+boneco de 1,75 m. A placa se dimensiona pelo que sobrou: a altura é a
+verga menos folga, e a largura vem dela pela proporção da célula do
+atlas (256 × 64). Placa maior que a verga atravessaria a parede por
+cima.
+
+### 4.18. O bar da torcida, e a `obra` que sede e bar dividem
+
+Cada torcida começa com um bar, então são dois no mapa. Eles escolhem
+quarteirão DEPOIS das sedes e ANTES dos outros equipamentos: a sede é o
+que a cena precisa pra existir e fica com o quarteirão que quiser; o
+bar quer o mais perto DELA que ainda esteja livre.
+
+**A `obra`.** Antes de escrever o bar, os ajudantes de prédio saíram de
+dentro do `sedeDaTorcida` e viraram uma função à parte: eixo local,
+peça, parede com vão, folha de porta e placa de sala. A sede usa, o bar
+usa, e o que vier depois usa. É aqui que mora a regra de que a porta
+abre pra dentro do cômodo e a placa fica do lado de fora — e ela vale
+uma vez só. Sem isso cada prédio novo traria a sua cópia da mesma
+sutileza pra sair errada de um jeito diferente. O pedido era "uma porta
+de vidro igual à da sede"; ela é literalmente a mesma.
+
+**A planta**, fiel à foto: **170 × 270** (8,7 × 13,8 m). Começou em
+116 × 232 (no apertado a quarta cadeira de cada mesa batia na parede e
+não havia como entrar atrás do balcão), foi a 200 × 400 (aí sobrou chão
+pelado), voltou pra 190 × 320 e parou aqui — depois que a mobília
+passou a ter o tamanho certo, o mesmo salão passou a caber em menos
+chão.
+
+| onde | o que |
+|---|---|
+| sul | a fachada com a porta de vidro de duas folhas |
+| oeste | faixa de serviço, balcão em L, prateleira de garrafa |
+| sudoeste | as pilhas de engradado de cerveja |
+| meio/leste | três mesas de pé central, cadeira de plástico |
+| norte | dois freezers, e a TV passando futebol em cima deles |
+| nordeste | o banheiro |
+
+**Só nas faces LESTE e OESTE do quarteirão.** O miolo tem uns 595 no
+sentido comprido e 249 no curto: 270 de fundo só cabe no comprido, que
+corre em x. Virado pro norte ou pro sul o bar não entraria — e é melhor
+ele existir numa face certa do que caber torto em qualquer uma.
+
+**Dá pra entrar no balcão.** A faixa de serviço atrás dele tem 38 de
+vão, e o corpo pede 24: o dono do bar fica atrás do balcão de verdade.
+Ela fecha ao sul pelo pé do L e a leste pelo braço comprido, e fica
+aberta ao norte — que é por onde se entra, como em balcão de verdade.
+No armário encostado na parede oeste, duas prateleiras de garrafa:
+âmbar de uísque, verde de cerveja, incolor de cachaça. Cada garrafa são
+três caixas (corpo, ombro e gargalo) mais a faixa do rótulo.
+
+**Oito banquetas** em volta do balcão, do lado do freguês — a leste do
+braço comprido e ao sul do pé do L. O assento são duas caixas cruzadas
+a 45°, que de cima leem como octógono: é o mais perto de redondo que
+sai por 24 triângulos. Elas NÃO bloqueiam, pela mesma razão da cadeira
+de plástico: uma fila delas encostada no balcão fecharia o corredor que
+leva ao fundo do bar, e banqueta se empurra com a perna.
+
+**O piso é xadrez de verdade**, como na foto, e é UMA peça: o 3D
+desenha só os ladrilhos escuros por cima do piso claro que já está lá —
+metade da geometria pelo mesmo desenho, umas 300 faces por bar. (Ele
+nasceu invisível: a 1,76 o ladrilho caía DENTRO da caixa do `piso`, que
+vai de 1,70 a 1,85. Subiu pra 1,92.)
+
+**Três coisas o corpo obrigou a mudar**, e todas vieram da varredura,
+não do olho:
+
+1. **Mesa no meio do salão parte o bar em três.** Centralizada ela
+   deixava 19 de cada lado; o corpo pede 24. As mesas foram pra parede
+   leste e o corredor oeste ficou com 30 inteiros — que é também o que
+   bar apertado de verdade faz.
+2. **Freezer com folga atrás vira armadilha.** A 22 da parede sobrava
+   um corredor de 15 entre eles e a mesa do fundo: estreito demais pro
+   corpo, largo demais pra sumir. Encostados na parede, o corredor é o
+   vão inteiro.
+3. **A porta do banheiro tem 28, não 34.** Com 34 o vão comia a parede
+   inteira (ela tem 36) e sobrava menos de 3 de cada lado, que o
+   `comVaos` descarta — o banheiro ficava sem parede sul nenhuma.
+
+**A cadeira é a dobrável de madeira** de bar de esquina: assento de
+RIPA com fresta, encosto de ripa larga no alto, montante de trás
+subindo do chão e travessa embaixo. São as frestas que fazem ela ler
+como cadeira de madeira e não como banquinho — por isso cada ripa é uma
+caixa, e não um tampo só. Os membros nascem em coordenada da cadeira
+(`u` pra frente, `v` pro lado) e giram pro mundo; sem isso ela sairia
+sempre de frente pro norte.
+
+A mesa bloqueia e a cadeira não: cadeira de bar se empurra com o pé, e
+uma fila delas fechando o corredor seria pior que qualquer ganho de
+fidelidade. Medido: **330 e 336 células de corpo dentro dos dois bares,
+todas alcançáveis da rua** — e com 20 bonecos dentro sobra corredor pra
+andar, que era o teste que o dono pediu.
+
+### 4.19. A mobília em metros, e não em chute
+
+A primeira leva de móveis foi dimensionada em UNIDADE, no olho. Medida
+contra o boneco, saiu sistematicamente grande:
+
+| peça | real | devia ter | tinha |
+|---|---|---|---|
+| mesa de bar | 0,75 m | 15 | 27 (1,8×) |
+| assento de cadeira | 0,45 m | 9 | 17 (1,9×) |
+| banqueta | 0,75 m | 15 | 26 (1,7×) |
+| balcão | 1,10 m | 21 | 30 (1,4×) |
+| freezer | 0,88 m | 17 | 28 (1,7×) |
+| TV | 1,10 m | 21 | 64 (3,0×) |
+
+Cadeira com o assento na altura do quadril, mesa na altura do peito, TV
+de três metros. A causa está no comentário da escala, que dizia "39
+unidades, 4,5 cm" enquanto a constante do arquivo diz `METRO = 34/1,75`
+— 5,1 cm. Medido o boneco na cena: **36,9 unidades** com o braço
+levantado, ou seja a constante é a certa e o comentário é que estava
+errado. Os dois foram corrigidos.
+
+Agora `obra()` entrega um `m(metros)` e a mobília inteira sai dele:
+`m(0.75)` é a altura de uma mesa, `m(0.45)` a de um assento. O número
+fica conferível na leitura, que é o que o chute em unidade não
+permitia.
+
+**A largura da porta é a única medida que NÃO pode ser real.** Uma
+folha de 0,80 m daria 16 unidades e a máscara exige 24 pro corpo passar
+— o corpo do motor de luta é largo demais pra escala do desenho, que é
+a calibragem que o §9 chama de "boneco de mesa". O vão desceu de 40
+(2,06 m, portão de garagem ao lado do boneco) pra **30** (1,54 m), que
+é o mínimo que ainda passa corpo com folga. É a única peça da cena que
+mente sobre a escala, e mente de propósito.
+
+De quebra, mobília menor é mais chão livre: as células de corpo dentro
+dos bares foram de 408/434 pra **518/546**, e as da sede nível 1 de 352
+pra **368**.
+
+### 4.20. A pixação é da torcida, e muda de dono
+
+Antes, o que estava escrito nos muros vinha de uma lista de 25 frases
+soltas — `VENDE-SE`, `CUIDADO COM O CÃO`, `A TORCIDA MANDA` — sorteadas
+por texto e pintadas num preto de spray tirado por hash. Era textura de
+bairro e nada mais: ninguém era dono de nada.
+
+Agora a pixação de torcida é **assinatura**, e diz de quem é a rua.
+
+**O que ela escreve** sai da ficha da torcida, em quatro formas:
+
+| forma | de onde sai | exemplo |
+|---|---|---|
+| nome por extenso | `nomeCompleto` | `TORCIDA JOVEM DO GRÊMIO` |
+| sigla | `siglaTorcida` | `TJG` |
+| sigla com o ano | + `fundacao` | `TJG - 1977` |
+| amor ao clube | `clube` | `GRÊMIO MEU AMOR`, `SOMOS GRÊMIO`, `VIVEMOS DE GRÊMIO` |
+
+`fundacao` não estava na ficha e passou a estar — era o único campo que
+faltava pra a terceira forma.
+
+**A tinta é SEMPRE a cor primária da torcida.** Isso tem um preço que o
+desenho tinha de pagar: metade das 140 torcidas do arquivo tem branco
+ou preto como primária, e branco em reboco claro some por completo. A
+saída não foi trocar a cor — foi pôr um **halo por baixo da letra**,
+escuro em tinta clara e claro em tinta escura. A cor de dentro continua
+sendo exatamente a que a torcida mandou, e ela lê em qualquer parede.
+De quebra, pixador contorna letra mesmo.
+
+**Onde ela vai:** muro e parede de casa, que é onde já ia. O muro,
+porém, deixou de receber a mesma tarja curta e baixa da casa: muro não
+tem porta nem janela, então ali a pixação toma a parede de ponta a
+ponta, na altura do peito. Na casa ela continua curta e baixa porque a
+janela do térreo começa em 26 e a porta toma o meio — é a faixa livre
+que sobra, não gosto. A proporção passou a ser a da célula do atlas
+(4:1), e a letra ganhou um esticão vertical de 1,18 com aperto
+horizontal de 0,88: pixação se escreve com o braço, e o traço sai alto
+e estreito.
+
+**De quem é cada muro** não é cara ou coroa: o peso é o **inverso do
+quadrado da distância às duas sedes**, com piso de 12% dos dois lados.
+Perto da sede da mandante quase tudo é dela, no meio do bairro é meio a
+meio, e os 12% garantem que sempre sobre pixação de rival pra cobrir
+perto de casa — que é onde o jogador começa. O mapa passa a ter
+território visível de longe.
+
+**O recado de parede ficou.** `VENDE-SE`, `ALUGA-SE`, `PINTA-SE CASAS`,
+`CONSERTA-SE GELADEIRA` não são pixação: são o anúncio de quem mora
+ali. Um bairro em que todo muro repete duas frases lê como cenário, não
+como bairro. A divisão é 66% torcida, 34% recado (`FATIA_PIXO`), e o
+muro grande do baldio é obrigado a ser de torcida, porque é o melhor
+pedaço de parede do mapa.
+
+Na cidade de hoje: **137 pixações de torcida** (72 da mandante, 65 da
+visitante) e 85 recados, com 12 textos distintos. O gradiente, medido
+por anel de distância à sede da mandante:
+
+| distância | dela | do rival |
+|---|---|---|
+| até 400 | 100% | 0% |
+| 400–900 | 100% | 0% |
+| 900–1600 | 87% | 13% |
+| acima de 1600 | 47% | 53% |
+
+O lado ruim disso está no primeiro anel: perto da própria sede não há
+pixação de rival pra cobrir. É consequência de haver poucos muros ali
+(cinco no raio de 900) e não do piso de 12% — a primeira de rival está
+a uns 1.000 do spawn. Se isso atrapalhar a descoberta da mecânica, o
+lugar de mexer é o `Math.max(0.12, ...)` do `ladoDoMuro`.
+
+#### Cobrir a do rival: o F, e a troca de UV
+
+Cada muro pixado guarda **as duas versões**, a da mandante e a da
+visitante, e as duas já entram no atlas na carga. Mostrar uma ou outra
+é apontar o quadrado pra uma célula ou pra outra:
+
+```js
+const a = p.mesh.geometry.attributes.uv, u = v.uv, i = p.i0;
+const f = [u[0],u[1], u[2],u[1], u[2],u[3],
+           u[0],u[1], u[2],u[3], u[0],u[3]];
+for (let k = 0; k < 12; k++) a.array[i + k] = f[k];
+a.needsUpdate = true;
+```
+
+**Doze floats.** Nenhuma malha se remonta — remontar pediria refazer os
+160 mil triângulos do bairro a cada lata de spray. `i0` é onde a UV
+daquele quadrado começa, guardado na hora em que `placa()` empilhou os
+seis vértices, e a ordem dos doze é a mesma que ela empilha.
+
+O atlas não engordou por isso: ele tinha **95 células** antes e tem
+**94** agora — as 25 frases soltas viraram 15 recados mais 12 textos de
+torcida, e o desenho continua num 1024 × 2048.
+
+**O F passou a fazer três coisas**, nesta ordem: porta ao alcance →
+pixação de rival ao alcance → agarrar do motor de luta. As duas
+primeiras quase nunca disputam (porta é de dentro da sede, pixação é de
+muro de rua), e quando disputam ganha quem está com a mão na maçaneta.
+O alcance da pixação é 62 (3,2 m) contra 46 da porta: porta se abre com
+a mão na maçaneta, pixação se faz a um passo da parede.
+
+A **dica não é barra de rodapé**: é um rótulo amarelo que fica SOBRE a
+tinta, projetado pela mesma conta dos rótulos de líder. O que falta
+saber não é que a tecla existe — é qual muro responde a ela. Ela some
+sozinha quando a pixação já é sua, porque `pixoPerto(x, y, lado)`
+ignora as do próprio lado.
+
+#### O sorteio compartilhado, mais uma vez
+
+O `rng()` do arquivo é uma sequência só, e TUDO que vem depois anda
+junto com ele. A pixação sorteia de quem é cada muro e qual frase vai
+nele — três números por muro — e isso, na sequência compartilhada,
+mudaria lote, árvore, moita e favela de lugar.
+
+Duas defesas, as mesmas de sempre:
+
+1. **Semente própria** (`semente(487219)`), que não consome um número
+   da sequência de fora.
+2. **O `escolher(RECADOS)` continua saindo do `rng()` compartilhado**,
+   gastando exatamente um número como o `escolher(PIXACAO)` de antes —
+   mesmo quando o muro acaba sendo de torcida e o recado é jogado fora.
+
+Prova: a máscara continua em **100,0% alcançável com 8 células presas**,
+o mesmo número de antes da mudança.
+
+### 4.21. O chão em PBR, e a nuvem que faz sombra
+
+O chão tinha um número que explicava tudo: **9,1 pixels por metro**
+(4096 px esticados sobre 450 m de mundo). A referência que se persegue
+tem 256 a 512. Pintar o mundo nessa densidade daria 115.200 × 86.784 px
+— dez gigapixels. Não é questão de caprichar na pintura; é impossível
+por aritmética.
+
+A saída é a de qualquer motor: **a pintura deixa de ser a aparência e
+vira a máscara**. `texChao` continua dizendo onde é rua, calçada,
+granulado e grama — pela mesma paleta que o `estadio_pintura.js` já
+usava — e o grão vem de texturas pequenas ladrilhadas a cada 2–4 m.
+1024 px a cada 4 m são 256 px/m: a conta fecha.
+
+| superfície | antes | depois |
+|---|---|---|
+| chão | 9,1 px/m | **256 px/m** (onde há textura na pasta) |
+
+Duas decisões que não são gosto:
+
+- **O grão entra pela luminância, multiplicando; a cor entra à parte,
+  por canal (`tinta`).** Na primeira versão só a luminância entrava e a
+  cor era toda da planta — o que não deixava o bege da areia tingir o
+  asfalto, mas também deixava a rua pintada de quase preto (#3a3a38)
+  quase preta com qualquer textura. Hoje cada canal diz quanto da cor
+  da textura entra: asfalto 0,45 (escolhido entre três renderizações),
+  concreto 1, areia 0,16. A luminância segue normalizada pela média da
+  própria imagem, e com um ganho automático pelo desvio dela: textura
+  de pouco contraste (o concreto) é esticada até render a mesma
+  variação que as outras.
+- **O UV ladrilhado sai do mesmo `vMapUv` da pintura**, multiplicado
+  pelo tamanho do mundo. O three.js monta a base tangente a partir
+  desse UV; amostrar o relevo num UV de outra orientação sairia
+  espelhado num eixo — buraco virando bolha só no sentido norte-sul.
+
+**A armadilha que custou a primeira versão:** a máscara foi escrita
+num canvas RGBA, e canvas guarda **alfa pré-multiplicado**. Um pixel
+"100% asfalto" é R=255, A=0 — e volta do `getImageData` como zero puro.
+A máscara nasceu **98% vazia** e só o canal da grama (que é o próprio
+alfa) sobreviveu. A correção é uma `DataTexture`, que leva o array
+direto pra GPU sem passar por canvas.
+
+#### A nuvem, e por que a sombra é fiel
+
+Duas coisas que têm de ser a mesma: o lençol que se vê e a sombra que
+ele faz. As duas saem da mesma textura, na mesma escala, com o mesmo
+vento — e a função que lê a nuvem é literalmente o mesmo GLSL nos dois.
+
+O que faz a sombra ser fiel é o **deslocamento**: nuvem não sombreia
+embaixo de si, sombreia do lado oposto ao sol. Uma nuvem a `H` de
+altura com o sol na direção `L` joga a sombra a `H/L.y · L.xz` de
+distância. Com o sol desta cena (elevação de uns 49°) e nuvem a 2.200,
+a sombra cai **1.683 unidades a oeste e 906 ao norte** da nuvem — uns
+87 m. É essa conta que faz o olho aceitar as duas como a mesma nuvem.
+
+A sombra desconta **só a luz direta**. A hemisférica é o céu, e o céu
+continua lá quando a nuvem passa: embaixo dela fica mais azulado e mais
+chapado, não preto.
+
+Três coisas que pareciam óbvias e estavam erradas:
+
+1. **A escala é de jogo, não de meteorologia.** Uma nuvem real tem
+   quilômetros; este mundo tem 450 m. Uma nuvem fiel cobriria a cidade
+   inteira de uma vez e a sombra leria como "a tela escureceu" — foi
+   exatamente o que aconteceu com ladrilho de 2.600. Em **1.500**
+   cabem umas seis no mapa e dá pra ver a mancha andando.
+2. **O céu apaga por ângulo, não por distância.** O fade por distância
+   parecia a conta certa e apagava o céu inteiro: de uma câmera rente
+   ao chão, o lençol todo está longe. O que precisa sumir é o rasante,
+   onde o raio quase tangencia o plano.
+3. **O sol teve de subir junto** (1,0 → 1,45). Sombra de nuvem
+   *subtrai* luz; adicioná-la sem mexer no sol só deixa a cidade
+   inteira mais escura — troca sol por penumbra em vez de criar
+   contraste. Com 1,45 o trecho no sol fica mais claro do que era e o
+   trecho na sombra cai perto do nível antigo.
+
+#### O que ainda não recebe a nuvem
+
+A sombra entra em **25 materiais** — chão, cidade, estádio. Os ~400
+restantes são os bonecos, que ficam de fora de propósito: o corte de
+distância usa `InstancedMesh`, e ali `modelMatrix` é a matriz da malha
+inteira, não a de cada instância — todos seriam sombreados pelo mesmo
+ponto de nuvem. Um bonde inteiro escurecendo junto no meio de uma rua
+clara seria mais visível como bug do que a falta da sombra é hoje.
+
+#### O caminho das texturas
+
+`ferramentas/arrumar_pbr.py` normaliza qualquer pacote (Poly Haven ou
+ambientCG) pro mesmo nome e tamanho, escreve o `manifesto.json` e apaga
+os originais. O manifesto existe pra o carregador **pedir só o que
+existe**: sem ele, seriam seis 404 vermelhos no console a cada carga,
+num projeto que trata "erros: nenhum" como regra.
+
+Hoje `areia/`, `asfalto/` e `concreto/` têm textura de verdade (Poly
+Haven; 15 MB de 4K viram ~1 MB de 1K). A grama cai num grão gerado,
+com a mesma conta de normal map de sempre — a cena nunca fica pior do
+que estava, e cada pacote que chega melhora um pedaço sem tocar em
+código.
+
+#### A calçada que não mostrava o concreto
+
+Com o concreto na pasta, a calçada continuou igual — e a suspeita do
+dono ("a textura antiga deve estar misturando") estava certa. A
+calçada e o miolo do lote **não são o chão**: são lajes elevadas
+(1,4 e 1,6 de altura) do `bairro3d.js`, e o topo delas vestia o reboco
+das paredes. O plano do chão, com o concreto, estava lá embaixo,
+coberto. Na cidade inteira o plano só aparece na rua.
+
+A correção tira o topo dessas lajes da malha do quarteirão e o põe numa
+malha própria, `lajes:chao`, com UV no mesmo sistema do plano
+(`(x − VX0)/VW`, `1 − (z − VY0)/VH`) e **o mesmo material do chão**. A
+laje continua com a altura e as bordas dela; só o que se pisa passou a
+ser o chão. As lajes de equipamento e de quintal ficaram como estavam.
+
+#### A faixa amarela e o anel em volta dela
+
+Consertada a calçada, cada tracejado da avenida apareceu dentro de um
+halo — roxo numa versão, um retângulo escuro na seguinte. Foram três
+causas empilhadas, e a última é a que importava:
+
+1. **Grão negativo.** O ganho era `1 + (razão − 1) × ganho`; com ganho
+   3 e um pixel escuro da textura a conta ia a −1,1. Na borda amarela
+   o negativo comia vermelho e verde e sobrava azul. Virou potência
+   (`razão^ganho`), que nunca passa de zero.
+2. **Conta não linear na cor.** Travas e um "isto é tinta ou é
+   asfalto?" decidiam diferente pro pixel que o mipmap borra entre
+   amarelo e cinza. A conta final é linear na pintura (textura +
+   diferença pra base, quando mais clara; textura × s, quando mais
+   escura), e o pixel borrado sai a mistura dos dois lados.
+3. **A máscara classificava a mistura.** A pintura tem 11 cm por
+   pixel e o tracejado tem 2 px com antisserrilhado: nenhum pixel dele
+   é o amarelo da paleta. Medido, é `#827a51` (50% amarelo sobre a rua)
+   e `#5e5a45` (25%) — que caíam no `lote` e na `moita`. Terra e grama
+   em volta de cada tracejado. Agora a classificação é feita na
+   pintura cheia, com a média dos PESOS por texel, e pergunta também
+   se o pixel está na reta entre uma tinta e o piso dela
+   (`MISTURAS`: eixo e faixa sobre a rua, linha sobre o gramado).
+
+Custo: a máscara passou a ler os 12,6 milhões de pixels da pintura. O
+que pesava não era a conta, era **a leitura**: com o canvas da pintura
+na GPU (o padrão do navegador) cada `getImageData` é uma cópia de volta
+de 50 MB, e medido na carga a máscara levava **3,8 s — já na versão
+antiga**, que encolhia a pintura com `drawImage` e pagava a mesma cópia
+sem aparecer em lugar nenhum. Criando o canvas com
+`willReadFrequently: true` ele fica na memória: a máscara cai pra
+**0,36 s** e a cena fica pronta 3 s antes (9,2 → 6,1 s no navegador de
+teste, que roda sem placa de vídeo).
+
+O tracejado ainda sai **apagado** de perto. Isso não é o shader: 2 px
+a 11 cm/px é o que a pintura consegue desenhar. Faixa nítida pede
+geometria própria (uma tira fina com a tinta) ou decalque — não mais
+resolução no chão inteiro.
+
+### 4.22. Os marcos: cinco prédios modelados peça por peça
+
+A cidade é de lote sorteado — casa, sobrado, galpão — e nenhum lote é
+um prédio que se reconheça. Entraram cinco, feitos a partir de
+fotos de modelos de referência:
+
+| marco | onde | tamanho |
+|---|---|---|
+| a igreja matriz (barroco mineiro: duas torres com cúpula bulbosa e pináculo, frontão de volutas com medalhão, cantaria, porta verde) | quarteirão 3,9, ao sul da Praça da Matriz — a praça já tinha o nome e não tinha igreja; a fachada dá pra rua de oeste e o lado comprido fica de frente pra praça | 12 × 21 m, torres de 18 m |
+| o prédio alto (embasamento de dois pisos com a quina chanfrada e a faixa vermelha, 12 andares de caixilho preto, painel ocre nas empenas, a ala mais baixa, casa de máquinas) | ponta leste do 3,5, na esquina: a quina chanfrada fica no cruzamento | 20 × 12 m, 47,6 m de altura |
+| o prédio de três andares com o mercado (tijolinho, letreiro verde, porta de enrolar, faixa marrom nas janelas, ar-condicionado, toldo, garagem com telhadinho) | ponta leste do 2,4, na rua por onde a torcida da casa sobe pro estádio | 18 × 12 m |
+| o centro administrativo (tijolo aparente e janela em fita azul sobre pilotis, faixa verde-azulada, toldo azul, ala baixa) | ponta oeste do 4,4, de frente pro hospital | 41 × 12 m |
+| a casa de classe média (sobrado cinza com portão de garagem e janela gradeada no quadro saltado, edícula verde com portão de grade) | ponta oeste do 3,10, esquina do bairro residencial do sul | 10 × 12 m |
+
+A escala vertical é a do boneco (andar de 2,9 m, porta de 2,1 m). A
+horizontal teve de caber: o quarteirão desta cidade tem 31 × 13 m, e
+todo marco ocupa a profundidade inteira de um. A igreja tem a
+proporção da foto (fachada de 12 m, nave mais capela-mor de 20 m); o
+prédio alto ficou com os 12 andares da foto e é, de longe, a coisa
+mais alta do mapa — 3 vezes a torre de refletor.
+
+**Por que entram no fim da planta, e não com os equipamentos.** O
+`rng()` é compartilhado, e quarteirão com fatia de equipamento gasta
+diferente (o quintal encolhe, o puxadinho não sorteia posição). Um
+marco posto lá em cima mudaria o sorteio da cidade inteira dali pra
+frente. No fim, ele só troca o que está embaixo: conferido lote por
+lote contra a versão anterior, os 643 lotes fora dos cinco
+quarteirões saem idênticos, e os carros e a favela também.
+
+**A fatia.** Parte da largura pedida na ponta do quarteirão e engole
+os lotes que pisa: o que sobra com 2,5 m ou mais de frente é aparado,
+o que sobra menos sai e a fatia cresce até a divisa dele. 43 lotes
+saíram (719 → 676). Árvore de calçada cuja copa encostaria num volume
+também sai (13 delas).
+
+**A massa é uma fonte só.** Cada modelo declara na planta (`MASSAS`),
+em metros e no referencial dele, os volumes grandes. Na planta eles
+viram o que bloqueia o boneco (`q.solidos`) e o que a câmera não
+atravessa (`noMarco`, chamado de `solido`); no 3D são o esqueleto da
+fachada. O volume pode ter `base`: o andar de cima do centro
+administrativo, por cima da colunata, a câmera não atravessa, mas o
+boneco passa embaixo, entre os pilotis.
+
+**A fachada é montada, não modelada.** `ferramentas/pintar_modelos.py`
+pinta uma folha de textura por prédio (`img/texturas/modelos/`): a
+janela do prédio alto com o peitoril, a porta verde com a cantaria, o
+letreiro do mercado, o reboco, o tijolo, a telha. O script também
+escreve `js/diajogo/modelos_atlas.js`, que diz onde cada peça caiu na
+folha e quanto ela mede em metros — **não se edita esse arquivo à
+mão**: muda-se o pintor e roda-se de novo. O 3D
+(`js/diajogo/modelos3d.js`) repete as peças (o 7º andar usa a mesma
+janela do 3º) e ladrilha as superfícies lisas no tamanho de mundo
+delas, recortando no contorno da face. Relevo que conta é geometria:
+pilastra, cornija, laje, requadro de janela com fundo, toldo,
+ar-condicionado, cúpula no torno, frontão extrudado.
+
+Quatro coisas que decidiram como ficou:
+
+1. **Parede e janela nunca se sobrepõem.** A fachada é partida pela
+   grade das bordas dos vãos: cada pedaço é parede ladrilhada OU a peça
+   do vão, no mesmo plano. Pôr a janela 2 cm na frente da parede daria
+   briga de profundidade a 100 m de câmera.
+2. **Tijolo tem de caber inteiro no módulo.** Com 10,6 tijolos por vão,
+   cada módulo terminava num tijolo cortado e a junta dele virava uma
+   costura clara a cada 2,4 m. O pintor estica o tijolo o que for
+   preciso pra caber um número inteiro.
+3. **O frontão é um contorno só.** O desenho das volutas está em
+   `FRONTAO`, no pintor; a folha pinta a cantaria acompanhando a borda
+   dele e o 3D extruda o mesmo polígono (sai no atlas).
+4. **Grade é `alphaToCoverage`.** Barra de 3 cm com recorte seco de
+   alfa virava chiado de longe (moiré no portão inteiro); com o alfa
+   virando cobertura do antisserrilhado ela só clareia com a distância.
+
+Custo: 14.870 triângulos (a cidade tem 160 mil), sete malhas, seis
+texturas somando uns 800 KB, e 60–100 ms na carga pra montar tudo. A
+câmera e o boneco foram conferidos contra os volumes: não se entra na
+nave, anda-se sob a colunata e no pátio que sobra atrás da igreja.
+
+O que não é fiel à foto, dito com todas as letras: as texturas são
+PINTADAS por código, não fotografadas — os sites de textura CC0 estão
+bloqueados na rede deste ambiente. De perto se vê que o reboco é
+ruído e a mercadoria da vitrine são retângulos coloridos. A forma, as
+proporções, as cores e os elementos (cada janela, pilastra, toldo,
+aparelho de ar) são os da referência. Trocar uma folha por foto de
+verdade não mexe em código: é pintar (ou colar) por cima da célula
+certa da folha e manter o tamanho dela.
+
+### 4.23. As casas da cidade: cinco tipos que vestem os lotes
+
+Depois dos marcos, a casa comum. Cinco modelos de referência passaram
+a ditar como a casa de verdade da cidade é feita — não cinco casas
+postas num lugar, mas cinco TIPOS paramétricos que vestem qualquer
+lote de casa, sobrado ou barraco, do tamanho que ele tiver
+(`js/diajogo/casas3d.js`):
+
+| tipo | referência | sai de |
+|---|---|---|
+| T1 | casa térrea de reboco branco encardido, telhado de duas águas com a calha na frente, porta de veneziana, janela de correr e basculante | 78% dos lotes `casa` |
+| T2 | casa de tijolo sem reboco: embasamento de cimento, borda da laje à mostra, ferro de espera. Com dois andares é a da foto, em L — o bloco do terraço na frente (porta de ferro e janelinha, mureta de tijolo por terminar em cima), o de dois andares recuado, a escada de alvenaria no dente entre os dois e o pilar solto na frente dela | 22% das `casa` (térrea) e 28% dos `sobrado` fora do centro |
+| T3 | casa com PONTO COMERCIAL embaixo: porta de enrolar entre pilastras (uma meio aberta mostrando a prateleira), porta do apartamento, quadro de promoções, marquise, letreiro da loja; em cima, janela de cortina. Só a frente é pintada, o lado é reboco cru | todo lote com `placa` |
+| T4 | sobrado de laje com as caixas d'água azuis em cima, térreo recuado sob o balanço do andar de cima, grade preta nas janelas, garagem de telhadinho com portão de ferro de lança quando a frente passa de 6,3 m | o resto dos `sobrado` |
+| T5 | casarão colonial: cunhal, friso, cornija, guilhotina de moldura amarela, porta-janela em arco com a sacada de gradil, telhado baixo de quatro águas | 60% dos `sobrado` perto da Praça da Matriz, 12% no resto |
+
+E a casa da FAVELA, que é da família do T2: o caixote de um a três
+andares com parede de tijolo, reboco cru ou pintada (a planta diz
+qual em `parede`), coberto de telha, laje nua (o `barraco`) ou
+fibrocimento (o que a planta chama de `galpao` na favela é casa com
+telha de fibrocimento). Galpão, muro, prédio e sede continuam com o
+desenho antigo do bairro.
+
+**Quem vira o quê sai da POSIÇÃO do lote.** Um hash da posição
+escolhe o tipo, a cor, o lado da garagem, se a porta de enrolar está
+aberta. O `rng()` da planta não é tocado: a cidade continua igual casa
+por casa, só muda a roupa. A única mudança na planta é a anotação
+`parede` nas 280 casas da favela, tirada do mesmo número que já
+escolhia a cor — conferido contra a versão anterior, os 643 lotes, os
+carros e a favela saem idênticos.
+
+**Tudo cabe no lote.** Telhado por cima da calçada é o que a
+varredura pega. Quando o tipo tem beiral, marquise ou sacada na
+frente, a parede da frente RECUA o que eles avançam (`rec`), e nada
+passa pro lado: o vizinho está ali. Conferido vértice por vértice nas
+514 casas: nenhum passa da divisa.
+
+**A casa assenta na laje do lote.** No quarteirão o chão do lote é
+uma laje 1,6 acima da rua; a casa começa nela, e não enterrada.
+
+**O decalque procura parede livre.** A janela e a porta são FUNDAS
+(têm requadro), então o letreiro, a pixação e a falha de reboco não
+podem cair por cima de um vão — ficariam boiando na frente dele.
+`lugarDoDecalque` procura, nas paredes da frente, o lugar livre mais
+perto do que o bairro pediu, longe de vão, escada, cunhal e sacada, e
+encolhe o decalque se não couber. A pixação pode ir na porta de aço
+fechada (é das coisas mais comuns da cidade). Todos os letreiros e
+todas as pixações acharam lugar. A falha de reboco só vai em parede
+de reboco — tijolo e reboco cru não têm reboco pra cair.
+
+**A mesma folha dos marcos, o mesmo construtor.** O construtor de
+fachada saiu de `modelos3d.js` pra `construtor3d.js` e é dividido
+pelos marcos e pelas casas. Ele ganhou duas coisas: a TINTA
+(`pintar`, ou `tinta` numa peça), que multiplica a cor do vértice —
+a folha tem um reboco claro só, e é a tinta que faz o sobrado verde, o
+mercado azul e o casarão amarelo, enquanto a janela desenhada sai sem
+tinta; e o VÃO EM ARCO (`arco`), porque a peça da porta-janela é
+retangular e o canto acima do arco tem de voltar a ser parede, com o
+intradorso fechando a volta. As peças das casas estão na folha
+`casas` (`img/texturas/modelos/casas.jpg`), pintada pelo mesmo
+`pintar_modelos.py`.
+
+Custo: cerca de 118 mil triângulos nas 514 casas (o T1 tem uns 200, o
+casarão uns 500; o bairro inteiro foi de 87 mil pra 183 mil), 26
+malhas (a das casas e a das grades, por pedaço de quarteirão e por
+quadrado de 80 m fora dele — a favela inteira numa malha só nunca
+sairia do quadro), duas texturas e uns 350 ms na carga. Na vista do
+jogo foram 18 chamadas de desenho a mais (173 → 191). Duas coisas
+seguraram o custo: a faixa (borda de laje, embasamento) desenha só o
+lábio em cima e embaixo, e não a tampa inteira ladrilhada com a peça
+de 30 cm — era de onde saía metade dos triângulos —, e a escada
+desenha só a frente, o piso e o espelho de cada degrau.
+
+O que não é fiel, dito com todas as letras: as texturas continuam
+PINTADAS por código. As casas mais estreitas (a favela tem casa de
+1,8 m de frente) não comportam o tipo inteiro: a janela sai antes da
+porta, e três casas ficaram só com a porta. O T2 de dois andares
+precisa de uns 5 m de frente pra ter o L com a escada; abaixo disso
+ele vira o caixote de dois andares. O quarteirão desta cidade é raso
+(13 m pros dois lados), então as casas têm de 2,5 a 6,5 m de fundo:
+a proporção é de casa de frente larga e pouco fundo.
+
+### 4.24. As casas grandes da favela: laje com terraço, casa rosa, bar e lanchonete
+
+Mais quatro referências, estas de favela: a casa de laje em três
+níveis com o terraço e o guarda-sol, a casa rosa atrás do muro com
+quintal, o bar de esquina (em dois ângulos) e a lanchonete KI-DELÍCIA.
+
+**Elas não cabem no lote da favela.** A fileira sorteia casa de 2,6 m
+de frente por 2,5 de fundo; as referências têm de 5 a 8 m. Encolher
+seria perder o que elas são. Então a planta JUNTA vizinhas, como a
+casa que comprou a do lado (`juntarCasasGrandes`, no fim da favela):
+
+- só junta quem já encosta — vão de até 8 entre duas casas, nunca por
+  cima de beco, que fecharia passagem;
+- a casa funda pega as DUAS fileiras de costas, de beco a beco, e é
+  aí que a quadra dá os 4,5 a 6,4 m de fundo (quase sempre 4,5 a 4,9 —
+  os modelos se ajustam a isso);
+- o corte tem de cair numa junta das duas fileiras ao mesmo tempo, com
+  14 de folga: a fresta que sobra não passa corpo, então não vira ilha;
+- quem vira o quê sai de um hash da posição, em rodadas (uma de cada
+  por vez), com distância mínima entre duas iguais; o bar prefere a
+  ponta do trecho, que é esquina — a referência abre pros dois lados;
+- roda depois de tudo que sorteia a favela: nada fora dela muda, e
+  das 280 casas 236 ficaram idênticas.
+
+Saíram 9: 2 bares, 1 lanchonete, 3 casas rosas e 3 de laje, no lugar
+de 44 barracos. A casa nova herda a pixação de uma das engolidas (a de
+torcida, se houver); as outras se perdem (112 → 104 pixações na favela,
+71 → 67 cobríveis). A caixa d'água e a árvore que caíam dentro da casa
+nova — ou de uma das engolidas, que às vezes passa um palmo dela —
+saem: a caixa sobraria no ar.
+
+**Os modelos** (`f1`, `f2`, `bar`, `lanche` em `casas3d.js`):
+
+| modelo | o que tem |
+|---|---|
+| F1 | térreo de tijolo entre pilar e viga de concreto aparente, porta verde de vidrinho e vidraça verde de correr; o terraço com mureta e pilarete, guarda-sol listrado preto e branco, cadeiras azuis, caixa d'água; o quarto verde com a porta branca; em cima, a varanda de mureta e o quarto de reboco com janela e porta azul, coberto de fibrocimento |
+| F2 | muro de reboco encardido com o portão de madeira de X entre pilares, o pedaço de tijolo por terminar em degrau, quintal de grama com bananeira, caminho de cimento, varanda de fibrocimento em pilarete rosa, casa rosa com a barra mais escura, platibanda e telhado de fibrocimento sujo |
+| bar | térreo aberto sob a água de fibrocimento, pilar branco, a faixa de cerveja (na frente e no lado da esquina), piso de cerâmica, escada de ladrilho, prateleira de garrafa, armário amarelo, freezer, engradados, mesa de plástico com cadeira de madeira e de plástico; em cima, tijolo com duas janelas e caixa d'água; em lote largo, o portão de chapa marrom com o quintal do lado |
+| lanchonete | o muro pintado (nome, o que vende, os desenhos e o cardápio) esticado uma vez na frente inteira, a porta de grade azul com a chapa vermelha, a porta de enrolar com o toldinho vermelho e o degrau; o terraço com a caixa d'água grande, guarda-sol amarelo, mesa e cadeiras vermelhas, e o quartinho de tijolo no fundo |
+
+As peças novas (fibrocimento, grama, piso, ladrilho, os caixilhos
+verdes, a faixa de cerveja, o muro da KI-DELÍCIA, o toldinho, as
+portas, o freezer, os engradados, a prateleira, o pano dos guarda-sóis,
+o portão de chapa) foram pintadas na mesma folha das casas, que passou
+a ter 2048 × 1168; o pé de bananeira, recortado, foi pra folha das
+grades. A faixa de cerveja não tem marca nenhuma — é a cara da faixa.
+O construtor não mudou: o muro pintado é a parede ladrilhada com a
+peça do tamanho exato da parede (`tw`, `th`).
+
+O decalque da casa grande procura a parede certa: o da casa rosa vai
+pro muro (a casa fica atrás do quintal), o do bar pro andar de cima, e
+a pintura da lanchonete (nome e cardápio) não leva pixação por cima.
+
+**Um bug achado aqui, e que vinha do passo anterior.** O bairro põe os
+dizeres (letreiro, pixação, falha de reboco) ANTES de montar as casas
+da beira da estrada e da favela. Pra essas, a casa ainda não tinha
+dito onde fica a parede dela, e o código caía no plano velho da
+divisa: o letreiro e a pixação da casa de beira com a frente recuada
+boiavam na frente da parede (até 60 cm, no comércio de marquise), e a
+falha de reboco da casa rosa aparecia no ar em cima da varanda. As
+casas de fora do quarteirão agora saem antes dos dizeres.
+
+O que não é fiel, dito com todas as letras: as texturas continuam
+pintadas por código (o muro da lanchonete é mais limpo que o da foto,
+a faixa de cerveja é genérica); não há bicicleta, varal, fio nem poste
+das referências; e as fotos das casas grandes que acompanham este
+trabalho foram tiradas com o plano de corte da câmera logo na frente
+da fachada — no jogo o beco tem 1,6 a 2,2 m, e a casa do outro lado
+fica na frente de quem olha de longe.
+
+### 4.25. A segunda leva da favela: a casa da escada, o sobrado do varal, o das garagens e o do embasamento
+
+Mais quatro referências, pelo mesmo caminho da §4.24: a planta junta
+vizinhas encostadas e o `casas3d.js` desenha o modelo no terreno que
+sobrou. Elas escolhem DEPOIS das nove da primeira leva, no que ficou
+livre (`MODELOS2`, com a distância mínima menor — 5 m de outra casa
+grande, 15 de uma igual), então as nove não saíram do lugar. Coube uma
+de cada; a favela ficou com 229 lotes (216 barracos, idênticos aos de
+antes, e 13 casas grandes). As pixações da favela, somadas as duas
+levas, foram de 112 pra 97 (as cobríveis, de 71 pra 65). A passagem
+continua 100%.
+
+| modelo | o que tem |
+|---|---|
+| escada | a casa de esquina de reboco cru: o muro de tijolo que faz a CURVA na esquina (segmentos com o tijolo correndo contínuo), o portão de grade enferrujada, o quintal de cimento com a bananeira; a escada de laje por fora — o voo com o fundo inclinado à mostra — subindo rente à casa até a varanda de mureta; os dois pilares altos que seguram a varanda e o telhado de fibrocimento; porta escura, vitrô de grade branca, janela verde de grade, a antena e o varal |
+| varal | o sobrado de tijolo em pilar de concreto com a laje do meio saltada 60 cm pra frente (a varandinha sem guarda-corpo), a janela de caixilho de madeira, a porta de chapa marrom, o varal de roupa; embaixo, o muro baixo de reboco (é nele que picham), o portão de grade com o poste amarelo e o toldinho de zinco, e a porta aberta pro corredor branco; em cima, a laje com o ferro de espera e a caixa d'água; e o poste de concreto com as duas cruzetas, a luminária, o transformador e a antena |
+| garagem | a moldura de concreto ocre com os dois portões de garagem vermelhos de bandeira vazada em losango e a entrada funda da esquerda; em cima, o tijolo rosado sem reboco entre pilar de concreto, as duas janelas de alumínio, a antena e a telha de zinco |
+| base | a casa de tijolo sobre o embasamento alto de cimento: a escada maciça da frente subindo pra plataforma da porta, a do lado subindo pro patamar da porta de lado, a janela de cortina, a porta de veneziana, a fiada de furo de ventilação embaixo da laje e a laje saltada em cima |
+
+Três coisas que vieram junto:
+
+1. **O desenho espelhado.** A casa da escada foi desenhada com a
+   esquina à direita, como na foto; quando o terreno tem a esquina do
+   outro lado, ela é montada à parte e os vértices trocam de lado
+   (`espelhado`) — e as paredes que o bairro usa pro decalque também.
+2. **A antena e o varal são recorte**, na folha das grades, como a
+   bananeira; a antena não tem marca.
+3. **O tijolo rosado é outra peça.** Tinta só multiplica: o tijolo da
+   folha multiplicado por qualquer cor fica mais vermelho ou mais
+   escuro, nunca rosa claro. A casa das garagens tem a peça dela.
+
+O decalque segue a casa: a pixação vai no muro (casa da escada e
+sobrado do varal — como a pichação azul da foto), no cimento do
+embasamento, ou no andar de cima e nos portões vermelhos (o das
+garagens).
+
+O que não é fiel: a curva do muro é feita de seis retas; o poste não
+tem fio (não há fio na cidade); a garagem recua 32 cm da divisa pra
+antena não sair do lote; e as escadas desta favela são mais íngremes
+que as da foto (40 a 49°), porque o quintal da casa da escada tem de
+caber em 4,5 a 6 m de fundo.
+
+### 4.26. O galpão e o prédio comum da cidade
+
+O pedido foi modelar o galpão e o prédio "do mesmo jeito" das casas
+novas: porta, janela, portão de verdade em vez da caixa cinza com
+retângulo escuro. Desta vez não veio foto — os quatro modelos saíram do
+repertório de periferia de cidade brasileira, com as mesmas peças e o
+mesmo acabamento das casas (§4.23 a §4.25). São 67 lotes, todos fora da
+favela: 59 galpões e 8 prédios. Os 19 galpões DA favela continuam sendo
+o barraco da §4.24 — lá o galpão é barraco maior, não depósito.
+
+| modelo | onde | o que tem |
+|---|---|---|
+| G1 | 48 galpões (11 com letreiro) | o galpão de platibanda: bloco de cimento aparente (55%) ou reboco pintado, a frente alta escondendo o telhado de fibrocimento de duas águas (10°); o portão de correr de chapa com a porta de pedestre desenhada nele, a porta de ferro ao lado com o vitrô em cima; o aviso pintado na platibanda em metade dos sem letreiro (DEPÓSITO, OFICINA, ALUGA-SE); a fileira de vitrô alto nos dois lados e no oitão do fundo; o rufo e o cano de descer água na quina. No comércio: uma ou duas portas de enrolar (às vezes meio aberta, com a prateleira à mostra), a porta de ferro e o letreiro na platibanda |
+| G2 | 11 galpões | o galpão de telhado em arco: a abóbada de zinco (a onda corre na volta do arco, como na telha curvada de verdade), o oitão em arco com a veneziana de ventilação, o portão de correr, a porta e o vitrô, a calha dos dois lados. Só sai em galpão sem letreiro de pelo menos 4,2 × 3 m |
+| P1 | 4 prédios | o predinho de reboco pintado (oito cores), 3 ou 4 andares: a faixa da escada em tijolo de vidro com a porta do prédio embaixo, a sacada embutida com gradil e corrimão onde o apartamento tem 3,2 m, a janela com o ar-condicionado, o friso branco em cada laje, a platibanda pintada e a casinha da caixa d'água. Embaixo, a loja, a garagem de portão vermelho ou o vitrô de grade. Só a frente é pintada; lado e fundo são reboco cru |
+| P2 | 4 prédios | o prédio de tijolo que foi subindo: tijolo aparente entre pilar e laje de concreto, janela de alumínio de quatro folhas ou de madeira; embaixo, a porta de ferro e a janela de grade, ou a loja; em cima, a laje do último andar virou terraço de mureta de tijolo com o puxadinho no fundo (porta, janela, ferro de espera e caixa d'água). No lote raso, o último andar é inteiro, com os pilares subindo e a caixa na laje |
+
+Quem vira o quê sai da posição do lote (`sorteDe`), como nas casas: a
+planta não mudou, e as outras 463 casas saem idênticas — vértice por
+vértice, cor e contagem de porta e janela; só o UV andou, porque a folha
+das casas cresceu de 2048 × 1264 pra 2048 × 1424 com as peças novas
+(bloco, tijolo de vidro, vitrô alto, veneziana, portão de galpão, os três
+avisos, o fundo da sacada e o ar-condicionado).
+
+Duas coisas que vieram junto:
+
+1. **O térreo do comércio é mais alto** (3,35 m no P1, 3,55 no P2). Com
+   o térreo igual aos outros andares, a porta de enrolar comia a parede
+   e o letreiro ("GÁS E ÁGUA") não tinha onde ir.
+2. **Onde não há reboco, não há reboco caído.** O prédio de tijolo e o
+   galpão de bloco não ganham a falha de reboco do bairro — a pixação,
+   sim.
+
+Medido: 146.858 triângulos de casa (eram 117.164; +443 por prédio ou
+galpão, em média), 467 mil na cena com o boneco, as mesmas 193 chamadas
+de desenho (as casas entram na malha do pedaço). Nenhuma passando da
+divisa, nenhum NaN, nenhuma sem porta, todo letreiro achou lugar. A
+passagem continua 100% (as mesmas 8 células de antes), auditoria e
+varredura limpas. Os quatro modelos também foram forçados nos 67 lotes,
+com e sem letreiro: nada quebra, nada passa da divisa, e o letreiro
+sempre cabe — é o único teste do P1 com loja, que a planta de hoje não
+sorteia.
+
+O que não é bom:
+
+- **Cinco galpões sem vidro na frente.** Dois de 1,4 m (a sobra do lado de
+  um marco) são porta, parede e laje. Três lojas-galpão de 2,1 a 2,7 m
+  são só a porta de enrolar e o letreiro — a portinha de comércio
+  existe assim, mas não tem janela nenhuma.
+- **A loja meio aberta mostra prateleira colorida**, que é a peça da
+  loja do T3; num "MATERIAIS DE CONSTRUÇÃO" ela lê como livraria.
+- **Dois galpões vizinhos podem sair com a mesma cor e o mesmo portão**
+  — o sorteio é por posição, não olha o vizinho.
+- **Um degrau na calçada, que já existia:** uma sobra da laje de quintal
+  de um quarteirão cortado pela avenida fica entre a frente de um galpão
+  girado e a calçada, e aparece como um degrau de uns 30 cm na frente do
+  portão. É da planta (`q.quintal`), estava lá antes com a caixa velha,
+  e não foi mexido.
+
+### 4.27. O atacarejo ATACADEX, o tabuleiro maior e as casas de muro
+
+Dois pedidos juntos: um supermercado "inspirado" nas três fotos de um
+atacarejo, com o nome **ATACADEX**, no mato a oeste da cidade que o
+dono marcou no mapa; e as quatro casas de muro das fotos (de frente e
+de cima), três de cada, espalhadas pela cidade, cada cópia diferente.
+
+**O tabuleiro cresceu pra oeste.** O mato marcado ficava FORA do que se
+anda: `arredores.js` conta célula a partir de x = 0, e o tabuleiro
+começava na rua da borda da cidade. Mexer no recorte do mapa (`MAPA`)
+andaria o mundo inteiro, e cada sorteio por posição (o tipo e a cor de
+cada casa, as casas grandes da favela, a pixação) mudaria. Então quem
+anda é só o TABULEIRO: o x da simulação é o x da planta mais `DX`
+(1152). A planta, o 3D e tudo o que ela sorteia ficam onde estavam; a
+cena (os pontos de nascimento, as entradas, os postos da PM, as
+grades, as filas, a máscara) sai no x do tabuleiro, `mundo()` desconta
+o `DX`, e os quatro lugares que comparavam o líder com coisa da cidade
+(a porta da sede, a pixação, o telhado da sede que abre, o bandeirão
+do setor) descontam também. `DX` é 2 × 576, e 576 é o mmc de 8, 18 e
+64 — a célula da malha, a vaga de nascimento e a grade espacial de
+`combate.js`: com isso a noite de antes sai IDÊNTICA, disco por disco
+(medido com a mesma semente: 90 s, 76 discos, zero diferença). Com
+1040 ela saía equivalente, mas não igual. A parte velha da máscara é a
+mesma célula a célula, fora o terreno do atacarejo; a faixa nova é
+mato andável (94%, o resto é moita e casa de beira) e a passagem
+continua 100%. A carga não mudou (uns 7,5 s pra montar a cena).
+
+**O atacarejo.** Entra no fim da planta, como os marcos (sem sorteio),
+com a massa em metros declarada uma vez só (`MASSAS.atacadex`): ela
+vira o que barra o boneco e a câmera e o esqueleto do modelo
+(`modelos3d.js`, folha `atacadex.jpg`). Tem, da avenida pra dentro:
+
+| parte | o que tem |
+|---|---|
+| estacionamento | asfalto de guia a guia, 14 vagas pintadas, seis carros, a faixa de pedestre na frente da porta, a guia da avenida com as duas entradas e quatro postes |
+| marquise | 36 m de testeira azul com o filete verde e amarelo, o selo ATACADEX (vermelho-laranja) com o emblema do carrinho saindo por cima e o ATACADISTA; dez colunas brancas de pé amarelo e preto, na divisa dos nove vãos da vitrine |
+| vitrine | vidro com caixilho branco e as gôndolas lá dentro, a porta automática com o ENTRADA, o painel bordô e os cartazes de oferta |
+| galpão | 36 × 26 m, 8,8 m de altura, chapa branca com a faixa azul embaixo e em cima; pilastras azuis e a marca pequena na parede da cidade, a porta de serviço |
+| parede oeste | o painel amarelo da quina e as cinco docas com o fole preto, uma com a carreta encostada |
+| telhado | chapa com fileiras de claraboia, a platibanda por dentro |
+| totem | na esquina da avenida com a rua da borda: a marca, o horário e o ESTACIONAMENTO GRÁTIS |
+
+A marca é nossa: o nome é ATACADEX e o emblema é um carrinho num disco
+amarelo — nada da marca da referência. Pra caber, saíram do terreno 50
+moitas (do balde espacial também), duas árvores, 62 decalques de chão,
+sete casas de beira (cinco na avenida, duas retas na rua da borda) e o
+pedaço da trilha de terra que atravessava. Custo: 6.744 triângulos,
+uma folha de 172 KB e uma chamada de desenho.
+
+**As casas de muro.** Quatro modelos no `casas3d.js`, do jeito das
+fotos:
+
+| modelo | o que tem |
+|---|---|
+| M1 | a garagem coberta na frente, fechada pelo gradil sobre a mureta, com o portãozinho no canto; a água de telha da garagem entra embaixo do beiral da casa de quatro águas |
+| M2 | o muro alto com o requadro bege em volta do portão de garagem (de losango ou de chapa) e do portão de grade, o telhadinho da garagem; atrás, a casa de quatro águas com a caixa d'água numa torrinha de telhado próprio |
+| M3 | o muro com o portãozinho de grade na boca do corredor, o quintal na frente, a casa com a janela e a porta no corredor |
+| M4 | a casinha no meio do lote: muro baixo, o portãozinho, o quintal, a passagem do lado e, no lote fundo, o quintalzinho de trás |
+
+**Três de cada, espalhadas.** Quem escolhe o lote é a planta, sem
+sorteio: um modelo por vez, a casa térrea comum (sem comércio, fora da
+favela) que cabe o modelo e fica mais longe das já escolhidas; a
+primeira é a mais perto do meio da cidade. Deu doze casas pelo mapa,
+a mais perto de outra a 48 m. Os doze lotes eram T1 (10) e T2 (2); as
+outras 514 casas saem idênticas, vértice por vértice.
+
+**Cada cópia com a sua roupa**, do hash da posição: a cor do muro
+(branco, creme, gelo) e a da casa (branco, creme e os pastéis de
+bairro), a janela (de correr, de grade, veneziana), a porta (madeira,
+veneziana, ferro), a grade (preta, branca, enferrujada), a altura do
+muro, o lado do portão (a casa sai espelhada), o tom da telha, o
+requadro e o portão do M2, e às vezes um pé de bananeira no quintal.
+
+O que não é fiel, dito com todas as letras:
+
+- **O lote da foto tem uns 20 m de fundo; o da cidade, no máximo 7.** O
+  quintal ficou com 1,2 a 2,4 m, a edícula dos fundos não coube e na
+  garagem do M1 não cabe carro.
+- **O atacarejo é pequeno pra um atacarejo:** 36 × 26 m, na escala da
+  cidade (o quarteirão daqui tem 31 × 13 m); um de verdade passa de
+  100 m. Os carros do estacionamento são as caixas de carro da cidade.
+- **A borda do mapa ficou perto:** o chão pintado acaba uns 4,6 m além
+  da nova borda oeste, e de lá se vê o plano liso de areia que fica
+  depois dele. Empurrar a pintura mudaria o sorteio das moitas.
+- As texturas continuam pintadas por código.
+
+### 4.28. A rua sem saída, os dois prédios do baldio e os props de rua
+
+Três pedidos de uma vez: uma rua sem saída com casas em volta no miolo
+vazio que o dono circulou no mapa (o quarteirão 2,2, entre a avenida
+noroeste e a rua da delegacia); o terreno baldio virando dois prédios
+"no estilo do prédio que te mandei" (o prédio alto do centro, modelado
+peça por peça), sendo os dois das fotos; e o pacote de mobiliário de
+rua espalhado pelas calçadas — "os sacos de lixo ao lado dos tambores
+de lixo, caixas; cestos de lixo na praça, banco de madeira" —, tudo
+menos o poste, que ele vai mandar. Os três entram no FIM da planta,
+sem gastar `rng()`: o resto da cidade sai igual (medido abaixo).
+
+**A rua sem saída** (`SEM_SAIDA`, guardada em `q.semSaida`). Entra pela
+rua do sul no lugar do sobrado que ficava no meio da face, com 5,7 m
+de asfalto e calçada de 1,5 m dos dois lados; sobe 24 m pelo meio do
+quarteirão e acaba num T de retorno (16 × 5,1 m) encostado no fundo
+das casas da avenida. Em volta, dez lotes novos: três de cada lado da
+haste (4,8 m de frente, 5 m de fundo), três de frente pro T (a do meio
+e a de leste são sobrados, porque ali o fundo livre passa de 6 m) e,
+na ponta de oeste, onde o fundo das casas da avenida só deixa 2 m de
+chão, o muro de um terreno vazio com o "É PROIBIDO JOGAR LIXO". O tipo,
+a altura e a cor de cada lote saem da posição; a casa que vai nele
+(T1, T2, T4, T5…) e a roupa dela saem do hash, no `casas3d.js`, como
+no resto da cidade. Saíram o quintal e os dez puxadinhos do miolo; o
+sobrado da boca sumiu e o vizinho de leste estreitou pra 3,2 m. A rua
+é um conjunto de retângulos (asfalto, calçadas) e uma guia: o pintor
+do chão pinta calçada, asfalto e meio-fio; o `bairro3d.js` FURA as duas
+lajes (a de 1,4 da calçada no asfalto, a de 1,6 do lote no asfalto e
+na calçada — `menosRets`, corte de convexo por meio-plano), e a borda
+do furo é a guia; `andaNaCidade` anda nela antes de perguntar pelo
+miolo maciço. Um carro parado na haste; o T fica livre, que é retorno.
+
+**Os dois prédios** (`PREDIOS`, `MASSAS.torre1/torre2`, folha
+`torres.jpg`). O miolo murado do baldio virou um condomínio fechado de
+duas torres, uma em cada metade (22 × 19,6 m), de frente pra rua de
+oeste; a fileira de bares e lojas virada pro estádio ficou como estava.
+
+| prédio | o que tem |
+|---|---|
+| EDIFÍCIO MIRANTE | concreto cinza, térreo de 3,6 m e 18 andares (55,8 m, a coroa chega a 60 m); a frente partida pelo RASGO de 1,5 m de fundo com a cortina de vidro azul, a massa da esquerda um andar mais baixa, a da direita subindo na coroa da casa de máquinas com a veneziana, a quina de vidro azul que dobra pro lado; janelinha solta em coluna no concreto e o friso de laje no vidro; a caixa da portaria com o nome na frente |
+| RESIDENCIAL BELA VISTA | quadro branco, térreo de 4,2 m e 15 andares (47,7 m); os dois painéis de tijolinho laranja com a janela de requadro branco do lado das sacadas, as duas colunas de sacada recuada com o fundo de vidro azul, a borda branca da laje e o guarda-corpo de vidro em cada andar, e a ALETA branca no meio que passa 3,8 m do telhado, de chapéu; no fundo, as mesmas sacadas; o PÓRTICO de pilares de tijolinho e viga branca com o nome, amarrado na fachada, e a marquise da porta |
+| o condomínio | muro creme recuado 15 cm da divisa (frente, fundo e o lado da rua), guarita de vidro fumê com PORTARIA, portãozinho e portão de garagem de grade preta, jardim na frente, no lado e no fundo, e árvores |
+
+A massa de cada um (em metros, uma vez só) dá o que a câmera não
+atravessa — `noMarco` agora vale pra qualquer equipamento com
+`volumes`, não só marco — e o esqueleto do modelo; o terreno inteiro
+barra o boneco (condomínio fechado). O jardim é tinta no chão
+(`piso` com `soMapa`): a laje do pátio veste o material do chão, que
+lê a tinta, e a grama sai grama sem caixa nenhuma no 3D. A pixação de
+torcida do muro grande do baldio (a que dá pra cobrir) mudou pro muro
+do condomínio na mesma rua, com o mesmo dizer. Saíram o muro do
+baldio, o mato pintado, o entulho, os dois carros largados, as árvores
+e o poste de dentro, e 134 decalques de mato e entulho do chão. Custo:
+2.598 + 5.146 triângulos, uma folha de 116 KB e quatro chamadas de
+desenho.
+
+**Os props de rua** (`PROPS`, `props3d.js`, folha `props.jpg`). Catorze
+peças modeladas em metros: o contêiner verde de tampa cinza de duas
+folhas (com o encaixe do garfo e as rodinhas), a lixeira de rodinha de
+tampa colorida (laranja, vermelha, azul, verde, amarela), o saco de
+lixo de 100 litros (amassado, cada variante de um jeito, com o nó), a
+caixa de papelão aberta, o cesto de praça de chapa trançada (cinco
+cores), a barreira New Jersey, a caixa de correio vermelha, o
+hidrante, o balizador preto e amarelo, o balizador amarelo de espuma,
+o delineador laranja e branco, o cone, o cinzeiro de pé e o banco de
+ripa de madeira com pé de ferro. Cada peça é montada uma vez por
+variante e copiada pros lugares; o que cai no mesmo quadrado de
+1.600 vira uma malha (384 peças, 38,7 mil triângulos, dez malhas).
+
+Onde: na faixa de serviço da calçada (a que encosta na guia), um
+ponto a cada 7,7 m, longe da esquina; o hash do ponto diz se tem
+alguma coisa (um em três) e o quê — contêiner com sacos e caixas,
+lixeiras da coleta com sacos, sacos soltos, cesto, hidrante,
+balizadores, uma obra (barreira, cones, delineador), correio ou
+cinzeiro; atrás de comércio sai mais cinzeiro e correio. O grupo só
+entra se cada peça cabe na calçada, longe de tronco, poste, semáforo,
+faixa de pedestre, carro e de outro grupo — e o que barra não fica de
+frente pra carro parado na guia (no primeiro teste uma barreira fez
+um beco de dois quadradinhos entre ela e o carro). Na praça, os oito
+bancos de caixote viraram o banco de madeira, de frente pro coreto,
+com um cesto a cada dois; nas cinco pracinhas das cunhas, o mesmo. Na
+rua sem saída, duas lixeiras, quatro sacos e duas caixas amontoados
+debaixo do "É PROIBIDO JOGAR LIXO". Barram o boneco o contêiner, a
+lixeira de rodinha, a barreira e o correio; o miúdo e o banco da praça
+não (a praça é onde a torcida se junta).
+
+**O que se mediu.** A planta de antes contra a de agora: 618 lotes
+viraram 627 — só mudaram os dois sobrados da boca, mais os dez lotes
+novos; quarteirões, casas de beira, favela, árvores, postes e moitas
+idênticos; um carro a mais (o da haste) e 134 decalques a menos, todos
+no baldio. A máscara mudou em 7.174 células: 4.761 no baldio (o
+condomínio é fechado), 1.886 que passaram a ser andáveis na rua sem
+saída, e umas dezenas por quarteirão onde entrou peça que barra. A
+passagem continua 100% (os mesmos 10 bolsões isolados de antes, nenhum
+novo). As casas: 0 passando da divisa, 0 sem porta na frente; a
+auditoria de geometria e a varredura, limpas (a auditoria pegou a
+pixação do muro novo pendurada meio ponto sobre a calçada: o muro do
+condomínio recuou 15 cm da divisa, como o do baldio recuava). A cena
+monta em ~8,1 s (era ~7,5–8) e desenha 207 chamadas (eram 195).
+
+De quebra, um defeito antigo que o muro claro deixou à vista: o atlas
+dos letreiros e das pixações tinha as células de 256 × 64 coladas uma
+na outra, e o filtro da textura puxava a borda da vizinha pra dentro —
+toda pixação e toda placa da cidade tinham um fio tracejado em cima e
+embaixo. Agora cada célula tem um respiro de 4 px (o passo continua
+256), e a placa estende o fundo dela no respiro.
+
+O que não é fiel, dito com todas as letras:
+
+- **A rua sem saída não tem balão redondo.** O miolo tem 19 m de
+  largura: um balão de retorno ocuparia tudo e não sobraria lote em
+  volta. Ficou o T, que é o retorno das vilas daqui.
+- **Os prédios são mais altos que tudo na cidade** (o prédio alto do
+  centro tem 45 m; estes, 60 e 52). É o que as fotos mostram — 18 e 15
+  andares —, e de longe eles mandam no horizonte do estádio.
+- **Os nomes EDIFÍCIO MIRANTE e RESIDENCIAL BELA VISTA são meus**; a
+  foto não mostra nome legível. É trocar a célula no pintor.
+- **A caixa de correio diz CORREIO**, não POST: a cidade é brasileira.
+  A cor ficou a da referência (vermelha); a daqui seria amarela.
+- **O carro parado continua a caixa de carro da cidade**, que de perto
+  parece um degrau: foi por isso que o T ficou sem carro.
+- Os cestos da referência têm uma trama mais fina do que dá pra pintar
+  a 200 px por metro; de longe eles leem como chapa lisa colorida.
+
+### 4.29. O poste de concreto
+
+O poste que o dono mandou (a foto dos dois postes de concreto) veste
+os postes da rua (`K.POSTES`) no lugar da caixa de antes. Ele é mais
+uma peça do `props3d.js` (folha `props`):
+
+| parte | o que tem |
+|---|---|
+| fuste | 9,3 m de concreto octogonal afunilado (31 cm no pé, 16 cm no alto), o escorrido, a mancha escura no meio e as faixas brancas pintadas embaixo |
+| colar | a base branca octogonal de 60 cm |
+| cruzetas | duas, a 8,0 e 8,55 m, atravessadas no sentido da rua, e o chapéu do topo |
+| luminária | o braço de 1 m pra rua a 7,2 m, com a mão-francesa embaixo, e a cabeça clara com a lente |
+| transformador | em um de cada quatro postes (pelo hash do ponto): a caixa cinza com o aviso de perigo, do lado da calçada, e o cabo pendurado em laço |
+
+São 80 postes: os 76 de antes e os quatro da calçada dos bares do
+baldio, que davam pra rua do estádio e ainda eram o modelo velho; o
+poste pequeno continua só onde é de praça e de pátio. Custo: uns 230
+triângulos por poste (18 mil ao todo), na mesma malha dos props.
+
+### 4.30. A planta em HTML e a proposta de expansão
+
+`ferramentas/planta_html/` é uma página solta, publicada como artefato. Ela
+desenha a planta inteira nas cores do diagrama das quadras (o lote pela
+cor do tipo e o rótulo "casa n T1", calçada, miolo, quintal, árvore,
+carro, poste e prop), com a régua em coordenada de planta. O que se
+clica abre em 3D, e o 3D sai do mesmo código do jogo:
+
+- a casa do lote vem do `planoDaCasa`/`montarCasa`, com o letreiro e a
+  pixação no lugar que o `lugarDoDecalque` dá;
+- o marco e as torres vêm do `montarModelos`;
+- o poste e os props vêm do `moldeDaPeca`;
+- o equipamento aparece nos volumes em caixa, sem textura.
+
+A página roda a planta de verdade (`dados/cena_estadio.js` cortado antes
+da cena). Então, quando a cidade mudar, é rodar `montar.sh` de novo e
+republicar.
+
+A segunda aba é a proposta de dobrar as quadras crescendo pra oeste e
+pro norte (`proposta.js`):
+
+| | hoje | com a proposta |
+|---|---|---|
+| quadras | 37 | 83 (+35 de casa, +11 de equipamento ou praça) |
+| lotes em quadra | 323 | 724 |
+| casas de beira de estrada | 75 | 15 (60 ficam debaixo da grade nova) |
+
+(Os 627 lotes que a planta conta em `K.LOTES` são os 323 de quadra mais
+as 229 casas da favela e as 75 de beira.)
+
+- **A grade.** São três colunas a oeste (até x −2.360) e duas linhas ao
+  norte, no passo da grade de hoje: rua de 6,1 m e quadra de
+  35,6 × 17,8 m.
+- **O que não muda.** Favela, atacarejo, estádio e orla ficam como
+  estão. A quadra que encosta na favela ou no atacarejo encolhe, e
+  fica a opção de maior área. As duas que caíam em cima do atacarejo
+  (0,5 e 0,6) saem.
+- **As avenidas** ficam onde estão e cortam as quadras novas. O lote
+  que encosta nelas sai, e a quadra que fica com menos de 3 lotes vira
+  praça. A avenida norte parte ao meio as quadras da coluna 4.
+- **Os lotes** saem da mesma regra do `lotear`: testada, fundo, tipo,
+  placa em 26%, pixação, 1 em 8 casa de muro. A diferença é que são
+  sorteados por hash do lugar, não pelo `rng()` do jogo.
+
+O que não é fiel:
+
+- **A proposta não está no jogo.** Se a planta ganhar as colunas novas
+  de verdade, os lotes vêm do `rng()`. Mudam os detalhes (tipo, placa,
+  pixação), não a conta.
+- **Os equipamentos novos não têm modelo:** escola, posto de saúde,
+  igreja, campo e os dois terrenos de sede. O 3D mostra um volume de
+  estudo.
+- **Os nomes e o lugar de cada equipamento são sugestão**, não pedido.
+- **O tabuleiro andável** precisa crescer uns 58 m pra oeste. Pro norte,
+  o de hoje já vai quase até lá: falta 1,4 m da rua de cima.
+
+### 4.31. A proposta, 2ª versão
+
+O dono pediu pra refazer a proposta assim: favelas nas duas pontas (noroeste e sudoeste), o
+supermercado num extremo do mapa, a escola fora, uma cópia do quarteirão do estádio a
+sudoeste, mais três prédios de cada tipo em outras cores, mais 22 quadras (12 a oeste, 10
+ao norte) com a borda menos quadrada, e duas estradas de entrada, uma no norte e uma no sul,
+cada uma com o pórtico "BEM-VINDO A {cidade}".
+
+| | hoje | 2ª versão |
+|---|---|---|
+| quadras | 37 | 105 (+55 de casa, +13 de equipamento) |
+| lotes em quadra | 323 | 1.014 |
+| favelas | 1 | 2 (o mesmo desenho, 229 casas cada) |
+| casas de beira de estrada | 75 | 3 (as outras 72 ficam debaixo da cidade nova ou de estrada que acabou) |
+
+Onde ficou cada pedido:
+
+- **A grade.** São 12 quadras a oeste: a coluna −3 nas linhas 1 a 8 e um degrau na coluna −4,
+  linhas 2 a 5. As 10 do norte são a linha −2 inteira e um degrau na linha −3 (colunas 1 e 2).
+  A borda fica em escada.
+- **As favelas.** A de hoje vai pra ponta noroeste, transladada. A segunda é o mesmo desenho
+  girado de meia volta, na ponta sudoeste. O vão por onde a avenida noroeste2 passava vira a
+  rua principal das duas. O lugar da favela de hoje vira quadra, com a Praça da Vila no meio.
+- **O Atacadex** vai pra estrada de entrada do norte, de frente pra estrada e antes do pórtico.
+  A borda do estacionamento ficou reta, e as vagas, o totem e os postes da guia foram refeitos
+  com a mesma conta da planta.
+- **O Estádio Municipal** é o quarteirão do estádio copiado no meio de uma quadra de seis,
+  a sudoeste, com a esplanada em volta. No 3D aparece o volume: arquibancada em degraus,
+  cobertura, fachada e os quatro refletores.
+- **Os prédios.** São três condomínios na linha alta (a do estádio): (1,2), (−2,2) e (−4,2).
+  Cada um tem o par do baldio, com a mesma massa, e uma fileira de casas do outro lado. As
+  cores saem de `ferramentas/planta_html/pintar_variantes.py`, que roda o pintor da folha
+  `torres` com outra paleta. As células caem no mesmo lugar (o script confere o atlas), e o
+  modelo só troca a textura. Os pares:
+  - Horizonte e Porto Belo: concreto areia, vidro verde, tijolo vinho;
+  - Atlântico e Monte Verde: concreto branco, vidro fumê, pastilha grafite;
+  - Solar e Ipê Amarelo: concreto terracota, vidro bronze, tijolo mostarda.
+- **As entradas.** A do norte é a avenida norte, que sobe reta até a borda nova; a noroeste
+  termina num entroncamento com ela. A do sul é a avenida sudoeste. As duas vão dar no
+  estádio. A beira-mar termina nas duas pontas da orla, e as avenidas do oeste terminam na
+  borda da cidade (a noroeste2 na entrada da favela do noroeste): não sai outra estrada.
+- **O pórtico** é feito com o construtor e a folha da igreja: dois pilares com embasamento de
+  cantaria e fuste rebocado, viga rebocada com cornija de pedra e telhadinho de telha
+  colonial. As letras são aplicadas na viga: BEM-VINDO pra quem chega, VOLTE SEMPRE pra quem
+  sai. A ficha deixa trocar a cidade entre as 30 praças do jogo, e a preposição acompanha o
+  nome: a São Paulo, ao Recife, à Bahia.
+
+O que não é fiel:
+
+- **Nada disso está no jogo.** É a página.
+- **As favelas são cópias.** No jogo, a favela teria que ser gerada de novo nos dois lugares,
+  e a de hoje sai. Ela é o maior pedaço feito à mão da cidade, então isso não é pouca coisa.
+  Se for melhor manter a favela onde está, dá pra deixar a de hoje e pôr só a do sudoeste.
+- **O tabuleiro cresce bastante:** uns 163 m pra oeste (as favelas ficam na ponta), 100 m
+  pro norte (a estrada e o Atacadex) e 17 m pro sul (a estrada).
+- **Algumas praças são sobra.** Das quatro, três são o que sobrou onde a avenida corta a
+  quadra na diagonal.
+- **O Estádio Municipal é o mesmo estádio.** A cena da torcida teria que aceitar dois.
+- **Os equipamentos novos não têm modelo:** igreja, posto de saúde, campo e os terrenos de
+  sede.
+- **Parte das praças são regiões,** não cidades: "BEM-VINDO AO INTERIOR DE SP" não é placa
+  de verdade. O jogo precisaria do nome de uma cidade.
+
+### 4.32. A proposta, 3ª versão
+
+O dono circulou no mapa onde quer as favelas e as duas avenidas que não quer, e pediu mudanças
+em seis quadras.
+
+- **As favelas nas manchas circuladas.** Elas não são mais a cópia torta da favela de hoje:
+  nascem de novo dentro do polígono que ele desenhou (o gancho do noroeste, em volta do
+  condomínio −4,2, e a meia-lua do sudoeste, a oeste e ao sul do Estádio Municipal). A conta
+  é a da favela da planta:
+  - faixas de quadra miúda (86 a 124 de fundo) com beco de 32 a 42 entre elas;
+  - quadras compridas (500 a 850) em cada faixa;
+  - duas fileiras de casa encostada na casa, de 42 a 66 de frente;
+  - as mesmas alturas, coberturas, paredes e pixações;
+  - as 19 casas grandes de cada tipo, com o sorteio da planta (bar, lanchonete, a da escada…);
+  - um campinho de terra.
+
+  A diferença é que o beco é reto, de leste a oeste ou de norte a sul, como a rua da cidade.
+  Pra não ler como bairro planejado, o corte de norte a sul de cada faixa começa num lugar, e
+  o beco não emenda de uma faixa pra outra. O sorteio é próprio, de semente fixa.
+- **Saem as avenidas transversais do oeste**, a oeste e a noroeste2. As quadras novas que elas
+  cortavam voltam a ser inteiras; as duas praças de sobra somem. A 1,4 de hoje, que a oeste
+  rasgava na diagonal, é refeita.
+- **A rua no meio.** As quadras altas −3,2, −1,2 e 0,2 ganham uma rua de norte a sul. Cada
+  metade vira duas fileiras de casa de costas, sem o quintal enorme.
+- **As quadras juntadas.** 0,7 com 1,7, −2,3 com −1,3 e 0,−1 com 1,−1 viram uma quadra só
+  cada par, por cima da rua. A 1,7 é de hoje e entra na junta.
+
+| | hoje | 3ª versão |
+|---|---|---|
+| quadras | 37 | 105 |
+| lotes em quadra | 323 | 1.112 |
+| casas na favela | 229 | 1.724 (545 no noroeste, 1.179 no sudoeste) |
+
+**A favela encosta na cidade** (pedido seguinte do dono, com a faixa de mato entre a favela do
+noroeste e o condomínio −4,2 circulada):
+
+- **As faixas estreitas entram.** Entra na favela o ponto de fora da mancha cuja distância
+  até ela, mais a distância até a rua ou a quadra da cidade, não passa de 340 (17,5 m).
+  Assim, a faixa estreita entre as duas enche, e o mato largo do lado de fora fica.
+- **A casa encosta na rua.** A que batia na rua passa a ser aparada até a guia, no lugar de
+  sair.
+- **O canto do sudoeste também entra.** É o canto entre a favela e a quina da cidade, a oeste
+  de −3,6 a −3,8 e ao sul de −4,5.
+
+**Primeiro a grade, depois as casas** (pedido seguinte do dono). A favela não sorteia mais as
+faixas a partir da borda da mancha; ela usa a grade da cidade:
+
+- **As vielas.** Cada rua da cidade segue dentro da favela na mesma linha, como uma viela
+  de 48 (2,5 m) no meio da faixa da rua. As linhas depois da 10 seguem no mesmo passo.
+- **A borda.** Onde o quarteirão da favela encosta numa quadra da cidade, a rua da cidade
+  (na largura inteira) é a borda dele, e a casa dá direto pra ela.
+- **O miolo.** Cada célula da grade que cai na mancha e não é cidade vira um quarteirão de
+  favela. Ele é cortado em faixas de 86 a 124 com beco de 32 a 42 entre elas, e por um ou
+  dois becos de norte a sul (que às vezes não cortam a faixa). Dentro, vêm as duas fileiras
+  de casa e as casas grandes.
+- **O corte.** A mancha recorta as casas do lado do mato, e a viela e o beco só aparecem
+  onde tem casa do lado.
+
+Com isso a rua nova da cidade passou a ser pintada na largura inteira: era a meia rua que
+deixava um fio de mato entre a favela e a guia. As favelas ficaram com 545 e 1.179 casas.
+
+**A casa em cima do asfalto** (o dono desconfiou pela foto, e estava certo). A rua nova era
+pintada com RUA + 12, pra cobrir as ruas de 128 em volta da linha do estádio, mas a favela
+parava na RUA (118,8). Uma varredura casa a casa (9 × 9 pontos em cada casa contra a faixa
+de rua pintada, a avenida com a calçada e o asfalto da cidade de hoje) achou 48 casas no
+noroeste e 82 no sudoeste com até 11,5 (60 cm) em cima do asfalto.
+
+Agora cada quadra nova tem a faixa de rua dela na largura de verdade: até a borda da coluna
+ou da linha do lado, 118,8 quase sempre e 128 em volta da linha e da coluna do estádio; do
+lado de dentro da quadra partida, a rua do meio. É essa mesma faixa que a página pinta e que
+a favela não pisa. A varredura deu 0 casa em cima de asfalto. A rua nova também não pisa
+quadra de hoje nem miolo de quadra nova.
+
+
+O que não é fiel, ou pesa:
+
+- **As favelas ficaram grandes**, porque enchem a mancha inteira e agora encostam na cidade:
+  são mais de sete vezes as casas de hoje. No jogo isso pesa (triângulo e máscara). Se for
+  muito, é diminuir o polígono.
+- **O tabuleiro cresce ainda mais:** uns 213 m pra oeste, 100 m pro norte e 55 m pro sul.
+- **O polígono é o desenho à mão, lido da foto.** A borda da favela segue o traço, com a
+  imprecisão dele.
+
+### 4.33. Sete terrenos pra sede na proposta
+
+O dono pediu pelo menos sete terrenos pra sede no mapa. A proposta tem sete, espalhados pela
+cidade nova, numerados de 1 a 7 no mapa:
+
+| nº | quadra | onde |
+|---|---|---|
+| 1 | 5,0 | nordeste, a duas quadras do estádio |
+| 2 | 2,−3 | bairro novo do norte |
+| 3 | −1,−2 | noroeste |
+| 4 | −4,4 | ponta oeste |
+| 5 | 0,4 | meio do oeste |
+| 6 | −3,6 | oeste |
+| 7 | 0,9 | sul, perto da entrada |
+
+- **O tamanho** é a fatia que a sede de nível 3 da planta pede (a conta do `areaDaSede`: 72%
+  da frente da quadra, pelo menos 420, e o fundo inteiro), uns 22 × 12,8 m. Fica na ponta
+  oeste da quadra, com a frente pra rua. A sede de nível 1 usa só um canto dela.
+- **O resto da quadra** continua casa. As casas que caíam na fatia saem, e o quintal encolhe
+  até a divisa.
+- **Os dois terrenos de quadra inteira** da 2ª versão viraram fatia também. As sedes de hoje
+  (TJF e TJG) ficam onde estão.
+- **Na página,** o terreno é terra batida com a borda roxa. No 3D, é murado, com portão de
+  chapa e a placa TERRENO PARA SEDE.
+
+O que falta pro jogo: a planta hoje monta duas sedes (`SEDES.mandante` e `.visitante`).
+Pra usar os sete terrenos, ela teria que aceitar uma lista de sedes.
+
+### 4.34. O bar pequeno da torcida, 18 bares e quem mora em cada espaço
+
+O dono pediu o bar da torcida menor, no tamanho e no arranjo do bar da favela, só que de
+classe média: o bar nas cores da torcida embaixo de um apartamento, com o que o bar grande
+tinha dentro. E 18 lugares assim pelo mapa; o bar que nenhuma torcida da cidade usa fica
+neutro, de porta fechada, e o espaço de sede também (torcida de sede nível 0 não tem sede).
+
+**O modelo** é o `bartorcida` do `casas3d.js` (entra pelo `l.modelo`, como as casas grandes
+da favela). O lote é o de esquina, 7,4 m de frente e o fundo da fileira (4,5 a 5,8 m):
+
+- **o térreo**, de 3 m: a varanda coberta na frente (1,3 a 1,7 m, como a do bar da favela),
+  com duas mesas de madeira; atrás dela o salão, com duas portas de enrolar na frente e uma
+  do lado da esquina. Parede, pilar e frontão na cor 1 da torcida, o rodapé na 3, a faixa
+  alta na 2, e o letreiro BAR DO X no frontão, no fundo da cor 2 (`l.placa`,
+  `l.placaFundo`, `l.placaTinta`; o plano da casa diz onde ele vai, com o deslocamento `u`
+  porque o frontão não é centrado no lote);
+- **dentro**, o que o bar grande tinha: o chão de xadrez azul e creme, o balcão em L na cor 2
+  com tampo de granito e as banquetas, o armário com a prateleira de garrafa, a cervejeira,
+  dois freezers com a TV (o jogo passando) em cima, o engradado, a mesa de madeira e a porta
+  do banheiro. Salão raso perde a mesa de dentro e um freezer;
+- **o corredor do apartamento**, do lado que não é a esquina: a porta cinza na frente, na
+  cor do prédio;
+- **o apartamento**, de 2,75 m: reboco pintado (seis cores claras), sacada recuada com gradil
+  em cima da varanda, janela de alumínio, ar-condicionado, janela do lado da esquina,
+  platibanda e a casinha da caixa d'água;
+- **fechado** (sem `l.torcida`): o térreo em cor de reboco, as três portas abaixadas, o
+  ALUGA-SE numa delas, sem letreiro e sem nada dentro (1.900 triângulos aberto, 600
+  fechado).
+
+O desenho é o da esquina à direita; a da esquerda sai pelo `espelhado`, e a peça com letra
+(a cervejeira, o ALUGA-SE) é desenhada depois, sem espelho. Nenhum lote do jogo usa o modelo
+ainda: as 2.917 casas do jogo e da proposta saem com a mesma geometria de antes.
+
+**Os 18 lugares** (`proposta.js`): o bar grande sai das quadras 2,8 e 5,1 e a fatia dele vira
+casa (as fileiras da conta do lotear, no fundo das que já existem, só onde não tem lote). Os
+dois primeiros bares ficam nessas quadras, na esquina mais perto da fatia; os outros 16, um a
+um, na esquina que fica mais longe de todo bar já posto (no máximo um por quadra, com quadra
+nova e quadra de hoje concorrendo). O mais perto de outro fica a 69 m. O bar pega a ponta da
+fileira norte ou sul; o lote do caminho é aparado (se sobrasse menos de 2,9 m, o bar fica
+com ele inteiro, até 9 m, ou encolhe até sobrar). Seis bares caem em quadra de hoje: o lote
+de hoje que vira bar sai do desenho da proposta (`lotesTirados`) e o novo entra
+(`lotesExtra`).
+
+**Os espaços de sede** são nove: os sete terrenos e as duas sedes de hoje (a 2,9 é fatia de
+nível 3; na 5,2 só cabe a de nível 1).
+
+**Quem mora onde** é da página, pela cidade escolhida no alto (a praça da torcida, o `mapa`
+dela): a maior torcida (nível da sede, depois o poder) escolhe primeiro e fica com o espaço
+mais perto do estádio; a de nível 1 prefere o espaço pequeno. Cada sede ganha um bar (o
+GDD §8.1 dá um bar nível 1 com a sede nível 1), o livre mais perto dela. A sede no espaço é
+o modelo da 4.35: a de nível 3 (do nível 2 em diante, como a planta faz) ou o barracão de
+nível 1, virado pra frente do espaço, com as cores e o nome da torcida; a de nível 1 num
+terreno inteiro fica no canto, e o resto é pátio murado. Espaço vago leva a sede do tamanho
+dele fechada, em cor de reboco, sem nada dentro.
+
+Em São Paulo as 8 torcidas ocupam 8 bares e 8 espaços; em Santos, 3 e 3.
+
+O que falta pro jogo: a cena do dia de jogo ainda usa o bar grande andável (`barDaTorcida`) e
+duas sedes; pôr as torcidas da cidade nos 18 bares e nas 9 sedes é trabalho da planta. O
+GDD §7.2 pede o bar em outra zona que a sede; o mapa 3D não tem zona, então a página ficou
+com o que a planta já fazia (o bar perto da sede). E não existe sede nível 0 nos dados (as
+140 torcidas estão entre 1 e 4): a regra do nível 0 está pronta, mas nenhuma cai nela hoje.
+
+### 4.35. A sede refeita no jeito das construções novas
+
+O dono pediu a sede com o visual das construções mais recentes (o bar da torcida, as casas
+da favela, o Atacadex), no mesmo nível de detalhe, e cada cômodo mobiliado conforme o que
+ele é. A sede da planta (`sedeDaTorcida`) é a sede ANDÁVEL da cena do dia de jogo: parede,
+porta e móvel em caixa lisa, que é o que a máscara de caminhada precisa. Ela não foi mexida.
+O modelo novo é um módulo à parte, `js/diajogo/sede3d.js`, que por enquanto só o artefato usa.
+
+**As paredes e as portas são as da planta.** `planoDaSede(L, A, nivel, lado)` refaz a conta
+do `sedeDaTorcida` — as mesmas constantes (parede de 9, muro da frente de 66/74, vão de 30,
+portão de 56), os mesmos cômodos e as mesmas folhas de porta — em coordenada local: `u` ao
+longo da fachada, `v` da fachada pro fundo, pelo mesmo `eixos` (em duas das quatro frentes o
+referencial é espelhado, e o modelo também). `ferramentas/planta_html/conferir_sede.mjs`
+confere nas duas sedes da cidade, parede por parede (23 e 9), folha por folha (9 e 4), a
+placa de cada sala e o MÓVEL QUE BLOQUEIA a caminhada: a mesa da diretoria e o armário do
+depósito na sede grande; a caixa d'água, o armário e a estante do patrimônio, o armário e a
+mesa da presidência no barracão — os sete no mesmo retângulo da planta. Se a planta mudar a
+sede, o teste acusa.
+
+**O que é só do modelo** (visual, não muda a caminhada): as janelas (a de grade na frente de
+cada sala, o tijolo de vidro no banheiro, o basculante no almoxarifado e no fundo, o vitrô
+alto no salão), a verga e o batente das portas, a janela de balcão entre o bar e o salão, a
+parede do pátio subindo até o telhado no barracão (na planta ela para em 2,6 m), e a mobília
+nova. Na fachada: a parede na cor 1 da torcida, o rodapé na 3, a faixa na 2, o letreiro com o
+nome dela em cima da porta (nível 3; no barracão, no trecho das salas), um escudo de cada
+lado (a bola da torcida e as duas cores do clube em 135°, a regra do jogo) e um em cada
+parede do lado. Os batentes da porta da rua param na faixa da verga pra dar lugar ao
+letreiro — na planta eles sobem até em cima.
+
+**O que tem em cada cômodo** (tudo em metro, no referencial do cômodo: `s` ao longo da parede
+da porta, `t` da porta pra dentro; a mobília deixa livre a frente de cada porta):
+
+- NÍVEL 3 (22 × 12,8 m): SECRETARIA (mesa de atendimento com computador, cadeira de
+  escritório e duas de quem chega, arquivo de aço, estante de pasta, mural, bebedouro,
+  bandeira, ar); BAR (balcão de granito atrás da janela de balcão, prateleira de garrafa,
+  armário, geladeira, freezer, engradados); BANHEIRO (azulejo até 1,60 m, dois boxes com
+  vaso, dois mictórios, pia de duas cubas com espelho); ALMOXARIFADO (três estantes de aço
+  cheias, surdos, mastros no canto); CORREDOR (capacho, extintor, quadro de aviso); SALÃO
+  (barrado e duas listras no chão nas cores da torcida, sinuca, pebolim, mesa comprida com
+  cadeira de plástico, a bateria no pé da faixa com o nome da torcida, TV, bancos, pilha de
+  cadeira, a lojinha de camisa e as banquetas do balcão); ALOJAMENTO (três beliches,
+  colchões, armário de aço); DIRETORIA (a mesa da planta vira a do diretor, com computador e
+  duas cadeiras; estante de troféus; mesa de reunião com seis cadeiras; TV, bandeira, ar);
+  DEPÓSITO (estantes, faixa dobrada, colchão empilhado, caixas, o armário da planta com
+  troféu velho em cima, o bumbo velho).
+- NÍVEL 1 (12,9 × 9,3 m): PÁTIO descoberto (os três colchões, a caixa d'água e o mastro da
+  planta; tanque, churrasqueira de tijolo, mesa de plástico, varal, banco, a faixa na parede,
+  a grade de correr recolhida ao lado da porta); PATRIMÔNIO (o armário e a estante da planta,
+  troféus em cima do armário, surdos, mastros, caixas); PRESIDÊNCIA (a mesa e o armário da
+  planta, computador, cadeira de escritório, sofá, mural, bandeira, ar).
+
+**Sede vaga** (sem torcida, ou torcida de sede nível 0): a mesma construção em cor de reboco,
+nada dentro, a porta de enrolar abaixada no portão, as portas fechadas e o telhado.
+
+**O que `montarSede(sede, destino, opc)` devolve**: os blocos no mundo em três listas — `casas`
+(folha das casas), `grades` e `telhado` (à parte, pra quem mostra poder tirar); os decalques
+com texto (o letreiro, a placa de cada sala, a faixa e os escudos: quem desenha o texto é quem
+mostra, como no bar da torcida); e a planta baixa em retângulos (piso, parede com o vão das
+portas, móvel). Com `opc.so2d` sai só a planta baixa. A sede grande aberta tem 15.300
+triângulos (5.200 vaga); o barracão, 4.260 (1.800 vago); montar a grande leva uns 100 ms.
+
+**No artefato**: as duas sedes de hoje (aba Mapa atual) e os nove espaços da proposta usam o
+modelo; o mapa 2D desenha a planta baixa dele (a vaga coberta pelo telhado). No 3D, o botão
+**Telhado** tira e põe o telhado; a sede ocupada abre sem ele, a vaga com ele, e a vista da
+quadra inteira sempre com ele. A página agora carrega `dados/times.js` (como o jogo), pra o
+escudo do clube sair com as cores dele; sem os clubes, o escudo do clube usa as duas últimas
+cores da torcida.
+
+O que falta pro jogo: a cena do dia de jogo continua montando a sede em caixa. Pra trocar,
+é chamar `montarSede` com o equipamento da planta e pôr a mobília nova na máscara de
+caminhada (hoje só a da planta bloqueia) — o telhado já vem à parte, que é o corte que a
+cena faz quando o jogador entra.
+
+### 4.36. O metrô, o segundo shopping, a delegacia nova e a Praça da Vila
+
+O dono mandou cinco fotos e pediu, na proposta: a Praça da Vila mais detalhada; um shopping
+detalhado no lugar do campo de várzea; a delegacia no lugar do posto de saúde; e duas entradas
+de metrô subterrâneo, na quadra −2,6 e na 3,−1, com a entrada da foto da entrada e a parte de
+dentro da foto da plataforma, as duas ligadas embaixo da terra, com trem de uma pra outra.
+
+**Onde foi cada coisa.** Tudo é da proposta (a aba Mapa atual não mudou nada):
+
+- a Praça da Vila é a quadra 1,1 inteira;
+- o **Shopping Poente** fica na −2,4, no lugar do campo (`EQUIP`, frente pro sul);
+- o **2º Distrito Policial** fica na −1,6, no lugar do posto de saúde (frente pro norte, de
+  frente pra entrada do metrô Poente). O posto de saúde saiu. A delegacia de hoje, a da 2,3,
+  CONTINUA: a cidade da proposta tem duas. Se a ideia era mudar a delegacia de lugar, é tirar a
+  da 2,3 da `EQUIP`, que é uma linha;
+- a **Estação Poente** fica na ponta leste da −2,6, e o povo desce da rua do norte;
+- a **Estação Norte** fica na ponta oeste da 3,−1, e o povo desce da rua do sul.
+
+**O metrô nos dados** (`proposta.js`, a tabela `METRO` e o trecho depois dos bares, pra não
+mexer no sorteio dos 18 bares). A ENTRADA é o terreno da ponta da quadra, de uma rua à outra,
+com 6,4 m de frente pra rua do lado. O lote da ponta de cada fileira sai; o vizinho que ficaria
+com menos de 2,9 m entra no terreno; o que sobra mais que isso é aparado até a divisa (e perde
+o muro, que era do lote inteiro). O quintal do meio encolhe junto. A −2,6 ficou com 9 lotes e a
+3,−1 com 10.
+
+A ESTAÇÃO é um salão de 11 m de largura embaixo da quadra, de ponta a ponta, que passa 3 m
+debaixo das ruas do lado:
+
+- o mezanino fica a 5,2 m e a plataforma a 10 m;
+- o trilho corre do lado da rua de onde o povo desce, e a plataforma e o mezanino ficam do
+  outro lado;
+- o TÚNEL sai da ponta da entrada de uma e chega na ponta da entrada da outra, numa Bézier que
+  sai e chega no rumo do trilho.
+
+A linha tem 358 m e o túnel reto daria 256 m. Da parada de uma à parada da outra são 319 m, e
+o raio mais apertado da curva é de 58 m. `gerarProposta` devolve `metro` com:
+
+- `estacoes`: a oeste primeiro;
+- `caminho`: os pontos do eixo do trilho, de 20 em 20, com a distância acumulada;
+- `km` de cada parada.
+
+Cada quadra com estação ganha `q.estacao`.
+
+**O modelo** (`js/diajogo/metro3d.js`). A estação é escrita UMA vez, no referencial da
+Poente: x ao longo do salão, com a entrada e o túnel no x grande; z do trilho pra plataforma;
+y a altura. A Norte é a mesma girada 180°, que não espelha nada, e então o que tem letra lê
+certo nas duas. `montarEstacao(est, destino, opc)` devolve:
+
+- os blocos;
+- os decalques com texto (o nome da estação, as placas penduradas, o sentido);
+- a planta baixa (o que está na rua e o que está embaixo, à parte);
+- onde o trem para;
+- de onde se olha a plataforma.
+
+As partes, de cima pra baixo:
+
+- ENTRADA (a foto da entrada de vidro): a caixa de vidro no pórtico branco, a viga em onda
+  descendo no fundo, a faixa grafite com o M e METRÔ, o totem do M na calçada e a grade de
+  enrolar recolhida;
+- DESCIDA (a foto de cima): a escada fixa de 31 degraus com o bocel amarelo e a rolante, entre
+  as paredes de azulejo azul;
+- MEZANINO: a bilheteria, o mapa da linha, as cinco catracas e as placas penduradas; do lado
+  pago, a escada pra plataforma;
+- PLATAFORMA (a foto de Londres): o piso bege, a pedra da borda e a faixa amarela tátil, os
+  bancos, os anúncios iluminados e os dois painéis de próximos trens. Na parede, o nome da
+  estação, a faixa azul e o friso de triângulos. No fim, a parede de tijolo com a boca do
+  túnel.
+
+O CORTE DE CASA DE BONECA: tudo que é de baixo da terra tem a face virada pra dentro e vai na
+lista `metro_sub`, que quem mostra desenha só de frente (FrontSide). De cima, o teto e a parede
+do lado de cá, que mostram as costas, somem sozinhos, e a estação aparece inteira. Da
+plataforma, está tudo lá. O que pende do teto só tem a face de baixo. O vidro vai em `vidros`,
+transparente e sem escrever no depth.
+
+As outras peças:
+
+- `montarTunel(caminho, destino, {de, ate})` levanta o tubo em peças de 2,4 m, com a brita, os
+  trilhos e uma luminária a cada 12 m;
+- `montarCarro(ponta)` faz um carro de 11 m: a cara azul-marinho com a moldura vermelha, o
+  carro branco com a faixa azul e as portas vermelhas, e os truques. O trem são três carros.
+
+Uma estação tem uns 7.900 triângulos e sai em 30 a 60 ms. O túnel tem 5.400 e cada carro de
+320 a 360.
+
+**Os equipamentos** (`js/diajogo/equip3d.js`: `montarShopping`, `montarDelegacia`,
+`montarPraca`). O referencial é o do construtor: x da esquerda pra direita de quem olha a
+fachada, z entrando no terreno. Pro mundo ele só GIRA, então a porta da delegacia, a viatura e
+a banca leem certo. O que tem texto que muda (o nome do shopping, o letreiro e o brasão da
+delegacia, a placa da praça) vai como decalque.
+
+- SHOPPING (a primeira foto): a planta de estádio, com a ponta redonda. Três andares de
+  cortina de vidro verde, com a faixa de alumínio em cada laje, e o último andar recuado de
+  vidro inclinado. A marquise de vidro na entrada. No teto, a casa de máquinas em meia-lua, as
+  condensadoras, a claraboia em pirâmide, os exaustores e a antena. Na praça da frente, o totem
+  cinza e vermelho, as árvores no vaso, os bancos, o bicicletário e os balizadores.
+- DELEGACIA (a segunda foto): dois andares de pastilha bege, a platibanda e o volume de cima
+  em azul, as janelas em fita. A marquise branca de friso vermelho, o letreiro, o brasão e a
+  bandeira do Brasil no mastro da fachada. A ala do plantão 24 h. No teto, as condensadoras e
+  as placas solares. O pátio tem grade, portão de correr, guarita e três viaturas da Polícia
+  Civil.
+
+  A folha nunca espelha, e o lado da viatura tem nome, farol e lanterna. Por isso ele é DUAS
+  células (`viatura_lado` e `viatura_lado_i`, a lataria invertida com o nome escrito certo), e
+  cada lado pega a que põe o farol na ponta da cara.
+- PRAÇA: a pedra portuguesa em onda e a cruz de calçadão, o chafariz de pastilha, o parquinho
+  na areia e no piso emborrachado (escorregador, balanço, gangorra) e as duas academias ao ar
+  livre. Também as mesas de xadrez, a banca de jornal, os ipês amarelos e as outras árvores,
+  os bancos de ripa, os postes de praça, as lixeiras, o bicicletário e a placa.
+
+Em triângulos: o shopping tem uns 4.400, a delegacia 6.060 e a praça 6.740. Cada um sai em uns
+35 ms. Nenhum vértice passa do terreno (conferido).
+
+**As folhas.** `pintar_modelos.py` ganhou duas folhas: `metro` (31 peças) e `equip` (34). E
+agora pinta só as folhas que se pedem:
+
+    python3 ferramentas/pintar_modelos.py metro equip
+
+Isso junta as duas no atlas que já existe. As outras folhas ficam idênticas, byte a byte.
+
+**No artefato** (a "4ª versão" das notas da proposta):
+
+- No mapa 2D:
+  - a linha tracejada azul;
+  - o salão e o mezanino tracejados;
+  - a planta da entrada e o M;
+  - a planta baixa do shopping, da delegacia e da praça.
+- Clicar no M abre a ficha da estação, com dois botões:
+  - **Pegar o trem**: monta as duas estações, o túnel inteiro e os três carros, e anima a
+    viagem em uns 13 s com a câmera atrás do trem. Na chegada, a ficha vira a da outra
+    estação. O tempo "uns 47 s" da ficha é o de verdade: 10 m/s mais 15 s de arrancar e frear.
+  - **Descer na plataforma**: põe a câmera na altura do olho, olhando ao longo do trilho.
+- A vista de cima esconde o chão da rua.
+
+**O que NÃO está feito, e por quê:**
+
+- O jogo não tem metrô. A viagem é a animação da página. Pra virar jogo, precisa de cena (a
+  plataforma andável) e de uma transição, e isso é outra conversa.
+- É uma linha de ida e volta, de um trilho só, com a plataforma de um lado. Metrô de verdade
+  tem dois trilhos. Dá pra dobrar, mas o salão passa de 11 m pra uns 15 m.
+- A escala é a da cidade, que é compacta. O raio de 58 m é apertado pra metrô de verdade, que
+  normalmente faz curva bem mais aberta. No jogo não se nota, mas não é realista.
+- O corte de casa de boneca é escolha de visualização. Na cena, a parede do lado de cá teria
+  de aparecer.
+- O detalhe é de caixa: a árvore é pirulito, o móvel é caixa, a viatura é caixa com a peça
+  pintada.
+- O shopping não tem estacionamento. A igreja e as praças que sobraram continuam sem modelo.
+
+### 4.37. A favela do sudoeste em três pedaços, e as 30 cidades contra os dois mapas
+
+**A favela.** O dono pediu pra dividir a favela do sudoeste em três. Um pedaço vai pro sul do
+mapa, abaixo da 2,10; outro vai pro norte, acima da 3,−2; o resto fica no sudoeste, ao lado do
+estádio. Em `FAVELAS` (`proposta.js`):
+
+- **Favela do Sudoeste**: é o traço do dono do lado do Estádio Municipal e da estrada sul,
+  cortado na viela a oeste da coluna −3 e na viela de baixo da fileira 11. Da fileira 12, fica
+  só o trecho embaixo do estádio. Tem a coluna −3 (fileiras 9 a 11) e as duas fileiras de baixo
+  do estádio: 397 casas.
+- **Favela do Sul**: fica abaixo da 1,10, do campo da 2,10 e da 3,10, entre a estrada sul e a
+  praia. São as fileiras 11 e 12 das colunas 1 a 3: 309 casas.
+- **Favela do Norte**: fica acima da 3,−2 e da sede da 2,−3, até a estrada do norte (longe do
+  pórtico). São as fileiras −3 a −5 das colunas 2 a 4: 388 casas.
+
+Eram 1.179 casas numa favela só e agora são 1.094 em três. A diferença vem de que cada pedaço
+tem as suas 19 casas grandes e o seu campinho, e isso come lugar de casa pequena. A do
+noroeste não mudou (545).
+
+Três mudanças no gerador de favela:
+
+1. **A célula é de uma favela só.** O conjunto `tomadas` guarda cada quarteirão que uma favela
+   pegou, e a próxima pula ele.
+2. **Cada mancha pode ter uma `caixa`.** A caixa limita onde a favela põe casa (a viela da
+   borda). Sem ela, a regra do GAP, que cola a favela na rua da cidade, puxava um pedaço do
+   quarteirão vizinho.
+3. **A rua em volta do campo e do estádio da planta entrou na `barra`.** Antes só a rua das
+   quadras entrava, e seis árvores da favela do sul caíam no asfalto de baixo do campo da 2,10.
+
+Fora as favelas, a proposta sai igual, byte a byte (quadras, bares, espaços de sede, metrô).
+Muda só a borda sul do mundo, que as favelas empurram: ela sobe de 6.855 pra 6.690, e com ela o
+primeiro ponto da estrada sul, na mesma reta. O pórtico não sai do lugar. A borda de cima da
+proposta agora vai até a Favela do Norte.
+
+**As cidades contra os mapas.** O dono pensa no mapa de hoje como o das cidades pequenas e
+na proposta como o das grandes, e mandou uma planilha com as 30 praças: nível, porte,
+bairros, torcidas e estádios. `ferramentas/planta_html/conferir_cidades.mjs` confere cada
+praça (`dados/cidades.js` e `dados/torcidas.js`) contra o que cada mapa tem, tirado do próprio
+mapa:
+
+| | estádios | espaços de sede (grande + pequeno) | bares | favelas | metrô |
+|---|---|---|---|---|---|
+| mapa atual | 1 | 1 + 1 | 2 | 1 | não |
+| proposta | 2 | 8 + 1 | 18 | 4 | sim |
+
+Cada praça pede:
+
+- um estádio por estádio dela;
+- uma sede por torcida (a de nível 2 em diante pede espaço grande);
+- um bar por torcida;
+- uma mancha de favela por bairro de classe Favela;
+- o metrô, se ela tem.
+
+O que saiu:
+
+- **Nenhuma das 30 cabe no mapa atual, nem as pequenas.** Toda praça pequena tem 3 torcidas ou
+  mais, e seis das sete têm 2 estádios. Pra servir as pequenas, o mapa atual precisa de:
+  - 1 estádio a mais;
+  - de 2 pra 5 espaços de sede, 4 deles grandes;
+  - de 2 pra 5 bares;
+  - de 1 pra 3 favelas.
+- **Na proposta cabem todas as pequenas, 8 das 18 médias e só 1 das 5 grandes** (Belo
+  Horizonte). Contando pela planilha: Interior de SP como média, e Interior do RS e de SC com 2
+  estádios. O que barra é o estádio: 13 praças têm 3, e São Paulo tem 4. Sede e bar sobram pra
+  todo mundo, porque o máximo é 8 torcidas, 7 de sede grande. Fortaleza tem 5 bairros de
+  favela, e a proposta tem 4.
+- **A planilha e os dados do jogo não batem em três praças.** São elas:
+  - Interior de SP: a planilha diz Médio com 12 bairros; os dados dizem Pequeno com 8.
+  - Interior do RS e Interior de SC: a planilha diz 2 estádios; os dados dizem 3.
+
+  `dados/cidades.js` é gerado por `ferramentas/importar_bairros.py`, então a correção vai na
+  fonte. São Paulo está sem metrô (`temMetro: false`), o que parece erro de dado.
+- **As zonas.** O mapa não tem bairro, e o jogo tem. A sede fica no bairro da torcida
+  (`bairroSede`), o bar fica em outra zona (GDD §7.2), e a classe do bairro decide renda e cena.
+  As quatro favelas da proposta ficam no norte, no sul e no oeste; nenhuma fica no leste, que é
+  a praia. 16 das 30 praças têm bairro de favela no leste.
+- **A praia.** Os dois mapas têm mar a leste. Isso serve pras praças do litoral (Rio,
+  Fortaleza, Recife, Salvador, Natal, Maceió, João Pessoa, Aracaju, São Luís, Santos, o litoral
+  catarinense), mas não pras sete pequenas, que são todas do interior, nem pra São Paulo e Belo
+  Horizonte.
+
+
+### 4.38. Três mapas — o pequeno, o médio e o grande —, e cada praça no dela
+
+**O pedido.** Depois da conferência da 4.37, o dono decidiu:
+
+- Interior de SP é praça média; Interior do RS e Interior de SC têm 2 estádios. É pra
+  corrigir no código.
+- O mapa das pequenas é o de hoje com uma cópia do estádio, 5 terrenos de sede, 8 prédios de
+  bar e 3 favelas, com as construções da proposta.
+- Praça sem praia não tem praia no mapa: no lugar dela, mato.
+- É pra fazer um mapa médio com o máximo que uma praça média pede.
+- O mapa 3D tem de ter todos os estádios da praça.
+
+**Os dados.** `dados/cidades.js` é gerado, então a correção foi feita na fonte
+(`dados/fonte/cidades_bairros.json`), e depois `ferramentas/importar_bairros.py` rodou de novo.
+O importador precisa do `openpyxl` pra ler o `Book_3_1.xlsx`; sem ele, perde os dados da
+planilha sem avisar.
+
+- **Interior de SP** passou a nível 2, porte Médio, 120 quarteirões e 12 bairros (3 por zona).
+  Tinha 8 bairros, então entraram 4, um por zona, sem sede de torcida:
+
+  | bairro | zona | classe | faturamento |
+  |---|---|---|---|
+  | Sorocaba | Sul | Classe Baixa | 0,8 |
+  | São José do Rio Preto | Norte | Nobre | 1,5 |
+  | São Carlos | Leste | Classe Média | 1,0 |
+  | Presidente Prudente | Oeste | Classe Baixa | 0,8 |
+
+  A classe de cada um foi escolha minha. O multiplicador médio foi de 0,975 pra 0,992.
+- **Interior do RS** perdeu o Estádio Centenário e ficou com o Bento Freitas e o Alfredo
+  Jaconi. **Interior de SC** perdeu a Arena Condá e ficou com a Arena Joinville e o Heriberto
+  Hulse. O critério foi manter o estádio das torcidas com mais membros:
+  - no RS, o Centenário soma 80 membros (Falange Grená e Mancha do Ypiranga), empatado com o
+    Jaconi (Mancha Verde, que tem sede de nível 3 e clube na 2ª divisão);
+  - em SC, a Condá tem 30 membros (Jovem Chape), contra 60 da Arena Joinville. Pela divisão do
+    clube a conta vira: a Chapecoense é a única da 1ª divisão.
+
+  As três torcidas continuam apontando pro estádio que saiu (`dados/torcidas.js`). A lista de
+  estádios do jogo 2D (`dados/estadios.js` e o `estadio` de cada clube) não foi mexida.
+- **`temPraia`** é chave nova, ao lado de `temMetro`. Vale `true` pras 11 praças do litoral:
+  Litoral Catarinense, Fortaleza, Alagoas, Maranhão, Paraíba, Recife, Rio de Janeiro, Rio
+  Grande do Norte, Bahia, Santos e Sergipe. Belém, Manaus e Porto Alegre ficaram sem praia,
+  porque a água delas é rio ou lagoa, não mar aberto.
+
+A fonte diz que veio dos `.asset` da Unity. Lá as mudanças ainda precisam ser feitas.
+
+**O gerador.** `gerarProposta(P, cfg, opc)` (`proposta.js`) recebe o mapa em `cfg`, que é um
+de `MAPAS.pequeno`, `MAPAS.medio` e `MAPAS.grande`. Em `opc` vai o que a praça decide:
+
+- `estadios`: quantos estádios ela tem;
+- `metro: false`, que tira o metrô.
+
+O que era constante do mapa grande (a grade, os equipamentos, o metrô, os condomínios, os
+terrenos, as quadras partidas e juntadas, as favelas) virou campo da config. Cada mapa tem o
+que a praça mais exigente do porte pede:
+
+| | estádios | espaços de sede (grande + pequeno) | bares | favelas (casas) | metrô |
+|---|---|---|---|---|---|
+| pequeno | 2 | 4 + 1 | 8 | 3: a de hoje 229, oeste 279, norte 174 | não |
+| médio | 3 | 6 + 1 | 12 | 4: noroeste 504, sudoeste 394, sul 309, norte 477 | sim |
+| grande | 4 | 8 + 1 | 18 | 5: noroeste 545, sudoeste 397, sul 309, norte 388, alto 185 | sim |
+
+O máximo de cada porte, tirado dos dados:
+
+- pequenas: 8 bairros, até 5 torcidas, 2 estádios e 3 bairros de favela;
+- médias: 12 bairros, até 7 torcidas (Interior de SP), 3 estádios e 4 bairros de favela;
+- grandes: 16 bairros, até 8 torcidas, 4 estádios (São Paulo) e 5 bairros de favela
+  (Fortaleza).
+
+O bar segue o número de bairros (8 e 12). O grande continua com os 18 de antes.
+
+**As vagas de estádio.** O estádio de hoje é a primeira vaga de todo mapa. As outras são
+blocos de 2 × 3 quadras, sem as ruas do meio, com a cópia do quarteirão do estádio. A praça
+ocupa as vagas na ordem:
+
+- no pequeno, a cópia vai pro sul, abaixo da 1,10 e do campo da 2,10 (colunas 1 e 2, fileiras
+  11 a 13);
+- no médio e no grande, a primeira cópia vai pro sudoeste (a do Estádio Municipal) e a segunda
+  pro noroeste (seis quadras das colunas −2 e −1, fileiras −1 a 1);
+- o grande tem uma quarta, no oeste (colunas −5 e −4, fileiras 6 a 8), só pra São Paulo.
+
+A vaga que a praça não usa volta a ser quadra de casa, se cai na grade, ou mato, se está fora
+dela. O nome de cada vaga é o estádio da praça, na ordem de `estadios` em `dados/cidades.js`:
+o primeiro fica no estádio de hoje. Em São Paulo, o Morumbi fica no lugar de hoje, a Neo
+Química Arena no sudoeste, o Allianz Parque no noroeste e o Canindé no oeste. Cada cópia abre
+em 3D com o mesmo modelo do estádio, e a ficha diz "Nº de N estádios".
+
+**O mapa pequeno** é a cidade de hoje, sem quadra nova, com isto a mais:
+
+- **A cópia do estádio**, no sul.
+- **Três terrenos de sede** tirados de quadras de hoje, na ponta sem casa de avenida:
+  - a 1,6, no oeste, perto do Atacadex;
+  - a 2,1, no norte, entre as duas favelas;
+  - a ponta leste da 3,4, no meio.
+
+  O terreno toma até 430 da ponta da quadra. Os lotes debaixo dele saem, e o que foi cortado
+  no meio fica aparado, se sobrar pelo menos 56. A quadra de hoje não é alterada: o que muda
+  vai em `lotesTirados` e `lotesExtra`, senão a mudança vazava pros outros mapas. Com as duas
+  sedes de hoje, são 5 espaços.
+- **Oito bares** pequenos da torcida, postos como na proposta. Os dois bares grandes de hoje
+  viram casa.
+- **Duas favelas novas** na grade da cidade:
+  - a do oeste, entre o Atacadex e a estrada sul;
+  - a do norte, acima da 2,1 e da 3,1.
+
+  Com a de hoje, que fica, são três. A favela nova não pisa no Atacadex nem na favela de hoje:
+  os dois entram na `barra`.
+
+O pequeno não tem metrô nem equipamento novo, e o Atacadex fica onde está.
+
+**O mapa médio** é a expansão cortada no meio. A cidade cresce três colunas pra oeste (−2 a 0)
+e duas linhas pro norte (−1 e 0). Fica sem as colunas −4 e −3 e sem as linhas −3 e −2 do
+grande. Tem:
+
+- 5 terrenos (5,0; 2,0; 0,4; −2,5; 0,9), que com as 2 sedes de hoje dão 7 espaços;
+- 12 bares;
+- o metrô com as mesmas duas estações;
+- o Shopping Poente, o 2º Distrito Policial, a Praça da Vila, a igreja, dois condomínios, o
+  Atacadex na estrada norte e os dois pórticos.
+
+A favela do noroeste começou com o traço do grande, mas no médio as colunas dela não existem,
+e ela ficou solta no mato, encostada na cidade só por um canto. Ganhou um traço próprio
+(`FAVELA_NOROESTE_MEDIO`), colado na rua oeste da coluna −2: a coluna −3 das fileiras −1 a 4 e
+a −4 no alto. Com o primeiro traço (as colunas −3 e −4 inteiras) saíam 765 casas, mais que a
+do grande. O traço foi afinado pra 504. A do norte (`FAVELA_NORTE_MEDIO`) desce até a linha −1.
+A do sudoeste e a do sul são as do grande.
+
+**O mapa grande** é a proposta de antes com duas coisas a mais:
+
+- a quarta vaga de estádio;
+- a **Favela do Alto** (185 casas), acima da −1,−2 e da 0,−2, porque Fortaleza tem cinco
+  bairros de favela e o grande tinha quatro favelas. O leste não tinha lugar: é o Atacadex e a
+  praia.
+
+Com 2 estádios, o grande sai igual à proposta do commit anterior, conferido chave a chave. Só
+mudam a lista de favelas (entrou a quinta) e a contagem.
+
+**A página.**
+
+- **As abas.** São Pequeno, Médio, Grande e Jogo hoje. Escolher a praça abre o mapa do porte
+  dela, e as outras abas servem pra comparar. O seletor de cidade é agrupado por porte.
+- **A variante.** Cada combinação de mapa, número de estádios e metrô sai do gerador uma vez
+  e fica guardada.
+- **A praia.** Se a praça não tem praia (`temPraia`), depois da avenida da beira vem mato: sem
+  areia, sem orla e sem mar. O "Jogo hoje" continua sendo a planta do jogo como está.
+- **As notas.** O painel mostra:
+  - estádios ocupados de quantas vagas, sedes, bares e casas na favela;
+  - a lista dos estádios da praça, e o que não cabe;
+  - se a praça tem praia e metrô;
+  - as casas por favela;
+  - a tabela dos três mapas, com o da praça marcado.
+- **A troca.** O que estava selecionado do mapa anterior sai quando o mapa troca.
+
+**A conferência.** `conferir_cidades.mjs` confere cada praça contra os três mapas e o "Jogo
+hoje". A capacidade de cada mapa é tirada do próprio mapa, com todas as vagas ocupadas. Se
+alguma praça não cabe no mapa do porte dela, o teste sai com erro. Hoje, as 30 cabem:
+
+| porte | praças | cabem no mapa do porte |
+|---|---|---|
+| pequeno | 7 | 7 |
+| médio | 18 | 18 |
+| grande | 5 | 5 |
+
+**O que isto NÃO faz.** O jogo continua com um mapa só. Os três mapas existem na planta
+(`proposta.js` e o artefato); levar pro jogo 2D e pra cena 3D é outro trabalho. São Paulo
+continua com `temMetro: false`, e por isso a praça tem vaga de metrô no mapa grande mas fica
+sem as estações. Pelo jeito, é erro de dado.
+
+
+### 4.39. A lagoa, a favela do noroeste na grade e o escudo de verdade na sede
+
+O dono revisou a 4.38 e pediu cinco coisas:
+
+- trocar a Arena Condá pela Arena Joinville;
+- corrigir o metrô de São Paulo;
+- pôr uma lagoa em Belém, Manaus e Porto Alegre;
+- deixar a favela do noroeste do mapa pequeno reta, na grade;
+- usar na sede os escudos PNG que o jogo já tem.
+
+Os estádios vão ser trocados pelos três modelos padrão do jogo, que ele ainda vai apontar. Levar os mapas pro jogo fica pra quando o planejamento e a modelagem estiverem fechados.
+
+**Os dados** (na fonte, e `dados/cidades.js` gerado de novo):
+
+- **Interior de SC** fica com o Heriberto Hulse e a Arena Condá. Sai a Arena Joinville. Agora é a União Tricolor (Joinville) que aponta pra um estádio que não está na praça.
+- **São Paulo** passa a `temMetro: true`, e o mapa grande dela ganha as duas estações.
+- **`temLagoa`** é chave nova, ao lado de `temPraia`. Vale `true` em Belém, Manaus e Porto Alegre, e o importador passa ela adiante.
+
+**A lagoa** (`desenharLagoa` em `index.html`). Nas três praças, o lugar da praia e do mar é uma lagoa comprida ao longo da avenida da beira:
+
+- **A forma.** A outra margem fica à vista, a 1.100–1.900 unidades da costa, e as duas pontas são arredondadas: a do norte perto de y −2.350, a do sul perto de 6.250.
+- **A beira.** A margem é de capim, com uma faixa de barro na linha d'água e um raso mais claro por dentro. A linha da margem ondula (soma de senos), pra não sair paralela à costa.
+- **Os detalhes.**
+  - junco em tufos dos dois lados;
+  - aguapé boiando no raso do lado da cidade, com uma ou outra flor lilás;
+  - um trapiche de madeira no meio da cidade (y 1.520), com a canoa amarrada;
+  - uma ilhota com quatro árvores;
+  - a mata na margem de lá.
+
+É desenho fixo (seno e hash, sem sorteio), montado uma vez e guardado. Vale nos três mapas. O "Jogo hoje" continua com a praia do jogo, pra todas as praças.
+
+**A favela do noroeste do mapa pequeno.** O pequeno ficava com a favela de hoje, a da planta do jogo. Ela é torta: as casas giradas uns 17°, acompanhando a estrada noroeste2. Agora o pequeno não guarda mais a favela de hoje (`favelaDeHoje: false`). No lugar dela entra uma favela da grade (`FAVELAS_PEQUENO`, `noroeste`), com o mesmo gerador das outras:
+
+- ocupa a coluna 1 das fileiras 0 a 3 e um pedaço da coluna 0 (x −150 a 880, y 60 a 2.110);
+- a casa fica a 0°, e o beco é a continuação da rua da cidade;
+- tem 223 casas, contra 229 da de hoje.
+
+A estrada noroeste2 continua passando no meio, como passa hoje. As casas de beira dessa estrada continuam acompanhando ela: não são da favela. A do oeste e a do norte saíram iguais (279 e 174). Os três mapas agora têm só favela da grade. A opção `favelaDeHoje` continua no gerador, sem uso.
+
+**O escudo de verdade na sede.** A sede nova (`js/diajogo/sede3d.js`) pintava o escudo gerado: a bola na cor da torcida com a sigla, e a diagonal nas duas cores do clube. A sede antiga da cena já usava o PNG (a seção 4, "O escudo é o do jogo, e vira o PNG quando ele existir"). A nova agora segue a mesma regra:
+
+- **O caminho.** Quem monta a sede resolve o caminho pelo manifesto `dados/escudos.js` (`caminhoDoEscudo`, a mesma da planta). O caminho é `img/escudos/torcida-<id>.png` e `clube-<clubeId>.png`, e passa antes pelo `window.__EMBUTIDOS`, como o `IMG()` do jogo.
+- **O decalque.** A sede recebe o caminho em `torcida.escudo` e `torcida.escudoClube` e põe no `img` dos quatro decalques de escudo: os dois da fachada e um em cada parede do lado.
+- **A textura.** `texturaEscudo` pinta o gerado. Quando o PNG carrega, repinta o quadrado com ele, na proporção e centrado (o jeito do `bairro3d`). Sem o PNG, fica o gerado. É o caso da Mancha Negra e do São Raimundo, que não têm arquivo.
+- **Onde vale.** Vale pra sede de cada espaço (a torcida da praça) e pra sede do jogo na aba "Jogo hoje" (a da Jovem Fla e a da Jovem do Grêmio).
+- **A ficha.** A ficha da sede mostra os dois escudos.
+
+**Os PNG no artefato.** São 278 arquivos, e o artefato tem teto de 255. O `montar.sh` embute num arquivo só (`dados/escudos_embutidos.js`, que preenche `window.__EMBUTIDOS`) os escudos das torcidas dos dados e dos clubes delas: 246 PNG, 2,0 MB. A página carrega o manifesto e, se existir, o embutido. Sem ele, o caminho vai direto pra `img/escudos/`.
+
+**O teste.** O gancho `?teste` da página agora também entrega a `vista` (a câmera do 3D). Com ela, o teste põe a câmera de frente pros escudos da fachada. Conferido na tela:
+
+- a sede da Jovem Fla, com o escudo dela e o do Flamengo;
+- a da União Fanática, com o dela e o do União Rondonópolis;
+- nenhum erro de console;
+- as 30 praças nas quatro abas;
+- a viagem de metrô;
+- `conferir_sede` e `conferir_cidades` passando.
+
+
+### 4.40. A vegetação em volta da cidade, pela região
+
+O dono pediu que o mato claro em volta do mapa fique só nas praças do Nordeste. Nas outras regiões, o mato vira verde, com cara de floresta.
+
+- **No Nordeste** (dez praças: Fortaleza, Recife, Bahia, Alagoas, Maranhão, Paraíba, Rio Grande do Norte, Sergipe, Interior de PE e Interior do CE), fica o mato claro e seco de antes (`COR.mato`), com as moitas e as trilhas.
+- **Nas outras vinte**, a volta da cidade é mata (`padraoMata` em `index.html`). É a copa das árvores vista de cima:
+  - num ladrilho de 2.400 unidades (124 m) que se repete sem emenda;
+  - cada copa tem de 3 a 8 m de diâmetro, em sete tons de verde;
+  - a sombra vai pro sudeste e o brilho pro noroeste (o sol do mapa), e as copas de baixo cobrem as de cima;
+  - a copa que passa da borda do ladrilho dá a volta e aparece do outro lado.
+
+  É desenho fixo (semente própria), feito uma vez e preso no mundo: anda com o mapa e cresce com o zoom. As trilhas de terra continuam por cima. As moitas soltas do mato claro não entram, porque na mata elas sumiam na copa.
+- **O "Jogo hoje"** continua com o mato do jogo em todas as praças, como a praia.
+
+A regra é a região da praça (`regiao` em `dados/cidades.js`); sem o dado, fica o mato claro. As notas da praça dizem qual das duas vale.
+
+
+### 4.41. A praia de verdade: calçadão, quiosque, guarda-sol, barraca e onda
+
+O dono pediu mais detalhe na praia das praças do litoral: quiosque, barraca, guarda-sol, onda e o resto. Como a lagoa (4.39), é desenho do mapa (`montarPraia` e `desenharPraia` em `index.html`). Vale nos três mapas e nas onze praças com `temPraia`. O "Jogo hoje" fica com a praia lisa do jogo.
+
+A faixa de areia continua a da planta: 12,5 m (243 unidades) entre a avenida da beira e a linha d'água. Cada coisa fica a uma distância dessa linha, medida na horizontal, como a própria faixa. O que é girado (quiosque, quadra, barraca, canga, posto, barco) segue o rumo da costa naquela altura. Da avenida pro mar:
+
+- **O calçadão**: os 2 m de cima da areia, em pedra portuguesa clara, com a onda preta no meio, a de Copacabana.
+- **Os coqueiros**: na beira do calçadão, a cada 11 a 18 m, com a sombra e as oito folhas em leque.
+- **Os quiosques**: a cada 50 a 70 m.
+  - O deck de madeira (5,8 × 4,4 m, com as tábuas).
+  - Três mesinhas com guarda-sol vermelho e branco, pro lado do mar.
+  - O quiosque de telhado de quatro águas, pro lado do calçadão.
+- **A areia**:
+  - guarda-sol em grupinhos, de 1,8 a 2,4 m, em oito pares de cores, com a sombra;
+  - canga do lado de seis em cada dez, fora da areia molhada;
+  - uma barraca de lona de duas águas aqui e ali;
+  - o posto de salva-vidas a cada 80 a 100 m (a cabine vermelha, o telhado branco e a bandeira vermelha e amarela);
+  - duas quadras de vôlei por praia (9 × 4,7 m, com a rede e os postes), ao longo da areia.
+
+  O guarda-sol não entra no deck do quiosque, na quadra nem no posto.
+- **A beira d'água**: a areia molhada (2 m mais escura) e a espuma, uma linha branca que ondula.
+- **O mar**:
+  - o raso em três faixas, do turquesa ao azul de sempre;
+  - quatro linhas de crista em pedaços, cada vez mais fracas pro fundo;
+  - oito barcos: a jangada de vela e o barco de pesca com a esteira.
+
+O calçadão, os coqueiros, os quiosques, o guarda-sol, a barraca, o posto e a quadra vão só onde a avenida da beira passa. Pra lá dela, a praia é deserta: só areia, onda e espuma. A onda, o raso e os barcos vão na costa inteira.
+
+É desenho fixo (hash, sem sorteio), montado uma vez por trecho de avenida e desenhado só no que está na tela. De longe, a praia vira uma faixa colorida com o calçadão; de perto, cada guarda-sol tem os gomos, cada quiosque as mesinhas.
+
+
+### 4.42. A vegetação é da praça: mata, cerrado ou caatinga
+
+O dono refez a regra da 4.40:
+
+- o Centro-Oeste é **cerrado**;
+- o Maranhão é **mata verde**;
+- só o Interior do CE e o Interior de PE ficam com o **mato seco**;
+- o resto do Nordeste também é verde.
+
+A regra deixou de ser a região. Agora é um dado da praça, `vegetacao`, na fonte (`dados/fonte/cidades_bairros.json`, ao lado de `temPraia` e `temLagoa`), passado pelo importador pra `dados/cidades.js`:
+
+| `vegetacao` | praças |
+|---|---|
+| `mata` | as outras 25 |
+| `cerrado` | Brasília, Goiânia e Mato Grosso |
+| `caatinga` | Interior do CE e Interior de PE |
+
+Sem o dado, a planta fica com o mato seco de antes. As notas da praça dizem qual vale.
+
+**O cerrado** (`padraoCerrado` em `index.html`) é o mesmo tipo de ladrilho da mata (2.400 unidades, sem emenda, semente própria). Tem, de baixo pra cima:
+
+- o capim amarelado, com manchas mais secas (douradas) e mais verdes, de borda macia (degradê);
+- a terra vermelha aparecendo, em manchas de três ou quatro pedaços;
+- o fiapo do capim;
+- o cupinzeiro;
+- o arbusto;
+- a árvore baixa e espaçada, de copa em três ou quatro bolas, com a sombra pro sudeste.
+
+Na mata e no cerrado, as moitas soltas do mato seco não entram, porque o ladrilho já tem a planta dele. As trilhas continuam nas três. O "Jogo hoje" continua com o mato do jogo.
+
+
+### 4.43. Os modelos 3D da praia e as árvores de todos os mapas
+
+> **Atualização (4.45):** a árvore de cartão saiu. `arvores3d.js` e a folha `vegetacao.png` foram apagados (ficam no histórico do git, no commit f427622). A árvore do jogo, em todo lugar, é a low poly (4.44). O coco da barraca foi pra folha `praia.jpg` e a rede do vôlei, pra `grades.png`. O que segue sobre a árvore de cartão fica como registro.
+
+O dono pediu duas coisas:
+
+- cada detalhe da praia (4.41) modelado em 3D, pra entrar no mapa depois;
+- as árvores que vão em todos os mapas do jogo.
+
+**Nada disso entrou no mapa ainda.** Fica numa aba nova da planta, **Modelos 3D** (o botão ao lado das abas). A aba lista cada peça e abre ela grande no 3D, com a ficha: planta, altura, triângulos e semente, e o botão "Outra semente".
+
+**As peças da praia** ficam em `js/diajogo/praia3d.js`: `PECAS_PRAIA` é o catálogo e `montarPecaDaPraia(id, onde, destino, semente)` monta. São onze:
+
+| peça | planta × altura | o que tem |
+|---|---|---|
+| guarda-sol | 2,4 × 3,5 × 2,3 m | oito gomos de tecido em duas cores, o babado recortado, as varetas e os tirantes; duas cadeiras de alumínio de lona listrada, a canga, o isopor e a prancha (fincada ou deitada) |
+| mesa com guarda-sol | 2,0 × 2,1 × 2,3 m | a mesa de plástico da cervejaria (o tampo PRAIANA), o guarda-sol que atravessa o tampo e quatro cadeiras de plástico, cada uma meio torta |
+| barraca | 3,3 × 3,3 × 2,8 m | a lona de duas águas, com a cumeeira ao comprido, como no 2D, nos seis paus; o babado com o nome (decalque) e, embaixo, a mesa, as cadeiras, os isopores, a pilha de cadeira e o coco |
+| posto de guarda-vidas | 3,0 × 3,5 × 5,4 m | as pernas com o X, o tablado a 1,9 m, a cabine vermelha (janela nos três lados, porta atrás), o telhado branco, o guarda-corpo, a escada, a bandeira vermelha e amarela batendo, a boia, a prancha de resgate, GUARDA-VIDAS e o número (decalques) |
+| quadra de vôlei | 16 × 12 × 3,2 m | a quadra oficial de 16 × 8 m em fita azul, os postes com a espuma e os estais, a rede de 1 m (em cima a 2,43 m) com a faixa branca, as antenas listradas e a bola |
+| quiosque de palha | 7,2 × 6,5 × 4,1 m | o deck com o degrau, o corpo de tábua pintada (a janela do balcão mostra a prateleira de garrafa lá dentro), o balcão de azulejo com as banquetas, o freezer SORVETES, a geladeira GELADINHA, a pilha de coco, o telhado de palha de beirada grossa nos esteios de tronco, a placa do nome, o cavalete do cardápio e as três mesas de guarda-sol |
+| quiosque da orla | 7,2 × 6,4 × 3,4 m | o mesmo deck e a mesma frente, mas de metal: a chapa branca, a janela de vidro, a laje fina de beiral largo nas colunas e o letreiro em cima |
+| calçadão | 18 × 13 × 12 m | 12 m de pedra portuguesa (a onda preta e branca corre ao longo da praia), o meio-fio e um pedaço da avenida, a areia com dois coqueiros, o chuveirão, a lixeira laranja no poste, o banco virado pro mar e o poste da orla |
+| beira do mar e onda | 16 × 15 × 1,5 m | a areia seca e a molhada, a espuma na linha d'água e a renda atrás, o raso em faixas do turquesa ao azul, a espuma da onda que já quebrou e a onda quebrando: crista branca e lábio caindo no meio, ombro baixo nas pontas |
+| jangada | 6,8 × 1,7 × 6,3 m | os seis paus que se juntam e levantam na proa, as travessas, os dois bancos, o mastro, a retranca, a vela triangular de valuma curva, enfunada, com o remendo e o 27, o leme e o isopor |
+| barco de pesca | 7,7 × 2,6 × 3,6 m | o casco de seções (branco de faixa azul, com a antivegetativa vermelha na linha d'água), o forro e o fundo por dentro, a borda azul, a casaria branca de teto azul, o mastro, o cano de descarga, a tampa do porão, os pneus velhos de defensa e o nome na popa e na proa |
+
+O TAMANHO É O DE VERDADE. O 2D desenha duas peças menores, como símbolo: a quadra com 9 × 4,7 m e a jangada com 3 m. Quem puser a peça no mapa acerta o lugar dela. A esteira do barco, que o 2D desenha, não virou modelo: é efeito do barco andando.
+
+A SEMENTE troca o que muda de uma praia pra outra:
+
+- a cor do guarda-sol, da lona e da tábua;
+- o nome do quiosque, da barraca e do barco, e o número do posto;
+- a canga;
+- o que está solto na areia;
+- o jeito de cada cadeira.
+
+**Como são feitas.** Cada peça é montada em metros em volta da origem, com o chão em y = 0 e a frente pro +z: o lado do mar no quiosque, o lado da areia na beira do mar. `noMundo`, novo no `construtor3d.js`, põe a peça no lugar, girada e na escala. As peças usam:
+
+- `Lugar`: um referencial girado dentro da peça, com o qual a cadeira gira em volta da mesa;
+- `bloco`: a caixa num lugar girado;
+- `barra`, `tubo`, `cilindro` e `toro` (a boia e o pneu);
+- `fita` (a lona da cadeira) e `malha` (a canga e a bandeira);
+- `paralelepipedo` (o encosto e o leme);
+- a vela, o casco e a onda feitos à mão, ponto a ponto.
+
+As listas:
+
+- `praia`: a folha nova `praia.jpg`, com 29 peças;
+- `equip`: a pedra portuguesa, a areia e o concreto;
+- `vegetacao`: o coco;
+- `rede`: a rede do vôlei.
+
+A rede usa a folha da vegetação, mas é **transparente de verdade, não recortada**. A malha de corda fina, na média do mipmap, fica abaixo de qualquer limiar: recortada, ela some de longe (com 0,45) ou vira uma faixa preta (com 0,08). O jogo tem de lembrar disso quando fizer o material dela.
+
+O texto que muda é decalque: `letreiro`, `logo` e um tipo novo, `pintado`, que é só a letra, sem placa em volta (o nome do barco).
+
+**As árvores** ficam em `js/diajogo/arvores3d.js`: `ESPECIES` é o catálogo, `FLORA` diz o que vai em cada lugar (o peso é o do sorteio) e `montarArvore(especie, onde, destino, semente)` monta. `especieDe(lugar, rnd)` sorteia uma espécie do lugar. São dezoito espécies:
+
+| lugar | espécies (peso) |
+|---|---|
+| mata | jequitibá 1, ingá 4, embaúba 2, açaí 2 |
+| cerrado | pequizeiro 5, ipê-amarelo 1, buriti 1 |
+| caatinga | catingueira 5, juazeiro 2, mandacaru 2, xique-xique 2 |
+| cidade | oiti 5, mangueira 2, ipê-amarelo 1, ipê-roxo 1, palmeira-imperial 1 |
+| praia | coqueiro 4, amendoeira 1 |
+| sul | araucária 3, ingá 2 |
+
+Como cada árvore é feita:
+
+- **O tronco e o galho** são um tubo varrido ao longo da curva (`varrer`), com a casca da espécie. A peça inteira se repete a cada tanto de comprimento, e o anel é levado de um ponto ao outro sem torcer.
+- **A copa** é de cachos. Cada cacho tem quatro cartões recortados: três em pé, girados de 60°, e um deitado, pra copa não sumir vista de cima. Os cachos ficam numa casca em espiral (Fibonacci) mais três no miolo de cima, pra não abrir buraco. A normal do cartão sai do centro da copa, puxada pra cima, e não de onde o cartão olha. Assim a copa pega luz como um volume: o lado do sol claro, o de trás escuro. A sombra de baixo e do miolo vem pintada na cor do vértice.
+- **A palmeira** tem a fronde: uma fita de corte em V que cai com o peso, com o desenho deitado nela.
+- **O cacto** é uma coluna de oito lados, com a pele de costela.
+- **A sombra** no chão é recortada (`customDepthMaterial` com o mapa e o limiar).
+
+A semente dá outro galho, outra copa e outro tamanho (±12%): uma mata de cem árvores sai com cem árvores diferentes.
+
+A folha nova, `vegetacao.png` (2048 × 800, com alfa, 29 peças), tem:
+
+- o cacho de cada espécie;
+- a flor dos dois ipês e o galho seco;
+- a folha de mão da embaúba, verde de um lado e prateada do outro;
+- as três frondes, o leque do buriti, a saia seca e o tufo da araucária;
+- as oito cascas, o cacto, o palmito, o coco e a rede.
+
+O desenho foi pintado no dobro e reduzido com o alfa pré-multiplicado, e a cor foi "sangrada" pra fora do recorte, senão o mipmap faz franja escura. O folíolo da fronde é um fuso largo, não uma linha: a linha fina sumia de longe.
+
+As duas folhas saem do pintor:
+
+    python3 ferramentas/pintar_modelos.py praia vegetacao
+
+**O que a página ganhou:**
+
+- o material `folhagem`: só a face da frente (o cartão vem nas duas, cada uma com a normal de fora), recorte a 0,45 e `alphaToCoverage`;
+- o material `rede`, transparente;
+- a sombra recortada da folhagem, da vegetação, da grade e da rede;
+- a normal que vem no bloco, quando todos trazem a deles.
+
+Custo, em triângulos:
+
+| peça | triângulos |
+|---|---|
+| árvore | de 400 (embaúba) a 3.700 (a touceira de açaí) |
+| quiosque | ~4.000 |
+| calçadão (com dois coqueiros) | ~4.500 |
+| guarda-sol, mesa, posto, quadra, barco, beira | 700 a 900 |
+
+**O que ficou aberto:**
+
+1. **Nada entrou no mapa.** O próximo passo é decidir onde vai cada peça e quantas árvores por hectare.
+2. **A mata não cabe como está.** Mil árvores dão de 1 a 2 milhões de triângulos. Ela vai precisar de instância (a mesma árvore copiada, `InstancedMesh`, umas oito variantes por espécie) e de nível de detalhe (de longe, dois cartões cruzados com a foto da árvore).
+3. **O cartão recortado afina de muito longe**, porque o mipmap come a borda. Já foi atenuado (a cor sangrada, o folíolo largo, `alphaToCoverage`), mas não resolvido.
+4. **A beira do mar é uma peça parada**, de 16 m, pra repetir ao longo da costa. O mar do jogo, com a onda andando, é outra coisa (animação ou shader).
+5. **As 25 praças de mata dividem a mesma mata.** A `FLORA` não separa a Mata Atlântica da Amazônia: o açaí aparece em todas.
+
+
+### 4.44. As dez árvores low poly
+
+O dono pediu uma variedade de dez árvores low poly. Elas são a outra família de árvore do jogo, em `js/diajogo/arvores_lowpoly.js`:
+
+- `ESPECIES_LP` é o catálogo;
+- `FLORA_LP` diz o que vai em cada lugar;
+- `montarArvoreLowpoly(especie, onde, destino, semente)` monta uma;
+- `especieLowpolyDe(lugar, rnd)` sorteia uma espécie do lugar;
+- `montarAsDez` põe as dez juntas, pra comparar.
+
+> **Atualização (4.45):** a de cartão saiu, e a low poly é a árvore do jogo em todo lugar: na rua e na praça (no jogo e na planta), nos equipamentos, na praia e no mato em volta da cidade. E cada uma ganhou a versão de longe.
+
+A de cartão (4.43) continua lá. Nada disso entrou no mapa ainda. Na aba Modelos 3D, as low poly vêm primeiro, e o catálogo abre em **As dez juntas**: as altas atrás, as baixas na frente, desencontradas, com a câmera de frente.
+
+| lugar | espécies (peso) |
+|---|---|
+| cidade | oiti 5, mangueira 2, ipê 2 |
+| mata | ingá 4, jequitibá 1, ipê 1 |
+| cerrado | pequizeiro 5, ipê 2 |
+| caatinga | catingueira 5, mandacaru 3 |
+| praia | coqueiro 1 |
+| sul | araucária 3, ingá 2 |
+
+O ipê é um só; a semente dá a cor. Em mil sementes saíram 42% amarelo, 32% roxo, 16% rosa e 10% branco.
+
+**Como é feita.** Sem textura e sem recorte:
+
+- **A copa** é um sólido facetado: bolas de 80 faces (o icosaedro dividido uma vez). Cada vértice é mexido até 14% do raio, com a mesma mexida pro vértice que as faces dividem, senão abre fresta. O fundo às vezes sai chato, e as faces de baixo, mais escuras (a sombra de dentro da copa). Uma copa são de três a seis bolas: a do meio e as das pontas dos galhos.
+- **O tronco e o galho** são prismas de três a sete lados, dobrados na curva, com o anel levado de um ponto ao outro sem torcer. Fecham na ponta.
+- **A cor** é chapada, uma por face (no prisma, uma por quadrado), com um tremor de ±7% de face pra face. É o que dá o jeito de low poly.
+- **As formas próprias:**
+  - a folha do coqueiro é uma fita dobrada em V, com a borda em serra;
+  - o tufo da araucária é um prato (a lente de seis lados);
+  - o mandacaru é a coluna de cinco costelas, com a ponta redonda;
+  - a catingueira é só galho, dividido três vezes;
+  - a sapopema do jequitibá são cinco aletas;
+  - o ipê tem o tapete de flor no chão, a mangueira a manga na beira da copa, e o coqueiro o cacho de coco.
+
+Tudo sai numa lista só, `lowpoly`, com a posição e a cor de cada face; a UV vai zerada. O material é o de cor de vértice, sem mapa, com `flatShading`. A semente dá outro galho, outra copa, outro tamanho (±12%) e outro tom.
+
+**Custo.** De 280 a 690 triângulos por árvore (vinte sementes de cada), e 5.100 as dez juntas. A de cartão tem de 400 a 3.700. Mil árvores low poly dão uns 500 mil triângulos, e com instância (a mesma árvore copiada) ficam ainda mais baratas.
+
+**O que ficou aberto:**
+
+1. **Nada entrou no mapa.**
+2. **A escolha das dez é minha.** Cobre os seis lugares com a silhueta mais diferente possível. Faltam, se precisar, o juazeiro, o buriti, a palmeira-imperial, a amendoeira, a embaúba e o açaí.
+3. **O estilo não é o dos prédios.** A árvore low poly é de cor chapada, e os prédios e as casas têm textura. Com a mesma luz e a mesma sombra a mistura funciona, mas é uma decisão de estilo: ou a cidade inteira vai pro low poly, ou a árvore fica sendo a exceção.
+
+
+### 4.45. O mato simplificado, a árvore low poly em todo lugar e a favela low poly
+
+Da estimativa de triângulos, o dono escolheu o mato simplificado e a árvore low poly em todo lugar. E pediu a favela mais low poly também.
+
+**A árvore de longe.** Cada árvore low poly ganhou a versão de longe: `facesDaArvore(especie, semente, o)` devolve `{ perto, longe, altura, raio, flor }`. A de longe não é desenhada à parte. Sai do REGISTRO da de perto: enquanto a de perto é montada, fica anotada cada bola da copa, cada tubo (o primeiro é o tronco), cada prato da araucária, cada folha do coqueiro e cada galho da catingueira. A de longe é tirada dessa lista. Então a mesma semente dá a mesma árvore nas duas, e a troca não salta. Por família:
+
+| família | espécies | a de longe | triângulos |
+|---|---|---|---|
+| copa | oiti, mangueira, ipê, jequitibá, ingá, pequizeiro | o tronco num prisma de três lados e uma bola de 20 faces no volume da copa (duas, se a copa é mais de 2,4 vezes larga do que alta), na cor média dela | 26 a 46 |
+| palmeira | coqueiro | o tronco de três lados e uma folha sim, outra não, em losango | 30 |
+| araucária | araucária | o tronco e um prato de cinco lados por andar | 46 |
+| cacto | mandacaru | cada coluna em quatro lados | 108 a 128 |
+| galho | catingueira | os caules e os galhos grossos, em prisma de três lados | 36 a 54 |
+
+De perto, continua com 280 a 690.
+
+`caber: { alt, raio }` encaixa a árvore num lugar dado: a altura e a largura da copa esticam cada uma pro seu lado. É o que a árvore de rua usa: o 2D dá o raio da copa, e a árvore sai com a altura e a copa da de antes (26 + 4,3 × raio de altura, 1,5 × raio de copa).
+
+**O mato simplificado** fica em `js/diajogo/mato3d.js`:
+
+- `plantarMato({ x0, x1, z0, z1, lugar, densidade, semente, pode })` planta uma área. É uma árvore por célula de uma grade tremida, e o lado da célula sai da `DENSIDADE` do lugar, a área de chão de cada árvore: mata 70 m², sul 90, praia 120, caatinga 150, cerrado 200, cidade 250. A espécie sai da `FLORA_LP` do lugar. O sorteio sai sempre, plantando ou não: tirar um pedaço do mato (a estrada nova, pelo `pode`) não muda a árvore do lado.
+- `montarMato(arvores)` junta as árvores em LADRILHOS de 40 m, cada um com duas malhas: a de perto e a de longe. Quem desenha põe as duas num `THREE.LOD` com o centro no meio do ladrilho. A menos de `LONGE_M` (60 m) da câmera sai a de perto; mais longe, a de longe. É uma chamada de desenho por ladrilho, não por árvore.
+
+Na aba Modelos 3D, o grupo **Mato simplificado** mostra os quatro matos em 160 × 120 m (16 ladrilhos), com o LOD de verdade: rolando pra aproximar, o ladrilho de perto troca. A ficha dá as contas:
+
+| mato | árvores | tudo de perto | tudo de longe |
+|---|---|---|---|
+| mata | 266 | 146.544 | 10.936 |
+| cerrado | 88 | 50.276 | 4.048 |
+| caatinga | 128 | 47.997 | 8.394 |
+| mata de araucária | 218 | 127.030 | 9.528 |
+
+A de longe sai de 12 a 14 vezes mais barata; na caatinga, 5,7 vezes, por causa do mandacaru.
+
+**A árvore low poly em todo lugar.** A de cartão saiu: `arvores3d.js` e a folha `vegetacao.png` foram apagados. Agora:
+
+- **No jogo** (`bairro3d.js`), a árvore do 2D era o pinheiro de duas pirâmides. Agora é a low poly da cidade (oiti, mangueira ou ipê, pela semente da posição), encaixada no raio do 2D e girada. Vão todas numa malha só, `arvores`.
+- **Na planta** (`arvore3d`), é a mesma, com a mesma semente: na rua, na praça e na favela.
+- **Nos equipamentos** (`equip3d.js`), a árvore do shopping, da delegacia e da Praça da Vila é o oiti, e o ipê-amarelo onde era ipê. Vão na lista `lowpoly`.
+- **Na praia** (`praia3d.js`), o coqueiro do calçadão. O coco da barraca foi pra folha `praia.jpg`, e a rede do vôlei pra `grades.png`. Os dois estavam na `vegetacao.png`.
+
+**A favela low poly.** A casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base) passaram pro **modo chapado** do `Construtor`: `Construtor(folha, { chapado: { paleta, branca, rnd, treme, lados } })`. Nele:
+
+- a peça que está na paleta vira um polígono só, de uma cor: a da paleta, vezes a tinta, com um tremor de ±6% de parede pra parede. A UV vai toda pro meio da peça `lisa`, que é branca, então a textura não aparece;
+- a janela e a porta viram uma placa a 1,5 cm da parede, em vez do vão com o fundo;
+- o torno cai pra seis lados (a caixa-d'água);
+- a ferragem de espera da laje vira um par de quadrados cruzados por canto.
+
+A paleta, `PALETA_FAVELA` em `casas3d.js`, tem 46 cores: o reboco, o tijolo, o bloco, a laje, a telha, o fibrocimento, cada janela e cada porta. O que é identidade da casa grande continua com textura: o muro da KI-DELÍCIA, o toldo, a faixa de cerveja, o guarda-sol e a geladeira. Assim o bar e a lanchonete ainda se reconhecem.
+
+Custo da favela, na praça mais pesada de cada mapa (uns 90 triângulos por casa; eram 220):
+
+| mapa | casas | antes | agora |
+|---|---|---|---|
+| pequeno | 676 | 162.540 | 66.816 |
+| médio | 1.684 | 374.116 | 148.212 |
+| grande | 1.824 | 403.908 | 161.878 |
+
+**O jogo de hoje** (`estadio3d.html`, medido com o `renderer.info`): a cena foi de 357.067 pra 424.514 triângulos, e o quadro, com a sombra, de 534 mil pra 599 mil. A favela caiu de 149 mil pra 122 mil. Mas a árvore foi de uns 16 triângulos (o pinheiro) pra uns 440, e as árvores somam 99 mil. No jogo a árvore da cidade ainda não troca pra de longe: está numa malha só.
+
+**A conta dos mapas, de novo.** É a mesma conta de antes, com a favela e as árvores novas. A cidade é medida (`objetoDoLote` e os outros montadores da planta); o resto é estimativa.
+
+| | pequeno | médio | grande |
+|---|---|---|---|
+| cidade (medida) | 314 mil (era 400) | 584 mil (era 796) | 741 mil (era 968) |
+| estádios (70 mil cada) | 140 mil | 210 mil | 280 mil |
+| calçada e quarteirão | 38 mil | 79 mil | 103 mil |
+| props nas quadras novas | ~1 mil | ~60 mil | ~92 mil |
+| árvores da cidade (~440 cada) | ~89 mil | ~184 mil | ~240 mil |
+| praia | — | ~149 mil | — |
+| **sem o mato** | **~0,58 milhão** | **~1,27 milhão** | **~1,46 milhão** |
+| mato, tudo de longe | +78 mil | +44 mil | +101 mil |
+| os ladrilhos de perto, com a câmera no mato | até +126 mil | até +126 mil | até +126 mil |
+| **total com o mato simplificado** | **0,66 a 0,78 milhão** | **1,31 a 1,44 milhão** | **1,56 a 1,68 milhão** |
+
+As praças são Interior do PR no pequeno, Bahia no médio (3 estádios, metrô e praia) e São Paulo no grande (4 estádios e metrô). Antes, o total com o mato simplificado era ~0,8, ~1,6 e ~1,85 milhão. A praia foi recontada peça por peça (quantas o 2D põe, vezes os triângulos do modelo) e deu ~150 mil, não os ~100 mil da primeira conta. O grosso são os 94 guarda-sóis: 63 mil.
+
+**O que ficou aberto:**
+
+1. **O mato ainda não está no mapa.** O módulo planta e monta. Falta decidir o `pode` de cada mapa (onde é cidade, estrada e mar) e ligar o LOD na cena do jogo.
+2. **A de longe não é o cartão de dois triângulos** da estimativa: tem de 26 a 128. É mais pesada, mas não precisa de textura nem de foto da árvore, e a troca não salta.
+3. ~~**A árvore da cidade, no jogo, não troca pra de longe.**~~ Resolvido na 4.46: a cidade inteira foi pra ladrilhos, e a árvore troca pra de longe junto com o ladrilho dela.
+4. **A favela perdeu a textura** de tijolo, de telha e de reboco. De longe fica igual; de perto, a casa é bloco de cor.
+5. **O ipê pequeno parece um cacho de balão.** A flor são bolas soltas na ponta dos galhos, sem folha. Na praça e na rua, encaixado no raio do 2D, lê como balão de festa.
+
+
+### 4.46. O jogo mais leve: a sombra anda com a câmera, a cidade em ladrilhos e a versão de longe
+
+O dono perguntou se o jogo roda no celular e no PC fraco, e se ajudava fazer como os jogos grandes: low poly de longe, detalhe de perto. Antes de mexer, medi a câmera de ombro olhando uma rua (tela + sombra, 1280 × 720). Eram 671 mil triângulos por quadro, e só uns 101 mil estavam dentro da tela. Três coisas explicavam isso:
+
+- **a sombra desenhava a cidade de novo:** 322 mil triângulos, numa caixa fixa em volta do estádio. A favela, fora dela, não tinha sombra e pagava igual;
+- **a cidade estava em poucas malhas grandes:** as árvores numa malha só, com 99 mil triângulos. A câmera não tinha o que descartar;
+- **quase tudo o que aparecia estava longe** e vinha com o detalhe de perto.
+
+Foram três mudanças.
+
+**1. A sombra anda com a câmera** (`moverSombra`, em `estadio3d.js`). A caixa tem o mesmo tamanho (134 × 113 m), mas agora fica em volta do alvo da câmera:
+
+- nas câmeras que seguem, o alvo é o líder;
+- nas outras, é o ponto olhado, e a caixa cresce com a distância nas vistas de longe.
+
+O centro anda de texel em texel no plano do sol; senão a borda da sombra treme. A favela agora tem sombra.
+
+**2. A cidade vai em ladrilhos de 40 m** (`ladrilhos3d.js`). Quem monta a cidade (`bairro3d`, `props3d`) diz de quem é cada triângulo: antes de uma casa, de uma árvore ou de um carro, chama `objeto(x, z, giro, tipo)`, e todo triângulo que sai depois leva o número dele. O recorte junta, em cada ladrilho, os triângulos dos objetos cujo meio cai ali, então a casa inteira fica num ladrilho só.
+
+- **Materiais iguais viram um.** Cada material é uma chamada de desenho por ladrilho. O reboco do quarteirão e o da beira viraram um só, e o de cor por vértice dos soltos e das árvores também. A textura pedida duas vezes (a telha da casa e a da favela) agora é carregada uma vez.
+- **Fica inteiro o que é pouco e é chão:** o tampo da laje, a moita e a falha de reboco. Recortados, cada um virava uma chamada por ladrilho pra desenhar uma dúzia de triângulos.
+- **Os marcos também ficam inteiros** (a igreja, as torres, o atacarejo). Já são uma malha cada, e a fachada deles é o que os faz marco: em bloco de uma cor, a torre azul e tijolo virava uma caixa cinza.
+
+**3. Cada ladrilho tem uma versão de longe.** Ele tem três estados, pela distância da câmera ao PONTO MAIS PERTO dele (a caixa do ladrilho):
+
+- de perto, tudo;
+- de longe, uma malha só, de cor por vértice;
+- além da névoa, nada.
+
+Pelo meio do ladrilho não servia: a borda de perto de um ladrilho grande trocava pra bloco a 35 m da câmera. De longe, cada coisa fica assim:
+
+- **a casa de modelo** (a da favela e as da cidade) vira blocos de altura. O telhado dela vai pra uma grade no referencial do lote, com células de 0,6 a 2 m, em degraus de meio metro, e cada retângulo de mesma altura vira um bloco. A cor do topo é a do telhado ali; a dos lados, a média das paredes. Ficam a laje, o quarto em cima dela, a caixa d'água e o muro; somem a janela, a porta e a calha;
+- **a árvore** vira a versão de longe dela, de 26 a 128 triângulos;
+- **o poste, o mastro e o semáforo** viram uma haste;
+- **o que já é caixa** (o carro, o hospital, o muro, a sede) fica igual, só sem o grão do reboco. Em blocos de altura, o hospital de seis andares virava uma caixa cinza sem janela;
+- **o miúdo** some: a lixeira, o cone, o banco, o móvel da sede, o decalque de chão.
+
+A cor de longe é a do vértice vezes a MÉDIA da textura naquele ponto: a da célula do atlas em que a UV cai, ou a da textura solta (o reboco, a telha). As médias saem do pintor, em `js/diajogo/modelos_medias.js` (`python3 ferramentas/pintar_modelos.py --medias` refaz só elas).
+
+**A troca desce com o modo leve:** 72 m no cheio, 57 no leve, 44 no leve+ e 33 no mínimo. O que passa do fim da névoa não é desenhado. Antes, a névoa curta dos níveis baixos só escondia a cidade: os três níveis sem sombra davam o mesmo número.
+
+**O que deu** (chamadas de desenho / triângulos por quadro, tela + sombra):
+
+| vista | antes, cheio | agora, cheio | antes, sem sombra | agora, leve | agora, mínimo |
+|---|---|---|---|---|---|
+| ombro, na rua | 100 / 671 mil | 164 / 352 mil | 55 / 349 mil | 69 / 139 mil | 57 / 124 mil |
+| ombro, na rua, pro outro lado | 176 / 819 mil | 250 / 532 mil | 93 / 384 mil | 122 / 221 mil | 108 / 189 mil |
+| alta, na favela | 55 / 498 mil | 95 / 166 mil | 20 / 181 mil | 29 / 47 mil | 27 / 45 mil |
+| a favela de longe | 63 / 539 mil | 117 / 210 mil | 28 / 222 mil | 37 / 55 mil | 28 / 34 mil |
+| maquete | 266 / 882 mil | 295 / 481 mil | 155 / 461 mil | 162 / 238 mil | 148 / 213 mil |
+| a câmera do começo do jogo | 209 / 599 mil | 228 / 372 mil | — | — | — |
+
+- **Os triângulos caíram de 1,5 a 6 vezes.** O menor ganho é olhando pro lado do estádio, que não entrou no recorte; o maior é na favela.
+- **As chamadas subiram no cheio**, porque a sombra passa por todos os ladrilhos que tocam a caixa dela. No leve, que é o nível do celular, ficaram parecidas.
+- **A conta que fiz antes de mexer foi otimista.** Pra câmera de ombro eu tinha dito "de 670 mil pra uns 100 mil"; deu 352 mil no cheio e 139 mil no leve. O estádio, que não entrou no recorte, tem 70 mil triângulos na tela e mais 59 mil na sombra dessa vista.
+- **A imagem quase não muda.** Comparando o automático com "tudo de perto" na mesma câmera, menos de 1% dos pixels muda mais de 40 níveis de cinza. Na maquete é 0,9%: lá a cidade atrás do estádio vira bloco.
+
+**Por que 40 m.** Medi também 60 e 80 m, com a troca pelo ponto mais perto. Com 60 m, no leve, o quadro tinha de 20 a 70% mais triângulos e só umas 5 chamadas a menos. A vantagem do 60 m é na sombra, e a sombra só liga em máquina forte. Com 80 m, a favela vista de cima desenhava o dobro.
+
+**A favela com textura de volta.** Com `?favela=detalhada` no `estadio3d.html`, a favela low poly troca pela de antes, com tijolo, telha e reboco. A de longe é a mesma nas duas. Na vista alta da favela:
+
+- no leve, 73 mil triângulos (47 mil com a low poly);
+- no cheio, 220 mil (166 mil com a low poly).
+
+É menos da metade do que a low poly custava antes dos ladrilhos. Nessa vista, umas 200 casas ficam de perto: cada 100 triângulos a mais por casa custam uns 20 mil por quadro, e uns 40 mil com sombra.
+
+**Como medir.** `estadio.vista._ladrilhos.forcar('perto' | 'longe' | null)` trava todos os ladrilhos num estado (pra foto e teste); `conta` diz quantos são e quanto pesa cada versão.
+
+**O que ficou aberto:**
+
+1. **O estádio não tem versão de longe.** Com 70 mil triângulos (e mais 59 mil na sombra), é a maior peça da cena nas vistas da rua.
+2. **Cada boneco é uma chamada de desenho** (`bonecos3.js`, um SkinnedMesh por figura). Na maquete são 44 chamadas na tela e 44 na sombra, somando 104 mil triângulos. É o próximo gargalo em cena de multidão.
+3. **O cheio tem mais chamadas que antes** (164 contra 100 na rua): a sombra passa ladrilho por ladrilho. No PC forte não pesa; no celular, a sombra já desliga no leve.
+4. **Dá pra ver a troca, se procurar.** A casa vira bloco a 72 m no cheio, e somem a janela e o telhado de duas águas.
+5. **O fps não foi medido:** este ambiente não tem placa de vídeo.
+
+
+### 4.47. As favelas pela metade
+
+O dono pediu a área de cada favela pela metade — elas não precisam ser tão grandes no jogo, e é triângulo que se ganha —, com as favelas seguindo conectadas à cidade.
+
+**A regra.** Em cada favela fica a metade colada na cidade; quando as duas metades encostam nela, a mais perto do estádio. Quando uma viela da grade dá perto da metade (de 44 a 53% da mancha), o corte cai nela; senão, cai no ponto exato da metade, no meio do quarteirão. A `caixa` da favela para a casa no corte, e a viela e o beco só ficam onde tem casa do lado (o passo 6 do gerador já fazia isso), então não sobra rua no mato. Cada favela da planta guarda onde foi cortada (`corte`, em `proposta.js`).
+
+| favela | mapa | o que ficou | corte |
+|---|---|---|---|
+| a de hoje, no jogo | jogo e aba "Jogo hoje" | a de baixo da estrada, colada nas quadras da coluna 1 | y ≥ 1347 (a metade da área construída) |
+| Noroeste | pequeno | a de baixo da estrada noroeste2 | y ≥ 1085 |
+| Oeste | pequeno | a de leste, colada nas quadras da coluna 1 | viela x = −680 |
+| Norte | pequeno | a de leste | viela x = 1750 |
+| Noroeste | médio | a de cima, colada no estádio | viela y = 617 |
+| Norte | médio | a de leste | x ≥ 2054 |
+| Sudoeste | médio e grande | a coluna −3, no lado oeste do estádio, da fileira 9 à 12 | viela x = −2300 |
+| Sul | médio e grande | a de leste | x ≥ 1375 |
+| Noroeste | grande | a de leste, colada nas quadras −3 e −2 e no estádio | viela x = −3920 |
+| Norte | grande | a de leste | x ≥ 2181 |
+| Alto | grande | a de leste | viela x = −680 |
+
+A do sudoeste primeiro saiu cortada na horizontal, pra ficar com o pedaço embaixo do estádio também, e sobrava uma fileira só de casa embaixo dele: lia como fileira, não como favela. Cortada na vertical, é um bloco a oeste do estádio.
+
+**A favela do jogo** (`dados/cena_estadio.js`): a área de casa (`AREA_FAV`) ficou só com a metade de baixo da faixa, y ≥ 1347, onde caía a metade da área construída — a de cima era mais rala, cortada pela estrada. A grade torta continua medida na faixa inteira (`FAIXA_FAV`), então a quadra e o beco caem no mesmo traçado. A de cima voltou a ser mato (482 → 531 moitas). O sorteio da cidade não anda: a favela usa o sorteio dela, a pixação da favela é a última a sortear, e a árvore de beira pula a favela antes do `rng()`.
+
+**As casas grandes também pela metade**: a conta de cada modelo caiu pra metade (uma de cada, duas da f1 e da f2), 10 por favela em vez de 19 — a mesma proporção de antes. Com a conta antiga, a favela pequena ficava com casa grande demais, e a casa grande é a que mais pesa.
+
+**O que deu:**
+
+| | antes | agora |
+|---|---|---|
+| favela do jogo | 229 casas, 727 mil un² construídos | 98 casas, 369 mil (51%) |
+| casas de favela, mapa pequeno | 676 casas, 66.816 triângulos | 348 casas, 34.624 (−48%) |
+| casas de favela, mapa médio | 1.684 casas, 148.212 triângulos | 729 casas, 66.384 (−55%) |
+| casas de favela, mapa grande | 1.824 casas, 161.878 triângulos | 795 casas, 73.832 (−54%) |
+| área de favela, medida no mapa | 15.137 / 28.764 / 30.049 m² | 7.439 / 14.259 / 14.539 m² |
+| a cidade medida, sem o estádio | 314 / 584 / 741 mil | 284 / 502 / 653 mil |
+| a cena do jogo | 424.514 triângulos | 406.648 |
+
+Cada favela ficou com 39 a 63% da área construída de antes (o corte é pela mancha; a parte cortada nem sempre tinha a mesma densidade — a do noroeste do pequeno perdeu justo a metade que a estrada cortava). A borda oeste do mundo acompanha a favela mais a oeste, então o mapa pequeno e o grande do Rio (sem a vaga do Estádio do Oeste) ficaram mais estreitos: menos mato em volta.
+
+No jogo o ganho é menor que na planta porque a favela do jogo já é low poly e já vai de longe nos ladrilhos (4.46). A favela continua toda andável: dentro dela nenhuma célula onde o corpo cabe ficou presa. Na faixa inteira da favela de antes sobraram 2 presas, as duas no mato que voltou, ao norte do corte, em bolsão de moita; no tabuleiro inteiro são 158, contra 156 antes.
+
+
+### 4.48. O lote de muro vira terreno baldio, e os cinco equipamentos antigos ganham modelo
+
+O dono mandou a foto de um lote de muro na planta ("caixa (muro)", 7,4 m de testada, 2,5 m de altura) e disse: aquele quadrado de muro cobrindo o lote todo não tem sentido; tem de ser um muro fino só na frente, com o terreno baldio dentro. E pediu pra modelar a delegacia, o hospital, o posto, a escola e o shopping Beira-Mar — os equipamentos da cidade de hoje, que ainda eram caixa de poucos triângulos — pra acompanharem a arquitetura da cidade.
+
+**O lote de muro.** O gerador (`tipoDoLote`, em `dados/cena_estadio.js`, e o `lotear` da proposta) sorteia `muro` como tipo de lote junto com casa e sobrado, e o lote sai com o fundo inteiro (4 a 5 m); o desenho era uma caixa da altura do muro (1,9 a 2,5 m) no lote todo — um bloco maciço. Agora `planoDaCasa` dá a ele o tipo `baldio` (`js/diajogo/casas3d.js`), e o jogo e a planta desenham o mesmo modelo:
+
+- o **muro de 20 cm** na divisa da frente, na altura que a planta deu: de bloco aparente (36%), de reboco cru (26%) ou de reboco pintado e desbotado (38%, oito tintas), com o capeamento em cima; um em quatro tem o **portão de chapa** — no muro com pixação, só a partir de 6,5 m e numa ponta, pra lata ter o muro (com o portão no meio do muro curto a pixação encolhia pra 2 m e sumia na vista da planta); a pixação também pode ir no próprio portão;
+- o **lado que dá pra rua** também é muro: na esquina e no quarteirão raso (quando o lote vai de uma rua à outra, o fundo também). Sem isso o lote ficava aberto pra calçada — e a máscara, que tranca o lote inteiro, virava parede invisível. O lado que encosta no vizinho não tem muro: quem fecha é a parede da casa do lado. É `ladosNaRua(l)`, pela borda do miolo da quadra (os lotes da proposta passaram a levar o miolo da quadra deles);
+- dentro, o **chão de terra** (a peça `terra`, 3 × 3 m, com a textura desviada por lote pra dois baldios vizinhos não saírem iguais), de uma a cinco **moitas de capim** low poly, às vezes a **bananeira** low poly e o **monte de entulho** (a peça `entulho`);
+- a pixação, que no muro "toma o muro" (a regra antiga do lote de caixa: de ponta a ponta, na altura do peito), foi pro `decalquesDaCasa` do jogo e pro `decalques` da planta, no lugar livre do muro novo.
+
+O capim e a bananeira primeiro saíram recortados (na folha das grades) e custavam **oito chamadas de desenho a mais** numa rua com baldio: cada ladrilho de 40 m que ganha uma peça de recorte ganha uma malha. Viraram triângulos de cor lisa na folha das casas (a UV parada no miolo da parede lisa, a cor na tinta — o que o modo chapado faz), no mesmo jeito das árvores low poly, e a rua voltou às 133 chamadas de antes.
+
+Na planta, o lote de muro vira **"Terreno baldio"** (a legenda e a cor de terra), com o muro riscado na divisa (`segmentosDoMuro`), e a ficha diz "muro fino e terreno baldio", com o fundo e a área. A máscara não muda: o lote continua trancado inteiro, e agora tem muro onde o boneco esbarra.
+
+**Os cinco equipamentos** (`js/diajogo/equip_antigo3d.js`, o módulo novo) saem das **mesmas peças** da planta, nas mesmas medidas — o bloco que tranca na máscara é o volume do prédio, o pilar é o pilar, o muro é o muro, a bomba é a bomba — e na **mesma folha das casas**, com as peças novas pintadas pra eles. Nada passa da borda do miolo da quadra: na face que encosta na calçada não sai friso, cornija nem beiral. O que o modelo não veste (o carro, a árvore, o poste, o mastro, o letreiro, o piso pintado, a tabela de basquete) continua saindo de `desenharPecas`; `montarEquipAntigo` devolve o conjunto `feitas`, e quem desenha pula essas peças.
+
+| equipamento | o modelo |
+|---|---|
+| Hospital Municipal | a lâmina de 4 andares de janela de fita (o módulo `hosp_modulo`, 3 m por andar, ladrilhado na face — é o que deixa a fachada barata), os frisos das lajes e a cornija, o andar de cima liso onde vão a **cruz** (a peça `cruz`) e o nome, a platibanda, a casa de máquinas e a caixa d'água no teto; a ala de 2 andares; o pronto-socorro com a **porta de vidro** e a marquise vermelha com a testeira alta que segura o letreiro; o muro baixo com o **gradil** branco |
+| 3º Distrito (delegacia) | o prédio de repartição de 2 andares: reboco creme, barrado cinza-azulado, a janela de ferro com grade (`dp_janela`), a **porta de duas folhas** (`porta_dupla`) no pórtico de quatro pilares, o friso entre os andares, a cornija, a caixa d'água e a antena de rádio no teto; a guarita de beiral |
+| Escola Municipal | os pilares de concreto marcando os vãos (saltando da parede do lado do pátio, e parando onde passa o letreiro), a fita de vitrô de ferro (`esc_janela`), o barrado azul, a porta debaixo do nome; a ala da escada com o **cobogó** e o basculante; a passarela coberta; o muro de barrado |
+| Posto Beira-Estrada | a conveniência de vitrine (`posto_vitrine`, com o 24 HORAS) e a faixa vermelha em cima; a cobertura com a testeira (`posto_testeira`) e o forro de luminária (`forro_posto`); os quatro pilares de pé vermelho; as ilhas de concreto; as bombas (`posto_bomba`, com os visores e os bicos) e o totem de preço (`posto_totem`). A marca é nossa: vermelho e branco, a gota, "POSTO" |
+| Shopping Beira-Mar | a caixa de placa de concreto (`shop_painel`) com a faixa azul no alto, as vitrines do térreo, a entrada de vidro do lado do estacionamento; a torre de vidro da entrada (`shop_vidro`) com a marca (`shop_logo`, a onda no círculo) e a coroa azul; a marquise de vidro; as claraboias (`claraboia`) e as máquinas de ar no teto; o totem com a marca |
+
+Três ajustes de dado, todos em peça que **não tranca** e sem `rng()` (a cidade não anda): a cruz e o nome do hospital subiram pro andar de cima (`base` 150 → 181 e 152 → 190), no painel liso; o letreiro do shopping saiu da frente da torre (que tem 4 m e deixava a placa de 7,7 m pendurada no ar dos dois lados) pra fachada da caixa, a oeste dela, acima da marquise; o do posto virou placa branca de letra vermelha, e o totem, vermelho.
+
+**A versão de longe.** O mapa de alturas automático dos ladrilhos (4.46) fazia do hospital uma caixa cinza lisa a mais de 70 m. Agora o próprio modelo manda a sua (`distante`: a caixa na cor da parede, a laje e, rente às faces, as faixas de janela, as portas, o barrado e as faixas de cor, em cor por vértice, das médias da folha), e `ladrilhos3d.js` usa a `longe` pronta de qualquer objeto que a traga — como a árvore já fazia. A 100 m o hospital continua com as faixas de janela, a cruz e o painel do nome, a escola com o barrado azul, o shopping com a faixa azul e o vidro.
+
+**As peças novas da folha das casas** (`ferramentas/pintar_modelos.py`): `terra`, `entulho`, `hosp_modulo`, `cruz`, `porta_vidro`, `porta_dupla`, `dp_janela`, `esc_janela`, `cobogo`, `posto_vitrine`, `posto_testeira`, `posto_bomba`, `posto_totem`, `forro_posto`, `shop_painel`, `shop_vidro`, `claraboia` e `shop_logo` (a folha foi de 2048 × 1440 pra 2048 × 1904). A folha das grades não mudou: o capim recortado que chegou a ser pintado nela saiu junto com o capim de recorte.
+
+**O que custou** (a cena do jogo, com a sombra, medida contra o commit anterior nas mesmas câmeras):
+
+| | antes | agora |
+|---|---|---|
+| triângulos da cidade | 406.648 | 409.796 (+0,8%) |
+| os 93 lotes de muro | 930 (caixa de 10) | 5.330 (57 por lote; 88 no lote inteiro) |
+| os cinco equipamentos | ~6.500 (cada janela era uma caixinha) | 5.298 (hospital 1.150, escola 1.798, delegacia 908, shopping 836, posto 606) |
+| rua na frente do hospital | 297 chamadas | 301 |
+| rua na frente da escola | 283 chamadas | 288 |
+| rua do baldio, posto e shopping | 133 e 130 chamadas | 133 e 129 |
+| a cidade de cima (maquete) | 166 chamadas, 255 mil triângulos | 166, 245 mil (−4%) |
+
+As quatro ou cinco chamadas a mais perto do hospital e da escola vêm de o prédio ter ido pra malha das casas: o ladrilho que só tinha a malha de reboco (o chão, o carro, o poste) ganhou a das casas. Na planta, que monta tudo de perto, o mapa pequeno foi de 284 pra 292 mil triângulos e o grande de 653 pra 667 mil (+2,3 a 2,8%): lá as caixas antigas não tinham janela nenhuma, então o equipamento custa mais (22 → 27 mil nos oito de hoje), e os baldios, 10 mil a mais no grande.
+
+**Conferido:** a máscara do jogo é a mesma, byte a byte, as peças que trancam nos equipamentos são as mesmas e os lotes são os mesmos (tipo, lugar, altura, pixação); as 35 pixações de muro do jogo e as 49 do mapa grande acham lugar no muro novo (nenhuma cai); o jogo carrega sem erro; as 30 praças abrem na planta sem erro nas quatro abas; `conferir_cidades` e `conferir_sede` passam.
+
+
+### 4.16. Dois bugs que a sede menor desenterrou
+
+Encolher a fatia da sede mexeu no `rng()` compartilhado, e a cidade
+inteira andou. Duas coisas que estavam erradas desde antes apareceram:
+
+1. **Árvore com a copa no asfalto.** O sorteio de árvore do quarteirão
+   testava avenida, fatia de equipamento e lote — mas **não a rua da
+   grade**. Numa QUINA de quarteirão o tronco fica na calçada de uma
+   face e a copa alcança o asfalto da outra. E o laço de árvore da
+   FAVELA não testava asfalto nenhum. Os dois ganharam
+   `tocaAsfalto(x, y, r + 2)`. Na favela o raio é sorteado ANTES do
+   teste de propósito: `entreFav` continua sendo chamado nas mesmas
+   voltas, então a favela sai igual — o que muda é só a árvore não
+   nascer.
+
+2. **A favela caiu de 262 pra 231 casas.** A reparação de ilha passou a
+   tirar mais casas porque as casas de beira de estrada, que entram na
+   camada-base dela, tinham andado. Havia dois caminhos: baixar a
+   frente da casa (devolvia 264, mas a 2,14 m — justamente o que o dono
+   reclamou antes) ou apertar a quadra. O beco saiu de varredura:
+   30–38 devolve 262 mas deixa 30 células presas (a reparação empaca
+   num bolsão que nenhuma remoção única abre), 31–39 zera as presas mas
+   cai pra 248, e **32–42 dá 260 casas com 25.384 de 25.384
+   alcançáveis**. Ficou o 32–42.
+
+### 4.13. Faixa de pedestre e semáforo, nos cruzamentos da avenida
+
+O dono mandou a foto de um cruzamento de verdade e pediu faixa nos
+cruzamentos das avenidas, com semáforo nos principais. A cidade já tinha
+faixa de pedestre — nos três portões do estádio e onde a avenida do
+norte chega —, mas eram quatro pontos fixos, escritos na mão. O que
+faltava era achar os cruzamentos que a planta gera sozinha.
+
+**Achando o cruzamento.** A avenida é uma sequência de segmentos retos;
+a rua da grade é sempre ortogonal, em bandas de x (`COLUNAS`) e de y
+(`LINHAS`). O cruzamento é o ponto de cada segmento onde ele atravessa
+uma dessas bandas — resolver `x = col.c` ou `y = lin.c` no segmento. O
+que decide se é cruzamento DE VERDADE, e não a avenida cortando um
+trecho de mato sem rua nenhuma ali, é `naRua()`: a mesma régua que a
+máscara usa pra saber se um corpo pode virar a esquina. `CRUZAMENTOS`
+sai pronto na planta, pra pintor e 3D lerem o mesmo ponto.
+
+**A LISTRA CORRE NO SENTIDO DO CARRO.** A primeira versão saiu girada
+90°: listra atravessada na pista, repetindo ao longo dela — que é o
+desenho de uma lombada, não de uma faixa. Quem atravessa uma faixa de
+verdade pisa numa listra de cada vez, então a listra é comprida no
+sentido em que o carro anda e se repete de uma guia à outra. (As faixas
+dos portões do estádio, essas, já estavam certas desde sempre; só a
+nova nasceu errada.)
+
+**SÃO QUATRO, UMA POR PERNA.** Tinta por cima do meio do cruzamento não
+é faixa. O padrão é o anel: as duas pernas da avenida e as duas da rua,
+cada uma encostada na SAÍDA do cruzamento. Foram 46 faixas em 12
+cruzamentos — 46 e não 48 porque duas pernas não existem (a avenida
+acaba ali).
+
+O retângulo de cada faixa sai pronto da PLANTA (`FAIXAS`: centro,
+ângulo, largura de pista, profundidade e a retenção), não do pintor.
+Assim dá pra auditar a tinta como se audita casa — contando pares que
+se tocam e quinas fora do asfalto —, e não olhando screenshot.
+
+**Onde a perna começa, e por que a conta não é "metade da largura".** A
+avenida é DIAGONAL. Andando pela rua a partir do centro do cruzamento,
+o quanto se anda até sair do asfalto da avenida é `a/proj` — a
+meia-largura da avenida dividida pela projeção de um sentido na normal
+do outro. Num cruzamento a 57° isso dá quase o dobro da meia-largura:
+encostar a faixa "na largura da avenida" deixava ela DENTRO do
+cruzamento. A projeção é a mesma nos dois sentidos (|v·nu| = |u·nv|),
+então uma conta só serve pras quatro pernas.
+
+**A perna só nasce se as QUATRO QUINAS estiverem no asfalto.** Testar
+só o centro não bastava, e testar o meio das bordas também não: a ponta
+da avenida do norte é uma CALOTA (o traço da avenida tem `lineCap`
+redondo, e `distAvenida` trunca o `t`), então o meio da borda ainda
+caía no asfalto enquanto as quinas já estavam de fora — a faixa
+sobrava pra fora do fim da avenida. Com as quatro quinas, zero faixa
+fora do asfalto (medido).
+
+**UMA FAIXA NÃO ENCOSTA NA OUTRA.** Recuar pela conta acima põe cada
+faixa fora do cruzamento, mas não garante que ela fique fora das
+OUTRAS: na quina AGUDA (57° de um lado, 123° do outro) a faixa da rua
+e a da avenida saem por direções que ainda se cruzam, e os retângulos
+se tocam. O mecanismo é o que um projeto de rua faz de verdade —
+RECUAR a faixa pra trás na própria perna, que é a única direção em que
+ela continua fazendo sentido:
+
+1. nasce quem cabe inteiro no asfalto;
+2. enquanto duas se tocarem (com folga de 6), as duas andam pra trás
+   de 6 em 6 na sua própria perna — como as pernas divergem, afastar
+   funciona;
+3. quem não tem pra onde ir (o passo a tiraria do asfalto) ou já andou
+   140 para de andar;
+4. o que ainda assim se tocar some, e some a da via mais ESTREITA, que
+   é a regra da rua: quem cede é a via menor.
+
+O teste de toque é o do **eixo separador (SAT)** entre dois retângulos
+GIRADOS. Caixa alinhada aos eixos não serve aqui: a faixa da avenida
+está a 57°, e a caixa dela alinhada é quase o dobro do retângulo de
+verdade — acusaria toque onde não há.
+
+**PROF 46 e folga 6 saíram de varredura, não de gosto.** Com os 56 de
+profundidade e 10 de folga que eu tinha chutado, o mecanismo salvava 36
+das 46 pernas: as outras 10 batiam no teto de recuo e eram apagadas.
+Varrendo profundidade × folga × teto, 46/6/140 devolve as 46 com o teto
+nem chegando a morder (o pior recuo para em 126), ou seja o afastamento
+converge sozinho em vez de ser cortado. O preço é recuo: 4 faixas não
+se mexeram, 24 andaram 1,1 m, 13 andaram 3,2 m, 4 andaram 4,3 m e 1
+andou 5,4 m. Num cruzamento a 57° isso é o que a rua de verdade faz —
+a faixa fica pra trás da esquina.
+
+Medido no fim: **46 faixas, zero pares se tocando, menor folga 6,3,
+zero quinas fora do asfalto.**
+
+**A retenção** — a barra branca grossa onde o carro para — vem depois
+da faixa, em meia largura de pista (a outra metade é a mão contrária,
+que para do outro lado do cruzamento). Só nos cruzamentos com semáforo:
+barra de parada em rua sem sinal nenhum é tinta que a prefeitura não
+pintou.
+
+**Quando a avenida passa numa esquina da grade** ela atravessa a COLUNA
+e a LINHA quase no mesmo lugar, e a conta cospe dois pontos a poucas
+dezenas um do outro. Não são dois cruzamentos: é um, de seis pernas, e
+desenhar os dois dava dois anéis de faixa embolados. O raio de fusão é
+200, generoso de propósito — ao longo da avenida dois cruzamentos do
+mesmo tipo nunca ficam a menos de 550, porque a grade é larga —, e fica
+o da rua mais larga. De 14 pontos crus sobram **12 cruzamentos**.
+
+**O semáforo, só nos PRINCIPAIS.** Nem todo cruzamento leva poste: as
+avenidas de entrada (`sudoeste` e `noroeste`, as que a torcida usa pra
+chegar) marcam `principal: true`; os ramais curtos que só viram estrada
+no mato e a beira-mar não. Dos 12 cruzamentos, 11 são principais e 10
+ganharam poste — um ficou de fora porque não achou esquina livre de
+asfalto (o próximo item explica por quê).
+
+**O recuo do poste não é só `avLarg/2 + folga`.** No cruzamento, a rua
+que corta a avenida TAMBÉM é asfalto — um recuo perpendicular à avenida
+atravessa essa segunda faixa antes de sair dela, e a esquina de verdade
+fica mais longe do centro do que a avenida sozinha sugere. A busca
+cresce o recuo de 8 em 8 até `noAsfalto` desistir, com teto em 140: se
+não limpou até lá, o cruzamento fica sem poste em vez de plantar um
+dentro do asfalto.
+
+O poste (`semaforo()`, em `bairro3d.js`) é o mastro do `poste()` de luz
+mais alto, com um braço perpendicular à avenida estendendo até a metade
+da pista e a cabeça na ponta, três focos empilhados na face que olha
+pra quem chega. Entra na mesma malha `TS` dos postes e carros — nenhuma
+chamada de desenho a mais.
+
+**A pegadinha que custou uma hora, ainda vale.** `arredores.js` lê
+`largura`, `altura` e `celula` **uma vez, na carga**, da cena padrão — e a
+malha, a malha de corpo e a memória de rota nascem daquele tamanho. O
+comentário do próprio módulo diz: "todas têm o mesmo tamanho de tela".
+Trocar de cena não redimensiona nada. A saída, sem mexer no módulo:
+**nesta página a cena padrão é o estádio** (`TO.dados.cenaArredores =
+TO.dados.cenaEstadio`, antes de `arredores.js` subir). O jogo em
+`index.html` não passa por aqui.
+
+### 4.49. O cenário 3D das praças, no GitHub Pages
+
+O dono pediu o cenário 3D das cidades num link do GitHub Pages: escolhe a praça e abre o mapa como foi planejado — e a planta da cidade continua sendo o guia do que muda no 3D.
+
+**A decisão: o cenário é a planta.** Nada foi copiado da planta pra outra página. O cenário é um módulo (`ferramentas/planta_html/cenario.js`) que a própria planta carrega, e tudo o que ele sabe do mapa ele pede a ela (`apiDoCenario()`, no `index.html`): a praça e o mapa (o do porte dela, ou outro pra comparar), a lista do que montar (`pecasDoCenario()`), o chão pintado (`pintarChao`) e a ficha do que se clica (`fichaDe`). `pecasDoCenario()` usa os **mesmos filtros do desenho 2D** — o lote que a proposta tira, a árvore debaixo de quadra nova, o carro do atacarejo que mudou de lugar — e os mesmos montadores do 3D da planta (`objetoDoLote`, `objetoDoMarco`, `objetoDaSede`, `objetoDoEquipNovo`, `objetoDoEstadio`, `objetoDoPortico`, `objetoDoProp`, `arvore3d`…). Mudou o `proposta.js`, um montador ou um filtro, remonta a pasta do Pages e o cenário sai igual à planta. Pra isso a planta ganhou três coisas pequenas: a entrada do metrô virou função (`entradaDaEstacao`, a boca na rua sem a estação de baixo), as peças do equipamento e da pracinha saíram numa função só (`pecasEm3d`), e o clique virou `pegarNoMundo(x, y)`.
+
+**O chão é o desenho da planta.** `desenhar()` ganhou o modo chão (`pintandoChao`): o mesmo desenho, só com o que é chão — a rua com o tracejado, a calçada, a terra debaixo de cada casa, o piso do equipamento, a areia, o calçadão, o mar com as ondas, a lagoa, o beco e o campinho da favela, o mato —, sem rótulo, contorno, árvore, carro, volume nem seleção, e na paleta do chão do jogo (`COR_CHAO`, as cores do `estadio_pintura.js`). O cenário pinta isso em ladrilhos de 1024 px (4, 6 ou 8 px por metro, pela qualidade), cada um com 2 px de sobra pra costura não aparecer, e cortados na borda da área. Um grão ladrilhado no shader dá textura rente ao chão e some de longe (o mipmap o reduz à média). Pra lá da área pintada vai o **chão de longe**: o próprio ladrilho do mato da planta (a copa da mata, o capim do cerrado — 2.400 unidades que emendam sem costura) repetido até o horizonte, e o mar a leste da linha d'água nas praças de praia (no modo chão a costa segue reta pra lá das pontas, como o `xCosta` segue).
+
+**O mato é plantado onde o desenho é mato.** A MÁSCARA é o mesmo desenho, a 1 px por metro, com o fundo do mato e a moita em magenta; o `plantarMato` do jogo (`mato3d.js`) planta a vegetação da praça onde é magenta a 2 m pros quatro lados — longe da rua, do lote, da praia —, e mais um anel de 110 m em volta da área pintada, com metade das árvores e nunca no mar, pra borda do mato não sair reta. Cada bloco de 96 m é um `THREE.LOD`: a árvore inteira perto, a versão de longe (20 a 130 triângulos) a mais de 60 m.
+
+**O forno junta as malhas.** Cada coisa é montada num grupo à parte, e as malhas dela viram vértice de mundo (posição, normal em 8 bits, cor em 8 bits já com a cor do material, uv) num balde por **bloco de 96 m e por material** — a chave é a folha do atlas (a mesma folha pedida por vários marcos junta, pela origem da imagem), o lado, a transparência, o recorte. O letreiro, a pixação, a placa e o escudo (cada um um canvas só dele) vão pra **folhas de decalque** de 2048 px, em prateleiras, e a malha deles também junta por bloco; o escudo em PNG chega depois e a folha copia de novo. No mapa grande são ~2.700 coisas, ~4.300 malhas e ~1.000 decalques que viram **~200 malhas**; depois de subir pra placa de vídeo, a cópia do vértice sai da memória do navegador.
+
+**O clique é exato.** Cada vértice do forno leva o número da coisa de onde veio; no clique, a cena é desenhada de novo num alvo de 1 × 1 pixel, com o número na cor, e o que está naquele pixel é o que se clicou — a parede do bar, não a caixa em volta da sede do lado (a primeira versão, por caixa, errava justamente isso). A ficha que abre é a da planta, com o contorno laranja na coisa; com o mouse parado, o nome aparece do lado.
+
+**A câmera.** Órbita em volta de um alvo no chão: arrastar pega o chão (o ponto fica debaixo do dedo); o botão direito (ou Shift) gira e inclina; a roda aproxima no cursor; WASD e as setas andam, Q/E giram, R/F inclinam; o duplo clique voa até o ponto; **Nível da rua** desce à altura do olho (1,6 m); **Vista de cima** volta pra cidade inteira. No toque: um dedo arrasta, dois dedos aproximam, giram e inclinam. O perto e o longe da câmera e a névoa acompanham a distância; o sol vem de noroeste, como a sombra do 2D (a sombra em si saiu na 4.50).
+
+**A página.** `montar_pages.sh` monta a pasta `cenario3d/` pro GitHub Pages: o `index.html` inteiro (com o `<head>`) abre direto na **lista das 30 praças por porte** (grandes → mapa grande, médias → médio, pequenas → pequeno, com os estádios, a praia ou a lagoa, o metrô e a vegetação de cada uma); escolhida a praça, o mapa monta com a barra de progresso (o chão primeiro, depois a cidade, o mato por último). No topo: a praça, as abas dos três mapas (o do porte marcado), Vista de cima, Nível da rua, a qualidade (Leve: chão a 4 px/m, decalque menor e a tela sem densidade extra — é a que o celular abre; Normal; Alta), Praças e **Planta 2D**, que fecha o cenário e mostra a planta, a mesma página por baixo. O endereço acompanha (`?cenario&cidade=Recife`, e `&mapa=` quando não é o do porte), então dá pra mandar o link de uma praça. `planta.html` abre só a planta. Na planta (o artefato), o botão **Cenário 3D** abre o mesmo cenário da praça e do mapa da tela.
+
+**Os números** (neste ambiente, rasterizador por software: o tempo de montar é de processador e vale como ordem de grandeza; o fps não foi medido):
+
+| mapa | praças | coisas | triângulos da cidade | árvores do mato | malhas da cidade | folhas de decalque | montar |
+|---|---|---|---|---|---|---|---|
+| grande | 5 | 2.582–2.723 | 738–872 mil | 1.909–4.210 | 176–197 | 5 | 4–10 s |
+| médio | 18 | 2.262–2.471 | 577–749 mil | 1.507–4.246 | 144–166 | 4–5 | 3–8 s |
+| pequeno | 7 | 1.478 | 372–418 mil | 1.083–3.169 | 89–92 | 2 | 2–4 s |
+
+As 30 praças montam sem erro (`todas.js` do teste passa por todas), e os conferidores da planta (`conferir_cidades.mjs`, `conferir_sede.mjs`) e a varredura das 30 praças na planta continuam passando: o modo chão só vale quando o cenário pinta.
+
+**O que o cenário ainda não é** (dito sem enfeite):
+
+- **O estádio é a casca da planta** (o gramado, a pista, a arquibancada em degraus, a cobertura, a fachada e as torres de luz), não o estádio detalhado da cena da torcida (`estadio3d.js`), que é outra montagem, presa à cena.
+- **A casa não tem versão de longe.** A cidade vai sempre inteira: de 0,4 a 0,9 milhão de triângulos, mais o mato. Num computador fraco ou no celular, a qualidade Leve tira a sombra e alivia o chão, mas não os triângulos; a versão de longe do jogo (`ladrilhos3d.js`) ainda não entrou aqui.
+- **A água é pintada.** O mar e a lagoa são o chão pintado (sem onda em 3D); o trapiche, o aguapé e o junco da lagoa também. O metrô tem só a entrada na rua (a estação de baixo e a viagem continuam na ficha da planta). O carro é a caixa com cabine do jogo, e não tem gente.
+- **O mato pintado debaixo da árvore** lê como copa vista de cima, mas nas faixas estreitas de mato perto da cidade, rente ao chão, parece mancha.
+- **O fps de verdade** tem de ser visto numa máquina com placa de vídeo: aqui só dá pra contar triângulo e chamada de desenho.
+
+### 4.50. A praia mais larga, o mar sem mato, o fps, a sombra fora e as rivais longe
+
+O dono abriu o cenário de Fortaleza no Pages e pediu: a faixa de areia mais larga; o mar estava "bugado", com uma textura de mata dentro dele; a areia seguindo pra fora da cidade, pra praia e mar parecerem contínuos; um medidor de fps; tirar a sombra de vez, pra ver se ajuda no rendimento; e redistribuir as sedes e os bares — a sede de uma torcida no lado oposto do mapa da sede da rival, e o bar longe da própria sede e da sede rival.
+
+**A praia.** Nos três mapas a faixa de areia passou de 12,5 m pra ~42 m (`PRAIA_A_MAIS`, 105 px do desenho do jogo): a **linha d'água vai pro mar** e a cidade e a avenida da beira ficam onde estavam; o "Jogo hoje" continua com a faixa do jogo. As peças se espalham pela areia nova, na distância da água proporcional à faixa: o guarda-sol (agora até seis por grupo) e a barraca em dois terços da areia, o posto a um quarto, a quadra de vôlei no meio, o quiosque e o coqueiro na beira do calçadão. A costa dos três mapas também **passa das pontas** (reta, como o `xCosta` segue pra lá da ponta): a areia, a espuma, o raso e a onda vão até a borda do desenho, na planta e no cenário.
+
+**O "mato dentro do mar"** não era desenho, era **profundidade**: o chão de longe era um plano de mato enorme 0,8 unidade debaixo do plano do mar, e de longe o teste de profundidade não separa 0,8 unidade a 20 mil — os dois brigavam e saía listrado. Agora o chão de longe são **faixas que não se sobrepõem**, em volta da área pintada e na mesma altura dela: o mato (o ladrilho da planta, com a uv no mundo) a oeste; ao norte e ao sul, o mato, a **faixa da praia** e o mar; a leste, o mar. A faixa da praia é um pedaço de 124 m da própria praia pintada pela planta (a areia, a areia molhada, a espuma, o raso e a onda), logo pra lá da ponta do mapa, repetido ao longo da costa até o horizonte; o mar de longe tem a cor tirada do mar pintado. E o "perto" da câmera sobe com a distância (2% dela), o que dá precisão de sobra lá longe.
+
+**A sombra saiu.** O cenário não desenha sombra nenhuma: o renderizador não tem mapa de sombra, e o sol só dá a luz de cada face. A sombra custava desenhar a cena mais uma vez por quadro (o mapa de sombra, que seguia o alvo). O custo visual é o de sempre: o prédio não projeta nada no chão, e a cidade fica mais chapada.
+
+**O medidor de fps** fica no canto de baixo, à esquerda (e no celular também): os quadros por segundo (verde a partir de 50, amarelo de 28 a 50, vermelho abaixo), os milissegundos por quadro, as chamadas de desenho e os triângulos do quadro e o tempo do processador pra mandar o quadro, na média de meio segundo. Pra medir de verdade, **o cenário desenha todo quadro** enquanto está aberto, como um jogo (antes ele só desenhava quando algo mudava); enquanto a praça monta, só desenha quando pede, pra não roubar tempo da montagem. Neste ambiente o rasterizador é por software e mostra 0 a 2 fps — o número que vale é o da sua máquina.
+
+**As sedes e os bares** (a regra é da planta, `distribuirTorcidas`, e vale pro 2D e pro 3D):
+
+- **A rivalidade é a dos dados**: entre as torcidas da praça, `maioresRivais` pesa 3 e `rivais` pesa 1 (de um lado ou do outro); a do mesmo clube não conta. É o que já estava em `dados/torcidas.js` (vindo do JSON de relações da era Unity): Gaviões × Mancha Verde, Remo × Paysandu, Ceará × Fortaleza estão lá como maiores rivais.
+- **Quem tem sede** não mudou: a maior primeiro, a de nível 1 cabe no espaço pequeno ou num terreno, a de nível 2 pra cima só no terreno.
+- **Onde**: a busca passa por todas as distribuições das sedes nos espaços (no máximo nove torcidas em nove espaços: 360 mil distribuições, em até 80 ms) e dá nota a cada uma, nesta ordem: a **menor distância entre duas sedes de maior rivalidade**, a menor entre duas rivais quaisquer — ninguém em cima da rival: é o "lado oposto" —, e a soma das distâncias entre rivais, com o peso. A praça sem rival fica com a regra antiga (a maior perto do estádio).
+- **O bar** fica a 100 m ou mais da sede da torcida e a 150 m ou mais da sede de uma rival no mapa grande; no médio e no pequeno as duas distâncias encolhem com a cidade (92/139 m e 63–71/95–107 m). Os bares saem **todos de uma vez**, pelo método húngaro (`casar`): o máximo de torcidas com bar que serve e, entre essas distribuições, cada bar o mais perto da própria sede; quem fica sem bar que sirva leva o que chega mais perto da regra.
+- **A sede manda**: das distribuições de sede quase tão boas quanto a melhor (a menor distância entre rivais a 90% ou mais da melhor), fica a primeira em que menos bar quebra a regra.
+- As notas da planta explicam a regra, e a tabela das torcidas mostra o bar com a distância dele à sede e a **sede rival mais perto**, com a distância.
+
+**O resultado**, nas 30 praças (no mapa do porte de cada uma): 139 torcidas com sede; **121 com o bar dentro da regra**. As 18 que não cumprem estão nos mapas onde não há bar que sirva — São Paulo (3), Belém (3), Subúrbio Carioca (3), Interior do RS (3), Goiânia (2), Rio (1), Interior de SC, Interior do PR e Mato Grosso (1 cada) —, quase todas a 85–98% da distância pedida; as piores (Subúrbio Carioca e Belém) a dois terços. O que as resolveria é bar em outro lugar: os pontos de bar são do gerador do mapa (um por bairro) e não mudaram. A primeira tentativa, que punha o bar antes da sede, deixava sede rival a 49 m em São Paulo — por isso a sede manda.
+
+### 4.51. A pé: o boneco do jogo andando na rua do cenário
+
+O dono mediu o cenário: 2 fps no computador dele (um i5 de 2ª geração) e de 35 a 60 fps no iPhone 16. E pediu o boneco 3D na rua, pra navegar o mapa com ele.
+
+**O boneco é o do jogo**, não um novo: `js/diajogo/bonecos3.js` (o modelo do Blender, `img/boneco.glb`, com o mesmo andar, o mesmo correr e o mesmo parado), entrando na cena do cenário por `entrarEm(cena)` — o modo convidado que o estádio usa — e lido a cada quadro de um disco, o mesmo objeto que o combate passa no jogo: o lugar, pra onde vai (`rumo`), se corre (`_cacando`), as cores da camisa (`cor`, `cor2`, `cor3`) e a torcida. O modelo só carrega quando alguém entra a pé: o `montar.sh` põe o GLB em base64 em `dados/boneco_glb.js` (3,6 MB), que o carregador do jogo lê sem pedir arquivo (o caminho que ele já tinha pro artefato), e leva junto o `bonecos3.js` e o `GLTFLoader.js` apontando pro three.js do CDN. A malha afina na chegada com 72 células na altura em vez das 48 do jogo (a câmera chega a um metro dele): das 119 mil faces do GLB, com todas as variantes, sobram 12 mil. O boneco tem 1,75 m. (Desde a 4.65, o `dados/boneco_glb.js` leva os dois níveis já afinados, 0,6 MB, e nada afina na chegada.)
+
+**A única linha mexida no módulo do jogo** é um campo opcional do disco, `passada` (sem ele, 1): o ciclo do passo sai da velocidade medida, e a corrida do jogo é curta, de briga — a 6 m/s o boneco dava sete passos por segundo. Com `passada`, o ciclo anda na velocidade dividida por ela: a pé, 1,15 andando e 2,1 correndo. No jogo ninguém manda `passada`, e nada muda (está no cabeçalho do `bonecos3.js`, como a sexta mudança).
+
+**Onde ele pisa: a grade do passo.** O chão da área em células de meio metro, montada junto com a praça (o boneco ainda nem carregou). O forno passa por ela cada triângulo que assa, e o que corta a **faixa do corpo** — de 35 cm a 1,80 m do chão — risca as células por onde o contorno passa: a parede, o muro, a grade, o carro, o poste, o tronco, o banco, o quiosque. O meio-fio e o degrau baixo ficam fora da faixa, e ele passa por cima. Só o contorno é riscado, e basta: o risco anda uma célula de cada vez, em x ou em z, então não tem fresta, e o miolo fechado de um carro ou de uma mesa nunca é alcançado. O que é de prédio (a casa, a favela, o bar, o marco, a sede, o equipamento, a entrada do metrô, o estádio) guarda ainda a **altura da parede** na célula, pra câmera. O mato passa o tronco dele (a árvore de perto do `mato3d.js`). A água entra por último: o **mar** pra lá da linha d'água da planta (`costa().agua`) e a **lagoa** pelo contorno da água, menos a ilhota e o **trapiche**, que se pisa (a planta passou a entregar isso ao cenário em `lagoa()`). O **alcance** é o que se chega andando da borda da área (uma busca em largura, feita na primeira vez que alguém entra a pé): é nele que o boneco nasce, e não dentro de uma casa fechada. No mapa pequeno são 0,73 milhão de células, riscadas em ~130 ms; no grande, 1,2 milhão, em ~190 ms; a água da lagoa, ~150 ms (neste ambiente).
+
+**Andar.** WASD ou as setas andam relativo à câmera; Shift corre (2,2 m/s andando, 6 m/s correndo). O corpo é um círculo de 28 cm que anda de 15 em 15 cm e desliza no que bate: encostou na parede de lado, segue ao longo dela. Ele vira pra onde anda; parado, faz o parado do jogo (respira, põe a mão na cintura, olha em volta). A câmera vai atrás, a 4,4 m, olhando pra 1,5 m de altura: **arrastar gira** (a pé o chão não se arrasta), a roda aproxima (de 1,2 a 30 m), Q/E giram, R/F inclinam. Andando pra frente, ela volta sozinha pras costas dele — de lado ou pra trás, não, e por 1,2 s depois de quem girou a câmera, também não. **A câmera não entra no prédio**: se a parede de um prédio fica entre ele e a câmera (a altura que a grade guardou), ela chega pra frente, no mínimo a 1 m dele, de uma vez, e volta devagar.
+
+**A barra de cima, a pé**, troca de controles: **Camisa** (as torcidas da praça, a maior primeiro; entra na maior que tem sede; "Sem torcida" é o boneco de branco), **Ir pra sede** (leva pra calçada na frente da porta da sede da torcida da camisa, de frente pra ela e com a câmera do lado da rua; apagado pra torcida sem sede na praça), **Outro boneco** (outro rosto e outro cabelo, pela semente), a qualidade e **Sair da rua** (a câmera sobe a 70 m por cima de onde ele estava). O boneco nasce onde está o meio da tela, no lugar alcançável mais perto com 3 m livres em volta — no meio da rua, e não colado numa parede —, de costas pra câmera, e a câmera desce até ele em 0,6 a 1,4 s (mais tempo quanto mais alto ela estava). Trocar a qualidade remonta a praça e ele volta pro mesmo lugar.
+
+**No celular**, o pad do jogo (o desenho do `css/pad3d.css`): a cruz do W, A, S, D à esquerda e **Correr** (liga e desliga) à direita; um dedo na tela gira a câmera, dois aproximam e giram. Em pé, a tela é estreita: a lente abre (de 50° até 66°) e a câmera se afasta um pouco, senão o boneco tomava a largura inteira. A barra de cima fica compacta (sem o nome da praça, com os rótulos curtos) e o fps sobe pra baixo dela, porque embaixo é do pad.
+
+**O fps.**
+
+- **A pé se enxerga até a `vista` da qualidade**, com a névoa fechando a partir de um terço dela: Mínima 180 m, Leve 260 m, Normal 450 m, Alta 800 m. O que passa dela a câmera descarta por bloco de 96 m antes de ir pra placa de vídeo. No mapa pequeno, na rua, são 180 a 235 mil triângulos no quadro, contra 400 a 500 mil na vista de cima.
+- **A qualidade Mínima** (nova): a tela desenhada com 0,6 pixel por pixel (sai borrada e custa um terço), o chão a 3 px/m e a vista de 180 m. É pra placa integrada antiga.
+- **Quem desenha.** O medidor passou a mostrar o nome da placa de vídeo que o navegador usa, e avisa quando não há nenhuma: *"Sem placa de vídeo: o navegador desenha no processador"* (SwiftShader, llvmpipe, o Microsoft Basic Render). É o suspeito número um dos 2 fps: o rasterizador por software deste ambiente dá **1 a 2 fps nesta mesma cena**. Num i5 de 2ª geração a placa é a integrada Intel HD 2000/3000, cujo driver a Intel parou no Windows 8.1; no Windows 10 ou 11 ela costuma rodar com driver genérico, ou o navegador põe a placa na lista negra — e aí o WebGL desenha no processador. Se o medidor mostrar o aviso, o fps não é do cenário, é do navegador sem placa; se mostrar "Intel(R) HD Graphics 3000", a placa é o limite, e o que resta é a Mínima a pé.
+- **O iPhone** fez de 35 a 60 fps na vista de cima; a pé o quadro tem menos da metade dos triângulos, mas não deu pra medir aqui.
+
+**Os números** (neste ambiente, rasterizador por software): nas 30 praças, a praça monta sem erro e o boneco entra a pé em todas — nasce no meio da rua, nunca dentro de sólido, com a camisa da maior torcida da praça que tem sede. A grade do passo soma de 0,11 a 0,25 s à montagem (a água da lagoa de Belém, mais 0,12 s). Andando reto 12 s ao longo da rua, nenhum ponto do caminho caiu em célula sólida; correndo pro mar em Fortaleza e pra lagoa em Belém, parou a meio metro da água — e em Belém, pelo trapiche, na ponta dele. O modelo carregou em todas (1,75 m, 12 mil triângulos) e a troca de camisa, o outro boneco, o ir pra sede e o sair funcionam no teclado e no toque. A planta continua passando nos conferidores (`conferir_cidades.mjs`, `conferir_sede.mjs`) e na varredura das 30 praças.
+
+**O que o modo a pé ainda não é** (sem enfeite):
+
+- **Ele não sobe.** O chão é plano: a escada, a arquibancada, a laje e o andar de cima da sede não se sobem, e o degrau baixo (até 35 cm) ele atravessa como se não existisse — o pé entra no degrau.
+- **A colisão é de meio metro.** Ele para entre 0 e 50 cm antes da parede (a célula inteira conta), e passagem mais estreita que ~1,1 m pode não passar (o beco mais estreito da favela).
+- **A câmera só se desvia de prédio.** Árvore, poste, carro e a copa da árvore podem ficar entre ela e ele; a câmera que chega a 1 m dele mostra ombro e nuca.
+- **A rua está vazia.** Não tem mais ninguém: nem gente, nem carro andando, nem PM. É o boneco sozinho no mapa.
+- **Na água ele para na beira** (não nada nem entra no raso).
+
+### 4.52. A pé, de cima: o joystick, o telhado que some e a sede que se anda inteira
+
+O dono pediu três coisas: a visão do boneco **de cima** (top-down); o controle de movimento **num círculo, emulando um joystick**; e revisar a sede, porque alguns cômodos não se entravam "por causa do mobiliário do corredor". Esta seção troca a câmera de ombro e a colisão da 4.51.
+
+**Por que os cômodos fechavam: a grade grossa, mais do que o móvel.** A colisão da 4.51 marcava células de meio metro por onde passava a faixa do corpo, e o corpo não encostava em célula marcada: cada móvel, cada batente e cada folha de porta engrossavam até meio metro. Pra medir isso sem achismo, a sede ganhou um conferidor (`ferramentas/planta_html/conferir_passagem.mjs`): ele monta cada sede que os três mapas podem ter (a de nível 3 em cada terreno, a de nível 1 no terreno e no espaço pequeno, na frente de cada um), risca a faixa do corpo com a mesma conta do cenário e procura, da calçada, por onde um corpo passa (de 5 em 5 cm). Com a regra antiga, **29 cômodos ficavam fechados ou quase**: secretaria, almoxarifado, alojamento e depósito da sede grande fechados em todas as frentes, o banheiro e a diretoria pela metade. Com a colisão exata (abaixo), com um corpo de 25 cm de raio, **nenhum**.
+
+**Onde o móvel apertava de verdade.** Com um corpo mais largo (70 cm de passagem), a secretaria e o banheiro caíam pra 40%: a folha da porta dessas salas abre pra dentro, tem 1,5 m, e o que fica logo depois da ponta dela vira parede. Na secretaria, as duas cadeiras de quem chega ficavam a 55 cm da ponta da folha, com 36 cm entre elas e 54 cm até a parede; no banheiro, a quina do box ficava a 65 cm da ponta da folha. Mexidas no `sede3d.js`: a mesa e as cadeiras da secretaria foram pro lado oposto ao da folha, a um metro da ponta dela (e sobram 70 cm atrás da mesa); o box do banheiro ficou 0,90 × 1,25 m (era 1,00 × 1,45). A menor passagem da sede passou de 56 cm pra 80 cm. O que a planta diz que bloqueia a caminhada (a mesa do diretor, o armário do depósito, a mobília do barracão) não saiu do lugar — o `conferir_sede.mjs` continua batendo. O `conferir_passagem.mjs` fica valendo: pede que um corpo de 70 cm alcance pelo menos 80% do chão livre de cada cômodo, em toda sede dos três mapas.
+
+**A colisão exata (`passo.js`).** O que barra o corpo virou um módulo pequeno, usado pelo cenário e pelo conferidor: de cada triângulo que corta a faixa do corpo (de 35 cm a 1,80 m) sai o RISCO, no chão, do pedaço dele que está nela — a parede em pé vira um risco só; o tampo da mesa e o assento da cadeira, o contorno. Os riscos ficam em baldes de 2 m, o corpo é um círculo de 25 cm que anda de 12 em 12 cm e, quando invade um risco, é empurrado pra fora pela reta do ponto mais perto (três voltas resolvem o canto) — desliza na parede e passa na porta de 80 cm. A grade de meio metro ficou só pro resto: a água, o alcance (onde ele nasce) e o TETO (abaixo). No mapa grande são uns 400 a 500 mil riscos, montados junto com a praça em 0,6 a 0,7 s neste ambiente.
+
+**A câmera de cima.** A pé, a câmera olha quase a pino (1,25 rad, 72°: um pouco de fachada aparece), com lente de 40°, a uma distância que põe **13 m no lado menor da tela** (no celular em pé, a largura); a roda e a pinça mudam isso de 5 a 80 m, arrastar a tela gira e inclina, Q/E e R/F também. Ao entrar, o giro vai pro quarto de volta mais perto — com a cidade inteira na tela, o norte pra cima, como na planta — e a rua fica de pé ou deitada na tela. No "Ir pra sede", a câmera pula por cima dos telhados e para do lado da rua: a fachada da sede, com o nome da torcida, fica em cima na tela. Não há mais câmera de ombro, nem volta automática pras costas. De cima a tela mostra umas dezenas de metros: o longe da câmera ficou curto (três vezes a distância, mais 60 m), sem névoa, e **o quadro caiu de 385 mil pra 120 a 165 mil triângulos** no mapa grande.
+
+**O telhado some.** Cada vértice da cidade já levava o número da coisa de onde veio (é o clique exato da 4.49). A grade do passo guarda, célula por célula, o número do prédio cujo telhado a cobre (o triângulo todo acima de 2,30 m e deitado — telhado, laje, forro). Quando o boneco está **dentro** de um prédio — coberto ali e a 60 cm pros quatro lados, pra o beiral da calçada não contar —, o material da cidade descarta, desse prédio, o que passa de 2,20 m: de cima aparece a planta dos cômodos, com a mobília, e a sede se anda inteira vendo onde se está. E o que fica **na frente dele na tela** acima da cabeça — num cone da cabeça dele até a câmera: a copa, o beiral, o prédio alto do lado da câmera — fica ralo, num pontilhado (o desenho ordenado de Bayer) que some no meio. É um trecho injetado nos materiais do forno, do decalque e do mato; o chão e o boneco não mudam.
+
+**O joystick.** O círculo embaixo à esquerda, com o pino que segue o dedo (ou o mouse): a direção é a da tela (pra cima é pra frente), a força é o quanto o pino saiu do meio — com 18% de folga no meio, pra o dedo parado não andar —, e da borda pra fora ele **corre** (o pino muda de cor). Solto, o pino volta ao meio. Ele aparece a pé em qualquer tela; WASD, as setas e o Shift continuam valendo. Saíram a cruz do W, A, S, D e o botão Correr da 4.51. A pé, o fps sobe pra baixo da barra de cima e a ficha sobe por cima do joystick.
+
+**Os números** (neste ambiente, rasterizador por software): a sede de nível 3 tem de 5.700 a 5.800 riscos, a de nível 1, 1.300; todos os cômodos das 8 sedes diferentes dos três mapas passam no conferidor. No cenário, entrar pela porta da sede da Gaviões e andar até a diretoria corta o telhado da sede inteira; o joystick arrastado pra direita leva o boneco pro leste, no mouse e no toque.
+
+**O que isto ainda não é** (sem enfeite):
+
+- **O pontilhado se vê.** Visto de perto, o ralo da copa e do beiral é um xadrez de pontos, não uma transparência lisa (a lisa pediria ordenar o que é transparente, e a cidade é uma malha só por material).
+- **O corte mostra o miolo da parede.** A parede cortada a 2,20 m aparece de cima como uma faixa escura (o lado de dentro dela não tem tampa).
+- **O prédio inteiro perde o alto**, não só o cômodo: entrar no estádio corta o estádio inteiro acima de 2,20 m. E debaixo de um toldo fundo (mais de 60 cm além do pé do boneco) o prédio do toldo também corta.
+- **Casa comum não se entra**: a porta dela é fechada no modelo. Entra-se na sede, no bar aberto, no que tiver vão de porta.
+- **A montagem da praça ficou mais lenta**: a colisão exata soma de 0,3 a 0,5 s à grade (0,6 a 0,7 s no mapa grande, aqui), e guarda uns 10 MB de riscos na memória.
+
+### 4.53. A pé no metrô: a escada, a catraca e a plataforma
+
+O dono chegou a pé na entrada do metrô e não conseguiu descer: "não consigo acessar a parte inferior do metrô".
+
+**Por que não descia: não tinha o que descer.** O cenário montava do metrô só o que fica na rua (a caixa de vidro, o pórtico, a placa): a estação de baixo não estava na cena, o chão da cidade passava por cima do poço da escada e o boneco andava num plano só, na altura da rua. Não era um defeito da colisão; faltavam três coisas: a estação embaixo, o buraco no chão e o boneco com altura.
+
+**O que mudou.**
+
+- **A estação inteira no cenário.** A peça do metrô passou a ser a mesma da planta quando se clica na estação (`objetoDaEstacao`): a entrada, o poço com a escada fixa e a rolante, o mezanino (bilheteria, mapa, catracas), a escada pra plataforma, a plataforma mobiliada e o trem de três carros parado. São uns 8 mil triângulos por estação, mais o trem. Tudo que é de baixo continua virado pra dentro dos cômodos e desenhado só de frente (a lista `metro_sub`): de cima, o teto e a parede do lado da câmera somem sozinhos.
+- **O buraco no chão.** O material do chão descarta, sempre, o retângulo do poço de cada estação: da rua se vê a escada descendo, e no voo também.
+- **O pé tem altura.** Embaixo da rua (ou entrando no poço), quem diz onde ele pisa é o **subsolo** (`ferramentas/planta_html/subsolo.js`, novo), com os próprios triângulos da estação, que o forno passa pra ele. A cada passo: o **chão** é o triângulo virado pra cima mais alto debaixo do meio do corpo que esteja a um degrau (30 cm) do pé — o degrau de 17 cm, a rampa de 30° da rolante e o piso passam; o banco (47 cm), a catraca e o trilho (1,1 m abaixo) não; e a **parede** é o que os triângulos de perto têm na faixa do corpo contada do pé (35 cm a 1,80 m acima dele), riscada na hora pela mesma conta da rua (`passo.js`). Duas exceções vêm da estação (`montarEstacao` devolve `andar`): a **borda da plataforma**, que não tem parede (o chão acaba e o trilho está embaixo), vira risco — ele para a 25 cm da borda, não cai; e os **braços das catracas** ficam fora (eles giram: o corpo passa pelo vão). Na rua, fora do poço, tudo continua como na 4.52.
+- **A câmera e o boneco descem juntos.** O boneco do jogo recebe a altura pelo `opc.pos` do `entrarEm` (o mesmo caminho que o estádio usa pra dobrar o tabuleiro); o pé que se vê vai atrás do pé da conta, macio, pra o degrau não sacudir a tela.
+- **O corte de baixo.** Com a cabeça dele abaixo da rua, a cidade em cima da caixa da estação (com 1,5 m de folga) some, e a **terra** aparece em volta: uma caixa marrom do tamanho do corte, vista de dentro. A altura do corte desce com ele: descendo a escada da rua, some o chão e o que tem em cima; no mezanino, do teto dele pra cima; da metade da escada da plataforma pra baixo, o mezanino também. O pontilhado da 4.52 (o que fica entre a cabeça e a câmera) vale embaixo também, e passou a valer no chão da rua. O clique respeita o corte e o buraco do poço.
+
+**Dois defeitos do modelo da estação, achados no caminho** (no `metro3d.js`, que só a planta usa):
+
+- **A escada do mezanino pra plataforma estava do avesso**: o piso de cada degrau virado pra baixo e o espelho pro alto. Como o subsolo é desenhado só de frente, de cima os degraus sumiam (via-se a plataforma através deles) e o boneco não tinha onde pisar. Os espelhos da escada da rua também estavam virados pro alto (de baixo, a escada saía vazada). Agora o piso olha pra cima e o espelho pro pé da escada.
+- **O guarda-corpo tapava a descida**: o vidro em volta do buraco da escada da plataforma tinha um lado na boca da escada. Saiu esse lado; os dois do comprido ficam.
+
+**O conferidor do metrô** (`ferramentas/planta_html/conferir_metro.mjs`, novo): monta cada estação dos mapas (a Poente, igual no médio e no grande, e a Norte de cada um), passa os triângulos pro subsolo e procura, da praça na frente da escada, por onde um corpo de 30 cm de raio passa, de 10 em 10 cm e com a altura do pé. Pede que se passe a catraca, que se chegue a pelo menos 85% do chão livre da plataforma e que o pé nunca desça abaixo dela. Antes da correção da escada: o corpo chegava ao mezanino e parava (0% da plataforma). Depois: **100% da plataforma nas três estações**, o pé mais baixo em −10,00 m, em ~3 s.
+
+**No cenário** (São Paulo, as duas estações, neste ambiente): da praça na frente da escada, o boneco desce a escada fixa (a −2,3 m na metade, −5,2 m no mezanino), passa a catraca, desce a escada da plataforma e anda na plataforma; andando pro trilho, para em 5,25 m (a borda é 5,0: o raio do corpo). E volta pela mesma rota até a rua, onde o corte desliga e a cidade volta. No mezanino e na plataforma o quadro tem de 40 a 150 mil triângulos (a cidade em volta cortada), contra 150 mil na rua. Montar o subsolo de uma praça com metrô soma poucos milissegundos.
+
+**O que isto ainda não é** (sem enfeite):
+
+- **A rolante não anda**: é uma rampa, que se sobe e se desce a pé.
+- **A catraca não gira**: o corpo atravessa o braço (ele não barra).
+- **O trem não sai nem se embarca**: fica parado na plataforma, e não se entra nele. A viagem de trem continua sendo a da planta (a ficha da estação).
+- **Embaixo é dia**: a luz do sol ilumina a plataforma como a rua (não há luz de estação).
+- **O corte é por caixa**: a cidade em cima da estação some de uma vez quando a cabeça dele passa da rua; a casa na beira da caixa aparece cortada.
+- **O painel pendurado fica pontilhado** quando está entre a cabeça e a câmera, como a copa na rua.
+- **O fps embaixo não foi medido numa placa de vídeo de verdade** (aqui é rasterizador por software, 1 a 5 fps).
+
+### 4.54. A rua de perto: a avenida reta, a calçada com meio-fio, a grade na beira do mato, o mato rasteiro, a pixação da praça e a porta da sede
+
+O dono andou a pé por Fortaleza e mandou seis pedidos: a pixação "da altura do boneco" e com as torcidas da cidade; as portas da sede abrindo e fechando no F; o mato refeito, com cara de vegetação rasa (no 3D ele estava feio); o mapa sem avenida torta (menos a da beira) e a entrada por uma avenida duplicada entre as colunas 1 e 2 de quadras; e a calçada com poste, meio-fio e mais coisa em cima, "até a borda da rua que não tem casa". No meio do caminho, mais dois: tirar as bolinhas brancas do piso da calçada, e pôr **grade de proteção entre a cidade e a mata** (com a foto de uma tela verde de poste em poste, na Aerolândia), pra o boneco não passar pro outro lado. Tudo isso é da planta e do cenário (o artefato e o `cenario3d/` do Pages); o mapa do jogo e a cena do dia de jogo não mudaram.
+
+**As avenidas** (`proposta.js`). As cinco avenidas tortas de hoje saem dos três mapas (fica a da beira, que segue a praia ou a lagoa). A entrada, no norte e no sul, é **uma avenida reta e duplicada**: duas pistas de 6,1 m e o canteiro de 2,5 m no meio, correndo entre a coluna 1 de quadras (que estreitou 8,6 m pra caber) e a coluna 2. O canteiro abre nas ruas que cruzam (é por ali que o carro atravessa) e é contínuo fora da cidade; o pórtico BEM-VINDO/VOLTE SEMPRE fica nas duas pontas, com um terceiro pilar no canteiro; o Atacadex vai pra ela, ao norte da cidade, do lado leste. As quadras que a avenida torta rasgava foram refeitas (as que eram altas demais partiram em duas), e as casas de beira de estrada das avenidas que saíram, saíram junto.
+
+**A calçada** (`montarCalcadas`, na planta). O que era chão pintado virou **laje**: a de cada quadra é o anel entre a guia e a divisa dos lotes (em quatro retângulos; a quadra que a costa recorta, em polígono), menos o asfalto da rua sem saída; a **da borda da cidade** é uma faixa nova do outro lado da rua que dá pro mato — o pedido "até a borda da rua que não tem casa" —, achada rua por rua; e o canteiro da avenida também é laje, com grama em cima. De cada laje sai o **contorno**: o pedaço de borda que nenhuma outra cobre, partido onde o lado de fora muda; onde dá pra rua é **guia**, onde dá pro lote ou pro mato, beira. No 3D:
+
+- a laje tem **7 cm** (a da calçada do jogo, 1,4 unidade), e o piso é textura de 2 m que se repete com a uv no mundo (não emenda de uma quadra pra outra): **cimentado** com a junta de metro em metro (na quadra de hoje, 70%), **ladrilho hidráulico** de 20 cm com os dezesseis quadradinhos, **bloquete** de 10 × 20 (na quadra nova, metade); o tom vem no vértice (o mesmo ladrilho sai vermelho, cinza ou amarelo);
+- na guia, a **face do meio-fio** de concreto claro, a faixa de 13 cm do topo dele, a **sarjeta** de 32 cm e a linha escura no pé; na quina pra fora, o canto da sarjeta;
+- a **faixa de pedestre** rente à esquina (60% das esquinas; listras de 40 cm), que na avenida para no canteiro e não se pinta em cima de carro parado; o **piso tátil** amarelo de 1,5 m nas duas pontas; a **boca de lobo** logo depois (a grelha na sarjeta e a boca na face do meio-fio);
+- o **mobiliário**: o poste de concreto do jogo (com o braço pra rua; um em quatro com transformador) na guia que olha pro norte e pro oeste — um lado de cada rua —, na da costa e na calçada da borda, de 34 em 34 m; a **árvore** na cova de terra com a borda de concreto (na quadra nova e na borda; a quadra de hoje já tem as dela, que ganham a cova); o cesto de lixo na esquina, o hidrante e a **placa da rua** (o cano com as duas placas azuis de borda branca) na quina noroeste; no canteiro, o poste no meio com o braço pra uma pista e pra outra e a árvore entre dois postes. Nada vai a menos de 3 m de outra peça, nem em cima do poste e do prop de hoje, do pórtico ou da boca do metrô;
+- o poste, o prop e a árvore de hoje que ficam na calçada **sobem na laje**.
+
+As **bolinhas brancas** eram do piso: a mancha clara do cimentado (e o grão do chão pintado, que a laje agora cobre). O piso ficou só com sujeira escura e macia, e o ladrilho e o bloquete perderam o brilho da aresta.
+
+**O pé na calçada**: o boneco tinha o pé sempre em zero na rua. Agora ele pisa no **PISO DA RUA** (`PisoDaRua`, em `passo.js`): o forno passa pra ele os triângulos virados pra cima que ficam embaixo da faixa do corpo (a laje, o canteiro, o piso da sede, o degrau da porta, o tablado do quiosque), num balde por metro, e o pé fica no mais alto debaixo dele que não passe de um degrau (30 cm) acima do pé de agora — pra baixo ele desce o que for. Na calçada o pé fica a 7 cm; dentro da sede, a 9 cm (o piso dela, que antes enterrava o pé). Fortaleza no grande tem 25 mil triângulos de piso.
+
+**A grade de proteção** (a da foto do dono). A **tela verde** de arame em losango de 6 cm, de poste em poste — o **poste de tubo verde** de 2,5 em 2,5 m, 2,3 m de altura —, em cima da **mureta de concreto** de 22 cm. Ela vai onde a cidade encosta no mato: na beira da calçada da borda (em cima da laje) e da quadra que dá direto pro mato; em volta das favelas e do Atacadex; dos dois lados das avenidas onde elas correm no mato, a meio metro do asfalto (a de entrada fora da cidade; a da beira, na praça sem praia); e, no litoral, na beira da areia ao norte e ao sul da cidade. São **1,6 km de grade no grande** (Fortaleza; 700 m em cima da laje), 1,2 km no pequeno. A textura da tela é gerada pixel a pixel, com a cor do arame também no vazado: no canvas o vazado vira preto, e de longe a média do mipmap escurecia a tela numa faixa preta.
+
+O boneco **não passa**: a tela é risco (está na faixa do corpo), e, além dela, o mato inteiro virou chão que não se anda na grade do passo (a MÁSCARA do mato, a mesma com que o mato 3D planta, marca a célula; a de beira, meio mato meio calçada, não). Onde a grade não chega (a trilha, a margem da lagoa), a beira do mato segura. Testado andando 12 m pra fora em 12 pontos da divisa de Fortaleza: parou nos 12, a 25 cm da tela (o raio do corpo).
+
+**O mato** (o chão dele, no cenário 3D). O chão do mato era o desenho do mapa 2D — a copa das árvores vista de cima (na mata) ou o capim do cerrado —, pintado no chão, com as árvores 3D em cima: no 3D, copa em cima de copa pintada. Agora o chão do cenário é a **vegetação rasteira**, por vegetação: na mata, o capim verde com a moita escura; no cerrado, o capim dourado com a terra vermelha e o cupinzeiro; na caatinga, a terra clara e seca, o capim ralo e a moita cinza-esverdeada (o ladrilho de 124 m, sem emenda). De perto o chão pintado tem 3 a 8 pixels por metro e borrava: onde é mato (pela máscara, que agora vai pro chão como textura de um pixel por metro), o chão ganha um ladrilho de 1,6 m com o fiapo do capim, em duas escalas; o chão de longe ganhou o mesmo capim e o mesmo grão (sem eles, a borda da área pintada aparecia). As árvores do mato começam a 3 m da beira dele (a faixa rente à grade é rasteira, como na foto). O mapa 2D continua com a copa e o capim vistos de cima.
+
+**A pixação.** A de torcida da planta era a do clássico do jogo (as duas torcidas da partida de hoje). Na praça escolhida ela vira a das **torcidas da praça**: o nome, a sigla, a sigla com o ano de fundação, o grito do clube ("FORTALEZA MEU AMOR", "SOMOS ATHLETIC"), na cor da torcida. De quem é cada muro sai do território, como no jogo: o peso de cada torcida é o inverso do quadrado da distância até a sede dela (e, bem menos, até os bares), com um piso pra toda torcida aparecer. Nas quadras novas, 60% do recado das casas e 45% do grafite da favela também viram pixação de torcida. Em Fortaleza no grande são 298 pixações de torcida (TFC 61, JGT 60, Aliança 54, TOC 43, MOFI 31, TUF 30, Jovem do Floresta 19) e 287 recados; em São Paulo, as mesmas 298 com Gaviões, Mancha, TTI, Camisa 12, Dragões, Pavilhão 9, TUP e Leões. O **tamanho é o do boneco**: a de torcida vai do pé da parede (20 cm) até 1,75 m, a letra alta e fina, em uma, duas ou três linhas (a quebra que deixa a letra maior), com o escorrido de tinta; o recado é a letra de quem escreve em pé, de 0,8 a 1,7 m. Ela procura o quadro mais largo que cabe na parede livre (sem janela nem porta; o portão de chapa vale).
+
+**As portas da sede** (`sede3d.js`, `opc.portasVivas`). A folha de cada porta — a de madeira das salas e as duas de vidro do portão — sai **fechada**, num construtor só dela, com a dobradiça e o giro de abrir no mundo; a planta faz de cada uma uma malha com a origem na dobradiça, e o forno deixa ela de fora (não junta nem risca). A pé, o **F** abre a mais perto (até 1,2 m da borda do corpo), em meio segundo, e fecha de novo; as duas do portão andam juntas; no celular (e pra quem prefere) aparece o botão **Abrir a porta / Abrir o portão**, do lado oposto ao joystick. O corpo bate na folha onde ela estiver (o risco dela gira junto), a folha que abre em cima dele o empurra, e ela não fecha com o boneco no caminho. A inclinação da câmera a pé passou pro **R/T** (o F era dela). No teste (Fortaleza, a sede da Cearamor): com o portão fechado ele para a 25 cm; depois do F, entra 3 m, pisando no piso da sede. São 48 folhas vivas no grande. O `conferir_passagem.mjs` continua com a sede de portas abertas (a conta dele é a do caminho, não a da folha).
+
+**O que custou.** Fortaleza no grande foi de 886 mil pra 1,08 milhão de triângulos na cidade (+21%: a laje com o contorno, os 151 postes novos, as 272 árvores novas e a grade), e a montagem de 13,9 pra 15,6 s neste ambiente (rasterizador por software). As calçadas de um mapa saem em 50 a 160 ms.
+
+**O que isto ainda não é** (sem enfeite):
+
+- **A avenida da beira continua torta** também na praça de mato (sem praia nem lagoa): ela é a da costa do jogo. Se for pra ser reta onde não há água, é outro pedido.
+- **O mapa do jogo não mudou**: a cena do dia de jogo continua com as avenidas tortas, a calçada pintada e a pixação do clássico.
+- **A esquina é quadrada** (o meio-fio real é arredondado) e a guia não rebaixa na faixa de pedestre (o piso tátil está lá, a rampa não).
+- **A placa da rua não tem nome**: a cidade não tem nome de rua.
+- **A porta da casa não abre**: só as da sede. A casa continua fechada.
+- **A grade não tem portão** e não segue a margem da lagoa (ali segura a beira do mato, sem grade à vista).
+- **O desempenho no computador do dono** ("Microsoft Basic Render Driver" no medidor) é o do Windows desenhando sem placa de vídeo: 2 a 4 fps em qualquer versão. Não é a cena: é o driver. Com o driver da placa (ou a aceleração por hardware do navegador ligada), o mesmo cenário roda na placa.
+
+### 4.55. A grade que faz sentido: a favela pelo que ela ocupa, a grade dupla e a borda leste sem praia
+
+O dono olhou o mapa com a grade em vermelho e apontou: "desenhou algumas divisas sem sentido na favela do noroeste". Era verdade — e, procurando, o problema era maior que a favela.
+
+**A favela.** A grade seguia o contorno desenhado da favela (o polígono amarelo do mapa), e esse contorno passa por dentro dela: corta beco e deixa fileira de casa de fora. Agora a grade vai em volta do que a favela **ocupa**: numa grade de 1 m, marca as casas, os becos e o campinho, fecha as frestas de até uns 5 m (engorda 3 células e emagrece 2), tapa os buracos de dentro e põe a grade em cada lado de célula da borda que dá pro mato — em degrau, a 1 m das casas. O vão estreito entre a favela e o chão da cidade (a rua, a calçada, a quadra) fica da favela: ela encosta na cidade sem sobrar bolsão de mato cercado. Não há mais grade dentro de favela nos três mapas.
+
+**A grade dupla.** Um detector (pares de trechos paralelos, virados um pro outro, a menos de 5 m) achou grade colada em grade: o **Atacadex** no grande (o estacionamento ficava a 4 m da pista da avenida, com mato e grade dos dois lados no meio, e a 2 m da calçada da rua de baixo); a **avenida da beira** no norte do grande (22 m de uma tira de mato de 4 m entre a calçada da borda e o asfalto); o **Atacadex e a favela** no pequeno (20 m, a 1,65 m) e no médio. O conserto geral é o **vão fino**: a calçada da borda que para a menos de 5 m do asfalto, do Atacadex ou de outra calçada ganha um polígono de calçada até o que tem do outro lado (com guia no asfalto; só onde o meio é mato — favela, quadra e costa não entram). A frente do Atacadex é a calçada da avenida até a linha da grade dele. Entre o Atacadex e a favela, a grade é a dele (em volta do estacionamento inteiro, com os cantos emendados, menos onde dá pra calçada ou rua); a da favela que corre de frente pra ela sai, e as pontas do corredor fecham até a dele. Resultado: nenhum par de grade dupla em Fortaleza, São Paulo e Belém (grande) nem em Goiânia, Curitiba e Porto Alegre (médio); no pequeno sobra um trecho de 4,5 m, a 0,8 m, na ponta norte da favela do noroeste.
+
+**A borda leste sem grade — um erro da rodada anterior (4.54).** Na praça **sem praia e sem lagoa** (São Paulo, Goiânia, Curitiba, Interior de Minas...), a planta tratava a zona da costa do jogo (orla, areia, mar) como ocupada — e ela é pintada de mato. O lado leste inteiro ficava **sem calçada de borda e sem grade**, e sobrava a grade de ruas de hoje correndo pra onde era a areia: rua sem saída pintada no mato, depois da avenida da beira. Agora, nessas praças, da beira oeste da orla pro leste é mato (o desenho cobre o resto da grade de hoje; as quadras que a costa recortava continuam até a avenida), a zona da costa não conta como ocupada pra grade, a calçada de borda não entra nela (a avenida corta a grade na diagonal) e a quadra recortada vale pelo polígono (a caixa dela passava da avenida e abria buraco na grade). A grade corre contínua do lado de fora da avenida da beira. Na praça de praia nada mudou; na de lagoa, a margem continua sem grade.
+
+**A quadra do estádio** (a cópia de cada vaga) e a da Praça da Vila não têm o anel de calçada, e por isso a rua em volta delas não ganhava a calçada da borda do outro lado: o estádio que encosta no mato ficava sem grade. Agora elas entram na conta da borda. **A calçada pintada** das avenidas (a faixa que o desenho pinta dos dois lados, dentro da cidade de hoje) contava como mato: no pequeno, a grade da favela atravessava a calçada da avenida de entrada. Agora é chão de cidade. E a fresta de centímetros entre a laje e o asfalto deixou de ser mato (o teste da grade da laje passou de 3 unidades pra meio metro da beira).
+
+**Medido.** A grade inteira (a soma dos trechos, a mesma conta antes e depois): Fortaleza 3,99 → 3,90 km, São Paulo 1,74 → 2,27 km, Goiânia 1,88 → 2,35 km, Interior de Minas 1,40 → 1,65 km (o "1,6 km no grande" da 4.54 era de uma conta anterior, sem a favela e a costa). A pé, o boneco não passou em nenhum dos 29 pontos testados (São Paulo 10, Fortaleza 10, Interior de Minas 9, incluindo o lado leste novo, o estádio e o Atacadex). As calçadas de um mapa grande saem em ~230 ms (antes, 160): o custo novo é o raster da favela com o chão da cidade em volta. Os quatro conferidores continuam passando.
+
+**O que isto ainda não é:**
+
+- A grade da favela é **em degrau** de 1 m (a célula), não reta: no 3D dá pra ver os dentes na beira do mato.
+- Sobra **um trecho duplo de 4,5 m** no pequeno (a ponta norte da favela do noroeste, colada na calçada da avenida de entrada).
+- Na praça **de lagoa**, entre a avenida da beira e a margem, fica uma tira de mato sem grade (o boneco não entra, mas não há tela à vista).
+- A **calçada pintada** das avenidas (sem laje, sem meio-fio) continua onde a cidade de hoje a pinta; ela só deixou de contar como mato.
+
+### 4.56. Os estádios nas pontas, a sede e o bar longe deles, a bandeira que tremula e a igreja do norte
+
+O dono pediu, na mesma rodada: a sede e o bar da torcida longe dos estádios; a bandeira da sede com o escudo da torcida, o fundo na cor 1 e a borda nas cores 2 e 3, tremulando; a igreja que faltava (a do bairro novo do norte era uma caixa de estudo); os estádios nas pontas do mapa que estavam vazias, com o quarteirão deles virando casa — **todos, inclusive o principal** (ele respondeu isso quando perguntado); e os estádios um pouco longe das entradas, pro visitante atravessar a cidade até o dele.
+
+**Os estádios nas pontas** (`proposta.js`, `ESTADIOS_*`). Nos três mapas o estádio sai do meio da cidade: cada vaga é o quarteirão do estádio do jogo (o estádio e a esplanada, a mesma cópia de antes) no meio de seis células da grade ou de uma caixa (`area`, onde a grade não encaixa), colada na grade — a rua em volta dele emenda na da borda da cidade. A ordem das vagas é a de quem fica mais longe das entradas (a primeira é a do estádio principal da praça); a distância é pela grade, do pórtico mais perto até a quadra do estádio:
+
+| Mapa | 1ª vaga (principal) | 2ª | 3ª | 4ª |
+|---|---|---|---|---|
+| grande | oeste, 395 m (sul) | sudoeste, 257 m (sul) | noroeste, 132 m (norte) | nordeste, 129 m (norte) |
+| médio | oeste, 312 m (sul) | nordeste, 133 m (norte) | noroeste, 136 m (norte) | — |
+| pequeno | oeste, 147 m (sul) | nordeste, 101 m (norte) | — | — |
+
+Pra comparar, o estádio do meio da cidade ficava a 221 m (grande), 173 m (médio) e 126 m (pequeno) da entrada norte. O **quarteirão do estádio de hoje vira quatro quadras de casa** (27,4 × 21,6 m, 11 ou 12 lotes cada), com uma rua nova de norte a sul e outra de leste a oeste no meio, na largura das outras; o carro que estava parado na boca delas sai. As seis quadras que eram vaga de estádio no oeste do grande também viram casa. A vaga que a praça não usa fica mato. Os "Bares do estádio" (os quiosques do baldio, que davam pro estádio) passam a se chamar **Bares do Mirante** nos três mapas. O "Jogo hoje" e a cena do dia de jogo (`dados/cena_estadio.js`) **não mudaram**: o estádio continua no meio da cidade do jogo.
+
+Dois tropeços no caminho, pegos no teste: a vaga da caixa marcava a coluna inteira da grade como cidade, e a Favela do Norte do grande perdia a metade de leste (agora a caixa não marca célula: quem segura a favela é a rua em volta do estádio); e o estádio do oeste do pequeno deixou 6,1 m de mato entre a calçada dele e a Favela do Oeste — duas grades a 1,5 m. O preenchimento do vão da favela (4.55) enchia até uns 5 m e só pela metade no vão maior; agora é **linha a linha e coluna a coluna**: o trecho de mato que vai da favela ao chão da cidade em 8 m ou menos vira favela, em linha reta (a margem da grade de cálculo subiu de 8 pra 12 m, senão a borda comia a fresta). Resultado: **nenhum par de grade dupla** em oito praças (São Paulo, Fortaleza, Porto Alegre e Rio no grande; Goiânia, Brasília e Belém no médio; Sergipe no pequeno — o trecho de 4,5 m que sobrava no pequeno sumiu) e a grade da favela com menos degrau (São Paulo: 155 → 130 trechos).
+
+**A sede e o bar longe do estádio.** `LONGE_DO_ESTADIO_M = 50`: nenhum espaço de sede e nenhum bar da torcida fica a menos de 50 m da quadra de um estádio (de caixa a caixa). Os terrenos são uma lista por ordem de preferência: o que cai perto sai e entra o próximo, até dar os espaços do porte (`nEspacos`: 5, 7 e 9, os da planilha). A sede de hoje colada num estádio vira casa no lugar dela — no pequeno, a da 5,2 ficava a 41 m do estádio do nordeste —, e um terreno a mais entra. A esquina de bar a menos de 50 m sai da conta. O mais perto que ficou: 54 m (um terreno do pequeno). No empate da distribuição (a praça sem rivalidade), a maior torcida fica mais perto do estádio **principal** (antes era o do meio da cidade). A tabela das torcidas, nas notas, ganhou a coluna "Do estádio mais perto" (a sede e o bar).
+
+**A bandeira da sede** (`sede3d.js`, `mastroComBandeira`; a página, `bandeiraNoMastro`). O pano de três listras, que ia assado junto com a sede, virou uma **malha viva**: 1,6 × 1,05 m, o escudo da torcida (o PNG do jogo; sem ele, a bola na cor 2 com a sigla) no meio, o fundo na cor 1, a faixa de fora na cor 2 e o filete de dentro na cor 3. A onda é do shader: duas ondas somadas que correm do mastro pra ponta, presas no mastro e mais soltas na ponta, a ponta caindo um tico e o pano encolhendo quando ondula, com a normal acompanhando (a luz mexe junto). O relógio é um só (`TEMPO_BANDEIRA`): a vista 3D da ficha anda ele a cada quadro (com a bandeira na vista o quadro não para; com "reduzir movimento" no sistema, ela fica parada) e o cenário também. No cenário ela fica fora do forno, como a porta da sede, e passa pelo corte do teto. Custo: 576 triângulos e uma chamada de desenho por sede ocupada (no máximo nove).
+
+**A igreja do norte** (`equip3d.js`, `montarIgreja`): a **Paróquia São Judas Tadeu**, na 2,−1 do grande e do médio, **de frente pra avenida de entrada** (a quadra é de 30,6 × 12,8 m: com a frente pra avenida, a nave corre no comprido). Igreja de bairro, não matriz: a nave amarela com o embasamento de pedra e as pilastras e a cornija brancas, cinco janelas de cada lado e a porta do lado; a fachada com a porta verde em arco, o nome da paróquia na placa, as duas janelas, o óculo e o frontão triangular que passa do telhado, com a beira branca e a cruz; a torre sineira do lado direito (15 m até a cornija, o sino nos quatro lados, o telhado em pirâmide e a cruz); a capela-mor atrás, mais baixa, com o vitral em losango; o adro de pedra portuguesa com a escadaria, os dois canteiros (um oiti e um ipê amarelo), os postes de praça e o quadro dos horários da missa; o gramado cercado de mureta e grade nos lados e no fundo. Usa as peças da folha da igreja matriz (a porta, as janelas, o sino, a telha) e as da praça no chão: 4,6 mil triângulos (a delegacia tem 6,2 mil).
+
+**Conferido.** Os quatro conferidores passam (as praças cabem no mapa do porte; do metrô se chega à plataforma; todo cômodo da sede se alcança; o modelo da sede bate com a planta). A pé, o boneco não passou pela grade em nenhum dos 12 pontos testados. As fichas do estádio (com a distância até a entrada), da quadra nova do estádio de hoje e da igreja abrem sem erro, e o "Jogo hoje" continua com o estádio no meio.
+
+**O que isto ainda não é:**
+
+- Os estádios dos **cantos de cima** ficam a 129–136 m da entrada norte no grande e no médio, e a 101 m no pequeno — **mais perto** que o estádio do meio da cidade ficava (221, 173 e 126 m). O mapa não tem outra ponta vazia: o leste é a costa e o oeste já tem os outros. Por isso eles são as últimas vagas: no grande só a praça de três e de quatro estádios os usa, no médio só a de dois e de três. Pra afastar mais, seria preciso tomar quadra de casa ou crescer a grade.
+- A cena do dia de jogo continua montando a cidade em volta do estádio no meio: pra usar estes mapas no jogo, ela teria de pôr o estádio onde o mapa manda.
+- A bandeira mostra o escudo espelhado no verso (como uma bandeira de verdade), e o clique no cenário não pega ela (é malha viva, fora do forno).
+- A igreja é **irmã da matriz**, não um estilo novo: a porta e as janelas verdes são as mesmas peças. Não tem interior (a porta é pintada).
+
+### 4.57. Os três estádios do jogo em 3D: o de 10, o de 20 e o de 40 mil
+
+O dono pediu: "No protótipo html do jogo no formato de feed de notícias existem 3 cenas de estádio, pegue as imagens dessas cenas e tente fazer um modelo 3d pra cada um, esses são os estádios que vamos implementar no jogo". As cenas são as do protótipo (a branch do feed, `dados/cenas.js`: "Estádio de 10 mil", "de 20 mil", "de 40 mil"), cada uma com a foto aérea (`img/cenas/estadio_10/20/40`) e a imagem em que o dono pintou os setores (`estadio nivel 1/2/3.jpg`). O modelo novo é `js/diajogo/estadios3d.js`; a planta mostra os três na aba **Modelos 3D**, na frente de tudo ("Estádios do jogo").
+
+**Medido na foto, com o campo de régua.** A escala de cada foto sai das linhas do campo (a grande área de 16,5 m confere): 12,65 px/m no de 10 mil (campo de 100 × 68), 9,7 no de 20 e 7,8 no de 40 (105 × 68). A arquibancada é uma família de anéis: a linha da frente e as paralelas atrás dela. No de 20 e no de 40, que fecham em volta, o anel é um retângulo arredondado cujo canto cresce mais devagar que o lado (raio `r0 + k·d`, com `k` 0,68 e 0,8 — é o que a foto mostra: o canto de fora é mais fechado que o de uma paralela); a linha que cruza os degraus fica reta e perpendicular no lado e abre em leque no canto. No de 10 mil a arquibancada não fecha: é um caminho de retas e arcos (a do norte, reta; a do leste e sul, em L, com as duas curvas e a asa do sudoeste). Os vomitórios do de 20 e do de 40 saíram da foto por detecção (a mancha escura no anel de cima), espelhados onde a foto é simétrica. Na vista de cima, o modelo cai em cima da foto; o que mais escapa é o canto de fora do de 20, um pouco mais redondo que o da foto, e o do de 40, que na foto não é simétrico.
+
+| | 10 mil (nível 1) | 20 mil (nível 2) | 40 mil (nível 3) |
+|---|---|---|---|
+| o que é | o municipal: a do norte (visitante), a do leste e sul em L, o portão do mandante cortando a do leste, o túnel do visitante (o meio cilindro do noroeste), o túnel do meio da do sul, o banco na frente da do norte, a passarela de cima e o muro caiado | o anel único bege: 8 vomitórios, os túneis do meio do norte e do sul, a pista cinza entre as placas e a arquibancada, 4 torres de treliça de 42 m, o terreno murado com os portões e as bilheterias do leste e do oeste, a rua | a tigela de dois anéis: o fosso seco com as quatro pontes (as do leste e do oeste são os túneis dos jogadores), o anel de baixo, o corredor, o anel de cima com 29 vomitórios e as muretas que dividem em blocos, a pista de ônibus, os prédios de entrada do leste e do oeste |
+| degraus | 15 + 15 de 0,80 × 0,40 m | 34 de 0,80 × 0,40 m | 28 de 0,80 × 0,42 + 39 de 0,80 × 0,52 m |
+| altura | 8,1 m (a passarela e o muro) | 15,7 m | 35,6 m |
+| com o terreno | 196 × 166 m | 232 × 179 m | 312 × 262 m |
+| lugares (0,5 m por pessoa) | 8.606 | 33.661 | 75.437 |
+| triângulos · malhas | 10,7 mil · 14 | 25,0 mil · 16 | 93,5 mil · 15 |
+| .glb | 1,6 MB | 3,2 MB | 10,2 MB |
+
+**O degrau é o de verdade, a foto não.** As fotos são geradas: desenham o degrau de 1,2 a 1,4 m de piso no de 10 e no de 40, e de 0,6 m no de 20. O modelo usa 0,80 m (0,40 de espelho; 0,42 e 0,52 nos dois anéis do de 40, que é mais íngreme em cima), então tem mais fileira que a foto no de 10 e no de 40 e menos no de 20. Com o degrau de verdade, **a planta da foto do de 20 dá 1,7 vez o nome e a do de 40, 1,9 vez**; a do de 10 dá 14% a menos. A ficha mostra a conta por anel e por setor.
+
+**Os setores** (a camada `setores`, que liga e desliga sem remontar): a cor por cima do degrau (fora da escada e do poço), o nome, a faixa de cada escalão pendurada na mureta da frente (virada pro campo) e os túneis de entrada; as **divisórias** — o gradil de 2,4 m que o dono riscou — ficam no estádio, sempre. Vêm das imagens do dono: no de 10, na do norte, visitante 1º e 2º e a PM entre as duas divisórias (em −8,2 e 2,5 m); na do leste e sul, mandante 1º (até o portão), 2º (até o túnel do meio da do sul) e 3º; o resto da do norte fica sem torcida. No de 20, visitante 2º no noroeste, a PM entre as divisórias do norte (−37,6 e −25,3 m), mandante 3º no norte, 1º no leste, 2º no sul até a PM do oeste (z 17,9 a 29,4 m), visitante 1º no oeste e 3º no canto noroeste. No de 40, o bolsão do visitante é o sudoeste: em cima, a PM1 no meio do oeste, o 2º e o 1º escalão e a PM4; embaixo, a PM2, o 3º escalão e a PM3; o mandante 2º fica no noroeste de cima e o 1º no leste de cima. Onde a imagem do dono não bate com o protótipo, valeu a imagem nas divisórias (o protótipo tinha as do norte do de 10 em −7,2 e 6,2 m, e a do oeste do de 20 em z 10) e o protótipo nos escalões: a imagem do de 40 escreve também "VISITANTE 3º ESCALÃO" (em maiúscula) no anel de baixo do norte, mas o protótipo e a própria imagem (em minúscula) põem o 3º escalão no sudoeste.
+
+**A textura é pintada no código**, em canvas, uma vez só: o concreto cinza (a cor de cada estádio vem no vértice), a parede com o escorrido, o piso de placa, a fachada (pilar a cada 6 m, painel, viga e a grelha de ventilação), a grama, a terra, o asfalto, o gradil e a rede recortados, a treliça, as placas de publicidade (marcas inventadas: nenhuma marca de verdade, embora a foto do de 20 mostre as de verdade), o refletor e a boca do túnel; o gramado de cada estádio é uma tela só, com a listra do corte, a falha (muita no de 10, pouca no de 20, nenhuma no de 40), as linhas e a área técnica tracejada. Os degraus na reta viram um quadrilátero só por fileira (na curva, um por intervalo).
+
+**O .glb** (o botão "Baixar .glb" da ficha; `glbDoEstadio`, com o `GLTFExporter` do three r160 em `vendor/three/`): a cópia do que está na vista, em metros, com as texturas embutidas (jpeg onde não tem recorte), o material trocado por PBR fosco (o Lambert sai metálico no exportador) e sem os nomes flutuantes. O Blender abre direto; no Unity, pelo pacote glTFast. No artefato do claude.ai o arquivo vem dentro de um .zip — o artefato só deixa baixar alguns formatos, e .glb não é um deles (a página escreve o zip sozinha, sem biblioteca); no GitHub Pages vem o .glb direto.
+
+**Conferido.** Os três montam sem erro na página da planta (a ficha, a camada que liga e desliga, o .glb que baixa e que o `GLTFLoader` relê com as mesmas malhas e os mesmos triângulos, o zip que o Python abre); a vista de cima de cada um cai em cima da foto; os quatro conferidores continuam passando.
+
+**O que isto ainda não é:**
+
+- **Não está no jogo nem no mapa.** O estádio do jogo de hoje é o comprimido (o campo de 33 × 21 m, o quarteirão de 61 × 49 m) e as vagas de estádio dos mapas são desse tamanho; estes três estão na escala de verdade (o de 40 ocupa 312 × 262 m com o terreno). Pra pôr no mapa, a vaga teria de crescer umas quatro vezes (ou o modelo encolher, e o boneco não cabe mais no degrau). É decisão de jogo.
+- **O nome e a lotação não batem** no de 20 e no de 40 (a planta da foto é maior que o nome); ou o jogo usa a lotação que o modelo conta, ou o modelo perde anel.
+- Não tem **torcida** (a arquibancada está vazia), **cobertura** (as fotos não mostram), **o de dentro** (o corredor debaixo da arquibancada, o banheiro, o bar: o vomitório acaba na boca do túnel — o corredor e as entradas vieram na 4.58) nem **luz no de 40** (a foto não mostra torre nem refletor). A fachada é a mesma textura nos três.
+- O de 40 tem 93,5 mil triângulos: pra caber num jogo no celular, pede uma versão de longe.
+
+### 4.58. Os três estádios por dentro: as três entradas da rua, o corredor debaixo da arquibancada e o vomitório
+
+O dono pediu: "Importante no modelo ter 3 entradas da rua pro estádio (2 pro mandante e 1 pra visitante) e a torcida entrar na arquibancada através de vomitório, e também é necessário corredor embaixo da arquibancada pra poder haver brigas não só na arquibancada e também no corredor".
+
+**O caminho é o mesmo nos três**, o do estádio do jogo de hoje: rua → portão (catraca) → corredor → vomitório → arquibancada. O **portão 1 e o 2 são do mandante, o 3 do visitante**; cada um dá no trecho do corredor do lado dele, e o vomitório é o único jeito de ir do corredor pra arquibancada. O corredor fica debaixo da arquibancada (no de 40 mil são dois: o do chão e o de cima) e é dividido como a arquibancada: onde o dono riscou divisória, o gradil vai do chão ao teto do corredor — visitante de um lado, a PM no meio, mandante do outro.
+
+| | 10 mil (nível 1) | 20 mil (nível 2) | 40 mil (nível 3) |
+|---|---|---|---|
+| portões | **1**: o corte da do leste — o portão do muro aberto pra fora, a viga com a placa, 10 catracas, uma porta pro corredor de cada lado do corte e, no lado do campo, o portão fechado; **2**: no muro do sul (x 25), o salão de 3 m que passa debaixo da passarela, com 3 catracas; **3** (visitante): o túnel de lona do noroeste, com o pórtico, a placa e 4 catracas na boca (fora do muro) e, do fim do túnel, o caminho cercado de gradil até a porta da ponta oeste da do norte | três vãos de 5 × 3,4 m na fachada, com a porta de enrolar, a placa e 5 catracas do lado de fora (o corredor está logo atrás da fachada): **1** no meio do leste, **2** no sul (x 14), **3** no oeste (z −18). Os portões do muro do leste e do oeste ficam abertos (de correr) e o muro do sul ganha um, de frente pro portão 2 | três salões de 5 m (4,5 de pé-direito) da fachada até o corredor do chão (33,6 m), com 5 catracas logo depois da porta e, do lado, a escadaria (dois lances de 52 degraus e o patamar do meio) até o corredor de cima: **1** no meio do leste, **2** no oeste (z −10, pra porta de cima não cair no gradil da PM1), **3** na curva do sudoeste, no meio do que é visitante embaixo e em cima |
+| corredor | debaixo de cada arquibancada, da fileira 7 ao fundo: 6,4 m de largura, 3,0 de pé-direito; três pedaços (o do norte, 91 m, visitante · PM · mandante; o do leste até o portão 1, 55 m; o do leste e sul, 171 m) e a passagem do nordeste, entre a ponta da do norte e a da do leste | o anel inteiro, 592 m, 8,0 × 4,0 m: visitante (do oeste ao norte) · PM · mandante · PM | o do chão, 571 m, 11,4 × 4,5 m (visitante · PM2 · mandante · PM3), e o de cima, 741 m, 8,0 × 4,0 m, a 18,9 m (visitante · PM1 · mandante · PM4) |
+| vomitório | 10, em **vala** (a arquibancada é baixa demais pra túnel): o poço das fileiras 2 a 6, com o piso na altura da fileira 1, e a escada que desce 1,4 m até o chão do corredor, a céu aberto | 10 com **túnel** (os 8 da foto e dois novos, no meio do leste e do oeste): o poço das fileiras 3 a 12, a escada desce 1,8 m por baixo das fileiras e o túnel segue reto até o corredor | 43 com túnel: os 29 de cima (o poço já está no nível do corredor de cima) e 14 novos embaixo (um sim, um não dos de cima, fileiras 4 a 9: a escada desce 2,5 m até o corredor do chão) |
+| lugares | 8.479 (eram 8.606) | 33.509 (33.661) | 75.147 (75.437) |
+| triângulos · malhas | 15,0 mil · 17 (eram 10,7 mil) | 30,6 mil · 21 (25,0 mil) | 110,5 mil · 21 (93,5 mil) |
+| .glb | 2,3 MB | 4,0 MB | 12,1 MB |
+
+**O corredor** tem o piso de placa, o teto com a luminária acesa a cada 6 m, os pilares (a cada 7,5 m no de 10, 9 m nos outros), os **balcões do comércio** encostados na parede de fora — lanche, bar, churrasquinho, pastel, água e refrigerante, cachorro-quente, sorvete, banheiro, cada um com a placa escrita virada pro corredor; nenhum no trecho da PM e nenhum na frente de porta, de boca de vomitório ou de gradil (16 no de 10, 29 no de 20, 50 no de 40) —, a barra da parede na cor de quem usa o trecho (vermelho do visitante, verde do mandante, azul da PM) e, na camada dos setores, o chão do trecho na mesma cor. As placas (portões, vendas) vêm de uma folha só, pintada no código (`SINAIS`).
+
+**O que mudou na arquibancada pra isso fechar.** No de 10 mil, as escadas da foto viraram vomitório (a escada continua na frente e atrás do poço), e a vala do meio da do sul (a da foto) desce até o chão e liga o corredor ao campo, fechada por portão do lado do campo: é a entrada da PM e da maca, não conta como vomitório. O túnel de lona do noroeste, que era meio cilindro de 1,8 m de raio, virou meia elipse de 3,6 m de largura e 2,6 de altura (o teste abaixo mostrou que no de 1,8 ninguém passava em pé), e o gradil das divisórias do dono passou a seguir pela passarela de cima até o muro: sem ele, o visitante subia a arquibancada e dava a volta pela passarela até a do mandante. No de 20 mil, o 1º escalão visitante não tinha vomitório nenhum (o do oeste mais perto fica na faixa da PM): ganhou o do meio do oeste (e o leste, o do meio, pela simetria), e a divisa entre o 1º e o 3º escalão visitante foi pra z −16,9, entre o vomitório do meio e o do noroeste. No de 40 mil, o anel de baixo ganhou vomitório (sem ele, do corredor do chão não se chegava no 3º escalão visitante), a divisa entre o 1º e o 2º visitante de cima foi pro meio entre dois vomitórios (antes caía em cima de um), e saiu a ponte de 7,4 m de altura entre os prédios de entrada e a fachada (o portão agora é embaixo).
+
+**Quantos vomitórios cada setor tem** (a ficha mostra): no de 10, 1 em cada setor do visitante, 1, 3 e 2 nos do mandante; no de 20, pelo menos 1 em cada setor; no de 40, de 1 (o 1º e o 3º visitante) a 7 (o 2º mandante). A faixa da PM do norte do de 10 não tem vomitório.
+
+**A vista em corte** (`cortarEstadio(obj, y)`, os botões "Corte no corredor" da ficha): um plano de corte no material tira tudo acima do teto do corredor (2,95 m no de 10, 3,95 no de 20, 4,45 e 22,83 no de 40), e a câmera sobe pra ver de cima o corredor, as bocas dos vomitórios, as portas, os balcões e os gradis. Pra o corte não mostrar o céu por baixo da arquibancada, entrou o **chão de baixo** (concreto escuro, no chão, só aparece no corte): na frente do corredor, debaixo da passarela do de 10 e debaixo do anel de cima do de 40, entre os salões — sem cobrir nada que já tem piso no chão (o fim da escada do vomitório, o túnel, o salão), que é onde a imagem tremeria. A página liga o `localClippingEnabled` da vista; o `.glb` leva o modelo inteiro, cortado ou não.
+
+**O conferidor da caminhada** (`ferramentas/planta_html/conferir_estadios.mjs`, novo). Monta os três estádios em Node (um canvas de mentira no lugar das texturas), passa os triângulos pro `subsolo.js` — a mesma conta do boneco a pé no metrô, que ganhou um terceiro argumento opcional pro degrau e pra faixa do corpo (o padrão continua o de antes) — e procura, de 20 em 20 cm, por onde um corpo de 20 cm de raio passa a partir da fila de cada portão (`info.entradas[].ponto`, 2,5 m pra fora da porta), subindo até 0,55 m de um passo (o degrau da arquibancada é de 0,40 a 0,52) e batendo no que tem de 0,55 a 1,9 m acima do pé; o braço da catraca não conta, ele gira. Fora do estádio só se anda perto do começo (a rua liga os portões; o teste é do lado de dentro). O que ele alcança se mede no chão pintado da camada dos setores. O resultado:
+
+| | portão 1 (mandante) | portão 2 (mandante) | portão 3 (visitante) |
+|---|---|---|---|
+| 10 mil | corredor do mandante 100%; m1, m2, m3 100%; nada do visitante nem da PM | igual ao 1 | corredor do visitante 100%; v1 e v2 96%; nada do mandante nem da PM |
+| 20 mil | corredor do mandante 100%; m1, m2, m3 100%; nada do visitante nem da PM | igual ao 1 | corredor do visitante 100%; v1, v2, v3 100%; nada do mandante nem da PM |
+| 40 mil | os dois corredores do mandante 100%; m1 e m2 100%; nada do visitante nem da PM | igual ao 1 | os dois corredores do visitante 100%; v1, v2, v3 100%; nada do mandante nem da PM |
+
+(O que falta pros 100% é chão colado em parede, gradil ou mureta, onde o corpo não cabe.) Da rua, **ninguém chega na faixa da PM** — ela é fechada por gradil na arquibancada, no corredor e na passarela do de 10: é o colchão entre as torcidas; como a PM entra é decisão de jogo (no de 10, a vala do meio da do sul já liga o campo ao corredor). O conferidor pede o corredor inteiro do lado de cada portão, pelo menos 90% de cada setor do lado dele e nada do outro lado nem da PM, e sai com erro se faltar; roda em ~35 s.
+
+**Conferido também:** os três montam sem erro na planta (a ficha com os portões, os corredores e os vomitórios de cada setor, os botões do corte, o `.glb` que o `GLTFLoader` relê com as mesmas malhas e os mesmos triângulos); cada entrada cai no trecho de corredor do lado dela (`info.entradas[].chega`); os quatro conferidores de antes continuam passando (o do metrô com o `subsolo.js` mexido).
+
+**O que isto ainda não é:**
+
+- **Não tem torcida nem briga**: é o espaço (o corredor, os vomitórios, os portões, as zonas de cada lado). A briga, a lotação de cada trecho e o caminho de cada boneco são do jogo; a conta de andar do conferidor (`subsolo.js`) é a mesma do boneco a pé do cenário e dá pra usar.
+- **Continua fora do jogo e do mapa**, na escala de verdade (o item 13 do §9).
+- **O que a foto não mostra, eu pus**: os 14 vomitórios do anel de baixo do de 40 (a foto mostra o anel de baixo inteiro de degrau), os dois do meio do de 20, os salões e as escadarias do de 40, o portão do sul do muro do de 20. O banheiro é só a placa de um balcão, não é cômodo; o corredor do de 10 não tem escada até a passarela (ela só se alcança pela última fileira).
+- O modelo ficou **20 a 40% mais pesado** (110,5 mil triângulos no de 40).
+
+### 4.59. A fachada de verdade, o letreiro com o nome e os estádios do jogo no mapa, no tamanho de verdade
+
+O dono pediu: "Os modelos de estádio no mapa 3d devem ser os que adicionamos agora. Aprimore a fachada externa do estádio pra ficar mais detalhado e realista, com letreiro com nome do estádio e as três entradas de torcedores pro corredor interno que vai acessar o vomitório da arquibancada".
+
+**A fachada** (`js/diajogo/estadios3d.js`). Antes era uma parede lisa com a textura de painel e janelinha, e o portão era um vão com a placa. Agora:
+
+| | 10 mil | 20 mil | 40 mil |
+|---|---|---|---|
+| por fora | o **muro caiado** com a barra azul de 1 m e o capeamento; o **nome pintado** em azul no muro do leste (ao norte do portão 1) e no do sul; o **arco do portão 1** (dois pilares e a viga a 8,4–10,4 m, por cima do muro) com o nome na placa azul; a **bilheteria** do lado dele | **concreto aparente** em 3 andares de 5,2 m: o pilar a cada 6 m (94), a faixa de cada laje, o embasamento escuro de 1 m, a cimalha; entre os pilares, um andar de **cobogó** e um de **brise**, alternando; o **letreiro** na placa escura, no andar de cima, em cima do portão 1 e no oeste; as quatro bilheterias do lado dos portões do muro ganharam janela, balcão e placa | o mesmo concreto em 6 andares de 5,9 m (134 pilares); o letreiro no 5º andar, em cima do portão 1 e no oeste; as bilheterias do norte e do sul com janela e placa; **saíram os prédios de entrada do leste e do oeste da foto** (tapavam o portão 1, o 2 e o letreiro) |
+| os três portões | o 1: o arco, o portão do muro aberto, a viga com a placa, as 10 catracas; o 2: **pórtico** com marquise, a fila de 3 raias e, no fundo do salão, a placa CORREDOR · VOMITÓRIOS; o 3: o túnel de lona, como era | o **pórtico** de cada um: os dois pilares, a verga com a placa do setor (SETOR MANDANTE / SETOR VISITANTE), a **marquise** com a barra na cor do lado (verde do mandante, vermelho do visitante), a placa do portão em pé em cima dela e duas luminárias embaixo; a **fila** com a grade de contenção de 1,1 m em 5 raias de 1 m no 1 e no 3 (no 2 não cabe: o muro está a 1,9 m da fachada) | o mesmo pórtico, com a marquise de 4 m por cima da **pista de ônibus**, a **faixa de pedestre** atravessada nela e a fila de 5 raias do outro lado, na praça; no fundo de cada salão, a placa CORREDOR · VOMITÓRIOS |
+| triângulos · .glb | 15,6 mil · 2,4 MB (eram 15,0 mil · 2,3) | 34,3 mil · 4,5 MB (30,6 mil · 4,0) | 117,0 mil · 12,9 MB (110,5 mil · 12,1) |
+
+Por dentro, cada boca de vomitório no corredor ganhou a **placa VOMITÓRIO pendurada no teto** na frente dela (a vala da PM do de 10 mil, a de PM). A textura da fachada é de dois andares (cobogó embaixo, brise em cima) e estica pro andar de cada estádio; o pilar cai sempre na faixa escura pintada porque os dois contam o comprimento do mesmo começo do anel. O braço da catraca foi pra um balde à parte (`bracos_da_catraca`, `semRisco`): ele gira, e nem o conferidor nem o boneco a pé do cenário batem nele. O conferidor da caminhada (4.58) continua passando igual: da fila de cada portão a torcida chega no corredor e na arquibancada do lado dela, e só nelas — as raias, o pórtico e a bilheteria não fecham nada.
+
+**O nome no letreiro** (`nomeDoLetreiro`): em maiúscula, com o acento que falta na planilha (Mangueirao → MANGUEIRÃO, Sao Januário → SÃO JANUÁRIO, Arena do Gremio → ARENA DO GRÊMIO, Moca Bonita, Mineirao, Independencia, Etelvino Mendonca, Germano Kruger, Antonio Accyoly, Estadio → ESTÁDIO), com "ESTÁDIO" na frente de quem não é estádio nem arena (Allianz Parque e Neo Química Arena ficam como são) e "ESTÁDIO DO" nos apelidos que pedem (MORUMBI, MARACANÃ, ARRUDA, CANINDÉ, JUNCO). No catálogo, sem praça, o de fábrica: ESTÁDIO MUNICIPAL, ESTÁDIO CENTENÁRIO, ARENA DA CIDADE. A etiqueta do estádio na planta 2D sai com o mesmo acento (`nomeComAcento`, sem o "ESTÁDIO" na frente). As letras são um canvas recortado (Arial Black onde tem; a espessura mais escura embaixo e do lado); o nome comprido aperta na largura.
+
+**No mapa.** Cada estádio da praça é agora o modelo da **lotação** dele (`dados/estadios.js`, que a planta passou a carregar): até 15 mil lugares, o de 10; até 30 mil, o de 20; acima, o de 40 (`modeloDaLotacao`). Das 76 praças de jogo, 25 são o de 10, 13 o de 20 e 38 o de 40. O modelo entra **no tamanho de verdade** — 154 × 126 m o terreno do de 10, 204 × 152 o do de 20, 284 × 236 o do de 40 (o tamanho da foto; a 4.60 encolheu cada um pro tamanho de jogo) —, e a vaga de estádio da cidade tem 77 × 66 m: ele não cabe. Então o gerador (`proposta.js`, com `opc.terrenos`) **tira o estádio da vaga pra fora da cidade, do lado dela** (`fora`: o do oeste pro oeste, o do sudoeste pro sul, o do noroeste e o do nordeste pro norte), **girado com o portão 1 de frente pra cidade**, no lugar livre mais perto: empurra pra fora e escorrega de lado até a rua em volta dele (a de sempre, 6,1 m) só encostar — nada dele pisa em quadra, favela, Atacadex, na avenida de entrada, na avenida da beira (a praia e a lagoa ficam do outro lado) nem em outro estádio — e **a reta do portão 1 chega numa rua da cidade** (a de uma quadra, a avenida de entrada ou a de outro estádio) em menos de 134 m, sem passar por favela nem pelo Atacadex. Quando a rua dele já é a da cidade, é ela; senão sai a **rua de acesso**, reta, de duas pistas, do portão 1 até a primeira rua. A vaga do próprio estádio vem primeiro; a de outro só se a dele não tem lugar (nas 30 praças, todo estádio ficou na vaga dele). O mundo cresce pra caber, e a avenida de entrada vai de ponta a ponta dele.
+
+| mapa (praça) | estádios | mundo (era) |
+|---|---|---|
+| grande (São Paulo, Rio) | 3 de 40 e 1 de 20 / 3 de 40 | 944 × 938 m (689 × 509) |
+| grande (Recife) | 2 de 20 e 1 de 40 | 825 × 842 m |
+| médio (Bahia, Porto Alegre, Curitiba) | 2 ou 3 de 40 | 865 a 868 × 702 a 774 m (606 × 530) |
+| médio (Interior de SP) | 3 de 10 | 687 × 572 m |
+| pequeno (Interior do PR) | 1 de 10 e 1 de 40 | 608 × 691 m (471 × 443) |
+
+Na **planta 2D** o estádio é a planta do modelo (`plantaDoEstadio`: o chão do terreno, o muro, as arquibancadas em faixa com os vomitórios, a pista, o fosso, o gramado com as linhas), girada no terreno, e o nome dele aparece em qualquer zoom. O clique abre a ficha nova (lotação, modelo, letreiro, terreno, de que lado o portão 1 fica, o acesso) e o **3D é o modelo de verdade** (`montarEstadioJogo(id, { nome, mapa: true })`: sem a camada dos setores e sem a rua de fora do terreno, que é a do mapa; 2 cm acima do chão pintado). No **cenário 3D** também: o forno assa o estádio inteiro, com o corredor, os vomitórios e os portões, e o boneco a pé entra pela fila e pela catraca até o corredor do chão (a arquibancada e o corredor de cima do de 40 ele não sobe: o piso da rua não tem escada, o item 12 do §9). O "Jogo hoje" continua com o estádio comprimido do jogo.
+
+**O peso** (o cenário montado neste ambiente, com rasterizador por software — os triângulos e as chamadas valem, o tempo é só pra comparar):
+
+| praça | triângulos da cidade | árvores do mato | chamadas | montagem |
+|---|---|---|---|---|
+| São Paulo | 1,10 mi → 1,51 mi | 4.412 → 5.153 | 326 → 510 | 17 → 24 s |
+| Rio de Janeiro | 1,25 mi → 1,64 mi | 2.312 → 4.390 | 342 → 500 | 45 → 64 s |
+| Bahia | 1,00 mi → 1,30 mi | 2.265 → 2.952 | 293 → 419 | 44 → 59 s |
+| Interior do PR | 0,43 mi → 0,58 mi | 3.533 → 3.172 | 155 → 205 | 27 → 34 s |
+
+Quase tudo o que cresceu é o estádio (em São Paulo, +370 mil dos quatro; as ruas novas em volta deles trazem uns 50 mil de poste, grade e árvore). Duas coisas seguram o resto: **o ladrilho de chão que é só mato não é mais pintado** (é o mato de longe, o mesmo ladrilho: 9 de 36 em São Paulo), e **a árvore do mato fica até 130 m do que não é mato** (a cidade, a estrada, o estádio), com metade delas depois de 60 m — sem isso o mundo maior dobrava as árvores (São Paulo ia a 9.252). A praça de praia continua a mais lenta de montar por causa da praia pintada, como antes.
+
+**Conferido:** o `conferir_estadios.mjs` (a caminhada de cada portão) igual ao de antes; o `conferir_cidades.mjs` agora gera também **o mapa de cada praça de verdade** (`mapa_da_praca.mjs`, as mesmas opções que a planta passa: a lotação, a costa, o metrô) e toda praça cabe nele (as mesmas sedes e bares); o `conferir_passagem.mjs` passou a conferir as sedes desses 30 mapas também (duas sedes novas de forma, as duas passam); o do metrô e o da sede passam; a planta abre as 30 praças sem erro; o cenário monta as 30 sem erro — de 0,42 milhão de triângulos e 178 chamadas (Interior de Minas) a 1,64 milhão (Rio) e 510 chamadas (São Paulo).
+
+**O que isto ainda não é:**
+
+- **O mapa ficou maior e mais pesado**: até 944 × 938 m e 1,6 milhão de triângulos (o Rio), +30 a 38% de triângulos e +50% de chamadas no cenário. O estádio vai inteiro (não tem versão de longe), e o fps de verdade não foi medido aqui. Se pesar no celular, o próximo passo é a versão de longe do estádio (a casca, sem o corredor) ou o corredor só quando a câmera chega perto.
+- Em algumas praças **um estádio chega na cidade pela rua de outro** (Porto Alegre: o Passo d'Areia pela rua do Grêmio; Bahia: o Joia da Princesa pela da Fonte Nova): o acesso encosta na rua do vizinho.
+- **O que a foto não mostra, eu pus**: o pórtico, a marquise, a fila, as bilheterias do de 10 e do portão 2, as placas penduradas, o nome pintado e o arco do de 10. E tirei os dois prédios de entrada do de 40.
+- A lotação do nome continua não sendo a do modelo (o de 40 tem 75 mil lugares a 0,5 m; o Morumbi de 60 mil e o Allianz de 40 mil usam o mesmo). O modelo é pela faixa de lotação, não um por estádio.
+
+### 4.60. Os estádios no tamanho de jogo: menores, o de 40 mil com menos vomitórios, mais fileiras em cima e o corredor de cima debaixo delas
+
+O dono pediu: "Os estádios ficaram grandes e desproporcionais ao mapa, pode diminuir sem precisar seguir as dimensões oficiais"; depois, "Diminua a quantidade de vomitórios no estádio de 40 mil" e "Preciso que o anel superior do estádio de 40 mil tenha mais degraus de arquibancada e o corredor superior fique abaixo da arquibancada superior".
+
+(O de 40 mil mudou de novo na 4.61: 15 fileiras em cada anel, 12 vomitórios em cima e as escadas internas no lugar da escadaria de cada portão. A tabela abaixo é a de antes.)
+
+**O tamanho de jogo** (`js/diajogo/estadios3d.js`: `G10`, `G20`, `G40`). A foto é de estádio de verdade; o mapa é comprimido (a quadra tem 35,6 × 17,8 m). Cada um encolhe onde não tem gente — o campo (com as linhas na mesma proporção: as áreas, o círculo, a marca do pênalti), a pista, o fosso e as margens — e o de 20 perde fileiras; o degrau (0,80 m), o corredor, o vomitório, o portão, a catraca, a escada e o pórtico continuam do tamanho de gente. O que a foto marca (o vomitório, a divisória do dono, o portão, a vala) vai pelo **u do anel da foto** (`anel20Foto`, `anel40Foto`, `aneis10Foto` com `uDaFoto`): cai no mesmo lugar do anel menor, porque o u anda em fração do lado e do canto. O vomitório que fica perto demais de uma divisória anda pro meio do trecho dele e, se o trecho é estreito, afina (`longeDosGradis`).
+
+| | 10 mil | 20 mil | 40 mil |
+|---|---|---|---|
+| terreno | 100 × 86 m (era 154 × 126) | 118 × 89 (204 × 152) | 162 × 141 (284 × 236) |
+| campo | 46 × 30 (100 × 68) | 56 × 36 (105 × 68) | 56 × 36 (105 × 68) |
+| fileiras | 15 (15) | 22 (34) | 12 embaixo e 28 em cima (28 e 39) |
+| vomitórios | 10 valas (10) | 10 com túnel (10) | 14 em cima e 7 embaixo (29 e 13) |
+| corredor | 6,4 m de largura (6,4) | 8,55 m (8) | o do chão, 11 m; o de cima, 7,5 m a 6,2 m do chão (11,4; 8 a 18,9 m) |
+| lugares, a 0,5 m de degrau por pessoa | 4,1 mil (8,5 mil) | 11,0 mil (33,5 mil) | 22,9 mil (75,1 mil) |
+| triângulos | 14,7 mil (15,6 mil) | 25,0 mil (34,3 mil) | 58,9 mil (117,0 mil) |
+
+- **O de 10 mil** é o que menos encolhe: as duas arquibancadas (a reta do norte e o L do leste e sul), a passarela, o muro e a asa do sudoeste não têm o que tirar. Tudo sai de meia dúzia de números (`G10`: o meio campo, as frentes, as pontas, as curvas, o muro), e a passarela do sul ficou de 3,4 m (era 5,7). O corte do portão 1 continua com 10,6 m (as 10 catracas); o nome pintado no muro do leste cabe entre o muro do norte e a bilheteria.
+- **O de 20 mil**: o vomitório é o poço das fileiras 2 a 8 com o túnel até o corredor, que começa na fileira 12 (o teto do túnel, a 4 m, passa 20 cm embaixo da fileira 9); a fachada tem dois andares (cobogó e brise) e o letreiro fica entre a placa do portão e a cimalha; as torres de luz têm 30 m; o portão 2 fica a 12 m do meio do sul (no x da foto batia na torre do meio).
+- **O de 40 mil**: ficam **14 vomitórios em cima** dos 29 da foto (`VOM40`: dois no norte, dois em cada curva, dois em cada lado e dois no sul, espelhados), cada setor do dono com pelo menos um, e **7 embaixo** (um sim, um não dos de cima, fora os que encostam num gradil). O anel de cima tem **28 fileiras** (a última a 22 m) e o **corredor de cima** agora fica na altura do corredor entre os anéis (6,2 m), **inteiro debaixo do anel de cima**: o vomitório de cima é como o do de 20 — o poço das fileiras 3 a 8, a escada que desce por baixo das fileiras até o corredor e o túnel (o teto dele, a 11,1 m, passa meio metro embaixo da fileira 9). A escadaria de cada portão sobe 6,2 m; o lance que volta pra fora passa por baixo da laje do corredor de cima, e só a 3,75 m do alto é que a cabeça cabe — por isso o corredor de cima acaba 6,3 m antes da fachada, e o salão (16,4 m) é mais comprido que a escadaria. Com 20 fileiras em cima o terreno era de 149 × 128 m; as 8 a mais custaram 13 m em cada lado.
+- **O balcão do corredor** ficou mais raso (1,7 m da parede; era 2,05): no corredor de cima do de 40, o fundo tomava a passagem.
+
+**No mapa**, o gerador é o mesmo (4.59): o estádio sai da vaga pra fora da cidade, com o portão 1 de frente pra ela. Com os estádios menores o mundo encolheu:
+
+| mapa (praça) | mundo com a foto (4.59) | no tamanho de jogo | sem os estádios de verdade |
+|---|---|---|---|
+| grande (São Paulo, Rio) | 944 × 938 m | 783 × 678 m | 689 × 509 |
+| médio (Bahia, Porto Alegre, Curitiba) | 865 a 868 × 702 a 774 | 695 × 580 | 606 × 530 |
+| pequeno (Interior do PR) | 608 × 691 | 554 × 569 | 471 × 443 |
+
+A etiqueta do estádio na planta 2D sai com o acento do letreiro (`nomeComAcento`).
+
+**Conferido:** o `conferir_estadios.mjs` passa nos três (de cada portão, o corredor e a arquibancada do lado dele, e só elas — ele pegou duas coisas no caminho: o balcão fundo demais no corredor de cima e a escada do lado de um vomitório encostando no gradil da PM1, as duas corrigidas); o `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam; o cenário monta as 30 praças sem erro, mais leve que com o estádio da foto (triângulos da cidade e chamadas; o tempo, com rasterizador por software, é só pra comparar e não vale):
+
+| praça | antes dos estádios de verdade | com o estádio da foto (4.59) | no tamanho de jogo |
+|---|---|---|---|
+| São Paulo | 1,10 mi · 326 | 1,51 mi · 510 | 1,30 mi · 405 |
+| Rio de Janeiro | 1,25 mi · 342 | 1,64 mi · 500 | 1,43 mi · 413 |
+| Bahia | 1,00 mi · 293 | 1,30 mi · 419 | 1,15 mi · 336 |
+| Interior do PR | 0,43 mi · 155 | 0,58 mi · 205 | 0,51 mi · 183 |
+
+O mundo menor também tem menos árvore de mato (São Paulo: 5.153 → 3.501).
+
+**O que isto ainda não é:**
+
+- **O nome e o modelo não batem**: o "de 40 mil" tem 22,9 mil lugares e o "de 20 mil", 11 mil (a 0,5 m de degrau por pessoa). A lotação do jogo é a da planilha (`dados/estadios.js`); o modelo é só pela faixa de lotação.
+- O campo é menor que o de regra (56 × 36 e 46 × 30): a proporção das linhas é a de regra, o tamanho não. O gol é o de verdade (7,32 m).
+- O de 10 mil encolheu menos que os outros e ficou quase do fundo do de 20 (86 × 89 m).
+- O corredor do norte do de 10 mil (37 m) ficou sem pilar e sem balcão: todo lugar dele cai perto de uma vala ou de um gradil.
+
+### 4.61. O de 40 mil com 15 fileiras em cada anel, e as escadas internas entre os dois corredores
+
+O dono pediu: "Diminua o lance de arquibancadas do estádio de 40 mil pra 15 degraus em cima e embaixo". Em cima eram 28 fileiras, embaixo 12: **o anel de cima perdeu 13 e o de baixo ganhou 3**. O pedido foi lido como "15 em cada anel".
+
+| de 40 mil | antes (4.60) | agora |
+|---|---|---|
+| fileiras | 12 embaixo e 28 em cima | 15 e 15 |
+| altura da arquibancada | 23,1 m | 17,6 m |
+| terreno | 161,8 × 140,8 m | 145,8 × 124,8 m |
+| fachada | 4 andares de 5,8 m | 3 andares de 5,9 m |
+| corredor do chão | 11 m de largura (307 m de volta) | 7 m (294 m) |
+| corredor de cima | 7,5 m de largura, piso a 6,2 m | 7,25 m, piso a 7,5 m |
+| do corredor do chão pro de cima | a escadaria de cada portão (34 degraus) | 3 escadas internas (42 degraus cada) |
+| vomitórios | 14 em cima e 7 embaixo | 12 e 7 |
+| lugares, a 0,5 m de degrau por pessoa | 22,9 mil (5,0 mil embaixo e 17,9 mil em cima) | 15,8 mil (6,7 mil e 9,1 mil) |
+| triângulos | 58,9 mil | 42,2 mil |
+
+- **Os anéis** (`G40`: `NI`, `NS`): o corredor entre os anéis fica a 7,5 m; a fileira 0 de cima, a 8,74 m, e a última, a 16,5 m. A fachada fica a 28,4 m da frente de baixo. Com quatro andares (4,4 m), a faixa da primeira laje cortava a porta dos portões (4,5 m): ficou em três, de 5,9 m.
+- **Os corredores**: o do chão vai de 9 a 16 m da frente, debaixo do fim do anel de baixo, do corredor entre os anéis e da frente do de cima; o de cima vai de 20,9 m até a fachada, inteiro debaixo do anel de cima (a fileira mais baixa em cima dele, a 8, fica a 12,9 m; o teto dele, a 11 m).
+- **O vomitório de cima** ficou mais raso: o poço das fileiras 1 a 5 (o piso é o da fileira 0, a da frente, por onde se sai pros lados), a escada de 7 degraus que desce até o corredor de cima e o túnel (o teto a 11,24 m, 10 cm embaixo da fileira 6). A escada da frente do poço saiu (não tem o que descer); as dos lados sobem da fileira 1 até a última.
+- **A escadaria de cada portão saiu, e não tinha como ficar**: o lance que volta pra fora passava debaixo da laje do corredor de cima, e só a 3,75 m do alto a cabeça cabia — o corredor de cima teria de acabar a uns 6 m da fachada e começar depois do túnel do vomitório (20,9 m): sobrava 1,2 m de corredor. No lugar dela, **as escadas internas** (`escadaInterna`), no vão de 4,9 m entre os dois corredores (de 16 a 20,9 m da frente): dois lances de 21 degraus (17,9 × 27 cm) ao longo do anel, lado a lado, com a parede no meio — o de baixo sobe da porta do corredor do chão (a placa **ESCADA · ANEL SUPERIOR**) até o patamar da volta; o outro volta até a porta do corredor de cima (a placa **SAÍDA**), em cima da de baixo. Tem 8,9 m de comprido, o forro a 2,1 m do patamar de cima e três luminárias. São três, **uma perto de cada portão**, com as portas na ponta de perto dele: a do **portão 2** (mandante) e a do **3** (visitante) logo depois do salão, a uns 4 m da porta dele no corredor do chão (as do 3 ficam antes da PM2 embaixo e da PM1 em cima); a do **portão 1** (mandante) na curva do nordeste, do outro lado do vomitório do leste que fica colado no salão dele (dos dois lados do salão do 1 tem vomitório), a 10 m. As três ficam na curva e seguem o anel: o comprimento é somado de pouco em pouco no anel do meio, e vale na passagem da reta pro canto (a do 1 começa na reta). Nenhuma fica debaixo de um vomitório nem de um salão. A primeira versão tinha as duas do mandante no meio do norte e do sul: do portão, eram 60 a 70 m de corredor até a escada, e o visitante tinha a dele colada no salão. As paredes dela ficam 5 cm pra dentro das do corredor: a parede do corredor é de dupla face, e no mesmo plano as duas brigavam (a foto mostrou a barra verde em pedaços).
+- **O salão de cada portão** agora só dá no corredor do chão; quem vai pra cima anda pelo corredor até a escada interna do lado dele. A ficha diz qual.
+- **Os vomitórios de cima** são 12: saíram os dois da curva do sul mais perto do leste e do oeste, (±100,2; 52,1) da foto. No do oeste é que cabe a escada do visitante, entre o salão do portão 3 e a PM2; o do leste saiu pela simetria. O v1 e o v2 de cima continuam com um cada. **Embaixo, 7**: um sim, um não dos de cima, mais o do 3º escalão visitante, que agora fica no u do vomitório de cima dele (onde já tem a escada do anel de baixo), e não mais no meio do trecho. A mureta do meio entre dois vomitórios que cai a menos de 1,5 m de um gradil do anel não entra: no anel de baixo, a do sudoeste ficava a 30 cm do gradil da PM2.
+
+**No mapa**: o terreno menor encolheu o mundo das praças com o de 40 (grande: 767 × 646 m, era 783 × 678; médio: 679 × 560 a 564, era 695 × 580; pequeno: 554 × 553, era 554 × 569).
+
+**Conferido:** o `conferir_estadios.mjs` passa nos três: de cada portão, 100% do corredor do lado dele (os dois, no de 40), os setores do lado dele (m1 e m2; v1, v2 e v3 no de 40) e nada do outro lado nem da PM. Sobram dois pontos soltos que o corpo não alcança, sem derrubar o setor: um de v3 a 8 cm do gradil da PM2 e um de m1 que o portão 2 alcança e o 1 não (a grade do conferidor muda de alinhamento conforme o portão). O `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam, e o cenário monta as 30 praças sem erro (triângulos da cidade e chamadas; o tempo, com rasterizador por software, não vale):
+
+| praça | no tamanho de jogo (4.60) | com o de 40 de 15 + 15 |
+|---|---|---|
+| São Paulo | 1,30 mi · 405 | 1,25 mi · 412 |
+| Rio de Janeiro | 1,43 mi · 413 | 1,38 mi · 413 |
+| Bahia | 1,15 mi · 336 | 1,12 mi · 358 |
+| Interior do PR | 0,51 mi · 183 | 0,50 mi · 199 |
+
+Os triângulos caem de 2 a 4%; as chamadas não caem junto, e na Bahia e no Interior do PR subiram (o estádio não ganhou material novo; não investiguei por quê).
+
+**O que isto ainda não é:**
+
+- **O de 40 mil ficou com menos lugar ainda**: 15,8 mil a 0,5 m de degrau por pessoa (era 22,9 mil). O nome e o modelo já não batiam (4.60); agora o "de 40 mil" tem só uns 4,8 mil lugares a mais que o "de 20 mil" (11 mil).
+- Cada portão tem uma escada só, de porta de 1,4 m: é o único caminho do corredor do chão pro de cima. Com a torcida inteira subindo, vai ser gargalo; estádio de verdade desse porte tem várias escadas e rampa.
+- O v1 de cima tem 371 lugares e um vomitório; os setores seguem a imagem do dono, e com o anel de cima raso eles encolheram na mesma conta.
+
+### 4.62. No cenário, o boneco a pé sobe no estádio: a escada interna, o corredor de cima, o vomitório e a arquibancada
+
+O dono mandou a foto do boneco no corredor do chão do de 40 mil: "Não dá pra subir pela escada pro anel superior".
+
+**Por quê.** No cenário o boneco pisava num plano só. Na rua, a GRADE DO PASSO (as paredes que cada coisa tem de 35 cm a 1,80 m do chão, riscadas uma vez na montagem) e o PISO DA RUA (o chão até 35 cm); só o metrô tinha andares, o SUBSOLO (`subsolo.js`). O estádio entrava como parede na altura da rua: do segundo degrau em diante, a escada era parede. O corredor do chão se andava; a escada interna, o vomitório e a arquibancada, não. O item 13 do §9 dizia isso ("no cenário o boneco a pé chega no corredor do chão, não na arquibancada"), mas o relatório da 4.61 não avisou.
+
+**O que mudou** (`ferramentas/planta_html/cenario.js` e `index.html`):
+- Cada estádio novo do mapa diz ao cenário o que é dentro dele (`g.userData.dentroDoEstadio`: da fachada pra dentro; no de 10, do muro), e o forno manda os triângulos dele também pros **ANDARES DOS ESTÁDIOS**: um subsolo (a mesma conta do metrô) com os triângulos dos estádios da praça.
+- Dentro do estádio — e no passo que entra ou sai dele, e em todo passo com o pé acima de 55 cm — o passo é o dos andares: o chão é o triângulo virado pra cima mais alto a um degrau do pé, e a parede é o que tem na faixa do corpo contada do pé. Fora, a rua de sempre.
+- O degrau e a faixa são os do conferidor dos estádios (`ESTADIO_PASSO`: degrau de 55 cm, faixa de 55 cm a 1,90 m). Com os da rua (30 e 35 cm), a fileira da arquibancada (40 a 52 cm) era parede: ele só subia pela escada da arquibancada, e o 3º escalão visitante de baixo do de 40 (o v3) ficava com 8% alcançável — a escada que sobe nele é cortada pelo poço do vomitório de baixo, e a outra saiu com o vomitório que deu lugar à escada interna do visitante (4.61). Com 55 cm ele sobe fileira por fileira, como se sobe arquibancada de concreto sem cadeira.
+- O corte do teto já seguia o pé: lá em cima, some do estádio o que passa de 2,2 m acima dele.
+
+**Conferido:**
+- O `conferir_estadios.mjs` agora anda com o corpo do boneco do cenário (raio de 25 cm; era 20) e não conta a lasca de chão pintado mais fina que 30 cm (a que fica colada no gradil, onde o corpo não encosta). Passa nos três: de cada portão, 100% dos corredores do lado dele, 94 a 100% de cada setor dele e nada do outro lado nem da PM.
+- No cenário de verdade (São Paulo, no navegador sem placa de vídeo), o boneco a pé andou com a colisão do cenário (`aPe.mover`, de 20 em 20 cm): do portão 1 do Morumbi (de 40) pelo salão, o corredor do chão, a escada interna (o patamar da volta a 3,77 m, o de cima a 7,52), o corredor de cima, o túnel do vomitório (o poço a 8,76) e a arquibancada até a última fileira (16,04 m), e a volta até a fila, na rua; do portão 3 (visitante), pela escada curva do sudoeste, até a última fileira do v1; e no Canindé (de 20), do portão 1 pelo corredor e o túnel até o alto da arquibancada.
+- O conferidor das cidades, o da passagem, o do metrô e o da sede passam, e o cenário monta as 30 praças sem erro, com os mesmos triângulos e chamadas de antes (os andares não desenham nada). Em São Paulo, os andares dos quatro estádios somam 151 mil triângulos e fecham em 0,1 a 0,2 s.
+
+**O que isto ainda não é:**
+- Ele sobe a fileira de até 55 cm de um passo só; a tela vai atrás macia, mas o boneco não tem animação de subir degrau.
+- Não pula nem cai: o passo que daria em chão mais de 55 cm abaixo não anda (da beira da arquibancada ele não desce pro corredor de baixo).
+- O estádio de 10 mil não foi andado no cenário de verdade, só no conferidor (a mesma conta, o mesmo corpo).
+
+### 4.63. O degrau com a metade do fundo, sem as muretas do meio, e a câmera que não corta a arquibancada
+
+O dono pediu, com duas fotos do boneco na arquibancada: "O tamanho dos degraus da arquibancada tá muito grande, pode afinar eles pela metade. como o jogo vai rodar com em média 200 bonecos somado todas as torcidas, o estádio vai ficar muito vazio. Isso vai servir pra diminuir também a área do estádio. Isso vai servir pros 3 modelos de estádio atualmente. Existem algumas barreiras no meio da arquibancada que são sem sentido como na primeira imagem. Preciso que ajuste pra quando o boneco estiver na arquibancada mostrar ela por inteiro, sem aparecer mais o corredor". Perguntado "metade em quê?", escolheu **só o fundo**: o piso do degrau vai de 0,80 m pra 0,40, a altura fica (0,40; 0,42 e 0,52 no de 40). A arquibancada fica mais em pé — 45° (o de 10, o de 20), 46° (embaixo no de 40) e 52° (em cima) — e cada anel tem a metade da largura; corredor, vomitório com túnel, corredor de cima e escadas internas continuam, mais perto do campo.
+
+| | de 10 mil | de 20 mil | de 40 mil |
+|---|---|---|---|
+| terreno | 100,0 × 85,7 → **88,0 × 73,7 m** | 118,1 × 88,7 → **100,5 × 71,1** | 145,8 × 124,8 → **121,8 × 100,8** |
+| fundo da arquibancada | 12 → 6 m | 17,6 → 8,8 | 12 + 12 → 6 + 6 (com o corredor entre os anéis, 26 → 14) |
+| altura | 8,1 m (igual) | 10,9 (igual) | 17,6 (igual) |
+| corredor | 6,4 → 3,6 m | 8,55 → 5,75 (313 → 262 m de volta) | do chão 7 → 5,2 (294 → 252 m); de cima 7,25 → 4,35 (373 → 303 m) |
+| escada interna (de 40) | | | vão de 4,9 → 3 m; cada lance de 2,35 → 1,35 m de largura |
+| lugares (0,5 m de degrau por pessoa) | 4,1 mil → 3,7 mil | 11,0 mil → 9,8 mil | 15,8 mil → 13,5 mil (6,1 + 7,4) |
+| triângulos | 14,7 mil → 14,8 mil | 25,0 → 26,6 mil | 42,2 → 43,5 mil |
+
+**O degrau** (`js/diajogo/estadios3d.js`): o piso é `PROF` (0,40), nos três e nos tamanhos de jogo (`G10.P`, `G20.dn`, `G40.dS` e `dP`). A área cai um quarto no de 10 e um terço no de 20 e no de 40; **os lugares caem só 10%**: a conta é o comprimento das fileiras, e elas são as mesmas (só as da curva ficam mais curtas).
+
+**Os vomitórios, refeitos pra caber.** Com o degrau de 0,40 a arquibancada é funda de menos pra escada inteira do vomitório caber debaixo dela (a escada anda 28 cm a cada 18 de desnível; a arquibancada, 40 a cada 40 ou 52):
+- **O poço começa na fileira 2** no de 20 e nos dois anéis do de 40 (era a 2 no de 20 e embaixo, a 1 em cima), das fileiras 2 a 5, com o piso na altura da 1; no de 10, a vala é das fileiras 1 a 5.
+- **A escada começa dentro do poço** (`T.noPoco`: 20 cm depois da frente dele), desce a céu aberto até a boca do túnel e segue coberta até o corredor. O teto do túnel passa 10 cm embaixo da fileira 6 (2,9 m no de 20; 3,2 e 11,2 m no de 40); na boca, o degrau já está a 0,35 m (de 20), 0,54 (de 40, embaixo) e 8,2 (em cima).
+- **A primeira fileira do poço não tem mureta do lado**: é um degrau só acima do piso dele, e é por ali que se sai do poço pra arquibancada. Com a lateral inteira, entre ela e a mureta da frente sobravam 20 cm (o conferidor achou: a arquibancada inteira sem ninguém).
+- Os corredores ficam onde a escada acaba e o teto cabe: de 20, da fileira 9 até a fachada; de 40, o do chão da fileira 9 até a fileira 2 de cima e o de cima de 11,8 m da frente até a fachada; de 10, da fileira 6 até o fundo.
+
+**A mureta da frente saiu de cima da fileira 0** e foi pra frente dela (de −0,2 a 0): com o degrau de 0,40, ela tomava a metade da primeira fileira, e o corpo do boneco (0,50) não ficava em pé ali. A faixa da torcida vai junto (pendurada 25 cm na frente), e o banco de reservas do de 10 recuou 20 cm.
+
+**As muretas que dividiam a arquibancada em blocos saíram** (a barreira da primeira foto do dono: no anel de cima e no de baixo do de 40, uma no meio de cada dois vomitórios). Ficam as que têm serventia: a mureta em volta do poço do vomitório, a de trás dele, a da frente e o gradil das divisórias do dono.
+
+**O furo do lado da escada de corredor.** Onde a escada da arquibancada (o degrau partido em dois) encosta numa fileira cheia, faltava a face do lado do meio degrau: pelo vão via-se o que tem debaixo da arquibancada — a foto de perto do de 40 mostrou a barra verde do corredor de cima e o céu. Era assim desde a 4.57; agora a face existe (uns 1,3 mil triângulos a mais no de 40).
+
+**No corredor mais estreito**, o balcão do comércio sai 1,3 m da parede (era 1,7) e o pilar fica encostado na parede de dentro (era a 1 m dela): com o pilar no meio e o balcão, sobravam 60 cm na frente dele no corredor de 3,6 m.
+
+**No de 10 mil**, o que dependia do fundo: as portas das pontas vão de 3 a 5,4 m da frente; a **passagem do nordeste** (da ponta da do norte pra da do leste) ficou torta — as duas portas não se olham mais, porque a curva do leste começa 1,3 m ao norte da frente da do norte (`passagem`, no lugar de `passagemReta`); o **túnel de lona** do portão 3 encurtou pra 11,3 m (era 16,1: o muro chegou 6 m pra perto do campo nos dois lados e a porta só 4,6 m, e com o túnel comprido a grade do caminho cercado passava na frente da boca dele — o conferidor achou: o visitante não saía do túnel); e a fila de catracas do portão 1 foi pro fundo da arquibancada (ficava no meio das portas novas).
+
+**A câmera** (`ferramentas/planta_html/cenario.js`, `subsolo.js`). O corte do teto sabia de que prédio o boneco está dentro pelo mapa de telhado: a célula coberta por triângulo deitado acima de 2,3 m. Visto de cima, o estádio inteiro é "telhado" (a arquibancada passa de 2,3 m), e na arquibancada o corte tirava tudo o que passava de 2,2 m acima do pé — as fileiras de trás sumiam, e pelo buraco aparecia o corredor embaixo. Agora, no estádio:
+- **Dentro é debaixo de alguma coisa**: o subsolo ganhou o `teto(x, z, y)` — a altura do triângulo deitado mais baixo acima de `y` em cima de (x, z), virado pra cima (o piso, a arquibancada) ou pra baixo (o forro, a laje), ou NaN se é céu aberto. O boneco está dentro quando tem teto em cima da cabeça (1,9 m acima do pé), ali e 30 cm pra cada lado (debaixo da viga do portão 1 do de 10, de 30 cm, ele não está; no túnel de 1,2 m do vomitório do de 20, está). Aí o corte é o de sempre: o corredor, o túnel, a escada interna e o salão aparecem de cima.
+- **Na arquibancada, no campo e no corredor entre os anéis, a céu aberto, nada some**: nem o prédio, nem o cone entre a câmera e a cabeça (de cima, quase a pino, o degrau de trás não tapa ninguém — até a 52°, a arquibancada é mais deitada que a linha da câmera —, e o buraco que o cone abria nele também mostrava o corredor).
+- A API de teste do cenário (`aPe.estado`) diz `aberto`.
+
+**O conferidor** (`conferir_estadios.mjs`) também não conta o chão pintado onde o corpo não fica em pé, na altura dele, em lugar nenhum a menos de 20 cm: debaixo do balcão (no corredor estreito, o meio do triângulo pintado da curva cai dentro dele) e a lasca da fileira logo atrás do poço, entre a mureta de trás dele e o degrau seguinte (25 cm). Sai 44 alvos no de 10, 48 no de 20 e 12 no de 40.
+
+**Conferido:**
+- `conferir_estadios.mjs`: de cada portão dos três, 100% dos corredores do lado dele, 96 a 100% de cada setor dele e nada do outro lado nem da PM. No caminho ele pegou o poço sem saída (a lateral inteira), a fileira 0 debaixo da mureta, o túnel de lona com a grade na boca e o balcão tomando o corredor.
+- As três escadas internas do de 40 continuam fora de todo vomitório (de cima e de baixo) e de todo salão.
+- `conferir_cidades.mjs` (as 30 praças cabem; o mundo encolhe na maioria — as pequenas, 554 × 466 → 542 × 454 m; São Paulo, 767 × 646 → 739 × 598 —, e em algumas o estádio acha outra vaga e o mundo troca de lado: Belém, 679 × 560 → 655 × 612), o da passagem, o do metrô (o subsolo mudou) e o da sede passam.
+- No cenário de verdade (no navegador sem placa de vídeo), com o caminho achado pela mesma busca do conferidor: do portão 1 do Morumbi (de 40, São Paulo) pelo salão, o corredor do chão, a escada interna (o patamar da volta a 3,77 m), o corredor de cima (7,52), o poço do vomitório (a escada nele a céu aberto a partir de 8,05) e a arquibancada até a última fileira (16,04 m); do portão 3 do Canindé (de 20) até a última do v3 (9,42 m); e do portão 3 do Felipe Santiago (de 10, Fortaleza) pelo túnel de lona, o caminho cercado, o corredor e a vala até a última do v1 (6,62 m). Nas fotos, no alto da arquibancada nada é cortado (a arquibancada inteira, sem corredor), e parado no corredor do de 20 o corte continua (o corredor de cima, com o balcão e a boca do vomitório).
+- O cenário monta as 30 praças sem erro (triângulos da cidade e chamadas; o tempo, com rasterizador por software, não vale):
+
+| praça | antes (4.62) | com o degrau de 0,40 |
+|---|---|---|
+| São Paulo | 1,25 mi · 412 | 1,24 mi · 418 |
+| Rio de Janeiro | 1,38 mi · 413 | 1,38 mi · 420 |
+| Fortaleza | 1,32 mi · 418 | 1,31 mi · 388 |
+| Bahia | 1,12 mi · 358 | 1,12 mi · 359 |
+| Interior do PR | 0,50 mi · 199 | 0,49 mi · 165 |
+
+  Os triângulos quase não mudam (o estádio tem uns tantos a mais, a cidade em volta muda um pouco com o terreno menor); as chamadas sobem ou descem conforme o estádio cai nos blocos do forno.
+
+**O que isto ainda não é:**
+- **O estádio continua vazio com 200 bonecos.** O degrau fino tira a metade da área, mas quase nenhum lugar: são os mesmos anéis, com as mesmas fileiras do mesmo comprimento. Com 200 bonecos, o de 10 fica com 5% dos lugares, o de 20 com 2% e o de 40 com 1,5%. Pra parecer cheio, o que conta é quantas fileiras (e quanta volta): menos fileiras, ou a torcida só num pedaço do anel.
+- **O degrau (0,40) é mais estreito que o corpo do boneco (0,50)**: em pé numa fileira ele passa 5 cm em cada vizinha, e dois bonecos em fileiras seguidas, um na frente do outro, se encostam. Quem for pôr a torcida no degrau (ainda não tem) vai ter de usar fileira sim, fileira não, ou desencontrar.
+- **É mais em pé que estádio de verdade**: de 45° a 52° (a norma pra arquibancada fica perto de 35°). É escolha do jogo, pra caber.
+- O corredor ficou mais apertado (3,6 m no de 10; 4,35 no de cima do de 40), e a escada interna, de 1,35 m por lance.
+- Na boca do túnel do vomitório o corte liga e desliga conforme o boneco passa (com o atraso de 0,35 s de sempre, pra não piscar).
+
+### 4.64. O de 40 mil sem as plataformas dos anéis, a escada interna debaixo do corredor de cima, e a curva do nordeste do de 10 encaixada
+
+O dono mandou três fotos — o boneco no corredor de 2 m entre os dois anéis do de 40, o boneco no corredor de trás do anel de cima (2,15 m, colado na fachada) e a junção do nordeste do de 10 — e pediu: "Retire essas plataformas em cada anel do estádio de 40 mil. Isso vai ajudar a reduzir a área do estádio e consequentemente do seu quarteirão. Uma curva do estádio de 10 mil não está exatamente encaixada."
+
+| de 40 mil | antes (4.63) | agora |
+|---|---|---|
+| terreno | 121,8 × 100,8 m | **113,9 × 92,9 m** |
+| da frente de baixo à fachada | 16,4 m (6 de baixo + 2 + 6 de cima + 2,15 + 0,25) | 12,45 m (6 + 0,2 de mureta + 6 + 0,25) |
+| corredor do chão | 5,2 m × 252 m | igual |
+| corredor de cima | 4,35 m × 303 m, de 11,8 m até a fachada | **3,4 m × 280 m**, de 8,8 m até a fachada |
+| escada interna | no vão de 3 m entre os corredores; chega pela porta da parede de dentro do de cima | no poço de 3,4 m debaixo do de cima; chega por um vão no piso dele |
+| vomitório de cima | o poço das fileiras 2 a 5, escada de 10 degraus | o poço das fileiras 1 a 4, escada de 7 |
+| lugares (0,5 m de degrau por pessoa) | 13,5 mil (6,1 + 7,4) | 13,2 mil (6,1 + 7,0) |
+| triângulos | 43,5 mil | 42,0 mil |
+
+**Os anéis** (`G40`): `dS` = 15 × 0,40 + 0,2 e `dP` = `dS` + 15 × 0,40 — o anel de cima começa logo atrás da última fileira de baixo, só com a mureta da frente dele (20 cm) no meio, e a fachada fica colada na mureta de trás da última fileira de cima. O anel de baixo acaba numa parede: o espelho da última fileira e, em cima dele, a face da mureta do anel de cima, 2,66 m acima da última fileira de baixo: ninguém passa de um anel pro outro (o boneco sobe no máximo 55 cm de um passo). A faixa da torcida de cima fica pendurada nessa parede, por cima da última fileira de baixo. O anel de cima chegou 1,8 m pra perto do campo: as fileiras dele ficam mais curtas, e ele perde 364 lugares.
+
+**O corredor de cima** continua no piso de 7,5 m (o alto do anel de baixo) e vai de onde acaba a escada do vomitório de cima até a fachada: 3,4 m. Mais largo não dá sem a plataforma de trás: pra ele começar antes, o vomitório de cima passou a abrir na fileira 1 (o poço das 1 a 4, com o piso na altura da 0, por onde se sai pros lados), e a escada dele (7 degraus) começa 20 cm dentro do poço e acaba a 8,76 m da frente de baixo. O teto do túnel, a 10,7 m, passa 12 cm debaixo do espelho da fileira 5; na boca, o degrau fica a 7,85 m. O corredor do chão fica como estava (de 3,6 a 8,8 m, 4,5 m de pé-direito).
+
+**A escada interna** (`escadaInterna`) não tinha mais vão entre os dois corredores: agora fica no poço debaixo do corredor de cima, da parede de fora do corredor do chão até a de fora do de cima. São os mesmos dois lances de 21 degraus (17,9 × 27 cm) ao longo do anel, lado a lado, com a parede no meio (1,55 e 1,6 m por lance): o A sobe da porta do corredor do chão (a placa ESCADA · ANEL SUPERIOR) até o patamar da volta, a 3,75 m; o B volta e chega no piso do corredor de cima por um **vão aberto no piso** dele (`furos`, no `corredor`: o piso, a laje de baixo e a cor do trecho vão só até a beira; o teto fica inteiro). O vão vai da parede do meio até a de fora (1,6 m) e, ao longo do anel, do alto do lance até o degrau cujo nariz fica 2,1 m debaixo da laje (15 degraus: 4,05 m). Em volta, o **guarda-corpo** de 1,1 m: a parede do meio sobe até ele (a face do lado do corredor e o capeamento) e, no fim do vão, a mureta de través, com a face do lado do vão descendo até a laje (tapa a beira dela). Ao lado do vão, o corredor de cima fica com 1,6 m de passagem; o pilar e o balcão não chegam perto (1,2 e 3 m, como das portas e das bocas). A placa **SAÍDA** fica pendurada no teto do corredor de cima, em cima do guarda-corpo, virada pra passagem. O forro do poço é a própria laje do corredor de cima, com duas luminárias (no lance A e no patamar da volta).
+
+As três escadas ficam onde estavam, uma perto de cada portão (a do 2 e a do 3 logo depois do salão; a do 1 do outro lado do vomitório do leste ao norte dele): nenhuma encosta num salão (o mais perto fica a 0,4 m), e o vão de cada uma fica a 3,1 a 5 m da boca de vomitório mais perta no corredor de cima. A do 1 não foi pra perto do salão dele porque, de qualquer lado dele, o vão ficaria na frente da boca do vomitório colado no salão.
+
+**No de 10 mil, a curva do nordeste** (`caminhos10`): o arco do nordeste da do leste tinha o centro em z = −L, e começava 1,3 m ao norte da linha da frente da do norte (a foto do protótipo também; é a mesma conta). Agora o centro fica rC ao sul da frente da do norte (`zFN + rC`), e o arco começa na linha dela, como o do sudeste acaba na da do sul. A reta do leste começa 1,3 m mais pro sul (a do leste perde 39 lugares: 2.748 → 2.709), o portão 1 anda 0,37 m pro sul (`p1`: o mesmo ponto da reta do leste que na foto, na reta nova; −0,86 → −0,49 m) e a **passagem do nordeste voltou a ser reta**: as duas portas se olham. O arco chega mais perto da mureta branca do gramado: no ponto mais perto, 0,77 m entre as duas (era 1,39).
+
+**O conferidor** (`conferir_estadios.mjs`) andava numa grade de 20 cm que começava na fila de cada portão: o alvo colado num canto caía numa casa livre pra um portão e não pro outro. Com o corredor de cima mais estreito, o meio de um triângulo pintado da curva caiu no canto do balcão, e o portão 1 "não chegava" num ponto do corredor mandante que o portão 2 alcançava. Agora a grade é uma só pra todos os portões (x = I·PASSO), de 10 cm, e cada alvo guarda as casas dela em volta (até 20 cm) onde o corpo fica em pé; é alcançado se o corpo chega numa delas. Anda o quádruplo de casas (30 s pros três estádios, eram 9).
+
+**Conferido:**
+- `conferir_estadios.mjs`: de cada portão dos três, 100% dos corredores do lado dele, 100% de cada setor dele e nada do outro lado nem da PM. Saem 44 alvos no de 10, 48 no de 20 e 60 no de 40 (onde o corpo não fica em pé): 25 dos 32 a mais no de 40 são da última fileira de cima, que agora encosta na mureta de trás (veja abaixo).
+- As três escadas internas fora de todo salão, com o vão longe das bocas (acima).
+- `conferir_cidades.mjs` (as 30 praças cabem), o da passagem, o do metrô e o da sede passam.
+- No cenário de verdade (no navegador sem placa de vídeo), com o caminho achado pela busca (agora na grade de 10 cm: na de 20, a busca não achava lugar pro corpo na última fileira de cima): do portão 1 do Morumbi (de 40, São Paulo) pelo salão, o corredor do chão, a escada interna, o vão no piso do corredor de cima, o vomitório e a arquibancada até a última fileira (16,04 m, com a arquibancada inteira na tela); do portão 2 (mandante), pela escada do noroeste, até a última fileira do m2; e do portão 3 (visitante), pela escada do sudoeste, até a última fileira do v1 (as duas também a 16,04 m). Os três sem travar em nenhum ponto do caminho (79, 66 e 68 pontos). No Felipe Santiago (de 10, Fortaleza), do portão 1 até a última fileira do m1 e do portão 3, pelo túnel de lona, até a do v1 (34 e 56 pontos), também sem travar.
+- **No mapa**, o mundo das 22 praças com o de 40 encolhe 8 m num lado ou nos dois (São Paulo e Rio, 739 × 598 → 731 × 582 m; as médias com dois de 40, 655 × 612 → 647 × 604; Interior do PR, 542 × 487 → 542 × 479); as 8 sem o de 40 ficam iguais. O cenário monta as 30 praças sem erro (triângulos da cidade e chamadas; o tempo, com rasterizador por software, não vale):
+
+| praça | antes (4.63) | sem as plataformas |
+|---|---|---|
+| São Paulo | 1,24 mi · 418 | 1,23 mi · 392 |
+| Rio de Janeiro | 1,38 mi · 420 | 1,37 mi · 397 |
+| Fortaleza | 1,31 mi · 388 | 1,31 mi · 377 |
+| Bahia | 1,12 mi · 359 | 1,12 mi · 351 |
+| Interior do PR | 0,49 mi · 165 | 0,49 mi · 164 |
+
+  Os triângulos ficam iguais ou caem até 0,7% (o de 40 tem 1,4 mil a menos, e a cidade em volta muda um pouco com o terreno menor); as chamadas caem nas 22 praças com o de 40 e ficam iguais nas outras 8.
+
+**O que isto ainda não é:**
+- **A última fileira de cada anel encosta numa parede** (a de baixo, na mureta do anel de cima; a de cima, na mureta de trás e na fachada): o corpo do boneco (0,5 m) só fica em pé nos 15 cm da frente do degrau de 0,40, e o conferidor tirou 25 pontos dela. Em pé, de costas pra parede, cabe; dois lado a lado ao longo da fileira, também. Se precisar de folga, a saída é a última fileira mais funda (uns 0,65 m), 25 cm a mais em cada anel.
+- O corredor de cima ficou com 3,4 m, e com 1,6 m ao lado do vão da escada. Com o pilar (0,6) e o balcão (1,3) no mesmo ponto, sobram 1,5 m.
+- A parede entre os anéis (2,66 m acima da última fileira de baixo) é alta; é o que sobra de pôr um anel logo atrás do outro.
+- O arco do nordeste do de 10 passa a 0,77 m da mureta do gramado (ninguém anda ali no jogo).
+
+### 4.65. O boneco afinado de verdade: um nível de perto e um de longe, trocados pelo tamanho na tela
+
+O dono pediu: "Tente diminuir os triângulos do boneco sem perder qualidade, porque quando tiver em uma cena de 300 bonecos vai pesar, né?"
+
+**Como era.** O `img/boneco.glb` do Blender tem 119 mil triângulos (todas as variantes: a cabeça tem 10.448 sozinha, cada um dos 12 cabelos uns 8 mil, o corpo 3.536); vestido com um cabelo, um boneco dá uns 22 mil. O `bonecos3.js` afinava na chegada (`afinarMalha`: junta os vértices numa grade de 1,75 m / 48 células no jogo, 72 no cenário) e cada boneco ficava com ~2,4 mil no jogo e ~3,1 mil no cenário. O custo era o rosto: a grade não sabe o que é nariz, e a cabeça virava uma bola com 270 triângulos (636 no cenário) — na foto de perto, sem olho, sem boca, e com um buraco na gola.
+
+**O afinador novo** (`ferramentas/afinar_boneco.mjs`) roda uma vez, fora do jogo, e grava dois GLB prontos, com o mesmo esqueleto, as mesmas variantes e os mesmos nomes de peça e de material:
+
+| | triângulos no arquivo | um boneco vestido | cabeça | corpo | tamanho |
+|---|---|---|---|---|---|
+| `boneco.glb` (o do Blender) | 118.992 | 14 a 24 mil (curto: 22.064) | 10.448 | 3.536 | 2,6 MB |
+| afinado na chegada, 48 células (o de hoje no jogo) | — | ~2,2 a 2,4 mil | ~270 | — | — |
+| **`boneco_perto.glb`** | 10.726 | 2.386 a 3.298 (curto: 2.910) | 450 | 1.924 | 306 KB |
+| **`boneco_longe.glb`** | 3.566 | 904 a 1.278 (curto: 1.036) | 100 | 792 | 148 KB |
+
+- É o simplificador do **meshoptimizer** (`simplifyWithAttributes`, a conta do erro quadrático com as normais junto), peça por peça, com a meta de triângulos de cada uma (`NIVEIS` no começo do arquivo) e a borda travada (a gola, a barra da calça e a boca do tênis não abrem). Ele só junta vértice em cima de vértice que já existe: o peso de cada osso vai junto, e a animação fica igual. No de perto, a camisa (342) fica como está.
+- **O cabelo por cima da cabeça afinada.** A cabeça afinada fica um pouco mais "cheia" em uns pontos e o cabelo afinado encolhe: o couro aparecia por cima. Duas coisas: o cabelo é inflado pra fora do centro da cabeça pelo que o contorno dele encolheu (numa grade de 16 × 8 direções, a zero na beira do cabelo, pra franja e nuca não saírem do lugar); e depois cada triângulo de cabelo é conferido em 7 pontos (os cantos, o meio das arestas e o meio dele) contra a cabeça afinada, e quem ficou por dentro é empurrado até ficar a 1,5 mm (perto) ou 2 mm (longe) por fora. Nos 17 cabelos, nenhum ponto fica dentro da cabeça.
+- O **black** e o **cacheado** param pela conta de triângulos (900 e 650 no de perto), não pelo erro: pelo erro, ficavam com 3,6 mil.
+- O índice que o anel, a pulseira e a pulseira do relógio dividiam no GLB ganha uma cópia pra cada um antes de afinar (senão afinar um estragava os outros).
+- O GLB sai com `asset.extras.afinado` (`perto` ou `longe`): o `bonecos3.js` vê isso e não afina de novo.
+- Uso: `npm install --no-save meshoptimizer@1.3.0; node ferramentas/afinar_boneco.mjs`. O meshoptimizer não fica no repositório (nem o jogo precisa dele): só quem mexer no `boneco.glb` roda de novo.
+
+**No jogo** (`bonecos3.js`):
+- `carregarGLB` carrega o de perto (`D.bonecoPertoGLB` embutido, ou `img/boneco_perto.glb`); se não tiver, cai no `boneco.glb` e afina na chegada como antes. Depois carrega o de longe.
+- Cada boneco guarda os dois níveis (`c.nivel`): a malha juntada do de perto, feita na hora, e a do de longe, feita na primeira vez que precisa, pela mesma roupa, as mesmas cores e o mesmo desenho da camisa, e guardada pela mesma chave (até 400 roupas; a mais velha sai).
+- **A troca** (`trocarNivel`, a cada quadro, em quem está na tela): quantos pixels (CSS) a altura do boneco ocupa na câmera de quem desenha, pela profundidade do meio do corpo (`projectionMatrix[5]`; na câmera ortográfica, a altura da vista). Abaixo de **110 px** vai o de longe; volta pro de perto acima de **135 px** (a folga pra não ficar trocando na divisa). É pela distância e não pela altura projetada: de cima, a altura de quem está em pé encolhe, e o boneco grande na tela ia pro de longe. **O líder fica sempre no de perto** (é um só, e é o que se olha). Sem câmera (a vitrine; quem chama `entrarEm` sem dizer a câmera), todo mundo fica no de perto.
+- `entrarEm` recebe `camera` e `alturaTela` (o estádio e o cenário passam os dois) e devolve `niveis` (quantos bonecos na tela em cada nível e os triângulos deles); o mesmo em `bonecos.niveis`.
+- O `montar.sh` embute os dois níveis (`dados/boneco_glb.js`: 0,6 MB, eram 3,6 MB) e não leva mais o `boneco.glb`.
+
+![o boneco: o original, o afinado na chegada de hoje, o de perto e o de longe](../img/cena3d/boneco-niveis.jpg)
+
+**Medido** na cena do estádio (`estadio3d.html?foto=1`, 1100 × 700, no navegador sem placa de vídeo — o fps não vale, os triângulos valem), a mesma cena antes e depois:
+
+| vista | triângulos antes | agora | bonecos na tela (perto + longe) | triângulos dos bonecos | chamadas |
+|---|---|---|---|---|---|
+| ombro | 368.880 | 336.175 | 79 (34 + 45) | 157.440 | 221 · 221 |
+| alta | 210.551 | 179.926 | 38 (5 + 33) | 53.542 | 79 · 82 |
+| zenital | 207.177 | 147.199 | 46 (0 + 46) | 50.392 | 146 · 146 |
+| maquete | 198.615 | 140.987 | 44 (0 + 44) | 48.408 | 134 · 134 |
+
+  Tirando a cena sem os bonecos (o que sobra do total de agora), os bonecos de antes custavam ~2,4 mil cada (190 mil na do ombro, 84 mil na alta). Agora, 3,1 mil cada o de perto e 1,1 mil o de longe. Com **300 bonecos**: antes, ~720 mil; agora, ~330 mil com todos pequenos na tela (a vista de cima, a maquete), ~430 mil com 50 grandes e 250 pequenos.
+
+  No cenário (Curitiba, a pé, vista de cima), o boneco a pé fica no de perto: 2.994 triângulos (eram ~3,1 mil, afinado com 72 células), agora com rosto. Nenhum erro na página nos dois.
+
+**O que isto ainda não é:**
+- **O de perto custa mais que o de hoje** (3,1 mil contra 2,4 mil): é o preço do rosto. Na vista do ombro, com 34 bonecos grandes, o ganho é pequeno (−9%); o ganho grande é de longe (−30% nas vistas de cima).
+- **O de longe, de perto, é feio** (o nariz grande, a cabeça em facetas): só aparece abaixo de 110 px de altura, onde o rosto tem uns 15 px. A troca é seca (sem transição); com a folga de 25 px não fica piscando, mas só foi visto no navegador sem placa.
+- No de longe, o moicano tem um pontinho de couro aparecendo na crista, e o black fica mais liso.
+- **Triângulo não é o único custo de 300 bonecos**: cada um é uma chamada de desenho (300, mais a sombra), e cada esqueleto de 16 ossos é animado no processador a cada quadro. Essas duas não mudaram aqui, e é provável que sejam o próximo gargalo.
+- A câmera ortográfica (`desenharDeCima`) tem a conta, mas nenhuma página usa esse caminho hoje: não foi testada.
+
+### 4.66. A regra da lotação (de 15 a 35 mil é o de 20) e a lotação de verdade de cada estádio
+
+O dono perguntou por que o Presidente Vargas (Fortaleza) saía o estádio de 40 mil e não o de 20, e depois deu a regra: "Estádios de 15 até 35 mil na vida real são o estádio de 20 mil no jogo. Abaixo disso é o de 10 e acima é o de 40."
+
+**Por que saía o de 40:** o `dados/estadios.js` é gerado do protótipo antigo (`legado/unity/data.js`), e a lotação de lá é de preenchimento em metade dos estádios — 35 mil, 60 mil, 15 mil redondos. O Presidente Vargas tinha 60 mil (a planilha, `dados/times.js`, diz 20.268). E o Treze (Campina Grande) aparecia como mandante dele, porque o estádio do Treze também se chama Presidente Vargas.
+
+**O que mudou:**
+- `modeloDaLotacao` (`estadios3d.js`): abaixo de 15 mil, o de 10; **de 15 a 35 mil**, o de 20; acima de 35 mil, o de 40 (era: até 15 mil, o de 10; até 30 mil, o de 20).
+- `ferramentas/importar_estadios.py`: a lotação é a da planilha quando os clubes da praça que mandam no estádio dizem a mesma; senão, a do legado (e uma tabela `CAPACIDADE` pra correção à mão: por enquanto só o Serra Dourada, 50.049, que o legado dizia 35 mil). O mandante é só clube da mesma praça (o Treze saiu do Presidente Vargas de Fortaleza). E a praça que ganhou bairros depois do legado (o Interior de SP, 4.38) volta a parear: vale a única daqui que tem todos os bairros da de lá — sem isso, o importador rodado de novo perdia os três estádios dela.
+- Das 74 praças de jogo que as cidades usam, 19 são o de 10, 36 o de 20 e 19 o de 40; **30 mudaram de modelo** (a maioria de 40 pra 20: Presidente Vargas, São Januário, Vila Belmiro, Vila Capanema, Rei Pelé, Moisés Lucarelli…; umas de 40 pra 10: Moça Bonita, Passo d'Areia, Ulrico Mursa, Nogueirão, Zinho de Oliveira; e umas de 10 pra 20: Alfredo Jaconi, Arena Condá, Heriberto Hülse, Batistão…). `conferir_cidades.mjs`: as 30 praças cabem no mapa do porte delas, com os estádios novos (Fortaleza: 40, 20 e 10).
+
+**O que isto ainda não é:** o Estádio Regional (Interior de Minas) e o Estádio do Trabalhador (Subúrbio Carioca) não têm clube na planilha, e o legado diz 15 mil redondos: pela regra, viram o de 20. Se a lotação de verdade deles for menor, é uma linha na tabela `CAPACIDADE`.
+
+### 4.67. O dia de jogo no cenário: o clássico da praça, as rotas das torcidas da sede ao lugar na arquibancada e a PM separando as duas
+
+O dono pediu: "Vamos começar a trabalhar em outros pontos do jogo, estou parcialmente satisfeito com o mapa no momento. Comece a iniciar rotas de entrada no estádio das torcidas pra chegar ao seu local exato na arquibancada, através da sua respectiva entrada, partindo da sua sede. Crie um jogo fictício de dois times da mesma cidade pras respectivas torcidas se locomoverem até lá. A polícia vai fazer cordões de isolamento ao redor do estádio pra evitar que haja encontro entre elas, e as torcidas vão fazer rotas no intuito de não se chocarem."
+
+**Onde está.** No cenário 3D (4.49), o botão **Dia de jogo** (no celular, **Jogo**) na barra de cima. Ele monta o plano (em ~1 s no navegador sem placa de vídeo daqui), põe a PM e os bonecos na porta das sedes e abre o painel do jogo. O código é `ferramentas/planta_html/dia_de_jogo.js`; o que ele pede do cenário e da planta está no fim.
+
+**O jogo (fictício).** Os dois primeiros clubes da praça (a ordem de `dados/cidades.js`, os daqui antes) que têm torcida com sede no mapa. O primeiro manda, no estádio dele (`mandantes` de `dados/estadios.js`; sem estádio próprio no mapa, o principal), domingo às 16h. No painel dá pra trocar o jogo (os outros pares da praça) e inverter o mando (o outro clube manda, no estádio dele).
+
+**Quem vai pra onde.** Cada torcida do clube vai pro setor do **escalão** dela: a de mais poder no 1º, a seguinte no 2º… O mandante entra pelos portões 1 e 2, o visitante pelo 3 (4.58). O portão de cada setor é o de caminho mais curto até ele. O de 40 tem m1, m2, v1, v2 e v3; o de 20 tem três de cada lado; o de 10 tem m1 a m3, v1 e v2. A torcida que sobra (o 3º visitante no de 10, o 3º mandante no de 40) divide o último setor do lado dela, nas vagas seguintes.
+
+**O bonde.** Um boneco a cada 3,3 membros (desde a 4.70, um a cada 2 torcedores na rua, que são 60% dos membros: dá o mesmo; no mínimo 5, no máximo 40 por torcida; no painel, "pouca gente" divide por dois e "muita gente" dobra, sem passar de 40). Eles se juntam na calçada da sede, virados pra rua, e saem numa coluna de 4 por fileira (0,8 m de lado, 0,9 m entre as fileiras) que estreita onde a rua estreita. Na revista da PM a coluna para: 1,5 s por pessoa. Na boca do portão ela vira fila, e cada um passa a catraca 1,2 s depois do da frente. Dali cada um anda, a 1,05 m/s, pela rota de dentro até a vaga dele, e fica virado pro campo. Na rua a marcha é de 1,25 m/s. (Desde a 4.69 a torcida espera em rodinhas na porta da sede, o bonde é uma massa solta que torce andando, e no portão cada um vai pra uma das raias, com a catraca dela.)
+
+#### As rotas de dentro do estádio (`rotas_estadios.mjs`, fora do jogo)
+
+A rota de dentro não se calcula no jogo: `ferramentas/planta_html/rotas_estadios.mjs` roda uma vez e grava `js/diajogo/rotas_estadios.js` (66 KB, GERADO).
+
+- O chão é o mesmo que o boneco a pé pisa (os andares do `subsolo.js`, 4.62): a escada, o corredor, o vomitório e a arquibancada de cada um dos três modelos.
+- O caminho é o de menor custo (algoritmo de Dial, passos de 10 e 14) numa grade de 10 cm, com o corpo do boneco (0,25 m de raio) e o degrau que ele sobe. Sai da **boca** do portão (8 m pra fora do ponto da fila), passa a fila, a catraca, o corredor e o vomitório, e chega no centro do setor.
+- Depois o caminho é enxugado: o trecho vira reta onde a reta passa.
+- Cada setor tem **100 vagas**, os lugares do degrau de 0,5 em 0,5 m nos trechos cheios da arquibancada (`vagas` da camada dos setores, `estadios3d.js`). Cada vaga guarda onde ela sai do caminho do setor e o pedaço dela até o lugar.
+- No de 40, por exemplo, o m1 fica a 50 m do portão 1 e o m2 a 108 m do portão 2 (a 59 m antes de o portão 2 ir pra lateral do norte, na 4.68).
+- Leva uns 45 s. **Roda de novo sempre que um estádio mudar.** Cada modelo guarda a marca (`marcaDoEstadio`, em `estadios3d.js`: os lugares, o ponto de cada entrada e os lugares de cada setor). A planta tira a marca do estádio que ela monta no mapa, e o painel avisa em vermelho quando as duas não batem.
+
+#### A grade da rota na cidade
+
+A rota da sede até a boca do portão sai de uma grade de 1 m, feita da grade do passo do cenário (0,5 m: o que o corpo alcança, 4.52) sem o estádio.
+
+- Cada célula tem a **folga**, a distância até a parede, o carro ou o poste, pela distância de chanfro.
+- O meio da rua custa 1 por metro; a beira custa até 4 (a partir de 2,5 m de folga, custa 1). Com menos de 0,7 m de folga o bonde não passa.
+- A busca é o A* com um monte binário. O custo de cada lado é uma tabela, uma conta por célula feita antes da busca: sem isso, a busca levava 27 s.
+
+#### O plano da PM
+
+1. **Os arredores.** É o que se anda até 110 m dos portões, ou menos se uma sede do jogo fica perto: 70% da distância dela, no mínimo 45 m. A PM divide os arredores em duas zonas.
+2. **O corredor do visitante, primeiro.** A PM traça a rota do visitante até o portão 3. Ela paga caro (+8 por metro) no pedaço dos arredores mais perto dos portões do mandante, e não passa a menos de **12 m** da boca de um portão do mandante (quando o mapa deixa).
+   - A **zona do visitante** é o pedaço dos arredores mais perto do portão 3 (andando) mais o corredor. O corredor é o que se anda até 8 m da rota: a rua inteira, de parede a parede, e a boca das transversais.
+   - O resto é a **zona do mandante**. A boca dos portões do mandante é sempre dele.
+   - Dividir só pelo portão mais perto não servia: no de 40 de Fortaleza, o portão 3 fica num bolsão que só se alcança passando pela zona do mandante.
+   - **O caminho do corredor é sempre do visitante**, mesmo na frente de um portão do mandante: a área de 6 m em volta da boca do portão do mandante (que é sempre do mandante) não corta o caminho dele. Ele passa antes; a torcida daquele portão espera (abaixo).
+   - **A conferência.** Todo portão do mandante que uma torcida dele usa tem de dar na rua pela zona do mandante, e o portão 3 pela do visitante.
+     - Se o corredor deixou um portão do mandante ilhado (passou na única rua dele), a PM traça o corredor de novo, cada vez mais longe daquele portão (16, 24, 36 e 54 m andando), enquanto o visitante ainda chegar no dele.
+     - Antes da regra dos 12 m e desta conferência, o corredor do Rei Pelé (Alagoas) passava na rua do portão 2, e a 2ª torcida do CRB ficava sem caminho.
+     - Com as ruas de lado dos estádios (4.68), o visitante quase sempre tem por onde chegar no portão 3 sem passar na frente dos outros.
+   - **O corredor que abre (a torcida espera na sede a ordem da PM).** Às vezes o mapa obriga: no Dutrinha (Mato Grosso, com o Mixto mandando), o portão 3 fica no canto nordeste, e as duas ruas que chegam nele passam na frente dos portões 1 e 2.
+     - Aí a torcida do portão ilhado espera na sede: a PM segura o corredor até o último visitante passar a catraca, e um minuto depois abre a rua. É a regra do dono: "Uma torcida pode esperar na sede aguardando ordem da polícia pra sair, pra outra passar na mesma rota se for o caso".
+     - A grade do cordão daquele trecho sai, os PMs se espremem nas pontas (na calçada), e o rótulo diz a hora ("Cordão da PM · abre às 15:06").
+     - A rota dessa torcida passa pelo corredor, mas nunca a menos de 15 m do portão do visitante. Se ela chegasse antes da hora, sairia da sede mais tarde; o painel diz quanto.
+3. **O cordão divisório.** Onde uma zona encosta na outra, a PM põe a grade de contenção e uma fila de PMs de escudo a cada 1,4 m, 1,2 m pro lado do visitante e virados pra ele.
+4. **As bocas**, onde a rua sai dos arredores:
+   - a boca por onde entra a rota de uma torcida vira **revista**: a grade em funil com a abertura de 3 m e 3 PMs, e o bonde para ali (desde a 4.70 a revista é na entrada do estádio, e essa boca fica aberta);
+   - as outras bocas da zona do visitante ficam **fechadas**: a grade atravessada e 2 PMs;
+   - as bocas do mandante ficam **abertas**, porque é por onde chega o resto da torcida dele.
+5. **A escolta.** 4 PMs andam com o bonde do 1º escalão visitante, dois na frente e dois atrás, da sede até a revista (desde a 4.70, até o portão).
+6. **Quantos PMs** (desde a 4.69): um pra cada 4 torcedores do jogo, divididos entre esses postos pela importância; a grade fica inteira.
+
+#### As rotas das torcidas: "no intuito de não se chocarem"
+
+Fora dos arredores não tem cordão, e quem separa é a rota e o horário.
+
+- **A ordem.** Primeiro sai a rota do visitante (a do corredor). Depois a do mandante, que paga caro perto das rotas do visitante. Depois a do visitante de novo, que paga perto das do mandante.
+- **O que cada lado paga a mais, por metro, fora dos arredores:**
+  - perto da sede rival: até +6, a metade a cada 31 m;
+  - perto da rota rival: até +10, a metade a cada 21 m;
+  - perto do pedaço dos arredores do lado rival: até +6, a metade a cada 17 m. Sem esse último, o visitante contornava a zona do mandante rente à borda e passava na boca por onde o mandante entra: na primeira versão, a 1 m da revista do mandante.
+- **O horário.** Cada bonde sai pra chegar na boca do portão na hora dele: o visitante às 15h05, o mandante às 15h20, e 5 min depois a cada escalão. A PM traz o visitante cedo.
+  - Depois o plano confere cada visitante contra cada mandante, a cada 10 s, a cabeça e o rabo de cada coluna.
+  - Se dois bondes rivais passam a menos de **60 m** um do outro na cidade, a saída do visitante adianta de 3 em 3 min (até 30).
+  - Adianta também se ele passa num cruzamento sem a margem que vem abaixo.
+- **Os cruzamentos e as travessias.** Quando o mapa obriga (o visitante mora do lado do mandante e o portão dele fica do outro lado), as rotas se cruzam.
+  - Cada trecho em que a rota de um mandante passa a menos de **15 m** da de um visitante, na cidade, é um cruzamento; cruzamentos a menos de 25 m um do outro viram um só.
+  - O rabo de quem passa antes tem de passar pelo menos **5 min** antes de a cabeça do outro chegar.
+  - A PM monta ali uma **travessia**: na rua de quem passa depois, dos dois lados da rota de quem passa antes, a grade de parede a parede e 3 PMs do lado do cruzamento. O rótulo diz até quando ela fica fechada.
+  - Um minuto depois do último passar, a grade sai e os PMs andam pra calçada.
+- O painel diz o que separou: a menor distância entre dois bondes rivais na rua, e cada cruzamento com a hora de cada um.
+
+#### No cenário
+
+- **O painel:**
+  - o relógio, **Começar/Pausar**, a velocidade (1×, 10×, 30×, 60×) e a régua da hora;
+  - cada torcida, com a hora de saída, os metros até o portão, o setor e o que ela está fazendo (na porta da sede, andando, na revista, na fila, passando a catraca, no lugar);
+  - a PM (cordões, revistas, ruas fechadas, travessias, PMs, grades) e o encontro.
+- **Os botões:**
+  - **Ver o plano**: de cima, todas as rotas;
+  - **Ver o estádio**;
+  - **Seguir**: a câmera anda com a cabeça de um bonde, e sobe junto na arquibancada;
+  - **Rotas e zonas**: a fita de cada rota na cor da torcida e as zonas pintadas no chão;
+  - o jogo, **Inverter o mando** e quanta gente.
+- **Os bonecos** são os do jogo (`bonecos3.js`), o mesmo `povo` do boneco a pé: com o dia de jogo aberto, dá pra andar a pé no meio deles. A passada acompanha a velocidade do relógio, pra 60× não virar corrida.
+- **O rótulo** de cada bonde (sigla e quantos) anda em cima da cabeça dele. Os rótulos ficam do mesmo tamanho na tela. Quando dois se cobrem, fica o mais importante: o da torcida, depois o da revista e o da travessia, depois o do cordão maior.
+- A câmera ganhou a **altura do alvo** (`orb.alto`), pra olhar a arquibancada e não a fachada.
+
+![o dia de jogo: as zonas e os cordões, a revista, a travessia, o lugar na arquibancada e o corredor do Dutrinha, fechado e aberto](../img/cena3d/dia-de-jogo.jpg)
+
+#### O que mudou fora do arquivo novo
+
+- `bonecos3.js`:
+  - `pos(x, y, d)` recebe o disco e usa `d.alt` como a altura do pé;
+  - o corte do que está fora da tela recebe o disco (`noQuadro(x, z, d)`);
+  - o PM parado fica virado pro `rumo` dele, usa a `passada` e o `escudo` levantado.
+  
+  Sem esses campos, faz o que fazia.
+- `cenario.js`:
+  - o botão e o painel;
+  - `GradeDoPasso.crua()`;
+  - os bonecos do dia junto com o boneco a pé, cortados pelo que a câmera vê;
+  - a altura da tela guardada na troca de tamanho. Lida a cada quadro (`clientHeight`), depois de o painel mudar um texto, ela obrigava o navegador a refazer o leiaute da página no meio do quadro: era um terço do tempo dos bonecos.
+  - a linha "dia de jogo: N bonecos, X ms" no medidor.
+- `index.html`: a planta dá ao cenário o clube, o poder, os membros, o nível, o bairro e os rivais de cada torcida, os clubes da praça com as cores e os estádios com o modelo, o terreno e a marca do modelo que ela montou.
+- `estadios3d.js`: a arquibancada dá as `vagas`, a camada dos setores dá as vagas e o centro de cada setor, e `marcaDoEstadio` dá a marca do modelo.
+
+#### Medido
+
+No navegador daqui, sem placa de vídeo. As contas do plano e dos bonecos são de processador, e valem; o fps não vale.
+
+| praça (mapa) | jogo · estádio | torcidas | plano | PM | cruzamentos na cidade |
+|---|---|---|---|---|---|
+| Fortaleza (grande) | Fortaleza × Ceará · Arena Castelão (40) | 5 | 1,2 s | 56 PMs | 2: o visitante passa 7 e 11 min antes |
+| Alagoas (médio) | CRB × CSA · Rei Pelé (20) | 4 | 1,2 s | 64 PMs | 1: 11 min antes |
+| Santos (médio), invertido | Portuguesa Santista × Santos · Ulrico Mursa (10) | 3 | 0,5 s | 49 PMs | 1: 12 min antes |
+| Mato Grosso (pequeno) | Cuiabá × Mixto · Arena Pantanal (40) | 2 | 0,5 s | 67 PMs | nenhum |
+| Mato Grosso, invertido | Mixto × Cuiabá · Dutrinha (10) | 2 | 0,6 s | 103 PMs; o corredor abre às 15h06 | nenhum |
+
+- **As 30 praças, com o mando normal e invertido** (60 planos, `todas.js`, com o portão 2 do 40 mil na lateral e as ruas de lado da 4.68): **os 60 sem erro**. Todas as torcidas chegam no lugar.
+  - O plano leva de 0,2 a 1,2 s (mediana 0,7 s).
+  - Em 17 dos 60 as rotas rivais se cruzam na cidade, e o visitante passa de 7 a 16 min antes.
+  - Só em São Paulo (São Paulo × Corinthians) dois bondes rivais ficam na rua ao mesmo tempo, a 486 m um do outro.
+  - Só no Dutrinha a torcida do mandante espera na sede o corredor abrir.
+  - A PM vai de 23 PMs (Joinville × Criciúma, no Heriberto Hülse) a 177 (Santa Cruz × Sport, no Arruda).
+- **Antes, 13 dos 60 falhavam**, e o conserto foi em três partes:
+  - **A busca guardava a distância em 32 bits.** O número guardado arredonda pra cima, e o mesmo caminho parecia "melhor" de novo toda vez: cada vizinho voltava pro monte, e em cadeia. Na Bahia invertida (Vitória × Bahia), a memória acabava ("Array buffer allocation failed"); em São Paulo, no Sergipe e no Maranhão, o plano levava de 47 a 168 s. Em 64 bits, isso some.
+  - **O caminho do corredor ficava cortado** pela área em volta da boca do portão do mandante, quando a única rua do portão 3 passa na frente dele (Ulrico Mursa, Junco, Germano Kruger, Bento Freitas, Amigão, São Januário, Ilha do Retiro, Estádio Regional, Heriberto Hülse, Cornélio de Barros). Agora o caminho do corredor é sempre do visitante.
+  - **A área que só servia pra traçar o corredor** (longe dos portões do mandante) continuava proibida pro visitante depois das zonas, e às vezes fechava o caminho dele dentro da própria zona.
+- **Os controles** (`controles.js`, em Fortaleza e no Mato Grosso), todos sem erro na página:
+  - Começar, Pausar e Continuar, com o relógio andando a 60×;
+  - a régua da hora: no fim, todos no lugar;
+  - Seguir (a câmera na cabeça do bonde), Rotas e zonas, Ver o plano e Ver o estádio;
+  - Inverter o mando, a gente (pouca, normal, muita: 65, 114 e 146 bonecos em Fortaleza) e o outro jogo da praça;
+  - o boneco a pé andando no meio do jogo, Fechar e abrir de novo.
+- **Os bonecos, andando** (Fortaleza, 179 bonecos: 114 da torcida e 65 PMs): o `povo.atualizar` leva 0,7 a 1,2 ms por quadro.
+  - Na primeira vez que entram na tela, cada boneco é montado (uns 3 ms cada: meio segundo pros 180 da vista de cima).
+  - Antes da altura da tela guardada, um terço do tempo dos bonecos era o navegador refazendo o leiaute da página.
+
+#### O que isto ainda não é
+
+- **Onde o mapa obriga, quem separa é o horário.** Em Fortaleza, as sedes do visitante ficam no nordeste, o portão 3 no sudoeste do estádio e as sedes do mandante no sudeste. Não tem caminho que não cruze, e as rotas se cruzam em dois pontos. A PM fecha a travessia e o visitante passa uns 7 a 10 min antes, mas ninguém "segura" um bonde na grade: se o horário apertar, os dois passam.
+- **Não tem reação.** Ninguém vê o rival, corre, desvia ou briga. O bonde anda no trilho e no horário do plano. A PM não age: está parada, na escolta ou abrindo a travessia. O combate do jogo (`combate.js`) não está ligado aqui.
+- **Um boneco é 3,3 torcedores**, e só vão as torcidas com sede no mapa. O resto do público (o torcedor comum, quem vem de ônibus) não existe, então a arquibancada fica quase vazia.
+- **A rota de dentro é de 3 modelos**, gerada fora do jogo. Qualquer mudança nos estádios pede rodar `rotas_estadios.mjs` de novo.
+- **A espera na sede é só a do corredor que abre.** A torcida do mandante espera a PM quando o corredor do visitante passa na frente do portão dela; noutros casos, quem separa é a saída mais cedo do visitante (até 30 min antes), não a espera do mandante.
+- **Os bonecos aparecem de uma vez.** Na primeira vez que entram na tela, cada boneco é montado; a vista de cima trava meio segundo. Depois disso, o custo é o de cima.
+- **A PM é grande.** O cordão põe um PM a cada 1,4 m de rua, e onde o corredor contorna o estádio (o Dutrinha), são 100 PMs pra 12 bonecos de torcida.
+- O fps não foi medido numa placa de vídeo de verdade. O navegador daqui desenha no processador e leva segundos por quadro com a cidade inteira; o medidor mostra o da máquina de quem abre.
+
+### 4.68. O portão 2 do 40 mil na lateral do campo, e mais ruas de acesso em cada estádio
+
+O dono pediu, olhando o dia de jogo (4.67), duas coisas no mapa:
+- sobre um print do 40 mil visto do oeste: "Corrija o portão 2 mandante pra ficar na lateral do campo, no local que marquei no print, pra ver se ameniza essa questão";
+- sobre a planta do Ulrico Mursa (Santos, mando invertido): "Crie mais uma ou duas ruas que acessam o estádio pra ajudar a resolver essa logística. Criei uma rua marcado de amarelo e os caminhos da torcida jovem e da sangue jovem pra esse caminho, como um exemplo de evitar passar pelo portão da outra torcida."
+
+E deu a regra pro que o mapa não resolve: "O jogo pode desenhar outra rota pra evitar passar nos outros portões, como no caso do Dutrinha. Uma torcida pode esperar na sede aguardando ordem da polícia pra sair, pra outra passar na mesma rota se for o caso" (o corredor que abre e a regra do caminho do corredor, na 4.67).
+
+**O portão 2 do 40 mil** (`estadios3d.js`, `montar40`). Ele ficava no oeste, 8 m ao norte do meio, a uns 38 m do portão 3 (o do visitante, na curva do sudoeste): o corredor do visitante tinha de passar colado nele.
+- Agora fica no meio da lateral do norte (`naFachada(0)`), entre as duas bilheterias de lá, que foram 1,5 m pra fora pra dar folga à marquise. O pórtico, a fila, o salão, as catracas e a porta do corredor do chão vêm do plano da entrada, como os outros.
+- A escada interna do noroeste continua onde era, logo depois de onde ficava o salão do 2: ela é o caminho do corredor do chão pro de cima do mandante.
+- O letreiro do oeste fica, agora sem portão embaixo.
+- `conferir_estadios.mjs`: do portão 2 novo, o mandante chega no corredor dele e no m1 e no m2, e em nada do visitante. As rotas de dentro (`rotas_estadios.mjs`) foram geradas de novo: o m2 fica a 108 m do portão 2 (eram 59 m do oeste), porque o caminho vai até a escada do noroeste e volta por cima.
+
+**As ruas de lado** (`proposta.js`). Cada estádio tinha uma rua de acesso só: a reta de duas pistas do portão 1 até a primeira rua da cidade (4.59). Com ela, todo mundo chegava pela frente do portão 1.
+- Agora, depois do acesso do portão 1, o gerador tenta uma rua de cada lado do estádio, primeiro do lado do portão 3.
+- **O lado do portão 3** vem do terreno de cada modelo (`vis`: o sinal do z do modelo onde fica o portão 3 — o norte no de 10 e no de 20, o sul no de 40), girado pro mundo com o estádio.
+- **Onde a rua sai:** da rua em volta do estádio, na frente, o mais perto da quina daquele lado que der, a 25 m ou mais do eixo do portão 1 (de 4 em 4 m, da quina pro portão).
+- **Como ela vai:** reta, paralela ao acesso do portão 1, até a primeira rua da cidade (a mesma conta do acesso, `reta`), com uma pista (6,1 m) e até 310 m. Se a rua em volta do estádio já encosta na cidade ali, não precisa rua nova. Se a reta bate em favela, no Atacadex ou em nada, não tem.
+- **Nas 30 praças:** dos 74 estádios dos mapas, 21 ganharam a rua do lado do portão 3 e 17 a do lado do portão 2. Nos outros, a rua em volta já encosta na cidade, ou não tem cidade em reta daquele lado. `conferir_cidades.mjs`: as 30 praças continuam cabendo no mapa do porte delas.
+- **No Ulrico Mursa** (o caso do desenho do dono), as duas torcidas visitantes chegam pelo leste, sobem a rua nova do lado do portão 3 e não passam na frente do portão 1. O mandante chega no 1 pela rua nova do oeste.
+
+![o portão 2 do 40 mil entre as bilheterias do norte; o Ulrico Mursa com o acesso do portão 1 no meio e as duas ruas de lado](../img/cena3d/portao2-e-ruas.jpg)
+
+**Medido:** a bateria das 30 praças da 4.67, com os dois mandos, já com isto: os 60 planos sem erro.
+
+**O que isto ainda não é:**
+- **A rua de lado é reta.** A rua amarela do dono dobra pra chegar na cidade mais ao sul; a do gerador vai reta até a primeira rua. Onde a reta não acha cidade, o estádio fica sem ela.
+- **No Dutrinha** (o 10 mil do mapa pequeno, no canto nordeste) não coube rua de lado: a torcida do mandante ainda espera na sede o corredor abrir (4.67).
+- **O m2 do 40 mil ficou mais longe do portão 2** (108 m por dentro, eram 59): a escada interna do mandante do norte é a do noroeste. Uma escada perto do portão novo encurtaria, mas mexe no poço debaixo do corredor de cima.
+
+### 4.69. A torcida solta: a festa na porta da sede, o bonde espalhado torcendo, as cinco raias do portão e a PM do tamanho da torcida
+
+O dono pediu, com um print da fila do portão (todo mundo na raia do meio) e a foto de um bonde de verdade andando na rua:
+- "Coloque a PM proporcional à quantidade de torcedores envolvidos no jogo, sempre."
+- "Faça os bonecos utilizarem as 5 bocas de entrada e não só uma, como o print mostra, pra agilizar a entrada."
+- "Deixe os bonecos mais espalhados em frente à sede como se estivessem à vontade confraternizando."
+- "Crie um movimento de torcer andando, que vai ser como eles vão se comportar enquanto estiverem caminhando na rua em direção ao estádio. Também evite fazer um movimento padronizado caminhando, deixando eles mais espalhados, como a imagem de exemplo mostra."
+
+![a festa em rodinhas na porta da sede, o bonde solto torcendo na rua, as cinco raias do portão 3 do Castelão e os gestos de torcer na frente da sede da Cearamor](../img/cena3d/torcida-solta.jpg)
+
+#### A PM do tamanho da torcida
+
+- **A regra.** Um PM pra cada 4 torcedores do jogo (`PM_POR_TORCEDOR`, os dois contados em bonecos: 1 boneco é 3,3 pessoas, dos dois lados). Antes, o número saía da rua: um PM a cada 1,4 m de cordão, mais os de cada posto. No Dutrinha eram 103 PMs pra 12 torcedores; no Arruda, 177 pra 108.
+- **A divisão**, pela importância do posto:
+  1. um em cada revista, um de cada lado de cada travessia, um em cada cordão (o maior primeiro), dois na escolta e um em cada rua fechada;
+  2. o resto pelo que cada posto ainda pede: o cordão, um a cada 1,4 m; a revista, 3; a travessia, 3 de cada lado; a escolta, 4; a rua fechada, 2;
+  3. se ainda sobra, uma 2ª fila (até a 4ª) atrás de cada cordão, 1,2 m mais pra trás.
+- **A grade continua inteira.** O que muda é quanto PM tem na frente dela. Com pouca gente, sobra grade sem PM: no Dutrinha agora são 3 PMs (as duas revistas e um cordão), e o corredor que abre (4.67) fica só com a grade.
+- O painel conta: "29 PMs, um pra cada 4 torcedores do jogo (114): 15 nos cordões, 6 nas revistas, 6 nas travessias, 2 na escolta do visitante" (Fortaleza).
+
+#### As raias do portão (`rotas_estadios.mjs`)
+
+- **A passagem de cada portão.** O modelo do estádio passou a dizer, pra cada entrada, o quadro dela (o ponto da fachada e o rumo de quem entra), a meia largura, a fila (de onde a onde) com o meio de cada raia, e a linha de catracas com o meio do vão de cada uma (`passagemDe`, em `estadios3d.js`, a mesma conta de `catracas`).
+- **A raia no chão.** A ferramenta das rotas de dentro traça cada raia: da frente da fila, pelo meio da raia, até a **parada** (0,6 m antes do pé da catraca do vão mais perto dela) e 0,75 m depois da catraca. Cada ponto é conferido no chão e cada trecho no corpo (a mesma conta do caminho); onde o corpo não cabe, o ponto chega pro meio, até 0,6 m. A raia que não passa fica de fora.
+- **Qual raia serve pra qual vaga.** Da ponta da raia, a pessoa volta pro caminho da vaga dela no ponto em que ele passa 0,5 m depois (no eixo do portão), em reta. A ferramenta confere essa reta pra cada vaga e cada raia e guarda uma máscara por vaga.
+  - A primeira tentativa juntava a raia no caminho do setor e não servia: em vários setores a cauda de muitas vagas sai do caminho logo na boca, antes da catraca (no 20 mil, o m1 e o m2 ficavam sem raia nenhuma).
+  - No meio de uma escada, o y da reta não é o do chão: a volta mede o chão de verdade.
+- **O que deu:**
+
+| estádio | portão 1 | portão 2 | portão 3 |
+|---|---|---|---|
+| 10 mil | 10 (o arco, sem fila: um por catraca) | 3 | 2 das 4 (no túnel de lona, as duas de fora não cabem em pé) |
+| 20 mil | 5 | 5 (sem fila: um por catraca) | 5 |
+| 40 mil | 5 | 5 | 5 |
+
+  Nos 18 setores, as 100 vagas de cada um servem com todas as raias do portão dele.
+- **No jogo.** Cada um chega no fim da rua no lugar dele no bonde e vai pra raia mais perto dali, entre as que servem pra vaga dele, com as raias recebendo a mesma gente. Ele anda na raia no passo do bonde até a parada, espera a vez e passa a catraca: **2 s cada um, e cada raia tem a sua**. Na raia, cada um fica a 0,65 m do da frente e dá um passo quando o da frente passa. Passou, vai pro caminho da vaga dele.
+- **Mais rápido.** O bonde de 40 da TOC (Fortaleza) passa o portão 3 em 20 s; antes, na fila única de 1,2 s por pessoa, eram 48 s. Um bonde pequeno de 6 passa em 5 s.
+- A rota de dentro velha, sem raia, ainda funciona: o bonde faz uma fila só no caminho da vaga, com a parada 7 m depois da boca.
+
+#### A festa na porta da sede
+
+- **As rodinhas.** Antes de sair, a torcida fica em grupos de 1 a 6 (mais de 3 e 4), cada grupo em roda virado pro meio dela.
+  - A roda tem 0,54 m de raio a dois e 1 m a seis.
+  - Ela fica numa faixa de uns 16 m ao longo da fachada e até uns 10 m pra fora (a calçada e a rua), onde tem 0,45 m de folga em volta, a 1,8 m ou mais das outras. Se não acha lugar, a faixa vai abrindo.
+  - Quem fica em qual lugar é sorteado: o bonde não sai na ordem das rodinhas.
+  - Na TOC (40), 31 dos 40 têm o vizinho mais perto na frente deles; a distância até o vizinho é 1,06 m na mediana.
+- **O que cada um faz** (o jeito `festa` do `bonecos3.js`): conversa com a mão desenhando no ar, escuta de braço cruzado, bebe (a lata sobe até a boca de tempos em tempos), ri com o tronco sacudindo, olha o celular, puxa um canto com o braço no alto, aponta. Troca de gesto quando quer.
+- **A saída.** Cada um sai da rodinha na hora de pegar o lugar dele no bonde, onde o bonde se forma: o primeiro ponto da rota com 2,4 m de largura, de 3 a 12 m da porta. Quem está longe sai antes. O da frente sai na hora do "bora"; os outros com até 5 s de demora.
+
+#### O bonde solto (a foto de exemplo)
+
+- **O desenho.** Cada um tem um lugar sorteado no bonde, a 0,95 m ou mais dos outros, numa faixa de até 4,4 m de largura, com 1,9 m² de rua por pessoa. O bonde de 40 tem 17 m de comprimento. Não tem fileira.
+- **A faixa na rua.** A cada metro da rota, o plano mede quanto se anda pra cada lado dela: até a folga de 0,7 m da parede, do carro e do poste, ou até o cordão.
+  - Na abertura da revista, a faixa aperta pros 3,2 m do funil.
+  - Onde a rota corre rente a uma parede, o bonde vai pro lado que tem rua. Na primeira versão a faixa era a mesma dos dois lados, e o bonde ficava estreito rente ao prédio com a rua vazia do lado.
+  - A faixa é alisada (o pior de 2 m pra frente e pra trás), e o bonde não pula de largura de uma célula pra outra.
+- **O desenho respira.** Uma onda passa devagar pelo bonde: meio metro pra frente e pra trás, num ciclo de 47 s, e um quarto de metro num de 29 s pelo lado. Vizinhos se movem quase juntos, então ninguém atravessa ninguém. Cada um ainda balança 10 cm pro lado no tempo dele. A onda some perto do portão e com o bonde parado.
+- **Parado, o bonde encolhe.** Na revista, quem vem atrás continua andando até o bonde ficar com metade do comprimento. Na saída, o da frente vai primeiro, e cada um só sai quando o espaço dele abre.
+- **O passo de cada um.** O tamanho do passo varia de 1,05 a 1,38 (a `passada` do disco, vezes a velocidade do relógio). O passo de cada boneco começa numa fase sorteada: quem sai junto não sai no mesmo pé. A cadência, o balanço dos braços e os três jeitos de andar já eram de cada um (`estiloDe`).
+
+#### Torcer andando (o jeito `bonde` do `bonecos3.js`)
+
+- **As pernas são as do passo; em cima vai o gesto.** Os gestos:
+  - o braço no alto, bombando no tempo do canto;
+  - palmas em cima da cabeça, ou palmas no peito;
+  - os dois braços pra cima, abertos, balançando de um lado pro outro;
+  - o soco no ar, pra frente e pra cima, a cada batida;
+  - conversando com o do lado, virado pra ele;
+  - ou só andando (uns 26% do tempo).
+- **Parado** (a revista), torce em pé, com os mesmos gestos e mais um: pulando.
+- **Na fila da catraca** fica mais calmo: parado, palmas no peito, o braço no alto, o celular, a conversa.
+- **Nada é padronizado.** Cada um troca de gesto quando quer (de 3 a 9 s) e tem um gesto favorito que pesa mais. O tempo da palma é de cada um (de 1,5 a 2,1 por segundo), numa fase dele: o do lado nunca está no mesmo tempo.
+- **O relógio de verdade.** Os gestos andam no relógio de verdade (`tAnim`), não no do jogo, que corre a 30×: a palma não pode ficar 30 vezes mais rápida. O PM parado também passou pra ele: antes ele respirava a 30×.
+- **O braço erguido fecha.** No esqueleto do boneco do Blender, o `ombroZ` que abre o braço na altura do peito fecha o braço erguido: com 0,5 as mãos se encontram em cima da cabeça, com 0,2 os braços abrem em V, e com 0,7 eles cruzam na frente do rosto. A primeira versão dos dois braços pra cima saía com os braços cruzados; as palmas em cima da cabeça, os dois braços, o pulo e o braço no alto foram acertados olhando o boneco de frente (uma fila de teste, um boneco por gesto).
+
+#### Duas correções no `bonecos3.js`, que valem pra todo mundo
+
+- **A multidão leve patinava.** Quem não é o líder só tem a pose recalculada a cada três quadros. O ciclo do passo andava só no quadro que conta, com o tempo de um quadro: a um terço da velocidade, e o pé patinava. Agora o tempo dos quadros pulados fica guardado e entra no quadro que conta, no passo, na velocidade medida e na pose.
+- **O passo começava no mesmo pé pra todo mundo.** O ciclo de cada um começa numa fase sorteada da semente dele.
+
+#### Medido (Fortaleza, o de 40 mil; sem placa de vídeo, a conta de processador)
+
+A conta dos bonecos por quadro (`povo.atualizar`, chamada direto 240 vezes, sem desenhar), antes e depois:
+
+| momento | antes | agora |
+|---|---|---|
+| a festa na sede, de perto | 0,7 ms (104 na tela) | 0,7 ms (102 na tela) |
+| o bonde andando, de perto | 0,5 ms (50) | 0,4 ms (46) |
+| o meio do jogo, o plano todo | 1,9 ms (170: 114 da torcida e 56 PMs) | 1,4 ms (143: 114 e 29 PMs) |
+| a fila do portão 3 | 0,1 ms (24) | 0,2 ms (35) |
+
+Agora todo mundo se mexe, parado ou andando, e a pose conta mais. Mas a PM do tamanho da torcida tirou quase metade dos PMs, e a conta ficou igual ou menor.
+
+- **As 30 praças, com o mando normal e invertido** (60 planos, `todas.js`): **os 60 sem erro**, todas as torcidas no lugar, nenhum erro na página.
+  - A PM vai de 3 PMs (12 torcedores: ABC Paulista, Interior de Minas, Interior de SP e Mato Grosso) a 35 (139 torcedores: Flamengo × Vasco). Antes ia de 23 a 177, pelo tamanho da rua e não da torcida.
+  - Os bondes entram por 5 raias (155 bondes), por 10 (10 bondes, no portão 1 do 10 mil) ou por 2 (11 bondes, no túnel do 10 mil). Cada bonde passa a catraca em 4 a 38 s (mediana de 11 s). O mais lento é o do Santos entrando pelo túnel do Ulrico Mursa, de duas raias.
+  - O plano leva de 0,3 a 1,7 s (mediana de 0,75 s).
+  - O horário não mudou: as mesmas travessias e o mesmo corredor que abre no Dutrinha às 15h06. Em São Paulo os dois bondes rivais continuam na rua ao mesmo tempo, agora a 484 m (eram 486: o bonde solto é mais comprido que a coluna).
+
+#### O que isto ainda não é
+
+- **Ninguém esbarra em ninguém de verdade.** O lugar de cada um sai do desenho do bonde e da onda, não de uma conta de empurra. Onde a rua aperta muito, a faixa aperta e dois bonecos podem se encostar. Na boca do portão, quem vai pra raia do outro lado cruza na frente de quem vai pra raia do meio por uns metros.
+- **Os gestos não têm objeto.** A lata, o celular e a bandeira não existem: é o gesto sem a coisa na mão.
+- **O canto não é da torcida inteira.** Cada um torce no tempo dele, como foi pedido (nada padronizado). Numa torcida de verdade a palma vai junto com a bateria. Isso seria um tempo comum por bonde, com cada um entrando e saindo dele.
+- **A razão da PM é um chute calibrado no olho.** Um pra cada 4 dá 3 PMs no Dutrinha e 29 em Fortaleza. É uma constante no começo do `dia_de_jogo.js` (`PM_POR_TORCEDOR`), fácil de trocar.
+- **Na arquibancada a torcida ainda fica parada**, virada pro campo. Torcer em pé no lugar é o mesmo gesto do bonde parado; ficou de fora pra não passar do que foi pedido.
+- O fps não foi medido numa placa de vídeo de verdade.
+
+### 4.70. A revista na entrada, a torcida da IA que ataca e o visitante de outra cidade
+
+O dono pediu, olhando o dia de jogo da 4.69:
+- "A revista é interessante que seja na hora da entrada, pois o jogador vai poder optar por fazer outra rota com sua torcida, essa lógica que desenvolvemos foi somente pra definir como as torcidas IA vão se comportar em dia de jogo se quiserem optar por ir em paz."
+- "A torcida IA pode optar por atacar alguém, e isso tem mais chances de acontecer caso seja um jogo contra uma torcida que tenha pontuação alta de rivalidade. Nesse caso ela vai de encontro a uma torcida rival em vez de ir direto pro estádio, e depois de ela ir de encontro à torcida rival independente do que aconteça ela vai pro estádio com aqueles que ficaram aptos (ou seja: jogo Ceará x CSA em Fortaleza, a Cearamor tem 100 membros aptos e optou por atacar a Mancha Azul do CSA, venceu a luta mas saiu com 10 feridos, chega no estádio somente com os 90 membros restantes."
+- "Simule também uma torcida que não tem aliado iniciando sua rota de ida ao jogo a partir de alguma das entradas da cidade. As torcidas visitantes que tem aliado iniciam sua rota ao estádio na sede do aliado, caso o aliado tenha optado por hospedá-lo. Caso tenha optado por hospedar e escoltar, 10 membros do aliado que recebeu vão com eles pro estádio."
+
+![a caravana da Mancha Azul (TOMA) descendo na entrada sul de Fortaleza; hospedada e escoltada pela Jovem Garra (5 bonecos de camisa azul no bonde); a Cearamor na tocaia, numa transversal; a briga; os feridos no chão depois; a revista na boca das raias do portão 1](../img/cena3d/briga-e-revista.jpg)
+
+#### O jogo: o da praça ou contra um de fora
+
+- **O painel escolhe o jogo.** O mandante é um clube da praça com torcida com sede. O visitante é outro da praça (o clássico, como antes) ou um **de fora**: qualquer clube dos dados com torcida que venha (59 em Fortaleza). "Inverter o mando" só aparece no jogo da praça. Abrindo, o jogo é o de antes (o primeiro par da praça); numa praça de um clube só, vem o de fora de torcida mais rival das do mandante.
+- **Quem vai pra rua é a conta do jogo.** A torcida da praça bota 60% do efetivo na rua (`naRuaEm`, `js/mundo/praca.js`). A de outra cidade vem em caravana: 18% dos membros (`caravanaDe`, `js/gestao/planejamento.js`, sem relação com o jogador); se a conta dá menos de 5, ela não vem. A Mancha Azul (TOMA, 80 membros) vem com 14; a Sangue Azul (20) não vem.
+- **Um boneco vale 2 torcedores** (no máximo 40 por torcida). A torcida da praça fica com os mesmos bonecos de antes: 60% × 1/2 é o 0,3 que era. A Cearamor (150 membros) tem 90 na rua, em 40 bonecos; a caravana da TOMA, 7.
+
+#### A revista na entrada
+
+- **Onde.** Na boca de cada raia do portão (4.69), antes da catraca. A boca dos arredores por onde a rota entra fica **aberta**: sem grade em funil, sem PM e sem o bonde parar. A escolta da PM vai com o visitante até o portão.
+- **Quantos PMs.** Um pra cada 10 bonecos que passam pelo portão (no máximo um por raia, pelo menos um), tirados do efetivo antes dos outros postos: a revista é por onde todo mundo passa. Se não dá pra todos, um em cada portão primeiro (o de mais gente antes) e o resto onde tem mais gente por PM. No clássico de Fortaleza: 4 no portão 1, 2 no portão 2 e 5 no portão 3, dos 29 PMs do jogo.
+- **Como anda.** Cada PM cuida de um grupo de raias vizinhas e revista um de cada vez, pela ordem de chegada na boca: **5 s cada um**. Na vez de alguém, o PM vai (0,8 s) pro lado da raia dele — meia raia pro lado, 30 cm pra dentro — e fica de frente pra ele. Sem ninguém, volta pro meio do grupo, virado pra quem chega.
+- **A fila.** Antes da revista, cada um espera atrás da boca da raia dele, a 0,65 m do da frente. Revistado, anda até a parada e passa a catraca da raia (2 s, como na 4.69).
+- **A pose da revista** (o jeito `revista` do `bonecos3.js`): parado, as mãos pro alto, abertas em V. O gesto mais comum seria os braços abertos pro lado, mas neste boneco o ombro que abre pro lado arrasta a camisa junto, e ela abre em saia (testado de 0,8 a 1,5 no `ombroZ`, que abre com o valor negativo nesse esqueleto). Pra cima, pelo ombro, a camisa fica no lugar.
+- **O tempo.** Da primeira revista à última de um bonde, de 25 a 92 s (mediana de 50 s) nas 90 partidas medidas. O portão de um PM só é o mais lento: 7 bonecos da TOMA em 35 s.
+
+#### O visitante de outra cidade
+
+- **O aliado que hospeda** é o do jogo (`anfitriaoDe`): uma torcida da praça com sede, a irmandade do visitante antes do aliado; no empate, a do sorteio fixo do par. Nunca uma do clube mandante, que no dia é rival. A TOMA tem dois aliados em Fortaleza, a TUF e a Jovem Garra (JGT), os dois do Fortaleza; o sorteio fixo dá a JGT.
+- **O que ele decide** é sorteado (`HOSPEDA`): a irmandade não recebe em 10%, hospeda em 30% e hospeda e escolta em 60%; o aliado, 35%, 45% e 20%. Esses números são meus (o jogo não tem essa decisão pra IA). O painel pode mandar: "o aliado decide (sorteio)", "não recebe", "hospeda", "hospeda e escolta".
+- **De onde sai.**
+  - Hospedado: da **sede do aliado**, com a festa em rodinhas na porta dela (dois visitantes na mesma sede dividem o espaço).
+  - Hospedado e escoltado: **10 membros do aliado** (5 bonecos, com a camisa dele) andam no bonde, na frente e pelos lados, e entram no setor do visitante junto.
+  - Sem aliado que receba: a caravana **desce na entrada da cidade** — o pórtico da estrada de caminho mais curto até o portão do visitante — 12 m pra dentro dele, e vai a pé. A TOMA desce na entrada sul de Fortaleza e anda 447 m até o portão 3.
+- **Nas 30 praças** (um visitante de fora em cada): 31 bondes desceram numa entrada (21 na sul, 10 na norte) e 6 saíram da sede de um aliado, 1 deles com a escolta.
+
+#### A torcida da IA que ataca
+
+- **A decisão.** Cada torcida decide (a de mais poder primeiro). O alvo é a rival do outro clube com mais chance, pela conta do jogo (`chanceDeProcurar`, `js/mundo/praca.js`):
+  - a base pela relação dela com o alvo: maior rival 88%, rival 72% (a tabela `BASE_PROCURA` do jogo); aliada, neutra ou irmã, nada;
+  - vezes a paridade das duas torcidas (os membros, não o bonde): com menos de 45% do tamanho do alvo, ela não vai; do tamanho dele, vai com até 1,3 vez a base;
+  - no máximo 95%. A Cearamor (150) contra a TOMA (80), rival: 72% × 1,3 = 94%.
+- **O sorteio** é fixo pro mesmo jogo ("Sortear de novo" troca). O painel mostra a chance e o que saiu, e pode mandar: "as torcidas decidem", "todas vão em paz", "quem pode, ataca".
+- **Quem não ataca.** Uma torcida entra em uma briga, no máximo (a atacada não ataca). O bonde com a **escolta da PM** (o 1º escalão do visitante) não sai da rota: a escolta não deixa. Essa regra é minha; sem ela, a caravana escoltada poderia atacar.
+- **Onde.** Quem ataca vai **de encontro ao bonde do alvo**, num ponto da rota dele na cidade: de 30 m da saída dele até 20 m antes dos arredores (lá está a PM). Fica o ponto que deixa o caminho do atacante mais curto (da saída dele ao ponto, só pela cidade, e do ponto ao portão dele, pelo lado dele nos arredores). Duas brigas não caem a menos de 40 m uma da outra.
+- **A tocaia.** O atacante chega 150 s antes do alvo e espera 14 m antes do ponto, no caminho dele, a 10 m ou mais da rua do alvo: na transversal, onde quem vem não vê (só se não tem, a 5 m). A primeira versão deixava o atacante esperando na mesma rua do alvo, do outro lado da calçada: era esbarrar, não emboscada.
+- **A briga.** 3 s antes de o alvo chegar no ponto, quem ataca corre (3,2 m/s) pro lado de um do alvo: os da frente primeiro, até 3 no mesmo; quem sobra avança até perto e fica na guarda. A briga dura **45 s**: soco e chute (as pancadas do combate do jogo, `d.ataque` do `bonecos3.js`), quem apanha se encolhe; no fim, quem perde só se cobre.
+- **Quem ganha.** A força de cada lado é a conta da investida do jogo (`resolverInvestidas`, `js/mundo/tensao.js`): a gente na rua × (0,6 + moral/40), com sorte (de 0,75 a 1,25) e, pra quem ataca, a surpresa (1,15). Nas 74 brigas das 30 praças, quem atacou ganhou 60.
+- **Os feridos.** Cada lado bate com quem alcança (até 2 em cada um do outro); de 8 a 20% das pancadas ferem, 1,4 vez isso em quem perde e 0,8 em quem ganha. Cem contra cinquenta: quem ganha perde uns 6%; quem perde, uns 40%. Os bonecos feridos caem durante a briga e **ficam no chão**, deitados, até o fim do dia. (A investida do jogo fere de 1 a 3 de quem ganha e de 1 a 6 de quem perde, só do lado do jogador; essa conta dos dois lados é minha.)
+- **Depois, cada um vai pro estádio com quem ficou de pé.** Quem ataca sai da tocaia pelo caminho dele, sem passar no ponto; o alvo junta os dele por 2 min e segue. Os feridos não entram: a vaga deles fica vazia.
+- **O exemplo do dono** (Ceará × CSA no Castelão): a Cearamor (90 na rua) decidiu atacar a TOMA (chance 94%). Ela ganhou (força 227 × 33). Ficaram na rua 2 da Cearamor e 6 da TOMA: a Cearamor chega com 88 de 90 e a TOMA com 8 de 14. Com a escolta da JGT, a TOMA vem com 24 e perde 10.
+- **A PM não sabe.** O plano dela (o corredor, os cordões, as travessias, o horário) é o da paz. O painel diz isso e mostra a rota da paz de quem foi atacar, fina e apagada, do lado da rota nova.
+- **Ver a briga.** Rodando mais rápido, o relógio para no começo da briga, cai pra 1× e a câmera vai até lá; no fim, volta pra velocidade de antes. O botão "Ver a briga" do painel volta 12 s e toca a briga a 1×.
+
+#### Medido
+
+- **As 30 praças, com o clássico, o mando invertido e um visitante de fora** (90 planos, `todas2.js`): **os 90 sem erro**, todas as torcidas com rota, nenhum erro na página.
+  - Brigas: 74. Tiveram briga 27 dos 30 clássicos, 23 dos 30 invertidos e 7 dos 30 jogos com visitante de fora (a caravana é pequena, e a paridade trava).
+  - Das torcidas com uma rival ao alcance que não brigaram: 23 estavam com a escolta da PM, 8 tiraram a paz no sorteio e 4 queriam atacar mas não acharam onde pegar o alvo (a sede dele fica colada nos arredores: a rota dele na cidade tem uns 35 m).
+  - O plano leva de 0,3 a 1,7 s (mediana de 0,64 s); a parte da IA, de 0 a 0,36 s (mediana de 0,1 s).
+  - A PM vai de 3 a 35 PMs.
+- **Os controles** (`controles2.js`, Fortaleza): o jogo de fora, o aliado nas três decisões, "todas em paz" (nenhuma briga), "quem pode, ataca", "Ver a briga" tocando a 1×, "Sortear de novo", a régua no fim (todos no lugar, menos os feridos) e o a pé no meio do jogo — tudo passa, nenhum erro na página.
+- **O custo por quadro** (Ceará × CSA, sem placa de vídeo): a briga de perto, 0,7 ms pros bonecos (49 na tela) e 0,1 ms pro dia de jogo — o mesmo do plano inteiro visto de cima; a revista no portão 1, 0,3 ms (43 na tela).
+
+#### O que isto ainda não é
+
+- **A briga é muito frequente com a conta do jogo.** O maior rival do mesmo tamanho ataca em 95% dos jogos, e 27 dos 30 clássicos tiveram briga. A tabela é a do jogo (`BASE_PROCURA`, em `js/mundo/praca.js`, e a mesma aqui): se a ideia é que a paz seja o comum, é ela que baixa — e baixa lá também.
+- **A PM não reage.** Ninguém vem pra briga, a escolta assiste, ninguém é preso (a investida do jogo prende um em 30% das vezes). Os feridos ficam no chão sem socorro.
+- **A briga é coreografada.** Cada um tem um par e bate no tempo dele; ninguém persegue ninguém, ninguém foge correndo.
+- **Só quem ataca muda de rota.** Os outros bondes seguem o plano da paz; o atacante pode passar perto de outra rival no caminho novo, e o horário não é refeito por isso. Depois da briga, o atacante e o alvo podem dividir uma rua até o estádio, com 2 min de diferença.
+- **A caravana aparece na entrada da cidade.** Não tem ônibus: ela está lá quando o dia começa.
+- **A escolta do aliado é 10, fixa**, como foi pedido. No jogo (`escoltaDe`), quem hospeda empresta de 5 a 10% do efetivo dele (a TUF, de 8 a 15).
+- **O que o aliado decide é um sorteio com números meus** (`HOSPEDA`). O jogo só tem a decisão do jogador (a recepção), não a da IA.
+- **Quem ataca e quem é atacado não é o jogador.** Tudo aqui é a IA contra a IA; a torcida do jogador, com a rota que ele escolher, é o próximo passo.
+
+
+### 4.71. As regras do jogo mais novo no dia de jogo, e o jogo inteiro por cima da cidade
+
+O dono, olhando a 4.70:
+- "Baixe a base_procura pra 55% maior rival e 25% rival."
+- "A quantidade de gente que vai pra rua tá desatualizada, consulte o html torcida organizada mais recente que foi publicado no github Pages pra consultar as regras dele."
+- Sobre o bonde da escolta da PM não atacar: "o bonde escoltado pode atacar sim."
+- Sobre o sorteio do aliado: "está correto, inclusive registre isso pra ir pro outro html do jogo também."
+- Sobre a escolta de 10 fixa: "volte a aplicar a regra de 8 a 15."
+- Sobre a conta de feridos: "deve registrar os dois lados."
+- "Em jogo Fortaleza x CSA, o aliado só hospeda a TOMA, e ela sai da sede sozinha pro estádio."
+- E o passo grande: "Comece a importar os detalhes de movimento dos bonecos e motor de briga pra dentro do jogo, assim como toda a rotina do html Torcida Organizada. Traga toda a hud pro jogo, como o menu lateral, as informações superiores, o menu inicial, e os dias passando." — ver `docs/JOGO_3D.md`.
+
+#### As regras (do jogo do Pages, commit 82bd43d)
+
+- **Quem vai pra rua** (`naRuaEm`, `js/mundo/praca.js`): a torcida da praça bota **todo mundo de pé** (as `disponiveisIA`: sem ferido, preso ou gente em subsede; os 60% caíram no jogo em 31/08), menos a escolta que ela empresta. A de fora vem na **caravana do jogo** (`caravanaDe`): a régua da caravana do jogador com 2 trechos e risco zero, × 0,6 — com a moral 12 com que toda IA nasce, uns 47% das de pé, no mínimo 5. A Cearamor (150) bota 150 na rua (40 bonecos, o teto); a TOMA (80) vem com 37; a Sangue Azul (20), com 9.
+- **O anfitrião** é o `anfitriaoDe` do jogo: uma torcida da praça com sede que está na irmandade (antes) ou nos aliados do visitante; o empate pelo hash do par (o `hash` FNV-1a de `js/mundo/mapa.js`). A TOMA tem dois aliados em Fortaleza, a TUF e a Jovem Garra; o hash dá a Jovem Garra.
+- **O que ele decide** continua sorteado (irmandade 10/30/60, aliado 35/45/20), mas **do clube mandante só hospeda**: a fatia da escolta vira hospedagem, e o painel nem oferece "hospeda e escolta". No Fortaleza × CSA, a Jovem Garra é do Fortaleza: hospeda (ou não recebe) e a TOMA sai da sede dela sozinha.
+- **A escolta** é a do jogo (`escoltaDe`): de 5 a 10% do efetivo de quem hospeda, pelo hash do par — a TUF (150) emprestaria de 8 a 15; a Jovem Garra (45), de 2 a 5. Ela sai do efetivo de quem empresta.
+- **A chance de atacar**: a base 55 (maior rival) / 25 (rival) × a paridade (até 1,3). O jogo ainda soma a mágoa e para em 57%; aqui não, porque a base foi dada pelo dono. O bonde escoltado pela PM também ataca.
+- **A briga** é a das IAs do jogo (`brigaIA`, com a tabela de `simular.js`): força = gente × a ficha média da torcida (a pirâmide de cargos: diretoria 15,5, frente 11,5, componente 6,5, novato 2,5; a escolta com a ficha dela), o favorito vence 70% das vezes, e as baixas são dos dois lados — quem perde deixa de 25 a 40% no chão e de 5 a 12% presos; quem ganha, de 8 a 16% e de 1 a 4%. O preso fica **rendido no lugar, de mãos pra cima** (a pose da revista), esperando a viatura; o ferido fica deitado, como antes. Cada lado vai pro estádio com quem ficou de pé e solto.
+- **No jogo** (`js/mundo/praca.js`, anotado em `docs/DECISOES.md`): a `BASE_PROCURA` passou a 55/25 (o hostil fica em 10), e o anfitrião da IA passou a sortear como recebe, com o do mandante só hospedando (`decisaoDoAnfitriao`, fixo pro par e pro dia). Os feridos dos dois lados o jogo já registrava (`relacoes.baixasIA`).
+
+#### Medido
+
+- **As 30 praças, 90 planos** (o clássico, o mando invertido e um visitante de fora em cada): **os 90 sem erro**, todo bonde com rota. Brigas: **58** (eram 74 com a base 88/72): 26 dos 30 clássicos, 20 dos 30 invertidos e 4 dos 30 com visitante de fora. A favorita venceu 42 e a zebra 16 (72%). As baixas por lado: feridos de 8 a 40% do bonde (mediana 20%), presos de 0 a 12% (mediana 5%). O plano leva de 0,2 a 1,3 s (mediana 0,57 s).
+- **Fortaleza × CSA** (a TOMA de fora): o anfitrião é a Jovem Garra, do Fortaleza. No sorteio deste jogo ela não recebe (o aliado não recebe em 35%) e a TOMA desce na entrada sul; mandada hospedar, hospeda, e a TOMA sai da sede dela sozinha pro estádio; o painel não oferece a escolta. **Ceará × CSA**: a Jovem Garra (de outro clube) escolta com 3 bonecos; com "quem pode, ataca", a Cearamor (150) cai em cima da TOMA (42 com a escolta) e ganha: ficam 20 feridos e 5 presos da Cearamor, 16 e 4 da TOMA.
+
+## 5. A vida da cena — o que o combate já fazia, e como foi ligado
+
+- **O MOTOR DE LUTA ESTAVA DUAS VERSÕES ATRÁS.** Este branch saiu de um
+  ponto antigo do repositório e ficou com um `combate.js` de 2.207
+  linhas; o do branch `claude/game-html-news-feed-sndgh4` tem 3.997. O
+  sintoma era mudo: `bonecos3.js` daqui já lia `d.ataque`, `d.defendendo`,
+  `d.segurando`, `d.seguradoPor`, `d.socorrendo`, `d.esquivou`,
+  `d.apanhou`, `d.inimigoPerto` e `d.linha` — as poses todas já estavam
+  implementadas —, e o motor velho não escrevia NENHUM desses campos.
+  Os bonecos sabiam brigar e nunca recebiam ordem.
+  Vieram o `combate.js` e o `arredores.js` daquele branch (o motor novo
+  chama `A.campoDoPonto` e `A.celulasDeDiscos`, que o antigo não tinha).
+  O motor novo já traz o vetor de câmera e o `d.cor3` que eu tinha
+  remendado aqui, então não houve remendo a reaplicar.
+  As ações e as teclas são as do `ponte.js`: **Q** bate, **E** segurado
+  defende (soltar na hora do golpe é o contragolpe), **F** agarra,
+  **C** chama, **2** pedra, **3** bomba, **R** recua, **X** foge,
+  **ENTER** manda entrar. As câmeras saíram de X/C/F/V, que viraram
+  teclas de briga, e foram pra **Z/V/B/N/M**. O pad ganhou botão de
+  SEGURAR, que a defesa precisa. A fila de formação sumiu: o motor novo
+  tem uma formação só, o Quadrado, e ela não tem tecla.
+
+Fora isso, o que muda é o que a página ENTREGA pro motor:
+
+- **DUAS TORCIDAS DE VERDADE, não "mandante contra visitante".** A cena
+  abria com `criarEstado({local, intencao, tensao, bombas, efetivoRival})`
+  e mais nada: os dois lados nasciam genéricos, sem nome, sem ficha e sem
+  cor, de camisa do lado. `index.html` nunca fez assim — ele passa
+  **bondes** (lado, efetivo, as três cores e a marca `nossa`) e
+  **escalação** (as fichas). Agora esta página faz o mesmo:
+  - a **planta** escolhe as duas torcidas em `dados/torcidas.js`, com a
+    semente dela: uma grande com rival no elenco, de preferência tricolor,
+    e um rival de primária LONGE da nossa — duas torcidas de preto e branco
+    na mesma briga viram uma só na tela. É a mesma escolha que pinta as
+    sedes, então a camisa do boneco e a fachada da sede não têm como
+    desencontrar (`CIDADE.TORCIDAS`);
+  - a página monta **quatro bondes**, um por spawn (1º escalão, 2º escalão,
+    setor visitante e retaguarda), com as três cores da torcida. Os dois
+    bondes da mesma torcida trazem o MESMO nome, que é a chave da paleta
+    em `bonecos3.js` — com nomes diferentes o segundo entraria como
+    "torcida que repete a primária" e sairia de calção trocado;
+  - a **escalação** sai do gerador da gestão (`TO.membros.povoarInicial`),
+    com a proporção de cargos que a fonte dá pra torcida: 34 fichas com
+    apelido, arquétipo, força, defesa, moral e XP. Quem tem ficha tem
+    nome na cena e vida pela defesa; o resto é povão.
+  - `combate.js` passava `cor` e `cor2` pro disco e **esquecia a terceira**
+    — `bonecos3.js` já a lia do bonde pra montar a paleta, mas o disco ia
+    sem ela e o desenho tricolor caía na segunda cor duas vezes. Uma linha.
+
+- **`id: 'arredores'`, de propósito.** `combate.js` só liga a vida do lado
+  de fora — ficar na sede até a hora, bonde hostil sair atrás do rival,
+  fugir é entrar — quando `D.id === 'arredores'` (`fugaPelaEntrada`). A
+  página acha a cena pelo registro `TO.dados.cenas.estadio`, não pelo id.
+- **O destino é o setor, não o portão.** `entradas` são os dois setores na
+  arquibancada (oeste mandante, leste visitante). O campo de fluxo leva
+  portão → corredor → vomitório → arquibancada sozinho, pela máscara.
+- **SETOR NÃO É PORTA: quem chega FICA.** No motor, chegar numa `entrada`
+  chamava `entrarNoEstadio`, que marca `d.entrou` — e `entrou` derruba
+  `get vivo`, então a cena filtrava o disco fora. Nos arredores isso está
+  certo (a porta leva pra outra tela), mas aqui o setor é o lugar: os
+  aliados subiam a arquibancada e sumiam na hora.
+  A marca é da CENA, não do motor: `entrada.fica = true` (o `setor()` de
+  `cena_estadio.js` põe nos dois) manda o `combate.js` segurar o disco no
+  setor em vez de removê-lo — conta em `J.entraram`, amortece a
+  velocidade e segue. Sem a marca vale o de sempre, então a cena dos
+  arredores não muda.
+  Medido, adiantando a simulação: aos 245 s, **fora da cena = 0** (entrou
+  0 / sumiu 0), 14 no setor, 22 na arquibancada — contra sumirem todos
+  antes.
+- **O setor visitante já está dentro, de guarda.** O combate só tem um
+  estado "fica parado esperando": `guarda`, que dorme até o rival chegar a
+  `gatilho.perto` (200, no tabuleiro). Sem isso todo mundo caminhava até o
+  destino e sumia em 50 segundos, e o estádio ficava vazio antes de você
+  entrar. O destino desse grupo é a **saída sul** (fora do portão sul, no
+  funil do cordão): acordado e em paz, o bonde caminha pro destino, e pelo
+  sul ele atravessa o corredor por uns 35 segundos — com a saída leste,
+  a 13 segundos do setor, ele já tinha ido embora quando o líder chegou
+  (§8). A retaguarda deles chega andando do quarteirão NE.
+- **O relógio e o clima.** `minutosAteJogo = 60` na página: a marcha pro
+  estádio começa perto de um minuto (tempo de você chegar antes), e o
+  bonde hostil sai atrás do rival entre 20 e 55 segundos. `raioVadiagem =
+  220` pra ninguém vagar até o meio do estádio. `tensao = 80`: quatro em
+  cinco bondes visitantes vêm pra brigar — com 60, o setor de guarda
+  acordava em paz uma vez em duas e ia embora sem briga.
+- **O cordão da PM não fecha o portão.** Cobre 48 dos 80 e deixa um funil
+  de 32 num lado. Selado, o campo de fluxo não tem rota e todo mundo para
+  na grade batendo nela.
+- **As divisas de setor são radiais**, do 2º ao 17º degrau, em oito
+  módulos — cortam a arquibancada em duas metades (quatro vomitórios cada)
+  e quebram, como toda grade. `bonecos3` desenha grade como uma caixa por
+  módulo, na altura do centro dele; com três módulos virava uma escada de
+  blocos amarelos flutuando.
+- **PM:** posto nos três portões, dois no corredor, dois nas divisas e um
+  na rua sul, que é onde os dois lados se cruzam se alguém for caçar.
+  `tropaChoque: true`.
+
+## 6. O que foi medido
+
+- Máscara: 241.165 células andáveis, **220.802 onde um corpo cabe, 100%
+  alcançáveis** do spawn do jogador (BFS com a mesma régua do
+  `arredores.js`: as 8 vizinhas livres, grades e filas bloqueando).
+- Por andar (células de corpo): rua/cidade 211.000 · corredor 4.371 ·
+  vomitório 577 · arquibancada 3.572 · portão 48.
+- Cena: 18 degraus · 8 vomitórios · 3 portões · 8 balcões · **37
+  quarteirões · 712 lotes (260 na favela) · 552 moitas · 207 árvores ·
+  72 postes · 55 carros · 1 campo · 8 equipamentos · 1.822 decalques de
+  chão · 12 cruzamentos de avenida com 46 faixas de pedestre, 10 com
+  semáforo · 2 sedes, uma de cada nível · 2 bares de 8,7 × 13,8 m** ·
+  159.585 triângulos
+  estáticos em 6 pedaços de cidade mais o estádio · 165 chamadas de
+  desenho sem gente na
+  tela; com a torcida inteira na frente da câmera, umas 550 (cada boneco
+  do Blender é várias malhas, e a sombra desenha tudo duas vezes — o modo
+  leve corta a sombra primeiro por isso).
+- Boneco do Blender ativo (`comModelo: true`). Planta carregada em 0,3 s;
+  a cena montada (máscara decodificada, malha de corpo, campos de fluxo dos
+  quatro spawns, geometria) em **618 ms** no navegador do teste.
+- **O custo da simulação no tabuleiro grande**: 3,4 ms por passo de 1/60
+  com as duas torcidas e a PM na rua (400 passos em 1,38 s). A 60 fps é um
+  quinto do quadro; a 3 fps, com vinte passos por quadro, são 70 ms — cabe.
+- **A cidade atravessada**: sem ninguém jogar, o 2º escalão mandante saiu
+  da sede do canto sudoeste e chegou ao setor mandante (17 entraram) entre
+  106 e 168 s de relógio — uns 4.600 de caminho pela avenida diagonal, o
+  portão oeste, o corredor e o vomitório. A retaguarda visitante, sorteada
+  hostil, atravessou a cidade da orla até a sede mandante e brigou lá:
+  dez mandantes e dois visitantes caídos aos 168 s. O setor de guarda
+  ficou no lugar, porque o líder não se mexeu.
+- A caminhada do líder e a briga dentro do estádio estão no §8 (medidas no
+  bairro de oito quarteirões; a cidade grande alonga o caminho, não muda o
+  mecanismo).
+
+## 7. Bugs achados no caminho, e o que eram
+
+1. **Metade do gramado escura no zenital.** Não era sombra: era o plano
+   escuro de "além do mapa", a 0,3 abaixo do chão. A 2300 de distância o
+   z-buffer não separa 0,3, e o plano de baixo vazava por uma diagonal (a
+   diagonal dos dois triângulos do plano). Plano a −6 e `near` 2.
+2. **Barras vermelhas em cima da arquibancada.** Os toldos das lojas, em
+   46–50, atravessavam a laje: o pé-direito na parede de dentro é 39. O
+   comércio inteiro desceu pra baixo de 39.
+3. **Câmera livre olhando sempre pro centro.** `posicionarCamera` resetava
+   o alvo pro centro do estádio em toda câmera que não segue o líder — a
+   câmera de foto incluída. E ela também precisava saber se o *alvo* está
+   embaixo da laje, não só o líder.
+4. **PORTÃO SELADO** — o §4, e antes dele o cordão do tamanho do portão.
+5. **Bandeirão azul no setor mandante.** `montarSetores` desenhava um
+   bandeirão por `entrada`, escolhendo o lado pela direção; a saída leste
+   (por onde o setor visitante vai embora) aponta como o setor oeste e
+   pintava um bandeirão azul por cima do vermelho. Agora só setor tem
+   bandeirão, e o lado vem de onde o setor está.
+6. **Descendo a escada, a câmera afundava no degrau.** `teto()` devolvia o
+   fundo da laje sobre o *buraco* do vomitório, onde é céu aberto; a
+   câmera era presa "sob a laje" e entrava no concreto — a faixa amarela
+   do nariz tomava um terço da tela. `teto`, `superficie` e `solido` agora
+   sabem que o buraco (r < 152) é aberto e que ali o chão é a escada; no
+   túnel a laje continua laje.
+7. **A câmera parava rente ao chão.** A marcha do sólido parava no
+   primeiro concreto e recuava pra 55% do braço — numa escada, num degrau
+   ou atrás de uma mureta, 55% do braço é dentro do concreto. Levantar a
+   câmera até "10 acima do chão mais alto do caminho" também não bastou:
+   com o líder embaixo dela, a linha de vista ainda atravessava o
+   parapeito (a foto mostrava a arquibancada oposta em cima e mureta em
+   baixo). A regra que ficou é geométrica: `P.piso(X, Y, Z)` diz o chão
+   sob cada amostra do caminho *no andar em que ela está*, e a câmera
+   sobe até a reta líder→câmera passar 6 acima de todos eles, com teto de
+   100 acima da cabeça do líder. Só parede, pilar, árvore e laje param.
+8. **A cabeceira era vazio pra câmera.** Entre a parede de dentro (r = 96)
+   e a boca (r = 112), sob os degraus 9 e 10, é concreto maciço — as
+   células dali são a escada. `solido`, `piso` e `teto` não sabiam, e com
+   o líder no pé da escada a câmera entrava ali. Agora é maciço até a
+   arquibancada.
+10. **Três fps.** A captura do dono, com a cena antiga (55 mil triângulos,
+   30 chamadas), rodava a 3 fps — isso não é cena pesada, é Chrome sem
+   placa de vídeo (SwiftShader, o rasterizador por software que ele usa
+   com a aceleração desligada ou o driver bloqueado). A página passou a
+   dizer na tela quem desenha (`WEBGL_debug_renderer_info`) e a avisar
+   quando é software. E, independente disso, entraram três medidas: o
+   **modo leve** automático (sombra, resolução, anisotropia e névoa caem
+   depois de 1,5 s ruins e voltam depois de 5 s folgados; `L` fixa, `K`
+   devolve), a **simulação em passo fixo** (o tempo real acumula e
+   `combate.js` dá até 24 passos de 1/60 por quadro: a 3 fps a tela pula,
+   mas o jogo deixa de correr em câmera lenta) e `preserveDrawingBuffer`
+   só com `?foto=1` (custava uma cópia por quadro e só serve pra tirar
+   foto).
+9. **Cabeça dentro da viga.** Na parede de dentro do corredor o pé-direito
+   é 39, as vigas do teto descem 6 e o boneco em escala 1,15 tem 39 — na
+   foto da briga o líder estava com a cabeça dentro de uma viga. Viga só
+   de r = 124 pra fora, onde o teto passa de 53; perto da parede o teto é
+   liso.
+12. **W andava pro lado contrário.** A câmera fica em `alvo + R·(sen
+   giro, cos giro)` e olha pro alvo, então a FRENTE dela é `(−sen giro,
+   −cos giro)`: girar a intenção do jogador é girar por **−giro**. O
+   código girava por **+giro**, e com a câmera a 90° o W levava o
+   boneco pro lado oposto — era esse o "ruim de fazer o boneco ir pro
+   destino". Junto veio o outro meio do problema: a intenção era
+   requantizada em quatro booleanos, e em oito direções não se segue
+   uma rua diagonal. Agora sai um **vetor contínuo**, e `moverLider`
+   passou a aceitar `teclas.vetor` — três linhas em `combate.js`, com
+   as teclas continuando a valer pra quem não tem câmera.
+13. **Poste na rua, moita no asfalto.** Os dois eram filtrados pelo
+   CENTRO, e os dois têm tamanho: a moita tem raio de até 40 e o poste
+   tem base. Meia moita ficava na rua, e nos cruzamentos a calçada da
+   avenida vira asfalto, onde quatro mastros tinham sido plantados.
+   O teste passou a ser o quadrado da peça (`tocaAsfalto`), e a
+   varredura (`varredura.js`) confere árvore, poste, moita, campo,
+   lote, equipamento e carro de uma vez.
+11. **As avenidas ficaram feias.** O dono perguntou se "rua com curva é
+   ruim de fazer". Não é — o feio era outra coisa, visto nas fotos de
+   perto: quarteirões pelados dos dois lados da avenida (o lote axial saía
+   se chegasse a 126 da avenida, e a ponta redonda da avenida contava, então
+   até o quarteirão do outro lado da esquina perdia as casas), tocos de
+   asfalto da grade entrando pelo mato até a linha do contorno, calçada de
+   avenida acompanhando a estrada pelo deserto, e a avenida do sudoeste
+   como um segmento reto que não desaguava em rua nenhuma. As avenidas
+   viraram linhas de vários pontos que nascem e morrem em rua da grade ou
+   saem da cidade como estrada; a rua da grade passou a existir só entre
+   células urbanas; a calçada da avenida é recortada pelo contorno; e os
+   lotes ganharam segunda chance (casa rotacionada com fundo menor, lote
+   axial encolhido). De 656 lotes (28 na avenida) pra 714 (39). A máscara
+   continua 100 % alcançável.
+
+14. **Quatro árvores com coordenada NaN, desde sempre.** Apareceu quando
+    a malha de decalques reclamou de `Computed radius is NaN` — mas a
+    culpa não era dela. O sorteio de árvore ao redor das casas de beira
+    lê `o.ang` e `o.vf` pra jogar a árvore pra fora da fachada; as **22
+    casas axiais da borda da cidade** têm `frente` e caixa, mas não têm
+    `ang` nem `vf`, então a conta virava `-undefined` = NaN. As árvores
+    nasciam NaN e sumiam caladas, porque `celulaEm(NaN)` não acha célula
+    nenhuma e elas eram descartadas sem aviso. Agora o laço se ramifica
+    em `o.ang` e tira o recuo da `frente` quando o lote é axial. **É a
+    terceira vez que `ang: 0` ser falso em JavaScript morde este
+    arquivo** — vale ler qualquer `if(o.ang)` novo com desconfiança.
+
+## 8. A caminhada do líder
+
+Medida com o roteiro `sim3.js`: waypoints em rua e corredor, a tecla certa
+apertada a cada passo de 50 ms até chegar, o líder a ~41 px/s. Nenhuma
+grade tocada até o encontro.
+
+| trecho | chegou em | onde | altura 3D | relógio |
+|---|---|---|---|---|
+| sede → esquina da rua norte | (658, 562) | rua | 0 | 9 s |
+| rua oeste até a frente do portão | (662, 1013) | rua | 0 | 17 s |
+| calçada e portão oeste | (702, 1019) | rua | 0 | 18 s |
+| portão → corredor | (795, 1029) | corredor | 0 | 20 s |
+| corredor → pé do vomitório 4 | (808, 947) | vomitório | 5 | 22 s |
+| escada acima → arquibancada | (954, 939) | arquibancada | 52 | 24 s |
+| **setor mandante** | (956, 1013) | arquibancada | 52 | **26 s** |
+| de volta pela boca, escada abaixo | (813, 938) | vomitório | 9 | 30 s |
+| atrás da escada, no corredor | (783, 938) | corredor | 0 | 31 s |
+| quina noroeste do corredor (arco) | (883, 739) | corredor | 0 | 36 s |
+| corredor norte, atrás do vomitório 0 | (1088, 611) | corredor | 0 | 41 s |
+| corredor norte, atrás do vomitório 1 | (1459, 611) | corredor | 0 | 58 s |
+| quina nordeste do corredor (arco) | (1755, 808) | corredor | 0 | 65 s |
+| **corredor leste** | (1774, 890) | corredor | 0 | **67 s** |
+
+Do spawn ao setor: 26 segundos. A volta inteira por baixo, da escada oeste
+ao lado leste, passando pelas duas quinas redondas e atrás das duas
+escadas do norte: 37 segundos. Na última rodada o roteiro fechou a rota
+inteira: atrás do vomitório 6 aos 65 s, pé da escada aos 66 s, escada
+acima aos 69 s e **setor visitante aos 71 s** (arquibancada, altura 57)
+— o caminho completo que o pedido descreve, sem tocar em grade. (Numa
+rodada anterior o líder chegou ao setor visitante pela arquibancada em
+94 s, e a chegada foi recebida com bomba: "Bomba deles", cinco mandantes
+caídos.)
+
+Nessa última rodada, porém, o setor deles estava **vazio** ao chegar: com
+`perto: 300` os guardas acordaram aos 58 s, quando o líder ainda estava no
+corredor nordeste, do outro lado da laje (item 9 do §9); o bonde deles
+tinha sido sorteado em paz, e acordado e sem inimigo ao alcance a regra
+do combate é caminhar pro destino — a saída leste, a 13 segundos. Dezesseis
+dos dezessete foram embora antes de o líder subir a escada. Foi isso que
+mudou `perto` pra 200, a saída deles pro portão sul e a tensão pra 80.
+
+**A rodada de confirmação, com os três ajustes.** O setor acordou aos 63 s,
+com o líder na quina nordeste do corredor — o alerta da PM subiu 11 → 40
+→ 82 → 100 conforme ele se aproximava —, e veio pra cima ("SETOR
+VISITANTE: veio pra cima"). A briga desceu ao encontro dele:
+
+| relógio | arquibancada | vomitório | corredor | rua | caídos (mand./vis.) |
+|---|---|---|---|---|---|
+| 71 s (chegada) | 1 | **21** | 6 | 40 | 7 / 0 |
+| 77 s | 1 | 6 | **22** | 39 | 13 / 0 |
+| 84 s | **18** | 12 | 4 | 33 | 15 / 0 |
+| 96 s | 18 | 6 | 3 | 25 | 15 / 0 |
+
+Escada, corredor e arquibancada, nessa ordem. O bonde do jogador apanhou
+porque no roteiro ninguém joga — o líder só anda —, e o 2º escalão chegou
+ao setor mandante (16 entraram) sem se envolver. O equilíbrio da briga é
+calibragem de `combate.js`, não desta cena.
+
+**O encontro.** O setor visitante, de guarda, acordou aos 58 s ("o setor
+deles viu o bonde chegar") e a PM foi a 100% ("A PM encostou no seu
+pessoal"). Dali a 124 s a briga já estava em dois andares:
+
+| relógio | arquibancada | vomitório | corredor | rua | caídos (mand./vis.) |
+|---|---|---|---|---|---|
+| 87 s | 19 | 4 | 1 | 36 | 2 / 0 |
+| 105 s | 21 | 2 | 1 | 36 | 2 / 1 |
+| 112 s | 18 | **13** | 1 | 31 | 3 / 3 |
+| 124 s | 20 | **15** | 4 | 22 | 9 / 3 |
+
+Quatro visitantes saíram pelo portão leste no meio da briga; dois
+mandantes do 2º escalão chegaram ao setor. Nenhum erro de console em
+nenhuma rodada.
+
+**O que o roteiro não fez, e por quê.** O navegador do teste é guloso —
+anda em linha reta pro waypoint — e três vezes essa linha entrou na tira
+de um vomitório pelo lado, onde está a mureta: a escada só se entra pelo
+pé ou pela boca. É limitação do teste, não da cena: o campo de fluxo dos
+bots contorna a mureta sozinho (é o que os 15 do vomitório mostram). Na
+primeira rodada, o líder foi **preso** encostando no cordão da PM do
+próprio portão — foi isso que tirou o cordão do portão da casa.
+
+## 9. O que ficou aberto
+
+1. **Quem chega no setor some.** É a regra do combate ("entrou"). Ficar de
+   pé cantando seria mecânica nova. O setor visitante contorna isso sendo
+   guarda; o mandante não tem equivalente — o seu bonde é você.
+2. ~~**A árvore é um pinheiro.**~~ Resolvido na 4.45: a árvore do jogo é
+   a low poly da cidade (oiti, mangueira ou ipê), encaixada no raio do 2D.
+3. **A grade é uma caixa.** `bonecos3` desenha cada módulo como caixa de 30
+   de altura; o cordão e a fila na frente do portão são blocos amarelos e
+   cinza. Não mexi de propósito — `bonecos3.js` era pra ficar intacto.
+4. **A escala continua a (a)** do `PLANO_CENA_3D.md`: boneco de mesa vivo.
+   É consequência de `combate.js` intacto — a (b) é recalibrar ele
+   inteiro. A arquibancada tem 84 de altura pra um boneco de 34.
+5. **A câmera de ombro ainda encontra pilar** no corredor, menos que antes
+   (o corredor é 128 e não 72), mas encontra. O braço encurta pra 70% sob a
+   laje e o sólido empurra a câmera pra perto do líder.
+6. **O fps de verdade.** Este ambiente só tem rasterizador por software; os
+   números de chamada e triângulo valem, o fps não. Rode aí e olhe o
+   contador; `H` desliga a sombra, que é o primeiro suspeito. (A 4.46
+   mediu e cortou o que se desenha: a sombra anda com a câmera e a
+   cidade vai em ladrilhos com versão de longe.)
+7. **A cena não está no dia de jogo.** É uma página à parte, como antes.
+8. **Placar, bandeirão de mastro, fumaça de sinalizador**: continuam não
+   existindo. O bandeirão de setor é uma faixa colorida na mureta.
+9. **O gatilho mede distância no tabuleiro, e o tabuleiro é dobrado.**
+   `conferirGatilho` acorda o setor de guarda quando qualquer mandante
+   chega a 300 de qualquer guarda — em coordenada de tabuleiro. Na dobra,
+   o corredor norte é vizinho da arquibancada leste: na caminhada medida,
+   o líder passando pelo vomitório 1 (no corredor, com laje por cima)
+   estava a 269 de um guarda parado no alto do setor deles, e a casa
+   acordou "através do concreto". Não incomoda no jogo — o setor acorda
+   um pouco antes de ver o bonde —, mas é a dobra vazando pra simulação,
+   e é o único lugar em que ela vaza. Corrigir é medir em coordenada de
+   mundo dentro de `combate.js`, que ficou intacto de propósito.
+10. **O cenário 3D (4.49) ainda não tem versão de longe da casa**, nem o
+    estádio detalhado da cena da torcida: a cidade vai inteira (0,4 a 0,9
+    milhão de triângulos) e o estádio é a casca da planta. O fps dele não
+    foi medido aqui (rasterizador por software); o medidor (4.50) mostra
+    o da máquina de quem abre.
+11. **18 das 139 torcidas ficam com o bar fora da regra** (4.50): perto
+    da própria sede ou de uma sede rival, porque o mapa não tem bar que
+    sirva. Resolver é mexer onde o gerador põe os bares.
+12. **O boneco a pé (4.51, 4.52) anda numa rua vazia**, e o chão só tem
+    altura no metrô (4.53: desce a escada até a plataforma); fora dele não
+    sobe escada nem arquibancada, e não há mais ninguém no mapa. A
+    câmera de cima corta o telhado do prédio em que ele está e deixa ralo
+    (em pontilhado) o que fica na frente dele; o pontilhado se vê. O fps
+    a pé não foi medido numa placa de vídeo de verdade; o medidor diz
+    quando o navegador está sem placa, que é o suspeito dos 2 fps do i5
+    de 2ª geração.
+13. **Os três estádios do jogo (4.57 a 4.64) já são os do mapa**, no
+    tamanho de jogo (4.60: menores que a foto, com o corredor e o portão
+    do tamanho de gente; 4.61: o de 40 com 15 fileiras em cada anel;
+    4.63: o degrau com 0,40 m de piso, a arquibancada em pé; 4.64: o de
+    40 sem as plataformas dos anéis); o jogo
+    ("Jogo hoje" e a cena da torcida) continua no estádio comprimido. No
+    tamanho de jogo o de 20 e o de 40 dão bem menos lugar que o nome (9,8
+    mil e 13,2 mil; a planta da foto dava 33,5 e 75,1), e o modelo é pela
+    faixa de lotação. O corredor, os vomitórios e os
+    portões estão no modelo (e o conferidor prova o caminho de cada
+    torcida), mas a torcida, a briga e a PM entrando são do jogo; no
+    cenário o boneco a pé anda nos andares do estádio (4.62): a escada,
+    os dois corredores, o vomitório e a arquibancada.
+14. **O dia de jogo do cenário (4.67) é plano e horário, sem reação.**
+    As torcidas saem das sedes, a PM separa as duas (zonas, cordão,
+    revista, travessia, escolta) e cada boneco chega na vaga dele; mas
+    ninguém vê o rival nem briga, e a PM não age. Onde o mapa obriga as
+    rotas a se cruzarem, quem separa é o horário. O combate do jogo não
+    está ligado ali. Desde a 4.69 a torcida festeja na porta da sede e
+    torce andando, e a PM é do tamanho dela; mas o gesto é de cada um,
+    sem o canto comum da bateria, e na arquibancada ela ainda fica parada.
+    Desde a 4.70 a torcida da IA pode atacar (a tocaia, a briga, os
+    feridos no chão) e o visitante pode vir de outra cidade; mas a PM
+    continua sem reagir à briga, e a briga é coreografada, não é o
+    combate do jogo. A torcida do jogador ainda não entra.
+
+## 10. O que este trabalho NÃO mexeu
+
+- `combate.js`, `arredores.js`, `cenario.js`, `ponte.js`, `cena3d.js`,
+  `bonecos3.js`, `sinais3d.js`, `pad3d.js`, `pad3d.css`, `boneco.glb`:
+  intactos. (Depois, na 4.51, o `bonecos3.js` ganhou um campo opcional do
+  disco, `passada`, pro boneco que anda a pé no cenário da planta; sem ele
+  o módulo faz exatamente o que fazia. Na 4.65 ele passou a carregar os dois
+  níveis afinados do boneco e a trocar entre eles pelo tamanho na tela; sem
+  os GLB novos, cai no `boneco.glb` afinado na chegada, como antes. Na 4.67,
+  pro dia de jogo do cenário, o `pos` e o corte do que está fora da tela
+  passaram a receber o disco — `d.alt` é a altura do pé —, e o PM parado
+  fica virado pro `rumo` dele, com a `passada` e o escudo levantado; sem
+  esses campos, faz o que fazia. Na 4.69 o disco ganhou o `jeito` — a
+  festa, o bonde, a fila —, com os gestos no relógio de verdade; e duas
+  correções que valem pra todo mundo: a multidão leve guarda o tempo dos
+  quadros pulados, e o passo de cada um começa numa fase sorteada. Na 4.70
+  o `jeito` ganhou a `revista`, as mãos pro alto; a briga do dia de jogo
+  usa os campos do combate que o disco já tinha — `ataque`, `hostil`,
+  `apanhou`, `derrubado` com `noChao`.)
+- As regras do jogo em `js/mundo/` e `js/gestao/` (`praca.js`,
+  `tensao.js`, `mundo.js`, `planejamento.js`): lidas, não mexidas. O dia
+  de jogo da planta repete as contas delas (a gente na rua, a caravana, o
+  anfitrião, a chance de procurar, a força da investida); se elas mudarem
+  lá, têm de mudar no `dia_de_jogo.js` também.
+- `cenas.js`, `cena_arredores.js` e todo dado de cena do jogo 2D: intactos.
+  A cena do estádio se acrescenta ao mapa de cenas de fora, e a troca da
+  cena padrão acontece só em `estadio3d.html`.
+- `index.html`, `arredores.html`, `arredores3d.html`: intactos.
+
+## 11. Os arquivos
+
+| arquivo | o que é |
+|---|---|
+| `dados/cena_estadio.js` | a planta: dobra, vomitórios, portões, comércio, a cidade (grade, costa, avenidas, campos, mato, lotes, sedes), o atacarejo e as casas de muro, a rua sem saída, os dois prédios do baldio e os props de rua, máscara, spawns, setores, PM, grades, filas, gatilho; o `DX` do tabuleiro |
+| `js/diajogo/estadio3d.js` | arquibancada, corredor, comércio, vomitórios, gradil, torres, setores, câmera (linha de vista, modo leve, com a distância em que a cidade troca pra versão de longe), a sombra que anda com a câmera, ligação com a simulação e com a gente |
+| `js/diajogo/bairro3d.js` | a cidade em pedaços: lotes (axiais e rotacionados; casa, sobrado, barraco, galpão e prédio vêm do `casas3d.js`, e o muro é o terreno baldio, também de lá), calçadas (com o furo da rua sem saída), árvores (a low poly de `arvores_lowpoly.js`, encaixada no raio do 2D), carros, postes, campos, moitas; cada triângulo sai com o objeto dele (`objeto`), pro recorte em ladrilhos |
+| `js/diajogo/estadio_pintura.js` | a textura do chão do mapa inteiro: mato, quarteirões (e a rua sem saída), ruas, avenidas, costa, campos, estádio |
+| `js/diajogo/construtor3d.js` | o construtor de fachada que os marcos e as casas dividem: ladrilho recortado, módulo, vão com fundo (e em arco), tinta por peça, telhado de quatro águas, torno, extrusão; e `noMundo`/`placasNoMundo`, que põem um modelo solto (a árvore, a peça da praia) no mundo, girado e na escala, com a normal junto; o modo chapado (a peça da paleta vira uma cor lisa, sem textura: a favela low poly); `sorteio`, `varrer` e `esfera` |
+| `js/diajogo/modelos3d.js` | os cinco marcos (igreja, prédio alto, mercado, centro administrativo, casa), o atacarejo ATACADEX, as duas torres do condomínio do baldio (Edifício Mirante e Residencial Bela Vista, com o muro, a guarita e os portões) e a montagem de cada um |
+| `js/diajogo/props3d.js` | os props de rua: contêiner, lixeira de rodinha, saco, caixa de papelão, cesto, barreira, correio, hidrante, balizadores, delineador, cone, cinzeiro, banco e o poste de concreto da rua; cada um montado uma vez por variante e copiado pros lugares que a planta dá, em malhas por quadrado de 1.600; cada peça é um objeto pro recorte em ladrilhos (o poste vira haste de longe, o resto some) |
+| `js/diajogo/casas3d.js` | as casas da cidade: os cinco tipos (T1 a T5), a casa da favela e as oito casas grandes dela (F1, F2, bar, lanchonete, escada, varal, garagem, base), as nove no modo chapado, com a `PALETA_FAVELA`, o galpão (G1 de platibanda, G2 de arco), o prédio comum (P1 de reboco, P2 de tijolo), as casas de muro (M1 a M4), o bar pequeno da torcida embaixo do apartamento (`bartorcida`, aberto ou fechado) e o terreno baldio do lote de muro (`baldio`: o muro fino na frente e no lado que dá pra rua, a terra, o capim e a bananeira low poly, o entulho; `ladosNaRua`, `segmentosDoMuro`), o plano de cada lote (tipo, recuo, letreiro) e o lugar livre dos decalques na fachada |
+| `js/diajogo/sede3d.js` | a sede da torcida no jeito das construções novas (nível 1 e nível 3, aberta nas cores da torcida ou vaga): as paredes e as portas da planta (`planoDaSede`), textura, janela, telhado à parte e cada cômodo mobiliado; devolve os blocos, os decalques com texto (os escudos com o caminho do PNG do jogo) e a planta baixa; com `portasVivas`, cada folha de porta sai fechada à parte, com a dobradiça e o giro de abrir (o cenário abre no F, 4.54); a bandeira do mastro sai à parte (`bandeira`), pra quem mostra montar o pano que tremula (4.56). Por enquanto só o artefato usa |
+| `js/diajogo/metro3d.js` | o metrô da proposta: a estação inteira (a entrada de vidro, a descida, o mezanino e a plataforma, escrita uma vez e girada pra outra ponta, no corte de casa de boneca da lista `metro_sub`), o túnel ao longo do caminho e o carro do trem; `montarEstacao` devolve também o `andar` (o poço, a caixa, a borda da plataforma, os braços das catracas e os níveis), pro boneco a pé descer (4.53). Por enquanto só o artefato usa |
+| `js/diajogo/equip3d.js` | os equipamentos novos da proposta: o Shopping Poente, o 2º Distrito Policial (com o pátio e as viaturas), a Praça da Vila e a Paróquia São Judas Tadeu (a igreja do norte, 4.56), com as árvores low poly; cada um devolve os blocos, os decalques com texto e a planta baixa. Por enquanto só o artefato usa |
+| `js/diajogo/equip_antigo3d.js` | os cinco equipamentos da cidade de hoje com modelo (o Hospital Municipal, o 3º Distrito, a Escola Municipal, o Posto Beira-Estrada e o Shopping Beira-Mar), saídos das mesmas peças da planta, na folha das casas: `montarEquipAntigo` devolve as partes (com a versão de longe pronta de cada prédio, quando recebe as médias da folha) e as peças que já desenhou. O jogo (`bairro3d.js`) e a planta usam |
+| `js/diajogo/arvores_lowpoly.js` | as árvores do jogo, todas: as dez espécies low poly (`ESPECIES_LP`: oiti, mangueira, ipê, jequitibá, ingá, pequizeiro, catingueira, mandacaru, coqueiro e araucária), o que vai em cada lugar (`FLORA_LP`) e a montagem pela semente (a copa de bolas facetadas, o tronco em prisma, a cor chapada por face, sem textura, na lista `lowpoly`). `facesDaArvore` devolve a de perto e a de longe (de 26 a 128 triângulos, tirada do registro da de perto) e encaixa a árvore num lugar dado (`caber`); `montarAsDez` põe as dez juntas |
+| `js/diajogo/mato3d.js` | o mato simplificado: `plantarMato` planta uma área pela densidade do lugar (a grade tremida, a espécie pela `FLORA_LP`, o `pode` que tira a cidade, a estrada e o mar) e `montarMato` junta em ladrilhos de 40 m, cada um com a malha de perto e a de longe, pro `THREE.LOD` (a de perto a menos de 60 m). Por enquanto só a aba Modelos 3D da planta usa |
+| `js/diajogo/ladrilhos3d.js` | a cidade do jogo em ladrilhos de 40 m: cada um com a versão de perto, a de longe (a casa de modelo em blocos de altura, a árvore de longe e o prédio que traz a dele — os cinco equipamentos —, o poste em haste, o que já é caixa igual, o miúdo some) e nada além da névoa; a troca pela distância da câmera ao ponto mais perto do ladrilho, e os materiais iguais juntos numa malha |
+| `js/diajogo/modelos_medias.js` | GERADO pelo pintor: a cor média (linear) de cada célula de cada folha, e a do reboco e da telha do bairro — é a cor da versão de longe |
+| `js/diajogo/estadios3d.js` | os três estádios do jogo (4.57): o de 10, o de 20 e o de 40 mil, medidos nas fotos do protótipo — a família de anéis (o retângulo arredondado que fecha, o caminho aberto do de 10), a arquibancada (degrau — 0,40 m de piso desde a 4.63, `PROF` —, escada, vomitório, mureta, corte, ponta), o campo pintado, o gol, o banco, a torre de luz, a placa, o muro e o portão, a camada dos setores do dono (a cor, o nome, a faixa, a lotação e os vomitórios de cada um), o `.glb` (`glbDoEstadio`) e, por dentro (4.58), as três entradas da rua (o salão, a catraca, a placa; no de 40, as escadas internas do corredor do chão pro de cima — `escadaInterna`, 4.61; no poço debaixo do de cima, chegando por um vão no piso dele, desde a 4.64), o corredor debaixo da arquibancada (os pilares, os balcões, a luminária, a barra e o gradil de cada trecho), o vomitório em vala ou com túnel, o chão de baixo e o corte (`cortarEstadio`); e por fora (4.59) a fachada de concreto aparente (pilar, faixa de laje, cobogó e brise, embasamento, cimalha — `fachadaDetalhada`), o letreiro com o nome (`letreiro`, `nomeDoLetreiro`), o pórtico de cada portão com a marquise e a fila (`porticoDoPortao`), a bilheteria, o muro caiado e o arco do de 10; o modelo de cada lotação (`modeloDaLotacao`), o terreno de cada um e a planta 2D (`plantaDoEstadio`) pro mapa, e o modo do mapa (`montarEstadioJogo(id, { nome, mapa })`); e o tamanho de jogo (4.60: `G10`, `G20`, `G40`, o u do anel da foto com `uDaFoto`, o vomitório longe do gradil com `longeDosGradis`, os vomitórios de cima do de 40 com `vomitorios40` — 12 desde a 4.61); a textura é pintada ali mesmo, em canvas. A aba Modelos 3D, a planta e o cenário 3D usam |
+| `vendor/three/GLTFExporter.js`, `TextureUtils.js` | o exportador de glTF do three r160 (licença MIT), com o import apontando pro `three.module.min.js` daqui: o `.glb` dos estádios |
+| `ferramentas/planta_html/referencias/` | as fotos dos três estádios do protótipo e as imagens dos setores do dono (em webp), que a ficha do estádio mostra |
+| `ferramentas/afinar_boneco.mjs`, `img/boneco_perto.glb`, `img/boneco_longe.glb` | o afinador do boneco (4.65: o simplificador do meshoptimizer peça por peça, o cabelo inflado e empurrado pra fora da cabeça afinada) e os dois níveis que ele grava do `img/boneco.glb`: o de perto (~2,9 mil triângulos por boneco) e o de longe (~1,0 mil), que o `bonecos3.js` troca pelo tamanho na tela |
+| `js/diajogo/praia3d.js` | as onze peças da praia em 3D (`PECAS_PRAIA`: guarda-sol, mesa, barraca, posto, quadra, os dois quiosques, calçadão, beira do mar com a onda, jangada e barco de pesca), no tamanho de verdade, com a semente; devolve os blocos e os decalques; o coqueiro é o low poly. Por enquanto só a aba Modelos 3D da planta usa |
+| `ferramentas/planta_html/` | a planta em HTML (o artefato): `index.html` desenha o mapa (a calçada em laje com o meio-fio, a sarjeta, a faixa de pedestre, o mobiliário e a grade de proteção na beira do mato, `montarCalcadas`, e a pixação das torcidas da praça, 4.54; com praia — calçadão, quiosque, guarda-sol, onda —, lagoa ou mato a leste, pela praça, e em volta a mata, o cerrado ou o mato seco da caatinga, pela `vegetacao` da praça) e abre em 3D o que se clica (lote, marco, prop, estádio, pórtico, bar, sede, com o botão do telhado na sede, estação do metrô, com a viagem de trem e a descida na plataforma, e os equipamentos novos), tem a aba **Modelos 3D** (as dez árvores low poly, de perto e de longe, o mato simplificado e as peças da praia, cada um grande no 3D, com a ficha e a semente) e põe as torcidas da cidade escolhida nos bares e nas sedes, `proposta.js` gera os três mapas (`MAPAS`: o pequeno, que é o de hoje com a cópia do estádio, 5 espaços de sede, 8 bares e 3 favelas; o médio; e o grande, a expansão com as 4 vagas de estádio, os condomínios, as entradas com pórtico, os 18 bares, os 9 espaços de sede, o shopping e a delegacia novos, a Linha 1 do metrô — o terreno das duas entradas, o salão de cada estação e o caminho do túnel — e as cinco favelas), com a praça decidindo quantas vagas de estádio ocupa e se tem metrô, `conferir_sede.mjs` confere o modelo da sede contra a planta, `conferir_cidades.mjs` confere cada uma das 30 praças contra o jogo de hoje e os três mapas (estádio, sede, bar, favela, metrô) e sai com erro se alguma não cabe no mapa do porte dela, `pintar_variantes.py` pinta as três cores novas da folha das torres em `texturas/`, `montar.sh` junta tudo numa pasta pra publicar (a planta, as torcidas, os clubes, as praças, o manifesto dos escudos e os PNG deles embutidos em `dados/escudos_embutidos.js`, e os módulos 3D); `cenario.js` é o **cenário 3D** (o mapa inteiro da praça em 3D, montado pela planta: o chão pintado, o mato, o forno que junta as malhas, o clique exato, a câmera, a lista das praças, o medidor de fps com o nome da placa de vídeo e o modo **a pé**, com o boneco do jogo andando na rua, visto de cima, com o joystick e o telhado que some, 4.51 e 4.52, e a porta da sede que abre no F, o mato que não se anda e o capim de perto no chão do mato, 4.54 — o `montar.sh` leva junto o `bonecos3.js`, o `GLTFLoader.js` e os dois níveis do modelo em `dados/boneco_glb.js`, 4.65), `passo.js` é onde o corpo do boneco bate (os riscos da faixa do corpo e o deslizar neles, a colisão exata) e onde ele pisa em cima da rua (o `PisoDaRua`: a laje da calçada, o piso da sede, 4.54), `subsolo.js` é onde ele pisa embaixo da rua (o chão a um degrau do pé e a faixa do corpo contada dele, nos triângulos da estação do metrô, 4.53; o degrau e a faixa podem mudar, 4.58) e nos andares dos estádios (os triângulos do estádio, da fachada pra dentro, 4.62; e o que tem em cima da cabeça, `teto`, pra câmera saber se ele está no corredor ou na arquibancada, 4.63), `conferir_passagem.mjs` prova com a mesma conta que todo cômodo de toda sede dos três mapas se alcança do portão, `conferir_metro.mjs` prova que da calçada se chega à plataforma de toda estação, `conferir_estadios.mjs` prova que de cada portão dos três estádios do jogo a torcida chega no corredor e na arquibancada do lado dela, e só nelas (4.58; com o corpo do boneco do cenário desde a 4.62; sem o chão onde o corpo não fica em pé, 4.63; numa grade só pra todos os portões, de 10 cm, 4.64), `mapa_da_praca.mjs` dá aos conferidores o mapa que cada praça abre de verdade, com os estádios da lotação dela no tamanho de verdade (4.59; o `proposta.js` tira cada um da vaga pra fora da cidade, com o portão 1 de frente pra ela e a rua de acesso, e, desde a 4.68, uma rua de cada lado) e `montar_pages.sh` monta a pasta `cenario3d/` do GitHub Pages, que abre direto no cenário (4.49); desde a 4.70, o `index.html` passa pro dia de jogo as torcidas de qualquer clube (`torcidasDoClube`), os clubes de fora (`clubesDeFora`), a relação entre duas torcidas pela tabela do mundo (`relacao`, `irmas`) e as entradas da cidade (`entradas`, os pórticos) |
+| `ferramentas/planta_html/dia_de_jogo.js` | o **dia de jogo** do cenário (4.67): o clássico da praça, a grade da rota de 1 m com a folga, o plano da PM (os arredores, o corredor do visitante, as zonas, o cordão, as bocas — revista, fechada, aberta —, a escolta), as rotas das torcidas (o A* com o custo de cada lado numa tabela), os cruzamentos e as travessias, o horário, e a cena: os bonecos (o `povo` do `bonecos3.js`), a PM, a grade em instâncias, as fitas, as zonas no chão, os rótulos e o painel; desde a 4.69, a PM do tamanho da torcida (`PM_POR_TORCEDOR`, dividida pelos postos), as rodinhas na porta da sede (`rodinhas`), o bonde solto (`desenhoDoBonde`, a faixa de cada lado da rota, a onda, o encolher parado) e as raias do portão com a vez de cada um na catraca (`prepararRaias`, `filaDo`); desde a 4.70, a revista na boca das raias (`revistaDo`, `entradaDo`, os PMs que vão pro lado da raia de quem é a vez), o jogo contra um clube de fora (a caravana, o aliado que hospeda e escolta — `anfitriao` —, a entrada da cidade), a torcida da IA que ataca (`chanceDe`, `planejarBriga`: o ponto, a tocaia, a rota nova; a força, os feridos) e a briga na cena (`posAtaque`, `luta`), com a cabeça do bonde andando por paradas (`cabeca`, `quando`, `atras`, `paradaEm`) |
+| `ferramentas/planta_html/rotas_estadios.mjs`, `js/diajogo/rotas_estadios.js` | a rota de dentro de cada um dos três estádios (4.67), do portão ao setor e às 100 vagas de cada setor, pelos andares do `subsolo.js` numa grade de 10 cm; roda fora do jogo e grava o `rotas_estadios.js` (GERADO), com a marca do modelo (`marcaDoEstadio`) que o dia de jogo confere; e, desde a 4.69, as raias de cada portão (da frente da fila até depois da catraca) e quais servem pra cada vaga |
+| `dados/fonte/cidades_bairros.json`, `ferramentas/importar_bairros.py`, `dados/cidades.js` | as 30 praças: a fonte (tirada dos `.asset` da Unity), o importador (que junta a planilha `Book_3_1.xlsx`, com o `openpyxl`) e o arquivo GERADO que o jogo e a planta leem — porte, bairros, estádios, `temMetro`, `temPraia`, `temLagoa` e `vegetacao` |
+| `js/diajogo/modelos_atlas.js` | GERADO pelo pintor: onde cada peça caiu em cada folha e quanto mede em metros |
+| `ferramentas/pintar_modelos.py` | pinta as folhas de textura dos marcos, das casas, das casas grandes da favela (o muro da KI-DELÍCIA, a faixa de cerveja, o fibrocimento…) do galpão e do prédio (bloco, tijolo de vidro, vitrô alto, veneziana, portão de correr, os avisos pintados) do atacarejo (a folha `atacadex`: chapa azul, vitrine, marca, painel, doca, totem, carreta), das duas torres (a folha `torres`: concreto e janelinha, a cortina azul, a coroa, o saguão, o tijolinho, a sacada e o guarda-corpo, os nomes, o muro e a guarita) e dos props (a folha `props`), do metrô (a folha `metro`: azulejo, piso e borda, o trem, a catraca, a bilheteria, os painéis e os anúncios) dos equipamentos novos (a folha `equip`: a cortina do shopping, a pastilha e a viatura da delegacia, a pedra portuguesa e o parquinho da praça), da praia (a folha `praia`: deck, lona, tecido do guarda-sol, palha, tábua pintada, balcão de azulejo, cardápio, geladeira, freezer, mesa, vela, casco, canga, prancha, coco) e a rede do vôlei, na folha de grades, e escreve o atlas e as cores médias (`modelos_medias.js`, que a versão de longe usa; `--medias` refaz só elas); roda de novo sempre que mudar uma peça. Com nomes de folha (`pintar_modelos.py metro equip`), pinta só essas e junta no atlas que já existe |
+| `img/texturas/modelos/*.jpg`, `grades.png` | as folhas dos marcos (uma por prédio), a das casas (`casas.jpg`, com as peças da favela), a do metrô (`metro.jpg`), a dos equipamentos novos (`equip.jpg`), a da praia (`praia.jpg`, com o coco) e a folha de grades vazadas, com alfa (portão de lança, gradil de sacada, grade enferrujada, pé de bananeira, antena, varal e a rede do vôlei) |
+| `estadio3d.html` | a página: a troca da cena padrão, o relógio, o passo fixo, o pad, o teclado, a linha de estado com o renderizador |
+| `ferramentas/importar_decalques.py` | corta a folha de contato do pack em atlas: inundação a partir da borda pra tirar o fundo, franja, dessaturação, encaixe na célula |
+| `img/texturas/chao.png` | o atlas de decalques de chão, 8 × 4 células de 192 px (capim, entulho, brita, poça, terra, folha) |
+| `img/texturas/fonte/chao_pack.png` | a folha de contato como veio do gerador, guardada pra dar pra refazer o atlas |
+| `docs/PACK_TEXTURAS.md` | os pedidos de imagem pro gerador: o pack de chão (40 peças, 32 entregues) e o pack de parede |
