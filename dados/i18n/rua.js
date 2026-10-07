@@ -3,7 +3,7 @@
    {marcadores}). Valor: {es, en}.
    Cobre a rua livre do jogo 3D (07/10/2026): o dia livre, o presidente a
    pé com o bonde, pixar, panfletar, partir pra cima, o assalto sozinho e
-   a panfletagem atacada (ferramentas/planta_html/rua3d.js, mapa3d.js), o
+   a panfletagem e a roda atacadas (ferramentas/planta_html/rua3d.js, mapa3d.js), o
    fecho da briga na rua e da panfletagem (js/gestao/acoes.js,
    js/mundo/dominio.js), a ida jogada no recado da partida (jogo3d.js e
    js/main.js) — e o que faltava da tela do planejamento da semana. */
@@ -63,6 +63,13 @@ TO.i18n.registrar({
   'Ir defender': {es:'Ir a defender', en:'Go defend them'},
   'Deixar': {es:'Dejarlo', en:'Let it go'},
   'A {nome} desfez a nossa panfletagem em {bairro}.': {es:'La {nome} desarmó nuestro volanteo en {bairro}.', en:'{nome} broke up our flyering in {bairro}.'},
+  'Os nossos três seguraram a panfletagem em {bairro}.': {es:'Nuestros tres sostuvieron el volanteo en {bairro}.', en:'Our three held the flyering in {bairro}.'},
+  /* a nossa roda atacada (07/10/2026) */
+  'Presidente, a {nome} tá indo pra cima da nossa roda em {bairro}! São {n} deles contra os {m} nossos na calçada.':
+    {es:'¡Presidente, la {nome} va contra nuestra ronda en {bairro}! Son {n} de ellos contra los {m} nuestros en la vereda.',
+     en:'President, {nome} is going after our crew on the corner in {bairro}! It\'s {n} of them against our {m} on the sidewalk.'},
+  'A nossa roda em {bairro} segurou a {nome} sozinha.': {es:'Nuestra ronda en {bairro} aguantó sola a la {nome}.', en:'Our crew in {bairro} held off {nome} on their own.'},
+  'A {nome} correu com a nossa roda em {bairro}.': {es:'La {nome} corrió a nuestra ronda en {bairro}.', en:'{nome} ran our crew off the corner in {bairro}.'},
   /* o mapa da cidade (mapa3d.js) */
   'PANFLETAGEM · {sigla}': {es:'VOLANTEO · {sigla}', en:'FLYERING · {sigla}'},
   'O PRESIDENTE': {es:'EL PRESIDENTE', en:'THE PRESIDENT'},
@@ -76,6 +83,10 @@ TO.i18n.registrar({
   'A PANFLETAGEM DELES FICOU': {es:'SU VOLANTEO SIGUIÓ EN PIE', en:'THEIR FLYERING STAYED PUT'},
   'A PANFLETAGEM FICOU DE PÉ': {es:'EL VOLANTEO SIGUIÓ EN PIE', en:'THE FLYERING HELD'},
   'DESFIZERAM A NOSSA PANFLETAGEM': {es:'DESARMARON NUESTRO VOLANTEO', en:'THEY BROKE UP OUR FLYERING'},
+  'A RODA DELES CORREU': {es:'SU RONDA SALIÓ CORRIENDO', en:'THEIR CREW RAN'},
+  'A RODA DELES SEGUROU A ESQUINA': {es:'SU RONDA AGUANTÓ LA ESQUINA', en:'THEIR CREW HELD THE CORNER'},
+  'A NOSSA RODA FICOU DE PÉ': {es:'NUESTRA RONDA SIGUIÓ EN PIE', en:'OUR CREW HELD THE CORNER'},
+  'CORRERAM COM A NOSSA RODA': {es:'CORRIERON A NUESTRA RONDA', en:'THEY RAN OUR CREW OFF'},
   '{a} contra {b}, em {bairro}': {es:'{a} contra {b}, en {bairro}', en:'{a} against {b}, in {bairro}'},
   'A gente já panfletou em {bairro} hoje.': {es:'Ya volanteamos en {bairro} hoy.', en:'We already flyered in {bairro} today.'},
   'Panfletagem em {bairro}: {n} novato entrou.': {es:'Volanteo en {bairro}: entró {n} novato.', en:'Flyering in {bairro}: {n} rookie joined.'},

@@ -491,6 +491,11 @@ TO.estado = (function(){
       try{ TO.dominio.panfletagensDoDia(E); }
       catch(err){ if(window.console) console.error('[dia] as panfletagens:', err); }
     }
+    /* e as rodas nossas que a rival vai atacar hoje (o jogo 3D avisa na hora) */
+    if(TO.dominio && TO.dominio.rodasDaIA){
+      try{ TO.dominio.rodasDaIA(E); }
+      catch(err){ if(window.console) console.error('[dia] as rodas:', err); }
+    }
     rodarExpediente(E);
     TO.membros.passarDia(E);
 

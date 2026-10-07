@@ -407,9 +407,9 @@ TO.acoes = (function(){
      panfletam ou quem veio atrapalhar. É briga pequena: a relação azeda
      menos que no dia de jogo (REL.brigaLivre; desfazer panfletagem,
      REL.panfleto), o prestígio é o da noite (fecharDiaDeJogo) e o bairro
-     é onde foi (GANHO.livre; a panfletagem, GANHO.panfleto). A
-     panfletagem que a gente desfez sai do dia dela; a nossa que eles
-     desfizeram, também */
+     é onde foi (GANHO.livre; a panfletagem, GANHO.panfleto; a roda da
+     dona, a dela ou a nossa atacada, GANHO.roda). A panfletagem que a
+     gente desfez sai do dia dela; a nossa que eles desfizeram, também */
   function fecharLivre(E, alvo, res){
     const R = TO.relacoes, D = TO.dominio;
     const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
@@ -421,13 +421,17 @@ TO.acoes = (function(){
       alvo.contraNos.resolvido = true;
       if(!ganhou && D.marcarPanfletoDesfeito) D.marcarPanfletoDesfeito(E, E.torcida.id, alvo.torcidaId, alvo.bid);
     }
+    /* A RODA (07/10/2026): a da rival derrotada sai da rua no resto do dia;
+       a nossa atacada, perdendo, também (a barra mexe pela briga, abaixo) */
+    if(D && alvo.roda && ganhou && D.marcarRodaDesfeita) D.marcarRodaDesfeita(E, alvo.roda, E.torcida.id);
+    if(D && alvo.contraRoda && D.resolverRodaContraNos) D.resolverRodaContraNos(E, alvo.contraRoda, ganhou, true);
     const membros = (res && res.membros) || [];
     const outro = ((res && res.nossoLado) || 'mandante') === 'mandante' ? 'visitante' : 'mandante';
     const efeitos = [
       {ind:'relacao', delta: r1(R.nivel(E, alvo.torcidaId) - antesR), dono:_t('com a {nome}', {nome:alvo.nome})},
       {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:alvo.nome})}
     ].filter(x=>x.delta);
-    const cena = alvo.panfleto || alvo.contraNos ? 'panfleto' : 'rua-livre';
+    const cena = alvo.panfleto || alvo.contraNos ? 'panfleto' : alvo.roda || alvo.contraRoda ? 'roda' : 'rua-livre';
     if(TO.feed) TO.feed.registrarConfronto(E, {
       torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: alvo.nosAtacamos !== false,
       local:{cena, bairro: alvo.bairro || '', cidade: alvo.cidade || E.torcida.mapa},
@@ -441,6 +445,10 @@ TO.acoes = (function(){
       efeitos});
     const titulo = alvo.contraNos
       ? (ganhou ? _t('A PANFLETAGEM FICOU DE PÉ') : _t('DESFIZERAM A NOSSA PANFLETAGEM'))
+      : alvo.contraRoda
+        ? (ganhou ? _t('A NOSSA RODA FICOU DE PÉ') : _t('CORRERAM COM A NOSSA RODA'))
+      : alvo.roda
+        ? (ganhou ? _t('A RODA DELES CORREU') : _t('A RODA DELES SEGUROU A ESQUINA'))
       : alvo.panfleto
         ? (ganhou ? _t('A PANFLETAGEM DELES ACABOU') : _t('A PANFLETAGEM DELES FICOU'))
         : (ganhou ? _t('A RUA FICOU NOSSA') : _t('CORRERAM COM A GENTE NA RUA'));

@@ -35,9 +35,11 @@
    O PERIGO: pixar ou panfletar no bairro da rival pode chamar a turma
    dela (25% a 60%, pela barra): eles vêm correndo pela calçada e, se
    alcançam, a briga começa. A roda da rival no bairro dela encara quem
-   chega perto e parte pra cima. E a panfletagem NOSSA pode ser atacada
-   (TO.dominio: a IA que vê o bairro): o recado chega na hora, e o
-   jogador decide se vai defender.
+   chega perto e parte pra cima — uma vez: depois da briga, a roda que
+   ficou de pé espera o presidente se afastar (PERTO.tregua) pra encarar
+   de novo, e a derrotada sai da rua no resto do dia. E a panfletagem
+   NOSSA e as RODAS NOSSAS podem ser atacadas (TO.dominio: a IA que vê o
+   bairro): o recado chega na hora, e o jogador decide se vai defender.
 
    A SETA NA BORDA (também do dia de jogo): um alvo no mundo vira uma seta
    na beira da área livre da tela, apontando pra ele, com a distância.
@@ -52,7 +54,7 @@ const BONDE = 4;
 /* a largura que cabe na tela a pé (m): mais aberto que o a pé do cenário */
 const VAO = 22;
 /* os alcances (m): o grupo, o muro, a porta da loja */
-const PERTO = { grupo: 12, muro: 4.5, loja: 7, encara: 7, desiste: 75, alcanca: 3.2 };
+const PERTO = { grupo: 12, muro: 4.5, loja: 7, encara: 7, desiste: 75, alcanca: 3.2, tregua: 20 };
 /* o tempo de cada ação (min do dia) */
 const DURA = { pixar: 20, panfletar: 60, briga: 30, assalto: 60 };
 /* os recados que dizem que o dia tem coisa marcada */
@@ -287,7 +289,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
       .sort((a, b) => (b.forca + b.defesa) - (a.forca + a.defesa));
     const bonde = aptos.slice(0, BONDE);
     S = { e, pres, T, bonde, min: clamp(vida.relogio.minuto, INI, FIM - 1), acao: null, perigo: null, briga: null, voltando: null,
-          discos: [], seg: null, falando: null, tEncara: new Map(), motivo: o.motivo || 'livre', entrando: true };
+          discos: [], seg: null, falando: null, tEncara: new Map(), tregua: new Set(), motivo: o.motivo || 'livre', entrando: true };
     TO.tela.pausarTempo('rua');
     vida.naRua = true;
     let ok = false;
@@ -325,6 +327,8 @@ export function criarRua(api, vida, dia3d, nevoa) {
     vida.naRua = false;
     if (Cn && Cn.vida) Cn.vida.extras = [];
     if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false);
+    if (s.briga) soltarNossaRoda(s.briga.nossaRoda);
+    if (s.voltando) soltarNossaRoda(s.voltando.nossaRoda);
     for (const g of vida.grupos) if (g.preso) { g.preso = false; g.mover = null; }
     if (hud) hud.hidden = true;
     if (seta) seta.alvo(null);
@@ -544,15 +548,20 @@ export function criarRua(api, vida, dia3d, nevoa) {
     }
   }
   /* A RODA DA RIVAL ENCARA: no bairro dela, quem chega perto é encarado e,
-     ficando, a roda parte pra cima (o GTA do pedido do dono) */
+     ficando, a roda parte pra cima (o GTA do pedido do dono). A TRÉGUA (o
+     dono, 07/10/2026: "acaba criando um loop que não para de reproduzir a
+     mesma cena"): a roda que já brigou com a gente não encara de novo
+     enquanto o presidente não sair de perto (PERTO.tregua) — ele volta da
+     briga no mesmo lugar, colado nela */
   function rodasEncarando(dt) {
     const eu = lider();
     if (!eu || S.briga || S.perigo) return;
     for (const g of vida.grupos) {
       if (g.tipo !== 'roda' || g.preso || !rival(g.tid)) continue;
+      const d = Math.hypot(g.x - eu.x, g.z - eu.y) / M;
+      if (S.tregua.has(g.chave)) { if (d > PERTO.tregua) S.tregua.delete(g.chave); continue; }
       const b = S.bairro;
       if (!b || b.id !== g.bid || b.dono !== g.tid) { S.tEncara.delete(g.chave); continue; }
-      const d = Math.hypot(g.x - eu.x, g.z - eu.y) / M;
       if (d > PERTO.encara) { S.tEncara.delete(g.chave); for (const x of g.gente) if (x.d.olhaPara === eu) x.d.olhaPara = null; continue; }
       const t = (S.tEncara.get(g.chave) || 0) + dt;
       S.tEncara.set(g.chave, t);
@@ -572,7 +581,10 @@ export function criarRua(api, vida, dia3d, nevoa) {
     const escalacao = [S.pres].concat(S.bonde.filter(m => !m.preso && !m.ferido)).concat(extra.mais || []);
     const deles = extra.deles || (g.gente ? g.gente.length : g.n || 3);
     g.preso = true;
-    S.briga = { g, pos, nosAtacamos };
+    /* (a encarada acabou aqui: o tempo dela não fica guardado pra depois da briga) */
+    S.tEncara.delete(g.chave);
+    for (const x of g.gente || []) if (x.d && x.d.olhaPara) x.d.olhaPara = null;
+    S.briga = { g, pos, nosAtacamos, nossaRoda: extra.nossaRoda || null };
     S.acao = null; S.perigo = null;
     desposar();
     if (seta) seta.alvo(null);
@@ -583,9 +595,11 @@ export function criarRua(api, vida, dia3d, nevoa) {
       rivalId: g.tid, deles, escalacao,
       ruaLivre: { nos: pos, eles: { x: g.x, z: g.z }, bairro, nosAtacamos,
                   rot: g.tipo === 'panfleto' ? 'OS QUE PANFLETAM' : g.tipo === 'roda' ? 'A RODA DA ' + String(g.sigla || '').toUpperCase() : 'QUEM VEIO' },
-      alvo: { bairro, bid: g.bid, nosAtacamos, panfleto: g.tipo === 'panfleto' && g.tid !== e.torcida.id && nosAtacamos, contraNos: extra.contraNos || null }
+      alvo: { bairro, bid: g.bid, nosAtacamos, panfleto: g.tipo === 'panfleto' && g.tid !== e.torcida.id && nosAtacamos, contraNos: extra.contraNos || null,
+              /* a roda da rival (a chave dela: derrotada, sai da rua hoje) e a nossa atacada */
+              roda: g.tipo === 'roda' && g.tid !== e.torcida.id ? g.chave : null, contraRoda: extra.contraRoda || null }
     });
-    if (!ok) { S.briga = null; g.preso = false; voltarAPe(pos); return false; }
+    if (!ok) { S.briga = null; g.preso = false; soltarNossaRoda(extra.nossaRoda); voltarAPe(pos); return false; }
     return true;
   }
   /* a cena desmontou (vida3d.js): quando o relatório fechar, o presidente volta pra rua */
@@ -610,9 +624,13 @@ export function criarRua(api, vida, dia3d, nevoa) {
     const v = S.voltando;
     if (!v || cobre()) return;
     S.voltando = null; S.briga = null;
-    /* quem brigou sai da rua (fugiu ou foi corrido) */
+    /* quem brigou sai da rua (fugiu ou foi corrido); a roda que ficou de
+       pé volta pro lugar dela, de trégua com a gente (a derrotada não volta:
+       TO.dominio.rodaDesfeita) */
     const R = vida.rua;
     if (v.g && R && R.grupos) R.grupos.delete(v.g.chave);
+    if (v.g && v.g.tipo === 'roda') S.tregua.add(v.g.chave);
+    soltarNossaRoda(v.nossaRoda);
     if (vida.esquecerPanfletos) vida.esquecerPanfletos();
     gastar(DURA.briga);
     if (S) voltarAPe(v.pos);
@@ -689,19 +707,112 @@ export function criarRua(api, vida, dia3d, nevoa) {
     const g = vida.grupos.find(x => x.tipo === 'panfleto' && x.tid === e.torcida.id);
     let onde = g ? { x: g.x, z: g.z } : null;
     if (!onde && vida.pontoDoBairro) { const p = api.sedeDe ? api.sedeDe(e.torcida.id) : null; onde = vida.pontoDoBairro(c.bid, p ? p.x : 0, p ? p.y : 0, 0, 5000); }
-    if (!onde) { TO.dominio.resolverContraNos(e, c, null); return; }
+    const naConta = () => {
+      const r = TO.dominio.resolverContraNos(e, c, null);
+      if (!r) return;
+      if (vida.esquecerPanfletos) vida.esquecerPanfletos();
+      avisar(r.ganhamos ? T_('Os nossos três seguraram a panfletagem em {bairro}.', { bairro: c.bairro })
+                        : T_('A {nome} desfez a nossa panfletagem em {bairro}.', { nome: c.nome, bairro: c.bairro }), !r.ganhamos);
+      if (TO.estado.salvar) TO.estado.salvar();
+    };
+    if (!onde) { naConta(); return; }
     const vem = vida.pontoDoBairro ? vida.pontoDoBairro(c.bid, onde.x, onde.z, 12, 30) : null;
-    const comecar = () => {
+    irDefender(onde, () => {
+      if (!S) { naConta(); return; }
       const tres = TO.membros.aptosParaOEstadio(e).filter(m => m !== S.pres && !S.bonde.includes(m)).slice(0, 3);
       const gAtq = { chave: 'contra|' + c.por, tipo: 'perigo', tid: c.por, bid: c.bid, nomeBairro: c.bairro, sigla: siglaDe(c.por), nome: c.nome,
                      x: vem ? vem.x : onde.x + 8 * M, z: vem ? vem.z : onde.z, gente: [], n: c.n };
-      brigar(gAtq, false, { deles: c.n, contraNos: c, mais: tres });
-    };
+      if (!brigar(gAtq, false, { deles: c.n, contraNos: c, mais: tres })) naConta();
+    }, naConta);
+  }
+  /* o presidente vai (na rua, levado; na sede, saindo pela calçada de lá)
+     e a briga começa; sem rua (o dia de jogo no ar, a praça de fora), a
+     conta resolve. Com o presidente ocupado (outra briga, a loja), espera */
+  async function irDefender(onde, comecar, naConta, tentativas = 0) {
+    if (S && (S.briga || S.voltando || S.entrando || S.assaltando)) {
+      if (tentativas > 90) { naConta(); return; }
+      setTimeout(() => irDefender(onde, comecar, naConta, tentativas + 1), 700);
+      return;
+    }
     if (S) {
       const Cn = C();
       if (Cn.aPe && Cn.aPe.levar) { Cn.aPe.levar(onde.x, onde.z, Cn.orb ? Cn.orb.az : 0); const eu = lider(); if (eu && S.seg) S.seg.semear(eu.x, eu.y, eu.x, eu.y, eu.rumo); }
       setTimeout(comecar, 900);
-    } else await sair({ x: onde.x, z: onde.z, motivo: 'defesa', depois: () => setTimeout(comecar, 600) });
+      return;
+    }
+    const ok = await sair({ x: onde.x, z: onde.z, motivo: 'defesa', depois: () => setTimeout(comecar, 600) });
+    if (!ok) naConta();
+  }
+
+  /* ======================================================
+     A NOSSA RODA ATACADA (TO.dominio.rodasContraNosHoje; o dono, 07/10/2026:
+     "Nossos bairros podem ser atacados da mesma forma"): a rival que
+     chega no bairro (nele ou no vizinho) vai pra cima de uma roda nossa,
+     na hora marcada. O recado;
+     "Ir defender" leva o presidente e o bonde pra calçada da roda, e a
+     roda briga junto (os da ficha que não estão no bonde); "Deixar" perde
+     a roda (ela sai da rua no resto do dia) e a barra do bairro
+     ====================================================== */
+  const rodasAvisadas = new Set();
+  const idDoAtaque = (e, c) => `roda-ataque|${e.data.absoluto}|${c.por}|${c.bid}|${c.k}`;
+  function conferirRodasContraNos(e, min) {
+    const D = TO.dominio;
+    if (!e || !e.data || !D || !D.rodasContraNosHoje || !naPracaNossa()) return;
+    for (const c of D.rodasContraNosHoje(e)) {
+      const id = idDoAtaque(e, c), h = minutoDe(c.hora);
+      if (rodasAvisadas.has(id) || h == null || min < h) continue;
+      rodasAvisadas.add(id);
+      const R = vida.rodaDoDia ? vida.rodaDoDia(c.chave) : null;
+      const m = TO.feed.propor(e, {
+        kind: 'roda-ataque', peso: 'decisao', voz: 'diretor', chave: id, hora: horaTxt(min),
+        texto: T_('Presidente, a {nome} tá indo pra cima da nossa roda em {bairro}! São {n} deles contra os {m} nossos na calçada.',
+                  { nome: c.nome, bairro: c.bairro, n: c.n, m: R ? R.n : 4 }),
+        dados: { contra: true, ataque: id },
+        botoes: [{ id: 'defender', rot: T_('Ir defender'), acao: 'jogo3d' }, { id: 'deixar', rot: T_('Deixar'), acao: 'jogo3d' }]
+      });
+      if (m) { const f = e.feedFila, i = f.indexOf(m); if (i > 0) { f.splice(i, 1); f.unshift(m); } }
+    }
+  }
+  function ataqueDoRecado(e, m) {
+    const D = TO.dominio, id = m && m.dados && m.dados.ataque;
+    if (!e || !D || !D.rodasContraNosHoje || !id) return null;
+    return D.rodasContraNosHoje(e).find(c => idDoAtaque(e, c) === id) || null;
+  }
+  /* sem briga jogada: a conta (a roda sozinha contra eles) ou o "Deixar" (perdeu) */
+  function rodaNaConta(e, c, ganhamos) {
+    const r = TO.dominio.resolverRodaContraNos(e, c, ganhamos);
+    if (!r) return;
+    if (vida.esquecerPanfletos) vida.esquecerPanfletos();
+    avisar(r.ganhamos ? T_('A nossa roda em {bairro} segurou a {nome} sozinha.', { bairro: c.bairro, nome: c.nome })
+                      : T_('A {nome} correu com a nossa roda em {bairro}.', { nome: c.nome, bairro: c.bairro }), !r.ganhamos);
+    if (TO.estado.salvar) TO.estado.salvar();
+    if (TO.tela.pintarTopo) TO.tela.pintarTopo();
+  }
+  async function defenderRoda(c) {
+    const e = E();
+    const R = vida.rodaDoDia ? vida.rodaDoDia(c.chave) : null;
+    let onde = R ? { x: R.x, z: R.z } : null;
+    if (!onde && vida.pontoDoBairro) { const p = api.sedeDe ? api.sedeDe(e.torcida.id) : null; onde = vida.pontoDoBairro(c.bid, p ? p.x : 0, p ? p.y : 0, 0, 5000); }
+    const naConta = () => rodaNaConta(e, c, null);
+    if (!onde) { naConta(); return; }
+    const vem = vida.pontoDoBairro ? vida.pontoDoBairro(c.bid, onde.x, onde.z, 12, 30) : null;
+    irDefender(onde, () => {
+      if (!S) { naConta(); return; }
+      /* a roda entra do nosso lado: os da ficha fora do bonde (e some da calçada enquanto a briga dura) */
+      const n = R ? R.n : 4;
+      const roda = TO.membros.aptosParaOEstadio(e).filter(m => m !== S.pres && !S.bonde.includes(m)).slice(0, n);
+      const nossa = vida.grupos.find(x => x.chave === c.chave) || null;
+      if (nossa) { nossa.preso = true; for (const x of nossa.gente) x.fora = true; }
+      const gAtq = { chave: 'contra-roda|' + c.por + '|' + c.bid, tipo: 'perigo', tid: c.por, bid: c.bid, nomeBairro: c.bairro, sigla: siglaDe(c.por), nome: c.nome,
+                     x: vem ? vem.x : onde.x + 8 * M, z: vem ? vem.z : onde.z, gente: [], n: c.n };
+      if (!brigar(gAtq, false, { deles: c.n, contraRoda: c, mais: roda, nossaRoda: nossa })) { soltarNossaRoda(nossa); naConta(); }
+    }, naConta);
+  }
+  /* a nossa roda volta pra calçada (a que perdeu sai no próximo quadro dos grupos: TO.dominio.rodaDesfeita) */
+  function soltarNossaRoda(g) {
+    if (!g) return;
+    g.preso = false;
+    for (const x of g.gente || []) x.fora = false;
   }
 
   /* ======================================================
@@ -796,6 +907,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
         const chave = `${e.data.ano}|${e.data.semana}|${e.data.dia}`;
         if (livreDe !== chave) { livreDe = chave; livreHoje = diaLivreHoje(e); }
         conferirContraNos(e, S ? S.min : vida.relogio.minuto);
+        conferirRodasContraNos(e, S ? S.min : vida.relogio.minuto);
       }
       pintarBotaoSair();
     }
@@ -843,6 +955,13 @@ export function criarRua(api, vida, dia3d, nevoa) {
           avisar(T_('A {nome} desfez a nossa panfletagem em {bairro}.', { nome: c.nome, bairro: c.bairro }), true);
           if (r && TO.estado.salvar) TO.estado.salvar();
         }
+        return true;
+      }
+      if (m.kind === 'roda-ataque') {
+        const c = ataqueDoRecado(e, m);
+        if (!c) return true;
+        if (botao === 'defender') setTimeout(() => defenderRoda(c), 50);
+        else rodaNaConta(e, c, false);
         return true;
       }
       return false;

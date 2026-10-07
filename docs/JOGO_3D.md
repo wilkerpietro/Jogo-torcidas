@@ -5069,10 +5069,13 @@ pra sede (ou antes, no "Voltar pra sede").
 turma dela (25% a 60%, pela barra dela no bairro): eles saem de uma roda e
 vêm correndo pela calçada (`rotaNaRua`); se alcançam, a briga começa — ou
 o jogador encara antes, ou corre (a 75 m eles desistem). A roda da rival no
-bairro dela encara quem chega a 7 m: um aviso e, 2,6 s depois, a briga. A
-panfletagem NOSSA também pode ser atacada (a IA que vê o bairro, abaixo): o
-recado chega na hora — "Ir defender" leva o presidente e o bonde até lá e
-abre a briga; "Deixar" perde a panfletagem.
+bairro dela encara quem chega a 7 m: um aviso e, 2,6 s depois, a briga —
+uma vez: a que ficou de pé espera o presidente se afastar 20 m pra encarar
+de novo, e a derrotada sai da rua no resto do dia (§47.6). A panfletagem
+NOSSA também pode ser atacada (a IA que vê o bairro, abaixo), e as rodas
+nossas também (§47.6): o recado chega na hora — "Ir defender" leva o
+presidente e o bonde até lá e abre a briga; "Deixar" perde a panfletagem
+(ou a roda).
 
 **A briga na rua.** O tabuleiro é montado onde os dois lados estão
 (`briga_lugar.js`, `brigaNaRua`): o meio entre eles (no máximo 15 m de
@@ -5091,8 +5094,9 @@ continua de onde parou.
 - **A camisa da dona no bairro dela**: de 10% (domínio 50) a 35% (domínio
   100) de quem anda na rua veste a camisa da torcida que domina o bairro;
   6% vestem a de outra. Bairro sem dona segue com a mistura de antes.
-- **As rodas**: de 1 a 4 rodas de 3 a 5 da dona por bairro (pelo domínio,
-  acima de 50), das 9h à meia-noite, em esquinas do bairro.
+- **As rodas**: de 4 a 6 rodas de 3 a 5 da dona por bairro (pelo domínio,
+  acima de 50; eram de 1 a 4 até o §47.6), das 9h à meia-noite, em
+  calçadas do bairro a pelo menos 15 m uma da outra.
 - **A panfletagem**: onde a torcida escolheu recrutar hoje (a do jogador
   pelo expediente "recrutar"; a da IA pelo recrutamento dela,
   `TO.dominio.recrutandoEm`), três dela numa calçada sorteada do bairro,
@@ -5225,3 +5229,82 @@ recado perguntou ("A caravana desceu na entrada de Recife…"); com "Assumir
 a ida", o presidente apareceu a pé às 14:52 na frente dos 40 (com a camisa
 da TUF), a seta apontou a pista a 274 m, e a pista e o cordão da PM levaram
 o bonde até o jogo. Nenhum erro no console.
+
+### 47.6 As rodas: o loop da briga, de 4 a 6 por bairro e as nossas atacadas (`rua3d.js`, `vida3d.js`, `dominio.js`, `acoes.js`)
+
+O dono (com a foto da briga "LEÕES DA TUF 5 × FALANGE CORAL 4" no
+celular): "Quando um grupo é avistado no bairro rival e eu abro a cena da
+briga, acaba criando um loop que não para de reproduzir a mesma cena.
+Corrija isso. Os bairros devem ter mais grupos como esses, variando de 4 a
+6 por bairro. Derrotar cada um dá mais pontos de domínio. Nossos bairros
+podem ser atacados da mesma forma."
+
+**O loop.** A causa: a roda que encara guardava o tempo da encarada
+(`tEncara`) já passado dos 2,6 s; no fim da briga o presidente volta pro
+mesmo ponto, colado na roda, e a roda — que a rua tira no fim da briga e o
+`vida3d.js` recria 0,6 s depois, com a mesma chave, porque ela continua
+devendo estar ali — achava o tempo vencido e abria a briga de novo, sem
+fim. Agora: (1) a briga zera a encarada; (2) a roda que brigou com a gente
+fica de trégua (`S.tregua`) até o presidente se afastar 20 m
+(`PERTO.tregua`) — voltando depois, ela encara de novo, como qualquer
+roda; (3) a roda derrotada sai da rua no resto do dia
+(`TO.dominio.marcarRodaDesfeita`, que o `gruposQueDevem` lê). O "Partir pra
+cima" continua no painel durante a trégua: brigar de novo com a mesma roda
+é escolha do jogador, nunca automático.
+
+**De 4 a 6 rodas por bairro.** Todo bairro com dona tem 4 rodas até 66,6%
+na barra, 5 até 83,3% e 6 acima disso — a conta é uma só
+(`TO.dominio.rodasNoBairro`) e o `vida3d.js` lê ela. Cada roda tem de 3 a
+5, das 9h à meia-noite, numa calçada sorteada pelo dia; a calçada que cai
+a menos de 15 m de outra roda do bairro é sorteada de novo (até oito
+vezes). Só as que estão perto da câmera vão pra tela, como antes.
+
+**O domínio.** A briga com a roda (a da rival no bairro dela, ou a nossa
+atacada) vale GANHO.roda = 8 pontos de barra (a briga solta na rua vale 4;
+a panfletagem desfeita, 6). É o valor de base: a conta de sempre
+(`pontosEfetivos`) multiplica pela torcida do clube no bairro (×0,4 a
+×1,3) e corta pela metade no bairro da sede de outra torcida. Na medição,
+ganhar da roda da Falange no Antônio Bezerra (bairro da sede dela) deu
+3,9; defender a nossa roda no Bom Jardim (o nosso reduto) deu 9,6 (a barra
+bateu em 100); deixar a Falange correr com a nossa roda lá tirou 4,3.
+Empate (ninguém caiu) não mexe na barra, como em toda briga. A roda que a
+gente derrota sai da rua no resto do dia; a nossa que perde, também.
+
+**As nossas rodas atacadas.** Todo dia livre (sem jogo nem viagem), cada
+rival que chega num bairro nosso — tem estrutura nele, ou domina ou tem
+estrutura num bairro vizinho (`vizinhosDe`: a roda dela atravessa a rua)
+— pode ir pra cima de uma roda nossa ali: 8% por bairro, por rival e por
+dia, pela força dela (×0,5 a ×1,6, o tamanho dela contra o nosso), no
+máximo um ataque por dia (`RODA` em `dominio.js`), numa hora entre 10h e
+21h, com 4 a 7 deles. Na hora, a diretoria manda o recado: "Presidente, a
+Falange Coral tá indo pra cima da nossa roda em Bom Jardim! São 5 deles
+contra os 4 nossos na calçada." **Ir defender** leva o presidente e o
+bonde (da rua, ou saindo da sede) até a calçada da roda, e a briga é o
+presidente, os quatro do bonde e a roda (os da ficha que não estão no
+bonde) contra eles; perdendo, a roda sai da rua no resto do dia. **Deixar**
+perde a roda e os pontos. Sem resposta no dia (o jogo fechado), o dia
+seguinte resolve na conta: a roda sozinha ganha 55% das vezes contra 4,
+30% contra mais. Só no jogo 3D: o jogo do feed não tem roda na calçada nem
+como defender, e lá ninguém ataca roda. A IA não ataca roda de outra IA.
+
+Junto veio uma correção na defesa da panfletagem: se o presidente não
+consegue sair (o dia de jogo no ar) ou está ocupado (outra briga, a loja),
+o "Ir defender" espera ou resolve na conta, em vez de não fazer nada.
+
+**Medido** (`scratchpad/rua/rodas.js`: novo jogo com a TUF em Fortaleza, a
+rua às 10h): 16 bairros com dona, com 4 (5 bairros), 5 (7) e 6 rodas (4),
+nenhum fora disso; a roda mais perto de outra do mesmo bairro a 16,5 m (113
+pares, nenhum abaixo de 15 m). O presidente posto a 3,5 m de uma roda da
+Falange no Antônio Bezerra: encarou e a briga abriu (7,8 s); com a derrota
+forçada, ele voltou pra rua no mesmo lugar e ficou 9 s parado — nenhuma
+cena nova, a roda de volta na calçada, de trégua; a 32 m a trégua acabou;
+de volta, a roda encarou e a briga abriu de novo (3,0 s); com a vitória
+forçada, 9 s parado: nenhuma cena nova, a roda fora da rua e a barra da
+Falange 80,7 → 76,8 (3,9 pra TUF). O mesmo no celular (390×844). O ataque
+à nossa roda: o recado na tela; "Ir defender" abriu a briga com 9 nossos
+(o presidente, 4 do bonde, 4 da roda) contra 5; com a vitória, a barra
+90,4 → 100 e a roda ficou; "Deixar" no segundo ataque: a roda saiu da rua,
+o aviso "A Falange Coral correu com a nossa roda em Bom Jardim." e a barra
+100 → 95,7. A frequência, em 60 dias sorteados com quatro a seis bairros
+nossos: 21 ataques (com 12% e dois por dia, a primeira versão, eram 51).
+O jogo do feed, dez dias: nenhum ataque de roda. Nenhum erro no console.

@@ -9456,6 +9456,17 @@ O pedido (a mensagem chegou cortada em "Pra jogos"): os dias sem nada marcado li
 
 **O que ficou de fora ou pela metade**: a sede da TUF em Fortaleza é colada no Castelão, então a ida dela é curta; só os bondes do plano do dia podem ser caçados na ida; o mato e as árvores não escurecem na névoa; os textos do painel do dia de jogo (como o resto do dia3d) não têm tradução. Detalhes: `docs/JOGO_3D.md` §47.
 
+## As rodas da rua: sem loop, de 4 a 6 por bairro e as nossas atacadas (dono, 07/10/2026)
+
+O pedido: "Quando um grupo é avistado no bairro rival e eu abro a cena da briga, acaba criando um loop que não para de reproduzir a mesma cena. Corrija isso. Os bairros devem ter mais grupos como esses, variando de 4 a 6 por bairro. Derrotar cada um dá mais pontos de domínio. Nossos bairros podem ser atacados da mesma forma."
+
+- **O loop acabou**: a briga com a roda reabria assim que o presidente voltava pra rua (ele volta no mesmo lugar, e a roda renascia com a encarada já vencida). Agora a roda que brigou com a gente fica de trégua até o presidente se afastar uns 20 m, e a derrotada sai da rua no resto do dia. Brigar de novo com a mesma roda, só pelo botão "Partir pra cima".
+- **De 4 a 6 rodas por bairro com dona** (4 até 66,6% na barra, 5 até 83,3%, 6 acima), de 3 a 5 cada, a pelo menos 15 m uma da outra. Antes eram de 1 a 4.
+- **Cada roda derrotada vale 8 pontos de barra de base** (a briga solta na rua vale 4); a conta de sempre ajusta pela torcida do clube no bairro e corta pela metade no bairro da sede de outra torcida.
+- **As nossas rodas podem ser atacadas** (só no jogo 3D): em dia livre, a rival que chega num bairro nosso (estrutura nele, ou domina ou tem estrutura num vizinho) pode ir pra cima de uma roda nossa — no máximo um ataque por dia, uns 20 em 60 dias com quatro a seis bairros. O recado: "Ir defender" (o presidente, o bonde e a própria roda contra eles) ou "Deixar" (a roda sai do dia e a rival leva os pontos).
+
+**O que ficou de fora ou pela metade**: a IA não ataca roda de outra IA; a frequência dos ataques é um número (`RODA.chance` em `js/mundo/dominio.js`) que pode pedir ajuste depois de jogar; sem resposta no dia (o jogo fechado), o ataque se resolve na conta no dia seguinte. Detalhes: `docs/JOGO_3D.md` §47.6.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
