@@ -2673,6 +2673,16 @@
   }
   /* a linha só tem um número, o da barra: o efetivo anda com ela */
   function itnMarcarEfetivo(){ itnContar(); }
+  /* A IDA SE DECIDE NO DIA (o jogo 3D, 07/10/2026): o jogo em casa (o
+     recado da partida pergunta) e o jogo fora numa cidade com mapa em 3D
+     (a pergunta é na chegada da caravana) não têm ataque no planejamento —
+     quem ataca é o jogador, na ida. Campo neutro e cidade sem mapa seguem
+     com o planejamento de antes */
+  function idaNoDiaDo(e, j){
+    if(!TO.semFeed || !e || !j || j.neutro) return false;
+    if(j.casa) return true;
+    return !!(TO.jogo3d && TO.jogo3d.temCidade && TO.jogo3d.temCidade(j.mapaAdv));
+  }
   /* A BAIXA DE UMA BRIGA FORA DAS PARADAS (a ida jogada do jogo 3D,
      dia3d.js: o presidente partiu pra cima de um bonde rival no caminho):
      quem caiu ou foi preso sai do número da linha, como na briga de uma
@@ -3746,8 +3756,8 @@
         const p = P.plano(e, it.jogo);
         const est = it.r.tipo === 'fora' ? P.estimativaCaravana(e, it.jogo) : null;
         const car = est ? _t('{n} na caravana', {n:est.vao}) + ' · ' : '';
-        /* (em casa, no jogo 3D, a ida se decide no dia) */
-        if(it.r.tipo !== 'fora' && TO.semFeed) return {txt:_t('a ida é no dia'), tom:'ok'};
+        /* (no jogo 3D a ida se decide no dia: em casa, no recado da partida; fora, na chegada) */
+        if(idaNoDiaDo(e, it.jogo)) return {txt: it.r.tipo === 'fora' ? car + _t('a ida se decide na chegada') : _t('a ida é no dia'), tom:'ok'};
         if(p.intencao === 'paz') return {txt: car + _t('em paz'), tom:'ok'};
         const alvo = p.alvoTorcida && M.torcida(p.alvoTorcida);
         if(!alvo) return {txt: car + _t('atacar: falta o alvo'), tom:'falta'};
@@ -3824,9 +3834,16 @@
          partida pergunta se ele assume a ida (o presidente a pé na frente
          do bonde, caçando quem quiser no caminho) ou vai em paz. Aqui
          ficam só as bombas */
-      const idaNoDia = !fora && !!TO.semFeed;
+      /* (e FORA, o dono, 07/10/2026: "o planejamento antecipado continua
+         principalmente pra decidir quantos irão viajar, mas assim que chegar
+         na cidade visitada vai perguntar se quer fazer o trajeto até o
+         estádio em paz [...] ou quer assumir a partir daí": aqui fica a
+         caravana, e o ataque sai) */
+      const idaNoDia = jogo ? idaNoDiaDo(e, jogo) : (!fora && !!TO.semFeed);
       if(idaNoDia)
-        s2.appendChild(el('p',{class:'plj-nota plj-ida', html:_t('Em casa, a ida é decidida <b>no dia do jogo</b>: o recado da partida pergunta se você assume a ida — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz.')}));
+        s2.appendChild(el('p',{class:'plj-nota plj-ida', html: fora
+          ? _t('Fora, a ida até o estádio é decidida <b>na chegada à cidade</b>: quando a caravana descer, o recado pergunta se você assume a ida dali — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz. Aqui se decide a viagem.')
+          : _t('Em casa, a ida é decidida <b>no dia do jogo</b>: o recado da partida pergunta se você assume a ida — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz.')}));
       const briga = !idaNoDia && p.intencao !== 'paz';
       const alvos = fora ? P.alvosDaViagem(e, {advId:(jogo && jogo.advId) || r.advId})
                          : (()=>{ const doJogo = new Set([...M.torcidasDe(r.grupo.casa), ...M.torcidasDe(r.grupo.vis)].map(o=>o.id));
@@ -4610,13 +4627,15 @@
     if(idBotao === 'iniciar' || idBotao === 'controle'){
       const msg = (e.feed || []).find(x=>x.id === id);
       if(msg && msg.kind === 'partida'){
-        if(msg.dados && msg.dados.idaJogada){
-          msg.dados.controle = idBotao === 'controle';
-          try{
-            const P = TO.planejamento, j = TO.itinerario.jogoDeHoje(e) || e.proximoJogo, p = P.plano(e, j), bombas = p.bombas;
+        if(msg.dados && msg.dados.idaJogada) msg.dados.controle = idBotao === 'controle';
+        /* (fora, a pergunta é na chegada à cidade: dia3d.js, `escolherIdaFora`) */
+        try{
+          const P = TO.planejamento, j = TO.itinerario.jogoDeHoje(e) || e.proximoJogo;
+          if(idaNoDiaDo(e, j)){
+            const p = P.plano(e, j), bombas = p.bombas;
             if(p.intencao !== 'paz'){ P.definirIntencao(e, 'paz', j); p.bombas = bombas; }
-          }catch(err){ console.error('a ida jogada:', err); }
-        }
+          }
+        }catch(err){ console.error('a ida jogada:', err); }
         abrirItinerario(msg);
       }
     }

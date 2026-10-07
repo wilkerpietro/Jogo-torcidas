@@ -99,6 +99,10 @@ TO.i18n.registrar({
     {es:'En casa, la ida se decide <b>el día del partido</b>: el aviso del partido pregunta si tomás el control de la ida —el presidente a pie al frente de la barra, pasando por los puntos de la policía y yendo al choque con quien encuentre en el camino— o si la hinchada va en paz.',
      en:'At home, the walk is decided <b>on match day</b>: the match message asks whether you take charge of the walk — the president on foot at the front of the crew, through the police checkpoints and going at anyone he finds on the way — or whether the firm goes in peace.'},
   'a ida é no dia': {es:'la ida se decide el día', en:'the walk is decided on the day'},
+  'Fora, a ida até o estádio é decidida <b>na chegada à cidade</b>: quando a caravana descer, o recado pergunta se você assume a ida dali — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz. Aqui se decide a viagem.':
+    {es:'De visitante, la ida al estadio se decide <b>al llegar a la ciudad</b>: cuando la caravana baja, el aviso pregunta si tomás el control de la ida desde ahí —el presidente a pie al frente de la barra, pasando por los puntos de la policía y yendo al choque con quien encuentre en el camino— o si la hinchada va en paz. Acá se decide el viaje.',
+     en:'Away, the walk to the stadium is decided <b>on arrival in the city</b>: when the coach drops the crew off, the message asks whether you take charge of the walk from there — the president on foot at the front of the crew, through the police checkpoints and going at anyone he finds on the way — or whether the firm goes in peace. Here you decide the trip.'},
+  'a ida se decide na chegada': {es:'la ida se decide al llegar', en:'the walk is decided on arrival'},
 
   /* =========================================================
      O PLANEJAMENTO DA SEMANA (main.js) — o que faltava

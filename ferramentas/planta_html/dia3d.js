@@ -427,7 +427,8 @@ export function criarDia3d(api, vida, g = {}) {
     if (!nome) return false;
     const eu = D = { it, msg: o.msg, j, e, fora: !j.casa, nome, fase: null, vezes: 30, corrida: null, partida: null, invadiu: false,
                      titulo: `${j.mandante.nome} × ${j.visitante.nome}`,
-                     /* A IDA JOGADA: o jogador assumiu a ida no recado do dia (em casa) */
+                     /* A IDA JOGADA: o jogador assumiu a ida no recado do dia (em casa);
+                        fora, a pergunta é na chegada à cidade (`montarCidade`) */
                      controle: !!(o.msg && o.msg.dados && o.msg.dados.controle) && !!j.casa };
     montarHud(); pintar();
     status(D.fora ? `A caravana chegando em ${nome}…` : 'A PM montando o plano do dia…');
@@ -454,6 +455,8 @@ export function criarDia3d(api, vida, g = {}) {
       if (D !== eu) return false;
       const ini = D.fora ? await escolherInicio(e, j) : null;
       if (D !== eu) return false;
+      /* A IDA NO JOGO FORA: a caravana desceu, e o jogador diz se leva o bonde (antes do plano: a tocaia da pista vira ponto de passagem) */
+      if (D.fora) { D.controle = await escolherIdaFora(e, j, ini); if (D !== eu) return false; }
       status('A PM montando o plano do dia…');
       await espera(); await espera();
       const esc0 = escolhaDoDia(e, j, D.msg, it, ini);
@@ -758,6 +761,58 @@ export function criarDia3d(api, vida, g = {}) {
         if (!b) return;
         fundo.remove();
         ok({ inicio: b.dataset.ini, aj: b.dataset.ini === 'aliado' ? aj : null });
+      });
+    });
+  }
+  /* A IDA NO JOGO FORA (o dono, 07/10/2026: "pra jogos fora de casa, o
+     planejamento antecipado continua principalmente pra decidir quantos
+     irão viajar, mas assim que chegar na cidade visitada vai perguntar se
+     quer fazer o trajeto até o estádio em paz (simulação em paz da forma
+     que está) ou quer assumir a partir daí"): a caravana desceu (na
+     entrada da cidade ou na sede da aliada) e a pergunta é um recado na
+     linha do dia, como o de onde ela desce. "Ir em paz" é o dia de sempre;
+     "Assumir a ida" é a ida jogada de casa, dali até o estádio: o
+     presidente a pé na frente do bonde, pela pista e pelo cordão da PM,
+     com a seta na borda. Devolve se o jogador assumiu */
+  function escolherIdaFora(e, j, ini) {
+    const cidade = j.cidadeAdv || D.nome || '';
+    const mesma = j.mapaAdv && j.mapaAdv === e.torcida.mapa;
+    const onde = mesma ? 'O jogo é no estádio deles, aqui na nossa cidade.'
+      : ini && ini.inicio === 'aliado' && ini.aj ? `A caravana desceu na sede da ${ini.aj.nome}, em ${cidade}.`
+      : `A caravana desceu na entrada de ${cidade}.`;
+    const texto = `${onde} Daqui até o estádio: quer levar o bonde — você a pé na frente, pelos pontos da PM, podendo partir pra cima de quem achar no caminho — ou ir em paz?`;
+    const voz = mesma ? 'Dia de jogo · a ida até o estádio' : `Caravana · ${cidade} · a ida até o estádio`;
+    const naLinha = TO.tela && TO.tela.recadoNaLinha;
+    if (naLinha) return new Promise(ok => {
+      const cx = document.createElement('div');
+      cx.className = 'itn-cartao investida escolha';
+      cx.innerHTML = `<div class="voz">${esc(voz)}</div><p>${esc(texto)}</p>
+        <div class="bts"><button class="itn-bt acao" data-ida-fora="assumir">Assumir a ida</button><button class="itn-bt" data-ida-fora="paz">Ir em paz</button></div>`;
+      let tirar = null;
+      cx.addEventListener('click', ev => {
+        const b = ev.target.closest('[data-ida-fora]');
+        if (!b) return;
+        if (tirar) tirar();
+        ok(b.dataset.idaFora === 'assumir');
+      });
+      tirar = naLinha(cx);
+      if (!tirar) ok(false);
+    });
+    return new Promise(ok => {
+      const fundo = document.createElement('div');
+      fundo.className = 'j3d-dia-modal';
+      fundo.innerHTML = `<div class="j3d-dia-caixa" role="dialog" aria-label="A ida até o estádio">
+          <p class="j3d-dia-sobre">${esc(voz)}</p>
+          <h3>A ida até o estádio</h3>
+          <p>${esc(texto)}</p>
+          <div class="j3d-dia-bts"><button data-ida-fora="assumir" class="acao">Assumir a ida</button><button data-ida-fora="paz">Ir em paz</button></div>
+        </div>`;
+      document.body.appendChild(fundo);
+      fundo.addEventListener('click', ev => {
+        const b = ev.target.closest('[data-ida-fora]');
+        if (!b) return;
+        fundo.remove();
+        ok(b.dataset.idaFora === 'assumir');
       });
     });
   }
@@ -1236,8 +1291,9 @@ export function criarDia3d(api, vida, g = {}) {
      antecipado do dia de jogo em casa. Agora no dia do jogo vai ter o
      balão de mensagem que é dia de jogo, perguntando se o jogador quer
      assumir o controle da ida ou ir em paz")
-     Em casa, com "Assumir a ida" no recado da partida: a concentração na
-     porta é a de sempre; na hora da saída o presidente aparece a pé na
+     Em casa, com "Assumir a ida" no recado da partida (fora, na pergunta
+     da chegada à cidade, `escolherIdaFora`, a partir de onde a caravana
+     desceu): a concentração na porta é a de sempre; na hora da saída o presidente aparece a pé na
      frente do bonde (o a pé do cenário) e o bonde inteiro vai atrás dele,
      pela trilha que ele faz, no desenho do plano. A saída é a do plano — ou
      antes, um minuto antes do primeiro bonde rival sair (no máximo duas
@@ -1255,6 +1311,18 @@ export function criarDia3d(api, vida, g = {}) {
      ====================================================== */
   let IDA = null;
   const DIST_PONTO = 9, PERTO_BONDE = 22, LIMITE_BOLA = 12 * 60;
+  /* a cidade do dia (o mapa dos bairros: a nossa em casa, a deles fora) */
+  const cidadeDoDia = () => D && D.fora && D.j && D.j.mapaAdv ? D.j.mapaAdv : D && D.e ? D.e.torcida.mapa : null;
+  /* o presidente a pé: o nome e as cores da torcida no disco (na praça de
+     fora a nossa torcida não está na lista de camisas do cenário, e o a pé
+     vestia a maior dela — a camisa da rival) */
+  function discoDoPresidente(e, nome) {
+    const c = TO.mundo && TO.mundo.coresDaTorcida ? TO.mundo.coresDaTorcida(e.torcida) : null;
+    const d = { tid: e.torcida.id, torcida: e.torcida.nome };
+    if (nome) d.nome = nome;
+    if (c) { d.cor = c.cor; d.cor2 = c.cor2; d.cor3 = c.cor3 || null; }
+    return d;
+  }
   /* (a saída da ida: no máximo duas horas antes da bola, e um minuto antes do primeiro bonde rival sair) */
   const CEDO_MAX = 2 * 3600, ANTES_DO_RIVAL = 60;
   /* o raio de chegada num ponto: 9 m — ou metade da distância de onde a ida
@@ -1319,7 +1387,7 @@ export function criarDia3d(api, vida, g = {}) {
       let ok = false;
       try {
         ok = await Cn.aPe.entrar({ x: d0.x, z: d0.y, camisa: e.torcida.id, vao: 30,
-                                  disco: { nome: pres && TO.membros.nomeDe ? TO.membros.nomeDe(pres) : 'Presidente', tid: e.torcida.id } });
+                                  disco: discoDoPresidente(e, pres && TO.membros.nomeDe ? TO.membros.nomeDe(pres) : 'Presidente') });
       } catch (err) { console.error('a ida jogada:', err); ok = false; }
       if (D !== eu0 || !IDA) return;
       if (!ok) { b.controlado = false; const f = IDA.fim; IDA = null; D.controle = false; rodarAte(b.chega, D.vezes, 'A caminhada até o estádio…', () => { status('O nosso bonde chegou no portão.'); f(); }); return; }
@@ -1329,7 +1397,7 @@ export function criarDia3d(api, vida, g = {}) {
                                           cabe: (x, z) => Cn.vida.cabe(x, z, 0.25), chao: (x, z) => Cn.vida.chao(x, z) });
       IDA.seg.semear(eu.x, eu.y, eu.x, eu.y, eu.rumo);
       IDA.andando = true;
-      IDA.x0 = eu.x; IDA.z0 = eu.y;
+      IDA.x0 = eu.x; IDA.z0 = eu.y; IDA.nome = eu.nome;
       dia.seguirBonde(null);
       D.vezes = 1; dia.rodar(1);
       const cedo = dia.t < b.sai - 30;
@@ -1409,13 +1477,13 @@ export function criarDia3d(api, vida, g = {}) {
     const deles = Math.max(2, a.v.gente.filter(g => !g.saiu).length);
     const fila = TO.membros.aptosParaOEstadio(e).sort((x, y) => (y.forca + y.defesa) - (x.forca + x.defesa)).slice(0, Math.max(2, nossos));
     const P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null;
-    const Dm = TO.dominio, b0 = bid && Dm ? Dm.bairro(e.torcida.mapa, bid) : null;
+    const cid = cidadeDoDia(), Dm = TO.dominio, b0 = bid && Dm && cid ? Dm.bairro(cid, bid) : null;
     IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: a.v, nossos, deles };
     dia.parar();
     if (Cn.aPe.ativo) Cn.aPe.sair(false);
     const ok = TO.tela.abrirBrigaLivre({ rivalId: a.v.t.id, deles, escalacao: fila,
       ruaLivre: { nos: { x: eu.x, z: eu.y }, eles: { x: a.d.x, z: a.d.y }, bairro: b0 ? b0.nome : '', nosAtacamos: true, rot: 'O BONDE DA ' + String(a.v.t.sigla || '').toUpperCase() },
-      alvo: { bairro: b0 ? b0.nome : '', nosAtacamos: true } });
+      alvo: { bairro: b0 ? b0.nome : '', bid, cidade: cid, nosAtacamos: true } });
     if (!ok) { IDA.brigando = null; voltarDaBrigaDaIda(); }
   }
   /* o bonde da rival da tocaia da pista (se ela está andando no dia) */
@@ -1455,7 +1523,7 @@ export function criarDia3d(api, vida, g = {}) {
     const onde = pos || (d0 ? { x: d0.d.x, z: d0.d.y } : null);
     if (!onde) { entregarPraPM(); return; }
     let ok = false;
-    try { ok = await Cn.aPe.entrar({ x: onde.x, z: onde.z, camisa: e.torcida.id, vao: 30, disco: { tid: e.torcida.id } }); } catch (err) { ok = false; }
+    try { ok = await Cn.aPe.entrar({ x: onde.x, z: onde.z, camisa: e.torcida.id, vao: 30, disco: discoDoPresidente(e, IDA && IDA.nome) }); } catch (err) { ok = false; }
     if (!IDA) return;
     if (!ok) { entregarPraPM(); return; }
     const eu = Cn.aPe.eu;
@@ -2100,7 +2168,7 @@ export function criarDia3d(api, vida, g = {}) {
       IDA.b.rua.ponto(Math.min(IDA.b.rua.L, (IDA.pontos[0].s || 0) + 14 * M), Q);
       IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: null, doItinerario: true };
       if (Cn.aPe.ativo) Cn.aPe.sair(false);
-      const e = D.e, P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null, Dm = TO.dominio, b0 = bid && Dm ? Dm.bairro(e.torcida.mapa, bid) : null;
+      const P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null, cid = cidadeDoDia(), Dm = TO.dominio, b0 = bid && Dm && cid ? Dm.bairro(cid, bid) : null;
       return { nos: { x: eu.x, z: eu.y }, eles: { x: Q.x, z: Q.z }, bairro: b0 ? b0.nome : '', nosAtacamos: false, rot: 'A TOCAIA DA PISTA' };
     },
     /* pro teste */

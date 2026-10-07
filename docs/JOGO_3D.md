@@ -5028,8 +5028,11 @@ atuais, mas pra isso é necessário que haja uma seta na borda apontando o
 caminho. [...] Agora no dia do jogo vai ter o balão de mensagem que é dia
 de jogo, perguntando se o jogador quer assumir o controle da ida ou ir em
 paz (ir em paz é a animação atual de não querer hostilidade). Pra jogos"
-— a mensagem chegou cortada aí; o que vale pros jogos fora ficou como
-estava, esperando o resto do pedido.
+— a mensagem chegou cortada aí, e o resto veio depois: "pra jogos fora de
+casa, o planejamento antecipado continua principalmente pra decidir
+quantos irão viajar, mas assim que chegar na cidade visitada vai perguntar
+se quer fazer o trajeto até o estádio em paz (simulação em paz da forma
+que está) ou quer assumir a partir daí" (§47.5).
 
 ### 47.1 O dia livre e a rua (`rua3d.js`)
 
@@ -5182,4 +5185,43 @@ Castelão: a ida dela é curta (o cordão a uns 20 m da porta) — por isso a
 saída mais cedo, pra quem quiser rodar a cidade atrás da rival antes de
 entregar o bonde. O "Partir pra cima" só vale contra os bondes do plano do
 dia (as torcidas do jogo indo pro estádio); a torcida que não vai ao jogo
-não está na rua. O jogo fora segue como antes.
+não está na rua.
+
+### 47.5 A ida no jogo fora (`dia3d.js`, `main.js`)
+
+**O planejamento fica pra viagem.** No jogo 3D, o jogo fora numa cidade com
+mapa (as 30 praças) perde o ataque no planejamento da semana, como o de
+casa: a seção "Na rua" diz que a ida se decide na chegada, a lista mostra
+"N na caravana · a ida se decide na chegada", e ficam a caravana (quantos
+vão, a estrada, o trajeto, a aliada que recebe) e as bombas. O "Iniciar
+partida" do recado tira o ataque que um save velho (ou o padrão salvo)
+tenha marcado, e as bombas ficam. Campo neutro e cidade sem mapa em 3D (o
+jogo fora do país) seguem com o planejamento de antes, porque lá não há
+cidade pra andar.
+
+**A pergunta na chegada.** A caravana pega a estrada como antes (a
+emboscada no caminho continua); na chegada à cidade, depois do "Onde a
+caravana desce?" (quando a aliada recebe), cai na linha do dia o recado
+"A caravana desceu na entrada de Recife. Daqui até o estádio: quer levar o
+bonde [...] ou ir em paz?" — **Ir em paz** é o dia de sempre, simulado;
+**Assumir a ida** é a ida jogada de casa (§47.4) a partir de onde a
+caravana desceu: o presidente a pé na frente do bonde, a pista e o cordão
+da PM como pontos de passagem, a seta na borda, a caça ao bonde rival à
+vista. Na cidade de fora a névoa é quase toda escura (a torcida não tem
+bairro nem estrutura lá): o que se vê é o que está em volta do presidente.
+A briga no caminho mexe no domínio do bairro DELES (a cidade do jogo), e o
+presidente veste a camisa da torcida dele — o a pé do cenário vestia a
+maior torcida da praça, que lá é a rival. No clássico com mando deles na
+nossa cidade (sem caravana), a mesma pergunta abre o dia.
+
+**Medido** (`scratchpad/ida/fora.js`: novo jogo com a TUF, Sport × Fortaleza
+em Recife, com um ataque planejado contra a Jovem Sport e uma bomba): o
+planejamento da semana 7 (ABC × Fortaleza, em Natal) mostra "131 na
+caravana · a ida se decide na chegada", a caravana, a aliada e as bombas, e
+nenhum "Atacar"; o recado do dia ficou com "Iniciar partida", que tirou o
+ataque (a bomba ficou); a caravana pegou a estrada (passando pelo Rio
+Grande do Norte), chegou em Recife de madrugada e, com o mapa montado, o
+recado perguntou ("A caravana desceu na entrada de Recife…"); com "Assumir
+a ida", o presidente apareceu a pé às 14:52 na frente dos 40 (com a camisa
+da TUF), a seta apontou a pista a 274 m, e a pista e o cordão da PM levaram
+o bonde até o jogo. Nenhum erro no console.

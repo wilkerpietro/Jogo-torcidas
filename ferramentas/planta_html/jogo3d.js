@@ -260,6 +260,8 @@ function ligar(api) {
     /* (pro teste: o controle da cena no ar — o J, o robô, o fim) */
     get controleDoAssalto() { return assaltoNoAr; },
     vida, mapa, dia: dia3d, recados, rua, nevoa,
+    /* a cidade do jogo tem mapa em 3D? (o planejamento do jogo fora: com ela, a ida se decide na chegada) */
+    temCidade: m => !!(m && api.pracaDe && api.pracaDe(m)),
     /* a resposta dos recados que são do jogo 3D (main.js, a tela 'jogo3d') */
     responder: (m, botao) => rua.responder(m, botao),
     /* OS GRÁFICOS (30/09/2026): as opções de gráfico do cenário (o painel
