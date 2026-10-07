@@ -727,8 +727,10 @@ body.jogo3d.em-cena .j3d-seta, body.jogo3d.palco-briga .j3d-seta, body.jogo3d.co
 .j3d-sair-rua:hover{filter:brightness(1.08)}
 .j3d-sair-rua[hidden]{display:none}
 body.jogo3d .cen-joy{left:calc(60px + env(safe-area-inset-left));bottom:calc(26px + env(safe-area-inset-bottom))}
-/* (a pé, o medidor de fps vai pro pé da direita: em cima ele ficava por cima da barra do jogo, e na esquerda é o joystick) */
+/* (a pé, o medidor de fps vai pro pé da direita: em cima ele ficava por cima da barra do jogo, e na esquerda é o joystick;
+   com o painel da rua embaixo, ele sobe pra cima dele) */
 body.jogo3d .cen.ape .cen-fps{top:auto;bottom:6px;left:auto;right:10px}
+body.jogo3d:has(.j3d-rua:not([hidden])) .cen.ape .cen-fps{bottom:118px}
 /* numa cena, num painel, no mapa ou fora do jogo, a rua sai da tela */
 body.jogo3d.em-cena .j3d-rua, body.jogo3d.palco-briga .j3d-rua, body.jogo3d.com-painel .j3d-rua,
 body.jogo3d.j3d-mapa-aberto .j3d-rua, body.jogo3d:not(.j3d-em-jogo) .j3d-rua,
