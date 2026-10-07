@@ -91,7 +91,14 @@ TO.dominio = (function(){
     reuniao: 12,                     // a reunião da zona na praça (01/10/2026)
     estrutura: {bar:8, loja:8, subsede:20, filial:15},
     social: [6, 10],                 // ação social no bairro
-    iaRua: 8, iaBar: 12              // as brigas entre as IAs
+    iaRua: 8, iaBar: 12,             // as brigas entre as IAs
+    /* A RUA LIVRE (o jogo 3D, 07/10/2026): a briga de rua que o jogador
+       comprou andando pela cidade (a roda da rival, quem veio atrapalhar)
+       e a panfletagem desfeita (a de quem perdeu sai do bairro) */
+    livre: 4, panfleto: 6,
+    /* a panfletagem do presidente na calçada: o recrutamento do dia, cinco
+       vezes o do expediente (é a diretoria na rua, uma vez por bairro) */
+    panfletar: 1
   };
   /* A AÇÃO SOCIAL NO BAIRRO (a de antes foi aposentada em 24/08/2026;
      esta é outra, com outro id): uma por semana, com gente na rua */
@@ -1336,7 +1343,7 @@ TO.dominio = (function(){
   /* o expediente recrutou hoje: +0,2 no bairro (uma vez por dia) */
   function recrutouHoje(E){
     const b = bairroDoRecrutamento(E), D = raiz(E), abs = E.data.absoluto || 0;
-    if(!b || D.recrutouEm === abs) return;
+    if(!b || D.recrutouEm === abs || panfletoDesfeito(E, eu(E))) return;
     D.recrutouEm = abs;
     mexer(E, E.torcida.mapa, b, eu(E), RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
   }
@@ -1386,10 +1393,118 @@ TO.dominio = (function(){
     const D = raiz(E);
     planejarRecrutamento(E);
     for(const tid in D.recrutaIA || {}){
+      /* (a panfletagem desfeita hoje não recruta) */
+      if(panfletoDesfeito(E, tid)) continue;
       const [cid, bid] = D.recrutaIA[tid].split('#');
       mexer(E, cid, bid, tid, RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
     }
   }
+
+  /* =======================================================
+     AS PANFLETAGENS NA RUA (o jogo 3D, 07/10/2026; o dono: "Onde a
+     torcida escolher onde quer recrutar, seja a do jogador ou IA, terá
+     três membros da respectiva torcida panfletando ou discursando em
+     alguma calçada aleatória do bairro. O jogador pode ir lá desfazer,
+     assim como a IA entre si ou contra a gente.")
+     Todo dia, antes do expediente, cada torcida da IA olha as
+     panfletagens da cidade dela: a de uma RIVAL num bairro que ela VÊ (é
+     dona dele ou tem estrutura nele — a régua da névoa: quem tem menos
+     bairro sabe menos) ela pode ir desfazer (18%, mais com mais gente que
+     a rival). Entre IAs a briga é a do mundo (`TO.relacoes.brigaIA`, até 6
+     contra os 3 que panfletam, no bairro da panfletagem); quem perde a
+     panfletagem não recruta no dia. Contra a NOSSA, a briga fica marcada
+     pra uma hora do dia (`contraNos`): no jogo 3D o recado chega nessa
+     hora e o jogador decide se vai defender; sem ele, o dia seguinte
+     resolve na conta.
+     ======================================================= */
+  const PANFLETO = {chance:0.18, ate:6, horas:[11, 16]};
+  function panfletoDoDia(E){
+    const D = raiz(E), abs = (E.data && E.data.absoluto) || 0;
+    if(!D.panfleto || D.panfleto.abs !== abs){
+      const velho = D.panfleto && D.panfleto.contraNos && !D.panfleto.contraNos.resolvido ? D.panfleto.contraNos : null;
+      D.panfleto = {abs, desfeitas:{}, contraNos:null, velho};
+    }
+    return D.panfleto;
+  }
+  const panfletoDesfeito = (E, tid) => !!(E && E.data && tid && panfletoDoDia(E).desfeitas[tid]);
+  /* a torcida vê o bairro: é dona dele, ou tem sede, bar, loja ou subsede nele */
+  function vendoBairro(E, tid, cid, bid){
+    if(!tid || !bid) return false;
+    if(donaDoBairro(E, cid, bid) === tid) return true;
+    try{ return estruturas(E, cid).some(s => s.tid === tid && s.bairro === bid); }
+    catch(e){ return false; }
+  }
+  /* o nosso expediente recruta hoje (e não é dia de jogo nem de viagem) */
+  function nossoRecrutaHoje(E){
+    const ex = TO.acoes && TO.acoes.expediente ? TO.acoes.expediente(E) : {};
+    if(!Object.values(ex || {}).includes('recrutar')) return false;
+    return !(TO.feed && TO.feed.diaLivre) || TO.feed.diaLivre(E, E.data.semana, E.data.dia);
+  }
+  /* a panfletagem desfeita: quem perdeu não recruta no dia, e a barra mexe
+     no bairro dela (`ganhou`: quem foi desfazer ganhou a briga) */
+  function desfazerPanfleto(E, tid, por, cid, bid, ganhou, marcar = true){
+    const P = panfletoDoDia(E);
+    if(ganhou && marcar) P.desfeitas[tid] = {por, bid};
+    return ganhou ? mexer(E, cid, bid, por, GANHO.panfleto, {contra:tid, motivo:'panfleto'})
+                  : mexer(E, cid, bid, tid, GANHO.panfleto, {contra:por, motivo:'panfleto'});
+  }
+  function panfletagensDoDia(E){
+    if(!E || !E.data || !E.torcida) return;
+    const P = panfletoDoDia(E);
+    if(P.feito) return;
+    P.feito = true;
+    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
+    if(!mundo) return;
+    /* a de ontem contra a gente que ninguém resolveu (o jogo fechado, o 2D): na conta */
+    if(P.velho) try{ resolverContraNos(E, P.velho, null); }catch(e){ /* o dia segue */ }
+    const meu = eu(E), I = indice();
+    const r = sorteio(`${semente(E)}|panfleto|${E.data.absoluto || 0}`);
+    for(const cid of I.comTorcida){
+      let rec;
+      try{ rec = recrutandoEm(E, cid); }catch(e){ continue; }
+      for(const [tid, B] of rec){
+        if(!B || P.desfeitas[tid]) continue;
+        if(tid === meu && (cid !== E.torcida.mapa || !nossoRecrutaHoje(E))) continue;
+        if(tid !== meu && !mundo[tid]) continue;
+        const mR = Math.max(1, tid === meu ? E.membros.length : membrosDe(E, tid));
+        const quem = torcidasDaCidade(cid).filter(o => o.id !== tid && o.id !== meu && mundo[o.id] &&
+          rivais(E, o.id, tid) && vendoBairro(E, o.id, cid, B.id) && membrosDe(E, o.id) >= 10);
+        for(const o of quem.sort((a, c) => membrosDe(E, c.id) - membrosDe(E, a.id))){
+          const ch = PANFLETO.chance * limitar(membrosDe(E, o.id) / mR, 0.5, 1.6);
+          if(r() >= ch) continue;
+          if(tid === meu){
+            /* contra a nossa: marcada pra uma hora do dia (o jogo 3D mostra) */
+            const h = PANFLETO.horas[0] + Math.floor(r() * (PANFLETO.horas[1] - PANFLETO.horas[0] + 1));
+            P.contraNos = {por:o.id, nome:o.nome, cid, bid:B.id, bairro:B.nome, hora:String(h).padStart(2, '0') + ':' + (r() < 0.5 ? '15' : '40'), n:3 + Math.floor(r() * 4)};
+          } else {
+            const R = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : null;
+            const reg = R && TO.relacoes.brigaIA ? TO.relacoes.brigaIA(E, o, R, cid, _t('panfletagem desfeita'),
+              {tetoA:PANFLETO.ate, tetoB:3, tipo:'panfleto', bairroFixo:{cid, b:B.id, pts:GANHO.panfleto}}) : null;
+            if(reg && reg.ganhouA) P.desfeitas[tid] = {por:o.id, bid:B.id};
+          }
+          break;
+        }
+      }
+    }
+  }
+  /* A NOSSA PANFLETAGEM ATACADA, resolvida na conta (`ganhamos`: null
+     sorteia pela força; o jogo 3D passa o resultado da briga jogada) */
+  function resolverContraNos(E, c, ganhamos){
+    if(!c || c.resolvido) return null;
+    c.resolvido = true;
+    const meu = eu(E);
+    if(ganhamos == null){
+      const nos = 3, deles = c.n || 4;
+      ganhamos = Math.random() < (nos >= deles ? 0.6 : 0.3);
+    }
+    /* (a de ontem não desfaz a de hoje: só a barra mexe) */
+    const r = desfazerPanfleto(E, meu, c.por, c.cid, c.bid, !ganhamos, c === panfletoDoDia(E).contraNos);
+    if(TO.relacoes && TO.relacoes.hostilidade) TO.relacoes.hostilidade(E, c.por, (TO.relacoes.REL && TO.relacoes.REL.iaBriga) || 2);
+    return {ganhamos, dominio:r};
+  }
+  const contraNosHoje = E => { const c = panfletoDoDia(E).contraNos; return c && !c.resolvido ? c : null; };
+  /* a panfletagem desfeita numa briga jogada (a barra já mexeu pela briga) */
+  function marcarPanfletoDesfeito(E, tid, por, bid){ if(tid) panfletoDoDia(E).desfeitas[tid] = {por, bid}; }
 
   /* A IA NÃO FICA PARADA: a primeira ou a segunda maior da cidade que
      não domina faz uma ação social por semana, em 35% das semanas, no
@@ -1495,6 +1610,8 @@ TO.dominio = (function(){
             : /^bar|bote/.test(cena) || d.alvoTipo === 'bar' ? GANHO.bar + (d.quebrou ? GANHO.quebrou : 0)
             : d.alvoTipo === 'sede' ? GANHO.sede
             : /casa|festa|piscina/.test(cena) ? GANHO.casa
+            : /^panfleto/.test(cena) ? GANHO.panfleto
+            : /^rua-livre/.test(cena) ? GANHO.livre
             : d.atacamos === false ? GANHO.defesa
             : GANHO.rua;
     return {cid, b, pts, cena, meu, rival};
@@ -1669,6 +1786,9 @@ TO.dominio = (function(){
   function brigaIA(E, reg){
     if(!E || !reg || !reg.a || !reg.b) return null;
     const venc = reg.ganhouA ? reg.a.id : reg.b.id, perd = reg.ganhouA ? reg.b.id : reg.a.id;
+    /* (a briga que já sabe o bairro: a panfletagem desfeita) */
+    const BF = reg.bairroFixo;
+    if(BF && BF.cid && bairro(BF.cid, BF.b)) return mexer(E, BF.cid, BF.b, venc, BF.pts || GANHO.iaRua, {contra:perd, motivo:reg.tipo || 'ia'});
     /* O ALVO DO MÊS (01/10/2026): a briga que a IA foi buscar acontece no
        bairro que ela quer virar, e é ali que a barra mexe */
     const F = ALVO_FORCADO;
@@ -1796,5 +1916,6 @@ TO.dominio = (function(){
           mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, ESTRUTURA_DIA, vizinhosDe, vizinhosDoEstadio, bairroDaPista, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje, recrutandoEm, RECRUTA_DIA,
+          PANFLETO, panfletagensDoDia, panfletoDesfeito, desfazerPanfleto, resolverContraNos, contraNosHoje, vendoBairro, nossoRecrutaHoje, marcarPanfletoDesfeito,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};
 })();

@@ -424,6 +424,18 @@ body.jogo3d.palco-briga .cen-fps{bottom:54px}
 .j3d-dia-invadir{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.12)}
 .j3d-dia-invadir[hidden]{display:none}
 .j3d-dia-invadir span{color:#ffb3a8;font-weight:600}
+/* A IDA JOGADA (dia3d.js): o próximo ponto, o bonde rival à vista e o "devolver pra PM" */
+.j3d-dia-ida{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,.12)}
+.j3d-dia-ida[hidden]{display:none}
+.j3d-dia-ida span{color:#ddd;margin-right:auto}
+.j3d-dia-ida span b{color:var(--ouro, #d9a441)}
+/* (com a ida no ar, o medidor de fps sobe pra cima do painel do dia; no celular, o joystick também) */
+body.jogo3d.j3d-ida .cen.ape .cen-fps{bottom:calc(var(--j3d-dia-h, 96px) + 20px)}
+@media (max-width:760px){
+  body.jogo3d.j3d-ida .cen-joy{bottom:calc(var(--j3d-dia-h, 120px) + 22px + env(safe-area-inset-bottom));width:116px;height:116px}
+  /* (no celular, a pé, o medidor de fps sai: entre o joystick e o painel não sobra lugar pra ele) */
+  body.jogo3d .cen.ape .cen-fps{display:none !important}
+}
 .j3d-dia button.perigo{background:var(--rubro, #8a1f1f);border-color:#c0392b;color:#fff}
 .j3d-dia button.perigo:hover{background:var(--rubro-vivo, #b3261e);color:#fff}
 /* numa cena (a briga, a reunião), num painel ou no mapa, o painel do dia sai */
@@ -648,4 +660,88 @@ body.jogo3d.em-cena .j3d-placar, body.jogo3d.palco-briga .j3d-placar{display:non
 .j3d-graf .bt.destaque{background:var(--rubro, #9d2222);border-color:var(--rubro-vivo, #d24141);color:#fff}
 @media (max-width:560px){
   .j3d-graf{top:auto;bottom:8px;right:8px;width:calc(100vw - 16px);max-height:62vh}
+}
+
+/* =========================================================
+   A RUA LIVRE (07/10/2026, rua3d.js): o presidente a pé com o bonde
+   - o painel embaixo, no molde do painel do dia de jogo: a hora, o bairro
+     (a cor e a barra da dona), quantos na rua, a dica e as ações ao
+     alcance (as quentes — briga, assalto — em vermelho);
+   - o aviso curto em cima dele;
+   - a seta na borda (também do dia de jogo): aponta pro alvo fora da tela;
+   - o botão "Sair pra rua" no dia livre;
+   - o joystick do a pé sai de baixo da coluna de ícones.
+   ========================================================= */
+.j3d-rua{position:fixed;z-index:25;left:50%;bottom:12px;transform:translateX(-50%);width:min(640px, calc(100vw - 210px));
+  padding:8px 12px 9px;border-radius:8px;background:rgba(18,18,20,.9);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 4px 18px rgba(0,0,0,.45);color:var(--texto, #eee);font:500 12.5px/1.35 var(--corpo, sans-serif);pointer-events:auto}
+.j3d-rua[hidden]{display:none}
+.j3d-rua-topo{display:flex;align-items:baseline;gap:10px;min-width:0}
+.j3d-rua-hora{font:700 18px/1 var(--mono, monospace);color:#f3e6c4;letter-spacing:.04em;flex:none}
+.j3d-rua-onde{display:flex;align-items:baseline;gap:6px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.j3d-rua-onde i{display:inline-block;width:10px;height:10px;border-radius:2px;flex:none;align-self:center;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.j3d-rua-onde b{font:700 13px/1.1 var(--titulo, sans-serif);letter-spacing:.06em;text-transform:uppercase}
+.j3d-rua-onde small{color:var(--fraco, #aaa)}
+.j3d-rua-bonde{margin-left:auto;flex:none;font:600 11px/1 var(--titulo, sans-serif);letter-spacing:.1em;text-transform:uppercase;color:var(--fraco, #aaa)}
+.j3d-rua-dica{margin:4px 0 6px;color:#ddd;min-height:1.35em}
+.j3d-rua-bts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.j3d-rua-acoes{display:contents}
+.j3d-rua button{font:600 11.5px/1 var(--titulo, sans-serif);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  padding:7px 10px;border-radius:5px;border:1px solid rgba(255,255,255,.22);background:rgba(40,40,44,.95);color:#eee}
+.j3d-rua button:hover:not(:disabled){border-color:var(--ouro, #d9a441);color:var(--ouro, #d9a441)}
+.j3d-rua button:disabled{opacity:.4;cursor:default}
+.j3d-rua button.quente{background:var(--rubro, #8a1f1f);border-color:#c0392b;color:#fff}
+.j3d-rua button.quente:hover{background:var(--rubro-vivo, #b3261e);color:#fff}
+.j3d-rua-voltar{margin-left:auto}
+.j3d-rua-escolha{position:absolute;left:0;right:0;bottom:calc(100% + 8px);padding:10px 12px;border-radius:8px;background:rgba(18,18,20,.96);
+  border:1px solid rgba(255,255,255,.18);box-shadow:0 6px 20px rgba(0,0,0,.5)}
+.j3d-rua-escolha p{margin:0 0 8px}
+.j3d-rua-escolha small{color:#bbb}
+.j3d-rua-escolha .bts{display:flex;flex-wrap:wrap;gap:6px}
+.j3d-rua-aviso{position:fixed;z-index:26;left:50%;bottom:118px;transform:translateX(-50%);max-width:min(560px, calc(100vw - 120px));
+  padding:7px 12px;border-radius:6px;background:rgba(14,14,16,.92);border:1px solid rgba(255,255,255,.16);color:#f3e6c4;
+  font:600 12.5px/1.35 var(--corpo, sans-serif);text-align:center;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.j3d-rua-aviso.ruim{color:#ffb3a8;border-color:rgba(192,57,43,.6)}
+.j3d-rua-aviso[hidden]{display:none}
+/* a seta: a ponta gira pro alvo; dentro da tela, ela vira o alfinete em cima dele */
+.j3d-seta{position:fixed;z-index:24;left:0;top:0;width:0;height:0;pointer-events:none}
+.j3d-seta[hidden]{display:none}
+/* (numa cena, num painel ou no mapa, a seta sai: ela é da rua) */
+body.jogo3d.em-cena .j3d-seta, body.jogo3d.palco-briga .j3d-seta, body.jogo3d.com-painel .j3d-seta, body.jogo3d.j3d-mapa-aberto .j3d-seta{display:none !important}
+.j3d-seta-ponta{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;background:rgba(18,18,20,.88);
+  border:2px solid var(--ouro, #d9a441);box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.j3d-seta-ponta::after{content:'';position:absolute;left:21px;top:10px;border:7px solid transparent;border-left:10px solid var(--ouro, #d9a441)}
+.j3d-seta.dentro .j3d-seta-ponta{border-radius:50% 50% 50% 0;transform:rotate(-45deg) !important;top:-40px}
+.j3d-seta.dentro .j3d-seta-ponta::after{display:none}
+.j3d-seta-rot,.j3d-seta-dist{position:absolute;left:0;transform:translateX(-50%);white-space:nowrap;padding:2px 6px;border-radius:4px;
+  background:rgba(12,12,14,.88);color:#fff;font:700 10.5px/1.2 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase}
+.j3d-seta-rot{top:22px}
+.j3d-seta-dist{top:40px;color:var(--ouro, #d9a441);font-family:var(--mono, monospace);letter-spacing:0}
+.j3d-seta-rot:empty{display:none}
+.j3d-seta.dentro .j3d-seta-rot{top:-66px}
+.j3d-seta.dentro .j3d-seta-dist{top:-48px}
+/* o botão do dia livre: no pé da tela, do lado da coluna de ícones */
+.j3d-sair-rua{position:fixed;z-index:25;left:62px;bottom:34px;padding:10px 14px;border-radius:7px;cursor:pointer;pointer-events:auto;
+  font:700 12.5px/1 var(--titulo, sans-serif);letter-spacing:.08em;text-transform:uppercase;
+  background:var(--ouro, #d9a441);border:1px solid var(--ouro, #d9a441);color:#111;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+.j3d-sair-rua:hover{filter:brightness(1.08)}
+.j3d-sair-rua[hidden]{display:none}
+body.jogo3d .cen-joy{left:calc(60px + env(safe-area-inset-left));bottom:calc(26px + env(safe-area-inset-bottom))}
+/* (a pé, o medidor de fps vai pro pé da direita: em cima ele ficava por cima da barra do jogo, e na esquerda é o joystick;
+   com o painel da rua embaixo, ele sobe pra cima dele) */
+body.jogo3d .cen.ape .cen-fps{top:auto;bottom:6px;left:auto;right:10px}
+body.jogo3d:has(.j3d-rua:not([hidden])) .cen.ape .cen-fps{bottom:118px}
+/* numa cena, num painel, no mapa ou fora do jogo, a rua sai da tela */
+body.jogo3d.em-cena .j3d-rua, body.jogo3d.palco-briga .j3d-rua, body.jogo3d.com-painel .j3d-rua,
+body.jogo3d.j3d-mapa-aberto .j3d-rua, body.jogo3d:not(.j3d-em-jogo) .j3d-rua,
+body.jogo3d.em-cena .j3d-rua-aviso, body.jogo3d.com-painel .j3d-rua-aviso, body.jogo3d:not(.j3d-em-jogo) .j3d-rua-aviso,
+body.jogo3d.em-cena .j3d-sair-rua, body.jogo3d.com-painel .j3d-sair-rua, body.jogo3d.j3d-mapa-aberto .j3d-sair-rua,
+body.jogo3d.em-cena .cen-joy, body.jogo3d.palco-briga .cen-joy{display:none !important}
+@media (max-width:760px){
+  .j3d-rua{width:calc(100vw - 68px);left:calc(50% + 22px);bottom:8px;padding:7px 9px}
+  .j3d-rua-hora{font-size:16px}
+  .j3d-rua button{padding:7px 8px;font-size:10.5px}
+  .j3d-rua-aviso{bottom:150px;max-width:calc(100vw - 80px)}
+  .j3d-sair-rua{left:52px;bottom:24px}
+  body.jogo3d .cen-joy{left:calc(50px + env(safe-area-inset-left));bottom:calc(150px + env(safe-area-inset-bottom));width:116px;height:116px}
 }

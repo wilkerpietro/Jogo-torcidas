@@ -23,11 +23,13 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=78b065fe68';
-import { criarVida, horaTxt } from './vida3d.js?v=78b065fe68';
-import { criarMapaDaCidade } from './mapa3d.js?v=78b065fe68';
-import { criarDia3d } from './dia3d.js?v=78b065fe68';
-import { criarRecados } from './recados3d.js?v=78b065fe68';
+import { CASCA } from './jogo_casca.js?v=4e3a9ffc45';
+import { criarVida, horaTxt } from './vida3d.js?v=4e3a9ffc45';
+import { criarMapaDaCidade } from './mapa3d.js?v=4e3a9ffc45';
+import { criarDia3d } from './dia3d.js?v=4e3a9ffc45';
+import { criarRecados } from './recados3d.js?v=4e3a9ffc45';
+import { criarRua } from './rua3d.js?v=4e3a9ffc45';
+import { criarNevoa } from './nevoa3d.js?v=4e3a9ffc45';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -42,24 +44,41 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=78b065fe68'), carregarCss('css/jogo3d.css?v=78b065fe68')]);
+  await Promise.all([carregarCss('css/jogo.css?v=4e3a9ffc45'), carregarCss('css/jogo3d.css?v=4e3a9ffc45')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=78b065fe68').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=4e3a9ffc45').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=78b065fe68');
+  await carregarScript('js/jogo.js?v=4e3a9ffc45');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=78b065fe68').catch(() => {});
-  await import('./bonecos3_global.js?v=78b065fe68');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=4e3a9ffc45').catch(() => {});
+  await import('./bonecos3_global.js?v=4e3a9ffc45');
   ligar(api);
   return TO.tela;
+}
+
+/* A IDA JOGADA NO RECADO DA PARTIDA (07/10/2026; o dono: "Agora no dia do
+   jogo vai ter o balão de mensagem que é dia de jogo, perguntando se o
+   jogador quer assumir o controle da ida ou ir em paz"): o jogo em casa,
+   na nossa praça, troca o "Iniciar partida" pelos dois botões — main.js
+   lê qual foi (`dados.controle`) e dia3d.js faz a ida. O jogo fora segue
+   com o botão de sempre (a caravana desce onde o jogador disser) */
+const T_ = (s, p) => typeof window._t === 'function' ? window._t(s, p) : String(s).replace(/\{(\w+)\}/g, (m, k) => p && p[k] != null ? p[k] : m);
+function idaNoRecado(e, m) {
+  if (!e || !e.torcida || !m || m.kind !== 'partida' || m.respondido || !m.dados) return;
+  if (m.dados.idaJogada !== undefined || m.dados.dia || m.dados.iniciada) return;
+  const casa = !!m.dados.somosCasa && (!m.dados.mapa || m.dados.mapa === e.torcida.mapa);
+  m.dados.idaJogada = casa;
+  if (!casa) return;
+  m.texto = (m.texto || '') + ' ' + T_('É dia de jogo em casa: quer assumir a ida até o estádio — você leva o bonde a pé, pelos pontos da PM, e pode partir pra cima de quem achar no caminho — ou ir em paz?');
+  m.botoes = [{ id: 'controle', rot: T_('Assumir a ida'), acao: 'iniciar-partida' }, { id: 'iniciar', rot: T_('Ir em paz'), acao: 'iniciar-partida' }];
 }
 
 function ligar(api) {
@@ -85,10 +104,17 @@ function ligar(api) {
       if (!v) { pracaDoJogo = null; conferirPraca(); }
     }
   });
+  /* A NÉVOA (07/10/2026, nevoa3d.js): fora dos bairros nossos e longe das
+     nossas estruturas a cidade fica escura, e a rival some dela */
+  const nevoa = criarNevoa(api);
+  /* A RUA LIVRE (07/10/2026, rua3d.js): o dia sem nada marcado, o
+     presidente a pé pela cidade com o bonde dele */
+  const rua = criarRua(api, vida, dia3d, nevoa);
   /* OS RECADOS EM BALÃO (28/09/2026, recados3d.js): cada mensagem que cai
      chega na boca de alguém — quem senta na frente do presidente, na sede;
-     o líder do nosso bonde, no dia de jogo */
-  const recados = criarRecados(api, vida, dia3d);
+     o líder do nosso bonde, no dia de jogo; quem anda com o presidente, na
+     rua livre */
+  const recados = criarRecados(api, vida, dia3d, rua);
   /* O RITMO: quanto a próxima mensagem espera. Com a vida da praça, até a
      hora dela no relógio do dia; e sempre, até quem está falando acabar
      (a fila de balões não cresce). O dia calado sem a vida passa no
@@ -104,10 +130,17 @@ function ligar(api) {
         TO.feed.marcarResposta(e, m.id, 'seguir', 'o jogo da cidade passa sozinho');
         agendarJogosDaCidade(e);
       }
+      idaNoRecado(e, m);
       recados.chegou(e, m); if (vida.ligada) vida.ritmo.caiu(e, m);
     },
     /* (o jogo da cidade de ontem sai; o de hoje entra depois da virada do relógio, que apaga as janelas) */
-    virouDia(e) { if (dia3d.jogoNoFundoHoje) dia3d.fechar(); if (vida.ligada) vida.ritmo.virouDia(e); horaDaPartida(e); agendarJogosDaCidade(e); }
+    virouDia(e) {
+      /* (a rua livre acaba com o dia: o ≫ que empurrou, a meia-noite) */
+      if (rua.ativo) rua.encerrar('virou');
+      if (dia3d.jogoNoFundoHoje) dia3d.fechar(); if (vida.ligada) vida.ritmo.virouDia(e); horaDaPartida(e); agendarJogosDaCidade(e);
+      /* o dia sem nada marcado começa com o recado do dia livre */
+      try { if (vida.ligada) rua.conferirDiaLivre(e); } catch (err) { console.error('jogo 3D, o dia livre:', err); }
+    }
   };
 
   /* OS JOGOS DA CIDADE (o jogo 3D, 28/09/2026). Primeiro o olheiro avisava e
@@ -135,6 +168,7 @@ function ligar(api) {
     try {
       const fila = e.feedFila || [], hoje = (e.data && e.data.absoluto) || 0, j = e.proximoJogo;
       const m = fila.find(x => x && x.kind === 'partida' && x.quando && x.quando.abs === hoje);
+      if (m) idaNoRecado(e, m);
       const bola = j && j.dia === e.data.dia ? minutoDe(j.hora) : null;
       if (!m || bola == null) return;
       const hora = Math.max(8 * 60, bola - 75);
@@ -202,6 +236,8 @@ function ligar(api) {
        do presidente, onde os recados chegam — no dia de jogo, no nosso bonde */
     irPraSala() {
       if (dia3d.ativo) { dia3d.verNossa(); return; }
+      /* (na rua livre a câmera é do presidente a pé) */
+      if (rua.ativo) return;
       if (vida.ligada && vida.sede) vida.irPraSala(); else irPraSede();
     },
     /* A TORCIDA TEM BAR NO MAPA? (o dono, 29/09/2026: "Torcidas que ainda
@@ -223,7 +259,9 @@ function ligar(api) {
     get assaltoNoAr() { return !!assaltoNoAr; },
     /* (pro teste: o controle da cena no ar — o J, o robô, o fim) */
     get controleDoAssalto() { return assaltoNoAr; },
-    vida, mapa, dia: dia3d, recados,
+    vida, mapa, dia: dia3d, recados, rua, nevoa,
+    /* a resposta dos recados que são do jogo 3D (main.js, a tela 'jogo3d') */
+    responder: (m, botao) => rua.responder(m, botao),
     /* OS GRÁFICOS (30/09/2026): as opções de gráfico do cenário (o painel
        é js/ui/graficos.js) */
     get graficos() { return api.cenario ? api.cenario.graficos || null : null; },
@@ -240,16 +278,19 @@ function ligar(api) {
     if (!loja) return { erro: 'a praça não tem ' + op.alvo };
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
-    const { iniciarAssalto } = await import('./assalto3d.js?v=78b065fe68');
+    const { iniciarAssalto } = await import('./assalto3d.js?v=4e3a9ffc45');
     /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
     const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
     const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;
+    /* O ASSALTO SOZINHO (a rua livre, 07/10/2026): só o presidente entra, e
+       sozinho ele carrega a metade do que a equipe pequena levaria */
+    const sozinho = !!op.sozinho;
     const cfg = {
       alvo: { id: op.alvo, nome: loja.nome, recompensa: P.recompensa, exposicao: P.exposicao, seguranca: P.seguranca,
               movimentacao: P.movimentacao, atencao: f.atencao, dificuldade: P.dificuldade },
       equipe: grupo.map(m => ({ id: m.id, nome: TO.membros.nomeDe(m) })),
-      dentro: f.dentro, abordagem: op.abordagem, horario: op.horario, noite: op.horario === 'fechamento',
-      calor: A.calorDe(e), potencial: f.potencial, distDelegacia: dist, semente: (TO.mapa.hash(op.id) % 100000) + 1
+      dentro: sozinho ? 1 : f.dentro, abordagem: op.abordagem, horario: op.horario, noite: op.horario === 'fechamento',
+      calor: A.calorDe(e), potencial: sozinho ? Math.round(f.potencial * 0.5 / 100) * 100 : f.potencial, distDelegacia: dist, semente: (TO.mapa.hash(op.id) % 100000) + 1
     };
     return new Promise(ok => {
       let ctl = null;
@@ -326,6 +367,10 @@ function ligar(api) {
     if (!vida.ligar(e.torcida.id)) { irPraSede(); return; }
     /* (o jogo que abriu no meio do dia: o jogo da cidade de hoje, no fundo) */
     agendarJogosDaCidade(e);
+    /* (e o dia livre: o recado, se o dia que abriu é um) */
+    try { rua.conferirDiaLivre(e); } catch (err) { console.error('jogo 3D, o dia livre:', err); }
+    /* (e o recado da partida que já caiu, num save aberto no dia do jogo) */
+    for (const m of e.feed || []) if (m && m.kind === 'partida' && !m.respondido) idaNoRecado(e, m);
     if (barNovo && barNovo.porta) {
       /* a câmera na rua, de frente pra fachada (o letreiro "BAR DA ...", a vitrine da loja, a platibanda da subsede, o portão da fábrica) */
       const q = barNovo.porta, nome = String(e.torcida.nome || '').replace(/[&<>]/g, '');
@@ -539,6 +584,21 @@ function ligar(api) {
     tAntes = t;
     pintarAndar();
     if (vida.ligada || dia3d.hora != null) pintarHora();
+    try { rua.quadro(dt); } catch (err) { console.error('jogo 3D, a rua livre:', err); }
+    /* a névoa: no jogo, na praça da torcida com a vida ligada ou com o dia de
+       jogo no ar; os olhos são o presidente a pé e a cabeça do nosso bonde */
+    try {
+      const Cn = api.cenario, bc = document.body.classList, emJogo = bc.contains('j3d-em-jogo');
+      /* (numa cena — a briga, o assalto — a névoa sai: a briga se vê inteira, onde quer que seja) */
+      const emCena = bc.contains('em-cena') || bc.contains('palco-briga');
+      const ligar = emJogo && !emCena && !!Cn && !Cn.montando && ((vida.ligada && !!pracaDoJogo && Cn.praca === pracaDoJogo) || dia3d.ativo);
+      const olhos = [];
+      const eu = Cn && Cn.aPe ? Cn.aPe.eu : null;
+      if (eu) olhos.push({ x: eu.x, z: eu.y, r: nevoa.RAIO.lider * api.M });
+      const cab = dia3d.cabecaNossa;
+      if (cab) olhos.push({ x: cab.x, z: cab.z, r: nevoa.RAIO.bonde * api.M });
+      nevoa.quadro(dt, { ligar, olhos });
+    } catch (err) { console.error('jogo 3D, a névoa:', err); }
     try { recados.quadro(dt); } catch (err) { console.error('jogo 3D, os recados:', err); }
     requestAnimationFrame(laco);
   };
