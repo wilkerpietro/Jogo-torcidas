@@ -70,7 +70,7 @@ const SALDO_S = 3.2;
 
 /* `api`: o do jogo 3D (cenario, M); `vida`: a vida da praça (vida3d.js,
    quem senta na frente do presidente); `dia3d`: o dia de jogo */
-export function criarRecados(api, vida, dia3d) {
+export function criarRecados(api, vida, dia3d, rua = null) {
   const M = api.M;
   const C = () => api.cenario;
   const E = () => TO.estado && TO.estado.E;
@@ -350,7 +350,8 @@ export function criarRecados(api, vida, dia3d) {
   /* quem traz: na sede, alguém senta na frente do presidente (no dia de
      jogo a decisão é da linha do dia, e ela fica no alto) */
   function sentar() {
-    if (!atual || dia3d.ativo || !vida.ligada || vida.reuniao) return;
+    /* (na rua livre, o presidente não está na sala: quem fala é quem anda com ele) */
+    if (!atual || dia3d.ativo || !vida.ligada || vida.reuniao || (rua && rua.ativo)) return;
     const r = vida.recado;
     if (r && r.msg === atual.id) return;
     vida.sentarRecado(atual);
@@ -553,7 +554,9 @@ export function criarRecados(api, vida, dia3d) {
     let alvo = null, volta = null, x = null, y = null;
     /* (no dia de jogo a decisão fica sempre no alto, embaixo do placar: em
        cima do líder ela tampava justamente o lado de onde a rival vinha) */
-    if (!dia3d.ativo && vida.ligada) {
+    const fr = rua && rua.ativo ? rua.falante : null;
+    if (fr) alvo = { x: fr.x, y: (fr.alt || 0) + 1.75 * M, z: fr.y };
+    else if (!dia3d.ativo && vida.ligada && !(rua && rua.ativo)) {
       const r = vida.recado;
       if (r && r.msg === atual.id) alvo = { x: r.d.x, y: (r.d.alt || 0) + 1.45 * M, z: r.d.y };
       if (vida.sede) volta = 'Ir pra sala do presidente';
@@ -579,7 +582,7 @@ export function criarRecados(api, vida, dia3d) {
     /* O PRESIDENTE À VISTA: o balão abre pro lado contrário ao dele (o rabo
        fica na cabeça de quem fala, perto da ponta do balão) */
     let meio = x;
-    const pres = vida.ligada ? vida.presidente : null;
+    const pres = vida.ligada && !(rua && rua.ativo) ? vida.presidente : null;
     if (pres && Cn) {
       const qp = Cn.vida.projetar(pres.x, (pres.alt || 0) + 1.2 * M, pres.y, PP);
       if (qp.frente && Math.abs(qp.x - x) < larg * 0.6 && qp.y < y + 40) meio = qp.x >= x ? x - larg / 2 + 34 : x + larg / 2 - 34;

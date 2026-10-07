@@ -47,6 +47,8 @@ TO.relacoes = (function(){
     arquibancadaIgual: 12, // arquibancada: efetivo parelho
     arquibancadaMais:  11, // arquibancada: passamos por cima do menor
     treta:          10,   // treta marcada, de efetivo igual
+    panfleto:       10,   // desfazer a panfletagem dela (ou ela a nossa) — a rua livre, 07/10/2026
+    brigaLivre:      8,   // a briga de rua que o presidente compra andando pela cidade
 
     /* --- NEGATIVO SEM BRIGA: 5 a 9 --- */
     pichacao:        9,   // pichar o território do rival
@@ -2157,6 +2159,9 @@ TO.relacoes = (function(){
     };
     if(ajA) reg.a.ajuda = {nome:ajA.o.nome, n:ajA.n};
     if(ajB) reg.b.ajuda = {nome:ajB.o.nome, n:ajB.n};
+    /* o bairro da briga, quando quem chama sabe (a panfletagem desfeita,
+       07/10/2026: é no bairro dela que a barra mexe) */
+    if(opts.bairroFixo) reg.bairroFixo = opts.bairroFixo;
     return registrarBrigaIA(E, reg);
   }
 

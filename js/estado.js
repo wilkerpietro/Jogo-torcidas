@@ -485,6 +485,12 @@ TO.estado = (function(){
 
     /* o dia que começa agora */
     E.acoes.usadas = 0;
+    /* as panfletagens do dia: quem vai desfazer a de quem (antes do
+       expediente: a nossa desfeita não recruta) — js/mundo/dominio.js */
+    if(TO.dominio && TO.dominio.panfletagensDoDia){
+      try{ TO.dominio.panfletagensDoDia(E); }
+      catch(err){ if(window.console) console.error('[dia] as panfletagens:', err); }
+    }
     rodarExpediente(E);
     TO.membros.passarDia(E);
 

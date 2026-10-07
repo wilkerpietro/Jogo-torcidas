@@ -1309,6 +1309,47 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
   return luz * uNoite;
 }
 `;
+  /* A NÉVOA (o jogo 3D, 07/10/2026; o dono: "Preciso que exista uma
+     espécie de área escura/bloqueio que causa o desconhecimento de
+     onde/como o rival está no mapa, seja em dias de jogo ou em dias
+     normais, área escura essa que não existe em bairros que a torcida
+     domina e que não existe ao redor de estruturas da torcida"). Um mapa
+     visto de cima (`uNevoaMapa`, uma célula por quadrado da grade dos
+     bairros: 255 é escuro, 0 é visto) e até quatro OLHOS (o líder a pé, a
+     cabeça do bonde: x, z e o raio, no mundo) que abrem um círculo nele.
+     No pixel, o escuro tira a cor e quase toda a luz: a forma da cidade
+     fica, o que se mexe nela o jogo esconde (os bonecos de outras
+     torcidas, `filtro`). O mapa e os olhos são do jogo (nevoa3d.js); sem
+     o jogo (a planta, o menu) ela fica desligada */
+  const NEVOA = {
+    uNevoa: { value: 0 }, uNevoaMapa: { value: vazia() }, uNevoaC: { value: new THREE.Vector4(0, 0, 1, 1) },
+    uNevoaOlho: { value: [0, 1, 2, 3].map(() => new THREE.Vector4()) }, uNNevoaOlho: { value: 0 }
+  };
+  const NEVOA_GLSL = `uniform sampler2D uNevoaMapa;
+uniform vec4 uNevoaC;
+uniform float uNevoa;
+uniform vec4 uNevoaOlho[ 4 ];
+uniform int uNNevoaOlho;
+varying vec3 vNevoaP;
+float nevoaEm( vec3 p ) {
+  if ( uNevoa < 0.001 ) return 0.0;
+  vec2 q = ( p.xz - uNevoaC.xy ) * uNevoaC.zw;
+  float f = ( q.x < 0.0 || q.y < 0.0 || q.x > 1.0 || q.y > 1.0 ) ? 1.0 : texture2D( uNevoaMapa, q ).r;
+  for ( int i = 0; i < 4; i++ ) {
+    if ( i >= uNNevoaOlho ) break;
+    vec4 o = uNevoaOlho[ i ];
+    f *= smoothstep( o.z * 0.6, o.z, length( p.xz - o.xy ) );
+  }
+  return f * uNevoa;
+}
+`;
+  const NEVOA_PIXEL = `{
+    float nv = nevoaEm( vNevoaP );
+    if ( nv > 0.001 ) {
+      float nl = dot( gl_FragColor.rgb, vec3( 0.299, 0.587, 0.114 ) );
+      gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( 0.022, 0.026, 0.04 ) + vec3( nl ) * 0.2, nv * 0.86 );
+    }
+  }`;
   /* A JANELA E A LÂMPADA DAS FOLHAS: uma máscara pequena por folha (1/4 do
      tamanho), com a célula de janela em vermelho (acende o vidro dela) e a
      que é lâmpada em verde (acende inteira). Pelo nome da célula */
@@ -1404,6 +1445,21 @@ vec3 luzDaNoite( vec3 p, vec3 n ) {
       if (acesas) sh.fragmentShader = sh.fragmentShader
         .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>
   reflectedLight.indirectDiffuse += luzDaNoite( vNoiteP, normalize( vNoiteN ) * ( gl_FrontFacing ? 1.0 : -1.0 ) ) * diffuseColor.rgb;`);
+      /* A NÉVOA: o ponto no mundo (com a instância) e o escuro no fim do pixel */
+      Object.assign(sh.uniforms, NEVOA);
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', 'varying vec3 vNevoaP;\nvoid main() {')
+        .replace('#include <project_vertex>', `#include <project_vertex>
+  {
+    vec4 nvp = vec4( transformed, 1.0 );
+    #ifdef USE_INSTANCING
+      nvp = instanceMatrix * nvp;
+    #endif
+    vNevoaP = ( modelMatrix * nvp ).xyz;
+  }`);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {', NEVOA_GLSL + 'void main() {')
+        .replace('#include <fog_fragment>', '#include <fog_fragment>\n  ' + NEVOA_PIXEL);
       if (GRAF.luz === 'simples' && mat.isMeshLambertMaterial) luzNoVertice(sh);
     };
     const chave = mat.customProgramCacheKey && mat.customProgramCacheKey !== THREE.Material.prototype.customProgramCacheKey ? mat.customProgramCacheKey() : '';
@@ -2613,6 +2669,8 @@ void main() {`)
      de fora (o nosso bonde indo pra investida). 'oculto': o plano já
      montou, mas a hora dele não chegou — a vida segue sozinha na tela */
   let diaNoFundo = false, extras = [];
+  /* o filtro dos bonecos da vida e do dia (a névoa do jogo 3D: fn(d) → se desenha) */
+  let filtroDiscos = null;
   const custoDia = { povo: 0, dia: 0 };
   function atualizarPovo(dt) {
     const comDia = dia && dia.aberto;
@@ -2645,6 +2703,8 @@ void main() {`)
       let ds = ape && eu ? [eu].concat(V.discos) : V.discos;
       if (doDia) ds = ds.concat(dia.J.discos);
       if (extras.length) ds = ds.concat(extras);
+      /* (a névoa: quem o jogo não deixa ver não é desenhado) */
+      if (filtroDiscos) ds = ds.filter(filtroDiscos);
       jogoDaVida.discos = ds;
       jogoDaVida.policiais = doDia ? dia.J.policiais : [];
       povo.atualizar(jogoDaVida, dt);
@@ -2654,6 +2714,8 @@ void main() {`)
     if (!comDia) { povo.atualizar(jogo, dt); return; }
     jogoDoDia.t = dia.J.t;
     jogoDoDia.discos = ape && eu ? [eu].concat(dia.J.discos) : dia.J.discos;
+    if (extras.length) jogoDoDia.discos = jogoDoDia.discos.concat(extras);
+    if (filtroDiscos) jogoDoDia.discos = jogoDoDia.discos.filter(filtroDiscos);
     jogoDoDia.policiais = dia.J.policiais;
     povo.atualizar(jogoDoDia, dt);
     /* quanto os bonecos custam no processador (a média, pro medidor) */
@@ -3047,6 +3109,8 @@ void main() {`)
       if (ape || montando || !grade) return false;
       const p = lugar();
       if (!p) throw new Error('não achei chão livre perto do meio da tela');
+      /* (o jogo 3D veste o presidente com a camisa da torcida do jogador: `onde.camisa`, o id) */
+      if (onde && onde.camisa) camisaId = onde.camisa;
       encherCamisas();
       /* de cima, a rua fica de pé ou deitada na tela: o giro da câmera vai
          pro quarto de volta mais perto (com a cidade inteira na tela, o
@@ -3056,6 +3120,8 @@ void main() {`)
       ape = { x: p.x, z: p.z, y, yv: y, vx: 0, vz: 0, rumo: Math.atan2(-Math.sin(az), -Math.cos(az)), vao: (onde && onde.vao) || APE.vao, teto: 0, tetoAte: 0,
               chegada: 0, de: { x: orb.alvo.x, z: orb.alvo.z, dist: orb.dist, el: orb.el, az: orb.az }, para: { az } };
       vestir();
+      /* (o que o jogo põe a mais no disco: o nome, a torcida — a névoa e o pé do balão leem) */
+      if (onde && onde.disco) Object.assign(eu, onde.disco);
       cancelarVoo(); fecharFicha();
       raiz.classList.add('ape');
       tela.focus({ preventScroll: true });
@@ -3478,6 +3544,35 @@ void main() {`)
     /* bonecos de fora, desenhados junto com a vida (o nosso bonde da investida) */
     set extras(a) { extras = Array.isArray(a) ? a : []; pedir(); },
     get extras() { return extras; },
+    /* quem não é desenhado (a névoa do jogo: fn(d) → se o boneco aparece; null, todos) */
+    set filtro(f) { filtroDiscos = typeof f === 'function' ? f : null; pedir(); },
+    get filtro() { return filtroDiscos; },
+    /* A NÉVOA (o jogo 3D, nevoa3d.js): `mapa(dados, x0, z0, cel, nx, ny)` — uma
+       célula por byte, de 0 (visto) a 255 (escuro), linha por linha a partir
+       de (x0, z0) —, `olhos([{x, z, r}])` (até quatro círculos abertos) e
+       `ligar(v)` */
+    nevoa: {
+      mapa(dados, x0, z0, cel, nx, ny) {
+        const n = nx * ny, rgba = new Uint8Array(n * 4);
+        for (let k = 0; k < n; k++) { const v = dados[k]; rgba[k * 4] = v; rgba[k * 4 + 1] = v; rgba[k * 4 + 2] = v; rgba[k * 4 + 3] = 255; }
+        const velha = NEVOA.uNevoaMapa.value;
+        const t = new THREE.DataTexture(rgba, nx, ny);
+        t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false;
+        t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.colorSpace = THREE.NoColorSpace; t.needsUpdate = true;
+        NEVOA.uNevoaMapa.value = t;
+        NEVOA.uNevoaC.value.set(x0, z0, 1 / (nx * cel), 1 / (ny * cel));
+        if (velha && velha !== t) velha.dispose();
+        pedir();
+      },
+      olhos(lista) {
+        const L = (lista || []).slice(0, 4);
+        L.forEach((o, i) => NEVOA.uNevoaOlho.value[i].set(o.x, o.z, o.r, 0));
+        if (NEVOA.uNNevoaOlho.value !== L.length || L.length) pedir();
+        NEVOA.uNNevoaOlho.value = L.length;
+      },
+      ligar(v) { const n = v ? 1 : 0; if (NEVOA.uNevoa.value !== n) { NEVOA.uNevoa.value = n; pedir(); } },
+      get ligada() { return NEVOA.uNevoa.value > 0; }
+    },
     /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
     set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
     get palco() { return palco; },
@@ -3567,6 +3662,10 @@ void main() {`)
            olhar(x, z, dist, el, az, alto = 0) { cancelarVoo(); orb.alvo.set(x, 0, z); orb.dist = dist; orb.el = el; orb.az = az; orb.alto = alto; pedir(); },
            /* pro teste: a pé */
            aPe: { entrar: entrarAPe, sair: sairDaRua, irPraSede, levar: levarPara,
+                  /* o disco do boneco a pé (o jogo 3D: a rua livre lê e mexe nele) */
+                  get eu() { return ape ? eu : null; }, get ativo() { return !!ape; },
+                  /* a largura que cabe na tela a pé (m): o jogo abre mais na rua livre */
+                  vao(v) { if (ape && v > 0) ape.vao = clamp(v, 5, 80); return ape ? ape.vao : null; },
                   /* pro teste: um passo de (dx, dz) metros, com a colisão de verdade */
                   mover(dx, dz) { if (!ape) return null; mover(dx * M, dz * M); ape.yv = ape.y; pedir(); return { x: ape.x, z: ape.z, y: ape.y / M }; },
                   get estado() { return ape && { x: ape.x, z: ape.z, y: ape.y / M, rumo: ape.rumo, v: Math.hypot(ape.vx, ape.vz), chegada: ape.chegada, az: orb.az, el: orb.el, vao: ape.vao, teto: ape.teto, aberto: !!ape.aberto, subY: CORTE.uSubY.value / M, camisa: torcidas[camisa] && torcidas[camisa].nome }; },

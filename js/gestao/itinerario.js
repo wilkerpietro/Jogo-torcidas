@@ -387,5 +387,5 @@ TO.itinerario = (function(){
   const comRecado = it => (it && it.paradas || [])
     .filter(o=>(o.eventos||[]).length).length;
 
-  return {montar, comRecado, hhmm, efetivoInicial};
+  return {montar, comRecado, hhmm, efetivoInicial, jogoDeHoje};
 })();

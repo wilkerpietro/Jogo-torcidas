@@ -62,6 +62,7 @@
 import { cenaDaInvasao, gradesDaInvasao } from './invasao.js';
 import { palcoDeBriga } from './palco_briga.js';
 import { brigaNosArredores, gradesDoCordao } from './arredores3d.js';
+import { criarSeguidores } from './rua3d.js';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -129,6 +130,10 @@ export function criarDia3d(api, vida, g = {}) {
       /* (na estrada: pular até a próxima parada, e a câmera de volta no ônibus) */
       if (D.estrada) { if (a === 'pular') pular(); else if (a === 'nossa') D.estrada.verOnibus(); return; }
       if (!dia) return;
+      if (b.dataset.ida === 'atacar') { partirPraCima(); return; }
+      if (b.dataset.ida === 'pm') { entregarPraPM('A PM pegou o bonde e leva até o portão.'); return; }
+      /* (na ida jogada o dia anda no passo de quem anda: 1×, e a câmera é do presidente) */
+      if (IDA && IDA.andando && (b.dataset.vezes || a === 'pular' || a === 'nossa' || a === 'estadio' || a === 'plano')) return;
       if (b.dataset.vezes) { D.vezes = +b.dataset.vezes; if (dia.rodando) dia.rodar(D.vezes); pintar(); return; }
       if (a === 'pular') pular();
       else if (a === 'nossa') { if (D.nosso) dia.seguirBonde(D.nosso); }
@@ -153,12 +158,16 @@ export function criarDia3d(api, vida, g = {}) {
     bn.hidden = !D.nosso && !D.estrada;
     /* (na estrada não tem estádio nem cidade pra ver: só o ônibus) */
     for (const q of ['estadio', 'plano']) hud.querySelector(`[data-dia="${q}"]`).hidden = !!D.estrada;
-    hud.querySelector('.j3d-dia-vezes').hidden = !!D.estrada;
+    hud.querySelector('.j3d-dia-vezes').hidden = !!D.estrada || !!(IDA && IDA.andando);
+    hud.querySelector('[data-dia="pular"]').hidden = !!(IDA && IDA.andando);
+    if (IDA && IDA.andando) for (const q of ['nossa', 'estadio', 'plano']) hud.querySelector(`[data-dia="${q}"]`).hidden = true;
     /* A INVASÃO: só na partida, uma por jogo, pelos caminhos que a nossa torcida tem */
     const inv = hud.querySelector('.j3d-dia-invadir');
     const vias = D.partida && !D.invadiu ? viasDaInvasao() : [];
     inv.hidden = !vias.length;
     inv.innerHTML = vias.length ? `<span>Invadir o setor da ${esc(vias[0].sigla)}:</span>` + vias.map(v => `<button data-dia="invadir" data-via="${v.via}" class="perigo">${esc(naVia(v.via))}</button>`).join('') : '';
+    /* (a parte da ida: some quando a PM pega o bonde) */
+    pintarIda();
   }
   function pintarHora() {
     if (!hud || !D || !dia) return;
@@ -417,7 +426,9 @@ export function criarDia3d(api, vida, g = {}) {
     const nome = nomeDaPraca(mapa);
     if (!nome) return false;
     const eu = D = { it, msg: o.msg, j, e, fora: !j.casa, nome, fase: null, vezes: 30, corrida: null, partida: null, invadiu: false,
-                     titulo: `${j.mandante.nome} × ${j.visitante.nome}` };
+                     titulo: `${j.mandante.nome} × ${j.visitante.nome}`,
+                     /* A IDA JOGADA: o jogador assumiu a ida no recado do dia (em casa) */
+                     controle: !!(o.msg && o.msg.dados && o.msg.dados.controle) && !!j.casa };
     montarHud(); pintar();
     status(D.fora ? `A caravana chegando em ${nome}…` : 'A PM montando o plano do dia…');
     if (g.travarPraca) g.travarPraca(true);
@@ -779,7 +790,12 @@ export function criarDia3d(api, vida, g = {}) {
     const r = TO.tela && TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
     const nosso = { id: e.torcida.id, n: r && r.nos != null ? r.nos : it.efetivo ? it.efetivo.nos : null, inicio: ini ? ini.inicio : 'sede',
                     aliado: aj ? aj.aliado : null, nivel: aj ? (aj.nivel === 'hospedar' ? 'hospedar' : 'escolta') : null, escolta: aj ? aj.escolta || 0 : 0 };
-    const briga = brigaDaIda(it, e), arr = briga ? null : arredoresDaIda(it, e);
+    let briga = brigaDaIda(it, e);
+    const arr = briga ? null : arredoresDaIda(it, e);
+    /* (na ida jogada, a tocaia da pista não entra no plano: ela é o ponto
+       de passagem da pista, e a briga é onde o presidente chegar — a
+       concentração na porta, antes de sair, fica como é) */
+    if (D && D.controle && briga && briga.onde === 'rua') { D.pistaDaIda = briga; briga = null; }
     return { jogo: true, casa, fora, bola: segDe(j.hora), presenca: pres.length ? pres : null, nosso, ia: 'paz', estadio: 'nao', gente: 1,
              /* em casa, quem recebe os visitantes de fora é o que o jogo diz (o aliado que a gente hospeda sai da nossa porta) */
              hospedes: j.casa ? hospedesDoJogo(e, casa, fora) : null,
@@ -1175,10 +1191,13 @@ export function criarDia3d(api, vida, g = {}) {
       if (ev && D.arr && ev === D.evArr) { noCordao(D.arr, cont); return; }
       /* a emboscada na estrada vem antes da cidade: a caminhada fica pro jogo */
       if (ev && ev.tipo === 'emboscada') { status('Na estrada, a caminho da cidade.'); cont(); return; }
-      if (ev && ev.ponto === 'arredores' && nosso) {
+      if (ev && ev.ponto === 'arredores' && nosso && !D.controle) {
         rodarAte(Math.max(pl.inicio, nosso.chega - 90), D.vezes, 'A caminho dos arredores do estádio…', () => { status('Nos arredores do estádio.'); cont(); });
         return;
       }
+      /* A IDA JOGADA: o presidente leva o bonde (a tocaia da pista, se tem,
+         é o ponto de passagem dela: o cartão da linha cai lá) */
+      if (D.controle && nosso) { comecarIda(cont, ev && D.pistaDaIda && ev === D.pistaDaIda.ev ? ev : null); return; }
       if (ev || !nosso) { cont(); return; }
       rodarAte(nosso.chega, D.vezes, 'A caminhada até o estádio…', () => { status('O nosso bonde chegou no portão.'); cont(); });
       return;
@@ -1194,6 +1213,9 @@ export function criarDia3d(api, vida, g = {}) {
          caminhada — sem isso ele ia do chão da briga pro estádio a 60× */
       const br = D.briga || D.arr;
       const andar = () => {
+        /* (a ida jogada que parou no cartão da pista — ou que nem começou, com
+           o ataque na porta antes da saída — segue com o presidente) */
+        if (D.controle && nosso && !D.idaEntregue && dia.t < nosso.chega - 20) { comecarIda(entrar, null); return; }
         if (nosso && dia.t < nosso.chega - 20) { dia.seguirBonde(nosso); rodarAte(nosso.chega - 20, D.vezes, 'A caminhada até o estádio, com quem ficou de pé…', entrar); }
         else entrar();
       };
@@ -1204,6 +1226,272 @@ export function criarDia3d(api, vida, g = {}) {
     }
     status('Fim de jogo: as torcidas saindo.');
     cont();
+  }
+  /* ======================================================
+     A IDA JOGADA (07/10/2026; o dono: "O itinerário até o estádio agora é
+     livremente comandado pelo jogador, mantendo a obrigação dos
+     checkpoints atuais, mas pra isso é necessário que haja uma seta na
+     borda apontando o caminho. Isso serve pro jogador mesmo ir atrás do
+     rival caso queira. Isso acaba com a necessidade do planejamento
+     antecipado do dia de jogo em casa. Agora no dia do jogo vai ter o
+     balão de mensagem que é dia de jogo, perguntando se o jogador quer
+     assumir o controle da ida ou ir em paz")
+     Em casa, com "Assumir a ida" no recado da partida: a concentração na
+     porta é a de sempre; na hora da saída o presidente aparece a pé na
+     frente do bonde (o a pé do cenário) e o bonde inteiro vai atrás dele,
+     pela trilha que ele faz, no desenho do plano. A saída é a do plano — ou
+     antes, um minuto antes do primeiro bonde rival sair (no máximo duas
+     horas antes da bola), pra dar tempo de ir atrás dele. O dia anda a 1×
+     (o passo de quem anda). Os PONTOS DE PASSAGEM são os de sempre do dia: a PISTA
+     (o meio da rota do plano; com a tocaia marcada no itinerário, o lugar
+     dela — o cartão da linha cai quando o presidente chega lá) e o CORDÃO
+     DA PM (onde a rota entra nos arredores do estádio): ali a polícia
+     assume e leva o bonde até o portão, como antes. A seta na borda da
+     tela aponta o próximo. No caminho, o bonde rival à vista (fora da
+     névoa, na rua, a 22 m) pode ser atacado ("Partir pra cima"): a briga é
+     no lugar, e quem cai sai do bonde dos dois lados. "Devolver pra PM"
+     larga o controle (a PM pega o bonde onde ele estiver); faltando 12
+     minutos pra bola, ela pega sozinha.
+     ====================================================== */
+  let IDA = null;
+  const DIST_PONTO = 9, PERTO_BONDE = 22, LIMITE_BOLA = 12 * 60;
+  /* (a saída da ida: no máximo duas horas antes da bola, e um minuto antes do primeiro bonde rival sair) */
+  const CEDO_MAX = 2 * 3600, ANTES_DO_RIVAL = 60;
+  /* o raio de chegada num ponto: 9 m — ou metade da distância de onde a ida
+     começou, quando ele está colado na porta (a sede perto do estádio: o
+     presidente tem de andar até ele, não "chegar" parado) */
+  const raioDoPonto = p => {
+    if (p.d0 == null) p.d0 = IDA && IDA.x0 != null ? Math.hypot(p.x - IDA.x0, p.z - IDA.z0) : Infinity;
+    return Math.min(DIST_PONTO * M, Math.max(2.5 * M, 0.5 * p.d0));
+  };
+  /* A HORA DE SAIR: a do plano (dez segundos antes da saída do bonde) — ou
+     antes, quando tem bonde rival que sai antes da gente: a ida é do
+     jogador, e ele pode ir atrás deles (o dono: "Isso serve pro jogador
+     mesmo ir atrás do rival caso queira") */
+  function horaDaIda(b) {
+    const pl = D.plano;
+    let t = b.sai - 10;
+    for (const v of pl.vivos || []) if (v !== b && v.sai != null && rivalDeHoje(v.t.id)) t = Math.min(t, v.sai - ANTES_DO_RIVAL);
+    return Math.max(t, pl.inicio || 0, (pl.bola || 0) - CEDO_MAX);
+  }
+  const setaDaRua = () => (TO.jogo3d && TO.jogo3d.rua ? TO.jogo3d.rua.seta : null);
+  const rivalDeHoje = tid => { const e = E(), Dm = TO.dominio; return !!(e && Dm && Dm.rivais && Dm.rivais(e, e.torcida.id, tid)); };
+  /* os pontos de passagem: a pista e o cordão da PM, na rota do plano */
+  function pontosDaIda(b) {
+    const p = D.plano, Q = {};
+    let s3 = b.rua.L;
+    for (let s = b.s0 || 0; s < b.rua.L; s += 2 * M) {
+      b.rua.ponto(s, Q);
+      const K = p.R.celula ? p.R.celula(Q.x, Q.z) : -1;
+      if (K >= 0 && p.noArredor[K]) { s3 = s; break; }
+    }
+    s3 = Math.max((b.s0 || 0) + 12 * M, s3 - 6 * M);
+    const pista = D.pistaDaIda;
+    let P2;
+    const s2 = ((b.s0 || 0) + s3) / 2;
+    if (pista && D.plano) {
+      /* a tocaia: a esquina da rota onde a rival esperaria (o ponto do meio, sem o plano dela) */
+      b.rua.ponto(s2, Q); P2 = { x: Q.x, z: Q.z };
+    } else { b.rua.ponto(s2, Q); P2 = { x: Q.x, z: Q.z }; }
+    b.rua.ponto(s3, Q);
+    return [{ id: 'pista', rot: 'A pista', x: P2.x, z: P2.z, s: s2, evento: !!pista },
+            { id: 'cordao', rot: 'O cordão da PM', x: Q.x, z: Q.z, s: s3 }];
+  }
+  /* a hora (do plano) em que a cabeça do bonde chega no ponto s */
+  function tempoEm(b, s) {
+    let a = b.sai, z = Math.max(b.sai + 60, b.chega || b.sai + 3600);
+    for (let k = 0; k < 40; k++) { const m = (a + z) / 2; if (D.plano.cabeca(b, m) >= s) z = m; else a = m; }
+    return z;
+  }
+  async function comecarIda(fim, eventoDaPista) {
+    const b = D.nosso, Cn = C(), e = D.e;
+    if (!b || !Cn || !Cn.aPe || !dia || !dia.plano) { fim(); return; }
+    if (IDA && IDA.andando) { IDA.fim = fim; IDA.pausa = false; dia.rodar(1); status('A ida segue: leve o bonde até o cordão da PM.'); pintar(); return; }
+    if (!IDA) IDA = { b, pontos: pontosDaIda(b), i: 0, fim, evento: eventoDaPista, andando: false, seg: null, alvo: null };
+    else { IDA.fim = fim; IDA.evento = eventoDaPista || IDA.evento; }
+    const eu0 = D;
+    const parte = async () => {
+      if (D !== eu0 || !IDA) return;
+      dia.parar();
+      b.controlado = true;
+      const d0 = b.gente[0].d;
+      const pres = TO.membros.presidente ? TO.membros.presidente(e) : null;
+      let ok = false;
+      try {
+        ok = await Cn.aPe.entrar({ x: d0.x, z: d0.y, camisa: e.torcida.id, vao: 30,
+                                  disco: { nome: pres && TO.membros.nomeDe ? TO.membros.nomeDe(pres) : 'Presidente', tid: e.torcida.id } });
+      } catch (err) { console.error('a ida jogada:', err); ok = false; }
+      if (D !== eu0 || !IDA) return;
+      if (!ok) { b.controlado = false; const f = IDA.fim; IDA = null; D.controle = false; rodarAte(b.chega, D.vezes, 'A caminhada até o estádio…', () => { status('O nosso bonde chegou no portão.'); f(); }); return; }
+      const eu = Cn.aPe.eu;
+      const discos = b.gente.filter(g => !g.saiu).map(g => g.d);
+      IDA.seg = criarSeguidores(discos, { M, lugarDe: k => { const q = b.povo[k] || { o: k * 0.6, l: 0 }; return { atras: 1.8 + q.o, lat: q.l }; },
+                                          cabe: (x, z) => Cn.vida.cabe(x, z, 0.25), chao: (x, z) => Cn.vida.chao(x, z) });
+      IDA.seg.semear(eu.x, eu.y, eu.x, eu.y, eu.rumo);
+      IDA.andando = true;
+      IDA.x0 = eu.x; IDA.z0 = eu.y;
+      dia.seguirBonde(null);
+      D.vezes = 1; dia.rodar(1);
+      const cedo = dia.t < b.sai - 30;
+      status(cedo ? 'A ida é sua, e saímos antes: tem bonde rival na rua. Leve o bonde pelos pontos (a seta aponta) até o cordão da PM — e, se quiser, vá atrás deles.'
+                  : 'A ida é sua: leve o bonde pelos pontos (a seta aponta) até o cordão da PM. Rival à vista dá pra caçar.');
+      pintar();
+    };
+    const tSai = horaDaIda(b);
+    if (dia.t < tSai) { rodarAte(tSai, D.vezes, 'A concentração na porta: o bonde sai daqui a pouco, com o presidente na frente…', parte); return; }
+    parte();
+  }
+  function rivalPerto(eu) {
+    const N = TO.jogo3d && TO.jogo3d.nevoa;
+    let melhor = null;
+    for (const v of D.plano.vivos) {
+      if (v === IDA.b || v.controlado || !rivalDeHoje(v.t.id)) continue;
+      if (dia.t < v.sai || dia.t > (v.chega || Infinity) - 20) continue;
+      const g = v.gente.find(x => !x.saiu), d = g && g.d;
+      if (!d) continue;
+      if (N && !N.visivel(d.x, d.y)) continue;
+      const dist = Math.hypot(d.x - eu.x, d.y - eu.y);
+      if (dist < PERTO_BONDE * M && (!melhor || dist < melhor.dist)) melhor = { v, d, dist };
+    }
+    return melhor;
+  }
+  function quadroIda(dt) {
+    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, seta = setaDaRua();
+    if (!IDA || !IDA.andando || !eu || D.emCena || IDA.brigando) { if (seta && (!IDA || !IDA.andando)) seta.alvo(null); return; }
+    IDA.seg.quadro(dt, eu);
+    const p = IDA.pontos[IDA.i];
+    if (seta && p) { if (!seta.alvoAtual || seta.alvoAtual.id !== p.id) seta.alvo({ id: p.id, x: p.x, z: p.z, rot: p.rot }); seta.pintar({ x: eu.x, z: eu.y }); }
+    /* (o cartão da pista esperando a resposta: o bonde segue o presidente, o dia não anda) */
+    if (IDA.pausa) { IDA.alvo = null; pintarIda(); return; }
+    if (p && Math.hypot(eu.x - p.x, eu.y - p.z) < raioDoPonto(p)) { chegouNoPonto(p); return; }
+    IDA.alvo = rivalPerto(eu);
+    pintarIda();
+    if (D.plano && dia.t > D.plano.bola - LIMITE_BOLA) entregarPraPM('A bola vai rolar: a PM recolheu o bonde e levou até o portão.');
+  }
+  function chegouNoPonto(p) {
+    if (p.id === 'cordao') { entregarPraPM(); return; }
+    IDA.i++;
+    if (p.evento && IDA.evento) {
+      /* A TOCAIA DA PISTA: o cartão da linha cai aqui, com o presidente na esquina */
+      IDA.pausa = true; IDA.evento = null;
+      dia.parar();
+      const f = IDA.fim; IDA.fim = null;
+      status('A rival tava esperando na pista!', true);
+      D.avisoNoAlto = true;
+      if (f) f();
+      return;
+    }
+    status('A pista ficou pra trás: agora o cordão da PM.');
+  }
+  function entregarPraPM(motivo) {
+    if (!IDA) return;
+    const b = IDA.b, f = IDA.fim, s3 = IDA.pontos[IDA.pontos.length - 1].s, Cn = C(), seta = setaDaRua();
+    IDA.andando = false;
+    if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false);
+    if (seta) seta.alvo(null);
+    b.controlado = false;
+    D.idaEntregue = true;
+    const tK = tempoEm(b, s3);
+    if (dia.t < tK) dia.irPara(tK);
+    IDA = null;
+    D.vezes = 30;
+    dia.seguirBonde(b);
+    status(motivo || 'O cordão da PM: daqui a polícia leva o bonde até o portão.');
+    pintar();
+    rodarAte(b.chega, D.vezes, 'A PM leva o bonde até o portão…', () => { status('O nosso bonde chegou no portão.'); if (f) f(); });
+  }
+  /* A BRIGA NO CAMINHO: o bonde rival à vista, no lugar onde o presidente está */
+  function partirPraCima() {
+    const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, a = IDA && IDA.alvo, e = D.e;
+    if (!a || !eu || !TO.tela.abrirBrigaLivre) return;
+    const resumo = TO.tela.resumoDaLinha ? TO.tela.resumoDaLinha() : null;
+    const nossos = Math.max(2, resumo && resumo.nos != null ? resumo.nos : IDA.b.gente.filter(g => !g.saiu).length);
+    const deles = Math.max(2, a.v.gente.filter(g => !g.saiu).length);
+    const fila = TO.membros.aptosParaOEstadio(e).sort((x, y) => (y.forca + y.defesa) - (x.forca + x.defesa)).slice(0, Math.max(2, nossos));
+    const P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null;
+    const Dm = TO.dominio, b0 = bid && Dm ? Dm.bairro(e.torcida.mapa, bid) : null;
+    IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: a.v, nossos, deles };
+    dia.parar();
+    if (Cn.aPe.ativo) Cn.aPe.sair(false);
+    const ok = TO.tela.abrirBrigaLivre({ rivalId: a.v.t.id, deles, escalacao: fila,
+      ruaLivre: { nos: { x: eu.x, z: eu.y }, eles: { x: a.d.x, z: a.d.y }, bairro: b0 ? b0.nome : '', nosAtacamos: true, rot: 'O BONDE DA ' + String(a.v.t.sigla || '').toUpperCase() },
+      alvo: { bairro: b0 ? b0.nome : '', nosAtacamos: true } });
+    if (!ok) { IDA.brigando = null; voltarDaBrigaDaIda(); }
+  }
+  /* o bonde da rival da tocaia da pista (se ela está andando no dia) */
+  function rivalDaPista() {
+    const pi = D && D.pistaDaIda, nosId = D && D.e ? D.e.torcida.id : null;
+    if (!pi || !D.plano) return null;
+    const tid = pi.a === nosId ? pi.v : pi.a;
+    return (D.plano.vivos || []).find(v => v.t && v.t.id === tid && v !== D.nosso) || null;
+  }
+  /* o palco da briga desmontou (vida3d.js): quando o relatório fechar, o presidente volta */
+  function voltouDaBrigaDaIda() { if (IDA) IDA.voltar = true; }
+  function conferirVoltaDaIda() {
+    if (!IDA || !IDA.voltar) return;
+    const b = document.body.classList;
+    if (b.contains('em-cena') || document.querySelector('.tela-cheia:not(.oculto):not(#telaMenu)')) return;
+    IDA.voltar = false;
+    /* quem caiu sai do bonde (os dois lados) */
+    const br = IDA.brigando, res = TO.tela.ultimoResultado || {};
+    if (br) {
+      const nl = res.nossoLado === 'visitante' ? 'Visitante' : 'Mandante', ol = nl === 'Mandante' ? 'Visitante' : 'Mandante';
+      const nossas = Math.round((res['caidos' + nl] || 0) + (res['presos' + nl] || 0)), delas = Math.round((res['caidos' + ol] || 0) + (res['presos' + ol] || 0));
+      /* (a briga que a linha abriu — a tocaia da pista — já tirou as baixas
+         do número dela; aqui só sai quem caiu dos bonecos dos bondes) */
+      const v = br.v || rivalDaPista();
+      dia.tirarDoBonde(IDA.b, nossas);
+      if (v) dia.tirarDoBonde(v, delas);
+      if (!br.doItinerario && v && TO.tela.baixaNaLinha) TO.tela.baixaNaLinha(nossas, v.t.id, delas);
+      D.brigouNaIda = true;
+    }
+    voltarDaBrigaDaIda(br ? br.pos : null);
+  }
+  async function voltarDaBrigaDaIda(pos) {
+    const Cn = C(), e = D && D.e;
+    if (!IDA || !Cn || !e) return;
+    IDA.brigando = null;
+    const b = IDA.b, d0 = b.gente.find(g => !g.saiu);
+    const onde = pos || (d0 ? { x: d0.d.x, z: d0.d.y } : null);
+    if (!onde) { entregarPraPM(); return; }
+    let ok = false;
+    try { ok = await Cn.aPe.entrar({ x: onde.x, z: onde.z, camisa: e.torcida.id, vao: 30, disco: { tid: e.torcida.id } }); } catch (err) { ok = false; }
+    if (!IDA) return;
+    if (!ok) { entregarPraPM(); return; }
+    const eu = Cn.aPe.eu;
+    const discos = b.gente.filter(g => !g.saiu).map(g => g.d);
+    IDA.seg = criarSeguidores(discos, { M, lugarDe: k => { const q = b.povo[k] || { o: k * 0.6, l: 0 }; return { atras: 1.8 + q.o, lat: q.l }; },
+                                        cabe: (x, z) => Cn.vida.cabe(x, z, 0.25), chao: (x, z) => Cn.vida.chao(x, z) });
+    IDA.seg.semear(eu.x, eu.y, eu.x, eu.y, eu.rumo);
+    D.emCena = false;
+    dia.esconder(false); dia.ocultarTorcidas(null);
+    if (!IDA.pausa) dia.rodar(1);
+    pintar();
+  }
+  /* a parte da ida no painel: o próximo ponto e o que dá pra fazer */
+  let idaVista = '';
+  /* (a ida no ar marca o body: no celular o joystick sobe pra cima do painel, e o medidor de fps também) */
+  function marcarIda() {
+    const no = !!(IDA && IDA.andando && hud && !hud.hidden), bc = document.body.classList;
+    if (bc.contains('j3d-ida') !== no) bc.toggle('j3d-ida', no);
+    if (no) { const h = hud.offsetHeight; if (h && h !== marcarIda.h) { marcarIda.h = h; document.body.style.setProperty('--j3d-dia-h', h + 'px'); } }
+  }
+  function pintarIda() {
+    marcarIda();
+    if (!hud) return;
+    let row = hud.querySelector('.j3d-dia-ida');
+    if (!row) { row = document.createElement('div'); row.className = 'j3d-dia-ida'; hud.appendChild(row); }
+    const p = IDA && IDA.andando ? IDA.pontos[IDA.i] : null;
+    const a = IDA && IDA.andando ? IDA.alvo : null;
+    /* (com o cartão da pista esperando resposta, só o próximo ponto: a PM e a caça esperam o cartão) */
+    const pausa = !!(IDA && IDA.pausa);
+    const sig = (p ? p.id : '') + '|' + (a ? a.v.t.id : '') + '|' + (pausa ? 'p' : '');
+    row.hidden = !IDA || !IDA.andando;
+    if (sig === idaVista) return;
+    idaVista = sig;
+    row.innerHTML = !p ? '' : `<span>Próximo ponto: <b>${esc(p.rot)}</b></span>` +
+      (a && !pausa ? `<button data-ida="atacar" class="perigo">Partir pra cima da ${esc(a.v.t.sigla)}</button>` : '') +
+      (pausa ? '' : `<button data-ida="pm" title="A PM pega o bonde onde ele estiver e leva até o portão">Devolver pra PM</button>`);
   }
   /* A INVESTIDA NOS ARREDORES (arredores3d.js; o dono, 29/09/2026: "pode
      fazer a briga dos arredores em 3D"): o nosso bonde desviou até o
@@ -1471,6 +1759,18 @@ export function criarDia3d(api, vida, g = {}) {
       else { dia.irPara(Math.min(dia.t, A.tIni - 10)); dia.rodar(10); status('A briga no cordão da PM (o resultado do duelo simulado).'); }
       D.arrJogada = false;
     }
+    /* A IDA JOGADA: a tocaia da pista no duelo simulado (sem palco) tira
+       do bonde quem caiu; a de verdade volta por `conferirVoltaDaIda` */
+    if (IDA) {
+      if (!IDA.brigando && res && ev && D.pistaDaIda && ev === D.pistaDaIda.ev) {
+        const nl = res.nossoLado === 'visitante' ? 'Visitante' : 'Mandante', ol = nl === 'Mandante' ? 'Visitante' : 'Mandante';
+        dia.tirarDoBonde(IDA.b, Math.round((res['caidos' + nl] || 0) + (res['presos' + nl] || 0)));
+        const v = rivalDaPista();
+        if (v) dia.tirarDoBonde(v, Math.round((res['caidos' + ol] || 0) + (res['presos' + ol] || 0)));
+      }
+      pintar();
+      return;
+    }
     if (D.nosso) dia.seguirBonde(D.nosso);
     pintar();
   }
@@ -1520,6 +1820,8 @@ export function criarDia3d(api, vida, g = {}) {
     if (!D || !dia) return;
     D.emCena = false;
     dia.esconder(false); dia.ocultarTorcidas(null);
+    /* (na ida jogada a câmera é do presidente a pé: ele volta quando o relatório fechar) */
+    if (IDA) return;
     if (D.partida || D.fase === 'jogo') verNossoSetor(); else if (D.nosso) dia.seguirBonde(D.nosso);
   }
   /* os caminhos da invasão da nossa torcida (o mais barato de cada via, com rival do outro lado) */
@@ -1654,6 +1956,9 @@ export function criarDia3d(api, vida, g = {}) {
       if (min != null) dia.t = D.plano.bola + min * 60 + (min > 45 ? INTERVALO_S : 0);
     }
     if (D.corrida && dia.t >= D.corrida.alvo) terminarCorrida();
+    /* a ida jogada: o bonde atrás do presidente, os pontos, o rival à vista */
+    if (IDA) { try { conferirVoltaDaIda(); quadroIda(dtq); } catch (err) { console.error('a ida jogada:', err); } }
+    else if (document.body.classList.contains('j3d-ida')) marcarIda();
     /* a luz da hora do dia */
     const h = dia.t / 3600;
     if (luzVista == null || Math.abs(h - luzVista) > 0.01) { luzVista = h; const Cn = C(); if (Cn && Cn.vida) Cn.vida.hora(h); }
@@ -1671,6 +1976,8 @@ export function criarDia3d(api, vida, g = {}) {
      ====================================================== */
   function fechar() {
     if (!D) return;
+    if (IDA) { const Cn = C(); if (Cn && Cn.aPe && Cn.aPe.ativo) Cn.aPe.sair(false); if (IDA.b) IDA.b.controlado = false; const st = setaDaRua(); if (st) st.alvo(null); IDA = null; }
+    document.body.classList.remove('j3d-ida');
     const eraFundo = !!D.fundo, tDia = dia && dia.plano ? dia.t : null, estrada = D.estrada;
     /* O RESULTADO FICA NA TELA: o dia fecha uns 2 s depois do apito, e o placar
        (com quem passou nos pênaltis) ia junto — agora ele vira a partida solta e
@@ -1734,6 +2041,8 @@ export function criarDia3d(api, vida, g = {}) {
   function verNossa() {
     if (D && D.estrada) { D.estrada.verOnibus(); return; }
     if (!D || !dia || !D.nosso) return;
+    /* (na ida jogada a câmera é do presidente a pé) */
+    if (IDA) return;
     if (D.partida || D.fase === 'jogo') verNossoSetor(); else dia.seguirBonde(D.nosso);
   }
 
@@ -1759,6 +2068,41 @@ export function criarDia3d(api, vida, g = {}) {
     },
     /* o nosso bonde ainda longe do portão (a briga da ida atrasou a caminhada) */
     get nossoNaRua() { return !!(D && D.nosso && dia && dia.plano && dia.t < D.nosso.chega - 20); },
+    /* A NÉVOA (nevoa3d.js): onde está a cabeça do nosso bonde (o olho dele no
+       escuro); na ida jogada (rua3d.js), o presidente a pé já é o olho */
+    get cabecaNossa() {
+      /* (na ida jogada o olho é o presidente a pé) */
+      if (IDA && IDA.andando) return null;
+      const b = D && !D.fundo && D.nosso, g = b && b.gente && b.gente.find(x => !x.saiu);
+      return g && g.d ? { x: g.d.x, z: g.d.y } : null;
+    },
+    /* A IDA JOGADA: no ar (o presidente leva o bonde), a briga que voltou e a rua da tocaia da pista */
+    get idaJogada() { return !!(IDA && (IDA.andando || IDA.pausa || IDA.brigando)); },
+    voltouDaBriga: () => voltouDaBrigaDaIda(),
+    /* pro teste: a ida jogada por dentro, e o presidente levado a um ponto (o bonde atrás dele) */
+    get ida() {
+      return IDA ? { andando: IDA.andando, pausa: !!IDA.pausa, i: IDA.i, brigando: !!IDA.brigando, alvo: IDA.alvo ? IDA.alvo.v.t.sigla : null,
+                     pontos: IDA.pontos.map(p => ({ id: p.id, x: p.x, z: p.z, evento: !!p.evento })), n: IDA.b.gente.filter(g => !g.saiu).length } : null;
+    },
+    levarNaIda(x, z) {
+      const Cn = C();
+      if (!IDA || !Cn || !Cn.aPe || !Cn.aPe.ativo || !Cn.aPe.levar) return false;
+      const ok = Cn.aPe.levar(x, z, Cn.orb ? Cn.orb.az : 0), eu = Cn.aPe.eu;
+      if (ok && IDA.seg && eu) IDA.seg.semear(eu.x, eu.y, eu.x, eu.y, eu.rumo);
+      return ok;
+    },
+    /* a tocaia da pista na ida jogada: a briga é onde o presidente está (briga_lugar.js, `brigaNaRua`) */
+    ruaDaIda(cfg) {
+      const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null;
+      if (!IDA || !eu) return null;
+      const Q = {};
+      /* eles vêm de 14 m pra frente na rota (a esquina) */
+      IDA.b.rua.ponto(Math.min(IDA.b.rua.L, (IDA.pontos[0].s || 0) + 14 * M), Q);
+      IDA.brigando = { pos: { x: eu.x, z: eu.y }, v: null, doItinerario: true };
+      if (Cn.aPe.ativo) Cn.aPe.sair(false);
+      const e = D.e, P = api.planta, bid = P && P.bairroEm ? P.bairroEm(eu.x, eu.y) : null, Dm = TO.dominio, b0 = bid && Dm ? Dm.bairro(e.torcida.mapa, bid) : null;
+      return { nos: { x: eu.x, z: eu.y }, eles: { x: Q.x, z: Q.z }, bairro: b0 ? b0.nome : '', nosAtacamos: false, rot: 'A TOCAIA DA PISTA' };
+    },
     /* pro teste */
     get estado() {
       if (!D) return null;

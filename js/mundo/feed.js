@@ -6448,6 +6448,11 @@ TO.feed = (function(){
       case 'jogo-praca':
         marcar();
         return {ok:true, abrir:{tela:'jogo-praca', msg:m}};
+      /* O RECADO DO JOGO 3D (o dia livre, a panfletagem atacada; 07/10/2026):
+         a resposta é do jogo 3D (jogo3d.js `responder`) */
+      case 'jogo3d':
+        marcar();
+        return {ok:true, abrir:{tela:'jogo3d', msg:m, botao:idBotao}};
       /* SÓ PRA SAVE ANTIGO (19/09/2026): obra virou notícia sem botão
          no mesmo dia em que nasceu como decisão, mas um save feito
          no meio do caminho pode ter um cartão de obra ainda aberto —

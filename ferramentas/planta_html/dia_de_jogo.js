@@ -2434,6 +2434,15 @@ export function criarDiaDeJogo(ctx) {
     const p = plano;
     tReal += dt;
     for (const b of p.vivos) {
+      /* A IDA JOGADA (dia3d.js, 07/10/2026): o nosso bonde vai atrás do
+         presidente a pé (rua3d.js, os seguidores) — o plano não mexe nele
+         até a PM pegar ele no cordão */
+      if (b.controlado) {
+        /* (o rótulo vai junto, em cima do primeiro de pé do bonde) */
+        const g0 = b.gente.find(g => !g.saiu), d0 = g0 && g0.d;
+        if (d0 && b.rotulo) b.rotulo.position.set(d0.x, (d0.alt || 0) + 3.4 * M, d0.y);
+        continue;
+      }
       const sh = p.cabeca(b, t), L = b.rua.L;
       /* quantos já passaram a catraca */
       let dentro = 0; for (const g of b.pessoas) if (g.passa <= t) dentro++;
@@ -2571,6 +2580,7 @@ export function criarDiaDeJogo(ctx) {
     for (const br of p.brigas) br.rotulo.userData.escondido = t < br.tIni - 3;
     /* a escolta: na frente e atrás do bonde, até o portão */
     for (const e of p.escolta) {
+      if (e.b.controlado) continue;
       const b = e.b, sh = p.cabeca(b, t), atras = (b.cauda + 1.5) * M;
       const s = Math.min(e.k < 2 ? sh + 2 * M : Math.max(0, sh - atras), b.rua.L - (e.k < 2 ? 2 : 5) * M);
       b.rua.ponto(Math.max(0, s), Q2);
@@ -2970,6 +2980,14 @@ export function criarDiaDeJogo(ctx) {
     },
     /* os bonecos do dia que não são de `ids` (as torcidas da briga, que o combate desenha) */
     semAsDaBriga(ids) { const fora = new Set(ids); return discos => discos.filter(d => !fora.has(d.spawn)); },
+    /* quem saiu da rua numa briga que o plano não tinha (a ida jogada): os
+       últimos `n` do bonde somem do dia (devolve quantos) */
+    tirarDoBonde(b, n) {
+      if (!b || !(n > 0)) return 0;
+      const vivosAinda = b.gente.filter(g => !g.saiu), sai = vivosAinda.slice(Math.max(1, vivosAinda.length - n));
+      for (const g of sai) { g.saiu = true; const i = J.discos.indexOf(g.d); if (i >= 0) J.discos.splice(i, 1); }
+      return sai.length;
+    },
     /* as torcidas da briga sem os objetos do dia (o bandeirão, o instrumento, o pano no ombro): null devolve */
     ocultarTorcidas(ids, o) { if (arq && arq.ocultar) arq.ocultar(ids || [], o); },
     /* A BRIGA NO CORDÃO (arredores3d.js): as grades da PM que caem no

@@ -131,6 +131,7 @@ export function criarMapaDaCidade(api) {
 
   /* ---- o desenho: a planta, e por cima a sede do jogador e a câmera ---- */
   function desenhar() {
+    const e0 = E();
     const w = Math.max(1, tela.clientWidth), h = Math.max(1, tela.clientHeight);
     dpr = Math.min(2, window.devicePixelRatio || 1);
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
@@ -143,7 +144,39 @@ export function criarMapaDaCidade(api) {
     try { api.planta.pintarMapa(ctx, V.x0, V.y0, V.s, dpr); }
     catch (e) { console.error('mapa da cidade:', e); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#222'; ctx.fillRect(0, 0, cv.width, cv.height); }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const e = E(), porta = e && e.torcida && api.sedeDe ? api.sedeDe(e.torcida.id) : null;
+    /* A NÉVOA (nevoa3d.js, 07/10/2026): o escuro do que a torcida não vê, por
+       cima da planta — o mesmo da cidade em 3D */
+    const J3 = window.TO && TO.jogo3d, N = J3 && J3.nevoa;
+    if (N && N.ligada && N.mapa && api.cenario && N.mapa.praca === api.cenario.praca) {
+      const nc = N.canvas(), mp = N.mapa;
+      if (nc) {
+        const [x0, y0] = naTela(mp.x0, mp.z0), [x1, y1] = naTela(mp.x0 + mp.nx * mp.cel, mp.z0 + mp.ny * mp.cel);
+        ctx.save(); ctx.imageSmoothingEnabled = true; ctx.drawImage(nc, x0, y0, x1 - x0, y1 - y0); ctx.restore();
+      }
+    }
+    /* AS PANFLETAGENS DE HOJE que se veem (as rodas ficam na rua; a
+       panfletagem é o que se procura no mapa): o megafone na cor da torcida */
+    const V3p = J3 && J3.vida;
+    for (const p of (V3p && V3p.panfletagensHoje ? V3p.panfletagensHoje() : [])) {
+      if (N && N.ligada && !N.visivel(p.x, p.z) && !(e0 && e0.torcida && p.tid === e0.torcida.id)) continue;
+      const [x, y] = naTela(p.x, p.z);
+      ctx.save();
+      ctx.fillStyle = p.cor || '#d9a441'; ctx.strokeStyle = '#111'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, 7); ctx.fill(); ctx.stroke();
+      rotulo(T_('PANFLETAGEM · {sigla}', { sigla: p.sigla || '' }), x, y - 16, p.cor || '#d9a441');
+      ctx.restore();
+    }
+    /* o presidente na rua (a rua livre, rua3d.js) */
+    const R3 = J3 && J3.rua, est = R3 && R3.ativo ? R3.estado : null;
+    if (est && est.lider) {
+      const [x, y] = naTela(est.lider.x, est.lider.z);
+      ctx.save();
+      ctx.fillStyle = '#f3e6c4'; ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(x, y, 8, 0, 7); ctx.fill(); ctx.stroke();
+      rotulo(T_('O PRESIDENTE'), x, y - 18, '#d9a441');
+      ctx.restore();
+    }
+    const e = e0, porta = e && e.torcida && api.sedeDe ? api.sedeDe(e.torcida.id) : null;
     const T = e && e.torcida && api.planta.torcidas ? api.planta.torcidas().find(t => t.id === e.torcida.id) : null;
     if (porta) {
       /* a sede do jogador: o alfinete na cor da torcida, com a estrela */

@@ -2673,6 +2673,27 @@
   }
   /* a linha só tem um número, o da barra: o efetivo anda com ela */
   function itnMarcarEfetivo(){ itnContar(); }
+  /* A BAIXA DE UMA BRIGA FORA DAS PARADAS (a ida jogada do jogo 3D,
+     dia3d.js: o presidente partiu pra cima de um bonde rival no caminho):
+     quem caiu ou foi preso sai do número da linha, como na briga de uma
+     parada — a escolta da aliada primeiro; do outro lado, só se a rival é
+     a torcida que a linha conta */
+  function itnBaixa(nos, rivalId, deles){
+    if(!ITN) return;
+    let sobra = Math.max(0, Math.round(nos || 0));
+    if(itnEscoltaAtiva()){ const k = Math.min(ITN.escolta.n, sobra); ITN.escolta.n -= k; sobra -= k; }
+    ITN.nos = Math.max(0, ITN.nos - sobra);
+    const R = rivalId && TO.mundo.torcida(rivalId), ef = ITN.it.efetivo || {};
+    const d = Math.max(0, Math.round(deles || 0));
+    if(R && ef.eles && R.nome === ef.nomeDeles) ITN.eles = Math.max(0, ITN.eles - d);
+    /* (o livro de quem sobrou, se a linha já abriu uma briga com elas) */
+    if(ITN.resta){
+      const nosId = E().torcida.id;
+      if(ITN.resta[nosId] != null) ITN.resta[nosId] = Math.max(0, ITN.resta[nosId] - Math.max(0, Math.round(nos || 0)));
+      if(rivalId && ITN.resta[rivalId] != null) ITN.resta[rivalId] = Math.max(0, ITN.resta[rivalId] - d);
+    }
+    itnContar();
+  }
 
   /* a linha vira a parada de agora: símbolo, hora, nome e o ponto aceso */
   function itnPintar(){
@@ -3725,6 +3746,8 @@
         const p = P.plano(e, it.jogo);
         const est = it.r.tipo === 'fora' ? P.estimativaCaravana(e, it.jogo) : null;
         const car = est ? _t('{n} na caravana', {n:est.vao}) + ' · ' : '';
+        /* (em casa, no jogo 3D, a ida se decide no dia) */
+        if(it.r.tipo !== 'fora' && TO.semFeed) return {txt:_t('a ida é no dia'), tom:'ok'};
         if(p.intencao === 'paz') return {txt: car + _t('em paz'), tom:'ok'};
         const alvo = p.alvoTorcida && M.torcida(p.alvoTorcida);
         if(!alvo) return {txt: car + _t('atacar: falta o alvo'), tom:'falta'};
@@ -3794,13 +3817,22 @@
         d.appendChild(s);
       }
       /* A RUA: em paz ou atacando; o alvo, onde, o efetivo e as bombas */
-      const briga = p.intencao !== 'paz';
+      const s2 = secao(n++, _t('Na rua'), fora ? _t('na cidade deles') : _t('na nossa praça'));
+      /* A IDA É NO DIA (o jogo 3D, 07/10/2026; o dono: "Isso acaba com a
+         necessidade do planejamento antecipado do dia de jogo em casa"): em
+         casa, quem decide se ataca é o jogador, no dia — o recado da
+         partida pergunta se ele assume a ida (o presidente a pé na frente
+         do bonde, caçando quem quiser no caminho) ou vai em paz. Aqui
+         ficam só as bombas */
+      const idaNoDia = !fora && !!TO.semFeed;
+      if(idaNoDia)
+        s2.appendChild(el('p',{class:'plj-nota plj-ida', html:_t('Em casa, a ida é decidida <b>no dia do jogo</b>: o recado da partida pergunta se você assume a ida — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz.')}));
+      const briga = !idaNoDia && p.intencao !== 'paz';
       const alvos = fora ? P.alvosDaViagem(e, {advId:(jogo && jogo.advId) || r.advId})
                          : (()=>{ const doJogo = new Set([...M.torcidasDe(r.grupo.casa), ...M.torcidasDe(r.grupo.vis)].map(o=>o.id));
                                   return P.alvosNaRua(e, {dia:r.grupo.dia}).filter(a=>doJogo.has(a.id)); })();
       let onde = P.ondeDoPlano(p);
-      const s2 = secao(n++, _t('Na rua'), fora ? _t('na cidade deles') : _t('na nossa praça'));
-      s2.appendChild(cartoes([
+      if(!idaNoDia) s2.appendChild(cartoes([
         {id:'paz', rot:_t('Ir em paz'), nota:_t('portão, bandeira e bateria'), sub:_t('ninguém arrisca nada')},
         {id:'atacar', rot:_t('Atacar'), nota: alvos.length ? _tn(alvos.length, '{n} alvo possível', '{n} alvos possíveis') : _t('ninguém pra atacar'),
          sub:_t('prestígio em jogo, feridos e presos'), off:!alvos.length, tom:'briga'}
@@ -4559,14 +4591,34 @@
         if(D3 && D3.abrirJogoDaCidade) D3.abrirJogoDaCidade(m);
       }
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
+      /* o recado que é do jogo 3D (o dia livre, a panfletagem atacada, o dia
+         de jogo): quem responde é ele (jogo3d.js) */
+      else if(t === 'jogo3d'){ if(TO.jogo3d && TO.jogo3d.responder) TO.jogo3d.responder(m, r.abrir.botao || idBotao); }
     }
     /* A BOLA ROLANDO ABRE O DIA INTEIRO (régua do dono, 20/08/2026):
        a partida deixou de ser um cartão solto no feed e virou uma
        parada do itinerário, junto da concentração, da pista, dos
        arredores e — em viagem — das praças da estrada. */
-    if(idBotao === 'iniciar'){
+    /* A IDA JOGADA (o jogo 3D, 07/10/2026; o dono: "Agora no dia do jogo
+       vai ter o balão de mensagem que é dia de jogo, perguntando se o
+       jogador quer assumir o controle da ida ou ir em paz"): em casa, na
+       nossa praça em 3D, o recado da partida tem os dois botões (jogo3d.js
+       troca o "Iniciar partida"). "Assumir a ida" põe o presidente a pé na
+       frente do bonde (dia3d.js); "Ir em paz" é o dia de sempre, sem
+       hostilidade nossa. Nos dois, o ataque planejado pro jogo sai: quem
+       ataca agora é o jogador, na rua (as bombas ficam) */
+    if(idBotao === 'iniciar' || idBotao === 'controle'){
       const msg = (e.feed || []).find(x=>x.id === id);
-      if(msg && msg.kind === 'partida') abrirItinerario(msg);
+      if(msg && msg.kind === 'partida'){
+        if(msg.dados && msg.dados.idaJogada){
+          msg.dados.controle = idBotao === 'controle';
+          try{
+            const P = TO.planejamento, j = TO.itinerario.jogoDeHoje(e) || e.proximoJogo, p = P.plano(e, j), bombas = p.bombas;
+            if(p.intencao !== 'paz'){ P.definirIntencao(e, 'paz', j); p.bombas = bombas; }
+          }catch(err){ console.error('a ida jogada:', err); }
+        }
+        abrirItinerario(msg);
+      }
     }
     TO.estado.salvar();
     pintarTopo();
@@ -11360,6 +11412,8 @@
       m.config.local = local; m.tres = false; m.renderizador = null;
       if(P3.falhou) P3.falhou();
     }
+    /* (a briga da rua livre que não montou na cidade cai na rua da foto) */
+    if(local === 'rua-livre'){ m.config.local = 'rua'; return montarCena(m); }
     const em3d = !!o.briga3d && /^rua(-media|-nobre)?$/.test(local)
               && !!(TO.dados.cenas && TO.dados.cenas[local+'-3d']) && !!TO.diaJogo.tres;
     const c2 = $('djPrincipal'), sobre = $('djSobre');
@@ -11438,6 +11492,9 @@
     /* na arquibancada a conta é SÓ a tabela do dono (19/08/2026):
        nem o prestígio da noite nem a moral genérica entram por cima */
     if(acao && acao.acao === 'estadio'){ res.prestigio = 0; res.moralTorcida = 0; }
+    /* a briga da rua livre é pequena (o presidente e uns quatro): a moral
+       da noite vale a metade (07/10/2026) */
+    if(acao && acao.acao === 'livre') res.moralTorcida = Math.round((res.moralTorcida || 0) * 5) / 10;
     /* O TAMANHO DO BONDE PESA NO PRESTÍGIO (decisão do autor): vitória
        em menor número vale mais, vitória esmagando em maior número
        vale menos. O fator é a razão entre os efetivos de abertura,
@@ -11588,6 +11645,49 @@
         if(aoFechar) aoFechar(res || {});
       }
     });
+  }
+
+  /* =======================================================
+     A BRIGA DA RUA LIVRE (o jogo 3D, 07/10/2026; o dono: "explorar o
+     mapa do jogo e executar ações de maneira livre como bater em
+     rivais"): o presidente e o bonde dele contra quem a rua livre achou
+     (ferramentas/planta_html/rua3d.js) — a roda da rival, os três que
+     panfletam, quem veio atrapalhar. Os dois lados descem como bonde, com
+     o número exato de cada um (a régua da briga do tutorial). `o`: {
+     rivalId, deles, escalacao (o nosso lado, o presidente primeiro),
+     ruaLivre (os dois pontos e o bairro: briga_lugar.js), alvo (o que o
+     fecho lê: bairro, panfleto, contraNos…) }
+     ======================================================= */
+  function abrirBrigaLivre(o){
+    const e = E();
+    if(!e || !o || !o.rivalId || !(o.escalacao || []).length) return false;
+    const T = TO.mundo.torcida(o.rivalId);
+    const cR = T ? TO.mundo.coresDaTorcida(T) : {cor:'#1d4f8a', cor2:'#e8e8e8', cor3:null};
+    const cores = TO.mundo.coresDaTorcida(e.torcida);
+    const fila = o.escalacao.slice();
+    const deles = Math.max(1, Math.round(o.deles || 3));
+    const bondes = [
+      {lado:'mandante', n:fila.length, nossa:true, nome:e.torcida.nome, cor:cores.cor, cor2:cores.cor2, cor3:cores.cor3,
+       sigla:TO.mundo.siglaTorcida(e.torcida)},
+      {lado:'visitante', n:deles, nossa:false, nome: T ? T.nome : _t('A rival'), cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3,
+       sigla: T ? TO.mundo.siglaTorcida(T) : 'RIV', perfil:perfilDe(o.rivalId)}
+    ];
+    $('telaDiaJogo').classList.remove('oculto');
+    document.body.classList.add('em-cena');
+    TO.estado.bloquear(true);
+    pararTudo('cena');
+    simularProxima = !!o.simular;
+    const acao = {acao:'livre', alvo:Object.assign({torcidaId:o.rivalId, nome: T ? T.nome : '', nossos:fila.length, deles,
+                                                   cidade:e.torcida.mapa}, o.alvo || {})};
+    abrirPalco({
+      canvas: $('djPrincipal'),
+      config: { escalacao: fila, intencao:'atacar', bondes, bombas:0, efetivoRival:deles, local:'rua-livre',
+                rivalId:o.rivalId, faixaDefensor:null, ruaLivre:o.ruaLivre,
+                rival:{nome: T ? T.nome : _t('A rival'), cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3},
+                perfilRival:perfilDe(o.rivalId) },
+      aoTerminar: res => fecharDiaDeJogo(res, null, acao)
+    });
+    return true;
   }
 
   /* =======================================================
@@ -12197,6 +12297,13 @@
   function mostrarRelatorio(res, resumo, fecho, ctx){
     ctx = ctx || {};
     const e = E();
+    /* (a briga da rua livre do jogo 3D: o fim é da briga, e a volta é pra rua) */
+    const naRua = !!(TO.jogo3d && TO.jogo3d.rua && TO.jogo3d.rua.ativo);
+    /* (e a da ida jogada: a volta é pro caminho do estádio) */
+    const naIda = !naRua && !!(TO.jogo3d && TO.jogo3d.dia && TO.jogo3d.dia.idaJogada);
+    const cab = $('telaRelatorio') && $('telaRelatorio').querySelector('header h2');
+    if(cab) cab.textContent = naRua || naIda ? _t('Fim da briga') : _t('Fim da noite');
+    $('btFecharRelatorio').textContent = naRua ? _t('Voltar pra rua') : naIda ? _t('Seguir pro estádio') : _t('Voltar pra sede');
     const nossoLado = res.nossoLado === 'visitante' ? 'visitante' : 'mandante';
     const outro = nossoLado === 'mandante' ? 'visitante' : 'mandante';
     const Cap = l => l === 'mandante' ? 'Mandante' : 'Visitante';
@@ -12436,6 +12543,10 @@
     msgDaLinha: () => (ITN && ITN.msg && ITN.e === E()) ? ITN.msg : null,
     /* a linha enxuta (o painel do dia de jogo em 3D) e a hora de cada fase pela cidade */
     resumoDaLinha: () => itnResumo(),
+    /* a briga fora das paradas da linha (a ida jogada do jogo 3D): o
+       resultado dela e as baixas que saem do número da linha */
+    get ultimoResultado(){ return ultimoResultado; },
+    baixaNaLinha: (nos, rivalId, deles) => itnBaixa(nos, rivalId, deles),
     /* o planejamento da semana, em popup (pro menu, pro jogo 3D e pro teste) */
     abrirPlanejamento: m => abrirPlanejamento(m),
     get planejamentoAberto(){ return !!planejamentoAberto; },
@@ -12454,7 +12565,7 @@
     /* o planejamento do assalto e a operação do dia em 3D (30/09/2026) */
     abrirAssalto, abrirAssalto3d, get assaltoNoAr(){ return assaltoNoAr; },
     abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
-    abrirBrigaDoTutorial,
+    abrirBrigaDoTutorial, abrirBrigaLivre,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,
     /* a retrospectiva da virada (dono, 09/09/2026) */

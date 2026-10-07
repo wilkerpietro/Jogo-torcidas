@@ -406,3 +406,84 @@ export function brigaNoPortao(ctx, est, o = {}) {
   return { cena, noMundo: Tb.noMundo, doMundo: Tb.doMundo, u: Tb.u, v: Tb.v, chao: Tb.chao, escala: Tb.K,
            lugar: { tipo: 'portao', estadio: est.nome, portao: Pt.nome }, malha: Tb.malha, COLS: Tb.COLS, ROWS: Tb.ROWS };
 }
+
+/* =========================================================
+   A BRIGA NA RUA LIVRE (o jogo 3D, 07/10/2026)
+   ---------------------------------------------------------
+   O dono: "pros dias sem nada marcado [...] serem liberados pro jogador
+   explorar o mapa do jogo e executar ações de maneira livre como bater
+   em rivais". A briga é onde os dois grupos se encontraram: o presidente
+   e o bonde dele de um lado, a roda da rival (ou os três que panfletam, ou
+   quem veio atrapalhar) do outro. O tabuleiro deita na linha que liga os
+   dois (o x vai da gente pra eles), a máscara é a rua e a calçada que se
+   alcançam andando de quem briga, e cada lado sai pelo lado de onde veio.
+   ========================================================= */
+/* `o`: { nos: {x, z} (o líder), eles: {x, z} (o meio do grupo deles),
+   bairro (o nome, pro texto), nosAtacamos (sem ele, sim), rot (quem são
+   eles: 'A RODA DA TUF', 'OS QUE PANFLETAM') }. Devolve { cena, noMundo,
+   doMundo, u, v, chao, escala, lugar } ou { erro } */
+export function brigaNaRua(ctx, o = {}) {
+  const M = ctx.M, P = ctx.P;
+  if (!ctx.grade) return { erro: 'a praça não tem a grade do passo' };
+  if (!o.nos || !o.eles) return { erro: 'a briga na rua precisa dos dois lados' };
+  const a = [o.nos.x, o.nos.z], b = [o.eles.x, o.eles.z];
+  const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz);
+  const u = L > 0.5 * M ? [dx / L, dz / L] : (o.u || [1, 0]);
+  /* o meio: entre os dois, e no máximo a 15 m de cada um (o tabuleiro tem 43 m) */
+  const lim = 15 * M, k = L > 2 * lim ? lim / L : 0.5;
+  const c = L > 2 * lim ? [a[0] + dx * k, a[1] + dz * k] : [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  const naRua = P && P.naRuaOuCalcada ? (wx, wz) => P.naRuaOuCalcada(wx, wz) : () => true;
+  const T = tabuleiro(ctx, c, u, naRua);
+  const { pxm, soltar, R } = T;
+  const dentroX = x => Math.max(70, Math.min(TAB.W - 70, x)), dentroY = y => Math.max(60, Math.min(TAB.H - 60, y));
+  const pa = T.doMundo(a[0], a[1]), pb = T.doMundo(b[0], b[1]);
+  const pA1 = soltar(dentroX(pa[0]), dentroY(pa[1]), 320), pD1 = soltar(dentroX(pb[0]), dentroY(pb[1]), 320);
+  if (!pA1 || !pD1) return { erro: 'a rua da briga não cabe no tabuleiro' };
+  T.ligar([pA1, pD1]);
+  if (!T.ligado(pA1, pD1)) return { erro: 'os dois lados da briga não se ligam andando' };
+  /* (o segundo grupo de cada lado: um pouco atrás do primeiro) */
+  const pA2 = soltar(pA1[0] - 1.8 * pxm, pA1[1] + 1.2 * pxm, 120);
+  const pD2 = soltar(pD1[0] + 1.6 * pxm, pD1[1] - 1.2 * pxm, 120);
+  /* AS SAÍDAS: cada um pelo lado de onde veio — a gente pra trás (x pequeno),
+     eles pra frente (x grande) —, no chão ligado à briga */
+  const saida = (x0, y0, sinal) => {
+    for (let x = x0; sinal < 0 ? x < TAB.W / 2 : x > TAB.W / 2; x -= sinal * 40) {
+      const p = soltar(x, y0, 260);
+      if (p && T.ligado(p, pA1)) return p;
+    }
+    return null;
+  };
+  const pSaiA = saida(46, pA1[1], -1) || pA1, pSaiD = saida(TAB.W - 46, pD1[1], 1) || pD1;
+  const nosAtacamos = o.nosAtacamos !== false;
+  /* o nosso lado: o mandante na rua livre; na defesa (a tocaia da pista na
+     ida jogada, o ataque que a gente sofre) a cena põe a gente de visitante */
+  const nl = o.nossoLado === 'visitante' ? 'visitante' : 'mandante', ol = nl === 'mandante' ? 'visitante' : 'mandante';
+  const spawns = [
+    { id: nl + '1', rot: o.rotNos || 'O PRESIDENTE E O BONDE', lado: nl, ...R(pA1), jogador: true, entrada: 'nossa' },
+    ...(pA2 ? [{ id: nl + '2', rot: 'O BONDE', lado: nl, ...R(pA2), entrada: 'nossa' }] : []),
+    { id: ol + '1', rot: o.rot || 'ELES', lado: ol, ...R(pD1), entrada: 'deles' },
+    ...(pD2 ? [{ id: ol + '2', rot: o.rot || 'ELES', lado: ol, ...R(pD2), entrada: 'deles' }] : [])
+  ];
+  const entradas = [
+    { id: 'nossa', rot: 'POR ONDE VIEMOS', lado: nl, ...R(pSaiA), raio: 46, dir: [-1, 0] },
+    { id: 'deles', rot: 'POR ONDE ELES VIERAM', lado: ol, ...R(pSaiD), raio: 46, dir: [1, 0] }
+  ];
+  /* a PM vem a pé das duas pontas do tabuleiro (de longe: briga de rua não tem posto) */
+  const pmPostos = [R(soltar(60, 60, 600) || pSaiA), R(soltar(TAB.W - 60, TAB.H - 60, 600) || pSaiD)];
+  const bairro = o.bairro ? ', em ' + o.bairro : '';
+  const cena = {
+    id: 'rua-livre@3d', base: 'rua', tres: true, nome: 'Rua',
+    local: 'Na rua' + bairro,
+    largura: TAB.W, altura: TAB.H, celula: TAB.CEL, imagem: null, mascara: T.mascara(),
+    blocos: [], enfeites: [], varais: [], grades: [], pintura: null, tropaChoque: false,
+    saida: { perto: 'Sair pela rua', longe: 'Por onde viemos (leve o líder)', feito: 'o bonde saiu da briga pela rua de onde veio',
+             dica: 'Pra sair da briga, leve o líder até a rua de onde vocês vieram.' },
+    spawns, entradas, faixas: {},
+    /* (quem a gente pega de surpresa só levanta quando o bonde chega perto; quem veio pra cima já vem) */
+    ...(nosAtacamos ? { gatilho: { lado: nl, perto: 200, rot: 'DE OLHO', espera: 'eles ainda não se mexeram', aviso: 'eles viram a gente e vieram' } } : {}),
+    pmPostos,
+    ...fugasDe(T, P)
+  };
+  return { cena, noMundo: T.noMundo, doMundo: T.doMundo, u: T.u, v: T.v, chao: T.chao, escala: T.K,
+           lugar: { tipo: 'rua', bairro: o.bairro || null, c }, malha: T.malha, COLS: T.COLS, ROWS: T.ROWS };
+}

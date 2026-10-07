@@ -392,12 +392,90 @@ TO.acoes = (function(){
 
   function fecharCena(E, ctx, res){
     if(!ctx || !ctx.acao) return null;
+    if(ctx.acao === 'livre')      return fecharLivre(E, ctx.alvo, res);
     if(ctx.acao === 'atacar')     return fecharAtaque(E, ctx.alvo, res);
     if(ctx.acao === 'pressionar') return fecharPressao(E, res);
     if(ctx.acao === 'defender')   return fecharDefesa(E, ctx.alvo, res);
     if(ctx.acao === 'treta')      return fecharTreta(E, ctx.alvo, res);
     if(ctx.acao === 'estadio')    return fecharEstadio(E, ctx.alvo, res);
     return null;
+  }
+
+  /* A BRIGA DA RUA LIVRE (o jogo 3D, 07/10/2026; o dono: "explorar o mapa
+     do jogo e executar ações de maneira livre como bater em rivais"): o
+     presidente e o bonde dele contra a roda da rival, os três que
+     panfletam ou quem veio atrapalhar. É briga pequena: a relação azeda
+     menos que no dia de jogo (REL.brigaLivre; desfazer panfletagem,
+     REL.panfleto), o prestígio é o da noite (fecharDiaDeJogo) e o bairro
+     é onde foi (GANHO.livre; a panfletagem, GANHO.panfleto). A
+     panfletagem que a gente desfez sai do dia dela; a nossa que eles
+     desfizeram, também */
+  function fecharLivre(E, alvo, res){
+    const R = TO.relacoes, D = TO.dominio;
+    const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
+    const antesR = R.nivel(E, alvo.torcidaId);
+    R.hostilidade(E, alvo.torcidaId, alvo.panfleto || alvo.contraNos ? REL().panfleto : REL().brigaLivre);
+    const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio', ganhou ? -0.2 : 0.2);
+    if(D && alvo.panfleto && ganhou && D.marcarPanfletoDesfeito) D.marcarPanfletoDesfeito(E, alvo.torcidaId, E.torcida.id, alvo.bid);
+    if(D && alvo.contraNos){
+      alvo.contraNos.resolvido = true;
+      if(!ganhou && D.marcarPanfletoDesfeito) D.marcarPanfletoDesfeito(E, E.torcida.id, alvo.torcidaId, alvo.bid);
+    }
+    const membros = (res && res.membros) || [];
+    const outro = ((res && res.nossoLado) || 'mandante') === 'mandante' ? 'visitante' : 'mandante';
+    const efeitos = [
+      {ind:'relacao', delta: r1(R.nivel(E, alvo.torcidaId) - antesR), dono:_t('com a {nome}', {nome:alvo.nome})},
+      {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:alvo.nome})}
+    ].filter(x=>x.delta);
+    const cena = alvo.panfleto || alvo.contraNos ? 'panfleto' : 'rua-livre';
+    if(TO.feed) TO.feed.registrarConfronto(E, {
+      torcidaId: alvo.torcidaId, ganhamos: ganhou, atacamos: alvo.nosAtacamos !== false,
+      local:{cena, bairro: alvo.bairro || '', cidade: alvo.cidade || E.torcida.mapa},
+      a: {torcidaId:E.torcida.id, nome:E.torcida.nome, n:alvo.nossos || 0,
+          caidos: membros.filter(m=>!m.preso && m.caido).length,
+          presos: membros.filter(m=>m.preso).length, venceu:ganhou},
+      b: {torcidaId:alvo.torcidaId, nome:alvo.nome, n:alvo.deles || 0,
+          caidos: (res && (outro==='mandante' ? res.caidosMandante : res.caidosVisitante)) || 0,
+          presos: (res && (outro==='mandante' ? res.presosMandante : res.presosVisitante)) || 0,
+          venceu:!ganhou},
+      efeitos});
+    const titulo = alvo.contraNos
+      ? (ganhou ? _t('A PANFLETAGEM FICOU DE PÉ') : _t('DESFIZERAM A NOSSA PANFLETAGEM'))
+      : alvo.panfleto
+        ? (ganhou ? _t('A PANFLETAGEM DELES ACABOU') : _t('A PANFLETAGEM DELES FICOU'))
+        : (ganhou ? _t('A RUA FICOU NOSSA') : _t('CORRERAM COM A GENTE NA RUA'));
+    return {ganhou, dinheiro:0, efeitos, titulo,
+            linhas:[_t('{a} contra {b}, em {bairro}', {a:alvo.nossos || 0, b:alvo.deles || 0, bairro:alvo.bairro || _t('na rua')})]};
+  }
+
+  /* A PANFLETAGEM DO PRESIDENTE (a rua livre, 07/10/2026): o presidente e
+     o bonde dele na calçada de um bairro, uma vez por bairro e por dia. É o
+     recrutamento do expediente com a diretoria na rua: o mesmo dado, com o
+     peso da torcida do clube NAQUELE bairro e uma vez e meia a chance; e
+     soma no domínio do bairro (GANHO.panfletar) */
+  function panfletar(E, bid){
+    const D = TO.dominio, cid = E.torcida.mapa;
+    const b = D && D.bairro ? D.bairro(cid, bid) : null;
+    if(!b) return {ok:false, msg:_t('Esse bairro não existe.')};
+    E.panfletagens = (E.panfletagens && E.panfletagens.abs === E.data.absoluto) ? E.panfletagens : {abs:E.data.absoluto, feitas:[]};
+    if(E.panfletagens.feitas.includes(b.id)) return {ok:false, msg:_t('A gente já panfletou em {bairro} hoje.', {bairro:b.nome})};
+    E.panfletagens.feitas.push(b.id);
+    const p = previsaoRecrutamento(E);
+    const pres = D.presencaDa ? D.presencaDa(E.torcida.id, cid, b.id) : 1;
+    const peso = (0.7 + 0.3 * Math.min(pres, 2)) / (p.peso || 1) * 1.5;
+    const um = Math.min(0.9, p.um * peso), dois = Math.min(0.5, p.dois * peso);
+    const dom = D.mexer ? D.mexer(E, cid, b.id, E.torcida.id, D.GANHO.panfletar, {motivo:'panfletar', semTorcida:true}) : null;
+    let n = 0;
+    if(p.vaga > 0 && p.base > 0){
+      const r = U.rng();
+      n = Math.min(p.vaga, r < dois ? 2 : r < dois + um ? 1 : 0);
+      for(let i = 0; i < n; i++) E.membros.push(TO.membros.criar(E, {cargo:'novato'}));
+      if(n) TO.estado.lancar(E, _tn(n, 'Recrutamento de {n} novato', 'Recrutamento de {n} novatos'), -5*n);
+    }
+    const msg = n ? _tn(n, 'Panfletagem em {bairro}: {n} novato entrou.', 'Panfletagem em {bairro}: {n} novatos entraram.', {bairro:b.nome})
+                  : p.vaga <= 0 ? _t('Panfletagem em {bairro}: a sede está cheia, ninguém pode entrar.', {bairro:b.nome})
+                  : _t('Panfletagem em {bairro}: ninguém quis entrar hoje.', {bairro:b.nome});
+    return {ok:true, n, msg, bairro:b.nome, dominio:dom};
   }
 
   /* A BRIGA NA ARQUIBANCADA fecha com a tabela do dono (19/08/2026),
@@ -1478,6 +1556,6 @@ TO.acoes = (function(){
           equipeDoAssalto, simularAssalto, fecharAssalto, qualidadeDe,
           calorDe, esfriarCalor, nivelDoCalor,
           alvosDeAtaque, temBar, efetivoDaZona, bondeDaZona, zonaDoMembro,
-          clube, fecharCena, fecharBrigaDeRua,
+          clube, fecharCena, fecharBrigaDeRua, panfletar,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};
 })();

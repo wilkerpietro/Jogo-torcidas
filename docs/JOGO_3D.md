@@ -5005,3 +5005,181 @@ a andada:
 A conversão em si (o vetor levado pro tabuleiro e projetado de volta na
 tela) dá 0 a 2° em todas. Os 8 a 12° que sobram no bar com a câmera girada
 são o líder raspando na parede da rua estreita, não a direção.
+
+## 47. A rua livre, a névoa e a ida jogada (07/10/2026)
+
+O dono: "Preciso aprimorar a dinâmica do jogo pros dias sem nada marcado
+fora as ações passivas do expediente da sede serem liberados pro jogador
+explorar o mapa do jogo e executar ações de maneira livre como bater em
+rivais, tentar aumentar o domínio num bairro executando ações e podendo
+também assaltar sozinho. Onde a torcida escolher onde quer recrutar, seja
+a do jogador ou IA, terá três membros da respectiva torcida panfletando ou
+discursando em alguma calçada aleatória do bairro. O jogador pode ir lá
+desfazer, assim como a IA entre si ou contra a gente. Preciso que exista
+uma espécie de área escura/bloqueio que causa o desconhecimento de
+onde/como o rival está no mapa, seja em dias de jogo ou em dias normais
+[...] Os bairros dominados pela torcida terão maior quantidade de membros
+da torcida na rua, similar à lógica que o GTA San Andreas faz com as
+gangues quando dominam um bairro. Recrutar ou querer pixar um bairro rival
+pode ser perigoso, pois pode ativar a animação do rival querendo atrapalhar
+tal ato (novas cenas de briga surgindo). O itinerário até o estádio agora é
+livremente comandado pelo jogador, mantendo a obrigação dos checkpoints
+atuais, mas pra isso é necessário que haja uma seta na borda apontando o
+caminho. [...] Agora no dia do jogo vai ter o balão de mensagem que é dia
+de jogo, perguntando se o jogador quer assumir o controle da ida ou ir em
+paz (ir em paz é a animação atual de não querer hostilidade). Pra jogos"
+— a mensagem chegou cortada aí; o que vale pros jogos fora ficou como
+estava, esperando o resto do pedido.
+
+### 47.1 O dia livre e a rua (`rua3d.js`)
+
+**Que dia é livre.** O dia sem nada marcado: sem jogo nem viagem do clube
+(`TO.feed.diaLivre`), sem reunião, operação, bote, treta, investida ou
+jogo da cidade na fila do dia (`AGENDADOS`), sem assalto com equipe e sem
+o dia de jogo no ar. Ele começa (07:05) com o recado da diretoria no
+balão: **Sair pra rua**, **Ficar na sede** ou **Não perguntar mais**.
+Ficando, o dia passa como sempre, e o botão "Sair pra rua" fica no canto
+de baixo (`.j3d-sair-rua`) pra quem mudar de ideia. As ações passivas do
+expediente da sede correm do mesmo jeito.
+
+**Na rua.** O presidente (o jogador) sai pela porta da sede a pé, com a
+camisa da torcida e o nome dele — o mesmo boneco a pé do cenário (joystick
+ou WASD, Shift corre, a câmera de cima) —, e os quatro mais fortes de pé
+vão atrás, pela trilha que ele faz (`criarSeguidores`: cada um no lugar
+dele, com a folga do lado que cabe na calçada). O relógio anda no passo da
+rua: 0,6 s por minuto do dia a 1× (das 7h às 23h, uns dez minutos), o 2×
+do jogo vale. As mensagens caem na hora delas, e a que pede decisão para
+o tempo no balão em cima de quem anda com ele. Às 23h a rapaziada volta
+pra sede (ou antes, no "Voltar pra sede").
+
+**O que dá pra fazer** (o painel embaixo mostra o que está ao alcance):
+
+| ação | onde | tempo do dia | o que faz |
+|---|---|---|---|
+| Pixar o muro | muro a 4,5 m | 20 min | o mesmo saldo de pixação do mês (`TO.dominio.pixar`) |
+| Panfletar aqui | o bairro onde ele está | 60 min | uma vez por bairro e dia: o recrutamento do dia com a diretoria na rua (× 1,5, pesado pela presença da torcida no bairro) e +1 no domínio (`TO.acoes.panfletar`) |
+| Partir pra cima da X | a roda da rival a 12 m | 30 min | a briga na rua, no lugar (`brigaNaRua`) |
+| Desfazer a panfletagem da X | os três que recrutam, a 12 m | 30 min | a briga contra os três; ganhando, a panfletagem acaba |
+| Assaltar sozinho | a porta da loja a 7 m | 60 min | o assalto em 3D com equipe de um: só o presidente entra e o potencial é a metade |
+
+**O perigo.** Pixar ou panfletar no bairro de uma rival pode chamar a
+turma dela (25% a 60%, pela barra dela no bairro): eles saem de uma roda e
+vêm correndo pela calçada (`rotaNaRua`); se alcançam, a briga começa — ou
+o jogador encara antes, ou corre (a 75 m eles desistem). A roda da rival no
+bairro dela encara quem chega a 7 m: um aviso e, 2,6 s depois, a briga. A
+panfletagem NOSSA também pode ser atacada (a IA que vê o bairro, abaixo): o
+recado chega na hora — "Ir defender" leva o presidente e o bonde até lá e
+abre a briga; "Deixar" perde a panfletagem.
+
+**A briga na rua.** O tabuleiro é montado onde os dois lados estão
+(`briga_lugar.js`, `brigaNaRua`): o meio entre eles (no máximo 15 m de
+cada um), só rua e calçada, o nosso lado de onde viemos e o deles de onde
+vieram, a fuga pelo eixo da rua, a PM a pé pelas pontas. Quem a gente pega
+de surpresa só levanta quando o bonde chega perto. O fecho
+(`acoes.js`, `fecharLivre`): a relação cai (10 na panfletagem, 8 na
+briga solta), o prestígio deles anda ±0,2, o domínio do bairro mexe pela
+porta de sempre (`registrarConfronto`: 6 na panfletagem, 4 na briga
+solta) e a moral conta pela metade (briga de quatro não é briga de
+estádio). O relatório diz "Fim da briga" e "Voltar pra rua", e a rua
+continua de onde parou.
+
+### 47.2 A rua viva (`vida3d.js`, `dominio.js`)
+
+- **A camisa da dona no bairro dela**: de 10% (domínio 50) a 35% (domínio
+  100) de quem anda na rua veste a camisa da torcida que domina o bairro;
+  6% vestem a de outra. Bairro sem dona segue com a mistura de antes.
+- **As rodas**: de 1 a 4 rodas de 3 a 5 da dona por bairro (pelo domínio,
+  acima de 50), das 9h à meia-noite, em esquinas do bairro.
+- **A panfletagem**: onde a torcida escolheu recrutar hoje (a do jogador
+  pelo expediente "recrutar"; a da IA pelo recrutamento dela,
+  `TO.dominio.recrutandoEm`), três dela numa calçada sorteada do bairro,
+  das 9h às 18h — um discursando no meio, dois apontando.
+- **A IA desfaz a da IA, e a nossa** (`panfletagensDoDia`): a cada dia, a
+  chance de 18% por panfletagem (até seis), entre 11h e 16h, de uma rival
+  que vê o bairro ir desfazer — entre duas IAs vira uma briga registrada
+  no bairro (`brigaIA`, tipo panfleto); contra nós, o recado do ataque.
+  Panfletagem desfeita sai da rua e não recruta naquele dia.
+
+### 47.3 A névoa (`nevoa3d.js`, `cenario.js`)
+
+**O que se vê.** Fica claro: o bairro de que a torcida do jogador é dona;
+um círculo de 45 m em volta da sede, de cada bar, loja, subsede e fábrica
+dela (mesmo no bairro de outra — o exemplo do dono: o bar da TUF na
+Aldeota da Cearamor); e os olhos — 28 m em volta do presidente a pé e 36 m
+em volta da cabeça do nosso bonde no dia de jogo. O resto da praça fica
+escuro: a forma da cidade fica, a cor e a luz quase somem (o pixel vai pra
+um azul quase preto), e **o que se mexe nele e é de outra torcida não
+aparece** — as rodas e a panfletagem da rival, quem passa de camisa dela, a
+turma na porta do bar dela, os bondes do dia de jogo. O mapa da cidade
+pinta o mesmo escuro por cima da planta, e as panfletagens só aparecem
+nele quando estão à vista.
+
+**Como.** A grade dos bairros da planta (células de 4 m) vira uma textura
+(0 visto, 255 escuro) com a borda borrada em uns 16 m; os materiais do
+cenário (os que já têm a noite, `comNoite`) leem ela no fragmento, e os
+olhos entram como até quatro círculos por quadro. O mapa refaz quando o
+domínio muda (o bairro que virou, a estrutura nova) ou a praça troca.
+
+**Numa cena a névoa sai**: a briga (a da rua, a da ida, a do bar) e o
+assalto se veem inteiros, onde quer que sejam — a primeira versão deixava a
+briga no bairro rival cinza e escura (medido no teste da ida).
+
+**Limite sincero**: o mato e as árvores fora desses materiais não escurecem
+(a copa fica verde no escuro); o resto da cidade escurece.
+
+### 47.4 A ida jogada (`dia3d.js`, `jogo3d.js`, `main.js`)
+
+**O recado.** No dia de jogo em casa, na nossa praça, o recado da partida
+troca o "Iniciar partida" por **Assumir a ida** e **Ir em paz**. "Ir em
+paz" é o dia de sempre, sem hostilidade nossa (a rival ainda pode cair em
+cima da gente, como antes). Nos dois, o ataque planejado pra esse jogo sai
+(as bombas ficam): **o planejamento da semana, no jogo 3D, não marca mais
+ataque no jogo em casa** — a seção "Na rua" diz que a ida se decide no dia,
+e a lista mostra "a ida é no dia". O 2D segue com o planejamento de antes.
+
+**A ida.** Com "Assumir a ida", a concentração na porta é a de sempre; na
+hora da saída o presidente aparece a pé na frente do bonde e o bonde
+inteiro vai atrás dele, pela trilha que ele faz, no desenho do plano. Ele
+sai na hora do plano — ou antes, até um minuto antes do primeiro bonde
+rival sair (no máximo duas horas antes da bola), pra dar tempo de ir atrás
+deles. O dia anda a 1× (o passo de quem anda; a velocidade e o "pular"
+somem do painel). **Os pontos de passagem** são os do dia: a **pista**
+(o meio da rota até os arredores; com a tocaia marcada no itinerário, o
+cartão da linha cai quando o presidente chega lá, e a briga é onde ele
+está) e o **cordão da PM** (onde a rota entra nos arredores do estádio):
+ali a polícia assume e leva o bonde até o portão, como antes. **A seta na
+borda** da tela aponta o próximo ponto, com a distância; com ele na tela,
+vira um alfinete em cima dele.
+
+**A caça.** Bonde rival à vista (fora da névoa, andando pro estádio, a
+22 m) acende "Partir pra cima da X" no painel: a briga é no lugar, com o
+número de cada um, e quem cai ou é preso sai do bonde (os bonecos) e do
+número da linha, dos dois lados. "Devolver pra PM" larga o controle (a PM
+pega o bonde onde ele estiver); faltando 12 minutos pra bola, ela pega
+sozinha. O relatório da briga diz "Fim da briga" e "Seguir pro estádio".
+
+**Medido** (`scratchpad/ida/ida.js`: novo jogo com a TUF, Fortaleza ×
+Ceará em casa, a tocaia da Cearamor marcada na pista e um ataque planejado
+— que o "Assumir" tirou, com as duas bombas ficando): o planejamento da
+semana 6 mostra "a ida é no dia" e nenhum "Atacar"; o balão traz os dois
+botões; a ida saiu às 14:57, um minuto antes do bonde da Cearamor (o plano
+punha a nossa saída às 15:18); os 40 seguem o presidente a no máximo 12 m;
+o "Partir pra cima da TOC" acendeu a 9 m do bonde dela (40 × 30, a briga
+no lugar; 1 nosso e 2 deles no chão saíram dos bondes e da linha: 40 → 39,
+30 → 28); na pista o cartão da tocaia caiu, a briga abriu onde o presidente
+estava (Cearamor 44 × 39), o relatório disse "Fim da briga · Seguir pro
+estádio" e a ida seguiu (39 → 37); no cordão a PM pegou o bonde e a linha
+chegou no jogo. Nenhum erro no console. No celular em pé (390 × 844) o
+mesmo roteiro passou inteiro: o joystick sobe pra cima do painel do dia
+(que ganha a linha da ida), a seta encosta o nome dela pro lado de dentro
+na beira da tela, e o medidor de fps sai enquanto o presidente está a pé
+(entre o joystick e o painel não sobrava lugar). O jogo de feed (2D) passou
+dez dias com o planejamento de antes (o "Atacar" no jogo em casa) e o
+relatório "Fim da noite".
+
+**Limites sinceros.** A sede da TUF em Fortaleza fica a uns 100 m do
+Castelão: a ida dela é curta (o cordão a uns 20 m da porta) — por isso a
+saída mais cedo, pra quem quiser rodar a cidade atrás da rival antes de
+entregar o bonde. O "Partir pra cima" só vale contra os bondes do plano do
+dia (as torcidas do jogo indo pro estádio); a torcida que não vai ao jogo
+não está na rua. O jogo fora segue como antes.
