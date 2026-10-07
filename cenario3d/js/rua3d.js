@@ -44,7 +44,7 @@
    A SETA NA BORDA (também do dia de jogo): um alvo no mundo vira uma seta
    na beira da área livre da tela, apontando pra ele, com a distância.
    ========================================================= */
-import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=a2fecc9f92';
+import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=08dc5e5aee';
 
 /* o passo do relógio na rua: ms por minuto do dia, a 1× (o 2× do jogo vale) */
 const RUA_MS_MIN = 600;
@@ -341,6 +341,7 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (seta) seta.alvo(null);
     if (motivo === 'noite') { vida.relogio.definir(FIM); avisar(T_('A noite caiu: o presidente e o bonde voltaram pra sede.')); }
     else if (motivo === 'preso') avisar(T_('O presidente caiu na briga: o bonde levou ele de volta pra sede.'));
+    else if (motivo === 'acao' || motivo === 'briga') avisar(T_('Feito: o presidente e o bonde voltaram pra sede.'));
     else if (motivo === 'reuniao') avisar(T_('A diretoria chamou: o presidente voltou pra sede pra reunião.'));
     TO.tela.retomarTempo('rua');
     if (vida.ligada && motivo !== 'virou') vida.irPraSala();
@@ -553,6 +554,8 @@ export function criarRua(api, vida, dia3d, nevoa) {
       avisar(T_('A {nome} desistiu: o bonde saiu de perto.', { nome: g.nome }));
       const R = vida.rua; if (R && R.grupos) R.grupos.delete(g.chave);
       S.perigo = null;
+      /* (a ação acabou e ninguém mais vem: de volta pra sede) */
+      if (!S.acao) encerrar('acao');
     }
   }
   /* A RODA DA RIVAL ENCARA: no bairro dela, quem chega perto é encarado e,
@@ -662,9 +665,11 @@ export function criarRua(api, vida, dia3d, nevoa) {
     if (vida.esquecerPanfletos) vida.esquecerPanfletos();
     gastar(DURA.briga);
     if (!S) return;
-    /* (a briga de fora acaba na sede — o dono, 07/10/2026: "no fim, ele volta pra sede") */
-    if (v.externa || !v.pos) { encerrar('briga'); return; }
-    voltarAPe(v.pos);
+    /* DEPOIS DE UMA AÇÃO ENCERRADA, A SEDE (o dono, 07/10/2026: "depois de
+       uma ação de domínio encerrada o jogador sempre volta pra sede"): toda
+       briga na rua — a da rua ou a de fora — acaba com o bonde na sede */
+    encerrar('briga');
+    void v;
   }
 
   /* O ASSALTO SOZINHO: a operação na hora, sem plano nem equipe — só o
@@ -708,6 +713,9 @@ export function criarRua(api, vida, dia3d, nevoa) {
       TO.estado.salvar && TO.estado.salvar();
       if (TO.tela.pintarTopo) TO.tela.pintarTopo();
       gastar(DURA.assalto);
+      /* (a ação acabou: de volta pra sede) */
+      if (S) encerrar('acao');
+      return;
     }
     if (S) voltarAPe(pos);
   }
@@ -974,7 +982,12 @@ export function criarRua(api, vida, dia3d, nevoa) {
     /* o bonde vai atrás; a ação em curso; o relógio */
     if (S.seg) S.seg.quadro(dt, eu);
     if (S.acao) {
-      if (S.min >= S.acao.fim - 1e-6) { const a = S.acao; S.acao = null; desposar(); try { if (a.depois) a.depois(); } catch (err) { console.error('a rua livre, a ação:', err); } }
+      if (S.min >= S.acao.fim - 1e-6) {
+        const a = S.acao; S.acao = null; desposar();
+        try { if (a.depois) a.depois(); } catch (err) { console.error('a rua livre, a ação:', err); }
+        /* (pixou ou panfletou: de volta pra sede — se a rival não vier atrás; vindo, depois dela) */
+        if (S && !S.perigo && !S.briga) { encerrar('acao'); return; }
+      }
     }
     andarRelogio(dt);
     if (!S) return;
