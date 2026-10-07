@@ -45115,15 +45115,21 @@ TO.diaJogo.combate = (function(){
     let dx=0,dy=0;
     /* A CENA 3D MANDA UM VETOR, NÃO TECLAS. Lá o W é "pra onde a câmera
        olha", e quem sabe pra onde a câmera olha é o renderizador — ele
-       já converte pro eixo da cena e entrega aqui. Sem vetor, as
-       teclas valem no eixo do mapa, como sempre. */
-    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+       já converte pro eixo da cena e entrega aqui (o teclado e a bola de
+       controle, ponte.js `vetorDaCena`). Sem vetor, as teclas valem no
+       eixo do mapa, como sempre.
+       O VETOR MANDA SOZINHO (07/10/2026): as teclas cruas eram somadas por
+       cima dele, e com a câmera girada o líder andava torto — no meio do
+       caminho entre a câmera e o mapa —, ou de lado, com a câmera de
+       costas pro norte do mapa (as duas direções se anulavam e sobrava o
+       resto). */
     /* A BOLA DE CONTROLE (pedido do dono, 22/08/2026): no celular a
        direção não sai mais de quatro botões, sai de um vetor livre —
        qualquer ângulo, e não só os oito da cruz. Quando o vetor existe
        é ele que manda; o teclado segue exatamente como estava. */
     const eixo = teclas.eixo;
-    if(eixo && (eixo.x || eixo.y)){ dx = eixo.x; dy = eixo.y; }
+    if(teclas.vetor){ dx=teclas.vetor.x; dy=teclas.vetor.y; }
+    else if(eixo && (eixo.x || eixo.y)){ dx = eixo.x; dy = eixo.y; }
     else {
       if(teclas['a']||teclas['arrowleft'])  dx--;
       if(teclas['d']||teclas['arrowright']) dx++;
@@ -49785,6 +49791,12 @@ TO.diaJogo.tres = (function(){
     const m=Math.hypot(x,y)||1;
     return {x:x/m, y:y/m};
   }
+  /* a tela no chão da cena (a bola de controle, ponte.js): a direita da
+     tela é a direita da câmera; pra cima, pra onde ela olha */
+  function deltaDaTela(sx, sy){
+    const fx=Math.sin(cam.yaw), fz=Math.cos(cam.yaw), rx=-fz, rz=fx;
+    return {x:rx*sx - fx*sy, y:rz*sx - fz*sy};
+  }
 
   /* =======================================================
      A CAMADA DE CIMA — nome, vida, preso, radar
@@ -50015,7 +50027,7 @@ TO.diaJogo.tres = (function(){
     gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   }
 
-  return {montar, desenhar, desenharDeCima, limparDeCima, vetorDoTeclado, trocarCamera, MODOS,
+  return {montar, desenhar, desenharDeCima, limparDeCima, vetorDoTeclado, deltaDaTela, trocarCamera, MODOS,
           get escalaDeCima(){ return escalaDeCima; }, set escalaDeCima(v){ escalaDeCima=v; },
           get ativo(){ return !!gl; }, get cam(){ return cam; }};
 })();
@@ -50243,6 +50255,24 @@ TO.diaJogo.ponte = (function(){
      devagar e parecia não sair do lugar). A aba que perdeu o foco volta
      sem salto grande: no máximo 0,2 s de uma vez */
   const PASSO_MAX = 0.05, PASSOS_MAX = 4;
+  /* A BOLA DE CONTROLE NA CENA 3D (o dono, 07/10/2026: "o controle de andar
+     em algumas cenas de briga não faz sentido. O boneco não vai na direção
+     apontada pelo joystick"). A bola é a TELA — pra cima é pra onde a
+     câmera olha, a direita é a direita dela — e ia crua pro tabuleiro, que
+     só por acaso coincide com a tela: quando a câmera abre alinhada com a
+     cena e ninguém gira ela. Na rua que corre torta na tela, ou com a
+     câmera girada, o líder andava pra outro lado (52° de câmera girada
+     davam 46 a 57° de erro). Quem passa da tela pro tabuleiro é o mesmo
+     `deltaDaTela` do arrasto da bomba; sem ele (o palco da reunião), a
+     bola segue crua, como no jogo de cima. */
+  function vetorDaCena(){
+    const ex = teclas.eixo;
+    if(ex && (ex.x || ex.y) && T.deltaDaTela){
+      const q = T.deltaDaTela(ex.x, ex.y), m = Math.hypot(q.x, q.y);
+      return m ? {x:q.x/m, y:q.y/m} : null;
+    }
+    return T.vetorDoTeclado(teclas);
+  }
   function quadro(agora){
     if(!rodando) return;
     if(cenaSumiu()){ rodando=false; return; }
@@ -50251,8 +50281,9 @@ TO.diaJogo.ponte = (function(){
     const dt=Math.min(PASSO_MAX, bruto/passos);
     dtQuadro=dt*passos;
     try{
-      /* na cena de perto o WASD é relativo à câmera: o renderizador resolve */
-      teclas.vetor = (tres && T) ? T.vetorDoTeclado(teclas) : null;
+      /* na cena de perto o WASD é relativo à câmera: o renderizador resolve
+         (e a bola de controle também — `vetorDaCena`) */
+      teclas.vetor = (tres && T) ? vetorDaCena() : null;
       if(J && !ED.ativo){
         for(let p=0; p<passos && !(J.acabou && J.fase==='acabando'); p++)
           for(let i=0; i<velocidade; i++) C.passo(J,dt,teclas,true);

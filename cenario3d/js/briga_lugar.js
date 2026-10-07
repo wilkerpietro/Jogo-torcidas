@@ -28,8 +28,8 @@
    corpo cabe) no que o lugar deixa (a quadra da praça, o lote da sede, a
    rua e a calçada) — e só o que se alcança andando de quem briga.
    ========================================================= */
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=ebdde4bb46';
-import { fugasNaRua } from './fuga_rua.js?v=ebdde4bb46';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=78b065fe68';
+import { fugasNaRua } from './fuga_rua.js?v=78b065fe68';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma da caminhada)
