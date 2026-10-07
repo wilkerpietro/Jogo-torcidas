@@ -70,6 +70,10 @@ TO.i18n.registrar({
      en:'President, {nome} is going after our crew on the corner in {bairro}! It\'s {n} of them against our {m} on the sidewalk.'},
   'A nossa roda em {bairro} segurou a {nome} sozinha.': {es:'Nuestra ronda en {bairro} aguantó sola a la {nome}.', en:'Our crew in {bairro} held off {nome} on their own.'},
   'A {nome} correu com a nossa roda em {bairro}.': {es:'La {nome} corrió a nuestra ronda en {bairro}.', en:'{nome} ran our crew off the corner in {bairro}.'},
+  /* a roda da IA atacada pela IA, e a rua que cede a vez (07/10/2026) */
+  'A {a} foi pra cima da roda da {b} em {bairro}!': {es:'¡La {a} fue contra la ronda de la {b} en {bairro}!', en:'{a} went after {b}\'s crew in {bairro}!'},
+  'roda desfeita': {es:'ronda desarmada', en:'crew run off'},
+  'A diretoria chamou: o presidente voltou pra sede pra reunião.': {es:'La directiva llamó: el presidente volvió a la sede para la reunión.', en:'The board called: the president went back to the HQ for the meeting.'},
   /* o mapa da cidade (mapa3d.js) */
   'PANFLETAGEM · {sigla}': {es:'VOLANTEO · {sigla}', en:'FLYERING · {sigla}'},
   'O PRESIDENTE': {es:'EL PRESIDENTE', en:'THE PRESIDENT'},

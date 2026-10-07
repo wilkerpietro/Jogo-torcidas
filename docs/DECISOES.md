@@ -9467,6 +9467,17 @@ O pedido: "Quando um grupo é avistado no bairro rival e eu abro a cena da briga
 
 **O que ficou de fora ou pela metade**: a IA não ataca roda de outra IA; a frequência dos ataques é um número (`RODA.chance` em `js/mundo/dominio.js`) que pode pedir ajuste depois de jogar; sem resposta no dia (o jogo fechado), o ataque se resolve na conta no dia seguinte. Detalhes: `docs/JOGO_3D.md` §47.6.
 
+## A rua cede a vez, o telhado da sede e a roda da IA contra a IA (dono, 07/10/2026)
+
+O pedido: "Faz a IA atacar rodas de outras IAs também. a tela da reunião fica bugada porque o jogo para onde o jogador estava. na hora da reunião, a cena da sede deve abrir. quando abre mensagem de algum ataque num bairro nosso, não abre a cena, já gera a mensagem automática do resultado da briga. quando volto pra sede após alguma ação o telhado cobre a visão dos compartimentos."
+
+- **A briga de fora com o presidente na rua abre na tela**: o ataque ao nosso bar (e qualquer briga que a rua livre não abriu) tira o presidente do modo a pé antes de a cena montar — a câmera ia ficar presa nele, com a briga correndo longe —, e no fim ele volta pra rua no mesmo lugar.
+- **A reunião da diretoria abre na sede**: com o presidente na rua, "Sentar com a diretoria" encerra a rua e a câmera vai pra mesa.
+- **O telhado da sede**: toda volta pra sala reabre a sede (a briga na rua e o assalto deixavam ela coberta).
+- **A IA ataca roda de outra IA** (só no jogo 3D, na cidade do jogador): a rival que chega no bairro vai pra cima de uma roda da dona, no máximo duas por dia na cidade, numa hora do dia. É a briga entre IAs de sempre (notícia, feridos, prestígio) e mexe 8 pontos de base no bairro; ganhando quem veio, a roda some da rua no resto do dia. Com a roda perto da câmera, dá pra ver a briga na calçada.
+
+**O que ficou de fora ou pela metade**: a briga de roda entre IAs só aparece se a câmera estiver perto dela na hora (longe, a roda só some); a frequência é um número (`RODA.chanceIA`) medido em dias sorteados, não jogando. Detalhes: `docs/JOGO_3D.md` §47.7.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

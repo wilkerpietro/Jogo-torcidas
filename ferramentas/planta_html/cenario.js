@@ -3576,6 +3576,8 @@ void main() {`)
     /* o palco: { J (o jogo do combate), pos(x, y, d, PE), rumo(d), comVida, quadro(dt) } (null tira) */
     set palco(p) { palco = p || null; if (povo) povo.limpar(); pedir(); },
     get palco() { return palco; },
+    /* (pro teste: o prédio aberto agora — o id dele na grade —, ou 0) */
+    get predioAberto() { return corteFixo ? corteFixo.id : 0; },
     /* o prédio em (x, z) sem o que passa de `alto` m do chão (null: todos inteiros) */
     abrirPredio(x, z, alto = 2.2) {
       if (x == null || !grade) { corteFixo = null; pedir(); return 0; }

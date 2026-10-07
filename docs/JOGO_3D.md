@@ -5306,5 +5306,64 @@ Falange 80,7 → 76,8 (3,9 pra TUF). O mesmo no celular (390×844). O ataque
 90,4 → 100 e a roda ficou; "Deixar" no segundo ataque: a roda saiu da rua,
 o aviso "A Falange Coral correu com a nossa roda em Bom Jardim." e a barra
 100 → 95,7. A frequência, em 60 dias sorteados com quatro a seis bairros
-nossos: 21 ataques (com 12% e dois por dia, a primeira versão, eram 51).
+nossos: de 21 a 30 ataques, conforme o mundo (com 12% e dois por dia, a
+primeira versão, eram 51).
 O jogo do feed, dez dias: nenhum ataque de roda. Nenhum erro no console.
+
+### 47.7 A rua cede a vez, o telhado da sede e a roda da IA contra a IA (`rua3d.js`, `vida3d.js`, `dominio.js`)
+
+O dono (com as fotos da reunião na praia, do relatório "não sobrou
+ninguém deles na cena" e da sede coberta): "Faz a IA atacar rodas de
+outras IAs também. a tela da reunião fica bugada porque o jogo para onde o
+jogador estava. na hora da reunião, a cena da sede deve abrir. quando abre
+mensagem de algum ataque num bairro nosso, não abre a cena, já gera a
+mensagem automática do resultado da briga. quando volto pra sede após
+alguma ação o telhado cobre a visão dos compartimentos."
+
+**O que estava errado.** As três falhas tinham duas causas. (1) Com o
+presidente na rua livre, o boneco a pé segue ligado e a câmera fica presa
+nele — a briga que a rua não abriu (o "Invadiram nosso bar!", que cai em
+dia comum) montava no bar, longe, e corria sozinha fora da tela até o
+relatório; a reunião da diretoria voava pra mesa e o a pé puxava a câmera
+de volta pra rua. (2) A sede só fica sem telhado por um corte que vale pra
+um prédio de cada vez (`abrirPredio`): a briga na rua e o assalto apagam
+esse corte no fim, e voltar pra sala não refazia.
+
+**Agora.** O roteador das brigas do 3D (`vida3d.js`, `palcoDe`) pergunta
+primeiro se a rua livre está no ar: a briga de fora tira o presidente do a
+pé antes de a cena montar (`rua3d.js`, `cederAVez`: quem vinha atrapalhar
+desiste) e, no fim, ele volta pra rua no lugar onde estava, com o tempo da
+briga descontado (`depoisDaBriga`; a cena da foto, sem palco em 3D, também
+devolve ele). A reunião da diretoria encerra a rua (o aviso "A diretoria
+chamou: o presidente voltou pra sede pra reunião.") e a câmera vai pra mesa.
+E toda volta pra sala (`irPraSala`) reabre o telhado da sede.
+
+**A roda da IA contra a IA.** Na cidade do jogador, todo dia (não só o dia
+livre), cada rival que chega num bairro de outra IA (estrutura nele, ou
+domina ou tem estrutura num vizinho) pode ir pra cima de uma roda da dona
+ali: 3% por bairro, por rival e por dia, pela força dela contra a dona; no
+máximo duas por dia na cidade, numa hora entre 10h e 21h. Na hora, a briga
+é a das IAs de sempre (`brigaIA`, tipo roda, de 4 a 7 contra até 5): a
+notícia, os feridos e o prestígio delas, e GANHO.roda no bairro pra quem
+ganha; ganhando quem veio, a roda sai da rua no resto do dia. Com a roda
+perto da câmera, a rua vê a briga (`brigaDeRoda`): os de fora chegam
+correndo pela calçada, cinco segundos e meio de pancada (o soco, o chute, a
+guarda e quem apanha são os do boneco das brigas), dois de quem perde no
+chão, e quem perdeu corre; os de fora que ganharam vão embora andando. Com o
+presidente na rua, o aviso "A MOFI foi pra cima da roda da Jovem do
+Floresta em Conjunto Ceará!". Sem o jogo aberto na hora, o dia seguinte
+resolve na conta. Só no jogo 3D.
+
+**Medido** (`scratchpad/rua/ceder.js` e `rodas.js`, novo jogo com a TUF em
+Fortaleza): depois de uma briga na rua o corte estava em 0 (a sede coberta);
+no "Voltar pra sede", o prédio aberto voltou a ser a sede (2250). O
+"Invadiram nosso bar!" com o presidente na rua: o a pé saiu, a câmera ficou
+a 1 m do meio da briga (14 da Falange contra 39 nossos, no bar), e no fim o
+presidente voltou pra rua no mesmo ponto (0 m). A reunião com o presidente
+na rua: a rua encerrou, a câmera ficou a 13 m da cadeira do presidente, e no
+fim o telhado da sede estava aberto. A roda da IA: a MOFI foi pra cima da
+roda da Jovem do Floresta no Conjunto Ceará — os de fora chegaram, 4 socando
+e 10 na guarda, a Jovem do Floresta ganhou (a roda ficou, a barra dela no
+bairro 86,2 → 96,6) e a briga entrou nas notícias (tipo roda). Em 60 dias
+sorteados, de 15 a 27 brigas de roda entre IAs na cidade (dois mundos). O
+celular e o jogo do feed sem erro; nenhum erro no console.
