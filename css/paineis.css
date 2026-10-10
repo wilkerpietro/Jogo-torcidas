@@ -2082,7 +2082,31 @@ header.capa-cidade{background-size:cover; background-position:center;
 .retro-nosso{margin-top:8px;font-size:13px}
 .retro-nosso b{color:var(--ouro)}
 .retro-rever{margin-bottom:12px}
+/* o degrau do sobe e desce (dono, 10/10/2026) */
+.retro-degrau{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco);margin:10px 0 2px}
+/* os donos da praça e da região */
+.retro-donos-tab td{vertical-align:top}
+.retro-donos-tab td.praca b{display:block}
+.retro-donos-tab small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.retro-donos-tab .dono{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.retro-donos-tab .dono .nome{min-width:0;overflow-wrap:anywhere}
+.retro-donos-tab .dono small{flex-basis:100%}
+.retro-donos-tab .dono.nossa .nome{color:var(--verde-vivo)}
+.retro-donos-tab .dono.vazio{color:var(--fraco)}
+.retro-donos-tab .premio{color:var(--ouro)}
+.retro-donos-tab tr.nossa td{color:inherit}
+/* os campeões */
+.retro-campeoes{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.retro-pais{min-width:0;margin-bottom:8px}
+.retro-pais.continente{grid-column:1/-1}
+.retro-pais .retro-col-tit{color:var(--ouro)}
+.retro-campeoes .comp{flex:0 0 46%;min-width:0;font-size:12px;color:var(--fraco);overflow-wrap:anywhere}
+.retro-campeoes .comp small{display:block;font-family:var(--mono);font-size:9.5px}
+.retro-campeoes .nome.vazio{color:var(--fraco);font-style:italic}
+.retro-campeoes .retro-linha.do-ano .comp{color:var(--texto)}
 @media (max-width:480px){
+  .retro-campeoes{grid-template-columns:1fr}
+  .retro-donos-tab .dono .to-chip,.retro-donos-tab .dono .to-escudo{display:none}
   .retro-ano{font-size:44px;top:38px}
   .retro-manchete{font-size:24px;max-width:100%}
   .retro-podio{grid-template-columns:1fr 1.15fr 1fr;gap:5px}

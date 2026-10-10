@@ -422,14 +422,23 @@ TO.estado = (function(){
           TO.conmebol.fotoDasVagas(E, anoQueFecha);
         const placarDoAno = TO.almanaque
           ? TO.almanaque.placarDoAnoTodo(E, anoQueFecha) : null;
+        const rankingTodo = TO.almanaque ? (TO.relacoes.rankingDoPais
+                    ? TO.relacoes.rankingDoPais(E)
+                    : TO.relacoes.ranking(E)) : [];
         const colheita = TO.almanaque ? {
           ano: anoQueFecha,
           placar: placarDoAno,
           /* o prêmio de Torcida do Ano é nacional: colher o top 8 do
              MUNDO podia entregar oito barras e deixar o país de fora */
-          ranking: (TO.relacoes.rankingDoPais
-                    ? TO.relacoes.rankingDoPais(E)
-                    : TO.relacoes.ranking(E)).slice(0, 8)
+          ranking: rankingTodo.slice(0, 8),
+          /* a dona de cada praça e de cada região (dono, 10/10/2026)
+             precisa da lista inteira: a melhor de Sergipe não está no
+             top 8 do país */
+          rankingTodo,
+          /* os campeões do ano, lidos antes de a temporada, as ligas e
+             as copas da Conmebol serem remontadas */
+          campeoes: TO.almanaque.campeoesDoAno
+            ? TO.almanaque.campeoesDoAno(E, anoQueFecha) : null
         } : null;
         const movForca = TO.competicoes.evoluirForca(E);
         /* A FOTO DO ELENCO NA VIRADA (pedido do dono, 19/09/2026): o

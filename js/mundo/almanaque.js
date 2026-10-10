@@ -208,6 +208,41 @@ TO.almanaque = (function(){
         cheia:[_t('Abriu {N} {porta} no ano e fechou com {T} no total.')],
         magra:[_t('Nenhuma torcida do país abriu prédio novo no ano.')]
       }
+    },
+
+    /* OS DONOS DA PRAÇA E DA REGIÃO (pedido do dono, 10/10/2026) */
+    pracas:{
+      chapeu:{
+        nossa:  [_t('A praça é nossa')],
+        padrao: [_t('Os donos de cada praça')]
+      },
+      manchete:{
+        nossa:  [_t('A {A} fecha {ano} como a dona {emP}')],
+        padrao: [_t('Quem mandou em cada praça em {ano}')]
+      },
+      olho:[_t('A melhor do ranking e o rei da pista de cada praça levam R$ 70 mil na cidade grande, R$ 50 mil na média e R$ 30 mil na pequena. Os prêmios se somam.')]
+    },
+    regioes:{
+      chapeu:{
+        nossa:  [_t('A região é nossa')],
+        padrao: [_t('Os donos de cada região')]
+      },
+      manchete:{
+        nossa:  [_t('A {A} termina {ano} por cima da região {R}')],
+        padrao: [_t('Quem mandou em cada região em {ano}')]
+      },
+      olho:[_t('A melhor do ranking e o rei da pista de cada região levam R$ 90 mil cada, somados ao que já levaram na praça.')]
+    },
+    campeoes:{
+      chapeu:{
+        nosso:  [_t('Tem taça nossa no meio')],
+        padrao: [_t('Os campeões')]
+      },
+      manchete:{
+        nosso:  [_t('O {A} está entre os campeões de {ano}')],
+        padrao: [_t('Os campeões de {ano}, país por país')]
+      },
+      olho:[_t('{N} taças entregues no continente em {ano}, da Libertadores às ligas de cada país.')]
     }
   };
 
@@ -335,20 +370,24 @@ TO.almanaque = (function(){
       };
     }
     const meu = E.torcida.clubeId;
-    const sobem = mov.filter(m => C().subiu(m.de, m.para));
-    const caem  = mov.filter(m => !C().subiu(m.de, m.para));
+    const sobe = m => m.sobe !== undefined ? !!m.sobe : C().subiu(m.de, m.para);
+    const sobem = mov.filter(m => sobe(m));
+    const caem  = mov.filter(m => !sobe(m));
     const nosso = mov.find(m => m.id === meu);
     const cond = !nosso ? 'padrao'
-               : C().subiu(nosso.de, nosso.para) ? 'subimosNos' : 'caimosNos';
+               : sobe(nosso) ? 'subimosNos' : 'caimosNos';
     const SD = MOLDES.sobeDesce;
     const v = {A: nomeTime(meu), N: mov.length,
                S: sobem.length, D: caem.length, ano};
+    /* TODAS AS DIVISÕES (pedido do dono, 10/10/2026): o quadro levava
+       seis de cada lado e "e mais 10"; agora vai a lista inteira, com
+       a divisão de onde cada um saiu, e a tela agrupa por degrau */
     const linha = (m, sobe) => ({
-      rot: sobe ? _t('sobe') : _t('cai'), valor: nomeTime(m.id),
-      nota: m.para, sobe, nossa: m.id === meu});
+      rot: sobe ? _t('sobe') : _t('cai'), valor: nomeTime(m.id), id: m.id,
+      de: m.de, nota: m.para, sobe, nossa: m.id === meu});
     return {
       ano, tipo:'sobeDesce', tom: !nosso ? '' :
-        C().subiu(nosso.de, nosso.para) ? 'boa' : 'ruim',
+        sobe(nosso) ? 'boa' : 'ruim',
       jornal:'O Almanaque', edicao:_t('Edição da virada'),
       chapeu: nosso ? SD.chapeu.nosso[0] : SD.chapeu.padrao[0],
       manchete: encher(daFila(SD.manchete[cond], ano), v),
@@ -358,10 +397,9 @@ TO.almanaque = (function(){
              _t('temporada de <b>{ano}</b>', {ano})],
       quadro:{
         titulo:_t('Quem trocou de divisão'),
-        linhas:[...sobem.slice(0, LINHAS).map(m=>linha(m,true)),
-                ...caem.slice(0, LINHAS).map(m=>linha(m,false))],
-        resto: Math.max(0, mov.length - Math.min(sobem.length, LINHAS)
-                                      - Math.min(caem.length, LINHAS))
+        linhas:[...sobem.map(m=>linha(m,true)),
+                ...caem.map(m=>linha(m,false))],
+        resto: 0
       }
     };
   }
@@ -742,17 +780,247 @@ TO.almanaque = (function(){
       _t('Prêmio Torcida do Ano {ano} — {pos}º lugar', {ano, pos:r.pos}), r.valor);
     for(const r of pista)   pagarPremio(E, r.id,
       _t('Prêmio Rei da Pista {ano} — {pos}º lugar', {ano, pos:r.pos}), r.valor);
-    return {ranking, pista};
+    /* e os donos de cada praça e de cada região, que somam com estes */
+    const donos = premiarPracas(E, ctx);
+    return {ranking, pista, donos};
   }
   const reais = v => v >= 1000 && v % 1000 === 0 ? _t('R$ {n} mil', {n:v/1000}) : 'R$ ' + String(v);
+
+  /* =======================================================
+     OS DONOS DA PRAÇA E DA REGIÃO (pedido do dono, 10/10/2026)
+     "No final do ano a torcida de melhor ranking de cada praça
+     ganha um bônus de 30/50/70 mil a depender do tamanho da
+     cidade. A melhor de cada região ganha 90 mil. O rei da pista
+     de cada praça, 30/50/70 mil; o de cada região, 90 mil. Tudo
+     isso pode ser cumulativo."
+
+     A praça da torcida é a da SEDE (`mapa`). O tamanho é o da
+     ficha da cidade — Grande, Médio, Pequeno. A região é a da
+     ficha também: no Brasil, as cinco do IBGE; lá fora o arquivo
+     das barras guarda o país no lugar da região, e a "região" de
+     uma barra argentina é a Argentina inteira. O rei da pista é o
+     mesmo do prêmio nacional — maior saldo positivo de brigas do
+     ano —, recortado pela praça e pela região. Nacional como o
+     resto do almanaque: só as praças do país de quem joga.
+     ======================================================= */
+  const BONUS_PRACA = {'Grande':70000, 'Médio':50000, 'Pequeno':30000};
+  const BONUS_REGIAO = 90000;
+  const ACENTO = {belem:'Belém', brasilia:'Brasília', goiania:'Goiânia', paraiba:'Paraíba',
+                  'sao-paulo':'São Paulo', 'suburbio-carioca':'Subúrbio Carioca'};
+  const nomePraca = c => ACENTO[c.id] || c.nome || c.id;
+  function pracaDe(id){
+    const o = M().torcida(id);
+    return o && o.mapa ? M().cidade(o.mapa) || null : null;
+  }
+  const ORDEM_TAM = {'Grande':0, 'Médio':1, 'Pequeno':2};
+  function premiarPracas(E, ctx){
+    const ano = (ctx && ctx.ano) || E.data.ano;
+    const nossa = id => !!(E.torcida && id === E.torcida.id);
+    const ranking = soDaqui(E, (ctx && (ctx.rankingTodo || ctx.ranking)) || []);
+    const pista = soDaqui(E, (ctx && ctx.placar) || []).filter(x => x.saldo > 0)
+      .sort((a,b)=> b.saldo - a.saldo || b.v - a.v);
+    const pracas = {}, regioes = {};
+    const daPraca = c => pracas[c.id] = pracas[c.id] || {
+      id:c.id, nome:nomePraca(c), tamanho:c.tamanho || 'Pequeno', regiao:c.regiao || '',
+      valor: BONUS_PRACA[c.tamanho] || BONUS_PRACA.Pequeno, ranking:null, pista:null};
+    const daRegiao = c => regioes[c.regiao] = regioes[c.regiao] || {
+      id:c.regiao, nome:c.regiao, valor:BONUS_REGIAO, ranking:null, pista:null};
+    /* as listas já vêm em ordem: a primeira de cada praça é a dona */
+    for(const x of ranking){
+      const c = pracaDe(x.id); if(!c) continue;
+      const v = {id:x.id, nome:x.nome || nomeTorcida(x.id), nossa:nossa(x.id),
+                 nota:_t('{n} pt', {n:Math.round(x.pontos || 0)})};
+      const P = daPraca(c); if(!P.ranking) P.ranking = v;
+      if(c.regiao){ const R = daRegiao(c); if(!R.ranking) R.ranking = v; }
+    }
+    for(const x of pista){
+      const c = pracaDe(x.id); if(!c) continue;
+      const v = {id:x.id, nome:x.nome || nomeTorcida(x.id), nossa:nossa(x.id),
+                 nota:`${x.v}–${x.d} · +${x.saldo}`};
+      const P = daPraca(c); if(!P.pista) P.pista = v;
+      if(c.regiao){ const R = daRegiao(c); if(!R.pista) R.pista = v; }
+    }
+    const listaP = Object.values(pracas).sort((a,b)=>
+      (ORDEM_TAM[a.tamanho] - ORDEM_TAM[b.tamanho]) || a.nome.localeCompare(b.nome));
+    const listaR = Object.values(regioes).sort((a,b)=> a.nome.localeCompare(b.nome));
+    let nosso = 0;
+    const pagar = (quem, rot, valor)=>{
+      if(!quem) return;
+      pagarPremio(E, quem.id, rot, valor);
+      if(quem.nossa) nosso += valor;
+    };
+    for(const P of listaP){
+      pagar(P.ranking, _t('Bônus {ano}: melhor do ranking em {praca}', {ano, praca:P.nome}), P.valor);
+      pagar(P.pista,   _t('Bônus {ano}: rei da pista em {praca}', {ano, praca:P.nome}), P.valor);
+    }
+    for(const R of listaR){
+      pagar(R.ranking, _t('Bônus {ano}: melhor do ranking da região {regiao}', {ano, regiao:_t(R.nome)}), R.valor);
+      pagar(R.pista,   _t('Bônus {ano}: rei da pista da região {regiao}', {ano, regiao:_t(R.nome)}), R.valor);
+    }
+    return {pracas:listaP, regioes:listaR, nosso};
+  }
+
+  /* quanto a nossa levou numa lista de praças ou regiões */
+  const nossoNa = lista => (lista || []).reduce((s, P)=>
+    s + (P.ranking && P.ranking.nossa ? P.valor : 0) + (P.pista && P.pista.nossa ? P.valor : 0), 0);
+
+  function paginaPracas(E, dono, ano){
+    const PR = MOLDES.pracas;
+    const lista = (dono && dono.pracas) || [];
+    const minha = lista.find(P => (P.ranking && P.ranking.nossa) || (P.pista && P.pista.nossa));
+    const valor = nossoNa(lista);
+    const v = {A:E.torcida.nome, ano,
+               emP: minha ? TO.genero.d('cidade', minha.nome, minha.nome) : ''};
+    return {
+      ano, tipo:'pracas', tom: minha ? 'boa' : '',
+      jornal:'O Almanaque', edicao:_t('Prêmio do ano'),
+      chapeu: minha ? PR.chapeu.nossa[0] : PR.chapeu.padrao[0],
+      manchete: encher(minha ? PR.manchete.nossa[0] : PR.manchete.padrao[0], v),
+      olho: PR.olho[0] + (valor ? ' ' + _t('A nossa levou {valor} nessa conta.', {valor:reais(valor)}) : ''),
+      tarja:[_tn(lista.length, '<b>{n}</b> praça', '<b>{n}</b> praças'),
+             _t('fechamento de <b>{data}</b>', {data:`31/12/${ano}`})],
+      pracas: lista, nosso: valor,
+      quadro:{titulo:_t('Os donos de cada praça'), linhas:[]}
+    };
+  }
+  function paginaRegioes(E, dono, ano){
+    const RG = MOLDES.regioes;
+    const lista = (dono && dono.regioes) || [];
+    const minha = lista.find(R => (R.ranking && R.ranking.nossa) || (R.pista && R.pista.nossa));
+    const valor = nossoNa(lista);
+    const v = {A:E.torcida.nome, ano, R: minha ? _t(minha.nome) : ''};
+    return {
+      ano, tipo:'regioes', tom: minha ? 'boa' : '',
+      jornal:'O Almanaque', edicao:_t('Prêmio do ano'),
+      chapeu: minha ? RG.chapeu.nossa[0] : RG.chapeu.padrao[0],
+      manchete: encher(minha ? RG.manchete.nossa[0] : RG.manchete.padrao[0], v),
+      olho: RG.olho[0] + (valor ? ' ' + _t('A nossa levou {valor} nessa conta.', {valor:reais(valor)}) : ''),
+      tarja:[_tn(lista.length, '<b>{n}</b> região', '<b>{n}</b> regiões'),
+             _t('fechamento de <b>{data}</b>', {data:`31/12/${ano}`})],
+      regioes: lista, nosso: valor,
+      quadro:{titulo:_t('Os donos de cada região'), linhas:[]}
+    };
+  }
+
+  /* =======================================================
+     OS CAMPEÕES DO ANO (pedido do dono, 10/10/2026)
+     "Uma tela que informa quem foi o campeão de cada campeonato
+     no respectivo país e a Sul-Americana e a Libertadores."
+     Lido na virada, ANTES de a temporada, as ligas de fora e as
+     copas da Conmebol serem remontadas; se alguma já tiver
+     virado, o arquivo do ano (`ligasHistorico`,
+     `conmebolHistorico`) responde por ela.
+     ======================================================= */
+  const ORDEM_TIPO = {nacional:0, copa:1, regional:2};
+  function campeoesDoAno(E, ano){
+    const pais = paisDaNossa(E);
+    const porPais = {};
+    const por = p => porPais[p] = porPais[p] || [];
+    const meu = E.torcida.clubeId;
+    const linha = (nome, c) => ({nome, campeao:c.campeao || null, vice:c.vice || null,
+                                 nosso: !!c.campeao && c.campeao === meu});
+    /* o Brasil, quando é o nosso país, mora na temporada */
+    const T = E.temporada;
+    if(T && T.ano === ano && (T.competicoes || []).length){
+      /* a Libertadores e a Sul-Americana do nosso clube também moram na
+         temporada, mas quem responde por elas é o bloco do continente */
+      const daConmebol = c => /Libertadores|Sul-Americana|Sudamericana/i.test(c.nome || '');
+      const comps = T.competicoes.filter(c => !daConmebol(c)).sort((a,b)=>
+        ((ORDEM_TIPO[a.tipo] ?? 3) - (ORDEM_TIPO[b.tipo] ?? 3)) ||
+        String(a.nome).localeCompare(String(b.nome)));
+      for(const c of comps) por('Brasil').push(linha(c.nome, c));
+    }
+    /* as ligas de fora: cada torneio da divisão, e o campeão do ano
+       quando a divisão tem mais de um */
+    const L = E.ligas && E.ligas.ano === ano && E.ligas.paises ? (()=>{
+      const out = {};
+      for(const p of Object.keys(E.ligas.paises)){
+        const P = E.ligas.paises[p];
+        out[p] = Object.keys(P.divisoes).map(div=>{
+          const D = P.divisoes[div];
+          return {div, campeao:D.campeao, vice:D.vice,
+                  torneios:D.torneios.map(t=>({nome:t.nome, campeao:t.campeao, vice:t.vice}))};
+        });
+      }
+      return out;
+    })() : ((E.ligasHistorico || []).find(h=>h.ano === ano) || {}).paises || {};
+    for(const p of Object.keys(L)){
+      for(const D of L[p]){
+        const ts = D.torneios || [];
+        if(ts.length > 1){
+          for(const t of ts) por(p).push(linha(`${D.div} · ${t.nome}`, t));
+          if(D.campeao) por(p).push(Object.assign(linha(D.div, D), {doAno:true}));
+        } else por(p).push(linha(D.div, ts[0] && ts[0].campeao ? ts[0] : D));
+      }
+    }
+    /* as copas: a nacional de cada país de fora e as duas da Conmebol */
+    const CM = E.conmebol && E.conmebol.ano === ano ? {
+      libertadores:E.conmebol.libertadores, sulamericana:E.conmebol.sulamericana,
+      copas:Object.values(E.conmebol.copas || {})
+    } : ((E.conmebolHistorico || []).find(h=>h.ano === ano) || {});
+    for(const c of (CM.copas || [])) if(c && c.pais) por(c.pais).push(linha(c.nome, c));
+    const continente = [];
+    if(CM.libertadores) continente.push(linha(_t('Copa Libertadores'), CM.libertadores));
+    if(CM.sulamericana) continente.push(linha(_t('Copa Sul-Americana'), CM.sulamericana));
+    const paises = Object.keys(porPais).sort((a,b)=>
+      (a === pais ? -1 : b === pais ? 1 : a.localeCompare(b)))
+      .map(p => ({pais:p, comps:porPais[p]}));
+    return {continente, paises};
+  }
+  function paginaCampeoes(E, camp, ano){
+    const CP = MOLDES.campeoes;
+    const todas = (camp.continente || []).concat(...(camp.paises || []).map(p=>p.comps));
+    const decididas = todas.filter(c=>c.campeao);
+    const nossa = decididas.find(c=>c.nosso);
+    const v = {A:nomeTime(E.torcida.clubeId), ano, N:decididas.length};
+    return {
+      ano, tipo:'campeoes', tom: nossa ? 'boa' : '',
+      jornal:'O Almanaque', edicao:_t('Edição de campeão'),
+      chapeu: nossa ? CP.chapeu.nosso[0] : CP.chapeu.padrao[0],
+      manchete: encher(nossa ? CP.manchete.nosso[0] : CP.manchete.padrao[0], v),
+      olho: encher(CP.olho[0], v),
+      tarja:[_tn(decididas.length, '<b>{n}</b> taça', '<b>{n}</b> taças'),
+             _tn((camp.paises||[]).length, '<b>{n}</b> país', '<b>{n}</b> países'),
+             _t('temporada de <b>{ano}</b>', {ano})],
+      campeoes: camp,
+      quadro:{titulo:_t('Os campeões'), linhas:[]}
+    };
+  }
+
+  /* O SOBE E DESCE DE QUEM JOGA FORA DO BRASIL: o Brasil devolve o
+     `mov` da temporada; as ligas de fora só aplicam a troca na
+     montagem do ano novo, então a virada lê o que cada divisão
+     decidiu — com a mesma regra de só trocar quando os dois lados
+     fecharam. */
+  function movDoPais(E, mov, ano){
+    if(mov && mov.length) return mov;
+    const pais = paisDaNossa(E);
+    const P = E.ligas && E.ligas.ano === ano && E.ligas.paises && E.ligas.paises[pais];
+    if(!P) return mov || [];
+    const fora = [];
+    const ordem = Object.keys(P.divisoes);
+    for(let k=0;k<ordem.length-1;k++){
+      const cima = P.divisoes[ordem[k]], baixo = P.divisoes[ordem[k+1]];
+      if(!cima || !baixo) continue;
+      const caem = cima.caem || [], sobem = baixo.sobem || [];
+      if(!caem.length || !sobem.length) continue;
+      const n = Math.min(caem.length, sobem.length);
+      for(const id of sobem.slice(0, n)) fora.push({ano, id, de:ordem[k+1], para:ordem[k], sobe:true});
+      for(const id of caem.slice(0, n))  fora.push({ano, id, de:ordem[k], para:ordem[k+1], sobe:false});
+    }
+    return fora;
+  }
 
   function fecharAno(E, ctx){
     const ano = (ctx && ctx.ano) || E.data.ano;
     const pr = (ctx && ctx.premios) || {};
     return [
-      sobeDesce(E, (ctx && ctx.sobeDesce) || [], ano),
+      sobeDesce(E, movDoPais(E, (ctx && ctx.sobeDesce) || [], ano), ano),
+      ctx && ctx.campeoes ? paginaCampeoes(E, ctx.campeoes, ano) : null,
       torcidaDoAno(E, (ctx && ctx.ranking) || [], ano, pr.ranking),
       reiDaPista(E, (ctx && ctx.placar) || [], ano, pr.pista),
+      pr.donos ? paginaPracas(E, pr.donos, ano) : null,
+      pr.donos ? paginaRegioes(E, pr.donos, ano) : null,
       janela(E, (ctx && ctx.forca) || [], ano + 1),
       patrimonio(E, ano),
       tretaDoAno(E, ano)
@@ -778,6 +1046,7 @@ TO.almanaque = (function(){
 
   return {MOLDES, encher, tirarFoto, prediosDe, LINHAS, abertura,
           fecharAno, placarDoAnoTodo, anotarTreta, PREMIOS, premiar,
+          BONUS_PRACA, BONUS_REGIAO, premiarPracas, campeoesDoAno, movDoPais,
           campeao, sobeDesce, torcidaDoAno, reiDaPista, janela, patrimonio,
           tretaDoAno};
 })();

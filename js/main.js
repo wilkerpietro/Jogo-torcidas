@@ -11778,7 +11778,8 @@
   let retroPag = 0, retroAtual = null;
   const ROT_RETRO = {sobeDesce:_t('Sobe e desce'), torcidaDoAno:_t('Torcida do ano'),
                      reiDaPista:_t('Rei da pista'), janela:_t('A janela'),
-                     patrimonio:_t('O balanço'), tretaDoAno:_t('A treta do ano')};
+                     patrimonio:_t('O balanço'), tretaDoAno:_t('A treta do ano'),
+                     campeoes:_t('Campeões'), pracas:_t('As praças'), regioes:_t('As regiões')};
   function abrirRetrospectivaSePendente(){
     const e = E();
     const r = e && e.retrospectiva;
@@ -11889,15 +11890,28 @@
     if(p.tipo === 'sobeDesce'){
       if(!linhas.length) return vazio(_t('Nenhum clube trocou de divisão.'));
       const cx = el('div',{class:'retro-destaque retro-colunas'});
+      /* TODAS AS DIVISÕES (dono, 10/10/2026): a coluna agrupa por
+         degrau — "Série B → Série A" — e lista todo mundo do degrau */
       const bloco = (rot, cls, lista)=>{
         const b = el('div',{class:'retro-col '+cls});
         b.appendChild(el('div',{class:'retro-col-tit', texto:rot}));
         if(!lista.length) b.appendChild(el('div',{class:'retro-vazio', texto:_t('ninguém')}));
+        const degraus = [];
         for(const l of lista){
-          const id = ((TO.mundo.todosTimes||[]).find(t=>t.nome === l.valor)||{}).id;
-          b.appendChild(el('div',{class:'retro-linha'+(l.nossa?' nossa':''), html:
-            `${chipClube(id, corDoClube(id))}<span class="nome">${l.valor}</span>`+
-            `<span class="dado">${l.nota ? `→ ${l.nota}` : ''}</span>`}));
+          const k = `${l.de || ''}→${l.nota || ''}`;
+          let g = degraus.find(x=>x.k === k);
+          if(!g) degraus.push(g = {k, de:l.de, para:l.nota, linhas:[]});
+          g.linhas.push(l);
+        }
+        for(const g of degraus){
+          if(g.de || g.para)
+            b.appendChild(el('div',{class:'retro-degrau', texto: g.de ? `${g.de} → ${g.para || ''}` : `→ ${g.para}`}));
+          for(const l of g.linhas){
+            const id = l.id || ((TO.mundo.todosTimes||[]).find(t=>t.nome === l.valor)||{}).id;
+            b.appendChild(el('div',{class:'retro-linha'+(l.nossa?' nossa':''), html:
+              `${chipClube(id, corDoClube(id))}<span class="nome">${l.valor}</span>`+
+              `<span class="dado">${!g.de && l.nota ? `→ ${l.nota}` : ''}</span>`}));
+          }
         }
         return b;
       };
@@ -11960,6 +11974,59 @@
       cx.appendChild(el('div',{class:'retro-x', texto:'×'}));
       if(b) cx.appendChild(lado(b, 'perdeu'));
       if(c) cx.appendChild(el('div',{class:'retro-nota', texto:`${c.rot}: ${c.valor} · ${c.nota||''}`}));
+      return cx;
+    }
+    /* OS DONOS DA PRAÇA E DA REGIÃO (dono, 10/10/2026): uma linha por
+       praça (ou região), com a melhor do ranking e o rei da pista lado
+       a lado e o bônus de cada um */
+    if(p.tipo === 'pracas' || p.tipo === 'regioes'){
+      const lista = (p.tipo === 'pracas' ? p.pracas : p.regioes) || [];
+      if(!lista.length) return vazio(_t('Nenhuma praça teve dona este ano.'));
+      const cx = el('div',{class:'retro-destaque retro-donos'});
+      const quem = (x, valor) => x
+        ? `<span class="dono${x.nossa?' nossa':''}">${chipTorcida(x.id, corDaTorcida(x.id))}`+
+          `<span class="nome">${linkTorcida(x.id, x.nome)}</span>`+
+          `<small>${x.nota || ''} · <b class="premio">${U.dinheiro(valor)}</b></small></span>`
+        : `<span class="dono vazio">${_t('ninguém')}</span>`;
+      const TAM = {'Grande':_t('cidade grande'), 'Médio':_t('cidade média'), 'Pequeno':_t('cidade pequena')};
+      const t = el('table',{class:'tab-olheiro retro-tab retro-donos-tab'});
+      t.innerHTML = `<thead><tr><th>${p.tipo === 'pracas' ? _t('Praça') : _t('Região')}</th>`+
+        `<th>${_t('Melhor do ranking')}</th><th>${_t('Rei da pista')}</th></tr></thead>`;
+      const tb = el('tbody');
+      for(const P of lista){
+        const nossa = (P.ranking && P.ranking.nossa) || (P.pista && P.pista.nossa);
+        tb.appendChild(el('tr',{class:nossa ? 'nossa' : '', html:
+          `<td class="praca"><b>${p.tipo === 'pracas' ? P.nome : _t(P.nome)}</b>`+
+          `<small>${p.tipo === 'pracas' ? `${TAM[P.tamanho] || ''}${P.regiao ? ' · ' + _t(P.regiao) : ''}` : ''}</small></td>`+
+          `<td>${quem(P.ranking, P.valor)}</td><td>${quem(P.pista, P.valor)}</td>`}));
+      }
+      t.appendChild(tb);
+      cx.appendChild(t);
+      if(p.nosso) cx.appendChild(el('div',{class:'retro-nosso', html:_t('A nossa levou <b>{valor}</b> — já está no caixa.', {valor:U.dinheiro(p.nosso)})}));
+      return cx;
+    }
+    /* OS CAMPEÕES (dono, 10/10/2026): a Libertadores e a Sul-Americana
+       no alto, e embaixo cada país com as suas taças */
+    if(p.tipo === 'campeoes'){
+      const C = p.campeoes || {};
+      const cx = el('div',{class:'retro-destaque retro-campeoes'});
+      const linhaC = c => {
+        const id = c.campeao;
+        return el('div',{class:'retro-linha'+(c.nosso?' nossa':'')+(c.doAno?' do-ano':''), html:
+          `<span class="comp">${c.nome}${c.doAno ? ` <small>${_t('campeão do ano')}</small>` : ''}</span>`+
+          (id ? `${chipClube(id, corDoClube(id))}<span class="nome">${(TO.mundo.time(id)||{}).nome || id}</span>`
+              : `<span class="nome vazio">${_t('não terminou')}</span>`)});
+      };
+      const bloco = (tit, comps, cls) => {
+        if(!comps || !comps.length) return;
+        const b = el('div',{class:'retro-pais '+(cls||'')});
+        b.appendChild(el('div',{class:'retro-col-tit', texto:tit}));
+        for(const c of comps) b.appendChild(linhaC(c));
+        cx.appendChild(b);
+      };
+      bloco(_t('Conmebol'), C.continente, 'continente');
+      for(const P of (C.paises || [])) bloco(_t(P.pais), P.comps);
+      if(!cx.children.length) return vazio(_t('Nenhuma taça entregue este ano.'));
       return cx;
     }
     /* página que não conheço: lista simples */

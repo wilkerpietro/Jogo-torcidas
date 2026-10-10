@@ -9829,6 +9829,58 @@ As respostas do dono aos achados da varredura:
 - **LNT igualada.** O duelo entre IAs paga o mesmo que o nosso 10×10:
   +5 de prestígio pra quem vence, −1 pra quem perde, e ±5 de moral.
 
+## Bônus de fim de ano por praça e região, e as telas da virada (dono, 10/10/2026)
+
+Pedido: "No final do ano a torcida de melhor ranking de cada praça ganha
+um bônus de 30/50/70 mil a depender do tamanho da cidade. A melhor de
+cada região ganha 90 mil. O rei da pista de cada praça, 30/50/70 mil; o
+de cada região, 90 mil. Tudo isso pode ser cumulativo. Crie essas telas
+no fim do ano. Os promovidos de todas as divisões devem aparecer naquela
+tela de promovidos, e uma tela com o campeão de cada campeonato no
+respectivo país, a Sul-Americana e a Libertadores."
+
+- **Os bônus** (`TO.almanaque.premiarPracas`, chamado de dentro de
+  `premiar` na virada):
+  - Praça de cada torcida = a da sede (`mapa`).
+  - Valor pelo tamanho da ficha da cidade: Grande R$ 70 mil, Médio R$ 50
+    mil, Pequeno R$ 30 mil.
+  - Região = a da ficha: as cinco regiões no Brasil. Nas praças das barras
+    o campo guarda o país, então a "região" de fora é o país inteiro.
+    Cada região paga R$ 90 mil.
+  - "Melhor do ranking" sai do ranking nacional do fechamento — a lista
+    inteira, não o top 8 (`colheita.rankingTodo`).
+  - "Rei da pista" é o maior saldo positivo de brigas do ano, o mesmo do
+    prêmio nacional, recortado pela praça e pela região.
+  - Tudo se soma: uma torcida pode levar praça (ranking + pista), região
+    (ranking + pista) e os prêmios nacionais de Torcida do Ano e Rei da
+    Pista no mesmo dia.
+  - Pago pra nós (lançamento no caixa) e pras IAs (`caixa` + `lancarIA`).
+  - É nacional como o resto do almanaque: só as praças do país de quem
+    joga.
+- **A tela de praças e a tela de regiões** (retrospectiva, páginas
+  `pracas` e `regioes`): uma linha por praça (grandes primeiro) ou por
+  região, com a melhor do ranking e o rei da pista lado a lado e o bônus
+  de cada um. Manchete própria quando a nossa leva alguma coisa, e o total
+  que caiu no nosso caixa.
+- **Sobe e desce com todas as divisões**: o quadro levava seis de cada
+  lado e "e mais N". Agora vai a lista inteira, agrupada por degrau
+  ("Série B → Série A"). Pra quem joga fora do Brasil, o sobe e desce é
+  lido das ligas de fora (`movDoPais`), com a mesma regra de só trocar
+  quando os dois lados decidiram.
+- **A tela de campeões** (página `campeoes`, logo depois do sobe e
+  desce):
+  - Libertadores e Sul-Americana no alto.
+  - Embaixo, país por país, com o nosso primeiro:
+    - o Brasil vem da temporada (Brasileirão, Copa do Brasil, regionais
+      e estaduais);
+    - as ligas de fora trazem cada torneio (Apertura/Clausura), o campeão
+      do ano e a copa nacional.
+  - Lido na virada, antes de a temporada, as ligas e a Conmebol serem
+    remontadas. Se alguma já virou, o arquivo do ano
+    (`ligasHistorico`/`conmebolHistorico`) responde por ela.
+  - A Libertadores e a Sul-Americana do nosso clube, que também moram na
+    temporada, ficam só no bloco do continente.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
