@@ -778,5 +778,8 @@ TO.i18n.registrar({
   "o duelo sem abrir a cena, com as mesmas consequências": {es:"el duelo sin abrir la escena, con las mismas consecuencias", en:"the clash without opening the scene, same consequences"},
   "{n} de {t}": {es:"{n} de {t}", en:"{n} of {t}"},
   "{v}V {e}E {d}D": {es:"{v}G {e}E {d}P", en:"{v}W {e}D {d}L"},
-  "Último save": {es:"Último guardado", en:"Last save"}
+  "Último save": {es:"Último guardado", en:"Last save"},
+  "Nossa sede": {es:"Nuestra sede", en:"Our HQ"},
+  "Nossa subsede": {es:"Nuestra subsede", en:"Our branch"},
+  "Trajeto na cidade": {es:"Trayecto en la ciudad", en:"Route through the city"}
 });

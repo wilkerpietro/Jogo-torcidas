@@ -380,6 +380,8 @@ TO.itinerario = (function(){
       /* as praças da estrada, da sede ao destino (o mapa da caravana,
          10/10/2026); em casa, só a nossa */
       rota: viaja ? rota.cidades.slice() : [pracaDoJogo],
+      /* o passo dois: da sede (ou da aliada, da subsede, da entrada) ao estádio */
+      trajeto: trajetoNaCidade(E, j),
       paradas,
       /* as paradas de verdade, pra quem precisar do detalhe */
       detalhadas
@@ -389,6 +391,59 @@ TO.itinerario = (function(){
   /* quantas paradas têm recado — pro texto da mensagem que abre o dia */
   const comRecado = it => (it && it.paradas || [])
     .filter(o=>(o.eventos||[]).length).length;
+
+  /* O TRAJETO NA CIDADE (pedido do dono, 10/10/2026): o passo dois do
+     itinerário, na planta 2D da praça do jogo. Em casa a linha sai da
+     nossa sede; fora, da sede da aliada designada a nos receber, da nossa
+     subsede na praça ou, sem nenhuma das duas, de uma entrada da praça.
+     Ela termina no estádio do jogo. Sem planta da praça, não há trajeto. */
+  const normal = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  function trajetoNaCidade(E, j){
+    if(!j) return null;
+    const cid = j.casa ? E.torcida.mapa : (j.mapaAdv || '');
+    const P = TO.dados && TO.dados.plantas && TO.dados.plantas[cid];
+    if(!P || !Array.isArray(P.b)) return null;
+    const Dm = TO.dominio;
+    const doBairro = b => { const pb = b && P.b.find(x => x[0] === (b.id || b)); return pb && pb[3] != null ? {x:pb[3], y:pb[4]} : null; };
+    const sede = tid => {
+      const s = (P.s || []).find(x => x[0] === tid);
+      if(s) return {x:s[2], y:s[3]};
+      return Dm && Dm.sedeDe ? doBairro(Dm.sedeDe(tid, cid)) : null;
+    };
+    /* o estádio: o rótulo da planta com o nome (ou um apelido) dele */
+    const est = (TO.mundo.estadiosEm ? TO.mundo.estadiosEm(cid) : []).find(x => normal(x.nome) === normal(j.estadio)) || null;
+    const nomes = [j.estadio].concat(est ? [est.nome].concat(est.apelidos || []) : []).map(normal).filter(Boolean);
+    const rotEst = (P.r || []).find(r => r[3] === 'e' && nomes.includes(normal(r[0])));
+    const ate = rotEst ? {x:rotEst[1], y:rotEst[2]}
+              : (Dm && Dm.bairroDoEstadio ? doBairro(Dm.bairroDoEstadio(E, cid, j.estadio)) : null);
+    if(!ate) return null;
+    ate.rot = j.estadio || _t('Estádio');
+    let de = null;
+    if(j.casa){
+      de = sede(E.torcida.id);
+      if(de) de.rot = _t('Nossa sede');
+    } else {
+      const aj = PL().ajudaDe ? PL().ajudaDe(E, j) : null;
+      if(aj && aj.aliado && (!aj.mapa || aj.mapa === cid)){
+        de = sede(aj.aliado);
+        if(de) de.rot = _t('Sede da {nome}', {nome:aj.nome || (M().torcida(aj.aliado) || {}).nome || ''});
+      }
+      if(!de && TO.patrimonio && TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, cid) && Dm && Dm.bairroDaFilial){
+        de = doBairro(Dm.bairroDaFilial(E.torcida.id, cid));
+        if(de) de.rot = _t('Nossa subsede');
+      }
+      if(!de){
+        const ents = (P.r || []).filter(r => r[3] === 'e' && /^(Entrada|Estrada)\b/.test(r[0]));
+        if(ents.length){
+          const r = ents[TO.mapa.hash(`entrada|${E.data.ano}|${E.data.semana}|${cid}`) % ents.length];
+          de = {x:r[1], y:r[2], rot:_t(r[0])};
+        }
+      }
+    }
+    if(!de) return null;
+    return {cid, de, ate};
+  }
 
   /* A ROTA DO DIA SEM MONTAR O DIA (10/10/2026): o mapa da mensagem,
      antes de o jogador clicar em iniciar, só precisa das praças — e
@@ -400,7 +455,7 @@ TO.itinerario = (function(){
     const rota = (!j.casa && PL().rotaEscolhida) ? PL().rotaEscolhida(E, j) : null;
     const viaja = !!(rota && rota.cidades && rota.cidades.length > 1 && rota.id !== 'ar');
     return {casa: !!j.casa, viaja, aereo: !!(rota && rota.id === 'ar'), destino,
-            rota: viaja ? rota.cidades.slice() : [destino]};
+            rota: viaja ? rota.cidades.slice() : [destino], trajeto: trajetoNaCidade(E, j)};
   }
 
   return {montar, rotaDoDia, comRecado, hhmm, efetivoInicial};

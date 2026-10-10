@@ -267,3 +267,7 @@
 .partida-gol.tensao{color:#c9b27a}
 .est-cena #djPalco, .est-cena #djCanvases{width:100%; max-width:100%}
 .est-cena #djPrincipal{max-width:100%}
+/* o trajeto na cidade (10/10/2026): os três pontos do caminho, miúdos */
+.mc-marco{fill:#e8eae4; opacity:.75}
+.mc-marco-rot{font-family:var(--corpo); font-weight:600; fill:#e8eae4; opacity:.8; paint-order:stroke; stroke:#0d0d0d}
+.mc-cidade .mc-praca.destino circle{fill:var(--verde-vivo, #4ca060)}

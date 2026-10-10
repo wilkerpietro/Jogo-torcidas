@@ -9527,6 +9527,48 @@ Teste (Playwright):
 - `diajogo.js`: o balão da emboscada inteiro, com os três botões e o custo dentro, e a arquibancada de perto na Gaviões.
 - `fim_briga` sem erro; nenhuma tradução faltando.
 
+## A arquibancada parada torcendo e o mapa da cidade como passo dois, pelas ruas (o dono, 10/10/2026)
+
+Pedidos do dono:
+- "Durante a partida, as demais torcidas IA irão ficar paradas com os bonecos fazendo a animação de torcer. Atualmente elas fogem do estádio sem explicação."
+- "Volte a mostrar o mapa da cidade 2d pra utilizar como passo dois do itinerário agora: se o jogo é em casa, surge um ponto na sede que traça linha até o estádio, e nessa linha pode ter algum ataque à nossa torcida. Se for no início o ataque é na concentração e se for no meio é na pista, se for no fim é nos arredores. No caso de jogo fora de casa essa linha pode se iniciar na sede do aliado designado a nos receber, numa subsede nossa caso haja na praça ou em uma entrada da praça caso não haja aliado designado a nos receber."
+- "Faça o traçado da rota percorrer somente ruas."
+
+**A arquibancada assistindo**
+- **Por que fugiam:** no modo `assistir`, `moverDiscos` ainda rodava sem a IA de luta, e cada bonde andava pra saída do setor.
+- **Correção no combate:** agora ninguém anda. A velocidade de todo mundo é zerada a cada passo.
+- **Correção nos bonecos** (`bonecos3`): todo mundo parado faz a animação `torcer`. A festa do gol e da provocação continua por cima.
+- **Medido:** as 84 fichas da IA não saem do lugar o jogo inteiro (deslocamento máximo de 0 px).
+
+**O trajeto na cidade** (`mapaCaravana.criarTrecho`, `itinerario.trajetoNaCidade`)
+- **O desenho:** a planta 2D da praça (`img/mapas/<id>.webp`), enquadrada no caminho e mantida dentro da planta.
+- **O ponto de partida:**
+  - em casa, a nossa sede (a da planta);
+  - fora, a sede da aliada da ajuda (`planejamento.ajudaDe`);
+  - sem aliada, a nossa subsede (`patrimonio.temFilialEm`, no bairro da filial);
+  - sem as duas, uma entrada da praça ("Entrada norte", "Estrada pra…"), sorteada pela semana.
+- **A chegada:** o estádio do jogo, pelo rótulo da planta com o nome ou um apelido. Sem rótulo, vale o bairro do estádio.
+- **Os pontos do caminho:** Concentração a 20%, Pista a 50% e Arredores a 80% do caminho. O ataque abre o balão no ponto dele.
+- **A fase da ida:**
+  - fora, primeiro o mapa do Brasil (a estrada, com a emboscada) e depois a cidade;
+  - em casa, só a cidade.
+- **A fase da volta:** o inverso. A arquibancada sai, a cidade vai do estádio ao ponto de partida e depois o Brasil.
+- **O resto:** a prévia do jogo em casa já mostra a cidade. Sem planta da praça, fica só o mapa do Brasil, como antes.
+
+**Somente ruas.** A planta é uma imagem, sem o grafo das ruas, mas o asfalto é um cinza só (≈ 85,85,85).
+- **A grade de ruas:** sai da própria imagem, em células de 6 px. Uma célula é rua quando pelo menos 5 das 9 amostras dela são asfalto. A grade fica guardada por praça.
+- **O caminho:** um A* com 8 vizinhos. O custo é 1 na rua (√2 na diagonal) e 40 fora dela. A sede, a entrada e o estádio vão pra rua mais perto.
+- **A linha:** fica só nas quinas.
+- **O ônibus:** a linha é reamostrada em 100 passos de mesmo comprimento, então o ônibus anda igual em todo trecho e os pontos do caminho caem no lugar certo.
+- **Enquanto a grade não sai:** o mapa espera até 3 s pra andar; se não sair, vai em reta.
+
+**Testes:**
+- **Em casa, Corinthians × Ponte Preta:** sede → concentração → pista → arredores → Neo Química Arena pelas ruas. O ataque na pista abre o balão no meio do caminho.
+- **Fora, Bragantino × Corinthians:** a estrada e depois a Entrada norte → Nabi Abi Chedid pelas ruas, atravessando o rio pela ponte.
+- **As três origens:** "Entrada norte", "Sede da Jovem Ponte" e "Nossa subsede", conferidas uma por uma.
+- **Briga da arquibancada:** abre em tela cheia e volta pro cartão.
+- **Regressão:** `fim_briga` sem erro e nenhuma tradução faltando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

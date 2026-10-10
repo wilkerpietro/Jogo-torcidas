@@ -965,7 +965,12 @@ TO.diaJogo.combate = (function(){
       if(J.t >= J.comemorarAte) J.fase = 'acabando';
       return;
     }
-    if(J.assistir){ moverDiscos(J,dt); separar(J); return; }
+    /* ASSISTINDO NINGUÉM ANDA (correção do dono, 10/10/2026: "as demais
+       torcidas IA irão ficar paradas com os bonecos fazendo a animação de
+       torcer. Atualmente elas fogem do estádio sem explicação"): sem a IA
+       de luta, o movimento levava cada bonde pra saída do setor. Cada um
+       fica onde nasceu — a festa e a torcida são só do corpo (bonecos3) */
+    if(J.assistir){ for(const d of J.discos){ d.vx = 0; d.vy = 0; } return; }
     /* O CRONÔMETRO POR ETAPA (medição de 17/09/2026): com `J._perfil`
        ligado, cada etapa soma o seu tempo em `J._tempos` — é o que
        diz onde uma cena de 600 gasta o quadro. Desligado, custa um

@@ -2686,6 +2686,10 @@
     const palco = el('div',{class:'itn-palco'});
     const mapa = TO.mapaCaravana ? TO.mapaCaravana.criar({rota:it.rota, destino:it.destino}) : null;
     if(mapa) palco.appendChild(mapa.el);
+    /* o passo dois: a planta da praça do jogo, do ponto de partida ao estádio */
+    const cidade = TO.mapaCaravana && it.trajeto ? TO.mapaCaravana.criarTrecho(it.trajeto) : null;
+    if(cidade){ palco.appendChild(cidade.el); cidade.el.hidden = !!(mapa && it.viaja); }
+    if(mapa && cidade && !it.viaja) mapa.el.hidden = true;
     raiz.appendChild(palco);
     const recados = el('div',{class:'itn-recados'});
     raiz.appendChild(recados);
@@ -2695,7 +2699,7 @@
     TO.feed.abrirLote(e);
     ITN.raiz = raiz; ITN.linha = linha; ITN.ic = ic; ITN.hora = hora;
     ITN.nome = nome; ITN.estado = estado; ITN.conta = conta;
-    ITN.pontos = pontos; ITN.recados = recados; ITN.palco = palco; ITN.mapa = mapa;
+    ITN.pontos = pontos; ITN.recados = recados; ITN.palco = palco; ITN.mapa = mapa; ITN.cidade = cidade;
     /* o rótulo do dia de cada parada (véspera, dia do jogo, volta) */
     ITN.rotDia = {};
     for(const p of it.paradas) if(p.abreDia) ITN.rotDia[p.dia] = p.abreDia;
@@ -2799,11 +2803,7 @@
     if(!ITN || !ITN.recados) return;
     for(const c of [...ITN.recados.querySelectorAll('.itn-cartao')]) c.remove();
     if(ITN.mapa) ITN.mapa.fecharBalao();
-  }
-  /* o ônibus anda até a última praça da rota da fase (10/10/2026) */
-  function itnViajarAoFim(depois){
-    if(ITN && ITN.mapa && ITN.mapa.indice < ITN.mapa.fim) ITN.mapa.viajar(ITN.mapa.fim, depois);
-    else depois();
+    if(ITN.cidade) ITN.cidade.fecharBalao();
   }
   /* o palco volta a ser o mapa: a arquibancada sai, e o placar e os gols
      ficam embaixo dele como registro do jogo */
@@ -2819,7 +2819,7 @@
       est.remove();
       ITN.palco.after(fim);
     }
-    if(ITN.mapa) ITN.mapa.el.hidden = false;
+    itnMostrarEtapa(ITN.cidade ? 'cidade' : 'brasil');
   }
 
   function itnProximo(){
@@ -2838,63 +2838,96 @@
       itnPartida(ITN.palco);
       return;
     }
-    /* a volta: o palco volta a ser o mapa, com a rota ao contrário */
-    if(p.id === 'volta'){
-      itnMostrarMapa();
-      if(ITN.it.viaja && ITN.mapa) ITN.mapa.novaRota(ITN.it.rota.slice().reverse());
-    }
+    /* a volta: a arquibancada sai e o palco volta a ser mapa */
+    if(p.id === 'volta') itnMostrarMapa();
     const fila = (p.eventos || []).slice();
     /* a escolta se junta na primeira parada da cidade, e fica na última */
     const antes = paradas[ITN.ponto - 1];
     const chegou = ITN.escolta && ITN.escolta.n > 0 && p.comEscolta && !(antes && antes.comEscolta);
     const ficou  = ITN.escolta && ITN.escolta.n > 0 && !p.comEscolta && antes && antes.comEscolta;
-    if(!fila.length){                 /* parada sem nada não fala */
-      itnDizer(chegou ? _t('a {nome} manda {n} pra escolta', {nome:ITN.escolta.nome, n:ITN.escolta.n})
-             : ficou ? _t('a escolta da {nome} fica', {nome:ITN.escolta.nome})
-             : _t('passando · {lugar}', {lugar:p.nome.toLowerCase()}));
-      ITN.travado = true;
-      itnViajarAoFim(()=>{ if(!ITN) return; ITN.travado = false; itnAgenda(chegou || ficou ? 900 : 400); });
-      return;
+    itnDizer(fila.length ? _t('seguindo')
+           : chegou ? _t('a {nome} manda {n} pra escolta', {nome:ITN.escolta.nome, n:ITN.escolta.n})
+           : ficou ? _t('a escolta da {nome} fica', {nome:ITN.escolta.nome})
+           : _t('passando · {lugar}', {lugar:p.nome.toLowerCase()}));
+    ITN.travado = true;
+    itnRodarFase(p, fila, chegou || ficou);
+  }
+
+  /* =======================================================
+     OS DOIS MAPAS DA FASE (pedido do dono, 10/10/2026): na ida, o Brasil
+     (a estrada, com a emboscada na entrada da praça) e depois a cidade
+     (a linha do ponto de partida até o estádio, com o ataque na
+     concentração, na pista ou nos arredores); na volta, o contrário. Em
+     casa não há estrada: a ida é só a cidade. Cada hostilidade abre o
+     balão no mapa em que acontece, e a fase segue quando ela se resolve
+     (`itnRecado` chama `ITN.continuar`).
+     ======================================================= */
+  function itnMostrarEtapa(etapa){
+    if(!ITN) return;
+    if(ITN.mapa) ITN.mapa.el.hidden = etapa !== 'brasil';
+    if(ITN.cidade) ITN.cidade.el.hidden = etapa !== 'cidade';
+    ITN.etapa = etapa;
+  }
+  function itnRodarFase(p, fila, demora){
+    const it = ITN.it, ida = p.id !== 'volta';
+    const temB = !!(ITN.mapa && it.viaja), temC = !!ITN.cidade;
+    let etapas = (ida ? [temB && 'brasil', temC && 'cidade'] : [temC && 'cidade', temB && 'brasil']).filter(Boolean);
+    if(!etapas.length) etapas = ITN.mapa ? ['brasil'] : [];
+    if(!ida){
+      if(temC) ITN.cidade.inverter();
+      if(temB) ITN.mapa.novaRota(it.rota.slice().reverse());
     }
-    /* uma parada pode ter dois recados — a gente sofrer um ataque no
-       mesmo ponto em que planejou descer em cima de alguém. Os dois
-       cartões aparecem, um de cada vez, e a linha só segue depois do
-       último. */
-    ITN.fila = fila;
-    itnRecado();
+    const evs = fila.slice();
+    let k = 0;
+    const proxima = ()=>{
+      if(!ITN) return;
+      if(k >= etapas.length){
+        /* sem mapa pro ocorrido: o cartão vai pra lista, como antes */
+        if(evs.length){ ITN.fila = evs.splice(0); ITN.continuar = null; itnRecadoNaLista(p); return; }
+        ITN.travado = false; itnAgenda(demora ? 900 : 400);
+        return;
+      }
+      const etapa = etapas[k++];
+      itnMostrarEtapa(etapa);
+      const Mp = etapa === 'brasil' ? ITN.mapa : ITN.cidade;
+      const daqui = ev => etapa === 'brasil' ? ev.tipo === 'emboscada' : ev.tipo !== 'emboscada';
+      let i = evs.findIndex(daqui);
+      if(i < 0 && k === etapas.length && evs.length) i = 0;
+      if(i < 0){ Mp.viajar(Mp.fim, proxima); return; }
+      const ev = evs.splice(i, 1)[0];
+      const onde = ev.praca || it.destino;
+      let alvo = etapa === 'brasil' ? Mp.indiceDe(onde) : Mp.indiceDoPonto(ev.ponto);
+      if(alvo < 0) alvo = Mp.fim;
+      Mp.viajar(Math.max(alvo, Mp.indice), ()=>{
+        if(!ITN) return;
+        itnDizer(_t('recado na parada · esperando você responder'), true);
+        const c = itnCartao(p, ev);
+        if(etapa === 'brasil') Mp.balao(onde, c); else Mp.balaoNo(Mp.indice, c);
+        /* resolvido o recado, o balão fica um pouco (o saldo da briga) e
+           o ônibus segue até o fim do mapa */
+        ITN.continuar = ()=>{
+          itnDizer(_t('seguindo'));
+          setTimeout(()=>{ if(!ITN) return; Mp.fecharBalao(); Mp.viajar(Mp.fim, proxima); }, 1800 / velTempo());
+        };
+      });
+    };
+    proxima();
   }
 
   function itnRecado(){
     if(!ITN) return;
-    const p = ITN.it.paradas[ITN.ponto];
-    const ev = ITN.fila.shift();
-    if(!ev){
-      /* resolvido o recado, o balão fica um pouco (o saldo da briga) e o
-         ônibus segue até o fim da fase */
-      ITN.travado = true; itnDizer(_t('seguindo'));
-      const temBalao = ITN.mapa && ITN.mapa.el.classList.contains('com-balao');
-      setTimeout(()=>{
-        if(!ITN) return;
-        if(ITN.mapa) ITN.mapa.fecharBalao();
-        itnViajarAoFim(()=>{ if(!ITN) return; ITN.travado = false; itnAgenda(500); });
-      }, (temBalao ? 1800 : 0) / velTempo());
-      return;
-    }
+    /* o recado da fase foi resolvido: a fase segue no mapa */
+    if(ITN.continuar){ const c = ITN.continuar; ITN.continuar = null; c(); return; }
+    itnRecadoNaLista(ITN.it.paradas[ITN.ponto]);
+  }
+  /* a reserva sem mapa: os cartões na lista embaixo da linha */
+  function itnRecadoNaLista(p){
+    if(!ITN) return;
+    const ev = (ITN.fila || []).shift();
+    if(!ev){ ITN.travado = false; itnDizer(_t('seguindo')); itnAgenda(1200); return; }
     ITN.travado = true;
-    /* A HOSTILIDADE É UM BALÃO EM CIMA DA PRAÇA (pedido do dono,
-       10/10/2026): o ônibus anda até a praça do ocorrido e o recado abre
-       ali, no mapa */
-    const onde = ev.praca || ITN.it.destino;
-    const mostrar = ()=>{
-      if(!ITN) return;
-      itnDizer(_t('recado na parada · esperando você responder'), true);
-      const c = itnCartao(p, ev);
-      if(ITN.mapa) ITN.mapa.balao(onde, c);
-      else ITN.recados.appendChild(c);
-    };
-    const i = ITN.mapa ? ITN.mapa.indiceDe(onde) : -1;
-    if(ITN.mapa && i > ITN.mapa.indice) ITN.mapa.viajar(i, mostrar);
-    else mostrar();
+    itnDizer(_t('recado na parada · esperando você responder'), true);
+    ITN.recados.appendChild(itnCartao(p, ev));
   }
 
   /* ---------- o cartão de cada recado ---------- */
@@ -3088,6 +3121,7 @@
     }
     /* o mapa sai e a arquibancada entra no lugar dele (10/10/2026) */
     if(ITN.mapa) ITN.mapa.el.hidden = true;
+    if(ITN.cidade) ITN.cidade.el.hidden = true;
     const caixa = widgetPartida(m, ()=>{
       /* apito final: a linha volta a andar, e o aviso da trava sai */
       atualizarFeed(); pintarTopo();
@@ -4206,7 +4240,10 @@
        o ônibus pra andar nele (abrirItinerario) */
     if(m.kind === 'partida' && !m.respondido && !aoVivo && !linha && TO.mapaCaravana && TO.itinerario.rotaDoDia){
       const r = TO.itinerario.rotaDoDia(E());
-      if(r) art.appendChild(TO.mapaCaravana.criar({rota:r.rota, destino:r.destino}).el);
+      /* em casa não há estrada: a prévia é a cidade, da sede ao estádio */
+      const c = r && !r.viaja && r.trajeto ? TO.mapaCaravana.criarTrecho(r.trajeto) : null;
+      if(c) art.appendChild(c.el);
+      else if(r) art.appendChild(TO.mapaCaravana.criar({rota:r.rota, destino:r.destino}).el);
     }
     /* com a linha do dia no cartão, os gols já estão dentro da parada
        do jogo — repetir a lista aqui embaixo é o mesmo jogo duas vezes */

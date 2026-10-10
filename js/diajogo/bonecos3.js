@@ -2034,6 +2034,8 @@ TO.diaJogo.bonecos3 = (function(){
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
       else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, ti); rapidez = 12; f.ataque = null; }
       else if(!andando && d.linha==='retaguarda' && !J.paz && !leve){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
+      /* a arquibancada assistindo ao jogo (10/10/2026): todo mundo torce */
+      else if(!andando && J.assistir){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
       else { f.ataque = null; rapidez = andando ? 14 : 5; }
       if(d.esquivou > 0) esquivar(p, f, d);
       else flinch(p, f, d, dt);
