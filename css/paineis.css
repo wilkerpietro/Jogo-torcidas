@@ -2865,3 +2865,13 @@ header.capa-cidade{background-size:cover; background-position:center;
 .social-toast .post-torcida{padding:11px 0 9px;border-bottom:0}
 .social-toast .post-torcida.nova{box-shadow:none;padding-left:0}
 @media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }
+/* O MODO DE JOGO na seleção (10/10/2026): dois cartões lado a lado */
+.sel-modos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sel-modo{text-align:left;background:#141414;border:1px solid #2c2c2c;color:inherit;
+  padding:14px 16px;cursor:pointer;font:inherit;border-radius:2px}
+.sel-modo:hover{border-color:#4a4a4a}
+.sel-modo.on{border-color:#b52a2a;background:#1d1212;box-shadow:inset 3px 0 0 #b52a2a}
+.sel-modo .nm{font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.sel-modo .resumo{font-size:13px;opacity:.85;margin-bottom:8px}
+.sel-modo ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.55;opacity:.8}
+@media (max-width:700px){ .sel-modos{grid-template-columns:1fr} }

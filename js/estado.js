@@ -37,6 +37,11 @@ TO.estado = (function(){
       versao: VERSAO,
       semente,
       criadoEm: opc.agora || 0,
+      /* O MODO DE JOGO (pedido do dono, 10/10/2026), escolhido na
+         seleção e fixo no save: 'rapido' é o jogo a jogo, sem domínio
+         de bairros, sem pixação e sem reunião mensal (as pautas chegam
+         como mensagem da diretoria); 'detalhista' é o jogo inteiro. */
+      modo: opc.modo === 'rapido' ? 'rapido' : 'detalhista',
 
       data:{ ano:2026, semana:1, dia:1, absoluto:0 },   // dia 1..7, jogo no 6
 
@@ -1001,6 +1006,8 @@ TO.estado = (function(){
     /* o domínio dos bairros (30/09/2026): a sede do jogador no bairro
        espalhado, quando duas sedes caíam no mesmo bairro */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
+    /* save de antes do modo de jogo (10/10/2026) é o jogo inteiro */
+    if(E.modo !== 'rapido' && E.modo !== 'detalhista') E.modo = 'detalhista';
     try{
       if(E.relacoes) delete E.relacoes['undefined'];
       if(E.marcaAjuda) delete E.marcaAjuda['undefined'];
@@ -1066,6 +1073,8 @@ TO.estado = (function(){
 
   return {
     get E(){ return E; },
+    /* o modo rápido (10/10/2026): sem domínio, sem pixação, sem reunião */
+    rapido: e => ((e || E) || {}).modo === 'rapido',
     novo, lancar, lancarNoResumo, registrarLinha,
     mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
     dataTexto, dataTextoEm, dataDaSemana, semanaDiaDe, sortearProximoJogo,

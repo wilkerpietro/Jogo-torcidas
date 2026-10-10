@@ -50,12 +50,36 @@ TO.i18n.registrar({
   'Começar a partida':      {es:'Empezar la partida',     en:'Start the game'},
   'Voltar ao menu':         {es:'Volver al menú',         en:'Back to menu'},
   'escolha ao lado':        {es:'elige al lado',          en:'pick one alongside'},
-  'passo 3 de 3 · {nome} · quem é o presidente':
-    {es:'paso 3 de 3 · {nome} · quién es el presidente', en:"step 3 of 3 · {nome} · who's the president"},
-  'passo 1 de 3 · país, liga e clube · {n} clubes em 10 países':
-    {es:'paso 1 de 3 · país, liga y club · {n} clubes en 10 países', en:'step 1 of 3 · country, league and club · {n} clubs in 10 countries'},
-  'passo 2 de 3 · {nome} · escolha a torcida':
-    {es:'paso 2 de 3 · {nome} · elige la barra', en:'step 2 of 3 · {nome} · choose the firm'},
+  'passo 4 de 4 · {nome} · quem é o presidente':
+    {es:'paso 4 de 4 · {nome} · quién es el presidente', en:"step 4 of 4 · {nome} · who's the president"},
+  'passo 3 de 4 · {nome} · o modo de jogo':
+    {es:'paso 3 de 4 · {nome} · el modo de juego', en:'step 3 of 4 · {nome} · game mode'},
+  'passo 1 de 4 · país, liga e clube · {n} clubes em 10 países':
+    {es:'paso 1 de 4 · país, liga y club · {n} clubes en 10 países', en:'step 1 of 4 · country, league and club · {n} clubs in 10 countries'},
+  'passo 2 de 4 · {nome} · escolha a torcida':
+    {es:'paso 2 de 4 · {nome} · elige la barra', en:'step 2 of 4 · {nome} · choose the firm'},
+  'Modo de jogo': {es:'Modo de juego', en:'Game mode'},
+  'Modo rápido': {es:'Modo rápido', en:'Quick mode'},
+  'Modo detalhista': {es:'Modo detallista', en:'Detailed mode'},
+  'O jogo a jogo: calendário do clube, caravanas, brigas, membros e caixa.':
+    {es:'Partido a partido: el calendario del club, las caravanas, las peleas, los miembros y la caja.', en:"Game by game: the club's calendar, caravans, fights, members and cash."},
+  'A diretoria manda mensagem sugerindo os ataques aos rivais':
+    {es:'La directiva manda mensajes sugiriendo los ataques a los rivales', en:'The board messages you suggesting attacks on rivals'},
+  'Os rivais podem atacar a gente': {es:'Los rivales nos pueden atacar', en:'Rivals can attack us'},
+  'Diplomacia, festas e assaltos chegam como mensagem':
+    {es:'Diplomacia, fiestas y asaltos llegan como mensaje', en:'Diplomacy, parties and robberies arrive as messages'},
+  'Sem domínio de bairros, sem pixação e sem reunião mensal':
+    {es:'Sin dominio de barrios, sin pintadas y sin reunión mensual', en:'No neighbourhood control, no graffiti and no monthly meeting'},
+  'O jogo inteiro: tudo do rápido e a disputa pela cidade.':
+    {es:'El juego entero: todo lo del rápido y la disputa por la ciudad.', en:'The whole game: everything in quick mode plus the fight for the city.'},
+  'A cidade em bairros, com domínio de cada torcida':
+    {es:'La ciudad en barrios, con el dominio de cada barra', en:'The city split into neighbourhoods, each with its controlling firm'},
+  'Pixações, recrutamento por bairro e ação social':
+    {es:'Pintadas, reclutamiento por barrio y acción social', en:'Graffiti, recruiting by neighbourhood and community action'},
+  'Os alvos de domínio do mês': {es:'Los objetivos de dominio del mes', en:"The month's control targets"},
+  'A reunião mensal da diretoria na sede': {es:'La reunión mensual de la directiva en la sede', en:'The monthly board meeting at the HQ'},
+  'O modo fica no save: não dá pra trocar depois que a partida começa.':
+    {es:'El modo queda en la partida guardada: no se puede cambiar después de empezar.', en:"The mode is saved with the game: it can't be changed once the game starts."},
   'Você é o presidente da <b>{nome}</b>. É o seu boneco que desce nas cenas — quando ele estiver preso, ferido ou fora da escalação, você assume o membro mais forte que estiver de pé.':
     {es:'Eres el presidente de <b>{nome}</b>. Es tu muñeco el que baja a las escenas: cuando esté preso, herido o fuera de la convocatoria, controlas al miembro más fuerte que siga en pie.',
      en:"You are the president of <b>{nome}</b>. Your figure is the one who goes down into the scenes — when he's jailed, injured or left out, you take over the strongest member still standing."},

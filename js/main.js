@@ -6,6 +6,8 @@
   const U = TO.util, IC = TO.icones;
   const $ = id => document.getElementById(id);
   const E = () => TO.estado.E;
+  /* o modo rápido do save aberto (10/10/2026) */
+  const rapidoTela = () => !!(TO.estado.E && TO.estado.rapido());
   const el = (t,p,f)=>U.criar(t,p,f);
 
   /* =======================================================
@@ -247,12 +249,14 @@
   let buscaSel = '';
   let selPais = null, selLiga = null, selClube = null, escolhida = null;
   let passoSel = 1;
+  /* o modo de jogo do passo 3 (10/10/2026): começa no rápido */
+  let modoSel = 'rapido';
 
   function abrirSelecao(){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
     selPais = selLiga = selClube = escolhida = null;
-    buscaSel = ''; passoSel = 1; nomePresidenteSel = '';
+    buscaSel = ''; passoSel = 1; nomePresidenteSel = ''; modoSel = 'rapido';
     pintarSelecao();
   }
 
@@ -337,33 +341,75 @@
   };
 
   function pintarSelecao(){
-    const p3 = passoSel === 3 && escolhida;
-    const p2 = passoSel === 2 && selClube && !p3;
-    $('passo1Sel').classList.toggle('oculto', !!(p2 || p3));
+    /* passo 3 é o modo de jogo, passo 4 o presidente (10/10/2026) */
+    const p4 = passoSel === 4 && escolhida;
+    const p3 = passoSel === 3 && escolhida && !p4;
+    const p2 = passoSel === 2 && selClube && !p3 && !p4;
+    $('passo1Sel').classList.toggle('oculto', !!(p2 || p3 || p4));
     $('passo2Sel').classList.toggle('oculto', !p2);
-    $('passo3Sel').classList.toggle('oculto', !p3);
-    $('btAvancarSelecao').classList.toggle('oculto', !!(p2 || p3));
-    $('btAvancarSelecao').disabled = !selClube;
+    $('passoModoSel').classList.toggle('oculto', !p3);
+    $('passo3Sel').classList.toggle('oculto', !p4);
+    $('btAvancarSelecao').classList.toggle('oculto', !!(p2 || p4));
+    $('btAvancarSelecao').disabled = p3 ? false : !selClube;
     $('btSelecionarTorcida').classList.toggle('oculto', !p2);
     $('btSelecionarTorcida').disabled = !escolhida;
-    $('btComecarPartida').classList.toggle('oculto', !p3);
-    $('btVoltarMenu').textContent = (p2 || p3) ? _t('Voltar') : _t('Voltar ao menu');
+    $('btComecarPartida').classList.toggle('oculto', !p4);
+    $('btVoltarMenu').textContent = (p2 || p3 || p4) ? _t('Voltar') : _t('Voltar ao menu');
     $('abasSelecao').innerHTML = '';
 
     const sub = $('subSelecao');
-    if(p3){
-      sub.textContent = _t('passo 3 de 3 · {nome} · quem é o presidente', {nome:escolhida.nome});
+    if(p4){
+      sub.textContent = _t('passo 4 de 4 · {nome} · quem é o presidente', {nome:escolhida.nome});
       pintarPasso3();
       return;
     }
+    if(p3){
+      sub.textContent = _t('passo 3 de 4 · {nome} · o modo de jogo', {nome:escolhida.nome});
+      pintarPassoModo();
+      return;
+    }
     if(!p2){
-      sub.textContent = _t('passo 1 de 3 · país, liga e clube · {n} clubes em 10 países',
+      sub.textContent = _t('passo 1 de 4 · país, liga e clube · {n} clubes em 10 países',
         {n:TO.mundo.todosTimes.length});
       pintarPasso1();
       return;
     }
-    sub.textContent = _t('passo 2 de 3 · {nome} · escolha a torcida', {nome:selClube.nome});
+    sub.textContent = _t('passo 2 de 4 · {nome} · escolha a torcida', {nome:selClube.nome});
     pintarPasso2();
+  }
+
+  /* ---------- PASSO 3: o modo de jogo (pedido do dono, 10/10/2026) ----------
+     Rápido é o jogo a jogo; detalhista traz a cidade inteira. O modo
+     fica no save e não muda depois que a partida começa. */
+  const MODOS_DE_JOGO = [
+    {id:'rapido', nome:'Modo rápido',
+     resumo:'O jogo a jogo: calendário do clube, caravanas, brigas, membros e caixa.',
+     itens:['A diretoria manda mensagem sugerindo os ataques aos rivais',
+            'Os rivais podem atacar a gente',
+            'Diplomacia, festas e assaltos chegam como mensagem',
+            'Sem domínio de bairros, sem pixação e sem reunião mensal']},
+    {id:'detalhista', nome:'Modo detalhista',
+     resumo:'O jogo inteiro: tudo do rápido e a disputa pela cidade.',
+     itens:['A cidade em bairros, com domínio de cada torcida',
+            'Pixações, recrutamento por bairro e ação social',
+            'Os alvos de domínio do mês',
+            'A reunião mensal da diretoria na sede']}
+  ];
+  function pintarPassoModo(){
+    const cx = $('fichaModo'); cx.innerHTML = '';
+    const grade = el('div',{class:'sel-modos'});
+    for(const m of MODOS_DE_JOGO){
+      const b = el('button',{class:'sel-modo'+(modoSel === m.id ? ' on' : '')});
+      b.appendChild(el('div',{class:'nm', texto:_t(m.nome)}));
+      b.appendChild(el('div',{class:'resumo', texto:_t(m.resumo)}));
+      const ul = el('ul');
+      for(const it of m.itens) ul.appendChild(el('li',{texto:_t(it)}));
+      b.appendChild(ul);
+      b.onclick = ()=>{ modoSel = m.id; pintarPassoModo(); };
+      grade.appendChild(b);
+    }
+    cx.appendChild(grade);
+    cx.appendChild(el('p',{class:'nota', texto:_t('O modo fica no save: não dá pra trocar depois que a partida começa.')}));
   }
 
   /* ---------- PASSO 3: o nome do presidente (dono, 22/09/2026) ----------
@@ -838,8 +884,10 @@
           id=>P.definirPolitica(e, 'outros', id));
     grupo(_t('Apoio nos jogos fora'), P.POLITICA_APOIO, pol.apoio,
           id=>P.definirPolitica(e, 'apoio', id));
-    grupo(_t('Pixações'), P.POLITICA_PIXO, pol.pixo,
-          id=>P.definirPolitica(e, 'pixo', id));
+    /* sem domínio no modo rápido, não há pixação a comandar (10/10/2026) */
+    if(!rapidoTela())
+      grupo(_t('Pixações'), P.POLITICA_PIXO, pol.pixo,
+            id=>P.definirPolitica(e, 'pixo', id));
     cx.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${_t('O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.')}</span>`}));
 
@@ -6403,7 +6451,7 @@
       tab.appendChild(el('thead', null, [el('tr',{html:
         `<th>${_t('Torcida')}</th><th>${_t('Membros')}</th><th>${_t('Sede')}</th>`+
         `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`+
-        `<th>${_t('Recruta em')}</th>`})]));
+        (rapidoTela() ? '' : `<th>${_t('Recruta em')}</th>`)})]));
       const tb = el('tbody');
       /* o bairro em que cada uma recruta (02/10/2026) */
       const recruta = TO.dominio && TO.dominio.recrutandoEm ? TO.dominio.recrutandoEm(e, c.id) : new Map();
@@ -6422,7 +6470,7 @@
             : (t.subsedes || '—')}</td>`+
           `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
           `<td class="num">${(pat.bares||[]).length || '—'}</td>`+
-          `<td>${recruta.get(o.id) ? escHTML(recruta.get(o.id).nome) : '—'}</td>`}));
+          (rapidoTela() ? '' : `<td>${recruta.get(o.id) ? escHTML(recruta.get(o.id).nome) : '—'}</td>`)}));
       }
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado', html:`<b>${_t('Da casa')}</b>`}));
@@ -8951,7 +8999,9 @@
       if(!X){ palco.appendChild(c); return c; }
       const aliados = X.aliadosNossos(e);
       c.appendChild(el('p',{class:'reu-fala', texto: aliados.length
-        ? _t('Um pedido por reunião: a chance de o aliado topar é o quanto ele anda com a gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a gente; recusando, −3. No aproximar, a gente apresenta um aliado nosso que ainda não anda com ele — seja neutro, rival ou maior rival dele; irmã não se larga.')
+        ? rapidoTela()
+          ? _t('Um pedido por mês: a chance de o aliado topar é o quanto ele anda com a gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a gente; recusando, −3. No aproximar, a gente apresenta um aliado nosso que ainda não anda com ele — seja neutro, rival ou maior rival dele; irmã não se larga.')
+          : _t('Um pedido por reunião: a chance de o aliado topar é o quanto ele anda com a gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a gente; recusando, −3. No aproximar, a gente apresenta um aliado nosso que ainda não anda com ele — seja neutro, rival ou maior rival dele; irmã não se larga.')
         : _t('A gente não tem aliado pra pedir nada — aliado é relação de +20 pra cima.')}));
       if(!aliados.length){ palco.appendChild(c); return c; }
       const grade = el('div',{class:'reu-pedido'});
@@ -9663,6 +9713,13 @@
     if(subDip === 'ideologia'){ pg.appendChild(caixaDeIdeologia(e)); return; }
     /* os eixos de aliança têm tela própria (dono, 11/09/2026) */
     if(subDip === 'eixos'){ pg.appendChild(painelEixos(e)); return; }
+    /* O PEDIDO A UM ALIADO NO MODO RÁPIDO (10/10/2026): sem reunião, o
+       pedido do mês mora em Alianças, o mesmo palco da mesa */
+    if(subDip === 'aliancas' && rapidoTela()){
+      const cP = el('div',{class:'eixo-pedido'});
+      construtoresDaReuniao(e, pintarDiplomacia).palcoDoPedido(cP);
+      pg.appendChild(cP);
+    }
 
     /* o valor corrente manda; o tipo da fonte é só o ponto de partida */
     const linhas = Object.entries(e.relacoes||{}).map(([id,v])=>{
@@ -11325,12 +11382,17 @@
   $('btComecarPartida').onclick = ()=>{
     if(!escolhida) return;
     const nome = String(nomePresidenteSel || '').trim() || TO.membros.nomeSugerido(escolhida.clubeId);
-    TO.estado.novo({torcida: escolhida, presidente: nome});
+    TO.estado.novo({torcida: escolhida, presidente: nome, modo: modoSel});
     entrarNoJogo(true);
   };
-  $('btAvancarSelecao').onclick = ()=>{ if(selClube) irParaPasso(2); };
-  /* do passo 3 volta pra torcida; do 2, pra escolha do clube; do 1, pro menu */
+  /* Avançar: do passo 1 pra torcida, do modo de jogo pro presidente */
+  $('btAvancarSelecao').onclick = ()=>{
+    if(passoSel === 3 && escolhida){ irParaPasso(4); return; }
+    if(selClube) irParaPasso(2);
+  };
+  /* do 4 volta pro modo; do 3, pra torcida; do 2, pra escolha do clube; do 1, pro menu */
   $('btVoltarMenu').onclick = ()=>{
+    if(passoSel === 4){ irParaPasso(3); return; }
     if(passoSel === 3){ irParaPasso(2); return; }
     if(passoSel === 2){ escolhida = null; irParaPasso(1); return; }
     $('telaSelecao').classList.add('oculto');

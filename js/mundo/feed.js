@@ -1819,6 +1819,7 @@ TO.feed = (function(){
        entre si sem passar pelo nosso feed (dono, 11/09/2026) */
     passo('diplomacia delas', ()=>{ if(TO.eixos) TO.eixos.diplomaciaDelas(E); });
     passo('reunião',        ()=>reuniaoDeHoje(E));
+    passo('pauta solta',    ()=>pautaSoltaDeHoje(E));
     passo('semana',         ()=>semanaDeHoje(E));
     passo('olheiro',        ()=>olheiroDoDia(E));
     passo('dia de jogo',    ()=>guerraDeHoje(E));
@@ -4416,6 +4417,22 @@ TO.feed = (function(){
       for(const a of it.festas) if(!a.resposta) r = responderFesta(E, it.festas, a.torcida, false) || r;
       if(r){ it.consequencia = r.consequencia; if(r.todas) it.decidido = {botao:'lista', rot:r.rot}; }
     }
+    /* O MODO RÁPIDO (pedido do dono, 10/10/2026): não há mesa. Os
+       assuntos do mês nascem do mesmo jeito — diplomacia das aliadas,
+       os botes no bar e na casa de piscina (35% cada, como antes dos
+       alvos de domínio), festas, aniversários e assalto — e cada um sai
+       como mensagem solta do diretor que o traz, um por dia
+       (`pautaSoltaDeHoje`). Sem alvo de domínio e sem bairro de
+       recrutamento: o domínio não existe nesse modo. */
+    if(TO.estado.rapido(E)){
+      fecharReuniao(E);
+      for(const x of [pautaAproximacao(E), pautaPaz(E), pautaAfastar(E)]) if(x) pautar(E, x);
+      for(const tipo of ['bar', 'casa']){ const b = pautaBote(E, tipo); if(b) pautar(E, b); }
+      { const fe = pautaFestas(E); if(fe) pautar(E, fe); }
+      for(const pa of pautaAniversarios(E)) pautar(E, pa);
+      { const as = pautaAssalto(E); if(as) pautar(E, as); }
+      return null;
+    }
     /* o que as aliadas trazem nasce na própria mesa */
     const a = pautaAproximacao(E); if(a) pautar(E, a);
     const p = pautaPaz(E);         if(p) pautar(E, p);
@@ -4452,6 +4469,47 @@ TO.feed = (function(){
       dados:{ano:E.data.ano, mes:mesDe(E), assuntos:quantos},
       botoes:[{id:'abrir', rot:_t('Sentar com a diretoria'), acao:'abrir-reuniao'}]
     });
+  }
+
+  /* A PAUTA SOLTA DO MODO RÁPIDO (10/10/2026): um assunto por dia vira
+     mensagem do diretor, com os mesmos botões e os mesmos efeitos da
+     mesa (`decidirPauta`). Os botes saem primeiro, porque têm dia
+     marcado; o convite de festa sai como uma mensagem por aliada. Os
+     assuntos que chegam no meio do mês (eixos) entram na fila e saem
+     no dia seguinte. */
+  const ORDEM_SOLTA = {bote:0, assalto:1, aniversario:2, festas:3};
+  function pautaSoltaDeHoje(E){
+    if(!TO.estado.rapido(E)) return null;
+    const Rn = caixaReuniao(E);
+    const fila = Rn.pauta.filter(x=>!x.decidido && !x.solta)
+      .sort((a,b)=>((ORDEM_SOLTA[a.tipo] ?? 9) - (ORDEM_SOLTA[b.tipo] ?? 9)) || a.id - b.id);
+    const it = fila[0];
+    if(!it) return null;
+    it.solta = true;
+    if(it.festas){
+      for(const a of it.festas){
+        if(a.resposta) continue;
+        propor(E, {kind:'pauta', peso:'decisao', voz:'diretor',
+          chave:`pauta|${it.id}|${a.torcida}`,
+          texto:_t('Chefe, a {nome} convidou a gente pra festa dos {n} anos dela, dia {data}. Ir custa R$ 2.000 e aproxima; furar afasta e queima na rua. A gente vai?',
+                   {nome:a.nome, n:a.idade, data:a.data}),
+          dados:{item:it.id, torcida:a.torcida},
+          botoes:[
+            {id:'ir',  rot:_t('Ir pra festa'), acao:'pauta-festa',
+             nota:_t('R$ 2.000 · +{n} rel.', {n:TO.relacoes.REL.irAniversario})},
+            {id:'nao', rot:_t('Não ir'), acao:'pauta-festa',
+             nota:_t('−{n} rel. · −2 prestígio', {n:TO.relacoes.REL.furarAniversario})}]});
+      }
+      return it;
+    }
+    return propor(E, {kind:'pauta', peso:'decisao', voz:'diretor',
+      chave:`pauta|${it.id}|${it.chave || it.tipo || ''}`,
+      texto: it.texto,
+      dados:{item:it.id},
+      /* "Ver os alvos" do assalto abre a tela de sempre, pela porta do
+         cartão antigo */
+      botoes:(it.botoes||[]).map(b=>({id:b.id, rot:b.rot, nota:b.nota,
+        acao: b.acao === 'assalto-ver' ? 'tela-assalto' : 'pauta'}))});
   }
 
   /* =======================================================
@@ -6313,6 +6371,24 @@ TO.feed = (function(){
          Fechar a tela sem encerrar deixa a mesa de pé. */
       case 'abrir-reuniao':
         return {ok:true, abrir:{tela:'tela-reuniao', msg:m, cancelavel:true, botao:idBotao}};
+      /* a pauta solta do modo rápido (10/10/2026): o efeito é o da mesa */
+      case 'pauta': {
+        const r = decidirPauta(E, (m.dados||{}).item, idBotao);
+        marcar();
+        m.consequencia = r.ok ? (r.item.consequencia || '') : _t('Esse assunto já passou.');
+        return {ok:true};
+      }
+      case 'pauta-festa': {
+        const d = m.dados || {};
+        const it = caixaReuniao(E).pauta.find(x=>x.id === d.item);
+        const r = responderFestaDaPauta(E, d.item, d.torcida, idBotao === 'ir');
+        marcar();
+        const a = r.ok && it && it.festas ? it.festas.find(x=>x.torcida === d.torcida) : null;
+        m.consequencia = !r.ok ? _t('Esse assunto já passou.')
+          : idBotao === 'ir' ? _t('Confirmado: a gente vai na festa da {nome}.', {nome:a ? a.nome : ''})
+          : _t('A gente não vai na festa da {nome}.', {nome:a ? a.nome : ''});
+        return {ok:true};
+      }
       /* --- as que resolvem aqui --- */
       case 'nada':
         marcar();

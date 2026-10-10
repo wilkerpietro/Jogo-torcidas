@@ -9360,6 +9360,62 @@ Pedido do dono: "agora um novato recrutado quando surge na torcida deve surgir v
     - `relacoes.js` carrega antes de `membros.js`, por isso guarda uma cópia desses números: `BASE_FICHA` e `MEDIA_FICHA`.
   - **Saves antigos:** os quadros da IA sobem aos poucos, à medida que entra gente nova.
 
+## Modo rápido e modo detalhista (o dono, 10/10/2026)
+
+Pedido do dono: "colocar um passo da seleção de torcida os modos de jogo: modo rápido e modo detalhista. O modo rápido não tem a complexidade do domínio de bairros, não tem reuniões e foca no jogo a jogo, podendo ter ataques dos rivais e mensagens de membros da diretoria sugerindo ataques a rivais, como era antes. O modo detalhista traz toda a complexidade do jogo no estado atual."
+
+Três respostas do dono:
+- O domínio some do mundo inteiro, IA incluída.
+- A diplomacia chega por mensagem da diretoria.
+- O modo é fixo no save.
+
+**A seleção.** Agora tem quatro passos:
+1. País, liga e clube.
+2. Torcida.
+3. **Modo de jogo**: dois cartões, com o rápido marcado.
+4. Presidente.
+
+O modo vai pra `E.modo` (`'rapido'` ou `'detalhista'`) em `TO.estado.novo` e não muda depois. Save de antes é detalhista (`repararSave`). `TO.estado.rapido(E)` responde.
+
+**O domínio desliga na raiz** (`js/mundo/dominio.js`). No modo rápido, as portas que mexem no domínio viram nada:
+- O dia do domínio, com metas da IA, pixação, estruturas e recrutamento da IA.
+- `brigaIA`, `compraIA`, `estrutura`, `recrutouHoje`, `confronto` e `mexer`.
+- `ondeDaBriga` e `previaBriga`: anúncios e resultados de briga saem sem bairro e sem barra.
+- Pixação e ação social.
+- Recrutamento por bairro: peso 1 e nenhum bairro.
+
+A geografia fica, porque cena e caravana usam bairro, sede e estádio.
+
+**A tela:**
+- O Mapa abre no Brasil, com os pontos sem a cor de dona. A cidade é só o perfil (visão geral, torcidas e estruturas) na largura toda: sem planta, sem aba Bairros e sem cartão do bairro.
+- A tabela de torcidas da cidade perde a coluna "Recruta em".
+- A ideologia perde o grupo Pixações.
+
+**A reunião vira mensagem.** No dia 5 os assuntos do mês nascem como sempre:
+- Aproximação, paz e cobrança de aliada.
+- Os **botes no bar e na casa de piscina**, 35% cada ao mês, como antes dos alvos de domínio.
+- Convites de festa, aniversários e assalto.
+
+Não nasce alvo de domínio nem bairro de recrutamento, e não há cartão de reunião. `pautaSoltaDeHoje` solta **um assunto por dia** como mensagem do diretor:
+- Botes primeiro, porque têm dia marcado.
+- Mesmos botões e mesmos efeitos da mesa: `responder` com `acao:'pauta'` chama `decidirPauta`.
+- O convite de festa sai como uma mensagem por aliada (`pauta-festa`).
+- "Ver os alvos" do assalto abre a tela de sempre.
+- Os assuntos de eixo que chegam no meio do mês saem no dia seguinte.
+
+O **pedido a um aliado**, que só existia na mesa, mora na aba Diplomacia → Alianças: um por mês, o mesmo palco da reunião.
+
+**O que fica nos dois modos:**
+- Calendário e caravanas.
+- Brigas, inclusive os ataques dos rivais (`relacoes.js`).
+- Membros e caixa.
+- Ranking e rede social.
+
+Teste (Playwright, `modos.js` e `modos_ui.js`): 150 dias em cada modo, Gaviões, mesma semente.
+- **Rápido:** nenhum cartão de reunião, o domínio intocado (log 0) e seis pautas soltas (assalto, cobrança de aliada, bote no bar marcado no calendário). A seleção mostra "passo 3 de 4 · o modo de jogo"; o Mapa abre no Brasil e a cidade só no perfil. O bote na casa de piscina sai como mensagem e o clique marca o calendário. Alianças mostra o pedido do mês.
+- **Detalhista:** igual a antes, com 4 reuniões, 35 avisos de domínio e pixação.
+- A briga da pista termina com todos provocando, sem erro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

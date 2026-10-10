@@ -1786,7 +1786,33 @@ TO.dominio = (function(){
      que ler `bairroSede` depois daqui */
   try{ indice(); }catch(e){ /* sem dados ainda: monta na primeira leitura */ }
 
-  return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO,
+  /* O MODO RÁPIDO (pedido do dono, 10/10/2026): o domínio some do
+     mundo inteiro — ninguém disputa bairro, nem a gente nem a IA. As
+     portas que mexem na barra, pixam, recrutam por bairro ou anunciam
+     o bairro da briga viram nada; a geografia (bairros, sede, estádio)
+     continua de pé, porque cena e caravana precisam dela. */
+  const rapido = () => !!(TO.estado && TO.estado.rapido && TO.estado.E && TO.estado.rapido());
+  const nadaNoRapido = (fn, vazio) => function(){ return rapido() ? (typeof vazio === 'function' ? vazio() : vazio) : fn.apply(this, arguments); };
+  dia = nadaNoRapido(dia, undefined);
+  metasDoDia = nadaNoRapido(metasDoDia, undefined);
+  brigaIA = nadaNoRapido(brigaIA, null);
+  compraIA = nadaNoRapido(compraIA, null);
+  estrutura = nadaNoRapido(estrutura, null);
+  recrutouHoje = nadaNoRapido(recrutouHoje, undefined);
+  confronto = nadaNoRapido(confronto, null);
+  ondeDaBriga = nadaNoRapido(ondeDaBriga, null);
+  previaBriga = nadaNoRapido(previaBriga, null);
+  mexer = nadaNoRapido(mexer, null);
+  pixar = nadaNoRapido(pixar, () => ({ok:false, msg:''}));
+  ganharPix = nadaNoRapido(ganharPix, undefined);
+  social = nadaNoRapido(social, () => ({ok:false, msg:''}));
+  podeSocial = nadaNoRapido(podeSocial, () => ({ok:false, motivo:''}));
+  pesoDoRecrutamento = nadaNoRapido(pesoDoRecrutamento, 1);
+  bairroDoRecrutamento = nadaNoRapido(bairroDoRecrutamento, null);
+  bairrosPraRecrutar = nadaNoRapido(bairrosPraRecrutar, () => []);
+  recrutandoEm = nadaNoRapido(recrutandoEm, () => new Map());
+
+  return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO, rapido,
           duas, presenca, presencaDa, clubeDe, fatorTorcida, fatorGanho, torcedoresNoBairro, parteDaTorcida, notaDaTorcida, cidadesDa,
           semZonas:cid => semZonas(cidadeDe(cid)),
           cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
