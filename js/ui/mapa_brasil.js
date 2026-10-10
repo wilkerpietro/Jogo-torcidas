@@ -537,6 +537,17 @@ TO.mapaBrasil = (function(){
     corpo.appendChild(lado);
   }
 
-  return {nivelDaSede, svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
+  /* o ponto de uma praça no plano do mapa (o mapa da caravana,
+     10/10/2026): as 30 praças pela lat/lon daqui, e as outras da malha
+     rodoviária (praças de passagem, Conmebol) pela posição da malha */
+  function pontoDaPraca(cid){
+    if(PRACAS[cid]) return proj(PRACAS[cid][0], PRACAS[cid][1]);
+    const xy = ((TO.dados || {}).malhaXY || {})[cid];
+    if(xy) return proj(13 - xy[1] / 20, xy[0] / 20 - 82);
+    return null;
+  }
+  const contornoNoPlano = () => CONTORNO.map(([la, lo]) => proj(la, lo));
+
+  return {pontoDaPraca, contornoNoPlano, nivelDaSede, svgDoBrasil, listaDeCidades, legenda, cartaoDoBairro, quadro, abrir, fechar, corDe, claro, PRACAS, nomeCidade,
           get aberto(){ return !!raiz; }};
 })();

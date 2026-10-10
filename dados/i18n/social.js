@@ -745,5 +745,21 @@ TO.i18n.registrar({
   "Chefe, a {nome} convidou a gente pra festa dos {n} anos dela, dia {data}. Ir custa R$ 2.000 e aproxima; furar afasta e queima na rua. A gente vai?": {es:"Jefe, {nome} nos invitó a la fiesta de sus {n} años, el {data}. Ir cuesta R$ 2.000 y acerca; faltar aleja y nos quema en la calle. ¿Vamos?", en:"Boss, {nome} invited us to their {n}th anniversary party on {data}. Going costs R$ 2,000 and brings us closer; skipping it pushes them away and burns us on the street. Are we going?"},
   "Confirmado: a gente vai na festa da {nome}.": {es:"Confirmado: vamos a la fiesta de {nome}.", en:"Confirmed: we're going to {nome}'s party."},
   "Esse assunto já passou.": {es:"Ese asunto ya pasó.", en:"That matter has already passed."},
-  "Um pedido por mês: a chance de o aliado topar é o quanto ele anda com a gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a gente; recusando, −3. No aproximar, a gente apresenta um aliado nosso que ainda não anda com ele — seja neutro, rival ou maior rival dele; irmã não se larga.": {es:"Un pedido por mes: la chance de que el aliado acepte es cuánto anda con nosotros. Si acepta, la relación entre los dos se mueve de 15 a 25 y él gana +2 con nosotros; si rechaza, −3. Al acercar, presentamos a un aliado nuestro que todavía no anda con él — sea neutral, rival o archirrival suyo; a una hermana no se la suelta.", en:"One request a month: the chance the ally agrees is how close they are to us. If they agree, the relationship between the two moves 15 to 25 and they gain +2 with us; if they refuse, −3. When bringing closer, we introduce an ally of ours who isn't close to them yet — whether neutral, rival or arch-rival of theirs; a sister firm is never dropped."}
+  "Um pedido por mês: a chance de o aliado topar é o quanto ele anda com a gente. Topando, a relação entre os dois mexe de 15 a 25 e ele ganha +2 com a gente; recusando, −3. No aproximar, a gente apresenta um aliado nosso que ainda não anda com ele — seja neutro, rival ou maior rival dele; irmã não se larga.": {es:"Un pedido por mes: la chance de que el aliado acepte es cuánto anda con nosotros. Si acepta, la relación entre los dos se mueve de 15 a 25 y él gana +2 con nosotros; si rechaza, −3. Al acercar, presentamos a un aliado nuestro que todavía no anda con él — sea neutral, rival o archirrival suyo; a una hermana no se la suelta.", en:"One request a month: the chance the ally agrees is how close they are to us. If they agree, the relationship between the two moves 15 to 25 and they gain +2 with us; if they refuse, −3. When bringing closer, we introduce an ally of ours who isn't close to them yet — whether neutral, rival or arch-rival of theirs; a sister firm is never dropped."},
+  "A PM está no setor depois da briga: a tensão não estoura de novo.": {es:"La policía está en el sector después de la pelea: la tensión no vuelve a estallar.", en:"The police are in the stand after the fight: the tension won't boil over again."},
+  "Amenizar": {es:"Calmar", en:"Calm down"},
+  "Em 100 a arquibancada se pega. Amenizar segura; provocar empurra a briga pra hora que convier.": {es:"En 100 la tribuna se agarra. Calmar la frena; provocar empuja la pelea al momento que convenga.", en:"At 100 the stands kick off. Calming holds it back; provoking pushes the fight to whenever suits us."},
+  "FIM": {es:"FIN", en:"FT"},
+  "Mapa da caravana": {es:"Mapa de la caravana", en:"Caravan map"},
+  "PÊN": {es:"PEN", en:"PEN"},
+  "Sem torcida rival na arquibancada.": {es:"No hay barra rival en la tribuna.", en:"No rival firm in the stands."},
+  "Tem aliado nosso na arquibancada: ninguém se pega hoje.": {es:"Hay un aliado nuestro en la tribuna: hoy nadie se agarra.", en:"An ally of ours is in the stands: nobody fights today."},
+  "Tensão": {es:"Tensión", en:"Tension"},
+  "de novo em {n}'": {es:"de nuevo en {n}'", en:"again in {n}'"},
+  "tensão +15": {es:"tensión +15", en:"tension +15"},
+  "tensão −15": {es:"tensión −15", en:"tension −15"},
+  "torcida deles": {es:"su barra", en:"their firm"},
+  "{min}' · A diretoria segurou a nossa arquibancada.": {es:"{min}' · La directiva calmó a nuestra tribuna.", en:"{min}' · The board held our stand back."},
+  "{min}' · A gente provocou a {nome}.": {es:"{min}' · Provocamos a {nome}.", en:"{min}' · We taunted {nome}."},
+  "{min}' · A {nome} provocou a gente.": {es:"{min}' · {nome} nos provocó.", en:"{min}' · {nome} taunted us."}
 });

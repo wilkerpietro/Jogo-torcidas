@@ -289,6 +289,12 @@ TO.diaJogo.combate = (function(){
          : !D.id ? true
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
+      /* ASSISTIR AO JOGO (pedido do dono, 10/10/2026): a arquibancada
+         dentro da mensagem do dia de jogo. Cada torcida no seu setor,
+         ninguém briga, a PM fica parada e a cena não acaba sozinha —
+         quem a desmonta é o fim da partida ou a tensão que estoura (aí
+         abre a cena de briga de verdade, em tela cheia). */
+      assistir: !!cfg.assistir,
       config_perfilRival: cfg.perfilRival || null,
       /* fichas prontas pro lado deles (a zona deles na casa de piscina):
          cada grupo tira a sua fatia, na ordem, em vez de cada spawn
@@ -959,6 +965,7 @@ TO.diaJogo.combate = (function(){
       if(J.t >= J.comemorarAte) J.fase = 'acabando';
       return;
     }
+    if(J.assistir){ moverDiscos(J,dt); separar(J); return; }
     /* O CRONÔMETRO POR ETAPA (medição de 17/09/2026): com `J._perfil`
        ligado, cada etapa soma o seu tempo em `J._tempos` — é o que
        diz onde uma cena de 600 gasta o quadro. Desligado, custa um

@@ -6036,6 +6036,8 @@ TO.feed = (function(){
               (estadio ? _t('A bola vai rolar {onde}.', {onde:noEstadio})
                        : _t('A bola vai rolar.')),
         dados:{casa:nome(nosso.c), fora:nome(nosso.f),
+               /* os clubes, pro placar de TV da arquibancada (10/10/2026) */
+               casaId:nosso.c, foraId:nosso.f,
                gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols,
                /* o clima do estádio lê quem está lá (dono, 19/08/2026) */
                somosCasa: nosso.c === meu,

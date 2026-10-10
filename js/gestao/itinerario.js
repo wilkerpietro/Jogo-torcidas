@@ -326,7 +326,10 @@ TO.itinerario = (function(){
         evs.push(Object.assign({}, ev, {
           lugarTxt: o.cidade ? `${o.nome} (${o.lugar || _t('estrada')})` : `${o.nome} · ${o.lugar || ''}`,
           naCidade: !o.cidade || o.cidade === (j.mapaAdv || ''),
-          cidade: o.cidade || null}));
+          cidade: o.cidade || null,
+          /* a praça onde o balão abre no mapa da caravana (10/10/2026):
+             a da estrada, ou a do jogo pros pontos da cidade */
+          praca: o.cidade || pracaDoJogo}));
       evs.sort((a,b)=>(PRIO[a.tipo] ?? 3) - (PRIO[b.tipo] ?? 3));
       return {id, nome, lugar, simbolo, min:prim.min, hora:prim.hora, dia:prim.dia,
               eventos: evs.slice(0, 1), comEscolta:false, detalhe: lista.map(o=>o.id)};
@@ -341,7 +344,8 @@ TO.itinerario = (function(){
          Object.assign(jogo, {simbolo:'estadio'}),
          fase('volta', _t('Volta do estádio'), _t('saída dos portões e pista'), depois, 'cidade')];
     if(escolta) jogo.comEscolta = true;
-    const detalhadas = paradas;
+    /* cópia, não o mesmo array: as fases entram no lugar das paradas */
+    const detalhadas = paradas.slice();
     paradas.length = 0; paradas.push(...fases);
 
     /* ---- os marcos de virada de dia ---- */
@@ -373,6 +377,9 @@ TO.itinerario = (function(){
       destino: casa ? E.torcida.mapa : (j.mapaAdv || ''),
       cidade: casa ? '' : (j.cidadeAdv || ''),
       dias: Object.keys(dias).length,
+      /* as praças da estrada, da sede ao destino (o mapa da caravana,
+         10/10/2026); em casa, só a nossa */
+      rota: viaja ? rota.cidades.slice() : [pracaDoJogo],
       paradas,
       /* as paradas de verdade, pra quem precisar do detalhe */
       detalhadas
@@ -383,5 +390,18 @@ TO.itinerario = (function(){
   const comRecado = it => (it && it.paradas || [])
     .filter(o=>(o.eventos||[]).length).length;
 
-  return {montar, comRecado, hhmm, efetivoInicial};
+  /* A ROTA DO DIA SEM MONTAR O DIA (10/10/2026): o mapa da mensagem,
+     antes de o jogador clicar em iniciar, só precisa das praças — e
+     `montar` avisa o olheiro, o que não pode acontecer numa repintura */
+  function rotaDoDia(E){
+    const j = jogoDeHoje(E) || (E && E.proximoJogo);
+    if(!j) return null;
+    const destino = j.casa ? E.torcida.mapa : (j.mapaAdv || '');
+    const rota = (!j.casa && PL().rotaEscolhida) ? PL().rotaEscolhida(E, j) : null;
+    const viaja = !!(rota && rota.cidades && rota.cidades.length > 1 && rota.id !== 'ar');
+    return {casa: !!j.casa, viaja, aereo: !!(rota && rota.id === 'ar'), destino,
+            rota: viaja ? rota.cidades.slice() : [destino]};
+  }
+
+  return {montar, rotaDoDia, comRecado, hhmm, efetivoInicial};
 })();

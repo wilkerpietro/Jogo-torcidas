@@ -168,3 +168,102 @@
 /* O SIMULAR NA LINHA DO DIA (dono, 23/08/2026): mesma família do botão
    do feed — tracejado, discreto, ao lado de quem desce. */
 .itn-bt.simular{border-style:dashed;font-size:10px;letter-spacing:.04em}
+
+/* =========================================================
+   O MAPA DA CARAVANA E A PARTIDA NA ARQUIBANCADA
+   (pedido do dono, 10/10/2026)
+
+   O mapa mora embaixo do texto da mensagem: a rota do dia num pedaço
+   do Brasil, o ônibus andando e o balão da hostilidade em cima da
+   praça. Quando a bola rola, o mesmo espaço vira a arquibancada, com
+   o placar de TV no alto (como no jogo 3D) e a barra de tensão embaixo.
+   ========================================================= */
+.mc-mapa{position:relative; margin-top:10px; aspect-ratio:4/3; border:1px solid var(--linha);
+  background:#0e1a24; overflow:visible}
+.mc-mapa.vazio{display:none}
+.mc-svg{display:block; width:100%; height:100%}
+.mc-mar{fill:#0e1a24}
+.mc-pais{fill:#1f2b22; stroke:#5c7a62; stroke-linejoin:round}
+.mc-outra{fill:#56604f}
+.mc-rota{fill:none; stroke:#c9b27a; stroke-opacity:.55; stroke-linecap:round; stroke-linejoin:round}
+.mc-rota-feita{fill:none; stroke:var(--ouro, #d9a441); stroke-linecap:round; stroke-linejoin:round}
+.mc-praca circle{fill:#d8dcd4; stroke:#0d0d0d}
+.mc-praca.destino circle{fill:var(--rubro-vivo, #c8102e)}
+.mc-praca.origem circle{fill:var(--ouro, #d9a441)}
+.mc-praca text{font-family:var(--corpo); font-weight:700; fill:#e8eae4; paint-order:stroke; stroke:#0d0d0d}
+.mc-onibus-ponto{fill:var(--ouro, #d9a441); stroke:#0d0d0d}
+.mc-onibus-halo{fill:var(--ouro, #d9a441); opacity:.22}
+.mc-mapa.andando .mc-onibus-halo{animation:mc-pulso 0.9s ease-in-out infinite}
+@keyframes mc-pulso{50%{opacity:.5}}
+.mc-baloes{position:absolute; inset:0; pointer-events:none}
+.mc-balao{position:absolute; width:min(340px, 88%); pointer-events:auto; z-index:3;
+  transform:translate(-50%, calc(-100% - 12px))}
+.mc-balao.abaixo{transform:translate(-50%, 12px)}
+.mc-balao.esq{transform:translate(-14%, calc(-100% - 12px))}
+.mc-balao.esq.abaixo{transform:translate(-14%, 12px)}
+.mc-balao.dir{transform:translate(-86%, calc(-100% - 12px))}
+.mc-balao.dir.abaixo{transform:translate(-86%, 12px)}
+.mc-balao .itn-cartao{margin:0; box-shadow:0 8px 24px rgba(0,0,0,.55); background:var(--painel-alto)}
+.mc-balao::after{content:''; position:absolute; left:50%; width:12px; height:12px; background:var(--painel-alto);
+  border:1px solid var(--linha); transform:translateX(-50%) rotate(45deg)}
+.mc-balao.acima::after{bottom:-7px; border-top:0; border-left:0}
+.mc-balao.abaixo::after{top:-7px; border-bottom:0; border-right:0}
+.mc-balao.esq::after{left:14%}
+.mc-balao.dir::after{left:86%}
+/* o cartão da mensagem não corta o balão que sobra pra fora do mapa */
+.msg.kind-partida{overflow:visible}
+.itn-palco{position:relative; margin-top:10px}
+.itn-palco > .mc-mapa{margin-top:0}
+
+/* ---------- a partida na arquibancada ---------- */
+.est-vivo{position:relative; border:1px solid #33301f; background:#0d0f14}
+.est-cena{position:relative; line-height:0}
+/* o palco da cena, emprestado da tela cheia: sem a faixa da transmissão
+   nem os comandos da briga — aqui se assiste ao jogo */
+#djPalco.assistindo #djFaixa, #djPalco.assistindo #djComandos,
+#djPalco.assistindo #djAviso, #djPalco.assistindo #djCaixaMini{display:none !important}
+#djPalco.assistindo #djPrincipal{border:0; cursor:default}
+/* o placar de TV (o mesmo do jogo 3D, cenario3d/css/jogo3d.css) */
+.tv-placar{position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:4;
+  display:flex; flex-direction:column; align-items:center; gap:4px; line-height:1; pointer-events:none}
+.tv-placar-tv{display:flex; align-items:stretch; height:30px; background:#0d0f14;
+  box-shadow:0 4px 14px rgba(0,0,0,.5); font-family:var(--corpo)}
+.tv-time{display:flex; align-items:center; gap:7px; padding:0 10px; color:#f3f1ea}
+.tv-time i{display:block; width:5px; height:18px}
+.tv-time b{font-size:17px; font-weight:800; letter-spacing:.04em}
+.tv-gols{display:flex; align-items:center; gap:10px; padding:0 11px; background:#f3f1ea; color:#0d0f14;
+  font-size:19px; font-weight:800; font-variant-numeric:tabular-nums}
+.tv-rel{display:flex; align-items:center; padding:0 9px; background:#c8102e; color:#fff;
+  font:700 13px var(--mono); min-width:44px; justify-content:center}
+.tv-rel.fim{background:#3b3b3b}
+.tv-pe{display:flex; gap:6px; pointer-events:auto}
+.tv-pe button{font:700 10px var(--mono); background:rgba(13,15,20,.85); color:#e8e6df;
+  border:1px solid #3a3a3a; padding:3px 8px; cursor:pointer}
+.tv-pe button:hover{border-color:var(--ouro)}
+.est-pe{padding:10px 12px; display:flex; flex-direction:column; gap:8px; line-height:1.3}
+.est-tensao{display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:10px; align-items:center}
+.est-tensao .rot{font:700 10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--apagado)}
+.est-barra{position:relative; height:12px; background:#1a1c20; border:1px solid #2c2f35; overflow:hidden}
+.est-barra::before{content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg, rgba(76,160,96,.18) 0 40%, rgba(217,164,65,.18) 40% 75%, rgba(200,16,46,.2) 75% 100%)}
+.est-barra i{position:absolute; left:0; top:0; bottom:0; background:var(--verde-vivo, #4ca060); transition:width .35s, background .35s}
+.est-barra.n1 i{background:var(--ouro, #d9a441)}
+.est-barra.n2 i{background:var(--rubro-vivo, #c8102e)}
+.est-tensao .estado{font:700 11px var(--mono); letter-spacing:.1em; min-width:11ch; text-align:right}
+.est-tensao .estado.n0{color:#9fc7a8} .est-tensao .estado.n1{color:#e0b040} .est-tensao .estado.n2{color:#ff6b6b}
+.est-bts{display:flex; gap:8px; flex-wrap:wrap}
+.est-bts button small{display:block; font-size:9px; opacity:.7; letter-spacing:.06em; margin-top:2px}
+.est-bts button[disabled]{opacity:.45; cursor:not-allowed}
+.est-nota{font-size:12px; color:var(--apagado)}
+.est-vivo .partida-eventos{margin-top:0}
+@media (max-width:620px){
+  .tv-time b{font-size:14px} .tv-gols{font-size:16px} .tv-placar-tv{height:26px}
+  .est-tensao{grid-template-columns:auto minmax(0,1fr) auto}
+  .est-tensao .est-bts{grid-column:1 / -1}
+}
+.est-cena.sem-cena{min-height:200px; background:radial-gradient(ellipse at 50% 60%, #2f5a2c 0 30%, #1a2a18 31% 100%)}
+.itn-final{margin-top:8px; display:flex; flex-direction:column; gap:6px; align-items:flex-start}
+.itn-final .tv-placar-tv{height:26px}
+.partida-gol.tensao{color:#c9b27a}
+.est-cena #djPalco, .est-cena #djCanvases{width:100%; max-width:100%}
+.est-cena #djPrincipal{max-width:100%}

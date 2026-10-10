@@ -1832,10 +1832,150 @@
     alternarPausaPartida(m);
   });
 
+  /* =======================================================
+     A PARTIDA NA ARQUIBANCADA (pedido do dono, 10/10/2026: "a partida
+     inicia dentro da cena da torcida dentro do estádio com o placar
+     ocupando o espaço superior da tela, igual ocorre no jogo 3d")
+
+     O palco da cena (#djPalco) é emprestado da tela cheia e vai pra
+     dentro do cartão do jogo, no lugar do mapa: cada torcida presente
+     no seu setor, ninguém briga (combate `assistir`). Quando a tensão
+     estoura, o palco volta pra tela cheia e abre a briga de sempre;
+     acabada a briga, volta pro cartão. Toda outra cena que montar o
+     palco o traz de volta antes (montarCena).
+     ======================================================= */
+  let palcoEmbutido = null, zoomAntesDoJogo = null;
+  function embutirPalco(vaga){
+    const p = $('djPalco');
+    if(!p || !vaga) return;
+    vaga.appendChild(p);
+    p.classList.add('assistindo');
+    palcoEmbutido = vaga;
+  }
+  function devolverPalco(){
+    const p = $('djPalco'), g = $('djGrade');
+    if(!p || !g || !palcoEmbutido) return;
+    p.classList.remove('assistindo');
+    g.insertBefore(p, g.firstChild);
+    palcoEmbutido = null;
+  }
+  function pararArquibancada(){
+    if(!palcoEmbutido) return;
+    try{ TO.diaJogo.ponte.parar(); }catch(_){}
+    if(zoomAntesDoJogo != null){ TO.diaJogo.ponte.zoom = zoomAntesDoJogo; zoomAntesDoJogo = null; }
+    devolverPalco();
+  }
+  /* as torcidas presentes, cada uma no seu setor — sem separar quem
+     desceria (isso é da briga, abrirBrigaNoEstadio) */
+  function bondesParaAssistir(e, d){
+    const pres = (d.presenca || []).filter(p => p.id && p.n > 0);
+    const nossos = pres.filter(p => p.casa === !!d.somosCasa).sort((a,b) => b.n - a.n);
+    const deles = pres.filter(p => p.casa !== !!d.somosCasa).sort((a,b) => b.n - a.n);
+    if(!nossos.some(p => p.id === e.torcida.id)) return null;
+    const local = cenaDoEstadio(e);
+    const setores = SETORES_ESTADIO[local] || {mandante:3, visitante:3};
+    const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
+    const outroLado = d.somosCasa ? 'visitante' : 'mandante';
+    const compacta = (lista, teto)=>{
+      const fica = lista.slice(0, Math.max(1, teto)).map(p=>Object.assign({}, p));
+      for(const extra of lista.slice(Math.max(1, teto))) fica[fica.length-1].n += extra.n;
+      return fica;
+    };
+    const bondeDe = (p, lado)=>{
+      const o = TO.mundo.torcida(p.id) || {nome:p.nome};
+      const c = TO.mundo.coresDaTorcida(o);
+      return {lado, n:Math.max(2, Math.min(60, Math.round(p.n))), nossa: p.id === e.torcida.id, id:p.id,
+              nome:o.nome || p.nome, cor:c.cor, cor2:c.cor2, cor3:c.cor3, sigla:TO.mundo.siglaTorcida(o)};
+    };
+    const nSet = compacta(nossos, setores[nossoLado]);
+    const dSet = deles.length ? compacta(deles, setores[outroLado]) : [];
+    const minha = nSet.find(p => p.id === e.torcida.id) || {n:10};
+    const aptos = TO.membros.aptosParaOEstadio(e)
+      .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
+      .slice(0, Math.max(2, Math.min(60, Math.round(minha.n))));
+    return {local, aptos, nossoLado, rivalId: dSet[0] ? dSet[0].id : null,
+            bondes:[...nSet.map(p => bondeDe(p, nossoLado)), ...dSet.map(p => bondeDe(p, outroLado))],
+            deles: dSet.reduce((t, p) => t + p.n, 0)};
+  }
+  function montarArquibancada(m, vaga){
+    const e = E(), d = m && m.dados;
+    if(!e || !d || !vaga || !$('djPrincipal')) return false;
+    const B = bondesParaAssistir(e, d);
+    if(!B || !B.aptos.length) return false;
+    embutirPalco(vaga);
+    simularProxima = false;
+    try{
+      montarCena({canvas:$('djPrincipal'),
+        config:{escalacao:B.aptos, intencao:'paz', paz:true, assistir:true, setores:true,
+                bondes:B.bondes, efetivoRival:B.deles, local:B.local, faixaDefensor:'ambos',
+                rivalId:B.rivalId, semArmas:true, bombas:0},
+        aoTerminar:()=>{}});
+      /* o estádio inteiro no quadro: sem aproximar no líder */
+      if(zoomAntesDoJogo == null) zoomAntesDoJogo = TO.diaJogo.ponte.zoom;
+      TO.diaJogo.ponte.zoom = 1;
+    }catch(err){ console.warn('arquibancada: ' + (err && err.message)); pararArquibancada(); return false; }
+    return true;
+  }
+  /* a festa (gol, provocação) de um lado da arquibancada: os bonecos
+     provocam por uns segundos */
+  function festaNaArquibancada(quem, seg){
+    if(!palcoEmbutido) return;
+    const J = TO.diaJogo.J;
+    if(!J || !J.assistir) return;
+    const nosso = J.discos.find(x => x.doJogador);
+    const lado = nosso ? nosso.lado : null;
+    for(const x of J.discos){
+      if(!x.vivo) continue;
+      if((quem === 'nos') !== (x.lado === lado)) continue;
+      if(U.rng() < 0.75){ x.comemorando = true; x._festaAte = J.t + seg * (0.7 + 0.6 * U.rng()); }
+    }
+    clearTimeout(festaNaArquibancada._tm);
+    festaNaArquibancada._tm = setTimeout(()=>{
+      const J2 = TO.diaJogo.J; if(!J2 || !J2.assistir) return;
+      for(const x of J2.discos) if(x._festaAte != null){ x.comemorando = false; x._festaAte = null; }
+    }, seg * 1300);
+  }
+  /* O PLACAR DE TV (o mesmo do jogo 3D, cenario3d/js/dia3d.js): sigla e
+     cor de cada clube, os gols no meio e o minuto em vermelho */
+  function placarDeTV(d){
+    const acha = (id, nome) => (id && TO.mundo.time(id)) ||
+      (TO.mundo.todosTimes || []).find(t => t.nome === nome) || null;
+    /* as três primeiras letras do nome (FOR × CEA); quando batem, a
+       sigla do clube no dado — a mesma régua do placar do jogo 3D */
+    const tres = nome => String(nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || '???';
+    const doDado = t => String((t && t.sigla) || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 4).toUpperCase();
+    const tc = acha(d.casaId, d.casa), tf = acha(d.foraId, d.fora);
+    let sc = tres(d.casa), sf = tres(d.fora);
+    if(sc === sf && doDado(tc) && doDado(tf) && doDado(tc) !== doDado(tf)){ sc = doDado(tc); sf = doDado(tf); }
+    const lado = (id, nome, cls)=>{
+      const t = acha(id, nome);
+      const cor = (t && (t.cores || [])[0]) || '#888';
+      const sig = cls === 'casa' ? sc : sf;
+      const sp = el('span',{class:'tv-time ' + cls});
+      const i = el('i'); i.style.background = cor;
+      const b = el('b',{texto:sig});
+      if(cls === 'casa') sp.append(i, b); else sp.append(b, i);
+      return sp;
+    };
+    const raiz = el('div',{class:'tv-placar'});
+    const tvx = el('div',{class:'tv-placar-tv'});
+    const gols = el('span',{class:'tv-gols', html:'<b>0</b><b>0</b>'});
+    const rel = el('span',{class:'tv-rel', texto:"0'"});
+    tvx.append(lado(d.casaId, d.casa, 'casa'), gols, lado(d.foraId, d.fora, 'fora'), rel);
+    const pe = el('div',{class:'tv-pe'});
+    raiz.append(tvx, pe);
+    return {el:raiz, pe,
+            gols:(c, f)=>{ gols.innerHTML = `<b>${c}</b><b>${f}</b>`; },
+            rel:(t, fim)=>{ rel.textContent = t; rel.classList.toggle('fim', !!fim); }};
+  }
+
   /* `aoApitar` é do itinerário: a linha do dia só segue depois do
      apito final (régua do dono, 20/08/2026), então quem desenha a
      partida avisa quando ela acaba. */
-  function widgetPartida(m, aoApitar){
+  function widgetPartida(m, aoApitar, opcW){
+    opcW = opcW || {};
+    const estadio = !!opcW.estadio;
     const d = m.dados;
     /* mensagens de antes do pause: o relógio velho era só t0 corrido */
     if(d.minAcum === undefined){
@@ -1843,7 +1983,10 @@
         (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG);
       d.t0 = Date.now();
     }
-    if(!d.vel) d.vel = 4;    /* o padrão da casa é 4× */
+    /* o padrão da casa é 4×; na arquibancada é 1× (10/10/2026): a
+       tensão pede tempo pra amenizar e provocar — o jogo inteiro leva
+       ~22 s, e o botão de velocidade continua ali */
+    if(!d.vel) d.vel = estadio ? 1 : 4;
     const caixa = el('div',{class:'partida-live'});
     const placar = el('div',{class:'partida-placar'});
     const linha = el('div',{class:'partida-linha'});
@@ -1865,16 +2008,87 @@
        a arquibancada. */
     const climaEl = el('div',{class:'partida-clima clima-0',
       texto:_t('Clima do estádio: {clima}', {clima:_t('TRANQUILO')})});
-    caixa.append(placar, linha, climaEl, eventos);
 
     const chance = chanceDeClima(E(), d);
     const pMin = chance.pMin;
     if(!d.clima) d.clima = {nivel:0, min:0};
+    /* A TENSÃO DE 0 A 100 (pedido do dono, 10/10/2026) no lugar dos três
+       degraus: ela anda minuto a minuto pela régua da pior relação
+       presente (chanceDeClima), sobe com gol e com provocação deles, e o
+       jogador mexe nela — Amenizar baixa, Provocar sobe. Em 100 a
+       arquibancada se pega. Save de antes: começa no degrau em que estava. */
+    if(typeof d.tensao !== 'number') d.tensao = [0, 50, 85][d.clima.nivel || 0] || 0;
     const ROT_CLIMA = [_t('TRANQUILO'), _t('ESQUENTANDO'), _t('TENSO')];
+    const nivelDe = t => t >= 75 ? 2 : t >= 40 ? 1 : 0;
+    /* a arquibancada e o placar de TV (estádio) ou o cartão antigo */
+    let tv = null, barraT = null, estadoT = null, btAmenizar = null, btProvocar = null, notaT = null, cenaEl = null;
+    if(estadio){
+      caixa.classList.add('est-vivo');
+      cenaEl = el('div',{class:'est-cena'});
+      tv = placarDeTV(d);
+      tv.pe.append(btPausa, btVel);
+      cenaEl.appendChild(tv.el);
+      const pe = el('div',{class:'est-pe'});
+      const lt = el('div',{class:'est-tensao'});
+      barraT = el('div',{class:'est-barra'}); barraT.appendChild(el('i'));
+      estadoT = el('span',{class:'estado'});
+      const bts = el('div',{class:'est-bts'});
+      btAmenizar = el('button',{class:'bt'}); btProvocar = el('button',{class:'bt destaque'});
+      bts.append(btAmenizar, btProvocar);
+      lt.append(el('span',{class:'rot', texto:_t('Tensão')}), barraT, estadoT, bts);
+      notaT = el('div',{class:'est-nota'});
+      pe.append(lt, notaT, eventos);
+      caixa.append(cenaEl, pe);
+      caixa._cena = cenaEl;
+    } else caixa.append(placar, linha, climaEl, eventos);
+    const RECARGA = 5;               // minutos de jogo entre um gesto e outro
+    const rivalNome = ()=>{
+      const e = E(), meu = (TO.mundo.torcida(e.torcida.id) || e.torcida).clubeId;
+      const o = (d.presenca || []).filter(p => p.id && p.id !== e.torcida.id &&
+        ((TO.mundo.torcida(p.id) || {}).clubeId !== meu)).sort((a,b)=>TO.relacoes.nivel(e, a.id) - TO.relacoes.nivel(e, b.id))[0];
+      return o ? o.nome : '';
+    };
     const pintarClima = ()=>{
+      d.tensao = Math.max(0, Math.min(100, d.tensao));
+      d.clima.nivel = nivelDe(d.tensao);
       climaEl.className = 'partida-clima clima-' + d.clima.nivel;
       climaEl.textContent = _t('Clima do estádio: {clima}', {clima:ROT_CLIMA[d.clima.nivel]});
+      if(!estadio) return;
+      barraT.className = 'est-barra n' + d.clima.nivel;
+      barraT.firstChild.style.width = d.tensao.toFixed(0) + '%';
+      estadoT.className = 'estado n' + d.clima.nivel;
+      estadoT.textContent = ROT_CLIMA[d.clima.nivel];
+      const min = minutoDaPartida(d);
+      const travado = !pMin || m.respondido || d.pausada || d.clima.aberto || min >= 90;
+      const espera = k => Math.max(0, (d[k] || -99) + RECARGA - min);
+      const rot = (b, nome, k)=>{
+        const w = espera(k);
+        b.innerHTML = `${nome}<small>${w ? _t("de novo em {n}'", {n:w}) : (k === 'cdAmenizar' ? _t('tensão −15') : _t('tensão +15'))}</small>`;
+        b.disabled = travado || w > 0;
+      };
+      rot(btAmenizar, _t('Amenizar'), 'cdAmenizar');
+      rot(btProvocar, _t('Provocar'), 'cdProvocar');
+      notaT.textContent = chance.temAliado ? _t('Tem aliado nosso na arquibancada: ninguém se pega hoje.')
+        : !pMin ? _t('Sem torcida rival na arquibancada.')
+        : d.clima.brigou ? _t('A PM está no setor depois da briga: a tensão não estoura de novo.')
+        : _t('Em 100 a arquibancada se pega. Amenizar segura; provocar empurra a briga pra hora que convier.');
     };
+    const anotar = txt => eventos.appendChild(el('div',{class:'partida-gol tensao', texto:txt}));
+    if(estadio){
+      btAmenizar.onclick = ()=>{
+        const min = minutoDaPartida(d);
+        d.tensao -= 15; d.cdAmenizar = min;
+        anotar(_t("{min}' · A diretoria segurou a nossa arquibancada.", {min}));
+        pintarClima();
+      };
+      btProvocar.onclick = ()=>{
+        const min = minutoDaPartida(d);
+        d.tensao += 15; d.cdProvocar = min;
+        anotar(_t("{min}' · A gente provocou a {nome}.", {min, nome:rivalNome() || _t('torcida deles')}));
+        festaNaArquibancada('nos', 3);
+        pintarClima();
+      };
+    }
     pintarClima();
 
     const pintarBotoes = ()=>{
@@ -1885,8 +2099,10 @@
     btVel.onclick   = ()=>{ alternarVelPartida(m);   pintarBotoes(); };
     pintarBotoes();
 
-    const pintarPlacar = (gc, gf) =>
+    const pintarPlacar = (gc, gf) =>{
       placar.textContent = `${d.casa} ${gc} × ${gf} ${d.fora}`;
+      if(tv) tv.gols(gc, gf);
+    };
     pintarPlacar(0, 0);
 
     let penCena = null;   /* a grade da disputa, se o jogo for pra ela */
@@ -1905,17 +2121,29 @@
       pintarBotoes();       /* o espaço muda o estado por fora do botão */
       fill.style.width = (min/90*100)+'%';
       rotMin.textContent = `${min}'`;
+      if(tv) tv.rel(min >= 90 && !d.pen ? _t('FIM') : naSerie ? _t('PÊN') : `${min}'`, min >= 90 && !naSerie);
       /* revela os gols que a barra já alcançou */
       const vistos = (d.gols||[]).filter(g=>g.min <= min);
-      while(eventos.children.length < vistos.length){
-        const g = vistos[eventos.children.length];
+      /* conta só as linhas de gol: as da tensão moram na mesma lista */
+      const golsNaLista = () => eventos.querySelectorAll('.gol-linha').length;
+      while(golsNaLista() < vistos.length){
+        const n = golsNaLista();
+        const g = vistos[n];
         const de = g.lado==='c' ? d.casa : d.fora;
-        const c2 = vistos.slice(0, eventos.children.length+1)
+        const c2 = vistos.slice(0, n+1)
           .filter(x=>x.lado==='c').length;
-        const f2 = vistos.slice(0, eventos.children.length+1)
+        const f2 = vistos.slice(0, n+1)
           .filter(x=>x.lado==='f').length;
-        eventos.appendChild(el('div',{class:'partida-gol',
+        eventos.appendChild(el('div',{class:'partida-gol gol-linha',
           texto:_t("{min}' · GOL do {time} — {c} × {f}", {min:g.min, time:de, c:c2, f:f2})}));
+        /* o gol mexe na arquibancada: a festa de quem fez, e a tensão sobe
+           — mais quando o gol é deles (só com rival presente) */
+        const nosso = (g.lado === 'c') === !!d.somosCasa;
+        if(!g.visto){
+          g.visto = true;
+          if(pMin && !m.respondido) d.tensao += nosso ? 6 : 12;
+          festaNaArquibancada(nosso ? 'nos' : 'eles', 4);
+        }
       }
       pintarPlacar(vistos.filter(x=>x.lado==='c').length,
                    vistos.filter(x=>x.lado==='f').length);
@@ -1942,19 +2170,29 @@
         if(d.penAte >= cb.length && passou > cb.length) d.penFim = true;
         if(d.penFim) penCena.fim();
       }
-      /* o clima anda minuto a minuto, junto com a barra */
+      /* a tensão anda minuto a minuto, junto com a barra */
       if(!d.pausada && !m.respondido && !naSerie){
-        while(d.clima.min < min && d.clima.nivel < 2){
+        while(d.clima.min < min){
           d.clima.min++;
-          if(pMin && U.rng() < pMin) d.clima.nivel++;
+          if(!pMin) continue;
+          d.tensao += pMin * 45 * (0.5 + U.rng());
+          /* a torcida deles também provoca */
+          if(U.rng() < pMin * 1.5){
+            d.tensao += 8;
+            if(estadio){ anotar(_t("{min}' · A {nome} provocou a gente.", {min:d.clima.min, nome:rivalNome() || _t('torcida deles')}));
+                         festaNaArquibancada('eles', 3); }
+          }
+          /* depois da briga a PM fica no setor: não estoura de novo */
+          if(d.clima.brigou) d.tensao = Math.min(d.tensao, 90);
         }
         d.clima.min = Math.max(d.clima.min, min);
+        if(d.clima.brigou) d.tensao = Math.min(d.tensao, 90);
         pintarClima();
         /* UMA BRIGA DE ARQUIBANCADA POR JOGO: depois da primeira a PM
            fica no setor, o clima cai pra "esquentando" e não sobe de
            novo — sem esta trava a mesma partida abriria a cena a cada
            vez que o dado batesse em tenso outra vez. */
-        if(d.clima.nivel >= 2 && !d.clima.aberto && !d.clima.brigou){
+        if(d.tensao >= 100 && !d.clima.aberto && !d.clima.brigou){
           d.clima.aberto = true;
           /* O CLIMA TENSO PAUSA O RELÓGIO (régua do dono, 20/08/2026).
              A partida NÃO acaba aqui: ela espera a briga terminar e
@@ -1971,9 +2209,12 @@
                rolar. Sem baixar, o gatilho reabriria a cena no quadro
                seguinte. */
               d.clima.nivel = 1; d.clima.aberto = false; d.clima.brigou = true;
+              d.tensao = 55;
               pontoDeControle(d);
               d.pausada = false;
               pintarClima();
+              /* a arquibancada volta pro cartão, com a PM no setor */
+              if(estadio && cenaEl.isConnected) montarArquibancada(m, cenaEl);
             });
           }), 1100);
           return;
@@ -2110,6 +2351,8 @@
        ter acabado por outro caminho (fim de jogo, save carregado,
        feed limpo): mensagem já respondida não abre cena nenhuma. */
     if(!e || !d || m.respondido) return;
+    /* a arquibancada do cartão devolve o palco pra tela cheia (10/10/2026) */
+    pararArquibancada();
     /* A PARTIDA NÃO ACABA AQUI (régua do dono, 20/08/2026): antes ela
        era encerrada no primeiro soco da arquibancada e o placar
        congelava aos 63'. Agora ela está PAUSADA — quem apita é o
@@ -2299,6 +2542,14 @@
       pontos.appendChild(b);
     });
     raiz.appendChild(pontos);
+    /* O PALCO DO DIA (pedido do dono, 10/10/2026): o mapa da caravana,
+       com o ônibus e o balão das hostilidades; na hora do jogo o mesmo
+       espaço vira a arquibancada (itnPartida) e volta a ser mapa na
+       volta pra casa */
+    const palco = el('div',{class:'itn-palco'});
+    const mapa = TO.mapaCaravana ? TO.mapaCaravana.criar({rota:it.rota, destino:it.destino}) : null;
+    if(mapa) palco.appendChild(mapa.el);
+    raiz.appendChild(palco);
     const recados = el('div',{class:'itn-recados'});
     raiz.appendChild(recados);
 
@@ -2307,7 +2558,7 @@
     TO.feed.abrirLote(e);
     ITN.raiz = raiz; ITN.linha = linha; ITN.ic = ic; ITN.hora = hora;
     ITN.nome = nome; ITN.estado = estado; ITN.conta = conta;
-    ITN.pontos = pontos; ITN.recados = recados;
+    ITN.pontos = pontos; ITN.recados = recados; ITN.palco = palco; ITN.mapa = mapa;
     /* o rótulo do dia de cada parada (véspera, dia do jogo, volta) */
     ITN.rotDia = {};
     for(const p of it.paradas) if(p.abreDia) ITN.rotDia[p.dia] = p.abreDia;
@@ -2410,6 +2661,28 @@
   function itnLimparOcorridos(){
     if(!ITN || !ITN.recados) return;
     for(const c of [...ITN.recados.querySelectorAll('.itn-cartao')]) c.remove();
+    if(ITN.mapa) ITN.mapa.fecharBalao();
+  }
+  /* o ônibus anda até a última praça da rota da fase (10/10/2026) */
+  function itnViajarAoFim(depois){
+    if(ITN && ITN.mapa && ITN.mapa.indice < ITN.mapa.fim) ITN.mapa.viajar(ITN.mapa.fim, depois);
+    else depois();
+  }
+  /* o palco volta a ser o mapa: a arquibancada sai, e o placar e os gols
+     ficam embaixo dele como registro do jogo */
+  function itnMostrarMapa(){
+    if(!ITN || !ITN.palco) return;
+    const est = ITN.palco.querySelector('.est-vivo');
+    if(est){
+      pararArquibancada();
+      const fim = el('div',{class:'itn-final'});
+      const tv = est.querySelector('.tv-placar-tv'), evs = est.querySelector('.partida-eventos');
+      if(tv) fim.appendChild(tv);
+      if(evs) fim.appendChild(evs);
+      est.remove();
+      ITN.palco.after(fim);
+    }
+    if(ITN.mapa) ITN.mapa.el.hidden = false;
   }
 
   function itnProximo(){
@@ -2425,8 +2698,13 @@
     if(p.jogo){                       /* O JOGO SEGURA A LINHA */
       ITN.travado = true;
       itnDizer(_t('a partida rolando · o dia só segue no apito final'), true);
-      itnPartida(ITN.recados);
+      itnPartida(ITN.palco);
       return;
+    }
+    /* a volta: o palco volta a ser o mapa, com a rota ao contrário */
+    if(p.id === 'volta'){
+      itnMostrarMapa();
+      if(ITN.it.viaja && ITN.mapa) ITN.mapa.novaRota(ITN.it.rota.slice().reverse());
     }
     const fila = (p.eventos || []).slice();
     /* a escolta se junta na primeira parada da cidade, e fica na última */
@@ -2437,7 +2715,8 @@
       itnDizer(chegou ? _t('a {nome} manda {n} pra escolta', {nome:ITN.escolta.nome, n:ITN.escolta.n})
              : ficou ? _t('a escolta da {nome} fica', {nome:ITN.escolta.nome})
              : _t('passando · {lugar}', {lugar:p.nome.toLowerCase()}));
-      itnAgenda(chegou || ficou ? 1400 : 900);
+      ITN.travado = true;
+      itnViajarAoFim(()=>{ if(!ITN) return; ITN.travado = false; itnAgenda(chegou || ficou ? 900 : 400); });
       return;
     }
     /* uma parada pode ter dois recados — a gente sofrer um ataque no
@@ -2452,10 +2731,33 @@
     if(!ITN) return;
     const p = ITN.it.paradas[ITN.ponto];
     const ev = ITN.fila.shift();
-    if(!ev){ ITN.travado = false; itnDizer(_t('seguindo')); itnAgenda(1200); return; }
+    if(!ev){
+      /* resolvido o recado, o balão fica um pouco (o saldo da briga) e o
+         ônibus segue até o fim da fase */
+      ITN.travado = true; itnDizer(_t('seguindo'));
+      const temBalao = ITN.mapa && ITN.mapa.el.classList.contains('com-balao');
+      setTimeout(()=>{
+        if(!ITN) return;
+        if(ITN.mapa) ITN.mapa.fecharBalao();
+        itnViajarAoFim(()=>{ if(!ITN) return; ITN.travado = false; itnAgenda(500); });
+      }, (temBalao ? 1800 : 0) / velTempo());
+      return;
+    }
     ITN.travado = true;
-    itnDizer(_t('recado na parada · esperando você responder'), true);
-    ITN.recados.appendChild(itnCartao(p, ev));
+    /* A HOSTILIDADE É UM BALÃO EM CIMA DA PRAÇA (pedido do dono,
+       10/10/2026): o ônibus anda até a praça do ocorrido e o recado abre
+       ali, no mapa */
+    const onde = ev.praca || ITN.it.destino;
+    const mostrar = ()=>{
+      if(!ITN) return;
+      itnDizer(_t('recado na parada · esperando você responder'), true);
+      const c = itnCartao(p, ev);
+      if(ITN.mapa) ITN.mapa.balao(onde, c);
+      else ITN.recados.appendChild(c);
+    };
+    const i = ITN.mapa ? ITN.mapa.indiceDe(onde) : -1;
+    if(ITN.mapa && i > ITN.mapa.indice) ITN.mapa.viajar(i, mostrar);
+    else mostrar();
   }
 
   /* ---------- o cartão de cada recado ---------- */
@@ -2653,19 +2955,24 @@
     m.dados.iniciada = true;
     if(m.dados.minAcum === undefined){
       m.dados.minAcum = 0; m.dados.t0 = Date.now();
-      m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
+      m.dados.vel = m.dados.vel || 1; m.dados.pausada = false;
     }
+    /* o mapa sai e a arquibancada entra no lugar dele (10/10/2026) */
+    if(ITN.mapa) ITN.mapa.el.hidden = true;
     const caixa = widgetPartida(m, ()=>{
       /* apito final: a linha volta a andar, e o aviso da trava sai */
       atualizarFeed(); pintarTopo();
       if(ITN && ITN.recados)
         for(const t of [...ITN.recados.querySelectorAll('.itn-trava')]) t.remove();
+      /* a arquibancada sai e o mapa volta pra volta pra casa */
+      itnMostrarMapa();
       /* o recado do apito final saiu (dono, 12/09/2026) */
       ITN.travado = false;
       itnAgenda(1100);
-    });
+    }, {estadio:true});
     caixa.classList.add('itn-partida-caixa');
     vaga.appendChild(caixa);
+    if(!montarArquibancada(m, caixa._cena)) caixa._cena.classList.add('sem-cena');
     /* O AVISO DA TRAVA SAIU (dono, 12/09/2026): "os arredores só abrem
        no apito final" dizia o óbvio — a linha do itinerário já está
        parada e o placar está rodando na frente do jogador. */
@@ -3765,6 +4072,13 @@
     const linha = itnNaMensagem(m);
     if(linha) art.appendChild(linha);
     if(aoVivo && !m.respondido && !linha) art.appendChild(widgetPartida(m));
+    /* O MAPA DA CARAVANA ANTES DE SAIR (pedido do dono, 10/10/2026): a
+       rota do dia num pedaço do Brasil, embaixo do texto; o Iniciar põe
+       o ônibus pra andar nele (abrirItinerario) */
+    if(m.kind === 'partida' && !m.respondido && !aoVivo && !linha && TO.mapaCaravana && TO.itinerario.rotaDoDia){
+      const r = TO.itinerario.rotaDoDia(E());
+      if(r) art.appendChild(TO.mapaCaravana.criar({rota:r.rota, destino:r.destino}).el);
+    }
     /* com a linha do dia no cartão, os gols já estão dentro da parada
        do jogo — repetir a lista aqui embaixo é o mesmo jogo duas vezes */
     if(m.kind === 'partida' && m.respondido && !linha && (m.dados||{}).gols &&
@@ -10387,6 +10701,9 @@
      dados/cenas.js quando a opção briga3d está ligada.
      ======================================================= */
   function montarCena(m){
+    /* toda cena que não é a de assistir ao jogo é de tela cheia: o palco
+       emprestado pro cartão volta antes (10/10/2026) */
+    if(!(m.config && m.config.assistir)) pararArquibancada();
     const o = opc(E());
     const local = String((m.config||{}).local || '');
     const em3d = !!o.briga3d && /^rua(-media|-nobre)?$/.test(local)

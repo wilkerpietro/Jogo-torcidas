@@ -9416,6 +9416,76 @@ Teste (Playwright, `modos.js` e `modos_ui.js`): 150 dias em cada modo, Gaviões,
 - **Detalhista:** igual a antes, com 4 reuniões, 35 avisos de domínio e pixação.
 - A briga da pista termina com todos provocando, sem erro.
 
+## O dia de jogo: mapa da caravana, partida na arquibancada e barra de tensão (o dono, 10/10/2026)
+
+Pedido do dono, vale para os dois modos: "Aprimore a mensagem do dia de jogo mostrando abaixo o mapa do Brasil com a rota traçada pelos pontos onde a caravana vai passar, quando clica em iniciar percorre a viagem e se houver alguma hostilidade durante o itinerário gera um balão em cima da praça no mapa. Agora a partida inicia dentro da cena da torcida dentro do estádio com o placar ocupando o espaço superior da tela, igual ocorre no jogo 3d. Enquanto o jogo rola vai ter uma barrinha mostrando como está a tensão do jogo, com o jogador podendo amenizar a tensão ou provocar pra tentar manipular a tensão quando for conveniente. Essa tela do jogo não cria popup, ela só substitui o espaço do mapa e se o clima ficar tenso que se extende sobre toda a tela, da forma que já funciona hoje."
+
+### O mapa da caravana
+
+Arquivo novo: `js/ui/mapa_caravana.js`.
+
+- **Antes de sair:** embaixo do texto da mensagem aparece um pedaço do Brasil em 4:3, enquadrado na rota do dia.
+  - Mostra o contorno do país, as praças da estrada ligadas por linha tracejada, a origem em dourado e o destino em vermelho.
+  - As outras praças aparecem apagadas, só para dar escala.
+  - Em casa, o mapa mostra só a nossa praça.
+- **De onde vem a rota:** `itinerario.rotaDoDia(E)`, uma função pura. `montar` avisa o olheiro, então não pode rodar a cada repintura.
+- **De onde vem a posição das praças:** `mapaBrasil.pontoDaPraca`, pelas 30 praças. As praças de passagem e as da Conmebol vêm de `malhaXY`.
+- **Ao clicar em Iniciar:**
+  - O ônibus anda pela rota e a linha percorrida fica sólida.
+  - A hostilidade da fase (emboscada, ataque sofrido, investida) abre como **balão em cima da praça** em que acontece, com os mesmos botões e o Simular. O balão abre pra cima ou pra baixo conforme o espaço, e encosta na borda no canto.
+  - Resolvido o balão, o saldo fica 1,8 s e o ônibus segue até o fim da fase.
+  - Na volta, a rota se inverte.
+- **Mudanças no itinerário:**
+  - `montar` devolve `rota`, e cada ocorrido traz `praca`.
+  - `detalhadas` deixou de ser o mesmo array das fases. Era um defeito antigo.
+
+### A partida na arquibancada
+
+- **O palco embutido:** o `#djPalco` é emprestado da tela cheia e entra no cartão, no lugar do mapa (`montarArquibancada`).
+  - Cada torcida presente fica no seu setor.
+  - A cena roda no modo novo **`assistir`** do combate: só move e separa os discos, ninguém briga, a PM não anda e a cena não acaba sozinha.
+  - O zoom fica em 1, com o estádio inteiro no quadro.
+- **O placar de TV no alto,** com a mesma régua do jogo 3D:
+  - Sigla de 3 letras do nome; quando as duas batem, usa a sigla do dado.
+  - Barra com a cor do clube, gols no centro e minuto em vermelho (FIM/PÊN).
+  - Pausa e velocidade logo abaixo.
+  - A mensagem do jogo passou a guardar `casaId` e `foraId`.
+- **Os gols:** quem marca comemora (os bonecos provocam por uns segundos) e a tensão sobe.
+- **O apito final:** o palco volta pra tela cheia e o mapa volta pro cartão. O placar e a lista de gols ficam embaixo do mapa, como registro.
+- **Velocidade:** na arquibancada a partida começa em 1×, cerca de 22 s de jogo, pra dar tempo de mexer na tensão. Antes começava em 4×.
+
+### A tensão de 0 a 100
+
+Substitui os três degraus do clima. `d.clima.nivel` continua existindo, derivado da tensão.
+
+- **Faixas:** 0 a 39 tranquilo, 40 a 74 esquentando, 75 a 99 tenso. **Em 100 a arquibancada se pega.**
+- **O que faz subir:**
+  - Por minuto de jogo, `pMin × 45 × (0,5 a 1,5)`. `pMin` é a régua de sempre (`chanceDeClima`: pior relação presente, aliado zera, bonde muito menor corta pela metade).
+  - Provocação deles: chance de `pMin × 1,5` por minuto, +8.
+  - Gol: +12 quando é deles, +6 quando é nosso.
+- **Os botões do jogador:**
+  - **Amenizar:** −15.
+  - **Provocar:** +15, e os nossos bonecos provocam.
+  - Cada um tem recarga de 5 minutos de jogo.
+  - Ficam desligados quando não há rival, quando há aliado presente ou quando o jogo está pausado.
+- **Quando estoura:** é a briga de sempre. Aparece a escolha Descer/Simular, o palco volta pra tela cheia e abre `abrirBrigaNoEstadio`.
+- **Depois da briga:** o palco volta pro cartão com a tensão em 55 e travada em 90. A PM fica no setor, como antes, e é uma briga por jogo.
+- **Save antigo** no meio do jogo: a tensão começa no degrau em que estava (0, 50 ou 85).
+- **Garantia:** toda outra cena (`montarCena`) devolve o palco pra tela cheia antes de montar.
+
+### Teste
+
+Playwright, `diajogo.js`:
+
+| Caso | Resultado |
+|---|---|
+| Em casa, Corinthians × Ponte Preta | O mapa da praça, a arquibancada com os bonecos nos setores, o placar de TV, o Provocar subindo a tensão e anotando, os gols listados certos, o apito e o mapa de volta com o placar e os gols embaixo |
+| Fora, Bragantino × Corinthians, com emboscada forçada | A rota São Paulo → Região de Campinas e o balão da emboscada em cima de Campinas |
+| Tensão forçada a 99,5 | A escolha Descer, a cena em tela cheia, o fim da noite e a arquibancada de volta no cartão (tensão 55), até o fim |
+| Modo rápido | Igual, sem a prévia de domínio |
+
+`fim_briga` e `modos` sem erro; nenhuma tradução faltando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
