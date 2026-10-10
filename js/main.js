@@ -5565,7 +5565,7 @@
          <b>${Math.round(e.indicadores.prestigio*5)} <span class="fraco">${_t('de 100')}</span></b></div>
        <div class="linha-dado"><span>${_t('Moral da torcida')}</span>
          <b>${Math.round(e.indicadores.moral*5)} <span class="fraco">${_t('de 100')}</span></b></div>
-       <div class="linha-dado"><span class="fraco">${_t('Ficar 20 dias sem briga deprecia: −5 de prestígio e −2,5 de moral, e o relógio segue correndo até a próxima briga.')}</span></div>`;
+       <div class="linha-dado"><span class="fraco">${_t('Ficar 20 dias sem briga deprecia: −1 de prestígio e −2,5 de moral, e o relógio segue correndo até a próxima briga.')}</span></div>`;
     cx.appendChild(c0);
 
     /* A RELAÇÃO COM O CLUBE (pedido do dono, 18/09/2026): régua
@@ -11278,8 +11278,13 @@
        vale no mínimo +1 na régua de 0 a 100, derrota no mínimo −1. A
        pressão no CT fica fora (não é confronto de torcida), e treta e
        arquibancada zeram logo abaixo porque têm tabela própria. */
-    if(!res.prestigio && !(acao && acao.acao === 'pressionar'))
-      res.prestigio = res.ganhamos ? 1 : -1;
+    /* O SINAL É O DO RESULTADO (varredura de 10/10/2026): o vencedor da
+       cena sai de quem ficou de pé ou chegou no objetivo, e a conta de
+       caídos podia sair do outro lado — ataque bem-sucedido custando
+       prestígio. Vitória vale no mínimo +1, derrota no máximo −1. */
+    if(!(acao && acao.acao === 'pressionar'))
+      res.prestigio = res.ganhamos ? Math.max(1, res.prestigio || 0)
+                                   : Math.min(-1, res.prestigio || 0);
     /* na TRETA o prestígio é a conta do dono e só ela: +1 pro ganhador,
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */
@@ -11291,7 +11296,9 @@
        em menor número vale mais, vitória esmagando em maior número
        vale menos. O fator é a razão entre os efetivos de abertura,
        preso entre 0,5× e 2×. */
-    if(res.prestigio > 0 && res.efetivo){
+    /* a fuga já sai medida pela diferença de efetivo (prestigioDaFuga,
+       de 1 a 6): o fator de novo encolhia tudo pela metade */
+    if(res.prestigio > 0 && res.efetivo && !res.correram){
       const meu = res.nossoLado || 'mandante';
       const outroL = meu === 'mandante' ? 'visitante' : 'mandante';
       const nossos = res.efetivo[meu] || 0, deles = res.efetivo[outroL] || 0;
@@ -11348,9 +11355,12 @@
                                  return d ? {id: d.torcida, nome: nomeDaTorcida(d.torcida, d.nome)} : null; })()
                    : null;
     /* a faixa tomada muda de dono e mexe no prestígio (dono, 09/09/2026) */
-    if(res && fecho && TO.acoes.aplicarFaixa)
+    /* (o encontro da rua também: na praça e no bar a faixa vai pra cena,
+       e a tomada mostrava "+5 pra nós" sem mudar de dono nem mexer em
+       nada — varredura de 10/10/2026) */
+    if(res && (fecho || enc) && TO.acoes.aplicarFaixa)
       for(const fx of (res.faixas || (res.faixa ? [res.faixa] : [])))
-        if(fx && fx.tomada) TO.acoes.aplicarFaixa(e, res, fecho, rivalIdCtx, fx);
+        if(fx && fx.tomada) TO.acoes.aplicarFaixa(e, res, fecho || {linhas:[]}, rivalIdCtx, fx);
     const cenaDaLuta = (acao && acao.alvo && (acao.alvo.cena || acao.alvo.local)) || (acao && acao.cena) ||
             (acao && acao.alvo && acao.alvo.tipo) || (enc && enc.local) || '';
     /* A RELAÇÃO COM O CLUBE SENTE A BRIGA EM DIA DE JOGO (pedido do
@@ -11998,7 +12008,7 @@
         `<b>${f.tipo === 'bandeira'
              ? _t('Tomamos a bandeira da {nome}', {nome:linkTorcida(f.torcidaId, f.nome)})
              : _t('Tomamos a faixa da {nome}', {nome:linkTorcida(f.torcidaId, f.nome)})}</b>`+
-        `<small>${_t('+{ganho} de prestígio pra nós · −{perda} pra eles', {ganho:V.ganho, perda:V.perda})}</small>`}));
+        `<small>${_t('+{ganho} de prestígio e +{moral} de moral pra nós · −{perda} de prestígio e −{mp} de moral pra eles', {ganho:V.ganho, moral:V.moralGanho, perda:V.perda, mp:V.moralPerda})}</small>`}));
     }
     cx.appendChild(leg);
     /* a foto: a primeira peça (faixa antes de bandeira), nas mãos de

@@ -1048,5 +1048,14 @@ TO.i18n.registrar({
   '{n} presos no assalto {ao} em {cidade}': {es:'{n} presos en el asalto {ao} en {cidade}', en:'{n} arrested in robbery {ao} in {cidade}'},
   'à joalheria': {es:'a la joyería', en:'at the jewellery store'},
   'à loja de roupas': {es:'a la tienda de ropa', en:'at the clothing store'},
-  'à tarde': {es:'a la tarde', en:'in the afternoon'}
+  'à tarde': {es:'a la tarde', en:'in the afternoon'},
+  "+{ganho} de prestígio e +{moral} de moral pra nós · −{perda} de prestígio e −{mp} de moral pra eles": {es:"+{ganho} de prestigio y +{moral} de moral para nosotros · −{perda} de prestigio y −{mp} de moral para ellos", en:"+{ganho} prestige and +{moral} morale for us · −{perda} prestige and −{mp} morale for them"},
+  "Deixamos quieto. Prestígio −1 · Moral −5.": {es:"Lo dejamos quieto. Prestigio −1 · Moral −5.", en:"We left it. Prestige −1 · Morale −5."},
+  "Ficar 20 dias sem briga deprecia: −1 de prestígio e −2,5 de moral, e o relógio segue correndo até a próxima briga.": {es:"Pasar 20 días sin pelea desgasta: −1 de prestigio y −2,5 de moral, y el reloj sigue corriendo hasta la próxima pelea.", en:"20 days without a fight wears you down: −1 prestige and −2.5 morale, and the clock keeps running until the next fight."},
+  "Ninguém fez nada. −10 de moral.": {es:"Nadie hizo nada. −10 de moral.", en:"Nobody did anything. −10 morale."},
+  "Prestígio −1 · Moral −5": {es:"Prestigio −1 · Moral −5", en:"Prestige −1 · Morale −5"},
+  "Segurando, Moral +7,5 · Prestígio +3,5; perdendo, Moral −15 · Prestígio −3,5": {es:"Si aguantamos, Moral +7,5 · Prestigio +3,5; si perdemos, Moral −15 · Prestigio −3,5", en:"Holding: Morale +7.5 · Prestige +3.5; losing: Morale −15 · Prestige −3.5"},
+  "a casa ficou de pé, mas levaram o nosso pano": {es:"la casa quedó en pie, pero se llevaron nuestro trapo", en:"the place held, but they took our cloth"},
+  "chegando no gramado, Relação com o clube −18 · Moral +4; falhando, −28 · Moral −6": {es:"llegando a la cancha, Relación con el club −18 · Moral +4; si falla, −28 · Moral −6", en:"reaching the pitch: club relationship −18 · Morale +4; failing: −28 · Morale −6"},
+  "grátis; cada ferido sara 2 dias mais cedo · Moral +1,5": {es:"gratis; cada herido se cura 2 días antes · Moral +1,5", en:"free; each injured member heals 2 days sooner · Morale +1.5"}
 });

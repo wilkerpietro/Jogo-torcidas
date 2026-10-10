@@ -298,9 +298,12 @@ TO.lnt = (function(){
   }
 
   /* o preço da briga no mundo: baixa de verdade e prestígio */
-  function cobrarDuelo(E, id, feridos, venceu, fase){
+  function cobrarDuelo(E, id, feridos, venceu, fase, semPrestigio){
     if(R().baixasIA) R().baixasIA(E, id, feridos, 0);
-    if(R().mover) R().mover(E, id, 'prestigio', venceu ? 0.4 : -0.2);
+    /* (no NOSSO duelo o prestígio do rival já mexeu na treta —
+       fecharTreta —; cobrar de novo aqui contava duas vezes: varredura
+       de 10/10/2026) */
+    if(R().mover && !semPrestigio) R().mover(E, id, 'prestigio', venceu ? 0.4 : -0.2);
     if(R().anotarBriga) R().anotarBriga(E, id, venceu);
   }
 
@@ -535,7 +538,7 @@ TO.lnt = (function(){
     d.j.wo = !!dados.wo;
     /* o rival também sangra e também colhe, como em qualquer duelo */
     const rival = souA ? d.j.b : d.j.a;
-    cobrarDuelo(E, rival, delesFeridos, !dados.ganhamos, d.fase);
+    cobrarDuelo(E, rival, delesFeridos, !dados.ganhamos, d.fase, !dados.wo);
     const ed = E.lnt.edicao;
     conferir(E, (ed.rodadaFeita || 0) - RODADAS_GRUPO);
     return d;

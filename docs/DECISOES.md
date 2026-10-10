@@ -9736,6 +9736,65 @@ arquibancada que a nossa torcida, mesmo com a nossa moral alta.
   a Curitiba, 117 ao Rio, 77 a Fortaleza e 49 a Manaus. Antes eram 117
   pra qualquer destino.
 
+## Varredura de moral e prestígio; faixa e bandeira valem mais (10/10/2026)
+
+O dono perdeu faixa e bandeira na arquibancada em Porto Alegre e viu só
+−10 e −5 de prestígio, sem moral nenhuma. Três agentes auditaram cada
+regra de moral, de prestígio e do pano contra as notas e este arquivo.
+
+**Faixa e bandeira, o bem mais precioso** (`PAT.FAIXA`, `PAT.BANDEIRA`,
+`acoes.aplicarFaixa`), na régua de 0 a 100:
+
+| Peça | Quem perde | Quem toma |
+|---|---|---|
+| Faixa | −20 de prestígio, −15 de moral | +10 de prestígio, +5 de moral |
+| Bandeira | −10 de prestígio, −10 de moral | +5 de prestígio, +3 de moral |
+
+Antes a faixa valia −10/+5 e a bandeira −5/+2, só no prestígio. Vale
+pra nós e pras IAs, também entre duas IAs. Perder faixa e bandeira na
+mesma noite agora custa −30 de prestígio e −25 de moral.
+
+**Corrigido:**
+- **Defesa com o pano levado.** "Defendemos o que é nosso" (+7,5 de
+  moral, +3,5 de prestígio) não paga quando a nossa faixa ou bandeira
+  foi tomada na mesma cena.
+- **Encontro na rua.** Na praça e no bar a faixa é tomada de verdade:
+  muda de dono e mexe nos indicadores. Antes o relatório dizia "+5 pra
+  nós" e nada acontecia.
+- **Arquibancada.** A derrota em menor número (o caso normal fora de
+  casa) custa −2,5 de moral. Antes custava zero.
+- **Sinal do prestígio.** Vitória vale no mínimo +1 e derrota no
+  máximo −1. A conta de caídos podia fazer um ataque vencido custar
+  prestígio.
+- **Fuga.** O prestígio de "eles correram" não é mais encolhido duas
+  vezes pela diferença de efetivo. Volta a ir de 1 a 6.
+- **Duelo da LNT.** O nosso duelo mexia duas vezes no prestígio do
+  rival.
+- **Bairro da sede perdido.** Custa 0,2 de moral por dia na régua de 0
+  a 100, como o dono definiu. Estava −1 por dia.
+- **Textos na régua do histórico.** A moral passou a ser mostrada ×5 em
+  24/08, mas vários textos ficaram com o número interno. Agora:
+  - deixar quieto: "Moral −5";
+  - defesa: "+7,5 / −15";
+  - aniversário: "+10 / +5 / −10";
+  - visita aos feridos: "+1,5";
+  - pressão no CT: "+4 / −6";
+  - a linha de consequência do feed mostra moral ×5, como o
+    prestígio;
+  - "20 dias sem briga": −1 de prestígio, não −5.
+
+  Nenhum valor de mecânica mudou nesses textos.
+
+**Achado, pra decisão do dono (não mexido):**
+- A briga genérica dá +5 de moral na vitória e −2,5 na derrota.
+- O resultado do clube conta um jogo por semana, e o título só paga na
+  virada do ano.
+- Na defesa e na pressão no CT, o resultado genérico da briga soma por
+  cima do valor fixo da nota.
+- A derrota na treta perdeu a moral por membro quando a moral de membro
+  acabou, e não ganhou outra.
+- O duelo de LNT entre IAs paga +2/−1, e o nosso +5/−1.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

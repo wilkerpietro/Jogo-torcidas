@@ -626,12 +626,14 @@ TO.patrimonio = (function(){
      pra baixo. A imagem de cada faixa é desenhada com as cores e o
      nome da torcida; `TO.dados.faixas[id]` (data-URI) substitui.
      ======================================================= */
-  const FAIXA = {custo:5000, ganho:5, perda:10};
+  /* (10/10/2026: o dono quer o pano como o bem mais precioso — o dobro
+     de prestígio e moral junto; tudo na régua de 0 a 100) */
+  const FAIXA = {custo:5000, ganho:10, perda:20, moralGanho:5, moralPerda:15};
   /* A BANDEIRA (pedido do dono, 09/09/2026): quadrada, fundo na cor
      primária, bordas na secundária e na terciária, o escudo da torcida
      no meio. R$ 2.000. Um membro só recolhe. Tomada como a faixa, mas
      vale menos: −5 pra quem perde, +2 pra quem toma. */
-  const BANDEIRA = {custo:2000, ganho:2, perda:5};
+  const BANDEIRA = {custo:2000, ganho:5, perda:10, moralGanho:3, moralPerda:10};
   function faixasDe(E){
     const p = F().patrimonio(E);
     if(!p.faixas) p.faixas = {nossas:[{n:1, desde:(E.data||{}).ano||2026}], tomadas:[]};

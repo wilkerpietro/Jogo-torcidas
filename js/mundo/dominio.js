@@ -73,7 +73,9 @@ TO.dominio = (function(){
      não existe mais essa trava de 80% mas o bairro da sede dá 0,5 por
      dia"): +0,5 por dia pra dona da sede no bairro dela, sempre; quem não
      é dona do bairro da própria sede perde 0,2 de moral por dia */
-  const SEDE_REFAZ = 0.5, SEDE_PERDIDA = 0.2;
+  /* (a perda vai na régua do dono, 0 a 100 — 0,2 por dia é 0,04 no
+     indicador, como o DIA do domínio; varredura de 10/10/2026) */
+  const SEDE_REFAZ = 0.5, SEDE_PERDIDA = 0.04;
   const SUBSEDE_TETO = 65, SUBSEDE_REFAZ = 1/3; // a subsede, até 65
   const RESISTE = 0.5;               // quem não é da casa ganha metade no bairro da sede (nas ações)
   const DIARIOS = new Set(['pixacao', 'recrutamento', 'estrutura-dia']);   // os ganhos de todo dia: inteiros

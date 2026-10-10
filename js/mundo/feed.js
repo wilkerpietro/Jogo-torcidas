@@ -1735,11 +1735,13 @@ TO.feed = (function(){
     if(!efeitos || !efeitos.length) return '';
     return efeitos.map(e=>{
       const nome = NOME_IND[e.ind] || e.ind;
+      /* (a moral também, desde a varredura de 10/10/2026: a linha
+         mostrava o interno e o histórico o ×5) */
       /* PRESTÍGIO FALA A RÉGUA DO DONO (correção de 18/08/2026): o
          indicador vive em 0-20, mas toda tela fala 0-100 — a linha
          mostrava o +0,6 interno onde o jogador esperava +3 */
       const v = e.ind === 'dinheiro'   ? U.dinheiro(Math.abs(e.delta))
-              : e.ind === 'prestigio'  ? Math.abs(Math.round(e.delta*5*10)/10)
+              : e.ind === 'prestigio' || e.ind === 'moral' ? Math.abs(Math.round(e.delta*5*10)/10)
               : Math.abs(Math.round(e.delta*10)/10);
       const sobe = e.delta > 0;
       const dono = e.dono ? ` ${e.dono}` : '';
@@ -4647,7 +4649,7 @@ TO.feed = (function(){
            : porPeca(alvo.peca,
                _t('Prestígio até ±10 · tomando a faixa, prestígio a mais · Relação −26 (perdendo, −18)'),
                _t('Prestígio até ±10 · tomando a bandeira, prestígio a mais · Relação −26 (perdendo, −18)'))},
-        {id:'nada', rot:_t('Deixar quieto'), acao:'bote-nao', nota:_t('Prestígio −1 · Moral −1')}
+        {id:'nada', rot:_t('Deixar quieto'), acao:'bote-nao', nota:_t('Prestígio −1 · Moral −5')}
       ]
     };
   }
@@ -4788,7 +4790,7 @@ TO.feed = (function(){
         chave:`alvo|${sem}|${i}`, rot:ROT[g.tipo], voz:_t('Diretoria'), tipo:'bote', bote, texto,
         botoes:[
           {id:'marcar', rot:_t('Marcar o alvo'), acao:'bote-marcar', nota:comDominio(NOTA[g.tipo], previaDoBote(E, bote).linha)},
-          {id:'nada', rot:_t('Deixar quieto'), acao:'bote-nao', nota:_t('Prestígio −1 · Moral −1')}
+          {id:'nada', rot:_t('Deixar quieto'), acao:'bote-nao', nota:_t('Prestígio −1 · Moral −5')}
         ]
       });
       /* o próximo alvo enxerga este na mesa (dois dias de folga entre eles) */
@@ -5011,7 +5013,7 @@ TO.feed = (function(){
         return;
       }
       const quieto = (acao) => agora
-        ? [{id:'nada', rot:_t('Deixar quieto'), acao, nota:_t('Prestígio −1 · Moral −1')}] : [];
+        ? [{id:'nada', rot:_t('Deixar quieto'), acao, nota:_t('Prestígio −1 · Moral −5')}] : [];
       if(b.tipo === 'bar'){
         return propor(E, {
           kind:'barrival', peso:'decisao', voz:'diretor',
@@ -5166,7 +5168,7 @@ TO.feed = (function(){
       case 'bote-nao':
         TO.estado.mexerIndicador(E, 'prestigio', -0.2, _t('Deixamos o bote quieto'));
         TO.estado.mexerIndicador(E, 'moral', -1, _t('Deixamos o bote quieto'));
-        it.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −1.');
+        it.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −5.');
         return {};
     }
     return {};
@@ -5181,7 +5183,7 @@ TO.feed = (function(){
     if(idBotao === 'nada'){
       TO.estado.mexerIndicador(E, 'moral', f.moral, daTorcida
         ? _t('Aniversário da torcida passou em branco') : _t('Aniversário do clube passou em branco'));
-      return _t('Ninguém fez nada. −2 de moral.');
+      return _t('Ninguém fez nada. −10 de moral.');
     }
     const rotFesta = daTorcida ? _t('Festa de aniversário da torcida') : _t('Festa de aniversário do clube');
     TO.estado.lancar(E, rotFesta, -f.custo);
@@ -5223,12 +5225,12 @@ TO.feed = (function(){
           {id:'grande',  rot:_t('Festa grande'), acao:'aniv-festa',
            nota:_t('{custo} · potencial de {min} a {max} · +{moral} de moral',
                    {custo:`R$ ${U.numero(F.grande.custo)}`, min:U.dinheiro(F.grande.min),
-                    max:U.dinheiro(F.grande.max), moral:F.grande.moral})},
+                    max:U.dinheiro(F.grande.max), moral:F.grande.moral*5})},
           {id:'simples', rot:_t('Festa simples'), acao:'aniv-festa',
            nota:_t('{custo} · potencial de {min} a {max} · +{moral} de moral',
                    {custo:`R$ ${U.numero(F.simples.custo)}`, min:U.dinheiro(F.simples.min),
-                    max:U.dinheiro(F.simples.max), moral:F.simples.moral})},
-          {id:'nada',    rot:_t('Não fazer nada'), acao:'aniv-festa', nota:_t('{moral} de moral', {moral:F.nada.moral})}
+                    max:U.dinheiro(F.simples.max), moral:F.simples.moral*5})},
+          {id:'nada',    rot:_t('Não fazer nada'), acao:'aniv-festa', nota:_t('{moral} de moral', {moral:F.nada.moral*5})}
         ]
       });
     }
@@ -5578,7 +5580,7 @@ TO.feed = (function(){
       dados:{torcida:a.torcida, alvo:a.alvo, cena:a.cena},
       botoes:[
         {id:'brigar', rot:cfg.brigar, acao:'cena-defesa',
-         nota:comDominio(_t('Segurando, Moral +1,5 · Prestígio +3,5; perdendo, Moral −3 · Prestígio −3,5'), pv.linha)},
+         nota:comDominio(_t('Segurando, Moral +7,5 · Prestígio +3,5; perdendo, Moral −15 · Prestígio −3,5'), pv.linha)},
         {id:'fugir',  rot:cfg.fugir,  acao:'fugir-defesa',
          nota:_t('ninguém desce: Moral −3 · Prestígio −3,5 · Relação −6')+
               (a.alvo === 'bar' ? ' · ' + _t('levam R$ 60 por invasor + 10% do caixa') : '')}
@@ -6733,7 +6735,7 @@ TO.feed = (function(){
           _t('Deixamos a resenha do rival quieta'));
         TO.estado.mexerIndicador(E, 'moral', -1,
           _t('Deixamos a resenha do rival quieta'));
-        m.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −1.');
+        m.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −5.');
         return {ok:true};
       }
 
@@ -6842,7 +6844,7 @@ TO.feed = (function(){
           _t('Deixamos o bar do rival quieto'));
         TO.estado.mexerIndicador(E, 'moral', -1,
           _t('Deixamos o bar do rival quieto'));
-        m.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −1.');
+        m.consequencia = _t('Deixamos quieto. Prestígio −1 · Moral −5.');
         return {ok:true};
       }
 

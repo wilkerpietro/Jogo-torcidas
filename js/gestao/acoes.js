@@ -305,8 +305,11 @@ TO.acoes = (function(){
     return {ganhamos};
   }
 
-  /* A FAIXA TOMADA (pedido do dono, 09/09/2026): −10 de prestígio pra
-     quem perdeu, +5 pra quem tomou, na régua de 0 a 100; a faixa muda
+  /* A FAIXA TOMADA (pedido do dono, 09/09/2026; endurecida em
+     10/10/2026: "faixa e bandeira são os bens mais preciosos da
+     torcida"): a faixa vale −20 de prestígio e −15 de moral pra quem
+     perdeu, +10 e +5 pra quem tomou; a bandeira, −10/−10 e +5/+3 — na
+     régua de 0 a 100 (PAT.FAIXA, PAT.BANDEIRA). A faixa muda
      de dono no Patrimônio (a nossa some da sede, a deles entra nas
      tomadas — de cabeça pra baixo). `outroId` é a outra torcida da
      cena, quem tomou a nossa ou de quem tomamos. */
@@ -329,10 +332,12 @@ TO.acoes = (function(){
          aparece no Patrimônio) */
       listaNossa().tomadas.push({de:fx.torcidaId, nome:fx.nome,
         quando:{ano:E.data.ano, semana:E.data.semana}, variante:fx.variante || 0});
-      TO.estado.mexerIndicador(E, 'prestigio', V.ganho/5, bandeira
-        ? _t('Tomamos a bandeira da {nome}', {nome:fx.nome})
-        : _t('Tomamos a faixa da {nome}', {nome:fx.nome}));
+      const motivoT = bandeira ? _t('Tomamos a bandeira da {nome}', {nome:fx.nome})
+                               : _t('Tomamos a faixa da {nome}', {nome:fx.nome});
+      TO.estado.mexerIndicador(E, 'prestigio', V.ganho/5, motivoT);
+      TO.estado.mexerIndicador(E, 'moral', V.moralGanho/5, motivoT);
       R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5);
+      R.mover(E, fx.torcidaId, 'moral', -V.moralPerda/5);
       fecho.linhas.push(bandeira
         ? _t('tomamos a bandeira da {nome}', {nome:fx.nome})
         : _t('tomamos a faixa da {nome}', {nome:fx.nome}));
@@ -345,11 +350,12 @@ TO.acoes = (function(){
       const o = outroId ? TO.mundo.torcida(outroId) : null;
       const t = outroId ? PAT.faixasIA(E, outroId) : null;
       if(t) t[tomadasIA(t)].push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano, variante:fx.variante || 0});
-      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5,
-        o ? (bandeira ? _t('Perdemos a nossa bandeira pra {nome}', {nome:o.nome})
-                      : _t('Perdemos a nossa faixa pra {nome}', {nome:o.nome}))
-          : (bandeira ? _t('Perdemos a nossa bandeira') : _t('Perdemos a nossa faixa')));
-      if(outroId) R.mover(E, outroId, 'prestigio', V.ganho/5);
+      const motivoP = o ? (bandeira ? _t('Perdemos a nossa bandeira pra {nome}', {nome:o.nome})
+                                    : _t('Perdemos a nossa faixa pra {nome}', {nome:o.nome}))
+                        : (bandeira ? _t('Perdemos a nossa bandeira') : _t('Perdemos a nossa faixa'));
+      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5, motivoP);
+      TO.estado.mexerIndicador(E, 'moral', -V.moralPerda/5, motivoP);
+      if(outroId){ R.mover(E, outroId, 'prestigio', V.ganho/5); R.mover(E, outroId, 'moral', V.moralGanho/5); }
       fecho.linhas.push(
         o ? (bandeira ? _t('perdemos a nossa bandeira pra {nome}', {nome:o.nome})
                       : _t('perdemos a nossa faixa pra {nome}', {nome:o.nome}))
@@ -364,7 +370,8 @@ TO.acoes = (function(){
       const quem = tomamos ? null : PAT.faixasIA(E, outroId);
       if(dona) dona[contaIA(dona)] = Math.max(0, dona[contaIA(dona)] - 1);
       if(quem) quem[tomadasIA(quem)].push({de:fx.torcidaId, nome:fx.nome, ano:E.data.ano, variante:fx.variante || 0});
-      if(quem){ R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5); R.mover(E, outroId, 'prestigio', V.ganho/5); }
+      if(quem){ R.mover(E, fx.torcidaId, 'prestigio', -V.perda/5); R.mover(E, outroId, 'prestigio', V.ganho/5);
+                R.mover(E, fx.torcidaId, 'moral', -V.moralPerda/5); R.mover(E, outroId, 'moral', V.moralGanho/5); }
       return null;
     }
     return null;
@@ -388,7 +395,8 @@ TO.acoes = (function(){
        vitória — em menor número (11+ a menos): Prestígio +3 · Moral +2;
                  parelho (±10): Prestígio +2 · Moral +1;
                  com 11+ a mais: Prestígio +1 · Moral +0,5;
-       derrota — em menor número: Prestígio −1;
+       derrota — em menor número: Prestígio −1 · Moral −0,5 (varredura
+                 de 10/10/2026: apanhar fora de casa custava zero de moral);
                  parelho (±10): Prestígio −2 · Moral −1;
                  com 11+ a mais: Prestígio −3 · Moral −2.
      Prestígio na régua de 0-100 (÷5 no indicador). A relação azeda pela
@@ -402,7 +410,7 @@ TO.acoes = (function(){
     const faixa = diff <= -11 ? 'menos' : diff >= 11 ? 'mais' : 'parelho';
     const T = ganhou
       ? {menos:{p: 3, m: 2}, parelho:{p: 2, m: 1}, mais:{p: 1, m: 0.5}}
-      : {menos:{p:-1, m: 0}, parelho:{p:-2, m:-1}, mais:{p:-3, m:-2}};
+      : {menos:{p:-1, m:-0.5}, parelho:{p:-2, m:-1}, mais:{p:-3, m:-2}};
     /* a relação com o rival paga pela mesma régua do efetivo (preço do
        dono, 19/08/2026): encarar quem era maior deixa mais ódio pra
        trás do que passar por cima de quem era menor — e cai dos dois
@@ -526,6 +534,10 @@ TO.acoes = (function(){
             linhas};
   }
 
+  /* a nossa faixa ou bandeira foi tomada nesta cena? */
+  const levaramOPano = res => (res && (res.faixas || (res.faixa ? [res.faixa] : [])) || [])
+    .some(f => f && f.tomada && f.nossa && f.por !== (res.nossoLado || 'mandante'));
+
   /* a casa invadida ou a caravana fechada na estrada */
   function fecharDefesa(E, alvo, res){
     const R = TO.relacoes;
@@ -572,6 +584,12 @@ TO.acoes = (function(){
       TO.estado.mexerIndicador(E, 'prestigio', -0.7, _t('Fugimos sem defender o que é nosso'));
       linhas.push(naEstrada ? _t('o ônibus seguiu viagem com meia turma de pé')
                             : _t('eles saíram de lá com a casa na mão'));
+    }else if(levaramOPano(res)){
+      /* SEGURAMOS A CASA, MAS LEVARAM O PANO (varredura de 10/10/2026):
+         o bônus de "defendemos o que é nosso" saía junto com a faixa
+         perdida na mesma cena. O que é nosso não ficou: sem bônus — a
+         perda da faixa ou da bandeira (aplicarFaixa) cobra o resto */
+      linhas.push(_t('a casa ficou de pé, mas levaram o nosso pano'));
     }else{
       TO.estado.mexerIndicador(E, 'moral', 1.5, _t('Defendemos o que é nosso'));
       TO.estado.mexerIndicador(E, 'prestigio', 0.7, _t('Defendemos o que é nosso'));
@@ -880,7 +898,7 @@ TO.acoes = (function(){
        abaixo. Save antigo com elas no expediente só pula o turno. */
     {
       id:'visita', nome:_t('Visita aos feridos'), icone:'conversa', cena:_t('Hospital'),
-      efeito:_t('grátis; cada ferido sara 2 dias mais cedo · Moral +0,3'),
+      efeito:_t('grátis; cada ferido sara 2 dias mais cedo · Moral +1,5'),
       disponivel(E){
         const n = E.membros.filter(m=>m.ferido).length;
         return n ? {ok:true, nota:_t('{n} de molho', {n})}
@@ -1070,7 +1088,7 @@ TO.acoes = (function(){
      }},
 
     {id:'pressionar', nome:_t('Pressionar o clube'), icone:'megafone', cena:_t('CT'),
-     efeito:_t('chegando no gramado, Relação com o clube −18 · Moral +0,8; falhando, −28 · Moral −1,2'), manual:true,
+     efeito:_t('chegando no gramado, Relação com o clube −18 · Moral +4; falhando, −28 · Moral −6'), manual:true,
      disponivel(E){
        const aptos = TO.membros.aptosParaOEstadio(E).length;
        if(aptos < MINIMO_SAIDA)
