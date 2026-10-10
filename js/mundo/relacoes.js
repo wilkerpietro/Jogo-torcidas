@@ -909,14 +909,19 @@ TO.relacoes = (function(){
       if(o && o.clubeId && TO.competicoes.jogosDaSemana){
         const jogos = TO.competicoes.jogosDaSemana(E, o.clubeId,
                                                    E.data.semana) || [];
+        let destinoFora = null;
         const viaja = jogos.some(j=>{
           if(j.casa) return false;
           const adv = M().time(j.adversario);
-          return adv && adv.mapa !== o.mapa;
+          if(adv && adv.mapa !== o.mapa){ destinoFora = adv.mapa; return true; }
+          return false;
         });
         if(viaja && TO.planejamento.custoCaravanaIA){
-          const n = TO.planejamento.caravanaDe(o, 0, E);
-          const cv = TO.planejamento.custoCaravanaIA(n, frotaIA(t));
+          /* a distância de verdade (10/10/2026): viagem longa leva menos
+             gente e cada cabeça custa mais trechos */
+          const n = TO.planejamento.caravanaDe(o, 0, E, destinoFora);
+          const cv = TO.planejamento.custoCaravanaIA(n, frotaIA(t),
+            TO.planejamento.trechosDaIA ? TO.planejamento.trechosDaIA(E, o, destinoFora) : 2);
           t.caixa -= cv;
           lancarIA(E, id, _t('Caravana — jogo fora ({n} cabeças)', {n}), -cv);
         }
@@ -2234,7 +2239,7 @@ TO.relacoes = (function(){
       if(!adv || adv.mapa === o.mapa) continue;
       const destino = adv.mapa;
       if((t.filiais||[]).some(f=>f.cidade === destino)) continue;
-      const n = TO.planejamento.caravanaDe(o, 0, E);
+      const n = TO.planejamento.caravanaDe(o, 0, E, destino);
       if(n < 2) continue;
       /* a casa é UMA só: a aliada mais próxima que mora na praça */
       const anf = M().torcidasEm(destino)

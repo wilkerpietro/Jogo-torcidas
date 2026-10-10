@@ -2007,7 +2007,7 @@ TO.feed = (function(){
               const t = (E.mundoTorcidas||{})[o.id];
               const n = local
                 ? Math.round(((t && t.membros) || o.membros || 20) * 0.6)
-                : PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
+                : PL().caravanaDe(o, (E.relacoes||{})[o.id], E, f.cidade);
               if(n < 5) continue;                    // caravana pequena não viaja
               const cena = inv && inv.alvo
                 ? (inv.como === 'ida' && inv.olheiro === 'praca' ? 'praca' : 'rua')
@@ -3934,7 +3934,7 @@ TO.feed = (function(){
       }
       for(const o of M().torcidasDe(j.vis.id)){
         if(o.id === E.torcida.id || o.incompleta || o.mapa === cidadeId) continue;
-        const n = PL().caravanaDe(o, (E.relacoes||{})[o.id], E);
+        const n = PL().caravanaDe(o, (E.relacoes||{})[o.id], E, cidadeId);
         if(n < 5) continue;
         fora.push({id:o.id, nome:o.nome, n, faixa:PL().faixaDeEfetivo(E, n, o.id), hostil:ehHostil(E, o.id), deFora:true});
       }
@@ -6108,7 +6108,7 @@ TO.feed = (function(){
             else if(o.mapa === casaMapa)
               n = TO.relacoes.disponiveisIA(E, o.id);
             else {
-              n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id], E);
+              n = TO.planejamento.caravanaDe(o, (E.relacoes||{})[o.id], E, casaMapa);
               if(n < 5) continue;   // caravana pequena demais não viaja
             }
             if(n > 0) presentes.push({id:o.id, nome:o.nome, n, casa: lado==='c'});

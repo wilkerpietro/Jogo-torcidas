@@ -164,7 +164,7 @@ TO.planejamento = (function(){
        chega é a caravana. Os 62% avulsos morreram. */
     const j = E.proximoJogo;
     const vemDeFora = j && j.casa && o.mapa !== E.torcida.mapa;
-    const efetivo = Math.max(6, vemDeFora ? caravanaDe(o, 0, E) : vivos);
+    const efetivo = Math.max(6, vemDeFora ? caravanaDe(o, 0, E, E.torcida.mapa) : vivos);
     const r = baralhoFixo(`${idTorcida}|${E.data.ano}|${E.data.semana}`);
 
     /* torcida grande se divide mais; torcida pequena anda junto */
@@ -529,11 +529,22 @@ TO.planejamento = (function(){
      sem relação registrada vale o piso, porque a caravana existe mesmo
      quando não somos nada deles. */
   const RELACAO_ALIADO = 20;
-  function caravanaDe(torcida, relacao, E){
+  /* OS TRECHOS DA VIAGEM DA IA (correção do dono, 10/10/2026: "as
+     torcidas IA não sentem a diferença de viagens longas e curtas"): a
+     estrada mais curta entre a praça dela e a do jogo, como a nossa rota
+     curta. Sem estrada ligando, é avião — 1 trecho, como o nosso. Sem
+     destino conhecido (o painel de público), a média de 2 de antes. */
+  function trechosDaIA(E, torcida, destino){
+    if(!destino || !torcida || !torcida.mapa) return 2;
+    if(destino === torcida.mapa) return 0;
+    const c = E ? caminho(E, torcida.mapa, destino, false) : null;
+    return c ? c.saltos : 1;
+  }
+  function caravanaDe(torcida, relacao, E, destino){
     /* A MESMA RÉGUA DO JOGADOR (ordem do dono, 31/08/2026): a caravana
        da IA sai da MESMA conta da nossa — vontade = 0,72 − 0,09 por
-       trecho + 0,4 × moral − 0,15 × risco — com a viagem média de 2
-       trechos que a estrada delas já assume no custo, e risco zero
+       trecho + 0,4 × moral − 0,15 × risco — com os trechos de verdade
+       até a praça do jogo (`destino`, `trechosDaIA`), e risco zero
        porque elas não traçam rota. Caíram os 18%, o "cresce com a
        relação" e o "ônibus enche 30%": a nossa caravana não tem nada
        disso — ônibus só barateia. `relacao` ficou na assinatura por
@@ -544,7 +555,7 @@ TO.planejamento = (function(){
     if(vivos <= 0) return 0;
     const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
     const moral = (t && t.moral != null ? t.moral : 12) / 20;
-    const vontade = U.limitar(0.72 - 2*0.09 + moral*0.4, 0.08, 0.95);
+    const vontade = U.limitar(0.72 - trechosDaIA(E, torcida, destino)*0.09 + moral*0.4, 0.08, 0.95);
     /* O REDUTOR DO VISITANTE (calibragem do dono, 31/08/2026): a
        caravana da IA sai da régua do jogador com uns 40% a menos —
        na régua cheia a estrada lotava demais pro gosto do dono. */
@@ -557,8 +568,9 @@ TO.planejamento = (function(){
      40% (o rateio dos embarcados cobre os outros 60%) e a frota abate
      30% por ônibus até zerar com três. Sem rota traçada pra elas, a
      viagem média vale 2 trechos. */
-  function custoCaravanaIA(n, frota){
-    const porCabeca = CABECA_BASE + CABECA_TRECHO * 2;
+  function custoCaravanaIA(n, frota, trechos){
+    const t = trechos == null ? 2 : trechos;
+    const porCabeca = CABECA_BASE + CABECA_TRECHO * t;
     const desconto = TO.financeiro.DESCONTO_ONIBUS[
       Math.min(3, frota || 0)] || 0;
     return Math.round(porCabeca * n * (1 - RATEIO) * (1 - desconto));
@@ -618,7 +630,7 @@ TO.planejamento = (function(){
             if(v === undefined || v < RELACAO_ALIADO) continue;   // só aliado de fato
             fora.push({id:o.id, torcida:o, clube:vis, adversario:casa,
                        relacao:v, dia:j.d || etapa.dia || 6, comp:comp.nome,
-                       estimativa:caravanaDe(o, v, E)});
+                       estimativa:caravanaDe(o, v, E, nossa)});
           }
         }
       }
@@ -1606,7 +1618,7 @@ TO.planejamento = (function(){
           passos, falta, investidaDe, definirInvestida,
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
-          aliadosNaCidade, caravanaDe, custoCaravanaIA, RELACAO_ALIADO,
+          aliadosNaCidade, caravanaDe, trechosDaIA, custoCaravanaIA, RELACAO_ALIADO,
           aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial,
           RECEPCAO, recepcaoDe, custoRecepcao,

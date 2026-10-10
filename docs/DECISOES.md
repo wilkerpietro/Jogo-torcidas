@@ -9710,6 +9710,32 @@ Cada loja virou uma cena `assalto-<alvo>`.
   Na bancada (`arredores.html#assalto-<alvo>`), as abas "Assalto 1–6"
   servem pra acertar a máscara no F2.
 
+## A caravana da IA sente a distância (correção do dono, 10/10/2026)
+
+O dono percebeu que, em viagem longa, a JGT punha mais gente na
+arquibancada que a nossa torcida, mesmo com a nossa moral alta.
+
+- **Por quê.** A IA usava a mesma conta da nossa caravana (0,72 − 0,09
+  por trecho + 0,4 × moral, com o redutor de visitante × 0,6), mas a
+  viagem dela valia sempre a média de 2 trechos. Viagem de 5 ou 7
+  trechos custava pra nós e não custava pra ela.
+- **Agora.** `caravanaDe(torcida, relação, E, destino)` usa
+  `trechosDaIA`: a estrada mais curta entre a praça dela e a do jogo.
+  Sem estrada ligando as duas, conta como avião, 1 trecho, como a
+  nossa rota aérea. Sem destino conhecido (o painel de público), segue
+  a média de 2.
+- **Quem passa o destino.** Todos os pontos que sabem pra onde ela vai:
+  - o estádio do nosso jogo (`presenca`);
+  - a rua da praça;
+  - o olheiro;
+  - os aliados chegando;
+  - a recepção;
+  - o custo da caravana da IA (`custoCaravanaIA` cobra os trechos de
+    verdade).
+- **Exemplo:** os Gaviões, saindo de São Paulo com 250 de pé, levam 131
+  a Curitiba, 117 ao Rio, 77 a Fortaleza e 49 a Manaus. Antes eram 117
+  pra qualquer destino.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
