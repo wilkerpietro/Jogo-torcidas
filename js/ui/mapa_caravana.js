@@ -150,15 +150,27 @@ TO.mapaCaravana = (function(){
         if(!p) p = ponto(pos);
         const x = (p[0] - vb.x) / vb.w * 100, y = (p[1] - vb.y) / vb.h * 100;
         const b = document.createElement('div');
-        b.className = 'mc-balao' + (y < 52 ? ' abaixo' : ' acima') +
-                      (x < 28 ? ' esq' : x > 72 ? ' dir' : '');
+        const lado = x < 28 ? ' esq' : x > 72 ? ' dir' : '';
+        b.className = 'mc-balao' + (y < 50 ? ' abaixo' : ' acima') + lado;
         b.style.left = x.toFixed(2) + '%'; b.style.top = y.toFixed(2) + '%';
         b.appendChild(nodo);
         camada.appendChild(b);
         caixa.classList.add('com-balao');
+        /* o balão alto não corta: abre pro lado com mais espaço e, se
+           ainda sobrar, a caixa do mapa abre margem e empurra o resto */
+        requestAnimationFrame(()=>{
+          if(!b.isConnected) return;
+          const H = caixa.clientHeight, h = b.offsetHeight + 14, py = y / 100 * H;
+          const cimaCabe = py >= h, baixoCabe = H - py >= h;
+          const abaixo = baixoCabe ? (!cimaCabe || y < 50) : (cimaCabe ? false : (H - py) >= py);
+          b.className = 'mc-balao' + (abaixo ? ' abaixo' : ' acima') + lado;
+          const sobra = abaixo ? h - (H - py) : h - py;
+          caixa.style.marginBottom = abaixo && sobra > 0 ? (sobra + 8) + 'px' : '';
+          caixa.style.marginTop = !abaixo && sobra > 0 ? (sobra + 8) + 'px' : '';
+        });
         return b;
       },
-      fecharBalao(){ camada.innerHTML = ''; caixa.classList.remove('com-balao'); },
+      fecharBalao(){ camada.innerHTML = ''; caixa.classList.remove('com-balao'); caixa.style.marginBottom = ''; caixa.style.marginTop = ''; },
       novaRota(lista){
         cancelAnimationFrame(anim);
         const ok = (lista || []).filter(c => MB().pontoDaPraca(c));

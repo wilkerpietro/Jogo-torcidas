@@ -761,5 +761,22 @@ TO.i18n.registrar({
   "torcida deles": {es:"su barra", en:"their firm"},
   "{min}' · A diretoria segurou a nossa arquibancada.": {es:"{min}' · La directiva calmó a nuestra tribuna.", en:"{min}' · The board held our stand back."},
   "{min}' · A gente provocou a {nome}.": {es:"{min}' · Provocamos a {nome}.", en:"{min}' · We taunted {nome}."},
-  "{min}' · A {nome} provocou a gente.": {es:"{min}' · {nome} nos provocó.", en:"{min}' · {nome} taunted us."}
+  "{min}' · A {nome} provocou a gente.": {es:"{min}' · {nome} nos provocó.", en:"{min}' · {nome} taunted us."},
+  "Aptos": {es:"Aptos", en:"Fit"},
+  "Campanha": {es:"Campaña", en:"Record"},
+  "Cofre de saves": {es:"Cofre de partidas", en:"Save vault"},
+  "Feridos · presos": {es:"Heridos · presos", en:"Injured · jailed"},
+  "Hoje": {es:"Hoy", en:"Today"},
+  "Moral −3 · Prestígio −3,5 · Relação −6": {es:"Moral −3 · Prestigio −3,5 · Relación −6", en:"Morale −3 · Prestige −3.5 · Relationship −6"},
+  "Navegador": {es:"Navegador", en:"Browser"},
+  "Não lidas": {es:"No leídas", en:"Unread"},
+  "Próximo jogo": {es:"Próximo partido", en:"Next game"},
+  "Reunião": {es:"Reunión", en:"Meeting"},
+  "Vagas usadas": {es:"Espacios usados", en:"Slots used"},
+  "grava": {es:"guarda", en:"saves"},
+  "não grava": {es:"no guarda", en:"doesn't save"},
+  "o duelo sem abrir a cena, com as mesmas consequências": {es:"el duelo sin abrir la escena, con las mismas consecuencias", en:"the clash without opening the scene, same consequences"},
+  "{n} de {t}": {es:"{n} de {t}", en:"{n} of {t}"},
+  "{v}V {e}E {d}D": {es:"{v}G {e}E {d}P", en:"{v}W {e}D {d}L"},
+  "Último save": {es:"Último guardado", en:"Last save"}
 });

@@ -11,6 +11,8 @@
 <link rel="stylesheet" href="css/gazeta.css">
 <link rel="stylesheet" href="css/mapa.css">
 <link rel="stylesheet" href="css/mobile.css">
+<!-- a casca das telas e a roupa da interface (10/10/2026): vem por último -->
+<link rel="stylesheet" href="css/telas.css">
 </head>
 <body>
 
@@ -26,9 +28,17 @@
        já diz onde o jogador está. Quem monta tudo isso é `pintarFeed`.
        O ☰ e a gaveta saíram junto: a coluna de ícones é a navegação
        inteira, em qualquer largura. -->
+  <!-- A CASCA DAS TELAS DO MENU (10/10/2026): a mesma do jogo 3D, no
+       molde do planejamento — o fundo escuro, e no alto da caixa o nome
+       da tela, a seção aberta com a data, os números da tela e o × -->
+  <div id="painelFundo"></div>
   <div id="painelBarra">
-    <span id="painelTitulo">—</span>
-    <button id="painelFechar" aria-label="Fechar">Fechar &times;</button>
+    <div class="pnl-titulo">
+      <small id="painelSobre"></small>
+      <h2><span id="painelTitulo">—</span><span id="painelSub"></span></h2>
+    </div>
+    <div id="painelKpis" class="pnl-kpis"></div>
+    <button id="painelFechar" aria-label="Fechar" title="Fechar">&times;</button>
   </div>
 
   <nav id="lateral"></nav>

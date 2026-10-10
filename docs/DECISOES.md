@@ -9486,6 +9486,47 @@ Playwright, `diajogo.js`:
 
 `fim_briga` e `modos` sem erro; nenhuma tradução faltando.
 
+## A casca do planejamento no jogo inteiro, o balão limpo e a câmera na nossa torcida (o dono, 10/10/2026)
+
+O dono fez três pedidos:
+- "A visão durante a partida deve ser mais aproximada na nossa torcida."
+- "Quero que as mensagens/balões tenham agora um visual mais limpo, como esse do print que fala das consequências de domínio e de ninguém descendo, sendo que tudo isso tem que estar dentro dos botões."
+- "Veja o visual novo que implantamos nas telas de menu e implante ele na restante da UI do jogo."
+
+**A câmera da arquibancada.** O zoom vai a 2,2, e a ponte centra no líder, que está no nosso setor. A torcida e a faixa dela enchem o quadro, e o placar de TV continua no alto.
+
+**O balão limpo** (`itnCartao`):
+- **O texto:** quem fala em rótulo miúdo, o que aconteceu, e o lugar numa linha discreta ("⌖ Região de Campinas · Distrito Industrial").
+- **Os botões:** as saídas empilham, e cada uma traz o seu custo dentro do botão:
+  - Descer leva a linha do domínio, que no modo rápido não aparece.
+  - Simular leva "o duelo sem abrir a cena, com as mesmas consequências".
+  - Não descer leva "Moral −3 · Prestígio −3,5 · Relação −6".
+- **O que saiu:** as linhas soltas "Descendo: …" e "Ninguém descendo: …".
+- **O mapa:** o balão abre pro lado com mais espaço. Se ainda passar do mapa, a caixa do mapa abre margem e empurra o resto do cartão, então nada fica cortado.
+
+**A casca das telas do menu, no 2D.** O jogo 3D tinha feito "as telas do menu no molde do planejamento" (commit `1ba0f45`, `css/telas.css` e `pintarCasca`). O 2D ganhou a mesma casca.
+- **No CSS:**
+  - `css/telas.css` é cópia da do 3D e é carregado por último.
+  - Saíram as regras velhas da barra do painel de `base.css` e `mobile.css`.
+- **No `index.html`:** entraram `#painelFundo` e a barra nova, com `#painelSobre`, `#painelTitulo`, `#painelSub`, `#painelKpis` e o ×.
+- **No `main.js`:** entraram `pintarCasca`, `medirCasca` e `KPIS`. O fundo escuro fecha, e um observador refaz o cabeçalho quando a tela repinta.
+- **O que muda na tela:**
+  - O nome da tela aparece em vermelho miúdo, com a seção e a data em letra grande.
+  - Os números da tela vêm em ladrilhos: membros, caixa, próximo jogo, ranking, aliadas, saves.
+  - As abas de cima viram a fita, e os cartões viram seções numeradas.
+- **Diferença do 3D:** a reunião só aparece no Calendário no modo detalhista, no dia 5.
+
+**O resto da interface na mesma mão** (fim de `css/telas.css`):
+- O cabeçalho do feed ganha o degradê da caixa, e a coluna de ícones ganha cantos redondos e a acesa em ouro.
+- As mensagens viram seções de cantos redondos, com o rótulo miúdo, e as de decisão em vermelho.
+- Os botões fora das telas (mensagens, balão, arquibancada, reunião) ganham a mão do planejamento, com o custo em letra de leitura dentro do botão.
+- A linha do dia, o mapa da caravana, a arquibancada e os cartões da seleção ganham cantos redondos.
+
+Teste (Playwright):
+- `telas.js`: Torcida, Financeiro, Calendário e Diplomacia com a casca e os números.
+- `diajogo.js`: o balão da emboscada inteiro, com os três botões e o custo dentro, e a arquibancada de perto na Gaviões.
+- `fim_briga` sem erro; nenhuma tradução faltando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

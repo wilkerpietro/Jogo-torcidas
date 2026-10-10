@@ -123,35 +123,10 @@ input[type=checkbox],input[type=radio]{background:initial;border:initial}
 .pagina[data-pag="mapa"].on{height:100%}
 
 /* PAINEL POR CIMA DO FEED, EM QUALQUER LARGURA.
-   A tela principal é o feed, e todo o resto — o mapa incluído — é
-   painel por cima dele. O painel cobre a área inteira porque a
-   navegação do feed é uma faixa horizontal no alto, e não uma coluna na
-   margem: deixar 58px de fora só mostraria pedaço de mensagem atrás do
-   painel. Quem fecha é a barra de título, que atravessa a tela toda. */
-body.com-painel .pagina.painel{
-  position:absolute; inset:0; z-index:52;
-  overflow-y:auto; background:var(--fundo);
-  padding:44px 14px 24px;
-}
-/* a barra de título do painel e o aviso de girar só existem quando
-   servem: os dois eram escondidos por regra de celular, e sem o grid
-   antigo passaram a aparecer soltos no rodapé da tela larga */
-#painelBarra{display:none}
-body.com-painel #painelBarra{
-  display:flex;align-items:center;gap:8px;
-  position:absolute;z-index:53;left:0;right:0;top:0;
-  height:40px;padding:0 12px;
-  background:var(--painel);border-bottom:1px solid var(--linha);
-}
-#painelTitulo{
-  font-family:var(--titulo);font-size:14px;letter-spacing:.11em;
-  text-transform:uppercase;flex:1;
-}
-#painelFechar{
-  background:transparent;border:1px solid var(--linha);color:var(--texto);
-  padding:4px 12px;font-size:14px;cursor:pointer;
-}
-#painelFechar:hover{border-color:var(--ouro,#d9a441);color:var(--ouro,#d9a441)}
+   A tela principal é o feed, e todo o resto é painel por cima dele. A
+   casca do painel — o fundo escuro, a caixa, o cabeçalho com a seção, os
+   números e o × — é a do planejamento desde 10/10/2026 (a mesma do jogo
+   3D) e mora inteira em css/telas.css. */
 .titulo-pagina{
   font-family:var(--titulo);font-size:19px;font-weight:700;
   letter-spacing:.13em;text-transform:uppercase;
