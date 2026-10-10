@@ -1,0 +1,80 @@
+/* =========================================================
+   O ASSALTO (10/10/2026): o planejamento (o mesmo do jogo 3D) e a
+   cena 2D vista de cima (js/ui/assalto2d.js)
+   ========================================================= */
+.plano-assalto{display:flex;flex-direction:column;gap:6px}
+.pa-alvos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.pa-alvo{text-align:left;background:#181818;border:1px solid var(--linha);border-left:3px solid #333;
+  padding:8px 10px;cursor:pointer;color:inherit;font:inherit;display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+.pa-alvo:hover:not(.off){background:#1f1f1f}
+.pa-alvo.on{background:#241717;border-left-color:var(--rubro-vivo)}
+.pa-alvo.off{opacity:.45;cursor:default}
+.pa-cab{display:flex;flex-direction:column;gap:1px}
+.pa-cab b{font-family:var(--titulo);letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.pa-cab span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);white-space:nowrap}
+.pa-barras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}
+.pa-barra{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--fraco);min-width:0}
+.pa-barra span{flex:none;width:68px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pa-barra i{flex:1;height:5px;background:#262626;display:block;min-width:24px}
+.pa-barra i b{display:block;height:100%}
+.pa-falta{font-size:10.5px;color:var(--rubro-vivo)}
+.pa-dias{display:flex;flex-wrap:wrap;gap:5px}
+.pa-dia{background:#181818;border:1px solid var(--linha);padding:5px 8px;cursor:pointer;color:inherit;font:inherit;
+  display:flex;flex-direction:column;align-items:center;min-width:54px}
+.pa-dia b{font-family:var(--titulo);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.pa-dia span{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+.pa-dia.on{background:#241717;border-color:var(--rubro-vivo)}
+.pa-resumo{margin-top:6px;border-top:1px solid var(--linha);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+.pa-linha{display:flex;justify-content:space-between;gap:10px;font-size:12px}
+.pa-linha span{color:var(--fraco)}
+.pa-linha b{font-family:var(--mono);white-space:nowrap}
+.pa-risco.baixo{color:var(--verde-vivo)}
+.pa-risco.medio{color:var(--ouro)}
+.pa-risco.alto{color:var(--rubro-vivo)}
+.pa-nota{font-size:11.5px;margin:0;line-height:1.5}
+.pa-resumo .medidor span{min-width:190px}
+@media (max-width:560px){ .pa-barras{grid-template-columns:1fr} .pa-resumo .medidor span{min-width:120px} }
+.pa-nivel{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--fraco);margin-left:6px;text-transform:none}
+
+/* ---------- a cena ---------- */
+body.asl2d-ativo{overflow:hidden}
+.asl2d{position:fixed;inset:0;z-index:900;background:#1e1f22;touch-action:none;user-select:none;-webkit-user-select:none}
+.asl2d-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.asl2d .asl-hud{position:absolute;left:10px;top:10px;width:270px;max-width:calc(100vw - 20px);background:rgba(16,18,22,.86);color:#f2f2f2;border-radius:10px;padding:9px 11px;font:12.5px/1.35 system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none}
+.asl2d .asl-hud h3{margin:0 0 2px;font-size:13.5px;letter-spacing:.04em}
+.asl2d .asl-hud h3 small{font-weight:400;opacity:.7;font-size:11px;margin-left:4px}
+.asl2d .asl-hud .sub{opacity:.75;font-size:11.5px;margin-bottom:6px}
+.asl2d .asl-barra{margin:4px 0}.asl2d .asl-barra .rot{display:flex;justify-content:space-between;font-size:11.5px}
+.asl2d .asl-barra .fundo{height:7px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden}.asl2d .asl-barra .cheio{height:100%;border-radius:5px;transition:width .2s}
+.asl2d .asl-sit{margin:6px 0 3px;font-weight:700;font-size:13px;padding:3px 8px;border-radius:6px;display:inline-block}
+.asl2d .asl-linha{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-top:2px}
+.asl2d .asl-olho{margin-top:5px;font-size:11.5px;opacity:.9}
+.asl2d .asl-dica{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(16,18,22,.88);color:#fff;border-radius:10px;padding:7px 13px;font:13.5px/1.3 system-ui,sans-serif;max-width:min(560px,calc(100vw - 24px));text-align:center;pointer-events:none}
+.asl2d .asl-dica b{color:#ffd35a}
+.asl2d .asl-prog{height:6px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:6px;overflow:hidden}.asl2d .asl-prog i{display:block;height:100%;background:#ffd35a}
+.asl2d .asl-avisos{position:absolute;right:10px;top:10px;width:300px;max-width:calc(100vw - 20px);display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.asl2d .asl-avisos div{background:rgba(16,18,22,.86);border-radius:8px;padding:5px 9px;font:12.5px/1.3 system-ui,sans-serif;color:#fff;border-left:4px solid currentColor}
+.asl2d .asl-botoes{position:absolute;right:10px;bottom:16px;display:grid;grid-template-columns:repeat(2,auto);gap:7px}
+.asl2d .asl-botoes button{font:600 12.5px system-ui,sans-serif;border:0;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.92);color:#111;box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;min-width:88px;touch-action:none}
+.asl2d .asl-botoes button:disabled{opacity:.45;cursor:default}
+.asl2d .asl-botoes button.forte{background:#ffd35a}.asl2d .asl-botoes button.perigo{background:#ff6b6b;color:#fff}
+.asl2d .asl-joy{position:absolute;left:20px;bottom:20px;width:124px;height:124px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);touch-action:none}
+.asl2d .asl-joy i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(255,255,255,.85)}
+.asl2d .asl-fim{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+.asl2d .asl-fim .caixa{background:#16181c;color:#f2f2f2;border-radius:14px;padding:18px 20px;width:min(420px,calc(100vw - 32px));font:14px/1.4 system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.asl2d .asl-fim h2{margin:0 0 6px;font-size:19px}.asl2d .asl-fim .obs{margin:2px 0 6px;font-size:12.5px;color:#c9c9c9}
+.asl2d .asl-fim .linha{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);padding:5px 0}
+.asl2d .asl-fim button{margin-top:12px;width:100%;font:700 15px system-ui,sans-serif;border:0;border-radius:10px;padding:11px;background:#ffd35a;color:#111;cursor:pointer}
+.asl2d .asl-fim button.nao{background:#444;color:#fff}
+.asl2d .asl-teclas{position:absolute;left:10px;bottom:10px;background:rgba(16,18,22,.7);color:#ddd;border-radius:8px;padding:6px 9px;font:11.5px/1.4 system-ui,sans-serif;pointer-events:none;max-width:280px}
+@media (pointer:coarse){.asl2d .asl-teclas{display:none}}
+@media (pointer:fine){.asl2d .asl-joy{display:none}}
+/* no celular o HUD encolhe: o que importa é a barra e a situação */
+@media (max-width:620px){
+  .asl2d .asl-hud{width:190px;padding:7px 9px;font-size:11px}
+  .asl2d .asl-hud .asl-linha:nth-of-type(n+2),.asl2d .asl-hud .asl-olho{display:none}
+  .asl2d .asl-avisos{top:auto;bottom:170px;left:10px;right:10px;width:auto}
+  .asl2d .asl-dica{bottom:150px}
+  .asl2d .asl-botoes{grid-template-columns:repeat(2,auto)}
+  .asl2d .asl-botoes button{min-width:78px;padding:9px 8px;font-size:11.5px}
+}

@@ -1829,6 +1829,7 @@ TO.feed = (function(){
     passo('escolta',        ()=>escoltaDeHoje(E));
     passo('assunto do clube',()=>assuntoClubeDeHoje(E));
     passo('bote do dia',    ()=>boteDeHoje(E));
+    passo('assalto do dia', ()=>assaltoDeHoje(E));
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
@@ -4481,11 +4482,21 @@ TO.feed = (function(){
   function pautaSoltaDeHoje(E){
     if(!TO.estado.rapido(E)) return null;
     const Rn = caixaReuniao(E);
-    const fila = Rn.pauta.filter(x=>!x.decidido && !x.solta)
+    /* o bote só sai em dia sem jogo nem caravana: ele é pra hoje */
+    const livreHoje = diaComumFeed(E, E.data.dia);
+    const fila = Rn.pauta.filter(x=>!x.decidido && !x.solta && (x.tipo !== 'bote' || livreHoje))
       .sort((a,b)=>((ORDEM_SOLTA[a.tipo] ?? 9) - (ORDEM_SOLTA[b.tipo] ?? 9)) || a.id - b.id);
     const it = fila[0];
     if(!it) return null;
     it.solta = true;
+    /* O BOTE SEM DATA NO MODO RÁPIDO (pedido do dono, 10/10/2026): não
+       existe "marcar o ataque". A sugestão do diretor é pra agora —
+       aceitou, a cena abre; deixou quieto, −1 de moral, como sempre. */
+    if(it.tipo === 'bote' && it.bote){
+      it.decidido = {botao:'solta', rot:_t('Virou sugestão')};
+      const b = Object.assign({}, it.bote, {ano:E.data.ano, semana:E.data.semana, dia:E.data.dia, feito:true});
+      return cartaoDoBote(E, b, true);
+    }
     if(it.festas){
       for(const a of it.festas){
         if(a.resposta) continue;
@@ -4961,6 +4972,13 @@ TO.feed = (function(){
         if(prox){ Object.assign(b, prox); continue; }
       }
       b.feito = true;
+      cartaoDoBote(E, b, false);
+    }
+  }
+  /* o cartão do bote: o do dia marcado (detalhista) ou a sugestão de
+     agora (modo rápido, `agora`), que leva também o Deixar quieto */
+  function cartaoDoBote(E, b, agora){
+    {
       const pvb = previaDoBote(E, b);
       if(b.tipo === 'reuniao'){
         propor(E, {
@@ -4972,7 +4990,7 @@ TO.feed = (function(){
           botoes:[{id:'atacar', rot:_t('Pegar a reunião'), acao:'atacar-reuniao-rival',
                    nota:comDominio(_t('Até 20 da Zona {zona} contra até 20 da deles · Prestígio até ±10 · Relação −26 (perdendo, −18)', {zona:_t(b.zona || '')}), pvb.linha)}]
         });
-        continue;
+        return;
       }
       if(b.tipo === 'treta'){
         const multa = Math.round((b.aposta || 0) * 0.2);
@@ -4990,30 +5008,41 @@ TO.feed = (function(){
              nota:_t('Prestígio −1 · {valor} de multa (20% da aposta)', {valor:U.dinheiro(multa)})}
           ]
         });
-        continue;
+        return;
       }
+      const quieto = (acao) => agora
+        ? [{id:'nada', rot:_t('Deixar quieto'), acao, nota:_t('Prestígio −1 · Moral −1')}] : [];
       if(b.tipo === 'bar'){
-        propor(E, {
+        return propor(E, {
           kind:'barrival', peso:'decisao', voz:'diretor',
           chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|bar`,
-          texto:_t('Hoje é o dia, chefe: o bar da {nome} tá cheio deles. O bonde desce e leva o caixa.', {nome:b.nome}) + noBairro(pvb),
+          texto:(agora
+            ? _t('Chefe, chegou a informação que o bar da {nome} tá cheio deles agora. Bora descer e levar o caixa?', {nome:b.nome})
+            : _t('Hoje é o dia, chefe: o bar da {nome} tá cheio deles. O bonde desce e leva o caixa.', {nome:b.nome})) + noBairro(pvb),
           /* o bar do ALVO (o bairro da pauta), não o primeiro bar deles */
           dados:{alvo:b.alvo, nome:b.nome, bairro:b.bairro || ''},
           botoes:[{id:'atacar', rot:_t('Descer no bar'), acao:'atacar-bar-rival',
-                   nota:comDominio(_t('Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)'), pvb.linha)}]
+                   nota:comDominio(_t('Prestígio até ±10 · ganhando, R$ 60 por defensor + 22% do caixa · Relação −26 (perdendo, −18)'), pvb.linha)},
+                  ...quieto('ignorar-bar-rival')]
         });
       } else {
-        propor(E, {
+        const zp = {zona:_t(b.zona || ''), nome:b.nome};
+        return propor(E, {
           kind:'casarival', peso:'decisao', voz:'diretor',
           chave:`bote|dia|${b.ano}|${b.semana}|${b.dia}|casa`,
-          texto: porPeca(b.peca,
-            _t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá na resenha da casa com piscina, com a faixa estendida. Bora dar o bote e tomar a faixa.', {zona:_t(b.zona || ''), nome:b.nome}),
-            _t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá na resenha da casa com piscina, com a bandeira estendida. Bora dar o bote e tomar a bandeira.', {zona:_t(b.zona || ''), nome:b.nome})) + noBairro(pvb),
+          texto: (agora
+            ? porPeca(b.peca,
+              _t('Chefe, a Zona {zona} da {nome} tá agora na resenha da casa com piscina, com a faixa estendida. Bora dar o bote e tomar a faixa?', zp),
+              _t('Chefe, a Zona {zona} da {nome} tá agora na resenha da casa com piscina, com a bandeira estendida. Bora dar o bote e tomar a bandeira?', zp))
+            : porPeca(b.peca,
+              _t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá na resenha da casa com piscina, com a faixa estendida. Bora dar o bote e tomar a faixa.', zp),
+              _t('Hoje é o dia, chefe: a Zona {zona} da {nome} tá na resenha da casa com piscina, com a bandeira estendida. Bora dar o bote e tomar a bandeira.', zp))) + noBairro(pvb),
           dados:{rival:b.rival, nome:b.nome, zona:b.zona, bairro:b.bairro, peca:b.peca},
           botoes:[{id:'atacar', rot:_t('Dar o bote'), acao:'atacar-casa-rival',
                    nota: comDominio(porPeca(b.peca,
                      _t('Prestígio até ±10 · tomando a faixa, prestígio a mais · Relação −26 (perdendo, −18)'),
-                     _t('Prestígio até ±10 · tomando a bandeira, prestígio a mais · Relação −26 (perdendo, −18)')), pvb.linha)}]
+                     _t('Prestígio até ±10 · tomando a bandeira, prestígio a mais · Relação −26 (perdendo, −18)')), pvb.linha)},
+                  ...quieto('ignorar-casa-rival')]
         });
       }
     }
@@ -5220,9 +5249,15 @@ TO.feed = (function(){
     return {
       chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:_t('Diretoria'), quem:dir.id,
       rot:_t('Alvos de assalto'),
-      texto:_t('Chefe, mapeei uns alvos pra um assalto — do mercadinho ao banco, cada um com seu risco. Bora ver?'),
+      /* O PLANEJAMENTO (pedido do dono, 30/09/2026 no 3D; 10/10/2026 no
+         2D): o botão abre a tela do plano — o alvo, a equipe, o jeito, a
+         hora e, no modo detalhista, o dia. No rápido não há dia: o plano
+         fechado já abre a loja. */
+      texto: TO.estado.rapido(E)
+        ? _t('Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o seu risco. Escolhe o alvo, a equipe e o jeito, que a gente vai agora.')
+        : _t('Chefe, mapeei uns alvos na praça — do mercadinho ao banco, cada um com o seu risco. Escolhe o alvo, a equipe, o jeito e o dia, que a gente põe no calendário.'),
       botoes:[
-        {id:'ver',  rot:_t('Ver os alvos'),  acao:'assalto-ver'},
+        {id:'ver',  rot:_t('Planejar o assalto'),  acao:'assalto-ver'},
         {id:'nada', rot:_t('Deixar quieto'), acao:'assalto-nao', nota:_t('sem efeito')}
       ]
     };
@@ -5231,11 +5266,88 @@ TO.feed = (function(){
   function fecharPautaAssalto(E, idItem, r){
     const it = caixaReuniao(E).pauta.find(x=>x.id === idItem);
     if(!it || it.decidido) return {ok:false};
+    /* a operação marcada pela tela do planejamento */
+    if(r && r.op){
+      it.decidido = {botao:'ver', rot:_t('Assalto marcado')};
+      it.consequencia = textoDaOperacao(r.op);
+      return {ok:true};
+    }
+    /* a operação feita na hora (modo rápido): o texto do fim */
+    if(r && r.texto != null){
+      it.decidido = {botao:'ver', rot:_t('Assalto feito')};
+      it.consequencia = r.texto;
+      return {ok:true};
+    }
     it.decidido = {botao:'ver', rot: r.caiu ? _t('Deu ruim') : _t('Assalto feito')};
     it.consequencia = r.caiu ? _tn(r.n, '{n} preso por {pena} dias — e o dinheiro ficou lá.',
                                         '{n} presos por {pena} dias — e o dinheiro ficou lá.', {pena:r.pena})
                              : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)});
     return {ok:true};
+  }
+
+  /* a operação numa linha: o dia, o alvo, a equipe, o jeito e a hora */
+  function textoDaOperacao(o){
+    const A = TO.acoes, f = A.fichaDoAssalto(o.alvo, o.n, o.horario);
+    if(!f) return '';
+    return _t('Marcado pra {dia}, {data}: {alvo} · {n} membros · {jeito} · {hora}. Está no calendário.',
+              {dia:_t(o.nomeDia || ''), data:o.dataTxt || '', alvo:_t(f.a.nome), n:o.n,
+               jeito:_t((A.ABORDAGENS[o.abordagem] || A.ABORDAGENS.rapido).nome).toLowerCase(),
+               hora:_t(f.H.nome).toLowerCase()});
+  }
+
+  /* O DIA DA OPERAÇÃO (pedido do dono, 30/09/2026): "OPERAÇÃO EM
+     ANDAMENTO" — o alvo, a equipe, a recompensa potencial, a exposição
+     e a suspeita (ainda zeradas: ela não começou) e o estado. No 2D o
+     jogador comanda a equipe dentro da loja vista de cima (assalto2d.js); em qualquer um dá pra
+     deixar a equipe fazer (a conta de acoes.js) ou cancelar. Dia de
+     jogo ou de viagem empurra a operação pro próximo dia livre, como o
+     bote. O cartão cai na hora marcada (abertura, tarde ou fechamento). */
+  function assaltoDeHoje(E){
+    if(TO.acoes.esfriarCalor) TO.acoes.esfriarCalor(E);
+    const lista = E.assaltos || [];
+    for(const o of lista){
+      if(o.feito || o.cancelado || o.aberto || o.ano !== E.data.ano || o.semana !== E.data.semana || o.dia !== E.data.dia) continue;
+      if(!diaComumFeed(E, E.data.dia)){
+        const prox = proximoDiaLivre(E, o);
+        if(prox){ Object.assign(o, prox); continue; }
+      }
+      const A = TO.acoes, f = A.fichaDoAssalto(o.alvo, o.n, o.horario);
+      if(!f){ o.cancelado = true; continue; }
+      const aptos = E.membros.filter(TO.membros.disponivel).length;
+      if(aptos < o.n){
+        o.cancelado = true;
+        propor(E, {kind:'assalto', peso:'info', tipo:'ruim', voz:'diretor',
+          texto:_t('A operação {local} caiu: faltou gente — só {n} disponíveis pra uma equipe de {m}.', {local:f.a.no, n:aptos, m:o.n})});
+        continue;
+      }
+      o.aberto = true;
+      const R = A.riscoDoAssalto(E, o);
+      const botoes = [];
+      botoes.push({id:'comandar', rot:_t('Comandar a equipe'), acao:'assalto-cena',
+                   nota:_t('você leva a equipe pra dentro da loja')});
+      botoes.push({id:'equipe', rot:_t('Deixar a equipe fazer'), acao:'assalto-simular',
+                   nota:_t('risco {r} · a equipe se vira sem você', {r:A.rotuloDoRisco(R.policia).toLowerCase()})});
+      botoes.push({id:'cancelar', rot:_t('Cancelar a operação'), acao:'assalto-cancelar', nota:_t('sem efeito')});
+      propor(E, {
+        kind:'assalto-dia', peso:'decisao', voz:'diretor', horaFixa:true, hora:f.H.hora,
+        chave:`assalto|dia|${o.id}`,
+        texto:_t('OPERAÇÃO EM ANDAMENTO — {alvo}. A equipe de {n} está no carro, na esquina: {jeito}, {quando}. Recompensa potencial de {valor}.',
+                 {alvo:_t(f.a.nome), n:o.n, jeito:_t(A.ABORDAGENS[o.abordagem].nome).toLowerCase(),
+                  quando:f.H.quando, valor:U.dinheiro(f.potencial)}),
+        dados:{op:o.id, alvo:o.alvo, n:o.n, abordagem:o.abordagem, horario:o.horario, potencial:f.potencial},
+        botoes
+      });
+    }
+  }
+  /* a operação do cartão de hoje */
+  const operacaoDe = (E, m) => (E.assaltos || []).find(o=>o.id === (m && m.dados && m.dados.op)) || null;
+  /* deixar a equipe fazer: a conta e o fim, na hora */
+  function assaltoSimulado(E, o){
+    const A = TO.acoes;
+    const grupo = A.equipeDoAssalto(E, o);
+    if(!grupo){ o.cancelado = true; return {texto:_t('Faltou gente: a operação caiu.')}; }
+    const r = A.simularAssalto(E, o, grupo);
+    return A.fecharAssalto(E, o, r) || {texto:''};
   }
 
   /* a mesa levanta: o que não foi decidido fica pra próxima */
@@ -6706,6 +6818,24 @@ TO.feed = (function(){
         contarFechamentoLNT(E);
         return {ok:true};
       }
+      case 'assalto-cena': {
+        const o = operacaoDe(E, m);
+        if(!o || o.feito || o.cancelado){ marcar(); return {ok:true}; }
+        return {ok:true, abrir:{tela:'assalto-cena', msg:m, args:{op:o.id}, cancelavel:true, botao:idBotao}};
+      }
+      case 'assalto-simular': {
+        marcar();
+        const o = operacaoDe(E, m);
+        if(!o || o.feito || o.cancelado) return {ok:true};
+        m.consequencia = assaltoSimulado(E, o).texto;
+        return {ok:true};
+      }
+      case 'assalto-cancelar': {
+        marcar();
+        const o = operacaoDe(E, m);
+        if(o && !o.feito){ o.cancelado = true; m.consequencia = _t('Operação cancelada. A equipe voltou pra sede.'); }
+        return {ok:true};
+      }
       case 'ignorar-bar-rival': {
         marcar();
         TO.estado.mexerIndicador(E, 'prestigio', -0.2,
@@ -7010,7 +7140,7 @@ TO.feed = (function(){
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
           statusDeHoje, eixosDoDia, reuniaoDeHoje,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
-          mesaDaReuniao, pautaBote, boteDeHoje, diaLivre, alvoDoBar, alvoDaCasa,
+          mesaDaReuniao, pautaBote, boteDeHoje, assaltoDeHoje, assaltoSimulado, textoDaOperacao, diaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,
           linhaDeConsequencia, nomeDaCena, NOME_DIA,
           SOFRIDO, previaDaBriga, opcoesDeAtaque, formasDoAtaque, fichaDoAtaque, marcarAtaqueDaPauta, FORMAS_DE_ATAQUE,

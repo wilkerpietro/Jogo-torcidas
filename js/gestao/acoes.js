@@ -1105,22 +1105,22 @@ TO.acoes = (function(){
      os valores de ganho continuam os mesmos */
   const ASSALTOS = [
     {id:'banco',        nome:_t('Banco'),             art:'no', efetivos:[10, 20],
-     no:_t('no banco'), doLocal:_t('do banco'),
+     no:_t('no banco'), doLocal:_t('do banco'), ao:_t('ao banco'),
      ganho:{10:[30000, 50000], 20:[60000, 120000]}, chance:0.50, pena:180},
     {id:'joalheria',    nome:_t('Joalheria'),         art:'na', efetivos:[10, 20],
-     no:_t('na joalheria'), doLocal:_t('da joalheria'),
+     no:_t('na joalheria'), doLocal:_t('da joalheria'), ao:_t('à joalheria'),
      ganho:{10:[10000, 20000], 20:[30000, 40000]},  chance:0.35, pena:120},
     {id:'supermercado', nome:_t('Supermercado'),      art:'no', efetivos:[5, 10],
-     no:_t('no supermercado'), doLocal:_t('do supermercado'),
+     no:_t('no supermercado'), doLocal:_t('do supermercado'), ao:_t('ao supermercado'),
      ganho:{5:[5000, 10000],   10:[10000, 15000]},  chance:0.35, pena:120},
     {id:'posto',        nome:_t('Posto de gasolina'), art:'no', efetivos:[5, 10],
-     no:_t('no posto de gasolina'), doLocal:_t('do posto de gasolina'),
+     no:_t('no posto de gasolina'), doLocal:_t('do posto de gasolina'), ao:_t('ao posto de gasolina'),
      ganho:{5:[2000, 3000],    10:[4000, 5000]},    chance:0.20, pena:90},
     {id:'mercadinho',   nome:_t('Mercadinho'),        art:'no', efetivos:[2, 5],
-     no:_t('no mercadinho'), doLocal:_t('do mercadinho'),
+     no:_t('no mercadinho'), doLocal:_t('do mercadinho'), ao:_t('ao mercadinho'),
      ganho:{2:[1000, 2000],    5:[3000, 4000]},     chance:0.10, pena:45},
     {id:'roupas',       nome:_t('Loja de roupas'),    art:'na', efetivos:[2, 5],
-     no:_t('na loja de roupas'), doLocal:_t('da loja de roupas'),
+     no:_t('na loja de roupas'), doLocal:_t('da loja de roupas'), ao:_t('à loja de roupas'),
      ganho:{2:[500, 1000],     5:[2000, 3000]},     chance:0.05, pena:30}
   ];
 
@@ -1152,6 +1152,254 @@ TO.acoes = (function(){
                {n, local:a.doLocal, valor:U.dinheiro(v)})
     });
     return {ok:true, caiu:false, n, valor:v, alvo:a.nome};
+  }
+
+  /* =======================================================
+     O ASSALTO PLANEJADO (pedido do dono, 30/09/2026; trazido do jogo
+     3D pro 2D em 10/10/2026, com a cena 2D vista de cima — assalto2d.js)
+     "preciso criar uma mecânica de assaltos pra parar de funcionar
+     de forma sorteada [...] pro assalto ser executado pelo jogador
+     [...] com o objetivo de ser rápido ou furtivo pra não chamar a
+     atenção da polícia, inspirado na forma que se assalta no GTA V."
+
+     O dado deixa de decidir sozinho. A reunião traz os alvos; o
+     jogador escolhe o alvo, o tamanho da equipe, a abordagem
+     (furtivo ou rápido), o horário (abertura, tarde ou fechamento) e
+     o dia — a operação vai pro calendário (`E.assaltos`). No dia, ou
+     ele comanda a equipe dentro da loja em 3D (assalto3d.js: quem
+     está lá dentro vê, desconfia e dá o alerta), ou deixa a equipe
+     fazer (`simularAssalto`: a mesma régua, em conta). O fim pesa a
+     recompensa potencial, a dificuldade do alvo, a exposição, a
+     atenção da polícia sobre a torcida (`E.calorPolicia`) e o
+     desempenho de quem foi; o acaso fica em segundo plano.
+     `executarAssalto` (o sorteio de antes) fica pra quem ainda o
+     chama, mas nenhuma tela usa mais.
+     ======================================================= */
+  /* as características de cada alvo, de 0 a 100 (as barras da tela), e
+     quantos entram com o líder na equipe menor e na maior — o resto
+     fica de olheiro na rua ou no carro */
+  const PERFIL_ASSALTO = {
+    banco:        {recompensa:95, exposicao:80, seguranca:90, movimentacao:60, atencao:85, dificuldade:90, dentro:[6, 8]},
+    joalheria:    {recompensa:75, exposicao:70, seguranca:70, movimentacao:40, atencao:75, dificuldade:70, dentro:[5, 6]},
+    supermercado: {recompensa:45, exposicao:60, seguranca:45, movimentacao:85, atencao:45, dificuldade:50, dentro:[4, 6]},
+    posto:        {recompensa:25, exposicao:55, seguranca:30, movimentacao:50, atencao:40, dificuldade:30, dentro:[3, 5]},
+    mercadinho:   {recompensa:15, exposicao:35, seguranca:15, movimentacao:45, atencao:30, dificuldade:15, dentro:[2, 3]},
+    roupas:       {recompensa:10, exposicao:40, seguranca:20, movimentacao:50, atencao:35, dificuldade:15, dentro:[2, 3]}
+  };
+  /* as barras, na ordem da tela */
+  const CARACTERISTICAS = [
+    {id:'exposicao',    nome:_t('Exposição'),    nota:_t('quanta gente vê de fora: vitrine, rua, câmera')},
+    {id:'seguranca',    nome:_t('Segurança'),    nota:_t('vigia, alarme, câmera e porta travada')},
+    {id:'movimentacao', nome:_t('Movimentação'), curto:_t('Fluxo'), nota:_t('clientes e quem passa: olhos e reféns')},
+    {id:'atencao',      nome:_t('Atenção'),      nota:_t('o quanto quem trabalha lá desconfia')},
+    {id:'dificuldade',  nome:_t('Dificuldade'),  nota:_t('cofre, vitrine e o tempo pra pegar')},
+    {id:'recompensa',   nome:_t('Recompensa potencial'), curto:_t('Recompensa'), nota:_t('o máximo que o alvo rende')}
+  ];
+  /* o horário mexe no caixa (`pot`), na atenção de quem trabalha, no
+     movimento da loja e na polícia (`pm`: a chance de ela chegar a tempo) */
+  const HORARIOS_ASSALTO = {
+    abertura:   {id:'abertura',   nome:_t('Abertura'),   hora:'09:10', quando:_t('na abertura'), pot:0.75, atencao:-10, clientes:0.55, pm:0.9,
+                 nota:_t('pouca gente, e gente com sono — mas o caixa ainda está vazio')},
+    tarde:      {id:'tarde',      nome:_t('Tarde'),      hora:'15:30', quando:_t('à tarde'), pot:1.00, atencao:0,   clientes:1.25, pm:1.15,
+                 nota:_t('loja cheia: mais olhos em cima e mais gente pra render')},
+    fechamento: {id:'fechamento', nome:_t('Fechamento'), hora:'19:35', quando:_t('no fechamento'), pot:1.10, atencao:15,  clientes:0.5,  pm:0.85,
+                 nota:_t('o caixa do dia inteiro e a rua escura — mas no fechamento todo mundo olha a porta')}
+  };
+  const ABORDAGENS = {
+    furtivo: {id:'furtivo', nome:_t('Furtivo'),
+              nota:_t('entra como cliente e pega sem ninguém ver: pouca exposição e butim menor — se alguém perceber, vira correria')},
+    rapido:  {id:'rapido', nome:_t('Rápido'),
+              nota:_t('anuncia o assalto, rende todo mundo e leva o máximo: o alarme toca e a polícia vem')}
+  };
+  /* A ATENÇÃO DA POLÍCIA SOBRE A TORCIDA (0–100): sobe com cada
+     assalto — mais com alarme, gravação, polícia no local e preso —,
+     esfria 1,5 por dia e encurta o caminho da viatura no próximo */
+  const calorDe = E => U.limitar(Math.round(E.calorPolicia || 0), 0, 100);
+  function esfriarCalor(E){
+    if(E.calorPolicia > 0) E.calorPolicia = Math.max(0, Math.round((E.calorPolicia - 1.5)*10)/10);
+  }
+  const nivelDoCalor = c => c >= 60 ? _t('na cola') : c >= 30 ? _t('de olho') : c >= 10 ? _t('desconfiada') : _t('tranquila');
+  /* o desempenho de quem vai: a ficha (força e defesa, de 1 a 20) */
+  const qualidadeDe = grupo => grupo && grupo.length
+    ? U.limitar(grupo.reduce((s,m)=>s + ((m.forca||1) + (m.defesa||1))/2, 0) / grupo.length / 20, 0, 1) : 0.4;
+
+  /* o alvo como a operação vê: a ficha, a hora mexendo na atenção e o
+     potencial pro tamanho da equipe (o teto da faixa da tabela do dono) */
+  function fichaDoAssalto(alvoId, n, horario){
+    const a = ASSALTOS.find(x=>x.id === alvoId);
+    if(!a) return null;
+    const P = PERFIL_ASSALTO[alvoId], H = HORARIOS_ASSALTO[horario] || HORARIOS_ASSALTO.tarde;
+    const tam = a.efetivos.includes(n) ? n : a.efetivos[0];
+    const grande = tam >= a.efetivos[1];
+    const faixa = a.ganho[tam];
+    return {a, P, H, n:tam, grande, faixa,
+            potencial: Math.round(faixa[1] * H.pot / 100) * 100,
+            dentro: Math.min(tam, P.dentro[grande ? 1 : 0]),
+            atencao: U.limitar(P.atencao + H.atencao, 0, 100)};
+  }
+
+  /* O RISCO DE UM PLANO (a tela e a conta usam o mesmo): no furtivo, a
+     chance de alguém perceber; e a da polícia chegar a tempo de pegar
+     alguém. A base é a régua do dono de antes (`chance`, de 5% na loja de
+     roupas a 50% no banco), mexida pela hora, pela atenção da polícia,
+     pelo tamanho da equipe e pela ficha de quem vai. `q`: a qualidade da
+     equipe (sem ela, a média de quem está disponível) */
+  function riscoDoAssalto(E, plano, q){
+    const f = fichaDoAssalto(plano.alvo, plano.n, plano.horario);
+    if(!f) return null;
+    const calor = calorDe(E), at = f.atencao/100, mov = f.P.movimentacao/100;
+    if(q == null) q = qualidadeDe(E.membros.filter(TO.membros.disponivel));
+    const notado = plano.abordagem === 'furtivo'
+      ? U.limitar(0.12 + 0.55*at*(0.55 + 0.45*mov*f.H.clientes) + (f.grande ? 0.1 : 0) - 0.3*q, 0.06, 0.85)
+      : 1;
+    const pmAlerta = U.limitar(f.a.chance * f.H.pm * (1 + (calor - 20)/100) * (1.25 - 0.5*q) * (f.grande ? 1.15 : 1), 0.02, 0.9);
+    /* no furtivo que ninguém percebe, a polícia só vem pela gravação ou
+       pela denúncia, depois — e bem menos */
+    const policia = plano.abordagem === 'furtivo' ? notado*pmAlerta*1.1 + (1 - notado)*pmAlerta*0.12 : pmAlerta;
+    return {notado, pmAlerta, policia:U.limitar(policia, 0.01, 0.9), ficha:f, calor, q};
+  }
+  const rotuloDoRisco = p => p >= 0.45 ? _t('Alto') : p >= 0.2 ? _t('Médio') : _t('Baixo');
+
+  /* os dias livres dos próximos `dias`: sem jogo do clube, sem viagem e
+     sem outra operação marcada no mesmo dia (a partir de depois de amanhã) */
+  function diasParaAssalto(E, dias){
+    const fora = [];
+    const hoje = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
+    for(let k = 2; k <= (dias || 14); k++){
+      const d = new Date(hoje); d.setDate(d.getDate() + k);
+      const sd = TO.estado.semanaDiaDe(d);
+      if(!sd || sd.semana > 52) continue;
+      if(TO.feed && TO.feed.diaLivre && !TO.feed.diaLivre(E, sd.semana, sd.dia)) continue;
+      if((E.assaltos||[]).some(o=>!o.feito && !o.cancelado && o.ano === sd.ano && o.semana === sd.semana && o.dia === sd.dia)) continue;
+      fora.push({ano:sd.ano, semana:sd.semana, dia:sd.dia,
+                 dataTxt:`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`,
+                 nomeDia: TO.feed && TO.feed.NOME_DIA ? TO.feed.NOME_DIA[sd.dia] : ''});
+    }
+    return fora;
+  }
+
+  /* marcar a operação (a tela do planejamento chama no Confirmar) */
+  function planejarAssalto(E, plano){
+    const f = fichaDoAssalto(plano.alvo, plano.n, plano.horario);
+    if(!f) return {ok:false, msg:_t('alvo inválido')};
+    if(!ABORDAGENS[plano.abordagem]) return {ok:false, msg:_t('escolhe a abordagem')};
+    if(!plano.quando) return {ok:false, msg:_t('escolhe o dia')};
+    E.assaltos = E.assaltos || [];
+    const op = {id:'as' + (E.data.absoluto || 0) + '-' + (E.assaltos.length + 1),
+                alvo:f.a.id, n:f.n, abordagem:plano.abordagem, horario:f.H.id,
+                ano:plano.quando.ano, semana:plano.quando.semana, dia:plano.quando.dia,
+                dataTxt:plano.quando.dataTxt, nomeDia:plano.quando.nomeDia,
+                feito:false, cancelado:false,
+                marcadoEm:{ano:E.data.ano, semana:E.data.semana, dia:E.data.dia}};
+    E.assaltos.push(op);
+    /* a lista não cresce pra sempre: fica o que é do ano e o que ainda vai acontecer */
+    if(E.assaltos.length > 24) E.assaltos = E.assaltos.filter(o=>!o.feito && !o.cancelado || o.ano >= E.data.ano).slice(-24);
+    return {ok:true, op};
+  }
+
+  /* a equipe do dia: sorteada entre os disponíveis (a régua do dono de
+     17/08 segue: não é a elite que vai), o líder o de melhor ficha */
+  function equipeDoAssalto(E, op){
+    const aptos = E.membros.filter(TO.membros.disponivel);
+    if(aptos.length < op.n) return null;
+    const grupo = U.embaralhar([...aptos]).slice(0, op.n);
+    grupo.sort((a,b)=>((b.forca||0)+(b.defesa||0)) - ((a.forca||0)+(a.defesa||0)));
+    return grupo;
+  }
+
+  /* DEIXAR A EQUIPE FAZER: a mesma régua da cena em 3D, em conta. Devolve
+     o fim no mesmo formato da cena (assalto.js, `J.fim`) */
+  function simularAssalto(E, op, grupo){
+    const q = qualidadeDe(grupo);
+    const R = riscoDoAssalto(E, op, q), f = R.ficha;
+    const dif = f.P.dificuldade/100, seg = f.P.seguranca/100, at = f.atencao/100;
+    const rapido = op.abordagem !== 'furtivo';
+    const notado = rapido || U.rng() < R.notado;
+    const policia = U.rng() < (notado ? R.pmAlerta * (rapido ? 1 : 1.1) : R.pmAlerta * 0.12);
+    /* no furtivo a equipe sozinha não abre o cofre nem limpa tudo: leva
+       menos, e bem menos se alguém percebe e vira correria */
+    let frac = rapido ? U.entre(0.65, 0.95) * (1 - 0.25*dif) + 0.1*q
+             : !notado ? U.entre(0.3, 0.55) * (1 - 0.2*dif) + 0.08*q
+             : U.entre(0.15, 0.4) + 0.05*q;
+    let presos = [];
+    if(policia){
+      /* a polícia chegou a tempo: cai parte de quem estava dentro — e às
+         vezes o bonde inteiro é cercado, carro e olheiros junto (a régua
+         antiga do dono, "se cair, cai todo mundo", continua possível) */
+      const dentro = grupo.slice(0, f.dentro);
+      if(U.rng() < (rapido ? 0.35 : 0.2)){ presos = grupo.map(m=>m.id); frac = 0; }
+      else {
+        const k = Math.max(1, Math.round(dentro.length * (rapido ? U.entre(0.5, 1) : U.entre(0.3, 0.8))));
+        presos = U.embaralhar([...dentro]).slice(0, k).map(m=>m.id);
+        frac *= (1 - k/Math.max(1, dentro.length)) * 0.85;
+      }
+    }
+    const butim = Math.max(0, Math.round(f.potencial * U.limitar(frac, 0, 1) / 10) * 10);
+    const exposicao = Math.round(rapido ? 70 + 30*U.rng() : notado ? 50 + 35*U.rng() : 8 + 30*at*U.rng());
+    return {modo:'simulado', alvo:op.alvo, motivo: presos.length && presos.includes(grupo[0].id) ? 'lider-preso' : 'fugiu',
+            fugiu:!presos.includes(grupo[0].id), abortou:false, butim, potencial:f.potencial, pego:butim,
+            presos, exposicao, suspeitaMax: notado ? 100 : Math.round(20 + 50*at*U.rng()),
+            alerta:notado, policia, tempo: Math.round(rapido ? U.entre(60, 150) : U.entre(120, 300)),
+            camerasDesligadas:false, gravado: notado ? U.rng() < seg : U.rng() < seg*0.25, anunciado:rapido};
+  }
+
+  /* O FIM DA OPERAÇÃO, jogada ou simulada: o dinheiro, a cadeia, a
+     atenção da polícia, o recado da diretoria e, se fez barulho, o
+     Futebol e Porrada. `r`: o fim da cena (assalto.js) ou da conta */
+  function fecharAssalto(E, op, r){
+    const a = ASSALTOS.find(x=>x.id === op.alvo);
+    if(!a || op.feito) return null;
+    op.feito = true;
+    const butim = Math.max(0, Math.round(r.butim || 0));
+    if(butim > 0) TO.estado.lancar(E, _t('Assalto — {alvo}', {alvo:a.nome}), butim);
+    const presos = [];
+    for(const id of r.presos || []){
+      const m = E.membros.find(x=>x.id === id);
+      if(!m || m.preso) continue;
+      TO.membros.prender(E, m, a.pena, _t('Preso no assalto — {alvo}', {alvo:a.nome}));
+      presos.push(m);
+    }
+    const antes = calorDe(E);
+    const sobe = r.abortou && !r.alerta ? 1
+      : (r.alerta ? 8 : 2) + (r.policia ? 6 : 0) + 3*presos.length + (r.gravado ? 6 : 0) + Math.round((r.exposicao || 0)/10);
+    E.calorPolicia = U.limitar(antes + sobe, 0, 100);
+    op.resultado = {modo:r.modo || '3d', butim, potencial:r.potencial || 0, presos:presos.map(m=>m.id),
+                    exposicao:Math.round(r.exposicao || 0), suspeita:Math.round(r.suspeitaMax || 0), alerta:!!r.alerta, policia:!!r.policia,
+                    gravado:!!r.gravado, abortou:!!r.abortou, tempo:Math.round(r.tempo || 0),
+                    calor:[antes, calorDe(E)]};
+    const n = presos.length;
+    const texto = r.abortou && !butim
+      ? (n ? _tn(n, 'A operação {local} foi abortada, e {n} ficou pra trás: pena de {pena} dias.',
+                    'A operação {local} foi abortada, e {n} ficaram pra trás: pena de {pena} dias.', {local:a.no, pena:a.pena})
+           : _t('A operação {local} foi abortada. Ninguém caiu, ninguém levou nada.', {local:a.no}))
+      : !butim
+        ? _tn(n, 'Deu ruim {local}: {n} preso por {pena} dias, e o dinheiro ficou lá.',
+                 'Deu ruim {local}: {n} presos por {pena} dias, e o dinheiro ficou lá.', {local:a.no, pena:a.pena})
+      : n ? _tn(n, 'Voltaram {local} com {valor} — mas {n} caiu: pena de {pena} dias.',
+                   'Voltaram {local} com {valor} — mas {n} caíram: pena de {pena} dias.', {local:a.doLocal, valor:U.dinheiro(butim), pena:a.pena})
+      : r.alerta
+        ? _t('Voltaram {local} com {valor}. O alarme tocou, mas ninguém caiu.', {local:a.doLocal, valor:U.dinheiro(butim)})
+      : r.gravado
+        ? _t('Voltaram {local} com {valor}. Ninguém chamou a polícia — mas a câmera gravou a equipe.', {local:a.doLocal, valor:U.dinheiro(butim)})
+        : _t('Voltaram {local} com {valor}. Ninguém viu, ninguém sabe.', {local:a.doLocal, valor:U.dinheiro(butim)});
+    if(TO.feed) TO.feed.propor(E, {kind:'assalto', peso:'info', tipo: n || !butim ? 'ruim' : 'boa', voz:'diretor', texto,
+                                   dados:{alvo:op.alvo, butim, presos:n, calor:calorDe(E)}});
+    /* o barulho vira jornal: alarme, polícia no local ou gente presa */
+    if(TO.feed && (r.alerta || n)){
+      const cidade = (TO.mundo.cidade && TO.mundo.cidade(E.torcida.mapa) || {}).nome || '';
+      const ao = a.ao, loja = _t(a.nome).toLowerCase();
+      const manchete = n ? _tn(n, 'Um preso no assalto {ao} em {cidade}', '{n} presos no assalto {ao} em {cidade}', {ao, cidade})
+        : r.policia ? _t('Bando assalta {loja} em {cidade} e escapa da polícia por pouco', {loja, cidade})
+        : _t('Assalto {ao} em {cidade}: o alarme tocou e o bando sumiu', {ao, cidade});
+      const olho = (n ? _t('A polícia fala em integrantes de torcida organizada.') + ' '
+                      : r.gravado ? _t('As câmeras gravaram a ação; a polícia analisa as imagens.') + ' '
+                      : _t('Ninguém foi identificado.') + ' ')
+        + (butim ? _t('O prejuízo passa de {valor}.', {valor:U.dinheiro(butim)}) : _t('O bando saiu sem nada.'));
+      TO.feed.propor(E, {kind:'almanaque', peso:'info', voz:'jornal', tipo:'ruim',
+                         chave:`assalto|${op.id}`, texto:`${_t('Polícia')}: ${manchete}. ${olho}`,
+                         dados:{pagina:{jornal:'Futebol e Porrada', tom:'', chapeu:_t('Polícia'), manchete, olho}}});
+    }
+    return {ok:true, butim, presos:n, texto, calor:calorDe(E)};
   }
 
   /* =======================================================
@@ -1206,6 +1454,10 @@ TO.acoes = (function(){
           previsaoRecrutamento, TABELA_RECRUTA,
           organizadasDaPraca, efetivoDe, efetivoDePe,
           ASSALTOS, executarAssalto,
+          PERFIL_ASSALTO, CARACTERISTICAS, HORARIOS_ASSALTO, ABORDAGENS,
+          fichaDoAssalto, riscoDoAssalto, rotuloDoRisco, diasParaAssalto, planejarAssalto,
+          equipeDoAssalto, simularAssalto, fecharAssalto, qualidadeDe,
+          calorDe, esfriarCalor, nivelDoCalor,
           alvosDeAtaque, efetivoDaZona, bondeDaZona, zonaDoMembro,
           clube, fecharCena, fecharBrigaDeRua,
           COBRANCA, MINIMO_SAIDA, CAP_RECRUTA};

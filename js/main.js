@@ -4555,6 +4555,7 @@
       else if(t === 'tela-caravana') abrirCaravana();
       else if(t === 'tela-reuniao') abrirReuniaoEmCena(m);
       else if(t === 'tela-assalto') abrirAssalto();
+      else if(t === 'assalto-cena') abrirAssaltoCena(m, a.op);
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
@@ -6033,62 +6034,193 @@
   }
 
   /* =======================================================
-     A TELA DO ASSALTO (tabela do dono, 17/08/2026)
-     Duas perguntas: qual alvo, quantos vão. Os membros são
-     sorteados entre os disponíveis; o dado é um só pro bonde
-     inteiro — partilha pra todos ou cadeia pra todos.
+     O PLANEJAMENTO DO ASSALTO (pedido do dono, 30/09/2026 no jogo 3D;
+     trazido pro 2D em 10/10/2026: "criar os cenários de assalto agora,
+     similares a como funciona no 3d, cada uma num nível de dificuldade")
+
+     Era a tela do sorteio (17/08/2026: qual alvo, quantos vão e um dado
+     só pro bonde inteiro). Agora é o plano: o alvo — seis lojas, da
+     loja de roupas ao banco, cada uma com as suas barras: exposição,
+     segurança, movimentação, atenção, dificuldade e recompensa —, o
+     tamanho da equipe, a abordagem (furtivo ou rápido) e o horário.
+     No DETALHISTA ainda se escolhe o dia e "Marcar a operação" põe no
+     calendário; no dia, o cartão "OPERAÇÃO EM ANDAMENTO" pergunta quem
+     comanda. No RÁPIDO não existe marcar: "Ir agora" abre a loja na
+     hora (assalto2d.js) e "Deixar a equipe fazer" resolve em conta.
+     `aoMarcar(r)`: quem abriu a tela (a pauta) fecha a decisão — com
+     {op} quando marcou, com {texto} quando já aconteceu.
      ======================================================= */
-  function abrirAssalto(aoFeito){
-    const e = E();
-    const A = TO.acoes.ASSALTOS;
+  function abrirAssalto(aoMarcar){
+    const e = E(), A = TO.acoes, L = A.ASSALTOS;
+    const rapido = TO.estado.rapido(e);
     const disp = e.membros.filter(TO.membros.disponivel).length;
-    let alvo = A[A.length-1].id;              // abre no mais leve
-    let efetivo = null;
-    const corpo = el('div');
+    const dias = rapido ? [] : A.diasParaAssalto(e, 14);
+    const pode = L.filter(a=>disp >= a.efetivos[0]);
+    /* abre no alvo mais leve, furtivo, no fechamento, no primeiro dia livre */
+    const pl = {alvo:(pode[pode.length-1] || L[L.length-1]).id, n:null,
+                abordagem:'furtivo', horario:'fechamento', quando:dias[0] || null};
+    const corpo = el('div',{class:'plano-assalto'});
+    const corDaBarra = (id, v) => id === 'recompensa' ? '#e6b93c'
+      : v >= 70 ? '#d9534f' : v >= 40 ? '#e89a3c' : '#6cbf6a';
+    const barra = (c, v) => `<div class="pa-barra" title="${c.nome}: ${c.nota}"><span>${c.curto || c.nome}</span>`+
+      `<i><b style="width:${U.limitar(v,0,100)}%;background:${corDaBarra(c.id, v)}"></b></i></div>`;
+    /* o nível de cada loja, do mais fácil (1) ao mais difícil (6) */
+    const nivelDe = id => L.length - L.findIndex(x=>x.id === id);
 
     const pintar = ()=>{
+      const rolo = corpo.closest('.moldura') && corpo.parentElement;
+      const topo = rolo ? rolo.scrollTop : 0;
       corpo.innerHTML = '';
-      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Qual o alvo')}));
-      corpo.appendChild(opcoes(A.map(a=>({
-        id:a.id, rot:_t(a.nome),
-        nota:_t('{min} a {max} · {p}% de cadeia · pena de {d} dias', {
-               min:U.dinheiro(a.ganho[a.efetivos[0]][0]),
-               max:U.dinheiro(a.ganho[a.efetivos[1]][1]),
-               p:Math.round(a.chance*100), d:a.pena}),
-        desabilitada: disp < a.efetivos[0]
-      })), alvo, id=>{ alvo = id; efetivo = null; pintar(); }));
+      const a = L.find(x=>x.id === pl.alvo);
+      if(pl.n === null || !a.efetivos.includes(pl.n) || disp < pl.n) pl.n = a.efetivos.find(n=>disp >= n) || a.efetivos[0];
 
-      const a = A.find(x=>x.id === alvo);
-      if(efetivo === null && disp >= a.efetivos[0]) efetivo = a.efetivos[0];
-      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('Quantos vão')}));
-      corpo.appendChild(opcoes(a.efetivos.map(n=>({
-        id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
-        nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
-            : _t('{min} a {max}', {min:U.dinheiro(a.ganho[n][0]), max:U.dinheiro(a.ganho[n][1])}),
-        desabilitada: disp < n
-      })), efetivo !== null ? String(efetivo) : null,
-          id=>{ efetivo = parseInt(id, 10); pintar(); }));
-      corpo.appendChild(el('div',{class:'linha-dado', html:
-        `<span class="fraco">${_t('Os {n} são sorteados entre os disponíveis. Se cair, cai todo mundo — e o dinheiro fica lá.', {n:efetivo || '—'})}</span>`}));
+      /* 1 · o alvo, do mais fácil ao mais difícil */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O alvo')}));
+      const lista = el('div',{class:'pa-alvos'});
+      for(const x of [...L].reverse()){
+        const P = A.PERFIL_ASSALTO[x.id], off = disp < x.efetivos[0];
+        const b = el('button',{class:'pa-alvo'+(x.id === pl.alvo ? ' on' : '')+(off ? ' off' : '')});
+        b.disabled = off;
+        b.innerHTML = `<div class="pa-cab"><b>${_t(x.nome)} <em class="pa-nivel">${_t('nível {n}', {n:nivelDe(x.id)})}</em></b>`+
+          `<span>${_t('{min} a {max}', {min:U.dinheiro(x.ganho[x.efetivos[0]][1]), max:U.dinheiro(x.ganho[x.efetivos[1]][1])})}</span></div>`+
+          `<div class="pa-barras">${A.CARACTERISTICAS.map(c=>barra(c, P[c.id])).join('')}</div>`+
+          (off ? `<small class="pa-falta">${_t('precisa de {n} disponíveis', {n:x.efetivos[0]})}</small>` : '');
+        b.onclick = ()=>{ pl.alvo = x.id; pl.n = null; pintar(); };
+        lista.appendChild(b);
+      }
+      corpo.appendChild(lista);
+
+      /* 2 · a equipe */
+      const f0 = A.fichaDoAssalto(pl.alvo, pl.n, pl.horario);
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A equipe')}));
+      corpo.appendChild(opcoes(a.efetivos.map(n=>{
+        const f = A.fichaDoAssalto(pl.alvo, n, pl.horario);
+        return {id:String(n), rot:_tn(n, '{n} membro', '{n} membros'),
+                nota: disp < n ? _tn(disp, 'só {n} disponível', 'só {n} disponíveis')
+                    : _t('{dentro} entram com o líder, {fora} na rua e no carro · potencial de {valor}',
+                         {dentro:f.dentro, fora:n - f.dentro, valor:U.dinheiro(f.potencial)}),
+                desabilitada: disp < n};
+      }), String(pl.n), id=>{ pl.n = parseInt(id, 10); pintar(); }));
+
+      /* 3 · o jeito */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('A abordagem')}));
+      corpo.appendChild(opcoes(Object.values(A.ABORDAGENS).map(o=>({id:o.id, rot:o.nome, nota:o.nota})),
+        pl.abordagem, id=>{ pl.abordagem = id; pintar(); }));
+
+      /* 4 · a hora */
+      corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O horário')}));
+      corpo.appendChild(opcoes(Object.values(A.HORARIOS_ASSALTO).map(h=>({id:h.id, rot:`${h.nome} · ${h.hora}`, nota:h.nota})),
+        pl.horario, id=>{ pl.horario = id; pintar(); }));
+
+      /* 5 · o dia (só no detalhista) */
+      if(!rapido){
+        corpo.appendChild(el('div',{class:'fase-rot', texto:_t('O dia')}));
+        if(!dias.length) corpo.appendChild(el('div',{class:'linha-dado', html:`<span class="fraco">${_t('Nenhum dia livre nas próximas duas semanas: jogo, viagem ou outra operação em todos.')}</span>`}));
+        else {
+          const cx = el('div',{class:'pa-dias'});
+          for(const d of dias){
+            const on = pl.quando && d.semana === pl.quando.semana && d.dia === pl.quando.dia;
+            const b = el('button',{class:'pa-dia'+(on ? ' on' : ''), html:`<b>${_t(d.nomeDia).slice(0,3)}</b><span>${d.dataTxt}</span>`});
+            b.onclick = ()=>{ pl.quando = d; pintar(); };
+            cx.appendChild(b);
+          }
+          corpo.appendChild(cx);
+        }
+      }
+
+      /* 6 · o risco do plano */
+      const R = A.riscoDoAssalto(e, pl);
+      const calor = A.calorDe(e);
+      const res = el('div',{class:'pa-resumo'});
+      res.innerHTML =
+        `<div class="pa-linha"><span>${_t('Recompensa potencial')}</span><b>${U.dinheiro(f0.potencial)}</b></div>`+
+        `<div class="pa-linha"><span>${_t('Risco estimado')}</span><b class="pa-risco ${R.policia >= 0.45 ? 'alto' : R.policia >= 0.2 ? 'medio' : 'baixo'}">${A.rotuloDoRisco(R.policia)}</b></div>`+
+        (pl.abordagem === 'furtivo'
+          ? `<div class="pa-linha"><span>${_t('Chance de alguém perceber')}</span><b>~${Math.round(R.notado*100)}%</b></div>` : '')+
+        `<div class="pa-linha"><span>${_t('Polícia chegar a tempo, deixando a equipe fazer')}</span><b>~${Math.round(R.policia*100)}%</b></div>`+
+        medidor(_t('Atenção da polícia sobre a torcida'), calor, 100, calor >= 60 ? '#d9534f' : calor >= 30 ? '#e89a3c' : '#6cbf6a')+
+        `<p class="fraco pa-nota">${_t('A polícia está {nivel} com a torcida. Cada assalto que faz barulho — alarme, câmera, polícia no local, gente presa — aumenta isso, e ela chega mais rápido no próximo. Esfria sozinha, dia a dia.', {nivel:A.nivelDoCalor(calor)})}</p>`;
+      corpo.appendChild(res);
+      if(rolo) rolo.scrollTop = topo;
     };
     pintar();
 
-    modal(_t('Assalto'), _t('a diretoria mapeou os alvos'), corpo, [
-      [_t('Assaltar'), ()=>{
-        if(efetivo === null){ aviso(_t('Escolhe o efetivo.'), 'ruim'); return; }
-        const r = TO.acoes.executarAssalto(e, alvo, efetivo);
+    /* o fim de uma operação feita na hora (rápido): a pauta fecha com o texto */
+    const feita = f => {
+      if(aoMarcar) aoMarcar({texto:f.texto}); else confirmarDecisao(_t('Assalto feito'));
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+    };
+    const acoesDoModal = rapido ? [
+      [_t('Deixar a equipe fazer'), ()=>{
+        const op = A.planejarAssalto(e, Object.assign({}, pl, {quando:hojeParaAssalto(e)}));
+        if(!op.ok){ aviso(op.msg, 'ruim'); return; }
+        const grupo = A.equipeDoAssalto(e, op.op);
+        if(!grupo){ op.op.cancelado = true; aviso(_t('Faltou gente: a operação caiu.'), 'ruim'); return; }
+        const f = A.fecharAssalto(e, op.op, A.simularAssalto(e, op.op, grupo)) || {texto:''};
+        aviso(f.texto, f.presos || !f.butim ? 'ruim' : 'boa');
+        feita(f);
+      }],
+      [_t('Ir agora'), ()=>{
+        const op = A.planejarAssalto(e, Object.assign({}, pl, {quando:hojeParaAssalto(e)}));
+        if(!op.ok){ aviso(op.msg, 'ruim'); return; }
+        abrirAssaltoCena(null, op.op.id, feita);
+      }]
+    ] : [
+      [_t('Marcar a operação'), ()=>{
+        if(!pl.quando){ aviso(_t('Sem dia livre pra operação.'), 'ruim'); return; }
+        const r = A.planejarAssalto(e, pl);
         if(!r.ok){ aviso(r.msg, 'ruim'); return; }
-        aviso(r.caiu ? _t('Deu ruim: {n} presos por {d} dias.', {n:r.n, d:r.pena})
-                     : _t('{valor} na conta.', {valor:U.dinheiro(r.valor)}),
-              r.caiu ? 'ruim' : 'boa');
-        /* assalto feito responde a mensagem que abriu a lista — ou,
-           vindo da reunião, fecha a pauta */
-        if(aoFeito) aoFeito(r); else confirmarDecisao(_t('Ver os alvos — assalto feito'));
+        aviso(TO.feed.textoDaOperacao(r.op), 'boa');
+        if(aoMarcar) aoMarcar({op:r.op}); else confirmarDecisao(_t('Assalto marcado'));
         TO.estado.salvar();
         pintarTopo();
         atualizarFeed();
       }]
-    ]);
+    ];
+    modal(_t('Planejar o assalto'), '', corpo, acoesDoModal, 'larga');
+  }
+  /* o "dia" da operação feita na hora (modo rápido): hoje */
+  function hojeParaAssalto(e){
+    const d = TO.estado.dataDaSemana(e.data.ano, e.data.semana, e.data.dia);
+    return {ano:e.data.ano, semana:e.data.semana, dia:e.data.dia,
+            dataTxt:`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`,
+            nomeDia: TO.feed.NOME_DIA ? TO.feed.NOME_DIA[e.data.dia] : ''};
+  }
+
+  /* A OPERAÇÃO NA LOJA (10/10/2026): "Comandar a equipe" (o cartão do dia)
+     ou "Ir agora" (o rápido) abrem a loja vista de cima (assalto2d.js) e
+     o tempo do jogo espera a cena inteira. Sem a cena (erro na planta),
+     a equipe faz sozinha — a mesma conta do "Deixar a equipe fazer". */
+  let assaltoNoAr = false;
+  async function abrirAssaltoCena(m, opId, aoFim){
+    const e = E(), A = TO.acoes;
+    const op = (e.assaltos || []).find(o=>o.id === opId);
+    const encerrar = (rot, f, tipo)=>{
+      const txt = f && f.texto;
+      const msg = m && (e.feed || []).find(x=>x.id === m.id);
+      if(msg && txt) msg.consequencia = txt;
+      if(aoFim) aoFim(f || {texto:txt || ''}); else confirmarDecisao(rot);
+      if(txt) aviso(txt, tipo || '');
+      TO.estado.salvar(); pintarTopo(); atualizarFeed();
+    };
+    if(!op || op.feito || op.cancelado){ encerrar(_t('Operação encerrada')); return; }
+    const grupo = A.equipeDoAssalto(e, op);
+    if(!grupo){ op.cancelado = true; encerrar(_t('Faltou gente'), {texto:_t('Faltou gente: a operação caiu.')}, 'ruim'); return; }
+    let r = null;
+    if(TO.assalto2d && !assaltoNoAr){
+      assaltoNoAr = true;
+      pausarTempo('assalto');
+      try{ r = await TO.assalto2d.iniciar(op, grupo); }
+      catch(err){ console.error('o assalto em 2D:', err); r = null; }
+      assaltoNoAr = false;
+      retomarTempo('assalto');
+    }
+    if(!r || r.erro){
+      if(r && r.erro) console.warn('o assalto em 2D não abriu:', r.erro);
+      r = A.simularAssalto(e, op, grupo);
+    }
+    const f = A.fecharAssalto(e, op, r) || {texto:''};
+    encerrar(r.abortou ? _t('Operação abortada') : _t('Operação feita'), f, f.presos || !f.butim ? 'ruim' : 'boa');
   }
 
   /* =======================================================

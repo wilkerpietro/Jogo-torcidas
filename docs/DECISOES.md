@@ -9637,6 +9637,34 @@ quatro excessos:
   a cena põe o número da presença, como a briga da arquibancada já
   fazia.
 
+## O bote sem data no modo rápido e o assalto planejado no 2D (pedido do dono, 10/10/2026)
+
+- **Modo rápido sem "marcar o ataque".** O bote do mês (bar e casa de
+  piscina) não vai mais pro calendário. A sugestão do diretor sai no
+  próprio dia, num dia sem jogo nem caravana (`pautaSoltaDeHoje` →
+  `cartaoDoBote(E, b, true)`), com "Descer no bar"/"Dar o bote", que
+  abre a cena na hora, e "Deixar quieto" (−1 de prestígio e −1 de
+  moral). O modo detalhista segue igual: marcar na reunião, abrir no
+  dia.
+- **O assalto planejado do jogo 3D veio pro 2D.** A operação foi
+  portada inteira para `acoes.js` (perfil de cada alvo, horário,
+  abordagem, risco, simular e fechar), com a atenção da polícia sobre a
+  torcida.
+  - A tela de planejamento mostra as seis lojas como **níveis 1 a 6**:
+    roupas, mercadinho, posto, supermercado, joalheria e banco.
+  - Detalhista: escolhe o dia, e o cartão "OPERAÇÃO EM ANDAMENTO" do dia
+    pergunta entre comandar, deixar a equipe fazer e cancelar.
+  - Rápido: "Ir agora" ou "Deixar a equipe fazer", sem dia.
+- **O motor e as lojas** também são os do 3D: `js/diajogo/assalto_motor.js`
+  (percepção, anúncio, saque, polícia, fuga) e `js/diajogo/lojas.js`
+  (as plantas).
+- **A cena espera as fotos.** O dono quer os nossos bonecos na loja. Os
+  prompts das seis fotos estão em `img/cenas/PROMPT-ASSALTOS.md`.
+  - O palco `js/ui/assalto2d.js`, desenhado de cima, fica como andaime:
+    ele só abre quando existir a cena `assalto-<alvo>`.
+  - Até lá, "Comandar" e "Ir agora" resolvem como "Deixar a equipe
+    fazer".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
