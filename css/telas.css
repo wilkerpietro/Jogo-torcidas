@@ -1,0 +1,376 @@
+/* =========================================================
+   AS TELAS DO MENU NO MOLDE DO PLANEJAMENTO (07/10/2026)
+   O dono: "Refaça o layout visual de todas as telas do menu mantendo a
+   estrutura delas, se inspirando no layout criado pra tela de
+   planejamento". O painel (Torcida, Financeiro, Calendário,
+   Competições, Ranking, Diplomacia, Notícias, Jogo) virou a caixa do
+   planejamento (planejamento.css): o fundo escuro por cima do jogo, a
+   caixa de cantos redondos e, no alto dela, o nome da tela em vermelho
+   miúdo, a seção aberta em letra grande com a data, os números da tela
+   em ladrilhos e o × (`pintarCasca`, main.js). A fileira de abas de
+   cima vira a fita das praças (o ouro marca a aberta) e gruda no alto
+   da caixa ao rolar; os cartões viram as seções numeradas; as listas
+   da esquerda viram a pauta (o vermelho na borda marca a escolhida);
+   botões, campos, tabelas e modais ganham a mesma mão. O conteúdo de
+   cada tela é o de antes, na mesma ordem — só a casca e a roupa mudaram.
+   No celular a caixa ocupa a tela inteira, como o planejamento.
+   (Este arquivo vem por último: ele manda nas regras de casca que
+   base.css e mobile.css tinham.)
+   ========================================================= */
+:root{
+  --pnl-larg:1180px;
+  --pnl-x:max(18px, calc((100vw - var(--pnl-larg)) / 2));
+  --pnl-y:18px;
+  /* a altura do cabeçalho: `pintarCasca` mede e escreve a de verdade */
+  --pnl-topo:78px;
+  --pnl-pad:22px;
+}
+
+/* ---------- o fundo escuro (clicar nele fecha, como no planejamento) ---------- */
+#painelFundo{display:none}
+body.com-painel #painelFundo{display:block;position:fixed;inset:0;z-index:51;background:#060607d9}
+
+/* ---------- o alto da caixa ---------- */
+#painelBarra{display:none}
+body.com-painel #painelBarra{
+  display:flex;align-items:center;gap:18px;
+  position:fixed;z-index:53;top:var(--pnl-y);left:var(--pnl-x);right:var(--pnl-x);height:auto;min-height:72px;
+  padding:12px 66px 12px var(--pnl-pad);
+  background:linear-gradient(180deg,#202020,#181818);
+  border:1px solid var(--linha);border-radius:8px 8px 0 0;
+  box-shadow:0 -8px 40px #0007;
+  font-family:var(--corpo);color:var(--texto);
+}
+.pnl-titulo{flex:0 1 auto;min-width:0}
+.pnl-titulo small{display:block;font-family:var(--titulo);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--rubro-vivo);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pnl-titulo h2{margin:0;font-family:var(--titulo);font-size:28px;font-weight:700;letter-spacing:.02em;line-height:1.1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.com-painel #painelTitulo{flex:none;font:inherit;letter-spacing:inherit;text-transform:none}
+#painelSub{margin-left:10px;font-size:15px;font-weight:500;color:var(--fraco);letter-spacing:.04em}
+.pnl-kpis{margin-left:auto;display:flex;gap:10px;flex:none;min-width:0}
+.pnl-kpis:empty{display:none}
+.pnl-kpis span{display:flex;flex-direction:column;min-width:96px;padding:7px 12px;background:#141414;border:1px solid var(--linha);border-radius:6px}
+.pnl-kpis small{font-size:10.5px;color:var(--fraco);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pnl-kpis b{font-family:var(--mono);font-size:17px;white-space:nowrap}
+.pnl-kpis b.positivo{color:var(--verde-vivo)}
+.pnl-kpis b.negativo{color:var(--vermelho)}
+body.com-painel #painelFechar{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  width:36px;height:36px;padding:0;border:1px solid var(--linha);border-radius:6px;
+  background:#141414;color:var(--texto);font-size:22px;line-height:1;cursor:pointer;
+}
+body.com-painel #painelFechar:hover{border-color:var(--rubro-vivo);color:var(--texto)}
+
+/* ---------- o corpo da caixa: a página, que rola por dentro ---------- */
+body.com-painel .pagina.painel{
+  display:block;position:fixed;z-index:52;
+  top:calc(var(--pnl-y) + var(--pnl-topo));bottom:var(--pnl-y);left:var(--pnl-x);right:var(--pnl-x);
+  overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:var(--painel);border:1px solid var(--linha);border-top:0;border-radius:0 0 8px 8px;
+  padding:16px var(--pnl-pad) 26px;box-shadow:0 18px 60px #000a;
+  animation:none;max-width:none;counter-reset:secao;
+}
+/* A TABELA LARGA ROLA DE LADO (correção do dono, 10/10/2026): a caixa
+   corta o que passa da largura (overflow-x:hidden), e no celular a
+   tabela de membros perdia as colunas da direita — o Promover junto,
+   sem ter como chegar nele. Quem rola agora é o corpo do cartão. */
+.pagina.painel .cartao > .corpo:has(> table.dados){overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* e o Promover fica grudado na borda direita, à vista sem rolar */
+@media (max-width:760px){
+  table.mb-tabela td.mb-acao{position:sticky;right:0;background:var(--painel);padding-left:6px}
+  table.mb-tabela td.mb-acao:empty{background:transparent}
+}
+/* o título que cada tela escreve no alto mora agora no cabeçalho */
+.pagina.painel > .titulo-pagina,
+.pagina.painel > .titulo-barra{display:none}
+
+/* ---------- a fileira de abas de cima: a fita das praças do planejamento ---------- */
+.pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes){
+  /* (o sticky respeita o padding da página: -16px gruda a fita na borda de cima da caixa) */
+  position:sticky;top:-16px;z-index:6;
+  display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;scrollbar-width:thin;
+  margin:-16px calc(-1 * var(--pnl-pad)) 16px;padding:8px var(--pnl-pad);
+  background:#161616;border:0;border-bottom:1px solid var(--linha);
+}
+.pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button{
+  flex:0 0 auto;display:flex;align-items:center;
+  padding:7px 16px;border:1px solid var(--linha);border-radius:6px;background:#141414;color:var(--texto);
+  font-family:var(--corpo);font-size:13.5px;font-weight:600;letter-spacing:.01em;text-transform:none;line-height:1.2;white-space:nowrap;
+}
+.pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button:hover:not(:disabled){
+  border-color:#4a4a4a;background:#1c1c1c;color:var(--texto)}
+.pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button.on{
+  border-color:var(--ouro);background:#2a2112;color:#fff;box-shadow:inset 0 0 0 1px #d9a44133}
+.pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button:disabled{opacity:.4}
+
+/* as abas de dentro (o filtro de uma seção): fichas menores, sem a fita */
+.pagina.painel .subabas,
+.pagina.painel .abas-grandes{display:flex;flex-wrap:wrap;gap:6px;background:transparent;border:0;margin-bottom:12px}
+.pagina.painel .subabas button,
+.pagina.painel .abas-grandes button{
+  flex:0 1 auto;padding:6px 12px;border:1px solid var(--linha);border-radius:6px;background:#141414;color:var(--fraco);
+  font-family:var(--corpo);font-size:12.5px;font-weight:500;letter-spacing:.01em;text-transform:none;line-height:1.25;white-space:nowrap;
+}
+.pagina.painel .subabas button:hover:not(:disabled),
+.pagina.painel .abas-grandes button:hover:not(:disabled){border-color:#4a4a4a;background:#1c1c1c;color:var(--texto)}
+.pagina.painel .subabas button.on,
+.pagina.painel .abas-grandes button.on{border-color:var(--ouro);background:#2a2112;color:var(--texto)}
+
+/* ---------- os cartões: as seções numeradas do planejamento ---------- */
+.pagina.painel .cartao,
+.pagina.painel .quadro{background:#1b1b1b;border:1px solid var(--linha);border-radius:8px}
+.pagina.painel .cartao{margin-bottom:14px}
+.pagina.painel .quadro{overflow:clip}
+.pagina.painel .cartao > h2{
+  background:transparent;border-bottom:0;padding:12px 14px 4px;gap:10px;
+  font-family:var(--titulo);font-size:16px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--texto);
+}
+.pagina.painel .quadro > header{padding:11px 14px;border-bottom:1px solid var(--linha)}
+.pagina.painel .quadro > header h2{font-family:var(--titulo);font-size:16px;font-weight:700;letter-spacing:.08em;color:var(--texto);
+  display:flex;align-items:center;gap:10px}
+/* o número da seção, a bolinha vermelha do planejamento (a rodada e o mês, que têm as setas, ficam sem) */
+.pagina.painel .cartao > h2::before,
+.pagina.painel .quadro > header:not(.nav-rodada) h2::before{
+  counter-increment:secao;content:counter(secao);
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:22px;height:22px;border-radius:50%;background:var(--rubro);color:#fff;
+  font-family:var(--titulo);font-size:13px;font-weight:700;letter-spacing:0;line-height:1;
+}
+/* cartão dentro de cartão não conta */
+.pagina.painel .cartao .cartao > h2::before,
+.pagina.painel .cartao .quadro > header h2::before,
+.pagina.painel .quadro .cartao > h2::before{content:none;counter-increment:none}
+.pagina.painel .cartao > h2 .conta,
+.pagina.painel .quadro > header .conta{
+  margin-left:auto;font-family:var(--corpo);font-size:11.5px;font-weight:400;letter-spacing:.02em;text-transform:none;color:var(--fraco);
+}
+.pagina.painel .cartao > .corpo{padding:8px 14px 14px}
+.pagina.painel .cartao > .rodape,
+.pagina.painel .quadro > .rodape{padding:10px 14px;background:#161616;border-top:1px solid var(--linha);border-radius:0 0 8px 8px}
+.pagina.painel .colunas,
+.pagina.painel .colunas-2,
+.pagina.painel .colunas-3,
+.pagina.painel .principal-lateral,
+.pagina.painel .lista-detalhe,
+.pagina.painel .comp-duas{gap:14px}
+
+/* o recado, a caixa de leitura do planejamento */
+.pagina.painel .recado{border-radius:8px;background:#171a1c;border-color:var(--linha);border-left-color:var(--rubro-vivo)}
+/* as outras caixas soltas das telas (a ideologia, o expediente, a escolha do time, a logo da competição, as ofertas): os cantos e o fundo das seções */
+.pagina.painel .ass-politicas,
+.pagina.painel .escolha-time,
+.pagina.painel .linha-rotina,
+.pagina.painel .comp-marca{border-radius:8px}
+.pagina.painel .ass-politicas,
+.pagina.painel .escolha-time,
+.pagina.painel .linha-rotina{background:#1b1b1b}
+.pagina.painel .oferta{border-radius:7px}
+
+/* ---------- botões e campos ---------- */
+/* (o tamanho fica o de cada tela: o botão da linha de save é menor que o do pé) */
+.pagina.painel .bt,
+.moldura .bt{
+  border:1px solid var(--linha);border-radius:6px;background:#1f1f1f;color:var(--texto);
+  font-family:var(--titulo);font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+}
+.pagina.painel .bt:hover:not(:disabled),
+.moldura .bt:hover:not(:disabled){border-color:#4a4a4a;background:#262626}
+.pagina.painel .bt.destaque,
+.moldura .bt.destaque{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+.pagina.painel .bt.destaque:hover:not(:disabled),
+.moldura .bt.destaque:hover:not(:disabled){background:#b62a2a;border-color:var(--rubro-vivo)}
+.pagina.painel select.campo,
+.pagina.painel .busca,
+.pagina.painel input[type=search],
+.pagina.painel input[type=text],
+.pagina.painel input[type=number],
+.moldura select.campo,
+.moldura .busca{border-radius:6px;background:#141414;border:1px solid var(--linha)}
+.pagina.painel select.campo:focus,
+.pagina.painel .busca:focus,
+.moldura .busca:focus{outline:0;border-color:var(--rubro-vivo)}
+.pagina.painel .filtros-linha button,
+.pagina.painel .mini-bt{border-radius:5px}
+.pagina.painel .filtros-linha button.on{background:#2a2112;border-color:var(--ouro);color:var(--texto)}
+.pagina.painel .tag{border-radius:10px;padding:1px 7px}
+
+/* ---------- as tabelas: o cabeçalho no rótulo miúdo do planejamento ---------- */
+.pagina.painel table th{
+  font-family:var(--corpo);font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--fraco);
+}
+.pagina.painel table.liga th,
+.pagina.painel table.agenda th{background:#171717}
+.pagina.painel table tr.meu td.pos,
+.pagina.painel table tr.nossa td:first-child{box-shadow:inset 3px 0 0 var(--rubro-vivo)}
+
+/* ---------- a loja: cada prateleira uma seção, cada produto um cartão de escolha ---------- */
+.pagina.painel .loja-caixa{border-radius:8px;background:#1b1b1b}
+.pagina.painel .loja-secao{margin-bottom:14px;padding:12px 14px 14px;background:#1b1b1b;border:1px solid var(--linha);border-radius:8px}
+.pagina.painel .loja-secao > h3{
+  align-items:center;padding:0 0 4px;margin-bottom:10px;border-bottom:0;
+  font-family:var(--titulo);font-size:16px;font-weight:700;letter-spacing:.08em;color:var(--texto);
+}
+.pagina.painel .loja-secao > h3::before{
+  counter-increment:secao;content:counter(secao);
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:22px;height:22px;border-radius:50%;background:var(--rubro);color:#fff;
+  font-size:13px;letter-spacing:0;line-height:1;
+}
+.pagina.painel .loja-secao > h3 small{font-family:var(--corpo);font-size:11.5px;letter-spacing:.02em}
+.pagina.painel .loja-tile,
+.pagina.painel .loja-item{background:#141414;border:1px solid var(--linha);border-radius:7px}
+.pagina.painel .loja-tile h3{letter-spacing:.06em}
+.pagina.painel .loja-tile .previa{border-radius:6px}
+.pagina.painel .loja-tile .stepper button{border-radius:6px}
+.pagina.painel .loja-bt{border-radius:6px;border-color:var(--rubro-vivo);font-size:13.5px;font-weight:700;letter-spacing:.08em}
+.pagina.painel .loja-item select{border-radius:6px}
+
+/* ---------- as listas da esquerda: a pauta do planejamento ---------- */
+.filtros{gap:6px;padding:2px 0}
+.filtros button{
+  border:1px solid transparent;border-left:3px solid transparent;border-radius:6px;
+  background:#1b1b1b;color:var(--fraco);border-bottom:1px solid transparent;
+}
+.filtros button:hover{background:#222;color:var(--texto)}
+.filtros button.on{border-color:var(--linha);border-left-color:var(--rubro-vivo);background:#262626;color:var(--texto)}
+
+/* ---------- os modais que as telas abrem (perfil, sair, membro…): a caixa do planejamento ---------- */
+.moldura{border-radius:8px;box-shadow:0 18px 60px #000a;overflow:hidden}
+.moldura > header{background:linear-gradient(180deg,#202020,#181818);padding:14px 20px}
+.moldura > header h2{font-size:22px;letter-spacing:.02em;text-transform:none;line-height:1.15}
+.moldura > header span{font-family:var(--corpo);font-size:12.5px;letter-spacing:.02em}
+.moldura > footer{background:#141414;padding:12px 20px}
+
+/* ---------- o mapa do jogo de feed (Brasil e cidades, mapa.css): o alto da caixa ---------- */
+.mb-painel > header{gap:14px;padding:12px 20px;background:linear-gradient(180deg,#202020,#181818)}
+.mb-painel > header h2{font-size:26px;font-weight:700;letter-spacing:.02em;text-transform:none}
+.mb-abas{gap:6px}
+.mb-abas button{border-radius:6px;background:#141414;color:var(--texto);font-weight:600;padding:6px 14px}
+.mb-abas button:hover{border-color:#4a4a4a}
+.mb-abas button[aria-selected="true"]{background:#2a2112;border-color:var(--ouro);color:#fff}
+.mb-x{border-radius:6px;background:#141414;width:36px;height:36px;font-size:22px}
+.mb-x:hover{border-color:var(--rubro-vivo);color:var(--texto)}
+/* o miolo do mapa (o do 2D e o do 3D usam as mesmas peças): blocos e cartões redondos, abas da lateral em ficha */
+.mb-zona-bloco{border-radius:8px;background:#1b1b1b;padding:10px}
+.mb-zona-bloco h4{font-size:14px;font-weight:700;letter-spacing:.08em}
+.mb-bairro{border-radius:6px}
+.mb-cartao{border-radius:8px;background:#1b1b1b}
+.mb-capa{border-radius:8px;overflow:hidden}
+.mb-lado-abas{gap:6px;border-bottom:0;padding:2px 0 4px}
+.mb-lado-abas button{border:1px solid var(--linha);border-radius:6px;background:#141414;color:var(--fraco);padding:7px 8px;
+  font-family:var(--corpo);font-size:12.5px;font-weight:600;letter-spacing:.01em;text-transform:none}
+.mb-lado-abas button[aria-selected="true"]{border-color:var(--ouro);background:#2a2112;color:var(--texto)}
+
+/* =========================================================
+   NO CELULAR: a caixa na tela inteira, como o planejamento
+   ========================================================= */
+@media (max-width:900px){
+  :root{--pnl-x:0px;--pnl-y:0px;--pnl-pad:12px}
+  body.com-painel #painelBarra{
+    flex-wrap:wrap;gap:8px;min-height:0;padding:10px 56px 10px 14px;
+    border-width:0 0 1px;border-radius:0;box-shadow:none;
+  }
+  .pnl-titulo{flex:1 1 100%}
+  .pnl-titulo h2{font-size:22px}
+  #painelSub{display:block;margin-left:0;font-size:12px}
+  .pnl-kpis{margin-left:0;width:100%;gap:6px}
+  /* a largura de cada ladrilho vem do número, não do rótulo (o rótulo corta) */
+  .pnl-kpis span{flex:1 1 auto;min-width:0;padding:5px 8px}
+  .pnl-kpis small{width:0;min-width:100%;font-size:9.5px;letter-spacing:.04em}
+  .pnl-kpis b{font-size:14px;overflow:hidden;text-overflow:ellipsis}
+  body.com-painel #painelFechar{top:12px;transform:none}
+  body.com-painel .pagina.painel{
+    border:0;border-radius:0;box-shadow:none;
+    padding:12px var(--pnl-pad) calc(28px + env(safe-area-inset-bottom));
+  }
+  .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes){top:-12px;margin-top:-12px;margin-bottom:12px}
+  .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button{padding:7px 12px;font-size:13px}
+  /* as abas de dentro quebram em vez de cortar (a regra velha esticava cada uma a um terço) */
+  .pagina.painel .subabas button,
+  .pagina.painel .abas-grandes button{flex:0 1 auto}
+  .pagina.painel .cartao > h2{padding:11px 12px 4px;font-size:15px}
+  .pagina.painel .cartao > .corpo{padding:8px 12px 12px}
+  .moldura > header{padding:12px 14px}
+  .moldura > header h2{font-size:19px}
+  .mb-painel > header{padding:10px 12px;gap:10px}
+  .mb-painel > header h2{font-size:20px}
+}
+
+
+/* =========================================================
+   O RESTO DA INTERFACE NA MESMA MÃO (pedido do dono, 10/10/2026:
+   "veja o visual novo que implantamos nas telas de menu e implante ele
+   na restante da UI do jogo")
+   O feed, as mensagens, a linha do dia de jogo, o mapa da caravana e o
+   balão, a arquibancada e a seleção ganham a roupa da caixa do
+   planejamento: cantos redondos, seções em #1b1b1b, o rótulo miúdo em
+   vermelho, botões de cantos redondos com o título em caixa alta e o
+   que cada escolha custa escrito DENTRO do botão.
+   ========================================================= */
+/* ---------- o alto do feed e a coluna de ícones ---------- */
+.feed-barra{background:linear-gradient(180deg,#202020,#181818)}
+.feed-menu{background:#141414}
+.feed-menu .mapa-ic{border-radius:6px}
+.feed-menu .mapa-ic.aceso{background:#2a2112;border-color:var(--ouro);color:#fff}
+
+/* ---------- as mensagens: seções do planejamento ---------- */
+.feed-lista .msg{border-radius:8px;background:#1b1b1b;padding:12px 14px}
+.feed-lista .msg.peso-decisao{background:#1e1e1e;border-color:#3a3a3a}
+.feed-lista .msg:has(> .gz){padding:0;overflow:hidden}
+.msg-voz{font-family:var(--titulo);font-size:12px;letter-spacing:.16em}
+.msg.peso-decisao .msg-voz{color:var(--rubro-vivo)}
+.msg-txt{font-size:14px;line-height:1.45}
+.msg-resp{border-top:1px solid var(--linha)}
+
+/* ---------- os botões fora das telas: a mão do planejamento ---------- */
+.msg .bt, .itn-cartao .bt, .est-vivo .bt, .reu-item .bt, .cena-baloes .bt{
+  border:1px solid var(--linha);border-radius:6px;background:#1f1f1f;color:var(--texto);
+  font-family:var(--titulo);font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+}
+.msg .bt:hover:not(:disabled), .itn-cartao .bt:hover:not(:disabled), .est-vivo .bt:hover:not(:disabled),
+.reu-item .bt:hover:not(:disabled), .cena-baloes .bt:hover:not(:disabled){border-color:#4a4a4a;background:#262626}
+.msg .bt.destaque, .itn-cartao .bt.destaque, .est-vivo .bt.destaque, .reu-item .bt.destaque, .cena-baloes .bt.destaque{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+.msg .bt.destaque:hover:not(:disabled), .itn-cartao .bt.destaque:hover:not(:disabled),
+.est-vivo .bt.destaque:hover:not(:disabled){background:#b62a2a}
+/* o que a escolha custa, dentro do botão, em letra de leitura */
+.msg-bts .bt small, .itn-cartao .bt small, .est-bts .bt small, .reu-item .bt small{
+  display:block;font-family:var(--corpo);font-size:11px;font-weight:400;letter-spacing:.01em;
+  text-transform:none;opacity:.78;line-height:1.3;margin-top:2px;white-space:normal;text-align:left}
+.msg-bts{gap:8px}
+.msg-bts .bt{padding:8px 12px;border-radius:6px}
+
+/* ---------- a linha do dia, o mapa da caravana e o balão ---------- */
+.itn-linha{border-radius:8px;background:linear-gradient(180deg,#202020,#181818)}
+.mc-mapa{border-radius:8px}
+.mc-svg{border-radius:8px}
+.itn-cartao{border-radius:8px;background:#1b1b1b;border:1px solid var(--linha);border-left:3px solid var(--linha);padding:12px 14px}
+.itn-cartao.sofrido, .itn-cartao.emboscada{background:#1d1717;border-left-color:var(--rubro-vivo)}
+.itn-cartao .voz{font-family:var(--titulo);font-size:12px;letter-spacing:.16em;margin-bottom:6px}
+.itn-cartao p{font-size:14px;line-height:1.45;color:var(--texto);margin:0}
+.itn-cartao .lugar{margin-top:6px;font-size:12px;color:var(--fraco)}
+.itn-cartao .lugar::before{content:'⌖ ';color:var(--rubro-vivo)}
+/* no balão as saídas empilham: cada uma com o seu custo dentro */
+.itn-cartao .bts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.itn-cartao .bts .bt{width:100%;text-align:left;padding:8px 12px;display:block}
+.itn-cartao .bts .bt span{display:block}
+.itn-cartao .bts .bt.simular{background:transparent;border-style:dashed}
+.itn-cartao .saldo{font-family:var(--corpo);font-size:12px;border-radius:6px;background:#141414;
+  border:1px solid var(--linha);padding:7px 10px;margin-top:10px}
+.mc-balao .itn-cartao{box-shadow:0 18px 50px #000b}
+.mc-balao::after{background:#1b1b1b}
+.mc-balao:has(.emboscada)::after, .mc-balao:has(.sofrido)::after{background:#1d1717}
+
+/* ---------- a arquibancada ---------- */
+.est-vivo{border-radius:8px;overflow:hidden;border-color:var(--linha)}
+.est-pe{background:#1b1b1b}
+.est-barra{border-radius:6px}
+.est-bts .bt{border-radius:6px}
+.tv-placar-tv{border-radius:6px;overflow:hidden}
+.tv-pe button{border-radius:5px}
+
+/* ---------- os cartões e listas da seleção (dentro da moldura) ---------- */
+.moldura .cartao{border-radius:8px;background:#1b1b1b}
+.moldura .torcida-opcao{border-radius:6px}
+.sel-modo{border-radius:8px}

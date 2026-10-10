@@ -1,0 +1,8 @@
+dist/
+__pycache__/
+
+# o pacote de arquivo único é gerado (ferramentas/empacotar_jogo.py)
+torcida-organizada.html
+
+# as cópias de trabalho dos agentes (worktrees temporárias do Claude Code)
+.claude/worktrees/
