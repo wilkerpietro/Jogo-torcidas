@@ -852,5 +852,7 @@ TO.i18n.registrar({
   "{valor} cada a mais": {es:'{valor} cada una de más', en:'{valor} for each extra'},
   "{valor} por cabeça · {n} aptos": {es:'{valor} por cabeza · {n} aptos', en:'{valor} per head · {n} fit'},
   "{valor} à torcida": {es:'{valor} a la hinchada', en:'{valor} to the firm'},
-  "~{n} aliados": {es:'~{n} aliados', en:'~{n} allies'}
+  "~{n} aliados": {es:'~{n} aliados', en:'~{n} allies'},
+  "Descer abre a cena e você comanda o bonde.": {es:'Bajar abre la escena y tú mandas la barra.', en:'Going down opens the scene and you lead the crew.'},
+  "Simular roda o duelo na hora — as consequências são as mesmas.": {es:'Simular resuelve el duelo al instante — las consecuencias son las mismas.', en:'Simulate runs the duel instantly — the consequences are the same.'}
 });

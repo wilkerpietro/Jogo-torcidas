@@ -2665,20 +2665,16 @@
     const corpo = el('div',{class:'itn-corpo'});
     const nome = el('div',{class:'itn-nome', texto:_t('Dia de jogo')});
     const estado = el('div',{class:'estado', texto:_t('o dia ainda não começou')});
-    corpo.append(nome, estado);
+    /* A LINHA ENXUTA (pedido do dono, 10/10/2026): só o nome da fase
+       e a hora. O estado ("passando · volta do estádio") repetia o
+       nome e saiu da tela — `estado` segue vivo fora do DOM pra quem
+       ainda escreve nele; o lugar, o rótulo do dia e os pontinhos
+       saíram; o efetivo só aparece quando muda ou ao tocar na linha. */
+    corpo.append(nome);
     const conta = el('div',{class:'itn-efetivo'});
     linha.append(ic, hora, corpo, conta);
+    linha.addEventListener('click', ()=> linha.classList.toggle('ver-efetivo'));
     raiz.appendChild(linha);
-    /* os pontinhos do dia: um por parada, pra se saber quanto falta */
-    const pontos = el('div',{class:'itn-pontos'});
-    it.paradas.forEach((p, i)=>{
-      /* `dojogo`, não `jogo`: a classe curta é a das linhas de partida
-         das tabelas (painéis.css) e vestia o pontinho de padding */
-      const b = el('i',{class:'itn-ponto'+(p.jogo?' dojogo':'')});
-      b.dataset.i = i; b.title = `${p.hora} · ${p.nome}`;
-      pontos.appendChild(b);
-    });
-    raiz.appendChild(pontos);
     /* O PALCO DO DIA (pedido do dono, 10/10/2026): o mapa da caravana,
        com o ônibus e o balão das hostilidades; na hora do jogo o mesmo
        espaço vira a arquibancada (itnPartida) e volta a ser mapa na
@@ -2699,10 +2695,7 @@
     TO.feed.abrirLote(e);
     ITN.raiz = raiz; ITN.linha = linha; ITN.ic = ic; ITN.hora = hora;
     ITN.nome = nome; ITN.estado = estado; ITN.conta = conta;
-    ITN.pontos = pontos; ITN.recados = recados; ITN.palco = palco; ITN.mapa = mapa; ITN.cidade = cidade;
-    /* o rótulo do dia de cada parada (véspera, dia do jogo, volta) */
-    ITN.rotDia = {};
-    for(const p of it.paradas) if(p.abreDia) ITN.rotDia[p.dia] = p.abreDia;
+    ITN.recados = recados; ITN.palco = palco; ITN.mapa = mapa; ITN.cidade = cidade;
 
     /* o cartão do feed é quem hospeda: repinta pra ele adotar a linha */
     atualizarFeed();
@@ -2750,6 +2743,14 @@
     if(!ITN || !ITN.conta) return;
     const nome = ITN.it.efetivo.nomeDeles;
     const esc = itnEscoltaAtiva();
+    /* o número pisca quando muda e some de novo */
+    const chave = `${ITN.nos}|${esc}|${ITN.eles}`;
+    if(chave !== ITN.contaChave){
+      ITN.contaChave = chave;
+      ITN.linha.classList.add('efetivo-mudou');
+      clearTimeout(ITN.contaTimer);
+      ITN.contaTimer = setTimeout(()=> ITN && ITN.linha.classList.remove('efetivo-mudou'), 3500);
+    }
     ITN.conta.innerHTML =
       _tn(ITN.nos, '<b>{n}</b> nosso', '<b>{n}</b> nossos') +
       (esc ? ` <span class="escolta">${_t('+ <b>{n}</b> da {nome}', {n:esc, nome:ITN.escolta.nome})}</span>` : '') +
@@ -2770,17 +2771,10 @@
     ITN.linha.classList.toggle('dojogo', !!(p && p.jogo));
     ITN.linha.classList.toggle('estrada', !!(p && p.cidade));
     if(p){
-      const dia = ITN.it.dias > 1 && ITN.rotDia[p.dia]
-        ? `<small>${ITN.rotDia[p.dia].split(' · ')[0]}</small>` : '';
-      ITN.hora.innerHTML = `${p.hora}${dia}`;
-      ITN.nome.innerHTML = `${p.nome}` +
-        (p.lugar ? `<span class="lugar">${p.lugar}</span>` : '');
-    }
-    for(const b of ITN.pontos.children){
-      const i = +b.dataset.i, q = ITN.it.paradas[i];
-      b.classList.toggle('passou', i < ITN.ponto);
-      b.classList.toggle('agora',  i === ITN.ponto);
-      b.classList.toggle('brigou', !!(q && q.brigou));
+      ITN.hora.textContent = p.hora;
+      ITN.nome.textContent = p.nome;
+      /* o lugar fica no toque longo do nome, não na linha */
+      ITN.nome.title = p.lugar || '';
     }
   }
 
@@ -3649,9 +3643,10 @@
     const d0 = TO.estado.dataDaSemana(e.data.ano, m.dados.semana || e.data.semana, 1);
     const d6 = TO.estado.dataDaSemana(e.data.ano, m.dados.semana || e.data.semana, 7);
     const dd = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+    /* o título numa linha só: a semana e as datas, o selo se houver */
     raiz.appendChild(el('div',{class:'sem-cab', html:
-      `<span class="sem-sem">${_t('Semana {n}', {n:m.dados.semana || e.data.semana})}</span>`+
-      `<span class="sem-datas">${_t('{de} a {ate}', {de:dd(d0), ate:dd(d6)})}</span>`+
+      `<span class="sem-sem">${_t('Semana {n}', {n:m.dados.semana || e.data.semana})}`+
+      ` <span class="sem-datas">· ${dd(d0)}–${dd(d6)}</span></span>`+
       (m.respondido ? `<span class="sem-selo">${_t('plano fechado')}</span>` : !vigente ? `<span class="sem-selo passada">${_t('semana passada')}</span>` : '')}));
     /* o que a semana tem (a sede): uma linha por jogo, com o que está decidido */
     const linhas = el('ul',{class:'sem-resumo'});
@@ -4179,8 +4174,10 @@
     /* QUEM PÕE GENTE NO ESTÁDIO É TABELA (pedido do dono, 26/08/2026):
        linha única, uma coluna por torcida, com a cor primária na borda
        esquerda de cada uma. Mandantes primeiro, visitantes depois. */
+    /* A TABELA SÓ ANTES DO APITO (pedido do dono, 10/10/2026): com o
+       dia andando ela ficava a partida inteira ocupando o cartão */
     const pres = m.kind === 'partida' && m.dados && m.dados.presenca;
-    if(pres && pres.length){
+    if(pres && pres.length && !m.dados.iniciada && !m.respondido && !itnNaMensagem(m)){
       const rolinho = el('div',{class:'rolo-presenca'});
       const tb = el('table',{class:'tab-presenca'});
       const tr = el('tr');
@@ -4329,9 +4326,15 @@
     }
 
     /* a linha de consequência sai dos efeitos aplicados, nunca do texto */
-    if(m.consequencia)
+    /* O PLACAR NÃO SE REPETE (pedido do dono, 10/10/2026): com a linha
+       do dia no cartão, o placar de TV já diz o "Final: …" — só sobra
+       o que ele não diz (os pênaltis, a briga na arquibancada) */
+    const fin = m.kind === 'partida' && itnNaMensagem(m) && (m.dados||{}).finalTxt;
+    const conseq = fin ? (m.consequencia || '').replace(fin, '').trim()
+                       : m.consequencia;
+    if(conseq)
       art.appendChild(el('div',{class:'msg-efeitos',
-        html: linkificarNomes(m.consequencia)}));
+        html: linkificarNomes(conseq)}));
 
     /* links informativos não consomem nada — "Ver Competições" */
     for(const l of (m.links || [])){
@@ -4476,10 +4479,11 @@
         bt.onclick = ()=>responderMensagem(m.id, b.id);
         bs.appendChild(bt);
       });
-      /* o cartão de segunda leva o botão no próprio cabeçalho, pra
-         fechar o plano sem rolar a tela (pedido do dono, 10/09/2026) */
-      const cab = m.kind === 'semana' && art.querySelector('.sem-cab');
-      if(cab) cab.appendChild(bs); else art.appendChild(bs);
+      /* O CARTÃO DE SEGUNDA COM UM BOTÃO SÓ (pedido do dono, 10/10/2026):
+         o "Fechar o planejamento" mora no rodapé do popup; no cartão
+         ficava em cima da lista, com o "Abrir" embaixo, dois botões pra
+         mesma semana */
+      if(m.kind !== 'semana') art.appendChild(bs);
     }
 
     /* A VÁLVULA DO RELÓGIO PARADO (correção do dono, 17/09/2026)
@@ -11027,21 +11031,25 @@
      botão. Nesses dois a pergunta vira este cartão — e ela é só sobre
      COMO brigar: a ação já foi executada e o custo já saiu. */
   function comEscolhaDeBriga(fn){
+    /* O CARTÃO ENXUTO (pedido do dono, 10/10/2026): só o título e as
+       duas opções. A explicação foi pra dica dos botões, e o Fechar
+       saiu — a ação já foi paga, fechar sem escolher largava a briga
+       no meio do caminho. */
     const corpo = el('div');
-    corpo.appendChild(el('div',{class:'em-construcao', texto:
-      _t('Descer abre a cena e você comanda o bonde. Simular roda o duelo na hora — as consequências são as mesmas.')}));
     const bs = el('div',{class:'msg-bts'});
     let fechar = null;
-    const opcao = (rot, classe, simular)=>{
+    const opcao = (rot, classe, simular, dica)=>{
       const bt = el('button',{class:'bt '+classe, html:`<span>${rot}</span>`});
+      bt.title = dica;
       bt.onclick = ()=>{ if(fechar) fechar(); fn(simular); };
       bs.appendChild(bt);
     };
-    opcao(_t('Descer pra briga'), 'destaque', false);
-    opcao(_t('Simular'), 'simular', true);
+    opcao(_t('Descer pra briga'), 'destaque', false,
+          _t('Descer abre a cena e você comanda o bonde.'));
+    opcao(_t('Simular'), 'simular', true,
+          _t('Simular roda o duelo na hora — as consequências são as mesmas.'));
     corpo.appendChild(bs);
-    fechar = modal(_t('Como vai ser'), _t('a briga é a mesma; o comando é que muda'),
-                   corpo);
+    fechar = modal(_t('Como vai ser'), '', corpo, null, null, true);
     return fechar;
   }
 

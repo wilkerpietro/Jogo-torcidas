@@ -6982,9 +6982,11 @@ TO.feed = (function(){
        virou "pela": o artigo agora sai do mesmo `pelaComp` do resto. */
     const pen = d.pen;
     const quemPassa = pen ? (pen.c > pen.f ? d.casa : d.fora) : '';
-    m.consequencia = _t('Final: {casa} {gc} × {gf} {fora}{comp}.',
-                        {casa:d.casa, gc:d.gc, gf:d.gf, fora:d.fora,
-                         comp:d.comp ? pelaComp(d.comp) : ''})+
+    /* o "Final: …" guardado à parte: o cartão com o placar de TV o tira */
+    d.finalTxt = _t('Final: {casa} {gc} × {gf} {fora}{comp}.',
+                    {casa:d.casa, gc:d.gc, gf:d.gf, fora:d.fora,
+                     comp:d.comp ? pelaComp(d.comp) : ''});
+    m.consequencia = d.finalTxt +
                      (pen ? ' ' + _t('Nos pênaltis, {a} a {b}: quem passa é o {time}.',
                                      {a:Math.max(pen.c,pen.f), b:Math.min(pen.c,pen.f), time:quemPassa}) : '');
     /* apito final: a rede e a Gazeta podem falar dos resultados do dia */

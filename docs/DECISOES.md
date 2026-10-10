@@ -9600,6 +9600,31 @@ Pedidos do dono:
 - **Planejamento (`plano.js`):** o cartão curto e o popup com 4 itens, sem erro.
 - **Regressão:** `fim_briga` e os dois modos sem erro, nenhuma tradução faltando.
 
+## Menos texto na tela (pedido do dono, 10/10/2026)
+
+O dono apontou que a linha do dia de jogo trazia texto demais. Saíram
+quatro excessos:
+
+1. **Linha do itinerário.** Ficam só o símbolo, a hora e o nome da fase.
+   - Saíram o lugar (que agora aparece só como dica do nome), o estado
+     que repetia o nome, o rótulo do dia junto da hora e os pontinhos.
+   - O efetivo aparece por alguns segundos quando muda e ao tocar na
+     linha.
+2. **Cartão da partida.**
+   - Com o placar de TV no cartão, o "Final: …" foi removido.
+     `d.finalTxt` guarda esse texto para tirá-lo da consequência. O
+     resto da consequência continua, como os pênaltis e a briga na
+     arquibancada.
+   - A tabela de quem está no estádio aparece só antes do apito.
+3. **"Como vai ser".** Ficaram só o título e os dois botões.
+   - A explicação foi para a dica de cada botão.
+   - O "Fechar" saiu: a ação já foi paga, e fechar sem escolher deixava
+     a briga no meio do caminho.
+4. **Cartão de segunda.**
+   - A semana e as datas ficam numa linha só.
+   - Fica um botão só, "Abrir o planejamento". O "Fechar o
+     planejamento" continua no rodapé do popup.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

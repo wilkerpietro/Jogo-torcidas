@@ -67,20 +67,6 @@
 .itn-mini.fechado .itn-linha{border-left-color:var(--linha)}
 .itn-mini.fechado .itn-ic{color:var(--fraco); border-color:var(--linha)}
 
-/* ---------- os pontinhos do dia ---------- */
-.itn-pontos{display:flex; gap:4px; padding:6px 2px 0 47px; flex-wrap:wrap}
-.itn-ponto{
-  display:block; width:6px; height:6px; border-radius:50%;
-  background:var(--fundo); border:1px solid var(--linha); transition:.25s;
-}
-.itn-ponto.dojogo{width:8px; height:8px; margin-top:-1px}
-.itn-ponto.passou{background:var(--fraco); border-color:var(--fraco)}
-.itn-ponto.passou.brigou{background:var(--rubro-vivo); border-color:var(--rubro-vivo)}
-.itn-ponto.agora{
-  background:var(--ouro); border-color:var(--ouro); transform:scale(1.35);
-  box-shadow:0 0 0 3px rgba(217,164,65,.16);
-}
-
 /* ---------- os recados embaixo da linha ---------- */
 .itn-recados{display:flex; flex-direction:column; gap:4px}
 .itn-recados:empty{display:none}
@@ -144,11 +130,9 @@
   .itn-ic svg{width:17px; height:17px}
   .itn-linha .itn-efetivo{grid-column:2 / -1; margin-top:2px}
   .itn-nome .lugar{display:block; margin:1px 0 0; white-space:normal}
-  .itn-pontos{padding-left:2px}
 }
 @media (prefers-reduced-motion:reduce){
   .itn-cartao{animation:none}
-  .itn-ponto{transition:none}
 }
 
 /* O EFETIVO QUE ANDA COM A LINHA (régua do dono, 20/08/2026): o bonde
@@ -160,6 +144,12 @@
   text-align:right;
 }
 .itn-efetivo b{color:var(--texto); font-weight:600}
+/* A LINHA ENXUTA (dono, 10/10/2026): o efetivo só aparece quando muda
+   (some sozinho depois) ou quando se toca na linha */
+.itn-linha{cursor:pointer}
+.itn-linha .itn-efetivo{opacity:0; transition:opacity .3s}
+.itn-linha.efetivo-mudou .itn-efetivo,
+.itn-linha.ver-efetivo .itn-efetivo{opacity:1}
 /* a escolta da aliada, somada ao nosso número só nas paradas da cidade */
 .itn-efetivo .escolta{color:var(--verde-vivo)}
 .itn-efetivo .escolta b{color:var(--verde-vivo)}
