@@ -284,7 +284,7 @@ TO.mapaCaravana = (function(){
     return [i0, j0];
   }
   /* o A*: custo 1 na rua (√2 na diagonal), 40 fora dela */
-  function caminhoPelasRuas(G, A, B){
+  function caminhoPelasRuas(G, A, B, entraNoFim, saiDaRua){
     if(!G || G.falhou || !G.rua) return null;
     const [ai, aj] = ruaMaisPerto(G, ...celDe(G, A[0], A[1]));
     const [bi, bj] = ruaMaisPerto(G, ...celDe(G, B[0], B[1]));
@@ -316,7 +316,9 @@ TO.mapaCaravana = (function(){
     for(let n = fim; n >= 0; n = n === ini ? -1 : de[n]) cels.push(n);
     cels.reverse();
     /* só as quinas: os trechos retos viram um segmento */
-    const pts = [A.slice()];
+    /* o começo é o ponto de partida (a sede, a entrada); saindo do
+       estádio, a linha já começa na rua dele */
+    const pts = saiDaRua ? [] : [A.slice()];
     let ant = null;
     cels.forEach((n, k) => {
       const i = n % nx, j = (n - i) / nx;
@@ -325,7 +327,8 @@ TO.mapaCaravana = (function(){
       if(k === 0 || k === cels.length - 1 || dir !== ant) pts.push(mundoDe(G, i, j));
       ant = dir;
     });
-    pts.push(B.slice());
+    /* o fim (o estádio) fica na rua dele: a linha não entra (10/10/2026) */
+    if(entraNoFim) pts.push(B.slice());
     return pts;
   }
   /* a linha em `n` passos de mesmo comprimento: o ônibus anda igual em
@@ -383,7 +386,7 @@ TO.mapaCaravana = (function(){
     let pts = [], pos = 0, parar = null, linhaFeita = null;
     /* o caminho pelas ruas (null enquanto a grade não sai): a linha de
        quinas, de A pra B; na volta, invertida */
-    let caminho = null, pronto = false, esperando = null;
+    let caminho = null, pronto = false, esperando = null, volta = false;
     const ponto = t => {
       const i = Math.max(0, Math.min(pts.length - 1, Math.floor(t)));
       const j = Math.min(pts.length - 1, i + 1), f = t - i;
@@ -400,7 +403,10 @@ TO.mapaCaravana = (function(){
       linhaFeita = sv('polyline', {points:'', class:'mc-rota-feita', 'stroke-width':(k*1).toFixed(1)});
       gLinha.appendChild(linhaFeita);
       /* os três pontos do caminho, miúdos */
-      for(const [rot, i] of [[_t('Concentração'), PONTO_NA_LINHA.concentracao], [_t('Pista'), PONTO_NA_LINHA.pista], [_t('Arredores'), PONTO_NA_LINHA.arredores]]){
+      /* na volta a ordem é a da saída do estádio: arredores, pista */
+      const marcos = volta ? [[_t('Arredores'), PONTO_NA_LINHA.concentracao], [_t('Pista'), PONTO_NA_LINHA.pista]]
+        : [[_t('Concentração'), PONTO_NA_LINHA.concentracao], [_t('Pista'), PONTO_NA_LINHA.pista], [_t('Arredores'), PONTO_NA_LINHA.arredores]];
+      for(const [rot, i] of marcos){
         const q = pts[i];
         gPontas.appendChild(sv('circle', {cx:q[0].toFixed(0), cy:q[1].toFixed(0), r:(k*0.6).toFixed(1), class:'mc-marco'}));
         const t = sv('text', {x:q[0].toFixed(0), y:(q[1] + k*3.2).toFixed(0), class:'mc-marco-rot', 'text-anchor':'middle',
@@ -429,7 +435,10 @@ TO.mapaCaravana = (function(){
     /* a grade de ruas sai da imagem; com ela, a linha refaz pelas ruas.
        Quem pedir pra andar antes espera (no máximo 3 s, e aí vai na reta) */
     const ficarPronto = () => { if(pronto) return; pronto = true; pintar(); pintarOnibus(); if(esperando){ const f = esperando; esperando = null; f(); } };
-    gradeDeRuas(opc.cid, P, G => { caminho = caminhoPelasRuas(G, A, B); ficarPronto(); });
+    /* o fim é o estádio na ida (a linha para na rua dele) e a entrada da
+       praça na volta de fora (aí vai até ela) */
+    let entraNoFim = false;
+    gradeDeRuas(opc.cid, P, G => { caminho = caminhoPelasRuas(G, A, B, entraNoFim); ficarPronto(); });
     setTimeout(ficarPronto, 3000);
     const api = {
       el: caixa,
@@ -450,10 +459,20 @@ TO.mapaCaravana = (function(){
         return balaoEm(caixa, camada, (q[0] - vb.x) / vb.w * 100, (q[1] - vb.y) / vb.h * 100, nodo);
       },
       fecharBalao(){ camada.innerHTML = ''; caixa.classList.remove('com-balao'); caixa.style.marginBottom = ''; caixa.style.marginTop = ''; },
+      /* outro caminho no mesmo mapa (a volta de fora: do estádio pra
+         entrada da praça), com o ônibus no começo */
+      trocar(de, ate){
+        if(parar) parar();
+        A = [de.x, de.y]; B = [ate.x, ate.y]; rotA = de.rot || ''; rotB = ate.rot || '';
+        pos = 0; caminho = null; pronto = false; entraNoFim = true; volta = true;
+        pintar(); pintarOnibus();
+        gradeDeRuas(opc.cid, P, G => { caminho = caminhoPelasRuas(G, A, B, true, true); pronto = false; ficarPronto(); });
+        setTimeout(ficarPronto, 3000);
+      },
       /* a volta: do estádio pro ponto de partida */
       inverter(){
         if(parar) parar();
-        [A, B] = [B, A]; [rotA, rotB] = [rotB, rotA]; pos = 0;
+        [A, B] = [B, A]; [rotA, rotB] = [rotB, rotA]; pos = 0; volta = !volta;
         if(caminho) caminho = caminho.slice().reverse();
         pintar(); pintarOnibus();
       }

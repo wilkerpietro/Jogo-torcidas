@@ -433,16 +433,20 @@ TO.itinerario = (function(){
         de = doBairro(Dm.bairroDaFilial(E.torcida.id, cid));
         if(de) de.rot = _t('Nossa subsede');
       }
-      if(!de){
-        const ents = (P.r || []).filter(r => r[3] === 'e' && /^(Entrada|Estrada)\b/.test(r[0]));
-        if(ents.length){
-          const r = ents[TO.mapa.hash(`entrada|${E.data.ano}|${E.data.semana}|${cid}`) % ents.length];
-          de = {x:r[1], y:r[2], rot:_t(r[0])};
-        }
-      }
+      if(!de) de = entrada();
     }
     if(!de) return null;
-    return {cid, de, ate};
+    /* A VOLTA (o dono, 10/10/2026: "o passo 4 vai só até a pista se for em
+       casa e se for fora vai pra entrada da cidade"): em casa a linha da
+       ida, ao contrário, até a pista; fora, do estádio pra entrada */
+    const volta = j.casa ? null : entrada();
+    return {cid, de, ate, volta: volta ? {de:Object.assign({}, ate), ate:volta} : null};
+    function entrada(){
+      const ents = (P.r || []).filter(r => r[3] === 'e' && /^(Entrada|Estrada)\b/.test(r[0]));
+      if(!ents.length) return null;
+      const r = ents[TO.mapa.hash(`entrada|${E.data.ano}|${E.data.semana}|${cid}`) % ents.length];
+      return {x:r[1], y:r[2], rot:_t(r[0])};
+    }
   }
 
   /* A ROTA DO DIA SEM MONTAR O DIA (10/10/2026): o mapa da mensagem,

@@ -9569,6 +9569,37 @@ Pedidos do dono:
 - **Briga da arquibancada:** abre em tela cheia e volta pro cartão.
 - **Regressão:** `fim_briga` sem erro e nenhuma tradução faltando.
 
+## A volta do dia de jogo, a linha na rua do estádio e o planejamento em popup no 2D (o dono, 10/10/2026)
+
+Pedidos do dono:
+- "O passo 4 do dia de jogo vai só até a pista se for em casa e se for fora vai pra entrada da cidade."
+- "O traçado que se cria no mapa da cidade não precisa entrar dentro do estádio, basta chegar na rua do estádio que já serve."
+- "O planejamento voltou a ter o visual antigo. Ajuste o visual dele."
+
+**A volta (passo 4)**
+- **Em casa:** a linha da ida, ao contrário, e o ônibus para na pista. A ordem dos pontos é a da saída: arredores, depois pista.
+- **Fora:** um caminho novo, da rua do estádio até uma entrada da praça (`trajeto.volta`, `criarTrecho().trocar`), e depois a estrada no mapa do Brasil, como antes.
+
+**A linha para na rua do estádio.** O caminho pelas ruas termina na rua mais perto do estádio e não entra nele. A volta de fora também começa nessa rua.
+
+**O planejamento**
+- **O que estava errado:** o popup ("transforme o planejamento da semana em um popup", 29/09) foi feito no jogo 3D (commit `8c1a8bc`) e nunca chegou ao 2D, que ainda abria a planilha antiga dentro do cartão de segunda.
+- **No `main.js`:** o 2D recebe o mesmo bloco do 3D, com o cartão de segunda curto, o botão "Abrir o planejamento" e `abrirPlanejamento`.
+- **No CSS:** `css/planejamento.css` é a cópia do 3D.
+- **`idaNoDiaDo`:** veio junto. No 2D é sempre falso, porque aqui o ataque continua sendo decidido no planejamento.
+- **O popup:**
+  - no alto, a semana, o caixa, os aptos e as bombas;
+  - à esquerda, a pauta da semana, com a decisão de cada item;
+  - à direita, o item em seções numeradas: quem vai estar na rua, na rua (ir em paz ou atacar) e as bombas;
+  - no pé, o que a semana custa e o botão de fechar.
+- **Traduções:** as 69 traduções do bloco vieram do dicionário do 3D.
+
+**Testes:**
+- **Em casa, Corinthians × Ponte Preta:** a volta da Neo Química Arena até a pista, pelas ruas.
+- **Fora, Bragantino × Corinthians:** a volta da rua do Nabi Abi Chedid até a Entrada norte.
+- **Planejamento (`plano.js`):** o cartão curto e o popup com 4 itens, sem erro.
+- **Regressão:** `fim_briga` e os dois modos sem erro, nenhuma tradução faltando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
