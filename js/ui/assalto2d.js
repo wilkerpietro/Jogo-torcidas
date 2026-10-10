@@ -1,256 +1,89 @@
 /* =========================================================
-   O ASSALTO NO 2D, VISTO DE CIMA (pedido do dono, 10/10/2026:
+   O ASSALTO NO 2D, SOBRE A FOTO DA LOJA (pedido do dono, 10/10/2026:
    "criar os cenários de assalto agora, similares a como funciona no 3d,
-   cada uma num nível de dificuldade")
+   cada uma num nível de dificuldade" — e "os bonecos têm que ser os
+   nossos bonecos")
 
    O motor é o do jogo 3D, inteiro (assalto_motor.js: a percepção —
-   exposição, suspeita, alerta —, o anúncio, o saque, a polícia, a fuga);
-   as lojas são as plantas do 3D (lojas.js). Aqui fica o que é do 2D:
+   exposição, suspeita, alerta —, o anúncio, o saque, a polícia, a fuga).
+   O palco é o das brigas: a foto da loja (cena `assalto-<alvo>`, com a
+   máscara do importador) e os NOSSOS BONECOS (bonecos3) por cima, na
+   mesma câmera de cima. Aqui fica o que é do assalto:
 
-   1. O TABULEIRO (`tabuleiro`): a loja no meio de um quarteirão
-      inventado — a rua da frente, a calçada, a rua de lado (a esquina,
-      por onde sai a porta dos fundos), os prédios vizinhos — numa grade
-      de 25 cm: onde o corpo cabe (a parede e o móvel, engordados do
-      raio do corpo, não), o que barra o olhar (a parede e o móvel alto;
-      o vidro deixa ver), as zonas (a loja e a área restrita) e os
-      pontos: o carro da fuga, os olheiros, por onde a PM chega, por
-      onde o povo passa.
-   2. O PALCO: um canvas por cima de tudo, a planta desenhada de cima
-      (o chão e os móveis assados uma vez numa camada só), e por cima,
-      a cada quadro, o saque, as câmeras, quem está lá e o CONE DO
-      OLHAR de cada um — cortado pelas paredes, que é o que o jogador
-      precisa ver pra fazer o furtivo.
+   1. O TABULEIRO (`tabuleiro`): a grade do motor sai da máscara da cena
+      (8 px por célula, em pixel da tela) — onde o corpo cabe é onde a
+      máscara deixa andar; o que barra o olhar é o que não é chão, menos
+      o vidro e o móvel baixo (dados/assaltos.js); as zonas e os pontos
+      (a van, os olheiros, os postos, os SEGURANÇAS, o saque, as
+      câmeras) vêm do mesmo arquivo. `M` é quantos pixels dão um metro
+      naquela foto: o motor anda, olha e prende em metros, e o boneco
+      cresce na mesma conta.
+   2. O PALCO: o canvas da foto e o WebGL dos bonecos com a mesma caixa;
+      entre os dois, na camada da foto, o CONE DO OLHAR de quem trabalha
+      e das câmeras — cortado pela parede, que é o que o jogador precisa
+      ver pra fazer o furtivo — e o saque; por cima, o "?" e o "!".
    3. O HUD e o CONTROLE: a Exposição, a Suspeita e a Situação, o butim,
       a equipe, a polícia, quem está te olhando; o teclado (WASD/setas,
       Shift, E, Q, Z, X, V, Esc) e, no toque, o joystick e os botões.
-
-   Os seis alvos são seis níveis: roupas e mercadinho (nível 1 e 2), o
-   posto (3), o supermercado (4), a joalheria (5) e o banco (6) — o
-   perfil de cada um (acoes.js, PERFIL_ASSALTO) e a planta fazem a
-   dificuldade: mais segurança, mais câmera, mais gente olhando, o cofre
-   que pede três da equipe juntos.
    ========================================================= */
 (function(){
   'use strict';
   const U = TO.util;
-  const CEL = 0.25, RAIO = 0.2;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const dinheiro = v => U.dinheiro(Math.round(v || 0));
+  /* o boneco tem uns 20 px por metro na escala de sempre */
+  const PX_POR_METRO_DO_BONECO = 20;
 
   /* =======================================================
-     1. O TABULEIRO
+     1. O TABULEIRO, a partir da cena da foto
      ======================================================= */
-  /* a medida do quarteirão (m): a calçada, a rua e a rua de lado */
-  const Q = {calc:2.5, rua:7, margem:16, lado:9.5, ladoCalc:2.2, fundo:3};
-  function tabuleiro(tipo){
-    const Lj = TO.lojas;
-    const W = Lj.MEDIDAS_LOJA[tipo].larg, D = Lj.FUNDO_LOJA[tipo];
-    const planta = Lj.plantaDaLoja(tipo, W, D, 'dir');
-    const plano = Lj.planoDaLoja(tipo, W, D, 'dir');
-    const x0 = -Q.margem, x1 = W + Q.margem, z0 = -D - Q.fundo, z1 = Q.calc + Q.rua + Q.calc;
-    const nx = Math.ceil((x1 - x0) / CEL), nz = Math.ceil((z1 - z0) / CEL);
+  const ROT_SAQUE = s => ({
+    caixa:_t('Esvaziar o caixa'), arara:_t('Encher a sacola de roupa'), cigarros:_t('Pegar os cigarros'),
+    cofrinho:_t('Abrir o cofrinho'), cofre:_t('Abrir o cofre'), cofreGerencia:_t('Abrir o cofre da gerência'),
+    vitrine:_t('Limpar a vitrine'), guiche:_t('Esvaziar o caixa {n}', {n:s.n || ''}), cofreForte:_t('Abrir o cofre-forte')
+  })[s.rot] || _t('Pegar');
+  function tabuleiro(alvo){
+    const d = TO.dados.assaltos && TO.dados.assaltos[alvo];
+    const A = TO.diaJogo.arredores;
+    if(!d || !A) return null;
+    A.usarCena('assalto-' + alvo);
+    const W = A.W || 1536, H = A.H || 1024, cel = A.CEL || 8;
+    const nx = Math.round(W/cel), nz = Math.round(H/cel);
     const anda = new Uint8Array(nx*nz), ve = new Uint8Array(nx*nz), zona = new Uint8Array(nx*nz);
-    /* o chão de cada célula: 0 prédio, 1 calçada, 2 asfalto, 3 lote */
-    const chao = new Uint8Array(nx*nz);
-    const ladoX0 = W, ladoX1 = W + Q.lado;
-    const tipoDoChao = (x, z) => {
-      if(z > 0) return (z <= Q.calc || z > Q.calc + Q.rua) ? 1 : 2;
-      if(x >= ladoX0 && x <= ladoX1 && z >= z0)
-        return (x <= ladoX0 + Q.ladoCalc || x >= ladoX1 - Q.ladoCalc) ? 1 : 2;
-      if(x >= 0 && x <= W && z >= -D) return 3;
-      return 0;
-    };
-    /* o que barra o corpo: as paredes (vidro também) sem os vãos, e os
-       móveis (a cobertura do posto é teto, não chão) */
-    const barra = [];
-    for(const p of planta.paredes){
-      const vaos = (p.vaos || []).slice().sort((a, b) => a.a0 - b.a0);
-      let a = p.a0;
-      const corta = (u0, u1) => { if(u1 - u0 < 1e-3) return; barra.push(p.ao === 'x' ? {x0:u0, x1:u1, z0:p.c0, z1:p.c1} : {x0:p.c0, x1:p.c1, z0:u0, z1:u1}); };
-      for(const v of vaos){ corta(a, v.a0); a = Math.max(a, v.a1); }
-      corta(a, p.a1);
-    }
-    for(const m of planta.moveis) if(m.tipo !== 'cobertura') barra.push(m);
-    const dentro = (r, x, z, f) => x >= r.x0 - f && x <= r.x1 + f && z >= r.z0 - f && z <= r.z1 + f;
-    const opacos = plano.opacos;
+    const dentro = (r, x, y) => x >= r.x0 && x <= r.x1 && y >= r.y0 && y <= r.y1;
     for(let j = 0; j < nz; j++) for(let i = 0; i < nx; i++){
-      const k = j*nx + i, wx = x0 + (i + 0.5)*CEL, wz = z0 + (j + 0.5)*CEL;
-      const c = tipoDoChao(wx, wz);
-      chao[k] = c;
-      if(c === 0){ anda[k] = 0; ve[k] = 0; continue; }
-      if(c === 3){
-        anda[k] = barra.some(r => dentro(r, wx, wz, RAIO)) ? 0 : 1;
-        ve[k] = opacos.some(o => dentro(o, wx, wz, 0)) ? 0 : 1;
-        zona[k] = plano.zonas.restrita.some(r => dentro(r, wx, wz, 0)) ? 2
-          : plano.zonas.loja.some(r => dentro(r, wx, wz, 0)) && !(plano.zonas.fora || []).some(r => dentro(r, wx, wz, 0)) ? 1 : 0;
-      } else {
-        /* o lote encosta na calçada: a primeira faixa dele não é rua */
-        anda[k] = 1; ve[k] = 1;
-      }
+      const k = j*nx + i, x = (i + 0.5)*cel, y = (j + 0.5)*cel;
+      anda[k] = A.celulaLivre(i, j) ? 1 : 0;
+      ve[k] = anda[k] || d.vidros.some(r => dentro(r, x, y)) || d.baixos.some(r => dentro(r, x, y)) ? 1 : 0;
+      zona[k] = d.restrita.some(r => dentro(r, x, y)) ? 2 : d.loja.some(r => dentro(r, x, y)) ? 1 : 0;
     }
-    const idx = (wx, wz) => { const i = Math.floor((wx - x0)/CEL), j = Math.floor((wz - z0)/CEL); return i < 0 || j < 0 || i >= nx || j >= nz ? -1 : j*nx + i; };
-    const centro = k => ({x: x0 + ((k % nx) + 0.5)*CEL, z: z0 + (Math.floor(k/nx) + 0.5)*CEL});
-    const soltar = (wx, wz, ate = 3) => {
-      const k0 = idx(wx, wz);
-      if(k0 >= 0 && anda[k0]) return {x:wx, z:wz};
-      const R = Math.ceil(ate/CEL), i0 = Math.floor((wx - x0)/CEL), j0 = Math.floor((wz - z0)/CEL);
-      let best = -1, bd = Infinity;
-      for(let dj = -R; dj <= R; dj++) for(let di = -R; di <= R; di++){
-        const i = i0 + di, j = j0 + dj;
-        if(i < 0 || j < 0 || i >= nx || j >= nz || !anda[j*nx + i]) continue;
-        const d = di*di + dj*dj;
-        if(d < bd){ bd = d; best = j*nx + i; }
-      }
-      return best >= 0 ? centro(best) : null;
-    };
-    /* SÓ O CHÃO LIGADO À CALÇADA (o que se alcança andando da rua) */
-    {
-      const semente = soltar(W/2, 1.2, 3);
-      const n = nx*nz, visto = new Uint8Array(n), fila = new Int32Array(n);
-      let a = 0, b = 0;
-      const s0 = idx(semente.x, semente.z); visto[s0] = 1; fila[b++] = s0;
-      while(a < b){
-        const k = fila[a++], i = k % nx, j = (k - i)/nx;
-        for(const [di, dj] of [[1,0],[-1,0],[0,1],[0,-1]]){
-          const ii = i + di, jj = j + dj, q = jj*nx + ii;
-          if(ii < 0 || jj < 0 || ii >= nx || jj >= nz || visto[q] || !anda[q]) continue;
-          visto[q] = 1; fila[b++] = q;
-        }
-      }
-      for(let k = 0; k < n; k++) if(!visto[k]) anda[k] = 0;
-    }
-    const naRua = (x, z, ate = 3) => soltar(x, z, ate);
-    const frente = plano.portas.find(q => q.rua === 'frente') || plano.portas[0];
-    /* O CARRO DA FUGA: no asfalto da frente, do lado de dentro da quadra
-       (longe da esquina), a uns 11 m da porta */
-    const carro = Object.assign(naRua(frente.x - 11, Q.calc + 1.6, 4), {rumo:-Math.PI/2});
-    const olheiros = [naRua(W + 1.1, 1.2, 3), naRua(-7, 1.2, 3)].filter(Boolean)
-      .map((p, i) => Object.assign(p, {rumo: i === 0 ? Math.PI/2 : -Math.PI/2}));
-    const chegadaPM = [naRua(x0 + 2, Q.calc + 4.5, 4), naRua(x1 - 2, Q.calc + 4.5, 4),
-                       naRua(W + Q.lado/2, z0 + 1, 4)].filter(Boolean).map(p => Object.assign(p, {rumo:0}));
-    const rua = [];
-    for(const lx of [-13, -8, -3, W/2, W + 4, W + 10, W + 14]){ const p = naRua(lx, 1.2, 2); if(p) rua.push(p); }
-    for(const lz of [-2, -D/2, -D + 1]){ const p = naRua(W + 1.1, lz, 2); if(p) rua.push(p); }
-    const fugaPovo = [naRua(x0 + 1, 1.2, 3), naRua(x1 - 1, 1.2, 3)].filter(Boolean);
-    const cp = p => p ? Object.assign({}, p) : null;
+    /* os pontos: {x, y} da tela viram {x, z} do motor */
+    const pt = p => p ? Object.assign({}, p, {z:p.y}) : null;
     const pontos = {
-      carro, olheiros, chegadaPM, rua, fugaPovo,
-      porta: {x:frente.x, z:frente.z}, saidaRua: {x:frente.x, z:2.2},
-      funcionarios: plano.funcionarios.map(cp), segurancas: plano.segurancas.map(s => Object.assign(cp(s), {ronda:(s.ronda || []).map(cp)})),
-      clientes: plano.clientes.map(cp), saque: plano.saque.map(cp), cameras: plano.cameras.map(cp), alarmes: plano.alarmes.map(cp),
-      gravador: cp(plano.gravador), fundos: cp(plano.fundos)
+      carro:pt(d.carro), olheiros:d.olheiros.map(pt), chegadaPM:d.chegadaPM.map(pt), rua:d.rua.map(pt),
+      fugaPovo:d.fugaPovo.map(pt), porta:pt(d.porta), saidaRua:pt(d.saidaRua),
+      funcionarios:d.funcionarios.map(pt),
+      segurancas:d.segurancas.map(s => Object.assign(pt(s), {ronda:(s.ronda || []).map(pt)})),
+      clientes:d.clientes.map(pt),
+      saque:d.saque.map(s => Object.assign(pt(s), {rot:ROT_SAQUE(s)})),
+      cameras:d.cameras.map(c => Object.assign(pt(c), {alcance:c.alcance})),
+      alarmes:d.alarmes.map(pt), gravador:pt(d.gravador), fundos:pt(d.fundos)
     };
-    return {
-      mapa:{M:1, x0, z0, cel:CEL, nx, nz, anda, ve, zona, pontos, chao:() => 0},
-      chao, planta, plano, W, D, x0, x1, z0, z1, nx, nz, idx
-    };
-  }
-
-  /* =======================================================
-     2. O DESENHO
-     ======================================================= */
-  const COR_MOVEL = {
-    gondola:'#b49a6c', prateleira_parede:'#a98f63', prateleira_baixa:'#c2a878', geladeiras:'#d6e8ee', cofre:'#59606a',
-    cofre_forte:'#4a5058', vitrine_balcao:'#bfe3f2', vitrine_fachada:'#cfeaf5', arara:'#8e5a8a', mesa_gerente:'#7a5a3a',
-    armario:'#6b5a48', atm:'#2f5f96', poste_fila:'#888', banco_espera:'#6d6d6d', ilha:'#8a8a86', totem:'#2e7d32',
-    pilha:'#a58a5a', bancada:'#6b5b4b', provador:'#7d3a6c', gravador:'#1d1d1d', checkout:'#77797c'
-  };
-  /* a camada parada (o chão, as paredes, os móveis), assada uma vez a PX por metro */
-  const PX = 24;
-  function assar(T, tipo){
-    const cv = document.createElement('canvas');
-    const w = Math.ceil((T.x1 - T.x0)*PX), h = Math.ceil((T.z1 - T.z0)*PX);
-    cv.width = w; cv.height = h;
-    const g = cv.getContext('2d');
-    const X = x => (x - T.x0)*PX, Z = z => (z - T.z0)*PX;
-    const cor = (TO.lojas.COR_LOJA() || {})[tipo] || {piso:'#ddd', balcao:'#876'};
-    /* o chão, célula a célula, numa ImageData */
-    const img = g.createImageData(T.nx, T.nz);
-    const PAL = [[78,66,58], [150,146,138], [56,58,62], null];
-    const piso = hex => [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
-    const pisoL = piso(cor.piso), pistaP = [176,174,168];
-    for(let k = 0; k < T.nx*T.nz; k++){
-      const c = T.chao[k];
-      let rgb = PAL[c];
-      if(c === 3){
-        const zn = T.mapa.zona[k];
-        rgb = zn === 2 ? pisoL.map(v => Math.round(v*0.86)) : zn === 1 ? pisoL : pistaP;
-      }
-      img.data[k*4] = rgb[0]; img.data[k*4+1] = rgb[1]; img.data[k*4+2] = rgb[2]; img.data[k*4+3] = 255;
-    }
-    const tmp = document.createElement('canvas'); tmp.width = T.nx; tmp.height = T.nz;
-    tmp.getContext('2d').putImageData(img, 0, 0);
-    g.imageSmoothingEnabled = false;
-    g.drawImage(tmp, 0, 0, w, h);
-    /* os prédios vizinhos: o telhado com as linhas */
-    {
-      g.save();
-      g.beginPath();
-      for(let j = 0; j < T.nz; j++) for(let i = 0; i < T.nx; i++) if(T.chao[j*T.nx + i] === 0) g.rect(i*CEL*PX, j*CEL*PX, CEL*PX + 0.5, CEL*PX + 0.5);
-      g.clip();
-      g.strokeStyle = 'rgba(0,0,0,.22)'; g.lineWidth = 2;
-      for(let y = 0; y < h; y += 14){ g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
-      g.restore();
-    }
-    /* a faixa da rua */
-    g.strokeStyle = 'rgba(240,210,90,.55)'; g.lineWidth = 2; g.setLineDash([16, 14]);
-    const zm = Q.calc + Q.rua/2;
-    g.beginPath(); g.moveTo(0, Z(zm)); g.lineTo(X(T.W), Z(zm)); g.moveTo(X(T.W + Q.lado), Z(zm)); g.lineTo(w, Z(zm)); g.stroke();
-    const xm = T.W + Q.lado/2;
-    g.beginPath(); g.moveTo(X(xm), 0); g.lineTo(X(xm), Z(0)); g.stroke();
-    g.setLineDash([]);
-    /* os móveis */
-    for(const m of T.planta.moveis){
-      const x = X(m.x0), y = Z(m.z0), mw = (m.x1 - m.x0)*PX, mh = (m.z1 - m.z0)*PX;
-      if(m.tipo === 'cobertura'){
-        g.strokeStyle = 'rgba(255,255,255,.35)'; g.setLineDash([6, 6]); g.lineWidth = 2;
-        g.strokeRect(x, y, mw, mh); g.setLineDash([]); continue;
-      }
-      g.fillStyle = m.tipo === 'balcao' || m.tipo === 'guiche' ? cor.balcao : (COR_MOVEL[m.tipo] || '#999');
-      g.fillRect(x, y, mw, mh);
-      g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1; g.strokeRect(x + .5, y + .5, mw - 1, mh - 1);
-      if(m.tipo === 'guiche'){ g.fillStyle = 'rgba(160,210,240,.5)'; g.fillRect(x, y + mh*0.35, mw, mh*0.3); }
-      if(m.tipo === 'cofre' || m.tipo === 'cofre_forte'){
-        g.strokeStyle = '#c9ced6'; g.lineWidth = 2; g.beginPath();
-        g.arc(x + mw/2, y + mh/2, Math.min(mw, mh)*0.28, 0, Math.PI*2); g.stroke();
-      }
-    }
-    /* as paredes: a de alvenaria escura, o vidro azulado */
-    for(const p of T.planta.paredes){
-      const vaos = (p.vaos || []).slice().sort((a, b) => a.a0 - b.a0);
-      let a = p.a0;
-      const corta = (u0, u1) => {
-        if(u1 - u0 < 1e-3) return;
-        const r = p.ao === 'x' ? {x0:u0, x1:u1, z0:p.c0, z1:p.c1} : {x0:p.c0, x1:p.c1, z0:u0, z1:u1};
-        const ex = Math.max(3, (r.x1 - r.x0)*PX), ez = Math.max(3, (r.z1 - r.z0)*PX);
-        g.fillStyle = p.vidro ? 'rgba(150,205,240,.9)' : '#1b1b1d';
-        g.fillRect(X(r.x0) - (ex === 3 ? 1 : 0), Z(r.z0) - (ez === 3 ? 1 : 0), ex, ez);
-      };
-      for(const v of vaos){ corta(a, v.a0); a = Math.max(a, v.a1); }
-      corta(a, p.a1);
-    }
-    /* os botões do alarme e o gravador */
-    for(const al of T.plano.alarmes){ g.fillStyle = '#d32f2f'; g.beginPath(); g.arc(X(al.x), Z(al.z), 3, 0, Math.PI*2); g.fill(); }
-    if(T.plano.gravador){ g.fillStyle = '#111'; g.fillRect(X(T.plano.gravador.x) - 5, Z(T.plano.gravador.z) - 5, 10, 10); g.fillStyle = '#e53935'; g.fillRect(X(T.plano.gravador.x) - 1.5, Z(T.plano.gravador.z) - 1.5, 3, 3); }
-    /* o letreiro na calçada, em cima da porta */
-    const nome = (TO.lojas.NOMES_LOJA[tipo] || [''])[0];
-    g.font = `700 ${Math.round(PX*0.55)}px system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(X(T.W/2) - g.measureText(nome).width/2 - 6, Z(0.55) - PX*0.38, g.measureText(nome).width + 12, PX*0.76);
-    g.fillStyle = '#fff'; g.fillText(nome, X(T.W/2), Z(0.55));
-    return cv;
+    return {mapa:{M:d.M, x0:0, z0:0, cel, nx, nz, anda, ve, zona, pontos, chao:() => 0},
+            dados:d, W, H};
   }
 
   /* o cone do olhar, cortado pelas paredes: um leque de raios que param
-     na primeira célula opaca */
+     na primeira célula opaca (`alcance` em unidades do motor) */
   function leque(J, o, alcance, abre, rumo){
-    const m = J.mapa, n = 22, pts = [];
+    const m = J.mapa, n = 22, pts = [], passo = m.cel*0.5;
     const a0 = rumo - abre*Math.PI/180, a1 = rumo + abre*Math.PI/180;
     for(let r = 0; r <= n; r++){
       const a = a0 + (a1 - a0)*r/n, dx = Math.sin(a), dz = Math.cos(a);
       let L = 0;
       while(L < alcance){
-        const nl = L + CEL*0.5, x = o.x + dx*nl, z = o.y + dz*nl;
+        const nl = L + passo, x = o.x + dx*nl, z = o.y + dz*nl;
         const i = Math.floor((x - m.x0)/m.cel), j = Math.floor((z - m.z0)/m.cel);
         if(i < 0 || j < 0 || i >= m.nx || j >= m.nz || m.ve[j*m.nx + i] === 0) break;
         L = nl;
@@ -261,20 +94,18 @@
   }
 
   /* =======================================================
-     3. O PALCO, O HUD E O CONTROLE
+     2 e 3. O PALCO, O HUD E O CONTROLE
      ======================================================= */
   const COR_SIT = {'Normal':'#2e7d32', 'Suspeita':'#c77800', 'Alerta':'#c62828', 'Polícia no local':'#6a1b9a'};
   const ROT_SIT = () => ({'Normal':_t('Normal'), 'Suspeita':_t('Suspeita'), 'Alerta':_t('Alerta'), 'Polícia no local':_t('Polícia no local')});
   let ativo = null;
 
-  /* A CENA SÓ ABRE COM A FOTO (decisão do dono, 10/10/2026: "os bonecos
-     têm que ser os nossos bonecos"): o desenho de bolinhas daqui é o
-     andaime, e fica desligado até a foto de cada loja chegar
-     (img/cenas/PROMPT-ASSALTOS.md) e virar cena com os bonecos das
-     brigas. Sem ela, quem chama recebe o erro e a equipe faz sozinha. */
-  const temFoto = alvo => !!(TO.dados && TO.dados.cenas && TO.dados.cenas['assalto-' + alvo]);
-  function iniciar(op, grupo, forcar){
-    if(!forcar && !temFoto(op.alvo)) return Promise.resolve({erro:'sem a foto da loja'});
+  /* a loja só abre com a foto e com os bonecos: sem um dos dois, quem
+     chama recebe o erro e a equipe faz sozinha (a conta de acoes.js) */
+  const temFoto = alvo => !!(TO.dados && TO.dados.cenas && TO.dados.cenas['assalto-' + alvo] &&
+                             TO.dados.assaltos && TO.dados.assaltos[alvo]);
+  function iniciar(op, grupo){
+    if(!temFoto(op.alvo)) return Promise.resolve({erro:'sem a foto da loja'});
     return new Promise(ok => {
       let ctl = null;
       try { ctl = montar(op, grupo, r => { ativo = null; ok(r); }); }
@@ -289,7 +120,9 @@
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     if(!f || !P) return {erro:'alvo sem perfil'};
     const T = tabuleiro(op.alvo);
-    const nomeLoja = (TO.lojas.NOMES_LOJA[op.alvo] || [_t(f.a.nome)])[0];
+    if(!T) return {erro:'a loja não tem tabuleiro'};
+    const B3 = TO.diaJogo.bonecos3;
+    const nomeLoja = _t(f.a.nome);
     const cfg = {
       alvo:{id:op.alvo, nome:nomeLoja, recompensa:P.recompensa, exposicao:P.exposicao, seguranca:P.seguranca,
             movimentacao:P.movimentacao, atencao:f.atencao, dificuldade:P.dificuldade},
@@ -300,13 +133,17 @@
     };
     const J = MOT.criarAssalto(T.mapa, cfg);
     const L = J.lider;
-    const camada = assar(T, op.alvo);
+    /* o que o boneco lê e o motor não tem */
+    J.projeteis = J.projeteis || []; J.grades = J.grades || [];
+    for(const d of J.discos){ d.spawn = d.spawn || d.id; if(d === L) d.doJogador = true; }
     let fechado = false, pausado = false, vista = 'perto';
 
-    /* ---- o DOM ---- */
+    /* ---- o DOM: a foto, os bonecos e a camada de cima, na mesma caixa ---- */
     const raiz = el('div', 'asl2d');
     const cv = document.createElement('canvas'); cv.className = 'asl2d-cv'; raiz.appendChild(cv);
-    const g = cv.getContext('2d');
+    const cvGL = document.createElement('canvas'); cvGL.className = 'asl2d-cv asl2d-gl'; raiz.appendChild(cvGL);
+    const cvSobre = document.createElement('canvas'); cvSobre.className = 'asl2d-cv asl2d-sobre'; raiz.appendChild(cvSobre);
+    const g = cv.getContext('2d'), gS = cvSobre.getContext('2d');
     const hud = el('div', 'asl-hud', raiz);
     const avisos = el('div', 'asl-avisos', raiz);
     const dica = el('div', 'asl-dica', raiz);
@@ -345,6 +182,12 @@
     joy.addEventListener('pointerup', soltarJoy); joy.addEventListener('pointercancel', soltarJoy);
     document.body.appendChild(raiz);
     document.body.classList.add('asl2d-ativo');
+    /* OS NOSSOS BONECOS: o mesmo renderizador das brigas, no canvas de
+       cima da foto, crescidos na escala da foto (M px por metro) */
+    if(!B3 || !B3.montar(cvGL)){ raiz.remove(); document.body.classList.remove('asl2d-ativo'); return {erro:'os bonecos não montaram (sem WebGL)'}; }
+    const escalaAntes = B3.escalaDeCima, Jantes = TO.diaJogo.J;
+    B3.escalaDeCima = escalaAntes * (T.mapa.M / PX_POR_METRO_DO_BONECO);
+    TO.diaJogo.J = J;
 
     /* ---- o teclado ---- */
     const teclas = new Set();
@@ -382,15 +225,21 @@
     }
 
     /* ---- a câmera ---- */
-    const cam = {x:L.x, z:L.y, esc:30};
-    function escalaDaVista(){
-      const w = cv.clientWidth || innerWidth, h = cv.clientHeight || innerHeight;
+    /* de perto: uns 16 m na menor dimensão da tela, atrás do líder; de
+       cima (V): a loja inteira com a calçada e a van */
+    const cam = {x:L.x, y:L.y, s:0};
+    const caixaLoja = (() => {
+      const r = T.dados.loja.reduce((a, b) => ({x0:Math.min(a.x0, b.x0), y0:Math.min(a.y0, b.y0), x1:Math.max(a.x1, b.x1), y1:Math.max(a.y1, b.y1)}));
+      const c = T.dados.carro;
+      return {x0:Math.min(r.x0, c.x) - 60, y0:r.y0 - 40, x1:Math.max(r.x1, c.x) + 60, y1:Math.max(r.y1, c.y) + 60};
+    })();
+    function alvoDaVista(w, h){
       if(vista === 'alto'){
-        /* a loja inteira com a calçada e o carro */
-        const lw = T.W + 26, lh = T.D + Q.calc + Q.rua + 4;
-        return Math.min(w/lw, h/lh);
+        const b = caixaLoja;
+        return {x:(b.x0 + b.x1)/2, y:(b.y0 + b.y1)/2, s:Math.min(w/(b.x1 - b.x0), h/(b.y1 - b.y0))};
       }
-      return clamp(Math.min(w, h)/15, 18, 46);
+      const quem = L.vivo || L.preso ? L : J.equipe.find(d => d.vivo) || L;
+      return {x:quem.x, y:quem.y, s:Math.min(w, h)/(16*T.mapa.M)};
     }
     function trocarVista(){ vista = vista === 'perto' ? 'alto' : 'perto'; }
 
@@ -409,108 +258,80 @@
         tHud -= dt;
         if(tHud <= 0){ tHud = 0.1; pintarHud(); }
       }
-      desenhar(dt);
+      desenhar(pausado ? 0 : dt);
       if(J.fim && !fechado) terminar();
     }
 
+    let escala = {s:1, ox:0, oy:0};
     function desenhar(dt){
       const dpr = Math.min(2, window.devicePixelRatio || 1);
-      const w = cv.clientWidth, h = cv.clientHeight;
-      if(cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){ cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr); }
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      /* a câmera vai atrás do líder (ou da loja, na vista de cima) */
-      const alvo = vista === 'alto' ? {x:T.W/2 - 3, y:(-T.D + Q.calc + Q.rua)/2} : (L.vivo || L.preso ? L : J.equipe.find(d => d.vivo) || L);
-      const k = 1 - Math.exp(-dt*6);
-      cam.x += (alvo.x - cam.x)*k; cam.z += (alvo.y - cam.z)*k;
-      cam.esc += (escalaDaVista() - cam.esc)*k;
-      const S = cam.esc;
-      const X = x => (x - cam.x)*S + w/2, Z = z => (z - cam.z)*S + h/2;
-      g.fillStyle = '#1e1f22'; g.fillRect(0, 0, w, h);
-      g.imageSmoothingEnabled = true;
-      g.drawImage(camada, X(T.x0), Z(T.z0), (T.x1 - T.x0)*S, (T.z1 - T.z0)*S);
-      /* o carro da fuga */
-      const c = T.mapa.pontos.carro;
-      g.save(); g.translate(X(c.x), Z(c.z));
-      g.fillStyle = '#20252b'; g.fillRect(-2.3*S, -0.95*S, 4.6*S, 1.9*S);
-      g.fillStyle = '#5d7488'; g.fillRect(-2.0*S, -0.75*S, 1.0*S, 1.5*S);
-      g.fillStyle = '#ffd35a'; g.font = `700 ${Math.max(9, S*0.42)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(_t('CARRO'), 0.5*S, 0);
-      g.restore();
-      /* o saque: o que ainda tem, e o anel do progresso */
-      for(const s of J.saque){
-        if(s.vazio) continue;
-        const x = X(s.x), y = Z(s.y), r = Math.max(5, S*0.32);
-        g.fillStyle = 'rgba(255,211,90,.25)'; g.beginPath(); g.arc(x, y, r*1.7, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#ffd35a'; g.beginPath(); g.arc(x, y, r, 0, Math.PI*2); g.fill();
-        g.fillStyle = '#3b2c00'; g.font = `800 ${r*1.2}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText('$', x, y + 0.5);
-        if(s.prog > 0){ g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, r*1.45, -Math.PI/2, -Math.PI/2 + Math.PI*2*clamp(s.prog/s.tempo, 0, 1)); g.stroke(); }
-        if(s.precisa > 1){ g.fillStyle = '#fff'; g.font = `700 ${Math.max(9, S*0.3)}px system-ui,sans-serif`; g.fillText('×' + s.precisa, x, y + r*2.2); }
-      }
-      /* OS OLHARES: as câmeras e quem está acordado */
-      const R = MOT.REGUA;
+      const w = Math.round(cv.clientWidth*dpr), h = Math.round(cv.clientHeight*dpr);
+      for(const c of [cv, cvSobre]) if(c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+      /* a câmera vai atrás do líder sem passar da borda da foto */
+      const alvo = alvoDaVista(w, h), k = cam.s ? 1 - Math.exp(-(dt || 0.016)*6) : 1;
+      cam.x += (alvo.x - cam.x)*k; cam.y += (alvo.y - cam.y)*k; cam.s += (alvo.s - cam.s)*k;
+      const s = Math.max(cam.s, Math.max(w/T.W, h/T.H));
+      let ox = w/2 - cam.x*s, oy = h/2 - cam.y*s;
+      ox = clamp(ox, w - T.W*s, 0); oy = clamp(oy, h - T.H*s, 0);
+      escala = {s, ox, oy};
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.fillStyle = '#0e0e0d'; g.fillRect(0, 0, w, h);
+      g.setTransform(s, 0, 0, s, ox, oy);
+      TO.diaJogo.arredores.desenharFundo(g);
+      /* OS OLHARES, no chão, por baixo dos bonecos */
+      const R = MOT.REGUA, M = T.mapa.M;
       const cone = (o, alc, abre, rumo, cor) => {
-        const pts = leque(J, o, alc, abre, rumo);
-        g.fillStyle = cor; g.beginPath(); g.moveTo(X(o.x), Z(o.y));
-        for(const [px, pz] of pts) g.lineTo(X(px), Z(pz));
+        const pts = leque(J, o, alc*M, abre, rumo);
+        g.fillStyle = cor; g.beginPath(); g.moveTo(o.x, o.y);
+        for(const [px, pz] of pts) g.lineTo(px, pz);
         g.closePath(); g.fill();
       };
       if(!J.camerasDesligadas) for(const cm of J.cameras){
-        cone(cm, cm.alcance, cm.abre, cm.rumo, cm.viu > 0.01 ? 'rgba(255,82,82,.20)' : 'rgba(120,170,255,.12)');
-        g.fillStyle = '#222'; g.fillRect(X(cm.x) - 4, Z(cm.y) - 4, 8, 8);
-        g.fillStyle = cm.viu > 0.01 ? '#ff5252' : '#7fb0ff'; g.fillRect(X(cm.x) - 1.5, Z(cm.y) - 1.5, 3, 3);
+        cone(cm, cm.alcance, cm.abre, cm.rumo, cm.viu > 0.01 ? 'rgba(255,82,82,.22)' : 'rgba(120,170,255,.14)');
+        g.fillStyle = '#1b1b1b'; g.fillRect(cm.x - 5, cm.y - 5, 10, 10);
+        g.fillStyle = cm.viu > 0.01 ? '#ff5252' : '#7fb0ff'; g.fillRect(cm.x - 2, cm.y - 2, 4, 4);
       }
       for(const o of J.povo){
         if(o.fora || o.sumiu || o.estado === 'rendido' || o.estado === 'fugindo' || o.estado === 'ligando') continue;
-        /* quem passa na calçada e quem compra só ganham cone quando
-           desconfiam: o leque de todo mundo cobria a rua inteira */
+        /* quem passa e quem compra só ganham cone quando desconfiam */
         if((o.papel === 'passante' || o.papel === 'cliente') && o.estado === 'normal') continue;
         const [alc0, abre] = R.olhar[o.papel] || R.olhar.cliente;
         const alc = o.distraidoAte > J.t ? 1.5 : alc0;
-        const cor = o.estado === 'alerta' ? 'rgba(255,82,82,.20)' : o.estado === 'desconfiado' ? 'rgba(255,200,60,.18)'
-          : 'rgba(255,255,255,.10)';
-        cone(o, alc, abre, o.rumo, cor);
+        cone(o, alc, abre, o.rumo, o.estado === 'alerta' ? 'rgba(255,82,82,.22)'
+          : o.estado === 'desconfiado' ? 'rgba(255,200,60,.2)' : 'rgba(255,255,255,.12)');
       }
-      /* a ação do líder: o anel no alvo */
+      /* o saque que ainda tem, e o anel do progresso */
+      const rS = Math.max(6, 0.32*M);
+      for(const sq of J.saque){
+        if(sq.vazio) continue;
+        g.fillStyle = 'rgba(255,211,90,.28)'; g.beginPath(); g.arc(sq.x, sq.y, rS*1.7, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#ffd35a'; g.beginPath(); g.arc(sq.x, sq.y, rS, 0, Math.PI*2); g.fill();
+        g.fillStyle = '#3b2c00'; g.font = `800 ${rS*1.2}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('$', sq.x, sq.y + 0.5);
+        if(sq.prog > 0){ g.strokeStyle = '#fff'; g.lineWidth = 3/s; g.beginPath(); g.arc(sq.x, sq.y, rS*1.45, -Math.PI/2, -Math.PI/2 + Math.PI*2*clamp(sq.prog/sq.tempo, 0, 1)); g.stroke(); }
+        if(sq.precisa > 1){ g.fillStyle = '#fff'; g.font = `700 ${rS}px system-ui,sans-serif`; g.fillText('×' + sq.precisa, sq.x, sq.y + rS*2.2); }
+      }
+      /* OS NOSSOS BONECOS */
+      try{
+        if(B3.ativo === false) throw new Error('contexto WebGL perdido');
+        B3.desenharDeCima(J, {escala, cw:w, ch:h, dt:dt || 0.016});
+      }catch(err){ console.warn('assalto: bonecos — ' + (err && err.message)); }
+      /* POR CIMA: o anel do líder, o alvo da ação, o "?" e o "!" */
+      gS.setTransform(1, 0, 0, 1, 0, 0); gS.clearRect(0, 0, w, h);
+      gS.setTransform(s, 0, 0, s, ox, oy);
       const ac = J.acao;
-      if(ac && ac.alvo){ g.strokeStyle = '#ffd35a'; g.lineWidth = 2; g.setLineDash([4, 3]); g.beginPath(); g.arc(X(ac.alvo.x), Z(ac.alvo.y), S*0.75, 0, Math.PI*2); g.stroke(); g.setLineDash([]); }
-      /* AS PESSOAS */
-      const boneco = (d, opc) => {
-        if(d.sumiu || d.fugiu || d.noCarro) return;
-        const x = X(d.x), y = Z(d.y), r = S*0.27;
-        g.save(); g.translate(x, y);
-        if(d.estado === 'rendido' || (d.preso && !opc.pm)){
-          /* no chão: o corpo deitado, as mãos na cabeça */
-          g.globalAlpha = 0.85;
-          g.fillStyle = d.cor || '#888'; g.beginPath(); g.ellipse(0, 0, r*1.15, r*0.7, 0, 0, Math.PI*2); g.fill();
-          g.fillStyle = '#c9a07a'; g.beginPath(); g.arc(r*0.95, 0, r*0.42, 0, Math.PI*2); g.fill();
-          if(d.preso && opc.equipe){ g.strokeStyle = '#90caf9'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, r*1.4, 0, Math.PI*2); g.stroke(); }
-          g.restore(); return;
-        }
-        const ang = Math.atan2(Math.cos(d.rumo || 0), Math.sin(d.rumo || 0));
-        g.rotate(ang);
-        if(opc.lider){ g.strokeStyle = '#ffd35a'; g.lineWidth = 2.5; g.beginPath(); g.arc(0, 0, r*1.55, 0, Math.PI*2); g.stroke(); }
-        /* os ombros (a camisa), a cabeça e o nariz pra onde olha */
-        g.fillStyle = d.cor || '#888'; g.beginPath(); g.ellipse(0, 0, r*0.62, r*1.05, 0, 0, Math.PI*2); g.fill();
-        g.strokeStyle = 'rgba(0,0,0,.45)'; g.lineWidth = 1; g.stroke();
-        g.fillStyle = opc.pm ? '#16243f' : (d.cabelo || '#3b2a1e'); g.beginPath(); g.arc(0, 0, r*0.5, 0, Math.PI*2); g.fill();
-        g.fillStyle = opc.pm ? '#1e3a8a' : '#c9a07a'; g.beginPath(); g.arc(r*0.22, 0, r*0.3, 0, Math.PI*2); g.fill();
-        if(d.jeito === 'celular'){ g.fillStyle = '#7fd7ff'; g.fillRect(r*0.55, -r*0.25, r*0.35, r*0.5); }
-        g.restore();
-        if(opc.equipe && d.carrega > 0){ g.fillStyle = '#ffd35a'; g.beginPath(); g.arc(x + r, y - r, Math.max(3, r*0.35), 0, Math.PI*2); g.fill(); }
-      };
-      for(const d of J.povo) boneco(d, {});
-      for(const d of J.equipe) boneco(d, {equipe:true, lider:d === L});
-      for(const p of J.policiais) if(p.vivo) boneco(Object.assign(p, {cor:'#22408f'}), {pm:true});
-      /* o ? e o ! em cima de quem desconfia */
-      g.font = `900 ${Math.max(14, S*0.75)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'bottom';
+      gS.lineWidth = 2.5/s;
+      if(ac && ac.alvo){ gS.strokeStyle = '#ffd35a'; gS.setLineDash([5/s, 4/s]); gS.beginPath(); gS.arc(ac.alvo.x, ac.alvo.y, 0.75*M, 0, Math.PI*2); gS.stroke(); gS.setLineDash([]); }
+      if(L.vivo){ gS.strokeStyle = '#ffd35a'; gS.beginPath(); gS.ellipse(L.x, L.y, 0.45*M, 0.3*M, 0, 0, Math.PI*2); gS.stroke(); }
+      gS.font = `900 ${Math.max(16/s, 0.7*M)}px system-ui,sans-serif`; gS.textAlign = 'center'; gS.textBaseline = 'bottom';
       for(const mk of J.marcas){
-        g.fillStyle = mk.tipo === '!' ? '#ff5252' : '#ffd35a';
-        g.strokeStyle = 'rgba(0,0,0,.7)'; g.lineWidth = 3;
-        g.strokeText(mk.tipo, X(mk.d.x), Z(mk.d.y) - S*0.35); g.fillText(mk.tipo, X(mk.d.x), Z(mk.d.y) - S*0.35);
+        const yy = mk.d.y - 1.9*M;
+        gS.fillStyle = mk.tipo === '!' ? '#ff5252' : '#ffd35a';
+        gS.strokeStyle = 'rgba(0,0,0,.75)'; gS.lineWidth = 4/s;
+        gS.strokeText(mk.tipo, mk.d.x, yy); gS.fillText(mk.tipo, mk.d.x, yy);
       }
-      /* a noite do fechamento escurece a rua */
-      if(cfg.noite){ g.fillStyle = 'rgba(10,14,40,.22)'; g.fillRect(0, 0, w, h); }
+      /* o fechamento é de noitinha */
+      if(cfg.noite){ gS.setTransform(1, 0, 0, 1, 0, 0); gS.fillStyle = 'rgba(10,14,40,.18)'; gS.fillRect(0, 0, w, h); }
     }
 
     /* ---- o HUD ---- */
@@ -591,6 +412,9 @@
     }
     function desmontar(){
       cancelAnimationFrame(raf);
+      try{ B3.limparDeCima(); }catch(_){ }
+      B3.escalaDeCima = escalaAntes;
+      if(TO.diaJogo.J === J) TO.diaJogo.J = Jantes;
       window.removeEventListener('keydown', aoDescer, true);
       window.removeEventListener('keyup', aoSubir, true);
       window.removeEventListener('blur', soltarTudo);
@@ -616,5 +440,5 @@
     return d;
   }
 
-  TO.assalto2d = {tabuleiro, iniciar, get ativo(){ return ativo; }};
+  TO.assalto2d = {tabuleiro, iniciar, temFoto, get ativo(){ return ativo; }};
 })();

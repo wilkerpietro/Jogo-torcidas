@@ -7,12 +7,12 @@ por alvo, do mais fácil ao mais difícil:
 
 | Nível | Alvo | Saída pro jogo | Estado |
 |---|---|---|---|
-| 1 | Loja de roupas | `assalto_roupas.webp` | prompt pronto |
-| 2 | Mercadinho | `assalto_mercadinho.webp` | prompt pronto |
-| 3 | Posto de gasolina | `assalto_posto.webp` | prompt pronto |
-| 4 | Supermercado | `assalto_supermercado.webp` | prompt pronto |
-| 5 | Joalheria | `assalto_joalheria.webp` | prompt pronto |
-| 6 | Banco | `assalto_banco.webp` | prompt pronto |
+| 1 | Loja de roupas | `assalto_roupas.webp` | **importada** (10/10) |
+| 2 | Mercadinho | `assalto_mercadinho.webp` | **importada** (10/10) |
+| 3 | Posto de gasolina | `assalto_posto.webp` | **importada** (10/10) |
+| 4 | Supermercado | `assalto_supermercado.webp` | **importada** (10/10) |
+| 5 | Joalheria | `assalto_joalheria.webp` | **importada** (10/10) |
+| 6 | Banco | `assalto_banco.webp` | **importada** (10/10) |
 
 Mesmo acabamento das outras cenas: ortofoto de zênite a 90°, prédio do
 alvo **sem telhado**, os vizinhos **com** telhado, dia nublado, cor

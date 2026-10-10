@@ -9665,6 +9665,51 @@ quatro excessos:
   - Até lá, "Comandar" e "Ir agora" resolvem como "Deixar a equipe
     fazer".
 
+## As seis lojas do assalto viram cena sobre foto, com os nossos bonecos (10/10/2026)
+
+O dono mandou as seis fotos (os prompts estão em `img/cenas/PROMPT-ASSALTOS.md`).
+Cada loja virou uma cena `assalto-<alvo>`.
+
+- **Foto e máscara.** O importador ganhou as receitas `assalto-*`,
+  medidas em pixel da tela (`TL`/`TS`):
+  - recorte na rua, na calçada e no miolo da loja;
+  - paredes de dentro e móveis excluídos;
+  - portas abertas na mão;
+  - as manchas de óleo da pista do posto e a calçada manchada abertas
+    em faixas.
+
+  A porta da sala do cofre do banco abre pro corredor por baixo: a
+  primeira tentativa abria dentro do próprio cofre e a sala ficava
+  isolada.
+- **Os pontos do motor** ficam em `dados/assaltos.js`:
+  - `M` (px por metro naquela foto, de 22 no posto a 50 na loja de
+    roupas);
+  - as zonas da loja e a área restrita;
+  - o vidro e o móvel baixo, que deixam o olhar passar;
+  - a van da fuga, os olheiros, a chegada da PM e a calçada;
+  - os postos de trabalho, o saque, as câmeras, os alarmes e o
+    gravador.
+
+  As plantas desenhadas do 3D (`lojas.js`) saíram: a planta agora é a
+  foto.
+- **Seguranças nos alvos valiosos** (dono: "alguns pontos mais
+  valiosos sempre vão ter seguranças, como banco e joalheria"):
+  - banco: três (a porta, o salão e o corredor do cofre);
+  - joalheria: dois (a porta e a passagem pros fundos);
+  - supermercado: um na ronda;
+  - loja de roupas, mercadinho e posto: nenhum.
+- **O palco** (`js/ui/assalto2d.js`) é o mesmo das brigas:
+  - a foto na camada 2D e os nossos bonecos (`bonecos3`) no WebGL, na
+    mesma caixa e com a mesma câmera de cima;
+  - o boneco cresce na escala da foto (`escalaDeCima × M/20`);
+  - no chão, entre a foto e os bonecos, ficam os cones do olhar
+    (cortados pela parede) e o saque; por cima, o "?" e o "!";
+  - a grade do motor sai da máscara da cena.
+- **Onde se abre:** "Comandar a equipe" (detalhista) e "Ir agora"
+  (rápido) abrem a loja. Sem WebGL ou sem a cena, a equipe faz sozinha.
+  Na bancada (`arredores.html#assalto-<alvo>`), as abas "Assalto 1–6"
+  servem pra acertar a máscara no F2.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

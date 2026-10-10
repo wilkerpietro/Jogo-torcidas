@@ -40,6 +40,9 @@
 body.asl2d-ativo{overflow:hidden}
 .asl2d{position:fixed;inset:0;z-index:900;background:#1e1f22;touch-action:none;user-select:none;-webkit-user-select:none}
 .asl2d-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* os bonecos (WebGL) e a camada de cima ficam na MESMA caixa da foto: o
+   renderizador mede a câmera pela caixa dele */
+.asl2d-gl,.asl2d-sobre{pointer-events:none;background:transparent}
 .asl2d .asl-hud{position:absolute;left:10px;top:10px;width:270px;max-width:calc(100vw - 20px);background:rgba(16,18,22,.86);color:#f2f2f2;border-radius:10px;padding:9px 11px;font:12.5px/1.35 system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none}
 .asl2d .asl-hud h3{margin:0 0 2px;font-size:13.5px;letter-spacing:.04em}
 .asl2d .asl-hud h3 small{font-weight:400;opacity:.7;font-size:11px;margin-left:4px}

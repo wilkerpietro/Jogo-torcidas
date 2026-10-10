@@ -1124,7 +1124,28 @@ TO.dados.cenas = (function(){
     });
   }
 
-  const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre,
+  /* AS LOJAS DO ASSALTO (10/10/2026): uma foto por nível, os pontos do
+     motor em dados/assaltos.js. Pra cena, só o que a ponte pede: a
+     equipe nasce na calçada, junto da van, e entra pela porta da loja */
+  const ASL = (typeof TO !== 'undefined' && TO.dados && TO.dados.assaltos) || {};
+  const NOME_LOJA = {roupas:'Loja de roupas', mercadinho:'Mercadinho', posto:'Posto de gasolina',
+                     supermercado:'Supermercado', joalheria:'Joalheria', banco:'Banco'};
+  const lojas = {};
+  for(const tipo in ASL){
+    const a = ASL[tipo];
+    lojas['assalto-'+tipo] = cenaDeFoto({
+      id:'assalto-'+tipo, nome:'Assalto — '+(NOME_LOJA[tipo] || tipo), local:'No assalto',
+      semBocas:true, semMeio:true, tropaChoque:false,
+      saida:{perto:'', longe:'', feito:'a operação acabou', dica:''},
+      spawns:[{id:'mandante1', rot:'EQUIPE', lado:'mandante', x:a.carro.x, y:a.carro.y - 40,
+               jogador:true, entrada:'porta'}],
+      entradas:[{id:'porta', rot:'PORTA DA LOJA', lado:'mandante', x:a.porta.x, y:a.porta.y + 18,
+                 raio:30, dir:[0,1]}],
+      pmPostos:[]
+    });
+  }
+
+  const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre, ...lojas,
                  bar, comercio, ct, 'casa-piscina':casaPiscina, ...sedes,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,

@@ -79,7 +79,13 @@ TO.diaJogo.bancada = (function(){
              for(let i=0;i<13;i++) fora.push({id:i+1, apelido:String(ap[(i*7+n) % ap.length]),
                forca:12+(i%6), defesa:12+((i*3)%6), xp:300+i*10, moral:12, cargo:'diretoria'});
              return fora;
-           })()}}))
+           })()}})),
+    /* AS LOJAS DO ASSALTO (10/10/2026): a foto e a máscara de cada
+       nível, pra acertar no F2. A cena aqui é a da briga, em paz — o
+       assalto de verdade abre pela tela do plano (assalto2d.js) */
+    ...['roupas','mercadinho','posto','supermercado','joalheria','banco'].map((t, i) => ({
+      id:'assalto-'+t, rot:'Assalto '+(i+1), titulo:`Assalto nível ${i+1} — ${t}`,
+      cfg:{paz:true, bombas:0, efetivoRival:0}}))
   ];
 
   /* A BANCADA DE PERTO (briga3d.html) usa a mesma bancada com outra
