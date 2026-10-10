@@ -9625,6 +9625,18 @@ quatro excessos:
    - Fica um botão só, "Abrir o planejamento". O "Fechar o
      planejamento" continua no rodapé do popup.
 
+## Promover no celular e a arquibancada inteira (correção do dono, 10/10/2026)
+
+- **Promover no celular.** A caixa dos painéis corta o que passa da
+  largura (`overflow-x:hidden`). No celular, a tabela de membros perdia
+  as colunas da direita e, com elas, o botão Promover.
+  - Agora o corpo do cartão rola de lado quando tem tabela.
+  - Abaixo de 760px, a coluna da ação fica grudada na borda direita.
+- **Arquibancada sem teto.** O jogo assistido punha no máximo 60
+  bonecos por torcida, enquanto a linha do dia contava 121. O teto saiu:
+  a cena põe o número da presença, como a briga da arquibancada já
+  fazia.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

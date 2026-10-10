@@ -2020,7 +2020,10 @@
     const bondeDe = (p, lado)=>{
       const o = TO.mundo.torcida(p.id) || {nome:p.nome};
       const c = TO.mundo.coresDaTorcida(o);
-      return {lado, n:Math.max(2, Math.min(60, Math.round(p.n))), nossa: p.id === e.torcida.id, id:p.id,
+      /* SEM TETO (correção do dono, 10/10/2026): o teto de 60 deixava
+         a cena com metade dos 121 que a linha do dia contava; a briga
+         da arquibancada já põe todo mundo, o jogo assistido também */
+      return {lado, n:Math.max(2, Math.round(p.n)), nossa: p.id === e.torcida.id, id:p.id,
               nome:o.nome || p.nome, cor:c.cor, cor2:c.cor2, cor3:c.cor3, sigla:TO.mundo.siglaTorcida(o)};
     };
     const nSet = compacta(nossos, setores[nossoLado]);
@@ -2028,7 +2031,7 @@
     const minha = nSet.find(p => p.id === e.torcida.id) || {n:10};
     const aptos = TO.membros.aptosParaOEstadio(e)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
-      .slice(0, Math.max(2, Math.min(60, Math.round(minha.n))));
+      .slice(0, Math.max(2, Math.round(minha.n)));
     return {local, aptos, nossoLado, rivalId: dSet[0] ? dSet[0].id : null,
             bondes:[...nSet.map(p => bondeDe(p, nossoLado)), ...dSet.map(p => bondeDe(p, outroLado))],
             deles: dSet.reduce((t, p) => t + p.n, 0)};
@@ -5680,7 +5683,7 @@
         return va<vb ? -ordem.dir : va>vb ? ordem.dir : 0;
       });
 
-    const tab = el('table',{class:'dados'});
+    const tab = el('table',{class:'dados mb-tabela'});
     const tr = el('tr');
     /* TORCIDA COM SUB-SEDE GANHA A COLUNA "ORIGEM" (pedido do dono,
        31/08/2026): de onde é cada membro — a sede, ou a cidade da

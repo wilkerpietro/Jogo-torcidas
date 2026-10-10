@@ -71,6 +71,16 @@ body.com-painel .pagina.painel{
   padding:16px var(--pnl-pad) 26px;box-shadow:0 18px 60px #000a;
   animation:none;max-width:none;counter-reset:secao;
 }
+/* A TABELA LARGA ROLA DE LADO (correção do dono, 10/10/2026): a caixa
+   corta o que passa da largura (overflow-x:hidden), e no celular a
+   tabela de membros perdia as colunas da direita — o Promover junto,
+   sem ter como chegar nele. Quem rola agora é o corpo do cartão. */
+.pagina.painel .cartao > .corpo:has(> table.dados){overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* e o Promover fica grudado na borda direita, à vista sem rolar */
+@media (max-width:760px){
+  table.mb-tabela td.mb-acao{position:sticky;right:0;background:var(--painel);padding-left:6px}
+  table.mb-tabela td.mb-acao:empty{background:transparent}
+}
 /* o título que cada tela escreve no alto mora agora no cabeçalho */
 .pagina.painel > .titulo-pagina,
 .pagina.painel > .titulo-barra{display:none}
