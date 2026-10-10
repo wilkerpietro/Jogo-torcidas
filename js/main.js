@@ -11288,7 +11288,7 @@
     /* na TRETA o prestígio é a conta do dono e só ela: +1 pro ganhador,
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */
-    if(acao && acao.acao === 'treta') res.prestigio = 0;
+    if(acao && acao.acao === 'treta'){ res.prestigio = 0; res.moralTorcida = 0; }
     /* na arquibancada a conta é SÓ a tabela do dono (19/08/2026):
        nem o prestígio da noite nem a moral genérica entram por cima */
     if(acao && acao.acao === 'estadio'){ res.prestigio = 0; res.moralTorcida = 0; }

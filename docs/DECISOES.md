@@ -9795,6 +9795,40 @@ mesma noite agora custa −30 de prestígio e −25 de moral.
   acabou, e não ganhou outra.
 - O duelo de LNT entre IAs paga +2/−1, e o nosso +5/−1.
 
+## O tamanho da briga, todo jogo do clube, a treta perdida e a LNT igualada (dono, 10/10/2026)
+
+As respostas do dono aos achados da varredura:
+
+- **A briga paga pelo tamanho** (`membros.fatorDoTamanho`, em
+  `aplicarResultadoDaNoite`). O fator soma os dois lados contra a régua
+  de 50:
+
+  | Briga | Total | Fator |
+  |---|---|---|
+  | 10 contra 10 | 20 | ×0,4 |
+  | 25 contra 25 | 50 | ×1 |
+  | 50 contra 50 | 100 | ×2 |
+
+  Ele multiplica a moral e o prestígio da noite. O prestígio continua
+  com o piso de ±1 e o teto sobe pra ±20, que só a briga grande
+  alcança.
+
+  A moral da noite ficou simétrica: +1 na vitória, −1 na derrota, −2
+  na debandada (na régua de 0 a 20, antes do fator). O "+1/−0,5" fazia
+  a moral subir só de brigar.
+
+  Arquibancada e treta seguem com as tabelas próprias.
+- **Todo jogo do clube mexe na moral** (`resultadosDoClubeHoje`). Cada
+  jogo nosso paga ±3 no dia em que é jogado: o segundo jogo da semana
+  agora conta. O título paga +12,5 no dia da conquista (antes era na
+  virada do ano). A virada só paga o título que tenha escapado daquela
+  conta (`E.titulosPagos`).
+- **A treta tem moral.** Perder tira e vencer dá a mesma régua do
+  prestígio dela: 5×5 ±3, 7×7 ±4, 10×10 ±5 de moral. A rival sente o
+  contrário. A moral genérica da noite não soma por cima.
+- **LNT igualada.** O duelo entre IAs paga o mesmo que o nosso 10×10:
+  +5 de prestígio pra quem vence, −1 pra quem perde, e ±5 de moral.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

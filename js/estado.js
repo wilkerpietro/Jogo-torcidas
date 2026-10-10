@@ -380,7 +380,8 @@ TO.estado = (function(){
       fecho = TO.financeiro.fecharSemana(E);
       const meu = TO.mundo.time(E.torcida.clubeId);
       fecho.jogo = meu ? TO.competicoes.jogoDaSemana(E, meu.id, E.data.semana) : null;
-      aplicarResultadoDoClube(E, fecho.jogo);
+      /* (o resultado do clube mexe na moral a cada jogo, no dia dele —
+         resultadosDoClubeHoje; aqui ficou só o jogo da semana pro fecho) */
 
       E.data.dia = 1; E.data.semana++;
 
@@ -396,7 +397,9 @@ TO.estado = (function(){
         for(const c of E.temporada.competicoes){
           if(c.campeao) TO.relacoes.conquistaDoClube(E, c.campeao, 'campeao');
           if(c.vice)    TO.relacoes.conquistaDoClube(E, c.vice, 'vice');
-          if(c.campeao === E.torcida.clubeId)
+          /* (o nosso título já pagou no dia da conquista —
+             resultadosDoClubeHoje; aqui só se ele escapou daquela conta) */
+          if(c.campeao === E.torcida.clubeId && !pagouTitulo(E, c, E.data.ano - 1))
             mexerIndicador(E, 'moral', 2.5, _t('Título: {comp}', {comp:c.nome}));
         }
         E.classifAnterior = null;
@@ -552,6 +555,7 @@ TO.estado = (function(){
     }catch(err){ console.warn('foto de antes do jogo: ' + err.message); }
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
     conferirProximoJogo(E);
+    resultadosDoClubeHoje(E);
 
     const passoLigas = TO.ligas ? TO.ligas.rodar(E) : null;
     const passoCM    = TO.conmebol ? TO.conmebol.rodar(E) : null;
@@ -590,6 +594,25 @@ TO.estado = (function(){
        Quem tinha o hábito de anotar aqui perde a voz: o registro vai
        pro console e não pra tela. */
     if(window.console) console.warn('anotar() aposentado:', msg);
+  }
+
+  /* TODO JOGO DO CLUBE MEXE NA MORAL (pedido do dono, 10/10/2026): era
+     só o "jogo da semana", e o segundo jogo de uma semana cheia não
+     contava. Agora cada jogo nosso paga no dia em que é jogado — e o
+     TÍTULO paga no dia da conquista, não na virada do ano. */
+  const chaveTitulo = (E, c, ano) => `${ano == null ? E.data.ano : ano}|${c.id}`;
+  const pagouTitulo = (E, c, ano) => !!((E.titulosPagos || {})[chaveTitulo(E, c, ano)]);
+  function resultadosDoClubeHoje(E){
+    const meu = TO.mundo.time(E.torcida.clubeId);
+    if(!meu || !E.temporada) return;
+    for(const j of TO.competicoes.agendaDoClube(E, meu.id))
+      if(j.semana === E.data.semana && j.dia === E.data.dia && j.jogado)
+        aplicarResultadoDoClube(E, j);
+    for(const c of E.temporada.competicoes){
+      if(c.campeao !== meu.id || pagouTitulo(E, c)) continue;
+      (E.titulosPagos = E.titulosPagos || {})[chaveTitulo(E, c)] = true;
+      mexerIndicador(E, 'moral', 2.5, _t('Título: {comp}', {comp:c.nome}));
+    }
   }
 
   /* o resultado do time mexe na moral da torcida, e é só nela: a

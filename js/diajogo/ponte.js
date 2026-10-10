@@ -1517,8 +1517,11 @@ TO.diaJogo.ponte = (function(){
          24/08/2026): a linha usava `venceu`, que é do ponto de vista
          do mandante — ganhar de visitante DESCONTAVA moral e perder
          pagava +1. Vale `ganhamos`, e a debandada que pesa é a NOSSA. */
+      /* (simétrica desde 10/10/2026: +1 na vitória, −1 na derrota, −2 na
+         debandada — o +1/−0,5 deixava a moral subir só de brigar; o
+         tamanho da briga multiplica em aplicarResultadoDaNoite) */
       moralTorcida: ganhamos ? +1
-                  : (J.debandou && J.debandou[nossoLado]) ? -2 : -0.5,
+                  : (J.debandou && J.debandou[nossoLado]) ? -2 : -1,
       /* a faixa (dono, 09/09/2026): tomada ou não, e por quem */
       faixa: C.fimDaFaixa ? C.fimDaFaixa(J, venceu) : null,
       /* no estádio são duas, uma por lado */

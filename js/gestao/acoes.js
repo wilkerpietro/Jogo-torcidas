@@ -457,15 +457,23 @@ TO.acoes = (function(){
     const ganhou = res.ganhamos !== undefined ? !!res.ganhamos : !!res.venceu;
     const antesRel = R.nivel(E, alvo.torcidaId);
     R.hostilidade(E, alvo.torcidaId, REL().treta);
-    const antesP = E.indicadores.prestigio;
+    const antesP = E.indicadores.prestigio, antesM = E.indicadores.moral;
     const display = (alvo.n||5) >= 10 ? 5 : (alvo.n||5) >= 7 ? 4 : 3;
     /* preço do dono (19/08/2026): vencer paga +3/+4/+5; perder custa
        −1 de prestígio e −1 de moral pra cada um que foi */
     TO.estado.mexerIndicador(E, 'prestigio', ganhou ? display/5 : -0.2,
       ganhou ? _t('Treta contra a {nome}: vencemos', {nome:alvo.nome})
              : _t('Treta contra a {nome}: perdemos', {nome:alvo.nome}));
+    /* A TRETA PERDIDA TIRA MORAL (pedido do dono, 10/10/2026), e a
+       vencida dá: a mesma régua do prestígio dela — 5×5 ±3, 7×7 ±4,
+       10×10 ±5 na régua de 0 a 100. A moral genérica da noite não soma
+       por cima (fecharDiaDeJogo zera). */
+    TO.estado.mexerIndicador(E, 'moral', (ganhou ? display : -display)/5,
+      ganhou ? _t('Treta contra a {nome}: vencemos', {nome:alvo.nome})
+             : _t('Treta contra a {nome}: perdemos', {nome:alvo.nome}));
     const dpDeles = R.mover(E, alvo.torcidaId, 'prestigio',
                             ganhou ? -0.2 : display/5);
+    R.mover(E, alvo.torcidaId, 'moral', (ganhou ? -display : display)/5);
     const membros = (res && res.membros) || [];
     /* a moral de membro foi extinta (dono, 24/08/2026): o ±2/−1 de
        quem descia pra treta saiu daqui — realocação a definir */
@@ -491,6 +499,7 @@ TO.acoes = (function(){
        dono:_t('com a {nome}', {nome:alvo.nome})},
       {ind:'prestigio', delta: r1(E.indicadores.prestigio - antesP),
        dono:_t('nosso')},
+      {ind:'moral',     delta: r1(E.indicadores.moral - antesM), dono:_t('nossa')},
       {ind:'prestigio', delta: dpDeles, dono:_t('da {nome}', {nome:alvo.nome})},
       {ind:'dinheiro',  delta: bolada, dono:_t('nosso')}
     ].filter(x=>x.delta);

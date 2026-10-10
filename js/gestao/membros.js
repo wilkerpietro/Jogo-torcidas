@@ -798,6 +798,13 @@ TO.membros = (function(){
 
   /* Recebe o resultado da cena e devolve o resumo do que mudou.
      É aqui que disco vira ficha vermelha de novo (GDD §17.2). */
+  /* o tamanho da briga: os dois lados somados, contra a régua de 50 */
+  function fatorDoTamanho(res){
+    const ef = (res && res.efetivo) || {};
+    const total = (ef.mandante || 0) + (ef.visitante || 0);
+    if(!total) return 1;
+    return U.limitar(total / 50, 0.4, 2);
+  }
   function aplicarResultadoDaNoite(E, res){
     const porId = new Map(E.membros.map(m=>[m.id,m]));
     const resumo = {feridos:[], presos:[], entraram:[], xpTotal:0};
@@ -822,10 +829,21 @@ TO.membros = (function(){
        de verdade fica carimbado no res (na régua de 0-100): é o que a
        linha do ocorrido mostra, pra nunca prometer crédito que o teto
        de 100 não deixou entrar (revisão do dono, 27/08/2026). */
+    /* O TAMANHO DA BRIGA PESA (pedido do dono, 10/10/2026: "dar mais
+       moral e prestígio nas brigas grandes e menos nas brigas
+       pequenas"): o fator sai de quantos eram, somando os dois lados —
+       50 é a briga de régua (×1); 10 contra 10 vale ×0,4; 50 contra 50
+       vale ×2. Pesa na moral e no prestígio da noite; o teto do
+       prestígio vai a ±20 (na régua de 0 a 100) só nas grandes. */
+    const fator = fatorDoTamanho(res);
+    res.fatorTamanho = fator;
+    let pNoite = res.prestigio || 0;
+    if(pNoite) pNoite = Math.sign(pNoite) * Math.max(1, Math.round(Math.abs(pNoite) * fator));
+    res.prestigio = U.limitar(pNoite, -20, 20);
     res.prestigioAplicado = TO.estado.mexerIndicador(E, 'prestigio',
-      U.limitar((res.prestigio||0)/5, -2, 2), _t('Resultado da briga')) * 5;
+      U.limitar(res.prestigio/5, -4, 4), _t('Resultado da briga')) * 5;
     res.moralAplicada = TO.estado.mexerIndicador(E, 'moral',
-      res.moralTorcida||0, _t('Resultado da briga'));
+      Math.round((res.moralTorcida||0) * fator * 100)/100, _t('Resultado da briga'));
 
     E.historicoNoites.unshift({
       semana:E.data.semana,
@@ -837,7 +855,7 @@ TO.membros = (function(){
     return resumo;
   }
 
-  return {
+  return {fatorDoTamanho,
     CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE, FICHA_NOVA, fichaNova,
     criar, nomeDe, nomeCompletoDe, cargoNome, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe, nivelInicialDaSede, PEQUENA_MAX,
     nomearPresidente, garantirPresidente, presidente, nomeSugerido,

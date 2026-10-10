@@ -303,7 +303,14 @@ TO.lnt = (function(){
     /* (no NOSSO duelo o prestígio do rival já mexeu na treta —
        fecharTreta —; cobrar de novo aqui contava duas vezes: varredura
        de 10/10/2026) */
-    if(R().mover && !semPrestigio) R().mover(E, id, 'prestigio', venceu ? 0.4 : -0.2);
+    /* A MESMA RÉGUA DO NOSSO DUELO (pedido do dono, 10/10/2026): a treta
+       10×10 paga +5 de prestígio a quem vence e −1 a quem perde, e ±5 de
+       moral (régua de 0 a 100; fecharTreta) — o duelo entre IAs pagava
+       +2/−1 e não mexia na moral */
+    if(R().mover && !semPrestigio){
+      R().mover(E, id, 'prestigio', venceu ? 1.0 : -0.2);
+      R().mover(E, id, 'moral', venceu ? 1.0 : -1.0);
+    }
     if(R().anotarBriga) R().anotarBriga(E, id, venceu);
   }
 
