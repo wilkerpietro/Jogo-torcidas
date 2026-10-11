@@ -9995,6 +9995,32 @@ placa não desenha (cena de disco).
   (`erguerPose`; no bandeirão, balançando com o pano). Quem marca é a
   festa, em `d.festaPose`.
 
+## Trapos dentro da arquibancada e bandeirão na forma da torcida (dono, 11/10/2026)
+
+Pedido: "os trapos precisam se alinhar pra encaixar somente dentro das
+bordas da arquibancada, assim como o bandeirão, que deve ser mais fluido
+e com menos aspecto de tão quadrado, pegando apenas a área ocupada pelos
+membros".
+
+- **Trapos:**
+  - Cada tira corre na sua linha, na direção do campo, e é recortada
+    pelo trecho pisável da máscara da cena que contém a torcida, ou seja,
+    do muro do fundo ao alambrado (`vaoDaTira`).
+  - A checagem usa o ponto onde a tira aparece na tela: a altura sobe
+    0,42 por unidade com a câmera. Assim nada sai visualmente da borda.
+  - As tiras ficam deitadas sobre as cabeças e se distribuem só pela
+    largura ocupada.
+- **Bandeirão:**
+  - A malha (64×44) cobre a caixa do setor, mas cada vértice sabe a
+    distância até a cabeça mais perto.
+  - Fora da mancha da torcida o triângulo não é desenhado, e na borda o
+    pano cai mole.
+  - Sobre cada um que segura há um calombo no ritmo dele, com barriga
+    entre as mãos e uma onda atravessando o pano.
+  - A luz da dobra sai da encosta da própria malha.
+- O ponto 3D das festas voltou pro chão (`+CABECA`): o eixo do setor
+  nasce nas cabeças, por causa do 2D, e no 3D a altura é de verdade.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

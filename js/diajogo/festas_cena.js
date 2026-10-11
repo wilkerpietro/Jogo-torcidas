@@ -510,7 +510,9 @@ TO.diaJogo.festas = (function(){
   }
   const lambert = (opc) => new THREE.MeshLambertMaterial(Object.assign({side:THREE.DoubleSide}, opc));
   /* um ponto do setor no mundo: (u, v) nos eixos do setor, h de altura */
-  const ponto = (S, u, v, h) => [S.cx + u*S.R[0] + v*S.f[0], h, S.cy + u*S.R[1] + v*S.f[1]];
+  /* o eixo do setor nasce nas CABEÇAS (S.cy = y − CABECA, pro 2D); no 3D
+     a altura é de verdade, então o ponto volta pro chão (+CABECA) */
+  const ponto = (S, u, v, h) => [S.cx + u*S.R[0] + v*S.f[0], h, S.cy + CABECA + u*S.R[1] + v*S.f[1]];
   /* geometria de quads em lote (posição e UV reescritas a cada quadro) */
   function lote(nQuads){
     const g = new THREE.BufferGeometry();
@@ -589,120 +591,206 @@ TO.diaJogo.festas = (function(){
     M.mesh.visible = n > 0;
   }
 
-  /* ---------- o bandeirão: o pano ondulando por cima das cabeças ---------- */
+  /* ---------- o bandeirão: o pano sobre a MANCHA da torcida ----------
+     (correção do dono, 11/10/2026: "mais fluido e com menos aspecto de
+     tão quadrado, pegando apenas a área ocupada pelos membros")
+     A malha cobre a caixa do setor, mas cada vértice sabe o quanto está
+     DENTRO da mancha (distância até a cabeça mais perto): dentro, o pano
+     fica na altura das mãos, com um calombo em cima de cada um que
+     segura (sobe e desce no ritmo dele) e barriga entre um e outro;
+     na borda ele cai mole; fora, o triângulo nem é desenhado. A borda
+     recortada pela mancha é o que tira o aspecto de lençol quadrado. */
+  const BAN_NU = 64, BAN_NV = 44, BAN_MARGEM = 14;
+  function campoDoBandeirao(B, S){
+    /* a mancha muda pouco no jogo assistido: refaz a cada ~1 s */
+    const agora = performance.now();
+    if(B.campo && agora - B.campoEm < 1000) return B.campo;
+    const nu = BAN_NU, nv = BAN_NV;
+    const u0 = S.u0 - BAN_MARGEM, w = S.u1 - S.u0 + 2*BAN_MARGEM;
+    const v0 = S.v0 - BAN_MARGEM, h = S.v1 - S.v0 + 2*BAN_MARGEM;
+    const n = (nu+1)*(nv+1);
+    const dist = new Float32Array(n), quem = new Int16Array(n);
+    const pts = S.nossos.map(d => [d._u, d._v]);
+    for(let j = 0; j <= nv; j++) for(let i = 0; i <= nu; i++){
+      const u = u0 + w*i/nu, v = v0 + h*j/nv;
+      let m1 = 1e9, q = -1;
+      for(let k = 0; k < pts.length; k++){
+        const du = pts[k][0] - u, dv = pts[k][1] - v, dd = du*du + dv*dv;
+        if(dd < m1){ m1 = dd; q = k; }
+      }
+      const id = j*(nu+1) + i;
+      dist[id] = Math.sqrt(m1); quem[id] = q;
+    }
+    B.campo = {u0, w, v0, h, dist, quem};
+    B.campoEm = agora;
+    return B.campo;
+  }
   function bandeirao3(F, S, t){
     const P = g3.partes;
     const jan = F.janelas.bandeirao;
     if(!jan) return;
-    const p = suave(fase(t, jan[0], jan[1], 1.4, 1.2));
+    const p = suave(fase(t, jan[0], jan[1], 1.8, 1.4));
     for(const d of S.nossos)
       if(p > 0.02) d.festaPose = d.festaPose || 'bandeirao';
       else if(d.festaPose === 'bandeirao') d.festaPose = null;
     if(!P.ban){
-      const geo = grade(48, 30);
+      const geo = grade(BAN_NU, BAN_NV);
+      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count*3).fill(1), 3));
       const src = F.bandeira;
       let mat;
-      /* a cor do vértice escurece a encosta da dobra: a luz de cima
-         sozinha quase não separa uma onda da outra vista do alto */
-      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count*3).fill(1), 3));
       if(src && src.width){ const tx = textura(src); mat = lambert({map:tx, vertexColors:true}); P.banTx = tx; }
       else mat = lambert({color:F.paleta[0], vertexColors:true});
       const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
-      /* a sombra do pano no setor */
-      const sg = grade(1, 1);
-      const sombra = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.3, depthWrite:false, side:THREE.DoubleSide}));
+      /* a sombra: a mesma malha achatada no chão, preta e rala */
+      const sombra = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.22, depthWrite:false, side:THREE.DoubleSide}));
       sombra.frustumCulled = false;
+      sombra.scale.set(1, 0.001, 1);
+      sombra.position.set(6, 1, 9);
       g3.raiz.add(sombra); g3.raiz.add(mesh);
-      P.ban = {mesh, geo, sombra, sg};
+      P.ban = {mesh, geo, sombra, idxEm:-1};
     }
     const B = P.ban;
     B.mesh.visible = B.sombra.visible = p > 0;
     if(p <= 0) return;
-    const u0 = S.u0 - 8, w = S.u1 - S.u0 + 16;
-    const vTopo = S.v0 - 8, h = S.v1 - S.v0 + 16, vBase = vTopo + h;
-    /* abre do alambrado pro fundo: a borda da frente fica, a de trás corre */
-    const hh = h * p;
-    const alt = 30 + (ALT_MAO + 4 - 30) * p;
+    const C = campoDoBandeirao(B, S);
+    const nu = BAN_NU, nv = BAN_NV;
     const pos = B.geo.attributes.position.array, uv = B.geo.attributes.uv.array;
     const cor = B.geo.attributes.color.array;
-    const nu = B.geo.nu, nv = B.geo.nv;
+    const alt = ALT_MAO - 2;
+    /* abre do alambrado (v grande) pro fundo: a frente da abertura corre */
+    const vAbre = C.v0 + C.h * (1 - p);
+    const dentro = new Float32Array((nu+1)*(nv+1));
+    const altura = new Float32Array((nu+1)*(nv+1));
     for(let j = 0; j <= nv; j++){
-      const r = j / nv;
+      const r = j / nv, v = C.v0 + C.h * r;
       for(let i = 0; i <= nu; i++){
-        const s2 = i / nu;
-        const u = u0 + s2 * w, v = vBase - hh + r * hh;
-        /* duas ondas cruzadas, mais forte no meio do pano; as bordas
-           caem um pouco onde ninguém segura */
-        /* dobras largas (o vento) e miúdas (as mãos puxando) */
-        const onda = 6.5*Math.sin(t*2.4 + s2*6 + r*3) + 2.6*Math.sin(t*3.7 - r*9 + s2*4)
-                   + 1.2*Math.sin(t*5.1 + s2*15);
-        const borda = Math.min(s2, 1 - s2, r, 1 - r);
-        const cai = borda < 0.06 ? (0.06 - borda) * 60 : 0;
-        const q = ponto(S, u, v, alt + onda * (0.6 + 0.4*p) - cai);
-        const k = j*(nu+1) + i;
-        pos.set(q, k*3);
-        uv[k*2] = s2; uv[k*2+1] = 1 - r;
-        /* a encosta: a derivada da dobra larga, clara de um lado e
-           escura do outro */
-        const enc = Math.cos(t*2.4 + s2*6 + r*3) + 0.4*Math.cos(t*3.7 - r*9 + s2*4);
-        const luz = Math.max(0.42, Math.min(1.15, 0.84 + 0.3*enc));
-        cor[k*3] = cor[k*3+1] = cor[k*3+2] = luz;
+        const s2 = i / nu, u = C.u0 + C.w * s2;
+        const id = j*(nu+1) + i;
+        const dmin = C.dist[id];
+        /* 1 no meio da mancha, 0 a ~2 passos fora dela */
+        let k = Math.max(0, Math.min(1, (24 - dmin) / 14));
+        /* a parte ainda não aberta fica embolada na frente */
+        const aberto = Math.max(0, Math.min(1, (v - vAbre) / 18 + 1));
+        k *= aberto;
+        dentro[id] = k;
+        /* o calombo da mão de quem segura (cada um no seu ritmo) e a
+           barriga entre dois, mais a onda que atravessa o pano */
+        const fa = (C.quem[id] * 2.399) % 6.283;
+        const mao = Math.exp(-dmin*dmin / 60) * (5 + 2.5*Math.sin(t*3.1 + fa));
+        const barriga = -0.45 * Math.min(dmin, 9);
+        const onda = 4.2*Math.sin(t*2.2 - v*0.045 + u*0.02) + 1.6*Math.sin(t*3.6 + u*0.06 - v*0.03);
+        /* a borda cai mole: perto de sair da mancha o pano despenca */
+        const cai = (1 - k) * 22;
+        const hh = alt + mao + barriga + onda * (0.5 + 0.5*k) - cai;
+        altura[id] = hh;
+        const q = ponto(S, u, v, hh);
+        pos.set(q, id*3);
+        uv[id*2] = (u - S.u0 + 6) / (S.u1 - S.u0 + 12);
+        uv[id*2+1] = 1 - (v - S.v0 + 6) / (S.v1 - S.v0 + 12);
       }
     }
-    B.geo.attributes.color.needsUpdate = true;
+    /* a luz da dobra, pela encosta (diferença de altura) */
+    for(let j = 0; j <= nv; j++) for(let i = 0; i <= nu; i++){
+      const id = j*(nu+1) + i;
+      const a = altura[j*(nu+1) + Math.max(0, i-1)], b = altura[j*(nu+1) + Math.min(nu, i+1)];
+      const c2 = altura[Math.max(0, j-1)*(nu+1) + i], d2 = altura[Math.min(nv, j+1)*(nu+1) + i];
+      const enc = (b - a) * 0.09 + (d2 - c2) * 0.07;
+      const luz = Math.max(0.45, Math.min(1.18, 0.9 + enc));
+      cor[id*3] = cor[id*3+1] = cor[id*3+2] = luz;
+    }
+    /* só os triângulos de dentro da mancha */
+    const idx = [];
+    for(let j = 0; j < nv; j++) for(let i = 0; i < nu; i++){
+      const a = j*(nu+1) + i, b = a + 1, c = a + nu + 1, d = c + 1;
+      if(dentro[a] > 0.02 && dentro[c] > 0.02 && dentro[b] > 0.02) idx.push(a, c, b);
+      if(dentro[b] > 0.02 && dentro[c] > 0.02 && dentro[d] > 0.02) idx.push(b, c, d);
+    }
+    B.geo.setIndex(idx);
     B.geo.attributes.position.needsUpdate = true; B.geo.attributes.uv.needsUpdate = true;
+    B.geo.attributes.color.needsUpdate = true;
     B.geo.computeVertexNormals();
-    /* a sombra: o mesmo retângulo no chão, empurrado pro lado da luz */
-    const sp = B.sg.attributes.position.array;
-    const cantos = [[u0, vBase - hh], [u0 + w, vBase - hh], [u0, vBase], [u0 + w, vBase]];
-    cantos.forEach(([u, v], k) => { const q = ponto(S, u + 6, v + 8, 1.5); sp.set(q, k*3); });
-    B.sg.attributes.position.needsUpdate = true;
   }
 
-  /* ---------- os trapos: do alto do fundo até o alambrado ---------- */
+  /* ---------- os trapos: só dentro das bordas da arquibancada ----------
+     (correção do dono, 11/10/2026: "os trapos precisam se alinhar pra
+     encaixar somente dentro das bordas da arquibancada")
+     Cada tira corre pela linha dela (u fixo, na direção do campo) e é
+     recortada pela própria arquibancada: o trecho pisável da máscara
+     da cena que contém a torcida — do muro do fundo ao alambrado.
+     A tira fica deitada por cima das cabeças, e a checagem é feita no
+     ponto onde ela APARECE (a altura sobe na tela pela câmera), pra
+     nada sair visualmente da borda. */
+  const TRAPO_ALT = 39, CISALHA_VISTA = 0.42;
+  function vaoDaTira(S, u){
+    const A2 = A();
+    if(!A2 || !A2.caminhavel) return [S.v0, S.v1];
+    const passoV = 3, sobe = TRAPO_ALT * CISALHA_VISTA;
+    const pisa = v => {
+      const q = ponto(S, u, v, 0);
+      return A2.caminhavel(q[0], q[2] - sobe);
+    };
+    /* o meio da torcida nessa linha: começa do miolo do setor */
+    let meio = (S.v0 + S.v1) / 2;
+    if(!pisa(meio)){
+      let achou = false;
+      for(let dv = passoV; dv < (S.v1 - S.v0); dv += passoV){
+        if(pisa(meio + dv)){ meio += dv; achou = true; break; }
+        if(pisa(meio - dv)){ meio -= dv; achou = true; break; }
+      }
+      if(!achou) return null;
+    }
+    let a = meio, b = meio;
+    const LIM = 400;
+    while(a - meio > -LIM && pisa(a - passoV)) a -= passoV;
+    while(b - meio < LIM && pisa(b + passoV)) b += passoV;
+    return [a + 2, b - 2];
+  }
   function trapos3(F, S, t){
     const P = g3.partes;
     if(!F.janelas.trapos) return;
     const W = F.janelas;
     const ocupa = ['mosaico','bandeirao'].some(id => W[id] && t >= W[id][0] - 0.4 && t <= W[id][1] + 0.4);
-    /* recolhe enquanto o mosaico e o bandeirão estão no ar */
     F.recolhe = Math.max(0, Math.min(1, (F.recolhe || 0) + (ocupa ? 0.04 : -0.04)));
     const largura = S.u1 - S.u0;
-    const n = Math.max(2, Math.floor(largura / 40));
+    const L = 16;
+    const n = Math.max(2, Math.floor(largura / 34));
     if(!P.trapos || P.trapos.n !== n){
       if(P.trapos) for(const r of P.trapos.fitas){ g3.raiz.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); }
       const fitas = [];
       for(let k = 0; k < n; k++){
-        /* a tira tem friso: uma textura de três listras ao comprido */
         const cv = document.createElement('canvas'); cv.width = 8; cv.height = 4;
         const c = cv.getContext('2d');
         const cor = F.paleta[k % 2], cor2 = F.paleta[(k + 1) % 2];
         c.fillStyle = cor; c.fillRect(0, 0, 8, 4);
         c.fillStyle = cor2; c.fillRect(1, 0, 1, 4); c.fillRect(6, 0, 1, 4);
         const tx = textura(cv); tx.magFilter = THREE.NearestFilter;
-        const geo = grade(1, 24);
+        const geo = grade(1, 28);
         const mesh = new THREE.Mesh(geo, lambert({map:tx}));
         mesh.frustumCulled = false;
         g3.raiz.add(mesh);
-        fitas.push({mesh, geo});
+        fitas.push({mesh, geo, vao:null, vaoEm:0});
       }
       P.trapos = {n, fitas};
     }
-    const passo = largura / n, comp = S.v1 - S.v0 + 20;
-    const L = 18;
+    /* as tiras ficam dentro da largura ocupada, com folga nas pontas */
+    const passo = (largura - L) / Math.max(1, n - 1);
+    const agora = performance.now();
     P.trapos.fitas.forEach((r, k) => {
-      r.mesh.visible = F.recolhe < 0.98;
+      const base = S.u0 + L/2 + passo * k;
+      if(!r.vao || agora - r.vaoEm > 1500){ r.vao = vaoDaTira(S, base); r.vaoEm = agora; }
+      r.mesh.visible = !!r.vao && F.recolhe < 0.98;
       if(!r.mesh.visible) return;
-      const base = S.u0 + passo * (k + 0.5);
+      const [va, vb] = r.vao;
+      /* recolhida, a tira enrola pro fundo */
+      const vFim = va + (vb - va) * (1 - 0.9 * F.recolhe);
       const pos = r.geo.attributes.position.array, uv = r.geo.attributes.uv.array;
       const nv = r.geo.nv;
       for(let j = 0; j <= nv; j++){
         const s2 = j / nv;
-        /* do alto do fundo (64) ao alambrado (24), com barriga no meio;
-           recolhida, a tira sobe e encurta pro fundo */
-        const vv = S.v0 - 10 + s2 * comp * (1 - 0.85 * F.recolhe);
-        const h = 64 + (24 - 64) * s2 - 10 * Math.sin(Math.PI * s2) + 3 * Math.sin(t*1.6 + k + s2*4) * Math.sin(Math.PI*s2);
-        const lado = 2.4 * Math.sin(t*1.3 + k*1.7 + s2*3) * Math.sin(Math.PI*s2);
+        const vv = va + (vFim - va) * s2;
+        /* deitada sobre as cabeças, ondulando com quem está embaixo */
+        const h = TRAPO_ALT + 2.2*Math.sin(t*2.3 + k*1.1 + vv*0.09) + 1.2*Math.sin(t*3.4 - vv*0.05);
+        const lado = 1.6 * Math.sin(t*1.2 + k*1.7 + s2*4);
         for(let i = 0; i <= 1; i++){
           const q = ponto(S, base + lado + (i ? L/2 : -L/2), vv, h);
           const kk = j*2 + i;
