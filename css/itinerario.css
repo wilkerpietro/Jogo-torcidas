@@ -255,6 +255,7 @@
 .itn-final{margin-top:8px; display:flex; flex-direction:column; gap:6px; align-items:flex-start}
 .itn-final .tv-placar-tv{height:26px}
 .partida-gol.tensao{color:#c9b27a}
+.partida-gol.festa{color:var(--ouro);font-weight:600}
 .est-cena #djPalco, .est-cena #djCanvases{width:100%; max-width:100%}
 .est-cena #djPrincipal{max-width:100%}
 /* o trajeto na cidade (10/10/2026): os três pontos do caminho, miúdos */

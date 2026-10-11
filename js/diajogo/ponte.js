@@ -308,6 +308,10 @@ TO.diaJogo.ponte = (function(){
                       /* com boneco por cima, o nome e a marca do líder
                          vão pra camada de cima (desenharSobre) */
                       semNomeDoLider:bonecos});
+    /* sem boneco por cima, a festa vai no próprio canvas da cena */
+    if(!bonecos && J.festa && TO.diaJogo.festas){
+      try{ TO.diaJogo.festas.desenhar(ctx, J); }catch(e){ registrarErro('festas', e); }
+    }
     if(mira && !ED.ativo) desenharMira(ctx);
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
@@ -358,6 +362,12 @@ TO.diaJogo.ponte = (function(){
     const c = sobreCtx;
     c.setTransform(1,0,0,1,0,0);
     c.clearRect(0,0,sc.width,sc.height);
+    /* as festas da arquibancada (dono, 11/10/2026): por cima dos bonecos */
+    if(J && J.festa && TO.diaJogo.festas){
+      c.setTransform(escala.s,0,0,escala.s,escala.ox,escala.oy);
+      try{ TO.diaJogo.festas.desenhar(c, J); }catch(e){ registrarErro('festas', e); }
+      c.setTransform(1,0,0,1,0,0);
+    }
     const f = focoDoZoom();
     if(!f || !f.vivo || ED.ativo) return;
     const s = escala.s;

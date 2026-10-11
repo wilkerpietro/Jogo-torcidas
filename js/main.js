@@ -2053,6 +2053,13 @@
          da ponte centra no líder, que está no nosso setor */
       if(zoomAntesDoJogo == null) zoomAntesDoJogo = TO.diaJogo.ponte.zoom;
       TO.diaJogo.ponte.zoom = 2.2;
+      /* AS FESTAS QUE A TORCIDA MONTOU PRA ESTE JOGO (dono, 11/10/2026):
+         o estoque já foi gasto quando o placar saiu (TO.festas); aqui
+         só a cena — mosaico, bandeirão, trapos, papel, mosaico 3D */
+      if((d.festas || []).length && TO.diaJogo.festas)
+        TO.diaJogo.festas.iniciar(TO.diaJogo.J, {festas:d.festas,
+          torcida:TO.mundo.torcida(e.torcida.id) || e.torcida, clubeId:e.torcida.clubeId,
+          semente:(e.data.ano * 400 + e.data.semana * 7 + e.data.dia)});
     }catch(err){ console.warn('arquibancada: ' + (err && err.message)); pararArquibancada(); return false; }
     return true;
   }
@@ -2230,6 +2237,14 @@
       };
     }
     pintarClima();
+    /* a festa do jogo na lista de lances (dono, 11/10/2026): o que subiu
+       e quanto empurra o time */
+    if((d.festas || []).length && TO.festas){
+      const nomes = d.festas.map(id => (TO.festas.POR_ID[id] || {}).nome || id).join(', ');
+      eventos.appendChild(el('div',{class:'partida-gol festa', texto:
+        _t('A torcida montou a festa: {nomes} — Fator Torcida +{pct}%', {nomes,
+           pct:Math.round(TO.festas.pctDe(d.festas) * 100)})}));
+    }
 
     const pintarBotoes = ()=>{
       btPausa.textContent = d.pausada ? '▶' : '❚❚';
@@ -2283,6 +2298,8 @@
           g.visto = true;
           if(pMin && !m.respondido) d.tensao += nosso ? 6 : 12;
           festaNaArquibancada(nosso ? 'nos' : 'eles', 4);
+          /* gol nosso com papel picado no estoque do jogo: chove de novo */
+          if(nosso && palcoEmbutido && TO.diaJogo.festas) TO.diaJogo.festas.gol(TO.diaJogo.J);
         }
       }
       pintarPlacar(vistos.filter(x=>x.lado==='c').length,
@@ -7761,6 +7778,38 @@
     sec0.appendChild(el('h3',{html:_t('Compra rápida <small>material de cena — o que se repõe toda semana</small>')}));
     sec0.appendChild(rap);
     pg.appendChild(sec0);
+
+    /* ---- FESTA NA ARQUIBANCADA (dono, 11/10/2026) ----
+       uma compra = uma festa; o estoque sobe no próximo jogo do clube
+       em que a torcida estiver no estádio, uma de cada tipo, e soma
+       no Fator Torcida daquele placar */
+    if(TO.festas){
+      const FS = TO.festas, est = FS.estoque(e);
+      const secF = el('div',{class:'loja-secao loja-festas'});
+      secF.appendChild(el('h3',{html:_t('Festa na arquibancada <small>sobe no próximo jogo do clube em que a torcida estiver no estádio, uma de cada tipo, e empurra o time no placar</small>')}));
+      const grF = el('div',{class:'loja-rapida'});
+      for(const f of FS.CATALOGO){
+        const t = el('div',{class:'loja-tile festa-' + f.id});
+        t.appendChild(el('h3',{texto:f.nome}));
+        t.appendChild(el('span',{class:'estoque', html:
+          _t('no depósito: <b>{n}</b> · Fator Torcida <b>+{pct}%</b>', {n:est[f.id], pct:Math.round(f.pct*100)})}));
+        t.appendChild(el('small',{class:'loja-nota', texto:f.nota}));
+        const pe = el('div',{class:'pe'});
+        pe.appendChild(el('span',{class:'preco', texto:U.dinheiro(f.custo)}));
+        const trava = e.dinheiro < f.custo ? _t('falta caixa')
+                    : est[f.id] >= FS.MAX_ESTOQUE ? _t('depósito cheio') : null;
+        pe.appendChild(botao(_t('Comprar'), trava, ()=>comprar(()=>FS.comprar(e, f.id, 1))));
+        t.appendChild(pe);
+        if(trava) t.appendChild(el('small',{class:'trava', texto:trava}));
+        grF.appendChild(t);
+      }
+      secF.appendChild(grF);
+      const total = FS.pctDe(FS.CATALOGO.filter(f => est[f.id] > 0).map(f => f.id));
+      secF.appendChild(el('div',{class:'recado', html: total
+        ? _t('No próximo jogo a festa empurra o time em <b>+{pct}%</b> (a bateria ensaiada soma mais 20% em casa).', {pct:Math.round(total*100)})
+        : _t('Depósito vazio: o próximo jogo vai sem festa.')}));
+      pg.appendChild(secF);
+    }
 
     /* ---- o resto, por natureza ---- */
     const SECOES = [

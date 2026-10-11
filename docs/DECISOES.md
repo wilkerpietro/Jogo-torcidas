@@ -9903,6 +9903,64 @@ nas caravanas das torcidas IA?"
   - Agora o nosso disco também nasce da moral da torcida
     (`E.indicadores.moral` ±3, entre 1 e 20).
 
+## Festas da arquibancada: mosaico, bandeirão, trapos, papel picado e mosaico 3D (dono, 11/10/2026)
+
+Pedido: animações da torcida durante o jogo, compradas na loja, cada uma
+somando uma porcentagem no Fator Torcida que ajuda o time a ganhar.
+Correção do dono no meio do trabalho: "a imagem sempre deve estar virada
+pro campo".
+
+- **Loja** (Financeiro → Loja → Festa na arquibancada, `js/gestao/festas.js`):
+
+| Festa | Preço | Fator Torcida |
+|---|---|---|
+| Chuva de papel picado | R$ 3.000 | +4% |
+| Festa com trapos | R$ 6.000 | +5% |
+| Bandeirão | R$ 12.000 | +8% |
+| Mosaico | R$ 20.000 | +10% |
+| Mosaico 3D | R$ 35.000 | +13% |
+
+  - Cada compra é uma festa, ou seja, o material de um jogo. O depósito
+    guarda até 20 de cada.
+  - As cinco juntas somam +40%.
+- **Uso:**
+  - O estoque é gasto sozinho no próximo jogo do clube em que a torcida
+    estiver no estádio.
+  - Em casa vale sempre (com 6 membros de pé). Fora, só se a caravana
+    sair com 10 ou mais.
+  - Vai uma festa de cada tipo por jogo.
+  - O gasto acontece na hora em que o placar é sorteado
+    (`competicoes.fatorDoJogo`). O jogo guarda a lista em `j.festas`, que
+    segue para a mensagem da partida (`dados.festas`).
+- **No placar:** a porcentagem é da mesma régua de 55 pontos da bateria
+  (+20%, só em casa, segue igual). Em casa empurra o mandante; fora o
+  bônus entra negativo, empurrando o visitante, que é o nosso clube.
+  - Os jogos da Conmebol (`conmebol.js`) sorteiam o placar sem bônus,
+    então lá a festa não conta.
+- **Na cena da arquibancada** (`js/diajogo/festas_cena.js`, desenhada na
+  camada de cima, por cima dos bonecos):
+  - **Mosaico:** cada membro nosso levanta um papel que mostra o seu
+    pedaço da arte. O setor inteiro forma o escudo do clube ou as cores
+    da torcida, sorteado por jogo. Sobe em onda, do alambrado pro fundo.
+  - **Bandeirão:** a bandeira da torcida abre do alambrado até a última
+    fileira, por cima das cabeças, tremulando em fatias.
+  - **Trapos:** tiras nas cores da torcida, do fundo até o alambrado, o
+    jogo inteiro. Saem de cena enquanto o mosaico e o bandeirão estão no
+    ar.
+  - **Papel picado:** chove na entrada do time e a cada gol nosso.
+  - **Mosaico 3D:** a bandeira gigante em pé no fundo do setor, com
+    escudo, raios e o nome da torcida. Desenrola de cima pra baixo.
+  - **Roteiro:** papel, mosaico 3D e mosaico na entrada (o 3D em cima e
+    o mosaico embaixo, como na foto do dono), bandeirão depois, trapos o
+    jogo todo. O relógio da festa é de tempo real.
+  - **Virada pro campo:** cada setor tem eixos próprios, tirados da
+    âncora da faixa do escalão (`dir`, que aponta pro gramado). A base
+    da arte fica no alambrado e o topo na última fileira, legível por
+    quem olha do campo.
+  - A lista de lances do jogo mostra a festa montada e o percentual.
+- Os discos ganharam `nossaTorcida` e `torcidaId`, para a festa vestir só
+  a nossa torcida no setor dividido com aliado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

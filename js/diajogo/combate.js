@@ -819,6 +819,11 @@ TO.diaJogo.combate = (function(){
         m ? m.apelido.toUpperCase()
           : String(nomes[i%nomes.length]||'ZÉ').toUpperCase(),
         s.lado, s, p.x, p.y, lider);
+      /* DE QUEM É O DISCO (festas na arquibancada, 11/10/2026): o
+         mosaico, o bandeirão e os trapos só vestem a NOSSA torcida, e
+         no setor dividido com aliado é por aqui que se separa */
+      d.nossaTorcida = meu;
+      d.torcidaId = g.bonde ? g.bonde.id : null;
       if(m){
         d.membroId=m.id;
         d.forca=m.forca; d.defesa=m.defesa;

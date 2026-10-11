@@ -6153,6 +6153,8 @@ TO.feed = (function(){
                /* os clubes, pro placar de TV da arquibancada (10/10/2026) */
                casaId:nosso.c, foraId:nosso.f,
                gc:nosso.gc, gf:nosso.gf, comp:nosso.compNome || '', gols,
+               /* as festas que a torcida montou pra este jogo (TO.festas) */
+               festas: (nosso.festas || []).slice(),
                /* o clima do estádio lê quem está lá (dono, 19/08/2026) */
                somosCasa: nosso.c === meu,
                /* a praça e o estádio: a briga da arquibancada é no bairro

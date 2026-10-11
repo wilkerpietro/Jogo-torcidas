@@ -1229,6 +1229,13 @@ TO.competicoes = (function(){
      de bateria do expediente. Com a bateria ensaiada na última semana,
      o clube DO JOGADOR manda em casa com +20% da régua de força (11
      dos 55 pontos do divisor). O resto do mundo segue sem bônus. */
+  /* O FATOR TORCIDA DO JOGO: a bateria (só em casa) mais as festas da
+     arquibancada (TO.festas, dono 11/10/2026), que gastam o estoque
+     neste exato jogo e deixam a lista em `j.festas` pra cena desenhar */
+  function fatorDoJogo(E, j){
+    const festas = TO.festas ? TO.festas.usarNoJogo(E, j) : 0;
+    return bonusTorcida(E, j.c) + festas;
+  }
   function bonusTorcida(E, casaId){
     if(!E || !E.torcida || !E.torcida.clubeId) return 0;
     if(casaId !== E.torcida.clubeId) return 0;
@@ -1382,7 +1389,7 @@ TO.competicoes = (function(){
         for(const j of r.jogos){
           if((j.s || r.semana) !== semana) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
+          const [a,b] = simular(j.c, j.f, fatorDoJogo(E, j));
           j.gc = a; j.gf = b;
           feitos.push({comp:comp.id, ...j});
         }
@@ -1392,7 +1399,7 @@ TO.competicoes = (function(){
           if(!j.f) continue;                       // passou sem jogar
           if((j.s || m.semana) !== semana) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c, j.f));
+          const [a,b] = simular(j.c, j.f, fatorDoJogo(E, j));
           j.gc = a; j.gf = b;
           /* em ida e volta quem decide é o agregado, não a partida */
           if(decideNaPartida(m)){
@@ -1451,7 +1458,7 @@ TO.competicoes = (function(){
           if((j.s || r.semana) !== semana) continue;
           if((j.d || r.dia || comp.dia || DIA_FDS) !== dia) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
+          const [a,b] = simular(j.c, j.f, fatorDoJogo(E, j));
           j.gc = a; j.gf = b;
           /* o número da rodada viaja com o jogo: a mensagem da nossa
              partida fala "pela 3ª rodada" (pedido do dono, 18/08/2026) */
@@ -1465,7 +1472,7 @@ TO.competicoes = (function(){
           if((j.s || m.semana) !== semana) continue;
           if((j.d || m.dia || DIA_FDS) !== dia) continue;
           if(j.gc !== undefined && j.gc !== null) continue;
-          const [a,b] = simular(j.c, j.f, bonusTorcida(E, j.c));
+          const [a,b] = simular(j.c, j.f, fatorDoJogo(E, j));
           j.gc = a; j.gf = b;
           if(decideNaPartida(m)){
             j.venceu = a>b ? j.c : b>a ? j.f
