@@ -117,3 +117,67 @@ Quando a imagem estiver pronta, é só mandar: ela entra no importador
 cena `subsede` em `dados/cenas.js`, ganha a aba na bancada
 (`arredores.html#subsede`) e os ataques às nossas subsedes passam a abrir
 essa cena.
+
+---
+
+## Rodada 1 · O que saiu, e o que muda
+
+A primeira rodada (`img/cenas/subsede_rodada1.jpg`, print do dono) acertou
+a estrutura: zênite de verdade, o lote sem telhado entre vizinhos com
+telhado, a rua com calçada no quarto de baixo, o pátio de cimento claro,
+o balcão de granito em L e o barzinho de cerâmica atrás dele, as cadeiras
+empilhadas na parede da esquerda e os surdos no canto da frente.
+
+O dono: **"preciso que saia com mais cara de bar, com algumas mesas e
+telão transmitindo um jogo"**. O pátio saiu um salão vazio.
+
+Duas coisas novas, e o cuidado de cada uma com a máscara:
+
+1. **As mesas.** Mesa de bar no meio do pátio vira parede na máscara —
+   o bonde não passa. Então: **poucas mesas, pequenas, em duas fileiras
+   encostadas nas paredes laterais**, e o **corredor do meio largo e
+   livre** da porta de enrolar até o balcão. Mesa de plástico branca com
+   quatro cadeiras em volta, e engradado de cerveja do lado.
+2. **O telão.** De zênite, tela de TV na parede é só uma risca — não dá
+   pra ver o jogo. A saída é a única licença do prompt: o **telão grande
+   pendurado alto na parede do fundo, acima do balcão, INCLINADO pra
+   frente e pra baixo** (como o telão de bar de esquina, virado pro
+   salão), de modo que a face dele aparece de cima e mostra **um jogo de
+   futebol: gramado verde, as linhas do campo e o placar no canto**. O
+   resto continua só topo. Se o Flow insistir em tela de pé, peça de
+   novo — o telão de cima tem de mostrar o gramado.
+
+Fica tudo o que já estava: o lote, os vizinhos, a rua, o balcão, o
+barzinho, a porta de enrolar. Ela continua sendo um vão largo aberto —
+na rodada 1 ela ficou à direita do surdo, no canto de baixo; serve
+assim, desde que esteja aberta.
+
+## O prompt (rodada 2 — edição sobre a imagem da rodada 1)
+
+**Anexe a imagem da rodada 1** (`subsede_rodada1.jpg`, ou a original do
+Flow, que tem mais resolução) e cole:
+
+```
+Edit the attached aerial image. Keep the camera, the framing and everything that is already there EXACTLY as it is: the same true orthographic 90 degree zenith view with only top surfaces visible, the same roofless subsede building in the center, the same neighboring houses with their fiber-cement and terracotta roofs, the same street with the concrete sidewalk at the bottom, the same pale burnt cement patio floor, the same L-shaped masonry bar counter with the dark granite top, the same small tiled bar behind it with the fridge and the freezer against the back wall, the same open roll-up door in the front wall, the same bass drums in the front corner. Only FURNISH THE PATIO so it reads clearly as a lively neighborhood football bar of a supporters' group:
+
+- TABLES: about eight small square white plastic bar tables, each with four white plastic chairs around it, arranged in TWO ROWS ONLY, one row along the left wall and one row along the right wall of the patio, each table close to its wall. Next to some tables, a red plastic beer crate and a few brown beer bottles on the table tops. The stack of chairs already against the left wall can stay.
+- A WIDE CLEAR AISLE down the middle of the patio, from the open roll-up door at the front all the way to the bar counter at the back, at least a third of the patio width, completely empty bare floor — nothing in it, no tables, no chairs, no crates.
+- THE BIG SCREEN: one large flat TV screen mounted high on the back wall, above the middle of the bar counter, TILTED FORWARD AND DOWN toward the patio like the big screen of a corner bar, so that from directly above its screen face is visible: it is showing a live football match broadcast — a bright green pitch with white field lines, tiny players, and a small scoreboard graphic in a corner of the screen. The screen glows slightly. This tilted screen is the ONLY object whose face is visible; everything else stays seen strictly from the top.
+- A few small details that say "bar": a string of bare light bulbs running along the top of the side walls (seen from above as a thin line of small round bulbs), a couple of plastic cups and bottle caps on the floor near the counter.
+
+Same bright diffuse overcast daylight, same muted natural colors, same photographic texture, seamlessly integrated, photorealistic.
+
+Do not change the building, the walls, the neighbors, the street or the camera. No tables or chairs in the central aisle, no furniture blocking the roll-up door or the doorway into the bar. No oblique angle, no tilted camera, no perspective, no visible wall faces, no visible facades. No banners, no flags, no hanging cloth, no painted crests, no murals, no logos, no signs, no readable text, no people, no cars. No illustration, no cartoon, no 3d render, no HDR, no night, no long shadows.
+```
+
+## Conferência da rodada 2
+
+1. **O corredor do meio está livre**, da porta de enrolar ao balcão, e
+   largo (um terço do pátio, pelo menos). Mesa no corredor = parede.
+2. **As mesas estão em duas fileiras, encostadas nas paredes**, e não
+   espalhadas pelo salão.
+3. **O telão mostra o jogo de cima** (gramado verde visível) e está na
+   parede do fundo, acima do balcão.
+4. **Nada mais mudou:** compare o balcão, o barzinho, a porta e os
+   vizinhos com a rodada 1.
+5. **A porta de enrolar e a porta do barzinho continuam abertas.**
