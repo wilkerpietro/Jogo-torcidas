@@ -10427,6 +10427,25 @@ Alegre e a Mancha Verde tem uma subsede lá, ela pode me atacar com seus
 - Medido: Mancha Verde com 40 na subsede de Porto Alegre entra no balde
   com a nossa caravana de 30; com 70, fica de fora.
 
+## IA ataca subsede de IA, e o tamanho do ataque de subsede (dono, 11/10/2026)
+
+"As IAs também devem atacar subsedes de outras IAs. Algumas cenas do
+itinerário de ataque de subsede estão gerando quantidades
+desproporcionais" (print: Camisa 12 Sub-Sede com 20 contra 300 nossos).
+- IA × SUBSEDE DE IA (`guerraDeFiliais`, semanal): a briga virou "ataque
+  à subsede" (`tipo:'subsede'`), quem ataca é sorteado no par de subsedes
+  da mesma cidade, e entraram as TORCIDAS DA PRAÇA descendo na subsede de
+  fora da cidade delas (bonde até 1,5 vez o núcleo). Quem vence leva a
+  faixa da subsede (a dona fica sem por 4 semanas); vale a regra das três
+  tentativas.
+- A RÉGUA DOS 70% NA ESTRADA: sem estimativa da caravana, o tamanho dela
+  era 20 fixo — a subsede de 20 "passava" contra 300. Agora cai na turma
+  de pé inteira.
+- NA CENA: quando quem ataca é o núcleo de uma subsede, o nosso lado que
+  desce é no máximo 1,3 vez esse núcleo (o grupo que estava ali; o resto
+  nem chega na briga). Medido: o nosso núcleo de 60 contra a subsede de
+  12 da Bamor abre 16 × 12.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

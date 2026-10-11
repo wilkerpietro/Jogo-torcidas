@@ -11647,6 +11647,12 @@
     if(noBar) nossos = Math.min(nossos, 40);
     /* na linha do dia, quem briga é o que SOBROU da caravana */
     nossos = tetoNossoItn(nossos);
+    /* O NÚCLEO DE UMA SUBSEDE NÃO PEGA A CARAVANA INTEIRA (dono, 11/10/2026:
+       "algumas cenas do itinerário de ataque de subsede estão gerando
+       quantidades desproporcionais" — 20 da subsede contra 300 nossos):
+       quem eles fecham é o ônibus/o grupo que estava ali, e o resto nem
+       chega na briga — no máximo 1,3 vez o núcleo deles */
+    if(atq.filial && atq.efetivo) nossos = Math.max(2, Math.min(nossos, Math.round(atq.efetivo * 1.3)));
     /* QUEM VEM ATACAR TRAZ A TURMA QUE O SERVIÇO PEDE. Os 30% fixos
        criavam a cena-farsa: atacante grande o bastante pra passar no
        filtro de geração ainda chegava com um terço do nosso bonde e

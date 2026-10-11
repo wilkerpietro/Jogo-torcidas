@@ -1565,7 +1565,9 @@ TO.planejamento = (function(){
   function emboscadaNaPraca(E, cidadeId, ida){
     const H = TO.mapa.hash;
     const est = estimativaCaravana(E);
-    const crew = (est && est.vao) || 20;
+    /* sem a estimativa, a turma de pé inteira: o 20 fixo deixava uma
+       subsede de 20 "passar na régua" contra uma caravana de 300 (11/10/2026) */
+    const crew = (est && est.vao) || TO.membros.aptosParaOEstadio(E).length || 20;
     const lista = hostisNaPraca(E, cidadeId, crew);
     if(!lista.length) return null;
     const chave = `emb|${E.data.ano}|${E.data.semana}|${cidadeId}|${ida?'ida':'volta'}`;
@@ -1605,7 +1607,9 @@ TO.planejamento = (function(){
        própria caravana não fecha pista (decisão do dono, 17/08/2026 —
        ataque sofrido de efetivo muito menor que o nosso não existe) */
     const est = estimativaCaravana(E);
-    const crew = (est && est.vao) || 20;
+    /* sem a estimativa, a turma de pé inteira: o 20 fixo deixava uma
+       subsede de 20 "passar na régua" contra uma caravana de 300 (11/10/2026) */
+    const crew = (est && est.vao) || TO.membros.aptosParaOEstadio(E).length || 20;
     for(const c of cidades)
       for(const o of M().torcidasEm(c)){
         if(o.incompleta || o.id === E.torcida.id) continue;

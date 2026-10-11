@@ -2982,28 +2982,62 @@ TO.relacoes = (function(){
      libera as descidas), relação ruim entre as duas, dose semanal
      pequena. A briga entra em brigasIA como qualquer outra — os bondes
      têm o TAMANHO DOS NÚCLEOS — e o jornal dá a nota. */
+  /* (11/10/2026, dono: "as IAs também devem atacar subsedes de outras
+     IAs"): a briga agora é ATAQUE À SUBSEDE — quem ataca desce na subsede
+     da outra, sai no jornal com esse nome, e quem vence leva a faixa da
+     subsede ("BAMOR RECIFE"), que a dona repõe em 4 semanas. E não só
+     subsede contra subsede: as torcidas DA PRAÇA também descem na
+     subsede de fora que abriu na cidade delas, com um bonde do tamanho do
+     serviço (até 1,5 vez o núcleo). */
+  function ataqueASubsedeIA(E, att, def, fDef, cidade, tetoA){
+    const reg = brigaIA(E, att, def, cidade, _t('ataque à subsede'),
+                        {tipo:'subsede', tetoA, tetoB: fDef.membros});
+    if(!reg || !reg.ganhouA) return reg;
+    const PAT = TO.patrimonio;
+    if(PAT && PAT.temFaixaDaSubsede && PAT.temFaixaDaSubsede(E, fDef)){
+      fDef.faixa = false; fDef.faixaDe = (E.data.absoluto || 0) + 28;
+      const t = PAT.faixasIA(E, att.id);
+      if(t) t.faixasTomadas.push({de:def.id, nome:def.nome, ano:E.data.ano,
+        variante:'sub:' + ((M().cidade(cidade) || {}).nome || cidade)});
+    }
+    return reg;
+  }
   function guerraDeFiliais(E){
     const m = E.mundoTorcidas || {};
+    const meu = E.torcida && E.torcida.id;
     const porCidade = {};
     for(const id of Object.keys(m))
       for(const f of (m[id].filiais||[]))
-        if((f.membros||0) >= 6)
+        if((f.membros||0) >= 6 && id !== meu)
           (porCidade[f.cidade] = porCidade[f.cidade] || []).push({id, f});
+    const chanceDe = (a, b, r) => ((-20 - r)/120) * 0.10 *
+      Math.max(brigaDe(m[a.id]), brigaDe(m[b.id]))
+      * FREIO_BRIGA * pesoDoRival(E, a.id, b.id) * FREIO_IA;
+    const podem = (a, b) => a && b && a.id !== b.id && a.clubeId !== b.clubeId &&
+      !(M().saoIrmas && M().saoIrmas(a.id, b.id)) && !desistiu(E, a.id, b.id);
     for(const cidade of Object.keys(porCidade)){
       const lst = porCidade[cidade];
-      if(lst.length < 2) continue;
+      /* subsede contra subsede: quem ataca é sorteado entre as duas */
       for(let x=0;x<lst.length;x++) for(let y=x+1;y<lst.length;y++){
-        const a = M().torcida(lst[x].id), b = M().torcida(lst[y].id);
-        if(!a || !b || a.clubeId === b.clubeId) continue;
-        if(M().saoIrmas && M().saoIrmas(a.id, b.id)) continue;
+        let [p, q] = U.rng() < 0.5 ? [lst[x], lst[y]] : [lst[y], lst[x]];
+        const a = M().torcida(p.id), b = M().torcida(q.id);
+        if(!podem(a, b)) continue;
         const r = relacaoDelas(E, a.id, b.id);
         if(r > -20) continue;
-        const chance = ((-20 - r)/120) * 0.10 *
-          Math.max(brigaDe(m[a.id]), brigaDe(m[b.id]))
-          * FREIO_BRIGA * pesoDoRival(E, a.id, b.id) * FREIO_IA;
-        if(U.rng() >= chance) continue;
-        brigaIA(E, a, b, cidade, '', {tetoA: lst[x].f.membros,
-                                      tetoB: lst[y].f.membros});
+        if(U.rng() >= chanceDe(a, b, r)) continue;
+        ataqueASubsedeIA(E, a, b, q.f, cidade, p.f.membros);
+      }
+      /* a torcida da praça contra a subsede de fora */
+      for(const loc of M().torcidasEm(cidade)){
+        if(loc.id === meu || loc.incompleta || !m[loc.id]) continue;
+        for(const q of lst){
+          const b = M().torcida(q.id);
+          if(!podem(loc, b)) continue;
+          const r = relacaoDelas(E, loc.id, b.id);
+          if(r > -20) continue;
+          if(U.rng() >= chanceDe(loc, b, r)) continue;
+          ataqueASubsedeIA(E, loc, b, q.f, cidade, Math.max(6, Math.round(q.f.membros * 1.5)));
+        }
       }
     }
   }
@@ -3032,7 +3066,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {registrarTentativa, desistiu, tentativas, DESISTE, REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
+  return {_guerraDeFiliais: guerraDeFiliais, registrarTentativa, desistiu, tentativas, DESISTE, REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
           ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,

@@ -1139,5 +1139,6 @@ TO.i18n.registrar({
   "Faixa nova pra uma subsede": {es:"Trapo nuevo para una filial", en:"New banner for a chapter house"},
   "Faixa {texto} pendurada na subsede.": {es:"Trapo {texto} colgado en la filial.", en:"{texto} banner hung at the chapter house."},
   "a faixa da subsede foi tomada · a nova sai com o nome da torcida e a cidade": {es:"el trapo de la filial fue robado · el nuevo sale con el nombre de la hinchada y la ciudad", en:"the chapter house banner was taken · the new one carries the crew's name and the city"},
-  "a subsede de {cidade} ficou sem faixa: a nova é na loja": {es:"la filial de {cidade} se quedó sin trapo: el nuevo está en la tienda", en:"the {cidade} chapter house lost its banner: get a new one at the shop"}
+  "a subsede de {cidade} ficou sem faixa: a nova é na loja": {es:"la filial de {cidade} se quedó sin trapo: el nuevo está en la tienda", en:"the {cidade} chapter house lost its banner: get a new one at the shop"},
+  "ataque à subsede": {es:"ataque a la filial", en:"chapter house raid"}
 });
