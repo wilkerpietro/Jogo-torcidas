@@ -3817,6 +3817,15 @@ TO.diaJogo.combate = (function(){
     const quem = cfg.faixaDefensor;
     if(!quem) return [];
     const meu = ladoDoJogador(J), outro = OUTRO_LADO[meu];
+    /* NA SUBSEDE, A FAIXA DELA (dono, 11/10/2026): "{TORCIDA} {CIDADE}",
+       só ela, e só se a subsede ainda tem a dela */
+    const FS = cfg.faixaSub;
+    if(D.id === 'subsede' && FS){
+      if(!FS.tem) return [];
+      const lado = quem === 'nos' ? meu : outro;
+      const F = montarUma(J, cfg, FS.torcidaId, lado, null, 'faixa', {variante:'sub:' + (FS.cidadeNome || ''), subsede:FS.cidade});
+      return F ? [F] : [];
+    }
     const ordem = quem === 'ambos' ? ['nos','eles'] : [quem];
     for(const q of ordem){
       const lado = q === 'nos' ? meu : outro;
@@ -3834,11 +3843,14 @@ TO.diaJogo.combate = (function(){
   }
   /* monta UMA peça (faixa ou bandeira) de uma torcida num lado/setor;
      null se a torcida não tem a peça */
-  function montarUma(J, cfg, id, lado, spawn, tipo){
+  function montarUma(J, cfg, id, lado, spawn, tipo, sub){
     const PAT = TO.patrimonio, E = TO.estado.E;
     const nossa = id === E.torcida.id;
     let o, quantas = 1;
-    if(nossa){
+    if(sub){
+      o = nossa ? E.torcida : TO.mundo.torcida(id);
+      if(!o) return null;
+    } else if(nossa){
       const lista = tipo === 'bandeira' ? PAT.bandeirasDe(E).nossas : PAT.faixasDe(E).nossas;
       if(!lista.length) return null;
       o = E.torcida; quantas = lista.length;
@@ -3851,7 +3863,7 @@ TO.diaJogo.combate = (function(){
     }
     /* qual das faixas da torcida sai hoje: sorteio entre as que ela tem
        (cada uma tem o seu dizer — ver `dizerDaFaixa`) */
-    const variante = Math.floor(U.rng() * Math.max(1, quantas));
+    const variante = sub ? sub.variante : Math.floor(U.rng() * Math.max(1, quantas));
     const guardas = D.spawns.filter(sp=>sp.lado===lado && sp.guarda);
     const doLado = D.spawns.filter(sp=>sp.lado===lado);
     const base = spawn ? [spawn] : guardas.length ? guardas
@@ -3865,7 +3877,7 @@ TO.diaJogo.combate = (function(){
             x: U.limitar(cx, 60, A.W-60), y: U.limitar(cy-30, 24, A.H-24),
             w: bandeira ? 19 : 76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
             equipeN: bandeira ? 1 : 2, semente: (U.rng()*6.28),
-            tChegou:null, tEscolha:0, tomadaPor:null, variante,
+            tChegou:null, tEscolha:0, tomadaPor:null, variante, subsede: sub ? sub.subsede : null,
             img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, tipo, variante) : null};
     /* A FAIXA DE VERDADE (a arte do dono, 29/09/2026) tem a proporção
        dela: a altura sai da tela (que já traz a margem do pano), não do
@@ -3992,7 +4004,7 @@ TO.diaJogo.combate = (function(){
       if(!donaViva && inimigoVenceu){ tomada = true; por = inimigo; }
     }
     return {tomada, por, tipo:F.tipo || 'faixa', lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado,
-            variante:F.variante || 0};
+            variante:F.variante || 0, subsede:F.subsede || null};
   }
   function fimDasFaixas(J, venceuMandante){
     return (J.faixas || []).map(F=>fimDeUmaFaixa(J, F, venceuMandante)).filter(Boolean);

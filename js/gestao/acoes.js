@@ -325,9 +325,17 @@ TO.acoes = (function(){
     const contaIA = (t) => bandeira ? 'bandeiras' : 'faixas';
     const tomadasIA = (t) => bandeira ? 'bandeirasTomadas' : 'faixasTomadas';
     fecho.linhas = fecho.linhas || [];
+    /* A FAIXA DA SUBSEDE (11/10/2026) não é do estoque da torcida: é a
+       da subsede, e quem perde fica sem — a nossa volta na loja, a da IA
+       volta sozinha em 4 semanas */
+    const daSubsede = !!fx.subsede;
+    const filialDaFaixa = daSubsede && PAT.filialDe ? PAT.filialDe(E, fx.nossa ? E.torcida.id : fx.torcidaId, fx.subsede) : null;
+    const perdeAFaixaDaSubsede = () => { if(filialDaFaixa){ filialDaFaixa.faixa = false;
+      if(!fx.nossa) filialDaFaixa.faixaDe = (E.data.absoluto || 0) + 28; } };
     if(tomamos && !fx.nossa){
       const t = PAT.faixasIA(E, fx.torcidaId);
-      if(t) t[contaIA(t)] = Math.max(0, t[contaIA(t)] - 1);
+      if(daSubsede) perdeAFaixaDaSubsede();
+      else if(t) t[contaIA(t)] = Math.max(0, t[contaIA(t)] - 1);
       /* (`variante`: qual das faixas dela era — a arte de verdade que
          aparece no Patrimônio) */
       listaNossa().tomadas.push({de:fx.torcidaId, nome:fx.nome,
@@ -346,7 +354,8 @@ TO.acoes = (function(){
     }
     if(!tomamos && fx.nossa){
       const nossas = listaNossa().nossas;
-      if(nossas.length) nossas.pop();
+      if(daSubsede) perdeAFaixaDaSubsede();
+      else if(nossas.length) nossas.pop();
       const o = outroId ? TO.mundo.torcida(outroId) : null;
       const t = outroId ? PAT.faixasIA(E, outroId) : null;
       if(t) t[tomadasIA(t)].push({de:E.torcida.id, nome:E.torcida.nome, ano:E.data.ano, variante:fx.variante || 0});
@@ -363,6 +372,8 @@ TO.acoes = (function(){
         o ? (bandeira ? _t('perdemos a nossa bandeira pra {nome}', {nome:o.nome})
                       : _t('perdemos a nossa faixa pra {nome}', {nome:o.nome}))
           : (bandeira ? _t('perdemos a nossa bandeira') : _t('perdemos a nossa faixa')));
+      if(daSubsede) fecho.linhas.push(_t('a subsede de {cidade} ficou sem faixa: a nova é na loja',
+                                         {cidade:TO.financeiro.nomeCidade(fx.subsede)}));
       fecho.faixa = 'perdemos';
       return 'perdemos';
     }

@@ -1133,5 +1133,11 @@ TO.i18n.registrar({
   "Segurar a subsede": {es:"Aguantar la filial", en:"Hold the chapter house"},
   "Largar a subsede": {es:"Abandonar la filial", en:"Give up the chapter house"},
   "Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou a subsede da {nome} aqui na cidade. São {n} dos nossos contra uns {m} deles. Manda descer?": {es:"Jefe, la gente de nuestra filial de {cidade} ubicó la filial de la {nome} aquí en la ciudad. Somos {n} de los nuestros contra unos {m} de ellos. ¿Bajamos?", en:"Boss, our {cidade} chapter crew found where {nome}'s chapter house is in town. It's {n} of ours against about {m} of theirs. Should we go?"},
-  "Não rolou: a subsede deles fechou as portas.": {es:"No se dio: su filial cerró las puertas.", en:"Didn't happen: their chapter house shut its doors."}
+  "Não rolou: a subsede deles fechou as portas.": {es:"No se dio: su filial cerró las puertas.", en:"Didn't happen: their chapter house shut its doors."},
+  "Essa subsede já tem faixa.": {es:"Esa filial ya tiene trapo.", en:"That chapter house already has a banner."},
+  "Faixa nova da subsede de {cidade}": {es:"Trapo nuevo de la filial de {cidade}", en:"New banner for the {cidade} chapter house"},
+  "Faixa nova pra uma subsede": {es:"Trapo nuevo para una filial", en:"New banner for a chapter house"},
+  "Faixa {texto} pendurada na subsede.": {es:"Trapo {texto} colgado en la filial.", en:"{texto} banner hung at the chapter house."},
+  "a faixa da subsede foi tomada · a nova sai com o nome da torcida e a cidade": {es:"el trapo de la filial fue robado · el nuevo sale con el nombre de la hinchada y la ciudad", en:"the chapter house banner was taken · the new one carries the crew's name and the city"},
+  "a subsede de {cidade} ficou sem faixa: a nova é na loja": {es:"la filial de {cidade} se quedó sin trapo: el nuevo está en la tienda", en:"the {cidade} chapter house lost its banner: get a new one at the shop"}
 });

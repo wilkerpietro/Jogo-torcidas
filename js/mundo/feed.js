@@ -6831,7 +6831,7 @@ TO.feed = (function(){
           escalacao: nucleo, efetivoRival: defensores,
           alvo:{torcidaId:rival.id, nome: naSubsede ? `${rival.nome} Sub-Sede ${cid}` : rival.nome, deQuem:rival.nome,
                 tipo: naSubsede ? 'subsede' : 'bar', cena,
-                bairro:cid,
+                bairro:cid, subsedeCidade: naSubsede ? d.cidade : null,
                 nossos:nucleo.length, efetivo:defensores}}}}};
       }
 

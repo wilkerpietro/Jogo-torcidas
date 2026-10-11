@@ -10385,6 +10385,28 @@ frequência das sugestões de hoje."
   o nosso núcleo descendo da rua, o núcleo deles (os membros da filial
   dela) defendendo. Se a subsede deles sumiu, "não rolou".
 
+## A faixa da subsede (dono, 11/10/2026)
+
+"Toda subsede criada, quando surge, surge com uma faixa própria —
+CEARAMOR NATAL, CEARAMOR RECIFE, MANCHA VERDE BELÉM. Se ela for tomada aí
+surge a necessidade de comprar outra faixa."
+- O PANO: a faixa gerada da torcida (cores, escudos da torcida e do
+  clube, o varal) com o dizer "{TORCIDA} {CIDADE}" — a variante
+  `'sub:<cidade>'` de `dizerDaFaixa`; nome com mais de 16 letras vira a
+  sigla. A arte de verdade das faixas (as tiras do dono) não vale pra
+  ela: é sempre a gerada.
+- A POSSE: a filial guarda `faixa` (true ao nascer; a de save antigo vale
+  como tendo). Nossa e das IAs (`patrimonio.filialDe`,
+  `temFaixaDaSubsede`).
+- NA CENA DA SUBSEDE (defesa nossa e ataque nosso à subsede rival), a
+  faixa exposta é a da subsede (`cfg.faixaSub`), e só ela; sem faixa,
+  nada exposto. As faixas da sede não entram.
+- TOMADA: a subsede fica sem a dela — não mexe no estoque da torcida.
+  A nossa: "a subsede de {cidade} ficou sem faixa: a nova é na loja", e
+  a Loja mostra "Faixa nova pra uma subsede" (R$ 5.000, a cidade no
+  dropdown). A da IA volta sozinha em 4 semanas. Quem toma guarda o pano
+  com o dizer da subsede (variante no troféu).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -542,6 +542,18 @@ TO.patrimonio = (function(){
               de:f.nivel, para:f.nivel+1, valor:U.dinheiro(FILIAL.ampliar[f.nivel])})}))});
     }
 
+    /* A FAIXA DA SUBSEDE TOMADA (dono, 11/10/2026: "se ela for tomada aí
+       surge a necessidade de comprar outra faixa"): a subsede sem faixa
+       aparece aqui, uma por vez no dropdown, pelo preço da faixa */
+    {
+      const semFaixa = ((F().patrimonio(E).filiais) || []).filter(f => !temFaixaDaSubsede(E, f));
+      if(semFaixa.length) lista.push({id:'faixa-filial', rot:_t('Faixa nova pra uma subsede'),
+        nota:_t('a faixa da subsede foi tomada · a nova sai com o nome da torcida e a cidade'),
+        custo:FAIXA.custo, trava:trava(FAIXA.custo),
+        escolhas: semFaixa.map(f => ({id:f.cidade,
+          rot:textoDaFaixaDaSubsede(E.torcida, F().nomeCidade(f.cidade))}))});
+    }
+
     /* O PRESENTE PRO ALIADO (pedido do dono, 17/09/2026): dois
        dropdowns — qual aliado e qual melhoria (sede, loja, bar ou
        subsede em outra cidade). O preço e a trava dependem dos dois,
@@ -608,7 +620,7 @@ TO.patrimonio = (function(){
     if(/^(faixa|bandeira|bombas)$/.test(id)) return 'material';
     if(/^(sede|anexo:|area-treino|fabrica)/.test(id)) return 'sede';
     if(/^(comprar|ampliar):(bar|loja|subsede)$/.test(id)) return 'pontos';
-    if(/^(filial|ampliar-filial)/.test(id)) return 'filiais';
+    if(/^(filial|ampliar-filial|faixa-filial)/.test(id)) return 'filiais';
     if(id === 'presente') return 'aliados';
     if(/^(mma|advogado)/.test(id)) return 'pessoal';
     if(id === 'onibus') return 'frota';
@@ -697,6 +709,10 @@ TO.patrimonio = (function(){
      rodando por um hash do id, pra torcidas diferentes não repetirem
      o mesmo dizer na mesma faixa. */
   function dizerDaFaixa(o, k){
+    /* A FAIXA DA SUBSEDE (dono, 11/10/2026: "toda subsede criada surge com
+       uma faixa própria — CEARAMOR NATAL, CEARAMOR RECIFE, MANCHA VERDE
+       BELÉM"): a variante 'sub:<cidade>' é o nome da torcida e a cidade */
+    if(typeof k === 'string' && k.indexOf('sub:') === 0) return {grande:textoDaFaixaDaSubsede(o, k.slice(4)), pequeno:''};
     const t = (TO.mundo && TO.mundo.time && o.clubeId) ? TO.mundo.time(o.clubeId) : null;
     const nome = String(o.nome || '').toUpperCase();
     const opcoes = [{grande:nome, pequeno:''}];
@@ -766,6 +782,7 @@ TO.patrimonio = (function(){
      fora do manifesto segue com a gerada (as cores e o nome). */
   const ALT_REAL = 128;
   function faixaReal(o, variante){
+    if(typeof variante === 'string') return null;     // a da subsede é sempre a gerada
     const L = o && o.id && TO.dados && TO.dados.faixasReais && TO.dados.faixasReais[o.id];
     if(!Array.isArray(L) || !L.length) return null;
     const n = L.length, k = (((variante || 0) % n) + n) % n;
@@ -897,6 +914,28 @@ TO.patrimonio = (function(){
   const imagemDaBandeira = (o, aoAtualizar) => imagemDaFaixa(o, aoAtualizar, 'bandeira');
   /* a mesma faixa como canvas, pra cena desenhar com drawImage */
   function imagemDaFaixaObj(o, tipo, variante){ return telaDaFaixa(o, tipo, variante); }
+  /* o dizer da faixa da subsede: o nome da torcida (a sigla, se o nome
+     é comprido demais pro pano) e a cidade, tudo em maiúscula */
+  function textoDaFaixaDaSubsede(o, cidade){
+    const nome = String((o && o.nome) || '').toUpperCase();
+    const curto = nome.length <= 16 ? nome
+      : String((TO.mundo && TO.mundo.siglaTorcida ? TO.mundo.siglaTorcida(o) : '') || nome).toUpperCase();
+    return `${curto} ${String(cidade || '').toUpperCase()}`.trim();
+  }
+  /* a faixa da subsede existe? (nasce com ela; some quando é tomada; a
+     nossa volta na loja, a da IA volta sozinha em 4 semanas) */
+  function temFaixaDaSubsede(E, f){
+    if(!f) return false;
+    if(f.faixa !== false) return true;
+    if(f.faixaDe != null && (E.data.absoluto || 0) >= f.faixaDe){ f.faixa = true; delete f.faixaDe; return true; }
+    return false;
+  }
+  /* a filial de uma torcida (nossa ou da IA) numa cidade */
+  function filialDe(E, tid, cidade){
+    const lista = tid === E.torcida.id ? ((F().patrimonio(E).filiais) || [])
+      : ((((TO.relacoes && TO.relacoes.mundo(E)) || {})[tid] || {}).filiais || []);
+    return lista.find(x => x.cidade === cidade) || null;
+  }
   /* as faixas das IAs vivem na ficha viva do mundo */
   function faixasIA(E, id){
     const t = TO.relacoes && TO.relacoes.mundo(E)[id];
@@ -938,6 +977,8 @@ TO.patrimonio = (function(){
       const f = opcoes(E).find(x=>x.id === 'filial');
       if(f && (f.escolhas||[]).some(c=>c.id === id.slice(7))) o = f;
     }
+    /* a faixa nova da subsede também ('faixa-filial:cidade') */
+    if(!o && id.indexOf('faixa-filial:') === 0) o = opcoes(E).find(x=>x.id === 'faixa-filial');
     /* a ampliação da subsede e o presente também chegam com a escolha
        colada no id ('ampliar-filial:cidade', 'presente:aliado:tipo') */
     if(!o && id.indexOf('ampliar-filial:') === 0) o = opcoes(E).find(x=>x.id === 'ampliar-filial');
@@ -963,7 +1004,8 @@ TO.patrimonio = (function(){
     }
     if(acao==='filial'){
       p.filiais = p.filiais || [];
-      p.filiais.push({cidade:tipo, nivel:1});
+      /* a subsede nasce com a faixa dela, "{TORCIDA} {CIDADE}" (11/10/2026) */
+      p.filiais.push({cidade:tipo, nivel:1, faixa:true});
       /* a subsede de fora ganha presença no bairro dela lá (o domínio) */
       if(TO.dominio) TO.dominio.estrutura(E, E.torcida.id, 'filial', tipo, null);
       TO.estado.lancar(E, _t('Subsede em {cidade}', {cidade:F().nomeCidade(tipo)}), -o.custo);
@@ -991,6 +1033,14 @@ TO.patrimonio = (function(){
         ? _t('Subsede aberta em {cidade} — {n} da sede destacados pra lá.',
              {cidade:F().nomeCidade(tipo), n:destacados.length})
         : _t('Subsede aberta em {cidade}.', {cidade:F().nomeCidade(tipo)})};
+    }
+    if(acao==='faixa-filial'){
+      const f = (p.filiais||[]).find(x=>x.cidade === tipo);
+      if(!f || temFaixaDaSubsede(E, f)) return {ok:false, msg:_t('Essa subsede já tem faixa.')};
+      if(E.dinheiro < FAIXA.custo) return {ok:false, msg:_t('Não dá: falta caixa.')};
+      f.faixa = true; delete f.faixaDe;
+      TO.estado.lancar(E, _t('Faixa nova da subsede de {cidade}', {cidade:F().nomeCidade(tipo)}), -FAIXA.custo);
+      return {ok:true, msg:_t('Faixa {texto} pendurada na subsede.', {texto:textoDaFaixaDaSubsede(E.torcida, F().nomeCidade(tipo))})};
     }
     if(acao==='ampliar-filial'){
       const f = (p.filiais||[]).find(x=>x.cidade === tipo);
@@ -1122,7 +1172,7 @@ TO.patrimonio = (function(){
     return {ok:true, compradas:qtd, custo};
   }
 
-  return {FAIXA, BANDEIRA, faixasDe, bandeirasDe, imagemDaFaixa, imagemDaBandeira, imagemDaFaixaObj, dizerDaFaixa, faixasIA,
+  return {textoDaFaixaDaSubsede, temFaixaDaSubsede, filialDe, FAIXA, BANDEIRA, faixasDe, bandeirasDe, imagemDaFaixa, imagemDaBandeira, imagemDaFaixaObj, dizerDaFaixa, faixasIA,
           faixaReal, proporcaoDaFaixa,
           SEDE, TETO, PONTO, FABRICA, FILIAL,
           filiaisDe, temFilialEm, cidadesCandidatas,

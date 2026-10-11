@@ -11572,6 +11572,11 @@
                 fichasRival: fichasDaZonaDeles(cena.alvo, cena.efetivoRival),
                 /* a faixa: quem é atacado expõe — aqui, eles */
                 faixaDefensor:'eles', rivalId: cena.alvo && cena.alvo.torcidaId,
+                /* na subsede deles, a faixa da subsede ("BAMOR RECIFE") */
+                faixaSub: cena.cena === 'subsede' && cena.alvo && cena.alvo.subsedeCidade
+                  ? {torcidaId:cena.alvo.torcidaId, cidade:cena.alvo.subsedeCidade, cidadeNome:cena.alvo.bairro,
+                     tem: TO.patrimonio.temFaixaDaSubsede(TO.estado.E, TO.patrimonio.filialDe(TO.estado.E, cena.alvo.torcidaId, cena.alvo.subsedeCidade))}
+                  : null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
                   cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : SEGURANCA,
                 perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
@@ -11705,6 +11710,9 @@
                 efetivoRival: deles, local: atq.cena || 'bar', bondes,
                 /* a faixa: quem é atacado expõe — aqui, a gente */
                 faixaDefensor:'nos', rivalId: atq.torcida,
+                /* na nossa subsede, a faixa dela ("TUF RECIFE", 11/10/2026) */
+                faixaSub: naSubsede ? {torcidaId:e.torcida.id, cidade:atq.cidadeFilial, cidadeNome:atq.cidadeNome,
+                  tem: TO.patrimonio.temFaixaDaSubsede(e, TO.patrimonio.filialDe(e, e.torcida.id, atq.cidadeFilial))} : null,
                 fichasRival: naCasa ? fichasDaZonaDeles({tipo:'casa', torcidaId:atq.torcida, zona:atq.zona}, deles) : null },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'defender', alvo:{tipo:atq.alvo || 'bar', torcidaId:atq.torcida, cobranca: !!atq.cobranca,
