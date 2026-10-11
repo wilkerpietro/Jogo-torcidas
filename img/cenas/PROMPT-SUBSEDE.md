@@ -1,0 +1,119 @@
+# A subsede — prompt pronto pra colar
+
+Cena nova (pedido do dono, 11/10/2026): "preciso que as nossas subsedes
+também sejam atacadas tanto pelas torcidas da praça como as demais
+subsedes rivais da cidade; crie uma imagem de subsede inspirada na
+subsede do jogo 3D" — e, em seguida, "quero que seja um prompt de imagem,
+pra eu criar a imagem da cena no Google Flow". Mesmo acabamento das
+outras cenas — ortofoto de zênite, sem telhado, dia nublado, um lote
+entre vizinhos. O raciocínio de cada regra está em `PROMPT-SEDE.md`;
+aqui é só colar.
+
+**Antes de colar, no Google Flow:**
+
+- proporção **16:9** (o Flow não faz 3:2; o importador completa em cima
+  e embaixo);
+- anexe `img/cenas/Aerial_view_of_roofless_bar_202608131633.jpeg` como
+  referência: ela carrega a projeção de zênite e o enquadramento de
+  **um lote entre muitos**;
+- se quiser, anexe também um print da subsede no jogo 3D (o modelo
+  `subsede` de `cenario3d/js/casas3d.js`), só como referência de
+  arrumação — a fachada com a porta de enrolar, o pátio, o balcão no
+  fundo.
+
+## A subsede do 3D, que é a base
+
+O modelo do jogo 3D (pedido do dono de 02/10/2026: "uma subsede do
+tamanho de uma casa comum, com dois compartimentos apenas — barzinho
+embutido e pátio"; as fotos de referência foram as fachadas da Mancha em
+Rio Claro e Matão, da Independente em Marília, dos Gaviões em Guarulhos
+e a Independente de Sorocaba por dentro):
+
+- **fachada na calçada**: parede de bloco pintada, porta de enrolar
+  larga aberta de um lado, toldo, letreiro na platibanda;
+- **o pátio coberto** (no 3D tem telhado de metal em treliça — **na
+  foto da cena ele sai SEM telhado**): paredes de bloco pintado de
+  branco com rodapé cinza, mesas e cadeiras de plástico brancas
+  encostadas na parede, os surdos da bateria encostados na fachada, a
+  TV na parede;
+- **o barzinho embutido no fundo**: balcão de alvenaria com tampo de
+  granito virado pro pátio, a porta do barzinho do mesmo lado da porta
+  da rua, e lá dentro a prateleira de garrafas, a cervejeira e o
+  freezer encostados na parede do fundo.
+
+Na cena do 2D o lote é **maior que o da cidade 3D** (lá é uns 6 × 5 m):
+a briga precisa de pátio pra uns 15 de cada lado.
+
+## O que o jogo vai fazer com a imagem (o plano, pra não se perder)
+
+| | |
+|---|---|
+| **quem está lá** | o núcleo da NOSSA subsede naquela cidade — os membros de lá, inteiros — espalhado pelo pátio e pelo barzinho |
+| **a faixa** | estendida na parede do pátio. **O jogo desenha** — a foto NÃO pode ter pano, bandeira, escudo pintado nem letreiro |
+| **quem ataca** | uma torcida da praça (o bonde dela) ou a subsede de uma torcida de fora que também tem filial na cidade (o núcleo dela) |
+| **os caminhos** | a rua → a calçada → a porta de enrolar → o pátio → a porta do barzinho → o barzinho atrás do balcão |
+| **objetivo de quem ataca** | botar o núcleo pra correr e tomar o balcão do bar |
+| **objetivo de quem defende** | segurar a porta e a faixa |
+| **como a cena nasce** | o aviso no feed, no molde do ataque ao bar: "Invadiram a nossa subsede de {cidade}! A {nome} tá na porta." |
+
+## O que a máscara de colisão precisa da foto
+
+- **piso claro, parede escura** — é o que o importador lê. Pátio de
+  cimento queimado claro, barzinho de cerâmica clara; as paredes como
+  faixas cinza contínuas e grossas (uns 1/60 da largura);
+- **a porta de enrolar é um vão largo e aberto** na parede da frente,
+  direto da calçada pro pátio — sem porta fechada, sem grade;
+- **a porta do barzinho é um vão aberto** na parede do balcão. Sem ela
+  ninguém chega lá dentro;
+- **o meio do pátio é livre**: é onde a briga acontece. Mesa, cadeira,
+  surdo e freezer só **encostados nas paredes**;
+- **a rua inteira no quarto de baixo**, de ponta a ponta, com calçada —
+  é por ali que o bonde de quem ataca chega;
+- **sem gente, sem carro na porta, sem pano, sem letreiro, sem texto,
+  sem escudo pintado** (a torcida muda de jogo pra jogo; quem pinta a
+  cor dela é o jogo).
+
+## O prompt
+
+```
+true orthographic zenith satellite orthophoto of a working-class residential street in a big city in northeast Brazil, camera pointing straight down at exactly 90 degrees from very high altitude with an extreme telephoto lens, orthographic projection, zero parallax, zero perspective, no horizon, no lens distortion. ONLY TOP SURFACES ARE VISIBLE ANYWHERE IN THE FRAME: the top of every wall reads as a flat even band, every roof reads as a flat plane, the top of every object reads as a flat shape. No vertical surface is visible anywhere: no wall faces, no house facades, no table legs, no chair backs. The buildings at the edges of the frame read exactly like the building at the center, they never lean or splay outward.
+
+THE NEIGHBORHOOD: a dense working-class block, houses built wall to wall along the street, each with its own flat fiber-cement or terracotta tile roof, a few water tanks on the roofs.
+- THE LOWER QUARTER of the frame is the street, running unbroken from the left edge to the right edge: a strip of worn grey asphalt with a faded dashed center line, and above it, along the lots, a wide sidewalk of pale grey concrete slabs with a low curb. Wide open space on the sidewalk in front of the subject lot.
+- LEFT AND RIGHT of the subject lot: neighboring houses glued to its side walls, keeping their roofs — one with grey corrugated fiber-cement sheets, the other with terracotta tiles.
+- THE TOP of the frame: the roofs of the houses on the next street over.
+- IN THE CENTER, one single lot has NO ROOF AT ALL, and that lot is the subject: the SUBSEDE of a football supporters' group, a wide one-storey building about twice as wide as the neighboring houses, its interior fully exposed from above. It occupies about half of the frame width and about half of its height, with its front wall right on the sidewalk. It is ONE LOT AMONG NEIGHBORS, with the neighbors clearly visible on both sides.
+
+THE SUBJECT BUILDING HAS NO ROOF, while every neighboring house keeps its own roof: seen from directly above, the whole interior is exposed, its thick painted block walls read as continuous pale grey bands, and each space shows its own floor. There are ONLY TWO SPACES inside, from the sidewalk at the bottom to the back wall at the top:
+- FRONT AND MIDDLE, THE PATIO, the big space: a wide covered-patio floor of pale polished burnt cement, swept clean, filling most of the lot. In the front wall, on the LEFT side, one WIDE OPEN ROLL-UP DOOR, a broad gap cut clean through the wall from the sidewalk straight into the patio, about a quarter of the front wall wide, with no door leaf and no grille. The rest of the front wall is solid. Inside the patio, pushed flat against the walls only: a row of white plastic tables with stacked white plastic chairs along the left wall near the back; three big bass drums of a samba percussion band standing against the inside of the front wall on the right; a wall-mounted TV on the right wall. The entire middle of the patio is completely clear bare floor.
+- BACK, THE SMALL BUILT-IN BAR, a narrow strip along the whole back of the lot, about a fifth of the lot depth: separated from the patio by a long masonry bar counter with a dark granite top facing the patio, running along most of the width; on the LEFT end of that dividing wall, the same side as the roll-up door, one OPEN DOORWAY from the patio into the bar. Inside the bar, a floor of pale cream ceramic tiles, and pushed flat against the back wall only: a bottle shelf, an upright beer fridge and a chest freezer. The middle of the bar strip is clear.
+
+EVERY DOORWAY IS WIDE AND OPEN: a gap cut clean through the wall, no door leaf, no frame, so that the sidewalk, the patio and the bar connect into one continuous walkable surface.
+
+Painted concrete block walls in off-white with a grey band at the base, polished burnt cement and pale ceramic floors in light grey and cream, clearly lighter than the walls. Asphalt in worn dark grey, concrete sidewalk slabs in pale grey. Bright but diffuse daylight, thin high overcast, short soft shadows, muted natural colors, documentary satellite photography, weathered paint, stained concrete, dusty urban textures. Photorealistic, natural materials, high detail.
+
+Absolutely no roof over the subject building and no cover of any kind over its patio or its bar, no metal roof, no trusses, no awning, no tarp — the neighboring houses DO keep their roofs. No close crop on the building, no isolated building, no building floating in a void. No wide angle lens, no fisheye, no lens distortion, no perspective, no leaning or splayed walls, no visible wall faces, no visible facades, no vertical surfaces, no furniture seen from the side, no oblique or 45 degree angle, no tilted camera. No clutter, no furniture in the middle of the patio, no closed roll-up door, no grille, no closed rooms without a doorway. No banners, no flags, no hanging cloth, no painted crests, no murals, no logos, no signs, no shop sign, no text, no labels, no numbers, no watermark, no people, no cars or motorcycles parked in front of the door. No illustration, no cartoon, no isometric, no 3d render, no blueprint look. No dark interior floors, no green ground, no HDR, no dramatic lighting, no night, no long shadows.
+```
+
+## Conferência antes de aceitar
+
+1. Alterne com a foto do bar: só topo de tudo, nenhuma face de parede.
+2. **Conte os caminhos:** rua → calçada → porta de enrolar → pátio →
+   porta do barzinho → barzinho. Se uma das portas veio fechada (ou
+   com grade), quem ataca não entra.
+3. **O meio do pátio está livre** e é largo: é ali que uns 30 bonecos
+   brigam. Mesa no meio vira parede na máscara.
+4. **Piso claro, parede escura:** o pátio e o barzinho mais claros que
+   o topo das paredes.
+5. **A rua inteira no quarto de baixo**, de ponta a ponta, com a
+   calçada larga na frente da porta.
+6. **Nada escrito, nada pintado:** sem letreiro, sem escudo, sem faixa,
+   sem bandeira — o jogo põe a da torcida.
+7. **Zênite de verdade:** nenhuma face de muro, nenhuma fachada. Muro é
+   faixa fina da mesma largura em todo canto.
+
+Quando a imagem estiver pronta, é só mandar: ela entra no importador
+(`ferramentas/importar_cena_foto.py`, receita no molde das sedes), vira a
+cena `subsede` em `dados/cenas.js`, ganha a aba na bancada
+(`arredores.html#subsede`) e os ataques às nossas subsedes passam a abrir
+essa cena.
