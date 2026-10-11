@@ -1523,6 +1523,8 @@ TO.planejamento = (function(){
       const rel = TO.relacoes.nivel(E, o.id);
       if(rel > -15) continue;
       if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) continue;
+      /* desistiu de vir atrás da gente (três tentativas sem dar certo) */
+      if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, o.id, E.torcida.id)) continue;
       /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
       const viva = TO.relacoes.disponiveisIA(E, o.id);
       if(viva < crew * 0.7) continue;
@@ -1583,6 +1585,7 @@ TO.planejamento = (function(){
         if(M().saoIrmas(E.torcida.id, o.id)) continue;
         const rel = TO.relacoes.nivel(E, o.id);
         if(rel > -15) continue;
+        if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, o.id, E.torcida.id)) continue;
         /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
         const viva = TO.relacoes.disponiveisIA(E, o.id);
         if(viva < crew * 0.7) continue;

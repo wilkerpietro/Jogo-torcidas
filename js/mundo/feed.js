@@ -1875,7 +1875,8 @@ TO.feed = (function(){
       const hostis = M().torcidasEm(f.cidade)
         .filter(o=>o.id !== E.torcida.id && !o.incompleta &&
                    !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&
-                   TO.relacoes.nivel(E, o.id) <= -15)
+                   TO.relacoes.nivel(E, o.id) <= -15 &&
+                   !TO.relacoes.desistiu(E, o.id, E.torcida.id))
         .sort((a,b)=>TO.relacoes.nivel(E,a.id) - TO.relacoes.nivel(E,b.id));
       const rival = hostis[0];
       if(!rival) continue;
@@ -5609,6 +5610,9 @@ TO.feed = (function(){
     const rival = TO.relacoes.rivalDaPraca(E,
       ev.tipo === 'treta' ? ev.chave : null);
     if(!rival) return;
+    /* o ataque é iniciativa dela: se já desistiu de vir atrás da gente
+       (três tentativas sem dar certo), o bar e a casa ficam em paz */
+    if(ev.tipo !== 'treta' && TO.relacoes.desistiu(E, rival.id, E.torcida.id)) return;
 
     if(ev.tipo === 'bar' || ev.tipo === 'casa'){
       /* o ataque ao bar entra pelo caminho de sempre: marca o ataque e

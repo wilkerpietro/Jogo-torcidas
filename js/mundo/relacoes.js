@@ -1288,6 +1288,31 @@ TO.relacoes = (function(){
     return false;
   }
 
+  /* =======================================================
+     QUEM TENTA TRÊS VEZES E NÃO CONSEGUE, DESISTE (dono, 11/10/2026:
+     "quando uma torcida tenta atacar a outra três vezes e não dá certo
+     ela para de ir atrás de confusão, mesmo continuando sendo rival")
+     A conta é por par, de quem ataca pra quem é atacado: cada ataque
+     que não dá certo soma um; o que dá certo zera. Com `DESISTE`
+     fracassos seguidos a atacante não vem mais atrás daquela — a
+     relação continua a mesma, só a iniciativa acaba. Ser atacada por
+     ela devolve a vontade: o ataque de B em A zera a conta de A em B.
+     ======================================================= */
+  const DESISTE = 3;
+  const chaveTent = (a, b) => `${a}>${b}`;
+  function registrarTentativa(E, atacante, alvo, deuCerto){
+    if(!E || !atacante || !alvo || atacante === alvo) return;
+    const T = E.tentativas = E.tentativas || {};
+    delete T[chaveTent(alvo, atacante)];
+    const k = chaveTent(atacante, alvo);
+    if(deuCerto) delete T[k];
+    else T[k] = (T[k] || 0) + 1;
+  }
+  const desistiu = (E, atacante, alvo) =>
+    (((E && E.tentativas) || {})[chaveTent(atacante, alvo)] || 0) >= DESISTE;
+  const tentativas = (E, atacante, alvo) =>
+    (((E && E.tentativas) || {})[chaveTent(atacante, alvo)] || 0);
+
   function ataquesContraNos(E){
     const fora = [];
     if(E.ataqueMarcado && !E.ataqueMarcado.resolvido &&
@@ -1301,6 +1326,7 @@ TO.relacoes = (function(){
       if(r > QUENTE) continue;
       if(emTregua(E, o.id)) continue;
       if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
+      if(desistiu(E, o.id, E.torcida.id)) continue;
       /* o ataque é no dia do nosso jogo: visitante tem de estar na
          cidade NESSE dia, não em qualquer um da semana */
       if(!alcanca(E, o.id, (E.proximoJogo && E.proximoJogo.dia) || 6)) continue;
@@ -1358,6 +1384,7 @@ TO.relacoes = (function(){
         const f = t && (t.filiais||[]).find(x=>x.cidade === E.torcida.mapa);
         if(!f || (f.membros||0) < 6) continue;       // núcleo pequeno não desce
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
+        if(desistiu(E, o.id, E.torcida.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
         const jogoEmCasa = E.proximoJogo && E.proximoJogo.casa;
@@ -1411,6 +1438,7 @@ TO.relacoes = (function(){
       for(const o of daPraca){
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         if(emTregua(E, o.id)) continue;
+        if(desistiu(E, o.id, E.torcida.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
         if(disponiveisIA(E, o.id) < crew * 0.5) continue;
@@ -2168,6 +2196,8 @@ TO.relacoes = (function(){
     const abs = E.data.absoluto || 0;
     const dispA = disponiveisIA(E, a.id), dispB = disponiveisIA(E, b.id);
     if(dispA < 8 || dispB < 8) return null;
+    /* quem já apanhou três vezes tentando não vem mais */
+    if(desistiu(E, a.id, b.id)) return null;
     /* quem é da cidade bota mais gente na rua; quem viajou traz caravana */
     const bonde = (o, disp) => Math.max(4, Math.round(disp *
       (o.mapa === cidade ? U.entre(0.18, 0.35) : U.entre(0.08, 0.18))));
@@ -2196,6 +2226,7 @@ TO.relacoes = (function(){
       + (ajB ? ajB.n * mediaDeFichaGerada(ajB.o, disponiveisIA(E, ajB.o.id), E) : 0);
     const favoritoA = pA === pB ? U.rng() < 0.5 : pA > pB;
     const ganhouA = U.rng() < 0.70 ? favoritoA : !favoritoA;
+    registrarTentativa(E, a.id, b.id, ganhouA);
     const baixas = (o, n, perdeu) => {
       const t = (E.mundoTorcidas||{})[o.id];
       /* o perdedor sai carregado (pedido do dono): um quarto a dois
@@ -2968,7 +2999,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
+  return {registrarTentativa, desistiu, tentativas, DESISTE, REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
           ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,

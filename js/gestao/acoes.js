@@ -552,6 +552,8 @@ TO.acoes = (function(){
     const R = TO.relacoes;
     const seguramos = res.ganhamos !== undefined ? !!res.ganhamos : !res.venceu;
     const naEstrada = alvo.tipo === 'emboscada';
+    /* a conta de quem tenta e não consegue (três e ela desiste) */
+    if(R.registrarTentativa) R.registrarTentativa(E, alvo.torcidaId, E.torcida.id, !seguramos);
     const linhas = [];
     let perdeu = 0;
     const antes = {moral:E.indicadores.moral, prestigio:E.indicadores.prestigio,
@@ -688,6 +690,8 @@ TO.acoes = (function(){
   function fecharAtaque(E, alvo, res){
     const R = TO.relacoes;
     const ganhou = !!res.venceu;
+    /* atacar quem desistiu de nós devolve a vontade a ela */
+    if(R.registrarTentativa) R.registrarTentativa(E, E.torcida.id, alvo.torcidaId, ganhou);
     const linhas = [];
     let levou = 0, quebrou = false;
     if(ganhou){

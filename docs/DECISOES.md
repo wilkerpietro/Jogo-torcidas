@@ -10291,6 +10291,30 @@ vista, dê mais espaçamento entre as letras."
   letra entre elas (`FRASE_VAO`): com um papel por cabeça, letra
   encostada vira borrão.
 
+## Três tentativas sem dar certo e ela desiste (dono, 11/10/2026)
+
+"No meu save somente a subsede que está na minha praça ataca meu bar sem
+parar. Quando uma torcida tenta atacar a outra três vezes e não dá certo
+ela para de ir atrás de confusão, mesmo continuando sendo rival."
+- A causa: o ataque da sub-sede inimiga ao bar fica fora do freio de
+  brigas — em −100 dava ataque em ~1 de cada 5 semanas.
+- A regra (`relacoes.registrarTentativa` / `desistiu`), por par de quem
+  ataca pra quem é atacado: ataque que não dá certo soma 1; o que dá
+  certo zera; com 3 seguidos a atacante não toma mais a iniciativa
+  contra aquela torcida. A relação não muda — continua rival.
+- Conta em toda defesa nossa (`fecharDefesa`: bar, casa, reunião,
+  concentração, pista, emboscada, filial) e em toda briga entre IAs
+  (`brigaIA`, o "a" é quem ataca).
+- Quem desistiu fica de fora de: ataque-surpresa do dia de jogo, ataque
+  da sub-sede, ataque do calendário do trimestre (bar e casa), meta de
+  domínio contra a gente, emboscada na estrada, ataque à nossa filial e
+  `brigaIA`. A treta marcada não entra: é combinada pelos dois lados.
+- Ser atacada devolve a vontade: o nosso ataque a ela (`fecharAtaque`),
+  ou o de B em A no mundo, zera a conta de A em B.
+- Teste: Bamor com sub-sede em Fortaleza a −100 atacava em 84 de 400
+  semanas; depois de 3 defesas seguradas, 0 (relação segue −100); um
+  ataque nosso a ela e voltou a 68.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

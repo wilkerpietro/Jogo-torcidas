@@ -1066,6 +1066,8 @@ TO.dominio = (function(){
   /* a meta da IA em cima da gente: o ataque marcado de hoje, com o aviso */
   function contraNos(E, m, x, att){
     if(m.c !== E.torcida.mapa || amigas(E, m.t, eu(E))) return;
+    /* três tentativas sem dar certo: ela desistiu de vir atrás da gente */
+    if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, m.t, eu(E))) return;
     /* no máximo UM por mês (02/10/2026): eram 5 em dois meses, fora o
        calendário de ataques do trimestre */
     const Dr = raiz(E), mes = mesDe(E);
