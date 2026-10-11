@@ -11060,6 +11060,21 @@
          : cap <= 15000 ? 'estadio-10'
          : cap <= 32000 ? 'estadio-20' : 'estadio-40';
 
+  /* O NÚCLEO DE UMA SUBSEDE NÃO É A ELITE DA TORCIDA (dono, 11/10/2026:
+     "sinto que há uma desproporcionalidade nos membros das subsedes das
+     torcidas IA pras nossas, sempre perco mesmo tendo mais quantidade").
+     A ficha do rival sai do plantel INTEIRO da torcida (até 250) e corta
+     o topo — 12 da subsede da Gaviões desciam com a ficha da diretoria e
+     da linha de frente de São Paulo. O núcleo de fora é gente de lá: o
+     plantel é do tamanho do núcleo, e a pirâmide é a de subsede — metade
+     novato, um terço componente, um pouco de frente, diretoria nenhuma.
+     O quadro vivo (o treino da sede) não vale pra ele. */
+  const perfilDaSubsede = (id, n) => {
+    const p = perfilDe(id);
+    if(!p) return null;
+    return Object.assign({}, p, {quadro:null, membros:Math.max(4, Math.round(n || 10)),
+      cargos:{diretoria:0, frente:10, componentes:35, povao:55}});
+  };
   const perfilDe = id => {
     const o = id ? TO.mundo.torcida(id) : null;
     if(!o) return null;
@@ -11579,7 +11594,9 @@
                   : null,
                 rival: (donoAlvo && cDono.cor) ? {nome:donoAlvo.nome,
                   cor:cDono.cor, cor2:cDono.cor2, cor3:cDono.cor3} : SEGURANCA,
-                perfilRival: perfilDe(cena.alvo && cena.alvo.torcidaId) },
+                perfilRival: cena.alvo && cena.alvo.tipo === 'subsede'
+                  ? perfilDaSubsede(cena.alvo.torcidaId, cena.efetivoRival)
+                  : perfilDe(cena.alvo && cena.alvo.torcidaId) },
       aoTerminar: res => fecharDiaDeJogo(res, null, cena)
     });
   }
@@ -11702,7 +11719,7 @@
        nome:(atq.filial && atq.nome) || (o&&o.nome) || _t('Rival'),
        cor:c2.cor, cor2:c2.cor2, cor3:c2.cor3,
        sigla:o?TO.mundo.siglaTorcida(o):'RIV',
-       perfil: perfilDe(atq.torcida)}
+       perfil: atq.filial ? perfilDaSubsede(atq.torcida, deles) : perfilDe(atq.torcida)}
     ];
     atq.resolvido = true;
     $('telaDiaJogo').classList.remove('oculto');

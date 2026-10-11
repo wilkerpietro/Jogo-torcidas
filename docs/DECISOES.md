@@ -10508,6 +10508,24 @@ tamanho do visitante? Isso resolveria o problema."
   cima inteira até a quina; 20 mil — o setor já comportava; 40 mil — o
   setor abriu até a folga do 3º escalão da casa.
 
+## O núcleo da subsede da IA não é a elite da torcida (dono, 11/10/2026)
+
+"Sinto que há uma desproporcionalidade nos membros das subsedes das
+torcidas IA pras nossas, sempre perco contra eles mesmo tendo mais
+quantidade."
+- A causa: a ficha do rival na cena sai de `fichasDoPerfil`, que gera o
+  plantel INTEIRO da torcida (até 250) e corta o topo — os 12 da subsede
+  desciam com a ficha da diretoria e da linha de frente da sede (medido:
+  Bamor Sub-Sede Recife com força 14,3 e defesa 14,3 de média).
+- `perfilDaSubsede(id, n)` (main.js): o plantel é do tamanho do núcleo e a
+  pirâmide é a de subsede — 55% novato, 35% componente, 10% frente,
+  diretoria nenhuma; o quadro vivo da sede não vale. Usado quando quem
+  ataca é o núcleo de uma subsede (`atq.filial`: a nossa subsede, a
+  emboscada e a concentração/pista do jogo fora) e quando a nossa subsede
+  ataca a subsede rival.
+- Medido de novo: a mesma subsede desce com 11,2 de força e 11,6 de
+  defesa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
