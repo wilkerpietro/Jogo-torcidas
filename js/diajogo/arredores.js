@@ -819,8 +819,23 @@ TO.diaJogo.arredores = (function(){
     for(const e of D.entradas) desenharPortao(c,e,opc.t||0,opc.editor);
 
     // ---- grades
+    /* com os bonecos em 3D o gradil de aço é desenhado lá (bonecos3,
+       11/10/2026); aqui sobra só a barrinha de vida do módulo */
+    const grade3d = !!opc.semCorpo;
     for(const m of mods){
       const px=-m.uy, py=m.ux;
+      if(grade3d){
+        if(m.tipo==='fila' || m.hp<=0) continue;
+        const ax=m.x-m.ux*m.meia, ay=m.y-m.uy*m.meia, bx=m.x+m.ux*m.meia, by=m.y+m.uy*m.meia;
+        const p=m.hp/m.hpMax;
+        if(p >= 1) continue;
+        c.strokeStyle='rgba(0,0,0,.5)'; c.lineWidth=3;
+        c.beginPath(); c.moveTo(ax+px*10,ay+py*10); c.lineTo(bx+px*10,by+py*10); c.stroke();
+        c.strokeStyle = p>0.5?'#5fa87d' : p>0.25?'#c8a03c' : '#b6432f';
+        c.beginPath(); c.moveTo(ax+px*10,ay+py*10);
+        c.lineTo(ax+(bx-ax)*p+px*10, ay+(by-ay)*p+py*10); c.stroke();
+        continue;
+      }
       const ax=m.x-m.ux*m.meia, ay=m.y-m.uy*m.meia;
       const bx=m.x+m.ux*m.meia, by=m.y+m.uy*m.meia;
 
@@ -838,7 +853,7 @@ TO.diaJogo.arredores = (function(){
       }
 
       if(m.hp<=0){
-        c.strokeStyle='rgba(120,100,40,.35)'; c.lineWidth=3;
+        c.strokeStyle='rgba(110,117,123,.45)'; c.lineWidth=3;
         c.setLineDash([4,6]);
         c.beginPath(); c.moveTo(ax,ay); c.lineTo(bx,by); c.stroke();
         c.setLineDash([]);
@@ -850,7 +865,8 @@ TO.diaJogo.arredores = (function(){
       c.lineCap='round';
       c.strokeStyle='rgba(0,0,0,.45)'; c.lineWidth=m.esp*2+3;
       c.beginPath(); c.moveTo(ax+tx+2,ay+ty+2); c.lineTo(bx+tx+2,by+ty+2); c.stroke();
-      c.strokeStyle = p>0.6?'#e8b53c' : p>0.3?'#c08a2a' : '#8a5f22';
+      /* o gradil de aço do jogo 3D (11/10/2026), não mais o amarelo */
+      c.strokeStyle = p>0.6?'#aab2b6' : p>0.3?'#8e969b' : '#6d757b';
       c.lineWidth=m.esp*2;
       c.beginPath(); c.moveTo(ax+tx,ay+ty); c.lineTo(bx+tx,by+ty); c.stroke();
       c.lineCap='butt';

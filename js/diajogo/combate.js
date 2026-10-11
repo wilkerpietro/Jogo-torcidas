@@ -717,6 +717,42 @@ TO.diaJogo.combate = (function(){
     return (B && B.apelidos) || N.apelidos || ['TROVÃO'];
   }
 
+  /* os lugares do bonde dentro do setor dele: enchente a partir do spawn
+     no passo dado, só por chão andável, sem cruzar grade de pé e sem
+     cair em lugar já tomado; o passo aperta até caber */
+  function lugaresNoSetor(J, s, qtd, ocupados, chave){
+    const origem = A.caminhavel(s.x, s.y) ? {x:s.x, y:s.y} : A.pontoLivreMaisProximo(s.x, s.y, 7);
+    let melhor = null;
+    for(const passo of [18, 16, 14, 12, 10]){
+      const vistos = new Set(), fila = [origem], fora = [];
+      const k = q => `${Math.round(q.x/passo)}|${Math.round(q.y/passo)}`;
+      vistos.add(k(origem));
+      while(fila.length && fora.length < qtd){
+        /* sempre o mais perto do spawn primeiro: o bloco sai redondo */
+        let bi = 0, bd = Infinity;
+        for(let i=0;i<fila.length;i++){ const d = (fila[i].x-s.x)**2 + (fila[i].y-s.y)**2; if(d < bd){ bd = d; bi = i; } }
+        const q = fila.splice(bi, 1)[0];
+        if(!ocupados.has(chave(q))) fora.push(q);
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const r = {x:q.x + dx*passo, y:q.y + dy*passo};
+          const kr = k(r);
+          if(vistos.has(kr)) continue;
+          vistos.add(kr);
+          if(r.x < 4 || r.y < 4 || r.x > A.W-4 || r.y > A.H-4) continue;
+          if(!A.caminhavel(r.x, r.y)) continue;
+          if(A.atravessaGrade(q.x, q.y, r.x, r.y, J.grades)) continue;
+          fila.push(r);
+        }
+      }
+      if(!melhor || fora.length > melhor.length) melhor = fora;
+      if(fora.length >= qtd) break;
+    }
+    /* nem no passo de 10 coube: quem sobra divide os lugares do setor
+       (empilha, mas não atravessa a grade) */
+    if(melhor.length && melhor.length < qtd)
+      for(let i = melhor.length, n = melhor.length; i < qtd; i++) melhor.push(melhor[i % n]);
+    return melhor.length ? melhor : null;
+  }
   function nascerGrupo(J, g, escalados, temLider, nomes){
     const s = g.s;
     const qtd = Math.max(g.qtd, escalados.length);
@@ -791,9 +827,21 @@ TO.diaJogo.combate = (function(){
     const chave = q => `${Math.round(q.x/CEL)}|${Math.round(q.y/CEL)}`;
     const vago = q => A.caminhavel(q.x, q.y) && !ocupados.has(chave(q));
     const nascidos=[];
+    /* O BONDE CABE NO SETOR DELE (dono, 11/10/2026: "em jogos com muitos
+       membros a torcida fica para além da grade de divisão — sempre tem
+       que caber no seu espaço devido"). O quadrado centrado no spawn não
+       sabe de grade: com 300, ele passava por cima da divisória e o
+       reencosto no vão livre punha gente no setor vizinho. Em cena com
+       grade, os lugares saem de uma enchente a partir do spawn que nunca
+       atravessa grade de pé, na ordem da distância (o bloco continua
+       junto); se o setor não comporta todo mundo no passo de 18, o passo
+       aperta (16, 14, 12, 10) — torcida espremida, mas no lugar dela. */
+    const lugares = (J.grades && J.grades.some(m => m.hp > 0) && A.atravessaGrade)
+      ? lugaresNoSetor(J, s, qtd, ocupados, chave) : null;
     for(let i=0;i<qtd;i++){
-      let p=A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
+      let p = lugares && lugares[i] ? lugares[i] : A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
                                     y0 + Math.floor(i/cols)*PASSO, 7);
+      if(!(lugares && lugares[i])){
       /* NINGUÉM NASCE EM CIMA DE CASA. Quando a rua está lotada na hora
          do nascimento, a busca em anéis falha e devolve o ponto do
          sorteio — que pode ser um telhado, e disco em telhado não anda,
@@ -811,6 +859,7 @@ TO.diaJogo.combate = (function(){
               const q = {x:p.x + dx*CEL, y:p.y + dy*CEL};
               if(vago(q)){ p = q; break busca; }
             }
+      }
       }
       ocupados.add(chave(p));
       const m = escalados[i];

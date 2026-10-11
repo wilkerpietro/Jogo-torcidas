@@ -10446,6 +10446,27 @@ desproporcionais" (print: Camisa 12 Sub-Sede com 20 contra 300 nossos).
   nem chega na briga). Medido: o nosso núcleo de 60 contra a subsede de
   12 da Bamor abre 16 × 12.
 
+## O bonde cabe no setor, e o gradil do 3D (dono, 11/10/2026)
+
+"Em jogos com muitos membros a torcida fica para além da grade de
+divisão — sempre tem que caber no seu espaço devido. Importe a grade do
+jogo 3D pra substituir essa grade amarela."
+- O LUGAR DE CADA UM (`combate.lugaresNoSetor`): em cena com grade de pé,
+  o bonde não nasce mais no quadrado centrado no spawn (que não sabia de
+  grade e, com 300, passava por cima da divisória). Os lugares saem de
+  uma enchente a partir do spawn, só por chão andável, que nunca cruza
+  grade e vai do mais perto pro mais longe (o bloco segue junto). Se o
+  setor não comporta todo mundo no passo de 18 px, o passo aperta (16,
+  14, 12, 10); no limite, quem sobra divide lugar — mas do lado certo.
+  Medido: Gaviões e Jovem Fla com 250 no estádio, 0 discos além da grade.
+- O GRADIL (bonecos3 `gradesDeFerro`): a peça do estádio 3D
+  (`estadios3d.js` `grade`/`pintarGradil`) — a tela de arame em losango
+  com moldura, o tubo de cima e os postes a cada 2,5 m, 2,4 m de altura
+  (1,2 m na fila do portão). A vida deixou de ser cor: a grade que apanha
+  entorta até ~25° pro lado, e a derrubada fica deitada no chão. No 2D com
+  os bonecos 3D, o traço por baixo saiu (só a barrinha de vida quando
+  apanha); no 2D puro, o traço virou cinza de aço.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
