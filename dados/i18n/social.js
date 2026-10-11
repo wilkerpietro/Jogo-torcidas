@@ -1125,5 +1125,8 @@ TO.i18n.registrar({
   "Presente de aliada": {es:"Regalo de aliada", en:"A gift from an ally"},
   "Presente pra {nome}: sede nível {n}": {es:"Regalo para {nome}: sede nivel {n}", en:"Gift to {nome}: level {n} headquarters"},
   "{A} ganha sede nova da {D}": {es:"{A} recibe sede nueva de {D}", en:"{A} get a new home from {D}"},
-  "{D} dá a casa nova da {A}": {es:"{D} le da la casa nueva a {A}", en:"{D} hand {A} a new home"}
+  "{D} dá a casa nova da {A}": {es:"{D} le da la casa nueva a {A}", en:"{D} hand {A} a new home"},
+  "SOMOS {c}": {es:"SOMOS {c}", en:"WE ARE {c}"},
+  "LUTAREMOS JUNTOS": {es:"LUCHAREMOS JUNTOS", en:"WE FIGHT TOGETHER"},
+  "LUTAR E VENCER": {es:"LUCHAR Y VENCER", en:"FIGHT AND WIN"}
 });

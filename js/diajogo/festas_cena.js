@@ -223,16 +223,27 @@ TO.diaJogo.festas = (function(){
     }
     F._listras = {n: S.nossos.length};
   }
-  /* a frase do mosaico: o nome da torcida ou o nome do time (dono,
-     11/10/2026), sorteado pelo jogo */
+  /* A FRASE DO MOSAICO (dono, 11/10/2026): ou o nome da torcida, que
+     vem com o escudo no mesmo mosaico, ou uma frase do time — "SOMOS
+     FORTALEZA", "LUTAREMOS JUNTOS", "LUTAR E VENCER" ou a sigla do time.
+     Sorteada pelo jogo. A letra é a universitária (varsity, a "Freshman"
+     das camisas de college), grossa e em maiúscula: é a que se lê de
+     longe com um papel por cabeça. */
   function fraseDoMosaico(F){
+    const o = F.torcida || {};
     const t = TO.mundo.time && TO.mundo.time(F.clubeId);
-    const clube = String((t && t.nome) || '').toUpperCase();
-    const lista = [F.nome, clube].filter(Boolean);
-    return lista.length ? lista[F.qualFrase % lista.length] : (F.sigla || '');
+    const clube = (t && t.nome) || o.clube || '';
+    const sigla = String((t && t.sigla) || o.sigla || '').toUpperCase();
+    if(F.qualFrase % 2 === 0 && o.nome) return {txt:String(o.nome).toUpperCase(), escudo:true};
+    const lista = [_t('SOMOS {c}', {c:String(clube).toUpperCase()}), _t('LUTAREMOS JUNTOS'), _t('LUTAR E VENCER')];
+    if(sigla) lista.push(sigla);
+    return {txt:lista[Math.floor(F.qualFrase / 2) % lista.length], escudo:false};
   }
-  /* o texto no maior tamanho que cabe, em uma ou duas linhas */
-  function escreverFrase(c, W, H, txt, cor, contorno){
+  const fonteFrase = q => `400 ${q}px 'Ultra Local', Ultra, 'Arial Black', serif`;
+  /* o texto no maior tamanho que cabe na caixa (x, y, W, H), em uma ou
+     duas linhas, engrossado: um traço da cor da letra por baixo e o
+     contorno largo na cor de fora */
+  function escreverFrase(c, x, y, W, H, txt, cor, contorno){
     const palavras = txt.split(/\s+/);
     const opcoes = [[txt]];
     if(palavras.length > 1){
@@ -246,22 +257,29 @@ TO.diaJogo.festas = (function(){
     }
     let melhor = null;
     for(const linhas of opcoes){
-      let px = Math.floor(H * 0.86 / linhas.length);
-      const fonte = q => `900 ${q}px Oswald, Impact, sans-serif`;
-      c.font = fonte(px);
+      let px = Math.floor(H * 1.0 / linhas.length);
+      c.font = fonteFrase(px);
       const larg = () => Math.max(...linhas.map(l => c.measureText(l).width));
-      while(px > 8 && larg() > W * 0.84){ px--; c.font = fonte(px); }
+      while(px > 8 && larg() > W * 0.94){ px--; c.font = fonteFrase(px); }
       if(!melhor || px > melhor.px) melhor = {px, linhas};
     }
-    c.font = `900 ${melhor.px}px Oswald, Impact, sans-serif`;
+    const px = melhor.px;
+    c.font = fonteFrase(px);
     c.textAlign = 'center'; c.textBaseline = 'middle';
     c.lineJoin = 'round';
-    const n = melhor.linhas.length, passo = melhor.px * 1.02;
+    const n = melhor.linhas.length, passo = px * 0.9;
+    /* a letra universitária é larga: estica na vertical pra frase tomar
+       a altura do mosaico (é assim que se monta na arquibancada) */
+    const estica = Math.max(1, Math.min(2.4, H * 0.84 / (n * passo)));
+    c.save();
+    c.translate(x + W/2, y + H/2); c.scale(1, estica);
     melhor.linhas.forEach((l, i) => {
-      const y = H/2 + (i - (n - 1)/2) * passo;
-      if(contorno){ c.lineWidth = melhor.px * 0.16; c.strokeStyle = contorno; c.strokeText(l, W/2, y); }
-      c.fillStyle = cor; c.fillText(l, W/2, y);
+      const yy = (i - (n - 1)/2) * passo + px * 0.04;
+      if(contorno){ c.lineWidth = px * 0.11; c.strokeStyle = contorno; c.strokeText(l, 0, yy); }
+      c.lineWidth = px * 0.05; c.strokeStyle = cor; c.strokeText(l, 0, yy);
+      c.fillStyle = cor; c.fillText(l, 0, yy);
     });
+    c.restore();
   }
   /* A ARTE DO MOSAICO de escudo ou frase, no tamanho do setor. Embaixo
      dela vai uma tira com as cores da torcida: o papel que cai FORA do
@@ -307,9 +325,33 @@ TO.diaJogo.festas = (function(){
       cv.circulo = {u:(S.u0 + S.u1)/2, v:(S.v0 + S.v1)/2, r: rFora / k};
       cv.cores = cores;
     } else {
-      /* a frase: fundo na primeira cor, letra na segunda, contorno na terceira */
+      /* a frase: fundo na primeira cor, letra na segunda, contorno na
+         terceira (tricolor). Com o nome da torcida, o escudo junto: do
+         lado se o setor é largo, em cima (no fundo do anel) se é fundo */
       c.fillStyle = a; c.fillRect(0, 0, W, H);
-      escreverFrase(c, W, H, fraseDoMosaico(F), b, tri ? d : null);
+      const fr = fraseDoMosaico(F);
+      const esc = F.escudo;
+      let cx = 0, cy = 0, cw = W, chh = H;
+      if(fr.escudo && esc && !esc._erro){
+        const largo = W / H >= 1.3;
+        const lado = largo ? Math.min(H * 0.7, W * 0.26) : Math.min(W * 0.6, H * 0.36);
+        const ex = largo ? W * 0.04 + lado/2 : W/2, ey = largo ? H/2 : H * 0.04 + lado/2;
+        c.beginPath(); c.arc(ex, ey, lado/2, 0, Math.PI*2); c.fillStyle = b; c.fill();
+        if(tri){ c.lineWidth = lado * 0.05; c.strokeStyle = d; c.stroke(); }
+        if(esc._ok){
+          const iw = esc.naturalWidth || 1, ih = esc.naturalHeight || 1;
+          const s2 = Math.min(lado*0.78/iw, lado*0.78/ih);
+          c.drawImage(esc, ex - iw*s2/2, ey - ih*s2/2, iw*s2, ih*s2);
+        } else cv.semEscudo = true;
+        if(largo){ cx = W * 0.06 + lado; cw = W - cx; }
+        else { cy = H * 0.06 + lado; chh = H - cy; }
+      }
+      /* a fonte universitária pode não ter chegado: desenha com a reserva e
+         refaz quando ela carregar */
+      if(document.fonts && !document.fonts.check(fonteFrase(20))){
+        document.fonts.load(fonteFrase(20)).then(() => { if(F.arteM === cv) F.arteM = null; }).catch(() => {});
+      }
+      escreverFrase(c, cx, cy, cw, chh, fr.txt, b, tri ? d : null);
     }
     cv.ww = w; cv.hh = h; cv.k = k; cv.u0 = S.u0; cv.v0 = S.v0; cv.H = H; cv.Htot = H + TIRA;
     F.arteM = cv;

@@ -10253,6 +10253,25 @@ o nome da torcida como o nome do time".
   na segunda, contorno na terceira (tricolor). Lê-se do campo, como o
   escudo.
 
+## Frases do mosaico: letra universitária e o escudo junto do nome (dono, 11/10/2026)
+
+"Deixe a letra da frase mais grossa" — "é a fonte universitária" (as
+varsity: Freshman, Wanted, Varsity Team). "Quando for o nome da torcida
+deve aparecer o escudo também no mesmo mosaico; na frase do time deve ser
+SOMOS FORTALEZA, LUTAREMOS JUNTOS, LUTAR E VENCER ou a sigla do time FEC."
+- Letra: Ultra (OFL, a slab universitária do Google Fonts), guardada em
+  css/fontes/ultra-latin.woff2 como as outras (funciona sem internet),
+  família 'Ultra Local'. Maiúscula, com um traço da própria cor por
+  baixo pra engrossar e o contorno na terceira cor (tricolor).
+- A letra é larga: a frase estica na vertical (até 2,4×) pra tomar a
+  altura do mosaico, como se monta na arquibancada.
+- Metade dos jogos com frase é o NOME DA TORCIDA com o escudo do lado
+  (setor largo) ou em cima, no fundo do anel (setor fundo); a outra
+  metade é do time: SOMOS {CLUBE}, LUTAREMOS JUNTOS, LUTAR E VENCER ou
+  a sigla do clube.
+- Se a fonte ainda não carregou, desenha com a reserva e refaz quando
+  ela chegar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
