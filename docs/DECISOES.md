@@ -10467,6 +10467,22 @@ jogo 3D pra substituir essa grade amarela."
   os bonecos 3D, o traço por baixo saiu (só a barrinha de vida quando
   apanha); no 2D puro, o traço virou cinza de aço.
 
+## Teste: 500 no 1º escalão visitante dos três estádios (dono, 11/10/2026)
+
+"Coloque 500 membros na torcida de primeiro escalão visitante em cada um
+dos 3 estádios pra poder testar."
+- Bancada (`arredores.html#estadio-10/20/40`): `cfg.efetivoPorSpawn`
+  crava o efetivo de um spawn (o combate usa no lugar da divisão do
+  efetivo rival pelos portões); os três estádios abrem com
+  `{visitante1:500}`.
+- O que o teste mostrou e mudou: a grade nem sempre fecha o setor de
+  ponta a ponta, e a enchente do `lugaresNoSetor` contornava a ponta dela
+  e enchia o setor vizinho (129 e 155 dos 500 do outro lado no 20 mil e
+  no 40 mil). Agora o lugar também tem de "ver" o spawn sem cruzar grade.
+  Medido no nascimento: 0 / 4 / 22 do outro lado (as sobras na ponta das
+  grades); no de 10 mil o setor não comporta 500 e parte divide lugar
+  (463 lugares distintos).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

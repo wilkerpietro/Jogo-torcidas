@@ -394,7 +394,10 @@ TO.diaJogo.combate = (function(){
         const base = (lado === ladoCfg && temEscalacao) ? 0
           : Math.max(1, Math.round(
               (lado===ladoCfg?P.efetivo:J.efetivoRival)/contarSpawns(lado)));
-        for(const s of spawns) grupos.push({s, bonde:null, qtd:base});
+        /* `efetivoPorSpawn` (a bancada, 11/10/2026): crava o efetivo de um
+           spawn — "500 no 1º escalão visitante" pra testar o setor cheio */
+        const fixo = cfg.efetivoPorSpawn || {};
+        for(const s of spawns) grupos.push({s, bonde:null, qtd: fixo[s.id] != null ? fixo[s.id] : base});
       }
     }
 
@@ -741,6 +744,11 @@ TO.diaJogo.combate = (function(){
           if(r.x < 4 || r.y < 4 || r.x > A.W-4 || r.y > A.H-4) continue;
           if(!A.caminhavel(r.x, r.y)) continue;
           if(A.atravessaGrade(q.x, q.y, r.x, r.y, J.grades)) continue;
+          /* a grade nem sempre fecha o setor de ponta a ponta (sobra vão
+             no pé da escada, na mureta): sem esta régua a enchente
+             contornava a ponta dela e enchia o setor vizinho. O lugar
+             tem de "ver" o spawn sem cruzar grade nenhuma. */
+          if(A.atravessaGrade(s.x, s.y, r.x, r.y, J.grades)) continue;
           fila.push(r);
         }
       }

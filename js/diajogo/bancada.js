@@ -53,11 +53,15 @@ TO.diaJogo.bancada = (function(){
     {id:'emb-onibus', rot:'Emboscada · estrada', titulo:'Emboscada na pista, ônibus parado',
      cfg:{intencao:'atacar', bombas:2, efetivoRival:24}},
     {id:'estadio-10', rot:'Estádio · 10 mil', titulo:'Arquibancada do estádio de 10 mil',
-     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:60}},
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:60,
+          /* 500 no 1º escalão visitante: o teste do setor cheio (dono, 11/10/2026) */
+          efetivoPorSpawn:{visitante1:500}}},
     {id:'estadio-20', rot:'Estádio · 20 mil', titulo:'Arquibancada do estádio de 20 mil',
-     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:80}},
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:80,
+          efetivoPorSpawn:{visitante1:500}}},
     {id:'estadio-40', rot:'Estádio · 40 mil', titulo:'Arquibancada do estádio de 40 mil',
-     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:90}},
+     cfg:{intencao:'atacar', paz:false, setores:true, bombas:0, efetivoRival:90,
+          efetivoPorSpawn:{visitante1:500}}},
     /* A CASA DE PISCINA (dono, 21/09/2026): a zona deles de resenha,
        20 contra 20, faixa no muro do deck — entra aqui antes de tudo,
        pra máscara ser acertada no F2 e a cena ser vista antes de
