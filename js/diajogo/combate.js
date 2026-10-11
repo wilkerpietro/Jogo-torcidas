@@ -444,6 +444,8 @@ TO.diaJogo.combate = (function(){
     /* o líder não depende da escalação: `grupoLider` sai do grupo do
        nosso portão, e a escalação só decide se ele tem NOME e ficha.
        Conferido com escalação vazia: líder existe e anda. */
+    /* a grade de isolamento anda conforme o tamanho do visitante */
+    if(D.id && /^estadio-/.test(D.id)) ajustarIsolamento(J, grupos);
     for(const g of grupos)
       nascerGrupo(J, g, fichas.get(g) || [], g === grupoLider, nomes);
 
@@ -718,6 +720,129 @@ TO.diaJogo.combate = (function(){
     const B = (TO.membros && TO.membros.bancoDe)
       ? TO.membros.bancoDe(TO.estado && TO.estado.E) : N;
     return (B && B.apelidos) || N.apelidos || ['TROVÃO'];
+  }
+
+  /* =======================================================
+     A GRADE DE ISOLAMENTO ANDA (dono, 11/10/2026: "é possível a grade
+     se ajustar de acordo com o tamanho do visitante? Isso resolveria o
+     problema"). Como no estádio de verdade, o isolamento é móvel: antes
+     de alguém nascer, conta-se quantos lugares (passo de 18 px) o setor
+     visitante tem, fechado pelas grades. Se não cabe o visitante (com 5%
+     de folga), a grade da divisa vai sendo empurrada pra fora do setor, 18
+     px por vez, uma de cada vez, e a cada passo ela se estica de ponta a
+     ponta do chão naquela linha (no estádio a divisória atravessa o lance
+     de degraus inteiro; sem isso ela vazava pela ponta). Uma grade só anda
+     se o setor ganha lugar e se não engole o ponto de nascimento de outro
+     bonde; para quando coube ou quando nenhuma anda mais.
+     ======================================================= */
+  function ajustarIsolamento(J, grupos){
+    if(!J.grades || !J.grades.length || !A.atravessaGrade) return;
+    const vis = grupos.filter(g => g.s.lado === 'visitante');
+    const nVis = vis.reduce((a, g) => a + Math.max(0, g.qtd || 0), 0);
+    if(nVis < 40) return;
+    const need = Math.ceil(nVis * 1.05), PASSO = 18;
+    const fontes = [...new Set(vis.map(g => g.s))];
+    const outros = D.spawns.filter(sp => sp.lado !== 'visitante');
+    const k = q => `${Math.round(q.x/PASSO)}|${Math.round(q.y/PASSO)}`;
+    /* a enchente do setor: quantos lugares e se encosta noutro spawn */
+    const encher = (limite) => {
+      const vistos = new Set(), fila = [], pts = [];
+      for(const sp of fontes){
+        const o = A.caminhavel(sp.x, sp.y) ? {x:sp.x, y:sp.y} : A.pontoLivreMaisProximo(sp.x, sp.y, 7);
+        if(!vistos.has(k(o))){ vistos.add(k(o)); fila.push(o); }
+      }
+      let invade = false;
+      while(fila.length && pts.length < limite){
+        const q = fila.shift(); pts.push(q);
+        /* folga do bonde dos outros: o setor não encosta no spawn deles */
+        for(const sp of outros) if(Math.hypot(sp.x - q.x, sp.y - q.y) < 110) invade = true;
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const r = {x:q.x + dx*PASSO, y:q.y + dy*PASSO}, kr = k(r);
+          if(vistos.has(kr)) continue; vistos.add(kr);
+          if(r.x < 4 || r.y < 4 || r.x > A.W-4 || r.y > A.H-4) continue;
+          if(!A.caminhavel(r.x, r.y)) continue;
+          if(A.atravessaGrade(q.x, q.y, r.x, r.y, J.grades)) continue;
+          fila.push(r);
+        }
+      }
+      return {cap: pts.length, pts, invade};
+    };
+    let atual = encher(need);
+    if(atual.cap >= need) return;
+    const ids = [...new Set(J.grades.filter(m => m.tipo !== 'fila').map(m => m.grade))];
+    const modsDe = id => J.grades.filter(m => m.grade === id);
+    /* o comprimento de cada grade como veio da cena: a que, andando,
+       fica bem mais comprida saiu do lance dela (passou da quina) */
+    const compOrig = {};
+    for(const id of ids) compOrig[id] = modsDe(id).reduce((a, m) => a + m.meia * 2, 0);
+    /* a grade inteira numa linha nova: o centro, a direção, esticada de
+       ponta a ponta do chão ao longo dela (até 260 px pra cada lado) */
+    const refazer = (id, cx, cy, ux, uy, base) => {
+      const ate = sentido => {
+        let ult = 0;
+        for(let t = 6; t <= 260; t += 6){
+          if(A.caminhavel(cx + ux*t*sentido, cy + uy*t*sentido)) ult = t;
+          else if(t - ult > 18) break;
+        }
+        return ult + 8;
+      };
+      const t0 = -ate(-1), t1 = ate(1), comp = t1 - t0, n = Math.max(1, Math.round(comp / 22)), meia = comp / n / 2;
+      const novos = [];
+      for(let i = 0; i < n; i++){
+        const t = t0 + comp * (i + 0.5) / n;
+        novos.push(Object.assign({}, base, {x:cx + ux*t, y:cy + uy*t, ux, uy, meia, movida:true}));
+      }
+      return novos;
+    };
+    for(let volta = 0; volta < 60 && atual.cap < need; volta++){
+      let andou = false;
+      for(const id of ids){
+        const ms = modsDe(id);
+        if(!ms.length) continue;
+        const cx = ms.reduce((a, m) => a + m.x, 0) / ms.length, cy = ms.reduce((a, m) => a + m.y, 0) / ms.length;
+        const ux = ms[0].ux, uy = ms[0].uy;
+        /* só a grade que faz divisa com o setor: algum lugar dele encostado nela */
+        const perto = atual.pts.some(p => {
+          const ao = Math.abs((p.x-cx)*ux + (p.y-cy)*uy), at = Math.abs((p.x-cx)*(-uy) + (p.y-cy)*ux);
+          return at < PASSO*1.6 && ao < ms.length * ms[0].meia + PASSO;
+        });
+        if(!perto) continue;
+        /* pra fora do setor: o lado oposto ao miolo dos lugares dele */
+        const mx = atual.pts.reduce((a, p) => a + p.x, 0) / atual.pts.length;
+        const my = atual.pts.reduce((a, p) => a + p.y, 0) / atual.pts.length;
+        let nx = -uy, ny = ux;
+        if((cx - mx)*nx + (cy - my)*ny < 0){ nx = -nx; ny = -ny; }
+        /* a grade paralela logo à frente (a divisória e o gradil do lado,
+           a 40 px uma da outra no estádio de 10 mil) anda junto: sem isso
+           uma travava a outra e o setor parava no meio */
+        const bloco = [id];
+        for(const id2 of ids){
+          if(id2 === id) continue;
+          const m2 = modsDe(id2);
+          if(!m2.length || Math.abs(m2[0].ux*ux + m2[0].uy*uy) < 0.9) continue;
+          const c2x = m2.reduce((a, m) => a + m.x, 0) / m2.length, c2y = m2.reduce((a, m) => a + m.y, 0) / m2.length;
+          const frente = (c2x - cx)*nx + (c2y - cy)*ny, lado = Math.abs((c2x - cx)*ux + (c2y - cy)*uy);
+          if(frente > 0 && frente <= PASSO*3 && lado < ms.length * ms[0].meia * 2) bloco.push(id2);
+        }
+        let novos = [];
+        for(const b of bloco){
+          const mb = modsDe(b);
+          const bx = mb.reduce((a, m) => a + m.x, 0) / mb.length, by = mb.reduce((a, m) => a + m.y, 0) / mb.length;
+          novos = novos.concat(refazer(b, bx + nx*PASSO, by + ny*PASSO, mb[0].ux, mb[0].uy, mb[0]));
+        }
+        const longa = bloco.some(b => novos.filter(m => m.grade === b).reduce((a, m) => a + m.meia * 2, 0) > compOrig[b] * 1.8);
+        if(longa) continue;
+        const antes = J.grades;
+        J.grades = J.grades.filter(m => !bloco.includes(m.grade)).concat(novos);
+        const r = encher(need);
+        if(r.invade || r.cap <= atual.cap){ J.grades = antes; continue; }
+        atual = r; andou = true;
+        if(atual.cap >= need) break;
+      }
+      if(!andou) break;
+    }
+    J.isolamentoAjustado = atual.cap;
+    J.versaoGrades = (J.versaoGrades || 0) + 1;
   }
 
   /* os lugares do bonde dentro do setor dele: enchente a partir do spawn

@@ -10483,6 +10483,31 @@ dos 3 estádios pra poder testar."
   grades); no de 10 mil o setor não comporta 500 e parte divide lugar
   (463 lugares distintos).
 
+## A grade de isolamento anda com o tamanho do visitante (dono, 11/10/2026)
+
+"É possível desenvolver uma forma da grade se ajustar de acordo com o
+tamanho do visitante? Isso resolveria o problema."
+- `combate.ajustarIsolamento`, nos estádios, antes de alguém nascer: conta
+  os lugares do setor visitante (enchente a partir dos spawns visitantes,
+  passo de 18 px, fechada pelas grades). Faltando lugar pro visitante (com
+  5% de folga; só com 40+), a grade da divisa é empurrada 18 px pra fora
+  do setor, uma por vez, e se estica de ponta a ponta do chão naquela
+  linha; repete até caber ou até nenhuma andar mais.
+- Uma grade só anda se: o setor ganha lugar; o setor não chega a menos de
+  110 px do spawn de outro bonde (a folga do vizinho); e ela não fica
+  mais que 1,8 vez mais comprida do que era (a que passa da quina sai do
+  lance dela e deixava o visitante descer a lateral).
+- Grades paralelas coladas (a divisória e o gradil do lado, a 40 px no
+  estádio de 10 mil) andam juntas, como um bloco — senão uma travava a
+  outra.
+- Os módulos movidos levam `movida:true` e a mesma vida da grade; o
+  `versaoGrades` sobe pra rota e o campo de passos recalcularem. O
+  gradil 3D acompanha sozinho (ele lê a posição do módulo a cada quadro).
+- Medido com 500 no 1º escalão visitante: 10 mil — a grade andou e o
+  setor foi de 161 pra 311 lugares, o visitante enche a arquibancada de
+  cima inteira até a quina; 20 mil — o setor já comportava; 40 mil — o
+  setor abriu até a folga do 3º escalão da casa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
