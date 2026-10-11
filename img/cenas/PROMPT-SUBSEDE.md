@@ -181,3 +181,46 @@ Do not change the building, the walls, the neighbors, the street or the camera. 
 4. **Nada mais mudou:** compare o balcão, o barzinho, a porta e os
    vizinhos com a rodada 1.
 5. **A porta de enrolar e a porta do barzinho continuam abertas.**
+
+---
+
+## O prompt do zero (rodada 3 — pedido do dono: "refaz o prompt do zero")
+
+Um prompt inteiro, sem anexar a rodada 1: a estrutura que deu certo nela
+(zênite, lote sem telhado entre vizinhos com telhado, rua embaixo,
+pátio claro, balcão de granito em L com o barzinho atrás) mais a cara de
+bar que faltou (mesas nas paredes, corredor livre no meio, telão
+inclinado com o jogo). Proporção 16:9; anexe só a foto do bar
+(`Aerial_view_of_roofless_bar_202608131633.jpeg`) como referência de
+zênite.
+
+```
+true orthographic zenith satellite orthophoto, camera pointing straight down at exactly 90 degrees from very high altitude with an extreme telephoto lens, orthographic projection, zero parallax, zero perspective, no horizon, no lens distortion. Only the top surfaces of things are visible: every wall top reads as a flat even pale band, every roof as a flat plane, every table and chair as a flat shape seen from above. No wall faces, no facades, no vertical surfaces anywhere, with ONE single exception described below (the big screen).
+
+THE PLACE: a dense working-class street in a big city in northeast Brazil, and in the middle of the block the SUBSEDE of a football supporters' group — a neighborhood football bar where the group meets to drink and watch the matches.
+
+THE FRAME, from bottom to top:
+- THE BOTTOM QUARTER is the street, running unbroken from the left edge to the right edge: worn dark grey asphalt with a faded dashed white center line, a few oil stains, and above it, along the lots, a wide sidewalk of pale grey concrete slabs with a low curb. Wide open sidewalk in front of the subsede.
+- THE MIDDLE is the row of lots on the sidewalk. In the CENTER, one wide lot, about twice as wide as its neighbors, has NO ROOF AT ALL: that is the subsede, fully exposed from above. It takes about one third of the frame width and about half of the frame height, its front wall right on the sidewalk. To its LEFT and RIGHT, houses glued to its side walls keep their roofs: on one side old terracotta tiles, on the other side grey corrugated fiber-cement sheets with two round blue water tanks.
+- THE TOP of the frame: the small back yards and roofs of the houses on the next street over.
+
+INSIDE THE SUBSEDE, seen from directly above, ONLY TWO SPACES, enclosed by thick painted concrete block walls that read as continuous pale grey bands:
+
+1. THE PATIO, the big front space, about four fifths of the lot depth: a floor of pale polished burnt cement with faint stains.
+   - In the FRONT WALL, on the LEFT side, one WIDE OPEN ROLL-UP DOOR: a broad gap cut clean through the wall, about a quarter of the front wall wide, straight from the sidewalk into the patio, no door leaf, no grille.
+   - FURNITURE ONLY ALONG THE TWO SIDE WALLS: on the left wall a row of four small square white plastic bar tables, and on the right wall another row of four, each table close to its wall with four white plastic chairs around it, brown beer bottles and plastic cups on the table tops, two or three red plastic beer crates on the floor beside them. In the front-right corner, three big bass drums of a samba percussion band seen from above as round drum heads.
+   - A WIDE CLEAR AISLE down the middle of the patio, from the roll-up door to the bar counter, at least a third of the patio width: completely empty bare floor, nothing in it.
+   - A string of bare light bulbs running along the top of both side walls, seen from above as a thin line of small round bulbs.
+
+2. THE BAR, the narrow back strip, about one fifth of the lot depth, separated from the patio by a long L-shaped masonry bar counter with a dark granite top facing the patio; at the LEFT end of the counter, the same side as the roll-up door, an OPEN GAP in the counter to walk from the patio into the bar. Inside the bar, a floor of pale cream ceramic tiles, and pushed flat against the back wall only: a wooden bottle shelf full of bottles, a tall beer fridge and a white chest freezer.
+
+THE BIG SCREEN, the single exception to the top-only view: one large flat TV screen hung high on the back wall, above the middle of the bar counter, TILTED STRONGLY FORWARD AND DOWN toward the patio like the big screen of a corner bar, so that from directly above its screen face is clearly visible: it is showing a live football match broadcast — a bright green pitch with white field lines, tiny players, and a small scoreboard graphic in one corner. The screen glows slightly.
+
+Materials and light: off-white painted block walls with a grey band at the base, pale burnt cement and cream ceramic floors clearly lighter than the walls, weathered paint, stained concrete, dusty urban textures. Bright but diffuse overcast daylight, short soft shadows, muted natural colors, documentary drone photography. Photorealistic, high detail.
+
+Absolutely no roof, no metal roof, no trusses, no awning and no tarp over the subsede — the neighboring houses DO keep their roofs. No tables, chairs or crates in the central aisle, no furniture blocking the roll-up door or the gap into the bar, no closed door, no grille. No close crop on the building, no isolated building floating in a void. No oblique or 45 degree angle, no tilted camera, no perspective, no wide angle, no fisheye, no visible wall faces, no visible facades, no leaning walls. No banners, no flags, no hanging cloth, no painted crests, no murals, no logos, no signs, no shop sign, no readable text, no watermark, no people, no cars or motorcycles in front of the door. No illustration, no cartoon, no isometric, no 3d render, no blueprint look, no HDR, no dramatic lighting, no night, no long shadows.
+```
+
+Conferência: a mesma da rodada 2 (corredor do meio livre e largo, mesas
+nas paredes, telão com o gramado visível, porta de enrolar e passagem do
+balcão abertas, zênite sem fachada nenhuma).
