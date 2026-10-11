@@ -514,8 +514,12 @@ TO.relacoes = (function(){
     const n = Math.max(0, Math.round(t.membros));
     if(!n) return [];
     const nomes = TO.membros.nomesDaTorcida(o.nome, 0, n);
-    /* a pirâmide de cargos da fonte, esticada pro tamanho de hoje */
-    let plano = TO.membros.planoDeCargos(n, o.cargos);
+    /* a pirâmide de cargos: a do QUADRO VIVO quando há (promoção e
+       aposentadoria mexem nela), senão a da fonte, esticada pro tamanho */
+    const qc = quadroDe(E, id);
+    let plano = qc && qc.total
+      ? ['diretoria', 'frente', 'componente', 'novato'].map(c => [c, Math.round(qc.cargos[c] * n / qc.total)])
+      : TO.membros.planoDeCargos(n, o.cargos);
     const somaP = plano.reduce((s,p)=>s+p[1], 0);
     if(somaP > n){
       const fator = n/somaP;
@@ -572,6 +576,18 @@ TO.relacoes = (function(){
     const FN = TO.membros.FICHA_NOVA;
     const XP_DE = {novato:[0,30], componente:[40,95],
                    frente:[100,290], diretoria:[300,500]};
+    /* A FICHA É A DO QUADRO VIVO (correção de 11/10/2026): a lista
+       mostrava a ficha de nascença e o ranking a força de hoje — dois
+       números pra mesma torcida. Agora cada um guarda a variação de
+       nascença (quem é mais forte que o colega segue mais forte), mas
+       o grupo do cargo fica na média que o quadro diz hoje: treino,
+       ferrugem, sequela e idade aparecem na lista também. */
+    const qv = qc;
+    const desvio = {};
+    for(const c of ESCADA){
+      const [f0, f1] = FN[c] || FN.novato;
+      desvio[c] = qv ? qv.forca[c] - (f0 + f1) / 2 : 0;
+    }
     const fora = [];
     for(let i=0; i<n; i++){
       const c = cargoDe[i];
@@ -579,7 +595,7 @@ TO.relacoes = (function(){
       const h = k => H(`${o.nome}|elenco|${i}|${k}`);
       const teto = cfg.teto || 10;
       const [f0, f1] = FN[c] || FN.novato;
-      const ficha = k => Math.min(teto, f0 + h(k) % (f1 - f0 + 1));
+      const ficha = k => U.limitar(Math.round(f0 + h(k) % (f1 - f0 + 1) + (desvio[c] || 0)), 1, teto);
       const [x0, x1] = XP_DE[c] || [0, 40];
       fora.push({
         nome: nomes[i], cargo: c, origem: origem[i],
@@ -1682,6 +1698,16 @@ TO.relacoes = (function(){
     /* save de antes do quadro vivo ganha a coluna de XP */
     if(!q.xp){ q.xp = {}; for(const c of ESCADA) q.xp[c] = 0; }
     if(!q.desgaste){ q.desgaste = {}; for(const c of ESCADA) q.desgaste[c] = 0; }
+    /* O PISO DA FICHA (correção de 11/10/2026, o ranking do dono: a
+       Força Alviverde com membros de 3 a 8 e força média 1,1). A
+       ferrugem — paz demais e cadeia — deixa o grupo DESTREINADO, não
+       acabado: ela não desce abaixo da ficha de nascença do cargo. Só o
+       que é permanente (sequela e idade) morde abaixo disso. Save que
+       já tinha afundado volta pro piso aqui. */
+    for(const c of ESCADA){
+      const piso = pisoDoCargo(q, c);
+      if(q.forca[c] < piso) q.forca[c] = piso;
+    }
     if(dif > 0){
       const n = q.cargos.novato;
       q.forca.novato = (n*q.forca.novato + dif*MEDIA_FICHA.novato)/(n + dif);
@@ -1700,6 +1726,9 @@ TO.relacoes = (function(){
   }
 
   /* a média do quadro: é o número que o ranking mostra */
+  function pisoDoCargo(q, c){
+    return Math.max(1, BASE_FICHA[c] - ((q.desgaste && q.desgaste[c]) || 0));
+  }
   function mediaDoQuadro(q){
     let soma = 0, n = 0;
     for(const c of ESCADA){ soma += q.cargos[c]*q.forca[c]; n += q.cargos[c]; }
@@ -2056,7 +2085,8 @@ TO.relacoes = (function(){
     if(!q || !quanto) return;
     for(const c of ESCADA){
       if(permanente) q.desgaste[c] = (q.desgaste[c] || 0) + quanto;
-      q.forca[c] = Math.max(1, q.forca[c] - quanto);
+      /* ferrugem para no piso do cargo; o permanente baixa o próprio piso */
+      q.forca[c] = Math.max(Math.min(q.forca[c], pisoDoCargo(q, c)), q.forca[c] - quanto);
     }
   }
   /* o que a noite cobrou do grupo: feridos deixam sequela e presos

@@ -10156,6 +10156,35 @@ principalmente aqueles de sede nível 0, com uma sede nova".
   atrás na fila, dava 1 por ano: o caixa típico delas no começo é
   R$ 2.400.
 
+## A força média do ranking volta a ser a da torcida (dono, 11/10/2026)
+
+O dono viu a Força Alviverde com membros de 3 a 8 na lista e força
+média 1,1 no ranking. Eram dois defeitos.
+
+- **A ferrugem não tinha piso:**
+  - A ferrugem da paz (0,2 a cada 20 dias sem briga) e a da cadeia
+    derrubam o quadro vivo das IAs.
+  - A torcida no ponto de encontro (sede 0) não tem vaga de treino, e a
+    pequena quase não briga. Em um ou dois anos afundava até 1, e essa
+    média também é a que entra na conta das brigas entre IAs e na LNT.
+  - A régua do dono já dizia que a ferrugem deixa "destreinado, não
+    acabado". Agora ela para na ficha de nascença do cargo: novato 3,
+    componente 5, frente 10, diretoria 14 (`pisoDoCargo`).
+  - Só o que é permanente (sequela e idade) baixa esse piso.
+  - Save que já tinha afundado volta pro piso ao abrir.
+- **A lista mostrava outra torcida:**
+  - `elencoDaTorcida` gerava a ficha de nascença e a pirâmide de cargos
+    da fonte, ignorando o que o quadro vivo viveu.
+  - Agora a pirâmide é a do quadro de hoje (promoções e aposentadorias)
+    e cada membro guarda a variação de nascença deslocada pra média
+    viva do cargo.
+  - Lista e ranking batem, com diferença de até 0,3 do arredondamento
+    das fichas inteiras.
+- **Medido em dois anos simulados:**
+  - A menor força média do mundo foi de ~1 pra 5,3; a mediana ficou em
+    8,3 e o topo em 11,5.
+  - Força Alviverde: ranking 6,1, lista 6,0. Cearamor: 9,4 e 9,3.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
