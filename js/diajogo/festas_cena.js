@@ -739,10 +739,24 @@ TO.diaJogo.festas = (function(){
       }
       if(!achou) return null;
     }
-    let a = meio, b = meio;
-    const LIM = 400;
-    while(a - meio > -LIM && pisa(a - passoV)) a -= passoV;
-    while(b - meio < LIM && pisa(b + passoV)) b += passoV;
+    /* O VOMITÓRIO NÃO CORTA A TIRA (dono, 11/10/2026): um buraco curto
+       no meio do degrau (a boca de saída, a escada) é atravessado — a
+       tira passa por cima dele e só para na borda de verdade da
+       arquibancada, que é onde o pisável acaba de vez. */
+    const VAO_MAX = 70;
+    const estende = (x, dir) => {
+      const LIM = 400;
+      for(;;){
+        if(Math.abs(x - meio) > LIM) return x;
+        if(pisa(x + dir*passoV)){ x += dir*passoV; continue; }
+        let pulo = 0;
+        for(let g = 2*passoV; g <= VAO_MAX; g += passoV)
+          if(pisa(x + dir*g)){ pulo = g; break; }
+        if(!pulo) return x;
+        x += dir*pulo;
+      }
+    };
+    const a = estende(meio, -1), b = estende(meio, 1);
     return [a + 2, b - 2];
   }
   function trapos3(F, S, t){

@@ -10010,6 +10010,9 @@ membros".
     0,42 por unidade com a câmera. Assim nada sai visualmente da borda.
   - As tiras ficam deitadas sobre as cabeças e se distribuem só pela
     largura ocupada.
+  - O vomitório não corta a tira (dono, 11/10/2026): um buraco de até
+    70 unidades no meio do degrau (a boca de saída, a escada) é
+    atravessado, e a tira só para na borda de verdade da arquibancada.
 - **Bandeirão:**
   - A malha (64×44) cobre a caixa do setor, mas cada vértice sabe a
     distância até a cabeça mais perto.
