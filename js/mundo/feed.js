@@ -1863,34 +1863,57 @@ TO.feed = (function(){
      lá sugere descida de vez em quando, e aliado que joga na
      cidade dela é hospedado pelo núcleo.
      ======================================================= */
-  /* a filial atacada se defende SOZINHA — sem bonde de socorro, por
-     ordem do dono: o núcleo local resolve por simulação e o resultado
-     cai no feed como qualquer briga */
+  /* A NOSSA SUBSEDE ATACADA, NA CENA DELA (dono, 11/10/2026: "preciso
+     que as nossas subsedes também sejam atacadas tanto pelas torcidas
+     da praça como as demais subsedes rivais da cidade"). Era a defesa
+     sozinha por simulação (25/08/2026); agora é o ataque marcado de
+     sempre — o aviso no feed, Segurar ou Largar — e a cena da subsede
+     (a foto do dono), com o NÚCLEO de lá defendendo: os membros da
+     filial, e mais ninguém (sem bonde de socorro, a ordem continua).
+     Quem pode vir: as torcidas DA PRAÇA da filial e as SUBSEDES de
+     torcidas de fora que também têm filial naquela cidade (com o
+     núcleo delas). A dose segue a de antes: 0,3% ao dia por filial. */
+  function quemAtacaASubsede(E, cidade){
+    const fora = [];
+    const ok = o => o && o.id !== E.torcida.id && !o.incompleta &&
+      !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&
+      !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) &&
+      TO.relacoes.nivel(E, o.id) <= -15 &&
+      !TO.relacoes.desistiu(E, o.id, E.torcida.id);
+    for(const o of M().torcidasEm(cidade))
+      if(ok(o) && TO.relacoes.disponiveisIA(E, o.id) >= 6) fora.push({o, filial:null});
+    const mt = E.mundoTorcidas || {};
+    for(const o of M().jogaveis()){
+      if(o.mapa === cidade || !ok(o)) continue;
+      const f = ((mt[o.id] || {}).filiais || []).find(x => x.cidade === cidade);
+      if(f && (f.membros || 0) >= 6) fora.push({o, filial:f});
+    }
+    return fora.sort((a, b) => TO.relacoes.nivel(E, a.o.id) - TO.relacoes.nivel(E, b.o.id));
+  }
   function filialDeHoje(E){
-    if(!TO.patrimonio || !TO.diaJogo || !TO.diaJogo.simular) return;
+    if(!TO.patrimonio) return;
+    const a = E.ataqueMarcado;
+    if(a && !a.resolvido && a.semana === E.data.semana) return;
+    const pj = E.proximoJogo;
+    if(pj && pj.semana === E.data.semana && (pj.dia || 6) === E.data.dia) return;
     for(const f of (((E.patrimonio||{}).filiais)||[])){
       if(U.rng() >= 0.005 * TO.relacoes.FREIO_BRIGA) continue;   // 0,3% ao dia (dono, 08/09/2026)
       const nucleo = TO.membros.aptosDaFilial(E, f.cidade);
       if(nucleo.length < 4) continue;
-      const hostis = M().torcidasEm(f.cidade)
-        .filter(o=>o.id !== E.torcida.id && !o.incompleta &&
-                   !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&
-                   TO.relacoes.nivel(E, o.id) <= -15 &&
-                   !TO.relacoes.desistiu(E, o.id, E.torcida.id))
-        .sort((a,b)=>TO.relacoes.nivel(E,a.id) - TO.relacoes.nivel(E,b.id));
-      const rival = hostis[0];
-      if(!rival) continue;
-      const deles = Math.max(6, Math.round(nucleo.length * U.entre(0.8, 1.4)));
-      const res = TO.diaJogo.simular.rodar({config:{
-        escalacao: nucleo, efetivoRival: deles,
-        bondes:[{nossa:true, lado:'mandante', n:nucleo.length}]}});
-      /* todo ocorrido mexe no prestígio (ordem do dono, 27/08/2026) */
-      if(!res.prestigio) res.prestigio = res.ganhamos ? 1 : -1;
-      TO.membros.aplicarResultadoDaNoite(E, res);
-      TO.acoes.fecharCena(E, {acao:'defender', alvo:{
-        torcidaId:rival.id, nome:rival.nome, tipo:'subsede', cena:'bar',
-        bairro:TO.financeiro.nomeCidade(f.cidade),
-        nossos:nucleo.length, efetivo:deles}}, res);
+      const lista = quemAtacaASubsede(E, f.cidade);
+      if(!lista.length) continue;
+      /* a pior relação primeiro, mas não sempre a mesma: das três piores */
+      const x = lista[Math.floor(U.rng() * Math.min(3, lista.length))];
+      const cid = TO.financeiro.nomeCidade(f.cidade);
+      const nome = x.filial ? `${x.o.nome} Sub-Sede ${cid}` : x.o.nome;
+      E.ataqueMarcado = {torcida:x.o.id, nome, alvo:'subsede', cena:'subsede',
+                         filial: !!x.filial, efetivo: x.filial ? x.filial.membros : undefined,
+                         cidadeFilial:f.cidade, cidadeNome:cid, bairro:cid, mapa:f.cidade,
+                         ano:E.data.ano, semana:E.data.semana, dia:E.data.dia};
+      if(TO.relacoes.hostilidade && TO.relacoes.REL) TO.relacoes.hostilidade(E, x.o.id, TO.relacoes.REL.ataqueMarcado || 8);
+      /* o passo do ataque sofrido já rodou hoje: o aviso sai daqui */
+      ataqueSofridoHoje(E);
+      return;
     }
   }
 
@@ -5561,7 +5584,11 @@ TO.feed = (function(){
                           {nome:o, zona:_t(a.zona || 'Sul'), bairro:a.bairro})
                      : _t('A {nome} chegou na praça em cima da reunião da Zona {zona}!',
                           {nome:o, zona:_t((a&&a.zona)||'Sul')}),
-                   brigar:_t('Segurar a roda'), fugir:_t('Desfazer a reunião')}
+                   brigar:_t('Segurar a roda'), fugir:_t('Desfazer a reunião')},
+    /* a nossa subsede de outra cidade (11/10/2026) */
+    subsede:      {texto:(o,a)=>_t('Invadiram a nossa subsede de {cidade}! A {nome} tá na porta, e lá só tem o nosso núcleo.',
+                                   {nome:o, cidade:(a && a.cidadeNome) || ''}),
+                   brigar:_t('Segurar a subsede'), fugir:_t('Largar a subsede')}
   };
 
   function ataqueSofridoHoje(E){
@@ -7139,7 +7166,7 @@ TO.feed = (function(){
     return {ok:true};
   }
 
-  return {INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
+  return {_filialDeHoje: filialDeHoje, _quemAtacaASubsede: quemAtacaASubsede, INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,

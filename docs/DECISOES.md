@@ -10344,6 +10344,32 @@ com o oponente tendo o triplo."
 - Medido (moral/prestígio na régua de 100, derrota com debandada): 20×20
   −23/−9,5; 20×40 −11,5/−4,7; 20×60 −7,6/−3,2 (era ~−31).
 
+## A nossa subsede atacada, na cena dela (dono, 11/10/2026)
+
+"Preciso que as nossas subsedes também sejam atacadas tanto pelas torcidas
+da praça como as demais subsedes rivais da cidade."
+- A CENA `subsede`: foto do dono no Flow (prompt em
+  img/cenas/PROMPT-SUBSEDE.md, refeito do zero com cara de bar: mesas
+  nas paredes, corredor livre, telão com o jogo). Receita no importador
+  com o chão por recorte + `abrir` (rua, porta de enrolar, corredor, vão
+  do balcão, barzinho) e as mesas e os surdos por `excluir`. Quem ataca
+  desce da rua (`mandante`), o núcleo está no pátio e no barzinho
+  (`visitante`, de guarda até o bonde chegar na porta — o gatilho), a
+  faixa fica na frente do balcão. Aba na bancada (`arredores.html#subsede`).
+- QUEM ATACA (`feed.quemAtacaASubsede`): as torcidas da praça da filial
+  (com 6+ de pé) e as SUBSEDES de torcidas de fora que também têm filial
+  naquela cidade (com o núcleo delas, 6+). Fora irmã, trégua, relação
+  acima de −15 e quem desistiu (as três tentativas). Sorteia entre as
+  três piores relações.
+- A DEFESA SIMULADA SAIU: `filialDeHoje` agora marca o ataque do dia
+  (`alvo:'subsede'`, `cena:'subsede'`), com o aviso no feed — "Invadiram a
+  nossa subsede de {cidade}!" — e Segurar / Simular / Largar. A dose segue
+  0,3% ao dia por filial; não marca em dia do nosso jogo nem com outro
+  ataque marcado na semana.
+- QUEM DEFENDE é o núcleo da filial (`aptosDaFilial`), inteiro e só ele.
+  Eles vêm: a subsede rival com o núcleo dela; a torcida da praça com
+  0,9 a 1,5 do nosso núcleo, até 40 e até metade da torcida dela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

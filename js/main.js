@@ -11616,7 +11616,10 @@
        Escalação e efetivo são duas coisas: `escalacao` é quem tem ficha,
        `bondes[].n` é quanta gente está lá. Nada é reequilibrado na
        abertura: se eles vieram com mais, a cena começa com mais deles. */
-    const fila = TO.membros.aptosParaOEstadio(e)
+    /* A NOSSA SUBSEDE (11/10/2026): quem defende é o núcleo de lá —
+       os membros da filial daquela cidade, inteiros, e mais ninguém */
+    const naSubsede = atq.alvo === 'subsede';
+    const fila = (naSubsede ? TO.membros.aptosDaFilial(e, atq.cidadeFilial) : TO.membros.aptosParaOEstadio(e))
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa));
     /* na estrada vai quem embarcou; no bar, um quarto da turma de pé;
        na concentração e na pista, o bonde inteiro do dia de jogo */
@@ -11630,8 +11633,8 @@
     const bondeZona = naCasa ? TO.acoes.bondeDaZona(e, atq.zona) : null;
     /* teto do dono (18/08/2026): defesa do NOSSO bar bota no máximo
        40 no salão; o atacante traz no máximo 60 (cap logo abaixo) */
-    const noBar = !naEstrada && !noDiaDeJogo && !naCasa;
-    let nossos = naEstrada
+    const noBar = !naEstrada && !noDiaDeJogo && !naCasa && !naSubsede;
+    let nossos = naSubsede ? Math.max(2, fila.length) : naEstrada
       ? Math.max(2, (est && est.vao) || Math.round(fila.length * 0.25))
       : noDiaDeJogo ? Math.max(2, fila.length)
       : naCasa ? Math.max(2, bondeZona.length)
@@ -11656,6 +11659,9 @@
        na subsede de Fortaleza descia com 41. Quem vem é o núcleo de lá,
        inteiro, e mais ninguém. */
     if(atq.filial) deles = Math.max(4, Math.round(atq.efetivo || 4));
+    /* a torcida da praça que desce na nossa subsede traz o bonde que o
+       serviço pede: até uma vez e meia o núcleo, nunca mais de 40 */
+    else if(naSubsede) deles = Math.max(4, Math.min(40, Math.max(6, Math.round(nossos * U.entre(0.9, 1.5))), Math.round(membrosDeles * 0.5)));
     if(naCasa) deles = TO.acoes.efetivoDaZona(e, o || {});
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);

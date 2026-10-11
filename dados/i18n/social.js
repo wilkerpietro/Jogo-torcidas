@@ -1128,5 +1128,8 @@ TO.i18n.registrar({
   "{D} dá a casa nova da {A}": {es:"{D} le da la casa nueva a {A}", en:"{D} hand {A} a new home"},
   "SOMOS {c}": {es:"SOMOS {c}", en:"WE ARE {c}"},
   "LUTAREMOS JUNTOS": {es:"LUCHAREMOS JUNTOS", en:"WE FIGHT TOGETHER"},
-  "LUTAR E VENCER": {es:"LUCHAR Y VENCER", en:"FIGHT AND WIN"}
+  "LUTAR E VENCER": {es:"LUCHAR Y VENCER", en:"FIGHT AND WIN"},
+  "Invadiram a nossa subsede de {cidade}! A {nome} tá na porta, e lá só tem o nosso núcleo.": {es:"¡Invadieron nuestra filial de {cidade}! La {nome} está en la puerta, y allí solo está nuestro núcleo.", en:"They stormed our {cidade} chapter house! {nome} are at the door, and only our local crew is there."},
+  "Segurar a subsede": {es:"Aguantar la filial", en:"Hold the chapter house"},
+  "Largar a subsede": {es:"Abandonar la filial", en:"Give up the chapter house"}
 });
