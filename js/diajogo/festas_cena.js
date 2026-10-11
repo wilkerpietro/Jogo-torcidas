@@ -592,37 +592,80 @@ TO.diaJogo.festas = (function(){
     M.mesh.visible = n > 0;
   }
 
-  /* ---------- o bandeirão: o pano sobre a MANCHA da torcida ----------
-     (correção do dono, 11/10/2026: "mais fluido e com menos aspecto de
-     tão quadrado, pegando apenas a área ocupada pelos membros")
-     A malha cobre a caixa do setor, mas cada vértice sabe o quanto está
-     DENTRO da mancha (distância até a cabeça mais perto): dentro, o pano
-     fica na altura das mãos, com um calombo em cima de cada um que
-     segura (sobe e desce no ritmo dele) e barriga entre um e outro;
-     na borda ele cai mole; fora, o triângulo nem é desenhado. A borda
-     recortada pela mancha é o que tira o aspecto de lençol quadrado. */
+  /* ---------- o bandeirão: o pano sobre a torcida, na curva do anel ----------
+     Na altura das mãos, com um calombo em cima de cada um que segura
+     (sobe e desce no ritmo dele), barriga entre um e outro e a onda que
+     atravessa; a forma é a do anel de cima da arquibancada. */
   const BAN_NU = 64, BAN_NV = 44, BAN_MARGEM = 8;
+  /* ajuste de parábola (mínimos quadrados) com uma passada que joga
+     fora quem foge demais — a borda do anel vira uma curva lisa */
+  function parabola(xs, ys){
+    const ajusta = (ix) => {
+      let s0=0,s1=0,s2=0,s3=0,s4=0,t0=0,t1=0,t2=0;
+      for(const i of ix){ const x=xs[i], y=ys[i], x2=x*x;
+        s0++; s1+=x; s2+=x2; s3+=x2*x; s4+=x2*x2; t0+=y; t1+=x*y; t2+=x2*y; }
+      const M = [[s4,s3,s2],[s3,s2,s1],[s2,s1,s0]], T = [t2,t1,t0];
+      const det = m => m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+      const D = det(M);
+      if(Math.abs(D) < 1e-9){ const m = t0 / Math.max(1, s0); return x => m; }
+      const col = (k) => M.map((l, r) => l.map((v, c) => c === k ? T[r] : v));
+      const a = det(col(0))/D, b = det(col(1))/D, c = det(col(2))/D;
+      return x => a*x*x + b*x + c;
+    };
+    let ix = xs.map((_, i) => i);
+    if(ix.length < 3){ const m = ys.reduce((p, y) => p + y, 0) / Math.max(1, ys.length); return x => m; }
+    let f = ajusta(ix);
+    const res = ix.map(i => Math.abs(ys[i] - f(xs[i])));
+    const med = res.slice().sort((p, q) => p - q)[Math.floor(res.length/2)] || 0;
+    const fica = ix.filter((i, k) => res[k] <= Math.max(4, med*2.5));
+    if(fica.length >= 3) f = ajusta(fica);
+    return f;
+  }
+  /* O PANO SEGUE A CURVA DO ANEL DE CIMA (dono, 11/10/2026: "o bandeirão
+     precisa ser curvado pra seguir a linha natural da arquibancada; as
+     pontas superiores saem fora dela, isso fica irreal"). Pra cada
+     coluna (u) da largura da torcida, o trecho do anel de cima; as duas
+     bordas (fundo e frente) viram parábolas lisas, e as linhas do pano
+     correm entre elas. Na quina o anel curva e o pano curva junto, sem
+     degrau e sem ponta pra fora; a textura vai inteira. */
   function campoDoBandeirao(B, S){
-    /* a mancha muda pouco no jogo assistido: refaz a cada ~1 s */
     const agora = performance.now();
     if(B.campo && agora - B.campoEm < 1000) return B.campo;
     const nu = BAN_NU, nv = BAN_NV;
     const u0 = S.u0 - BAN_MARGEM, w = S.u1 - S.u0 + 2*BAN_MARGEM;
-    const v0 = S.v0 - BAN_MARGEM, h = S.v1 - S.v0 + 2*BAN_MARGEM;
+    const us = [], vas = [], vbs = [];
+    for(let i = 0; i <= nu; i++){
+      const u = u0 + w*i/nu;
+      const vao = vaoNaLinha(S, u, ALT_MAO);
+      if(!vao || vao[1] - vao[0] < 12) continue;
+      us.push(u); vas.push(vao[0]); vbs.push(vao[1]);
+    }
+    const fa = parabola(us, vas), fb = parabola(us, vbs);
+    /* a profundidade não passa da torcida: o pano é de quem segura */
+    const fundoMin = S.v0 - BAN_MARGEM, frenteMax = S.v1 + BAN_MARGEM;
     const n = (nu+1)*(nv+1);
+    const U = new Float32Array(n), V = new Float32Array(n);
     const dist = new Float32Array(n), quem = new Int16Array(n);
     const pts = S.nossos.map(d => [d._u, d._v]);
-    for(let j = 0; j <= nv; j++) for(let i = 0; i <= nu; i++){
-      const u = u0 + w*i/nu, v = v0 + h*j/nv;
-      let m1 = 1e9, q = -1;
-      for(let k = 0; k < pts.length; k++){
-        const du = pts[k][0] - u, dv = pts[k][1] - v, dd = du*du + dv*dv;
-        if(dd < m1){ m1 = dd; q = k; }
+    const ok = new Uint8Array(nu+1);
+    for(let i = 0; i <= nu; i++){
+      const u = u0 + w*i/nu;
+      let va2 = Math.max(fa(u) + 3, fundoMin), vb2 = Math.min(fb(u) - 3, frenteMax);
+      ok[i] = us.length >= 3 && vb2 - va2 > 12 ? 1 : 0;
+      if(!ok[i]){ va2 = S.v0; vb2 = S.v1; }
+      for(let j = 0; j <= nv; j++){
+        const id = j*(nu+1) + i;
+        const v = va2 + (vb2 - va2) * (j/nv);
+        U[id] = u; V[id] = v;
+        let m1 = 1e9, q = -1;
+        for(let k = 0; k < pts.length; k++){
+          const du = pts[k][0] - u, dv = pts[k][1] - v, dd = du*du + dv*dv;
+          if(dd < m1){ m1 = dd; q = k; }
+        }
+        dist[id] = Math.sqrt(m1); quem[id] = q;
       }
-      const id = j*(nu+1) + i;
-      dist[id] = Math.sqrt(m1); quem[id] = q;
     }
-    B.campo = {u0, w, v0, h, dist, quem};
+    B.campo = {ok, U, V, dist, quem};
     B.campoEm = agora;
     return B.campo;
   }
@@ -658,26 +701,22 @@ TO.diaJogo.festas = (function(){
     const pos = B.geo.attributes.position.array, uv = B.geo.attributes.uv.array;
     const cor = B.geo.attributes.color.array;
     const alt = ALT_MAO - 2;
-    /* abre do alambrado (v grande) pro fundo: a frente da abertura corre */
-    const vAbre = C.v0 + C.h * (1 - p);
     const dentro = new Float32Array((nu+1)*(nv+1));
     const altura = new Float32Array((nu+1)*(nv+1));
     for(let j = 0; j <= nv; j++){
-      const r = j / nv, v = C.v0 + C.h * r;
+      const r = j / nv;
+      /* abre do alambrado (r = 1) pro fundo: a parte ainda fechada fica
+         embolada na frente */
+      const aberto = Math.max(0, Math.min(1, (r - (1 - p)) / 0.08 + 1));
       for(let i = 0; i <= nu; i++){
-        const s2 = i / nu, u = C.u0 + C.w * s2;
+        const s2 = i / nu;
         const id = j*(nu+1) + i;
+        const u = C.U[id], v = C.V[id];
         const dmin = C.dist[id];
-        /* O FORMATO É QUADRADO (dono, 11/10/2026, desfazendo o recorte
-           pela mancha): o pano é o retângulo da torcida inteiro; a
-           distância até a mão só faz o relevo */
-        let k = 1;
-        /* a parte ainda não aberta fica embolada na frente */
-        const aberto = Math.max(0, Math.min(1, (v - vAbre) / 18 + 1));
-        k *= aberto;
-        dentro[id] = k;
-        /* o calombo da mão de quem segura (cada um no seu ritmo) e a
-           barriga entre dois, mais a onda que atravessa o pano */
+        /* coluna sem degrau não tem pano */
+        dentro[id] = C.ok[i] ? aberto : 0;
+        /* o calombo da mão de quem segura (cada um no seu ritmo), a
+           barriga entre dois e a onda que atravessa o pano */
         const fa = (C.quem[id] * 2.399) % 6.283;
         const mao = Math.exp(-dmin*dmin / 60) * (5 + 2.5*Math.sin(t*3.1 + fa));
         const barriga = -0.45 * Math.min(dmin, 9);
@@ -685,7 +724,7 @@ TO.diaJogo.festas = (function(){
         /* a beirada pende um pouco: ninguém segura a quina */
         const borda = Math.min(s2, 1 - s2, r, 1 - r);
         const cai = borda < 0.05 ? (0.05 - borda) * 90 : 0;
-        const hh = alt + mao + barriga + onda * (0.5 + 0.5*k) - cai;
+        const hh = alt + mao + barriga + onda - cai;
         altura[id] = hh;
         const q = ponto(S, u, v, hh);
         pos.set(q, id*3);
@@ -701,7 +740,7 @@ TO.diaJogo.festas = (function(){
       const luz = Math.max(0.45, Math.min(1.18, 0.9 + enc));
       cor[id*3] = cor[id*3+1] = cor[id*3+2] = luz;
     }
-    /* só os triângulos de dentro da mancha */
+    /* só os triângulos das colunas com degrau, na parte já aberta */
     const idx = [];
     for(let j = 0; j < nv; j++) for(let i = 0; i < nu; i++){
       const a = j*(nu+1) + i, b = a + 1, c = a + nu + 1, d = c + 1;
@@ -724,28 +763,104 @@ TO.diaJogo.festas = (function(){
      ponto onde ela APARECE (a altura sobe na tela pela câmera), pra
      nada sair visualmente da borda. */
   const TRAPO_ALT = 39, CISALHA_VISTA = 0.42;
-  function vaoDaTira(S, u){
+  /* OS ANÉIS DA ARQUIBANCADA. Na máscara do estádio, o anel de cima
+     (o de fora, com os vomitórios redondos) e o de baixo são separados
+     por uma linha fina de não-pisável, com falhas aqui e ali. Pra
+     separar os dois: engrossa o não-pisável em 2 células (fecha as
+     falhas da linha), rotula as regiões pisáveis que sobram e devolve o
+     rótulo a toda célula pisável original (a mais perto). O ANEL DE
+     CIMA é a região grande mais longe do meio da cena. Fica guardado
+     por cena. */
+  const aneis = {chave:null, rot:null, cima:-1};
+  function anelDeCima(){
     const A2 = A();
-    if(!A2 || !A2.caminhavel) return [S.v0, S.v1];
-    const passoV = 3, sobe = TRAPO_ALT * CISALHA_VISTA;
+    if(!A2 || !A2.celulaLivre) return null;
+    const chave = (A2.D && A2.D.id) + '|' + A2.COLS + 'x' + A2.ROWS;
+    if(aneis.chave === chave) return aneis;
+    const C2 = A2.COLS, R2 = A2.ROWS;
+    const livre = new Uint8Array(C2*R2);
+    for(let r = 0; r < R2; r++) for(let c = 0; c < C2; c++) livre[r*C2+c] = A2.celulaLivre(c, r) ? 1 : 0;
+    const E2 = 2;
+    const grosso = new Uint8Array(C2*R2);
+    for(let r = 0; r < R2; r++) for(let c = 0; c < C2; c++){
+      if(!livre[r*C2+c]) continue;
+      let ok = 1;
+      for(let dr = -E2; dr <= E2 && ok; dr++) for(let dc = -E2; dc <= E2; dc++){
+        const rr = r+dr, cc = c+dc;
+        if(rr < 0 || cc < 0 || rr >= R2 || cc >= C2 || !livre[rr*C2+cc]){ ok = 0; break; }
+      }
+      grosso[r*C2+c] = ok;
+    }
+    const rot = new Int32Array(C2*R2).fill(-1);
+    const regioes = [];
+    const fila = new Int32Array(C2*R2);
+    for(let i = 0; i < C2*R2; i++){
+      if(!grosso[i] || rot[i] >= 0) continue;
+      const id = regioes.length; let ini = 0, fim = 0, n = 0, sd = 0;
+      fila[fim++] = i; rot[i] = id;
+      while(ini < fim){
+        const k = fila[ini++]; n++;
+        const r = (k / C2) | 0, c = k % C2;
+        sd += Math.hypot(c - C2/2, r - R2/2);
+        for(const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const rr = r+dr, cc = c+dc;
+          if(rr < 0 || cc < 0 || rr >= R2 || cc >= C2) continue;
+          const kk = rr*C2+cc;
+          if(grosso[kk] && rot[kk] < 0){ rot[kk] = id; fila[fim++] = kk; }
+        }
+      }
+      regioes.push({n, dist: sd / n});
+    }
+    /* devolve o rótulo às células que o engrosso apagou (pela vizinha) */
+    let ini = 0, fim = 0;
+    for(let i = 0; i < C2*R2; i++) if(rot[i] >= 0) fila[fim++] = i;
+    while(ini < fim){
+      const k = fila[ini++];
+      const r = (k / C2) | 0, c = k % C2;
+      for(const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+        const rr = r+dr, cc = c+dc;
+        if(rr < 0 || cc < 0 || rr >= R2 || cc >= C2) continue;
+        const kk = rr*C2+cc;
+        if(livre[kk] && rot[kk] < 0){ rot[kk] = rot[k]; fila[fim++] = kk; }
+      }
+    }
+    let cima = -1, melhor = -1;
+    regioes.forEach((g, id) => { if(g.n >= 300 && g.dist > melhor){ melhor = g.dist; cima = id; } });
+    aneis.chave = chave; aneis.rot = rot; aneis.cima = cima; aneis.C = C2; aneis.CEL = A2.CEL;
+    return aneis;
+  }
+  /* o ponto (x, y) da cena está no anel de cima? */
+  function noAnelDeCima(x, y){
+    const N = anelDeCima();
+    const A2 = A();
+    if(!N || N.cima < 0) return A2 && A2.caminhavel ? A2.caminhavel(x, y) : true;
+    const c = Math.floor(x / N.CEL), r = Math.floor(y / N.CEL);
+    if(c < 0 || r < 0 || c >= N.C) return false;
+    return N.rot[r*N.C + c] === N.cima;
+  }
+
+  /* O ANEL DE CIMA (dono, 11/10/2026: "o trapo é somente na parte
+     superior, passando por cima do vomitório superior"). Pela linha `u`
+     (na direção do campo), o trecho do anel de cima, na posição em que
+     a coisa APARECE na tela (altura `alt` sobe 0,42 por unidade com a
+     câmera). O vomitório — buraco curto dentro do anel — é atravessado;
+     o corredor que separa do anel de baixo, não: do outro lado dele já
+     é outra região. */
+  function vaoNaLinha(S, u, alt){
+    const passoV = 3, sobe = alt * CISALHA_VISTA;
     const pisa = v => {
       const q = ponto(S, u, v, 0);
-      return A2.caminhavel(q[0], q[2] - sobe);
+      return noAnelDeCima(q[0], q[2] - sobe);
     };
-    /* o meio da torcida nessa linha: começa do miolo do setor */
     let meio = (S.v0 + S.v1) / 2;
     if(!pisa(meio)){
       let achou = false;
-      for(let dv = passoV; dv < (S.v1 - S.v0); dv += passoV){
-        if(pisa(meio + dv)){ meio += dv; achou = true; break; }
+      for(let dv = passoV; dv < (S.v1 - S.v0) + 120; dv += passoV){
         if(pisa(meio - dv)){ meio -= dv; achou = true; break; }
+        if(pisa(meio + dv)){ meio += dv; achou = true; break; }
       }
       if(!achou) return null;
     }
-    /* O VOMITÓRIO NÃO CORTA A TIRA (dono, 11/10/2026): um buraco curto
-       no meio do degrau (a boca de saída, a escada) é atravessado — a
-       tira passa por cima dele e só para na borda de verdade da
-       arquibancada, que é onde o pisável acaba de vez. */
     const VAO_MAX = 70;
     const estende = (x, dir) => {
       const LIM = 400;
@@ -759,9 +874,10 @@ TO.diaJogo.festas = (function(){
         x += dir*pulo;
       }
     };
-    const a = estende(meio, -1), b = estende(meio, 1);
-    return [a + 2, b - 2];
+    const a2 = estende(meio, -1), b2 = estende(meio, 1);
+    return [a2 + 2, b2 - 2];
   }
+  const vaoDaTira = (S, u) => vaoNaLinha(S, u, TRAPO_ALT);
   /* as três cores da torcida; torcida de duas ganha o branco (ou o
      preto, se o branco já é dela) como terceira, pra tira ter três faixas */
   function paletaDeTres(F){

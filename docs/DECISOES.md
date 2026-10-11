@@ -10038,6 +10038,33 @@ membros".
     Torcida de duas cores ganha o branco como terceira (ou o preto, se o
     branco já é dela).
 
+## Trapo e bandeirão só no anel de cima, com o bandeirão na curva (dono, 11/10/2026)
+
+Pedido: "o trapo é somente na parte superior, passando por cima do
+vomitório superior. O bandeirão precisa ser curvado pra seguir a linha
+natural da arquibancada; as pontas superiores saem fora dela, isso fica
+irreal".
+
+- **Os anéis** (`anelDeCima`, guardado por cena):
+  - Na máscara do estádio, o anel de cima e o de baixo são separados por
+    uma linha fina de não-pisável, cheia de falhas, e era por essas
+    falhas que a tira escorregava pro anel de baixo.
+  - O não-pisável é engrossado em 2 células, o que fecha as falhas. As
+    regiões que sobram são rotuladas e o rótulo volta pra toda célula
+    pisável.
+  - O anel de cima é a região grande mais longe do meio da cena.
+- **Trapos:**
+  - Correm só no anel de cima, do muro do fundo até a linha que o separa
+    do anel de baixo.
+  - Atravessam os vomitórios: buraco de até 70 dentro do mesmo anel.
+- **Bandeirão:**
+  - Cada coluna da largura da torcida mede o trecho do anel de cima.
+  - As bordas de fundo e de frente viram parábolas lisas (mínimos
+    quadrados, com uma passada que descarta quem foge demais).
+  - O pano corre entre as duas: curva com o anel na quina, sem degrau de
+    escada e sem ponta pra fora.
+  - O relevo das mãos, a barriga, a onda e a luz da dobra continuam.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
