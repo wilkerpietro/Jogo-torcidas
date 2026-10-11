@@ -1054,6 +1054,55 @@ TO.dados.cenas = (function(){
   });
 
   /* =======================================================
+     A SUBSEDE (dono, 11/10/2026: "preciso que as nossas subsedes também
+     sejam atacadas tanto pelas torcidas da praça como as demais subsedes
+     rivais da cidade"). A foto é do dono, no Flow (prompt em
+     img/cenas/PROMPT-SUBSEDE.md): a subsede sem telhado entre as casas da
+     rua, a porta de enrolar na fachada à esquerda, o pátio com as mesas
+     encostadas nas paredes e o corredor livre no meio, o balcão de granito
+     em L com o vão do lado esquerdo, o barzinho atrás com o telão do jogo.
+     Quem ataca desce da rua; o núcleo da subsede está no pátio e no
+     barzinho e só levanta quando o bonde chega na porta. A faixa fica na
+     frente do balcão.
+     ======================================================= */
+  const subsede = cenaDeFoto({
+    id:'subsede', nome:'Subsede', local:'Na subsede, com o jogo no telão',
+    saida:{perto:'Tomar a subsede', longe:'Balcão do bar (leve o líder)',
+           feito:'sua torcida tomou a subsede deles',
+           dica:'Leve o líder até o balcão do bar.'},
+    faixas:{visitante:{x:810, y:420, len:140, dir:[0,-1]}},
+    faixaAbrigo:{x:880, y:330, raio:40, rot:'BARZINHO'},
+    espalharBonde:'visitante',
+    semBocas:true, semMeio:true,
+    spawns:[
+      {id:'mandante1', rot:'1º ESCALÃO', lado:'mandante', x:1180, y:868,
+       jogador:true, entrada:'balcao'},
+      {id:'mandante2', rot:'2º ESCALÃO', lado:'mandante', x:1360, y:880,
+       entrada:'balcao'},
+      {id:'visitante1', rot:'NA PORTA', lado:'visitante', x:690, y:660,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante2', rot:'MEIO DO PÁTIO', lado:'visitante', x:770, y:560,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante3', rot:'MESAS DA ESQUERDA', lado:'visitante', x:700, y:470,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante4', rot:'MESAS DA DIREITA', lado:'visitante', x:840, y:470,
+       guarda:true, entrada:'fim_rua'},
+      {id:'visitante5', rot:'NO BARZINHO', lado:'visitante', x:780, y:335,
+       guarda:true, entrada:'fim_rua'}
+    ],
+    entradas:[
+      {id:'balcao', rot:'BALCÃO DO BAR', lado:'mandante', x:770, y:428, raio:50, dir:[0,-1]},
+      {id:'fim_rua', rot:'FIM DA RUA', lado:'visitante', x:40, y:870, raio:46, dir:[-1,0]}
+    ],
+    /* a porta de enrolar acorda a subsede */
+    gatilho:{x:670, y:740, raio:90, lado:'mandante', soZona:true,
+             rot:'PORTA DA SUBSEDE',
+             espera:'a subsede ainda não te viu',
+             aviso:'gritaram na porta — o núcleo inteiro veio pra cima'},
+    pmPostos:[{x:80, y:900}, {x:1470, y:900}]
+  });
+
+  /* =======================================================
      AS SEDES (fotos do dono: nível 1 em 10/09, 2 a 5 em 22/09/2026)
      Uma cena por nível de sede, sobre a foto de zênite do quarteirão
      sem telhado — o nível 6 usa a foto do 5. É NELAS que a reunião
@@ -1146,7 +1195,7 @@ TO.dados.cenas = (function(){
   }
 
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre, ...lojas,
-                 bar, comercio, ct, 'casa-piscina':casaPiscina, ...sedes,
+                 bar, comercio, ct, 'casa-piscina':casaPiscina, subsede, ...sedes,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,
                  'emb-posto':embPosto, 'emb-onibus':embOnibus,
@@ -1201,6 +1250,7 @@ TO.dados.cenas = (function(){
     comercio:      [[20,512],[1516,512]],
     ct:            [[20,860],[1516,860]],
     'casa-piscina':[[20,750],[1516,750]],
+    subsede:       [[20,870],[1516,870]],
     'sede-1':      [[20,780],[1516,780]],
     'sede-2':      [[20,816],[1516,816]],
     'sede-3':      [[20,820],[1516,820]],

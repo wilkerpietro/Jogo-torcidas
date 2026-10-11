@@ -156,6 +156,30 @@ FONTES = [
      'recorte': [(0.00, 0.69, 1.00, 0.93),
                  (0.19, 0.225, 0.815, 0.695)]},
 
+    # ---- A SUBSEDE (foto do dono no Flow, 11/10/2026, prompt em
+    #      img/cenas/PROMPT-SUBSEDE.md): 2576x1438, o lote sem telhado no
+    #      meio, a rua no quarto de baixo. Medidas em pixel da TELA (a foto
+    #      encaixada: faixa de 83 px em cima e embaixo). O chao vem da cor
+    #      dentro do recorte; a rua, a porta de enrolar (a faixa cinza da
+    #      porta enrolada, na fachada a esquerda), o vao do balcao e o
+    #      barzinho sao abertos por decreto; as mesas e os surdos, que sao
+    #      claros como o piso, saem pelo `excluir`.
+    {'id': 'subsede', 'arquivo': 'subsede.jpg', 'saida': 'subsede.webp',
+     'sementes': [TS(768, 870), TS(150, 870), TS(1380, 870), TS(770, 560)],
+     'recorte': [TL(0, 723, 1536, 938),        # a calcada e a rua
+                 TL(579, 698, 761, 732),       # a porta de enrolar
+                 TL(571, 410, 966, 708),       # o patio
+                 TL(615, 372, 656, 416),       # o vao do balcao
+                 TL(584, 292, 957, 376)],      # o barzinho
+     'excluir': [TL(565, 429, 663, 521), TL(565, 535, 663, 600),
+                 TL(565, 608, 663, 704),       # as tres mesas da esquerda
+                 TL(877, 429, 971, 502), TL(877, 537, 971, 610),
+                 TL(884, 637, 973, 710),       # as duas da direita e os surdos
+                 TL(584, 292, 957, 300)],      # a prateleira e a geladeira
+     'abrir': [TL(0, 723, 1536, 938), TL(579, 698, 761, 732),
+               TL(663, 410, 877, 708), TL(571, 410, 966, 428),
+               TL(615, 372, 656, 416), TL(584, 302, 957, 376)]},
+
     # ---- lote de 19/08 (pedido do dono): tretas, emboscadas, CT e
     #      os tres estadios por capacidade -------------------------------
     # 5x5: a viela entre os quintais — corredor apertado de ponta a ponta

@@ -6466,7 +6466,8 @@ TO.feed = (function(){
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
     'emb-posto':'no posto', 'emb-onibus':'na estrada',
-    'casa-piscina':'na casa de piscina', 'praca-reuniao':'na praça'
+    'casa-piscina':'na casa de piscina', 'praca-reuniao':'na praça',
+    subsede:'na subsede'
   };
   /* os valores ficam em português (cabeBairro compara com eles);
      a frase sai traduzida daqui */

@@ -64,6 +64,9 @@ TO.diaJogo.bancada = (function(){
        valer no jogo. `faixaDefensor:'eles'` estende a peça deles. */
     {id:'casa-piscina', rot:'Casa de piscina', titulo:'Resenha na casa de piscina',
      cfg:{intencao:'atacar', bombas:0, efetivoRival:20, faixaDefensor:'eles'}},
+    /* a subsede (foto do dono, 11/10/2026) */
+    {id:'subsede', rot:'Subsede', titulo:'Ataque à subsede',
+     cfg:{intencao:'atacar', bombas:0, efetivoRival:14, faixaDefensor:'eles'}},
     /* A REUNIÃO DA DIRETORIA NO PÁTIO DA SEDE (dono, 22/09/2026): uma
        aba por nível de sede, com a diretoria sentada em C no pátio e o
        presidente em pé à direita — sem briga. A escalação de mentira é

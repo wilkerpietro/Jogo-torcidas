@@ -3777,7 +3777,7 @@ TO.diaJogo.combate = (function(){
      fecha com a faixa ainda no muro e o lado dela derrotado sem
      ninguém de pé: tomada também.
      ======================================================= */
-  const CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina)/;
+  const CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina|subsede)/;
   /* FAIXA_AFASTA: o portador tenta ficar a pelo menos isto de qualquer inimigo */
   const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180, FAIXA_AFASTA = 200;
   /* O QUE CADA CENA EXPÕE (pedido do dono, 09/09/2026): no bar, bandeira
