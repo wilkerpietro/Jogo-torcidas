@@ -1929,21 +1929,39 @@ TO.feed = (function(){
       if((H(`fsug|${f.cidade}|${sa}`) % 7) + 1 !== E.data.dia) continue;
       const nucleo = TO.membros.aptosDaFilial(E, f.cidade);
       if(nucleo.length < 6) continue;
-      const alvo = M().torcidasEm(f.cidade)
-        .filter(o=>o.id !== E.torcida.id && !o.incompleta &&
-                   !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&
-                   TO.relacoes.nivel(E, o.id) <= -15)
-        .sort((a,b)=>TO.relacoes.nivel(E,a.id) - TO.relacoes.nivel(E,b.id))[0];
-      if(!alvo) continue;
+      /* O ALVO: o bar de uma torcida da praça ou — desde 11/10/2026 (dono:
+         "nossa subsede vai poder atacar outras subsedes? Sim, na mesma
+         frequência das sugestões de hoje") — a SUBSEDE de uma torcida de
+         fora que também tem filial naquela cidade, na cena da subsede,
+         contra o núcleo dela. Os dois no mesmo balde, pela pior relação;
+         o hash da semana escolhe entre as três piores. */
+      const hostil = o => o && o.id !== E.torcida.id && !o.incompleta &&
+        !(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) &&
+        !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) &&
+        TO.relacoes.nivel(E, o.id) <= -15;
+      const balde = M().torcidasEm(f.cidade).filter(hostil).map(o => ({o, tipo:'bar'}));
+      const mt = E.mundoTorcidas || {};
+      for(const o of M().jogaveis()){
+        if(o.mapa === f.cidade || !hostil(o)) continue;
+        const fl = ((mt[o.id] || {}).filiais || []).find(x => x.cidade === f.cidade);
+        if(fl && (fl.membros || 0) >= 4) balde.push({o, tipo:'subsede', membros:fl.membros});
+      }
+      if(!balde.length) continue;
+      balde.sort((a, b) => TO.relacoes.nivel(E, a.o.id) - TO.relacoes.nivel(E, b.o.id));
+      const esc = balde[H(`fsug|${f.cidade}|${sa}|alvo`) % Math.min(3, balde.length)];
+      const alvo = esc.o, naSubsede = esc.tipo === 'subsede';
       const cid = TO.financeiro.nomeCidade(f.cidade);
       /* o bairro da subsede naquela cidade (o mesmo do fecho, 02/10/2026) */
-      const pvF = previaDaBriga(E, {torcidaId:alvo.id, atacamos:true, local:{cena:'bar', bairro:cid}});
+      const pvF = previaDaBriga(E, {torcidaId:alvo.id, atacamos:true, local:{cena:naSubsede ? 'subsede' : 'bar', bairro:cid}});
       propor(E, {
         kind:'filial-ataque', peso:'decisao', voz:'olheiro', tipo:'ruim',
         chave:`fsug|${f.cidade}|${sa}`,
-        texto:_t('Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou o bar da {nome}. São {n} dos nossos na cidade. Manda descer?',
-                 {cidade:cid, nome:alvo.nome, n:nucleo.length}) + noBairro(pvF),
-        dados:{cidade:f.cidade, rival:alvo.id},
+        texto:(naSubsede
+          ? _t('Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou a subsede da {nome} aqui na cidade. São {n} dos nossos contra uns {m} deles. Manda descer?',
+               {cidade:cid, nome:alvo.nome, n:nucleo.length, m:esc.membros})
+          : _t('Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou o bar da {nome}. São {n} dos nossos na cidade. Manda descer?',
+               {cidade:cid, nome:alvo.nome, n:nucleo.length})) + noBairro(pvF),
+        dados:{cidade:f.cidade, rival:alvo.id, tipo:esc.tipo},
         botoes:[{id:'desce',  rot:_t('Atacar'), acao:'filial-ataque', nota:pvF.linha || undefined},
                 {id:'quieto', rot:_t('Não atacar'), acao:'nada'}]});
     }
@@ -6794,15 +6812,26 @@ TO.feed = (function(){
           m.consequencia = _t('Não rolou: o núcleo de lá não tem gente de pé.');
           return {ok:true};
         }
+        /* a subsede rival (11/10/2026): quem está lá é o núcleo dela */
+        const naSubsede = d.tipo === 'subsede';
+        const fl = naSubsede ? (((E.mundoTorcidas || {})[rival.id] || {}).filiais || []).find(x => x.cidade === d.cidade) : null;
+        if(naSubsede && !fl){
+          marcar(_t('Atacar — não rolou'));
+          m.consequencia = _t('Não rolou: a subsede deles fechou as portas.');
+          return {ok:true};
+        }
         const ef = TO.acoes.efetivoDePe(E, rival) || 30;
-        const defensores = Math.min(40, Math.max(4, Math.round(ef * 0.35)));
+        const defensores = naSubsede ? Math.max(4, Math.round(fl.membros || 4))
+                                     : Math.min(40, Math.max(4, Math.round(ef * 0.35)));
+        const cena = naSubsede ? 'subsede' : 'bar';
+        const cid = TO.financeiro.nomeCidade(d.cidade);
         marcar();
         return {ok:true, abrir:{tela:'cena-acao', args:{cena:{
-          cena:'bar', acao:'atacar',
+          cena, acao:'atacar',
           escalacao: nucleo, efetivoRival: defensores,
-          alvo:{torcidaId:rival.id, nome:rival.nome, deQuem:rival.nome,
-                tipo:'bar', cena:'bar',
-                bairro:TO.financeiro.nomeCidade(d.cidade),
+          alvo:{torcidaId:rival.id, nome: naSubsede ? `${rival.nome} Sub-Sede ${cid}` : rival.nome, deQuem:rival.nome,
+                tipo: naSubsede ? 'subsede' : 'bar', cena,
+                bairro:cid,
                 nossos:nucleo.length, efetivo:defensores}}}}};
       }
 
@@ -7166,7 +7195,7 @@ TO.feed = (function(){
     return {ok:true};
   }
 
-  return {_filialDeHoje: filialDeHoje, _quemAtacaASubsede: quemAtacaASubsede, INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
+  return {_filialSugestaoDeHoje: filialSugestaoDeHoje, _filialDeHoje: filialDeHoje, _quemAtacaASubsede: quemAtacaASubsede, INTERVALO_DROP, tbtDaSemana, lembrancasDe, anotarLazer, lazerDeOntem,
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,

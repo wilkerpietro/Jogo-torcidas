@@ -1131,5 +1131,7 @@ TO.i18n.registrar({
   "LUTAR E VENCER": {es:"LUCHAR Y VENCER", en:"FIGHT AND WIN"},
   "Invadiram a nossa subsede de {cidade}! A {nome} tá na porta, e lá só tem o nosso núcleo.": {es:"¡Invadieron nuestra filial de {cidade}! La {nome} está en la puerta, y allí solo está nuestro núcleo.", en:"They stormed our {cidade} chapter house! {nome} are at the door, and only our local crew is there."},
   "Segurar a subsede": {es:"Aguantar la filial", en:"Hold the chapter house"},
-  "Largar a subsede": {es:"Abandonar la filial", en:"Give up the chapter house"}
+  "Largar a subsede": {es:"Abandonar la filial", en:"Give up the chapter house"},
+  "Chefe, o pessoal da nossa Sub-Sede {cidade} mapeou a subsede da {nome} aqui na cidade. São {n} dos nossos contra uns {m} deles. Manda descer?": {es:"Jefe, la gente de nuestra filial de {cidade} ubicó la filial de la {nome} aquí en la ciudad. Somos {n} de los nuestros contra unos {m} de ellos. ¿Bajamos?", en:"Boss, our {cidade} chapter crew found where {nome}'s chapter house is in town. It's {n} of ours against about {m} of theirs. Should we go?"},
+  "Não rolou: a subsede deles fechou as portas.": {es:"No se dio: su filial cerró las puertas.", en:"Didn't happen: their chapter house shut its doors."}
 });

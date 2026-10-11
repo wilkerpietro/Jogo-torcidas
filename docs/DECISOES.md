@@ -10370,6 +10370,21 @@ da praça como as demais subsedes rivais da cidade."
   Eles vêm: a subsede rival com o núcleo dela; a torcida da praça com
   0,9 a 1,5 do nosso núcleo, até 40 e até metade da torcida dela.
 
+## A nossa subsede ataca a subsede rival (dono, 11/10/2026)
+
+"Nossa subsede vai poder atacar outras subsedes?" — "Sim, na mesma
+frequência das sugestões de hoje."
+- A sugestão do olheiro da filial (`filialSugestaoDeHoje`, uma a cada 12
+  semanas por filial) passa a escolher num balde só: o bar de uma
+  torcida da praça OU a subsede de uma torcida de fora que também tem
+  filial naquela cidade (núcleo de 4+). Fora irmã, trégua e relação acima
+  de −15; o hash da semana sorteia entre as três piores relações.
+- Texto da subsede: "o pessoal da nossa Sub-Sede {cidade} mapeou a subsede
+  da {nome} aqui na cidade. São {n} dos nossos contra uns {m} deles."
+- No Atacar (`filial-ataque`, `dados.tipo:'subsede'`): a cena `subsede`,
+  o nosso núcleo descendo da rua, o núcleo deles (os membros da filial
+  dela) defendendo. Se a subsede deles sumiu, "não rolou".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
