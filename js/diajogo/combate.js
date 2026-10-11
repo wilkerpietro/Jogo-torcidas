@@ -821,7 +821,16 @@ TO.diaJogo.combate = (function(){
         s.lado, s, p.x, p.y, lider);
       if(m){
         d.membroId=m.id;
-        d.forca=m.forca; d.defesa=m.defesa; d.moral=m.moral;
+        d.forca=m.forca; d.defesa=m.defesa;
+        /* A MORAL É DA TORCIDA (conserto de 11/10/2026): a de membro
+           morreu em 24/08 e o campo da ficha ficou parado em 12 — o
+           nosso bonde atendia o "chamar" sempre com 12, enquanto o
+           rival usava a moral viva da torcida dele. Agora os dois
+           lados saem da mesma régua: moral da torcida ±3. */
+        const Em = TO.estado && TO.estado.E;
+        d.moral = Em && Em.indicadores
+          ? U.limitar(Math.round(Em.indicadores.moral) + U.inteiro(-3,3), 1, 20)
+          : m.moral;
         /* defesa vira resistência: quem apanha melhor cai depois */
         d.hpMax = 90 + m.defesa*7;
         d.hp=d.hpMax;

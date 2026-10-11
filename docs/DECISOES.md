@@ -9881,6 +9881,28 @@ respectivo país, a Sul-Americana e a Libertadores."
   - A Libertadores e a Sul-Americana do nosso clube, que também moram na
     temporada, ficam só no bloco do continente.
 
+## A moral na caravana da IA e a sobra da moral de membro na briga (dono, 11/10/2026)
+
+Pergunta: "a moral da torcida está influenciando a quantidade de membros
+nas caravanas das torcidas IA?"
+
+- **Está.** `caravanaDe` usa `E.mundoTorcidas[id].moral`, a moral da
+  torcida (0–20), na mesma fórmula da nossa:
+  `vontade = 0,72 − 0,09 × trechos + 0,4 × moral/20`, limitada entre 0,08
+  e 0,95, e depois × 0,6 (o redutor do visitante).
+- Medido com a Torcida Jovem do Grêmio (140 disponíveis):
+  - até Manaus, de 15 membros com moral 0 a 49 com moral 20;
+  - até São Paulo, de 38 a 71.
+- Perto de casa a vontade bate no teto de 0,95 a partir da moral 12, e
+  daí em diante a moral não muda mais o número.
+- **Sobra achada e consertada:** na cena de briga, o "chamar" do bonde lê
+  a moral de cada disco.
+  - O rival já usava a moral viva da torcida dele (±3).
+  - O nosso usava o campo `moral` da ficha do membro. Esse campo ficou
+    parado em 12 desde que a moral de membro foi extinta (24/08).
+  - Agora o nosso disco também nasce da moral da torcida
+    (`E.indicadores.moral` ±3, entre 1 e 20).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
