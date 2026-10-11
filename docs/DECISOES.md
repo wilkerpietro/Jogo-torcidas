@@ -10281,6 +10281,16 @@ pouca gente não forma letra miúda.
 - Torcida pequena: o nome dela vira a sigla da torcida (com o escudo); as
   frases do time ficam só as que cabem — na prática, a sigla do clube.
 
+## Frase do mosaico menor e com as letras afastadas (dono, 11/10/2026)
+
+"Faça a frase ocupar um espaço um pouco menor no mosaico pra ser melhor
+vista, dê mais espaçamento entre as letras."
+- A frase toma 78% da largura e 66% da altura da sua área
+  (`FRASE_LARG`, `FRASE_ALT`), com margem de papel de fundo em volta.
+- As letras são desenhadas uma a uma com um vão de 22% do tamanho da
+  letra entre elas (`FRASE_VAO`): com um papel por cabeça, letra
+  encostada vira borrão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

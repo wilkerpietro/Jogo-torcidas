@@ -259,6 +259,13 @@ TO.diaJogo.festas = (function(){
   /* o texto no maior tamanho que cabe na caixa (x, y, W, H), em uma ou
      duas linhas, engrossado: um traço da cor da letra por baixo e o
      contorno largo na cor de fora */
+  /* (dono, 11/10/2026: "a frase ocupar um espaço um pouco menor no
+     mosaico pra ser melhor vista, e mais espaçamento entre as letras")
+     A frase toma `FRASE_LARG` da largura e `FRASE_ALT` da altura, com
+     uma margem de papel de fundo em volta; entre uma letra e outra fica
+     um vão de `FRASE_VAO` do tamanho da letra — com um papel por cabeça,
+     letra encostada vira borrão. */
+  const FRASE_LARG = 0.78, FRASE_ALT = 0.66, FRASE_VAO = 0.22;
   function escreverFrase(c, x, y, W, H, txt, cor, contorno){
     const palavras = txt.split(/\s+/);
     const opcoes = [[txt]];
@@ -271,32 +278,42 @@ TO.diaJogo.festas = (function(){
       }
       opcoes.push(melhor.l);
     }
+    /* a largura da linha letra a letra, com o vão entre elas */
+    const largLinha = (l, px) => {
+      const cs = [...l];
+      return cs.reduce((s2, ch) => s2 + c.measureText(ch).width, 0) + px * FRASE_VAO * (cs.length - 1);
+    };
     let melhor = null;
     for(const linhas of opcoes){
-      let px = Math.floor(H * 1.0 / linhas.length);
+      let px = Math.floor(H * FRASE_ALT / linhas.length);
       c.font = fonteFrase(px);
-      const larg = () => Math.max(...linhas.map(l => c.measureText(l).width));
-      while(px > 8 && larg() > W * 0.94){ px--; c.font = fonteFrase(px); }
+      const larg = () => Math.max(...linhas.map(l => largLinha(l, px)));
+      while(px > 8 && larg() > W * FRASE_LARG){ px--; c.font = fonteFrase(px); }
       if(!melhor || px > melhor.px) melhor = {px, linhas};
     }
     const px = melhor.px;
     c.font = fonteFrase(px);
-    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.textAlign = 'left'; c.textBaseline = 'middle';
     c.lineJoin = 'round';
-    const n = melhor.linhas.length, passo = px * 0.9;
+    const n = melhor.linhas.length, passo = px * 1.0;
     /* a letra universitária é larga: estica na vertical pra frase tomar
-       a altura do mosaico (é assim que se monta na arquibancada) */
-    const estica = Math.max(1, Math.min(2.4, H * 0.84 / (n * passo)));
+       a altura reservada pra ela (é assim que se monta na arquibancada) */
+    const estica = Math.max(1, Math.min(2.2, H * FRASE_ALT / (n * passo)));
     c.save();
     c.translate(x + W/2, y + H/2); c.scale(1, estica);
     melhor.linhas.forEach((l, i) => {
       const yy = (i - (n - 1)/2) * passo + px * 0.04;
-      if(contorno){ c.lineWidth = px * 0.11; c.strokeStyle = contorno; c.strokeText(l, 0, yy); }
-      c.lineWidth = px * 0.05; c.strokeStyle = cor; c.strokeText(l, 0, yy);
-      c.fillStyle = cor; c.fillText(l, 0, yy);
+      let xx = -largLinha(l, px) / 2;
+      for(const ch of l){
+        if(contorno){ c.lineWidth = px * 0.11; c.strokeStyle = contorno; c.strokeText(ch, xx, yy); }
+        c.lineWidth = px * 0.05; c.strokeStyle = cor; c.strokeText(ch, xx, yy);
+        c.fillStyle = cor; c.fillText(ch, xx, yy);
+        xx += c.measureText(ch).width + px * FRASE_VAO;
+      }
     });
     c.restore();
   }
+
   /* A ARTE DO MOSAICO de escudo ou frase, no tamanho do setor. Embaixo
      dela vai uma tira com as cores da torcida: o papel que cai FORA do
      escudo pega a cor da listra dele ali (o fundo listrado, na régua do
