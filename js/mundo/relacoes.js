@@ -1436,6 +1436,7 @@ TO.relacoes = (function(){
         M().torcidasEm(j.mapaAdv).filter(o=>o.id !== E.torcida.id && !o.incompleta).map(o=>o.id),
         id => nivel(E, id)).map(id => M().torcida(id)));
       for(const o of daPraca){
+        if(desistiu(E, o.id, E.torcida.id)) continue;
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         if(emTregua(E, o.id)) continue;
         if(desistiu(E, o.id, E.torcida.id)) continue;
@@ -1464,6 +1465,38 @@ TO.relacoes = (function(){
                        TO.patrimonio.temFilialEm(E, j.mapaAdv))});
         fora.push({id:o.id, torcida:o.nome, alvo:alvo.id, dia});
         break;
+      }
+      /* A SUBSEDE RIVAL NA PRAÇA DELES (dono, 11/10/2026): torcida de fora
+         com filial na cidade do jogo também pode cair na nossa
+         concentração ou na pista, com o núcleo dela — se ele chega perto
+         da nossa caravana (70% dela, ou mais) */
+      if(!fora.length && TO.planejamento.subsedesHostisNaPraca){
+        const nomeCid = FIN().nomeCidade ? FIN().nomeCidade(j.mapaAdv) : j.mapaAdv;
+        for(const s of TO.planejamento.subsedesHostisNaPraca(E, j.mapaAdv)){
+          if(s.membros < crew * 0.7) continue;
+          const r = s.relacao, t = (E.mundoTorcidas||{})[s.id];
+          const cobra = !!dividaIA(E, s.id, E.torcida.id);
+          const chance = ((QUENTE - r)/(100 + QUENTE)) * 0.18 * brigaDe(t)
+                         * (cobra ? COBRANCA_MULT : FREIO_BRIGA * pesoDoRival(E, E.torcida.id, s.id));
+          if(U.rng() > chance) continue;
+          const sorteio = [];
+          for(const a of ALVOS) for(let i=0;i<a.peso;i++) sorteio.push(a);
+          const alvo = U.escolher(sorteio);
+          const dia = j.dia || 6;
+          const nome = `${s.torcida.nome} Sub-Sede ${nomeCid}`;
+          E.ataqueMarcado = {torcida:s.id, nome, alvo:alvo.id, cena:alvo.cena, mapa:j.mapaAdv,
+                             efetivo:s.membros, filial:true,
+                             ano:E.data.ano, semana:E.data.semana, dia, cobranca: cobra};
+          hostilidade(E, s.id, REL.ataqueMarcado);
+          if(TO.feed && TO.feed.avisoDoOlheiro)
+            TO.feed.avisoDoOlheiro(E, {
+              chave:`atqf|${E.data.ano}|${E.data.semana}|${s.id}|fora`,
+              alvo:alvo.id, nome, cidade:j.cidadeAdv || '', cobranca: cobra,
+              forcar: !!(TO.patrimonio && TO.patrimonio.temFilialEm &&
+                         TO.patrimonio.temFilialEm(E, j.mapaAdv))});
+          fora.push({id:s.id, torcida:nome, alvo:alvo.id, dia, filial:true});
+          break;
+        }
       }
     }
     return fora;

@@ -10407,6 +10407,26 @@ surge a necessidade de comprar outra faixa."
   dropdown). A da IA volta sozinha em 4 semanas. Quem toma guarda o pano
   com o dizer da subsede (variante no troféu).
 
+## A subsede rival ataca a caravana no itinerário (dono, 11/10/2026)
+
+"As subsedes também podem me atacar no itinerário de jogo, se a
+quantidade for equivalente ou próxima à minha. Se eu vou com 30 pra Porto
+Alegre e a Mancha Verde tem uma subsede lá, ela pode me atacar com seus
+40."
+- `planejamento.subsedesHostisNaPraca(E, cidade)`: torcidas de fora com
+  filial na cidade (núcleo de 6+), hostis (−15 pra baixo), fora irmã,
+  trégua e quem desistiu (as três tentativas).
+- A EMBOSCADA DA ROTA (cada praça da ida e da volta, inclusive a chegada
+  na cidade do jogo): `hostisNaPraca` põe essas subsedes no mesmo balde
+  das torcidas da praça, se o núcleo chega a 70% da nossa caravana (a
+  régua de sempre; maior, pode à vontade). A emboscada sai com o nome
+  "{Torcida} Sub-Sede {Cidade}" e o efetivo é o núcleo dela.
+- A CONCENTRAÇÃO E A PISTA DO JOGO FORA: sem ataque das torcidas da
+  praça, a subsede rival da cidade do jogo também pode cair, pela mesma
+  régua de 70% e com a chance das sub-sedes (0,18 × a relação).
+- Medido: Mancha Verde com 40 na subsede de Porto Alegre entra no balde
+  com a nossa caravana de 30; com 70, fica de fora.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

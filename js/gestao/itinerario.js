@@ -218,6 +218,8 @@ TO.itinerario = (function(){
                           abrir:{tela:'defesa', atq:{
                             torcida:emb.torcida, nome:emb.nome,
                             alvo:'emboscada', cena:emb.cena,
+                            /* a subsede rival vem com o núcleo dela (11/10/2026) */
+                            filial:!!emb.filial, efetivo:emb.efetivo,
                             /* a emboscada é na entrada desta praça (02/10/2026) */
                             mapa:c, chave:`emb|${c}|ida`}}}];
             /* a campana do olheiro fareja a pista (dono, 24/08/2026):
@@ -278,6 +280,8 @@ TO.itinerario = (function(){
                           abrir:{tela:'defesa', atq:{
                             torcida:emb.torcida, nome:emb.nome,
                             alvo:'emboscada', cena:emb.cena,
+                            /* a subsede rival vem com o núcleo dela (11/10/2026) */
+                            filial:!!emb.filial, efetivo:emb.efetivo,
                             mapa:c, chave:`emb|${c}|volta`}}}];
             if(TO.feed && TO.feed.avisoDoOlheiro)
               TO.feed.avisoDoOlheiro(E, {

@@ -1530,7 +1530,32 @@ TO.planejamento = (function(){
       if(viva < crew * 0.7) continue;
       fora.push({id:o.id, torcida:o, relacao:rel});
     }
+    /* AS SUBSEDES RIVAIS NA PRAÇA (dono, 11/10/2026: "as subsedes também
+       podem me atacar no itinerário de jogo, se a quantidade for
+       equivalente ou próxima à minha — se eu vou com 30 pra Porto Alegre
+       e a Mancha Verde tem uma subsede lá, ela pode me atacar com seus
+       40"): torcida de fora com filial nesta cidade entra no mesmo balde,
+       com o núcleo dela — e só se ele chega perto do nosso bonde (a régua
+       de 70% de sempre; maior, pode à vontade) */
+    for(const s of subsedesHostisNaPraca(E, cidadeId))
+      if(s.membros >= crew * 0.7 && !fora.some(x => x.id === s.id)) fora.push(s);
     return fora.sort((a,b)=>a.relacao-b.relacao || (a.id<b.id?-1:1));
+  }
+  /* as subsedes de torcidas de fora numa cidade, hostis a nós */
+  function subsedesHostisNaPraca(E, cidadeId){
+    const fora = [], mt = E.mundoTorcidas || {};
+    for(const o of M().jogaveis()){
+      if(o.incompleta || o.id === E.torcida.id || o.mapa === cidadeId) continue;
+      if(M().saoIrmas(E.torcida.id, o.id)) continue;
+      const rel = TO.relacoes.nivel(E, o.id);
+      if(rel > -15) continue;
+      if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) continue;
+      if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, o.id, E.torcida.id)) continue;
+      const f = ((mt[o.id] || {}).filiais || []).find(x => x.cidade === cidadeId);
+      if(!f || (f.membros || 0) < 6) continue;
+      fora.push({id:o.id, torcida:o, relacao:rel, filial:true, membros:Math.round(f.membros)});
+    }
+    return fora;
   }
 
   /* A EMBOSCADA DAQUELA PRAÇA, na ida ou na volta.
@@ -1559,7 +1584,9 @@ TO.planejamento = (function(){
       chance = chance/2;
     if((H(chave+'|dado') % 100) >= chance) return null;
     const cid = M().cidade(cidadeId);
-    return {torcida:alvo.id, nome:alvo.torcida.nome,
+    return {torcida:alvo.id,
+            nome: alvo.filial ? `${alvo.torcida.nome} Sub-Sede ${cid ? cid.nome : ''}`.trim() : alvo.torcida.nome,
+            filial: !!alvo.filial, efetivo: alvo.filial ? alvo.membros : undefined,
             cidade: cid ? cid.nome : '', relacao:alvo.relacao,
             /* os dois cenários do dono pra estrada */
             cena: H(chave+'|cena') % 2 ? 'emb-posto' : 'emb-onibus'};
@@ -1625,7 +1652,7 @@ TO.planejamento = (function(){
           aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial,
           RECEPCAO, recepcaoDe, custoRecepcao,
-          emboscadaDaRota, emboscadaNaPraca, hostisNaPraca,
+          emboscadaDaRota, emboscadaNaPraca, hostisNaPraca, subsedesHostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
           compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};
 })();
