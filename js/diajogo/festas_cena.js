@@ -71,6 +71,7 @@ TO.diaJogo.festas = (function(){
       nome: String(o.nome || '').toUpperCase(), sigla: TO.mundo.siglaTorcida ? TO.mundo.siglaTorcida(o) : '',
       /* escudo ou só as cores, sorteado pelo jogo (dono: "aleatório") */
       modoMosaico: (opc.semente != null ? Math.abs(opc.semente) % 2 : (Math.random() < .5 ? 0 : 1)) === 0 ? 'escudo' : 'cores',
+      oriListras: (opc.semente != null ? Math.floor(Math.abs(opc.semente) / 2) % 2 : (Math.random() < .5 ? 0 : 1)) === 0 ? 'vertical' : 'horizontal',
       janelas:{
         trapos:    tem('trapos')    ? [0, Infinity] : null,
         /* O 3D VEM COM O PAPEL NA MÃO E A CHUVA (dono, 11/10/2026: "no
@@ -159,19 +160,6 @@ TO.diaJogo.festas = (function(){
   /* 0 na frente do setor (lado do campo), 1 no fundo */
   const profundidade = (S, v) => S.v1 > S.v0 ? (S.v1 - v) / (S.v1 - S.v0) : 0.5;
 
-  /* listras diagonais revezando as cores da lista (torcida tricolor
-     tem as três: a fonte, de duas, repete a segunda e vira bicolor) */
-  function listras(c, W, H, cores){
-    c.fillStyle = cores[0]; c.fillRect(0, 0, W, H);
-    const passo = W / 4;
-    let i = 0;
-    for(let k = -W; k < W*2; k += passo, i++){
-      c.fillStyle = cores[i % cores.length];
-      c.beginPath();
-      c.moveTo(k, 0); c.lineTo(k + passo + 1, 0); c.lineTo(k + passo + 1 - H*0.6, H); c.lineTo(k - H*0.6, H);
-      c.closePath(); c.fill();
-    }
-  }
   /* uma cor da torcida ao acaso (papel picado): as três, se tiver */
   const umaCor = F => { const p = coresDistintas(F.paleta); return p[Math.floor(Math.random() * p.length)]; };
   /* as cores DISTINTAS da paleta, na ordem (a terceira some se repete) */
@@ -189,11 +177,56 @@ TO.diaJogo.festas = (function(){
      vez quando o papel sobe (o setor quase não mexe no jogo assistido).
      Cada papel mostra o SEU pedaço dela — a soma dos papéis é o escudo
      ou as listras, com a fresta entre um e outro que todo mosaico tem. */
+  /* AS LISTRAS DO MOSAICO (dono, 11/10/2026): "listras mais finas, na
+     orientação vertical ou horizontal em relação ao campo, numa estrutura
+     similar à dos trapos"; "no caso do Fortaleza pode ser só três listras
+     verticais, tipo a bandeira da França, ou horizontais, tipo a da
+     Holanda". Cada papel é de UMA cor, e a cor sai de onde o membro está
+     em relação ao gramado, com a mesma régua dos trapos:
+       · VERTICAL: a posição "de lado" (lat) — a faixa corre do fundo do
+         anel até a beira do campo, como um trapo;
+       · HORIZONTAL: a distância até o campo — a faixa acompanha a curva
+         da arquibancada, paralela à linha do gramado.
+     Tricolor: três faixas largas, uma por cor, com o mesmo tanto de gente
+     em cada. Bicolor: listras finas revezando as duas. A orientação é
+     sorteada pelo jogo. */
+  const LISTRA_FINA = 26;
+  function paletaDoMosaico(F){
+    const cores = coresDistintas(F.paleta);
+    const cv = document.createElement('canvas');
+    cv.width = 8 * cores.length; cv.height = 8;
+    const c = cv.getContext('2d');
+    cores.forEach((cor, i) => { c.fillStyle = cor; c.fillRect(i*8, 0, 8, 8); });
+    cv.porDisco = true; cv.cores = cores;
+    return cv;
+  }
+  function listrasDoCampo(F, S){
+    const L = F._listras;
+    if(L && L.n === S.nossos.length && S.nossos.every(d => d._cm != null)) return;
+    const n = coresDistintas(F.paleta).length;
+    const G = geometriaDoCampo(S);
+    const vertical = F.oriListras === 'vertical';
+    const val = vertical
+      ? G.lat.map(r => (r - G.a0) / ((G.a1 - G.a0) || 1) * G.largura)
+      : G.prof.slice();
+    if(n >= 3){
+      const ordem = val.map((x, i) => [x, i]).sort((p, q) => p[0] - q[0]);
+      ordem.forEach(([, i], k) => { S.nossos[i]._cm = Math.min(n - 1, Math.floor(k * 3 / ordem.length)); });
+    } else {
+      const m = Math.min(...val);
+      val.forEach((x, i) => { S.nossos[i]._cm = Math.floor((x - m) / LISTRA_FINA) % n; });
+    }
+    F._listras = {n: S.nossos.length};
+  }
   function arteDoMosaico(F, S){
     const w = S.u1 - S.u0, h = S.v1 - S.v0;
     const pronta = F.arteM && Math.abs(F.arteM.ww - w) < w*0.15 && Math.abs(F.arteM.hh - h) < h*0.15 &&
                    !(F.arteM.semEscudo && F.escudo && F.escudo._ok);
     if(pronta) return F.arteM;
+    if(F.modoMosaico !== 'escudo' || !F.escudo || F.escudo._erro){
+      if(F.arteM && F.arteM.porDisco) return F.arteM;
+      return (F.arteM = paletaDoMosaico(F));
+    }
     const k = 2;
     const cv = document.createElement('canvas');
     cv.width = Math.max(8, Math.round(w*k)); cv.height = Math.max(8, Math.round(h*k));
@@ -202,7 +235,7 @@ TO.diaJogo.festas = (function(){
     const [a, b, d] = F.paleta;
     const esc = F.escudo;
     cv.semEscudo = false;
-    if(F.modoMosaico === 'escudo' && esc && !esc._erro){
+    {
       c.fillStyle = a; c.fillRect(0, 0, W, H);
       /* um aro na segunda cor em volta do escudo, pra ele saltar do fundo */
       const r = Math.min(W, H) * 0.47;
@@ -216,21 +249,6 @@ TO.diaJogo.festas = (function(){
         const s2 = Math.min(r*1.7/iw, r*1.7/ih);
         c.drawImage(esc, W/2 - iw*s2/2, H/2 - ih*s2/2, iw*s2, ih*s2);
       } else cv.semEscudo = true;
-    } else {
-      /* TODAS as cores da torcida no desenho (dono, 11/10/2026: o do
-         Fortaleza saía só azul e branco). Tricolor reveza as três */
-      const tipo = String(F.nome).length % 3;
-      const todas = coresDistintas([a, b, d]);
-      if(tipo === 0) listras(c, W, H, todas);
-      else if(tipo === 1){
-        c.fillStyle = a; c.fillRect(0, 0, W, H);
-        c.fillStyle = b; c.fillRect(0, H*0.33, W, H*0.34);
-        c.fillStyle = d; c.fillRect(0, H*0.45, W, H*0.10);
-      } else {
-        /* cinco faixas: a b d b a (bicolor fica a b a b a) */
-        const seq = todas.length >= 3 ? [a, b, d, b, a] : [a, b, a, b, a];
-        for(let i = 0; i < 5; i++){ c.fillStyle = seq[i]; c.fillRect(0, i*H/5, W, H/5 + 1); }
-      }
     }
     cv.ww = w; cv.hh = h; cv.k = k; cv.u0 = S.u0; cv.v0 = S.v0;
     F.arteM = cv;
@@ -241,6 +259,7 @@ TO.diaJogo.festas = (function(){
     const [a, b] = F.janelas.mosaico;
     if(t < a || t > b) return;
     const arte = arteDoMosaico(F, S);
+    if(arte.porDisco) listrasDoCampo(F, S);
     const k = arte.k;
     const CW = 19, CH = 17;
     c.save(); noSetor(c, S);
@@ -251,9 +270,14 @@ TO.diaJogo.festas = (function(){
       const p = suave(fase(t, a + atraso, b - 0.9 + atraso, 0.35, 0.35));
       if(p <= 0) continue;
       const ch = CH * p;
-      const sx = (d._u - CW/2 - arte.u0) * k, sy = (d._v - CH/2 - arte.v0) * k;
-      c.drawImage(arte, Math.max(0, sx), Math.max(0, sy), CW*k, CH*k,
-                  d._u - CW/2, d._v - ch/2, CW, ch);
+      if(arte.porDisco){
+        c.fillStyle = arte.cores[d._cm || 0];
+        c.fillRect(d._u - CW/2, d._v - ch/2, CW, ch);
+      } else {
+        const sx = (d._u - CW/2 - arte.u0) * k, sy = (d._v - CH/2 - arte.v0) * k;
+        c.drawImage(arte, Math.max(0, sx), Math.max(0, sy), CW*k, CH*k,
+                    d._u - CW/2, d._v - ch/2, CW, ch);
+      }
       c.fillStyle = 'rgba(0,0,0,.16)';
       c.fillRect(d._u - CW/2, d._v + ch/2 - 1, CW, 1);
     }
@@ -587,6 +611,7 @@ TO.diaJogo.festas = (function(){
     }
     const M = P.mosaico;
     if(M.arte !== arte){ M.tx.dispose(); M.tx = textura(arte); M.mesh.material.map = M.tx; M.mesh.material.needsUpdate = true; M.arte = arte; }
+    if(arte.porDisco) listrasDoCampo(F, S);
     const pos = M.geo.attributes.position.array, uv = M.geo.attributes.uv.array;
     const W = S.u1 - S.u0, H = S.v1 - S.v0;
     const CW = 17.5, CH = 15.5, INCL = 0.35;     // o papel inclinado pro campo
@@ -607,8 +632,13 @@ TO.diaJogo.festas = (function(){
         /* a borda da frente (v+) mais baixa: o papel olha pro campo e pro alto */
         const q = ponto(S, du + ou, dv + ov, h - ov * INCL);
         pos.set(q, (n*4 + k)*3);
-        const uu = (du + ou - S.u0) / W, vv = (dv + ov - S.v0) / H;
-        uv[(n*4 + k)*2] = uu; uv[(n*4 + k)*2 + 1] = 1 - vv;
+        if(arte.porDisco){
+          /* um papel, uma cor: o meio do quadradinho dela na paleta */
+          uv[(n*4 + k)*2] = ((d._cm || 0) + 0.5) / arte.cores.length; uv[(n*4 + k)*2 + 1] = 0.5;
+        } else {
+          const uu = (du + ou - S.u0) / W, vv = (dv + ov - S.v0) / H;
+          uv[(n*4 + k)*2] = uu; uv[(n*4 + k)*2 + 1] = 1 - vv;
+        }
       }
       n++;
     }
@@ -996,7 +1026,10 @@ TO.diaJogo.festas = (function(){
      Coordenada de PÉ da cena, conferida no ponto em que a tira aparece
      na tela (a altura sobe 0,42 por unidade). */
   const TRAPO_L = 16;
-  function linhasDosTrapos(J, S){
+  /* O CAMPO VISTO DA TORCIDA: a direção pro gramado em cada ponto e a
+     posição "de lado" de cada membro (lat, com a largura que a torcida
+     ocupa). Serve aos trapos e às listras do mosaico. */
+  function geometriaDoCampo(S){
     const W = (A() && A().W) || 1536, H = (A() && A().H) || 1024;
     const N = anelDeCima();
     const D = A() && A().D;
@@ -1062,6 +1095,18 @@ TO.diaJogo.festas = (function(){
       }
     }
     const a0 = Math.min(...lat), a1 = Math.max(...lat);
+    /* a distância de cada membro até o campo, no sentido da tira */
+    const prof = pes.map(([x, y]) => {
+      if(modo === 'reto') return -(x*reto[0] + y*reto[1]);
+      const q = modo === 'arco' ? [ccx, ccy] : maisPerto(x, y);
+      return Math.hypot(q[0] - x, q[1] - y);
+    });
+    return {N, D, modo, ccx, ccy, reto, maisPerto, direcao, pes, lat, largura, a0, a1, prof};
+  }
+
+  function linhasDosTrapos(J, S){
+    const G = geometriaDoCampo(S);
+    const {N, pes, lat, largura, a0, a1, direcao} = G;
     const n = Math.max(2, Math.floor(largura / 34));
     const bases = [];
     for(let k = 0; k < n; k++){

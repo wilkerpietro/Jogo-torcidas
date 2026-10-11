@@ -10218,6 +10218,24 @@ duas primeiras cores da paleta. Agora:
 Torcida de duas cores continua de duas: a terceira só entra se for de
 verdade (`coresDistintas` descarta a repetida).
 
+## Listras do mosaico em relação ao campo (dono, 11/10/2026)
+
+"Listras mais finas e na orientação vertical ou horizontal em relação ao
+campo, numa estrutura similar ao que construímos nos trapos"; "no caso
+do Fortaleza pode ser só três listras verticais tipo a bandeira da
+França ou horizontais tipo a da Holanda".
+- O mosaico de "só cores" deixou de ser uma arte desenhada no retângulo
+  do setor: cada papel é de UMA cor, escolhida por onde o membro está em
+  relação ao gramado (`listrasDoCampo`).
+- A régua é a mesma dos trapos (`geometriaDoCampo`, separada de
+  `linhasDosTrapos`): VERTICAL usa a posição de lado (a faixa corre do
+  fundo do anel até a beira do campo, como um trapo); HORIZONTAL usa a
+  distância até o campo (a faixa acompanha a curva da arquibancada).
+- Tricolor: três faixas largas, uma por cor, com o mesmo tanto de gente
+  em cada (França/Holanda). Bicolor: listras finas (26) revezando.
+- A orientação é sorteada pelo jogo (`oriListras`); o modo escudo não
+  mudou.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
