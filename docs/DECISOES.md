@@ -10185,6 +10185,27 @@ média 1,1 no ranking. Eram dois defeitos.
     8,3 e o topo em 11,5.
   - Força Alviverde: ranking 6,1, lista 6,0. Cearamor: 9,4 e 9,3.
 
+## Lotação nova das sedes, treino na esquina e festa mais barata nas grandes (dono, 11/10/2026)
+
+| Sede | Membros (antes → agora) | Treino/dia | Festa (antes → agora) |
+|---|---|---|---|
+| 0 (ponto de encontro) | 30 → 30 | 0 → **1** | — |
+| 1 | 50 → **60** | 2 | R$ 170 |
+| 2 | 90 → **100** | 4 | R$ 300 |
+| 3 | 150 → **160** | 8 | R$ 500 |
+| 4 | 200 → **220** | 12 | R$ 700 → **R$ 600** |
+| 5 | 500 → **380** | 20 | R$ 1.700 → **R$ 1.100** |
+| 6 (Complexo) | 700 → **550** | 30 | R$ 2.600 → **R$ 1.500** |
+
+- **Treino na esquina:** o ponto de encontro treina 1 por dia, pra
+  torcida pequena não ficar só enferrujando. Vale pras IAs também, pela
+  mesma tabela.
+- **Preço da festa:** de 4 pra cima, a festa se paga com ~60% do salão
+  a R$ 4,80 por cabeça (220 × 0,6 × 4,8 ≈ 630; 380 → 1.095; 550 →
+  1.585), arredondado pra baixo. As IAs pagam o mesmo preço.
+- **Lotação menor nas sedes 5 e 6:** quem já tem mais gente que a
+  lotação nova não perde ninguém; só para de crescer até caber.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

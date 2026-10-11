@@ -114,16 +114,19 @@ TO.membros = (function(){
   const SEDE = [
     /* O NÍVEL 0 É O PONTO DE ENCONTRO (decisão do dono, 22/09/2026): a
        torcida pequena (até 30 na fonte) começa sem sede — a esquina não
-       cabe mais de 30, não treina ninguém, não custa nada. A primeira
+       cabe mais de 30, treina um por dia, não custa nada. A primeira
        sede é uma obra (patrimonio.SEDE[1]). */
-    {membros:30,  diretoria:2,  treino:0},
-    {membros:50,  diretoria:2,  treino:2},
-    {membros:90,  diretoria:4,  treino:4},
-    {membros:150, diretoria:6,  treino:8},
-    {membros:200, diretoria:10, treino:12},
-    {membros:500, diretoria:15, treino:20},
+    /* LOTAÇÃO NOVA (dono, 11/10/2026): 30/60/100/160/220/380/550, e a
+       esquina passa a treinar 1 — sem isso a torcida pequena só
+       enferrujava */
+    {membros:30,  diretoria:2,  treino:1},
+    {membros:60,  diretoria:2,  treino:2},
+    {membros:100, diretoria:4,  treino:4},
+    {membros:160, diretoria:6,  treino:8},
+    {membros:220, diretoria:10, treino:12},
+    {membros:380, diretoria:15, treino:20},
     /* o COMPLEXO (sede nível 6, régua do dono, 02/09/2026) */
-    {membros:700, diretoria:20, treino:30}
+    {membros:550, diretoria:20, treino:30}
   ];
 
   /* ferido volta em 5 a 15 dias, sorteado na hora (decisão do dono,

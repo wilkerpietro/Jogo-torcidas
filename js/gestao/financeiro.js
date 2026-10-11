@@ -29,7 +29,11 @@ TO.financeiro = (function(){
      por cabeça) paga o custo. Sede nível 4 continua nos R$ 700
      de sempre: o que mudou foi embaixo, não o que já existia.
      ======================================================= */
-  const FESTA = [null, 170, 300, 500, 700, 1700, 2600];
+  /* AS SEDES GRANDES BARATEARAM (dono, 11/10/2026), junto com a lotação
+     nova (60/100/160/220/380/550): de 4 pra cima a festa se paga com
+     ~60% do salão a R$ 4,80 — 220 × 0,6 × 4,8 ≈ 630, 380 → 1.095,
+     550 → 1.585 —, arredondado pra baixo. Era 700, 1.700 e 2.600. */
+  const FESTA = [null, 170, 300, 500, 600, 1100, 1500];
   /* quanta gente a festa deste nível precisa pra se pagar */
   const pisoDaFesta = nivel => Math.ceil((FESTA[nivel] || 700)/4.8);
 

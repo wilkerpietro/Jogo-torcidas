@@ -863,8 +863,8 @@ TO.acoes = (function(){
     {
       id:'festa', nome:_t('Festa na sede'), icone:'copo', cena:_t('Sede'),
       /* O PREÇO SEGUE O TAMANHO DO SALÃO (régua do dono, 20/08/2026):
-         R$ 170 na sede 1 e R$ 1.700 na 5, com os R$ 700 de sempre na
-         sede 4. Por isso custo e efeito são função de E, não número
+         R$ 170 na sede 1, e de 4 pra cima R$ 600/1.100/1.500 (dono,
+         11/10/2026). Por isso custo e efeito são função de E, não número
          fixo — quem lê a linha da ação lê o preço da NOSSA sede. */
       efeito: E => _t('custa {valor}; rende R$ 4,80–6,40 por presente — lucra com ~{n} disponíveis',
         {valor:U.dinheiro(custoFesta(E)), n:TO.financeiro.pisoDaFesta(nivelDaSede(E))}),
