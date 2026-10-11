@@ -711,7 +711,15 @@ TO.diaJogo.festas = (function(){
       for(let i = 0; i <= nu; i++){
         const s2 = i / nu;
         const id = j*(nu+1) + i;
-        const u = C.U[id], v = C.V[id];
+        /* O PANO ANDA (dono, 11/10/2026: "o escudo deve se mover junto"):
+           além de subir e descer, o tecido corre de lado e pra frente —
+           um balanço geral do pano inteiro e ondas que atravessam ele —
+           e como a textura vai presa no vértice, o escudo anda e se
+           deforma com o pano */
+        const u0b = C.U[id], v0b = C.V[id];
+        const balanco = Math.sin(t * 0.9) * 6, vai = Math.sin(t * 0.7 + 1.3) * 4;
+        const u = u0b + balanco + 5*Math.sin(t*1.9 - v0b*0.05 + u0b*0.012) * Math.sin(Math.PI*s2);
+        const v = v0b + vai + 4*Math.sin(t*1.6 + u0b*0.04 - v0b*0.01) * Math.sin(Math.PI*r);
         const dmin = C.dist[id];
         /* coluna sem degrau não tem pano */
         dentro[id] = C.ok[i] ? aberto : 0;
@@ -720,7 +728,8 @@ TO.diaJogo.festas = (function(){
         const fa = (C.quem[id] * 2.399) % 6.283;
         const mao = Math.exp(-dmin*dmin / 60) * (5 + 2.5*Math.sin(t*3.1 + fa));
         const barriga = -0.45 * Math.min(dmin, 9);
-        const onda = 4.2*Math.sin(t*2.2 - v*0.045 + u*0.02) + 1.6*Math.sin(t*3.6 + u*0.06 - v*0.03);
+        /* a onda grande correndo do alambrado pro fundo, e a miúda */
+        const onda = 6.5*Math.sin(t*2.0 - v*0.05 + u*0.015) + 1.8*Math.sin(t*3.6 + u*0.06 - v*0.03);
         /* a beirada pende um pouco: ninguém segura a quina */
         const borda = Math.min(s2, 1 - s2, r, 1 - r);
         const cai = borda < 0.05 ? (0.05 - borda) * 90 : 0;
@@ -1012,84 +1021,103 @@ TO.diaJogo.festas = (function(){
     if(M.mesh.instanceColor) M.mesh.instanceColor.needsUpdate = true;
   }
 
-  /* ---------- o mosaico 3D: a bandeira gigante de pé, de frente pro campo ---------- */
+  /* ---------- o mosaico 3D: içado da arquibancada até ficar de pé ----------
+     (dono, 11/10/2026, com as fotos do Bart da TUF: "surge num movimento
+     de baixo pra cima"). A bandeira nasce DEITADA sobre a torcida, com a
+     barra de baixo presa no meio do setor, e as cordas lá do alto vão
+     puxando a barra de cima: o pano gira em torno da barra de baixo até
+     ficar de pé (~60° do chão), de frente pro campo. Enquanto sobe ele
+     balança de lado e faz barriga; em pé, só o vento. Na saída desce
+     do mesmo jeito. */
+  function cilindroEntre(m, a, b){
+    const dx = b[0]-a[0], dy = b[1]-a[1], dz = b[2]-a[2];
+    const L = Math.hypot(dx, dy, dz) || 1;
+    m.position.set((a[0]+b[0])/2, (a[1]+b[1])/2, (a[2]+b[2])/2);
+    m.scale.set(1, L, 1);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(dx/L, dy/L, dz/L));
+  }
   function mosaico3d3(F, S, t){
     const P = g3.partes;
     const jan = F.janelas.mosaico3d;
     if(!jan) return;
-    const p = suave(fase(t, jan[0], jan[1], 1.8, 1.4));
+    /* a subida é mais lenta que a descida: puxar dá trabalho */
+    const p = fase(t, jan[0], jan[1], 3.2, 1.8);
     const SW = S.u1 - S.u0, SD = S.v1 - S.v0;
     const w = Math.max(90, SW * 0.9);
     const h = Math.max(80, Math.min(SD * 0.9, w * 0.85, 190));
     if(!P.m3d){
       const arte = arte3D(F, w, h);
       const tx = textura(arte);
-      const geo = grade(24, 16);
+      const geo = grade(24, 18);
       const mesh = new THREE.Mesh(geo, lambert({map:tx}));
       mesh.frustumCulled = false;
-      /* os dois mastros e a travessa que seguram no alto */
-      const mm = new THREE.MeshLambertMaterial({color:0x2a2a2a});
-      const mastros = [0, 1].map(() => {
-        const c = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 1, 6), mm);
+      /* as cordas que sobem do pano até o alto do estádio */
+      const cm = new THREE.MeshLambertMaterial({color:0x2a2a2a});
+      const cordas = [0, 1, 2].map(() => {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1, 5), cm);
         c.frustumCulled = false; g3.raiz.add(c); return c;
       });
-      const rolo = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 1, 10), lambert({color:F.paleta[0]}));
-      rolo.frustumCulled = false;
-      g3.raiz.add(mesh); g3.raiz.add(rolo);
-      P.m3d = {mesh, geo, tx, mastros, rolo, w, h};
+      g3.raiz.add(mesh);
+      P.m3d = {mesh, geo, tx, cordas, w, h};
     }
     const M = P.m3d;
-    /* o escudo chega depois: a arte é refeita e a textura troca */
     const arteAgora = arte3D(F, M.w, M.h);
     if(M.mesh.material.map.image !== arteAgora){
       M.tx.dispose(); M.tx = textura(arteAgora);
       M.mesh.material.map = M.tx; M.mesh.material.needsUpdate = true;
     }
     const vivo = p > 0;
-    M.mesh.visible = M.rolo.visible = vivo; M.mastros.forEach(m => m.visible = vivo);
+    M.mesh.visible = vivo; M.cordas.forEach(c => c.visible = vivo);
     if(!vivo) return;
-    /* EM PÉ, INCLINADA NO DEGRAU: a barra de baixo no meio do setor, a
-       de cima mais alta e mais pro fundo (a arquibancada sobe pra trás).
-       De frente pro campo: a base olha o gramado e o topo, a última
-       fileira — como no 2D, legível de quem está no campo. */
-    const INC = 1.05;                         // ~60° do chão
+    const ergue = suave(p);
+    /* o ângulo do pano com o chão: deitado (0,08) até em pé (~60°) */
+    const INC = 1.05, ang = 0.55 + (INC - 0.55) * ergue;
     const uC = (S.u0 + S.u1) / 2;
-    const vBaixo = S.v0 + SD * 0.42, hBaixo = ALT_MAO + 6;
-    const topoV = vBaixo - M.h * Math.cos(INC), topoH = hBaixo + M.h * Math.sin(INC);
-    /* desenrola de cima: o topo preso nos mastros, o rolo descendo */
+    /* a barra de baixo, presa na mão da torcida no meio do setor */
+    const vBaixo = S.v0 + SD * 0.62, hBaixo = ALT_MAO + 2;
+    /* deitado, o pano vai pro FUNDO (v menor) por cima das cabeças; em
+       pé, sobe pro alto. Balanço de lado e barriga enquanto sobe. */
+    const agita = Math.sin(Math.PI * Math.min(1, ergue));
+    const rolo = 0.10 * agita * Math.sin(t * 2.3);           // tomba de lado
     const pos = M.geo.attributes.position.array, uv = M.geo.attributes.uv.array;
     const nu = M.geo.nu, nv = M.geo.nv;
+    /* SURGE DE BAIXO PRA CIMA, como o Bart da TUF: as cordas puxam o
+       TOPO da arte primeiro — a cabeça sai do meio da torcida — e o
+       resto vai saindo atrás; a parte que ainda não subiu fica embolada
+       na barra, por baixo das cabeças. `ergue` é quanto da arte já saiu. */
+    const pontoDoPano = (s2, r) => {
+      /* r = 0 no topo da arte, 1 na barra de baixo */
+      const fora = r <= ergue;
+      const d = fora ? (ergue - r) * M.h : 0;
+      const uL = -M.w/2 + s2 * M.w;
+      /* o tombo de lado: a ponta de cima corre pro lado */
+      const u = uC + uL + rolo * d;
+      /* barriga do pano enquanto é puxado, mais no meio e no alto */
+      const bar = (6 * agita + 1.6) * Math.sin(Math.PI * s2) * Math.sin(Math.PI * (1 - r)) *
+                  (0.7 + 0.3 * Math.sin(t * 2.7 + s2 * 4));
+      const v = vBaixo - d * Math.cos(ang) + (fora ? bar * Math.sin(ang) : 0);
+      /* o que ainda não subiu fica embolado embaixo das cabeças */
+      const hh = fora ? hBaixo + d * Math.sin(ang) + bar * Math.cos(ang) * 0.4
+                      : hBaixo - 14 - (r - ergue) * 8;
+      return ponto(S, u, v, hh);
+    };
     for(let j = 0; j <= nv; j++){
-      const r = (j / nv) * p;                 // 0 no topo, p na barra que desce
+      const r = j / nv;
       for(let i = 0; i <= nu; i++){
         const s2 = i / nu;
-        const u = uC - M.w/2 + s2 * M.w;
-        const v = topoV + (vBaixo - topoV) * r;
-        const hh = topoH + (hBaixo - topoH) * r;
-        /* o vento empurra o pano pra frente e pra trás, de leve */
-        const vento = 2.2 * Math.sin(t*1.5 + s2*5 + r*3) * Math.sin(Math.PI*r);
-        const q = ponto(S, u, v + vento, hh);
         const k = j*(nu+1) + i;
-        pos.set(q, k*3);
+        pos.set(pontoDoPano(s2, r), k*3);
         uv[k*2] = s2; uv[k*2+1] = 1 - r;
       }
     }
     M.geo.attributes.position.needsUpdate = true; M.geo.attributes.uv.needsUpdate = true;
     M.geo.computeVertexNormals();
-    /* o rolo na barra de baixo enquanto desenrola */
-    const rb = ponto(S, uC, topoV + (vBaixo - topoV) * p, topoH + (hBaixo - topoH) * p);
-    M.rolo.visible = p < 0.995;
-    M.rolo.position.set(rb[0], rb[1], rb[2]);
-    M.rolo.scale.set(1, M.w + 6, 1);
-    M.rolo.rotation.set(0, 0, 0);
-    /* o cilindro nasce em pé (eixo y): deita ao longo de R */
-    M.rolo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(S.R[0], 0, S.R[1]));
-    /* os mastros: do chão do fundo até acima do topo */
-    [-1, 1].forEach((lado, k) => {
-      const mp = ponto(S, uC + lado * (M.w/2 + 2), topoV, 0);
-      const alto = topoH + 10;
-      M.mastros[k].position.set(mp[0], alto/2, mp[2]);
-      M.mastros[k].scale.set(1, alto, 1);
+    /* as cordas: das pontas e do meio da barra de cima até o alto,
+       atrás da última fileira */
+    [0, 0.5, 1].forEach((s2, k) => {
+      const a = pontoDoPano(s2, 0);
+      const b = ponto(S, uC - M.w/2 + s2 * M.w, S.v0 - 30, hBaixo + M.h * Math.sin(INC) + 60);
+      cilindroEntre(M.cordas[k], a, b);
     });
   }
 

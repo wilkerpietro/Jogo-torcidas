@@ -10065,6 +10065,30 @@ irreal".
     escada e sem ponta pra fora.
   - O relevo das mãos, a barriga, a onda e a luz da dobra continuam.
 
+## O mosaico 3D sobe da torcida e o bandeirão anda (dono, 11/10/2026)
+
+Pedido, com fotos do Bart da TUF e de bandeirões: "o mosaico 3D surge
+num movimento de baixo pra cima; o bandeirão também aparece em
+movimento, e o escudo deve se mover junto pra dar uma impressão mais
+realista".
+
+- **Mosaico 3D:**
+  - A barra de baixo fica presa na mão da torcida, no meio do setor.
+  - Cordas lá do alto, atrás da última fileira, puxam o topo da arte
+    primeiro: a cabeça do desenho sai do meio da torcida e o resto vai
+    saindo atrás.
+  - A parte que ainda não subiu fica embolada por baixo das cabeças.
+  - Enquanto sobe, o pano passa de inclinado a de pé (~60°), tomba de
+    lado e faz barriga. De pé, só o vento.
+  - A subida leva 3,2 s e a descida 1,8 s. Os mastros saíram e entraram
+    as três cordas.
+- **Bandeirão:**
+  - Além de subir e descer, o pano corre de lado e pra frente: um balanço
+    do pano inteiro e ondas que o atravessam.
+  - A textura vai presa nos vértices, então o escudo anda e se deforma
+    com o tecido.
+  - A onda grande corre do alambrado pro fundo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
