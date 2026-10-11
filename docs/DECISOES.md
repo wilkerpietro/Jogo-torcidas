@@ -10206,6 +10206,18 @@ média 1,1 no ranking. Eram dois defeitos.
 - **Lotação menor nas sedes 5 e 6:** quem já tem mais gente que a
   lotação nova não perde ninguém; só para de crescer até caber.
 
+## Mosaico e papel picado com as três cores (dono, 11/10/2026)
+
+"Mosaico da torcida do Fortaleza tá só de duas cores." Os desenhos de
+"só cores" do mosaico (listras diagonais e cinco faixas) usavam só as
+duas primeiras cores da paleta. Agora:
+- as listras revezam todas as cores distintas da torcida;
+- as cinco faixas ficam a·b·c·b·a na tricolor (a·b·a·b·a na bicolor);
+- no modo escudo, a tricolor ganha um anel da terceira cor por fora do aro;
+- o papel picado e os raios do bandeirão sorteiam entre as três.
+Torcida de duas cores continua de duas: a terceira só entra se for de
+verdade (`coresDistintas` descarta a repetida).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

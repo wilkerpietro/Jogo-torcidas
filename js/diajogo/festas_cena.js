@@ -159,16 +159,23 @@ TO.diaJogo.festas = (function(){
   /* 0 na frente do setor (lado do campo), 1 no fundo */
   const profundidade = (S, v) => S.v1 > S.v0 ? (S.v1 - v) / (S.v1 - S.v0) : 0.5;
 
-  function listras(c, W, H, a, b){
-    c.fillStyle = a; c.fillRect(0, 0, W, H);
-    c.fillStyle = b;
+  /* listras diagonais revezando as cores da lista (torcida tricolor
+     tem as três: a fonte, de duas, repete a segunda e vira bicolor) */
+  function listras(c, W, H, cores){
+    c.fillStyle = cores[0]; c.fillRect(0, 0, W, H);
     const passo = W / 4;
-    for(let k = -W; k < W*2; k += passo*2){
+    let i = 0;
+    for(let k = -W; k < W*2; k += passo, i++){
+      c.fillStyle = cores[i % cores.length];
       c.beginPath();
-      c.moveTo(k, 0); c.lineTo(k + passo, 0); c.lineTo(k + passo - H*0.6, H); c.lineTo(k - H*0.6, H);
+      c.moveTo(k, 0); c.lineTo(k + passo + 1, 0); c.lineTo(k + passo + 1 - H*0.6, H); c.lineTo(k - H*0.6, H);
       c.closePath(); c.fill();
     }
   }
+  /* uma cor da torcida ao acaso (papel picado): as três, se tiver */
+  const umaCor = F => { const p = coresDistintas(F.paleta); return p[Math.floor(Math.random() * p.length)]; };
+  /* as cores DISTINTAS da paleta, na ordem (a terceira some se repete) */
+  const coresDistintas = p => p.filter((x, i) => p.findIndex(y => String(y).toLowerCase() === String(x).toLowerCase()) === i);
   /* ---------- as cinco festas ---------- */
   const fase = (t, a, b, sobe, desce) => {
     if(t < a || t > b) return 0;
@@ -199,6 +206,10 @@ TO.diaJogo.festas = (function(){
       c.fillStyle = a; c.fillRect(0, 0, W, H);
       /* um aro na segunda cor em volta do escudo, pra ele saltar do fundo */
       const r = Math.min(W, H) * 0.47;
+      /* tricolor: a terceira cor faz um anel por fora do aro */
+      if(coresDistintas([a, b, d]).length >= 3){
+        c.beginPath(); c.arc(W/2, H/2, r*1.12, 0, Math.PI*2); c.fillStyle = d; c.fill();
+      }
       c.beginPath(); c.arc(W/2, H/2, r, 0, Math.PI*2); c.fillStyle = b; c.fill();
       if(esc._ok){
         const iw = esc.naturalWidth || 1, ih = esc.naturalHeight || 1;
@@ -206,14 +217,19 @@ TO.diaJogo.festas = (function(){
         c.drawImage(esc, W/2 - iw*s2/2, H/2 - ih*s2/2, iw*s2, ih*s2);
       } else cv.semEscudo = true;
     } else {
+      /* TODAS as cores da torcida no desenho (dono, 11/10/2026: o do
+         Fortaleza saía só azul e branco). Tricolor reveza as três */
       const tipo = String(F.nome).length % 3;
-      if(tipo === 0) listras(c, W, H, a, b);
+      const todas = coresDistintas([a, b, d]);
+      if(tipo === 0) listras(c, W, H, todas);
       else if(tipo === 1){
         c.fillStyle = a; c.fillRect(0, 0, W, H);
         c.fillStyle = b; c.fillRect(0, H*0.33, W, H*0.34);
         c.fillStyle = d; c.fillRect(0, H*0.45, W, H*0.10);
       } else {
-        for(let i = 0; i < 5; i++){ c.fillStyle = i % 2 ? b : a; c.fillRect(0, i*H/5, W, H/5 + 1); }
+        /* cinco faixas: a b d b a (bicolor fica a b a b a) */
+        const seq = todas.length >= 3 ? [a, b, d, b, a] : [a, b, a, b, a];
+        for(let i = 0; i < 5; i++){ c.fillStyle = seq[i]; c.fillRect(0, i*H/5, W, H/5 + 1); }
       }
     }
     cv.ww = w; cv.hh = h; cv.k = k; cv.u0 = S.u0; cv.v0 = S.v0;
@@ -265,7 +281,7 @@ TO.diaJogo.festas = (function(){
       const su = u0 + s0 * w, sw = w / N + 0.6;
       const sv = vBase - hh + onda;
       if(ban) c.drawImage(ban, s0 * iw, 0, iw / N + 0.5, ih, su, sv, sw, hh);
-      else { c.fillStyle = i % 6 < 3 ? F.paleta[0] : F.paleta[1]; c.fillRect(su, sv, sw, hh); }
+      else { c.fillStyle = coresDistintas(F.paleta)[Math.floor(i / 3) % coresDistintas(F.paleta).length]; c.fillRect(su, sv, sw, hh); }
       /* luz e sombra da dobra */
       const luz = Math.sin(t * 4.2 + i * 0.55 + 1.2);
       c.fillStyle = luz > 0 ? `rgba(255,255,255,${0.12 * luz})` : `rgba(0,0,0,${-0.22 * luz})`;
@@ -317,7 +333,7 @@ TO.diaJogo.festas = (function(){
             z: 40 + Math.random() * 70,
             vz: 14 + Math.random() * 12,
             fase: Math.random() * 6.28,
-            cor: Math.random() < 0.18 ? '#ffffff' : F.paleta[Math.random() < 0.5 ? 0 : 1],
+            cor: Math.random() < 0.18 ? '#ffffff' : umaCor(F),
             chao: null
           });
         }
@@ -354,13 +370,14 @@ TO.diaJogo.festas = (function(){
     const c = cv.getContext('2d');
     const W = cv.width, H = cv.height;
     const [a, b, d] = F.paleta;
-    /* o fundo: raios saindo do centro, nas duas cores */
+    /* o fundo: raios saindo do centro, revezando as cores da torcida */
     c.fillStyle = a; c.fillRect(0, 0, W, H);
     c.save(); c.translate(W/2, H*0.45);
     for(let i = 0; i < 16; i++){
       c.rotate(Math.PI / 8);
       c.beginPath(); c.moveTo(0, 0); c.lineTo(W, -W*0.12); c.lineTo(W, W*0.12); c.closePath();
-      c.fillStyle = i % 2 ? b : a; c.globalAlpha = 0.55; c.fill();
+      const raio = coresDistintas([a, b, d]);
+      c.fillStyle = raio[i % raio.length]; c.globalAlpha = 0.55; c.fill();
     }
     c.restore(); c.globalAlpha = 1;
     /* o escudo grande no meio */
@@ -1185,7 +1202,7 @@ TO.diaJogo.festas = (function(){
           F.papel.push({x:q[0], z:q[2], h:ALT_MAO + 20 + Math.random()*70, vh:16 + Math.random()*12,
                         rx:Math.random()*6, ry:Math.random()*6, wx:3 + Math.random()*6, wy:2 + Math.random()*5,
                         fase:Math.random()*6.28, chao:null,
-                        cor: Math.random() < 0.2 ? '#ffffff' : F.paleta[Math.random() < 0.5 ? 0 : 1]});
+                        cor: Math.random() < 0.2 ? '#ffffff' : umaCor(F)});
         }
       }
     }
