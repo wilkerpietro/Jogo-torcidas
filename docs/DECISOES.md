@@ -10089,6 +10089,42 @@ realista".
     com o tecido.
   - A onda grande corre do alambrado pro fundo.
 
+## Trapos retos pro campo de borda a borda, Bart menor com papel e bandeirão brotando (dono, 11/10/2026)
+
+- **Trapos** (varredura do print do Remo × Fortaleza e régua do dono:
+  "sempre de uma borda a outra do anel, e sempre no sentido vertical em
+  relação ao campo" — ao campo, não à tela):
+  - **Direção:** a tira encara o gramado de frente. Há três jeitos de
+    saber onde ele está, do mais certo pro mais geral:
+    - setor com arco anotado na âncora: a tira é um raio do centro da
+      curva;
+    - estádio fechado (o anel abraça o campo): a tira aponta pro ponto
+      mais perto da borda do campo, isto é, do gramado e do fosso até a
+      arquibancada;
+    - campo aberto, como o estádio de 10 mil, cujo gramado vaza pra fora
+      da cena: a tira segue a direção do gramado anotada no setor.
+  - **Bases:** saem da própria torcida. Cada membro tem uma posição "de
+    lado" e a base de cada tira é o miolo da sua fatia.
+  - **Comprimento:** de borda a borda do anel de cima, por cima dos
+    vomitórios. Grade de pé interrompe.
+  - **Quina:** onde a linha entraria ao comprido no lado vizinho, nenhuma
+    tira passa da profundidade do anel no setor (a tira mais curta,
+    +15%), a partir do muro do fundo.
+- **Mosaico 3D:**
+  - Menor, na proporção do Bart: uns dois quintos da largura da torcida
+    e 1,35 vez mais alto que largo.
+  - Com ele, a torcida sempre levanta o mosaico de papel e cai papel
+    picado, na entrada e quando a arte termina de subir. É só a cena: o
+    bônus no placar continua sendo o do que foi comprado.
+- **Bandeirão:**
+  - Surge da torcida como o mosaico 3D. O pano começa escondido por
+    baixo das cabeças e brota do meio da torcida numa onda que corre do
+    alambrado pro fundo, com um tranco na crista.
+  - A parte que já subiu ondula na altura das mãos. Na saída, afunda do
+    mesmo jeito.
+- O relógio da festa ganhou `fixo` (instante parado), só pra teste
+  fotografar a animação quadro a quadro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

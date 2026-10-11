@@ -73,14 +73,21 @@ TO.diaJogo.festas = (function(){
       modoMosaico: (opc.semente != null ? Math.abs(opc.semente) % 2 : (Math.random() < .5 ? 0 : 1)) === 0 ? 'escudo' : 'cores',
       janelas:{
         trapos:    tem('trapos')    ? [0, Infinity] : null,
-        mosaico:   tem('mosaico')   ? [1, 10] : null,
+        /* O 3D VEM COM O PAPEL NA MÃO E A CHUVA (dono, 11/10/2026: "no
+           mosaico 3D os membros sempre vão ter mosaico de papel na mão,
+           com papel picado durante a festa também"). É só a cena: o
+           bônus no placar continua sendo o do que foi comprado. */
+        mosaico:   tem('mosaico') || tem('mosaico3d') ? [1, 10] : null,
         mosaico3d: tem('mosaico3d') ? [0.5, 11.5] : null,
         bandeirao: tem('bandeirao') ? [fimMosaico ? fimMosaico + 0.8 : 1, (fimMosaico ? fimMosaico + 0.8 : 1) + 9] : null
       },
       papel: []
     };
     J.festa = F;
-    if(tem('papel')) chuva(J, 0.2);
+    F.temPapel = tem('papel') || tem('mosaico3d');
+    if(F.temPapel) chuva(J, 0.2);
+    /* no 3D, uma segunda chuva quando a arte termina de subir */
+    if(tem('mosaico3d')) chuva(J, 4.2);
     /* a bandeira da torcida, pro bandeirão (canvas pronto do patrimônio) */
     if(tem('bandeirao') && TO.patrimonio && TO.patrimonio.imagemDaFaixaObj)
       F.bandeira = TO.patrimonio.imagemDaFaixaObj(o, 'bandeira');
@@ -91,7 +98,7 @@ TO.diaJogo.festas = (function(){
   /* gol nosso: mais papel (só quando a festa tem papel) */
   function gol(J){
     const F = J && J.festa;
-    if(!F || !F.lista.includes('papel')) return;
+    if(!F || !F.temPapel) return;
     chuva(J, 0);
   }
   function chuva(J, atraso){
@@ -426,6 +433,8 @@ TO.diaJogo.festas = (function(){
   /* chamado pela ponte, com a matriz de mundo já posta */
   /* o relógio da festa, em tempo real (um só, seja 2D ou 3D quem desenha) */
   function avancar(F){
+    /* `fixo`: pra quem testa, o relógio parado num instante */
+    if(F.fixo != null){ F.relogio = F.fixo; return 0.016; }
     const agora = performance.now() / 1000;
     const dt = F.ultimo == null ? 0.016 : Math.max(0, Math.min(0.25, agora - F.ultimo));
     F.ultimo = agora;
@@ -459,7 +468,7 @@ TO.diaJogo.festas = (function(){
     if(W.mosaico) desenharMosaico(c, J, F, S, t);
     if(W.bandeirao) desenharBandeirao(c, J, F, S, t);
     if(W.mosaico3d) desenharMosaico3D(c, J, F, S, t);
-    if(F.lista.includes('papel')) desenharPapel(c, J, F, S, t, dt);
+    if(F.temPapel) desenharPapel(c, J, F, S, t, dt);
   }
 
   /* pra quem testa: o que está no ar agora */
@@ -673,7 +682,13 @@ TO.diaJogo.festas = (function(){
     const P = g3.partes;
     const jan = F.janelas.bandeirao;
     if(!jan) return;
-    const p = suave(fase(t, jan[0], jan[1], 1.8, 1.4));
+    /* SURGE DA TORCIDA (dono, 11/10/2026: "essa animação do mosaico 3D
+       surgir da torcida ficou boa, é o que quero do bandeirão também"):
+       o pano começa escondido por baixo das cabeças e vai brotando do
+       meio da torcida numa onda que corre do alambrado pro fundo — a
+       parte que já subiu ondula na altura das mãos, a que ainda não
+       subiu continua embaixo. Na saída, afunda do mesmo jeito. */
+    const p = fase(t, jan[0], jan[1], 3.0, 1.8);
     for(const d of S.nossos)
       if(p > 0.02) d.festaPose = d.festaPose || 'bandeirao';
       else if(d.festaPose === 'bandeirao') d.festaPose = null;
@@ -705,9 +720,8 @@ TO.diaJogo.festas = (function(){
     const altura = new Float32Array((nu+1)*(nv+1));
     for(let j = 0; j <= nv; j++){
       const r = j / nv;
-      /* abre do alambrado (r = 1) pro fundo: a parte ainda fechada fica
-         embolada na frente */
-      const aberto = Math.max(0, Math.min(1, (r - (1 - p)) / 0.08 + 1));
+      /* quanto desta linha já brotou: a frente (r = 1) primeiro */
+      const sobe = suave(Math.max(0, Math.min(1, (p * 1.6 - (1 - r) * 0.6) / 0.45)));
       for(let i = 0; i <= nu; i++){
         const s2 = i / nu;
         const id = j*(nu+1) + i;
@@ -722,7 +736,7 @@ TO.diaJogo.festas = (function(){
         const v = v0b + vai + 4*Math.sin(t*1.6 + u0b*0.04 - v0b*0.01) * Math.sin(Math.PI*r);
         const dmin = C.dist[id];
         /* coluna sem degrau não tem pano */
-        dentro[id] = C.ok[i] ? aberto : 0;
+        dentro[id] = C.ok[i] ? sobe : 0;
         /* o calombo da mão de quem segura (cada um no seu ritmo), a
            barriga entre dois e a onda que atravessa o pano */
         const fa = (C.quem[id] * 2.399) % 6.283;
@@ -733,7 +747,10 @@ TO.diaJogo.festas = (function(){
         /* a beirada pende um pouco: ninguém segura a quina */
         const borda = Math.min(s2, 1 - s2, r, 1 - r);
         const cai = borda < 0.05 ? (0.05 - borda) * 90 : 0;
-        const hh = alt + mao + barriga + onda - cai;
+        /* brotando: sai de baixo das cabeças com um tranco (a crista da
+           onda de quem está empurrando o pano pra cima) */
+        const crista = sobe > 0 && sobe < 1 ? 7 * Math.sin(Math.PI * sobe) : 0;
+        const hh = (ALT_MAO - 20) + (alt + mao + barriga + onda - cai - (ALT_MAO - 20)) * sobe + crista;
         altura[id] = hh;
         const q = ponto(S, u, v, hh);
         pos.set(q, id*3);
@@ -835,6 +852,48 @@ TO.diaJogo.festas = (function(){
     }
     let cima = -1, melhor = -1;
     regioes.forEach((g, id) => { if(g.n >= 300 && g.dist > melhor){ melhor = g.dist; cima = id; } });
+    /* a caixa do anel de cima: dá o centro e os semi-eixos da elipse que
+       o estádio desenha em volta do campo (o leque dos trapos) */
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    if(cima >= 0) for(let i = 0; i < C2*R2; i++) if(rot[i] === cima){
+      const c = i % C2, r = (i / C2) | 0;
+      if(c < x0) x0 = c; if(c > x1) x1 = c; if(r < y0) y0 = r; if(r > y1) y1 = r;
+    }
+    aneis.elipse = cima >= 0 ? {cx:(x0 + x1 + 1)/2 * A2.CEL, cy:(y0 + y1 + 1)/2 * A2.CEL,
+                                a:(x1 - x0 + 1)/2 * A2.CEL, b:(y1 - y0 + 1)/2 * A2.CEL} : null;
+    /* O CAMPO: o não-pisável ligado ao meio da cena (gramado e fosso,
+       até a borda da arquibancada). A borda dele é o que a tira encara. */
+    const campo = new Uint8Array(C2*R2);
+    {
+      const ci = ((R2/2)|0)*C2 + ((C2/2)|0);
+      let ini = 0, fim = 0;
+      if(!livre[ci]){ fila[fim++] = ci; campo[ci] = 1; }
+      let aberto = false;
+      while(ini < fim){
+        const k = fila[ini++];
+        const r = (k / C2) | 0, c = k % C2;
+        if(r === 0 || c === 0 || r === R2-1 || c === C2-1) aberto = true;
+        for(const [dr, dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const rr = r+dr, cc = c+dc;
+          if(rr < 0 || cc < 0 || rr >= R2 || cc >= C2) continue;
+          const kk = rr*C2+cc;
+          if(!livre[kk] && !campo[kk]){ campo[kk] = 1; fila[fim++] = kk; }
+        }
+      }
+      /* campo ABERTO: o gramado vaza pra fora da cena (estádio sem anel
+         completo, como o de 10 mil) — a borda dele não serve de régua */
+      aneis.campoAberto = aberto;
+    }
+    const bordaCampo = [];
+    for(let i = 0; i < C2*R2; i++){
+      if(!campo[i]) continue;
+      const r = (i / C2) | 0, c = i % C2;
+      if([[1,0],[-1,0],[0,1],[0,-1]].some(([dr, dc]) => {
+        const rr = r+dr, cc = c+dc;
+        return rr >= 0 && cc >= 0 && rr < R2 && cc < C2 && livre[rr*C2+cc];
+      })) bordaCampo.push([(c + 0.5) * A2.CEL, (r + 0.5) * A2.CEL]);
+    }
+    aneis.bordaCampo = bordaCampo;
     aneis.chave = chave; aneis.rot = rot; aneis.cima = cima; aneis.C = C2; aneis.CEL = A2.CEL;
     return aneis;
   }
@@ -886,7 +945,6 @@ TO.diaJogo.festas = (function(){
     const a2 = estende(meio, -1), b2 = estende(meio, 1);
     return [a2 + 2, b2 - 2];
   }
-  const vaoDaTira = (S, u) => vaoNaLinha(S, u, TRAPO_ALT);
   /* as três cores da torcida; torcida de duas ganha o branco (ou o
      preto, se o branco já é dela) como terceira, pra tira ter três faixas */
   function paletaDeTres(F){
@@ -902,58 +960,198 @@ TO.diaJogo.festas = (function(){
     while(unicas.length < 3) unicas.push(F.paleta[unicas.length % F.paleta.length]);
     return unicas.slice(0, 3);
   }
+  /* ---------- O TRAÇADO DOS TRAPOS (dono, 11/10/2026) ----------
+     A régua do dono: "eles sempre devem atingir de uma borda a outra do
+     anel, e sempre no sentido vertical em relação ao campo" — vertical
+     em relação ao CAMPO, não à tela: a tira encara o gramado de frente,
+     perpendicular à borda dele. Na lateral, de frente pra linha
+     lateral; atrás do gol, pra linha de fundo; na curva, apontando pro
+     campo como um raio.
+       · A DIREÇÃO de cada tira é a do ponto da borda do campo (gramado
+         e fosso, até a arquibancada) mais perto dela.
+       · DE BORDA A BORDA: corre o anel de cima inteiro na linha dela,
+         do muro do fundo à borda do lado do campo, por cima dos
+         vomitórios; a grade de pé interrompe. Na quina, onde a linha
+         entraria ao comprido no lado vizinho, ninguém passa da
+         profundidade do anel no setor (a tira mais curta, com folga).
+       · LADO A LADO pela largura que a torcida ocupa, medida em ângulo
+         em volta do meio do campo.
+     Coordenada de PÉ da cena, conferida no ponto em que a tira aparece
+     na tela (a altura sobe 0,42 por unidade). */
+  const TRAPO_L = 16;
+  function linhasDosTrapos(J, S){
+    const W = (A() && A().W) || 1536, H = (A() && A().H) || 1024;
+    const N = anelDeCima();
+    const D = A() && A().D;
+    const pes = S.nossos.map(d => [d.x, d.y]);
+    const conta = {};
+    for(const d of S.nossos) conta[d.spawn] = (conta[d.spawn] || 0) + 1;
+    const spawn = Object.keys(conta).sort((a,b) => conta[b] - conta[a])[0];
+    const fx = D && D.faixas && D.faixas[spawn];
+    /* TRÊS JEITOS DE SABER ONDE É O CAMPO, do mais certo pro mais geral:
+         · ARCO: a âncora do setor curvo traz o centro da curva — a tira
+           é um raio dele;
+         · BORDA: estádio fechado (o anel abraça o campo) — a tira encara
+           o ponto da borda do campo mais perto;
+         · RETO: campo aberto (estádio sem anel completo) — a tira segue
+           a direção do gramado anotada no setor, perpendicular à linha. */
+    const borda = (N && N.bordaCampo) || [];
+    const modo = fx && fx.arco ? 'arco' : (borda.length && N && !N.campoAberto) ? 'borda' : 'reto';
+    let ccx = W/2, ccy = H/2;
+    if(modo === 'arco'){ ccx = fx.arco[0]; ccy = fx.arco[1]; }
+    else if(borda.length){ ccx = borda.reduce((s, p) => s + p[0], 0) / borda.length; ccy = borda.reduce((s, p) => s + p[1], 0) / borda.length; }
+    let reto = null;
+    if(modo === 'reto'){
+      let gx = fx && fx.dir ? fx.dir[0] : ccx - pes[0][0], gy = fx && fx.dir ? fx.dir[1] : ccy - pes[0][1];
+      const gn = Math.hypot(gx, gy) || 1; reto = [gx/gn, gy/gn];
+    }
+    const maisPerto = (x, y) => {
+      let m = Infinity, q = null;
+      for(const p of borda){ const d = (p[0]-x)*(p[0]-x) + (p[1]-y)*(p[1]-y); if(d < m){ m = d; q = p; } }
+      return q || [ccx, ccy];
+    };
+    /* a direção da tira que passa por (x, y) */
+    const direcao = (x, y) => {
+      if(modo === 'reto') return reto;
+      const q = modo === 'arco' ? [ccx, ccy] : maisPerto(x, y);
+      const gx = q[0] - x, gy = q[1] - y, gn = Math.hypot(gx, gy) || 1;
+      return [gx/gn, gy/gn];
+    };
+    /* AS BASES SAEM DA TORCIDA: cada membro ganha uma posição "de lado"
+       (o ângulo em volta do centro do arco; o ângulo do ponto de borda
+       dele em volta do meio do campo; ou a projeção ao longo da linha),
+       as tiras se espalham por essa largura e a base de cada uma é o
+       miolo de quem está naquela fatia */
+    let lat, largura;
+    if(modo === 'reto'){
+      const lx = -reto[1], ly = reto[0];
+      lat = pes.map(([x, y]) => x*lx + y*ly);
+      largura = Math.max(...lat) - Math.min(...lat) + 8;
+    } else {
+      const alvo = modo === 'arco' ? pes : pes.map(([x, y]) => maisPerto(x, y));
+      const angs = alvo.map(([x, y]) => Math.atan2(y - ccy, x - ccx));
+      const ref = Math.atan2(angs.reduce((s, a) => s + Math.sin(a), 0), angs.reduce((s, a) => s + Math.cos(a), 0));
+      lat = angs.map(a => { let d = a - ref; while(d > Math.PI) d -= 2*Math.PI; while(d < -Math.PI) d += 2*Math.PI; return d; });
+      if(modo === 'arco'){
+        const raio = pes.reduce((s, [x, y]) => s + Math.hypot(x - ccx, y - ccy), 0) / pes.length;
+        largura = (Math.max(...lat) - Math.min(...lat)) * raio + 8;
+      } else {
+        const ordem = lat.map((r, i) => [r, i]).sort((p, q) => p[0] - q[0]);
+        largura = 8;
+        for(let i = 1; i < ordem.length; i++){
+          const p = alvo[ordem[i-1][1]], q = alvo[ordem[i][1]];
+          largura += Math.hypot(q[0] - p[0], q[1] - p[1]);
+        }
+      }
+    }
+    const a0 = Math.min(...lat), a1 = Math.max(...lat);
+    const n = Math.max(2, Math.floor(largura / 34));
+    const bases = [];
+    for(let k = 0; k < n; k++){
+      const c0 = a0 + (a1 - a0) * k / n, c1 = a0 + (a1 - a0) * (k + 1) / n;
+      let sx = 0, sy = 0, m = 0;
+      lat.forEach((r, i) => { if(r >= c0 - 1e-9 && (r < c1 || (k === n - 1 && r <= c1 + 1e-9))){ sx += pes[i][0]; sy += pes[i][1]; m++; } });
+      if(m) bases.push([sx/m, sy/m]);
+    }
+    const sobe = TRAPO_ALT * CISALHA_VISTA;
+    const pisa = (x, y) => noAnelDeCima(x, y - sobe);
+    const grades = (J && J.grades) || null;
+    const cruza = (x1, y1, x2, y2) => !!(grades && A().atravessaGrade &&
+      A().atravessaGrade(x1, y1 - sobe, x2, y2 - sobe, grades));
+    const linhas = [];
+    for(const [bx, by] of bases){
+      const dir = direcao(bx, by);
+      const gx = dir[0], gy = dir[1];
+      const P = s => [bx + gx*s, by + gy*s];
+      const ok = s => { const [x, y] = P(s); return pisa(x, y); };
+      let meio = 0;
+      if(!ok(0)){
+        let achou = false;
+        for(let d = 3; d < 160; d += 3){
+          if(ok(d)){ meio = d; achou = true; break; }
+          if(ok(-d)){ meio = -d; achou = true; break; }
+        }
+        if(!achou){ linhas.push({base:[bx, by], dir, vao:null}); continue; }
+      }
+      const estende = (s, sentido) => {
+        for(let guarda = 0; guarda < 400; guarda++){
+          const prox = s + sentido*3;
+          const [x1, y1] = P(s), [x2, y2] = P(prox);
+          if(cruza(x1, y1, x2, y2)) return s;
+          if(ok(prox)){ s = prox; continue; }
+          let pulo = 0;
+          for(let gg = 6; gg <= 70; gg += 3) if(ok(s + sentido*gg)){ pulo = gg; break; }
+          if(!pulo) return s;
+          const [x3, y3] = P(s + sentido*pulo);
+          if(cruza(x1, y1, x3, y3)) return s;
+          s += sentido*pulo;
+        }
+        return s;
+      };
+      const sa = estende(meio, -1), sb = estende(meio, 1);
+      linhas.push({base:[bx, by], dir, vao: sb - sa > 16 ? [sa + 2, sb - 2] : null});
+    }
+    /* na quina: ninguém passa da profundidade do anel no setor, a partir
+       do muro do fundo (o lado oposto ao campo) */
+    const comps = linhas.filter(l => l.vao).map(l => l.vao[1] - l.vao[0]);
+    if(comps.length){
+      const teto = Math.max(60, Math.min(...comps) * 1.15);
+      for(const l of linhas) if(l.vao && l.vao[1] - l.vao[0] > teto) l.vao = [l.vao[0], l.vao[0] + teto];
+    }
+    return linhas;
+  }
+
   function trapos3(F, S, t){
     const P = g3.partes;
     if(!F.janelas.trapos) return;
     const W = F.janelas;
     const ocupa = ['mosaico','bandeirao'].some(id => W[id] && t >= W[id][0] - 0.4 && t <= W[id][1] + 0.4);
     F.recolhe = Math.max(0, Math.min(1, (F.recolhe || 0) + (ocupa ? 0.04 : -0.04)));
-    const largura = S.u1 - S.u0;
-    const L = 16;
-    const n = Math.max(2, Math.floor(largura / 34));
+    /* o traçado muda pouco no jogo assistido: refaz a cada 1,5 s */
+    const agora = performance.now();
+    if(!P.tracado || agora - P.tracadoEm > 1500){ P.tracado = linhasDosTrapos(g3.J, S); P.tracadoEm = agora; }
+    const linhas = P.tracado;
+    const n = linhas.length;
     if(!P.trapos || P.trapos.n !== n){
       if(P.trapos) for(const r of P.trapos.fitas){ g3.raiz.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); }
       const fitas = [];
+      const cores = paletaDeTres(F);
       for(let k = 0; k < n; k++){
-        /* AS TRÊS CORES DA TORCIDA (dono, 11/10/2026: o trapo do Fortaleza
-           saía só em duas): cada tira tem três faixas ao comprido, uma de
-           cada cor, e a ordem roda de tira pra tira */
+        /* AS TRÊS CORES DA TORCIDA: três faixas ao comprido, a ordem
+           rodando de tira pra tira */
         const cv = document.createElement('canvas'); cv.width = 9; cv.height = 4;
         const c = cv.getContext('2d');
-        const cores = paletaDeTres(F);
         for(let f = 0; f < 3; f++){ c.fillStyle = cores[(k + f) % 3]; c.fillRect(f*3, 0, 3, 4); }
         const tx = textura(cv); tx.magFilter = THREE.NearestFilter;
         const geo = grade(1, 28);
         const mesh = new THREE.Mesh(geo, lambert({map:tx}));
         mesh.frustumCulled = false;
         g3.raiz.add(mesh);
-        fitas.push({mesh, geo, vao:null, vaoEm:0});
+        fitas.push({mesh, geo});
       }
       P.trapos = {n, fitas};
     }
-    /* as tiras ficam dentro da largura ocupada, com folga nas pontas */
-    const passo = (largura - L) / Math.max(1, n - 1);
-    const agora = performance.now();
     P.trapos.fitas.forEach((r, k) => {
-      const base = S.u0 + L/2 + passo * k;
-      if(!r.vao || agora - r.vaoEm > 1500){ r.vao = vaoDaTira(S, base); r.vaoEm = agora; }
-      r.mesh.visible = !!r.vao && F.recolhe < 0.98;
+      const L = linhas[k];
+      r.mesh.visible = !!(L && L.vao) && F.recolhe < 0.98;
       if(!r.mesh.visible) return;
-      const [va, vb] = r.vao;
+      const [sa, sb] = L.vao;
+      const [bx, by] = L.base, [gx, gy] = L.dir;
+      const px = -gy, py = gx;                     // o lado da tira
       /* recolhida, a tira enrola pro fundo */
-      const vFim = va + (vb - va) * (1 - 0.9 * F.recolhe);
+      const sFim = sa + (sb - sa) * (1 - 0.9 * F.recolhe);
       const pos = r.geo.attributes.position.array, uv = r.geo.attributes.uv.array;
       const nv = r.geo.nv;
       for(let j = 0; j <= nv; j++){
         const s2 = j / nv;
-        const vv = va + (vFim - va) * s2;
+        const s = sa + (sFim - sa) * s2;
         /* deitada sobre as cabeças, ondulando com quem está embaixo */
-        const h = TRAPO_ALT + 2.2*Math.sin(t*2.3 + k*1.1 + vv*0.09) + 1.2*Math.sin(t*3.4 - vv*0.05);
+        const h = TRAPO_ALT + 2.2*Math.sin(t*2.3 + k*1.1 + s*0.09) + 1.2*Math.sin(t*3.4 - s*0.05);
         const lado = 1.6 * Math.sin(t*1.2 + k*1.7 + s2*4);
         for(let i = 0; i <= 1; i++){
-          const q = ponto(S, base + lado + (i ? L/2 : -L/2), vv, h);
+          const off = lado + (i ? TRAPO_L/2 : -TRAPO_L/2);
           const kk = j*2 + i;
-          pos.set(q, kk*3);
+          pos[kk*3] = bx + gx*s + px*off; pos[kk*3+1] = h; pos[kk*3+2] = by + gy*s + py*off;
           uv[kk*2] = i; uv[kk*2+1] = 1 - s2;
         }
       }
@@ -965,7 +1163,7 @@ TO.diaJogo.festas = (function(){
   /* ---------- o papel picado: confete girando ---------- */
   function papel3(F, S, t, dt){
     const P = g3.partes;
-    if(!F.lista.includes('papel')) return;
+    if(!F.temPapel) return;
     const MAX = 600;
     if(!P.papel){
       const geo = new THREE.PlaneGeometry(3.4, 2.2);
@@ -1043,8 +1241,11 @@ TO.diaJogo.festas = (function(){
     /* a subida é mais lenta que a descida: puxar dá trabalho */
     const p = fase(t, jan[0], jan[1], 3.2, 1.8);
     const SW = S.u1 - S.u0, SD = S.v1 - S.v0;
-    const w = Math.max(90, SW * 0.9);
-    const h = Math.max(80, Math.min(SD * 0.9, w * 0.85, 190));
+    /* NA PROPORÇÃO DO BART (dono, 11/10/2026): a figura ocupa uns dois
+       quintos da largura da torcida e é mais alta que larga — o mosaico
+       de papel continua aparecendo dos dois lados dela */
+    const w = Math.max(64, Math.min(150, SW * 0.42));
+    const h = Math.max(80, Math.min(200, w * 1.35));
     if(!P.m3d){
       const arte = arte3D(F, w, h);
       const tx = textura(arte);
@@ -1134,6 +1335,7 @@ TO.diaJogo.festas = (function(){
       g3.raiz = new THREE.Group();
       scene.add(g3.raiz);
     }
+    g3.J = J;
     const S = setor(J);
     if(!S){ g3.raiz.visible = false; return; }
     g3.raiz.visible = true;
@@ -1147,5 +1349,6 @@ TO.diaJogo.festas = (function(){
     papel3(F, S, t, passo);
   }
 
-  return {iniciar, gol, desenhar, emCena, atualizar3d};
+  return {iniciar, gol, desenhar, emCena, atualizar3d,
+          /* pra quem testa o traçado */ _linhasDosTrapos: linhasDosTrapos, _setor: setor};
 })();
