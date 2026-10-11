@@ -10125,6 +10125,37 @@ realista".
 - O relógio da festa ganhou `fixo` (instante parado), só pra teste
   fotografar a animação quadro a quadro.
 
+## As IAs dão sede nova pras aliadas (dono, 11/10/2026)
+
+Pedido: "coloque na fila das torcidas IA presentear aliados,
+principalmente aqueles de sede nível 0, com uma sede nova".
+
+- **Na fila:** o item `presente` entrou duas vezes na fila de compras
+  delas: logo depois do primeiro bar e no meio da segunda rodada de
+  comércio. `FILA_V` foi pra 6, então toda torcida recomeça a fila nova.
+- **Quem recebe** (`aliadaPraPresente`):
+  - O círculo é o do aniversário: aliadas e irmãs declaradas e as
+    torcidas da mesma praça.
+  - A relação viva tem de ser de aliada (≥ 20) ou de irmandade de clube.
+  - O ponto de encontro (sede nível 0) vem primeiro. Sede 1 ou 2 só
+    ganha de quem está dois níveis acima dela.
+  - No empate, ganha a mais chegada.
+  - Cada aliada ganha no máximo um presente a cada 26 semanas.
+  - A nossa torcida não entra.
+- **Quem dá:** precisa de sede própria (nível 1 ou mais). Paga o preço
+  da sede seguinte da aliada (R$ 30 mil pro nível 1) e só dá quando o
+  caixa cobre o presente mais R$ 5 mil de colchão. Até lá, junta.
+- **Efeito:**
+  - A sede da aliada sobe um nível e a relação entre as duas sobe +50,
+    a mesma régua do presente do jogador.
+  - Fica uma linha no extrato de cada uma.
+  - Se a aliada é da nossa praça ou de interesse, sai notícia no
+    Futebol e Porrada ("A X deu de presente uma sede nova pra aliada Y").
+- **Medido:** no primeiro ano saíram 8 presentes, todos pra torcidas no
+  ponto de encontro. A primeira versão, com colchão de 50% e o item mais
+  atrás na fila, dava 1 por ano: o caixa típico delas no começo é
+  R$ 2.400.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

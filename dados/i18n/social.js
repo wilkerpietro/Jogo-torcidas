@@ -1118,5 +1118,12 @@ TO.i18n.registrar({
   "no depósito: <b>{n}</b> · Fator Torcida <b>+{pct}%</b>": {es:"en depósito: <b>{n}</b> · Factor Hinchada <b>+{pct}%</b>", en:"in storage: <b>{n}</b> · Crowd Factor <b>+{pct}%</b>"},
   "papel picado nas cores da torcida na entrada do time e a cada gol nosso": {es:"papelitos en los colores de la hinchada en la salida del equipo y en cada gol nuestro", en:"confetti in the crew's colours as the team walks out and at every goal of ours"},
   "tiras de tecido nas cores da torcida penduradas na arquibancada o jogo inteiro": {es:"tiras de tela en los colores de la hinchada colgadas en la tribuna todo el partido", en:"strips of cloth in the crew's colours hanging in the stand the whole match"},
-  "{nome} no depósito: {n}.": {es:"{nome} en depósito: {n}.", en:"{nome} in storage: {n}."}
+  "{nome} no depósito: {n}.": {es:"{nome} en depósito: {n}.", en:"{nome} in storage: {n}."},
+  "A {de} deu de presente uma sede nova pra aliada {nome}": {es:"{de} le regaló una sede nueva a su aliada {nome}", en:"{de} gave their ally {nome} a new headquarters"},
+  "A {nome} ganhou uma sede nova de presente": {es:"{nome} recibió una sede nueva de regalo", en:"{nome} got a new headquarters as a gift"},
+  "Presente da {nome}: sede nível {n}": {es:"Regalo de {nome}: sede nivel {n}", en:"Gift from {nome}: level {n} headquarters"},
+  "Presente de aliada": {es:"Regalo de aliada", en:"A gift from an ally"},
+  "Presente pra {nome}: sede nível {n}": {es:"Regalo para {nome}: sede nivel {n}", en:"Gift to {nome}: level {n} headquarters"},
+  "{A} ganha sede nova da {D}": {es:"{A} recibe sede nueva de {D}", en:"{A} get a new home from {D}"},
+  "{D} dá a casa nova da {A}": {es:"{D} le da la casa nueva a {A}", en:"{D} hand {A} a new home"}
 });

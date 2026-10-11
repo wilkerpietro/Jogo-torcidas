@@ -3059,7 +3059,10 @@ TO.feed = (function(){
     fabrica: nome => _t('A {nome} montou uma fábrica de material próprio', {nome}),
     /* a cidade vem logo atrás, então "fora da praça" sobrava:
        "abriu uma subsede fora da praça no Rio de Janeiro" */
-    filial: nome => _t('A {nome} abriu uma subsede', {nome})
+    filial: nome => _t('A {nome} abriu uma subsede', {nome}),
+    /* o presente de aliada (dono, 11/10/2026): a frase completa, com
+       quem deu, é montada no cartão */
+    'presente-sede': nome => _t('A {nome} ganhou uma sede nova de presente', {nome})
   };
   /* A VOZ É UMA SÓ, E É A TERCEIRA PESSOA (correção do dono,
      21/09/2026). Havia aqui uma tabela de verbos em primeira pessoa
@@ -3185,9 +3188,12 @@ TO.feed = (function(){
        resto, e a metade desta lista é região ("no Interior de SP") */
     const cidadeEm = cidadeNome ? TO.genero.em('cidade', cidadeNome) : '';
     const nossa = ev.torcida === E.torcida.id;
+    const deNome = ev.de ? ((M().torcida(ev.de) || {}).nome || '') : '';
     const frase = (ev.item === 'filial' && cidadeEm)
       ? _t('A {nome} abriu uma subsede {onde}', {nome, onde:cidadeEm})
-      : v(nome);
+      : (ev.item === 'presente-sede' && deNome)
+        ? _t('A {de} deu de presente uma sede nova pra aliada {nome}', {de:deNome, nome})
+        : v(nome);
     const texto = frase + '.';
     return {
       chave:`obra|noticia|${ev.ano}|${ev.semana}|${ev.torcida}|${ev.item}`,
@@ -3200,7 +3206,7 @@ TO.feed = (function(){
       dados:{
         torcida:ev.torcida, nome, nossa,
         nomeNossa:(M().torcida(E.torcida.id) || {}).nome || _t('nós'),
-        item:ev.item, cidade:ev.cidade || null, cidadeNome, cidadeEm,
+        item:ev.item, cidade:ev.cidade || null, cidadeNome, cidadeEm, deNome,
         bairro: COM_BAIRRO[ev.item] ? (ev.bairro || null) : null,
         naPraca: nossa || naPraca(E, ev.torcida),
         /* obra nossa compara com quem tem mais rua na praça hoje —

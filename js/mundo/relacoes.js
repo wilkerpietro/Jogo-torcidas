@@ -233,16 +233,20 @@ TO.relacoes = (function(){
      ampliação dos dois — antes de professor e advogado; a segunda
      rodada de comércio vem antes de ônibus, filial e clube; a área de
      treino saiu da fila. */
-  const ORDEM = ['loja', 'bar', 'bombas', 'evoluir:loja', 'evoluir:bar',
+  /* O PRESENTE PRA ALIADA (dono, 11/10/2026: "coloque na fila das
+     torcidas IA presentear aliados, principalmente aqueles de sede
+     nível 0, com uma sede nova") entra duas vezes: logo depois do
+     primeiro bar e no meio da segunda rodada de comércio. */
+  const ORDEM = ['loja', 'bar', 'bombas', 'presente', 'evoluir:loja', 'evoluir:bar',
                  'mma', 'advogado',
                  'loja', 'bar', 'bombas', 'evoluir:loja', 'evoluir:bar',
                  'onibus', 'filial', 'elenco', 'bombas', 'mma', 'subsede',
-                 'filial', 'elenco', 'evoluir:sorteio',
+                 'presente', 'filial', 'elenco', 'evoluir:sorteio',
                  'galpao', 'enfermaria', 'cofre'];
   /* muda a ORDEM? sobe o número, e toda torcida recomeça a fila nova.
      A fila viva de save antigo tem outras chaves e outra contagem de
      repetições — comparar por conjunto não daria conta. */
-  const FILA_V = 4;
+  const FILA_V = 6;
   /* os que NUNCA acabam: bomba se gasta e o clube sempre aceita
      dinheiro. Eles não podem segurar a sede pra sempre (ver a nota
      no proximaCompra). */
@@ -730,6 +734,14 @@ TO.relacoes = (function(){
       return {tipo:'anexo:'+chave, custo:ax.custo};
     }
     if(chave === 'elenco') return elencoAlvo(E, id);
+    if(chave === 'presente'){
+      const alvo = aliadaPraPresente(E, t, id);
+      /* sem aliada precisando, a vez passa (cumprido) */
+      if(!alvo) return null;
+      return {tipo:'presente', custo:alvo.custo, alvo:alvo.id, nivel:alvo.nivel,
+              /* dá sem se quebrar: sobra um colchão de R$ 5 mil */
+              cofre:alvo.custo + 5000};
+    }
     if(chave === 'onibus'){
       if(frotaIA(t) < FIN().cabeNaSede(t.sede))
         return {tipo:'onibus', custo:FIN().ONIBUS_CUSTO};
@@ -779,6 +791,43 @@ TO.relacoes = (function(){
     if(quantos < lim.qtd) return {tipo:chave, custo:cfg.compra};
     return T[chave].some((x,n)=> x && n > t.sede && x.qtd > lim.qtd)
          ? {sede:true} : null;
+  }
+
+  /* A ALIADA QUE GANHA A SEDE NOVA. O círculo é o do aniversário: as
+     aliadas e irmãs declaradas e as torcidas da mesma praça, com relação
+     viva de aliada (≥ 20) ou irmandade de clube. Quem está no PONTO DE
+     ENCONTRO (sede nível 0) vem primeiro — é a que mais precisa —; sede
+     1 ou 2 só ganha de quem está dois níveis acima dela. Cada uma ganha
+     no máximo um presente a cada 26 semanas, e a nossa torcida não
+     entra (presente pro jogador é outra conversa). */
+  const PRESENTE_REL = 20, PRESENTE_INTERVALO = 26;
+  function aliadaPraPresente(E, t, id){
+    const o = M().torcida(id);
+    if(!o || (t.sede || 0) < 1) return null;
+    const m = mundo(E);
+    const circulo = new Set([
+      ...(o.aliados || []), ...(o.irmandade || []),
+      ...M().torcidasEm(o.mapa).map(x => x.id)
+    ]);
+    const hoje = semanaAbs(E);
+    let melhor = null;
+    for(const aid of circulo){
+      if(aid === id || aid === E.torcida.id) continue;
+      const a = m[aid], oa = M().torcida(aid);
+      if(!a || !oa || oa.incompleta) continue;
+      const sa = a.sede || 0;
+      if(sa === 0 ? false : (sa > 2 || t.sede < sa + 2)) continue;
+      if(!P().SEDE[sa + 1]) continue;
+      if(a.presenteEm != null && hoje - a.presenteEm < PRESENTE_INTERVALO) continue;
+      const rel = relacaoDelas(E, id, aid);
+      const irma = M().saoIrmas && M().saoIrmas(id, aid);
+      if(!irma && rel < PRESENTE_REL) continue;
+      /* nível 0 na frente; no empate, a mais chegada */
+      const nota = (2 - Math.min(2, sa)) * 1000 + rel + (irma ? 50 : 0);
+      if(!melhor || nota > melhor.nota)
+        melhor = {id:aid, nivel:sa + 1, custo:P().SEDE[sa + 1].custo, nota};
+    }
+    return melhor;
   }
 
   function proximaCompra(E, t, id){
@@ -1065,6 +1114,23 @@ TO.relacoes = (function(){
           E.investimento[compra.clube] = (E.investimento[compra.clube] || 0) + 1;
           TO.competicoes.usarSave(E);
         }
+        else if(compra.tipo === 'presente'){
+          /* a sede dela sobe; o dinheiro é nosso (dela, a que deu), e no
+             extrato da aliada fica a linha do presente com o valor */
+          const a = m[compra.alvo];
+          a.sede = (a.sede || 0) + 1;
+          a.presenteEm = semanaAbs(E);
+          const nomeDe = x => (M().torcida(x) || {}).nome || x;
+          compra.rotulo = _t('Presente pra {nome}: sede nível {n}', {nome:nomeDe(compra.alvo), n:a.sede});
+          (a.extrato = a.extrato || []).unshift(
+            {q:_t('{ano} s{semana}', {ano:E.data.ano, semana:E.data.semana}),
+             d:_t('Presente da {nome}: sede nível {n}', {nome:nomeDe(id), n:a.sede}), v:compra.custo});
+          if(a.extrato.length > 36) a.extrato.pop();
+          /* quem ganha presente fica mais próximo (a régua do jogador) */
+          moverRelacao(E, id, compra.alvo, PRESENTE_GANHO);
+          if(TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, compra.alvo))
+            TO.feed.registrarObra(E, {tipo:'obra', torcida:compra.alvo, item:'presente-sede', de:id});
+        }
         else if(compra.tipo.startsWith('ampliar:')) compra.alvo.nivel++;
         else {
           /* o ponto novo nasce com bairro (o domínio dos bairros,
@@ -1075,12 +1141,12 @@ TO.relacoes = (function(){
         }
         /* a compra entra no extrato dela (crivo do dono, 31/08/2026) */
         if(compra.custo) lancarIA(E, id,
-          ROTULO_COMPRA[compra.tipo] || compra.tipo, -compra.custo);
+          compra.rotulo || ROTULO_COMPRA[compra.tipo] || compra.tipo, -compra.custo);
         /* O MUNDO PASSOU A AVISAR (pedido do dono, 19/09/2026): obra
            de torcida que interessa à gente — a da nossa cidade, a da
            aliada, a do rival — vira cartão no feed. O filtro é do
            feed; aqui só se anuncia. */
-        if(TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, id))
+        if(compra.tipo !== 'presente' && TO.feed && TO.feed.registrarObra && TO.feed.obraInteressa(E, id))
           TO.feed.registrarObra(E,
             {tipo:'obra', torcida:id, item:compra.tipo, cidade:compra.cidade});
         /* UMA POR VEZ (dono, 26/08/2026): comprou, a vez desse item
@@ -2880,7 +2946,7 @@ TO.relacoes = (function(){
           brigasDeHoje, mundoDia, brigaIA, disponiveisIA, foraDeCombate, baixasIA,
           convitesDeAniversario,
           mundo, balanco, economiaDelas, ORDEM, proximaCompra, EXPEDIENTE,
-          PRESENTES, ROTULO_PRESENTE, presenteDe, presentear, ganhoRepetido,
+          PRESENTES, ROTULO_PRESENTE, presenteDe, presentear, ganhoRepetido, aliadaPraPresente,
           relacaoDelas, moverRelacao, chaveDe,
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,

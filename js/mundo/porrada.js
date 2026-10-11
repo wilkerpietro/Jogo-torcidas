@@ -347,7 +347,8 @@ TO.porrada = (function(){
         ampliou:[_t('Reforma na cidade')],
         sede:   [_t('A casa cresceu')],
         fabrica:[_t('Material próprio')],
-        filial: [_t('Bandeira fora da cidade')]
+        filial: [_t('Bandeira fora da cidade')],
+        presente:[_t('Presente de aliada')]
       },
       /* MANCHETE CURTA. A primeira leva tinha frase de linha inteira
          e o recorte saía com seis linhas de caixa alta, o dobro do
@@ -375,6 +376,11 @@ TO.porrada = (function(){
       filial:[
         _t('{A} abre subsede {C}'),
         _t('{A} finca bandeira {C}')
+      ],
+      /* a sede nova que a aliada pagou (dono, 11/10/2026): {D} é quem deu */
+      presente:[
+        _t('{A} ganha sede nova da {D}'),
+        _t('{D} dá a casa nova da {A}')
       ],
       /* o olho: o fato seco e a comparação, na mesma terceira pessoa
          da manchete — era "contra 2 nossos" e "empata com a gente" */
@@ -733,6 +739,7 @@ TO.porrada = (function(){
     const nossa = !!d.nossa;
 
     const grupo = d.item === 'sede' ? 'sede'
+                : d.item === 'presente-sede' ? 'presente'
                 : d.item === 'fabrica' ? 'fabrica'
                 : d.item === 'filial' ? 'filial'
                 : /^ampliar:/.test(d.item) ? 'ampliou' : 'abriu';
@@ -743,7 +750,7 @@ TO.porrada = (function(){
     const v = {A:d.nome, O:_t(O_QUE[d.item] || 'ponto'),
                N:eles.total || 0, M:nos.total || 0,
                NN:d.nomeNossa || _t('a gente'),
-               C:d.cidadeEm || _t('fora da praça')};
+               C:d.cidadeEm || _t('fora da praça'), D:d.deNome || ''};
 
     /* o olho leva o fato seco e, quando é de outra torcida da praça,
        a comparação — é o que faz a notícia ser NOSSA também */
