@@ -353,8 +353,11 @@ TO.acoes = (function(){
       const motivoP = o ? (bandeira ? _t('Perdemos a nossa bandeira pra {nome}', {nome:o.nome})
                                     : _t('Perdemos a nossa faixa pra {nome}', {nome:o.nome}))
                         : (bandeira ? _t('Perdemos a nossa bandeira') : _t('Perdemos a nossa faixa'));
-      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5, motivoP);
-      TO.estado.mexerIndicador(E, 'moral', -V.moralPerda/5, motivoP);
+      /* perder o pano pra quem veio com o dobro dói menos — mas dói:
+         no mínimo metade (dono, 11/10/2026) */
+      const peso = Math.max(0.5, TO.membros.pesoDaDerrota ? TO.membros.pesoDaDerrota(res) : 1);
+      TO.estado.mexerIndicador(E, 'prestigio', -V.perda/5 * peso, motivoP);
+      TO.estado.mexerIndicador(E, 'moral', -V.moralPerda/5 * peso, motivoP);
       if(outroId){ R.mover(E, outroId, 'prestigio', V.ganho/5); R.mover(E, outroId, 'moral', V.moralGanho/5); }
       fecho.linhas.push(
         o ? (bandeira ? _t('perdemos a nossa bandeira pra {nome}', {nome:o.nome})
@@ -591,8 +594,10 @@ TO.acoes = (function(){
               dono:E.torcida.id, atacante:(alvo && alvo.torcidaId) || null});
         }
       }
-      TO.estado.mexerIndicador(E, 'moral', -3, _t('Fugimos sem defender o que é nosso'));
-      TO.estado.mexerIndicador(E, 'prestigio', -0.7, _t('Fugimos sem defender o que é nosso'));
+      /* em menor número a cobrança é menor (dono, 11/10/2026) */
+      const peso = TO.membros.pesoDaDerrota ? TO.membros.pesoDaDerrota(res) : 1;
+      TO.estado.mexerIndicador(E, 'moral', -3 * peso, _t('Fugimos sem defender o que é nosso'));
+      TO.estado.mexerIndicador(E, 'prestigio', -0.7 * peso, _t('Fugimos sem defender o que é nosso'));
       linhas.push(naEstrada ? _t('o ônibus seguiu viagem com meia turma de pé')
                             : _t('eles saíram de lá com a casa na mão'));
     }else if(levaramOPano(res)){

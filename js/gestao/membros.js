@@ -808,6 +808,22 @@ TO.membros = (function(){
     if(!total) return 1;
     return U.limitar(total / 50, 0.4, 2);
   }
+  /* APANHAR EM MENOR NÚMERO PESA MENOS (dono, 11/10/2026: "brigas em
+     que eu estou numa quantidade menor eu preciso perder menos moral e
+     prestígio; algumas emboscadas eu chego a perder 30 de moral mesmo
+     com o oponente tendo o triplo"). O peso da derrota é nossos÷deles,
+     entre 0,25 e 1: parelho ou maior paga cheio; contra o dobro, metade;
+     contra o triplo, um terço. Vale pra moral e prestígio da noite, pro
+     "fugimos sem defender" e pra faixa/bandeira perdida. */
+  function pesoDaDerrota(res){
+    const ef = (res && res.efetivo) || {};
+    const nosso = res && res.nossoLado;
+    if(!nosso) return 1;
+    const outro = nosso === 'mandante' ? 'visitante' : 'mandante';
+    const n = ef[nosso] || 0, d = ef[outro] || 0;
+    if(!n || !d) return 1;
+    return U.limitar(n / d, 0.25, 1);
+  }
   function aplicarResultadoDaNoite(E, res){
     const porId = new Map(E.membros.map(m=>[m.id,m]));
     const resumo = {feridos:[], presos:[], entraram:[], xpTotal:0};
@@ -840,13 +856,23 @@ TO.membros = (function(){
        prestígio vai a ±20 (na régua de 0 a 100) só nas grandes. */
     const fator = fatorDoTamanho(res);
     res.fatorTamanho = fator;
+    /* na derrota, o tamanho é o da briga que a gente aguentava (o nosso
+       bonde contra o mesmo tanto) — senão apanhar de 60 sendo 20 pesava
+       ×1,6, mais do que perder um parelho — e ainda leva o peso da
+       desvantagem */
+    const peso = pesoDaDerrota(res);
+    res.pesoDerrota = peso;
+    const ef = res.efetivo || {};
+    const menor = Math.min(ef.mandante || 0, ef.visitante || 0);
+    const fatorPerda = (menor ? U.limitar(menor * 2 / 50, 0.4, 2) : fator) * peso;
     let pNoite = res.prestigio || 0;
-    if(pNoite) pNoite = Math.sign(pNoite) * Math.max(1, Math.round(Math.abs(pNoite) * fator));
+    if(pNoite > 0) pNoite = Math.max(1, Math.round(pNoite * fator));
+    else if(pNoite < 0) pNoite = -Math.max(1, Math.round(-pNoite * fatorPerda));
     res.prestigio = U.limitar(pNoite, -20, 20);
     res.prestigioAplicado = TO.estado.mexerIndicador(E, 'prestigio',
       U.limitar(res.prestigio/5, -4, 4), _t('Resultado da briga')) * 5;
     res.moralAplicada = TO.estado.mexerIndicador(E, 'moral',
-      Math.round((res.moralTorcida||0) * fator * 100)/100, _t('Resultado da briga'));
+      Math.round((res.moralTorcida||0) * ((res.moralTorcida||0) < 0 ? fatorPerda : fator) * 100)/100, _t('Resultado da briga'));
 
     E.historicoNoites.unshift({
       semana:E.data.semana,
@@ -858,7 +884,7 @@ TO.membros = (function(){
     return resumo;
   }
 
-  return {fatorDoTamanho,
+  return {fatorDoTamanho, pesoDaDerrota,
     CARGOS, ACIMA, SEDE, AREA_TREINO, FERIDO_MIN, FERIDO_MAX, DA_FONTE, FICHA_NOVA, fichaNova,
     criar, nomeDe, nomeCompletoDe, cargoNome, bancoDe, povoarInicial, planoDeCargos, nivelQueCabe, nivelInicialDaSede, PEQUENA_MAX,
     nomearPresidente, garantirPresidente, presidente, nomeSugerido,

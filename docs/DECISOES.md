@@ -10325,6 +10325,25 @@ cena usa o mandante da mensagem da partida (`d.casaId` → capacidade do
 clube) e só cai no `proximoJogo` sem ela. A prévia de bairro da briga na
 arquibancada também passou a usar a cena certa (era `estadio-20` fixo).
 
+## Apanhar em menor número pesa menos (dono, 11/10/2026)
+
+"Brigas em que eu estou numa quantidade menor eu preciso perder menos
+moral e prestígio; algumas emboscadas eu chego a perder 30 de moral mesmo
+com o oponente tendo o triplo."
+- A conta antiga somava três perdas sem olhar o efetivo: a da noite
+  (moral −1/−2 × o fator do tamanho, que soma os DOIS lados — apanhar de
+  60 sendo 20 pesava ×1,6, mais que um parelho), o "fugimos sem defender"
+  fixo (−15 na régua de 100) e a faixa/bandeira perdida.
+- `membros.pesoDaDerrota(res)` = nossos ÷ deles na cena, entre 0,25 e 1:
+  parelho ou maior paga cheio; contra o dobro, metade; contra o triplo,
+  um terço.
+- Na derrota o tamanho da briga passa a ser o que a gente aguentava (o
+  menor lado ×2, régua de 50) vezes o peso; a vitória não muda.
+- "Fugimos sem defender" (−3 moral, −0,7 prestígio) vezes o peso; a faixa
+  ou bandeira perdida vezes o peso, com piso de metade.
+- Medido (moral/prestígio na régua de 100, derrota com debandada): 20×20
+  −23/−9,5; 20×40 −11,5/−4,7; 20×60 −7,6/−3,2 (era ~−31).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
