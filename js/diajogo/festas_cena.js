@@ -229,16 +229,32 @@ TO.diaJogo.festas = (function(){
      Sorteada pelo jogo. A letra é a universitária (varsity, a "Freshman"
      das camisas de college), grossa e em maiúscula: é a que se lê de
      longe com um papel por cabeça. */
-  function fraseDoMosaico(F){
+  /* FRASE LONGA SÓ PRA TORCIDA GRANDE (dono, 11/10/2026): com um papel
+     por cabeça, pouca gente não forma letra miúda. Até `FRASE_CURTA`
+     letras vale sempre; mais que isso, só com `TORCIDA_GRANDE` membros no
+     setor. A torcida pequena troca o nome dela pela sigla (com o escudo)
+     e as frases do time pela sigla do clube. */
+  const FRASE_CURTA = 9, TORCIDA_GRANDE = 200;
+  const letras = txt => String(txt).replace(/\s+/g, '').length;
+  function fraseDoMosaico(F, S){
     const o = F.torcida || {};
     const t = TO.mundo.time && TO.mundo.time(F.clubeId);
     const clube = (t && t.nome) || o.clube || '';
     const sigla = String((t && t.sigla) || o.sigla || '').toUpperCase();
-    if(F.qualFrase % 2 === 0 && o.nome) return {txt:String(o.nome).toUpperCase(), escudo:true};
+    const grande = !!(S && S.nossos.length >= TORCIDA_GRANDE);
+    const cabe = txt => grande || letras(txt) <= FRASE_CURTA;
+    if(F.qualFrase % 2 === 0 && o.nome){
+      const nome = String(o.nome).toUpperCase();
+      const curta = String(F.sigla || '').toUpperCase();
+      return {txt: cabe(nome) || !curta ? nome : curta, escudo:true};
+    }
     const lista = [_t('SOMOS {c}', {c:String(clube).toUpperCase()}), _t('LUTAREMOS JUNTOS'), _t('LUTAR E VENCER')];
     if(sigla) lista.push(sigla);
-    return {txt:lista[Math.floor(F.qualFrase / 2) % lista.length], escudo:false};
+    const servem = lista.filter(cabe);
+    const pool = servem.length ? servem : lista;
+    return {txt:pool[Math.floor(F.qualFrase / 2) % pool.length], escudo:false};
   }
+
   const fonteFrase = q => `400 ${q}px 'Ultra Local', Ultra, 'Arial Black', serif`;
   /* o texto no maior tamanho que cabe na caixa (x, y, W, H), em uma ou
      duas linhas, engrossado: um traço da cor da letra por baixo e o
@@ -329,7 +345,7 @@ TO.diaJogo.festas = (function(){
          terceira (tricolor). Com o nome da torcida, o escudo junto: do
          lado se o setor é largo, em cima (no fundo do anel) se é fundo */
       c.fillStyle = a; c.fillRect(0, 0, W, H);
-      const fr = fraseDoMosaico(F);
+      const fr = fraseDoMosaico(F, S);
       const esc = F.escudo;
       let cx = 0, cy = 0, cw = W, chh = H;
       if(fr.escudo && esc && !esc._erro){

@@ -10272,6 +10272,15 @@ SOMOS FORTALEZA, LUTAREMOS JUNTOS, LUTAR E VENCER ou a sigla do time FEC."
 - Se a fonte ainda não carregou, desenha com a reserva e refaz quando
   ela chegar.
 
+## Frase longa só pra torcida grande (dono, 11/10/2026)
+
+"Deixe frases longas só para torcidas grandes." Com um papel por cabeça,
+pouca gente não forma letra miúda.
+- Até 9 letras (sem contar espaço) vale sempre; mais que isso, só com
+  200 ou mais membros no setor (`FRASE_CURTA`, `TORCIDA_GRANDE`).
+- Torcida pequena: o nome dela vira a sigla da torcida (com o escudo); as
+  frases do time ficam só as que cabem — na prática, a sigla do clube.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
