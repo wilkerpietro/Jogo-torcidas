@@ -70,7 +70,12 @@ TO.diaJogo.festas = (function(){
       relogio:0, ultimo:null, lista, paleta, torcida:o, clubeId:opc.clubeId || o.clubeId,
       nome: String(o.nome || '').toUpperCase(), sigla: TO.mundo.siglaTorcida ? TO.mundo.siglaTorcida(o) : '',
       /* escudo ou só as cores, sorteado pelo jogo (dono: "aleatório") */
-      modoMosaico: (opc.semente != null ? Math.abs(opc.semente) % 2 : (Math.random() < .5 ? 0 : 1)) === 0 ? 'escudo' : 'cores',
+      /* escudo (com o fundo listrado), só as listras ou uma frase, nas
+         cores da torcida (dono: "aleatório"; 11/10/2026: "o mosaico pode
+         formar frases com as cores da torcida ou o escudo do time, com o
+         fundo listrado") */
+      modoMosaico: ['escudo', 'cores', 'frase'][opc.semente != null ? Math.abs(opc.semente) % 3 : Math.floor(Math.random() * 3)],
+      qualFrase: opc.semente != null ? Math.floor(Math.abs(opc.semente) / 6) : Math.floor(Math.random() * 12),
       oriListras: (opc.semente != null ? Math.floor(Math.abs(opc.semente) / 2) % 2 : (Math.random() < .5 ? 0 : 1)) === 0 ? 'vertical' : 'horizontal',
       janelas:{
         trapos:    tem('trapos')    ? [0, Infinity] : null,
@@ -218,48 +223,112 @@ TO.diaJogo.festas = (function(){
     }
     F._listras = {n: S.nossos.length};
   }
+  /* a frase do mosaico: o nome da torcida ou o nome do time (dono,
+     11/10/2026), sorteado pelo jogo */
+  function fraseDoMosaico(F){
+    const t = TO.mundo.time && TO.mundo.time(F.clubeId);
+    const clube = String((t && t.nome) || '').toUpperCase();
+    const lista = [F.nome, clube].filter(Boolean);
+    return lista.length ? lista[F.qualFrase % lista.length] : (F.sigla || '');
+  }
+  /* o texto no maior tamanho que cabe, em uma ou duas linhas */
+  function escreverFrase(c, W, H, txt, cor, contorno){
+    const palavras = txt.split(/\s+/);
+    const opcoes = [[txt]];
+    if(palavras.length > 1){
+      let melhor = null;
+      for(let i = 1; i < palavras.length; i++){
+        const l = [palavras.slice(0, i).join(' '), palavras.slice(i).join(' ')];
+        const m = Math.max(l[0].length, l[1].length);
+        if(!melhor || m < melhor.m) melhor = {l, m};
+      }
+      opcoes.push(melhor.l);
+    }
+    let melhor = null;
+    for(const linhas of opcoes){
+      let px = Math.floor(H * 0.86 / linhas.length);
+      const fonte = q => `900 ${q}px Oswald, Impact, sans-serif`;
+      c.font = fonte(px);
+      const larg = () => Math.max(...linhas.map(l => c.measureText(l).width));
+      while(px > 8 && larg() > W * 0.84){ px--; c.font = fonte(px); }
+      if(!melhor || px > melhor.px) melhor = {px, linhas};
+    }
+    c.font = `900 ${melhor.px}px Oswald, Impact, sans-serif`;
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.lineJoin = 'round';
+    const n = melhor.linhas.length, passo = melhor.px * 1.02;
+    melhor.linhas.forEach((l, i) => {
+      const y = H/2 + (i - (n - 1)/2) * passo;
+      if(contorno){ c.lineWidth = melhor.px * 0.16; c.strokeStyle = contorno; c.strokeText(l, W/2, y); }
+      c.fillStyle = cor; c.fillText(l, W/2, y);
+    });
+  }
+  /* A ARTE DO MOSAICO de escudo ou frase, no tamanho do setor. Embaixo
+     dela vai uma tira com as cores da torcida: o papel que cai FORA do
+     escudo pega a cor da listra dele ali (o fundo listrado, na régua do
+     campo), e no 3D o uv aponta pro quadradinho dessa cor. */
+  const TIRA = 16;
   function arteDoMosaico(F, S){
     const w = S.u1 - S.u0, h = S.v1 - S.v0;
-    const pronta = F.arteM && Math.abs(F.arteM.ww - w) < w*0.15 && Math.abs(F.arteM.hh - h) < h*0.15 &&
-                   !(F.arteM.semEscudo && F.escudo && F.escudo._ok);
-    if(pronta) return F.arteM;
-    if(F.modoMosaico !== 'escudo' || !F.escudo || F.escudo._erro){
+    const temEscudo = F.modoMosaico === 'escudo' && F.escudo && !F.escudo._erro;
+    if(!temEscudo && F.modoMosaico !== 'frase'){
       if(F.arteM && F.arteM.porDisco) return F.arteM;
       return (F.arteM = paletaDoMosaico(F));
     }
+    const pronta = F.arteM && !F.arteM.porDisco && Math.abs(F.arteM.ww - w) < w*0.15 && Math.abs(F.arteM.hh - h) < h*0.15 &&
+                   !(F.arteM.semEscudo && F.escudo && F.escudo._ok);
+    if(pronta) return F.arteM;
     const k = 2;
     const cv = document.createElement('canvas');
-    cv.width = Math.max(8, Math.round(w*k)); cv.height = Math.max(8, Math.round(h*k));
+    const W = Math.max(8, Math.round(w*k)), H = Math.max(8, Math.round(h*k));
+    cv.width = W; cv.height = H + TIRA;
     const c = cv.getContext('2d');
-    const W = cv.width, H = cv.height;
     const [a, b, d] = F.paleta;
-    const esc = F.escudo;
+    const cores = coresDistintas(F.paleta);
+    const tri = cores.length >= 3;
+    cores.forEach((cor, i) => { c.fillStyle = cor; c.fillRect(Math.floor(i*W/cores.length), H, Math.ceil(W/cores.length) + 1, TIRA); });
     cv.semEscudo = false;
-    {
+    if(temEscudo){
+      const esc = F.escudo;
       c.fillStyle = a; c.fillRect(0, 0, W, H);
-      /* um aro na segunda cor em volta do escudo, pra ele saltar do fundo */
-      const r = Math.min(W, H) * 0.47;
-      /* tricolor: a terceira cor faz um anel por fora do aro */
-      if(coresDistintas([a, b, d]).length >= 3){
-        c.beginPath(); c.arc(W/2, H/2, r*1.12, 0, Math.PI*2); c.fillStyle = d; c.fill();
-      }
+      /* um aro na segunda cor em volta do escudo, pra ele saltar do fundo;
+         na tricolor, a terceira faz um anel por fora */
+      /* menor que o setor: sobra borda pro fundo listrado aparecer */
+      const r = Math.min(W, H) * 0.34;
+      const rFora = tri ? r*1.12 : r;
+      if(tri){ c.beginPath(); c.arc(W/2, H/2, rFora, 0, Math.PI*2); c.fillStyle = d; c.fill(); }
       c.beginPath(); c.arc(W/2, H/2, r, 0, Math.PI*2); c.fillStyle = b; c.fill();
       if(esc._ok){
         const iw = esc.naturalWidth || 1, ih = esc.naturalHeight || 1;
         const s2 = Math.min(r*1.7/iw, r*1.7/ih);
         c.drawImage(esc, W/2 - iw*s2/2, H/2 - ih*s2/2, iw*s2, ih*s2);
       } else cv.semEscudo = true;
+      /* o círculo, em coordenada do setor: quem está dentro mostra o escudo */
+      cv.circulo = {u:(S.u0 + S.u1)/2, v:(S.v0 + S.v1)/2, r: rFora / k};
+      cv.cores = cores;
+    } else {
+      /* a frase: fundo na primeira cor, letra na segunda, contorno na terceira */
+      c.fillStyle = a; c.fillRect(0, 0, W, H);
+      escreverFrase(c, W, H, fraseDoMosaico(F), b, tri ? d : null);
     }
-    cv.ww = w; cv.hh = h; cv.k = k; cv.u0 = S.u0; cv.v0 = S.v0;
+    cv.ww = w; cv.hh = h; cv.k = k; cv.u0 = S.u0; cv.v0 = S.v0; cv.H = H; cv.Htot = H + TIRA;
     F.arteM = cv;
     return cv;
   }
+  /* este papel é listra (uma cor só) ou mostra o pedaço da arte? */
+  function corDoPapel(arte, d){
+    if(arte.porDisco) return d._cm || 0;
+    const C = arte.circulo;
+    if(!C) return -1;
+    return Math.hypot(d._u - C.u, d._v - C.v) <= C.r ? -1 : (d._cm || 0);
+  }
+
 
   function desenharMosaico(c, J, F, S, t){
     const [a, b] = F.janelas.mosaico;
     if(t < a || t > b) return;
     const arte = arteDoMosaico(F, S);
-    if(arte.porDisco) listrasDoCampo(F, S);
+    if(arte.cores) listrasDoCampo(F, S);
     const k = arte.k;
     const CW = 19, CH = 17;
     c.save(); noSetor(c, S);
@@ -270,12 +339,13 @@ TO.diaJogo.festas = (function(){
       const p = suave(fase(t, a + atraso, b - 0.9 + atraso, 0.35, 0.35));
       if(p <= 0) continue;
       const ch = CH * p;
-      if(arte.porDisco){
-        c.fillStyle = arte.cores[d._cm || 0];
+      const ci = corDoPapel(arte, d);
+      if(ci >= 0){
+        c.fillStyle = arte.cores[ci];
         c.fillRect(d._u - CW/2, d._v - ch/2, CW, ch);
       } else {
         const sx = (d._u - CW/2 - arte.u0) * k, sy = (d._v - CH/2 - arte.v0) * k;
-        c.drawImage(arte, Math.max(0, sx), Math.max(0, sy), CW*k, CH*k,
+        c.drawImage(arte, Math.max(0, sx), Math.max(0, Math.min(sy, (arte.H || arte.height) - CH*k)), CW*k, CH*k,
                     d._u - CW/2, d._v - ch/2, CW, ch);
       }
       c.fillStyle = 'rgba(0,0,0,.16)';
@@ -611,7 +681,7 @@ TO.diaJogo.festas = (function(){
     }
     const M = P.mosaico;
     if(M.arte !== arte){ M.tx.dispose(); M.tx = textura(arte); M.mesh.material.map = M.tx; M.mesh.material.needsUpdate = true; M.arte = arte; }
-    if(arte.porDisco) listrasDoCampo(F, S);
+    if(arte.cores) listrasDoCampo(F, S);
     const pos = M.geo.attributes.position.array, uv = M.geo.attributes.uv.array;
     const W = S.u1 - S.u0, H = S.v1 - S.v0;
     const CW = 17.5, CH = 15.5, INCL = 0.35;     // o papel inclinado pro campo
@@ -627,17 +697,20 @@ TO.diaJogo.festas = (function(){
       const hw = CW/2, hh = CH/2 * p;
       const du = d._u, dv = d._v;
       const cs = [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
+      const ci = corDoPapel(arte, d);
       for(let k = 0; k < 4; k++){
         const [ou, ov] = cs[k];
         /* a borda da frente (v+) mais baixa: o papel olha pro campo e pro alto */
         const q = ponto(S, du + ou, dv + ov, h - ov * INCL);
         pos.set(q, (n*4 + k)*3);
-        if(arte.porDisco){
-          /* um papel, uma cor: o meio do quadradinho dela na paleta */
-          uv[(n*4 + k)*2] = ((d._cm || 0) + 0.5) / arte.cores.length; uv[(n*4 + k)*2 + 1] = 0.5;
+        if(ci >= 0){
+          /* um papel, uma cor: o meio do quadradinho dela (na paleta, ou
+             na tira de cores embaixo da arte) */
+          uv[(n*4 + k)*2] = (ci + 0.5) / arte.cores.length;
+          uv[(n*4 + k)*2 + 1] = arte.porDisco ? 0.5 : TIRA / 2 / arte.Htot;
         } else {
           const uu = (du + ou - S.u0) / W, vv = (dv + ov - S.v0) / H;
-          uv[(n*4 + k)*2] = uu; uv[(n*4 + k)*2 + 1] = 1 - vv;
+          uv[(n*4 + k)*2] = uu; uv[(n*4 + k)*2 + 1] = 1 - vv * arte.H / arte.Htot;
         }
       }
       n++;

@@ -10236,6 +10236,23 @@ França ou horizontais tipo a da Holanda".
 - A orientação é sorteada pelo jogo (`oriListras`); o modo escudo não
   mudou.
 
+## Mosaico: frase ou escudo com fundo listrado (dono, 11/10/2026)
+
+"O mosaico pode formar frases com as cores da torcida ou pode formar o
+escudo do time também, com o fundo listrado"; "as frases podem ser tanto
+o nome da torcida como o nome do time".
+- Três desenhos sorteados pelo jogo (`modoMosaico`): escudo, listras ou
+  frase.
+- ESCUDO: o círculo (raio 0,34 do setor, com aro na segunda cor e anel na
+  terceira se for tricolor) mostra o escudo; quem está fora dele pega a
+  cor da listra do campo ali (`corDoPapel`), na mesma régua das listras.
+  A arte leva embaixo uma tira com as cores da torcida, e no 3D o uv do
+  papel de fora aponta pro quadradinho da cor dele.
+- FRASE: o nome da torcida ou o nome do time (`qualFrase`), no maior
+  tamanho que cabe em uma ou duas linhas; fundo na primeira cor, letra
+  na segunda, contorno na terceira (tricolor). Lê-se do campo, como o
+  escudo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
