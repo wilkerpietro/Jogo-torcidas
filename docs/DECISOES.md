@@ -10315,6 +10315,16 @@ ela para de ir atrás de confusão, mesmo continuando sendo rival."
   semanas; depois de 3 defesas seguradas, 0 (relação segue −100); um
   ataque nosso a ela e voltou a 68.
 
+## O estádio da cena é o do mandante do jogo na tela (dono, 11/10/2026)
+
+"Em alguns jogos o estádio não é o da capacidade do mandante" (Fortaleza ×
+Athletic no Castelão abriu o estádio pequeno). `cenaDoEstadio` lia
+`E.proximoJogo`, que é o jogo da SEMANA: numa semana com dois jogos ele
+apontava pro outro (o Athletic de MG tem 15 mil → `estadio-10`). Agora a
+cena usa o mandante da mensagem da partida (`d.casaId` → capacidade do
+clube) e só cai no `proximoJogo` sem ela. A prévia de bairro da briga na
+arquibancada também passou a usar a cena certa (era `estadio-20` fixo).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

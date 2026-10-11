@@ -2008,7 +2008,7 @@
     const nossos = pres.filter(p => p.casa === !!d.somosCasa).sort((a,b) => b.n - a.n);
     const deles = pres.filter(p => p.casa !== !!d.somosCasa).sort((a,b) => b.n - a.n);
     if(!nossos.some(p => p.id === e.torcida.id)) return null;
-    const local = cenaDoEstadio(e);
+    const local = cenaDoEstadio(e, d);
     const setores = SETORES_ESTADIO[local] || {mandante:3, visitante:3};
     const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
     const outroLado = d.somosCasa ? 'visitante' : 'mandante';
@@ -2520,7 +2520,7 @@
        briga mexe na barra dele */
     const rivalDaBriga = ((d.presenca || []).filter(p => p.id && p.casa !== !!d.somosCasa).sort((a, b) => b.n - a.n)[0] || {}).id;
     const pvA = rivalDaBriga && TO.feed.previaDaBriga ? TO.feed.previaDaBriga(e, {torcidaId:rivalDaBriga, atacamos:true,
-      local:{cena:'estadio-20', bairro:'', cidade:d.mapa || null, estadio:d.estadio || null}}) : null;
+      local:{cena:cenaDoEstadio(e, d), bairro:'', cidade:d.mapa || null, estadio:d.estadio || null}}) : null;
     if(pvA && pvA.onde) m.consequencia += ' ' + _t('Bairro: {bairro}.', {bairro:pvA.onde}) + (pvA.linha ? ' ' + pvA.linha + '.' : '');
     /* quem ficou quieto entra na consequência mais abaixo, depois de
        a gente saber quem é aliado de quem */
@@ -2545,7 +2545,7 @@
       if(!TO.feed.travado(e)) retomarTempo('decisao');
       return;
     }
-    const local = cenaDoEstadio(e);
+    const local = cenaDoEstadio(e, d);
     const setores = SETORES_ESTADIO[local] || {mandante:3, visitante:3};
     const nossoLado = d.somosCasa ? 'mandante' : 'visitante';
     const outroLado = d.somosCasa ? 'visitante' : 'mandante';
@@ -11038,17 +11038,27 @@
   /* qual estádio a cena dos arredores abre (fotos do dono, 19/08/2026):
      pela capacidade do estádio do MANDANTE do nosso jogo — até 15 mil o
      pequeno, até 32 mil o médio, acima disso o grandão */
-  function cenaDoEstadio(e){
+  /* O ESTÁDIO É O DO JOGO NA TELA (dono, 11/10/2026: "em alguns jogos o
+     estádio não é o da capacidade do mandante"): `proximoJogo` é o jogo
+     da SEMANA — numa semana com dois jogos (o do meio de semana em
+     casa e o de fim de semana fora, ou a ida e a volta da copa) ele
+     apontava pro outro, e o Fortaleza × Athletic no Castelão abria o
+     estádio pequeno do Athletic. Com a mensagem da partida em mãos,
+     vale o mandante dela; `proximoJogo` fica só de reserva. */
+  function cenaDoEstadio(e, d){
+    const casa = d && d.casaId && TO.mundo.time ? TO.mundo.time(d.casaId) : null;
+    if(casa && casa.capacidade) return faixaDoEstadio(casa.capacidade);
     const pj = e.proximoJogo || {};
     let cap = pj.capacidade;
     if(cap == null){
       const t = (TO.dados.times || []).find(x => x.estadio === pj.estadio);
       cap = t && t.capacidade;
     }
-    return !cap ? 'estadio-20'
+    return faixaDoEstadio(cap);
+  }
+  const faixaDoEstadio = cap => !cap ? 'estadio-20'
          : cap <= 15000 ? 'estadio-10'
          : cap <= 32000 ? 'estadio-20' : 'estadio-40';
-  }
 
   const perfilDe = id => {
     const o = id ? TO.mundo.torcida(id) : null;
