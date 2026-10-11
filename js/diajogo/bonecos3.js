@@ -1715,6 +1715,16 @@ TO.diaJogo.bonecos3 = (function(){
     p.inclina = 0.15 + 0.12*puxa; p.gira = 0.08*Math.sin(w*0.7); p.olhaX = 0.2;
     p.coxa = [-0.5, 0.4]; p.joelho = [0.55, 0.4]; p.y = -2.4;
   }
+  /* ERGUER (festas da arquibancada, 11/10/2026): os dois braços no alto
+     segurando o papel do mosaico ou o pano do bandeirão. No bandeirão
+     os braços balançam com o pano, e o corpo acompanha. */
+  function erguerPose(p, f, t, tipo){
+    parado(p, f, t);
+    const w = t*3.4 + f.fase, b = tipo === 'bandeirao' ? Math.sin(w) : 0.25*Math.sin(w*0.6);
+    p.ombro = [-2.95 + 0.12*b, -2.95 - 0.12*b]; p.cotovelo = [-0.12, -0.12];
+    p.ombroZ = [0.16, 0.16]; p.maoZ = [0, 0]; p.punho = [0, 0]; p.pulso = [-0.3, -0.3];
+    p.olhaX = -0.35; p.inclina = -0.05; p.y += tipo === 'bandeirao' ? 0.6*Math.max(0, b) : 0;
+  }
   /* SEGURADO: se debate — as mãos nos braços de quem segura, o tronco
      torcendo, um pé arrastando */
   function seguradoPose(p, f, t){
@@ -2034,6 +2044,8 @@ TO.diaJogo.bonecos3 = (function(){
       else if(d.apanhou > 0 && !andando){ cobrirSe(p, f, t); rapidez = 16; f.ataque = null; }
       else if(d.hostil > 0 && !andando && !corre){ guarda(p, f, ti); rapidez = 12; f.ataque = null; }
       else if(!andando && d.linha==='retaguarda' && !J.paz && !leve){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
+      /* a festa: papel ou pano erguido (festas_cena.js marca quem segura) */
+      else if(!andando && d.festaPose){ erguerPose(p, f, t, d.festaPose); rapidez = 7; f.ataque = null; f.provoca = null; }
       /* a arquibancada assistindo ao jogo (10/10/2026): todo mundo torce */
       else if(!andando && J.assistir){ torcer(p, f, t, dt); rapidez = 9; f.ataque = null; }
       else { f.ataque = null; rapidez = andando ? 14 : 5; }
@@ -2407,6 +2419,11 @@ TO.diaJogo.bonecos3 = (function(){
     projeteis(J);
     atualizarParticulas(dt);
     gradesDeFerro(J.grades);
+    /* as festas da arquibancada em 3D, na mesma cena e na mesma luz */
+    const FS = TO.diaJogo.festas;
+    if(FS && FS.atualizar3d){
+      try{ FS.atualizar3d(scene, J, dt); }catch(e){ console.warn('festas3d: ' + (e && e.message)); }
+    }
   }
 
   /* O QUE É SÓ DA FIGURA SAI DA PLACA COM ELA: os materiais clonados

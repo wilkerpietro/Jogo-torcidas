@@ -423,15 +423,23 @@ TO.diaJogo.festas = (function(){
   }
 
   /* chamado pela ponte, com a matriz de mundo já posta */
-  function desenhar(c, J){
-    const F = J && J.festa;
-    if(!F) return;
-    const S = setor(J);
-    if(!S) return;
+  /* o relógio da festa, em tempo real (um só, seja 2D ou 3D quem desenha) */
+  function avancar(F){
     const agora = performance.now() / 1000;
     const dt = F.ultimo == null ? 0.016 : Math.max(0, Math.min(0.25, agora - F.ultimo));
     F.ultimo = agora;
     F.relogio += dt;
+    return dt;
+  }
+  function desenhar(c, J){
+    const F = J && J.festa;
+    if(!F) return;
+    /* com os bonecos em Three.js, a festa é 3D (atualizar3d): o 2D só
+       entra quando a placa não está desenhando */
+    if(F.visto3d && performance.now() - F.visto3d < 600) return;
+    const S = setor(J);
+    if(!S) return;
+    const dt = avancar(F);
     const t = F.relogio;
     const W = F.janelas;
     /* a ordem é a de altura: tecido no setor, papel na mão, bandeirão por
@@ -464,5 +472,414 @@ TO.diaJogo.festas = (function(){
     return fora;
   }
 
-  return {iniciar, gol, desenhar, emCena};
+
+  /* =======================================================
+     A FESTA EM THREE.JS (pedido do dono, 11/10/2026: "refaça os
+     desenhos das festas pra ficar mais bonito em threejs")
+
+     Na MESMA cena dos bonecos (bonecos3.atualizarCena chama aqui
+     a cada quadro), com a mesma luz e a mesma câmera de cima com
+     cisalhamento — então altura é altura de verdade: o papel fica
+     na mão erguida, o bandeirão ondula por cima das cabeças com
+     luz e sombra nas dobras, os trapos descem do alto do fundo até
+     o alambrado, o confete cai girando e o mosaico 3D fica de pé,
+     inclinado no degrau, de frente pro campo.
+
+     Coordenadas: x = x do disco, z = y do disco, y = altura.
+     Os eixos do setor (R, f) são os mesmos do 2D (`setor`).
+     ======================================================= */
+  const ALT_MAO = 44;             // a mão erguida de um boneco em pé
+  const g3 = {cena:null, F:null, raiz:null, partes:{}};
+
+  function limpar3d(){
+    if(g3.raiz && g3.cena) g3.cena.remove(g3.raiz);
+    if(g3.raiz) g3.raiz.traverse(o=>{
+      if(o.geometry) o.geometry.dispose();
+      if(o.material){
+        if(o.material.map) o.material.map.dispose();
+        o.material.dispose();
+      }
+    });
+    g3.raiz = null; g3.F = null; g3.partes = {};
+  }
+  function textura(canvas){
+    const tx = new THREE.CanvasTexture(canvas);
+    if(THREE.SRGBColorSpace) tx.colorSpace = THREE.SRGBColorSpace;
+    tx.anisotropy = 4;
+    return tx;
+  }
+  const lambert = (opc) => new THREE.MeshLambertMaterial(Object.assign({side:THREE.DoubleSide}, opc));
+  /* um ponto do setor no mundo: (u, v) nos eixos do setor, h de altura */
+  const ponto = (S, u, v, h) => [S.cx + u*S.R[0] + v*S.f[0], h, S.cy + u*S.R[1] + v*S.f[1]];
+  /* geometria de quads em lote (posição e UV reescritas a cada quadro) */
+  function lote(nQuads){
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nQuads*4*3), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(nQuads*4*2), 2));
+    const idx = new (nQuads*4 > 65535 ? Uint32Array : Uint16Array)(nQuads*6);
+    for(let i = 0; i < nQuads; i++){
+      const a = i*4;
+      idx.set([a, a+1, a+2, a, a+2, a+3], i*6);
+    }
+    g.setIndex(new THREE.BufferAttribute(idx, 1));
+    return g;
+  }
+  /* uma malha em grade (nu × nv células) com posição e UV livres */
+  function grade(nu, nv){
+    const g = new THREE.BufferGeometry();
+    const n = (nu+1)*(nv+1);
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n*3), 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n*2), 2));
+    const idx = [];
+    for(let j = 0; j < nv; j++) for(let i = 0; i < nu; i++){
+      const a = j*(nu+1) + i, b = a + 1, c = a + nu + 1, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+    g.setIndex(idx);
+    g.nu = nu; g.nv = nv;
+    return g;
+  }
+
+  /* ---------- o mosaico: um papel na mão de cada um ---------- */
+  function mosaico3(F, S, t){
+    const P = g3.partes;
+    const jan = F.janelas.mosaico;
+    if(!jan) return;
+    const [a, b] = jan;
+    const arte = arteDoMosaico(F, S);
+    if(!P.mosaico){
+      const N = 400;
+      const geo = lote(N);
+      const tx = textura(arte);
+      const mesh = new THREE.Mesh(geo, lambert({map:tx}));
+      mesh.frustumCulled = false;
+      g3.raiz.add(mesh);
+      P.mosaico = {mesh, geo, tx, N, arte};
+    }
+    const M = P.mosaico;
+    if(M.arte !== arte){ M.tx.dispose(); M.tx = textura(arte); M.mesh.material.map = M.tx; M.mesh.material.needsUpdate = true; M.arte = arte; }
+    const pos = M.geo.attributes.position.array, uv = M.geo.attributes.uv.array;
+    const W = S.u1 - S.u0, H = S.v1 - S.v0;
+    const CW = 17.5, CH = 15.5, INCL = 0.35;     // o papel inclinado pro campo
+    let n = 0;
+    for(const d of S.nossos){
+      if(n >= M.N) break;
+      const atraso = profundidade(S, d._v) * 0.9;
+      const p = suave(fase(t, a + atraso, b - 0.9 + atraso, 0.35, 0.35));
+      d.festaPose = p > 0.05 ? 'mosaico' : (d.festaPose === 'mosaico' ? null : d.festaPose);
+      if(p <= 0) continue;
+      /* o papel sobe com a mão: de 26 (no peito) até a mão erguida */
+      const h = 26 + (ALT_MAO - 26) * p;
+      const hw = CW/2, hh = CH/2 * p;
+      const du = d._u, dv = d._v;
+      const cs = [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]];
+      for(let k = 0; k < 4; k++){
+        const [ou, ov] = cs[k];
+        /* a borda da frente (v+) mais baixa: o papel olha pro campo e pro alto */
+        const q = ponto(S, du + ou, dv + ov, h - ov * INCL);
+        pos.set(q, (n*4 + k)*3);
+        const uu = (du + ou - S.u0) / W, vv = (dv + ov - S.v0) / H;
+        uv[(n*4 + k)*2] = uu; uv[(n*4 + k)*2 + 1] = 1 - vv;
+      }
+      n++;
+    }
+    M.geo.setDrawRange(0, n*6);
+    M.geo.attributes.position.needsUpdate = true; M.geo.attributes.uv.needsUpdate = true;
+    M.geo.computeVertexNormals();
+    M.mesh.visible = n > 0;
+  }
+
+  /* ---------- o bandeirão: o pano ondulando por cima das cabeças ---------- */
+  function bandeirao3(F, S, t){
+    const P = g3.partes;
+    const jan = F.janelas.bandeirao;
+    if(!jan) return;
+    const p = suave(fase(t, jan[0], jan[1], 1.4, 1.2));
+    for(const d of S.nossos)
+      if(p > 0.02) d.festaPose = d.festaPose || 'bandeirao';
+      else if(d.festaPose === 'bandeirao') d.festaPose = null;
+    if(!P.ban){
+      const geo = grade(48, 30);
+      const src = F.bandeira;
+      let mat;
+      /* a cor do vértice escurece a encosta da dobra: a luz de cima
+         sozinha quase não separa uma onda da outra vista do alto */
+      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count*3).fill(1), 3));
+      if(src && src.width){ const tx = textura(src); mat = lambert({map:tx, vertexColors:true}); P.banTx = tx; }
+      else mat = lambert({color:F.paleta[0], vertexColors:true});
+      const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false;
+      /* a sombra do pano no setor */
+      const sg = grade(1, 1);
+      const sombra = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.3, depthWrite:false, side:THREE.DoubleSide}));
+      sombra.frustumCulled = false;
+      g3.raiz.add(sombra); g3.raiz.add(mesh);
+      P.ban = {mesh, geo, sombra, sg};
+    }
+    const B = P.ban;
+    B.mesh.visible = B.sombra.visible = p > 0;
+    if(p <= 0) return;
+    const u0 = S.u0 - 8, w = S.u1 - S.u0 + 16;
+    const vTopo = S.v0 - 8, h = S.v1 - S.v0 + 16, vBase = vTopo + h;
+    /* abre do alambrado pro fundo: a borda da frente fica, a de trás corre */
+    const hh = h * p;
+    const alt = 30 + (ALT_MAO + 4 - 30) * p;
+    const pos = B.geo.attributes.position.array, uv = B.geo.attributes.uv.array;
+    const cor = B.geo.attributes.color.array;
+    const nu = B.geo.nu, nv = B.geo.nv;
+    for(let j = 0; j <= nv; j++){
+      const r = j / nv;
+      for(let i = 0; i <= nu; i++){
+        const s2 = i / nu;
+        const u = u0 + s2 * w, v = vBase - hh + r * hh;
+        /* duas ondas cruzadas, mais forte no meio do pano; as bordas
+           caem um pouco onde ninguém segura */
+        /* dobras largas (o vento) e miúdas (as mãos puxando) */
+        const onda = 6.5*Math.sin(t*2.4 + s2*6 + r*3) + 2.6*Math.sin(t*3.7 - r*9 + s2*4)
+                   + 1.2*Math.sin(t*5.1 + s2*15);
+        const borda = Math.min(s2, 1 - s2, r, 1 - r);
+        const cai = borda < 0.06 ? (0.06 - borda) * 60 : 0;
+        const q = ponto(S, u, v, alt + onda * (0.6 + 0.4*p) - cai);
+        const k = j*(nu+1) + i;
+        pos.set(q, k*3);
+        uv[k*2] = s2; uv[k*2+1] = 1 - r;
+        /* a encosta: a derivada da dobra larga, clara de um lado e
+           escura do outro */
+        const enc = Math.cos(t*2.4 + s2*6 + r*3) + 0.4*Math.cos(t*3.7 - r*9 + s2*4);
+        const luz = Math.max(0.42, Math.min(1.15, 0.84 + 0.3*enc));
+        cor[k*3] = cor[k*3+1] = cor[k*3+2] = luz;
+      }
+    }
+    B.geo.attributes.color.needsUpdate = true;
+    B.geo.attributes.position.needsUpdate = true; B.geo.attributes.uv.needsUpdate = true;
+    B.geo.computeVertexNormals();
+    /* a sombra: o mesmo retângulo no chão, empurrado pro lado da luz */
+    const sp = B.sg.attributes.position.array;
+    const cantos = [[u0, vBase - hh], [u0 + w, vBase - hh], [u0, vBase], [u0 + w, vBase]];
+    cantos.forEach(([u, v], k) => { const q = ponto(S, u + 6, v + 8, 1.5); sp.set(q, k*3); });
+    B.sg.attributes.position.needsUpdate = true;
+  }
+
+  /* ---------- os trapos: do alto do fundo até o alambrado ---------- */
+  function trapos3(F, S, t){
+    const P = g3.partes;
+    if(!F.janelas.trapos) return;
+    const W = F.janelas;
+    const ocupa = ['mosaico','bandeirao'].some(id => W[id] && t >= W[id][0] - 0.4 && t <= W[id][1] + 0.4);
+    /* recolhe enquanto o mosaico e o bandeirão estão no ar */
+    F.recolhe = Math.max(0, Math.min(1, (F.recolhe || 0) + (ocupa ? 0.04 : -0.04)));
+    const largura = S.u1 - S.u0;
+    const n = Math.max(2, Math.floor(largura / 40));
+    if(!P.trapos || P.trapos.n !== n){
+      if(P.trapos) for(const r of P.trapos.fitas){ g3.raiz.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); }
+      const fitas = [];
+      for(let k = 0; k < n; k++){
+        /* a tira tem friso: uma textura de três listras ao comprido */
+        const cv = document.createElement('canvas'); cv.width = 8; cv.height = 4;
+        const c = cv.getContext('2d');
+        const cor = F.paleta[k % 2], cor2 = F.paleta[(k + 1) % 2];
+        c.fillStyle = cor; c.fillRect(0, 0, 8, 4);
+        c.fillStyle = cor2; c.fillRect(1, 0, 1, 4); c.fillRect(6, 0, 1, 4);
+        const tx = textura(cv); tx.magFilter = THREE.NearestFilter;
+        const geo = grade(1, 24);
+        const mesh = new THREE.Mesh(geo, lambert({map:tx}));
+        mesh.frustumCulled = false;
+        g3.raiz.add(mesh);
+        fitas.push({mesh, geo});
+      }
+      P.trapos = {n, fitas};
+    }
+    const passo = largura / n, comp = S.v1 - S.v0 + 20;
+    const L = 18;
+    P.trapos.fitas.forEach((r, k) => {
+      r.mesh.visible = F.recolhe < 0.98;
+      if(!r.mesh.visible) return;
+      const base = S.u0 + passo * (k + 0.5);
+      const pos = r.geo.attributes.position.array, uv = r.geo.attributes.uv.array;
+      const nv = r.geo.nv;
+      for(let j = 0; j <= nv; j++){
+        const s2 = j / nv;
+        /* do alto do fundo (64) ao alambrado (24), com barriga no meio;
+           recolhida, a tira sobe e encurta pro fundo */
+        const vv = S.v0 - 10 + s2 * comp * (1 - 0.85 * F.recolhe);
+        const h = 64 + (24 - 64) * s2 - 10 * Math.sin(Math.PI * s2) + 3 * Math.sin(t*1.6 + k + s2*4) * Math.sin(Math.PI*s2);
+        const lado = 2.4 * Math.sin(t*1.3 + k*1.7 + s2*3) * Math.sin(Math.PI*s2);
+        for(let i = 0; i <= 1; i++){
+          const q = ponto(S, base + lado + (i ? L/2 : -L/2), vv, h);
+          const kk = j*2 + i;
+          pos.set(q, kk*3);
+          uv[kk*2] = i; uv[kk*2+1] = 1 - s2;
+        }
+      }
+      r.geo.attributes.position.needsUpdate = true; r.geo.attributes.uv.needsUpdate = true;
+      r.geo.computeVertexNormals();
+    });
+  }
+
+  /* ---------- o papel picado: confete girando ---------- */
+  function papel3(F, S, t, dt){
+    const P = g3.partes;
+    if(!F.lista.includes('papel')) return;
+    const MAX = 600;
+    if(!P.papel){
+      const geo = new THREE.PlaneGeometry(3.4, 2.2);
+      const mesh = new THREE.InstancedMesh(geo, lambert({color:0xffffff}), MAX);
+      mesh.frustumCulled = false;
+      mesh.count = 0;
+      g3.raiz.add(mesh);
+      P.papel = {mesh, obj:new THREE.Object3D(), cor:new THREE.Color()};
+    }
+    /* nasce: cada chuva solta confete por cima do setor */
+    if(F.chuvas && F.chuvas.length){
+      const prontas = F.chuvas.filter(x => x <= t);
+      F.chuvas = F.chuvas.filter(x => x > t);
+      for(const _ of prontas){
+        const n = Math.min(320, 80 + S.nossos.length * 2);
+        for(let i = 0; i < n && F.papel.length < MAX; i++){
+          const u = S.u0 + Math.random() * (S.u1 - S.u0), v = S.v0 + Math.random() * (S.v1 - S.v0);
+          const q = ponto(S, u, v, 0);
+          F.papel.push({x:q[0], z:q[2], h:ALT_MAO + 20 + Math.random()*70, vh:16 + Math.random()*12,
+                        rx:Math.random()*6, ry:Math.random()*6, wx:3 + Math.random()*6, wy:2 + Math.random()*5,
+                        fase:Math.random()*6.28, chao:null,
+                        cor: Math.random() < 0.2 ? '#ffffff' : F.paleta[Math.random() < 0.5 ? 0 : 1]});
+        }
+      }
+    }
+    const M = P.papel, o = M.obj;
+    const vivos = [];
+    let n = 0;
+    for(const q of F.papel){
+      if(q.chao == null){
+        q.h -= q.vh * dt;
+        q.x += Math.sin(t*2.6 + q.fase) * 10 * dt;
+        q.z += Math.cos(t*2.1 + q.fase) * 6 * dt;
+        q.rx += q.wx * dt; q.ry += q.wy * dt;
+        /* para nas cabeças (34) ou no chão, conforme cai */
+        const piso = (q.fase % 1 < 0.6) ? 34 : 1;
+        if(q.h <= piso){ q.h = piso; q.chao = t; q.rx = Math.PI/2; }
+      }
+      if(q.chao != null && t - q.chao > 3) continue;
+      vivos.push(q);
+      o.position.set(q.x, q.h, q.z);
+      o.rotation.set(q.rx, q.ry, 0);
+      const enc = q.chao != null ? Math.max(0.01, 1 - (t - q.chao)/3) : 1;
+      o.scale.setScalar(enc);
+      o.updateMatrix();
+      M.mesh.setMatrixAt(n, o.matrix);
+      M.mesh.setColorAt(n, M.cor.set(q.cor));
+      n++;
+    }
+    F.papel = vivos;
+    M.mesh.count = n;
+    M.mesh.instanceMatrix.needsUpdate = true;
+    if(M.mesh.instanceColor) M.mesh.instanceColor.needsUpdate = true;
+  }
+
+  /* ---------- o mosaico 3D: a bandeira gigante de pé, de frente pro campo ---------- */
+  function mosaico3d3(F, S, t){
+    const P = g3.partes;
+    const jan = F.janelas.mosaico3d;
+    if(!jan) return;
+    const p = suave(fase(t, jan[0], jan[1], 1.8, 1.4));
+    const SW = S.u1 - S.u0, SD = S.v1 - S.v0;
+    const w = Math.max(90, SW * 0.9);
+    const h = Math.max(80, Math.min(SD * 0.9, w * 0.85, 190));
+    if(!P.m3d){
+      const arte = arte3D(F, w, h);
+      const tx = textura(arte);
+      const geo = grade(24, 16);
+      const mesh = new THREE.Mesh(geo, lambert({map:tx}));
+      mesh.frustumCulled = false;
+      /* os dois mastros e a travessa que seguram no alto */
+      const mm = new THREE.MeshLambertMaterial({color:0x2a2a2a});
+      const mastros = [0, 1].map(() => {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 1, 6), mm);
+        c.frustumCulled = false; g3.raiz.add(c); return c;
+      });
+      const rolo = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 1, 10), lambert({color:F.paleta[0]}));
+      rolo.frustumCulled = false;
+      g3.raiz.add(mesh); g3.raiz.add(rolo);
+      P.m3d = {mesh, geo, tx, mastros, rolo, w, h};
+    }
+    const M = P.m3d;
+    /* o escudo chega depois: a arte é refeita e a textura troca */
+    const arteAgora = arte3D(F, M.w, M.h);
+    if(M.mesh.material.map.image !== arteAgora){
+      M.tx.dispose(); M.tx = textura(arteAgora);
+      M.mesh.material.map = M.tx; M.mesh.material.needsUpdate = true;
+    }
+    const vivo = p > 0;
+    M.mesh.visible = M.rolo.visible = vivo; M.mastros.forEach(m => m.visible = vivo);
+    if(!vivo) return;
+    /* EM PÉ, INCLINADA NO DEGRAU: a barra de baixo no meio do setor, a
+       de cima mais alta e mais pro fundo (a arquibancada sobe pra trás).
+       De frente pro campo: a base olha o gramado e o topo, a última
+       fileira — como no 2D, legível de quem está no campo. */
+    const INC = 1.05;                         // ~60° do chão
+    const uC = (S.u0 + S.u1) / 2;
+    const vBaixo = S.v0 + SD * 0.42, hBaixo = ALT_MAO + 6;
+    const topoV = vBaixo - M.h * Math.cos(INC), topoH = hBaixo + M.h * Math.sin(INC);
+    /* desenrola de cima: o topo preso nos mastros, o rolo descendo */
+    const pos = M.geo.attributes.position.array, uv = M.geo.attributes.uv.array;
+    const nu = M.geo.nu, nv = M.geo.nv;
+    for(let j = 0; j <= nv; j++){
+      const r = (j / nv) * p;                 // 0 no topo, p na barra que desce
+      for(let i = 0; i <= nu; i++){
+        const s2 = i / nu;
+        const u = uC - M.w/2 + s2 * M.w;
+        const v = topoV + (vBaixo - topoV) * r;
+        const hh = topoH + (hBaixo - topoH) * r;
+        /* o vento empurra o pano pra frente e pra trás, de leve */
+        const vento = 2.2 * Math.sin(t*1.5 + s2*5 + r*3) * Math.sin(Math.PI*r);
+        const q = ponto(S, u, v + vento, hh);
+        const k = j*(nu+1) + i;
+        pos.set(q, k*3);
+        uv[k*2] = s2; uv[k*2+1] = 1 - r;
+      }
+    }
+    M.geo.attributes.position.needsUpdate = true; M.geo.attributes.uv.needsUpdate = true;
+    M.geo.computeVertexNormals();
+    /* o rolo na barra de baixo enquanto desenrola */
+    const rb = ponto(S, uC, topoV + (vBaixo - topoV) * p, topoH + (hBaixo - topoH) * p);
+    M.rolo.visible = p < 0.995;
+    M.rolo.position.set(rb[0], rb[1], rb[2]);
+    M.rolo.scale.set(1, M.w + 6, 1);
+    M.rolo.rotation.set(0, 0, 0);
+    /* o cilindro nasce em pé (eixo y): deita ao longo de R */
+    M.rolo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(S.R[0], 0, S.R[1]));
+    /* os mastros: do chão do fundo até acima do topo */
+    [-1, 1].forEach((lado, k) => {
+      const mp = ponto(S, uC + lado * (M.w/2 + 2), topoV, 0);
+      const alto = topoH + 10;
+      M.mastros[k].position.set(mp[0], alto/2, mp[2]);
+      M.mastros[k].scale.set(1, alto, 1);
+    });
+  }
+
+  function atualizar3d(scene, J, dt){
+    const F = J && J.festa;
+    if(!F || typeof THREE === 'undefined'){
+      if(g3.raiz) limpar3d();
+      if(J) for(const d of J.discos) if(d.festaPose) d.festaPose = null;
+      return;
+    }
+    if(g3.F !== F || g3.cena !== scene){
+      limpar3d();
+      g3.cena = scene; g3.F = F;
+      g3.raiz = new THREE.Group();
+      scene.add(g3.raiz);
+    }
+    const S = setor(J);
+    if(!S){ g3.raiz.visible = false; return; }
+    g3.raiz.visible = true;
+    F.visto3d = performance.now();
+    const passo = avancar(F);
+    const t = F.relogio;
+    trapos3(F, S, t);
+    mosaico3(F, S, t);
+    bandeirao3(F, S, t);
+    mosaico3d3(F, S, t);
+    papel3(F, S, t, passo);
+  }
+
+  return {iniciar, gol, desenhar, emCena, atualizar3d};
 })();

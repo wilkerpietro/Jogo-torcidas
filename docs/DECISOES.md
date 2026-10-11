@@ -9961,6 +9961,40 @@ pro campo".
 - Os discos ganharam `nossaTorcida` e `torcidaId`, para a festa vestir só
   a nossa torcida no setor dividido com aliado.
 
+## As festas em Three.js (dono, 11/10/2026)
+
+Pedido: "refaça os desenhos das festas pra ficar mais bonito em threejs".
+
+As festas saíram da camada 2D e entraram na cena Three.js dos bonecos.
+É a mesma luz e a mesma câmera de cima com cisalhamento, então a altura
+é altura de verdade. Quem chama é `bonecos3.atualizarCena`, que chama
+`TO.diaJogo.festas.atualizar3d`. O 2D fica de reserva, para quando a
+placa não desenha (cena de disco).
+
+- **Mosaico:**
+  - Um papel na mão de cada um dos nossos, num lote só de quads com a
+    textura da arte (escudo ou cores).
+  - Cada papel leva o UV do seu pedaço.
+  - Ele sobe do peito até a mão erguida e fica inclinado pro campo.
+- **Bandeirão:**
+  - Uma malha 48×30 com a bandeira da torcida, na altura das mãos.
+  - Duas ondas cruzadas e uma miúda. A luz da dobra é pintada no vértice,
+    porque vista do alto a luz da cena quase não separa uma onda da outra.
+  - Abre do alambrado pro fundo, com a sombra no setor.
+- **Trapos:** fitas largas listradas nas cores da torcida, do alto do
+  fundo até o alambrado, com barriga e balanço. Recolhem enquanto o
+  mosaico e o bandeirão estão no ar.
+- **Papel picado:** confete instanciado (até 600) girando enquanto cai.
+  Uma parte para nas cabeças, outra no chão, e some em 3 s.
+- **Mosaico 3D:**
+  - A bandeira gigante em pé, inclinada uns 60° no degrau, de frente pro
+    campo.
+  - Presa em dois mastros, desenrola de cima com um rolo descendo.
+  - A arte é refeita quando o escudo termina de carregar.
+- **Os bonecos:** com papel ou pano, os nossos erguem os dois braços
+  (`erguerPose`; no bandeirão, balançando com o pano). Quem marca é a
+  festa, em `d.festaPose`.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
