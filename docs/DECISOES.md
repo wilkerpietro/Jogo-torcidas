@@ -10024,6 +10024,20 @@ membros".
 - O ponto 3D das festas voltou pro chão (`+CABECA`): o eixo do setor
   nasce nas cabeças, por causa do 2D, e no 3D a altura é de verdade.
 
+## Bandeirão quadrado de novo e trapos em três cores (dono, 11/10/2026)
+
+- **Bandeirão:** voltou a ser o retângulo da torcida inteiro. O recorte
+  pela mancha saiu. Ficaram o relevo sobre cada mão que segura, a
+  barriga entre as mãos, a onda e a luz da dobra. Só a beirada pende um
+  pouco, porque ninguém segura a quina.
+- **Trapos:**
+  - Cada tira tem três faixas ao comprido, uma de cada cor da torcida,
+    e a ordem roda de tira pra tira.
+  - O trapo do Fortaleza saía só em duas cores.
+  - As cores vêm de `coresDaTorcida`, das cores da ficha e do detalhe.
+    Torcida de duas cores ganha o branco como terceira (ou o preto, se o
+    branco já é dela).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

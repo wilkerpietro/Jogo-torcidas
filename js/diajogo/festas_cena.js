@@ -278,14 +278,15 @@ TO.diaJogo.festas = (function(){
     c.save(); noSetor(c, S);
     for(let k = 0; k < n; k++){
       const base = S.u0 + passo * (k + 0.5);
-      const cor = F.paleta[k % 2], cor2 = F.paleta[(k + 1) % 2];
+      const tres = paletaDeTres(F);
+      const cor = tres[k % 3], cor2 = tres[(k + 1) % 3];
       c.beginPath();
       for(let i = 0; i <= seg; i++){ const s2 = i/seg; const v = S.v0 + s2*comp, u = base + bal(k, s2) - L/2;
         if(i === 0) c.moveTo(u, v); else c.lineTo(u, v); }
       for(let i = seg; i >= 0; i--){ const s2 = i/seg; c.lineTo(base + bal(k, s2) + L/2, S.v0 + s2*comp); }
       c.closePath();
       c.fillStyle = cor; c.fill();
-      c.lineWidth = 1; c.strokeStyle = 'rgba(0,0,0,.35)'; c.stroke();
+      c.lineWidth = 2; c.strokeStyle = tres[(k + 2) % 3]; c.stroke();
       /* o friso de outra cor no meio da tira */
       c.beginPath();
       for(let i = 0; i <= seg; i++){ const s2 = i/seg; const v = S.v0 + s2*comp, u = base + bal(k, s2);
@@ -600,7 +601,7 @@ TO.diaJogo.festas = (function(){
      segura (sobe e desce no ritmo dele) e barriga entre um e outro;
      na borda ele cai mole; fora, o triângulo nem é desenhado. A borda
      recortada pela mancha é o que tira o aspecto de lençol quadrado. */
-  const BAN_NU = 64, BAN_NV = 44, BAN_MARGEM = 14;
+  const BAN_NU = 64, BAN_NV = 44, BAN_MARGEM = 8;
   function campoDoBandeirao(B, S){
     /* a mancha muda pouco no jogo assistido: refaz a cada ~1 s */
     const agora = performance.now();
@@ -667,8 +668,10 @@ TO.diaJogo.festas = (function(){
         const s2 = i / nu, u = C.u0 + C.w * s2;
         const id = j*(nu+1) + i;
         const dmin = C.dist[id];
-        /* 1 no meio da mancha, 0 a ~2 passos fora dela */
-        let k = Math.max(0, Math.min(1, (24 - dmin) / 14));
+        /* O FORMATO É QUADRADO (dono, 11/10/2026, desfazendo o recorte
+           pela mancha): o pano é o retângulo da torcida inteiro; a
+           distância até a mão só faz o relevo */
+        let k = 1;
         /* a parte ainda não aberta fica embolada na frente */
         const aberto = Math.max(0, Math.min(1, (v - vAbre) / 18 + 1));
         k *= aberto;
@@ -679,14 +682,14 @@ TO.diaJogo.festas = (function(){
         const mao = Math.exp(-dmin*dmin / 60) * (5 + 2.5*Math.sin(t*3.1 + fa));
         const barriga = -0.45 * Math.min(dmin, 9);
         const onda = 4.2*Math.sin(t*2.2 - v*0.045 + u*0.02) + 1.6*Math.sin(t*3.6 + u*0.06 - v*0.03);
-        /* a borda cai mole: perto de sair da mancha o pano despenca */
-        const cai = (1 - k) * 22;
+        /* a beirada pende um pouco: ninguém segura a quina */
+        const borda = Math.min(s2, 1 - s2, r, 1 - r);
+        const cai = borda < 0.05 ? (0.05 - borda) * 90 : 0;
         const hh = alt + mao + barriga + onda * (0.5 + 0.5*k) - cai;
         altura[id] = hh;
         const q = ponto(S, u, v, hh);
         pos.set(q, id*3);
-        uv[id*2] = (u - S.u0 + 6) / (S.u1 - S.u0 + 12);
-        uv[id*2+1] = 1 - (v - S.v0 + 6) / (S.v1 - S.v0 + 12);
+        uv[id*2] = s2; uv[id*2+1] = 1 - r;
       }
     }
     /* a luz da dobra, pela encosta (diferença de altura) */
@@ -759,6 +762,21 @@ TO.diaJogo.festas = (function(){
     const a = estende(meio, -1), b = estende(meio, 1);
     return [a + 2, b - 2];
   }
+  /* as três cores da torcida; torcida de duas ganha o branco (ou o
+     preto, se o branco já é dela) como terceira, pra tira ter três faixas */
+  function paletaDeTres(F){
+    const o = F.torcida || {};
+    const c = (TO.mundo.coresDaTorcida && TO.mundo.coresDaTorcida(o)) || {};
+    const lista = [c.cor, c.cor2, c.cor3, ...(o.cores || []), o.detalhe]
+      .filter(Boolean).map(x => String(x).toLowerCase());
+    const unicas = [...new Set(lista)];
+    if(unicas.length < 3){
+      const extra = unicas.includes('#ffffff') ? '#111111' : '#ffffff';
+      if(!unicas.includes(extra)) unicas.push(extra);
+    }
+    while(unicas.length < 3) unicas.push(F.paleta[unicas.length % F.paleta.length]);
+    return unicas.slice(0, 3);
+  }
   function trapos3(F, S, t){
     const P = g3.partes;
     if(!F.janelas.trapos) return;
@@ -772,11 +790,13 @@ TO.diaJogo.festas = (function(){
       if(P.trapos) for(const r of P.trapos.fitas){ g3.raiz.remove(r.mesh); r.mesh.geometry.dispose(); r.mesh.material.dispose(); }
       const fitas = [];
       for(let k = 0; k < n; k++){
-        const cv = document.createElement('canvas'); cv.width = 8; cv.height = 4;
+        /* AS TRÊS CORES DA TORCIDA (dono, 11/10/2026: o trapo do Fortaleza
+           saía só em duas): cada tira tem três faixas ao comprido, uma de
+           cada cor, e a ordem roda de tira pra tira */
+        const cv = document.createElement('canvas'); cv.width = 9; cv.height = 4;
         const c = cv.getContext('2d');
-        const cor = F.paleta[k % 2], cor2 = F.paleta[(k + 1) % 2];
-        c.fillStyle = cor; c.fillRect(0, 0, 8, 4);
-        c.fillStyle = cor2; c.fillRect(1, 0, 1, 4); c.fillRect(6, 0, 1, 4);
+        const cores = paletaDeTres(F);
+        for(let f = 0; f < 3; f++){ c.fillStyle = cores[(k + f) % 3]; c.fillRect(f*3, 0, 3, 4); }
         const tx = textura(cv); tx.magFilter = THREE.NearestFilter;
         const geo = grade(1, 28);
         const mesh = new THREE.Mesh(geo, lambert({map:tx}));
