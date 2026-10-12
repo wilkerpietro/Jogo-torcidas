@@ -410,3 +410,25 @@ torcidas variando de 2 a 5."*
     4 e o máximo é 5,7 por ano. As pontas são torcidas com a moral no fundo
     ou no topo.
 
+### 5.5 Pequena 2, média 3, grande 5 (dono, 12/10/2026)
+
+*"Torcidas pequenas desenvolvem em média 2 pesquisas por ano, médias 3 e
+grandes 5."*
+
+- **Pontos da sede** (substitui a régua da 5.4): 0,5 / 0,6 / 1,3 / 1,6 /
+  1,8 / 2,8 / 3,2 nos níveis 0 a 6. Diretoria, velha guarda e turno ficam
+  como na 5.4.
+- **Moral mais branda:** ×0,85 / ×1 / ×1,15 (era ×0,7 / ×1 / ×1,2). O
+  tamanho manda mais que o humor do momento.
+- **Desconto da difusão:** até −10%.
+- **Medido** (3 anos, jogador passivo):
+
+  | Torcida | Estudos por ano | Média |
+  |---|---|---|
+  | Aliança (pequena, sede 0) | 2, 1, 3 | 2,0 |
+  | Leões da TUF (média, sede 4) | 2, 4, 3 | 3,0 |
+  | Gaviões (grande, sede 5) | 4, 5, 5 | 4,7 |
+
+  - **As 386 IAs:** as pequenas ficam em ~1,7 por ano, a mediana (sede 2,
+    ~100 membros) em 2,7, 90% ficam até 4 e a maior chega a 6,3.
+

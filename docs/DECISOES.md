@@ -10622,6 +10622,16 @@ Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos 
   - as 386 IAs: mediana 2,7, 10% até 2 e 90% até 4, com pontas de 1,3 e 5,7.
 - **Os números** estão em `docs/PLANO-PESQUISA.md` §5.4.
 
+## Desenvolvimento da Torcida: pequena 2, média 3, grande 5 por ano (dono, 12/10/2026)
+
+"Torcidas pequenas desenvolvem em média 2 pesquisas por ano, médias 3 e grandes 5."
+
+- **Pontos da sede:** 0,5 / 0,6 / 1,3 / 1,6 / 1,8 / 2,8 / 3,2 (níveis 0 a 6).
+- **Moral:** ×0,85 / ×1 / ×1,15.
+- **Difusão:** até −10%.
+- **Medido** (3 anos, passivo): Aliança 2,0, Leões da TUF 3,0 e Gaviões 4,7 por ano. Nas IAs, a pequena fica em ~1,7, a mediana em 2,7 e a maior em 6,3.
+- **Detalhes** em `docs/PLANO-PESQUISA.md` §5.5.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
