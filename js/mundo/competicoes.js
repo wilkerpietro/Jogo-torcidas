@@ -1622,6 +1622,9 @@ TO.competicoes = (function(){
                      hora:j.h || '16:00',
                      comp:comp.nome, compId:comp.id,
                      tipo:comp.tipo, fase, mata:!!mata,
+                     /* a rodada e o total, pro jogo decisivo da reta final */
+                     rodada: mata ? 0 : (r._i || 0), rodadas: comp.rodadas.length,
+                     pontosCorridos: !!comp.pontosCorridos,
                      casa: j.neutro ? false : casa, neutro: j.neutro||null,
                      adversario: casa ? j.f : j.c,
                      gp: temJogo(j) ? (casa?j.gc:j.gf) : null,
@@ -1634,7 +1637,7 @@ TO.competicoes = (function(){
                      agregado: j.agregado || null, venceu: j.venceu});
         }
       };
-      comp.rodadas.forEach((r, i)=> junta(r,
+      comp.rodadas.forEach((r, i)=> junta(Object.assign({}, r, {_i:i+1}),
         comp.grupos.length > 1 ? `Grupos · ${i+1}ª rodada` : `${i+1}ª rodada`, false));
       for(const m of comp.mata) junta(m, m.fase, true);
     }

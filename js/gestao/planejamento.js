@@ -542,6 +542,41 @@ TO.planejamento = (function(){
     const c = E ? caminho(E, torcida.mapa, destino, false) : null;
     return c ? c.saltos : 1;
   }
+  /* =======================================================
+     O JOGO DECISIVO (dono, 12/10/2026): quartas, semifinal e final
+     de qualquer copa ou mata-mata, todo jogo da Libertadores e as 10
+     últimas rodadas do Brasileirão de pontos corridos (Séries A, B e
+     C) despertam mais vontade de viajar no membro.
+     ======================================================= */
+  const VONTADE_DECISIVO = 0.15;
+  function jogoDecisivo(j){
+    if(!j) return false;
+    if(/libertadores/i.test(String(j.compId || '') + ' ' + String(j.competicao || j.comp || ''))) return true;
+    if(j.mata && /^(Quartas|Semifinal|Final)/.test(String(j.fase || ''))) return true;
+    return !!(j.pontosCorridos && /^brasileirao-serie-[abc]$/.test(j.compId || '') &&
+              j.rodada && j.rodadas && j.rodada > j.rodadas - 10);
+  }
+  /* A VONTADE DE VIAJAR É UMA CONTA SÓ (dono, 12/10/2026: "a quantidade
+     de membros das subsedes interessadas a ir ao jogo obedece ao mesmo
+     cálculo de quando a sede vai fazer uma caravana pra respectiva
+     cidade"): 0,72 − 0,09 por trecho + 0,4 × moral − 0,15 × risco,
+     mais o quarto ônibus e o jogo decisivo. Sede, subsede e IA leem
+     daqui. */
+  function vontadeDeViajar(saltos, moral, risco, quarto, decisivo){
+    return U.limitar(0.72 - saltos*0.09 + moral*0.4 - ((risco||0)/100)*0.15
+                     + (quarto ? TO.financeiro.VONTADE_ONIBUS4 : 0)
+                     + (decisivo ? VONTADE_DECISIVO : 0), 0.08, 0.95);
+  }
+  /* o jogo do nosso clube que leva a torcida `o` até `destino` hoje:
+     ou ela é do nosso clube, ou do adversário do próximo jogo */
+  function decisivoPraIA(E, torcida, destino){
+    const j = E && E.proximoJogo;
+    if(!j || !torcida || !jogoDecisivo(j)) return false;
+    const mapaJogo = j.casa ? E.torcida.mapa : j.mapaAdv;
+    if(destino && mapaJogo && destino !== mapaJogo) return false;
+    return torcida.clubeId === j.advId || torcida.clubeId === E.torcida.clubeId;
+  }
+
   function caravanaDe(torcida, relacao, E, destino){
     /* A MESMA RÉGUA DO JOGADOR (ordem do dono, 31/08/2026): a caravana
        da IA sai da MESMA conta da nossa — vontade = 0,72 − 0,09 por
@@ -557,9 +592,9 @@ TO.planejamento = (function(){
     if(vivos <= 0) return 0;
     const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
     const moral = (t && t.moral != null ? t.moral : 12) / 20;
-    const quarto = TO.relacoes && TO.relacoes.frotaIA && TO.relacoes.frotaIA(t) >= 4
-      ? TO.financeiro.VONTADE_ONIBUS4 : 0;
-    const vontade = U.limitar(0.72 - trechosDaIA(E, torcida, destino)*0.09 + moral*0.4 + quarto, 0.08, 0.95);
+    const quarto = !!(TO.relacoes && TO.relacoes.frotaIA && TO.relacoes.frotaIA(t) >= 4);
+    const vontade = vontadeDeViajar(trechosDaIA(E, torcida, destino), moral, 0, quarto,
+                                    decisivoPraIA(E, torcida, destino));
     /* O REDUTOR DO VISITANTE (calibragem do dono, 31/08/2026): a
        caravana da IA sai da régua do jogador com uns 40% a menos —
        na régua cheia a estrada lotava demais pro gosto do dono. */
@@ -607,9 +642,13 @@ TO.planejamento = (function(){
     if(!f || f.cidade === destino) return {n:0, membros:[], saltos:0};
     const aptos = TO.membros.aptosDaFilial(E, f.cidade);
     if(aptos.length < 2) return {n:0, membros:[], saltos:0};
-    const saltos = saltosEntre(E, f.cidade, destino);
+    /* a MESMA conta da caravana da sede pra essa viagem: trechos e
+       risco da rota mais curta, moral, quarto ônibus e jogo decisivo */
+    const rota = caminho(E, f.cidade, destino, false);
+    const saltos = rota ? rota.saltos : 4;
     const moral = E.indicadores.moral/20;
-    const vontade = U.limitar(0.72 - saltos*0.09 + moral*0.4, 0.08, 0.95);
+    const vontade = vontadeDeViajar(saltos, moral, rota ? rota.risco : 0,
+      TO.financeiro.onibusDe(E) >= 4, jogoDecisivo(E.proximoJogo));
     const n = Math.min(aptos.length,
                        Math.max(2, Math.round(aptos.length * vontade)));
     const membros = aptos.slice()
@@ -950,9 +989,9 @@ TO.planejamento = (function(){
     const aptos = TO.membros.aptosParaOEstadio(E);
     const moral = E.indicadores.moral/20;
     /* o quarto ônibus (sede 6): lugar sentado pra todo mundo */
-    const quarto = r.id !== 'ar' && TO.financeiro.onibusDe(E) >= 4 ? TO.financeiro.VONTADE_ONIBUS4 : 0;
-    const vontade = U.limitar(0.72 - r.saltos*0.09 + moral*0.4
-                              - (r.risco/100)*0.15 + quarto, 0.08, 0.95);
+    const quarto = r.id !== 'ar' && TO.financeiro.onibusDe(E) >= 4;
+    const vontade = vontadeDeViajar(r.saltos, moral, r.risco, quarto,
+                                    jogoDecisivo(jogo || E.proximoJogo));
     const interessados = Math.max(MINIMO, Math.round(aptos.length * vontade));
     const escolhido = (plano(E, jogo)||{}).caravana;
     const vao = U.limitar(escolhido == null ? interessados : escolhido,
@@ -1703,6 +1742,7 @@ TO.planejamento = (function(){
           aliadosNaCidade, caravanaDe, trechosDaIA, custoCaravanaIA, RELACAO_ALIADO,
           aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial, filiaisNoJogo, aptosDoJogo,
+          jogoDecisivo, vontadeDeViajar, VONTADE_DECISIVO,
           RECEPCAO, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca, subsedesHostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,

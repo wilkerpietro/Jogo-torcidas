@@ -194,6 +194,9 @@ TO.estado = (function(){
     return {
       competicao: agenda ? agenda.comp : (meu.divisao || 'Amistoso'),
       fase: agenda ? agenda.fase : '',
+      compId: agenda ? agenda.compId : '',
+      rodada: agenda ? agenda.rodada : 0, rodadas: agenda ? agenda.rodadas : 0,
+      pontosCorridos: !!(agenda && agenda.pontosCorridos),
       mata: !!(agenda && agenda.mata),
       dia: agenda ? agenda.dia : 6,
       neutro: agenda ? agenda.neutro : null,

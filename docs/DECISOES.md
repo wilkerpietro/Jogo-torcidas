@@ -10548,6 +10548,22 @@ O Complexo deixa de ser só membro e anexo. Na sede nível 6:
   - a escalação das cenas do estádio e do confronto na rua, via `aptosDoJogo`.
 - **Medido:** num save com 150 membros (64 na matriz e 86 em 4 filiais), a presença em casa foi de 64 para 117.
 
+## Vontade de viajar: uma conta só e o jogo decisivo (dono, 12/10/2026)
+
+"A quantidade de membros das subsedes interessadas a ir ao jogo obedece ao mesmo cálculo de quando a sede vai fazer uma caravana pra respectiva cidade."
+
+- **Conta única:** `planejamento.vontadeDeViajar(saltos, moral, risco, quarto, decisivo)` = 0,72 − 0,09 × trecho + 0,4 × moral − 0,15 × risco, mais o quarto ônibus (+10%) e o jogo decisivo (+15%), limitada entre 0,08 e 0,95. Quem lê daqui:
+  - a caravana da sede (`estimativaCaravana`);
+  - a da subsede (`caravanaDaFilial`), que agora usa os trechos e o risco da rota mais curta da cidade dela até o jogo (antes ignorava o risco);
+  - a da IA (`caravanaDe`, que mantém o redutor de 40% do visitante).
+- **Jogo decisivo:** `planejamento.jogoDecisivo(j)` vale para:
+  - quartas, semifinal e final de qualquer mata-mata;
+  - todo jogo da Libertadores;
+  - as 10 últimas rodadas do Brasileirão de pontos corridos (Séries A, B e C; a D, que não é pontos corridos, fica fora).
+- **Dados novos na agenda:** cada jogo agora traz `rodada`, `rodadas` e `pontosCorridos` (`agendaDoClube`), e `fichaDoJogo` repassa esses campos junto com o `compId`.
+- **IA:** o bônus vale para as torcidas do nosso clube e do adversário do próximo jogo, quando vão para a praça desse jogo.
+- **Medido:** numa subsede com 40 aptos foram 34 na 5ª rodada e 38 na 33ª. A torcida visitante da IA foi de 29 para 34.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
