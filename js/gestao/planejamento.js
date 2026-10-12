@@ -283,7 +283,8 @@ TO.planejamento = (function(){
          +20); não receber tira −7 — é o que ELA cobra de nós
          no caso inverso;
        · moral: dormir na sede deles dá +1; churrasco dá +2;
-       · escolta: 10 membros dela (régua do dono, 08/09/2026)
+       · escolta: 10 membros dela (régua do dono, 08/09/2026; 20 com
+         sede 4 e 30 com sede 5 ou 6 desde 12/10/2026)
          andam com o nosso bonde a partir da CHEGADA na cidade —
          concentração, pista, arredores e estádio — e ficam quando
          a caravana pega a estrada de volta (efetivoDaSaida e a
@@ -291,6 +292,16 @@ TO.planejamento = (function(){
      Um pedido por jogo; a resposta fica no plano da semana.
      ======================================================= */
   const ajudaDe = (E, jogo) => (plano(E, jogo) || {}).ajuda || null;
+
+  /* O TAMANHO DA ESCOLTA PELA SEDE (dono, 12/10/2026): "torcidas com
+     sede nível 4 podem escoltar com 20 membros e nível 5 e 6 com 30".
+     Abaixo disso, os 10 de sempre. Vale pra qualquer escolta — a nossa,
+     a da aliada que nos recebe e a das IAs entre si —, sempre limitada
+     a quem está de pé. */
+  const ESCOLTA_SEDE = [10, 10, 10, 10, 20, 30, 30];
+  const sedeDe = (E, id) => id === E.torcida.id ? (E.torcida.sedeNivel || 0)
+    : (((E.mundoTorcidas || {})[id] || {}).sede ?? 1);
+  const tetoDaEscolta = (E, id) => ESCOLTA_SEDE[U.limitar(sedeDe(E, id), 0, 6)];
 
   /* as aliadas da praça do jogo fora, e a resposta que cada uma daria */
   function aliadasNaPracaDeles(E, jogo){
@@ -359,7 +370,7 @@ TO.planejamento = (function(){
       }
     }
     const escolta = (r.nivel === 'escolta' || r.nivel === 'churrasco')
-      ? Math.min(10, Math.max(0, TO.relacoes.disponiveisIA(E, aliadoId))) : 0;
+      ? Math.min(tetoDaEscolta(E, aliadoId), Math.max(0, TO.relacoes.disponiveisIA(E, aliadoId))) : 0;
     p.ajuda = {aliado:aliadoId, nome:o.nome, nivel:r.nivel, escolta,
                relacao:ganho, moral: Math.round(moral*5),
                mapa:j.mapaAdv, chave:j.chave};
@@ -1742,7 +1753,7 @@ TO.planejamento = (function(){
           aliadosNaCidade, caravanaDe, trechosDaIA, custoCaravanaIA, RELACAO_ALIADO,
           aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial, filiaisNoJogo, aptosDoJogo,
-          jogoDecisivo, vontadeDeViajar, VONTADE_DECISIVO,
+          jogoDecisivo, vontadeDeViajar, VONTADE_DECISIVO, ESCOLTA_SEDE, tetoDaEscolta,
           RECEPCAO, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca, subsedesHostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,

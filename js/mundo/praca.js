@@ -329,10 +329,13 @@ TO.praca = (function(){
     if(anfitriao.id === E.torcida.id){
       const nivel = PL().nivelDe(E, visitante.id);
       if(nivel !== 'escolta' && nivel !== 'churrasco') return 0;
-      return Math.min(10, TO.membros.aptosParaOEstadio(E).length);
+      return Math.min(PL().tetoDaEscolta(E, E.torcida.id), TO.membros.aptosParaOEstadio(E).length);
     }
-    const pct = 5 + (MP().hash(`escolta|${anfitriao.id}|${visitante.id}`) % 6);
-    return Math.max(1, Math.round((anfitriao.membros || 20) * pct / 100));
+    /* a régua da sede vale pra IA também (dono, 12/10/2026): 10, 20
+       na sede 4, 30 na 5 e na 6 — no lugar dos 5 a 10% do efetivo */
+    const vivos = TO.relacoes && TO.relacoes.disponiveisIA
+      ? TO.relacoes.disponiveisIA(E, anfitriao.id) : (anfitriao.membros || 20);
+    return Math.max(1, Math.min(PL().tetoDaEscolta(E, anfitriao.id), vivos));
   }
 
   /* toda organizada pisa na rua no dia do jogo dela */

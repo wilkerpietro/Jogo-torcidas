@@ -2246,7 +2246,9 @@ TO.relacoes = (function(){
     const ajuda = lado => {
       const anf = lado === 'a' ? opts.ajudaA : opts.ajudaB;
       if(!anf) return null;
-      const n = Math.max(3, Math.round(disponiveisIA(E, anf.id) * 0.15));
+      /* do tamanho da escolta da sede dela (dono, 12/10/2026) */
+      const n = Math.max(3, Math.min(TO.planejamento.tetoDaEscolta(E, anf.id),
+                                     Math.round(disponiveisIA(E, anf.id) * 0.15)));
       return {o:anf, n};
     };
     const ajA = ajuda('a'), ajB = ajuda('b');

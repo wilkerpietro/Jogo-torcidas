@@ -10564,6 +10564,17 @@ O Complexo deixa de ser só membro e anexo. Na sede nível 6:
 - **IA:** o bônus vale para as torcidas do nosso clube e do adversário do próximo jogo, quando vão para a praça desse jogo.
 - **Medido:** numa subsede com 40 aptos foram 34 na 5ª rodada e 38 na 33ª. A torcida visitante da IA foi de 29 para 34.
 
+## Escolta pelo nível da sede (dono, 12/10/2026)
+
+"Torcidas com sede nível 4 podem escoltar com 20 membros e nível 5 e 6 com 30." A tabela é `planejamento.ESCOLTA_SEDE` = [10, 10, 10, 10, 20, 30, 30], lida por `tetoDaEscolta(E, id)` e sempre limitada a quem está de pé. Vale para todas as escoltas:
+
+- **A nossa** (`praca.escoltaDe`, quando hospedamos e escoltamos um aliado): era 10 fixo.
+- **A da aliada que nos recebe** no jogo fora (`pedirAjuda`, que entra no efetivo da saída e no itinerário): era 10 fixo.
+- **A dos anfitriões IA na nossa praça:** era 5 a 10% do efetivo; agora segue a mesma régua da sede.
+- **A ajuda do anfitrião nas brigas entre IAs** (`brigaIA`): continua sendo 15% dos de pé, mas com o teto da escolta da sede.
+
+Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos Gaviões (252 de pé) deu 10, 20, 30 e 30 nas sedes 2, 4, 5 e 6.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
