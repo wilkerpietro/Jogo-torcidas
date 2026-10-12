@@ -2029,7 +2029,8 @@
     const nSet = compacta(nossos, setores[nossoLado]);
     const dSet = deles.length ? compacta(deles, setores[outroLado]) : [];
     const minha = nSet.find(p => p.id === e.torcida.id) || {n:10};
-    const aptos = TO.membros.aptosParaOEstadio(e)
+    /* as subsedes que vieram pro jogo entram na escalação (12/10/2026) */
+    const aptos = TO.planejamento.aptosDoJogo(e, d.mapa || e.torcida.mapa)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, Math.max(2, Math.round(minha.n)));
     return {local, aptos, nossoLado, rivalId: dSet[0] ? dSet[0].id : null,
@@ -2604,7 +2605,8 @@
         {nomes:q.join(` ${_t('e')} `), de:quietas[0].de});
     }
     const minha = nossosSet.find(p => p.id === e.torcida.id) || {n:10};
-    const aptos = TO.membros.aptosParaOEstadio(e)
+    /* as subsedes que vieram pro jogo entram na escalação (12/10/2026) */
+    const aptos = TO.planejamento.aptosDoJogo(e, d.mapa || e.torcida.mapa)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, Math.max(2, Math.round(minha.n)));
     const nosT = nossosSet.reduce((s,p)=>s+p.n, 0);
@@ -11154,7 +11156,8 @@
        registro da briga (enc) conta os números que a cena abriu */
     nosso.n = tetoNossoItn(Math.round(nosso.n));
     deles.n = descontoItn(deles.torcida, Math.round(deles.n));
-    const aptos = TO.membros.aptosParaOEstadio(e)
+    /* as subsedes que vieram pro jogo entram na escalação (12/10/2026) */
+    const aptos = TO.planejamento.aptosDoJogo(e, e.torcida.mapa)
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa))
       .slice(0, Math.max(2, Math.round(nosso.n)));
     /* DE QUE LADO NÓS ENTRAMOS. Em casa somos o mandante, e foi assim

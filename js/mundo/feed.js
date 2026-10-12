@@ -1980,12 +1980,11 @@ TO.feed = (function(){
     if(!j || E.data.dia !== (j.dia || 6)) return;
     if(!PL().caravanaDaFilial || !TO.diaJogo || !TO.diaJogo.simular) return;
     const destino = j.casa ? E.torcida.mapa : (j.mapaAdv || E.torcida.mapa);
-    for(const f of (((E.patrimonio||{}).filiais)||[])){
-      const c = PL().caravanaDaFilial(E, f, destino);
-      if(!c.n) continue;
-      const custo = PL().custoCaravanaFilial(c.n, c.saltos,
-        TO.financeiro.onibusDe(E));
-      if(custo > E.dinheiro) continue;         // sem caixa, ninguém embarca
+    /* a mesma lista que o efetivo da saída soma (12/10/2026): quem
+       paga o frete aqui é quem aparece no estádio */
+    for(const c of PL().filiaisNoJogo(E, destino)){
+      const f = c.f, custo = c.custo;
+      if(c.local) continue;                    // a da cidade do jogo vai a pé
       if(custo > 0) TO.estado.lancar(E,
         _t('Caravana da subsede {cidade} ({n} cabeças)', {cidade:TO.financeiro.nomeCidade(f.cidade), n:c.n}), -custo);
       /* a estrada tem dono de vez em quando */

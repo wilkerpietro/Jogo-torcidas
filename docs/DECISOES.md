@@ -10536,6 +10536,18 @@ O Complexo deixa de ser só membro e anexo. Na sede nível 6:
 - **Área de treino nível 4:** R$ 1 milhão, +100% de vagas de treino, só em sede 6 (`AREA_TREINO.sede`). As IAs seguem a mesma porta.
 - **Conserto junto:** a sala de treino (`mmaMax`) usava a escada da garagem e, na sede 6, deixava contratar um quarto professor que zerava o ganho do treino (`GANHO_MMA[4]` não existe). Agora ela fica limitada a `MMA_MAX` (3).
 
+## As subsedes vão ao estádio de verdade (dono, 12/10/2026)
+
+"As nossas subsedes não estão se locomovendo pra ir pros jogos do nosso time; a torcida tem 600 membros e coloca 300 em casa." A caravana silenciosa da filial (31/08/2026) cobrava o frete, mas ninguém somava quem viajou. Em casa, o efetivo da saída era só a matriz. Fora de casa, era a caravana mais o núcleo da cidade do jogo.
+
+- **Conta única:** `planejamento.filiaisNoJogo(E, destino)`. O núcleo da cidade do jogo vai inteiro e a pé. As outras filiais mandam `caravanaDaFilial` (a mesma vontade por trecho e moral), desde que haja caixa pro frete.
+- **Embarque fixado por dia e destino:** o frete descontado no meio do dia não tira do estádio quem já foi.
+- **Quem lê essa conta:**
+  - o frete do dia (`caravanaDasFiliais`, no feed);
+  - `efetivoDaSaida`, em casa e fora (logo a presença na mensagem da partida, a rua da praça e a relação com o clube);
+  - a escalação das cenas do estádio e do confronto na rua, via `aptosDoJogo`.
+- **Medido:** num save com 150 membros (64 na matriz e 86 em 4 filiais), a presença em casa foi de 64 para 117.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

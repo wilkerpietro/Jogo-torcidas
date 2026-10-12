@@ -248,11 +248,13 @@ TO.planejamento = (function(){
     const emCasa = partida
       ? (partida.mapa ? partida.mapa === E.torcida.mapa : !!partida.casa)
       : !TO.financeiro.precisaCaravana(E);
-    if(emCasa) return aptos;
-    const mapaAdv = (partida && partida.mapa) || (j && j.mapaAdv);
-    const nucleo = (mapaAdv && TO.patrimonio.temFilialEm &&
-                    TO.patrimonio.temFilialEm(E, mapaAdv))
-      ? TO.membros.aptosDaFilial(E, mapaAdv).length : 0;
+    const destino = emCasa ? E.torcida.mapa
+      : ((partida && partida.mapa) || (j && j.mapaAdv));
+    /* o núcleo da cidade do jogo e as caravanas das outras filiais */
+    const filiais = filiaisNoJogo(E, destino).reduce((s, c)=>s + c.n, 0);
+    if(emCasa) return aptos + filiais;
+    const mapaAdv = destino;
+    const nucleo = filiais;
     const est = estimativaCaravana(E, j);
     /* A ESCOLTA DO ALIADO DA PRAÇA DELES (pedido do dono, 08/09/2026):
        se a ajuda pedida no planejamento veio com escolta, o bonde deles
@@ -613,6 +615,48 @@ TO.planejamento = (function(){
     const membros = aptos.slice()
       .sort((a,b)=>(b.forca+b.defesa)-(a.forca+a.defesa)).slice(0, n);
     return {n, membros, saltos};
+  }
+
+  /* AS SUBSEDES CHEGAM NO ESTÁDIO (dono, 12/10/2026: "as nossas
+     subsedes não estão se locomovendo pra ir pros jogos do nosso time;
+     a torcida tem 600 membros e coloca 300 em casa"). A caravana da
+     filial pagava o frete e sumia: ninguém somava quem viajou. Esta é
+     a conta única — o frete do dia (`caravanaDasFiliais`, no feed), o
+     efetivo da saída e a escalação da cena leem daqui. Sem caixa pro
+     frete, a filial fica; a da cidade do jogo vai a pé, inteira. */
+  /* quem embarca é decidido UMA vez por dia e destino: o frete
+     descontado no meio do dia não pode tirar do estádio quem já foi */
+  let embarqueDoDia = null;
+  function filiaisNoJogo(E, destino){
+    const fora = [];
+    let caixa = E.dinheiro;
+    const chave = `${(E.data||{}).absoluto}|${destino}|${E.torcida.id}`;
+    if(!embarqueDoDia || embarqueDoDia.chave !== chave) embarqueDoDia = {chave, foram:null};
+    const fixo = embarqueDoDia.foram;
+    if(!fixo) embarqueDoDia.foram = new Set();
+    for(const f of (((E.patrimonio||{}).filiais)||[])){
+      if(fixo && !fixo.has(f.cidade)) continue;
+      if(f.cidade === destino){
+        const aptos = TO.membros.aptosDaFilial(E, f.cidade);
+        if(aptos.length) fora.push({f, n:aptos.length, membros:aptos, saltos:0, custo:0, local:true});
+        if(!fixo) embarqueDoDia.foram.add(f.cidade);
+        continue;
+      }
+      const c = caravanaDaFilial(E, f, destino);
+      if(!c.n) continue;
+      const custo = custoCaravanaFilial(c.n, c.saltos, TO.financeiro.onibusDe(E));
+      if(!fixo && custo > caixa) continue;
+      caixa -= custo;
+      if(!fixo) embarqueDoDia.foram.add(f.cidade);
+      fora.push(Object.assign({f, custo}, c));
+    }
+    return fora;
+  }
+  /* os de pé pro estádio do dia: a matriz e quem chegou das filiais */
+  function aptosDoJogo(E, destino){
+    const extra = [];
+    for(const c of filiaisNoJogo(E, destino)) extra.push(...c.membros);
+    return TO.membros.aptosParaOEstadio(E).concat(extra);
   }
 
   function aliadosNaCidade(E, semana){
@@ -1658,7 +1702,7 @@ TO.planejamento = (function(){
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           aliadosNaCidade, caravanaDe, trechosDaIA, custoCaravanaIA, RELACAO_ALIADO,
           aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
-          saltosEntre, custoCaravanaFilial, caravanaDaFilial,
+          saltosEntre, custoCaravanaFilial, caravanaDaFilial, filiaisNoJogo, aptosDoJogo,
           RECEPCAO, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca, subsedesHostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
