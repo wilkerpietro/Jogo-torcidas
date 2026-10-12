@@ -1087,7 +1087,12 @@ TO.dados.cenas = (function(){
        guarda:true, entrada:'fim_rua'},
       {id:'visitante4', rot:'MESAS DA DIREITA', lado:'visitante', x:840, y:470,
        guarda:true, entrada:'fim_rua'},
-      {id:'visitante5', rot:'NO BARZINHO', lado:'visitante', x:780, y:335,
+      /* SAIU DE TRÁS DO BALCÃO (dono, 12/10/2026: "os membros que
+         spawnam atrás do balcão atrapalham o desenrolar da cena; ficam se
+         movendo em círculos sem parar e não participam da briga"): o
+         balcão em L fecha o barzinho e o grupo não achava o vão — agora
+         ele nasce no pátio, entre o meio e as mesas da direita */
+      {id:'visitante5', rot:'PERTO DAS MESAS', lado:'visitante', x:860, y:610,
        guarda:true, entrada:'fim_rua'}
     ],
     entradas:[

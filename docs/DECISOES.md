@@ -10575,6 +10575,13 @@ O Complexo deixa de ser só membro e anexo. Na sede nível 6:
 
 Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos Gaviões (252 de pé) deu 10, 20, 30 e 30 nas sedes 2, 4, 5 e 6.
 
+## Mosaico sem a bola atrás do escudo, enquadrado na torcida e sem teto de papéis; subsede sem gente atrás do balcão (dono, 12/10/2026)
+
+- **Sem a bola:** "Essa bola no fundo do escudo deixa ele feio visualmente no mosaico." O círculo (e o anel da tricolor) atrás do escudo saiu, tanto no modo escudo quanto na frase com o nome da torcida. No modo escudo, quem mostra a arte é quem está em cima do desenho: a máscara vem do alfa do próprio escudo (`cv.mascara`, que substitui `cv.circulo`). O resto segue nas listras.
+- **Enquadrado na torcida:** "No estádio de 20 mil o escudo fica mal enquadrado." O centro era o meio do retângulo do setor, e a torcida em L puxava o escudo pra fora dela. Agora o centro é a mediana dos papéis, e o tamanho sai do miolo (10% a 90%) de cada eixo.
+- **Papel pra todo mundo:** "Quando a torcida fica muito gigante, faltam papéis." A malha 3D do mosaico nascia com 400 papéis e não crescia; agora ela é refeita com folga quando a torcida passa disso. O mosaico continua sendo só da nossa torcida: a outra organizada do mesmo clube não ergue papel (dono, na mesma conversa). O deslocamento dos papéis pra cima é a perspectiva da câmera com o papel erguido, e fica como está.
+- **Subsede:** o núcleo "NO BARZINHO" (`visitante5`) nascia atrás do balcão em L, ficava girando sem achar o vão e não entrava na briga. Ele passou pro pátio, perto das mesas da direita (860, 610). No ataque forçado da bancada, os três entraram na briga e nenhum defensor ficou atrás do balcão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

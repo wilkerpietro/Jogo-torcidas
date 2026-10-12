@@ -342,20 +342,36 @@ TO.diaJogo.festas = (function(){
     if(temEscudo){
       const esc = F.escudo;
       c.fillStyle = a; c.fillRect(0, 0, W, H);
-      /* um aro na segunda cor em volta do escudo, pra ele saltar do fundo;
-         na tricolor, a terceira faz um anel por fora */
-      /* menor que o setor: sobra borda pro fundo listrado aparecer */
-      const r = Math.min(W, H) * 0.34;
-      const rFora = tri ? r*1.12 : r;
-      if(tri){ c.beginPath(); c.arc(W/2, H/2, rFora, 0, Math.PI*2); c.fillStyle = d; c.fill(); }
-      c.beginPath(); c.arc(W/2, H/2, r, 0, Math.PI*2); c.fillStyle = b; c.fill();
+      /* SEM A BOLA (dono, 12/10/2026: "essa bola no fundo do escudo deixa
+         ele feio"): o escudo vai direto sobre as listras, e quem mostra a
+         arte é só quem está em cima do desenho dele (a máscara do alfa).
+         ENQUADRADO NA TORCIDA, não no retângulo do setor (o estádio de 20
+         mil, com a torcida em L, cortava o escudo): o centro é a mediana
+         dos papéis e o tamanho sai do miolo (10% a 90%) de cada eixo. */
+      const qs = (xs, q) => xs[Math.min(xs.length - 1, Math.max(0, Math.floor(q * (xs.length - 1))))];
+      const us = S.nossos.map(x => x._u).sort((p, q) => p - q), vs = S.nossos.map(x => x._v).sort((p, q) => p - q);
+      const mu = qs(us, 0.5), mv = qs(vs, 0.5);
+      const lado = Math.max(30, Math.min(qs(us, 0.9) - qs(us, 0.1), qs(vs, 0.9) - qs(vs, 0.1)) * 0.92) * k;
+      const ex = (mu - S.u0) * k, ey = (mv - S.v0) * k;
       if(esc._ok){
         const iw = esc.naturalWidth || 1, ih = esc.naturalHeight || 1;
-        const s2 = Math.min(r*1.7/iw, r*1.7/ih);
-        c.drawImage(esc, W/2 - iw*s2/2, H/2 - ih*s2/2, iw*s2, ih*s2);
+        const s2 = Math.min(lado/iw, lado/ih);
+        const dw = iw*s2, dh = ih*s2;
+        c.drawImage(esc, ex - dw/2, ey - dh/2, dw, dh);
+        /* a máscara: o mesmo escudo num canvas à parte, só pelo alfa */
+        const mc = document.createElement('canvas');
+        mc.width = W; mc.height = H;
+        const m2 = mc.getContext('2d');
+        m2.drawImage(esc, ex - dw/2, ey - dh/2, dw, dh);
+        let px = null;
+        try{ px = m2.getImageData(0, 0, W, H).data; }catch(_){ px = null; }
+        if(px){
+          const al = new Uint8Array(W * H);
+          for(let i = 0; i < al.length; i++) al[i] = px[i*4 + 3];
+          cv.mascara = {al, W, H};
+        } else cv.mascara = {caixa:[ex - dw/2, ey - dh/2, ex + dw/2, ey + dh/2]};
       } else cv.semEscudo = true;
-      /* o círculo, em coordenada do setor: quem está dentro mostra o escudo */
-      cv.circulo = {u:(S.u0 + S.u1)/2, v:(S.v0 + S.v1)/2, r: rFora / k};
+      cv.modoEscudo = true;
       cv.cores = cores;
     } else {
       /* a frase: fundo na primeira cor, letra na segunda, contorno na
@@ -369,8 +385,7 @@ TO.diaJogo.festas = (function(){
         const largo = W / H >= 1.3;
         const lado = largo ? Math.min(H * 0.7, W * 0.26) : Math.min(W * 0.6, H * 0.36);
         const ex = largo ? W * 0.04 + lado/2 : W/2, ey = largo ? H/2 : H * 0.04 + lado/2;
-        c.beginPath(); c.arc(ex, ey, lado/2, 0, Math.PI*2); c.fillStyle = b; c.fill();
-        if(tri){ c.lineWidth = lado * 0.05; c.strokeStyle = d; c.stroke(); }
+        /* sem a bola atrás (dono, 12/10/2026): o escudo direto no fundo */
         if(esc._ok){
           const iw = esc.naturalWidth || 1, ih = esc.naturalHeight || 1;
           const s2 = Math.min(lado*0.78/iw, lado*0.78/ih);
@@ -393,9 +408,15 @@ TO.diaJogo.festas = (function(){
   /* este papel é listra (uma cor só) ou mostra o pedaço da arte? */
   function corDoPapel(arte, d){
     if(arte.porDisco) return d._cm || 0;
-    const C = arte.circulo;
-    if(!C) return -1;
-    return Math.hypot(d._u - C.u, d._v - C.v) <= C.r ? -1 : (d._cm || 0);
+    if(!arte.modoEscudo) return -1;
+    const M = arte.mascara;
+    if(!M) return d._cm || 0;                 // escudo não carregou: só listra
+    const x = (d._u - arte.u0) * arte.k, y = (d._v - arte.v0) * arte.k;
+    if(M.caixa) return (x >= M.caixa[0] && x <= M.caixa[2] && y >= M.caixa[1] && y <= M.caixa[3]) ? -1 : (d._cm || 0);
+    /* o papel mostra o escudo se o miolo dele cai no desenho */
+    const xi = Math.round(x), yi = Math.round(y);
+    if(xi < 0 || yi < 0 || xi >= M.W || yi >= M.H) return d._cm || 0;
+    return M.al[yi * M.W + xi] > 90 ? -1 : (d._cm || 0);
   }
 
 
@@ -745,8 +766,15 @@ TO.diaJogo.festas = (function(){
     if(!jan) return;
     const [a, b] = jan;
     const arte = arteDoMosaico(F, S);
+    /* PAPEL PRA TODO MUNDO (dono, 12/10/2026: "quando a torcida fica
+       muito gigante, faltam papéis"): a malha nascia com 400 e não
+       crescia — agora cresce com a torcida */
+    if(P.mosaico && P.mosaico.N < S.nossos.length){
+      g3.raiz.remove(P.mosaico.mesh); P.mosaico.geo.dispose(); P.mosaico.tx.dispose();
+      P.mosaico.mesh.material.dispose(); P.mosaico = null;
+    }
     if(!P.mosaico){
-      const N = 400;
+      const N = Math.max(400, Math.ceil(S.nossos.length * 1.2));
       const geo = lote(N);
       const tx = textura(arte);
       const mesh = new THREE.Mesh(geo, lambert({map:tx}));
