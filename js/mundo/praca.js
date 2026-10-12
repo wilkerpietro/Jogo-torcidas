@@ -307,6 +307,14 @@ TO.praca = (function(){
         if(v === undefined || v < PL().RELACAO_ALIADO) return 0;
         return v >= 60 ? 2 : 1;
       }
+      /* a anfitriã da IA é escolhida pela relação VIVA, como a nossa
+         (paridade, 12/10/2026): eram as listas fixas da fonte */
+      const R = TO.relacoes;
+      if(R && R.relacaoDelas){
+        const v = R.relacaoDelas(E, visitante.id, t.id);
+        if(M().saoIrmas && M().saoIrmas(visitante.id, t.id)) return 2;
+        return v >= 60 ? 2 : v >= PL().RELACAO_ALIADO ? 1 : 0;
+      }
       if((visitante.irmandade||[]).includes(t.id)) return 2;
       if((visitante.aliados||[]).includes(t.id))   return 1;
       return 0;

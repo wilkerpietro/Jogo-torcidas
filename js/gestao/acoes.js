@@ -581,8 +581,12 @@ TO.acoes = (function(){
          na concentração ou na pista custa gente, moral e prestígio —
          não saque. */
       if(alvo.tipo === 'bar'){
-        perdeu = Math.round(60 * Math.max(4, alvo.efetivo||40)
-                            + Math.max(0, E.dinheiro) * 0.10);
+        /* O SAQUE É UM SÓ (paridade, dono 12/10/2026): 60 por cabeça de
+           quem defendia o bar — até 40 — mais 22% do caixa, nos dois
+           sentidos e entre as IAs. Era 60 × o bonde DELES + 10% do nosso. */
+        const defensores = res && res.efetivo && res.nossoLado ? res.efetivo[res.nossoLado] : null;
+        perdeu = Math.round(60 * Math.min(40, Math.max(4, defensores || alvo.efetivo || 40))
+                            + Math.max(0, E.dinheiro) * 0.22);
         /* galpão tranca o material e o cofre guarda o caixa
            (pacote do dono, 02/09/2026) */
         perdeu = TO.patrimonio.protegerPerda(E, perdeu);
@@ -716,7 +720,11 @@ TO.acoes = (function(){
          é lá que tem gaveta e caixa. Sede e o resto rendem prestígio,
          moral e faixa rasgada — não saque. */
       if(alvo.tipo === 'bar'){
-        const gaveta = 60 * alvo.efetivo;
+        /* a mesma régua do saque (paridade, 12/10/2026): 60 por cabeça de
+           quem defendia o bar, até 40 — era 60 × o efetivo INTEIRO dela */
+        const outroLado = res && res.nossoLado ? (res.nossoLado === 'mandante' ? 'visitante' : 'mandante') : null;
+        const defensores = res && res.efetivo && outroLado ? res.efetivo[outroLado] : null;
+        const gaveta = 60 * Math.min(40, Math.max(4, defensores || alvo.efetivo || 40));
         levou = Math.round(gaveta + (m ? m.caixa : 1200) * 0.22);
         /* galpão e cofre da VÍTIMA seguram o saque (dono, 02/09/2026):
            a mesma proteção que o jogador tem — quem rouba leva menos */

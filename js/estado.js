@@ -398,8 +398,11 @@ TO.estado = (function(){
         guardarTitulos(E);
         /* o que o clube fez em campo move a moral das torcidas dele */
         for(const c of E.temporada.competicoes){
-          if(c.campeao) TO.relacoes.conquistaDoClube(E, c.campeao, 'campeao');
+          if(c.campeao) TO.relacoes.conquistaDoClube(E, c.campeao, 'campeao', c, E.data.ano - 1);
           if(c.vice)    TO.relacoes.conquistaDoClube(E, c.vice, 'vice');
+          /* o vice anima a nossa também (paridade, 12/10/2026): era só delas */
+          if(c.vice === E.torcida.clubeId)
+            mexerIndicador(E, 'moral', 0.8, _t('Vice: {comp}', {comp:c.nome}));
           /* (o nosso título já pagou no dia da conquista —
              resultadosDoClubeHoje; aqui só se ele escapou daquela conta) */
           if(c.campeao === E.torcida.clubeId && !pagouTitulo(E, c, E.data.ano - 1))
@@ -568,6 +571,9 @@ TO.estado = (function(){
     const jogos = TO.competicoes.jogarDia(E, E.data.semana, E.data.dia);
     conferirProximoJogo(E);
     resultadosDoClubeHoje(E);
+    /* PARIDADE (dono, 12/10/2026): o jogo do clube delas mexe na moral
+       delas no dia, e o título paga no dia da conquista, como o nosso */
+    if(TO.relacoes.resultadosDelasHoje) TO.relacoes.resultadosDelasHoje(E);
 
     const passoLigas = TO.ligas ? TO.ligas.rodar(E) : null;
     const passoCM    = TO.conmebol ? TO.conmebol.rodar(E) : null;

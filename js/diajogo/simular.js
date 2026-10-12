@@ -89,12 +89,21 @@ TO.diaJogo.simular = (function(){
     const outroLado = nossoLado === 'mandante' ? 'visitante' : 'mandante';
 
     const nA = nossos.length;
+    /* o rival é o bonde do OUTRO lado: o aliado que desce com a gente
+       também é "não nosso" e era lido como inimigo */
     const nB = Math.max(1, Math.round(cfg.efetivoRival ||
-      ((cfg.bondes || []).find(b=>!b.nossa) || {}).n || nA));
+      ((cfg.bondes || []).find(b=>!b.nossa && b.lado === outroLado) ||
+       (cfg.bondes || []).find(b=>!b.nossa) || {}).n || nA));
     const deles = fichasDeles(cfg, nB);
 
     /* força é efetivo × ficha: a soma de força e defesa dos dois lados */
-    const pA = nossos.reduce((s,m)=>s + fichaDe(m), 0);
+    const fichaMedia = nA ? nossos.reduce((s,m)=>s + fichaDe(m), 0) / nA : 0;
+    /* A ESCOLTA DO ALIADO CONTA NO SIMULAR (paridade, dono 12/10/2026):
+       na briga das IAs a ajuda entrava na conta e no nosso Simular não;
+       o bonde aliado do nosso lado soma com a ficha média da nossa gente */
+    const aliados = (cfg.bondes || []).filter(b=>!b.nossa && b.lado === nossoLado)
+      .reduce((s,b)=>s + (b.n || 0), 0);
+    const pA = nossos.reduce((s,m)=>s + fichaDe(m), 0) + aliados * fichaMedia;
     const pB = deles.reduce((s,m)=>s + fichaDe(m), 0) || nB * 2;
 
     const favoritoNosso = pA === pB ? U.rng() < 0.5 : pA > pB;

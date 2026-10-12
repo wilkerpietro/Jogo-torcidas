@@ -5657,6 +5657,8 @@ TO.feed = (function(){
     /* o ataque é iniciativa dela: se já desistiu de vir atrás da gente
        (três tentativas sem dar certo), o bar e a casa ficam em paz */
     if(ev.tipo !== 'treta' && TO.relacoes.desistiu(E, rival.id, E.torcida.id)) return;
+    /* em trégua ela não vem no bar nem na casa (paridade, 12/10/2026) */
+    if(ev.tipo !== 'treta' && TO.relacoes.emTregua && TO.relacoes.emTregua(E, rival.id)) return;
 
     if(ev.tipo === 'bar' || ev.tipo === 'casa'){
       /* o ataque ao bar entra pelo caminho de sempre: marca o ataque e

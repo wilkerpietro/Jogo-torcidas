@@ -551,7 +551,9 @@ TO.planejamento = (function(){
     if(!destino || !torcida || !torcida.mapa) return 2;
     if(destino === torcida.mapa) return 0;
     const c = E ? caminho(E, torcida.mapa, destino, false) : null;
-    return c ? c.saltos : 1;
+    /* sem estrada ligando vale viagem longa, como a nossa (`saltosEntre`;
+       paridade 12/10/2026 — era 1 trecho) */
+    return c ? c.saltos : 4;
   }
   /* =======================================================
      O JOGO DECISIVO (dono, 12/10/2026): quartas, semifinal e final
@@ -1715,6 +1717,8 @@ TO.planejamento = (function(){
         const rel = TO.relacoes.nivel(E, o.id);
         if(rel > -15) continue;
         if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, o.id, E.torcida.id)) continue;
+        /* trégua segura a estrada também (paridade, 12/10/2026) */
+        if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, o.id)) continue;
         /* de pé, sem ferido nem preso (ordem do dono, 27/08/2026) */
         const viva = TO.relacoes.disponiveisIA(E, o.id);
         if(viva < crew * 0.7) continue;

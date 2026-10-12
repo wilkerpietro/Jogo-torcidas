@@ -476,7 +476,7 @@
   /* -------------------------------------------------------
      AS RIVAIS ESTUDAM TAMBÉM (pela mesma régua, simplificada): os pontos
      saem do tamanho e da sede delas, e o estudo é sorteado entre os
-     liberados. No protótipo elas NÃO ganham os efeitos — só aparecem
+     liberados. Os efeitos delas vêm em `efeitosIA` (paridade, 12/10/2026) — e aparecem
      no ranking e baixam o custo pra quem vem depois (a difusão).
      ------------------------------------------------------- */
   function iaSemana(E){
@@ -501,6 +501,70 @@
         if(x.pd < c) break;
         x.pd -= c; x.feitos.push(x.atual); x.atual = null;
       }
+      try{ efeitosIA(E, id, t, x); }catch(e){ console.warn('[desenv] efeitos IA', e); }
+    }
+  }
+
+  /* OS ESTUDOS DELAS TAMBÉM RENDEM (paridade, dono 12/10/2026: "dar às
+     IAs os efeitos dos estudos"). Sem livro-caixa por lançamento nem
+     ficha por membro, cada efeito vira o equivalente na conta delas:
+     receita e custo pela fatia do balanço da semana, ficha pela média do
+     quadro, recrutamento por chance extra, torcedores e elenco do clube
+     pelas mesmas contas da nossa, moral e prestígio pelo indicador. */
+  function efeitosIA(E, id, t, x){
+    const tem2 = k => x.feitos.includes(k);
+    const R = TO.relacoes;
+    x.aplicados = x.aplicados || [];
+    const umaVez = (k, f) => { if(tem2(k) && !x.aplicados.includes(k)){ x.aplicados.push(k); f(); } };
+    /* ficha: o quadro sobe pela média */
+    const q = R && R.quadroDe ? R.quadroDe(E, id) : null;
+    const C = TO.membros.CARGOS || {};
+    const somarQ = (cargos, f) => { if(!q) return; for(const c of cargos)
+      if(q.forca[c] != null) q.forca[c] = Math.min(((C[c] || {}).teto || 20), q.forca[c] + f); };
+    umaVez('p_frente', () => somarQ(['frente', 'diretoria'], 0.6));
+    umaVez('p_bloco', () => somarQ(['novato', 'componente'], 0.3));
+    if(tem2('p_treino')) somarQ(['novato', 'componente', 'frente', 'diretoria'], 0.01);   // treino +20%, na semana
+    if(tem2('m_tecnica')) somarQ(['novato'], 0.02);                                        // quem chega melhor
+    /* dinheiro: a fatia da semana do balanço */
+    if(R && R.balanco){
+      const b = R.balanco(t, E, id), sem = 1/4;
+      let pct = 0;
+      if(tem2('n_chope')) pct += 0.08;
+      if(tem2('n_marca')) pct += 0.12;
+      let corte = 0;
+      for(const k of ['n_estampa', 'e_frota', 'n_contab', 'a_festa', 'p_bomba', 'e_rateio']) if(tem2(k)) corte += 0.02;
+      const v = Math.round(b.rec * sem * pct + b.des * sem * corte + (tem2('n_socio') ? 0.1 * Math.max(0, b.mensal || 0) * sem : 0));
+      if(v > 0) t.caixa += v;
+    }
+    /* recrutamento: chance extra na semana, se tiver vaga */
+    const extra = (tem2('m_peneira') ? 0.25 : 0) + (tem2('m_portas') ? 0.5 : 0);
+    const cabe = ((TO.membros.SEDE || [])[Math.max(0, Math.min(6, t.sede || 0))] || {}).membros || 0;
+    if(extra && (t.membros || 0) < cabe && Math.random() < extra) t.membros = (t.membros || 0) + 1;
+    /* moral e prestígio */
+    if(R && R.mover){
+      if(tem2('a_hino')) R.mover(E, id, 'prestigio', 0.02);
+      if(tem2('a_orgulho') || tem2('e_lanche')) R.mover(E, id, 'moral', 0.05);
+    }
+    /* saúde e jurídico: quem está preso sai um pouco antes */
+    if(tem2('o_juri') || tem2('o_saude'))
+      t.presosIA = (t.presosIA || []).map(p => ({n:p.n, ate:p.ate - 1}));
+    /* torcedores e elenco do clube: a mesma conta da nossa, no mês */
+    const o = TO.mundo.torcida(id);
+    const mes = Math.floor((E.data.absoluto || 0) / 28);
+    if(o && o.clubeId && x.mes !== mes){
+      x.mes = mes;
+      const crescer = (cid, pct) => {
+        const a = TO.mundo.torcedoresDoClubeNa(cid, o.clubeId);
+        if(!a) return;
+        E.torcedoresEv = E.torcedoresEv || {};
+        E.torcedoresEv[cid + '|' + o.clubeId] = Math.round(a * (1 + pct) * 100) / 100;
+      };
+      if(tem2('m_escola')) crescer(o.mapa, 0.005);
+      if(tem2('m_interior')) for(const f of (t.filiais || [])) crescer(f.cidade, 0.005);
+      x.meses = (x.meses || 0) + 1;
+      E.investimento = E.investimento || {};
+      if(tem2('m_vaquinha') && x.meses % 6 === 0) E.investimento[o.clubeId] = (E.investimento[o.clubeId] || 0) + 1;
+      if(tem2('m_base') && x.meses % 3 === 0) E.investimento[o.clubeId] = (E.investimento[o.clubeId] || 0) + 1;
     }
   }
 
@@ -601,7 +665,7 @@
     const c4 = UI.cartao('As rivais também estudam', `${pos}º do país`);
     c4.corpo.innerHTML = rivais.length
       ? rivais.slice(0, 8).map(x => linha(esc(x.nome), x.n)).join('')+
-        `<div class="linha-dado"><span class="fraco">No protótipo elas não ganham os efeitos: só baixam o custo do que já estudaram (−1% por torcida, −3% se for aliada, até −10%).</span></div>`
+        `<div class="linha-dado"><span class="fraco">Os estudos delas rendem pela mesma régua (na conta delas), e baixam o custo pra quem vem depois (−1% por torcida, −3% se for aliada, até −10%).</span></div>`
       : `<div class="em-construcao">Começa a contar na primeira semana.</div>`;
     grade2.appendChild(c4);
     const c5 = UI.cartao('Últimos concluídos');

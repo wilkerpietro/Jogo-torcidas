@@ -242,11 +242,13 @@ TO.relacoes = (function(){
                  'loja', 'bar', 'bombas', 'evoluir:loja', 'evoluir:bar',
                  'onibus', 'filial', 'elenco', 'bombas', 'mma', 'subsede',
                  'presente', 'filial', 'elenco', 'evoluir:sorteio',
-                 'galpao', 'enfermaria', 'cofre'];
+                 /* a área de treino volta pra fila (paridade, dono 12/10/2026:
+                    a nossa compra os quatro níveis; a delas nunca comprava) */
+                 'area-treino', 'galpao', 'enfermaria', 'cofre', 'area-treino'];
   /* muda a ORDEM? sobe o número, e toda torcida recomeça a fila nova.
      A fila viva de save antigo tem outras chaves e outra contagem de
      repetições — comparar por conjunto não daria conta. */
-  const FILA_V = 6;
+  const FILA_V = 7;
   /* os que NUNCA acabam: bomba se gasta e o clube sempre aceita
      dinheiro. Eles não podem segurar a sede pra sempre (ver a nota
      no proximaCompra). */
@@ -286,13 +288,19 @@ TO.relacoes = (function(){
      que ela vai deixar. */
   /* a sala de treino delas é a nossa: sede 1 não comporta professor
      nenhum, sede 2 comporta um, sede 3 dois e sede 5 os três */
+  /* PARIDADE (dono, 12/10/2026): a sala delas tem o mesmo teto da nossa,
+     três professores — na sede 6 a garagem cabe 4 e a IA contratava um
+     quarto que zerava o treino (GANHO_MMA[4] não existe) */
+  const salaDeTreinoIA = t => Math.min(FIN().MMA_MAX, FIN().cabeNaSede(t.sede));
   const mmaDe = t =>{
     if(!t || !t.mma) return 0;
     return U.limitar(Math.round(t.mma === true ? 1 : t.mma),
-                     0, FIN().cabeNaSede(t.sede));
+                     0, salaDeTreinoIA(t));
   };
   const ganhoDeleas = t => FIN().GANHO_MMA[mmaDe(t)] || 1;
-  const cofreDoProfessor = t => FIN().MMA_MES * 3 * (mmaDe(t) + 1);
+  /* o caixa pra contratar é o nosso: o mês do professor (paridade,
+     12/10/2026; era três meses da folha inteira) */
+  const cofreDoProfessor = t => FIN().MMA_MES;
   /* O ESCRITÓRIO DELAS É O NOSSO (pedido do dono, 31/08/2026): R$ 5.000
      por mês por advogado, 10 dias a menos de cadeia por cabeça — na
      contratação e em toda prisão nova — e a escada própria da sede:
@@ -300,9 +308,9 @@ TO.relacoes = (function(){
   const advogadosIA = t =>{
     if(!t || !t.advogados) return 0;
     return U.limitar(Math.round(t.advogados), 0,
-                     FIN().ADVOGADOS_SEDE[U.limitar(t.sede == null ? 1 : t.sede, 0, 5)] || 0);
+                     FIN().ADVOGADOS_SEDE[U.limitar(t.sede == null ? 1 : t.sede, 0, 6)] || 0);
   };
-  const cofreDoAdvogado = t => FIN().ADVOGADO_MES * 3 * (advogadosIA(t) + 1);
+  const cofreDoAdvogado = t => FIN().ADVOGADO_MES;
   /* a pena que o camburão dá hoje, já com o corte do escritório */
   const penaIA = t => Math.max(1,
     U.inteiro(15, 90) - advogadosIA(t) * FIN().ADVOGADO_DIAS);
@@ -318,6 +326,9 @@ TO.relacoes = (function(){
      dono, 31/08/2026): a IA paga o mesmo preço unitário */
   const BOMBA = {lote:5, custo:2000, teto:10};
   /* a cama da enfermaria delas é a nossa: 3–9 dias com o anexo */
+  /* galpão corta 30% do saque, cofre corta metade do resto — a régua do
+     nosso `protegerPerda` */
+  const protegerIA = (t, v) => Math.round(v * (t && t.galpao ? 0.7 : 1) * (t && t.cofre ? 0.5 : 1));
   const camaIA = t => (t && t.enfermaria) ? U.inteiro(3, 9)
                                           : U.inteiro(5, 15);
   /* SEM ARQUÉTIPO, a vontade de brigar vem da OUSADIA, que cada
@@ -339,11 +350,14 @@ TO.relacoes = (function(){
         caixa: (o.saldo || 200) * 4,
         moral: 12,
         prestigio: U.limitar(Math.round((o.prestigio || 15)/5), 0, 20),
-        bares:[{nivel:1}], lojas:[], subsedes:0, fabrica:false,
+        /* o bar grátis vem com a sede 2, como o nosso (paridade, 12/10/2026) */
+        bares: sede >= 2 ? [{nivel:1}] : [], barGratisDado: sede >= 2,
+        lojas:[], subsedes:0, fabrica:false,
         /* o menu Financeiro inteiro vale pra elas (decisão do dono,
            18/08/2026): ônibus, professor de MMA e estoque de bombas
            são comprados com o caixa delas, como o jogador faz */
-        onibus:0, mma:0, bombas:10,
+        /* 4 bombas no paiol, como o nosso começo (paridade, 12/10/2026) */
+        onibus:0, mma:0, bombas:4,
         /* a faixa da torcida (dono, 09/09/2026): uma, e as que ela tomou */
         faixas:1, faixasTomadas:[], bandeiras:1, bandeirasTomadas:[],
         /* subsedes em OUTRAS cidades (dono, 25/08/2026) */
@@ -419,7 +433,8 @@ TO.relacoes = (function(){
     let mensCheia = 0;
     for(const [cargo, n] of TO.membros.planoDeCargos(total, o.cargos))
       mensCheia += TO.membros.CARGOS[cargo].mensalidade * n;
-    pon(rec, _t('Mensalidades ({n})', {n:pagantes}), mensCheia * pagantes / total);
+    const mensalidades = Math.round(mensCheia * pagantes / total);
+    pon(rec, _t('Mensalidades ({n})', {n:pagantes}), mensalidades);
 
     const fx = FIN().faixaDaMoral ? FIN().faixaDaMoral((t.moral||12)*5) : 1;
     const fator = fx * (0.7 + ((t.prestigio||0)/20)*0.4
@@ -442,12 +457,17 @@ TO.relacoes = (function(){
           R.bar[b.nivel] * multB(ba) * fator * corte(o.mapa, ba)
             * (FIN().multDano ? FIN().multDano(b, hojeAbs) : 1));
     });
+    /* caixa no vermelho: a loja fica sem insumo e não fatura — a nossa
+       régua (financeiro.js, `semInsumo`; paridade 12/10/2026) */
+    const semInsumo = (t.caixa || 0) < 0;
     (t.lojas||[]).forEach((l, i)=>{
+      if(semInsumo) return;
       const ba = bairroIA(o, 'loja', i, l);
       pon(rec, (ba ? _t('Loja — {bairro} (n{nivel})', {bairro:ba.nome, nivel:l.nivel})
                    : _t('Loja (n{nivel})', {nivel:l.nivel}))+
                (t.fabrica ? _t(' · fábrica') : ''),
-          R.loja[l.nivel] * multB(ba) * fator * corte(o.mapa, ba));
+          R.loja[l.nivel] * multB(ba) * fator * corte(o.mapa, ba)
+            * (1 + (TO.relacaoClube && t.relClube != null ? TO.relacaoClube.faixaDe(t.relClube).lojaBuff : 0)));
     });
     for(let i=0; i<(t.subsedes||0); i++){
       const ba = bairroIA(o, 'subsede', i);
@@ -472,7 +492,7 @@ TO.relacoes = (function(){
       manutCom += MAN.subsede[f.nivel] || MAN.subsede[1];
     pon(des, _t('Manutenção do comércio'), manutCom);
     let insumo = 0;
-    for(const l of (t.lojas||[]))
+    if(!semInsumo) for(const l of (t.lojas||[]))
       insumo += R.loja[l.nivel]*FIN().INSUMO*(1-corteFab);
     pon(des, t.fabrica ? _t('Insumos das lojas · fábrica') : _t('Insumos das lojas'), insumo);
     /* as folhas nas mensalidades CHEIAS do jogador */
@@ -491,7 +511,11 @@ TO.relacoes = (function(){
     if(t.galpao)     pon(des, _t('Galpão de material'), P().ANEXOS.galpao.mes);
 
     const soma = l => l.reduce((s,x)=>s+x.v, 0);
-    return {receitas:rec, despesas:des,
+    /* o que é do MÊS, e não da semana: mensalidade, professores,
+       advogados e ônibus — o nosso fechamento cobra uma vez por mês */
+    const mensal = mensalidades - Math.round(frotaIA(t) * FIN().ONIBUS_MES +
+      mmaDe(t) * FIN().MMA_MES + advogadosIA(t) * FIN().ADVOGADO_MES);
+    return {receitas:rec, despesas:des, mensal,
             rec:soma(rec), des:soma(des), saldo:soma(rec)-soma(des)};
   }
   const balanco = balancoDetalhado;
@@ -720,13 +744,14 @@ TO.relacoes = (function(){
     const T = P().TETO, PT = P().PONTO;
 
     if(chave === 'mma'){
-      if(mmaDe(t) < FIN().cabeNaSede(t.sede))
+      if(mmaDe(t) < salaDeTreinoIA(t))
         return {tipo:'mma', custo:0, cofre:cofreDoProfessor(t)};
       /* a sala está cheia: uma sede maior comporta mais? */
-      return FIN().cabeNaSede(t.sede) < FIN().MMA_MAX ? {sede:true} : null;
+      return salaDeTreinoIA(t) < FIN().MMA_MAX ? {sede:true} : null;
     }
     if(chave === 'advogado'){
-      const teto = FIN().ADVOGADOS_SEDE[U.limitar(t.sede || 1, 1, 5)] || 0;
+      /* até 12 na sede 6, como o nosso (paridade, 12/10/2026) */
+      const teto = FIN().ADVOGADOS_SEDE[U.limitar(t.sede || 1, 1, 6)] || 0;
       if(advogadosIA(t) < teto)
         return {tipo:'advogado', custo:0, cofre:cofreDoAdvogado(t)};
       /* o escritório está cheio: sede maior comporta mais? */
@@ -963,10 +988,35 @@ TO.relacoes = (function(){
           t.membros += 1;
         } else if(f.membros > tetoF) f.membros = tetoF;
       }
+      /* o bar grátis da sede 2 (paridade, 12/10/2026): uma vez só */
+      if(!t.barGratisDado && (t.sede || 0) >= 2){
+        if(!(t.bares||[]).length) (t.bares = t.bares || []).push({nivel:1});
+        t.barGratisDado = true;
+      }
+      if((t.caixa || 0) > 0) comprarFestasIA(E, M().torcida(id) || {id}, t);
+      assaltoIA(E, M().torcida(id) || {id}, t);
       const b = balanco(t, E, id);
-      t.caixa += Math.round(b.saldo * SEM);
-      lancarIA(E, id, _t('Semana — comércio, folhas e manutenção'),
-               Math.round(b.saldo * SEM));
+      /* PARIDADE (12/10/2026): o balanço era aplicado ×¼ toda semana,
+         13 mensalidades e 13 folhas por ano. Agora a semana leva o
+         semanal, e mensalidade e folhas entram uma vez, na semana do
+         dia 1 — como o nosso fechamento */
+      const doMes = FIN().semanaDaMensalidade && FIN().semanaDaMensalidade(E) ? b.mensal : 0;
+      const semana = Math.round((b.saldo - b.mensal) * SEM + doMes);
+      t.caixa += semana;
+      lancarIA(E, id, _t('Semana — comércio, folhas e manutenção'), semana);
+      /* o que o nosso fechamento tem e o delas não tinha (paridade,
+         12/10/2026): a doação de simpatizante (10% da semana, 200 +
+         prestígio × 30–90) e, no mês, a quebra séria do ônibus (1% por
+         ônibus, R$ 15 mil) */
+      if(U.rng() < 0.10){
+        const v = Math.round(200 + (t.prestigio || 0) * U.entre(30, 90));
+        t.caixa += v;
+        lancarIA(E, id, _t('Doação de simpatizante'), v);
+      }
+      if(doMes) for(let k = 0; k < frotaIA(t); k++) if(U.rng() < 0.01){
+        t.caixa -= 15000;
+        lancarIA(E, id, _t('Ônibus — manutenção séria'), -15000);
+      }
 
       /* A CARAVANA DELAS PAGA ESTRADA (assimetria fechada pelo dono,
          27/08/2026): semana com jogo fora da praça cobra a mesma
@@ -987,12 +1037,14 @@ TO.relacoes = (function(){
           /* a distância de verdade (10/10/2026): viagem longa leva menos
              gente e cada cabeça custa mais trechos */
           const n = TO.planejamento.caravanaDe(o, 0, E, destinoFora);
-          const cv = TO.planejamento.custoCaravanaIA(n, frotaIA(t),
-            TO.planejamento.trechosDaIA ? TO.planejamento.trechosDaIA(E, o, destinoFora) : 2);
+          const cv = Math.round(TO.planejamento.custoCaravanaIA(n, frotaIA(t),
+            TO.planejamento.trechosDaIA ? TO.planejamento.trechosDaIA(E, o, destinoFora) : 2)
+            * (1 - (TO.relacaoClube && t.relClube != null ? TO.relacaoClube.faixaDe(t.relClube).caravana : 0)));
           t.caixa -= cv;
           lancarIA(E, id, _t('Caravana — jogo fora ({n} cabeças)', {n}), -cv);
         }
         if(viaja) recepcaoIA(E, o, t, jogos);
+        clubeDelas(E, o, t, jogos);
         /* A CARAVANA SILENCIOSA DA SUBSEDE DELAS (ordem do dono,
            31/08/2026): em todo jogo da semana — em casa e fora — o
            núcleo de cada filial viaja pra praça da partida pela rota
@@ -1047,7 +1099,8 @@ TO.relacoes = (function(){
            de dívida — aqui contados na fatia semanal — e uma loja sai
            por R$ 90 mil, a de nível mais baixo */
         t.diasVermelho = (t.diasVermelho || 0) + 7;
-        if(t.diasVermelho >= 30){
+        /* 28: a semana mais perto dos 30 dias do nosso (eram 35 na prática) */
+        if(t.diasVermelho >= 28){
           let mexeu = false;
           if((t.lojas||[]).length){
             let iL = 0;
@@ -1230,6 +1283,13 @@ TO.relacoes = (function(){
   function moverRelacao(E, a, b, quanto){
     E.relacoesDelas[chaveDe(a,b)] =
       U.limitar(relacaoDelas(E, a, b) + quanto, -100, 100);
+    /* o relógio da convivência delas (paridade, 12/10/2026): queda é
+       hostilidade, subida é ajuda — a nossa marcaHostil/marcaAjuda */
+    if(quanto && E.data){
+      const M2 = E.marcasDelas = E.marcasDelas || {};
+      const k = chaveDe(a, b), x = M2[k] || (M2[k] = {});
+      if(quanto < 0) x.h = semanaAbs(E); else x.a = semanaAbs(E);
+    }
   }
 
   /* mexer num indicador delas devolve o delta aplicado — é o número
@@ -1387,6 +1447,8 @@ TO.relacoes = (function(){
         if(!f || (f.membros||0) < 6) continue;       // núcleo pequeno não desce
         if(M().saoIrmas && M().saoIrmas(E.torcida.id, o.id)) continue;
         if(desistiu(E, o.id, E.torcida.id)) continue;
+        /* a trégua vale aqui também (paridade, 12/10/2026) */
+        if(emTregua(E, o.id)) continue;
         const r = nivel(E, o.id);
         if(r > QUENTE) continue;
         const jogoEmCasa = E.proximoJogo && E.proximoJogo.casa;
@@ -1608,6 +1670,129 @@ TO.relacoes = (function(){
     return hostis.length ? hostis[0].o : null;
   }
 
+  /* O JOGO DO DIA DELAS (paridade, dono 12/10/2026): cada jogo do clube
+     mexe ±0,6 na moral das torcidas dele, no dia — a nossa régua
+     (estado.aplicarResultadoDoClube) —, e o último resultado fica pro
+     O título paga no dia da conquista. (O regime de recrutamento já
+     lê o placar do dia em `mundoDia`.) */
+  function resultadosDelasHoje(E){
+    const S = E.temporada;
+    if(!S) return;
+    mundo(E);
+    const hoje = E.data.dia, sem = E.data.semana;
+    const viu = new Set();
+    for(const comp of S.competicoes){
+      for(const etapa of [...comp.rodadas, ...comp.mata]){
+        for(const j of etapa.jogos){
+          if((j.s || etapa.semana) !== sem || (j.d || etapa.dia || comp.dia || 6) !== hoje) continue;
+          if(!j.f || j.gc == null || j.gf == null) continue;
+          for(const [clube, gp, gc] of [[j.c, j.gc, j.gf], [j.f, j.gf, j.gc]]){
+            if(!clube || viu.has(clube + '|' + j.c + '|' + j.f)) continue;
+            viu.add(clube + '|' + j.c + '|' + j.f);
+            const d = gp > gc ? 0.6 : gp < gc ? -0.6 : 0;
+            for(const o of M().torcidasDe(clube)){
+              if(o.id === E.torcida.id) continue;
+              const t = (E.mundoTorcidas||{})[o.id];
+              if(!t) continue;
+              if(d) mover(E, o.id, 'moral', d);
+            }
+          }
+        }
+      }
+      if(comp.campeao) conquistaDoClube(E, comp.campeao, 'campeao', comp);
+    }
+  }
+
+  /* AS FESTAS DA ARQUIBANCADA DELAS (paridade, dono 12/10/2026): a loja
+     de festas era só nossa. A diretoria delas compra com o caixa que
+     sobra — a mais cara que couber deixando R$ 20 mil de colchão, até 2
+     de cada no depósito — e o Fator Torcida vale nos jogos do clube
+     delas: em casa sempre, fora só com caravana de 10 ou mais (a nossa
+     régua, festas.MIN_FORA). */
+  function comprarFestasIA(E, o, t){
+    const F = TO.festas;
+    if(!F || !F.CATALOGO || (t.caixa || 0) < 23000) return;
+    t.festas = t.festas || {};
+    for(const f of F.CATALOGO.slice().reverse()){
+      if((t.festas[f.id] || 0) >= 2 || t.caixa - f.custo < 20000) continue;
+      t.festas[f.id] = (t.festas[f.id] || 0) + 1;
+      t.caixa -= f.custo;
+      lancarIA(E, o.id, _tn(1, 'Festa na arquibancada: {nome}', 'Festa na arquibancada: {nome} (×{n})', {nome:f.nome}), -f.custo);
+      return;
+    }
+  }
+  /* OS ASSALTOS DELAS (paridade, dono 12/10/2026): eram só nossos. Sem
+     cena, simulados: a semana dá chance de 4% × a ousadia dela, menor
+     quanto mais quente a polícia; precisa de 6 de pé. O golpe rende pelo
+     tamanho da sede (os nossos alvos vão de R$ 500 a R$ 120 mil), e dá
+     certo 65% das vezes, menos o calor. Esquenta a polícia — +6 a +14
+     no acerto, +14 no erro —, que esfria 1,5 por dia como a nossa. Errou:
+     1 a 3 vão em cana, com a pena e os advogados dela. */
+  function assaltoIA(E, o, t){
+    t.calor = Math.max(0, (t.calor || 0) - 10.5);          // 1,5 por dia
+    if(disponiveisIA(E, o.id) < 6) return;
+    const chance = 0.04 * brigaDe(t) * (1 - Math.min(1, (t.calor || 0) / 100));
+    if(U.rng() >= chance) return;
+    const sede = Math.max(0, Math.min(6, t.sede || 0));
+    const valor = U.inteiro(500, [3000, 6000, 12000, 25000, 45000, 80000, 120000][sede]);
+    if(U.rng() < 0.65 - (t.calor || 0) / 200){
+      t.caixa += valor;
+      t.calor = (t.calor || 0) + U.inteiro(6, 14);
+      lancarIA(E, o.id, _t('Assalto'), valor);
+    } else {
+      const n = U.inteiro(1, 3);
+      (t.presosIA = t.presosIA || []).push({n, ate:(E.data.absoluto || 0) + penaIA(t)});
+      t.calor = (t.calor || 0) + 14;
+    }
+  }
+  /* A RELAÇÃO COM O CLUBE DELAS (paridade, dono 12/10/2026): a mesma
+     tabela da nossa (TO.relacaoClube.FAIXAS). Presença sobe — +2 por
+     jogo em casa, +1 por jogo fora com caravana —, briga da semana
+     desce 5. A faixa paga ingresso aos sócios (10/30/60% do efetivo a
+     R$ 10 por jogo em casa), material oficial na loja (no balanço) e
+     corta 20% da caravana na faixa de cima. */
+  function clubeDelas(E, o, t, jogos){
+    const RC = TO.relacaoClube;
+    if(!RC) return;
+    if(t.relClube == null) t.relClube = 50;
+    let casa = 0, fora = 0;
+    for(const j of (jogos||[])){ if(j.casa) casa++; else fora++; }
+    t.relClube += casa * 2 + fora;
+    if(t.ultimaBrigaIA != null && (E.data.absoluto || 0) - t.ultimaBrigaIA < 7) t.relClube -= 5;
+    t.relClube = U.limitar(t.relClube, 0, 100);
+    const fx = RC.faixaDe(t.relClube);
+    if(casa && fx.ingressos){
+      const v = Math.round(disponiveisIA(E, o.id) * fx.ingressos * RC.PRECO_INGRESSO * casa);
+      if(v > 0){ t.caixa += v; lancarIA(E, o.id, _t('Venda de ingressos aos sócios ({n} · R$ {preco} cada)',
+        {n:Math.round(disponiveisIA(E, o.id) * fx.ingressos), preco:RC.PRECO_INGRESSO}), v); }
+    }
+  }
+
+  function festasDelasNoJogo(E, j){
+    const F = TO.festas;
+    if(!F || !j || j.festasIA) return 0;
+    j.festasIA = [];
+    mundo(E);
+    let pts = 0;
+    const casa = M().time(j.c), mapaCasa = casa && casa.mapa;
+    for(const [clube, sinal] of [[j.c, 1], [j.f, -1]]){
+      if(!clube) continue;
+      for(const o of M().torcidasDe(clube)){
+        if(o.id === E.torcida.id) continue;
+        const t = (E.mundoTorcidas||{})[o.id];
+        if(!t || !t.festas) continue;
+        const tem = F.CATALOGO.filter(f => (t.festas[f.id] || 0) > 0);
+        if(!tem.length) continue;
+        if(sinal < 0 && o.mapa !== mapaCasa &&
+           TO.planejamento.caravanaDe(o, 0, E, mapaCasa) < F.MIN_FORA) continue;
+        for(const f of tem) t.festas[f.id]--;
+        j.festasIA.push(o.id);
+        pts += sinal * F.REGUA * tem.reduce((s2, f) => s2 + f.pct, 0);
+      }
+    }
+    return pts;
+  }
+
   function ataqueDeHoje(E){
     const a = E.ataqueMarcado;
     if(!a || a.resolvido) return null;
@@ -1617,17 +1802,25 @@ TO.relacoes = (function(){
 
   /* o que o clube faz em campo move a moral da torcida dele */
   const CONQUISTA_MORAL = {campeao:2.5, vice:0.8, acesso:2, rebaixado:-3};
-  function conquistaDoClube(E, clubeId, tipo){
+  function conquistaDoClube(E, clubeId, tipo, comp, ano){
     const d = CONQUISTA_MORAL[tipo];
     if(!d || !clubeId) return [];
     mundo(E);
+    /* o título que já pagou no dia da conquista não paga de novo na virada */
+    if(comp){
+      const k = `${ano == null ? E.data.ano : ano}|${comp.id}`;
+      E.titulosIA = E.titulosIA || {};
+      if(E.titulosIA[k]) return [];
+      E.titulosIA[k] = true;
+    }
     /* a janela quente/seca do recrutamento também é delas (decisão do
        dono, 18/08/2026): título e acesso abrem 2 semanas de 40/20;
        rebaixamento fecha o portão por 2 semanas */
+    /* 3 semanas, como a nossa (paridade, 12/10/2026; eram 2) */
     const janela = tipo === 'campeao' || tipo === 'acesso'
-      ? {tipo:'titulo', ate: semanaAbs(E) + 2}
+      ? {tipo:'titulo', ate: semanaAbs(E) + 3}
       : tipo === 'rebaixado'
-      ? {tipo:'rebaixamento', ate: semanaAbs(E) + 2}
+      ? {tipo:'rebaixamento', ate: semanaAbs(E) + 3}
       : null;
     const fora = [];
     for(const o of M().torcidasDe(clubeId)){
@@ -1686,6 +1879,41 @@ TO.relacoes = (function(){
   const passoDaSeca = id => SECO_MES * (0.6 + (TO.mapa.hash(`conv|seca|${id}`) %  81) / 100);
   const atrasoDaPaz  = id => TO.mapa.hash(`conv|dp|${id}`) % 4;
   const atrasoDaSeca = id => TO.mapa.hash(`conv|ds|${id}`) % 8;
+
+  /* A CONVIVÊNCIA DELAS (paridade, dono 12/10/2026: "aceito"): as
+     relações entre IAs também apodrecem — a mesma régua da nossa, com o
+     mesmo passo por torcida: mês sem briga entre as duas, +0,1 a +0,3;
+     dois meses sem ajuda, −0,6 a −1,4. Roda a cada 4 semanas, sobre os
+     pares que importam: os que já se mexeram e os aliados/irmãos/rivais
+     declarados na fonte (os outros 150 mil pares nunca se cruzam). */
+  function convivenciaDelas(E){
+    const sa = semanaAbs(E);
+    if(sa % 4) return;
+    E.relacoesDelas = E.relacoesDelas || {};
+    const M2 = E.marcasDelas = E.marcasDelas || {};
+    const pares = new Map();
+    for(const k of Object.keys(E.relacoesDelas)){
+      const [a, b] = k.split('|');
+      if(a && b) pares.set(k, [a, b]);
+    }
+    for(const o of M().jogaveis()){
+      if(o.incompleta || o.id === E.torcida.id) continue;
+      for(const x of [...(o.aliados||[]), ...(o.irmandade||[]), ...(o.rivais||[])]){
+        if(!x || x === E.torcida.id) continue;
+        pares.set(chaveDe(o.id, x), [o.id, x]);
+      }
+    }
+    for(const [k, [a, b]] of pares){
+      if(a === E.torcida.id || b === E.torcida.id) continue;
+      const x = M2[k] || (M2[k] = {});
+      const h0 = x.h != null ? x.h : (x.h = sa - atrasoDaPaz(k));
+      const a0 = x.a != null ? x.a : (x.a = sa - atrasoDaSeca(k));
+      let v = relacaoDelas(E, a, b);
+      if(sa - h0 >= 4){ v += passoDaPaz(k); x.h = sa; }
+      if(sa - a0 >= 8){ v += passoDaSeca(k); x.a = sa; }
+      E.relacoesDelas[k] = U.limitar(v, -100, 100);
+    }
+  }
 
   function convivencia(E){
     const sa = semanaAbs(E);
@@ -1767,10 +1995,8 @@ TO.relacoes = (function(){
        acabado: ela não desce abaixo da ficha de nascença do cargo. Só o
        que é permanente (sequela e idade) morde abaixo disso. Save que
        já tinha afundado volta pro piso aqui. */
-    for(const c of ESCADA){
-      const piso = pisoDoCargo(q, c);
-      if(q.forca[c] < piso) q.forca[c] = piso;
-    }
+    /* O PISO SAIU (paridade, dono 12/10/2026: "tirar o piso das IAs"):
+       a nossa ficha desce até 1 na ferrugem, a delas também */
     if(dif > 0){
       const n = q.cargos.novato;
       q.forca.novato = (n*q.forca.novato + dif*MEDIA_FICHA.novato)/(n + dif);
@@ -2148,8 +2374,9 @@ TO.relacoes = (function(){
     if(!q || !quanto) return;
     for(const c of ESCADA){
       if(permanente) q.desgaste[c] = (q.desgaste[c] || 0) + quanto;
-      /* ferrugem para no piso do cargo; o permanente baixa o próprio piso */
-      q.forca[c] = Math.max(Math.min(q.forca[c], pisoDoCargo(q, c)), q.forca[c] - quanto);
+      /* sem piso (paridade, 12/10/2026): a régua do nosso `perder`, que
+         para em 1 */
+      q.forca[c] = Math.max(1, q.forca[c] - quanto);
     }
   }
   /* o que a noite cobrou do grupo: feridos deixam sequela e presos
@@ -2173,6 +2400,10 @@ TO.relacoes = (function(){
       if(abs - marco < 20) continue;
       t.ultimaFerrugem = abs;
       desgastarQuadro(E, id, 0.2);
+      /* e a paz cobra moral e prestígio delas como cobra os nossos
+         (paridade, 12/10/2026): −0,5 de moral e −0,2 de prestígio */
+      mover(E, id, 'moral', -0.5);
+      mover(E, id, 'prestigio', -0.2);
     }
   }
 
@@ -2408,15 +2639,22 @@ TO.relacoes = (function(){
       /* a casa é UMA só: a aliada mais próxima que mora na praça */
       const anf = M().torcidasEm(destino)
         .filter(x => x.id !== o.id && x.id !== E.torcida.id && !x.incompleta &&
-                     relacaoDelas(E, o.id, x.id) >= ALIADO)
+                     relacaoDelas(E, o.id, x.id) >= REL_ALIADA_DA_MESA)
         .sort((x,y)=>relacaoDelas(E,o.id,y.id) - relacaoDelas(E,o.id,x.id))[0];
       if(!anf) continue;
       const ta = (E.mundoTorcidas||{})[anf.id];
-      const d = U.rng();
-      let nivel = d < 0.30 ? 'escolta' : d < 0.50 ? 'hospedar' : 'nada';
-      const porCabeca = {escolta:50, hospedar:25, nada:0}[nivel];
-      let custo = porCabeca * n;
-      if(ta && custo > ta.caixa){ nivel = 'nada'; custo = 0; }
+      /* A RECEPÇÃO DELAS É ESCOLHA PELA RELAÇÃO, como a nossa (paridade,
+         dono 12/10/2026): era sorteio de 30% escolta, 20% hospedar e 50%
+         nada, sem churrasco, e só pra aliada de 45. Agora a aliada de 20
+         recebe; de 45 escolta; de 70 faz churrasco. Sem caixa, desce um
+         degrau até caber. */
+      const rel = relacaoDelas(E, o.id, anf.id);
+      const NIVEIS = ['nada', 'hospedar', 'escolta', 'churrasco'];
+      const POR = {nada:0, hospedar:25, escolta:50, churrasco:75};
+      let k = rel >= 70 ? 3 : rel >= 45 ? 2 : 1;
+      while(k > 0 && ta && POR[NIVEIS[k]] * n > ta.caixa) k--;
+      let nivel = NIVEIS[k];
+      let custo = POR[nivel] * n;
       if(custo > 0 && ta){
         ta.caixa -= custo;
         lancarIA(E, anf.id, _t('Recepção da {nome} ({n} cabeças)', {nome:o.nome, n}), -custo);
@@ -2426,7 +2664,8 @@ TO.relacoes = (function(){
         (ta.recepcoes = ta.recepcoes || []).push({sem: semanaAbs(E), v: custo});
       }
       moverRelacao(E, o.id, anf.id,
-        nivel === 'escolta'  ? ganhoRepetido(E, o.id, anf.id, 'caravana', REL.hospedarEscolta)
+        nivel === 'churrasco' ? ganhoRepetido(E, o.id, anf.id, 'caravana', REL.churrasco)
+      : nivel === 'escolta'  ? ganhoRepetido(E, o.id, anf.id, 'caravana', REL.hospedarEscolta)
       : nivel === 'hospedar' ? ganhoRepetido(E, o.id, anf.id, 'caravana', REL.hospedar)
       : -REL.naoReceber);
     }
@@ -2530,7 +2769,9 @@ TO.relacoes = (function(){
     if(reg.ganhouA){
       const tAtk = (E.mundoTorcidas||{})[atk.id];
       const tDono = (E.mundoTorcidas||{})[o.id];
-      const saque = Math.round(60*reg.b.n +
+      /* o galpão e o cofre da dona protegem como protegem os nossos
+         (paridade, 12/10/2026: no IA×IA eles não contavam) */
+      const saque = protegerIA(tDono, 60*reg.b.n +
         0.22*Math.max(0, tDono ? tDono.caixa : 0));
       /* o dinheiro já mudava de mão, mas em silêncio: agora entra no
          extrato dos dois lados, como qualquer conta delas (ordem do
@@ -2618,7 +2859,26 @@ TO.relacoes = (function(){
      reunião de diretoria. Sem sorteio e sem arquétipo. */
   const EXPEDIENTE = ['recrutar', 'festa', 'reuniao'];
   const REL_ALIADA_DA_MESA = 20;   // o corte de Aliado na régua
-  function expedienteIA(){ return EXPEDIENTE; }
+  /* OS TRÊS TURNOS DELAS SÃO ESCOLHA, COMO OS NOSSOS (paridade, dono
+     12/10/2026): eram os três de uma vez, todo dia. Agora são 3 turnos
+     e a diretoria delas escolhe pela necessidade — o que o jogador
+     faria: com vaga, recruta; com o caixa curto, festa e PIX pra
+     fechar a conta; com aliada na praça, reunião; o que sobra,
+     recruta de novo (se tem vaga) ou faz festa. */
+  function expedienteIA(E, o, t){
+    if(!E || !t) return EXPEDIENTE;
+    const teto = tetoDe(E, t) + (t.filiais||[]).reduce((s,f)=>s+(f.membros||0), 0);
+    const vaga = t.membros < teto;
+    const curto = (t.caixa || 0) < 5000;
+    const temAliada = M().torcidasEm(o.mapa).some(x => x.id !== o.id && x.id !== E.torcida.id &&
+      relacaoDelas(E, o.id, x.id) >= REL_ALIADA_DA_MESA && relacaoDelas(E, o.id, x.id) < 69);
+    const ops = [];
+    if(vaga) ops.push('recrutar');
+    if(curto){ ops.push('festa'); ops.push('pix'); }
+    else if(temAliada) ops.push('reuniao');
+    while(ops.length < 3) ops.push(vaga ? 'recrutar' : 'festa');
+    return ops.slice(0, 3);
+  }
 
   /* A REUNIÃO DE DIRETORIA delas: o mesmo passo da nossa (+4,2 com o
      aliado mais próximo) e a mesma exigência de dois diretores de pé,
@@ -2651,7 +2911,10 @@ TO.relacoes = (function(){
      ======================================================= */
   const TETO_DA_REUNIAO = 69;      // o degrau antes da Irmandade
   function reuniaoIA(E, o, t){
-    if(((o.cargos||{}).diretoria || 0) < 2) return;
+    /* os dois diretores vêm do quadro VIVO dela, não da ficha da fonte
+       (paridade, 12/10/2026) — a nossa exige dois de pé */
+    const q = quadroDe(E, o.id);
+    if(((q && q.cargos ? q.cargos.diretoria : (o.cargos||{}).diretoria) || 0) < 2) return;
     if(E.data.dia !== 1) return;                    // uma vez por semana
     let alvo = null, melhor = -Infinity;
     for(const v of M().torcidasEm(o.mapa)){
@@ -2704,14 +2967,22 @@ TO.relacoes = (function(){
       if(!t) continue;
 
       /* --- os 3 turnos do expediente --- */
-      for(const op of expedienteIA()){
+      for(const op of expedienteIA(E, o, t)){
         if(op === 'recrutar'){
           /* o teto da sede vale pra SEDE: quem mora na filial não come
              a vaga de quem recruta na cidade-mãe (dono, 31/08/2026) */
           const teto = tetoDe(E, t)
             + (t.filiais||[]).reduce((s,f)=>s+(f.membros||0), 0);
           if(t.membros >= teto || t.caixa < 10) continue;
-          const tab = TAB[regimeIA(E, t)] || {um:0.10, dois:0.05};
+          /* o turno rodou com vaga: o bairro dela ganha o +0,2 do dia, como
+             o nosso (o domínio lê a marca) */
+          t.recrutouEm = E.data.absoluto || 0;
+          const tab0 = TAB[regimeIA(E, t)] || {um:0.10, dois:0.05};
+          /* o peso do bairro: a diretoria delas recruta no reduto do clube,
+             como a gente escolheria (×0,7 a ×1,3 no nosso; 1,2 pra elas) —
+             no modo rápido não há bairro, peso 1, igual ao nosso */
+          const peso = (TO.dominio && TO.dominio.rapido && TO.dominio.rapido(E)) ? 1 : 1.2;
+          const tab = {um:Math.min(0.9, tab0.um * peso), dois:Math.min(0.5, tab0.dois * peso)};
           const r = U.rng();
           const n = Math.min(r < tab.dois ? 2
                            : r < tab.dois + tab.um ? 1 : 0,
@@ -2731,6 +3002,14 @@ TO.relacoes = (function(){
           t.caixa += Math.round(publico * U.entre(4.8, 6.4)) - custo;
         } else if(op === 'reuniao'){
           reuniaoIA(E, o, t);
+        } else if(op === 'pix'){
+          /* a campanha de PIX delas é a nossa: R$ 8–15 por membro de pé,
+             −0,2 de prestígio (paridade, 12/10/2026) */
+          const pe = disponiveisIA(E, o.id);
+          if(pe < 3) continue;
+          const v = Math.round(pe * U.entre(8, 15));
+          t.caixa += v;
+          mover(E, o.id, 'prestigio', -0.2);
         }
       }
 
@@ -3052,6 +3331,7 @@ TO.relacoes = (function(){
        variação que a tela mostra cobre o mês inteiro */
     fotoDoMes(E);
     convivencia(E);
+    convivenciaDelas(E);
     economiaDelas(E);
     guerraDeFiliais(E);
     return {ataques: ataquesContraNos(E)};
@@ -3083,7 +3363,7 @@ TO.relacoes = (function(){
           mover, indicadoresDe, semanaAbs,
           ataquesContraNos, ataqueDeHoje, diaDoAtaque,
           eventosDoTrimestre, eventoDeHoje, rivalDaPraca, SEMANAS_TRI,
-          conquistaDoClube, passarSemana, guerraDeFiliais, panorama,
+          conquistaDoClube, resultadosDelasHoje, festasDelasNoJogo, passarSemana, guerraDeFiliais, panorama,
           elencoDaTorcida, lancarIA, recepcaoIA, convivencia,
           MENSALIDADE,
           fotoDoMes, marcaDoMes, medirNoRanking,

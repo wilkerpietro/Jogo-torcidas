@@ -1068,6 +1068,8 @@ TO.dominio = (function(){
     if(m.c !== E.torcida.mapa || amigas(E, m.t, eu(E))) return;
     /* três tentativas sem dar certo: ela desistiu de vir atrás da gente */
     if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, m.t, eu(E))) return;
+    /* e a trégua do ano segura a meta dela contra a gente (paridade, 12/10/2026) */
+    if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, m.t)) return;
     /* no máximo UM por mês (02/10/2026): eram 5 em dois meses, fora o
        calendário de ataques do trimestre */
     const Dr = raiz(E), mes = mesDe(E);
@@ -1389,7 +1391,12 @@ TO.dominio = (function(){
   function recrutamentoIA(E){
     const D = raiz(E);
     planejarRecrutamento(E);
+    const W = (TO.relacoes && TO.relacoes.mundo) ? TO.relacoes.mundo(E) : {};
     for(const tid in D.recrutaIA || {}){
+      /* só no dia em que o turno dela recrutou com vaga, como o nosso
+         (paridade, 12/10/2026: era todo dia, mesmo com a sede cheia) */
+      const t = W[tid];
+      if(t && t.recrutouEm !== (E.data.absoluto || 0)) continue;
       const [cid, bid] = D.recrutaIA[tid].split('#');
       mexer(E, cid, bid, tid, RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
     }
@@ -1415,12 +1422,15 @@ TO.dominio = (function(){
           mexer(E, cid, fraco.id, pl.dono, GANHO.social[0] + r0() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
         }
       }
-      for(const tid of maiores(E, cid)){
+      /* PARIDADE (dono, 12/10/2026): a nossa ação social é uma por
+         semana, garantida; a delas era 35% das semanas e só das duas
+         maiores. Agora toda torcida da cidade com caixa pra ela faz a
+         dela na semana. */
+      for(const tid of torcidasDaCidade(cid).map(o => o.id)){
         if(tid === meu || tid === pl.dono) continue;
         const t = mundo[tid];
         if(!t || (t.caixa || 0) < SOCIAL.custo * 2) continue;
         const r = sorteio(`${semente(E)}|social|${tid}|${E.data.ano}|${E.data.semana}`);
-        if(r() >= 0.35) continue;
         const alvo = alvoSocial(E, cid, tid, r);
         if(!alvo) continue;
         t.caixa -= SOCIAL.custo;

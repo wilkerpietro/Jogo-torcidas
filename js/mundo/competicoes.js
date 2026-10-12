@@ -1234,7 +1234,9 @@ TO.competicoes = (function(){
      neste exato jogo e deixam a lista em `j.festas` pra cena desenhar */
   function fatorDoJogo(E, j){
     const festas = TO.festas ? TO.festas.usarNoJogo(E, j) : 0;
-    return bonusTorcida(E, j.c) + festas;
+    /* e as festas das IAs, nos jogos do clube delas (paridade, 12/10/2026) */
+    const delas = TO.relacoes && TO.relacoes.festasDelasNoJogo ? TO.relacoes.festasDelasNoJogo(E, j) : 0;
+    return bonusTorcida(E, j.c) + festas + delas;
   }
   function bonusTorcida(E, casaId){
     if(!E || !E.torcida || !E.torcida.clubeId) return 0;

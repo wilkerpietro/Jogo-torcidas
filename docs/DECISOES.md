@@ -10646,6 +10646,81 @@ Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos 
 - **Correção:** trocar de estudo guarda o progresso de cada um.
 - **Testado** (Playwright, 1366 e 390 de largura): o item aparece entre Notícias e Jogo, a página abre pelo ícone, a subaba Massa mostra as três trilhas e clicar escolhe o estudo. No `index.html`, `TO.desenvolvimento` não existe.
 
+## Paridade das torcidas: as IAs na nossa régua (dono, 12/10/2026)
+
+"Preciso que a paridade das torcidas seja similar à condição nossa o máximo possível." Partiu da varredura em `docs/PARIDADE-TORCIDAS.md`.
+
+**Decisões do dono:**
+- **Seção 1 não entra:** ficha individual por membro, cena real entre IAs, eventos de história do feed.
+- **Seção 2 entra:** as escolhas manuais viram regra automática nas IAs.
+- **Seção 3:**
+  - a IA segue desistindo depois de 3 fracassos;
+  - a caravana dela segue com ×0,6;
+  - os ataques dela **não** são liberados (calendário e freios ficam);
+  - as relações IA×IA esfriam;
+  - presentes das IAs para nós **não**.
+- **Seção 4:** tirar o piso das IAs. O saque fica a mesma conta nos dois sentidos.
+
+**Bugs da IA:**
+- professores limitados a 3 (`salaDeTreinoIA`);
+- advogados até 12 na sede 6;
+- a área de treino volta à `ORDEM` (duas vezes; `FILA_V` 7, e toda IA recomeça a fila);
+- galpão e cofre da vítima protegem no saque IA×IA (`protegerIA`).
+
+**Ferrugem e indicadores:**
+- **Ferrugem da paz:** a IA perde −0,5 de moral e −0,2 de prestígio a cada 20 dias sem briga, e a ficha do quadro desce até 1, sem o piso da nascença.
+- **Jogo do clube:** cada jogo mexe ±0,6 na moral das torcidas dele, no dia (`resultadosDelasHoje`). O título paga no dia da conquista e não paga de novo na virada (`E.titulosIA`).
+- **Vice:** passa a dar +0,8 de moral para nós também.
+- **Janela de título e rebaixamento:** 3 semanas para todos.
+
+**Economia:**
+- **Contas do mês:** mensalidade e folhas (professores, advogados, ônibus) entram uma vez por mês, na semana do dia 1; antes eram ×¼ toda semana, ou seja 13 por ano.
+- **Caixa negativo:** a loja fica sem insumo e não fatura; a venda forçada sai em 28 dias.
+- **Começo:** o bar grátis vem com a sede 2, e a IA começa com 4 bombas.
+- **Doação e ônibus:** a IA ganha a doação de simpatizante (10% da semana) e tem a quebra séria de ônibus (1% por ônibus no mês, R$ 15 mil).
+- **Contratar:** o caixa mínimo é o mês do profissional, como o nosso.
+- **Caravana sem estrada:** vale 4 trechos (era 1).
+
+**Briga:**
+- **Saque igual para todos:** 60 × quem defendia o bar (até 40), mais 22% do caixa, com galpão e cofre protegendo. Antes, nós levávamos 60 × o efetivo inteiro dela, e ela levava 10% do nosso caixa.
+- **Trégua:** agora vale também na subsede de fora, no calendário de bar e casa contra nós, na emboscada da rota e na meta de domínio.
+- **No nosso "Simular":** a escolta do aliado soma, e o rival é o bonde do outro lado (antes o aliado podia ser lido como inimigo).
+
+**Seção 2, as escolhas das IAs:**
+- **Expediente:** 3 turnos escolhidos pela necessidade (`expedienteIA`): com vaga, recruta; com o caixa curto, festa e PIX; com aliada, reunião; o resto, recrutar ou festa.
+  - Peso do bairro 1,2 no recrutamento (1 no modo rápido).
+  - O +0,2 de domínio só no dia em que o turno recrutou com vaga.
+  - O PIX delas: R$ 8–15 por cabeça de pé, −0,2 de prestígio.
+- **Ação social:** toda torcida da cidade com caixa faz a dela na semana (eram 35% das semanas, só as 2 maiores).
+- **Recepção de caravana:** pela relação. Aliada a partir de 20 recebe (era 45), 45 escolta, 70 churrasco; sem caixa, desce um degrau.
+- **Anfitriã da escolta:** pela relação viva (`praca.anfitriaoDe`).
+- **Reunião:** exige 2 diretores do quadro vivo.
+- **Relações IA×IA esfriando:** a régua da nossa convivência, a cada 4 semanas (`convivenciaDelas`). Vale para os pares que já se mexeram e para os aliados, irmãos e rivais da fonte. O relógio é `E.marcasDelas`, marcado em `moverRelacao`.
+- **Festas da arquibancada:** a IA compra com o caixa acima de R$ 20 mil, até 2 de cada. O Fator Torcida vale nos jogos do clube dela: em casa sempre, fora com caravana de 10 ou mais (`festasDelasNoJogo` no `fatorDoJogo`).
+- **Assaltos simulados** (`assaltoIA`):
+  - chance de 4% × ousadia por semana, menor com a polícia quente;
+  - valor pela sede (até R$ 120 mil);
+  - 65% de acerto, menos o calor;
+  - errou: 1 a 3 presos;
+  - calor da polícia próprio, que esfria 1,5 por dia.
+- **Relação com o clube** (`clubeDelas`): a mesma tabela da nossa. Sobe +2 por jogo em casa e +1 por jogo fora, cai −5 com briga na semana. Paga ingressos aos sócios, material oficial na loja e −20% na caravana na faixa de cima.
+
+**Desenvolvimento (protótipo):** os estudos das IAs rendem efeito (`efeitosIA`):
+- receita e custo pela fatia do balanço;
+- ficha pela média do quadro;
+- recrutamento extra;
+- moral e prestígio;
+- presos saindo antes;
+- torcedores e elenco do clube.
+
+**O que fica de propósito:**
+- a desistência depois de 3 fracassos;
+- a caravana ×0,6;
+- o calendário e os freios de ataque da IA;
+- presentes só entre IAs;
+- a queima de caixa das IAs acumuladoras;
+- tudo da seção 1.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
