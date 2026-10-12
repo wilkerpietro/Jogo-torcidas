@@ -377,3 +377,36 @@ O jogador passivo escolhe sempre o estudo mais barato e não briga. As
 diferenças são de propósito pequenas e acumulativas. O sorteio do jogo
 diverge entre as duas partidas, então moral e torcedores não são
 comparáveis um a um.
+
+### 5.4 O ritmo: ~3 estudos por ano (dono, 12/10/2026)
+
+*"Tem que ser em torno de 3 estudos por ano pra uma torcida média, com as
+torcidas variando de 2 a 5."*
+
+- **Custos dos degraus:** 24 / 36 / 48 pontos (eram 12 / 30 / 60). Ficaram
+  mais próximos porque a torcida pequena só alcança o 1º degrau (sede < 2),
+  e com ele barato ela estudava mais que a média.
+- **Pontos por semana** (substitui a régua da 5.1):
+  - sede: 0,6 / 0,8 / 1,1 / 1,5 / 1,9 / 2,3 / 2,7 nos níveis 0 a 6;
+  - diretoria: até 0,4 (ótimo em 6% do efetivo);
+  - velha guarda: até 0,5 (ótimo em 5%);
+  - turno de estudo: 0,15 cada, até 3;
+  - tudo × a moral (×0,7 / ×1 / ×1,2).
+- **Desconto da difusão:** até −20% (era −30%).
+- **As IAs** usam a mesma régua; a diretoria delas vale cheia.
+- **Medido** (3 anos, jogador passivo que escolhe sempre o estudo mais
+  barato):
+
+  | Torcida | Estudos por ano | Média | Pontos por semana |
+  |---|---|---|---|
+  | Aliança (20 membros, sede 0) | 2, 2, 3 | 2,3 | ~1 |
+  | Leões da TUF (150, sede 4) | 2, 3, 3 | 2,7 | 1,7 a 2,3 |
+  | Gaviões (250, sede 5) | 4, 4, 3 | 3,7 | 2,1 a 2,8 |
+
+  - O passivo deixa a moral cair, e o multiplicador desce pra ×0,7. Com a
+    moral no normal, a TUF fica em ~2,3 pontos por semana, ou seja, ~3,2
+    estudos por ano.
+  - **As 386 IAs:** mínimo 1,3, 10% ficam até 2, mediana 2,7, 90% ficam até
+    4 e o máximo é 5,7 por ano. As pontas são torcidas com a moral no fundo
+    ou no topo.
+

@@ -36,7 +36,11 @@
     {id:'organizacao', nome:'Organização', cor:'#a07ae0', desc:'saúde, jurídico e disciplina'},
     {id:'massa', nome:'Massa', cor:'#e07ac0', desc:'torcedores do clube, recrutamento e elenco'}
   ];
-  const CUSTO = [0, 12, 30, 60];        // PD por degrau
+  /* O RITMO (dono, 12/10/2026): "em torno de 3 estudos por ano pra uma
+     torcida média, com as torcidas variando de 2 a 5". Os degraus ficaram
+     mais próximos entre si (eram 12/30/60): a torcida pequena só alcança o
+     1º degrau (sede < 2), e com ele barato ela estudava mais que a média */
+  const CUSTO = [0, 24, 36, 48];        // PD por degrau
   const SEDE_MIN = [0, 0, 2, 4];        // nível de sede pra liberar o degrau
 
   const ESTUDOS = [
@@ -108,7 +112,10 @@
      rende linear até um ÓTIMO e satura; a sede soma um fixo; a moral
      multiplica (a "pluralidade" nossa)
      ------------------------------------------------------- */
-  const PD_SEDE = [0, 1, 1.5, 2, 3, 4, 5];
+  /* a régua de ~3 por ano: a sede é o grosso (é o tamanho da torcida),
+     diretoria e velha guarda são o tempero, o turno de estudo é a escolha */
+  const PD_SEDE = [0.6, 0.8, 1.1, 1.5, 1.9, 2.3, 2.7];
+  const PD_DIRETORIA = 0.4, PD_VELHA = 0.5, PD_TURNO = 0.15, PD_MENTOR = 0.2;
   function fontes(E){
     E = E || Ev();
     const d = D(E);
@@ -120,12 +127,12 @@
     const moral = E.indicadores.moral;
     const mult = (moral < 8 ? 0.7 : moral < 14 ? 1.0 : 1.2) * (tem('o_biblio', E) ? 1.1 : 1);
     const linhas = [
-      {rot:'Velha guarda', v: 4 * Math.min(1, (vg / ativos) / otimoVG),
+      {rot:'Velha guarda', v: PD_VELHA * Math.min(1, (vg / ativos) / otimoVG),
        nota: `${vg} na velha guarda · ótimo em ${Math.round(otimoVG*100)}% do efetivo`},
-      {rot:'Diretoria', v: 3 * Math.min(1, (dir / ativos) / 0.06) + (tem('o_mentor', E) ? 1 : 0),
+      {rot:'Diretoria', v: PD_DIRETORIA * Math.min(1, (dir / ativos) / 0.06) + (tem('o_mentor', E) ? PD_MENTOR : 0),
        nota: `${dir} diretores · ótimo em 6% do efetivo`},
       {rot:'Sede', v: PD_SEDE[sede], nota:`sede nível ${sede}`},
-      {rot:'Turnos de estudo', v: Math.min(3, d.turnos || 0), nota:'1 por turno "Estudar" na semana, até 3'}
+      {rot:'Turnos de estudo', v: PD_TURNO * Math.min(3, d.turnos || 0), nota:'0,15 por turno "Estudar" na semana, até 3'}
     ];
     const bruto = linhas.reduce((s, l) => s + l.v, 0);
     return {linhas, bruto, mult, total: bruto * mult,
@@ -142,7 +149,7 @@
     return null;
   }
   /* o desconto da difusão: −1% por torcida que já tem, −3% se for
-     aliada (relação ≥ 45), até −30% */
+     aliada (relação ≥ 45), até −20% */
   function quemTem(E, id){
     const d = D(E), out = [];
     for(const [tid, x] of Object.entries(d.ia || {})) if((x.feitos || []).includes(id)) out.push(tid);
@@ -152,7 +159,7 @@
     const ja = quemTem(E, s.id);
     let desc = 0;
     for(const tid of ja) desc += ((E.relacoes || {})[tid] || 0) >= 45 ? 0.03 : 0.01;
-    desc = Math.min(0.3, desc);
+    desc = Math.min(0.2, desc);
     return {base: CUSTO[s.n], desc, valor: Math.round(CUSTO[s.n] * (1 - desc)), ja: ja.length};
   }
 
@@ -276,7 +283,7 @@
     if(A && Array.isArray(A.LISTA) && !A.LISTA.some(a => a.id === 'estudar')){
       A.LISTA.push({
         id:'estudar', nome:'Estudar (Desenvolvimento)', icone:'conversa', cena:'Sede',
-        efeito:'grátis; +1 ponto de desenvolvimento na semana (até 3 turnos)',
+        efeito:'grátis; +0,15 ponto de desenvolvimento na semana (até 3 turnos)',
         disponivel(E){
           const d = D(E);
           return (d.turnos || 0) < 3 ? {ok:true, nota:`${d.turnos || 0}/3 na semana`}
@@ -474,7 +481,9 @@
       const sede = Math.max(0, Math.min(6, t.sede == null ? 1 : t.sede));
       const mem = t.membros || 20;
       const moral = t.moral != null ? t.moral : 12;
-      x.pd += (3 * Math.min(1, mem / 150) + PD_SEDE[sede]) * (moral < 8 ? 0.7 : moral < 14 ? 1 : 1.2);
+      /* a mesma régua: sede + diretoria (a IA não tem ficha de diretor;
+         toda torcida tem a sua, então a diretoria vale cheia) */
+      x.pd += (PD_SEDE[sede] + PD_DIRETORIA) * (moral < 8 ? 0.7 : moral < 14 ? 1 : 1.2);
       for(let k = 0; k < 4; k++){
         if(!x.atual){
           const livres = ESTUDOS.filter(s => !x.feitos.includes(s.id) &&
@@ -615,7 +624,7 @@
         </div>
         <div class="dv-cartao"><b>As rivais também estudam</b>
           ${rivais.length ? rivais.map(x => `<div class="dv-linha"><span>${x.nome}</span><span>${x.n}</span></div>`).join('') : '<div class="dv-nota">Começa a contar na primeira semana.</div>'}
-          <div class="dv-nota" style="margin-top:4px">No protótipo elas não ganham os efeitos — só baixam o custo do que já estudaram (−1% por torcida, −3% se for aliada, até −30%).</div>
+          <div class="dv-nota" style="margin-top:4px">No protótipo elas não ganham os efeitos — só baixam o custo do que já estudaram (−1% por torcida, −3% se for aliada, até −20%).</div>
         </div>
       </div>
       <div class="dv-areas">

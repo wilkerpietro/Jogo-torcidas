@@ -10601,6 +10601,27 @@ Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos 
 - **Medido** (2 anos, Leões da TUF, passivo): 17 estudos; força e defesa médias 8,29 contra 7,85; 50º contra 54º no ranking.
 - **Correção no caminho:** a Bandeira fincada escolhia Lima. Agora a cidade nova é sempre do país da torcida.
 
+## Desenvolvimento da Torcida: ~3 estudos por ano (dono, 12/10/2026)
+
+"Tem que ser em torno de 3 estudos por ano pra uma torcida média, com as torcidas variando de 2 a 5. Ajuste os pontos de desenvolvimento pra ficar alinhado com isso."
+
+- **Pontos por semana** (protótipo, `js/prototipo/desenvolvimento.js`):
+  - sede: 0,6 a 2,7;
+  - diretoria: até 0,4;
+  - velha guarda: até 0,5;
+  - turno de estudo: 0,15 cada, até 3;
+  - × moral.
+  - Antes eram de 1 a 5 pela sede, mais até 3 da diretoria, 4 da velha guarda e 1 por turno, o que dava ~8 estudos por ano.
+- **Custos dos degraus:** 24 / 36 / 48 (eram 12 / 30 / 60). Com o 1º degrau barato, a torcida pequena, que só chega nele, estudava mais que a média.
+- **Desconto da difusão:** até −20%.
+- **IAs:** a diretoria delas vale cheia.
+- **Medido** (3 anos, passivo):
+  - Aliança (sede 0): 2,3 por ano;
+  - Leões da TUF (sede 4): 2,7 por ano (~3,2 com a moral no normal; o passivo a deixa cair);
+  - Gaviões: 3,7 por ano;
+  - as 386 IAs: mediana 2,7, 10% até 2 e 90% até 4, com pontas de 1,3 e 5,7.
+- **Os números** estão em `docs/PLANO-PESQUISA.md` §5.4.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
