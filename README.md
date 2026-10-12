@@ -6,8 +6,8 @@ Jogo de gestão de torcida organizada, em HTML e JavaScript puros, sem build.
 
 O jogo é servido direto deste repositório pelo GitHub Pages:
 
-- Jogo: https://wilkerpietro.github.io/jogo-torcidas/
-- Bancada de cenas de briga (editor de máscara, F2): https://wilkerpietro.github.io/jogo-torcidas/arredores.html
+- Jogo: https://wilkerpietro.github.io/Jogo-torcidas/
+- Bancada de cenas de briga (editor de máscara, F2): https://wilkerpietro.github.io/Jogo-torcidas/arredores.html
 
 Cada push na branch configurada no Pages vira a versão nova em um ou dois minutos.
 O navegador pode segurar a versão anterior por até dez minutos.

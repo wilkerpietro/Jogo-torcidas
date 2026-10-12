@@ -306,7 +306,7 @@ Cada achado vira uma **mensagem da diretoria**, não notícia do feed (a regra d
 fora à parte pra sentir a diferença."*
 
 - **Onde:** `desenvolvimento.html`, no mesmo endereço do jogo:
-  https://wilkerpietro.github.io/jogo-torcidas/desenvolvimento.html
+  https://wilkerpietro.github.io/Jogo-torcidas/desenvolvimento.html
 - **O jogo normal não muda:** o `index.html` não carrega nada disto. A
   página do protótipo é uma cópia do `index.html` gerada por
   `ferramentas/gerar_desenvolvimento.py` (rode de novo quando o
