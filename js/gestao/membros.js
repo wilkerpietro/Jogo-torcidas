@@ -443,7 +443,8 @@ TO.membros = (function(){
   /* A ÁREA DE TREINO AMPLIADA (ordem do dono, 02/09/2026): três
      níveis de obra — 100/200/500 mil — que aumentam as vagas de
      treino por dia em 25%, 50% e 75% sobre a régua da sede */
-  const AREA_TREINO = [1, 1.25, 1.50, 1.75];
+  /* e o quarto, +100%, só na sede 6 (dono, 12/10/2026) */
+  const AREA_TREINO = [1, 1.25, 1.50, 1.75, 2.00];
   const capTreino  = E => Math.round(SEDE[E.torcida.sedeNivel].treino *
     AREA_TREINO[(E.patrimonio && E.patrimonio.areaTreino) || 0]);
   const capDiretoria = E => SEDE[E.torcida.sedeNivel].diretoria;

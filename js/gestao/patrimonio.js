@@ -51,15 +51,16 @@ TO.patrimonio = (function(){
      nível eles podem chegar. Bar nível 3 só existe em sede nível 5. */
   const TETO = {
     bar:     [{qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
-                    {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:2, nivel:3}],
+                    {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:3, nivel:3}],
     loja:    [{qtd:0, nivel:0}, {qtd:0, nivel:0}, {qtd:1, nivel:1}, {qtd:1, nivel:2},
-                    {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:2, nivel:3}],
+                    {qtd:2, nivel:2}, {qtd:2, nivel:3}, {qtd:3, nivel:3}],
     /* subsede na cidade e fora somadas: a cena não distingue as duas
        ainda, então o teto é a soma das duas colunas do GDD */
-    /* o nível 6 NÃO abre ponto comercial novo (ordem do dono,
-       02/09/2026): o Complexo é membro, estrutura e anexo */
+    /* O COMPLEXO VIROU IMPÉRIO (dono, 12/10/2026): a ordem de 02/09
+       ("o nível 6 não abre ponto comercial novo") caiu — a sede 6
+       ganha mais um bar, mais uma loja e mais 4 subsedes */
     subsede: [{qtd:0, nivel:0}, {qtd:0, nivel:1}, {qtd:1, nivel:1}, {qtd:2, nivel:1},
-                    {qtd:5, nivel:1}, {qtd:8, nivel:1}, {qtd:8, nivel:1}]
+                    {qtd:5, nivel:1}, {qtd:8, nivel:1}, {qtd:12, nivel:1}]
   };
 
   /* GDD V4 §8.3. O preço de cada nível é o preço de ter o ponto
@@ -147,7 +148,8 @@ TO.patrimonio = (function(){
        fechando a porta pra quem mais tinha condição de abrir. Fica
        em 8, o teto da nv5 — a ordem do dono foi que o nível 6 não
        abre ponto comercial novo. */
-    porSede: [0, 0, 0, 1, 3, 8, 8],
+    /* a sede 6 banca mais 4 (dono, 12/10/2026) */
+    porSede: [0, 0, 0, 1, 3, 8, 12],
     prestigioMin: 12            // 60 na régua de 0 a 100
   };
   const filiaisDe = E => F().patrimonio(E).filiais || [];
@@ -178,9 +180,12 @@ TO.patrimonio = (function(){
 
   /* A ÁREA DE TREINO (ordem do dono, 02/09/2026): obra em três
      níveis, cada um esticando as vagas de treino da sede */
+  /* o QUARTO nível (dono, 12/10/2026) é do Complexo: R$ 1 milhão,
+     +100%, e só em sede nível 6 */
   const AREA_TREINO = {
-    custo: [null, 100000, 200000, 500000],
-    bonus: [0, 25, 50, 75]
+    custo: [null, 100000, 200000, 500000, 1000000],
+    bonus: [0, 25, 50, 75, 100],
+    sede:  [0, 0, 0, 0, 6]
   };
 
   const nivelSede = E => E.torcida.sedeNivel;
@@ -232,7 +237,7 @@ TO.patrimonio = (function(){
     const nArea = (E.patrimonio && E.patrimonio.areaTreino) || 0;
     if(nArea) fora.push({tipo:'anexo',
       rot:_t('Área de treino (nível {n})', {n:nArea}), bairro:'',
-      nota:_t('+{p}% de membros treinando por dia', {p:[0,25,50,75][nArea]}),
+      nota:_t('+{p}% de membros treinando por dia', {p:AREA_TREINO.bonus[nArea]}),
       receita:0, despesa:0});
 
     const hojeAbs = (E.data && E.data.absoluto) || 0;
@@ -407,7 +412,10 @@ TO.patrimonio = (function(){
         id:'onibus',
         rot: temOnibus ? _t('Comprar mais um ônibus ({n}º)', {n:proximo})
                        : _t('Comprar o ônibus da torcida'),
-        nota:(proximo === F().ONIBUS_MAX
+        nota:(proximo === 4
+               ? _t('a estrada já é de graça com três: o quarto dá lugar sentado pra todo mundo e +{p}% da torcida topa a caravana',
+                    {p:Math.round(F().VONTADE_ONIBUS4*100)})
+               : proximo === 3
                ? _tn(proximo, 'com {n} ônibus a caravana de estrada sai {p}% mais barata — frota cheia, estrada de graça e o rateio vira receita',
                               'com {n} ônibus a caravana de estrada sai {p}% mais barata — frota cheia, estrada de graça e o rateio vira receita', {p:desc})
                : _tn(proximo, 'com {n} ônibus a caravana de estrada sai {p}% mais barata',
@@ -584,7 +592,7 @@ TO.patrimonio = (function(){
       trava:trava(FABRICA.custo,
         n < FABRICA.sede ? _t('precisa de sede nível {n}', {n:FABRICA.sede}) : null)});
 
-    /* a área de treino: um degrau por vez, até o nível 3 */
+    /* a área de treino: um degrau por vez, até o nível 3 — e o 4 na sede 6 */
     const nAT = (E.patrimonio && E.patrimonio.areaTreino) || 0;
     if(AREA_TREINO.custo[nAT+1]) lista.push({
       id:'area-treino',
@@ -596,7 +604,8 @@ TO.patrimonio = (function(){
         : _t('+{p}% de membros treinando por dia (hoje: a régua da sede)',
              {p:AREA_TREINO.bonus[nAT+1]}),
       custo:AREA_TREINO.custo[nAT+1],
-      trava:trava(AREA_TREINO.custo[nAT+1])});
+      trava:trava(AREA_TREINO.custo[nAT+1],
+        n < AREA_TREINO.sede[nAT+1] ? _t('precisa de sede nível {n}', {n:AREA_TREINO.sede[nAT+1]}) : null)});
 
     /* os anexos da sede, um botão cada, enquanto não existirem */
     for(const chave of Object.keys(ANEXOS)){

@@ -741,7 +741,9 @@ TO.relacoes = (function(){
     if(chave === 'area-treino'){
       const AT = P().AREA_TREINO;
       const n = t.areaTreino || 0;
-      return AT.custo[n+1] ? {tipo:'area-treino', custo:AT.custo[n+1]} : null;
+      if(!AT.custo[n+1]) return null;
+      if(t.sede < (AT.sede[n+1] || 0)) return t.sede < 6 ? {sede:true} : null;
+      return {tipo:'area-treino', custo:AT.custo[n+1]};
     }
     if(chave === 'galpao' || chave === 'enfermaria' || chave === 'cofre'){
       if(t[chave]) return null;

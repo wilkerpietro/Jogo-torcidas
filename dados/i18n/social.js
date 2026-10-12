@@ -1140,5 +1140,6 @@ TO.i18n.registrar({
   "Faixa {texto} pendurada na subsede.": {es:"Trapo {texto} colgado en la filial.", en:"{texto} banner hung at the chapter house."},
   "a faixa da subsede foi tomada · a nova sai com o nome da torcida e a cidade": {es:"el trapo de la filial fue robado · el nuevo sale con el nombre de la hinchada y la ciudad", en:"the chapter house banner was taken · the new one carries the crew's name and the city"},
   "a subsede de {cidade} ficou sem faixa: a nova é na loja": {es:"la filial de {cidade} se quedó sin trapo: el nuevo está en la tienda", en:"the {cidade} chapter house lost its banner: get a new one at the shop"},
-  "ataque à subsede": {es:"ataque a la filial", en:"chapter house raid"}
+  "ataque à subsede": {es:"ataque a la filial", en:"chapter house raid"},
+  "a estrada já é de graça com três: o quarto dá lugar sentado pra todo mundo e +{p}% da torcida topa a caravana": {es:"con tres la ruta ya es gratis: el cuarto da asiento para todos y un +{p}% de la hinchada se suma a la caravana", en:"the road is already free with three: the fourth gives everyone a seat and +{p}% of the crew joins the caravan"}
 });

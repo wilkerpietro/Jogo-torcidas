@@ -10526,6 +10526,16 @@ quantidade."
 - Medido de novo: a mesma subsede desce com 11,2 de força e 11,6 de
   defesa.
 
+## Sede nível 6 cresce: bar, loja, ônibus, área de treino, subsedes e filiais (dono, 12/10/2026)
+
+O Complexo deixa de ser só membro e anexo. Na sede nível 6:
+
+- **Bar e loja:** 3 de cada (eram 2), até o nível 3.
+- **Subsedes na cidade:** 12 (eram 8). **Filiais (subsedes em outra cidade):** 12 (eram 8).
+- **Quarto ônibus:** `ONIBUS_MAX` passou para 4; a garagem da sede 6 já comportava 4. Com três, a estrada já sai de graça, então o quarto não abate custo. Ele dá lugar sentado pra todo mundo: +10% na vontade de viajar (`VONTADE_ONIBUS4`), na caravana do jogador (exceto de avião) e na das IAs.
+- **Área de treino nível 4:** R$ 1 milhão, +100% de vagas de treino, só em sede 6 (`AREA_TREINO.sede`). As IAs seguem a mesma porta.
+- **Conserto junto:** a sala de treino (`mmaMax`) usava a escada da garagem e, na sede 6, deixava contratar um quarto professor que zerava o ganho do treino (`GANHO_MMA[4]` não existe). Agora ela fica limitada a `MMA_MAX` (3).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

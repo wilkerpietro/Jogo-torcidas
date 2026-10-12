@@ -555,7 +555,9 @@ TO.planejamento = (function(){
     if(vivos <= 0) return 0;
     const t = E && E.mundoTorcidas && E.mundoTorcidas[torcida.id];
     const moral = (t && t.moral != null ? t.moral : 12) / 20;
-    const vontade = U.limitar(0.72 - trechosDaIA(E, torcida, destino)*0.09 + moral*0.4, 0.08, 0.95);
+    const quarto = TO.relacoes && TO.relacoes.frotaIA && TO.relacoes.frotaIA(t) >= 4
+      ? TO.financeiro.VONTADE_ONIBUS4 : 0;
+    const vontade = U.limitar(0.72 - trechosDaIA(E, torcida, destino)*0.09 + moral*0.4 + quarto, 0.08, 0.95);
     /* O REDUTOR DO VISITANTE (calibragem do dono, 31/08/2026): a
        caravana da IA sai da régua do jogador com uns 40% a menos —
        na régua cheia a estrada lotava demais pro gosto do dono. */
@@ -903,8 +905,10 @@ TO.planejamento = (function(){
     if(!r) return null;
     const aptos = TO.membros.aptosParaOEstadio(E);
     const moral = E.indicadores.moral/20;
+    /* o quarto ônibus (sede 6): lugar sentado pra todo mundo */
+    const quarto = r.id !== 'ar' && TO.financeiro.onibusDe(E) >= 4 ? TO.financeiro.VONTADE_ONIBUS4 : 0;
     const vontade = U.limitar(0.72 - r.saltos*0.09 + moral*0.4
-                              - (r.risco/100)*0.15, 0.08, 0.95);
+                              - (r.risco/100)*0.15 + quarto, 0.08, 0.95);
     const interessados = Math.max(MINIMO, Math.round(aptos.length * vontade));
     const escolhido = (plano(E, jogo)||{}).caravana;
     const vao = U.limitar(escolhido == null ? interessados : escolhido,

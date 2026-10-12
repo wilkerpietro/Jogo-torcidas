@@ -202,7 +202,12 @@ TO.financeiro = (function(){
      ônibus são R$ 4.500 por mês —, fora a manutenção séria de R$ 15
      mil, que é sorteada por ônibus.
      ======================================================= */
-  const ONIBUS_MAX = 3, ONIBUS_MES = 1500, ONIBUS_CUSTO = 100000;
+  /* o QUARTO ônibus (dono, 12/10/2026) mora na garagem da sede 6: a
+     estrada já é de graça com três, então ele não abate mais nada —
+     ele dá lugar sentado pra todo mundo, e mais gente topa a viagem
+     (VONTADE_ONIBUS4 na conta da caravana) */
+  const ONIBUS_MAX = 4, ONIBUS_MES = 1500, ONIBUS_CUSTO = 100000;
+  const VONTADE_ONIBUS4 = 0.10;
   /* =======================================================
      A GARAGEM E A SALA DE TREINO CABEM NA SEDE
      (régua do dono, 20/08/2026)
@@ -217,7 +222,9 @@ TO.financeiro = (function(){
   const nivelDaSede = E => (E && E.torcida && E.torcida.sedeNivel != null) ? E.torcida.sedeNivel : 1;
   const cabeNaSede = nivel => TETO_SEDE[U.limitar(nivel == null ? 1 : nivel, 0, 6)] || 0;
   const onibusMax = E => cabeNaSede(nivelDaSede(E));
-  const mmaMax    = E => cabeNaSede(nivelDaSede(E));
+  /* a garagem da sede 6 cabe 4, a sala de treino segue em 3: o quarto
+     professor não tem ganho na escada (GANHO_MMA[4] não existe) */
+  const mmaMax    = E => Math.min(MMA_MAX, cabeNaSede(nivelDaSede(E)));
   /* =======================================================
      A COMISSÃO TÉCNICA (régua do dono, 20/08/2026)
      A mesma escada dos ônibus: um professor faz o treino
@@ -257,7 +264,7 @@ TO.financeiro = (function(){
     return U.limitar(Math.round(p.n != null ? p.n : 1), 0, mmaMax(E));
   }
   const ganhoDoTreino = E => GANHO_MMA[professoresDe(E)] || 1;
-  const DESCONTO_ONIBUS = [0, 0.30, 0.60, 1];
+  const DESCONTO_ONIBUS = [0, 0.30, 0.60, 1, 1];
   /* save antigo guardava um objeto só, sem contagem: aquilo é 1 */
   function onibusDe(E){
     const o = E && E.onibus;
@@ -820,7 +827,7 @@ TO.financeiro = (function(){
           semanaDaMensalidade, fimDoMes, mesCorrente, fecharMes,
           venderLojaSeEndividado, VENDA_LOJA,
           onibusDe, descontoCaravana,
-          ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS,
+          ONIBUS_MAX, ONIBUS_MES, ONIBUS_CUSTO, DESCONTO_ONIBUS, VONTADE_ONIBUS4,
           FESTA, pisoDaFesta,
           MMA_MAX, MMA_MES, GANHO_MMA, professoresDe, ganhoDoTreino,
           ADVOGADO_MES, ADVOGADO_DIAS, ADVOGADOS_SEDE,
