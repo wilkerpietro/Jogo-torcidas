@@ -167,6 +167,10 @@
   function escolher(id){
     const E = Ev(), d = D(E), s = POR_ID[id];
     if(!s || trava(E, s)) return false;
+    /* cada estudo guarda o seu progresso: trocar não leva o andamento junto */
+    d.progs = d.progs || {};
+    if(d.atual && d.atual !== id) d.progs[d.atual] = d.prog;
+    if(d.atual !== id){ d.prog = d.progs[id] || 0; delete d.progs[id]; }
     d.atual = id;
     avancar(E);           // a reserva entra na hora
     salvarLeve();
@@ -432,6 +436,7 @@
     iaSemana(E);
     if(!d.atual) aviso('Desenvolvimento: a diretoria está sem estudo — os pontos estão guardando.', true);
     pintarBotao();
+    if(TO.ui && TO.ui.painelAberto && TO.ui.painelAberto() === 'desenvolvimento') pintarAgora();
   }
 
   function porMes(E){
@@ -500,149 +505,154 @@
   }
 
   /* -------------------------------------------------------
-     A TELA
+     A PÁGINA DO MENU (dono, 12/10/2026: "o desenvolvimento deve ocupar
+     uma página do menu com padrão visual idêntico ao das outras
+     páginas"). Entra pela porta TO.ui.registrarPagina do main.js e usa
+     as MESMAS peças das páginas do jogo: título de página, subabas,
+     cartões com h2, linha-dado, valorão, a medida com barra e a oferta
+     da Loja. Nada de CSS próprio.
      ------------------------------------------------------- */
-  const css = `
-  #dvBotao{position:fixed;right:12px;bottom:84px;z-index:80;background:#1d1a14;color:#f0e6c8;border:1px solid #c9a23a;border-radius:10px;padding:8px 12px;font:600 13px/1.2 system-ui,sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.5);min-width:150px;text-align:left}
-  #dvBotao small{display:block;font-weight:400;opacity:.8;margin-top:3px}
-  #dvBotao .dv-bar{height:4px;background:#3a3427;border-radius:2px;margin-top:5px;overflow:hidden}
-  #dvBotao .dv-bar i{display:block;height:100%;background:#c9a23a}
-  #dvBotao.alerta{border-color:#e05252;animation:dvPulse 1.4s infinite}
-  @keyframes dvPulse{50%{box-shadow:0 0 0 4px rgba(224,82,82,.35)}}
-  #dvTela{position:fixed;inset:0;z-index:90;background:rgba(8,7,5,.94);color:#eee;font:14px/1.4 system-ui,sans-serif;overflow:auto;padding:16px}
-  #dvTela.oculto,#dvBotao.oculto{display:none}
-  #dvTela .dv-h1{font-size:20px;margin:0}
-  #dvTela .dv-topo{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:12px}
-  #dvTela .dv-fechar{background:#c9a23a;color:#111;border:0;border-radius:8px;padding:8px 14px;font-weight:700;cursor:pointer}
-  #dvTela .dv-cartao{background:#16140f;border:1px solid #333;border-radius:10px;padding:10px 12px}
-  #dvTela .dv-linha{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2px 0}
-  #dvTela .dv-linha span:first-child{opacity:.8}
-  #dvTela .dv-resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-bottom:12px}
-  #dvTela .dv-areas{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
-  #dvTela .dv-area .dv-h2{font-size:15px;margin:0 0 2px}
-  #dvTela .dv-area .dv-d{font-size:12px;opacity:.7;margin-bottom:6px}
-  #dvTela .dv-trilha{margin:8px 0 2px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;opacity:.75}
-  #dvTela .dv-est{display:block;width:100%;text-align:left;background:#211e17;border:1px solid #3a3427;color:#eee;border-radius:8px;padding:7px 9px;margin:4px 0;cursor:pointer;font:inherit}
-  #dvTela .dv-est b{font-size:13px}
-  #dvTela .dv-est small{display:block;font-size:12px;opacity:.8;margin-top:2px}
-  #dvTela .dv-est .dv-meta{font-size:11px;opacity:.75;margin-top:3px}
-  #dvTela .dv-est.dv-feito{border-color:#4cbf7a;background:#16241b}
-  #dvTela .dv-est.dv-atual{border-color:#c9a23a;box-shadow:inset 0 0 0 1px #c9a23a}
-  #dvTela .dv-est.dv-travado{opacity:.45;cursor:default}
-  #dvTela .dv-bar{height:6px;background:#3a3427;border-radius:3px;overflow:hidden;margin-top:6px}
-  #dvTela .dv-bar i{display:block;height:100%;background:#c9a23a}
-  #dvTela .dv-nota{font-size:12px;opacity:.7}
-  #dvToast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;z-index:95;background:#1d1a14;border:1px solid #c9a23a;color:#f0e6c8;border-radius:10px;padding:10px 14px;font:13px/1.35 system-ui,sans-serif;max-width:min(560px,92vw);box-shadow:0 6px 20px rgba(0,0,0,.6)}
-  @media (max-width:600px){#dvBotao{bottom:76px;right:8px;min-width:120px;font-size:12px}#dvTela{padding:10px}}
-  `;
-  function montarDOM(){
-    if(document.getElementById('dvBotao')) return;
-    const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
-    const b = document.createElement('button'); b.id = 'dvBotao'; b.className = 'oculto';
-    b.addEventListener('click', abrir);
-    document.body.appendChild(b);
-    const t = document.createElement('div'); t.id = 'dvTela'; t.className = 'oculto';
-    t.addEventListener('click', ev => {
-      const e = ev.target.closest('[data-est]');
-      if(e && !e.classList.contains('dv-travado') && !e.classList.contains('dv-feito')){ escolher(e.dataset.est); pintar(); pintarBotao(); }
-      if(ev.target.closest('[data-fechar]')) fechar();
-    });
-    document.body.appendChild(t);
-  }
-  let toastT = null;
+  let aba = 'resumo';
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const linha = (rot, val, cls) => `<div class="linha-dado"><span>${rot}</span><b${cls ? ` class="${cls}"` : ''}>${val}</b></div>`;
+  const medida = (v, max) => {
+    const p = Math.max(0, Math.min(1, max ? v / max : 0));
+    return `<span class="medida ${p > 0.66 ? '' : p > 0.33 ? 'media' : 'baixa'}"><span class="n">${Math.floor(v)}/${max}</span>`+
+           `<span class="barra"><i style="width:${p * 100}%"></i></span></span>`;
+  };
   function aviso(txt, leve){
-    let el = document.getElementById('dvToast');
-    if(!el){ el = document.createElement('div'); el.id = 'dvToast'; document.body.appendChild(el); }
-    el.textContent = txt; el.style.display = 'block';
-    clearTimeout(toastT); toastT = setTimeout(() => { el.style.display = 'none'; }, leve ? 2600 : 5200);
+    if(TO.ui && TO.ui.aviso) TO.ui.aviso(txt, leve ? '' : 'boa');
   }
+  /* o selo do item do menu: aceso quando não há estudo escolhido */
   function pintarBotao(){
-    const b = document.getElementById('dvBotao'), E = Ev();
-    if(!b) return;
-    const jogo = document.getElementById('jogo');
-    const visivel = E && E.torcida && jogo && !jogo.classList.contains('oculto') && !document.body.classList.contains('em-cena');
-    b.classList.toggle('oculto', !visivel);
-    if(!visivel) return;
-    const d = D(E), s = d.atual && POR_ID[d.atual];
-    const c = s ? custo(E, s).valor : 0;
-    b.classList.toggle('alerta', !s);
-    b.innerHTML = `Desenvolvimento<small>${s ? `${s.nome} · ${Math.floor(d.prog)}/${c}` : `sem estudo · ${Math.floor(d.pd)} PD guardados`}</small>` +
-      (s ? `<div class="dv-bar"><i style="width:${Math.min(100, d.prog / c * 100)}%"></i></div>` : '');
+    const E = Ev();
+    const d = E && E.torcida ? D(E) : null;
+    for(const b of document.querySelectorAll('.nav-item[data-pag="desenvolvimento"] .ic-badge, .mapa-ic[data-pag="desenvolvimento"] .ic-badge')){
+      const sem = !!(d && !d.atual);
+      b.hidden = !sem;
+      if(sem) b.textContent = '!';
+    }
   }
-  let pausou = false;
-  function abrir(){
-    const t = document.getElementById('dvTela');
-    if(!t || !Ev()) return;
-    if(ST().estaBloqueado && !ST().estaBloqueado()){ ST().bloquear(true); pausou = true; }
-    t.classList.remove('oculto');
-    pintar();
+  let pgAtual = null;
+  function pintarAgora(){ if(pgAtual && pgAtual.isConnected) pintarPagina(pgAtual); }
+
+  function pintarPagina(pg){
+    pgAtual = pg;
+    const E = Ev(), UI = TO.ui;
+    if(!E || !UI) return;
+    const d = D(E);
+    pg.innerHTML = '';
+    pg.appendChild(UI.el('div', {class:'titulo-pagina', texto:'Desenvolvimento da Torcida'}));
+    const feitosNa = a => d.feitos.filter(id => POR_ID[id].area === a.id).length;
+    pg.appendChild(UI.subabas([{id:'resumo', rot:'Resumo'}].concat(AREAS.map(a => ({
+      id:a.id, rot:`${a.nome} · ${feitosNa(a)}/${ESTUDOS.filter(x => x.area === a.id).length}`}))),
+      aba, id => { aba = id; pintarPagina(pg); }));
+    if(aba === 'resumo') resumo(pg, E, d, UI);
+    else area(pg, E, d, UI, AREAS.find(a => a.id === aba));
   }
-  function fechar(){
-    document.getElementById('dvTela').classList.add('oculto');
-    if(pausou){ ST().bloquear(false); pausou = false; }
-    pintarBotao();
-  }
-  function pintar(){
-    const t = document.getElementById('dvTela'), E = Ev();
-    if(!t || !E) return;
-    const d = D(E), F = fontes(E), s = d.atual && POR_ID[d.atual];
+
+  function resumo(pg, E, d, UI){
+    const F = fontes(E), s = d.atual && POR_ID[d.atual];
     const c = s ? custo(E, s) : null;
-    const sem = F.total > 0 ? Math.ceil(((c ? c.valor - d.prog : 0) - d.pd) / F.total) : null;
+    const sem = F.total > 0 && c ? Math.ceil((c.valor - d.prog) / F.total) : null;
+    pg.appendChild(UI.el('div', {class:'recado', html:
+      `Protótipo à parte: o jogo normal não tem esta página. <b>${d.feitos.length} de ${ESTUDOS.length}</b> estudos feitos.`+
+      `<small>Uma torcida pequena faz uns 2 estudos por ano, a média 3 e a grande 5.</small>`}));
+    const grade = UI.el('div', {class:'colunas-3'});
+
+    const c1 = UI.cartao('Estudo atual', s ? AREAS.find(a => a.id === s.area).nome : '');
+    if(s){
+      c1.corpo.innerHTML =
+        `<div class="valorao"><span>${esc(s.trilha)} · degrau ${s.n}</span><b>${esc(s.nome)}</b></div>`+
+        linha('Efeito', `<span class="fraco">${esc(s.efeito)}</span>`)+
+        linha('Progresso', medida(d.prog, c.valor))+
+        linha('Faltam', sem > 0 ? `~${sem} semana${sem > 1 ? 's' : ''}` : 'fecha na próxima semana')+
+        (c.desc ? linha('Desconto', `−${Math.round(c.desc * 100)}% · ${c.ja} torcidas já têm`) : '');
+    } else {
+      c1.corpo.innerHTML = `<div class="em-construcao"><b>Sem estudo</b>Os pontos ficam guardados (${Math.floor(d.pd)} PD). Escolha um estudo numa das áreas.</div>`;
+    }
+    grade.appendChild(c1);
+
+    const c2 = UI.cartao('Pontos por semana', `${um(F.total)} PD`);
+    c2.corpo.innerHTML = F.linhas.map(l => linha(`${l.rot} <span class="fraco">· ${esc(l.nota)}</span>`, um(l.v))).join('')+
+      linha(`Multiplicador <span class="fraco">· ${esc(F.multNota)}</span>`, `×${um(F.mult)}`)+
+      linha('Reserva', `${Math.floor(d.pd)} PD`);
+    grade.appendChild(c2);
+
     const r = d.rendeu;
-    const rivais = Object.entries(d.ia).map(([id, x]) => ({id, n:x.feitos.length, nome:(TO.mundo.torcida(id) || {}).nome || id}))
-      .sort((a,b) => b.n - a.n).slice(0, 6);
-    const pos = 1 + Object.values(d.ia).filter(x => x.feitos.length > d.feitos.length).length;
-    t.innerHTML = `
-      <div class="dv-topo">
-        <div><div class="dv-h1">Desenvolvimento da Torcida</div>
-          <div class="dv-nota">Protótipo à parte — o jogo normal não tem isto. ${d.feitos.length} de ${ESTUDOS.length} estudos feitos · ${pos}º do país em estudos.</div></div>
-        <button class="dv-fechar" data-fechar>Voltar ao jogo</button>
-      </div>
-      <div class="dv-resumo">
-        <div class="dv-cartao"><b>Estudo atual</b>
-          ${s ? `<div style="margin-top:4px">${s.nome} <span class="dv-nota">(${AREAS.find(a => a.id === s.area).nome} · ${s.trilha} ${s.n})</span></div>
-            <div class="dv-nota">${s.efeito}</div>
-            <div class="dv-bar"><i style="width:${Math.min(100, d.prog / c.valor * 100)}%"></i></div>
-            <div class="dv-linha"><span>Progresso</span><span>${Math.floor(d.prog)} / ${c.valor} PD${c.desc ? ` (−${Math.round(c.desc*100)}%: ${c.ja} torcidas já têm)` : ''}</span></div>
-            <div class="dv-linha"><span>Faltam</span><span>${sem != null && sem > 0 ? `~${sem} semana${sem > 1 ? 's' : ''}` : 'fecha na próxima semana'}</span></div>`
-            : `<div class="dv-nota" style="margin-top:4px">Nenhum estudo escolhido: os pontos ficam guardados (${Math.floor(d.pd)} PD). Toque num estudo liberado.</div>`}
-        </div>
-        <div class="dv-cartao"><b>Pontos de Desenvolvimento por semana: ${um(F.total)}</b>
-          ${F.linhas.map(l => `<div class="dv-linha"><span>${l.rot} <span class="dv-nota">· ${l.nota}</span></span><span>${um(l.v)}</span></div>`).join('')}
-          <div class="dv-linha"><span>Multiplicador <span class="dv-nota">· ${F.multNota}</span></span><span>×${um(F.mult)}</span></div>
-          <div class="dv-linha"><span>Reserva</span><span>${Math.floor(d.pd)} PD</span></div>
-        </div>
-        <div class="dv-cartao"><b>O que o Desenvolvimento já rendeu</b>
-          <div class="dv-linha"><span>Dinheiro (economizado + ganho)</span><span>${R$(r.dinheiro)}</span></div>
-          <div class="dv-linha"><span>Força e defesa somadas nos membros</span><span>+${um(r.fichas)}</span></div>
-          <div class="dv-linha"><span>Torcedores do clube a mais</span><span>+${um(r.torcedores)}</span></div>
-          <div class="dv-linha"><span>Força no elenco do clube</span><span>+${r.forcaClube}</span></div>
-          <div class="dv-linha"><span>Novatos garantidos</span><span>${r.recrutas}</span></div>
-          <div class="dv-linha"><span>Dias de ferido poupados</span><span>${r.diasFerido}</span></div>
-          <div class="dv-linha"><span>Prestígio a mais · moral poupada</span><span>+${um(r.prestigio)} · +${um(r.moral)}</span></div>
-          <div class="dv-linha"><span>Fator Torcida a mais nas festas · bombas</span><span>+${um(r.festa)} · ${r.bombas}</span></div>
-          ${d.cidadesNovas.length ? `<div class="dv-linha"><span>Cidades novas</span><span>${d.cidadesNovas.map(x => (TO.mundo.cidade(x.cidade) || {}).nome || x.cidade).join(', ')}</span></div>` : ''}
-        </div>
-        <div class="dv-cartao"><b>As rivais também estudam</b>
-          ${rivais.length ? rivais.map(x => `<div class="dv-linha"><span>${x.nome}</span><span>${x.n}</span></div>`).join('') : '<div class="dv-nota">Começa a contar na primeira semana.</div>'}
-          <div class="dv-nota" style="margin-top:4px">No protótipo elas não ganham os efeitos — só baixam o custo do que já estudaram (−1% por torcida, −3% se for aliada, até −10%).</div>
-        </div>
-      </div>
-      <div class="dv-areas">
-        ${AREAS.map(a => `<div class="dv-cartao dv-area" style="border-top:3px solid ${a.cor}">
-          <div class="dv-h2">${a.nome}</div><div class="dv-d">${a.desc}</div>
-          ${[...new Set(ESTUDOS.filter(x => x.area === a.id).map(x => x.trilha))].map(tr => `
-            <div class="dv-trilha">${tr}</div>
-            ${ESTUDOS.filter(x => x.area === a.id && x.trilha === tr).sort((p,q) => p.n - q.n).map(x => {
-              const tv = trava(E, x), cc = custo(E, x);
-              const cls = tv === 'feito' ? 'dv-feito' : x.id === d.atual ? 'dv-atual' : tv ? 'dv-travado' : '';
-              return `<button class="dv-est ${cls}" data-est="${x.id}">
-                <b>${tv === 'feito' ? '✓ ' : ''}${x.n}. ${x.nome}</b><small>${x.efeito}</small>
-                <div class="dv-meta">${tv === 'feito' ? 'feito' : tv ? tv : `${cc.valor} PD${cc.desc ? ` (−${Math.round(cc.desc*100)}%)` : ''}${x.id === d.atual ? ' · estudando' : ' · toque pra estudar'}`}</div>
-              </button>`;
-            }).join('')}`).join('')}
-        </div>`).join('')}
-      </div>`;
+    const c3 = UI.cartao('O que já rendeu');
+    c3.corpo.innerHTML =
+      linha('Dinheiro (economizado + ganho)', R$(r.dinheiro), r.dinheiro > 0 ? 'positivo' : '')+
+      linha('Força e defesa nos membros', `+${um(r.fichas)}`)+
+      linha('Torcedores do clube', `+${um(r.torcedores)}`)+
+      linha('Força no elenco do clube', `+${r.forcaClube}`)+
+      linha('Novatos garantidos', r.recrutas)+
+      linha('Dias de ferido poupados', r.diasFerido)+
+      linha('Prestígio a mais · moral poupada', `+${um(r.prestigio)} · +${um(r.moral)}`)+
+      linha('Fator Torcida nas festas · bombas', `+${um(r.festa)} · ${r.bombas}`)+
+      (d.cidadesNovas.length ? linha('Cidades novas', d.cidadesNovas.map(x => esc((TO.mundo.cidade(x.cidade) || {}).nome || x.cidade)).join(', ')) : '');
+    grade.appendChild(c3);
+    pg.appendChild(grade);
+
+    const rivais = Object.entries(d.ia).map(([id, x]) => ({n:x.feitos.length, nome:(TO.mundo.torcida(id) || {}).nome || id}))
+      .sort((a, b) => b.n - a.n);
+    const pos = 1 + rivais.filter(x => x.n > d.feitos.length).length;
+    const grade2 = UI.el('div', {class:'colunas-3'});
+    const c4 = UI.cartao('As rivais também estudam', `${pos}º do país`);
+    c4.corpo.innerHTML = rivais.length
+      ? rivais.slice(0, 8).map(x => linha(esc(x.nome), x.n)).join('')+
+        `<div class="linha-dado"><span class="fraco">No protótipo elas não ganham os efeitos: só baixam o custo do que já estudaram (−1% por torcida, −3% se for aliada, até −10%).</span></div>`
+      : `<div class="em-construcao">Começa a contar na primeira semana.</div>`;
+    grade2.appendChild(c4);
+    const c5 = UI.cartao('Últimos concluídos');
+    c5.corpo.innerHTML = d.historico.length
+      ? d.historico.slice(0, 8).map(h => linha(esc(POR_ID[h.id].nome), esc(h.quando || ''))).join('')
+      : `<div class="em-construcao">Nenhum ainda.</div>`;
+    grade2.appendChild(c5);
+    const c6 = UI.cartao('Como funciona');
+    c6.corpo.innerHTML =
+      linha('Um estudo por vez', '<span class="fraco">o que sobra vai pra reserva</span>')+
+      linha('Degraus 1 · 2 · 3', `${CUSTO[1]} · ${CUSTO[2]} · ${CUSTO[3]} PD`)+
+      linha('Sede pra liberar', `${SEDE_MIN[1]} · ${SEDE_MIN[2]} · ${SEDE_MIN[3]}`)+
+      linha('Turno "Estudar" no expediente', `+${String(PD_TURNO).replace('.', ',')} PD cada, até 3`);
+    grade2.appendChild(c6);
+    pg.appendChild(grade2);
+  }
+
+  function area(pg, E, d, UI, a){
+    pg.appendChild(UI.el('div', {class:'recado', html:`<b>${a.nome}</b> — ${a.desc}.`+
+      `<small>Cada trilha sobe um degrau por vez; o estudo em andamento aparece marcado.</small>`}));
+    /* uma trilha por linha: lado a lado, três trilhas espremiam o texto */
+    const grade = UI.el('div');
+    for(const tr of [...new Set(ESTUDOS.filter(x => x.area === a.id).map(x => x.trilha))]){
+      const lista = ESTUDOS.filter(x => x.area === a.id && x.trilha === tr).sort((p, q) => p.n - q.n);
+      const c = UI.cartao(tr, `${lista.filter(x => d.feitos.includes(x.id)).length}/${lista.length}`);
+      for(const x of lista){
+        const tv = trava(E, x), cc = custo(E, x), feito = tv === 'feito', atual = x.id === d.atual;
+        const b = UI.el('button', {class:'oferta' + (tv && !feito ? ' travada' : '')});
+        b.innerHTML = `<span class="txt"><b>${feito ? '✓ ' : ''}${x.n}. ${esc(x.nome)}</b><small>${esc(x.efeito)}</small></span>`+
+          `<span class="preco">${feito ? 'feito' : atual ? `${Math.floor(d.prog)}/${cc.valor} PD` : `${cc.valor} PD`}</span>`;
+        if(tv && !feito) b.appendChild(UI.el('small', {class:'trava', texto:tv}));
+        if(atual) b.appendChild(UI.el('small', {class:'trava', texto:'estudando agora'}));
+        b.disabled = !!tv || atual;
+        b.onclick = () => {
+          if(escolher(x.id)){ aviso(`Estudo escolhido: ${x.nome}.`, true); pintarBotao(); pintarPagina(pg); }
+        };
+        c.corpo.appendChild(b);
+      }
+      grade.appendChild(c);
+    }
+    pg.appendChild(grade);
+  }
+
+  /* o ícone do menu: uma escada subindo, que é o que o desenvolvimento é */
+  function registrar(){
+    if(!TO.ui || !TO.ui.registrarPagina) return false;
+    if(TO.icones && TO.icones.todos && !TO.icones.todos.desenvolvimento)
+      TO.icones.todos.desenvolvimento = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+
+        '<path d="M4 20h4v-4h4v-4h4V8h4"/><path d="M14 4h6v6"/><path d="m20 4-7 7"/></svg>';
+    TO.ui.registrarPagina({id:'desenvolvimento', rot:'Desenvolvimento', ic:'desenvolvimento', antes:'jogo', pintar:pintarPagina});
+    return true;
   }
   let salvarT = null;
   function salvarLeve(){ clearTimeout(salvarT); salvarT = setTimeout(() => { try{ ST().salvar && ST().salvar(); }catch(_){} }, 300); }
@@ -652,7 +662,7 @@
      ------------------------------------------------------- */
   function iniciar(){
     if(!TO.estado || !TO.membros){ return setTimeout(iniciar, 300); }
-    montarDOM();
+    registrar();
     ligarEfeitos();
     ST().aoFecharSemana && ST().aoFecharSemana((fecho, E) => { try{ porSemana(E || Ev()); }catch(e){ console.warn('[desenv] semana', e); } });
     ST().aoMudar && ST().aoMudar(E => { try{ if(E && E.torcida){ porDia(E); pintarBotao(); } }catch(e){ console.warn('[desenv] dia', e); } });
@@ -662,5 +672,5 @@
 
   /* pra quem testa */
   TO.desenvolvimento = {AREAS, ESTUDOS, POR_ID, D, fontes, custo, trava, escolher, concluir: (id) => concluir(Ev(), POR_ID[id]),
-                        porSemana, porMes, porDia, fincarBandeira, abrir, fechar, pintar};
+                        porSemana, porMes, porDia, fincarBandeira, abrir: () => TO.ui && TO.ui.abrirPainel('desenvolvimento')};
 })();

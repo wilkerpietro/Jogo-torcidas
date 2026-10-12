@@ -10632,6 +10632,20 @@ Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos 
 - **Medido** (3 anos, passivo): Aliança 2,0, Leões da TUF 3,0 e Gaviões 4,7 por ano. Nas IAs, a pequena fica em ~1,7, a mediana em 2,7 e a maior em 6,3.
 - **Detalhes** em `docs/PLANO-PESQUISA.md` §5.5.
 
+## Desenvolvimento da Torcida vira página do menu (dono, 12/10/2026)
+
+"O desenvolvimento deve ocupar uma página do menu com padrão visual idêntico ao das outras páginas."
+
+- **No protótipo** (`desenvolvimento.html`), "Desenvolvimento" é item do menu, antes de "Jogo", e abre como os outros painéis:
+  - título e subabas: Resumo e uma por área;
+  - cartões, `linha-dado`, `valorao` e medida;
+  - a `oferta` da Loja pros estudos.
+  
+  O botão flutuante e o CSS próprio saíram. O selo "!" aparece sem estudo escolhido.
+- **A porta no `main.js`:** `TO.ui.registrarPagina({id, rot, ic, antes, pintar})` acrescenta o item a `NAV`, o pintor a `PINTOR` e a `<section>`. Junto vão as peças `cartao`, `subabas`, `el`, `aviso`, `redesenhar`, `abrirPainel` e `painelAberto`. É inerte: o `index.html` não a usa, e o jogo normal segue com os mesmos itens.
+- **Correção:** trocar de estudo guarda o progresso de cada um.
+- **Testado** (Playwright, 1366 e 390 de largura): o item aparece entre Notícias e Jogo, a página abre pelo ícone, a subaba Massa mostra as três trilhas e clicar escolhe o estudo. No `index.html`, `TO.desenvolvimento` não existe.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -777,6 +777,28 @@
   };
   const pintarPagina = id => (PINTOR[id] || (()=>{}))();
 
+  /* A PÁGINA DE FORA (12/10/2026): o protótipo à parte do Desenvolvimento
+     da Torcida (desenvolvimento.html, dono: "deve ocupar uma página do
+     menu com padrão visual idêntico ao das outras páginas") entra no menu
+     por aqui, com as mesmas peças das páginas do jogo. No index.html
+     ninguém chama isto: o jogo normal não muda. */
+  function registrarPagina(p){
+    if(!p || !p.id || typeof p.pintar !== 'function' || NAV.some(n => n.id === p.id)) return;
+    const i = NAV.findIndex(n => n.id === (p.antes || 'jogo'));
+    NAV.splice(i < 0 ? NAV.length : i, 0, {id:p.id, rot:p.rot, ic:p.ic || 'estrela'});
+    PINTOR[p.id] = () => { const pg = U.$(`.pagina[data-pag="${p.id}"]`); if(pg) p.pintar(pg); };
+    const irma = U.$('.pagina[data-pag="jogo"]');
+    if(irma && !U.$(`.pagina[data-pag="${p.id}"]`)){
+      const s = document.createElement('section');
+      s.className = 'pagina'; s.dataset.pag = p.id;
+      irma.parentNode.insertBefore(s, irma);
+    }
+    if($('lateral') && $('lateral').children.length) montarLateral();
+  }
+  TO.ui = Object.assign(TO.ui || {}, {registrarPagina, cartao, subabas, el,
+    aviso: (t, tipo) => aviso(t, tipo), redesenhar: () => redesenhar(),
+    abrirPainel: id => abrirPainel(id), painelAberto: () => painel});
+
   function abrirPainel(id){
     if(id === 'feed'){ fecharPainel(); return; }
     pausarTempo('painel');

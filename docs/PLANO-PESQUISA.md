@@ -432,3 +432,27 @@ grandes 5."*
   - **As 386 IAs:** as pequenas ficam em ~1,7 por ano, a mediana (sede 2,
     ~100 membros) em 2,7, 90% ficam até 4 e a maior chega a 6,3.
 
+### 5.6 Uma página do menu (dono, 12/10/2026)
+
+*"O desenvolvimento deve ocupar uma página do menu com padrão visual
+idêntico ao das outras páginas."*
+
+- **No menu:** o botão flutuante e a tela própria saíram. "Desenvolvimento"
+  é um item do menu, logo antes de "Jogo", com ícone de escada, e abre como
+  painel igual aos outros (o tempo pausa).
+- **Na página:**
+  - título de página e subabas: Resumo e uma por área, com a contagem
+    "feitos/total";
+  - no Resumo, os cartões numerados com `linha-dado`, `valorao` e a medida
+    com barra;
+  - em cada área, uma trilha por cartão, com os estudos no mesmo botão
+    `oferta` da Loja: preço em PD e trava em vermelho.
+  - Nenhum CSS próprio.
+- **Selo "!" no ícone** quando não há estudo escolhido.
+- **Como entra no menu:** o `main.js` ganhou uma porta inerte,
+  `TO.ui.registrarPagina`, que acrescenta um item a `NAV`, um pintor a
+  `PINTOR` e a `<section>` da página. No `index.html` ninguém a chama, então
+  o jogo normal não muda.
+- **Correção:** trocar de estudo agora guarda o progresso de cada um. Antes,
+  o andamento ia junto para o estudo novo.
+
