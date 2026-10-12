@@ -1,4 +1,4 @@
-# Pesquisa e desenvolvimento: o plano (dono, 12/10/2026)
+# Desenvolvimento da Torcida: o plano (dono, 12/10/2026)
 
 O pedido, nas palavras do dono: *"Vamos realizar uma expansão de um modelo
 de pesquisa e desenvolvimento pro jogo. Mapeie com agentes como as
@@ -12,7 +12,7 @@ Este arquivo tem quatro partes, para decidirmos juntos:
 3. as ideias;
 4. as perguntas em aberto.
 
-Nada disto está no jogo ainda.
+Nada disto está no jogo ainda. Existe um **protótipo à parte** (seção 5) pra sentir a diferença.
 
 ---
 
@@ -80,6 +80,10 @@ com "~" não foram confirmados no vanilla.
 
 ### 3.1 O nome e a fantasia
 
+**Decidido pelo dono (12/10/2026): "Desenvolvimento da Torcida".** A palavra
+"escola" não tem a ver com a identidade do jogo; as categorias passam a se
+chamar **áreas**. O texto abaixo guarda a proposta original pra registro.
+
 Torcida não tem laboratório. Ela tem **"o que a torcida aprendeu"**:
 - a doutrina de rua passada pela velha guarda;
 - o jeito de organizar a caravana;
@@ -116,7 +120,15 @@ O que estiver acima disso sai do multiplicador e da velha guarda, com teto.
 
 **Reserva:** sem estudo escolhido, os PE acumulam até 52 semanas de produção, igual ao Vic2. A tela avisa *"a diretoria está sem estudo"*.
 
-### 3.3 A árvore: 5 escolas × 3 trilhas × 4 degraus
+### 3.3 A árvore: 6 áreas × trilhas de degraus
+
+**Pedido do dono (12/10/2026):** uma sexta área focada no aumento da
+quantidade de torcedores do clube, com estudos que melhoram o elenco e
+puxando pra ela o recrutamento, que hoje está espalhado pelo jogo, e
+estudos que fazem surgir torcedores numa cidade onde o clube ainda não
+tem. Ela se chama **Massa**. O protótipo (seção 5) já tem as seis áreas.
+
+A proposta original (5 áreas × 3 trilhas × 4 degraus) segue abaixo.
 
 A ideia é **60 estudos no jogo cheio** e um **recorte de 20 a 25 na primeira versão** (seção 3.8).
 
@@ -284,3 +296,84 @@ Cada achado vira uma **mensagem da diretoria**, não notícia do feed (a regra d
 7. **Achados:** entram, e como avisam (mensagem da diretoria ou post da torcida)?
 8. **Liberar coisa nova** (bandeirão gigante, etc.) desde a primeira versão, ou só modificadores primeiro?
 9. **Velha guarda como fonte principal:** faz sentido para você na fantasia da torcida?
+
+
+---
+
+## 5. O protótipo à parte (pedido do dono, 12/10/2026)
+
+*"Gostaria de testar isso sem aplicar no jogo no momento, numa versão
+fora à parte pra sentir a diferença."*
+
+- **Onde:** `desenvolvimento.html`, no mesmo endereço do jogo:
+  https://wilkerpietro.github.io/jogo-torcidas/desenvolvimento.html
+- **O jogo normal não muda:** o `index.html` não carrega nada disto. A
+  página do protótipo é uma cópia do `index.html` gerada por
+  `ferramentas/gerar_desenvolvimento.py` (rode de novo quando o
+  `index.html` mudar), com dois acréscimos:
+  - o save mora noutra gaveta do navegador (`torcida-organizada-desenv:`),
+    então a partida do jogo normal não é lida nem sobrescrita. Pra levar
+    uma partida pra lá, use exportar e importar do menu;
+  - o módulo `js/prototipo/desenvolvimento.js`, que age **por fora** do
+    código do jogo: embrulha o livro-caixa, os indicadores, o peso do
+    recrutamento e o bônus das festas; escuta o fechamento da semana; e
+    olha o save uma vez por dia.
+- **Na tela:** um botão "Desenvolvimento" no canto de baixo à direita, com
+  o estudo atual e a barra de progresso. Ele fica vermelho quando não há
+  estudo escolhido. Tocar abre a tela: o estudo atual; os pontos por
+  semana e de onde vêm; **"o que o Desenvolvimento já rendeu"** (dinheiro,
+  fichas, torcedores, força do elenco do clube, dias de ferido...); as
+  rivais que mais estudaram; e as seis áreas com as trilhas. O jogo pausa
+  com a tela aberta.
+- **No expediente:** uma ação nova, "Estudar (Desenvolvimento)": +1
+  ponto na semana por turno, até 3.
+
+### 5.1 O que o protótipo tem
+
+- **Pontos por semana:**
+  - velha guarda: até 4, no ótimo de 5% do efetivo;
+  - diretoria: até 3, no ótimo de 6% do efetivo;
+  - sede: 0 / 1 / 1,5 / 2 / 3 / 4 / 5;
+  - turnos de estudo: até 3;
+  - tudo × a moral (×0,7 / ×1 / ×1,2).
+- **Reserva:** os pontos sem estudo escolhido ficam guardados, até 52
+  semanas de produção.
+- **Degraus:** custam 12 / 30 / 60 pontos e pedem sede 0 / 2 / 4.
+- **Desconto pela difusão:** −1% por torcida que já tem o estudo, −3% se
+  for aliada, até −30%.
+- **39 estudos em 6 áreas.** A **Massa** tem três trilhas:
+  - *Recrutamento:* Peneira (+25% de chance), Peneira técnica (quem entra
+    chega com +1,5 de força e defesa) e Portas abertas (+25% e um novato
+    garantido por mês);
+  - *Torcedores do clube:* Escolinha de torcedor (+0,5% ao mês na nossa
+    cidade), Caravana no interior (+0,5% ao mês nas cidades das
+    subsedes) e Bandeira fincada (surge torcida do clube na maior cidade
+    do país onde ele não tem torcedor, e dá pra abrir subsede lá);
+  - *Elenco do clube:* Olheiros da torcida (reforço 15% mais barato),
+    Vaquinha pro elenco (+1 de força a cada 6 meses) e Categoria de base
+    (+1 a cada 3 meses).
+- **As rivais estudam pela mesma régua simplificada**, mas **não ganham os
+  efeitos** no protótipo. Elas só aparecem no ranking e baixam o custo
+  pela difusão.
+- **Só em português.** Se aprovado, o texto entra pelo `_t()` e pelos
+  dicionários.
+
+### 5.2 O que ficou de fora do protótipo
+
+A linha da torcida, a pauta da reunião, os achados, dinheiro virando
+pontos e os efeitos dentro da cena de briga. Na Pista, os estudos mexem
+na ficha dos membros, não na fórmula do golpe.
+
+### 5.3 Medido (2 anos, Leões da TUF, jogador passivo, mesma semente)
+
+| | sem | com Desenvolvimento |
+|---|---|---|
+| Estudos feitos | — | 17 |
+| Força e defesa médias dos membros | 7,85 | 8,29 |
+| Caixa | R$ 142.736 | R$ 145.054 |
+| Posição no ranking do país | 54º | 50º |
+
+O jogador passivo escolhe sempre o estudo mais barato e não briga. As
+diferenças são de propósito pequenas e acumulativas. O sorteio do jogo
+diverge entre as duas partidas, então moral e torcedores não são
+comparáveis um a um.

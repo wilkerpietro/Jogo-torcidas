@@ -10582,6 +10582,25 @@ Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos 
 - **Papel pra todo mundo:** "Quando a torcida fica muito gigante, faltam papéis." A malha 3D do mosaico nascia com 400 papéis e não crescia; agora ela é refeita com folga quando a torcida passa disso. O mosaico continua sendo só da nossa torcida: a outra organizada do mesmo clube não ergue papel (dono, na mesma conversa). O deslocamento dos papéis pra cima é a perspectiva da câmera com o papel erguido, e fica como está.
 - **Subsede:** o núcleo "NO BARZINHO" (`visitante5`) nascia atrás do balcão em L, ficava girando sem achar o vão e não entrava na briga. Ele passou pro pátio, perto das mesas da direita (860, 610). No ataque forçado da bancada, os três entraram na briga e nenhum defensor ficou atrás do balcão.
 
+## Desenvolvimento da Torcida: protótipo à parte (dono, 12/10/2026)
+
+"Gostei mas gostaria de testar isso sem aplicar no jogo no momento, numa versão fora à parte pra sentir a diferença. O nome pode ser 'Desenvolvimento da Torcida' [...]. Gostaria de mais uma 'escola' focada no aumento da quantidade de torcedores do time, pesquisas que aumentam a qualidade do elenco, puxando também a parte de recrutamento [...]. Pode ter pesquisas que surgem torcedores numa cidade que ainda não temos."
+
+- **O jogo não muda.** O protótipo mora em `desenvolvimento.html`, uma cópia do `index.html` gerada por `ferramentas/gerar_desenvolvimento.py`. O save dessa página é desviado para `torcida-organizada-desenv:` e o módulo é `js/prototipo/desenvolvimento.js`.
+- **Como o módulo age:** só por fora, pelas portas públicas:
+  - `estado.lancar`, `lancarNoResumo` e `mexerIndicador`;
+  - `dominio.pesoDoRecrutamento`;
+  - `festas.usarNoJogo`;
+  - `acoes.LISTA` (o turno "Estudar");
+  - `estado.aoFecharSemana`, `aoMudar` e uma olhada por segundo no save.
+  
+  Os efeitos de cidade nova são repostos na lista de cidades a cada carga.
+- **Nome e áreas:** "Desenvolvimento da Torcida". As categorias são **áreas** (sem "escola"): Pista, Estrada, Arquibancada, Negócio, Organização e **Massa**, a área nova (recrutamento, torcedores do clube, cidade nova e elenco do clube).
+- **Tamanho:** 39 estudos.
+- **O desenho e os números** estão em `docs/PLANO-PESQUISA.md`, seção 5.
+- **Medido** (2 anos, Leões da TUF, passivo): 17 estudos; força e defesa médias 8,29 contra 7,85; 50º contra 54º no ranking.
+- **Correção no caminho:** a Bandeira fincada escolhia Lima. Agora a cidade nova é sempre do país da torcida.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
