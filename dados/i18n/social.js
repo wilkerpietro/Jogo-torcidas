@@ -1143,5 +1143,14 @@ TO.i18n.registrar({
   "ataque à subsede": {es:"ataque a la filial", en:"chapter house raid"},
   "a estrada já é de graça com três: o quarto dá lugar sentado pra todo mundo e +{p}% da torcida topa a caravana": {es:"con tres la ruta ya es gratis: el cuarto da asiento para todos y un +{p}% de la hinchada se suma a la caravana", en:"the road is already free with three: the fourth gives everyone a seat and +{p}% of the crew joins the caravan"},
   "Vice: {comp}": {es:"Subcampeón: {comp}", en:"Runner-up: {comp}"},
-  "Acompanhados por {n} membros da {nome}": {es:"Acompañados por {n} miembros de {nome}", en:"Escorted by {n} members of {nome}"}
+  "Acompanhados por {n} membros da {nome}": {es:"Acompañados por {n} miembros de {nome}", en:"Escorted by {n} members of {nome}"},
+  "Envolvidos": {es:"Involucrados", en:"Involved"},
+  "Feridos": {es:"Heridos", en:"Injured"},
+  "Presos": {es:"Detenidos", en:"Arrested"},
+  "Do nosso lado": {es:"De nuestro lado", en:"On our side"},
+  "Do outro lado": {es:"Del otro lado", en:"On the other side"},
+  "Nosso lado": {es:"Nuestro lado", en:"Our side"},
+  "Lado deles": {es:"Su lado", en:"Their side"},
+  "Baixas de cada torcida": {es:"Bajas de cada hinchada", en:"Casualties by crew"},
+  "nosso lado {a} · lado deles {b}": {es:"nuestro lado {a} · su lado {b}", en:"our side {a} · their side {b}"}
 });

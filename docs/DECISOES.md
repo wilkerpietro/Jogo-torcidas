@@ -10785,6 +10785,25 @@ Teste (Playwright, jogo fora em Natal, escolta de 30, ataque na concentração e
 - a cena abre com 98 nossos + 30 da aliada, colados;
 - 5 da escolta caídos saem só da escolta.
 
+## Relatório do fim da noite com as baixas de cada torcida (dono, 13/10/2026)
+
+Pedido do dono: "em brigas que envolvem mais de duas torcidas o relatório deve mostrar as baixas de cada uma separado — na briga do estádio, que pode ter até seis torcidas, tudo se embaralha".
+
+O relatório tinha duas colunas, uma por lado. Elas somavam todo mundo do lado e punham no cabeçalho o nome da nossa torcida e o do rival principal.
+
+- **Na cena:** o resultado (ponte.js) traz `porTorcida`, contado boneco por boneco pela torcida de cada boneco: envolvidos, feridos e presos.
+  - Os bondes de rua, concentração, pista e ataque passaram a levar o `id` da torcida; os do estádio já levavam.
+- **No Simular:** são calculados os mesmos números.
+  - As nossas baixas são as fichas que caíram.
+  - O aliado do nosso lado apanha na mesma proporção que a gente.
+  - O saldo do outro lado se reparte pelo tamanho de cada bonde.
+- **Com mais de duas torcidas:** o relatório mostra a tabela "Baixas de cada torcida", agrupada em "Do nosso lado" e "Do outro lado", com a nossa primeiro e as outras pelo tamanho.
+  - As armas, que a cena só conta por lado, ficam numa linha.
+  - A linha da relação continua com o rival da briga.
+- **Com duas torcidas:** o quadro de duas colunas segue igual.
+
+Teste (Playwright, estádio com seis torcidas, três de cada lado): cada uma aparece com os seus envolvidos, feridos e presos, no computador e em 390 px. Testei também o par de sempre e a escolta (três torcidas, na cena e no Simular).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -1974,6 +1974,27 @@ header.capa-cidade{background-size:cover; background-position:center;
   color:var(--fraco);text-align:center;padding:7px 4px;border-bottom:1px solid var(--sulco);white-space:nowrap;
 }
 .fim-cons .linha-dado b{font-size:14px}
+/* as baixas de cada torcida, quando a briga tem mais de duas (13/10/2026) */
+.fim-torcidas{display:grid;grid-template-columns:minmax(0,1fr) repeat(3, 64px);gap:0 8px;align-items:center;margin-bottom:14px}
+.fim-t-cab{display:contents}
+.fim-t-cab span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);
+  text-align:right;padding:4px 0 6px;border-bottom:1px solid var(--linha)}
+.fim-t-lado{grid-column:1/-1;font-family:var(--titulo);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  padding:10px 0 4px;color:var(--fraco)}
+.fim-t-lado.nos{color:var(--verde-vivo)} .fim-t-lado.eles{color:var(--rubro-vivo)}
+.fim-t-linha{display:contents}
+.fim-t-linha > *{padding:6px 0;border-bottom:1px solid var(--sulco)}
+.fim-t-linha > b{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;text-align:right;color:var(--texto)}
+.fim-t-linha > b.negativo{color:var(--vermelho)}
+.fim-t-nome{display:flex;align-items:center;gap:7px;min-width:0;font-size:13px}
+.fim-t-nome b,.fim-t-nome a{min-width:0;overflow-wrap:anywhere;line-height:1.15}
+.fim-t-linha.nossa .fim-t-nome b{color:var(--texto)}
+.fim-t-armas{margin:-6px 0 14px} .fim-t-armas b{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--fraco)}
+@media (max-width:480px){
+  .fim-torcidas{grid-template-columns:minmax(0,1fr) repeat(3, 44px);gap:0 5px}
+  .fim-t-cab span{font-size:8px;letter-spacing:.03em}
+  .fim-t-linha > b{font-size:13px}
+}
 /* no celular o nome quebra em duas linhas em vez de virar "LEÕE…";
    o rótulo do meio fica estreito pra sobrar largura pras colunas */
 @media (max-width:480px){

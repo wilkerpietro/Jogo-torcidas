@@ -11240,10 +11240,10 @@
     const nossoLado = enc.nossoLado === 'visitante' ? 'visitante' : 'mandante';
     const outroLado = nossoLado === 'mandante' ? 'visitante' : 'mandante';
     const bondes = [
-      {lado:nossoLado, n:nosso.n,
+      {lado:nossoLado, n:nosso.n, id:nosso.torcida || e.torcida.id,
        cor:nosso.cor, cor2:nosso.cor2, cor3:nosso.cor3,
        sigla:nosso.sigla, nome:nosso.nome,  nossa:true},
-      {lado:outroLado, n:deles.n,
+      {lado:outroLado, n:deles.n, id:deles.torcida || null,
        cor:deles.cor, cor2:deles.cor2, cor3:deles.cor3,
        sigla:deles.sigla, nome:deles.nome,  nossa:false,
        perfil: perfilDe(deles.torcida)}
@@ -11251,7 +11251,7 @@
     /* o bonde do aliado escoltado desce JUNTO e na mão do jogador
        (régua do dono, 28/08/2026): cor e ficha dele, comando nosso */
     if(enc.junto) bondes.push(
-      {lado:nossoLado, n:Math.max(1, Math.round(enc.junto.n)),
+      {lado:nossoLado, n:Math.max(1, Math.round(enc.junto.n)), id:enc.junto.torcida || null,
        cor:enc.junto.cor, cor2:enc.junto.cor2, cor3:enc.junto.cor3,
        sigla:enc.junto.sigla, nome:enc.junto.nome, nossa:false,
        controlado:true, perfil: perfilDe(enc.junto.torcida)});
@@ -11788,10 +11788,10 @@
     const outro  = 'mandante';
     const aptos = naCasa ? bondeZona.slice(0, nossos) : fila.slice(0, nossos);
     const bondes = [
-      {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome,
+      {lado:nosso, n:nossos, nossa:true, nome:e.torcida.nome, id:e.torcida.id,
        cor:c1.cor, cor2:c1.cor2, cor3:c1.cor3,
        sigla:TO.mundo.siglaTorcida(e.torcida)},
-      {lado:outro, n:deles, nossa:false,
+      {lado:outro, n:deles, nossa:false, id:atq.torcida || null,
        nome:(atq.filial && atq.nome) || (o&&o.nome) || _t('Rival'),
        cor:c2.cor, cor2:c2.cor2, cor3:c2.cor3,
        sigla:o?TO.mundo.siglaTorcida(o):'RIV',
@@ -12313,8 +12313,13 @@
       presos: res['presos' + Cap(l)] || 0,
       armas: `${armasDe(l).bomba||0}+${armasDe(l).pedra||0}`
     });
-    const nos = lado(nossoLado, e.torcida.nome, e.torcida.id);
-    const eles = lado(outro, (ctx.rival && ctx.rival.nome) || _t('Rival'), ctx.rival && ctx.rival.id);
+    const pt = (res.porTorcida || []).filter(x => x.envolvidos > 0);
+    /* com mais de duas torcidas as colunas são a SOMA de cada lado: o
+       cabeçalho diz isso, e a tabela de baixo separa torcida por torcida */
+    const muitas = pt.length > 2;
+    const nos = lado(nossoLado, muitas ? _t('Nosso lado') : e.torcida.nome, muitas ? null : e.torcida.id);
+    const eles = lado(outro, muitas ? _t('Lado deles') : ((ctx.rival && ctx.rival.nome) || _t('Rival')),
+                      muitas ? null : (ctx.rival && ctx.rival.id));
     const corDe = id => { const o = id && TO.mundo.torcida(id); return (o && TO.mundo.coresDaTorcida(o).cor) || '#888'; };
     const linhas = [[_t('Membros envolvidos'),'envolvidos'], [_t('Membros feridos'),'feridos'],
                     [_t('Membros presos'),'presos'], [_t('Bombas + pedras'),'armas']];
@@ -12328,7 +12333,34 @@
       grade.appendChild(el('div',{class:'fim-rot', texto:rot}));
       grade.appendChild(el('div',{class:'fim-val eles', html:`<b>${eles[k]}</b>`}));
     }
-    cx.appendChild(grade);
+    /* MAIS DE DUAS TORCIDAS, UMA LINHA PRA CADA (dono, 13/10/2026: "na
+       briga do estádio, que pode ter até seis torcidas, tudo se embaralha
+       no relatório"). As duas colunas ficam pro par de sempre; com
+       aliado, escolta ou a arquibancada cheia, cada torcida mostra as
+       baixas dela, agrupadas pelo lado em que brigou. */
+    if(!muitas) cx.appendChild(grade);
+    if(muitas){
+      const tab = el('div',{class:'fim-torcidas'});
+      tab.appendChild(el('div',{class:'fim-t-cab', html:
+        `<span></span><span>${_t('Envolvidos')}</span><span>${_t('Feridos')}</span><span>${_t('Presos')}</span>`}));
+      for(const [l, rot] of [[nossoLado, _t('Do nosso lado')], [outro, _t('Do outro lado')]]){
+        const doLado = pt.filter(x => x.lado === l)
+          .sort((a,b)=> (b.nossa - a.nossa) || (b.envolvidos - a.envolvidos));
+        if(!doLado.length) continue;
+        tab.appendChild(el('div',{class:'fim-t-lado '+(l === nossoLado ? 'nos' : 'eles'), texto:rot}));
+        for(const x of doLado){
+          const nome = x.id && !x.nossa ? linkTorcida(x.id, x.nome) : `<b>${x.nome}</b>`;
+          tab.appendChild(el('div',{class:'fim-t-linha'+(x.nossa?' nossa':''), html:
+            `<span class="fim-t-nome">${chipTorcida(x.id, x.cor || corDe(x.id))}${nome}</span>`+
+            `<b>${x.envolvidos}</b><b class="${x.feridos?'negativo':''}">${x.feridos}</b><b class="${x.presos?'negativo':''}">${x.presos}</b>`}));
+        }
+      }
+      cx.appendChild(el('div',{class:'fase-rot', texto:_t('Baixas de cada torcida')}));
+      cx.appendChild(tab);
+      /* as armas são contadas por lado na cena: ficam numa linha só */
+      cx.appendChild(el('div',{class:'linha-dado fim-t-armas', html:
+        `<span>${_t('Bombas + pedras')}</span><b>${_t('nosso lado {a} · lado deles {b}', {a:nos.armas, b:eles.armas})}</b>`}));
+    }
 
     /* as consequências */
     const d = ctx.delta || {};
@@ -12339,7 +12371,9 @@
       cons.appendChild(el('div',{class:'linha-dado', html:
         `<span>${rot}</span><b class="${sobe?'positivo':'negativo'}">${sobe?'+':'−'}${fmt(Math.abs(v))}</b>`}));
     };
-    if(d.relacao != null && eles.id) item(_t('Relação com a {nome}', {nome:eles.nome}), d.relacao, v=>String(Math.round(v)));
+    /* a relação é com o rival da briga, mesmo quando o cabeçalho virou "Lado deles" */
+    const rivalRel = ctx.rival && ctx.rival.id ? ctx.rival : (eles.id ? eles : null);
+    if(d.relacao != null && rivalRel) item(_t('Relação com a {nome}', {nome:rivalRel.nome || eles.nome}), d.relacao, v=>String(Math.round(v)));
     item(_t('Moral'), d.moral, v=>String(v));
     item(_t('Prestígio'), d.prestigio, v=>String(v));
     item(_t('Dinheiro'), d.dinheiro, v=>U.dinheiro(v));

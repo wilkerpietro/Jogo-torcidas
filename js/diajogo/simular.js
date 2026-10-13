@@ -169,6 +169,33 @@ TO.diaJogo.simular = (function(){
       forca: {nossa: pA, deles: pB, favoritoNosso},
       membros
     };
+    /* as baixas de cada torcida (13/10/2026): as nossas são as fichas que
+       caíram; do outro lado o saldo se reparte pelo tamanho de cada bonde,
+       e o aliado do nosso lado apanha na mesma proporção que a gente */
+    const bs = (cfg.bondes || []).filter(b => b.id || b.nome);
+    if(bs.length > 2){
+      const reparte = (lista, feridos, presos) => {
+        const tot = lista.reduce((s,b)=>s + (b.n||0), 0) || 1;
+        let rf = feridos, rp = presos;
+        return lista.map((b, i) => {
+          const ult = i === lista.length - 1;
+          const f = ult ? rf : Math.min(rf, Math.round(feridos * (b.n||0) / tot));
+          const p = ult ? rp : Math.min(rp, Math.round(presos * (b.n||0) / tot));
+          rf -= f; rp -= p;
+          return {id:b.id || null, nome:b.nome || '', lado:b.lado, cor:b.cor || null, nossa:!!b.nossa,
+                  envolvidos:Math.round(b.n||0), feridos:f, presos:p};
+        });
+      };
+      const taxa = v => nA ? v / nA : 0;
+      res.porTorcida = [
+        ...bs.filter(b => b.lado === nossoLado).map(b => b.nossa
+          ? {id:b.id || null, nome:b.nome || '', lado:b.lado, cor:b.cor || null, nossa:true,
+             envolvidos:nA, feridos:nossosCaidos, presos:nossosPresos}
+          : {id:b.id || null, nome:b.nome || '', lado:b.lado, cor:b.cor || null, nossa:false,
+             envolvidos:Math.round(b.n||0),
+             feridos:Math.round((b.n||0) * taxa(nossosCaidos)), presos:Math.round((b.n||0) * taxa(nossosPresos))}),
+        ...reparte(bs.filter(b => b.lado === outroLado), delesCaidos, delesPresos)];
+    }
     if(op && op.aoTerminar) op.aoTerminar(res);
     return res;
   }

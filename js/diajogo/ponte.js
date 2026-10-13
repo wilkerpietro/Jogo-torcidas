@@ -1514,6 +1514,21 @@ TO.diaJogo.ponte = (function(){
       presosMandante:J.presosPor.mandante, presosVisitante:J.presosPor.visitante,
       /* a escolta da aliada que desceu com a gente: quantos dela caíram
          ou foram presos (13/10/2026) — a linha do dia desconta dela */
+      /* AS BAIXAS DE CADA TORCIDA (dono, 13/10/2026: "na briga do estádio
+         com até seis torcidas tudo se embaralha no relatório"): o lado
+         soma todo mundo; aqui vai torcida por torcida, boneco por boneco */
+      porTorcida: (()=>{
+        const g = new Map();
+        for(const d of J.discos){
+          const k = d.torcidaId || d.torcida;
+          if(!k) continue;
+          const x = g.get(k) || g.set(k, {id:d.torcidaId || null, nome:d.torcida || '', lado:d.lado,
+            cor:d.cor || null, nossa:!!d.nossaTorcida, envolvidos:0, feridos:0, presos:0}).get(k);
+          x.envolvidos++;
+          if(d.preso) x.presos++; else if(d.caido) x.feridos++;
+        }
+        return [...g.values()];
+      })(),
       baixasJunto: J.discos.some(d => d.junto)
         ? J.discos.filter(d => d.junto && (d.caido || d.preso)).length : null,
       rompido:J.rompido,
