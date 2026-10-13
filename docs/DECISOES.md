@@ -10804,6 +10804,23 @@ O relatório tinha duas colunas, uma por lado. Elas somavam todo mundo do lado e
 
 Teste (Playwright, estádio com seis torcidas, três de cada lado): cada uma aparece com os seus envolvidos, feridos e presos, no computador e em 390 px. Testei também o par de sempre e a escolta (três torcidas, na cena e no Simular).
 
+## Influência dos eixos — rascunho no protótipo (dono, 13/10/2026)
+
+Pedido: um modelo de influência à moda do Hearts of Iron IV.
+- Toda torcida tende a ter um eixo e puxa as aliadas pra ele.
+- As grandes regem a influência, como a esfera do Victoria II.
+- O país deve caminhar pra quatro ou cinco grandes eixos.
+
+**Rascunho, ainda não testado nem calibrado.** Mora só no `desenvolvimento.html` (`js/prototipo/influencia.js`, página "Influência" no menu).
+- Apoio em % a cada eixo por torcida.
+- Pontos de influência por tamanho, prestígio e sede; as 8 maiores do país são potências (×1,5).
+- Campanha nas aliadas (+20) e contrainteligência.
+- Deriva de 8% por semana.
+- Quando inclinada, a torcida aproxima-se do eixo novo e esfria com o antigo.
+- Entra com 50%, sai com menos de 15%; eixo com um membro só se dissolve.
+
+O dono pediu para pesquisar antes como o HOI4 faz; o modelo será revisto com essa pesquisa antes da simulação.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

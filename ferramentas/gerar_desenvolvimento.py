@@ -10,7 +10,8 @@ A página é uma CÓPIA do `index.html` com três mudanças:
     navegador: toda chave `torcida-organizada:…` vira
     `torcida-organizada-desenv:…`. O save do jogo normal não é lido nem
     escrito por ela (pra levar uma partida pra cá, use exportar/importar);
-  * no fim, o módulo `js/prototipo/desenvolvimento.js`.
+  * no fim, os módulos `js/prototipo/desenvolvimento.js` e
+    `js/prototipo/influencia.js`.
 
 Como é cópia, rode de novo sempre que o `index.html` mudar:
 
@@ -47,7 +48,9 @@ def main():
     html = html.replace('<head>', '<head>\n' + DESVIO, 1)
     fim = html.rfind('</body>')
     html = (html[:fim] + '<!-- o protótipo do Desenvolvimento da Torcida -->\n'
-            '<script src="js/prototipo/desenvolvimento.js"></script>\n' + html[fim:])
+            '<script src="js/prototipo/desenvolvimento.js"></script>\n'
+            '<!-- o protótipo da Influência dos eixos (13/10/2026) -->\n'
+            '<script src="js/prototipo/influencia.js"></script>\n' + html[fim:])
     i = html.find('>', html.lower().find('<!doctype')) + 1
     html = html[:i] + '\n' + aviso.rstrip('\n') + html[i:]
     SAIDA.write_text(html, encoding='utf-8')
