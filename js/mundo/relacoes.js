@@ -636,10 +636,17 @@ TO.relacoes = (function(){
   /* O EXTRATO DELAS (crivo do dono, 31/08/2026): a IA guarda um anel
      de lançamentos de verdade — semana fechada, compra da fila,
      caravanas e saque sofrido — pro perfil da torcida mostrar. */
-  function lancarIA(E, id, descricao, valor){
+  /* A SONDA DA RENDA (12/10/2026, pra medir a renda delas item a item
+     contra a nossa): inerte — ninguém a liga no jogo; uma simulação pode
+     pôr `TO.relacoes.sonda = (id, rotulo, valor) => …` e recebe cada
+     dinheiro que entra ou sai do caixa delas, inclusive o que não vira
+     linha de extrato (festa, PIX, os itens do balanço da semana). */
+  const sondar = (id, rot, v) => { const f = API && API.sonda; if(f && v) try{ f(id, rot, v); }catch(_){} };
+  function lancarIA(E, id, descricao, valor, semSonda){
     const t = (E.mundoTorcidas||{})[id];
     const v = Math.round(valor);
     if(!t || !v) return;
+    if(!semSonda) sondar(id, descricao, v);
     (t.extrato = t.extrato || []).unshift(
       {q:_t('{ano} s{semana}', {ano:E.data.ano, semana:E.data.semana}), d:descricao, v});
     if(t.extrato.length > 36) t.extrato.pop();
@@ -1003,7 +1010,12 @@ TO.relacoes = (function(){
       const doMes = FIN().semanaDaMensalidade && FIN().semanaDaMensalidade(E) ? b.mensal : 0;
       const semana = Math.round((b.saldo - b.mensal) * SEM + doMes);
       t.caixa += semana;
-      lancarIA(E, id, _t('Semana — comércio, folhas e manutenção'), semana);
+      lancarIA(E, id, _t('Semana — comércio, folhas e manutenção'), semana, true);
+      if(API.sonda){
+        const MENSAL = /^(Mensalidades|Ônibus da torcida|Professores de MMA|Advogados)/;
+        for(const x of b.receitas) sondar(id, x.rot, MENSAL.test(x.rot) ? (doMes ? x.v : 0) : Math.round(x.v * SEM));
+        for(const x of b.despesas) sondar(id, x.rot, -(MENSAL.test(x.rot) ? (doMes ? x.v : 0) : Math.round(x.v * SEM)));
+      }
       /* o que o nosso fechamento tem e o delas não tinha (paridade,
          12/10/2026): a doação de simpatizante (10% da semana, 200 +
          prestígio × 30–90) e, no mês, a quebra séria do ônibus (1% por
@@ -1235,8 +1247,11 @@ TO.relacoes = (function(){
 
       if(!compra){
         const cofre = b.des * 12;
-        if(t.caixa > cofre)
-          t.caixa -= Math.round((t.caixa - cofre) * 0.06 * brigaDe(t));
+        if(t.caixa > cofre){
+          const q = Math.round((t.caixa - cofre) * 0.06 * brigaDe(t));
+          t.caixa -= q;
+          sondar(id, 'Queima de caixa acumulado', -q);
+        }
       }
     }
   }
@@ -2987,7 +3002,7 @@ TO.relacoes = (function(){
           const n = Math.min(r < tab.dois ? 2
                            : r < tab.dois + tab.um ? 1 : 0,
                              teto - t.membros);
-          if(n > 0){ t.membros += n; t.caixa -= n*5; }
+          if(n > 0){ t.membros += n; t.caixa -= n*5; sondar(o.id, 'Recrutamento', -n*5); }
         } else if(op === 'festa'){
           /* A FESTA DELAS É A NOSSA, com o preço do nível da sede
              (régua do dono, 20/08/2026): mesmo custo, mesma renda por
@@ -2999,7 +3014,10 @@ TO.relacoes = (function(){
           const custo = FIN().FESTA[t.sede] || 700;
           const publico = disponiveisIA(E, o.id);
           if(t.caixa < custo || publico < FIN().pisoDaFesta(t.sede)) continue;
-          t.caixa += Math.round(publico * U.entre(4.8, 6.4)) - custo;
+          const rendeu = Math.round(publico * U.entre(4.8, 6.4));
+          t.caixa += rendeu - custo;
+          sondar(o.id, 'Festa na sede (público)', rendeu);
+          sondar(o.id, 'Festa na sede (custo)', -custo);
         } else if(op === 'reuniao'){
           reuniaoIA(E, o, t);
         } else if(op === 'pix'){
@@ -3009,6 +3027,7 @@ TO.relacoes = (function(){
           if(pe < 3) continue;
           const v = Math.round(pe * U.entre(8, 15));
           t.caixa += v;
+          sondar(o.id, 'PIX', v);
           mover(E, o.id, 'prestigio', -0.2);
         }
       }
@@ -3080,7 +3099,7 @@ TO.relacoes = (function(){
         const aceita = podePagar &&
           U.rng() < U.limitar(0.5 + rel/100, 0.15, 0.95);
         if(aceita){
-          if(t) t.caixa -= 2000;
+          if(t){ t.caixa -= 2000; sondar(c.id, 'Aniversário de aliada', -2000); }
           moverRelacao(E, o.id, c.id,
             ganhoRepetido(E, o.id, c.id, 'festa', REL.iaConviteAceito));
         } else {
@@ -3350,7 +3369,7 @@ TO.relacoes = (function(){
       .sort((a,b) => a.relacao - b.relacao);
   }
 
-  return {_guerraDeFiliais: guerraDeFiliais, registrarTentativa, desistiu, tentativas, DESISTE, REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
+  const API = {sondar, _guerraDeFiliais: guerraDeFiliais, registrarTentativa, desistiu, tentativas, DESISTE, REL, HOSTIL, QUENTE, ALIADO, FREIO_BRIGA, FREIO_IA, COBRANCA_MULT, VINGANCA_FRUSTRADA, dividaIA, anotarDividaIA, quitarDividaIA, brigaIA,
           ehMaiorRival, pesoDoRival, emTregua,
           nivel, hostilidade, marcarAjuda,
           ranking, rankingDoPais, posicaoNoRanking, posicaoNoMundo,
@@ -3372,4 +3391,5 @@ TO.relacoes = (function(){
           mmaDe,
           mediaDeFichaGerada,
           placarDoAno, anotarBriga, saldoDoAno, frotaIA};
+  return API;
 })();

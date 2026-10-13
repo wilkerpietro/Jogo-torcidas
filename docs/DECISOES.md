@@ -10721,6 +10721,44 @@ Medido: a nossa escolta deu 10, 10, 20, 30 e 30 nas sedes 1, 3, 4, 5 e 6; a dos 
 - a queima de caixa das IAs acumuladoras;
 - tudo da seção 1.
 
+## Sonda da renda das IAs, item a item (dono, 13/10/2026)
+
+Pedido: medir a renda das IAs item a item e comparar com a nossa.
+Para isso, `TO.relacoes` ganhou um gancho inerte, `TO.relacoes.sonda(id, rotulo, valor)`.
+Ele fica desligado: sem ninguém pendurado, o jogo roda igual.
+Quando está ligado, recebe cada lançamento de cada IA:
+
+- o extrato (`lancarIA`);
+- o balanço da semana linha a linha, com as linhas mensais (mensalidades, ônibus, MMA, advogados) só na semana da mensalidade;
+- festa na sede (público e custo);
+- PIX;
+- recrutamento;
+- queima de caixa;
+- aniversário de aliada;
+- ação social (dominio.js).
+
+A linha agregada "Semana" do extrato não vai pra sonda, pra não contar duas vezes.
+
+Medição (2 anos, semente fixa, Leões da TUF; valores por torcida por ano).
+Com o expediente na mesma regra da IA (recruta se há vaga, senão festa nos três turnos, PIX se o caixa está curto), a nossa sede 4 com 210 membros fica assim:
+
+| Item | Nossa sede 4 | IA sede 4 |
+|---|---|---|
+| Festa | 380k | 449k |
+| Mensalidades | 96k | 97k |
+| Manutenção da sede | −23k | −23k |
+| Doação | ≈ | ≈ |
+
+As regras batem. A diferença é de conduta: elas compram bar, loja e anexos (~450k/ano na sede 4), brigam, saqueiam e levam prêmio de fim de ano.
+
+Ficou uma assimetria só, a relação com o clube:
+
+- a IA perde 5 pontos por qualquer briga na semana; nós só perdemos em briga no dia de jogo;
+- a IA ganha +2 fixo por jogo em casa; nós ganhamos +2 só com 80% presentes, e até +6 fora.
+
+Resultado: a IA vive na faixa ruim e vende ~1k/ano de ingresso, contra ~31k nossos.
+Fica registrada, à espera do dono.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

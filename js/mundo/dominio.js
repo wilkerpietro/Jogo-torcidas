@@ -1419,6 +1419,7 @@ TO.dominio = (function(){
         const fraco = bairros(E, cid).filter(b => b.dono === pl.dono && b.v < 60 && b.sede !== pl.dono).sort((a, c) => a.v - c.v)[0];
         if(fraco && r0() < 0.35){
           mundo[pl.dono].caixa -= SOCIAL.custo;
+          if(TO.relacoes.sondar) TO.relacoes.sondar(pl.dono, 'Ação social', -SOCIAL.custo);
           mexer(E, cid, fraco.id, pl.dono, GANHO.social[0] + r0() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
         }
       }
@@ -1434,6 +1435,7 @@ TO.dominio = (function(){
         const alvo = alvoSocial(E, cid, tid, r);
         if(!alvo) continue;
         t.caixa -= SOCIAL.custo;
+        if(TO.relacoes.sondar) TO.relacoes.sondar(tid, 'Ação social', -SOCIAL.custo);
         mexer(E, cid, alvo, tid, GANHO.social[0] + r() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
       }
     }
