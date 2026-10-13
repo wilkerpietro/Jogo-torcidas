@@ -10804,22 +10804,46 @@ O relatório tinha duas colunas, uma por lado. Elas somavam todo mundo do lado e
 
 Teste (Playwright, estádio com seis torcidas, três de cada lado): cada uma aparece com os seus envolvidos, feridos e presos, no computador e em 390 px. Testei também o par de sempre e a escolta (três torcidas, na cena e no Simular).
 
-## Influência dos eixos — rascunho no protótipo (dono, 13/10/2026)
+## Influência dos eixos no protótipo, na régua do Hearts of Iron IV (dono, 13/10/2026)
 
-Pedido: um modelo de influência à moda do Hearts of Iron IV.
+Pedido: um modelo de influência à moda do HoI4.
 - Toda torcida tende a ter um eixo e puxa as aliadas pra ele.
 - As grandes regem a influência, como a esfera do Victoria II.
-- O país deve caminhar pra quatro ou cinco grandes eixos.
+- O país caminha pra poucos eixos grandes. Primeiro eram quatro ou cinco; depois o dono ajustou: "pode ter até 8 eixos agora".
 
-**Rascunho, ainda não testado nem calibrado.** Mora só no `desenvolvimento.html` (`js/prototipo/influencia.js`, página "Influência" no menu).
-- Apoio em % a cada eixo por torcida.
-- Pontos de influência por tamanho, prestígio e sede; as 8 maiores do país são potências (×1,5).
-- Campanha nas aliadas (+20) e contrainteligência.
-- Deriva de 8% por semana.
-- Quando inclinada, a torcida aproxima-se do eixo novo e esfria com o antigo.
-- Entra com 50%, sai com menos de 15%; eixo com um membro só se dissolve.
+Mora só no `desenvolvimento.html` (`js/prototipo/influencia.js`, página "Influência" no menu).
 
-O dono pediu para pesquisar antes como o HOI4 faz; o modelo será revisto com essa pesquisa antes da simulação.
+Antes de fechar, o dono pediu pesquisa do HoI4. Os números vieram dos arquivos do jogo (2019) e de trechos da wiki e do fórum.
+
+As escolhas do dono:
+- **Sem espionagem:** sem rede de informantes nem operações; fica só a campanha de influência.
+- **Sair de um eixo:** custa −50 com cada membro, "mas não vira rival de cara, vira neutro" (para no zero).
+- **Acima de 50% de um eixo de fora:** nada de troca automática. As relações andam aos poucos até ela sair de um eixo e entrar no outro.
+
+As regras:
+- **Apoio:** cada torcida tem apoio em % a cada eixo, somando 100 com "sem eixo". É a popularidade dos partidos do HoI4.
+- **Pontos de influência (PI) por semana:** membros^0,85 ÷ 10 × (0,6 + prestígio/25) × (1 + 0,1 × sede).
+  - As 7 maiores de cada país são potências, com ×1,5 (os "majors" do HoI4).
+  - A IA põe a contrainteligência em 10% do PI quando está firme e em 30% quando balança; a nossa é escolha (0, 25 ou 50%).
+- **Campanha:** vai só nas aliadas (+20) do mesmo país, em até 4 alvos (IA) ou 3 (nós, ou automático).
+- **Deriva somada por semana:** a campanha rende 3 × PI ÷ (PI do alvo + 5) × (1 − resistência).
+  - Resistência = 0,1 + até 0,25 pelo tamanho + a contrainteligência, no máximo 60%. Sem eixo, −30% (o "não alinhado" do HoI4).
+  - A base soma +0,5 por semana pro eixo de casa; no HoI4 o partido no poder não tem deriva própria.
+  - A soma volta a 100 toda semana.
+- **Acima de 50% pra um eixo de fora:** a cada semana, a relação sobe 1,5 a 3 com os membros dele (até +60) e desce com os do eixo de casa (até o neutro).
+  - Ela sai do eixo de casa quando deixa de ser aliada de metade dele.
+  - Ela entra no novo com 30% de apoio (o piso de facção do HoI4) e pelas regras de sempre do `podeEntrar`.
+- **Eixo que fica com um membro só se dissolve.** O de nascença fica no save vazio e marcado, porque a migração do jogo o recriaria.
+- **Teto de 8 eixos ativos por país:** a fundação do dia que passar disso é desfeita na hora, por fora do `TO.eixos.eventosDoDia`, e o nome volta pra lista.
+- **A nossa torcida não vira sozinha:** se um eixo de fora passa a nossa bandeira, moral −0,3 por semana, e o aviso diz que a base rachou.
+
+Simulação (5 anos, semente fixa, TUF, Brasil):
+- O país chega a 8 eixos em 2028 e fica.
+- 11 fundações foram barradas.
+- Os grandes crescem: Dedo pro Alto de 17 pra 25 torcidas, Punho Cruzado de 11 pra 18; os pequenos encolhem.
+- Foram 21 inclinações, 11 saídas e 13 entradas.
+
+O que mais barra uma entrada é ter um rival comum dentro do eixo novo: das 30 torcidas com 30% ou mais de apoio a um eixo de fora, 13 param aí. Fica pra o dono decidir se a treta com rival comum do eixo novo também esfria quando a torcida se inclina.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

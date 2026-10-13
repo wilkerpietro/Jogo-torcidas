@@ -53,19 +53,26 @@
      A RÉGUA
      ------------------------------------------------------- */
   const SEM_EIXO     = '_';
-  const POTENCIAS    = 8;      // as maiores do país: ×1,5 (esfera do Victoria II)
+  /* a régua veio do Hearts of Iron IV (pesquisa de 13/10/2026, arquivos do
+     jogo): a deriva é SOMA de pontos por semana, não salto; a defesa contra
+     a deriva corta até a metade; o não alinhado é 30% mais fácil de virar;
+     os 7 maiores são os "majors"; facção pede 30% da ideologia do líder */
+  const POTENCIAS    = 7;      // os "majors" do país: ×1,5 (e a esfera do Victoria II)
   const MULT_POTENCIA= 1.5;
   const ALIADA       = 20;     // só se influencia quem anda com a gente
-  const DERIVA       = 0.08;   // o apoio anda 8% por semana rumo à fatia de influência
-  const BASE_EM_CASA = 1.0;    // a base de cada uma pesa o PI inteiro dela em casa
-  const BASE_SEM_EIXO= 0.6;    // quem não tem eixo segura menos: "toda torcida tende a ter um"
+  const GANHO        = 3;      // pontos de apoio por semana por PI de campanha, sobre (PI do alvo + 5)
+  const BASE_CASA    = 0.5;    // a base segura o eixo de casa: +0,5 ponto por semana (no HoI4 o partido no poder não tem deriva própria)
+  const BASE_SEM_EIXO= 1;      // quem não tem eixo segura menos: "toda torcida tende a ter um"
   const ALVOS_IA     = 4;      // a IA concentra a campanha em até 4 torcidas
   const ALVOS_NOSSOS = 3;      // e a gente escolhe até 3
   const DEFESA_IA    = [0.1, 0.3];  // contrainteligência da IA: tranquila / balançando
-  const DEFESA_FATOR = 0.3;    // cada PI na defesa corta 30% de 1 PI de campanha de fora...
-  const ENTRAR       = 50;     // apoio pra pedir entrada no eixo de fora
-  const SAIR         = 15;     // apoio abaixo do qual larga o eixo de casa
+  const RESIST_MAX   = 0.6;    // a resistência à deriva não passa de 60%
+  const SEM_EIXO_RES = -0.3;   // sem eixo: 30% mais fácil de virar (o não alinhado do HoI4)
+  const INCLINA      = 50;     // eixo de fora acima disto: as relações começam a andar
+  const ENTRAR_MIN   = 30;     // apoio mínimo pra entrar num eixo (os 30% da facção do HoI4)
+  const TRAICAO      = 50;     // sair de um eixo: −50 com cada membro, mas para no neutro
   const DERIVA_REL   = 1.5;    // relação por semana quando inclinada (até 3)
+  const EIXOS_MAX    = 8;      // teto de eixos ativos por país (dono, 13/10/2026: "pode ter até 8 eixos agora")
   const CORES = ['#d64545', '#3b82d6', '#2f9e5b', '#e0a400', '#8e5bd0', '#159a9a', '#e06a1c',
                  '#c2418d', '#6b8e23', '#b07d48', '#4b6cb7', '#a33b3b'];
 
@@ -177,16 +184,12 @@
       const ap = apoioDe(E, id);
       const b = bandeira[id] = bandeiraDe(E, id, ap);
       const p = pi[id];
-      if(!b){ soma(id, SEM_EIXO, p * BASE_SEM_EIXO); defesa[id] = 0; continue; }
-      /* a base: o PI inteiro segura a casa, repartido pelos eixos dela */
-      const meus = X().de(E, id);
-      const tot = meus.reduce((s, x) => s + (ap[x.id] || 1), 0);
-      for(const x of meus) soma(id, x.id, p * BASE_EM_CASA * (ap[x.id] || 1) / tot);
+      if(!b){ defesa[id] = 0; continue; }
       /* a contrainteligência: a IA liga quando ela própria balança */
       let df;
       if(id === nos) df = i.nossa.defesa || 0;
       else df = (ap[b] || 0) < 60 ? DEFESA_IA[1] : DEFESA_IA[0];
-      defesa[id] = p * df;
+      defesa[id] = df;
       /* a campanha: aliadas que ainda não são da bandeira, ou que balançam */
       const verba = p * (1 - df);
       let alvos;
@@ -202,75 +205,93 @@
       const pesoTot = alvos.reduce((s, x) => s + x[1], 0);
       campanha[id] = alvos.map(([a, w]) => ({alvo:a, v: pesoTot ? verba * w / pesoTot : 0}));
     }
-    /* a campanha chega descontada da contrainteligência de quem recebe */
-    for(const id of ids){
-      for(const c of (campanha[id] || [])){
-        const corte = 1 / (1 + (defesa[c.alvo] || 0) * DEFESA_FATOR / Math.max(1, pi[c.alvo]) * 3);
-        const v = c.v * (bandeira[c.alvo] === bandeira[id] ? 1 : corte);
-        soma(c.alvo, bandeira[id], v);
-        if(id === nos) nossaParte[c.alvo] = (nossaParte[c.alvo] || 0) + v;
-      }
+    for(const id of ids) for(const c of (campanha[id] || [])){
+      soma(c.alvo, bandeira[id], c.v);
+      if(id === nos) nossaParte[c.alvo] = (nossaParte[c.alvo] || 0) + c.v;
     }
 
-    /* 4. a deriva: o apoio anda rumo à fatia de influência */
-    const total = {};
+    /* 4. a deriva (o drift do HoI4): pontos somados por semana.
+       A campanha de fora rende GANHO × PI ÷ (PI do alvo + 5) — torcida
+       grande é difícil de virar — e perde a RESISTÊNCIA do alvo (o
+       "drift defence": tamanho + contrainteligência, até 60%; sem eixo,
+       −30%). A base de casa soma +0,5 por semana pro eixo dela, e a
+       campanha das parceiras do mesmo eixo entra inteira. Depois a soma
+       volta a 100 — é isso que faz o empurrão minguar perto do topo. */
+    const total = {}, resist = {};
     for(const id of ids){
       const o = inf.get(id), ap = apoioDe(E, id);
-      const t = Object.values(o).reduce((s, v) => s + v, 0) || 1;
-      total[id] = t;
-      const chaves = new Set([...Object.keys(ap), ...Object.keys(o)]);
-      for(const k of chaves) ap[k] = (ap[k] || 0) * (1 - DERIVA) + ((o[k] || 0) / t * 100) * DERIVA;
+      const meus = X().de(E, id).map(x => x.id);
+      let r = 0.1 + 0.25 * Math.min(1, membrosDe(E, id) / 500) + (defesa[id] || 0);
+      if(!meus.length) r += SEM_EIXO_RES;
+      r = resist[id] = Math.max(SEM_EIXO_RES, Math.min(RESIST_MAX, r));
+      total[id] = Object.values(o).reduce((s, v) => s + v, 0);
+      const escala = GANHO / (pi[id] + 5);
+      for(const [k, v] of Object.entries(o))
+        ap[k] = (ap[k] || 0) + v * escala * (meus.includes(k) ? 1 : (1 - r));
+      if(meus.length){
+        const tot = meus.reduce((s, k) => s + (ap[k] || 1), 0);
+        for(const k of meus) ap[k] = (ap[k] || 0) + BASE_CASA * (ap[k] || 1) / tot;
+      } else ap[SEM_EIXO] = (ap[SEM_EIXO] || 0) + BASE_SEM_EIXO;
       /* eixo que sumiu do mapa sai da conta; migalha também */
       for(const k of Object.keys(ap)) if(ap[k] < 0.5 || (k !== SEM_EIXO && !X().eixo(E, k))) delete ap[k];
       const s = Object.values(ap).reduce((a, v) => a + v, 0) || 1;
       for(const k of Object.keys(ap)) ap[k] = ap[k] * 100 / s;
     }
 
-    /* 5. quem passou do ponto: inclina, entra, sai */
+    /* 5. quem passou do ponto (dono, 13/10/2026): "gradualmente as relações
+       com os membros do eixo em que ela está vão piorando e melhorando com
+       os membros do outro eixo, a ponto dela sair de um eixo e entrar em
+       outro". Nada de troca automática: acima de 50% a relação anda toda
+       semana; ela SAI quando deixa de ser aliada de metade do eixo de casa
+       (a mesma régua que o jogo usa pra entrar), pagando a traição; e
+       ENTRA quando o eixo novo a aceita pelas regras de sempre e o apoio
+       passa de 30% (o piso de facção do HoI4). */
     const eventos = [];
     for(const id of ids){
       if(id === nos) continue;
       const ap = apoioDe(E, id);
-      const meus = X().de(E, id).map(x => x.id);
+      let meus = X().de(E, id).map(x => x.id);
       const deFora = Object.keys(ap).filter(k => k !== SEM_EIXO && !meus.includes(k))
         .sort((a, b) => ap[b] - ap[a])[0];
       if(!deFora) continue;
-      const casa = meus.length ? meus.slice().sort((a, b) => (ap[b] || 0) - (ap[a] || 0))[0] : SEM_EIXO;
-      const vFora = ap[deFora] || 0, vCasa = ap[casa] || 0;
-      if(vFora <= vCasa) continue;
+      const vFora = ap[deFora] || 0;
       const xF = X().eixo(E, deFora);
-      /* inclinada: chega perto do eixo novo e esfria com o antigo */
-      const passo = Math.min(3, DERIVA_REL * Math.max(1, (vFora - vCasa) / 25));
-      for(const m of xF.membros){
-        if(m === id) continue;
-        const v = rel(E, id, m);
-        if(v > -15 && v < 60) porRel(E, id, m, Math.min(60, v + passo));
-      }
-      for(const c of meus) for(const m of (X().eixo(E, c) || {membros:[]}).membros){
-        if(m === id || xF.membros.includes(m) || (M().saoIrmas && M().saoIrmas(id, m))) continue;
-        const v = rel(E, id, m);
-        if(v > 0) porRel(E, id, m, Math.max(0, v - passo));
-      }
+      const casa = meus.length ? meus.slice().sort((a, b) => (ap[b] || 0) - (ap[a] || 0))[0] : SEM_EIXO;
       const k = `${id}|${deFora}`;
-      if(!i.avisos[k]){ i.avisos[k] = E.data.absoluto || 1;
-        eventos.push({tipo:'inclinou', torcida:id, eixo:deFora, de:casa}); }
-      /* larga o eixo de casa que ficou sem base */
-      for(const c of meus) if((ap[c] || 0) < SAIR && vFora >= ENTRAR){
-        if(sair(E, c, id)) eventos.push({tipo:'saiu', torcida:id, eixo:c, pra:deFora});
+      if(vFora > INCLINA){
+        const passo = Math.min(3, DERIVA_REL * Math.max(1, (vFora - INCLINA) / 15));
+        for(const m of xF.membros){
+          if(m === id) continue;
+          const v = rel(E, id, m);
+          if(v > -15 && v < 60) porRel(E, id, m, Math.min(60, v + passo));
+          /* a treta com rival comum de dentro do eixo novo também esfria,
+             na metade do passo e só até o neutro — o rival dentro barra a
+             entrada (`podeEntrar`), e sem isto nenhum eixo grande
+             absorvia ninguém. Maior rival não: esse barra pra sempre. */
+          else if(v <= -15 && !(R().ehMaiorRival && R().ehMaiorRival(E, id, m)))
+            porRel(E, id, m, Math.min(0, v + passo / 2));
+        }
+        for(const c of meus) for(const m of (X().eixo(E, c) || {membros:[]}).membros){
+          if(m === id || xF.membros.includes(m) || (M().saoIrmas && M().saoIrmas(id, m))) continue;
+          const v = rel(E, id, m);
+          if(v > 0) porRel(E, id, m, Math.max(0, v - passo));
+        }
+        if(!i.avisos[k]){ i.avisos[k] = E.data.absoluto || 1;
+          eventos.push({tipo:'inclinou', torcida:id, eixo:deFora, de:casa}); }
+        /* sai do eixo de casa quando não é mais aliada de metade dele */
+        for(const c of meus){
+          const outros = ((X().eixo(E, c) || {}).membros || []).filter(m => m !== id);
+          const amigas = outros.filter(m => rel(E, id, m) >= ALIADA).length;
+          if(outros.length && amigas * 2 < outros.length && sair(E, c, id))
+            eventos.push({tipo:'saiu', torcida:id, eixo:c, pra:deFora});
+        }
+        meus = X().de(E, id).map(x => x.id);
       }
-      /* pede entrada com metade do apoio */
-      if(vFora >= ENTRAR){
-        let agora = X().de(E, id);
-        if(agora.length >= X().MAX_POR_TORCIDA){
-          const pior = agora.slice().sort((a, b) => (ap[a.id] || 0) - (ap[b.id] || 0))[0];
-          if(sair(E, pior.id, id)) eventos.push({tipo:'saiu', torcida:id, eixo:pior.id, pra:deFora});
-        }
-        const pode = X().podeEntrar(E, deFora, id);
-        if(pode.ok){
-          X().entrar(E, deFora, id);
-          eventos.push({tipo:'entrou', torcida:id, eixo:deFora, de:casa});
-          delete i.avisos[k];
-        }
+      /* entra quando o eixo a aceita e o apoio passa do piso */
+      if(vFora >= ENTRAR_MIN && meus.length < X().MAX_POR_TORCIDA && X().podeEntrar(E, deFora, id).ok){
+        X().entrar(E, deFora, id);
+        eventos.push({tipo:'entrou', torcida:id, eixo:deFora, de:casa});
+        delete i.avisos[k];
       }
     }
     /* 6. eixo de um membro só se dissolve */
@@ -302,7 +323,7 @@
       potencias:[...potencias], nossaParte, total,
       recebido: Object.fromEntries(ids.filter(id => Object.keys(inf.get(id)).length).map(id => [id, inf.get(id)])),
       campanha: (campanha[nos] || []).map(c => ({alvo:c.alvo, v:c.v})),
-      defesa: defesa[nos] || 0};
+      defesa: defesa[nos] || 0, resist: resist[nos] || 0};
     for(const ev of eventos){
       if(ev.tipo === 'pressao' && i.hist[0] && i.hist[0].tipo === 'pressao') continue;
       i.hist.unshift(Object.assign({abs:E.data.absoluto || 0, quando:quando(E)}, ev));
@@ -317,7 +338,9 @@
     const x = X().eixo(E, eixoId);
     if(!x || !x.membros.includes(id)) return false;
     x.membros = x.membros.filter(m => m !== id);
-    for(const m of x.membros) porRel(E, id, m, rel(E, id, m) - 20);
+    /* a traição (dono, 13/10/2026): −50, "mas não vira rival de cara,
+       vira neutro" — quem estava acima de zero para no zero */
+    for(const m of x.membros){ const v = rel(E, id, m); if(v > 0) porRel(E, id, m, Math.max(0, v - TRAICAO)); }
     const Xc = X().caixas(E);
     Xc.vetos[`${eixoId}|${id}`] = R().semanaAbs(E);
     anotarEixo(E, {tipo:'saiu', eixo:eixoId, torcida:id, outra:null});
@@ -383,7 +406,7 @@
   function barraApoio(E, ap, larga){
     const ks = Object.keys(ap).sort((a, b) => ap[b] - ap[a]);
     const seg = ks.map(k => `<i title="${esc(nomeEixo(E, k))} · ${pct(ap[k])}" style="display:block;height:100%;width:${ap[k]}%;background:${corDoEixo(E, k)}"></i>`).join('');
-    const leg = ks.filter(k => ap[k] >= 5).slice(0, larga ? 4 : 2)
+    const leg = ks.filter(k => ap[k] >= 5).slice(0, larga ? 4 : 3)
       .map(k => `<span style="color:${corDoEixo(E, k)}">■</span> ${esc(siglaEixo(E, k))} ${pct(ap[k])}`).join(' · ');
     return `<span style="display:flex;flex-direction:column;gap:3px;min-width:${larga ? 220 : 150}px;max-width:100%">`+
       `<span style="display:flex;height:8px;border-radius:2px;overflow:hidden;background:var(--sulco)">${seg}</span>`+
@@ -412,8 +435,8 @@
     const ult = i.ult || {};
     pg.appendChild(UI.el('div', {class:'recado', html:
       `Protótipo à parte. A ideologia de cada torcida é o eixo: toda semana as torcidas gastam <b>pontos de influência</b> nas aliadas pra puxá-las pro eixo delas. `+
-      `Quando um eixo de fora passa o de casa, a torcida se inclina, esfria com os antigos parceiros e, com 50% de apoio, pede entrada.`+
-      `<small>As 8 maiores do país são potências (×1,5). A contrainteligência corta a campanha que chega de fora.</small>`}));
+      `Acima de 50% de apoio a um eixo de fora, a torcida se aproxima dos membros dele e esfria com os do eixo dela, semana a semana, até sair de um e entrar no outro.`+
+      `<small>As 7 maiores do país são potências (×1,5). Torcida grande resiste mais; a contrainteligência soma resistência. Sair de um eixo custa −50 com cada membro, parando no neutro.</small>`}));
     const grade = UI.el('div', {class:'colunas-3'});
 
     const c1 = UI.cartao('A nossa bandeira', b ? siglaEixo(E, b) : 'sem eixo');
@@ -438,15 +461,14 @@
     const c2 = UI.cartao('Pontos de influência', `${um(piN)} PI/semana`);
     c2.corpo.innerHTML =
       linha('Membros · prestígio · sede', `${E.membros.length} · ${um(prestigioDe(E, nos))} · ${sedeDe(E, nos)}`)+
-      linha('Potência do país', pot ? '<span class="positivo">sim · ×1,5</span>' : '<span class="fraco">não (as 8 maiores)</span>')+
-      linha('Na contrainteligência', `${Math.round((i.nossa.defesa || 0) * 100)}% · ${um(ult.defesa || 0)} PI`)+
+      linha('Potência do país', pot ? '<span class="positivo">sim · ×1,5</span>' : '<span class="fraco">não (as 7 maiores)</span>')+
+      linha('Na contrainteligência', `${Math.round((i.nossa.defesa || 0) * 100)}% do PI · resistência ${pct((ult.resist || 0) * 100)}`)+
       linha('Em campanha', `${um((ult.campanha || []).reduce((s, c) => s + c.v, 0))} PI`);
     const defs = UI.el('div', {class:'linha-dado'});
     defs.innerHTML = '<span>Contrainteligência</span>';
-    const bx = UI.el('b');
+    const bx = UI.el('b'); bx.style.cssText = 'display:flex;gap:6px;flex-wrap:nowrap';
     for(const v of [0, 0.25, 0.5]){
       const bt = UI.el('button', {class:'bt' + (Math.abs((i.nossa.defesa || 0) - v) < 0.01 ? ' destaque' : ''), texto:Math.round(v * 100) + '%'});
-      bt.style.marginLeft = '6px';
       bt.onclick = () => { i.nossa.defesa = v; repintar(); };
       bx.appendChild(bt);
     }
@@ -505,7 +527,7 @@
   function pgEixos(pg, E, UI){
     const q = quadroDosEixos(E), nossos = X().de(E, E.torcida.id).map(x => x.id);
     pg.appendChild(UI.el('div', {class:'recado', html:
-      `<b>${q.length} eixos</b> no país. O jogo caminha pra quatro ou cinco grandes: eixo que fica com um membro só se dissolve.`+
+      `<b>${q.length} de até ${EIXOS_MAX} eixos</b> no país. Eixo novo só nasce se houver vaga, e eixo que fica com um membro só se dissolve.`+
       `<small>Simpatizantes: torcidas de fora do eixo com 30% ou mais de apoio a ele.</small>`}));
     const c = UI.cartao('Os eixos, pelo poder de influência');
     for(const r of q){
@@ -517,7 +539,7 @@
     }
     pg.appendChild(c);
     const ult = I(E).ult || {};
-    const pot = UI.cartao('As potências do país', 'as 8 que regem a influência');
+    const pot = UI.cartao('As potências do país', 'as 7 que regem a influência');
     pot.corpo.innerHTML = (ult.potencias || []).filter(id => pais(M().torcida(id)) === pais(M().torcida(E.torcida.id)))
       .sort((a, b) => (ult.pi[b] || 0) - (ult.pi[a] || 0))
       .map(id => linha(`${esc((M().torcida(id) || {}).nome)} <span class="fraco">· ${esc(siglaEixo(E, bandeiraDe(E, id) || SEM_EIXO))}</span>`, `${um(ult.pi[id])} PI`)).join('')
@@ -534,7 +556,7 @@
     }).filter(r => r.fora && r.ap[r.fora] >= 15).sort((a, b) => a.folga - b.folga);
     pg.appendChild(UI.el('div', {class:'recado', html:
       `As torcidas com um eixo de fora acima de 15% de apoio, das mais perto de virar às mais firmes.`+
-      `<small>Folga negativa: o eixo de fora já passou o de casa — ela está inclinada e esfriando com os antigos parceiros.</small>`}));
+      `<small>Acima de 50% pro eixo de fora ela está inclinada: esfria com os parceiros de casa e se aproxima dos do eixo novo.</small>`}));
     const c = UI.cartao('Em disputa', `${lista.length}`);
     c.corpo.innerHTML = lista.slice(0, 40).map(r => linha(
       `<b>${esc(r.o.nome)}</b> <span class="fraco">· ${esc(siglaEixo(E, r.casa))} ⟵ ${esc(siglaEixo(E, r.fora))}</span>${barraApoio(E, r.ap)}`,
@@ -559,6 +581,40 @@
   /* -------------------------------------------------------
      A LIGAÇÃO
      ------------------------------------------------------- */
+  /* O TETO DE EIXOS (dono, 13/10/2026: "pode ter até 8 eixos agora"): a
+     fundação de eixo novo mora dentro do `TO.eixos.eventosDoDia` do jogo,
+     e o protótipo não mexe no código dele. Por fora: se a fundação do dia
+     deixou o país com mais de 8 eixos ativos, o eixo recém-nascido é
+     desfeito na hora — sai da lista e do histórico, e o nome volta pra
+     lista de nomes. As relações que o nascimento já tinha subido ficam:
+     o grupo continua amigo, só não virou eixo. */
+  const ativosNoPais = (E, p) => X().lista(E).filter(x => !x.dissolvido && x.membros.length >= 2 &&
+    pais(M().torcida(x.membros[0])) === p).length;
+  function travarFundacao(){
+    const Xm = TO.eixos;
+    if(!Xm || Xm._tetoInfluencia) return;
+    const orig = Xm.eventosDoDia;
+    Xm.eventosDoDia = function(E, forcar){
+      const evs = orig.apply(this, arguments) || [];
+      try{
+        const Xc = Xm.caixas(E);
+        for(const ev of evs.slice()){
+          if(ev.tipo !== 'fundou') continue;
+          const x = Xm.eixo(E, ev.eixo); if(!x) continue;
+          const p = pais(M().torcida(x.membros[0]));
+          if(ativosNoPais(E, p) <= EIXOS_MAX) continue;
+          Xc.lista = Xc.lista.filter(y => y !== x);
+          Xc.historico = Xc.historico.filter(h => h.eixo !== x.id);
+          Xc.nomesUsados = (Xc.nomesUsados || []).filter(n => n !== x.nome);
+          evs.splice(evs.indexOf(ev), 1);
+          const i = I(E); if(i) i.barradas = (i.barradas || 0) + 1;
+        }
+      }catch(e){ console.warn('[influência] teto', e); }
+      return evs;
+    };
+    Xm._tetoInfluencia = true;
+  }
+
   function registrar(){
     if(!TO.ui || !TO.ui.registrarPagina) return false;
     if(TO.icones && TO.icones.todos && !TO.icones.todos.influencia)
@@ -570,6 +626,7 @@
   function iniciar(){
     if(!TO.estado || !TO.eixos || !TO.relacoes){ return setTimeout(iniciar, 300); }
     registrar();
+    travarFundacao();
     ST().aoFecharSemana && ST().aoFecharSemana((fecho, E) => {
       try{ E = E || Ev(); if(E && E.torcida){ semana(E); if(TO.ui && TO.ui.painelAberto && TO.ui.painelAberto() === 'influencia') repintar(); } }
       catch(e){ console.warn('[influência] semana', e); }
@@ -580,5 +637,5 @@
   /* pra quem testa */
   TO.influencia = {I, semana, apoioDe, piBase, bandeiraDe, quadroDosEixos, aliadasNossas, alternarAlvo, sair,
                    abrir: () => TO.ui && TO.ui.abrirPainel('influencia'),
-                   REGUA:{POTENCIAS, MULT_POTENCIA, DERIVA, ENTRAR, SAIR, ALVOS_IA, ALVOS_NOSSOS}};
+                   ativosNoPais, REGUA:{EIXOS_MAX, POTENCIAS, MULT_POTENCIA, GANHO, BASE_CASA, INCLINA, ENTRAR_MIN, TRAICAO, ALVOS_IA, ALVOS_NOSSOS}};
 })();
