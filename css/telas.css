@@ -351,6 +351,8 @@ body.com-painel .pagina.painel{
 .itn-cartao p{font-size:14px;line-height:1.45;color:var(--texto);margin:0}
 .itn-cartao .lugar{margin-top:6px;font-size:12px;color:var(--fraco)}
 .itn-cartao .lugar::before{content:'⌖ ';color:var(--rubro-vivo)}
+.itn-cartao .lugar.escolta{color:var(--verde-vivo)}
+.itn-cartao .lugar.escolta::before{content:'⛨ ';color:var(--verde-vivo)}
 /* no balão as saídas empilham: cada uma com o seu custo dentro */
 .itn-cartao .bts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .itn-cartao .bts .bt{width:100%;text-align:left;padding:8px 12px;display:block}

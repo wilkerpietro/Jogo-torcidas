@@ -10759,6 +10759,32 @@ Ficou uma assimetria só, a relação com o clube:
 Resultado: a IA vive na faixa ruim e vende ~1k/ano de ingresso, contra ~31k nossos.
 Fica registrada, à espera do dono.
 
+## A escolta da aliada anda com a gente na cidade e desce na briga (dono, 13/10/2026)
+
+Pedido do dono: quando a aliada nos recebe com escolta e somos atacados, sentia falta dela com a gente na rota da cidade.
+Queria um aviso ("acompanhado por 30 membros da Os Fanáticos") e os bonecos dela junto na briga da concentração, da pista ou dos arredores.
+
+O defeito: a escolta existia na conta, mas sumia na hora.
+- As fases da linha do dia nasceram com `comEscolta:false`.
+- O ocorrido da concentração e da pista não carrega `cidade`; só a entrada da praça carregava.
+- Quando valia, a escolta era só número somado ao nosso bonde, com a nossa cor e as nossas fichas.
+
+O que mudou:
+- **A escolta conta enquanto o mapa da cidade estiver aberto** (`ITN.naCidade`) e em todo ocorrido da praça do jogo.
+- **Aviso na chegada:** quando a ida abre o mapa da cidade, sai "Acompanhados por {n} membros da {nome}" na linha e na notificação. Quando a volta pega a estrada, sai "a escolta da {nome} fica".
+- **Balão do ocorrido:** ganhou a mesma linha, em verde.
+- **Bonde próprio na cena:** a escolta desce com a cor e a ficha da aliada, no nosso lado e no nosso comando (`controlado`, o mesmo molde do aliado que a gente escolta). Com `colado`, nasce no portão do nosso bonde.
+  - Vale no ataque sofrido (concentração, pista, emboscada na entrada da praça) e na investida (arredores, pista, praça).
+  - O nosso teto na linha do dia deixou de somar a escolta.
+- **Baixas:**
+  - Na cena, cada boneco da escolta é marcado (`d.junto`) e o relatório traz `baixasJunto`; a escolta perde só os dela.
+  - No Simular, quem cai são fichas nossas: a baixa fica com a gente e a escolta perde a parte proporcional dela.
+
+Teste (Playwright, jogo fora em Natal, escolta de 30, ataque na concentração e na pista):
+- aviso e balão aparecem;
+- a cena abre com 98 nossos + 30 da aliada, colados;
+- 5 da escolta caídos saem só da escolta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

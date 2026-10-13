@@ -1142,5 +1142,6 @@ TO.i18n.registrar({
   "a subsede de {cidade} ficou sem faixa: a nova é na loja": {es:"la filial de {cidade} se quedó sin trapo: el nuevo está en la tienda", en:"the {cidade} chapter house lost its banner: get a new one at the shop"},
   "ataque à subsede": {es:"ataque a la filial", en:"chapter house raid"},
   "a estrada já é de graça com três: o quarto dá lugar sentado pra todo mundo e +{p}% da torcida topa a caravana": {es:"con tres la ruta ya es gratis: el cuarto da asiento para todos y un +{p}% de la hinchada se suma a la caravana", en:"the road is already free with three: the fourth gives everyone a seat and +{p}% of the crew joins the caravan"},
-  "Vice: {comp}": {es:"Subcampeón: {comp}", en:"Runner-up: {comp}"}
+  "Vice: {comp}": {es:"Subcampeón: {comp}", en:"Runner-up: {comp}"},
+  "Acompanhados por {n} membros da {nome}": {es:"Acompañados por {n} miembros de {nome}", en:"Escorted by {n} members of {nome}"}
 });

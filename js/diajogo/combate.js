@@ -384,8 +384,12 @@ TO.diaJogo.combate = (function(){
           ordem.forEach((s, i)=> grupos.push({s, bonde:b,
                                               qtd: base + (i < sobra ? 1 : 0)}));
         } else {
-          fila.forEach((b, i)=> grupos.push({s:ordem[i % ordem.length], bonde:b,
-                                             qtd:Math.max(1, Math.round(b.n))}));
+          /* a escolta da aliada na linha do dia (`colado`, 13/10/2026)
+             chega junto com a gente: nasce no portão do nosso bonde,
+             não num ponto à parte */
+          let k = 0;
+          fila.forEach(b=> grupos.push({s: b.colado ? ordem[0] : ordem[k++ % ordem.length], bonde:b,
+                                        qtd:Math.max(1, Math.round(b.n))}));
         }
       } else {
         /* com escalação e sem bonde, quem diz o tamanho é a escalação */
@@ -1051,6 +1055,9 @@ TO.diaJogo.combate = (function(){
          cor e ficha dele, mas o comando é do jogador — os discos
          seguem a formação do nosso líder e obedecem R e F */
       d.doJogador = meu || !!(g.bonde && g.bonde.controlado);
+      /* a escolta da aliada na linha do dia (13/10/2026): as baixas dela
+         são contadas à parte, pra não sair do nosso bonde */
+      d.junto = !!(g.bonde && g.bonde.controlado);
       J.discos.push(d);
       nascidos.push(d);
     }

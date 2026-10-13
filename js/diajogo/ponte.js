@@ -1512,6 +1512,10 @@ TO.diaJogo.ponte = (function(){
       caidosMandante:  Math.max(0, J.caidos.mandante  - J.presosPor.mandante),
       caidosVisitante: Math.max(0, J.caidos.visitante - J.presosPor.visitante),
       presosMandante:J.presosPor.mandante, presosVisitante:J.presosPor.visitante,
+      /* a escolta da aliada que desceu com a gente: quantos dela caíram
+         ou foram presos (13/10/2026) — a linha do dia desconta dela */
+      baixasJunto: J.discos.some(d => d.junto)
+        ? J.discos.filter(d => d.junto && (d.caido || d.preso)).length : null,
       rompido:J.rompido,
       entraram:J.entraram,
       venceu, ganhamos, nossoLado, xpNoite,

@@ -2779,8 +2779,15 @@
     if(p && p.comEscolta) return ITN.escolta.n;
     /* ocorrido na cidade deles dentro da fase da caravana: a escolta
        está junto (a partir da chegada) */
+    /* ESTAR NA CIDADE É O QUE VALE (dono, 13/10/2026: "sinto falta deles
+       com a gente na rota da cidade"): as fases da linha nasceram com
+       `comEscolta:false`, e o ocorrido da concentração e da pista não
+       carrega `cidade` — só o da entrada da praça carregava. A escolta
+       sumia justo onde ela mais vale. Agora conta o mapa da cidade
+       aberto e qualquer ocorrido da praça do jogo. */
+    if(ITN.naCidade) return ITN.escolta.n;
     const ev = ITN.esperando && ITN.esperando.ev;
-    return (ev && ev.naCidade && ev.cidade) ? ITN.escolta.n : 0;
+    return (ev && ev.naCidade) ? ITN.escolta.n : 0;
   }
   /* o número que a linha carrega: o nosso bonde e o deles */
   function itnContar(){
@@ -2926,6 +2933,7 @@
     const proxima = ()=>{
       if(!ITN) return;
       if(k >= etapas.length){
+        if(!ida) ITN.naCidade = false;
         /* sem mapa pro ocorrido: o cartão vai pra lista, como antes */
         if(evs.length){ ITN.fila = evs.splice(0); ITN.continuar = null; itnRecadoNaLista(p); return; }
         ITN.travado = false; itnAgenda(demora ? 900 : 400);
@@ -2933,6 +2941,21 @@
       }
       const etapa = etapas[k++];
       itnMostrarEtapa(etapa);
+      /* A ESCOLTA ENTRA NA CIDADE (dono, 13/10/2026): "um aviso dizendo
+         (acompanhado por 30 membros da Os Fanáticos)". Ela chega com o
+         mapa da cidade na ida e fica quando a volta pega a estrada. */
+      if(it.escolta && ITN.escolta && !it.casa){
+        const naCid = etapa === 'cidade';
+        if(naCid && !ITN.naCidade && ITN.escolta.n > 0 && ida){
+          const txt = _t('Acompanhados por {n} membros da {nome}', {n:ITN.escolta.n, nome:ITN.escolta.nome});
+          itnDizer(txt);
+          aviso(txt, 'ok');
+        } else if(!naCid && ITN.naCidade && ITN.escolta.n > 0){
+          itnDizer(_t('a escolta da {nome} fica', {nome:ITN.escolta.nome}));
+        }
+        ITN.naCidade = naCid;
+        itnContar();
+      }
       const Mp = etapa === 'brasil' ? ITN.mapa : ITN.cidade;
       const daqui = ev => etapa === 'brasil' ? ev.tipo === 'emboscada' : ev.tipo !== 'emboscada';
       let i = evs.findIndex(daqui);
@@ -3016,6 +3039,9 @@
     cx.appendChild(el('div',{class:'voz', texto:voz}));
     cx.appendChild(el('p',{texto}));
     cx.appendChild(el('div',{class:'lugar', texto:lugar}));
+    const comEsc = ITN && ITN.escolta && ITN.escolta.n > 0 && (ITN.naCidade || ev.naCidade) ? ITN.escolta : null;
+    if(comEsc) cx.appendChild(el('div',{class:'lugar escolta',
+      texto:_t('Acompanhados por {n} membros da {nome}', {n:comEsc.n, nome:comEsc.nome})}));
     const caixa = el('div',{class:'bts'});
     bts.forEach((b, k)=>{
       const bt = el('button',{class:'bt'+(k===0?' destaque':'')+(b.simular?' simular':'')});
@@ -3098,7 +3124,19 @@
     const antesNos = ITN.nos, antesEles = ITN.eles;
     /* a escolta da aliada apanha primeiro: é ela que vai na frente */
     let sobra = baixasNossas;
-    if(itnEscoltaAtiva()){
+    /* a cena conta boneco por boneco quem da escolta caiu (13/10/2026);
+       o Simular não tem boneco, e a escolta segue apanhando primeiro */
+    if(itnEscoltaAtiva() && res.baixasJunto != null){
+      const daEscolta = Math.min(ITN.escolta.n, res.baixasJunto, sobra);
+      ITN.escolta.n -= daEscolta; sobra -= daEscolta;
+    } else if(itnEscoltaAtiva() && res.simulada){
+      /* no Simular quem cai são fichas NOSSAS (simular.js derruba só a
+         escalação): a nossa baixa fica inteira com a gente, e a escolta
+         perde a parte dela, na proporção de quem desceu (13/10/2026) */
+      const ef = (res.efetivo || {})[nossoLado] || ITN.nos || 1;
+      const daEscolta = Math.min(ITN.escolta.n, Math.round(sobra * ITN.escolta.n / Math.max(1, ef)));
+      ITN.escolta.n -= daEscolta;
+    } else if(itnEscoltaAtiva()){
       const daEscolta = Math.min(ITN.escolta.n, sobra);
       ITN.escolta.n -= daEscolta; sobra -= daEscolta;
     }
@@ -11150,9 +11188,21 @@
   /* o nosso corte é o mesmo dos outros, com a caravana viva de teto */
   const tetoNossoItn = n =>
     doItinerario()
-      ? Math.max(2, Math.min(descontoItn(E().torcida.id, n),
-                             (ITN.nos || 0) + itnEscoltaAtiva()))
+      ? Math.max(2, Math.min(descontoItn(E().torcida.id, n), ITN.nos || 0))
       : n;
+  /* A ESCOLTA DESCE COM A GENTE (dono, 13/10/2026): era número somado ao
+     nosso bonde, com a nossa cor e as nossas fichas. Agora é o bonde
+     dela, com a cor e a ficha da aliada, no nosso lado e no nosso
+     comando — o mesmo molde do aliado que a gente escolta. */
+  function bondeDaEscoltaItn(lado){
+    const n = doItinerario() ? itnEscoltaAtiva() : 0;
+    if(!n) return null;
+    const o = TO.mundo.torcida(ITN.escolta.aliado) || {};
+    const c = TO.mundo.coresDaTorcida(o);
+    return {lado, n, id:ITN.escolta.aliado, cor:c.cor, cor2:c.cor2, cor3:c.cor3,
+            sigla:TO.mundo.siglaTorcida(o) || 'ALI', nome:ITN.escolta.nome || o.nome || _t('Aliado'),
+            nossa:false, controlado:true, colado:true, perfil: perfilDe(ITN.escolta.aliado)};
+  }
 
   function abrirConfronto(e, enc){
     const nosso = enc.a.nossa ? enc.a : enc.b.nossa ? enc.b : null;
@@ -11205,6 +11255,7 @@
        cor:enc.junto.cor, cor2:enc.junto.cor2, cor3:enc.junto.cor3,
        sigla:enc.junto.sigla, nome:enc.junto.nome, nossa:false,
        controlado:true, perfil: perfilDe(enc.junto.torcida)});
+    else { const esc = bondeDaEscoltaItn(nossoLado); if(esc) bondes.push(esc); }
     encontroAberto = enc;
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
@@ -11746,6 +11797,7 @@
        sigla:o?TO.mundo.siglaTorcida(o):'RIV',
        perfil: atq.filial ? perfilDaSubsede(atq.torcida, deles) : perfilDe(atq.torcida)}
     ];
+    { const esc = bondeDaEscoltaItn(nosso); if(esc) bondes.push(esc); }
     atq.resolvido = true;
     $('telaDiaJogo').classList.remove('oculto');
     document.body.classList.add('em-cena');
