@@ -4493,8 +4493,9 @@ TO.feed = (function(){
     pautaAlvos(E);
     /* e o bairro do recrutamento do mês */
     { const rc = pautaRecrutamento(E); if(rc) pautar(E, rc); }
-    /* os convites de festa das aliadas até a próxima reunião */
-    { const fe = pautaFestas(E); if(fe) pautar(E, fe); }
+    /* os convites de festa das aliadas até a próxima reunião — e a
+       mensagem única do mês, com a peça da agenda (14/10/2026) */
+    { const fe = pautaFestas(E); const it = fe && pautar(E, fe); if(it) mensagemDosConvites(E, it, false); }
     /* a nossa festa de aniversário e a do clube, e os alvos de assalto */
     for(const pa of pautaAniversarios(E)) pautar(E, pa);
     { const as = pautaAssalto(E); if(as) pautar(E, as); }
@@ -4546,20 +4547,11 @@ TO.feed = (function(){
       const b = Object.assign({}, it.bote, {ano:E.data.ano, semana:E.data.semana, dia:E.data.dia, feito:true});
       return cartaoDoBote(E, b, true);
     }
+    /* OS CONVITES DO MÊS NUMA MENSAGEM SÓ (dono, 14/10/2026): era uma
+       decisão por aliada; agora é uma, com a peça da agenda e o Ir /
+       Não ir de cada uma dentro dela */
     if(it.festas){
-      for(const a of it.festas){
-        if(a.resposta) continue;
-        propor(E, {kind:'pauta', peso:'decisao', voz:'diretor',
-          chave:`pauta|${it.id}|${a.torcida}`,
-          texto:_t('Chefe, a {nome} convidou a gente pra festa dos {n} anos dela, dia {data}. Ir custa R$ 2.000 e aproxima; furar afasta e queima na rua. A gente vai?',
-                   {nome:a.nome, n:a.idade, data:a.data}),
-          dados:{item:it.id, torcida:a.torcida},
-          botoes:[
-            {id:'ir',  rot:_t('Ir pra festa'), acao:'pauta-festa',
-             nota:_t('R$ 2.000 · +{n} rel.', {n:TO.relacoes.REL.irAniversario})},
-            {id:'nao', rot:_t('Não ir'), acao:'pauta-festa',
-             nota:_t('−{n} rel. · −2 prestígio', {n:TO.relacoes.REL.furarAniversario})}]});
-      }
+      mensagemDosConvites(E, it, true);
       return it;
     }
     return propor(E, {kind:'pauta', peso:'decisao', voz:'diretor',
@@ -4603,10 +4595,8 @@ TO.feed = (function(){
     }
     if(!lista.length) return null;
     lista.sort((a,b)=>(a.mes*40 + a.dia) - (b.mes*40 + b.dia));
-    for(const a of lista)
-      mensagemDe(E, a.torcida, _t('Passando aqui pra convidar todos os nossos aliados pra nossa festa de comemoração dos nossos {n} anos de história! Vai ser {data} aqui {emCidade}. Contamos com a presença de vocês.',
-        {data:a.data, n:a.idade, emCidade:emPraca((M().torcida(a.torcida)||{}).mapa)}), 'convite',
-        {arte:{n:a.idade, data:a.data}});
+    /* (o post de convite de cada aliada na rede social saiu em 14/10/2026:
+       os convites do mês chegam juntos, na mensagem da diretoria) */
     return {
       chave:`festas|${E.data.ano}|${mesDe(E)}`, rot:_t('Convites de festa'), voz:_t('Diretoria'),
       tipo:'festas', festas:lista, botoes:[],
@@ -4614,6 +4604,53 @@ TO.feed = (function(){
         'Os convites chegaram: {n} aliada faz aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?',
         'Os convites chegaram: {n} aliadas fazem aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua. Em quais a gente aparece?')
     };
+  }
+
+  /* =======================================================
+     OS CONVITES DO MÊS NUMA MENSAGEM SÓ (pedido do dono, 14/10/2026)
+     "Junte os convites dos aliados em uma mensagem só por mês,
+     respeitando a identidade visual nova do jogo." Era um post de
+     convite por aliada na rede social (e, no modo rápido, uma decisão
+     por aliada). Agora é UMA mensagem da diretoria por mês: a peça
+     "CONVITES DO MÊS" no molde dos posts (escudo, anos e dia de cada
+     aliada) e, embaixo, cada aliada com o seu Ir / Não ir.
+
+     A resposta é a MESMA da pauta da reunião (`responderFestaDaPauta`):
+     responder aqui marca lá, e vice-versa. No jogo completo a mensagem
+     é aviso (quem decide em cima da hora é a mesa); no modo rápido,
+     que não tem mesa, é decisão e segura o tempo até a última resposta.
+     A lista viaja em `dados.lista` e é ressincronizada com a pauta a
+     cada leitura — a pauta é a dona da resposta.
+     ======================================================= */
+  function mensagemDosConvites(E, it, decisao){
+    if(!it || !it.festas || !it.festas.length) return null;
+    const mes = MESES[dataDeHoje(E).getMonth()];
+    return propor(E, {kind:'convites', peso: decisao ? 'decisao' : 'info', voz:'diretor',
+      chave:`convites|${it.chave || it.id}`,
+      texto:_tn(it.festas.length,
+        'Os convites do mês chegaram: {n} aliada faz aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua.',
+        'Os convites do mês chegaram: {n} aliadas fazem aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua.'),
+      dados:{item:it.id, mes, lista:it.festas.map(a=>Object.assign({}, a))}});
+  }
+  /* a lista viva: a da pauta, quando ela ainda existe */
+  function convitesDe(E, m){
+    if(!m || m.kind !== 'convites' || !m.dados) return [];
+    const it = caixaReuniao(E).pauta.find(x=>x.id === m.dados.item);
+    if(it && it.festas){
+      m.dados.lista = it.festas.map(a=>Object.assign({}, a));
+      if(it.consequencia) m.consequencia = it.consequencia;
+      if(it.decidido && !m.respondido) m.respondido = {botao:'lista', rot:it.decidido.rot};
+    }
+    return m.dados.lista || [];
+  }
+  function responderConvite(E, idMsg, torcidaId, ir){
+    caixas(E);
+    const m = E.feed.find(x=>x.id === idMsg);
+    if(!m || m.kind !== 'convites' || m.respondido) return {ok:false};
+    const r = responderFestaDaPauta(E, (m.dados||{}).item, torcidaId, ir);
+    if(!r.ok) return r;
+    convitesDe(E, m);
+    return {ok:true, fechou: !!m.respondido};
   }
 
   /* =======================================================
@@ -7200,7 +7237,7 @@ TO.feed = (function(){
           propor, dropar, pendentes, travado, decisaoAberta,
           abertura, eventosDoDia, emboscadaDaViagem,
           lntDeHoje, lntDepoisDaCena, mundoDeHoje,
-          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
+          registrarConfronto, responder, marcarResposta, responderAniversario, responderFestaDaPauta, convitesDe, responderConvite, pautaFestas, pautaAniversarios, pautaAssalto, fecharPautaAssalto,
           mensagemDe, mensagensNaoLidas, lerMensagens, ganchos, responderMensagemDe,
           curtidasDe, curtimos, nossaCasaNoFeed, partidaPendente, publicarAgendadas, postDoJornal, brigasDoMundoHoje, JORNAIS,
           oculto, podeEsconder, naturezaDe, perfilDe, pararDeSeguir, voltarASeguir, mostrarMenos, mostrarNormal,

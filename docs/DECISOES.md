@@ -10845,6 +10845,28 @@ Simulação (5 anos, semente fixa, TUF, Brasil):
 
 O que mais barra uma entrada é ter um rival comum dentro do eixo novo: das 30 torcidas com 30% ou mais de apoio a um eixo de fora, 13 param aí. Fica pra o dono decidir se a treta com rival comum do eixo novo também esfria quando a torcida se inclina.
 
+## Os convites das aliadas numa mensagem só por mês (dono, 14/10/2026)
+
+Pedido: "junte os convites dos aliados em uma mensagem só por mês, respeitando a identidade visual nova do jogo".
+
+Antes, cada aliada com aniversário até a próxima reunião postava o próprio convite na rede social, com a peça "CONVITE!". No modo rápido, cada aliada virava ainda uma decisão separada do diretor. Com 9 aliadas, eram 9 posts (e 9 decisões).
+
+Agora é **uma mensagem da diretoria por mês**:
+- **A peça "CONVITES":** no molde dos posts (`cartaz.js`, caso `convites-mes`), nas cores da nossa torcida, com o subtítulo "{MÊS} · ALIADOS E AMIZADES".
+  - O miolo `agenda` mostra o escudo, os anos e o dia de cada aliada, até 8; o resto vira "+N".
+  - Com mais de 4 aliadas a grade encolhe pra caber.
+- **Embaixo:** cada aliada numa linha com Ir / Não ir (a régua da lista de aniversários).
+- **A resposta é a da pauta da reunião** (`responderFestaDaPauta`): responder na mensagem marca na mesa e vice-versa. `feed.convitesDe` ressincroniza a lista a cada leitura.
+- **No jogo completo** a mensagem é aviso: quem decide também pode ser a mesa, e o que ficar sem resposta continua furando na reunião seguinte.
+- **No modo rápido** é decisão: segura o tempo até a última resposta.
+- **O post de convite de cada aliada saiu da rede social.** O agradecimento depois da festa continua.
+
+Teste (Playwright, os dois modos, 9 aliadas):
+- uma mensagem só, nenhum post de convite e nenhuma decisão por aliada;
+- o clique marca na mensagem e na pauta;
+- no modo rápido, o tempo volta a andar quando todas têm resposta;
+- a peça foi conferida no computador e em 390 px.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

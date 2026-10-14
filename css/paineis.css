@@ -2788,6 +2788,23 @@ header.capa-cidade{background-size:cover; background-position:center;
 .ca-g{display:grid;place-items:center;aspect-ratio:1;border-radius:50%;background:#fff;box-shadow:0 .4cqw 1cqw #0003}
 .ca-g .cz-escudo{width:92%;height:92%;filter:none}
 .ca-g .cz-sigla{width:100%;height:100%;font-size:2.2cqw;border:none}
+/* a agenda dos convites do mês (14/10/2026): escudo, anos e dia de cada aliada */
+.ca-agenda{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6cqw 2cqw;width:76cqw;align-content:center}
+.ca-ag-cheia .ca-ag .ca-g{width:11.5cqw}
+.ca-ag-cheia .ca-ag b{font-size:5.4cqw}
+.ca-ag-cheia .ca-ag i{font-size:2.6cqw}
+.ca-ag-cheia .ca-ag small{font-size:2.3cqw}
+.ca-agenda:not(.ca-ag-cheia){grid-template-columns:repeat(auto-fit,minmax(0,17cqw));justify-content:center}
+.ca-ag{display:flex;flex-direction:column;align-items:center;gap:.3cqw;min-width:0}
+.ca-ag .ca-g{width:15cqw}
+.ca-ag b{font:400 7cqw/.95 'Anton','Impact',sans-serif;background:linear-gradient(180deg,var(--v) 0 50%,var(--e) 50% 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;margin-top:.6cqw}
+.ca-ag i{font:400 3cqw/1 'UnifrakturCook','UnifrakturMaguntia',serif;font-style:normal;color:var(--x)}
+.ca-ag small{font:700 2.6cqw/1 var(--mono, monospace);letter-spacing:.04em;color:var(--x);opacity:.85}
+.ca-ag-mais .ca-g{display:grid;place-items:center;background:var(--p)}
+.ca-ag-mais .ca-g b{font-size:5cqw;margin:0}
+.msg-cartaz{margin:8px 0 4px}
+.msg-cartaz .cartaz.cz-arte{margin:0 auto;width:100%}
 .ca-pins{display:flex;justify-content:center;gap:3cqw;width:100%;margin:0 0 2.4cqw;position:relative}
 .ca-etq{display:flex;flex-direction:column;align-items:center;gap:.6cqw;min-width:0;max-width:44cqw}
 .ca-etq small{font:400 3cqw/1 'Anton','Impact',sans-serif;letter-spacing:.06em;text-transform:uppercase}

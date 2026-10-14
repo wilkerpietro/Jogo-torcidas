@@ -1694,6 +1694,10 @@
     : m.kind === 'aniversarios'
       ? 'aniv-'+(((m.dados||{}).lista||[]).filter(x=>x.resposta).length)+
         (m.respondido ? '-fim' : '')
+    /* os convites do mês (14/10/2026): a mesma conta, resposta por aliada */
+    : m.kind === 'convites'
+      ? 'conv-'+(TO.feed.convitesDe(e, m).filter(x=>x.resposta).length)+
+        (m.respondido ? '-fim' : '')
     /* A ENTREVISTA TAMBÉM (conserto de 19/09/2026): ela responde
        pergunta por pergunta, igual à lista de aniversários, mas ficou
        de fora desta conta — o estado não mudava, `atualizarFeed` pulava
@@ -4349,6 +4353,47 @@
                  hora — é o que `responderMensagem` faz por toda decisão;
                  sem isto o feed ficava parado até outra coisa acordar o
                  relógio (delay visto pelo dono, 08/09/2026) */
+              if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
+            };
+            bts.appendChild(b);
+          }
+          linha.appendChild(bts);
+        }
+        bloco.appendChild(linha);
+      }
+      art.appendChild(bloco);
+    }
+
+    /* OS CONVITES DO MÊS NUMA MENSAGEM SÓ (pedido do dono, 14/10/2026):
+       a peça "CONVITES DO MÊS" no molde dos posts — escudo, anos e dia de
+       cada aliada — e, embaixo, a régua da lista de aniversários: cada
+       aliada numa linha com o seu Ir / Não ir. A resposta é a da pauta
+       da reunião, então o que se responde aqui aparece lá. */
+    if(m.kind === 'convites'){
+      const lista = TO.feed.convitesDe(e, m);
+      const peca = TO.cartaz && TO.cartaz.htmlConvites ? TO.cartaz.htmlConvites(e, lista, (m.dados||{}).mes) : '';
+      if(peca) art.appendChild(el('div',{class:'msg-cartaz', html:peca}));
+      const REL = TO.relacoes.REL;
+      const bloco = el('div',{class:'bloco-recepcao bloco-anivs'});
+      for(const a of lista){
+        const linha = el('div',{class:'rec-aliado'+(a.resposta?' pago':'')});
+        linha.appendChild(el('div',{class:'rec-nome', html:
+          `<b>${linkTorcida(a.torcida, a.nome)}</b> <span class="fraco">· `+
+          `${_t('dia {data} · {n} anos', {data:a.data, n:a.idade})}</span>`+
+          (a.resposta === 'ir' ? ` <span class="tag">${_t('vamos')}</span>`
+           : a.resposta === 'nao' ? ` <span class="tag">${_t('não vamos')}</span>` : '')}));
+        if(!a.resposta && !m.respondido){
+          const bts = el('div',{class:'rec-botoes'});
+          const opcoes = [
+            [_t('Ir pra festa'), `${U.dinheiro(2000)} · ${_t('{n} rel.', {n:'+'+REL.irAniversario})}`, true],
+            [_t('Não ir'), _t('−{n} rel. · −2 prestígio', {n:REL.furarAniversario}), false]];
+          for(const [rot, nota, ir] of opcoes){
+            const b = el('button',{class:'rec-bt'+(ir?' on':''), html:`${rot}<small>${nota}</small>`});
+            b.onclick = ()=>{
+              const r = TO.feed.responderConvite(e, m.id, a.torcida, ir);
+              if(!r.ok) return;
+              TO.estado.salvar();
+              atualizarFeed(); pintarTopo();
               if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
             };
             bts.appendChild(b);
