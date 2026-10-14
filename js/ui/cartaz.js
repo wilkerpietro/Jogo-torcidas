@@ -377,11 +377,6 @@ TO.cartaz = (function(){
         pins:a.cidade ? [{rot:_t('ONDE'), val:a.cidade}] : []};
       case 'resenha': return {tit:[_t('RESENHA')], sub:m.zona ? _t('ZONA {zona}', {zona:MAIUS(_t(m.zona))}) : '',
         miolo:eu, pins:[{rot:_t('LOCAL'), val:_t('Casa de piscina')}, {rot:_t('DIA'), val:_t('Sábado')}]};
-      /* OS CONVITES DO MÊS NUMA PEÇA SÓ (dono, 14/10/2026): a agenda das
-         festas das aliadas, cada uma com o escudo, os anos e o dia */
-      case 'convites-mes': return {tit:[_t('CONVITES')],
-        sub:a.mes ? _t('{mes} · ALIADOS E AMIZADES', {mes:MAIUS(a.mes)}) : _t('ALIADOS E AMIZADES'),
-        miolo:{t:'agenda', itens:a.itens || []}};
       case 'convite-nosso': case 'convite': return {tit:[_t('CONVITE!')], sub:_t('ALIADOS E AMIZADES'),
         miolo:{t:'anos', n:a.n, id:m.de, grade:aliadasDe(m.de)},
         pins:a.data ? [{rot:_t('DATA'), val:a.data}] : []};
@@ -460,7 +455,7 @@ TO.cartaz = (function(){
       case 'nosso-jogo': case 'resultado': return tipo === 'reclamacao' || (a.gc != null && a.gc === a.gf) ? null : festa('praca');
       case 'classico-v': case 'goleada-r': case 'titulo': case 'acesso': case 'queda-r': return festa('praca');
       case 'classico-d': case 'goleada-d': case 'queda': case 'protesto': return cobra();
-      case 'convite-nosso': case 'obrigado-nosso': case 'treta-msg': case 'convites-mes': return null;
+      case 'convite-nosso': case 'obrigado-nosso': case 'treta-msg': return null;
       case 'sede': return festa('sede-3');
     }
     if(tipo === 'convite' || tipo === 'agradecimento' || tipo === 'cobranca' || tipo === 'treta') return null;
@@ -488,16 +483,6 @@ TO.cartaz = (function(){
         return `<div class="ca-miolo ca-anos">`+
           (x.n ? `<div class="ca-selo" style="${varsDe(pal)}"><b>${esc(x.n)}</b><i>${esc(_t('Anos'))}</i></div>` : aro('t', x.id, nomeT(x.id), pal))+
           (grade ? `<div class="ca-grade">${grade}</div>` : '')+`</div>`;
-      }
-      /* a agenda do mês: até 8 aliadas na peça, o resto vira "+N" */
-      case 'agenda': {
-        const itens = x.itens || [], cabem = itens.length > 8 ? 7 : 8;
-        const cel = itens.slice(0, cabem).map(i =>
-          `<div class="ca-ag"><span class="ca-g">${marcaDaTorcida(i.id, nomeT(i.id))}</span>`+
-          `<b style="${varsDe(pal)}">${esc(i.n)}</b><i>${esc(_t('anos'))}</i><small>${esc(i.data)}</small></div>`).join('');
-        const resto = itens.length - cabem;
-        return `<div class="ca-miolo ca-agenda${itens.length > 4 ? ' ca-ag-cheia' : ''}">${cel}`+
-          (resto > 0 ? `<div class="ca-ag ca-ag-mais"><span class="ca-g" style="${varsDe(pal)}"><b>+${resto}</b></span></div>` : '')+`</div>`;
       }
       case 'escudo': return `<div class="ca-miolo ca-um">${aro(x.tipo, x.id, x.tipo === 't' ? nomeT(x.id) : '', pal, 'ca-maior', de)}</div>`;
     }
@@ -655,15 +640,5 @@ TO.cartaz = (function(){
     observador.observe(fig);
   }
 
-  /* a peça dos convites do mês, pra mensagem da diretoria (14/10/2026):
-     nas cores da nossa torcida, que é quem recebe e organiza a agenda */
-  function htmlConvites(E, lista, mes){
-    if(!E || !E.torcida || !lista || !lista.length) return '';
-    try{
-      return htmlDaArte({id:'convites', de:E.torcida.id, tipo:'convites-mes',
-        arte:{k:'convites-mes', mes, itens:lista.map(a => ({id:a.torcida, n:a.idade, data:a.data}))}});
-    }catch(err){ console.warn('cartaz: ' + err.message); return ''; }
-  }
-
-  return {html, htmlConvites, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
+  return {html, ligar, fundoDeEstadio, mancheteDoJogo, mancheteDaBriga, especDaArte, fotoDoPost, pedirFotoArte, paleta, ehRival, get fotos(){ return fotos; }};
 })();

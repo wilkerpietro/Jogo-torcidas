@@ -1153,9 +1153,7 @@ TO.i18n.registrar({
   "Lado deles": {es:"Su lado", en:"Their side"},
   "Baixas de cada torcida": {es:"Bajas de cada hinchada", en:"Casualties by crew"},
   "nosso lado {a} · lado deles {b}": {es:"nuestro lado {a} · su lado {b}", en:"our side {a} · their side {b}"},
-  "CONVITES": {es:"INVITACIONES", en:"INVITES"},
-  "{mes} · ALIADOS E AMIZADES": {es:"{mes} · ALIADOS Y AMISTADES", en:"{mes} · ALLIES AND FRIENDS"},
-  "anos": {es:"años", en:"years"},
   "Os convites do mês chegaram: {n} aliada faz aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua.": {es:"Llegaron las invitaciones del mes: {n} aliada cumple años antes de la próxima reunión. Ir cuesta R$ 2.000 por fiesta y acerca; faltar aleja y quema en la calle.", en:"This month's invites are in: {n} ally has a birthday before the next meeting. Going costs R$ 2,000 per party and brings you closer; skipping pushes them away and burns you on the street."},
-  "Os convites do mês chegaram: {n} aliadas fazem aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua.": {es:"Llegaron las invitaciones del mes: {n} aliadas cumplen años antes de la próxima reunión. Ir cuesta R$ 2.000 por fiesta y acerca; faltar aleja y quema en la calle.", en:"This month's invites are in: {n} allies have birthdays before the next meeting. Going costs R$ 2,000 per party and brings you closer; skipping pushes them away and burns you on the street."}
+  "Os convites do mês chegaram: {n} aliadas fazem aniversário até a próxima reunião. Ir custa R$ 2.000 por festa e aproxima; furar afasta e queima na rua.": {es:"Llegaron las invitaciones del mes: {n} aliadas cumplen años antes de la próxima reunión. Ir cuesta R$ 2.000 por fiesta y acerca; faltar aleja y quema en la calle.", en:"This month's invites are in: {n} allies have birthdays before the next meeting. Going costs R$ 2,000 per party and brings you closer; skipping pushes them away and burns you on the street."},
+  "Ir": {es:"Ir", en:"Go"}
 });

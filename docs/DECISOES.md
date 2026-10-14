@@ -10851,11 +10851,15 @@ Pedido: "junte os convites dos aliados em uma mensagem só por mês, respeitando
 
 Antes, cada aliada com aniversário até a próxima reunião postava o próprio convite na rede social, com a peça "CONVITE!". No modo rápido, cada aliada virava ainda uma decisão separada do diretor. Com 9 aliadas, eram 9 posts (e 9 decisões).
 
-Agora é **uma mensagem da diretoria por mês**:
-- **A peça "CONVITES":** no molde dos posts (`cartaz.js`, caso `convites-mes`), nas cores da nossa torcida, com o subtítulo "{MÊS} · ALIADOS E AMIZADES".
-  - O miolo `agenda` mostra o escudo, os anos e o dia de cada aliada, até 8; o resto vira "+N".
-  - Com mais de 4 aliadas a grade encolhe pra caber.
-- **Embaixo:** cada aliada numa linha com Ir / Não ir (a régua da lista de aniversários).
+Agora é **uma mensagem da diretoria por mês**.
+
+**Só a lista** (ajuste do dono no mesmo dia: "no feed deve ser somente a lista com as torcidas, as datas e os botões, todos na mesma linha"):
+- uma aliada por linha: o nome, o dia e os botões Ir / Não ir lado a lado;
+- o custo de cada botão fica no título dele (passando o mouse);
+- sem texto e sem peça (a peça "CONVITES" do primeiro desenho saiu);
+- respondida, a linha fica com os dois botões travados e o escolhido aceso (a régua da entrevista).
+
+O resto:
 - **A resposta é a da pauta da reunião** (`responderFestaDaPauta`): responder na mensagem marca na mesa e vice-versa. `feed.convitesDe` ressincroniza a lista a cada leitura.
 - **No jogo completo** a mensagem é aviso: quem decide também pode ser a mesa, e o que ficar sem resposta continua furando na reunião seguinte.
 - **No modo rápido** é decisão: segura o tempo até a última resposta.
@@ -10865,7 +10869,7 @@ Teste (Playwright, os dois modos, 9 aliadas):
 - uma mensagem só, nenhum post de convite e nenhuma decisão por aliada;
 - o clique marca na mensagem e na pauta;
 - no modo rápido, o tempo volta a andar quando todas têm resposta;
-- a peça foi conferida no computador e em 390 px.
+- a lista foi conferida no computador e em 390 px, cada aliada numa linha só.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

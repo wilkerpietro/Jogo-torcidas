@@ -4213,7 +4213,8 @@
       ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || _t('Diplomacia'));
     art.appendChild(el('div',{class:'msg-cab', html:
       `<span class="msg-voz">${quem}</span>`}));
-    if(m.texto)
+    /* os convites do mês são só a lista (dono, 14/10/2026) */
+    if(m.texto && m.kind !== 'convites')
       art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
 
     /* A SEMANA SEM ANEXO (correção do dono, 17/09/2026): o save tira o
@@ -4365,40 +4366,34 @@
     }
 
     /* OS CONVITES DO MÊS NUMA MENSAGEM SÓ (pedido do dono, 14/10/2026):
-       a peça "CONVITES DO MÊS" no molde dos posts — escudo, anos e dia de
-       cada aliada — e, embaixo, a régua da lista de aniversários: cada
-       aliada numa linha com o seu Ir / Não ir. A resposta é a da pauta
-       da reunião, então o que se responde aqui aparece lá. */
+       "no feed deve ser somente a lista com as torcidas, as datas e os
+       botões, todos na mesma linha". Uma linha por aliada: o nome, o dia
+       e o Ir / Não ir — o custo de cada um no título do botão. Respondida,
+       a linha fica com os dois botões travados e o escolhido aceso (a
+       régua da entrevista e da recepção). A resposta é a da pauta da
+       reunião, então o que se responde aqui aparece lá. */
     if(m.kind === 'convites'){
       const lista = TO.feed.convitesDe(e, m);
-      const peca = TO.cartaz && TO.cartaz.htmlConvites ? TO.cartaz.htmlConvites(e, lista, (m.dados||{}).mes) : '';
-      if(peca) art.appendChild(el('div',{class:'msg-cartaz', html:peca}));
       const REL = TO.relacoes.REL;
-      const bloco = el('div',{class:'bloco-recepcao bloco-anivs'});
+      const bloco = el('div',{class:'bloco-recepcao conv-lista'});
       for(const a of lista){
-        const linha = el('div',{class:'rec-aliado'+(a.resposta?' pago':'')});
-        linha.appendChild(el('div',{class:'rec-nome', html:
-          `<b>${linkTorcida(a.torcida, a.nome)}</b> <span class="fraco">· `+
-          `${_t('dia {data} · {n} anos', {data:a.data, n:a.idade})}</span>`+
-          (a.resposta === 'ir' ? ` <span class="tag">${_t('vamos')}</span>`
-           : a.resposta === 'nao' ? ` <span class="tag">${_t('não vamos')}</span>` : '')}));
-        if(!a.resposta && !m.respondido){
-          const bts = el('div',{class:'rec-botoes'});
-          const opcoes = [
-            [_t('Ir pra festa'), `${U.dinheiro(2000)} · ${_t('{n} rel.', {n:'+'+REL.irAniversario})}`, true],
-            [_t('Não ir'), _t('−{n} rel. · −2 prestígio', {n:REL.furarAniversario}), false]];
-          for(const [rot, nota, ir] of opcoes){
-            const b = el('button',{class:'rec-bt'+(ir?' on':''), html:`${rot}<small>${nota}</small>`});
-            b.onclick = ()=>{
-              const r = TO.feed.responderConvite(e, m.id, a.torcida, ir);
-              if(!r.ok) return;
-              TO.estado.salvar();
-              atualizarFeed(); pintarTopo();
-              if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
-            };
-            bts.appendChild(b);
-          }
-          linha.appendChild(bts);
+        const linha = el('div',{class:'conv-linha'+(a.resposta?' pago':'')});
+        linha.appendChild(el('span',{class:'conv-nome', html:linkTorcida(a.torcida, a.nome)}));
+        linha.appendChild(el('span',{class:'conv-data', texto:a.data}));
+        const travada = !!a.resposta || !!m.respondido;
+        for(const [rot, dica, ir, id] of [
+            [_t('Ir'), _t('R$ 2.000 · +{n} rel.', {n:REL.irAniversario}), true, 'ir'],
+            [_t('Não ir'), _t('−{n} rel. · −2 prestígio', {n:REL.furarAniversario}), false, 'nao']]){
+          const b = el('button',{class:'rec-bt conv-bt'+(a.resposta === id ? ' on' : ''), texto:rot, title:dica});
+          b.disabled = travada;
+          b.onclick = ()=>{
+            const r = TO.feed.responderConvite(e, m.id, a.torcida, ir);
+            if(!r.ok) return;
+            TO.estado.salvar();
+            atualizarFeed(); pintarTopo();
+            if(r.fechou){ redesenhar(); if(!TO.feed.travado(e)) retomarTempo('decisao'); }
+          };
+          linha.appendChild(b);
         }
         bloco.appendChild(linha);
       }
