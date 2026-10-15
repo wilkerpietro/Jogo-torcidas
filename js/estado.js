@@ -1044,9 +1044,20 @@ TO.estado = (function(){
       if(Array.isArray(E.mensagensAgendadas))
         E.mensagensAgendadas = E.mensagensAgendadas.filter(m => !saiu(((m && m.extra) || {}).chave));
     }catch(e){ /* a faxina nunca derruba a carga */ }
+    /* A TRETA APOSTADA E A LNT SAÍRAM (dono, 15/10/2026): o caixote da
+       liga sai do save, e a decisão de treta ou de LNT que estava aberta
+       fecha sem efeito (decisão aberta segura o tempo) */
+    try{
+      delete E.lnt;
+      for(const m of (E.feed || []))
+        if(m && !m.respondido && /^(treta|lnt-treta)$/.test(m.kind || ''))
+          m.respondido = {botao:'saiu', rot:_t('Esse assunto já passou.')};
+    }catch(e){}
     /* o domínio dos bairros (30/09/2026): a sede do jogador no bairro
-       espalhado, quando duas sedes caíam no mesmo bairro */
+       espalhado, quando duas sedes caíam no mesmo bairro; o domínio de
+       antes da barra de 7 (15/10/2026) é refeito do zero */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
+    try{ if(TO.elenco) TO.elenco.garantirNossos(E); }catch(e){}
     /* save de antes do modo de jogo (10/10/2026) é o jogo inteiro */
     if(E.modo !== 'rapido' && E.modo !== 'detalhista') E.modo = 'detalhista';
     try{

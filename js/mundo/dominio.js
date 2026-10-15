@@ -4,11 +4,18 @@
    Em cada bairro vai apontar qual torcida comanda, e a torcida que
    comandar mais bairros domina a cidade").
 
-   A BARRA. Cada bairro tem uma barra de 0 a 100 repartida entre as
-   torcidas (o que sobra é de ninguém). Quem passa de 50 é a DONA do
-   bairro; ninguém acima de 50, o bairro está em disputa. Toda ação
-   ganha no bairro soma pontos na barra de quem ganhou e tira de quem
-   perdeu — passou de 50, virou dona.
+   A BARRA DE 7 (o dono, 15/10/2026: "cada domínio agora vai ser uma
+   barrinha de 7 pontos apenas, e quem tiver 4 pontos num bairro domina
+   ele ... Somente as brigas vão ditar os pontos de domínio"). Cada
+   bairro tem 7 pontos inteiros repartidos entre as torcidas; o que
+   sobra é neutro. Quem tem 4 ou mais é a DONA; ninguém com 4, o bairro
+   está em disputa. Toda briga no bairro passa 1 ponto de quem perdeu
+   pra quem venceu; se quem perdeu não tem ponto ali, o vencedor tira 1
+   do neutro, e sem neutro não muda nada ("tem que ganhar de quem tem").
+   Toda torcida tem um ponto FIXO no bairro da sede dela (e a filial, no
+   bairro dela na outra cidade): esse ninguém tira. Vale nos dois modos.
+   Pixação, recrutamento, estrutura e ação social não mexem mais na
+   barra, e nada rende por dia.
 
    A CIDADE. Domina a cidade quem é dona de MAIS bairros que qualquer
    outra; empate no topo, ninguém domina. Todo dia:
@@ -65,20 +72,13 @@ TO.dominio = (function(){
   const _t = (s, p) => typeof window._t === 'function' ? window._t(s, p) : sub(s, p);
 
   /* ---- as réguas (o dono, 30/09/2026) ---- */
-  const DOMINA = 50;                 // mais que isto na barra: dona do bairro
+  const MAX = 7;                     // a barra: 7 pontos inteiros (15/10/2026)
+  const DOMINA = 4;                  // 4 ou mais: dona do bairro
   const DIA = 0.02;                  // 0,1 na régua de 0 a 100
   const CORTE = 1;                   // receita em bairro de rival: sem corte desde 05/10/2026
-  /* A SEDE NÃO TEM MAIS TETO (o dono, 02/10/2026: "o bairro da sede pode
-     ser perdido pela torcida também e isso reduz a moral em 0,2 por dia.
-     não existe mais essa trava de 80% mas o bairro da sede dá 0,5 por
-     dia"): +0,5 por dia pra dona da sede no bairro dela, sempre; quem não
-     é dona do bairro da própria sede perde 0,2 de moral por dia */
-  /* (a perda vai na régua do dono, 0 a 100 — 0,2 por dia é 0,04 no
-     indicador, como o DIA do domínio; varredura de 10/10/2026) */
-  const SEDE_REFAZ = 0.5, SEDE_PERDIDA = 0.04;
-  const SUBSEDE_TETO = 65, SUBSEDE_REFAZ = 1/3; // a subsede, até 65
-  const RESISTE = 0.5;               // quem não é da casa ganha metade no bairro da sede (nas ações)
-  const DIARIOS = new Set(['pixacao', 'recrutamento', 'estrutura-dia']);   // os ganhos de todo dia: inteiros
+  /* quem não é dona do bairro da própria sede perde 0,2 de moral por
+     dia (na régua de 0 a 100; 0,04 no indicador) */
+  const SEDE_PERDIDA = 0.04;
   /* quanto cada ação vale na barra (pontos de 0 a 100) */
   const GANHO = {
     treta: {5:10, 7:14, 10:18},      // treta marcada, pelo tamanho
@@ -426,13 +426,19 @@ TO.dominio = (function(){
       }
       if(!pegou) break;
     }
-    /* a barra de cada bairro: a dona com 55–75 (a da sede, 80–92) e,
-       em 6 de cada 10, uma segunda de olho (a rival primeiro) */
+    /* A BARRA DE 7 NO COMEÇO (o dono, 15/10/2026: "começa de forma
+       proporcional, as torcidas maiores já começam com mais barras, e a
+       torcida sempre tem um ponto fixo no bairro que tem sede"): a dona
+       com 4 ou 5 (5 no bairro da sede; fora dela, a maior da cidade tem
+       mais chance do 5), e em 6 de cada 10 bairros uma segunda com 1 ou
+       2 (a rival primeiro). O resto é neutro. */
+    const maiorM = Math.max(1, ...ts.map(t => t.membros || 0));
     for(const b of bs){
       const t = dono.get(b.id);
       if(!t){ fora.b[b.id] = {}; continue; }
       const naSede = (sedes.get(t) || {}).id === b.id;
-      const v = um(naSede ? 80 + r() * 12 : 55 + r() * 20);
+      const peso = ((ts.find(o => o.id === t) || {}).membros || 0) / maiorM;
+      const v = naSede ? 5 : (r() < 0.2 + 0.5 * peso ? 5 : 4);
       const p = {[t]: v};
       if(r() < 0.6){
         const outras = ts.filter(o => o.id !== t && !(TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(o.id, t)));
@@ -441,11 +447,19 @@ TO.dominio = (function(){
         const lista = vizinhas.length ? vizinhas : (rivais.length ? rivais : outras);
         if(lista.length){
           const o = lista[Math.floor(r() * lista.length)];
-          const q = um(Math.min(100 - v - 2, 5 + r() * 20));
-          if(q >= 3) p[o.id] = q;
+          p[o.id] = Math.min(MAX - v, r() < 0.4 ? 2 : 1);
         }
       }
       fora.b[b.id] = p;
+    }
+    /* o ponto fixo de cada sede, mesmo quando a dona do bairro é outra */
+    for(const t of ts){
+      const s = sedes.get(t.id), p = s && fora.b[s.id];
+      if(p && !(p[t.id] >= 1)){
+        const soma = Object.values(p).reduce((x, y) => x + y, 0);
+        if(soma >= MAX){ const maior = Object.keys(p).sort((x, y) => p[y] - p[x])[0]; p[maior]--; }
+        p[t.id] = 1;
+      }
     }
     return fora;
   }
@@ -454,7 +468,9 @@ TO.dominio = (function(){
      O ESTADO NO SAVE
      ======================================================= */
   function raiz(E){
-    if(!E.dominio || typeof E.dominio !== 'object') E.dominio = {v:1};
+    /* O SAVE ANTIGO (barra de 0 a 100) É REFEITO DO ZERO (dono, 15/10/2026):
+       a distribuição nova sai da semente, como num save novo */
+    if(!E.dominio || typeof E.dominio !== 'object' || E.dominio.v !== 2) E.dominio = {v:2};
     const D = E.dominio;
     D.c = D.c || {}; D.donos = D.donos || {}; D.log = D.log || [];
     return D;
@@ -499,7 +515,7 @@ TO.dominio = (function(){
   }
   const donaDoObjeto = p => {
     let m = null;
-    for(const t in p) if(p[t] > DOMINA && (!m || p[t] > p[m])) m = t;
+    for(const t in p) if(p[t] >= DOMINA && (!m || p[t] > p[m])) m = t;
     return m;
   };
   const donaDoBairro = (E, cid, bid) => donaDoObjeto(((daCidade(E, cid).b) || {})[bid] || {});
@@ -508,7 +524,7 @@ TO.dominio = (function(){
   function bairros(E, cid){
     return bairrosDe(cid).map(b => {
       const ps = partes(E, cid, b.id);
-      const dono = ps.length && ps[0].v > DOMINA ? ps[0].t : null;
+      const dono = ps.length && ps[0].v >= DOMINA ? ps[0].t : null;
       return {id:b.id, nome:b.nome, zona:b.zona, semZona:semZonas(cidadeDe(cid)), classe:b.classe, mult:b.mult, cidade:cidadeDoBairro(cidadeDe(cid), b),
               dono, v: dono ? ps[0].v : 0, partes:ps, sede:casaDe(cid, b.id)};
     });
@@ -722,88 +738,61 @@ TO.dominio = (function(){
   }
 
   /* =======================================================
-     MEXER NA BARRA
-     `tid` ganha `pts` no bairro; os pontos saem primeiro de `contra`
-     (quem perdeu ali), depois do que é de ninguém, depois das outras
-     (a maior primeiro). No bairro da sede de outra torcida, quem não é
-     da casa ganha metade.
+     A BRIGA MEXE 1 PONTO (o dono, 15/10/2026)
+     "Se a TUF tem 1 ponto de domínio e vence uma briga contra a
+     Cearamor que tem 4 pontos num bairro, ganha 1 ponto naquele bairro
+     e a Cearamor perde um." Quem perdeu e não tem ponto ali (ou só tem
+     o fixo da sede): o vencedor tira 1 do neutro; sem neutro, nada.
      ======================================================= */
-  /* A BARRA FECHA NO MÁXIMO EM 100: uma casa decimal, nada abaixo de
-     0,05, e o que o arredondamento passar de 100 sai de quem não é
-     `tid` (a maior primeiro), por último dele */
-  function fecharBarra(p, tid){
-    for(const k of Object.keys(p)){ p[k] = um(p[k]); if(!(p[k] >= 0.05)) delete p[k]; }
-    let sobra = um(Object.keys(p).reduce((s, k) => s + p[k], 0) - 100);
-    if(sobra > 0){
-      const ord = Object.keys(p).sort((a, c) => (a === tid) - (c === tid) || p[c] - p[a]);
-      for(const k of ord){
-        if(sobra <= 0) break;
-        const t = Math.min(p[k], sobra);
-        p[k] = um(p[k] - t); sobra = um(sobra - t);
-        if(!(p[k] >= 0.05)) delete p[k];
-      }
+  /* o ponto fixo: a sede da torcida no bairro, ou a filial dela ali */
+  function fixoDe(E, cid, bid, tid){
+    if(!tid) return 0;
+    if(casaDe(cid, bid) === tid) return 1;
+    const o = (TO.mundo && TO.mundo.torcida) ? TO.mundo.torcida(tid) : indice().porId.get(tid);
+    if(o && o.mapa !== cid){
+      const f = bairroDaFilial(tid, cid);
+      if(f && f.id === bid && temFilialEm(E, tid, cid)) return 1;
     }
-    return p;
+    return 0;
   }
-  /* os pontos que a ação vale de verdade no bairro: a torcida do clube
-     ali pesa, e no bairro da sede de outra quem não é da casa ganha
-     metade */
-  function pontosEfetivos(E, cid, x, tid, pts, opc){
-    opc = opc || {};
-    /* A TORCIDA DO BAIRRO PESA NO GANHO (01/10/2026): ×0,4 onde o clube
-       quase não tem torcida, ×1 na média da cidade dele, até ×1,3 no
-       reduto. A sede e a subsede se refazem como antes */
-    if(!opc.semTorcida && opc.motivo !== 'sede' && opc.motivo !== 'subsede') pts *= fatorGanho(E, tid, cid, x);
-    /* O BAIRRO DA SEDE CORTA PELA METADE SÓ AS AÇÕES (briga, ação social,
-       estrutura nova): o que rende por dia — muro, recrutamento, estrutura
-       — vale inteiro (o dono, 02/10/2026: três muros e o recrutamento na
-       sede da MOFI, 0,8 por dia contra 0,5 da sede, e a barra caía; o
-       muro rendia 0,1 e o cartão dizia 0,2) */
-    const casa = casaDe(cid, x.id);
-    if(casa && casa !== tid && !DIARIOS.has(opc.motivo)) pts *= RESISTE;
-    return pts;
+  function temFilialEm(E, tid, cid){
+    if(!E) return false;
+    if(tid === eu(E)) return ((E.patrimonio || {}).filiais || []).some(f => f.cidade === cid);
+    const m = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E)[tid] : null;
+    return !!(m && (m.filiais || []).some(f => f.cidade === cid));
   }
-  /* A CONTA DA BARRA (pura: a prévia da briga roda numa cópia) */
-  function somarNaBarra(p, tid, pts, contra){
-    const antes = p[tid] || 0;
-    /* (a conta corre sem arredondar: arredondar a parte e descontar o
-       valor cheio criava ou sumia centésimos, e em milhares de passos de
-       0,2 a barra passava de 100 — 112% em Genibaú num ano simulado,
-       01/10/2026. O arredondamento é um só, no fim, em `fechar`.) */
-    const tirar = (id, q) => {
-      const t = Math.min(p[id] || 0, q);
-      p[id] = (p[id] || 0) - t;
-      if(!(p[id] > 1e-9)) delete p[id];
-      return t;
-    };
-    let ganho = Math.min(pts, 100 - antes), resta = ganho;
-    if(contra && contra !== tid) resta -= tirar(contra, resta);
-    const soma = () => Object.keys(p).reduce((s, k) => s + p[k], 0);
-    resta -= Math.min(Math.max(0, 100 - soma()), resta);
-    for(let g = 0; resta > 0.05 && g < 12; g++){
-      const outras = Object.keys(p).filter(k => k !== tid && p[k] > 0).sort((a, c) => p[c] - p[a]);
-      if(!outras.length) break;
-      resta -= tirar(outras[0], resta);
+  const somaDe = p => Object.keys(p).reduce((x, k) => x + (p[k] || 0), 0);
+  /* a conta pura (a prévia roda numa cópia) */
+  function passarPonto(E, cid, bid, p, venc, perd){
+    const antesV = p[venc] || 0, antesP = perd ? (p[perd] || 0) : 0;
+    if(antesV >= MAX) return {ganho:0, antesV, antesP};
+    if(perd && antesP > fixoDe(E, cid, bid, perd)){
+      p[perd] = antesP - 1; if(!p[perd]) delete p[perd];
+      p[venc] = antesV + 1;
+      return {ganho:1, tirou:perd, antesV, antesP};
     }
-    ganho -= Math.max(0, resta);
-    p[tid] = limitar(antes + ganho, 0, 100);
-    fecharBarra(p, tid);
-    return {antes, ganho};
+    if(somaDe(p) < MAX){ p[venc] = antesV + 1; return {ganho:1, tirou:null, antesV, antesP}; }
+    return {ganho:0, antesV, antesP};
   }
-  function mexer(E, cid, b, tid, pts, opc){
-    opc = opc || {};
+  function transferir(E, cid, b, venc, perd, motivo){
     const x = bairro(cid, b);
-    if(!E || !x || !tid || !(pts > 0)) return null;
-    pts = pontosEfetivos(E, cid, x, tid, pts, opc);
+    if(!E || !x || !venc || venc === perd) return null;
     const st = paraMexer(E, cid);
     const p = st.b[x.id] = st.b[x.id] || {};
     const dono0 = donaDoObjeto(p);
-    const {antes, ganho} = somarNaBarra(p, tid, pts, opc.contra);
+    const q = passarPonto(E, cid, x.id, p, venc, perd);
     const dono1 = donaDoObjeto(p);
-    const r = {cid, bairro:x, tid, contra:opc.contra || null, antes, depois:p[tid], ganho:um(ganho), dono0, dono1};
-    if(dono0 !== dono1) virou(E, r, opc.motivo || '');
+    const r = {cid, bairro:x, tid:venc, contra:perd || null, antes:q.antesV, depois:p[venc] || 0, ganho:q.ganho,
+               contraAntes:q.antesP, contraDepois:perd ? (p[perd] || 0) : 0, tirou:q.tirou || null, dono0, dono1};
+    if(dono0 !== dono1) virou(E, r, motivo || '');
     return r;
   }
+  /* (compatibilidade: quem ainda chama `mexer` com pontos de 0 a 100
+     ganha 1 ponto, tirado de `contra`) */
+  function mexer(E, cid, b, tid, pts, opc){
+    return pts > 0 ? transferir(E, cid, b, tid, (opc || {}).contra || null, (opc || {}).motivo) : null;
+  }
+  function fecharBarra(p){ return p; }
 
   /* o bairro mudou de dona: fica no registro, e o jogador sabe quando
      é com ele ou na cidade dele */
@@ -819,13 +808,13 @@ TO.dominio = (function(){
     let texto = null;
     if(r.dono1 === meu)
       texto = r.dono0 ? _t('Tomamos {bairro} ({cidade}) da {de}. O bairro agora é nosso.', {bairro:nb, cidade, de:nomeDe(r.dono0)})
-                      : _t('{bairro} ({cidade}) passou de 50% pra nós. O bairro agora é nosso.', {bairro:nb, cidade});
+                      : _t('{bairro} ({cidade}) chegou a 4 pontos pra nós. O bairro agora é nosso.', {bairro:nb, cidade});
     else if(r.dono0 === meu && casaDe(r.cid, r.bairro.id) === meu)
       texto = r.dono1 ? _t('Perdemos o bairro da nossa sede, {bairro}, pra {para}: −0,2 de moral por dia até retomar.', {bairro:nb, para:nomeDe(r.dono1)})
-                      : _t('O bairro da nossa sede, {bairro}, caiu abaixo de 50%: −0,2 de moral por dia até retomar.', {bairro:nb});
+                      : _t('O bairro da nossa sede, {bairro}, caiu abaixo de 4 pontos: −0,2 de moral por dia até retomar.', {bairro:nb});
     else if(r.dono0 === meu)
       texto = r.dono1 ? _t('Perdemos {bairro} ({cidade}) pra {para}.', {bairro:nb, cidade, para:nomeDe(r.dono1)})
-                      : _t('{bairro} ({cidade}) caiu abaixo de 50% pra nós: o bairro está em disputa.', {bairro:nb, cidade});
+                      : _t('{bairro} ({cidade}) caiu abaixo de 4 pontos pra nós: o bairro está em disputa.', {bairro:nb, cidade});
     else if(r.cid === E.torcida.mapa){
       /* O BAIRRO DOS OUTROS VAI PRO RESUMO DA SEMANA (02/10/2026): um
          cartão por virada enchia o feed; fica a última dona de cada um */
@@ -840,24 +829,11 @@ TO.dominio = (function(){
   }
 
   /* =======================================================
-     O DIA: a cidade dominada rende, a grande sem cidade sangra, a sede
-     e a subsede se refazem. Chamado por TO.estado.avancarDia.
+     O DIA (o dono, 15/10/2026: "mantém só os dois efeitos"): quem domina
+     a cidade ganha +0,1 de prestígio e de moral por dia e as duas
+     maiores que não dominam perdem 0,1; quem não é dona do bairro da
+     própria sede perde 0,2 de moral por dia. Nada rende ponto por dia.
      ======================================================= */
-  function refazer(E, cid){
-    const D = raiz(E);
-    const st = D.c[cid];
-    if(!st) return;
-    const I = indice();
-    const sedes = I.sedes.get(cid) || new Map();
-    for(const [tid, b] of sedes){
-      mexer(E, cid, b, tid, SEDE_REFAZ, {motivo:'sede'});
-    }
-    for(const s of estruturas(E, cid)){
-      if(s.tipo !== 'subsede' && s.tipo !== 'filial') continue;
-      const p = (st.b || {})[s.bairro] || {};
-      if((p[s.tid] || 0) < SUBSEDE_TETO) mexer(E, cid, s.bairro, s.tid, Math.min(SUBSEDE_REFAZ, SUBSEDE_TETO - (p[s.tid] || 0)), {motivo:'subsede'});
-    }
-  }
   /* o que o dia faz no indicador: o jogador leva direto (o livro de
      moral e prestígio ganha uma linha por semana, não 7); as IAs, pelo
      `mover` delas */
@@ -914,7 +890,6 @@ TO.dominio = (function(){
     D.dia = abs;
     const I = indice(), minha = E.torcida.mapa;
     for(const cid of I.comTorcida){
-      refazer(E, cid);
       const pl = placar(E, cid);
       const dono = pl.dono || null;
       if(dono) noIndicador(E, dono, DIA);
@@ -924,12 +899,9 @@ TO.dominio = (function(){
       if(antes !== undefined && antes !== dono && cid === minha) avisarCidade(E, cid, antes, dono, pl);
     }
     try{ sedesPerdidas(E); }catch(e){ /* a moral não derruba o dia */ }
-    /* a IA que está atrás na cidade dela faz ação social (a semana) */
-    if(E.data.dia === 1){ fecharLivro(E); semanaDasIAs(E); resumoDaSemana(E); }
-    /* as metas do mês de cada organizada da IA (01/10/2026) */
-    try{ metasDoDia(E); }catch(e){ /* as metas não derrubam o dia */ }
-    /* os muros pixados rendem, a IA pixa e recruta (01/10/2026) */
-    try{ desgaste(E); diaDosMuros(E); diaDasEstruturas(E); iaPixa(E); recrutamentoIA(E); }catch(e){ /* idem */ }
+    if(E.data.dia === 1){ fecharLivro(E); resumoDaSemana(E); }
+    /* a briga de bairro das IAs entre si: uma por mês cada (15/10/2026) */
+    try{ brigasDasIAs(E); }catch(e){ console.warn('[domínio] brigas das IAs', e); }
   }
   /* os bairros que trocaram de dona na nossa cidade na semana, num cartão só */
   function resumoDaSemana(E){
@@ -957,375 +929,86 @@ TO.dominio = (function(){
   }
 
   /* =======================================================
-     AS METAS DA IA (pedido do dono, 01/10/2026: "o objetivo da torcida
-     IA e da nossa é sempre dominar a cidade inteira" — "dois alvos por
-     mês ... sede nível 0 a 2 é um alvo, 5 a 6 são 3"; aprovados o
-     "ataque com motivo" e o "sem descanso quando domina")
-     No começo de cada mês, cada organizada da IA escolhe os bairros
-     mais baratos de virar na cidade dela — o que falta pra passar de
-     50%, dividido pelo quanto um ponto dela rende ali, com desconto pra
-     zona onde ela já manda (o motivo). Quem domina a cidade não para:
-     os bairros dela abaixo de 60% entram na frente. Cada alvo ganha um
-     dia do mês e um golpe: o bote no bar da dona (se o bar fica ali),
-     a reunião da zona na praça ou a treta marcada.
-     No dia: se a dona somos nós, é ataque contra a gente (a reunião
-     da nossa zona na praça, ou o nosso bar, se ele fica no bairro),
-     com o aviso do olheiro e a cena de defesa; se é outra IA, é a
-     briga das duas (`relacoes.brigaIA`), e a barra mexe no bairro do
-     alvo, não no mais fraco da perdedora.
+     A BRIGA DE BAIRRO DAS IAs (o dono, 15/10/2026: "as IAs também brigam
+     por bairro entre elas, pro mapa se mexer sem a gente")
+     Cada organizada da IA tenta uma briga por mês, num dia fixo pela
+     semente, contra a dona de um bairro da cidade dela que não seja
+     aliada nem irmã (filial de fora conta). O alvo é a DONA do bairro.
+     Resolve no simulado: a chance de vencer é a força de quem ataca (até
+     20) sobre a soma com a de quem defende (os moradores, até 15). Quem
+     vence leva 1 ponto ali. A nossa torcida fica de fora: contra nós são
+     os dois ataques do mês, no feed.
      ======================================================= */
-  let ALVO_FORCADO = null;
-  /* UM ALVO POR MÊS (o dono, 02/10/2026: "reduza pra um alvo mensal"):
-     era 1/2/3 pela sede, pro jogador e pra IA */
-  const ALVOS_PELA_SEDE = () => 1;
-  /* MENOS BRIGA DE BAIRRO NO MUNDO (o dono, 02/10/2026: "as brigas nos
-     bairros ficaram mais dinâmicas que todo o restante do jogo; o foco é
-     primeiro a logística ao redor do jogo"): a IA busca UM bairro por
-     mês (dois com sede 5 ou 6). A régua do jogador (1/2/3) não muda. */
-  const ALVOS_DA_IA = () => 1;
-  function mesDe(E){
-    const d = TO.estado && TO.estado.dataDaSemana ? TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia) : null;
-    return d ? `${d.getFullYear()}|${d.getMonth()}` : `${E.data.ano}|${Math.floor((E.data.semana - 1) / 4.35)}`;
+  const mesDe = E => (E.data.ano || 0) * 12 + Math.floor(((E.data.semana || 1) - 1) / 4.35);
+  /* quem apanha num ataque de `atk` ao bairro: a dona; sem dona, a que
+     tem mais pontos ali (fora a atacante, as aliadas dela e a gente) */
+  function defensoraDe(E, b, atk){
+    const meu = eu(E);
+    const ok = t => t && t !== atk && t !== meu && !amigas(E, atk, t);
+    if(b.dono) return ok(b.dono) ? b.dono : null;
+    const p = b.partes.find(x => ok(x.t));
+    return p ? p.t : null;
   }
-  /* os bairros que valem a pena pra `tid` na cidade (a régua do jogador) */
-  function alvosDe(E, cid, tid, n, bs, pl){
-    const zk = b => b.semZona ? 'c:' + b.cidade : b.zona;
-    const minhas = new Set(bs.filter(b => b.dono === tid).map(zk));
-    const amiga = o => amigas(E, tid, o);
-    const domina = pl.dono === tid;
-    const cand = [];
-    for(const b of bs){
-      const minha = (b.partes.find(p => p.t === tid) || {}).v || 0;
-      const f = fatorGanho(E, tid, cid, b) * (b.sede && b.sede !== tid ? RESISTE : 1);
-      if(b.dono === tid){
-        if(b.v >= 60) continue;
-        const r = b.partes.find(p => !amiga(p.t));
-        if(r) cand.push({b, v:r.t, nota:(b.v - 50) / Math.max(0.2, f) * (domina ? 0.5 : 1.3)});
-        continue;
-      }
-      const r = b.dono && !amiga(b.dono) ? b.dono : (b.partes.find(p => !amiga(p.t)) || {}).t;
-      if(!r) continue;
-      const falta = Math.max(0, 50.1 - minha) + (b.dono ? Math.max(0, b.v - 50) : 0);
-      cand.push({b, v:r, nota:falta / Math.max(0.2, f) - (minhas.has(zk(b)) ? 8 : 0)});
-    }
-    return cand.sort((x, y) => x.nota - y.nota).slice(0, n);
-  }
-  function planejarMes(E){
-    const I = indice(), meu = eu(E);
-    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
-    if(!mundo) return [];
-    const hoje = E.data.absoluto || 0, out = [];
-    const r = sorteio(`${semente(E)}|metas|${mesDe(E)}`);
-    for(const cid of I.comTorcida){
-      const bs = bairros(E, cid), pl = placar(E, cid);
-      if(!bs.length) continue;
-      for(const o of torcidasDaCidade(cid)){
-        if(o.id === meu) continue;
-        const t = mundo[o.id];
-        if(!t) continue;
-        const ests = estruturas(E, cid);
-        for(const a of alvosDe(E, cid, o.id, ALVOS_DA_IA(t.sede || 0), bs, pl)){
-          const barDela = ests.some(s => s.tid === a.v && s.tipo === 'bar' && s.bairro === a.b.id);
-          const k = barDela && r() < 0.6 ? 'bar' : r() < 0.55 ? 'reuniao' : 'treta';
-          out.push({t:o.id, c:cid, b:a.b.id, v:a.v, k, d:hoje + 2 + Math.floor(r() * 25)});
-        }
-      }
-    }
-    return out;
-  }
-  function metasDoDia(E){
-    const D = raiz(E), mes = mesDe(E);
-    if(D.mesIA !== mes){ D.mesIA = mes; D.metas = planejarMes(E); }
-    const hoje = E.data.absoluto || 0, meu = eu(E);
-    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
-    for(const m of D.metas || []){
-      if(m.feito || m.d > hoje) continue;
-      m.feito = 1;
-      const x = bairro(m.c, m.b), att = TO.mundo && TO.mundo.torcida(m.t);
-      if(!x || !att || !mundo || !mundo[m.t]) continue;
-      /* a vítima é quem está no caminho HOJE: a dona, ou a maior das outras */
-      /* (a dona era a vítima sem conferir: a JGT atacava a reunião da
-         TUF, irmã dela, porque a TUF era a dona do bairro — 02/10/2026) */
-      const ps = partes(E, m.c, x.id).filter(p => !amigas(E, m.t, p.t));
-      const dona = donaDoBairro(E, m.c, x.id);
-      const vit = dona && !amigas(E, m.t, dona) ? dona : (ps[0] || {}).t;
-      if(!vit || amigas(E, m.t, vit)) continue;
-      if(vit === meu){ contraNos(E, m, x, att); continue; }
-      const vo = TO.mundo.torcida(vit);
-      if(!vo || !mundo[vit] || !TO.relacoes.brigaIA) continue;
-      ALVO_FORCADO = {cid:m.c, b:x.id, a:m.t, v:vit, k:m.k};
-      try{
-        TO.relacoes.brigaIA(E, att, vo, m.c, m.k === 'bar' ? _t('ataque ao bar') : '',
-          {tipo: m.k === 'bar' ? 'bar' : m.k === 'treta' ? 'treta' : 'rua'});
-      }catch(e){ /* a meta não derruba o dia */ }
-      finally{ ALVO_FORCADO = null; }
-    }
-    /* o mês velho sai do save */
-    D.metas = (D.metas || []).filter(m => !m.feito);
-  }
-  /* a meta da IA em cima da gente: o ataque marcado de hoje, com o aviso */
-  function contraNos(E, m, x, att){
-    if(m.c !== E.torcida.mapa || amigas(E, m.t, eu(E))) return;
-    /* três tentativas sem dar certo: ela desistiu de vir atrás da gente */
-    if(TO.relacoes.desistiu && TO.relacoes.desistiu(E, m.t, eu(E))) return;
-    /* e a trégua do ano segura a meta dela contra a gente (paridade, 12/10/2026) */
-    if(TO.relacoes.emTregua && TO.relacoes.emTregua(E, m.t)) return;
-    /* no máximo UM por mês (02/10/2026): eram 5 em dois meses, fora o
-       calendário de ataques do trimestre */
-    const Dr = raiz(E), mes = mesDe(E);
-    if(Dr.contraNos && Dr.contraNos[0] === mes && Dr.contraNos[1] >= 1) return;
-    const a = E.ataqueMarcado;
-    if(a && !a.resolvido && a.semana === E.data.semana) return;
-    /* no dia do nosso jogo a rua é do itinerário */
-    const pj = E.proximoJogo;
-    if(pj && pj.semana === E.data.semana && pj.dia === E.data.dia) return;
-    const nossoBar = (E.patrimonio && E.patrimonio.bares || []).some(b => bairro(m.c, b.bairro) === x);
-    const noBar = m.k === 'bar' && nossoBar;
-    const Z = (TO.mundo && TO.mundo.ZONAS) || ZONAS;
-    const zona = x.zona && Z.includes(x.zona) ? x.zona : Z[hash(`${m.t}|${x.id}`) % Z.length];
-    Dr.contraNos = [mes, (Dr.contraNos && Dr.contraNos[0] === mes ? Dr.contraNos[1] : 0) + 1];
-    E.ataqueMarcado = {torcida:m.t, nome:att.nome, alvo: noBar ? 'bar' : 'reuniao',
-                       cena: noBar ? 'bar' : 'praca-reuniao', zona: noBar ? null : zona,
-                       bairro:x.nome, mapa:m.c, ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
-                       meta:true};
-    if(TO.relacoes.hostilidade && TO.relacoes.REL) TO.relacoes.hostilidade(E, m.t, TO.relacoes.REL.ataqueMarcado || 8);
-    if(TO.feed && TO.feed.avisoDoOlheiro)
-      TO.feed.avisoDoOlheiro(E, {chave:`meta|${E.data.ano}|${E.data.semana}|${m.t}|${x.id}`,
-                                 alvo: noBar ? 'bar' : 'reuniao', nome:att.nome, zona});
-  }
-
-  /* =======================================================
-     AS PIXAÇÕES (pedido do dono, 01/10/2026: "um sistema de pixações no
-     mapa, com quantidade limitada de pixações a fazer e os locais de
-     pixação bem definidos pelo mapa, de 3 a 5 por bairro, com cada
-     pixação dando buff de 0.2 pontos diários de domínio. Sede 0 a 2: 5
-     pixações pra gastar por mês, nível 3 a 4: 8, nível 5 ou 6: 10.
-     Algumas vitórias de brigas no bairro dão pontos de pixação no geral
-     pra torcida utilizar. A IA vai pixar ao longo de todo o mês de forma
-     espalhada [...] e sempre vai priorizar pixar em bairro que tem chance
-     maior de dominar.")
-
-     · OS LUGARES: cada bairro tem de 3 a 5 muros (o número sai do hash
-       do bairro, fixo pra sempre); a planta desenha cada um num ponto
-       fixo dentro do bairro (js/ui/mapa_planta.js).
-     · O MURO: livre, ou de uma torcida (a última que pixou). Pixar por
-       cima do muro de outra torcida também gasta uma pixação; o nosso
-       muro não se pixa de novo.
-     · O BUFF: cada muro dá 0,2 por dia na barra do bairro pra dona dele,
-       na conta de sempre (`mexer`: tira do que é de ninguém e das
-       outras; no bairro da sede de outra torcida, metade).
-     · O SALDO: a cota do mês (5, 8 ou 10, pelo nível da sede) vence no
-       fim do mês; a de briga (`extra`) não vence. Gasta-se a do mês
-       primeiro. Ganha extra quem vence treta (+1; a de 10 contra 10,
-       +2), bote no bar ou na sede, a reunião da zona na praça e a
-       resenha da casa de piscina (+1) — da gente e da IA.
-     · A IA espalha: a cada dia gasta o saldo dividido pelos dias que
-       faltam no mês (a fração no sorteio), no bairro que ela tem mais
-       chance de virar (a régua das metas), primeiro num muro livre,
-       depois cobrindo o de uma rival.
-     O SAVE: `E.dominio.pix[cid][bairro#n] = 'torcida|dia'` e
-     `E.dominio.pixSaldo[torcida] = [mês, cota, extra]`.
-     ======================================================= */
-  /* a cota nova do dono (01/10/2026): 2 sem sede, 4 na sede 1 e 2, 8 na
-     3 e 4, 12 na 5 e 6; a líder da cidade leva +2 no mês. O pixo desbota
-     em 60 dias e o muro volta a ficar livre. */
-  const PIX = {dia:0.2, cota:n => n >= 5 ? 12 : n >= 3 ? 8 : n >= 1 ? 4 : 2, lider:2, desbota:60};
-  const vagasPix = (cid, bid) => 3 + hash(`pix|${cid}|${bid}`) % 3;
-  function pixCidade(E, cid){
-    const D = raiz(E);
-    D.pix = D.pix || {};
-    return D.pix[cid] = D.pix[cid] || {};
-  }
-  /* os muros do bairro: [{i, t (dona ou null), abs}] */
-  function muros(E, cid, b){
-    const x = bairro(cid, b);
-    if(!x) return [];
-    const P = ((raiz(E).pix || {})[cid]) || {};
-    const out = [];
-    for(let i = 0; i < vagasPix(cid, x.id); i++){
-      const v = P[`${x.id}#${i}`];
-      const [t, abs] = v ? v.split('|') : [null, null];
-      out.push({i, t:t || null, abs: abs ? +abs : null});
-    }
-    return out;
-  }
-  const nivelDaSedeDe = (E, tid) => tid === eu(E) ? (E.torcida.sedeNivel || 0)
-    : (((TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : {})[tid] || {}).sede || 0);
-  /* o saldo de hoje: a cota do mês (renovada na virada) e o de briga */
-  function saldoPix(E, tid){
-    const D = raiz(E), mes = mesDe(E);
-    D.pixSaldo = D.pixSaldo || {};
-    let s = D.pixSaldo[tid];
-    if(!s || s[0] !== mes){
-      /* A LÍDER DA CIDADE (+2 no mês): quem é dona de mais bairros na virada */
-      const cid = tid === eu(E) ? E.torcida.mapa : ((TO.mundo && TO.mundo.torcida(tid)) || {}).mapa;
-      const lider = !!cid && bairrosDe(cid).length > 0 && placar(E, cid).dono === tid;
-      s = D.pixSaldo[tid] = [mes, PIX.cota(nivelDaSedeDe(E, tid)) + (lider ? PIX.lider : 0), s ? s[2] || 0 : 0, lider ? 1 : 0];
-    }
-    return {cota:s[1], extra:s[2], total:s[1] + s[2], cotaDoMes:PIX.cota(nivelDaSedeDe(E, tid)), lider:!!s[3]};
-  }
-  function gastarPix(E, tid){
-    saldoPix(E, tid);
-    const s = raiz(E).pixSaldo[tid];
-    if(s[1] > 0){ s[1]--; return true; }
-    if(s[2] > 0){ s[2]--; return true; }
-    return false;
-  }
-  function ganharPix(E, tid, n){
-    if(!tid || !(n > 0)) return;
-    saldoPix(E, tid);
-    raiz(E).pixSaldo[tid][2] += n;
-  }
-  const irmas = (a, b) => !!(TO.mundo && TO.mundo.saoIrmas && TO.mundo.saoIrmas(a, b));
-  /* PIXAR: num muro escolhido (`i`) ou no primeiro livre — sem livre, por
-     cima do muro da rival que tem mais muros ali */
-  function pixar(E, tid, cid, b, i){
-    const x = bairro(cid, b);
-    if(!E || !x || !tid) return {ok:false, msg:_t('Esse bairro não existe.')};
-    const ms = muros(E, cid, x);
-    let m = i != null ? ms.find(z => z.i === +i) : null;
-    if(i != null && !m) return {ok:false, msg:_t('Esse muro não existe.')};
-    if(!m){
-      m = ms.find(z => !z.t);
-      if(!m){
-        const conta = {};
-        for(const z of ms) if(z.t) conta[z.t] = (conta[z.t] || 0) + 1;
-        m = ms.filter(z => z.t && !amigas(E, tid, z.t)).sort((a, c) => conta[c.t] - conta[a.t] || a.abs - c.abs)[0];
-      }
-    }
-    if(!m) return {ok:false, msg:_t('Todos os muros de {bairro} já são nossos.', {bairro:x.nome})};
-    if(m.t === tid) return {ok:false, msg:_t('Esse muro já é nosso.')};
-    if(m.t && irmas(tid, m.t)) return {ok:false, msg:_t('Esse muro é de uma torcida irmã.')};
-    if(m.t && amigas(E, tid, m.t)) return {ok:false, msg:_t('Esse muro é de uma torcida aliada.')};
-    if(!gastarPix(E, tid)) return {ok:false, msg:_t('Acabaram as pixações deste mês.')};
-    const de = m.t;
-    pixCidade(E, cid)[`${x.id}#${m.i}`] = `${tid}|${E.data.absoluto || 0}`;
-    /* (o post da rival que cobriu o nosso muro — "Passamos por cima do
-       pixo da…" — saiu, pedido do dono, 05/10/2026) */
-    return {ok:true, i:m.i, cobriu:de, msg: de
-      ? _t('Pixamos por cima da {de} em {bairro}: +0,2 por dia pra gente ali.', {de:nomeDe(de), bairro:x.nome})
-      : _t('Pixamos um muro em {bairro}: +0,2 por dia pra gente ali.', {bairro:x.nome})};
-  }
-  /* o muro rende: 0,2 por dia pra dona, somados por bairro e torcida */
-  function diaDosMuros(E){
-    const P = raiz(E).pix || {}, hoje = E.data.absoluto || 0;
-    for(const cid in P){
-      const soma = {};
-      for(const k in P[cid]){
-        const [bid] = k.split('#'), [t, abs] = String(P[cid][k]).split('|');
-        /* O PIXO DESBOTA (dono, 01/10/2026): 60 dias depois, o muro está livre */
-        if(!t || hoje - (+abs || 0) >= PIX.desbota){ delete P[cid][k]; continue; }
-        const ch = bid + '|' + t;
-        soma[ch] = (soma[ch] || 0) + PIX.dia;
-      }
-      for(const ch in soma){
-        const [bid, t] = ch.split('|');
-        mexer(E, cid, bid, t, soma[ch], {motivo:'pixacao', semTorcida:true});
-      }
-    }
-  }
-  /* A ESTRUTURA SEGURA O BAIRRO (o dono, 02/10/2026: "ter uma estrutura
-     num bairro dá buff diário de dominação"): cada bar,
-     loja, subsede e filial soma 0,2 por dia pra dona no bairro dela. A
-     sede tem a régua própria (+0,5 por dia, sem teto) */
-  const ESTRUTURA_DIA = 0.2;   // era 0,1; o dono subiu pra 0,2 (02/10/2026), igual ao recrutamento
-  function diaDasEstruturas(E){
-    for(const cid of indice().comTorcida){
-      const soma = {};
-      for(const s of estruturas(E, cid)){
-        if(s.tipo === 'sede') continue;
-        const ch = s.bairro + '|' + s.tid;
-        soma[ch] = (soma[ch] || 0) + ESTRUTURA_DIA;
-      }
-      for(const ch in soma){
-        const [bid, tid] = ch.split('|');
-        mexer(E, cid, bid, tid, soma[ch], {motivo:'estrutura-dia', semTorcida:true});
-      }
-    }
-  }
-  /* O DESGASTE ACIMA DE 80 (dono, 01/10/2026: "um desgaste diário
-     pequeno acima de 80, essa sobra volta a ser de ninguém"): bairro
-     não fica de dono pra sempre. Quem passa de 80 perde, por dia, 2% do
-     que passa — 0,4 a 100%, 0,2 a 90% —, e isso vira de ninguém. Os
-     muros e a sede ainda seguram (0,2 por muro, 0,5 da sede), mas
-     quem só tem barra e não tem muro desce devagar até 80. */
-  const DESGASTE = {piso:80, taxa:0.02};
-  function desgaste(E){
-    const D = raiz(E);
-    for(const cid in D.c){
-      const st = D.c[cid] && D.c[cid].b;
-      if(!st) continue;
-      for(const bid in st){
-        const p = st[bid];
-        for(const t in p){
-          if(!(p[t] > DESGASTE.piso)) continue;
-          p[t] = um(p[t] - (p[t] - DESGASTE.piso) * DESGASTE.taxa);
-        }
-      }
-    }
-  }
-  /* quantos dias faltam no mês (contando hoje) */
-  function diasQueFaltam(E){
-    const d = TO.estado && TO.estado.dataDaSemana ? TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia) : null;
-    if(!d) return 30;
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() - d.getDate() + 1;
-  }
-  const pixoAutomatico = E => !!(E.politicas && E.politicas.pixo === 'ia');
-  /* A IA PIXA ESPALHADO, no bairro de mais chance */
-  function iaPixa(E){
-    const I = indice(), meu = eu(E), falta = Math.max(1, diasQueFaltam(E));
+  function brigasDasIAs(E){
     const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
     if(!mundo) return;
-    const r = sorteio(`${semente(E)}|pixo|${E.data.absoluto || 0}`);
+    const I = indice(), meu = eu(E), mes = mesDe(E), abs = E.data.absoluto || 0;
+    const EL = TO.elenco;
     for(const cid of I.comTorcida){
-      let bs = null, pl = null;
       for(const o of torcidasDaCidade(cid)){
-        /* a nossa entra quando a ideologia deixa a pixação com a diretoria
-           (pedido do dono, 06/10/2026) — a mesma régua das outras */
-        if(o.id === meu ? !pixoAutomatico(E) : !mundo[o.id]) continue;
-        const sd = saldoPix(E, o.id);
-        if(sd.total <= 0) continue;
-        const media = sd.total / falta;
-        let n = Math.floor(media) + (r() < media - Math.floor(media) ? 1 : 0);
-        if(!n) continue;
-        if(!bs){ bs = bairros(E, cid); pl = placar(E, cid); }
-        const lista = alvosDe(E, cid, o.id, 6, bs, pl).map(a => a.b);
-        const minhas = bs.filter(b => b.dono === o.id).sort((a, c) => a.v - c.v);
-        for(const b of lista.concat(minhas)){
-          if(n <= 0) break;
-          while(n > 0){
-            const res = pixar(E, o.id, cid, b.id);
-            if(!res.ok) break;
-            n--;
-          }
-        }
+        if(o.id === meu || !mundo[o.id]) continue;
+        const r = sorteio(`${semente(E)}|bairroIA|${o.id}|${mes}`);
+        /* o dia do mês dela: 1 em cada ~30 dias, fixo pela semente */
+        if(hash(`${semente(E)}|diaIA|${o.id}|${mes}`) % 30 !== abs % 30) continue;
+        /* quem defende: a dona; no bairro em disputa, a maior que não é
+           ela, nem aliada, nem a gente (sem isso a cidade inteira virava
+           "em disputa" em um ano e ninguém mais a fechava) */
+        const bs = bairros(E, cid).map(b => ({...b, def:defensoraDe(E, b, o.id)})).filter(b => b.def);
+        if(!bs.length) continue;
+        /* onde ela já tem ponto, ou vizinho do que é dela, na frente */
+        const minhas = new Set(bairros(E, cid).filter(b => b.dono === o.id).map(b => b.id));
+        const nota = b => ((b.partes.find(x => x.t === o.id) || {}).v || 0) * 3 +
+          (vizinhosDe(cid, b.id).some(v => minhas.has(v.id)) ? 2 : 0) + r() * 3;
+        const alvo = bs.sort((a, c) => nota(c) - nota(a))[0];
+        const forca = (tid, max, bid) => {
+          const l = EL ? (bid ? EL.noBairro(E, tid, cid, bid, max) : EL.maisFortes(E, tid, cid, max)) : [];
+          return l.reduce((x, m) => x + (m.forca || 5) + (m.defesa || 5), 0) || max * 8;
+        };
+        const fa = forca(o.id, 20, null), fd = forca(alvo.def, 15, alvo.id);
+        const venceu = r() < fa / (fa + fd);
+        const venc = venceu ? o.id : alvo.def, perd = venceu ? alvo.def : o.id;
+        transferir(E, cid, alvo.id, venc, perd, 'briga-ia');
+        if(TO.relacoes.moverRelacao) try{ TO.relacoes.moverRelacao(E, o.id, alvo.def, -2); }catch(_){}
       }
     }
   }
+  /* (as metas mensais antigas da IA saíram: ficam as portas, vazias) */
+  function metasDoDia(){}
+  function alvosDe(){ return []; }
+
+  /* A PIXAÇÃO SAIU DO JOGO (dono, 15/10/2026: "sem pixação"): as portas
+     que o resto do código ainda chama ficam, sem efeito */
+  const PIX = {dia:0, cota:() => 0, lider:0, desbota:0};
+  const vagasPix = () => 0;
+  function muros(){ return []; }
+  function saldoPix(){ return {cota:0, extra:0, lider:0, total:0, usadas:0, resta:0}; }
+  function pixar(){ return {ok:false, msg:''}; }
+  function ganharPix(){}
 
   /* =======================================================
-     O RECRUTAMENTO POR BAIRRO (pedido do dono, 01/10/2026: "a opção de
-     recrutar vai ser inteligente e definida na reunião qual bairro iremos
-     recrutar. recrutar em um bairro dá 0,2 pontos diários de domínio
-     nele")
-     A diretoria lista, na reunião, os três bairros que mais valem: onde
-     o clube tem mais torcida morando (é dali que vem novato) pesado pelo
-     que o bairro vale no domínio (o sem dona e o de dona fraca na frente;
-     o nosso já folgado, atrás). O escolhido fica até a próxima escolha
-     (`E.recrutamento`); sem escolha, vale o primeiro da lista. Todo dia
-     em que o expediente recrutou, +0,2 ali; a chance do novato pesa
-     pela torcida do clube no bairro (×0,7 a ×1,3, acoes.js). A IA
-     recruta no melhor bairro dela, com o mesmo +0,2 por dia.
+     O RECRUTAMENTO POR BAIRRO continua escolhendo ONDE se recruta (a
+     chance do novato pesa pela torcida do clube no bairro, e o novato
+     passa a morar ali — o elenco fixo, 15/10/2026), mas não rende mais
+     ponto de domínio.
      ======================================================= */
-  const RECRUTA_DIA = 0.2;
+  const RECRUTA_DIA = 0;
   function bairrosPraRecrutar(E, tid, cid, n){
     tid = tid || eu(E); cid = cid || (tid === eu(E) ? E.torcida.mapa : ((TO.mundo && TO.mundo.torcida(tid)) || {}).mapa);
     const bs = bairros(E, cid);
     return bs.map(b => {
       const pres = presencaDa(tid, cid, b.id), minha = (b.partes.find(p => p.t === tid) || {}).v || 0;
-      const vale = b.dono === tid ? (b.v >= 70 ? 0.4 : 0.8) : !b.dono ? 1.2 : b.v < 65 ? 1.1 : 0.9;
       return {id:b.id, nome:b.nome, presenca:pres, minha, dono:b.dono, v:b.v,
-              nota:Math.min(pres, 2) * vale * (b.sede && b.sede !== tid ? 0.6 : 1)};
+              nota:Math.min(pres, 2) * (b.sede && b.sede !== tid ? 0.6 : 1)};
     }).sort((a, c) => c.nota - a.nota).slice(0, n || 3);
   }
   function bairroDoRecrutamento(E){
@@ -1334,124 +1017,20 @@ TO.dominio = (function(){
     const l = bairrosPraRecrutar(E, eu(E), E.torcida.mapa, 1);
     return l.length ? bairro(E.torcida.mapa, l[0].id) : null;
   }
-  /* o peso da torcida do bairro na chance do novato */
   function pesoDoRecrutamento(E){
     const b = bairroDoRecrutamento(E);
     return b ? 0.7 + 0.3 * Math.min(presencaDa(eu(E), E.torcida.mapa, b.id), 2) : 1;
   }
-  /* o expediente recrutou hoje: +0,2 no bairro (uma vez por dia) */
-  function recrutouHoje(E){
-    const b = bairroDoRecrutamento(E), D = raiz(E), abs = E.data.absoluto || 0;
-    if(!b || D.recrutouEm === abs) return;
-    D.recrutouEm = abs;
-    mexer(E, E.torcida.mapa, b, eu(E), RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
-  }
-  /* ONDE CADA TORCIDA RECRUTA (o dono, 02/10/2026: "o jogo vai dizer em
-     qual bairro cada torcida tá recrutando"): a nossa, o bairro escolhido
-     na reunião; a IA, o do mês (o mesmo que `recrutamentoIA` usa) */
+  function recrutouHoje(){}
   function recrutandoEm(E, cid){
-    const out = new Map(), D = raiz(E), meu = eu(E);
-    for(const o of torcidasDaCidade(cid)){
-      let b = null;
-      if(o.id === meu){ if(cid === E.torcida.mapa) b = bairroDoRecrutamento(E); }
-      else {
-        planejarRecrutamento(E);
-        const v = D.recrutaIA && D.recrutaIA[o.id];
-        if(v){ const [c, bid] = v.split('#'); if(c === cid) b = bairro(cid, bid); }
-      }
-      if(b) out.set(o.id, b);
-    }
+    const out = new Map(), meu = eu(E);
+    if(cid === E.torcida.mapa){ const b = bairroDoRecrutamento(E); if(b) out.set(meu, b); }
     return out;
   }
-  /* O BAIRRO DO MÊS DE CADA IA, ESPALHADO (02/10/2026): a escolha crua
-     punha seis das sete de Fortaleza em Genibaú. Da maior pra menor, cada
-     uma escolhe entre os 5 melhores bairros dela, e o bairro vale menos a
-     cada torcida que já recruta lá (a nossa conta) */
-  function planejarRecrutamento(E){
-    const D = raiz(E), mes = mesDe(E), I = indice(), meu = eu(E);
-    if(D.recrutaMes === mes && D.recrutaIA) return;
-    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
-    if(!mundo) return;
-    D.recrutaMes = mes; D.recrutaIA = {};
-    for(const cid of I.comTorcida){
-      const ja = {};
-      if(cid === E.torcida.mapa){ const b = bairroDoRecrutamento(E); if(b) ja[b.id] = 1; }
-      const os = torcidasDaCidade(cid).filter(o => o.id !== meu && mundo[o.id])
-        .sort((a, c) => membrosDe(E, c.id) - membrosDe(E, a.id) || (a.id < c.id ? -1 : 1));
-      for(const o of os){
-        const l = bairrosPraRecrutar(E, o.id, cid, 5);
-        if(!l.length) continue;
-        const x = l.slice().sort((a, c) => c.nota / (1 + 0.7 * (ja[c.id] || 0)) - a.nota / (1 + 0.7 * (ja[a.id] || 0)))[0];
-        ja[x.id] = (ja[x.id] || 0) + 1;
-        D.recrutaIA[o.id] = cid + '#' + x.id;
-      }
-    }
-  }
-  /* a IA recruta no melhor bairro dela (escolhido no começo do mês) */
-  function recrutamentoIA(E){
-    const D = raiz(E);
-    planejarRecrutamento(E);
-    const W = (TO.relacoes && TO.relacoes.mundo) ? TO.relacoes.mundo(E) : {};
-    for(const tid in D.recrutaIA || {}){
-      /* só no dia em que o turno dela recrutou com vaga, como o nosso
-         (paridade, 12/10/2026: era todo dia, mesmo com a sede cheia) */
-      const t = W[tid];
-      if(t && t.recrutouEm !== (E.data.absoluto || 0)) continue;
-      const [cid, bid] = D.recrutaIA[tid].split('#');
-      mexer(E, cid, bid, tid, RECRUTA_DIA, {motivo:'recrutamento', semTorcida:true});
-    }
-  }
-
-  /* A IA NÃO FICA PARADA: a primeira ou a segunda maior da cidade que
-     não domina faz uma ação social por semana, em 35% das semanas, no
-     bairro sem dona ou de dona fraca mais perto do território dela.
-     Paga do caixa dela. */
-  function semanaDasIAs(E){
-    const mundo = TO.relacoes && TO.relacoes.mundo ? TO.relacoes.mundo(E) : null;
-    if(!mundo) return;
-    const I = indice(), meu = eu(E);
-    for(const cid of I.comTorcida){
-      const pl = placar(E, cid);
-      /* SEM DESCANSO QUANDO DOMINA (01/10/2026): a dona da cidade também
-         trabalha — no bairro dela abaixo de 60% */
-      if(pl.dono && pl.dono !== meu && mundo[pl.dono] && (mundo[pl.dono].caixa || 0) >= SOCIAL.custo * 2){
-        const r0 = sorteio(`${semente(E)}|segura|${pl.dono}|${E.data.ano}|${E.data.semana}`);
-        const fraco = bairros(E, cid).filter(b => b.dono === pl.dono && b.v < 60 && b.sede !== pl.dono).sort((a, c) => a.v - c.v)[0];
-        if(fraco && r0() < 0.35){
-          mundo[pl.dono].caixa -= SOCIAL.custo;
-          if(TO.relacoes.sondar) TO.relacoes.sondar(pl.dono, 'Ação social', -SOCIAL.custo);
-          mexer(E, cid, fraco.id, pl.dono, GANHO.social[0] + r0() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
-        }
-      }
-      /* PARIDADE (dono, 12/10/2026): a nossa ação social é uma por
-         semana, garantida; a delas era 35% das semanas e só das duas
-         maiores. Agora toda torcida da cidade com caixa pra ela faz a
-         dela na semana. */
-      for(const tid of torcidasDaCidade(cid).map(o => o.id)){
-        if(tid === meu || tid === pl.dono) continue;
-        const t = mundo[tid];
-        if(!t || (t.caixa || 0) < SOCIAL.custo * 2) continue;
-        const r = sorteio(`${semente(E)}|social|${tid}|${E.data.ano}|${E.data.semana}`);
-        const alvo = alvoSocial(E, cid, tid, r);
-        if(!alvo) continue;
-        t.caixa -= SOCIAL.custo;
-        if(TO.relacoes.sondar) TO.relacoes.sondar(tid, 'Ação social', -SOCIAL.custo);
-        mexer(E, cid, alvo, tid, GANHO.social[0] + r() * (GANHO.social[1] - GANHO.social[0]), {motivo:'social'});
-      }
-    }
-  }
-  /* onde a ação social rende mais: sem dona, ou dona fraca, perto do
-     que a torcida já tem */
-  function alvoSocial(E, cid, tid, r){
-    const bs = bairros(E, cid);
-    /* (a zona; na praça sem zona, a cidade) */
-    const zk = b => b.semZona ? 'cidade:' + b.cidade : b.zona;
-    const zonas = new Set(bs.filter(b => b.dono === tid).map(zk));
-    const cand = bs.filter(b => b.dono !== tid && !(b.sede && b.sede !== tid));
-    if(!cand.length) return null;
-    const nota = b => (b.dono ? b.v : 30) - (zonas.has(zk(b)) ? 12 : 0) - 20 * (Math.min(presencaDa(tid, cid, b.id), 1.5) - 1) + r() * 8;
-    return cand.sort((a, c) => nota(a) - nota(c))[0].id;
-  }
+  /* a ação social no bairro saiu junto (só briga mexe na barra) */
+  function podeSocial(){ return {ok:false, motivo:''}; }
+  function social(){ return {ok:false, msg:''}; }
+  function alvoSocial(){ return null; }
 
   /* =======================================================
      AS AÇÕES QUE MEXEM NA BARRA
@@ -1503,60 +1082,46 @@ TO.dominio = (function(){
         b = bairroDoEstadio(E, cid, L.estadio);
     }
     if(!b) return null;
-    const pts = estrada ? GANHO.estrada
-            : /treta/.test(cena) ? (GANHO.treta[d.tam] || GANHO.treta[7])
-            : /^estadio|arquibancada/.test(cena) ? GANHO.estadio
-            : /arredores/.test(cena) ? GANHO.arredores
-            : /reuniao/.test(cena) || d.alvoTipo === 'reuniao' || d.tipoDefesa === 'reuniao' ? GANHO.reuniao
-            : /^bar|bote/.test(cena) || d.alvoTipo === 'bar' ? GANHO.bar + (d.quebrou ? GANHO.quebrou : 0)
-            : d.alvoTipo === 'sede' ? GANHO.sede
-            : /casa|festa|piscina/.test(cena) ? GANHO.casa
-            : d.atacamos === false ? GANHO.defesa
-            : GANHO.rua;
+    const pts = 1;
     return {cid, b, pts, cena, meu, rival};
   }
 
-  /* A BRIGA DO JOGADOR (TO.feed.registrarConfronto): quem ganhou soma
-     no bairro da briga, quem perdeu perde ali */
+  /* A BRIGA DO JOGADOR (TO.feed.registrarConfronto): quem venceu leva
+     1 ponto no bairro da briga, de quem perdeu (15/10/2026) */
   function confronto(E, d){
     const o = ondeDaBriga(E, d);
     /* empate não mexe (ninguém saiu por cima) */
     if(!o || d.empatou) return null;
-    const {cid, b, pts, cena, meu, rival} = o;
+    const {cid, b, cena, meu, rival} = o;
     const ganhou = !!d.ganhamos;
-    /* VITÓRIA QUE DÁ PIXAÇÃO (01/10/2026): treta (+1; a de 10, +2), bote
-       no bar ou na sede, a reunião da zona e a casa de piscina (+1) */
-    const pixos = /treta/.test(cena) ? (d.tam >= 10 ? 2 : 1)
-      : (/reuniao|casa|piscina|^bar|bote/.test(cena) || ['bar', 'sede', 'reuniao', 'casa'].includes(d.alvoTipo)) && d.atacamos !== false ? 1 : 0;
-    if(pixos) ganharPix(E, ganhou ? meu : rival, pixos);
-    const r = ganhou ? mexer(E, cid, b, meu, pts, {contra:rival, motivo:cena || 'briga'})
-                     : mexer(E, cid, b, rival, pts, {contra:meu, motivo:cena || 'briga'});
+    const r = ganhou ? transferir(E, cid, b, meu, rival, cena || 'briga')
+                     : transferir(E, cid, b, rival, meu, cena || 'briga');
     if(r){
-      /* o nosso antes e depois, pro resultado contar */
-      const nosso = (((daCidade(E, cid).b) || {})[r.bairro.id] || {})[meu] || 0;
-      r.nosAntes = ganhou ? r.antes : um(nosso + r.ganho);
-      r.nosDepois = um(nosso);
+      const p = ((daCidade(E, cid).b) || {})[r.bairro.id] || {};
+      r.nosDepois = p[meu] || 0;
+      r.nosAntes = ganhou ? r.antes : r.contraAntes;
+      r.elesDepois = p[rival] || 0;
+      r.elesAntes = ganhou ? r.contraAntes : r.antes;
     }
     return r;
   }
 
-  /* A PRÉVIA (o anúncio da briga): o bairro, e a nossa parte e a deles
-     ali vencendo e perdendo — a mesma conta do fim, numa cópia da barra */
+  /* A PRÉVIA (o anúncio da briga): o bairro e os pontos nossos e deles
+     ali, vencendo e perdendo — a mesma conta do fim, numa cópia */
   function previaBriga(E, d){
     const o = ondeDaBriga(E, d);
     if(!o) return null;
-    const {cid, b, pts, meu, rival} = o;
+    const {cid, b, meu, rival} = o;
     const x = bairro(cid, b);
     if(!x) return null;
     const barra = Object.assign({}, ((daCidade(E, cid).b) || {})[x.id] || {});
     const lado = (venc, perd) => {
       const p = Object.assign({}, barra);
-      const n = pontosEfetivos(E, cid, x, venc, pts, {motivo:'briga'});
-      somarNaBarra(p, venc, n, perd);
-      return {nos:um(p[meu] || 0), eles:um(p[rival] || 0), dona:donaDoObjeto(p)};
+      passarPonto(E, cid, x.id, p, venc, perd);
+      return {nos:p[meu] || 0, eles:p[rival] || 0, dona:donaDoObjeto(p)};
     };
-    return {cid, cidade:(cidadeDe(cid) || {}).nome || cid, bairro:x, pts,
-            antes:{nos:um(barra[meu] || 0), eles:um(barra[rival] || 0), dona:donaDoObjeto(barra)},
+    return {cid, cidade:(cidadeDe(cid) || {}).nome || cid, bairro:x, pts:1,
+            antes:{nos:barra[meu] || 0, eles:barra[rival] || 0, dona:donaDoObjeto(barra)},
             vencendo:lado(meu, rival), perdendo:lado(rival, meu), meu, rival};
   }
   /* a prévia em texto: "Bairro X (Cidade)" e a linha do domínio */
@@ -1565,34 +1130,32 @@ TO.dominio = (function(){
     return pv.cidade && pv.cidade !== pv.bairro.nome ? _t('{bairro} ({cidade})', {bairro:pv.bairro.nome, cidade:pv.cidade})
                                                      : pv.bairro.nome;
   }
+  const de7 = v => _t('{n}/7', {n:v || 0});
   function linhaDaPrevia(E, pv){
     if(!pv) return '';
-    const pc = v => umaCasa(v) + '%';
     const vira = (r, meu) => r.dona !== pv.antes.dona
       ? (r.dona === meu ? ' ' + _t('(o bairro vira nosso)')
          : r.dona ? ' ' + _t('(o bairro vira da {nome})', {nome:nomeDe(r.dona)})
          : pv.antes.dona === meu ? ' ' + _t('(perdemos o bairro)') : ' ' + _t('(o bairro fica sem dona)'))
       : '';
-    const P = {bairro:pv.bairro.nome, a:pc(pv.antes.nos), b:pc(pv.vencendo.nos), va:vira(pv.vencendo, pv.meu),
-               e:pc(pv.perdendo.nos), rival:nomeDe(pv.rival), c:pc(pv.antes.eles), d:pc(pv.perdendo.eles), vp:vira(pv.perdendo, pv.meu)};
-    /* perdendo, a nossa parte só cai quando o ponto sai dela */
-    return pv.perdendo.nos < pv.antes.nos - 0.05
-      ? _t('Domínio em {bairro} (a nossa parte: {a}): vencendo, sobe pra {b}{va}; perdendo, cai pra {e} e a {rival} vai de {c} pra {d}{vp}', P)
-      : _t('Domínio em {bairro} (a nossa parte: {a}): vencendo, sobe pra {b}{va}; perdendo, a {rival} vai de {c} pra {d}{vp}', P);
+    return _t('Domínio em {bairro} (nós {a}, a {rival} {c}): vencendo, nós {b}{va}; perdendo, nós {e} e ela {d}{vp}',
+      {bairro:pv.bairro.nome, rival:nomeDe(pv.rival), a:de7(pv.antes.nos), c:de7(pv.antes.eles),
+       b:de7(pv.vencendo.nos), va:vira(pv.vencendo, pv.meu), e:de7(pv.perdendo.nos), d:de7(pv.perdendo.eles), vp:vira(pv.perdendo, pv.meu)});
   }
-  /* o resultado em texto (a mensagem da briga): quanto mexeu e em quem */
+  /* o resultado em texto (a mensagem da briga): o ponto que andou */
   function linhaDoResultado(E, r){
     if(!r || !r.bairro) return '';
-    const pc = v => umaCasa(v) + '%';
     const cidade = (cidadeDe(r.cid) || {}).nome || r.cid;
     const onde = cidade && cidade !== r.bairro.nome ? _t('{bairro} ({cidade})', {bairro:r.bairro.nome, cidade}) : r.bairro.nome;
-    if(!(r.ganho >= 0.05)) return r.tid === eu(E)
-      ? _t('Domínio em {onde}: a nossa parte já estava em {a}, não tinha o que somar', {onde, a:pc(r.depois)})
-      : _t('Domínio em {onde}: a {nome} já estava no teto ali, a barra não mexeu', {onde, nome:nomeDe(r.tid)});
-    return r.tid === eu(E)
-      ? _t('Domínio em {onde}: a nossa parte foi de {a} pra {b} (+{g})', {onde, a:pc(r.antes), b:pc(r.depois), g:umaCasa(r.ganho)})
-      : _t('Domínio em {onde}: a {nome} ganhou {g} ali; a nossa parte foi de {a} pra {b}', {onde, nome:nomeDe(r.tid), g:umaCasa(r.ganho),
-           a:pc(r.nosAntes != null ? r.nosAntes : 0), b:pc(r.nosDepois != null ? r.nosDepois : 0)});
+    const meu = eu(E);
+    if(!r.ganho) return r.tid === meu
+      ? _t('Domínio em {onde}: nada a tirar de ninguém, os pontos não mexeram', {onde})
+      : _t('Domínio em {onde}: a {nome} não tinha o que tirar, os pontos não mexeram', {onde, nome:nomeDe(r.tid)});
+    const quem = t => t === meu ? _t('nós') : _t('a {nome}', {nome:nomeDe(t)});
+    const tirou = r.tirou
+      ? ' · ' + _t('{quem} de {c} pra {d}', {quem:quem(r.tirou), c:de7(r.contraAntes), d:de7(r.contraDepois)})
+      : ' · ' + _t('o ponto veio de ninguém');
+    return _t('Domínio em {onde}: {quem} de {a} pra {b}', {onde, quem:quem(r.tid), a:de7(r.antes), b:de7(r.depois)}) + tirou;
   }
 
   /* o bairro do estádio do jogo (dados/estadios.js): o do nome, quando
@@ -1679,57 +1242,14 @@ TO.dominio = (function(){
     return bairroDoEstadio(null, cid);
   }
 
-  /* A BRIGA DAS IAs (TO.relacoes.registrarBrigaIA): a vencedora soma no
-     bairro mais exposto da perdedora naquela cidade (o dela de barra
-     mais baixa, fora da sede), ou onde a perdedora tem mais barra */
-  function brigaIA(E, reg){
-    if(!E || !reg || !reg.a || !reg.b) return null;
-    const venc = reg.ganhouA ? reg.a.id : reg.b.id, perd = reg.ganhouA ? reg.b.id : reg.a.id;
-    /* O ALVO DO MÊS (01/10/2026): a briga que a IA foi buscar acontece no
-       bairro que ela quer virar, e é ali que a barra mexe */
-    const F = ALVO_FORCADO;
-    if(reg.tipo === 'treta' || reg.tipo === 'bar' || (F && F.k === 'reuniao')) ganharPix(E, venc, reg.tipo === 'treta' && (reg.a.n || 0) >= 10 ? 2 : 1);
-    if(F && F.cid && bairro(F.cid, F.b) && [F.a, F.v].includes(venc) && [F.a, F.v].includes(perd)){
-      const tam = reg.a.n || 0;
-      const pts = F.k === 'reuniao' ? GANHO.reuniao : F.k === 'bar' ? GANHO.iaBar
-                : F.k === 'treta' ? (GANHO.treta[tam] || GANHO.treta[7]) : GANHO.iaRua;
-      return mexer(E, F.cid, F.b, venc, pts, {contra:perd, motivo:'alvo-' + (F.k || 'rua')});
-    }
-    let cid = reg.mapa;
-    if(!cid){ const c = indice().C.find(x => x.nome === reg.cidade || x.id === reg.cidade); cid = c && c.id; }
-    if(!cid || !bairrosDe(cid).length) return null;
-    /* A ESTRADA TAMBÉM É BAIRRO (02/10/2026): a emboscada das IAs cai na
-       entrada da praça, como a nossa */
-    if(reg.tipo === 'estrada'){
-      const b = bairroDaEntrada(cid, `emb|${cid}|${venc}|${perd}|${reg.semana || ''}`);
-      return b ? mexer(E, cid, b.id, venc, GANHO.estrada, {contra:perd, motivo:'estrada'}) : null;
-    }
-    const bs = bairros(E, cid);
-    /* (o bairro da sede também entra: a sede pode ser perdida, 02/10/2026) */
-    const daPerd = bs.filter(b => b.dono === perd).sort((a, c) => a.v - c.v);
-    let alvo = daPerd[0] || null;
-    if(!alvo){
-      const onde = bs.map(b => ({b, v:(b.partes.find(x => x.t === perd) || {}).v || 0})).filter(x => x.v > 0)
-        .sort((a, c) => c.v - a.v)[0];
-      alvo = onde ? onde.b : null;
-    }
-    /* quem perdeu não tem nada na cidade: a briga foi na rua do estádio */
-    if(!alvo) alvo = bairroDoEstadio(E, cid);
-    if(!alvo) return null;
-    const tam = reg.a.n || 0;
-    const pts = reg.tipo === 'treta' ? (GANHO.treta[tam] || GANHO.treta[7])
-              : reg.tipo === 'bar' ? GANHO.iaBar : GANHO.iaRua;
-    return mexer(E, cid, alvo.id, venc, pts, {contra:perd, motivo:reg.tipo || 'ia'});
-  }
+  /* A BRIGA DAS IAs NA RUA, NA ESTRADA E NO ESTÁDIO (TO.relacoes.registrarBrigaIA)
+     não mexe mais no domínio: entre elas, é a briga de bairro do mês
+     (`brigasDasIAs`) que move a barra (15/10/2026) */
+  function brigaIA(){ return null; }
 
   /* UMA ESTRUTURA NOVA NO BAIRRO (bar, loja, subsede; a filial na
      cidade dela): a torcida ganha presença ali */
-  function estrutura(E, tid, tipo, cid, b){
-    const pts = GANHO.estrutura[tipo] || 0;
-    if(!pts) return null;
-    if(tipo === 'filial') b = bairroDaFilial(tid, cid);
-    return mexer(E, cid, b, tid, pts, {motivo:'estrutura'});
-  }
+  function estrutura(){ return null; }
   /* o bairro que a IA escolhe pro ponto novo: um dela (fora da sede),
      depois um sem dona perto do território, depois o padrão */
   function bairroNovoIA(E, tid, tipo){
@@ -1749,44 +1269,13 @@ TO.dominio = (function(){
   function compraIA(E, tid, tipo, obj){
     const o = (TO.mundo && TO.mundo.torcida(tid)) || null;
     if(!o) return null;
-    if(tipo === 'filial') return estrutura(E, tid, 'filial', obj && obj.cidade, null);
+    if(tipo === 'filial') return null;
     const b = tipo === 'subsede'
       ? bairroPadrao(o, 'subsede', Math.max(0, (((E.mundoTorcidas || {})[tid] || {}).subsedes || 1) - 1))
       : bairroNovoIA(E, tid, tipo);
     if(obj && b && tipo !== 'subsede') obj.bairro = b.nome;
-    return b ? estrutura(E, tid, tipo, o.mapa, b) : null;
+    return b || null;
   }
-
-  /* A AÇÃO SOCIAL NO BAIRRO (do jogador): cesta básica, mutirão, o
-     campinho arrumado — a torcida aparece no bairro sem briga. Uma por
-     semana, na cidade da torcida. */
-  function podeSocial(E){
-    if(!E) return {ok:false, motivo:''};
-    E.acoes = E.acoes || {};
-    if(E.acoes.ultimaSocial === `${E.data.ano}|${E.data.semana}`)
-      return {ok:false, motivo:_t('já teve ação social esta semana')};
-    if((E.dinheiro || 0) < SOCIAL.custo) return {ok:false, motivo:_t('custa {valor}', {valor:dinheiro(SOCIAL.custo)})};
-    const aptos = TO.membros && TO.membros.aptosParaOEstadio ? TO.membros.aptosParaOEstadio(E).length : (E.membros || []).length;
-    if(aptos < SOCIAL.gente) return {ok:false, motivo:_t('gente apta de menos ({n} de {min})', {n:aptos, min:SOCIAL.gente})};
-    return {ok:true};
-  }
-  function social(E, b){
-    const pode = podeSocial(E);
-    if(!pode.ok) return {ok:false, msg:pode.motivo};
-    const cid = E.torcida.mapa, x = bairro(cid, b);
-    if(!x) return {ok:false, msg:_t('Esse bairro não é da nossa cidade.')};
-    E.acoes.ultimaSocial = `${E.data.ano}|${E.data.semana}`;
-    /* (o lancarNoResumo já tira do caixa: descontar antes cobrava duas
-       vezes — R$ 3.000 por ação, 01/10/2026) */
-    if(TO.estado && TO.estado.lancarNoResumo) TO.estado.lancarNoResumo(E, 'social', -SOCIAL.custo);
-    else E.dinheiro -= SOCIAL.custo;
-    const r0 = sorteio(`${semente(E)}|social-nosso|${E.data.absoluto}|${x.id}`);
-    const pts = GANHO.social[0] + r0() * (GANHO.social[1] - GANHO.social[0]);
-    const r = mexer(E, cid, x, eu(E), pts, {motivo:'social'});
-    const v = r ? r.depois : 0;
-    return {ok:true, r, msg:_t('Ação social em {bairro}: a barra da torcida foi a {v}%.', {bairro:x.nome, v:Math.round(v)})};
-  }
-  const dinheiro = v => (TO.util && TO.util.dinheiro) ? TO.util.dinheiro(v) : 'R$ ' + Math.round(v).toLocaleString('pt-BR');
 
   /* o que o save antigo precisa: a sede do jogador no bairro espalhado */
   function reparar(E){
@@ -1802,40 +1291,18 @@ TO.dominio = (function(){
      que ler `bairroSede` depois daqui */
   try{ indice(); }catch(e){ /* sem dados ainda: monta na primeira leitura */ }
 
-  /* O MODO RÁPIDO (pedido do dono, 10/10/2026): o domínio some do
-     mundo inteiro — ninguém disputa bairro, nem a gente nem a IA. As
-     portas que mexem na barra, pixam, recrutam por bairro ou anunciam
-     o bairro da briga viram nada; a geografia (bairros, sede, estádio)
-     continua de pé, porque cena e caravana precisam dela. */
-  const rapido = () => !!(TO.estado && TO.estado.rapido && TO.estado.E && TO.estado.rapido());
-  const nadaNoRapido = (fn, vazio) => function(){ return rapido() ? (typeof vazio === 'function' ? vazio() : vazio) : fn.apply(this, arguments); };
-  dia = nadaNoRapido(dia, undefined);
-  metasDoDia = nadaNoRapido(metasDoDia, undefined);
-  brigaIA = nadaNoRapido(brigaIA, null);
-  compraIA = nadaNoRapido(compraIA, null);
-  estrutura = nadaNoRapido(estrutura, null);
-  recrutouHoje = nadaNoRapido(recrutouHoje, undefined);
-  confronto = nadaNoRapido(confronto, null);
-  ondeDaBriga = nadaNoRapido(ondeDaBriga, null);
-  previaBriga = nadaNoRapido(previaBriga, null);
-  mexer = nadaNoRapido(mexer, null);
-  pixar = nadaNoRapido(pixar, () => ({ok:false, msg:''}));
-  ganharPix = nadaNoRapido(ganharPix, undefined);
-  social = nadaNoRapido(social, () => ({ok:false, msg:''}));
-  podeSocial = nadaNoRapido(podeSocial, () => ({ok:false, motivo:''}));
-  pesoDoRecrutamento = nadaNoRapido(pesoDoRecrutamento, 1);
-  bairroDoRecrutamento = nadaNoRapido(bairroDoRecrutamento, null);
-  bairrosPraRecrutar = nadaNoRapido(bairrosPraRecrutar, () => []);
-  recrutandoEm = nadaNoRapido(recrutandoEm, () => new Map());
+  /* O DOMÍNIO VALE NOS DOIS MODOS (dono, 15/10/2026): os embrulhos do
+     modo rápido, que apagavam tudo, saíram */
+  const rapido = () => false;
 
-  return {DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO, rapido,
+  return {MAX, transferir, passarPonto, fixoDe, brigasDasIAs, defensoraDe, DOMINA, DIA, CORTE, GANHO, SOCIAL, ZONAS, VIZINHAS, TORCIDA, POVO, rapido,
           duas, presenca, presencaDa, clubeDe, fatorTorcida, fatorGanho, torcedoresNoBairro, parteDaTorcida, notaDaTorcida, cidadesDa,
           semZonas:cid => semZonas(cidadeDe(cid)),
           cidadeDoBairro:(cid, b) => { const x = bairro(cid, b); return x ? cidadeDoBairro(cidadeDe(cid), x) : ''; },
           indice, espalhar, bairro, bairrosDe, sedeDe, casaDe, bairroPadrao, bairroDaFilial,
           torcidasDaCidade, estruturas, inicial, daCidade, partes, bairros, placar, donaDaCidade,
-          donaDoBairro, SEDE_REFAZ, SEDE_PERDIDA, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
-          mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, ESTRUTURA_DIA, vizinhosDe, vizinhosDoEstadio, bairroDaPista, compraIA, bairroNovoIA, bairroDoEstadio,
+          donaDoBairro, SEDE_PERDIDA, maiores, membrosDe, rivais, amigas, fator, notaDoCorte, siglaDe, nomeDe,
+          mexer, confronto, ondeDaBriga, previaBriga, linhaDaPrevia, linhaDoResultado, ondeEmTexto, bairroDaEntrada, brigaIA, estrutura, vizinhosDe, vizinhosDoEstadio, bairroDaPista, compraIA, bairroNovoIA, bairroDoEstadio,
           podeSocial, social, alvoSocial, dia, reparar, fecharLivro, hash, metasDoDia, alvosDe,
           PIX, vagasPix, muros, saldoPix, pixar, ganharPix, bairrosPraRecrutar, bairroDoRecrutamento, pesoDoRecrutamento, recrutouHoje, recrutandoEm, RECRUTA_DIA,
           get log(){ return (TO.estado && TO.estado.E && TO.estado.E.dominio && TO.estado.E.dominio.log) || []; }};

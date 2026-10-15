@@ -353,12 +353,12 @@ TO.mapaPlanta = (function(){
         let [sx, sy] = paraTela(pb[3], pb[4]);
         if(sx < -120 || sx > larg + 120 || sy < -30 || sy > alt + 30) return;
         const t = b.nome.toUpperCase();
-        const sub = b.dono ? `${d.siglaDe(b.dono)} ${Math.round(b.v)}%` : _t('em disputa');
+        const sub = b.dono ? `${d.siglaDe(b.dono)} ${b.v}/${d.MAX || 7}` : _t('em disputa');
         /* as demais torcidas com barra no bairro, embaixo da dona (o dono,
            01/10/2026: "a porcentagem das demais torcidas não-dominantes do
            bairro"), até três */
         let outras = (b.partes || []).filter(x => x.t !== b.dono && x.v >= 1).slice(0, 3)
-          .map(x => `${d.siglaDe(x.t)} ${Math.round(x.v)}%`).join(' · ');
+          .map(x => `${d.siglaDe(x.t)} ${x.v}`).join(' · ');
         ctx.font = fonte(700, 13);
         const w = Math.max(ctx.measureText(t).width, 40);
         /* (de longe, na praça de várias cidades, o nome que não cabe espera

@@ -10871,6 +10871,57 @@ Teste (Playwright, os dois modos, 9 aliadas):
 - no modo rápido, o tempo volta a andar quando todas têm resposta;
 - a lista foi conferida no computador e em 390 px, cada aliada numa linha só.
 
+## Domínio dos bairros de novo, só no braço — sem treta apostada e sem LNT (dono, 15/10/2026)
+
+Pedido: "Tire os 5x5, 7x7 e 10x10 apostado do jogo e o LNT. Quero tentar
+implementar uma lógica simples de dominação dos bairros novamente", sem
+pixação, só cenas de briga nos bairros. Tudo combinado em 20 perguntas.
+
+**O que saiu.** A treta apostada (5×5, 7×7, 10×10, o W.O., o cartão de
+treta do trimestre, a treta entre IAs) e a LNT inteira (`js/mundo/lnt.js`,
+a aba de Competições, o recorte do jornal, as manchetes do Porrada). Saíram
+também os alvos de domínio do mês, a pixação (muros, cota, política de pixo
+na ideologia), a ação social de bairro e os +0,x por dia de estrutura e de
+recrutamento. Save antigo: `E.lnt` some, decisão de treta/LNT aberta fecha
+com "Esse assunto já passou." e o domínio é refeito do zero (`E.dominio.v = 2`).
+
+**A barra de 7.** Cada bairro tem 7 pontos inteiros (`js/mundo/dominio.js`,
+`MAX`); dona é quem tem 4 ou mais (`DOMINA`), ninguém com 4 = em disputa.
+Começo: a dona leva 4 ou 5 (5 no bairro da sede; as maiores têm mais chance
+de 5), em 60% dos bairros uma segunda torcida leva 1–2, e toda torcida tem 1
+ponto fixo no bairro da sede (a filial, no dela) — esse nunca sai. Outras
+cidades também têm pontos.
+
+**Só briga mexe.** Quem vence tira 1 de quem perde (`transferir` /
+`passarPonto`); se o perdedor não tem o que dar, o ponto vem de ninguém
+(se sobra ponto livre); senão nada. Vale pra briga de bairro, pros confrontos
+do itinerário (±1 no bairro da briga, nos dois modos) e pra defesa. Ficaram só
+dois efeitos diários: dona da cidade ±0,1 e −0,2 de moral por dia com o
+bairro da sede perdido.
+
+**As brigas do mês** (`js/mundo/feed.js`, `bairroDeHoje`), nos dois modos:
+- 1 chance nossa: num bairro de uma não aliada (a dona; em disputa, a maior
+  ali). Três jeitos — reunião na praça (`treta-campo`), assistindo o jogo
+  deles (`treta-galpao`, só em dia de jogo fora do clube deles) e "passei
+  por lá e vi membros deles de bobeira" (`treta-beco`). Ir pra cima, Simular
+  ou Deixar quieto (de graça).
+- 2 ataques contra nós, num bairro nosso (sem bairro nosso, o da sede).
+  Descer, Simular ou Ninguém desce (+1 pra eles, −1 pra nós e o moral de
+  "ninguém desceu").
+- Efetivos: quem defende põe os que moram no bairro, até 15 (beco 7); quem
+  ataca traz os mais fortes, até 20 (beco 7).
+- As IAs brigam entre si, uma por mês cada, contra a dona (ou a maior, no
+  bairro em disputa) — sem esse "ou a maior" a cidade inteira virava "em
+  disputa" em um ano e ninguém fechava mais nada.
+
+**O elenco fixo** (`js/mundo/elenco.js`, `TO.elenco`): cada torcida tem os
+membros dela gerados por hash — nome, cargo, idade, ficha e bairro — iguais em
+todo save. A filial aparece como "Cearamor Recife". Os nossos ganham bairro
+na hora (e o novato mora no bairro do recrutamento). É daí que sai quem desce
+na briga e a lista "Membros que moram aqui" do cartão do bairro.
+
+**O mapa da cidade** abre nos dois modos, com a barra de 7 gomos no cartão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

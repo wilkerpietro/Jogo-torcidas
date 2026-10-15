@@ -1623,7 +1623,9 @@ TO.relacoes = (function(){
                  semanaAbs: bloco*SEMANAS_TRI + Math.floor(d/7) + 1,
                  dia: (d % 7) + 1});
     };
-    for(let i=0;i<nTreta;i++) poe('treta', i);
+    /* a treta marcada (apostada) saiu do jogo em 15/10/2026: o dado
+       continua rodando pra o bar e a casa caírem nos mesmos dias */
+    void nTreta;
     for(let i=0;i<nBar;i++)   poe('bar', i);
     for(let i=0;i<nCasa;i++)  poe('casa', i);
     return fora;
@@ -2730,45 +2732,7 @@ TO.relacoes = (function(){
     return lista.sort((x,y)=>vivoDe(E,y.id)-vivoDe(E,x.id))[0];
   }
 
-  /* a TRETA MARCADA delas: efetivos idênticos (5/7/10), a conta do
-     dono — prestígio ±1 na régua de 0-100, relação −2, sem dinheiro */
-  function tretaIA(E, o, chave){
-    const r = rivalDaPracaIA(E, o, chave);
-    if(!r) return null;
-    const tam = [5, 7, 10][TO.mapa.hash(`${chave}|n`) % 3];
-    if(disponiveisIA(E, o.id) < tam || disponiveisIA(E, r.id) < tam)
-      return null;
-    const abs = E.data.absoluto || 0;
-    const pA = tam * mediaDeFichaGerada(o, disponiveisIA(E, o.id), E) * U.entre(0.85, 1.15);
-    const pB = tam * mediaDeFichaGerada(r, disponiveisIA(E, r.id), E) * U.entre(0.85, 1.15);
-    const ganhouA = pA >= pB;
-    const machuca = (id, perdeu) => {
-      const t = (E.mundoTorcidas||{})[id];
-      const n = Math.round(tam * (perdeu ? U.entre(0.25, 0.45)
-                                         : U.entre(0.08, 0.20)));
-      if(t && n) (t.feridosIA = t.feridosIA||[]).push({n, ate: abs + camaIA(t)});
-      return n;
-    };
-    const fA = machuca(o.id, !ganhouA), fB = machuca(r.id, ganhouA);
-    /* régua do dono (18/08/2026): treta paga no mínimo 3 de prestígio
-       na régua de 0-100 — 3 no 5×5, 4 no 7×7, 5 no 10×10 */
-    const display = tam >= 10 ? 5 : tam >= 7 ? 4 : 3;
-    mover(E, ganhouA ? o.id : r.id, 'prestigio',  display/5);
-    /* perder a treta custa −1 de prestígio e um tanto de moral
-       (preço do dono, 19/08/2026 — a mesma régua da nossa) */
-    mover(E, ganhouA ? r.id : o.id, 'prestigio', -0.2);
-    mover(E, ganhouA ? o.id : r.id, 'moral', 0.6);
-    mover(E, ganhouA ? r.id : o.id, 'moral', -0.2);
-    moverRelacao(E, o.id, r.id, -REL.iaTreta);
-    return registrarBrigaIA(E, {
-      ano:E.data.ano, semana:E.data.semana, dia:E.data.dia,
-      cidade:(M().cidade(o.mapa)||{}).nome || o.mapa, jogo:_t('treta marcada'),
-      mapa:o.mapa, tipo:'treta',
-      a:{id:o.id, nome:o.nome, n:tam, feridos:fA, presos:0},
-      b:{id:r.id, nome:r.nome, n:tam, feridos:fB, presos:0},
-      vencedor: ganhouA ? o.nome : r.nome, prestigio:display, ganhouA
-    });
-  }
+  /* (a treta marcada entre as IAs saiu em 15/10/2026) */
 
   /* o ATAQUE AO BAR delas: a maior rival da praça vem, e dinheiro SÓ
      muda de mão aqui — como no nosso bar (saque de 60 por cabeça do
@@ -3035,8 +2999,7 @@ TO.relacoes = (function(){
       /* --- o calendário do trimestre dela --- */
       for(const ev of eventosDoTrimestre(E, o.id)){
         if(ev.semanaAbs !== sa || ev.dia !== E.data.dia) continue;
-        const r = ev.tipo === 'treta' ? tretaIA(E, o, ev.chave)
-                                      : barIA(E, o, ev.chave);
+        const r = barIA(E, o, ev.chave);
         if(r) fora.push(r);
       }
 

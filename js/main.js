@@ -387,12 +387,12 @@
      itens:['A diretoria manda mensagem sugerindo os ataques aos rivais',
             'Os rivais podem atacar a gente',
             'Diplomacia, festas e assaltos chegam como mensagem',
-            'Sem domínio de bairros, sem pixação e sem reunião mensal']},
+            'Brigas de bairro pelo domínio da cidade, sem reunião mensal']},
     {id:'detalhista', nome:'Modo detalhista',
      resumo:'O jogo inteiro: tudo do rápido e a disputa pela cidade.',
      itens:['A cidade em bairros, com domínio de cada torcida',
-            'Pixações, recrutamento por bairro e ação social',
-            'Os alvos de domínio do mês',
+            'Brigas de bairro pelo domínio da cidade',
+            'Os confrontos do itinerário também mexem nos bairros',
             'A reunião mensal da diretoria na sede']}
   ];
   function pintarPassoModo(){
@@ -1042,10 +1042,7 @@
           id=>P.definirPolitica(e, 'outros', id));
     grupo(_t('Apoio nos jogos fora'), P.POLITICA_APOIO, pol.apoio,
           id=>P.definirPolitica(e, 'apoio', id));
-    /* sem domínio no modo rápido, não há pixação a comandar (10/10/2026) */
-    if(!rapidoTela())
-      grupo(_t('Pixações'), P.POLITICA_PIXO, pol.pixo,
-            id=>P.definirPolitica(e, 'pixo', id));
+    /* (15/10/2026) a pixação saiu do jogo com o domínio novo */
     cx.appendChild(el('div',{class:'linha-dado', html:
       `<span class="fraco">${_t('O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.')}</span>`}));
 
@@ -1100,8 +1097,9 @@
      saiu voltava pro feed (numa partida de 400 dias, em 65 deles havia
      uma Gazeta no feed). As matérias de jornal saem do feed sempre; o
      post que a rede ainda tem continua valendo pra qualquer outro tipo. */
-  const MATERIA_DE_JORNAL = new Set(['rodada', 'almanaque',
-                                     'lnt-fundacao', 'lnt-fim', 'obra']);
+  const MATERIA_DE_JORNAL = new Set(['rodada', 'almanaque', 'obra',
+                                     /* (os da LNT, que saiu em 15/10/2026: save antigo) */
+                                     'lnt-fundacao', 'lnt-fim']);
   function feedVisivel(e){
     const naRede = new Set();
     for(const m of (e.mensagens || [])){
@@ -1547,8 +1545,6 @@
     try{
       const pg = m.kind === 'confronto' && TO.porrada ? TO.porrada.montar(e, m)
         : m.kind === 'rodada' && TO.gazeta ? TO.gazeta.montar(e, m)
-        : (m.kind === 'lnt-fundacao' || m.kind === 'lnt-fim') && TO.porrada && TO.porrada.montarLNT
-          ? TO.porrada.montarLNT(e, m)
         : m.kind === 'obra' && TO.porrada && TO.porrada.montarObra
           ? TO.porrada.montarObra(e, m)
         : m.kind === 'almanaque' ? (m.dados || {}).pagina
@@ -3470,50 +3466,6 @@
     return rec;
   }
 
-  /* a página da LNT no Futebol e Porrada: mesma cabeça, mesma tarja,
-     e no lugar do quadro da noite o quadro das quatro divisões */
-  function recorteDaLNT(p){
-    const rec = el('article',{class:'gz pp'});
-    const cab = el('div',{class:'gz-cabeca'});
-    cab.innerHTML = `<div class="nome-jornal">Futebol e Porrada</div>`;
-    rec.appendChild(cab);
-
-    const topo = el('div',{class:'gz-topo'});
-    const man = el('div',{class:'gz-manchete'});
-    man.innerHTML =
-      `<div class="chapeu">${p.chapeu}</div>
-       <h2>${p.manchete}</h2>
-       <p class="olho">${p.olho}</p>` +
-      (p.meu ? `<p class="olho nossa">${p.meu}</p>` : '');
-    topo.appendChild(man);
-
-    const cx = el('aside',{class:'pp-quadro'});
-    if(p.divisoes){
-      cx.appendChild(el('div',{class:'col-tit', texto:_t('As quatro divisões')}));
-      const g = el('div',{class:'grade'});
-      for(const d of p.divisoes)
-        g.appendChild(el('div',{class:'l'+(d.minha?' forte':''), html:
-          `<span class="rot">${d.nome}${d.minha?' · '+_t('a nossa'):''}</span>`+
-          `<span class="v">${d.clubes}</span>`}));
-      cx.appendChild(g);
-      cx.appendChild(el('div',{class:'venceu', html: p.fora
-        ? _tn(p.fora, '<span class="rot">Fora desta edição</span> {n} torcida',
-                      '<span class="rot">Fora desta edição</span> {n} torcidas')
-        : _t('<span class="rot">Todas</span> as torcidas entraram')}));
-    }else{
-      cx.appendChild(el('div',{class:'col-tit', texto:_t('Os quatro campeões')}));
-      const g = el('div',{class:'grade'});
-      for(const c of (p.campeoes||[]))
-        g.appendChild(el('div',{class:'l', html:
-          `<span class="rot">${_t('{n}ª Divisão', {n:c.div})}</span>`+
-          `<span class="v">${c.campeao}</span>`}));
-      cx.appendChild(g);
-    }
-    topo.appendChild(cx);
-    rec.appendChild(topo);
-    return rec;
-  }
-
   /* A OBRA NA PRAÇA (pedido do dono, 21/09/2026): porta nova na rua
      sai no Futebol e Porrada, com o quadro da praça do lado, e não
      como linha solta de texto. Mesmo esqueleto da briga e da LNT. */
@@ -4499,18 +4451,6 @@
       art.appendChild(recorteDoAlmanaque(m.dados.pagina, e));
     }
 
-    /* A LNT NO JORNAL (pedido do dono, 22/08/2026): a fundação e o
-       fim de cada edição saem no Futebol e Porrada, no mesmo
-       esqueleto da briga. */
-    if((m.kind === 'lnt-fundacao' || m.kind === 'lnt-fim') &&
-       TO.porrada && TO.porrada.montarLNT){
-      const pg = TO.porrada.montarLNT(e, m);
-      if(pg){
-        const txt = art.querySelector('.msg-txt');
-        if(txt) txt.remove();
-        art.appendChild(recorteDaLNT(pg));
-      }
-    }
 
     /* obra de save antigo não tem `dados`: sem eles a página não se
        monta e o cartão segue sendo a linha de texto de sempre */
@@ -4678,7 +4618,7 @@
       else if(t === 'cena-guerra') abrirGuerra(a);
       else if(t === 'cena-defesa') abrirDefesa();
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
-      else if(t === 'cena-treta') abrirTreta(m && m.dados);
+      else if(t === 'cena-bairro') abrirBrigaBairro(m && m.dados);
       else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
       else if(t === 'tutorial') TO.tutorial.iniciar();
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
@@ -7383,10 +7323,8 @@
       tab.appendChild(el('thead', null, [el('tr',{html:
         `<th>${_t('Torcida')}</th><th>${_t('Membros')}</th><th>${_t('Sede')}</th>`+
         `<th>${_t('Subsedes')}</th><th>${_t('Lojas')}</th><th>${_t('Bares')}</th>`+
-        (rapidoTela() ? '' : `<th>${_t('Recruta em')}</th>`)})]));
+        ''})]));
       const tb = el('tbody');
-      /* o bairro em que cada uma recruta (02/10/2026) */
-      const recruta = TO.dominio && TO.dominio.recrutandoEm ? TO.dominio.recrutandoEm(e, c.id) : new Map();
       for(const o of TO.mundo.torcidasEm(c.id)){
         if(o.incompleta) continue;
         const nossa = o.id === e.torcida.id;
@@ -7402,7 +7340,7 @@
             : (t.subsedes || '—')}</td>`+
           `<td class="num">${(pat.lojas||[]).length || '—'}</td>`+
           `<td class="num">${(pat.bares||[]).length || '—'}</td>`+
-          (rapidoTela() ? '' : `<td>${recruta.get(o.id) ? escHTML(recruta.get(o.id).nome) : '—'}</td>`)}));
+          ''}));
       }
       tab.appendChild(tb);
       cx.appendChild(el('div',{class:'recado', html:`<b>${_t('Da casa')}</b>`}));
@@ -8171,7 +8109,7 @@
      Layout do mockup: abas grandes por divisão, classificação
      à esquerda e a rodada navegável à direita.
      ======================================================= */
-  let compSel = null, rodadaSel = null, faseSel = null, divLNT = null;
+  let compSel = null, rodadaSel = null, faseSel = null;
   /* a vista extra da competição: null (a tela normal), 'publico' ou
      'historico' (pedido do dono, 25/08/2026) */
   let vistaComp = null;
@@ -8368,7 +8306,6 @@
                   conta:c.clubes.length}));
       const copa = S && S.competicoes.find(c=>c.copa);
       if(copa) fora.push({id:copa.id, rot:copa.nome, conta:copa.clubes.length});
-      if(TO.lnt && TO.lnt.existe(e)) fora.push({id:'lnt', rot:'LNT', conta:138});
       /* o botão Histórico do menu saiu (ordem do dono, 25/08/2026):
          o Histórico por competição supre melhor */
       return fora;
@@ -8379,9 +8316,6 @@
       conta:P.divisoes[d].clubes.length})) : [];
     const copa = (e.conmebol||{}).copas && e.conmebol.copas[paisComp];
     if(copa) fora.push({id:'copa-nac', rot:copa.nome, conta:copa.clubes.length});
-    if(paisComp === 'Brasil'){
-      if(TO.lnt && TO.lnt.existe(e)) fora.push({id:'lnt', rot:'LNT', conta:138});
-    }
     return fora;
   }
 
@@ -8493,14 +8427,13 @@
       const src = it && TO.dados.logoDaCompeticao && TO.dados.logoDaCompeticao(nomeLogo, paisComp);
       if(src) pg.appendChild(el('div',{class:'comp-marca', html:
         `<img src="${src}" alt="">`+
-        `<div><b>${escHTML(nomeLogo === 'LNT' ? _t('Liga Nacional de Torcidas') : nomeLogo)}</b>`+
+        `<div><b>${escHTML(nomeLogo)}</b>`+
         `<small>${escHTML(nivelComp === 'internacional' ? 'CONMEBOL'
                  : nivelComp === 'regional' ? _t('Regional') : _t(paisComp))}</small></div>`}));
     }
 
     /* ---- o corpo ---- */
     if(nivelComp === 'internacional'){ pintarConmebolUm(e, pg, compSel); return; }
-    if(compSel === 'lnt'){ pintarLNT(e, pg); return; }
     if(compSel === 'copa-nac'){
       pintarCopaNacional(e, pg, e.conmebol.copas[paisComp]); return;
     }
@@ -9250,135 +9183,6 @@
     pg.appendChild(duas);
   }
 
-  /* =======================================================
-     A LNT NA TELA (pedido do dono, 22/08/2026)
-     Uma divisão por vez: as chaves à esquerda, o mata-mata e o
-     dinheiro à direita. Abre na divisão onde a gente está.
-     ======================================================= */
-  function pintarLNT(e, pg){
-    const L = TO.lnt, ed = e.lnt.edicao;
-    const nomeT = id => (TO.mundo.torcida(id)||{}).nome || '—';
-    const corT  = id =>{
-      const o = TO.mundo.torcida(id);
-      return (o && TO.mundo.coresDaTorcida(o).cor) || '#888';
-    };
-    if(!ed){
-      pg.appendChild(emConstrucao('LNT',
-        _t('A liga foi fundada. A primeira edição começa na virada do semestre.')));
-      return;
-    }
-    const minha = ed.divs.findIndex(d=>d.clubes.includes(e.torcida.id));
-    if(divLNT === null) divLNT = minha >= 0 ? minha : 0;
-
-    const filtros = el('div',{class:'filtros-linha'});
-    ed.divs.forEach((d, k)=>{
-      const b = el('button',{class:(k===divLNT?'on':'')+(k===minha?' minha':''),
-        html:`${_t(d.nome)}<span class="conta">${d.clubes.length}</span>`});
-      b.onclick = ()=>{ divLNT = k; redesenhar(); };
-      filtros.appendChild(b);
-    });
-    pg.appendChild(filtros);
-
-    const div = ed.divs[divLNT];
-    const duas = el('div',{class:'comp-duas'});
-    const esq = el('div');
-
-    if(div.campeao){
-      const c = quadro(_t('Campeão'));
-      c.corpo.appendChild(el('div',{class:'campeao', estilo:{padding:'12px 14px'}, html:
-        `${IC.get('trofeu')}<div><b>${nomeT(div.campeao)}</b>
-         <small>${_t('vice: {nome}', {nome:nomeT(div.vice)})}</small></div>`}));
-      esq.appendChild(c);
-    }
-
-    div.grupos.forEach((g, gi)=>{
-      const q = quadro(_t('Chave {g}', {g:'ABCDEFGHI'[gi]}), el('span',{class:'conta',
-        texto:_tn(FORMATO_LNT()[divLNT].passam || 4, '{n} passa', '{n} passam')}));
-      const rolo = el('div',{class:'rolo'});
-      rolo.appendChild(tabelaLNT(e, div, gi, nomeT, corT));
-      q.corpo.appendChild(rolo);
-      esq.appendChild(q);
-    });
-
-    duas.appendChild(esq);
-    duas.appendChild(chaveLNT(e, div, nomeT));
-    pg.appendChild(duas);
-  }
-  const FORMATO_LNT = ()=> TO.lnt.FORMATO;
-
-  function tabelaLNT(e, div, gi, nomeT, corT){
-    const linhas = TO.lnt.tabelaDoGrupo(div, gi);
-    const f = TO.lnt.FORMATO.find(x=>x.n === div.n);
-    const meu = e.torcida.id;
-    const t = el('table',{class:'liga'});
-    /* FZ é ferido do rival, TM é ferido nosso: o saldo entre os dois é
-       o primeiro desempate depois dos pontos (régua do dono) */
-    t.innerHTML =
-      `<thead><tr><th>#</th><th class="time">${_t('Torcida')}</th>`+
-      _t('<th>P</th><th>V</th><th>D</th><th>FZ</th><th>TM</th><th>SF</th>')+
-      `</tr></thead>`;
-    const tb = el('tbody');
-    linhas.forEach((l,i)=>{
-      const cls = [];
-      if(l.id===meu) cls.push('meu');
-      if(f.passam && i < f.passam) cls.push('sobe');
-      if(f.caem && i === linhas.length-1) cls.push('cai');
-      const tr = el('tr',{class:cls.join(' ')});
-      tr.innerHTML =
-        `<td class="pos">${i+1}</td>
-         <td class="time">${chipTorcida(l.id, corT(l.id))}${nomeT(l.id)}</td>
-         <td>${l.p}</td><td>${l.v}</td><td>${l.d}</td>
-         <td>${l.fez}</td><td>${l.tomou}</td><td>${l.sf>0?'+':''}${l.sf}</td>`;
-      tb.appendChild(tr);
-    });
-    t.appendChild(tb);
-    return t;
-  }
-
-  function chaveLNT(e, div, nomeT){
-    const meu = e.torcida.id;
-    const f = TO.lnt.FORMATO.find(x=>x.n === div.n);
-    const q = quadro(_t('Mata-mata'), el('span',{class:'conta',
-      texto:_tn(div.clubes.length, '{n} torcida', '{n} torcidas')}));
-    if(!div.mata.length){
-      q.corpo.innerHTML = '<div class="em-construcao">'+
-        _t('A chave abre quando as cinco rodadas de grupo terminarem.')+'</div>';
-    }
-    for(const m of div.mata){
-      const meus = m.jogos.filter(j=>j.a===meu||j.b===meu);
-      const mostra = meus.length ? meus : m.jogos.slice(0,4);
-      q.corpo.appendChild(el('div',{class:'fase-rot',
-        texto:`${rotEtapa(m.fase)}`+(m.espera && m.espera.length
-              ? ` · ${_t('{n} esperando nas oitavas', {n:m.espera.length})}` : '')+
-              (meus.length?'':` · ${_tn(m.jogos.length, '{n} duelo', '{n} duelos')}`)}));
-      for(const j of mostra){
-        const feito = !!j.venceu;
-        q.corpo.appendChild(el('div',{class:'jogo-chave'+
-          (j.a===meu||j.b===meu?' meu':''), html:
-          `<span class="a ${j.venceu===j.a?'venceu':''}">${nomeT(j.a)}</span>
-           <b>${feito?`${j.fb||0} × ${j.fa||0}`:'—'}</b>
-           <span class="b ${j.venceu===j.b?'venceu':''}">${nomeT(j.b)}</span>
-           ${j.wo?'<em class="pen">W.O.</em>':''}`}));
-      }
-    }
-    /* o dinheiro da divisão, na régua do dono */
-    const pr = el('div',{class:'fase-rot', texto:_t('Prêmios da divisão')});
-    q.corpo.appendChild(pr);
-    const tab = [[_t('Campeão'), f.premio.campeao], [_t('Vice'), f.premio.vice],
-                 [_t('Semifinal'), f.premio.semi], [_t('Quartas'), f.premio.quartas],
-                 [_t('Oitavas'), f.premio.oitavas], [_t('16-avos'), f.premio.dezesseis]];
-    for(const [rot, v] of tab){
-      if(!v) continue;
-      q.corpo.appendChild(el('div',{class:'lnt-premio', html:
-        `<span class="rot">${rot}</span><span class="v">${U.dinheiro(v)}</span>`}));
-    }
-    const nosso = div.premiados[meu];
-    if(nosso) q.corpo.appendChild(el('div',{class:'lnt-premio nosso', html:
-      `<span class="rot">${_t('Já embolsamos')}</span>`+
-      `<span class="v">${U.dinheiro(nosso)}</span>`}));
-    return q;
-  }
-
   /* o painelHistorico global saiu (ordem do dono, 25/08/2026): o
      Histórico de cada competição supre melhor a necessidade */
 
@@ -9537,7 +9341,6 @@
         cel.appendChild(el('span',{class:'sub', texto:
           b.tipo === 'bar' ? _t('bar da {nome}', {nome:b.nome})
           : b.tipo === 'reuniao' ? _t('reunião na praça · {nome}', {nome:b.nome})
-          : b.tipo === 'treta' ? _t('treta · {nome}', {nome:b.nome})
           : _t('casa de piscina · {nome}', {nome:b.nome})}));
       }else{
         /* OS TRÊS TURNOS NO DIA (pedido do dono, 24/08/2026): a célula
@@ -9772,7 +9575,7 @@
         (dir && !naCena ? `<span class="quem">${_t('traz o assunto: <b>{nome}</b> · {cargo}', {nome:TO.membros.nomeDe(dir), cargo:_t(TO.membros.cargoNome(dir)).toLowerCase()})}</span>` : '')}));
       c.appendChild(fala('reu-balao', it.texto));
       /* (no alvo do mês ainda aberto, quem diz quando e onde é a ficha da escolha) */
-      if(it.bote && !(it.bote.dominio && !it.decidido && F.fichaDoAtaque)){
+      if(it.bote){
         const b = it.bote;
         c.appendChild(el('div',{class:'reu-quando', html:
           `<span>${_t('Quando: <b>{dia}, {data}</b>', {dia:_t(b.nomeDia), data:b.dataTxt})}</span>`+
@@ -9824,9 +9627,6 @@
          lista, e o ataque do mês por bairro, torcida e forma, com a ficha */
       if(it.tipo === 'recruta' && F.opcoesDeRecrutamento){
         c.appendChild(blocoDoRecrutamento(it)); palco.appendChild(c); return c;
-      }
-      if(it.tipo === 'bote' && it.bote && it.bote.dominio && F.fichaDoAtaque){
-        c.appendChild(blocoDoAtaque(it)); palco.appendChild(c); return c;
       }
       const bts = el('div',{class:'msg-bts'});
       (it.botoes||[]).forEach((b,i)=>{
@@ -9884,66 +9684,7 @@
       bts.appendChild(bt); cx.appendChild(bts);
       return cx;
     };
-    /* --- o ataque do mês: bairro, torcida e forma, com a ficha --- */
-    const blocoDoAtaque = (it)=>{
-      const cx = el('div');
-      const est = {bairro:it.bote.bairroId, rival:it.bote.rival, tipo:it.bote.tipo, tam:it.bote.tam || 7};
-      const sB = el('select',{class:'campo'}), sR = el('select',{class:'campo'}),
-            sF = el('select',{class:'campo'}), sT = el('select',{class:'campo'});
-      const grade = el('div',{class:'reu-pedido reu-ataque'});
-      grade.appendChild(campoDaMesa(_t('Bairro'), sB));
-      grade.appendChild(campoDaMesa(_t('Contra'), sR));
-      grade.appendChild(campoDaMesa(_t('Forma do ataque'), sF));
-      const wT = campoDaMesa(_t('Tamanho da treta'), sT);
-      grade.appendChild(wT);
-      cx.appendChild(grade);
-      const ficha = el('div',{class:'reu-ficha'});
-      cx.appendChild(ficha);
-      const bts = el('div',{class:'msg-bts'});
-      const btM = el('button',{class:'bt destaque', html:`<span>${_t('Marcar o ataque')}</span>`});
-      bts.appendChild(btM);
-      const nada = (it.botoes || []).find(b => b.acao === 'bote-nao');
-      if(nada){
-        const btN = el('button',{class:'bt', html:`<span>${nada.rot}</span>`+(nada.nota ? `<small>${nada.nota}</small>` : '')});
-        btN.onclick = ()=>{ F.decidirPauta(e, it.id, nada.id); depois(); };
-        bts.appendChild(btN);
-      }
-      cx.appendChild(bts);
-      const ops = F.opcoesDeAtaque(e);
-      const linha = (rot, txt, cls) => `<div class="reu-ficha-l${cls ? ' ' + cls : ''}"><span>${rot}</span><b>${escHTML(txt)}</b></div>`;
-      const pinta = ()=>{
-        encher(sB, ops.map(o => ({v:o.id, t:_t('{bairro} · nossa barra {n}%', {bairro:o.nome, n:Math.round(o.nosso)})})), est.bairro);
-        est.bairro = sB.value;
-        const o = ops.find(x => x.id === est.bairro) || {rivais:[]};
-        encher(sR, o.rivais.map(r => ({v:r.id, t:_t('{nome} · {v}% lá', {nome:r.nome, v:Math.round(r.v)})})), est.rival);
-        est.rival = sR.value;
-        const fs = F.formasDoAtaque(e, est.bairro, est.rival);
-        if(!fs.some(f => f.tipo === est.tipo && f.pode)){ const p = fs.find(f => f.pode); if(p) est.tipo = p.tipo; }
-        encher(sF, fs.map(f => ({v:f.tipo, t:f.pode ? f.rot : _t('{forma} — {motivo}', {forma:f.rot, motivo:f.motivo}), off:!f.pode})), est.tipo);
-        est.tipo = sF.value;
-        encher(sT, [5, 7, 10].map(n => ({v:String(n), t:_t('{n} contra {n}', {n})})), String(est.tam));
-        wT.hidden = est.tipo !== 'treta';
-        const f = F.fichaDoAtaque(e, est.bairro, est.rival, est.tipo, est.tam);
-        btM.disabled = !f.ok;
-        if(!f.ok){ ficha.innerHTML = linha(_t('Não dá'), f.motivo || '', 'ruim'); return; }
-        ficha.innerHTML =
-          linha(_t('Quando'), `${_t(f.quando.nomeDia)}, ${f.quando.dataTxt}`) +
-          linha(_t('Eles'), _t('{n} de pé · descem {m} na cena', {n:f.dePe, m:f.naCena})) +
-          linha(_t('Nós'), est.tipo === 'treta' ? _t('{n} da linha de frente', {n:f.nossos})
-                         : est.tipo === 'bar' ? _t('{n} aptos pro bonde', {n:f.nossos})
-                         : _t('{n} da Zona {zona} (até 20)', {n:f.nossos, zona:_t(f.forma.zona)})) +
-          (est.tipo === 'treta' ? linha(_t('Aposta'), _t('{valor} de cada lado', {valor:U.dinheiro(f.aposta)})) : '') +
-          linha(_t('Dando certo'), f.certo, 'boa') +
-          linha(_t('Dando errado'), f.errado, 'ruim');
-      };
-      sB.onchange = ()=>{ est.bairro = sB.value; est.rival = null; pinta(); };
-      sR.onchange = ()=>{ est.rival = sR.value; pinta(); };
-      sF.onchange = ()=>{ est.tipo = sF.value; pinta(); };
-      sT.onchange = ()=>{ est.tam = +sT.value; pinta(); };
-      btM.onclick = ()=>{ const r = F.marcarAtaqueDaPauta(e, it.id, est); if(r.ok) depois(); else pinta(); };
-      pinta();
-      return cx;
-    };
+
 
     /* --- o pedido a um aliado (régua do dono, 17/09/2026) ---
        Três escolhas: aproximar ou afastar, qual aliado a gente pede, e
@@ -11013,38 +10754,43 @@
     abrirAtaqueAoBar(atq);
   }
 
-  /* A TRETA MARCADA (decisão do autor): briga combinada em rua, fora
-     de dia de jogo, com efetivos IDÊNTICOS dos dois lados — 5×5, 7×7
-     ou 10×10. Vitória: relação −2, prestígio +1 pro ganhador e −1 pro
-     perdedor. */
-  function abrirTreta(d){
-    const e = E();
-    if(!d || !d.rival) return;
+  /* =======================================================
+     A BRIGA DE BAIRRO (pedido do dono, 15/10/2026)
+     As cenas da treta apostada (que saiu) viram as três brigas de
+     bairro: a reunião deles na praça (o campo de terra), a turma vendo
+     o jogo (o pátio do galpão) e os de bobeira (o beco). Quem defende é
+     quem MORA no bairro (o elenco fixo, até 15; no beco, até 7); quem
+     ataca traz os mais fortes da cidade (até 20; no beco, até 7). Mano a
+     mano, sem pedra nem bomba, como era a treta. Vale pros dois lados:
+     `d.atacamos` diz se fomos nós que chegamos.
+     ======================================================= */
+  const CENA_BAIRRO = {praca:'treta-campo', jogo:'treta-galpao', bobeira:'treta-beco'};
+  function abrirBrigaBairro(d){
+    const e = E(), EL = TO.elenco;
+    if(!d || !d.rival || !EL) return;
     const rival = TO.mundo.torcida(d.rival) || {};
-    /* TRETA É COISA DE LINHA DE FRENTE (régua do dono, 22/08/2026):
-       briga combinada de efetivo igual não é lugar de novato. Escala
-       primeiro quem tem os galões; faltando gente apta, IMPROVISA UM
-       COMPONENTE — e só depois disso é que o resto entra, pra cena
-       nunca ficar sem bonde. Dentro de cada faixa manda a ficha. */
-    const ORDEM_TRETA = {frente:0, componente:1, diretoria:2, novato:3};
-    const aptos = TO.membros.aptosParaOEstadio(e)
-      .sort((a,b)=>
-        ((ORDEM_TRETA[a.cargo] ?? 9) - (ORDEM_TRETA[b.cargo] ?? 9)) ||
-        ((b.forca+b.defesa) - (a.forca+a.defesa)));
-    const n = Math.max(2, Math.min(d.tam || 5, aptos.length));
+    const cid = d.cid || e.torcida.mapa;
+    const tipo = CENA_BAIRRO[d.tipo] ? d.tipo : 'praca';
+    const local = CENA_BAIRRO[tipo];
+    const defMax = tipo === 'bobeira' ? 7 : 15, atkMax = tipo === 'bobeira' ? 7 : 20;
+    const atacamos = d.atacamos !== false;
+    const nossos = atacamos ? EL.maisFortes(e, e.torcida.id, e.torcida.mapa, atkMax)
+                            : EL.noBairro(e, e.torcida.id, cid, d.bairroId, defMax);
+    const deles = atacamos ? EL.noBairro(e, d.rival, cid, d.bairroId, defMax)
+                           : EL.maisFortes(e, d.rival, cid, atkMax);
+    const n = Math.max(2, nossos.length), nR = Math.max(2, deles.length);
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);
-    /* cada tamanho tem palco próprio (fotos do dono, 19/08/2026):
-       5x5 no beco, 7x7 no pátio do galpão, 10x10 no campo de terra */
-    const local = n <= 5 ? 'treta-beco'
-                : n <= 7 ? 'treta-galpao' : 'treta-campo';
+    const nomeR = EL.nomeNaCidade(d.rival, cid) || rival.nome || _t('Rival');
+    const viva = (TO.relacoes && TO.relacoes.mundo(e)[d.rival]) || {};
+    const moralR = Math.round(viva.moral != null ? viva.moral : 12);
+    const fichasR = deles.map(m => ({cargo:m.cargo, forca:m.forca, defesa:m.defesa,
+                                     moral:Math.max(1, Math.min(20, moralR + ((m.i || 0) % 7) - 3))}));
     const bondes = [
       {lado:'mandante', n, nossa:true, nome:e.torcida.nome,
-       cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3,
-       sigla:TO.mundo.siglaTorcida(e.torcida)},
-      {lado:'visitante', n, nossa:false, nome:rival.nome||_t('Rival'),
-       cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3,
-       sigla:TO.mundo.siglaTorcida(rival)||'RIV',
+       cor:cN.cor, cor2:cN.cor2, cor3:cN.cor3, sigla:TO.mundo.siglaTorcida(e.torcida)},
+      {lado:'visitante', n:nR, nossa:false, nome:nomeR, id:d.rival,
+       cor:cR.cor, cor2:cR.cor2, cor3:cR.cor3, sigla:TO.mundo.siglaTorcida(rival)||'RIV',
        perfil: perfilDe(d.rival)}
     ];
     $('telaDiaJogo').classList.remove('oculto');
@@ -11053,34 +10799,21 @@
     pararTudo('cena');
     abrirPalco({
       canvas: $('djPrincipal'),
-      /* treta marcada é mano a mano: sem pedra, sem bomba, sem braço
-         automático — de lado nenhum (decisão do dono) */
-      config: { escalacao: aptos.slice(0, n), intencao:'atacar', bombas:0,
-                semArmas:true, bondes, efetivoRival:n, local },
+      config: { escalacao: nossos, intencao:'atacar', bombas:0,
+                semArmas:true, bondes, efetivoRival:nR, local, fichasRival:fichasR },
       aoTerminar: res => fecharDiaDeJogo(res, null,
-        {acao:'treta', alvo:{torcidaId:d.rival, nome:rival.nome||_t('Rival'),
-                             bairro:d.bairro, cena:local, n,
-                             aposta: d.aposta || 0,
-                             /* na LNT a treta é a competição: sem aposta,
-                                que o dinheiro ali é prêmio de fase */
-                             lnt: d.lnt || null}})
+        {acao:'bairro', alvo:{torcidaId:d.rival, nome:nomeR, tipo, cena:local,
+                              bairro:d.bairro || '', bairroId:d.bairroId || '', cidade:cid,
+                              atacamos, nossos:n, deles:nR}})
     });
-    /* BRIGA COMBINADA NÃO TEM ESPERA: os dois lados vieram pra isso.
-       O bonde deles sai da boca da rua já procurando o nosso — sem
-       este alvo, a cena de encontro fica parada esperando o jogador
-       dirigir, que é o comportamento das surpresas, não da treta. */
+    /* briga de bairro também não tem espera: os dois lados se procuram */
     const J = TO.diaJogo.ponte.J;
     if(J){
-      const spawnsNossos = [...new Set(J.discos.filter(x=>x.doJogador)
-                                               .map(x=>x.spawn))];
+      const spawnsNossos = [...new Set(J.discos.filter(x=>x.doJogador).map(x=>x.spawn))];
       const alvoDeles = spawnsNossos[0] || null;
-      for(const s2 of [...new Set(J.discos.filter(x=>!x.doJogador)
-                                          .map(x=>x.spawn))]){
-        J.bondes[s2] = Object.assign(J.bondes[s2] || {id:s2},
-          {humor:'atacar', agirEm:0, alvo:alvoDeles});
+      for(const s2 of [...new Set(J.discos.filter(x=>!x.doJogador).map(x=>x.spawn))]){
+        J.bondes[s2] = Object.assign(J.bondes[s2] || {id:s2}, {humor:'atacar', agirEm:0, alvo:alvoDeles});
       }
-      /* na treta ninguém é dono da casa esperando atrás do balcão: o
-         spawn de rua nasce com `guarda`, e guarda parado não caça */
       for(const d2 of J.discos){ d2.guarda = false; d2.daCasa = false; }
       J.acordou = true;
       J.paz = false;
@@ -11478,7 +11211,7 @@
     /* na TRETA o prestígio é a conta do dono e só ela: +1 pro ganhador,
        −1 pro perdedor (fecharTreta). O prestígio genérico da noite não
        soma por cima. */
-    if(acao && acao.acao === 'treta'){ res.prestigio = 0; res.moralTorcida = 0; }
+    if(acao && acao.acao === 'bairro'){ res.prestigio = 0; res.moralTorcida = 0; }
     /* na arquibancada a conta é SÓ a tabela do dono (19/08/2026):
        nem o prestígio da noite nem a moral genérica entram por cima */
     if(acao && acao.acao === 'estadio'){ res.prestigio = 0; res.moralTorcida = 0; }
@@ -11968,7 +11701,7 @@
   /* o bar não tem rótulo fixo: é o rival ou o nosso, conforme quem atacou */
   const LUGAR_CENA = [
     [/^estadio/, _t('NA ARQUIBANCADA')], [/^emb-|^emboscada/, _t('NA EMBOSCADA')],
-    [/^treta/, _t('NA TRETA')], [/^concentracao|^praca/, _t('NA PRAÇA')],
+    [/^treta/, _t('NO BAIRRO')], [/^concentracao|^praca/, _t('NA PRAÇA')],
     [/^pista|^rua/, _t('NA PISTA')], [/^arredores/, _t('NOS ARREDORES')],
     [/^ct$/, _t('NO CT')], [/^comercio/, _t('NO COMÉRCIO')], [/^sede/, _t('NA SEDE')],
     [/^loja/, _t('NA LOJA')], [/^subsede/, _t('NA SUBSEDE')], [/^bar/, null]
@@ -12590,7 +12323,7 @@
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
     abrirCaravana, abrirAtaque, abrirIdeologia,
-    abrirGuerra, abrirDefesa, abrirEscolta, abrirTreta, abrirAcaoEmCena,
+    abrirGuerra, abrirDefesa, abrirEscolta, abrirBrigaBairro, abrirAcaoEmCena,
     abrirBrigaDoTutorial,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */
     widgetPartida, abrirBrigaNoEstadio, cenaDoEstadio, chanceDeClima,

@@ -28,7 +28,8 @@ TO.mapaBrasil = (function(){
   const E = () => TO.estado && TO.estado.E;
   /* MODO RÁPIDO (10/10/2026): sem domínio, o mapa é o Brasil e o perfil
      de cada cidade — sem a planta de bairros e sem a cor da dona */
-  const rapido = () => !!(TO.estado && TO.estado.rapido && E() && TO.estado.rapido());
+  /* (15/10/2026) o domínio voltou pros dois modos: o mapa da cidade é igual */
+  const rapido = () => false;
   const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const SVG = 'http://www.w3.org/2000/svg';
   /* o contorno (lat, lon) e a praça de cada mapa do jogo (lat, lon) */
@@ -196,7 +197,7 @@ TO.mapaBrasil = (function(){
            `<span>${esc(nome(id))}${tags.length ? ` <small>${esc(tags.join(' · '))}</small>` : ''}</span>` +
            `<b>${esc(_t('{n} de {total}', {n, total:pl.total}))}</b></li>`;
     }
-    if(pl.semDono) h += `<li class="sem"><i></i><span>${esc(_t('Sem dona (ninguém passa de 50%)'))}</span><b>${pl.semDono}</b></li>`;
+    if(pl.semDono) h += `<li class="sem"><i></i><span>${esc(_t('Em disputa (ninguém tem 4 pontos)'))}</span><b>${pl.semDono}</b></li>`;
     h += '</ul>';
     caixa.innerHTML = h;
     return caixa;
@@ -251,113 +252,54 @@ TO.mapaBrasil = (function(){
       h += `<h4>${esc(_t('Torcedores que moram aqui'))}</h4><ul class="mb-moram">` + top.map(o =>
         `<li><span>${esc(o.clube)}</span><b>${esc(num(Math.round(o.n)))}</b><small>${Math.round(o.perc * 100)}%</small></li>`).join('') + '</ul>';
     }
-    /* a barra de 0 a 100: a parte de cada torcida e a de ninguém (o dono
-       preferiu manter a fatia de ninguém, 01/10/2026); dona é quem passa
-       de 50% */
+    /* A BARRA DE 7 PONTOS (o dono, 15/10/2026): cada torcida tem pontos
+       inteiros no bairro, 7 no total; dona é quem tem 4 ou mais. Os
+       pontos só mexem nas brigas de bairro: quem ganha tira 1 de quem
+       perde (ou de ninguém, se o perdedor não tem). */
+    const MAXP = d.MAX || 7;
     h += `<h4>${esc(_t('Domínio do bairro'))}</h4>`;
     h += `<p class="mb-dona">${b.dono
-      ? (b.dono === meu ? esc(_t('O bairro é nosso ({v}%).', {v:Math.round(b.v)})) : esc(_t('A dona é a {nome} ({v}%).', {nome:nome(b.dono), v:Math.round(b.v)})))
-      : esc(_t('Sem dona: ninguém passa de 50%.'))}</p>`;
-    h += '<div class="mb-barra" role="img" aria-label="' + esc(b.partes.map(p => sigla(p.t) + ' ' + Math.round(p.v) + '%').join(', ') || _t('ninguém')) + '">';
+      ? (b.dono === meu ? esc(_t('O bairro é nosso ({v} de {max} pontos).', {v:b.v, max:MAXP})) : esc(_t('A dona é a {nome} ({v} de {max} pontos).', {nome:nome(b.dono), v:b.v, max:MAXP})))
+      : esc(_t('Em disputa: ninguém tem 4 pontos.'))}</p>`;
+    h += '<div class="mb-barra mb-barra7" role="img" aria-label="' + esc(b.partes.map(p => sigla(p.t) + ' ' + p.v).join(', ') || _t('ninguém')) + '">';
     let soma = 0;
-    for(const p of b.partes){
-      soma += p.v;
+    for(const p of b.partes) for(let i = 0; i < p.v && soma < MAXP; i++, soma++){
       const cor = corDe(p.t);
-      h += `<span style="width:${p.v.toFixed(2)}%;background:${cor}"${claro(cor) ? ' class="claro"' : ''} title="${esc(nome(p.t) + ': ' + Math.round(p.v) + '%')}">${p.v >= 12 ? esc(sigla(p.t)) : ''}</span>`;
+      h += `<span style="width:${(100 / MAXP).toFixed(3)}%;background:${cor}"${claro(cor) ? ' class="claro"' : ''} title="${esc(nome(p.t) + ': ' + p.v)}">${i === 0 ? esc(sigla(p.t)) : ''}</span>`;
     }
-    const livre = Math.max(0, 100 - soma);
-    h += `<span class="livre" style="width:${livre.toFixed(2)}%" title="${esc(_t('De ninguém') + ': ' + Math.round(livre) + '%')}"></span><em class="meio"></em></div>`;
-    const pc = v => (Math.round(v * 10) / 10).toLocaleString('pt-BR') + '%';
-    h += '<ul class="mb-partes">' + b.partes.filter(p => p.v >= 0.05).map(p =>
-      `<li${p.t === meu ? ' class="nos"' : ''}><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${pc(p.v)}</b></li>`).join('') +
-      (livre >= 0.05 ? `<li class="livre"><i></i>${esc(_t('De ninguém'))}<b>${pc(livre)}</b></li>` : '') + '</ul>';
-    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: quem não é da casa ganha metade nas brigas e ações daqui (muro, recrutamento e estrutura rendem inteiros), e a casa soma +0,5 por dia. Se perder o bairro, a {nome} perde 0,2 de moral por dia.', {nome:nome(b.sede)}))}</p>`;
+    for(; soma < MAXP; soma++) h += `<span class="livre" style="width:${(100 / MAXP).toFixed(3)}%" title="${esc(_t('De ninguém'))}"></span>`;
+    h += '</div>';
+    const livre = Math.max(0, MAXP - b.partes.reduce((t, p) => t + p.v, 0));
+    h += '<ul class="mb-partes">' + b.partes.map(p =>
+      `<li${p.t === meu ? ' class="nos"' : ''}><i style="background:${corDe(p.t)}"></i>${esc(nome(p.t))}<b>${p.v}</b></li>`).join('') +
+      (livre ? `<li class="livre"><i></i>${esc(_t('De ninguém'))}<b>${livre}</b></li>` : '') + '</ul>';
+    if(b.sede) h += `<p class="mb-nota">${esc(_t('É o bairro da sede da {nome}: ela nunca fica com menos de 1 ponto aqui. Se perder o bairro, a {nome} perde 0,2 de moral por dia.', {nome:nome(b.sede)}))}</p>`;
+    /* QUEM MORA AQUI (15/10/2026): os membros fixos de cada torcida que
+       moram no bairro — são eles que brigam quando o bairro é atacado */
+    const EL = TO.elenco;
+    if(EL && EL.moradores){
+      const mo = EL.moradores(e, cid, b.id), mor = Object.keys(mo).map(tid => ({tid, n:mo[tid]})).sort((x, y) => y.n - x.n);
+      h += `<h4>${esc(_t('Membros que moram aqui'))}</h4>`;
+      h += mor.length
+        ? '<ul class="mb-estruturas">' + mor.map(o =>
+            `<li><i style="background:${corDe(o.tid)}"></i>${esc((EL.nomeNaCidade ? EL.nomeNaCidade(o.tid, cid) : nome(o.tid)) + ' · ' + (o.n === 1 ? _t('1 membro') : _t('{n} membros', {n:o.n})))}</li>`).join('') + '</ul>'
+        : `<p class="mb-nada">${esc(_t('Nenhum membro de torcida mora aqui.'))}</p>`;
+    }
     /* as estruturas presentes */
     const est = d.estruturas(e, cid).filter(s => s.bairro === b.id);
     const T = TIPO();
     h += `<h4>${esc(_t('Estruturas no bairro'))}</h4>`;
     h += est.length
       ? '<ul class="mb-estruturas">' + est.map(s => {
-          /* A SEDE DE NÍVEL 0 NÃO TEM PRÉDIO (o 3D, 02/10/2026): a torcida junta
-             no bar, na subsede ou na esquina do bairro */
           if(s.tipo === 'sede' && nivelDaSede(s.tid) === 0)
             return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t('Bairro da {nome} (sem sede: junta no bar ou na esquina)', {nome:nome(s.tid)}))}</li>`;
           const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
-          /* a estrutura segura o bairro: +0,2 por dia pra dona (02/10/2026) */
-          const buff = s.tipo !== 'sede' ? ' · ' + _t('+0,2 por dia') : '';
-          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv + buff)}</li>`;
+          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv)}</li>`;
         }).join('') + '</ul>'
       : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;
-    /* QUEM RECRUTA AQUI (o dono, 02/10/2026): cada torcida recruta num
-       bairro, e isso soma +0,2 por dia pra ela ali */
-    if(d.recrutandoEm){
-      const rec = [...d.recrutandoEm(e, cid)].filter(([, x]) => x.id === b.id).map(([tid]) => tid);
-      h += `<h4>${esc(_t('Recrutamento'))}</h4>`;
-      h += rec.length
-        ? '<ul class="mb-estruturas">' + rec.map(tid =>
-            `<li><i style="background:${corDe(tid)}"></i>${esc(_t('{nome} recruta aqui', {nome:nome(tid)}) + ' · ' + _t('+0,2 por dia'))}</li>`).join('') + '</ul>'
-        : `<p class="mb-nada">${esc(_t('Nenhuma torcida recruta aqui.'))}</p>`;
-    }
-    /* AS PIXAÇÕES (01/10/2026): os muros do bairro, de quem é cada um e
-       quanto rendem; o saldo nosso e o botão de pixar (só na nossa cidade) */
-    let ms = [], selMuro = null;
-    if(d.muros){
-      ms = d.muros(e, cid, b.id);
-      selMuro = opc.muro && opc.muro.b === b.id ? ms.find(m => m.i === opc.muro.i) : null;
-      const ha = abs => { const n = (e.data.absoluto || 0) - (abs || 0); return n <= 0 ? _t('hoje') : n === 1 ? _t('ontem') : _t('há {n} dias', {n}); };
-      const nossos = ms.filter(m => m.t === meu).length;
-      h += `<h4>${esc(_t('Pixações'))} <small>${esc(_t('{n} de {total} muros · +0,2 por dia cada', {n:ms.filter(m => m.t).length, total:ms.length}))}</small></h4>`;
-      h += '<ul class="mb-muros">' + ms.map(m =>
-        `<li data-muro="${m.i}" class="${selMuro && selMuro.i === m.i ? 'sel' : ''}${m.t ? '' : ' livre'}"><i${m.t ? ` style="background:${corDe(m.t)}"` : ''}></i>` +
-        `<span>${esc(_t('Muro {n}', {n:m.i + 1}))}</span><b>${m.t ? esc(nome(m.t)) : esc(_t('livre'))}</b><small>${m.t ? esc(ha(m.abs) + ' · ' + _t('desbota em {n} dias', {n:Math.max(1, (d.PIX ? d.PIX.desbota : 60) - ((e.data.absoluto || 0) - (m.abs || 0)))})) : ''}</small></li>`).join('') + '</ul>';
-      if(nossos) h += `<p class="mb-nota">${esc(_t('Os nossos {n} muros aqui rendem +{v} por dia na barra.', {n:nossos, v:(nossos * 0.2).toLocaleString('pt-BR', {maximumFractionDigits:1})}))}</p>`;
-    }
-    /* (o aviso de "rendem 30% menos" saiu com o corte, 05/10/2026) */
     caixa.innerHTML = h;
-    /* o que dá pra fazer (só na nossa cidade) */
     const pe = document.createElement('div');
     pe.className = 'mb-acoes';
-    if(cid === e.torcida.mapa && b.dono !== meu && !(b.sede && b.sede !== meu) && TO.acoes && TO.acoes.porId('social-bairro')){
-      const pode = d.podeSocial(e);
-      const bt = document.createElement('button');
-      bt.type = 'button'; bt.className = 'bt';
-      bt.textContent = _t('Ação social aqui ({valor})', {valor: TO.util && TO.util.dinheiro ? TO.util.dinheiro(d.SOCIAL.custo) : 'R$ ' + d.SOCIAL.custo});
-      bt.disabled = !pode.ok;
-      if(!pode.ok) bt.title = pode.motivo || '';
-      bt.onclick = () => {
-        const r = TO.acoes.executar(e, 'social-bairro', {alvo:b.id});
-        if(TO.estado.mudou) try{ TO.estado.mudou(); }catch(_){}
-        if(opc.aoAviso) opc.aoAviso(r.msg || '', r.ok);
-        if(opc.aoMudar) opc.aoMudar();
-      };
-      pe.appendChild(bt);
-      if(!pode.ok){ const m = document.createElement('small'); m.textContent = pode.motivo || ''; pe.appendChild(m); }
-    }
-    if(d.pixar && cid === e.torcida.mapa && ms.length){
-      const sd = d.saldoPix(e, meu);
-      /* o pixo da aliada (e da irmã) não se cobre (o dono, 02/10/2026) */
-      const amiga = m => m.t && m.t !== meu && d.amigas && d.amigas(e, meu, m.t);
-      const alvo = selMuro || ms.find(m => !m.t) || ms.find(m => m.t && m.t !== meu && !amiga(m));
-      const bt = document.createElement('button');
-      bt.type = 'button'; bt.className = 'bt';
-      bt.textContent = !alvo ? (ms.some(m => m.t !== meu) ? _t('Os outros muros daqui são de aliadas') : _t('Todos os muros daqui são nossos'))
-        : alvo.t === meu ? _t('Esse muro já é nosso')
-        : amiga(alvo) ? _t('Muro da {nome}, aliada: não se cobre', {nome:sigla(alvo.t)})
-        : alvo.t ? _t('Cobrir o pixo da {nome}', {nome:sigla(alvo.t)})
-        : selMuro ? _t('Pixar este muro') : _t('Pixar em {bairro}', {bairro:b.nome});
-      bt.disabled = !alvo || alvo.t === meu || amiga(alvo) || sd.total <= 0;
-      bt.onclick = () => {
-        const r = d.pixar(e, meu, cid, b.id, alvo ? alvo.i : null);
-        if(TO.estado.mudou) try{ TO.estado.mudou(); }catch(_){}
-        if(opc.aoAviso) opc.aoAviso(r.msg || '', r.ok);
-        if(opc.aoMudar) opc.aoMudar();
-      };
-      pe.appendChild(bt);
-      const m = document.createElement('small');
-      m.textContent = _t('{n} pixações pra gastar: {c} do mês + {x} das brigas', {n:sd.total, c:sd.cota, x:sd.extra}) +
-        (sd.lider ? ' · ' + _t('+2 por liderar a cidade') : '');
-      pe.appendChild(m);
-    }
     if(opc.aoIr){
       const bt = document.createElement('button');
       bt.type = 'button'; bt.className = 'bt';
@@ -366,7 +308,6 @@ TO.mapaBrasil = (function(){
       pe.appendChild(bt);
     }
     if(pe.childNodes.length) caixa.appendChild(pe);
-    if(opc.aoMuro) for(const li of caixa.querySelectorAll('.mb-muros li')) li.onclick = () => opc.aoMuro(+li.dataset.muro);
     return caixa;
   }
 
@@ -398,8 +339,8 @@ TO.mapaBrasil = (function(){
         bt.type = 'button';
         bt.className = 'mb-bairro' + (b.dono === meu ? ' nosso' : '') + (opc.escolhido === b.id ? ' escolhido' : '') + (claro(cor) ? ' claro' : '');
         bt.style.setProperty('--cor', cor);
-        const outras = b.partes.filter(p => p.t !== b.dono && p.v >= 1).slice(0, 3).map(p => sigla(p.t) + ' ' + Math.round(p.v) + '%').join(' · ');
-        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + Math.round(b.v) + '%') : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>` +
+        const outras = b.partes.filter(p => p.t !== b.dono && p.v >= 1).slice(0, 3).map(p => sigla(p.t) + ' ' + p.v).join(' · ');
+        bt.innerHTML = `<b>${esc(b.nome)}</b><small>${b.dono ? esc(sigla(b.dono) + ' ' + b.v + '/' + (d.MAX || 7)) : esc(_t('em disputa'))}${b.sede ? ' · ' + esc(_t('sede')) : ''}</small>` +
                        (outras ? `<small class="mb-outras">${esc(outras)}</small>` : '');
         bt.onclick = () => opc.aoEscolher && opc.aoEscolher(b.id);
         zona.appendChild(bt);
