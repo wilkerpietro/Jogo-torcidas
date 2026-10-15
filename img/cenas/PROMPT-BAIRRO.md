@@ -53,11 +53,17 @@ true orthographic zenith aerial drone photograph shot straight down at exactly 9
 
 ## PRAÇA · onde a torcida faz a reunião
 
-### P1 · Pracinha de bairro com coreto
+### P1 · Pracinha de bairro com coreto (rodada 2: quase sem árvore)
+
+O dono (15/10/2026): a arborização da praça atrapalha o cenário. Copa de
+árvore de cima esconde os bonecos e vira parede na máscara. Agora são só
+quatro árvores pequenas, uma em cada canto, por fora do piso.
 
 ```
-THE SUBJECT, filling the center of the frame: a small neighborhood square, one full city block, surrounded on all four sides by streets of worn grey asphalt with narrow pale concrete sidewalks, and beyond the streets the roofs of the houses. The square is paved with pale grey and cream portuguese stone pavement in a simple wave pattern. In the exact center, a small round concrete bandstand platform, low and flat, seen from above as a pale circle. Around the edges ONLY: a ring of large mango and oiti trees whose round dark green canopies sit at the four corners and along the borders, concrete benches along the outer edge, two small flower beds of dry grass at the corners, a closed metal popcorn cart parked against one edge. A wide clear paved ring between the trees and the bandstand, completely open floor. Four open paths enter the square, one in the middle of each side, straight from the sidewalk.
+THE SUBJECT, filling the center of the frame: a small neighborhood square, one full city block, surrounded on all four sides by streets of worn grey asphalt with narrow pale concrete sidewalks, and beyond the streets the roofs of the houses. The square is an OPEN SUN-EXPOSED PAVED PLAZA, almost entirely bare: pale grey and cream portuguese stone pavement in a simple wave pattern covering the whole block from edge to edge. In the exact center, a small round concrete bandstand platform, low and flat, seen from above as a pale circle. VERY FEW TREES: only FOUR small young trees, one in each outer corner of the square, each with a small round canopy no wider than a parked car, standing in a small square patch of dry dirt; no other trees, no shrubs, no hedges anywhere. Along the outer edge ONLY: a few concrete benches, two small low flower beds of dry grass, a closed metal popcorn cart parked against one edge. Everything between the edges and the bandstand is a wide clear paved floor, fully visible from above, with no canopy over it. Four open paths enter the square, one in the middle of each side, straight from the sidewalk.
 ```
+
+O rabo negativo ganha, no fim: `No dense trees, no tree canopy over the paved area, no rows of trees along the borders, no shrubs, no hedges, no shade covering the plaza.`
 
 ### P2 · Praça da igreja
 
