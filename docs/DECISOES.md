@@ -10956,6 +10956,8 @@ E refez três nobres: praça de alto padrão (praça), corredor comercial
 sinal de trânsito (jogo — um dos painéis passa a partida). As quadras de
 areia ficaram. Na esquina, por pedido dele, pode ter painel e o número da
 temperatura; continua proibido nome de marca real.
+Por fim trocou as quadras de areia (N3) por um campo society com barzinho
+ao lado, o típico complexo de society brasileiro.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

@@ -23,7 +23,7 @@ dividem os mesmos quatro cenários (o mesmo corte das ruas, em
 |---|---|---|---|
 | **Popular** (Favela, Classe Baixa) | F1 campinho na beira do rio · F4 pracinha de classe média baixa | F2 bar da lagoa | F3 becos e vielas da favela |
 | **Classe Média** | M1 quadra no parque · M2 praça com lago | M3 quiosque da praça com TV | M4 pista de skate do parque |
-| **Nobre** | N1 praça de alto padrão · N3 quadras de areia | N4 esquina de avenida com LED | N2 corredor comercial |
+| **Nobre** | N1 praça de alto padrão · N3 campo society com barzinho | N4 esquina de avenida com LED | N2 corredor comercial |
 
 Com duas cenas de praça na classe, o bairro escolhe uma pelo hash (o mesmo
 bairro abre sempre o mesmo cenário). Enquanto a foto de uma cena não chega,
@@ -159,10 +159,15 @@ THE SUBJECT: an elegant designed public square in the richest neighborhood of th
 THE SUBJECT: an upscale pedestrian shopping street ("corredor comercial") crossing the whole frame horizontally through the middle, closed to cars, about a third of the frame tall. Its floor is pale grey and cream stone paving in a long elegant pattern, with a thin metal drainage channel down the center. On both sides, glued to each other, the flat roofs of two- to four-storey shop buildings of different heights, with rooftop air conditioning units, skylights, solar panels and a small rooftop terrace with umbrellas. Along the shop fronts on both sides ONLY, the details of a busy commercial street seen from above: colorful retractable awnings of different solid colors over the shop doors (each awning a narrow flat strip, not covering the middle), café and restaurant terraces with small round tables and chairs, potted olive trees in square planters, a flower stall, a closed ice cream cart, an ATM kiosk with a small flat roof, rows of rental bikes and electric scooters in a docking station, delivery hand trucks with stacked boxes, slim lamp posts, waste bins, a parklet deck of pale wood with benches. The middle of the street is a wide clear paved floor from the left edge to the right edge. At the left and right edges, the street opens onto cross streets of dark asphalt with white zebra crosswalks.
 ```
 
-### N3 · Quadras de areia do parque (praça)
+### N3 · Campo society com barzinho (praça)
+
+O dono (15/10/2026) trocou as quadras de areia por "um campo society com
+barzinho ao lado, típico que tem no Brasil". A grama sintética é verde: se
+o importador ler o campo como parede, ele se abre no pincel (F2). O chão
+garantido da briga é o pátio de concreto entre o campo e o bar.
 
 ```
-THE SUBJECT: two side-by-side sand courts for beach tennis and footvolley in an upscale park. In the middle of the frame, two large rectangles of pale fine sand with thin white boundary lines, the nets taken down, only the slim posts at the sides seen as small dots. Around both courts, a wide border of pale concrete paving. Along the outer edges of the paving ONLY: a small modern kiosk with a flat white roof, wooden benches, a drinking fountain, a bike rack. Around it, low manicured lawns. The TOP FIFTH of the frame: a band of park trees as background. The LOWER EDGE: a wide pale path and a street with dark asphalt, beyond it the flat roofs of tall residential towers. The courts and their paving are one wide clear open floor, open at the bottom and at the left and right.
+THE SUBJECT: a typical Brazilian "society" football complex in an upscale neighborhood, one wide lot seen from directly above. In the upper two thirds of the frame, a seven-a-side artificial turf pitch with NO ROOF: bright even synthetic grass in alternating light and dark green mowing stripes, crisp white lines, a center circle, small penalty areas and two small goals at the left and right ends seen from above as thin white rectangles. Around the pitch, a tall fence of thin green netting on slim posts, seen from above only as a thin line around the turf, with TWO WIDE OPEN GATES in its lower side. Below the pitch, filling the lower middle of the frame, a wide open courtyard of pale smooth concrete. On the right side of the courtyard, the "barzinho" of the complex: a small bar building with a flat light grey metal roof and, in front of it, a covered-free terrace of pale ceramic tiles with rows of white plastic tables and chairs, red plastic beer crates and a closed chest freezer, placed ONLY against the bar and along the right edge; a small barbecue grill against the bar wall. On the left side of the courtyard, a row of wooden benches and a rack of footballs and team bibs against the left edge. The LOWER EDGE: the low wall top of the lot with a wide open entrance gate onto a quiet street of dark asphalt, and beyond it the flat roofs of upscale houses with pools. The TOP EDGE: a narrow band of trees as background behind the pitch fence. The courtyard is a wide clear open floor connecting the street gate, the bar terrace and the two open gates of the pitch.
 ```
 
 ### N4 · Esquina de avenida de alto padrão com LED (jogo)
