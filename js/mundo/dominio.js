@@ -973,7 +973,7 @@ TO.dominio = (function(){
         const soma = (l, max) => l.reduce((x, m) => x + (m.forca || 5) + (m.defesa || 5), 0) || max * 8;
         /* os moradores defendem (até 15) e o ataque vem com até 60% a mais */
         const defs = EL ? EL.noBairro(E, alvo.def, cid, alvo.id, 15) : [];
-        const maxA = EL ? EL.ataqueContra(defs.length) : 20;
+        const maxA = EL ? EL.ataqueSorteado(defs.length, r()) : 20;
         const fa = soma(EL ? EL.maisFortes(E, o.id, cid, maxA) : [], maxA), fd = soma(defs, 15);
         const venceu = r() < fa / (fa + fd);
         const venc = venceu ? o.id : alvo.def, perd = venceu ? alvo.def : o.id;

@@ -10788,7 +10788,8 @@
     const atacamos = d.atacamos !== false;
     const defs = atacamos ? EL.noBairro(e, d.rival, cid, d.bairroId, defMax)
                           : EL.noBairro(e, e.torcida.id, cid, d.bairroId, defMax);
-    const atkMax = EL.ataqueContra(defs.length);
+    const atkMax = EL.ataqueSorteado(defs.length,
+      (TO.mapa.hash(`atk|${e.data.absoluto}|${d.bairroId}|${d.rival}`) % 1000) / 1000);
     const nossos = atacamos ? EL.maisFortes(e, e.torcida.id, e.torcida.mapa, atkMax) : defs;
     const deles = atacamos ? defs : EL.maisFortes(e, d.rival, cid, atkMax);
     const n = Math.max(2, nossos.length), nR = Math.max(2, deles.length);

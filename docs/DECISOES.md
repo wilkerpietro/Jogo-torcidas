@@ -10981,6 +10981,10 @@ bancada (`js/diajogo/bancada.js`) abre as três cenas do mesmo jeito.
   atacando; 7 no beco, até 11. Vale pro nosso ataque, pro ataque contra
   nós, pra prévia dos botões e pra briga entre IAs (`brigasDasIAs`). Antes
   era 20 contra 15 fixo, e 7 contra 7 no beco.
+  Logo depois o dono corrigiu: é "até 60%", não sempre 60%, e também pode
+  sair 7×7, 7×5. O ataque agora é sorteado entre 70% e 160% dos
+  defensores (`TO.elenco.ataqueSorteado`, fixo pelo dia, bairro e rival):
+  7 defendendo dá de 5 a 11; 15 dá de 11 a 24. O botão mostra o teto.
 - A mensagem dos convites do mês volta a ter uma frase em cima da lista:
   "Chefe, nossos aliados enviaram os convites das festas de aniversário
   deles. Responda quais iremos."

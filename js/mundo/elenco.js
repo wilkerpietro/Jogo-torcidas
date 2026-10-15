@@ -217,6 +217,15 @@ TO.elenco = (function(){
      defensores (dono, 15/10/2026) */
   const ATAQUE = 1.6;
   const ataqueContra = nDef => Math.max(2, Math.floor(Math.max(1, nDef) * ATAQUE));
-  return {ATAQUE, ataqueContra, fila:filaIA, maisFortes, noBairro, moradores, bairroDoNosso, garantirNossos,
+  /* quantos vêm de fato, sorteado entre 70% e 160% dos defensores (o
+     dono, 15/10/2026: "não é obrigatório sempre ter 60% a mais, mas até
+     60%" e "continua gerando 7x7 também, 7x5, etc") — `r` é um número
+     de 0 a 1 */
+  const PISO = 0.7;
+  const ataqueSorteado = (nDef, r) => {
+    const base = Math.max(2, Math.ceil(Math.max(1, nDef) * PISO)), teto = ataqueContra(nDef);
+    return base + Math.floor(Math.max(0, Math.min(0.999, r)) * (teto - base + 1));
+  };
+  return {ATAQUE, ataqueContra, ataqueSorteado, fila:filaIA, maisFortes, noBairro, moradores, bairroDoNosso, garantirNossos,
           morarNoRecrutamento, nomeNaCidade, disponiveis, tamanhos};
 })();
