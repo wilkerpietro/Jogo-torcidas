@@ -10934,6 +10934,21 @@ acabamento das cenas de hoje (zênite, nublado, nada escrito). Nos bares, a TV
 inclinada é a única face visível, como na subsede. Quando as fotos vierem,
 `CENA_BAIRRO` vira uma lista por situação, com o cenário fixo pelo bairro.
 
+## Doze cenários de briga de bairro por classe social (dono, 15/10/2026)
+
+Pedido: "os cenários precisam deixar de ser tão urbanos e podem ser mais
+dinâmicos, com vegetação ao fundo em alguns casos [...] Crie doze novos
+cenários, quatro pra cada classe social. Vamos adotar esses novos doze no
+jogo." Os doze (`img/cenas/PROMPT-BAIRRO.md`) substituem os nove prompts
+anteriores. Quatro por classe: popular (Favela e Classe Baixa dividem, como
+nas ruas), Classe Média e Nobre; em cada uma, duas cenas de reunião na praça,
+uma de jogo (bar com TV) e uma de bobeira. Regra da vegetação: árvore grande
+só numa faixa de fundo encostada numa borda (até um quinto do quadro), no
+meio só vegetação rasteira, árvore solta só pequena e nas bordas; água (rio,
+lagoa, lago, mar) fecha um lado da cena e vira parede. Quando as fotos
+chegarem, `CENA_BAIRRO` passa a escolher pela classe do bairro e pela
+situação, com o bairro fixando qual das duas praças abre.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

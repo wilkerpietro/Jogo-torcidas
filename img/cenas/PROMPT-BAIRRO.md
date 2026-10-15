@@ -1,155 +1,182 @@
-# As brigas de bairro — prompts das variações
+# As brigas de bairro — os doze cenários por classe social
 
-Pedido do dono (15/10/2026): "crie prompts de mais imagens que podem compor
-a variação, como pracinha e barzinho típico brasileiro que transmite jogo".
-Hoje as três brigas de bairro usam três fotos fixas (`docs/DECISOES.md`,
-"Domínio dos bairros de novo, só no braço"):
+Pedido do dono (15/10/2026): "os cenários precisam deixar de ser tão
+urbanos e podem ser mais dinâmicos, com vegetação ao fundo em alguns
+casos, como a quadra que pode ser em um parque, praça com um lago, etc.
+Crie doze novos cenários, quatro pra cada classe social. Vamos adotar
+esses novos doze no jogo. Lembre-se que é visão zenital e que a vegetação
+grande vista de cima atrapalha."
 
-| situação da mensagem | cena de hoje | variações deste arquivo |
-|---|---|---|
-| reunião na praça (`praca`) | `treta-campo` (campo de terra) | P1 pracinha com coreto · P2 praça da igreja · P3 quadra de esportes |
-| assistindo o jogo (`jogo`) | `treta-galpao` (pátio de galpão) | J1 barzinho de esquina com TV · J2 espetinho com telão na calçada · J3 bar de sinuca com TV |
-| de bobeira (`bobeira`) | `treta-beco` (beco) | B1 esquina do mercadinho · B2 viela de escadaria · B3 ponto de ônibus e lava-jato |
+Estes doze **substituem** os nove prompts anteriores deste arquivo
+(pracinha com coreto, praça da igreja, quadra, barzinho de esquina,
+espetinho, sinuca, mercadinho, viela, lava-jato), que ficam só no
+histórico do git.
 
-Mesmo acabamento das outras cenas: foto de drone a prumo, dia nublado, cor
-dessaturada, bairro popular de cidade grande brasileira. O raciocínio de
-cada regra está em `PROMPT-SEDE.md` e `PROMPT-SUBSEDE.md`; aqui é só colar.
+## Como o jogo vai escolher
 
-**Antes de colar, no Google Flow:**
+A cena sai da **classe do bairro** onde a briga cai e da **situação da
+mensagem**. As classes do jogo são quatro; aqui Favela e Classe Baixa
+dividem os mesmos quatro cenários (o mesmo corte das ruas, em
+`PROMPT-PRACA-RUA.md`).
 
-- proporção **16:9** (o importador completa em cima e embaixo);
-- anexe `treta_campo.jpeg` (praças), `Aerial_view_of_roofless_bar_202608131633.jpeg`
-  (bares) ou `treta_beco.jpeg` (bobeira) como referência de zênite e de
-  enquadramento.
+| classe | reunião na praça (`praca`) | assistindo o jogo (`jogo`) | de bobeira (`bobeira`) |
+|---|---|---|---|
+| **Popular** (Favela, Classe Baixa) | F1 campinho na beira do rio · F3 pracinha do conjunto | F2 bar da lagoa | F4 trilha da linha do trem |
+| **Classe Média** | M1 quadra no parque · M2 praça com lago | M3 quiosque da praça com TV | M4 pista de skate do parque |
+| **Nobre** | N2 parque com lago e deck · N3 quadras de areia | N1 quiosque da orla com TV | N4 pista de cooper e academia ao ar livre |
 
-## O que a máscara precisa de toda foto (vale pras nove)
+Com duas cenas de praça na classe, o bairro escolhe uma pelo hash (o mesmo
+bairro abre sempre o mesmo cenário). Enquanto a foto de uma cena não chega,
+vale a cena de hoje (`treta-campo`, `treta-galpao`, `treta-beco`).
 
-- **zênite de verdade**: só o topo das coisas, nenhuma fachada, nenhuma
-  face de parede. Muro é faixa da mesma largura em todo canto;
-- **piso claro, parede escura**: o chão onde se briga mais claro que o topo
-  dos muros e que os telhados;
-- **o meio livre e largo**: uns 20 contra 15 bonecos brigam ali. Banco,
-  mesa, árvore e carro só nas bordas;
-- **pelo menos duas entradas abertas**, em lados opostos: uma de quem
-  ataca, uma de quem defende (e de quem foge);
-- **rua de ponta a ponta numa das bordas**: é por onde o bonde chega;
-- **sem gente, sem texto, sem letreiro, sem pichação legível, sem escudo,
-  sem bandeira** — a cor da torcida quem pinta é o jogo. (O campo de hoje
-  saiu com letras nos muros; não repetir.)
+## As regras da foto (valem pras doze)
 
-O rabo negativo é o mesmo em todos os prompts:
+**Zênite.** Só o topo das coisas. Nenhuma fachada, nenhuma face de muro.
 
-```
-NEGATIVE: no people, no crowds, no cars or motorcycles in the open area, no banners, no flags, no hanging cloth, no painted crests, no murals, no graffiti letters, no logos, no signs, no shop sign, no readable text, no labels, no numbers, no watermark. No wide angle lens, no fisheye, no perspective, no oblique or 45 degree angle, no tilted camera, no visible wall faces, no visible facades, no leaning or splayed buildings. No clutter in the middle of the open area. No illustration, no cartoon, no isometric, no 3d render, no HDR, no night, no dramatic lighting, no long shadows.
-```
+**A vegetação (o pedido do dono).** Vista de cima, copa de árvore é uma
+mancha que esconde os bonecos e vira parede na máscara. Então:
 
-O começo também é igual (cole antes de cada um):
+- **árvore grande só no fundo**: uma faixa de mata ou de árvores encostada
+  em **uma** borda da foto (no máximo duas), ocupando no máximo um quinto
+  do quadro, nunca por cima do chão da briga;
+- **no meio, vegetação só rasteira**: grama baixa, capim seco ralo, areia,
+  terra;
+- **árvore solta, só pequena** (copa do tamanho de um carro) e só nas
+  bordas;
+- **água é borda**: lago, rio, lagoa e mar fecham um lado da cena e viram
+  parede na máscara — é um limite natural, e é bom.
 
-```
-true orthographic zenith aerial drone photograph shot straight down at exactly 90 degrees from high altitude with a long telephoto lens, orthographic projection, zero parallax, zero perspective, no horizon. Only top surfaces are visible: every wall top reads as a flat even band, every roof as a flat plane, every object as a flat shape seen from above. Bright but diffuse daylight under thin high overcast, short soft shadows, desaturated muted natural colors, documentary photography, weathered paint, stained concrete, dusty urban textures, photorealistic, high detail. A dense working-class neighborhood of a big city in northeast Brazil: houses built wall to wall with terracotta tile and grey fiber-cement roofs, blue water tanks on the roofs.
-```
+**O chão da briga é claro**: terra, areia, concreto, pedra portuguesa,
+deck claro. Gramado verde escuro pode sair como parede no importador; se o
+gramado tiver de ser chão, ele se abre no pincel (F2 da bancada).
 
----
+**O meio livre e largo**, com **pelo menos duas entradas abertas** em
+lados opostos (quem ataca e quem foge). Na bobeira o espaço é menor (até 7
+contra 7).
 
-## PRAÇA · onde a torcida faz a reunião
+**Nos bares, a TV é a única licença**: pendurada alta e inclinada pra
+baixo, de modo que de cima se veja o jogo (gramado verde, linhas, placar no
+canto). Mesas só nas bordas.
 
-### P1 · Pracinha de bairro com coreto (rodada 2: quase sem árvore)
+**Nada escrito, ninguém na foto**: sem gente, sem carro no chão da briga,
+sem letreiro, sem pichação, sem escudo, sem bandeira.
 
-O dono (15/10/2026): a arborização da praça atrapalha o cenário. Copa de
-árvore de cima esconde os bonecos e vira parede na máscara. Agora são só
-quatro árvores pequenas, uma em cada canto, por fora do piso.
+**No Google Flow:** proporção 16:9; anexe `treta_campo.jpeg` como
+referência de zênite e enquadramento.
 
-```
-THE SUBJECT, filling the center of the frame: a small neighborhood square, one full city block, surrounded on all four sides by streets of worn grey asphalt with narrow pale concrete sidewalks, and beyond the streets the roofs of the houses. The square is an OPEN SUN-EXPOSED PAVED PLAZA, almost entirely bare: pale grey and cream portuguese stone pavement in a simple wave pattern covering the whole block from edge to edge. In the exact center, a small round concrete bandstand platform, low and flat, seen from above as a pale circle. VERY FEW TREES: only FOUR small young trees, one in each outer corner of the square, each with a small round canopy no wider than a parked car, standing in a small square patch of dry dirt; no other trees, no shrubs, no hedges anywhere. Along the outer edge ONLY: a few concrete benches, two small low flower beds of dry grass, a closed metal popcorn cart parked against one edge. Everything between the edges and the bandstand is a wide clear paved floor, fully visible from above, with no canopy over it. Four open paths enter the square, one in the middle of each side, straight from the sidewalk.
-```
+## O começo e o fim de todos os prompts
 
-O rabo negativo ganha, no fim: `No dense trees, no tree canopy over the paved area, no rows of trees along the borders, no shrubs, no hedges, no shade covering the plaza.`
-
-### P2 · Praça da igreja (rodada 2: quase sem vegetação)
-
-O dono (15/10/2026): a vegetação da P2 também atrapalha. Saem as fileiras
-de palmeiras; ficam só duas palmeiras pequenas junto da igreja.
+Começo (cole antes do assunto):
 
 ```
-THE SUBJECT: a wide paved church square in a poor neighborhood. The TOP QUARTER of the frame is the roof of a simple parish church, a long rectangle of terracotta tiles with a small square bell tower roof at one end, sitting at the top edge of the square. The square in front of it, filling the middle of the frame, is an OPEN SUN-EXPOSED esplanade of pale washed concrete slabs with thin joints, a few cracks and patches, almost entirely bare. VERY LITTLE VEGETATION: only TWO small palm trees, one on each side of the church steps, each with a small star-shaped crown no wider than a parked car; no other trees, no rows of palms, no shrubs, no hedges, no flower beds anywhere. Along the left and right borders ONLY: a few concrete benches, a few lamp posts seen as small dots, two closed metal food kiosks pushed against the left border. The LOWER QUARTER of the frame is a street of grey asphalt crossing from edge to edge with a pale sidewalk. The whole center of the esplanade is clear open floor, fully visible from above with no canopy over it, from the street up to the church steps. Two side streets enter the square from the left and right edges.
+true orthographic zenith aerial drone photograph shot straight down at exactly 90 degrees from high altitude with a long telephoto lens, orthographic projection, zero parallax, zero perspective, no horizon. Only top surfaces are visible: every wall top reads as a flat even band, every roof as a flat plane, every tree as a flat round canopy, every object as a flat shape seen from above. Bright but diffuse daylight under thin high overcast, short soft shadows, desaturated muted natural colors, documentary photography, weathered textures, photorealistic, high detail. A big city in northeast Brazil.
 ```
 
-O rabo negativo ganha, no fim: `No dense trees, no tree canopy over the paved area, no rows of trees or palms along the borders, no shrubs, no hedges, no shade covering the plaza.`
-
-### P3 · Quadra de esportes do bairro
+Fim (cole depois do assunto):
 
 ```
-THE SUBJECT: an open-air neighborhood multi-sport court, NOT roofed, inside a small fenced lot between houses. The court is pale grey-green painted concrete with faded white and yellow lines of a futsal and basketball court, two small goal frames at the short ends seen from above as thin rectangles. Around the court, a strip of pale concrete with three low tiers of concrete bleachers along ONE long side only, seen from above as three thin pale steps. The lot is closed by a thin wall band, with TWO WIDE OPEN GATES: one in the middle of the lower wall, opening onto the street, and one at the far upper corner, opening onto a narrow alley between the houses. The LOWER QUARTER of the frame is the street of grey asphalt from edge to edge, with a pale sidewalk. Two big trees whose canopies touch only the outer corners. The whole court surface is clear open floor.
+NEGATIVE: no people, no crowds, no cars or motorcycles in the open area, no banners, no flags, no hanging cloth, no painted crests, no murals, no graffiti, no logos, no signs, no readable text, no labels, no numbers, no watermark. No tree canopy over the open area, no big trees in the middle of the frame, no dense vegetation covering the ground, no tall bushes in the open area, no shade covering the open area. No wide angle lens, no fisheye, no perspective, no oblique or 45 degree angle, no tilted camera, no visible wall faces, no visible facades, no leaning or splayed buildings. No clutter in the middle of the open area. No illustration, no cartoon, no isometric, no 3d render, no HDR, no night, no dramatic lighting, no long shadows.
 ```
 
 ---
 
-## JOGO · onde a torcida se junta pra assistir o jogo dela
+## POPULAR · Favela e Classe Baixa
 
-A TV é a única licença: de zênite, tela é só uma risca. Por isso **a TV fica
-alta na parede, inclinada pra frente e pra baixo**, e de cima mostra o jogo
-(gramado verde, linhas, placar no canto). Mesa no meio vira parede na
-máscara: **mesas só nas bordas, corredor largo e livre no meio**.
-
-### J1 · Barzinho de esquina com TV
+### F1 · Campinho de terra na beira do rio (praça)
 
 ```
-THE SUBJECT: a typical Brazilian corner bar ("boteco") on a street corner, with NO ROOF while every neighboring house keeps its roof. Two streets of grey asphalt meet at the LOWER RIGHT corner of the frame, one running along the whole bottom edge and one running along the whole right edge, each with a wide pale concrete sidewalk. The bar occupies the corner lot, its interior exposed from above: a floor of cheap pale cream ceramic tiles, thin wall bands, a long masonry counter with a red tiled top along the back wall, a chest freezer and an upright beer fridge pushed against the back wall. The bar is OPEN TO THE CORNER: the two front walls are almost entirely wide open roll-up door gaps, no door leaf, no grille, so the tiled floor flows straight onto the sidewalk. Outside on the wide sidewalk, along the curb and along the walls ONLY: red and yellow plastic tables with four plastic chairs each, red plastic beer crates, a few brown bottles on the tables. A wide clear strip of sidewalk and bar floor between the tables, completely empty. THE TV: one flat TV screen mounted high on the inner back wall, TILTED FORWARD AND DOWN toward the street, so that from above its face is visible, showing a live football match — a bright green pitch with white lines, tiny players and a small scoreboard in a corner. The tilted screen is the only object whose face is visible.
+THE SUBJECT: a poor riverside neighborhood. Filling the middle of the frame, a bare packed red-dirt football pitch, worn smooth, with faint white chalk lines and two simple wooden goal frames at the left and right ends seen from above as thin rectangles. The TOP FIFTH of the frame is the riverbank: a strip of low green reeds and short grass, then the brown-green water of a small urban river running from edge to edge. The LOWER FIFTH is a dirt street with a few small self-built brick houses with fiber-cement roofs below it. The LEFT edge: the back walls of small houses with blue water tanks. The RIGHT edge: an empty lot of low dry grass with a single small young tree in the corner. Three open ways in: from the dirt street at the bottom through a wide gap, along a footpath on the riverbank at the top right, and between the houses at the left. The pitch and its dirt margins are one wide clear open floor.
 ```
 
-### J2 · Espetinho com telão na calçada
+### F2 · Bar da lagoa com TV (jogo)
 
 ```
-THE SUBJECT: a wide street of grey asphalt crossing the whole frame horizontally through the middle, closed to traffic, with wide pale concrete sidewalks on both sides, houses with roofs above and below. On the upper sidewalk, at the center, a small grill stand ("espetinho") seen from above: a long charcoal barbecue grill with skewers, a folding table with a cooler, all pushed against the house wall. Next to it, the big screen: a large outdoor TV on a metal stand placed against the house wall, TILTED BACK toward the sky so that from above its face is visible, showing a live football match — bright green pitch, white lines, tiny players, a small scoreboard in a corner. Along both curbs ONLY: rows of white plastic tables and chairs, red plastic beer crates, a few styrofoam coolers. A string of bare light bulbs crosses the street high above, seen as a thin line of small round bulbs. The middle of the asphalt is a wide clear open floor from the left edge to the right edge.
+THE SUBJECT: a simple lakeside bar on the edge of a poor neighborhood. The TOP QUARTER of the frame is a calm lagoon of dark green water with a fringe of low grass and a few small coconut palms with small star-shaped crowns only along its shore. On the left of the middle of the frame, a small square bar kiosk of painted concrete block with a flat grey fiber-cement roof, about a tenth of the frame wide. In front of it, filling the middle of the frame, a wide terrace of pale packed sand and cracked concrete slabs. Along the edges of the terrace ONLY: red and yellow plastic tables with four plastic chairs each, red plastic beer crates, a few brown bottles on the table tops. THE TV: one flat TV screen mounted high on the front wall of the kiosk, TILTED FORWARD AND DOWN toward the terrace, so that from above its face is visible, showing a live football match — a bright green pitch with white lines, tiny players and a small scoreboard in a corner; the tilted screen is the only object whose face is visible. The LOWER QUARTER is a dirt road from edge to edge with a few small houses beyond it. The middle of the terrace is a wide clear open floor, open to the road at the bottom and to a sandy path along the lagoon at the right.
 ```
 
-### J3 · Bar de sinuca com TV
+### F3 · Pracinha do conjunto habitacional (praça)
 
 ```
-THE SUBJECT: one wide one-storey bar lot in the middle of the block, with NO ROOF while every neighboring house keeps its roof. The LOWER QUARTER of the frame is the street of grey asphalt from edge to edge, with a pale concrete sidewalk. The bar's front wall faces the sidewalk with TWO WIDE OPEN roll-up door gaps, one on the left and one on the right, no door leaf, no grille. Inside, the floor is pale grey burnt cement. Along the left wall ONLY: two pool tables with green felt, seen from above as green rectangles with dark rails. Along the right wall ONLY: a row of small plastic tables with chairs. At the back: a long masonry counter with a white tiled top, shelves of bottles and a fridge against the back wall, and an open doorway at the back right into a small yard with a clothesline. THE TV: one flat TV mounted high on the back wall above the counter, TILTED FORWARD AND DOWN, so that from above its face is visible, showing a live football match — bright green pitch, white lines, tiny players, a small scoreboard. A wide clear aisle down the middle of the bar, from the doors to the counter, completely empty floor.
+THE SUBJECT: a public housing estate ("conjunto habitacional") of identical small one-storey houses in straight rows, each with the same grey fiber-cement roof and a blue water tank, filling the top and bottom of the frame. Between the rows, in the middle of the frame, a small rectangular common square of pale cracked concrete, worn and patched. At one short end, a small sandy playground of pale sand with an old metal swing set and a slide seen from above as thin lines. Along the long edges ONLY: two concrete ping-pong tables, a few concrete benches, a low strip of dry grass with three small young trees with small canopies. Narrow paved lanes run between the rows of houses and open into the square at all four corners. The whole middle of the square is a wide clear open floor.
+```
+
+### F4 · Trilha da linha do trem (bobeira)
+
+```
+THE SUBJECT: the edge of a poor neighborhood along a railway. The TOP FIFTH of the frame is the railway: two parallel steel rails on dark wooden sleepers and grey gravel ballast running from edge to edge, with a strip of low scrub and a few banana plants along it. Below the railway, filling the middle of the frame, a wide clearing of pale packed dirt and patches of low dry grass, where a worn footpath runs from the left edge to the right edge, with scattered rubble and an old tire pushed against the edges ONLY. The LOWER FIFTH: the back walls of small self-built brick houses with unfinished red brick wall tops and fiber-cement roofs, with one narrow gap between two houses opening onto the clearing. The clearing is open at the left and right edges along the footpath. The middle is clear open ground.
 ```
 
 ---
 
-## BOBEIRA · "passei por lá e vi membros deles de bobeira"
+## CLASSE MÉDIA
 
-Lugar de passagem, apertado e pequeno: a cena do beco é de até 7 contra 7.
-
-### B1 · Esquina do mercadinho
+### M1 · Quadra no parque (praça)
 
 ```
-THE SUBJECT: a street corner where two narrow streets of patched grey asphalt cross, one horizontal through the middle of the frame and one vertical through the middle, forming a plus shape, each with narrow pale sidewalks. On one corner lot, a small neighborhood grocery store ("mercadinho") with its roof ON, a plain grey fiber-cement roof, and in front of it on the sidewalk, pushed against its wall ONLY: stacked blue gas cylinders in a cage, a rack of plastic crates of fruit, a red cooler. On the opposite corner, a small empty lot of bare red dirt with a few weeds and a low broken wall. The other two corners are houses with terracotta roofs. A wooden electricity pole at one corner, seen as a small dot with a thin crossbar. The crossing itself is a wide clear open area.
+THE SUBJECT: a public city park in a middle-class neighborhood. In the middle of the frame, an open-air multi-sport court with NO ROOF: pale grey-green painted concrete with faded white and yellow lines of a futsal and basketball court, two small goal frames at the short ends seen as thin rectangles, no fence. Around the court, a wide ring of pale concrete paving with a few benches and drinking fountains at its outer edge ONLY. Around that, a pale concrete walking path loop and low mowed lawns with dry patches. The TOP FIFTH of the frame is the background: a band of park trees with round canopies, staying behind the walking path. The LOWER FIFTH is a street of grey asphalt from edge to edge with a pale sidewalk and the park entrance, a wide open paved gap. Paths leave the court ring to the left and right edges. The court and its paved ring are one wide clear open floor.
 ```
 
-### B2 · Viela de escadaria
+### M2 · Praça com lago (praça)
 
 ```
-THE SUBJECT: a narrow pedestrian alley ("viela") climbing between densely packed self-built brick houses, running straight from the BOTTOM EDGE of the frame to the TOP EDGE through the middle. The alley floor is pale grey concrete with wide flat stair landings every few meters, seen from above as pale rectangles separated by thin lines, a shallow open gutter along one side. The alley is about a fifth of the frame wide, widening in the middle into a small open landing about twice as wide, where two side passages open to the left and right between the houses. Houses on both sides with flat grey concrete slab roofs, unfinished red brick wall tops, blue water tanks, rebar sticking out, a few potted plants on the roofs. No objects in the alley except a couple of plastic chairs against a house wall on the landing.
+THE SUBJECT: a neighborhood square with a small pond in a middle-class area. The RIGHT THIRD of the frame is a small artificial pond of calm green-brown water with a low concrete rim, and a short pale wooden deck reaching a little into the water. The rest of the square, filling the left two thirds, is a wide plaza of pale grey concrete paving with a simple pattern of darker joints, sloping gently to the pond rim. Along the outer edges of the plaza ONLY: concrete benches, lamp posts seen as small dots, a few low flower beds of short grass, and four small young trees with small canopies in the corners. Beyond the pond, along the far right edge, a narrow band of trees as background. The LEFT and BOTTOM edges: streets of grey asphalt with pale sidewalks, and beyond them the flat roofs of three- and four-storey apartment buildings with small rooftop water tanks. Open ways in from the street at the bottom and from the street at the left. The plaza is one wide clear open floor.
 ```
 
-### B3 · Ponto de ônibus e lava-jato
+### M3 · Quiosque da praça com TV (jogo)
 
 ```
-THE SUBJECT: a wide avenue of grey asphalt crossing the whole frame horizontally in the LOWER THIRD, with a faded dashed center line and a wide pale concrete sidewalk. On the sidewalk at the center, a simple bus stop: a thin flat metal roof seen from above as a small grey rectangle, with a bench under it. Behind the sidewalk, filling the middle of the frame, a small car wash yard ("lava-jato") with NO ROOF: a wide open floor of wet dark-grey concrete with a drain grate and puddles, open to the sidewalk along its whole front, no gate. Against the back wall ONLY: a blue pressure washer machine, coiled hoses, plastic buckets, a stack of tires. Left and right: houses with terracotta and fiber-cement roofs glued to the yard's side walls. A narrow alley opens at the upper left corner of the yard, leading out between the houses. The yard and the sidewalk form one wide clear open floor.
+THE SUBJECT: a middle-class neighborhood square with a bar kiosk. In the middle of the upper half of the frame, a small square bar kiosk with a flat light grey metal roof, about a tenth of the frame wide. Around and below it, filling most of the frame, a wide plaza of pale grey and cream portuguese stone pavement in a simple pattern. Along the edges of the plaza ONLY: rows of white plastic tables with four chairs each, beer crates, a few bottles on the table tops. THE TV: one flat TV screen mounted high on the front of the kiosk, TILTED FORWARD AND DOWN toward the plaza, so that from above its face is visible, showing a live football match — a bright green pitch with white lines, tiny players and a small scoreboard in a corner; the tilted screen is the only object whose face is visible. A string of bare light bulbs runs from the kiosk to the edges, seen as thin lines of small round bulbs. The TOP EDGE: a narrow strip of low lawn and a few trees as background. The LOWER QUARTER: a street of grey asphalt from edge to edge with a pale sidewalk and low apartment buildings beyond it. The middle of the plaza is a wide clear open floor, open to the street at the bottom and to paths at the left and right.
+```
+
+### M4 · Pista de skate do parque (bobeira)
+
+```
+THE SUBJECT: a small street-style skate plaza inside a middle-class city park. In the middle of the frame, a flat area of smooth pale grey concrete, about half the frame wide. Along its edges ONLY: low concrete ledges, a short metal handrail and two small flat quarter-pipe ramps seen from above as pale rectangles with a thin edge line. The center of the skate plaza is flat open concrete. Around it, low mowed lawn with dry patches and a pale concrete path that crosses the frame from the left edge to the right edge, passing through the skate plaza. The TOP FIFTH of the frame: a band of park trees with round canopies as background. The LOWER EDGE: a pale concrete jogging path and a low hedge strip along a street. The skate plaza and the path are one clear open floor.
+```
+
+---
+
+## NOBRE
+
+### N1 · Quiosque da orla com TV (jogo)
+
+```
+THE SUBJECT: the seafront of an upscale neighborhood. The TOP QUARTER of the frame is the beach: pale golden sand and, at the very top edge, the turquoise sea with a thin line of white foam, with a single row of small coconut palms with small star-shaped crowns only along the line where sand meets pavement. Filling the middle of the frame, a very wide seaside promenade ("calçadão") of black and white portuguese stone pavement in a wave pattern. In the middle of the promenade, a modern beach kiosk with a flat white roof, about a tenth of the frame wide. Along the edges of the promenade ONLY: square wooden tables with four chairs each, a few closed beach umbrellas lying flat, a coconut cart. THE TV: one flat TV screen mounted high on the front of the kiosk, TILTED FORWARD AND DOWN toward the promenade, so that from above its face is visible, showing a live football match — a bright green pitch with white lines, tiny players and a small scoreboard in a corner; the tilted screen is the only object whose face is visible. The LOWER QUARTER: a wide seaside avenue of dark asphalt and, at the bottom edge, the flat roofs of tall residential towers with rooftop pools. The promenade is one wide clear open floor, open to the left and right edges and to the avenue.
+```
+
+### N2 · Parque com lago e deck (praça)
+
+```
+THE SUBJECT: an upscale landscaped park with a lake. The TOP THIRD of the frame is a large calm lake of dark blue-green water, and beyond it, at the very top edge, a thin band of trees as background. Along the shore, filling the middle of the frame, a wide waterfront plaza: a broad deck of pale weathered wooden boards next to the water, joined to a wide area of pale granite paving. Along the outer edges of the plaza ONLY: modern wooden benches, low planters with ornamental grasses, slim lamp posts seen as small dots, and four small young trees with small canopies in round planters. The LOWER QUARTER: manicured low lawns cut by pale paths, and at the bottom edge the flat roofs of tall condominium towers. Wide paths enter the plaza from the left edge, the right edge and the bottom. The deck and the granite plaza are one wide clear open floor.
+```
+
+### N3 · Quadras de areia do parque (praça)
+
+```
+THE SUBJECT: two side-by-side sand courts for beach tennis and footvolley in an upscale park. In the middle of the frame, two large rectangles of pale fine sand with thin white boundary lines, the nets taken down, only the slim posts at the sides seen as small dots. Around both courts, a wide border of pale concrete paving. Along the outer edges of the paving ONLY: a small modern kiosk with a flat white roof, wooden benches, a drinking fountain, a bike rack. Around it, low manicured lawns. The TOP FIFTH of the frame: a band of park trees as background. The LOWER EDGE: a wide pale path and a street with dark asphalt, beyond it the flat roofs of tall residential towers. The courts and their paving are one wide clear open floor, open at the bottom and at the left and right.
+```
+
+### N4 · Pista de cooper e academia ao ar livre (bobeira)
+
+```
+THE SUBJECT: the edge of an upscale park beside a gated condominium. A wide reddish running track of rubberized asphalt with thin white lane lines crosses the whole frame horizontally through the middle. Next to it, a pale concrete plaza with outdoor gym machines seen from above as small flat metal shapes, placed ONLY along the edges of the plaza; the center of the plaza is open. Low manicured lawns around. The TOP FIFTH of the frame: a band of park trees as background. The LOWER FIFTH: the long top of a tall condominium perimeter wall as a thin pale band, with a small square guardhouse roof and a closed vehicle gate, and the flat roofs of the condominium houses with pools beyond it. The track and the plaza are one clear open floor, open at the left and right edges.
 ```
 
 ---
 
 ## Conferência antes de aceitar
 
-1. **Zênite de verdade**: nenhuma fachada, nenhuma face de muro; os
-   prédios das bordas iguais aos do meio.
-2. **O meio está livre** e largo, e as entradas estão abertas (pelo menos
-   duas, em lados opostos).
-3. **Piso claro, parede escura.**
-4. **Nos bares, a TV mostra o jogo de cima** (gramado verde visível), e as
-   mesas ficaram nas bordas.
-5. **Nada escrito** em lugar nenhum.
+1. **Zênite de verdade**: nenhuma fachada, os prédios das bordas iguais aos
+   do meio.
+2. **Árvore grande só na borda do fundo**, e nenhuma copa por cima do chão
+   da briga.
+3. **O chão da briga é claro e o meio está livre**, com as entradas
+   abertas.
+4. **Nos bares, a TV mostra o jogo de cima.**
+5. **Nada escrito**, ninguém na foto.
 
-Quando as imagens chegarem: cada uma entra no importador
-(`ferramentas/importar_cena_foto.py`, receita no molde de `treta-*`), vira
-uma cena em `dados/cenas.js`, ganha a aba na bancada pra acertar a máscara
-no F2 e passa a ser sorteada pela situação — em `abrirBrigaBairro`
-(`js/main.js`), `CENA_BAIRRO` deixa de ser uma cena por situação e vira uma
-lista, com a escolha fixa pelo bairro (o mesmo bairro abre sempre o mesmo
-cenário).
+Quando as fotos chegarem: cada uma entra no importador
+(`ferramentas/importar_cena_foto.py`), vira cena em `dados/cenas.js`
+(`bairro-f1` … `bairro-n4`), ganha aba na bancada pra acertar a máscara
+no F2, e `CENA_BAIRRO` (`js/main.js`, `abrirBrigaBairro`) passa a escolher
+pela classe do bairro e pela situação, como na tabela do começo.
