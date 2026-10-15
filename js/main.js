@@ -4159,8 +4159,15 @@
       (m.tipo ? ' '+m.tipo : '') + (m.respondido ? ' respondida' : ''), 'data-id': m.id});
     /* a voz 'torcida' é a própria torcida falando (status, intermediação),
        e a 'eixo' é o eixo de aliança: nesses dois a origem é o nome */
+    /* "Mensagem da Mancha Azul do CSA": o clube só entra quando o nome
+       da torcida não traz ele (dono, 15/10/2026) */
+    const mensagemDe = d => {
+      const o = TO.mundo.torcida(d.de) || {};
+      const clube = o.clube && !String(d.nome).includes(o.clube) ? ' ' + TO.genero.d('clube', o.clube) : '';
+      return _t('Mensagem da {torcida}', {torcida: linkTorcida(d.de, d.nome) + escHTML(clube)});
+    };
     const quem = m.voz === 'torcida' && m.dados && m.dados.nome
-      ? linkTorcida(m.dados.de, m.dados.nome)
+      ? (m.dados.mensagem ? mensagemDe(m.dados) : linkTorcida(m.dados.de, m.dados.nome))
       : m.voz === 'eixo' && m.dados && m.dados.nome
       ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || _t('Diplomacia'));
     art.appendChild(el('div',{class:'msg-cab', html:

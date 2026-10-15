@@ -1206,5 +1206,6 @@ TO.i18n.registrar({
   "{n}/7": {es:"{n}/7", en:"{n}/7"},
   "{quem} de {c} pra {d}": {es:"{quem} de {c} a {d}", en:"{quem} from {c} to {d}"},
   "É o bairro da sede da {nome}: ela nunca fica com menos de 1 ponto aqui. Se perder o bairro, a {nome} perde 0,2 de moral por dia.": {es:"Es el barrio de la sede de {nome}: nunca queda con menos de 1 punto aquí. Si pierde el barrio, {nome} pierde 0,2 de moral por día.", en:"It's {nome}'s HQ neighbourhood: they never drop below 1 point here. If they lose it, {nome} loses 0.2 morale per day."},
-  "Chefe, nossos aliados enviaram os convites das festas de aniversário deles. Responda quais iremos.": {es:"Jefe, nuestros aliados mandaron las invitaciones a sus fiestas de aniversario. Responde a cuáles vamos.", en:"Boss, our allies sent the invites to their anniversary parties. Answer which ones we're going to."}
+  "Chefe, nossos aliados enviaram os convites das festas de aniversário deles. Responda quais iremos.": {es:"Jefe, nuestros aliados mandaron las invitaciones a sus fiestas de aniversario. Responde a cuáles vamos.", en:"Boss, our allies sent the invites to their anniversary parties. Answer which ones we're going to."},
+  "Mensagem da {torcida}": {es:"Mensaje de {torcida}", en:"Message from {torcida}"}
 });

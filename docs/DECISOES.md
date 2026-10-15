@@ -10985,6 +10985,17 @@ bancada (`js/diajogo/bancada.js`) abre as três cenas do mesmo jeito.
   "Chefe, nossos aliados enviaram os convites das festas de aniversário
   deles. Responda quais iremos."
 
+## A pauta de outra torcida diz quem manda (dono, 15/10/2026)
+
+No modo rápido a pauta da reunião vira mensagem solta, e toda ela saía com o
+título "Diretoria" — até o fim de treta em que quem fala é a aliada ("Fala
+irmão. A Bamor (Bahia) anda junto com a gente..."). O dono: o título tem de
+dizer "Mensagem da Mancha Azul do CSA". Agora a pauta que traz a torcida
+de origem (`it.de`: fim de treta, aproximação, cobrança de aliada) sai com a
+voz dela e o título "Mensagem da {torcida}", com o clube junto quando o nome
+da torcida não traz ele ("Mensagem da Bamor do Bahia"). As da nossa
+diretoria continuam "Diretoria".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

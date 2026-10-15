@@ -4555,10 +4555,14 @@ TO.feed = (function(){
       mensagemDosConvites(E, it, true);
       return it;
     }
-    return propor(E, {kind:'pauta', peso:'decisao', voz:'diretor',
+    /* A PAUTA QUE VEM DE OUTRA TORCIDA (dono, 15/10/2026): fim de treta,
+       aproximação, cobrança — quem fala é a aliada, e o título diz
+       "Mensagem da Mancha Azul do CSA", não "Diretoria" */
+    const deFora = it.de && it.nome && it.de !== E.torcida.id;
+    return propor(E, {kind:'pauta', peso:'decisao', voz: deFora ? 'torcida' : 'diretor',
       chave:`pauta|${it.id}|${it.chave || it.tipo || ''}`,
       texto: it.texto,
-      dados:{item:it.id},
+      dados: deFora ? {item:it.id, de:it.de, nome:it.nome, mensagem:true} : {item:it.id},
       /* "Ver os alvos" do assalto abre a tela de sempre, pela porta do
          cartão antigo */
       botoes:(it.botoes||[]).map(b=>({id:b.id, rot:b.rot, nota:b.nota,
