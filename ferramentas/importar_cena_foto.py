@@ -60,6 +60,18 @@ CASA = lambda *r: foto(2000, 1116, *r)
 TL = lambda x0, y0, x1, y1: (x0 / LARG, y0 / ALT, x1 / LARG, y1 / ALT)
 TS = lambda x, y: (x / LARG, y / ALT)
 
+# AS BRIGAS DE BAIRRO (fotos do dono, 15/10/2026): 2576x1438 do Flow, 16:9.
+# Medidas em FRACAO DA FOTO (x e y de 0 a 1, lidos na foto inteira); P e Q
+# convertem pra fracao da tela, que tem 83 px de quintal em cima e embaixo.
+_B_ALT = round(1438 * LARG / 2576)
+_B_TOPO = (ALT - _B_ALT) // 2
+P = lambda x, y: (x, (_B_TOPO + y * _B_ALT) / ALT)
+Q = lambda x0, y0, x1, y1: P(x0, y0) + P(x1, y1)
+POL = lambda *pts: [P(x, y) for x, y in pts]
+import math as _m
+ELI = lambda cx, cy, rx, ry, n=40: [P(cx + rx * _m.cos(2 * _m.pi * k / n), cy + ry * _m.sin(2 * _m.pi * k / n)) for k in range(n)]
+RET = lambda x0, y0, x1, y1: POL((x0, y0), (x1, y0), (x1, y1), (x0, y1))
+
 FONTES = [
     {'id': 'praca', 'arquivo': 'Aerial_view_of_public_square_202608131340.jpeg',
      'saida': 'praca.webp',
@@ -378,6 +390,131 @@ FONTES = [
      'abrir': [TL(733, 670, 806, 698), TL(835, 378, 876, 404), TL(756, 330, 778, 360),
                TL(872, 324, 898, 352)]},
 
+
+    # ---- AS BRIGAS DE BAIRRO (fotos do dono, 15/10/2026) ------------
+    # Uma por classe e situacao (img/cenas/PROMPT-BAIRRO.md). Medidas com
+    # P/Q, em fracao da foto. Grama, quadra pintada e agua saem por cor;
+    # onde a briga tem de pisar nelas (a quadra, o society, o jardim),
+    # `abrir` decreta o chao.
+    # F4 · pracinha de classe media baixa: o largo e as tres ruas
+    {'id': 'bairro-f4', 'arquivo': 'bairro_f4_pracinha.jpg', 'saida': 'bairro_f4.webp',
+     'terra': True,
+     'sementes': [P(0.48, 0.50), P(0.60, 0.30), P(0.40, 0.75), P(0.65, 0.32),
+                  P(0.22, 0.40), P(0.72, 0.40), P(0.50, 0.95), P(0.85, 0.83),
+                  P(0.08, 0.05), P(0.80, 0.05)],
+     # as duas ruas diagonais, o largo entre elas e a rua de baixo
+     'forma': [POL((0.02, 0), (0.14, 0), (0.25, 0.21), (0.765, 0.21), (0.75, 0),
+                   (0.87, 0), (0.82, 0.25), (0.76, 0.45), (0.72, 0.62), (0.73, 0.76),
+                   (1.0, 0.77), (1.0, 0.89), (0.66, 0.89), (0.64, 1.0), (0.36, 1.0),
+                   (0.31, 0.85), (0.25, 0.65), (0.18, 0.45), (0.10, 0.20))],
+     'excluir': [Q(0.465, 0.235, 0.535, 0.33)]},  # o telhado do quiosque
+    # F2 · o bar da lagoa: o terreiro de areia e a estrada de terra
+    {'id': 'bairro-f2', 'arquivo': 'bairro_f2_lagoa.jpg', 'saida': 'bairro_f2.webp',
+     'terra': True, 'claro': True,
+     'sementes': [P(0.45, 0.50), P(0.60, 0.40), P(0.35, 0.60), P(0.50, 0.73),
+                  P(0.15, 0.73), P(0.85, 0.73)],
+     'recorte': [Q(0.00, 0.62, 1.00, 0.82),   # a estrada
+                 Q(0.19, 0.30, 0.76, 0.66)],  # o terreiro do bar
+     'excluir': [Q(0.165, 0.39, 0.305, 0.61)]},  # o telhado do bar
+    # F3 · os becos da favela: a viela de ponta a ponta, a clareira e
+    # os tres ramos. Laje e cinza igual beco: so o recorte segura
+    {'id': 'bairro-f3', 'arquivo': 'bairro_f3_becos.jpg', 'saida': 'bairro_f3.webp',
+     'sementes': [P(0.50, 0.48), P(0.10, 0.50), P(0.90, 0.50), P(0.36, 0.15),
+                  P(0.66, 0.10), P(0.51, 0.80), P(0.30, 0.50), P(0.70, 0.50)],
+     # a forma e o chao inteiro; dentro dela tudo e beco (laje fica fora)
+     'forma': [POL((0, 0.465), (1, 0.465), (1, 0.535), (0, 0.535)),
+               POL((0.37, 0.42), (0.40, 0.40), (0.62, 0.40), (0.645, 0.46),
+                   (0.60, 0.55), (0.55, 0.565), (0.47, 0.565), (0.37, 0.55)),
+               POL((0.335, 0), (0.372, 0), (0.39, 0.25), (0.405, 0.42),
+                   (0.37, 0.42), (0.355, 0.25)),
+               POL((0.62, 0.42), (0.605, 0.30), (0.635, 0.10), (0.65, 0),
+                   (0.69, 0), (0.668, 0.12), (0.648, 0.30), (0.665, 0.42)),
+               POL((0.48, 0.55), (0.535, 0.55), (0.53, 1.0), (0.49, 1.0))],
+     'abrirForma': [POL((0, 0.47), (1, 0.47), (1, 0.53), (0, 0.53)),
+                    POL((0.38, 0.42), (0.40, 0.405), (0.62, 0.405), (0.64, 0.46),
+                        (0.60, 0.545), (0.55, 0.56), (0.47, 0.56), (0.38, 0.545)),
+                    POL((0.34, 0), (0.368, 0), (0.386, 0.25), (0.40, 0.42),
+                        (0.375, 0.42), (0.36, 0.25)),
+                    POL((0.625, 0.42), (0.61, 0.30), (0.64, 0.10), (0.655, 0),
+                        (0.685, 0), (0.664, 0.12), (0.644, 0.30), (0.66, 0.42)),
+                    POL((0.488, 0.55), (0.53, 0.55), (0.527, 1.0), (0.494, 1.0))]},
+    # M1 · a quadra no parque. O concreto do anel e a rua sao rosados
+    # (a cor le como telha): o chao e decretado pela forma
+    {'id': 'bairro-m1', 'arquivo': 'bairro_m1_quadra.jpg', 'saida': 'bairro_m1.webp',
+     'sementes': [P(0.50, 0.27), P(0.50, 0.73), P(0.30, 0.50), P(0.70, 0.50),
+                  P(0.50, 0.50), P(0.50, 0.93), P(0.10, 0.93), P(0.90, 0.93)],
+     'recorte': [Q(0.00, 0.16, 1.00, 1.00)],
+     'abrirForma': [ELI(0.50, 0.505, 0.248, 0.268), RET(0.455, 0.74, 0.545, 0.84),
+                    RET(0.0, 0.835, 1.0, 1.0), RET(0.04, 0.485, 0.26, 0.525),
+                    RET(0.74, 0.475, 1.0, 0.52)]},
+    # a mesma foto, so o pedaco de baixo — a bobeira da classe media:
+    # a calcada e a rua em frente ao parque (ate 7 contra 11)
+    {'id': 'bairro-m1-rua', 'arquivo': 'bairro_m1_quadra.jpg', 'saida': 'bairro_m1.webp',
+     'sementes': [P(0.50, 0.93), P(0.10, 0.93), P(0.90, 0.93), P(0.50, 0.80)],
+     'recorte': [Q(0.00, 0.74, 1.00, 1.00)],
+     'abrirForma': [RET(0.455, 0.74, 0.545, 0.84), RET(0.0, 0.835, 1.0, 1.0)]},
+    # M2 · a praca com lago: os caminhos, o gramado aberto em volta do
+    # coreto, a rua da esquerda e a de baixo. O lago fica de fora por cor
+    {'id': 'bairro-m2', 'arquivo': 'bairro_m2_lago.jpg', 'saida': 'bairro_m2.webp',
+     'sementes': [P(0.40, 0.50), P(0.30, 0.30), P(0.50, 0.70), P(0.17, 0.50),
+                  P(0.17, 0.10), P(0.50, 0.83), P(0.85, 0.83), P(0.60, 0.40)],
+     'recorte': [Q(0.14, 0.00, 0.20, 1.00),   # a rua da esquerda
+                 Q(0.00, 0.77, 0.92, 0.88),   # a rua de baixo
+                 Q(0.19, 0.16, 0.62, 0.79)],  # a praca
+     'abrir': [Q(0.21, 0.19, 0.60, 0.42), Q(0.21, 0.56, 0.60, 0.76),
+               Q(0.21, 0.42, 0.255, 0.56), Q(0.335, 0.42, 0.60, 0.56)]},
+    # M3 · o quiosque da praca com TV: o calcadao e a rua
+    {'id': 'bairro-m3', 'arquivo': 'bairro_m3_quiosque.jpg', 'saida': 'bairro_m3.webp',
+     'claro': True,
+     'sementes': [P(0.30, 0.55), P(0.10, 0.50), P(0.50, 0.55), P(0.75, 0.30),
+                  P(0.50, 0.80), P(0.10, 0.80), P(0.90, 0.80), P(0.95, 0.40)],
+     'recorte': [Q(0.00, 0.26, 1.00, 0.73),   # o calcadao
+                 Q(0.00, 0.72, 1.00, 0.86)],  # a rua
+     'excluir': [Q(0.43, 0.15, 0.575, 0.36)]},  # o telhado do quiosque
+    # N1 · a praca de alto padrao: o largo, as quatro ruas; o espelho
+    # d'agua e o pavilhao de vidro ficam de fora
+    {'id': 'bairro-n1', 'arquivo': 'bairro_n1_praca.jpg', 'saida': 'bairro_n1.webp',
+     'claro': True,
+     'sementes': [P(0.35, 0.35), P(0.65, 0.35), P(0.35, 0.65), P(0.50, 0.30),
+                  P(0.50, 0.19), P(0.50, 0.83), P(0.25, 0.50), P(0.75, 0.50),
+                  P(0.10, 0.19), P(0.90, 0.83)],
+     'recorte': [Q(0.00, 0.15, 1.00, 0.235), Q(0.00, 0.78, 1.00, 0.865),
+                 Q(0.225, 0.00, 0.28, 1.00), Q(0.72, 0.00, 0.775, 1.00),
+                 Q(0.275, 0.22, 0.725, 0.80)],
+     'excluir': [Q(0.42, 0.43, 0.58, 0.57), Q(0.61, 0.57, 0.695, 0.69)]},
+    # N2 · o corredor comercial: a rua de pedestres e as duas transversais
+    {'id': 'bairro-n2', 'arquivo': 'bairro_n2_corredor.jpg', 'saida': 'bairro_n2.webp',
+     'claro': True,
+     'sementes': [P(0.50, 0.50), P(0.20, 0.50), P(0.80, 0.50), P(0.03, 0.30),
+                  P(0.03, 0.75), P(0.97, 0.30), P(0.97, 0.75)],
+     'recorte': [Q(0.065, 0.31, 0.935, 0.69), Q(0.00, 0.00, 0.068, 1.00),
+                 Q(0.932, 0.00, 1.00, 1.00)],
+     # o asfalto das transversais e escuro demais pra cor
+     'abrirForma': [RET(0.0, 0.0, 0.065, 1.0), RET(0.935, 0.0, 1.0, 1.0),
+                    RET(0.065, 0.36, 0.10, 0.64), RET(0.90, 0.36, 0.935, 0.64)]},
+    # N3 · o campo society com barzinho: o campo (abrir), o portao, o
+    # patio, o deck do bar e a rua
+    {'id': 'bairro-n3', 'arquivo': 'bairro_n3_society.jpg', 'saida': 'bairro_n3.webp',
+     'claro': True,
+     'sementes': [P(0.40, 0.70), P(0.65, 0.72), P(0.50, 0.94), P(0.10, 0.94),
+                  P(0.90, 0.94), P(0.50, 0.35), P(0.30, 0.40), P(0.70, 0.40)],
+     'recorte': [Q(0.15, 0.13, 0.86, 0.87), Q(0.00, 0.86, 1.00, 1.00)],
+     'excluir': [Q(0.68, 0.58, 0.87, 0.75)],     # o telhado do bar
+     'abrir': [Q(0.185, 0.17, 0.83, 0.58),       # o gramado sintetico
+               Q(0.45, 0.56, 0.54, 0.62)],       # o portao do campo
+     # o patio, o portao da rua e a rua (asfalto escuro)
+     'abrirForma': [RET(0.165, 0.605, 0.675, 0.835), RET(0.45, 0.83, 0.55, 0.88),
+                    RET(0.0, 0.875, 1.0, 1.0)]},
+    # a mesma foto, so o patio, o deck do bar e a rua — o jogo da
+    # classe nobre: a turma junta no barzinho do society
+    {'id': 'bairro-n3-bar', 'arquivo': 'bairro_n3_society.jpg', 'saida': 'bairro_n3.webp',
+     'claro': True,
+     'sementes': [P(0.40, 0.70), P(0.65, 0.72), P(0.50, 0.94), P(0.10, 0.94),
+                  P(0.90, 0.94)],
+     'recorte': [Q(0.15, 0.60, 0.86, 0.87), Q(0.00, 0.86, 1.00, 1.00)],
+     'excluir': [Q(0.68, 0.58, 0.87, 0.75)],
+     'abrirForma': [RET(0.165, 0.605, 0.675, 0.835), RET(0.45, 0.83, 0.55, 0.88),
+                    RET(0.0, 0.875, 1.0, 1.0)]},
 ]
 
 
@@ -446,9 +583,20 @@ def recortar(forma, retangulos):
     return fica
 
 
+def poligonos(forma, polis):
+    """Irmao do recortar(): o chao dito como POLIGONO, em fracao da tela.
+    Rua diagonal (a pracinha triangular, 15/10/2026) nao cabe em retangulo."""
+    from PIL import ImageDraw
+    im = Image.new('L', (LARG, ALT), 0)
+    d = ImageDraw.Draw(im)
+    for pol in polis:
+        d.polygon([(x * LARG, y * ALT) for x, y in pol], fill=255)
+    return np.asarray(im) > 0
+
+
 def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
          terra=False, claro=False, engorda=0, excluir=None, crista=0,
-         abrir=None):
+         abrir=None, forma=None, abrirForma=None):
     """1 onde dá pra pisar. Cor dá o candidato; conectividade dá a resposta."""
     R, G, B = a[:, :, 0], a[:, :, 1], a[:, :, 2]
     mx, mn = a.max(2), a.min(2)
@@ -494,6 +642,8 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
         cand &= corredor(asf)
     if recorte:
         cand &= recortar(cand.shape, recorte)
+    if forma:
+        cand &= poligonos(cand.shape, forma)
     if excluir:
         # o inverso do recorte: DENTRO destes retangulos nao ha chao.
         # E o gramado dos estadios — a briga e na arquibancada, e sem
@@ -504,6 +654,8 @@ def chao(a, sementes, topo, altura, usarCorredor=False, recorte=None,
         # de `excluir` — e a passagem atras da casa de piscina, que a
         # foto mostra na sombra e a cor nao pega
         cand |= recortar(cand.shape, abrir)
+    if abrirForma:
+        cand |= poligonos(cand.shape, abrirForma)
 
     # fecha junta e remove cisco antes de olhar conectividade
     cand = nd.binary_closing(cand, np.ones((5, 5)))
@@ -603,7 +755,7 @@ def main():
                  f.get('corredor', False), f.get('recorte'),
                  f.get('terra', False), f.get('claro', False),
                  f.get('engorda', 0), f.get('excluir'), f.get('crista', 0),
-                 f.get('abrir'))
+                 f.get('abrir'), f.get('forma'), f.get('abrirForma'))
         cel = para_celulas(m)
         anc = ancoras(cel)
         fora[f['id']] = {

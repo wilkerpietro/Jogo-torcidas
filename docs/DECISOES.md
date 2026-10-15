@@ -11000,6 +11000,34 @@ voz dela e o título "Mensagem da {torcida}", com o clube junto quando o nome
 da torcida não traz ele ("Mensagem da Bamor do Bahia"). As da nossa
 diretoria continuam "Diretoria".
 
+## As fotos das brigas de bairro viram cena (dono, 15/10/2026)
+
+O dono mandou nove das doze fotos de `img/cenas/PROMPT-BAIRRO.md`. Cada uma
+virou uma cena `bairro-*`:
+
+- **A máscara** (`ferramentas/importar_cena_foto.py`): a medida é em fração da
+  foto (`P`, `Q`), e o importador ganhou `forma` e `abrirForma`, que são
+  polígonos em vez de retângulos. A pracinha triangular tem duas ruas
+  diagonais que retângulo nenhum segue, e o concreto rosado da quadra do
+  parque lia como telha na cor. Grama sintética, quadra pintada e jardim
+  entram como chão por decreto (`abrir`, `abrirForma`). Água, telhado de
+  quiosque, espelho d'água e pavilhão ficam de fora (`excluir`).
+- **A cena** (`dados/cenas.js`, `BAIRRO_CENAS`): nós sempre de `mandante`,
+  vindo de uma rua da borda; eles (`visitante`) reunidos no meio, que é a
+  praça, o terreiro ou a clareira do beco. As fugas ficam na ponta de cada
+  rua do pedaço (`RUA`).
+- **A escolha** (`cenaDoBairro`, em `js/mundo/feed.js`): sai da classe do
+  bairro e da situação da mensagem. Favela e Classe Baixa dividem as
+  populares. Com duas praças na classe, o bairro fixa qual abre. Cena que
+  não existir cai na de antes (campo, galpão, beco).
+- **As três que faltam** (F1, M4, N4) saem de pedaços das que chegaram, como
+  o dono sugeriu. A bobeira média é só a calçada e a rua da quadra do parque
+  (`bairro-m1-rua`). O jogo nobre é só o pátio e o barzinho do society
+  (`bairro-n3-bar`). O recorte fecha o resto da foto e as fugas ficam na
+  ponta da rua do pedaço.
+- **Notícias** (feed e Porrada) e a bancada (uma aba por cena, pra acertar a
+  máscara no F2) ganharam as onze.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

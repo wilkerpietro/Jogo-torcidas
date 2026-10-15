@@ -29,7 +29,24 @@ Com duas cenas de praça na classe, o bairro escolhe uma pelo hash (o mesmo
 bairro abre sempre o mesmo cenário). Enquanto a foto de uma cena não chega,
 vale a cena de hoje (`treta-campo`, `treta-galpao`, `treta-beco`).
 
-## As regras da foto (valem pras doze)
+## O que já chegou (15/10/2026)
+
+O dono mandou nove das doze: F2, F3, F4, M1, M2, M3, N1, N2 e N3. Viraram as
+cenas `bairro-*` (`ferramentas/importar_cena_foto.py` e `dados/cenas.js`).
+As três que faltam (F1 campinho, M4 skate, N4 esquina com LED) foram cobertas
+com **pedaços** das fotos que chegaram, como o dono sugeriu ("utilizar parte
+da imagem pra gerar cenas de brigas com menos membros, ajustando o ponto de
+fuga"):
+
+| vaga | cena | o pedaço |
+|---|---|---|
+| bobeira · média | `bairro-m1-rua` | a calçada e a rua em frente à quadra do parque |
+| jogo · nobre | `bairro-n3-bar` | o pátio, o deck do barzinho e a rua do society |
+| praça · popular | só `bairro-f4` | o campinho (F1) entra quando a foto chegar |
+
+Quando F1, M4 e N4 chegarem, entram em `CENAS_POR_CLASSE` (`js/mundo/feed.js`).
+
+
 
 **Zênite.** Só o topo das coisas. Nenhuma fachada, nenhuma face de muro.
 

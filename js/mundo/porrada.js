@@ -392,6 +392,17 @@ TO.porrada = (function(){
     'estadio-40':'na arquibancada',
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
+    'bairro-f4':'na pracinha',
+    'bairro-f2':'no bar da lagoa',
+    'bairro-f3':'nos becos',
+    'bairro-m1':'na quadra do parque',
+    'bairro-m1-rua':'na rua do parque',
+    'bairro-m2':'na praça do lago',
+    'bairro-m3':'no quiosque da praça',
+    'bairro-n1':'na praça',
+    'bairro-n2':'no corredor comercial',
+    'bairro-n3':'no campo society',
+    'bairro-n3-bar':'no barzinho do society',
     'emb-posto':'no posto', 'emb-onibus':'na estrada',
     'casa-piscina':'na casa de piscina', 'praca-reuniao':'na praça'
   };
@@ -407,7 +418,8 @@ TO.porrada = (function(){
     praca:'praca', 'praca-reuniao':'praca',
     rua:'rua', 'rua-media':'rua', 'rua-nobre':'rua',
     arredores:'arredores',
-    'treta-beco':'treta', 'treta-galpao':'treta', 'treta-campo':'treta'
+    'treta-beco':'treta', 'treta-galpao':'treta', 'treta-campo':'treta',
+    'bairro-f4':'treta', 'bairro-f2':'treta', 'bairro-f3':'treta', 'bairro-m1':'treta', 'bairro-m1-rua':'treta', 'bairro-m2':'treta', 'bairro-m3':'treta', 'bairro-n1':'treta', 'bairro-n2':'treta', 'bairro-n3':'treta', 'bairro-n3-bar':'treta'
   };
   /* o mesmo lugar sem a preposição, pra tarja ("praça", "bar") — era
      um regex que arrancava o "na"/"no" do texto, e isso só funciona em
@@ -421,6 +433,17 @@ TO.porrada = (function(){
     'estadio-40':'arquibancada',
     'treta-beco':'beco', 'treta-galpao':'pátio do galpão',
     'treta-campo':'campo de terra',
+    'bairro-f4':'pracinha',
+    'bairro-f2':'bar da lagoa',
+    'bairro-f3':'becos',
+    'bairro-m1':'quadra do parque',
+    'bairro-m1-rua':'rua do parque',
+    'bairro-m2':'praça do lago',
+    'bairro-m3':'quiosque da praça',
+    'bairro-n1':'praça',
+    'bairro-n2':'corredor comercial',
+    'bairro-n3':'campo society',
+    'bairro-n3-bar':'barzinho do society',
     'emb-posto':'posto', 'emb-onibus':'estrada',
     'casa-piscina':'casa de piscina', 'praca-reuniao':'praça'
   };

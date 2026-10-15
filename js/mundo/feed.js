@@ -5428,6 +5428,26 @@ TO.feed = (function(){
      próximo dia comum.
      ======================================================= */
   const CENA_BAIRRO = {praca:'treta-campo', jogo:'treta-galpao', bobeira:'treta-beco'};
+  /* A CENA PELA CLASSE DO BAIRRO (fotos do dono, 15/10/2026): uma ou
+     duas por classe e situação (img/cenas/PROMPT-BAIRRO.md). Favela e
+     Classe Baixa dividem as populares. Com duas, o bairro fixa qual abre
+     (o mesmo bairro, sempre o mesmo cenário). Cena que não existir
+     (foto que não chegou) cai na de antes. */
+  const CENAS_POR_CLASSE = {
+    popular: {praca:['bairro-f4'], jogo:['bairro-f2'], bobeira:['bairro-f3']},
+    media:   {praca:['bairro-m1', 'bairro-m2'], jogo:['bairro-m3'], bobeira:['bairro-m1-rua']},
+    nobre:   {praca:['bairro-n1', 'bairro-n3'], jogo:['bairro-n3-bar'], bobeira:['bairro-n2']}
+  };
+  function cenaDoBairro(cid, bid, tipo){
+    tipo = CENA_BAIRRO[tipo] ? tipo : 'praca';
+    const b = TO.dominio && TO.dominio.bairro ? TO.dominio.bairro(cid, bid) : null;
+    const c = String((b && b.classe) || '');
+    const grupo = c === 'Nobre' ? 'nobre' : c === 'Classe Média' ? 'media' : c ? 'popular' : null;
+    const C = (TO.dados && TO.dados.cenas) || {};
+    const lista = grupo ? CENAS_POR_CLASSE[grupo][tipo].filter(id => C[id]) : [];
+    if(!lista.length) return CENA_BAIRRO[tipo];
+    return lista[TO.mapa.hash(`cenaBairro|${cid}|${bid}`) % lista.length];
+  }
   /* "do Antônio Bezerra", "da Maraponga": a primeira palavra terminada
      em "a" é feminina (a régua do cartaz) */
   const doBairro = b => /a$/i.test(String(b || '').trim().split(/\s+/)[0] || '')
@@ -5515,7 +5535,7 @@ TO.feed = (function(){
       const nome = TO.elenco.nomeNaCidade(a.rival, a.cid);
       const tipo = jogaForaHoje(E, a.rival) && H(`tipo|${ch}`) % 2 === 0 ? 'jogo'
                  : H(`tipo2|${ch}`) % 5 < 3 ? 'praca' : 'bobeira';
-      const local = CENA_BAIRRO[tipo];
+      const local = cenaDoBairro(a.cid, a.b.id, tipo);
       const pv = previaDaBriga(E, {torcidaId:a.rival, atacamos:true, local:{cena:local, bairro:a.b.id, cidade:a.cid}});
       const mor = TO.elenco.noBairro(E, a.rival, a.cid, a.b.id, tipo === 'bobeira' ? 7 : 15).length;
       const P2 = {nome, bairro:a.b.nome, doBairro:doBairro(a.b.nome), noBairro:noBairroNome(a.b.nome)};
@@ -5539,7 +5559,7 @@ TO.feed = (function(){
     if(!a) return;
     const nome = TO.elenco.nomeNaCidade(a.rival, a.cid);
     const tipo = H(`tipoC|${ch}`) % 5 < 3 ? 'praca' : 'bobeira';
-    const local = CENA_BAIRRO[tipo];
+    const local = cenaDoBairro(a.cid, a.b.id, tipo);
     const pv = previaDaBriga(E, {torcidaId:a.rival, atacamos:false, local:{cena:local, bairro:a.b.id, cidade:a.cid}});
     const mor = TO.elenco.noBairro(E, E.torcida.id, a.cid, a.b.id, tipo === 'bobeira' ? 7 : 15).length;
     const P2 = {nome, bairro:a.b.nome, doBairro:doBairro(a.b.nome), noBairro:noBairroNome(a.b.nome)};
@@ -6223,6 +6243,17 @@ TO.feed = (function(){
     'estadio-40':'na arquibancada',
     'treta-beco':'no beco', 'treta-galpao':'no pátio do galpão',
     'treta-campo':'no campo de terra',
+    'bairro-f4':'na pracinha',
+    'bairro-f2':'no bar da lagoa',
+    'bairro-f3':'nos becos',
+    'bairro-m1':'na quadra do parque',
+    'bairro-m1-rua':'na rua do parque',
+    'bairro-m2':'na praça do lago',
+    'bairro-m3':'no quiosque da praça',
+    'bairro-n1':'na praça',
+    'bairro-n2':'no corredor comercial',
+    'bairro-n3':'no campo society',
+    'bairro-n3-bar':'no barzinho do society',
     'emb-posto':'no posto', 'emb-onibus':'na estrada',
     'casa-piscina':'na casa de piscina', 'praca-reuniao':'na praça',
     subsede:'na subsede'
@@ -6913,7 +6944,7 @@ TO.feed = (function(){
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
-          statusDeHoje, eixosDoDia, reuniaoDeHoje, bairroDeHoje, planoDosBairros,
+          statusDeHoje, eixosDoDia, reuniaoDeHoje, bairroDeHoje, planoDosBairros, cenaDoBairro,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
           mesaDaReuniao, pautaBote, boteDeHoje, assaltoDeHoje, assaltoSimulado, textoDaOperacao, diaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,

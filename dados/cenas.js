@@ -1199,13 +1199,246 @@ TO.dados.cenas = (function(){
     });
   }
 
+
+  /* =======================================================
+     AS BRIGAS DE BAIRRO (fotos do dono, 15/10/2026): uma cena por
+     classe e situação (img/cenas/PROMPT-BAIRRO.md). O chão vem da
+     foto (importar_cena_foto, receitas `bairro-*`). `bairro-m1-rua` e
+     `bairro-n3-bar` são pedaços das fotos da quadra e do society, pra
+     briga pequena: o recorte da máscara fecha o resto da foto e as
+     fugas ficam na ponta da rua do pedaço (pedido do dono: "utilizar
+     parte da imagem pra gerar cenas de brigas com menos membros,
+     ajustando o ponto de fuga"). Nós somos sempre o `mandante`.
+     ======================================================= */
+  const BAIRRO_CENAS = {};
+  BAIRRO_CENAS['bairro-f4'] = cenaDeFoto({
+    id:'bairro-f4', nome:'Pracinha', local:'Na pracinha do bairro',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu da pracinha por cima',
+           dica:'Leve o líder até a ponta de uma das ruas.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:768, y:897,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:768, y:469,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:123, y:109, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:768, y:927, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:461, y:597}, {x:1075, y:340}]
+  });
+  BAIRRO_CENAS['bairro-f2'] = cenaDeFoto({
+    id:'bairro-f2', nome:'Bar da lagoa', local:'No bar da lagoa',
+    saida:{perto:'Furar pra fora', longe:'Ponta da estrada (leve o líder)',
+           feito:'sua torcida saiu do bar da lagoa por cima',
+           dica:'Leve o líder até a ponta da estrada.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:154, y:709,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:768, y:469,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:709, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:709, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:461, y:709}, {x:1075, y:554}]
+  });
+  BAIRRO_CENAS['bairro-f3'] = cenaDeFoto({
+    id:'bairro-f3', nome:'Becos', local:'Nos becos da favela',
+    saida:{perto:'Furar pra fora', longe:'Saída do beco (leve o líder)',
+           feito:'sua torcida furou pra fora dos becos',
+           dica:'Leve o líder até a saída de um dos becos.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:154, y:512,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:799, y:486,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:512, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:512, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:384, y:512}, {x:1229, y:512}]
+  });
+  BAIRRO_CENAS['bairro-m1'] = cenaDeFoto({
+    id:'bairro-m1', nome:'Quadra do parque', local:'Na quadra do parque',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu do parque por cima',
+           dica:'Leve o líder até a ponta da rua ou de um caminho do parque.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:461, y:880,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:768, y:340,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:512, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:880, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:461, y:512}, {x:1075, y:683}]
+  });
+  BAIRRO_CENAS['bairro-m1-rua'] = cenaDeFoto({
+    id:'bairro-m1-rua', nome:'Rua do parque', local:'Na rua do parque',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu da rua do parque por cima',
+           dica:'Leve o líder até a ponta da rua.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:307, y:880,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:952, y:854,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:880, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:880, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:614, y:880}, {x:1229, y:880}]
+  });
+  BAIRRO_CENAS['bairro-m2'] = cenaDeFoto({
+    id:'bairro-m2', nome:'Praça do lago', local:'Na praça do lago',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu da praça do lago por cima',
+           dica:'Leve o líder até a ponta de uma das ruas.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:461, y:794,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:645, y:512,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:261, y:100, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:46, y:794, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:384, y:340}, {x:845, y:683}]
+  });
+  BAIRRO_CENAS['bairro-m3'] = cenaDeFoto({
+    id:'bairro-m3', nome:'Quiosque da praça', local:'No quiosque da praça',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu do quiosque por cima',
+           dica:'Leve o líder até a ponta da rua ou do calçadão.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:154, y:769,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:768, y:554,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:469, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:769, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:384, y:512}, {x:1229, y:769}]
+  });
+  BAIRRO_CENAS['bairro-n1'] = cenaDeFoto({
+    id:'bairro-n1', nome:'Praça nobre', local:'Na praça do bairro nobre',
+    saida:{perto:'Furar pra fora', longe:'Ponta da avenida (leve o líder)',
+           feito:'sua torcida saiu da praça por cima',
+           dica:'Leve o líder até a ponta de uma das avenidas.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:768, y:794,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:614, y:383,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1490, y:246, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:46, y:790, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:384, y:512}, {x:1152, y:512}]
+  });
+  BAIRRO_CENAS['bairro-n2'] = cenaDeFoto({
+    id:'bairro-n2', nome:'Corredor comercial', local:'No corredor comercial',
+    saida:{perto:'Furar pra fora', longe:'Esquina (leve o líder)',
+           feito:'sua torcida saiu do corredor por cima',
+           dica:'Leve o líder até uma das esquinas do corredor.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:230, y:512,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:922, y:512,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1490, y:512, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:46, y:512, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:538, y:512}, {x:1229, y:512}]
+  });
+  BAIRRO_CENAS['bairro-n3'] = cenaDeFoto({
+    id:'bairro-n3', nome:'Campo society', local:'No campo society',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu do society por cima',
+           dica:'Leve o líder até a ponta da rua.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:461, y:889,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:768, y:400,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:889, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:889, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:614, y:700}, {x:1229, y:889}]
+  });
+  BAIRRO_CENAS['bairro-n3-bar'] = cenaDeFoto({
+    id:'bairro-n3-bar', nome:'Barzinho do society', local:'No barzinho do society',
+    saida:{perto:'Furar pra fora', longe:'Ponta da rua (leve o líder)',
+           feito:'sua torcida saiu do barzinho por cima',
+           dica:'Leve o líder até a ponta da rua.'},
+    spawns:[
+      {id:'mandante1', rot:'NOSSO BONDE', lado:'mandante', x:307, y:889,
+       jogador:true, entrada:'boca_leste'},
+      {id:'visitante1',rot:'BONDE DELES', lado:'visitante', x:845, y:700,
+       guarda:true, entrada:'boca_oeste'}
+    ],
+    gatilho:{lado:'mandante', perto:280, rot:'DE OLHO',
+             espera:'eles ainda não se mexeram',
+             aviso:'eles viram o bonde e vieram'},
+    entradas:[
+      {id:'boca_oeste', rot:'SAÍDA DELES', lado:'visitante', x:1505, y:889, raio:46, dir:[1,0]},
+      {id:'boca_leste', rot:'NOSSA SAÍDA', lado:'mandante',  x:31, y:889, raio:46, dir:[-1,0]}
+    ],
+    pmPostos:[{x:614, y:700}, {x:1229, y:889}]
+  });
+
   const cenas = {praca, rua, 'rua-media':ruaMedia, 'rua-nobre':ruaNobre, ...lojas,
                  bar, comercio, ct, 'casa-piscina':casaPiscina, subsede, ...sedes,
                  'treta-beco':tretaBeco, 'treta-galpao':tretaGalpao,
                  'treta-campo':tretaCampo,
                  'emb-posto':embPosto, 'emb-onibus':embOnibus,
                  'estadio-10':estadio10, 'estadio-20':estadio20,
-                 'estadio-40':estadio40};
+                 'estadio-40':estadio40, ...BAIRRO_CENAS};
 
   /* =======================================================
      AS RUAS EM 3D
@@ -1263,7 +1496,19 @@ TO.dados.cenas = (function(){
     'sede-5':      [[20,830],[1516,830]],
     'treta-beco':  [[20,512],[1516,512]],
     'emb-posto':   [[20,975],[1516,975]],
-    'emb-onibus':  [[20,512],[1516,512]]
+    'emb-onibus':  [[20,512],[1516,512]],
+    /* as brigas de bairro: a ponta de cada rua do pedaço (15/10/2026) */
+    'bairro-f4':     [[108,90],[1244,90],[1516,794],[768,935]],
+    'bairro-f2':     [[20,709],[1516,709]],
+    'bairro-f3':     [[20,512],[1516,512],[538,90],[1029,90],[783,935]],
+    'bairro-m1':     [[20,880],[1516,880],[61,516],[1516,512]],
+    'bairro-m1-rua': [[20,880],[1516,880]],
+    'bairro-m2':     [[261,90],[261,935],[20,794],[1413,794]],
+    'bairro-m3':     [[20,769],[1516,769],[20,469],[1516,469]],
+    'bairro-n1':     [[20,246],[1516,246],[20,790],[1516,790],[384,90],[1152,90],[384,935],[1152,935]],
+    'bairro-n2':     [[46,90],[46,935],[1490,90],[1490,935]],
+    'bairro-n3':     [[20,889],[1516,889]],
+    'bairro-n3-bar': [[20,889],[1516,889]]
   };
   for(const id in RUA){
     const c = id === 'arredores'

@@ -10780,7 +10780,8 @@
     const rival = TO.mundo.torcida(d.rival) || {};
     const cid = d.cid || e.torcida.mapa;
     const tipo = CENA_BAIRRO[d.tipo] ? d.tipo : 'praca';
-    const local = CENA_BAIRRO[tipo];
+    /* a cena sai da classe do bairro (fotos do dono, 15/10/2026) */
+    const local = TO.feed.cenaDoBairro ? TO.feed.cenaDoBairro(cid, d.bairroId, tipo) : CENA_BAIRRO[tipo];
     /* QUEM ATACA TRAZ ATÉ 60% A MAIS (dono, 15/10/2026): primeiro saem
        os defensores (os moradores, até 15; no beco até 7), e o ataque
        vem com no máximo 1,6 vez esse número (`EL.ataqueContra`) */
@@ -11718,7 +11719,7 @@
   /* o bar não tem rótulo fixo: é o rival ou o nosso, conforme quem atacou */
   const LUGAR_CENA = [
     [/^estadio/, _t('NA ARQUIBANCADA')], [/^emb-|^emboscada/, _t('NA EMBOSCADA')],
-    [/^treta/, _t('NO BAIRRO')], [/^concentracao|^praca/, _t('NA PRAÇA')],
+    [/^treta|^bairro-/, _t('NO BAIRRO')], [/^concentracao|^praca/, _t('NA PRAÇA')],
     [/^pista|^rua/, _t('NA PISTA')], [/^arredores/, _t('NOS ARREDORES')],
     [/^ct$/, _t('NO CT')], [/^comercio/, _t('NO COMÉRCIO')], [/^sede/, _t('NA SEDE')],
     [/^loja/, _t('NA LOJA')], [/^subsede/, _t('NA SUBSEDE')], [/^bar/, null]
