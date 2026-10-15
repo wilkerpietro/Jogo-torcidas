@@ -65,11 +65,16 @@ THE SUBJECT, filling the center of the frame: a small neighborhood square, one f
 
 O rabo negativo ganha, no fim: `No dense trees, no tree canopy over the paved area, no rows of trees along the borders, no shrubs, no hedges, no shade covering the plaza.`
 
-### P2 · Praça da igreja
+### P2 · Praça da igreja (rodada 2: quase sem vegetação)
+
+O dono (15/10/2026): a vegetação da P2 também atrapalha. Saem as fileiras
+de palmeiras; ficam só duas palmeiras pequenas junto da igreja.
 
 ```
-THE SUBJECT: a wide paved church square in a poor neighborhood. The TOP QUARTER of the frame is the roof of a simple parish church, a long rectangle of terracotta tiles with a small square bell tower roof at one end, sitting at the top edge of the square. The square in front of it, filling the middle of the frame, is a broad open esplanade of pale washed concrete slabs with thin joints, a few cracks and patches. Along the left and right borders ONLY: a row of tall palm trees seen from above as star-shaped green crowns, concrete benches, a few lamp posts seen as small dots, two closed metal food kiosks pushed against the left border. The LOWER QUARTER of the frame is a street of grey asphalt crossing from edge to edge with a pale sidewalk. The whole center of the esplanade is clear open floor, from the street up to the church steps. Two side streets enter the square from the left and right edges.
+THE SUBJECT: a wide paved church square in a poor neighborhood. The TOP QUARTER of the frame is the roof of a simple parish church, a long rectangle of terracotta tiles with a small square bell tower roof at one end, sitting at the top edge of the square. The square in front of it, filling the middle of the frame, is an OPEN SUN-EXPOSED esplanade of pale washed concrete slabs with thin joints, a few cracks and patches, almost entirely bare. VERY LITTLE VEGETATION: only TWO small palm trees, one on each side of the church steps, each with a small star-shaped crown no wider than a parked car; no other trees, no rows of palms, no shrubs, no hedges, no flower beds anywhere. Along the left and right borders ONLY: a few concrete benches, a few lamp posts seen as small dots, two closed metal food kiosks pushed against the left border. The LOWER QUARTER of the frame is a street of grey asphalt crossing from edge to edge with a pale sidewalk. The whole center of the esplanade is clear open floor, fully visible from above with no canopy over it, from the street up to the church steps. Two side streets enter the square from the left and right edges.
 ```
+
+O rabo negativo ganha, no fim: `No dense trees, no tree canopy over the paved area, no rows of trees or palms along the borders, no shrubs, no hedges, no shade covering the plaza.`
 
 ### P3 · Quadra de esportes do bairro
 
