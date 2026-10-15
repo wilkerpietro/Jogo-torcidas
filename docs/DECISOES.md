@@ -10922,6 +10922,18 @@ na briga e a lista "Membros que moram aqui" do cartão do bairro.
 
 **O mapa da cidade** abre nos dois modos, com a barra de 7 gomos no cartão.
 
+## Prompts das variações das brigas de bairro (dono, 15/10/2026)
+
+Pedido: "crie prompts de mais imagens que podem compor a variação como
+pracinha e barzinho típico brasileiro que transmite jogo". Nove prompts em
+`img/cenas/PROMPT-BAIRRO.md`, três por situação da mensagem: praça (pracinha
+com coreto, praça da igreja, quadra de esportes), jogo (barzinho de esquina
+com TV, espetinho com telão na calçada, bar de sinuca com TV) e bobeira
+(esquina do mercadinho, viela de escadaria, ponto de ônibus e lava-jato). Mesmo
+acabamento das cenas de hoje (zênite, nublado, nada escrito). Nos bares, a TV
+inclinada é a única face visível, como na subsede. Quando as fotos vierem,
+`CENA_BAIRRO` vira uma lista por situação, com o cenário fixo pelo bairro.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
