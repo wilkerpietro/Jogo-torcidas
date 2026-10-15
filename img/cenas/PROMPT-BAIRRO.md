@@ -23,7 +23,7 @@ dividem os mesmos quatro cenários (o mesmo corte das ruas, em
 |---|---|---|---|
 | **Popular** (Favela, Classe Baixa) | F1 campinho na beira do rio · F4 pracinha de classe média baixa | F2 bar da lagoa | F3 becos e vielas da favela |
 | **Classe Média** | M1 quadra no parque · M2 praça com lago | M3 quiosque da praça com TV | M4 pista de skate do parque |
-| **Nobre** | N2 parque com lago e deck · N3 quadras de areia | N1 quiosque da orla com TV | N4 pista de cooper e academia ao ar livre |
+| **Nobre** | N1 praça de alto padrão · N3 quadras de areia | N4 esquina de avenida com LED | N2 corredor comercial |
 
 Com duas cenas de praça na classe, o bairro escolhe uma pelo hash (o mesmo
 bairro abre sempre o mesmo cenário). Enquanto a foto de uma cena não chega,
@@ -142,16 +142,21 @@ THE SUBJECT: a small street-style skate plaza inside a middle-class city park. I
 
 ## NOBRE
 
-### N1 · Quiosque da orla com TV (jogo)
+O dono (15/10/2026) refez três dos nobres: praça de alto padrão, corredor
+comercial "com bastante detalhes condizentes a isso" e esquina de avenida
+de alto padrão "com propagandas comerciais de LED, placa de temperatura,
+sinal de trânsito e etc". As quadras de areia ficaram.
+
+### N1 · Praça de alto padrão (praça)
 
 ```
-THE SUBJECT: the seafront of an upscale neighborhood. The TOP QUARTER of the frame is the beach: pale golden sand and, at the very top edge, the turquoise sea with a thin line of white foam, with a single row of small coconut palms with small star-shaped crowns only along the line where sand meets pavement. Filling the middle of the frame, a very wide seaside promenade ("calçadão") of black and white portuguese stone pavement in a wave pattern. In the middle of the promenade, a modern beach kiosk with a flat white roof, about a tenth of the frame wide. Along the edges of the promenade ONLY: square wooden tables with four chairs each, a few closed beach umbrellas lying flat, a coconut cart. THE TV: one flat TV screen mounted high on the front of the kiosk, TILTED FORWARD AND DOWN toward the promenade, so that from above its face is visible, showing a live football match — a bright green pitch with white lines, tiny players and a small scoreboard in a corner; the tilted screen is the only object whose face is visible. The LOWER QUARTER: a wide seaside avenue of dark asphalt and, at the bottom edge, the flat roofs of tall residential towers with rooftop pools. The promenade is one wide clear open floor, open to the left and right edges and to the avenue.
+THE SUBJECT: an elegant designed public square in the richest neighborhood of the city, filling the middle of the frame as one full city block. The square is a wide plaza of large pale beige limestone and light grey granite slabs laid in a clean modern grid, with thin dark joints. In the exact center, a shallow rectangular reflecting pool of dark water with a thin stone rim, flat and low, about a fifth of the plaza wide. Along the outer edges of the plaza ONLY: long minimalist benches of pale concrete and wood, sculptural low planters with ornamental grasses, a row of slim modern lamp posts seen as small dots, a small glass-roofed café pavilion with a flat white roof in one corner, bike racks, and four small manicured trees with small round canopies in square planters at the corners. Between the reflecting pool and the edges, a wide clear paved floor on all four sides. Around the square, streets of smooth dark asphalt with crisp white markings and wide pale sidewalks, and beyond them the flat roofs of tall luxury residential towers with rooftop pools, gardens and helipads. Open ways in from the middle of each side of the square.
 ```
 
-### N2 · Parque com lago e deck (praça)
+### N2 · Corredor comercial (bobeira)
 
 ```
-THE SUBJECT: an upscale landscaped park with a lake. The TOP THIRD of the frame is a large calm lake of dark blue-green water, and beyond it, at the very top edge, a thin band of trees as background. Along the shore, filling the middle of the frame, a wide waterfront plaza: a broad deck of pale weathered wooden boards next to the water, joined to a wide area of pale granite paving. Along the outer edges of the plaza ONLY: modern wooden benches, low planters with ornamental grasses, slim lamp posts seen as small dots, and four small young trees with small canopies in round planters. The LOWER QUARTER: manicured low lawns cut by pale paths, and at the bottom edge the flat roofs of tall condominium towers. Wide paths enter the plaza from the left edge, the right edge and the bottom. The deck and the granite plaza are one wide clear open floor.
+THE SUBJECT: an upscale pedestrian shopping street ("corredor comercial") crossing the whole frame horizontally through the middle, closed to cars, about a third of the frame tall. Its floor is pale grey and cream stone paving in a long elegant pattern, with a thin metal drainage channel down the center. On both sides, glued to each other, the flat roofs of two- to four-storey shop buildings of different heights, with rooftop air conditioning units, skylights, solar panels and a small rooftop terrace with umbrellas. Along the shop fronts on both sides ONLY, the details of a busy commercial street seen from above: colorful retractable awnings of different solid colors over the shop doors (each awning a narrow flat strip, not covering the middle), café and restaurant terraces with small round tables and chairs, potted olive trees in square planters, a flower stall, a closed ice cream cart, an ATM kiosk with a small flat roof, rows of rental bikes and electric scooters in a docking station, delivery hand trucks with stacked boxes, slim lamp posts, waste bins, a parklet deck of pale wood with benches. The middle of the street is a wide clear paved floor from the left edge to the right edge. At the left and right edges, the street opens onto cross streets of dark asphalt with white zebra crosswalks.
 ```
 
 ### N3 · Quadras de areia do parque (praça)
@@ -160,10 +165,24 @@ THE SUBJECT: an upscale landscaped park with a lake. The TOP THIRD of the frame 
 THE SUBJECT: two side-by-side sand courts for beach tennis and footvolley in an upscale park. In the middle of the frame, two large rectangles of pale fine sand with thin white boundary lines, the nets taken down, only the slim posts at the sides seen as small dots. Around both courts, a wide border of pale concrete paving. Along the outer edges of the paving ONLY: a small modern kiosk with a flat white roof, wooden benches, a drinking fountain, a bike rack. Around it, low manicured lawns. The TOP FIFTH of the frame: a band of park trees as background. The LOWER EDGE: a wide pale path and a street with dark asphalt, beyond it the flat roofs of tall residential towers. The courts and their paving are one wide clear open floor, open at the bottom and at the left and right.
 ```
 
-### N4 · Pista de cooper e academia ao ar livre (bobeira)
+### N4 · Esquina de avenida de alto padrão com LED (jogo)
+
+Aqui o dono pediu letreiro, então a regra do "nada escrito" vale pela
+metade: **pode** ter o painel de LED, a placa de temperatura e o sinal de
+trânsito; **não pode** marca de verdade nem texto legível fora do número
+da temperatura. De zênite essas coisas são de pé e não se veem, então ganham
+a mesma licença da TV: **inclinadas pra trás, de modo que a face apareça de
+cima**. Um dos painéis passa o jogo — é por ele que a torcida está ali.
 
 ```
-THE SUBJECT: the edge of an upscale park beside a gated condominium. A wide reddish running track of rubberized asphalt with thin white lane lines crosses the whole frame horizontally through the middle. Next to it, a pale concrete plaza with outdoor gym machines seen from above as small flat metal shapes, placed ONLY along the edges of the plaza; the center of the plaza is open. Low manicured lawns around. The TOP FIFTH of the frame: a band of park trees as background. The LOWER FIFTH: the long top of a tall condominium perimeter wall as a thin pale band, with a small square guardhouse roof and a closed vehicle gate, and the flat roofs of the condominium houses with pools beyond it. The track and the plaza are one clear open floor, open at the left and right edges.
+THE SUBJECT: the corner of two wide high-end avenues in the richest district of the city. Two avenues of smooth dark asphalt, each with several lanes, crisp white lane markings, arrows and wide white zebra crosswalks, cross at the LOWER RIGHT of the frame: one runs along the whole bottom of the frame, the other along the whole right side. On the corner lot, filling the middle and upper left of the frame, a wide open forecourt plaza of polished light grey granite in front of a glass office tower, whose flat roof with a rooftop helipad and technical equipment fills the TOP LEFT corner. On the forecourt, against the tower ONLY: an upscale sports bar terrace with modern lounge chairs, low tables and large outdoor umbrellas closed and lying flat, glass planters with small trimmed shrubs. The street furniture of a premium corner, along the curbs ONLY: traffic lights on slim black poles with long arms reaching over the lanes, seen from above as thin black lines ending in small signal heads with a glowing red light; a digital street thermometer and clock on a pole; two large freestanding LED advertising screens on slim pylons and one LED screen on the tower's corner; bus shelter with a flat glass roof; bike lane painted green along the curb; bollards; slim lamp posts. THE SCREENS: every LED screen and the thermometer are TILTED BACK toward the sky so that from directly above their glowing faces are visible: the biggest LED screen shows a live football match — bright green pitch, white lines, tiny players and a small scoreboard; the other LED screens show colorful abstract advertising images of a perfume bottle, a luxury car silhouette and a smartphone, without any brand name; the thermometer shows a bright orange digital temperature reading "31°C". These tilted screens are the only objects whose faces are visible; everything else is seen strictly from the top. The forecourt is a wide clear open floor between the terrace and the curbs, open to both crosswalks.
+```
+
+Pra esta, troque o fim comum por este (tira "no signs, no readable text,
+no numbers" e põe a proibição de marca):
+
+```
+NEGATIVE: no people, no crowds, no cars or motorcycles on the forecourt, no banners, no flags, no hanging cloth, no painted crests, no murals, no graffiti, no real brand names, no real company logos, no readable words, no text other than the temperature reading, no watermark. No tree canopy over the open area, no big trees, no shade covering the open area. No wide angle lens, no fisheye, no perspective, no oblique or 45 degree angle, no tilted camera, no visible building facades, no leaning or splayed buildings. No clutter in the middle of the forecourt. No illustration, no cartoon, no isometric, no 3d render, no HDR, no night, no dramatic lighting, no long shadows.
 ```
 
 ---

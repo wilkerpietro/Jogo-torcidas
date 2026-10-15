@@ -10951,6 +10951,11 @@ situação, com o bairro fixando qual das duas praças abre.
 Logo depois o dono trocou dois da classe popular: o F3 virou os becos e
 vielas da favela (bobeira) e o F4 uma pracinha pequena de classe média
 baixa (praça).
+E refez três nobres: praça de alto padrão (praça), corredor comercial
+(bobeira) e esquina de avenida com painéis de LED, termômetro de rua e
+sinal de trânsito (jogo — um dos painéis passa a partida). As quadras de
+areia ficaram. Na esquina, por pedido dele, pode ter painel e o número da
+temperatura; continua proibido nome de marca real.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
