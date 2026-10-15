@@ -970,11 +970,11 @@ TO.dominio = (function(){
         const nota = b => ((b.partes.find(x => x.t === o.id) || {}).v || 0) * 3 +
           (vizinhosDe(cid, b.id).some(v => minhas.has(v.id)) ? 2 : 0) + r() * 3;
         const alvo = bs.sort((a, c) => nota(c) - nota(a))[0];
-        const forca = (tid, max, bid) => {
-          const l = EL ? (bid ? EL.noBairro(E, tid, cid, bid, max) : EL.maisFortes(E, tid, cid, max)) : [];
-          return l.reduce((x, m) => x + (m.forca || 5) + (m.defesa || 5), 0) || max * 8;
-        };
-        const fa = forca(o.id, 20, null), fd = forca(alvo.def, 15, alvo.id);
+        const soma = (l, max) => l.reduce((x, m) => x + (m.forca || 5) + (m.defesa || 5), 0) || max * 8;
+        /* os moradores defendem (até 15) e o ataque vem com até 60% a mais */
+        const defs = EL ? EL.noBairro(E, alvo.def, cid, alvo.id, 15) : [];
+        const maxA = EL ? EL.ataqueContra(defs.length) : 20;
+        const fa = soma(EL ? EL.maisFortes(E, o.id, cid, maxA) : [], maxA), fd = soma(defs, 15);
         const venceu = r() < fa / (fa + fd);
         const venc = venceu ? o.id : alvo.def, perd = venceu ? alvo.def : o.id;
         transferir(E, cid, alvo.id, venc, perd, 'briga-ia');

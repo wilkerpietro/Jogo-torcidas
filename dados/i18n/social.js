@@ -1205,5 +1205,6 @@ TO.i18n.registrar({
   "{bairro} ({cidade}) chegou a 4 pontos pra nós. O bairro agora é nosso.": {es:"{bairro} ({cidade}) llegó a 4 puntos para nosotros. El barrio ahora es nuestro.", en:"{bairro} ({cidade}) reached 4 points for us. The neighbourhood is ours now."},
   "{n}/7": {es:"{n}/7", en:"{n}/7"},
   "{quem} de {c} pra {d}": {es:"{quem} de {c} a {d}", en:"{quem} from {c} to {d}"},
-  "É o bairro da sede da {nome}: ela nunca fica com menos de 1 ponto aqui. Se perder o bairro, a {nome} perde 0,2 de moral por dia.": {es:"Es el barrio de la sede de {nome}: nunca queda con menos de 1 punto aquí. Si pierde el barrio, {nome} pierde 0,2 de moral por día.", en:"It's {nome}'s HQ neighbourhood: they never drop below 1 point here. If they lose it, {nome} loses 0.2 morale per day."}
+  "É o bairro da sede da {nome}: ela nunca fica com menos de 1 ponto aqui. Se perder o bairro, a {nome} perde 0,2 de moral por dia.": {es:"Es el barrio de la sede de {nome}: nunca queda con menos de 1 punto aquí. Si pierde el barrio, {nome} pierde 0,2 de moral por día.", en:"It's {nome}'s HQ neighbourhood: they never drop below 1 point here. If they lose it, {nome} loses 0.2 morale per day."},
+  "Chefe, nossos aliados enviaram os convites das festas de aniversário deles. Responda quais iremos.": {es:"Jefe, nuestros aliados mandaron las invitaciones a sus fiestas de aniversario. Responde a cuáles vamos.", en:"Boss, our allies sent the invites to their anniversary parties. Answer which ones we're going to."}
 });

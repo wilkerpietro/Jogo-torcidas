@@ -10972,6 +10972,19 @@ máximo o paiol dela; sem bomba nossa, sem bomba deles — a régua de sempre).
 A bomba gasta sai do estoque no fim da noite, como nas outras cenas. A
 bancada (`js/diajogo/bancada.js`) abre as três cenas do mesmo jeito.
 
+## Ataque de bairro com até 60% a mais e a frase dos convites (dono, 15/10/2026)
+
+- "As cenas de ataque no bairro devem ter até 60% mais atacantes que
+  defensores." Os defensores continuam sendo os moradores do bairro (até
+  15; no beco até 7) e o ataque vem com no máximo 1,6 vez esse número,
+  arredondado pra baixo (`TO.elenco.ataqueContra`): 15 defendendo, até 24
+  atacando; 7 no beco, até 11. Vale pro nosso ataque, pro ataque contra
+  nós, pra prévia dos botões e pra briga entre IAs (`brigasDasIAs`). Antes
+  era 20 contra 15 fixo, e 7 contra 7 no beco.
+- A mensagem dos convites do mês volta a ter uma frase em cima da lista:
+  "Chefe, nossos aliados enviaram os convites das festas de aniversário
+  deles. Responda quais iremos."
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

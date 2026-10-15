@@ -213,6 +213,10 @@ TO.elenco = (function(){
   /* o nome que aparece: a torcida, ou "Cearamor Recife" fora de casa */
   const nomeNaCidade = (tid, cid) => nomeDaFila(tid, cid);
 
-  return {fila:filaIA, maisFortes, noBairro, moradores, bairroDoNosso, garantirNossos,
+  /* o teto do ataque numa briga de bairro: até 60% a mais que os
+     defensores (dono, 15/10/2026) */
+  const ATAQUE = 1.6;
+  const ataqueContra = nDef => Math.max(2, Math.floor(Math.max(1, nDef) * ATAQUE));
+  return {ATAQUE, ataqueContra, fila:filaIA, maisFortes, noBairro, moradores, bairroDoNosso, garantirNossos,
           morarNoRecrutamento, nomeNaCidade, disponiveis, tamanhos};
 })();

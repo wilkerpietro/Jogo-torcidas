@@ -4165,8 +4165,10 @@
       ? linkEixo(m.dados.de, m.dados.nome) : (ROT_VOZ[m.voz] || _t('Diplomacia'));
     art.appendChild(el('div',{class:'msg-cab', html:
       `<span class="msg-voz">${quem}</span>`}));
-    /* os convites do mês são só a lista (dono, 14/10/2026) */
-    if(m.texto && m.kind !== 'convites')
+    /* os convites do mês: uma frase só e a lista (dono, 14 e 15/10/2026) */
+    if(m.kind === 'convites')
+      art.appendChild(el('p',{class:'msg-txt', texto: _t('Chefe, nossos aliados enviaram os convites das festas de aniversário deles. Responda quais iremos.')}));
+    else if(m.texto)
       art.appendChild(el('p',{class:'msg-txt', html: linkificarNomes(m.texto)}));
 
     /* A SEMANA SEM ANEXO (correção do dono, 17/09/2026): o save tira o
@@ -10772,12 +10774,16 @@
     const cid = d.cid || e.torcida.mapa;
     const tipo = CENA_BAIRRO[d.tipo] ? d.tipo : 'praca';
     const local = CENA_BAIRRO[tipo];
-    const defMax = tipo === 'bobeira' ? 7 : 15, atkMax = tipo === 'bobeira' ? 7 : 20;
+    /* QUEM ATACA TRAZ ATÉ 60% A MAIS (dono, 15/10/2026): primeiro saem
+       os defensores (os moradores, até 15; no beco até 7), e o ataque
+       vem com no máximo 1,6 vez esse número (`EL.ataqueContra`) */
+    const defMax = tipo === 'bobeira' ? 7 : 15;
     const atacamos = d.atacamos !== false;
-    const nossos = atacamos ? EL.maisFortes(e, e.torcida.id, e.torcida.mapa, atkMax)
-                            : EL.noBairro(e, e.torcida.id, cid, d.bairroId, defMax);
-    const deles = atacamos ? EL.noBairro(e, d.rival, cid, d.bairroId, defMax)
-                           : EL.maisFortes(e, d.rival, cid, atkMax);
+    const defs = atacamos ? EL.noBairro(e, d.rival, cid, d.bairroId, defMax)
+                          : EL.noBairro(e, e.torcida.id, cid, d.bairroId, defMax);
+    const atkMax = EL.ataqueContra(defs.length);
+    const nossos = atacamos ? EL.maisFortes(e, e.torcida.id, e.torcida.mapa, atkMax) : defs;
+    const deles = atacamos ? defs : EL.maisFortes(e, d.rival, cid, atkMax);
     const n = Math.max(2, nossos.length), nR = Math.max(2, deles.length);
     const cN = TO.mundo.coresDaTorcida(e.torcida);
     const cR = TO.mundo.coresDaTorcida(rival);

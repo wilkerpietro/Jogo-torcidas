@@ -5520,7 +5520,7 @@ TO.feed = (function(){
         : tipo === 'jogo'
           ? _t('Chefe, o pessoal da {nome} {doBairro} se reuniu pra assistir o jogo deles, bora dar o bote? Isso ajuda a fazer o bairro ser nosso.', P2)
           : _t('Chefe, passei {noBairro} e vi membros da {nome} de bobeira. Bora chegar? Ganhar ali ajuda a tomar o bairro pra gente.', P2);
-      const ate = tipo === 'bobeira' ? 7 : 20;
+      const ate = TO.elenco.ataqueContra(mor);
       return propor(E, {
         kind:'bairro', peso:'decisao', voz:'diretor', tipo:'neutro',
         chave:`bairro|nosso|${ch}`, texto,
@@ -5548,7 +5548,7 @@ TO.feed = (function(){
       dados:{tipo, rival:a.rival, nome, bairro:a.b.nome, bairroId:a.b.id, cid:a.cid, atacamos:false},
       botoes:[
         {id:'descer', rot:_t('Descer'), acao:'cena-bairro',
-         nota:comDominio(_t('Os {n} nossos que moram ali contra até {a} deles · segurando, Prestígio +4 · Relação −2', {n:mor, a:tipo === 'bobeira' ? 7 : 20}), pv.linha)},
+         nota:comDominio(_t('Os {n} nossos que moram ali contra até {a} deles · segurando, Prestígio +4 · Relação −2', {n:mor, a:TO.elenco.ataqueContra(mor)}), pv.linha)},
         {id:'ninguem', rot:_t('Ninguém desce'), acao:'bairro-ninguem',
          nota:_t('o bairro dá 1 ponto pra eles · Moral −3 · Prestígio −3,5 · Relação −6')}]
     });
