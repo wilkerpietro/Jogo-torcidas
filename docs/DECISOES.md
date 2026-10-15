@@ -10948,6 +10948,9 @@ meio só vegetação rasteira, árvore solta só pequena e nas bordas; água (ri
 lagoa, lago, mar) fecha um lado da cena e vira parede. Quando as fotos
 chegarem, `CENA_BAIRRO` passa a escolher pela classe do bairro e pela
 situação, com o bairro fixando qual das duas praças abre.
+Logo depois o dono trocou dois da classe popular: o F3 virou os becos e
+vielas da favela (bobeira) e o F4 uma pracinha pequena de classe média
+baixa (praça).
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

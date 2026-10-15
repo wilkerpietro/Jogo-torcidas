@@ -21,7 +21,7 @@ dividem os mesmos quatro cenários (o mesmo corte das ruas, em
 
 | classe | reunião na praça (`praca`) | assistindo o jogo (`jogo`) | de bobeira (`bobeira`) |
 |---|---|---|---|
-| **Popular** (Favela, Classe Baixa) | F1 campinho na beira do rio · F3 pracinha do conjunto | F2 bar da lagoa | F4 trilha da linha do trem |
+| **Popular** (Favela, Classe Baixa) | F1 campinho na beira do rio · F4 pracinha de classe média baixa | F2 bar da lagoa | F3 becos e vielas da favela |
 | **Classe Média** | M1 quadra no parque · M2 praça com lago | M3 quiosque da praça com TV | M4 pista de skate do parque |
 | **Nobre** | N2 parque com lago e deck · N3 quadras de areia | N1 quiosque da orla com TV | N4 pista de cooper e academia ao ar livre |
 
@@ -94,16 +94,20 @@ THE SUBJECT: a poor riverside neighborhood. Filling the middle of the frame, a b
 THE SUBJECT: a simple lakeside bar on the edge of a poor neighborhood. The TOP QUARTER of the frame is a calm lagoon of dark green water with a fringe of low grass and a few small coconut palms with small star-shaped crowns only along its shore. On the left of the middle of the frame, a small square bar kiosk of painted concrete block with a flat grey fiber-cement roof, about a tenth of the frame wide. In front of it, filling the middle of the frame, a wide terrace of pale packed sand and cracked concrete slabs. Along the edges of the terrace ONLY: red and yellow plastic tables with four plastic chairs each, red plastic beer crates, a few brown bottles on the table tops. THE TV: one flat TV screen mounted high on the front wall of the kiosk, TILTED FORWARD AND DOWN toward the terrace, so that from above its face is visible, showing a live football match — a bright green pitch with white lines, tiny players and a small scoreboard in a corner; the tilted screen is the only object whose face is visible. The LOWER QUARTER is a dirt road from edge to edge with a few small houses beyond it. The middle of the terrace is a wide clear open floor, open to the road at the bottom and to a sandy path along the lagoon at the right.
 ```
 
-### F3 · Pracinha do conjunto habitacional (praça)
+### F3 · Becos e vielas da favela (bobeira)
+
+O dono (15/10/2026) trocou a pracinha do conjunto e a trilha do trem: o F3
+virou os becos da favela (bobeira) e o F4 uma pracinha pequena de classe
+média baixa (praça).
 
 ```
-THE SUBJECT: a public housing estate ("conjunto habitacional") of identical small one-storey houses in straight rows, each with the same grey fiber-cement roof and a blue water tank, filling the top and bottom of the frame. Between the rows, in the middle of the frame, a small rectangular common square of pale cracked concrete, worn and patched. At one short end, a small sandy playground of pale sand with an old metal swing set and a slide seen from above as thin lines. Along the long edges ONLY: two concrete ping-pong tables, a few concrete benches, a low strip of dry grass with three small young trees with small canopies. Narrow paved lanes run between the rows of houses and open into the square at all four corners. The whole middle of the square is a wide clear open floor.
+THE SUBJECT: the inside of a dense hillside favela, seen from directly above. The whole frame is packed with small self-built houses glued to each other, with flat grey concrete slab roofs, unfinished red brick wall tops, blue water tanks, a few terracotta tile roofs and some roof slabs with small rooftop terraces. Cutting through them, a network of narrow pedestrian alleys ("becos" and "vielas") of pale grey worn concrete, each about as wide as two people: one main alley running from the LEFT EDGE to the RIGHT EDGE across the middle of the frame, and three narrower alleys branching off it, two going up to the TOP EDGE and one going down to the BOTTOM EDGE, with a few short steps seen as thin lines and a shallow open gutter along one side. Where the main alley meets the branches, in the middle of the frame, a small irregular open clearing of pale concrete, about three times as wide as the alleys, with a single plastic chair and a pile of bricks pushed against a house wall ONLY. No trees, no plants except a few potted plants on the roofs. All the alleys are open from end to end and connect into one continuous walkable surface.
 ```
 
-### F4 · Trilha da linha do trem (bobeira)
+### F4 · Pracinha pequena de classe média baixa (praça)
 
 ```
-THE SUBJECT: the edge of a poor neighborhood along a railway. The TOP FIFTH of the frame is the railway: two parallel steel rails on dark wooden sleepers and grey gravel ballast running from edge to edge, with a strip of low scrub and a few banana plants along it. Below the railway, filling the middle of the frame, a wide clearing of pale packed dirt and patches of low dry grass, where a worn footpath runs from the left edge to the right edge, with scattered rubble and an old tire pushed against the edges ONLY. The LOWER FIFTH: the back walls of small self-built brick houses with unfinished red brick wall tops and fiber-cement roofs, with one narrow gap between two houses opening onto the clearing. The clearing is open at the left and right edges along the footpath. The middle is clear open ground.
+THE SUBJECT: a small neighborhood square in a lower-middle-class area, at the meeting of three quiet streets. The square is a small irregular block in the middle of the frame, about half the frame wide, paved with pale grey concrete slabs and patches of cream portuguese stone pavement, worn and a little cracked. Along its edges ONLY: a few concrete benches, a closed metal newsstand, a small playground corner of pale sand with an old metal swing set and a seesaw seen from above as thin lines, an outdoor ping-pong table of concrete, and two small young trees with small canopies in the corners. The middle of the square is a wide clear paved floor. Around the square, streets of patched grey asphalt with narrow pale sidewalks, entering from the left edge, the right edge and the bottom edge, and beyond them simple one- and two-storey houses with terracotta tile roofs, small front yards of bare concrete behind low wall tops, a few flat concrete slab roofs with blue water tanks, and a small corner bakery with a flat grey roof. The square is open on all its sides to the streets.
 ```
 
 ---
