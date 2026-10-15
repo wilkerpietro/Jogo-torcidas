@@ -222,9 +222,10 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   /* BOMBA EM TODO CONFRONTO (régua do dono, 18/08/2026): o estoque
      inteiro da torcida está na mochila em qualquer cena — rua, praça,
-     arredores, bar, sede, CT —, planejada ou não. A única exceção é a
-     cena declarada sem armas: a treta 5×5/7×7/10×10, que é mano a
-     mano. */
+     arredores, bar, sede, CT, bairro —, planejada ou não. A única
+     exceção é a cena declarada sem armas (a reunião e a arquibancada só
+     de assistir). A treta 5×5/7×7/10×10 saiu do jogo em 15/10/2026 e a
+     briga de bairro que ficou no lugar dela tem pedra e bomba. */
   function bombasDaCena(cfg){
     if(cfg.semArmas) return 0;
     const base = cfg.bombas !== undefined ? cfg.bombas : P.bombas;

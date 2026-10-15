@@ -10959,6 +10959,19 @@ temperatura; continua proibido nome de marca real.
 Por fim trocou as quadras de areia (N3) por um campo society com barzinho
 ao lado, o típico complexo de society brasileiro.
 
+## Pedra e bomba na briga de bairro (dono, 15/10/2026)
+
+Pedido: "eu ainda não estou satisfeito com a mecânica de bater, por isso,
+eu preciso que as brigas que ocorrem nos bairros tenham todas as
+possibilidades, como pedra e bomba". A briga de bairro (`abrirBrigaBairro`,
+`js/main.js`) nasceu herdando o `semArmas` da treta apostada, que era mano a
+mano. Saiu: agora ela é briga como qualquer outra — pedra (tecla 2) e bomba
+(tecla 3) do nosso lado, com o estoque inteiro (`bombasDaCena`), e o braço
+da IA do outro lado jogando pedra e as bombas dela (metade das nossas, no
+máximo o paiol dela; sem bomba nossa, sem bomba deles — a régua de sempre).
+A bomba gasta sai do estoque no fim da noite, como nas outras cenas. A
+bancada (`js/diajogo/bancada.js`) abre as três cenas do mesmo jeito.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

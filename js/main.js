@@ -10799,8 +10799,11 @@
     pararTudo('cena');
     abrirPalco({
       canvas: $('djPrincipal'),
-      config: { escalacao: nossos, intencao:'atacar', bombas:0,
-                semArmas:true, bondes, efetivoRival:nR, local, fichasRival:fichasR },
+      /* A BRIGA DE BAIRRO É BRIGA DE VERDADE (dono, 15/10/2026): pedra e
+         bomba nos dois lados, como em qualquer cena — o estoque inteiro
+         vai junto (`bombasDaCena`) */
+      config: { escalacao: nossos, intencao:'atacar', bombas: (TO.planejamento.plano(e) || {}).bombas || 0,
+                bondes, efetivoRival:nR, local, fichasRival:fichasR },
       aoTerminar: res => fecharDiaDeJogo(res, null,
         {acao:'bairro', alvo:{torcidaId:d.rival, nome:nomeR, tipo, cena:local,
                               bairro:d.bairro || '', bairroId:d.bairroId || '', cidade:cid,

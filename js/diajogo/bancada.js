@@ -42,12 +42,13 @@ TO.diaJogo.bancada = (function(){
        tretas abrem sem arma, como no jogo; os estádios abrem com os
        setores ligados, senão o bonde do jogador tomaria o spawn do
        1º escalão e a planta não seria a que se vai editar. */
-    {id:'treta-beco', rot:'Treta · beco', titulo:'Treta 5×5 no beco',
-     cfg:{intencao:'atacar', semArmas:true, bombas:0, efetivoRival:5}},
-    {id:'treta-galpao', rot:'Treta · galpão', titulo:'Treta 7×7 no pátio do galpão',
-     cfg:{intencao:'atacar', semArmas:true, bombas:0, efetivoRival:7}},
-    {id:'treta-campo', rot:'Treta · campo', titulo:'Treta 10×10 no campo de terra',
-     cfg:{intencao:'atacar', semArmas:true, bombas:0, efetivoRival:10}},
+    /* as três cenas viraram briga de bairro (15/10/2026): pedra e bomba */
+    {id:'treta-beco', rot:'Bairro · beco', titulo:'Briga de bairro no beco (de bobeira, 7×7)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:7}},
+    {id:'treta-galpao', rot:'Bairro · galpão', titulo:'Briga de bairro no galpão (assistindo o jogo)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
+    {id:'treta-campo', rot:'Bairro · campo', titulo:'Briga de bairro no campo (reunião na praça)',
+     cfg:{intencao:'atacar', bombas:3, efetivoRival:15}},
     {id:'emb-posto', rot:'Emboscada · posto', titulo:'Emboscada no pátio do posto',
      cfg:{intencao:'atacar', bombas:2, efetivoRival:24}},
     {id:'emb-onibus', rot:'Emboscada · estrada', titulo:'Emboscada na pista, ônibus parado',
