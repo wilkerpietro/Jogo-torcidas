@@ -841,7 +841,7 @@ TO.acoes = (function(){
            fraca paga. Abaixo disso é vaquinha, e vaquinha é escolha
            ruim — não é impossibilidade. */
         const custo = custoFesta(E);
-        /* a sede em bairro de dona de fora (não aliada): a festa rende 30%
+        /* a sede em bairro de dona de fora (não aliada): a festa rende 15%
            menos — o público tem medo de ir (voltou em 16/10/2026) */
         const corte = TO.dominio ? TO.dominio.fator(E, E.torcida.id, E.torcida.mapa,
           TO.dominio.sedeDe(E.torcida.id, E.torcida.mapa) || TO.mundo.bairroDaSede(E.torcida)) : 1;

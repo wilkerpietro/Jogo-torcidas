@@ -48,7 +48,7 @@
    a subsede que ele já tem.
 
    A RECEITA (voltou em 16/10/2026, ver `fator`: dona de fora que não é
-   aliada nem irmã corta 30% de bar, loja, subsede e festa da sede). Antes: bar, loja, subsede (e a festa da sede) em bairro cuja
+   aliada nem irmã corta 15% de bar, loja, subsede e festa da sede). Antes: bar, loja, subsede (e a festa da sede) em bairro cuja
    dona era RIVAL da torcida rendiam 30% menos — o corte acabou (o dono,
    05/10/2026: "Acabe com o debuff de 'Os nossos pontos aqui rendem 30%
    menos: o bairro é da Falange Coral, rival'"): `fator` vale 1 sempre
@@ -76,7 +76,7 @@ TO.dominio = (function(){
   const MAX = 7;                     // a barra: 7 pontos inteiros (15/10/2026)
   const DOMINA = 4;                  // 4 ou mais: dona do bairro
   const DIA = 0.02;                  // 0,1 na régua de 0 a 100
-  const CORTE = 0.7;                 // receita em bairro de dona de fora (não aliada): −30% (voltou em 16/10/2026)
+  const CORTE = 0.85;                // receita em bairro de dona de fora (não aliada): −15% (voltou em 16/10/2026 a 30%, baixou pra 15% no mesmo dia)
   /* quem não é dona do bairro da própria sede perde 0,2 de moral por
      dia (na régua de 0 a 100; 0,04 no indicador) */
   const SEDE_PERDIDA = 0.04;
@@ -603,7 +603,7 @@ TO.dominio = (function(){
   function notaDoCorte(E, tid, cid, b){
     const x = bairro(cid, b);
     if(!E || !x || fator(E, tid, cid, x) === 1) return '';
-    return _t('bairro da {sigla} −30%', {sigla:siglaDe(donaDoBairro(E, cid, x.id))});
+    return _t('bairro da {sigla} −15%', {sigla:siglaDe(donaDoBairro(E, cid, x.id))});
   }
   function siglaDe(tid){
     const o = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : indice().O.find(x => x.id === tid);

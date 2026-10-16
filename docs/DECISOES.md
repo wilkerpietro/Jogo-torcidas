@@ -11118,6 +11118,15 @@ sede agora."
 - A tela de abrir ponto mostrava a dona em "%" (resto da barra de 0 a 100);
   agora diz "{v} de 7".
 
+## O corte do bairro de outra dona cai pra 15% (dono, 16/10/2026)
+
+Pedido: "Agora tem que ser somente 15% menos". `CORTE` em
+`js/mundo/dominio.js` passou de 0,7 pra 0,85: bar, loja, subsede, subsede de
+fora e a festa da sede (nossa e das IAs) rendem 85% no bairro com dona de
+fora não amiga. Os textos agora dizem "bairro da {sigla} −15%", "rende 15%
+menos" e "a festa rende 15% menos". O resto da regra (quem corta, o foco na
+sede perdida) não mudou.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

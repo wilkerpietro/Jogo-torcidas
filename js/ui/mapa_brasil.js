@@ -11,7 +11,7 @@
    · `legenda`: quem domina a cidade, quantos bairros cada torcida tem e o
      que isso rende (ou tira) por dia;
    · `cartaoDoBairro`: a barra de 0 a 100 do bairro, repartida entre as
-     torcidas, o que tem nele (sede, bar, loja, subsede), o corte de 30%
+     torcidas, o que tem nele (sede, bar, loja, subsede), o corte de 15%
      quando a dona é rival e a ação social;
    · `quadro`: os bairros da cidade em quatro zonas (a bússola), pro jogo
      de feed, que não tem a planta da cidade;
@@ -294,8 +294,8 @@ TO.mapaBrasil = (function(){
           if(s.tipo === 'sede' && nivelDaSede(s.tid) === 0)
             return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t('Bairro da {nome} (sem sede: junta no bar ou na esquina)', {nome:nome(s.tid)}))}</li>`;
           const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
-          /* o corte de 30% (voltou em 16/10/2026): bairro com dona de fora */
-          const corta = d.fator && d.fator(e, s.tid, cid, b.id) < 1 ? ' · ' + _t('rende 30% menos') : '';
+          /* o corte de 15% (voltou em 16/10/2026): bairro com dona de fora */
+          const corta = d.fator && d.fator(e, s.tid, cid, b.id) < 1 ? ' · ' + _t('rende 15% menos') : '';
           return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv + corta)}</li>`;
         }).join('') + '</ul>'
       : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;

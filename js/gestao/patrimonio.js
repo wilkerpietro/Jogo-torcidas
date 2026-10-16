@@ -215,7 +215,7 @@ TO.patrimonio = (function(){
        impede a tabela de mentir quando o balanço mudar */
     const REC = F().RECEITA, MAN = F().MANUT, INSUMO = F().INSUMO;
     const fora = [];
-    /* o corte de 30% do bairro de rival (dono, 30/09/2026), igual ao
+    /* o corte (hoje 15%) do bairro de rival (dono, 30/09/2026), igual ao
        do fechamento: a tabela não pode prometer o que o caixa não paga */
     const D = TO.dominio, eu = E.torcida.id, minha = E.torcida.mapa;
     /* (e a torcida do bairro, 01/10/2026: o ponto rende pelo tanto de
@@ -228,7 +228,7 @@ TO.patrimonio = (function(){
     const bSede = ((D && D.sedeDe(eu, minha)) || TO.mundo.bairroDaSede(E.torcida) || {}).nome || '';
     fora.push({tipo:'sede', rot:_t('Sede (nível {n})', {n:nivelSede(E)}),
                bairro:bSede,
-               nota: notaSede(minha, bSede) ? _t('{nota}: a festa rende 30% menos', {nota:notaSede(minha, bSede)}) : undefined,
+               nota: notaSede(minha, bSede) ? _t('{nota}: a festa rende 15% menos', {nota:notaSede(minha, bSede)}) : undefined,
                receita:0, despesa:F().MANUT_SEDE[nivelSede(E)]});
     for(const chave of Object.keys(ANEXOS))
       if(p[chave]) fora.push({tipo:'anexo', rot:ANEXOS[chave].rot,
@@ -334,7 +334,7 @@ TO.patrimonio = (function(){
         const dona = !b.dono ? _t('sem dona')
           : b.dono === eu ? _t('nosso ({v} de 7)', {v:b.v})
           : _t('da {sigla} ({v} de 7)', {sigla:D.siglaDe(b.dono), v:b.v});
-        const corte = D && D.fator(E, eu, cid, b.id) < 1 ? ' · ' + _t('rende 30% menos') : '';
+        const corte = D && D.fator(E, eu, cid, b.id) < 1 ? ' · ' + _t('rende 15% menos') : '';
         const onde = varias && b.cidade ? _t('{bairro} ({cidade})', {bairro:b.nome, cidade:b.cidade}) : b.nome;
         const torcida = D && D.parteDaTorcida
           ? ' · ' + _t('{clube} {p}% · rende ×{f}', {clube:E.torcida.clube || '', p:Math.round(D.parteDaTorcida(eu, cid, b.id) * 100),

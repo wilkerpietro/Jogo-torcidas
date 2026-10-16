@@ -29,7 +29,7 @@ TO.i18n.registrar({
   'Perdemos o domínio de {cidade}: agora ninguém tem mais bairros que todo mundo.':
     {es:'Perdimos el dominio de {cidade}: ahora nadie tiene más barrios que todos.', en:'We lost our rule over {cidade}: now nobody has more neighborhoods than everyone else.'},
   '{cidade} ficou sem dona: empate no número de bairros.': {es:'{cidade} se quedó sin dueña: empate en número de barrios.', en:'{cidade} has no ruler: tie in the number of neighborhoods.'},
-  'bairro da {sigla} −30%': {es:'barrio de {sigla} −30%', en:'{sigla} neighborhood −30%'},
+  'bairro da {sigla} −15%': {es:'barrio de {sigla} −15%', en:'{sigla} neighborhood −15%'},
   'já teve ação social esta semana': {es:'ya hubo acción social esta semana', en:'there was already a community action this week'},
   'Esse bairro não é da nossa cidade.': {es:'Ese barrio no es de nuestra ciudad.', en:'That neighborhood is not in our city.'},
   'Ação social em {bairro}: a barra da torcida foi a {v}%.': {es:'Acción social en {bairro}: la barra de la hinchada llegó a {v}%.', en:'Community action in {bairro}: our bar went to {v}%.'},
@@ -54,10 +54,10 @@ TO.i18n.registrar({
   'sem dona': {es:'sin dueña', en:'no owner'},
   'nosso ({v}%)': {es:'nuestro ({v}%)', en:'ours ({v}%)'},
   'da {sigla} ({v}%)': {es:'de {sigla} ({v}%)', en:'{sigla}’s ({v}%)'},
-  'rende 30% menos': {es:'rinde 30% menos', en:'earns 30% less'},
+  'rende 15% menos': {es:'rinde 15% menos', en:'earns 15% less'},
   '{bairro} (zona {zona}) · {dona}': {es:'{bairro} (zona {zona}) · {dona}', en:'{bairro} ({zona} zone) · {dona}'},
   '{bairro} · {dona}': {es:'{bairro} · {dona}', en:'{bairro} · {dona}'},
-  '{nota}: a festa rende 30% menos': {es:'{nota}: la fiesta rinde 30% menos', en:'{nota}: the party earns 30% less'},
+  '{nota}: a festa rende 15% menos': {es:'{nota}: la fiesta rinde 15% menos', en:'{nota}: the party earns 15% less'},
 
   /* =========================================================
      O MAPA: O BRASIL, A LEGENDA, O CARTÃO E O QUADRO (mapa_brasil.js)

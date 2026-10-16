@@ -380,9 +380,9 @@ TO.financeiro = (function(){
 
     const fator = fatorComercial(E) * multMoral(E);
     const hoje = absDe(E);
-    /* O BAIRRO DE OUTRA DONA CORTA 30% (o dono, 30/09/2026; voltou em
+    /* O BAIRRO DE OUTRA DONA CORTA 15% (o dono, 30/09/2026; voltou em
        16/10/2026 pra qualquer dona que não seja aliada nem irmã): bar,
-       loja, subsede e subsede de fora rendem 70% — a linha diz de quem é
+       loja, subsede e subsede de fora rendem 85% — a linha diz de quem é
        o bairro (js/mundo/dominio.js) */
     const D = TO.dominio, eu = E.torcida.id;
     /* A TORCIDA DO BAIRRO (o dono, 01/10/2026): o ponto rende pelo tanto
