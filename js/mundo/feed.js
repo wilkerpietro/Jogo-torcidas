@@ -5448,10 +5448,8 @@ TO.feed = (function(){
     if(!lista.length) return CENA_BAIRRO[tipo];
     return lista[TO.mapa.hash(`cenaBairro|${cid}|${bid}`) % lista.length];
   }
-  /* "do Antônio Bezerra", "da Maraponga": a primeira palavra terminada
+  /* "no Antônio Bezerra", "na Maraponga": a primeira palavra terminada
      em "a" é feminina (a régua do cartaz) */
-  const doBairro = b => /a$/i.test(String(b || '').trim().split(/\s+/)[0] || '')
-    ? _t('da {bairro}', {bairro:b}) : _t('do {bairro}', {bairro:b});
   const noBairroNome = b => /a$/i.test(String(b || '').trim().split(/\s+/)[0] || '')
     ? _t('na {bairro}', {bairro:b}) : _t('no {bairro}', {bairro:b});
   function planoDosBairros(E){
@@ -5538,12 +5536,15 @@ TO.feed = (function(){
       const local = cenaDoBairro(a.cid, a.b.id, tipo);
       const pv = previaDaBriga(E, {torcidaId:a.rival, atacamos:true, local:{cena:local, bairro:a.b.id, cidade:a.cid}});
       const mor = TO.elenco.noBairro(E, a.rival, a.cid, a.b.id, tipo === 'bobeira' ? 7 : 15).length;
-      const P2 = {nome, bairro:a.b.nome, doBairro:doBairro(a.b.nome), noBairro:noBairroNome(a.b.nome)};
+      /* O LUGAR DA CENA NA MENSAGEM (dono, 16/10/2026): "na pracinha no
+         Pirambu", "no corredor comercial na Aldeota" — o mesmo cenário que
+         a cena vai abrir (`cenaDoBairro`) */
+      const P2 = {nome, bairro:a.b.nome, noBairro:noBairroNome(a.b.nome), lugar:nomeDaCena(local)};
       const texto = tipo === 'praca'
-          ? _t('Chefe, os caras da {nome} {doBairro} tão fazendo uma reunião na praça, dá pra gente chegar pra acabar com isso. Ganhar essa luta aumenta nossos pontos de domínio e nos ajuda a tomar o bairro pra gente.', P2)
+          ? _t('Chefe, os caras da {nome} tão fazendo uma reunião {lugar} {noBairro}. Dá pra gente chegar e acabar com isso: ganhar essa luta aumenta nossos pontos de domínio e ajuda a tomar o bairro pra gente.', P2)
         : tipo === 'jogo'
-          ? _t('Chefe, o pessoal da {nome} {doBairro} se reuniu pra assistir o jogo deles, bora dar o bote? Isso ajuda a fazer o bairro ser nosso.', P2)
-          : _t('Chefe, passei {noBairro} e vi membros da {nome} de bobeira. Bora chegar? Ganhar ali ajuda a tomar o bairro pra gente.', P2);
+          ? _t('Chefe, o pessoal da {nome} se juntou {lugar} {noBairro} pra assistir o jogo deles. Bora dar o bote? Isso ajuda a fazer o bairro ser nosso.', P2)
+          : _t('Chefe, passei {lugar} {noBairro} e vi uns membros da {nome} de bobeira. Bora chegar? Ganhar ali ajuda a tomar o bairro pra gente.', P2);
       const ate = TO.elenco.ataqueContra(mor);
       return propor(E, {
         kind:'bairro', peso:'decisao', voz:'diretor', tipo:'neutro',
@@ -5562,16 +5563,16 @@ TO.feed = (function(){
     const local = cenaDoBairro(a.cid, a.b.id, tipo);
     const pv = previaDaBriga(E, {torcidaId:a.rival, atacamos:false, local:{cena:local, bairro:a.b.id, cidade:a.cid}});
     const mor = TO.elenco.noBairro(E, E.torcida.id, a.cid, a.b.id, tipo === 'bobeira' ? 7 : 15).length;
-    const P2 = {nome, bairro:a.b.nome, doBairro:doBairro(a.b.nome), noBairro:noBairroNome(a.b.nome)};
+    const P2 = {nome, bairro:a.b.nome, noBairro:noBairroNome(a.b.nome), lugar:nomeDaCena(local)};
     const texto = tipo === 'praca'
-      ? _t('Chefe, a {nome} tá descendo pra cima da nossa reunião na praça {doBairro}! Se a gente não segurar, o bairro escorrega pra eles.', P2)
-      : _t('Chefe, uns da {nome} pegaram uns nossos de bobeira {noBairro}! Bora descer antes que eles tomem a rua.', P2);
+      ? _t('Chefe, a gente tava fazendo uma reunião {lugar} {noBairro} e uns membros da {nome} desceram pra cima! Se a gente não segurar, o bairro escorrega pra eles.', P2)
+      : _t('Chefe, alguns membros nossos estavam de bobeira {lugar} {noBairro} e foram abordados por uns membros da {nome}. Se a gente não descer, o bairro escorrega pra eles.', P2);
     return propor(E, {
       kind:'bairro', peso:'decisao', voz:'diretor', tipo:'ruim',
       chave:`bairro|contra|${ch}`, texto,
       dados:{tipo, rival:a.rival, nome, bairro:a.b.nome, bairroId:a.b.id, cid:a.cid, atacamos:false},
       botoes:[
-        {id:'descer', rot:_t('Descer'), acao:'cena-bairro',
+        {id:'descer', rot:_t('Abrir a cena'), acao:'cena-bairro',
          nota:comDominio(_t('Os {n} nossos que moram ali contra até {a} deles · segurando, Prestígio +4 · Relação −2', {n:mor, a:TO.elenco.ataqueContra(mor)}), pv.linha)},
         {id:'ninguem', rot:_t('Ninguém desce'), acao:'bairro-ninguem',
          nota:_t('o bairro dá 1 ponto pra eles · Moral −3 · Prestígio −3,5 · Relação −6')}]

@@ -11028,6 +11028,18 @@ virou uma cena `bairro-*`:
 - **Notícias** (feed e Porrada) e a bancada (uma aba por cena, pra acertar a
   máscara no F2) ganharam as onze.
 
+## A mensagem da briga de bairro diz o lugar (dono, 16/10/2026)
+
+Pedido: a mensagem tem de dar mais contexto e citar o local, como "Chefe,
+alguns membros estavam de bobeira na praça de alimentação no Dionísio Torres e
+foram abordados por uns membros da Cearamor." As cinco mensagens (três nossas,
+duas contra nós) ganharam o `{lugar}`, que é o nome da cena que vai abrir
+(`nomeDaCena(cenaDoBairro(...))`: "na pracinha", "nos becos", "no corredor
+comercial", "no campo society"...), seguido do bairro. Exemplo: "Chefe, alguns
+membros nossos estavam de bobeira no corredor comercial no Dionísio Torres e
+foram abordados por uns membros da Leões da TUF." O botão de quando somos
+atacados deixou de ser "Descer" e virou "Abrir a cena".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
