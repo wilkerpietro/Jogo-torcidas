@@ -11058,6 +11058,40 @@ por aliada, tanto na briga da nossa praça (`js/mundo/praca.js`) quanto nas
 brigas entre elas (`js/mundo/relacoes.js`). A recepção entre elas
 (`recepcaoIA`) já pulava os dois casos.
 
+## A postura do bonde na briga: Massacrar, Tomar a faixa, Proteger o material (dono, 16/10/2026)
+
+Pedido: "definir pros membros da minha torcida o que por si só devem fazer na
+briga": tomar a faixa (no estádio, uns 5 arrodeiam pra abordar quem segura a
+faixa deles), massacrar (o de hoje) ou proteger o material (melhor em minoria:
+defendem mais do que batem). O dono decidiu, nas perguntas, que a escolha é só
+dentro da briga, que a peça continua sendo tomada como hoje (derrubando quem
+segura), que vale em toda cena em que eles tenham faixa ou bandeira e que o
+bairro continua sem faixa.
+
+- **A troca** (`js/diajogo/combate.js`, `alternarPostura`): a tecla V, o
+  botão novo do HUD e o POSTURA do pad giram Massacrar → Tomar a faixa →
+  Proteger o material. Toda cena começa em Massacrar (`J.postura`).
+- **Tomar a faixa**: até 5 (no máximo um terço do bonde, os de mais força e
+  defesa) viram `cacaFaixa`. Quem cai é reposto a cada 1,5 s. Eles largam a
+  briga do meio e vão em quem recolhe ou carrega a peça deles; perto do
+  portador, que foge com a peça, correm 25% mais (o mesmo arranque de quem
+  persegue bonde em fuga) e batem nele primeiro. No estádio arrodeiam
+  (`arrodeio`): andam pelo anel no sentido em que o bonde deles não está, na
+  mesma banda da arquibancada; se empacam 2,5 s (grade de setor), vão reto.
+  Sem peça deles na cena (o bairro), o aviso diz e o bonde segue massacrando.
+- **Proteger o material**: o bonde não sai caçando (sem a busca longa nem a
+  perseguição a quem foge). Sem inimigo em cima, fecha em roda do lugar da
+  nossa peça na parede (`F.base`), não do portador, porque seguir o
+  portador, que fica atrás do bonde, fazia o bloco inteiro andar pra trás
+  sem bater (medido). Vê o golpe vindo mais vezes (0,38 + defesa/36, contra
+  0,25 + defesa/40) e uma oportunidade de bater em quatro vira guarda. Sem
+  peça nossa na cena, segue o líder.
+- **Medição**: a simulação com o motor da cena, com o líder indo pra cima,
+  varia muito de uma rodada pra outra no Massacrar. Tomar a faixa tomou a
+  faixa deles numa de três rodadas no estádio de 40 mil. O efeito do
+  Proteger em minoria não apareceu na medição (ninguém perdeu material
+  nas rodadas). O equilíbrio fica pra ajustar jogando.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

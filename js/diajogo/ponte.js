@@ -877,7 +877,7 @@ TO.diaJogo.ponte = (function(){
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
       : tres
       ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
-      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
+      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>V</kbd> postura · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
   }
 
   /* =======================================================
@@ -904,6 +904,7 @@ TO.diaJogo.ponte = (function(){
     liga('djBtBomba', alternarMira);
     liga('djBtBater', ()=>{ if(J) C.bater(J, liderVivo()); });
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
+    liga('djBtPostura',()=>{ if(J && !J.reuniao){ C.alternarPostura(J); atualizarBotoes(); } });
     liga('djBtFugir', mandarCorrer);
     liga('djVelocidade', alternarVelocidade);
     liga('djBtEntrar', mandarEntrarOuSair);
@@ -946,6 +947,14 @@ TO.diaJogo.ponte = (function(){
   }
   function atualizarBotoes(){
     U.$$('.form-btn').forEach(b=>b.classList.toggle('on', b.dataset.f===J.form));
+    /* A POSTURA DO BONDE (16/10/2026): o botão diz a de agora */
+    const bp=$('djBtPostura');
+    if(bp && J){
+      bp.innerHTML = `${_t(C.NOME_POSTURA[J.postura] || 'Massacrar')} <b>V</b>`;
+      bp.style.borderColor = J.postura !== 'massacrar' ? 'var(--ouro)' : '#3d3d39';
+      bp.style.color = J.postura !== 'massacrar' ? 'var(--ouro)' : 'var(--texto)';
+      bp.style.display = J.reuniao ? 'none' : '';
+    }
     const br=$('djBtRecuar');
     if(br&&br.firstChild){
       br.firstChild.textContent=(J.recuando?_t('Voltar pra briga'):_t('Recuar'))+' ';
@@ -956,7 +965,7 @@ TO.diaJogo.ponte = (function(){
        Os botões de briga apagam junto, senão ficam prometendo pedra e
        recuo pra quem está correndo. */
     const correndo = C.emFuga(J);
-    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba','djBtBater']){
+    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba','djBtBater','djBtPostura']){
       const b = $(id);
       if(b){ b.disabled = correndo; b.classList.toggle('gasto', correndo); }
     }
@@ -1202,6 +1211,7 @@ TO.diaJogo.ponte = (function(){
       defender);
     acoes.append(
       disparo('r',_t('RECUAR'),()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
+      disparo('v',_t('POSTURA'),()=>{ if(J){ C.alternarPostura(J); atualizarBotoes(); } }),
       disparo('f',_t('AGARRAR'),()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
       disparo('c',_t('CHAMAR'),()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
       /* FUGIR SAIU DO F (que virou agarrar) e foi pro X */
@@ -1280,6 +1290,7 @@ TO.diaJogo.ponte = (function(){
          ENTER do portão não têm o que fazer numa roda de cadeiras */
       if(J.reuniao) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
+      if(k==='v'){C.alternarPostura(J);atualizarBotoes();}
       if(k==='x'){C.mandarFugir(J);atualizarBotoes();}
       if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
       if(k==='f'){ const l=liderVivo(); if(l) C.agarrar(J, l); }
