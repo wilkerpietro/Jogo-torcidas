@@ -291,7 +291,18 @@ TO.planejamento = (function(){
          linha do dia).
      Um pedido por jogo; a resposta fica no plano da semana.
      ======================================================= */
-  const ajudaDe = (E, jogo) => (plano(E, jogo) || {}).ajuda || null;
+  /* QUEM JOGA NA PRÓPRIA PRAÇA OU TEM SUBSEDE LÁ NÃO É RECEBIDO (dono,
+     16/10/2026: "quando o Fortaleza joga contra o Ceará, a TUF é
+     recepcionada na sede da JGT"). No clássico a gente sai da nossa
+     sede; onde temos subsede, ficamos nela. A ajuda de um pedido antigo
+     nesses jogos (save de antes) também deixa de valer. */
+  function semRecepcao(E, jogo){
+    const j = jogo || E.proximoJogo;
+    if(!j || j.casa || !j.mapaAdv) return true;
+    if(j.mapaAdv === E.torcida.mapa) return true;
+    return !!(TO.patrimonio && TO.patrimonio.temFilialEm && TO.patrimonio.temFilialEm(E, j.mapaAdv));
+  }
+  const ajudaDe = (E, jogo) => semRecepcao(E, jogo) ? null : ((plano(E, jogo) || {}).ajuda || null);
 
   /* O TAMANHO DA ESCOLTA PELA SEDE (dono, 12/10/2026): "torcidas com
      sede nível 4 podem escoltar com 20 membros e nível 5 e 6 com 30".
@@ -306,7 +317,7 @@ TO.planejamento = (function(){
   /* as aliadas da praça do jogo fora, e a resposta que cada uma daria */
   function aliadasNaPracaDeles(E, jogo){
     const j = jogo || E.proximoJogo;
-    if(!j || j.casa || !j.mapaAdv) return [];
+    if(!j || j.casa || !j.mapaAdv || semRecepcao(E, j)) return [];
     const fora = [];
     for(const o of M().torcidasEm(j.mapaAdv)){
       if(o.id === E.torcida.id || o.incompleta) continue;
@@ -338,7 +349,7 @@ TO.planejamento = (function(){
     if(p.ajuda) return p.ajuda;                       // um pedido por jogo
     const j = jogo;
     const o = M().torcida(aliadoId);
-    if(!j || j.casa || !o) return null;
+    if(!j || j.casa || !o || semRecepcao(E, j)) return null;
     const r = respostaDaAjuda(E, aliadoId, j);
     const rec = recepcaoDe(r.nivel);
     E.relacoes = E.relacoes || {};
@@ -1755,7 +1766,7 @@ TO.planejamento = (function(){
           relatorioDoOlheiro, leituraDoPonto, pontosDeIda,
           PONTOS, pontosDeAtaque, ponto, divisao, efetivoDaSaida,
           aliadosNaCidade, caravanaDe, trechosDaIA, custoCaravanaIA, RELACAO_ALIADO,
-          aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe,
+          aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe, semRecepcao,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial, filiaisNoJogo, aptosDoJogo,
           jogoDecisivo, vontadeDeViajar, VONTADE_DECISIVO, ESCOLTA_SEDE, tetoDaEscolta,
           RECEPCAO, recepcaoDe, custoRecepcao,

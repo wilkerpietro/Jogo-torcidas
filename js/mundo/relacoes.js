@@ -2618,6 +2618,8 @@ TO.relacoes = (function(){
          das vezes o anfitrião desce junto (a escolta do mundo) */
       const anfitriaoDe = (o, outro) => {
         if(o.mapa === cidade) return null;
+        /* com subsede na cidade, fica nela (dono, 16/10/2026) */
+        if((((E.mundoTorcidas || {})[o.id] || {}).filiais || []).some(f => f.cidade === cidade)) return null;
         const anf = M().torcidasEm(cidade).find(x =>
           x.id !== o.id && x.id !== outro.id && !x.incompleta &&
           x.id !== E.torcida.id && x.clubeId !== outro.clubeId &&

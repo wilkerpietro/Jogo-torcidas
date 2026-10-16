@@ -11040,6 +11040,24 @@ membros nossos estavam de bobeira no corredor comercial no Dionísio Torres e
 foram abordados por uns membros da Leões da TUF." O botão de quando somos
 atacados deixou de ser "Descer" e virou "Abrir a cena".
 
+## Clássico na própria praça e praça com subsede: ninguém recebe (dono, 16/10/2026)
+
+O erro: "quando o Fortaleza joga contra o Ceará, a TUF é recepcionada na sede
+da JGT". O pedido de apoio do jogo fora (`aliadasNaPracaDeles` e `pedirAjuda`,
+em `js/gestao/planejamento.js`, inclusive o automático da ideologia) olhava as
+aliadas da praça do adversário sem perguntar se a praça era a nossa. Agora
+`semRecepcao` fecha os dois casos:
+
+- **jogo fora na nossa praça** (o clássico): a caravana sai da nossa sede;
+- **praça onde temos subsede**: a caravana fica nela.
+
+Nesses jogos não há pedido nem resposta, e um pedido antigo de save também
+deixa de valer (`ajudaDe`). A tela da caravana explica o porquê. A mesma régua
+vale pras IAs: a visitante com subsede na cidade não é hospedada nem escoltada
+por aliada, tanto na briga da nossa praça (`js/mundo/praca.js`) quanto nas
+brigas entre elas (`js/mundo/relacoes.js`). A recepção entre elas
+(`recepcaoIA`) já pulava os dois casos.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -371,6 +371,9 @@ TO.praca = (function(){
     for(const jogo of doDia)
       for(const o of M().torcidasDe(jogo.vis.id)){
         if(pontoDaSede(mo, o)) continue;         // mora aqui, não é caravana
+        if(o.mapa === E.torcida.mapa) continue;  // é daqui (16/10/2026)
+        /* tem subsede aqui: fica nela, ninguém hospeda (16/10/2026) */
+        if((((E.mundoTorcidas || {})[o.id] || {}).filiais || []).some(f => f.cidade === E.torcida.mapa)) continue;
         if(PL().caravanaDe(o, (E.relacoes||{})[o.id], E, E.torcida.mapa) < 5) continue;
         const casa = anfitriaoDe(E, mo, o);
         if(!casa) continue;

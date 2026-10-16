@@ -6448,6 +6448,13 @@
           `${_t('{n} rel.', {n:(rec.relacao>0?'+':'')+rec.relacao})}`+
           `${ajuda.moral ? _t(' · +{n} moral', {n:ajuda.moral}) : ''}`+
           `${ajuda.escolta ? _t(' · {n} na escolta', {n:ajuda.escolta}) : ''}</b>`}));
+      } else if(P.semRecepcao && P.semRecepcao(e) && j && !j.casa){
+        /* clássico na nossa praça ou praça com subsede nossa: ninguém
+           recebe (dono, 16/10/2026) */
+        corpo.appendChild(el('div',{class:'linha-dado', html:
+          `<span class="fraco">${j.mapaAdv === e.torcida.mapa
+            ? _t('O jogo é na nossa praça: a caravana sai da nossa sede, ninguém precisa receber a gente.')
+            : _t('Temos subsede em {cidade}: a caravana fica nela.', {cidade:j.cidadeAdv || j.mapaAdv})}</span>`}));
       } else if(!aliadas.length){
         corpo.appendChild(el('div',{class:'linha-dado', html:
           `<span class="fraco">${j.cidadeAdv
