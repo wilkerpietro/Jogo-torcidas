@@ -5513,6 +5513,13 @@ TO.feed = (function(){
       !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, t)) &&
       (TO.elenco ? TO.elenco.maisFortes(E, t, cid, 3).length >= 2 : true));
     if(!quem.length) return null;
+    /* QUEM PERDEU O BAIRRO DA SEDE PRA GENTE VEM ATRÁS DELE (dono,
+       16/10/2026): a maior delas ataca lá, antes de qualquer outro alvo */
+    const semCasa = quem.map(t => ({t, s:D.sedeDe(t, cid)}))
+      .map(x => ({t:x.t, b:x.s && bs.find(y => y.id === x.s.id && y.dono === meu)}))
+      .filter(x => x.b)
+      .sort((x, y) => D.membrosDe(E, y.t) - D.membrosDe(E, x.t));
+    if(semCasa.length) return {cid, b:semCasa[0].b, rival:semCasa[0].t, casaDeles:true};
     const nota = t => ((b.partes.find(p => p.t === t) || {}).v || 0) * 4 + (D.rivais(E, meu, t) ? 3 : 0) +
       Math.min(3, D.membrosDe(E, t) / 100) + (H(`contra|${ch}|${t}`) % 100) / 40;
     const rival = quem.sort((x, y) => nota(y) - nota(x))[0];
@@ -5567,9 +5574,11 @@ TO.feed = (function(){
     const texto = tipo === 'praca'
       ? _t('Chefe, a gente tava fazendo uma reunião {lugar} {noBairro} e uns membros da {nome} desceram pra cima! Se a gente não segurar, o bairro escorrega pra eles.', P2)
       : _t('Chefe, alguns membros nossos estavam de bobeira {lugar} {noBairro} e foram abordados por uns membros da {nome}. Se a gente não descer, o bairro escorrega pra eles.', P2);
+    /* é o bairro da sede deles: vieram buscar de volta (16/10/2026) */
+    const textoFim = a.casaDeles ? texto + ' ' + _t('É o bairro da sede da {nome}: eles querem de volta.', P2) : texto;
     return propor(E, {
       kind:'bairro', peso:'decisao', voz:'diretor', tipo:'ruim',
-      chave:`bairro|contra|${ch}`, texto,
+      chave:`bairro|contra|${ch}`, texto:textoFim,
       dados:{tipo, rival:a.rival, nome, bairro:a.b.nome, bairroId:a.b.id, cid:a.cid, atacamos:false},
       botoes:[
         {id:'descer', rot:_t('Abrir a cena'), acao:'cena-bairro',
@@ -6945,7 +6954,7 @@ TO.feed = (function(){
           abrirLote, fecharLote,
           avisoDoOlheiro, nivelDaCampana,
           alvoDaDefesa, encerrarPartida, pautaDosJogos, pautaDaCidade, semanaDeHoje,
-          statusDeHoje, eixosDoDia, reuniaoDeHoje, bairroDeHoje, planoDosBairros, cenaDoBairro,
+          statusDeHoje, eixosDoDia, reuniaoDeHoje, bairroDeHoje, planoDosBairros, cenaDoBairro, alvoContra,
           caixaReuniao, pautar, pautaAberta, decidirPauta, fecharReuniao,
           mesaDaReuniao, pautaBote, boteDeHoje, assaltoDeHoje, assaltoSimulado, textoDaOperacao, diaLivre, alvoDoBar, alvoDaCasa,
           pautaAproximacao, pautaPaz, pautaAfastar,

@@ -294,7 +294,9 @@ TO.mapaBrasil = (function(){
           if(s.tipo === 'sede' && nivelDaSede(s.tid) === 0)
             return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t('Bairro da {nome} (sem sede: junta no bar ou na esquina)', {nome:nome(s.tid)}))}</li>`;
           const nv = s.obj && s.obj.nivel ? ' ' + _t('(nível {n})', {n:s.obj.nivel}) : '';
-          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv)}</li>`;
+          /* o corte de 30% (voltou em 16/10/2026): bairro com dona de fora */
+          const corta = d.fator && d.fator(e, s.tid, cid, b.id) < 1 ? ' · ' + _t('rende 30% menos') : '';
+          return `<li><i style="background:${corDe(s.tid)}"></i>${esc(_t(T[s.tipo] || '{nome}', {nome:nome(s.tid)}) + nv + corta)}</li>`;
         }).join('') + '</ul>'
       : `<p class="mb-nada">${esc(_t('Nenhuma sede, bar, loja ou subsede.'))}</p>`;
     caixa.innerHTML = h;

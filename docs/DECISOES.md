@@ -11092,6 +11092,32 @@ bairro continua sem faixa.
   Proteger em minoria não apareceu na medição (ninguém perdeu material
   nas rodadas). O equilíbrio fica pra ajustar jogando.
 
+## Volta o corte de 30% no bairro de outra dona, e quem perde a sede vai atrás dela (dono, 16/10/2026)
+
+Pedido: "Quando uma torcida perde o domínio do bairro da sede ela foca o ataque
+nesse bairro pra tentar recuperar o domínio. Volte a aplicar o debuff de
+receitas de estruturas cujo bairro é dominado por outra torcida, inclusive a
+sede agora."
+
+- **O corte** (`dominio.fator` e `notaDoCorte`, que valiam 1 e vazio desde
+  05/10/2026): bar, loja, subsede, subsede de fora e a festa da sede rendem
+  70% quando o bairro tem dona (4 de 7 pontos ou mais) e ela não é a própria
+  torcida, nem aliada, nem irmã. Antes de 05/10 o corte era só pra dona
+  rival; agora vale pra qualquer dona de fora que não seja amiga. Vale pra
+  nós e pras IAs. A festa diária delas (o Expediente) também passou a
+  levar o corte da sede, que antes só a nossa tinha. A linha do
+  financeiro diz "bairro da {sigla} −30%". A tela de abrir ponto e o cartão
+  do bairro (cada estrutura cortada) dizem "rende 30% menos". A sede usa o
+  bairro do domínio (`sedeDe`, que já vem espalhado), não o dos dados.
+- **O foco na sede**: nas brigas entre as IAs (`brigasDasIAs`), a torcida cujo
+  bairro da sede não é dela ataca lá, contra a dona ou contra quem tem mais
+  ponto. Nos ataques contra nós (`alvoContra`), se a gente domina o bairro
+  da sede de alguma torcida não amiga, a maior delas vem lá, antes de
+  qualquer outro alvo, e a mensagem acrescenta "É o bairro da sede da {nome}:
+  eles querem de volta."
+- A tela de abrir ponto mostrava a dona em "%" (resto da barra de 0 a 100);
+  agora diz "{v} de 7".
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

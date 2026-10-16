@@ -47,7 +47,8 @@
    leitura, porque o começo dela considera onde estão o bar, a loja e
    a subsede que ele já tem.
 
-   A RECEITA. Bar, loja, subsede (e a festa da sede) em bairro cuja
+   A RECEITA (voltou em 16/10/2026, ver `fator`: dona de fora que não é
+   aliada nem irmã corta 30% de bar, loja, subsede e festa da sede). Antes: bar, loja, subsede (e a festa da sede) em bairro cuja
    dona era RIVAL da torcida rendiam 30% menos — o corte acabou (o dono,
    05/10/2026: "Acabe com o debuff de 'Os nossos pontos aqui rendem 30%
    menos: o bairro é da Falange Coral, rival'"): `fator` vale 1 sempre
@@ -75,7 +76,7 @@ TO.dominio = (function(){
   const MAX = 7;                     // a barra: 7 pontos inteiros (15/10/2026)
   const DOMINA = 4;                  // 4 ou mais: dona do bairro
   const DIA = 0.02;                  // 0,1 na régua de 0 a 100
-  const CORTE = 1;                   // receita em bairro de rival: sem corte desde 05/10/2026
+  const CORTE = 0.7;                 // receita em bairro de dona de fora (não aliada): −30% (voltou em 16/10/2026)
   /* quem não é dona do bairro da própria sede perde 0,2 de moral por
      dia (na régua de 0 a 100; 0,04 no indicador) */
   const SEDE_PERDIDA = 0.04;
@@ -586,11 +587,24 @@ TO.dominio = (function(){
     if(E && R && R.relacaoDelas) return R.relacaoDelas(E, a, b) < -15;
     return ehRival(a, b);
   }
-  /* o fator da receita de um ponto: era 0,7 em bairro de dona rival; o
-     corte acabou em 05/10/2026 (ver A RECEITA, no alto) */
-  function fator(){ return 1; }
+  /* O FATOR DA RECEITA DE UM PONTO (volta do corte, dono 16/10/2026:
+     "volte a aplicar o debuff de receitas de estruturas cujo bairro é
+     dominado por outra torcida, inclusive a sede agora"): bar, loja,
+     subsede, subsede de fora e a festa da sede rendem 70% quando o
+     bairro tem dona (4 pontos ou mais) e ela não é a própria torcida nem
+     aliada ou irmã dela. Vale pra nós e pras IAs. */
+  function fator(E, tid, cid, b){
+    const x = bairro(cid, b);
+    if(!E || !x || !tid) return 1;
+    const d = donaDoBairro(E, cid, x.id);
+    return d && d !== tid && !amigas(E, tid, d) ? CORTE : 1;
+  }
   /* a nota que a linha do financeiro leva quando corta */
-  function notaDoCorte(){ return ''; }
+  function notaDoCorte(E, tid, cid, b){
+    const x = bairro(cid, b);
+    if(!E || !x || fator(E, tid, cid, x) === 1) return '';
+    return _t('bairro da {sigla} −30%', {sigla:siglaDe(donaDoBairro(E, cid, x.id))});
+  }
   function siglaDe(tid){
     const o = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(tid) : indice().O.find(x => x.id === tid);
     if(!o) return tid;
@@ -969,7 +983,12 @@ TO.dominio = (function(){
         const minhas = new Set(bairros(E, cid).filter(b => b.dono === o.id).map(b => b.id));
         const nota = b => ((b.partes.find(x => x.t === o.id) || {}).v || 0) * 3 +
           (vizinhosDe(cid, b.id).some(v => minhas.has(v.id)) ? 2 : 0) + r() * 3;
-        const alvo = bs.sort((a, c) => nota(c) - nota(a))[0];
+        /* PERDEU O BAIRRO DA SEDE, VAI ATRÁS DELE (dono, 16/10/2026): sem
+           o domínio de casa, o ataque do mês é lá, contra quem estiver
+           mandando ou com mais ponto */
+        const sb = sedeDe(o.id, cid);
+        const casa = sb ? bs.find(b => b.id === sb.id && b.dono !== o.id) : null;
+        const alvo = casa || bs.sort((a, c) => nota(c) - nota(a))[0];
         const soma = (l, max) => l.reduce((x, m) => x + (m.forca || 5) + (m.defesa || 5), 0) || max * 8;
         /* os moradores defendem (até 15) e o ataque vem com até 60% a mais */
         const defs = EL ? EL.noBairro(E, alvo.def, cid, alvo.id, 15) : [];

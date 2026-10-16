@@ -1292,5 +1292,8 @@ TO.i18n.registrar({
   "Massacrar": {es:"Masacrar", en:"Smash them"},
   "Tomar a faixa": {es:"Tomar el trapo", en:"Take the banner"},
   "Proteger o material": {es:"Proteger el material", en:"Protect our gear"},
-  "O que o bonde faz sozinho: massacrar, tomar a faixa deles ou proteger o nosso material": {es:"Lo que la banda hace sola: masacrar, tomar su trapo o proteger nuestro material", en:"What the crew does on its own: smash them, take their banner or protect our gear"}
+  "O que o bonde faz sozinho: massacrar, tomar a faixa deles ou proteger o nosso material": {es:"Lo que la banda hace sola: masacrar, tomar su trapo o proteger nuestro material", en:"What the crew does on its own: smash them, take their banner or protect our gear"},
+  "É o bairro da sede da {nome}: eles querem de volta.": {es:"Es el barrio de la sede de {nome}: lo quieren de vuelta.", en:"It's {nome}'s HQ neighbourhood: they want it back."},
+  "nosso ({v} de 7)": {es:"nuestro ({v} de 7)", en:"ours ({v} of 7)"},
+  "da {sigla} ({v} de 7)": {es:"de {sigla} ({v} de 7)", en:"{sigla}'s ({v} of 7)"}
 });

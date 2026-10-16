@@ -2980,7 +2980,11 @@ TO.relacoes = (function(){
           const custo = FIN().FESTA[t.sede] || 700;
           const publico = disponiveisIA(E, o.id);
           if(t.caixa < custo || publico < FIN().pisoDaFesta(t.sede)) continue;
-          const rendeu = Math.round(publico * U.entre(4.8, 6.4));
+          /* a sede em bairro de dona de fora: a festa rende 30% menos
+             (a nossa régua, volta do corte em 16/10/2026) */
+          const bS = (TO.dominio && TO.dominio.sedeDe(o.id, o.mapa)) || (TO.mundo.bairroDaSede ? TO.mundo.bairroDaSede(o) : null);
+          const corteS = TO.dominio && bS ? TO.dominio.fator(E, o.id, o.mapa, bS) : 1;
+          const rendeu = Math.round(publico * U.entre(4.8, 6.4) * corteS);
           t.caixa += rendeu - custo;
           sondar(o.id, 'Festa na sede (público)', rendeu);
           sondar(o.id, 'Festa na sede (custo)', -custo);

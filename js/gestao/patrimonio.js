@@ -225,7 +225,7 @@ TO.patrimonio = (function(){
     const notaSede = (cid, b) => D ? D.notaDoCorte(E, eu, cid, b) : '';
     const junta = (a, b) => [a, b].filter(Boolean).join(' · ') || undefined;
 
-    const bSede = (TO.mundo.bairroDaSede(E.torcida)||{}).nome || '';
+    const bSede = ((D && D.sedeDe(eu, minha)) || TO.mundo.bairroDaSede(E.torcida) || {}).nome || '';
     fora.push({tipo:'sede', rot:_t('Sede (nível {n})', {n:nivelSede(E)}),
                bairro:bSede,
                nota: notaSede(minha, bSede) ? _t('{nota}: a festa rende 30% menos', {nota:notaSede(minha, bSede)}) : undefined,
@@ -323,7 +323,7 @@ TO.patrimonio = (function(){
     const bs = D ? D.bairros(E, cid)
                  : TO.mundo.bairrosDe(cid).map(b=>({id:b.id, nome:b.nome, zona:b.zona, dono:null}));
     const ordem = b => (padrao && b.id === padrao.id) ? 0 : b.dono === eu ? 1 : !b.dono ? 2
-                     : (D && D.rivais(E, eu, b.dono)) ? 4 : 3;
+                     : (D && D.fator(E, eu, cid, b.id) < 1) ? 4 : 3;
     /* A TORCIDA DO BAIRRO (01/10/2026): cada linha diz quanto da gente
        do bairro é do nosso clube e quanto o ponto rende por isso; dentro
        de cada grupo, o que rende mais vem primeiro */
@@ -332,9 +332,9 @@ TO.patrimonio = (function(){
     return bs.slice().sort((a, b)=> ordem(a) - ordem(b) || fT(b) - fT(a) || a.nome.localeCompare(b.nome))
       .map(b=>{
         const dona = !b.dono ? _t('sem dona')
-          : b.dono === eu ? _t('nosso ({v}%)', {v:Math.round(b.v)})
-          : _t('da {sigla} ({v}%)', {sigla:D.siglaDe(b.dono), v:Math.round(b.v)});
-        const corte = D && b.dono && b.dono !== eu && D.rivais(E, eu, b.dono) ? ' · ' + _t('rende 30% menos') : '';
+          : b.dono === eu ? _t('nosso ({v} de 7)', {v:b.v})
+          : _t('da {sigla} ({v} de 7)', {sigla:D.siglaDe(b.dono), v:b.v});
+        const corte = D && D.fator(E, eu, cid, b.id) < 1 ? ' · ' + _t('rende 30% menos') : '';
         const onde = varias && b.cidade ? _t('{bairro} ({cidade})', {bairro:b.nome, cidade:b.cidade}) : b.nome;
         const torcida = D && D.parteDaTorcida
           ? ' · ' + _t('{clube} {p}% · rende ×{f}', {clube:E.torcida.clube || '', p:Math.round(D.parteDaTorcida(eu, cid, b.id) * 100),
