@@ -115,8 +115,8 @@ TO.i18n.registrar({
   /* ---------- o dia de jogo e o relatório (index.html) ---------- */
   'Velocidade da cena': {es:'Velocidad de la escena', en:'Scene speed'},
   'PM': {es:'Policía', en:'Police'},
-  'Soltar o E na hora do golpe é o contragolpe':
-    {es:'Soltar la E en el momento del golpe es el contragolpe', en:'Releasing E right as the blow lands is the counter'},
+  'O golpe vira sozinho pro rival mais perto e sempre entra':
+    {es:'El golpe gira solo hacia el rival más cercano y siempre entra', en:'The blow turns to the nearest rival on its own and always lands'},
   'Bater':    {es:'Golpear',  en:'Hit'},
   '· Defender':{es:'· Defender', en:'· Block'},
   '· Agarrar': {es:'· Agarrar',  en:'· Grab'},

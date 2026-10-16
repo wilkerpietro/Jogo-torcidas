@@ -11127,6 +11127,40 @@ fora não amiga. Os textos agora dizem "bairro da {sigla} −15%", "rende 15%
 menos" e "a festa rende 15% menos". O resto da regra (quem corta, o foco na
 sede perdida) não mudou.
 
+## Bater sem defesa, golpe do jogador sempre entra, agarrão mais forte (dono, 16/10/2026)
+
+Pedido: "Preciso melhorar a mecânica de bater, o movimento precisa ser mais
+similar à realidade e o meu boneco precisa dar dano sempre que for bater em
+alguém, tirando a opção de defender do jogo. O agarrar agora vai ser mais
+efetivo também."
+
+- **A defesa saiu** (`js/diajogo/combate.js`): ninguém bloqueia, esquiva ou
+  dá contragolpe, nem o jogador (E e o botão DEFENDER saíram) nem a IA. O
+  chute também não passa mais no ar: entra sempre e derruba de 50% a 75%
+  das vezes (menos em quem tem defesa alta). A ficha de defesa continua
+  segurando dano e virando HP. A postura Proteger, que defendia mais,
+  agora faz os nossos levarem 20% menos.
+- **O golpe do jogador sempre entra**: o Q mira sozinho o rival de pé mais
+  perto até 1,8 vez o alcance, de qualquer lado; o boneco vira pra ele no
+  ato e o golpe acerta se ele ainda estiver nesse raio no impacto. Apertar
+  Q com o braço ainda indo guarda o próximo golpe (sai emendado). O F faz
+  o mesmo com o agarrão.
+- **O movimento**: quem bate dá um passo de entrada até o impacto (8 px a
+  IA, 16 o jogador) em vez de socar parado; o jogador anda a 35% durante o
+  golpe (pé plantado); quem apanha é empurrado pra trás (soco 4 px, chute
+  9). Golpes emendados em menos de 0,7 s seguem a série direto, gancho,
+  direto, uppercut, jab (`bonecos3.js`, `SERIE`), trocando de mão.
+- **Agarrão**: entra com 0,75 + (força − defesa)/40, de 55% a 95% (era
+  0,5, de 20% a 85%), segura de 2,4 a 3,4 s (era 1,6 a 2,4), puxa o
+  agarrado colado, o agarrado leva 1,8× (era 1,5×), a joelhada dá 1,5×
+  (era 1,2×), quem segura só larga com pancada de 14+ (era 9) e a espera
+  entre agarrões caiu (1 s depois de tentar, 1,5 s depois de soltar). A
+  IA tenta agarrar um pouco mais (0,2 em vez de 0,14).
+- **Calibragem**: sem bloqueio a briga 10×14 de bairro caiu de 55 s pra
+  uns 45 s mesmo com o dano por golpe a 90% (`DANO_SEM_DEFESA`). No teste, 24 de
+  24 golpes do jogador entraram (oito direções, até 1,6 alcance) e 28 de
+  30 agarrões pegaram.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

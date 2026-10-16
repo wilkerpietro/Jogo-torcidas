@@ -876,8 +876,8 @@ TO.diaJogo.ponte = (function(){
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
       : tres
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
-      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>V</kbd> postura · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>F</kbd> agarrar · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>C</kbd> câmera · arrastar gira · roda aproxima')
+      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>V</kbd> postura · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
   }
 
   /* =======================================================
@@ -1199,20 +1199,19 @@ TO.diaJogo.ponte = (function(){
     bomba.addEventListener('pointerup', soltaBomba);
     bomba.addEventListener('pointercancel', soltaBomba);
     bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
-    /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
-       ficam do outro lado, nos números 2 e 3 */
-    const defender = botao(_t('DEFENDER'), 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
+    /* Q bate, F agarra, R recua; pedra e bomba ficam do outro lado,
+       nos números 2 e 3. A DEFESA SAIU (dono, 16/10/2026): o lugar dela
+       na linha de cima ficou pro AGARRAR */
     /* OS MAIS USADOS NA LINHA DE CIMA, MAIORES (pedido do dono,
-       08/09/2026): bater, defender, pedra e bomba; o resto embaixo */
+       08/09/2026): bater, agarrar, pedra e bomba; o resto embaixo */
     const principais = document.createElement('div');
     principais.className = 'pad-acoes pad-principais';
     principais.append(
       disparo('q',_t('BATER'), ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
-      defender);
+      disparo('f',_t('AGARRAR'),()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }));
     acoes.append(
       disparo('r',_t('RECUAR'),()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
       disparo('v',_t('POSTURA'),()=>{ if(J){ C.alternarPostura(J); atualizarBotoes(); } }),
-      disparo('f',_t('AGARRAR'),()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
       disparo('c',_t('CHAMAR'),()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
       /* FUGIR SAIU DO F (que virou agarrar) e foi pro X */
       disparo('x',_t('FUGIR'), ()=>{ mandarCorrer(); }),
@@ -1295,14 +1294,12 @@ TO.diaJogo.ponte = (function(){
       if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
       if(k==='f'){ const l=liderVivo(); if(l) C.agarrar(J, l); }
       if(k==='c'){ C.chamar(J, C.ladoDoJogador(J)); }
-      /* E é segurar: a defesa é lida por `teclas.e` no moverLider;
-         SOLTAR o E na hora do golpe é o contragolpe */
       if(k==='2') C.arremessar(J,'pedra');
       if(k==='3') alternarMira();
       if(k==='escape') cancelarMira();
       if(k==='enter') mandarEntrarOuSair();
     });
-    addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k==='e' && teclas.e && J) C.soltarDefesa(J, liderVivo()); teclas[k]=false; });
+    addEventListener('keyup',e=>{ teclas[e.key.toLowerCase()]=false; });
 
     /* rodinha = zoom. `passive:false` porque sem o preventDefault a
        página rola junto e o zoom vira briga com o scroll. O passo é

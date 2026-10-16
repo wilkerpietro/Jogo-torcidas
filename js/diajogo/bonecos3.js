@@ -1250,6 +1250,7 @@ TO.diaJogo.bonecos3 = (function(){
     chutador:{jab:.30, direto:.28, gancho:.22, uppercut:.08, empurrao:.12}
   };
   const CHUTES = ['chute','chuteBaixo','joelhada'];
+  const SERIE = ['direto','gancho','direto','uppercut','jab'];
   /* O GOLPE É DO COMBATE (`d.ataque`: soco 0,36 s com impacto aos
      0,15; chute 0,58 s com impacto aos 0,28 — `ataque.tipo` diz qual).
      Aqui só se escolhe COMO ele sai — jab, direto, gancho… pelo
@@ -1264,6 +1265,10 @@ TO.diaJogo.bonecos3 = (function(){
     else if(ref.tipo==='joelhada') tipo = 'joelhada';
     else if(ref.tipo==='agarrar') tipo = 'agarrar';
     else if(ref.tipo==='contra') tipo = vr===2 ? 'gancho' : 'direto';
+    /* A SEQUÊNCIA (dono, 16/10/2026): golpe emendado no outro segue a
+       série de quem briga de verdade — um-dois, gancho, direto, por
+       baixo — trocando de mão a cada um */
+    else if(ref.serie > 0) tipo = SERIE[(ref.serie - 1) % SERIE.length];
     else {
       const pesos = REPERTORIO[e.repertorio] || REPERTORIO.misto;
       let r = Math.random(); tipo = 'jab';
