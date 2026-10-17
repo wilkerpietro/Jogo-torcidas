@@ -2920,19 +2920,39 @@ header.capa-cidade{background-size:cover; background-position:center;
 .social-toast.saindo{opacity:0;transform:translateX(14px)}
 .social-toast .post-torcida{padding:11px 0 9px;border-bottom:0}
 .social-toast .post-torcida.nova{box-shadow:none;padding-left:0}
-/* NO CELULAR O AVISO SOBE DE BAIXO (dono, 17/10/2026): a coluna da rede
-   não cabe, então o post novo aparece no pé da tela, por cima do feed,
-   ao lado da coluna de ícones */
+/* A FAIXA DA REDE (dono, 17/10/2026): só em tela estreita; o ticker sai
+   e a faixa fica no pé do feed, sem cobrir nada */
+.feed-rede-faixa{display:none}
 @media (max-width:1000px){
-  .social-toasts{left:56px;right:8px;top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto;max-width:none;
-    flex-direction:column-reverse;z-index:62}
-  .social-toast{max-height:40vh;transform:translateY(14px)}
-  .social-toast.saindo{transform:translateY(14px)}
-  .social-toast:nth-child(n+3){display:none}   /* no máximo dois de cada vez */
-  .social-toast .encolhida{margin-left:auto;margin-right:auto}
-  .social-toast .post-comentarios{display:none}
-  .social-toast .post-legenda,.social-toast .post-texto{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  .feed-ticker{display:none}
+  .feed-rede-faixa{display:block;position:relative;flex:none;height:20vh;min-height:92px;overflow:hidden;
+    background:#101012;border-top:1px solid var(--linha);cursor:pointer}
+  .feed-rede-faixa .rf-rot{position:absolute;inset:0;display:grid;place-items:center;font:700 10px/1 var(--mono);
+    letter-spacing:.2em;text-transform:uppercase;color:#ffffff30;pointer-events:none}
+  .feed-rede-faixa.tem .rf-rot{display:none}
+  .rf-card{position:absolute;inset:6px 8px;display:flex;flex-direction:column;justify-content:center;gap:2px;
+    padding:6px 12px;background:#1b1b1f;border:1px solid #3a3a40;border-left:3px solid var(--rubro-vivo,#c0392b);
+    border-radius:8px;overflow:hidden;transform:translateX(-112%);transition:transform .45s ease}
+  .rf-card.entra{transform:none}
+  .rf-card.sai{transform:translateX(112%)}
+  .rf-quem{font:700 13px/1.2 var(--corpo);color:var(--texto)}
+  .rf-arroba{font:11px/1.2 var(--mono);color:var(--fraco)}
+  .rf-card p{margin:2px 0 0;font:13px/1.35 var(--corpo);color:var(--texto);display:-webkit-box;
+    -webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  /* o recorte de jornal, apertado pra caber na faixa */
+  .rf-jornal{padding:0;border:0;border-left:0;background:none;border-radius:6px}
+  .rf-jornal .gz{margin:0;height:100%;box-sizing:border-box;padding:5px 10px 5px;overflow:hidden;display:flex;flex-direction:column}
+  .rf-jornal .gz-cabeca{padding-bottom:2px}
+  .rf-jornal .nome-jornal{font-size:13px}
+  .rf-jornal .gz-manchete{border-bottom:0;padding:3px 0 0;min-height:0;overflow:hidden}
+  .rf-jornal .gz-manchete .chapeu{font-size:8px;margin-bottom:1px}
+  .rf-jornal .gz-manchete h2{font-size:14px;line-height:1.08;display:-webkit-box;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2;overflow:hidden}
+  .rf-jornal .placar-grande{margin-top:3px;padding:2px 0;gap:6px}
+  .rf-jornal .placar-grande .time{font-size:11px}
+  .rf-jornal .placar-grande .n{font-size:15px}
 }
+@media (prefers-reduced-motion:reduce){ .rf-card{transition:none} }
 @media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }
 /* O MODO DE JOGO na seleção (10/10/2026): dois cartões lado a lado */
 .sel-modos{display:grid;grid-template-columns:1fr 1fr;gap:12px}

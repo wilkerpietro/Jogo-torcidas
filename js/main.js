@@ -1109,7 +1109,7 @@
     return (e.feed || []).filter(m => m.kind !== 'confronto' &&
       (m.peso === 'decisao' || !(MATERIA_DE_JORNAL.has(m.kind) || naRede.has(m.id))));
   }
-  let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null;
+  let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null, noFeedRede = null;
   let feedVistas = new Map();
 
   function pintarFeed(){
@@ -1199,7 +1199,13 @@
        (o feed é o jogo; a rede segue a um toque, em Notícias). */
     const colunas = el('div',{class:'feed-colunas'});
     colunas.append(rolo, montarSocialLado());
-    corpo.append(barra, noFeedTicker, colunas);
+    /* A FAIXA DA REDE NO CELULAR (dono, 17/10/2026): o aviso por cima do
+       feed atrapalhava o jogo. Em tela estreita o ticker sai e a rede
+       ganha uma faixa de 20% da altura no pé do feed, sem sobrepor nada
+       (ver `proximaFaixa`) */
+    noFeedRede = el('div',{class:'feed-rede-faixa', html:`<span class="rf-rot">${_t('Rede social')}</span>`});
+    noFeedRede.addEventListener('click', ()=>{ subNoticias = 'mensagens'; abrirPainel('noticias'); });
+    corpo.append(barra, noFeedTicker, colunas, noFeedRede);
     pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
@@ -1357,7 +1363,8 @@
      inteiro de vez em quando (troca de dia, painel que fecha), e a
      coluna nasce de novo — sem isto, o post novo ia virar "já visto" e
      o aviso do canto, que mora no <body>, ia junto com a coluna velha */
-  const REDE = {conhecidos:new Set(), iniciado:false, naoVistos:0, toastFila:[], toastTimer:null, toastsEl:null};
+  const REDE = {conhecidos:new Set(), iniciado:false, naoVistos:0, toastFila:[], toastTimer:null, toastsEl:null, faixaFila:[], faixaTimer:null};
+  const emCelular = () => matchMedia('(max-width:1000px)').matches;
   function caixaDeToasts(){
     if(!REDE.toastsEl || !REDE.toastsEl.isConnected){
       REDE.toastsEl = el('div',{class:'social-toasts'});
@@ -1367,10 +1374,9 @@
   }
   let redeRecolhida = false;
   try{ redeRecolhida = localStorage.getItem('to.redeRecolhida') === '1'; }catch(_){}
-  /* A COLUNA FORA DA TELA CONTA COMO RECOLHIDA (dono, 17/10/2026: "as
-     mensagens da rede social não aparecem na tela do feed quando é
-     mobile"): no celular (e em tela estreita) a coluna nem se desenha,
-     então o post novo vira aviso — embaixo, no celular (paineis.css) */
+  /* A COLUNA FORA DA TELA CONTA COMO RECOLHIDA: em tela estreita ela
+     nem se desenha, e o post novo vai pra faixa do pé do feed
+     (`proximaFaixa`) em vez do aviso do canto */
   function redeEscondida(){
     return redeRecolhida || !!(socialLado && !socialLado.asd.offsetParent);
   }
@@ -1414,41 +1420,67 @@
      ele ainda fica 1,5 s. */
   const ctxToast = {menu:{aberto:null}, aoMudar:()=>{},
                     aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
-  /* O POST INTEIRO CABE NA TELA DO CELULAR (dono, 17/10/2026: "reduza o
-     tamanho do post pra caber sempre na tela"): o cartaz/imagem é o que
-     estica o post; ele estreita (e com isso encolhe) até o aviso caber em 40% da
-     altura, e cabeçalho, números e legenda ficam no tamanho de leitura */
-  const TOAST_ALTURA_CEL = 0.4;
-  function encolherToast(t){
-    if(!matchMedia('(max-width:1000px)').matches) return;
-    const lim = innerHeight * TOAST_ALTURA_CEL - 4;
-    const fig = t.querySelector('.post-torcida > figure, .post-torcida > .post-imagem, .post-torcida > img');
-    if(!fig) return;
-    /* o cartaz guarda a proporção pela largura: estreitar é encolher. A
-       legenda reflui com a largura nova, então confere de novo (até 3) */
-    for(let i = 0; i < 3; i++){
-      const h = t.scrollHeight;   // o aviso já vem cortado no max-height
-      if(h <= lim) return;
-      const fh = fig.offsetHeight, fw = fig.offsetWidth, resto = h - fh;
-      const k = Math.max(0.25, (lim - resto) / fh);
-      if(k >= 1 || fw < 60) return;
-      fig.style.width = Math.floor(fw * k) + 'px'; fig.classList.add('encolhida');
+  /* =======================================================
+     A FAIXA DA REDE NO CELULAR (dono, 17/10/2026)
+     "É melhor as mensagens ocuparem um espaço que não sobrepõe o feed":
+     sem ticker, uma faixa de 20% da altura no pé do feed. Uma postagem
+     por vez, entrando da esquerda e saindo pela direita, parada 3 s.
+     Post de torcida: só o texto. Post de jornal: o recorte de jornal
+     (o mesmo papel da Gazeta, css/gazeta.css), ajustado à faixa.
+     ======================================================= */
+  const FAIXA_PARADA = 3000, FAIXA_ANIM = 450;
+  function cardDaFaixa(e, m){
+    const F = TO.feed, jornal = m.jornal && (F.JORNAIS || {})[m.jornal];
+    const card = el('div',{class:'rf-card' + (jornal ? ' rf-jornal' : '')});
+    if(jornal){
+      const c = m.card || {}, nomeClube = id => (TO.mundo.time(id) || {}).nome || id || '';
+      let miolo = '';
+      if(c.t === 'jogo') miolo = `<div class="placar-grande"><span class="time">${escHTML(nomeClube(c.c))}</span>`+
+        `<span class="n">${c.gc}</span><span class="n">${c.gf}</span><span class="time">${escHTML(nomeClube(c.f))}</span></div>`;
+      else if(c.t === 'briga' && c.a && c.b) miolo = `<div class="placar-grande"><span class="time">${escHTML(c.a.nome)}</span>`+
+        `<span class="n">×</span><span class="time">${escHTML(c.b.nome)}</span></div>`;
+      card.innerHTML = `<article class="gz"><div class="gz-cabeca"><div class="nome-jornal">${escHTML(jornal.nome)}</div></div>`+
+        `<div class="gz-manchete"><div class="chapeu">${escHTML(ROT_MSG[m.tipo] || '')}</div>`+
+        `<h2>${linkificarNomes(m.texto)}</h2>${miolo}</div></article>`;
+    } else {
+      const o = TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome};
+      card.innerHTML = `<b class="rf-quem">${escHTML(m.nome || o.nome || '')}</b>`+
+        `<span class="rf-arroba">${escHTML(arrobaPost(o))}</span>`+
+        `<p>${escHTML(m.texto)}</p>`;
     }
+    return card;
   }
+  function proximaFaixa(){
+    const e = E(), cx = noFeedRede;
+    if(REDE.faixaTimer || !e || !cx || !cx.isConnected) return;
+    const id = REDE.faixaFila.shift();
+    if(id == null) return;
+    const m = (e.mensagens || []).find(x => x.id === id);
+    if(!m){ proximaFaixa(); return; }
+    const card = cardDaFaixa(e, m);
+    cx.appendChild(card); cx.classList.add('tem');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>card.classList.add('entra')));
+    REDE.faixaTimer = setTimeout(()=>{
+      card.classList.remove('entra'); card.classList.add('sai');
+      REDE.faixaTimer = setTimeout(()=>{
+        card.remove(); REDE.faixaTimer = null;
+        cx.classList.toggle('tem', !!cx.querySelector('.rf-card'));
+        proximaFaixa();
+      }, FAIXA_ANIM + 50);
+    }, FAIXA_ANIM + FAIXA_PARADA);
+  }
+
   function mostrarToast(e, m){
     const t = el('div',{class:'social-toast feed-social'});
     t.appendChild(montarPost(e, m, ctxToast));
     t.addEventListener('click', ev=>{ fecharMenuPost(ctxToast, ev.target); });
     caixaDeToasts().prepend(t);
-    encolherToast(t);
     requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('vivo')));
     let relogio = null;
     const sair = ()=>{ t.classList.remove('vivo'); t.classList.add('saindo'); setTimeout(()=>t.remove(), 450); };
     const armar = ms => { clearTimeout(relogio); relogio = setTimeout(sair, ms); };
     t.addEventListener('mouseenter', ()=>clearTimeout(relogio));
     t.addEventListener('mouseleave', ()=>armar(1500));
-    /* no dedo não há "mouse em cima": tocar no aviso segura ele mais 4 s */
-    t.addEventListener('touchstart', ()=>armar(4000), {passive:true});
     armar(TOAST_VIDA);
   }
   /* o que muda o desenho de um post que já está na coluna */
@@ -1474,8 +1506,12 @@
       if(!novos.length) return;
       REDE.naoVistos += novos.length; pintarTira(S);
       if(painel === 'noticias' && subNoticias === 'mensagens') return;
-      for(const m of novos) if(F.importante && F.importante(e, m)) REDE.toastFila.push(m.id);
-      if(REDE.toastFila.length && !REDE.toastTimer) proximoToast();
+      const cel = emCelular();
+      for(const m of novos) if(F.importante && F.importante(e, m)) (cel ? REDE.faixaFila : REDE.toastFila).push(m.id);
+      if(cel){
+        if(REDE.faixaFila.length > 6) REDE.faixaFila.splice(0, REDE.faixaFila.length - 6);
+        proximaFaixa();
+      } else if(REDE.toastFila.length && !REDE.toastTimer) proximoToast();
       return;
     }
     for(const m of vis) REDE.conhecidos.add(m.id);

@@ -11161,7 +11161,34 @@ efetivo também."
   24 golpes do jogador entraram (oito direções, até 1,6 alcance) e 28 de
   30 agarrões pegaram.
 
-## Rede social no celular: o post novo vira aviso embaixo (dono, 17/10/2026)
+## Rede social no celular: faixa de 20% no pé do feed, sem ticker (dono, 17/10/2026)
+
+Pedido: o aviso por cima do feed "atrapalha a dinâmica do jogo"; "remova o
+ticker de notícias pra ganhar espaço e os posts da rede social ganham um
+espaço em torno de 20% da tela na parte de baixo que vai mostrar só os
+textos, sem imagem mais pros posts da torcida, vai gerar imagem somente
+pros posts dos jornais [...] com o visual antigo de página de jornal.
+Somente uma notícia aparece por vez e desliza da esquerda pra direita,
+parando 3s".
+
+- **Só em tela estreita (até 1000 px)**, onde a coluna da rede não cabe: o
+  ticker de manchetes sai e entra a faixa (`.feed-rede-faixa`, 20% da
+  altura) no pé do feed, como parte do layout — nada fica por cima. No
+  computador continua o ticker e a coluna ao lado, com o aviso do canto
+  quando a rede está recolhida.
+- **Um post por vez** (`proximaFaixa`, `js/main.js`): entra pela esquerda,
+  fica 3 s e sai pela direita; os seguintes esperam na fila (até 6; o mais
+  velho cai). Entram os mesmos posts que viravam aviso (os importantes pra
+  nós) e nenhum com Notícias → Mensagens aberta. Tocar na faixa abre a rede.
+- **Post de torcida**: só o texto (nome, arroba e até 3 linhas), sem arte.
+- **Post de jornal**: o recorte de página de jornal da Gazeta (`.gz`, o
+  papel e a tipografia de `css/gazeta.css`) apertado pra caber: nome do
+  jornal, manchete em até 2 linhas e o placar (jogo) ou os dois lados
+  (briga).
+- O aviso por cima do feed e o encolhimento do cartaz, feitos hoje de
+  manhã, saíram do celular.
+
+## Rede social no celular: [substituído acima: aviso embaixo] (dono, 17/10/2026)
 
 Pedido: "As mensagens da rede social não aparecem na tela do feed quando é
 mobile, corrija isso. Elas devem aparecer na parte de baixo como mensagem
