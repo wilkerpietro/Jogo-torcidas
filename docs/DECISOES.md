@@ -11195,6 +11195,14 @@ parando 3s".
   compartilhamentos. A tela passou a usar `100dvh` (a altura visível, sem a
   barra do navegador) e, em aparelho de toque, a faixa sobe 68 px pra ficar
   acima da barra flutuante do Safari.
+- **E por fim** (dono: "continua ruim, é melhor que volte a sobrepor o feed
+  em uma faixa que não seja exatamente a borda inferior, mas um pouco acima
+  pra livrar da barra de pesquisa do navegador"): a faixa voltou a flutuar
+  por cima do feed (`position:fixed`), o cartão com a altura do conteúdo,
+  14 px acima da borda — 84 px em aparelho de toque, livre da barra do
+  Safari. Vazia, ela não aparece nem pega toque; fica abaixo dos painéis e
+  some nas cenas; o feed ganhou folga embaixo pra rolar até sair de trás
+  dela. O ticker continua fora no celular.
 
 ## Rede social no celular: [substituído acima: aviso embaixo] (dono, 17/10/2026)
 
