@@ -1414,11 +1414,33 @@
      ele ainda fica 1,5 s. */
   const ctxToast = {menu:{aberto:null}, aoMudar:()=>{},
                     aoLer:aba=>{ subNoticias = aba; abrirPainel('noticias'); }};
+  /* O POST INTEIRO CABE NA TELA DO CELULAR (dono, 17/10/2026: "reduza o
+     tamanho do post pra caber sempre na tela"): o cartaz/imagem é o que
+     estica o post; ele estreita (e com isso encolhe) até o aviso caber em 40% da
+     altura, e cabeçalho, números e legenda ficam no tamanho de leitura */
+  const TOAST_ALTURA_CEL = 0.4;
+  function encolherToast(t){
+    if(!matchMedia('(max-width:1000px)').matches) return;
+    const lim = innerHeight * TOAST_ALTURA_CEL - 4;
+    const fig = t.querySelector('.post-torcida > figure, .post-torcida > .post-imagem, .post-torcida > img');
+    if(!fig) return;
+    /* o cartaz guarda a proporção pela largura: estreitar é encolher. A
+       legenda reflui com a largura nova, então confere de novo (até 3) */
+    for(let i = 0; i < 3; i++){
+      const h = t.scrollHeight;   // o aviso já vem cortado no max-height
+      if(h <= lim) return;
+      const fh = fig.offsetHeight, fw = fig.offsetWidth, resto = h - fh;
+      const k = Math.max(0.25, (lim - resto) / fh);
+      if(k >= 1 || fw < 60) return;
+      fig.style.width = Math.floor(fw * k) + 'px'; fig.classList.add('encolhida');
+    }
+  }
   function mostrarToast(e, m){
     const t = el('div',{class:'social-toast feed-social'});
     t.appendChild(montarPost(e, m, ctxToast));
     t.addEventListener('click', ev=>{ fecharMenuPost(ctxToast, ev.target); });
     caixaDeToasts().prepend(t);
+    encolherToast(t);
     requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('vivo')));
     let relogio = null;
     const sair = ()=>{ t.classList.remove('vivo'); t.classList.add('saindo'); setTimeout(()=>t.remove(), 450); };

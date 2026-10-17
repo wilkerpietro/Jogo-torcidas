@@ -11177,6 +11177,12 @@ social tá ocultada."
   Tocar no aviso segura ele mais 4 s.
 - Com Notícias → Mensagens aberta (a própria rede na tela), não há aviso,
   no celular e no computador.
+- **O post cabe inteiro** (dono, 17/10/2026: "reduza o tamanho do post pra
+  caber sempre na tela"): o cartaz é o que estica o post, então ele
+  estreita (e encolhe junto, na mesma proporção) até o aviso caber nos 40%
+  da altura; cabeçalho, números e legenda ficam no tamanho de leitura
+  (`encolherToast`). A legenda vai até 3 linhas e os comentários não
+  entram no aviso. Testado em 390×844 e 360×640.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

@@ -2929,6 +2929,9 @@ header.capa-cidade{background-size:cover; background-position:center;
   .social-toast{max-height:40vh;transform:translateY(14px)}
   .social-toast.saindo{transform:translateY(14px)}
   .social-toast:nth-child(n+3){display:none}   /* no máximo dois de cada vez */
+  .social-toast .encolhida{margin-left:auto;margin-right:auto}
+  .social-toast .post-comentarios{display:none}
+  .social-toast .post-legenda,.social-toast .post-texto{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 }
 @media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }
 /* O MODO DE JOGO na seleção (10/10/2026): dois cartões lado a lado */
