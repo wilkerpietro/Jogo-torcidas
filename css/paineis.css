@@ -2920,6 +2920,16 @@ header.capa-cidade{background-size:cover; background-position:center;
 .social-toast.saindo{opacity:0;transform:translateX(14px)}
 .social-toast .post-torcida{padding:11px 0 9px;border-bottom:0}
 .social-toast .post-torcida.nova{box-shadow:none;padding-left:0}
+/* NO CELULAR O AVISO SOBE DE BAIXO (dono, 17/10/2026): a coluna da rede
+   não cabe, então o post novo aparece no pé da tela, por cima do feed,
+   ao lado da coluna de ícones */
+@media (max-width:1000px){
+  .social-toasts{left:56px;right:8px;top:auto;bottom:calc(10px + env(safe-area-inset-bottom,0px));width:auto;max-width:none;
+    flex-direction:column-reverse;z-index:62}
+  .social-toast{max-height:40vh;transform:translateY(14px)}
+  .social-toast.saindo{transform:translateY(14px)}
+  .social-toast:nth-child(n+3){display:none}   /* no máximo dois de cada vez */
+}
 @media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }
 /* O MODO DE JOGO na seleção (10/10/2026): dois cartões lado a lado */
 .sel-modos{display:grid;grid-template-columns:1fr 1fr;gap:12px}

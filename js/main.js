@@ -1367,6 +1367,13 @@
   }
   let redeRecolhida = false;
   try{ redeRecolhida = localStorage.getItem('to.redeRecolhida') === '1'; }catch(_){}
+  /* A COLUNA FORA DA TELA CONTA COMO RECOLHIDA (dono, 17/10/2026: "as
+     mensagens da rede social não aparecem na tela do feed quando é
+     mobile"): no celular (e em tela estreita) a coluna nem se desenha,
+     então o post novo vira aviso — embaixo, no celular (paineis.css) */
+  function redeEscondida(){
+    return redeRecolhida || !!(socialLado && !socialLado.asd.offsetParent);
+  }
   function alternarRede(recolher){
     const S = socialLado;
     redeRecolhida = !!recolher;
@@ -1394,7 +1401,7 @@
   const TOAST_VIDA = 5000;
   function proximoToast(){
     const e = E();
-    if(!e || !REDE.toastFila.length || !redeRecolhida){ REDE.toastTimer = null; return; }
+    if(!e || !REDE.toastFila.length || !redeEscondida()){ REDE.toastTimer = null; return; }
     const idT = REDE.toastFila.shift();
     const m = (e.mensagens || []).find(x => x.id === idT);
     if(m) mostrarToast(e, m);
@@ -1418,6 +1425,8 @@
     const armar = ms => { clearTimeout(relogio); relogio = setTimeout(sair, ms); };
     t.addEventListener('mouseenter', ()=>clearTimeout(relogio));
     t.addEventListener('mouseleave', ()=>armar(1500));
+    /* no dedo não há "mouse em cima": tocar no aviso segura ele mais 4 s */
+    t.addEventListener('touchstart', ()=>armar(4000), {passive:true});
     armar(TOAST_VIDA);
   }
   /* o que muda o desenho de um post que já está na coluna */
@@ -1425,16 +1434,15 @@
   function atualizarSocialLado(refazer){
     const S = socialLado, e = E();
     if(!S || !e || !S.lista.isConnected) return;
-    /* fora da tela (celular, coluna escondida) não gasta nada */
-    if(!S.asd.offsetParent) { S.pronto = false; return; }
     const F = TO.feed;
     const vis = (e.mensagens || []).filter(m => !(F.oculto && F.oculto(e, m))).slice(0, SOCIAL_LADO_MAX);
     /* o que já estava na rede quando o jogo abriu não é novidade */
     if(!REDE.iniciado){ for(const m of vis) REDE.conhecidos.add(m.id); REDE.iniciado = true; }
     if(REDE.conhecidos.size > 3000) REDE.conhecidos = new Set(vis.map(m => m.id));
-    if(redeRecolhida){
-      /* recolhida: a coluna não se desenha; o post novo conta na tira e,
-         se for importante pra nós, vira aviso no canto */
+    if(redeEscondida()){
+      /* recolhida (ou fora da tela, no celular): a coluna não se
+         desenha; o post novo conta na tira e, se for importante pra nós,
+         vira aviso — menos com a própria rede aberta em Notícias */
       S.pronto = false;
       const novos = [];
       for(let i = vis.length - 1; i >= 0; i--){
@@ -1443,6 +1451,7 @@
       }
       if(!novos.length) return;
       REDE.naoVistos += novos.length; pintarTira(S);
+      if(painel === 'noticias' && subNoticias === 'mensagens') return;
       for(const m of novos) if(F.importante && F.importante(e, m)) REDE.toastFila.push(m.id);
       if(REDE.toastFila.length && !REDE.toastTimer) proximoToast();
       return;

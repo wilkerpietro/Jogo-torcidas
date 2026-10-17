@@ -11161,6 +11161,23 @@ efetivo também."
   24 golpes do jogador entraram (oito direções, até 1,6 alcance) e 28 de
   30 agarrões pegaram.
 
+## Rede social no celular: o post novo vira aviso embaixo (dono, 17/10/2026)
+
+Pedido: "As mensagens da rede social não aparecem na tela do feed quando é
+mobile, corrija isso. Elas devem aparecer na parte de baixo como mensagem
+temporária, similar ao que ocorre na versão de computador quando a rede
+social tá ocultada."
+
+- Em tela de até 1000 px a coluna da rede não se desenha, e
+  `atualizarSocialLado` saía na hora, sem avisar nada. Agora a coluna fora
+  da tela conta como recolhida (`redeEscondida()` em `js/main.js`): o post
+  novo importante vira o mesmo aviso do computador (o post inteiro, 5 s).
+- No celular o aviso sobe do pé da tela, ao lado da coluna de ícones, com
+  até 40% da altura e no máximo dois de cada vez (`css/paineis.css`).
+  Tocar no aviso segura ele mais 4 s.
+- Com Notícias → Mensagens aberta (a própria rede na tela), não há aviso,
+  no celular e no computador.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
