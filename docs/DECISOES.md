@@ -11187,6 +11187,14 @@ parando 3s".
   (briga).
 - O aviso por cima do feed e o encolhimento do cartaz, feitos hoje de
   manhã, saíram do celular.
+- **Depois, no mesmo dia** (dono: "deixe o visual dos posts da rede social
+  mais estilizada como era antes, com likes, arroba e etc" e "posicione
+  mais pra cima"): o post de torcida na faixa é o cartão da rede
+  (`montarPost`) sem a arte, sem menu e sem comentários — avatar, nome,
+  zona, @, quando, legenda em 2 linhas e curtidas, comentários e
+  compartilhamentos. A tela passou a usar `100dvh` (a altura visível, sem a
+  barra do navegador) e, em aparelho de toque, a faixa sobe 68 px pra ficar
+  acima da barra flutuante do Safari.
 
 ## Rede social no celular: [substituído acima: aviso embaixo] (dono, 17/10/2026)
 

@@ -79,6 +79,8 @@ input[type=checkbox],input[type=radio]{background:initial;border:initial}
     "tela"
     "ticker";
   height:100vh; min-height:100vh; overflow:hidden;
+  /* a altura que se vê de fato (sem a barra do navegador do celular) */
+  height:100dvh; min-height:100dvh;
 }
 
 /* ---------- barra lateral ---------- */

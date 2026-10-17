@@ -1443,10 +1443,17 @@
         `<div class="gz-manchete"><div class="chapeu">${escHTML(ROT_MSG[m.tipo] || '')}</div>`+
         `<h2>${linkificarNomes(m.texto)}</h2>${miolo}</div></article>`;
     } else {
-      const o = TO.mundo.torcida(m.de) || {id:m.de, nome:m.nome};
-      card.innerHTML = `<b class="rf-quem">${escHTML(m.nome || o.nome || '')}</b>`+
-        `<span class="rf-arroba">${escHTML(arrobaPost(o))}</span>`+
-        `<p>${escHTML(m.texto)}</p>`;
+      /* O POST COM CARA DE POST (dono, 17/10/2026: "mais estilizada como
+         era antes, com likes, arroba e etc"): o mesmo cartão da rede
+         (montarPost) — avatar, nome, zona, @, quando, curtidas,
+         comentários e compartilhamentos —, só sem a arte, sem o menu e
+         sem os comentários, e com a legenda antes dos números */
+      card.classList.add('rf-post');
+      const art = montarPost(e, m, ctxToast);
+      art.querySelectorAll('.cartaz, .post-menu, .post-comentarios, .rec-botoes, .msg-efeitos').forEach(x => x.remove());
+      const pe = art.querySelector('.post-pe');
+      if(pe) art.appendChild(pe);
+      card.appendChild(art);
     }
     return card;
   }

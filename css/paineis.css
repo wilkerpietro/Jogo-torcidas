@@ -2930,15 +2930,26 @@ header.capa-cidade{background-size:cover; background-position:center;
   .feed-rede-faixa .rf-rot{position:absolute;inset:0;display:grid;place-items:center;font:700 10px/1 var(--mono);
     letter-spacing:.2em;text-transform:uppercase;color:#ffffff30;pointer-events:none}
   .feed-rede-faixa.tem .rf-rot{display:none}
+  /* MAIS PRA CIMA (dono, 17/10/2026): no celular a barra flutuante do
+     navegador (Safari) cobria a faixa. Num aparelho de toque a faixa
+     sobe o tamanho da barra, e o vão fica embaixo dela */
+  @media (pointer:coarse){
+    .feed-rede-faixa{margin-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+  }
   .rf-card{position:absolute;inset:6px 8px;display:flex;flex-direction:column;justify-content:center;gap:2px;
     padding:6px 12px;background:#1b1b1f;border:1px solid #3a3a40;border-left:3px solid var(--rubro-vivo,#c0392b);
     border-radius:8px;overflow:hidden;transform:translateX(-112%);transition:transform .45s ease}
   .rf-card.entra{transform:none}
   .rf-card.sai{transform:translateX(112%)}
-  .rf-quem{font:700 13px/1.2 var(--corpo);color:var(--texto)}
-  .rf-arroba{font:11px/1.2 var(--mono);color:var(--fraco)}
-  .rf-card p{margin:2px 0 0;font:13px/1.35 var(--corpo);color:var(--texto);display:-webkit-box;
-    -webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  /* o post de torcida: o cartão da rede, apertado (sem arte) */
+  .rf-post{justify-content:flex-start;padding:4px 12px}
+  .rf-post .post-torcida{padding:4px 0 0;border-bottom:0;display:flex;flex-direction:column;gap:3px;min-height:0;height:100%}
+  .rf-post .post-torcida.nova{box-shadow:none;padding-left:0}
+  .rf-post .post-cab{margin-bottom:0}
+  .rf-post .post-avatar{width:30px;height:30px;flex-basis:30px}
+  .rf-post .post-texto{margin:0;font-size:13px;line-height:1.32;display:-webkit-box;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2;overflow:hidden;flex:none}
+  .rf-post .post-pe{margin-top:auto}
   /* o recorte de jornal, apertado pra caber na faixa */
   .rf-jornal{padding:0;border:0;border-left:0;background:none;border-radius:6px}
   .rf-jornal .gz{margin:0;height:100%;box-sizing:border-box;padding:5px 10px 5px;overflow:hidden;display:flex;flex-direction:column}
