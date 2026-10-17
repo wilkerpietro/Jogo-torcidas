@@ -2184,10 +2184,11 @@
         (Date.now() - (d.t0||Date.now()))/1000 * MIN_POR_SEG);
       d.t0 = Date.now();
     }
-    /* o padrão da casa é 4×; na arquibancada é 1× (10/10/2026): a
-       tensão pede tempo pra amenizar e provocar — o jogo inteiro leva
-       ~22 s, e o botão de velocidade continua ali */
-    if(!d.vel) d.vel = estadio ? 1 : 4;
+    /* o padrão é 4× em qualquer cena da partida (dono, 17/10/2026: "o
+       tempo durante a partida tem que ser 4x de padrão e não 1x"; na
+       arquibancada era 1× desde 10/10/2026). O botão de velocidade
+       continua ali pra quem quiser mais tempo pra amenizar e provocar */
+    if(!d.vel) d.vel = 4;
     const caixa = el('div',{class:'partida-live'});
     const placar = el('div',{class:'partida-placar'});
     const linha = el('div',{class:'partida-linha'});
@@ -3230,7 +3231,7 @@
     m.dados.iniciada = true;
     if(m.dados.minAcum === undefined){
       m.dados.minAcum = 0; m.dados.t0 = Date.now();
-      m.dados.vel = m.dados.vel || 1; m.dados.pausada = false;
+      m.dados.vel = m.dados.vel || 4; m.dados.pausada = false;
     }
     /* o mapa sai e a arquibancada entra no lugar dele (10/10/2026) */
     if(ITN.mapa) ITN.mapa.el.hidden = true;

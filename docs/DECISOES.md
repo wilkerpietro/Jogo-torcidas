@@ -11184,6 +11184,14 @@ social tá ocultada."
   (`encolherToast`). A legenda vai até 3 linhas e os comentários não
   entram no aviso. Testado em 390×844 e 360×640.
 
+## A partida roda a 4× de padrão, também na arquibancada (dono, 17/10/2026)
+
+Pedido: "O tempo durante a partida tem que ser 4x de padrão e não 1x". Desde
+10/10/2026 a partida dentro da cena da arquibancada abria a 1× (pra dar
+tempo de amenizar e provocar). Agora abre a 4× em qualquer cena
+(`js/main.js`, `d.vel`), e o botão de velocidade (1× → 2× → 4×) continua
+ali pra quem quiser mais tempo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
