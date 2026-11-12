@@ -29,5 +29,6 @@ e abra `http://127.0.0.1:8765/index.html`.
 
 - `js/` e `dados/`: o jogo. `js/lib/` tem as bibliotecas de terceiros.
 - `img/`: a arte. Os arquivos `_ref_*` são referências do editor de máscara, o jogo não os carrega.
+- `docs/LIVRO-DO-JOGO.md`: o livro do jogo — como ele está hoje (regras, números, telas, cenas, arquitetura), escrito pra reconstruir do zero.
 - `docs/DECISOES.md`: o diário de decisões do projeto, uma seção por mudança.
 - `ferramentas/`: utilitários. `empacotar_jogo.py` gera o arquivo único `torcida-organizada.html`, que só servia pra publicar como artefato e não é mais o caminho principal.
