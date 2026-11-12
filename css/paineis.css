@@ -1731,6 +1731,14 @@ td.placar small.pen{
   .sel-tres{grid-template-columns:1fr}
   .sel-rolo{max-height:26vh}
 }
+/* UMA TELA POR PASSO (dono, 13/11/2026): a lista ocupa a tela inteira,
+   em duas colunas de linhas quando cabe */
+.sel-tres.sel-uma{grid-template-columns:1fr}
+.sel-uma .sel-rolo{max-height:62vh;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+@media (max-width:820px){ .sel-uma .sel-rolo{max-height:60vh;grid-template-columns:1fr} }
+.sel-uma .sel-cab{display:none}
+.sel-uma .busca{display:block;box-sizing:border-box;width:calc(100% - 20px);margin:10px 10px 4px}
+#abasSelecao:empty{display:none}
 .sel-bandeira{display:flex;align-items:center;justify-content:center;
   width:34px;height:34px;flex:0 0 34px;border-radius:3px;
   background:rgba(255,255,255,.05);border:1px solid var(--linha);

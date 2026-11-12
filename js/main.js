@@ -234,34 +234,29 @@
   }
 
   /* =======================================================
-     SELEÇÃO DE TORCIDA — DOIS PASSOS (régua do dono, 23/08/2026)
+     SELEÇÃO DE TORCIDA — UMA TELA POR PASSO (dono, 13/11/2026)
 
-     PASSO 1: país, liga e clube na MESMA tela, em três colunas que se
-     encadeiam — escolher o país filtra as ligas, escolher a liga filtra
-     os clubes. É uma decisão só, tomada de uma vez, e o jogador vê o
-     caminho inteiro sem trocar de tela.
-
-     PASSO 2: qual das torcidas daquele clube, com a ficha ao lado.
-
-     Antes era uma lista única de 139 torcidas com uma fileira de abas
-     por divisão. Com dez países e 356 clubes aquilo virava um paredão.
+     "Onde você torce é o primeiro passo, liga e depois clube. Cada uma
+     em uma tela diferente." Os passos:
+       1 o país (onde você torce) · 2 a liga · 3 o clube ·
+       4 qual torcida daquele clube (só quando ele tem mais de uma) ·
+       5 o nome do presidente.
+     Tocar num país, numa liga ou num clube já leva ao passo seguinte. A
+     tela do modo de jogo saiu: o jogo só tem o modo rápido.
      ======================================================= */
   let buscaSel = '';
   let selPais = null, selLiga = null, selClube = null, escolhida = null;
   let passoSel = 1;
-  /* o modo de jogo do passo 3 (10/10/2026): começa no rápido */
-  let modoSel = 'rapido';
 
   function abrirSelecao(){
     $('telaMenu').classList.add('oculto');
     $('telaSelecao').classList.remove('oculto');
     selPais = selLiga = selClube = escolhida = null;
-    buscaSel = ''; passoSel = 1; nomePresidenteSel = ''; modoSel = 'rapido';
+    buscaSel = ''; passoSel = 1; nomePresidenteSel = '';
     pintarSelecao();
   }
 
   function irParaPasso(n){ passoSel = n; buscaSel = ''; pintarSelecao(); }
-
   const torcidasJogaveis = () => TO.mundo.selecionaveis();
   const torcidasDoClube = id => torcidasJogaveis()
     .filter(o=>o.clubeId===id).map(TO.mundo.ficha)
@@ -307,7 +302,7 @@
                     (a.time.nome < b.time.nome ? -1 : 1));
   }
 
-  /* uma coluna do passo 1 */
+  /* a lista de um passo (país, liga ou clube), na tela inteira */
   function coluna(titulo, conta, itens, montar){
     const c = el('div',{class:'sel-coluna'});
     c.appendChild(el('div',{class:'sel-cab', html:
@@ -340,76 +335,35 @@
     return d;
   };
 
+  /* a tela da torcida só existe quando o clube tem mais de uma; a
+     numeração fica fixa em cinco (o clube de uma torcida só pula a 4) */
+  const variasTorcidas = () => !!(selClube && torcidasDoClube(selClube.id).length > 1);
+  const totalPassos = () => 5;
+  const numeroDoPasso = n => n;
+
   function pintarSelecao(){
-    /* passo 3 é o modo de jogo, passo 4 o presidente (10/10/2026) */
-    const p4 = passoSel === 4 && escolhida;
-    const p3 = passoSel === 3 && escolhida && !p4;
-    const p2 = passoSel === 2 && selClube && !p3 && !p4;
-    $('passo1Sel').classList.toggle('oculto', !!(p2 || p3 || p4));
-    $('passo2Sel').classList.toggle('oculto', !p2);
-    $('passoModoSel').classList.toggle('oculto', !p3);
-    $('passo3Sel').classList.toggle('oculto', !p4);
-    $('btAvancarSelecao').classList.toggle('oculto', !!(p2 || p4));
-    $('btAvancarSelecao').disabled = p3 ? false : !selClube;
-    $('btSelecionarTorcida').classList.toggle('oculto', !p2);
+    const pPres = passoSel === 5 && escolhida;
+    const pTor = passoSel === 4 && selClube && !pPres;
+    const pLista = !pPres && !pTor;
+    $('passo1Sel').classList.toggle('oculto', !pLista);
+    $('passo2Sel').classList.toggle('oculto', !pTor);
+    $('passo3Sel').classList.toggle('oculto', !pPres);
+    /* do país ao clube, o toque na linha já avança: o botão sai */
+    $('btAvancarSelecao').classList.add('oculto');
+    $('btSelecionarTorcida').classList.toggle('oculto', !pTor);
     $('btSelecionarTorcida').disabled = !escolhida;
-    $('btComecarPartida').classList.toggle('oculto', !p4);
-    $('btVoltarMenu').textContent = (p2 || p3 || p4) ? _t('Voltar') : _t('Voltar ao menu');
+    $('btComecarPartida').classList.toggle('oculto', !pPres);
+    $('btVoltarMenu').textContent = passoSel > 1 ? _t('Voltar') : _t('Voltar ao menu');
     $('abasSelecao').innerHTML = '';
 
     const sub = $('subSelecao');
-    if(p4){
-      sub.textContent = _t('passo 4 de 4 · {nome} · quem é o presidente', {nome:escolhida.nome});
-      pintarPasso3();
-      return;
-    }
-    if(p3){
-      sub.textContent = _t('passo 3 de 4 · {nome} · o modo de jogo', {nome:escolhida.nome});
-      pintarPassoModo();
-      return;
-    }
-    if(!p2){
-      sub.textContent = _t('passo 1 de 4 · país, liga e clube · {n} clubes em 10 países',
-        {n:TO.mundo.todosTimes.length});
-      pintarPasso1();
-      return;
-    }
-    sub.textContent = _t('passo 2 de 4 · {nome} · escolha a torcida', {nome:selClube.nome});
-    pintarPasso2();
-  }
-
-  /* ---------- PASSO 3: o modo de jogo (pedido do dono, 10/10/2026) ----------
-     Rápido é o jogo a jogo; detalhista traz a cidade inteira. O modo
-     fica no save e não muda depois que a partida começa. */
-  const MODOS_DE_JOGO = [
-    {id:'rapido', nome:'Modo rápido',
-     resumo:'O jogo a jogo: calendário do clube, caravanas, brigas, membros e caixa.',
-     itens:['A diretoria manda mensagem sugerindo os ataques aos rivais',
-            'Os rivais podem atacar a gente',
-            'Diplomacia, festas e assaltos chegam como mensagem',
-            'Brigas de bairro pelo domínio da cidade, sem reunião mensal']},
-    {id:'detalhista', nome:'Modo detalhista',
-     resumo:'O jogo inteiro: tudo do rápido e a disputa pela cidade.',
-     itens:['A cidade em bairros, com domínio de cada torcida',
-            'Brigas de bairro pelo domínio da cidade',
-            'Os confrontos do itinerário também mexem nos bairros',
-            'A reunião mensal da diretoria na sede']}
-  ];
-  function pintarPassoModo(){
-    const cx = $('fichaModo'); cx.innerHTML = '';
-    const grade = el('div',{class:'sel-modos'});
-    for(const m of MODOS_DE_JOGO){
-      const b = el('button',{class:'sel-modo'+(modoSel === m.id ? ' on' : '')});
-      b.appendChild(el('div',{class:'nm', texto:_t(m.nome)}));
-      b.appendChild(el('div',{class:'resumo', texto:_t(m.resumo)}));
-      const ul = el('ul');
-      for(const it of m.itens) ul.appendChild(el('li',{texto:_t(it)}));
-      b.appendChild(ul);
-      b.onclick = ()=>{ modoSel = m.id; pintarPassoModo(); };
-      grade.appendChild(b);
-    }
-    cx.appendChild(grade);
-    cx.appendChild(el('p',{class:'nota', texto:_t('O modo fica no save: não dá pra trocar depois que a partida começa.')}));
+    const de = (n, txt, p) => _t('passo {n} de {total} · {txt}', {n:numeroDoPasso(n), total:totalPassos(), txt:_t(txt, p||{})});
+    if(pPres){ sub.textContent = de(5, '{nome} · quem é o presidente', {nome:escolhida.nome}); pintarPasso3(); return; }
+    if(pTor){ sub.textContent = de(4, '{nome} · escolha a torcida', {nome:selClube.nome}); pintarPasso2(); return; }
+    if(passoSel === 1) sub.textContent = de(1, 'onde você torce · {n} clubes em 10 países', {n:TO.mundo.todosTimes.length});
+    else if(passoSel === 2) sub.textContent = de(2, '{pais} · a liga', {pais:_t(selPais)});
+    else sub.textContent = de(3, '{liga} · o clube', {liga:selLiga});
+    pintarPasso1();
   }
 
   /* ---------- PASSO 3: o nome do presidente (dono, 22/09/2026) ----------
@@ -436,61 +390,66 @@
     setTimeout(()=>{ campo.focus(); campo.select(); }, 30);
   }
 
-  /* ---------- PASSO 1: três colunas encadeadas ---------- */
+  /* ---------- PASSOS 1 A 3: o país, a liga e o clube, cada um na sua tela ---------- */
   function pintarPasso1(){
     const h = document.querySelector('#passo1Sel .cartao h2');
-    if(h && h.firstChild) h.firstChild.textContent = _t('Onde você torce') + ' ';
+    const titulo = passoSel === 1 ? _t('Onde você torce') : passoSel === 2 ? _t('Liga') : _t('Clube');
+    if(h && h.firstChild) h.firstChild.textContent = titulo + ' ';
     const cx = $('listaTorcidas'); cx.innerHTML = '';
-    const grade = el('div',{class:'sel-tres'});
+    const grade = el('div',{class:'sel-tres sel-uma'});
+    const conta = n => { $('contaTorcidas').textContent = String(n); };
 
-    const paises = paisesComTorcida();
-    grade.appendChild(coluna(_t('País'), `${paises.length}`, paises, p=>
-      linhaSel(selPais===p.pais?' on':'', selo(p.pais),
-        _t(p.pais), _t('{n} clubes', {n:p.clubes}),
-        p.torcidas ? `${p.torcidas}<small>${_t('torcidas')}</small>`
-                   : `<small>${_t('sem torcidas')}</small>`,
-        !p.torcidas,
-        ()=>{ selPais = p.pais; selLiga = null; selClube = null;
-              escolhida = null; pintarSelecao(); })));
-
-    const ligas = selPais ? ligasDoPais(selPais) : [];
-    grade.appendChild(coluna(_t('Liga'), selPais ? `${ligas.length}` : '', ligas, l=>
-      linhaSel(selLiga===l.liga?' on':'', null,
-        l.liga.replace('Brasileirão ',''), _t('{n} clubes', {n:l.clubes}),
-        l.torcidas ? `${l.torcidas}<small>${_t('torcidas')}</small>`
-                   : `<small>${_t('sem torcidas')}</small>`,
-        !l.torcidas,
-        ()=>{ selLiga = l.liga; selClube = null; escolhida = null;
-              pintarSelecao(); })));
-
-    const clubes = (selPais && selLiga) ? clubesDaLiga(selPais, selLiga) : [];
-    const lista = clubes.filter(c=>!buscaSel ||
-      (c.time.nome + c.time.cidade).toLowerCase()
-        .includes(buscaSel.toLowerCase()));
-    const colC = coluna(_t('Clube'), selLiga ? `${lista.length}` : '', lista, c=>
-      linhaSel(selClube && selClube.id===c.time.id?' on':'',
-        /* `escudo` quer o ARRAY de cores; `coresDaTorcida` devolve
-           {cor, cor2, cor3} e não se desestrutura */
-        escudo(c.time.cores, c.time.sigla || c.time.nome.slice(0,3),
-          null, ['c', c.time.id]),
-        c.time.nome, `${c.time.cidade}${c.time.uf?' - '+c.time.uf:''}`,
-        c.torcidas ? `${c.torcidas}<small>${c.torcidas===1?_t('torcida'):_t('torcidas')}</small>`
-                   : `<small>${_t('sem torcida')}</small>`,
-        !c.torcidas,
-        ()=>{ selClube = c.time; escolhida = null;
-              const t = torcidasDoClube(c.time.id);
-              /* clube de uma torcida só não tem o que escolher: já
-                 entra no passo 2 com ela na mão */
-              if(t.length === 1) escolhida = t[0];
-              pintarSelecao(); }));
-    if(selLiga){
+    if(passoSel === 1){
+      const paises = paisesComTorcida(); conta(paises.length);
+      grade.appendChild(coluna(_t('País'), `${paises.length}`, paises, p=>
+        linhaSel(selPais===p.pais?' on':'', selo(p.pais),
+          _t(p.pais), _t('{n} clubes', {n:p.clubes}),
+          p.torcidas ? `${p.torcidas}<small>${_t('torcidas')}</small>`
+                     : `<small>${_t('sem torcidas')}</small>`,
+          !p.torcidas,
+          ()=>{ selPais = p.pais; selLiga = null; selClube = null;
+                escolhida = null; irParaPasso(2); })));
+    } else if(passoSel === 2){
+      const ligas = ligasDoPais(selPais); conta(ligas.length);
+      grade.appendChild(coluna(_t('Liga'), `${ligas.length}`, ligas, l=>
+        linhaSel(selLiga===l.liga?' on':'', null,
+          l.liga.replace('Brasileirão ',''), _t('{n} clubes', {n:l.clubes}),
+          l.torcidas ? `${l.torcidas}<small>${_t('torcidas')}</small>`
+                     : `<small>${_t('sem torcidas')}</small>`,
+          !l.torcidas,
+          ()=>{ selLiga = l.liga; selClube = null; escolhida = null;
+                irParaPasso(3); })));
+    } else {
+      const clubes = clubesDaLiga(selPais, selLiga);
+      const lista = clubes.filter(c=>!buscaSel ||
+        (c.time.nome + c.time.cidade).toLowerCase()
+          .includes(buscaSel.toLowerCase()));
+      conta(lista.length);
+      const colC = coluna(_t('Clube'), `${lista.length}`, lista, c=>
+        linhaSel(selClube && selClube.id===c.time.id?' on':'',
+          /* `escudo` quer o ARRAY de cores; `coresDaTorcida` devolve
+             {cor, cor2, cor3} e não se desestrutura */
+          escudo(c.time.cores, c.time.sigla || c.time.nome.slice(0,3),
+            null, ['c', c.time.id]),
+          c.time.nome, `${c.time.cidade}${c.time.uf?' - '+c.time.uf:''}`,
+          c.torcidas ? `${c.torcidas}<small>${c.torcidas===1?_t('torcida'):_t('torcidas')}</small>`
+                     : `<small>${_t('sem torcida')}</small>`,
+          !c.torcidas,
+          ()=>{ selClube = c.time; escolhida = null;
+                const t = torcidasDoClube(c.time.id);
+                /* clube de uma torcida só não tem o que escolher: vai
+                   direto pro presidente com ela na mão */
+                if(t.length === 1){ escolhida = t[0]; nomePresidenteSel = ''; irParaPasso(5); }
+                else irParaPasso(4); }));
       const bs = el('input',{class:'busca', type:'search',
         placeholder:_t('clube ou cidade…')});
       bs.value = buscaSel;
-      bs.oninput = ev=>{ buscaSel = ev.target.value; pintarPasso1(); };
+      bs.oninput = ev=>{ buscaSel = ev.target.value; pintarPasso1();
+                         const b2 = $('listaTorcidas').querySelector('input.busca');
+                         if(b2){ b2.focus(); b2.setSelectionRange(b2.value.length, b2.value.length); } };
       colC.insertBefore(bs, colC.lastChild);
+      grade.appendChild(colC);
     }
-    grade.appendChild(colC);
     cx.appendChild(grade);
   }
 
@@ -654,8 +613,8 @@
        o olheiro fala, se houver o que falar */
     if(partidaNova){
       const e = E();
-      /* as duas decisões de abertura vêm antes de tudo (textos
-         aprovados pelo dono): ideologia e Expediente da Sede */
+      /* a decisão de abertura vem antes de tudo: o Expediente da Sede
+         (o tutorial e a ideologia saíram, 13/11/2026) */
       TO.feed.abertura(e);
       const jogos = TO.competicoes.jogarDia(e, e.data.semana, e.data.dia);
       TO.feed.eventosDoDia(e, {jogos});
@@ -984,84 +943,6 @@
        ícone muda com a altura da tela: mudar de orientação remonta o
        mapa uma vez, que é onde ela é construída */
     addEventListener('resize', ()=>{ if(!painel) redesenhar(); });
-  }
-
-  /* A IDEOLOGIA — antes chamada "políticas".
-     É o mesmo conjunto de padrões: o que fazer com o adversário do nosso
-     jogo, como receber aliado e o que fazer com os outros jogos da
-     praça. O nome mudou porque é assim que o jogo passa a falar dela em
-     toda parte, inclusive no botão "Seguir ideologia" das decisões. */
-  function caixaDeIdeologia(e, comBotao){
-    const P = TO.planejamento;
-    const cx = el('div',{class:'ass-politicas'});
-    cx.appendChild(el('div',{class:'fase-rot',
-      texto:_t('Ideologia — vale toda semana')}));
-    /* PENDENTE ATÉ SALVAR. A escolha se aplicava solta, a cada `change`,
-       e o jogador não tinha confirmação nenhuma de que ficou guardada.
-       Agora os três seletores e a chave escrevem aqui, e um botão só
-       leva tudo pro estado. */
-    const pend = {};
-    const grupo = (rot, itens, atual, aplicar)=>{
-      const d = el('div',{class:'pol-grupo'});
-      d.appendChild(el('b',{texto:rot}));
-      /* `select.campo` E NÃO `select` PELADO: `base.css` dava `color`
-         sem `background`, e o texto claro do tema caía sobre o branco
-         padrão do navegador — os três apareciam vazios porque estavam
-         brancos no branco. A classe já existia em `paineis.css`. */
-      const sel = el('select',{class:'campo'});
-      for(const it of itens){
-        const o = el('option',{texto:it.rot}); o.value = it.id;
-        if(it.id === atual) o.selected = true;
-        sel.appendChild(o);
-      }
-      /* O EFEITO DE CADA ESCOLHA, POR ESCRITO (pedido do dono,
-         19/08/2026): a linha abaixo do seletor explica o que a opção
-         selecionada faz, e troca junto com a seleção. */
-      const nota = el('small',{class:'fraco pol-nota'});
-      const explicar = ()=>{
-        const it = itens.find(x=>x.id === sel.value) || itens[0];
-        nota.textContent = it.nota || '';
-      };
-      explicar();
-      sel.onchange = ()=>{ pend[rot] = ()=>aplicar(sel.value); explicar(); };
-      d.appendChild(sel);
-      d.appendChild(nota);
-      cx.appendChild(d);
-    };
-    const pol = P.politicas(e);
-    grupo(_t('Nosso jogo'), P.POLITICA_ATAQUE, pol.jogo,
-          id=>P.definirPolitica(e, 'jogo', id));
-    grupo(_t('Aliados na cidade'),
-          P.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
-            nota:(r.porCabeca ? _t('R$ {valor} por cabeça', {valor:r.porCabeca}) : _t('de graça'))+' · '+
-                 _t('{rel} de relação com o aliado — {nota}',
-                    {rel:`${r.relacao>0?'+':''}${r.relacao}`, nota:r.nota})})),
-          P.recepcaoPadrao(e) || 'nada',
-          id=>P.definirRecepcaoPadrao(e, id === 'nada' ? 'nada' : id));
-    grupo(_t('Outros jogos na cidade'), P.POLITICA_ATAQUE, pol.outros,
-          id=>P.definirPolitica(e, 'outros', id));
-    grupo(_t('Apoio nos jogos fora'), P.POLITICA_APOIO, pol.apoio,
-          id=>P.definirPolitica(e, 'apoio', id));
-    /* (15/10/2026) a pixação saiu do jogo com o domínio novo */
-    cx.appendChild(el('div',{class:'linha-dado', html:
-      `<span class="fraco">${_t('O olheiro sempre pergunta antes de cada jogo. O botão "Seguir padrão" da mensagem executa o que está definido aqui.')}</span>`}));
-
-    /* UM BOTÃO SÓ, e é ele que confirma. Aberta como tela, quem carrega
-       esse botão é o rodapé do modal — daí a caixa saber salvar sem ter
-       botão nenhum dentro dela. */
-    cx.salvar = ()=>{
-      for(const fn of Object.values(pend)) fn();
-      TO.estado.salvar();
-      redesenhar();
-    };
-    if(comBotao !== false){
-      const bt = el('button',{class:'bt destaque', texto:_t('Salvar')});
-      bt.onclick = ()=>{ cx.salvar(); aviso(_t('Ideologia salva.'), 'boa'); };
-      const rod = el('div',{class:'pol-rodape'});
-      rod.appendChild(bt);
-      cx.appendChild(rod);
-    }
-    return cx;
   }
 
   /* =======================================================
@@ -4073,7 +3954,11 @@
       d.appendChild(s0);
       if(r.passou || !vigente || !r.grupo || !r.grupo.chaveJogo){ d.appendChild(el('p',{class:'plj-vazio', texto: r.passou ? _t('Esse jogo já passou.') : _t('Nada a decidir.')})); return d; }
       const inv = (p.investidas||{})[r.grupo.chaveJogo];
-      const hostis = r.torcidas.filter(t=>t.hostil);
+      /* NA CIDADE, SÓ COM A RELAÇÃO LÁ EMBAIXO (dono, 13/11/2026): nos
+         outros jogos da nossa praça a investida só existe contra quem
+         está de −55 pra baixo com a gente; a diretoria pergunta antes */
+      const hostis = r.torcidas.filter(t=>t.hostil &&
+        (!emCasa || TO.relacoes.nivel(e, t.id) <= P.RELACAO_QUENTE));
       const ondes = emCasa ? P.ONDE_ATAQUE : P.ONDE_ATAQUE.filter(o=>o.id!=='arredores');
       const base = emCasa ? {como:'arredores', olheiro:null} : {como:'ida', olheiro:'avenida', filial:cidade};
       const s = secao(1, _t('A nossa investida'), _t('só aparece na cidade e só para o tempo se for marcada'));
@@ -4099,12 +3984,12 @@
     function detAliados(it){
       const d = el('div',{class:'plj-det'});
       d.appendChild(el('header',{class:'plj-jogo', html:`<span class="plj-dia">${_t('ALIADOS')}</span><div class="plj-duelo"><b>${_t('Quem chega na nossa praça')}</b></div>`+
-        `<small class="plj-onde">${_t('receber bem sobe a relação; não receber, o aliado cobra depois')}</small>`}));
+        `<small class="plj-onde">${_t('aliado sempre fica na nossa sede; escolta e churrasco sobem mais a relação')}</small>`}));
       let k = 1;
       for(const a of it.aliados){
         const pago = ((P.plano(e).pago)||{})[a.id];
         const s = secao(k++, linkTorcida(a.id, a.nome), `${_t('~{n} aliados', {n:a.n})} · ${DIA[a.dia]||''}${pago?' · '+_t('resolvido'):''}`);
-        s.appendChild(cartoes(P.RECEPCAO.map(rc=>({id:rc.id, rot:rc.rot,
+        s.appendChild(cartoes(P.RECEPCAO_ESCOLHAS.map(rc=>({id:rc.id, rot:rc.rot,
           nota:`${rc.porCabeca*a.n ? U.dinheiro(rc.porCabeca*a.n) : _t('de graça')}`, sub:`${_t('relação {n}', {n:(rc.relacao>0?'+':'')+rc.relacao})} · ${rc.nota||''}`,
           tom: rc.id==='nada' ? 'risco' : '', off:!!pago})), P.nivelDe(e, a.id), id=>{ P.definirRecepcao(e, a.id, id); salvar(); pintar(); }));
         d.appendChild(s);
@@ -4339,7 +4224,7 @@
           (pago ? ` <span class="tag">${_t('resolvido')}</span>` : '')}));
         const bts = el('div',{class:'rec-botoes'});
         const atual = P2.nivelDe(e, a.id);
-        for(const r of P2.RECEPCAO){
+        for(const r of P2.RECEPCAO_ESCOLHAS){
           const custo = r.porCabeca * a.n;
           const b = el('button',{class:'rec-bt'+(atual===r.id?' on':''),
             html:`${r.rot}<small>${custo ? U.dinheiro(custo) : _t('de graça')}`+
@@ -4692,7 +4577,6 @@
       decisaoAberta = r.abrir.cancelavel
         ? {id, botao: r.abrir.botao || idBotao} : null;
       if(t === 'tela-ataque') abrirAtaque(a.ctx);
-      else if(t === 'tela-ideologia') abrirIdeologia();
       else if(t === 'painel-expediente'){ abaCal = 'expediente';
                                           abrirPainel('calendario'); }
       else if(t === 'tela-caravana') abrirCaravana();
@@ -4704,7 +4588,6 @@
       else if(t === 'cena-escolta') abrirEscolta(m && m.dados);
       else if(t === 'cena-bairro') abrirBrigaBairro(m && m.dados);
       else if(t === 'cena-acao') abrirAcaoEmCena(a.cena);
-      else if(t === 'tutorial') TO.tutorial.iniciar();
       else if(t === 'painel') abrirPainel(a.pagina || 'competicoes');
     }
     /* A BOLA ROLANDO ABRE O DIA INTEIRO (régua do dono, 20/08/2026):
@@ -5029,14 +4912,6 @@
 
     duas.appendChild(esq);
     duas.appendChild(dir);
-    /* o "Como funciona" que a mensagem de pular promete: reabre o
-       passo a passo do tutorial a qualquer hora (dono, 02/09/2026) */
-    const qt = quadro(_t('Como funciona'));
-    const btTut = el('button',{class:'bt', texto:_t('Rever o passo a passo')});
-    btTut.style.margin = '10px 14px';
-    btTut.onclick = ()=>TO.tutorial.iniciar();
-    qt.corpo.appendChild(btTut);
-    dir.appendChild(qt);
 
     pg.appendChild(duas);
   }
@@ -5262,11 +5137,11 @@
     if(!m.resposta && (m.tipo === 'pedido' || m.tipo === 'tregua')){
       const bts = el('div',{class:'rec-botoes'});
       /* O PEDIDO JÁ VEM MARCADO (pedido do dono, 06/10/2026): o botão do
-         nível que vai valer no dia — a escolha da semana ou a ideologia —
+         nível que vai valer no dia — a escolha da semana ou o padrão —
          chega aceso; clicar nele (ou em outro) confirma */
       const valeHoje = m.tipo === 'pedido' && P2.nivelDe ? P2.nivelDe(e, m.de) : null;
       const opcoes = m.tipo === 'pedido'
-        ? P2.RECEPCAO.map(r=>({id:r.id, rot:r.rot,
+        ? P2.RECEPCAO_ESCOLHAS.map(r=>({id:r.id, rot:r.rot,
             nota:`${r.porCabeca ? U.dinheiro(r.porCabeca*((m.dados||{}).n||0)) : _t('de graça')} · ${_t('{n} rel.', {n:(r.relacao>0?'+':'')+r.relacao})}`}))
         : [{id:'aceitar', rot:_t('Aceitar a trégua'), nota:_t('ninguém procura ninguém até o fim do ano · +15 rel.')},
            {id:'recusar', rot:_t('Recusar'), nota:_t('{n} rel.', {n:'−5'})}];
@@ -6778,18 +6653,6 @@
         TO.estado.salvar();
         redesenhar();
       }]], 'media');
-  }
-
-  /* A IDEOLOGIA SOZINHA, numa tela dela. O botão "Definir ideologia"
-     abria a Gestão inteira e deixava o que ele promete no rodapé. */
-  function abrirIdeologia(){
-    /* SALVAR JÁ FECHA (régua do dono, 22/08/2026): a tela tinha Salvar
-       no corpo e Fechar no rodapé, e o Fechar não guardava nada. Agora
-       é um botão só, no rodapé, e ele faz as duas coisas. */
-    const cx = caixaDeIdeologia(E(), false);
-    return modal(_t('Ideologia'), _t('vale toda semana'), cx,
-                 [[_t('Salvar'), ()=>{ cx.salvar(); aviso(_t('Ideologia salva.'), 'boa'); }]],
-                 'media', true);
   }
 
   /* =======================================================
@@ -10501,12 +10364,10 @@
       {id:'relacoes',    rot:_t('Relações')},
       {id:'eixos',       rot:_t('Eixos') + (novas ? ` (${novas})` : '')},
       {id:'aliancas',    rot:_t('Alianças')},
-      {id:'rivalidades', rot:_t('Rivalidades')},
-      {id:'ideologia',   rot:_t('Ideologia')}
+      {id:'rivalidades', rot:_t('Rivalidades')}
     ], subDip, id=>{subDip=id; redesenhar();}));
-
-    /* a ideologia mora aqui: é o padrão de como tratamos os outros */
-    if(subDip === 'ideologia'){ pg.appendChild(caixaDeIdeologia(e)); return; }
+    /* a aba da ideologia saiu (13/11/2026) */
+    if(subDip === 'ideologia') subDip = 'relacoes';
     /* os eixos de aliança têm tela própria (dono, 11/09/2026) */
     if(subDip === 'eixos'){ pg.appendChild(painelEixos(e)); return; }
     /* O PEDIDO A UM ALIADO NO MODO RÁPIDO (10/10/2026): sem reunião, o
@@ -12350,28 +12211,26 @@
     /* o modal do mês, só pra quem ligou a chave */
     if(opc(e).relatorio && rel.mes) abrirFechamento(rel.mes);
   });
-  /* escolhida a torcida, falta o presidente: o passo 3 (dono, 22/09/2026) */
+  /* escolhida a torcida, falta o presidente (dono, 22/09/2026) */
   $('btSelecionarTorcida').onclick = ()=>{
     if(!escolhida) return;
     nomePresidenteSel = '';
-    irParaPasso(3);
+    irParaPasso(5);
   };
   $('btComecarPartida').onclick = ()=>{
     if(!escolhida) return;
     const nome = String(nomePresidenteSel || '').trim() || TO.membros.nomeSugerido(escolhida.clubeId);
-    TO.estado.novo({torcida: escolhida, presidente: nome, modo: modoSel});
+    TO.estado.novo({torcida: escolhida, presidente: nome, modo: 'rapido'});
     entrarNoJogo(true);
   };
-  /* Avançar: do passo 1 pra torcida, do modo de jogo pro presidente */
-  $('btAvancarSelecao').onclick = ()=>{
-    if(passoSel === 3 && escolhida){ irParaPasso(4); return; }
-    if(selClube) irParaPasso(2);
-  };
-  /* do 4 volta pro modo; do 3, pra torcida; do 2, pra escolha do clube; do 1, pro menu */
+  /* o Avançar ficou sem uso: do país ao clube, o toque já avança */
+  $('btAvancarSelecao').onclick = ()=>{};
+  /* Voltar: um passo atrás (o da torcida só existe com mais de uma) */
   $('btVoltarMenu').onclick = ()=>{
-    if(passoSel === 4){ irParaPasso(3); return; }
-    if(passoSel === 3){ irParaPasso(2); return; }
-    if(passoSel === 2){ escolhida = null; irParaPasso(1); return; }
+    if(passoSel === 5){ escolhida = variasTorcidas() ? escolhida : null; irParaPasso(variasTorcidas() ? 4 : 3); return; }
+    if(passoSel === 4){ escolhida = null; irParaPasso(3); return; }
+    if(passoSel === 3){ selClube = null; escolhida = null; irParaPasso(2); return; }
+    if(passoSel === 2){ selLiga = null; irParaPasso(1); return; }
     $('telaSelecao').classList.add('oculto');
     $('telaMenu').classList.remove('oculto');
   };
@@ -12422,7 +12281,7 @@
     get pausasDoTempo(){ return [...pausasT]; },
     abrirPainel, fecharPainel, get painel(){ return painel; },
     resolverIda: e => TO.praca.resolverIda(e || E()),
-    abrirCaravana, abrirAtaque, abrirIdeologia,
+    abrirCaravana, abrirAtaque,
     abrirGuerra, abrirDefesa, abrirEscolta, abrirBrigaBairro, abrirAcaoEmCena,
     abrirBrigaDoTutorial,
     /* o clima do estádio e a briga na arquibancada (dono, 19/08/2026) */

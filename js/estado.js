@@ -37,11 +37,10 @@ TO.estado = (function(){
       versao: VERSAO,
       semente,
       criadoEm: opc.agora || 0,
-      /* O MODO DE JOGO (pedido do dono, 10/10/2026), escolhido na
-         seleção e fixo no save: 'rapido' é o jogo a jogo, sem domínio
-         de bairros, sem pixação e sem reunião mensal (as pautas chegam
-         como mensagem da diretoria); 'detalhista' é o jogo inteiro. */
-      modo: opc.modo === 'rapido' ? 'rapido' : 'detalhista',
+      /* SÓ O MODO RÁPIDO (dono, 13/11/2026: "O modo detalhista deixa de
+         existir"): sem reunião mensal — as pautas chegam como mensagem da
+         diretoria. O campo fica no save pra quem ainda o lê. */
+      modo: 'rapido',
 
       data:{ ano:2026, semana:1, dia:1, absoluto:0 },   // dia 1..7, jogo no 6
 
@@ -1058,8 +1057,16 @@ TO.estado = (function(){
        antes da barra de 7 (15/10/2026) é refeito do zero */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
     try{ if(TO.elenco) TO.elenco.garantirNossos(E); }catch(e){}
-    /* save de antes do modo de jogo (10/10/2026) é o jogo inteiro */
-    if(E.modo !== 'rapido' && E.modo !== 'detalhista') E.modo = 'detalhista';
+    /* o detalhista deixou de existir (13/11/2026): todo save vira rápido */
+    E.modo = 'rapido';
+    /* a ideologia saiu (13/11/2026): as regras fixas valem pra todo save */
+    try{ if(TO.planejamento && TO.planejamento.politicas) TO.planejamento.politicas(E); }catch(e){}
+    /* o tutorial e a ideologia saíram (13/11/2026): as decisões de
+       abertura que ficaram sem resposta num save antigo não seguram o dia */
+    for(const m of (E.feed || []))
+      if(!m.respondido && (m.chave === 'abertura|tutorial' || m.chave === 'abertura|ideologia'))
+        m.respondido = {botao:'x'};
+    E.feedFila = (E.feedFila || []).filter(m => m.chave !== 'abertura|tutorial' && m.chave !== 'abertura|ideologia');
     try{
       if(E.relacoes) delete E.relacoes['undefined'];
       if(E.marcaAjuda) delete E.marcaAjuda['undefined'];
@@ -1125,8 +1132,8 @@ TO.estado = (function(){
 
   return {
     get E(){ return E; },
-    /* o modo rápido (10/10/2026): sem domínio, sem pixação, sem reunião */
-    rapido: e => ((e || E) || {}).modo === 'rapido',
+    /* só existe o modo rápido (13/11/2026) */
+    rapido: () => true,
     novo, lancar, lancarNoResumo, registrarLinha,
     mexerIndicador, avancarDia, aoMudar, aoFecharSemana, mudou,
     dataTexto, dataTextoEm, dataDaSemana, semanaDiaDe, sortearProximoJogo,

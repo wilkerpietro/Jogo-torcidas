@@ -1826,6 +1826,7 @@ TO.feed = (function(){
     passo('semana',         ()=>semanaDeHoje(E));
     passo('olheiro',        ()=>olheiroDoDia(E));
     passo('dia de jogo',    ()=>guerraDeHoje(E));
+    passo('investida na cidade', ()=>investidaDaCidadeHoje(E));
     passo('trimestre',      ()=>eventoDoTrimestreHoje(E));
     passo('ataque sofrido', ()=>ataqueSofridoHoje(E));
     passo('briga de bairro', ()=>bairroDeHoje(E));
@@ -1839,7 +1840,7 @@ TO.feed = (function(){
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
        28/08/2026) */
     passo('recepções',      ()=>{ if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E); });
-    /* a ideologia pode mandar pedir apoio em todo jogo fora (06/10/2026) */
+    /* sempre pedimos apoio em jogo fora (dono, 13/11/2026; era opção da ideologia) */
     passo('apoio fora',     ()=>{ if(PL().pedirApoioDaSemana) PL().pedirApoioDaSemana(E); });
     passo('filial',         ()=>filialDeHoje(E));
     passo('olheiro da filial', ()=>filialSugestaoDeHoje(E));
@@ -3699,29 +3700,15 @@ TO.feed = (function(){
   }
 
   /* -------------------------------------------------------
-     0. A ABERTURA DA PARTIDA (textos aprovados pelo dono)
-        Duas decisões, uma vez só, antes de o tempo correr:
-        a ideologia e o Expediente da Sede.
+     0. A ABERTURA DA PARTIDA: uma decisão, uma vez só, antes de o
+        tempo correr — o Expediente da Sede. A mensagem de boas-vindas
+        com o tutorial e a da ideologia saíram (dono, 13/11/2026).
      ------------------------------------------------------- */
   function abertura(E){
-    /* o tutorial vem antes de tudo (crivo do dono, 02/09/2026) */
-    propor(E, {
-      kind:'tutorial', peso:'decisao', voz:'diretor',
-      chave:'abertura|tutorial',
-      texto:_t('Bem vindo ao jogo, chefe. Se quiser, a gente te mostra o jogo — menu por menu, e no fim uma briga simulada pra você sentir como funciona a pista. Leva uns dois minutos.'),
-      botoes:[{id:'abrir', rot:_t('Mostra o jogo'), acao:'tutorial'},
-              {id:'pular', rot:_t('Já sei jogar — pular'), acao:'tutorial'}]
-    });
-    propor(E, {
-      kind:'abertura', peso:'decisao', voz:'diretor',
-      chave:'abertura|ideologia',
-      texto:_t('Chefe, antes de tudo: define a nossa ideologia — o que a gente faz com o adversário em dia de jogo e o que faz com os outros jogos da praça. É ela que o botão "Seguir padrão" executa quando você não quiser decidir jogo a jogo.'),
-      botoes:[{id:'ideologia', rot:_t('Definir ideologia'), acao:'tela-ideologia'}]
-    });
     propor(E, {
       kind:'abertura', peso:'decisao', voz:'diretor',
       chave:'abertura|expediente',
-      texto:_t('E define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.'),
+      texto:_t('Chefe, define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.'),
       botoes:[{id:'expediente', rot:_t('Abrir o Expediente'), acao:'painel-expediente'}]
     });
   }
@@ -5347,6 +5334,47 @@ TO.feed = (function(){
   }
 
   /* -------------------------------------------------------
+     2b. A DIRETORIA PERGUNTA NOS OUTROS JOGOS DA CIDADE
+        (dono, 13/11/2026: "Em outros jogos da cidade só podemos atacar
+        se a relação for alta e deve haver a mensagem da diretoria
+        perguntando se podemos atacar"). Na véspera de cada jogo de
+        outros clubes na nossa praça, se vem torcida com quem a relação
+        está de −55 pra baixo (guerra aberta), a diretoria pergunta.
+        Sim marca a investida (o dia do jogo traz o "Ir pra Guerra");
+        não deixa passar. Uma pergunta por jogo, a pior relação primeiro.
+     ------------------------------------------------------- */
+  function investidaDaCidadeHoje(E){
+    const hoje = E.data.dia;
+    for(const og of PL().outrosJogosNaCidade(E, E.data.semana)){
+      const dia = og.dia || 6;
+      if(Math.max(1, dia - 1) !== hoje || dia < hoje) continue;
+      const inv = PL().investidaDe(E, og.chave);
+      if(inv && (inv.alvo || inv.jogada)) continue;
+      const alvos = og.visitantes
+        .filter(v => !v.aliada && !(M().saoIrmas && M().saoIrmas(E.torcida.id, v.id)) &&
+                     !(TO.relacoes.emTregua && TO.relacoes.emTregua(E, v.id)) &&
+                     TO.relacoes.nivel(E, v.id) <= PL().RELACAO_QUENTE &&
+                     TO.relacoes.disponiveisIA(E, v.id) > 0)
+        .sort((a, b) => TO.relacoes.nivel(E, a.id) - TO.relacoes.nivel(E, b.id));
+      if(!alvos.length) continue;
+      const alvo = alvos[0], rel = Math.round(TO.relacoes.nivel(E, alvo.id));
+      propor(E, {
+        kind:'investida-cidade', peso:'decisao', voz:'diretor', tipo:'ruim',
+        chave:`investida-cidade|${E.data.ano}|${E.data.semana}|${og.chave}`,
+        texto:_t('Chefe, a {nome} vem pra cá {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?',
+                 {nome:alvo.torcida.nome, dia:NO_DIA[dia] || NO_DIA[6], casa:og.casa.nome, vis:og.vis.nome,
+                  comp:pelaComp(og.comp), rel}),
+        dados:{chaveJogo:og.chave, alvo:alvo.id, dia},
+        botoes:[{id:'atacar', rot:_t('Pode atacar'), acao:'investida-cidade',
+                 args:{chaveJogo:og.chave, alvo:alvo.id},
+                 nota:_t('no dia do jogo o bonde vai até eles nos arredores')},
+                {id:'passar', rot:_t('Deixa passar'), acao:'paz-praca',
+                 args:{chaveJogo:og.chave}, nota:_t('nada muda')}]
+      });
+    }
+  }
+
+  /* -------------------------------------------------------
      3. O ATAQUE SOFRIDO — bar/loja em dia comum, concentração
         em dia de jogo em casa, pista a caminho do estádio,
         estrada na caravana.
@@ -6363,15 +6391,11 @@ TO.feed = (function(){
         }
         return {ok:true};
       }
-      case 'tutorial': {
+      /* o tutorial saiu (13/11/2026): mensagem de save antigo só fecha */
+      case 'tutorial':
         marcar();
-        if(idBotao === 'pular'){
-          E.tutorial = {feito:true, pulou:true};
-          m.consequencia = _t('Fechado, chefe. Qualquer coisa, o "Como funciona" fica no menu do Jogo.');
-          return {ok:true};
-        }
-        return {ok:true, abrir:{tela:'tutorial'}};
-      }
+        E.tutorial = {feito:true, pulou:true};
+        return {ok:true};
       case 'tela-assalto':
         /* a lista de alvos também dá pra fechar sem assaltar */
         return {ok:true, abrir:{tela:'tela-assalto', msg:m,
@@ -6391,6 +6415,11 @@ TO.feed = (function(){
       case 'paz':
         PL().definirIntencao(E, 'paz');
         marcar();
+        return {ok:true};
+      case 'investida-cidade':
+        PL().definirInvestida(E, b.args.chaveJogo, {alvo:b.args.alvo, como:'arredores', olheiro:null});
+        marcar();
+        m.consequencia = _t('Marcado: no dia do jogo a gente vai pra cima deles nos arredores.');
         return {ok:true};
       case 'paz-praca':
         PL().definirInvestida(E, b.args.chaveJogo, null);

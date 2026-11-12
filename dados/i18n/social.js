@@ -1309,5 +1309,19 @@ TO.i18n.registrar({
   "O reforço da PM está chegando": {es:"Llega el refuerzo policial", en:"Police backup is coming"},
   "O reforço da PM entrou no setor: {n} PMs dispersando os dois lados.": {es:"El refuerzo policial entró al sector: {n} policías dispersando a los dos bandos.", en:"Police backup entered the stand: {n} officers dispersing both sides."},
   "A viatura chegou: {n} PMs desceram dispersando os dois lados.": {es:"Llegó el patrullero: {n} policías bajaron dispersando a los dos bandos.", en:"The patrol car is here: {n} officers got out, dispersing both sides."},
-  "{nome} foi algemado no chão.": {es:"{nome} fue esposado en el suelo.", en:"{nome} was cuffed on the ground."}
+  "{nome} foi algemado no chão.": {es:"{nome} fue esposado en el suelo.", en:"{nome} was cuffed on the ground."},
+  /* ---------- seleção em telas, sem ideologia (13/11/2026) ---------- */
+  "passo {n} de {total} · {txt}": {es:"paso {n} de {total} · {txt}", en:"step {n} of {total} · {txt}"},
+  "onde você torce · {n} clubes em 10 países": {es:"dónde alentás · {n} clubes en 10 países", en:"where you support · {n} clubs in 10 countries"},
+  "{pais} · a liga": {es:"{pais} · la liga", en:"{pais} · the league"},
+  "{liga} · o clube": {es:"{liga} · el club", en:"{liga} · the club"},
+  "{nome} · escolha a torcida": {es:"{nome} · elegí la barra", en:"{nome} · pick the firm"},
+  "{nome} · quem é o presidente": {es:"{nome} · quién es el presidente", en:"{nome} · who is the president"},
+  "Chefe, define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.": {es:"Jefe, definí la Jornada de la Sede: tres turnos por día — mañana, tarde y noche —, cada uno con una acción que los muchachos llevan solos. Los días de partido y de ruta quedan afuera.", en:"Boss, set the HQ Daily Routine: three shifts a day — morning, afternoon and evening — each with an action the lads run on their own. Match days and travel days are left out."},
+  "Chefe, a {nome} vem pra cá {dia} pro {casa} × {vis}{comp}. A gente tá em guerra com eles (relação {rel}). Podemos ir pra cima?": {es:"Jefe, {nome} viene para acá {dia} por el {casa} × {vis}{comp}. Estamos en guerra con ellos (relación {rel}). ¿Vamos por ellos?", en:"Boss, {nome} are coming here {dia} for {casa} × {vis}{comp}. We're at war with them (relation {rel}). Can we go after them?"},
+  "Pode atacar": {es:"Pueden atacar", en:"Go ahead"},
+  "Deixa passar": {es:"Dejalo pasar", en:"Let it go"},
+  "no dia do jogo o bonde vai até eles nos arredores": {es:"el día del partido la banda va hacia ellos en las inmediaciones", en:"on match day the crew goes after them around the stadium"},
+  "Marcado: no dia do jogo a gente vai pra cima deles nos arredores.": {es:"Marcado: el día del partido vamos por ellos en las inmediaciones.", en:"Set: on match day we go after them around the stadium."},
+  "aliado sempre fica na nossa sede; escolta e churrasco sobem mais a relação": {es:"el aliado siempre se queda en nuestra sede; escolta y asado suben más la relación", en:"allies always stay at our HQ; escort and barbecue raise the relation more"}
 });

@@ -4,7 +4,6 @@
 TO.i18n.registrar({
   /* ---------- menu principal (index.html) ---------- */
   'Organizada':      {es:'Organizada',      en:'Organizada'},
-  '— desde 1997 —':  {es:'— desde 1997 —',  en:'— since 1997 —'},
   'Continuar':       {es:'Continuar',       en:'Continue'},
   'Novo jogo':       {es:'Nuevo juego',     en:'New game'},
   'Carregar jogo':   {es:'Cargar partida',  en:'Load game'},

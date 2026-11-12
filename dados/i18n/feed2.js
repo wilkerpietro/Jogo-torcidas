@@ -90,9 +90,6 @@ TO.i18n.registrar({
     {es:'Jefe, antes que nada: define nuestra ideología — qué hacemos con el rival en día de partido y qué hacemos con los otros partidos de la ciudad. Es la que ejecuta el botón "Seguir el plan" cuando no quieras decidir partido por partido.',
      en:'Boss, first things first: set our ideology — what we do to the opposition on match day and what we do about the other matches in town. It is what the "Follow the default" button runs when you don\'t want to decide match by match.'},
   'Definir ideologia': {es:'Definir ideología', en:'Set ideology'},
-  'E define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.':
-    {es:'Y define la Jornada de la Sede: tres turnos por día — mañana, tarde y noche —, cada uno con una acción que los muchachos llevan solos. Los días de partido y de ruta quedan afuera.',
-     en:'And set the HQ Daily Routine: three shifts a day — morning, afternoon and evening — each with an action the lads run on their own. Match days and travel days are left out.'},
   'Abrir o Expediente': {es:'Abrir la Jornada', en:'Open the Daily Routine'},
 
   /* ---------- o olheiro e a pauta da semana ---------- */

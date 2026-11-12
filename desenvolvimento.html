@@ -83,7 +83,6 @@
     <div id="menuTitulo">
       <div class="estrelas">★ ★ ★</div>
       <h1>Torcida<em>Organizada</em></h1>
-      <div class="desde">— desde 1997 —</div>
     </div>
     <div id="menuLista">
       <button id="btContinuar">Continuar</button>
@@ -101,8 +100,8 @@
 <div id="telaSelecao" class="tela-cheia oculto">
   <div class="moldura">
     <header><h2>Seleção de torcida</h2><span id="subSelecao"></span></header>
-    <!-- DOIS PASSOS: escolher o nome, e só depois ler a ficha. Ler a
-         ficha é a decisão; escolher o nome é o começo dela. -->
+    <!-- UMA TELA POR PASSO (dono, 13/11/2026): país, liga, clube,
+         torcida (quando o clube tem mais de uma) e o presidente. -->
     <div>
       <div id="passo1Sel">
         <div class="subabas" id="abasSelecao"></div>
@@ -116,17 +115,9 @@
           <div class="corpo" id="fichaTorcida"></div>
         </div>
       </div>
-      <!-- PASSO 3: o nome do presidente (pedido do dono, 22/09/2026).
-           O jogador é um membro da diretoria com nome: é ele o boneco
-           controlado nas cenas. -->
-      <!-- O MODO DE JOGO (pedido do dono, 10/10/2026): rápido ou
-           detalhista, fixo no save. -->
-      <div id="passoModoSel" class="oculto">
-        <div class="cartao">
-          <h2>Modo de jogo</h2>
-          <div class="corpo" id="fichaModo"></div>
-        </div>
-      </div>
+      <!-- O nome do presidente (pedido do dono, 22/09/2026): o jogador é
+           um membro da diretoria com nome — é ele o boneco das cenas.
+           A tela do modo de jogo saiu (dono, 13/11/2026: só o rápido). -->
       <div id="passo3Sel" class="oculto">
         <div class="cartao">
           <h2>O presidente da torcida</h2>
@@ -250,7 +241,6 @@
 <script src="dados/i18n/jornal.js"></script>
 <script src="dados/i18n/cena.js"></script>
 <script src="dados/i18n/gestao.js"></script>
-<script src="dados/i18n/tutorial.js"></script>
 <script src="dados/i18n/mundo.js"></script>
 <script src="dados/i18n/dados.js"></script>
 <script src="dados/i18n/dominio.js"></script>
@@ -337,7 +327,6 @@
 <script src="js/ui/mapa_planta.js"></script>
 <script src="js/ui/mapa_caravana.js"></script>
 <script src="js/ui/assalto2d.js"></script>
-<script src="js/gestao/tutorial.js"></script>
 <script src="js/main.js"></script>
 <!-- o protótipo do Desenvolvimento da Torcida -->
 <script src="js/prototipo/desenvolvimento.js"></script>

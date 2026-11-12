@@ -336,8 +336,9 @@ TO.planejamento = (function(){
     const rel = TO.relacoes.nivel(E, aliadoId);
     const h = TO.mapa.hash(`ajuda|${E.data.ano}|${E.data.semana}|${aliadoId}`);
     const nota = rel + (h % 21) - 10;
-    let nivel = nota >= 60 ? 'churrasco' : nota >= 42 ? 'escolta'
-              : nota >= 26 ? 'hospedar' : 'nada';
+    /* ALIADO SEMPRE HOSPEDA NA SEDE (dono, 13/11/2026): a relação diz se
+       vem escolta e churrasco; o colchão no salão é garantido */
+    let nivel = nota >= 60 ? 'churrasco' : nota >= 42 ? 'escolta' : 'hospedar';
     const est = estimativaCaravana(E, j);
     const cabecas = est ? est.vao : 0;
     return {nivel, custo: custoRecepcao(nivel, cabecas), cabecas, nota};
@@ -764,6 +765,9 @@ TO.planejamento = (function(){
      nota:_t('recepção de irmandade: carne, bebida e caminhada junto')}
   ];
   const recepcaoDe = id => RECEPCAO.find(r=>r.id===id) || RECEPCAO[0];
+  /* o que o jogador pode escolher: "não receber" saiu (dono, 13/11/2026:
+     "Sempre um aliado vai hospedar o outro na sede") */
+  const RECEPCAO_ESCOLHAS = RECEPCAO.filter(r=>r.id !== 'nada');
 
   /* nível padrão de recepção: quem não quer decidir toda semana escolhe
      uma vez e o aliado é recebido assim sempre */
@@ -773,8 +777,10 @@ TO.planejamento = (function(){
     return E.padraoRecepcao || null;
   }
   /* o que vale pra este aliado agora: escolha da semana ou o padrão */
-  const nivelDe = (E, idAliado) =>
-    (plano(E).recepcao[idAliado]) || recepcaoPadrao(E) || 'nada';
+  const nivelDe = (E, idAliado) => {
+    const n = (plano(E).recepcao[idAliado]) || recepcaoPadrao(E) || 'hospedar';
+    return n === 'nada' ? 'hospedar' : n;
+  };
   const custoRecepcao = (nivel, gente) => recepcaoDe(nivel).porCabeca * gente;
 
   /* a escolha do bloco de recepção da mensagem do olheiro (dono,
@@ -799,7 +805,9 @@ TO.planejamento = (function(){
       if((p.pago||{})[a.id]) continue;
       let nivel = nivelDe(E, a.id);
       let custo = custoRecepcao(nivel, a.estimativa);
-      if(custo > E.dinheiro){ nivel = 'nada'; custo = 0; }
+      /* sem caixa pro combinado, desce até hospedar — e hospeda mesmo assim
+         (dono, 13/11/2026: aliado sempre hospeda) */
+      if(custo > E.dinheiro && nivel !== 'hospedar'){ nivel = 'hospedar'; custo = custoRecepcao(nivel, a.estimativa); }
       if(custo > 0)
         TO.estado.lancar(E, _t('Recepção da {nome} ({n} cabeças)',
                                {nome:a.torcida.nome, n:a.estimativa}), -custo);
@@ -1503,12 +1511,15 @@ TO.planejamento = (function(){
     {id:'ia',  rot:_t('A diretoria pixa sozinha'),
      nota:_t('o saldo do mês é gasto aos poucos, todo dia, no bairro com mais chance de virar — como as outras torcidas fazem')}
   ];
+  /* A IDEOLOGIA SAIU (dono, 13/11/2026). As regras ficaram fixas:
+     · "Só podemos atacar um rival se planejarmos isso" — nada é marcado
+       sozinho: jogo e outros jogos em 'nunca';
+     · "Sempre vamos pedir apoio em jogo fora" — apoio em 'sempre';
+     · nos outros jogos da cidade, a diretoria pergunta (feed.js,
+       `investidaDaCidadeHoje`) e só com relação de −55 pra baixo.
+     O objeto continua no save porque as funções de baixo o leem. */
   function politicas(E){
-    E.politicas = E.politicas || {};
-    if(E.politicas.jogo   === undefined) E.politicas.jogo   = 'nunca';
-    if(E.politicas.outros === undefined) E.politicas.outros = 'nunca';
-    if(E.politicas.apoio  === undefined) E.politicas.apoio  = 'manual';
-    if(E.politicas.pixo   === undefined) E.politicas.pixo   = 'eu';
+    E.politicas = {jogo:'nunca', outros:'nunca', apoio:'sempre', pixo:'eu'};
     return E.politicas;
   }
   /* O APOIO AUTOMÁTICO: roda todo dia; cada jogo fora da semana que
@@ -1529,9 +1540,9 @@ TO.planejamento = (function(){
     }
     return feitos;
   }
-  function definirPolitica(E, qual, id){
-    politicas(E)[qual] = id;
-    return E.politicas[qual];
+  /* (sem ideologia não há o que definir: devolve a regra fixa) */
+  function definirPolitica(E, qual){
+    return politicas(E)[qual];
   }
 
   /* RIVAL É A RIVALIDADE DECLARADA DO GRAFO, não a tensão da semana.
@@ -1769,7 +1780,7 @@ TO.planejamento = (function(){
           aliadasNaPracaDeles, respostaDaAjuda, pedirAjuda, ajudaDe, semRecepcao,
           saltosEntre, custoCaravanaFilial, caravanaDaFilial, filiaisNoJogo, aptosDoJogo,
           jogoDecisivo, vontadeDeViajar, VONTADE_DECISIVO, ESCOLTA_SEDE, tetoDaEscolta,
-          RECEPCAO, recepcaoDe, custoRecepcao,
+          RECEPCAO, RECEPCAO_ESCOLHAS, recepcaoDe, custoRecepcao,
           emboscadaDaRota, emboscadaNaPraca, hostisNaPraca, subsedesHostisNaPraca,
           grafo, caminho, rotas, rotaEscolhida, estimativaCaravana, hostilidade,
           compromissos, pendencias, confirmar, CUSTO_BASE, CUSTO_SALTO, CUSTO_AR};

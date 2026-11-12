@@ -2670,8 +2670,10 @@ TO.relacoes = (function(){
       const rel = relacaoDelas(E, o.id, anf.id);
       const NIVEIS = ['nada', 'hospedar', 'escolta', 'churrasco'];
       const POR = {nada:0, hospedar:25, escolta:50, churrasco:75};
+      /* ALIADO SEMPRE HOSPEDA NA SEDE (dono, 13/11/2026): o caixa pode
+         descer o nível até o colchão no salão, mas não até "não receber" */
       let k = rel >= 70 ? 3 : rel >= 45 ? 2 : 1;
-      while(k > 0 && ta && POR[NIVEIS[k]] * n > ta.caixa) k--;
+      while(k > 1 && ta && POR[NIVEIS[k]] * n > ta.caixa) k--;
       let nivel = NIVEIS[k];
       let custo = POR[nivel] * n;
       if(custo > 0 && ta){
