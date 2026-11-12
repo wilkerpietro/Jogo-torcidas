@@ -213,8 +213,24 @@ TO.diaJogo.ponte = (function(){
       if(J && J.acabou && J.fase==='acabando') encerrar(J.acabou.motivo);
     }catch(e){ registrarErro('simulação', e); }
     try{ desenhar(); }catch(e){ registrarErro('desenho', e); }
+    /* o som e o tremor da câmera (12/11/2026): o combate só anota */
+    if(J && TO.som) TO.som.escoar(J);
+    tremerPalco();
     try{ atualizarHUD(); }catch(e){ registrarErro('hud', e); }
     requestAnimationFrame(quadro);
+  }
+
+  /* O TREMOR DA CÂMERA (12/11/2026): chute forte, queda do líder e
+     bomba balançam o palco por um instante (`J.tremorCam`, de 0 a 1,
+     que o combate acende e apaga sozinho). Vale pros canvas da cena,
+     não pro HUD. */
+  let tremia = false;
+  function tremerPalco(){
+    const f = J && J.fase === 'ativo' ? (J.tremorCam || 0) : 0;
+    if(f < 0.03 && !tremia) return;
+    tremia = f >= 0.03;
+    const tr = tremia ? `translate(${((Math.random()*2-1)*7*f).toFixed(1)}px,${((Math.random()*2-1)*7*f).toFixed(1)}px)` : '';
+    for(const id of ['djPrincipal','djPrincipal3d','djSobre']){ const el = document.getElementById(id); if(el) el.style.transform = tr; }
   }
 
   /* =======================================================

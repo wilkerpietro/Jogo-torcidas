@@ -1295,5 +1295,16 @@ TO.i18n.registrar({
   "O que o bonde faz sozinho: massacrar, tomar a faixa deles ou proteger o nosso material": {es:"Lo que la banda hace sola: masacrar, tomar su trapo o proteger nuestro material", en:"What the crew does on its own: smash them, take their banner or protect our gear"},
   "É o bairro da sede da {nome}: eles querem de volta.": {es:"Es el barrio de la sede de {nome}: lo quieren de vuelta.", en:"It's {nome}'s HQ neighbourhood: they want it back."},
   "nosso ({v} de 7)": {es:"nuestro ({v} de 7)", en:"ours ({v} of 7)"},
-  "da {sigla} ({v} de 7)": {es:"de {sigla} ({v} de 7)", en:"{sigla}'s ({v} of 7)"}
+  "da {sigla} ({v} de 7)": {es:"de {sigla} ({v} de 7)", en:"{sigla}'s ({v} of 7)"},
+  /* ---------- a polícia em degraus (12/11/2026) ---------- */
+  "A PM mandou dispersar": {es:"La policía ordenó dispersarse", en:"Police ordered everyone to disperse"},
+  "A PM avança em linha": {es:"La policía avanza en línea", en:"Police advance in a line"},
+  "Bomba de efeito moral": {es:"Granada aturdidora", en:"Stun grenade"},
+  "A PM fechou em bloco e pediu reforço": {es:"La policía se cerró en bloque y pidió refuerzos", en:"Police closed ranks and called for backup"},
+  "Em minoria, a PM fechou em bloco e pediu reforço.": {es:"En minoría, la policía se cerró en bloque y pidió refuerzos.", en:"Outnumbered, the police closed ranks and called for backup."},
+  "Sirene: a viatura está chegando": {es:"Sirena: llega el patrullero", en:"Siren: the patrol car is coming"},
+  "Dá pra ouvir a sirene: a viatura está chegando.": {es:"Se oye la sirena: llega el patrullero.", en:"You can hear the siren: the patrol car is coming."},
+  "A viatura chegou": {es:"Llegó el patrullero", en:"The patrol car is here"},
+  "A viatura chegou: {n} PMs desceram dispersando os dois lados.": {es:"Llegó el patrullero: {n} policías bajaron dispersando a los dos bandos.", en:"The patrol car is here: {n} officers got out, dispersing both sides."},
+  "{nome} foi algemado no chão.": {es:"{nome} fue esposado en el suelo.", en:"{nome} was cuffed on the ground."}
 });
