@@ -24,7 +24,7 @@ O jogo tem três camadas que se alimentam:
 
 Os dois indicadores centrais são **prestígio** (o nome da torcida na rua, que entra no ranking nacional) e **moral**. O jogo não tem condição de vitória: é uma caixa de areia com ranking, retrospectiva de fim de ano e temporadas de futebol que se repetem.
 
-Existem dois modos, escolhidos ao criar a partida e fixos no save: **rápido** (`rapido`) e **completo** (`detalhista`). A diferença real hoje é pequena: o rápido não tem a reunião mensal da diretoria (as pautas chegam uma por dia como mensagem), resolve bote e assalto na hora e abre o mapa no Brasil. **O domínio dos bairros e as brigas de bairro valem nos dois modos.** A tabela completa está na Parte II, capítulo 1.
+**Há um modo só, o rápido** (desde 13/11/2026; o detalhista deixou de existir e todo save antigo vira rápido): não há reunião mensal da diretoria — as pautas chegam uma por dia como mensagem —, bote e assalto se resolvem na hora e o mapa abre no Brasil. O domínio dos bairros e as brigas de bairro valem normalmente. **Não há ideologia nem tutorial** (ver Parte II, 1.5).
 
 Existem duas versões jogáveis no mesmo repositório:
 
@@ -67,7 +67,7 @@ A ordem de carga importa, porque não há módulos ES. A ordem do `index.html` �
 5. `js/estado.js`.
 6. Os jornais e o feed: `gazeta`, `porrada`, `almanaque`, `feed`.
 7. O dia de jogo: `cenario`, `arredores`, `som`, `combate`, `festas_cena`, `tres`, as libs do Three, `dados/boneco_leve_glb.js`, `bonecos3`, `ponte`, `simular`, `assalto_motor`.
-8. A interface: `ui/icones`, `ui/cartaz`, `ui/mapa_brasil`, `ui/mapa_planta`, `ui/mapa_caravana`, `ui/assalto2d`, `gestao/tutorial`.
+8. A interface: `ui/icones`, `ui/cartaz`, `ui/mapa_brasil`, `ui/mapa_planta`, `ui/mapa_caravana`, `ui/assalto2d` (o `gestao/tutorial.js` continua no repositório, mas não é mais carregado).
 9. `js/main.js` (a casca: todas as telas e a ligação entre tudo).
 
 ### 2.3 Tamanho de cada parte
@@ -100,13 +100,19 @@ A ordem de carga importa, porque não há módulos ES. A ordem do `index.html` �
 
 ### 3.1 Menu principal
 
-Título "TORCIDA ORGANIZADA — desde 1997" e os itens: **Continuar** (se há autosave), **Novo jogo**, **Carregar jogo**, **Configurações**, e dois itens apagados (Conquistas, Créditos). Configurações tem o idioma (português, español, english), que fica no navegador (`to.idioma`) e recarrega a página.
+Título "TORCIDA ORGANIZADA" (com três estrelas em cima) e os itens: **Continuar** (se há autosave), **Novo jogo**, **Carregar jogo**, **Configurações**, e dois itens apagados (Conquistas, Créditos). Configurações tem o idioma (português, español, english), que fica no navegador (`to.idioma`) e recarrega a página.
 
 ### 3.2 Novo jogo: seleção em passos
 
-1. **Escolher a torcida**: lista filtrável por país, estado e clube, com escudo, cidade, tamanho e posição no ranking. A torcida escolhida define a cidade (a "praça"), o clube e o ponto de partida (membros, dinheiro, prestígio).
-2. **Nome do presidente** e **modo de jogo** (rápido ou completo, dois cartões lado a lado).
-3. A partida nasce (`TO.estado.novo`) e abre o tutorial (pode pular).
+Uma tela por passo; tocar numa linha já avança, e "Voltar" recua um passo:
+
+1. **Onde você torce**: o país (10 países), com bandeira, clubes e torcidas.
+2. **A liga** daquele país.
+3. **O clube**, com escudo, cidade e quantas torcidas tem, e uma busca por clube ou cidade.
+4. **A torcida** do clube, com a ficha (membros por cargo, sede, prestígio, divisão, estádio, aliados e rivais, rivalidade máxima). Só aparece quando o clube tem mais de uma; com uma só, pula para o 5.
+5. **O nome do presidente** (vem um sugerido; "Sortear outro").
+
+A torcida escolhida define a cidade (a "praça"), o clube e o ponto de partida. A partida nasce (`TO.estado.novo`) e a única mensagem de abertura é a do Expediente da Sede. Não há tela de modo, mensagem de boas-vindas nem tutorial.
 
 ### 3.3 A tela principal: o feed
 
@@ -147,7 +153,7 @@ Perfis abrem como painel próprio: **perfil do membro**, **perfil da torcida** (
 ### 3.6 O planejamento da semana e a reunião
 
 - **Segunda-feira**: o planejamento da semana (popup): o jogo do fim de semana, a intenção (ir em paz, atacar, defender…), a caravana, o pedido de recepção aos aliados.
-- **Reunião mensal da diretoria** (modo completo): uma cena com a diretoria sentada em cadeiras em "C", na sede do nível atual; cada diretor fala uma pauta num balão (alvos de domínio do mês, convites de festa, ataques a bar e casa, alvos de assalto, aniversários). O presidente responde a cada pauta. No modo rápido essas pautas chegam como mensagens da diretoria no feed.
+- **Reunião mensal da diretoria** (do antigo modo completo; hoje desligada, as pautas chegam como mensagem): uma cena com a diretoria sentada em cadeiras em "C", na sede do nível atual; cada diretor fala uma pauta num balão (alvos de domínio do mês, convites de festa, ataques a bar e casa, alvos de assalto, aniversários). O presidente responde a cada pauta. No modo rápido essas pautas chegam como mensagens da diretoria no feed.
 
 ### 3.7 O dia de jogo no feed
 
@@ -204,7 +210,7 @@ Fonte: `js/estado.js` (`TO.estado`), `js/nucleo.js` (`TO.util`, `TO.genero`).
 4. Povoa os membros (`membros.povoarInicial`), nomeia o presidente, sorteia a fila de treino.
 5. `E.forcas = {}`; liga as competições ao save; monta a temporada (`competicoes.montarTemporada`); tira a "foto do ano zero" do almanaque.
 6. Escolhe o jogo da semana (`sortearProximoJogo`) e lança "Caixa inicial" com valor 0 no extrato.
-7. (Na tela, o jogo novo chama `feed.abertura(E)`, que põe três decisões na fila: tutorial, ideologia e expediente — capítulo 9.)
+7. (Na tela, o jogo novo chama `feed.abertura(E)`, que põe uma decisão na fila: o Expediente da Sede — capítulo 9.)
 
 ### 1.3 Campos de primeiro nível de `E`
 
@@ -262,24 +268,20 @@ Criados depois, pelo uso (agrupados):
 
 **Ritmo na tela** (`main.js: rodarTempo`): o tempo anda sozinho. Com mensagem na fila, solta uma por vez — 1.500 ms antes de uma decisão, 500 ms entre informações; sem mensagem, passa um dia a cada 120 ms; tudo dividido pela velocidade (2×). Decisão sem resposta **trava** o tempo. Painel aberto, cena e tutorial pausam.
 
-### 1.5 Os dois modos de jogo
+### 1.5 O modo de jogo e as regras fixas que substituíram a ideologia
 
-Escolhidos na criação, gravados em `E.modo`, imutáveis. `TO.estado.rapido(E)` responde se é o rápido. Save sem o campo vira `detalhista`.
+**Só existe o modo rápido** (13/11/2026). `E.modo` é sempre `'rapido'` e `TO.estado.rapido()` sempre responde verdadeiro; um save antigo com `'detalhista'` é convertido ao carregar. No rápido: sem reunião mensal (as pautas do mês chegam uma por dia, `pautaSoltaDeHoje`), sem a pauta "Onde a gente recruta", bote a bar e resenha rival chegam como sugestão para agora, assalto planejado e executado no mesmo dia, um pedido a aliado por mês, o mapa abre no Brasil. Domínio e brigas de bairro valem; pixação e ação social estão desligadas.
 
-| | Modo rápido (`rapido`) | Modo completo (`detalhista`) |
-|---|---|---|
-| Reunião mensal da diretoria | **não há**: as pautas do mês são criadas e chegam uma por dia como mensagem (`pautaSoltaDeHoje`) | **há**: no dia 5 chega a decisão "Reunião da diretoria" com todas as pautas |
-| Pauta "Onde a gente recruta" | não é criada | criada todo mês |
-| Bote a bar / resenha rival | chega como sugestão para **agora**, com botão "Deixar quieto" | é marcado na reunião para um dia do mês; no dia chega o cartão |
-| Convites de aniversário de aliadas | mensagem `convites` com peso de decisão | pauta da reunião + mensagem `convites` informativa |
-| Assalto | planejado e executado no mesmo dia (sem escolher data) | escolhe-se um dia entre 2 e 14 dias à frente |
-| Pedido a aliado (diplomacia) | um por mês, na aba Alianças | um por reunião |
-| Mapa | abre no mapa do Brasil; a lista da cidade não mostra os bairros | abre na cidade, com bairros e domínio |
-| Calendário | não mostra a data da reunião | mostra |
-| Domínio dos bairros e brigas de bairro | **ligados** (`dominio.js: rapido = () => false` — "o domínio vale nos dois modos") | ligados |
-| Pixação e ação social no bairro | (desligadas nos dois modos: `dominio.js: pixar` e `social` devolvem `ok:false`) | (desligadas) |
+**A ideologia saiu.** As escolhas que ela guardava (`E.politicas`) viraram regras fixas, reescritas a cada carga (`planejamento.js: politicas`):
 
-O texto de seleção ainda descreve o rápido como "sem reunião mensal" e o detalhista como "a cidade em bairros"; o comentário de `estado.js` que fala em "sem domínio" no rápido está superado pelo código.
+| Antes (escolha da ideologia) | Agora (regra fixa) |
+|---|---|
+| Nosso jogo: nunca / rivais / rivais quentes / todos | **Nunca marca sozinho**: só atacamos um rival se o jogador planejar (cartão da semana, Planejar ataque, ou responder a uma sugestão da diretoria). |
+| Outros jogos na cidade: idem | **A diretoria pergunta** (mensagem `investida-cidade`, na véspera) e só quando vem torcida com relação **de −55 pra baixo** (`RELACAO_QUENTE`), sem trégua, que não seja aliada nem irmã. "Pode atacar" marca a investida nos arredores; "Deixa passar" não muda nada. No planejamento da semana, a investida em jogo alheio da cidade só aparece contra essas torcidas. |
+| Apoio nos jogos fora: só quando eu mandar / sempre | **Sempre**: todo jogo fora, a diretoria pede à aliada de melhor relação na praça (`pedirApoioDaSemana`). |
+| Aliados na cidade: não receber / hospedar / escoltar / churrasco | **Aliado sempre hospeda**: "Não receber" saiu das escolhas (`RECEPCAO_ESCOLHAS`). O padrão é hospedar; sem caixa, desce até hospedar e paga mesmo assim. A aliada que responde ao nosso pedido hospeda no mínimo. As IAs também sempre hospedam aliado (o caixa só desce o nível até hospedar). |
+
+A tela da ideologia, a aba Ideologia da Diplomacia, a mensagem de abertura da ideologia e o tutorial saíram; mensagens antigas desses tipos são fechadas ao carregar o save.
 
 ### 1.6 O jogo da semana
 
@@ -1420,8 +1422,9 @@ Rodam nesta ordem, cada passo protegido contra erro:
 
 | `kind` | Peso | Quem fala | Quando aparece | Botões → efeito |
 |---|---|---|---|---|
-| `tutorial` | decisão | diretor | uma vez, na abertura do jogo novo | **Mostra o jogo** → abre o tutorial · **Já sei jogar — pular** → `E.tutorial = {feito, pulou}` |
-| `abertura` (ideologia) | decisão | diretor | abertura | **Definir ideologia** → tela de ideologia |
+| `tutorial` (saiu em 13/11/2026) | decisão | diretor | não é mais criada; save antigo a fecha ao carregar | **Mostra o jogo** → abre o tutorial · **Já sei jogar — pular** → `E.tutorial = {feito, pulou}` |
+| `abertura` (ideologia, saiu em 13/11/2026) | decisão | diretor | não é mais criada | — |
+| `investida-cidade` | decisão | diretor | véspera de jogo de outros clubes na nossa praça, com torcida de relação ≤ −55 | **Pode atacar** → marca a investida nos arredores (o dia do jogo traz o "Ir pra Guerra") · **Deixa passar** |
 | `abertura` (expediente) | decisão | diretor | abertura | **Abrir o Expediente** → painel do expediente |
 | `dica` | info | diretor | terças das semanas 1 e 3 do primeiro mês (só enquanto a semana absoluta ≤ 4) | — (40 dicas em sequência, `E.dicaSeq`) |
 | `semana` | decisão se há jogo; info se não | diretor | toda segunda, se há jogo nosso ou jogos na nossa cidade/cidades de filial | **Fechar o planejamento** → confirma o plano de todos os jogos da semana (consome as investidas) e resume "Caravana: N para X. Plano: …". Sem jogo: "Semana de folga do time." |
@@ -1641,9 +1644,12 @@ Resultado: `acoes.fecharBairro` (6.4) e o ponto na barra do bairro (`dominio.con
 
 **Pauta dos jogos** (`pautaDosJogos`, `pautaDaCidade`): monta, para a tela de planejamento da semana, os jogos da nossa cidade (e das cidades de filial), com as torcidas que estarão na rua, a faixa de efetivo de cada uma, quem é hostil, e as aliadas que chegam.
 
-## 10. Tutorial e os protótipos "Desenvolvimento" e "Influência"
+## 10. Tutorial (removido) e os protótipos "Desenvolvimento" e "Influência"
 
-### 10.1 Tutorial (`js/gestao/tutorial.js`, `TO.tutorial`)
+### 10.1 Tutorial (`js/gestao/tutorial.js`, `TO.tutorial`) — removido em 13/11/2026
+
+**O tutorial não é mais carregado nem oferecido.** O arquivo continua no repositório; o que segue descreve como ele era.
+
 
 - **Entrada**: a primeira mensagem do jogo novo (`kind:'tutorial'`) oferece "Mostra o jogo" ou "Já sei jogar — pular". Pular grava `E.tutorial = {feito:true, pulou:true}`. `TO.tutorial.iniciar()` é a única função pública.
 - **Parte 1 — passeio pelas telas**: pausa o tempo (`pausarTempo('tutorial')`), abre um balão fixo "Diretoria · passo a passo" com contador "Passo N de 15", botão **Avançar →** e **Pular o resto**. Em cada passo abre o painel e a aba correspondentes e circula os elementos citados.
@@ -2478,7 +2484,7 @@ Se a dona do bairro mudou (`virou`), entra no log (últimas 60 viradas) e, se no
 | Recrutar no bairro | `recrutouHoje()` vazio, `RECRUTA_DIA = 0` |
 | Metas/alvos de domínio | `metasDoDia()` vazio; `alvosDe()` devolve lista vazia |
 | Tabela `GANHO` (treta 10/14/18, rua 10, arredores 8, estádio 6, bar 12…) | constantes da régua antiga de 0–100; nenhuma função as usa |
-| `rapido()` (modo rápido) | sempre falso |
+| `rapido()` (domínio no modo rápido) | sempre falso: o domínio vale |
 
 ### 5.5 Onde a briga conta (`ondeDaBriga`)
 
@@ -3500,7 +3506,6 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
   - A venda forçada da loja por dívida credita R$ 90 mil duas vezes (`financeiro.js: venderLojaSeEndividado` soma no caixa e depois chama `lancar`, que soma de novo): o caixa sobe R$ 180 mil.
   - A caixa de 5 bombas ignora o desconto do galpão.
   - O botão de fugir da defesa anuncia "Moral −3 · Relação −6", mas o código aplica moral −15 na tela e relação −13.
-  - Textos e comentários desatualizados: a tela de seleção e um comentário de `estado.js` ainda dizem que o modo rápido não tem domínio.
 - **Código desligado que continua no projeto**: pixação e ação social (`dominio.js` devolve `ok:false`), sugestões do olheiro, o cartão de guerra do nosso jogo, a treta do trimestre, `feed.emboscadaDaViagem`.
 - **Save grande**: cerca de 3,4 MB antes da compressão depois de um ano; 1,5 MB é o estado das torcidas do computador.
 - **Sem risco real de perder**: a torcida só perde membros por aposentadoria. Derrota e dívida não tiram ninguém.

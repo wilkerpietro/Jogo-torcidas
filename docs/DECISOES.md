@@ -11311,6 +11311,47 @@ mexer em `cenario3d/` caiu com este pedido.
 separa frente e retaguarda), zoom no nocaute do líder, fôlego como barra
 que se gasta, e botão de som na tela.
 
+## Seleção em telas, só o modo rápido, sem tutorial e sem ideologia (dono, 13/11/2026)
+
+Pedido: "Retire o desde 1997 do início do jogo. Onde você torce é o primeiro
+passo, liga e depois clube. Cada uma em uma tela diferente. O modo detalhista
+deixa de existir. O jogo vai ter só o modo rápido. Não precisa mais ter essa
+tela de seleção de modo. Tire a mensagem do bem-vindo ao jogo, e remova o
+tutorial. A ideologia some. Sempre um aliado vai hospedar o outro na sede. Só
+podemos atacar um rival se planejarmos isso. Sempre vamos pedir apoio em jogo
+fora. Em outros jogos da cidade só podemos atacar se a relação for alta e deve
+haver a mensagem da diretoria perguntando se podemos atacar."
+
+- **Menu**: sem o "— desde 1997 —".
+- **Seleção** (`main.js`): uma tela por passo — 1 onde você torce (país),
+  2 liga, 3 clube, 4 torcida (só com mais de uma), 5 presidente. Tocar na
+  linha avança; Voltar recua um passo. A tela do modo saiu.
+- **Só o modo rápido**: `E.modo` sempre `'rapido'`, `TO.estado.rapido()`
+  sempre verdadeiro; save detalhista vira rápido ao carregar.
+- **Sem tutorial e sem boas-vindas**: a mensagem "Bem vindo ao jogo…" e o
+  botão "Rever o passo a passo" saíram; `js/gestao/tutorial.js` não é mais
+  carregado. A abertura tem só o Expediente da Sede.
+- **Sem ideologia**: saíram a tela, a aba da Diplomacia e a mensagem de
+  abertura. `planejamento.js: politicas` agora devolve regras fixas: nosso
+  jogo e outros jogos em "nunca" (nada é marcado sozinho — só o que o
+  jogador planeja), apoio fora em "sempre".
+- **Aliado sempre hospeda**: "Não receber" saiu das escolhas; o padrão é
+  hospedar e, sem caixa, desce até hospedar e paga assim mesmo. A aliada que
+  responde ao nosso pedido hospeda no mínimo. As IAs também (o caixa só
+  desce até hospedar).
+- **Outros jogos da cidade**: a diretoria pergunta na véspera (mensagem
+  `investida-cidade`, "Podemos ir pra cima?") só quando vem torcida com
+  relação **de −55 pra baixo** — "relação alta" lida como rivalidade alta, e
+  −55 é o corte que o jogo já chamava de guerra aberta. "Pode atacar" marca
+  a investida nos arredores; o planejamento da semana só oferece investida
+  em jogo alheio da cidade contra essas torcidas.
+- Save antigo: mensagens pendentes do tutorial e da ideologia são fechadas
+  ao carregar.
+- Testado: seleção no computador e no celular; um ano de jogo sem erro
+  (3 perguntas da diretoria, 3 investidas, 12 recepções pagas, nenhuma
+  cobrança de "nem apareceu"); save detalhista antigo carregou rápido e
+  sem travar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
