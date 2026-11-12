@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=aa21047a36';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=532c16cffc';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2113,10 +2113,32 @@ let escalaDoTabuleiro = () => 1;
     const k = im.t/im.dur;
     const r = Math.sin(Math.min(1, k*1.6)*Math.PI/2) * (1 - suave((k-0.4)/0.6));   // sobe rápido, desce devagar
     const F = im.forca * f.estilo.duro, L = im.lado;
-    p.olhaX -= 0.55*F*r; p.olhaY += L*0.45*F*r;
-    p.inclina -= 0.28*F*r; p.tomba += L*0.14*F*r; p.gira += L*0.18*F*r;
-    p.y -= 0.6*F*r;
-    p.ombro[0] += 0.5*F*r; p.ombro[1] += 0.4*F*r; p.ombroZ[0] += 0.35*F*r; p.ombroZ[1] += 0.3*F*r;
+    /* A PANCADA PELO GOLPE (12/11/2026): no corpo — chute, joelhada,
+       empurrão — o tronco DOBRA pra frente em cima do golpe e as mãos
+       descem pra barriga; o uppercut joga a cabeça pra trás; o gancho e
+       o cruzado viram a cabeça e o ombro pro lado de onde vieram; o jab
+       e o direto estalam a cabeça pra trás, como antes */
+    const tp = im.tipo;
+    if(tp === 'chute' || tp === 'chuteBaixo' || tp === 'joelhada' || tp === 'empurrao'){
+      p.inclina += 0.42*F*r; p.olhaX += 0.3*F*r; p.y -= 1.5*F*r;
+      p.ombro[0] = mistura(p.ombro[0], -0.55, Math.min(1, F*r)); p.ombro[1] = mistura(p.ombro[1], -0.5, Math.min(1, F*r));
+      p.cotovelo[0] = mistura(p.cotovelo[0], -1.75, Math.min(1, F*r)); p.cotovelo[1] = mistura(p.cotovelo[1], -1.7, Math.min(1, F*r));
+      p.ombroZ[0] -= 0.1*F*r; p.ombroZ[1] -= 0.1*F*r;
+      p.joelho[0] += 0.3*F*r; p.joelho[1] += 0.3*F*r; p.tomba += L*0.08*F*r;
+      if(tp === 'chuteBaixo'){ p.coxa[L > 0 ? 1 : 0] += 0.4*F*r; p.tomba += L*0.16*F*r; }
+    } else if(tp === 'uppercut'){
+      p.olhaX -= 0.85*F*r; p.inclina -= 0.36*F*r; p.y += 0.9*F*r*(1 - r);
+      p.ombro[0] += 0.7*F*r; p.ombro[1] += 0.65*F*r; p.ombroZ[0] += 0.4*F*r; p.ombroZ[1] += 0.4*F*r;
+    } else if(tp === 'gancho'){
+      p.olhaY += L*0.85*F*r; p.olhaX -= 0.2*F*r; p.gira += L*0.42*F*r; p.tomba += L*0.24*F*r;
+      p.inclina -= 0.1*F*r; p.y -= 0.7*F*r;
+      p.ombro[L > 0 ? 0 : 1] += 0.6*F*r; p.ombroZ[L > 0 ? 0 : 1] += 0.45*F*r;
+    } else {
+      p.olhaX -= 0.55*F*r; p.olhaY += L*0.45*F*r;
+      p.inclina -= 0.28*F*r; p.tomba += L*0.14*F*r; p.gira += L*0.18*F*r;
+      p.y -= 0.6*F*r;
+      p.ombro[0] += 0.5*F*r; p.ombro[1] += 0.4*F*r; p.ombroZ[0] += 0.35*F*r; p.ombroZ[1] += 0.3*F*r;
+    }
     const fraco = d.hpMax ? d.hp/d.hpMax < 0.35 : false;
     if(F >= 1 || fraco){ p.coxa[0] += 0.45*r; p.joelho[0] += 0.3*r; p.joelho[1] += 0.25*r; p.inclina -= 0.15*r; }
   }
@@ -2196,7 +2218,17 @@ let escalaDoTabuleiro = () => 1;
   /* cair de vez: de frente, de costas ou de lado — gira até o chão,
      quica, fica. Quem já estava DERRUBADO e apanhou não cai de novo:
      fica deitado como estava (`f.jazido`). */
-  function cair(p, f, dt){
+  function cair(p, f, dt, d){
+    /* A QUEDA VAI PRO LADO DO GOLPE (12/11/2026): o combate guarda o rumo
+       da pancada que derrubou (`d.caiuRumo`); de frente pro golpe cai de
+       costas, de costas pra ele cai de frente, de lado cai de lado */
+    if(!f.queda && !f.jazido && d && typeof d.caiuRumo === 'number'){
+      const r = d.caiuRumo;
+      let rel = (typeof rumoDoTabuleiro === 'function' ? rumoDoTabuleiro(Math.sin(r), Math.cos(r)) : r) - f.yaw;
+      while(rel > Math.PI) rel -= Math.PI*2; while(rel < -Math.PI) rel += Math.PI*2;
+      const a = Math.abs(rel);
+      f.queda = {t:0, var: a < 0.9 ? 0 : a > 2.2 ? 1 : 2, lado: rel > 0 ? -1 : 1};
+    }
     if(!f.queda) f.queda = {t: f.jazido ? 1 : 0, var: f.jazido ? f.jazido : (f.varianteForcada!=null ? f.varianteForcada : dado(f.sem+'qv', 3)),
                             lado: f.jazido ? (f.jazidoLado||1) : (frac(f.sem+'ql') < 0.5 ? 1 : -1)};
     f.queda.t += dt;
@@ -2470,6 +2502,67 @@ let escalaDoTabuleiro = () => 1;
     return pm._b3;
   }
 
+  /* =======================================================
+     A CAMADA DE REALISMO (dono, 12/11/2026)
+     "Aprimore todos os movimentos dos bonecos pra ficar mais realista."
+     Passa por cima de QUALQUER movimento de quem está de pé, depois
+     que a pose do estado já foi escolhida:
+     · o CORPO TEM PESO — arrancando ele se joga pra frente, freando ele
+       senta pra trás, e na curva deita pro lado de dentro;
+     · a CABEÇA ATRASA — numa virada rápida do tronco ela chega depois;
+     · o CANSAÇO APARECE — abaixo de 45% da vida a guarda cai, o tronco
+       dobra, a cabeça baixa e a respiração fica pesada;
+     · o que o combate sente, o corpo mostra — o novato que HESITA abre
+       as mãos e encolhe, quem está com RAIVA fecha e avança o tronco,
+       quem respirou o GÁS tosse dobrado com a mão no rosto, e quem
+       levou cassetete da ronda sai cobrindo a cabeça.
+     ======================================================= */
+  function realismo(p, f, d, J, dt, t){
+    const lim = (v, a, b) => v < a ? a : v > b ? b : v;
+    /* o peso: a aceleração ao longo do rumo e a taxa de giro */
+    const vel = Math.hypot(f.vx || 0, f.vz || 0);
+    const acel = dt > 0 ? (vel - (f.rVel == null ? vel : f.rVel))/dt : 0;
+    f.rVel = vel;
+    f.rAcel = (f.rAcel || 0) + (lim(acel*0.0011, -0.16, 0.2) - (f.rAcel || 0))*Math.min(1, dt*7);
+    let dy = f.yaw - (f.rYaw == null ? f.yaw : f.rYaw);
+    while(dy > Math.PI) dy -= Math.PI*2; while(dy < -Math.PI) dy += Math.PI*2;
+    f.rYaw = f.yaw;
+    const giro = dt > 0 ? lim(dy/dt, -6, 6) : 0;
+    f.rGiro = (f.rGiro || 0) + (giro - (f.rGiro || 0))*Math.min(1, dt*8);
+    if(!d.ataque){
+      p.inclina += f.rAcel;
+      p.tomba += lim(f.rGiro*0.022*Math.min(1, vel/40), -0.14, 0.14);
+    }
+    p.olhaY -= lim(f.rGiro*0.05, -0.3, 0.3);
+    /* o cansaço */
+    const vida = d.hpMax ? d.hp/d.hpMax : 1;
+    const k = lim((0.45 - vida)/0.3, 0, 1);
+    if(k > 0 && !d.ataque){
+      const ar = Math.sin(t*(4.2 + 2.2*k) + f.fase);
+      p.ombro[0] += 0.38*k; p.ombro[1] += 0.34*k; p.cotovelo[0] += 0.3*k; p.cotovelo[1] += 0.28*k;
+      p.inclina += 0.13*k + 0.035*k*ar; p.olhaX += 0.16*k; p.y -= 0.5*k - 0.3*k*ar;
+      p.joelho[0] += 0.1*k; p.joelho[1] += 0.1*k;
+    }
+    /* o que o combate sente */
+    const agora = J.t;
+    if(d.gas > agora && !d.ataque){
+      const tosse = Math.max(0, Math.sin(t*9 + f.fase));
+      p.ombro[0] = -1.55; p.cotovelo[0] = -2.45; p.ombroZ[0] = 0.25; p.punho[0] = 0;
+      p.ombro[1] = -0.5; p.cotovelo[1] = -1.2; p.ombroZ[1] = 0.5;
+      p.inclina += 0.34 + 0.16*tosse; p.olhaX += 0.4; p.y -= 0.8 + 0.5*tosse;
+    } else if(d.dispersa > agora && !d.ataque){
+      p.ombro = [-2.3, -2.2]; p.cotovelo = [-2.0, -2.1]; p.ombroZ = [0.5, 0.5]; p.punho = [0, 0];
+      p.inclina += 0.3; p.olhaX += 0.35; p.y -= 1.2;
+    } else if(d.hesita > agora && !d.ataque){
+      p.ombro = [-1.25, -1.2]; p.cotovelo = [-1.95, -1.9]; p.ombroZ = [0.55, 0.6]; p.punho = [0, 0];
+      p.inclina -= 0.1; p.olhaX -= 0.06; p.y -= 0.6; p.joelho[0] += 0.12; p.joelho[1] += 0.12;
+      p.olhaY += 0.25*Math.sin(t*3.1 + f.fase);
+    } else if(d.furia > agora){
+      p.inclina += 0.09; p.olhaX += 0.1; p.y -= 0.4;
+      if(!d.ataque){ p.ombro[0] -= 0.12; p.ombro[1] -= 0.12; p.ombroZ[0] += 0.12; p.ombroZ[1] += 0.12; }
+    }
+  }
+
   function animarDisco(d, i, J, dt){
     const fg = figuraDe(d, i, false), f = fg.f, c = fg.corpo;
     const t = J.t;
@@ -2482,7 +2575,12 @@ let escalaDoTabuleiro = () => 1;
        pulados só a posição do disco é copiada; se nem ela mudou, o
        esqueleto não sobe pra placa (ver figuraDe). O líder e quem está
        brigando continuam em sessenta, com tudo. */
-    const leve = cfg.movimentoLeve && !d.lider;
+    /* A MULTIDÃO VIVA (12/11/2026): de tempos em tempos cada um da
+       multidão "acorda" por pouco mais de um segundo — respira, olha em
+       volta, provoca, torce — em vez de ficar de estátua a briga inteira.
+       Um sexto deles por vez, em rodízio: a conta de placa quase não muda. */
+    const acorda = ((Math.floor(J.t/1.3) + i*5) % 6) === 0;
+    const leve = cfg.movimentoLeve && !d.lider && !acorda;
     const agitado = !d.vivo || d.derrubado > 0 || !!d.ataque || d.golpe > 0 || d.apanhou > 0 ||
       d.atordoado > 0 || !!d.arremesso || !!d.segurando || !!d.seguradoPor || d.esquivou > 0 ||
       d.tremor >= 4.5 || !!f.impacto || !!f.queda || !!d.fugindo || !!d.fugaBomba || (d.chamou > t - 1.3) ||
@@ -2509,7 +2607,7 @@ let escalaDoTabuleiro = () => 1;
     if(!d.vivo && !d.longe){
       if(d.preso){ sentar(p, f, t); f.queda = null; rapidez = 6; esmaecer(c, 1); }
       else {
-        cair(p, f, dt); rapidez = 14;
+        cair(p, f, dt, d); rapidez = 14;
         /* O CAÍDO FICA QUASE TRANSPARENTE (régua do dono, 06/09/2026):
            70% de transparência, ou seja, 30% de opacidade — nos dois
            lados. Some do bolo sem sumir da conta. */
@@ -2620,6 +2718,7 @@ let escalaDoTabuleiro = () => 1;
       else { f.ataque = null; rapidez = andando ? 14 : jeito ? 8 : 5; }
       if(d.esquivou > 0) esquivar(p, f, d);
       else flinch(p, f, d, dt);
+      realismo(p, f, d, J, dt, t);
     }
 
     misturarPose(f.pose, p, Math.min(1, dt*rapidez));
@@ -2665,6 +2764,10 @@ let escalaDoTabuleiro = () => 1;
       if(pm.carga){ p.escudo = true; p.ombro[0] = -1.2; p.cotovelo[0] = -1.4; p.ombroZ[0] = 0.1; p.inclina += 0.14; }
       /* o escudo em pé, na frente do corpo (o cordão de isolamento) */
       else if(pm.escudo){ p.escudo = true; p.ombro[0] = -0.9; p.cotovelo[0] = -1.2; p.ombroZ[0] = 0.12; }
+      /* manda dispersar: o braço do escudo sobe, a palma aberta (degrau 1) */
+      if(!pm.carga && J.pmFase === 1 && pm.cooldown <= 0){ p.ombro[0] = -2.5 + 0.12*Math.sin(J.t*5 + f.fase); p.cotovelo[0] = -0.4; p.ombroZ[0] = 0.3; p.punho[0] = 0; }
+      /* algemando quem ficou no chão: agachado em cima dele */
+      if(pm.algema && pm.algema.t > 0){ socorrerPose(p, f, J.t); p.escudo = false; rapidez = 12; }
       if(pm.golpe > 0){
         const k = 1 - pm.golpe/0.3, desce = suave(k/0.6);
         p.ombro[1] = mistura(-2.8, -0.9, desce); p.cotovelo[1] = mistura(-0.9, -0.3, desce); p.ombroZ[1] = 0.25;
@@ -3003,8 +3106,57 @@ let escalaDoTabuleiro = () => 1;
     /* figuras que saíram da cena: some da lista, não só da tela */
     for(const [d,fg] of figuras) if(!fg.viva){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
     projeteis(J);
+    efeitosDaPM(J, dt);
     atualizarParticulas(dt);
     gradesDeFerro(J.grades);
+  }
+
+  /* =======================================================
+     O GÁS E A VIATURA (dono, 12/11/2026)
+     O combate guarda a nuvem da bomba de efeito moral em `J.gases` e a
+     viatura em `J.viatura`; aqui eles ganham corpo: a lata voando, a
+     fumaça clara que cresce e some, e o carro com o giroflex piscando.
+     ======================================================= */
+  let carroPM = null;
+  function efeitosDaPM(J, dt){
+    
+    for(const g of (J.gases || [])){
+      if(J.t < g.estoura){
+        const k = (J.t - g.nasce)/(g.estoura - g.nasce);
+        const q = pos(g.ox + (g.x - g.ox)*k, g.oy + (g.y - g.oy)*k);
+        if(Math.random() < 0.6) soltar(q.x, q.y + 14 + Math.sin(k*Math.PI)*26, q.z, {dur:0.35, tam:1.6, cresce:5, cor:'#d8dcd8', alfa:0.6});
+        continue;
+      }
+      const vida = (J.t - g.estoura)/(g.ate - g.estoura);
+      if(Math.random() < (vida < 0.15 ? 1 : 0.55)*(1 - vida*0.7)){
+        const a = Math.random()*6.283, r = Math.sqrt(Math.random())*g.r*(0.35 + 0.65*Math.min(1, vida*3));
+        const q = pos(g.x + Math.cos(a)*r, g.y + Math.sin(a)*r);
+        soltar(q.x, q.y + 3 + Math.random()*5, q.z, {vy:5 + Math.random()*5, vx:(Math.random() - 0.5)*7, vz:(Math.random() - 0.5)*7,
+          dur:1.3 + Math.random()*0.9, tam:7, cresce:16, cor:'#e2e4de', alfa:0.42});
+      }
+    }
+    const v = J.viatura, tem = !!(v && v.chegou && !v.aPe);
+    if(tem && !carroPM){
+      const g = G(), grupo = new THREE.Group();
+      const peca = (cor, sx, sy, sz, x, y, z) => { const m = new THREE.Mesh(g.caixa, mat(cor)); m.scale.set(sx, sy, sz); m.position.set(x, y, z); grupo.add(m); return m; };
+      peca('#e8e4dc', 24, 9, 50, 0, 8.5, 0);       // a carroceria
+      peca('#1e3a2c', 24.4, 4, 50.4, 0, 8, 0);      // a faixa verde
+      peca('#e8e4dc', 22, 8, 26, 0, 17, -2);        // a cabine
+      peca('#10161a', 22.4, 5, 22, 0, 17.5, -2);    // os vidros
+      for(const [x, z] of [[-11, 15], [11, 15], [-11, -15], [11, -15]]) peca('#141414', 3, 7, 7, x, 3.5, z);
+      const luzes = [peca('#dc463c', 8, 2.4, 4, -5, 22.2, -2), peca('#508ceb', 8, 2.4, 4, 5, 22.2, -2)];
+      luzes[0].material = new THREE.MeshBasicMaterial({color:'#dc463c'}); luzes[1].material = new THREE.MeshBasicMaterial({color:'#508ceb'});
+      scene.add(grupo); carroPM = {grupo, luzes};
+    }
+    if(carroPM){
+      if(!tem){ scene.remove(carroPM.grupo); carroPM.luzes.forEach(l => l.material.dispose()); carroPM = null; }
+      else {
+        const q = pos(v.x, v.y), e = escalaDeCima/1.25;
+        carroPM.grupo.position.set(q.x, q.y, q.z); carroPM.grupo.rotation.y = rumoDoTabuleiro(Math.sin(v.rumo), Math.cos(v.rumo)); carroPM.grupo.scale.setScalar(e);
+        const pisca = Math.sin(J.t*9) > 0;
+        carroPM.luzes[0].material.color.set(pisca ? '#ff4a3c' : '#3a1512'); carroPM.luzes[1].material.color.set(pisca ? '#12233a' : '#5a9cff');
+      }
+    }
   }
 
   /* O QUE É SÓ DA FIGURA SAI DA PLACA COM ELA: os materiais clonados

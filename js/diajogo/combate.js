@@ -3563,7 +3563,7 @@ TO.diaJogo.combate = (function(){
       J.viatura = {chamadaEm:J.t, chegaEm:J.t + U.entre(VIATURA.de, VIATURA.ate), chegou:false, avisou:false};
     const v = J.viatura;
     if(v && !v.chegou){
-      if(!v.avisou && v.chegaEm - J.t <= 10){ v.avisou = true; aviso(J, _t('Sirene: a viatura está chegando'), '#e0b040'); logar(J, _t('Dá pra ouvir a sirene: a viatura está chegando.'), 'pm'); som(J, 'sirene'); }
+      if(!v.avisou && v.chegaEm - J.t <= 10){ v.avisou = true; aviso(J, D.semRecuoPM ? _t('O reforço da PM está chegando') : _t('Sirene: a viatura está chegando'), '#e0b040'); logar(J, _t('Dá pra ouvir a sirene: a viatura está chegando.'), 'pm'); som(J, 'sirene'); }
       if(J.t >= v.chegaEm){
         v.chegou = true; v.ate = J.t + VIATURA.dura;
         /* por onde ela entra: a boca marcada pra tropa, um posto da PM, ou
@@ -3579,6 +3579,8 @@ TO.diaJogo.combate = (function(){
         porta = porta || {x:A.W/2, y:A.H/2};
         const q0 = A.pontoLivreMaisProximo(porta.x, porta.y, 12);
         v.x = q0.x; v.y = q0.y; v.rumo = Math.atan2(c.x - v.x, c.y - v.y);
+        /* dentro do setor não entra carro: é o reforço a pé */
+        v.aPe = !!D.semRecuoPM;
         for(let i = 0; i < VIATURA.pms; i++){
           const pm = new Policial({x:v.x, y:v.y});
           const q = A.pontoLivreMaisProximo(v.x + U.entre(-40, 40), v.y + U.entre(-40, 40), 10);
@@ -3586,8 +3588,9 @@ TO.diaJogo.combate = (function(){
           J.policiais.push(pm);
         }
         J.alerta = Math.max(J.alerta, 85);
-        aviso(J, _t('A viatura chegou'), '#5fa87d'); som(J, 'sirene');
-        logar(J, _t('A viatura chegou: {n} PMs desceram dispersando os dois lados.', {n:VIATURA.pms}), 'pm');
+        aviso(J, v.aPe ? _t('O reforço da PM entrou') : _t('A viatura chegou'), '#5fa87d'); som(J, 'sirene');
+        logar(J, v.aPe ? _t('O reforço da PM entrou no setor: {n} PMs dispersando os dois lados.', {n:VIATURA.pms})
+                       : _t('A viatura chegou: {n} PMs desceram dispersando os dois lados.', {n:VIATURA.pms}), 'pm');
       }
     } else if(v && v.chegou && !v.recolheu && J.t > v.ate){
       v.recolheu = true;
@@ -4872,7 +4875,7 @@ TO.diaJogo.combate = (function(){
      (12/11/2026): do chão, valem com ou sem os bonecos por cima */
   function desenharPM2(c, J){
     const v = J.viatura;
-    if(v && v.chegou){
+    if(v && v.chegou && !v.aPe){
       c.save(); c.translate(v.x, v.y); c.rotate(-v.rumo);
       c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-13, -24, 28, 50);
       c.fillStyle='#e8e4dc'; c.fillRect(-12, -25, 24, 48);

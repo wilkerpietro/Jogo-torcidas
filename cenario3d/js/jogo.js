@@ -4026,7 +4026,22 @@ TO.i18n.registrar({
   "cada muro é escolhido no mapa, à mão": {es:"cada muro se elige en el mapa, a mano", en:"each wall is picked on the map, by hand"},
   "o pedido sai do botão \"Pedir ajuda\" da caravana, jogo a jogo": {es:"el pedido sale del botón \"Pedir ayuda\" de la caravana, partido a partido", en:"the request comes from the caravan's \"Ask for help\" button, game by game"},
   "o saldo do mês é gasto aos poucos, todo dia, no bairro com mais chance de virar — como as outras torcidas fazem": {es:"el saldo del mes se gasta de a poco, todos los días, en el barrio con más chance de dar vuelta — como hacen las otras barras", en:"the month's balance is spent bit by bit, every day, in the neighbourhood most likely to flip — like the other firms do"},
-  "todo jogo fora, a diretoria pede à aliada de melhor relação na praça — receber soma relação; a recusa tira −7": {es:"en cada partido fuera, la directiva le pide a la aliada con mejor relación en la plaza — ser recibidos suma relación; el rechazo quita −7", en:"every away game, the board asks the ally with the best relationship in that city — being hosted adds relationship; a refusal takes −7"}
+  "todo jogo fora, a diretoria pede à aliada de melhor relação na praça — receber soma relação; a recusa tira −7": {es:"en cada partido fuera, la directiva le pide a la aliada con mejor relación en la plaza — ser recibidos suma relación; el rechazo quita −7", en:"every away game, the board asks the ally with the best relationship in that city — being hosted adds relationship; a refusal takes −7"},
+  /* ---------- a polícia em degraus (12/11/2026) ---------- */
+  "A PM mandou dispersar": {es:"La policía ordenó dispersarse", en:"Police ordered everyone to disperse"},
+  "A PM avança em linha": {es:"La policía avanza en línea", en:"Police advance in a line"},
+  "Bomba de efeito moral": {es:"Granada aturdidora", en:"Stun grenade"},
+  "A PM fechou em bloco e pediu reforço": {es:"La policía se cerró en bloque y pidió refuerzos", en:"Police closed ranks and called for backup"},
+  "Em minoria, a PM fechou em bloco e pediu reforço.": {es:"En minoría, la policía se cerró en bloque y pidió refuerzos.", en:"Outnumbered, the police closed ranks and called for backup."},
+  "Sirene: a viatura está chegando": {es:"Sirena: llega el patrullero", en:"Siren: the patrol car is coming"},
+  "Dá pra ouvir a sirene: a viatura está chegando.": {es:"Se oye la sirena: llega el patrullero.", en:"You can hear the siren: the patrol car is coming."},
+  "A viatura chegou": {es:"Llegó el patrullero", en:"The patrol car is here"},
+  "O reforço da PM entrou": {es:"Entró el refuerzo policial", en:"Police backup is in"},
+  "O reforço da PM está chegando": {es:"Llega el refuerzo policial", en:"Police backup is coming"},
+  "O reforço da PM entrou no setor: {n} PMs dispersando os dois lados.": {es:"El refuerzo policial entró al sector: {n} policías dispersando a los dos bandos.", en:"Police backup entered the stand: {n} officers dispersing both sides."},
+  "A viatura chegou: {n} PMs desceram dispersando os dois lados.": {es:"Llegó el patrullero: {n} policías bajaron dispersando a los dos bandos.", en:"The patrol car is here: {n} officers got out, dispersing both sides."},
+  "{nome} foi algemado no chão.": {es:"{nome} fue esposado en el suelo.", en:"{nome} was cuffed on the ground."},
+  "Massacrar": {es:"Masacrar", en:"Smash"}, "Tomar a faixa": {es:"Tomar la bandera", en:"Take the banner"}, "Proteger": {es:"Proteger", en:"Protect"}
 });
 
 ;
@@ -44386,6 +44401,95 @@ TO.diaJogo.arredores = (function(){
 
 ;
 
+/* ===== js/som.js ===== */
+/* =========================================================
+   O SOM DA BRIGA (dono, 12/11/2026)
+   "Som: grito de torcida, sirene e bomba são o que mais aumenta a
+   sensação de briga pelo menor custo." Não há arquivo de áudio: tudo é
+   sintetizado na hora (WebAudio) — ruído filtrado pra pancada, queda,
+   bomba e gás; duas notas alternadas pra sirene; um apito.
+
+   O combate não toca nada: ele anota o nome do som em `J.sons` e a
+   ponte chama `TO.som.escoar(J)` uma vez por quadro. O navegador só
+   libera áudio depois de um gesto do jogador; até lá fica calado.
+   Liga/desliga em `TO.som.ligado` (guardado em localStorage).
+   ========================================================= */
+window.TO = window.TO || {};
+TO.som = (function(){
+  let ctx = null, ruido = null, ligado = true, ultimo = {};
+  try{ ligado = localStorage.getItem('to.som') !== '0'; }catch(_){}
+  const AC = window.AudioContext || window.webkitAudioContext;
+  function contexto(){
+    if(!AC) return null;
+    if(!ctx){
+      try{ ctx = new AC(); }catch(_){ return null; }
+      const n = ctx.sampleRate, b = ctx.createBuffer(1, n, n), d = b.getChannelData(0);
+      for(let i = 0; i < n; i++) d[i] = Math.random()*2 - 1;
+      ruido = b;
+    }
+    if(ctx.state === 'suspended'){ try{ ctx.resume(); }catch(_){} }
+    return ctx.state === 'running' ? ctx : null;
+  }
+  /* o primeiro toque ou tecla acorda o áudio */
+  const acordar = () => { if(ligado) contexto(); };
+  addEventListener('pointerdown', acordar, {passive:true});
+  addEventListener('keydown', acordar);
+
+  /* um sopro de ruído filtrado: o corpo de quase todo som daqui */
+  function sopro(c, o){
+    const t = c.currentTime + (o.em || 0), s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = ruido; s.loop = true;
+    f.type = o.tipo || 'lowpass'; f.frequency.setValueAtTime(o.f0, t);
+    if(o.f1) f.frequency.exponentialRampToValueAtTime(o.f1, t + o.dur);
+    f.Q.value = o.q || 0.7;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.vol, t + (o.ataque || 0.005));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    s.connect(f); f.connect(g); g.connect(c.destination);
+    s.start(t, Math.random()*0.5); s.stop(t + o.dur + 0.05);
+  }
+  function nota(c, o){
+    const t = c.currentTime + (o.em || 0), os = c.createOscillator(), g = c.createGain();
+    os.type = o.onda || 'sine'; os.frequency.setValueAtTime(o.f0, t);
+    if(o.f1) os.frequency.exponentialRampToValueAtTime(o.f1, t + o.dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(o.vol, t + (o.ataque || 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+    os.connect(g); g.connect(c.destination);
+    os.start(t); os.stop(t + o.dur + 0.05);
+  }
+  const SONS = {
+    soco(c){ sopro(c, {f0:900, f1:180, dur:0.09, vol:0.22}); nota(c, {f0:150, f1:70, dur:0.08, vol:0.18}); },
+    chute(c){ sopro(c, {f0:600, f1:120, dur:0.14, vol:0.3}); nota(c, {f0:110, f1:48, dur:0.14, vol:0.28}); },
+    queda(c){ sopro(c, {f0:320, f1:70, dur:0.22, vol:0.3}); nota(c, {f0:80, f1:38, dur:0.2, vol:0.3}); },
+    bomba(c){ sopro(c, {f0:2400, f1:60, dur:0.9, vol:0.7, ataque:0.002}); nota(c, {f0:90, f1:28, dur:0.7, vol:0.6}); },
+    gas(c){ sopro(c, {f0:1800, f1:300, dur:0.25, vol:0.4, ataque:0.002});
+            sopro(c, {tipo:'bandpass', f0:5200, f1:2600, dur:2.4, vol:0.12, ataque:0.2, q:1.2, em:0.1}); },
+    pedra(c){ sopro(c, {tipo:'bandpass', f0:2600, f1:900, dur:0.07, vol:0.2, q:2}); },
+    apito(c){ nota(c, {onda:'square', f0:2300, f1:2500, dur:0.5, vol:0.06}); },
+    sirene(c){ for(let i = 0; i < 6; i++) nota(c, {onda:'sawtooth', f0:i%2 ? 620 : 880, dur:0.36, vol:0.07, em:i*0.36, ataque:0.03}); }
+  };
+  /* dois sons iguais colados (dez socos no mesmo quadro) viram um só */
+  const FOLGA = {soco:0.05, chute:0.07, queda:0.1, pedra:0.05, gas:0.5, sirene:2.5, apito:1, bomba:0.15};
+  function tocar(nome){
+    if(!ligado || !SONS[nome]) return;
+    const c = contexto(); if(!c) return;
+    const agora = c.currentTime;
+    if(agora - (ultimo[nome] || -9) < (FOLGA[nome] || 0.05)) return;
+    ultimo[nome] = agora;
+    try{ SONS[nome](c); }catch(_){}
+  }
+  /* esvazia a fila que o combate encheu */
+  function escoar(J){
+    if(!J || !J.sons || !J.sons.length) return;
+    const fila = J.sons; J.sons = [];
+    if(ligado) for(const n of fila) tocar(n);
+  }
+  return {tocar, escoar,
+          get ligado(){ return ligado; },
+          set ligado(v){ ligado = !!v; try{ localStorage.setItem('to.som', ligado ? '1' : '0'); }catch(_){} }};
+})();
+
 /* ===== js/diajogo/combate.js ===== */
 
 /* =========================================================
@@ -44538,11 +44642,11 @@ TO.diaJogo.combate = (function(){
       /* BATER E DEFENDER (decisão do dono, 05/09/2026). Dano não é mais
          contato contínuo: é golpe. `ataque` é o golpe em curso ({t, dur,
          alvo}), com o impacto aos 0,15 s; `cdBater` o instante em que
-         pode bater de novo; `defendendo` o tempo que ainda fica na
-         defesa — quem defende de frente esquiva de 3 em 4 golpes e
-         leva um terço do outro. `esquivou`, `inimigoPerto` e `provoca`
-         são só de desenho. O líder bate no Q e defende no E; todos os
-         outros decidem sozinhos (`iaLuta`). */
+         pode bater de novo. A DEFESA SAIU (dono, 16/10/2026): golpe que
+         chega entra; `defendendo` fica sempre em 0. `esquivou`,
+         `inimigoPerto` e `provoca` são só de desenho. O líder bate no Q
+         (mira sozinho e sempre entra) e agarra no F; todos os outros
+         decidem sozinhos (`iaLuta`). */
       this.ataque=null; this.cdBater=0; this.defendendo=0; this.esquivou=0;
       /* DERRUBADO (pedido do dono, 06/09/2026): o chute que entra põe
          no chão por uns segundos — `derrubado` é o que falta pra
@@ -44564,7 +44668,7 @@ TO.diaJogo.combate = (function(){
          cima). O que cada um sabe fazer vem do CARGO (`perfilDe`). */
       this.cargo=null;          // preenchido pela escalação; sem ficha, inferido da força
       this.soltouEm=-9;         // quando soltou a defesa (o contragolpe lê)
-      this.contra=0;            // janela aberta pro contragolpe (segundos)
+      this.contra=0;            // contragolpe: saiu com a defesa (16/10/2026)
       this.segurando=null; this.seguradoPor=null; this.seguraAte=0; this.cdAgarrar=0;
       this.cercado=false; this.chamado=0; this.chamou=-9;
       this.chutador = lider ? 0.30 : U.entre(0.06, 0.22);
@@ -44611,9 +44715,10 @@ TO.diaJogo.combate = (function(){
      ======================================================= */
   /* BOMBA EM TODO CONFRONTO (régua do dono, 18/08/2026): o estoque
      inteiro da torcida está na mochila em qualquer cena — rua, praça,
-     arredores, bar, sede, CT —, planejada ou não. A única exceção é a
-     cena declarada sem armas: a treta 5×5/7×7/10×10, que é mano a
-     mano. */
+     arredores, bar, sede, CT, bairro —, planejada ou não. A única
+     exceção é a cena declarada sem armas (a reunião e a arquibancada só
+     de assistir). A treta 5×5/7×7/10×10 saiu do jogo em 15/10/2026 e a
+     briga de bairro que ficou no lugar dela tem pedra e bomba. */
   function bombasDaCena(cfg){
     if(cfg.semArmas) return 0;
     const base = cfg.bombas !== undefined ? cfg.bombas : P.bombas;
@@ -44633,6 +44738,10 @@ TO.diaJogo.combate = (function(){
       t:0, fase:'ativo',
       discos:[], policiais:[], projeteis:[], grades:A.montarGrades(),
       form:'investida',
+      /* a postura do nosso bonde (dono, 16/10/2026): 'massacrar' (o de
+         sempre), 'faixa' (uns vão atrás da faixa deles) ou 'proteger'
+         (fecham em volta do nosso material e defendem mais que batem) */
+      postura:'massacrar',
       /* o estoque da noite vem do planejamento da semana */
       /* cena combinada não tem projétil de lado nenhum: nem pedra, nem
          bomba, nem braço automático (decisão do dono, 17/08/2026) */
@@ -44678,6 +44787,12 @@ TO.diaJogo.combate = (function(){
          : !D.id ? true
          : cfg.intencao==='atacar' ? false : U.rng()*100 < P.chancePaz,
       intencao: cfg.intencao || 'paz', cdClima:0,
+      /* ASSISTIR AO JOGO (pedido do dono, 10/10/2026): a arquibancada
+         dentro da mensagem do dia de jogo. Cada torcida no seu setor,
+         ninguém briga, a PM fica parada e a cena não acaba sozinha —
+         quem a desmonta é o fim da partida ou a tensão que estoura (aí
+         abre a cena de briga de verdade, em tela cheia). */
+      assistir: !!cfg.assistir,
       config_perfilRival: cfg.perfilRival || null,
       /* fichas prontas pro lado deles (a zona deles na casa de piscina):
          cada grupo tira a sua fatia, na ordem, em vez de cada spawn
@@ -44767,8 +44882,12 @@ TO.diaJogo.combate = (function(){
           ordem.forEach((s, i)=> grupos.push({s, bonde:b,
                                               qtd: base + (i < sobra ? 1 : 0)}));
         } else {
-          fila.forEach((b, i)=> grupos.push({s:ordem[i % ordem.length], bonde:b,
-                                             qtd:Math.max(1, Math.round(b.n))}));
+          /* a escolta da aliada na linha do dia (`colado`, 13/10/2026)
+             chega junto com a gente: nasce no portão do nosso bonde,
+             não num ponto à parte */
+          let k = 0;
+          fila.forEach(b=> grupos.push({s: b.colado ? ordem[0] : ordem[k++ % ordem.length], bonde:b,
+                                        qtd:Math.max(1, Math.round(b.n))}));
         }
       } else {
         /* com escalação e sem bonde, quem diz o tamanho é a escalação */
@@ -44777,7 +44896,10 @@ TO.diaJogo.combate = (function(){
         const base = (lado === ladoCfg && temEscalacao) ? 0
           : Math.max(1, Math.round(
               (lado===ladoCfg?P.efetivo:J.efetivoRival)/contarSpawns(lado)));
-        for(const s of spawns) grupos.push({s, bonde:null, qtd:base});
+        /* `efetivoPorSpawn` (a bancada, 11/10/2026): crava o efetivo de um
+           spawn — "500 no 1º escalão visitante" pra testar o setor cheio */
+        const fixo = cfg.efetivoPorSpawn || {};
+        for(const s of spawns) grupos.push({s, bonde:null, qtd: fixo[s.id] != null ? fixo[s.id] : base});
       }
     }
 
@@ -44824,6 +44946,8 @@ TO.diaJogo.combate = (function(){
     /* o líder não depende da escalação: `grupoLider` sai do grupo do
        nosso portão, e a escalação só decide se ele tem NOME e ficha.
        Conferido com escalação vazia: líder existe e anda. */
+    /* a grade de isolamento anda conforme o tamanho do visitante */
+    if(D.id && /^estadio-/.test(D.id)) ajustarIsolamento(J, grupos);
     for(const g of grupos)
       nascerGrupo(J, g, fichas.get(g) || [], g === grupoLider, nomes);
 
@@ -45100,6 +45224,170 @@ TO.diaJogo.combate = (function(){
     return (B && B.apelidos) || N.apelidos || ['TROVÃO'];
   }
 
+  /* =======================================================
+     A GRADE DE ISOLAMENTO ANDA (dono, 11/10/2026: "é possível a grade
+     se ajustar de acordo com o tamanho do visitante? Isso resolveria o
+     problema"). Como no estádio de verdade, o isolamento é móvel: antes
+     de alguém nascer, conta-se quantos lugares (passo de 18 px) o setor
+     visitante tem, fechado pelas grades. Se não cabe o visitante (com 5%
+     de folga), a grade da divisa vai sendo empurrada pra fora do setor, 18
+     px por vez, uma de cada vez, e a cada passo ela se estica de ponta a
+     ponta do chão naquela linha (no estádio a divisória atravessa o lance
+     de degraus inteiro; sem isso ela vazava pela ponta). Uma grade só anda
+     se o setor ganha lugar e se não engole o ponto de nascimento de outro
+     bonde; para quando coube ou quando nenhuma anda mais.
+     ======================================================= */
+  function ajustarIsolamento(J, grupos){
+    if(!J.grades || !J.grades.length || !A.atravessaGrade) return;
+    const vis = grupos.filter(g => g.s.lado === 'visitante');
+    const nVis = vis.reduce((a, g) => a + Math.max(0, g.qtd || 0), 0);
+    if(nVis < 40) return;
+    const need = Math.ceil(nVis * 1.05), PASSO = 18;
+    const fontes = [...new Set(vis.map(g => g.s))];
+    const outros = D.spawns.filter(sp => sp.lado !== 'visitante');
+    const k = q => `${Math.round(q.x/PASSO)}|${Math.round(q.y/PASSO)}`;
+    /* a enchente do setor: quantos lugares e se encosta noutro spawn */
+    const encher = (limite) => {
+      const vistos = new Set(), fila = [], pts = [];
+      for(const sp of fontes){
+        const o = A.caminhavel(sp.x, sp.y) ? {x:sp.x, y:sp.y} : A.pontoLivreMaisProximo(sp.x, sp.y, 7);
+        if(!vistos.has(k(o))){ vistos.add(k(o)); fila.push(o); }
+      }
+      let invade = false;
+      while(fila.length && pts.length < limite){
+        const q = fila.shift(); pts.push(q);
+        /* folga do bonde dos outros: o setor não encosta no spawn deles */
+        for(const sp of outros) if(Math.hypot(sp.x - q.x, sp.y - q.y) < 110) invade = true;
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const r = {x:q.x + dx*PASSO, y:q.y + dy*PASSO}, kr = k(r);
+          if(vistos.has(kr)) continue; vistos.add(kr);
+          if(r.x < 4 || r.y < 4 || r.x > A.W-4 || r.y > A.H-4) continue;
+          if(!A.caminhavel(r.x, r.y)) continue;
+          if(A.atravessaGrade(q.x, q.y, r.x, r.y, J.grades)) continue;
+          fila.push(r);
+        }
+      }
+      return {cap: pts.length, pts, invade};
+    };
+    let atual = encher(need);
+    if(atual.cap >= need) return;
+    const ids = [...new Set(J.grades.filter(m => m.tipo !== 'fila').map(m => m.grade))];
+    const modsDe = id => J.grades.filter(m => m.grade === id);
+    /* o comprimento de cada grade como veio da cena: a que, andando,
+       fica bem mais comprida saiu do lance dela (passou da quina) */
+    const compOrig = {};
+    for(const id of ids) compOrig[id] = modsDe(id).reduce((a, m) => a + m.meia * 2, 0);
+    /* a grade inteira numa linha nova: o centro, a direção, esticada de
+       ponta a ponta do chão ao longo dela (até 260 px pra cada lado) */
+    const refazer = (id, cx, cy, ux, uy, base) => {
+      const ate = sentido => {
+        let ult = 0;
+        for(let t = 6; t <= 260; t += 6){
+          if(A.caminhavel(cx + ux*t*sentido, cy + uy*t*sentido)) ult = t;
+          else if(t - ult > 18) break;
+        }
+        return ult + 8;
+      };
+      const t0 = -ate(-1), t1 = ate(1), comp = t1 - t0, n = Math.max(1, Math.round(comp / 22)), meia = comp / n / 2;
+      const novos = [];
+      for(let i = 0; i < n; i++){
+        const t = t0 + comp * (i + 0.5) / n;
+        novos.push(Object.assign({}, base, {x:cx + ux*t, y:cy + uy*t, ux, uy, meia, movida:true}));
+      }
+      return novos;
+    };
+    for(let volta = 0; volta < 60 && atual.cap < need; volta++){
+      let andou = false;
+      for(const id of ids){
+        const ms = modsDe(id);
+        if(!ms.length) continue;
+        const cx = ms.reduce((a, m) => a + m.x, 0) / ms.length, cy = ms.reduce((a, m) => a + m.y, 0) / ms.length;
+        const ux = ms[0].ux, uy = ms[0].uy;
+        /* só a grade que faz divisa com o setor: algum lugar dele encostado nela */
+        const perto = atual.pts.some(p => {
+          const ao = Math.abs((p.x-cx)*ux + (p.y-cy)*uy), at = Math.abs((p.x-cx)*(-uy) + (p.y-cy)*ux);
+          return at < PASSO*1.6 && ao < ms.length * ms[0].meia + PASSO;
+        });
+        if(!perto) continue;
+        /* pra fora do setor: o lado oposto ao miolo dos lugares dele */
+        const mx = atual.pts.reduce((a, p) => a + p.x, 0) / atual.pts.length;
+        const my = atual.pts.reduce((a, p) => a + p.y, 0) / atual.pts.length;
+        let nx = -uy, ny = ux;
+        if((cx - mx)*nx + (cy - my)*ny < 0){ nx = -nx; ny = -ny; }
+        /* a grade paralela logo à frente (a divisória e o gradil do lado,
+           a 40 px uma da outra no estádio de 10 mil) anda junto: sem isso
+           uma travava a outra e o setor parava no meio */
+        const bloco = [id];
+        for(const id2 of ids){
+          if(id2 === id) continue;
+          const m2 = modsDe(id2);
+          if(!m2.length || Math.abs(m2[0].ux*ux + m2[0].uy*uy) < 0.9) continue;
+          const c2x = m2.reduce((a, m) => a + m.x, 0) / m2.length, c2y = m2.reduce((a, m) => a + m.y, 0) / m2.length;
+          const frente = (c2x - cx)*nx + (c2y - cy)*ny, lado = Math.abs((c2x - cx)*ux + (c2y - cy)*uy);
+          if(frente > 0 && frente <= PASSO*3 && lado < ms.length * ms[0].meia * 2) bloco.push(id2);
+        }
+        let novos = [];
+        for(const b of bloco){
+          const mb = modsDe(b);
+          const bx = mb.reduce((a, m) => a + m.x, 0) / mb.length, by = mb.reduce((a, m) => a + m.y, 0) / mb.length;
+          novos = novos.concat(refazer(b, bx + nx*PASSO, by + ny*PASSO, mb[0].ux, mb[0].uy, mb[0]));
+        }
+        const longa = bloco.some(b => novos.filter(m => m.grade === b).reduce((a, m) => a + m.meia * 2, 0) > compOrig[b] * 1.8);
+        if(longa) continue;
+        const antes = J.grades;
+        J.grades = J.grades.filter(m => !bloco.includes(m.grade)).concat(novos);
+        const r = encher(need);
+        if(r.invade || r.cap <= atual.cap){ J.grades = antes; continue; }
+        atual = r; andou = true;
+        if(atual.cap >= need) break;
+      }
+      if(!andou) break;
+    }
+    J.isolamentoAjustado = atual.cap;
+    J.versaoGrades = (J.versaoGrades || 0) + 1;
+  }
+
+  /* os lugares do bonde dentro do setor dele: enchente a partir do spawn
+     no passo dado, só por chão andável, sem cruzar grade de pé e sem
+     cair em lugar já tomado; o passo aperta até caber */
+  function lugaresNoSetor(J, s, qtd, ocupados, chave){
+    const origem = A.caminhavel(s.x, s.y) ? {x:s.x, y:s.y} : A.pontoLivreMaisProximo(s.x, s.y, 7);
+    let melhor = null;
+    for(const passo of [18, 16, 14, 12, 10]){
+      const vistos = new Set(), fila = [origem], fora = [];
+      const k = q => `${Math.round(q.x/passo)}|${Math.round(q.y/passo)}`;
+      vistos.add(k(origem));
+      while(fila.length && fora.length < qtd){
+        /* sempre o mais perto do spawn primeiro: o bloco sai redondo */
+        let bi = 0, bd = Infinity;
+        for(let i=0;i<fila.length;i++){ const d = (fila[i].x-s.x)**2 + (fila[i].y-s.y)**2; if(d < bd){ bd = d; bi = i; } }
+        const q = fila.splice(bi, 1)[0];
+        if(!ocupados.has(chave(q))) fora.push(q);
+        for(const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+          const r = {x:q.x + dx*passo, y:q.y + dy*passo};
+          const kr = k(r);
+          if(vistos.has(kr)) continue;
+          vistos.add(kr);
+          if(r.x < 4 || r.y < 4 || r.x > A.W-4 || r.y > A.H-4) continue;
+          if(!A.caminhavel(r.x, r.y)) continue;
+          if(A.atravessaGrade(q.x, q.y, r.x, r.y, J.grades)) continue;
+          /* a grade nem sempre fecha o setor de ponta a ponta (sobra vão
+             no pé da escada, na mureta): sem esta régua a enchente
+             contornava a ponta dela e enchia o setor vizinho. O lugar
+             tem de "ver" o spawn sem cruzar grade nenhuma. */
+          if(A.atravessaGrade(s.x, s.y, r.x, r.y, J.grades)) continue;
+          fila.push(r);
+        }
+      }
+      if(!melhor || fora.length > melhor.length) melhor = fora;
+      if(fora.length >= qtd) break;
+    }
+    /* nem no passo de 10 coube: quem sobra divide os lugares do setor
+       (empilha, mas não atravessa a grade) */
+    if(melhor.length && melhor.length < qtd)
+      for(let i = melhor.length, n = melhor.length; i < qtd; i++) melhor.push(melhor[i % n]);
+    return melhor.length ? melhor : null;
+  }
   function nascerGrupo(J, g, escalados, temLider, nomes){
     const s = g.s;
     const qtd = Math.max(g.qtd, escalados.length);
@@ -45174,9 +45462,21 @@ TO.diaJogo.combate = (function(){
     const chave = q => `${Math.round(q.x/CEL)}|${Math.round(q.y/CEL)}`;
     const vago = q => A.caminhavel(q.x, q.y) && !ocupados.has(chave(q));
     const nascidos=[];
+    /* O BONDE CABE NO SETOR DELE (dono, 11/10/2026: "em jogos com muitos
+       membros a torcida fica para além da grade de divisão — sempre tem
+       que caber no seu espaço devido"). O quadrado centrado no spawn não
+       sabe de grade: com 300, ele passava por cima da divisória e o
+       reencosto no vão livre punha gente no setor vizinho. Em cena com
+       grade, os lugares saem de uma enchente a partir do spawn que nunca
+       atravessa grade de pé, na ordem da distância (o bloco continua
+       junto); se o setor não comporta todo mundo no passo de 18, o passo
+       aperta (16, 14, 12, 10) — torcida espremida, mas no lugar dela. */
+    const lugares = (J.grades && J.grades.some(m => m.hp > 0) && A.atravessaGrade)
+      ? lugaresNoSetor(J, s, qtd, ocupados, chave) : null;
     for(let i=0;i<qtd;i++){
-      let p=A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
+      let p = lugares && lugares[i] ? lugares[i] : A.pontoLivreMaisProximo(x0 + (i%cols)*PASSO,
                                     y0 + Math.floor(i/cols)*PASSO, 7);
+      if(!(lugares && lugares[i])){
       /* NINGUÉM NASCE EM CIMA DE CASA. Quando a rua está lotada na hora
          do nascimento, a busca em anéis falha e devolve o ponto do
          sorteio — que pode ser um telhado, e disco em telhado não anda,
@@ -45195,6 +45495,7 @@ TO.diaJogo.combate = (function(){
               if(vago(q)){ p = q; break busca; }
             }
       }
+      }
       ocupados.add(chave(p));
       const m = escalados[i];
       const lider = temLider && i===0;
@@ -45202,9 +45503,23 @@ TO.diaJogo.combate = (function(){
         m ? m.apelido.toUpperCase()
           : String(nomes[i%nomes.length]||'ZÉ').toUpperCase(),
         s.lado, s, p.x, p.y, lider);
+      /* DE QUEM É O DISCO (festas na arquibancada, 11/10/2026): o
+         mosaico, o bandeirão e os trapos só vestem a NOSSA torcida, e
+         no setor dividido com aliado é por aqui que se separa */
+      d.nossaTorcida = meu;
+      d.torcidaId = g.bonde ? g.bonde.id : null;
       if(m){
         d.membroId=m.id;
-        d.forca=m.forca; d.defesa=m.defesa; d.moral=m.moral;
+        d.forca=m.forca; d.defesa=m.defesa;
+        /* A MORAL É DA TORCIDA (conserto de 11/10/2026): a de membro
+           morreu em 24/08 e o campo da ficha ficou parado em 12 — o
+           nosso bonde atendia o "chamar" sempre com 12, enquanto o
+           rival usava a moral viva da torcida dele. Agora os dois
+           lados saem da mesma régua: moral da torcida ±3. */
+        const Em = TO.estado && TO.estado.E;
+        d.moral = Em && Em.indicadores
+          ? U.limitar(Math.round(Em.indicadores.moral) + U.inteiro(-3,3), 1, 20)
+          : m.moral;
         /* defesa vira resistência: quem apanha melhor cai depois */
         d.hpMax = 90 + m.defesa*7;
         d.hp=d.hpMax;
@@ -45238,6 +45553,9 @@ TO.diaJogo.combate = (function(){
          cor e ficha dele, mas o comando é do jogador — os discos
          seguem a formação do nosso líder e obedecem R e F */
       d.doJogador = meu || !!(g.bonde && g.bonde.controlado);
+      /* a escolta da aliada na linha do dia (13/10/2026): as baixas dela
+         são contadas à parte, pra não sair do nosso bonde */
+      d.junto = !!(g.bonde && g.bonde.controlado);
       J.discos.push(d);
       nascidos.push(d);
     }
@@ -45349,6 +45667,12 @@ TO.diaJogo.combate = (function(){
       if(J.t >= J.comemorarAte) J.fase = 'acabando';
       return;
     }
+    /* ASSISTINDO NINGUÉM ANDA (correção do dono, 10/10/2026: "as demais
+       torcidas IA irão ficar paradas com os bonecos fazendo a animação de
+       torcer. Atualmente elas fogem do estádio sem explicação"): sem a IA
+       de luta, o movimento levava cada bonde pra saída do setor. Cada um
+       fica onde nasceu — a festa e a torcida são só do corpo (bonecos3) */
+    if(J.assistir){ for(const d of J.discos){ d.vx = 0; d.vy = 0; } return; }
     /* O CRONÔMETRO POR ETAPA (medição de 17/09/2026): com `J._perfil`
        ligado, cada etapa soma o seu tempo em `J._tempos` — é o que
        diz onde uma cena de 600 gasta o quadro. Desligado, custa um
@@ -45365,11 +45689,13 @@ TO.diaJogo.combate = (function(){
     moverDiscos(J,dt);
     if(PF) marca('moverDiscos');
     moverPoliciais(J,dt);
+    passoPM(J,dt); passoMoral(J,dt);
     if(PF) marca('moverPoliciais');
     iaLuta(J,dt); if(PF) marca('iaLuta');
     socorrer(J,dt); conferirAgarroes(J); iaChamar(J);
     if(PF) marca('socorro+agarrao+chamar');
     atualizarFaixas(J,dt);
+    if(J.postura==='faixa' && J.t - (J._tCaca||0) > 1.5){ J._tCaca = J.t; repartirCacadores(J); }
     if(PF) marca('faixas');
     contatos(J,dt);
     if(PF) marca('contatos');
@@ -45425,6 +45751,127 @@ TO.diaJogo.combate = (function(){
      está em menor número e não há inimigo a 110 px — com inimigo em
      cima, briga como sempre. O líder do jogador fica de fora: ele é
      quem manda. */
+  /* =======================================================
+     A POSTURA DO BONDE (pedido do dono, 16/10/2026)
+     "definir o que os membros da minha torcida por si só devem fazer
+     na briga": a tecla V troca, no meio da cena, entre
+       · MASSACRAR — o de sempre: todo mundo vai em quem estiver perto;
+       · TOMAR A FAIXA — até 5 (no máximo um terço do bonde) largam a
+         briga do meio e vão atrás de quem segura a faixa ou a bandeira
+         deles; no estádio, contornam pelos setores. A peça passa a ser
+         nossa como sempre: derrubando quem a carrega;
+       · PROTEGER O MATERIAL — o bonde fecha em volta da nossa faixa
+         (ou do líder, sem peça na cena), não sai caçando, defende mais
+         e bate menos. É a postura de quem está em minoria.
+     ======================================================= */
+  const POSTURAS = ['massacrar', 'faixa', 'proteger'];
+  const NOME_POSTURA = {massacrar:'Massacrar', faixa:'Tomar a faixa', proteger:'Proteger o material'};
+  const CACA_MAX = 5;
+  const faixasDeles = J => {
+    const meu = ladoDoJogador(J);
+    return (J.faixas || []).filter(F => F.lado !== meu && F.estado !== 'tomada');
+  };
+  const podeCacar = d => d.doJogador && d.vivo && !d.lider && !d.comFaixa && !d.faixaIndo && !d.fugindo &&
+    !d.caido && !d.preso && !d.sumiu && !d.entrando && !d.entrou && !d.sentado;
+  /* completa a turma da faixa (quem caiu é trocado); fora da postura, desfaz */
+  function repartirCacadores(J){
+    const todos = J.discos.filter(d => d.cacaFaixa);
+    if(J.postura !== 'faixa' || !faixasDeles(J).length){
+      for(const d of todos) d.cacaFaixa = false;
+      return 0;
+    }
+    for(const d of todos) if(!podeCacar(d)) d.cacaFaixa = false;
+    const nossos = J.discos.filter(podeCacar);
+    const n = Math.min(CACA_MAX, Math.max(1, Math.floor(nossos.length / 3)));
+    let tem = nossos.filter(d => d.cacaFaixa).length;
+    /* os mais inteiros vão: quem tem mais força e defesa somadas */
+    const livres = nossos.filter(d => !d.cacaFaixa).sort((a, b) => (b.forca + b.defesa) - (a.forca + a.defesa));
+    while(tem < n && livres.length){ livres.shift().cacaFaixa = true; tem++; }
+    return tem;
+  }
+  function alternarPostura(J){
+    if(!J) return null;
+    const i = POSTURAS.indexOf(J.postura);
+    J.postura = POSTURAS[(i + 1) % POSTURAS.length];
+    const n = repartirCacadores(J);
+    J._tCaca = J.t;
+    const nome = _t(NOME_POSTURA[J.postura]);
+    if(J.postura === 'faixa' && !n)
+      aviso(J, _t('{postura}: não tem faixa deles aqui', {postura:nome}), '#e0b040');
+    else if(J.postura === 'faixa')
+      aviso(J, _t('{postura}: {n} vão atrás da faixa deles', {postura:nome, n}), '#e0b040');
+    else aviso(J, nome, '#e0b040');
+    logar(J, _t('Postura do bonde: {postura}.', {postura:nome}), 'p');
+    return J.postura;
+  }
+  /* pra onde vai quem caça a faixa: quem a segura, quem a recolhe ou,
+     ainda no muro, a própria peça — a mais perto dele */
+  function alvoDaFaixa(J, d){
+    let melhor = null, md = Infinity;
+    for(const F of faixasDeles(J)){
+      let quem = null;
+      if(F.estado === 'na-mao' && F.portador && F.portador.vivo && !F.portador.sumiu) quem = F.portador;
+      else if(F.estado === 'recolhendo'){
+        const eq = (F.equipe || []).filter(x => x.vivo && !x.caido && !x.sumiu);
+        if(eq.length) quem = eq.reduce((a, b) => U.dist2(d.x,d.y,a.x,a.y) <= U.dist2(d.x,d.y,b.x,b.y) ? a : b);
+      }
+      const x = quem ? quem.x : F.x, y = quem ? quem.y : F.y;
+      const q = U.dist2(d.x, d.y, x, y);
+      if(q < md){ md = q; melhor = {F, quem, x, y}; }
+    }
+    return melhor;
+  }
+  /* O ARRODEIO DO ESTÁDIO: o próximo ponto do anel, andando no sentido
+     que não passa pelo bonde deles. O centro é o do gramado (o meio da
+     foto); o raio, o da arquibancada entre quem caça e a faixa. Perto o
+     bastante da faixa (menos de ~35°), vai direto. */
+  const NORM = a => { a %= Math.PI*2; return a < 0 ? a + Math.PI*2 : a; };
+  function arrodeio(J, d, cf){
+    /* empacou no contorno (grade de setor, divisória do anel)? larga o
+       contorno uns segundos e vai reto */
+    if(d._semVolta && J.t < d._semVolta) return null;
+    const alvoD = Math.hypot(d.x-cf.x, d.y-cf.y);
+    if(!d._voltaMelhor || alvoD < d._voltaMelhor.v - 25) d._voltaMelhor = {v:alvoD, t:J.t};
+    else if(J.t - d._voltaMelhor.t > 2.5){ d._semVolta = J.t + 6; d._voltaMelhor = null; d._volta = null; return null; }
+    if(d._volta && J.t - d._volta.t < 1) return d._volta.p;
+    const cx = A.W/2, cy = A.H/2;
+    const th = Math.atan2(d.y-cy, d.x-cx), tt = Math.atan2(cf.y-cy, cf.x-cx);
+    const eles = J.discos.filter(o => o.lado !== d.lado && o.vivo && !o.caido && !o.sumiu && !o.entrou);
+    let p = null;
+    const ccw = NORM(tt - th);
+    if(Math.min(ccw, Math.PI*2 - ccw) > 0.6 && eles.length){
+      const ex = eles.reduce((a,o)=>a+o.x,0)/eles.length, ey = eles.reduce((a,o)=>a+o.y,0)/eles.length;
+      const te = Math.atan2(ey-cy, ex-cx);
+      /* o bonde deles está no arco anti-horário? então vai pelo horário */
+      const dir = NORM(te - th) < ccw ? -1 : 1;
+      const resta = dir > 0 ? ccw : Math.PI*2 - ccw;
+      const ang = th + dir*Math.min(0.85, resta);
+      /* na mesma banda do anel em que ele já está: a divisória entre o
+         anel de baixo e o de cima é parede */
+      const r = Math.hypot(d.x-cx, d.y-cy);
+      let x = cx + Math.cos(ang)*r, y = cy + Math.sin(ang)*r;
+      if(!A.livrePara(x, y, A.raioMalha(d.r))){ const q = A.pontoLivreMaisProximo(x, y, d.r); x = q.x; y = q.y; }
+      p = {x, y};
+    }
+    d._volta = {t:J.t, p};
+    return p;
+  }
+
+  /* onde fica quem protege: em roda da nossa peça (na parede ou na mão
+     de quem a carrega); sem peça na cena, null — e o bonde segue o líder */
+  function pontoDeGuarda(J, d){
+    const F = (J.faixas || []).find(F => F.lado === d.lado && F.estado !== 'tomada' && (F.nossa || F.estado === 'na-mao'));
+    if(!F) return null;
+    /* a roda é no lugar da peça, não em quem a carrega: o portador fica
+       atrás do bonde, e seguir o portador fazia o bloco inteiro andar pra
+       trás atrás dele, fugindo da briga sem bater (medido) */
+    const c = F.base || F;
+    const a = ((d._ord || 0) * 2.39996) % (Math.PI * 2), r = 46 + ((d._ord || 0) % 3) * 16;
+    let x = c.x + Math.cos(a) * r, y = c.y + Math.sin(a) * r;
+    if(!A.livrePara(x, y, A.raioMalha(d.r))){ const q = A.pontoLivreMaisProximo(x, y, d.r); x = q.x; y = q.y; }
+    return {x, y};
+  }
+
   function escoltaDaFaixa(J, d){
     if(!D.faixaAbrigo || d.comFaixa || d.fugindo || d.noChao || d.lider || d.entrou || d.sumiu) return null;
     const F = (J.faixas || []).find(F => F.lado === d.lado && F.estado === 'na-mao' &&
@@ -45721,9 +46168,9 @@ TO.diaJogo.combate = (function(){
     /* o jogador corre atrás no mesmo passo de quem foge — a mesma
        regra dos discos, e pelo mesmo motivo (ver `inimigoFugindo`) */
     const cacando = J.discos.some(o=>o.vivo && o.fugindo && inimigos(l.lado,o.lado));
-    /* segurando E, o líder defende — e anda a 60% */
-    if(podeControlar && teclas && teclas.e && l.vivo) defender(J, l, 0.12);
-    const v = P.velocidade * (cacando ? 1.25 : 1) * (l.defendendo>0 ? 0.6 : 1);
+    /* A DEFESA SAIU DO JOGO (dono, 16/10/2026). No meio do golpe o pé
+       planta: anda a 35% até o braço voltar */
+    const v = P.velocidade * (cacando ? 1.25 : 1) * (l.ataque ? 0.35 : 1) * (l.gas > J.t ? 0.6 : 1);
     const px=l.x, py=l.y;
     A.mover(l, dx/m*v*dt, dy/m*v*dt);
     A.barrarGrades(l,J.grades);
@@ -46039,7 +46486,7 @@ TO.diaJogo.combate = (function(){
 
       const recua = d.fugindo || recuando(J, d.lado);
 
-      let ax,ay, usarCampo=false, campo=null, ramo=null, escolta=null;
+      let ax,ay, usarCampo=false, campo=null, ramo=null, escolta=null, cf=null, gp=null;
       d._olhaPara=null;
 
       /* de guarda: fica no posto. Sem isto o dono do bar sai andando
@@ -46250,6 +46697,29 @@ TO.diaJogo.combate = (function(){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
         campo = campoDoSpawn(s); usarCampo=true;
+      } else if(d.cacaFaixa && J.postura==='faixa' && (cf = alvoDaFaixa(J, d))){
+        /* TOMAR A FAIXA (16/10/2026): passa pela briga do meio sem parar
+           e vai em quem segura a peça; de perto, direto nele, de longe
+           pelo campo de fluxo — no estádio é ele que contorna os setores */
+        ramo='caca-faixa'; d._alvoFaixa = cf.quem || null; d._olhaPara = cf.quem || null;
+        /* o portador foge com a peça na mesma velocidade: perto dele, quem
+           caça corre como quem persegue bonde em fuga (+25%) */
+        const dq = cf.quem ? U.dist(d.x,d.y,cf.quem.x,cf.quem.y) : Infinity;
+        d._cacando = dq < 340;
+        /* NO ESTÁDIO, ARRODEIA (dono, 16/10/2026: "uns 5 membros vão
+           arrudear o estádio pra abordar os detentores da faixa"): em vez
+           da reta, que cruza o bonde deles no meio da arquibancada, vai
+           pelo lado do anel em que eles não estão, de ponto em ponto */
+        const volta = !(cf.quem && dq < 160) && /^estadio-/.test(D.id || '') ? arrodeio(J, d, cf) : null;
+        if(cf.quem && dq < 160){ ax=cf.quem.x; ay=cf.quem.y; }
+        else {
+          const px = volta ? volta.x : cf.x, py = volta ? volta.y : cf.y;
+          let qx = Math.round(px/64)*64, qy = Math.round(py/64)*64, achou = A.caminhavel(qx, qy);
+          if(!achou) for(const [ox,oy] of [[32,0],[-32,0],[0,32],[0,-32],[32,32],[-32,-32],[32,-32],[-32,32]]){
+            if(A.caminhavel(qx+ox, qy+oy)){ qx+=ox; qy+=oy; achou=true; break; } }
+          if(achou){ campo = A.campoDoPonto('caca:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades); usarCampo=true; }
+          else { ax=px; ay=py; }
+        }
       } else if(d.vadiando && !agressivo(J,d) && J.t < d.entraEm){
         vadiar(J, d); ax=d.vagoX; ay=d.vagoY;
       } else {
@@ -46272,7 +46742,9 @@ TO.diaJogo.combate = (function(){
           if(!vez && c && c.vivo && U.dist2(d.x,d.y,c.x,c.y) <= 150*150) alvo = c;
           else alvo = d._alvoCurto = inimigoAlcancavel(J,d, 130);
         }
-        if(!alvo && !J.paz && agressivo(J,d))
+        /* quem protege o material não sai caçando: só o que chegar perto */
+        const protege = J.postura==='proteger' && d.doJogador;
+        if(!alvo && !J.paz && agressivo(J,d) && !protege)
           alvo = buscaLonga(J,d, 240, '_alvoLongo');
         if(alvo && !alvo.fugindo){
           J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
@@ -46291,7 +46763,7 @@ TO.diaJogo.combate = (function(){
            quem decide não é a corrida: é o gargalo. Doze discos não
            passam juntos por uma boca de 48 px, e quem chega junto da
            fila segura os últimos. */
-        if(!alvo && fugindo[OUTRO_LADO[d.lado]] && agressivo(J,d))
+        if(!alvo && fugindo[OUTRO_LADO[d.lado]] && agressivo(J,d) && !protege)
           alvo = inimigoFugindo(J, d, RAIO_CACA);
         d._cacando = !!(alvo && alvo.fugindo);
         const meuBonde = J.bondes[d.spawn];
@@ -46315,6 +46787,8 @@ TO.diaJogo.combate = (function(){
           ax=q.x; ay=q.y; ramo='retaguarda'; d._olhaPara=visto;
         }
         else if(alvo && agressivo(J,d)){ ax=alvo.x; ay=alvo.y; }
+        /* PROTEGER O MATERIAL: sem ninguém em cima, volta pra roda da peça */
+        else if(protege && (gp = pontoDeGuarda(J, d))){ ax=gp.x; ay=gp.y; ramo='guarda-material'; }
         /* veio pra brigar e não tem ninguém por perto: vai até onde o
            rival está. Sem isto ele só ficava disposto — andava pro
            próprio portão e a hostilidade não encontrava ninguém. */
@@ -46864,6 +47338,8 @@ TO.diaJogo.combate = (function(){
   function procurandoConflito(J,d){
     if(!d.vivo||d.fugindo||d.entrou) return false;
     if(recuando(J, d.lado)) return false;
+    /* levou cassetete de ronda: sai de perto da PM por uns segundos */
+    if(d.dispersa > J.t) return false;
     return d.hostil>0;
   }
 
@@ -46880,16 +47356,27 @@ TO.diaJogo.combate = (function(){
            17/09/2026): a conta varre todos os discos hostis com uma
            vizinhança cada — por policial, por quadro. Um quarto de
            segundo de atraso na escolha não muda a carga. */
-        let alvo = p._alvoCarga;
-        if(!alvo || !procurandoConflito(J,alvo) || ((J._quadro||0) + (p.postoX|0)) % 15 === 0)
-          alvo = p._alvoCarga = alvoDaCarga(J,p);
-        if(alvo){ax=alvo.x;ay=alvo.y;vel=96;} else {ax=p.postoX;ay=p.postoY;vel=76;}
+        /* A LINHA CARREGA JUNTA (12/11/2026): o alvo é um só pra tropa
+           inteira, e cada um toma o seu lugar na linha, de través ao
+           rumo — a briga é empurrada pra um lado só */
+        let alvo = J._alvoCarga;
+        if(!alvo || !procurandoConflito(J,alvo) || J.t >= (J._alvoCargaEm||0)){
+          alvo = J._alvoCarga = alvoDaCarga(J,p); J._alvoCargaEm = J.t + 0.25;
+        }
+        if(alvo){
+          const q = hyp(alvo.x-p.x, alvo.y-p.y) || 1, lugar = ((J.policiais.indexOf(p) % 7) - 3) * 15;
+          const perto = q < 60 ? q/60 : 1;      // colado no alvo, a linha fecha em cima dele
+          ax = alvo.x + (-(alvo.y-p.y)/q)*lugar*perto; ay = alvo.y + ((alvo.x-p.x)/q)*lugar*perto; vel=96;
+        } else {ax=p.postoX;ay=p.postoY;vel=76;}
         for(const d of porPerto(J,p.x,p.y,40)){
           if(!procurandoConflito(J,d)) continue;
           if(U.dist(d.x,d.y,p.x,p.y)>d.r+p.r+8) continue;
           if(p.cooldown>0) break;
-          p.cooldown=1.25;
-          d.hp-=P.forcaPM*P.dano*1.4; d.atordoado=1.0; d.tremor=6;
+          /* a guarnição da viatura dispersa, não massacra: cassetete de
+             ronda (1×, a cada 2 s); o 1,4× é da tropa de choque */
+          p.cooldown=p.daViatura?2.0:1.25;
+          d.hp-=P.forcaPM*P.dano*(p.daViatura?1:1.4); d.atordoado=1.0; d.tremor=6;
+          if(p.hpMax<380) d.dispersa=J.t+3; d._pm=p;
           d.apanhou=0.5; p.golpe=0.3; levouDe(J, d, p);
           if(d.hp<=0) prender(J,d);
           break;
@@ -46899,6 +47386,12 @@ TO.diaJogo.combate = (function(){
         for(const b of buracos){const dd=U.dist(b.x,b.y,p.x,p.y); if(dd<md){md=dd;alvo=b;}}
         ax=alvo.x; ay=alvo.y; vel=64;
       } else {
+        /* o posto anda com a linha (degraus 2 e 3) e vira o bloco quando
+           a PM está acuada */
+        const av = J.pmAvanco || 0, dir = J.pmDir;
+        const ex = J.pmAcuada && J.pmBloco ? J.pmBloco.x + (p.postoX-J.pmBloco.x)*0.25 : p.postoX + (dir ? dir.x*av : 0);
+        const ey = J.pmAcuada && J.pmBloco ? J.pmBloco.y + (p.postoY-J.pmBloco.y)*0.25 : p.postoY + (dir ? dir.y*av : 0);
+        const guia = J.pmAcuada ? 34 : 80;
         let perto=null, pd=1e9;
         for(const d of porPerto(J,p.x,p.y,80)){
           if(!procurandoConflito(J,d)) continue;
@@ -46910,16 +47403,20 @@ TO.diaJogo.combate = (function(){
         }
         if(perto){
           ax=perto.x; ay=perto.y; vel=70;
-          const fx=ax-p.postoX, fy=ay-p.postoY, f=hyp(fx,fy);
-          if(f>80){ax=p.postoX+fx/f*80; ay=p.postoY+fy/f*80;}
+          const fx=ax-ex, fy=ay-ey, f=hyp(fx,fy);
+          if(f>guia){ax=ex+fx/f*guia; ay=ey+fy/f*guia;}
           if(p.cooldown<=0 && pd<perto.r+p.r+8){
             p.cooldown=2.0;
             perto.hp-=P.forcaPM*P.dano; perto.atordoado=0.6; perto.tremor=5;
+            perto.dispersa=J.t+3; perto._pm=p;
             perto.apanhou=0.5; p.golpe=0.3; levouDe(J, perto, p);
             if(perto.hp<=0) prender(J,perto);
           }
+        } else if(p.algema && !J.pmAcuada){
+          /* ninguém pra enfrentar: vai algemar quem ficou no chão */
+          ax=p.algema.d.x; ay=p.algema.d.y; vel=64;
         } else {
-          ax=p.postoX; ay=p.postoY+Math.sin(J.t*0.55+p.giro)*26; vel=42;
+          ax=ex; ay=ey+(av>4||J.pmAcuada ? 0 : Math.sin(J.t*0.55+p.giro)*26); vel=av>4?52:42;
         }
       }
 
@@ -46988,7 +47485,10 @@ TO.diaJogo.combate = (function(){
     return PERFIS[c] || PERFIS.novato;
   }
   const DUR_GOLPE = 0.36, IMPACTO_EM = 0.15, CD_GOLPE = 0.18;
-  const DUR_CONTRA = 0.28, IMPACTO_CONTRA = 0.10, JANELA_CONTRA = 0.16;
+  /* sem bloqueio nem esquiva, cada golpe entra: o dano por golpe cai
+     10% (10×14 no bairro: 55 s com defesa, uns 45 s sem; medido em
+     16/10/2026) */
+  const DANO_SEM_DEFESA = 0.9;
   const DUR_AGARRAO = 0.5, IMPACTO_AGARRAO = 0.22;
   /* O CHUTE (pedido do dono, 06/09/2026): uma parte dos golpes — do Q
      e da IA — sai de perna. É mais lento (dá mais tempo de ver vindo
@@ -47020,9 +47520,13 @@ TO.diaJogo.combate = (function(){
   }
   function podeBater(J,d){
     return d.vivo && !d.ataque && J.t>=d.cdBater && d.defendendo<=0 && d.derrubado<=0 && !d.seguradoPor &&
-           !d.fugindo && d.atordoado<=0 && !d.fugaBomba && !d.entrando && !d.preso;
+           !d.fugindo && d.atordoado<=0 && !d.fugaBomba && !d.entrando && !d.preso &&
+           !(d.gas > J.t) && !(d.hesita > J.t && !d.lider);
   }
   function bater(J,d,tipo){
+    /* o jogador apertou de novo com o braço ainda indo: guarda o golpe
+       pro fim deste (a sequência sai sem buraco) */
+    if(d.lider && d.doJogador && d.ataque && d.ataque.tipo!=='agarrar' && d.ataque.t > d.ataque.impacto*0.5){ d.filaGolpe = true; return false; }
     if(!podeBater(J,d)) return false;
     const pf = perfilDe(d);
     /* segurando alguém: o golpe é a joelhada nele, e sempre entra */
@@ -47032,27 +47536,47 @@ TO.diaJogo.combate = (function(){
       d.golpe = 0.42; d.hostil = 3.0; d._alvo = b; d.golpesDados++;
       return true;
     }
-    const b = alvoNaFrente(J,d);
-    if(!tipo && d.contra>0) tipo = 'contra';
+    /* o boneco do jogador mira sozinho: vira pro inimigo mais perto ao
+       alcance e o golpe entra (ver `alvoDoJogador`) */
+    const meu = d.lider && d.doJogador;
+    const b = meu ? alvoDoJogador(J,d) : alvoNaFrente(J,d);
+    if(meu && b) d.rumo = rumoPara(d,b);
     if(!tipo) tipo = (pf.chuta && U.rng() < d.chutador && !(b && b.derrubado>0)) ? 'chute' : 'soco';
-    const chute = tipo==='chute', contra = tipo==='contra';
-    if(contra) d.contra = 0;
-    d.ataque = {t:0, dur: chute?DUR_CHUTE:contra?DUR_CONTRA:DUR_GOLPE, impacto: chute?IMPACTO_CHUTE:contra?IMPACTO_CONTRA:IMPACTO_EM, tipo, alvo:b, bateu:false};
+    const chute = tipo==='chute';
+    /* A SEQUÊNCIA (dono, 16/10/2026): golpe emendado em menos de 0,7 s
+       é o próximo da série — o desenho faz jab, direto, gancho */
+    d.serie = J.t - (d.fimGolpe||-9) < 0.7 ? (d.serie||0) + 1 : 0;
+    d.ataque = {t:0, dur: chute?DUR_CHUTE:DUR_GOLPE, impacto: chute?IMPACTO_CHUTE:IMPACTO_EM, tipo, alvo:b, bateu:false, serie:d.serie, meu};
     d.golpe = d.ataque.dur; d.hostil = 3.0; d._alvo = b; d.golpesDados++;
     if(b){ b.linha='frente'; }
     return true;
   }
-  function defender(J,d,dur){
-    if(!d.vivo || d.fugindo || d.atordoado>0 || d.derrubado>0 || d.seguradoPor || d.segurando) return false;
-    if(d.ataque && d.ataque.t < d.ataque.impacto) return false;   // no meio do golpe não dá
-    d.defendendo = Math.max(d.defendendo, dur); d.hostil = Math.max(d.hostil, 2);
-    return true;
+  /* O ALVO DO JOGADOR (dono, 16/10/2026: "o meu boneco precisa dar dano
+     sempre que for bater em alguém"): o inimigo de pé mais perto até
+     1,8 vez o alcance, de qualquer lado — o boneco vira pra ele no
+     ato. Sem ninguém de pé, quem está no chão. */
+  const ALCANCE_JOGADOR = 1.8;
+  function alvoDoJogador(J, a){
+    let melhor=null, md=1e9, chao=null, mc=1e9;
+    for(const b of porPerto(J,a.x,a.y,(a.r+(J._raioMax||8)+9)*ALCANCE_JOGADOR)){
+      if(a===b||!b.vivo||!inimigos(a.lado,b.lado)) continue;
+      const q=U.dist(a.x,a.y,b.x,b.y);
+      if(q>alcanceDe(a,b)*ALCANCE_JOGADOR) continue;
+      if(b.derrubado>0){ if(q<mc){ mc=q; chao=b; } continue; }
+      if(q<md){ md=q; melhor=b; }
+    }
+    return melhor || chao;
   }
+  /* A DEFESA SAIU DO JOGO (dono, 16/10/2026: "tirando a opção de
+     defender do jogo"): ninguém mais bloqueia, esquiva ou dá
+     contragolpe. Os dois nomes ficam como casca vazia pra quem ainda
+     chama. A ficha de defesa continua: segura dano e vira HP. */
+  function defender(){ return false; }
   /* CONTRAGOLPE: soltar o E (ou o botão) na hora do golpe vindo — até
      0,16 s antes do impacto — esquiva na certa e abre 0,6 s pra um soco
      mais rápido (0,28 s), mais forte (1,8×) e que não se defende. Só
      quem tem o perfil (linha de frente, diretoria, líder). */
-  function soltarDefesa(J,d){ if(d && d.vivo) d.soltouEm = J.t; }
+  function soltarDefesa(){}
 
   /* AGARRAR (tecla F): pega quem está na frente de pé. Entra com
      0,5 + (força − defesa)/40 (20% a 85%); segurado, o outro não bate,
@@ -47064,20 +47588,30 @@ TO.diaJogo.combate = (function(){
   }
   function agarrar(J,d){
     if(!podeAgarrar(J,d)) return false;
-    const b = alvoNaFrente(J,d,true);
+    const meu = d.lider && d.doJogador;
+    let b = meu ? alvoDoJogador(J,d) : alvoNaFrente(J,d,true);
+    if(b && b.derrubado>0) b = null;
     if(!b || b.seguradoPor || b.segurando) return false;
+    if(meu) d.rumo = rumoPara(d,b);
     d.ataque = {t:0, dur:DUR_AGARRAO, impacto:IMPACTO_AGARRAO, tipo:'agarrar', alvo:b, bateu:false};
     d.golpe = DUR_AGARRAO; d.hostil = 3.0; d._alvo = b;
     return true;
   }
   function resolverAgarrao(J,a,b){
-    a.cdAgarrar = J.t + 1.5;
+    a.cdAgarrar = J.t + 1.0;
     if(!b || !b.vivo || b.derrubado>0 || b.seguradoPor || b.segurando) return;
-    if(U.dist(a.x,a.y,b.x,b.y) > alcanceDe(a,b)*1.25 || !naFrente(a,b)) return;
-    const chance = U.limitar(0.5 + (a.forca - b.defesa)/40, 0.2, 0.85);
+    const meu = a.lider && a.doJogador;
+    if(U.dist(a.x,a.y,b.x,b.y) > alcanceDe(a,b)*(meu ? ALCANCE_JOGADOR : 1.25) || (!meu && !naFrente(a,b))) return;
+    /* MAIS EFETIVO (dono, 16/10/2026): entra com 0,75 + (força −
+       defesa)/40, de 55% a 95%, e segura de 2,4 a 3,4 s */
+    const chance = U.limitar(0.75 + (a.forca - b.defesa)/40, 0.55, 0.95);
     if(U.rng() > chance){ b.esquivou = 0.3; return; }
     a.segurando = b; b.seguradoPor = a;
-    a.seguraAte = J.t + U.entre(1.6, 2.4) * (a.forca >= b.forca ? 1 : 0.7);
+    a.seguraAte = J.t + U.entre(2.4, 3.4) * (a.forca >= b.forca ? 1 : 0.8);
+    /* puxa pra perto: os dois colados */
+    { const q = U.dist(a.x,a.y,b.x,b.y)||1, cola = a.r+b.r+2;
+      if(q > cola){ A.mover(b, (a.x-b.x)/q*(q-cola), (a.y-b.y)/q*(q-cola)); A.barrarGrades(b,J.grades); } }
+    a.rumo = rumoPara(a,b);
     b.ataque = null; b.defendendo = 0; b.linha = 'frente'; b.hostil = 3; a.hostil = 3;
     b.viraPara = rumoPara(b,a); levouDe(J, b, a); atacado(J,b);
     if(b.lider) aviso(J,_t('Te agarraram — o bonde solta'),'#d9705f');
@@ -47085,7 +47619,7 @@ TO.diaJogo.combate = (function(){
   function soltar(J,a){
     const b = a.segurando; if(!b) return;
     a.segurando = null; b.seguradoPor = null;
-    a.cdAgarrar = J.t + 2.5; a.cdBater = Math.max(a.cdBater, J.t + 0.3); b.cdBater = Math.max(b.cdBater, J.t + 0.3);
+    a.cdAgarrar = J.t + 1.5; a.cdBater = Math.max(a.cdBater, J.t + 0.3); b.cdBater = Math.max(b.cdBater, J.t + 0.3);
   }
   function conferirAgarroes(J){
     for(const a of J.discos){
@@ -47138,15 +47672,7 @@ TO.diaJogo.combate = (function(){
 
   function acertar(J,a,b){
     const chute = !!(a.ataque && a.ataque.tipo==='chute');
-    const contra = !!(a.ataque && a.ataque.tipo==='contra');
     const joelhada = !!(a.ataque && a.ataque.tipo==='joelhada');
-    /* o contragolpe do alvo: soltou a defesa na hora certa, de frente */
-    if(!b.seguradoPor && b.derrubado<=0 && naFrente(b,a) && perfilDe(b).contra && J.t - b.soltouEm >= 0 && J.t - b.soltouEm <= JANELA_CONTRA){
-      b.esquivou = 0.4; b.contra = 0.6; b.cdBater = 0; b.soltouEm = -9; b.defendendo = 0;
-      b.contraEm = J.t;
-      if(b.lider) aviso(J,_t('CONTRA!'),'#7fc2a0');
-      return;
-    }
     /* no chão não se defende — e quem apanha no chão fica lá */
     if(b.derrubado>0){
       b.hp -= Math.max(1,(a.forca*U.entre(0.8,1.2))-b.defesa*0.5)*P.dano*0.55*2.6;
@@ -47160,21 +47686,29 @@ TO.diaJogo.combate = (function(){
       if(b.hp<=0) derrubar(J,b);
       return;
     }
-    /* segurado não defende nem esquiva; cercado defende pior; o
-       contragolpe e a joelhada de quem segura não se defendem */
-    const defende = b.defendendo>0 && naFrente(b,a) && !b.seguradoPor && !contra && !joelhada;
-    if(defende && U.rng() < (b.cercado ? 0.45 : 0.75)){ b.esquivou = 0.4; return; }
-    /* o chute é lento: mesmo sem defender, quem tem defesa desvia
-       uma parte (28% a 53%) — o pé passa no ar */
-    if(chute && !defende && !b.seguradoPor && U.rng() < 0.28 + b.defesa/48){ b.esquivou = 0.4; return; }
+    /* SEM DEFESA (dono, 16/10/2026): golpe que chega, entra. A ficha de
+       defesa segura parte do dano; quem protege o material (postura
+       Proteger) fecha a guarda e leva 20% menos. */
+    const guardando = J.postura==='proteger' && b.doJogador && !b.lider;
     const bruto=(a.forca*U.entre(0.8,1.2))-b.defesa*0.5;
-    const dano = Math.max(1,bruto)*P.dano*0.55*(b.fugindo?1.6:1)*(defende?0.35:1)*(chute?1.3:1)
-                 *(contra?1.8:1)*(joelhada?1.2:1)*(b.seguradoPor?1.5:1)*(b.segurando?1.3:1)*(b.cercado?1.3:1)*(a.chamado>J.t?1.1:1);
+    const dano = Math.max(1,bruto)*P.dano*0.55*DANO_SEM_DEFESA*(b.fugindo?1.6:1)*(chute?1.3:1)
+                 *(joelhada?1.5:1)*(b.seguradoPor?1.8:1)*(b.segurando?1.3:1)*(b.cercado && !b.gargalo?1.3:1)*(a.chamado>J.t?1.1:1)*(guardando?0.8:1)
+                 *(a.furia>J.t?1.15:1)*(b.gargalo?0.85:1);
     b.hp-=dano;
-    /* quem segura e leva um golpe de 9+ solta */
-    if(b.segurando && dano >= 9) soltar(J,b);
+    som(J, chute || joelhada ? 'chute' : 'soco');
+    if(chute && (a.lider || b.lider)) tremerCamera(J, 0.45);
+    /* quem segura só larga com pancada grande (14+) */
+    if(b.segurando && dano >= 14) soltar(J,b);
     b.tremor=Math.min(6,b.tremor+2.4); b.apanhou=0.35; levouDe(J, b, a);
-    if(chute && !defende && b.hp>0){
+    /* O CORPO SENTE (dono, 16/10/2026): o golpe empurra quem apanha pra
+       trás — soco um passo curto, chute mais —, menos quem está preso
+       num agarrão */
+    if(!b.seguradoPor && !b.segurando){
+      const q = U.dist(a.x,a.y,b.x,b.y)||1, k = (chute ? 9 : joelhada ? 0 : 4) * (b.hp>0 ? 1 : 1.5);
+      if(k){ A.mover(b, (b.x-a.x)/q*k, (b.y-a.y)/q*k); A.barrarGrades(b,J.grades); }
+    }
+    /* o chute derruba de 50% a 75% das vezes (menos em quem tem defesa) */
+    if(chute && b.hp>0 && U.rng() < U.limitar(0.75 - b.defesa/80, 0.5, 0.75)){
       if(b.seguradoPor) soltar(J, b.seguradoPor);
       if(b.segurando) soltar(J, b);
       b.derrubadoDur = b.derrubado = U.entre(QUEDA_MIN, QUEDA_MAX);
@@ -47191,7 +47725,7 @@ TO.diaJogo.combate = (function(){
       b.agarrado=(b.agarrado||0)+0.7;
       if(b.agarrado>=1.2 && b.hp>0) derrubar(J,b);
     }
-    if(b.hp<=0) derrubar(J,b);
+    if(b.hp<=0){ tombo(J,a,b); derrubar(J,b); }
   }
 
   function levantar(J,c){
@@ -47284,8 +47818,12 @@ TO.diaJogo.combate = (function(){
         d.cercado = cercado;
         d._vizinhos = {perto, aliados, cercado};
       }
+      /* quem caça a faixa bate em quem a segura, se ele estiver ao alcance */
+      if(d.cacaFaixa && d._alvoFaixa && d._alvoFaixa.vivo && !d._alvoFaixa.caido){
+        const q = U.dist(d.x,d.y,d._alvoFaixa.x,d._alvoFaixa.y);
+        if(q <= alcanceDe(d,d._alvoFaixa)*1.3){ perto = d._alvoFaixa; md = q; }
+      }
       d.inimigoPerto = perto ? md : 999; d.aliadosPerto = aliados;
-      if(d.contra > 0) d.contra -= dt;
       if(d.lider) continue;
       if(d.fugindo || d.atordoado>0 || d.derrubado>0 || d.fugaBomba || d.entrando) continue;
       if(!agressivo(J,d)) continue;
@@ -47297,23 +47835,12 @@ TO.diaJogo.combate = (function(){
       if(d.comFaixa && !(perto && md <= alcanceDe(d,perto))) continue;
       if(!perto) continue;
       const alcance = alcanceDe(d,perto);
-      /* golpe vindo em mim: defender, com a chance que a defesa dá */
-      const vindo = perto.ataque && perto.ataque.alvo===d && perto.ataque.t < perto.ataque.impacto;
       const pf = perfilDe(d);
-      if(vindo && d.defendendo<=0 && !d.ataque && !d.seguradoPor){
-        const pDef = 0.25 + d.defesa/40;
-        if(U.rng() < pDef*Math.min(1, dt*30)){
-          const falta = perto.ataque.impacto - perto.ataque.t;
-          /* quem sabe o contragolpe solta a defesa a 0,05 s do impacto (uma parte das vezes) */
-          if(pf.contra && U.rng() < 0.2 + d.defesa/50){ defender(J, d, Math.max(0.1, falta)); d.soltouEm = J.t + Math.max(0, falta - 0.05); }
-          else defender(J, d, U.entre(0.35, 0.7));
-          continue;
-        }
-      }
+      const guardando = J.postura==='proteger' && d.doJogador;
       if(md > alcance) continue;
       if(!naFrente(d,perto)){ if(d.viraPara==null) d.viraPara = rumoPara(d,perto); continue; }
       /* agarra quando tem companheiro do lado pra aproveitar */
-      if(pf.agarra && !d.segurando && !perto.seguradoPor && perto.derrubado<=0 && d.aliadosPerto>=1 && podeAgarrar(J,d) && U.rng() < 0.14*Math.min(1, dt*30)){ agarrar(J,d); continue; }
+      if(pf.agarra && !d.segurando && !perto.seguradoPor && perto.derrubado<=0 && d.aliadosPerto>=1 && podeAgarrar(J,d) && U.rng() < 0.2*Math.min(1, dt*30)){ agarrar(J,d); continue; }
       if(podeBater(J,d)){
         /* só tem gente no chão na frente: uns vão em cima, outros esperam */
         if(perto.derrubado>0 && !alvoNaFrente(J,d,true) && U.rng() > d.pisoteia){ d.cdBater = J.t + U.entre(0.3, 0.6); continue; }
@@ -47322,6 +47849,8 @@ TO.diaJogo.combate = (function(){
           d.respirou = true; d.cdBater = J.t + U.entre(0.45, 1.0); continue;
         }
         d.respirou = false;
+        /* protegendo, segura a mão: uma oportunidade em duas vira guarda */
+        if(guardando && U.rng() < 0.25){ d.cdBater = J.t + U.entre(0.25, 0.5); continue; }
         bater(J,d);
       }
     }
@@ -47333,14 +47862,35 @@ TO.diaJogo.combate = (function(){
       /* o golpe em curso anda e, na hora, acerta (ou não) */
       if(a.ataque){
         const at=a.ataque; at.t+=dt;
+        /* O PASSO DE ENTRADA (dono, 16/10/2026: "o movimento precisa ser
+           mais similar à realidade"): até o impacto, quem bate leva o
+           corpo pra frente, encurtando a distância pro alvo — ninguém
+           soca parado no lugar. O jogador ainda vira pro alvo. */
+        if(!at.bateu && at.alvo && at.alvo.vivo && !a.segurando && !a.seguradoPor && at.tipo!=='joelhada'){
+          const o=at.alvo, q=U.dist(a.x,a.y,o.x,o.y)||1, cola=a.r+o.r+3;
+          const falta=Math.max(0.03, at.impacto-(at.t-dt));
+          const anda=Math.min(Math.max(0,q-cola), (at.meu?16:8)) * Math.min(1, dt/falta);
+          if(anda>0.05){ A.mover(a, (o.x-a.x)/q*anda, (o.y-a.y)/q*anda); A.barrarGrades(a,J.grades); }
+          if(at.meu) a.rumo = rumoPara(a,o);
+        }
         if(!at.bateu && at.t>=at.impacto){
           at.bateu=true;
           let b=at.alvo;
-          if(!(b && b.vivo && U.dist(a.x,a.y,b.x,b.y)<=alcanceDe(a,b)*1.25 && naFrente(a,b))) b=alvoNaFrente(J,a);
+          /* o golpe do jogador entra em quem ele mirou, se ainda estiver a
+             1,8 alcance (de qualquer lado: ele já virou) */
+          if(at.meu){ if(!(b && b.vivo && U.dist(a.x,a.y,b.x,b.y)<=alcanceDe(a,b)*ALCANCE_JOGADOR)) b=alvoDoJogador(J,a); }
+          else if(!(b && b.vivo && U.dist(a.x,a.y,b.x,b.y)<=alcanceDe(a,b)*1.25 && naFrente(a,b))) b=alvoNaFrente(J,a);
           if(at.tipo==='agarrar') resolverAgarrao(J,a,b);
           else if(b && !a.fugindo && a.atordoado<=0) acertar(J,a,b);
         }
-        if(at.t>=at.dur){ a.ataque=null; a.cdBater=J.t+(at.tipo==='chute'?CD_CHUTE:CD_GOLPE)+U.rng()*0.2; }
+        if(at.t>=at.dur){
+          a.ataque=null; a.fimGolpe=J.t;
+          /* CANSADO (12/11/2026): abaixo de 30% de vida o braço demora mais a voltar */
+          const cansado = a.hp < a.hpMax*0.3 ? 0.14 : 0;
+          a.cdBater=J.t+cansado+(at.meu ? (at.tipo==='chute'?CD_CHUTE*0.6:0.06) : (at.tipo==='chute'?CD_CHUTE:CD_GOLPE)+U.rng()*0.2);
+          /* o Q apertado no meio do golpe fica guardado e sai em seguida */
+          if(at.meu && a.filaGolpe){ a.filaGolpe=false; a.cdBater=J.t; bater(J,a); }
+        }
       }
       if(a.fugindo||a.atordoado>0||a.derrubado>0||a.fugaBomba) continue;
       if(recuando(J, a.lado)) continue;
@@ -47395,7 +47945,7 @@ TO.diaJogo.combate = (function(){
     for(const g of J.grades) g.tremor=Math.max(0,g.tremor-dt*8);
     J.alerta=Math.max(0,J.alerta-dt*1.2);
 
-    if(J.alerta>=100&&J.reforco<3&&!J.rompido){
+    if(J.alerta>=100&&J.reforco<3&&!J.rompido&&D.pmPostos&&D.pmPostos.length){
       J.reforco++;
       const base=D.pmPostos[U.inteiro(0,D.pmPostos.length-1)];
       for(let i=0;i<3;i++) J.policiais.push(new Policial(base));
@@ -47415,6 +47965,8 @@ TO.diaJogo.combate = (function(){
     if(d.segurando) soltar(J,d);
     if(d.seguradoPor) soltar(J,d.seguradoPor);
     J.caidos[d.lado]++;
+    abaloDaQueda(J, d); som(J, 'queda');
+    if(d.lider) tremerCamera(J, 1);
     /* a cascata de moral saiu junto com a moral da briga (decisão do
        dono): cada caído derrubava o lado dele e subia o outro, e era
        ela que transformava a primeira queda em varrida */
@@ -47425,6 +47977,243 @@ TO.diaJogo.combate = (function(){
     d.preso=true; d.hp=0; d.vx=d.vy=0;
     J.presos++; J.caidos[d.lado]++; J.presosPor[d.lado]++;
     logar(J,_t('{nome} foi preso.', {nome:d.nome}),'pm');
+  }
+
+
+  /* =======================================================
+     A POLÍCIA EM DEGRAUS (dono, 12/11/2026)
+     "Aprimorar a atuação da polícia nas brigas": a PM saltava de parada
+     pra carga. Agora ela sobe um degrau de cada vez, pelo alerta —
+       0 parada · 1 manda dispersar (45) · 2 avança em linha (70) ·
+       3 bomba de efeito moral (85) · 4 carga (grade rompida) —
+     e desce com folga (30 / 55 / 72), pra não ficar piscando.
+     Junto: a linha anda inteira no mesmo rumo (`J.pmDir`, `J.pmAvanco`),
+     a PM em minoria grande fecha em bloco e pede reforço (`J.pmAcuada`),
+     o policial algema quem ficou no chão (`algemar`), a nuvem de gás
+     atordoa e espalha os dois lados (`J.gases`) e a viatura chega depois
+     de um tempo e serve de relógio da briga (`J.viatura`).
+     ======================================================= */
+  const PM_SOBE = [45, 70, 85], PM_DESCE = [30, 55, 72];
+  const PM_AVANCO_MAX = 170, PM_AVANCO_VEL = 14;
+  const GAS = {raio:78, pavio:0.9, dura:6, cd:7, alcance:420};
+  const ALGEMA = {raio:30, tempo:1.2, busca:110};
+  const VIATURA = {de:26, ate:36, pms:3, dura:16};
+  const temPM = J => J.policiais.some(p => p.vivo);
+  function som(J, nome){ (J.sons = J.sons || []).push(nome); if(J.sons.length > 24) J.sons.shift(); }
+  function tremerCamera(J, forca){ J.tremorCam = Math.max(J.tremorCam || 0, forca); }
+  /* o meio da confusão: a média de quem está procurando conflito */
+  function centroDaBriga(J){
+    let x = 0, y = 0, n = 0;
+    for(const d of J.discos){ if(!procurandoConflito(J, d)) continue; x += d.x; y += d.y; n++; }
+    return n ? {x:x/n, y:y/n, n} : null;
+  }
+  /* preso no chão: quem já estava caído vira preso sem contar duas vezes */
+  function algemar(J, d){
+    if(d.preso) return;
+    if(!d.caido){ prender(J, d); return; }
+    d.preso = true; J.presos++; J.presosPor[d.lado]++;
+    logar(J, _t('{nome} foi algemado no chão.', {nome:d.nome}), 'pm');
+  }
+  function passoPM(J, dt){
+    J.gases = J.gases || [];
+    if(J.reuniao || J.assistir) return;
+    const vivos = J.policiais.filter(p => p.vivo);
+    /* ---- o degrau ---- */
+    const havia = J.pmFase || 0;
+    let f = Math.min(havia, 3);
+    if(!vivos.length) f = 0;
+    else if(J.rompido && J.t <= (J.cargaAte || 0)) f = 4;
+    else if(J.viatura && J.viatura.chegou && J.t <= J.viatura.ate) f = 4;
+    else {
+      while(f < 3 && J.alerta >= PM_SOBE[f]) f++;
+      while(f > 0 && J.alerta < PM_DESCE[f-1]) f--;
+    }
+    if(f !== havia){
+      J.pmFase = f;
+      if(f > havia && f < 4){
+        const txt = [null, _t('A PM mandou dispersar'), _t('A PM avança em linha'), _t('Bomba de efeito moral')][f];
+        aviso(J, txt, '#5fa87d'); logar(J, txt + '.', 'pm');
+        if(f === 1) som(J, 'apito');
+      }
+    }
+    /* ---- o rumo da linha e a PM acuada (duas vezes por segundo) ---- */
+    if(J.t >= (J._pmPensa || 0)){
+      J._pmPensa = J.t + 0.5;
+      const c = centroDaBriga(J);
+      J._nHostis = c ? c.n : 0;
+      let px = 0, py = 0, n = 0;
+      for(const p of vivos){ if(p.hpMax >= 380 || p.daViatura) continue; px += p.postoX; py += p.postoY; n++; }
+      if(n && c){
+        px /= n; py /= n;
+        const q = hyp(c.x - px, c.y - py) || 1;
+        J.pmDir = {x:(c.x - px)/q, y:(c.y - py)/q, dist:q};
+        let perto = 0;
+        for(const d of J.discos) if(procurandoConflito(J, d) && U.dist(d.x, d.y, px, py) < 170) perto++;
+        const acuada = !J.rompido && !J.tropaVeio && !(J.viatura && J.viatura.chegou) && perto >= 10 && perto >= n*5;
+        if(acuada && !J.pmAcuada){ aviso(J, _t('A PM fechou em bloco e pediu reforço'), '#5fa87d'); logar(J, _t('Em minoria, a PM fechou em bloco e pediu reforço.'), 'pm'); }
+        J.pmAcuada = acuada; J.pmBloco = {x:px, y:py};
+      } else { J.pmDir = null; J.pmAcuada = false; }
+    }
+    if(J.pmAcuada) J.alerta = Math.min(100, J.alerta + 5*dt);
+    /* A BRIGA À VISTA DA PM ESQUENTA O ALERTA (até 88: o reforço dos 100
+       continua sendo de quem encosta na PM ou derruba grade). Sem isto,
+       na praça sem grade a polícia assistia à briga inteira parada. */
+    if(J.pmDir && J.pmDir.dist < 300 && J._nHostis >= 6 && J.alerta < 88) J.alerta = Math.min(88, J.alerta + 2.6*dt);
+    J.pmAvanco = U.limitar((J.pmAvanco || 0) + (f >= 2 && f < 4 && !J.pmAcuada ? PM_AVANCO_VEL : -20)*dt, 0,
+                           Math.min(PM_AVANCO_MAX, Math.max(0, ((J.pmDir && J.pmDir.dist) || 0) - 40)));
+    /* ---- a bomba de efeito moral ---- */
+    if(f >= 3 && vivos.length && J.t >= (J.cdGas || 0)){
+      let alvo = null, nota = 1;
+      for(const d of J.discos){
+        if(!procurandoConflito(J, d)) continue;
+        let perto = false;
+        for(const p of vivos) if(U.dist(p.x, p.y, d.x, d.y) < GAS.alcance){ perto = true; break; }
+        if(!perto) continue;
+        let n = 0;
+        for(const o of porPerto(J, d.x, d.y, GAS.raio)) if(procurandoConflito(J, o)) n++;
+        if(n > nota){ nota = n; alvo = d; }
+      }
+      if(alvo){
+        let de = vivos[0], md = 1e9;
+        for(const p of vivos){ const q = U.dist(p.x, p.y, alvo.x, alvo.y); if(q < md){ md = q; de = p; } }
+        J.gases.push({x:alvo.x, y:alvo.y, ox:de.x, oy:de.y, r:GAS.raio, nasce:J.t, estoura:J.t + GAS.pavio,
+                      ate:J.t + GAS.pavio + GAS.dura, estourou:false});
+        de.golpe = 0.3; J.cdGas = J.t + GAS.cd;
+      } else J.cdGas = J.t + 1;
+    }
+    for(const g of J.gases){
+      if(J.t < g.estoura) continue;
+      const estouro = !g.estourou;
+      if(estouro){ g.estourou = true; som(J, 'gas'); tremerCamera(J, 0.5); }
+      for(const d of porPerto(J, g.x, g.y, g.r)){
+        if(!d.vivo) continue;
+        const q = U.dist(d.x, d.y, g.x, g.y);
+        if(q > g.r) continue;
+        if(estouro){ d.atordoado = Math.max(d.atordoado, 1.0); d.tremor = 6; d.ataque = null; }
+        d.gas = J.t + 0.5;
+        /* quem não é o jogador sai da nuvem tossindo */
+        if(!(d.lider && d.doJogador) && d.derrubado <= 0 && !d.seguradoPor){
+          const k = q || 1;
+          A.mover(d, (d.x - g.x)/k*62*dt, (d.y - g.y)/k*62*dt); A.barrarGrades(d, J.grades);
+        }
+      }
+    }
+    if(J.gases.length && J.t > J.gases[0].ate) J.gases = J.gases.filter(g => J.t <= g.ate);
+    /* ---- a algema: quem ficou no chão perto de um PM ---- */
+    for(const p of vivos){
+      if(p.cooldown > 0.6){ p.algema = null; continue; }
+      let a = p.algema;
+      if(a && (a.d.preso || a.d.entrou || a.d.sumiu || U.dist(p.x, p.y, a.d.x, a.d.y) > ALGEMA.busca ||
+               (a.d.caido ? J.t - a.d.caiuEm > CAIDO_SOME_EM : !a.d.noChao))) a = p.algema = null;
+      if(!a && f >= 1 && ((J._quadro + (p.postoX|0)) % 12 === 0)){
+        let melhor = null, md = ALGEMA.busca;
+        for(const d of J.discos){
+          if(d.preso || d.entrou || d.sumiu) continue;
+          const noChao = d.caido ? (J.t - d.caiuEm < CAIDO_SOME_EM - ALGEMA.tempo) : (d.noChao && !(d.lider && d.doJogador));
+          if(!noChao) continue;
+          const q = U.dist(p.x, p.y, d.x, d.y);
+          if(q < md && !vivos.some(o => o !== p && o.algema && o.algema.d === d)){ md = q; melhor = d; }
+        }
+        if(melhor) a = p.algema = {d:melhor, t:0};
+      }
+      if(a && U.dist(p.x, p.y, a.d.x, a.d.y) < ALGEMA.raio){
+        a.t += dt;
+        if(a.t >= ALGEMA.tempo){ algemar(J, a.d); p.algema = null; p.cooldown = 1.0; }
+      }
+    }
+    /* ---- a viatura: o relógio da briga ---- */
+    const caidos = J.caidos.mandante + J.caidos.visitante;
+    if(!J.viatura && !J.paz && (f >= 1 || caidos >= 1))
+      J.viatura = {chamadaEm:J.t, chegaEm:J.t + U.entre(VIATURA.de, VIATURA.ate), chegou:false, avisou:false};
+    const v = J.viatura;
+    if(v && !v.chegou){
+      if(!v.avisou && v.chegaEm - J.t <= 10){ v.avisou = true; aviso(J, D.semRecuoPM ? _t('O reforço da PM está chegando') : _t('Sirene: a viatura está chegando'), '#e0b040'); logar(J, _t('Dá pra ouvir a sirene: a viatura está chegando.'), 'pm'); som(J, 'sirene'); }
+      if(J.t >= v.chegaEm){
+        v.chegou = true; v.ate = J.t + VIATURA.dura;
+        /* por onde ela entra: a boca marcada pra tropa, um posto da PM, ou
+           a boca de rua mais longe da confusão */
+        const c = centroDaBriga(J) || {x:A.W/2, y:A.H/2};
+        let porta = D.tropaEm || (D.pmPostos && D.pmPostos[0]) || null;
+        if(!porta){
+          let md = -1;
+          for(const s of [].concat(A.fugas || [], D.spawns || [])){
+            const q = U.dist(s.x, s.y, c.x, c.y); if(q > md){ md = q; porta = s; }
+          }
+        }
+        porta = porta || {x:A.W/2, y:A.H/2};
+        const q0 = A.pontoLivreMaisProximo(porta.x, porta.y, 12);
+        v.x = q0.x; v.y = q0.y; v.rumo = Math.atan2(c.x - v.x, c.y - v.y);
+        /* dentro do setor não entra carro: é o reforço a pé */
+        v.aPe = !!D.semRecuoPM;
+        for(let i = 0; i < VIATURA.pms; i++){
+          const pm = new Policial({x:v.x, y:v.y});
+          const q = A.pontoLivreMaisProximo(v.x + U.entre(-40, 40), v.y + U.entre(-40, 40), 10);
+          pm.x = q.x; pm.y = q.y; pm.carga = true; pm.daViatura = true;
+          J.policiais.push(pm);
+        }
+        J.alerta = Math.max(J.alerta, 85);
+        aviso(J, v.aPe ? _t('O reforço da PM entrou') : _t('A viatura chegou'), '#5fa87d'); som(J, 'sirene');
+        logar(J, v.aPe ? _t('O reforço da PM entrou no setor: {n} PMs dispersando os dois lados.', {n:VIATURA.pms})
+                       : _t('A viatura chegou: {n} PMs desceram dispersando os dois lados.', {n:VIATURA.pms}), 'pm');
+      }
+    } else if(v && v.chegou && !v.recolheu && J.t > v.ate){
+      v.recolheu = true;
+      for(const p of J.policiais) if(p.daViatura) p.carga = false;
+    }
+  }
+
+  /* =======================================================
+     A MORAL EM CENA, O GARGALO E O TOMBO (dono, 12/11/2026)
+     Ver o companheiro cair mexe com quem está do lado: novato hesita
+     (não bate e dá uns passos pra trás), a linha de frente e a
+     diretoria ficam com raiva (batem 15% mais forte). Quem briga
+     espremido entre duas paredes — beco, portão, corredor — segura o
+     gargalo: leva 15% menos e não conta como cercado. E quem cai
+     esbarra em quem está logo atrás.
+     ======================================================= */
+  function abaloDaQueda(J, d){
+    for(const o of porPerto(J, d.x, d.y, 130)){
+      if(o === d || !o.vivo || o.lado !== d.lado || o.lider || o.fugindo) continue;
+      const c = o.cargo || (o.forca >= 10 ? 'frente' : o.forca >= 5 ? 'componente' : 'novato');
+      if(c === 'novato'){ if(U.rng() < 0.6) o.hesita = J.t + U.entre(1.2, 2.6); }
+      else if(c === 'frente' || c === 'diretoria'){ if(U.rng() < 0.7) o.furia = J.t + U.entre(2, 3.5); }
+    }
+  }
+  function passoMoral(J, dt){
+    for(const d of J.discos){
+      if(!d.vivo) continue;
+      /* o gargalo: parede dos dois lados do corpo (medido de vez em quando) */
+      if(((J._quadro + (d._ord || 0)) % 24) === 0){
+        const px = Math.cos(d.rumo), py = -Math.sin(d.rumo), k = d.r + 22;
+        d.gargalo = !A.caminhavel(d.x + px*k, d.y + py*k) && !A.caminhavel(d.x - px*k, d.y - py*k);
+      }
+      /* O CASSETETE DISPERSA (12/11/2026): quem levou da PM de ronda abre
+         distância dela em vez de ficar apanhando até ser preso */
+      if(d.dispersa > J.t && d._pm && !d.lider && d.derrubado <= 0 && !d.seguradoPor && !d.segurando){
+        const q = U.dist(d.x, d.y, d._pm.x, d._pm.y) || 1;
+        if(q < 150){ A.mover(d, (d.x - d._pm.x)/q*58*dt, (d.y - d._pm.y)/q*58*dt); A.barrarGrades(d, J.grades); }
+      }
+      if(d.hesita > J.t && !d.lider && d.derrubado <= 0 && !d.seguradoPor && !d.segurando){
+        const o = d._vizinhos && d._vizinhos.perto;
+        if(o && o.vivo && d.inimigoPerto < 80){
+          const q = U.dist(d.x, d.y, o.x, o.y) || 1;
+          A.mover(d, (d.x - o.x)/q*46*dt, (d.y - o.y)/q*46*dt); A.barrarGrades(d, J.grades);
+        }
+      }
+    }
+    if(J.tremorCam) J.tremorCam = Math.max(0, J.tremorCam - dt*2.4);
+  }
+  /* quem cai esbarra em quem está logo atrás, no rumo do golpe */
+  function tombo(J, a, b){
+    const q = U.dist(a.x, a.y, b.x, b.y) || 1, ux = (b.x - a.x)/q, uy = (b.y - a.y)/q;
+    b.caiuRumo = Math.atan2(ux, uy);
+    for(const o of porPerto(J, b.x, b.y, 26)){
+      if(o === b || o === a || !o.vivo || o.derrubado > 0) continue;
+      const dx = o.x - b.x, dy = o.y - b.y;
+      if(dx*ux + dy*uy <= 0 || dx*dx + dy*dy > 26*26) continue;
+      o.tremor = Math.min(6, o.tremor + 3); o.apanhou = Math.max(o.apanhou || 0, 0.25);
+      A.mover(o, ux*5, uy*5); A.barrarGrades(o, J.grades);
+    }
   }
 
   /* Tropa de choque é coisa de operação montada: existe no cordão do
@@ -47594,13 +48383,13 @@ TO.diaJogo.combate = (function(){
       const alvos=J.discos.filter(d=>d.vivo&&inimigos(p.lado,d.lado));
       if(p.tipo==='pedra'){
         for(const d of alvos) if(U.dist(d.x,d.y,p.x,p.y)<32){
-          d.hp-=22*P.dano; d.tremor=5; d.apanhou=0.4; d.linha='frente'; atacado(J,d);
+          d.hp-=22*P.dano; d.tremor=5; d.apanhou=0.4; d.linha='frente'; atacado(J,d); som(J,'pedra');
           if(J.t - d.frenteEm > 0.4) d.viraPara = Math.atan2(p.x-d.x, p.y-d.y);
           if(d.hp<=0) derrubar(J,d); break;
         }
         for(const g of J.grades) if(g.hp>0&&g.tipo!=='fila'&&U.dist(g.x,g.y,p.x,p.y)<26){g.hp-=30;g.tremor=4;break;}
       } else {
-        p.explosao=0;
+        p.explosao=0; som(J,'bomba'); tremerCamera(J,1);
         for(const d of alvos){
           const dist=U.dist(d.x,d.y,p.x,p.y);
           if(dist<RAIO_BOMBA){
@@ -48211,7 +49000,7 @@ TO.diaJogo.combate = (function(){
      fecha com a faixa ainda no muro e o lado dela derrotado sem
      ninguém de pé: tomada também.
      ======================================================= */
-  const CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina)/;
+  const CENAS_FAIXA = /^(bar|praca|estadio-|casa-piscina|subsede)/;
   /* FAIXA_AFASTA: o portador tenta ficar a pelo menos isto de qualquer inimigo */
   const FAIXA_TIRAR = 3.0, FAIXA_ALCANCE = 180, FAIXA_AFASTA = 200;
   /* O QUE CADA CENA EXPÕE (pedido do dono, 09/09/2026): no bar, bandeira
@@ -48270,6 +49059,15 @@ TO.diaJogo.combate = (function(){
     const quem = cfg.faixaDefensor;
     if(!quem) return [];
     const meu = ladoDoJogador(J), outro = OUTRO_LADO[meu];
+    /* NA SUBSEDE, A FAIXA DELA (dono, 11/10/2026): "{TORCIDA} {CIDADE}",
+       só ela, e só se a subsede ainda tem a dela */
+    const FS = cfg.faixaSub;
+    if(D.id === 'subsede' && FS){
+      if(!FS.tem) return [];
+      const lado = quem === 'nos' ? meu : outro;
+      const F = montarUma(J, cfg, FS.torcidaId, lado, null, 'faixa', {variante:'sub:' + (FS.cidadeNome || ''), subsede:FS.cidade});
+      return F ? [F] : [];
+    }
     const ordem = quem === 'ambos' ? ['nos','eles'] : [quem];
     for(const q of ordem){
       const lado = q === 'nos' ? meu : outro;
@@ -48288,11 +49086,14 @@ TO.diaJogo.combate = (function(){
   }
   /* monta UMA peça (faixa ou bandeira) de uma torcida num lado/setor;
      null se a torcida não tem a peça */
-  function montarUma(J, cfg, id, lado, spawn, tipo){
+  function montarUma(J, cfg, id, lado, spawn, tipo, sub){
     const PAT = TO.patrimonio, E = TO.estado.E;
     const nossa = id === E.torcida.id;
     let o, quantas = 1;
-    if(nossa){
+    if(sub){
+      o = nossa ? E.torcida : TO.mundo.torcida(id);
+      if(!o) return null;
+    } else if(nossa){
       const lista = tipo === 'bandeira' ? PAT.bandeirasDe(E).nossas : PAT.faixasDe(E).nossas;
       if(!lista.length) return null;
       o = E.torcida; quantas = lista.length;
@@ -48305,7 +49106,7 @@ TO.diaJogo.combate = (function(){
     }
     /* qual das faixas da torcida sai hoje: sorteio entre as que ela tem
        (cada uma tem o seu dizer — ver `dizerDaFaixa`) */
-    const variante = Math.floor(U.rng() * Math.max(1, quantas));
+    const variante = sub ? sub.variante : Math.floor(U.rng() * Math.max(1, quantas));
     const guardas = D.spawns.filter(sp=>sp.lado===lado && sp.guarda);
     const doLado = D.spawns.filter(sp=>sp.lado===lado);
     const base = spawn ? [spawn] : guardas.length ? guardas
@@ -48319,7 +49120,7 @@ TO.diaJogo.combate = (function(){
             x: U.limitar(cx, 60, A.W-60), y: U.limitar(cy-30, 24, A.H-24),
             w: bandeira ? 19 : 76, h:19, dir:null, estado:'exposta', equipe:[], portador:null,
             equipeN: bandeira ? 1 : 2, semente: (U.rng()*6.28),
-            tChegou:null, tEscolha:0, tomadaPor:null, variante,
+            tChegou:null, tEscolha:0, tomadaPor:null, variante, subsede: sub ? sub.subsede : null,
             img: PAT.imagemDaFaixaObj ? PAT.imagemDaFaixaObj(o, tipo, variante) : null};
     /* A FAIXA DE VERDADE (a arte do dono, 29/09/2026) tem a proporção
        dela: a altura sai da tela (que já traz a margem do pano), não do
@@ -48355,6 +49156,9 @@ TO.diaJogo.combate = (function(){
         F.w = len; F.h = telaReal ? Math.round(len * telaReal.height / telaReal.width) : Math.round(len/6 * 1.24);
       }
     }
+    /* o lugar da peça na parede: é em volta dele que o bonde fecha
+       quando a postura é proteger o material (16/10/2026) */
+    F.base = {x:F.x, y:F.y};
     return F;
   }
   /* QUEM SAI DA EQUIPE LARGA A FAIXA (correção do dono, 09/09/2026): o
@@ -48446,7 +49250,7 @@ TO.diaJogo.combate = (function(){
       if(!donaViva && inimigoVenceu){ tomada = true; por = inimigo; }
     }
     return {tomada, por, tipo:F.tipo || 'faixa', lado:F.lado, torcidaId:F.torcidaId, nome:F.nome, nossa:F.nossa, estado:F.estado,
-            variante:F.variante || 0};
+            variante:F.variante || 0, subsede:F.subsede || null};
   }
   function fimDasFaixas(J, venceuMandante){
     return (J.faixas || []).map(F=>fimDeUmaFaixa(J, F, venceuMandante)).filter(Boolean);
@@ -48649,6 +49453,45 @@ TO.diaJogo.combate = (function(){
     if(corpo) for(const d of ord) if(!d.vivo && !(d.caido && J.t-(d.caiuEm||0) > CAIDO_SOME_EM)) desenharDisco(c,d);
     for(const d of ord) if(d.vivo){ if(corpo) desenharDisco(c,d); else desenharRotulo(c,d); }
     if(corpo) for(const p of J.projeteis) desenharProjetil(c,p);
+    desenharPM2(c, J);
+  }
+  /* a viatura parada na boca de rua e a nuvem da bomba de efeito moral
+     (12/11/2026): do chão, valem com ou sem os bonecos por cima */
+  function desenharPM2(c, J){
+    const v = J.viatura;
+    if(v && v.chegou && !v.aPe){
+      c.save(); c.translate(v.x, v.y); c.rotate(-v.rumo);
+      c.fillStyle='rgba(0,0,0,.35)'; c.fillRect(-13, -24, 28, 50);
+      c.fillStyle='#e8e4dc'; c.fillRect(-12, -25, 24, 48);
+      c.fillStyle='#1e3a2c'; c.fillRect(-12, -9, 24, 16);
+      c.fillStyle='#10161a'; c.fillRect(-10, 9, 20, 8); c.fillRect(-10, -20, 20, 6);
+      const pisca = Math.sin(J.t*9) > 0;
+      c.fillStyle = pisca ? '#dc463c' : '#3a1512'; c.fillRect(-9, -3, 8, 4);
+      c.fillStyle = pisca ? '#12233a' : '#508ceb'; c.fillRect(1, -3, 8, 4);
+      c.restore();
+      const g = c.createRadialGradient(v.x, v.y, 4, v.x, v.y, 70);
+      g.addColorStop(0, pisca ? 'rgba(220,70,60,.20)' : 'rgba(80,140,235,.20)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(v.x, v.y, 70, 0, 7); c.fill();
+    }
+    for(const g of (J.gases || [])){
+      if(J.t < g.estoura){
+        /* a lata no ar, do PM ao alvo */
+        const k = (J.t - g.nasce)/(g.estoura - g.nasce);
+        const x = g.ox + (g.x - g.ox)*k, y = g.oy + (g.y - g.oy)*k - Math.sin(k*Math.PI)*26;
+        c.fillStyle='#cfd3d6'; c.beginPath(); c.arc(x, y, 3, 0, 7); c.fill();
+        c.setLineDash([5,5]); c.strokeStyle='rgba(207,211,214,.35)'; c.lineWidth=1.5;
+        c.beginPath(); c.arc(g.x, g.y, g.r, 0, 7); c.stroke(); c.setLineDash([]);
+        continue;
+      }
+      const vida = (J.t - g.estoura)/(g.ate - g.estoura), a = 0.5*(1 - vida*vida);
+      for(let i = 0; i < 7; i++){
+        const ang = i*0.9 + J.t*0.25*(i%2 ? 1 : -1), rr = g.r*(0.25 + 0.1*(i%3));
+        const x = g.x + Math.cos(ang)*rr*(0.6 + vida*0.5), y = g.y + Math.sin(ang)*rr*(0.6 + vida*0.5);
+        const gr = c.createRadialGradient(x, y, 2, x, y, g.r*0.62);
+        gr.addColorStop(0, `rgba(226,228,222,${a.toFixed(3)})`); gr.addColorStop(1, 'rgba(226,228,222,0)');
+        c.fillStyle = gr; c.beginPath(); c.arc(x, y, g.r*0.62, 0, 7); c.fill();
+      }
+    }
   }
 
   return {FORMACOES, Disco, criarEstado, passo, desenhar, reforcar, fimDaFaixa, fimDasFaixas, recolherAntesDeFugir,
@@ -48661,7 +49504,9 @@ TO.diaJogo.combate = (function(){
           arremessar, alternarRecuo, noPortao, entrarNoEstadio,
           restaCd, logar, aviso, nivelMoral, romperCordao, conferirGatilho,
           iaArremesso, alvoDeFuga, conferirFim, dePe, agressivo, atacado,
-          mandarEntrar, mandarFugir, emFuga, conferirPortoes};
+          mandarEntrar, mandarFugir, emFuga, conferirPortoes,
+          POSTURAS, NOME_POSTURA, alternarPostura, repartirCacadores,
+          passoPM, algemar, centroDaBriga, GAS, VIATURA};
 })();
 
 
@@ -50917,8 +51762,24 @@ TO.diaJogo.ponte = (function(){
       if(J && J.acabou && J.fase==='acabando') encerrar(J.acabou.motivo);
     }catch(e){ registrarErro('simulação', e); }
     try{ desenhar(); }catch(e){ registrarErro('desenho', e); }
+    /* o som e o tremor da câmera (12/11/2026): o combate só anota */
+    if(J && TO.som) TO.som.escoar(J);
+    tremerPalco();
     try{ atualizarHUD(); }catch(e){ registrarErro('hud', e); }
     requestAnimationFrame(quadro);
+  }
+
+  /* O TREMOR DA CÂMERA (12/11/2026): chute forte, queda do líder e
+     bomba balançam o palco por um instante (`J.tremorCam`, de 0 a 1,
+     que o combate acende e apaga sozinho). Vale pros canvas da cena,
+     não pro HUD. */
+  let tremia = false;
+  function tremerPalco(){
+    const f = J && J.fase === 'ativo' ? (J.tremorCam || 0) : 0;
+    if(f < 0.03 && !tremia) return;
+    tremia = f >= 0.03;
+    const tr = tremia ? `translate(${((Math.random()*2-1)*7*f).toFixed(1)}px,${((Math.random()*2-1)*7*f).toFixed(1)}px)` : '';
+    for(const id of ['djPrincipal','djPrincipal3d','djSobre']){ const el = document.getElementById(id); if(el) el.style.transform = tr; }
   }
 
   /* =======================================================
@@ -51012,6 +51873,10 @@ TO.diaJogo.ponte = (function(){
                       /* com boneco por cima, o nome e a marca do líder
                          vão pra camada de cima (desenharSobre) */
                       semNomeDoLider:bonecos});
+    /* sem boneco por cima, a festa vai no próprio canvas da cena */
+    if(!bonecos && J.festa && TO.diaJogo.festas){
+      try{ TO.diaJogo.festas.desenhar(ctx, J); }catch(e){ registrarErro('festas', e); }
+    }
     if(mira && !ED.ativo) desenharMira(ctx);
     if(ED.ativo) desenharEditor(ctx);
     ctx.setTransform(1,0,0,1,0,0);
@@ -51062,6 +51927,12 @@ TO.diaJogo.ponte = (function(){
     const c = sobreCtx;
     c.setTransform(1,0,0,1,0,0);
     c.clearRect(0,0,sc.width,sc.height);
+    /* as festas da arquibancada (dono, 11/10/2026): por cima dos bonecos */
+    if(J && J.festa && TO.diaJogo.festas){
+      c.setTransform(escala.s,0,0,escala.s,escala.ox,escala.oy);
+      try{ TO.diaJogo.festas.desenhar(c, J); }catch(e){ registrarErro('festas', e); }
+      c.setTransform(1,0,0,1,0,0);
+    }
     const f = focoDoZoom();
     if(!f || !f.vivo || ED.ativo) return;
     const s = escala.s;
@@ -51586,10 +52457,10 @@ TO.diaJogo.ponte = (function(){
       ? `<b style="color:var(--ouro)">${_t(espera).toUpperCase()}</b> · `+
         _t('<kbd>WASD</kbd> líder · <kbd>1</kbd>–<kbd>4</kbd> formação')
       : tres && miraNoPalco()
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
       : tres
-      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>E</kbd> defender · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
-      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>E</kbd> defender (segurar) · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
+      ? _t('<kbd>WASD</kbd> líder (pra onde a câmera olha) · <kbd>Q</kbd> bater · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> bomba · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · <kbd>V</kbd> câmera · arrastar gira · roda aproxima')
+      : _t('<kbd>WASD</kbd> líder · <kbd>Q</kbd> bater · <kbd>F</kbd> agarrar · <kbd>C</kbd> chamar · <kbd>2</kbd> pedra · <kbd>3</kbd> mira da bomba (clique joga) · <kbd>R</kbd> recuar · <kbd>X</kbd> fugir · rodinha = zoom · <kbd>F2</kbd> editor de cena');
   }
 
   /* =======================================================
@@ -51616,6 +52487,7 @@ TO.diaJogo.ponte = (function(){
     liga('djBtBomba', alternarMira);
     liga('djBtBater', ()=>{ if(J) C.bater(J, liderVivo()); });
     liga('djBtRecuar',()=>{C.alternarRecuo(J);atualizarBotoes();});
+    liga('djBtPostura',()=>{ if(J && !J.reuniao){ C.alternarPostura(J); atualizarBotoes(); } });
     liga('djBtFugir', mandarCorrer);
     liga('djBtCamera', trocarCamera3d);
     liga('djVelocidade', alternarVelocidade);
@@ -51659,6 +52531,14 @@ TO.diaJogo.ponte = (function(){
   }
   function atualizarBotoes(){
     U.$$('.form-btn').forEach(b=>b.classList.toggle('on', b.dataset.f===J.form));
+    /* A POSTURA DO BONDE (16/10/2026): o botão diz a de agora */
+    const bp=$('djBtPostura');
+    if(bp && J){
+      bp.innerHTML = `${_t(C.NOME_POSTURA[J.postura] || 'Massacrar')} <b>${tres ? 'B' : 'V'}</b>`;
+      bp.style.borderColor = J.postura !== 'massacrar' ? 'var(--ouro)' : '#3d3d39';
+      bp.style.color = J.postura !== 'massacrar' ? 'var(--ouro)' : 'var(--texto)';
+      bp.style.display = J.reuniao ? 'none' : '';
+    }
     const br=$('djBtRecuar');
     if(br&&br.firstChild){
       br.firstChild.textContent=(J.recuando?_t('Voltar pra briga'):_t('Recuar'))+' ';
@@ -51669,7 +52549,7 @@ TO.diaJogo.ponte = (function(){
        Os botões de briga apagam junto, senão ficam prometendo pedra e
        recuo pra quem está correndo. */
     const correndo = C.emFuga(J);
-    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba','djBtBater']){
+    for(const id of ['djBtFugir','djBtRecuar','djBtPedra','djBtBomba','djBtBater','djBtPostura']){
       const b = $(id);
       if(b){ b.disabled = correndo; b.classList.toggle('gasto', correndo); }
     }
@@ -51906,19 +52786,19 @@ TO.diaJogo.ponte = (function(){
     bomba.addEventListener('pointerup', soltaBomba);
     bomba.addEventListener('pointercancel', soltaBomba);
     bomba.addEventListener('contextmenu', ev=>ev.preventDefault());
-    /* Q bate (toque), E defende (segurar), R recua; pedra e bomba
-       ficam do outro lado, nos números 2 e 3 */
-    const defender = botao(_t('DEFENDER'), 'pad-acao pad-e', ()=>{ teclas.e=true; }, ()=>{ teclas.e=false; if(J) C.soltarDefesa(J, liderVivo()); });
+    /* Q bate, F agarra, R recua; pedra e bomba ficam do outro lado,
+       nos números 2 e 3. A DEFESA SAIU (dono, 16/10/2026): o lugar dela
+       na linha de cima ficou pro AGARRAR */
     /* OS MAIS USADOS NA LINHA DE CIMA, MAIORES (pedido do dono,
-       08/09/2026): bater, defender, pedra e bomba; o resto embaixo */
+       08/09/2026): bater, agarrar, pedra e bomba; o resto embaixo */
     const principais = document.createElement('div');
     principais.className = 'pad-acoes pad-principais';
     principais.append(
       disparo('q',_t('BATER'), ()=>{ if(J){ const l=liderVivo(); if(l) C.bater(J, l); } }),
-      defender);
+      disparo('f',_t('AGARRAR'),()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }));
     acoes.append(
       disparo('r',_t('RECUAR'),()=>{ if(J){ C.alternarRecuo(J); atualizarBotoes(); } }),
-      disparo('f',_t('AGARRAR'),()=>{ if(J){ const l=liderVivo(); if(l) C.agarrar(J, l); } }),
+      disparo('v',_t('POSTURA'),()=>{ if(J){ C.alternarPostura(J); atualizarBotoes(); } }),
       disparo('c',_t('CHAMAR'),()=>{ if(J) C.chamar(J, C.ladoDoJogador(J)); }),
       /* FUGIR SAIU DO F (que virou agarrar) e foi pro X */
       disparo('x',_t('FUGIR'), ()=>{ mandarCorrer(); }),
@@ -52004,18 +52884,18 @@ TO.diaJogo.ponte = (function(){
          ENTER do portão não têm o que fazer numa roda de cadeiras */
       if(J.reuniao) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
+      /* a postura também no B: no 3D o V é da câmera */
+      if(k==='v'||k==='b'){C.alternarPostura(J);atualizarBotoes();}
       if(k==='x'){C.mandarFugir(J);atualizarBotoes();}
       if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
       if(k==='f'){ const l=liderVivo(); if(l) C.agarrar(J, l); }
       if(k==='c'){ C.chamar(J, C.ladoDoJogador(J)); }
-      /* E é segurar: a defesa é lida por `teclas.e` no moverLider;
-         SOLTAR o E na hora do golpe é o contragolpe */
       if(k==='2') C.arremessar(J,'pedra');
       if(k==='3') alternarMira();
       if(k==='escape') cancelarMira();
       if(k==='enter') mandarEntrarOuSair();
     });
-    addEventListener('keyup',e=>{ const k=e.key.toLowerCase(); if(k==='e' && teclas.e && J) C.soltarDefesa(J, liderVivo()); teclas[k]=false; });
+    addEventListener('keyup',e=>{ teclas[e.key.toLowerCase()]=false; });
     /* NA CIDADE, com a mira aberta, o clique na cidade joga a bomba ali —
        antes de a cidade pegar o clique pra arrastar a câmera (a escuta é
        na captura) — e o botão direito cancela. O que é do HUD (os
@@ -52253,6 +53133,25 @@ TO.diaJogo.ponte = (function(){
       caidosMandante:  Math.max(0, J.caidos.mandante  - J.presosPor.mandante),
       caidosVisitante: Math.max(0, J.caidos.visitante - J.presosPor.visitante),
       presosMandante:J.presosPor.mandante, presosVisitante:J.presosPor.visitante,
+      /* a escolta da aliada que desceu com a gente: quantos dela caíram
+         ou foram presos (13/10/2026) — a linha do dia desconta dela */
+      /* AS BAIXAS DE CADA TORCIDA (dono, 13/10/2026: "na briga do estádio
+         com até seis torcidas tudo se embaralha no relatório"): o lado
+         soma todo mundo; aqui vai torcida por torcida, boneco por boneco */
+      porTorcida: (()=>{
+        const g = new Map();
+        for(const d of J.discos){
+          const k = d.torcidaId || d.torcida;
+          if(!k) continue;
+          const x = g.get(k) || g.set(k, {id:d.torcidaId || null, nome:d.torcida || '', lado:d.lado,
+            cor:d.cor || null, nossa:!!d.nossaTorcida, envolvidos:0, feridos:0, presos:0}).get(k);
+          x.envolvidos++;
+          if(d.preso) x.presos++; else if(d.caido) x.feridos++;
+        }
+        return [...g.values()];
+      })(),
+      baixasJunto: J.discos.some(d => d.junto)
+        ? J.discos.filter(d => d.junto && (d.caido || d.preso)).length : null,
       rompido:J.rompido,
       entraram:J.entraram,
       venceu, ganhamos, nossoLado, xpNoite,
@@ -52268,8 +53167,11 @@ TO.diaJogo.ponte = (function(){
          24/08/2026): a linha usava `venceu`, que é do ponto de vista
          do mandante — ganhar de visitante DESCONTAVA moral e perder
          pagava +1. Vale `ganhamos`, e a debandada que pesa é a NOSSA. */
+      /* (simétrica desde 10/10/2026: +1 na vitória, −1 na derrota, −2 na
+         debandada — o +1/−0,5 deixava a moral subir só de brigar; o
+         tamanho da briga multiplica em aplicarResultadoDaNoite) */
       moralTorcida: ganhamos ? +1
-                  : (J.debandou && J.debandou[nossoLado]) ? -2 : -0.5,
+                  : (J.debandou && J.debandou[nossoLado]) ? -2 : -1,
       /* a faixa (dono, 09/09/2026): tomada ou não, e por quem */
       faixa: C.fimDaFaixa ? C.fimDaFaixa(J, venceu) : null,
       /* no estádio são duas, uma por lado */

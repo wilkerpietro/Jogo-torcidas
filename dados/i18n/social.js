@@ -1305,6 +1305,9 @@ TO.i18n.registrar({
   "Sirene: a viatura está chegando": {es:"Sirena: llega el patrullero", en:"Siren: the patrol car is coming"},
   "Dá pra ouvir a sirene: a viatura está chegando.": {es:"Se oye la sirena: llega el patrullero.", en:"You can hear the siren: the patrol car is coming."},
   "A viatura chegou": {es:"Llegó el patrullero", en:"The patrol car is here"},
+  "O reforço da PM entrou": {es:"Entró el refuerzo policial", en:"Police backup is in"},
+  "O reforço da PM está chegando": {es:"Llega el refuerzo policial", en:"Police backup is coming"},
+  "O reforço da PM entrou no setor: {n} PMs dispersando os dois lados.": {es:"El refuerzo policial entró al sector: {n} policías dispersando a los dos bandos.", en:"Police backup entered the stand: {n} officers dispersing both sides."},
   "A viatura chegou: {n} PMs desceram dispersando os dois lados.": {es:"Llegó el patrullero: {n} policías bajaron dispersando a los dos bandos.", en:"The patrol car is here: {n} officers got out, dispersing both sides."},
   "{nome} foi algemado no chão.": {es:"{nome} fue esposado en el suelo.", en:"{nome} was cuffed on the ground."}
 });

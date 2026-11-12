@@ -90,6 +90,11 @@ export function palcoDeBriga(o) {
     const [wx, wz] = o.noMundo(l.x, l.y);
     const k = seguindo ? 1 - Math.exp(-dt * 5) : 1;
     orb.alvo.x += (wx - orb.alvo.x) * k; orb.alvo.z += (wz - orb.alvo.z) * k;
+    /* O TREMOR DA CÂMERA (12/11/2026): chute forte, queda do líder, bomba e
+       gás sacodem o alvo por um instante (`J.tremorCam`, de 0 a 1, do
+       combate); o seguir macio traz de volta sozinho */
+    const j = J(), tr = j && j.fase === 'ativo' ? (j.tremorCam || 0) : 0;
+    if (tr > 0.03) { orb.alvo.x += (Math.random() * 2 - 1) * 0.3 * M * tr; orb.alvo.z += (Math.random() * 2 - 1) * 0.3 * M * tr; if (C.pedir) C.pedir(); }
     seguindo = true;
   }
   function vista(nome, voar) {

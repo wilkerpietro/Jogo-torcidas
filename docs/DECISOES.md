@@ -11235,6 +11235,82 @@ tempo de amenizar e provocar). Agora abre a 4× em qualquer cena
 (`js/main.js`, `d.vel`), e o botão de velocidade (1× → 2× → 4×) continua
 ali pra quem quiser mais tempo.
 
+## Briga: polícia em degraus, viatura, moral em cena, som, e o combate novo no jogo 3D (dono, 12/11/2026)
+
+Pedido: "Aplique tudo e edite o cenário 3d. Aprimore todos os movimentos dos
+bonecos pra ficar mais realista. Faça todas essas coisas que você citou" (as
+16 sugestões de bonecos, briga, polícia, câmera e som). A regra antiga de não
+mexer em `cenario3d/` caiu com este pedido.
+
+**O combate (`js/diajogo/combate.js`, e o mesmo código dentro do jogo 3D)**
+- **Polícia em degraus** (`passoPM`): pelo alerta, 0 parada · 1 manda
+  dispersar (45) · 2 avança em linha (70) · 3 bomba de efeito moral (85) ·
+  4 carga (grade rompida ou viatura). Desce com folga (30/55/72). A briga à
+  vista da PM esquenta o alerta até 88 (antes, sem grade, ela assistia).
+- **A linha anda junta**: nos degraus 2 e 3 o posto de cada PM avança até
+  170 px no rumo da confusão; na carga a tropa tem um alvo só e cada um
+  toma o lugar na linha.
+- **PM acuada**: com 5 brigões pra cada PM (e 10 ou mais), ela fecha em
+  bloco e pede reforço (o alerta sobe 5/s).
+- **Bomba de efeito moral** (`J.gases`): no degrau 3, uma a cada 7 s no
+  maior bolo a até 420 px; estoura em 0,9 s, atordoa 1 s quem está no raio
+  de 78 px e por 6 s ninguém bate lá dentro e a IA sai da nuvem; o jogador
+  anda a 60%. Não tira vida.
+- **O cassetete dispersa**: quem leva da PM de ronda fica 3 s sem procurar
+  conflito e abre distância dela (era apanhar parado até ser preso). A
+  tropa de choque continua batendo 1,4×.
+- **Algema** (`algemar`): PM sem ninguém pra enfrentar vai até quem ficou
+  no chão a até 110 px e, em 1,2 s em cima dele, prende — o caído vira
+  preso sem contar duas vezes.
+- **Viatura** (`J.viatura`): chamada no primeiro caído (ou no degrau 1),
+  chega em 26 a 36 s com sirene avisando 10 s antes; descem 3 PMs em carga
+  de ronda por 16 s. Dentro do setor não entra carro: é reforço a pé.
+- **Moral em cena** (`abaloDaQueda`): companheiro caiu a até 130 px —
+  novato hesita 1,2 a 2,6 s (não bate e recua), linha de frente e diretoria
+  ficam com raiva 2 a 3,5 s (+15% de dano).
+- **Gargalo**: parede dos dois lados do corpo — leva 15% menos e não conta
+  como cercado. **Tombo**: quem cai esbarra em quem está logo atrás.
+  **Cansado**: abaixo de 30% de vida o golpe demora 0,14 s a mais.
+- Reforço dos 100 de alerta não quebra mais em cena sem posto de PM.
+- Medido na briga de bairro 10×14 (jogador parado): 5 vitórias em 6, antes
+  6 em 6; a viatura chega perto do fim (38 a 44 s numa briga de ~48 s).
+
+**Som e câmera**
+- `js/som.js`: sem arquivo de áudio, tudo sintetizado (soco, chute, queda,
+  pedra, bomba, gás, apito, sirene). O combate anota em `J.sons`, a ponte
+  toca. Liga/desliga em `TO.som.ligado` (ainda sem botão na tela).
+- `J.tremorCam`: chute no/do líder, queda do líder, bomba e gás sacodem o
+  palco (CSS no 2D, o alvo da câmera no 3D, `palco_briga.js`).
+
+**Bonecos (`js/diajogo/bonecos3.js` e `cenario3d/js/bonecos3.js` + cópia `_cena`)**
+- A pancada muda com o golpe: no corpo dobra pra frente, uppercut joga a
+  cabeça pra trás, gancho vira cabeça e ombro.
+- A queda vai pro lado do golpe (`d.caiuRumo`).
+- Camada `realismo` por cima de qualquer movimento: peso (arranca, freia,
+  deita na curva), cabeça atrasada na virada, cansaço abaixo de 45% de
+  vida, e as poses de hesitar, raiva, tossir no gás e cobrir a cabeça.
+- Multidão: um sexto por vez "acorda" por 1,3 s em rodízio.
+- PM: braço erguido mandando dispersar, agachado algemando; gás em fumaça
+  e a viatura com giroflex nos dois renderizadores.
+
+**O jogo 3D**
+- `cenario3d/js/jogo.js` é o pacote do jogo de feed gerado por um
+  `montar.sh` que não está neste repositório. O combate e a ponte de lá
+  estavam na versão de 07/10 (com defesa e contragolpe). Entraram por
+  mesclagem de três vias (base: o `combate.js` de 06/10; sem conflito no
+  combate, dois na ponte, resolvidos à mão), então o 3D ganhou também o
+  que o 2D recebeu em outubro: golpe do jogador que sempre entra, sem
+  defesa, agarrão forte e posturas.
+- No 3D o V é da câmera: a postura ficou no B (vale no 2D também). A
+  casca (`jogo_casca.js`) perdeu "Defender E" e ganhou o botão de postura.
+- A versão de cache dos arquivos do 3D mudou (`?v=532c16cffc`).
+- **Cuidado**: se o pacote for regerado pelo `montar.sh` a partir de outra
+  árvore, estas mudanças somem de `jogo.js`.
+
+**O que ficou de fora**: fileiras nos primeiros segundos (o combate já
+separa frente e retaguarda), zoom no nocaute do líder, fôlego como barra
+que se gasta, e botão de som na tela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

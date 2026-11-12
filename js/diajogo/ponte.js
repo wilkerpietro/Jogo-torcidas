@@ -966,7 +966,7 @@ TO.diaJogo.ponte = (function(){
     /* A POSTURA DO BONDE (16/10/2026): o botão diz a de agora */
     const bp=$('djBtPostura');
     if(bp && J){
-      bp.innerHTML = `${_t(C.NOME_POSTURA[J.postura] || 'Massacrar')} <b>V</b>`;
+      bp.innerHTML = `${_t(C.NOME_POSTURA[J.postura] || 'Massacrar')} <b>${tres ? 'B' : 'V'}</b>`;
       bp.style.borderColor = J.postura !== 'massacrar' ? 'var(--ouro)' : '#3d3d39';
       bp.style.color = J.postura !== 'massacrar' ? 'var(--ouro)' : 'var(--texto)';
       bp.style.display = J.reuniao ? 'none' : '';
@@ -1305,7 +1305,8 @@ TO.diaJogo.ponte = (function(){
          ENTER do portão não têm o que fazer numa roda de cadeiras */
       if(J.reuniao) return;
       if(k==='r'){C.alternarRecuo(J);atualizarBotoes();}
-      if(k==='v'){C.alternarPostura(J);atualizarBotoes();}
+      /* a postura também no B: no 3D o V é da câmera */
+      if(k==='v'||k==='b'){C.alternarPostura(J);atualizarBotoes();}
       if(k==='x'){C.mandarFugir(J);atualizarBotoes();}
       if(k==='q'){ const l=liderVivo(); if(l) C.bater(J, l); }
       if(k==='f'){ const l=liderVivo(); if(l) C.agarrar(J, l); }
