@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=e1b52e90fd';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=e1b52e90fd';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=b3cee2d0ab';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=b3cee2d0ab';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -208,6 +208,8 @@ const PISO_PARIDADE = 0.45, PAR_PARIDADE = 0.8;
 const BRIGA = 45;           // s de briga
 const EMBOSCADA = 150;      // s: quem ataca chega no ponto esse tanto antes do alvo
 const ESCONDIDO = 14;       // m: e espera esse tanto antes do ponto, na rua dele
+/* a câmera do alto que segue o bonde na caminhada (m, rad) */
+const HELICOPTERO = { dist: 300, el: 1.22 };
 const REAGRUPA = 120;       // s: depois da briga, o alvo junta os dele antes de seguir
 const ESQUINA = 18;         // m: a rua que sai de um ponto, nos quatro rumos, pra ele ser esquina (a briga na pista)
 const PRIVADO = 8;          // quanto custa a mais andar fora da rua e da calçada (o lote, o terreno baldio, o quintal, a praça)
@@ -2966,7 +2968,12 @@ export function criarDiaDeJogo(ctx) {
     rodar(v) { if (!plano) return; if (v) vezes = v; lenta = null; rodando = true; ctx.pedir(); },
     parar() { rodando = false; if (lenta) { vezes = lenta.vezes; lenta = null; } },
     /* a câmera: atrás de um bonde (null solta), o estádio, o plano todo */
-    seguirBonde(b) { seguir = b || null; semFoco(); if (seguir) { const d = seguir.gente[0].d; ctx.voarPara(d.x, d.y, 45 * M, 0.95, undefined, d.alt || 0); } },
+    /* A CÂMERA DE HELICÓPTERO (dono, 13/11/2026: "a visão do jogador sendo
+       bem de cima, com a distância vendo diversos quarteirões, igual um
+       helicóptero"): seguir o bonde é do alto; `vista` ({dist em m, el})
+       troca a altura (a briga desce a câmera) */
+    seguirBonde(b, vista) { seguir = b || null; semFoco(); if (seguir) { const d = seguir.gente[0].d, v = vista || HELICOPTERO; ctx.voarPara(d.x, d.y, v.dist * M, v.el, undefined, d.alt || 0); } },
+    HELICOPTERO,
     get seguindo() { return seguir; },
     verEstadio: () => { if (plano) { seguir = null; verEstadio(); } },
     verPlano: () => { if (plano) { seguir = null; verPlano(); } },

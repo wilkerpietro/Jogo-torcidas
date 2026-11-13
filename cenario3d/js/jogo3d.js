@@ -23,13 +23,13 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=e1b52e90fd';
-import { criarVida, horaTxt } from './vida3d.js?v=e1b52e90fd';
-import { criarMapaDaCidade } from './mapa3d.js?v=e1b52e90fd';
-import { criarDia3d } from './dia3d.js?v=e1b52e90fd';
-import { criarRecados } from './recados3d.js?v=e1b52e90fd';
-import { criarRua } from './rua3d.js?v=e1b52e90fd';
-import { criarNevoa } from './nevoa3d.js?v=e1b52e90fd';
+import { CASCA } from './jogo_casca.js?v=b3cee2d0ab';
+import { criarVida, horaTxt } from './vida3d.js?v=b3cee2d0ab';
+import { criarMapaDaCidade } from './mapa3d.js?v=b3cee2d0ab';
+import { criarDia3d } from './dia3d.js?v=b3cee2d0ab';
+import { criarRecados } from './recados3d.js?v=b3cee2d0ab';
+import { criarRua } from './rua3d.js?v=b3cee2d0ab';
+import { criarNevoa } from './nevoa3d.js?v=b3cee2d0ab';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -44,22 +44,22 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=e1b52e90fd'), carregarCss('css/jogo3d.css?v=e1b52e90fd')]);
+  await Promise.all([carregarCss('css/jogo.css?v=b3cee2d0ab'), carregarCss('css/jogo3d.css?v=b3cee2d0ab')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=e1b52e90fd').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=b3cee2d0ab').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=e1b52e90fd');
+  await carregarScript('js/jogo.js?v=b3cee2d0ab');
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=e1b52e90fd').catch(() => {});
-  await import('./bonecos3_global.js?v=e1b52e90fd');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=b3cee2d0ab').catch(() => {});
+  await import('./bonecos3_global.js?v=b3cee2d0ab');
   ligar(api);
   return TO.tela;
 }
@@ -74,8 +74,13 @@ const T_ = (s, p) => typeof window._t === 'function' ? window._t(s, p) : String(
 function idaNoRecado(e, m) {
   if (!e || !e.torcida || !m || m.kind !== 'partida' || m.respondido || !m.dados) return;
   if (m.dados.idaJogada !== undefined || m.dados.dia || m.dados.iniciada) return;
+  /* A IDA ANDA SOZINHA (dono, 13/11/2026, etapa 2: "a torcida sai da sede
+     mesmo e vai andando até o estádio", com a câmera de helicóptero): não
+     há mais a pergunta "Assumir a ida / Ir em paz" — o bonde vai sozinho,
+     e o jogador assume quando outra torcida chega perto (etapa 3) */
+  m.dados.idaJogada = false;
+  return;
   const casa = !!m.dados.somosCasa && (!m.dados.mapa || m.dados.mapa === e.torcida.mapa);
-  m.dados.idaJogada = casa;
   if (!casa) return;
   m.texto = (m.texto || '') + ' ' + T_('É dia de jogo em casa: quer assumir a ida até o estádio — você leva o bonde a pé, pelos pontos da PM, e pode partir pra cima de quem achar no caminho — ou ir em paz?');
   m.botoes = [{ id: 'controle', rot: T_('Assumir a ida'), acao: 'iniciar-partida' }, { id: 'iniciar', rot: T_('Ir em paz'), acao: 'iniciar-partida' }];
@@ -295,7 +300,7 @@ function ligar(api) {
     if (!loja) return { erro: 'a praça não tem ' + op.alvo };
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
-    const { iniciarAssalto } = await import('./assalto3d.js?v=e1b52e90fd');
+    const { iniciarAssalto } = await import('./assalto3d.js?v=b3cee2d0ab');
     /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
     const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
     const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;

@@ -59,10 +59,10 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=e1b52e90fd';
-import { palcoDeBriga } from './palco_briga.js?v=e1b52e90fd';
-import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=e1b52e90fd';
-import { criarSeguidores } from './rua3d.js?v=e1b52e90fd';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=b3cee2d0ab';
+import { palcoDeBriga } from './palco_briga.js?v=b3cee2d0ab';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=b3cee2d0ab';
+import { criarSeguidores } from './rua3d.js?v=b3cee2d0ab';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -431,7 +431,7 @@ export function criarDia3d(api, vida, g = {}) {
                      titulo: `${j.mandante.nome} × ${j.visitante.nome}`,
                      /* A IDA JOGADA: o jogador assumiu a ida no recado do dia (em casa);
                         fora, a pergunta é na chegada à cidade (`montarCidade`) */
-                     controle: !!(o.msg && o.msg.dados && o.msg.dados.controle) && !!j.casa };
+                     controle: false };
     montarHud(); pintar();
     status(D.fora ? `A caravana chegando em ${nome}…` : 'A PM montando o plano do dia…');
     if (g.travarPraca) g.travarPraca(true);
@@ -458,7 +458,8 @@ export function criarDia3d(api, vida, g = {}) {
       const ini = D.fora ? await escolherInicio(e, j) : null;
       if (D !== eu) return false;
       /* A IDA NO JOGO FORA: a caravana desceu, e o jogador diz se leva o bonde (antes do plano: a tocaia da pista vira ponto de passagem) */
-      if (D.fora) { D.controle = await escolherIdaFora(e, j, ini); if (D !== eu) return false; }
+      /* (fora também a ida anda sozinha: sem a pergunta da chegada, 13/11/2026) */
+      if (D.fora) D.controle = false;
       status('A PM montando o plano do dia…');
       await espera(); await espera();
       const esc0 = escolhaDoDia(e, j, D.msg, it, ini);
@@ -528,7 +529,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=e1b52e90fd');
+    const { criarEstrada } = await import('./estrada3d.js?v=b3cee2d0ab');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -961,7 +962,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=e1b52e90fd');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=b3cee2d0ab');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1637,7 +1638,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function montarCaca() {
     if (!IDA || IDA.grupos) return;
     IDA.grupos = [];
-    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=e1b52e90fd')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
+    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=b3cee2d0ab')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
     if (!IDA || !D) return;
     const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, e = D.e, nosId = e.torcida.id;
     if (!eu) return;

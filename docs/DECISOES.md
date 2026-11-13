@@ -11464,6 +11464,23 @@ mesmo."
   o feed), o botão "Ver o 1º andar", o recado do dia livre e o botão
   "Sair pra rua" (a rua livre).
 
+## Etapa 2: a ida anda sozinha, vista de helicóptero (dono, 13/11/2026)
+
+Pedido: "Vá pra etapa 2" (a câmera de helicóptero e a caminhada
+automática sede→estádio).
+
+- **Sem a pergunta da ida**: o recado da partida não oferece mais
+  "Assumir a ida / Ir em paz" (`idaNoRecado`, jogo3d.js), nem a chegada
+  numa cidade de fora (`escolherIdaFora` não é mais chamada). O dia de
+  jogo abre com `controle: false`: o bonde sai da porta da sede (ou de
+  onde a caravana desceu) e anda sozinho pela rota do plano até o portão.
+  A ida jogada (`comecarIda`) fica no código pra etapa 3, quando o
+  jogador assume com a rival perto.
+- **A câmera de helicóptero** (`HELICOPTERO`, dia_de_jogo.js): seguir o
+  bonde é a 300 m, 70° de inclinação — vários quarteirões na tela. As
+  brigas continuam descendo a câmera pra perto (38–58 m).
+- O cartão da partida no 3D não mostra mais o mapa 2D do trajeto.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -29,7 +29,7 @@ Os dois indicadores centrais são **prestígio** (o nome da torcida na rua, que 
 Existem duas versões jogáveis no mesmo repositório:
 
 - **O jogo 3D**, em `cenario3d/jogo.html`: **é o jogo desde 13/11/2026** — o endereço principal (`index.html`) abre ele. A cidade inteira modelada em 3D, com o mesmo motor de regras rodando por cima (o pacote `cenario3d/js/jogo.js` é o código do 2D mesclado com o do 3D). Descrito na Parte V.
-  Entre os jogos o 3D fica escondido e parado: a tela é o feed com cartões e botões grandes; a cidade só aparece (e só desenha) nas cenas — o dia de jogo, as brigas, o assalto e o mapa da cidade. Não há mais a sala do presidente nem a rua livre.
+  Entre os jogos o 3D fica escondido e parado: a tela é o feed com cartões e botões grandes; a cidade só aparece (e só desenha) nas cenas — o dia de jogo, as brigas, o assalto e o mapa da cidade. Não há mais a sala do presidente nem a rua livre. No dia de jogo o bonde sai sozinho da sede e anda até o estádio, com a câmera de helicóptero (300 m de altura) seguindo ele; não há mais a pergunta "Assumir a ida / Ir em paz".
 - **O jogo de feed (2D)**, na raiz: `index.html?2d`. Fica no repositório sem link; as regras que este livro descreve são as dele, e o 3D roda as mesmas.
 
 ## 2. Tecnologia e arquitetura

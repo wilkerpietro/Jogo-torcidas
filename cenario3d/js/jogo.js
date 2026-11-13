@@ -63730,7 +63730,8 @@ TO.mapaCaravana = (function(){
     /* O MAPA DA CARAVANA ANTES DE SAIR (pedido do dono, 10/10/2026): a
        rota do dia num pedaço do Brasil, embaixo do texto; o Iniciar põe
        o ônibus pra andar nele (abrirItinerario) */
-    if(m.kind === 'partida' && !m.respondido && !aoVivo && !linha && TO.mapaCaravana && TO.itinerario.rotaDoDia){
+    /* (no jogo 3D a ida é a caminhada na cidade, vista do alto: sem o mapa 2D, 13/11/2026) */
+    if(m.kind === 'partida' && !m.respondido && !aoVivo && !linha && !TO.semFeed && TO.mapaCaravana && TO.itinerario.rotaDoDia){
       const r = TO.itinerario.rotaDoDia(E());
       /* em casa não há estrada: a prévia é a cidade, da sede ao estádio */
       const c = r && !r.viaja && r.trajeto ? TO.mapaCaravana.criarTrecho(r.trajeto) : null;
