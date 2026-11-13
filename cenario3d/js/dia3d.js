@@ -59,10 +59,10 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=2101a3f679';
-import { palcoDeBriga } from './palco_briga.js?v=2101a3f679';
-import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=2101a3f679';
-import { criarSeguidores, criarSeta } from './rua3d.js?v=2101a3f679';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=3993ad02c1';
+import { palcoDeBriga } from './palco_briga.js?v=3993ad02c1';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=3993ad02c1';
+import { criarSeguidores, criarSeta } from './rua3d.js?v=3993ad02c1';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -120,6 +120,7 @@ export function criarDia3d(api, vida, g = {}) {
         <button data-dia="nossa" title="A câmera vai atrás do nosso bonde">Nossa</button>
         <button data-dia="estadio" title="A câmera no estádio">Estádio</button>
         <button data-dia="plano" title="O dia inteiro, de cima">Cidade</button>
+        <button data-dia="assumir" class="acao" hidden title="Você leva o bonde a pé: dá pra esperar a rival num canto e emboscar">Assumir o bonde</button>
       </div>
       <div class="j3d-dia-invadir" hidden></div>`;
     document.body.appendChild(hud);
@@ -141,6 +142,7 @@ export function criarDia3d(api, vida, g = {}) {
       else if (a === 'nossa') { if (D.nosso) dia.seguirBonde(D.nosso); }
       else if (a === 'estadio') { if (D.fase === 'jogo' && D.nosso) verNossoSetor(); else dia.verEstadio(); }
       else if (a === 'plano') dia.verPlano();
+      else if (a === 'assumir') { if (podeAssumir()) assumirNaIda(null); }
       else if (a === 'invadir') invadir(b.dataset.via);
     });
     return hud;
@@ -163,6 +165,7 @@ export function criarDia3d(api, vida, g = {}) {
     hud.querySelector('.j3d-dia-vezes').hidden = !!D.estrada || !!(IDA && IDA.andando);
     hud.querySelector('[data-dia="pular"]').hidden = !!(IDA && IDA.andando);
     if (IDA && IDA.andando) for (const q of ['nossa', 'estadio', 'plano']) hud.querySelector(`[data-dia="${q}"]`).hidden = true;
+    hud.querySelector('[data-dia="assumir"]').hidden = !podeAssumir();
     /* A INVASÃO: só na partida, uma por jogo, pelos caminhos que a nossa torcida tem */
     const inv = hud.querySelector('.j3d-dia-invadir');
     const vias = D.partida && !D.invadiu ? viasDaInvasao() : [];
@@ -173,7 +176,8 @@ export function criarDia3d(api, vida, g = {}) {
   }
   function pintarHora() {
     if (!hud || !D || !dia) return;
-    const h = hud.querySelector('.j3d-dia-hora'), txt = hhmm(dia.t);
+    /* (na saída do estádio o relógio do plano anda pra trás: o do painel segue pra frente) */
+    const h = hud.querySelector('.j3d-dia-hora'), txt = hhmm(D.saida ? D.saida.relogio : dia.t);
     if (h.textContent !== txt) h.textContent = txt;
   }
   /* A FAIXA DAS FASES: ida, jogo e volta, cada uma com a hora da cidade
@@ -529,7 +533,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=2101a3f679');
+    const { criarEstrada } = await import('./estrada3d.js?v=3993ad02c1');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -962,7 +966,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=2101a3f679');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=3993ad02c1');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1240,6 +1244,11 @@ export function criarDia3d(api, vida, g = {}) {
     /* (a linha espera esta fase acabar: se o dia em 3D cai no meio, `cidadeRefeita` chama a espera no lugar dele) */
     if (D && !D.fundo) { const c0 = cont, eu = D; cont = () => { if (D === eu && D.pendente === cont) D.pendente = null; c0(); }; D.pendente = cont; }
     if (D && D.estrada && !D.fundo && !p.jogo && p.id !== 'volta') { faseNaEstrada(p, cont); return; }
+    /* A SAÍDA DO ESTÁDIO vem antes da volta (a estrada, fora; o fim do dia, em casa) */
+    if (D && !D.fundo && p.id === 'volta' && !D.saiuDoEstadio && D.plano && dia && dia.plano && D.nosso) {
+      D.saiuDoEstadio = true;
+      if (sairDoEstadio(() => { if (D) fase(p, cont); })) return;
+    }
     if (D && D.fora && !D.fundo && p.id === 'volta' && !D.voltou && D.plano && voltaPelaEstrada(p, cont)) return;
     if (!D || !D.plano || !dia || !dia.plano) { cont(); return; }
     const pl = D.plano, nosso = D.nosso;
@@ -1320,6 +1329,48 @@ export function criarDia3d(api, vida, g = {}) {
     status('Fim de jogo: as torcidas saindo.');
     cont();
   }
+  /* ======================================================
+     A SAÍDA DO ESTÁDIO (o dono, 13/11/2026: "Precisamos ativar o movimento
+     de saída do estádio, até um quarteirão depois do estádio, e aí inicia
+     a cena de voltar pra cidade-sede"). O plano do dia só sabe a ida: cada
+     pessoa tem a rota da rua até a catraca e da catraca até a vaga. A
+     saída é a ida passada de trás pra frente — o relógio do plano volta, do
+     todo mundo no lugar até a cabeça do nosso bonde estar a SAIDA_M metros
+     do portão, e cada um refaz o caminho dele de costas pro estádio (o
+     rumo de quem anda é o do passo que ele deu). Dura uns SAIDA_S segundos
+     de tela; o relógio do painel segue pra frente
+     ====================================================== */
+  const SAIDA_M = 170, SAIDA_S = 22;
+  function sairDoEstadio(fim) {
+    const b = D.nosso, pl = D.plano;
+    if (!b || !b.rua || !pl.cabeca || !(b.chega > b.sai)) return false;
+    const quer = Math.max(0, b.rua.L - SAIDA_M * M);
+    let a = b.sai, z = b.chega;
+    for (let k = 0; k < 24; k++) { const m = (a + z) / 2; if (pl.cabeca(b, m) < quer) a = m; else z = m; }
+    const de = Math.max(z + 1, Math.min(dia.t, (b.fim || b.chega) + 5));
+    if (!(de > z + 2)) return false;
+    dia.parar(); dia.soTorcidas = false;
+    D.corrida = null;
+    D.saida = { t: de, ate: z, vel: (de - z) / SAIDA_S, relogio: dia.t, fim };
+    dia.irPara(de);
+    dia.seguirBonde(b);
+    status('Fim de jogo: as torcidas saindo do estádio…');
+    pintar();
+    return true;
+  }
+  function quadroDaSaida(dt) {
+    const S = D.saida;
+    S.t -= dt * S.vel; S.relogio += dt * 20;
+    if (S.t <= S.ate) {
+      D.saida = null;
+      dia.irPara(S.ate);
+      status('Fim de jogo: o bonde a um quarteirão do estádio.');
+      const f = S.fim; setTimeout(() => { if (D) f(); }, 600);
+      return;
+    }
+    dia.irPara(S.t);
+  }
+
   /* ======================================================
      A IDA JOGADA (07/10/2026; o dono: "O itinerário até o estádio agora é
      livremente comandado pelo jogador, mantendo a obrigação dos
@@ -1439,9 +1490,19 @@ export function criarDia3d(api, vida, g = {}) {
     }
     return melhor && melhor.v;
   }
+  /* ASSUMIR PORQUE QUER (o dono, 13/11/2026: "durante a caminhada na cidade
+     o jogador pode querer assumir o controle da torcida a caminho do
+     estádio, pra tentar emboscar um rival, esperando em algum canto que ele
+     prefira"): o botão "Assumir o bonde" do painel, enquanto a caminhada
+     anda sozinha e o cordão da PM ainda não passou */
+  function podeAssumir() {
+    if (!D || D.fundo || D.estrada || D.emCena || IDA || !dia || !D.plano || !D.nosso || D.fase !== 'ida' || !D.corrida || D.idaEntregue || D.briga || D.arr) return false;
+    const b = D.nosso, pts = pontosDaIda(b), s3 = pts.length ? pts[pts.length - 1].s : 0;
+    return D.plano.cabeca(b, dia.t) < s3 - 3 * M;
+  }
   function assumirNaIda(v) {
     const b = D.nosso;
-    D.avisados.add(v);
+    if (v) D.avisados.add(v);
     /* (o cordão já passou: a PM é quem leva, ninguém assume) */
     const s3 = pontosDaIda(b).slice(-1)[0].s;
     if (D.plano.cabeca(b, dia.t) >= s3 - 3 * M) return;
@@ -1449,8 +1510,8 @@ export function criarDia3d(api, vida, g = {}) {
     D.corrida = null;
     dia.parar();
     D.controle = true;
-    D.assumiuPor = v.t.sigla || v.t.nome || 'rival';
-    status(`A ${D.assumiuPor} tá chegando perto! A ida é sua.`, true);
+    D.assumiuPor = v ? (v.t.sigla || v.t.nome || 'rival') : null;
+    status(v ? `A ${D.assumiuPor} tá chegando perto! A ida é sua.` : 'A ida é sua: leve o bonde por onde quiser.', !!v);
     comecarIda(c && c.fim ? c.fim : () => {}, null);
   }
   async function comecarIda(fim, eventoDaPista) {
@@ -1723,7 +1784,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function montarCaca() {
     if (!IDA || IDA.grupos) return;
     IDA.grupos = [];
-    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=2101a3f679')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
+    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=3993ad02c1')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
     if (!IDA || !D) return;
     const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, e = D.e, nosId = e.torcida.id;
     if (!eu) return;
@@ -2476,6 +2537,7 @@ export function criarDia3d(api, vida, g = {}) {
       /* (com o intervalo: o segundo tempo começa 15 minutos depois do fim do primeiro) */
       if (min != null) dia.t = D.plano.bola + min * 60 + (min > 45 ? INTERVALO_S : 0);
     }
+    if (D.saida) { try { quadroDaSaida(dtq); } catch (err) { console.error('a saída do estádio:', err); const f = D.saida && D.saida.fim; D.saida = null; if (f) f(); } }
     if (D.corrida && dia.t >= D.corrida.alvo) terminarCorrida();
     /* a rival chegando perto na caminhada: o jogador assume (etapa 3) */
     if (!IDA && D && D.corrida && D.fase === 'ida' && !D.emCena && !D.briga && !D.arr) {
@@ -2486,7 +2548,7 @@ export function criarDia3d(api, vida, g = {}) {
     else if (document.body.classList.contains('j3d-ida')) marcarIda();
     try { pintarBalaoDoAtaque(); } catch (err) { console.error('o balão do ataque:', err); }
     /* a luz da hora do dia */
-    const h = dia.t / 3600;
+    const h = (D.saida ? D.saida.relogio : dia.t) / 3600;
     if (luzVista == null || Math.abs(h - luzVista) > 0.01) { luzVista = h; const Cn = C(); if (Cn && Cn.vida) Cn.vida.hora(h); }
     if (agora - ultimo > 200) {
       ultimo = agora; pintarHora(); pintarFases(); pintarPlacar();
@@ -2592,6 +2654,8 @@ export function criarDia3d(api, vida, g = {}) {
     /* (na estrada, a hora da viagem: o relógio de cima anda com o da faixa) */
     get hora() {
       if (D && !D.fundo && D.estrada) return (((D.estrada.minuto % 1440) + 1440) % 1440) * 60;
+      /* (na saída do estádio o relógio do plano anda pra trás: vale o que segue pra frente) */
+      if (D && D.saida) return D.saida.relogio;
       return D && !D.fundo && dia && dia.plano ? dia.t : null;
     },
     /* o nosso bonde ainda longe do portão (a briga da ida atrasou a caminhada) */

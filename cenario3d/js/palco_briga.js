@@ -338,6 +338,8 @@ export function palcoDeBriga(o) {
       if (!C || !C.vida) return false;
       montado = true; seguindo = false;
       document.body.classList.add('palco3d', 'palco-briga');
+      /* (o lugar da briga fica anotado: a foto do troféu, no relatório, é tirada nele) */
+      if (window.TO && TO.jogo3d) TO.jogo3d.ultimoPalco = { noMundo: o.noMundo, escala: K };
       C.vida.palco = {
         get J() { return J() || { t: 0, discos: [], policiais: [], projeteis: [], grades: [] }; },
         pos, rumo, rumoDe, seguir, semAnel: false, comVida: false, livre: !!o.livre, escala: K,

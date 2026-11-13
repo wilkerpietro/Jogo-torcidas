@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=2101a3f679';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=2101a3f679';
-import { Subsolo } from './subsolo.js?v=2101a3f679';
-import { ATLAS } from './modelos_atlas.js?v=2101a3f679';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=3993ad02c1';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=3993ad02c1';
+import { Subsolo } from './subsolo.js?v=3993ad02c1';
+import { ATLAS } from './modelos_atlas.js?v=3993ad02c1';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -2738,13 +2738,52 @@ void main() {`)
         for (const c of l.slice(0, celulas.size - RETRATO_MAX)) largar(c);
       }
     }
+    /* UMA FOTO DE CIMA de um retângulo qualquer da cidade parada (a foto
+       do troféu do relatório, no lugar da briga): os três cantos no mundo
+       — o de cima à esquerda, o de cima à direita e o de baixo à esquerda
+       —, e o tamanho em pixels. Devolve um canvas */
+    function foto(p00, p10, p01, W, H) {
+      const ux = p10[0] - p00[0], uz = p10[1] - p00[1], vx = p01[0] - p00[0], vz = p01[1] - p00[1];
+      const larg = Math.hypot(ux, uz), alt = Math.hypot(vx, vz);
+      if (!(larg > 1e-3 && alt > 1e-3)) return null;
+      const camF = new THREE.OrthographicCamera(-larg / 2, larg / 2, alt / 2, -alt / 2, 1, ALT + 60 * M);
+      camF.layers.set(RETRATO_CAMADA);
+      const cx = p00[0] + (ux + vx) / 2, cz = p00[1] + (uz + vz) / 2;
+      camF.position.set(cx, ALT, cz); camF.up.set(-vx / alt, 0, -vz / alt); camF.lookAt(cx, 0, cz);
+      camF.updateProjectionMatrix(); camF.updateMatrixWorld();
+      const rt = new THREE.WebGLRenderTarget(W, H, { depthBuffer: true });
+      rt.texture.colorSpace = THREE.SRGBColorSpace;
+      const px = new Uint8Array(W * H * 4);
+      const fn = cena.fog.near, ff = cena.fog.far, nv = NEVOA.uNevoa.value, ct = CORTE.uCorte.value, antes = rend.getRenderTarget(), estava = ligado;
+      if (estava) for (const m of fixos) m.visible = true;
+      cena.fog.near = 1e9; cena.fog.far = 2e9; NEVOA.uNevoa.value = 0; CORTE.uCorte.value = 0;
+      try { rend.setRenderTarget(rt); rend.render(cena, camF); rend.readRenderTargetPixels(rt, 0, 0, W, H, px); }
+      finally {
+        rend.setRenderTarget(antes);
+        cena.fog.near = fn; cena.fog.far = ff; NEVOA.uNevoa.value = nv; CORTE.uCorte.value = ct;
+        if (estava) for (const m of fixos) m.visible = false;
+        rt.dispose();
+      }
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const c2 = cv.getContext('2d'), im = c2.createImageData(W, H);
+      /* (a leitura vem de baixo pra cima; e o tabuleiro espelhado no mundo sai espelhado: desvira) */
+      const espelho = ux * vz - uz * vx < 0;
+      for (let y = 0; y < H; y++) {
+        const o = (H - 1 - y) * W * 4;
+        if (!espelho) im.data.set(px.subarray(o, o + W * 4), y * W * 4);
+        else for (let x = 0; x < W; x++) { const a = o + (W - 1 - x) * 4, b = (y * W + x) * 4; im.data[b] = px[a]; im.data[b + 1] = px[a + 1]; im.data[b + 2] = px[a + 2]; im.data[b + 3] = px[a + 3]; }
+      }
+      for (let k = 3; k < im.data.length; k += 4) im.data[k] = 255;
+      c2.putImageData(im, 0, 0);
+      return cv;
+    }
     function jogarFora() {
       ligar(false);
       for (const c of [...celulas.values()]) largar(c);
       geo.dispose(); alvo.dispose();
       if (grupo.parent) grupo.parent.remove(grupo);
     }
-    return { quadro, ligar, jogarFora, sujar() { versao++; }, get ligado() { return ligado; }, get nivel() { return nivel; }, get fotos() { return conta.fotos; }, get ladrilhos() { return celulas.size; } };
+    return { quadro, ligar, jogarFora, foto, sujar() { versao++; }, get ligado() { return ligado; }, get nivel() { return nivel; }, get fotos() { return conta.fotos; }, get ladrilhos() { return celulas.size; } };
   }
 
   /* A TERRA em volta da estação: uma caixa marrom do tamanho do corte,
@@ -2864,8 +2903,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=2101a3f679', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=2101a3f679');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=3993ad02c1', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=3993ad02c1');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2997,7 +3036,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=2101a3f679');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=3993ad02c1');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3799,7 +3838,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=2101a3f679'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=3993ad02c1'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -3874,6 +3913,8 @@ void main() {`)
     get grade() { return grade; },
     /* o ponto do mundo na tela: px CSS a partir do canto da tela do
        cenário, e se está na frente da câmera */
+    /* a foto de cima de um pedaço da cidade parada (o troféu do relatório): `Retratos.foto` */
+    fotoDeCima(p00, p10, p01, W, H) { try { return retratos ? retratos.foto(p00, p10, p01, W, H) : null; } catch (e) { console.error('cenário, a foto de cima:', e); return null; } },
     projetar(x, y, z, o = {}) {
       vPro.set(x, y, z).project(cam);
       const r = tela.getBoundingClientRect();

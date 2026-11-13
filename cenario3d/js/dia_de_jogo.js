@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=2101a3f679';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=2101a3f679';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=3993ad02c1';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=3993ad02c1';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -1204,6 +1204,22 @@ export function planejar(ctx, escolha = {}) {
     }
     b.sai = base - melhor.adianta * 60;
     b.adiantou = melhor.adianta;
+  }
+  /* QUEM JOGA SAI ANTES DOS RIVAIS (o dono, 13/11/2026: "Nunca quando a
+     torcida do jogador sair da sede o rival já vai estar no estádio,
+     justamente pra tentar emboscar eles"). O horário da PM põe o visitante
+     no portão 15 minutos antes do mandante: com a sede perto do estádio, o
+     nosso bonde saía com a rival já lá dentro. Agora o bonde de quem joga
+     sai, no máximo, um minuto antes do primeiro bonde do outro lado — a
+     rival ainda está na rua a caminhada inteira (e a PM recebe a gente
+     mais cedo no portão) */
+  {
+    const meu = vivos.find(b => b.nossa);
+    const outros = meu ? vivos.filter(o => o.lado !== meu.lado) : [];
+    if (meu && outros.length) {
+      const cedo = Math.min(...outros.map(o => o.sai)) - 60;
+      if (meu.sai > cedo) { meu.saiaAntes = Math.round((meu.sai - cedo) / 60); meu.sai = cedo; }
+    }
   }
   /* A FAIXA DE CADA RUA: quanto se anda pra cada lado da rota (m), a cada
      metro dela — até onde a rua acaba (a folga de 0,7 m da parede, do

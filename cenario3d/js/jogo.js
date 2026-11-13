@@ -70829,6 +70829,8 @@ TO.mapaCaravana = (function(){
        a emboscada no posto e na estrada — roda o mesmo combate, e quem
        desenha é a cidade (o renderizador que o jogo 3D dá). Sem jogo 3D,
        ou se o palco não sobe, a cena de sempre. */
+    /* (o lugar da última briga em 3D — a foto do troféu — é só da cena que montar agora) */
+    if(TO.jogo3d) TO.jogo3d.ultimoPalco = null;
     const P3 = TO.jogo3d && TO.jogo3d.palcoDe ? TO.jogo3d.palcoDe(local, m.config || {}) : null;
     if(P3){
       const c2 = $('djPrincipal'), c3 = $('djPrincipal3d'), sobre = $('djSobre');

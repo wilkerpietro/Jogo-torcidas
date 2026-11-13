@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=2101a3f679';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=3993ad02c1';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -3841,9 +3841,25 @@ void main() {`)
     const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
     const x = cv2.getContext('2d');
     /* 1. o fundo da cena, na escala do recorte */
-    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
-    A.desenharFundo(x);
-    x.restore();
+    /* (o dono, 13/11/2026: "sempre o local onde os bonecos vão estender a
+       faixa é onde ocorreu a briga, nesse caso, foi na arquibancada, então
+       eles aparecem na arquibancada do estádio 3d"): a briga que foi na
+       cidade em 3D deixa anotado onde o tabuleiro dela fica no mundo
+       (`TO.jogo3d.ultimoPalco`), e o fundo da foto é a cidade vista de
+       cima naquele retângulo — a arquibancada, a rua, a praça. A briga da
+       foto (sem palco 3D) segue com o fundo da cena dela */
+    let fundo3d = null;
+    try {
+      const T3 = window.TO && TO.jogo3d, pal = T3 && T3.ultimoPalco, Cn = T3 && T3.api && T3.api.cenario;
+      if(pal && pal.noMundo && Cn && Cn.vida && Cn.vida.fotoDeCima)
+        fundo3d = Cn.vida.fotoDeCima(pal.noMundo(x0, y0), pal.noMundo(x0 + VW, y0), pal.noMundo(x0, y0 + VH), W, H);
+    } catch(err){ console.warn('o fundo 3D do troféu: '+(err && err.message)); fundo3d = null; }
+    if(fundo3d) x.drawImage(fundo3d, 0, 0, W, H);
+    else {
+      x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+      A.desenharFundo(x);
+      x.restore();
+    }
 
     /* 2. os bonecos, na MESMA câmera de cima da briga */
     const cvB = {width:W, height:H};   // o tamanho; o canvas é o do renderizador das fotos
