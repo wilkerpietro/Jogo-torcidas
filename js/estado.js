@@ -1064,6 +1064,10 @@ TO.estado = (function(){
        antes da barra de 7 (15/10/2026) é refeito do zero */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
     try{ if(TO.elenco) TO.elenco.garantirNossos(E); }catch(e){}
+    /* as entrevistas saíram (13/11/2026): a que ficou aberta num save
+       antigo não segura o dia */
+    for(const m of (E.feed || [])) if(!m.respondido && m.kind === 'entrevista') m.respondido = {botao:'x'};
+    E.feedFila = (E.feedFila || []).filter(m => m.kind !== 'entrevista');
     /* save de antes de 13/11/2026 já passou da estreia */
     if(E.estreou === undefined) E.estreou = true;
     /* o detalhista deixou de existir (13/11/2026): todo save vira rápido */

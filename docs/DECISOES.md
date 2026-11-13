@@ -11384,6 +11384,12 @@ deixam de existir, e isso para de impactar nas relações."
   membros, sede 3: o aviso de prejuízo apareceu três vezes, com público de
   ~85 contra 105 necessários).
 
+## As entrevistas saíram (dono, 13/11/2026)
+
+Pedido: "Remova as entrevistas do jogo. É desnecessário." O assunto do
+clube do mês par (`entrevistaDeHoje`) não é mais chamado; o protesto no CT
+do mês ímpar continua. Save antigo com entrevista aberta a fecha ao carregar.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

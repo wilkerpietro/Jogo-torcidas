@@ -274,6 +274,7 @@ Criados depois, pelo uso (agrupados):
 - **Sem mensagem de abertura.** O Expediente nasce configurado: **manhã Recrutar, tarde Festa na sede, noite Festa na sede**; o jogador muda no painel quando quiser.
 - **A festa no prejuízo** (`feed.js: festaNoPrejuizoHoje`): cada festa guarda custo, receita e público (`E.acoes.festas`, as últimas 14). Com a festa no expediente e pelo menos 6 festas registradas, se as últimas somam prejuízo de R$ 200 ou mais (ou qualquer prejuízo com o caixa no vermelho), a diretoria explica: quanto saiu, quanto entrou, quantos vêm por noite e quantos precisam vir para a festa se pagar (`financeiro.pisoDaFesta`). Botões "Mudar o Expediente" e "Manter as festas". Repete no máximo a cada 21 dias.
 - **Assalto até 3 por ano, só depois do primeiro jogo.** A sugestão (pauta "Alvos de assalto") sai em 4 de cada 12 meses pelo hash, para na terceira do ano (`E.assaltosNoAno[ano]`) e não sai antes de `E.estreou`.
+- **As entrevistas saíram** (13/11/2026): o assunto do clube dos meses pares (a entrevista ao jornal) não acontece mais; o protesto no CT dos meses ímpares continua. Onde o livro ainda descreve a entrevista, ela está desligada.
 - **Os convites de festa das aliadas deixaram de existir**: nem pauta, nem mensagem, nem efeito na relação (`pautaFestas` e, entre as IAs, `relacoes.convitesDeAniversario` não fazem nada). A nossa festa de aniversário e a do clube continuam.
 
 ### 1.5 O modo de jogo e as regras fixas que substituíram a ideologia

@@ -2417,7 +2417,9 @@ TO.feed = (function(){
     if(dia !== E.data.dia) return;
     /* `mes` só cresce — não é módulo do ano —, então a alternância
        atravessa a virada sem repetir nem pular */
-    if(mes % 2 === 0){ entrevistaDeHoje(E, sa); return; }
+    /* AS ENTREVISTAS SAÍRAM DO JOGO (dono, 13/11/2026: "Remova as
+       entrevistas do jogo. É desnecessário."): o mês par fica calado */
+    if(mes % 2 === 0) return;
     if(TO.relacaoClube.sequenciaRuim(E)) protestoNoCT(E, sa);
   }
 
