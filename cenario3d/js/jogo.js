@@ -62191,6 +62191,28 @@ TO.mapaCaravana = (function(){
       if(alvo < 0) alvo = fimDe(etapa, Mp);
       Mp.viajar(Math.max(alvo, Mp.indice), ()=>{
         if(!ITN) return;
+        /* A CIDADE EM 3D JÁ RESOLVEU (dia3d.js, `respostaDaLinha`; o dono,
+           13/11/2026: "esse popup que deve parar de existir e notificar
+           como um balão no mapa, apontando pra torcida atacante"): o ataque
+           que a gente sofre não abre o cartão no mapa da linha — a rival
+           está na rua da cidade, com o balão em cima dela. A que encostou
+           abre a briga ali; a que não achou a gente sai da linha */
+        const D3c = TO.jogo3d && TO.jogo3d.dia;
+        const auto = D3c && D3c.ativo && D3c.respostaDaLinha ? D3c.respostaDaLinha(ev) : null;
+        if(auto === 'pular' || auto === 'brigar'){
+          const segue = ()=>{ if(!ITN) return; Mp.viajar(fimDe(etapa, Mp), proxima); };
+          if(auto === 'pular'){
+            const atq = ev.abrir && ev.abrir.atq;
+            if(atq) atq.resolvido = true;
+            itnDizer(_t('a {nome} não achou a gente', {nome:ev.nome}));
+            setTimeout(segue, 900 / velTempo());
+            return;
+          }
+          /* (o cartão existe só pra guardar o saldo da briga: não vai pra tela) */
+          ITN.continuar = ()=>{ itnDizer(_t('seguindo')); segue(); };
+          itnResponder(p, ev, true, itnCartao(p, ev));
+          return;
+        }
         itnDizer(_t('recado na parada · esperando você responder'), true);
         const c = itnCartao(p, ev);
         if(etapa === 'brasil') Mp.balao(onde, c); else Mp.balaoNo(Mp.indice, c);
@@ -71235,11 +71257,12 @@ TO.mapaCaravana = (function(){
     if(naCasa) deles = TO.acoes.efetivoDaZona(e, o || {});
     /* e o ferido deles da briga anterior também não desce do carro */
     deles = descontoItn(atq.torcida, deles);
-    return {o, naEstrada, est, naCasa, bondeZona, fila, nossos, deles};
+    /* (o `naSubsede` vai junto: `abrirAtaqueAoBar` lê ele pra faixa da subsede — sem ele a cena do ataque quebrava ao abrir, 13/11/2026) */
+    return {o, naEstrada, est, naCasa, naSubsede, bondeZona, fila, nossos, deles};
   }
   function abrirAtaqueAoBar(atq){
     const e = E();
-    const {o, naEstrada, est, naCasa, bondeZona, fila, nossos, deles} = efetivoDoAtaque(atq);
+    const {o, naEstrada, est, naCasa, naSubsede, bondeZona, fila, nossos, deles} = efetivoDoAtaque(atq);
     const c1 = TO.mundo.coresDaTorcida(e.torcida);
     const c2 = TO.mundo.coresDaTorcida(o || {});
     /* NÓS SOMOS SEMPRE O LADO ATACADO — e nas duas cenas o atacado é o

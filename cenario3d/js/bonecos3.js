@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=02cbabfbd0';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=97a3818241';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2951,7 +2951,7 @@ let escalaDoTabuleiro = () => 1;
      boneco de 30 px não sente a diferença; a placa do celular sente
      — 1,5× é 2,25 vezes mais pixel que 1×. */
   const DPR_NIVEIS = [1.5, 1.0, 0.75];
-  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true, nivelLeve:false};
+  const cfg = {cortarForaDaTela:true, resolucaoAdaptativa:true, afinarMalha:true, afinarCelulas:48, juntarPecas:true, movimentoLeve:true, nivelLeve:false, tetoFiguras:0};
   let quadroN = 0;
   /* o relógio de verdade das figuras (o do jogo, J.t, pode correr acelerado: o dia de jogo) */
   let tAnim = 0;
@@ -3132,8 +3132,48 @@ let escalaDoTabuleiro = () => 1;
     if(prof <= 0) return Infinity;
     return h * camNivel.projectionMatrix.elements[5] / prof * alturaNivel / 2;
   }
-  function porMiniatura(d, q, pm){
-    const M = miniDe();
+  /* A MINIATURA DE PERTO (13/11/2026): a multidão que passa do teto de
+     figuras (`cfg.tetoFiguras`) fica grande na tela, e a caixa lisa ali é
+     um tijolo. De perto a miniatura é um bonequinho de blocos, parado: as
+     pernas escuras, o tronco e os braços na cor da camisa (de cima, é o
+     ombro que diz de que lado ele é) e a cabeça — três malhas
+     instanciadas, 72 triângulos por boneco */
+  const MINI_BLOCO = 22;
+  let miniP = null;
+  function juntarCaixas(lista){
+    const pos = [], nor = [];
+    for(const [w, h, p, x, y, z] of lista){
+      const g = new THREE.BoxGeometry(w, h, p).toNonIndexed();
+      g.translate(x, y + h/2, z);
+      for(const v of g.attributes.position.array) pos.push(v);
+      for(const v of g.attributes.normal.array) nor.push(v);
+      g.dispose();
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    return g;
+  }
+  function miniPertoDe(){
+    if(miniP && miniP.cena === scene) return miniP;
+    if(miniP) for(const m of miniP.malhas) miniP.cena.remove(m);
+    const mat = cor => { const m = new THREE.MeshLambertMaterial({color:cor}); remendar(m); return m; };
+    const roupa = new THREE.InstancedMesh(juntarCaixas([[10.5, 12.5, 5.6, 0, 14, 0], [3, 11.5, 3.6, -6.9, 15, 0], [3, 11.5, 3.6, 6.9, 15, 0]]), mat('#ffffff'), MINI_MAX);
+    const pele = new THREE.InstancedMesh(juntarCaixas([[5.2, 6, 5.2, 0, 27.2, 0]]), mat('#ffffff'), MINI_MAX);
+    const pernas = new THREE.InstancedMesh(juntarCaixas([[4.3, 14, 4.6, -2.7, 0, 0], [4.3, 14, 4.6, 2.7, 0, 0]]), mat('#262a33'), MINI_MAX);
+    const malhas = [roupa, pele, pernas];
+    for(const m of malhas){
+      m.count = 0; m.frustumCulled = false; m.name = 'bonecos-miniatura';
+      m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      if(m !== pernas) m.setColorAt(0, _mc.set('#ffffff'));
+      scene.add(m);
+    }
+    miniP = {roupa, pele, pernas, malhas, cena:scene, n:0};
+    return miniP;
+  }
+  function porMiniatura(d, q, pm, px){
+    const perto = px >= MINI_BLOCO;
+    const M = perto ? miniPertoDe() : miniDe();
     if(M.n >= MINI_MAX) return;
     const e = escalaDeCima * 0.86, r = rumoDe(d);
     _mq.setFromAxisAngle(_my, typeof r === 'number' ? r : 0);
@@ -3141,16 +3181,22 @@ let escalaDoTabuleiro = () => 1;
     if(caido) _mq.multiply(_deitado);
     _mp.set(q.x, q.y + (caido ? 3 * e : 0), q.z); _ms.set(e, e, e);
     _mm.compose(_mp, _mq, _ms);
+    if(perto){
+      M.roupa.setMatrixAt(M.n, _mm); M.pele.setMatrixAt(M.n, _mm); M.pernas.setMatrixAt(M.n, _mm);
+      M.roupa.setColorAt(M.n, _mc.set(pm ? '#27303d' : (d.cor || '#c0392b')));
+      M.pele.setColorAt(M.n, _mc.set(pm ? '#10141b' : '#4a3327'));
+      M.n++;
+      return;
+    }
     M.corpo.setMatrixAt(M.n, _mm); M.cabeca.setMatrixAt(M.n, _mm);
     M.corpo.setColorAt(M.n, _mc.set(pm ? '#27303d' : (d.cor || '#c0392b')));
     M.cabeca.setColorAt(M.n, _mc.set(pm ? '#10141b' : '#3b2a21'));
     M.n++;
   }
   function fecharMiniaturas(){
-    if(!mini) return;
-    for(const m of [mini.corpo, mini.cabeca]){
-      if(m.count === 0 && mini.n === 0) continue;
-      m.count = mini.n; m.instanceMatrix.needsUpdate = true;
+    for(const [S, malhas] of [[mini, mini ? [mini.corpo, mini.cabeca] : []], [miniP, miniP ? miniP.malhas : []]]) for(const m of malhas){
+      if(m.count === 0 && S.n === 0) continue;
+      m.count = S.n; m.instanceMatrix.needsUpdate = true;
       if(m.instanceColor) m.instanceColor.needsUpdate = true;
     }
   }
@@ -3159,10 +3205,32 @@ let escalaDoTabuleiro = () => 1;
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
     if(mini && mini.cena !== scene) miniDe();
     if(mini) mini.n = 0;
+    if(miniP && miniP.cena !== scene) miniPertoDe();
+    if(miniP) miniP.n = 0;
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
     const cortar = cfg.cortarForaDaTela;
     conta.vistos = 0; conta.cortados = 0; conta.minis = 0;
+    /* O TETO DE FIGURAS (`cfg.tetoFiguras`, dos gráficos do cenário; o dono
+       joga sem placa de vídeo, 13/11/2026): a briga na rua põe uns 300
+       bonecos de perto, e cada figura é uma malha com esqueleto — medido lá,
+       674 mil triângulos e 2 fps. Com o teto, só as figuras mais perto do
+       meio da câmera (onde está o líder) ficam de pé e animadas; o resto da
+       multidão é miniatura, do tamanho que for na tela */
+    let raioFig2 = Infinity, camX = 0, camZ = 0;
+    if(cfg.tetoFiguras > 0 && camNivel && !camNivel.isOrthographicCamera){
+      const todos = (J.policiais && J.policiais.length) ? J.discos.concat(J.policiais) : J.discos;
+      if(todos.length > cfg.tetoFiguras){
+        camX = camNivel.position.x; camZ = camNivel.position.z;
+        const ds = [];
+        for(const d of todos){
+          if(d.entrou || (d.sumiu && !d.longe)) continue;
+          const q = pos(d.x, d.y, d);
+          ds.push((q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ));
+        }
+        if(ds.length > cfg.tetoFiguras){ ds.sort((a, b) => a - b); raioFig2 = ds[cfg.tetoFiguras - 1]; }
+      }
+    }
     const animar = (d, i, pm) => {
       if(cortar && !naVista(d.x, d.y, d)){
         const fg = figuras.get(d);
@@ -3173,9 +3241,10 @@ let escalaDoTabuleiro = () => 1;
       /* pequeno demais na tela: a miniatura (sem figura, sem pose) */
       if(camNivel && !camNivel.isOrthographicCamera && (pm || !d.lider)){
         const q = pos(d.x, d.y, d), px = pxNaTela(q);
-        if(px < (d._mini ? MINI_SAI : MINI_ENTRA) || (cfg.nivelLeve && !pm && px < MINI_PARADO && paradoNaMultidao(d, J))){
+        const longeDoMeio = raioFig2 < Infinity && ((q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ)) > raioFig2 * (d._mini ? 0.8 : 1);
+        if(longeDoMeio || px < (d._mini ? MINI_SAI : MINI_ENTRA) || (cfg.nivelLeve && !pm && px < MINI_PARADO && paradoNaMultidao(d, J))){
           d._mini = true;
-          porMiniatura(d, q, pm);
+          porMiniatura(d, q, pm, px);
           const fg0 = figuras.get(d);
           if(fg0) fg0.viva = true;         // a figura fica guardada (invisível) pra quando chegar perto
           conta.vistos++; conta.minis = (conta.minis || 0) + 1;
@@ -3955,6 +4024,7 @@ let escalaDoTabuleiro = () => 1;
       limpar(){
         for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
         if(mini){ mini.n = 0; mini.corpo.count = 0; mini.cabeca.count = 0; }
+        if(miniP){ miniP.n = 0; for(const m of miniP.malhas) m.count = 0; }
       },
       get comModelo(){ return !!modeloGLB; },
       get quantas(){ return figuras.size; },

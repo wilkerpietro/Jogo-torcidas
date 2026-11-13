@@ -11710,6 +11710,43 @@ prejudicada por estar granulado demais" (o print: a briga no estádio a
   (o roteiro de teste não conseguiu disparar a invasão antes do fim da
   partida).
 
+## O ataque sofrido vira balão no mapa, e a cena que quebrava (dono, 13/11/2026)
+
+Relato: "recebi um aviso de ataque da Cearamor na pista contra a gente, aí
+abriu esse popup que deve parar de existir e notificar como um balão no
+mapa, apontando pra torcida atacante, e depois abriu essa imagem do
+estádio de 20 mil que não tem sentido nenhum com a briga."
+
+- **O bug** (reproduzido): `abrirAtaqueAoBar` lia `naSubsede`, que
+  `efetivoDoAtaque` não devolvia (sobra da mesclagem do pacote). Toda
+  briga de ataque sofrido quebrava ao abrir: a tela da cena aparecia sem
+  montar o palco e mostrava a ÚLTIMA cena desenhada (daí o estádio de 20
+  mil com as torcidas de outra partida). Corrigido.
+- **Sem o cartão**: o ataque que a gente sofre no dia de jogo não abre
+  mais o cartão da linha (nem na lista, nem no mapa 2D da linha:
+  `respostaDaLinha` responde `brigar`/`pular` pros dois caminhos).
+- **A rival que não está no jogo do dia** (a Cearamor num Fortaleza ×
+  Náutico) não é bonde do plano da PM e não tinha encenação. Agora ela é
+  a caça da ida: sai da sede (ou de um bairro) dela atrás do nosso
+  bonde, a ida passa a ser do jogador na hora, e a briga abre onde ela
+  encostar, na cidade em 3D. Quem chega no cordão da PM antes escapa (a
+  regra que a caçada já tinha).
+- **O balão do ataque** (`pintarBalaoDoAtaque`, dia3d.js): vermelho, em
+  cima de quem vem ("Cearamor vem pra cima da gente", com a distância);
+  fora da tela ele encosta na beira e a ponta aponta pra ela. Vale pra
+  caça e pro bonde do plano que dobra a esquina.
+- **A briga de perto sem placa de vídeo**: uns 300 bonecos com esqueleto
+  davam 674 mil triângulos e 2 fps. Com os bonecos leves há um teto de
+  figuras de pé (`cfg.tetoFiguras`: 24 sem placa, 90 com): as mais
+  perto do meio da câmera ficam animadas e o resto da multidão é
+  miniatura — de perto, um bonequinho de blocos (pernas, tronco e braços
+  na cor da camisa, cabeça). Os retratos de cima ganharam níveis de
+  perto (até um oitavo de bloco) e valem com o boneco a pé na rua.
+  Medido: a briga na rua de 2 fps pra 11–15 fps.
+- Perde-se: as saídas "Simular" e "Recuar pra sede" do cartão do ataque
+  sofrido (dentro da briga segue o "Fugir"; na caçada dá pra escapar
+  pro cordão da PM ou devolver pra PM).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

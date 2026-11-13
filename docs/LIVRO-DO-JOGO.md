@@ -3521,6 +3521,15 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
 - **O véu do resultado** (`TO.competicoes.comVeu`): enquanto a partida de
   hoje não foi jogada, as telas pintam sem os placares de hoje.
 
+### 4.5 O ataque sofrido no dia de jogo (13/11/2026)
+
+- Não abre cartão: a rival aparece na rua com o **balão do ataque** em
+  cima dela (vermelho, com a distância; na beira da tela vira seta).
+- A rival de fora do jogo do dia vira a caça da ida: sai da sede dela
+  atrás do bonde, a ida passa pro jogador e a briga abre onde encostar.
+- Nos bonecos leves há um teto de figuras animadas; o resto da multidão
+  é miniatura (de perto, um bonequinho de blocos).
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:

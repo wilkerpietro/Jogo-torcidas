@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=02cbabfbd0';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=02cbabfbd0';
-import { Subsolo } from './subsolo.js?v=02cbabfbd0';
-import { ATLAS } from './modelos_atlas.js?v=02cbabfbd0';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=97a3818241';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=97a3818241';
+import { Subsolo } from './subsolo.js?v=97a3818241';
+import { ATLAS } from './modelos_atlas.js?v=97a3818241';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -155,9 +155,10 @@ const BLOCO_M = 96;
    ficam guardadas, a camada do que a foto vê e o nível mais largo (2³ blocos
    de lado). `ESTADIO_DE_PE`: o estádio fora da foto, em malha (medido: a
    vista do estádio a 74 ms com ele de pé e a 46 com ele na foto — entrou na
-   foto, e a torcida desce pro chão junto: o `pos` dos bonecos). O nível -1
-   é o de perto: meio bloco por foto */
-const RETRATO_PX = 384, RETRATO_MAX = 72, RETRATO_CAMADA = 5, RETRATO_NIVEIS = 3, RETRATO_PERTO = -1, ESTADIO_DE_PE = false;
+   foto, e a torcida desce pro chão junto: o `pos` dos bonecos). Os níveis
+   -1 a -3 são os de perto: de meio bloco a um oitavo de bloco por foto (a
+   briga na rua, com a câmera a 17 m do chão) */
+const RETRATO_PX = 384, RETRATO_MAX = 72, RETRATO_CAMADA = 5, RETRATO_NIVEIS = 3, RETRATO_PERTO = -3, ESTADIO_DE_PE = false;
 /* a folha dos decalques e o vão entre um quadro e outro */
 const FOLHA_DECAL = 2048, VAO_DECAL = 4;
 /* o sol do mapa: de noroeste, alto (a sombra da copa no 2D vai pro sudeste); só luz */
@@ -2548,9 +2549,10 @@ void main() {`)
        pra foto não borrar (a conta é pela tela inteira, não pela
        resolução automática — senão uma puxava a outra). Sem placa de
        vídeo a foto pode ampliar o dobro a mais (a imagem lá já é desenhada
-       a 35–70%): vale até na briga, com a câmera a uns 40 m;
+       a 35–70%): vale até na briga, com a câmera a uns 10 m;
      - o prédio aberto pelo jogo (a briga dentro do bar, o assalto à sede)
-       e o boneco a pé desligam: a foto não tem dentro;
+       e o boneco a pé dentro de um prédio ou do metrô desligam: a foto
+       não tem dentro;
      - a foto é tirada um ladrilho por quadro; enquanto falta algum da
        vista, desenha-se a cidade de verdade (como antes);
      - a luz muda com a hora: o retângulo corrige a foto pela razão entre a
@@ -2680,7 +2682,9 @@ void main() {`)
       const telaPxm = altoTela * Math.min(window.devicePixelRatio || 1, GRAF.teto) / (2 * orb.dist * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2)) * M;
       const nf = Math.log2(1.6 * PXM0 / Math.max(1e-6, telaPxm));
       const piso = RETRATO_PERTO - (PROVA.semPlaca ? 1 : 0) - (ligado ? 0.15 : 0);
-      const quer = GRAF.longe === 'retrato' && !ape && !corteFixo && orb.el > 1.35 && nf >= piso;
+      /* (a pé na rua, com a câmera de cima do jogo, vale; dentro de um prédio ou embaixo da rua, não) */
+      const dentro = ape && ((ape.chegada >= 1 && ape.teto) || ape.y < -1.2 * M);
+      const quer = GRAF.longe === 'retrato' && !dentro && !corteFixo && orb.el > 1.35 && nf >= piso;
       if (quer && !(ligado && nf >= nivel - 0.15 && nf <= nivel + 1.15)) nivel = clamp(Math.floor(nf), RETRATO_PERTO, RETRATO_NIVEIS);
       if (!quer) { if (ligado) ligar(false); return; }
       const s = assinatura();
@@ -2860,8 +2864,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=02cbabfbd0', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=02cbabfbd0');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=97a3818241', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=97a3818241');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2869,6 +2873,8 @@ void main() {`)
       mod.cfg.remendo = m => comNoite(m);
       /* (os bonecos leves dos gráficos: todo mundo no nível de longe) */
       mod.cfg.nivelLeve = GRAF.bonecos === 'leve';
+      /* (e o teto de figuras de pé: o resto da multidão em miniatura) */
+      mod.cfg.tetoFiguras = tetoDeFiguras();
       modBonecos = mod;
       /* o líder sai com 1,1 × 0,86 da escala: aqui, 1,75 m. O lugar dele
          tem altura: a do pé que se vê (no metrô, embaixo da rua) */
@@ -2991,7 +2997,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=02cbabfbd0');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=97a3818241');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3659,7 +3665,7 @@ void main() {`)
     if (mudou.has('resolucao') || mudou.has('teto') || mudou.has('alvo') || mudou.has('fpsMax')) { AUTO.dts.length = 0; AUTO.t = 0; AUTO.falhas = 0; AUTO.bons = 0; ajustarTela(); }
     if (mudou.has('luz') || mudou.has('luzes')) refazerMateriais();
     if (retratos && (mudou.has('luz') || mudou.has('luzes') || mudou.has('longe'))) retratos.sujar();
-    if (mudou.has('bonecos') && modBonecos) modBonecos.cfg.nivelLeve = GRAF.bonecos === 'leve';
+    if (mudou.has('bonecos') && modBonecos) { modBonecos.cfg.nivelLeve = GRAF.bonecos === 'leve'; modBonecos.cfg.tetoFiguras = tetoDeFiguras(); }
     if (mudou.has('medidor')) { fpsEl.hidden = !GRAF.medidor; medidor.desde = 0; }
     if (mudou.has('texturas')) {
       qualidade = GRAF.texturas;
@@ -3677,6 +3683,8 @@ void main() {`)
   }
   /* a predefinição que as opções de agora são (ou a personalizada) */
   const predefDasOpcoes = () => Object.keys(PREDEFS).find(n => Object.keys(PREDEFS[n]).every(k => GRAF[k] === PREDEFS[n][k])) || 'pessoal';
+  /* quantos bonecos ficam de pé e animados de uma vez (os bonecos leves; sem placa de vídeo, menos) */
+  function tetoDeFiguras() { return GRAF.bonecos === 'leve' ? (PROVA.semPlaca ? 24 : 90) : 0; }
   function definirGraficos(novas) {
     const mudou = new Set();
     for (const k in novas) {
@@ -3791,7 +3799,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=02cbabfbd0'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=97a3818241'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },

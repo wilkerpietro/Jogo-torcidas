@@ -59,10 +59,10 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=02cbabfbd0';
-import { palcoDeBriga } from './palco_briga.js?v=02cbabfbd0';
-import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=02cbabfbd0';
-import { criarSeguidores } from './rua3d.js?v=02cbabfbd0';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=97a3818241';
+import { palcoDeBriga } from './palco_briga.js?v=97a3818241';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=97a3818241';
+import { criarSeguidores, criarSeta } from './rua3d.js?v=97a3818241';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -529,7 +529,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=02cbabfbd0');
+    const { criarEstrada } = await import('./estrada3d.js?v=97a3818241');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -962,7 +962,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=02cbabfbd0');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=97a3818241');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1260,6 +1260,26 @@ export function criarDia3d(api, vida, g = {}) {
         return;
       }
       if (ev && D.arr && ev === D.evArr) { noCordao(D.arr, cont); return; }
+      /* O ATAQUE DE QUEM NÃO ESTÁ NO JOGO DO DIA (o dono, 13/11/2026: "abriu
+         esse popup que deve parar de existir e notificar como um balão no
+         mapa, apontando pra torcida atacante"). A rival da cidade que marcou
+         de cair em cima da gente (a Cearamor num Fortaleza × Náutico) não é
+         bonde do plano da PM: não tinha encenação, e o aviso era o cartão da
+         linha, parado na porta da sede. Agora ela é a CAÇA: sai da sede (ou
+         de um bairro) dela atrás do nosso bonde, com o balão do ataque em
+         cima dela (`pintarBalaoDoAtaque`), e a ida passa a ser do jogador
+         — a briga abre onde ela encostar; quem chega no cordão da PM antes
+         escapa */
+      if (ev && ev.tipo === 'sofrido' && ev.torcida && ev.naCidade !== false && nosso && C() && C().aPe) {
+        const T = TO.mundo && TO.mundo.torcida ? TO.mundo.torcida(ev.torcida) : null;
+        D.pistaDaIda = { a: ev.torcida, v: D.e.torcida.id, onde: 'rua', ev };
+        D.controle = true;
+        D.assumiuPor = (T && TO.mundo.siglaTorcida ? TO.mundo.siglaTorcida(T) : null) || ev.nome || 'rival';
+        /* (sem a espera na porta: o bonde sai já) */
+        if (nosso.sai != null && dia.t < nosso.sai - 10) dia.irPara(nosso.sai - 10);
+        comecarIda(cont, null);
+        return;
+      }
       /* a emboscada na estrada vem antes da cidade: a caminhada fica pro jogo */
       if (ev && ev.tipo === 'emboscada') { status('Na estrada, a caminho da cidade.'); cont(); return; }
       if (ev && ev.ponto === 'arredores' && nosso && !D.controle) {
@@ -1703,7 +1723,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function montarCaca() {
     if (!IDA || IDA.grupos) return;
     IDA.grupos = [];
-    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=02cbabfbd0')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
+    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=97a3818241')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
     if (!IDA || !D) return;
     const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, e = D.e, nosId = e.torcida.id;
     if (!eu) return;
@@ -1849,11 +1869,41 @@ export function criarDia3d(api, vida, g = {}) {
      levou o bonde antes) sai da linha */
   function respostaDaLinha(ev) {
     const H = D && D.caca;
-    if (!H || !ev || ev !== H.ev) return null;
-    if (H.pegou) return 'brigar';
-    tirarGrupo(H);
-    D.caca = null;
-    return 'pular';
+    if (H && ev && ev === H.ev) {
+      if (H.pegou) return 'brigar';
+      tirarGrupo(H);
+      D.caca = null;
+      return 'pular';
+    }
+    /* (o ataque que a gente sofre não abre mais o cartão: a rival está na
+       rua, com o balão em cima dela, e a briga abre ali — 13/11/2026) */
+    if (D && !D.fundo && ev && ev.tipo === 'sofrido') { D.ataqueAberto = true; return 'brigar'; }
+    return null;
+  }
+  /* O BALÃO DO ATAQUE: em cima de quem vem pra cima da gente (a caça na
+     rua, ou o bonde do plano que dobrou a esquina); fora da tela, ele
+     encosta na beira e a ponta aponta pra ela, com a distância */
+  let setaAtq = null;
+  function alvoDoAtaque() {
+    if (!D || D.fundo || D.emCena || !dia) return null;
+    const H = D.caca;
+    if (H && H.estado !== 'foi' && !H.pegou && H.gente[0]) return { d: H.gente[0].d, nome: H.nome, vindo: H.estado === 'caca' };
+    const br = D.briga;
+    if (br && D.fase === 'ida' && br.v === D.nosso && !br.aplicado && !D.ataqueAberto && dia.t >= br.tIni - 30) {
+      const g = br.a.gente.find(x => !x.saiu);
+      if (g) return { d: g.d, nome: br.a.t.nome, vindo: true };
+    }
+    return null;
+  }
+  function pintarBalaoDoAtaque() {
+    const a = alvoDoAtaque();
+    if (!a) { if (setaAtq && setaAtq.alvoAtual) setaAtq.alvo(null); return; }
+    if (!setaAtq) { setaAtq = criarSeta(C, M); setaAtq.el.classList.add('ataque'); }
+    const rot = a.vindo ? `${a.nome} vem pra cima da gente` : `${a.nome} saindo atrás da gente`;
+    if (!setaAtq.alvoAtual || setaAtq.alvoAtual.rot !== rot) setaAtq.alvo({ id: 'ataque', x: a.d.x, z: a.d.y, rot });
+    setaAtq.alvoAtual.x = a.d.x; setaAtq.alvoAtual.z = a.d.y;
+    const Cn = C(), eu = Cn && Cn.aPe && Cn.aPe.ativo ? Cn.aPe.eu : null, g = !eu && D.nosso ? D.nosso.gente.find(x => !x.saiu) : null, de = eu || (g && g.d);
+    setaAtq.pintar(de ? { x: de.x, z: de.y } : null);
   }
   /* o alvo da caça (o botão "Caçar"): as turmas e os bondes rivais na rua, do mais perto */
   function alvosDaCaca(eu) {
@@ -2432,6 +2482,7 @@ export function criarDia3d(api, vida, g = {}) {
     /* a ida jogada: o bonde atrás do presidente, os pontos, o rival à vista */
     if (IDA) { try { conferirVoltaDaIda(); quadroIda(dtq); } catch (err) { console.error('a ida jogada:', err); } }
     else if (document.body.classList.contains('j3d-ida')) marcarIda();
+    try { pintarBalaoDoAtaque(); } catch (err) { console.error('o balão do ataque:', err); }
     /* a luz da hora do dia */
     const h = dia.t / 3600;
     if (luzVista == null || Math.abs(h - luzVista) > 0.01) { luzVista = h; const Cn = C(); if (Cn && Cn.vida) Cn.vida.hora(h); }

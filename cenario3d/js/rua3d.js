@@ -44,7 +44,7 @@
    A SETA NA BORDA (também do dia de jogo): um alvo no mundo vira uma seta
    na beira da área livre da tela, apontando pra ele, com a distância.
    ========================================================= */
-import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=02cbabfbd0';
+import { areaLivre, horaTxt, andarPor } from './vida3d.js?v=97a3818241';
 
 /* o passo do relógio na rua: ms por minuto do dia, a 1× (o 2× do jogo vale) */
 const RUA_MS_MIN = 600;
