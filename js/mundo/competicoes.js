@@ -1610,6 +1610,53 @@ TO.competicoes = (function(){
   const temJogo = j => j && j.gc!==undefined && j.gc!==null;
 
   /* todos os compromissos de um clube no ano, em ordem de semana */
+  /* O VÉU DO DIA DE JOGO (dono, 13/11/2026: "o início já entrega o
+     resultado do jogo e já diz o próximo adversário mesmo sem o jogo
+     acontecer"). A rodada do dia é simulada quando o dia vira, antes de a
+     partida do nosso clube ser jogada na tela — e a agenda, a
+     classificação e o calendário já mostravam o placar. Enquanto o
+     recado da partida de hoje está sem resposta (na fila, no feed ou ao
+     vivo), toda PINTURA de tela roda dentro de `comVeu`: os placares dos
+     jogos de hoje somem dos dados durante a pintura e voltam no fim dela
+     (é síncrono; a regra do jogo, fora da pintura, lê os dados inteiros). */
+  let veuAtivo = false;
+  function veuDe(E){
+    if(!E || !E.data || !E.temporada) return null;
+    const abs = E.data.absoluto || 0;
+    const pendente = m => m && m.kind === 'partida' && !m.respondido && m.quando && m.quando.abs === abs;
+    return (E.feed || []).some(pendente) || (E.feedFila || []).some(pendente)
+      ? {semana:E.data.semana, dia:E.data.dia} : null;
+  }
+  function comVeu(E, fn){
+    const v = veuAtivo ? null : veuDe(E);
+    if(!v) return fn();
+    const guardados = [];
+    const velar = (r, comp) => {
+      for(const j of (r.jogos || [])){
+        if(j.gc === undefined || j.gc === null) continue;
+        if((j.s || r.semana) !== v.semana || (j.d || r.dia || comp.dia || DIA_FDS) !== v.dia) continue;
+        guardados.push([j, j.gc, j.gf, j.pen, j.venceu, j.penaltis, j.agregado]);
+        j.gc = null; j.gf = null; j.pen = undefined; j.venceu = undefined; j.penaltis = undefined; j.agregado = undefined;
+      }
+    };
+    veuAtivo = true;
+    try{
+      for(const comp of (E.temporada.competicoes || [])){
+        for(const r of (comp.rodadas || [])) velar(r, comp);
+        for(const m of (comp.mata || [])) velar(m, comp);
+      }
+      return fn();
+    } finally {
+      for(const [j, gc, gf, pen, venceu, penaltis, agregado] of guardados){
+        j.gc = gc; j.gf = gf;
+        if(pen !== undefined) j.pen = pen; else delete j.pen;
+        if(venceu !== undefined) j.venceu = venceu; else delete j.venceu;
+        if(penaltis !== undefined) j.penaltis = penaltis; else delete j.penaltis;
+        if(agregado !== undefined) j.agregado = agregado; else delete j.agregado;
+      }
+      veuAtivo = false;
+    }
+  }
   function agendaDoClube(E, clubeId){
     const S = E.temporada;
     if(!S) return [];
@@ -1870,7 +1917,7 @@ TO.competicoes = (function(){
           custoDoPonto, investir, invDe, TABELA_INVESTIMENTO,
           FORCA_MIN, FORCA_MAX,
           faseDaSemana, roundRobin, simular, etapas, etapaAtual, horaDoJogo,
-          jogosDaSemana, posicaoNaTabela, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
+          jogosDaSemana, posicaoNaTabela, comVeu, veuDe, COPA_FASES, COPA_NOME, DIA_FDS, DIA_MEIO,
           aplicarSobeDesce, subiu, divisaoDe, regionalDe, melhores, piores,
           rivaisDiretos, ajustarMandos, piorSequencia, piorSequenciaEmCasa, diaDoJogo,
           SEMANAS_ANO, INICIO_REGIONAL, INICIO_NACIONAL};

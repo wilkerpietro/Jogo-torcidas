@@ -23,13 +23,13 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=ab5ba4954c';
-import { criarVida, horaTxt } from './vida3d.js?v=ab5ba4954c';
-import { criarMapaDaCidade } from './mapa3d.js?v=ab5ba4954c';
-import { criarDia3d } from './dia3d.js?v=ab5ba4954c';
-import { criarRecados } from './recados3d.js?v=ab5ba4954c';
-import { criarRua } from './rua3d.js?v=ab5ba4954c';
-import { criarNevoa } from './nevoa3d.js?v=ab5ba4954c';
+import { CASCA } from './jogo_casca.js?v=40808e1ae6';
+import { criarVida, horaTxt } from './vida3d.js?v=40808e1ae6';
+import { criarMapaDaCidade } from './mapa3d.js?v=40808e1ae6';
+import { criarDia3d } from './dia3d.js?v=40808e1ae6';
+import { criarRecados } from './recados3d.js?v=40808e1ae6';
+import { criarRua } from './rua3d.js?v=40808e1ae6';
+import { criarNevoa } from './nevoa3d.js?v=40808e1ae6';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -44,25 +44,25 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=ab5ba4954c'), carregarCss('css/jogo3d.css?v=ab5ba4954c'), carregarCss('css/portal.css?v=ab5ba4954c'), carregarCss('css/telas3d.css?v=ab5ba4954c')]);
+  await Promise.all([carregarCss('css/jogo.css?v=40808e1ae6'), carregarCss('css/jogo3d.css?v=40808e1ae6'), carregarCss('css/portal.css?v=40808e1ae6'), carregarCss('css/telas3d.css?v=40808e1ae6')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=ab5ba4954c').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=40808e1ae6').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
   /* o portal (a tela entre os jogos, portal.js) entra logo depois do jogo:
      main.js só procura `TO.portal` quando monta o feed, na hora de abrir a partida */
-  await carregarScript('js/jogo.js?v=ab5ba4954c');
-  await carregarScript('js/portal.js?v=ab5ba4954c').catch(err => console.error('o portal não carregou:', err));
+  await carregarScript('js/jogo.js?v=40808e1ae6');
+  await carregarScript('js/portal.js?v=40808e1ae6').catch(err => console.error('o portal não carregou:', err));
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=ab5ba4954c').catch(() => {});
-  await import('./bonecos3_global.js?v=ab5ba4954c');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=40808e1ae6').catch(() => {});
+  await import('./bonecos3_global.js?v=40808e1ae6');
   ligar(api);
   return TO.tela;
 }
@@ -303,7 +303,7 @@ function ligar(api) {
     if (!loja) return { erro: 'a praça não tem ' + op.alvo };
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
-    const { iniciarAssalto } = await import('./assalto3d.js?v=ab5ba4954c');
+    const { iniciarAssalto } = await import('./assalto3d.js?v=40808e1ae6');
     /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
     const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
     const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;

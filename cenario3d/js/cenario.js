@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=ab5ba4954c';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=ab5ba4954c';
-import { Subsolo } from './subsolo.js?v=ab5ba4954c';
-import { ATLAS } from './modelos_atlas.js?v=ab5ba4954c';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=40808e1ae6';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=40808e1ae6';
+import { Subsolo } from './subsolo.js?v=40808e1ae6';
+import { ATLAS } from './modelos_atlas.js?v=40808e1ae6';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -2423,11 +2423,13 @@ void main() {`)
     const estacoes = P.metro ? P.metro() : [], subNovo = estacoes.length ? Subsolo(M, estacoes) : null;
     const andaresNovos = Subsolo(M, [], ESTADIO_PASSO), dentroNovos = [];
     const sobradosNovos = Subsolo(M, []), sedesNovas = [];
-    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo, andaresNovos, sobradosNovos), porTipo = {};
+    const pecas = P.pecas(), forno = Forno(area, QUALIDADES[qualidade].decal, gradeNova, subNovo, pisoNovo, andaresNovos, sobradosNovos), porTipo = {}, triPorTipo = {};
     let i = 0, tFatia = agora();
     for (const pc of pecas) {
       const g = new THREE.Group();
       try { pc.montar(g); } catch (e) { console.error('cenário: não montei', pc.tipo, e); }
+      /* (quantos triângulos cada tipo de peça põe na cidade: `numeros.triPorTipo`, pra medir) */
+      { let nt = 0; g.traverse(m => { if (m.isMesh && m.geometry) { const gg = m.geometry; nt += (gg.index ? gg.index.count : gg.attributes.position ? gg.attributes.position.count : 0) / 3; } }); triPorTipo[pc.tipo] = (triPorTipo[pc.tipo] || 0) + Math.round(nt); }
       forno.assar(g, pc.it, pc.tipo);
       if (g.userData.dentroDoEstadio) dentroNovos.push(g.userData.dentroDoEstadio);
       if (g.userData.dentroDaSede) sedesNovas.push(g.userData.dentroDaSede);
@@ -2494,7 +2496,7 @@ void main() {`)
     andares = dentroNovos.length ? andaresNovos : null; dentroDosEstadios = dentroNovos;
     sobrados = sedesNovas.length ? sobradosNovos : null; dentroDosSobrados = sedesNovas;
     montado = { nome, decal: forno.decal };
-    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, mato, noite, segundos: (agora() - t0) / 1000, tempos,
+    numeros = { tri, nMalhas, chamadas: cidade3d.children.length, pecas: pecas.length, porTipo, triPorTipo, mato, noite, segundos: (agora() - t0) / 1000, tempos,
                 folhas: forno.decal.folhas.length, area: { ...area }, grade: Object.assign(grade.conta(), { msAgua: Math.round(tSub - tGrade), piso: piso.n }),
                 subsolo: sub ? { estacoes: estacoes.length, triangulos: sub.n, ms: Math.round(tAndares - tSub) } : null,
                 andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null,
@@ -2623,8 +2625,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=ab5ba4954c', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=ab5ba4954c');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=40808e1ae6', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=40808e1ae6');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2749,7 +2751,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=ab5ba4954c');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=40808e1ae6');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3548,7 +3550,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=ab5ba4954c'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=40808e1ae6'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },

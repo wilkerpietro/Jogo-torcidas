@@ -301,9 +301,13 @@
   /* ======================================================
      MONTAR E ATUALIZAR
      ====================================================== */
+  /* (dentro do véu do dia de jogo: o placar de hoje não aparece antes de a partida ser jogada) */
   function pintar(){
     const e = TO.estado && TO.estado.E;
     if(!e || !e.torcida || !raiz || !raiz.isConnected) return;
+    return TO.competicoes.comVeu ? TO.competicoes.comVeu(e, () => pintarCru(e)) : pintarCru(e);
+  }
+  function pintarCru(e){
     const seguro = (fn, titulo) => { try { return fn(); } catch (err) { console.error('o portal, ' + titulo + ':', err); return bloco(titulo, vazio(T('Não deu pra montar este bloco.'))); } };
     const agenda = tentar(() => agendaNossa(e), []);
     const r = tentar(() => TO.financeiro.resumoDaSemana(e), {}) || {};
@@ -327,7 +331,7 @@
     medir();
     const p = e.patrimonio || {};
     const k = [e.data.absoluto, Math.round(e.dinheiro), e.membros.length, (e.feed || []).length, ((e.feed || [])[0] || {}).id,
-               (p.bares || []).length, (p.lojas || []).length, e.torcida.sedeNivel, (window.TO.i18n || {}).idioma].join('|');
+               (p.bares || []).length, (p.lojas || []).length, e.torcida.sedeNivel, (window.TO.i18n || {}).idioma, TO.competicoes.veuDe && TO.competicoes.veuDe(e) ? 'v' : ''].join('|');
     if(!forcar && k === chave) return;
     chave = k;
     pintar();

@@ -45,7 +45,7 @@
    posição e a cor de cada face (a UV vai zerada). O material é o de cor
    de vértice, chapado (`flatShading`), sem mapa.
    ========================================================= */
-import { METRO, sub, soma, esc, unit, pv, noMundo, sorteio } from './construtor3d.js?v=ab5ba4954c';
+import { METRO, sub, soma, esc, unit, pv, noMundo, sorteio } from './construtor3d.js?v=40808e1ae6';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -548,9 +548,15 @@ export function facesDaArvore(especie, semente = 1, o = {}) {
    mundo e põe o bloco em `destino.lowpoly` (ou `o.lista`); `o.longe`
    monta a de longe. Devolve a altura, o raio da copa, os triângulos (os
    da que montou e os das duas) e, no ipê, a cor da flor. */
+/* A ÁRVORE SEMPRE DE LONGE (dono, 13/11/2026: "deixando todas as construções
+   e detalhes lowpoly"): no jogo a câmera é sempre de cima e nunca chega
+   perto de uma árvore — a de perto (uns 450 triângulos, 280 mil na cidade)
+   só pesava. Com `ARVORES.sempreDeLonge` (o jogo liga antes de montar a
+   praça), toda árvore sai na versão de 20 a 50 triângulos. */
+export const ARVORES = { sempreDeLonge: false };
 export function montarArvoreLowpoly(especie, onde = {}, destino = {}, semente = 1, o = {}) {
   const r = facesDaArvore(especie, semente, { fator: onde.fator, flor: o.flor, caber: o.caber });
-  const F = o.longe ? r.longe : r.perto;
+  const F = o.longe || ARVORES.sempreDeLonge ? r.longe : r.perto;
   noMundo({ [o.lista || 'lowpoly']: F }, destino, onde);
   const k = onde.escala || 1;
   return { altura: r.altura * k, raio: r.raio * k, triangulos: F.pos.length / 9,

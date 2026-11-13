@@ -60,10 +60,10 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=ab5ba4954c';
-import { ATLAS } from './modelos_atlas.js?v=ab5ba4954c';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=40808e1ae6';
+import { ATLAS } from './modelos_atlas.js?v=40808e1ae6';
 /* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
-import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=ab5ba4954c';
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=40808e1ae6';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;
@@ -3499,10 +3499,42 @@ export const PALETA_FAVELA = {
 };
 /* `favelaLowPoly: false` volta a favela pra textura (tijolo, telha,
    reboco) — é o `?favela=detalhada` do estadio3d.html, pra comparar */
-export const OPCOES_CASAS = { favelaLowPoly: true };
+/* A CIDADE INTEIRA LOW POLY (dono, 13/11/2026: "vamos suavizar os gráficos
+   do mapa da cidade, deixando todas as construções e detalhes lowpoly, pra
+   deixar o jogo com mais qualidade na renderização"). Com
+   `OPCOES_CASAS.tudoLowPoly` (o jogo liga antes de montar a praça), TODO
+   tipo de casa sai no modo chapado do construtor, o mesmo da favela: a
+   parede numa peça só (sem o recorte dos vãos nem o requadro), cada face
+   numa cor lisa e os canos com no máximo seis lados. A cor de cada peça é
+   a média dela na folha das casas (medida com a folha de 13/11/2026; a
+   janela sai 22% mais escura — de longe ela é o buraco escuro da parede);
+   as que a favela já tinha afinado à mão ficam com a da favela. */
+export const PALETA_CASAS = Object.assign({
+  portao_losango: '#e4e3dd', suja: '#e7e8e3', lisa: '#f1f2ed', crua: '#b8b5ad', tijolo: '#a3634f',
+  laje_borda: '#9e9c97', laje: '#a29f98', telha: '#a86d40', calha: '#8a8d90', jan2: '#484d4e', basc: '#5d6163',
+  porta_vene: '#cfd0cb', veneziana: '#3f2e23', jan_vidro: '#627081', porta_ferro: '#6b6c68', enrolar: '#b7b9b8',
+  enrolar_meia: '#8a8983', promocoes: '#2c2d2e', jan_cortina: '#6c6f71', jan_peq: '#525657', porta_ap: '#7c7f7f',
+  porta_alu: '#e1e1df', jan_grade: '#464745', caixa: '#1d2d8c', col_janela: '#9b9b93', col_porta: '#5e5950',
+  col_arco: '#7f8493', fibro: '#959691', fibro_sujo: '#92938e', grama: '#5d7b38', piso_bar: '#c3c0b9',
+  azulejo: '#683831', porta_verde: '#366246', vidraca_verde: '#314d3f', porta_azul: '#2c5da9',
+  portao_madeira: '#835a35', porta_madeira: '#583825', faixa_cerveja: '#e48f2f', geladeira: '#c9c7c3',
+  engradado: '#c7a519', prateleira: '#655135', armario: '#d6af2a', porta_escura: '#3b3c3d', cartaz_verde: '#5f973f',
+  mural_ki: '#e4b22b', toldo_ki: '#cf3921', porta_grade_azul: '#5d3448', guarda_sol_pb: '#7c7c7b',
+  guarda_sol_am: '#e1ca79', portao_chapa: '#78442f', jan_grade_branca: '#585d5f', jan_verde_grade: '#273931',
+  jan_madeira: '#303131', jan_alu4: '#3d4347', zinco: '#8b9195', portao_vermelho: '#b54d41', tijolo_furos: '#875443',
+  tijolo_rosa: '#d19c8f', bloco: '#a2a19c', tijolo_vidro: '#677e7b', vitro_alto: '#363e42', veneziana_ar: '#56595c',
+  portao_galpao: '#5a758a', aviso_deposito: '#cfcdc8', aviso_oficina: '#c7ae41', aviso_aluga: '#e8d0cb',
+  sacada_fundo: '#a2a3a1', ar: '#a6a7a4', ar_lado: '#d8d9d4', terra: '#8b7654', entulho: '#927f72',
+  hosp_modulo: '#cbcdc9', cruz: '#d8a29f', porta_vidro: '#91908a', porta_dupla: '#5a4e44', dp_janela: '#475158',
+  esc_janela: '#576464', cobogo: '#908b83', posto_vitrine: '#76716c', posto_testeira: '#cf656a',
+  posto_bomba: '#b09895', posto_totem: '#926f6e', forro_posto: '#e0e1db', shop_painel: '#dbd7cd',
+  shop_vidro: '#58737a', claraboia: '#91a3aa', shop_logo: '#5c697e'
+}, PALETA_FAVELA);
+export const OPCOES_CASAS = { favelaLowPoly: true, tudoLowPoly: false };
 export function montarCasa(l, p, destino, y0 = 0) {
-  const favela = OPCOES_CASAS.favelaLowPoly && TIPOS_FAVELA.has(p.tipo);
-  const B = Construtor('casas', favela ? { chapado: { paleta: PALETA_FAVELA, branca: 'lisa', rnd: sorteio(Math.floor(p.s('lowpoly') * 4294967295)), treme: 0.06, lados: 6 } } : {});
+  const tudo = !!OPCOES_CASAS.tudoLowPoly;
+  const favela = tudo || (OPCOES_CASAS.favelaLowPoly && TIPOS_FAVELA.has(p.tipo));
+  const B = Construtor('casas', favela ? { chapado: { paleta: tudo ? PALETA_CASAS : PALETA_FAVELA, branca: 'lisa', rnd: sorteio(Math.floor(p.s('lowpoly') * 4294967295)), treme: tudo ? 0.04 : 0.06, lados: 6 } } : {});
   const G = Construtor('grades');
   /* o vidro transparente (a vitrine da loja da torcida): a folha das
      grades só pela geometria — o material 'vidros' da planta não tem

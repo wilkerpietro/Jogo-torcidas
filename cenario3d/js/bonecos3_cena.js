@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=ab5ba4954c';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=40808e1ae6';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -3075,19 +3075,113 @@ let escalaDoTabuleiro = () => 1;
     : (x >= vista.x0 - MARGEM_VISTA && x <= vista.x1 + MARGEM_VISTA &&
        z >= vista.z0 - MARGEM_VISTA && z <= vista.z1 + MARGEM_VISTA);
   const conta = {vistos:0, cortados:0};
+  /* =======================================================
+     A MINIATURA (dono, 13/11/2026: "vamos suavizar os gráficos [...]
+     deixando todas as construções e detalhes lowpoly [...] veja como a
+     jogabilidade fica prejudicada por estar granulado demais")
+     Medido na vista de cima do estádio inteiro, sem placa de vídeo: 330
+     bonecos custavam uns 800 mil triângulos (cada um uma malha com
+     esqueleto, de 0,9 a 3,3 mil) pra aparecer com meia dúzia de pixels —
+     mais do que a cidade inteira na tela. O boneco que sai menor que
+     MINI_ENTRA pixels de altura na câmera (em perspectiva: a do cenário)
+     não ganha figura nem pose: vira duas caixas — o corpo na cor da
+     camisa e a cabeça —, todas desenhadas em duas chamadas (24
+     triângulos cada). Chegando perto (MINI_SAI) volta a ser o boneco de
+     sempre. O líder não vira miniatura; o caído deita.
+     ======================================================= */
+  const MINI_ENTRA = 30, MINI_SAI = 37, MINI_MAX = 1500;
+  /* COM OS BONECOS LEVES (os gráficos de quem joga sem placa de vídeo, ou
+     no celular: `cfg.nivelLeve`), quem está PARADO na multidão também é
+     miniatura até MINI_PARADO pixels — numa briga de 300, só quem bate,
+     apanha, cai, corre ou segura alguém ganha o boneco de verdade (e fica
+     com ele 1,5 s depois de parar, pra não piscar) */
+  const MINI_PARADO = 72;
+  function paradoNaMultidao(d, J){
+    const agitado = d.vivo === false || d.derrubado > 0 || !!d.ataque || d.golpe > 0 || d.apanhou > 0 || d.atordoado > 0 ||
+      !!d.arremesso || !!d.segurando || !!d.seguradoPor || d.esquivou > 0 || !!d.fugindo || !!d.fugaBomba ||
+      !!d.caido || J.falante === d || !!d.comemorando;
+    if(agitado){ d._agitadoAte = J.t + 1.5; return false; }
+    return !(d._agitadoAte > J.t);
+  }
+  let mini = null;
+  const _mm = new THREE.Matrix4(), _mq = new THREE.Quaternion(), _mq2 = new THREE.Quaternion(), _ms = new THREE.Vector3(),
+        _mp = new THREE.Vector3(), _mc = new THREE.Color(), _mv = new THREE.Vector3(), _my = new THREE.Vector3(0, 1, 0);
+  const _deitado = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI/2, 0, 0));
+  function miniDe(){
+    if(mini && mini.cena === scene) return mini;
+    if(mini){ mini.cena.remove(mini.corpo); mini.cena.remove(mini.cabeca); }
+    const caixa = (w, h, d, y) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(0, y + h/2, 0); return g; };
+    const mat = () => { const m = new THREE.MeshLambertMaterial({color:'#ffffff'}); remendar(m); return m; };
+    const corpo = new THREE.InstancedMesh(caixa(10.5, 27, 6.2, 0), mat(), MINI_MAX);
+    const cabeca = new THREE.InstancedMesh(caixa(5.8, 6.4, 5.8, 27.4), mat(), MINI_MAX);
+    for(const m of [corpo, cabeca]){
+      m.count = 0; m.frustumCulled = false; m.name = 'bonecos-miniatura';
+      m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      m.setColorAt(0, _mc.set('#ffffff'));
+      scene.add(m);
+    }
+    mini = {corpo, cabeca, cena:scene, n:0};
+    return mini;
+  }
+  /* a altura do boneco na tela, em pixels CSS (a mesma conta do `trocarNivel`) */
+  function pxNaTela(q){
+    if(!camNivel || camNivel.isOrthographicCamera || !(alturaNivel > 0)) return Infinity;
+    const h = ALTURA_CAIXAS * escalaDeCima * 0.86;
+    _mv.set(q.x, q.y + h/2, q.z).applyMatrix4(camNivel.matrixWorldInverse);
+    const prof = -_mv.z;
+    if(prof <= 0) return Infinity;
+    return h * camNivel.projectionMatrix.elements[5] / prof * alturaNivel / 2;
+  }
+  function porMiniatura(d, q, pm){
+    const M = miniDe();
+    if(M.n >= MINI_MAX) return;
+    const e = escalaDeCima * 0.86, r = rumoDe(d);
+    _mq.setFromAxisAngle(_my, typeof r === 'number' ? r : 0);
+    const caido = !pm && (d.caido || d.derrubado > 0 || d.vivo === false);
+    if(caido) _mq.multiply(_deitado);
+    _mp.set(q.x, q.y + (caido ? 3 * e : 0), q.z); _ms.set(e, e, e);
+    _mm.compose(_mp, _mq, _ms);
+    M.corpo.setMatrixAt(M.n, _mm); M.cabeca.setMatrixAt(M.n, _mm);
+    M.corpo.setColorAt(M.n, _mc.set(pm ? '#27303d' : (d.cor || '#c0392b')));
+    M.cabeca.setColorAt(M.n, _mc.set(pm ? '#10141b' : '#3b2a21'));
+    M.n++;
+  }
+  function fecharMiniaturas(){
+    if(!mini) return;
+    for(const m of [mini.corpo, mini.cabeca]){
+      if(m.count === 0 && mini.n === 0) continue;
+      m.count = mini.n; m.instanceMatrix.needsUpdate = true;
+      if(m.instanceColor) m.instanceColor.needsUpdate = true;
+    }
+  }
   function atualizarCena(J, dt){
     quadroN++; tAnim += dt;
     for(const fg of figuras.values()){ fg.corpo.raiz.visible = false; fg.viva = false; }
+    if(mini && mini.cena !== scene) miniDe();
+    if(mini) mini.n = 0;
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
     const cortar = cfg.cortarForaDaTela;
-    conta.vistos = 0; conta.cortados = 0;
+    conta.vistos = 0; conta.cortados = 0; conta.minis = 0;
     const animar = (d, i, pm) => {
       if(cortar && !naVista(d.x, d.y, d)){
         const fg = figuras.get(d);
         if(fg) fg.viva = true;            // fica na lista, fora do quadro
         conta.cortados++;
         return;
+      }
+      /* pequeno demais na tela: a miniatura (sem figura, sem pose) */
+      if(camNivel && !camNivel.isOrthographicCamera && (pm || !d.lider)){
+        const q = pos(d.x, d.y, d), px = pxNaTela(q);
+        if(px < (d._mini ? MINI_SAI : MINI_ENTRA) || (cfg.nivelLeve && !pm && px < MINI_PARADO && paradoNaMultidao(d, J))){
+          d._mini = true;
+          porMiniatura(d, q, pm);
+          const fg0 = figuras.get(d);
+          if(fg0) fg0.viva = true;         // a figura fica guardada (invisível) pra quando chegar perto
+          conta.vistos++; conta.minis = (conta.minis || 0) + 1;
+          return;
+        }
+        d._mini = false;
       }
       if(pm) animarPM(d, i, J, dt); else animarDisco(d, i, J, dt);
       const fg = figuras.get(d);
@@ -3105,6 +3199,7 @@ let escalaDoTabuleiro = () => 1;
     (J.policiais||[]).forEach((p,i)=>animar(p, i, true));
     /* figuras que saíram da cena: some da lista, não só da tela */
     for(const [d,fg] of figuras) if(!fg.viva){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
+    fecharMiniaturas();
     projeteis(J);
     efeitosDaPM(J, dt);
     atualizarParticulas(dt);
@@ -3859,6 +3954,7 @@ let escalaDoTabuleiro = () => 1;
          pixels e a multidão inteira nasce em pose de corrida */
       limpar(){
         for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
+        if(mini){ mini.n = 0; mini.corpo.count = 0; mini.cabeca.count = 0; }
       },
       get comModelo(){ return !!modeloGLB; },
       get quantas(){ return figuras.size; },
