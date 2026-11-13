@@ -175,8 +175,8 @@
    planta) pro sul. O relógio do jogo em segundos do dia.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=47a2d1cb64';
-import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=47a2d1cb64';
+import { ROTAS_ESTADIOS } from './rotas_estadios.js?v=ab5ba4954c';
+import { planejarArquibancada, criarArquibancada } from './arquibancada.js?v=ab5ba4954c';
 
 const ARREDOR = 110;        // m de rua a partir dos portões: os arredores (encolhe se uma sede fica perto)
 const CORREDOR = 8;         // m de rua (andando, sem atravessar parede) em volta da rota do visitante: o corredor dele nos arredores
@@ -2849,9 +2849,16 @@ export function criarDiaDeJogo(ctx) {
     const r = Math.max(x1 - x0, z1 - z0) / 2 + 30 * M;
     ctx.voarPara((x0 + x1) / 2, (z0 + z1) / 2, r / Math.tan(21 * Math.PI / 180) * 0.95, 1.2, 0);
   }
+  /* O ESTÁDIO INTEIRO, DE CIMA (dono, 13/11/2026: "pra visão ser mais ampla
+     sobre todo o estádio, pra entender melhor tudo que tá acontecendo ao
+     redor"): a distância que põe o estádio e a volta dele no lado menor da
+     tela (no celular em pé, a largura), com o comprido do estádio no
+     comprido da tela */
+  const RAIO_ESTADIO = 108;
   function verEstadio() {
-    const c = plano.centroEst;
-    ctx.voarPara(c[0], c[2], 150 * M, 0.75, -0.6);
+    const c = plano.centroEst, asp = Math.max(0.3, innerWidth / Math.max(1, innerHeight));
+    const giro = -((plano.estadio && plano.estadio.giro) || 0) * Math.PI / 180;
+    ctx.voarPara(c[0], c[2], RAIO_ESTADIO * M / (Math.tan(21 * Math.PI / 180) * Math.min(1, asp)), 1.5, giro + (asp < 1 ? Math.PI / 2 : 0));
   }
   /* A INVASÃO NO ESTÁDIO: a câmera na grade do isolamento (de cima, no
      corredor: o que fica em cima dele se abre no corte do cenário) */

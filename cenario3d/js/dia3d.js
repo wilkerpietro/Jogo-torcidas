@@ -59,10 +59,10 @@
    com a câmera no encontro; depois ele volta pra sede e tudo some. Sem
    investida, nada monta e o relógio não para.
    ========================================================= */
-import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=47a2d1cb64';
-import { palcoDeBriga } from './palco_briga.js?v=47a2d1cb64';
-import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=47a2d1cb64';
-import { criarSeguidores } from './rua3d.js?v=47a2d1cb64';
+import { cenaDaInvasao, gradesDaInvasao } from './invasao.js?v=ab5ba4954c';
+import { palcoDeBriga } from './palco_briga.js?v=ab5ba4954c';
+import { brigaNosArredores, gradesDoCordao } from './arredores3d.js?v=ab5ba4954c';
+import { criarSeguidores } from './rua3d.js?v=ab5ba4954c';
 
 const VEZES = [1, 10, 30, 60];
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -529,7 +529,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function abrirEstrada(v, eu) {
     const Cn = C();
     if (!Cn || !Cn.vida || !Cn.vida.cena || !api.planta || !api.planta.areaDoCenario) return false;
-    const { criarEstrada } = await import('./estrada3d.js?v=47a2d1cb64');
+    const { criarEstrada } = await import('./estrada3d.js?v=ab5ba4954c');
     if (D !== eu) return false;
     const e = D.e, a = api.planta.areaDoCenario(), Mu = TO.mundo;
     const cores = t => (Mu && Mu.coresDaTorcida && t ? Mu.coresDaTorcida(t) : {}) || {};
@@ -962,7 +962,7 @@ export function criarDia3d(api, vida, g = {}) {
     const soltar = () => { if (T && T.retomarTempo) T.retomarTempo('jogo-da-cidade'); };
     try {
       dia = await Cn.vida.diaDeJogo();
-      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=47a2d1cb64');
+      const { caminhoNaRua } = await import('./dia_de_jogo.js?v=ab5ba4954c');
       if (D !== eu) return false;
       const reg = brigaRegistrada(e, casa, vis);
       const pres = presencaDoJogo(e, casa.id, vis.id);
@@ -1193,6 +1193,19 @@ export function criarDia3d(api, vida, g = {}) {
   /* ======================================================
      AS FASES DA LINHA
      ====================================================== */
+  /* O DIA JÁ COMEÇA COM O BONDE ANDANDO (dono, 13/11/2026: "Quando começa
+     o itinerário de jogo, ele já deve começar com a torcida se deslocando
+     pro estádio, sem ficar parada em frente à sede, pra dar mais dinâmica
+     ao jogo"): a espera na porta é pulada — o relógio vai direto pra hora
+     da saída —, e a caminhada anda num passo que dá pra ver: uns 25
+     segundos de tela (de 1× a 30×, conforme o tamanho dela) */
+  function sairAndando(b) {
+    if (!b || !dia) return;
+    if (b.sai != null && dia.t < b.sai) dia.irPara(b.sai);
+    const dur = Math.max(1, (b.chega || 0) - Math.max(dia.t, b.sai || 0));
+    D.vezes = clamp(Math.round(dur / 25), 1, 30);
+    dia.seguirBonde(b);
+  }
   function rodarAte(alvo, vezes, txt, fim) {
     D.corrida = { alvo, fim };
     if (txt) status(txt);
@@ -1250,6 +1263,7 @@ export function criarDia3d(api, vida, g = {}) {
       /* a emboscada na estrada vem antes da cidade: a caminhada fica pro jogo */
       if (ev && ev.tipo === 'emboscada') { status('Na estrada, a caminho da cidade.'); cont(); return; }
       if (ev && ev.ponto === 'arredores' && nosso && !D.controle) {
+        sairAndando(nosso);
         rodarAte(Math.max(pl.inicio, nosso.chega - 90), D.vezes, 'A caminho dos arredores do estádio…', () => { status('Nos arredores do estádio.'); cont(); });
         return;
       }
@@ -1257,7 +1271,8 @@ export function criarDia3d(api, vida, g = {}) {
          é o ponto de passagem dela: o cartão da linha cai lá) */
       if (D.controle && nosso) { comecarIda(cont, ev && D.pistaDaIda && ev === D.pistaDaIda.ev ? ev : null); return; }
       if (ev || !nosso) { cont(); return; }
-      rodarAte(nosso.chega, D.vezes, 'A caminhada até o estádio…', () => { status('O nosso bonde chegou no portão.'); cont(); });
+      sairAndando(nosso);
+      rodarAte(nosso.chega, D.vezes, 'A caminhada até o estádio…', () => { D.vezes = 30; status('O nosso bonde chegou no portão.'); cont(); });
       return;
     }
     if (D.fase === 'jogo') {
@@ -1688,7 +1703,7 @@ export function criarDia3d(api, vida, g = {}) {
   async function montarCaca() {
     if (!IDA || IDA.grupos) return;
     IDA.grupos = [];
-    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=47a2d1cb64')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
+    try { if (!caminhoNaRuaFn) caminhoNaRuaFn = (await import('./dia_de_jogo.js?v=ab5ba4954c')).caminhoNaRua; } catch (err) { caminhoNaRuaFn = null; }
     if (!IDA || !D) return;
     const Cn = C(), eu = Cn && Cn.aPe ? Cn.aPe.eu : null, e = D.e, nosId = e.torcida.id;
     if (!eu) return;
@@ -2378,7 +2393,9 @@ export function criarDia3d(api, vida, g = {}) {
     if (!D || !dia) return;
     const A = D.plano && D.plano.arq, T = A && D.nosso && A.porBonde.get(D.nosso);
     dia.seguirBonde(null);
-    if (!T) { dia.verEstadio(); return; }
+    /* (na partida a câmera é o estádio inteiro, de cima — 13/11/2026; a de
+       perto, do campo olhando a nossa arquibancada, saiu) */
+    if (T || !T) { dia.verEstadio(); return; }
     const P0 = T.vaga.find(Boolean);
     if (!P0) { dia.verEstadio(); return; }
     /* do campo, olhando a torcida na arquibancada (a faixa na mureta, os bandeirões, o puxador) */

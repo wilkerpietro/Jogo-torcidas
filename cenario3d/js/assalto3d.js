@@ -23,8 +23,8 @@
       teclado (WASD/setas, Shift, E, Q, Z, X, V, Esc) e, no toque, o
       joystick e os botões.
    ========================================================= */
-import { criarAssalto, passoAssalto, acaoPossivel, olhosEm, alvoDaConversa, REGUA } from './assalto.js?v=47a2d1cb64';
-import { planoDaLoja } from './lojas3d.js?v=47a2d1cb64';
+import { criarAssalto, passoAssalto, acaoPossivel, olhosEm, alvoDaConversa, REGUA } from './assalto.js?v=ab5ba4954c';
+import { planoDaLoja } from './lojas3d.js?v=ab5ba4954c';
 
 const CEL_M = 0.25, RAIO_M = 0.22, MARGEM_M = 24;
 const HORA_DO_PLANO = { abertura: 9.2, tarde: 15.5, fechamento: 19.6 };

@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=47a2d1cb64';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=47a2d1cb64';
-import { Subsolo } from './subsolo.js?v=47a2d1cb64';
-import { ATLAS } from './modelos_atlas.js?v=47a2d1cb64';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=ab5ba4954c';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=ab5ba4954c';
+import { Subsolo } from './subsolo.js?v=ab5ba4954c';
+import { ATLAS } from './modelos_atlas.js?v=ab5ba4954c';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -99,7 +99,11 @@ const QUALIDADES = {
    ====================================================== */
 const PREDEFS = {
   minima: { texturas: 'minima', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 30, distancia: 0.45, luz: 'simples', luzes: false, gente: 0.35, bonecos: 'leve' },
-  leve:   { texturas: 'leve', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 60, distancia: 0.7, luz: 'simples', luzes: true, gente: 0.65, bonecos: 'leve' },
+  /* (o celular, 13/11/2026 — o dono: "Remova esse granulado": a leve desenhava
+     a um ponto por ponto de CSS e sem suavização de bordas, e no celular de
+     tela densa isso é serrilhado e chuvisco. Agora o teto é 2 e a suavização
+     liga com placa de vídeo; a resolução automática segue de freio) */
+  leve:   { texturas: 'leve', teto: 2, resolucao: 'auto', alvo: 30, suavizar: 'auto', fpsMax: 60, distancia: 0.7, luz: 'simples', luzes: true, gente: 0.65, bonecos: 'leve' },
   normal: { texturas: 'normal', teto: 1.5, resolucao: 1, alvo: 30, suavizar: 'auto', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' },
   alta:   { texturas: 'alta', teto: 2, resolucao: 1, alvo: 30, suavizar: 'sim', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' }
 };
@@ -600,6 +604,8 @@ export function criarCenario(P) {
       g = { predef: p, ...PREDEFS[p] };
     }
     const base = PREDEFS[g.predef] || PREDEFS.normal;
+    /* (quem está numa predefinição com nome fica com o que ela vale HOJE: a que mudou muda pra ele também) */
+    if (PREDEFS[g.predef]) Object.assign(g, PREDEFS[g.predef]);
     for (const k in VALORES_GRAF) if (!VALORES_GRAF[k].includes(g[k])) g[k] = k === 'medidor' ? true : base[k];
     if (!PREDEFS[g.predef] && g.predef !== 'pessoal') g.predef = 'pessoal';
     /* a última resolução que o automático achou (a próxima abertura começa dela) */
@@ -701,6 +707,8 @@ export function criarCenario(P) {
   /* A PÉ, DE CIMA: a distância da câmera que põe `vao` metros no lado
      menor da tela (no celular em pé, a largura) */
   const FOV_APE = 40;
+  const ZENITAL = 1.5;
+  let zenital = false;
   const distDoVao = vao => vao * M / 2 / (Math.tan(THREE.MathUtils.degToRad(FOV_APE / 2)) * Math.min(1, cam.aspect));
   function posicionar() {
     /* a pé (`k` vai de 0 a 1 na chegada): o alvo é o boneco e a câmera
@@ -709,6 +717,12 @@ export function criarCenario(P) {
     const k = ape ? suave(ape.chegada) : 0, kv = ape && ape.de.pulo ? 1 : k;
     if (ape && k >= 1) { orb.dist = distDoVao(ape.vao); orb.el = clamp(orb.el, 0.9, 1.5); }
     else { orb.dist = clamp(orb.dist, 2.5 * M, 2600 * M); orb.el = clamp(orb.el, 0.02, 1.54); }
+    /* A CÂMERA ZENITAL DO JOGO (dono, 13/11/2026: "a visão sempre tem que
+       ser zenital em cima dos bonecos"): com `zenital` ligado (o jogo 3D
+       liga dentro da partida), a câmera olha sempre de cima, quase na
+       vertical — o voo, o arrasto e o a pé só mexem no alvo, na distância
+       e no giro */
+    if (zenital) orb.el = ZENITAL;
     if (ape) {
       const de = ape.de;
       orb.alvo.set(de.x + (ape.x - de.x) * k, (OLHO + (APE.olho - OLHO) * k) * M + ape.yv * k, de.z + (ape.z - de.z) * k);
@@ -2609,8 +2623,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=47a2d1cb64', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=47a2d1cb64');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=ab5ba4954c', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=ab5ba4954c');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2735,7 +2749,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=47a2d1cb64');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=ab5ba4954c');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3534,7 +3548,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=47a2d1cb64'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=ab5ba4954c'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -3647,6 +3661,8 @@ void main() {`)
   return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi, graficos: graficosApi,
            /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
            get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
+           /* a câmera sempre de cima (o jogo 3D liga dentro da partida) */
+           get zenital() { return zenital; }, set zenital(v) { v = !!v; if (v !== zenital) { zenital = v; pedir(); } },
            /* se a praça ainda está montando (quem abre a de fora espera o fim dela: dia3d.js) */
            get montando() { return montando; },
            /* pro teste: o dia de jogo (dia_de_jogo.js) e o botão dele */

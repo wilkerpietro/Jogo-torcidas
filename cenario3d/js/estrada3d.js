@@ -41,10 +41,12 @@
    pra direita dela (o z do mundo); O é o mundo no metro 0 da pista.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import * as K from './detalhe3d.js?v=47a2d1cb64';
-import { montarCaravana, cenaDaCaravana, PLANOS, ESCALA, chaoDeLonge, posteDeRede, fiosEntre, cerca, faixaPintada, capim } from './caravana3d.js?v=47a2d1cb64';
+import * as K from './detalhe3d.js?v=ab5ba4954c';
+import { montarCaravana, cenaDaCaravana, PLANOS, ESCALA, chaoDeLonge, posteDeRede, fiosEntre, cerca, faixaPintada, capim } from './caravana3d.js?v=ab5ba4954c';
 
 const PI = Math.PI;
+/* a câmera de cima (o cenário trava a mesma no jogo: cenario.js, `zenital`) */
+const ZENITAL = 1.5;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const suave = t => t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
 /* A RODOVIA (m): a pista de 7,2 m (duas mãos de 3,6) e o acostamento de
@@ -110,6 +112,18 @@ function placa(g, s, l, w, h, alt, tex, texturas) {
   const mat = new THREE.MeshLambertMaterial({ map: tex });
   texturas.push(tex, mat);
   g.add(K.painel(w, h, mat, s - 0.002, alt + h / 2, l, -PI / 2));
+}
+/* A PLACA DEITADA NO CHÃO (13/11/2026): de cima a placa em pé é um risco
+   — a mesma placa verde, com o nome e a seta, pintada no chão da beira
+   (o pé dela do lado de quem vem, a seta apontando pra direita da pista) */
+function placaNoChao(g, s, l, w, h, tex, texturas) {
+  const mat = new THREE.MeshBasicMaterial({ map: tex });
+  texturas.push(mat);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+  /* o x do pano vira o l (a direita da pista), o y vira o s (a frente) e a face olha pra cima */
+  m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)));
+  m.position.set(s, 0.05, l);
+  g.add(m);
 }
 /* a cidade lá no fundo (m): os prédios claros, a caixa d'água e a igreja */
 function cidadeNoFundo(g, sc, lc, rnd) {
@@ -177,8 +191,20 @@ export function criarEstrada(cfg) {
   const PXM = M / ESCALA;
   const W = (s, l, P) => { P = P || {}; P.x = O[0] + s * M; P.z = O[1] + l * M; return P; };
   const rnd = K.sorteio(97);
-  const cidades = cfg.cidades || [];
-  const emb = cfg.emb && cfg.emb.i >= 0 && cfg.emb.i < cidades.length ? cfg.emb : null;
+  /* A VIAGEM CURTA (dono, 13/11/2026: "A cena da caravana também vai ter
+     uma visão zenital mais simples, que já encerra assim que a seta pra
+     entrar na outra cidade é avistada e o ônibus faz a curva pra direita"):
+     da rota inteira ficam só o trecho do destino — o ônibus anda, a seta
+     da saída aparece, ele faz a curva e a cena acaba — e, se tem emboscada
+     marcada, o trecho da praça dela antes. As praças do meio do caminho
+     não têm mais trecho. */
+  let cidades = cfg.cidades || [];
+  let emb = cfg.emb && cfg.emb.i >= 0 && cfg.emb.i < cidades.length ? cfg.emb : null;
+  if (cidades.length > 1) {
+    const fica = cidades.map((c, i) => i === cidades.length - 1 || !!(emb && emb.i === i));
+    if (emb) emb = Object.assign({}, emb, { i: fica.slice(0, emb.i).filter(Boolean).length });
+    cidades = cidades.filter((c, i) => fica[i]);
+  }
 
   /* ---------- O TRAÇADO: os trechos, a peça da emboscada e as alças ---------- */
   const trechos = [];
@@ -238,7 +264,8 @@ export function criarEstrada(cfg) {
   const uParada = iParada >= 0 ? U[iParada] : null;
   /* a viagem acaba com o ônibus já dentro da curva da saída do destino */
   const iAlca = caminho.length - ult.alca.length;
-  const uFim = U[Math.min(caminho.length - 1, iAlca + 30)];
+  /* (13/11/2026: mais cedo — a seta da saída já apareceu e o ônibus já virou pra direita) */
+  const uFim = U[Math.min(caminho.length - 1, iAlca + 17)];
   const uAlca = U[iAlca];
   function pontoEm(u, Q) {
     Q = Q || {};
@@ -285,6 +312,9 @@ export function criarEstrada(cfg) {
       placa(g, t.aviso, 9.4, 6.2, 2.6, 2.4, texturaDaPlaca([{ txt: nome, tam: 0.44 }, { txt: t.ultima ? 'destino · próxima saída' : 'próxima saída', tam: 0.24, fino: true, cor: '#fff4c2' }], true, 512, 215), texturas);
       const e = t.saida, q = t.alca.find(p => p[0] >= e - 6) || t.alca[0];
       placa(g, e - 6, q[1] + ALCA_LARG / 2 + 3, 4.6, 2.2, 2.6, texturaDaPlaca([{ txt: 'SAÍDA', tam: 0.26, cor: '#fff4c2' }, { txt: nome, tam: 0.42 }], true, 512, 245), texturas);
+      /* (e as duas no chão, pra câmera de cima: o aviso e a seta da saída) */
+      placaNoChao(g, t.aviso + 6, 16, 13, 5.4, texturaDaPlaca([{ txt: nome, tam: 0.44 }, { txt: t.ultima ? 'destino · próxima saída' : 'próxima saída', tam: 0.24, fino: true, cor: '#fff4c2' }], true, 512, 215), texturas);
+      placaNoChao(g, e - 2, q[1] + ALCA_LARG / 2 + 11, 13, 6.2, texturaDaPlaca([{ txt: 'SAÍDA', tam: 0.26, cor: '#fff4c2' }, { txt: nome, tam: 0.42 }], true, 512, 245), texturas);
       cidadeNoFundo(g, t.cidade[0], t.cidade[1], rnd);
     }
     /* o que fica em volta: a cerca dos dois lados (com o vão das alças e
@@ -455,16 +485,19 @@ export function criarEstrada(cfg) {
       const rc = rivais.length ? rivais.reduce((a, p) => [a[0] + p.s / rivais.length, a[1] + p.l / rivais.length], [0, 0]) : [peca.sA, peca.lA + 4];
       ts = (Q2.s + rc[0]) / 2; tl = (Q2.l + rc[1]) / 2 + 1;
       const ox = -0.55, oz = -0.83;
-      az = Math.atan2(ox, oz); el = 0.62;
+      az = Math.atan2(ox, oz); el = ZENITAL;
       const aspecto = C.vida && C.vida.camera ? C.vida.camera.aspect : 1.6;
       dist = (Math.hypot(Q2.s - rc[0], Q2.l - rc[1]) * 1.25 + 24) / Math.min(1, Math.max(0.5, aspecto * 1.1));
     } else if (CAM.modo === 'gente') {
-      ts = Q2.s + 2; tl = Q2.l + 4; az = Math.atan2(-0.35, -0.94); el = 0.72; dist = 30;
+      ts = Q2.s + 2; tl = Q2.l + 4; az = Math.atan2(-0.35, -0.94); el = ZENITAL; dist = 34;
     } else {
-      /* atrás e um pouco à esquerda, olhando a pista e a beira da direita */
-      const b = 0.2, fx = -Q2.hs * Math.cos(b) + Q2.hl * Math.sin(b), fz = -Q2.hl * Math.cos(b) - Q2.hs * Math.sin(b);
-      ts = Q2.s + Q2.hs * 13 + 1.5 * -Q2.hl; tl = Q2.l + Q2.hl * 13 + 1.5 * Q2.hs + 1.2;
-      az = Math.atan2(fx, fz); el = 0.28; dist = 33;
+      /* DE CIMA (13/11/2026): a estrada sobe pela tela (a frente do ônibus
+         pra cima, a beira da direita à direita) e a câmera não gira com
+         ele — a curva da saída se vê como curva. O alvo vai um pouco à
+         frente do ônibus e pro lado da saída, pra seta aparecer antes */
+      const aspecto = C.vida && C.vida.camera ? C.vida.camera.aspect : 1.6;
+      ts = Q2.s + 16; tl = 9 + (Q2.l - NA_MAO) * 0.5;
+      az = -PI / 2; el = ZENITAL; dist = 74 / clamp(aspecto, 0.6, 1);
     }
     W(ts, tl, PW);
     const k = CAM.alvo ? 1 - Math.exp(-dt * 3.2) : 1;

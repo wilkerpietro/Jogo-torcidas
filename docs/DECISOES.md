@@ -11618,6 +11618,46 @@ ainda destoava e de limpar o calendário.
   devolve nada no modo rápido — o único que existe —, em que as pautas
   chegam por mensagem.
 
+## Câmera zenital, saída imediata, sem granulado e caravana curta (dono, 13/11/2026)
+
+Pedido (com a foto do celular na hora do jogo e a da briga vista de cima):
+"a visão sempre tem que ser zenital em cima dos bonecos, com o ângulo
+similar a como ocorre na segunda foto, pra visão ser mais ampla sobre
+todo o estádio [...] Quando começa o itinerário de jogo, ele já deve
+começar com a torcida se deslocando pro estádio, sem ficar parada em
+frente à sede [...] Remova esse granulado. A cena da caravana também vai
+ter uma visão zenital mais simples, que já encerra assim que a seta pra
+entrar na outra cidade é avistada e o ônibus faz a curva pra direita."
+
+- **A câmera zenital do jogo** (cenario.js, `zenital`; jogo3d.js liga
+  dentro da partida): com ela ligada, `posicionar` trava a inclinação em
+  1,5 rad (quase vertical) em todo voo, arrasto e a pé — a ida, a ida
+  assumida, as brigas no palco da cidade, a invasão e a estrada. No menu
+  a cidade segue como antes.
+- **Na partida, o estádio inteiro** (`verEstadio`, dia_de_jogo.js): a
+  distância que põe o estádio e a volta dele (108 m de raio) no lado
+  menor da tela, com o comprido do estádio no comprido da tela (no
+  celular em pé ele gira 90°). A câmera de perto, do campo olhando a
+  nossa arquibancada (`verNossoSetor`), saiu. E a névoa não cobre o
+  estádio no dia de jogo (um "olho" de 190 m no centro dele, jogo3d.js).
+- **O dia já começa com o bonde andando** (`sairAndando`, dia3d.js): o
+  relógio pula a espera na porta (vai direto pra hora da saída do plano)
+  e a caminhada anda de 1× a 30×, pra durar uns 25 segundos de tela.
+  Consequência: a rival que saiu antes da gente já está no estádio, e o
+  encontro no caminho (etapa 3) fica mais raro.
+- **O granulado** era o desenho do celular: a predefinição "leve" (a do
+  aparelho de toque) desenhava a 1 ponto por ponto de CSS e sem
+  suavização de bordas. Agora o teto é 2 e a suavização liga com placa
+  de vídeo; a resolução automática segue de freio (30 fps de alvo). Quem
+  está numa predefinição com nome passa a receber o que ela vale hoje
+  (antes o navegador guardava os valores velhos).
+- **A caravana** (estrada3d.js): vista de cima, com a estrada subindo
+  pela tela e a câmera sem girar na curva; da rota ficam só o trecho do
+  destino (e o da emboscada, se tem uma marcada) — as praças do meio não
+  têm mais trecho; a placa de aviso e a seta da saída ganharam uma cópia
+  deitada no chão (de cima a placa em pé é um risco); e a cena acaba
+  mais cedo, com o ônibus na metade da curva da saída.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
