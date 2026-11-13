@@ -25,7 +25,7 @@
    calçada se chega à plataforma. Em unidades de mundo da planta (x, y
    pra cima, z = o y da planta).
    ========================================================= */
-import { FAIXA_M, riscosDaFaixa } from './passo.js?v=e5efb2ed59';
+import { FAIXA_M, riscosDaFaixa } from './passo.js?v=47a2d1cb64';
 
 /* o degrau: o mais que o pé sobe ou desce de um passo pro outro (m) */
 export const DEGRAU_M = 0.3;

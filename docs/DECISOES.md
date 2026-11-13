@@ -11600,6 +11600,24 @@ com a nova identidade visual do jogo."
   "o recado pergunta se você assume a ida"; diz que o bonde anda sozinho
   e que o jogador assume se uma rival chegar perto (etapas 2 e 3).
 
+## As cenas na identidade nova e o calendário sem reunião (dono, 13/11/2026)
+
+O dono respondeu "Quero sim" à oferta de passar a paleta "Faixa" no que
+ainda destoava e de limpar o calendário.
+
+- **O dourado das cenas vira o branco de faixa** (`css/telas3d.css`, o
+  bloco "As cenas na identidade nova"): no painel do dia de jogo, no
+  placar de TV, no balão, nos avisos, na seta, no mapa da cidade, nos
+  gráficos e na tela da briga, `--ouro` passa a valer `--marca`. A
+  velocidade escolhida, a aba aberta e o botão de ação ficam em branco
+  com letra preta; o vermelho segue só no perigo (invadir, fugir, a
+  rival). Os degradês do placar e dos cabeçalhos saíram.
+- **A tela da briga sobre a foto** ganhou fundo opaco: o portal não
+  aparece mais por trás dela.
+- **O calendário não mostra mais "Reunião"**: `diaDaReuniaoEm` (main.js)
+  devolve nada no modo rápido — o único que existe —, em que as pautas
+  chegam por mensagem.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

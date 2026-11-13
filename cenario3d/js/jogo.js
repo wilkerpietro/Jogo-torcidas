@@ -68680,6 +68680,8 @@ TO.mapaCaravana = (function(){
   function diaDaReuniaoEm(e, ano, mes){
     const F = TO.feed;
     if(!F || !F.diaDaReuniao) return null;
+    /* (só o modo rápido existe desde 13/11/2026, e nele não há reunião: as pautas chegam por mensagem) */
+    if(TO.estado.rapido && TO.estado.rapido(e)) return null;
     const chave = `${e.torcida.id}|${e.data.absoluto || 0}|${ano}|${mes}`;
     if(reuniaoDoMes.has(chave)) return reuniaoDoMes.get(chave);
     if(reuniaoDoMes.size > 40) reuniaoDoMes.clear();

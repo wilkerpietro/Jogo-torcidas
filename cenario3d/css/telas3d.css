@@ -232,3 +232,76 @@ body.jogo3d .sem-curto .bt{border-radius:5px}
 @media (max-width:900px){
   body.jogo3d #painelSub{display:none}
 }
+
+/* =========================================================
+   AS CENAS NA IDENTIDADE NOVA (dono, 13/11/2026: "Quero sim" — o painel
+   do dia de jogo, a tela da briga e o que mais ainda usava o dourado)
+   O dourado das cenas vira o branco de faixa: nas peças do jogo 3D (o
+   painel do dia, o placar, o balão, os avisos, a seta, o mapa, os
+   gráficos) e na tela da briga, `--ouro` passa a valer `--marca`. O
+   vermelho segue sendo só o perigo (invadir, fugir, a rival).
+   ========================================================= */
+body.jogo3d :is(.j3d-dia, .j3d-placar, .j3d-avisos, .j3d-aviso, .j3d-balao, .j3d-seta, .j3d-rua, .j3d-dia-modal,
+  .j3d-mapa, .j3d-graf, .j3d-armario, .j3d-lider, #j3dHora, #telaDiaJogo, #telaRelatorio, .cena-balao){
+  --ouro:var(--marca);
+}
+
+/* ---------- o painel do dia de jogo ---------- */
+body.jogo3d .j3d-dia{background:rgba(20,20,21,.96);border:1px solid var(--linha);border-radius:var(--raio);box-shadow:0 8px 28px rgba(0,0,0,.55)}
+body.jogo3d .j3d-dia-hora{color:var(--marca)}
+body.jogo3d .j3d-dia button{border-radius:5px;background:var(--faixa);border-color:var(--linha);color:var(--texto)}
+body.jogo3d .j3d-dia button:hover:not(:disabled){border-color:var(--marca);color:var(--marca)}
+body.jogo3d .j3d-dia-vezes button[aria-pressed="true"]{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .j3d-dia button.acao,
+body.jogo3d .j3d-dia-caixa button.acao{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .j3d-dia button.perigo{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+body.jogo3d .j3d-dia-fases li.agora{color:var(--marca)}
+body.jogo3d .j3d-dia-fases li.agora b{color:var(--marca);box-shadow:inset 0 -2px 0 var(--rubro-vivo)}
+body.jogo3d .j3d-dia-caixa{border-radius:var(--raio);background:var(--painel);border:1px solid var(--linha)}
+body.jogo3d #j3dHora{color:var(--marca)}
+
+/* ---------- o placar de TV ---------- */
+body.jogo3d .j3d-placar-tv{border-radius:5px;overflow:hidden;border:1px solid var(--linha)}
+body.jogo3d .j3d-placar-time{background:#17171a}
+body.jogo3d .j3d-placar-rel:not(.vivo){background:var(--faixa);color:var(--marca)}
+body.jogo3d .j3d-placar-bts button{border-radius:5px}
+
+/* ---------- o balão, os avisos e a seta ---------- */
+body.jogo3d .j3d-balao-corpo{border-radius:var(--raio);background:var(--painel)}
+body.jogo3d .j3d-balao.decisao .j3d-balao-corpo,
+body.jogo3d .j3d-balao.linha .j3d-balao-corpo{border-color:var(--marca)}
+body.jogo3d .j3d-balao.decisao .j3d-balao-corpo .msg{border-left-color:var(--rubro-vivo)}
+body.jogo3d .j3d-balao-mais{color:var(--marca)}
+body.jogo3d .j3d-balao-tempo b{background:var(--marca)}
+body.jogo3d .j3d-aviso{border-radius:5px;background:rgba(20,20,21,.95);border-color:var(--linha);border-left-color:var(--marca)}
+body.jogo3d .j3d-aviso-cab b{color:var(--marca)}
+body.jogo3d .j3d-seta-rot{border-radius:4px}
+body.jogo3d .j3d-lider{color:var(--marca)}
+body.jogo3d .j3d-lider i b{background:var(--marca)}
+
+/* ---------- o mapa da cidade e os gráficos ---------- */
+body.jogo3d .j3d-mapa-barra, body.jogo3d .j3d-graf-topo, body.jogo3d .j3d-graf > header{background:var(--painel-alto)}
+body.jogo3d .j3d-mapa-abas button{border-radius:5px}
+body.jogo3d .j3d-mapa-abas button[aria-selected="true"],
+body.jogo3d .j3d-graf-bts button[aria-pressed="true"]{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .j3d-mapa-aviso{border-left-color:var(--marca);background:var(--painel-alto)}
+body.jogo3d .j3d-graf .bt.destaque{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+
+/* ---------- a tela da briga ---------- */
+body.jogo3d .acao-btn{background:var(--faixa);border:1px solid var(--linha);border-radius:5px;color:var(--texto)}
+body.jogo3d .acao-btn:hover:not(:disabled){background:#2a2a2d;border-color:var(--apagado)}
+body.jogo3d .acao-btn b{color:var(--fraco)}
+body.jogo3d .acao-btn.entrar{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .acao-btn.entrar b{color:var(--marca-tinta)}
+body.jogo3d .acao-btn.entrar:hover:not(:disabled){background:#fff;color:var(--marca-tinta)}
+body.jogo3d .acao-btn.fugir{border-color:var(--rubro-vivo);color:var(--vermelho)}
+body.jogo3d .acao-btn.fugir:hover:not(:disabled){background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+body.jogo3d .form-btn{border-radius:5px}
+body.jogo3d .form-btn.on{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d #djVelocidade{border-radius:4px}
+body.jogo3d #djVelocidade.rapido{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d #djCarga.quente{color:var(--vermelho)}
+body.jogo3d .slider input[type=range]{accent-color:var(--marca)}
+body.jogo3d .cena-balao{border-radius:var(--raio)}
+/* (a briga sobre a foto cobre a tela inteira: o portal não aparece por trás) */
+body.jogo3d:not(.palco3d) #telaDiaJogo, body.jogo3d #telaRelatorio{background:var(--fundo)}
