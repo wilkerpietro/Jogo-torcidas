@@ -31,7 +31,7 @@ const SAIDA = process.argv[4] || path.join(require('os').tmpdir(), 'simulacao');
   const pg = await nav.newPage({viewport:{width:1440, height:900}});
   const erros = [];
   pg.on('pageerror', e => erros.push(e.message));
-  await pg.goto('http://127.0.0.1:8799/index.html');
+  await pg.goto('http://127.0.0.1:8799/index.html?2d');
   await pg.waitForTimeout(1200);
   await pg.click('#btNovoJogo'); await pg.waitForTimeout(400);
   /* a figurante: a menor organizada fora do Brasil */

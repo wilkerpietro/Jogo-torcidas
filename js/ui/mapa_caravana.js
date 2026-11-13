@@ -261,7 +261,7 @@ TO.mapaCaravana = (function(){
       for(const f of G.esperam.splice(0)) f(G);
     };
     im.onerror = () => { G.falhou = true; G.ok = true; for(const f of G.esperam.splice(0)) f(G); };
-    im.src = IMG('img/mapas/' + cid + '.webp');
+    im.src = IMG((TO.semFeed ? '../' : '') + 'img/mapas/' + cid + '.webp');
   }
   /* do mundo pra célula e de volta */
   const celDe = (G, x, y) => [Math.max(0, Math.min(G.nx - 1, Math.floor((x - G.L.x0) / (G.L.x1 - G.L.x0) * G.w / CEL_RUA))),
@@ -369,7 +369,7 @@ TO.mapaCaravana = (function(){
                            class:'mc-svg', role:'img', 'aria-label':_t('Trajeto na cidade')});
     svg.appendChild(sv('rect', {x:vb.x, y:vb.y, width:vb.w, height:vb.h, fill:'#121512'}));
     const im = sv('image', {x:L.x0, y:L.y0, width:L.x1 - L.x0, height:L.y1 - L.y0, preserveAspectRatio:'none'});
-    im.setAttribute('href', IMG('img/mapas/' + opc.cid + '.webp'));
+    im.setAttribute('href', IMG((TO.semFeed ? '../' : '') + 'img/mapas/' + opc.cid + '.webp'));
     svg.appendChild(im);
     svg.appendChild(sv('rect', {x:vb.x, y:vb.y, width:vb.w, height:vb.h, fill:'#000', opacity:'.25'}));
     const gLinha = sv('g', {}), gPontas = sv('g', {});

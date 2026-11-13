@@ -80,6 +80,8 @@ input[type=checkbox],input[type=radio]{background:initial;border:initial}
     "tela"
     "ticker";
   height:100vh; min-height:100vh; overflow:hidden;
+  /* a altura que se vê de fato (sem a barra do navegador do celular) */
+  height:100dvh; min-height:100dvh;
 }
 
 /* ---------- barra lateral ---------- */
@@ -281,7 +283,6 @@ input[type=checkbox],input[type=radio]{background:initial;border:initial}
 /* CONFIGURAÇÕES: o idioma (dono, 24/09/2026) */
 .config-idiomas{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
 .config-idioma{min-width:120px}
-
 /* ===== css/paineis.css ===== */
 /* =========================================================
    PAINÉIS — cartões, sub-abas, tabelas e listas
@@ -1768,6 +1769,14 @@ table.dados tr.selecionada td{background:#252525}
    aceso. Sem isto os três pareciam clicáveis do mesmo jeito e não dava
    pra ver qual tinha sido a resposta. */
 .rec-bt:disabled:not(.on){opacity:.38}
+/* os convites do mês (14/10/2026): uma aliada por linha — nome, dia e
+   os dois botões lado a lado, sem quebrar */
+.conv-linha{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--sulco)}
+.conv-linha:last-child{border-bottom:none}
+.conv-nome{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-data{font-family:var(--mono);font-size:11px;color:var(--fraco);flex:none}
+.conv-bt{flex:none;flex-direction:row;align-items:center;padding:4px 10px}
+.conv-linha.pago .conv-nome{opacity:.7}
 .msg-abaixo{
   margin-top:5px;font-size:11.5px;color:var(--fraco);
   display:flex;align-items:center;gap:8px;
@@ -2014,6 +2023,14 @@ td.placar small.pen{
   .sel-tres{grid-template-columns:1fr}
   .sel-rolo{max-height:26vh}
 }
+/* UMA TELA POR PASSO (dono, 13/11/2026): a lista ocupa a tela inteira,
+   em duas colunas de linhas quando cabe */
+.sel-tres.sel-uma{grid-template-columns:1fr}
+.sel-uma .sel-rolo{max-height:62vh;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+@media (max-width:820px){ .sel-uma .sel-rolo{max-height:60vh;grid-template-columns:1fr} }
+.sel-uma .sel-cab{display:none}
+.sel-uma .busca{display:block;box-sizing:border-box;width:calc(100% - 20px);margin:10px 10px 4px}
+#abasSelecao:empty{display:none}
 .sel-bandeira{display:flex;align-items:center;justify-content:center;
   width:34px;height:34px;flex:0 0 34px;border-radius:3px;
   background:rgba(255,255,255,.05);border:1px solid var(--linha);
@@ -2265,6 +2282,27 @@ header.capa-cidade{background-size:cover; background-position:center;
   color:var(--fraco);text-align:center;padding:7px 4px;border-bottom:1px solid var(--sulco);white-space:nowrap;
 }
 .fim-cons .linha-dado b{font-size:14px}
+/* as baixas de cada torcida, quando a briga tem mais de duas (13/10/2026) */
+.fim-torcidas{display:grid;grid-template-columns:minmax(0,1fr) repeat(3, 64px);gap:0 8px;align-items:center;margin-bottom:14px}
+.fim-t-cab{display:contents}
+.fim-t-cab span{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco);
+  text-align:right;padding:4px 0 6px;border-bottom:1px solid var(--linha)}
+.fim-t-lado{grid-column:1/-1;font-family:var(--titulo);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+  padding:10px 0 4px;color:var(--fraco)}
+.fim-t-lado.nos{color:var(--verde-vivo)} .fim-t-lado.eles{color:var(--rubro-vivo)}
+.fim-t-linha{display:contents}
+.fim-t-linha > *{padding:6px 0;border-bottom:1px solid var(--sulco)}
+.fim-t-linha > b{font-family:var(--mono);font-size:15px;font-variant-numeric:tabular-nums;text-align:right;color:var(--texto)}
+.fim-t-linha > b.negativo{color:var(--vermelho)}
+.fim-t-nome{display:flex;align-items:center;gap:7px;min-width:0;font-size:13px}
+.fim-t-nome b,.fim-t-nome a{min-width:0;overflow-wrap:anywhere;line-height:1.15}
+.fim-t-linha.nossa .fim-t-nome b{color:var(--texto)}
+.fim-t-armas{margin:-6px 0 14px} .fim-t-armas b{font-family:var(--mono);font-size:12px;font-weight:400;color:var(--fraco)}
+@media (max-width:480px){
+  .fim-torcidas{grid-template-columns:minmax(0,1fr) repeat(3, 44px);gap:0 5px}
+  .fim-t-cab span{font-size:8px;letter-spacing:.03em}
+  .fim-t-linha > b{font-size:13px}
+}
 /* no celular o nome quebra em duas linhas em vez de virar "LEÕE…";
    o rótulo do meio fica estreito pra sobrar largura pras colunas */
 @media (max-width:480px){
@@ -2373,7 +2411,31 @@ header.capa-cidade{background-size:cover; background-position:center;
 .retro-nosso{margin-top:8px;font-size:13px}
 .retro-nosso b{color:var(--ouro)}
 .retro-rever{margin-bottom:12px}
+/* o degrau do sobe e desce (dono, 10/10/2026) */
+.retro-degrau{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco);margin:10px 0 2px}
+/* os donos da praça e da região */
+.retro-donos-tab td{vertical-align:top}
+.retro-donos-tab td.praca b{display:block}
+.retro-donos-tab small{display:block;font-family:var(--mono);font-size:10px;color:var(--fraco)}
+.retro-donos-tab .dono{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;min-width:0}
+.retro-donos-tab .dono .nome{min-width:0;overflow-wrap:anywhere}
+.retro-donos-tab .dono small{flex-basis:100%}
+.retro-donos-tab .dono.nossa .nome{color:var(--verde-vivo)}
+.retro-donos-tab .dono.vazio{color:var(--fraco)}
+.retro-donos-tab .premio{color:var(--ouro)}
+.retro-donos-tab tr.nossa td{color:inherit}
+/* os campeões */
+.retro-campeoes{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.retro-pais{min-width:0;margin-bottom:8px}
+.retro-pais.continente{grid-column:1/-1}
+.retro-pais .retro-col-tit{color:var(--ouro)}
+.retro-campeoes .comp{flex:0 0 46%;min-width:0;font-size:12px;color:var(--fraco);overflow-wrap:anywhere}
+.retro-campeoes .comp small{display:block;font-family:var(--mono);font-size:9.5px}
+.retro-campeoes .nome.vazio{color:var(--fraco);font-style:italic}
+.retro-campeoes .retro-linha.do-ano .comp{color:var(--texto)}
 @media (max-width:480px){
+  .retro-campeoes{grid-template-columns:1fr}
+  .retro-donos-tab .dono .to-chip,.retro-donos-tab .dono .to-escudo{display:none}
   .retro-ano{font-size:44px;top:38px}
   .retro-manchete{font-size:24px;max-width:100%}
   .retro-podio{grid-template-columns:1fr 1.15fr 1fr;gap:5px}
@@ -2982,6 +3044,9 @@ header.capa-cidade{background-size:cover; background-position:center;
 @font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;
   src:url(fontes/anton-latin-ext.woff2) format('woff2');
   unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1E00-1E9F,U+1EF2-1EFF,U+20A0-20AB,U+20AD-20C0}
+/* a letra universitária (varsity) das frases do mosaico (11/10/2026) */
+@font-face{font-family:'Ultra Local';font-style:normal;font-weight:400;font-display:swap;
+  src:url(fontes/ultra-latin.woff2) format('woff2')}
 @font-face{font-family:'UnifrakturCook';font-style:normal;font-weight:400 700;font-display:swap;
   src:url(fontes/unifrakturcook-latin.woff2) format('woff2')}
 .cartaz.cz-arte{aspect-ratio:4/5;background:var(--p);color:var(--x);border-radius:6px;max-width:460px}
@@ -3198,8 +3263,67 @@ header.capa-cidade{background-size:cover; background-position:center;
 .social-toast.saindo{opacity:0;transform:translateX(14px)}
 .social-toast .post-torcida{padding:11px 0 9px;border-bottom:0}
 .social-toast .post-torcida.nova{box-shadow:none;padding-left:0}
+/* A FAIXA DA REDE (dono, 17/10/2026): só em tela estreita; o ticker sai
+   e a faixa fica no pé do feed, sem cobrir nada */
+.feed-rede-faixa{display:none}
+@media (max-width:1000px){
+  .feed-ticker{display:none}
+  /* POR CIMA DO FEED DE NOVO, MAS ACIMA DA BARRA DO NAVEGADOR (dono,
+     17/10/2026: "volte a sobrepor o feed em uma faixa que não seja
+     exatamente a borda inferior, mas um pouco acima pra livrar da barra
+     de pesquisa"). Vazia, a faixa some; o feed rola até sair de baixo dela */
+  .feed-rede-faixa{display:block;position:fixed;left:56px;right:8px;z-index:50;   /* abaixo do fundo do painel (51) */
+    bottom:calc(14px + env(safe-area-inset-bottom,0px));height:min(20vh,170px);min-height:118px;
+    overflow:hidden;pointer-events:none;cursor:pointer}
+  .feed-rede-faixa.tem{pointer-events:auto}
+  body.em-cena .feed-rede-faixa{display:none}
+  .feed-rede-faixa .rf-card{box-shadow:0 8px 24px #000b}
+  .feed-colunas .feed-rolo{padding-bottom:calc(min(20vh,170px) + 40px)}
+  .feed-rede-faixa .rf-rot{display:none}
+  /* aparelho de toque: sobe acima da barra flutuante do navegador */
+  @media (pointer:coarse){
+    .feed-rede-faixa{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+    .feed-colunas .feed-rolo{padding-bottom:calc(min(20vh,170px) + 110px)}
+  }
+  .rf-card{position:absolute;left:0;right:0;bottom:0;max-height:100%;display:flex;flex-direction:column;justify-content:center;gap:2px;
+    padding:6px 12px;background:#1b1b1f;border:1px solid #3a3a40;border-left:3px solid var(--rubro-vivo,#c0392b);
+    border-radius:8px;overflow:hidden;transform:translateX(-112%);transition:transform .45s ease}
+  .rf-card.entra{transform:none}
+  .rf-card.sai{transform:translateX(112%)}
+  /* o post de torcida: o cartão da rede, apertado (sem arte) */
+  .rf-post{justify-content:flex-start;padding:4px 12px}
+  .rf-post .post-torcida{padding:4px 0 0;border-bottom:0;display:flex;flex-direction:column;gap:3px;min-height:0}
+  .rf-post .post-torcida.nova{box-shadow:none;padding-left:0}
+  .rf-post .post-cab{margin-bottom:0}
+  .rf-post .post-avatar{width:30px;height:30px;flex-basis:30px}
+  .rf-post .post-texto{margin:0;font-size:13px;line-height:1.32;display:-webkit-box;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2;overflow:hidden;flex:none}
+  .rf-post .post-pe{margin:2px 0 4px}
+  /* o recorte de jornal, apertado pra caber na faixa */
+  .rf-jornal{padding:0;border:0;border-left:0;background:none;border-radius:6px}
+  .rf-jornal .gz{margin:0;box-sizing:border-box;padding:5px 10px 5px;overflow:hidden;display:flex;flex-direction:column}
+  .rf-jornal .gz-cabeca{padding-bottom:2px}
+  .rf-jornal .nome-jornal{font-size:13px}
+  .rf-jornal .gz-manchete{border-bottom:0;padding:3px 0 0;min-height:0;overflow:hidden}
+  .rf-jornal .gz-manchete .chapeu{font-size:8px;margin-bottom:1px}
+  .rf-jornal .gz-manchete h2{font-size:14px;line-height:1.08;display:-webkit-box;-webkit-box-orient:vertical;
+    -webkit-line-clamp:2;overflow:hidden}
+  .rf-jornal .placar-grande{margin-top:3px;padding:2px 0;gap:6px}
+  .rf-jornal .placar-grande .time{font-size:11px}
+  .rf-jornal .placar-grande .n{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){ .rf-card{transition:none} }
 @media (prefers-reduced-motion:reduce){ .social-toast{transition:none} }
-
+/* O MODO DE JOGO na seleção (10/10/2026): dois cartões lado a lado */
+.sel-modos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sel-modo{text-align:left;background:#141414;border:1px solid #2c2c2c;color:inherit;
+  padding:14px 16px;cursor:pointer;font:inherit;border-radius:2px}
+.sel-modo:hover{border-color:#4a4a4a}
+.sel-modo.on{border-color:#b52a2a;background:#1d1212;box-shadow:inset 3px 0 0 #b52a2a}
+.sel-modo .nm{font-size:16px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.sel-modo .resumo{font-size:13px;opacity:.85;margin-bottom:8px}
+.sel-modo ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.55;opacity:.8}
+@media (max-width:700px){ .sel-modos{grid-template-columns:1fr} }
 /* ===== css/cenas.css ===== */
 /* =========================================================
    CENAS — dia de jogo (canvas) e editor de cena
@@ -3656,7 +3780,6 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
 #djPalco.hud-mini .fx-reuniao .reu-titulo{display:none}
 #djPalco.hud-mini .cena-balao .cena-fala{min-width:200px;padding:8px 10px 9px}
 #djPalco.hud-mini .cena-balao .cena-marca{font-size:10.5px;padding:4px 7px}
-
 /* ===== css/itinerario.css ===== */
 /* =========================================================
    O ITINERÁRIO DO DIA DE JOGO, DENTRO DA MENSAGEM
@@ -3727,20 +3850,6 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
 .itn-mini.fechado .itn-linha{border-left-color:var(--linha)}
 .itn-mini.fechado .itn-ic{color:var(--fraco); border-color:var(--linha)}
 
-/* ---------- os pontinhos do dia ---------- */
-.itn-pontos{display:flex; gap:4px; padding:6px 2px 0 47px; flex-wrap:wrap}
-.itn-ponto{
-  display:block; width:6px; height:6px; border-radius:50%;
-  background:var(--fundo); border:1px solid var(--linha); transition:.25s;
-}
-.itn-ponto.dojogo{width:8px; height:8px; margin-top:-1px}
-.itn-ponto.passou{background:var(--fraco); border-color:var(--fraco)}
-.itn-ponto.passou.brigou{background:var(--rubro-vivo); border-color:var(--rubro-vivo)}
-.itn-ponto.agora{
-  background:var(--ouro); border-color:var(--ouro); transform:scale(1.35);
-  box-shadow:0 0 0 3px rgba(217,164,65,.16);
-}
-
 /* ---------- os recados embaixo da linha ---------- */
 .itn-recados{display:flex; flex-direction:column; gap:4px}
 .itn-recados:empty{display:none}
@@ -3804,11 +3913,9 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
   .itn-ic svg{width:17px; height:17px}
   .itn-linha .itn-efetivo{grid-column:2 / -1; margin-top:2px}
   .itn-nome .lugar{display:block; margin:1px 0 0; white-space:normal}
-  .itn-pontos{padding-left:2px}
 }
 @media (prefers-reduced-motion:reduce){
   .itn-cartao{animation:none}
-  .itn-ponto{transition:none}
 }
 
 /* O EFETIVO QUE ANDA COM A LINHA (régua do dono, 20/08/2026): o bonde
@@ -3820,6 +3927,12 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
   text-align:right;
 }
 .itn-efetivo b{color:var(--texto); font-weight:600}
+/* A LINHA ENXUTA (dono, 10/10/2026): o efetivo só aparece quando muda
+   (some sozinho depois) ou quando se toca na linha */
+.itn-linha{cursor:pointer}
+.itn-linha .itn-efetivo{opacity:0; transition:opacity .3s}
+.itn-linha.efetivo-mudou .itn-efetivo,
+.itn-linha.ver-efetivo .itn-efetivo{opacity:1}
 /* a escolta da aliada, somada ao nosso número só nas paradas da cidade */
 .itn-efetivo .escolta{color:var(--verde-vivo)}
 .itn-efetivo .escolta b{color:var(--verde-vivo)}
@@ -3829,6 +3942,109 @@ body.em-reuniao .tela-cheia:not(#telaDiaJogo){z-index:65}
    do feed — tracejado, discreto, ao lado de quem desce. */
 .itn-bt.simular{border-style:dashed;font-size:10px;letter-spacing:.04em}
 
+/* =========================================================
+   O MAPA DA CARAVANA E A PARTIDA NA ARQUIBANCADA
+   (pedido do dono, 10/10/2026)
+
+   O mapa mora embaixo do texto da mensagem: a rota do dia num pedaço
+   do Brasil, o ônibus andando e o balão da hostilidade em cima da
+   praça. Quando a bola rola, o mesmo espaço vira a arquibancada, com
+   o placar de TV no alto (como no jogo 3D) e a barra de tensão embaixo.
+   ========================================================= */
+.mc-mapa{position:relative; margin-top:10px; aspect-ratio:4/3; border:1px solid var(--linha);
+  background:#0e1a24; overflow:visible}
+.mc-mapa.vazio{display:none}
+.mc-svg{display:block; width:100%; height:100%}
+.mc-mar{fill:#0e1a24}
+.mc-pais{fill:#1f2b22; stroke:#5c7a62; stroke-linejoin:round}
+.mc-outra{fill:#56604f}
+.mc-rota{fill:none; stroke:#c9b27a; stroke-opacity:.55; stroke-linecap:round; stroke-linejoin:round}
+.mc-rota-feita{fill:none; stroke:var(--ouro, #d9a441); stroke-linecap:round; stroke-linejoin:round}
+.mc-praca circle{fill:#d8dcd4; stroke:#0d0d0d}
+.mc-praca.destino circle{fill:var(--rubro-vivo, #c8102e)}
+.mc-praca.origem circle{fill:var(--ouro, #d9a441)}
+.mc-praca text{font-family:var(--corpo); font-weight:700; fill:#e8eae4; paint-order:stroke; stroke:#0d0d0d}
+.mc-onibus-ponto{fill:var(--ouro, #d9a441); stroke:#0d0d0d}
+.mc-onibus-halo{fill:var(--ouro, #d9a441); opacity:.22}
+.mc-mapa.andando .mc-onibus-halo{animation:mc-pulso 0.9s ease-in-out infinite}
+@keyframes mc-pulso{50%{opacity:.5}}
+.mc-baloes{position:absolute; inset:0; pointer-events:none}
+.mc-balao{position:absolute; width:min(340px, 88%); pointer-events:auto; z-index:3;
+  transform:translate(-50%, calc(-100% - 12px))}
+.mc-balao.abaixo{transform:translate(-50%, 12px)}
+.mc-balao.esq{transform:translate(-14%, calc(-100% - 12px))}
+.mc-balao.esq.abaixo{transform:translate(-14%, 12px)}
+.mc-balao.dir{transform:translate(-86%, calc(-100% - 12px))}
+.mc-balao.dir.abaixo{transform:translate(-86%, 12px)}
+.mc-balao .itn-cartao{margin:0; box-shadow:0 8px 24px rgba(0,0,0,.55); background:var(--painel-alto)}
+.mc-balao::after{content:''; position:absolute; left:50%; width:12px; height:12px; background:var(--painel-alto);
+  border:1px solid var(--linha); transform:translateX(-50%) rotate(45deg)}
+.mc-balao.acima::after{bottom:-7px; border-top:0; border-left:0}
+.mc-balao.abaixo::after{top:-7px; border-bottom:0; border-right:0}
+.mc-balao.esq::after{left:14%}
+.mc-balao.dir::after{left:86%}
+/* o cartão da mensagem não corta o balão que sobra pra fora do mapa */
+.msg.kind-partida{overflow:visible}
+.itn-palco{position:relative; margin-top:10px}
+.itn-palco > .mc-mapa{margin-top:0}
+
+/* ---------- a partida na arquibancada ---------- */
+.est-vivo{position:relative; border:1px solid #33301f; background:#0d0f14}
+.est-cena{position:relative; line-height:0}
+/* o palco da cena, emprestado da tela cheia: sem a faixa da transmissão
+   nem os comandos da briga — aqui se assiste ao jogo */
+#djPalco.assistindo #djFaixa, #djPalco.assistindo #djComandos,
+#djPalco.assistindo #djAviso, #djPalco.assistindo #djCaixaMini{display:none !important}
+#djPalco.assistindo #djPrincipal{border:0; cursor:default}
+/* o placar de TV (o mesmo do jogo 3D, cenario3d/css/jogo3d.css) */
+.tv-placar{position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:4;
+  display:flex; flex-direction:column; align-items:center; gap:4px; line-height:1; pointer-events:none}
+.tv-placar-tv{display:flex; align-items:stretch; height:30px; background:#0d0f14;
+  box-shadow:0 4px 14px rgba(0,0,0,.5); font-family:var(--corpo)}
+.tv-time{display:flex; align-items:center; gap:7px; padding:0 10px; color:#f3f1ea}
+.tv-time i{display:block; width:5px; height:18px}
+.tv-time b{font-size:17px; font-weight:800; letter-spacing:.04em}
+.tv-gols{display:flex; align-items:center; gap:10px; padding:0 11px; background:#f3f1ea; color:#0d0f14;
+  font-size:19px; font-weight:800; font-variant-numeric:tabular-nums}
+.tv-rel{display:flex; align-items:center; padding:0 9px; background:#c8102e; color:#fff;
+  font:700 13px var(--mono); min-width:44px; justify-content:center}
+.tv-rel.fim{background:#3b3b3b}
+.tv-pe{display:flex; gap:6px; pointer-events:auto}
+.tv-pe button{font:700 10px var(--mono); background:rgba(13,15,20,.85); color:#e8e6df;
+  border:1px solid #3a3a3a; padding:3px 8px; cursor:pointer}
+.tv-pe button:hover{border-color:var(--ouro)}
+.est-pe{padding:10px 12px; display:flex; flex-direction:column; gap:8px; line-height:1.3}
+.est-tensao{display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:10px; align-items:center}
+.est-tensao .rot{font:700 10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--apagado)}
+.est-barra{position:relative; height:12px; background:#1a1c20; border:1px solid #2c2f35; overflow:hidden}
+.est-barra::before{content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg, rgba(76,160,96,.18) 0 40%, rgba(217,164,65,.18) 40% 75%, rgba(200,16,46,.2) 75% 100%)}
+.est-barra i{position:absolute; left:0; top:0; bottom:0; background:var(--verde-vivo, #4ca060); transition:width .35s, background .35s}
+.est-barra.n1 i{background:var(--ouro, #d9a441)}
+.est-barra.n2 i{background:var(--rubro-vivo, #c8102e)}
+.est-tensao .estado{font:700 11px var(--mono); letter-spacing:.1em; min-width:11ch; text-align:right}
+.est-tensao .estado.n0{color:#9fc7a8} .est-tensao .estado.n1{color:#e0b040} .est-tensao .estado.n2{color:#ff6b6b}
+.est-bts{display:flex; gap:8px; flex-wrap:wrap}
+.est-bts button small{display:block; font-size:9px; opacity:.7; letter-spacing:.06em; margin-top:2px}
+.est-bts button[disabled]{opacity:.45; cursor:not-allowed}
+.est-nota{font-size:12px; color:var(--apagado)}
+.est-vivo .partida-eventos{margin-top:0}
+@media (max-width:620px){
+  .tv-time b{font-size:14px} .tv-gols{font-size:16px} .tv-placar-tv{height:26px}
+  .est-tensao{grid-template-columns:auto minmax(0,1fr) auto}
+  .est-tensao .est-bts{grid-column:1 / -1}
+}
+.est-cena.sem-cena{min-height:200px; background:radial-gradient(ellipse at 50% 60%, #2f5a2c 0 30%, #1a2a18 31% 100%)}
+.itn-final{margin-top:8px; display:flex; flex-direction:column; gap:6px; align-items:flex-start}
+.itn-final .tv-placar-tv{height:26px}
+.partida-gol.tensao{color:#c9b27a}
+.partida-gol.festa{color:var(--ouro);font-weight:600}
+.est-cena #djPalco, .est-cena #djCanvases{width:100%; max-width:100%}
+.est-cena #djPrincipal{max-width:100%}
+/* o trajeto na cidade (10/10/2026): os três pontos do caminho, miúdos */
+.mc-marco{fill:#e8eae4; opacity:.75}
+.mc-marco-rot{font-family:var(--corpo); font-weight:600; fill:#e8eae4; opacity:.8; paint-order:stroke; stroke:#0d0d0d}
+.mc-cidade .mc-praca.destino circle{fill:var(--verde-vivo, #4ca060)}
 /* ===== css/gazeta.css ===== */
 /* =========================================================
    A GAZETA DOS SPORTS
@@ -4558,7 +4774,11 @@ body:has(.mb-painel) .tela-cheia{z-index:75}
   .mb-planta-dica{font-size:11px;right:auto;max-width:calc(100% - 20px)}
   .mb-planta-zoom button{width:38px;height:38px;font-size:19px}
 }
-
+/* modo rápido (10/10/2026): a cidade é só o perfil, centrado */
+.mb-corpo-perfil .mb-lado{flex:1;max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:12px;min-width:0}
+/* a barra de 7 pontos do bairro (15/10/2026): um gomo por ponto */
+.mb-barra7 span{border-right:1px solid #000;box-sizing:border-box}
+.mb-barra7 span:last-child{border-right:0}
 /* ===== css/planejamento.css ===== */
 /* =========================================================
    O PLANEJAMENTO DA SEMANA, EM POPUP (29/09/2026)
@@ -4747,6 +4967,90 @@ body:has(.mb-painel) .tela-cheia{z-index:75}
   .plj-bt{flex:1;padding:10px 8px;font-size:14px}
 }
 
+/* ===== css/assalto.css ===== */
+/* =========================================================
+   O ASSALTO (10/10/2026): o planejamento (o mesmo do jogo 3D) e a
+   cena 2D vista de cima (js/ui/assalto2d.js)
+   ========================================================= */
+.plano-assalto{display:flex;flex-direction:column;gap:6px}
+.pa-alvos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.pa-alvo{text-align:left;background:#181818;border:1px solid var(--linha);border-left:3px solid #333;
+  padding:8px 10px;cursor:pointer;color:inherit;font:inherit;display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
+.pa-alvo:hover:not(.off){background:#1f1f1f}
+.pa-alvo.on{background:#241717;border-left-color:var(--rubro-vivo)}
+.pa-alvo.off{opacity:.45;cursor:default}
+.pa-cab{display:flex;flex-direction:column;gap:1px}
+.pa-cab b{font-family:var(--titulo);letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.pa-cab span{font-family:var(--mono);font-size:10.5px;color:var(--fraco);white-space:nowrap}
+.pa-barras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 12px}
+.pa-barra{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--fraco);min-width:0}
+.pa-barra span{flex:none;width:68px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pa-barra i{flex:1;height:5px;background:#262626;display:block;min-width:24px}
+.pa-barra i b{display:block;height:100%}
+.pa-falta{font-size:10.5px;color:var(--rubro-vivo)}
+.pa-dias{display:flex;flex-wrap:wrap;gap:5px}
+.pa-dia{background:#181818;border:1px solid var(--linha);padding:5px 8px;cursor:pointer;color:inherit;font:inherit;
+  display:flex;flex-direction:column;align-items:center;min-width:54px}
+.pa-dia b{font-family:var(--titulo);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.pa-dia span{font-family:var(--mono);font-size:10.5px;color:var(--fraco)}
+.pa-dia.on{background:#241717;border-color:var(--rubro-vivo)}
+.pa-resumo{margin-top:6px;border-top:1px solid var(--linha);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+.pa-linha{display:flex;justify-content:space-between;gap:10px;font-size:12px}
+.pa-linha span{color:var(--fraco)}
+.pa-linha b{font-family:var(--mono);white-space:nowrap}
+.pa-risco.baixo{color:var(--verde-vivo)}
+.pa-risco.medio{color:var(--ouro)}
+.pa-risco.alto{color:var(--rubro-vivo)}
+.pa-nota{font-size:11.5px;margin:0;line-height:1.5}
+.pa-resumo .medidor span{min-width:190px}
+@media (max-width:560px){ .pa-barras{grid-template-columns:1fr} .pa-resumo .medidor span{min-width:120px} }
+.pa-nivel{font-style:normal;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--fraco);margin-left:6px;text-transform:none}
+
+/* ---------- a cena ---------- */
+body.asl2d-ativo{overflow:hidden}
+.asl2d{position:fixed;inset:0;z-index:900;background:#1e1f22;touch-action:none;user-select:none;-webkit-user-select:none}
+.asl2d-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* os bonecos (WebGL) e a camada de cima ficam na MESMA caixa da foto: o
+   renderizador mede a câmera pela caixa dele */
+.asl2d-gl,.asl2d-sobre{pointer-events:none;background:transparent}
+.asl2d .asl-hud{position:absolute;left:10px;top:10px;width:270px;max-width:calc(100vw - 20px);background:rgba(16,18,22,.86);color:#f2f2f2;border-radius:10px;padding:9px 11px;font:12.5px/1.35 system-ui,sans-serif;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none}
+.asl2d .asl-hud h3{margin:0 0 2px;font-size:13.5px;letter-spacing:.04em}
+.asl2d .asl-hud h3 small{font-weight:400;opacity:.7;font-size:11px;margin-left:4px}
+.asl2d .asl-hud .sub{opacity:.75;font-size:11.5px;margin-bottom:6px}
+.asl2d .asl-barra{margin:4px 0}.asl2d .asl-barra .rot{display:flex;justify-content:space-between;font-size:11.5px}
+.asl2d .asl-barra .fundo{height:7px;border-radius:5px;background:rgba(255,255,255,.14);overflow:hidden}.asl2d .asl-barra .cheio{height:100%;border-radius:5px;transition:width .2s}
+.asl2d .asl-sit{margin:6px 0 3px;font-weight:700;font-size:13px;padding:3px 8px;border-radius:6px;display:inline-block}
+.asl2d .asl-linha{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;margin-top:2px}
+.asl2d .asl-olho{margin-top:5px;font-size:11.5px;opacity:.9}
+.asl2d .asl-dica{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(16,18,22,.88);color:#fff;border-radius:10px;padding:7px 13px;font:13.5px/1.3 system-ui,sans-serif;max-width:min(560px,calc(100vw - 24px));text-align:center;pointer-events:none}
+.asl2d .asl-dica b{color:#ffd35a}
+.asl2d .asl-prog{height:6px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:6px;overflow:hidden}.asl2d .asl-prog i{display:block;height:100%;background:#ffd35a}
+.asl2d .asl-avisos{position:absolute;right:10px;top:10px;width:300px;max-width:calc(100vw - 20px);display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.asl2d .asl-avisos div{background:rgba(16,18,22,.86);border-radius:8px;padding:5px 9px;font:12.5px/1.3 system-ui,sans-serif;color:#fff;border-left:4px solid currentColor}
+.asl2d .asl-botoes{position:absolute;right:10px;bottom:16px;display:grid;grid-template-columns:repeat(2,auto);gap:7px}
+.asl2d .asl-botoes button{font:600 12.5px system-ui,sans-serif;border:0;border-radius:10px;padding:9px 11px;background:rgba(255,255,255,.92);color:#111;box-shadow:0 3px 10px rgba(0,0,0,.3);cursor:pointer;min-width:88px;touch-action:none}
+.asl2d .asl-botoes button:disabled{opacity:.45;cursor:default}
+.asl2d .asl-botoes button.forte{background:#ffd35a}.asl2d .asl-botoes button.perigo{background:#ff6b6b;color:#fff}
+.asl2d .asl-joy{position:absolute;left:20px;bottom:20px;width:124px;height:124px;border-radius:50%;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);touch-action:none}
+.asl2d .asl-joy i{position:absolute;left:50%;top:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:rgba(255,255,255,.85)}
+.asl2d .asl-fim{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}
+.asl2d .asl-fim .caixa{background:#16181c;color:#f2f2f2;border-radius:14px;padding:18px 20px;width:min(420px,calc(100vw - 32px));font:14px/1.4 system-ui,sans-serif;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.asl2d .asl-fim h2{margin:0 0 6px;font-size:19px}.asl2d .asl-fim .obs{margin:2px 0 6px;font-size:12.5px;color:#c9c9c9}
+.asl2d .asl-fim .linha{display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);padding:5px 0}
+.asl2d .asl-fim button{margin-top:12px;width:100%;font:700 15px system-ui,sans-serif;border:0;border-radius:10px;padding:11px;background:#ffd35a;color:#111;cursor:pointer}
+.asl2d .asl-fim button.nao{background:#444;color:#fff}
+.asl2d .asl-teclas{position:absolute;left:10px;bottom:10px;background:rgba(16,18,22,.7);color:#ddd;border-radius:8px;padding:6px 9px;font:11.5px/1.4 system-ui,sans-serif;pointer-events:none;max-width:280px}
+@media (pointer:coarse){.asl2d .asl-teclas{display:none}}
+@media (pointer:fine){.asl2d .asl-joy{display:none}}
+/* no celular o HUD encolhe: o que importa é a barra e a situação */
+@media (max-width:620px){
+  .asl2d .asl-hud{width:190px;padding:7px 9px;font-size:11px}
+  .asl2d .asl-hud .asl-linha:nth-of-type(n+2),.asl2d .asl-hud .asl-olho{display:none}
+  .asl2d .asl-avisos{top:auto;bottom:170px;left:10px;right:10px;width:auto}
+  .asl2d .asl-dica{bottom:150px}
+  .asl2d .asl-botoes{grid-template-columns:repeat(2,auto)}
+  .asl2d .asl-botoes button{min-width:78px;padding:9px 8px;font-size:11.5px}
+}
 /* ===== css/mobile.css ===== */
 /* =========================================================
    TELA ESTREITA
@@ -4953,7 +5257,6 @@ body:has(.mb-painel) .tela-cheia{z-index:75}
 @media (max-width: 900px){
   #djComandos .acao-btn b, .form-btn small{ display:none; }
 }
-
 /* ===== css/telas.css ===== */
 /* =========================================================
    AS TELAS DO MENU NO MOLDE DO PLANEJAMENTO (07/10/2026)
@@ -5027,6 +5330,16 @@ body.com-painel .pagina.painel{
   background:var(--painel);border:1px solid var(--linha);border-top:0;border-radius:0 0 8px 8px;
   padding:16px var(--pnl-pad) 26px;box-shadow:0 18px 60px #000a;
   animation:none;max-width:none;counter-reset:secao;
+}
+/* A TABELA LARGA ROLA DE LADO (correção do dono, 10/10/2026): a caixa
+   corta o que passa da largura (overflow-x:hidden), e no celular a
+   tabela de membros perdia as colunas da direita — o Promover junto,
+   sem ter como chegar nele. Quem rola agora é o corpo do cartão. */
+.pagina.painel .cartao > .corpo:has(> table.dados){overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* e o Promover fica grudado na borda direita, à vista sem rolar */
+@media (max-width:760px){
+  table.mb-tabela td.mb-acao{position:sticky;right:0;background:var(--painel);padding-left:6px}
+  table.mb-tabela td.mb-acao:empty{background:transparent}
 }
 /* o título que cada tela escreve no alto mora agora no cabeçalho */
 .pagina.painel > .titulo-pagina,
@@ -5244,3 +5557,82 @@ body.com-painel .pagina.painel{
   .mb-painel > header h2{font-size:20px}
 }
 
+
+/* =========================================================
+   O RESTO DA INTERFACE NA MESMA MÃO (pedido do dono, 10/10/2026:
+   "veja o visual novo que implantamos nas telas de menu e implante ele
+   na restante da UI do jogo")
+   O feed, as mensagens, a linha do dia de jogo, o mapa da caravana e o
+   balão, a arquibancada e a seleção ganham a roupa da caixa do
+   planejamento: cantos redondos, seções em #1b1b1b, o rótulo miúdo em
+   vermelho, botões de cantos redondos com o título em caixa alta e o
+   que cada escolha custa escrito DENTRO do botão.
+   ========================================================= */
+/* ---------- o alto do feed e a coluna de ícones ---------- */
+.feed-barra{background:linear-gradient(180deg,#202020,#181818)}
+.feed-menu{background:#141414}
+.feed-menu .mapa-ic{border-radius:6px}
+.feed-menu .mapa-ic.aceso{background:#2a2112;border-color:var(--ouro);color:#fff}
+
+/* ---------- as mensagens: seções do planejamento ---------- */
+.feed-lista .msg{border-radius:8px;background:#1b1b1b;padding:12px 14px}
+.feed-lista .msg.peso-decisao{background:#1e1e1e;border-color:#3a3a3a}
+.feed-lista .msg:has(> .gz){padding:0;overflow:hidden}
+.msg-voz{font-family:var(--titulo);font-size:12px;letter-spacing:.16em}
+.msg.peso-decisao .msg-voz{color:var(--rubro-vivo)}
+.msg-txt{font-size:14px;line-height:1.45}
+.msg-resp{border-top:1px solid var(--linha)}
+
+/* ---------- os botões fora das telas: a mão do planejamento ---------- */
+.msg .bt, .itn-cartao .bt, .est-vivo .bt, .reu-item .bt, .cena-baloes .bt{
+  border:1px solid var(--linha);border-radius:6px;background:#1f1f1f;color:var(--texto);
+  font-family:var(--titulo);font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+}
+.msg .bt:hover:not(:disabled), .itn-cartao .bt:hover:not(:disabled), .est-vivo .bt:hover:not(:disabled),
+.reu-item .bt:hover:not(:disabled), .cena-baloes .bt:hover:not(:disabled){border-color:#4a4a4a;background:#262626}
+.msg .bt.destaque, .itn-cartao .bt.destaque, .est-vivo .bt.destaque, .reu-item .bt.destaque, .cena-baloes .bt.destaque{
+  background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+.msg .bt.destaque:hover:not(:disabled), .itn-cartao .bt.destaque:hover:not(:disabled),
+.est-vivo .bt.destaque:hover:not(:disabled){background:#b62a2a}
+/* o que a escolha custa, dentro do botão, em letra de leitura */
+.msg-bts .bt small, .itn-cartao .bt small, .est-bts .bt small, .reu-item .bt small{
+  display:block;font-family:var(--corpo);font-size:11px;font-weight:400;letter-spacing:.01em;
+  text-transform:none;opacity:.78;line-height:1.3;margin-top:2px;white-space:normal;text-align:left}
+.msg-bts{gap:8px}
+.msg-bts .bt{padding:8px 12px;border-radius:6px}
+
+/* ---------- a linha do dia, o mapa da caravana e o balão ---------- */
+.itn-linha{border-radius:8px;background:linear-gradient(180deg,#202020,#181818)}
+.mc-mapa{border-radius:8px}
+.mc-svg{border-radius:8px}
+.itn-cartao{border-radius:8px;background:#1b1b1b;border:1px solid var(--linha);border-left:3px solid var(--linha);padding:12px 14px}
+.itn-cartao.sofrido, .itn-cartao.emboscada{background:#1d1717;border-left-color:var(--rubro-vivo)}
+.itn-cartao .voz{font-family:var(--titulo);font-size:12px;letter-spacing:.16em;margin-bottom:6px}
+.itn-cartao p{font-size:14px;line-height:1.45;color:var(--texto);margin:0}
+.itn-cartao .lugar{margin-top:6px;font-size:12px;color:var(--fraco)}
+.itn-cartao .lugar::before{content:'⌖ ';color:var(--rubro-vivo)}
+.itn-cartao .lugar.escolta{color:var(--verde-vivo)}
+.itn-cartao .lugar.escolta::before{content:'⛨ ';color:var(--verde-vivo)}
+/* no balão as saídas empilham: cada uma com o seu custo dentro */
+.itn-cartao .bts{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.itn-cartao .bts .bt{width:100%;text-align:left;padding:8px 12px;display:block}
+.itn-cartao .bts .bt span{display:block}
+.itn-cartao .bts .bt.simular{background:transparent;border-style:dashed}
+.itn-cartao .saldo{font-family:var(--corpo);font-size:12px;border-radius:6px;background:#141414;
+  border:1px solid var(--linha);padding:7px 10px;margin-top:10px}
+.mc-balao .itn-cartao{box-shadow:0 18px 50px #000b}
+.mc-balao::after{background:#1b1b1b}
+.mc-balao:has(.emboscada)::after, .mc-balao:has(.sofrido)::after{background:#1d1717}
+
+/* ---------- a arquibancada ---------- */
+.est-vivo{border-radius:8px;overflow:hidden;border-color:var(--linha)}
+.est-pe{background:#1b1b1b}
+.est-barra{border-radius:6px}
+.est-bts .bt{border-radius:6px}
+.tv-placar-tv{border-radius:6px;overflow:hidden}
+.tv-pe button{border-radius:5px}
+
+/* ---------- os cartões e listas da seleção (dentro da moldura) ---------- */
+.moldura .cartao{border-radius:8px;background:#1b1b1b}
+.moldura .torcida-opcao{border-radius:6px}
+.sel-modo{border-radius:8px}

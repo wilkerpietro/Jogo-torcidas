@@ -18,18 +18,18 @@ Torcida Organizada é um simulador de gestão de uma torcida organizada de futeb
 
 O jogo tem três camadas que se alimentam:
 
-1. **O dia a dia (o feed).** O tempo corre sozinho, um dia por vez. Cada dia solta mensagens num feed: recados da diretoria, pedidos de aliados, provocações de rivais, notícias de jornal. Algumas são só informação; outras são **decisões** com botões, e o relógio para até o jogador responder.
+1. **O dia a dia (o feed).** O tempo corre sozinho, um dia por vez. Entre um jogo e outro o feed é curto (13/11/2026): só os ataques que a torcida sofre, as sugestões da diretoria (pautas, investidas, guerra, festa no prejuízo) e o próprio dia de jogo. Notícias, jornais e a rede social ficam só no painel Notícias. Algumas mensagens são só informação; as **decisões** têm botões, e o relógio para até o jogador responder.
 2. **A gestão.** Dinheiro, membros (cada um com nome, idade, força, defesa, cargo e ficha), patrimônio (sede, bares, lojas, subsedes), alianças e rivalidades, caravanas para jogos fora, domínio dos bairros da cidade, festas na arquibancada.
 3. **A ação.** Brigas em tempo real, vistas de cima sobre uma foto aérea ou um cenário desenhado. O jogador controla o presidente (um boneco); o resto do bonde luta sozinho. Há também assaltos jogados (furtivos, com cone de visão) e a partida de futebol ao vivo com barra de tensão na arquibancada.
 
 Os dois indicadores centrais são **prestígio** (o nome da torcida na rua, que entra no ranking nacional) e **moral**. O jogo não tem condição de vitória: é uma caixa de areia com ranking, retrospectiva de fim de ano e temporadas de futebol que se repetem.
 
-**Há um modo só, o rápido** (desde 13/11/2026; o detalhista deixou de existir e todo save antigo vira rápido): não há reunião mensal da diretoria — as pautas chegam uma por dia como mensagem —, bote e assalto se resolvem na hora e o mapa abre no Brasil. O domínio dos bairros e as brigas de bairro valem normalmente. **Não há ideologia nem tutorial** (ver Parte II, 1.5).
+**Há um modo só, o rápido** (desde 13/11/2026; o detalhista deixou de existir e todo save antigo vira rápido): não há reunião mensal da diretoria — as pautas chegam uma por dia como mensagem —, bote e assalto se resolvem na hora e o mapa abre no Brasil. O domínio dos bairros vale, mas **as brigas de bairro saíram** (13/11/2026): o domínio só muda nas brigas do dia de jogo. **Não há ideologia nem tutorial** (ver Parte II, 1.5).
 
 Existem duas versões jogáveis no mesmo repositório:
 
-- **O jogo de feed (2D)**, na raiz: `index.html`. É a versão principal e a que este livro descreve.
-- **O jogo 3D**, em `cenario3d/`: a cidade inteira modelada em 3D, com o mesmo motor de regras rodando por cima. Descrito na Parte V.
+- **O jogo 3D**, em `cenario3d/jogo.html`: **é o jogo desde 13/11/2026** — o endereço principal (`index.html`) abre ele. A cidade inteira modelada em 3D, com o mesmo motor de regras rodando por cima (o pacote `cenario3d/js/jogo.js` é o código do 2D mesclado com o do 3D). Descrito na Parte V.
+- **O jogo de feed (2D)**, na raiz: `index.html?2d`. Fica no repositório sem link; as regras que este livro descreve são as dele, e o 3D roda as mesmas.
 
 ## 2. Tecnologia e arquitetura
 
@@ -121,7 +121,7 @@ A torcida escolhida define a cidade (a "praça"), o clube e o ponto de partida. 
 - **Coluna de ícones** (esquerda, sempre visível, também no celular): Feed, Mapa, Torcida, Financeiro, Calendário, Competições, Ranking, Diplomacia, Notícias, Jogo (cofre de saves), Menu principal. Ícones SVG de traço (`js/ui/icones.js`), com contadores vermelhos de pendências.
 - **Barra do topo**: escudo e nome da torcida, posição no ranking (`#12`), dinheiro, número de membros, prestígio e moral (na régua de 0 a 100).
 - **Linha da data**: dia da semana, data, "semana N de 52 · ano", botão `»` para avançar um dia na mão, e o botão de velocidade `1×/2×`.
-- **Ticker de manchetes** ("Últimas"): fita que rola com as notícias, as da nossa torcida e do nosso clube na frente. **No celular (até 1000 px) o ticker não aparece.**
+- **Sem ticker, sem rede social ao lado e sem avisos de post** (13/11/2026): a tela do jogo é só o feed. O que vem abaixo sobre a coluna da rede e o cartão do celular vale hoje só dentro de Notícias → Mensagens.
 - **O rolo do feed**: cartões de mensagem, o mais novo em cima. Cada cartão tem o rótulo de quem fala (DIRETORIA, JORNAL, FUTEBOL E PORRADA, "MENSAGEM DA <torcida>"), o texto, e, se for decisão, os botões com o efeito anunciado embaixo de cada um ("Prestígio +4 · Relação −2"). Depois de respondido, mostra "Você respondeu: …" e a consequência.
 - **Coluna da rede social** (direita, só acima de 1000 px): os posts das torcidas e dos dois jornais, com avatar, arroba, cidade, "há quanto tempo", imagem (cartaz), curtidas, comentários, compartilhamentos e o menu `⋯` (Parar de seguir / Mostrar menos). Pode ser recolhida numa tira; recolhida, os posts importantes viram um aviso que some em 5 s no canto.
 - **No celular**, a rede social vira um cartão flutuante perto do pé da tela (84 px acima da borda em aparelho de toque, para livrar a barra do navegador), um post por vez, entrando pela esquerda, parando 3 s e saindo pela direita. Post de torcida aparece sem a arte; post de jornal aparece como recorte de página de jornal.

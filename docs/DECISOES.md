@@ -11390,6 +11390,55 @@ Pedido: "Remova as entrevistas do jogo. É desnecessário." O assunto do
 clube do mês par (`entrevistaDeHoje`) não é mais chamado; o protesto no CT
 do mês ímpar continua. Save antigo com entrevista aberta a fecha ao carregar.
 
+## O jogo vira o 3D, com menos mensagens (dono, 13/11/2026)
+
+Pedido: "os jogos não devem ter tantas mensagens entre um e outro, pra
+deixar o save mais rápido e prático. O mapa deve ser 3d [...] a torcida
+sai da sede mesmo e vai andando até o estádio. A briga pode acontecer
+naturalmente no caminho do estádio, nos arredores ou dentro do estádio,
+com a visão do jogador sendo bem de cima [...] igual um helicóptero."
+Respostas do dono às perguntas: evoluir o 3D (ele vira o jogo); modelos
+3D vistos de cima; a ida anda sozinha e o jogador assume quando outra
+torcida chega perto; entre os jogos só "Ataques que sofremos, Sugestões
+da diretoria"; brigas de bairro saem; notícias, jornais e rede social só
+em Notícias; câmera de helicóptero que desce quando a briga começa;
+celular e computador por igual; o 2D vira o 3D. Em quatro etapas, nesta
+ordem: 1) regras novas no 3D e menos mensagens; 2) câmera de helicóptero
+e a caminhada sede→estádio; 3) assumir quando a rival chega perto; 4)
+celular.
+
+Etapa 1 (feita):
+
+- **Brigas de bairro fora**: `bairroDeHoje` (feed.js) não roda mais e o
+  domínio não chama `brigasDasIAs`. O domínio só muda nas brigas do dia
+  de jogo.
+- **A tela do jogo é só o feed**: sem a coluna da rede social, sem o
+  ticker e sem a faixa do celular, e sem o aviso de post no canto. Tudo
+  segue em Notícias (Mensagens e Arquivo).
+- **O que aparece no feed** (`SO_EM_NOTICIAS`, main.js): rodada,
+  almanaque, obra, domínio, dica, aniversário, saída de eixo e os fins de
+  competição vão só pro Arquivo de Notícias.
+- **Decisões que não nascem mais** (`FORA_DO_FEED`, feed.js): veredicto
+  do campeonato, protesto no CT, proposta de mudar o status da relação,
+  briga de bairro, entrevista e convites. Ficam: o jogo, a semana, as
+  pautas da diretoria, os ataques (sofridos e planejados), a investida da
+  cidade, a guerra e o festa-no-prejuízo. Um ano simulado: 51 jogos, 42
+  semanas, 14 pautas, 3 investidas, 3 guerras, 8 cartões de rival na
+  cidade, 2 ataques sofridos.
+- **O pacote do 3D remontado** (`cenario3d/js/jogo.js`, `jogo_casca.js`,
+  `css/jogo.css`): cada arquivo do 2D mesclado em três vias com a versão
+  do 3D (base: o commit 183bca4, de onde o pacote tinha saído). Conflitos
+  resolvidos assim: o domínio é o do 2D (sem as rodas e panfletagens do
+  3D — eram brigas de bairro); o combate, a ponte e o som são os do 3D; o
+  planejamento do assalto e a operação do dia são os do 3D (a loja
+  jogada em 3D); a seleção em passos, o modo único, o expediente, a festa
+  no prejuízo e o resto das regras de 13/11 vêm do 2D. Saíram do pacote a
+  LNT e o tutorial; o assalto 2D (`assalto2d.js`, `assalto_motor.js`) não
+  entra, porque no 3D a loja é a 3D.
+- **O endereço principal abre o 3D**: `index.html` redireciona pra
+  `cenario3d/jogo.html`. O 2D continua no repositório e abre com `?2d`
+  no endereço (as ferramentas e os testes usam assim).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

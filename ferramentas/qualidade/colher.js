@@ -28,7 +28,7 @@ const ANOS  = Math.max(1, parseInt(process.argv[4] || '2', 10));
   for(const torcida of TORCIDAS){
   const pg = await nav.newPage({viewport:{width:1280,height:900}});
   pg.on('pageerror', e=>erros.push(`[${torcida}] ${e.message}`));
-  await pg.goto('http://127.0.0.1:8765/index.html'); await pg.waitForTimeout(900);
+  await pg.goto('http://127.0.0.1:8765/index.html?2d'); await pg.waitForTimeout(900);
   await pg.click('#btNovoJogo'); await pg.waitForTimeout(400);
   const achou = await pg.evaluate(t=>{ try{ return !!TO.tela.escolherTorcida(t); }catch(e){ return false; } }, torcida);
   await pg.click('#btSelecionarTorcida'); await pg.waitForTimeout(1600);
