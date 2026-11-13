@@ -981,13 +981,17 @@
   const MATERIA_DE_JORNAL = new Set(['rodada', 'almanaque', 'obra',
                                      /* (os da LNT, que saiu em 15/10/2026: save antigo) */
                                      'lnt-fundacao', 'lnt-fim']);
+  /* notícias, balanços e avisos do mundo ficam só em Notícias (dono,
+     13/11/2026): a tela do jogo é dos ataques e da diretoria */
+  const SO_EM_NOTICIAS = new Set(['rodada', 'almanaque', 'obra', 'dominio', 'dica', 'aniversario',
+                                  'eixo-saida', 'conmebol-fim', 'mundo-fim', 'lnt-fundacao', 'lnt-fim']);
   function feedVisivel(e){
     const naRede = new Set();
     for(const m of (e.mensagens || [])){
       const k = m.jornal && String(m.chave || '');
       if(k && k.indexOf('jornal|') === 0) naRede.add(+k.slice(7));
     }
-    return (e.feed || []).filter(m => m.kind !== 'confronto' &&
+    return (e.feed || []).filter(m => m.kind !== 'confronto' && !SO_EM_NOTICIAS.has(m.kind) &&
       (m.peso === 'decisao' || !(MATERIA_DE_JORNAL.has(m.kind) || naRede.has(m.id))));
   }
   let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null, noFeedRede = null;
@@ -1079,14 +1083,17 @@
        Notícias → Mensagens. Abaixo de 1000 px de largura a coluna sai
        (o feed é o jogo; a rede segue a um toque, em Notícias). */
     const colunas = el('div',{class:'feed-colunas'});
-    colunas.append(rolo, montarSocialLado());
+    /* SÓ O FEED NA TELA (dono, 13/11/2026: "notícias, jornais e rede
+       social só em Notícias"): a coluna da rede, o ticker e a faixa do
+       celular saem da tela do jogo; tudo segue em Notícias. */
+    colunas.append(rolo);
     /* A FAIXA DA REDE NO CELULAR (dono, 17/10/2026): o aviso por cima do
        feed atrapalhava o jogo. Em tela estreita o ticker sai e a rede
        ganha uma faixa de 20% da altura no pé do feed, sem sobrepor nada
        (ver `proximaFaixa`) */
     noFeedRede = el('div',{class:'feed-rede-faixa', html:`<span class="rf-rot">${_t('Rede social')}</span>`});
     noFeedRede.addEventListener('click', ()=>{ subNoticias = 'mensagens'; abrirPainel('noticias'); });
-    corpo.append(barra, noFeedTicker, colunas, noFeedRede);
+    corpo.append(barra, colunas);
     pg.append(montarMenuIcones('feed-menu'), corpo);
     atualizarFeed();
     pintarTopo();
@@ -1287,6 +1294,8 @@
   /* o aviso do canto: quem postou, o começo do texto, 3 s na tela */
   const TOAST_VIDA = 5000;
   function proximoToast(){
+    /* sem avisos da rede por cima do jogo (13/11/2026): só em Notícias */
+    REDE.toastFila.length = 0; REDE.toastTimer = null; return;
     const e = E();
     if(!e || !REDE.toastFila.length || !redeEscondida()){ REDE.toastTimer = null; return; }
     const idT = REDE.toastFila.shift();

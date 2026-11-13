@@ -1577,10 +1577,15 @@ TO.feed = (function(){
     return fora;
   }
 
+  const FORA_DO_FEED = new Set(['veredicto', 'protesto-ct', 'status', 'bairro', 'entrevista', 'convites']);
   function propor(E, msg){
     caixas(E);
     /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) */
     if(calado(E)) return null;
+    /* MENOS MENSAGENS ENTRE OS JOGOS (dono, 13/11/2026): entre um jogo e
+       outro só os ataques que sofremos e as sugestões da diretoria. As
+       decisões que não são nem uma coisa nem outra não nascem mais. */
+    if(msg && FORA_DO_FEED.has(msg.kind)) return null;
     if(msg && msg.botoes) msg = Object.assign({}, msg,
                                               {botoes: comSimular(msg.botoes)});
     const m = Object.assign({
@@ -5639,6 +5644,9 @@ TO.feed = (function(){
     return {cid, b, rival};
   }
   function bairroDeHoje(E){
+    /* AS BRIGAS DE BAIRRO SAEM DO JOGO (dono, 13/11/2026): o domínio só
+       muda com as brigas do dia de jogo */
+    return;
     if(!TO.dominio || !TO.elenco || !E.torcida) return;
     const P = planoDosBairros(E);
     const hoje = dataDeHoje(E).getDate();

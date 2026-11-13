@@ -915,7 +915,7 @@ TO.dominio = (function(){
     try{ sedesPerdidas(E); }catch(e){ /* a moral não derruba o dia */ }
     if(E.data.dia === 1){ fecharLivro(E); resumoDaSemana(E); }
     /* a briga de bairro das IAs entre si: uma por mês cada (15/10/2026) */
-    try{ brigasDasIAs(E); }catch(e){ console.warn('[domínio] brigas das IAs', e); }
+    /* as brigas de bairro saíram do jogo (13/11/2026) */
   }
   /* os bairros que trocaram de dona na nossa cidade na semana, num cartão só */
   function resumoDaSemana(E){
