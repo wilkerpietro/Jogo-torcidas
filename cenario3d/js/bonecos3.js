@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=3993ad02c1';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=14c8078041';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -3175,7 +3175,8 @@ let escalaDoTabuleiro = () => 1;
      fração do tamanho do boneco): ele para quando afinar mais deformaria
      além disso, com os triângulos que der. O triângulo custa pouco perto
      da instância (medido: 38 mil a mais, 9 ms) */
-  const PECAS_TRI = [{tri:700, erro:0.010}, {tri:420, erro:0.022}];
+  /* (o terceiro é o da ESTÁTUA: o boneco pequeno na tela, parado na pose de repouso — abaixo) */
+  const PECAS_TRI = [{tri:700, erro:0.010}, {tri:420, erro:0.022}, {tri:240, erro:0.05}];
   /* quantos bonecos de peças ficam no nível de perto (depois das figuras inteiras) */
   const PECAS_PERTO = 50;
   /* AS PEÇAS DE CADA NÍVEL. Medido sem placa de vídeo: o que custa na
@@ -3188,7 +3189,8 @@ let escalaDoTabuleiro = () => 1;
   const JUNTA_COM = [
     {maoD:'cotoveloD', maoE:'cotoveloE', peD:'joelhoD', peE:'joelhoE', pescoco:'cabeca'},
     {maoD:'ombroD', cotoveloD:'ombroD', maoE:'ombroE', cotoveloE:'ombroE', pescoco:'tronco', cabeca:'tronco', pelvis:'tronco',
-     quadrilD:'tronco', joelhoD:'tronco', peD:'tronco', quadrilE:'tronco', joelhoE:'tronco', peE:'tronco'}];
+     quadrilD:'tronco', joelhoD:'tronco', peD:'tronco', quadrilE:'tronco', joelhoE:'tronco', peE:'tronco'},
+    {}];
   let simplificador = null, simplificadorPedido = false;
   function pedirSimplificador(){
     if(simplificadorPedido) return;
@@ -3311,16 +3313,38 @@ void main() {`)
     const mats = sk.boneInverses.map(bi => new THREE.Matrix4().multiplyMatrices(bi, c.junto.bindMatrix));
     const por = new Map(), v = new THREE.Vector3();
     const cabeca = c._grupoDaCabeca;
+    /* A ESTÁTUA (o nível 2): uma peça só, na pose em que a figura está — o
+       vértice é assado com o esqueleto (os 4 ossos dele, com o peso de cada
+       um), no espaço da raiz da figura */
+    const est = nivel === 2;
+    let assar = null;
+    if(est){
+      const si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+      c.raiz.updateMatrixWorld(true);
+      const inv = new THREE.Matrix4().copy(c.raiz.matrixWorld).invert();
+      const rel = sk.bones.map((b, k) => new THREE.Matrix4().multiplyMatrices(inv, b.matrixWorld).multiply(mats[k]));
+      const a = new THREE.Vector3(), b0 = new THREE.Vector3();
+      assar = (i, out) => {
+        a.fromBufferAttribute(pos, i); out.set(0, 0, 0);
+        let soma = 0;
+        for(const [bi, w] of [[si.getX(i), sw.getX(i)], [si.getY(i), sw.getY(i)], [si.getZ(i), sw.getZ(i)], [si.getW(i), sw.getW(i)]]){
+          if(!(w > 0)) continue;
+          out.addScaledVector(b0.copy(a).applyMatrix4(rel[bi]), w); soma += w;
+        }
+        if(soma > 0) out.multiplyScalar(1 / soma); else out.copy(a).applyMatrix4(rel[0]);
+        return out;
+      };
+    }
     for(const t of tris){
       if(t.vid !== vid) continue;
       /* (no corpo: 1 a pele, 2 a calça, 3 o tênis; na variante: 1 o cabelo, 2 o boné; o resto, a cor do vértice) */
       const zona = cabelo ? (t.zona >= 4 ? t.zona - 3 : 0) : (t.zona >= 4 ? 0 : t.zona);
       /* (o cabelo inteiro é da cabeça: uma peça só) */
-      const osso = cabelo && cabeca >= 0 ? cabeca : t.osso;
+      const osso = est ? 0 : cabelo && cabeca >= 0 ? cabeca : t.osso;
       let o = por.get(osso);
       if(!o) por.set(osso, o = {P:[], C:[], Z:[], I:[], de:new Map()});
       /* (o vértice é dividido entre os triângulos da mesma zona: menos conta por boneco, e a luz sai lisa) */
-      const veste = !cabelo && zona === 0 && col && daCamisa.has(sk.bones[osso].name);
+      const veste = !cabelo && zona === 0 && col && daCamisa.has(sk.bones[t.osso].name);
       for(const i of [t.a, t.b, t.c]){
         let zv = zona;
         if(veste){
@@ -3332,7 +3356,7 @@ void main() {`)
         let n = o.de.get(k);
         if(n === undefined){
           n = o.Z.length; o.de.set(k, n);
-          v.fromBufferAttribute(pos, i).applyMatrix4(mats[osso]);
+          if(est) assar(i, v); else v.fromBufferAttribute(pos, i).applyMatrix4(mats[osso]);
           o.P.push(v.x, v.y, v.z);
           if(col) o.C.push(col.getX(i), col.getY(i), col.getZ(i)); else o.C.push(0.8, 0.8, 0.8);
           o.Z.push(zv);
@@ -3362,16 +3386,17 @@ void main() {`)
       p.malha = nova;
     }
   }
-  function porNaFamilia(chave, c, vid, hexes, rgb, nivel){
+  function porNaFamilia(chave, c, vid, hexes, rgb, nivel, matriz){
     chave += '|' + nivel;
     let S = conjuntos.get(chave);
-    if(S === undefined){ S = montarFamilia(c, vid, hexes, nivel); conjuntos.set(chave, S); }
+    if(S === undefined){ if(!c) return false; S = montarFamilia(c, vid, hexes, nivel); conjuntos.set(chave, S); }
     if(!S) return false;
     if(!S.partes.length) return true;                    // (o careca: a família do cabelo dele é vazia)
     if(S.cena !== scene){ for(const p of S.partes){ S.cena.remove(p.malha); scene.add(p.malha); } S.cena = scene; }
     if(S.n >= S.cap) crescerFamilia(S);
-    const ossos = c.junto.skeleton.bones, n = S.n;
-    for(const p of S.partes) p.malha.setMatrixAt(n, ossos[p.osso].matrixWorld);
+    const n = S.n;
+    if(matriz) for(const p of S.partes) p.malha.setMatrixAt(n, matriz);
+    else { const ossos = c.junto.skeleton.bones; for(const p of S.partes) p.malha.setMatrixAt(n, ossos[p.osso].matrixWorld); }
     for(let k = 0; k < S.c.length; k++) S.c[k].setXYZ(n, rgb[k * 3], rgb[k * 3 + 1], rgb[k * 3 + 2]);
     S.n++;
     return true;
@@ -3416,6 +3441,55 @@ void main() {`)
     const e = c.raiz.scale.x, r = c.raiz.position;
     _sp.set(r.x, r.y + 0.3 * e, r.z); _ss.set(c.sombra.scale.x * e, c.sombra.scale.y * e, 1);
     sombras.malha.setMatrixAt(sombras.n++, _sm.compose(_sp, _sq, _ss));
+  }
+  /* A ESTÁTUA: o boneco pequeno na tela (o dono, 13/11/2026: "visto de cima
+     ainda está os bonecos antigos, vamos adicionar esse novo modelo
+     intermediário [...] até quando estiver de longe"). No lugar das duas
+     caixas, o mesmo modelo afinado, numa peça só e parado na pose de
+     repouso — sem figura e sem pose por boneco: uma instância do corpo e
+     uma de cada variante (o penteado), com as cores dele. O molde de cada
+     família é uma figura montada só pra isso, na primeira vez */
+  const moldes = [], semPeca = new Set();
+  function moldeDe(f, pm){
+    const c = construirCorpoGLB(f, pm);
+    if(!c || !c.junto || !c.nivel || !c.nivel.perto) return null;
+    c.raiz.updateMatrixWorld(true);
+    moldes.push(c);
+    return c;
+  }
+  function porEstatua(d, q, pm, i){
+    if(!simplificador || !modeloGLB || !cfg.juntarPecas) return false;
+    let e = d._est;
+    if(!e){
+      const f = fichaDe(d, i), cores = coresDe(f, pm), cz = new THREE.Color();
+      const rgbDe = l => { const o = new Float32Array(l.length * 3); l.forEach((h, k) => { cz.set(h || '#888888'); o[k * 3] = cz.r; o[k * 3 + 1] = cz.g; o[k * 3 + 2] = cz.b; }); return o; };
+      const hc = [cores.pele, cores.calca, cores.tenis, cores.camisa, cores.faixa, cores.faixa2], hk = [cores.cabelo, cores.bone];
+      e = d._est = {f, hc, hk, rc:rgbDe(hc), rk:rgbDe(hk), vars:[...variantesDe(f, pm)]};
+    }
+    const falta = k => conjuntos.get(k + '|2') === undefined;
+    let c = null, tentou = false;
+    const molde = () => { if(!tentou){ tentou = true; try{ c = moldeDe(e.f, pm); }catch(err){ console.warn('a estátua: '+(err && err.message)); c = null; } } return c; };
+    const esc = escalaDeCima * 0.86, r = rumoDe(d);
+    _mq.setFromAxisAngle(_my, typeof r === 'number' ? r : 0);
+    const caido = !pm && (d.caido || d.derrubado > 0 || d.vivo === false);
+    if(caido) _mq.multiply(_deitado);
+    _mp.set(q.x, q.y + (caido ? 3 * esc : 0), q.z); _ms.set(esc, esc, esc);
+    _mm.compose(_mp, _mq, _ms);
+    const kc = pm ? 'corpo|pm' : 'corpo';
+    if(falta(kc) && !molde()){ conjuntos.set(kc + '|2', null); return false; }
+    if(!porNaFamilia(kc, c, 0, e.hc, e.rc, 2, _mm)) return false;
+    for(const n of e.vars){
+      if(semPeca.has(n)) continue;
+      const kv = 'var|' + n;
+      if(!idsDeVariante.has(n) || falta(kv)){
+        molde();
+        /* (a variante que o modelo não tem — ou que o molde não montou — não se tenta de novo a cada quadro) */
+        if(!idsDeVariante.has(n) || !c){ semPeca.add(n); continue; }
+      }
+      const vid = idsDeVariante.get(n);
+      if(vid) porNaFamilia(kv, c, vid, e.hk, e.rk, 2, _mm);
+    }
+    return true;
   }
   function fecharPecas(){
     if(conjuntos.size) luzDasPecas();
@@ -3553,7 +3627,7 @@ void main() {`)
         d._pecas = pecas ? nivelPecas + 1 : 0;
         if(!pecas && (longeDoMeio || pequeno || (cfg.nivelLeve && !pm && px < MINI_PARADO && paradoNaMultidao(d, J)))){
           d._mini = true;
-          porMiniatura(d, q, pm, px);
+          if(!porEstatua(d, q, pm, i)) porMiniatura(d, q, pm, px);
           const fg0 = figuras.get(d);
           if(fg0) fg0.viva = true;         // a figura fica guardada (invisível) pra quando chegar perto
           conta.vistos++; conta.minis = (conta.minis || 0) + 1;

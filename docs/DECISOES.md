@@ -11829,6 +11829,48 @@ sendo rival, corrija pra dar certo atacar".
   investida). Testado: Fortaleza × CRB, ataque à Comando Alvirrubro nos
   arredores — o bonde vai ao cordão da PM e a briga abre contra ela.
 
+## O boneco novo de longe, o troféu no lugar da briga, a saída do estádio e assumir o bonde (dono, 13/11/2026)
+
+Pedidos: "visto de cima ainda está os bonecos antigos, vamos adicionar
+esse novo modelo intermediário [...] até quando estiver de longe";
+"sempre o local onde os bonecos vão estender a faixa é onde ocorreu a
+briga [...] eles aparecem na arquibancada do estádio 3d"; "ativar o
+movimento de saída do estádio, até um quarteirão depois do estádio, e aí
+inicia a cena de voltar pra cidade-sede"; "o jogador pode querer assumir o
+controle da torcida a caminho do estádio, pra tentar emboscar um rival
+[...] Nunca quando a torcida do jogador sair da sede o rival já vai estar
+no estádio".
+
+- **A estátua** (bonecos3.js, `porEstatua`): o boneco pequeno na tela
+  deixou de ser duas caixas. É o mesmo modelo afinado (uns 215
+  triângulos), numa peça só, assado na pose de repouso, instanciado com
+  as cores de cada um e o penteado dele — sem figura e sem pose por
+  boneco. A caixa fica de reserva (sem o simplificador ou sem o modelo).
+  Medido: a caminhada com 330 bonecos segue no teto de 30 fps. (Um
+  defeito achado e corrigido no caminho: a variante que o modelo não tem
+  montava um molde novo a cada quadro.)
+- **O troféu no lugar da briga**: o palco 3D anota onde o tabuleiro da
+  briga fica no mundo (`TO.jogo3d.ultimoPalco`), e o fundo da foto do
+  troféu é a cidade vista de cima naquele retângulo (`Retratos.foto`,
+  pela camada da cidade parada) — a arquibancada, a rua, a praça. A briga
+  de foto (sem palco 3D) segue com o fundo da cena dela. Testado com a
+  briga no cordão da PM; a da arquibancada usa o mesmo caminho, mas não
+  consegui disparar a invasão no roteiro de teste.
+- **A saída do estádio** (dia3d.js, `sairDoEstadio`): o plano do dia só
+  sabe a ida. A saída é a ida de trás pra frente — o relógio do plano
+  volta, do todo mundo no lugar até a cabeça do nosso bonde estar a 170 m
+  do portão, em 22 segundos de tela; o relógio do painel segue pra
+  frente. Só depois começa a volta (a estrada, fora; o fim do dia, em
+  casa).
+- **Assumir o bonde**: botão no painel do dia enquanto a caminhada anda
+  sozinha e o cordão da PM não passou (`podeAssumir`); o resto é a ida
+  jogada de sempre (caçar, partir pra cima, devolver pra PM).
+- **Quem joga sai antes dos rivais** (dia_de_jogo.js): o horário da PM
+  punha o visitante no portão 15 minutos antes do mandante, e com a sede
+  perto do estádio a gente saía com a rival já lá dentro. Agora o bonde
+  de quem joga sai, no máximo, um minuto antes do primeiro bonde do outro
+  lado (no teste: nós 09:58, a rival 09:59).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

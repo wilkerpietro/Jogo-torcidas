@@ -3548,6 +3548,17 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
   quem e onde), em casa e fora; no dia o bonde vai ao ponto e a briga
   abre lá.
 
+### 4.8 O dia de jogo: saída, assumir o bonde e o troféu (13/11/2026)
+
+- O boneco pequeno na tela é a **estátua**: o modelo afinado numa peça
+  só, parado, com as cores dele (a caixa ficou de reserva).
+- O bonde de quem joga sai da sede antes do primeiro bonde rival; o botão
+  **Assumir o bonde** passa a caminhada pro jogador quando ele quiser.
+- Depois do apito as torcidas **saem do estádio** (a ida de trás pra
+  frente) até um quarteirão; só então vem a volta.
+- A foto do **troféu** é tirada no lugar da briga, com a cidade em 3D de
+  fundo.
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:
