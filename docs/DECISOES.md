@@ -11816,7 +11816,9 @@ sendo rival, corrija pra dar certo atacar".
 - **A hospedagem não se escolhe mais**: `nivelDe` devolve sempre
   `hospedar`, e `RECEPCAO_ESCOLHAS` ficou só com ela. No planejamento o
   item dos aliados é leitura (quem chega, quando, quanto custa e a
-  relação). Saem "Hospedar e escoltar" e "Churrasco e escolta".
+  relação). Saem "Hospedar e escoltar" e "Churrasco e escolta". O passo
+  "Aliados na cidade" já nasce feito: ele travava o botão "Fechar o
+  planejamento" com um "Falta decidir".
 - **O ataque voltou ao planejamento** (`idaNoDiaDo` devolve `false`):
   desde 07/10 o jogo 3D escondia o ataque nos nossos jogos ("a ida se
   decide no dia"), e com a ida andando sozinha (etapa 2) não sobrava

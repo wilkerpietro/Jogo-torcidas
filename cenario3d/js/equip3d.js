@@ -28,8 +28,8 @@
    muda (o nome do shopping, a placa da praça) vai como decalque, pra
    quem mostra escrever.
    ========================================================= */
-import { Construtor, METRO, lerp, sub, unit } from './construtor3d.js?v=fc32d78874';
-import { facesDaArvore } from './arvores_lowpoly.js?v=fc32d78874';
+import { Construtor, METRO, lerp, sub, unit } from './construtor3d.js?v=2101a3f679';
+import { facesDaArvore } from './arvores_lowpoly.js?v=2101a3f679';
 
 const M = METRO;
 const lisa = tinta => ({ k: 'lisa', tinta });

@@ -31223,8 +31223,9 @@ TO.planejamento = (function(){
     }
     const al = aliadosNaCidade(E, E.data.semana);
     if(al.length){
-      const decididos = al.filter(a=>plano(E).recepcao[a.id] || recepcaoPadrao(E)).length;
-      põe('aliados', _t('Aliados na cidade'), decididos === al.length,
+      /* (o aliado fica sempre na sede: não há o que decidir, e o passo já nasce feito — 13/11/2026) */
+      const decididos = al.length;
+      põe('aliados', _t('Aliados na cidade'), true,
           _tn(al.length, '{n} torcida · {d} resolvidas', '{n} torcidas · {d} resolvidas', {d:decididos}));
     }
     const ou = outrosJogosNaCidade(E, E.data.semana);
