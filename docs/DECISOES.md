@@ -11658,6 +11658,58 @@ entrar na outra cidade é avistada e o ônibus faz a curva pra direita."
   deitada no chão (de cima a placa em pé é um risco); e a cena acaba
   mais cedo, com o ônibus na metade da curva da saída.
 
+## O véu do resultado e a cidade em retrato de cima (dono, 13/11/2026)
+
+Pedido: "o início já entrega o resultado do jogo e já diz o próximo
+adversário mesmo sem o jogo acontecer. Vamos suavizar os gráficos do mapa
+da cidade, deixando todas as construções e detalhes lowpoly, pra deixar o
+jogo com mais qualidade na renderização [...] a jogabilidade fica
+prejudicada por estar granulado demais" (o print: a briga no estádio a
+7 fps e 35% da resolução, no navegador sem placa de vídeo).
+
+- **O véu** (`TO.competicoes.comVeu` / `veuDe`): a rodada do dia é simulada
+  na virada do dia, antes de o jogador jogar. Enquanto o cartão "Hoje tem…"
+  do dia está sem resposta, toda pintura de tela (o portal, a casca, os
+  painéis) roda com os placares de hoje escondidos — a agenda mostra "–",
+  o próximo jogo é o de hoje e a tabela não conta a rodada. Depois da
+  partida o véu sai sozinho. É síncrono (esconde, pinta, devolve): o
+  estado guardado não muda.
+- **Low-poly na vista de cima**: as casas todas no modo chapado (a cor
+  média de cada peça da folha, sem textura: `OPCOES_CASAS.tudoLowPoly`),
+  as árvores sempre na versão de longe (`ARVORES.sempreDeLonge`) e o
+  boneco pequeno na tela vira MINIATURA (duas caixas instanciadas, com a
+  cor da camisa; a figura de verdade volta quando ele cresce na tela).
+  Medido na vista do estádio: de 1,36 milhão de triângulos e 550 ms pra
+  324 mil e 178 ms.
+- **Os retratos de cima** (cenario.js, `Retratos`): mesmo low-poly, a
+  cidade punha uns 370 mil triângulos na vista, e sem placa de vídeo o
+  custo é por triângulo (150 dos 180 ms do quadro não mudavam com a
+  resolução — por isso a automática parava em 35% e 6 fps). Agora, com a
+  câmera de cima, cada ladrilho da cidade (meio bloco, um bloco, 2, 4 ou
+  8 blocos de lado, conforme a distância) é fotografado uma vez, de cima,
+  e vira UM retângulo no chão; as malhas da cidade, o estádio, o chão e o
+  mato saem do desenho. Ficam em 3D os bonecos, os carros, as grades e o
+  que é do dia de jogo. Como a arquibancada da foto não tem altura, quem
+  está nela desce pro chão (o `pos` dos bonecos), no lugar dele na foto.
+  - A foto é guardada com a cor de tela (sem conversão por pixel) e
+    corrigida pela luz da hora com uma multiplicação (a razão entre a luz
+    de agora e a de quando foi tirada): a tarde cai sem refazer foto e sem
+    emenda entre ladrilhos.
+  - Enquanto falta foto de algum ladrilho da vista, desenha-se a cidade de
+    verdade (como antes); o prédio aberto pelo jogo (a briga dentro do
+    bar, o assalto à sede) e o boneco a pé desligam os retratos.
+  - Opção nova nos Gráficos: "Cidade vista de cima" (Em retrato /
+    Inteira). Liga nas predefinições Mínima e Leve. Sem placa de vídeo o
+    retrato vale até com a câmera a uns 40 m (a foto amplia mais).
+  - Medido no navegador sem placa (1280 × 800): a caminhada de 189 ms
+    (5 fps, 35%) pra 33–38 ms (26–30 fps, com a resolução subindo até
+    75%); a vista do estádio de 178 ms (6 fps, 35%) pra 34–43 ms
+    (23–29 fps, 45%); de perto (câmera a 70 m) de 103 ms pra 33 ms; a
+    cidade visitante ao entardecer de 83 ms pra 33–36 ms.
+- **Não testado**: a briga da invasão dentro do estádio com os retratos
+  (o roteiro de teste não conseguiu disparar a invasão antes do fim da
+  partida).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

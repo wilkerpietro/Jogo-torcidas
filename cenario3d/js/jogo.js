@@ -7120,6 +7120,10 @@ TO.i18n.registrar({
   'Desliga quando o jogo abrir de novo (recarregue a página).': {es:'Se apaga cuando el juego se abra de nuevo (recargue la página).', en:'Turns off when the game opens again (reload the page).'},
 
   'Limite de fps': {es:'Límite de fps', en:'Fps limit'},
+  'Cidade vista de cima': {es:'Ciudad vista desde arriba', en:'City seen from above'},
+  'Em retrato': {es:'En retrato', en:'As a snapshot'},
+  'Inteira': {es:'Entera', en:'Full'},
+  'Em retrato, cada quarteirão visto de cima e de longe vira uma foto dele, e só a torcida, os carros e o que é do jogo continuam em 3D. É o que mais alivia sem placa de vídeo (o quadro fica 3 a 4 vezes mais rápido).': {es:'En retrato, cada manzana vista desde arriba y de lejos se vuelve una foto de sí misma, y solo la hinchada, los autos y lo que es del partido siguen en 3D. Es lo que más alivia sin placa de video (el cuadro queda de 3 a 4 veces más rápido).', en:'As a snapshot, each block seen from above and from afar becomes a photo of itself, and only the supporters, the cars and the match-day things stay in 3D. It is the biggest relief without a graphics card (the frame gets 3 to 4 times faster).'},
   'Sem limite': {es:'Sin límite', en:'No limit'},
   'Não aumenta o fps: deixa o processador livre pro resto do jogo e esquenta menos o computador.':
     {es:'No aumenta los fps: deja el procesador libre para el resto del juego y calienta menos la computadora.',
@@ -58384,6 +58388,9 @@ TO.graficos = (function(){
     {k:'distancia', rot:_t('Distância de visão'),
      vals:[[1, _t('Longe')], [0.7, _t('Média')], [0.45, _t('Perto')]],
      nota:_t('Com a câmera longe (a cidade vista de cima), a névoa chega antes e menos quarteirões são desenhados.')},
+    {k:'longe', rot:_t('Cidade vista de cima'),
+     vals:[['retrato', _t('Em retrato')], ['malha', _t('Inteira')]],
+     nota:_t('Em retrato, cada quarteirão visto de cima e de longe vira uma foto dele, e só a torcida, os carros e o que é do jogo continuam em 3D. É o que mais alivia sem placa de vídeo (o quadro fica 3 a 4 vezes mais rápido).')},
     {k:'gente', rot:_t('Gente na rua'),
      vals:[[1, _t('Muita')], [0.65, _t('Média')], [0.35, _t('Pouca')]]},
     {k:'bonecos', rot:_t('Bonecos'),

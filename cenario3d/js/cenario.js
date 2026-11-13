@@ -36,10 +36,10 @@
    sul, 1 m = P.M unidades).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=40808e1ae6';
-import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=40808e1ae6';
-import { Subsolo } from './subsolo.js?v=40808e1ae6';
-import { ATLAS } from './modelos_atlas.js?v=40808e1ae6';
+import { plantarMato, montarMato, LONGE_M } from './mato3d.js?v=02cbabfbd0';
+import { FAIXA_M, riscosDaFaixa, Paredes, PisoDaRua } from './passo.js?v=02cbabfbd0';
+import { Subsolo } from './subsolo.js?v=02cbabfbd0';
+import { ATLAS } from './modelos_atlas.js?v=02cbabfbd0';
 
 /* O CHÃO: ladrilho de 1024 px (e 2 de sobra em volta, pra costura não
    aparecer), na resolução da qualidade */
@@ -93,25 +93,27 @@ const QUALIDADES = {
    - `gente`: quanta gente anda na rua (vida3d.js), de 0,35 a 1;
    - `bonecos`: 'leve' põe todo mundo no nível de longe (o de quem joga
      fica no de perto);
+   - `longe`: 'retrato' troca cada quarteirão visto de cima e de longe por
+     uma foto dele (OS RETRATOS DE CIMA, abaixo); 'malha' desenha tudo;
    - `texturas`: a de cima (QUALIDADES);
    - `medidor`: o medidor de fps no canto.
    As predefinições juntam tudo; mexer numa opção vira "personalizada".
    ====================================================== */
 const PREDEFS = {
-  minima: { texturas: 'minima', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 30, distancia: 0.45, luz: 'simples', luzes: false, gente: 0.35, bonecos: 'leve' },
+  minima: { texturas: 'minima', teto: 1, resolucao: 'auto', alvo: 30, suavizar: 'nao', fpsMax: 30, distancia: 0.45, luz: 'simples', luzes: false, gente: 0.35, bonecos: 'leve', longe: 'retrato' },
   /* (o celular, 13/11/2026 — o dono: "Remova esse granulado": a leve desenhava
      a um ponto por ponto de CSS e sem suavização de bordas, e no celular de
      tela densa isso é serrilhado e chuvisco. Agora o teto é 2 e a suavização
      liga com placa de vídeo; a resolução automática segue de freio) */
-  leve:   { texturas: 'leve', teto: 2, resolucao: 'auto', alvo: 30, suavizar: 'auto', fpsMax: 60, distancia: 0.7, luz: 'simples', luzes: true, gente: 0.65, bonecos: 'leve' },
-  normal: { texturas: 'normal', teto: 1.5, resolucao: 1, alvo: 30, suavizar: 'auto', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' },
-  alta:   { texturas: 'alta', teto: 2, resolucao: 1, alvo: 30, suavizar: 'sim', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal' }
+  leve:   { texturas: 'leve', teto: 2, resolucao: 'auto', alvo: 30, suavizar: 'auto', fpsMax: 60, distancia: 0.7, luz: 'simples', luzes: true, gente: 0.65, bonecos: 'leve', longe: 'retrato' },
+  normal: { texturas: 'normal', teto: 1.5, resolucao: 1, alvo: 30, suavizar: 'auto', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal', longe: 'malha' },
+  alta:   { texturas: 'alta', teto: 2, resolucao: 1, alvo: 30, suavizar: 'sim', fpsMax: 0, distancia: 1, luz: 'completa', luzes: true, gente: 1, bonecos: 'normal', longe: 'malha' }
 };
 /* os valores que cada opção aceita (o que vem do navegador é conferido) */
 const VALORES_GRAF = {
   texturas: Object.keys(QUALIDADES), teto: [1, 1.5, 2], resolucao: ['auto', 1, 0.85, 0.7, 0.5, 0.35], alvo: [20, 30, 45, 60],
   suavizar: ['auto', 'sim', 'nao'], fpsMax: [0, 60, 30], distancia: [1, 0.7, 0.45], luz: ['completa', 'simples'], luzes: [true, false],
-  gente: [1, 0.65, 0.35], bonecos: ['normal', 'leve'], medidor: [true, false]
+  gente: [1, 0.65, 0.35], bonecos: ['normal', 'leve'], longe: ['retrato', 'malha'], medidor: [true, false]
 };
 /* a resolução automática não desce daqui (a imagem ficaria um borrão) */
 const RES_MIN = 0.35;
@@ -149,6 +151,13 @@ const PREDIOS = new Set(['casa', 'favela', 'bar', 'loja', 'lojatorcida', 'subsed
 /* o lado do BLOCO do forno (m): a malha junta tudo o que cai nele; o
    bloco é também o que a câmera descarta fora da vista */
 const BLOCO_M = 96;
+/* OS RETRATOS DE CIMA (lá embaixo): o lado da foto de um ladrilho, quantas
+   ficam guardadas, a camada do que a foto vê e o nível mais largo (2³ blocos
+   de lado). `ESTADIO_DE_PE`: o estádio fora da foto, em malha (medido: a
+   vista do estádio a 74 ms com ele de pé e a 46 com ele na foto — entrou na
+   foto, e a torcida desce pro chão junto: o `pos` dos bonecos). O nível -1
+   é o de perto: meio bloco por foto */
+const RETRATO_PX = 384, RETRATO_MAX = 72, RETRATO_CAMADA = 5, RETRATO_NIVEIS = 3, RETRATO_PERTO = -1, ESTADIO_DE_PE = false;
 /* a folha dos decalques e o vão entre um quadro e outro */
 const FOLHA_DECAL = 2048, VAO_DECAL = 4;
 /* o sol do mapa: de noroeste, alto (a sombra da copa no 2D vai pro sudeste); só luz */
@@ -606,7 +615,7 @@ export function criarCenario(P) {
     const base = PREDEFS[g.predef] || PREDEFS.normal;
     /* (quem está numa predefinição com nome fica com o que ela vale HOJE: a que mudou muda pra ele também) */
     if (PREDEFS[g.predef]) Object.assign(g, PREDEFS[g.predef]);
-    for (const k in VALORES_GRAF) if (!VALORES_GRAF[k].includes(g[k])) g[k] = k === 'medidor' ? true : base[k];
+    for (const k in VALORES_GRAF) if (!VALORES_GRAF[k].includes(g[k])) g[k] = k === 'medidor' ? true : k === 'longe' && PROVA.semPlaca ? 'retrato' : base[k];
     if (!PREDEFS[g.predef] && g.predef !== 'pessoal') g.predef = 'pessoal';
     /* a última resolução que o automático achou (a próxima abertura começa dela) */
     if (!(g.escalaAuto >= RES_MIN && g.escalaAuto <= 1)) g.escalaAuto = PROVA.semPlaca ? 0.6 : 1;
@@ -680,6 +689,8 @@ export function criarCenario(P) {
      `clientHeight` a cada quadro, depois que o painel mudou um texto, faz o
      navegador refazer o leiaute da página inteira ali no meio */
   let altoTela = 0;
+  /* os retratos de cima da praça montada (lá embaixo: OS RETRATOS DE CIMA) */
+  let retratos = null;
   /* A RESOLUÇÃO: a densidade de pixel da tela (até o teto) vezes a fração
      que se desenha — a escolhida, ou a do automático */
   let escalaAuto = GRAF.escalaAuto;
@@ -870,6 +881,7 @@ export function criarCenario(P) {
     atualizarPovo(dt);
     for (const f of depoisDaCamera) { try { f(dt); } catch (e) { console.error('cenário, depois da câmera:', e); } }
     const t0 = performance.now();
+    if (retratos) { try { retratos.quadro(); } catch (e) { console.error('cenário, os retratos de cima:', e); retratos.jogarFora(); retratos = null; } }
     rend.render(cena, cam);
     medir(t, performance.now() - t0);
     contar();
@@ -1138,6 +1150,9 @@ export function criarCenario(P) {
     const fundo = cena.background, cor = rend.getClearColor(new THREE.Color()), alfa = rend.getClearAlpha();
     const vis = caixaSel.visible, dv = doMapa.getObjectByName('dia-de-jogo');
     if (dv) dv.visible = false;
+    /* (com os retratos de cima no ar, as malhas de verdade voltam pra este desenho) */
+    const comRetratos = retratos && retratos.ligado;
+    if (comRetratos) retratos.ligar(false);
     cena.background = null; cena.overrideMaterial = matId; caixaSel.visible = false;
     rend.setClearColor(0x000000, 1);
     cam.setViewOffset(r.width, r.height, Math.floor(sx - r.left), Math.floor(sy - r.top), 1, 1);
@@ -1148,6 +1163,7 @@ export function criarCenario(P) {
     cam.clearViewOffset();
     cena.background = fundo; cena.overrideMaterial = null; caixaSel.visible = vis;
     if (dv) dv.visible = true;
+    if (comRetratos) retratos.ligar(true);
     rend.setClearColor(cor, alfa);
     const id = pixel[0] + pixel[1] * 256 + pixel[2] * 65536;
     return coisas[id] || null;
@@ -1789,9 +1805,10 @@ void main() {`)
       if (sobrados && grupo.userData.dentroDaSede) for (const p of barram) sobrados.juntar(p.P3, p.n);
       const i = clamp(Math.floor(((x0 + x1) / 2 - ar.x0) / LADO), 0, nx - 1), j = clamp(Math.floor(((z0 + z1) / 2 - ar.y0) / LADO), 0, nz - 1);
       for (const p of pedacos) {
-        const k = i + ',' + j + '|' + p.chave;
+        const k = i + ',' + j + (ESTADIO_DE_PE && tipo === 'estadio' ? '|3d|' : '|') + p.chave;
         let b = baldes.get(k);
-        if (!b) baldes.set(k, b = { chave: p.chave, m: p.m, partes: [], n: 0, i, j });
+        if (!b) baldes.set(k, b = { chave: p.chave, m: p.m, partes: [], n: 0, i, j, de3d: ESTADIO_DE_PE && tipo === 'estadio' });
+        /* (o balde do estádio não mistura com o do vizinho: a chave leva a marca) */
         b.partes.push(p); b.n += p.n;
         triangulos += p.n / 3;
       }
@@ -1837,6 +1854,8 @@ void main() {`)
         for (const a of Object.values(g.attributes)) a.onUpload(function () { this.array = null; });
         const malha = new THREE.Mesh(g, mat);
         malha.matrixAutoUpdate = false;
+        /* (se o estádio ficasse de pé nos retratos de cima: `ESTADIO_DE_PE`) */
+        if (b.de3d) malha.userData.de3d = true;
         grupo.add(malha);
       }
       baldes.clear();
@@ -2346,6 +2365,7 @@ void main() {`)
       else if (o.material && o.material.userData.doMapa) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
     });
     if (montado && montado.decal) montado.decal.jogarFora();
+    if (retratos) { retratos.jogarFora(); retratos = null; }
     doMapa = new THREE.Group(); cena.add(doMapa);
     coisas = [null]; fecharFicha();
     portas = [];
@@ -2502,10 +2522,225 @@ void main() {`)
                 andares: andares ? { estadios: dentroNovos.length, triangulos: andares.n, ms: Math.round(agora() - tAndares) } : null,
                 sobrados: sobrados ? { sedes: sedesNovas.length, triangulos: sobrados.n } : null };
     /* o escudo em PNG chega depois: a folha copia de novo */
-    setTimeout(() => { if (vivo()) { forno.decal.recopiar(); pedir(); } }, 700);
-    setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); pedir(); } }, 2500);
+    retratos = Retratos(area, grupoChao, cidade3d, grupoMato);
+    setTimeout(() => { if (vivo()) { forno.decal.recopiar(); if (retratos) retratos.sujar(); pedir(); } }, 700);
+    setTimeout(() => { if (vivo()) { forno.decal.recopiar(true); if (retratos) retratos.sujar(); pedir(); } }, 2500);
     carga.hidden = true;
     if (window.__cenarioPronto) window.__cenarioPronto(numeros);
+  }
+
+  /* ======================================================
+     OS RETRATOS DE CIMA (o dono, 13/11/2026: "vamos suavizar os gráficos
+     do mapa da cidade [...] a jogabilidade fica prejudicada por estar
+     granulado demais"; ele joga sem placa de vídeo). Medido lá (SwiftShader,
+     1280 × 800, a caminhada vista do helicóptero): a cidade, mesmo com as
+     casas chapadas, põe uns 370 mil triângulos na vista, e o custo é por
+     triângulo — 150 dos 180 ms do quadro não mudam com a resolução (por
+     isso a resolução automática descia a 35% e não saía dos 6 fps).
+     De cima e de longe, a cidade parada é uma FOTO: cada ladrilho do
+     tamanho de um bloco do forno (ou de 2, 4, 8 blocos de lado, conforme a
+     distância) é fotografado uma vez, de cima, com a luz da hora, e vira
+     UM retângulo no chão. As malhas da cidade (o estádio também), o chão
+     e o mato saem do desenho; ficam de pé as portas, os bonecos, os carros
+     e o que é do jogo. A torcida desce pro chão junto (a arquibancada
+     da foto não tem altura: o `pos` dos bonecos zera a dela).
+     - Só vale com a câmera de cima (`orb.el` > 1,35) e longe o bastante
+       pra foto não borrar (a conta é pela tela inteira, não pela
+       resolução automática — senão uma puxava a outra). Sem placa de
+       vídeo a foto pode ampliar o dobro a mais (a imagem lá já é desenhada
+       a 35–70%): vale até na briga, com a câmera a uns 40 m;
+     - o prédio aberto pelo jogo (a briga dentro do bar, o assalto à sede)
+       e o boneco a pé desligam: a foto não tem dentro;
+     - a foto é tirada um ladrilho por quadro; enquanto falta algum da
+       vista, desenha-se a cidade de verdade (como antes);
+     - a luz muda com a hora: o retângulo corrige a foto pela razão entre a
+       luz de agora e a de quando ela foi tirada (A LUZ DA HORA NA FOTO);
+     - a névoa da guerra entra no retângulo (a conta vai no vértice dele).
+     ====================================================== */
+    function Retratos(ar, grupoChao, cidade3d, grupoMato) {
+    const LADO = BLOCO_M * M, PX = rend.capabilities.isWebGL2 ? RETRATO_PX : 256;
+    const ALT = 500 * M, PXM0 = PX / BLOCO_M;
+    /* (os ladrilhos passam dois blocos da área: o anel de mato em volta dela — 110 m — entra na foto) */
+    ar = { x0: ar.x0 - 2 * LADO, y0: ar.y0 - 2 * LADO, x1: ar.x1 + 2 * LADO, y1: ar.y1 + 2 * LADO };
+    const grupo = new THREE.Group(); grupo.name = 'retratos'; grupo.visible = false; doMapa.add(grupo);
+    /* o que a foto vê (a camada dela) e o que sai do desenho com ela no ar */
+    const fixos = [];
+    for (const m of cidade3d.children) { if (m.userData.de3d) continue; m.layers.enable(RETRATO_CAMADA); fixos.push(m); }
+    grupoChao.traverse(o => { if (!o.isMesh) return; o.layers.enable(RETRATO_CAMADA); if (o.name !== 'longe') fixos.push(o); });
+    /* (o mato é um LOD por bloco, que acende o nível dele a cada desenho: quem
+       sai é o LOD inteiro) */
+    for (const o of grupoMato.children) {
+      if (o.position.x < ar.x0 || o.position.x > ar.x1 || o.position.z < ar.y0 || o.position.z > ar.y1) continue;
+      o.traverse(m => { if (m.isMesh) m.layers.enable(RETRATO_CAMADA); });
+      fixos.push(o);
+    }
+    hemi.layers.enable(RETRATO_CAMADA); sol.layers.enable(RETRATO_CAMADA);
+    const camR = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, ALT + 30 * M);
+    camR.layers.set(RETRATO_CAMADA); camR.rotation.x = -Math.PI / 2;
+    const geo = new THREE.PlaneGeometry(LADO, LADO, 6, 6).rotateX(-Math.PI / 2);
+    const material = tex => {
+      const m = new THREE.MeshBasicMaterial({ map: tex });
+      m.onBeforeCompile = sh => {
+        Object.assign(sh.uniforms, NEVOA);
+        sh.vertexShader = sh.vertexShader
+          .replace('void main() {', NEVOA_GLSL.replace('varying vec3 vNevoaP;\n', '') + 'varying float vNevoaV;\nvoid main() {')
+          .replace('#include <project_vertex>', '#include <project_vertex>\n  vNevoaV = nevoaEm( ( modelMatrix * vec4( transformed, 1.0 ) ).xyz );');
+        sh.fragmentShader = sh.fragmentShader
+          .replace('void main() {', 'varying float vNevoaV;\nvoid main() {')
+          .replace('#include <colorspace_fragment>', '')
+          .replace('#include <fog_fragment>', `#include <fog_fragment>
+  if ( vNevoaV > 0.001 ) {
+    float nl = dot( gl_FragColor.rgb, vec3( 0.299, 0.587, 0.114 ) );
+    gl_FragColor.rgb = mix( gl_FragColor.rgb, vec3( 0.022, 0.026, 0.04 ) + vec3( nl ) * 0.2, vNevoaV * 0.86 );
+  }`);
+      };
+      m.customProgramCacheKey = () => 'retrato-de-cima';
+      return m;
+    };
+    /* a câmara escura: UM alvo pra todas as fotos (ele codifica a cor de tela
+       na gravação; os bytes saem dele pra textura de cada ladrilho) */
+    const alvo = new THREE.WebGLRenderTarget(PX, PX, { depthBuffer: true });
+    alvo.texture.colorSpace = THREE.SRGBColorSpace;
+    const celulas = new Map();
+    let ligado = false, nivel = 0, versao = 1, sig = '', vez = 0, conta = { fotos: 0 };
+    /* A LUZ DA HORA NA FOTO: o que a foto mostra é quase só face virada pra
+       cima (o chão, a laje, o telhado), e a luz que bate nela é uma conta
+       só: o céu mais o sol pela altura dele. Cada foto guarda a luz de
+       quando foi tirada, e o retângulo dela multiplica pela razão entre a
+       de agora e aquela — a tarde cai em todas juntas, sem emenda entre
+       uma foto nova e uma velha e sem fotografar de novo a cada degrau.
+       Fotografa-se de novo só quando muda o que a conta não pega: as
+       lâmpadas da noite, o lado do sol (o telhado de duas águas) ou uma
+       razão longe demais (o dia virando noite) */
+    const q = (v, p) => Math.round(v / p);
+    const assinatura = () => [GRAF.luzes !== false ? q(NOITE.uNoite.value, 0.1) + ':' + q(NOITE.uAcesas.value, 0.1) : '', q(Math.atan2(solAgora.x, solAgora.z), 0.8)].join(',');
+    const LUZ = [1, 1, 1];
+    function luzAgora() {
+      const ks = sol.intensity * Math.max(0, solAgora.y), kh = hemi.intensity;
+      LUZ[0] = Math.max(0.02, hemi.color.r * kh + sol.color.r * ks);
+      LUZ[1] = Math.max(0.02, hemi.color.g * kh + sol.color.g * ks);
+      LUZ[2] = Math.max(0.02, hemi.color.b * kh + sol.color.b * ks);
+      return LUZ;
+    }
+    const longeDaLuz = c => { for (let k = 0; k < 3; k++) { const r = LUZ[k] / c.luz[k]; if (r > 1.8 || r < 1 / 1.8) return true; } return false; };
+    function ligar(v) {
+      v = !!v;
+      for (const m of fixos) m.visible = !v;
+      grupo.visible = v;
+      ligado = v;
+    }
+    function celula(nv, i, j) {
+      const k = nv + ':' + i + ',' + j;
+      let c = celulas.get(k);
+      if (!c) celulas.set(k, c = { k, nv, i, j, tex: null, malha: null, versao: 0, uso: 0, luz: [1, 1, 1] });
+      return c;
+    }
+    function largar(c) {
+      if (c.malha) { grupo.remove(c.malha); c.malha.material.dispose(); }
+      if (c.tex) c.tex.dispose();
+      celulas.delete(c.k);
+    }
+    /* A FOTO de um ladrilho: a câmera reta de cima, sem a névoa de distância
+       nem a da guerra (essas entram depois, no retângulo) */
+    function fotografar(c) {
+      const lado = LADO * 2 ** c.nv, cx = ar.x0 + (c.i + 0.5) * lado, cz = ar.y0 + (c.j + 0.5) * lado;
+      if (!c.tex) {
+        /* (a foto guardada: os bytes como a tela mostra — nem a textura
+           converte na leitura, nem o retângulo na saída: sem placa de vídeo
+           cada conversão dessas é uma potência por pixel) */
+        c.tex = new THREE.DataTexture(new Uint8Array(PX * PX * 4), PX, PX, THREE.RGBAFormat, THREE.UnsignedByteType);
+        c.tex.colorSpace = THREE.NoColorSpace; c.tex.generateMipmaps = true;
+        c.tex.minFilter = THREE.LinearMipmapNearestFilter; c.tex.magFilter = THREE.LinearFilter;
+        c.malha = new THREE.Mesh(geo, material(c.tex));
+        /* (o chão pintado fica em -0,3: o retrato entra um fio acima dele e do chão de longe) */
+        c.malha.position.set(cx, -0.2, cz); c.malha.scale.set(2 ** c.nv, 1, 2 ** c.nv);
+        c.malha.matrixAutoUpdate = false; c.malha.updateMatrix();
+        c.malha.visible = false;
+        grupo.add(c.malha);
+      }
+      camR.left = -lado / 2; camR.right = lado / 2; camR.top = lado / 2; camR.bottom = -lado / 2;
+      camR.position.set(cx, ALT, cz); camR.updateProjectionMatrix(); camR.updateMatrixWorld();
+      const fn = cena.fog.near, ff = cena.fog.far, nv = NEVOA.uNevoa.value, ct = CORTE.uCorte.value, antes = rend.getRenderTarget(), estava = ligado;
+      if (estava) for (const m of fixos) m.visible = true;
+      cena.fog.near = 1e9; cena.fog.far = 2e9; NEVOA.uNevoa.value = 0; CORTE.uCorte.value = 0;
+      try { rend.setRenderTarget(alvo); rend.render(cena, camR); rend.readRenderTargetPixels(alvo, 0, 0, PX, PX, c.tex.image.data); c.tex.needsUpdate = true; }
+      finally {
+        rend.setRenderTarget(antes);
+        cena.fog.near = fn; cena.fog.far = ff; NEVOA.uNevoa.value = nv; CORTE.uCorte.value = ct;
+        if (estava) for (const m of fixos) m.visible = false;
+      }
+      c.versao = versao; c.malha.visible = true;
+      luzAgora(); c.luz[0] = LUZ[0]; c.luz[1] = LUZ[1]; c.luz[2] = LUZ[2];
+      conta.fotos++;
+    }
+    const v3 = new THREE.Vector3();
+    function quadro() {
+      vez++;
+      /* quantos pontos da tela (a inteira) cabem num metro do chão, e o nível que serve */
+      const telaPxm = altoTela * Math.min(window.devicePixelRatio || 1, GRAF.teto) / (2 * orb.dist * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2)) * M;
+      const nf = Math.log2(1.6 * PXM0 / Math.max(1e-6, telaPxm));
+      const piso = RETRATO_PERTO - (PROVA.semPlaca ? 1 : 0) - (ligado ? 0.15 : 0);
+      const quer = GRAF.longe === 'retrato' && !ape && !corteFixo && orb.el > 1.35 && nf >= piso;
+      if (quer && !(ligado && nf >= nivel - 0.15 && nf <= nivel + 1.15)) nivel = clamp(Math.floor(nf), RETRATO_PERTO, RETRATO_NIVEIS);
+      if (!quer) { if (ligado) ligar(false); return; }
+      const s = assinatura();
+      if (s !== sig) { sig = s; versao++; }
+      luzAgora();
+      /* o pedaço do chão que a tela mostra */
+      cam.updateMatrixWorld();
+      let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+      for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+        v3.set(a, b, 0.5).unproject(cam).sub(cam.position);
+        if (v3.y > -1e-6) { if (ligado) ligar(false); return; }
+        const t = -cam.position.y / v3.y, x = cam.position.x + v3.x * t, z = cam.position.z + v3.z * t;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
+      }
+      const lado = LADO * 2 ** nivel, nx = Math.ceil((ar.x1 - ar.x0) / lado), nz = Math.ceil((ar.y1 - ar.y0) / lado);
+      const faixa = (m) => [Math.max(0, Math.floor((x0 - ar.x0) / lado - m)), Math.min(nx - 1, Math.floor((x1 - ar.x0) / lado + m)),
+                            Math.max(0, Math.floor((z0 - ar.y0) / lado - m)), Math.min(nz - 1, Math.floor((z1 - ar.y0) / lado + m))];
+      const [i0, i1, j0, j1] = faixa(0.2);
+      if ((i1 - i0 + 1) * (j1 - j0 + 1) > RETRATO_MAX - 12) { if (ligado) ligar(false); return; }
+      let faltam = [], velhos = [];
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        const c = celula(nivel, i, j);
+        c.uso = vez;
+        if (!c.versao) faltam.push(c); else if (c.versao !== versao || longeDaLuz(c)) velhos.push(c);
+      }
+      /* as fotos: as que faltam na vista (até 3 por quadro, que o quadro
+         já é o lento); depois as velhas da vista (uma a cada três quadros)
+         e as que faltam na volta de fora da vista (uma por quadro; a velha
+         de lá espera entrar na vista) */
+      if (faltam.length) { for (const c of faltam.splice(0, 3)) fotografar(c); }
+      else if (velhos.length) { if (vez % 3 === 0) fotografar(velhos[0]); }
+      else {
+        const [a0, a1, b0, b1] = faixa(1.2);
+        fora: for (let j = b0; j <= b1; j++) for (let i = a0; i <= a1; i++) {
+          const c = celula(nivel, i, j);
+          if (c.uso !== vez) c.uso = vez - 1;
+          if (!c.versao) { fotografar(c); break fora; }
+        }
+      }
+      const pronto = !faltam.length;
+      if (pronto !== ligado) ligar(pronto);
+      /* só o nível da vez aparece; o que passou do teto sai, o mais antigo antes */
+      for (const c of celulas.values()) {
+        if (!c.malha) continue;
+        c.malha.visible = c.nv === nivel && !!c.versao;
+        /* (a foto guarda a cor como a tela mostra, com a curva dela: a razão da luz entra com a mesma curva) */
+        if (c.malha.visible) c.malha.material.color.setRGB(Math.pow(clamp(LUZ[0] / c.luz[0], 0.2, 5), 0.4545), Math.pow(clamp(LUZ[1] / c.luz[1], 0.2, 5), 0.4545), Math.pow(clamp(LUZ[2] / c.luz[2], 0.2, 5), 0.4545));
+      }
+      if (celulas.size > RETRATO_MAX) {
+        const l = [...celulas.values()].filter(c => c.uso < vez - 1).sort((a, b) => a.uso - b.uso);
+        for (const c of l.slice(0, celulas.size - RETRATO_MAX)) largar(c);
+      }
+    }
+    function jogarFora() {
+      ligar(false);
+      for (const c of [...celulas.values()]) largar(c);
+      geo.dispose(); alvo.dispose();
+      if (grupo.parent) grupo.parent.remove(grupo);
+    }
+    return { quadro, ligar, jogarFora, sujar() { versao++; }, get ligado() { return ligado; }, get nivel() { return nivel; }, get fotos() { return conta.fotos; }, get ladrilhos() { return celulas.size; } };
   }
 
   /* A TERRA em volta da estação: uma caixa marrom do tamanho do corte,
@@ -2625,8 +2860,8 @@ void main() {`)
     if (!chamando) chamando = (async () => {
       const TO = window.TO || (window.TO = { dados: {} });
       TO.dados = TO.dados || {}; TO.diaJogo = TO.diaJogo || {};
-      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=40808e1ae6', import.meta.url).href);
-      const mod = await import('./bonecos3.js?v=40808e1ae6');
+      if (!TO.dados.bonecoPertoGLB) await carregarScript(new URL('../dados/boneco_glb.js?v=02cbabfbd0', import.meta.url).href);
+      const mod = await import('./bonecos3.js?v=02cbabfbd0');
       /* (só vale se o modelo for o detalhado, afinado na chegada: a câmera
          chega a um metro dele, e a malha afina menos que no jogo) */
       mod.cfg.afinarCelulas = 72;
@@ -2641,8 +2876,13 @@ void main() {`)
       povo = mod.entrarEm(cena, { escala: 1 / (1.1 * 0.86),
         /* o pé: o do boneco a pé é o da conta dele; o do dia de jogo vem no disco (`alt`) */
         pos: (x, y, d) => {
-          if (palco && palco.pos && !(d && d.mundo)) return palco.pos(x, y, d, PE);
-          PE.x = x; PE.y = d && d.alt != null ? d.alt : ape ? ape.yv : 0; PE.z = y; return PE;
+          /* (com a cidade em retrato de cima, a arquibancada é uma foto no
+             chão: quem está no alto dela desce pro chão, no lugar dele na foto) */
+          const chato = !ESTADIO_DE_PE && retratos && retratos.ligado;
+          if (palco && palco.pos && !(d && d.mundo)) { const q = palco.pos(x, y, d, PE); if (chato && q.y > 0) q.y = 0; return q; }
+          PE.x = x; PE.y = d && d.alt != null ? d.alt : ape ? ape.yv : 0; PE.z = y;
+          if (chato && PE.y > 0) PE.y = 0;
+          return PE;
         },
         /* o rumo do disco do palco pode ser outro (a cadeira da sala da reunião) */
         rumo: d => palco && palco.rumo && !(d && d.mundo) ? palco.rumo(d) : d.rumo,
@@ -2751,7 +2991,7 @@ void main() {`)
     try {
       if (!povo) { carga.hidden = false; aviso('Chamando os bonecos…', 0.4); try { await chamarBoneco(); } finally { carga.hidden = true; } }
       if (!dia) {
-        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=40808e1ae6');
+        const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=02cbabfbd0');
         dia = criarDiaDeJogo(contextoDoJogo());
       }
       if (montando || !grade) return;
@@ -3418,6 +3658,7 @@ void main() {`)
   function aplicarGraficos(mudou) {
     if (mudou.has('resolucao') || mudou.has('teto') || mudou.has('alvo') || mudou.has('fpsMax')) { AUTO.dts.length = 0; AUTO.t = 0; AUTO.falhas = 0; AUTO.bons = 0; ajustarTela(); }
     if (mudou.has('luz') || mudou.has('luzes')) refazerMateriais();
+    if (retratos && (mudou.has('luz') || mudou.has('luzes') || mudou.has('longe'))) retratos.sujar();
     if (mudou.has('bonecos') && modBonecos) modBonecos.cfg.nivelLeve = GRAF.bonecos === 'leve';
     if (mudou.has('medidor')) { fpsEl.hidden = !GRAF.medidor; medidor.desde = 0; }
     if (mudou.has('texturas')) {
@@ -3550,7 +3791,7 @@ void main() {`)
     /* O DIA DE JOGO DO JOGO 3D (dia3d.js): o mesmo do botão, montado com o jogo */
     async diaDeJogo() {
       if (!povo) await chamarBoneco();
-      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=40808e1ae6'); dia = criarDiaDeJogo(contextoDoJogo()); }
+      if (!dia) { const { criarDiaDeJogo } = await import('./dia_de_jogo.js?v=02cbabfbd0'); dia = criarDiaDeJogo(contextoDoJogo()); }
       return dia;
     },
     get dia() { return dia; },
@@ -3660,7 +3901,7 @@ void main() {`)
     }
   };
 
-  return { abrir, fechar, get numeros() { return numeros; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi, graficos: graficosApi,
+  return { abrir, fechar, get numeros() { return numeros; }, get retratos() { return retratos; }, montar, orb, pedir, get aberto() { return !raiz.hidden; }, vida: vidaApi, graficos: graficosApi,
            /* o jogo 3D: que praça está montada, e a câmera voando até um ponto */
            get praca() { return montado && montado.nome; }, voarPara, pausar, get pausado() { return pausado; },
            /* a câmera sempre de cima (o jogo 3D liga dentro da partida) */

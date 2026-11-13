@@ -3506,6 +3506,21 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
 - No 3D a tecla V troca a câmera; a postura fica no B.
 - A briga do 3D carrega `bonecos3_cena.js`, cópia idêntica de `bonecos3.js`.
 
+### 4.4 A cidade em retrato de cima e o véu do resultado (13/11/2026)
+
+- **Retratos de cima** (cenario.js, `Retratos`): com a câmera de cima, a
+  cidade parada vira fotos tiradas de cima, um retângulo por ladrilho
+  (níveis de meio bloco a 8 blocos de lado, conforme a distância). As
+  malhas da cidade, o estádio, o chão e o mato saem do desenho; os
+  bonecos descem pro chão (a foto não tem altura). A luz da hora entra
+  por uma multiplicação no retângulo. Opção "Cidade vista de cima" nos
+  Gráficos (liga na Mínima e na Leve). Sem placa de vídeo o quadro fica
+  3 a 5 vezes mais rápido e a resolução automática sobe.
+- **Low-poly**: casas chapadas, árvores na versão de longe, boneco
+  pequeno na tela em miniatura (caixas instanciadas).
+- **O véu do resultado** (`TO.competicoes.comVeu`): enquanto a partida de
+  hoje não foi jogada, as telas pintam sem os placares de hoje.
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:
