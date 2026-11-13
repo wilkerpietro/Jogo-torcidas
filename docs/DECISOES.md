@@ -11481,6 +11481,26 @@ automática sede→estádio).
   brigas continuam descendo a câmera pra perto (38–58 m).
 - O cartão da partida no 3D não mostra mais o mapa 2D do trajeto.
 
+## Etapa 3: a rival chega perto e o jogador assume (dono, 13/11/2026)
+
+Pedido: "Vá pra etapa 3" (assumir quando outra torcida chega perto,
+antes de estourar a briga; a câmera desce).
+
+- A caminhada automática (dia3d.js) vigia a cada quadro os bondes das
+  rivais do dia (`rivalChegando`): o que chega a `ALERTA_BONDE` = 70 m da
+  cabeça do nosso — na concentração da porta ou na rua, até 2 minutos
+  antes do portão — para a corrida em 1×, e a ida vira do jogador
+  (`assumirNaIda` → `comecarIda`): o presidente aparece a pé na frente do
+  bonde e a câmera desce do helicóptero (300 m) pra perto dele (~40 m).
+  Os pontos de passagem que o bonde já passou saem da lista; se o cordão
+  da PM já passou, ninguém assume. Cada rival avisa uma vez por dia.
+- Dali vale a ida jogada: "Partir pra cima" com a rival a 22 m (a briga
+  no lugar), "Caçar", seguir até o cordão da PM (a seta aponta) ou
+  "Devolver pra PM" — a PM leva o bonde e a câmera volta pro alto.
+- As brigas já marcadas no itinerário (ataque sofrido, investida) seguem
+  o caminho delas; a vigia não roda com elas no dia.
+- (Teste: `TO.jogo3d.dia.alertaBonde` muda a distância.)
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
