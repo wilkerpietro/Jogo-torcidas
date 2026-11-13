@@ -11747,6 +11747,50 @@ estádio de 20 mil que não tem sentido nenhum com a briga."
   sofrido (dentro da briga segue o "Fugir"; na caçada dá pra escapar
   pro cordão da PM ou devolver pra PM).
 
+## O boneco de peças: a multidão com a forma do boneco de verdade (dono, 13/11/2026)
+
+Pergunta e pedido: "o principal problema na queda de rendimento são os
+bonecos? [...] não gostei dos bonecos na forma que você fez agora, ficaram
+muito simples. Vamos estudar uma forma de suavizar os polígonos dos
+bonecos do jogo, pra maximizar o rendimento."
+
+- **O estudo** (a briga de rua com 294 bonecos, navegador sem placa de
+  vídeo, 1280 × 800): com as figuras, 433 ms por quadro; sem as malhas
+  delas, 76 ms — os bonecos são 82% do quadro. Cada figura tem ~2,3 mil
+  triângulos e 16 ossos, e a conta do esqueleto é por vértice. Nas vistas
+  de longe (a caminhada, o estádio) eles já eram miniatura e quem pesava
+  era a cidade (resolvido com os retratos de cima).
+- **O boneco de peças** (bonecos3.js): o MESMO modelo, com a mesma roupa e
+  a mesma pose. A malha de perto é afinada pelo simplificador do
+  meshoptimizer (uns 240 triângulos; 170 na multidão) e cortada em peças
+  rígidas pelo osso que mais pesa em cada triângulo; todas as figuras
+  dividem as mesmas malhas instanciadas (a matriz da instância é a do
+  osso). Sem esqueleto na placa.
+  - As figuras quase não repetem o visual, então as peças são de duas
+    famílias — um corpo pra todo mundo (e um pro PM) e uma por penteado
+    ou boné — e a pele, a calça, o tênis, a camisa, a faixa, a 3ª cor e
+    o cabelo são cores da instância (a malha juntada passou a guardar a
+    zona de cada vértice). O desenho da camisa é o do primeiro boneco
+    que serviu de molde.
+  - Medido: sem placa de vídeo o que custa na malha instanciada é a
+    instância (cada peça de cada boneco), não o triângulo. Por isso dois
+    níveis: 11 peças pros 50 mais perto do meio da câmera, 3 peças (o
+    corpo e os dois braços) pro resto.
+  - O material é próprio: a luz do céu e do sol no vértice e mais nada.
+  - A sombra da multidão é uma malha só (dos 50 de perto).
+- **Quem usa**: com os bonecos leves (as predefinições Mínima e Leve),
+  as figuras inteiras são as `tetoFiguras` mais perto do meio (6 sem
+  placa de vídeo, 60 com) e o líder; o resto é boneco de peças. A
+  miniatura de caixas segue só pra quem fica pequeno na tela; a de
+  blocos virou reserva (se o simplificador não carregar).
+- **Resultado** na mesma briga: de 433 ms (2 fps) pra 90–110 ms (9–11
+  fps), com todo mundo com a forma e a pose de verdade. O piso que sobra
+  (uns 60 ms) é a cena, o JavaScript das poses e as figuras inteiras.
+- **Limites**: na dobra do cotovelo e do joelho as peças não esticam
+  (fica um vinco); na multidão a perna não se mexe; o desenho da camisa
+  da multidão é o do molde; perto da borda da tela o boneco aparece
+  deitado pela perspectiva (a câmera da briga fica a 17 m do chão).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

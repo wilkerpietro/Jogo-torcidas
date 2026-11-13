@@ -3530,6 +3530,15 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
 - Nos bonecos leves há um teto de figuras animadas; o resto da multidão
   é miniatura (de perto, um bonequinho de blocos).
 
+### 4.6 O boneco de peças (13/11/2026)
+
+- Na briga de perto os bonecos eram 82% do quadro (sem placa de vídeo).
+- Com os bonecos leves, só os mais perto do meio da câmera (e o líder)
+  são figuras inteiras; o resto é o **boneco de peças**: o mesmo modelo
+  afinado (~240 triângulos), em peças rígidas instanciadas que seguem os
+  ossos, com as cores de cada boneco. A multidão mais longe usa 3 peças.
+- A miniatura de caixas fica pra quem está pequeno na tela.
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:

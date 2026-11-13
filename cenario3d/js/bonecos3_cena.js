@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=97a3818241';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=30207340cc';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -1041,11 +1041,15 @@ let escalaDoTabuleiro = () => 1;
   /* A GEOMETRIA JUNTA: as peças numa malha só, com os ossos do corpo. Os
      dois níveis do boneco têm o mesmo esqueleto (os mesmos ossos, na mesma
      ordem), e a geometria de um serve no esqueleto do outro. */
+  const ZONAS_DE_COR = {pele:1, calca:2, tenis:3, cabelo:4, bone:5};
+  /* (e a peça que é variante — o penteado, o boné — leva o número dela nos bits de cima) */
+  const idsDeVariante = new Map();
+  const idDaVariante = nome => { let k = idsDeVariante.get(nome); if(!k){ k = idsDeVariante.size + 1; idsDeVariante.set(nome, k); } return k; };
   function geometriaJunta(base, pecas){
     const idxOsso = new Map(base.skeleton.bones.map((b,i)=>[b.name, i]));
     let geo;
     {
-      const P=[], N=[], C=[], SI=[], SW=[], IDX=[], UV=[];
+      const P=[], N=[], C=[], SI=[], SW=[], IDX=[], UV=[], Z=[];
       const invBase = new THREE.Matrix4().copy(base.matrixWorld).invert();
       const m4 = new THREE.Matrix4(), m3 = new THREE.Matrix3(), v = new THREE.Vector3(), n = new THREE.Vector3();
       const cor = new THREE.Color();
@@ -1072,7 +1076,10 @@ let escalaDoTabuleiro = () => 1;
           remap = o.skeleton.bones.map(b => idxOsso.has(b.name) ? idxOsso.get(b.name) : 0);
         }
         if(o.material && o.material.color) cor.copy(o.material.color); else cor.set('#cccccc');
+        /* (a zona de cor da peça, pro boneco de peças: a pele, a calça, o tênis, o cabelo e o boné mudam de boneco pra boneco) */
+        const zona = (ZONAS_DE_COR[o.material && o.material.name] || 0) + 8 * (VARIANTE.test(o.name) ? idDaVariante(o.name) : 0);
         for(let i=0;i<nV;i++){
+          Z.push(zona);
           v.fromBufferAttribute(pos, i); if(pendurada) v.applyMatrix4(m4);
           P.push(v.x, v.y, v.z);
           if(nor){ n.fromBufferAttribute(nor, i); if(pendurada) n.applyMatrix3(m3).normalize(); N.push(n.x, n.y, n.z); }
@@ -1097,6 +1104,7 @@ let escalaDoTabuleiro = () => 1;
       if(texRosto) geo.setAttribute('uv', new THREE.Float32BufferAttribute(UV, 2));
       geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(SI, 4));
       geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(SW, 4));
+      geo.setAttribute('zona', new THREE.Uint16BufferAttribute(Z, 1));
       geo.setIndex(IDX);
       geo.computeBoundingSphere();
     }
@@ -3132,6 +3140,290 @@ let escalaDoTabuleiro = () => 1;
     if(prof <= 0) return Infinity;
     return h * camNivel.projectionMatrix.elements[5] / prof * alturaNivel / 2;
   }
+  /* =======================================================
+     O BONECO DE PEÇAS (o dono, 13/11/2026: "não gostei dos bonecos na
+     forma que você fez agora, ficaram muito simples. Vamos estudar uma
+     forma de suavizar os polígonos dos bonecos do jogo, pra maximizar o
+     rendimento"). Medido na briga de rua sem placa de vídeo: 294 figuras
+     de ~2,3 mil triângulos, cada uma com esqueleto, são 82% do quadro
+     (433 ms com elas, 76 sem) — a conta do esqueleto é por vértice (4
+     ossos, 16 leituras de textura cada), e cada figura é uma chamada.
+     O boneco de peças é O MESMO modelo, com a mesma roupa e a mesma pose:
+     - a malha de perto de cada visual é afinada uma vez (o simplificador
+       do meshoptimizer, o mesmo dos níveis) até uns PECAS_TRI triângulos;
+     - cada triângulo fica com o osso que mais pesa nele, e as peças (a
+       cabeça, o tronco, cada braço, cada perna) são malhas rígidas, no
+       espaço do osso;
+     - todas as figuras do mesmo visual saem numa malha instanciada por
+       peça: a matriz de cada instância é a do osso — sem esqueleto na
+       placa, e umas 14 chamadas por visual, pra quantos bonecos forem.
+     A pose é a de sempre (a figura existe, só a malha dela não desenha).
+     Na dobra do cotovelo e do joelho as peças não esticam: fica um vinco.
+     ======================================================= */
+  /* (as figuras quase não repetem o visual — o penteado, a pele, a calça e
+     o tênis mudam de uma pra outra —, e uma malha por visual seria uma
+     chamada por peça por boneco. Então as peças se dividem em duas
+     famílias: o CORPO, igual pra todo mundo da mesma camisa, e o CABELO,
+     igual pra todo mundo do mesmo penteado; e a pele, a calça, o tênis, o
+     cabelo e o boné são cores DA INSTÂNCIA: cada vértice diz a zona dele
+     (`zona`, que a malha juntada guarda) e o desenho troca a cor do
+     vértice pela do boneco) */
+  /* (o triângulo custa pouco perto da instância: os dois níveis ficam com a forma inteira) */
+  const PECAS_TRI = [240, 170];
+  /* quantos bonecos de peças ficam no nível de perto (depois das figuras inteiras) */
+  const PECAS_PERTO = 50;
+  /* AS PEÇAS DE CADA NÍVEL. Medido sem placa de vídeo: o que custa na
+     malha instanciada é a INSTÂNCIA (cada peça de cada boneco, uns 17
+     microssegundos), mais do que o triângulo — 287 bonecos de 13 peças
+     eram 65 ms com 61 mil triângulos e os mesmos 65 ms com 23 mil. Então
+     o nível de perto tem 11 peças (a mão vai com o antebraço, o pé com a
+     canela, o pescoço com a cabeça) e o da multidão, 3: o corpo inteiro
+     (de cima, a perna quase não aparece) e os dois braços */
+  const JUNTA_COM = [
+    {maoD:'cotoveloD', maoE:'cotoveloE', peD:'joelhoD', peE:'joelhoE', pescoco:'cabeca'},
+    {maoD:'ombroD', cotoveloD:'ombroD', maoE:'ombroE', cotoveloE:'ombroE', pescoco:'tronco', cabeca:'tronco', pelvis:'tronco',
+     quadrilD:'tronco', joelhoD:'tronco', peD:'tronco', quadrilE:'tronco', joelhoE:'tronco', peE:'tronco'}];
+  let simplificador = null, simplificadorPedido = false;
+  function pedirSimplificador(){
+    if(simplificadorPedido) return;
+    simplificadorPedido = true;
+    import('https://cdn.jsdelivr.net/npm/meshoptimizer@0.20.0/meshopt_simplifier.module.js')
+      .then(m => m.MeshoptSimplifier.ready.then(()=>{ simplificador = m.MeshoptSimplifier; }))
+      .catch(err => console.warn('o simplificador do boneco não veio (fica a miniatura): '+(err && err.message)));
+  }
+  const conjuntos = new Map();
+  let matPecas = null;
+  /* O MATERIAL DAS PEÇAS: a conta da luz no vértice, e mais nada (sem a
+     noite, a névoa e a neblina do material da cidade: sem placa de vídeo o
+     triângulo custa pelo que o desenho dele carrega, e aqui são dezenas de
+     milhares). A luz é a da cena — o céu, o chão e o sol —, lida a cada
+     quadro (`luzDasPecas`) */
+  const UPC = {uPcCeu:{value:new THREE.Color(0.45, 0.45, 0.45)}, uPcChao:{value:new THREE.Color(0.3, 0.3, 0.3)},
+               uPcSol:{value:new THREE.Color(0.6, 0.6, 0.6)}, uPcDir:{value:new THREE.Vector3(0, 1, 0)}};
+  function materialDePecas(){
+    if(matPecas) return matPecas;
+    const m = new THREE.MeshBasicMaterial({vertexColors:true, side:THREE.DoubleSide, fog:false});
+    m.onBeforeCompile = sh => {
+      Object.assign(sh.uniforms, UPC);
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', `attribute float zona;
+attribute vec3 aC1;
+attribute vec3 aC2;
+attribute vec3 aC3;
+attribute vec3 aC4;
+attribute vec3 aC5;
+attribute vec3 aC6;
+uniform vec3 uPcCeu;
+uniform vec3 uPcChao;
+uniform vec3 uPcSol;
+uniform vec3 uPcDir;
+void main() {`)
+        .replace('#include <color_vertex>', `#include <color_vertex>
+  if ( zona > 0.5 ) vColor.rgb = zona < 1.5 ? aC1 : zona < 2.5 ? aC2 : zona < 3.5 ? aC3 : zona < 4.5 ? aC4 : zona < 5.5 ? aC5 : aC6;
+  {
+    vec3 pn = normal;
+    #ifdef USE_INSTANCING
+      pn = mat3( instanceMatrix ) * pn;
+    #endif
+    pn = normalize( mat3( modelMatrix ) * pn );
+    vColor.rgb *= mix( uPcChao, uPcCeu, 0.5 * pn.y + 0.5 ) + uPcSol * max( dot( pn, uPcDir ), 0.0 );
+  }`);
+    };
+    m.customProgramCacheKey = () => 'boneco-de-pecas';
+    matPecas = m;
+    return matPecas;
+  }
+  let luzesDaCena = null;
+  const _ld = new THREE.Vector3(), _lt = new THREE.Vector3();
+  function luzDasPecas(){
+    if(!luzesDaCena || luzesDaCena.cena !== scene){
+      let raiz = scene; while(raiz.parent) raiz = raiz.parent;
+      luzesDaCena = {cena:scene, hemi:null, sol:null};
+      raiz.traverse(o => { if(o.isHemisphereLight && !luzesDaCena.hemi) luzesDaCena.hemi = o; else if(o.isDirectionalLight && !luzesDaCena.sol) luzesDaCena.sol = o; });
+    }
+    const {hemi, sol} = luzesDaCena, k = 1 / Math.PI;
+    if(hemi){ UPC.uPcCeu.value.copy(hemi.color).multiplyScalar(hemi.intensity * k); UPC.uPcChao.value.copy(hemi.groundColor).multiplyScalar(hemi.intensity * k); }
+    if(sol){
+      UPC.uPcSol.value.copy(sol.color).multiplyScalar(sol.intensity * k);
+      sol.getWorldPosition(_ld); sol.target.getWorldPosition(_lt);
+      UPC.uPcDir.value.copy(_ld).sub(_lt).normalize();
+    }
+  }
+  function malhaDePecas(geo, S){
+    S.c.forEach((a, k) => geo.setAttribute('aC' + (k + 1), a));
+    const m = new THREE.InstancedMesh(geo, materialDePecas(), S.cap);
+    m.count = 0; m.frustumCulled = false; m.name = 'bonecos-pecas';
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    scene.add(m);
+    return m;
+  }
+  const coresDaInstancia = cap => { const a = new THREE.InstancedBufferAttribute(new Float32Array(cap * 3), 3); a.setUsage(THREE.DynamicDrawUsage); return a; };
+  /* a malha de perto da figura, afinada: os triângulos que ficaram, com o osso e a zona de cada um */
+  function afinarFigura(c, nivel){
+    const g = c.nivel.perto, sk = c.junto.skeleton;
+    const pos = g.getAttribute('position'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight'), zo = g.getAttribute('zona');
+    if(!pos || !pos.array || !si || !si.array || !sw || !sw.array || !zo) return null;
+    const idx = g.index ? Uint32Array.from(g.index.array) : Uint32Array.from({length:pos.count}, (_, k) => k);
+    const P = pos.array instanceof Float32Array ? pos.array : Float32Array.from(pos.array);
+    let fino = idx;
+    try{
+      const alvo = Math.min(idx.length, PECAS_TRI[nivel] * 3);
+      fino = simplificador.simplify(idx, P, 3, alvo, 0.05)[0];
+      if(fino.length > alvo * 1.4) fino = simplificador.simplify(idx, P, 3, alvo, 0.3)[0];
+    }catch(err){ console.warn('boneco de peças: '+(err && err.message)); return null; }
+    if(!fino || fino.length < 9) return null;
+    const nomeDe = new Map(sk.bones.map((b, k) => [b.name, k]));
+    const grupo = sk.bones.map((b, k) => { const pai = JUNTA_COM[nivel][b.name]; return pai != null && nomeDe.has(pai) ? nomeDe.get(pai) : k; });
+    c._grupoDaCabeca = nomeDe.has('cabeca') ? grupo[nomeDe.get('cabeca')] : -1;
+    const peso = new Float32Array(sk.bones.length), tris = [];
+    for(let t = 0; t + 2 < fino.length; t += 3){
+      peso.fill(0);
+      const z = [0, 0, 0];
+      for(let k = 0; k < 3; k++){
+        const i = fino[t + k];
+        peso[si.getX(i)] += sw.getX(i); peso[si.getY(i)] += sw.getY(i); peso[si.getZ(i)] += sw.getZ(i); peso[si.getW(i)] += sw.getW(i);
+        z[k] = zo.getX(i);
+      }
+      let b = 0;
+      for(let k = 1; k < peso.length; k++) if(peso[k] > peso[b]) b = k;
+      /* (a zona do triângulo: a da maioria dos cantos) */
+      const zt = z[1] === z[2] ? z[1] : z[0];
+      tris.push({a:fino[t], b:fino[t + 1], c:fino[t + 2], osso:grupo[b], zona: zt & 7, vid: zt >> 3});
+    }
+    return tris;
+  }
+  /* uma família (o corpo de uma camisa, ou um penteado): as peças por osso, instanciadas */
+  function montarFamilia(c, vid, hexes, nivel){
+    const cabelo = vid > 0;
+    const tris = afinarFigura(c, nivel);
+    if(!tris) return null;
+    /* (a camisa: os vértices do tronco e dos braços na cor da camisa, da
+       faixa ou da 3ª cor de quem serviu de molde viram zona — 4, 5 e 6 —,
+       e cada boneco pinta com as dele; o desenho da camisa é o do molde) */
+    const molde = cabelo ? [] : [4, 5, 3].map(k => new THREE.Color(hexes[k] || '#000'));
+    const daCamisa = new Set(['pelvis', 'tronco', 'ombroD', 'ombroE', 'cotoveloD', 'cotoveloE']);
+    const g = c.nivel.perto, sk = c.junto.skeleton, pos = g.getAttribute('position'), col = g.getAttribute('color');
+    const mats = sk.boneInverses.map(bi => new THREE.Matrix4().multiplyMatrices(bi, c.junto.bindMatrix));
+    const por = new Map(), v = new THREE.Vector3();
+    const cabeca = c._grupoDaCabeca;
+    for(const t of tris){
+      if(t.vid !== vid) continue;
+      /* (no corpo: 1 a pele, 2 a calça, 3 o tênis; na variante: 1 o cabelo, 2 o boné; o resto, a cor do vértice) */
+      const zona = cabelo ? (t.zona >= 4 ? t.zona - 3 : 0) : (t.zona >= 4 ? 0 : t.zona);
+      /* (o cabelo inteiro é da cabeça: uma peça só) */
+      const osso = cabelo && cabeca >= 0 ? cabeca : t.osso;
+      let o = por.get(osso);
+      if(!o) por.set(osso, o = {P:[], C:[], Z:[], I:[], de:new Map()});
+      /* (o vértice é dividido entre os triângulos da mesma zona: menos conta por boneco, e a luz sai lisa) */
+      const veste = !cabelo && zona === 0 && col && daCamisa.has(sk.bones[osso].name);
+      for(const i of [t.a, t.b, t.c]){
+        let zv = zona;
+        if(veste){
+          const r = col.getX(i), gg = col.getY(i), bb = col.getZ(i);
+          /* (a camisa por último: time de uma cor só pinta tudo com ela) */
+          for(const [kz, m] of [[6, molde[0]], [5, molde[1]], [4, molde[2]]]) if(Math.abs(r - m.r) + Math.abs(gg - m.g) + Math.abs(bb - m.b) < 0.02) zv = kz;
+        }
+        const k = i * 8 + zv;
+        let n = o.de.get(k);
+        if(n === undefined){
+          n = o.Z.length; o.de.set(k, n);
+          v.fromBufferAttribute(pos, i).applyMatrix4(mats[osso]);
+          o.P.push(v.x, v.y, v.z);
+          if(col) o.C.push(col.getX(i), col.getY(i), col.getZ(i)); else o.C.push(0.8, 0.8, 0.8);
+          o.Z.push(zv);
+        }
+        o.I.push(n);
+      }
+    }
+    const S = {partes:[], n:0, cap:64, cena:scene, c:Array.from({length:cabelo ? 2 : 6}, () => coresDaInstancia(64))};
+    for(const [osso, o] of por){
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(o.P, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(o.C, 3));
+      geo.setAttribute('zona', new THREE.Float32BufferAttribute(o.Z, 1));
+      geo.setIndex(o.I);
+      geo.computeVertexNormals();
+      S.partes.push({osso, geo, malha:malhaDePecas(geo, S)});
+    }
+    return S;
+  }
+  function crescerFamilia(S){
+    S.cap *= 2;
+    S.c = S.c.map(a => { const nova = coresDaInstancia(S.cap); nova.array.set(a.array); return nova; });
+    for(const p of S.partes){
+      const velha = p.malha, nova = malhaDePecas(p.geo, S);
+      nova.instanceMatrix.array.set(velha.instanceMatrix.array);
+      S.cena.remove(velha); velha.dispose();
+      p.malha = nova;
+    }
+  }
+  function porNaFamilia(chave, c, vid, hexes, rgb, nivel){
+    chave += '|' + nivel;
+    let S = conjuntos.get(chave);
+    if(S === undefined){ S = montarFamilia(c, vid, hexes, nivel); conjuntos.set(chave, S); }
+    if(!S) return false;
+    if(!S.partes.length) return true;                    // (o careca: a família do cabelo dele é vazia)
+    if(S.cena !== scene){ for(const p of S.partes){ S.cena.remove(p.malha); scene.add(p.malha); } S.cena = scene; }
+    if(S.n >= S.cap) crescerFamilia(S);
+    const ossos = c.junto.skeleton.bones, n = S.n;
+    for(const p of S.partes) p.malha.setMatrixAt(n, ossos[p.osso].matrixWorld);
+    for(let k = 0; k < S.c.length; k++) S.c[k].setXYZ(n, rgb[k * 3], rgb[k * 3 + 1], rgb[k * 3 + 2]);
+    S.n++;
+    return true;
+  }
+  function porPecas(c, nivel){
+    const nv = c.nivel;
+    if(!simplificador || !nv || !nv.chave || !nv.perto || !c.junto || !c.junto.skeleton) return false;
+    let q = nv.pecas;
+    if(!q){
+      const cores = coresDe(nv.f, nv.pm), cz = new THREE.Color();
+      const rgbDe = l => { const o = new Float32Array(l.length * 3); l.forEach((h, k) => { cz.set(h || '#888888'); o[k * 3] = cz.r; o[k * 3 + 1] = cz.g; o[k * 3 + 2] = cz.b; }); return o; };
+      /* (o corpo: a pele, a calça, o tênis, a camisa, a faixa e a 3ª cor; o cabelo: o cabelo e o boné) */
+      const hc = [cores.pele, cores.calca, cores.tenis, cores.camisa, cores.faixa, cores.faixa2], hk = [cores.cabelo, cores.bone];
+      q = nv.pecas = {hc, hk, rc:rgbDe(hc), rk:rgbDe(hk),
+        /* (um corpo pra todo mundo — o desenho da camisa é o do primeiro que chegou —, e um pro PM) */
+        corpo: nv.pm ? 'corpo|pm' : 'corpo',
+        /* (cada variante ligada — o penteado, o boné — é uma família, de quem a tiver) */
+        vars: [...variantesDe(nv.f, nv.pm)].filter(n => idsDeVariante.has(n)).map(n => ({chave:'var|' + n, vid:idsDeVariante.get(n)}))};
+    }
+    c.raiz.updateMatrixWorld(true);
+    if(!porNaFamilia(q.corpo, c, 0, q.hc, q.rc, nivel)) return false;
+    for(const v of q.vars) porNaFamilia(v.chave, c, v.vid, q.hk, q.rk, nivel);
+    c.junto.visible = false;
+    /* (a sombra da multidão é uma malha só, e só de quem está no nível de perto; o anel do lado fica com quem está de pé inteiro) */
+    if(nivel < 1) porSombra(c);
+    c.sombra.visible = false; c._emPecas = true;
+    if(c.anel) c.anel.visible = false;
+    if(c.anelFundo) c.anelFundo.visible = false;
+    return true;
+  }
+  let sombras = null;
+  const _sq = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI/2, 0, 0)), _sp = new THREE.Vector3(), _ss = new THREE.Vector3(), _sm = new THREE.Matrix4();
+  function porSombra(c){
+    if(!sombras || sombras.cena !== scene){
+      if(sombras) sombras.cena.remove(sombras.malha);
+      const m = new THREE.InstancedMesh(G().disco, new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.34, depthWrite:false}), MINI_MAX);
+      m.count = 0; m.frustumCulled = false; m.name = 'bonecos-sombras'; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      scene.add(m);
+      sombras = {malha:m, cena:scene, n:0};
+    }
+    if(sombras.n >= MINI_MAX) return;
+    const e = c.raiz.scale.x, r = c.raiz.position;
+    _sp.set(r.x, r.y + 0.3 * e, r.z); _ss.set(c.sombra.scale.x * e, c.sombra.scale.y * e, 1);
+    sombras.malha.setMatrixAt(sombras.n++, _sm.compose(_sp, _sq, _ss));
+  }
+  function fecharPecas(){
+    if(conjuntos.size) luzDasPecas();
+    for(const S of conjuntos.values()){
+      if(!S) continue;
+      for(const p of S.partes){
+        if(p.malha.count === 0 && S.n === 0) continue;
+        p.malha.count = S.n; p.malha.instanceMatrix.needsUpdate = true;
+      }
+      if(S.n) for(const a of S.c) a.needsUpdate = true;
+    }
+    if(sombras && (sombras.malha.count || sombras.n)){ sombras.malha.count = sombras.n; sombras.malha.instanceMatrix.needsUpdate = true; }
+  }
   /* A MINIATURA DE PERTO (13/11/2026): a multidão que passa do teto de
      figuras (`cfg.tetoFiguras`) fica grande na tela, e a caixa lisa ali é
      um tijolo. De perto a miniatura é um bonequinho de blocos, parado: as
@@ -3207,17 +3499,20 @@ let escalaDoTabuleiro = () => 1;
     if(mini) mini.n = 0;
     if(miniP && miniP.cena !== scene) miniPertoDe();
     if(miniP) miniP.n = 0;
+    for(const S of conjuntos.values()) if(S) S.n = 0;
+    if(sombras) sombras.n = 0;
+    if(cfg.tetoFiguras > 0) pedirSimplificador();
     const C = TO.diaJogo.combate;
     const FICA = (C && C.CAIDO_FICA) || 3.0, SOME = (C && C.CAIDO_SOME) || 1.5;
     const cortar = cfg.cortarForaDaTela;
-    conta.vistos = 0; conta.cortados = 0; conta.minis = 0;
+    conta.vistos = 0; conta.cortados = 0; conta.minis = 0; conta.pecas = 0;
     /* O TETO DE FIGURAS (`cfg.tetoFiguras`, dos gráficos do cenário; o dono
        joga sem placa de vídeo, 13/11/2026): a briga na rua põe uns 300
        bonecos de perto, e cada figura é uma malha com esqueleto — medido lá,
        674 mil triângulos e 2 fps. Com o teto, só as figuras mais perto do
        meio da câmera (onde está o líder) ficam de pé e animadas; o resto da
        multidão é miniatura, do tamanho que for na tela */
-    let raioFig2 = Infinity, camX = 0, camZ = 0;
+    let raioFig2 = Infinity, raioPec2 = Infinity, camX = 0, camZ = 0;
     if(cfg.tetoFiguras > 0 && camNivel && !camNivel.isOrthographicCamera){
       const todos = (J.policiais && J.policiais.length) ? J.discos.concat(J.policiais) : J.discos;
       if(todos.length > cfg.tetoFiguras){
@@ -3228,7 +3523,7 @@ let escalaDoTabuleiro = () => 1;
           const q = pos(d.x, d.y, d);
           ds.push((q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ));
         }
-        if(ds.length > cfg.tetoFiguras){ ds.sort((a, b) => a - b); raioFig2 = ds[cfg.tetoFiguras - 1]; }
+        if(ds.length > cfg.tetoFiguras){ ds.sort((a, b) => a - b); raioFig2 = ds[cfg.tetoFiguras - 1]; raioPec2 = ds[Math.min(ds.length - 1, cfg.tetoFiguras + PECAS_PERTO - 1)]; }
       }
     }
     const animar = (d, i, pm) => {
@@ -3239,10 +3534,19 @@ let escalaDoTabuleiro = () => 1;
         return;
       }
       /* pequeno demais na tela: a miniatura (sem figura, sem pose) */
+      let pecas = false, nivelPecas = 0;
       if(camNivel && !camNivel.isOrthographicCamera && (pm || !d.lider)){
         const q = pos(d.x, d.y, d), px = pxNaTela(q);
-        const longeDoMeio = raioFig2 < Infinity && ((q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ)) > raioFig2 * (d._mini ? 0.8 : 1);
-        if(longeDoMeio || px < (d._mini ? MINI_SAI : MINI_ENTRA) || (cfg.nivelLeve && !pm && px < MINI_PARADO && paradoNaMultidao(d, J))){
+        const doMeio2 = (q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ);
+        const longeDoMeio = raioFig2 < Infinity && doMeio2 > raioFig2 * ((d._mini || d._pecas) ? 0.8 : 1);
+        /* (as peças de perto pras PECAS_PERTO seguintes; o resto da multidão no nível mais leve) */
+        nivelPecas = doMeio2 > raioPec2 * (d._pecas === 2 ? 0.8 : 1) ? 1 : 0;
+        const pequeno = px < (d._mini ? MINI_SAI : MINI_ENTRA);
+        /* (quem passa do teto de figuras, grande na tela: o boneco de peças,
+           com a pose dele; sem o simplificador, a miniatura de blocos) */
+        pecas = !pequeno && longeDoMeio && !!simplificador;
+        d._pecas = pecas ? nivelPecas + 1 : 0;
+        if(!pecas && (longeDoMeio || pequeno || (cfg.nivelLeve && !pm && px < MINI_PARADO && paradoNaMultidao(d, J)))){
           d._mini = true;
           porMiniatura(d, q, pm, px);
           const fg0 = figuras.get(d);
@@ -3254,7 +3558,15 @@ let escalaDoTabuleiro = () => 1;
       }
       if(pm) animarPM(d, i, J, dt); else animarDisco(d, i, J, dt);
       const fg = figuras.get(d);
-      if(fg){ fg.viva = true; trocarNivel(fg.corpo, !pm && d.lider); }
+      if(fg){
+        fg.viva = true;
+        if(pecas && porPecas(fg.corpo, nivelPecas)) conta.pecas = (conta.pecas || 0) + 1;
+        else {
+          if(fg.corpo.junto) fg.corpo.junto.visible = true;
+          if(fg.corpo._emPecas){ fg.corpo._emPecas = false; if(fg.corpo.sombra) fg.corpo.sombra.visible = true; }
+          trocarNivel(fg.corpo, !pm && d.lider);
+        }
+      }
       conta.vistos++;
     };
     J.discos.forEach((d,i)=>{
@@ -3269,6 +3581,7 @@ let escalaDoTabuleiro = () => 1;
     /* figuras que saíram da cena: some da lista, não só da tela */
     for(const [d,fg] of figuras) if(!fg.viva){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
     fecharMiniaturas();
+    fecharPecas();
     projeteis(J);
     efeitosDaPM(J, dt);
     atualizarParticulas(dt);
@@ -4025,6 +4338,8 @@ let escalaDoTabuleiro = () => 1;
         for(const [d,fg] of figuras){ scene.remove(fg.corpo.raiz); liberar(fg); figuras.delete(d); }
         if(mini){ mini.n = 0; mini.corpo.count = 0; mini.cabeca.count = 0; }
         if(miniP){ miniP.n = 0; for(const m of miniP.malhas) m.count = 0; }
+        for(const S of conjuntos.values()) if(S){ S.n = 0; for(const q of S.partes) q.malha.count = 0; }
+        if(sombras){ sombras.n = 0; sombras.malha.count = 0; }
       },
       get comModelo(){ return !!modeloGLB; },
       get quantas(){ return figuras.size; },
