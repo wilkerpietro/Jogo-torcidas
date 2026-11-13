@@ -6250,6 +6250,11 @@ TO.feed = (function(){
       const bc = E.brigasCom[d.torcidaId];
       E.brigasCom[d.torcidaId] = (bc && bc.ano === E.data.ano) ? {ano:E.data.ano, n:bc.n+1}
                                                                 : {ano:E.data.ano, n:1};
+      /* O RETROSPECTO CONTRA CADA UMA (o portal, 13/11/2026): vitórias,
+         derrotas e empates da gente contra ela, desde que o save conta */
+      E.retrospecto = E.retrospecto || {};
+      const rt = E.retrospecto[d.torcidaId] || (E.retrospecto[d.torcidaId] = {v:0, d:0, e:0});
+      if(empatou) rt.e++; else if(d.ganhamos) rt.v++; else rt.d++;
     }
     const vencedor = empatou ? '' : d.ganhamos ? (a.nome || E.torcida.nome)
                                                : (b.nome || '');

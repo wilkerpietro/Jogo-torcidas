@@ -1,0 +1,274 @@
+/* =========================================================
+   O PORTAL — a tela entre os jogos (dono, 13/11/2026; portal.js)
+
+   Três colunas no computador: a caixa de entrada, o clube (próximo
+   jogo, agenda, classificação) e a torcida (finanças, patrimônio,
+   elenco, relações). No celular, três abas. O menu é a coluna com
+   ícone e nome (embaixo, no celular).
+
+   A PALETA NOVA ("Sinalizador"): o fundo azul-petróleo da noite de
+   estádio, o laranja do sinalizador como destaque e o âmbar do
+   refletor como segundo tom. Vale só na página do feed entre os jogos
+   — as outras telas mudam quando o dono aprovar.
+   ========================================================= */
+body.jogo3d.j3d-entre-jogos{background:#0b1116}
+body.jogo3d.j3d-entre-jogos .pagina[data-pag="feed"]{
+  --fundo:#0b1116;
+  --painel:#121a21;
+  --painel-alto:#18222b;
+  --faixa:#1d2a34;
+  --linha:#253440;
+  --sulco:#1a252e;
+  --texto:#e9eff3;
+  --fraco:#8fa0ad;
+  --apagado:#5b6b77;
+  --rubro:#d9531a;
+  --rubro-vivo:#ff7a3d;
+  --rubro-fundo:#3a1c0e;
+  --ouro:#ffc247;
+  --verde:#2fbf71;
+  --verde-vivo:#47d98a;
+  --vermelho:#ff5a5f;
+  --azul:#3aa0ff;
+}
+body.jogo3d.j3d-entre-jogos .pagina[data-pag="feed"].on{background:var(--fundo);color:var(--texto)}
+/* com uma cena em 3D no ar o portal some (o rolo já some em jogo3d.css) */
+body.jogo3d:not(.j3d-entre-jogos) .portal{display:none}
+body.jogo3d.j3d-entre-jogos .feed-rolo{display:block !important}
+.menu-rot{display:none}
+
+/* ---------- a barra de cima ---------- */
+body.jogo3d.j3d-entre-jogos .feed-barra{padding:10px 18px;gap:16px;background:var(--painel);border-bottom:1px solid var(--linha);box-shadow:none}
+body.jogo3d.j3d-entre-jogos .feed-marca{gap:14px}
+body.jogo3d.j3d-entre-jogos .feed-marca .escudo{width:38px;height:38px;font-size:14px}
+body.jogo3d.j3d-entre-jogos .feed-marca b{font-size:21px}
+body.jogo3d.j3d-entre-jogos .feed-marca .num{font-size:14.5px;gap:6px}
+body.jogo3d.j3d-entre-jogos .feed-marca .num svg{width:17px;height:17px}
+body.jogo3d.j3d-entre-jogos .feed-quando{background:var(--painel-alto);border-color:var(--linha);border-radius:10px}
+body.jogo3d.j3d-entre-jogos .feed-quando .quando-txt{font-size:14.5px}
+body.jogo3d.j3d-entre-jogos .feed-barra .mapa-ic{min-width:42px;height:38px;font-size:14px;border-radius:9px;background:var(--painel-alto);border-color:var(--linha);color:var(--texto)}
+body.jogo3d.j3d-entre-jogos .feed-barra .mapa-ic:hover{border-color:var(--rubro-vivo)}
+body.jogo3d.j3d-entre-jogos .feed-barra .mapa-ic.aceso{background:var(--rubro-fundo);border-color:var(--rubro-vivo);color:var(--ouro)}
+
+/* ---------- o menu: a coluna com ícone e nome ---------- */
+body.jogo3d.j3d-entre-jogos .feed-menu{
+  flex-flow:column nowrap;width:200px;padding:14px 10px;gap:3px;overflow-y:auto;
+  background:var(--painel);border-right:1px solid var(--linha);box-shadow:none;scrollbar-width:thin}
+body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{
+  width:100%;height:44px;flex:none;justify-content:flex-start;gap:13px;padding:0 13px;
+  background:transparent;border:1px solid transparent;border-radius:10px;color:var(--fraco)}
+body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic svg{width:21px;height:21px;flex:none}
+body.jogo3d.j3d-entre-jogos .feed-menu .menu-rot{
+  display:block;font-family:var(--titulo);font-size:16px;font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic:hover{background:var(--painel-alto);color:var(--texto)}
+body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic.aceso,
+body.jogo3d.j3d-entre-jogos:not(.com-painel) .feed-menu .mapa-ic[data-pag="feed"]{
+  background:var(--rubro-fundo);border-color:var(--rubro);color:#fff;box-shadow:inset 3px 0 0 var(--rubro-vivo)}
+body.jogo3d.j3d-entre-jogos .feed-menu .ic-badge{right:10px;bottom:auto;top:50%;transform:translateY(-50%);box-shadow:none;min-width:20px;height:20px;line-height:20px;font-size:11px;border-radius:10px}
+
+/* ---------- as três colunas ---------- */
+.portal{flex:1;min-width:0;min-height:0;display:grid;gap:14px;padding:14px;
+  grid-template-columns:minmax(0,1.12fr) minmax(0,1fr) minmax(0,.96fr)}
+.pt-abas{display:none}
+.pt-col{min-width:0;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;scrollbar-width:thin;scrollbar-color:var(--linha) transparent}
+.pt-msgs{background:var(--painel);border:1px solid var(--linha);border-radius:14px;overflow:hidden;gap:0}
+.pt-msgs .feed-rolo{flex:1;min-height:0;overflow-y:auto;padding:12px;scrollbar-width:thin;scrollbar-color:var(--linha) transparent}
+.pt-msgs .feed-lista{max-width:none;margin:0;gap:12px}
+.pt-msgs .feed-lista:empty::before{content:attr(data-vazio);display:block;padding:34px 16px;text-align:center;color:var(--fraco);font-size:15px;line-height:1.5}
+.pt-msgs .feed-mais{margin:14px auto 4px;padding:10px 18px;font-size:14px}
+
+/* ---------- o bloco ---------- */
+.pt-bloco{flex:none;background:var(--painel);border:1px solid var(--linha);border-radius:14px;overflow:hidden}
+.pt-cab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--linha);background:linear-gradient(180deg,var(--painel-alto),var(--painel))}
+.pt-cab h3{margin:0;font-family:var(--titulo);font-size:16px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--rubro-vivo)}
+.pt-cab.fixo{flex:none}
+.pt-aguarda{font-family:var(--mono);font-size:11.5px;color:#1a0d05;background:var(--ouro);border-radius:20px;padding:4px 10px;font-weight:700;white-space:nowrap}
+.pt-abrir{font-family:var(--titulo);font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco);
+  background:transparent;border:1px solid var(--linha);border-radius:8px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.pt-abrir i{font-style:normal;color:var(--rubro-vivo)}
+.pt-abrir:hover{color:var(--texto);border-color:var(--rubro-vivo)}
+.pt-corpo{padding:12px 14px 14px}
+.pt-corpo h4{margin:14px 0 7px;font-family:var(--titulo);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--fraco)}
+.pt-corpo h4.primeiro{margin-top:0}
+.pt-vazio{margin:6px 0;color:var(--fraco);font-size:14px}
+.pt-nota{margin:8px 0 0;color:var(--fraco);font-size:13px;line-height:1.4}
+.pt-nota.topo{margin:0 0 8px}
+.pt-nota.ruim, .pt-corpo .ruim{color:var(--vermelho)}
+.pt-corpo .bom{color:var(--verde-vivo)}
+.pt-chip{font-style:normal;font-family:var(--titulo);font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 8px;border-radius:20px;border:1px solid var(--linha);color:var(--fraco);white-space:nowrap}
+.pt-chip.bom{color:var(--verde-vivo);border-color:#1f5c3d;background:#10281c}
+.pt-chip.ruim{color:var(--vermelho);border-color:#6a2a2e;background:#2a1215}
+
+/* os ladrilhos de número */
+.pt-ladrilhos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pt-ladrilhos.tres{grid-template-columns:1.2fr 1fr 1fr}
+.pt-ladrilhos > div{background:var(--painel-alto);border:1px solid var(--linha);border-radius:10px;padding:9px 11px;min-width:0}
+.pt-ladrilhos small{display:block;font-family:var(--titulo);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--fraco)}
+.pt-ladrilhos b{display:block;margin-top:2px;font-family:var(--mono);font-size:18px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-ladrilhos b i{font-style:normal;font-size:12px;color:var(--fraco);font-weight:400}
+.pt-ladrilhos .g b{font-size:21px;color:var(--ouro)}
+.pt-ladrilhos .g b.ruim{color:var(--vermelho)}
+
+/* o escudo */
+.pt-escudo{display:inline-block;object-fit:contain;flex:none}
+.pt-escudo.g{width:52px;height:52px}
+.pt-escudo.p{width:20px;height:20px}
+.pt-escudo.sem{border-radius:50%;text-align:center;font-family:var(--titulo);font-weight:700}
+.pt-escudo.sem.g{line-height:52px;font-size:16px}
+.pt-escudo.sem.p{line-height:20px;font-size:8px}
+
+/* ---------- o próximo jogo ---------- */
+.pt-jogo-topo{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--fraco)}
+.pt-jogo-topo b{font-family:var(--titulo);font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--ouro);white-space:nowrap}
+.pt-jogo-topo b.hoje{color:#1a0d05;background:var(--rubro-vivo);padding:2px 9px;border-radius:20px}
+.pt-confronto{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:12px 0 10px}
+.pt-time{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0}
+.pt-time b{font-family:var(--titulo);font-size:19px;font-weight:700;letter-spacing:.03em;line-height:1.1;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pt-time small{font-family:var(--mono);font-size:12px;color:var(--fraco)}
+.pt-x{display:flex;flex-direction:column;align-items:center;gap:1px}
+.pt-x b{font-family:var(--titulo);font-size:24px;color:var(--apagado);line-height:1}
+.pt-x small{font-family:var(--mono);font-size:12px;color:var(--texto);white-space:nowrap}
+.pt-local{margin:0;text-align:center;font-size:13px;color:var(--fraco)}
+.pt-efetivo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pt-total{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:5px;margin-bottom:4px;border-bottom:1px solid var(--linha)}
+.pt-total span{font-size:12.5px;color:var(--fraco)}
+.pt-total b{font-family:var(--mono);font-size:17px;color:var(--ouro)}
+
+/* as listas de torcida (a cor na frente, o número no fim) */
+.pt-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.pt-lista li{display:flex;align-items:center;gap:8px;font-size:13.5px;min-width:0}
+.pt-lista li > i{flex:none;width:4px;height:17px;border-radius:2px}
+.pt-lista li > span:first-of-type{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-lista li > b{font-family:var(--mono);font-size:13.5px;font-weight:600}
+.pt-lista li.nada{color:var(--apagado);font-size:13px}
+.pt-lista.rel li{flex-wrap:wrap;row-gap:1px}
+.pt-lista.rel li small{flex:1 1 100%;padding-left:12px;font-size:12px;color:var(--fraco)}
+.pt-barra{flex:none;width:34%;height:6px;border-radius:3px;background:var(--faixa);overflow:hidden}
+.pt-barra u{display:block;height:100%;border-radius:3px;text-decoration:none}
+.pt-barra.bom u{background:var(--verde)}
+.pt-barra.ruim u{background:var(--vermelho)}
+.pt-lista.barra li > b{width:38px;text-align:right}
+.pt-risco{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.pt-risco li{font-size:13.5px;line-height:1.35;padding:7px 10px;border-radius:9px;background:var(--painel-alto);border-left:3px solid var(--linha)}
+.pt-risco li.ruim{border-left-color:var(--vermelho)}
+.pt-risco li.ataque{border-left-color:var(--rubro-vivo)}
+.pt-risco li.bom{border-left-color:var(--verde)}
+
+/* ---------- as tabelas ---------- */
+.pt-tabela{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed}
+/* (a largura de cada coluna é fixa, em porcentagem) */
+.pt-tabela.agenda td.data{width:16%} .pt-tabela.agenda td.clube{width:54%} .pt-tabela.agenda td.lado{width:8%} .pt-tabela.agenda td:nth-child(4){width:22%}
+.pt-tabela.liga th:first-child{width:9%} .pt-tabela.liga th.clube{width:41%}
+.pt-tabela.patr th.clube{width:37%}
+.pt-tabela.elenco td.clube{width:76%}
+.pt-tabela th{font-family:var(--titulo);font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco);
+  padding:0 5px 6px;text-align:right;border-bottom:1px solid var(--linha)}
+.pt-tabela td{padding:6px 5px;text-align:right;border-bottom:1px solid var(--sulco);font-family:var(--mono);font-size:13px;white-space:nowrap}
+.pt-tabela tr:last-child td{border-bottom:0}
+.pt-tabela th.clube, .pt-tabela td.clube{text-align:left;font-family:var(--corpo);overflow:hidden;text-overflow:ellipsis}
+.pt-tabela td.clube .pt-escudo{vertical-align:middle;margin-right:8px}
+.pt-tabela td.clube > span{vertical-align:middle}
+.pt-tabela.patr td.clube > span, .pt-tabela.elenco td.clube > span{display:block;overflow:hidden;text-overflow:ellipsis}
+.pt-tabela td.clube small{display:block;font-size:11.5px;color:var(--fraco);overflow:hidden;text-overflow:ellipsis}
+.pt-tabela td.clube b{font-weight:600}
+.pt-tabela td.clube b i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--fraco);font-weight:400}
+.pt-tabela.liga td:first-child, .pt-tabela.liga th:first-child{text-align:center;color:var(--fraco)}
+.pt-tabela.liga tr.nosso td{background:var(--rubro-fundo);color:#fff}
+.pt-tabela.liga tr.nosso td:first-child{box-shadow:inset 3px 0 0 var(--rubro-vivo);color:var(--ouro)}
+.pt-tabela.liga tr.adv td.clube span{color:var(--ouro)}
+.pt-tabela.agenda td.data{text-align:left;color:var(--fraco)}
+.pt-tabela.agenda td.lado{color:var(--fraco)}
+.pt-tabela.agenda td.clube{display:table-cell}
+.pt-tabela.agenda td.clube > span{display:inline-block;max-width:calc(100% - 30px);overflow:hidden;text-overflow:ellipsis}
+.pt-tabela.agenda tr:not(.feito) td.clube span{font-weight:600}
+.pt-res{display:inline-flex;align-items:center;gap:6px}
+.pt-res i{width:9px;height:9px;border-radius:50%;background:var(--apagado)}
+.pt-res.v i{background:var(--verde-vivo)} .pt-res.d i{background:var(--vermelho)} .pt-res.e i{background:var(--ouro)}
+.pt-res small{color:var(--fraco)}
+.pt-tabela tfoot td{border-top:1px solid var(--linha);border-bottom:0;font-weight:600;padding-top:8px}
+.pt-tabela.patr td.bom, .pt-tabela.patr td.ruim{font-size:12.5px}
+
+/* ---------- as mensagens da caixa de entrada: cartões inteiros ---------- */
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg{padding:15px 17px;border-radius:12px;background:var(--painel-alto);border:1px solid var(--linha);box-shadow:none}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg.peso-decisao{background:#1b2731;border-color:#33485a;box-shadow:inset 4px 0 0 var(--rubro-vivo)}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-voz{font-size:13px;letter-spacing:.16em;margin-bottom:6px;color:var(--fraco)}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg.peso-decisao .msg-voz{color:var(--rubro-vivo)}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-txt{font-size:16px;line-height:1.5}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-resp{font-size:14.5px;line-height:1.45;margin-top:10px;padding-top:10px;border-top-color:var(--linha)}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts{gap:10px;margin-top:13px}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt{padding:11px 18px;border-radius:10px;font-size:15px;letter-spacing:.08em;min-height:46px;
+  background:var(--faixa);border-color:var(--linha);color:var(--texto)}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt:hover:not(:disabled){border-color:var(--rubro-vivo);background:#22323e}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt.destaque{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt.destaque:hover:not(:disabled){background:#ef6223}
+body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt small{font-size:12px;margin-top:3px}
+
+/* ---------- telas médias e o celular: as três abas ---------- */
+@media (max-width:1080px){
+  .portal{display:flex;flex-direction:column;gap:0;padding:0}
+  .pt-abas{display:flex;flex:none;background:var(--painel);border-bottom:1px solid var(--linha)}
+  .pt-abas button{flex:1;padding:13px 6px;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--fraco);cursor:pointer;
+    font-family:var(--titulo);font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+  .pt-abas button.on{color:#fff;border-bottom-color:var(--rubro-vivo)}
+  .pt-conta{display:inline-block;margin-left:7px;min-width:20px;height:20px;line-height:20px;padding:0 5px;border-radius:10px;
+    background:var(--ouro);color:#1a0d05;font-family:var(--mono);font-size:11.5px;font-style:normal;font-weight:700;vertical-align:1px}
+  .pt-conta[hidden]{display:none}
+  .pt-col{display:none;flex:1;padding:12px;gap:12px}
+  .portal[data-aba="msgs"] .pt-msgs, .portal[data-aba="clube"] .pt-clube, .portal[data-aba="torcida"] .pt-torcida{display:flex}
+  .pt-msgs{border:0;border-radius:0;background:transparent;padding:0}
+  .pt-msgs .pt-cab.fixo{display:none}
+  .pt-msgs .feed-rolo{padding:12px}
+}
+/* o computador de tela média: o menu mais estreito */
+@media (min-width:761px) and (max-width:1280px){
+  body.jogo3d.j3d-entre-jogos .feed-menu{width:172px}
+}
+/* o celular: o menu vira a barra de baixo, com ícone e nome */
+@media (max-width:760px){
+  body.jogo3d.j3d-entre-jogos .feed-menu{
+    position:fixed;left:0;right:0;bottom:0;top:auto;z-index:30;width:auto;height:auto;max-height:none;
+    flex-flow:row nowrap;gap:2px;padding:5px 6px calc(5px + env(safe-area-inset-bottom, 0px));
+    overflow-x:auto;overflow-y:hidden;border-right:0;border-top:1px solid var(--linha);scrollbar-width:none}
+  body.jogo3d.j3d-entre-jogos .feed-menu::-webkit-scrollbar{display:none}
+  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{
+    flex:0 0 auto;width:auto;min-width:66px;height:52px;flex-direction:column;justify-content:center;gap:3px;padding:0 8px;border-radius:9px}
+  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic svg{width:22px;height:22px}
+  body.jogo3d.j3d-entre-jogos .feed-menu .menu-rot{font-size:11px;letter-spacing:.05em}
+  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic.aceso,
+  body.jogo3d.j3d-entre-jogos:not(.com-painel) .feed-menu .mapa-ic[data-pag="feed"]{box-shadow:inset 0 3px 0 var(--rubro-vivo)}
+  body.jogo3d.j3d-entre-jogos .feed-menu .ic-badge{right:8px;top:4px;transform:none;min-width:17px;height:17px;line-height:17px;font-size:10px}
+  body.jogo3d.j3d-entre-jogos .feed-corpo{padding-bottom:calc(63px + env(safe-area-inset-bottom, 0px))}
+  body.jogo3d.j3d-entre-jogos .feed-barra{flex-wrap:wrap;padding:8px 10px;gap:8px}
+  body.jogo3d.j3d-entre-jogos .feed-marca{flex:1 1 100%;gap:10px;overflow-x:auto;scrollbar-width:none}
+  body.jogo3d.j3d-entre-jogos .feed-marca .escudo{width:30px;height:30px}
+  body.jogo3d.j3d-entre-jogos .feed-marca b{font-size:17px}
+  body.jogo3d.j3d-entre-jogos .feed-marca .num{font-size:13.5px}
+  body.jogo3d.j3d-entre-jogos .feed-quando{flex:1 1 0;min-width:0;max-width:calc(100% - 52px);width:auto}
+  body.jogo3d.j3d-entre-jogos .feed-quando .quando-txt{font-size:13px}
+  body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt{flex:1 1 100%}
+  .pt-col{padding:10px}
+  .pt-abas button{font-size:15px;padding:11px 4px}
+}
+/* o celular deitado: a barra numa linha só e as abas baixas */
+@media (max-height:500px) and (orientation:landscape){
+  body.jogo3d.j3d-entre-jogos .feed-barra{flex-wrap:nowrap;padding:4px 8px}
+  body.jogo3d.j3d-entre-jogos .feed-marca{flex:1 1 auto}
+  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{height:44px;min-width:60px}
+  body.jogo3d.j3d-entre-jogos .feed-corpo{padding-bottom:55px}
+  .pt-abas button{padding:7px 4px;font-size:14px}
+  body.jogo3d.j3d-entre-jogos .pt-msgs .msg-bts .bt{flex:1 1 auto;min-height:42px}
+}
+
+/* ---------- acertos do celular em pé ---------- */
+/* (os avisos da rede saíram do jogo; a caixa vazia deles ficava por cima das abas) */
+body.jogo3d.j3d-entre-jogos .social-toasts{display:none !important}
+@media (max-width:760px){
+  body.jogo3d.j3d-entre-jogos .feed-marca b{display:none}
+  body.jogo3d.j3d-entre-jogos .feed-quando{justify-content:space-between}
+  .pt-msgs .feed-rolo{padding:0}
+  .pt-col.pt-msgs{padding:10px}
+}
+/* (o miolo do feed não recebia clique no 3D, pra câmera arrastar; entre os jogos recebe) */
+body.jogo3d.j3d-entre-jogos .feed-colunas{pointer-events:auto}

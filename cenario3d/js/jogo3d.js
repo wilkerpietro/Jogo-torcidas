@@ -23,13 +23,13 @@
    - o que é da cidade: quando a partida começa (ou carrega), a praça
      vira a da torcida do jogador e a câmera voa até a porta da sede.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=2e2dfb457c';
-import { criarVida, horaTxt } from './vida3d.js?v=2e2dfb457c';
-import { criarMapaDaCidade } from './mapa3d.js?v=2e2dfb457c';
-import { criarDia3d } from './dia3d.js?v=2e2dfb457c';
-import { criarRecados } from './recados3d.js?v=2e2dfb457c';
-import { criarRua } from './rua3d.js?v=2e2dfb457c';
-import { criarNevoa } from './nevoa3d.js?v=2e2dfb457c';
+import { CASCA } from './jogo_casca.js?v=80bda847c4';
+import { criarVida, horaTxt } from './vida3d.js?v=80bda847c4';
+import { criarMapaDaCidade } from './mapa3d.js?v=80bda847c4';
+import { criarDia3d } from './dia3d.js?v=80bda847c4';
+import { criarRecados } from './recados3d.js?v=80bda847c4';
+import { criarRua } from './rua3d.js?v=80bda847c4';
+import { criarNevoa } from './nevoa3d.js?v=80bda847c4';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -44,22 +44,25 @@ const carregarCss = href => new Promise(ok => {
 
 export async function montarJogo(api) {
   document.body.classList.add('jogo3d');
-  await Promise.all([carregarCss('css/jogo.css?v=2e2dfb457c'), carregarCss('css/jogo3d.css?v=2e2dfb457c')]);
+  await Promise.all([carregarCss('css/jogo.css?v=80bda847c4'), carregarCss('css/jogo3d.css?v=80bda847c4'), carregarCss('css/portal.css?v=80bda847c4')]);
   /* a casca entra antes do main.js: ele procura os ids na hora que carrega */
   const caixa = document.createElement('div');
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos de todos os clubes, as fotos das praças e as bandeiras,
      embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=2e2dfb457c').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=80bda847c4').catch(() => {});
   /* sem o rolo do feed: quem entrega as mensagens é o balão (recados3d.js) */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=2e2dfb457c');
+  /* o portal (a tela entre os jogos, portal.js) entra logo depois do jogo:
+     main.js só procura `TO.portal` quando monta o feed, na hora de abrir a partida */
+  await carregarScript('js/jogo.js?v=80bda847c4');
+  await carregarScript('js/portal.js?v=80bda847c4').catch(err => console.error('o portal não carregou:', err));
   /* o boneco das cenas: os dois níveis afinados em base64 (o cenário só
      puxa esse .js quando alguém entra a pé; o jogo precisa dele nas cenas) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=2e2dfb457c').catch(() => {});
-  await import('./bonecos3_global.js?v=2e2dfb457c');
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=80bda847c4').catch(() => {});
+  await import('./bonecos3_global.js?v=80bda847c4');
   ligar(api);
   return TO.tela;
 }
@@ -300,7 +303,7 @@ function ligar(api) {
     if (!loja) return { erro: 'a praça não tem ' + op.alvo };
     const f = A.fichaDoAssalto(op.alvo, op.n, op.horario), P = A.PERFIL_ASSALTO[op.alvo];
     try { await C.vida.chamarPovo(); } catch (err) { return { erro: 'os bonecos não carregaram' }; }
-    const { iniciarAssalto } = await import('./assalto3d.js?v=2e2dfb457c');
+    const { iniciarAssalto } = await import('./assalto3d.js?v=80bda847c4');
     /* a delegacia mais perto da loja (sem nenhuma no mapa, 500 m) */
     const dls = api.planta && api.planta.delegacias ? api.planta.delegacias() : [];
     const dist = dls.length ? Math.min(...dls.map(d => Math.hypot(d.x - loja.porta.x, d.y - loja.porta.y))) / api.M : 500;

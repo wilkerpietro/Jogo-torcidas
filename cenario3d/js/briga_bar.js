@@ -35,8 +35,8 @@
    calçada e dentro do lote do bar — e só o que se alcança andando de quem
    briga.
    ========================================================= */
-import { planoDoBar } from './casas3d.js?v=2e2dfb457c';
-import { fugasNaRua, fugasNosEixos, pontaSemCruzamento } from './fuga_rua.js?v=2e2dfb457c';
+import { planoDoBar } from './casas3d.js?v=80bda847c4';
+import { fugasNaRua, fugasNosEixos, pontaSemCruzamento } from './fuga_rua.js?v=80bda847c4';
 
 const TAB = { W: 1536, H: 1024, CEL: 8 };
 const ESCALA = Math.sqrt(0.3);          // unidade de mundo por px (a mesma da caminhada)

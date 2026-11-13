@@ -756,7 +756,6 @@ body.jogo3d.em-cena .cen-joy, body.jogo3d.palco-briga .cen-joy{display:none !imp
    ar: a cidade some (e para de desenhar), o rolo do feed volta numa
    coluna central, e tudo o que se lê ou se aperta cresce.
    ========================================================= */
-body.jogo3d.j3d-entre-jogos{background:#0f0f11}
 body.jogo3d.j3d-entre-jogos .cen{visibility:hidden}
 body.jogo3d.j3d-entre-jogos .cen-fps,
 body.jogo3d.j3d-entre-jogos .cen-ficha,
@@ -773,64 +772,10 @@ body.jogo3d .j3d-sair-rua{display:none !important}
 
 /* a página do feed: fundo de verdade e o mouse de volta */
 body.jogo3d.j3d-entre-jogos #jogo{pointer-events:auto}
-body.jogo3d.j3d-entre-jogos .pagina[data-pag="feed"].on{
-  background:radial-gradient(ellipse at 50% 0%,#1d1d21 0%,#121214 55%,#0f0f11 100%)}
 body.jogo3d.j3d-entre-jogos .feed-corpo{pointer-events:auto}
-body.jogo3d.j3d-entre-jogos .feed-rolo{display:block !important;padding:22px 24px 60px}
-body.jogo3d.j3d-entre-jogos .feed-lista{max-width:880px;margin:0 auto;gap:16px}
 
-/* a barra de cima, mais alta e mais legível */
-body.jogo3d.j3d-entre-jogos .feed-barra{padding:12px 18px;gap:16px;background:rgba(24,24,27,.98)}
-body.jogo3d.j3d-entre-jogos .feed-marca{gap:14px}
-body.jogo3d.j3d-entre-jogos .feed-marca .escudo{width:40px;height:40px;font-size:15px}
-body.jogo3d.j3d-entre-jogos .feed-marca b{font-size:22px}
-body.jogo3d.j3d-entre-jogos .feed-marca .num{font-size:15px;gap:6px}
-body.jogo3d.j3d-entre-jogos .feed-marca .num svg{width:18px;height:18px}
-body.jogo3d.j3d-entre-jogos .feed-quando .quando-txt{font-size:15px}
-body.jogo3d.j3d-entre-jogos .feed-barra .mapa-ic{min-width:44px;height:40px;font-size:15px}
-
-/* o menu da esquerda: ícones grandes */
-body.jogo3d.j3d-entre-jogos .feed-menu{padding:10px 8px;gap:8px;background:#141416}
-body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{width:52px;height:48px;border-radius:10px}
-body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic svg{width:24px;height:24px}
-
-/* as mensagens: cartões grandes */
-body.jogo3d.j3d-entre-jogos .feed-lista .msg{padding:20px 24px;border-radius:14px;
-  background:#1b1b1e;border:1px solid #2c2c31;box-shadow:0 6px 22px rgba(0,0,0,.35)}
-body.jogo3d.j3d-entre-jogos .feed-lista .msg.peso-decisao{background:#202024;border-color:#3d3d44;
-  box-shadow:inset 4px 0 0 var(--rubro-vivo),0 6px 22px rgba(0,0,0,.4)}
-body.jogo3d.j3d-entre-jogos .msg-voz{font-size:14px;letter-spacing:.18em;margin-bottom:8px}
-body.jogo3d.j3d-entre-jogos .msg-txt{font-size:19px;line-height:1.55}
-body.jogo3d.j3d-entre-jogos .msg-resp{font-size:16px;line-height:1.5;margin-top:12px;padding-top:12px}
-body.jogo3d.j3d-entre-jogos .msg-bts{gap:12px;margin-top:16px}
-body.jogo3d.j3d-entre-jogos .msg-bts .bt{padding:14px 22px;border-radius:10px;font-size:16px;
-  letter-spacing:.08em;min-height:52px}
-body.jogo3d.j3d-entre-jogos .msg-bts .bt small{font-size:13px;margin-top:4px}
-body.jogo3d.j3d-entre-jogos .feed-mais{display:block;margin:18px auto 0;padding:12px 22px;font-size:15px}
-
-/* os painéis do menu também crescem */
-body.jogo3d.j3d-entre-jogos .pagina.painel{font-size:15px}
-body.jogo3d.j3d-entre-jogos .pagina.painel .bt{padding:10px 16px;font-size:14px}
-body.jogo3d.j3d-entre-jogos #painelBarra h2{font-size:26px}
-
-@media (max-width:760px){
-  body.jogo3d.j3d-entre-jogos .feed-rolo{padding:12px 10px 50px}
-  body.jogo3d.j3d-entre-jogos .feed-lista .msg{padding:16px}
-  body.jogo3d.j3d-entre-jogos .msg-txt{font-size:17px}
-  body.jogo3d.j3d-entre-jogos .msg-bts .bt{flex:1 1 100%;font-size:15px}
-  body.jogo3d.j3d-entre-jogos .feed-marca b{font-size:17px}
-  body.jogo3d.j3d-entre-jogos .feed-menu{padding:6px 4px;gap:6px}
-  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{width:40px;height:40px;border-radius:8px}
-  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic svg{width:20px;height:20px}
-  /* a barra em duas linhas: a torcida e os números em cima, a data embaixo */
-  body.jogo3d.j3d-entre-jogos .feed-barra{flex-wrap:wrap;padding:8px 10px;gap:8px}
-  body.jogo3d.j3d-entre-jogos .feed-marca{flex:1 1 100%;gap:10px;overflow-x:auto;scrollbar-width:none}
-  body.jogo3d.j3d-entre-jogos .feed-marca .escudo{width:32px;height:32px}
-  body.jogo3d.j3d-entre-jogos .feed-marca .num{font-size:14px}
-  body.jogo3d.j3d-entre-jogos .feed-quando{flex:1 1 0;min-width:0;max-width:calc(100% - 52px);width:auto}
-  body.jogo3d.j3d-entre-jogos .feed-quando .quando-txt{font-size:13px}
-  body.jogo3d.j3d-entre-jogos .feed-barra .mapa-ic{min-width:40px;height:38px}
-}
+/* (o visual da tela entre os jogos — a paleta, o menu com nome, a barra e os
+   cartões — mora em css/portal.css desde o portal, 13/11/2026) */
 
 /* =========================================================
    ETAPA 4: O CELULAR (dono, 13/11/2026: "Os dois por igual" — o
@@ -865,12 +810,4 @@ body.jogo3d.j3d-entre-jogos #painelBarra h2{font-size:26px}
   .j3d-placar-tv{height:26px}
   .j3d-placar-time b{font-size:14px}
   .j3d-placar-gols b{font-size:16px}
-  /* o feed entre os jogos, deitado: a coluna mais larga e o menu enxuto */
-  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{width:38px;height:30px}
-  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic svg{width:18px;height:18px}
-  body.jogo3d.j3d-entre-jogos .feed-menu{gap:3px;padding:4px}
-  body.jogo3d.j3d-entre-jogos .feed-barra{flex-wrap:nowrap}
-  body.jogo3d.j3d-entre-jogos .feed-marca{flex:1 1 auto}
-  body.jogo3d.j3d-entre-jogos .msg-txt{font-size:16px}
-  body.jogo3d.j3d-entre-jogos .msg-bts .bt{flex:1 1 auto;min-height:44px}
 }

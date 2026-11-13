@@ -11517,6 +11517,56 @@ no feed, na ida vista do helicóptero, na ida assumida e na briga.
 - A tela da briga no celular (os botões grandes e o direcional) já
   servia em pé e deitado: não mudou.
 
+## O portal: a tela entre os jogos no molde do Football Manager (dono, 13/11/2026)
+
+Pedido: "Eu quero reformular essa tela pra ser uma tela com a pegada mais
+de Football Manager: a caixa de entrada de mensagens com classificação,
+próximo adversário, finanças da torcida, patrimônio, e outras coisas."
+Respostas do dono às perguntas: entram também a agenda de jogos, o
+elenco, os aliados e rivais e "quanto cada patrimônio tá gerando de
+receitas e despesas"; o tempo "corre sozinho, como hoje"; as mensagens
+são "cartões inteiros"; o menu é a "coluna com ícone e nome"; no celular,
+abas no portal; o próximo adversário mostra torcidas e efetivo, relação e
+histórico, risco do dia e viagem; a paleta é nova; e o refazer vale pro
+portal e pra todas as telas do menu (em etapas: o portal primeiro).
+
+- **`cenario3d/js/portal.js` e `css/portal.css`** (novos). main.js monta
+  o rolo das mensagens como sempre e entrega ao portal (`TO.portal.montar`,
+  em `pintarFeed`); `atualizarFeed` chama `TO.portal.atualizar`, que só
+  repinta quando o dia, o caixa, o elenco, as mensagens ou o patrimônio
+  mudam. O portal só LÊ o jogo: nenhuma regra mora nele.
+- **Três colunas** (acima de 1080 px): a CAIXA DE ENTRADA (os cartões,
+  com o aviso "N aguardando resposta"); o CLUBE — Próximo jogo (escudos,
+  posição na tabela, data, casa/fora, estádio; quem deve ir de cada lado
+  pela mesma régua do recado da partida; a relação com cada torcida do
+  adversário e o retrospecto das brigas; o risco do dia: aviso do olheiro,
+  ataque ou investida marcados, quem nos recebe, emboscada na estrada; a
+  viagem: destino, quantos vão, custo, rota), Agenda (4 últimos resultados
+  e 5 próximos) e Classificação (a liga do próximo jogo); a TORCIDA —
+  Finanças (caixa, saldo, receitas, despesas da semana), Patrimônio (cada
+  ponto com o que rende, o que custa e o saldo por semana), Elenco
+  (membros, aptos, feridos, presos, os 5 mais fortes) e Aliados e rivais
+  (os 5 de cada ponta). Cada bloco tem "Abrir", que leva à tela dele.
+- **No celular e em tela média**: três abas (Mensagens, Clube, Torcida) e
+  o menu vira a barra de baixo, com ícone e nome, rolando de lado.
+- **O menu com nome**: `montarMenuIcones` escreve o nome ao lado do ícone
+  (`.menu-rot`); com cena em 3D no ar ele volta a ser só ícone.
+- **A conta por ponto** (`contas(E).pontos`, financeiro.js): sede (a
+  manutenção e os anexos), cada bar, loja (manutenção e insumo), subsede,
+  subsede de fora e a fábrica — as mesmas fórmulas das linhas da semana,
+  repartidas por ponto.
+- **O retrospecto** (`E.retrospecto[id] = {v, d, e}`, feed.js,
+  `registrarConfronto`): vitórias, derrotas e empates contra cada
+  torcida, contados daqui pra frente.
+- **A paleta nova ("Sinalizador")**: fundo azul-petróleo (#0b1116),
+  painéis #121a21, destaque laranja de sinalizador (#ff7a3d) e âmbar de
+  refletor (#ffc247). Por ora só na página do portal (as variáveis são
+  redefinidas em `.pagina[data-pag="feed"]`): as outras telas mudam
+  quando o dono aprovar.
+- Conserto junto: o miolo do feed herdava `pointer-events:none` do 3D
+  (pra câmera arrastar) e, entre os jogos, não recebia clique fora dos
+  cartões.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

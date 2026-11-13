@@ -26697,7 +26697,10 @@ TO.financeiro = (function(){
     const juntar = (lista, rot, v, extra)=>{
       v = Math.round(v);
       if(v) lista.push(Object.assign({rot, v}, extra||{}));
+      return v;
     };
+    /* quanto cada ponto rende (o portal mostra receita e despesa de cada um, 13/11/2026) */
+    const recDe = new Map();
 
     /* --- receitas --- */
     let mens = 0, pagantes = 0;
@@ -26732,10 +26735,10 @@ TO.financeiro = (function(){
     const minha = E.torcida.mapa;
     for(const b of p.bares){
       const dd = diasDeDano(b, hoje);
-      juntar(rec, (b.bairro ? _t('Bar — {bairro} (n{nivel})', {bairro:b.bairro, nivel:b.nivel})
+      recDe.set(b, juntar(rec, (b.bairro ? _t('Bar — {bairro} (n{nivel})', {bairro:b.bairro, nivel:b.nivel})
                             : _t('Bar (n{nivel})', {nivel:b.nivel}))+
                   (dd ? ' · ' + _t('quebrado, {d} d', {d:dd}) : '') + nota(minha, b.bairro),
-             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje)*corte(minha, b.bairro), COM);
+             RECEITA.bar[b.nivel]*multDe(E,b.bairro)*fator*SEM*multDano(b, hoje)*corte(minha, b.bairro), COM));
     }
     /* a fábrica REPENSADA (ordem do dono, 02/09/2026): não mexe mais
        na receita — ela corta 50% do CUSTO da loja, lá nas despesas */
@@ -26746,21 +26749,21 @@ TO.financeiro = (function(){
     const multClube = TO.relacaoClube ? TO.relacaoClube.multLoja(E) : 1;
     for(const l of p.lojas){
       if(l.semInsumo){ des.push({rot:_t('Loja — {bairro}: sem insumo', {bairro:l.bairro}), v:0, nota:true}); continue; }
-      juntar(rec, (l.bairro ? _t('Loja — {bairro} (n{nivel})', {bairro:l.bairro, nivel:l.nivel})
+      recDe.set(l, juntar(rec, (l.bairro ? _t('Loja — {bairro} (n{nivel})', {bairro:l.bairro, nivel:l.nivel})
                             : _t('Loja (n{nivel})', {nivel:l.nivel}))+
                   (p.fabrica ? ' · ' + _t('fábrica') : '')+
                   (multClube > 1 ? ' · ' + _t('material oficial') : '') + nota(minha, l.bairro),
-             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube*corte(minha, l.bairro), COM);
+             RECEITA.loja[l.nivel]*multDe(E,l.bairro)*fator*SEM*multClube*corte(minha, l.bairro), COM));
     }
     for(const s of p.subsedes)
-      juntar(rec, (s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede')) + nota(minha, s.bairro),
-             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM*corte(minha, s.bairro), COM);
+      recDe.set(s, juntar(rec, (s.bairro ? _t('Subsede — {bairro}', {bairro:s.bairro}) : _t('Subsede')) + nota(minha, s.bairro),
+             RECEITA.subsede*multDe(E,s.bairro)*fator*SEM*corte(minha, s.bairro), COM));
     /* as FILIAIS (subsede em outra cidade, dono 25/08/2026) rendem a
        mesma régua da subsede, no multiplicador da cidade DELAS */
     for(const f of (p.filiais||[])){
       const bf = D ? D.bairroDaFilial(eu, f.cidade) : null;
-      juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}) + nota(f.cidade, bf),
-             RECEITA.subsede*multFilial(E,f)*fator*SEM*corte(f.cidade, bf), COM);
+      recDe.set(f, juntar(rec, _t('Subsede — {cidade} (n{nivel})', {cidade:nomeCidade(f.cidade), nivel:f.nivel}) + nota(f.cidade, bf),
+             RECEITA.subsede*multFilial(E,f)*fator*SEM*corte(f.cidade, bf), COM));
     }
 
     /* --- despesas --- */
@@ -26790,8 +26793,27 @@ TO.financeiro = (function(){
     for(const l of p.lojas) insumo += RECEITA.loja[l.nivel]*INSUMO*(1-corteFab);
     juntar(des, _t('Insumos das lojas') + (corteFab ? ' · ' + _t('fábrica') : ''), insumo*SEM, COM);
 
+    /* CADA PONTO DO PATRIMÔNIO, COM O QUE RENDE E O QUE CUSTA NA SEMANA
+       (dono, 13/11/2026: "quanto cada patrimônio tá gerando de receitas e
+       despesas"): as mesmas contas das linhas de cima, repartidas por ponto
+       — a manutenção de cada um e, na loja, o insumo dela */
+    const R = Math.round, pontos = [];
+    pontos.push({tipo:'sede', nivel:E.torcida.sedeNivel || 0, receita:0,
+      despesa:R(((MANUT_SEDE[E.torcida.sedeNivel] || 0) +
+        (px.enfermaria ? (TO.patrimonio ? TO.patrimonio.ANEXOS.enfermaria.mes : 1200) : 0) +
+        (px.galpao ? (TO.patrimonio ? TO.patrimonio.ANEXOS.galpao.mes : 600) : 0))*SEM)});
+    for(const b of p.bares) pontos.push({tipo:'bar', bairro:b.bairro || '', nivel:b.nivel,
+      receita:recDe.get(b) || 0, despesa:R(MANUT.bar[b.nivel]*SEM), quebrado:diasDeDano(b, hoje)});
+    for(const l of p.lojas) pontos.push({tipo:'loja', bairro:l.bairro || '', nivel:l.nivel, semInsumo:!!l.semInsumo,
+      receita:recDe.get(l) || 0, despesa:R((MANUT.loja[l.nivel] + RECEITA.loja[l.nivel]*INSUMO)*(1-corteFab)*SEM)});
+    for(const s of p.subsedes) pontos.push({tipo:'subsede', bairro:s.bairro || '', nivel:s.nivel || 1,
+      receita:recDe.get(s) || 0, despesa:R(MANUT.subsede[s.nivel || 1]*SEM)});
+    for(const f of (p.filiais||[])) pontos.push({tipo:'filial', cidade:nomeCidade(f.cidade), nivel:f.nivel,
+      receita:recDe.get(f) || 0, despesa:R((MANUT.subsede[f.nivel] || MANUT.subsede[1])*SEM)});
+    if(p.fabrica) pontos.push({tipo:'fabrica', receita:0, despesa:0});
+
     const soma = l => l.reduce((s,x)=>s+x.v, 0);
-    return {receitas:rec, despesas:des,
+    return {pontos, receitas:rec, despesas:des,
             receita:soma(rec), despesa:soma(des),
             saldo:soma(rec)-soma(des), insumo:Math.round(insumo*SEM)};
   }
@@ -42249,6 +42271,11 @@ TO.feed = (function(){
       const bc = E.brigasCom[d.torcidaId];
       E.brigasCom[d.torcidaId] = (bc && bc.ano === E.data.ano) ? {ano:E.data.ano, n:bc.n+1}
                                                                 : {ano:E.data.ano, n:1};
+      /* O RETROSPECTO CONTRA CADA UMA (o portal, 13/11/2026): vitórias,
+         derrotas e empates da gente contra ela, desde que o save conta */
+      E.retrospecto = E.retrospecto || {};
+      const rt = E.retrospecto[d.torcidaId] || (E.retrospecto[d.torcidaId] = {v:0, d:0, e:0});
+      if(empatou) rt.e++; else if(d.ganhamos) rt.v++; else rt.d++;
     }
     const vencedor = empatou ? '' : d.ganhamos ? (a.nome || E.torcida.nome)
                                                : (b.nome || '');
@@ -59580,7 +59607,7 @@ TO.mapaCaravana = (function(){
     for(const n of NAV){
       if(!temNoMenu(n)) continue;
       const b = el('button',{class:'mapa-ic', 'data-pag':n.id,
-        html: IC.get(n.ic) + '<i class="ic-badge" hidden></i>'});
+        html: IC.get(n.ic) + `<span class="menu-rot">${n.rot}</span>` + '<i class="ic-badge" hidden></i>'});
       b.title = n.rot;
       b.setAttribute('aria-label', n.rot);
       if(painel === n.id) b.classList.add('aceso');
@@ -60065,7 +60092,12 @@ TO.mapaCaravana = (function(){
        cima da cidade, na borda da esquerda, ao lado dos ícones (a direita
        é dos recortes de jornal; jogo3d.css). */
     const colunas = el('div',{class:'feed-colunas'});
-    if(rolo) colunas.append(rolo);
+    /* O PORTAL (dono, 13/11/2026, cenario3d/js/portal.js): o rolo das
+       mensagens vira a caixa de entrada, a primeira de três colunas — as
+       outras duas são o clube (próximo jogo, agenda, classificação) e a
+       torcida (finanças, patrimônio, elenco, relações) */
+    if(rolo && TO.portal) TO.portal.montar(colunas, rolo, {abrirPainel: id => (id === 'planejamento' && ACAO_NAV.planejamento ? ACAO_NAV.planejamento() : abrirPainel(id))});
+    else if(rolo) colunas.append(rolo);
     /* SÓ O FEED NA TELA (dono, 13/11/2026: notícias, jornais e rede social
        só em Notícias): sem a coluna da rede e sem o ticker */
     corpo.append(barra, colunas);
@@ -60745,6 +60777,7 @@ TO.mapaCaravana = (function(){
     /* NO JOGO 3D não há lista (TO.semFeed): o que anda é a coluna da rede
        social, por cima da cidade (sync com o 2D, 06/10/2026) */
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
+    if(TO.portal) try{ TO.portal.atualizar(); }catch(err){ console.error('o portal:', err); }
     const {hist, teto} = janelaDoFeed(e);
     /* ALCANÇAR A DECISÃO ENTERRADA EXIGE REMONTAR (17/09/2026): esticar
        a janela não basta. O laço abaixo pula a mensagem cujo estado não
