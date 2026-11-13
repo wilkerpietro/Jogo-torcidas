@@ -1,0 +1,234 @@
+/* =========================================================
+   AS TELAS DO MENU NA IDENTIDADE NOVA (dono, 13/11/2026)
+
+   "Refaça as demais telas do menu pra ficar condizente com a nova
+   identidade visual do jogo."
+
+   1. A MOLDURA: entre os jogos, a tela do menu (Torcida, Financeiro,
+      Calendário, Competições, Ranking, Diplomacia, Notícias, Jogo) não é
+      mais uma caixa por cima de um fundo escuro — ela abre DENTRO da
+      moldura do portal, no lugar das três colunas: o menu com nome
+      segue à esquerda (embaixo, no celular), a barra da torcida segue
+      em cima, e o item aberto fica marcado no menu. portal.js mede a
+      moldura (`--pt-topo`, `--pt-menu`, `--pt-base`).
+   2. AS PEÇAS: o alto da tela, as abas, as seções, as tabelas, os
+      botões, os campos, as listas e os modais na mão do portal — o
+      grafite sem degradê, o branco de faixa na marca e no botão de
+      ação, o risco vermelho antes de cada título (a paleta "Faixa", em
+      portal.css). O conteúdo de cada tela é o de antes.
+
+   Este arquivo vem depois de jogo.css e portal.css; tudo aqui é do
+   jogo 3D (`body.jogo3d`).
+   ========================================================= */
+
+/* ---------- 1. a moldura ---------- */
+body.jogo3d.j3d-entre-jogos.com-painel #painelFundo{display:none}
+body.jogo3d.j3d-entre-jogos.com-painel #painelBarra{
+  top:var(--pt-topo, 62px);left:var(--pt-menu, 200px);right:0;
+  min-height:70px;padding:13px 70px 13px 22px;
+  background:var(--fundo);border:0;border-bottom:1px solid var(--linha);border-radius:0;box-shadow:none;
+}
+body.jogo3d.j3d-entre-jogos.com-painel .pagina.painel{
+  top:calc(var(--pt-topo, 62px) + var(--pnl-topo));left:var(--pt-menu, 200px);right:0;bottom:var(--pt-base, 0px);
+  background:var(--fundo);border:0;border-radius:0;box-shadow:none;
+  padding:16px 22px 34px;
+}
+/* (o miolo não estica sem fim na tela muito larga) */
+body.jogo3d.j3d-entre-jogos.com-painel .pagina.painel > *{max-width:1280px}
+
+/* ---------- 2. o alto da tela ---------- */
+body.jogo3d .pnl-titulo small{font-size:12.5px;letter-spacing:.2em;color:var(--fraco)}
+body.jogo3d .pnl-titulo h2{font-size:30px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--marca);
+  display:flex;align-items:baseline;gap:0}
+body.jogo3d .pnl-titulo h2::before{content:'';flex:none;align-self:center;width:5px;height:24px;margin-right:12px;background:var(--rubro-vivo)}
+body.jogo3d #painelSub{font-size:14px;text-transform:none;letter-spacing:.02em}
+body.jogo3d .pnl-kpis span{min-width:104px;padding:8px 13px;background:var(--painel);border:1px solid var(--linha);border-radius:var(--raio)}
+body.jogo3d .pnl-kpis small{font-family:var(--titulo);font-size:12px;letter-spacing:.12em;color:var(--fraco)}
+body.jogo3d .pnl-kpis b{font-size:18px;color:var(--texto)}
+body.jogo3d.com-painel #painelFechar{width:38px;height:38px;border-radius:var(--raio);background:var(--painel);border-color:var(--linha)}
+body.jogo3d.com-painel #painelFechar:hover{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+/* fora da moldura (a tela aberta com uma cena em 3D no ar) o alto não tem degradê */
+body.jogo3d.com-painel #painelBarra{background:var(--painel-alto)}
+body.jogo3d.j3d-entre-jogos.com-painel #painelBarra{background:var(--fundo)}
+
+/* ---------- as abas de cima: a fita sublinhada ---------- */
+body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes){
+  gap:2px;padding:0 22px;margin-left:-22px;margin-right:-22px;max-width:none;
+  background:var(--fundo);border-bottom:1px solid var(--linha);
+}
+body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button{
+  padding:13px 16px 11px;border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:var(--fraco);
+  font-family:var(--titulo);font-size:16px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+}
+body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button:hover:not(:disabled){
+  background:transparent;border-color:transparent;border-bottom-color:var(--apagado);color:var(--texto)}
+body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button.on{
+  background:transparent;border-color:transparent;border-bottom-color:var(--rubro-vivo);color:var(--marca);box-shadow:none}
+
+/* as abas de dentro: fichas; a escolhida é o branco de faixa */
+body.jogo3d .pagina.painel .subabas button,
+body.jogo3d .pagina.painel .abas-grandes button{
+  padding:7px 13px;border:1px solid var(--linha);border-radius:5px;background:var(--painel);color:var(--fraco);
+  font-family:var(--titulo);font-size:14px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+}
+body.jogo3d .pagina.painel .subabas button:hover:not(:disabled),
+body.jogo3d .pagina.painel .abas-grandes button:hover:not(:disabled){border-color:var(--apagado);background:var(--faixa);color:var(--texto)}
+body.jogo3d .pagina.painel .subabas button.on,
+body.jogo3d .pagina.painel .abas-grandes button.on{border-color:var(--marca);background:var(--marca);color:var(--marca-tinta)}
+/* (a fita de cima não vira ficha) */
+body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button.on{color:var(--marca)}
+body.jogo3d .pagina.painel .filtros-linha button{border-radius:5px;background:var(--painel);border-color:var(--linha)}
+body.jogo3d .pagina.painel .filtros-linha button.on{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+
+/* ---------- as seções: o bloco do portal ---------- */
+body.jogo3d .pagina.painel .cartao,
+body.jogo3d .pagina.painel .quadro{background:var(--painel);border:1px solid var(--linha);border-radius:var(--raio)}
+body.jogo3d .pagina.painel .cartao > h2,
+body.jogo3d .pagina.painel .quadro > header{
+  padding:11px 14px;background:var(--painel-alto);border-bottom:1px solid var(--linha);border-radius:var(--raio) var(--raio) 0 0;
+}
+body.jogo3d .pagina.painel .cartao > h2,
+body.jogo3d .pagina.painel .quadro > header h2{
+  font-family:var(--titulo);font-size:17px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--marca);
+}
+/* o risco vermelho no lugar da bolinha numerada */
+body.jogo3d .pagina.painel .cartao > h2::before,
+body.jogo3d .pagina.painel .quadro > header:not(.nav-rodada) h2::before{
+  counter-increment:none;content:'';width:4px;height:16px;border-radius:0;background:var(--rubro-vivo);
+}
+body.jogo3d .pagina.painel .cartao .cartao > h2::before,
+body.jogo3d .pagina.painel .cartao .quadro > header h2::before,
+body.jogo3d .pagina.painel .quadro .cartao > h2::before{content:none}
+body.jogo3d .pagina.painel .cartao .cartao > h2,
+body.jogo3d .pagina.painel .quadro .cartao > h2{background:transparent;border-bottom:0;font-size:15px}
+body.jogo3d .pagina.painel .cartao > .corpo{padding:12px 14px 14px}
+body.jogo3d .pagina.painel .cartao > .rodape,
+body.jogo3d .pagina.painel .quadro > .rodape{background:var(--painel-alto);border-radius:0 0 var(--raio) var(--raio)}
+body.jogo3d .pagina.painel .recado{border-radius:var(--raio);background:var(--painel-alto);border-left-color:var(--marca)}
+body.jogo3d .pagina.painel .ass-politicas,
+body.jogo3d .pagina.painel .escolha-time,
+body.jogo3d .pagina.painel .linha-rotina,
+body.jogo3d .pagina.painel .comp-marca,
+body.jogo3d .pagina.painel .loja-caixa,
+body.jogo3d .pagina.painel .loja-secao{border-radius:var(--raio);background:var(--painel)}
+body.jogo3d .pagina.painel .loja-secao > h3{font-size:17px;letter-spacing:.12em;color:var(--marca)}
+body.jogo3d .pagina.painel .loja-secao > h3::before{counter-increment:none;content:'';width:4px;height:16px;border-radius:0;background:var(--rubro-vivo)}
+body.jogo3d .pagina.painel .loja-tile,
+body.jogo3d .pagina.painel .loja-item{background:var(--painel-alto);border-radius:var(--raio)}
+body.jogo3d .pagina.painel .loja-bt{border-color:var(--marca);border-radius:5px}
+
+/* ---------- botões e campos ---------- */
+body.jogo3d .pagina.painel .bt,
+body.jogo3d .moldura .bt,
+body.jogo3d .msg .bt, body.jogo3d .itn-cartao .bt{
+  border:1px solid var(--linha);border-radius:5px;background:var(--faixa);color:var(--texto);
+}
+body.jogo3d .pagina.painel .bt:hover:not(:disabled),
+body.jogo3d .moldura .bt:hover:not(:disabled){border-color:var(--marca);background:#2a2a2d}
+body.jogo3d .pagina.painel .bt.destaque,
+body.jogo3d .moldura .bt.destaque,
+body.jogo3d .msg .bt.destaque, body.jogo3d .itn-cartao .bt.destaque{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .pagina.painel .bt.destaque:hover:not(:disabled),
+body.jogo3d .moldura .bt.destaque:hover:not(:disabled),
+body.jogo3d .msg .bt.destaque:hover:not(:disabled){background:#fff;border-color:#fff;color:var(--marca-tinta)}
+body.jogo3d .pagina.painel .bt:disabled, body.jogo3d .moldura .bt:disabled{opacity:.42}
+body.jogo3d .pagina.painel select.campo,
+body.jogo3d .pagina.painel .busca,
+body.jogo3d .pagina.painel input[type=search],
+body.jogo3d .pagina.painel input[type=text],
+body.jogo3d .pagina.painel input[type=number],
+body.jogo3d .moldura select.campo,
+body.jogo3d .moldura .busca{border-radius:5px;background:#0f0f10;border:1px solid var(--linha);color:var(--texto)}
+body.jogo3d .pagina.painel select.campo:focus,
+body.jogo3d .pagina.painel .busca:focus,
+body.jogo3d .moldura .busca:focus{border-color:var(--marca)}
+body.jogo3d .pagina.painel .tag{border-radius:4px}
+
+/* ---------- as tabelas ---------- */
+body.jogo3d .pagina.painel table th{
+  font-family:var(--titulo);font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--fraco);
+}
+body.jogo3d .pagina.painel table.liga th,
+body.jogo3d .pagina.painel table.agenda th{background:var(--painel-alto)}
+body.jogo3d .pagina.painel table tr.meu td,
+body.jogo3d .pagina.painel table tr.nossa td{background:var(--faixa)}
+body.jogo3d .pagina.painel table tr.meu td.pos,
+body.jogo3d .pagina.painel table tr.nossa td:first-child{box-shadow:inset 3px 0 0 var(--marca)}
+
+/* ---------- as listas da esquerda ---------- */
+body.jogo3d .filtros button{border-radius:5px;background:var(--painel);color:var(--fraco)}
+body.jogo3d .filtros button:hover{background:var(--faixa);color:var(--texto)}
+body.jogo3d .filtros button.on{border-color:var(--linha);border-left-color:var(--marca);background:var(--faixa);color:var(--marca)}
+
+/* ---------- os modais ---------- */
+body.jogo3d .moldura{border-radius:var(--raio);border:1px solid var(--linha);background:var(--painel)}
+body.jogo3d .moldura > header{background:var(--painel-alto);border-bottom:1px solid var(--linha)}
+body.jogo3d .moldura > header h2{font-family:var(--titulo);font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--marca)}
+body.jogo3d .moldura > footer{background:var(--painel-alto);border-top:1px solid var(--linha)}
+
+/* ---------- o mapa (Brasil e cidade) ---------- */
+body.jogo3d .mb-painel > header{background:var(--painel-alto)}
+body.jogo3d .mb-painel > header h2{text-transform:uppercase;letter-spacing:.05em;color:var(--marca)}
+body.jogo3d .mb-abas button,
+body.jogo3d .mb-lado-abas button{border-radius:5px;background:var(--painel);border-color:var(--linha)}
+body.jogo3d .mb-abas button[aria-selected="true"],
+body.jogo3d .mb-lado-abas button[aria-selected="true"]{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .mb-x{border-radius:var(--raio);background:var(--painel)}
+body.jogo3d .mb-x:hover{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .mb-zona-bloco, body.jogo3d .mb-cartao{border-radius:var(--raio);background:var(--painel)}
+
+/* ---------- os avisos do canto ---------- */
+body.jogo3d #notificacoes .nota{border-radius:var(--raio);background:var(--painel-alto);border-color:var(--linha)}
+
+/* ---------- o celular ---------- */
+@media (max-width:900px){
+  body.jogo3d.j3d-entre-jogos.com-painel #painelBarra{padding:10px 56px 10px 14px}
+  body.jogo3d.j3d-entre-jogos.com-painel .pagina.painel{padding:12px 12px 26px}
+  body.jogo3d .pnl-titulo h2{font-size:23px}
+  body.jogo3d .pnl-titulo h2::before{height:19px;margin-right:9px}
+  body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes){padding:0 12px;margin-left:-12px;margin-right:-12px}
+  body.jogo3d .pagina.painel > :is(.titulo-pagina, .titulo-barra) + :is(.subabas, .abas-grandes) button{padding:11px 12px 9px;font-size:14.5px}
+  body.jogo3d .pnl-kpis span{min-width:0;padding:6px 9px}
+  body.jogo3d .pnl-kpis b{font-size:14.5px}
+  body.jogo3d .pagina.painel .cartao > h2{padding:10px 12px;font-size:15.5px}
+}
+
+/* ---------- o planejamento da semana (o popup; planejamento.css) ---------- */
+body.jogo3d .plj{border-radius:var(--raio);background:var(--painel)}
+body.jogo3d .plj-topo{background:var(--painel-alto)}
+body.jogo3d .plj-titulo small{color:var(--fraco);letter-spacing:.2em}
+body.jogo3d .plj-titulo h2{text-transform:uppercase;letter-spacing:.03em;color:var(--marca)}
+body.jogo3d .plj-selo{border-radius:4px;color:var(--fraco)}
+body.jogo3d .plj-kpis span{background:var(--painel);border-radius:var(--raio)}
+body.jogo3d .plj-x{border-radius:var(--raio);background:var(--painel)}
+body.jogo3d .plj-x:hover{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .plj-praca{border-radius:5px;background:var(--painel)}
+body.jogo3d .plj-praca.on{border-color:var(--marca);background:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .plj-praca.on *{color:var(--marca-tinta)}
+body.jogo3d .plj-item{border-radius:5px;background:var(--painel-alto)}
+body.jogo3d .plj-item.on{border-left-color:var(--marca);background:var(--faixa)}
+body.jogo3d .plj-nosso{border-radius:0;width:4px;height:12px;background:var(--rubro-vivo);vertical-align:-1px}
+body.jogo3d .plj-jogo .plj-dia{border-radius:5px;background:var(--painel-alto)}
+body.jogo3d .plj-secao{border-radius:var(--raio);background:var(--painel-alto)}
+body.jogo3d .plj-secao h4{font-size:17px;letter-spacing:.12em;color:var(--marca)}
+/* o risco vermelho no lugar da bolinha numerada */
+body.jogo3d .plj-secao h4 i{width:4px;height:16px;border-radius:0;background:var(--rubro-vivo);font-size:0;color:transparent}
+body.jogo3d .plj-cartao{border-radius:5px;background:var(--painel)}
+body.jogo3d .plj-cartao.on{border-color:var(--marca);background:var(--faixa);box-shadow:inset 3px 0 0 var(--marca)}
+body.jogo3d .plj-cartao.briga.on{border-color:var(--rubro-vivo);background:var(--rubro-fundo);box-shadow:inset 3px 0 0 var(--rubro-vivo)}
+body.jogo3d .plj-cartao.aliada b::after{color:var(--fraco)}
+body.jogo3d .plj-cont{border-radius:5px;background:var(--painel)}
+body.jogo3d .plj-trajeto span{border-radius:4px;background:var(--painel)}
+body.jogo3d .plj-bt{border-radius:5px;background:var(--faixa)}
+body.jogo3d .plj-bt:hover:not(:disabled){border-color:var(--marca)}
+body.jogo3d .plj-bt.destaque{background:var(--marca);border-color:var(--marca);color:var(--marca-tinta)}
+body.jogo3d .plj-bt.destaque:hover:not(:disabled){background:#fff}
+body.jogo3d .plj em.briga{color:var(--rubro-vivo)}
+/* o resumo da semana dentro do cartão do feed */
+body.jogo3d .sem-curto .sem-resumo li.nosso b{color:var(--marca)}
+body.jogo3d .sem-curto .bt{border-radius:5px}
+
+/* ---------- acertos do celular ---------- */
+@media (max-width:900px){
+  body.jogo3d #painelSub{display:none}
+}

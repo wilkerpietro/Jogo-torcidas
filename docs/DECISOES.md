@@ -11567,6 +11567,39 @@ portal e pra todas as telas do menu (em etapas: o portal primeiro).
   (pra câmera arrastar) e, entre os jogos, não recebia clique fora dos
   cartões.
 
+## A paleta "Faixa" e as telas do menu na identidade nova (dono, 13/11/2026)
+
+Pedido: "Prefiro outra paleta de cor, uma mais séria e condizente com
+torcida organizada. Refaça as demais telas do menu pra ficar condizente
+com a nova identidade visual do jogo."
+
+- **A paleta "Sinalizador" saiu** (azul-petróleo com laranja: o dono não
+  quis). **Entra a "Faixa"**: o preto e o grafite do pano (#0b0b0c,
+  #141415, #1a1a1c, #212123), o branco da letra de faixa como cor da
+  marca (`--marca` #f2f0ea, com `--marca-tinta` #0b0b0c por cima) e o
+  vermelho (#d63a33) só pro que pede atenção. Sem degradê, cantos de
+  7 px, e um risco vermelho antes de cada título de seção. As variáveis
+  são do `body.jogo3d` (portal.css): valem no jogo 3D inteiro. Pra trocar
+  a paleta de novo, é esse bloco.
+- **As telas do menu abrem dentro da moldura** (`css/telas3d.css`):
+  entre os jogos, Torcida, Financeiro, Calendário, Competições, Ranking,
+  Diplomacia, Notícias e Jogo ocupam o lugar das três colunas do portal
+  — o menu com nome segue à esquerda (embaixo, no celular), a barra da
+  torcida segue em cima e o item aberto fica marcado. Sem o fundo escuro
+  por cima. portal.js mede a moldura (`--pt-topo`, `--pt-menu`,
+  `--pt-base`). Com uma cena em 3D no ar a tela abre como antes, em
+  caixa.
+- **As peças na mão do portal**: o alto da tela (o nome em caixa alta
+  com o risco vermelho, os números em ladrilhos), as abas de cima como
+  fita sublinhada, as abas de dentro como fichas (a escolhida em branco),
+  as seções com cabeçalho e risco vermelho no lugar da bolinha numerada,
+  o botão de ação em branco de faixa com letra preta, campos, tabelas,
+  listas, modais, o mapa e o popup do planejamento. O conteúdo de cada
+  tela é o de antes.
+- **O texto do planejamento sobre a ida** foi trocado: não fala mais em
+  "o recado pergunta se você assume a ida"; diz que o bonde anda sozinho
+  e que o jogador assume se uma rival chegar perto (etapas 2 e 3).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

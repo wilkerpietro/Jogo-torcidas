@@ -324,13 +324,39 @@
     const e = TO.estado && TO.estado.E;
     if(!e || !e.torcida || !raiz || !raiz.isConnected) return;
     contarMensagens(e);
+    medir();
     const p = e.patrimonio || {};
     const k = [e.data.absoluto, Math.round(e.dinheiro), e.membros.length, (e.feed || []).length, ((e.feed || [])[0] || {}).id,
                (p.bares || []).length, (p.lojas || []).length, e.torcida.sedeNivel, (window.TO.i18n || {}).idioma].join('|');
     if(!forcar && k === chave) return;
     chave = k;
     pintar();
+    vigiarMoldura();
   }
+  /* A MOLDURA DAS TELAS (13/11/2026): as telas do menu abrem DENTRO da
+     moldura — o menu e a barra de cima ficam à vista —, e o CSS
+     (telas3d.css) precisa saber onde a barra acaba e onde o menu está:
+     `--pt-topo` (o pé da barra), `--pt-menu` (a largura da coluna do menu;
+     0 no celular) e `--pt-base` (a altura do menu embaixo, no celular) */
+  let observador = null;
+  function medir(){
+    const b = document.querySelector('.pagina[data-pag="feed"] .feed-barra'), m = document.querySelector('.pagina[data-pag="feed"] .feed-menu');
+    if(!b || !m) return;
+    const rb = b.getBoundingClientRect(), rm = m.getBoundingClientRect();
+    if(!rb.width || !rm.width) return;
+    const embaixo = rm.top > rb.bottom && rm.width > innerWidth * 0.7;
+    const st = document.documentElement.style;
+    st.setProperty('--pt-topo', Math.round(rb.bottom) + 'px');
+    st.setProperty('--pt-menu', (embaixo ? 0 : Math.round(rm.right)) + 'px');
+    st.setProperty('--pt-base', (embaixo ? Math.max(0, Math.round(innerHeight - rm.top)) : 0) + 'px');
+  }
+  function vigiarMoldura(){
+    if(observador) observador.disconnect();
+    const b = document.querySelector('.pagina[data-pag="feed"] .feed-barra'), m = document.querySelector('.pagina[data-pag="feed"] .feed-menu');
+    if(window.ResizeObserver && b && m){ observador = new ResizeObserver(medir); observador.observe(b); observador.observe(m); }
+    medir();
+  }
+  addEventListener('resize', medir);
   /* `colunas`: a caixa do miolo do feed; `rolo`: o rolo das mensagens que
      main.js acabou de montar; `c`: { abrirPainel } */
   function montar(colunas, rolo, c){
@@ -375,6 +401,14 @@
 
   /* ---------- o dicionário do portal (es, en) ---------- */
   if(TO.i18n && TO.i18n.registrar) TO.i18n.registrar({
+    /* (o planejamento: a ida anda sozinha desde a etapa 2) */
+    'Fora, o bonde anda sozinho de onde a caravana descer até o estádio. Se uma rival chegar perto no caminho, <b>você assume o bonde</b> antes da briga. Aqui se decide a viagem.':
+      {es:'De visitante, la banda camina sola desde donde baja la caravana hasta el estadio. Si una rival se acerca en el camino, <b>tomás el control</b> antes de la pelea. Acá se decide el viaje.',
+       en:'Away, the crew walks on its own from where the convoy stops to the stadium. If a rival gets close on the way, <b>you take over the crew</b> before the fight. Here you decide the trip.'},
+    'Em casa, o bonde sai sozinho da sede e anda até o estádio. Se uma rival chegar perto no caminho, <b>você assume o bonde</b> antes da briga.':
+      {es:'De local, la banda sale sola de la sede y camina hasta el estadio. Si una rival se acerca en el camino, <b>tomás el control</b> antes de la pelea.',
+       en:'At home, the crew leaves HQ on its own and walks to the stadium. If a rival gets close on the way, <b>you take over the crew</b> before the fight.'},
+    'a ida anda sozinha': {es:'la ida va sola', en:'the walk runs on its own'},
     'Abrir a tela': {es:'Abrir la pantalla', en:'Open the screen'},
     'Abrir': {es:'Abrir', en:'Open'},
     'Próximo jogo': {es:'Próximo partido', en:'Next game'},

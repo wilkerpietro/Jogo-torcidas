@@ -63093,7 +63093,7 @@ TO.mapaCaravana = (function(){
         const est = it.r.tipo === 'fora' ? P.estimativaCaravana(e, it.jogo) : null;
         const car = est ? _t('{n} na caravana', {n:est.vao}) + ' · ' : '';
         /* (no jogo 3D a ida se decide no dia: em casa, no recado da partida; fora, na chegada) */
-        if(idaNoDiaDo(e, it.jogo)) return {txt: it.r.tipo === 'fora' ? car + _t('a ida se decide na chegada') : _t('a ida é no dia'), tom:'ok'};
+        if(idaNoDiaDo(e, it.jogo)) return {txt: it.r.tipo === 'fora' ? car + _t('a ida anda sozinha') : _t('a ida anda sozinha'), tom:'ok'};
         if(p.intencao === 'paz') return {txt: car + _t('em paz'), tom:'ok'};
         const alvo = p.alvoTorcida && M.torcida(p.alvoTorcida);
         if(!alvo) return {txt: car + _t('atacar: falta o alvo'), tom:'falta'};
@@ -63178,8 +63178,8 @@ TO.mapaCaravana = (function(){
       const idaNoDia = jogo ? idaNoDiaDo(e, jogo) : (!fora && !!TO.semFeed);
       if(idaNoDia)
         s2.appendChild(el('p',{class:'plj-nota plj-ida', html: fora
-          ? _t('Fora, a ida até o estádio é decidida <b>na chegada à cidade</b>: quando a caravana descer, o recado pergunta se você assume a ida dali — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz. Aqui se decide a viagem.')
-          : _t('Em casa, a ida é decidida <b>no dia do jogo</b>: o recado da partida pergunta se você assume a ida — o presidente a pé na frente do bonde, passando pelos pontos da PM e partindo pra cima de quem achar no caminho — ou se a torcida vai em paz.')}));
+          ? _t('Fora, o bonde anda sozinho de onde a caravana descer até o estádio. Se uma rival chegar perto no caminho, <b>você assume o bonde</b> antes da briga. Aqui se decide a viagem.')
+          : _t('Em casa, o bonde sai sozinho da sede e anda até o estádio. Se uma rival chegar perto no caminho, <b>você assume o bonde</b> antes da briga.')}));
       const briga = !idaNoDia && p.intencao !== 'paz';
       const alvos = fora ? P.alvosDaViagem(e, {advId:(jogo && jogo.advId) || r.advId})
                          : (()=>{ const doJogo = new Set([...M.torcidasDe(r.grupo.casa), ...M.torcidasDe(r.grupo.vis)].map(o=>o.id));
