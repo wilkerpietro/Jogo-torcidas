@@ -3539,6 +3539,15 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
   ossos, com as cores de cada boneco. A multidão mais longe usa 3 peças.
 - A miniatura de caixas fica pra quem está pequeno na tela.
 
+### 4.7 O planejamento da semana (13/11/2026)
+
+- O cartão de segunda tem três grupos: nossos jogos (com a etiqueta do
+  que está marcado), os jogos da cidade e os aliados que chegam.
+- O aliado fica sempre na nossa sede: não há escolha de recepção.
+- O ataque é marcado no planejamento ("Na rua": em paz ou atacar, contra
+  quem e onde), em casa e fora; no dia o bonde vai ao ponto e a briga
+  abre lá.
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:

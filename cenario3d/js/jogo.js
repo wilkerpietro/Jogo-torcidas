@@ -7120,6 +7120,17 @@ TO.i18n.registrar({
   'Desliga quando o jogo abrir de novo (recarregue a página).': {es:'Se apaga cuando el juego se abra de nuevo (recargue la página).', en:'Turns off when the game opens again (reload the page).'},
 
   'Limite de fps': {es:'Límite de fps', en:'Fps limit'},
+  'Nossos jogos': {es:'Nuestros partidos', en:'Our matches'},
+  'Na cidade': {es:'En la ciudad', en:'In town'},
+  'Aliados chegando': {es:'Aliados llegando', en:'Allies arriving'},
+  'fora · {cidade}': {es:'fuera · {cidade}', en:'away · {cidade}'},
+  'rival na rua': {es:'rival en la calle', en:'rival on the street'},
+  'fica na nossa sede': {es:'se queda en nuestra sede', en:'stays at our HQ'},
+  'aliado sempre fica na nossa sede: nada a decidir': {es:'el aliado siempre se queda en nuestra sede: nada que decidir', en:'allies always stay at our HQ: nothing to decide'},
+  'Ficam na nossa sede ({nota}). <b>{valor}</b> no dia do jogo · relação <b class="positivo">{n}</b>.': {es:'Se quedan en nuestra sede ({nota}). <b>{valor}</b> el día del partido · relación <b class="positivo">{n}</b>.', en:'They stay at our HQ ({nota}). <b>{valor}</b> on match day · relation <b class="positivo">{n}</b>.'},
+  '{n} aliado chegando · fica na sede': {es:'{n} aliado llegando · se queda en la sede', en:'{n} ally arriving · stays at HQ'},
+  '{n} aliados chegando · ficam na sede': {es:'{n} aliados llegando · se quedan en la sede', en:'{n} allies arriving · stay at HQ'},
+  'Aliados na cidade — ficam na nossa sede': {es:'Aliados en la ciudad — se quedan en nuestra sede', en:'Allies in town — they stay at our HQ'},
   'Cidade vista de cima': {es:'Ciudad vista desde arriba', en:'City seen from above'},
   'Em retrato': {es:'En retrato', en:'As a snapshot'},
   'Inteira': {es:'Entera', en:'Full'},
@@ -30854,7 +30865,10 @@ TO.planejamento = (function(){
   const recepcaoDe = id => RECEPCAO.find(r=>r.id===id) || RECEPCAO[0];
   /* o que o jogador pode escolher: "não receber" saiu (dono, 13/11/2026:
      "Sempre um aliado vai hospedar o outro na sede") */
-  const RECEPCAO_ESCOLHAS = RECEPCAO.filter(r=>r.id !== 'nada');
+  /* (e a escolha acabou — 13/11/2026: "pare de condicionar, na mensagem de
+     planejamento, como iremos hospedar um aliado se estiver predefinido que
+     iremos hospedar na sede": é sempre a hospedagem na sede) */
+  const RECEPCAO_ESCOLHAS = RECEPCAO.filter(r=>r.id === 'hospedar');
 
   /* nível padrão de recepção: quem não quer decidir toda semana escolhe
      uma vez e o aliado é recebido assim sempre */
@@ -30864,10 +30878,7 @@ TO.planejamento = (function(){
     return E.padraoRecepcao || null;
   }
   /* o que vale pra este aliado agora: escolha da semana ou o padrão */
-  const nivelDe = (E, idAliado) => {
-    const n = (plano(E).recepcao[idAliado]) || recepcaoPadrao(E) || 'hospedar';
-    return n === 'nada' ? 'hospedar' : n;
-  };
+  const nivelDe = (E, idAliado) => 'hospedar';
   const custoRecepcao = (nivel, gente) => recepcaoDe(nivel).porCabeca * gente;
 
   /* a escolha do bloco de recepção da mensagem do olheiro (dono,
@@ -61978,11 +61989,13 @@ TO.mapaCaravana = (function(){
      (a pergunta é na chegada da caravana) não têm ataque no planejamento —
      quem ataca é o jogador, na ida. Campo neutro e cidade sem mapa seguem
      com o planejamento de antes */
-  function idaNoDiaDo(e, j){
-    if(!TO.semFeed || !e || !j || j.neutro) return false;
-    if(j.casa) return true;
-    return !!(TO.jogo3d && TO.jogo3d.temCidade && TO.jogo3d.temCidade(j.mapaAdv));
-  }
+  /* (13/11/2026, o dono: "num jogo Fortaleza × CRB [...] não dá pra atacar a
+     Comando Alvirrubro mesmo ela sendo rival, corrija pra dar certo
+     atacar"): a ida voltou a andar sozinha (etapa 2), e sem o ataque no
+     planejamento não sobrava jeito de marcar a rival do jogo. O ataque é
+     de novo do planejamento, em casa e fora; no dia, a cidade em 3D leva o
+     bonde até o ponto marcado e a briga abre lá (dia3d.js) */
+  function idaNoDiaDo(e, j){ return false; }
   /* A BAIXA DE UMA BRIGA FORA DAS PARADAS (a ida jogada do jogo 3D,
      dia3d.js: o presidente partiu pra cima de um bonde rival no caminho):
      quem caiu ou foi preso sai do número da linha, como na briga de uma
@@ -62962,17 +62975,28 @@ TO.mapaCaravana = (function(){
      ======================================================= */
   const chaveDoPlano = e => {
     const p = (TO.planejamento && e.plano) || {};
+    /* (e o plano de CADA jogo nosso da semana: com dois jogos, o do meio da
+       semana não é o `e.plano`, e o cartão não repintava ao marcar o ataque) */
+    let daSemana = '';
+    try {
+      daSemana = (TO.competicoes.jogosDaSemana(e, e.torcida.clubeId, e.data.semana) || []).map(a => {
+        const q = TO.planejamento.plano(e, TO.estado.fichaDoJogo(e, a));
+        return [q.intencao, q.alvoTorcida, q.alvo].join(':');
+      }).join(';');
+    } catch(_) {}
     return [p.chave, p.intencao, p.alvoTorcida, p.alvo, p.caravana, p.rota,
             p.bombas, p.efetivoAtaque, Object.keys(p.investidas||{}).length,
-            JSON.stringify(p.recepcao||{}), p.ajuda ? p.ajuda.nivel : ''].join('|');
+            JSON.stringify(p.recepcao||{}), p.ajuda ? p.ajuda.nivel : '', daSemana].join('|');
   };
   /* A IDA SE DECIDE NO DIA é do jogo 3D (o ataque escolhido na ida, na
      cidade em 3D); no 2D o planejamento continua mandando no ataque */
-  function idaNoDiaDo(e, j){
-    if(!TO.semFeed || !e || !j || j.neutro) return false;
-    if(j.casa) return true;
-    return !!(TO.jogo3d && TO.jogo3d.temCidade && TO.jogo3d.temCidade(j.mapaAdv));
-  }
+  /* (13/11/2026, o dono: "num jogo Fortaleza × CRB [...] não dá pra atacar a
+     Comando Alvirrubro mesmo ela sendo rival, corrija pra dar certo
+     atacar"): a ida voltou a andar sozinha (etapa 2), e sem o ataque no
+     planejamento não sobrava jeito de marcar a rival do jogo. O ataque é
+     de novo do planejamento, em casa e fora; no dia, a cidade em 3D leva o
+     bonde até o ponto marcado e a briga abre lá (dia3d.js) */
+  function idaNoDiaDo(e, j){ return false; }
   const DIA_ABREV = ['',_t('SEG'),_t('TER'),_t('QUA'),_t('QUI'),_t('SEX'),_t('SÁB'),_t('DOM')];
 
   /* O CARTÃO DE SEGUNDA, CURTO (o dono, 29/09/2026: "transforme o
@@ -62982,41 +63006,84 @@ TO.mapaCaravana = (function(){
      (`abrirPlanejamento`). O botão "Fechar o planejamento" (o da
      mensagem) continua no cabeçalho: fechar sem abrir fica com o que o
      plano já tem */
+  /* (13/11/2026, o dono: "preciso que essa mensagem de planejamento seja
+     mais bonita, organizada e condizente com o novo design do jogo"): a
+     semana em três grupos — os nossos jogos (o escudo dos dois, a data, a
+     competição e o que está marcado: em paz ou em cima de quem), os outros
+     jogos da praça (uma linha curta cada, com a rival na rua ou a investida
+     marcada) e os aliados que chegam (sempre na sede: sem escolha) */
   function cartaoSemana(e, m){
     const P = TO.planejamento, F = TO.feed, M = TO.mundo;
-    const raiz = el('div',{class:'sem sem-curto'});
-    const vigente = (m.dados.ano||e.data.ano) === e.data.ano &&
-                    (m.dados.semana||e.data.semana) === e.data.semana;
-    const d0 = TO.estado.dataDaSemana(e.data.ano, m.dados.semana || e.data.semana, 1);
-    const d6 = TO.estado.dataDaSemana(e.data.ano, m.dados.semana || e.data.semana, 7);
+    const raiz = el('div',{class:'sem sem-curto semc'});
+    const semana = m.dados.semana || e.data.semana, ano = m.dados.ano || e.data.ano;
+    const vigente = ano === e.data.ano && semana === e.data.semana;
     const dd = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-    /* o título numa linha só: a semana e as datas, o selo se houver */
-    raiz.appendChild(el('div',{class:'sem-cab', html:
-      `<span class="sem-sem">${_t('Semana {n}', {n:m.dados.semana || e.data.semana})}`+
-      ` <span class="sem-datas">· ${dd(d0)}–${dd(d6)}</span></span>`+
-      (m.respondido ? `<span class="sem-selo">${_t('plano fechado')}</span>` : !vigente ? `<span class="sem-selo passada">${_t('semana passada')}</span>` : '')}));
-    /* o que a semana tem (a sede): uma linha por jogo, com o que está decidido */
-    const linhas = el('ul',{class:'sem-resumo'});
+    const dataDe = dia => { try { return dd(TO.estado.dataDaSemana(e.data.ano, semana, dia)); } catch(_) { return ''; } };
+    const hesc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;'}[c]));
+    const escudo = c => ((TO.dados.escudos || {}).clubes || {})[c.id]
+      ? `<img class="semc-escudo" src="${IMG((TO.semFeed ? '../' : '') + 'img/escudos/clube-' + c.id + '.png')}" alt="">`
+      : `<i class="semc-escudo sem" style="background:${hesc(c.cor || '#666')}"></i>`;
+    raiz.appendChild(el('div',{class:'semc-cab', html:
+      `<div class="semc-titulo"><small>${_t('Planejamento')}</small><b>${_t('Semana {n}', {n:semana})}</b></div>`+
+      `<div class="semc-lado"><span class="semc-datas">${dataDe(1)} – ${dataDe(7)}</span>`+
+      (m.respondido ? `<span class="semc-selo">${_t('plano fechado')}</span>` : !vigente ? `<span class="semc-selo passada">${_t('semana passada')}</span>` : '')+`</div>`}));
+    const grupo = (titulo, n) => {
+      const g = el('section',{class:'semc-grupo'});
+      g.appendChild(el('h4',{html:`${titulo}<i>${n}</i>`}));
+      const ul = el('ul'); g.appendChild(ul);
+      return {g, ul};
+    };
     try {
       const pt = F.pautaDaCidade(e, e.torcida.mapa, m.dados.semana, m.dados.ano);
-      for(const r of pt.linhas){
-        const nosso = r.tipo === 'nosso' || r.tipo === 'fora';
-        let txt = '';
-        if(nosso && vigente && !r.passou){
-          const p = P.plano(e, e.proximoJogo), alvo = p.intencao !== 'paz' && p.alvoTorcida ? M.torcida(p.alvoTorcida) : null;
-          txt = alvo ? _t('em cima da {nome}', {nome:alvo.nome}) : _t('em paz');
-        } else if(!nosso && vigente && r.grupo && r.grupo.chaveJogo){
-          const inv = (P.plano(e).investidas||{})[r.grupo.chaveJogo];
-          const a = inv && inv.alvo ? M.torcida(inv.alvo) : null;
-          txt = a ? _t('investida contra {nome}', {nome:a.nome}) : '';
+      const jogosSemana = (TO.competicoes.jogosDaSemana(e, e.torcida.clubeId, semana) || []).map(a => TO.estado.fichaDoJogo(e, a));
+      const jogoDaLinha = l => {
+        const advId = l.tipo === 'fora' ? l.advId : (l.grupo && (l.grupo.casa === e.torcida.clubeId ? l.grupo.vis : l.grupo.casa));
+        return jogosSemana.find(j => j.advId === advId) || e.proximoJogo || null;
+      };
+      const duelo = r => `<span class="semc-duelo">${escudo(r.clubes[0])}<b>${hesc(r.clubes[0].nome)}</b><i>×</i><b>${hesc(r.clubes[1].nome)}</b>${escudo(r.clubes[1])}</span>`;
+      const dia = r => `<span class="semc-dia"><b>${DIA_ABREV[r.diaN]||''}</b><small>${dataDe(r.diaN)}</small></span>`;
+      const nossos = pt.linhas.filter(r => r.tipo === 'nosso' || r.tipo === 'fora'), outros = pt.linhas.filter(r => !(r.tipo === 'nosso' || r.tipo === 'fora'));
+      if(nossos.length){
+        const G = grupo(_t('Nossos jogos'), nossos.length);
+        for(const r of nossos){
+          let tag = '';
+          if(r.passou) tag = `<span class="semc-tag passou">${_t('já foi')}</span>`;
+          else if(vigente){
+            const p = P.plano(e, jogoDaLinha(r)), alvo = p.intencao !== 'paz' && p.alvoTorcida ? M.torcida(p.alvoTorcida) : null;
+            tag = alvo ? `<span class="semc-tag briga">${_t('em cima da {nome}', {nome:hesc(alvo.nome)})}</span>` : `<span class="semc-tag paz">${_t('em paz')}</span>`;
+          }
+          const onde = r.tipo === 'fora' ? _t('fora · {cidade}', {cidade:hesc(r.cidade || '')}) : _t('em casa');
+          G.ul.appendChild(el('li',{class:'semc-jogo'+(r.passou?' passou':''), html:
+            dia(r) + `<div class="semc-meio">${duelo(r)}<div class="semc-pe"><small>${[hesc(r.hora || ''), onde, hesc(r.comp || '')].filter(Boolean).join(' · ')}</small>${tag}</div></div>`}));
         }
-        linhas.appendChild(el('li',{class:(nosso?'nosso':'')+(r.passou?' passou':''), html:
-          `<span class="sem-dia">${DIA_ABREV[r.diaN]||''}</span><b>${r.clubes[0].nome} × ${r.clubes[1].nome}</b>`+
-          (r.tipo==='fora' ? `<small>${_t('em {cidade}', {cidade:r.cidade||''})}</small>` : '')+(txt ? `<em>${txt}</em>` : '')}));
+        raiz.appendChild(G.g);
       }
-      if(pt.aliados.length) linhas.appendChild(el('li',{html:`<span class="sem-dia">${_t('ALI')}</span><b>${_tn(pt.aliados.length, '{n} aliado chegando', '{n} aliados chegando')}</b>`}));
+      if(outros.length){
+        const G = grupo(_t('Na cidade'), outros.length);
+        for(const r of outros){
+          let tag = '';
+          if(!r.passou && vigente){
+            const inv = r.grupo && r.grupo.chaveJogo ? (P.plano(e).investidas||{})[r.grupo.chaveJogo] : null;
+            const a = inv && inv.alvo ? M.torcida(inv.alvo) : null;
+            tag = a ? `<span class="semc-tag briga">${_t('investida contra {nome}', {nome:hesc(a.nome)})}</span>`
+                    : r.temAlvo ? `<span class="semc-tag rival">${_t('rival na rua')}</span>` : '';
+          }
+          G.ul.appendChild(el('li',{class:'semc-linha'+(r.passou?' passou':''), html:
+            `<span class="semc-dia curto"><b>${DIA_ABREV[r.diaN]||''}</b></span><span class="semc-times">${hesc(r.clubes[0].nome)} <i>×</i> ${hesc(r.clubes[1].nome)}</span>` + tag}));
+        }
+        raiz.appendChild(G.g);
+      }
+      if(pt.aliados.length){
+        const G = grupo(_t('Aliados chegando'), pt.aliados.length);
+        for(const a of pt.aliados){
+          const c = (M.coresDaTorcida(M.torcida(a.id) || {}) || {}).cor || '#888';
+          G.ul.appendChild(el('li',{class:'semc-linha aliado', html:
+            `<span class="semc-dia curto"><b>${DIA_ABREV[a.dia]||''}</b></span><span class="semc-times"><i class="semc-chip" style="background:${hesc(c)}"></i>${hesc(a.nome)} <small>~${a.n}</small></span>`+
+            `<span class="semc-tag paz">${_t('fica na nossa sede')}</span>`}));
+        }
+        raiz.appendChild(G.g);
+      }
     } catch(err){ console.error('o cartão da semana:', err); }
-    if(linhas.children.length) raiz.appendChild(linhas);
     const b = el('button',{class:'bt destaque sem-abrir', texto: m.respondido || !vigente ? _t('Ver o planejamento') : _t('Abrir o planejamento')});
     b.onclick = ev => { ev.stopPropagation(); abrirPlanejamento(m); };
     raiz.appendChild(b);
@@ -63183,8 +63250,8 @@ TO.mapaCaravana = (function(){
         if(inv && inv.alvo){ const a = M.torcida(inv.alvo); return {txt:_t('investida contra {nome}', {nome:a ? a.nome : inv.alvo}), tom:'briga'}; }
         return {txt: it.r.temAlvo ? _t('deixar passar') : _t('ninguém hostil'), tom:'neutro'};
       }
-      const n = it.aliados.length, pagos = it.aliados.filter(a => P.nivelDe(e, a.id) !== 'nada').length;
-      return {txt:_tn(n, '{n} aliado chegando · {k} recebido', '{n} aliados chegando · {k} recebidos', {k:pagos}), tom: pagos ? 'ok' : 'neutro'};
+      const n = it.aliados.length;
+      return {txt:_tn(n, '{n} aliado chegando · fica na sede', '{n} aliados chegando · ficam na sede'), tom:'ok'};
     }
 
     /* ---------- o item por inteiro ---------- */
@@ -63337,14 +63404,15 @@ TO.mapaCaravana = (function(){
     function detAliados(it){
       const d = el('div',{class:'plj-det'});
       d.appendChild(el('header',{class:'plj-jogo', html:`<span class="plj-dia">${_t('ALIADOS')}</span><div class="plj-duelo"><b>${_t('Quem chega na nossa praça')}</b></div>`+
-        `<small class="plj-onde">${_t('aliado sempre fica na nossa sede; escolta e churrasco sobem mais a relação')}</small>`}));
+        `<small class="plj-onde">${_t('aliado sempre fica na nossa sede: nada a decidir')}</small>`}));
       let k = 1;
+      const rc = P.recepcaoDe('hospedar');
       for(const a of it.aliados){
         const pago = ((P.plano(e).pago)||{})[a.id];
         const s = secao(k++, linkTorcida(a.id, a.nome), `${_t('~{n} aliados', {n:a.n})} · ${DIA[a.dia]||''}${pago?' · '+_t('resolvido'):''}`);
-        s.appendChild(cartoes(P.RECEPCAO_ESCOLHAS.map(rc=>({id:rc.id, rot:rc.rot,
-          nota:`${rc.porCabeca*a.n ? U.dinheiro(rc.porCabeca*a.n) : _t('de graça')}`, sub:`${_t('relação {n}', {n:(rc.relacao>0?'+':'')+rc.relacao})} · ${rc.nota||''}`,
-          tom: rc.id==='nada' ? 'risco' : '', off:!!pago})), P.nivelDe(e, a.id), id=>{ P.definirRecepcao(e, a.id, id); salvar(); pintar(); }));
+        s.classList.add('plj-leitura');
+        s.appendChild(el('p',{class:'plj-nota', html:_t('Ficam na nossa sede ({nota}). <b>{valor}</b> no dia do jogo · relação <b class="positivo">{n}</b>.',
+          {nota:rc.nota, valor:U.dinheiro(rc.porCabeca * a.n), n:(rc.relacao>0?'+':'')+rc.relacao})}));
         d.appendChild(s);
       }
       return d;
@@ -63567,7 +63635,7 @@ TO.mapaCaravana = (function(){
       const P2 = TO.planejamento;
       const bloco = el('div',{class:'bloco-recepcao'});
       bloco.appendChild(el('div',{class:'rec-titulo',
-        texto:_t('Aliados na cidade — como vamos receber?')}));
+        texto:_t('Aliados na cidade — ficam na nossa sede')}));
       for(const a of alds){
         const pago = ((P2.plano(e).pago)||{})[a.id];
         const linha = el('div',{class:'rec-aliado'+(pago?' pago':'')});
@@ -63577,7 +63645,7 @@ TO.mapaCaravana = (function(){
           (pago ? ` <span class="tag">${_t('resolvido')}</span>` : '')}));
         const bts = el('div',{class:'rec-botoes'});
         const atual = P2.nivelDe(e, a.id);
-        for(const r of P2.RECEPCAO_ESCOLHAS){
+        for(const r of []){
           const custo = r.porCabeca * a.n;
           const b = el('button',{class:'rec-bt'+(atual===r.id?' on':''),
             html:`${r.rot}<small>${custo ? U.dinheiro(custo) : _t('de graça')}`+

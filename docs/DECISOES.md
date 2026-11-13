@@ -11796,6 +11796,37 @@ bonecos do jogo, pra maximizar o rendimento."
   da multidão é o do molde; perto da borda da tela o boneco aparece
   deitado pela perspectiva (a câmera da briga fica a 17 m do chão).
 
+## O cartão do planejamento, o aliado sempre na sede e o ataque de volta ao planejamento (dono, 13/11/2026)
+
+Pedidos: "preciso que essa mensagem de planejamento seja mais bonita,
+organizada e condizente com o novo design do jogo"; "que o jogo pare de
+condicionar, na mensagem de planejamento, como iremos hospedar um aliado
+se estiver predefinido que iremos hospedar na sede"; "num jogo Fortaleza ×
+CRB no início de 2026 não dá pra atacar a Comando Alvirrubro mesmo ela
+sendo rival, corrija pra dar certo atacar".
+
+- **O cartão da semana** (`cartaoSemana`, classes `semc-*` em
+  telas3d.css): três grupos — "Nossos jogos" (um cartão cada, com o dia e
+  a data, os escudos, a hora, casa ou fora, a competição e a etiqueta do
+  que está marcado: "em paz" ou "em cima da X", em vermelho), "Na cidade"
+  (uma linha por jogo, com "rival na rua" ou a investida marcada) e
+  "Aliados chegando" (uma linha por aliado, "fica na nossa sede"). O
+  plano lido é o de cada jogo (antes as duas linhas mostravam o do
+  próximo jogo), e o cartão repinta quando qualquer um deles muda.
+- **A hospedagem não se escolhe mais**: `nivelDe` devolve sempre
+  `hospedar`, e `RECEPCAO_ESCOLHAS` ficou só com ela. No planejamento o
+  item dos aliados é leitura (quem chega, quando, quanto custa e a
+  relação). Saem "Hospedar e escoltar" e "Churrasco e escolta".
+- **O ataque voltou ao planejamento** (`idaNoDiaDo` devolve `false`):
+  desde 07/10 o jogo 3D escondia o ataque nos nossos jogos ("a ida se
+  decide no dia"), e com a ida andando sozinha (etapa 2) não sobrava
+  jeito de marcar a rival do jogo. Agora "Na rua" tem de novo "Ir em paz
+  / Atacar", contra quem, onde e o efetivo, em casa e fora. No dia, a
+  cidade em 3D leva o bonde até o ponto marcado e a briga abre lá, sem o
+  cartão "Ir pra cima" (`respostaDaLinha` responde `brigar` pra
+  investida). Testado: Fortaleza × CRB, ataque à Comando Alvirrubro nos
+  arredores — o bonde vai ao cordão da PM e a briga abre contra ela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

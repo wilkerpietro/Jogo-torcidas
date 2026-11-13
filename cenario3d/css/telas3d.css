@@ -305,3 +305,51 @@ body.jogo3d .slider input[type=range]{accent-color:var(--marca)}
 body.jogo3d .cena-balao{border-radius:var(--raio)}
 /* (a briga sobre a foto cobre a tela inteira: o portal não aparece por trás) */
 body.jogo3d:not(.palco3d) #telaDiaJogo, body.jogo3d #telaRelatorio{background:var(--fundo)}
+
+
+/* ---- O CARTÃO DO PLANEJAMENTO DA SEMANA (13/11/2026) ---- */
+body.jogo3d .semc{display:flex;flex-direction:column;gap:12px;padding:0;background:none;border:0}
+body.jogo3d .semc-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:0 0 10px;border-bottom:1px solid var(--linha)}
+body.jogo3d .semc-titulo{display:flex;flex-direction:column;gap:2px;min-width:0}
+body.jogo3d .semc-titulo small{font:700 10.5px/1 var(--titulo);letter-spacing:.16em;text-transform:uppercase;color:var(--fraco)}
+body.jogo3d .semc-titulo b{font:700 24px/1 var(--titulo);letter-spacing:.04em;text-transform:uppercase;color:var(--texto)}
+body.jogo3d .semc-lado{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none}
+body.jogo3d .semc-datas{font:500 12px/1 var(--mono);color:var(--fraco);white-space:nowrap}
+body.jogo3d .semc-selo{font:700 10px/1 var(--titulo);letter-spacing:.1em;text-transform:uppercase;padding:4px 7px;border-radius:4px;background:var(--faixa);color:var(--texto);border:1px solid var(--linha)}
+body.jogo3d .semc-selo.passada{color:var(--fraco)}
+body.jogo3d .semc-grupo{display:flex;flex-direction:column;gap:6px}
+body.jogo3d .semc-grupo h4{margin:0;display:flex;align-items:center;gap:7px;font:700 10.5px/1 var(--titulo);letter-spacing:.16em;text-transform:uppercase;color:var(--fraco)}
+body.jogo3d .semc-grupo h4 i{font:600 10px/1 var(--mono);font-style:normal;letter-spacing:0;padding:2px 5px;border-radius:9px;background:var(--faixa);color:var(--fraco)}
+body.jogo3d .semc-grupo ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+/* os nossos jogos: um cartão cada */
+body.jogo3d .semc-jogo{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--raio);background:var(--painel-alto);border:1px solid var(--linha);border-left:3px solid var(--marca)}
+body.jogo3d .semc-jogo.passou{opacity:.5;border-left-color:var(--linha)}
+body.jogo3d .semc-dia{flex:none;width:46px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:5px;background:var(--fundo);border:1px solid var(--linha)}
+body.jogo3d .semc-dia b{font:700 13px/1 var(--titulo);letter-spacing:.08em;color:var(--texto)}
+body.jogo3d .semc-dia small{font:500 9.5px/1 var(--mono);color:var(--fraco)}
+body.jogo3d .semc-dia.curto{width:38px;padding:4px 0;background:none;border-color:transparent}
+body.jogo3d .semc-dia.curto b{font-size:11.5px;color:var(--fraco)}
+body.jogo3d .semc-meio{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+body.jogo3d .semc-pe{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+body.jogo3d .semc-pe small{flex:1;min-width:0;font:400 11.5px/1.25 var(--corpo);color:var(--fraco);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.jogo3d .semc-duelo{display:flex;align-items:center;gap:6px;min-width:0;font:700 14.5px/1.15 var(--corpo);color:var(--texto)}
+body.jogo3d .semc-duelo b{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.jogo3d .semc-duelo i{font-style:normal;color:var(--fraco);font-weight:400;flex:none}
+body.jogo3d .semc-escudo{flex:none;width:20px;height:20px;object-fit:contain}
+body.jogo3d .semc-escudo.sem{border-radius:50%;width:14px;height:14px;margin:0 3px}
+/* os da praça e os aliados: uma linha cada */
+body.jogo3d .semc-linha{display:flex;align-items:center;gap:8px;padding:3px 10px 3px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+body.jogo3d .semc-linha:last-child{border-bottom:0}
+body.jogo3d .semc-linha.passou{opacity:.45}
+body.jogo3d .semc-times{flex:1;min-width:0;font:500 13px/1.2 var(--corpo);color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.jogo3d .semc-times i{font-style:normal;color:var(--fraco)}
+body.jogo3d .semc-times small{font:500 11px/1 var(--mono);color:var(--fraco);margin-left:4px}
+body.jogo3d .semc-chip{display:inline-block;width:4px;height:13px;border-radius:2px;margin-right:7px;vertical-align:-2px}
+body.jogo3d .semc-tag{flex:none;max-width:62%;font:700 10px/1.15 var(--titulo);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:4px;border:1px solid var(--linha);color:var(--fraco);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.jogo3d .semc-tag.briga{background:var(--rubro);border-color:var(--rubro-vivo);color:#fff}
+body.jogo3d .semc-tag.rival{border-color:rgba(214,58,51,.5);color:var(--rubro-vivo)}
+body.jogo3d .semc-tag.paz{color:var(--texto)}
+body.jogo3d .semc .sem-abrir{margin-top:2px;width:100%}
+@media (max-width:520px){
+  body.jogo3d .semc-titulo b{font-size:20px}
+}
