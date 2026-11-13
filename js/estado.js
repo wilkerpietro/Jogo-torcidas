@@ -72,7 +72,14 @@ TO.estado = (function(){
 
       acoes:{ usadas:0 },
       /* expediente da sede: manhã, tarde e noite → id de ação */
-      expediente:{ manha:null, tarde:null, noite:null },
+      /* O EXPEDIENTE JÁ COMEÇA RODANDO (dono, 13/11/2026): recrutar de
+         manhã e festa na sede à tarde e à noite; o jogador muda quando
+         quiser */
+      expediente:{ manha:'recrutar', tarde:'festa', noite:'festa' },
+      /* NADA NO FEED ANTES DO PRIMEIRO JOGO (dono, 13/11/2026): a
+         primeira experiência é o dia de jogo; `estreou` vira verdadeiro
+         quando ele passa (feed.js) */
+      estreou: false,
       /* O FEED É O JOGO, e o feed é HISTÓRICO: ele nasce vazio, é salvo
          inteiro e rola pra trás. Aqui morava `avisos:[]`, uma fita
          cortada em 12 itens que a tela consumia e jogava fora — o que
@@ -1057,6 +1064,8 @@ TO.estado = (function(){
        antes da barra de 7 (15/10/2026) é refeito do zero */
     try{ if(TO.dominio) TO.dominio.reparar(E); }catch(e){}
     try{ if(TO.elenco) TO.elenco.garantirNossos(E); }catch(e){}
+    /* save de antes de 13/11/2026 já passou da estreia */
+    if(E.estreou === undefined) E.estreou = true;
     /* o detalhista deixou de existir (13/11/2026): todo save vira rápido */
     E.modo = 'rapido';
     /* a ideologia saiu (13/11/2026): as regras fixas valem pra todo save */

@@ -853,6 +853,12 @@ TO.acoes = (function(){
            (decisão do dono, 18/08/2026 — a festa diária poluía tudo) */
         TO.estado.lancarNoResumo(E, 'festa', -custo);
         TO.estado.lancarNoResumo(E, 'festa', receita, true);
+        /* o saldo de cada festa fica guardado (as últimas 14): é por ele
+           que a diretoria avisa quando a festa dá prejuízo (feed.js,
+           `festaNoPrejuizoHoje`) */
+        const hist = (E.acoes.festas = E.acoes.festas || []);
+        hist.push({dia:E.data.absoluto || 0, custo, receita, publico});
+        if(hist.length > 14) hist.splice(0, hist.length - 14);
         return {ok:true, msg:_t('Festa na sede. {valor} de saldo.', {valor:U.dinheiro(receita-custo)})};
       }
     },

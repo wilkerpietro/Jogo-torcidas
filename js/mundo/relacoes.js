@@ -3042,6 +3042,10 @@ TO.relacoes = (function(){
   };
 
   function convitesDeAniversario(E){
+    /* OS CONVITES DE FESTA DEIXARAM DE EXISTIR (dono, 13/11/2026), entre
+       as IAs também: ninguém paga festa de aliada nem ganha ou perde
+       relação por isso */
+    return;
     const m = mundo(E);
     const hoje = TO.estado.dataDaSemana(E.data.ano, E.data.semana, E.data.dia);
     const fora = [];

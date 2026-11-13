@@ -268,6 +268,14 @@ Criados depois, pelo uso (agrupados):
 
 **Ritmo na tela** (`main.js: rodarTempo`): o tempo anda sozinho. Com mensagem na fila, solta uma por vez — 1.500 ms antes de uma decisão, 500 ms entre informações; sem mensagem, passa um dia a cada 120 ms; tudo dividido pela velocidade (2×). Decisão sem resposta **trava** o tempo. Painel aberto, cena e tutorial pausam.
 
+### 1.4b O começo do jogo, o Expediente, o assalto e os convites (13/11/2026)
+
+- **Nada no feed antes do primeiro dia de jogo.** `E.estreou` nasce falso; até o primeiro dia de jogo do clube (ou um dia de caravana dele) o feed fica calado: os passos que criam acontecimento não rodam e `feed.propor` descarta qualquer mensagem. Rodam por baixo o mundo, as recepções, o pedido de apoio do jogo fora, o placar e o expediente. Passado o dia do jogo, `E.estreou` vira verdadeiro. Dependendo do calendário do clube a estreia pode demorar (a TUF estreia no dia 41); dia sem mensagem passa em 120 ms. Save antigo já conta como estreado.
+- **Sem mensagem de abertura.** O Expediente nasce configurado: **manhã Recrutar, tarde Festa na sede, noite Festa na sede**; o jogador muda no painel quando quiser.
+- **A festa no prejuízo** (`feed.js: festaNoPrejuizoHoje`): cada festa guarda custo, receita e público (`E.acoes.festas`, as últimas 14). Com a festa no expediente e pelo menos 6 festas registradas, se as últimas somam prejuízo de R$ 200 ou mais (ou qualquer prejuízo com o caixa no vermelho), a diretoria explica: quanto saiu, quanto entrou, quantos vêm por noite e quantos precisam vir para a festa se pagar (`financeiro.pisoDaFesta`). Botões "Mudar o Expediente" e "Manter as festas". Repete no máximo a cada 21 dias.
+- **Assalto até 3 por ano, só depois do primeiro jogo.** A sugestão (pauta "Alvos de assalto") sai em 4 de cada 12 meses pelo hash, para na terceira do ano (`E.assaltosNoAno[ano]`) e não sai antes de `E.estreou`.
+- **Os convites de festa das aliadas deixaram de existir**: nem pauta, nem mensagem, nem efeito na relação (`pautaFestas` e, entre as IAs, `relacoes.convitesDeAniversario` não fazem nada). A nossa festa de aniversário e a do clube continuam.
+
 ### 1.5 O modo de jogo e as regras fixas que substituíram a ideologia
 
 **Só existe o modo rápido** (13/11/2026). `E.modo` é sempre `'rapido'` e `TO.estado.rapido()` sempre responde verdadeiro; um save antigo com `'detalhista'` é convertido ao carregar. No rápido: sem reunião mensal (as pautas do mês chegam uma por dia, `pautaSoltaDeHoje`), sem a pauta "Onde a gente recruta", bote a bar e resenha rival chegam como sugestão para agora, assalto planejado e executado no mesmo dia, um pedido a aliado por mês, o mapa abre no Brasil. Domínio e brigas de bairro valem; pixação e ação social estão desligadas.

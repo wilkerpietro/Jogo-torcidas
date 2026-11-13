@@ -1579,6 +1579,8 @@ TO.feed = (function(){
 
   function propor(E, msg){
     caixas(E);
+    /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) */
+    if(calado(E)) return null;
     if(msg && msg.botoes) msg = Object.assign({}, msg,
                                               {botoes: comSimular(msg.botoes)});
     const m = Object.assign({
@@ -1811,8 +1813,34 @@ TO.feed = (function(){
     }
   }
 
+  /* A ESTREIA (dono, 13/11/2026: "Eu quero que nada aconteça no feed antes
+     da primeira experiência ser o primeiro dia de jogo"). Até o primeiro
+     dia de jogo do clube passar, o feed fica calado: os passos que criam
+     acontecimento (bote, ataque sofrido, briga de bairro, pauta, assalto,
+     olheiro…) não rodam, e `propor` descarta o que tentar entrar. O mundo
+     anda por baixo, o expediente roda e o apoio do jogo fora é pedido. No
+     dia do jogo (e nos dias de caravana dele) tudo vale. */
+  function diaDoNossoJogo(E){
+    const meu = M().time(E.torcida.clubeId);
+    if(meu && TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana)
+                .some(j => j.dia === E.data.dia)) return true;
+    return TO.financeiro.diasDeCaravana(E).includes(E.data.dia);
+  }
+  const calado = E => E.estreou === false && !diaDoNossoJogo(E);
+  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo']);
+
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
+    const silencio = calado(E);
+    const jogoHoje = E.estreou === false && !silencio && (() => {
+      const meu = M().time(E.torcida.clubeId);
+      return !!(meu && TO.competicoes.jogosDaSemana(E, meu.id, E.data.semana).some(j => j.dia === E.data.dia));
+    })();
+    const filtrado = (nome, fn) => { if(!silencio || PASSOS_DA_ESTREIA.has(nome)) passo(nome, fn); };
+    try{ eventosDoDiaCru(E, ctx, filtrado); }
+    finally{ if(jogoHoje) E.estreou = true; }
+  }
+  function eventosDoDiaCru(E, ctx, passo){
     passo('resultado guardado', ()=>soltarDepoisDoJogo(E));
     passo('posts do dia',   ()=>publicarAgendadas(E));
     passo('tréguas',        ()=>treguasDoDia(E));
@@ -1837,6 +1865,7 @@ TO.feed = (function(){
     passo('patrimônio da cidade', ()=>obraDeHoje(E));
     passo('veredicto da campanha', ()=>veredictoDeHoje(E));
     passo('aniversários',   ()=>aniversariosDeHoje(E));
+    passo('festa no prejuízo', ()=>festaNoPrejuizoHoje(E));
     /* a recepção do aliado vira dinheiro no dia do jogo dele (dono,
        28/08/2026) */
     passo('recepções',      ()=>{ if(PL().cobrarRecepcoes) PL().cobrarRecepcoes(E); });
@@ -3705,13 +3734,11 @@ TO.feed = (function(){
         com o tutorial e a da ideologia saíram (dono, 13/11/2026).
      ------------------------------------------------------- */
   function abertura(E){
-    propor(E, {
-      kind:'abertura', peso:'decisao', voz:'diretor',
-      chave:'abertura|expediente',
-      texto:_t('Chefe, define o Expediente da Sede: três turnos por dia — manhã, tarde e noite —, cada um com uma ação que a rapaziada toca sozinha. Dia de jogo e dia de estrada ficam de fora.'),
-      botoes:[{id:'expediente', rot:_t('Abrir o Expediente'), acao:'painel-expediente'}]
-    });
+    /* nada na abertura (13/11/2026): o Expediente já nasce configurado e o
+       feed fica calado até o primeiro dia de jogo */
+    return null;
   }
+
 
   /* -------------------------------------------------------
      1. O OLHEIRO — dois dias antes de cada jogo relevante
@@ -4568,6 +4595,9 @@ TO.feed = (function(){
      resposta. A mensagem de cada aliada sai no mesmo dia.
      ======================================================= */
   function pautaFestas(E){
+    /* OS CONVITES DE FESTA DEIXARAM DE EXISTIR (dono, 13/11/2026): nem
+       pauta, nem mensagem, nem efeito na relação */
+    return null;
     const hoje = dataDeHoje(E);
     const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 4, 23, 59);
     const lista = [];
@@ -5043,13 +5073,20 @@ TO.feed = (function(){
      da mesa — nove meses em doze, pela mesma dose de sempre (9 por
      ano), decididos pelo hash do mês. "Ver os alvos" abre a tela do
      assalto por cima da cena e o resultado fecha a pauta. */
-  const ASSALTOS_MESES = 9;
+  /* ATÉ TRÊS POR ANO, E SÓ DEPOIS DO PRIMEIRO JOGO (dono, 13/11/2026):
+     cada mês tem a sua chance pelo hash (4 em 12), e o ano para na
+     terceira sugestão. `E.assaltosNoAno[ano]` conta as que saíram. */
+  const ASSALTOS_MESES = 4, ASSALTOS_POR_ANO = 3;
   function pautaAssalto(E){
     const H = TO.mapa.hash;
+    if(E.estreou === false) return null;
+    const conta = (E.assaltosNoAno = E.assaltosNoAno || {});
+    if((conta[E.data.ano] || 0) >= ASSALTOS_POR_ANO) return null;
     if(H(`assalto|${E.data.ano}|${mesDe(E)}|${E.torcida.id}`) % 12 >= ASSALTOS_MESES) return null;
     const dir = E.membros.find(m=>m.cargo === 'diretoria' && !m.presidente && TO.membros.disponivel(m));
     if(!dir) return null;
     if(E.membros.filter(TO.membros.disponivel).length < 2) return null;
+    conta[E.data.ano] = (conta[E.data.ano] || 0) + 1;
     return {
       chave:`assalto|${E.data.ano}|${mesDe(E)}`, tipo:'assalto', voz:_t('Diretoria'), quem:dir.id,
       rot:_t('Alvos de assalto'),
@@ -5331,6 +5368,52 @@ TO.feed = (function(){
                  nota: comDominio(nota + ' · ' + _t('a briga vale até ±10 de prestígio'), pv.linha)}]
       });
     }
+  }
+
+  /* -------------------------------------------------------
+     A FESTA NO PREJUÍZO (dono, 13/11/2026: "se as festas na sede estão
+     dando prejuízo, deve aparecer a mensagem da diretoria dizendo isso,
+     pra ajudar o jogador a entender porque o caixa tá ficando no
+     vermelho"). O expediente já nasce com duas festas por dia; quando
+     as últimas festas (pelo menos 6) somam prejuízo de R$ 200 ou mais (ou
+     qualquer prejuízo com o caixa no vermelho), a diretoria
+     explica: quanto saiu, quanto entrou, quantos foram e quantos
+     precisam ir pra festa se pagar — e oferece trocar o turno. Avisa de
+     novo só depois de 21 dias, e só se o prejuízo continua.
+     ------------------------------------------------------- */
+  function festaNoPrejuizoHoje(E){
+    const exp = E.expediente || {};
+    const turnos = ['manha', 'tarde', 'noite'].filter(t => exp[t] === 'festa').length;
+    if(!turnos) return null;
+    const hist = (E.acoes && E.acoes.festas) || [];
+    if(hist.length < 6) return null;
+    const hoje = E.data.absoluto || 0;
+    if(hoje - (E.avisoFesta || -999) < 21) return null;
+    const ult = hist.slice(-Math.min(hist.length, 6 * turnos));
+    const gasto = ult.reduce((a, f) => a + f.custo, 0);
+    const entrou = ult.reduce((a, f) => a + f.receita, 0);
+    const saldo = entrou - gasto;
+    /* prejuízo miúdo com o caixa no azul não vale parar o dia: só a partir
+       de R$ 200, ou qualquer prejuízo com o caixa já no vermelho */
+    if(saldo >= 0 || (saldo > -200 && E.dinheiro >= 0)) return null;
+    E.avisoFesta = hoje;
+    const publico = Math.round(ult.reduce((a, f) => a + f.publico, 0) / ult.length);
+    const nivel = (E.torcida && E.torcida.sedeNivel) || 1;
+    const piso = TO.financeiro.pisoDaFesta ? TO.financeiro.pisoDaFesta(nivel) : null;
+    return propor(E, {
+      kind:'festa-prejuizo', peso:'decisao', voz:'diretor', tipo:'ruim',
+      chave:`festa-prejuizo|${hoje}`,
+      texto:_tn(ult.length,
+        'Chefe, a festa na sede tá dando prejuízo. Na última festa gastamos {gasto} e entraram {entrou}: {saldo} no caixa. Vieram uns {publico} por noite, e pra festa se pagar precisa de uns {piso}. É por isso que o caixa tá descendo.',
+        'Chefe, as festas na sede estão dando prejuízo. Nas últimas {n} festas gastamos {gasto} e entraram {entrou}: {saldo} no caixa. Vêm uns {publico} por noite, e pra festa se pagar precisa de uns {piso}. É por isso que o caixa tá descendo.',
+        {n:ult.length, gasto:U.dinheiro(gasto), entrou:U.dinheiro(entrou), saldo:U.dinheiro(saldo),
+         publico, piso: piso != null ? piso : '—'}),
+      dados:{gasto, entrou, saldo, publico, piso, festas:ult.length},
+      botoes:[{id:'expediente', rot:_t('Mudar o Expediente'), acao:'painel-expediente',
+               nota:_t('trocar a festa por outra ação no turno')},
+              {id:'manter', rot:_t('Manter as festas'), acao:'ciente',
+               nota:_t('o prejuízo continua saindo do caixa')}]
+    });
   }
 
   /* -------------------------------------------------------
@@ -6414,6 +6497,9 @@ TO.feed = (function(){
         return {ok:true};
       case 'paz':
         PL().definirIntencao(E, 'paz');
+        marcar();
+        return {ok:true};
+      case 'ciente':
         marcar();
         return {ok:true};
       case 'investida-cidade':

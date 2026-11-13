@@ -11352,6 +11352,38 @@ haver a mensagem da diretoria perguntando se podemos atacar."
   cobrança de "nem apareceu"); save detalhista antigo carregou rápido e
   sem travar.
 
+## Expediente pronto, festa no prejuízo, assalto 3 por ano, estreia calada e sem convites (dono, 13/11/2026)
+
+Pedido: "O expediente da sede inicia automático com recrutar, festa na sede e
+festa na sede, mas se quiser o jogador pode mudar. Mas tem que ser algo bem
+inteligente: se as festas na sede estão dando prejuízo, deve aparecer a
+mensagem da diretoria dizendo isso, pra ajudar o jogador a entender porque o
+caixa tá ficando no vermelho. O assalto pode ocorrer agora só até 3x por ano,
+e só ocorre depois do primeiro jogo. Eu quero que nada aconteça no feed antes
+da primeira experiência ser o primeiro dia de jogo. Os convites de festa
+deixam de existir, e isso para de impactar nas relações."
+
+- `E.expediente` nasce `{manha:'recrutar', tarde:'festa', noite:'festa'}`; a
+  mensagem de abertura do Expediente saiu (`feed.abertura` não propõe nada).
+- A festa guarda o saldo (`E.acoes.festas`, 14); `festaNoPrejuizoHoje` avisa
+  com números (gasto, receita, saldo, público médio, público que paga a
+  festa) quando as últimas festas somam −R$ 200 ou pior, ou qualquer
+  prejuízo com o caixa negativo; no máximo a cada 21 dias. Botões: Mudar o
+  Expediente / Manter as festas.
+- Assalto: `pautaAssalto` só depois de `E.estreou`, 4 meses em 12 pelo hash,
+  e no máximo 3 por ano (`E.assaltosNoAno`).
+- Estreia calada: `E.estreou` falso até passar o primeiro dia de jogo do
+  clube; até lá `eventosDoDia` só roda diplomacia das IAs, recepções, apoio
+  fora, placar e mundo, e `propor` descarta mensagens (exceto no dia do jogo
+  e nos dias de caravana).
+- Convites de festa: `pautaFestas` devolve nada e `convitesDeAniversario`
+  (entre as IAs) não roda — ninguém ganha ou perde relação por festa de
+  aliada.
+- Testado: um ano com a TUF (estreia no dia 41, feed vazio até lá, 3
+  assaltos, nenhum convite, festas no lucro) e com a Comando Alvirrubro (80
+  membros, sede 3: o aviso de prejuízo apareceu três vezes, com público de
+  ~85 contra 105 necessários).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
