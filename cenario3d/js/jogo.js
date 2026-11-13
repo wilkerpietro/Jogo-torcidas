@@ -59454,7 +59454,7 @@ TO.mapaCaravana = (function(){
     /* NO JOGO 3D NÃO TEM FEED (dono, 28/09/2026): o primeiro item fecha o
        painel e leva a câmera até a sala do presidente, onde os recados
        chegam em balão (no dia de jogo, até o nosso bonde) */
-    {id:'feed',        rot:TO.semFeed ? _t('Sala do presidente') : _t('Feed'), ic:'feed'},
+    {id:'feed',        rot:_t('Feed'), ic:'feed'},
     /* O MAPA DA CIDADE (o dono, 28/09/2026, no jogo 3D: "Preciso que o
        mapa da cidade seja uma opção no menu lateral do jogo"). Só existe
        com a cidade em 3D (`so3d`): quem abre é o jogo 3D (jogo3d.js), a
@@ -59574,7 +59574,7 @@ TO.mapaCaravana = (function(){
      fora, é uma só. O parâmetro fica porque a classe é o que a folha de
      estilo usa pra posicionar a coluna.
      Clicar abre a página como painel; clicar de novo fecha. */
-  const irPraSalaNo3d = () => { if(TO.semFeed && TO.jogo3d && TO.jogo3d.irPraSala) TO.jogo3d.irPraSala(); };
+  const irPraSalaNo3d = () => { if(TO.semFeed && TO.jogo3d && TO.jogo3d.irPraSala && !document.body.classList.contains('j3d-entre-jogos')) TO.jogo3d.irPraSala(); };
   function montarMenuIcones(classe){
     const cx = el('div',{class: classe || 'feed-menu'});
     for(const n of NAV){
@@ -59978,8 +59978,9 @@ TO.mapaCaravana = (function(){
            o feed na tela, "responda o que está aberto" sem nada aberto à
            vista era o jogo parado sem saída — o ≫ traz o recado de volta */
         const R3 = TO.jogo3d && TO.jogo3d.recados;
-        if(TO.semFeed && R3 && R3.trazerDecisao) R3.trazerDecisao();
-        aviso(TO.semFeed ? _t('Responda o recado do balão — o tempo está parado.')
+        const naCena3d = TO.semFeed && !document.body.classList.contains('j3d-entre-jogos');
+        if(naCena3d && R3 && R3.trazerDecisao) R3.trazerDecisao();
+        aviso(naCena3d ? _t('Responda o recado do balão — o tempo está parado.')
                          : _t('Responda o que está aberto — o tempo está parado.'), 'ruim');
         atualizarFeed();
         return;
@@ -60019,9 +60020,14 @@ TO.mapaCaravana = (function(){
        cada uma é o balão do jogo 3D (recados3d.js). Sem a lista,
        `atualizarFeed` não tem o que fazer, e a linha do dia de jogo mora
        no balão. */
+    /* ENTRE OS JOGOS O FEED VOLTA (dono, 13/11/2026: "Entre um jogo e
+       outro não aparece a cena do boneco na sede [...] Aparece um novo
+       visual do jogo, com botões, menus e mensagens maiores na tela. O 3d
+       só roda quando as cenas abrem mesmo"): o rolo nasce sempre; com uma
+       cena em 3D no ar (jogo3d.js, `j3d-entre-jogos` fora do body) ele
+       some e quem fala é o balão. */
     let rolo = null;
-    if(TO.semFeed) noFeedLista = null;
-    else {
+    {
       rolo = el('div',{class:'feed-rolo'});
       noFeedLista = el('div',{class:'feed-lista'});
       rolo.appendChild(noFeedLista);
@@ -60738,7 +60744,6 @@ TO.mapaCaravana = (function(){
     const e = E();
     /* NO JOGO 3D não há lista (TO.semFeed): o que anda é a coluna da rede
        social, por cima da cidade (sync com o 2D, 06/10/2026) */
-    if(e && TO.semFeed){ atualizarSocialLado(); return; }
     if(!e || !noFeedLista || !noFeedLista.isConnected) return;
     const {hist, teto} = janelaDoFeed(e);
     /* ALCANÇAR A DECISÃO ENTERRADA EXIGE REMONTAR (17/09/2026): esticar
@@ -61799,7 +61804,7 @@ TO.mapaCaravana = (function(){
       /* (o minuto cortado, como o relógio da cidade mostra) */
       p.min = Math.floor(seg / 60 + 1e-6); p.hora = hhmm(p.min);
     }
-    for(const b of ITN.pontos.children){
+    for(const b of (ITN.pontos ? ITN.pontos.children : [])){
       const q = ITN.it.paradas[+b.dataset.i];
       if(q) b.title = `${q.hora} · ${q.nome}`;
     }

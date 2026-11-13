@@ -11439,6 +11439,31 @@ Etapa 1 (feita):
   `cenario3d/jogo.html`. O 2D continua no repositório e abre com `?2d`
   no endereço (as ferramentas e os testes usam assim).
 
+## Entre os jogos não há cidade: o feed grande (dono, 13/11/2026)
+
+Pedido: "Entre um jogo e outro não aparece a cena do boneco na sede. Toda
+essa parte deixa de existir. Aparece um novo visual do jogo, com botões,
+menus e mensagens maiores na tela. O 3d só roda quando as cenas abrem
+mesmo."
+
+- `jogo3d.js` decide a cada quadro se há **cena em 3D** no ar: o dia de
+  jogo (`dia3d.ativo`/`montando`), a briga no palco da cidade
+  (`palco-briga`, `palco3d`), o assalto na loja e o mapa da cidade. Sem
+  cena, o body ganha `j3d-entre-jogos`: a cidade fica escondida e **para
+  de desenhar** (`C.pausar`), os balões não falam e o relógio anda no
+  compasso do jogo de feed (sem esperar a hora da sede).
+- O **rolo do feed** volta no 3D (`main.js` do pacote monta sempre o
+  rolo; com cena no ar ele some e o balão fala). As decisões entre os
+  jogos se respondem nos cartões, inclusive "Assumir a ida / Ir em paz"
+  do dia de jogo — e o clique abre a ida em 3D.
+- **O visual novo** (`jogo3d.css`, fim do arquivo): coluna central de até
+  880 px, cartões com 19 px de texto e botões de 52 px de altura, barra
+  de cima e ícones do menu maiores; no celular a barra vira duas linhas
+  e os botões ocupam a largura toda.
+- Saíram junto: a sala do presidente (o item "Feed" do menu volta a ser
+  o feed), o botão "Ver o 1º andar", o recado do dia livre e o botão
+  "Sair pra rua" (a rua livre).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
