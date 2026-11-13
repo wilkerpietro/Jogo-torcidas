@@ -3474,6 +3474,8 @@ O planejamento do assalto (alvo, equipe, jeito) é uma tela do `main.js`; a esco
 
 ## 4. O jogo 3D (`cenario3d/`)
 
+> **Desde 13/11/2026 o jogo é 2D de novo (ver 4.9).** A cidade em 3D saiu do repositório; as seções 4.1 a 4.8 ficam como registro do que existiu até o commit 17badf1. A pasta `cenario3d/` segue sendo onde o jogo mora.
+
 Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carregado de CDN). Cerca de 168 mil linhas, 43 MB.
 
 ### 4.1 Como é montado
@@ -3559,13 +3561,25 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
 - A foto do **troféu** é tirada no lugar da briga, com a cidade em 3D de
   fundo.
 
+### 4.9 O jogo 2D com as cenas nas imagens (13/11/2026)
+
+O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráficos 3d, as cenas vão ser todas nas imagens."
+
+- **Como abre**: `index.html` manda pra `cenario3d/jogo.html`, uma página pequena que carrega as quatro folhas de estilo e `js/jogo2d.js`. Esse arquivo põe a casca (`jogo_casca.js`), carrega `dados/imagens_jogo.js`, `js/jogo.js` (o jogo inteiro), `js/portal.js`, o boneco em base64 e `js/bonecos3_global.js` (o boneco desenhado sobre as fotos). Guarda também a regra da hora do cartão da partida (75 minutos antes da bola, sem nada que conte o placar na frente dele), pelo gancho `TO.ritmoDoDia.virouDia`.
+- **Entre os jogos**: o portal (caixa de entrada, próximo jogo, agenda, tabela, finanças, patrimônio, elenco, relações), o menu do lado e a barra de cima. O relógio anda no compasso do jogo de feed (1,5 s antes de uma decisão, 120 ms no dia calado).
+- **O dia de jogo**: "Iniciar partida" abre a linha do dia dentro do cartão da partida (`abrirItinerario`). O `body` ganha `dia-de-jogo` e a caixa de entrada vira a coluna larga. A linha mostra a fase, a hora e o efetivo; embaixo, o palco: o mapa da caravana (o Brasil na estrada, a planta da praça na cidade, com o caminho pelas ruas) e, na hora do jogo, a arquibancada sobre a foto do estádio com o placar de TV e os botões de amenizar e provocar.
+- **O ataque que a gente sofre** é um cartão no balão do mapa: "Caiu em cima da gente · X", com "Pra cima deles", "Simular" e "Recuar pra sede".
+- **As cenas**: a briga abre na tela cheia sobre a foto do lugar (`abrirPalco`, `montarCena`), com os bonecos por cima; depois o relatório. O assalto abre a loja vista de cima (`assalto2d.js`). O troféu é a foto da cena com quatro dos nossos segurando o pano.
+- **Os bonecos nas fotos sem placa de vídeo**: acima de 16 bonecos, só os 16 mais perto dos líderes são malha com esqueleto; os outros são o boneco de peças (4.6), que agora vale também na câmera de cima. 298 bonecos: de 3,5 para 9 quadros por segundo no navegador de teste.
+- **O que sobrou de 3D**: `cenario3d/planta.html`, a ferramenta que desenha a planta das praças (os mapas 2D do jogo saem dela, por `ferramentas/assar_plantas.js`), e os modelos que ela mostra do lado. Não faz parte do jogo.
+- **Dívida**: uns 30 ganchos `TO.jogo3d && …` mortos dentro de `jogo.js`, regras sem uso em `jogo3d.css` e os nomes antigos das classes (`jogo3d`, `j3d-entre-jogos`).
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:
   - Cinco chaves duplicadas em objetos: `bonecos3.js` (`corBone`, `barba`), `competicoes.js` (`simular`), `feed.js` (`subsede`), `relacoes.js` (`brigaIA`).
   - Um bloco morto `if(false && …)` em `feed.js`.
   - Cerca de 50 variáveis ou funções nunca usadas (por exemplo `painelHierarquia`, `cartazDaCena`, `pisoDoCargo`, `penaltis`).
-  - Um 404 no carregamento (provavelmente o `favicon.ico`).
 - **Bugs achados ao escrever este livro, ainda não corrigidos:**
   - A venda forçada da loja por dívida credita R$ 90 mil duas vezes (`financeiro.js: venderLojaSeEndividado` soma no caixa e depois chama `lancar`, que soma de novo): o caixa sobe R$ 180 mil.
   - A caixa de 5 bombas ignora o desconto do galpão.

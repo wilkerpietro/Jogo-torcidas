@@ -11871,6 +11871,76 @@ no estádio".
   de quem joga sai, no máximo, um minuto antes do primeiro bonde do outro
   lado (no teste: nós 09:58, a rival 09:59).
 
+## O jogo volta a ser 2D, com as cenas nas imagens (dono, 13/11/2026)
+
+Pedidos: "To pensando em voltar com a ideia do jogo ser 2d com imagens mas
+aproveitando o design atual. Itinerário funcionava bem e os bonecos só nas
+imagens já supriam"; e depois: "Remova de vez os gráficos 3d, as cenas vão
+ser todas nas imagens. Aviso de ataque volta a ser um cartão no itinerário
+exatamente como era antes".
+
+- **A página do jogo não monta mais cidade nenhuma.** `cenario3d/jogo.html`
+  era a planta da cidade (9,6 mil linhas) com o jogo por cima; agora é uma
+  página de 20 linhas que chama `js/jogo2d.js`: a casca, o jogo (`jogo.js`),
+  o portal (`portal.js`) e o boneco das cenas de imagem
+  (`bonecos3_global.js`). O endereço é o mesmo. Medido no teste: o jogo
+  abre em 1,6 s (antes, uns 9 s montando a cidade).
+- **O que ficou do desenho atual**: o portal entre os jogos, o menu com
+  ícone e nome, a barra de cima, a paleta de faixa, as telas do menu, o
+  cartão do planejamento da semana, o véu do resultado.
+- **O dia de jogo é o itinerário** (o que o jogo de feed já tinha, e que o
+  pacote guardava por baixo dos ganchos do 3D): a linha do dia no cartão da
+  partida, com o mapa da caravana (o Brasil na estrada, a planta da praça
+  na cidade), a arquibancada na hora do jogo e os cartões da linha. Com a
+  linha no ar o `body` ganha `dia-de-jogo` e o portal abre espaço: a caixa
+  de entrada vira a coluna larga, o próximo jogo fica do lado e as finanças
+  saem da tela; na tela média e no celular, só o dia. A prévia do mapa
+  voltou ao cartão da partida antes do "Iniciar partida".
+- **O aviso de ataque é o cartão no itinerário**, como era: "Caiu em cima
+  da gente · X", com "Pra cima deles / Simular / Recuar pra sede", no balão
+  do ponto do mapa. (A coluna do dia rola até o cartão inteiro: os botões
+  ficavam abaixo da dobra.) Sem a cidade em 3D não há quem responda a linha
+  no lugar do jogador (`respostaDaLinha` era do dia3d.js).
+- **As cenas são as de imagem**: a briga sobre a foto (a praça, a rua, o
+  bar, o estádio de 10, 20 e 40 mil), o relatório, o troféu com o fundo da
+  cena. O palco ficava encostado na esquerda com uma faixa vazia do lado
+  (era a grade de bloco do 3D): centralizado.
+- **O assalto voltou a ser a loja vista de cima** (js/ui/assalto2d.js e
+  js/diajogo/assalto_motor.js, do jogo de feed): o pacote do 3D tinha
+  trocado a cena pela loja da cidade. As seis fotos de loja entraram em
+  `cenario3d/img/cenas/`. O planejamento do assalto é o mesmo.
+- **A briga de imagem sem placa de vídeo**: medido, 298 bonecos na foto do
+  estádio davam 3,5 quadros por segundo — todo mundo era malha com
+  esqueleto. O boneco de peças (feito pra cidade) agora vale também na
+  câmera de cima: sem placa (SwiftShader, "Microsoft Basic Render Driver",
+  llvmpipe), só os 16 do meio da briga ficam em malha de esqueleto e o
+  resto é o boneco de peças, com a pose dele. Ficou em 9 quadros por
+  segundo no mesmo teste (com 50 bonecos, 14). Com placa nada muda.
+- **O que foi apagado**: a página do visualizador da cidade
+  (`cenario3d/index.html`) e 25 módulos — `cenario.js`, `jogo3d.js`,
+  `dia3d.js`, `dia_de_jogo.js`, `vida3d.js`, `recados3d.js`, `rua3d.js`,
+  `nevoa3d.js`, `mapa3d.js`, `arquibancada.js`, `invasao.js`,
+  `palco_briga.js`, `briga_bar.js`, `briga_lugar.js`, `briga_treta.js`,
+  `caminhada.js`, `fuga_rua.js`, `estrada3d.js`, `arredores3d.js`,
+  `assalto.js`, `assalto3d.js`, `passo.js`, `subsolo.js`,
+  `rotas_estadios.js` e `bonecos3.js` (a cópia do `bonecos3_cena.js`). O
+  último commit com tudo isso é o 17badf1.
+- **O que ficou de 3D no repositório, fora do jogo**: `cenario3d/planta.html`
+  e os módulos que ela importa (casas, sedes, estádios, props). É a
+  ferramenta que desenha a planta das praças — dela saem os mapas 2D do
+  jogo (`ferramentas/assar_plantas.js`) — e abre o lote clicado em 3D do
+  lado. O botão "Cenário 3D" e o modo jogo dela saíram.
+- **O que ficou pra depois**: dentro de `jogo.js` restam uns 30 ganchos
+  `TO.jogo3d && …` que não rodam mais (não há `TO.jogo3d`), a folha
+  `jogo3d.css` ainda tem regras das peças da cidade, e as classes do
+  desenho seguem com o nome antigo (`jogo3d`, `j3d-entre-jogos`). Nada
+  disso aparece pra quem joga.
+- Testado no navegador de teste (sem placa): o dia em casa com o ataque
+  forçado (cartão → briga na praça → relatório → jogo → volta), o dia fora
+  (caravana no mapa, o jogo, a volta), o assalto no banco, o celular em pé
+  e a ferramenta da planta abrindo sem erro. A invasão dentro do estádio e
+  a emboscada da estrada não foram disparadas nos testes.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

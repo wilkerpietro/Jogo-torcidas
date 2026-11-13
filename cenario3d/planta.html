@@ -242,7 +242,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
         <button role="tab" id="aba-atual" aria-selected="false">Jogo hoje</button>
       </div>
       <button class="bt-modelos" id="bt-modelos" aria-pressed="false">Modelos 3D</button>
-      <button class="bt-modelos bt-cenario" id="bt-cenario" title="O mapa inteiro da praça em 3D">Cenário 3D</button>
+      <button class="bt-modelos bt-cenario" id="bt-cenario" hidden>Cenário 3D</button>
       <div class="camadas">
         <label><input type="checkbox" id="c-rotulos" checked> Rótulos</label>
         <label><input type="checkbox" id="c-grade" checked> Grade</label>
@@ -289,24 +289,24 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--selecao); o
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, placasDoLote, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js?v=14c8078041';
-import { montarModelos } from './js/modelos3d.js?v=14c8078041';
-import { moldeDaPeca, comTransformador } from './js/props3d.js?v=14c8078041';
-import { ATLAS } from './js/modelos_atlas.js?v=14c8078041';
-import { Construtor, sorteio } from './js/construtor3d.js?v=14c8078041';
-import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M, cisaoDaPraca, VAO_CIDADES_M, PRAIA_A_MAIS } from './js/proposta.js?v=14c8078041';
-import { montarSede, nivelQueCabe } from './js/sede3d.js?v=14c8078041';
-import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=14c8078041';
-import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=14c8078041';
-import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=14c8078041';
-import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=14c8078041';
-import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js?v=14c8078041';
-import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=14c8078041';
-import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=14c8078041';
-import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=14c8078041';
-import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=14c8078041';
-import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js?v=14c8078041';
-import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js?v=14c8078041';
+import { planoDaCasa, montarCasa, juntarBlocos, lugarDoDecalque, placasDoLote, segmentosDoMuro, carrosDoEstacionamento, portaoDoEstacionamento } from './js/casas3d.js?v=b5814edd87';
+import { montarModelos } from './js/modelos3d.js?v=b5814edd87';
+import { moldeDaPeca, comTransformador } from './js/props3d.js?v=b5814edd87';
+import { ATLAS } from './js/modelos_atlas.js?v=b5814edd87';
+import { Construtor, sorteio } from './js/construtor3d.js?v=b5814edd87';
+import { gerarProposta, MAPAS, MAPA_DO_PORTE, RUA, LONGE_DO_ESTADIO_M, cisaoDaPraca, VAO_CIDADES_M, PRAIA_A_MAIS } from './js/proposta.js?v=b5814edd87';
+import { montarSede, nivelQueCabe } from './js/sede3d.js?v=b5814edd87';
+import { onibus as onibusDetalhe, juntar as juntarDetalhe } from './js/detalhe3d.js?v=b5814edd87';
+import { montarLoteDeVeraneio, plantaDoLote, festaNoMundo, noMundoDoLote, cenaDaFesta, detalheDaCasaDaFesta } from './js/veraneio3d.js?v=b5814edd87';
+import { montarCaravana, cenaDaCaravana } from './js/caravana3d.js?v=b5814edd87';
+import { montarEstacao, montarTunel, montarCarro, TREM } from './js/metro3d.js?v=b5814edd87';
+import { montarShopping, montarDelegacia, montarPraca, montarIgreja, montarEscola, montarHospital } from './js/equip3d.js?v=b5814edd87';
+import { montarEquipAntigo, TIPOS_ANTIGOS } from './js/equip_antigo3d.js?v=b5814edd87';
+import { PECAS_PRAIA, montarPecaDaPraia } from './js/praia3d.js?v=b5814edd87';
+import { ESPECIES_LP, FLORA_LP, montarArvoreLowpoly, montarAsDez, facesDaArvore, especieLowpolyDe } from './js/arvores_lowpoly.js?v=b5814edd87';
+import { plantarMato, montarMato, LONGE_M, DENSIDADE, LADRILHO_M } from './js/mato3d.js?v=b5814edd87';
+import { ESTADIOS_JOGO, montarEstadioJogo, glbDoEstadio, cortarEstadio, plantaDoEstadio, modeloDaLotacao, nomeDoLetreiro, nomeComAcento, marcaDoEstadio, BOCAS_DOS_PORTOES, BILHETERIAS_DA_RUA } from './js/estadios3d.js?v=b5814edd87';
+import { PECAS_AMBULANTES, montarAmbulante } from './js/ambulantes3d.js?v=b5814edd87';
 
 const $ = id => document.getElementById(id);
 const aviso = $('aviso');
@@ -323,25 +323,25 @@ function carregarScript(src) {
 }
 window.TO = window.TO || { dados: {} };
 try {
-  await carregarScript('dados/torcidas.js?v=14c8078041');
-  await carregarScript('dados/times.js?v=14c8078041');
-  await carregarScript('dados/cena_estadio.js?v=14c8078041');
-  await carregarScript('dados/cidades.js?v=14c8078041');
-  await carregarScript('dados/estadios.js?v=14c8078041');
-  await carregarScript('dados/escudos.js?v=14c8078041');
+  await carregarScript('dados/torcidas.js?v=b5814edd87');
+  await carregarScript('dados/times.js?v=b5814edd87');
+  await carregarScript('dados/cena_estadio.js?v=b5814edd87');
+  await carregarScript('dados/cidades.js?v=b5814edd87');
+  await carregarScript('dados/estadios.js?v=b5814edd87');
+  await carregarScript('dados/escudos.js?v=b5814edd87');
   /* o manifesto das faixas de verdade (a arte do dono, 29/09/2026): a arquibancada estende a da torcida */
-  await carregarScript('dados/faixas.js?v=14c8078041').catch(() => {});
+  await carregarScript('dados/faixas.js?v=b5814edd87').catch(() => {});
   /* O DOMÍNIO DOS BAIRROS (o dono, 30/09/2026): as sedes repetidas num
      bairro saem espalhadas (nos dados, na carga) e os bares ganham o
      bairro deles — o mesmo módulo do jogo (js/mundo/dominio.js) */
-  await carregarScript('js/dominio.js?v=14c8078041').catch(() => {});
+  await carregarScript('js/dominio.js?v=b5814edd87').catch(() => {});
 } catch (e) {
   aviso.textContent = 'A planta da cidade não carregou (' + e.message + '). Recarregue a página.';
   throw e;
 }
 /* os PNG dos escudos, embutidos (o montar.sh gera): sem o arquivo, o
    caminho vai direto pra img/escudos/ */
-await carregarScript('dados/escudos_embutidos.js?v=14c8078041').catch(() => {});
+await carregarScript('dados/escudos_embutidos.js?v=b5814edd87').catch(() => {});
 const P = TO.dados.plantaEstadio, K = P.CIDADE, M = P.METRO, CALC = K.CALC;
 /* o mapa da vez (o pequeno, o médio ou o grande, montado pra praça
    escolhida): quem monta é usarMapa, lá embaixo */
@@ -9415,88 +9415,15 @@ function apiDoCenario() {
 /* O JOGO EM 3D: a praça do último jogo (ou Fortaleza) monta atrás do
    menu; o jogo de feed carrega por cima e, quando a partida começa, a
    praça vira a da torcida do jogador (js/jogo3d.js) */
-async function abrirJogo3d() {
-  const nomes = CIDADES.map(([n]) => n);
-  let inicial = nomes.includes('Fortaleza') ? 'Fortaleza' : nomes[0];
-  try { const s = localStorage.getItem('jogo3d-praca'); if (s && nomes.includes(s)) inicial = s; } catch (e) {}
-  if (nomes.includes(PARAMS.get('cidade'))) inicial = PARAMS.get('cidade');
-  const pronta = abrirCenario(inicial, mapaDoPorte(inicial));
-  try {
-    const { montarJogo } = await import('./js/jogo3d.js?v=14c8078041');
-    await montarJogo({
-      get cenario() { return cenario; },
-      pronta, nomes, M,
-      /* A PRAÇA DE UM MAPA DO JOGO (o id de dados/cidades.js: 'sao-paulo'):
-         pelo slug do nome, como `infoDaCidade` — o nome dos dados vem sem
-         acento em seis praças ("Sao Paulo", "Belem"…), e procurar pelo
-         nome deixava essas seis sem cidade em 3D (conserto de 28/09/2026:
-         o jogo fora em São Paulo abria com a cidade do jogador na tela) */
-      pracaDe: mapa => (mapa && nomes.find(n => slugDe(n) === mapa)) || null,
-      abrirPraca(nome, forcar, visita) {
-        /* `visita`: a praça de fora de uma caravana não é a que o jogo abre da
-           próxima vez — se a página cai no meio da viagem, o menu abre a
-           cidade do jogador, não a de lá (o dono, 29/09/2026: "quase todas
-           as vezes que preciso abrir outro mapa devido a caravanas o jogo
-           buga e recarrega automaticamente"). Medido, derrubando a aba com a
-           praça de lá montando: a praça lembrada pro boot era "Manaus" (e o
-           `abrirJogo3d` monta a lembrada atrás do menu, antes de o
-           "Continuar" voltar pra cidade da sede) */
-        if (!visita) try { localStorage.setItem('jogo3d-praca', nome); } catch (e) {}
-        /* `forcar`: a mesma praça, montada de novo (a sede do jogador mudou de nível) */
-        if (forcar && cenario && cenario.praca === nome) return cenario.montar(nome, mapaDoPorte(nome));
-        return abrirCenario(nome, mapaDoPorte(nome));
-      },
-      /* a calçada na frente da porta da sede (o mesmo ponto do dia de jogo) */
-      sedeDe(id) { const t = apiDoCenario().torcidas().find(x => x.id === id); return t && t.porta; },
-      /* de onde o bonde da torcida sai: a porta da sede ou, sem sede no
-         mapa (o nível 0), o ponto de encontro — a calçada do bar dela, ou
-         da subsede (`tipo` 'bar'/'subsede'); sem os dois, null */
-      casaDe(id) { const t = apiDoCenario().torcidas().find(x => x.id === id); return t ? t.porta || t.ponto || null : null; },
-      /* a planta (a vida da praça lê dela as sedes, os bares e as calçadas) */
-      get planta() { return apiDoCenario(); },
-      /* o nível da sede do save (vale na próxima montagem da praça) */
-      nivelDoJogo: (id, n) => apiDoCenario().nivelDoJogo(id, n),
-      /* quantos bares a torcida tem no save (idem) */
-      baresDoJogo: (id, n, doJogador) => apiDoCenario().baresDoJogo(id, n, doJogador),
-      /* o que a torcida guarda nos armários do almoxarifado (troca na hora, com a praça montada) */
-      guardadosDoJogo: (id, g) => apiDoCenario().guardadosDoJogo(id, g),
-      onibusDoJogo: (id, n) => apiDoCenario().onibusDoJogo(id, n),
-      pagodeDoJogo: (id, v) => apiDoCenario().pagodeDoJogo(id, v),
-      /* a fábrica e os anexos da sede (idem: valem na próxima montagem) */
-      fabricaDoJogo: (id, v) => apiDoCenario().fabricaDoJogo(id, v),
-      anexosDoJogo: (id, a) => apiDoCenario().anexosDoJogo(id, a),
-      /* a praça montada bate com o save de agora? (o nível, os bares, as lojas, as subsedes, a fábrica e os anexos de cada torcida dela) */
-      emDiaComOJogo: () => apiDoCenario().emDiaComOJogo()
-    });
-  } catch (e) { console.error(e); alert('O jogo não carregou: ' + e.message); }
-}
-let cenario = null;
-async function abrirCenario(nome, modo) {
-  if (!cenario) {
-    try {
-      const { criarCenario } = await import('./js/cenario.js?v=14c8078041');
-      cenario = criarCenario(apiDoCenario());
-    } catch (e) { console.error(e); alert('O cenário 3D não carregou: ' + e.message); return; }
-  }
-  return cenario.abrir(nome, modo);
-}
+/* O JOGO É 2D (13/11/2026; o dono: "Remova de vez os gráficos 3d, as cenas
+   vão ser todas nas imagens"): a cidade inteira em 3D (js/cenario.js), o
+   jogo por cima dela (js/jogo3d.js) e o assalto na loja em 3D saíram do
+   repositório. Esta página segue sendo a ferramenta que desenha a planta
+   das praças — é dela que saem os mapas 2D do jogo
+   (ferramentas/assar_plantas.js) — com o lote clicado aberto em 3D do lado. */
+const cenario = null;
+async function abrirCenario() { return null; }
 $('bt-cenario').onclick = () => abrirCenario(cidade, estado.modo);
-if (PARAMS.has('teste')) { window.__planta.abrirCenario = abrirCenario; Object.defineProperty(window.__planta, 'cenario', { get: () => cenario }); }
-/* pro teste: o assalto (assalto3d.js) numa loja da praça aberta, sem o jogo de feed */
-if (PARAMS.has('teste')) window.__planta.assalto = async (tipo, cfg = {}) => {
-  const C = cenario, loja = apiDoCenario().lojas().find(l => l.tipo === tipo);
-  if (!C || !loja) return { erro: 'sem cenário ou sem a loja ' + tipo };
-  await C.vida.chamarPovo();
-  const { iniciarAssalto } = await import('./js/assalto3d.js?v=14c8078041');
-  const equipe = Array.from({ length: cfg.n || 10 }, (_, i) => ({ id: 'm' + i, nome: ['Negão', 'Ruivo', 'Baixinho', 'Magrão', 'Alemão', 'Cabeça', 'Tico', 'Zóio', 'Bola', 'Formiga'][i % 10] }));
-  const A = { banco: [95, 80, 90, 60, 85, 90], joalheria: [75, 70, 70, 40, 75, 70], supermercado: [45, 60, 45, 85, 45, 50], posto: [25, 55, 30, 50, 40, 30], mercadinho: [15, 35, 15, 45, 30, 15], roupas: [10, 40, 20, 50, 35, 15] }[tipo];
-  const alvo = { id: tipo, nome: loja.nome, recompensa: A[0], exposicao: A[1], seguranca: A[2], movimentacao: A[3], atencao: A[4], dificuldade: A[5] };
-  window.__assalto = iniciarAssalto({ C, ctx: C.vida.contextoDoDia(), loja,
-    cfg: Object.assign({ alvo, equipe, dentro: 5, abordagem: 'rapido', horario: 'tarde', calor: 20, potencial: 30000, semente: 7 }, cfg, { equipe }),
-    aoFim: r => { window.__assaltoFim = r; } });
-  return window.__assalto.erro ? { erro: window.__assalto.erro } : { ok: true, loja };
-};
-
 /* ======================================================
    AS NOTAS DA PROPOSTA
    ====================================================== */
@@ -9640,15 +9567,12 @@ try { const m = localStorage.getItem('planta-modo'); if (MODOS.includes(m)) modo
    pede, `window.__CENARIO`: é o que o GitHub Pages usa). O JOGO EM 3D
    (27/09/2026) abre com ?jogo (ou `window.__JOGO`, o jogo.html do Pages):
    o cenário da praça atrás e o jogo de feed por cima (js/jogo3d.js) */
-const modoJogo = PARAMS.has('jogo') || !!window.__JOGO;
-const cenarioDireto = PARAMS.has('cenario') || !!window.__CENARIO || modoJogo;
+const modoJogo = false, cenarioDireto = false;
 if (cenarioDireto) modoSalvo = MODOS.includes(PARAMS.get('mapa')) && PARAMS.get('mapa') !== 'atual' ? PARAMS.get('mapa') : mapaDoPorte(cidade);
 mudarModo(modoSalvo);
 new ResizeObserver(() => { tamanho(); pedirDesenho(); }).observe(mapa);
 aviso.hidden = true;
-if (modoJogo) abrirJogo3d();
-else if (cenarioDireto) abrirCenario(PARAMS.get('cidade') === cidade ? cidade : null, estado.modo);
-else {
+{
   /* abre com um imóvel na tela: o Residencial Bela Vista — ou, quando ele
      saiu da praça (fora do bairro Nobre), a primeira torre que ficou */
   const torres = marcosDeHoje().concat(marcosNovos).filter(m => m.pc && /^(torre|predio)/.test(m.pc.modelo));

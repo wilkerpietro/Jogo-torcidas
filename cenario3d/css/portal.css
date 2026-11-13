@@ -282,3 +282,35 @@ body.jogo3d.j3d-entre-jogos .social-toasts{display:none !important}
 }
 /* (o miolo do feed não recebia clique no 3D, pra câmera arrastar; entre os jogos recebe) */
 body.jogo3d.j3d-entre-jogos .feed-colunas{pointer-events:auto}
+
+/* ---------- O DIA DE JOGO (o jogo 2D, 13/11/2026) ----------
+   Com a linha do dia no ar (`body.dia-de-jogo`, jogo.js) o cartão do dia
+   toma a tela: a caixa de entrada vira a coluna larga — o mapa da caravana,
+   a arquibancada e os cartões da linha em tamanho de palco —, o próximo
+   jogo fica do lado (quem está de cada lado, o risco do dia) e as finanças
+   esperam o apito. Na tela média e no celular, só o dia. */
+@media (min-width:1081px){
+  body.dia-de-jogo .portal{grid-template-columns:minmax(0,1.85fr) minmax(0,1fr)}
+  body.dia-de-jogo .pt-torcida{display:none}
+}
+@media (max-width:1080px){
+  body.dia-de-jogo .pt-abas{display:none}
+  body.dia-de-jogo .portal .pt-col{display:none}
+  body.dia-de-jogo .portal .pt-msgs{display:flex}
+}
+/* a linha do dia: a fase de agora em letra de faixa, a hora em destaque */
+body.jogo3d .itn-mini{margin-top:14px;padding-top:14px}
+body.jogo3d .itn-linha{border-radius:var(--raio);padding:11px 14px 11px 12px;gap:0 14px;background:var(--faixa)}
+body.jogo3d .itn-ic{width:40px;height:40px}
+body.jogo3d .itn-ic svg{width:22px;height:22px}
+body.jogo3d .itn-linha{grid-template-columns:40px auto minmax(0,1fr)}
+body.jogo3d .itn-hora{font-size:17px;font-weight:600}
+body.jogo3d .itn-nome{font-size:19px;letter-spacing:.08em;color:var(--marca)}
+/* o efetivo na linha de baixo, sempre à vista: comprido (com a escolta da aliada) ele empurrava o nome da fase pra fora */
+body.jogo3d .itn-linha .itn-efetivo{grid-column:3 / -1;margin-top:3px;font-size:12.5px;text-align:left;white-space:normal;overflow:visible;opacity:1}
+/* o palco do dia: o mapa e a arquibancada, largos e baixos pra caber com os cartões */
+body.jogo3d .itn-palco{margin-top:12px}
+body.jogo3d .itn-palco > .mc-mapa{border-radius:var(--raio);border-color:var(--linha)}
+@media (min-width:1081px){
+  body.dia-de-jogo .itn-palco > .mc-mapa{aspect-ratio:16/9}
+}

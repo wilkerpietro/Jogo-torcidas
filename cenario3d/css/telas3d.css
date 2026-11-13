@@ -353,3 +353,8 @@ body.jogo3d .semc .sem-abrir{margin-top:2px;width:100%}
 @media (max-width:520px){
   body.jogo3d .semc-titulo b{font-size:20px}
 }
+
+/* ---- A CENA DE IMAGEM NO MEIO DA TELA (o jogo 2D, 13/11/2026) ----
+   o palco tem a largura do canvas (fit-content) dentro de uma grade de
+   bloco: sem a margem ele encostava na esquerda, com uma faixa vazia do lado */
+body.jogo3d #djPalco{margin-inline:auto;border-color:var(--linha);border-radius:var(--raio);overflow:hidden}

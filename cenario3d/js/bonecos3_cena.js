@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=14c8078041';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=b5814edd87';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -3033,6 +3033,15 @@ let escalaDoTabuleiro = () => 1;
     }catch(err){ console.error('bonecos3: '+err.message); renderer=null; return false; }
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(1);
+    /* SEM PLACA DE VÍDEO (o desenho no processador: o SwiftShader, o "Microsoft
+       Basic Render Driver", o llvmpipe), só os 16 do meio da briga ficam em
+       malha de esqueleto; o resto é o boneco de peças. Com placa, todo mundo
+       inteiro, como sempre foi */
+    try{
+      const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info');
+      const nome = String((ext && gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) || gl.getParameter(gl.RENDERER) || '');
+      if(!cfg.tetoFiguras && /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(nome)) cfg.tetoFiguras = 16;
+    }catch(_){}
     /* A PLACA PODE DESISTIR. Com muita gente em cena (140 bonecos numa
        emboscada) a GPU fraca — ou o iframe do artifact — perde o
        contexto WebGL; sem tratar, o Three lança no quadro seguinte e o
@@ -3592,10 +3601,20 @@ void main() {`)
        meio da câmera (onde está o líder) ficam de pé e animadas; o resto da
        multidão é miniatura, do tamanho que for na tela */
     let raioFig2 = Infinity, raioPec2 = Infinity, camX = 0, camZ = 0;
-    if(cfg.tetoFiguras > 0 && camNivel && !camNivel.isOrthographicCamera){
+    /* NA CENA DE IMAGEM TAMBÉM (o jogo 2D, 13/11/2026): a câmera de cima é
+       ortogonal e não tem "perto" — o meio é onde estão os líderes (a média
+       deles), e quem passa do teto vira o boneco de peças, com a pose dele.
+       Medido sem placa de vídeo, 298 bonecos na foto: 3,5 quadros por segundo
+       com todo mundo em malha de esqueleto */
+    const orto = !!(camNivel && camNivel.isOrthographicCamera);
+    if(cfg.tetoFiguras > 0 && camNivel){
       const todos = (J.policiais && J.policiais.length) ? J.discos.concat(J.policiais) : J.discos;
       if(todos.length > cfg.tetoFiguras){
-        camX = camNivel.position.x; camZ = camNivel.position.z;
+        if(orto){
+          let n = 0;
+          for(const d of J.discos){ if(!d.lider || d.entrou || d.sumiu) continue; const q = pos(d.x, d.y, d); camX += q.x; camZ += q.z; n++; }
+          if(n){ camX /= n; camZ /= n; } else { camX = camNivel.position.x; camZ = camNivel.position.z; }
+        } else { camX = camNivel.position.x; camZ = camNivel.position.z; }
         const ds = [];
         for(const d of todos){
           if(d.entrou || (d.sumiu && !d.longe)) continue;
@@ -3614,12 +3633,13 @@ void main() {`)
       }
       /* pequeno demais na tela: a miniatura (sem figura, sem pose) */
       let pecas = false, nivelPecas = 0;
-      if(camNivel && !camNivel.isOrthographicCamera && (pm || !d.lider)){
+      if(camNivel && (!orto || raioFig2 < Infinity) && (pm || !d.lider)){
         const q = pos(d.x, d.y, d), px = pxNaTela(q);
         const doMeio2 = (q.x - camX) * (q.x - camX) + (q.z - camZ) * (q.z - camZ);
         const longeDoMeio = raioFig2 < Infinity && doMeio2 > raioFig2 * ((d._mini || d._pecas) ? 0.8 : 1);
         /* (as peças de perto pras PECAS_PERTO seguintes; o resto da multidão no nível mais leve) */
-        nivelPecas = doMeio2 > raioPec2 * (d._pecas === 2 ? 0.8 : 1) ? 1 : 0;
+        /* (de cima o boneco tem uns 30 px: o nível mais leve serve pra todos) */
+        nivelPecas = orto || doMeio2 > raioPec2 * (d._pecas === 2 ? 0.8 : 1) ? 1 : 0;
         const pequeno = px < (d._mini ? MINI_SAI : MINI_ENTRA);
         /* (quem passa do teto de figuras, grande na tela: o boneco de peças,
            com a pose dele; sem o simplificador, a miniatura de blocos) */
@@ -3915,25 +3935,10 @@ void main() {`)
     const cv2 = document.createElement('canvas'); cv2.width = W; cv2.height = H;
     const x = cv2.getContext('2d');
     /* 1. o fundo da cena, na escala do recorte */
-    /* (o dono, 13/11/2026: "sempre o local onde os bonecos vão estender a
-       faixa é onde ocorreu a briga, nesse caso, foi na arquibancada, então
-       eles aparecem na arquibancada do estádio 3d"): a briga que foi na
-       cidade em 3D deixa anotado onde o tabuleiro dela fica no mundo
-       (`TO.jogo3d.ultimoPalco`), e o fundo da foto é a cidade vista de
-       cima naquele retângulo — a arquibancada, a rua, a praça. A briga da
-       foto (sem palco 3D) segue com o fundo da cena dela */
-    let fundo3d = null;
-    try {
-      const T3 = window.TO && TO.jogo3d, pal = T3 && T3.ultimoPalco, Cn = T3 && T3.api && T3.api.cenario;
-      if(pal && pal.noMundo && Cn && Cn.vida && Cn.vida.fotoDeCima)
-        fundo3d = Cn.vida.fotoDeCima(pal.noMundo(x0, y0), pal.noMundo(x0 + VW, y0), pal.noMundo(x0, y0 + VH), W, H);
-    } catch(err){ console.warn('o fundo 3D do troféu: '+(err && err.message)); fundo3d = null; }
-    if(fundo3d) x.drawImage(fundo3d, 0, 0, W, H);
-    else {
-      x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
-      A.desenharFundo(x);
-      x.restore();
-    }
+    /* (a faixa é estendida onde a briga foi: o fundo é o da cena de imagem dela) */
+    x.save(); x.setTransform(s, 0, 0, s, -x0*s, -y0*s);
+    A.desenharFundo(x);
+    x.restore();
 
     /* 2. os bonecos, na MESMA câmera de cima da briga */
     const cvB = {width:W, height:H};   // o tamanho; o canvas é o do renderizador das fotos
