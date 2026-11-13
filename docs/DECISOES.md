@@ -11762,7 +11762,8 @@ bonecos do jogo, pra maximizar o rendimento."
   era a cidade (resolvido com os retratos de cima).
 - **O boneco de peças** (bonecos3.js): o MESMO modelo, com a mesma roupa e
   a mesma pose. A malha de perto é afinada pelo simplificador do
-  meshoptimizer (uns 240 triângulos; 170 na multidão) e cortada em peças
+  meshoptimizer até um limite de ERRO (1% do tamanho do boneco nos 50 de
+  perto, uns 660 triângulos; 2,2% na multidão, uns 350) e cortada em peças
   rígidas pelo osso que mais pesa em cada triângulo; todas as figuras
   dividem as mesmas malhas instanciadas (a matriz da instância é a do
   osso). Sem esqueleto na placa.
@@ -11786,6 +11787,10 @@ bonecos do jogo, pra maximizar o rendimento."
 - **Resultado** na mesma briga: de 433 ms (2 fps) pra 90–110 ms (9–11
   fps), com todo mundo com a forma e a pose de verdade. O piso que sobra
   (uns 60 ms) é a cena, o JavaScript das poses e as figuras inteiras.
+- **A primeira versão quebrava de lado** (corrigido no mesmo dia): pedir
+  240 triângulos com o erro solto fazia o corpo virar um cone e a perna
+  sumir. De cima não se via; as fotos de lado que o dono pediu mostraram.
+  Agora quem manda é o limite de erro, não o número de triângulos.
 - **Limites**: na dobra do cotovelo e do joelho as peças não esticam
   (fica um vinco); na multidão a perna não se mexe; o desenho da camisa
   da multidão é o do molde; perto da borda da tela o boneco aparece

@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=30207340cc';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=2a53481ed8';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -3168,8 +3168,14 @@ let escalaDoTabuleiro = () => 1;
      cabelo e o boné são cores DA INSTÂNCIA: cada vértice diz a zona dele
      (`zona`, que a malha juntada guarda) e o desenho troca a cor do
      vértice pela do boneco) */
-  /* (o triângulo custa pouco perto da instância: os dois níveis ficam com a forma inteira) */
-  const PECAS_TRI = [240, 170];
+  /* QUANTO AFINAR (13/11/2026, depois das fotos de lado): pedir 240
+     triângulos com o erro solto (30% do tamanho) quebrava o boneco — o
+     corpo virava um cone e a perna sumia. De cima passava; de lado, não.
+     O que manda agora é o ERRO que o simplificador pode cometer (uma
+     fração do tamanho do boneco): ele para quando afinar mais deformaria
+     além disso, com os triângulos que der. O triângulo custa pouco perto
+     da instância (medido: 38 mil a mais, 9 ms) */
+  const PECAS_TRI = [{tri:700, erro:0.010}, {tri:420, erro:0.022}];
   /* quantos bonecos de peças ficam no nível de perto (depois das figuras inteiras) */
   const PECAS_PERTO = 50;
   /* AS PEÇAS DE CADA NÍVEL. Medido sem placa de vídeo: o que custa na
@@ -3267,9 +3273,8 @@ void main() {`)
     const P = pos.array instanceof Float32Array ? pos.array : Float32Array.from(pos.array);
     let fino = idx;
     try{
-      const alvo = Math.min(idx.length, PECAS_TRI[nivel] * 3);
-      fino = simplificador.simplify(idx, P, 3, alvo, 0.05)[0];
-      if(fino.length > alvo * 1.4) fino = simplificador.simplify(idx, P, 3, alvo, 0.3)[0];
+      const alvo = Math.min(idx.length, PECAS_TRI[nivel].tri * 3);
+      fino = simplificador.simplify(idx, P, 3, alvo, PECAS_TRI[nivel].erro)[0];
     }catch(err){ console.warn('boneco de peças: '+(err && err.message)); return null; }
     if(!fino || fino.length < 9) return null;
     const nomeDe = new Map(sk.bones.map((b, k) => [b.name, k]));

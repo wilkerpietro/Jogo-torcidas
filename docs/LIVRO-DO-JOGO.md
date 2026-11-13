@@ -3535,7 +3535,7 @@ Uma segunda versão, com a cidade inteira em 3D (Three r160 como módulo, carreg
 - Na briga de perto os bonecos eram 82% do quadro (sem placa de vídeo).
 - Com os bonecos leves, só os mais perto do meio da câmera (e o líder)
   são figuras inteiras; o resto é o **boneco de peças**: o mesmo modelo
-  afinado (~240 triângulos), em peças rígidas instanciadas que seguem os
+  afinado (~660 triângulos perto, ~350 na multidão), em peças rígidas instanciadas que seguem os
   ossos, com as cores de cada boneco. A multidão mais longe usa 3 peças.
 - A miniatura de caixas fica pra quem está pequeno na tela.
 

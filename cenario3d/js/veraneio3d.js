@@ -34,8 +34,8 @@
    acorda a casa, a faixa e o depósito).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { Construtor, METRO } from './construtor3d.js?v=30207340cc';
-import * as K from './detalhe3d.js?v=30207340cc';
+import { Construtor, METRO } from './construtor3d.js?v=2a53481ed8';
+import * as K from './detalhe3d.js?v=2a53481ed8';
 
 const M = METRO;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
