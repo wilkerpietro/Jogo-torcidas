@@ -831,3 +831,46 @@ body.jogo3d.j3d-entre-jogos #painelBarra h2{font-size:26px}
   body.jogo3d.j3d-entre-jogos .feed-quando .quando-txt{font-size:13px}
   body.jogo3d.j3d-entre-jogos .feed-barra .mapa-ic{min-width:40px;height:38px}
 }
+
+/* =========================================================
+   ETAPA 4: O CELULAR (dono, 13/11/2026: "Os dois por igual" — o
+   celular e o computador). O que se mediu em 390×844 e 844×390:
+   o medidor de fps em cima do painel do dia, a barra de cima em três
+   linhas e, deitado, o painel do dia cobrindo o joystick e a seta.
+   ========================================================= */
+/* o medidor de fps é coisa de computador (o painel Gráficos segue no menu) */
+@media (max-width:760px), (max-height:500px){
+  body.jogo3d .cen-fps{display:none !important}
+}
+/* em pé: a barra em duas linhas (a torcida e os números; a data, o ≫ e o 1×) */
+@media (max-width:760px){
+  body.jogo3d .feed-barra{flex-wrap:wrap;padding:6px 8px;gap:6px}
+  body.jogo3d .feed-marca{flex:1 1 100%;overflow-x:auto;scrollbar-width:none}
+  body.jogo3d .feed-quando{flex:1 1 0;min-width:0;max-width:calc(100% - 52px)}
+  body.jogo3d #j3dHora{font-size:15px}
+  /* o painel do dia mais baixo e com os botões grandes pro dedo */
+  .j3d-dia button{min-height:36px;padding:7px 10px;font-size:11px}
+  .j3d-placar{top:96px}
+}
+/* deitado: o painel do dia vai pro canto direito e o joystick fica livre na esquerda */
+@media (max-height:500px) and (orientation:landscape){
+  body.jogo3d .feed-barra{padding:4px 8px;gap:8px}
+  body.jogo3d .feed-marca .escudo{width:22px;height:22px}
+  body.jogo3d .feed-marca b{display:none}
+  .j3d-dia{left:auto;right:8px;bottom:6px;transform:none;width:min(430px, 52vw);padding:6px 9px 7px}
+  .j3d-dia-estado{font-size:11.5px;margin:2px 0 4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .j3d-dia-fases li{font-size:9.5px}
+  .j3d-dia button{min-height:32px;padding:6px 8px;font-size:10.5px}
+  .j3d-placar{top:48px}
+  .j3d-placar-tv{height:26px}
+  .j3d-placar-time b{font-size:14px}
+  .j3d-placar-gols b{font-size:16px}
+  /* o feed entre os jogos, deitado: a coluna mais larga e o menu enxuto */
+  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic{width:38px;height:30px}
+  body.jogo3d.j3d-entre-jogos .feed-menu .mapa-ic svg{width:18px;height:18px}
+  body.jogo3d.j3d-entre-jogos .feed-menu{gap:3px;padding:4px}
+  body.jogo3d.j3d-entre-jogos .feed-barra{flex-wrap:nowrap}
+  body.jogo3d.j3d-entre-jogos .feed-marca{flex:1 1 auto}
+  body.jogo3d.j3d-entre-jogos .msg-txt{font-size:16px}
+  body.jogo3d.j3d-entre-jogos .msg-bts .bt{flex:1 1 auto;min-height:44px}
+}

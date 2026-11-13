@@ -11501,6 +11501,22 @@ antes de estourar a briga; a câmera desce).
   o caminho delas; a vigia não roda com elas no dia.
 - (Teste: `TO.jogo3d.dia.alertaBonde` muda a distância.)
 
+## Etapa 4: o celular (dono, 13/11/2026)
+
+Pedido: "Faça a etapa 4." Medido em 390×844 (em pé) e 844×390 (deitado),
+no feed, na ida vista do helicóptero, na ida assumida e na briga.
+
+- O medidor de fps sai em tela pequena (o painel Gráficos segue no menu).
+- Em pé, a barra de cima ocupa duas linhas (a torcida e os números; a
+  data, o ≫ e o 1×), o placar de TV desce pra baixo dela e os botões do
+  painel do dia têm 36 px de altura pro dedo.
+- Deitado, o painel do dia vai pro canto direito (até 52% da largura) e
+  o joystick fica livre na esquerda; a barra de cima perde o nome da
+  torcida (o escudo fica) e o placar sobe. O feed entre os jogos ganha o
+  menu enxuto e os botões lado a lado.
+- A tela da briga no celular (os botões grandes e o direcional) já
+  servia em pé e deitado: não mudou.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
