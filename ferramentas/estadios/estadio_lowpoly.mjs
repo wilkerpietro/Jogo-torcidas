@@ -90,7 +90,9 @@ function medidasDe(ficha, anel, t, arco, prof) {
   const vomCentros = [], vomMeia = Math.max(1, ((vs && vs.larg) || 3.8) / larguraCel / 2), vomRows = Math.max(2, Math.round(((vs && vs.fundo) || 3.8) / passo));
   if (vs !== false && frente > 0 && N >= 6) {
     const margem = vomMeia + 3;
-    if (corr) { const cada = vs.cada || 2; for (let j = 1; j * corr < n; j++) { const c = j * corr + esc / 2; if (j % cada === cada - 1 && c > margem && c < n - margem) vomCentros.push(c); }
+    /* `em`: as bocas em lugares certos do trecho (fração do comprimento; 0 e 1 dão meia boca na divisa, que fecha com a do vizinho) */
+    if (vs.em) vs.em.forEach(f => vomCentros.push(Math.max(0, Math.min(1, f)) * n));
+    else if (corr) { const cada = vs.cada || 2; for (let j = 1; j * corr < n; j++) { const c = j * corr + esc / 2; if (j % cada === cada - 1 && c > margem && c < n - margem) vomCentros.push(c); }
       if (!vomCentros.length) { const j = Math.max(1, Math.round(n / corr / 2)), c = j * corr + esc / 2; if (c > margem && c < n - margem) vomCentros.push(c); } }
     else { const d = Math.max(8, Math.round((vs.dist || 30) / larguraCel)); for (let c = d / 2; c < n - margem; c += d) if (c > margem) vomCentros.push(c); }
   }

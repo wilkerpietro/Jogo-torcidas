@@ -524,3 +524,5 @@ export const FICHAS = {
    aqui, uma linha de import e uma de registro por estádio. */
 import alfredoJaconi from './fichas/estadio-alfredo-jaconi.mjs';
 FICHAS[alfredoJaconi.id] = alfredoJaconi;
+import centenario from './fichas/estadio-centenario.mjs';
+FICHAS[centenario.id] = centenario;

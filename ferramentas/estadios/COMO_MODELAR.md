@@ -114,7 +114,9 @@ formam um chão só; uma fresta isola o lance).
   `escadaNaBorda: true`: uma escada na divisa do trecho.
 - `vomitorios: { f, cada, larg, fundo }` ou `false`: as bocas de acesso.
   `f` é onde abrem (0 = na frente, dando no corredor; 0,4 = no meio do
-  lance); `cada: 2` = uma a cada duas escadas.
+  lance); `cada: 2` = uma a cada duas escadas. Com `em: [0, 0.5, 1]` as bocas
+  caem em lugares certos do trecho (fração do comprimento; 0 e 1 fazem meia
+  boca na divisa, que fecha com a meia boca do trecho vizinho).
 - `h`, `dentro`, `fora`: valem só pro trecho (um setor mais fundo ou mais
   alto que os vizinhos). Com `fora` diferente num anel `reto`, ponha
   `reto: false` no trecho.

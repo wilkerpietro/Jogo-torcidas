@@ -12682,6 +12682,44 @@ também".
   Lobo (Pelotas) e Passo d'Areia (São José). As fotos já baixadas de
   quatro deles estão guardadas fora do repositório.
 
+## Centenário lowpoly (Caxias) (dono, 14/11/2026)
+
+- O dono aprovou o Alfredo Jaconi: "Aprovado, vamos pro próximo". O
+  próximo da fila gaúcha foi o Centenário, feito sem agente (pra poupar
+  o limite dele).
+- **Fotos**: 15 de referência (satélite, aéreas de vários lados e de
+  dentro), fora do repositório. Os buscadores de imagem de sempre
+  bloquearam; saíram do site do clube e de uma busca que respondeu.
+- **Centenário** (Francisco Stédile; o norte à direita, o oeste em cima):
+  - em cima (oeste), as Sociais, retas e altas, de dois lances: o de
+    baixo descoberto, em quatro blocos de cadeira (do sul pro norte:
+    branco com a faixa grená, azul, grená, azul), com duas bocas de
+    túnel; o de cima debaixo da cobertura marrom de telha, em sete
+    blocos (azul nas pontas, marrom no meio); atrás, o esqueleto de
+    concreto e a rua;
+  - a ferradura (curva sul, lado leste, curva norte): um lance só de
+    degrau de cimento pintado, em gomos azuis e grenás alternados, com a
+    risca branca da escada numa divisa e a boca do vomitório na outra; o
+    lado leste é mais fundo (15 m contra 12 m das curvas);
+  - o gramado oval sem pista, com o escudo do clube atrás do gol do sul;
+    o campo de treino ao norte, a avenida no leste, o posto na esquina
+    do sul, as torres de refletor na calçada do leste.
+- **Setores**: a visitante na ponta noroeste da ferradura, colada nas
+  sociais (fonte pública: entra pelo portão 10, na Thomas Beltrão de
+  Queiroz, a rua das sociais). A Falange Grená atrás do gol do sul é
+  escolha minha, sem fonte: o dono corrige se for outro lugar.
+- **A pintura das cadeiras das sociais** muda de foto pra foto (numa
+  mais antiga o lance de baixo é todo azul). Segui a mais recente.
+- **Gerador**: `vomitorios.em: [0, 0.5, 1]` põe as bocas em lugares
+  certos do trecho (fração do comprimento; 0 e 1 fazem meia boca na
+  divisa, que fecha com a do trecho vizinho). Foi o que deixou a
+  ferradura com escada numa divisa e vomitório na outra.
+- **Testado**: briga 60 × 56 jogando de Falange Grená; chão um só,
+  nenhum marcador fora; sem erro de página.
+- **Fila do Rio Grande do Sul** (aguardando o dono): Colosso da Lagoa
+  (Ypiranga), Bento Freitas (Brasil de Pelotas), Boca do Lobo (Pelotas)
+  e Passo d'Areia (São José).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
