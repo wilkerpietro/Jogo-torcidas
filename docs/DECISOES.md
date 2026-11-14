@@ -12475,6 +12475,33 @@ de acesso do andar de cima, `bocas`, que saíram grandes e brancas demais)
 e mandou: "Retire esses blocos brancos." Saíram dos três trechos; os
 vomitórios escuros da frente de cada lance continuam.
 
+## Arena do Grêmio lowpoly pela planta e pelas fotos do dono (dono, 14/11/2026)
+
+O dono mandou a planta de setores e cinco fotos: "Arena do grêmio".
+
+- **A planta** (o norte à esquerda, o leste em cima): retangular de cantos
+  redondos, em três níveis que dão a volta inteira — o Gramado (lance de
+  baixo), o anel Gold (a faixa azul-marinho dos camarotes, com poucas
+  fileiras) e a Alta (lance de cima). Cadeiras celestes.
+- **A Geral**, atrás do gol norte: o degrau de concreto sem cadeira, com as
+  escadas amarelas. É onde nasce a maior torcida do Grêmio (no lance de
+  baixo, não no meio da arquibancada).
+- **A cobertura**: branca, tapa todas as cadeiras, com a abertura retangular
+  de cantos redondos em cima do campo e a borda azulada de dentro. Na
+  vista de cima do jogo ela sai bem transparente (28%), pra enxergar a
+  torcida.
+- A fachada de vidro azul-escuro em cima da esplanada redonda, os dois
+  telões atrás dos gols, as cabines de imprensa nas laterais e a faixa
+  azul em volta do gramado.
+- **Visitante** na quina sudeste (em cima, à direita), como na planta.
+- **No gerador**: `jogo.fracao` diz em que altura da arquibancada o bonde
+  fica (0 = na frente, 1 = no fundo).
+- **Testado**: briga 60 × 56 jogando de Super Raça Gremista; bondes,
+  túneis e PM em chão andável; um chão só; sem erro de página.
+- **Limite**: o jogo não tem a torcida "Geral do Grêmio" (só a Super Raça
+  Gremista e a Torcida Jovem), então a Geral fica com a maior das que
+  estiverem no jogo.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

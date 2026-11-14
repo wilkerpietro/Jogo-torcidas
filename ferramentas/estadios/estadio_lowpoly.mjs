@@ -489,7 +489,8 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
     return [+(sinal * (b[0] - a[0]) / q).toFixed(2), +(sinal * (b[1] - a[1]) / q).toFixed(2)]; };
   const spawns = [], faixas = {};
   const bonde = (id, rot, lado, ang, entrada, jogador) => {
-    spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, 0.5), jogador ? { jogador: true } : {}));
+    /* (em que altura da arquibancada o bonde fica: no meio, ou onde a ficha disser — `jogo.fracao`, 0 = na frente, 1 = no fundo) */
+    spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, (j.fracao && j.fracao[id] != null) ? j.fracao[id] : 0.5), jogador ? { jogador: true } : {}));
     const q = ponto(ang, raioDe(ang, contornoEm(ang).d) + 0.7), p = paraPx(q[0], q[1]);
     faixas[id] = { x: Math.round(p[0]), y: Math.round(p[1]), len: 130, dir: dirPx(ang, -1) };
   };

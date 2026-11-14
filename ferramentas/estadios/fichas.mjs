@@ -7,6 +7,7 @@ const E = (a, b) => ({ a, b, forma: 'elipse' });
 const MAR_AM = '#efc12f', MAR_AZ = '#4a8fd0', MAR_AZ2 = '#3b7cc0', MAR_BG = '#e7e2d0';
 const MOR_V = '#c9373b', MOR_V2 = '#b32d31';
 const ILHA_V = '#c93a43';
+const GRE_A = '#5aa7d8', GRE_A2 = '#4a93c8';
 /* o contorno de fora do andar de cima do Arruda, a `d` metros do de dentro */
 const ARR_FORA = d => ({ a: 90 + d, b: 59 + d, r: 59 + d });
 const ARR_BANDAS = [['#c3202d', 30], ['#efeee9', 13], ['#1d1d1f', 30], ['#efeee9', 13]];
@@ -343,5 +344,56 @@ export const FICHAS = {
     /* o Inferno Coral atrás do gol do leste; a Raça Coral no norte; a visitante atrás do gol do oeste */
     jogo: { mandante1: [-18, 18], mandante2: [72, 108], mandante3: [250, 290], visitante: [163, 197], tunelMandante: 0, tunelVisitante: 180,
             torcidas: { inferno_coral: 'mandante1', raca_coral: 'mandante2' } }
+  },
+
+  /* ARENA DO GRÊMIO — pela planta de setores e pelas fotos do dono
+     (14/11/2026). O quadro é o da planta: o norte à esquerda, o leste em
+     cima. Retangular de cantos redondos, em três níveis que dão a volta
+     inteira: o Gramado (o lance de baixo), o anel Gold (a faixa azul-marinho
+     dos camarotes, com poucas fileiras) e a Alta (o lance de cima). Tudo de
+     cadeira celeste, menos a GERAL, atrás do gol norte: o degrau de
+     concreto sem cadeira, com os corrimãos amarelos, onde fica a torcida do
+     Grêmio. A cobertura branca tapa todas as cadeiras, com a abertura
+     retangular de cantos redondos em cima do campo e a borda azulada de
+     dentro. A fachada é o anel de vidro azul-escuro, em cima da esplanada
+     redonda. Visitante na quina sudeste (em cima, à direita). */
+  'estadio-arena-do-gremio': {
+    id: 'estadio-arena-do-gremio', nome: 'Arena do Grêmio', clubes: ['gremio'], norte: 180, vazado: 0.28, folga: 26,
+    chao: { cor: '#8c8b86', esplanada: { a: 150, b: 132, forma: 'elipse' }, corEsplanada: '#b9b5aa' },
+    campo: { corMargem: '#3f78c0' },
+    corMureta: '#1f2f66',
+    aneis: [
+      { dentro: { a: 58.5, b: 40, r: 5 }, fora: { a: 81, b: 62.5, r: 27 }, reto: true, h: [1, 9.5], fileiras: 22,
+        trechos: [
+          { de: -150, ate: 150, cor: GRE_A, cor2: GRE_A2, padrao: 'mosaico', mistura: 0.35, corredor: 13 },
+          /* a Geral: degrau de concreto, sem cadeira, as escadas amarelas */
+          { de: 150, ate: 210, cor: '#cfc8b6', cor2: '#c2bba9', padrao: 'mosaico', mistura: 0.4, semCadeiras: true, corredor: 9, corEscada: AMARELO }
+        ] },
+      { dentro: { a: 81, b: 62.5, r: 27 }, fora: { a: 87, b: 68.5, r: 33 }, reto: true, h: [11, 13.5], fileiras: 5, corredorFrente: 1.2, vomitorios: false, corMureta: '#f2f2ee',
+        trechos: [{ de: 0, ate: 360, cor: '#27408f', cor2: GRE_A2, padrao: 'mosaico', mistura: 0.3, corredor: 13 }] },
+      { dentro: { a: 87, b: 68.5, r: 33 }, fora: { a: 110, b: 91.5, r: 56 }, reto: true, h: [16, 32], fileiras: 24, corredorFrente: 2, corMureta: '#1f2f66',
+        trechos: [{ de: 0, ate: 360, cor: GRE_A, cor2: GRE_A2, padrao: 'mosaico', mistura: 0.35, corredor: 14, parapeito: 2 }] }
+    ],
+    coberturasAnel: [{ fora: { a: 126, b: 107, r: 72 }, dentro: { a: 63, b: 44.5, r: 12 }, h: 45, cai: 5, n: 64, cor: '#f3f3ef', cor2: '#ebebe6', corNervura: '#d6d6d0',
+      bordaFora: { larg: 3, cor: '#dcdcd6' }, bordaDentro: { larg: 9, cor: '#8fb0c6' } }],
+    fachada: { cor: '#1f2f66' },
+    blocos: [
+      /* os dois telões pendurados atrás dos gols e as cabines de imprensa das laterais */
+      { u: 84, v: 0, w: 1.8, d: 26, h: 8, y: 33, cor: '#17181b' }, { u: -84, v: 0, w: 1.8, d: 26, h: 8, y: 33, cor: '#17181b' },
+      { u: 0, v: 88, w: 60, d: 4, h: 3.4, y: 31, cor: '#e9e9e5' }, { u: 0, v: -88, w: 60, d: 4, h: 3.4, y: 31, cor: '#e9e9e5' },
+      /* o letreiro branco na fachada */
+      { u: 0, v: -93, w: 66, d: 1.4, h: 7, y: 12, cor: '#f4f4f0' }
+    ],
+    entorno: [
+      /* o viaduto e a estrada de um lado, o bairro de casas do outro */
+      { tipo: 'rua', de: [-300, 176], ate: [300, 150], larg: 20 }, { tipo: 'rua', de: [176, -260], ate: [196, 260], larg: 16 }, { tipo: 'rua', de: [60, 240], ate: [240, 60], larg: 12 },
+      { tipo: 'grama', u: 232, v: -60, w: 60, d: 200, cor: '#7c9a5c' },
+      { tipo: 'casas', u: -214, v: 30, nu: 5, nv: 16, passo: 14 }, { tipo: 'casas', u: -60, v: -190, nu: 14, nv: 3, passo: 14 },
+      { tipo: 'estacionamento', u: 60, v: -168, w: 120, d: 34, cheio: 0.3 },
+      { tipo: 'predio', u: -40, v: -150, w: 34, d: 12, h: 6, cor: '#e9e9e5', cor2: '#c9c9c4' },
+      { tipo: 'rua', de: [-300, -214], ate: [300, -214], larg: 10 }, { tipo: 'rua', de: [-172, -260], ate: [-172, 260], larg: 10 }
+    ],
+    /* a torcida do Grêmio na Geral (o gol norte); a visitante na quina sudeste */
+    jogo: { mandante1: [160, 200], mandante2: [70, 110], mandante3: [250, 290], visitante: [10, 42], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5, fracao: { mandante1: 0.2 } }
   }
 };
