@@ -313,9 +313,9 @@ export const FICHAS = {
          do oeste até o leste; e a lateral coberta */
       { dentro: { a: 90, b: 59, r: 59 }, fora: ARR_FORA(34), h: [9, 20], fileiras: 16, corredorFrente: 2,
         trechos: [
-          { de: -25, ate: 25, fora: ARR_FORA(34), h: [9, 26], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
-          { de: 25, ate: 75, fora: ARR_FORA(28), h: [9, 23], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
-          { de: 75, ate: 125, fora: ARR_FORA(22), h: [9, 20], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: -25, ate: 25, fora: ARR_FORA(34), h: [9, 26], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
+          { de: 25, ate: 75, fora: ARR_FORA(28), h: [9, 23], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
+          { de: 75, ate: 125, fora: ARR_FORA(22), h: [9, 20], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
           { de: 125, ate: 165, fora: ARR_FORA(16), h: [9, 17], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
           { de: 165, ate: 205, fora: ARR_FORA(13), h: [9, 15.5], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
           /* a lateral coberta: só o andar de cima, as cadeiras debaixo do concreto */

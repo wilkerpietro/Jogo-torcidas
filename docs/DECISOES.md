@@ -12470,9 +12470,10 @@ Os dois andares do lado sul entram agora no mesmo redemoinho tricolor do
 resto do estádio. Testado: briga no Arruda jogando de Inferno Coral, sem
 erro de página.
 
-Em aberto: o dono perguntou o que são os blocos brancos na arquibancada.
-São as bocas de acesso do andar de cima (`bocas`), que saíram grandes e
-brancas demais. Aguardando ele dizer se tira, diminui ou troca.
+O dono perguntou o que eram os blocos brancos na arquibancada (as bocas
+de acesso do andar de cima, `bocas`, que saíram grandes e brancas demais)
+e mandou: "Retire esses blocos brancos." Saíram dos três trechos; os
+vomitórios escuros da frente de cada lance continuam.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
