@@ -17,7 +17,7 @@
    cartão da partida cai perto da hora da bola e nada do que conta o
    placar passa na frente dele.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=bd4c5336a1';
+import { CASCA } from './jogo_casca.js?v=78c61e96ba';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -31,17 +31,17 @@ async function montarJogo() {
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos, as fotos das praças e as bandeiras embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=bd4c5336a1').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=78c61e96ba').catch(() => {});
   /* os estádios low-poly das cenas (ferramentas/estadios/assar.js): antes do jogo, que monta as cenas quando carrega */
-  await carregarScript('dados/estadios_cenas.js?v=bd4c5336a1').catch(() => {});
+  await carregarScript('dados/estadios_cenas.js?v=78c61e96ba').catch(() => {});
   /* sem o rolo do feed: a tela entre os jogos é o portal */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=bd4c5336a1');
-  await carregarScript('js/portal.js?v=bd4c5336a1').catch(err => console.error('o portal não carregou:', err));
+  await carregarScript('js/jogo.js?v=78c61e96ba');
+  await carregarScript('js/portal.js?v=78c61e96ba').catch(err => console.error('o portal não carregou:', err));
   /* o boneco das cenas de imagem (os dois níveis afinados, em base64) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=bd4c5336a1').catch(() => {});
-  await import('./bonecos3_global.js?v=bd4c5336a1').catch(err => console.error('o boneco das cenas não carregou:', err));
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=78c61e96ba').catch(() => {});
+  await import('./bonecos3_global.js?v=78c61e96ba').catch(err => console.error('o boneco das cenas não carregou:', err));
   ligar();
 }
 

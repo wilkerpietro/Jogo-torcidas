@@ -188,6 +188,12 @@ setor (os ids estão em `cenario3d/js/jogo.js`, procure por
 
 ## O que conferir antes de entregar
 
+- O meio do campo: ache o círculo central no satélite antes de medir (um
+  erro de 6 m ali entorta os dois fundos).
+- Se existir mapa de setores do clube, ele manda no desenho: diz onde há
+  arquibancada, onde há camarote e onde fica a visitante.
+- Telhado no satélite não quer dizer arquibancada.
+
 - A vista de cima bate com o satélite: forma, proporção com o campo, quais
   lados têm arquibancada, quais são cobertos, quantos lances.
 - As cores e os letreiros batem com as fotos.

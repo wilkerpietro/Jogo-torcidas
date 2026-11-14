@@ -12910,6 +12910,51 @@ também".
   cima de telhado, usar o `pe`; poste do chão só fora da arquibancada.
 - **Testado**: briga no estádio, chão um só, sem erro de página.
 
+## Heriberto Hülse refeito pelo mapa de setores do clube (dono, 14/11/2026)
+
+- O dono viu a correção do canto e disse: "Ficou esquisito. Releia as
+  imagens do Heriberto Hülse pra entender melhor o mapa do estádio", e
+  mandou duas plantas (o plano diretor e o mapa de setores do clube:
+  "esse mapa é melhor").
+- **O que eu tinha errado**:
+  - o centro do campo estava 6 m fora do lugar (medi o satélite com o
+    meio no lugar errado), então um fundo saía fundo demais e o outro
+    raso demais;
+  - a "curva sudoeste" de que ele falava é o FUNDO sudoeste (o menor dos
+    dois fundos), não o canto: é ali que ficam poucos degraus, a parede
+    dos camarotes logo acima do último e o telão. Eu tinha posto a
+    parede e o telão no canto oeste;
+  - o chanfro grande (o canto sul) eu tinha deixado quase vazio; no mapa
+    é o setor U, o da visitante.
+- **Como ficou** (é o mapa do clube girado meia volta: as cadeiras em
+  cima, o fundo nordeste à direita):
+  - em cima (noroeste), as cadeiras: E e F na ponta, o G branco na
+    frente com o setor cadeiras atrás (o mosaico preto e amarelo), o H
+    na outra ponta; os bancos na frente; a treliça dos refletores em
+    cima do telhado; o prédio da fachada atrás;
+  - o canto norte, o setor I;
+  - à direita (nordeste), o fundo mais fundo, J K L M;
+  - o canto leste, os setores N e O;
+  - embaixo (sudeste), P Q R S T, com as cabines de imprensa no alto e
+    os postes dos refletores em cima do telhado;
+  - o canto sul (o chanfro grande), o setor U, da visitante;
+  - à esquerda (sudoeste), o fundo menor, com a parede dos camarotes e
+    o telão no meio;
+  - o canto oeste, o setor D, também com os camarotes em cima;
+  - os blocos alternam amarelo e branco na volta inteira.
+- **Cantos concêntricos**: cada canto agora tem o fundo concêntrico com
+  a frente (`a - r` e `b - r` iguais nos dois contornos), e cada lado
+  leva o seu `dentro` e o seu `fora`. É o jeito de ter lados de fundura
+  diferente sem sobra nem buraco entre um trecho e outro.
+- **Setores**: a visitante no setor U vem do mapa do clube. Os Tigres no
+  fundo nordeste e a Guerrilha Jovem no lado sudeste continuam escolha
+  minha, sem fonte.
+- **Lições**: (1) conferir o meio do campo pelo círculo central antes
+  de medir; (2) quando houver mapa de setores, ele manda no desenho;
+  (3) "curva" na boca do dono pode ser o fundo atrás do gol.
+- **Testado**: briga 60 × 56 jogando de Os Tigres; chão um só, nenhum
+  marcador fora; sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
