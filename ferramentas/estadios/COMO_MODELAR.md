@@ -182,7 +182,8 @@ jogo: { mandante1: [160, 200], mandante2: [70, 110], mandante3: [250, 290], visi
 Cada setor é uma faixa de ângulo onde EXISTE arquibancada. `mandante1` é
 o setor da maior torcida da casa. `visitante` vira um curral fechado por
 duas grades. `fracao` diz em que altura da arquibancada o bonde fica (0 =
-na frente, 1 = no fundo; padrão 0,5). `torcidas` fixa uma torcida num
+na frente, 1 = no fundo; padrão 0,5). Vale também pros bondes da
+visitante (`visitante1`, `visitante2`, `visitante3`). `torcidas` fixa uma torcida num
 setor (os ids estão em `cenario3d/js/jogo.js`, procure por
 `"clubeId": "<clube>"`).
 

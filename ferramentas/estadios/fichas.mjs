@@ -546,3 +546,5 @@ import arenaJoinville from './fichas/estadio-arena-joinville.mjs';
 FICHAS[arenaJoinville.id] = arenaJoinville;
 import vilaCapanema from './fichas/estadio-vila-capanema.mjs';
 FICHAS[vilaCapanema.id] = vilaCapanema;
+import arenaDaBaixada from './fichas/estadio-arena-da-baixada.mjs';
+FICHAS[arenaDaBaixada.id] = arenaDaBaixada;

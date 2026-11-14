@@ -13134,6 +13134,43 @@ também".
   (Athletico), Couto Pereira (Coritiba), Estádio do Café (Londrina) e
   Germano Krüger (Operário; no jogo o Maringá também manda nele).
 
+## Arena da Baixada lowpoly (Athletico) (dono, 14/11/2026)
+
+- O dono pediu a Arena da Baixada depois da Vila Capanema. Feita sem
+  agente. Fotos de referência (satélite de alta resolução, aéreas, de
+  dentro e o mapa de acessos e setores do clube) fora do repositório.
+- **O satélite pega o teto retrátil fechado**: dele saíram só o contorno
+  do teto (199 × 157 m), o tamanho da abertura (107 × 75 m) e o entorno.
+  O interior veio do mapa do clube e das fotos de dentro.
+- **Teto aberto no modelo**: com o retrátil fechado o gramado ficaria
+  atrás do teto na vista do jogo. Ficou aberto, com os dois painéis
+  recolhidos em cima das pontas e os dois trilhos ao longo da abertura.
+- **Arena da Baixada** (na posição do mapa do clube: a Getúlio Vargas
+  em cima, a Brasílio Itiberê e o estacionamento embaixo, a Coronel
+  Dulcídio à esquerda, a Buenos Aires e a praça à direita):
+  - uma caixa retangular fechada, com dois anéis de cadeira cinza
+    (clara, salpicada de escura) nos quatro lados, de cantos redondos:
+    o inferior (setores 101 a 124) e o superior (301 a 325);
+  - o teto fixo em anel, com as nervuras das abóbadas; as quatro
+    fachadas debaixo da beira; o corpo escuro do lado da Coronel
+    Dulcídio; os telões no alto das duas pontas;
+  - em volta: os prédios colados do lado da Getúlio Vargas, a praça do
+    outro lado da Buenos Aires, o edifício do estacionamento embaixo.
+- **Setores**: a visitante nos setores 301 e 302 do anel superior (o
+  canto de baixo à esquerda, acesso M), como no mapa do clube. Os
+  Fanáticos no Buenos Aires inferior (atrás do gol da direita): no mapa
+  esse setor tem categoria própria, e é onde eu lembro que a organizada
+  fica; não achei fonte escrita.
+- **`jogo.fracao`** também vale pros bondes da visitante (`visitante1`,
+  `visitante2`, `visitante3`): 0,75 põe a visitante no anel de cima.
+- **O que é aproximado**: as funduras dos dois anéis (15 m e 18 m)
+  foram estimadas pelas fotos, porque o teto esconde tudo no satélite;
+  os cantos do anel superior, que são chanfrados, saíram redondos.
+- **Testado**: briga 60 × 56 jogando de Os Fanáticos; chão um só,
+  nenhum marcador fora; sem erro de página.
+- **Fila do Paraná** (aguardando o dono): Couto Pereira (Coritiba),
+  Estádio do Café (Londrina) e Germano Krüger (Operário e Maringá).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
