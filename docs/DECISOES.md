@@ -12648,6 +12648,40 @@ também".
   lista os estádios sem nenhum "estimado", e um jogo novo de Os Farrapos
   abre sem erro de página.
 
+## Alfredo Jaconi lowpoly; um agente por vez, com aviso (dono, 14/11/2026)
+
+- O dono pediu até cinco agentes buscando fotos e modelando os estádios
+  gaúchos que faltavam. Com os cinco rodando, avisou que o limite dele ia
+  estourar: "Deixe só um agente trabalhando". Parei quatro. Depois: "Avise
+  antes de começar o próximo pra eu ver o resultado". Fica a regra: um
+  estádio por vez, e só começa o seguinte depois que ele vir o anterior.
+- O agente do Alfredo Jaconi foi cortado pelo limite, mas deixou 13 fotos
+  de referência (satélite, aéreas, de dentro) e a ficha. Conferi a ficha
+  com o satélite e a aérea e integrei.
+- **Alfredo Jaconi** (Juventude; o norte à direita, o oeste em cima):
+  - em cima (oeste), as Sociais: o lance de baixo descoberto (branco nas
+    pontas, verde e branco no meio) e o de cima de cadeira verde debaixo
+    da cobertura cinza com as placas solares; atrás, o prédio branco do
+    clube, a torre treliçada e o estacionamento;
+  - embaixo (leste), a arquibancada coberta de ponta a ponta: o degrau
+    branco embaixo, a faixa verde em cima, as cabines escuras no fundo e
+    os postes verdes dos refletores na beira;
+  - à direita (norte), a Ferradura Norte: o degrau verde sem cadeira, o
+    barranco de grama com as escadas brancas, o muro verde e o placar, e o
+    mato atrás;
+  - à esquerda (sul), a Ferradura Sul, com a passarela de concreto em
+    cima, dando pra rua;
+  - as quatro quinas em leque de cimento claro.
+- **Setores**: a Mancha Verde na metade leste da Ferradura Sul; a visitante
+  na ponta oeste da Ferradura Norte (entra pelo portão 5). O setor da
+  visitante saiu de fonte pública; o da Mancha foi leitura das fotos.
+- **Testado**: briga 60 × 56 jogando de Mancha Verde Juventude; chão um
+  só, nenhum marcador fora; sem erro de página.
+- **Fila do Rio Grande do Sul** (aguardando o dono): Centenário (Caxias),
+  Colosso da Lagoa (Ypiranga), Bento Freitas (Brasil de Pelotas), Boca do
+  Lobo (Pelotas) e Passo d'Areia (São José). As fotos já baixadas de
+  quatro deles estão guardadas fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

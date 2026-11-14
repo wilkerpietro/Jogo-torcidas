@@ -522,3 +522,5 @@ export const FICHAS = {
 
 /* AS FICHAS AVULSAS (ferramentas/estadios/fichas/<id>.mjs, uma por arquivo, exportada como `default`): entram
    aqui, uma linha de import e uma de registro por estádio. */
+import alfredoJaconi from './fichas/estadio-alfredo-jaconi.mjs';
+FICHAS[alfredoJaconi.id] = alfredoJaconi;
