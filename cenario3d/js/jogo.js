@@ -4201,6 +4201,12 @@ TO.i18n.registrar({
   "Fugir com o butim": {es:"Huir con el botín", en:"Escape with the loot"},
   "Ir agora": {es:"Ir ahora", en:"Go now"},
   "Voltar pro jogo": {es:"Volver al juego", en:"Back to the game"},
+  "a polícia apartou a briga": {es:"la policía separó la pelea", en:"the police broke up the fight"},
+  "A polícia apartou a briga": {es:"La policía separó la pelea", en:"The police broke up the fight"},
+  "O reforço da PM entrou pra apartar": {es:"El refuerzo policial entró a separar", en:"Police backup came in to break it up"},
+  "A viatura chegou pra apartar": {es:"El patrullero llegó a separar", en:"The patrol car arrived to break it up"},
+  "O reforço da PM entrou no setor: {n} PMs no meio, apartando os dois lados.": {es:"El refuerzo policial entró al sector: {n} policías en el medio, separando a los dos lados.", en:"Police backup entered the stand: {n} officers in the middle, keeping both sides apart."},
+  "A viatura chegou: {n} PMs desceram e ficaram no meio, apartando os dois lados.": {es:"Llegó el patrullero: {n} policías bajaron y se pusieron en el medio, separando a los dos lados.", en:"The patrol car arrived: {n} officers got out and stood in the middle, keeping both sides apart."},
   "Você pode definir a rotina da sede da torcida em Calendário > Expediente da Sede, cada ação em um turno produz algo pra torcida.": {es:"Puedes definir la rutina de la sede de la hinchada en Calendario > Jornada de la Sede: cada acción en un turno produce algo para la hinchada.", en:"You can set the routine of the group's headquarters in Calendar > Headquarters Schedule: each action in a shift produces something for the group."},
   "Chefe, é importante ficar monitorando o financeiro da torcida pra ver o que tá dando prejuízo, e às vezes nem precisa levar a torcida toda na caravana, já que a gente tem custo com cada um.": {es:"Jefe, es importante seguir de cerca las finanzas de la hinchada para ver qué está dando pérdida, y a veces ni hace falta llevar a toda la hinchada en la caravana, porque cada uno nos cuesta.", en:"Boss, it's important to keep an eye on the group's finances to see what is losing money, and sometimes you don't even need to take everyone on the away trip, since each one costs us."},
   "Chefe, é bom sempre ficar monitorando quais membros estão aptos pra ser promovidos, assim nossa torcida fica mais forte.": {es:"Jefe, conviene estar siempre atento a qué miembros están aptos para ser ascendidos: así nuestra hinchada se hace más fuerte.", en:"Boss, it's good to always keep track of which members are ready to be promoted: that makes our group stronger."},
@@ -37625,7 +37631,8 @@ TO.feed = (function(){
     caixas(E);
     /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) — menos
        as dicas da diretoria, que voltaram (dono, 14/11/2026) */
-    if(calado(E) && !(msg && msg.kind === 'dica')) return null;
+    /* (e a véspera de cada competição, do Almanaque: é o começo da temporada) */
+    if(calado(E) && !(msg && (msg.kind === 'dica' || msg.kind === 'almanaque'))) return null;
     /* MENOS MENSAGENS ENTRE OS JOGOS (dono, 13/11/2026): entre um jogo e
        outro só os ataques que sofremos e as sugestões da diretoria. As
        decisões que não são nem uma coisa nem outra não nascem mais. */
@@ -37876,7 +37883,7 @@ TO.feed = (function(){
     return TO.financeiro.diasDeCaravana(E).includes(E.data.dia);
   }
   const calado = E => E.estreou === false && !diaDoNossoJogo(E);
-  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica']);
+  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica', 'almanaque']);
 
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
@@ -47798,6 +47805,20 @@ TO.diaJogo.combate = (function(){
         if(achou){ campo = A.campoDoPonto('escolta:'+qx+':'+qy, qx, qy, J.grades, J.versaoGrades); usarCampo=true; }
         else { ax=escolta.x; ay=escolta.y; }
         ramo='escolta-faixa';
+      } else if(tregua(J) && J.aparta.meio && !d.doJogador && !recua){
+        /* A POLÍCIA APARTA: quem não é do bonde do jogador se afasta da
+           linha da PM, pro lado dele, e fica lá de frente pra ela */
+        const mp = J.aparta.meio, sg = d.lado === 'mandante' ? 1 : -1;
+        const jaFoi = ((d.x - mp.x)*mp.nx + (d.y - mp.y)*mp.ny) * sg;
+        if(jaFoi >= APARTA.dist + ((d._ord||0) % 5) * 12){
+          d.vx*=0.8; d.vy*=0.8; A.mover(d, d.vx*dt, d.vy*dt); A.barrarGrades(d,J.grades);
+          d._ramo='apartado'; d._alvo=null;
+          d.rumo = Math.atan2(mp.x - d.x, mp.y - d.y);
+          continue;
+        }
+        ax = d.x + sg*mp.nx*140; ay = d.y + sg*mp.ny*140; ramo='apartado';
+        /* (o alvo anda junto com ele: sem isto o passo desistia em 0,8 s, como de um alvo inalcançável) */
+        d.acomodado=false; d.melhorDist=undefined; d.semGanho=0;
       } else if(recua){
         // recuo mandado pelo jogador: volta pro próprio spawn e espera
         const s=D.spawns.find(x=>x.id===d.spawn)||D.spawns[0];
@@ -47849,8 +47870,10 @@ TO.diaJogo.combate = (function(){
         }
         /* quem protege o material não sai caçando: só o que chegar perto */
         const protege = J.postura==='proteger' && d.doJogador;
-        if(!alvo && !J.paz && agressivo(J,d) && !protege)
+        if(!alvo && !J.paz && agressivo(J,d) && !protege && !tregua(J))
           alvo = buscaLonga(J,d, 240, '_alvoLongo');
+        /* (com a PM apartando, o bonde do jogador só responde a quem está em cima dele) */
+        if(tregua(J) && alvo && U.dist2(d.x,d.y,alvo.x,alvo.y) > 55*55) alvo = null;
         if(alvo && !alvo.fugindo){
           J.encostou[d.lado]=true; J.encostou[alvo.lado]=true;
         }
@@ -47897,7 +47920,7 @@ TO.diaJogo.combate = (function(){
         /* veio pra brigar e não tem ninguém por perto: vai até onde o
            rival está. Sem isto ele só ficava disposto — andava pro
            próprio portão e a hostilidade não encontrava ninguém. */
-        else if(agressivo(J,d) && meuBonde && meuBonde.alvo){
+        else if(agressivo(J,d) && meuBonde && meuBonde.alvo && !tregua(J)){
           const s=D.spawns.find(x=>x.id===meuBonde.alvo);
           if(s){ campo=campoDoSpawn(s); usarCampo=true; }
         }
@@ -48486,17 +48509,20 @@ TO.diaJogo.combate = (function(){
           if(d.hp<=0) prender(J,d);
           break;
         }
-      } else if(buracos.length){
+      } else if(buracos.length && !(p.aparta && J.aparta)){
         let alvo=buracos[0], md=1e9;
         for(const b of buracos){const dd=U.dist(b.x,b.y,p.x,p.y); if(dd<md){md=dd;alvo=b;}}
         ax=alvo.x; ay=alvo.y; vel=64;
       } else {
         /* o posto anda com a linha (degraus 2 e 3) e vira o bloco quando
            a PM está acuada */
-        const av = J.pmAvanco || 0, dir = J.pmDir;
-        const ex = J.pmAcuada && J.pmBloco ? J.pmBloco.x + (p.postoX-J.pmBloco.x)*0.25 : p.postoX + (dir ? dir.x*av : 0);
-        const ey = J.pmAcuada && J.pmBloco ? J.pmBloco.y + (p.postoY-J.pmBloco.y)*0.25 : p.postoY + (dir ? dir.y*av : 0);
-        const guia = J.pmAcuada ? 34 : 80;
+        /* (quem veio apartar fica na vaga dele, na linha do meio: sai dela só
+           uns passos, pra quem chega procurando briga) */
+        const noMeio = !!(p.aparta && J.aparta);
+        const av = noMeio ? 0 : (J.pmAvanco || 0), dir = J.pmDir;
+        const ex = noMeio ? p.postoX : J.pmAcuada && J.pmBloco ? J.pmBloco.x + (p.postoX-J.pmBloco.x)*0.25 : p.postoX + (dir ? dir.x*av : 0);
+        const ey = noMeio ? p.postoY : J.pmAcuada && J.pmBloco ? J.pmBloco.y + (p.postoY-J.pmBloco.y)*0.25 : p.postoY + (dir ? dir.y*av : 0);
+        const guia = noMeio ? 44 : J.pmAcuada ? 34 : 80;
         let perto=null, pd=1e9;
         for(const d of porPerto(J,p.x,p.y,80)){
           if(!procurandoConflito(J,d)) continue;
@@ -48521,7 +48547,7 @@ TO.diaJogo.combate = (function(){
           /* ninguém pra enfrentar: vai algemar quem ficou no chão */
           ax=p.algema.d.x; ay=p.algema.d.y; vel=64;
         } else {
-          ax=ex; ay=ey+(av>4||J.pmAcuada ? 0 : Math.sin(J.t*0.55+p.giro)*26); vel=av>4?52:42;
+          ax=ex; ay=ey+(av>4||J.pmAcuada||noMeio ? 0 : Math.sin(J.t*0.55+p.giro)*26); vel=noMeio?112:av>4?52:42;
         }
       }
 
@@ -48932,6 +48958,7 @@ TO.diaJogo.combate = (function(){
       if(d.lider) continue;
       if(d.fugindo || d.atordoado>0 || d.derrubado>0 || d.fugaBomba || d.entrando) continue;
       if(!agressivo(J,d)) continue;
+      if(maoNoBolso(J,d)) continue;
       /* RECUADO BATE DE COSTAS (correção do dono, 27/08/2026): recuar
          reposiciona, não desarma. O recuado não vai atrás de golpe —
          mas quem COLAR nele leva o soco normal. */
@@ -49104,6 +49131,43 @@ TO.diaJogo.combate = (function(){
   const ALGEMA = {raio:30, tempo:1.2, busca:110};
   const VIATURA = {de:26, ate:36, pms:3, dura:16};
   const temPM = J => J.policiais.some(p => p.vivo);
+  /* A POLÍCIA APARTA (dono, 14/11/2026: "quando a polícia chega na briga, as
+     torcidas tendem a se apartar e ficarem longes uma da outra, e os
+     policiais que chegam tentam ficar no meio tentando controlar pra que não
+     briguem. Se a situação apaziguar e parar de ter hostilidade, encerra a
+     cena"). O reforço (a viatura, ou os PMs a pé dentro do setor) não entra
+     mais em carga: faz uma linha no meio, entre o centro de um lado e o do
+     outro (`J.aparta.meio`), e bate de cassetete só em quem chega nela
+     procurando briga. Quem não é do bonde do jogador se afasta da linha até
+     `dist` px do lado dele e fica; o bonde do jogador larga a caça e volta
+     pra formação — quem decide se a briga continua é o presidente: enquanto
+     ele bate (`J._liderHostil`), os dois lados brigam como sempre. Passados
+     `calma` segundos sem ninguém hostil (a hostilidade de cada um dura 3 s
+     depois do último golpe), a cena fecha: "a polícia apartou a briga".
+     Nos arredores não vale: lá a cena acaba no portão. */
+  const APARTA = {dist:150, calma:5, vao:26, pmsMin:3, pmsMax:8, porPm:50};
+  const apartaVale = () => !fugaPelaEntrada() && !D.semApartar;
+  /* COM A PM NO MEIO, A MÃO FICA NO BOLSO: só bate quem acabou de apanhar
+     (legítima defesa) — e o bonde do jogador, se o presidente seguir
+     batendo (`J._liderHostil`: é ele quem decide se a briga continua).
+     Medido na praça, 50 × 55: sem isto os dois lados se afastavam trocando,
+     e caíam mais 13 nos dez segundos depois de a viatura chegar. */
+  /* (a trégua é dos dois lados ou de nenhum: enquanto o presidente bate, a
+     rival briga como sempre — senão ela ficaria parada apanhando) */
+  const tregua = J => !!J.aparta && !J._liderHostil;
+  function maoNoBolso(J, d){
+    if(!tregua(J) || d.lider) return false;
+    return !(d.apanhou > 0);
+  }
+  function encerrarApartada(J){
+    if(J.fase !== 'ativo') return;
+    J.fase = 'acabando';
+    J.acabou = {lado:null, venceu: J.caidos.visitante >= J.caidos.mandante, correram:false, apartada:true,
+                tranquila: J.caidos.mandante + J.caidos.visitante === 0,
+                motivo:_t('a polícia apartou a briga')};
+    aviso(J, _t('A polícia apartou a briga'), '#5fa87d');
+    logar(J, J.acabou.motivo, 'pm');
+  }
   function som(J, nome){ (J.sons = J.sons || []).push(nome); if(J.sons.length > 24) J.sons.shift(); }
   function tremerCamera(J, forca){ J.tremorCam = Math.max(J.tremorCam || 0, forca); }
   /* o meio da confusão: a média de quem está procurando conflito */
@@ -49128,7 +49192,7 @@ TO.diaJogo.combate = (function(){
     let f = Math.min(havia, 3);
     if(!vivos.length) f = 0;
     else if(J.rompido && J.t <= (J.cargaAte || 0)) f = 4;
-    else if(J.viatura && J.viatura.chegou && J.t <= J.viatura.ate) f = 4;
+    else if(J.viatura && J.viatura.chegou && J.t <= J.viatura.ate && !J.aparta) f = 4;
     else {
       while(f < 3 && J.alerta >= PM_SOBE[f]) f++;
       while(f > 0 && J.alerta < PM_DESCE[f-1]) f--;
@@ -49146,6 +49210,32 @@ TO.diaJogo.combate = (function(){
       J._pmPensa = J.t + 0.5;
       const c = centroDaBriga(J);
       J._nHostis = c ? c.n : 0;
+      if(J.aparta){
+        const ap = J.aparta;
+        /* (o centro de quem NÃO é visitante é o do mandante, e vice-versa) */
+        const cm = centroDoInimigo(J, 'visitante'), cv = centroDoInimigo(J, 'mandante');
+        if(cm && cv){
+          const q = hyp(cm.x - cv.x, cm.y - cv.y) || 1;
+          const novo = {x:(cm.x + cv.x)/2, y:(cm.y + cv.y)/2, nx:(cm.x - cv.x)/q, ny:(cm.y - cv.y)/q};
+          /* (o meio anda devagar: a linha não corre atrás de cada passo dos grupos) */
+          ap.meio = ap.meio ? {x:ap.meio.x + (novo.x - ap.meio.x)*0.25, y:ap.meio.y + (novo.y - ap.meio.y)*0.25, nx:novo.nx, ny:novo.ny} : novo;
+        }
+        if(ap.meio){
+          const os = vivos.filter(p => p.aparta), k = os.length;
+          os.forEach((p, i) => {
+            const t = (i - (k - 1)/2) * APARTA.vao;
+            const q = A.pontoLivreMaisProximo(ap.meio.x - ap.meio.ny*t, ap.meio.y + ap.meio.nx*t, p.r);
+            p.postoX = q.x; p.postoY = q.y;
+          });
+        }
+        { const pres = J.discos.find(d => d.lider && d.doJogador && d.vivo); J._liderHostil = !!(pres && pres.hostil > 0); }
+        /* (a calma só conta com a linha da PM formada no meio — ou 12 s
+           depois de ela chegar, se alguém ficou preso no caminho) */
+        const formada = J.t - ap.desde > 12 ||
+          vivos.some(p => p.aparta) && vivos.every(p => !p.aparta || U.dist(p.x, p.y, p.postoX, p.postoY) < 45);
+        if(J._nHostis > 0 || !formada) ap.calmoDesde = J.t;
+        else if(J.t - ap.calmoDesde >= APARTA.calma && !J.entrando) encerrarApartada(J);
+      }
       let px = 0, py = 0, n = 0;
       for(const p of vivos){ if(p.hpMax >= 380 || p.daViatura) continue; px += p.postoX; py += p.postoY; n++; }
       if(n && c){
@@ -49250,14 +49340,24 @@ TO.diaJogo.combate = (function(){
         v.x = q0.x; v.y = q0.y; v.rumo = Math.atan2(c.x - v.x, c.y - v.y);
         /* dentro do setor não entra carro: é o reforço a pé */
         v.aPe = !!D.semRecuoPM;
-        for(let i = 0; i < VIATURA.pms; i++){
+        /* (pra apartar vem mais gente quanto maior a briga: de 3 a 8) */
+        const aparta = apartaVale();
+        let dePeAgora = 0;
+        for(const d of J.discos) if(d.vivo && !d.fugindo && !d.entrou) dePeAgora++;
+        const nPms = aparta ? U.limitar(APARTA.pmsMin + Math.round(dePeAgora/APARTA.porPm), APARTA.pmsMin, APARTA.pmsMax) : VIATURA.pms;
+        for(let i = 0; i < nPms; i++){
           const pm = new Policial({x:v.x, y:v.y});
           const q = A.pontoLivreMaisProximo(v.x + U.entre(-40, 40), v.y + U.entre(-40, 40), 10);
-          pm.x = q.x; pm.y = q.y; pm.carga = true; pm.daViatura = true;
+          pm.x = q.x; pm.y = q.y; pm.carga = !aparta; pm.aparta = aparta; pm.daViatura = true;
           J.policiais.push(pm);
         }
-        J.alerta = Math.max(J.alerta, 85);
-        aviso(J, v.aPe ? _t('O reforço da PM entrou') : _t('A viatura chegou'), '#5fa87d'); som(J, 'sirene');
+        if(aparta){ J.aparta = {desde:J.t, calmoDesde:J.t, meio:null}; J._pmPensa = 0; }
+        J.alerta = Math.max(J.alerta, aparta ? 60 : 85);
+        aviso(J, aparta ? (v.aPe ? _t('O reforço da PM entrou pra apartar') : _t('A viatura chegou pra apartar'))
+                        : v.aPe ? _t('O reforço da PM entrou') : _t('A viatura chegou'), '#5fa87d'); som(J, 'sirene');
+        if(aparta) logar(J, v.aPe ? _t('O reforço da PM entrou no setor: {n} PMs no meio, apartando os dois lados.', {n:nPms})
+                                  : _t('A viatura chegou: {n} PMs desceram e ficaram no meio, apartando os dois lados.', {n:nPms}), 'pm');
+        else
         logar(J, v.aPe ? _t('O reforço da PM entrou no setor: {n} PMs dispersando os dois lados.', {n:VIATURA.pms})
                        : _t('A viatura chegou: {n} PMs desceram dispersando os dois lados.', {n:VIATURA.pms}), 'pm');
       }
@@ -49874,6 +49974,8 @@ TO.diaJogo.combate = (function(){
       if(b.lado!==ladoIA || !b.arremessador || !b.vivo || b.fugindo || b.fugaBomba) continue;
       if(b.atordoado>0 || b.derrubado>0 || J.t < (b.cdBracoAte||0)) continue;
       if(!agressivo(J,b)) continue;
+      /* (com a PM no meio ninguém joga pedra nem bomba de longe) */
+      if(maoNoBolso(J,b)) continue;
       if(b.guarda && !J.acordou) continue;
       /* já está no contato: usa a mão, não a pedra */
       if(b.linha==='frente' && inimigoAlcancavel(J,b,40)) continue;
@@ -61441,9 +61543,11 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
      notícias do futebol e porrada e gazeta dos sports no feed": a dica, a
      Gazeta da rodada e a página do Futebol e Porrada voltam pra caixa de
      entrada; o resto segue só em Notícias) */
-  const SO_EM_NOTICIAS = new Set(['almanaque', 'obra', 'dominio', 'aniversario',
+  /* (o Almanaque também: a véspera de cada competição — o começo da
+     temporada — e a edição do campeão; o dono sentiu falta delas) */
+  const SO_EM_NOTICIAS = new Set(['obra', 'dominio', 'aniversario',
                                   'eixo-saida', 'conmebol-fim', 'mundo-fim', 'lnt-fundacao', 'lnt-fim']);
-  const JORNAL_NO_FEED = new Set(['rodada', 'confronto']);
+  const JORNAL_NO_FEED = new Set(['rodada', 'confronto', 'almanaque']);
   function feedVisivel(e){
     const naRede = new Set();
     for(const m of (e.mensagens || [])){
@@ -71554,9 +71658,18 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
   const MS_DIA_VAZIO = 120;
   let relogioTempo = null;
   /* o compasso da PRÓXIMA mensagem da fila: decisão espera 1,5 s */
+  /* AS MENSAGENS CHEGAM DEVAGAR (dono, 14/11/2026: "lembre-se de mostrar as
+     mensagens no feed devagar. Acabou o primeiro jogo e o Gazeta e o futebol
+     e porrada criou muito rápido as manchetes"): o que aparece na caixa de
+     entrada espera antes de cair — o jornal 3,5 s, o recado comum 2,2 s. O
+     que não aparece nela (vai só pra Notícias) segue no meio segundo. */
+  const MS_JORNAL = 3500, MS_RECADO = 2200;
   const compassoDaFila0 = e => {
     const prox = (e.feedFila || [])[0];
-    return prox && prox.peso === 'decisao' ? MS_DROP : MS_INFO;
+    if(!prox) return MS_INFO;
+    if(prox.peso === 'decisao') return MS_DROP;
+    if(SO_EM_NOTICIAS.has(prox.kind)) return MS_INFO;
+    return JORNAL_NO_FEED.has(prox.kind) ? MS_JORNAL : MS_RECADO;
   };
   /* O DIA EM 3D (o jogo 3D, 27/09/2026): "O dia passa até ocorrer alguma
      coisa". Quem tem o relógio do dia (`TO.jogo3d.ritmo`) diz quanto a

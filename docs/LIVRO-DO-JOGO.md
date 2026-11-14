@@ -3581,6 +3581,12 @@ O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráfic
 - **Agenda de jogos** do portal: duas linhas por jogo — "data - dia - competição - fase - Casa/Fora" e, embaixo, escudo, adversário e placar.
 - **Dia de jogo**: com a linha no ar, a coluna mostra só o cartão do dia, sem o texto do recado, e a arquibancada encolhe pela altura da janela pra tudo caber sem rolar (linha, arquibancada, tensão, botões e gols).
 
+### 4.11 O compasso do feed e a polícia que aparta (14/11/2026)
+
+- **Compasso**: decisão 1,5 s; recado comum 2,2 s; jornal 3,5 s; o que só vai pra Notícias 0,5 s; dia sem nada 120 ms. Tudo dividido pela velocidade (1× ou 2×).
+- **Almanaque na caixa de entrada**: "Começa a disputa" sete dias antes de cada competição nossa (inclusive antes do primeiro jogo) e a edição do campeão.
+- **A polícia aparta**: o reforço da PM (26 a 36 s depois do primeiro caído ou do primeiro aviso) faz uma linha no meio dos dois lados. A rival e as torcidas aliadas se afastam e param; o bonde do jogador volta pra formação. Só bate quem acabou de apanhar; se o presidente segue batendo, a briga continua normal. Cinco segundos sem hostilidade, com a linha formada, e a cena fecha: "a polícia apartou a briga", com o resultado pela conta de caídos. Não vale nos arredores do estádio.
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:

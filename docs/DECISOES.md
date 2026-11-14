@@ -11980,6 +11980,57 @@ feed", com três dicas escritas por ele.
 - Testado no navegador de teste: três dias de jogo seguidos, sem erros,
   com as dicas, três Gazetas e uma página do Futebol e Porrada na caixa.
 
+## Feed devagar, o começo da temporada e a polícia que aparta (dono, 14/11/2026)
+
+Pedidos: "lembre-se de mostrar as mensagens no feed devagar. Acabou o
+primeiro jogo e o Gazeta e o futebol e porrada criou muito rápido as
+manchetes"; "Senti falta das mensagens de início de temporada também [...]
+Acho que elas são do Almanaque"; e a lógica nova da briga: "quando a
+polícia chega na briga, as torcidas tendem a se apartar e ficarem longes
+uma da outra, e os policiais que chegam tentam ficar no meio tentando
+controlar pra que não briguem. Se a situação apaziguar e parar de ter
+hostilidade, encerra a cena".
+
+- **O compasso do feed** (main.js no pacote, `compassoDaFila0`): a
+  mensagem comum caía a cada meio segundo. Agora o que aparece na caixa de
+  entrada espera antes de cair: o jornal (Gazeta, Futebol e Porrada,
+  Almanaque) 3,5 s e o recado comum 2,2 s; a decisão segue em 1,5 s e o
+  que vai só pra Notícias segue no meio segundo. Medido: a Gazeta cai 3,5
+  s depois do fim do dia de jogo, e as dicas do começo a cada 2,4 a 2,8 s.
+  O 2× do jogo corta esses tempos pela metade.
+- **O começo da temporada**: era mesmo o Almanaque — a edição "Começa a
+  disputa", sete dias antes da estreia de cada competição do nosso clube.
+  Ela não saía por dois motivos: o feed calado antes do primeiro jogo
+  (agora a dica e o Almanaque passam) e o Almanaque estar só em Notícias
+  (agora entra na caixa de entrada, com a edição do campeão).
+- **A polícia aparta** (combate.js no pacote, `APARTA`): quando o reforço
+  chega (a viatura, ou os PMs a pé dentro do setor) ele não entra mais em
+  carga. São de 3 a 8 PMs, conforme o tamanho da briga, que fazem uma
+  linha no meio, entre o centro de um lado e o do outro, e batem de
+  cassetete só em quem chega nela procurando briga. Quem não é do bonde do
+  jogador se afasta da linha até uns 150 px do lado dele e fica de frente
+  pra ela; o bonde do jogador larga a caça e volta pra formação. Com a PM
+  no meio só bate quem acabou de apanhar, e ninguém joga pedra nem bomba
+  de longe.
+- **Quem decide se a briga continua é o presidente**: enquanto ele bate, a
+  trégua não vale pra ninguém e os dois lados brigam como sempre (senão a
+  rival ficaria parada apanhando). Parou, a trégua volta.
+- **O fim**: com a linha da PM formada e ninguém hostil por 5 segundos (a
+  hostilidade de cada um dura 3 s depois do último golpe), a cena fecha
+  com "a polícia apartou a briga". O resultado segue a régua de sempre das
+  cenas que não acabam por um lado sumir: quem tem menos caídos. Nos
+  arredores do estádio não vale — lá a cena acaba no portão.
+- Dois defeitos achados no caminho: o afastamento parava em 0,8 s (o
+  passo do boneco desiste de alvo que não chega mais perto, e o alvo aqui
+  anda junto com ele), e a rival seguia jogando pedra de longe, o que
+  segurava a cena aberta por quase um minuto.
+- Testado no navegador de teste: a praça, 50 × 55 — a viatura chega, os
+  lados vão de 100 pra 330 px de distância, ninguém mais cai e a cena
+  fecha uns 8 s depois; com o presidente batendo a briga segue, e fecha 5 s
+  depois que ele para. No estádio (dois setores) também fecha. O ganho de
+  moral e prestígio de uma briga apartada não foi revisto: uma apartada
+  com 4 caídos nossos e 1 deles ainda sai como derrota inteira.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
