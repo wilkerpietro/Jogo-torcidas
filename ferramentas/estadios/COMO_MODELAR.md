@@ -145,6 +145,10 @@ jogo só nascem em `aneis`.
 - `abobadas: [{ u, comp, vFrente, vFundo, n, bojo, cor, cor2, perfil: [[f, altura], ..] }]`:
   fileira de cascas ao longo de uma lateral reta (o Romeirão).
 
+- `telhados: [{ pontos: [[u, v], ..], furo: [[u, v], ..], y, h, cor, cobertura }]`:
+  telhado em polígono, com o vão do meio opcional (o oitavado do Heriberto
+  Hülse). Sai transparente na foto de cima; `cobertura: false` deixa opaco.
+
 ### Peças soltas
 
 - `blocos: [{ u, v, w, d, h, y, cor, giro, cobertura: true, texto, corTexto }]`:

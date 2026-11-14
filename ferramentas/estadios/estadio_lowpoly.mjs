@@ -486,6 +486,16 @@ export function construir(THREE, ficha) {
       pl.rotation.order = 'YXZ'; pl.rotation.x = -Math.PI / 2; pl.rotation.y = ((b.giro || 0) + (b.textoGiro || 0)) * RAD; pl.position.set(b.u, (b.y || 0) + b.h + 0.08, -b.v); grupo.add(pl);
     }
   }
+  /* ---- OS TELHADOS EM POLÍGONO (o oitavado do Heriberto Hülse): uma laje fina com o contorno que a ficha der
+     (`pontos`, em metros) e, se houver, o vão do meio (`furo`). Sai transparente na foto de cima, como toda
+     cobertura; com `cobertura: false` fica opaco (telhado de prédio). ---- */
+  for (const t of ficha.telhados || []) {
+    const sh = new THREE.Shape(t.pontos.map(q => new THREE.Vector2(q[0], q[1])));
+    if (t.furo) sh.holes.push(new THREE.Path(t.furo.map(q => new THREE.Vector2(q[0], q[1]))));
+    const g = new THREE.ExtrudeGeometry(sh, { depth: t.h || 0.5, bevelEnabled: false }); g.rotateX(-Math.PI / 2);
+    const m = sombra(new THREE.Mesh(g, mat(t.cor || '#cbcdce', { flatShading: true }))); m.position.y = t.y || 0;
+    (t.cobertura === false ? cena : coberturas).add(m);
+  }
   for (const p of ficha.passarelas || []) { const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.d), mat(p.cor || CONCRETO)); m.rotation.x = -Math.PI / 2; m.position.set(p.u, 0.11, -p.v); m.receiveShadow = true; cena.add(m); }
 
   /* ---- o entorno: prédios, casas, piscina, árvores, ruas ---- */

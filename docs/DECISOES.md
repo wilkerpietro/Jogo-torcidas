@@ -12857,6 +12857,41 @@ também".
   Jaconi, Centenário, Colosso da Lagoa, Bento Freitas, Boca do Lobo e
   Passo d'Areia. O próximo estado espera o dono dizer qual é.
 
+## Heriberto Hülse lowpoly (Criciúma): começa Santa Catarina (dono, 14/11/2026)
+
+- O dono fechou o Rio Grande do Sul e mandou: "Vamos iniciar os estádios
+  catarinenses agora pelo Heriberto Hülse". Mesma regra: um por vez, sem
+  agente, e só começo o seguinte quando ele disser.
+- **Fotos**: 13 de referência (satélite de alta resolução, aéreas de três
+  lados e de dentro), fora do repositório.
+- **Heriberto Hülse** (o fundo nordeste à direita, o sudoeste à esquerda,
+  as cadeiras do noroeste em cima, o sudeste embaixo):
+  - um anel fechado e todo coberto, de planta em oitavado (os quatro
+    cantos chanfrados), com o telhado de zinco claro;
+  - em cima, as cadeiras, o lado mais fundo: amarelo na frente
+    (descoberto) e o mosaico preto e amarelo atrás, debaixo do telhado;
+    a treliça comprida dos refletores em cima do telhado; os bancos na
+    frente;
+  - à direita, o fundo nordeste, o mais fundo, em blocos amarelos e
+    brancos, com a metade da frente descoberta;
+  - embaixo, o lado sudeste, mais raso, todo debaixo do pano mais claro
+    do telhado, com os três postes de refletor na beira;
+  - à esquerda, o fundo sudoeste, todo coberto, em blocos amarelos e
+    brancos;
+  - os cantos em degrau de cimento claro.
+- **Gerador: `telhados`** (telhado em polígono, com o vão do meio). O
+  oitavado feito de retângulos girados ficava com as pontas sobrando;
+  agora a ficha dá os pontos do contorno e do vão e sai limpo. Serve pra
+  qualquer telhado que não seja retângulo nem anel redondo.
+- **O que não é fiel**: debaixo do telhado os cantos das arquibancadas
+  saem em leque redondo (o telhado é que é chanfrado); a divisão de
+  cores do fundo nordeste e do lado sudeste é suposta igual à do fundo
+  sudoeste (nas fotos eles ficam debaixo do telhado ou na sombra).
+- **Setores**: sem fonte. Escolha minha: Os Tigres no fundo sudoeste, a
+  Guerrilha Jovem no lado sudeste, a visitante no fundo nordeste.
+- **Testado**: briga 60 × 56 jogando de Os Tigres; chão um só, nenhum
+  marcador fora; sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
