@@ -12152,6 +12152,43 @@ projeto fez.
   entorno são aproximados. As artes de jornal e os cartazes de briga
   ainda usam a foto genérica. Faltam 33 estádios.
 
+## Maracanã, Morumbi e Neo Química Arena pelas fotos do dono (dono, 14/11/2026)
+
+O dono depositou na página de referências 10 fotos do Maracanã, 10 do
+Morumbi e 15 da Neo Química Arena (satélite, aéreas, TV, fachada), com a
+nota de onde ficam as torcidas, e pediu: "tente reproduzir".
+
+- **Maracanã** (Flamengo e Fluminense): anel oval em dois lances, cadeiras
+  em degradê amarelo → azul → branco, a cobertura branca de lona em 72
+  gomos com a boca oval sobre o campo, a galeria de concreto por fora, os
+  telões atrás dos gols, as duas rampas e o Maracanãzinho ao lado.
+  Organizada atrás do gol leste, visitante no escanteio sudoeste.
+- **Morumbi** (São Paulo): oval sem cobertura, todo vermelho, em três
+  níveis (lance de baixo, faixa dos camarotes com as duas coberturas
+  azuis, lance grande de cima com as bocas de concreto), pista de
+  atletismo, as ondas tricolores atrás dos gols, os quatro pórticos
+  brancos de luz, os telões e as piscinas do clube. Organizada atrás do
+  gol leste, visitante atrás do gol oeste.
+- **Neo Química Arena** (Corinthians): retangular, lance de baixo em volta
+  do campo e os lances altos só nas laterais, o degrau de concreto sem
+  cadeira atrás do gol das organizadas, o prédio branco do lado oeste, os
+  telões e as duas coberturas brancas com o nome da arena. Organizadas no
+  gol oeste, visitante na curva nordeste.
+- **O quadro da imagem**: o campo fica sempre deitado, como na TV. "Gol
+  leste" da nota do dono é o gol da direita; "oeste", o da esquerda.
+- **O gerador ganhou**: cobertura em anel inteiro; arquibancada reta (bloco
+  reto de cadeiras) e anel "reto" (corredores perpendiculares ao campo, pra
+  estádio retangular); degradê de cadeiras; pista com raias e fosso; ondas
+  pintadas no chão; pórticos de luz; bocas de acesso; cobertura opaca;
+  letreiro pintado em cima de bloco; laje alta (galeria); cúpula,
+  estacionamento e gramado no entorno.
+- **Cobertura vista de cima**: sai meio transparente (42% no Maracanã, 46%
+  na Arena), pra torcida embaixo continuar aparecendo.
+- **Testado**: briga de arquibancada 60 × 56 nos três (cena certa, 4 PMs,
+  10 a 16 grades, cordão rompendo, sem erro de página).
+- **Limite**: as medidas saíram das fotos por proporção com o campo, não de
+  planta; o entorno é simplificado.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

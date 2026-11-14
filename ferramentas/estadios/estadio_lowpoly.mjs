@@ -37,6 +37,23 @@ export function raioDe(ang, c) {
   return dc + Math.sqrt(Math.max(0, dc * dc - cc));
 }
 const ponto = (ang, raio) => [Math.cos(ang * RAD) * raio, Math.sin(ang * RAD) * raio];
+/* ANEL RETO (`reto: true` no anel de canto redondo): o ponto do contorno não é
+   medido pelo raio e sim pelo LADO — nas retas a cadeira de trás fica bem
+   atrás da cadeira da frente, e o corredor sai perpendicular ao campo, como
+   nos estádios retangulares; só no canto ele abre em leque. */
+function paramDe(ang, c) {
+  const r = raioDe(ang, c), x = Math.cos(ang * RAD) * r, y = Math.sin(ang * RAD) * r, rr = Math.min(c.r || 0, c.a, c.b), ex = c.a - rr, ey = c.b - rr;
+  const ax = Math.abs(x), ay = Math.abs(y), sx = x < 0 ? -1 : 1, sy = y < 0 ? -1 : 1;
+  if (ax <= ex + 1e-6) return { tipo: 'h', sy, t: ex ? x / ex : 0 };
+  if (ay <= ey + 1e-6) return { tipo: 'v', sx, t: ey ? y / ey : 0 };
+  return { tipo: 'c', sx, sy, phi: Math.atan2(ay - ey, ax - ex) };
+}
+function pontoPor(pm, c) {
+  const rr = Math.min(c.r || 0, c.a, c.b), ex = c.a - rr, ey = c.b - rr;
+  if (pm.tipo === 'h') return [pm.t * ex, pm.sy * c.b];
+  if (pm.tipo === 'v') return [pm.sx * c.a, pm.t * ey];
+  return [pm.sx * (ex + rr * Math.cos(pm.phi)), pm.sy * (ey + rr * Math.sin(pm.phi))];
+}
 const mod360 = a => ((a % 360) + 360) % 360;
 const dentroDoArco = (ang, de, ate) => { const a = mod360(ang - de); return a <= mod360(ate - de) || (ate - de) >= 360; };
 function semente(n) { let s = n >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -50,10 +67,16 @@ export const limites = ficha => ({ dentro: ficha.aneis[0].dentro, fora: ficha.an
 export function andavel(ficha, u, v) {
   const d = Math.hypot(u, v); if (d < 1e-6) return false;
   const ang = Math.atan2(v, u) / RAD;
-  for (const anel of ficha.aneis) {
-    const t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue;
+  const ult = ficha.aneis.length - 1;
+  for (let ia = 0; ia <= ult; ia++) {
+    const anel = ficha.aneis[ia], t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue;
     const r0 = raioDe(ang, t.dentro || anel.dentro), r1 = raioDe(ang, t.fora || anel.fora);
-    if (d >= r0 + 0.4 && d <= r1 - 0.4) return true;
+    /* (só a beira de dentro do primeiro anel e a de fora do último encolhem: anéis encostados não deixam fresta) */
+    if (d >= r0 + (ia === 0 ? 0.4 : -0.3) && d <= r1 - (ia === ult ? 0.4 : -0.3)) return true;
+  }
+  for (const t of ficha.retas || []) {
+    const a = t.ang * RAD, du = u - t.u, dv = v - t.v, x = -du * Math.sin(a) + dv * Math.cos(a), y = du * Math.cos(a) + dv * Math.sin(a);
+    if (Math.abs(x) <= t.comp / 2 - 0.4 && y >= -0.6 && y <= t.prof - 0.4) return true;
   }
   for (const p of ficha.passarelas || []) { if (Math.abs(u - p.u) <= p.w / 2 && Math.abs(v - p.v) <= p.d / 2) return true; }
   return false;
@@ -100,7 +123,19 @@ export function construir(THREE, ficha) {
   /* a margem entre o gramado e a arquibancada (grama, ou a pista de atletismo) */
   const cp = ficha.campo || {}, C = cp.c || 105, L = cp.l || 68;
   anelPlano(null, lim.dentro, 0.06, cp.corMargem || '#4f9a58', 3);
-  if (cp.pista) { anelPlano(cp.pista.dentro, cp.pista.fora, 0.08, cp.pista.cor || '#b5533c', 3); }
+  if (cp.pista) { anelPlano(cp.pista.dentro, cp.pista.fora, 0.08, cp.pista.cor || '#b5533c', 3);
+    if (cp.corFosso) anelPlano(cp.pista.fora, lim.dentro, 0.07, cp.corFosso, 3);
+    /* as raias */
+    for (let k = 1; k < (cp.pista.raias || 0); k++) { const f = k / cp.pista.raias, mix = c => ({ forma: c.forma, a: 0, b: 0, r: 0 });
+      const c0 = cp.pista.dentro, c1 = cp.pista.fora, m = { forma: c0.forma, a: c0.a + (c1.a - c0.a) * f, b: c0.b + (c1.b - c0.b) * f, r: (c0.r || 0) + ((c1.r || 0) - (c0.r || 0)) * f };
+      anelPlano({ forma: m.forma, a: m.a - 0.12, b: m.b - 0.12, r: Math.max(0, m.r - 0.12) }, { forma: m.forma, a: m.a + 0.12, b: m.b + 0.12, r: m.r + 0.12 }, 0.085, '#e9d9d2', 3); }
+  }
+  /* as ondas pintadas no chão atrás dos gols (Morumbi) */
+  for (const o of cp.ondas || []) for (const sg of (o.lados || [-1, 1])) {
+    const nn = 28, uf = v => sg * (o.u + o.amp * Math.sin(v / o.v * Math.PI * (o.ciclos || 1.5) + (o.fase || 0)));
+    for (let i = 0; i < nn; i++) { const v0 = -o.v + 2 * o.v * i / nn, v1 = -o.v + 2 * o.v * (i + 1) / nn, e = o.larg / 2;
+      M.quad(P(uf(v0) - e, v0, 0.09), P(uf(v0) + e, v0, 0.09), P(uf(v1) + e, v1, 0.09), P(uf(v1) - e, v1, 0.09), o.cor); }
+  }
   /* o gramado em faixas */
   const NF = 14;
   for (let i = 0; i < NF; i++) {
@@ -118,7 +153,35 @@ export function construir(THREE, ficha) {
   cena.add(M.malha());
 
   /* ---- os anéis de arquibancada ---- */
-  const A = Malha(), R = Malha(), Pm = Malha();
+  const A = Malha(), R = Malha(), Ro = Malha(), Pm = Malha();
+  /* a cor de cada cadeira de um trecho de n × N cadeiras */
+  const pintorDe = (t, n, N, arco, rnd) => {
+    let letreiro = null;
+    if (t.texto) {
+      const cv = document.createElement('canvas'); cv.width = n; cv.height = N;
+      const x = cv.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, n, N);
+      x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const alt = Math.round(N * (t.textoAltura || 0.62));
+      x.font = `bold ${alt}px "Arial Black", "DejaVu Sans", "Arial", sans-serif`;
+      const larg = x.measureText(t.texto).width, cabe = n * (t.textoLargura || 0.8);
+      x.save(); x.translate(n / 2, N * (t.textoMeio || 0.5)); x.scale(Math.min(3.2, cabe / larg), 1); x.fillText(t.texto, 0, 0); x.restore();
+      letreiro = x.getImageData(0, 0, n, N).data;
+    }
+    const corr = t.corredor === 0 ? 0 : Math.max(6, Math.round((t.corredor || 16) / (arco / n)));
+    return (i, k) => {
+      if (corr && i % corr === 0 && i > 0) return CONCRETO;
+      if (letreiro) { const bx = n - 1 - i, by = N - 1 - k; if (letreiro[(by * n + bx) * 4] > 110) return t.corTexto || '#ffffff'; }
+      if (t.faixaTopo && k >= N - t.faixaTopo.n) return t.faixaTopo.cor;
+      if (t.faixaBase && k < t.faixaBase.n) return t.faixaBase.cor;
+      if (t.padrao === 'mosaico') return rnd() < (t.mistura || 0.45) ? (t.cor2 || '#ffffff') : t.cor;
+      if (t.padrao === 'blocos') return (Math.floor(i / (t.bloco || 10)) + Math.floor(k / (t.blocoFileiras || 99))) % 2 ? (t.cor2 || t.cor) : t.cor;
+      if (t.padrao === 'vazias') return rnd() < (t.mistura || 0.5) ? CONCRETO : t.cor;
+      /* degradê de baixo pra cima, salpicado (Maracanã: amarelo, azul, branco) */
+      if (t.padrao === 'degrade') { const cs = t.cores, q = (k + 0.5) / N * (cs.length - 1) + (rnd() - 0.5) * (t.mistura == null ? 1 : t.mistura) * 1.6;
+        return cs[Math.max(0, Math.min(cs.length - 1, Math.round(q)))]; }
+      return t.cor;
+    };
+  };
   ficha.aneis.forEach((anel, ia) => {
     const rnd = semente(1234 + ia * 77 + (ficha.id || '').length * 13);
     for (const t of anel.trechos) {
@@ -131,63 +194,56 @@ export function construir(THREE, ficha) {
         const n = Math.max(2, Math.ceil(vao / 3));
         for (let i = 0; i < n; i++) {
           const a0 = t.de + vao * i / n, a1 = t.de + vao * (i + 1) / n;
-          const p = (ang, c) => { const q = ponto(ang, raioDe(ang, c)); return P(q[0], q[1], 0.12); };
+          const p = (ang, c, h) => { const q = ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
           A.quad(p(a0, cd), p(a0, cf), p(a1, cf), p(a1, cd), t.cor || CONCRETO);
+          /* (a laje alta — a galeria de cima — ganha a parede de fora) */
+          if (t.alt > 1) Pm.quad(p(a0, cf, 0), p(a1, cf, 0), p(a1, cf), p(a0, cf), t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb');
         }
         continue;
       }
       const [h0, h1] = t.h || anel.h, N = t.fileiras || anel.fileiras || 14;
       const n = Math.max(3, Math.ceil(arco / (t.celula || 1.7)));
-      /* o letreiro nas cadeiras: um desenho de n × N "cadeiras" */
-      let letreiro = null;
-      if (t.texto) {
-        const cv = document.createElement('canvas'); cv.width = n; cv.height = N;
-        const x = cv.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, n, N);
-        x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
-        const alt = Math.round(N * (t.textoAltura || 0.62));
-        x.font = `bold ${alt}px "Arial Black", "DejaVu Sans", "Arial", sans-serif`;
-        const larg = x.measureText(t.texto).width, cabe = n * (t.textoLargura || 0.8);
-        x.save(); x.translate(n / 2, N * (t.textoMeio || 0.5)); x.scale(Math.min(3.2, cabe / larg), 1); x.fillText(t.texto, 0, 0); x.restore();
-        letreiro = x.getImageData(0, 0, n, N).data;
-      }
-      const corr = t.corredor === 0 ? 0 : Math.max(6, Math.round((t.corredor || 16) / (arco / n)));
-      const corDe = (i, k) => {
-        if (corr && i % corr === 0 && i > 0) return CONCRETO;
-        if (letreiro) { const bx = n - 1 - i, by = N - 1 - k; if (letreiro[(by * n + bx) * 4] > 110) return t.corTexto || '#ffffff'; }
-        if (t.faixaTopo && k >= N - t.faixaTopo.n) return t.faixaTopo.cor;
-        if (t.faixaBase && k < t.faixaBase.n) return t.faixaBase.cor;
-        if (t.padrao === 'mosaico') return rnd() < (t.mistura || 0.45) ? (t.cor2 || '#ffffff') : t.cor;
-        if (t.padrao === 'blocos') return (Math.floor(i / (t.bloco || 10)) + Math.floor(k / (t.blocoFileiras || 99))) % 2 ? (t.cor2 || t.cor) : t.cor;
-        if (t.padrao === 'vazias') return rnd() < (t.mistura || 0.5) ? CONCRETO : t.cor;
-        return t.cor;
-      };
+      const corDe = pintorDe(t, n, N, arco, rnd);
       /* (de cima o degrau não aparece: a fileira de trás de cada par sai um tom abaixo, e a arquibancada clareia pro alto) */
       const ct = new THREE.Color(), tom = (h, f) => '#' + ct.set(h).multiplyScalar(f).getHexString();
+      /* onde cai a cadeira (ângulo, fração de dentro pra fora) e os ângulos das colunas */
+      const reto = !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+      const pos = reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+                       : (ang, f) => { const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); return ponto(ang, r0 + (r1 - r0) * f); };
+      const p = (ang, f, h) => { const q = pos(ang, f); return P(q[0], q[1], h); };
+      const angs = [];
+      if (reto) { /* colunas de largura igual, medidas pela beira de dentro */
+        const MS = Math.max(180, n * 5), ac = [0]; let ant = pos(t.de, 0);
+        for (let j = 1; j <= MS; j++) { const q = pos(t.de + vao * j / MS, 0); ac.push(ac[j - 1] + Math.hypot(q[0] - ant[0], q[1] - ant[1])); ant = q; }
+        for (let i = 0, j = 0; i <= n; i++) { const alvo = ac[MS] * i / n; while (j < MS - 1 && ac[j + 1] < alvo) j++;
+          angs.push(t.de + vao * (j + (ac[j + 1] > ac[j] ? (alvo - ac[j]) / (ac[j + 1] - ac[j]) : 0)) / MS); }
+      } else for (let i = 0; i <= n; i++) angs.push(t.de + vao * i / n);
+      const prof = Math.max(1, raioDe((t.de + t.ate) / 2, cf) - raioDe((t.de + t.ate) / 2, cd));
       for (let i = 0; i < n; i++) {
-        const a0 = t.de + vao * i / n, a1 = t.de + vao * (i + 1) / n;
-        const r0a = raioDe(a0, cd), r1a = raioDe(a0, cf), r0b = raioDe(a1, cd), r1b = raioDe(a1, cf);
+        const a0 = angs[i], a1 = angs[i + 1];
         for (let k = 0; k < N; k++) {
           const f0 = k / N, f1 = (k + 1) / N, hk = h0 + (h1 - h0) * (k + 0.5) / N, hk1 = h0 + (h1 - h0) * (k + 1.5) / N;
-          const p = (ang, ra, rb, f, h) => { const q = ponto(ang, ra + (rb - ra) * f); return P(q[0], q[1], h); };
-          A.quad(p(a0, r0a, r1a, f0, hk), p(a0, r0a, r1a, f1, hk), p(a1, r0b, r1b, f1, hk), p(a1, r0b, r1b, f0, hk), tom(corDe(i, k), (k % 2 ? 0.9 : 1) * (0.9 + 0.1 * k / N)));
-          if (k < N - 1) A.quad(p(a0, r0a, r1a, f1, hk), p(a0, r0a, r1a, f1, hk1), p(a1, r0b, r1b, f1, hk1), p(a1, r0b, r1b, f1, hk), CONCRETO_ESC);
+          A.quad(p(a0, f0, hk), p(a0, f1, hk), p(a1, f1, hk), p(a1, f0, hk), tom(corDe(i, k), (k % 2 ? 0.9 : 1) * (0.9 + 0.1 * k / N)));
+          if (k < N - 1) A.quad(p(a0, f1, hk), p(a0, f1, hk1), p(a1, f1, hk1), p(a1, f1, hk), CONCRETO_ESC);
         }
         /* a mureta da frente e a parede de trás */
-        const q = (ang, r, h) => { const w = ponto(ang, r); return P(w[0], w[1], h); };
-        Pm.quad(q(a0, r0a, 0), q(a0, r0a, h0 + (h1 - h0) * 0.5 / N + 0.9), q(a1, r0b, h0 + (h1 - h0) * 0.5 / N + 0.9), q(a1, r0b, 0), t.corMureta || ficha.corMureta || '#d9d7cf');
+        Pm.quad(p(a0, 0, 0), p(a0, 0, h0 + (h1 - h0) * 0.5 / N + 0.9), p(a1, 0, h0 + (h1 - h0) * 0.5 / N + 0.9), p(a1, 0, 0), t.corMureta || ficha.corMureta || '#d9d7cf');
         if (ia === ficha.aneis.length - 1 || t.paredeAtras) {
           const hf = h1 + (t.parapeito == null ? 1.2 : t.parapeito), cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
-          Pm.quad(q(a0, r1a, 0), q(a1, r1b, 0), q(a1, r1b, hf), q(a0, r1a, hf), cf2);
-          Pm.quad(q(a0, r1a, hf), q(a1, r1b, hf), q(a1, r1b - 0.8, hf), q(a0, r1a - 0.8, hf), cf2);
+          Pm.quad(p(a0, 1, 0), p(a1, 1, 0), p(a1, 1, hf), p(a0, 1, hf), cf2);
+          Pm.quad(p(a0, 1, hf), p(a1, 1, hf), p(a1, 1 - 0.8 / prof, hf), p(a0, 1 - 0.8 / prof, hf), cf2);
         }
       }
       /* as laterais do trecho (onde ele acaba em degrau) */
       for (const [ang, viz] of [[t.de, t.de - 0.5], [t.ate, t.ate + 0.5]]) {
         const outro = trechoEm(anel, viz);
         if (outro && outro !== t && outro.tipo !== 'passagem' && outro.tipo !== 'vazio') continue;
-        const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf), q = (r, h) => { const w = ponto(ang, r); return P(w[0], w[1], h); };
-        Pm.quad(q(r0, 0), q(r1, 0), q(r1, h1), q(r0, h0), t.corFachada || CONCRETO_ESC);
+        Pm.quad(p(ang, 0, 0), p(ang, 1, 0), p(ang, 1, h1), p(ang, 0, h0), t.corFachada || CONCRETO_ESC);
       }
+      /* as bocas de acesso (as caixinhas de concreto no meio da arquibancada) */
+      if (t.bocas) { const bc = t.bocas, f = bc.f == null ? 0.3 : bc.f;
+        for (let a = t.de + bc.cada / 2; a < t.ate; a += bc.cada) { const r = raioDe(a, cd) + (raioDe(a, cf) - raioDe(a, cd)) * f, w = ponto(a, r), hb = h0 + (h1 - h0) * f + 1.7;
+          const m = caixa(bc.d || 5, hb, bc.w || 4, bc.cor || CONCRETO, w[0], hb / 2, -w[1]); m.rotation.y = a * RAD; } }
       /* a cobertura do trecho */
       const cb = t.cobertura;
       if (cb) {
@@ -196,8 +252,9 @@ export function construir(THREE, ficha) {
           const a0 = t.de + vao * i / nn, a1 = t.de + vao * (i + 1) / nn;
           const q = (ang, dr, h) => { const w = ponto(ang, raioDe(ang, cf) + dr); return P(w[0], w[1], h); };
           const tom = cb.listras && i % 2 ? (cb.cor2 || '#e9e9e4') : (cb.cor || '#f1f1ec');
-          R.quad(q(a0, av, hc), q(a1, av, hc), q(a1, -cb.larg, hc - cai), q(a0, -cb.larg, hc - cai), tom);
-          R.quad(q(a0, av, hc), q(a1, av, hc), q(a1, av, hc - 1.4), q(a0, av, hc - 1.4), cb.corBorda || tom);
+          const RR = cb.opaca ? Ro : R;
+          RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, -cb.larg, hc - cai), q(a0, -cb.larg, hc - cai), tom);
+          RR.quad(q(a0, av, hc), q(a1, av, hc), q(a1, av, hc - 1.4), q(a0, av, hc - 1.4), cb.corBorda || tom);
           /* a treliça de cada módulo */
           if (cb.trelica !== false && i % 2 === 0) { const w0 = ponto(a0, raioDe(a0, cf) + av), w1 = ponto(a0, raioDe(a0, cf) - cb.larg);
             const m = sombra(new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(w1[0] - w0[0], w1[1] - w0[1]), 0.5, 0.35), mat(cb.corTrelica || '#8a8f93')));
@@ -208,6 +265,41 @@ export function construir(THREE, ficha) {
       }
     }
   });
+  /* ---- as arquibancadas RETAS (um bloco reto de cadeiras: `u, v` é o meio da
+     beira da frente, `ang` pra onde ela sobe, `comp` de ponta a ponta, `prof` da frente ao fundo) ---- */
+  (ficha.retas || []).forEach((t, it) => {
+    const rnd = semente(4321 + it * 91), a = t.ang * RAD, ox = Math.cos(a), oy = Math.sin(a), tx = -Math.sin(a), ty = Math.cos(a);
+    const [h0, h1] = t.h, N = t.fileiras || 14, n = Math.max(3, Math.ceil(t.comp / (t.celula || 1.7)));
+    const corDe = pintorDe(t, n, N, t.comp, rnd), ct = new THREE.Color(), tom = (h, f) => '#' + ct.set(h).multiplyScalar(f).getHexString();
+    const p = (fi, fk, h) => { const x = -t.comp / 2 + t.comp * fi, y = t.prof * fk; return P(t.u + tx * x + ox * y, t.v + ty * x + oy * y, h); };
+    for (let i = 0; i < n; i++) {
+      const i0 = i / n, i1 = (i + 1) / n;
+      for (let k = 0; k < N; k++) { const f0 = k / N, f1 = (k + 1) / N, hk = h0 + (h1 - h0) * (k + 0.5) / N, hk1 = h0 + (h1 - h0) * (k + 1.5) / N;
+        A.quad(p(i0, f0, hk), p(i0, f1, hk), p(i1, f1, hk), p(i1, f0, hk), tom(corDe(i, k), (k % 2 ? 0.9 : 1) * (0.9 + 0.1 * k / N)));
+        if (k < N - 1) A.quad(p(i0, f1, hk), p(i0, f1, hk1), p(i1, f1, hk1), p(i1, f1, hk), CONCRETO_ESC); }
+    }
+    const hf = h1 + (t.parapeito == null ? 1.2 : t.parapeito), cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
+    Pm.quad(p(0, 0, t.base || 0), p(0, 0, h0 + 0.9), p(1, 0, h0 + 0.9), p(1, 0, t.base || 0), t.corMureta || ficha.corMureta || '#d9d7cf');
+    Pm.quad(p(0, 1, 0), p(1, 1, 0), p(1, 1, hf), p(0, 1, hf), cf2);
+    for (const fi of [0, 1]) Pm.quad(p(fi, 0, t.base || 0), p(fi, 1, 0), p(fi, 1, h1), p(fi, 0, h0), t.corLado || CONCRETO_ESC);
+  });
+  /* ---- a cobertura em ANEL inteiro (Maracanã): de um contorno de fora até a boca de dentro, em gomos ---- */
+  for (const cb of ficha.coberturasAnel || []) {
+    const n = cb.n || 60, hf = cb.h, hd = cb.h - (cb.cai || 0), prof = raioDe(0, cb.fora) - raioDe(0, cb.dentro);
+    const pt = (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return P(q[0], q[1], hd + (hf - hd) * f + (dh || 0)); };
+    const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
+    const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
+    faixa(fd, 1 - ff, cb.cor || '#f4f3ee', cb.cor2);
+    if (ff) faixa(1 - ff, 1, cb.bordaFora.cor); if (fd) faixa(0, fd, cb.bordaDentro.cor);
+    for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, 0.2);
+    /* as nervuras entre os gomos */
+    if (cb.nervuras !== false) for (let i = 0; i < n; i++) { const a = 360 * i / n, e = 0.16; R.quad(pt(a - e, fd, 0.12), pt(a - e, 1 - ff, 0.12), pt(a + e, 1 - ff, 0.12), pt(a + e, fd, 0.12), cb.corNervura || '#cfcfc8'); }
+    /* a borda de fora e a de dentro, de pé */
+    for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n;
+      R.quad(pt(a0, 1, 0), pt(a1, 1, 0), pt(a1, 1, -2.2), pt(a0, 1, -2.2), (cb.bordaFora && cb.bordaFora.cor) || cb.cor || '#f4f3ee');
+      R.quad(pt(a0, 0, 0), pt(a1, 0, 0), pt(a1, 0, -1.2), pt(a0, 0, -1.2), (cb.bordaDentro && cb.bordaDentro.cor) || cb.cor || '#f4f3ee'); }
+  }
+  if (!Ro.vazia) cena.add(Ro.malha());
   if (!A.vazia) cena.add(A.malha());
   if (!Pm.vazia) cena.add(Pm.malha());
   if (!R.vazia) coberturas.add(R.malha());
@@ -230,7 +322,30 @@ export function construir(THREE, ficha) {
     const [u, v, h] = r; caixa(0.9, h, 0.9, '#8d9093', u, h / 2, -v);
     const p = caixa(6, 3.4, 0.7, '#d9dcdf', u, h + 1.2, -v); p.rotation.y = Math.atan2(v, -u) + Math.PI / 2;
   }
-  for (const b of ficha.blocos || []) { const m = caixa(b.w, b.h, b.d, b.cor || '#c9c6bb', b.u, (b.y || 0) + b.h / 2, -b.v, b.cobertura ? coberturas : cena); if (b.giro) m.rotation.y = b.giro * RAD; }
+  /* os pórticos de luz (Morumbi): dois pilares e a treliça deitada em cima, rente à beira de fora */
+  for (const pp of ficha.porticos || []) {
+    const r = raioDe(pp.ang, lim.fora) + (pp.dr == null ? 2 : pp.dr), c = ponto(pp.ang, r), a = pp.ang * RAD, tx = -Math.sin(a), ty = Math.cos(a), cr = pp.cor || '#e6e8ea';
+    for (const sg of [-1, 1]) caixa(1.8, pp.h, 1.8, cr, c[0] + tx * sg * pp.larg / 2, pp.h / 2, -(c[1] + ty * sg * pp.larg / 2));
+    for (const [dy, alt, esp] of [[0, 0.9, 3.2], [4.2, 0.9, 3.2]]) { const m = caixa(pp.larg + 6, alt, esp, cr, c[0], pp.h + dy, -c[1]); m.rotation.y = (pp.ang + 90) * RAD; }
+    const nb = Math.round(pp.larg / 4); for (let i = 0; i <= nb; i++) { const x = -pp.larg / 2 + pp.larg * i / nb; caixa(0.5, 4.2, 0.5, cr, c[0] + tx * x, pp.h + 2.1, -(c[1] + ty * x)); }
+    const luz = caixa(pp.larg * 0.86, 3, 0.9, '#f7f9fb', c[0] - Math.cos(a) * 1.4, pp.h + 2.1, -(c[1] - Math.sin(a) * 1.4)); luz.rotation.y = (pp.ang + 90) * RAD;
+  }
+  for (const b of ficha.blocos || []) {
+    const grupo = b.cobertura ? coberturas : cena;
+    const m = caixa(b.w, b.h, b.d, b.cor || '#c9c6bb', b.u, (b.y || 0) + b.h / 2, -b.v, grupo); if (b.giro) m.rotation.y = b.giro * RAD;
+    /* o letreiro pintado em cima (a cobertura da Neo Química Arena) */
+    if (b.texto) {
+      const cv = document.createElement('canvas'); cv.width = 1024; cv.height = Math.max(64, Math.round(1024 * b.d / b.w));
+      const x = cv.getContext('2d'); x.fillStyle = b.corTexto || '#3a3c40'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      const linhas = b.texto.split('|'), px = Math.round(cv.height * (b.textoAltura || 0.42)); x.font = `bold ${px}px "DejaVu Sans", "Arial", sans-serif`;
+      const larg = Math.max(...linhas.map(l => x.measureText(l).width)), cabe = 1024 * (b.textoLargura || 0.6);
+      linhas.forEach((l, i) => { x.save(); x.translate(512 + 1024 * (b.textoU || 0), cv.height * (b.textoMeio || 0.5) + (i - (linhas.length - 1) / 2) * px * 1.05); x.scale(Math.min(1, cabe / larg), 1);
+        x.textAlign = b.textoAlinha || 'center'; x.fillText(l, b.textoAlinha === 'left' ? -larg / 2 : 0, 0); x.restore(); });
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.d), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+      pl.rotation.order = 'YXZ'; pl.rotation.x = -Math.PI / 2; pl.rotation.y = ((b.giro || 0) + (b.textoGiro || 0)) * RAD; pl.position.set(b.u, (b.y || 0) + b.h + 0.08, -b.v); grupo.add(pl);
+    }
+  }
   for (const p of ficha.passarelas || []) { const m = new THREE.Mesh(new THREE.PlaneGeometry(p.w, p.d), mat(p.cor || CONCRETO)); m.rotation.x = -Math.PI / 2; m.position.set(p.u, 0.11, -p.v); m.receiveShadow = true; cena.add(m); }
 
   /* ---- o entorno: prédios, casas, piscina, árvores, ruas ---- */
@@ -259,6 +374,17 @@ export function construir(THREE, ficha) {
       for (let i = 0; i < e.n; i++) { const u = e.u + (rnd() - 0.5) * e.w, v = e.v + (rnd() - 0.5) * e.d, r = 2.4 + rnd() * 2;
         caixa(0.6, 3, 0.6, '#6b5a45', u, 1.5, -v);
         const m = sombra(new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), mat(['#3f8a47', '#4a9a52', '#357a3e'][Math.floor(rnd() * 3)], { flatShading: true }))); m.position.set(u, 3 + r * 0.7, -v); cena.add(m); }
+    } else if (e.tipo === 'cupula') {
+      const c = sombra(new THREE.Mesh(new THREE.CylinderGeometry(e.r, e.r, e.h, 30), mat(e.cor2 || '#c9c6bb'))); c.position.set(e.u, e.h / 2, -e.v); cena.add(c);
+      const t = sombra(new THREE.Mesh(new THREE.ConeGeometry(e.r * 1.05, e.h * 0.5, 30), mat(e.cor || '#efeee8', { flatShading: true }))); t.position.set(e.u, e.h * 1.25, -e.v); cena.add(t);
+      const o = sombra(new THREE.Mesh(new THREE.CylinderGeometry(e.r * 0.16, e.r * 0.16, 1.2, 12), mat('#bfc2c4'))); o.position.set(e.u, e.h * 1.5, -e.v); cena.add(o);
+    } else if (e.tipo === 'grama') {
+      const m = caixa(e.w, 0.12, e.d, e.cor || '#6f9a55', e.u, 0.04, -e.v); if (e.giro) m.rotation.y = e.giro * RAD;
+    } else if (e.tipo === 'estacionamento') {
+      caixa(e.w, 0.1, e.d, e.cor || '#66676a', e.u, 0.03, -e.v);
+      const CARROS = ['#d9d9d6', '#2f3033', '#8f9396', '#b8322e', '#27507f', '#e9e9e6'];
+      for (let v = -e.d / 2 + 5; v < e.d / 2 - 3; v += 13) { caixa(e.w - 4, 0.06, 0.3, '#d8d8d2', e.u, 0.1, -(e.v + v + 3));
+        for (let u = -e.w / 2 + 3; u < e.w / 2 - 2; u += 2.9) for (const sg of [0, 6]) if (rnd() < (e.cheio == null ? 0.45 : e.cheio)) caixa(2, 1.4, 4.3, CARROS[Math.floor(rnd() * CARROS.length)], e.u + u, 0.8, -(e.v + v + sg)); }
     } else if (e.tipo === 'agua') {
       caixa(e.w, 0.1, e.d, '#3f6f86', e.u, 0.03, -e.v);
     }
