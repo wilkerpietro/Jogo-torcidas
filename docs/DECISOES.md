@@ -12104,6 +12104,54 @@ Planejamento."
   nesse teste porque nenhuma visitante estava em guerra aberta com a
   torcida (relação de −55 pra baixo), que é a régua dela.
 
+## Estádios lowpoly: gerador, três de amostra e a página de referências (dono, 14/11/2026)
+
+Pedido do dono, com dez imagens de um projeto de estádios lowpoly feito
+pro Football Manager: "Quero que cada estádio do jogo tenha esse nível de
+detalhismo e as cenas ocorram em um 3d lowpoly inspirado nesse projeto.
+Vamos começar pelos 40 das séries A e B. As cenas continuam ocorrendo
+vistas de cima, mas agora não mais numa imagem e sim nesses estádios
+lowpoly." Combinado na conversa: primeiro uma amostra de três (Castelão,
+Ilha do Retiro e Aflitos) pra aprovar o estilo; e uma página onde o dono
+deposita fotos de cada estádio em vários ângulos, igual o autor daquele
+projeto fez.
+
+- **Como o estádio é feito.** Cada estádio é uma ficha em
+  `ferramentas/estadios/fichas.mjs`: o contorno do campo e das
+  arquibancadas (retângulo de cantos redondos ou oval), cada lance com
+  as suas fileiras, as cores e os mosaicos das cadeiras, o letreiro
+  escrito nas cadeiras, corredores, coberturas com treliça e pilares,
+  refletores, prédios e o entorno (ruas, casas, piscina, quadra,
+  árvores, água). `ferramentas/estadios/estadio_lowpoly.mjs` monta o
+  modelo 3D a partir da ficha.
+- **Como ele entra no jogo.** O jogador não tem placa de vídeo, então o
+  jogo não desenha o estádio 3D ao vivo. `ferramentas/estadios/assar.js`
+  fotografa o modelo de cima (1536×1024, a cobertura por cima com
+  transparência, pra enxergar a torcida embaixo) e grava a imagem em
+  `cenario3d/img/cenas/` e, em `cenario3d/dados/estadios_cenas.js`, o
+  que a cena precisa: por onde se anda (arquibancada, corredor e
+  esplanada sim; campo, muro e prédio não), setores de mandante e
+  visitante, túneis, grades, postos da PM e faixas. Tudo sai da mesma
+  ficha, então imagem e regra de andar nunca ficam desencontradas. Os
+  bonecos, a briga e a polícia seguem iguais, por cima.
+- **Qual estádio abre.** O do clube mandante: Fortaleza e Ceará no
+  Castelão, Sport na Ilha do Retiro, Náutico nos Aflitos. Clube sem
+  estádio modelado segue na foto genérica por capacidade (10, 20 ou 40
+  mil), como antes.
+- **Página de referências.** Um artefato privado lista os 36 estádios
+  dos 40 clubes das Séries A e B, cada um com seis ângulos (satélite,
+  aérea, transmissão de TV, fachada, torcida, extra) e um campo de
+  notas. As fotos depositadas ali são lidas na hora de modelar cada
+  estádio.
+- **Testado**: briga de arquibancada com 60 × 56 nos três estádios
+  (cena certa, 4 PMs, 10 a 16 grades, cordão rompendo, sem erro de
+  página) e um dia de jogo em casa da Leões da TUF até a partida, com o
+  Castelão no cartão do jogo.
+- **Limites conhecidos.** Os três foram modelados de memória e pelas
+  fotos de referência do pedido, sem as fotos do dono: proporções e
+  entorno são aproximados. As artes de jornal e os cartazes de briga
+  ainda usam a foto genérica. Faltam 33 estádios.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

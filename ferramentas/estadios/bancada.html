@@ -1,0 +1,82 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Bancada dos estádios low-poly</title>
+<style>html,body{margin:0;background:#111;color:#ddd;font:14px system-ui}</style>
+<canvas id="cv" width="1536" height="1024"></canvas>
+<script type="module">
+/* A BANCADA: monta o estádio da ficha e o fotografa — de cima, no tamanho da
+   cena do jogo (1536 × 1024), com as coberturas vazadas por cima, e de dois
+   ângulos de conferência (aérea e TV). ferramentas/estadios/assar.js chama. */
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
+import { construir, marcadores, mascara, limites, raioDe } from './estadio_lowpoly.mjs';
+import { FICHAS } from './fichas.mjs';
+const W = 1536, H = 1024, CEL = 8;
+const cv = document.getElementById('cv');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+function montar(ficha) {
+  const scene = new THREE.Scene();
+  const { cena, coberturas } = construir(THREE, ficha);
+  scene.add(cena, coberturas);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8478, 1.15));
+  const sol = new THREE.DirectionalLight(0xfff4e2, 2.1);
+  /* o sol do meio da tarde, vindo do noroeste da ficha */
+  const an = ((ficha.norte == null ? 90 : ficha.norte) + 50) * Math.PI / 180;
+  sol.position.set(Math.cos(an) * 260, 330, -Math.sin(an) * 260);
+  sol.castShadow = true; sol.shadow.mapSize.set(4096, 4096);
+  const c = sol.shadow.camera; c.left = -330; c.right = 330; c.top = 330; c.bottom = -330; c.near = 10; c.far = 1200; sol.shadow.bias = -0.0006; sol.shadow.normalBias = 0.6;
+  scene.add(sol);
+  return { scene, cena, coberturas };
+}
+/* quanto do estádio cabe: a escala em px por metro */
+function escalaDe(ficha) {
+  const f = limites(ficha).fora, folga = ficha.folga == null ? 14 : ficha.folga;
+  let mu = 0, mv = 0;
+  for (let a = 0; a < 360; a += 2) { const r = raioDe(a, f); mu = Math.max(mu, Math.abs(Math.cos(a * Math.PI / 180) * r)); mv = Math.max(mv, Math.abs(Math.sin(a * Math.PI / 180) * r)); }
+  const extra = ficha.fachada && ficha.fachada.pilares ? (ficha.fachada.pilares.pe || 9) + 3 : 0;
+  return Math.min(W / (2 * (mu + extra + folga)), H / (2 * (mv + extra + folga)));
+}
+const tela = (w, h) => { renderer.setSize(w, h, false); };
+function pegar(tipo, q) { return cv.toDataURL(tipo || 'image/png', q); }
+
+window.assar = async function (id, opc) {
+  opc = opc || {};
+  const ficha = FICHAS[id]; if (!ficha) throw new Error('sem ficha: ' + id);
+  const { scene, cena, coberturas } = montar(ficha);
+  const s = escalaDe(ficha);
+  const paraPx = (u, v) => [W / 2 + u * s, H / 2 - v * s], paraMetros = (x, y) => [(x - W / 2) / s, (H / 2 - y) / s];
+  /* ---- de cima ---- */
+  tela(W, H);
+  const cam = new THREE.OrthographicCamera(-W / 2 / s, W / 2 / s, H / 2 / s, -H / 2 / s, 1, 1000);
+  cam.position.set(0, 500, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0);
+  /* 1. tudo menos a cobertura (que ainda faz sombra) */
+  const telhas = []; coberturas.traverse(o => { if (o.isMesh) telhas.push(o); });
+  /* (a cobertura é vazada: de cima ela não aparece nem faz sombra nesta passada) */
+  coberturas.visible = false;
+  renderer.setClearColor(0x000000, 1); renderer.render(scene, cam);
+  coberturas.visible = true;
+  const base = document.createElement('canvas'); base.width = W; base.height = H;
+  const bx = base.getContext('2d'); bx.drawImage(cv, 0, 0);
+  /* 2. só a cobertura, vazada por cima */
+  cena.visible = false; renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, cam); cena.visible = true;
+  bx.globalAlpha = opc.vazado != null ? opc.vazado : ficha.vazado != null ? ficha.vazado : 0.34; bx.drawImage(cv, 0, 0); bx.globalAlpha = 1;
+  const imagem = base.toDataURL('image/webp', 0.86);
+  /* (e a mesma vista com a cobertura fechada, pra conferir com o satélite) */
+  renderer.setClearColor(0x000000, 1); renderer.render(scene, cam); const satelite = pegar('image/jpeg', 0.85);
+  /* ---- as fotos de conferência ---- */
+  tela(960, 540);
+  const persp = new THREE.PerspectiveCamera(38, 960 / 540, 1, 3000);
+  const olhar = (px, py, pz, ax, ay, az) => { persp.position.set(px, py, pz); persp.up.set(0, 1, 0); persp.lookAt(ax, ay, az); renderer.setClearColor(0xbcd7f0, 1); renderer.render(scene, persp); return pegar('image/jpeg', 0.85); };
+  const fora = limites(ficha).fora;
+  const aerea = olhar(-fora.a * 1.9, fora.a * 1.55, fora.b * 2.6, 0, 0, 0);
+  persp.fov = 62; persp.updateProjectionMatrix();
+  const tv = olhar(0, 16, raioDe(270, fora) - 6, 0, 6, -20);
+  /* ---- a máscara e os marcadores ---- */
+  const m = marcadores(ficha, paraPx, s);
+  return { id, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, tv, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
+};
+window.FICHAS = Object.keys(FICHAS);
+window.pronto = true;
+</script>

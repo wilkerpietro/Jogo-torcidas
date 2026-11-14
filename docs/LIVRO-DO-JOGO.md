@@ -3592,6 +3592,13 @@ O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráfic
 
 A cena jogada entrega ao registro da briga o que a PM fez (`dados.pm`: degrau, bombas, pedido de reforço, cordão rompido, choque, reforço, quantos PMs, linha no meio, apartou). A página usa só isso: uma frase no fim do olho pro fato mais forte, mais uma se houve bomba; a briga apartada ganha chapéu "A polícia apartou" e manchete sem vencedor declarado ("levava a melhor quando a PM fez linha no meio"). Briga simulada não tem esses dados e não fala de polícia.
 
+### 4.13 Estádios lowpoly (14/11/2026)
+
+- **Ficha → modelo → foto de cima.** `ferramentas/estadios/fichas.mjs` descreve cada estádio; `estadio_lowpoly.mjs` monta o modelo (campo, lances de arquibancada com cor por cadeira, mosaico, letreiro, coberturas, refletores, entorno); `assar.js` (com `bancada.html` e o servidor local na porta 8799) grava a imagem de cima em `cenario3d/img/cenas/estadio_<nome>.webp` e os dados em `cenario3d/dados/estadios_cenas.js`. Rodar: `node ferramentas/estadios/assar.js` (`SO=estadio-castelao` assa um só; `CONF=pasta` grava as vistas de conferência: satélite, aérea e TV).
+- **No jogo**: `TO.dados.estadiosLowPoly[id] = {nome, clubes, setores, foto:{imagem, mascara}, cena:{faixas, spawns, entradas, pmPostos, grades}}`. `cenaDoEstadio` procura o estádio do clube mandante; sem estádio modelado, vale a regra antiga por capacidade.
+- **Medidas da ficha**: metros; `u` ao longo do campo (direita da imagem), `v` atravessado (pra cima); ângulos em graus, anti-horário a partir de `+u` (0 = atrás do gol da direita, 90 = lateral de cima, 180 = gol da esquerda, 270 = lateral de baixo). `jogo:{mandante1..3, visitante, tunelMandante, tunelVisitante}` são faixas de ângulo.
+- **Modelados**: Castelão (Fortaleza, Ceará), Ilha do Retiro (Sport), Aflitos (Náutico). Fotos de referência dos outros: artefato "Referências dos Estádios" (coleção `estadios`, um documento por estádio).
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:
