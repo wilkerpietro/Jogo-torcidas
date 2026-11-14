@@ -526,3 +526,5 @@ import alfredoJaconi from './fichas/estadio-alfredo-jaconi.mjs';
 FICHAS[alfredoJaconi.id] = alfredoJaconi;
 import centenario from './fichas/estadio-centenario.mjs';
 FICHAS[centenario.id] = centenario;
+import colossoDaLagoa from './fichas/estadio-colosso-da-lagoa.mjs';
+FICHAS[colossoDaLagoa.id] = colossoDaLagoa;

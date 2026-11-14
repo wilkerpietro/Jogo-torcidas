@@ -12720,6 +12720,37 @@ também".
   (Ypiranga), Bento Freitas (Brasil de Pelotas), Boca do Lobo (Pelotas)
   e Passo d'Areia (São José).
 
+## Colosso da Lagoa lowpoly (Ypiranga/RS) (dono, 14/11/2026)
+
+- O dono viu o Centenário e mandou seguir: "Vamos pro próximo". Feito
+  sem agente, com as 9 fotos que já estavam baixadas (satélite, drone de
+  cima, aérea, fachada e de dentro), fora do repositório.
+- **Colosso da Lagoa** (o sul à direita, o leste em cima, a social coberta
+  embaixo, como na foto de drone do clube, com o letreiro de pé):
+  - um oval de degrau de cimento pintado em volta da pista de atletismo
+    de seis raias;
+  - em cima (leste), a reta verde com SÓCIO CANARINHO escrito duas vezes
+    em amarelo; atrás, as árvores e os campos de treino;
+  - as quatro curvas amarelas com YFC em verde; as pontas em verde,
+    amarelo, verde, com a casinha branca no meio da ponta sul;
+  - embaixo (oeste), a social coberta de dois lances: o de baixo com o
+    degrau amarelo nas pontas e três blocos de cadeira branca no meio (o
+    do meio em fundo amarelo); o de cima, debaixo do telhado de zinco
+    manchado de ferrugem, em cinco blocos verdes e amarelos alternados;
+    atrás, a fachada, a bola gigante e a avenida.
+- **Letreiro legível**: o degrau dos trechos com letra é desenhado mais
+  fino (`passoFileira: 0.45`, `celula: 0.4`), senão SÓCIO CANARINHO saía
+  em blocos. Vale como receita pros próximos letreiros compridos.
+- **Setores**: não achei fonte pra nenhum dos dois. Escolha minha: a
+  Mancha do Ypiranga na reta do letreiro, a visitante na curva nordeste
+  (em cima, à esquerda). O dono corrige se for outro lugar.
+- **Satélite**: o servidor de sempre só entrega Erechim em 512 px; medi
+  nessa imagem (0,62 m por pixel) e usei as outras só pra detalhe.
+- **Testado**: briga 60 × 56 jogando de Mancha do Ypiranga; chão um só,
+  nenhum marcador fora; sem erro de página.
+- **Fila do Rio Grande do Sul** (aguardando o dono): Bento Freitas
+  (Brasil de Pelotas), Boca do Lobo (Pelotas) e Passo d'Areia (São José).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
