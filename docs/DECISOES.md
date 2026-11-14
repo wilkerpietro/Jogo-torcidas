@@ -13022,6 +13022,40 @@ também".
 - **Fila de Santa Catarina** (aguardando o dono): Orlando Scarpelli
   (Figueirense) e Arena Joinville.
 
+## Orlando Scarpelli lowpoly (Figueirense) (dono, 14/11/2026)
+
+- O dono pediu o Orlando Scarpelli depois da Ressacada. Feito sem
+  agente. Fotos de referência (satélite de alta resolução, aéreas e de
+  dentro) fora do repositório. Não achei mapa de setores do clube.
+- **Medida**: as linhas do gramado quase não aparecem no satélite; o
+  meio do campo saiu do ponto médio entre os dois gols (106 m de um ao
+  outro, o que confere).
+- **Orlando Scarpelli** (o norte à direita, o oeste em cima, pro FFC
+  sair de pé): um oval fechado de cadeira verde com as escadas
+  amarelas, de fundura diferente em cada lado:
+  - em cima (oeste), a coberta: o lance de baixo descoberto, com FFC em
+    cadeira branca, e o de cima debaixo do telhado escuro e remendado;
+    atrás, o prédio e as duas torres de refletor; na frente, no chão, a
+    faixa preta FIGUEIRENSE (lida de quem está na coberta) e as tendas;
+  - à direita (norte), a arquibancada mais funda (32 m), atrás do gol;
+  - embaixo (leste), a reta alta e descoberta, com o prédio do clube, o
+    estacionamento e a avenida em diagonal atrás;
+  - à esquerda (sul), a curva baixa do anel;
+  - o canto noroeste mais fundo, o nordeste raso (a avenida espreme).
+- **Refletores do leste**: saem do meio da arquibancada. É assim de
+  verdade (as fotos mostram os dois mastros furando a reta do leste),
+  então ficaram vindo do chão. A regra do Heriberto Hülse (nascer do
+  telhado) vale onde o refletor fica em cima de cobertura.
+- **Frestas**: a coberta e a reta do leste têm contorno próprio (reto);
+  entre elas e o anel oval sobrava uma cunha vazia que partia o chão em
+  dois. As pontas do anel agora entram um pouco por baixo delas.
+- **Setores**: sem fonte. Escolha minha: a Gaviões Alvinegros na
+  arquibancada funda do norte, a visitante na curva sul.
+- **Testado**: briga 60 × 56 jogando de Gaviões Alvinegros; chão um só,
+  nenhum marcador fora; sem erro de página.
+- **Fila de Santa Catarina** (aguardando o dono): Arena Joinville, a
+  última.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

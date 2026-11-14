@@ -41,8 +41,8 @@
    detalhadas (detalhe3d.js) e juntada por material.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import * as K from './detalhe3d.js?v=5779505f8f';
-import { METRO } from './construtor3d.js?v=5779505f8f';
+import * as K from './detalhe3d.js?v=871da2ae3a';
+import { METRO } from './construtor3d.js?v=871da2ae3a';
 
 const M = METRO;
 export const TABULEIRO = { W: 1536, H: 1024, CEL: 8 };

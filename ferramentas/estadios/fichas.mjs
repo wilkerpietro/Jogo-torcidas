@@ -540,3 +540,5 @@ import arenaConda from './fichas/estadio-arena-conda.mjs';
 FICHAS[arenaConda.id] = arenaConda;
 import ressacada from './fichas/estadio-da-ressacada.mjs';
 FICHAS[ressacada.id] = ressacada;
+import orlandoScarpelli from './fichas/estadio-orlando-scarpelli.mjs';
+FICHAS[orlandoScarpelli.id] = orlandoScarpelli;
