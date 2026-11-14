@@ -12822,6 +12822,41 @@ também".
 - **Fila do Rio Grande do Sul** (aguardando o dono): Passo d'Areia (São
   José), o último.
 
+## Passo d'Areia lowpoly (São José) (dono, 14/11/2026)
+
+- O dono viu a Boca do Lobo e mandou: "Pode fazer o Passo d'Areia". Feito
+  sem agente, com as fotos que já estavam baixadas (satélite de alta
+  resolução, vistas do Google Earth e fotos de dentro), fora do
+  repositório. Fecha a fila do Rio Grande do Sul.
+- **Correção do dono no meio do trabalho**: eu tinha posto arquibancada
+  nos quatro lados (o satélite só mostra quatro telhados). Ele mandou a
+  foto do fundo do telhado largo: "O gol oeste do Passo d'Areia não tem
+  arquibancada". Ali é o prédio do clube, com o paredão claro das placas
+  e as portas escuras no térreo, logo atrás do gol. (No satélite esse
+  fundo é o do norte; fica à direita no quadro.)
+- **Passo d'Areia** (o norte à direita, o oeste em cima):
+  - estádio pequeno e fechado, com as arquibancadas a 3 m das linhas;
+  - em cima (oeste), a social: cadeiras azul-marinho na frente e azuis
+    atrás, as fileiras da frente descobertas, a laje de concreto por
+    cima das de trás e das cabines, as torres de refletor atrás;
+  - embaixo (leste), a arquibancada comprida debaixo do telhado claro
+    de zinco, com as cadeiras brancas na frente; colada, a avenida de
+    duas pistas;
+  - à esquerda (sul), o fundo menor, coberto, com o estacionamento atrás;
+  - à direita (norte), sem arquibancada: o prédio do clube com o telhado
+    largo e o paredão das placas;
+  - escadas amarelas; as quinas são pisos de concreto.
+- **Lição**: telhado no satélite não quer dizer arquibancada. Onde o
+  telhado é muito mais fundo que os outros, conferir com foto de dentro
+  antes de pôr cadeira.
+- **Setores**: sem fonte. Escolha minha: Os Farrapos na arquibancada do
+  leste, a visitante no fundo do sul.
+- **Testado**: briga 60 × 56 jogando de Os Farrapos; chão um só, nenhum
+  marcador fora; sem erro de página.
+- **Rio Grande do Sul fechado**: Arena do Grêmio, Beira-Rio, Alfredo
+  Jaconi, Centenário, Colosso da Lagoa, Bento Freitas, Boca do Lobo e
+  Passo d'Areia. O próximo estado espera o dono dizer qual é.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
