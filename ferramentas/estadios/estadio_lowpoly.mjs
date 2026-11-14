@@ -95,9 +95,11 @@ function medidasDe(ficha, anel, t, arco, prof) {
     else { const d = Math.max(8, Math.round((vs.dist || 30) / larguraCel)); for (let c = d / 2; c < n - margem; c += d) if (c > margem) vomCentros.push(c); }
   }
   const naBoca = i => vomCentros.some(c => Math.abs(i + 0.5 - c) <= vomMeia);
+  /* a boca pode abrir no MEIO do lance (`vomitorios.f`, fração da fundura; 0 = na frente, dando no corredor) */
+  const vomK0 = Math.round(Math.max(0, Math.min(0.8, (vs && vs.f) || 0)) * N);
   return { n, N, Nold: t.fileiras || anel.fileiras || 14, prof, arco, frente, fc, passo, larguraCel, corr, esc, vomCentros, vomMeia, vomRows,
     escada: i => (!!t.escadaNaBorda && i < esc) || (!!corr && i > 0 && (i % corr) < esc),
-    noVomitorio: (i, k) => k < vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomRows && naBoca(i) };
+    vomK0, noVomitorio: (i, k) => k >= vomK0 && k < vomK0 + vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomK0 + vomRows && naBoca(i) };
 }
 /* as medidas de um trecho de anel, mais onde cai cada coluna (`pos`, `angs`, `angEm`) */
 export function colunasDe(ficha, anel, t) {
@@ -266,7 +268,10 @@ export function construir(THREE, ficha) {
       for (let k = 0; k < N; k++) {
         const f0 = fc + (1 - fc) * k / N, f1 = fc + (1 - fc) * (k + 1) / N, df = f1 - f0, sobe = (h1 - h0) / N, hk = h0 + sobe * (k + 0.5), hk1 = hk + sobe;
         if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, '#232427'); continue; }
-        if (escada) { const ce = t.corEscada || ficha.corEscada; q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, ce || '#d9d7ce'); q4(i, i + 1, f0 + df / 2, f1, hk, ce ? tomL(ce, 0.78) : '#a9a79e'); }
+        /* A ESCADA É DE CONCRETO LISO (dono, 14/11/2026: "refaça as escadas entre os blocos de arquibancada pra ficarem
+           condizente com a realidade"): a faixa clara entre dois blocos de cadeiras, o degrau só um tom abaixo — antes
+           saía tracejada de branco e cinza. Com `corEscada` (a escada pintada), a cor cheia e o degrau um tom abaixo. */
+        if (escada) { const ce = t.corEscada || ficha.corEscada || '#c9c7be'; q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, ce); q4(i, i + 1, f0 + df / 2, f1, hk, tomL(ce, 0.92)); }
         else {
           const degrau = tomL(t.semCadeiras ? corDe(i, k) : CONCRETO, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
           q4(i, i + 1, f0, f1, hk, degrau);
@@ -385,6 +390,26 @@ export function construir(THREE, ficha) {
     for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n;
       R.quad(pt(a0, 1, 0), pt(a1, 1, 0), pt(a1, 1, -2.2), pt(a0, 1, -2.2), (cb.bordaFora && cb.bordaFora.cor) || cb.cor || '#f4f3ee');
       R.quad(pt(a0, 0, 0), pt(a1, 0, 0), pt(a1, 0, -1.2), pt(a0, 0, -1.2), (cb.bordaDentro && cb.bordaDentro.cor) || cb.cor || '#f4f3ee'); }
+  }
+  /* ---- A COBERTURA DE FOLHAS (o Beira-Rio; dono, 14/11/2026: "observe a cobertura pra ficar mais condizente"): cada
+     folha é uma membrana abaulada que nasce numa ponta no chão, do lado de fora, alarga subindo pela fachada, encosta
+     nas vizinhas no alto e vai até o anel de dentro. `perfil`: [[f, altura, largura], ...] de dentro (f = 0) pra fora
+     (f = 1 na beira da arquibancada; mais que 1, a perna descendo); a largura vai de 1 (encostada) a 0 (a ponta).
+     A parte em cima das cadeiras sai vazada na foto de cima; a perna, do lado de fora, fica inteira. ---- */
+  for (const fo of ficha.folhas || []) {
+    const n = fo.n || 60, perfil = fo.perfil, bojo = fo.bojo == null ? 3 : fo.bojo, fen = fo.fenda == null ? 0.05 : fo.fenda, passo = 360 / n, T = [-1, -0.6, -0.2, 0.2, 0.6, 1];
+    const pt = (ang, f, h) => { const r0 = raioDe(ang, fo.dentro), r1 = raioDe(ang, fo.fora), q = ponto(ang, r0 + (r1 - r0) * f); return P(q[0], q[1], h); };
+    for (let i = 0; i < n; i++) {
+      const ac = passo * (i + 0.5), c = i % 2 ? (fo.cor2 || fo.cor || '#f6f6f2') : (fo.cor || '#f6f6f2');
+      const est = perfil.map(([f, h, w]) => T.map(t => pt(ac + t * (passo / 2) * w * (1 - fen), f, h + bojo * Math.max(0.25, w) * (1 - t * t))));
+      for (let k = 0; k < est.length - 1; k++) { const Mf = perfil[k][0] >= 1 ? Ro : R;
+        for (let j = 0; j < T.length - 1; j++) Mf.quad(est[k][j], est[k + 1][j], est[k + 1][j + 1], est[k][j + 1], c); }
+    }
+    /* o anel de dentro (a treliça branca que segura as folhas) */
+    const hd = perfil[0][1] + bojo, la = fo.anel == null ? 0.07 : fo.anel;
+    for (let i = 0; i < n * 2; i++) { const a0 = 180 * i / n, a1 = 180 * (i + 1) / n;
+      R.quad(pt(a0, 0.01, hd), pt(a1, 0.01, hd), pt(a1, -la, hd), pt(a0, -la, hd), i % 2 ? '#e3e6e8' : '#d3d7da');
+      R.quad(pt(a0, -la, hd), pt(a1, -la, hd), pt(a1, -la, hd - 2.4), pt(a0, -la, hd - 2.4), '#c5c9cc'); }
   }
   if (!Ro.vazia) cena.add(Ro.malha());
   if (!A.vazia) cena.add(A.malha());
@@ -512,7 +537,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
     const anel = ficha.aneis[0], t = trechoEm(anel, ang); if (!t || t.tipo) return null;
     const G = colunasDe(ficha, anel, t); if (!G.vomCentros.length) return null;
     let melhor = null; for (const c of G.vomCentros) { const a = G.angEm(c), d = Math.abs(((a - ang + 540) % 360) - 180); if (!melhor || d < melhor.d) melhor = { a, d }; }
-    const q = G.pos(melhor.a, G.fc + (1 - G.fc) * (G.vomRows * 0.45) / G.N), p = paraPx(q[0], q[1]);
+    const q = G.pos(melhor.a, G.fc + (1 - G.fc) * (G.vomK0 + G.vomRows * 0.45) / G.N), p = paraPx(q[0], q[1]);
     return { x: Math.round(p[0]), y: Math.round(p[1]), ang: melhor.a };
   };
   const tunel = (id, rot, lado, ang) => { const v = vomitorioEm(ang);

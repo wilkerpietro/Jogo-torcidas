@@ -409,24 +409,24 @@ export const FICHAS = {
      do norte, o estacionamento e o ginásio. Torcida adversária no lance de
      cima da quina noroeste (em cima, à direita); a nossa atrás do gol sul. */
   'estadio-beira-rio': {
-    id: 'estadio-beira-rio', nome: 'Beira-Rio', clubes: ['internacional'], norte: 0, vazado: 0.3, folga: 30,
+    id: 'estadio-beira-rio', nome: 'Beira-Rio', clubes: ['internacional'], norte: 0, vazado: 0.34, folga: 34,
     chao: { cor: '#8c8b86', esplanada: { a: 170, b: 144, forma: 'elipse' }, corEsplanada: '#a9a59b' },
     campo: { corMargem: '#4a9a56' },
     corMureta: '#e9e6e0',
     aneis: [
+      /* (as escadas de concreto entre os blocos, e a boca de acesso no meio do lance em cada divisa, como nas plantas) */
       { dentro: E(78, 51), fora: E(96, 69), h: [1.2, 9], fileiras: 20,
-        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 15 }] },
+        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11, vomitorios: { f: 0.5, cada: 1, larg: 3.2, fundo: 3 } }] },
       /* o anel dos camarotes */
       { dentro: E(96, 69), fora: E(100, 73), h: [10.5, 12], fileiras: 3, corredorFrente: 0, vomitorios: false, passoFileira: 2,
         trechos: [{ de: 0, ate: 360, cor: '#4a2428', cor2: '#e9e6e0', padrao: 'blocos', bloco: 2, semCadeiras: true, corredor: 0 }] },
       { dentro: E(100, 73), fora: E(124, 98), h: [14, 30], fileiras: 26, corredorFrente: 2,
-        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 17, parapeito: 2 }] }
+        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 12, parapeito: 2, vomitorios: { f: 0.3, cada: 1, larg: 3.2, fundo: 3 } }] }
     ],
-    /* as folhas: de fora (baixas) até o anel de dentro (alto) */
-    coberturasAnel: [{ fora: E(141, 115), dentro: E(93, 66), h: 33, cai: -12, n: 65, bojo: 3.2, fenda: 0.12, cor: '#f6f6f2', cor2: '#f0f0ec', nervuras: false,
-      bordaDentro: { larg: 2.6, cor: '#c9cdd0' } }],
-    /* as pernas das folhas na fachada */
-    fachada: { cor: '#6b2a2e', pilares: { n: 65, h: 33, pe: 20, topo: 16, esp: 5.4, fundo: 1.2, cor: '#f4f4f0', contorno: E(124, 98) } },
+    /* as 65 folhas: a ponta no chão, a perna alargando pela fachada, o ombro, o alto e o anel de dentro */
+    folhas: [{ fora: E(128, 102), dentro: E(93, 66), n: 65, bojo: 3, fenda: 0.05, cor: '#f7f7f3', cor2: '#f1f1ed',
+      perfil: [[0, 38, 1], [0.4, 42.5, 1], [0.8, 41.5, 1], [1, 38, 1], [1.14, 31, 0.94], [1.26, 20, 0.7], [1.35, 9, 0.4], [1.41, 0.6, 0.07]] }],
+    fachada: { cor: '#8d8780' },
     blocos: [
       { u: 96, v: 0, w: 1.8, d: 24, h: 8, y: 33, cor: '#17181b' }, { u: -96, v: 0, w: 1.8, d: 24, h: 8, y: 33, cor: '#17181b' },
       /* os bancos de reserva do lado oeste */

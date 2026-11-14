@@ -12526,6 +12526,30 @@ O dono mandou duas plantas de setores e quatro fotos: "Beira Rio".
 - **Escolha minha**: o dono não disse onde fica cada torcida do Inter;
   pus a maior atrás do gol sul.
 
+## Beira-Rio: a cobertura de folhas de verdade e as escadas de concreto (dono, 14/11/2026)
+
+O dono, com mais uma foto aérea do Beira-Rio: "Observe a cobertura pra
+ficar mais condizente e refaça as escadas entre os blocos de arquibancada
+pra ficarem condizente com a realidade".
+
+- **A cobertura**: as folhas eram chapas chatas, separadas, com uma perna
+  reta. Agora cada uma das 65 é uma membrana abaulada que nasce numa ponta
+  no chão, alarga subindo pela fachada, encosta nas vizinhas no alto e vai
+  até o anel branco de dentro (`folhas`, com um `perfil` de altura e
+  largura). Na vista de cima do jogo, a parte em cima das cadeiras sai
+  transparente e as pernas, do lado de fora, inteiras.
+- **As escadas** (vale pra todos os estádios): eram tracejadas de branco e
+  cinza; agora são a faixa de concreto liso entre dois blocos de cadeiras,
+  com o degrau só um tom abaixo. Onde a escada é pintada (a amarela da
+  Ilha do Retiro e da Geral do Grêmio), a cor cheia.
+- **As bocas de acesso no Beira-Rio**: no meio do lance, em cada divisa de
+  bloco, como nas plantas (`vomitorios.f`); antes ficavam só na frente, em
+  escadas alternadas. Os blocos ficaram mais estreitos (escada a cada 11 e
+  12 m). Nos outros estádios a boca segue na frente, dando no corredor.
+- Os nove estádios foram assados de novo por causa da escada.
+- **Testado**: nos nove, bondes, túneis e PM em chão andável e um chão só;
+  briga no Beira-Rio jogando de Camisa 12 do Inter, sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
