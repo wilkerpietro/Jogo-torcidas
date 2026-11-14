@@ -12553,6 +12553,39 @@ pra ficarem condizente com a realidade".
 - **Testado**: nos nove, bondes, túneis e PM em chão andável e um chão só;
   briga no Beira-Rio jogando de Camisa 12 do Inter, sem erro de página.
 
+## Arena Romeirão lowpoly pelas fotos do dono (dono, 14/11/2026)
+
+O dono mandou cinco fotos: "Estádio Romeirão. Atente-se aos detalhes pra
+fazer fielmente."
+
+- **A planta** (os gols à esquerda e à direita): retangular, colada no
+  gramado, de um lance só de cadeira verde-clara, com as escadas brancas e
+  as bocas de acesso no meio da arquibancada.
+- **As duas laterais** (em cima e embaixo) têm a cobertura de oito
+  abóbadas de lona branca: cada módulo nasce baixo atrás da arquibancada,
+  sobe em arco e avança sobre as fileiras de trás até a treliça da frente,
+  com a fileira de refletores. Atrás, o prédio branco da circulação e os
+  pilares.
+- **Atrás do gol da direita**: a arquibancada descoberta, de ponta a
+  ponta, com três bocas e o prédio baixo de laje atrás.
+- **Atrás do gol da esquerda**: não tem arquibancada. É o prédio branco de
+  dois andares, com o caixote amarelo numa ponta e o placar. As duas
+  laterais dobram a quina ali em curva e acabam numa ponta redonda de muro
+  branco, com a torre branca de escada do lado.
+- Em volta: o estacionamento de um lado e o bairro de casas de telha.
+- **Clube**: o Icasa (o único do jogo que manda no Romeirão). A Fúria
+  Icasiana numa lateral coberta; a visitante atrás do gol da direita.
+- **O gerador ganhou**: `abobadas` (a fileira de cascas ao longo de uma
+  arquibancada reta) e a passagem do anel reto seguindo a mesma régua das
+  vizinhas.
+- **Testado**: briga 60 × 56 jogando de Fúria Icasiana; bondes, túneis e
+  PM em chão andável; um chão só; sem erro de página.
+- **Onde eu posso ter errado**: as fotos são tiradas de ângulos que
+  enganam sobre qual lado é o comprido. Li que as abóbadas ficam nas
+  laterais e a arquibancada descoberta atrás de um gol (pelas linhas do
+  campo e pelo gol que aparecem em três das fotos). Se for o contrário, é
+  trocar os lados na ficha. Os setores das torcidas foram escolha minha.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

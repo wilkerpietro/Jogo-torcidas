@@ -296,7 +296,9 @@ export function construir(THREE, ficha) {
         const n = Math.max(2, Math.ceil(vao / 3));
         for (let i = 0; i < n; i++) {
           const a0 = t.de + vao * i / n, a1 = t.de + vao * (i + 1) / n;
-          const p = (ang, c, h) => { const q = ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
+          /* (no anel reto a passagem segue a mesma régua das vizinhas — pelo lado, não pelo raio — pra emendar nelas sem sobra) */
+          const retoP = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+          const p = (ang, c, h) => { const q = retoP ? pontoPor(paramDe(ang, cd), c) : ponto(ang, raioDe(ang, c)); return P(q[0], q[1], h == null ? (t.alt || 0.12) : h); };
           A.quad(p(a0, cd), p(a0, cf), p(a1, cf), p(a1, cd), t.cor || CONCRETO);
           /* (a laje alta — a galeria de cima — ganha a parede de fora) */
           if (t.alt > 1) Pm.quad(p(a0, cf, 0), p(a1, cf, 0), p(a1, cf), p(a0, cf), t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb');
@@ -410,6 +412,30 @@ export function construir(THREE, ficha) {
     for (let i = 0; i < n * 2; i++) { const a0 = 180 * i / n, a1 = 180 * (i + 1) / n;
       R.quad(pt(a0, 0.01, hd), pt(a1, 0.01, hd), pt(a1, -la, hd), pt(a0, -la, hd), i % 2 ? '#e3e6e8' : '#d3d7da');
       R.quad(pt(a0, -la, hd), pt(a1, -la, hd), pt(a1, -la, hd - 2.4), pt(a0, -la, hd - 2.4), '#c5c9cc'); }
+  }
+  /* ---- A COBERTURA DE ABÓBADAS (o Romeirão; dono, 14/11/2026): uma fileira de módulos de lona branca ao longo de
+     uma arquibancada reta. Cada módulo é uma casca abaulada que nasce baixa atrás da arquibancada, sobe em arco e
+     avança por cima das últimas fileiras até a treliça da frente, onde ficam os refletores. `u`, `comp`: o meio e o
+     comprimento da fileira; `vFrente`, `vFundo`: de onde a onde vai (o sinal diz o lado); `perfil`: [[f, altura]],
+     da frente (f = 0) ao pé de trás (f = 1). ---- */
+  for (const ab of ficha.abobadas || []) {
+    const n = ab.n || 8, mod = ab.comp / n, bojo = ab.bojo == null ? 2.6 : ab.bojo, T = [-1, -0.6, -0.2, 0.2, 0.6, 1], perfil = ab.perfil;
+    const pv = f => ab.vFrente + (ab.vFundo - ab.vFrente) * f;
+    for (let i = 0; i < n; i++) {
+      const uc = ab.u - ab.comp / 2 + mod * (i + 0.5), c = i % 2 ? (ab.cor2 || ab.cor || '#f6f6f2') : (ab.cor || '#f6f6f2');
+      const est = perfil.map(([f, h]) => T.map(t => P(uc + t * mod * 0.485, pv(f), h + bojo * (1 - t * t))));
+      for (let k = 0; k < est.length - 1; k++) for (let j = 0; j < T.length - 1; j++) R.quad(est[k][j], est[k + 1][j], est[k + 1][j + 1], est[k][j + 1], c);
+      /* o arco da frente de cada módulo (a testeira) e o tímpano de treliça de trás */
+      for (let j = 0; j < T.length - 1; j++) { const a0 = est[0][j], a1 = est[0][j + 1]; R.quad(a0, a1, [a1[0], perfil[0][1] - 0.6, a1[2]], [a0[0], perfil[0][1] - 0.6, a0[2]], '#dfe2e4'); }
+      const ul = est[est.length - 1]; for (let j = 0; j < T.length - 1; j++) R.quad(ul[j], ul[j + 1], [ul[j + 1][0], 0.3, ul[j + 1][2]], [ul[j][0], 0.3, ul[j][2]], '#aab1b6');
+    }
+    /* a treliça da frente, com a fileira de refletores, e os pilares brancos de trás de cada divisa */
+    const hf = perfil[0][1], vf = ab.vFrente, sg = ab.vFundo > ab.vFrente ? 1 : -1;
+    caixa(ab.comp, 0.5, 0.5, '#8d949a', ab.u, hf - 0.4, -vf, coberturas); caixa(ab.comp, 0.5, 0.5, '#8d949a', ab.u, hf - 2.8, -(vf + sg * 1.6), coberturas);
+    for (let k = 0; k <= n * 3; k++) caixa(0.35, 2.6, 0.35, '#8d949a', ab.u - ab.comp / 2 + ab.comp * k / (n * 3), hf - 1.6, -(vf + sg * 0.8), coberturas);
+    for (let k = 0; k < n * 2; k++) caixa(2.2, 1.1, 0.7, '#22262a', ab.u - ab.comp / 2 + ab.comp * (k + 0.5) / (n * 2), hf - 3.2, -(vf - sg * 0.2), coberturas);
+    for (let k = 0; k <= n; k++) { const f = ab.pilarEm == null ? 0.62 : ab.pilarEm, hp = perfil.reduce((q, [pf, ph]) => Math.abs(pf - f) < Math.abs(q[0] - f) ? [pf, ph] : q, perfil[0])[1];
+      caixa(0.8, hp, 0.8, '#f1f1ed', ab.u - ab.comp / 2 + mod * k, hp / 2, -pv(f)); }
   }
   if (!Ro.vazia) cena.add(Ro.malha());
   if (!A.vazia) cena.add(A.malha());

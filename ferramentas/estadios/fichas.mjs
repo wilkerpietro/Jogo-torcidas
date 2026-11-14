@@ -7,6 +7,9 @@ const E = (a, b) => ({ a, b, forma: 'elipse' });
 const MAR_AM = '#efc12f', MAR_AZ = '#4a8fd0', MAR_AZ2 = '#3b7cc0', MAR_BG = '#e7e2d0';
 const MOR_V = '#c9373b', MOR_V2 = '#b32d31';
 const ILHA_V = '#c93a43';
+const ROM_V = '#c3cf9c', ROM_V2 = '#b2c088';
+/* o arco da abóbada do Romeirão, da treliça da frente ao pé de trás */
+const ROM_ARCO = [[0, 20.5], [0.18, 23], [0.4, 23.6], [0.6, 21.5], [0.78, 17], [0.9, 11], [1, 4.5]];
 const BEI_V = '#c8343a', BEI_V2 = '#b22c33';
 const GRE_A = '#5aa7d8', GRE_A2 = '#4a93c8';
 /* o contorno de fora do andar de cima do Arruda, a `d` metros do de dentro */
@@ -444,5 +447,75 @@ export const FICHAS = {
     ],
     jogo: { mandante1: [160, 200], mandante2: [250, 290], mandante3: [70, 110], visitante: [8, 46], tunelMandante: 180, tunelVisitante: 27, folgaPM: 5,
             fracao: { mandante1: 0.2, visitante1: 0.72, visitante2: 0.72, visitante3: 0.72 } }
+  },
+
+  /* ARENA ROMEIRÃO (Icasa, Juazeiro do Norte) — pelas cinco fotos do dono
+     (14/11/2026). Retangular, colada no gramado, de um lance só de cadeira
+     verde-clara, as escadas brancas e três bocas de acesso no meio de cada
+     arquibancada (as caixas brancas). No quadro: os gols à esquerda e à
+     direita.
+     · EM CIMA e EMBAIXO, as duas arquibancadas das laterais, cada uma com a
+       cobertura de oito abóbadas de lona branca: nascem baixas atrás da
+       arquibancada, sobem em arco e avançam sobre as fileiras de trás até a
+       treliça com os refletores. Atrás, o prédio branco da circulação.
+     · À DIREITA, atrás do gol, a arquibancada descoberta, de ponta a ponta,
+       com o prédio baixo de laje atrás.
+     · À ESQUERDA, atrás do outro gol, não tem arquibancada: é o prédio
+       branco de dois andares, com o caixote amarelo numa ponta e o placar
+       na beira do campo. As duas arquibancadas das laterais dobram a quina
+       ali em curva e acabam numa ponta redonda de muro branco, com a torre
+       branca de escada do lado.
+     Em volta, o estacionamento de um lado e o bairro de casas de telha. */
+  'estadio-romeirao': {
+    id: 'estadio-romeirao', nome: 'Arena Romeirão', clubes: ['icasa'], norte: 90, vazado: 0.42, folga: 26, corEscada: '#ecebe6',
+    chao: { cor: '#8b8a85' },
+    campo: { corMargem: '#2f6f4a' },
+    corMureta: '#f2f2ee', corAlambrado: '#f4f4f0',
+    aneis: [
+      { dentro: { a: 58.5, b: 39.5, r: 6 }, fora: { a: 80.5, b: 61.5, r: 28 }, reto: true, h: [1.2, 13], fileiras: 24,
+        trechos: [
+          /* atrás do gol da direita: descoberta, sete blocos, três bocas */
+          { de: -29.8, ate: 29.8, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 9.9, vomitorios: { f: 0.42, cada: 2, larg: 4.4, fundo: 4 } },
+          { de: 29.8, ate: 36.9, tipo: 'passagem', cor: '#d9d7cf' },
+          /* a lateral de cima (coberta) */
+          { de: 36.9, ate: 143.1, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11.6, vomitorios: { f: 0.42, cada: 3, larg: 4.4, fundo: 4 } },
+          /* a quina em curva e a ponta redonda, do lado do prédio */
+          { de: 143.1, ate: 157, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
+          { de: 157, ate: 203, tipo: 'vazio' },
+          { de: 203, ate: 216.9, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
+          /* a lateral de baixo (coberta) */
+          { de: 216.9, ate: 323.1, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11.6, vomitorios: { f: 0.42, cada: 3, larg: 4.4, fundo: 4 } },
+          { de: 323.1, ate: 330.2, tipo: 'passagem', cor: '#d9d7cf' }
+        ] }
+    ],
+    abobadas: [
+      { u: 2, comp: 104, vFrente: 49, vFundo: 73, n: 8, bojo: 2.6, cor: '#f7f7f3', cor2: '#f1f1ed', perfil: ROM_ARCO },
+      { u: 2, comp: 104, vFrente: -49, vFundo: -73, n: 8, bojo: 2.6, cor: '#f7f7f3', cor2: '#f1f1ed', perfil: ROM_ARCO }
+    ],
+    fachada: { cor: '#f1f1ed' },
+    blocos: [
+      /* o prédio da circulação atrás de cada lateral (debaixo das abóbadas) e o de laje atrás do gol da direita */
+      { u: 2, v: 66, w: 104, d: 8, h: 12.5, cor: '#eeeeea' }, { u: 2, v: -66, w: 104, d: 8, h: 12.5, cor: '#eeeeea' },
+      { u: 85, v: 0, w: 8, d: 96, h: 9, cor: '#e9e9e5' }, { u: 85, v: 0, w: 9, d: 98, h: 0.5, y: 9, cor: '#cfcfca' },
+      /* as torres brancas de escada nas quatro pontas das laterais */
+      { u: -60, v: 67, w: 9, d: 9, h: 16, cor: '#f4f4f0' }, { u: -60, v: -67, w: 9, d: 9, h: 16, cor: '#f4f4f0' },
+      { u: 62, v: 66, w: 7, d: 7, h: 14, cor: '#f4f4f0' }, { u: 62, v: -66, w: 7, d: 7, h: 14, cor: '#f4f4f0' },
+      /* atrás do gol da esquerda: o prédio de dois andares, a laje, o caixote amarelo e o placar */
+      { u: -70.5, v: 0, w: 21, d: 46, h: 8.5, cor: '#f1f1ed' }, { u: -70.5, v: 0, w: 22, d: 47, h: 0.5, y: 8.5, cor: '#b9b6ae' },
+      { u: -59.8, v: 0, w: 0.6, d: 44, h: 2.6, y: 4.6, cor: '#5d6b78' },
+      { u: -89, v: -44, w: 13, d: 13, h: 10.5, cor: '#e8b520' }, { u: -92, v: 0, w: 14, d: 74, h: 7, cor: '#eeeeea' }, { u: -92, v: 0, w: 15, d: 75, h: 0.5, y: 7, cor: '#b9b6ae' },
+      { u: -59, v: 14, w: 1.2, d: 8, h: 4.5, y: 9, cor: '#17181b' },
+      /* os bancos de reserva */
+      { u: -14, v: -37, w: 9, d: 1.8, h: 1.5, cor: '#e9e9e5' }, { u: 14, v: -37, w: 9, d: 1.8, h: 1.5, cor: '#e9e9e5' }
+    ],
+    entorno: [
+      { tipo: 'estacionamento', u: 6, v: -112, w: 150, d: 44, cheio: 0.12 },
+      { tipo: 'rua', de: [-200, -142], ate: [200, -142], larg: 10 }, { tipo: 'rua', de: [-98, -170], ate: [-98, 170], larg: 12 }, { tipo: 'rua', de: [106, -170], ate: [106, 170], larg: 9 },
+      { tipo: 'rua', de: [-200, 92], ate: [200, 92], larg: 9 },
+      { tipo: 'casas', u: 4, v: 122, nu: 14, nv: 4, passo: 13 }, { tipo: 'casas', u: 142, v: 0, nu: 4, nv: 20, passo: 13 }, { tipo: 'casas', u: -140, v: 0, nu: 5, nv: 20, passo: 13 },
+      { tipo: 'predio', u: 30, v: 108, w: 20, d: 12, h: 13, cor: '#d9584a', cor2: '#e9e6e0' }
+    ],
+    /* a nossa torcida numa lateral coberta; a visitante atrás do gol da direita */
+    jogo: { mandante1: [75, 105], mandante2: [255, 285], mandante3: [112, 138], visitante: [-22, 22], tunelMandante: 90, tunelVisitante: 0, folgaPM: 2 }
   }
 };
