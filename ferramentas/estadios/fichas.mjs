@@ -37,83 +37,95 @@ export const FICHAS = {
     jogo: { mandante1: [152, 208], mandante2: [70, 110], mandante3: [250, 290], visitante: [-32, 32], tunelMandante: 180, tunelVisitante: 0 }
   },
 
-  /* ILHA DO RETIRO (Sport) — refeita pelas sete fotos do dono (14/11/2026),
-     no quadro da foto tirada de cima. EM CIMA, a arquibancada principal em
-     dois lances: o de baixo de cadeira vermelha; a faixa preta com a frase
-     em amarelo; o de cima preto com SPORT em vermelho, uma letra por bloco
-     entre as escadas amarelas, a parte vermelha à direita e a tribuna
-     coberta no alto. À ESQUERDA, a curva vermelha de degrau, que emenda na
-     principal e nas sociais. À DIREITA, atrás do outro gol, a arquibancada
-     listrada de vermelho e preto, solta das vizinhas, e o trecho listrado
-     da quina. EMBAIXO, as sociais: as fileiras da frente descobertas e a
-     cobertura de concreto com as nervuras, os refletores na beira e a
-     antena. No gramado, a margem verde larga, o tapete rubro-negro atrás
-     do gol da esquerda e os bancos amarelos. */
+  /* ILHA DO RETIRO (Sport) — pela planta de setores e pelas fotos do dono
+     (14/11/2026). O quadro é o da planta, a TV em cima:
+     · EM CIMA, o lado da TV: as SOCIAIS (o lance de baixo) e as CADEIRAS
+       (Ampliação, Central e Assento Especial, o lance de cima), com a
+       cobertura de concreto;
+     · EMBAIXO, a ARQUIBANCADA CENTRAL, o bloco reto que sai pra fora: o
+       lance de baixo de cadeira vermelha, a faixa preta com a frase em
+       amarelo e o de cima preto com SPORT em vermelho, uma letra por bloco
+       entre as escadas amarelas (lido de quem está nas sociais), a parte
+       vermelha do lado da visitante e a tribuna coberta no alto. A GANG DA
+       ILHA fica na ponta dela do lado da Sede;
+     · À DIREITA, a ARQUIBANCADA DA SEDE: a curva de degrau listrado que
+       sai da Central, dobra a quina e sobe atrás do gol, mais funda no
+       meio — é onde fica a JOVEM;
+     · À ESQUERDA, a ARQUIBANCADA VISITANTE, um bloco solto, xadrez de
+       vermelho e preto, com a quina de baixo vazia ao lado. */
   'estadio-ilha-do-retiro': {
-    id: 'estadio-ilha-do-retiro', nome: 'Ilha do Retiro', clubes: ['sport-recife'], norte: 168, vazado: 0.6, corEscada: AMARELO,
+    id: 'estadio-ilha-do-retiro', nome: 'Ilha do Retiro', clubes: ['sport-recife'], norte: 90, vazado: 0.5, corEscada: AMARELO,
     chao: { cor: '#8b8a85' },
     campo: { corMargem: '#3f9a50' },
     corMureta: '#2a2a2c',
     aneis: [
-      { dentro: { a: 72, b: 40, r: 32 }, fora: { a: 86, b: 53, r: 44 }, reto: true, h: [1.2, 8], fileiras: 12,
+      { dentro: { a: 77, b: 42.5, r: 34 }, fora: { a: 91, b: 55, r: 46 }, reto: true, h: [1.2, 8], fileiras: 12,
         trechos: [
-          { de: -30, ate: 30, padrao: 'faixas', cores: [PRETO, VERM], faixaM: 3.2, semCadeiras: true, corredor: 14 },
-          { de: 30, ate: 36, tipo: 'passagem' },
-          { de: 36, ate: 50, padrao: 'faixas', cores: [VERM, '#5a1d22'], faixaM: 1.8, semCadeiras: true, corredor: 12 },
-          { de: 50, ate: 132, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 11 },
-          { de: 132, ate: 232, cor: ILHA_V, cor2: '#a8323a', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 15 },
-          { de: 232, ate: 324, cor: ILHA_V, cor2: PRETO, padrao: 'blocos', bloco: 7, corredor: 12 },
-          { de: 324, ate: 330, tipo: 'passagem' }
+          /* a Sede, da ponta da Central até as cadeiras */
+          { de: -45.5, ate: 26, padrao: 'faixas', cores: [ILHA_V, PRETO], faixaM: 2.4, semCadeiras: true, corredor: 13 },
+          /* as Sociais */
+          { de: 26, ate: 148, cor: '#232325', cor2: ILHA_V, padrao: 'mosaico', mistura: 0.16, corredor: 12 },
+          /* a Visitante (antes da folga, pra a divisória valer a fundura dela) e a folga ao lado */
+          { de: 156, ate: 192, cor: VERM, cor2: PRETO, padrao: 'blocos', bloco: 5, blocoFileiras: 3, semCadeiras: true, corredor: 14 },
+          { de: 148, ate: 156, tipo: 'passagem' },
+          /* a quina vazia de baixo, do lado da visitante */
+          { de: 192, ate: 226, tipo: 'passagem' },
+          /* a Arquibancada Central, o lance de baixo */
+          { de: 226, ate: 314.5, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 11 }
         ] },
-      { dentro: { a: 86, b: 53, r: 44 }, fora: { a: 105, b: 70, r: 60 }, reto: true, h: [9, 20], fileiras: 16, corredorFrente: 1.8,
+      { dentro: { a: 91, b: 55, r: 46 }, fora: { a: 106, b: 71.5, r: 58 }, reto: true, h: [9, 20], fileiras: 16, corredorFrente: 1.8,
         trechos: [
-          { de: -30, ate: 30, padrao: 'faixas', cores: [VERM, PRETO], faixaM: 3.2, semCadeiras: true, corredor: 14, h: [9, 17] },
-          { de: 30, ate: 36, tipo: 'passagem' },
-          { de: 36, ate: 50, padrao: 'faixas', cores: ['#5a1d22', VERM], faixaM: 1.8, semCadeiras: true, corredor: 12, faixaTopo: { n: 1, cor: AMARELO }, h: [9, 17] },
-          { de: 50, ate: 75.2, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 11 },
-          /* SPORT: uma letra por bloco, a escada amarela na divisa de cada um */
-          { de: 75.2, ate: 86.1, cor: PRETO, texto: 'T', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
-          { de: 86.1, ate: 97.3, cor: PRETO, texto: 'R', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
-          { de: 97.3, ate: 108, cor: PRETO, texto: 'O', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
-          { de: 108, ate: 117.5, cor: PRETO, texto: 'P', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
-          { de: 117.5, ate: 125.6, cor: PRETO, texto: 'S', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
-          { de: 125.6, ate: 132, cor: PRETO, cor2: ILHA_V, padrao: 'blocos', bloco: 3, corredor: 0, escadaNaBorda: true, vomitorios: false },
-          { de: 132, ate: 232, cor: ILHA_V, cor2: '#a8323a', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 15, h: [9, 18] },
-          { de: 232, ate: 324, cor: '#6f6d6a', cor2: ILHA_V, padrao: 'blocos', bloco: 7, corredor: 12,
-            cobertura: { h: 25, larg: 23, avanco: 2.5, cai: 1.5, cor: '#8f8e89', cor2: '#7d7c78', listras: true, corTrelica: '#5f5e5b', corPilar: '#8a8985' } },
-          { de: 324, ate: 330, tipo: 'passagem' }
+          /* a parte funda da Sede, atrás do gol: a Jovem */
+          { de: -14.4, ate: 19, padrao: 'faixas', cores: [PRETO, ILHA_V], faixaM: 2.4, semCadeiras: true, corredor: 13, h: [9, 18] },
+          /* as Cadeiras: Assento Especial, Central (coberta) e Ampliação */
+          { de: 19, ate: 42, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 12, faixaTopo: { n: 1, cor: AMARELO } },
+          { de: 42, ate: 141, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 12, faixaTopo: { n: 1, cor: AMARELO },
+            cobertura: { h: 26, larg: 17, avanco: 2.5, cai: 1.5, cor: '#8f8e89', cor2: '#7d7c78', listras: true, corTrelica: '#5f5e5b', corPilar: '#8a8985' } },
+          { de: 141, ate: 148, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 0, faixaTopo: { n: 1, cor: AMARELO } },
+          /* a Visitante: o bloco vai mais pra fora que o resto */
+          { de: 156, ate: 192, fora: { a: 112, b: 76, r: 18 }, reto: false, cor: PRETO, cor2: VERM, padrao: 'blocos', bloco: 5, blocoFileiras: 3, semCadeiras: true, corredor: 14, faixaTopo: { n: 1, cor: AMARELO }, h: [9, 22] },
+          { de: 148, ate: 156, tipo: 'passagem' },
+          /* a Arquibancada Central, o lance de cima: a parte vermelha, T R O P S (lido das sociais: SPORT) e a ponta */
+          { de: 232.8, ate: 252.4, cor: ILHA_V, cor2: '#b9454c', padrao: 'mosaico', mistura: 0.25, corredor: 11 },
+          { de: 252.4, ate: 263.4, cor: PRETO, texto: 'T', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
+          { de: 263.4, ate: 274.8, cor: PRETO, texto: 'R', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
+          { de: 274.8, ate: 285.8, cor: PRETO, texto: 'O', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
+          { de: 285.8, ate: 295.8, cor: PRETO, texto: 'P', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
+          { de: 295.8, ate: 304.4, cor: PRETO, texto: 'S', corTexto: VERM, textoLargura: 0.74, textoAltura: 0.78, corredor: 0, escadaNaBorda: true, vomitorios: false },
+          { de: 304.4, ate: 307.2, cor: PRETO, cor2: ILHA_V, padrao: 'blocos', bloco: 2, corredor: 0, escadaNaBorda: true, vomitorios: false }
         ] }
     ],
     fachada: { cor: '#b3262e' },
     blocos: [
-      /* a faixa preta com a frase, entre os dois lances da principal */
-      { u: -1, v: 53.4, w: 82, d: 1.9, h: 0.5, y: 8.6, cor: '#151515', texto: 'O SPORT QUE EMOCIONA    O SPORT QUE A GENTE AMA', corTexto: AMARELO, textoLargura: 0.94, textoAltura: 0.62 },
-      /* a tribuna coberta no alto da principal */
-      { u: -4, v: 71.6, w: 84, d: 4.6, h: 4.5, y: 20, cor: '#3a1418' }, { u: -4, v: 70.6, w: 88, d: 8, h: 0.7, y: 24.6, cor: '#7a2228', cobertura: true },
-      /* a marquise branca da quina e a antena no teto das sociais */
-      { u: 84, v: 63, w: 22, d: 12, h: 0.6, y: 15, giro: -42, cor: '#eeeeea', cobertura: true },
-      { u: 6, v: -63, w: 7, d: 7, h: 9, y: 25, cor: '#b9b6ad', cobertura: true },
-      /* o tapete rubro-negro atrás do gol da esquerda e o escudo atrás do da direita */
-      { u: -66.5, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: VERM }, { u: -64.4, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: PRETO }, { u: -62.3, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: VERM },
-      { u: -60.2, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: PRETO }, { u: -58.1, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: VERM }, { u: -56, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: PRETO },
-      { u: 60.5, v: 12, w: 5, d: 5, h: 0.06, y: 0.14, cor: VERM }, { u: 60.5, v: 12, w: 3, d: 3, h: 0.06, y: 0.22, cor: AMARELO },
+      /* a faixa preta com a frase, entre os dois lances da Central (lida das sociais) */
+      { u: 0, v: -55.3, w: 82, d: 1.9, h: 0.5, y: 8.6, cor: '#151515', texto: 'O SPORT QUE EMOCIONA    O SPORT QUE A GENTE AMA', corTexto: AMARELO, textoLargura: 0.94, textoAltura: 0.62, textoGiro: 180 },
+      /* a tribuna coberta no alto da Central */
+      { u: 0, v: -73.4, w: 84, d: 4.2, h: 4.5, y: 20, cor: '#3a1418' }, { u: 0, v: -72.4, w: 88, d: 7.6, h: 0.7, y: 24.6, cor: '#7a2228', cobertura: true },
+      /* a antena no teto das cadeiras */
+      { u: -6, v: 66, w: 7, d: 7, h: 9, y: 26, cor: '#b9b6ad', cobertura: true },
+      /* o tapete rubro-negro atrás do gol da Sede e o escudo atrás do outro */
+      { u: 56, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: PRETO }, { u: 58.1, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: VERM }, { u: 60.2, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: PRETO },
+      { u: 62.3, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: VERM }, { u: 64.4, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: PRETO }, { u: 66.5, v: 0, w: 2.1, d: 34, h: 0.06, y: 0.14, cor: VERM },
+      { u: -62, v: -12, w: 5, d: 5, h: 0.06, y: 0.14, cor: VERM }, { u: -62, v: -12, w: 3, d: 3, h: 0.06, y: 0.22, cor: AMARELO },
       /* os bancos amarelos na beira do campo */
-      { u: -16, v: 37.6, w: 11, d: 1.7, h: 1.3, cor: AMARELO }, { u: 16, v: 37.6, w: 11, d: 1.7, h: 1.3, cor: AMARELO },
-      { u: -24, v: -37.6, w: 8, d: 1.7, h: 1.3, cor: AMARELO }, { u: 0, v: -37.6, w: 6, d: 1.7, h: 1.3, cor: AMARELO }, { u: 24, v: -37.6, w: 8, d: 1.7, h: 1.3, cor: AMARELO }
+      { u: -16, v: -39.8, w: 11, d: 1.7, h: 1.3, cor: AMARELO }, { u: 16, v: -39.8, w: 11, d: 1.7, h: 1.3, cor: AMARELO },
+      { u: -24, v: 39.8, w: 8, d: 1.7, h: 1.3, cor: AMARELO }, { u: 0, v: 39.8, w: 6, d: 1.7, h: 1.3, cor: AMARELO }, { u: 24, v: 39.8, w: 8, d: 1.7, h: 1.3, cor: AMARELO }
     ],
-    refletores: [[96, 52, 40], [110, 20, 40], [110, -20, 40], [96, -52, 40], [-44, -74, 30], [-15, -75, 30], [15, -75, 30], [44, -74, 30]],
+    refletores: [[99, 58, 40], [114, 34, 40], [114, -30, 40], [99, -58, 40]],
     entorno: [
-      { tipo: 'piscina', u: 30, v: -112, w: 40, d: 20 }, { tipo: 'piscina', u: -8, v: -118, w: 22, d: 16 }, { tipo: 'piscina', u: 66, v: -104, w: 16, d: 12 },
-      { tipo: 'quadra', u: 104, v: -96, w: 26, d: 18, cor: '#c9773f' }, { tipo: 'quadra', u: 104, v: -74, w: 26, d: 16, cor: '#c9773f' },
-      { tipo: 'predio', u: -70, v: -112, w: 44, d: 30, h: 12, cor: '#e4e2da', cor2: '#bdbbb2' },
-      { tipo: 'agua', u: 0, v: 128, w: 400, d: 26 },
-      { tipo: 'predio', u: -70, v: 104, w: 18, d: 18, h: 90 }, { tipo: 'predio', u: -30, v: 106, w: 18, d: 18, h: 96 }, { tipo: 'predio', u: 14, v: 106, w: 18, d: 18, h: 88 },
-      { tipo: 'predio', u: 56, v: 104, w: 18, d: 18, h: 92 }, { tipo: 'predio', u: -116, v: 96, w: 20, d: 20, h: 70 },
-      { tipo: 'predio', u: 126, v: 80, w: 30, d: 22, h: 9, cor: '#d9d6cb', cor2: '#b5b2a7' },
-      { tipo: 'rua', de: [-200, 88], ate: [200, 88], larg: 9 }, { tipo: 'rua', de: [124, -160], ate: [124, 160], larg: 10 }, { tipo: 'rua', de: [-126, -160], ate: [-126, 160], larg: 10 },
-      { tipo: 'casas', u: -150, v: -40, nu: 2, nv: 8, passo: 13 }, { tipo: 'arvores', u: -118, v: -96, w: 14, d: 40, n: 7 }, { tipo: 'arvores', u: 60, v: -88, w: 60, d: 8, n: 7 }
+      /* o clube atrás das sociais: as piscinas, as quadras e o ginásio */
+      { tipo: 'piscina', u: 24, v: 112, w: 40, d: 20 }, { tipo: 'piscina', u: -14, v: 118, w: 22, d: 16 }, { tipo: 'piscina', u: 62, v: 106, w: 16, d: 12 },
+      { tipo: 'quadra', u: 104, v: 100, w: 26, d: 18, cor: '#c9773f' }, { tipo: 'predio', u: -76, v: 110, w: 44, d: 26, h: 12, cor: '#e4e2da', cor2: '#bdbbb2' },
+      /* os prédios altos e o rio atrás da Central */
+      { tipo: 'agua', u: 0, v: -132, w: 400, d: 26 },
+      { tipo: 'predio', u: -70, v: -106, w: 18, d: 18, h: 90 }, { tipo: 'predio', u: -30, v: -108, w: 18, d: 18, h: 96 }, { tipo: 'predio', u: 14, v: -108, w: 18, d: 18, h: 88 },
+      { tipo: 'predio', u: 58, v: -106, w: 18, d: 18, h: 92 }, { tipo: 'predio', u: 104, v: -98, w: 20, d: 20, h: 70 },
+      { tipo: 'rua', de: [-200, -90], ate: [200, -90], larg: 9 }, { tipo: 'rua', de: [128, -160], ate: [128, 160], larg: 10 }, { tipo: 'rua', de: [-128, -160], ate: [-128, 160], larg: 10 },
+      { tipo: 'arvores', u: -30, v: 96, w: 150, d: 6, n: 9 }, { tipo: 'arvores', u: -120, v: -60, w: 10, d: 50, n: 6 }
     ],
-    jogo: { mandante1: [78, 112], mandante2: [160, 200], mandante3: [252, 292], visitante: [-27, 27], tunelMandante: 95, tunelVisitante: 0 }
+    /* a Jovem na parte funda da Sede; a Gang da Ilha na ponta da Central do lado da Sede; as outras, nas sociais */
+    jogo: { mandante1: [-2, 18], mandante2: [290, 312], mandante3: [70, 110], visitante: [157, 191], tunelMandante: 8, tunelVisitante: 174, folgaPM: 5,
+            torcidas: { jovem_sport: 'mandante1', gang_da_ilha: 'mandante2' } }
   },
 
   /* AFLITOS (Náutico) — eixo norte-sul, norte à esquerda. A arquibancada

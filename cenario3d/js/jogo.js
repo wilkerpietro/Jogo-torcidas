@@ -46158,8 +46158,16 @@ TO.diaJogo.combate = (function(){
           /* a escolta da aliada na linha do dia (`colado`, 13/10/2026)
              chega junto com a gente: nasce no portão do nosso bonde,
              não num ponto à parte */
+          /* A TORCIDA QUE TEM LUGAR CERTO (dono, 14/11/2026, o mapa de setores
+             da Ilha do Retiro: a Jovem na Sede, a Gang da Ilha na Central): a
+             cena diz o setor de cada uma (`setorDaTorcida`); as outras ocupam
+             os setores que sobram, na ordem de sempre. */
           let k = 0;
-          fila.forEach(b=> grupos.push({s: b.colado ? ordem[0] : ordem[k++ % ordem.length], bonde:b,
+          const lugarCerto = D.setorDaTorcida || null, dono = new Map();
+          if(lugarCerto) for(const b of fila){ const sp = lugarCerto[b.id] && ordem.find(s=>s.id === lugarCerto[b.id]); if(sp && ![...dono.values()].includes(sp)) dono.set(b, sp); }
+          const livres = ordem.filter(s=>![...dono.values()].includes(s));
+          const proximo = () => livres.length ? livres[k++ % livres.length] : ordem[k++ % ordem.length];
+          fila.forEach(b=> grupos.push({s: b.colado ? ordem[0] : (dono.get(b) || proximo()), bonde:b,
                                         qtd:Math.max(1, Math.round(b.n))}));
         }
       } else {

@@ -99,7 +99,7 @@ export function colunasDe(ficha, anel, t) {
   const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, meio = (t.de + t.ate) / 2;
   const prof = Math.max(1, raioDe(meio, cf) - raioDe(meio, cd)), arco = vao * RAD * (raioDe(meio, cd) + raioDe(meio, cf)) / 2;
   const G = medidasDe(ficha, anel, t, arco, prof), n = G.n;
-  const reto = !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+  const reto = t.reto !== false && !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
   const pos = reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
                    : (ang, f) => { const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); return ponto(ang, r0 + (r1 - r0) * f); };
   const angs = [];
@@ -459,7 +459,9 @@ export function construir(THREE, ficha) {
    ========================================================= */
 export function marcadores(ficha, paraPx, pxPorMetro) {
   const lim = limites(ficha), j = ficha.jogo;
-  const noMeio = (ang, f) => { const r0 = raioDe(ang, lim.dentro), r1 = raioDe(ang, lim.fora), q = ponto(ang, r0 + (r1 - r0) * f); return paraPx(q[0], q[1]); };
+  /* de onde até onde vai a arquibancada NESTE ângulo (cada trecho pode ter a sua fundura, e um anel pode não existir ali) */
+  const contornoEm = ang => { let d = null, f = null; for (const anel of ficha.aneis) { const t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue; if (!d) d = t.dentro || anel.dentro; f = t.fora || anel.fora; } return { d: d || lim.dentro, f: f || lim.fora }; };
+  const noMeio = (ang, f) => { const c = contornoEm(ang), r0 = raioDe(ang, c.d), r1 = raioDe(ang, c.f), q = ponto(ang, r0 + (r1 - r0) * f); return paraPx(q[0], q[1]); };
   const pt = (ang, f) => { const p = noMeio(ang, f); return { x: Math.round(p[0]), y: Math.round(p[1]) }; };
   const meio = arco => (arco[0] + arco[1]) / 2;
   const dirPx = (ang, sinal) => { const a = paraPx(0, 0), b = paraPx(Math.cos(ang * RAD), Math.sin(ang * RAD)), q = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
@@ -467,7 +469,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const spawns = [], faixas = {};
   const bonde = (id, rot, lado, ang, entrada, jogador) => {
     spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, 0.5), jogador ? { jogador: true } : {}));
-    const q = ponto(ang, raioDe(ang, lim.dentro) + 0.7), p = paraPx(q[0], q[1]);
+    const q = ponto(ang, raioDe(ang, contornoEm(ang).d) + 0.7), p = paraPx(q[0], q[1]);
     faixas[id] = { x: Math.round(p[0]), y: Math.round(p[1]), len: 130, dir: dirPx(ang, -1) };
   };
   bonde('mandante1', 'MANDANTE 1º ESCALÃO', 'mandante', meio(j.mandante1), 'portao_mandante', true);
@@ -493,7 +495,8 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
     return { id: 'div_v' + (i + 1), rot: 'DIVISÓRIA', de: a, ate: b, modulos: Math.max(3, Math.round(Math.hypot(b.x - a.x, b.y - a.y) / 28)), espessura: 10 }; });
   const folga = j.folgaPM || 7;
   const pmPostos = [pt(vd - folga, 0.35), pt(vd - folga, 0.7), pt(va + folga, 0.35), pt(va + folga, 0.7)];
-  return { faixas, spawns, entradas, pmPostos, grades };
+  /* a torcida que tem lugar certo no estádio (`jogo.torcidas`: id da torcida → o setor dela) */
+  return Object.assign({ faixas, spawns, entradas, pmPostos, grades }, j.torcidas ? { setorDaTorcida: j.torcidas } : {});
 }
 
 /* a máscara da cena (192 × 128 células de 8 px), no formato do jogo: por

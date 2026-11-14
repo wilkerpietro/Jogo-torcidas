@@ -12337,6 +12337,47 @@ retiro". A primeira versão tinha sido feita de memória.
 - **Testado**: briga 60 × 56, bondes, túneis e PM em chão andável, um chão
   só, sem erro de página.
 
+## Ilha do Retiro pela planta de setores; a Jovem e a Gang no lugar delas (dono, 14/11/2026)
+
+O dono, vendo a Ilha do Retiro refeita pelas fotos: "A arquibancada do
+estádio do Sport não ficou correta", e mandou a planta de setores marcada:
+o círculo amarelo é a visão da TV, o verde onde fica a Jovem Sport, o azul
+onde fica a Gang da Ilha, o cinza a visitante. "Pegue o formato do estádio
+nessa imagem que mandei e leia novamente as imagens."
+
+- **O erro**: eu tinha posto a arquibancada do SPORT do lado da TV e as
+  sociais do outro, a visitante na ponta errada, e todas as arquibancadas
+  com a mesma fundura.
+- **A planta agora** (a TV em cima):
+  - em cima, as Sociais (lance de baixo) e as Cadeiras (Ampliação, Central
+    e Assento Especial, lance de cima), com a cobertura de concreto;
+  - embaixo, a Arquibancada Central, o bloco reto que sai pra fora: cadeira
+    vermelha, a faixa preta com a frase em amarelo, e em cima SPORT em
+    vermelho sobre preto, letra por bloco entre as escadas amarelas — de
+    cabeça pra baixo na planta, porque é lido de quem está nas sociais;
+  - à direita, a Arquibancada da Sede: a curva de degrau listrado que sai
+    da Central, dobra a quina e sobe atrás do gol, mais funda no meio;
+  - à esquerda, a Arquibancada Visitante: um bloco solto, xadrez de
+    vermelho e preto, mais pra fora que o resto, e a quina de baixo vazia
+    ao lado dela.
+- **Quem fica onde**: a Jovem Sport na parte funda da Sede; a Gang da Ilha
+  na ponta da Central do lado da Sede; a visitante no bloco dela; as
+  outras torcidas do Sport, nas sociais.
+- **Torcida com lugar certo** (novo, vale pra qualquer estádio): a ficha
+  pode dizer o setor de uma torcida (`jogo.torcidas`). Antes o setor era
+  só por tamanho (a maior no 1º escalão). O líder nasce onde a torcida do
+  jogador senta.
+- **No gerador**: cada trecho pode ter a sua fundura (`fora` no trecho), e
+  os marcadores (bondes, grades, PM, faixas) passaram a medir a
+  arquibancada de cada ângulo, não o anel inteiro.
+- **Testado**: jogando de Gang da Ilha e de Jovem Sport, com as duas e uma
+  visitante no estádio: a Jovem nasce na Sede, a Gang na Central, o líder
+  no setor da torcida do jogador; bondes, túneis e PM em chão andável; um
+  chão só; sem erro de página.
+- **Escolhas minhas**: a cobertura só em cima das cadeiras; o tapete
+  rubro-negro atrás do gol da Sede; a Sede listrada e a visitante xadrez
+  (as fotos mostram pinturas diferentes em épocas diferentes).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
