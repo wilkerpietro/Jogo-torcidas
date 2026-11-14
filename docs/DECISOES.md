@@ -12070,6 +12070,40 @@ aconteceu".
   mostrou. As páginas das brigas das outras torcidas (simuladas) não
   mudaram. Traduções em espanhol e inglês feitas por mim, sem revisão.
 
+## O planejamento antes do primeiro jogo e a dica dos rivais na cidade (dono, 14/11/2026)
+
+Pedidos: "Gere também as mensagens de planejamento dos outros jogos da
+praça e do nosso time, antes do primeiro jogo" e uma dica nova, com o
+texto dele: "Chefe, nós podemos atacar rivais que estejam na cidade mesmo
+que eles não estejam em um jogo contra o nosso time. Se eles vierem pra um
+jogo contra o rival a gente pode emboscar. Vai aparecer a oportunidade em
+Planejamento."
+
+- **O que passa pelo silêncio da estreia** (feed.js no pacote,
+  `ANTES_DA_ESTREIA` e `PASSOS_DA_ESTREIA`): além da dica e do Almanaque,
+  o cartão de segunda do planejamento (`semana` — decisão na semana com
+  jogo nosso, aviso na semana só com jogo dos outros na praça), a pergunta
+  da diretoria na véspera do jogo dos outros (`investida-cidade`), o "Ir
+  pra Guerra" do dia da investida marcada (`guerra`) e a briga que sair
+  dela (`confronto`, com a página do Futebol e Porrada). O resto segue
+  calado até o primeiro dia de jogo.
+- Antes disso o primeiro jogo não tinha planejamento nenhum: o cartão de
+  segunda da semana da estreia não nascia, e o dia começava "em paz" sem
+  pergunta.
+- **A dica nova** é a quarta das dicas do começo (uma por dia, nos quatro
+  primeiros dias). As dicas do começo só saem nas seis primeiras semanas
+  da partida: quem já joga há mais tempo não recebe a nova no meio da
+  temporada.
+- Testado numa partida nova da Leões da TUF: antes do primeiro jogo
+  chegaram as quatro dicas (dias 2 a 5 da semana 1), a dica antiga da
+  semana 3, o cartão "Semana de folga do time" da semana 4 (com jogo dos
+  outros na praça), o Almanaque na semana 5 e, na segunda da semana 6, o
+  planejamento com Fortaleza × Campinense, Ceará × Treze, Floresta ×
+  Imperatriz e o aliado chegando. O planejamento abriu, fechou e o jogo
+  seguiu até o recado da partida. A pergunta da diretoria não apareceu
+  nesse teste porque nenhuma visitante estava em guerra aberta com a
+  torcida (relação de −55 pra baixo), que é a régua dela.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

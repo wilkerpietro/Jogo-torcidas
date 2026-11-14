@@ -3577,7 +3577,8 @@ O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráfic
 ### 4.10 O que aparece na caixa de entrada e o dia que cabe na tela (14/11/2026)
 
 - **Caixa de entrada** (`feedVisivel`): decisões, o recado da partida, as dicas da diretoria, a Gazeta dos Sports da rodada e a página do Futebol e Porrada das nossas brigas. Almanaque, obras, domínio e aniversários ficam só em Notícias.
-- **Dicas**: três no começo da partida, uma por dia (o Expediente da Sede em Calendário, vigiar o financeiro e o tamanho da caravana, promover quem está apto), e depois as das semanas 1 e 3 da lista de 40. Antes do primeiro jogo o resto do feed segue calado.
+- **Dicas**: quatro no começo da partida, uma por dia (o Expediente da Sede em Calendário, vigiar o financeiro e o tamanho da caravana, promover quem está apto, atacar rival que vem à cidade pro jogo dos outros), e depois as das semanas 1 e 3 da lista de 40.
+- **Antes do primeiro jogo** o feed deixa passar só: dica, Almanaque, o cartão de segunda do planejamento (com o nosso jogo e os jogos dos outros na praça), a pergunta da diretoria sobre o jogo dos outros, o "Ir pra Guerra" da investida marcada e a briga que sair dela.
 - **Agenda de jogos** do portal: duas linhas por jogo — "data - dia - competição - fase - Casa/Fora" e, embaixo, escudo, adversário e placar.
 - **Dia de jogo**: com a linha no ar, a coluna mostra só o cartão do dia, sem o texto do recado, e a arquibancada encolhe pela altura da janela pra tudo caber sem rolar (linha, arquibancada, tensão, botões e gols).
 

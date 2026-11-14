@@ -4201,6 +4201,7 @@ TO.i18n.registrar({
   "Fugir com o butim": {es:"Huir con el botín", en:"Escape with the loot"},
   "Ir agora": {es:"Ir ahora", en:"Go now"},
   "Voltar pro jogo": {es:"Volver al juego", en:"Back to the game"},
+  "Chefe, nós podemos atacar rivais que estejam na cidade mesmo que eles não estejam em um jogo contra o nosso time. Se eles vierem pra um jogo contra o rival a gente pode emboscar. Vai aparecer a oportunidade em Planejamento.": {es:"Jefe, podemos atacar a rivales que estén en la ciudad aunque no jueguen contra nuestro equipo. Si vienen a un partido contra el rival, podemos emboscarlos. La oportunidad va a aparecer en Planificación.", en:"Boss, we can attack rivals who are in town even when they are not playing against our team. If they come for a match against our rival, we can ambush them. The opportunity will show up in Planning."},
   "A polícia apartou": {es:"La policía separó", en:"Police broke it up"},
   "O choque entrou": {es:"Entró la antidisturbios", en:"Riot squad moved in"},
   "Efeito moral": {es:"Gas y estruendo", en:"Stun grenades"},
@@ -37741,12 +37742,18 @@ TO.feed = (function(){
   }
 
   const FORA_DO_FEED = new Set(['veredicto', 'protesto-ct', 'status', 'bairro', 'entrevista', 'convites']);
+  /* o que o feed deixa passar antes do primeiro dia de jogo */
+  const ANTES_DA_ESTREIA = new Set(['dica', 'almanaque', 'semana', 'investida-cidade', 'guerra', 'confronto']);
   function propor(E, msg){
     caixas(E);
     /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) — menos
        as dicas da diretoria, que voltaram (dono, 14/11/2026) */
     /* (e a véspera de cada competição, do Almanaque: é o começo da temporada) */
-    if(calado(E) && !(msg && (msg.kind === 'dica' || msg.kind === 'almanaque'))) return null;
+    /* (e o planejamento — dono, 14/11/2026: "Gere também as mensagens de
+       planejamento dos outros jogos da praça e do nosso time, antes do
+       primeiro jogo": o cartão da semana, a pergunta da diretoria sobre o
+       jogo dos outros, o "Ir pra Guerra" do dia e a briga que sair dele) */
+    if(calado(E) && !(msg && ANTES_DA_ESTREIA.has(msg.kind))) return null;
     /* MENOS MENSAGENS ENTRE OS JOGOS (dono, 13/11/2026): entre um jogo e
        outro só os ataques que sofremos e as sugestões da diretoria. As
        decisões que não são nem uma coisa nem outra não nascem mais. */
@@ -37997,7 +38004,9 @@ TO.feed = (function(){
     return TO.financeiro.diasDeCaravana(E).includes(E.data.dia);
   }
   const calado = E => E.estreou === false && !diaDoNossoJogo(E);
-  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica', 'almanaque']);
+  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica', 'almanaque',
+                                       /* o planejamento: o cartão de segunda, a pergunta da diretoria e o dia da investida */
+                                       'semana', 'investida na cidade', 'dia de jogo']);
 
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
@@ -38390,17 +38399,21 @@ TO.feed = (function(){
     _t('Na briga de arquibancada cada torcida senta no setor do seu escalão — 1º escalão é a maior torcida do clube, 2º a seguinte, e isso vira quando uma passa a outra. Vencer paga de +1 a +3 de prestígio (mais se você estava em menor número); perder tira de −1 a −3.')
   ];
   /* AS DICAS DO COMEÇO (dono, 14/11/2026: "Volte com as dicas antes do
-     primeiro jogo"): as três que o dono escreveu, uma por dia, nos três
-     primeiros dias da partida — o expediente, o financeiro e as promoções.
+     primeiro jogo"): as quatro que o dono escreveu, uma por dia, nos
+     primeiros dias da partida — o expediente, o financeiro, as promoções e
+     o ataque a rival que vem à cidade pro jogo dos outros.
      Depois delas, as de sempre (semanas 1 e 3). */
   const DICAS_DO_COMECO = [
     _t('Você pode definir a rotina da sede da torcida em Calendário > Expediente da Sede, cada ação em um turno produz algo pra torcida.'),
     _t('Chefe, é importante ficar monitorando o financeiro da torcida pra ver o que tá dando prejuízo, e às vezes nem precisa levar a torcida toda na caravana, já que a gente tem custo com cada um.'),
-    _t('Chefe, é bom sempre ficar monitorando quais membros estão aptos pra ser promovidos, assim nossa torcida fica mais forte.')
+    _t('Chefe, é bom sempre ficar monitorando quais membros estão aptos pra ser promovidos, assim nossa torcida fica mais forte.'),
+    _t('Chefe, nós podemos atacar rivais que estejam na cidade mesmo que eles não estejam em um jogo contra o nosso time. Se eles vierem pra um jogo contra o rival a gente pode emboscar. Vai aparecer a oportunidade em Planejamento.')
   ];
   function dicaDeHoje(E){
     const n0 = E.dicasDoComeco || 0;
-    if(n0 < DICAS_DO_COMECO.length){
+    /* (só nas seis primeiras semanas da partida: quem já joga há tempo não
+       recebe dica de começo quando a lista ganha uma nova) */
+    if(n0 < DICAS_DO_COMECO.length && TO.relacoes.semanaAbs(E) <= 6){
       const m0 = propor(E, {kind:'dica', peso:'info', voz:'diretor',
         chave:`dica-comeco|${n0}`, texto: DICAS_DO_COMECO[n0]});
       if(m0) E.dicasDoComeco = n0 + 1;
