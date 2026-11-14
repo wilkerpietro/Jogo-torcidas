@@ -12462,6 +12462,18 @@ errado".
 - **Testado**: briga no Arruda jogando de Inferno Coral, sem erro de
   página; bondes, túneis e PM em chão andável; um chão só.
 
+## Arruda: o lado coberto também nas cores corais (dono, 14/11/2026)
+
+O dono: "O lado coberto também é todo com essas cores corais". Eu tinha
+posto cadeira cinza no andar de cima coberto e vermelho liso no de baixo.
+Os dois andares do lado sul entram agora no mesmo redemoinho tricolor do
+resto do estádio. Testado: briga no Arruda jogando de Inferno Coral, sem
+erro de página.
+
+Em aberto: o dono perguntou o que são os blocos brancos na arquibancada.
+São as bocas de acesso do andar de cima (`bocas`), que saíram grandes e
+brancas demais. Aguardando ele dizer se tira, diminui ou troca.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

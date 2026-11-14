@@ -60,10 +60,10 @@
    avançam (`rec`), e o letreiro, a pixação e a falha de reboco do
    bairro vão pro plano dessa parede, não pro da divisa.
    ========================================================= */
-import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=5e72c32364';
-import { ATLAS } from './modelos_atlas.js?v=5e72c32364';
+import { Construtor, METRO, mureta, toldo, arSplit, sorteio } from './construtor3d.js?v=afa70b0ece';
+import { ATLAS } from './modelos_atlas.js?v=afa70b0ece';
 /* as lojas do assalto (lojas3d.js): modelos de lote como os outros */
-import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=5e72c32364';
+import { TIPOS_LOJA, REC_LOJA, placaDaLoja } from './lojas3d.js?v=afa70b0ece';
 
 /* o arquivo de cada folha, pro bairro montar o material dele */
 export const arquivoDaFolha = folha => ATLAS[folha].arquivo;

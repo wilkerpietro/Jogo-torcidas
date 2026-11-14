@@ -293,7 +293,7 @@ export const FICHAS = {
      maior, em cinco degraus: cada trecho tem a sua fundura e a sua altura. Os dois são de
      degrau pintado no redemoinho tricolor (vermelho, branco, preto). Só a
      lateral de baixo (sul) é coberta, e só o andar de cima dela: as
-     cadeiras cinzas debaixo da cobertura de concreto. Em volta do gramado,
+     cadeiras, também nas cores corais, debaixo da cobertura de concreto. Em volta do gramado,
      a margem larga de terra clara. Nota do dono: Inferno Coral no leste,
      Raça Coral no norte, visitante no oeste. */
   'estadio-arruda': {
@@ -305,7 +305,8 @@ export const FICHAS = {
       { dentro: { a: 80, b: 49, r: 49 }, fora: { a: 90, b: 59, r: 59 }, h: [1.5, 7], fileiras: 8, corredorFrente: 1.8,
         trechos: [
           { de: -25, ate: 205, padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 123, torcao: 8, semCadeiras: true, corredor: 20 },
-          { de: 205, ate: 335, cor: '#c0333c', cor2: '#a82c34', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 18 }
+          /* (o lado coberto também é todo nas cores corais: correção do dono, 14/11/2026) */
+          { de: 205, ate: 335, padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 123, torcao: 8, semCadeiras: true, corredor: 18 }
         ] },
       /* o andar de cima, EM DEGRAUS (correção do dono, 14/11/2026: "deve se inspirar na imagem em anexo" — a vista
          aérea em que cada trecho tem o seu tamanho): cinco trechos, cada um mais fundo e mais alto que o anterior,
@@ -318,7 +319,7 @@ export const FICHAS = {
           { de: 125, ate: 165, fora: ARR_FORA(16), h: [9, 17], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
           { de: 165, ate: 205, fora: ARR_FORA(13), h: [9, 15.5], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
           /* a lateral coberta: só o andar de cima, as cadeiras debaixo do concreto */
-          { de: 205, ate: 335, fora: ARR_FORA(22), h: [9, 20], cor: '#b9b6ac', cor2: '#a5a299', padrao: 'mosaico', mistura: 0.3, corredor: 16,
+          { de: 205, ate: 335, fora: ARR_FORA(22), h: [9, 20], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, corredor: 16,
             cobertura: { h: 30, larg: 21, avanco: 3, cai: 1.5, cor: '#7b7972', cor2: '#696761', listras: true, corTrelica: '#4f4e4a', corPilar: '#8a8985' } }
         ] }
     ],
