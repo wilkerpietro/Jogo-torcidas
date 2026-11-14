@@ -542,3 +542,5 @@ import ressacada from './fichas/estadio-da-ressacada.mjs';
 FICHAS[ressacada.id] = ressacada;
 import orlandoScarpelli from './fichas/estadio-orlando-scarpelli.mjs';
 FICHAS[orlandoScarpelli.id] = orlandoScarpelli;
+import arenaJoinville from './fichas/estadio-arena-joinville.mjs';
+FICHAS[arenaJoinville.id] = arenaJoinville;

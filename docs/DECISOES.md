@@ -13056,6 +13056,45 @@ também".
 - **Fila de Santa Catarina** (aguardando o dono): Arena Joinville, a
   última.
 
+## Arena Joinville lowpoly (Joinville): fecha Santa Catarina (dono, 14/11/2026)
+
+- O dono pediu a Arena Joinville depois do Orlando Scarpelli. Feita sem
+  agente. Fotos de referência (satélite de alta resolução, aéreas e de
+  dentro) fora do repositório. Não achei mapa de setores do clube (o que
+  a busca trouxe era de outros estádios).
+- **Medida**: no satélite o gramado está sendo refeito (terra, sem
+  linhas); o meio do campo saiu do meio do retângulo de terra.
+- **Arena Joinville** (o norte à direita, o oeste em cima): um anel
+  fechado de um lance só, retangular, colado nas linhas do campo, de
+  cadeira vermelha, branca e preta (vermelho embaixo, preto no alto),
+  com a fachada de tijolo vermelho:
+  - em cima (oeste), a coberta: o lance de baixo, a faixa escura das
+    cabines e o lance de cima, tudo debaixo do telhado claro e
+    remendado que vem até a beira do campo, com as duas caixas-d'água;
+    atrás, o prédio dos acessos;
+  - embaixo (leste), a descoberta, com as bocas dos vomitórios e as duas
+    torres de refletor atrás (fora da arquibancada); depois, o pátio de
+    terra do estacionamento;
+  - à esquerda (sul) e à direita (norte), os dois fundos descobertos; no
+    meio do norte, o bloco sem cadeira (só o degrau de cimento), como no
+    satélite;
+  - atrás do sul, as torres brancas das escadas; atrás do norte, a
+    galeria e a avenida.
+- **Pintura**: `padrao: 'degrade'` com as cores repetidas (vermelho,
+  branco, vermelho, branco, preto, branco, preto) dá o vermelho com
+  branco embaixo e o preto com branco em cima, salpicado.
+- **Cantos**: na vida real são chanfrados, com blocos de cadeira em
+  diagonal. No modelo saem em leque, e cadeira solta num leque vira
+  risco; ficaram como degrau pintado em duas faixas lisas (rosado
+  embaixo, cinza em cima).
+- **Setores**: sem fonte. Escolha minha: a União Tricolor no fundo sul,
+  a visitante na ponta oeste do fundo norte.
+- **Testado**: briga 60 × 56 jogando de União Tricolor; chão um só,
+  nenhum marcador fora; sem erro de página.
+- **Santa Catarina fechada**: Heriberto Hülse, Arena Condá, Ressacada,
+  Orlando Scarpelli e Arena Joinville. O próximo estado espera o dono
+  dizer qual é.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

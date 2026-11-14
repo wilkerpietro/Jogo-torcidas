@@ -193,6 +193,10 @@ setor (os ids estão em `cenario3d/js/jogo.js`, procure por
 - Se existir mapa de setores do clube, ele manda no desenho: diz onde há
   arquibancada, onde há camarote e onde fica a visitante.
 - Telhado no satélite não quer dizer arquibancada.
+- Canto em leque (anel `reto` de raio pequeno): use `semCadeiras: true` com
+  pintura lisa (`fracoes`); cadeira solta ali abre e vira risco.
+- Onde um trecho reto de contorno próprio encosta num anel oval, faça a ponta
+  do anel entrar um pouco por baixo dele, senão sobra fresta e o chão parte.
 
 - A vista de cima bate com o satélite: forma, proporção com o campo, quais
   lados têm arquibancada, quais são cobertos, quantos lances.
