@@ -12031,6 +12031,45 @@ hostilidade, encerra a cena".
   moral e prestígio de uma briga apartada não foi revisto: uma apartada
   com 4 caídos nossos e 1 deles ainda sai como derrota inteira.
 
+## O Futebol e Porrada conta o que a polícia fez na briga (dono, 14/11/2026)
+
+Pedido: "Adapte algumas notícias do futebol e porrada pra explicar a ação
+da polícia também no meio da briga, sempre condizente com o que realmente
+aconteceu".
+
+- **A cena anota os fatos** (combate.js e ponte.js no pacote, `res.pm`):
+  se havia PM na cena, o degrau mais alto que ela subiu (mandou dispersar,
+  avançou em linha, bomba de efeito moral, carga), quantas bombas jogou,
+  se fechou em bloco e pediu reforço, se o cordão rompeu, se a tropa de
+  choque entrou, se o reforço chegou (de viatura ou a pé no setor), com
+  quantos PMs, se ele fez linha no meio e se foi a polícia que acabou a
+  briga. O registro da briga guarda isso na mensagem (`dados.pm`). Briga
+  simulada não tem cena, não tem `pm` e a página dela não fala de polícia.
+- **A frase da polícia no olho** (porrada.js, `MOLDES.pm`): uma frase pro
+  fato mais forte, nesta ordem — apartou (de viatura ou a pé, com o número
+  de PMs) · o cordão rompeu e o choque entrou · o reforço chegou (pra
+  apartar sem conseguir, ou dispersando) · o cordão rompeu e a PM partiu
+  pra cima · jogou N bombas · fechou em bloco e pediu reforço · mandou
+  dispersar e avançou em linha · mandou dispersar. Se ela jogou bomba e a
+  frase não é a da bomba, entra mais uma: "Teve também N bombas de efeito
+  moral da PM" (sem dizer se foi antes ou depois, porque a cena não guarda
+  a ordem). PM que ficou parada não vira frase.
+- **A briga apartada tem página própria**: chapéu "A polícia apartou" e
+  manchete que não diz que alguém venceu — "A {A} levava a melhor sobre a
+  {B} quando a PM fez linha no meio" (quem tinha menos caídos), "A PM
+  apartou {A} e {B} com a conta empatada", "A PM chegou antes da primeira
+  queda e separou {A} e {B}" (ninguém no chão). O olho diz a conta "na
+  hora em que parou". Com a mesma conta dos dois lados a página sai sem
+  vencedor, mesmo que a régua da cena tenha desempatado.
+- **Chapéus novos**: "A polícia apartou", "O choque entrou" e "Efeito
+  moral" (duas bombas ou mais). O "Noite de camburão" (quatro presos ou
+  mais) segue na frente.
+- Conferido: 17 situações montadas à mão (cada frase só aparece com o fato
+  dela) e uma briga jogada até a PM apartar — a página saiu com "A polícia
+  apartou", 5 PMs em linha e a conta de cada lado, igual ao que a cena
+  mostrou. As páginas das brigas das outras torcidas (simuladas) não
+  mudaram. Traduções em espanhol e inglês feitas por mim, sem revisão.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

@@ -3587,6 +3587,10 @@ O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráfic
 - **Almanaque na caixa de entrada**: "Começa a disputa" sete dias antes de cada competição nossa (inclusive antes do primeiro jogo) e a edição do campeão.
 - **A polícia aparta**: o reforço da PM (26 a 36 s depois do primeiro caído ou do primeiro aviso) faz uma linha no meio dos dois lados. A rival e as torcidas aliadas se afastam e param; o bonde do jogador volta pra formação. Só bate quem acabou de apanhar; se o presidente segue batendo, a briga continua normal. Cinco segundos sem hostilidade, com a linha formada, e a cena fecha: "a polícia apartou a briga", com o resultado pela conta de caídos. Não vale nos arredores do estádio.
 
+### 4.12 A polícia no Futebol e Porrada (14/11/2026)
+
+A cena jogada entrega ao registro da briga o que a PM fez (`dados.pm`: degrau, bombas, pedido de reforço, cordão rompido, choque, reforço, quantos PMs, linha no meio, apartou). A página usa só isso: uma frase no fim do olho pro fato mais forte, mais uma se houve bomba; a briga apartada ganha chapéu "A polícia apartou" e manchete sem vencedor declarado ("levava a melhor quando a PM fez linha no meio"). Briga simulada não tem esses dados e não fala de polícia.
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:

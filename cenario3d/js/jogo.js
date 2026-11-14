@@ -4201,6 +4201,36 @@ TO.i18n.registrar({
   "Fugir com o butim": {es:"Huir con el botín", en:"Escape with the loot"},
   "Ir agora": {es:"Ir ahora", en:"Go now"},
   "Voltar pro jogo": {es:"Volver al juego", en:"Back to the game"},
+  "A polícia apartou": {es:"La policía separó", en:"Police broke it up"},
+  "O choque entrou": {es:"Entró la antidisturbios", en:"Riot squad moved in"},
+  "Efeito moral": {es:"Gas y estruendo", en:"Stun grenades"},
+  "A PM entrou no meio e separou {A} e {B} quando a melhor era da {A}": {es:"La policía se metió en el medio y separó a {A} y {B} cuando {A} iba ganando", en:"Police stepped in and split {A} and {B} while {A} was on top"},
+  "A polícia apartou a briga, e quem saía na frente era a {A}": {es:"La policía separó la pelea, y la que iba adelante era {A}", en:"Police broke up the fight, and {A} was the one ahead"},
+  "A {A} levava a melhor sobre a {B} quando a PM fez linha no meio": {es:"{A} le iba ganando a {B} cuando la policía hizo una línea en el medio", en:"{A} was getting the better of {B} when police lined up between them"},
+  "A PM apartou {A} e {B} com a conta empatada": {es:"La policía separó a {A} y {B} con la cuenta empatada", en:"Police split {A} and {B} with the count level"},
+  "A polícia entrou no meio e a briga de {A} e {B} ficou sem dono": {es:"La policía se metió en el medio y la pelea de {A} y {B} quedó sin dueño", en:"Police stepped in and the {A} v {B} fight ended with no winner"},
+  "A PM chegou antes da primeira queda e separou {A} e {B}": {es:"La policía llegó antes de la primera caída y separó a {A} y {B}", en:"Police arrived before anyone went down and split {A} and {B}"},
+  "A polícia se pôs no meio de {A} e {B} e ninguém foi pro chão": {es:"La policía se puso entre {A} y {B} y nadie fue al piso", en:"Police stood between {A} and {B} and nobody hit the ground"},
+  "Foi {onde}, {nA} de um lado e {nB} do outro. Na hora em que parou, {fAtxt} da {A} e {fB} da {B}.": {es:"Fue {onde}, {nA} de un lado y {nB} del otro. Cuando paró, {fAtxt} de {A} y {fB} de {B}.", en:"It was {onde}, {nA} on one side and {nB} on the other. When it stopped: {fAtxt} for {A} and {fB} for {B}."},
+  "nenhum ferido": {es:"ningún herido", en:"no one hurt"},
+  "Foi {onde}, {nA} de um lado e {nB} do outro, e ninguém ficou no chão.": {es:"Fue {onde}, {nA} de un lado y {nB} del otro, y nadie quedó en el piso.", en:"It was {onde}, {nA} on one side and {nB} on the other, and nobody was left on the ground."},
+  "O cordão rompeu e a tropa de choque entrou dispersando os dois lados.": {es:"El cordón se rompió y la antidisturbios entró dispersando a los dos lados.", en:"The cordon broke and the riot squad came in scattering both sides."},
+  "O cordão rompeu e a PM partiu pra cima dos dois lados.": {es:"El cordón se rompió y la policía se fue encima de los dos lados.", en:"The cordon broke and police charged both sides."},
+  "Em minoria, a PM fechou em bloco e pediu reforço.": {es:"En minoría, la policía cerró filas y pidió refuerzos.", en:"Outnumbered, police closed ranks and called for backup."},
+  "A PM mandou dispersar e avançou em linha.": {es:"La policía ordenó dispersarse y avanzó en línea.", en:"Police ordered the crowd to disperse and advanced in a line."},
+  "A PM mandou dispersar.": {es:"La policía ordenó dispersarse.", en:"Police ordered the crowd to disperse."},
+  "A viatura chegou no meio da confusão, {n} PM fez linha entre os dois lados e a briga parou ali.": {es:"El patrullero llegó en medio del lío, {n} policía hizo una línea entre los dos lados y la pelea paró ahí.", en:"The patrol car arrived mid-brawl, {n} officer lined up between the two sides and the fight stopped there."},
+  "A viatura chegou no meio da confusão, {n} PMs fizeram linha entre os dois lados e a briga parou ali.": {es:"El patrullero llegó en medio del lío, {n} policías hicieron una línea entre los dos lados y la pelea paró ahí.", en:"The patrol car arrived mid-brawl, {n} officers lined up between the two sides and the fight stopped there."},
+  "O reforço da PM entrou no setor, {n} PM fez linha entre as duas torcidas e a briga parou ali.": {es:"El refuerzo policial entró al sector, {n} policía hizo una línea entre las dos hinchadas y la pelea paró ahí.", en:"Police backup entered the stand, {n} officer lined up between the two groups and the fight stopped there."},
+  "O reforço da PM entrou no setor, {n} PMs fizeram linha entre as duas torcidas e a briga parou ali.": {es:"El refuerzo policial entró al sector, {n} policías hicieron una línea entre las dos hinchadas y la pelea paró ahí.", en:"Police backup entered the stand, {n} officers lined up between the two groups and the fight stopped there."},
+  "O reforço chegou com {n} PM pra apartar, mas não foi ele que acabou a briga.": {es:"El refuerzo llegó con {n} policía para separar, pero no fue él quien terminó la pelea.", en:"Backup arrived with {n} officer to break it up, but that is not what ended the fight."},
+  "O reforço chegou com {n} PMs pra apartar, mas não foi ele que acabou a briga.": {es:"El refuerzo llegó con {n} policías para separar, pero no fue él quien terminó la pelea.", en:"Backup arrived with {n} officers to break it up, but that is not what ended the fight."},
+  "O reforço chegou e {n} PM desceu dispersando os dois lados.": {es:"Llegó el refuerzo y {n} policía bajó dispersando a los dos lados.", en:"Backup arrived and {n} officer got out scattering both sides."},
+  "O reforço chegou e {n} PMs desceram dispersando os dois lados.": {es:"Llegó el refuerzo y {n} policías bajaron dispersando a los dos lados.", en:"Backup arrived and {n} officers got out scattering both sides."},
+  "A PM jogou {n} bomba de efeito moral no meio da confusão.": {es:"La policía tiró {n} granada de aturdimiento en medio del lío.", en:"Police threw {n} stun grenade into the brawl."},
+  "A PM jogou {n} bombas de efeito moral no meio da confusão.": {es:"La policía tiró {n} granadas de aturdimiento en medio del lío.", en:"Police threw {n} stun grenades into the brawl."},
+  "Teve também {n} bomba de efeito moral da PM no meio da confusão.": {es:"Hubo además {n} granada de aturdimiento de la policía en medio del lío.", en:"There was also {n} police stun grenade thrown into the brawl."},
+  "Teve também {n} bombas de efeito moral da PM no meio da confusão.": {es:"Hubo además {n} granadas de aturdimiento de la policía en medio del lío.", en:"There were also {n} police stun grenades thrown into the brawl."},
   "a polícia apartou a briga": {es:"la policía separó la pelea", en:"the police broke up the fight"},
   "A polícia apartou a briga": {es:"La policía separó la pelea", en:"The police broke up the fight"},
   "O reforço da PM entrou pra apartar": {es:"El refuerzo policial entró a separar", en:"Police backup came in to break it up"},
@@ -34274,7 +34304,11 @@ TO.porrada = (function(){
       semLuta:   [_t('Ninguém desceu')],
       arquibancada:[_t('O setor se pegou')],
       apoio:     [_t('Desceu junto')],
-      padrao:    [_t('O pau do dia')]
+      padrao:    [_t('O pau do dia')],
+      /* a polícia no meio da briga (dono, 14/11/2026) */
+      apartou:   [_t('A polícia apartou')],
+      choque:    [_t('O choque entrou')],
+      gas:       [_t('Efeito moral')]
     },
 
     /* 2 · manchete
@@ -34337,6 +34371,23 @@ TO.porrada = (function(){
       semLuta:[
         _t('A {A} quebrou tudo e foi embora sem achar ninguém'),
         _t('A {A} chegou, quebrou e ninguém desceu pra segurar')
+      ],
+      /* A POLÍCIA APARTOU (dono, 14/11/2026): a cena acabou com a linha
+         da PM no meio. {A} é quem tinha menos caídos na hora. */
+      apartada:[
+        _t('A PM entrou no meio e separou {A} e {B} quando a melhor era da {A}'),
+        _t('A polícia apartou a briga, e quem saía na frente era a {A}'),
+        _t('A {A} levava a melhor sobre a {B} quando a PM fez linha no meio')
+      ],
+      /* apartada com a mesma conta de caídos dos dois lados */
+      apartadaEmpate:[
+        _t('A PM apartou {A} e {B} com a conta empatada'),
+        _t('A polícia entrou no meio e a briga de {A} e {B} ficou sem dono')
+      ],
+      /* apartada sem ninguém no chão */
+      apartadaSemQueda:[
+        _t('A PM chegou antes da primeira queda e separou {A} e {B}'),
+        _t('A polícia se pôs no meio de {A} e {B} e ninguém foi pro chão')
       ],
       /* a polícia levou gente demais */
       cadeia:[
@@ -34493,7 +34544,38 @@ TO.porrada = (function(){
          Com um olho só, a derrota em menor número saía dizendo que
          quem venceu é que estava em desvantagem. */
       menosGanhou:[_t('Foi {onde}. A {A} era {nA} contra {nB} e mandou embora do mesmo jeito.')],
-      menosPerdeu:[_t('Foi {onde}. A {B} era {nB} contra {nA} e não teve como segurar a {A}.')]
+      menosPerdeu:[_t('Foi {onde}. A {B} era {nB} contra {nA} e não teve como segurar a {A}.')],
+      /* apartada: a conta de cada lado, sem dizer que alguém venceu */
+      apartada:[_t('Foi {onde}, {nA} de um lado e {nB} do outro. Na hora em que parou, {fAtxt} da {A} e {fB} da {B}.')],
+      apartadaSemQueda:[_t('Foi {onde}, {nA} de um lado e {nB} do outro, e ninguém ficou no chão.')]
+    },
+
+    /* 3b · A FRASE DA POLÍCIA (dono, 14/11/2026: "explicar a ação da
+       polícia também no meio da briga, sempre condizente com o que
+       realmente aconteceu"). Vai depois do olho, e só diz o que a cena
+       anotou (`dados.pm`): uma frase pro fato mais forte — apartou, o
+       choque, o reforço, a bomba, o pedido de reforço, a linha, a ordem de
+       dispersar — e, se ela jogou bomba e a frase não é a da bomba, mais
+       uma. Briga simulada não tem `pm`, e não ganha frase nenhuma. */
+    pm:{
+      apartouViatura: n => _tn(n, 'A viatura chegou no meio da confusão, {n} PM fez linha entre os dois lados e a briga parou ali.',
+                                  'A viatura chegou no meio da confusão, {n} PMs fizeram linha entre os dois lados e a briga parou ali.'),
+      apartouAPe: n => _tn(n, 'O reforço da PM entrou no setor, {n} PM fez linha entre as duas torcidas e a briga parou ali.',
+                              'O reforço da PM entrou no setor, {n} PMs fizeram linha entre as duas torcidas e a briga parou ali.'),
+      choque: () => _t('O cordão rompeu e a tropa de choque entrou dispersando os dois lados.'),
+      carga: () => _t('O cordão rompeu e a PM partiu pra cima dos dois lados.'),
+      reforcoNoMeio: n => _tn(n, 'O reforço chegou com {n} PM pra apartar, mas não foi ele que acabou a briga.',
+                                 'O reforço chegou com {n} PMs pra apartar, mas não foi ele que acabou a briga.'),
+      reforcoCarga: n => _tn(n, 'O reforço chegou e {n} PM desceu dispersando os dois lados.',
+                                'O reforço chegou e {n} PMs desceram dispersando os dois lados.'),
+      gas: n => _tn(n, 'A PM jogou {n} bomba de efeito moral no meio da confusão.',
+                       'A PM jogou {n} bombas de efeito moral no meio da confusão.'),
+      /* (sem dizer se foi antes ou depois: a bomba sai em qualquer hora da briga) */
+      gasTambem: n => _tn(n, 'Teve também {n} bomba de efeito moral da PM no meio da confusão.',
+                             'Teve também {n} bombas de efeito moral da PM no meio da confusão.'),
+      acuada: () => _t('Em minoria, a PM fechou em bloco e pediu reforço.'),
+      linha: () => _t('A PM mandou dispersar e avançou em linha.'),
+      dispersar: () => _t('A PM mandou dispersar.')
     },
 
     /* 4 · as notas das outras brigas do dia (o card aberto) */
@@ -34706,7 +34788,12 @@ TO.porrada = (function(){
     /* empate é ninguém levar a melhor: a briga aconteceu e as duas
        fichas saíram parecidas */
     const houveBriga = !d.semResistencia && (fA || fB || nA);
-    const empate = houveBriga && fA === fB && !ganhamos;
+    /* a ação da PM que a cena anotou (briga simulada não tem) */
+    const pm = d.pm && d.pm.tinha ? d.pm : null;
+    const apartou = !!(pm && pm.apartou) && !d.semResistencia;
+    /* (apartada com a mesma conta dos dois lados não tem vencedor, mesmo
+       que a régua da cena tenha dado o desempate pra um deles) */
+    const empate = houveBriga && fA === fB && (!ganhamos || apartou);
     const venc = d.semResistencia ? b : empate ? null : (ganhamos ? a : b);
     const perd = d.semResistencia ? a : empate ? null : (ganhamos ? b : a);
 
@@ -34737,6 +34824,8 @@ TO.porrada = (function(){
     };
     /* "1 feridos" não existe: a palavra acompanha o número */
     v.plA = v.fA === 1 ? _t('ferido') : _t('feridos');
+    /* ("0 feridos da X" não se escreve: nenhum ferido) */
+    v.fAtxt = v.fA ? v.fA + ' ' + v.plA : _t('nenhum ferido');
     /* o aliado escoltado entra na manchete de apoio */
     if(d.aliado) v.AL = d.aliado.nome;
 
@@ -34746,6 +34835,10 @@ TO.porrada = (function(){
                  /* o camburão passa na frente do lugar: quem foi preso
                     é a notícia, a arquibancada é só o endereço */
                  : presos >= 4 ? CH.cadeia[0]
+                 /* a polícia que acabou a briga, ou o choque que entrou */
+                 : apartou ? CH.apartou[0]
+                 : pm && pm.choque ? CH.choque[0]
+                 : pm && pm.gas >= 2 ? CH.gas[0]
                  : d.aliado ? CH.apoio[0]
                  : /^estadio-/.test(d.cena||'') ? CH.arquibancada[0]
                  : (cond === 'vitoriaMenos' || cond === 'apanhouMenos') ? CH.menos[0]
@@ -34762,18 +34855,39 @@ TO.porrada = (function(){
     const daCena = (venc && !d.semResistencia && MOLDES.mancheteCena[grupo] &&
                     MOLDES.mancheteCena[grupo][ganhamos ? 'vitoria' : 'derrota'])
                    || [];
+    /* A BRIGA APARTADA TEM A MANCHETE DELA: quem acabou foi a PM, e dizer
+       "passou o trator" de uma briga que a polícia parou seria mentir */
+    const semQueda = apartou && fA + fB === 0;
     const manchete = encher(
-      proxima(MOLDES.manchete[cond].concat(daCena), 'manchete'), v);
+      apartou ? proxima(MOLDES.manchete[semQueda ? 'apartadaSemQueda' : empate ? 'apartadaEmpate' : 'apartada'], 'manchete')
+              : proxima(MOLDES.manchete[cond].concat(daCena), 'manchete'), v);
 
     /* ---- olho ---- */
     const O = MOLDES.olho;
-    const olho = encher(
+    let olho = encher(
       d.semResistencia ? O.semLuta[0]
+      : semQueda ? O.apartadaSemQueda[0]
+      : apartou && !presos ? O.apartada[0]
       : empate ? O.empate[0]
       : cond === 'vitoriaMenos' ? O.menosGanhou[0]
       : cond === 'apanhouMenos' ? O.menosPerdeu[0]
       : presos ? O.comPresos[0]
       : O.completo[0], v);
+    /* a frase da polícia, pelo fato mais forte que a cena anotou */
+    if(pm && !d.semResistencia){
+      const PMF = MOLDES.pm, n = pm.pms || 0;
+      let frase = null, daBomba = false;
+      if(apartou) frase = (pm.aPe ? PMF.apartouAPe : PMF.apartouViatura)(n);
+      else if(pm.choque) frase = PMF.choque();
+      else if(pm.reforco && n) frase = (pm.noMeio ? PMF.reforcoNoMeio : PMF.reforcoCarga)(n);
+      else if(pm.rompido) frase = PMF.carga();
+      else if(pm.gas){ frase = PMF.gas(pm.gas); daBomba = true; }
+      else if(pm.acuada) frase = PMF.acuada();
+      else if(pm.degrau >= 2) frase = PMF.linha();
+      else if(pm.degrau >= 1) frase = PMF.dispersar();
+      if(frase) olho += ' ' + frase;
+      if(frase && pm.gas && !daBomba) olho += ' ' + PMF.gasTambem(pm.gas);
+    }
 
     return {
       cabeca:{
@@ -42452,6 +42566,8 @@ TO.feed = (function(){
              dominio: d.dominio ? {cid:d.dominio.cid, bairro:d.dominio.bairro.id, tid:d.dominio.tid,
                                    ganho:d.dominio.ganho} : null,
              semResistencia,
+             /* o que a PM fez na cena (só brigas jogadas: a simulada não tem) */
+             pm: E.pmDaCena || null,
              /* quando descemos pelo aliado escoltado, o jornal precisa
                 do nome dele: a manchete é de apoio, não de treta nossa */
              aliado: d.aliado || null,
@@ -49197,6 +49313,8 @@ TO.diaJogo.combate = (function(){
       while(f < 3 && J.alerta >= PM_SOBE[f]) f++;
       while(f > 0 && J.alerta < PM_DESCE[f-1]) f--;
     }
+    /* (o que a PM fez de verdade, pro jornal: o degrau mais alto) */
+    if(f > (J.pmFaseMax || 0)) J.pmFaseMax = f;
     if(f !== havia){
       J.pmFase = f;
       if(f > havia && f < 4){
@@ -49245,7 +49363,7 @@ TO.diaJogo.combate = (function(){
         let perto = 0;
         for(const d of J.discos) if(procurandoConflito(J, d) && U.dist(d.x, d.y, px, py) < 170) perto++;
         const acuada = !J.rompido && !J.tropaVeio && !(J.viatura && J.viatura.chegou) && perto >= 10 && perto >= n*5;
-        if(acuada && !J.pmAcuada){ aviso(J, _t('A PM fechou em bloco e pediu reforço'), '#5fa87d'); logar(J, _t('Em minoria, a PM fechou em bloco e pediu reforço.'), 'pm'); }
+        if(acuada && !J.pmAcuada){ J.pmAcuou = true; aviso(J, _t('A PM fechou em bloco e pediu reforço'), '#5fa87d'); logar(J, _t('Em minoria, a PM fechou em bloco e pediu reforço.'), 'pm'); }
         J.pmAcuada = acuada; J.pmBloco = {x:px, y:py};
       } else { J.pmDir = null; J.pmAcuada = false; }
     }
@@ -49273,7 +49391,7 @@ TO.diaJogo.combate = (function(){
         for(const p of vivos){ const q = U.dist(p.x, p.y, alvo.x, alvo.y); if(q < md){ md = q; de = p; } }
         J.gases.push({x:alvo.x, y:alvo.y, ox:de.x, oy:de.y, r:GAS.raio, nasce:J.t, estoura:J.t + GAS.pavio,
                       ate:J.t + GAS.pavio + GAS.dura, estourou:false});
-        de.golpe = 0.3; J.cdGas = J.t + GAS.cd;
+        de.golpe = 0.3; J.cdGas = J.t + GAS.cd; J.gasJogados = (J.gasJogados || 0) + 1;
       } else J.cdGas = J.t + 1;
     }
     for(const g of J.gases){
@@ -49352,6 +49470,7 @@ TO.diaJogo.combate = (function(){
           J.policiais.push(pm);
         }
         if(aparta){ J.aparta = {desde:J.t, calmoDesde:J.t, meio:null}; J._pmPensa = 0; }
+        v.pms = nPms; v.noMeio = aparta;
         J.alerta = Math.max(J.alerta, aparta ? 60 : 85);
         aviso(J, aparta ? (v.aPe ? _t('O reforço da PM entrou pra apartar') : _t('A viatura chegou pra apartar'))
                         : v.aPe ? _t('O reforço da PM entrou') : _t('A viatura chegou'), '#5fa87d'); som(J, 'sirene');
@@ -55954,6 +56073,18 @@ TO.diaJogo.ponte = (function(){
         ? J.discos.filter(d => d.junto && (d.caido || d.preso)).length : null,
       rompido:J.rompido,
       entraram:J.entraram,
+      /* A AÇÃO DA POLÍCIA NA CENA (dono, 14/11/2026: o Futebol e Porrada
+         conta o que a PM fez, "sempre condizente com o que realmente
+         aconteceu"): só fatos que a cena viu — se havia PM, até que degrau
+         ela subiu (1 mandou dispersar, 2 avançou em linha, 3 bomba de
+         efeito moral, 4 carga), quantas bombas jogou, se pediu reforço, se
+         o cordão rompeu e a tropa de choque entrou, se o reforço chegou (de viatura ou a pé),
+         com quantos, se fez linha no meio e se foi ela que acabou a briga */
+      pm: {tinha: J.policiais.length > 0, degrau: J.pmFaseMax || 0, gas: J.gasJogados || 0,
+           acuada: !!J.pmAcuou, choque: !!J.tropaVeio, rompido: !!J.rompido,
+           reforco: !!(J.viatura && J.viatura.chegou), aPe: !!(J.viatura && J.viatura.aPe),
+           pms: (J.viatura && J.viatura.pms) || 0, noMeio: !!(J.viatura && J.viatura.noMeio),
+           apartou: !!(J.acabou && J.acabou.apartada)},
       venceu, ganhamos, nossoLado, xpNoite,
       tranquila, correram,
       /* quantos eram de cada lado, pro cartaz poder dizer de que
@@ -72495,6 +72626,8 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
         'agradecimento');
     }
     const resumo = TO.membros.aplicarResultadoDaNoite(e, res);
+    /* (a ação da PM na cena vai junto da briga que for registrada agora) */
+    e.pmDaCena = res.pm || null;
     if(enc){
       /* o encontro da rua também é briga: o registro (e a mensagem de
          resultado) sai daqui, pela mesma porta das outras */
@@ -72502,6 +72635,7 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       encontroAberto = null;
     }
     const fecho = acao ? TO.acoes.fecharCena(e, acao, res) : null;
+    delete e.pmDaCena;
     /* O RITMO DA NOTÍCIA É SEMPRE 1,5s (correção do dono, 24/08/2026).
        Aqui a fila inteira era esvaziada de uma vez pra o resultado da
        briga não esperar o próximo tique — e o que caía junto com ele
