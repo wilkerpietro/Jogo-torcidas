@@ -13095,6 +13095,45 @@ também".
   Orlando Scarpelli e Arena Joinville. O próximo estado espera o dono
   dizer qual é.
 
+## Vila Capanema lowpoly (Paraná Clube): começa o Paraná (dono, 14/11/2026)
+
+- O dono fechou Santa Catarina e mandou: "Paraná, Vila Capanema". Mesma
+  regra: um por vez, sem agente, e só começo o seguinte quando ele
+  disser. Fotos de referência (satélite de alta resolução, aéreas e de
+  dentro) fora do repositório. Não achei mapa de setores do clube.
+- **Medida**: no satélite metade do gramado está coberta por um piso de
+  evento; o meio do campo saiu do meio do oval de dentro da pista.
+- **Vila Capanema** (o norte à direita, o oeste em cima): o gramado oval
+  com a pista velha em volta e quatro lados diferentes:
+  - em cima (oeste), a social: a arquibancada reta com o bloco de
+    cadeira vermelha e o de cadeira azul no meio e o cimento nas pontas;
+    atrás, o prédio branco das cabines, debaixo do telhado branco (as
+    pontas em azul-escuro); os dois refletores saem de cima do telhado;
+  - embaixo (leste), a reta descoberta de degrau escuro e, colado atrás,
+    o prédio dos camarotes (vermelho, de telhado claro) com as três
+    torres azuis das escadas;
+  - à direita (norte), a curva norte, a maior: meio anel fundo de degrau
+    de cimento, com a ponta do leste em cadeira azul-escura;
+  - à esquerda (sul), a curva sul: só o quarto do sudoeste tem
+    arquibancada (baixa, de cimento, com o muro alto atrás); o quarto do
+    sudeste é o muro vermelho com as caixas azuis, colado na avenida.
+- **Reta além do oval**: as duas retas têm frente reta mais comprida
+  que a parte reta do oval; levam `dentro` próprio (um retângulo) e são
+  ligadas às curvas por pisos `passagem`, pro chão ser um só.
+- **Posto da PM fora do chão**: o setor da visitante ia até a ponta da
+  arquibancada do sudoeste e um posto da PM caía no corredor estreito.
+  O setor encolheu pra caber com a folga.
+- **O que é suposição**: as cores do prédio do leste (vermelho com
+  torres azuis) vêm de fotos de 2014; no satélite de hoje só se vê o
+  telhado. A reta do leste escura pode ser sombra do prédio.
+- **Setores**: sem fonte. Escolha minha: a Fúria Independente na curva
+  norte, a visitante na arquibancada do sudoeste.
+- **Testado**: briga 60 × 56 jogando de Fúria Independente; chão um só,
+  nenhum marcador fora; sem erro de página.
+- **Fila do Paraná** (aguardando o dono): Arena da Baixada
+  (Athletico), Couto Pereira (Coritiba), Estádio do Café (Londrina) e
+  Germano Krüger (Operário; no jogo o Maringá também manda nele).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

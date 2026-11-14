@@ -544,3 +544,5 @@ import orlandoScarpelli from './fichas/estadio-orlando-scarpelli.mjs';
 FICHAS[orlandoScarpelli.id] = orlandoScarpelli;
 import arenaJoinville from './fichas/estadio-arena-joinville.mjs';
 FICHAS[arenaJoinville.id] = arenaJoinville;
+import vilaCapanema from './fichas/estadio-vila-capanema.mjs';
+FICHAS[vilaCapanema.id] = vilaCapanema;
