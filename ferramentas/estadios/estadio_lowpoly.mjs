@@ -459,8 +459,10 @@ export function construir(THREE, ficha) {
   }
   /* ---- os refletores, o placar e as peças soltas ---- */
   for (const r of ficha.refletores || []) {
-    const [u, v, h] = r; caixa(0.9, h, 0.9, '#8d9093', u, h / 2, -v);
-    const p = caixa(6, 3.4, 0.7, '#d9dcdf', u, h + 1.2, -v); p.rotation.y = Math.atan2(v, -u) + Math.PI / 2;
+    /* com o quarto número (a altura do pé), o poste nasce em cima da cobertura em vez de vir do chão (dono, 14/11/2026:
+       "deixe de fazer o refletor atravessar a arquibancada, ele só começa da cobertura pra cima") e sai junto com ela na foto */
+    const [u, v, h, pe = 0] = r, g = pe ? coberturas : cena; caixa(0.9, h - pe, 0.9, '#8d9093', u, pe + (h - pe) / 2, -v, g);
+    const p = caixa(6, 3.4, 0.7, '#d9dcdf', u, h + 1.2, -v, g); p.rotation.y = Math.atan2(v, -u) + Math.PI / 2;
   }
   /* os pórticos de luz (Morumbi): dois pilares e a treliça deitada em cima, rente à beira de fora */
   for (const pp of ficha.porticos || []) {

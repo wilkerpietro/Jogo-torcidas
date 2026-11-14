@@ -157,6 +157,8 @@ jogo só nascem em `aneis`.
   sair transparente na foto de cima (use em teto). `texto` pinta um
   letreiro em cima.
 - `refletores: [[u, v, altura], ..]`, `porticos: [{ ang, larg, h }]`.
+  Um quarto número no refletor (`[u, v, altura, pe]`) faz o poste nascer na
+  altura `pe` (em cima da cobertura) em vez de vir do chão.
 - `fachada: { cor, pilares: { n, h, pe, topo, esp, fundo, cor, contorno } }`.
 - `campo.pista: { dentro, fora, cor, raias }` e `campo.corFosso`: pista
   de atletismo.

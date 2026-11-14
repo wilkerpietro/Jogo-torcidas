@@ -15,7 +15,9 @@
      na beira do telhado.
    · À ESQUERDA (sudoeste), o outro fundo, todo coberto, em blocos amarelos
      e brancos.
-   · Os quatro cantos são degrau de cimento claro, em leque. */
+   · Os cantos são degrau de cimento claro, em leque. O do oeste (entre o
+     fundo sudoeste e as cadeiras) é o menor: poucos degraus, a parede
+     clara logo acima do último e o telão nela. */
 const AM = '#f0c61f', AM2 = '#e2b81a';                  /* o amarelo */
 const BR = '#e6e6e1', BR2 = '#d5d5cf';                  /* o branco */
 const PT = '#232325';                                   /* o preto */
@@ -49,8 +51,9 @@ export default {
         /* as cadeiras (em cima): a ponta branca, depois o amarelo na frente e o mosaico preto e amarelo atrás */
         { de: 41, ate: 58, dentro: DT, fora: F_CIMA, h: [1.5, 15.5], cor: BR, cor2: BR2, padrao: 'mosaico', mistura: 0.3, faixaBase: { n: 13, cor: AM }, corredor: 14, vomitorios: false, paredeAtras: true },
         { de: 58, ate: 139, dentro: DT, fora: F_CIMA, h: [1.5, 15.5], cor: PT, cor2: AM, padrao: 'mosaico', mistura: 0.42, faixaBase: { n: 13, cor: AM }, corredor: 14, vomitorios: { f: 0.45, cada: 2 }, paredeAtras: true },
-        /* o canto oeste */
-        { de: 139, ate: 150.3, dentro: DT, fora: { a: 78.5, b: 70, r: 30 }, h: [1.5, 13], ...CANTO },
+        /* o canto oeste, o menor (dono, 14/11/2026: "tem uma parede logo acima do último degrau e um telão"): poucos degraus
+           e, colada no último, a parede clara que sobe até o telhado */
+        { de: 139, ate: 150.3, dentro: DT, fora: { a: 68, b: 55.3, r: 12 }, h: [1.5, 6.5], ...CANTO, parapeito: 11.5, corFachada: '#d3d4d0' },
         /* o fundo sudoeste (à esquerda): sete blocos, todo coberto */
         ...LADO(7, f => [-57, 32.5 - 59.5 * f], 150, { fora: F_ESQ }),
         /* o canto sul: o chanfro maior (as duas arquibancadas acabam antes dele) */
@@ -68,8 +71,11 @@ export default {
     { y: 20.3, h: 0.3, cor: ZINCO2, pontos: [[-43.3, -56.7], [75.8, -56.7], [68.3, -37.8], [-45, -37.8]] }
   ],
   fachada: { cor: '#e9e8e2' },
-  refletores: [[-13, -43.5, 30], [12, -43.5, 30], [38, -43.5, 30]],
+  /* (os postes nascem em cima do telhado, não atravessam a arquibancada) */
+  refletores: [[-13, -43.5, 30, 20.6], [12, -43.5, 30, 20.6], [38, -43.5, 30, 20.6]],
   blocos: [
+    /* o telão na parede do canto oeste: a moldura amarela e a tela escura, viradas pro campo */
+    { u: -63.2, v: 51.3, w: 12, d: 0.5, h: 6.4, y: 9, cor: AM, giro: 45 }, { u: -62.7, v: 50.8, w: 9.6, d: 0.5, h: 4.6, y: 9.9, cor: '#1b1c20', giro: 45 },
     /* a treliça dos refletores em cima do telhado das cadeiras */
     { u: 2, v: 61.5, w: 66, d: 1, h: 1.4, y: 25, cor: '#eef0f1', cobertura: true },
     { u: -30, v: 63.5, w: 0.5, d: 5, h: 4.6, y: 20.5, cor: '#8b8f93', cobertura: true }, { u: 2, v: 63.5, w: 0.5, d: 5, h: 4.6, y: 20.5, cor: '#8b8f93', cobertura: true }, { u: 34, v: 63.5, w: 0.5, d: 5, h: 4.6, y: 20.5, cor: '#8b8f93', cobertura: true },

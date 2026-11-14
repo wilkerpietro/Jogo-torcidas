@@ -12892,6 +12892,24 @@ também".
 - **Testado**: briga 60 × 56 jogando de Os Tigres; chão um só, nenhum
   marcador fora; sem erro de página.
 
+## Heriberto Hülse: refletor em cima do telhado e o canto do telão (dono, 14/11/2026)
+
+- O dono viu o estádio e corrigiu duas coisas:
+  - "Deixe de fazer o refletor atravessar a arquibancada, ele só começa
+    da cobertura pra cima." Os três postes do lado sudeste vinham do
+    chão e furavam a arquibancada e o telhado. Agora nascem em cima do
+    telhado.
+  - "A curva sudoeste (a que é menor em tamanho) tem uma parede logo
+    acima do último degrau e um telão" (com foto). É o canto entre o
+    fundo sudoeste e as cadeiras: ficou com poucos degraus, a parede
+    clara colada no último, subindo até o telhado, e o telão nela
+    (moldura amarela, tela escura), virado pro campo.
+- **Gerador**: `refletores: [[u, v, altura, pe]]`. Com o quarto número,
+  o poste nasce na altura `pe` (em cima da cobertura) e sai junto com
+  ela na foto de cima. Regra pros próximos: onde o refletor fica em
+  cima de telhado, usar o `pe`; poste do chão só fora da arquibancada.
+- **Testado**: briga no estádio, chão um só, sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
