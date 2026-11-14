@@ -120,6 +120,9 @@ formam um chão só; uma fresta isola o lance).
 - `h`, `dentro`, `fora`: valem só pro trecho (um setor mais fundo ou mais
   alto que os vizinhos). Com `fora` diferente num anel `reto`, ponha
   `reto: false` no trecho.
+  Pra uma arquibancada retangular num anel `reto` (cada lado com a sua
+  fundura), dê ao contorno de fora um raio que deixe o lado reto do tamanho
+  do de dentro (`a - r` e `b - r` iguais nos dois), senão ela abre em leque.
 - `cobertura: { h, larg, avanco, cai, cor, cor2, listras, corTrelica, corPilar, pilares, trelica, opaca }`:
   marquise em cima do trecho, da beira de trás pra frente (`larg` metros
   pra dentro, `avanco` pra fora).

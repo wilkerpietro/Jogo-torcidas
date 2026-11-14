@@ -12786,6 +12786,42 @@ também".
 - **Fila do Rio Grande do Sul** (aguardando o dono): Boca do Lobo
   (Pelotas) e Passo d'Areia (São José).
 
+## Boca do Lobo lowpoly (Pelotas) (dono, 14/11/2026)
+
+- O dono aprovou o Bento Freitas ("ficou bom") e explicou a confusão das
+  fotos: as que eu tinha misturavam épocas diferentes do estádio. Mandou
+  seguir pra Boca do Lobo. Feita sem agente, com as fotos que já estavam
+  baixadas (satélite de alta resolução, quadros de drone, fotos de
+  dentro), fora do repositório.
+- **Boca do Lobo** (a geral à esquerda, o fundo do 1908 à direita, a
+  arquibancada ECP e a avenida em cima, a coberta embaixo; a ECP ficou em
+  cima pro letreiro sair de pé na vista do jogo):
+  - tudo em degrau de cimento pintado de azul com letra amarela;
+  - em cima, a arquibancada comprida com E C P, as escadas amarelas, a
+    boca do túnel entre o E e o C e os dois postes de refletor atrás;
+  - à direita, a do 1908, com a faixa amarela LOBÃO A MAIOR PAIXÃO no
+    alto e a boca do túnel entre o 0 e o 8; ela não pega o fundo inteiro
+    (fica deslocada pro lado da avenida); atrás, os prédios de tijolo;
+  - à esquerda, a geral, a maior (28 m de fundura contra 16 m das
+    outras), azul-escura, com o círculo do escudo pintado, a boca do
+    túnel e as duas torres de refletor atrás;
+  - embaixo, o degrau baixo ao longo do campo e a coberta de dois lances
+    debaixo da marquise de concreto com as nervuras; a sede ao lado, o
+    quiosque redondo na esquina, a praça do outro lado da rua.
+- **Arquibancada retangular em anel `reto`**: quando o trecho tem `fora`
+  próprio, o lado reto de fora precisa ter o mesmo tamanho do de dentro
+  (`a - r` e `b - r` iguais nos dois contornos), senão a arquibancada
+  abre em leque. Aqui: dentro `r: 2`, fora `r: 18`.
+- **O que não é fiel**: o escudo da geral virou só um círculo; as quinas
+  são pisos de concreto pra ligar as arquibancadas (na vida real há
+  prédios e portões ali).
+- **Setores**: sem fonte. Escolha minha: a Força Jovem na geral, a
+  visitante no fundo do 1908.
+- **Testado**: briga 60 × 56 jogando de Força Jovem Pelotas; chão um
+  só, nenhum marcador fora; sem erro de página.
+- **Fila do Rio Grande do Sul** (aguardando o dono): Passo d'Areia (São
+  José), o último.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
