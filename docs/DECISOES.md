@@ -12378,6 +12378,33 @@ nessa imagem que mandei e leia novamente as imagens."
   rubro-negro atrás do gol da Sede; a Sede listrada e a visitante xadrez
   (as fotos mostram pinturas diferentes em épocas diferentes).
 
+## Ilha do Retiro: um andar só atrás dos gols e no lado descoberto; SPORT no lado coberto e na curva sudoeste (dono, 14/11/2026)
+
+O dono, com três das fotos de novo: "Você tá gerando os setores atrás do
+gol com dois andares mas eles são um só, e o lado não-coberto também é um
+andar só. Faltou fazer a arquibancada sudoeste também. O letreiro da
+arquibancada SPORT é do lado coberto. Essa curva que faltou você fazer
+também tem o nome SPORT na curva."
+
+- **Dois andares só no lado coberto** (Sociais e Cadeiras, em cima na
+  planta): cadeira vermelha embaixo, a faixa preta com a frase em amarelo,
+  e em cima SPORT em vermelho sobre preto, uma letra por bloco entre as
+  escadas amarelas, com a cobertura de concreto no alto.
+- **Um andar só**: o lado descoberto (a Arquibancada Central: fundo,
+  preto, com a faixa vermelha no alto, o friso amarelo e as cabines
+  pretas), a Sede atrás do gol da direita (listrada, mais funda no meio) e
+  a Visitante atrás do gol da esquerda (o bloco solto, listrado).
+- **A curva sudoeste**, entre a visitante e a Central, que eu tinha deixado
+  vazia: preta, com SPORT pintado em vermelho acompanhando a curva.
+- As quatro torres de luz foram pra trás da visitante, como nas fotos.
+- A Jovem (no meio da Sede) e a Gang da Ilha (na ponta do lado descoberto
+  perto da Sede) seguem onde o dono marcou.
+- **No gerador**: `padrao: 'fracoes'` pinta a fundura em faixas por fração
+  (preto até 66%, vermelho até 95%, amarelo no fim).
+- **Testado**: jogando de Gang da Ilha e de Jovem Sport, cada uma nasce no
+  seu setor; bondes, túneis e PM em chão andável; um chão só; sem erro de
+  página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
