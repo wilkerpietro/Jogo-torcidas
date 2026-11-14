@@ -4809,11 +4809,13 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 3,
+   "quantidadeEstadios": 5,
    "estadios": [
     "Bento Freitas",
     "Estadio Centenario",
-    "Alfredo Jaconi"
+    "Alfredo Jaconi",
+    "Colosso da Lagoa",
+    "Boca do Lobo"
    ],
    "rodovias": [
     "Rodovia Sul 2"
@@ -6311,10 +6313,11 @@
    "temPraia": false,
    "temLagoa": true,
    "vegetacao": "mata",
-   "quantidadeEstadios": 2,
+   "quantidadeEstadios": 3,
    "estadios": [
     "Arena do Gremio",
-    "Beira-Rio"
+    "Beira-Rio",
+    "Passo d'Areia"
    ],
    "rodovias": [
     "Rodovia Sul 2"

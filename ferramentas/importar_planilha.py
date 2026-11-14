@@ -60,8 +60,10 @@ CLUBE_TROCADO = {
 # dados/estadios.js (a lotação desses clubes, em times.js, foi acertada à
 # mão com a do estádio — a planilha traz a do estádio antigo). Sem estádio
 # próprio no jogo, o clube manda no da praça que a torcida dele já dizia
-# (Remo, Paysandu e Águia no Mangueirão; Portuguesa no Morumbi; São José
-# na Arena do Grêmio).
+# (Remo, Paysandu e Águia no Mangueirão; Portuguesa no Morumbi).
+# 14/11/2026, o dono: o São José volta pro Passo d'Areia, o Ypiranga/RS vai
+# pro Colosso da Lagoa e o Pelotas pra Boca do Lobo — os três ganharam o
+# estádio deles modelado.
 ESTADIO_CORRIGIDO = {
  'sao-bernardo':'Estadio Primeiro de Maio','santo-andre':'Estadio Bruno Daniel','sao-caetano':'Estadio Anacleto Campanella',
  'remo':'Mangueirao','paysandu':'Mangueirao','aguia-de-maraba':'Mangueirao','tuna-luso':'Estádio do Souza',
@@ -71,11 +73,11 @@ ESTADIO_CORRIGIDO = {
  'athletic':'Estadio Regional','mamore':'Estadio Regional','urt':'Estadio Regional',
  'ypiranga-pe':'Cornélio de Barros','inter-de-limeira':'Jorge Ismael de Biasi','xv-de-piracicaba':'Jorge Ismael de Biasi',
  'noroeste':'Santa Cruz','ituano':'Maião','iguatu':'Arena Romeirão','maringa':'Germano Kruger',
- 'caxias':'Estadio Centenario','ypiranga-rs':'Estadio Centenario','pelotas':'Bento Freitas',
+ 'caxias':'Estadio Centenario','ypiranga-rs':'Colosso da Lagoa','pelotas':'Boca do Lobo',
  'nacional':'Estádio da Colina','sao-raimundo':'Estádio da Colina','moto-club':'Castelão','imperatriz':'Castelão',
  'treze':'Amigão','sousa':'Almeidão','sergipe':'Batistão','madureira':'Moca Bonita',
  'goytacaz':'Raulino de Oliveira','americano':'Raulino de Oliveira',
- 'portuguesa':'Morumbi','sao-jose':'Arena do Gremio',
+ 'portuguesa':'Morumbi','sao-jose':"Passo d'Areia",
 }
 
 

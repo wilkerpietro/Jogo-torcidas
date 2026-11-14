@@ -12616,6 +12616,38 @@ jogo, estado por estado, começando pelos que faltam do Rio Grande do Sul.
   peça, como conferir).
 - As fotos de referência ficam fora do repositório.
 
+## São José, Ypiranga/RS e Pelotas mandam no estádio deles (dono, 14/11/2026)
+
+Ao levantar os estádios gaúchos, vi que três clubes apontavam o estádio de
+outro: o São José a Arena do Grêmio, o Ypiranga/RS o Centenário e o
+Pelotas o Bento Freitas. Perguntei, e o dono: "Sim, corrija os três
+também".
+
+- **Isto desfaz, pra esses três, a regra de 03/10/2026** ("cada clube joga
+  num estádio do jogo": sem o dele no jogo, o clube mandava no da praça).
+  Eu tinha chamado de erro nos dados; era decisão do dono naquela data,
+  quando o jogo só tinha os estádios do protótipo antigo. Agora cada um
+  ganha o estádio dele modelado, então o motivo da regra acabou pra eles.
+- **O que mudou**: São José → Passo d'Areia (Porto Alegre, bairro Bom Fim,
+  o mesmo de antes de sair; 16.000); Ypiranga/RS → Colosso da Lagoa
+  (Interior do RS, bairro Erechim; 22.000); Pelotas → Boca do Lobo
+  (Interior do RS, bairro Pelotas II; 23.336). O Grêmio, o Brasil de
+  Pelotas e o Caxias ficam sozinhos nos deles.
+- **Onde**: `times.js` (estádio e lotação), `estadios.js` (três estádios
+  novos e os mandantes), `torcidas.js` e `torcidas_relacoes.json` (o
+  estádio da torcida), `cidades.js` e `cidades_bairros.json` (a lista de
+  estádios da praça), o pacote `jogo.js`, e as tabelas dos importadores.
+- **Limite**: as plantas das cidades foram assadas na ferramenta da cidade
+  3D, que saiu. Os três estádios novos não têm o desenho nem o rótulo na
+  planta de Porto Alegre e do Interior do RS: aparecem na lista do bairro,
+  e o caminho do dia de jogo vai até o meio do bairro (é o que já
+  acontecia com o Centenário, que também não tem rótulo na planta).
+- **Lotação**: tirada do que é público de cada estádio; se a busca dos
+  agentes achar outro número, acerto.
+- **Testado**: no jogo, os três clubes devolvem o estádio novo, a praça
+  lista os estádios sem nenhum "estimado", e um jogo novo de Os Farrapos
+  abre sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

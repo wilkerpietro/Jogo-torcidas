@@ -77,6 +77,8 @@ RENOMEAR_PRACA = {'cuiaba': 'mato-grosso', 'campinas': 'regiao-de-campinas', 'fl
 TIRAR = {'estadio-do-trabalhador'}
 NOVOS = [
     {'nome': 'Raulino de Oliveira', 'mapa': 'suburbio-carioca', 'bairro': 'Volta Redonda'},
+    {'nome': 'Colosso da Lagoa', 'mapa': 'interior-do-rs', 'bairro': 'Erechim'},
+    {'nome': 'Boca do Lobo', 'mapa': 'interior-do-rs', 'bairro': 'Pelotas II'},
 ]
 
 
@@ -153,7 +155,9 @@ def main():
     # (03/10/2026, mesma regra: saíram o Zinho de Oliveira, Belém — o
     # Águia joga no Mangueirão —, o Canindé — a Portuguesa no Morumbi — e o
     # Passo d'Areia — o São José na Arena do Grêmio.)
-    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira', 'caninde', 'passo-d-areia'}
+    # (14/11/2026: o Passo d'Areia volta — o São José manda nele de novo —, e entram o
+    # Colosso da Lagoa e a Boca do Lobo, na lista NOVOS.)
+    TIRAR = set(TIRAR) | {'felipe-santiago', 'zinho-de-oliveira', 'caninde'}
     legado_e_novos = [e for e in estadios if identificador(e['nome']) not in TIRAR] + \
         [{'nome': n['nome'], 'mapaNovo': n['mapa'], 'bairroEstadio': n['bairro']} for n in NOVOS]
     for e in sorted(legado_e_novos, key=lambda x: x['nome']):
