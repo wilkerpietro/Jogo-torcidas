@@ -36,6 +36,17 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
     dados[id] = { nome: r.nome, clubes: r.clubes, escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
                   foto: { imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), mascara: r.mascara }, cena: r.cena };
     if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'aerea2', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); }
+    /* O CHÃO É UM SÓ? As ilhas de chão andável da máscara, e se os marcadores (bondes, túneis, PM) caem na maior. */
+    { const linhas = r.mascara.split(';'), C = 384, R = linhas.length, m = new Uint8Array(C * R);
+      linhas.forEach((l, y) => { let c = 0, v = 0; for (const n of l.split(',')) { for (let k = 0; k < +n && c < C; k++, c++) m[y * C + c] = v; v ^= 1; } });
+      const ilha = new Int32Array(C * R).fill(-1), tam = [];
+      for (let i = 0; i < m.length; i++) { if (!m[i] || ilha[i] >= 0) continue; const n = tam.length, f = [i]; let t = 0; ilha[i] = n;
+        while (f.length) { const j = f.pop(), c = j % C, y = (j - c) / C; t++; for (const k of [c > 0 ? j - 1 : -1, c < C - 1 ? j + 1 : -1, y > 0 ? j - C : -1, y < R - 1 ? j + C : -1]) if (k >= 0 && m[k] && ilha[k] < 0) { ilha[k] = n; f.push(k); } }
+        tam.push(t); }
+      const maior = tam.indexOf(Math.max(...tam)), fora = [];
+      const confere = (rot, p) => { const i = Math.floor(p.y / 8) * C + Math.floor(p.x / 8); if (ilha[i] !== maior) fora.push(rot); };
+      r.cena.spawns.forEach(p => confere(p.id, p)); r.cena.entradas.forEach(p => confere(p.id, p)); r.cena.pmPostos.forEach((p, k) => confere('pm' + k, p));
+      console.log(id, 'chão:', tam.length === 1 ? 'um só' : tam.length + ' ilhas ' + JSON.stringify(tam.sort((a, b) => b - a).slice(0, 6)), '· marcadores fora da ilha maior:', fora.length ? fora.join(', ') : 'nenhum'); }
     console.log(id, 'escala', r.escala, 'px/m ·', Math.round(bin(r.imagem).length / 1024), 'KB ·', Date.now() - t0, 'ms');
   }
   if (!FICHA) fs.writeFileSync(saida, '/* GERADO por ferramentas/estadios/assar.js — não editar à mão.\n   Os estádios low-poly das cenas: a foto de cima, a máscara de onde se anda\n   e os marcadores de cada um; `clubes` diz quem manda o jogo ali. */\nwindow.__ESTADIOS = ' + JSON.stringify(dados, null, 1) + ';\n');
