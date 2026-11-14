@@ -12305,6 +12305,38 @@ também".
 - **Testado**: briga 60 × 56 pelo lado visitante no estádio de 40 mil e no
   Castelão, sem erro de página.
 
+## Ilha do Retiro refeita pelas fotos do dono (dono, 14/11/2026)
+
+O dono mandou sete fotos da Ilha do Retiro (aéreas, uma de cima e a
+panorâmica da arquibancada principal) e pediu: "Tente fazer da ilha do
+retiro". A primeira versão tinha sido feita de memória.
+
+- **No quadro da foto de cima**: em cima, a arquibancada principal em dois
+  lances — o de baixo de cadeira vermelha, a faixa preta com "O SPORT QUE
+  EMOCIONA / O SPORT QUE A GENTE AMA" em amarelo, o de cima preto com
+  SPORT em vermelho (uma letra por bloco entre as escadas amarelas), a
+  parte vermelha à direita e a tribuna coberta no alto.
+- À esquerda, a curva vermelha de degrau, emendada na principal e nas
+  sociais. À direita, atrás do outro gol, a arquibancada listrada de
+  vermelho e preto, solta das vizinhas, e o trecho listrado da quina com a
+  marquise branca.
+- Embaixo, as sociais: as fileiras da frente descobertas e a cobertura de
+  concreto com as nervuras, os refletores na beira e a antena.
+- No gramado: a margem verde larga, o tapete rubro-negro atrás do gol da
+  esquerda, o escudo atrás do da direita e os bancos amarelos.
+- Em volta: os prédios altos e o rio de um lado; as piscinas, as quadras
+  e o ginásio do clube do outro.
+- **O gerador ganhou**: faixas pintadas no degrau (`padrao: 'faixas'`),
+  cor da escada (`corEscada`) e escada na divisa do bloco
+  (`escadaNaBorda`), que é o que separa as letras.
+- **Setores** (sem nota do dono, escolha minha): a nossa torcida na
+  principal, a visitante na arquibancada listrada atrás do gol da direita.
+- **Dúvida que ficou**: as fotos são de épocas diferentes (numa as sociais
+  têm a cobertura de concreto, noutras aquele lado aparece sem ela). Fiz
+  com a cobertura, como na foto de cima.
+- **Testado**: briga 60 × 56, bondes, túneis e PM em chão andável, um chão
+  só, sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

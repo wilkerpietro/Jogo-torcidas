@@ -91,7 +91,7 @@ function medidasDe(ficha, anel, t, arco, prof) {
   }
   const naBoca = i => vomCentros.some(c => Math.abs(i + 0.5 - c) <= vomMeia);
   return { n, N, Nold: t.fileiras || anel.fileiras || 14, prof, arco, frente, fc, passo, larguraCel, corr, esc, vomCentros, vomMeia, vomRows,
-    escada: i => !!corr && i > 0 && (i % corr) < esc,
+    escada: i => (!!t.escadaNaBorda && i < esc) || (!!corr && i > 0 && (i % corr) < esc),
     noVomitorio: (i, k) => k < vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomRows && naBoca(i) };
 }
 /* as medidas de um trecho de anel, mais onde cai cada coluna (`pos`, `angs`, `angEm`) */
@@ -233,6 +233,8 @@ export function construir(THREE, ficha) {
       if (t.padrao === 'mosaico') return rnd() < (t.mistura || 0.45) ? (t.cor2 || '#ffffff') : t.cor;
       if (t.padrao === 'blocos') return (Math.floor(i / bloco) + Math.floor(k / blocoF)) % 2 ? (t.cor2 || t.cor) : t.cor;
       if (t.padrao === 'vazias') return rnd() < (t.mistura || 0.5) ? CONCRETO : t.cor;
+      /* faixas pintadas no degrau, de baixo pra cima (a arquibancada listrada da Ilha do Retiro) */
+      if (t.padrao === 'faixas') { const nf = Math.max(1, Math.round((t.faixaM || 3) / G.passo)); return t.cores[Math.floor(k / nf) % t.cores.length]; }
       /* degradê de baixo pra cima, salpicado (Maracanã: amarelo, azul, branco) */
       if (t.padrao === 'degrade') { const cs = t.cores, q = (k + 0.5) / N * (cs.length - 1) + (rnd() - 0.5) * (t.mistura == null ? 1 : t.mistura) * 1.6;
         return cs[Math.max(0, Math.min(cs.length - 1, Math.round(q)))]; }
@@ -252,7 +254,7 @@ export function construir(THREE, ficha) {
       for (let k = 0; k < N; k++) {
         const f0 = fc + (1 - fc) * k / N, f1 = fc + (1 - fc) * (k + 1) / N, df = f1 - f0, sobe = (h1 - h0) / N, hk = h0 + sobe * (k + 0.5), hk1 = hk + sobe;
         if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, '#232427'); continue; }
-        if (escada) { q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, '#d9d7ce'); q4(i, i + 1, f0 + df / 2, f1, hk, '#a9a79e'); }
+        if (escada) { const ce = t.corEscada || ficha.corEscada; q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, ce || '#d9d7ce'); q4(i, i + 1, f0 + df / 2, f1, hk, ce ? tomL(ce, 0.78) : '#a9a79e'); }
         else {
           const degrau = tomL(t.semCadeiras ? corDe(i, k) : CONCRETO, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
           q4(i, i + 1, f0, f1, hk, degrau);
