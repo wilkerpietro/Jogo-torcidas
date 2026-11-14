@@ -11941,6 +11941,45 @@ exatamente como era antes".
   e a ferramenta da planta abrindo sem erro. A invasão dentro do estádio e
   a emboscada da estrada não foram disparadas nos testes.
 
+## O dia de jogo cabe na tela, a agenda em duas linhas, as dicas e os jornais de volta (dono, 14/11/2026)
+
+Pedidos, com a foto do celular: "A mensagem supera o tamanho da tela"; "A
+linha da tabela em agenda do time deve ser reorganizada assim, em duas
+linhas por linha da tabela: 03/06 - qua - Copa do Brasil - Primeira Fase -
+Casa / {escudo} {nome do adversário} {placar}"; "Volte com as dicas antes
+do primeiro jogo, e as notícias do futebol e porrada e gazeta dos sports no
+feed", com três dicas escritas por ele.
+
+- **O cartão do dia cabe na tela** (portal.css, `body.dia-de-jogo`): medido
+  no celular (390 × 690), a linha, a arquibancada e o pé somavam 555 px
+  numa coluna de 488, com o texto do recado ainda por cima. Com a linha do
+  dia no ar só o cartão do dia aparece, sem o cabeçalho e sem o texto do
+  recado; a linha ficou mais baixa no celular (o efetivo numa linha só); a
+  explicação da tensão saiu; os gols rolam dentro do pé (duas linhas no
+  celular, três no computador); e a arquibancada encolhe pela altura da
+  janela (`100dvh`), com a largura acompanhando. Ficou em 462 px de 488 no
+  celular e 603 de 659 no computador (1280 × 800). O balão do ataque segue
+  podendo passar da tela: a coluna rola até ele.
+- **A agenda em duas linhas** (portal.js, `blocoAgenda`): em cima, a data,
+  o dia da semana, a competição, a fase e o lado, separados por " - "; em
+  baixo, o escudo, o nome do adversário e o placar. A tabela de quatro
+  colunas virou uma lista.
+- **As dicas antes do primeiro jogo** (feed.js dentro do pacote): o feed
+  seguia calado até a estreia; agora a dica passa pelo silêncio. As três
+  do dono (o Expediente da Sede, o financeiro e a caravana, as promoções)
+  saem uma por dia nos três primeiros dias da partida (`E.dicasDoComeco`),
+  e depois vêm as de sempre, das semanas 1 e 3. Save que já estreou não as
+  recebe no meio da temporada. No teste, quatro dicas antes do primeiro
+  jogo.
+- **Os dois jornais no feed**: a Gazeta da rodada (`rodada`) e a página do
+  Futebol e Porrada (`confronto`) voltam pra caixa de entrada; a dica
+  também. Balanços e avisos do mundo (almanaque, obra, domínio,
+  aniversário) seguem só em Notícias. Como a coluna da caixa é estreita
+  mesmo no computador, o recorte fica com a manchete em cima e o quadro
+  embaixo, e a manchete tem tamanho fixo (crescia com a largura da janela).
+- Testado no navegador de teste: três dias de jogo seguidos, sem erros,
+  com as dicas, três Gazetas e uma página do Futebol e Porrada na caixa.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

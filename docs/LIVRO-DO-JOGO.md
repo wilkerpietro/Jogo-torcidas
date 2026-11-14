@@ -3574,6 +3574,13 @@ O dono decidiu voltar ao 2D, guardando o desenho novo: "Remova de vez os gráfic
 - **O que sobrou de 3D**: `cenario3d/planta.html`, a ferramenta que desenha a planta das praças (os mapas 2D do jogo saem dela, por `ferramentas/assar_plantas.js`), e os modelos que ela mostra do lado. Não faz parte do jogo.
 - **Dívida**: uns 30 ganchos `TO.jogo3d && …` mortos dentro de `jogo.js`, regras sem uso em `jogo3d.css` e os nomes antigos das classes (`jogo3d`, `j3d-entre-jogos`).
 
+### 4.10 O que aparece na caixa de entrada e o dia que cabe na tela (14/11/2026)
+
+- **Caixa de entrada** (`feedVisivel`): decisões, o recado da partida, as dicas da diretoria, a Gazeta dos Sports da rodada e a página do Futebol e Porrada das nossas brigas. Almanaque, obras, domínio e aniversários ficam só em Notícias.
+- **Dicas**: três no começo da partida, uma por dia (o Expediente da Sede em Calendário, vigiar o financeiro e o tamanho da caravana, promover quem está apto), e depois as das semanas 1 e 3 da lista de 40. Antes do primeiro jogo o resto do feed segue calado.
+- **Agenda de jogos** do portal: duas linhas por jogo — "data - dia - competição - fase - Casa/Fora" e, embaixo, escudo, adversário e placar.
+- **Dia de jogo**: com a linha no ar, a coluna mostra só o cartão do dia, sem o texto do recado, e a arquibancada encolhe pela altura da janela pra tudo caber sem rolar (linha, arquibancada, tensão, botões e gols).
+
 ## 5. Problemas conhecidos e dívidas
 
 - **Auditoria incompleta.** Uma leitura completa em busca de bugs foi iniciada e interrompida. O que as verificações mecânicas mostraram, e não foi corrigido:

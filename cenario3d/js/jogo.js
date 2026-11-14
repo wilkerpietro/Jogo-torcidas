@@ -4201,6 +4201,9 @@ TO.i18n.registrar({
   "Fugir com o butim": {es:"Huir con el botín", en:"Escape with the loot"},
   "Ir agora": {es:"Ir ahora", en:"Go now"},
   "Voltar pro jogo": {es:"Volver al juego", en:"Back to the game"},
+  "Você pode definir a rotina da sede da torcida em Calendário > Expediente da Sede, cada ação em um turno produz algo pra torcida.": {es:"Puedes definir la rutina de la sede de la hinchada en Calendario > Jornada de la Sede: cada acción en un turno produce algo para la hinchada.", en:"You can set the routine of the group's headquarters in Calendar > Headquarters Schedule: each action in a shift produces something for the group."},
+  "Chefe, é importante ficar monitorando o financeiro da torcida pra ver o que tá dando prejuízo, e às vezes nem precisa levar a torcida toda na caravana, já que a gente tem custo com cada um.": {es:"Jefe, es importante seguir de cerca las finanzas de la hinchada para ver qué está dando pérdida, y a veces ni hace falta llevar a toda la hinchada en la caravana, porque cada uno nos cuesta.", en:"Boss, it's important to keep an eye on the group's finances to see what is losing money, and sometimes you don't even need to take everyone on the away trip, since each one costs us."},
+  "Chefe, é bom sempre ficar monitorando quais membros estão aptos pra ser promovidos, assim nossa torcida fica mais forte.": {es:"Jefe, conviene estar siempre atento a qué miembros están aptos para ser ascendidos: así nuestra hinchada se hace más fuerte.", en:"Boss, it's good to always keep track of which members are ready to be promoted: that makes our group stronger."},
   "Ir embora": {es:"Irse", en:"Leave"},
   "Limpar a vitrine": {es:"Vaciar la vitrina", en:"Clean out the display case"},
   "Líder": {es:"Líder", en:"Leader"},
@@ -33465,6 +33468,8 @@ TO.estado = (function(){
     E.feedFila = (E.feedFila || []).filter(m => m.kind !== 'entrevista');
     /* save de antes de 13/11/2026 já passou da estreia */
     if(E.estreou === undefined) E.estreou = true;
+    /* (e quem já estreou não recebe as dicas do começo no meio da temporada) */
+    if(E.dicasDoComeco === undefined) E.dicasDoComeco = E.estreou === false ? 0 : 3;
     /* o detalhista deixou de existir (13/11/2026): todo save vira rápido */
     E.modo = 'rapido';
     /* a ideologia saiu (13/11/2026): as regras fixas valem pra todo save */
@@ -37618,8 +37623,9 @@ TO.feed = (function(){
   const FORA_DO_FEED = new Set(['veredicto', 'protesto-ct', 'status', 'bairro', 'entrevista', 'convites']);
   function propor(E, msg){
     caixas(E);
-    /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) */
-    if(calado(E)) return null;
+    /* antes do primeiro dia de jogo o feed fica calado (13/11/2026) — menos
+       as dicas da diretoria, que voltaram (dono, 14/11/2026) */
+    if(calado(E) && !(msg && msg.kind === 'dica')) return null;
     /* MENOS MENSAGENS ENTRE OS JOGOS (dono, 13/11/2026): entre um jogo e
        outro só os ataques que sofremos e as sugestões da diretoria. As
        decisões que não são nem uma coisa nem outra não nascem mais. */
@@ -37870,7 +37876,7 @@ TO.feed = (function(){
     return TO.financeiro.diasDeCaravana(E).includes(E.data.dia);
   }
   const calado = E => E.estreou === false && !diaDoNossoJogo(E);
-  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo']);
+  const PASSOS_DA_ESTREIA = new Set(['diplomacia delas', 'recepções', 'apoio fora', 'placar', 'mundo', 'dica']);
 
   function eventosDoDia(E, ctx){
     ctx = ctx || {};
@@ -38262,7 +38268,23 @@ TO.feed = (function(){
     _t('Na partida ao vivo, o cartão do clima do estádio vai de tranquilo a esquentando e tenso: rival de relação muito ruim na arquibancada esquenta rápido, e aliado presente segura o jogo inteiro em tranquilo. Se ficar TENSO, a arquibancada se pega e a cena abre.'),
     _t('Na briga de arquibancada cada torcida senta no setor do seu escalão — 1º escalão é a maior torcida do clube, 2º a seguinte, e isso vira quando uma passa a outra. Vencer paga de +1 a +3 de prestígio (mais se você estava em menor número); perder tira de −1 a −3.')
   ];
+  /* AS DICAS DO COMEÇO (dono, 14/11/2026: "Volte com as dicas antes do
+     primeiro jogo"): as três que o dono escreveu, uma por dia, nos três
+     primeiros dias da partida — o expediente, o financeiro e as promoções.
+     Depois delas, as de sempre (semanas 1 e 3). */
+  const DICAS_DO_COMECO = [
+    _t('Você pode definir a rotina da sede da torcida em Calendário > Expediente da Sede, cada ação em um turno produz algo pra torcida.'),
+    _t('Chefe, é importante ficar monitorando o financeiro da torcida pra ver o que tá dando prejuízo, e às vezes nem precisa levar a torcida toda na caravana, já que a gente tem custo com cada um.'),
+    _t('Chefe, é bom sempre ficar monitorando quais membros estão aptos pra ser promovidos, assim nossa torcida fica mais forte.')
+  ];
   function dicaDeHoje(E){
+    const n0 = E.dicasDoComeco || 0;
+    if(n0 < DICAS_DO_COMECO.length){
+      const m0 = propor(E, {kind:'dica', peso:'info', voz:'diretor',
+        chave:`dica-comeco|${n0}`, texto: DICAS_DO_COMECO[n0]});
+      if(m0) E.dicasDoComeco = n0 + 1;
+      return;
+    }
     const sa = TO.relacoes.semanaAbs(E);
     /* SÓ NO PRIMEIRO MÊS (pedido do dono, 08/09/2026): a dica a cada
        duas semanas virava ruído depois que o jogador já sabe jogar.
@@ -61415,16 +61437,21 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
                                      'lnt-fundacao', 'lnt-fim']);
   /* notícias, balanços e avisos do mundo ficam só em Notícias (dono,
      13/11/2026): a tela do jogo é dos ataques e da diretoria */
-  const SO_EM_NOTICIAS = new Set(['rodada', 'almanaque', 'obra', 'dominio', 'dica', 'aniversario',
+  /* (14/11/2026, o dono: "Volte com as dicas antes do primeiro jogo, e as
+     notícias do futebol e porrada e gazeta dos sports no feed": a dica, a
+     Gazeta da rodada e a página do Futebol e Porrada voltam pra caixa de
+     entrada; o resto segue só em Notícias) */
+  const SO_EM_NOTICIAS = new Set(['almanaque', 'obra', 'dominio', 'aniversario',
                                   'eixo-saida', 'conmebol-fim', 'mundo-fim', 'lnt-fundacao', 'lnt-fim']);
+  const JORNAL_NO_FEED = new Set(['rodada', 'confronto']);
   function feedVisivel(e){
     const naRede = new Set();
     for(const m of (e.mensagens || [])){
       const k = m.jornal && String(m.chave || '');
       if(k && k.indexOf('jornal|') === 0) naRede.add(+k.slice(7));
     }
-    return (e.feed || []).filter(m => m.kind !== 'confronto' && !SO_EM_NOTICIAS.has(m.kind) &&
-      (m.peso === 'decisao' || !(MATERIA_DE_JORNAL.has(m.kind) || naRede.has(m.id))));
+    return (e.feed || []).filter(m => !SO_EM_NOTICIAS.has(m.kind) &&
+      (m.peso === 'decisao' || JORNAL_NO_FEED.has(m.kind) || !(MATERIA_DE_JORNAL.has(m.kind) || naRede.has(m.id))));
   }
   let noFeedLista = null, noFeedTopo = null, noFeedQuando = null, noFeedTicker = null, noFeedRede = null;
   let feedVistas = new Map();

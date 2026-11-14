@@ -190,11 +190,16 @@
         const v = j.gp > j.gc || (j.gp === j.gc && j.venceu === true), dr = j.gp < j.gc || (j.gp === j.gc && j.venceu === false);
         res = `<span class="pt-res ${v ? 'v' : dr ? 'd' : 'e'}"><i></i>${j.gp}–${j.gc}${j.pen ? ' <small>(' + j.pen.c + '–' + j.pen.f + ')</small>' : ''}</span>`;
       }
-      return `<tr class="${j.jogado ? 'feito' : ''}"><td class="data">${diaMes(d)}</td><td class="clube">${escudoDoClube(j.adversario, 'p')}<span>${esc(t.nome || j.adversario)}<small>${esc(j.comp || '')}</small></span></td>` +
-        `<td class="lado">${j.neutro ? 'N' : j.casa ? T('C') : T('F')}</td><td>${res}</td></tr>`;
+      /* DUAS LINHAS POR JOGO (dono, 14/11/2026): em cima, a data, o dia da
+         semana, a competição, a fase e o lado; embaixo, o escudo, o nome do
+         adversário e o placar */
+      const topo = [diaMes(d), T(DIAS[d.getDay()] || '').toLowerCase(), j.comp || '', j.fase ? T(j.fase) : '',
+                    j.neutro ? T('Neutro') : j.casa ? T('Casa') : T('Fora')].filter(Boolean).map(esc).join(' - ');
+      return `<li class="${j.jogado ? 'feito' : ''}"><small>${topo}</small>` +
+        `<div>${escudoDoClube(j.adversario, 'p')}<b>${esc(t.nome || j.adversario)}</b>${res}</div></li>`;
     };
     return bloco(T('Agenda de jogos'),
-      `<table class="pt-tabela agenda"><tbody>${feitos.map(linha).join('')}${vem.map(linha).join('')}</tbody></table>`, 'calendario');
+      `<ul class="pt-agenda">${feitos.map(linha).join('')}${vem.map(linha).join('')}</ul>`, 'calendario');
   }
 
   /* ======================================================
@@ -423,6 +428,7 @@
     'Campo neutro': {es:'Cancha neutral', en:'Neutral ground'},
     'Em casa': {es:'De local', en:'Home'},
     'Fora': {es:'De visitante', en:'Away'},
+    'Casa': {es:'Local', en:'Home'}, 'Neutro': {es:'Neutral', en:'Neutral'},
     'Torcidas e efetivo': {es:'Barras y efectivo', en:'Firms and numbers'},
     'Do nosso lado': {es:'De nuestro lado', en:'On our side'},
     'Do lado deles': {es:'Del lado de ellos', en:'On their side'},

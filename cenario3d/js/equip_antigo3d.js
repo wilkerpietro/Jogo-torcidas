@@ -47,7 +47,7 @@
    da planta / METRO (o sul é +z), y pra cima. Nada gira: os cinco são
    alinhados com a quadra e olham pro sul, que é a frente das peças.
    ========================================================= */
-import { Construtor, METRO, mureta } from './construtor3d.js?v=b5814edd87';
+import { Construtor, METRO, mureta } from './construtor3d.js?v=a6b824fc27';
 
 const M = METRO;
 export const TIPOS_ANTIGOS = new Set(['hospital', 'delegacia', 'escola', 'posto', 'shopping']);
