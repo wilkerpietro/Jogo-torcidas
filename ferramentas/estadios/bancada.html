@@ -10,6 +10,10 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { construir, marcadores, mascara, limites, raioDe } from './estadio_lowpoly.mjs';
 import { FICHAS } from './fichas.mjs';
+/* UMA FICHA AVULSA, pra conferir sem mexer nas outras: bancada.html?ficha=/ferramentas/estadios/fichas/<id>.mjs
+   (o arquivo exporta a ficha como `default`). É como quem modela um estádio novo testa o dele (assar.js, FICHA=...). */
+{ const extra = new URLSearchParams(location.search).get('ficha');
+  if (extra) { const m = await import(extra + (extra.includes('?') ? '&' : '?') + 't=' + Date.now()); const f = m.default || m.FICHA; FICHAS[f.id] = f; window.SO_FICHA = f.id; } }
 /* A CENA DO ESTÁDIO TEM O DOBRO DA CENA COMUM (dono, 14/11/2026: "deixe os
    estádios maiores em proporção aos bonecos"): 3072 × 2048, a mesma célula
    de 8 px. O jogo abre com a câmera no líder; afastando, vê o estádio todo. */

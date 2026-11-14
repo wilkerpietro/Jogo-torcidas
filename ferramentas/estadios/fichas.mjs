@@ -458,13 +458,12 @@ export const FICHAS = {
        cobertura de oito abóbadas de lona branca: nascem baixas atrás da
        arquibancada, sobem em arco e avançam sobre as fileiras de trás até a
        treliça com os refletores. Atrás, o prédio branco da circulação.
-     · À DIREITA, atrás do gol, a arquibancada descoberta, de ponta a ponta,
-       com o prédio baixo de laje atrás.
-     · À ESQUERDA, atrás do outro gol, não tem arquibancada: é o prédio
-       branco de dois andares, com o caixote amarelo numa ponta e o placar
-       na beira do campo. As duas arquibancadas das laterais dobram a quina
-       ali em curva e acabam numa ponta redonda de muro branco, com a torre
-       branca de escada do lado.
+     · À DIREITA (leste) e À ESQUERDA (oeste), atrás dos gols, as duas
+       arquibancadas descobertas, de ponta a ponta, com três bocas cada; as
+       quatro curvas também têm arquibancada. Atrás da oeste, o prédio
+       branco com o caixote amarelo; nas pontas das laterais, as torres
+       brancas de escada. A Fúria Icasiana fica na oeste, a visitante na
+       leste.
      Em volta, o estacionamento de um lado e o bairro de casas de telha. */
   'estadio-romeirao': {
     id: 'estadio-romeirao', nome: 'Arena Romeirão', clubes: ['icasa'], norte: 90, vazado: 0.42, folga: 26, corEscada: '#ecebe6',
@@ -474,18 +473,20 @@ export const FICHAS = {
     aneis: [
       { dentro: { a: 58.5, b: 39.5, r: 6 }, fora: { a: 80.5, b: 61.5, r: 28 }, reto: true, h: [1.2, 13], fileiras: 24,
         trechos: [
-          /* atrás do gol da direita: descoberta, sete blocos, três bocas */
+          /* (correção do dono, 14/11/2026: as quatro curvas têm arquibancada, e o lado oeste é arquibancada normal,
+             igual à do leste — eu tinha posto concreto nas curvas do leste e o prédio no lugar da oeste) */
+          /* o leste, atrás do gol da direita: descoberta, sete blocos, três bocas — a visitante */
           { de: -29.8, ate: 29.8, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 9.9, vomitorios: { f: 0.42, cada: 2, larg: 4.4, fundo: 4 } },
-          { de: 29.8, ate: 36.9, tipo: 'passagem', cor: '#d9d7cf' },
-          /* a lateral de cima (coberta) */
+          { de: 29.8, ate: 36.9, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
+          /* a lateral norte (coberta) */
           { de: 36.9, ate: 143.1, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11.6, vomitorios: { f: 0.42, cada: 3, larg: 4.4, fundo: 4 } },
-          /* a quina em curva e a ponta redonda, do lado do prédio */
-          { de: 143.1, ate: 157, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
-          { de: 157, ate: 203, tipo: 'vazio' },
-          { de: 203, ate: 216.9, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
-          /* a lateral de baixo (coberta) */
+          { de: 143.1, ate: 150.2, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
+          /* o oeste, atrás do gol da esquerda: descoberta, igual à do leste — a Fúria Icasiana */
+          { de: 150.2, ate: 209.8, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 9.9, vomitorios: { f: 0.42, cada: 2, larg: 4.4, fundo: 4 } },
+          { de: 209.8, ate: 216.9, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false },
+          /* a lateral sul (coberta) */
           { de: 216.9, ate: 323.1, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11.6, vomitorios: { f: 0.42, cada: 3, larg: 4.4, fundo: 4 } },
-          { de: 323.1, ate: 330.2, tipo: 'passagem', cor: '#d9d7cf' }
+          { de: 323.1, ate: 330.2, cor: ROM_V, cor2: ROM_V2, padrao: 'mosaico', mistura: 0.35, corredor: 0, vomitorios: false }
         ] }
     ],
     abobadas: [
@@ -500,11 +501,9 @@ export const FICHAS = {
       /* as torres brancas de escada nas quatro pontas das laterais */
       { u: -60, v: 67, w: 9, d: 9, h: 16, cor: '#f4f4f0' }, { u: -60, v: -67, w: 9, d: 9, h: 16, cor: '#f4f4f0' },
       { u: 62, v: 66, w: 7, d: 7, h: 14, cor: '#f4f4f0' }, { u: 62, v: -66, w: 7, d: 7, h: 14, cor: '#f4f4f0' },
-      /* atrás do gol da esquerda: o prédio de dois andares, a laje, o caixote amarelo e o placar */
-      { u: -70.5, v: 0, w: 21, d: 46, h: 8.5, cor: '#f1f1ed' }, { u: -70.5, v: 0, w: 22, d: 47, h: 0.5, y: 8.5, cor: '#b9b6ae' },
-      { u: -59.8, v: 0, w: 0.6, d: 44, h: 2.6, y: 4.6, cor: '#5d6b78' },
+      /* atrás da arquibancada oeste: o prédio de dois andares, a laje, o caixote amarelo e o placar no alto */
       { u: -89, v: -44, w: 13, d: 13, h: 10.5, cor: '#e8b520' }, { u: -92, v: 0, w: 14, d: 74, h: 7, cor: '#eeeeea' }, { u: -92, v: 0, w: 15, d: 75, h: 0.5, y: 7, cor: '#b9b6ae' },
-      { u: -59, v: 14, w: 1.2, d: 8, h: 4.5, y: 9, cor: '#17181b' },
+      { u: -82, v: 0, w: 1.2, d: 9, h: 4.5, y: 14, cor: '#17181b' },
       /* os bancos de reserva */
       { u: -14, v: -37, w: 9, d: 1.8, h: 1.5, cor: '#e9e9e5' }, { u: 14, v: -37, w: 9, d: 1.8, h: 1.5, cor: '#e9e9e5' }
     ],
@@ -515,7 +514,11 @@ export const FICHAS = {
       { tipo: 'casas', u: 4, v: 122, nu: 14, nv: 4, passo: 13 }, { tipo: 'casas', u: 142, v: 0, nu: 4, nv: 20, passo: 13 }, { tipo: 'casas', u: -140, v: 0, nu: 5, nv: 20, passo: 13 },
       { tipo: 'predio', u: 30, v: 108, w: 20, d: 12, h: 13, cor: '#d9584a', cor2: '#e9e6e0' }
     ],
-    /* a nossa torcida numa lateral coberta; a visitante atrás do gol da direita */
-    jogo: { mandante1: [75, 105], mandante2: [255, 285], mandante3: [112, 138], visitante: [-22, 22], tunelMandante: 90, tunelVisitante: 0, folgaPM: 2 }
+    /* a Fúria Icasiana na arquibancada oeste; a visitante na leste (nota do dono) */
+    jogo: { mandante1: [165, 195], mandante2: [75, 105], mandante3: [255, 285], visitante: [-22, 22], tunelMandante: 180, tunelVisitante: 0, folgaPM: 2,
+            torcidas: { furia_icasiana: 'mandante1' } }
   }
 };
+
+/* AS FICHAS AVULSAS (ferramentas/estadios/fichas/<id>.mjs, uma por arquivo, exportada como `default`): entram
+   aqui, uma linha de import e uma de registro por estádio. */

@@ -1,0 +1,190 @@
+# Como modelar um estádio low-poly
+
+Cada estádio do jogo é uma **ficha** (um objeto JavaScript) que o gerador
+`estadio_lowpoly.mjs` transforma em modelo 3D. O jogo não desenha o 3D ao
+vivo: `assar.js` fotografa o modelo de cima e grava a imagem, a máscara de
+onde se anda e os marcadores (setores, túneis, grades, PM). Este guia é
+pra quem vai escrever uma ficha nova a partir de fotos.
+
+## O fluxo
+
+1. Junte pelo menos 5 fotos do estádio: uma de cima (satélite), aéreas de
+   lados diferentes, uma de dentro e, se achar, a planta de setores.
+   As fotos são só referência: ficam fora do repositório, nunca entram num
+   commit.
+2. Escreva a ficha em `ferramentas/estadios/fichas/<id>.mjs`, exportada
+   como `default`, com as constantes dela dentro do próprio arquivo.
+3. Confira, sem gravar nada no jogo (o servidor da raiz precisa estar em
+   `127.0.0.1:8799`):
+
+   ```
+   FICHA=ferramentas/estadios/fichas/<id>.mjs CONF=<pasta> node ferramentas/estadios/assar.js
+   ```
+
+   Saem em `<pasta>`: `<id>_satelite.jpg` (de cima, cobertura fechada),
+   `<id>_cima.webp` (como aparece no jogo, cobertura transparente),
+   `<id>_aerea.jpg`, `<id>_aerea2.jpg` (do lado oposto) e `<id>_tv.jpg`.
+4. Olhe as imagens, compare com as fotos, ajuste. Repita até parecer.
+5. Pra entrar no jogo: uma linha de `import` e uma de registro no fim de
+   `fichas.mjs`, e `node ferramentas/estadios/assar.js`.
+
+## O quadro
+
+- Medidas em **metros**. O campo fica sempre deitado: `u` ao longo do
+  comprimento (direita da imagem), `v` atravessado (pra cima da imagem).
+  O campo tem 105 × 68, centrado em (0, 0).
+- **Ângulos** em graus, anti-horário a partir de `+u`: 0 = atrás do gol
+  da direita, 90 = lateral de cima, 180 = atrás do gol da esquerda, 270 =
+  lateral de baixo. Um trecho vai de `de` até `ate` (`ate` > `de`; `de`
+  pode ser negativo, por exemplo `-30` a `30`).
+- `norte`: pra onde fica o norte no quadro (90 = pra cima, 0 = direita,
+  180 = esquerda, 270 = pra baixo). Serve pro sol.
+- **Contorno**: `{ a, b, r }` é um retângulo de cantos redondos (meio
+  comprimento `a` em `u`, meia largura `b` em `v`, raio do canto `r`;
+  `r` igual a `b` dá o oval de estádio antigo). `{ a, b, forma: 'elipse' }`
+  é uma elipse (com `cu`, `cv` ela sai do centro).
+
+## A ficha
+
+```js
+export default {
+  id: 'estadio-nome', nome: 'Nome do estádio', clubes: ['id-do-clube'],
+  norte: 90, vazado: 0.34, folga: 14,
+  chao: { cor: '#8b8a85', esplanada: <contorno>, corEsplanada: '#bdb9ad' },
+  campo: { corMargem: '#4c9656' },
+  corMureta: '#d9d7cf',
+  aneis: [ ... ], retas: [ ... ],
+  coberturasAnel: [ ... ], folhas: [ ... ], abobadas: [ ... ],
+  fachada: { cor: '#c9c6bb' },
+  blocos: [ ... ], refletores: [ [u, v, altura], ... ], porticos: [ ... ],
+  entorno: [ ... ],
+  jogo: { ... }
+};
+```
+
+- `vazado`: quanto a cobertura aparece na foto de cima do jogo (0 some, 1
+  fecha). Com cobertura grande, 0,28 a 0,45, pra torcida aparecer.
+- `folga`: metros de margem em volta da arquibancada na foto. Aumente se a
+  cobertura, a fachada ou um prédio passam da arquibancada.
+
+### `aneis`: as arquibancadas
+
+De dentro pra fora. Cada anel fica entre dois contornos e é cortado em
+trechos por ângulo. Um lance em cima do outro são dois anéis, e o
+`dentro` do de cima deve ser o `fora` do de baixo (anéis encostados
+formam um chão só; uma fresta isola o lance).
+
+```js
+{ dentro: <contorno>, fora: <contorno>, reto: true, h: [1.2, 11], fileiras: 14,
+  corredorFrente: 2.4, inclinacao: undefined,
+  trechos: [ { de: 0, ate: 360, cor: '#c8343a', cor2: '#b22c33', padrao: 'mosaico', mistura: 0.3, corredor: 13 } ] }
+```
+
+- `h`: altura da primeira e da última fileira. Uma arquibancada sobe uns
+  0,5 m por metro de fundura.
+- `reto: true` (só em retângulo de canto redondo): as escadas saem
+  perpendiculares ao campo e o canto abre em leque. Use em estádio
+  retangular. Nesse caso os ângulos dos trechos valem na beira de DENTRO.
+- `fileiras`: só serve de régua pras faixas e blocos (`faixaTopo`,
+  `blocoFileiras`). O número real de fileiras sai da fundura (0,9 m cada).
+- `corredorFrente`: o corredor vazio entre a primeira fileira e o
+  alambrado (2,4 m; 0 desliga).
+
+**Trecho** (`tipo` ausente = arquibancada):
+
+- `tipo: 'passagem'`: chão de concreto andável (liga setores). Com `alt`
+  vira laje alta.
+- `tipo: 'vazio'`: nada ali (não se anda).
+- Pintura: `cor`, e um `padrao`:
+  - `'mosaico'` (`cor2`, `mistura`): salpicado de duas cores;
+  - `'blocos'` (`cor2`, `bloco` em metros, `blocoFileiras`): xadrez;
+  - `'faixas'` (`cores: [..]`, `faixaM`): faixas de baixo pra cima;
+  - `'fracoes'` (`fracoes: [[0.66, cor], [0.95, cor], [1, cor]]`): faixas
+    por fração da fundura;
+  - `'degrade'` (`cores: [..]`, `mistura`): degradê de baixo pra cima;
+  - `'redemoinho'` (`bandas: [[cor, graus], ..]`, `fase`, `torcao`):
+    faixas tortas que dão a volta;
+  - `'vazias'` (`mistura`): cadeiras faltando.
+- `texto`, `corTexto`, `textoLargura`, `textoAltura`: letreiro escrito nas
+  cadeiras (lido de quem olha de frente pra arquibancada).
+- `faixaTopo: { n, cor }`, `faixaBase: { n, cor }`: fileiras de outra cor.
+- `semCadeiras: true`: só o degrau pintado (arquibancada de cimento).
+- `corredor`: de quantos em quantos metros desce uma escada (0 = sem
+  escada). `corEscada`: escada pintada (sem ela, concreto liso).
+  `escadaNaBorda: true`: uma escada na divisa do trecho.
+- `vomitorios: { f, cada, larg, fundo }` ou `false`: as bocas de acesso.
+  `f` é onde abrem (0 = na frente, dando no corredor; 0,4 = no meio do
+  lance); `cada: 2` = uma a cada duas escadas.
+- `h`, `dentro`, `fora`: valem só pro trecho (um setor mais fundo ou mais
+  alto que os vizinhos). Com `fora` diferente num anel `reto`, ponha
+  `reto: false` no trecho.
+- `cobertura: { h, larg, avanco, cai, cor, cor2, listras, corTrelica, corPilar, pilares, trelica, opaca }`:
+  marquise em cima do trecho, da beira de trás pra frente (`larg` metros
+  pra dentro, `avanco` pra fora).
+- `parapeito`, `corFachada`, `corMureta`.
+
+### `retas`: bloco reto de cadeiras fora de anel
+
+`{ u, v, ang, comp, prof, h: [h0, h1], base, ...pintura do trecho }`:
+`(u, v)` é o meio da beira da frente, `ang` pra onde ela sobe, `comp` de
+ponta a ponta, `prof` da frente ao fundo. Anda-se nela, mas os setores do
+jogo só nascem em `aneis`.
+
+### Coberturas inteiras
+
+- `coberturasAnel: [{ fora, dentro, h, cai, n, cor, cor2, corNervura, bordaFora: { larg, cor }, bordaDentro: { larg, cor }, bojo, fenda }]`:
+  anel de cobertura em gomos, do contorno de fora até a boca de dentro
+  (`cai` negativo sobe de fora pra dentro).
+- `folhas: [{ fora, dentro, n, bojo, fenda, cor, cor2, perfil: [[f, altura, largura], ..] }]`:
+  folhas abauladas (o Beira-Rio).
+- `abobadas: [{ u, comp, vFrente, vFundo, n, bojo, cor, cor2, perfil: [[f, altura], ..] }]`:
+  fileira de cascas ao longo de uma lateral reta (o Romeirão).
+
+### Peças soltas
+
+- `blocos: [{ u, v, w, d, h, y, cor, giro, cobertura: true, texto, corTexto }]`:
+  caixas (prédio, telão, tribuna, banco de reserva). `w` em `u`, `d` em
+  `v`, `h` a altura, `y` a altura do pé. `cobertura: true` faz o bloco
+  sair transparente na foto de cima (use em teto). `texto` pinta um
+  letreiro em cima.
+- `refletores: [[u, v, altura], ..]`, `porticos: [{ ang, larg, h }]`.
+- `fachada: { cor, pilares: { n, h, pe, topo, esp, fundo, cor, contorno } }`.
+- `campo.pista: { dentro, fora, cor, raias }` e `campo.corFosso`: pista
+  de atletismo.
+- `passarelas: [{ u, v, w, d, cor }]`: chão plano andável.
+
+### `entorno`
+
+`{ tipo: 'predio', u, v, w, d, h, cor, cor2 }`, `{ tipo: 'casas', u, v, nu, nv, passo }`,
+`{ tipo: 'rua', de: [u, v], ate: [u, v], larg }`, `{ tipo: 'arvores', u, v, w, d, n }`,
+`{ tipo: 'estacionamento', u, v, w, d, cheio }`, `{ tipo: 'piscina' | 'quadra' | 'grama' | 'agua', u, v, w, d, cor }`,
+`{ tipo: 'cupula', u, v, r, h }`.
+
+### `jogo`: onde fica cada torcida
+
+```js
+jogo: { mandante1: [160, 200], mandante2: [70, 110], mandante3: [250, 290], visitante: [10, 42],
+        tunelMandante: 180, tunelVisitante: 26, folgaPM: 5,
+        fracao: { mandante1: 0.2 }, torcidas: { id_da_torcida: 'mandante1' } }
+```
+
+Cada setor é uma faixa de ângulo onde EXISTE arquibancada. `mandante1` é
+o setor da maior torcida da casa. `visitante` vira um curral fechado por
+duas grades. `fracao` diz em que altura da arquibancada o bonde fica (0 =
+na frente, 1 = no fundo; padrão 0,5). `torcidas` fixa uma torcida num
+setor (os ids estão em `cenario3d/js/jogo.js`, procure por
+`"clubeId": "<clube>"`).
+
+## O que conferir antes de entregar
+
+- A vista de cima bate com o satélite: forma, proporção com o campo, quais
+  lados têm arquibancada, quais são cobertos, quantos lances.
+- As cores e os letreiros batem com as fotos.
+- Todo lugar onde tem setor do jogo tem arquibancada, e as arquibancadas
+  formam um chão só (lances encostados; `passagem` onde há um vão por onde
+  se passa).
+- Nenhuma caixa em cima de arquibancada sem querer.
+- Exemplos pra copiar em `fichas.mjs`: Arena do Grêmio (retangular, três
+  níveis, cobertura em anel), Beira-Rio (oval, folhas), Arruda (lance de
+  cima em degraus, pintura em redemoinho), Ilha do Retiro (lados
+  diferentes, letreiro), Arena Romeirão (retangular, abóbadas, um lance).

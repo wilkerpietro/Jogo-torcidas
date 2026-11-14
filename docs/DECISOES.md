@@ -12586,6 +12586,36 @@ fazer fielmente."
   campo e pelo gol que aparecem em três das fotos). Se for o contrário, é
   trocar os lados na ficha. Os setores das torcidas foram escolha minha.
 
+## Romeirão: arquibancada nas quatro curvas e no oeste; a Fúria no oeste (dono, 14/11/2026)
+
+O dono: "Ficou faltando arquibancada nas curvas nordeste e sudeste do
+Romeirão e eu não entendi esse concreto na arquibancada oeste. É
+arquibancada normal. A Fúria fica na arquibancada oeste. Visitantes na
+leste."
+
+- As curvas nordeste e sudeste, onde eu tinha posto laje de concreto,
+  viraram arquibancada.
+- O lado oeste, onde eu tinha posto o prédio no lugar da arquibancada, é
+  arquibancada normal, igual à do leste (descoberta, três bocas). O prédio
+  branco com o caixote amarelo ficou atrás dela.
+- A Fúria Icasiana tem lugar certo na oeste; a visitante na leste.
+- Testado: briga jogando de Fúria Icasiana, bondes, túneis e PM em chão
+  andável, um chão só, sem erro de página.
+
+## Ferramenta pra modelar estádios em paralelo (dono, 14/11/2026)
+
+O dono pediu até cinco agentes procurando fotos dos estádios dos clubes do
+jogo, estado por estado, começando pelos que faltam do Rio Grande do Sul.
+
+- `assar.js` ganhou o modo de ficha avulsa: `FICHA=<arquivo> CONF=<pasta>`
+  monta só aquele estádio e grava só as fotos de conferência, sem tocar na
+  imagem e nos dados do jogo. Cada um testa o seu sem atropelar os outros.
+- As fichas novas ficam uma por arquivo em `ferramentas/estadios/fichas/`
+  e entram no jogo por uma linha no fim de `fichas.mjs`.
+- `ferramentas/estadios/COMO_MODELAR.md`: o guia da ficha (o quadro, cada
+  peça, como conferir).
+- As fotos de referência ficam fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
