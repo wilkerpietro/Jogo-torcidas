@@ -7,6 +7,7 @@ const E = (a, b) => ({ a, b, forma: 'elipse' });
 const MAR_AM = '#efc12f', MAR_AZ = '#4a8fd0', MAR_AZ2 = '#3b7cc0', MAR_BG = '#e7e2d0';
 const MOR_V = '#c9373b', MOR_V2 = '#b32d31';
 const ILHA_V = '#c93a43';
+const ARR_BANDAS = [['#c3202d', 30], ['#efeee9', 13], ['#1d1d1f', 30], ['#efeee9', 13]];
 const ILHA_TETO = { h: 26, larg: 11, avanco: 2.5, cai: 1.2, cor: '#8f8e89', cor2: '#7d7c78', listras: true, corTrelica: '#5f5e5b', corPilar: '#8a8985' };
 const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
 
@@ -281,5 +282,60 @@ export const FICHAS = {
       { tipo: 'estacionamento', u: -20, v: -160, w: 200, d: 60 }, { tipo: 'estacionamento', u: 10, v: 160, w: 180, d: 60 }
     ],
     jogo: { mandante1: [152, 208], mandante2: [65, 115], mandante3: [245, 295], visitante: [12, 40], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5 }
+  },
+
+  /* ARRUDA (Santa Cruz) — pela planta e pelas fotos do dono (14/11/2026).
+     Oval de dois andares, o norte em cima. O andar de BAIXO dá a volta
+     inteira. O de CIMA é fino atrás do gol da esquerda (oeste) e vai
+     ficando mais fundo pelo norte até o gol da direita (leste), onde é o
+     maior: o contorno de fora é uma elipse fora do centro. Os dois são de
+     degrau pintado no redemoinho tricolor (vermelho, branco, preto). Só a
+     lateral de baixo (sul) é coberta, e só o andar de cima dela: as
+     cadeiras cinzas debaixo da cobertura de concreto. Em volta do gramado,
+     a margem larga de terra clara. Nota do dono: Inferno Coral no leste,
+     Raça Coral no norte, visitante no oeste. */
+  'estadio-arruda': {
+    id: 'estadio-arruda', nome: 'Arruda', clubes: ['santa-cruz'], norte: 90, vazado: 0.5, folga: 16,
+    chao: { cor: '#8b8a85' },
+    campo: { corMargem: '#cfc8b2' },
+    corMureta: '#eeeeea',
+    aneis: [
+      { dentro: { a: 80, b: 49, r: 49 }, fora: { a: 90, b: 59, r: 59 }, h: [1.5, 7], fileiras: 8, corredorFrente: 1.8,
+        trechos: [
+          { de: -25, ate: 205, padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 123, torcao: 8, semCadeiras: true, corredor: 20 },
+          { de: 205, ate: 335, cor: '#c0333c', cor2: '#a82c34', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 18 }
+        ] },
+      { dentro: { a: 90, b: 59, r: 59 }, fora: { a: 113.5, b: 82, forma: 'elipse', cu: 9.5, cv: 1 }, h: [9, 20], fileiras: 16, corredorFrente: 2,
+        trechos: [
+          { de: -25, ate: 25, h: [9, 26], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: 25, ate: 75, h: [9, 23], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: 75, ate: 125, h: [9, 20], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: 125, ate: 165, h: [9, 17], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
+          { de: 165, ate: 205, h: [9, 15.5], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
+          /* a lateral coberta: só o andar de cima, as cadeiras debaixo do concreto */
+          { de: 205, ate: 335, h: [9, 20], cor: '#b9b6ac', cor2: '#a5a299', padrao: 'mosaico', mistura: 0.3, corredor: 16,
+            cobertura: { h: 30, larg: 21, avanco: 3, cai: 1.5, cor: '#7b7972', cor2: '#696761', listras: true, corTrelica: '#4f4e4a', corPilar: '#8a8985' } }
+        ] }
+    ],
+    fachada: { cor: '#d9d6cb' },
+    blocos: [
+      /* o gramado em volta do campo, dentro da margem de terra */
+      { u: 0, v: 0, w: 121, d: 80, h: 0.02, y: 0.07, cor: '#4c9656' },
+      /* os bancos de reserva do lado coberto e o placar no alto do norte */
+      { u: -22, v: -41.5, w: 10, d: 2, h: 1.6, cor: '#d98a92' }, { u: 22, v: -41.5, w: 10, d: 2, h: 1.6, cor: '#d98a92' },
+      { u: 2, v: 77, w: 14, d: 2, h: 5, y: 20, cor: '#17181b' }
+    ],
+    refletores: [[-82, 86, 46], [84, 90, 46], [-94, -88, 46], [96, -86, 46]],
+    entorno: [
+      { tipo: 'casas', u: -40, v: 118, nu: 16, nv: 3, passo: 13 }, { tipo: 'agua', u: 60, v: 142, w: 200, d: 10 },
+      { tipo: 'casas', u: -146, v: 10, nu: 3, nv: 14, passo: 13 }, { tipo: 'casas', u: 158, v: 60, nu: 3, nv: 6, passo: 13 },
+      { tipo: 'arvores', u: 150, v: -30, w: 30, d: 70, n: 14 }, { tipo: 'predio', u: 150, v: 118, w: 26, d: 18, h: 8, cor: '#d9d6cb', cor2: '#b5b2a7' },
+      { tipo: 'estacionamento', u: -30, v: -112, w: 110, d: 22, cheio: 0.25 }, { tipo: 'quadra', u: 96, v: -116, w: 44, d: 26 },
+      { tipo: 'rua', de: [-220, -98], ate: [220, -98], larg: 9 }, { tipo: 'rua', de: [-124, -160], ate: [-124, 160], larg: 9 }, { tipo: 'rua', de: [136, -160], ate: [136, 160], larg: 9 },
+      { tipo: 'rua', de: [-220, 100], ate: [220, 100], larg: 8 }
+    ],
+    /* o Inferno Coral atrás do gol do leste; a Raça Coral no norte; a visitante atrás do gol do oeste */
+    jogo: { mandante1: [-18, 18], mandante2: [72, 108], mandante3: [250, 290], visitante: [163, 197], tunelMandante: 0, tunelVisitante: 180,
+            torcidas: { inferno_coral: 'mandante1', raca_coral: 'mandante2' } }
   }
 };

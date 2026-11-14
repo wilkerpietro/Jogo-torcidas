@@ -29,7 +29,12 @@ const CONCRETO = '#b4b2a9', CONCRETO_ESC = '#8d8b84';
 /* o raio do contorno na direção `ang` (graus) */
 export function raioDe(ang, c) {
   const dx = Math.cos(ang * RAD), dy = Math.sin(ang * RAD);
-  if (c.forma === 'elipse') return c.a * c.b / Math.hypot(c.b * dx, c.a * dy);
+  if (c.forma === 'elipse') {
+    /* a elipse pode estar FORA DO CENTRO (`cu`, `cv`): é o que faz a arquibancada mais funda de um lado que do outro (o Arruda) */
+    if (c.cu || c.cv) { const cu = c.cu || 0, cv = c.cv || 0, A = dx * dx / (c.a * c.a) + dy * dy / (c.b * c.b), B = -2 * (dx * cu / (c.a * c.a) + dy * cv / (c.b * c.b)), C = cu * cu / (c.a * c.a) + cv * cv / (c.b * c.b) - 1;
+      return (-B + Math.sqrt(Math.max(0, B * B - 4 * A * C))) / (2 * A); }
+    return c.a * c.b / Math.hypot(c.b * dx, c.a * dy);
+  }
   const ax = Math.abs(dx), ay = Math.abs(dy), r = Math.min(c.r || 0, c.a, c.b);
   if (ax > 1e-9) { const t = c.a / ax; if (t * ay <= c.b - r + 1e-9) return t; }
   if (ay > 1e-9) { const t = c.b / ay; if (t * ax <= c.a - r + 1e-9) return t; }
@@ -234,6 +239,11 @@ export function construir(THREE, ficha) {
       if (t.padrao === 'blocos') return (Math.floor(i / bloco) + Math.floor(k / blocoF)) % 2 ? (t.cor2 || t.cor) : t.cor;
       if (t.padrao === 'vazias') return rnd() < (t.mistura || 0.5) ? CONCRETO : t.cor;
       /* faixas pintadas no degrau, de baixo pra cima (a arquibancada listrada da Ilha do Retiro) */
+      /* redemoinho: faixas tortas que dão a volta no estádio (a pintura tricolor do Arruda). `bandas`: [[cor, graus], ...];
+         `fase`: onde a primeira começa; `torcao`: quantos graus a faixa anda da frente ao fundo */
+      if (t.padrao === 'redemoinho') { const bs = t.bandas, tot = bs.reduce((q, b) => q + b[1], 0);
+        let a = ((G.angEm ? G.angEm(i + 0.5) : 0) - (t.fase || 0) + (t.torcao || 0) * (k / N)) % tot; if (a < 0) a += tot;
+        for (const [c, w] of bs) { if (a < w) return c; a -= w; } return bs[0][0]; }
       /* faixas por fração da fundura: [[até onde (0 a 1), cor], ...] (o lado descoberto da Ilha: preto, vermelho no alto e o friso amarelo) */
       if (t.padrao === 'fracoes') { const f = (k + 0.5) / N; for (const [ate, c] of t.fracoes) if (f <= ate) return c; return t.fracoes[t.fracoes.length - 1][1]; }
       if (t.padrao === 'faixas') { const nf = Math.max(1, Math.round((t.faixaM || 3) / G.passo)); return t.cores[Math.floor(k / nf) % t.cores.length]; }

@@ -12405,6 +12405,36 @@ também tem o nome SPORT na curva."
   seu setor; bondes, túneis e PM em chão andável; um chão só; sem erro de
   página.
 
+## Arruda lowpoly pela planta e pelas fotos do dono (dono, 14/11/2026)
+
+O dono mandou a planta e quatro fotos do Arruda: "Tente fazer do estádio
+arruda: dois andares, só uma lateral coberta e somente a parte superior
+dela, arquibancada superior vai aumentando de tamanho da esquerda pra
+direita. Inferno Coral fica no lado leste, Raça Coral no lado norte e
+visitante no oeste."
+
+- **A planta** (o norte em cima): oval de dois andares. O andar de baixo dá
+  a volta inteira. O de cima é fino atrás do gol do oeste e vai ficando
+  mais fundo pelo norte até o gol do leste, onde é o maior.
+- **A pintura**: os dois andares de degrau pintado no redemoinho tricolor,
+  em faixas tortas de vermelho, branco e preto que dão a volta no estádio.
+- **A cobertura**: só na lateral sul, e só no andar de cima dela — as
+  cadeiras cinzas debaixo do concreto. O andar de baixo desse lado fica
+  descoberto.
+- Em volta do gramado, a margem larga de terra clara; as quatro torres de
+  luz nos cantos; o bairro de casas em volta.
+- **Setores**: Inferno Coral atrás do gol do leste, Raça Coral no norte,
+  visitante atrás do gol do oeste, com lugar certo pelo nome da torcida.
+- **O gerador ganhou**: contorno de elipse fora do centro (`cu`, `cv`), que
+  é o que faz a arquibancada mais funda de um lado; e a pintura
+  `redemoinho` (`bandas`, `fase`, `torcao`).
+- **Testado**: jogando de Inferno Coral e de Raça Coral, cada uma nasce no
+  seu setor; bondes, túneis e PM em chão andável; um chão só; sem erro de
+  página.
+- **Limite**: o Santa Cruz não está nas Séries A e B, então o Arruda não
+  aparece na página de referências (que lista só os 36 estádios dessas
+  séries).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
