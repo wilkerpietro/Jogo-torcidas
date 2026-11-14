@@ -371,3 +371,7 @@ body.dia-de-jogo .itn-mini:not(.fechado) .est-cena{margin-inline:auto;max-width:
 .pt-msgs .gz.alm .gz-manchete h2{font-size:23px}
 .pt-msgs .gz.pp .nome-jornal{font-size:22px}
 .pt-msgs .gz.pp .pp-quadro .cab .lado{white-space:normal;overflow-wrap:normal;word-break:normal}
+/* (antes do "Iniciar partida": a prévia do mapa mais baixa no celular, pro botão ficar à vista) */
+@media (max-width:1080px){
+  body:not(.dia-de-jogo) .pt-msgs .msg.kind-partida > .mc-mapa{aspect-ratio:2/1}
+}

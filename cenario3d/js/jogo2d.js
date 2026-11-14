@@ -17,7 +17,7 @@
    cartão da partida cai perto da hora da bola e nada do que conta o
    placar passa na frente dele.
    ========================================================= */
-import { CASCA } from './jogo_casca.js?v=a6b824fc27';
+import { CASCA } from './jogo_casca.js?v=e4a11584f6';
 
 const carregarScript = src => new Promise((ok, erro) => {
   const s = document.createElement('script');
@@ -31,15 +31,15 @@ async function montarJogo() {
   caixa.innerHTML = CASCA;
   while (caixa.firstChild) document.body.appendChild(caixa.firstChild);
   /* os escudos, as fotos das praças e as bandeiras embutidos (o `IMG()` do jogo procura aqui antes do caminho) */
-  await carregarScript('dados/imagens_jogo.js?v=a6b824fc27').catch(() => {});
+  await carregarScript('dados/imagens_jogo.js?v=e4a11584f6').catch(() => {});
   /* sem o rolo do feed: a tela entre os jogos é o portal */
   window.TO = window.TO || {};
   TO.semFeed = true;
-  await carregarScript('js/jogo.js?v=a6b824fc27');
-  await carregarScript('js/portal.js?v=a6b824fc27').catch(err => console.error('o portal não carregou:', err));
+  await carregarScript('js/jogo.js?v=e4a11584f6');
+  await carregarScript('js/portal.js?v=e4a11584f6').catch(err => console.error('o portal não carregou:', err));
   /* o boneco das cenas de imagem (os dois níveis afinados, em base64) */
-  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=a6b824fc27').catch(() => {});
-  await import('./bonecos3_global.js?v=a6b824fc27').catch(err => console.error('o boneco das cenas não carregou:', err));
+  if (!TO.dados.bonecoPertoGLB) await carregarScript('dados/boneco_glb.js?v=e4a11584f6').catch(() => {});
+  await import('./bonecos3_global.js?v=e4a11584f6').catch(err => console.error('o boneco das cenas não carregou:', err));
   ligar();
 }
 
