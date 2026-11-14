@@ -7,6 +7,7 @@ const E = (a, b) => ({ a, b, forma: 'elipse' });
 const MAR_AM = '#efc12f', MAR_AZ = '#4a8fd0', MAR_AZ2 = '#3b7cc0', MAR_BG = '#e7e2d0';
 const MOR_V = '#c9373b', MOR_V2 = '#b32d31';
 const ILHA_V = '#c93a43';
+const BEI_V = '#c8343a', BEI_V2 = '#b22c33';
 const GRE_A = '#5aa7d8', GRE_A2 = '#4a93c8';
 /* o contorno de fora do andar de cima do Arruda, a `d` metros do de dentro */
 const ARR_FORA = d => ({ a: 90 + d, b: 59 + d, r: 59 + d });
@@ -395,5 +396,53 @@ export const FICHAS = {
     ],
     /* a torcida do Grêmio na Geral (o gol norte); a visitante na quina sudeste */
     jogo: { mandante1: [160, 200], mandante2: [70, 110], mandante3: [250, 290], visitante: [10, 42], tunelMandante: 180, tunelVisitante: 26, folgaPM: 5, fracao: { mandante1: 0.2 } }
+  },
+
+  /* BEIRA-RIO (Internacional) — pelas plantas de setores e pelas fotos do
+     dono (14/11/2026). O quadro é o das plantas: o oeste em cima, o norte à
+     direita. Oval, com o gramado largo em volta do campo. Dois lances de
+     cadeira vermelha que dão a volta inteira — o Inferior e o Superior — e,
+     entre eles, o anel dos camarotes. A cobertura branca é a das 65 folhas:
+     cada uma nasce no chão do lado de fora, sobe pela fachada e vai até o
+     anel de dentro, que deixa a abertura oval em cima do campo. Os dois
+     telões pendurados atrás dos gols. Do lado oeste, a avenida e o Guaíba;
+     do norte, o estacionamento e o ginásio. Torcida adversária no lance de
+     cima da quina noroeste (em cima, à direita); a nossa atrás do gol sul. */
+  'estadio-beira-rio': {
+    id: 'estadio-beira-rio', nome: 'Beira-Rio', clubes: ['internacional'], norte: 0, vazado: 0.3, folga: 30,
+    chao: { cor: '#8c8b86', esplanada: { a: 170, b: 144, forma: 'elipse' }, corEsplanada: '#a9a59b' },
+    campo: { corMargem: '#4a9a56' },
+    corMureta: '#e9e6e0',
+    aneis: [
+      { dentro: E(78, 51), fora: E(96, 69), h: [1.2, 9], fileiras: 20,
+        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 15 }] },
+      /* o anel dos camarotes */
+      { dentro: E(96, 69), fora: E(100, 73), h: [10.5, 12], fileiras: 3, corredorFrente: 0, vomitorios: false, passoFileira: 2,
+        trechos: [{ de: 0, ate: 360, cor: '#4a2428', cor2: '#e9e6e0', padrao: 'blocos', bloco: 2, semCadeiras: true, corredor: 0 }] },
+      { dentro: E(100, 73), fora: E(124, 98), h: [14, 30], fileiras: 26, corredorFrente: 2,
+        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 17, parapeito: 2 }] }
+    ],
+    /* as folhas: de fora (baixas) até o anel de dentro (alto) */
+    coberturasAnel: [{ fora: E(141, 115), dentro: E(93, 66), h: 33, cai: -12, n: 65, bojo: 3.2, fenda: 0.12, cor: '#f6f6f2', cor2: '#f0f0ec', nervuras: false,
+      bordaDentro: { larg: 2.6, cor: '#c9cdd0' } }],
+    /* as pernas das folhas na fachada */
+    fachada: { cor: '#6b2a2e', pilares: { n: 65, h: 33, pe: 20, topo: 16, esp: 5.4, fundo: 1.2, cor: '#f4f4f0', contorno: E(124, 98) } },
+    blocos: [
+      { u: 96, v: 0, w: 1.8, d: 24, h: 8, y: 33, cor: '#17181b' }, { u: -96, v: 0, w: 1.8, d: 24, h: 8, y: 33, cor: '#17181b' },
+      /* os bancos de reserva do lado oeste */
+      { u: -18, v: 38, w: 12, d: 2.2, h: 1.6, cor: '#e9e6e0' }, { u: 18, v: 38, w: 12, d: 2.2, h: 1.6, cor: '#e9e6e0' }
+    ],
+    entorno: [
+      /* o oeste: a avenida e o Guaíba */
+      { tipo: 'agua', u: 0, v: 236, w: 700, d: 90 }, { tipo: 'rua', de: [-320, 176], ate: [320, 168], larg: 18 }, { tipo: 'arvores', u: -40, v: 190, w: 300, d: 10, n: 22 },
+      /* o norte: o estacionamento e o ginásio */
+      { tipo: 'estacionamento', u: 236, v: 30, w: 100, d: 180, cheio: 0.3 }, { tipo: 'cupula', u: 214, v: -128, r: 34, h: 12 },
+      /* o leste e o sul: a avenida, o parque e a cidade */
+      { tipo: 'rua', de: [-320, -164], ate: [320, -176], larg: 14 }, { tipo: 'rua', de: [-196, -260], ate: [-186, 260], larg: 12 },
+      { tipo: 'arvores', u: -240, v: 40, w: 60, d: 200, n: 26 }, { tipo: 'grama', u: -240, v: 40, w: 70, d: 210, cor: '#6f9a55' },
+      { tipo: 'casas', u: -60, v: -214, nu: 16, nv: 3, passo: 14 }, { tipo: 'predio', u: 120, v: -210, w: 22, d: 22, h: 44 }, { tipo: 'predio', u: 156, v: -214, w: 20, d: 22, h: 56 }
+    ],
+    jogo: { mandante1: [160, 200], mandante2: [250, 290], mandante3: [70, 110], visitante: [8, 46], tunelMandante: 180, tunelVisitante: 27, folgaPM: 5,
+            fracao: { mandante1: 0.2, visitante1: 0.72, visitante2: 0.72, visitante3: 0.72 } }
   }
 };

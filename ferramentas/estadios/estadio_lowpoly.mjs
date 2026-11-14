@@ -370,7 +370,13 @@ export function construir(THREE, ficha) {
     const pt = (ang, f, dh) => { const r0 = raioDe(ang, cb.dentro), r1 = raioDe(ang, cb.fora), q = ponto(ang, r0 + (r1 - r0) * f); return P(q[0], q[1], hd + (hf - hd) * f + (dh || 0)); };
     const faixa = (f0, f1, c1, c2, dh) => { for (let i = 0; i < n; i++) { const a0 = 360 * i / n, a1 = 360 * (i + 1) / n; R.quad(pt(a0, f0, dh), pt(a0, f1, dh), pt(a1, f1, dh), pt(a1, f0, dh), i % 2 ? (c2 || c1) : c1); } };
     const ff = cb.bordaFora ? cb.bordaFora.larg / prof : 0, fd = cb.bordaDentro ? cb.bordaDentro.larg / prof : 0;
-    faixa(fd, 1 - ff, cb.cor || '#f4f3ee', cb.cor2);
+    /* AS FOLHAS (o Beira-Rio): com `bojo`, cada gomo é uma folha abaulada — a espinha do meio sobe `bojo` metros, e
+       a luz pega um lado e o outro de cada folha de jeito diferente; `fenda` deixa um vão escuro entre as folhas */
+    if (cb.bojo) { const fen = (cb.fenda || 0) * 360 / n / 2;
+      for (let i = 0; i < n; i++) { const a0 = 360 * i / n + fen, a1 = 360 * (i + 1) / n - fen, am = (a0 + a1) / 2, c = i % 2 ? (cb.cor2 || cb.cor || '#f4f3ee') : (cb.cor || '#f4f3ee'), b = cb.bojo;
+        R.quad(pt(a0, fd, 0), pt(a0, 1 - ff, 0), pt(am, 1 - ff, b), pt(am, fd, b * 0.4), c);
+        R.quad(pt(am, fd, b * 0.4), pt(am, 1 - ff, b), pt(a1, 1 - ff, 0), pt(a1, fd, 0), c); }
+    } else faixa(fd, 1 - ff, cb.cor || '#f4f3ee', cb.cor2);
     if (ff) faixa(1 - ff, 1, cb.bordaFora.cor); if (fd) faixa(0, fd, cb.bordaDentro.cor);
     for (const an of cb.aneis || []) faixa(an.f, an.f + an.larg / prof, an.cor, null, 0.2);
     /* as nervuras entre os gomos */

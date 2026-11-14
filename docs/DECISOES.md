@@ -12502,6 +12502,30 @@ O dono mandou a planta de setores e cinco fotos: "Arena do grêmio".
   Gremista e a Torcida Jovem), então a Geral fica com a maior das que
   estiverem no jogo.
 
+## Beira-Rio lowpoly pelas plantas e pelas fotos do dono (dono, 14/11/2026)
+
+O dono mandou duas plantas de setores e quatro fotos: "Beira Rio".
+
+- **A planta** (o oeste em cima, o norte à direita): oval, com o gramado
+  largo em volta do campo. Dois lances de cadeira vermelha que dão a volta
+  inteira (Inferior e Superior) e, entre eles, o anel dos camarotes.
+- **A cobertura**: as 65 folhas brancas. Cada uma nasce no chão do lado de
+  fora, sobe pela fachada e vai até o anel de dentro, que deixa a abertura
+  oval em cima do campo. Cada folha é abaulada, com um vão escuro entre
+  uma e outra.
+- Os dois telões pendurados atrás dos gols; do lado oeste a avenida e o
+  Guaíba; do norte o estacionamento e o ginásio.
+- **Setores**: a torcida adversária no lance de cima da quina noroeste (em
+  cima, à direita), como na planta; a maior torcida do Inter atrás do gol
+  sul, no lance de baixo.
+- **O gerador ganhou**: `bojo` e `fenda` na cobertura em anel (o gomo vira
+  folha abaulada) e a cobertura que sobe de fora pra dentro (`cai`
+  negativo).
+- **Testado**: briga 60 × 56 jogando de Camisa 12 do Inter; bondes, túneis
+  e PM em chão andável; um chão só; sem erro de página.
+- **Escolha minha**: o dono não disse onde fica cada torcida do Inter;
+  pus a maior atrás do gol sul.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
