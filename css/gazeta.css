@@ -1,0 +1,484 @@
+/* =========================================================
+   A GAZETA DOS SPORTS
+   A mensagem de rodada é um RECORTE DE JORNAL preso no mural
+   escuro do feed. Ele não acompanha o tema do jogo porque
+   jornal não acompanha: papel é papel. Por isso todas as cores
+   daqui são literais, e não as variáveis do jogo.
+   (régua do dono, 20/08/2026)
+   ========================================================= */
+.gz{
+  --papel:#E7E1D0;      /* newsprint envelhecido, viés verde-cinza */
+  --tinta:#17130F;      /* tinta de impressão, viés marrom         */
+  --tinta-2:#574E42;    /* tinta gasta: legendas e secundário      */
+  --rubro-jornal:#8E2A1E;
+  --fio-jornal:#A2977F;
+
+  /* METADE DA ALTURA (ordem do dono, 12/09/2026): o recorte tomava
+     meia tela do feed. Encolheram o recuo, a cabeça, a manchete e o
+     olho — a régua de tipografia caiu junto, não só o espaço em
+     branco, senão a manchete sozinha já ocupava o que sobrava. */
+  margin-top:8px; background:var(--papel); color:var(--tinta);
+  padding:7px 11px 8px;
+  font-family:'PT Serif',Georgia,serif; line-height:1.42;
+  /* a granulação do papel: duas tramas cruzadas, bem fracas */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(23,19,15,.030) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(23,19,15,.022) 0 1px, transparent 1px 4px);
+}
+.gz b,.gz strong{color:var(--tinta); font-weight:700}
+
+/* ---------- cabeçalho: só o nome do jornal ---------- */
+.gz-cabeca{
+  border-bottom:2px solid var(--tinta);
+  padding:0 0 3px;
+}
+.gz .nome-jornal{
+  font-family:Ultra,'Archivo Narrow',Georgia,serif;
+  font-size:clamp(13px,2vw,17px); line-height:1; letter-spacing:-.005em;
+  text-transform:uppercase; white-space:nowrap; color:var(--tinta);
+}
+
+/* ---------- manchete ---------- */
+.gz-manchete{border-bottom:1px solid var(--tinta); padding:5px 0 5px}
+.gz-manchete .chapeu{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:8.5px; letter-spacing:.19em; text-transform:uppercase;
+  color:var(--rubro-jornal); margin-bottom:2px;
+}
+.gz-manchete h2{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:clamp(15px,2.4vw,20px); line-height:.97; letter-spacing:-.012em;
+  text-transform:uppercase; margin:0; color:var(--tinta); text-wrap:balance;
+}
+.gz-manchete .olho{
+  font-size:11.5px; font-style:italic; color:var(--tinta-2);
+  margin:4px 0 0; max-width:64ch; line-height:1.3;
+}
+.gz-manchete .placar-grande{
+  display:inline-flex; align-items:baseline; gap:9px; margin-top:9px;
+  border-top:1px solid var(--fio-jornal); border-bottom:1px solid var(--fio-jornal);
+  padding:5px 0; font-variant-numeric:tabular-nums;
+}
+.gz-manchete .placar-grande .time{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:15px; letter-spacing:.03em; text-transform:uppercase;
+}
+.gz-manchete .placar-grande .n{font-family:Ultra,Georgia,serif; font-size:24px; line-height:1}
+
+/* =========================================================
+   O TOPO: MANCHETE E O RECORTE DA TABELA
+   A edição encolheu (21/08/2026) e fecha no placar grande. Ao
+   lado da manchete fica um recorte de três linhas da tabela —
+   o time logo acima do nosso, o nosso e o logo abaixo.
+   ========================================================= */
+/* SEM LINHA DO MEIO (pedido do dono, 21/08/2026): o fio vertical
+   entre a manchete e o recorte saiu; o que separa é o espaço */
+.gz-topo{
+  display:grid; grid-template-columns:1fr 250px; gap:0 16px;
+  border-bottom:1px solid var(--tinta);
+}
+.gz-topo.sozinha{grid-template-columns:1fr}
+.gz-topo .gz-manchete{border-bottom:0}
+.gz-recorte{padding:5px 0 5px; align-self:start}
+.gz .col-tit{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:9px; letter-spacing:.13em; text-transform:uppercase; color:var(--tinta);
+  border-bottom:1px solid var(--tinta); padding-bottom:3px; margin-bottom:5px;
+}
+.gz-recorte .col-tit{border-bottom-width:1px; margin-bottom:8px}
+.gz-recorte .col-tit .onde{
+  font-weight:600; letter-spacing:.1em; color:var(--tinta-2); margin-left:8px;
+}
+.gz-recorte .l{
+  display:grid; grid-template-columns:16px 1fr auto auto auto;
+  gap:0 7px; align-items:baseline;
+  font-size:11.5px; line-height:1.5; color:var(--tinta);
+  font-variant-numeric:tabular-nums;
+  border-bottom:1px dotted var(--fio-jornal); padding:1px 0;
+}
+.gz-recorte .l .p{color:var(--tinta-2); text-align:right}
+.gz-recorte .l .t{overflow-wrap:anywhere}
+.gz-recorte .l .j,.gz-recorte .l .sg{color:var(--tinta-2); font-size:10.5px}
+.gz-recorte .l .sg{min-width:2.4em; text-align:right}
+.gz-recorte .l .pt{font-weight:700; min-width:2em; text-align:right}
+.gz-recorte .l.nossa{
+  background:rgba(142,42,30,.10); margin:0 -5px; padding:1px 5px;
+  border-bottom-color:var(--rubro-jornal);
+}
+.gz-recorte .l.nossa .t,.gz-recorte .l.nossa .pt{font-weight:700}
+.gz-recorte .de{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:8.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2); margin-top:5px; text-align:right;
+}
+/* o nosso clube no placar grande sai marcado, como no recorte */
+.gz-manchete .placar-grande .time.nossa{color:var(--rubro-jornal)}
+
+@media (max-width:560px){
+  .gz-topo,.gz-topo.sozinha{grid-template-columns:1fr}
+  .gz-recorte{
+    border-top:1px solid var(--fio-jornal); padding:5px 0 4px; margin-top:2px;
+  }
+  .gz .nome-jornal{white-space:normal}
+}
+
+/* =========================================================
+   O BOTÃO QUE ABRE O JORNAL (pedido do dono, 21/08/2026)
+   ========================================================= */
+.gz-abre{border-top:2px solid var(--tinta); margin-top:11px; padding-top:8px}
+.gz-mostrar{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:10px; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--rubro-jornal); background:none; cursor:pointer;
+  border:1px solid var(--rubro-jornal); padding:6px 13px;
+}
+.gz-mostrar:hover{background:rgba(142,42,30,.10)}
+.gz-mostrar:focus-visible{outline:2px solid var(--rubro-jornal); outline-offset:3px}
+.gz-mostrar.aberto{color:var(--tinta-2); border-color:var(--fio-jornal)}
+.gz-mostrar.aberto:hover{background:rgba(23,19,15,.06)}
+/* =========================================================
+   O JORNAL COMPLETO (atrás do botão, 21/08/2026)
+   Tudo daqui pra baixo só aparece com a página aberta. É o
+   jornal de 20/08/2026 inteiro, sem uma vírgula de diferença.
+   ========================================================= */
+.gz-cheio{padding-top:2px}
+.gz-colunas{
+  display:grid; grid-template-columns:1.12fr 1fr .92fr; gap:0 13px; padding-top:11px;
+}
+.gz-colunas > *:not(:first-child){
+  border-left:1px solid var(--fio-jornal); padding-left:13px; margin-left:-1px;
+}
+.gz .col-tit.rubra{color:var(--rubro-jornal); border-bottom-color:var(--rubro-jornal)}
+.gz-materia p{
+  margin:0 0 8px; font-size:12.5px; line-height:1.45; color:var(--tinta);
+  text-align:justify; hyphens:auto; -webkit-hyphens:auto;
+}
+.gz-materia p:last-child{margin-bottom:0}
+.gz-materia .assina{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2); margin-bottom:6px;
+}
+
+/* a caixa do nosso jogo */
+.gz-caixa{
+  background:var(--papel-2); border:1px solid var(--tinta);
+  padding:9px 10px; margin-top:12px;
+}
+.gz-caixa.bom{border-left-width:3px; border-left-color:#2E6B3A}
+.gz-caixa.ruim{border-left-width:3px; border-left-color:var(--rubro-jornal)}
+.gz-caixa .rot{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:9px; letter-spacing:.17em; text-transform:uppercase;
+  color:var(--rubro-jornal); margin-bottom:4px;
+}
+.gz-caixa .jogo{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:15px; letter-spacing:.01em; text-transform:uppercase; line-height:1.15;
+  color:var(--tinta); font-variant-numeric:tabular-nums;
+}
+.gz-caixa .sob{font-size:11.5px; font-style:italic; color:var(--tinta-2);
+  margin-top:4px; line-height:1.35}
+.gz-caixa .tab{
+  border-top:1px solid var(--fio-jornal); margin-top:7px; padding-top:5px;
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--tinta-2); font-variant-numeric:tabular-nums;
+}
+
+/* ---------- o placar do dia ---------- */
+.gz-placares{font-variant-numeric:tabular-nums}
+.gz-placares .comp{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:8.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--tinta-2); border-bottom:1px solid var(--fio-jornal);
+  padding-bottom:2px; margin:8px 0 4px;
+}
+.gz-placares .comp:first-child{margin-top:0}
+.gz-placares .r{
+  display:grid; grid-template-columns:1fr auto 1fr; gap:5px; align-items:start;
+  font-size:11.5px; padding:2px 0; line-height:1.3; color:var(--tinta);
+}
+/* nome comprido quebra DENTRO da célula: com as linhas grudadas, um
+   "Inter de Limeira" quebrado se misturava visualmente com a linha de
+   cima e o placar virava sopa de letra */
+.gz-placares .r > span{overflow-wrap:anywhere}
+.gz-placares .r .m{text-align:right}
+.gz-placares .r .g{font-weight:700; letter-spacing:.02em; white-space:nowrap}
+.gz-placares .r.gol .g{color:var(--rubro-jornal)}
+.gz-placares .r.nossa{background:rgba(142,42,30,.09); margin:0 -4px; padding:1px 4px}
+.gz-placares .r.nossa .m,.gz-placares .r.nossa .v{font-weight:700}
+
+/* ---------- rodapé ---------- */
+.gz-pe{
+  border-top:2px solid var(--tinta); margin-top:12px; padding-top:7px;
+  display:flex; flex-wrap:wrap; gap:5px 14px; align-items:baseline;
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--tinta-2);
+}
+.gz-pe .espaco{flex:1}
+.gz-link{
+  font:inherit; letter-spacing:inherit; text-transform:inherit;
+  color:var(--rubro-jornal); background:none; cursor:pointer;
+  border:0; border-bottom:1px solid currentColor; padding:0;
+}
+.gz-link:hover{background:rgba(142,42,30,.10)}
+.gz-link:focus-visible{outline:2px solid var(--rubro-jornal); outline-offset:3px}
+
+@media (max-width:560px){
+  .gz-colunas{grid-template-columns:1fr; gap:0}
+  .gz-colunas > *:not(:first-child){
+    border-left:0; border-top:1px solid var(--fio-jornal); padding-left:0;
+    margin-left:0; padding-top:10px; margin-top:10px;
+  }
+  .gz-cabeca .linha{grid-template-columns:1fr; text-align:center; gap:3px}
+  .gz-cabeca .lado,.gz-cabeca .lado.dir{text-align:center}
+}
+
+/* a página magra: sem jogo na praça e sem o nosso clube, as notas do
+   país sobem pra primeira coluna e o jornal fecha em duas */
+.gz-cheio.magra .gz-colunas{grid-template-columns:1.25fr 1fr}
+.gz .col-tit.meio{margin-top:14px}
+.gz-notas p{
+  margin:0 0 8px; font-size:12.5px; line-height:1.45; color:var(--tinta);
+  text-align:justify; hyphens:auto; -webkit-hyphens:auto;
+}
+.gz-notas p:last-child{margin-bottom:0}
+
+/* =========================================================
+   A FAIXA DA CLASSIFICAÇÃO (pedido do dono, 20/08/2026)
+   A tabela da divisão do nosso clube fecha a página, como a
+   tabela fecha a página de esportes: faixa larga embaixo,
+   colunas curtas, e a nossa linha marcada.
+   ========================================================= */
+.gz-tabela{border-top:2px solid var(--tinta); margin-top:12px; padding-top:9px}
+.gz-tabela .col-tit{border-bottom-width:1px; margin-bottom:8px}
+.gz-tabela .col-tit .onde{
+  font-weight:600; letter-spacing:.1em; color:var(--tinta-2); margin-left:8px;
+}
+.gz-tabela .linhas{
+  display:grid; grid-template-columns:repeat(2, 1fr); gap:0 22px;
+}
+.gz-tabela .l,.gz-tabela .salto{
+  display:grid; grid-template-columns:16px 1fr auto auto auto;
+  gap:0 8px; align-items:baseline;
+  font-size:11.5px; line-height:1.5; color:var(--tinta);
+  font-variant-numeric:tabular-nums;
+  border-bottom:1px dotted var(--fio-jornal); padding:1px 0;
+}
+.gz-tabela .l .p{color:var(--tinta-2); text-align:right}
+.gz-tabela .l .t{overflow-wrap:anywhere}
+.gz-tabela .l .j,.gz-tabela .l .sg{color:var(--tinta-2); font-size:10.5px}
+.gz-tabela .l .sg{min-width:2.4em; text-align:right}
+.gz-tabela .l .pt{font-weight:700; min-width:2em; text-align:right}
+.gz-tabela .l.nossa{
+  background:rgba(142,42,30,.10); margin:0 -5px; padding:1px 5px;
+  border-bottom-color:var(--rubro-jornal);
+}
+.gz-tabela .l.nossa .t,.gz-tabela .l.nossa .pt{font-weight:700}
+.gz-tabela .salto{
+  display:block; text-align:center; letter-spacing:.4em;
+  color:var(--tinta-2); border-bottom:0; padding:0;
+}
+@media (max-width:560px){ .gz-tabela .linhas{grid-template-columns:1fr} }
+
+/* =========================================================
+   FUTEBOL E PORRADA (pedido do dono, 21/08/2026)
+   O jornal da briga usa o mesmo esqueleto da Gazeta, mas o
+   papel é mais barato e a tinta mais suja: é jornal de banca
+   de esquina, não de assinatura. Só o que MUDA mora aqui.
+   ========================================================= */
+.gz.pp{
+  --papel:#E3DCC8;          /* papel mais amarelado e mais grosso */
+  --tinta:#141210;
+  --tinta-2:#5A5045;
+  --rubro-jornal:#9B2318;   /* vermelho de manchete de banca */
+  --fio-jornal:#9C9078;
+  /* a trama do papel barato é mais visível que a da Gazeta */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(20,18,16,.045) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(20,18,16,.032) 0 1px, transparent 1px 4px);
+}
+.gz.pp .gz-cabeca{border-top-width:5px; border-bottom-width:2px}
+.gz.pp .nome-jornal{
+  font-family:Ultra,'Archivo Narrow',Georgia,serif;
+  font-size:clamp(18px,3.1vw,27px); letter-spacing:-.01em;
+  color:var(--rubro-jornal);
+}
+.gz.pp .gz-manchete .chapeu{letter-spacing:.22em}
+.gz.pp .gz-manchete h2{
+  /* manchete de briga é mais gritada: um pouco maior e mais fechada */
+  font-size:clamp(26px,4.8vw,42px); letter-spacing:-.018em;
+}
+/* ---------- o quadro da noite ----------
+   Sem o placar grande (dono, 24/08/2026), o quadro é o protagonista
+   da página: número maior e o vencedor em faixa. */
+.pp-quadro{padding:13px 0 11px; align-self:start}
+.pp-quadro .col-tit{border-bottom-width:1px; margin-bottom:8px}
+.pp-quadro .grade{font-variant-numeric:tabular-nums}
+.pp-quadro .cab,.pp-quadro .l{
+  display:grid; grid-template-columns:1fr 3.6em 3.6em; gap:0 6px;
+  align-items:baseline;
+}
+.pp-quadro .cab{
+  border-bottom:1px solid var(--tinta); padding-bottom:4px; margin-bottom:2px;
+}
+.pp-quadro .cab .lado{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:9px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--tinta-2); text-align:center; line-height:1.15;
+  overflow-wrap:anywhere;
+}
+.pp-quadro .cab .lado.nossa{color:var(--rubro-jornal)}
+.pp-quadro .l{
+  border-bottom:1px dotted var(--fio-jornal); padding:3px 0;
+}
+.pp-quadro .l .rot{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2);
+}
+.pp-quadro .l .v{
+  font-family:Ultra,Georgia,serif; font-size:17px; line-height:1;
+  color:var(--tinta); text-align:center;
+}
+.gz.pp .pp-quadro .l .v{font-size:20px}
+.gz.pp .pp-quadro .cab .lado{font-size:10px}
+/* O QUADRO DA PRAÇA (obra, 21/09/2026) tem nome de torcida no
+   cabeçalho e rótulo mais comprido na linha ("SUBSEDES"), então as
+   colunas de número precisam de mais ar que as do quadro da noite:
+   em 3.6em o `overflow-wrap:anywhere` partia "CAMISA 12" no meio da
+   palavra — "CAMIS / A 12". Aqui a quebra é por palavra, e só parte
+   a palavra se ela sozinha não couber. O quadro da briga não muda. */
+.pp-quadro.pp-obra .cab,.pp-quadro.pp-obra .l{
+  grid-template-columns:1fr 4.8em 4.8em;
+}
+.pp-quadro.pp-obra .cab .lado{overflow-wrap:break-word}
+/* quem levou mais ferido e mais cadeia aparece na tinta vermelha:
+   é o número que conta a história da noite */
+.pp-quadro .l.forte .v.pior{color:var(--rubro-jornal)}
+.pp-quadro .venceu{
+  background:var(--rubro-jornal); color:#F2EADA;
+  margin-top:8px; padding:6px 9px;
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:12px; letter-spacing:.04em; text-transform:uppercase;
+  line-height:1.2; overflow-wrap:anywhere;
+}
+.pp-quadro .venceu .rot{
+  display:block; font-weight:600; font-size:8.5px; letter-spacing:.17em;
+  opacity:.82; margin-bottom:1px;
+}
+.pp-quadro .venceu.empatou{background:var(--tinta-2)}
+
+/* ---------- as outras brigas do dia ---------- */
+.pp-outras{padding-top:2px}
+.pp-nota{border-bottom:1px solid var(--fio-jornal); padding:8px 0}
+.pp-nota:last-of-type{border-bottom:0}
+.pp-nota p{
+  margin:0; font-size:13px; line-height:1.4; color:var(--tinta);
+}
+.pp-nota .onde{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:8.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2); margin-top:3px;
+}
+.pp-nota .numeros{
+  display:flex; flex-wrap:wrap; gap:2px 18px; margin-top:4px;
+  font-size:11.5px; color:var(--tinta-2); font-variant-numeric:tabular-nums;
+}
+.pp-nota .numeros b{color:var(--tinta)}
+.pp-mais{
+  border-top:1px solid var(--tinta); margin-top:8px; padding-top:6px;
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--tinta-2);
+}
+.pp-vazio{margin:0; font-size:13px; font-style:italic; color:var(--tinta-2)}
+
+/* a conta das outras tretas, ao lado do botão */
+.gz-abre{display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center}
+.gz-conta{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--tinta-2);
+}
+
+@media (max-width:560px){
+  .pp-quadro{
+    border-top:1px solid var(--fio-jornal); padding:10px 0 11px; margin-top:2px;
+  }
+}
+
+/* =========================================================
+   O ALMANAQUE (pedido do dono, 21/08/2026)
+   O jornal do ano: papel mais claro e mais limpo que o dos
+   outros dois, porque aqui não tem sangue nem rodada — tem
+   balanço. Só o que MUDA mora aqui.
+   ========================================================= */
+.gz.alm{
+  --papel:#EFECE1;
+  --fio-jornal:#B0A68C;
+  /* trama mais fina: papel de anuário, não de banca */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(23,19,15,.020) 0 1px, transparent 1px 4px);
+}
+.gz.alm .nome-jornal{letter-spacing:.01em}
+.gz.alm .gz-manchete{padding-bottom:13px}
+.gz.alm .gz-manchete h2{font-size:clamp(23px,4.2vw,37px)}
+.gz.alm .gz-manchete .olho{margin-bottom:0}
+/* o tom da notícia pinta o chapéu, e nada mais: título é título */
+.gz.alm.boa  .gz-manchete .chapeu{color:#2E6B3A}
+.gz.alm.ruim .gz-manchete .chapeu{color:var(--rubro-jornal)}
+.gz.alm .gz-topo{grid-template-columns:1fr 258px}
+
+/* ---------- o quadro do ano ---------- */
+.alm-quadro{padding:5px 0 5px; align-self:start}
+.alm-quadro .col-tit{border-bottom-width:1px; margin-bottom:4px}
+/* A COLUNA DO RÓTULO SE AJUSTA AO CONTEÚDO: "Campeão" não cabia em
+   3,1em e passava por cima do nome. Com auto, a grade mede a maior
+   das linhas e todas ficam alinhadas. */
+.alm-quadro .l{
+  display:grid; grid-template-columns:minmax(2.4em,auto) 1fr auto; gap:0 10px;
+  align-items:baseline; padding:1px 0;
+  border-bottom:1px dotted var(--fio-jornal);
+  font-size:10.5px; line-height:1.25; color:var(--tinta);
+}
+.alm-quadro .l:last-child{border-bottom:0}
+.alm-quadro .l .rot{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:700;
+  font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--tinta-2); font-variant-numeric:tabular-nums;
+}
+.alm-quadro .l .v{overflow-wrap:anywhere}
+.alm-quadro .l .dado{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:10px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--tinta-2); white-space:nowrap; font-variant-numeric:tabular-nums;
+}
+.alm-quadro .l.forte .v{font-weight:700}
+.alm-quadro .l.sobe .rot{color:#2E6B3A}
+.alm-quadro .l.desce .rot{color:var(--rubro-jornal)}
+.alm-quadro .l.nossa{
+  background:rgba(142,42,30,.10); margin:0 -5px; padding:3px 5px;
+  border-bottom-color:var(--rubro-jornal);
+}
+.alm-quadro .l.nossa .v{font-weight:700}
+.alm-quadro .de{
+  font-family:'Archivo Narrow',var(--titulo),sans-serif; font-weight:600;
+  font-size:8.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--tinta-2); margin-top:5px; text-align:right;
+}
+@media (max-width:560px){
+  .gz.alm .gz-topo{grid-template-columns:1fr}
+  .alm-quadro{
+    border-top:1px solid var(--fio-jornal); padding:5px 0 4px; margin-top:2px;
+  }
+}
+
+
+/* QUEM GANHOU A TRETA (dono, 23/08/2026): no placar de derrubados o
+   vencedor vem em negrito e com o traço embaixo — o número maior já é
+   dele, e a marca tira a última dúvida. */
+.gz.pp .placar-grande .time.venceu{font-weight:700;color:#161616;
+  box-shadow:inset 0 -3px 0 rgba(180,30,30,.5)}
+.gz.pp .placar-grande .n.venceu{font-weight:800}
