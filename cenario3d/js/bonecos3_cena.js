@@ -103,7 +103,7 @@
       numa fase sorteada (quem sai junto não sai no mesmo pé).
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=6dce274cb0';
+import { GLTFLoader, SkeletonUtils } from './GLTFLoader.js?v=eaaecb00c8';
 
 /* onde o modelo mora, quando não vem embutido em base64: o detalhado
    (o do Blender) e os dois níveis afinados dele (ferramentas/afinar_boneco.mjs) */
@@ -2898,28 +2898,84 @@ let escalaDoTabuleiro = () => 1;
   /* =======================================================
      AS GRADES DE FERRO
      ======================================================= */
+  /* O GRADIL DE AÇO (dono, 11/10/2026: "importe a grade do jogo 3D pra
+     substituir essa grade amarela"; e de novo em 14/11/2026: "coloque a
+     grade nova em vez dessa antiga, observe nos estádios padrões do jogo
+     como é a grade"). O gradil tinha entrado só no desenho do jogo antigo
+     (js/diajogo/bonecos3.js); este arquivo, que é o que as cenas usam
+     hoje, seguia com a caixa amarela. É a mesma peça: a tela de arame em
+     losango com a moldura de tubo, o tubo de cima, os postes a cada 2,5 m
+     e 2,4 m de altura (o boneco tem 1,75 m = 17,5 aqui). A vida da grade
+     não é cor: a que apanha ENTORTA pro lado, e a que caiu fica deitada.
+     A fila do portão (`fila`) é o mesmo gradil, mais baixo. */
+  const UM_M = 10, ALT_GRADIL = 2.4 * UM_M, ALT_FILA = 1.2 * UM_M, PASSO_POSTE = 2.5 * UM_M;
+  let texGradil = null;
+  function telaDoGradil(){
+    if(texGradil) return texGradil;
+    const W = 256, c = document.createElement('canvas'); c.width = c.height = W;
+    const x = c.getContext('2d');
+    x.strokeStyle = '#d3d8da'; x.lineWidth = 2.2;
+    for(let k = -W; k < 2*W; k += 16){
+      x.beginPath(); x.moveTo(k, 0); x.lineTo(k + W, W); x.stroke();
+      x.beginPath(); x.moveTo(k, W); x.lineTo(k + W, 0); x.stroke();
+    }
+    x.fillStyle = '#8e969b';
+    x.fillRect(0, 0, W, 8); x.fillRect(0, W - 8, W, 8); x.fillRect(0, 0, 7, W); x.fillRect(W - 7, 0, 7, W);
+    texGradil = new THREE.CanvasTexture(c);
+    texGradil.wrapS = texGradil.wrapT = THREE.RepeatWrapping;
+    texGradil.colorSpace = THREE.SRGBColorSpace;
+    texGradil.anisotropy = 4;
+    return texGradil;
+  }
+  const matGradil = () => matGradil.m || (matGradil.m = remendar(new THREE.MeshLambertMaterial({
+    map: telaDoGradil(), transparent: true, alphaTest: 0.3, side: THREE.DoubleSide, depthWrite: true})));
+  const matTubo = () => matTubo.m || (matTubo.m = remendar(new THREE.MeshLambertMaterial({color: '#7d868b'})));
   const gradeMeshes = new Map();
+  function montarGradil(m){
+    const L = Math.max(4, m.meia * 2), h = m.tipo === 'fila' ? ALT_FILA : ALT_GRADIL;
+    const grupo = new THREE.Group();          // gira no chão (o rumo da grade)
+    const pivo = new THREE.Group();           // entorta em volta do pé
+    grupo.add(pivo);
+    /* a tela: no plano y-z do grupo (o comprimento é o z, como a caixa antiga) */
+    const geo = new THREE.PlaneGeometry(L, h);
+    const uv = geo.attributes.uv;
+    for(let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * L / PASSO_POSTE, uv.getY(i) * h / PASSO_POSTE);
+    uv.needsUpdate = true;
+    const tela = new THREE.Mesh(geo, matGradil());
+    tela.rotation.y = Math.PI / 2; tela.position.y = h / 2;
+    pivo.add(tela);
+    /* o tubo de cima */
+    const tubo = new THREE.Mesh(G().caixa, matTubo());
+    tubo.scale.set(0.6, 0.6, L); tubo.position.y = h;
+    pivo.add(tubo);
+    /* os postes: nas pontas e a cada 2,5 m */
+    const n = Math.max(1, Math.ceil(L / PASSO_POSTE));
+    for(let j = 0; j <= n; j++){
+      const poste = new THREE.Mesh(G().caixa, matTubo());
+      poste.scale.set(0.8, h, 0.8);
+      poste.position.set(0, h / 2, -L/2 + L * j / n);
+      pivo.add(poste);
+    }
+    scene.add(grupo);
+    return {grupo, pivo, lado: (m.x * 7 + m.y * 3) % 2 < 1 ? 1 : -1};
+  }
   function gradesDeFerro(mods){
-    const g = G();
     const agora = new Set();
     for(const m of mods || []){
       agora.add(m);
       let v = gradeMeshes.get(m);
-      if(!v){
-        const mesh = new THREE.Mesh(g.caixa, mat('#e8b53c'));
-        scene.add(mesh); v = {mesh, hp:null}; gradeMeshes.set(m, v);
-      }
-      const ang = Math.atan2(m.ux, m.uy);
+      if(!v){ v = montarGradil(m); gradeMeshes.set(m, v); }
       const qg = pos(m.x, m.y);
-      const mesh = v.mesh;
-      mesh.rotation.y = ang;
-      if(m.tipo==='fila'){ mesh.scale.set(m.esp*2, 30, m.meia*2); mesh.position.set(qg.x, qg.y+15, qg.z); mesh.material = mat('#9aa0a6'); continue; }
-      if(m.hp<=0){ mesh.scale.set(m.esp*2+6, 3, m.meia*2); mesh.position.set(qg.x, qg.y+1.5, qg.z); mesh.material = mat('#6a5a30'); continue; }
-      const p = m.hp/m.hpMax;
-      mesh.material = mat(p>0.6 ? '#e8b53c' : p>0.3 ? '#c08a2a' : '#8a5f22');
-      mesh.scale.set(m.esp*2, 30, m.meia*2); mesh.position.set(qg.x, qg.y+15, qg.z);
+      v.grupo.position.set(qg.x, qg.y, qg.z);
+      v.grupo.rotation.y = Math.atan2(m.ux, m.uy);
+      if(m.tipo === 'fila'){ v.pivo.rotation.z = 0; continue; }
+      /* inteira de pé; apanhando, entorta até ~25°; no chão, deitada */
+      const p = m.hpMax ? m.hp / m.hpMax : 1;
+      v.pivo.rotation.z = m.hp <= 0 ? v.lado * (Math.PI / 2 - 0.04)
+                        : v.lado * (1 - Math.max(0, Math.min(1, p))) * 0.45
+                          + (m.tremor ? Math.sin(performance.now() / 40) * 0.03 * Math.min(1, m.tremor) : 0);
     }
-    for(const [m,v] of gradeMeshes) if(!agora.has(m)){ gradeMeshes.delete(m); scene.remove(v.mesh); }
+    for(const [m,v] of gradeMeshes) if(!agora.has(m)){ gradeMeshes.delete(m); scene.remove(v.grupo); }
   }
 
   /* =======================================================

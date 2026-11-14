@@ -12256,6 +12256,32 @@ dentro pra fora:
 - **Limite**: o vomitório é só a boca; não existe a galeria interna por
   baixo da arquibancada como cena.
 
+## O gradil de aço de volta no lugar da grade amarela (dono, 14/11/2026)
+
+Pedido do dono, vendo as capturas dos estádios lowpoly: "Coloque a grade
+nova em vez dessa antiga, observe nos estádios padrões do jogo como é a
+grade".
+
+- **O que tinha acontecido**: o gradil de aço que o dono pediu em
+  11/10/2026 ("importe a grade do jogo 3D pra substituir essa grade
+  amarela") entrou só no desenho do jogo antigo
+  (`js/diajogo/bonecos3.js`). O desenho que as cenas usam hoje
+  (`cenario3d/js/bonecos3_cena.js`) tinha ficado com a caixa amarela, e
+  desde que o endereço principal passou a abrir esse jogo, toda divisória
+  de arquibancada voltou a aparecer como viga amarela.
+- **O que mudou**: `bonecos3_cena.js` passa a desenhar o mesmo gradil: tela
+  de arame em losango com moldura, tubo em cima, postes a cada 2,5 m,
+  2,4 m de altura (1,2 m na fila do portão). A vida da grade não é mais
+  cor: a que apanha entorta pro lado e a que caiu fica deitada. A barrinha
+  de vida continua aparecendo quando a grade apanha.
+- **Vale pra todas as cenas** com grade: os estádios lowpoly, os três
+  estádios de foto (10, 20 e 40 mil), o gradil do bar e o da praça.
+- **Testado**: briga 60 × 56 no estádio de 40 mil e no Maracanã, sem erro
+  de página; a grade aparece de aço nas duas e a derrubada fica deitada.
+- **Limite**: vista bem de cima, a grade que corre na vertical da tela é
+  fina (é uma tela de arame vista de quina); com o zoom afastado no
+  estádio grande ela fica discreta.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
