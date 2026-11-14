@@ -32,8 +32,8 @@
    requadro da janela, toldo, ar-condicionado. O resto é pintura.
    ========================================================= */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-import { ATLAS } from './modelos_atlas.js?v=9e0868c0e8';
-import { Construtor, METRO, lerp, sub, soma, esc, pv, pe, unit, recuoPoligono, mureta, toldo, arSplit } from './construtor3d.js?v=9e0868c0e8';
+import { ATLAS } from './modelos_atlas.js?v=926c2e6e57';
+import { Construtor, METRO, lerp, sub, soma, esc, pv, pe, unit, recuoPoligono, mureta, toldo, arSplit } from './construtor3d.js?v=926c2e6e57';
 
 /* =======================================================
    1. A IGREJA MATRIZ

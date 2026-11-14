@@ -414,14 +414,14 @@ export const FICHAS = {
     campo: { corMargem: '#4a9a56' },
     corMureta: '#e9e6e0',
     aneis: [
-      /* (as escadas de concreto entre os blocos, e a boca de acesso no meio do lance em cada divisa, como nas plantas) */
+      /* (as escadas de concreto entre os blocos, e a boca de acesso no meio do lance, uma a cada duas divisas: o espaçamento da foto) */
       { dentro: E(78, 51), fora: E(96, 69), h: [1.2, 9], fileiras: 20,
-        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11, vomitorios: { f: 0.5, cada: 1, larg: 3.2, fundo: 3 } }] },
+        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 11, vomitorios: { f: 0.5, cada: 2, larg: 3.2, fundo: 3 } }] },
       /* o anel dos camarotes */
       { dentro: E(96, 69), fora: E(100, 73), h: [10.5, 12], fileiras: 3, corredorFrente: 0, vomitorios: false, passoFileira: 2,
         trechos: [{ de: 0, ate: 360, cor: '#4a2428', cor2: '#e9e6e0', padrao: 'blocos', bloco: 2, semCadeiras: true, corredor: 0 }] },
       { dentro: E(100, 73), fora: E(124, 98), h: [14, 30], fileiras: 26, corredorFrente: 2,
-        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 12, parapeito: 2, vomitorios: { f: 0.3, cada: 1, larg: 3.2, fundo: 3 } }] }
+        trechos: [{ de: 0, ate: 360, cor: BEI_V, cor2: BEI_V2, padrao: 'mosaico', mistura: 0.35, corredor: 12, parapeito: 2, vomitorios: { f: 0.3, cada: 2, larg: 3.2, fundo: 3 } }] }
     ],
     /* as 65 folhas: a ponta no chão, a perna alargando pela fachada, o ombro, o alto e o anel de dentro */
     folhas: [{ fora: E(128, 102), dentro: E(93, 66), n: 65, bojo: 3, fenda: 0.05, cor: '#f7f7f3', cor2: '#f1f1ed',

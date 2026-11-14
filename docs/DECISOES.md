@@ -12546,6 +12546,9 @@ pra ficarem condizente com a realidade".
   bloco, como nas plantas (`vomitorios.f`); antes ficavam só na frente, em
   escadas alternadas. Os blocos ficaram mais estreitos (escada a cada 11 e
   12 m). Nos outros estádios a boca segue na frente, dando no corredor.
+- Depois o dono achou as bocas demais ("Você criou muitos vomitórios, veja
+  mais ou menos o espaçamento na imagem"): passaram a uma a cada duas
+  divisas (umas 25 por lance em vez de 50), que é o espaçamento da foto.
 - Os nove estádios foram assados de novo por causa da escada.
 - **Testado**: nos nove, bondes, túneis e PM em chão andável e um chão só;
   briga no Beira-Rio jogando de Camisa 12 do Inter, sem erro de página.
