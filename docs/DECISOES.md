@@ -12282,6 +12282,29 @@ grade".
   fina (é uma tela de arame vista de quina); com o zoom afastado no
   estádio grande ela fica discreta.
 
+## Não a tela de arame: a grade de contenção de ferro do cordão da PM (dono, 14/11/2026)
+
+O dono, vendo o gradil de tela de arame nas cenas: "Não é essa grade não,
+eu tinha feito uma grade mais detalhista, é a que rodava no jogo 3d
+também".
+
+- **Qual era**: o módulo de grade de contenção de ferro que o dono fez pro
+  cordão da PM do jogo 3D (2 m × 1,1 m: dois montantes, tubo de cima,
+  travessa de baixo, onze barras verticais e dois pés atravessados). Vivia
+  em `dia_de_jogo.js` (`geoGrade`) e era desenhado na briga por
+  `arredores3d.js` (`gradesDoCordao`); os dois arquivos saíram junto com a
+  cidade 3D.
+- **O que mudou**: `bonecos3_cena.js` desenha esse modelo em toda grade da
+  cena, um módulo de uns 2 m por pedaço da grade do combate. A tela de
+  arame saiu. A grade que apanha balança e entorta; a que cai fica
+  deitada pra um dos lados.
+- **Diferença pro modelo original**: os tubos saem mais grossos (11 cm a
+  moldura, 4,5 cm a barra, contra 4 cm e 1,6 cm). No jogo 3D a câmera
+  ficava a poucos metros; aqui a cena inteira cabe na tela e o tubo fino
+  sumia.
+- **Testado**: briga 60 × 56 pelo lado visitante no estádio de 40 mil e no
+  Castelão, sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
