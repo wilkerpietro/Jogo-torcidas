@@ -12955,6 +12955,41 @@ também".
 - **Testado**: briga 60 × 56 jogando de Os Tigres; chão um só, nenhum
   marcador fora; sem erro de página.
 
+## Arena Condá lowpoly (Chapecoense) (dono, 14/11/2026)
+
+- O dono pediu a Arena Condá depois do Heriberto Hülse. Feita sem
+  agente. Fotos de referência (satélite de alta resolução, aéreas
+  recentes e antigas, de dentro) fora do repositório. Não achei mapa de
+  setores do clube.
+- **Medida**: o meio do campo saiu do círculo central do satélite (a
+  lição do Heriberto Hülse); a régua bateu com as linhas do gramado.
+- **As fotos misturam épocas** (a lição do Bento Freitas): segui o
+  satélite e as duas aéreas mais novas, onde o fundo do prédio já tem o
+  telhado verde grande.
+- **Arena Condá** (o norte à direita, o oeste em cima): quatro
+  arquibancadas retas, separadas nos cantos, onde ficam as torres dos
+  refletores:
+  - em cima (oeste), a coberta: cadeira verde, escadas amarelas, os
+    blocos de cadeira branca no alto do meio; a frente descoberta, o
+    telhado claro por cima das fileiras de trás; os bancos na frente;
+  - embaixo (leste), a descoberta de degrau de cimento, com as escadas
+    amarelas, as duas bocas grandes de vomitório no meio do lance e o
+    tablado do escudo na frente;
+  - à esquerda (sul), o fundo descoberto de cimento, com as três bocas
+    na frente, as placas no alto e o telão;
+  - à direita (norte), o fundo do prédio: a arquibancada debaixo do
+    telhado verde e o prédio branco de escritórios atrás; depois, a
+    praça do chafariz e a rua com os carros.
+- **O que é suposição**: a arquibancada debaixo do telhado verde do
+  norte. As fotos antigas (de noite, cheia) mostram arquibancada nesse
+  fundo; nas novas o telhado esconde o que há embaixo.
+- **Setores**: sem fonte. Escolha minha: a Jovem Chape no fundo sul, a
+  visitante na ponta norte da arquibancada do leste.
+- **Testado**: briga 60 × 56 jogando de Jovem Chape; chão um só, nenhum
+  marcador fora; sem erro de página.
+- **Fila de Santa Catarina** (aguardando o dono): Ressacada (Avaí e
+  Barra), Orlando Scarpelli (Figueirense) e Arena Joinville.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

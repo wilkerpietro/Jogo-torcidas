@@ -536,3 +536,5 @@ import passoDareia from './fichas/estadio-passo-dareia.mjs';
 FICHAS[passoDareia.id] = passoDareia;
 import heribertoHulse from './fichas/estadio-heriberto-hulse.mjs';
 FICHAS[heribertoHulse.id] = heribertoHulse;
+import arenaConda from './fichas/estadio-arena-conda.mjs';
+FICHAS[arenaConda.id] = arenaConda;
