@@ -12217,6 +12217,45 @@ ocupava o espaço de umas quatro fileiras.
   segundo parado e 14 a 21 na briga, contra 21 e 15 a 16 da versão
   anterior.
 
+## Arquibancada com cadeiras, escadas, corredor do alambrado e vomitórios (dono, 14/11/2026)
+
+Pedido do dono, com três fotos do Castelão: "adicione mais realismo
+colocando assentos nas arquibancadas, escadaria entre lance de
+arquibancadas, pequeno corredor vazio entre arquibancada e alambrado,
+vomitório que dá acesso ao corredor [...] (que também pode ser por lá a
+briga) [...] o corredor é esse espaço onde esse homem está."
+
+Cada lance de arquibancada dos seis estádios lowpoly passou a ter, de
+dentro pra fora:
+
+- **O alambrado**: o corrimão de ferro na beira da frente.
+- **O corredor**: 2,4 m de piso plano e vazio entre o alambrado e a
+  primeira fileira. Existe na base de cada lance (o de baixo e os de
+  cima). É chão andável: a briga pode acontecer ali.
+- **As cadeiras**: uma a uma (assento e encosto), uma cadeira a cada
+  0,75 m e uma fileira a cada 0,9 m. Os mosaicos e os letreiros (SPORT,
+  NÁUTICO) ficaram mais nítidos por terem mais cadeiras.
+- **As escadas**: os corredores entre os blocos de cadeiras viraram
+  escadaria, com os degraus marcados.
+- **Os vomitórios**: bocas escuras que saem de baixo da arquibancada e dão
+  no corredor da frente, em escadas alternadas (onde não há escada, de 30
+  em 30 m). Em cima de cada boca vai o parapeito.
+- **O túnel do jogo** (por onde o bonde entra e sai) deixou de ser um
+  ponto no fundo da arquibancada: agora é o vomitório do lance de baixo
+  mais perto do setor de cada torcida.
+- **A faixa** da torcida estende no alambrado.
+- Onde não tem cadeira de verdade ficou degrau liso: o setor das
+  organizadas da Neo Química Arena e a faixa dos camarotes do Morumbi.
+- De carona: os dois lances do Castelão e os lances altos da Neo Química
+  Arena passaram a encostar no lance de baixo. Antes havia uma fresta e o
+  lance de baixo do Castelão ficava isolado, sem ninguém conseguir chegar.
+  Agora cada estádio é um chão só.
+- **Testado**: nos seis estádios, bondes, túneis e postos da PM caem em
+  chão andável, e cada estádio é uma ilha só de chão; briga 60 × 56 no
+  Castelão e na Neo Química Arena sem erro de página.
+- **Limite**: o vomitório é só a boca; não existe a galeria interna por
+  baixo da arquibancada como cena.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

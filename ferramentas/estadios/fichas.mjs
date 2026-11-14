@@ -20,7 +20,7 @@ export const FICHAS = {
     aneis: [
       { dentro: { a: 60, b: 42, r: 28 }, fora: { a: 84, b: 66, r: 50 }, h: [1.2, 11], fileiras: 12,
         trechos: [{ de: 0, ate: 360, cor: '#dfe2dc', cor2: '#c3cbc6', padrao: 'mosaico', mistura: 0.3, corredor: 18 }] },
-      { dentro: { a: 86, b: 68, r: 52 }, fora: { a: 128, b: 108, r: 90 }, h: [14, 34], fileiras: 18,
+      { dentro: { a: 84, b: 66, r: 50 }, fora: { a: 128, b: 108, r: 90 }, h: [14, 34], fileiras: 18,
         trechos: [{ de: 0, ate: 360, cor: '#c2c9c4', cor2: '#a3aea9', padrao: 'mosaico', mistura: 0.3, corredor: 22, parapeito: 3,
                     cobertura: { h: 43, larg: 47, avanco: 9, cai: 3, cor: '#f5f5f1', cor2: '#e6e8e6', listras: true, corTrelica: '#b9bdc0', pilares: false } }] }
     ],
@@ -125,7 +125,7 @@ export const FICHAS = {
       { dentro: E(76, 52), fora: E(100, 76), h: [1.2, 10], fileiras: 18,
         trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AM, MAR_AM, MAR_AZ, MAR_AZ2], mistura: 0.9, corredor: 17 }] },
       { dentro: E(100, 76), fora: E(130, 108), h: [12, 30], fileiras: 24,
-        trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AZ2, MAR_AZ, MAR_BG, MAR_BG], mistura: 0.9, corredor: 21, bocas: { cada: 12, f: 0.07, w: 4, d: 4 } }] },
+        trechos: [{ de: 0, ate: 360, padrao: 'degrade', cores: [MAR_AZ2, MAR_AZ, MAR_BG, MAR_BG], mistura: 0.9, corredor: 21 }] },
       { dentro: E(130, 108), fora: E(148, 128), trechos: [{ de: 0, ate: 360, tipo: 'passagem', alt: 30, cor: '#ecebe5' }] }
     ],
     coberturasAnel: [{ fora: E(152, 132), dentro: E(80, 61), h: 42, cai: 7, n: 72, cor: '#f6f5f0', cor2: '#eeede7', corNervura: '#d3d3cc',
@@ -166,7 +166,7 @@ export const FICHAS = {
     aneis: [
       { dentro: { a: 93, b: 57, r: 57 }, fora: { a: 101, b: 65, r: 65 }, h: [1.5, 5.5], fileiras: 8,
         trechos: [{ de: 0, ate: 360, cor: MOR_V, cor2: MOR_V2, padrao: 'mosaico', mistura: 0.3, corredor: 15 }] },
-      { dentro: { a: 101, b: 65, r: 65 }, fora: { a: 105, b: 69, r: 69 }, h: [6.6, 7.6], fileiras: 2,
+      { dentro: { a: 101, b: 65, r: 65 }, fora: { a: 105, b: 69, r: 69 }, h: [6.6, 7.6], fileiras: 2, corredorFrente: 0, vomitorios: false, semCadeiras: true, passoFileira: 2,
         trechos: [
           { de: -58, ate: 58, cor: '#55585c', corredor: 0 },
           { de: 58, ate: 122, cor: '#55585c', corredor: 0, cobertura: { h: 10.5, larg: 7, avanco: 0.5, cai: 0.8, cor: '#2f58b8', cor2: '#2a4fa6', listras: true, trelica: false, pilares: false, opaca: true } },
@@ -208,13 +208,13 @@ export const FICHAS = {
         trechos: [
           { de: -33, ate: 33, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.14, corredor: 13 },
           { de: 33, ate: 147, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 13 },
-          { de: 147, ate: 213, cor: '#c4c2ba', cor2: '#b1afa7', padrao: 'mosaico', mistura: 0.5, corredor: 13 },
+          { de: 147, ate: 213, cor: '#c4c2ba', cor2: '#b6b4ac', padrao: 'mosaico', mistura: 0.5, corredor: 13, semCadeiras: true },
           { de: 213, ate: 327, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 13, faixaTopo: { n: 2, cor: '#2e3033' } }
         ] }
     ],
     retas: [
-      { u: 0, v: 63.5, ang: 90, comp: 130, prof: 38, h: [13, 35], base: 9, fileiras: 24, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, corFachada: '#e9e9e5' },
-      { u: 0, v: -63.5, ang: 270, comp: 130, prof: 38, h: [15, 35], base: 9, fileiras: 22, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, faixaBase: { n: 3, cor: '#2e3033' }, corFachada: '#e9e9e5' }
+      { u: 0, v: 62.5, ang: 90, comp: 130, prof: 38, h: [13, 35], base: 9, fileiras: 24, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, corFachada: '#e9e9e5' },
+      { u: 0, v: -62.5, ang: 270, comp: 130, prof: 38, h: [15, 35], base: 9, fileiras: 22, cor: NEO_B, cor2: NEO_C, padrao: 'mosaico', mistura: 0.1, corredor: 14, faixaBase: { n: 3, cor: '#2e3033' }, corFachada: '#e9e9e5' }
     ],
     fachada: { cor: '#e4e4e0' },
     blocos: [

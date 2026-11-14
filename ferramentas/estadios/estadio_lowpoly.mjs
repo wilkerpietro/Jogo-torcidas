@@ -58,6 +58,62 @@ const mod360 = a => ((a % 360) + 360) % 360;
 const dentroDoArco = (ang, de, ate) => { const a = mod360(ang - de); return a <= mod360(ate - de) || (ate - de) >= 360; };
 function semente(n) { let s = n >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 
+/* =========================================================
+   O LANCE DE ARQUIBANCADA, CADEIRA POR CADEIRA (dono, 14/11/2026, com as
+   fotos do Castelão: "adicione mais realismo colocando assentos nas
+   arquibancadas, escadaria entre lance de arquibancadas, pequeno corredor
+   vazio entre arquibancada e alambrado, vomitório que dá acesso ao
+   corredor [...] que também pode ser por lá a briga").
+
+   De dentro pra fora, cada lance tem: o ALAMBRADO (o corrimão de ferro), o
+   CORREDOR vazio da frente (2,4 m, plano), e as FILEIRAS subindo, uma
+   cadeira a cada 0,75 m e uma fileira a cada 0,9 m. De tantos em tantos
+   metros desce uma ESCADA; e em escadas alternadas abre um VOMITÓRIO: a
+   boca escura que sai de baixo da arquibancada e dá no corredor.
+   ========================================================= */
+const PASSO_FILEIRA = 0.9, LARG_CADEIRA = 0.75, FRENTE = 2.4;
+const def = (...vs) => vs.find(v => v !== undefined);
+function medidasDe(ficha, anel, t, arco, prof) {
+  const frente = def(t.corredorFrente, anel.corredorFrente, ficha.corredorFrente, prof >= 7 ? FRENTE : 0);
+  const n = Math.max(3, Math.ceil(arco / (t.celula || anel.celula || ficha.celula || LARG_CADEIRA)));
+  const N = Math.max(2, Math.round((prof - frente) / (t.passoFileira || anel.passoFileira || ficha.passoFileira || PASSO_FILEIRA)));
+  const larguraCel = arco / n, passo = (prof - frente) / N, fc = Math.min(0.6, frente / prof);
+  const corr = t.corredor === 0 ? 0 : Math.max(6, Math.round((t.corredor || 16) / larguraCel));
+  const esc = Math.max(1, Math.round(1.3 / larguraCel));
+  /* os vomitórios: em escadas alternadas; sem escada, de 30 em 30 m */
+  const vs = def(t.vomitorios, anel.vomitorios, ficha.vomitorios, {});
+  const vomCentros = [], vomMeia = Math.max(1, ((vs && vs.larg) || 3.8) / larguraCel / 2), vomRows = Math.max(2, Math.round(((vs && vs.fundo) || 3.8) / passo));
+  if (vs !== false && frente > 0 && N >= 6) {
+    const margem = vomMeia + 3;
+    if (corr) { const cada = vs.cada || 2; for (let j = 1; j * corr < n; j++) { const c = j * corr + esc / 2; if (j % cada === cada - 1 && c > margem && c < n - margem) vomCentros.push(c); }
+      if (!vomCentros.length) { const j = Math.max(1, Math.round(n / corr / 2)), c = j * corr + esc / 2; if (c > margem && c < n - margem) vomCentros.push(c); } }
+    else { const d = Math.max(8, Math.round((vs.dist || 30) / larguraCel)); for (let c = d / 2; c < n - margem; c += d) if (c > margem) vomCentros.push(c); }
+  }
+  const naBoca = i => vomCentros.some(c => Math.abs(i + 0.5 - c) <= vomMeia);
+  return { n, N, Nold: t.fileiras || anel.fileiras || 14, prof, arco, frente, fc, passo, larguraCel, corr, esc, vomCentros, vomMeia, vomRows,
+    escada: i => !!corr && i > 0 && (i % corr) < esc,
+    noVomitorio: (i, k) => k < vomRows && naBoca(i), sobreVomitorio: (i, k) => k === vomRows && naBoca(i) };
+}
+/* as medidas de um trecho de anel, mais onde cai cada coluna (`pos`, `angs`, `angEm`) */
+export function colunasDe(ficha, anel, t) {
+  const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora, vao = t.ate - t.de, meio = (t.de + t.ate) / 2;
+  const prof = Math.max(1, raioDe(meio, cf) - raioDe(meio, cd)), arco = vao * RAD * (raioDe(meio, cd) + raioDe(meio, cf)) / 2;
+  const G = medidasDe(ficha, anel, t, arco, prof), n = G.n;
+  const reto = !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
+  const pos = reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+                   : (ang, f) => { const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); return ponto(ang, r0 + (r1 - r0) * f); };
+  const angs = [];
+  if (reto) { /* colunas de largura igual, medidas pela beira de dentro */
+    const MS = Math.max(180, n * 4), ac = [0]; let ant = pos(t.de, 0);
+    for (let j = 1; j <= MS; j++) { const q = pos(t.de + vao * j / MS, 0); ac.push(ac[j - 1] + Math.hypot(q[0] - ant[0], q[1] - ant[1])); ant = q; }
+    for (let i = 0, j = 0; i <= n; i++) { const alvo = ac[MS] * i / n; while (j < MS - 1 && ac[j + 1] < alvo) j++;
+      angs.push(t.de + vao * (j + (ac[j + 1] > ac[j] ? (alvo - ac[j]) / (ac[j + 1] - ac[j]) : 0)) / MS); }
+  } else for (let i = 0; i <= n; i++) angs.push(t.de + vao * i / n);
+  G.pos = pos; G.angs = angs;
+  G.angEm = ci => { const j = Math.min(n - 1, Math.max(0, Math.floor(ci))); return angs[j] + (angs[j + 1] - angs[j]) * (ci - j); };
+  return G;
+}
+
 /* o trecho do anel que cobre este ângulo */
 export function trechoEm(anel, ang) { return anel.trechos.find(t => dentroDoArco(ang, t.de, t.ate)) || null; }
 /* todo o miolo de arquibancada da ficha, de dentro pra fora */
@@ -155,7 +211,8 @@ export function construir(THREE, ficha) {
   /* ---- os anéis de arquibancada ---- */
   const A = Malha(), R = Malha(), Ro = Malha(), Pm = Malha();
   /* a cor de cada cadeira de um trecho de n × N cadeiras */
-  const pintorDe = (t, n, N, arco, rnd) => {
+  const pintorDe = (t, G, rnd) => {
+    const n = G.n, N = G.N, kf = N / G.Nold;
     let letreiro = null;
     if (t.texto) {
       const cv = document.createElement('canvas'); cv.width = n; cv.height = N;
@@ -167,14 +224,14 @@ export function construir(THREE, ficha) {
       x.save(); x.translate(n / 2, N * (t.textoMeio || 0.5)); x.scale(Math.min(3.2, cabe / larg), 1); x.fillText(t.texto, 0, 0); x.restore();
       letreiro = x.getImageData(0, 0, n, N).data;
     }
-    const corr = t.corredor === 0 ? 0 : Math.max(6, Math.round((t.corredor || 16) / (arco / n)));
+    const nTopo = t.faixaTopo ? Math.max(1, Math.round(t.faixaTopo.n * kf)) : 0, nBase = t.faixaBase ? Math.max(1, Math.round(t.faixaBase.n * kf)) : 0;
+    const bloco = Math.max(1, Math.round((t.bloco || 10) * 1.7 / G.larguraCel)), blocoF = Math.max(1, Math.round((t.blocoFileiras || 99) * kf));
     return (i, k) => {
-      if (corr && i % corr === 0 && i > 0) return CONCRETO;
       if (letreiro) { const bx = n - 1 - i, by = N - 1 - k; if (letreiro[(by * n + bx) * 4] > 110) return t.corTexto || '#ffffff'; }
-      if (t.faixaTopo && k >= N - t.faixaTopo.n) return t.faixaTopo.cor;
-      if (t.faixaBase && k < t.faixaBase.n) return t.faixaBase.cor;
+      if (nTopo && k >= N - nTopo) return t.faixaTopo.cor;
+      if (nBase && k < nBase) return t.faixaBase.cor;
       if (t.padrao === 'mosaico') return rnd() < (t.mistura || 0.45) ? (t.cor2 || '#ffffff') : t.cor;
-      if (t.padrao === 'blocos') return (Math.floor(i / (t.bloco || 10)) + Math.floor(k / (t.blocoFileiras || 99))) % 2 ? (t.cor2 || t.cor) : t.cor;
+      if (t.padrao === 'blocos') return (Math.floor(i / bloco) + Math.floor(k / blocoF)) % 2 ? (t.cor2 || t.cor) : t.cor;
       if (t.padrao === 'vazias') return rnd() < (t.mistura || 0.5) ? CONCRETO : t.cor;
       /* degradê de baixo pra cima, salpicado (Maracanã: amarelo, azul, branco) */
       if (t.padrao === 'degrade') { const cs = t.cores, q = (k + 0.5) / N * (cs.length - 1) + (rnd() - 0.5) * (t.mistura == null ? 1 : t.mistura) * 1.6;
@@ -182,6 +239,32 @@ export function construir(THREE, ficha) {
       return t.cor;
     };
   };
+  /* O LANCE: alambrado, corredor da frente, fileiras de cadeiras, escadas e
+     vomitórios. `Q(coluna, fração de dentro pra fora, altura)` dá o ponto. */
+  const ctL = new THREE.Color(), tomL = (h, f) => '#' + ctL.set(h).multiplyScalar(f).getHexString();
+  function desenharLance(t, G, h0, h1, Q, corDe) {
+    const { n, N, fc } = G, piso = t.corPiso || ficha.corPiso || '#c1bfb6', ferro = t.corAlambrado || ficha.corAlambrado || '#8b9297';
+    const fr = fc > 0 ? Math.min(fc * 0.3, 0.32 / G.prof) : 0;
+    const q4 = (i0, i1, f0, f1, h, c) => A.quad(Q(i0, f0, h), Q(i0, f1, h), Q(i1, f1, h), Q(i1, f0, h), c);
+    for (let i = 0; i < n; i++) {
+      if (fc > 0) { q4(i, i + 1, 0, fc, h0, i % 2 ? piso : tomL(piso, 0.975)); q4(i, i + 1, 0, fr, h0 + 1.1, ferro); }
+      const escada = G.escada(i);
+      for (let k = 0; k < N; k++) {
+        const f0 = fc + (1 - fc) * k / N, f1 = fc + (1 - fc) * (k + 1) / N, df = f1 - f0, sobe = (h1 - h0) / N, hk = h0 + sobe * (k + 0.5), hk1 = hk + sobe;
+        if (G.noVomitorio(i, k)) { q4(i, i + 1, f0, f1, h0 - 0.02, '#232427'); continue; }
+        if (escada) { q4(i, i + 1, f0, f0 + df / 2, hk - sobe / 2, '#d9d7ce'); q4(i, i + 1, f0 + df / 2, f1, hk, '#a9a79e'); }
+        else {
+          const degrau = tomL(t.semCadeiras ? corDe(i, k) : CONCRETO, (k % 2 ? 0.95 : 1) * (0.92 + 0.08 * k / N));
+          q4(i, i + 1, f0, f1, hk, degrau);
+          if (G.sobreVomitorio(i, k)) q4(i, i + 1, f0, f0 + df * 0.42, hk + 1, '#dddbd2');   /* o parapeito em cima da boca */
+          else if (!t.semCadeiras) { const c = corDe(i, k), luz = 0.9 + 0.1 * k / N;
+            q4(i + 0.12, i + 0.88, f0 + df * 0.10, f0 + df * 0.58, hk + 0.45, tomL(c, luz * 0.94));     /* o assento */
+            q4(i + 0.12, i + 0.88, f0 + df * 0.58, f0 + df * 0.80, hk + 0.9, tomL(c, Math.min(1.25, luz * 1.1))); } /* o encosto */
+        }
+        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), CONCRETO_ESC);
+      }
+    }
+  }
   ficha.aneis.forEach((anel, ia) => {
     const rnd = semente(1234 + ia * 77 + (ficha.id || '').length * 13);
     for (const t of anel.trechos) {
@@ -201,33 +284,14 @@ export function construir(THREE, ficha) {
         }
         continue;
       }
-      const [h0, h1] = t.h || anel.h, N = t.fileiras || anel.fileiras || 14;
-      const n = Math.max(3, Math.ceil(arco / (t.celula || 1.7)));
-      const corDe = pintorDe(t, n, N, arco, rnd);
-      /* (de cima o degrau não aparece: a fileira de trás de cada par sai um tom abaixo, e a arquibancada clareia pro alto) */
-      const ct = new THREE.Color(), tom = (h, f) => '#' + ct.set(h).multiplyScalar(f).getHexString();
-      /* onde cai a cadeira (ângulo, fração de dentro pra fora) e os ângulos das colunas */
-      const reto = !!(anel.reto || t.reto) && cd.forma !== 'elipse' && cf.forma !== 'elipse';
-      const pos = reto ? (ang, f) => { const pm = paramDe(ang, cd), a = pontoPor(pm, cd), b = pontoPor(pm, cf); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
-                       : (ang, f) => { const r0 = raioDe(ang, cd), r1 = raioDe(ang, cf); return ponto(ang, r0 + (r1 - r0) * f); };
+      const [h0, h1] = t.h || anel.h;
+      const G = colunasDe(ficha, anel, t), n = G.n, angs = G.angs, pos = G.pos, prof = G.prof;
       const p = (ang, f, h) => { const q = pos(ang, f); return P(q[0], q[1], h); };
-      const angs = [];
-      if (reto) { /* colunas de largura igual, medidas pela beira de dentro */
-        const MS = Math.max(180, n * 5), ac = [0]; let ant = pos(t.de, 0);
-        for (let j = 1; j <= MS; j++) { const q = pos(t.de + vao * j / MS, 0); ac.push(ac[j - 1] + Math.hypot(q[0] - ant[0], q[1] - ant[1])); ant = q; }
-        for (let i = 0, j = 0; i <= n; i++) { const alvo = ac[MS] * i / n; while (j < MS - 1 && ac[j + 1] < alvo) j++;
-          angs.push(t.de + vao * (j + (ac[j + 1] > ac[j] ? (alvo - ac[j]) / (ac[j + 1] - ac[j]) : 0)) / MS); }
-      } else for (let i = 0; i <= n; i++) angs.push(t.de + vao * i / n);
-      const prof = Math.max(1, raioDe((t.de + t.ate) / 2, cf) - raioDe((t.de + t.ate) / 2, cd));
+      desenharLance(t, G, h0, h1, (ci, f, h) => p(G.angEm(ci), f, h), pintorDe(t, G, rnd));
       for (let i = 0; i < n; i++) {
         const a0 = angs[i], a1 = angs[i + 1];
-        for (let k = 0; k < N; k++) {
-          const f0 = k / N, f1 = (k + 1) / N, hk = h0 + (h1 - h0) * (k + 0.5) / N, hk1 = h0 + (h1 - h0) * (k + 1.5) / N;
-          A.quad(p(a0, f0, hk), p(a0, f1, hk), p(a1, f1, hk), p(a1, f0, hk), tom(corDe(i, k), (k % 2 ? 0.9 : 1) * (0.9 + 0.1 * k / N)));
-          if (k < N - 1) A.quad(p(a0, f1, hk), p(a0, f1, hk1), p(a1, f1, hk1), p(a1, f1, hk), CONCRETO_ESC);
-        }
         /* a mureta da frente e a parede de trás */
-        Pm.quad(p(a0, 0, 0), p(a0, 0, h0 + (h1 - h0) * 0.5 / N + 0.9), p(a1, 0, h0 + (h1 - h0) * 0.5 / N + 0.9), p(a1, 0, 0), t.corMureta || ficha.corMureta || '#d9d7cf');
+        Pm.quad(p(a0, 0, 0), p(a0, 0, h0 + 1.1), p(a1, 0, h0 + 1.1), p(a1, 0, 0), t.corMureta || ficha.corMureta || '#d9d7cf');
         if (ia === ficha.aneis.length - 1 || t.paredeAtras) {
           const hf = h1 + (t.parapeito == null ? 1.2 : t.parapeito), cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
           Pm.quad(p(a0, 1, 0), p(a1, 1, 0), p(a1, 1, hf), p(a0, 1, hf), cf2);
@@ -269,17 +333,11 @@ export function construir(THREE, ficha) {
      beira da frente, `ang` pra onde ela sobe, `comp` de ponta a ponta, `prof` da frente ao fundo) ---- */
   (ficha.retas || []).forEach((t, it) => {
     const rnd = semente(4321 + it * 91), a = t.ang * RAD, ox = Math.cos(a), oy = Math.sin(a), tx = -Math.sin(a), ty = Math.cos(a);
-    const [h0, h1] = t.h, N = t.fileiras || 14, n = Math.max(3, Math.ceil(t.comp / (t.celula || 1.7)));
-    const corDe = pintorDe(t, n, N, t.comp, rnd), ct = new THREE.Color(), tom = (h, f) => '#' + ct.set(h).multiplyScalar(f).getHexString();
+    const [h0, h1] = t.h, G = medidasDe(ficha, {}, t, t.comp, t.prof), n = G.n;
     const p = (fi, fk, h) => { const x = -t.comp / 2 + t.comp * fi, y = t.prof * fk; return P(t.u + tx * x + ox * y, t.v + ty * x + oy * y, h); };
-    for (let i = 0; i < n; i++) {
-      const i0 = i / n, i1 = (i + 1) / n;
-      for (let k = 0; k < N; k++) { const f0 = k / N, f1 = (k + 1) / N, hk = h0 + (h1 - h0) * (k + 0.5) / N, hk1 = h0 + (h1 - h0) * (k + 1.5) / N;
-        A.quad(p(i0, f0, hk), p(i0, f1, hk), p(i1, f1, hk), p(i1, f0, hk), tom(corDe(i, k), (k % 2 ? 0.9 : 1) * (0.9 + 0.1 * k / N)));
-        if (k < N - 1) A.quad(p(i0, f1, hk), p(i0, f1, hk1), p(i1, f1, hk1), p(i1, f1, hk), CONCRETO_ESC); }
-    }
+    desenharLance(t, G, h0, h1, (ci, f, h) => p(ci / n, f, h), pintorDe(t, G, rnd));
     const hf = h1 + (t.parapeito == null ? 1.2 : t.parapeito), cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
-    Pm.quad(p(0, 0, t.base || 0), p(0, 0, h0 + 0.9), p(1, 0, h0 + 0.9), p(1, 0, t.base || 0), t.corMureta || ficha.corMureta || '#d9d7cf');
+    Pm.quad(p(0, 0, t.base || 0), p(0, 0, h0 + 1.1), p(1, 0, h0 + 1.1), p(1, 0, t.base || 0), t.corMureta || ficha.corMureta || '#d9d7cf');
     Pm.quad(p(0, 1, 0), p(1, 1, 0), p(1, 1, hf), p(0, 1, hf), cf2);
     for (const fi of [0, 1]) Pm.quad(p(fi, 0, t.base || 0), p(fi, 1, 0), p(fi, 1, h1), p(fi, 0, h0), t.corLado || CONCRETO_ESC);
   });
@@ -407,7 +465,7 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   const spawns = [], faixas = {};
   const bonde = (id, rot, lado, ang, entrada, jogador) => {
     spawns.push(Object.assign({ id, rot, lado, entrada }, pt(ang, 0.5), jogador ? { jogador: true } : {}));
-    const q = ponto(ang, raioDe(ang, lim.dentro) + 2.2), p = paraPx(q[0], q[1]);
+    const q = ponto(ang, raioDe(ang, lim.dentro) + 0.7), p = paraPx(q[0], q[1]);
     faixas[id] = { x: Math.round(p[0]), y: Math.round(p[1]), len: 130, dir: dirPx(ang, -1) };
   };
   bonde('mandante1', 'MANDANTE 1º ESCALÃO', 'mandante', meio(j.mandante1), 'portao_mandante', true);
@@ -417,7 +475,16 @@ export function marcadores(ficha, paraPx, pxPorMetro) {
   bonde('visitante1', 'VISITANTE 1º ESCALÃO', 'visitante', vd + (va - vd) * 0.5, 'portao_visitante');
   bonde('visitante2', 'VISITANTE 2º ESCALÃO', 'visitante', vd + (va - vd) * 0.22, 'portao_visitante');
   bonde('visitante3', 'VISITANTE 3º ESCALÃO', 'visitante', vd + (va - vd) * 0.78, 'portao_visitante');
-  const tunel = (id, rot, lado, ang) => Object.assign({ id, rot, lado, raio: 40, dir: dirPx(ang, 1) }, pt(ang, 0.9));
+  /* o túnel é o vomitório do lance de baixo mais perto do ângulo pedido (sem vomitório ali, o fundo da arquibancada) */
+  const vomitorioEm = ang => {
+    const anel = ficha.aneis[0], t = trechoEm(anel, ang); if (!t || t.tipo) return null;
+    const G = colunasDe(ficha, anel, t); if (!G.vomCentros.length) return null;
+    let melhor = null; for (const c of G.vomCentros) { const a = G.angEm(c), d = Math.abs(((a - ang + 540) % 360) - 180); if (!melhor || d < melhor.d) melhor = { a, d }; }
+    const q = G.pos(melhor.a, G.fc + (1 - G.fc) * (G.vomRows * 0.45) / G.N), p = paraPx(q[0], q[1]);
+    return { x: Math.round(p[0]), y: Math.round(p[1]), ang: melhor.a };
+  };
+  const tunel = (id, rot, lado, ang) => { const v = vomitorioEm(ang);
+    return v ? { id, rot, lado, raio: 40, dir: dirPx(v.ang, 1), x: v.x, y: v.y } : Object.assign({ id, rot, lado, raio: 40, dir: dirPx(ang, 1) }, pt(ang, 0.9)); };
   const entradas = [tunel('portao_mandante', 'TÚNEL MANDANTE', 'mandante', j.tunelMandante == null ? meio(j.mandante1) : j.tunelMandante),
                     tunel('portao_visitante', 'TÚNEL VISITANTE', 'visitante', j.tunelVisitante == null ? meio(j.visitante) : j.tunelVisitante)];
   const grades = [vd, va].map((ang, i) => { const a = pt(ang, 0.04), b = pt(ang, 0.96);
