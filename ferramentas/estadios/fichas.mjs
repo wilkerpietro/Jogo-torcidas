@@ -538,3 +538,5 @@ import heribertoHulse from './fichas/estadio-heriberto-hulse.mjs';
 FICHAS[heribertoHulse.id] = heribertoHulse;
 import arenaConda from './fichas/estadio-arena-conda.mjs';
 FICHAS[arenaConda.id] = arenaConda;
+import ressacada from './fichas/estadio-da-ressacada.mjs';
+FICHAS[ressacada.id] = ressacada;

@@ -12990,6 +12990,38 @@ também".
 - **Fila de Santa Catarina** (aguardando o dono): Ressacada (Avaí e
   Barra), Orlando Scarpelli (Figueirense) e Arena Joinville.
 
+## Ressacada lowpoly (Avaí e Barra) (dono, 14/11/2026)
+
+- O dono pediu a Ressacada depois da Arena Condá. Feita sem agente.
+  Fotos de referência (satélite de alta resolução, aéreas, de dentro e
+  o mapa de setores do sócio) fora do repositório.
+- **Medida**: o meio do campo saiu do círculo central do satélite. O
+  quadro está na posição do mapa do clube: o leste em cima, o Setor A
+  (oeste) embaixo, o norte à esquerda.
+- **Ressacada**:
+  - um anel oval baixo de cadeira azul, com as escadas amarelas, dá a
+    volta no gramado, que continua em grama atrás dos dois gols;
+  - em cima (leste), a coberta grande: o anel passa por baixo e, atrás
+    dele, sobe o lance de cima, em arco, debaixo do telhado claro que
+    acompanha a curva, com as placas solares no meio; os dois
+    refletores saem de cima do telhado;
+  - embaixo (oeste), o Setor A, coberto: reto e mais fundo, cortando o
+    anel, debaixo do telhado claro, com os bancos de reserva (vermelhos)
+    na frente e uma torre de refletor em cada ponta;
+  - à esquerda e à direita, as duas curvas descobertas; atrás da curva
+    norte, o estacionamento.
+- **No jogo o Barra também manda aqui** (decisão antiga do dono: clube
+  sem estádio próprio joga no da cidade); a ficha leva os dois clubes.
+- **O que não é fiel**: o lance de cima do leste, que na vida real é em
+  três panos retos, saiu em arco contínuo; o escudo nas cadeiras do
+  Setor A não foi desenhado.
+- **Setores**: o mapa do sócio só nomeia o Setor A. A torcida da casa na
+  curva norte e a visitante na curva sul são escolha minha, sem fonte.
+- **Testado**: briga 60 × 56 jogando de Mancha Azul; chão um só, nenhum
+  marcador fora; sem erro de página.
+- **Fila de Santa Catarina** (aguardando o dono): Orlando Scarpelli
+  (Figueirense) e Arena Joinville.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
