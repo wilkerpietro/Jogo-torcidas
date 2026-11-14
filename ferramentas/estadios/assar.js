@@ -31,7 +31,7 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
     fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
     dados[id] = { nome: r.nome, clubes: r.clubes, escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
                   foto: { imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), mascara: r.mascara }, cena: r.cena };
-    if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); }
+    if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'aerea2', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); }
     console.log(id, 'escala', r.escala, 'px/m ·', Math.round(bin(r.imagem).length / 1024), 'KB ·', Date.now() - t0, 'ms');
   }
   fs.writeFileSync(saida, '/* GERADO por ferramentas/estadios/assar.js — não editar à mão.\n   Os estádios low-poly das cenas: a foto de cima, a máscara de onde se anda\n   e os marcadores de cada um; `clubes` diz quem manda o jogo ali. */\nwindow.__ESTADIOS = ' + JSON.stringify(dados, null, 1) + ';\n');

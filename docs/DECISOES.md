@@ -12428,12 +12428,39 @@ visitante no oeste."
 - **O gerador ganhou**: contorno de elipse fora do centro (`cu`, `cv`), que
   é o que faz a arquibancada mais funda de um lado; e a pintura
   `redemoinho` (`bandas`, `fase`, `torcao`).
+  (A elipse fora do centro deixou de ser usada no Arruda na correção
+  seguinte: o andar de cima passou a ser em degraus.)
 - **Testado**: jogando de Inferno Coral e de Raça Coral, cada uma nasce no
   seu setor; bondes, túneis e PM em chão andável; um chão só; sem erro de
   página.
 - **Limite**: o Santa Cruz não está nas Séries A e B, então o Arruda não
   aparece na página de referências (que lista só os 36 estádios dessas
   séries).
+
+## Arruda: o andar de cima em degraus, na vista de cima também (dono, 14/11/2026)
+
+O dono devolveu a vista aérea do Arruda e, depois de uma primeira frase
+que eu entendi ao contrário, explicou: "eu expliquei errado: deve se
+inspirar na imagem em anexo e as outras imagens que você mandou ficou
+errado".
+
+- **O certo** é o da vista aérea: o andar de cima em cinco trechos, cada
+  um com o seu tamanho, crescendo em degraus do oeste até o leste.
+- **O errado** eram as outras imagens (a vista de cima e a do jogo): ali o
+  contorno do andar de cima saía redondo, numa curva lisa, porque só a
+  altura mudava de trecho pra trecho — a fundura vinha de uma elipse.
+- **O que mudou**: cada trecho do andar de cima tem agora a sua fundura
+  (13, 16, 22, 28 e 34 m) junto com a sua altura. O degrau aparece na
+  vista de cima, na cena do jogo e na aérea. A lateral coberta ficou com
+  22 m.
+- A parede do lado de cada trecho passou a ser desenhada onde o vizinho é
+  mais raso ou mais baixo (é o degrau à mostra).
+- **Desfeito**: eu tinha chegado a fazer a altura acompanhar a fundura de
+  forma contínua (sem degrau), pela primeira frase. Não foi usado no
+  Arruda; a opção (`inclinacao`) ficou no gerador, desligada.
+- A bancada ganhou a vista aérea do lado oposto (`aerea2`).
+- **Testado**: briga no Arruda jogando de Inferno Coral, sem erro de
+  página; bondes, túneis e PM em chão andável; um chão só.
 
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair

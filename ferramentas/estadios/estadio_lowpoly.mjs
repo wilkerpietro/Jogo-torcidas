@@ -298,29 +298,38 @@ export function construir(THREE, ficha) {
         }
         continue;
       }
-      const [h0, h1] = t.h || anel.h;
+      const h0 = (t.h || anel.h)[0];
       const G = colunasDe(ficha, anel, t), n = G.n, angs = G.angs, pos = G.pos, prof = G.prof;
       const p = (ang, f, h) => { const q = pos(ang, f); return P(q[0], q[1], h); };
-      desenharLance(t, G, h0, h1, (ci, f, h) => p(G.angEm(ci), f, h), pintorDe(t, G, rnd));
+      /* A ALTURA ACOMPANHA A FUNDURA (`inclinacao`: quanto sobe por metro de fundura; dono, 14/11/2026, o Arruda: a
+         arquibancada de cima cresce redonda, sem degrau entre um trecho e outro). Sem `inclinacao`, vale a altura
+         fixa do trecho (`h`). Com ela, onde a arquibancada é mais funda ela também é mais alta, de forma contínua. */
+      const incl = def(t.inclinacao, anel.inclinacao);
+      const h1 = incl != null ? h0 + incl * prof : (t.h || anel.h)[1];
+      const fundura = ang => Math.max(1, raioDe(ang, cf) - raioDe(ang, cd));
+      const hEm = incl != null ? (ang, h) => h <= h0 ? h : h0 + (h - h0) * fundura(ang) / prof : (ang, h) => h;
+      desenharLance(t, G, h0, h1, (ci, f, h) => { const a = G.angEm(ci); return p(a, f, hEm(a, h)); }, pintorDe(t, G, rnd));
       for (let i = 0; i < n; i++) {
         const a0 = angs[i], a1 = angs[i + 1];
         /* a mureta da frente e a parede de trás */
         Pm.quad(p(a0, 0, 0), p(a0, 0, h0 + 1.1), p(a1, 0, h0 + 1.1), p(a1, 0, 0), t.corMureta || ficha.corMureta || '#d9d7cf');
         if (ia === ficha.aneis.length - 1 || t.paredeAtras) {
-          const hf = h1 + (t.parapeito == null ? 1.2 : t.parapeito), cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
-          Pm.quad(p(a0, 1, 0), p(a1, 1, 0), p(a1, 1, hf), p(a0, 1, hf), cf2);
-          Pm.quad(p(a0, 1, hf), p(a1, 1, hf), p(a1, 1 - 0.8 / prof, hf), p(a0, 1 - 0.8 / prof, hf), cf2);
+          const par = t.parapeito == null ? 1.2 : t.parapeito, hfa = hEm(a0, h1) + par, hfb = hEm(a1, h1) + par, cf2 = t.corFachada || (ficha.fachada && ficha.fachada.cor) || '#c9c6bb';
+          Pm.quad(p(a0, 1, 0), p(a1, 1, 0), p(a1, 1, hfb), p(a0, 1, hfa), cf2);
+          Pm.quad(p(a0, 1, hfa), p(a1, 1, hfb), p(a1, 1 - 0.8 / prof, hfb), p(a0, 1 - 0.8 / prof, hfa), cf2);
         }
       }
       /* as laterais do trecho (onde ele acaba em degrau) */
       for (const [ang, viz] of [[t.de, t.de - 0.5], [t.ate, t.ate + 0.5]]) {
         const outro = trechoEm(anel, viz);
-        if (outro && outro !== t && outro.tipo !== 'passagem' && outro.tipo !== 'vazio') continue;
-        Pm.quad(p(ang, 0, 0), p(ang, 1, 0), p(ang, 1, h1), p(ang, 0, h0), t.corFachada || CONCRETO_ESC);
+        /* (o vizinho mais raso ou mais baixo deixa a lateral deste à mostra: é o degrau entre um trecho e outro) */
+        const degrau = outro && outro !== t && ((outro.fora || anel.fora) !== cf || (outro.h || anel.h)[1] !== (t.h || anel.h)[1]);
+        if (outro && outro !== t && outro.tipo !== 'passagem' && outro.tipo !== 'vazio' && !degrau) continue;
+        Pm.quad(p(ang, 0, 0), p(ang, 1, 0), p(ang, 1, hEm(ang, h1)), p(ang, 0, h0), t.corFachada || (ficha.fachada && degrau && ficha.fachada.cor) || CONCRETO_ESC);
       }
       /* as bocas de acesso (as caixinhas de concreto no meio da arquibancada) */
       if (t.bocas) { const bc = t.bocas, f = bc.f == null ? 0.3 : bc.f;
-        for (let a = t.de + bc.cada / 2; a < t.ate; a += bc.cada) { const r = raioDe(a, cd) + (raioDe(a, cf) - raioDe(a, cd)) * f, w = ponto(a, r), hb = h0 + (h1 - h0) * f + 1.7;
+        for (let a = t.de + bc.cada / 2; a < t.ate; a += bc.cada) { const r = raioDe(a, cd) + (raioDe(a, cf) - raioDe(a, cd)) * f, w = ponto(a, r), hb = hEm(a, h0 + (h1 - h0) * f) + 1.7;
           const m = caixa(bc.d || 5, hb, bc.w || 4, bc.cor || CONCRETO, w[0], hb / 2, -w[1]); m.rotation.y = a * RAD; } }
       /* a cobertura do trecho */
       const cb = t.cobertura;

@@ -74,11 +74,13 @@ window.assar = async function (id, opc) {
   const olhar = (px, py, pz, ax, ay, az) => { persp.position.set(px, py, pz); persp.up.set(0, 1, 0); persp.lookAt(ax, ay, az); renderer.setClearColor(0xbcd7f0, 1); renderer.render(scene, persp); return pegar('image/jpeg', 0.85); };
   const fora = limites(ficha).fora;
   const aerea = olhar(-fora.a * 1.9, fora.a * 1.55, fora.b * 2.6, 0, 0, 0);
+  /* (e a aérea do lado oposto, pra conferir a volta inteira) */
+  const aerea2 = olhar(fora.a * 1.9, fora.a * 1.55, -fora.b * 2.6, 0, 0, 0);
   persp.fov = 62; persp.updateProjectionMatrix();
   const tv = olhar(0, 16, raioDe(270, fora) - 6, 0, 6, -20);
   /* ---- a máscara e os marcadores ---- */
   const m = marcadores(ficha, paraPx, s);
-  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, tv, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
+  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, aerea2, tv, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
 };
 window.FICHAS = Object.keys(FICHAS);
 window.pronto = true;

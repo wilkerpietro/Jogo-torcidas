@@ -7,6 +7,8 @@ const E = (a, b) => ({ a, b, forma: 'elipse' });
 const MAR_AM = '#efc12f', MAR_AZ = '#4a8fd0', MAR_AZ2 = '#3b7cc0', MAR_BG = '#e7e2d0';
 const MOR_V = '#c9373b', MOR_V2 = '#b32d31';
 const ILHA_V = '#c93a43';
+/* o contorno de fora do andar de cima do Arruda, a `d` metros do de dentro */
+const ARR_FORA = d => ({ a: 90 + d, b: 59 + d, r: 59 + d });
 const ARR_BANDAS = [['#c3202d', 30], ['#efeee9', 13], ['#1d1d1f', 30], ['#efeee9', 13]];
 const ILHA_TETO = { h: 26, larg: 11, avanco: 2.5, cai: 1.2, cor: '#8f8e89', cor2: '#7d7c78', listras: true, corTrelica: '#5f5e5b', corPilar: '#8a8985' };
 const NEO_B = '#ecebe6', NEO_C = '#b9bbbb';
@@ -288,7 +290,7 @@ export const FICHAS = {
      Oval de dois andares, o norte em cima. O andar de BAIXO dá a volta
      inteira. O de CIMA é fino atrás do gol da esquerda (oeste) e vai
      ficando mais fundo pelo norte até o gol da direita (leste), onde é o
-     maior: o contorno de fora é uma elipse fora do centro. Os dois são de
+     maior, em cinco degraus: cada trecho tem a sua fundura e a sua altura. Os dois são de
      degrau pintado no redemoinho tricolor (vermelho, branco, preto). Só a
      lateral de baixo (sul) é coberta, e só o andar de cima dela: as
      cadeiras cinzas debaixo da cobertura de concreto. Em volta do gramado,
@@ -305,15 +307,18 @@ export const FICHAS = {
           { de: -25, ate: 205, padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 123, torcao: 8, semCadeiras: true, corredor: 20 },
           { de: 205, ate: 335, cor: '#c0333c', cor2: '#a82c34', padrao: 'mosaico', mistura: 0.3, semCadeiras: true, corredor: 18 }
         ] },
-      { dentro: { a: 90, b: 59, r: 59 }, fora: { a: 113.5, b: 82, forma: 'elipse', cu: 9.5, cv: 1 }, h: [9, 20], fileiras: 16, corredorFrente: 2,
+      /* o andar de cima, EM DEGRAUS (correção do dono, 14/11/2026: "deve se inspirar na imagem em anexo" — a vista
+         aérea em que cada trecho tem o seu tamanho): cinco trechos, cada um mais fundo e mais alto que o anterior,
+         do oeste até o leste; e a lateral coberta */
+      { dentro: { a: 90, b: 59, r: 59 }, fora: ARR_FORA(34), h: [9, 20], fileiras: 16, corredorFrente: 2,
         trechos: [
-          { de: -25, ate: 25, h: [9, 26], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
-          { de: 25, ate: 75, h: [9, 23], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
-          { de: 75, ate: 125, h: [9, 20], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
-          { de: 125, ate: 165, h: [9, 17], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
-          { de: 165, ate: 205, h: [9, 15.5], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
+          { de: -25, ate: 25, fora: ARR_FORA(34), h: [9, 26], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: 25, ate: 75, fora: ARR_FORA(28), h: [9, 23], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: 75, ate: 125, fora: ARR_FORA(22), h: [9, 20], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2, bocas: { cada: 12.5, f: 0.42, w: 4, d: 4, cor: '#e9e8e2' } },
+          { de: 125, ate: 165, fora: ARR_FORA(16), h: [9, 17], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
+          { de: 165, ate: 205, fora: ARR_FORA(13), h: [9, 15.5], padrao: 'redemoinho', bandas: ARR_BANDAS, fase: 80, torcao: 12, semCadeiras: true, corredor: 22, parapeito: 2 },
           /* a lateral coberta: só o andar de cima, as cadeiras debaixo do concreto */
-          { de: 205, ate: 335, h: [9, 20], cor: '#b9b6ac', cor2: '#a5a299', padrao: 'mosaico', mistura: 0.3, corredor: 16,
+          { de: 205, ate: 335, fora: ARR_FORA(22), h: [9, 20], cor: '#b9b6ac', cor2: '#a5a299', padrao: 'mosaico', mistura: 0.3, corredor: 16,
             cobertura: { h: 30, larg: 21, avanco: 3, cai: 1.5, cor: '#7b7972', cor2: '#696761', listras: true, corTrelica: '#4f4e4a', corPilar: '#8a8985' } }
         ] }
     ],
