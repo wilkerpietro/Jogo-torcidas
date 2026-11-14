@@ -1,7 +1,7 @@
 /* ASSAR OS ESTÁDIOS LOW-POLY (14/11/2026)
    Abre a bancada (bancada.html) no Chromium, monta cada ficha (fichas.mjs),
    fotografa de cima e grava:
-     · cenario3d/img/cenas/<id>.webp — o palco da cena, 1536 × 1024;
+     · cenario3d/img/cenas/<id>.webp — o palco da cena, 3072 × 2048 (o dobro da cena comum);
      · cenario3d/dados/estadios_cenas.js — a máscara de onde se anda, os
        marcadores (bondes, túneis, grades, PM, faixas) e os clubes de cada um;
      · as fotos de conferência (satélite, aérea, TV) na pasta dada em CONF.
@@ -29,8 +29,8 @@ const bin = u => Buffer.from(u.split(',')[1], 'base64');
     const r = await pg.evaluate(id => window.assar(id), id);
     const arq = id.replace(/-/g, '_') + '.webp';
     fs.writeFileSync(path.join(RAIZ, 'cenario3d', 'img', 'cenas', arq), bin(r.imagem));
-    dados[id] = { nome: r.nome, clubes: r.clubes, escala: r.escala, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
-                  foto: { imagem: 'img/cenas/' + arq, mascara: r.mascara }, cena: r.cena };
+    dados[id] = { nome: r.nome, clubes: r.clubes, escala: r.escala, largura: r.largura, altura: r.altura, setores: { mandante: r.cena.spawns.filter(s => s.lado === 'mandante').length, visitante: r.cena.spawns.filter(s => s.lado === 'visitante').length },
+                  foto: { imagem: 'img/cenas/' + arq + '?v=' + require('crypto').createHash('sha1').update(bin(r.imagem)).digest('hex').slice(0, 8), mascara: r.mascara }, cena: r.cena };
     if (CONF) { fs.mkdirSync(CONF, { recursive: true }); for (const k of ['satelite', 'aerea', 'tv']) fs.writeFileSync(path.join(CONF, id + '_' + k + '.jpg'), bin(r[k])); fs.writeFileSync(path.join(CONF, id + '_cima.webp'), bin(r.imagem)); }
     console.log(id, 'escala', r.escala, 'px/m ·', Math.round(bin(r.imagem).length / 1024), 'KB ·', Date.now() - t0, 'ms');
   }

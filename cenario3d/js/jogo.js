@@ -13025,7 +13025,7 @@ TO.dados.cenas = (function(){
      abaixo, como em qualquer cena de foto. */
   {
     const LP = (typeof TO !== 'undefined' && TO.dados && TO.dados.estadiosLowPoly) || {};
-    for(const id in LP) cenas[id] = fazEstadio(Object.assign({id}, JSON.parse(JSON.stringify(LP[id].cena))));
+    for(const id in LP) cenas[id] = fazEstadio(Object.assign({id, largura: LP[id].largura || W, altura: LP[id].altura || H}, JSON.parse(JSON.stringify(LP[id].cena))));
   }
 
   /* =======================================================
@@ -44729,11 +44729,22 @@ TO.diaJogo.arredores = (function(){
      todo o resto do combate não precisam saber qual está no ar. */
   let D = TO.dados.cenaArredores;
 
-  const W = D.largura, H = D.altura, CEL = D.celula;
-  const COLS = Math.ceil(W/CEL), ROWS = Math.ceil(H/CEL);
+  /* A CENA PODE SER MAIOR QUE A TELA (dono, 14/11/2026: "deixe os estádios
+     maiores em proporção aos bonecos"): o estádio low-poly vem com o dobro
+     do tamanho (3072 × 2048), a mesma célula. Largura, altura e a malha
+     deixam de ser fixas — `redimensionar` troca tudo quando a cena muda,
+     e quem está de fora lê sempre o valor do momento (A.W, A.H). */
+  let W = D.largura, H = D.altura; const CEL = D.celula;
+  let COLS = Math.ceil(W/CEL), ROWS = Math.ceil(H/CEL);
 
   /* 1 = dá pra pisar. 0 = prédio, muro, canteiro, terreno. */
-  const malha = new Uint8Array(COLS*ROWS);
+  let malha = new Uint8Array(COLS*ROWS);
+  function redimensionar(){
+    const w = D.largura || 1536, h = D.altura || 1024;
+    if(w === W && h === H) return;
+    W = w; H = h; COLS = Math.ceil(W/CEL); ROWS = Math.ceil(H/CEL);
+    malha = new Uint8Array(COLS*ROWS); malhaCorpo = new Uint8Array(COLS*ROWS); memoriaLivre = null;
+  }
 
   let imagem=null, imagemOk=false, imagemErro=false;
 
@@ -45177,7 +45188,7 @@ TO.diaJogo.arredores = (function(){
      célula de asfalto onde o disco não cabe, ele fica a vida inteira
      empurrando o meio-fio, apontando pra uma direção impossível.
      Recalculada junto com a malha. */
-  const malhaCorpo=new Uint8Array(COLS*ROWS);
+  let malhaCorpo=new Uint8Array(COLS*ROWS);
   function construirMalhaCorpo(){
     const r=raioMalha(7);
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)
@@ -45411,6 +45422,7 @@ TO.diaJogo.arredores = (function(){
       ? TO.dados.cenas[id] : TO.dados.cenaArredores;
     if(!nova || nova === D) { reconstruir(); return D; }
     D = nova;
+    redimensionar();
     imagem = null; imagemOk = false; imagemErro = false;
     if(D.imagem) carregarImagem();
     reconstruir();
@@ -45631,7 +45643,7 @@ TO.diaJogo.arredores = (function(){
   carregarImagem();
 
   return {
-    get D(){return D;}, W, H, CEL, COLS, ROWS, malha, usarCena,
+    get D(){return D;}, get W(){return W;}, get H(){return H;}, CEL, get COLS(){return COLS;}, get ROWS(){return ROWS;}, get malha(){return malha;}, usarCena,
     reconstruir, construirMalhaDosPoligonos,
     codificarMascara, decodificarMascara,
     caminhavel, cabe, celulaLivre, cabeCorpo, pontoLivreMaisProximo,
@@ -54746,6 +54758,12 @@ TO.diaJogo.ponte = (function(){
      ======================================================= */
   let zoom=1;
   const ZOOM_MAX=5;
+  /* CENA MAIOR QUE A TELA (estádio low-poly com o dobro do tamanho,
+     14/11/2026): o `zoom` continua contado na régua da cena comum — em 1×
+     o boneco aparece do tamanho de sempre, e a cena grande já abre com a
+     câmera seguindo o líder. `kMundo` é quantas vezes a cena é maior; a
+     rodinha (ou a pinça) afasta até 1/kMundo, que é o estádio inteiro. */
+  const kMundo = () => Math.max(1, (A.W || 1536) / 1536);
   /* MAIS PERTO (pedido do dono, 08/09/2026): com a briga refinada nos
      bonecos, 2,4× já não deixava ler quem bate em quem. 3,4× no celular;
      o teto sobe junto pra pinça ainda ter pra onde ir. */
@@ -54779,7 +54797,7 @@ TO.diaJogo.ponte = (function(){
     if(cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
     /* preencher: o zoom mínimo é o que faz a menor razão alcançar a maior */
     const enche = Math.max(w/A.W, h/A.H) / Math.min(w/A.W, h/A.H);
-    zoom = U.limitar(Math.max(zoom, ZOOM_CELULAR, enche), 1, ZOOM_MAX);
+    zoom = U.limitar(Math.max(zoom, ZOOM_CELULAR, enche/kMundo()), 1/kMundo(), ZOOM_MAX);
   }
   function focoDoZoom(){
     if(!J) return null;
@@ -54799,9 +54817,10 @@ TO.diaJogo.ponte = (function(){
   }
 
   function ajustar(c,alvo,W,H){
-    const s=Math.min(alvo.width/W, alvo.height/H)*zoom;
+    const zz=Math.max(1, zoom*kMundo());   /* (zoom afastado numa cena grande não encolhe a cena comum que vier depois) */
+    const s=Math.min(alvo.width/W, alvo.height/H)*zz;
     let cx=W/2, cy=H/2;
-    if(zoom>1){ const f=focoDoZoom(); if(f){cx=f.x; cy=f.y;} }
+    if(zz>1){ const f=focoDoZoom(); if(f){cx=f.x; cy=f.y;} }
     /* o ponto de foco vai pro centro do canvas, mas a câmera não passa
        da borda da cena: encostou no canto, o foco sai do centro */
     let ox=alvo.width/2 - cx*s, oy=alvo.height/2 - cy*s;
@@ -55868,7 +55887,7 @@ TO.diaJogo.ponte = (function(){
        miúdos) andarem na mesma velocidade percebida. */
     cv.addEventListener('wheel',e=>{
       e.preventDefault();
-      zoom=U.limitar(zoom*Math.exp(-e.deltaY*0.0018), 1, ZOOM_MAX);
+      zoom=U.limitar(zoom*Math.exp(-e.deltaY*0.0018), 1/kMundo(), ZOOM_MAX);
     },{passive:false});
 
     ligarPinca();
@@ -55958,7 +55977,7 @@ TO.diaJogo.ponte = (function(){
       if(e.pointerType!=='touch' || !dedos.has(e.pointerId)) return;
       dedos.set(e.pointerId,{x:e.clientX,y:e.clientY});
       if(dedos.size!==2 || dist0<10) return;
-      zoom=U.limitar(zoom0*afast()/dist0, 1, ZOOM_MAX);
+      zoom=U.limitar(zoom0*afast()/dist0, 1/kMundo(), ZOOM_MAX);
     });
   }
 
@@ -56548,7 +56567,7 @@ ${(D.fugas||[]).map(f=>'    '+j(f)).join(',\n')}
           abrirMira: ()=>abrirMira(null), soltarBomba, cancelarMira,
           alternarVelocidade,
           get zoom(){return zoom;},
-          set zoom(v){ zoom=U.limitar(+v||1, 1, ZOOM_MAX); },
+          set zoom(v){ zoom=U.limitar(+v||1, 1/kMundo(), ZOOM_MAX); },
           get velocidade(){return velocidade;},
           set velocidade(v){ velocidade = velocidades.includes(v) ? v : 1;
                              atualizarBotaoVelocidade(); },
@@ -62855,7 +62874,8 @@ TO.assaltoMotor = { REGUA, criarAssalto, passoAssalto, acaoPossivel, olhosEm, al
       /* de perto, na nossa torcida (pedido do dono, 10/10/2026): a câmera
          da ponte centra no líder, que está no nosso setor */
       if(zoomAntesDoJogo == null) zoomAntesDoJogo = TO.diaJogo.ponte.zoom;
-      TO.diaJogo.ponte.zoom = 2.2;
+      /* (no estádio low-poly, com o dobro do tamanho, um pouco mais aberto: a torcida e um pedaço do campo) */
+      TO.diaJogo.ponte.zoom = (TO.diaJogo.arredores.W || 1536) > 1536 ? 1.5 : 2.2;
       /* AS FESTAS QUE A TORCIDA MONTOU PRA ESTE JOGO (dono, 11/10/2026):
          o estoque já foi gasto quando o placar saiu (TO.festas); aqui
          só a cena — mosaico, bandeirão, trapos, papel, mosaico 3D */

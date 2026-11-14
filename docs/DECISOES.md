@@ -12189,6 +12189,34 @@ nota de onde ficam as torcidas, e pediu: "tente reproduzir".
 - **Limite**: as medidas saíram das fotos por proporção com o campo, não de
   planta; o entorno é simplificado.
 
+## Estádios maiores em proporção aos bonecos (dono, 14/11/2026)
+
+Pedido do dono, depois de ver os seis estádios lowpoly: "deixe os estádios
+maiores em proporção aos bonecos". O boneco ficava gigante: no Maracanã
+ocupava o espaço de umas quatro fileiras.
+
+- **O que mudou**: a cena do estádio lowpoly passou a ter o dobro do
+  tamanho da cena comum (3072 × 2048 em vez de 1536 × 1024). O boneco
+  segue do mesmo tamanho na tela; o estádio é que ficou duas vezes maior
+  em volta dele. Os seis estádios foram assados de novo.
+- **A câmera**: a briga abre de perto, seguindo o líder, e mostra metade
+  do estádio. A rodinha do mouse (ou a pinça no celular) afasta até ver o
+  estádio inteiro, com os bonecos pequenos. A seta que já apontava o bonde
+  rival fora do quadro continua valendo.
+- **O jogo assistido** no cartão do dia abre um pouco mais aberto (1,5× em
+  vez de 2,2×), pra aparecer a torcida e um pedaço do campo.
+- **No motor**: a malha de onde se anda deixou de ter tamanho fixo e
+  acompanha a cena; o zoom do palco continua contado na régua da cena
+  comum. As outras cenas (rua, praça, bar, sede, estádios de foto) não
+  mudaram.
+- **Consequência**: as distâncias dentro do estádio dobraram em relação ao
+  passo do boneco. Atravessar de um setor ao outro demora o dobro.
+- **Testado**: briga 60 × 56 nos seis estádios e no celular (sem erro de
+  página); troca entre cena comum e estádio grande; jogo assistido em casa
+  no Castelão. Desempenho no teste sem placa de vídeo: 26 a 30 quadros por
+  segundo parado e 14 a 21 na briga, contra 21 e 15 a 16 da versão
+  anterior.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

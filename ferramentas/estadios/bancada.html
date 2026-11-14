@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <title>Bancada dos estádios low-poly</title>
 <style>html,body{margin:0;background:#111;color:#ddd;font:14px system-ui}</style>
-<canvas id="cv" width="1536" height="1024"></canvas>
+<canvas id="cv" width="3072" height="2048"></canvas>
 <script type="module">
 /* A BANCADA: monta o estádio da ficha e o fotografa — de cima, no tamanho da
    cena do jogo (1536 × 1024), com as coberturas vazadas por cima, e de dois
@@ -10,7 +10,10 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
 import { construir, marcadores, mascara, limites, raioDe } from './estadio_lowpoly.mjs';
 import { FICHAS } from './fichas.mjs';
-const W = 1536, H = 1024, CEL = 8;
+/* A CENA DO ESTÁDIO TEM O DOBRO DA CENA COMUM (dono, 14/11/2026: "deixe os
+   estádios maiores em proporção aos bonecos"): 3072 × 2048, a mesma célula
+   de 8 px. O jogo abre com a câmera no líder; afastando, vê o estádio todo. */
+const W = 3072, H = 2048, CEL = 8;
 const cv = document.getElementById('cv');
 const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -62,7 +65,7 @@ window.assar = async function (id, opc) {
   /* 2. só a cobertura, vazada por cima */
   cena.visible = false; renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, cam); cena.visible = true;
   bx.globalAlpha = opc.vazado != null ? opc.vazado : ficha.vazado != null ? ficha.vazado : 0.34; bx.drawImage(cv, 0, 0); bx.globalAlpha = 1;
-  const imagem = base.toDataURL('image/webp', 0.86);
+  const imagem = base.toDataURL('image/webp', 0.84);
   /* (e a mesma vista com a cobertura fechada, pra conferir com o satélite) */
   renderer.setClearColor(0x000000, 1); renderer.render(scene, cam); const satelite = pegar('image/jpeg', 0.85);
   /* ---- as fotos de conferência ---- */
@@ -75,7 +78,7 @@ window.assar = async function (id, opc) {
   const tv = olhar(0, 16, raioDe(270, fora) - 6, 0, 6, -20);
   /* ---- a máscara e os marcadores ---- */
   const m = marcadores(ficha, paraPx, s);
-  return { id, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, tv, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
+  return { id, largura: W, altura: H, nome: ficha.nome, clubes: ficha.clubes, escala: +s.toFixed(3), imagem, satelite, aerea, tv, mascara: mascara(ficha, paraMetros, W, H, CEL), cena: Object.assign({ nome: ficha.nome }, m) };
 };
 window.FICHAS = Object.keys(FICHAS);
 window.pronto = true;
