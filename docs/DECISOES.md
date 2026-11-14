@@ -12751,6 +12751,41 @@ também".
 - **Fila do Rio Grande do Sul** (aguardando o dono): Bento Freitas
   (Brasil de Pelotas), Boca do Lobo (Pelotas) e Passo d'Areia (São José).
 
+## Bento Freitas lowpoly (Brasil de Pelotas) (dono, 14/11/2026)
+
+- O dono viu o Colosso da Lagoa e mandou: "Pode seguir pro Bento
+  Freitas". Feito sem agente, com as 13 fotos que já estavam baixadas
+  (satélite, aéreas e de dentro), fora do repositório.
+- **Leitura das fotos**: a aérea mostra um L de concreto em primeiro
+  plano que parece obra nova, mas são as arquibancadas velhas do leste e
+  do norte vistas por trás. O satélite e a ordem das arquibancadas nas
+  outras fotos fecham assim: três arquibancadas de degrau pintado em U
+  (sul, leste, norte) e o lado oeste picado.
+- **Bento Freitas** (o sul à direita, o norte à esquerda, o leste em
+  cima, o oeste embaixo):
+  - à direita (sul), a arquibancada funda de faixas vermelhas e pretas,
+    com o muro preto no alto escrito A MAIOR E MAIS FIEL e a cabine;
+  - em cima (leste), a arquibancada comprida e mais baixa, com GEB (o
+    escudo) pintado no meio, as placas no alto e os dois postes de
+    refletor atrás; depois, o terreno baldio e a avenida do canal;
+  - à esquerda (norte), a outra arquibancada de fundo; atrás, os prédios;
+  - embaixo (oeste): a social de dois lances de cadeira vermelha (o de
+    cima com as escadas amarelas, debaixo do telhado claro), o degrau
+    baixo com o prédio vermelho das cabines e, na ponta norte, o pátio
+    sem arquibancada com a torre do refletor;
+  - as bocas dos vomitórios no meio de cada arquibancada, nos lugares
+    que o satélite mostra.
+- **O que não é fiel**: o escudo virou só as letras GEB (o gerador não
+  desenha escudo); o letreiro A MAIOR E MAIS FIEL, que na vida real é na
+  parede (de frente pro campo), está pintado em cima do muro pra aparecer
+  na vista de cima; as quinas, que são chanfradas, saíram em leque.
+- **Setores**: sem fonte. Escolha minha: a Comando Rubro-Negro na
+  arquibancada do letreiro (sul), a visitante na do norte.
+- **Testado**: briga 60 × 56 jogando de Comando Rubro-Negro; chão um
+  só, nenhum marcador fora; sem erro de página.
+- **Fila do Rio Grande do Sul** (aguardando o dono): Boca do Lobo
+  (Pelotas) e Passo d'Areia (São José).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

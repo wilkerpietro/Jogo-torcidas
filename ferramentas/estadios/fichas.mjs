@@ -528,3 +528,5 @@ import centenario from './fichas/estadio-centenario.mjs';
 FICHAS[centenario.id] = centenario;
 import colossoDaLagoa from './fichas/estadio-colosso-da-lagoa.mjs';
 FICHAS[colossoDaLagoa.id] = colossoDaLagoa;
+import bentoFreitas from './fichas/estadio-bento-freitas.mjs';
+FICHAS[bentoFreitas.id] = bentoFreitas;
