@@ -147,7 +147,22 @@ export function andavel(ficha, u, v) {
   const ang = Math.atan2(v, u) / RAD;
   const ult = ficha.aneis.length - 1;
   for (let ia = 0; ia <= ult; ia++) {
-    const anel = ficha.aneis[ia], t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue;
+    const anel = ficha.aneis[ia];
+    /* `andarReto: true` (anel `reto` de arquibancada RETANGULAR e funda, longe do centro — o Bruno Daniel): o trecho vale pelo
+       pé da perpendicular na beira de dentro, como no desenho, e não pelo ângulo visto do centro; sem isso sobra uma cunha de
+       chão invisível depois de cada ponta da arquibancada. */
+    if (anel.andarReto) {
+      let achou = false;
+      for (const t of anel.trechos) { if (t.tipo === 'vazio') continue;
+        const cd = t.dentro || anel.dentro, cf = t.fora || anel.fora; if (cd.forma === 'elipse' || cf.forma === 'elipse') continue;
+        const cx = Math.max(-(cd.a - cd.r), Math.min(cd.a - cd.r, u)), cy = Math.max(-(cd.b - cd.r), Math.min(cd.b - cd.r, v)), dd = Math.hypot(u - cx, v - cy);
+        if (dd < cd.r - 0.3) continue;
+        const fx = cx + (u - cx) / dd * cd.r, fy = cy + (v - cy) / dd * cd.r;
+        if (!dentroDoArco(Math.atan2(fy, fx) / RAD, t.de, t.ate)) continue;
+        if (d <= raioDe(ang, cf) - (ia === ult ? 0.4 : -0.3)) { achou = true; break; } }
+      if (achou) return true; continue;
+    }
+    const t = trechoEm(anel, ang); if (!t || t.tipo === 'vazio') continue;
     const r0 = raioDe(ang, t.dentro || anel.dentro), r1 = raioDe(ang, t.fora || anel.fora);
     /* (só a beira de dentro do primeiro anel e a de fora do último encolhem: anéis encostados não deixam fresta) */
     if (d >= r0 + (ia === 0 ? 0.4 : -0.3) && d <= r1 - (ia === ult ? 0.4 : -0.3)) return true;

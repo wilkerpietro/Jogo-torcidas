@@ -89,6 +89,10 @@ formam um chão só; uma fresta isola o lance).
   `blocoFileiras`). O número real de fileiras sai da fundura (0,9 m cada).
 - `corredorFrente`: o corredor vazio entre a primeira fileira e o
   alambrado (2,4 m; 0 desliga).
+- `andarReto: true` (anel `reto`): use quando a arquibancada é um retângulo
+  fundo e longe do centro (o Bruno Daniel). O chão andável passa a valer
+  pelo pé da perpendicular na beira de dentro, como o desenho; sem isso
+  sobra chão invisível depois de cada ponta.
 - `normal: true` (também vale no trecho): a escada sai perpendicular à beira
   de dentro e vai reta até o fundo. Use quando a arquibancada é mais funda
   num lugar que no outro sem ser em degraus (as fileiras acompanham a beira

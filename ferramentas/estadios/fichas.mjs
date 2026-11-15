@@ -585,3 +585,4 @@ import moisesLucarelli from './fichas/estadio-moises-lucarelli.mjs'; FICHAS[mois
 import brincoDeOuro from './fichas/estadio-brinco-de-ouro.mjs'; FICHAS[brincoDeOuro.id] = brincoDeOuro;
 import ulricoMursa from './fichas/estadio-ulrico-mursa.mjs'; FICHAS[ulricoMursa.id] = ulricoMursa;
 import anacletoCampanella from './fichas/estadio-anacleto-campanella.mjs'; FICHAS[anacletoCampanella.id] = anacletoCampanella;
+import brunoDaniel from './fichas/estadio-bruno-daniel.mjs'; FICHAS[brunoDaniel.id] = brunoDaniel;

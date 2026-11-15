@@ -13844,6 +13844,38 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Comando Azul
   sem erro de página.
 
+## Bruno Daniel lowpoly (Santo André) (dono, 15/11/2026)
+
+- O dono, depois de revisar o Anacleto Campanella: "Ramalhão."
+- Procurei o mapa de setores e NÃO achei. As fotos misturam épocas: as
+  antigas mostram a marquise de concreto em balanço sobre a arquibancada
+  grande, que foi demolida. Modelei o estado do satélite.
+- **Como é** (o meio do campo saiu do círculo central): duas
+  arquibancadas retas, uma de cada lado, e nada atrás dos gols. No
+  quadro o oeste fica em cima.
+  - A arquibancada grande (oeste): reta, 125 m por 28 m, alta,
+    descoberta, de degrau pintado em faixas azuis e brancas; os dois
+    blocos do meio mais escuros. As escadas e as quatro bocas da frente
+    onde o satélite mostra. Atrás, a estrutura de concreto e os doze
+    pilares da marquise que saiu. Na frente, o teto branco do túnel.
+  - A arquibancada menor (leste): reta, 111 m por 16 m, de cadeira azul,
+    com cinco escadas; atrás, o galpão comprido de teto branco.
+  - As duas curvas: sem arquibancada (barranco de grama).
+  - A pista oval bege em volta do gramado e a faixa azul-clara de fora.
+- **Gerador: `andarReto: true`** no anel. Numa arquibancada retangular
+  funda e longe do centro, o chão andável era cortado pelo ângulo visto
+  do centro e sobrava uma cunha de chão invisível depois de cada ponta
+  (até 30 m aqui). Com `andarReto` o trecho vale pelo pé da
+  perpendicular na beira de dentro, como no desenho. É opcional: os
+  outros estádios não mudam.
+- **As torcidas (escolha minha, sem fonte)**: a Fúria Andreense no meio
+  da arquibancada grande e a visitante na ponta norte da menor.
+- **Aproximações**: a pintura da pista (as ondas bege e azul viraram
+  duas faixas); o muro em curva atrás dos gols não foi feito; as torres
+  dos refletores; as alturas; o entorno em caixas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Fúria
+  Andreense sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
