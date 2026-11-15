@@ -327,7 +327,7 @@ export function construir(THREE, ficha) {
         }
         /* o espelho do degrau (a face de pé entre uma fileira e a outra): concreto; com `corEspelho` (o Independência), a cor
            do encosto das cadeiras, que é o que se vê de frente nas fotos — de cima ele não aparece */
-        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), (!escada && !t.semCadeiras && (t.corEspelho || ficha.corEspelho)) || CONCRETO_ESC);
+        if (k < N - 1 && !G.noVomitorio(i, k + 1)) A.quad(Q(i, f1, hk), Q(i, f1, hk1), Q(i + 1, f1, hk1), Q(i + 1, f1, hk), (!escada && (t.corEspelho || (!t.semCadeiras && ficha.corEspelho))) || CONCRETO_ESC);
       }
     }
   }
