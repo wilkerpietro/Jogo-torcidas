@@ -220,6 +220,11 @@ terço da altura (`vomitorios: { f: 0.3, cada: 2 }`).
 - Se existir mapa de setores do clube, ele manda no desenho: diz onde há
   arquibancada, onde há camarote e onde fica a visitante.
 - Telhado no satélite não quer dizer arquibancada.
+- Arquibancada coberta nem sempre é um prédio à parte: veja se ela é só um
+  trecho do mesmo anel com telhado em cima (o Estádio do Café). Nesse caso é
+  um `trecho` do anel, não um bloco reto encostado.
+- Não parta um lance em dois por causa de uma linha clara no satélite: só há
+  dois anéis se as fotos mostrarem o degrau ou a mureta entre eles.
 - Canto em leque (anel `reto` de raio pequeno): use `semCadeiras: true` com
   pintura lisa (`fracoes`); cadeira solta ali abre e vira risco.
 - Onde um trecho reto de contorno próprio encosta num anel oval, faça a ponta

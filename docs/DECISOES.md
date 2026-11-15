@@ -13296,6 +13296,32 @@ também".
 - **Fila do Paraná** (aguardando o dono): Germano Krüger (Operário e
   Maringá), o último.
 
+## Estádio do Café: uma ferradura só, de um lance (dono, 15/11/2026)
+
+- O dono viu o Estádio do Café e corrigiu duas coisas:
+  - "O modelo que você criou desconecta a área coberta da restante, a
+    arquibancada tem formato de ferradura." Eu tinha feito a coberta
+    como um bloco reto à parte, mais raso, encostado na ponta da
+    ferradura.
+  - "O estádio do Café não tem dois anéis, tem um só." Eu tinha partido
+    a ferradura em dois lances com um corredor no meio (li uma linha
+    clara do satélite como corredor).
+- **Como ficou**: um lance único e contínuo, da ponta sudoeste, pelo
+  lado oeste, pela curva norte e pelo lado leste, até a ponta sudeste.
+  A coberta é o trecho oeste dessa mesma ferradura: cadeira em blocos
+  vermelhos e azuis (xadrez), com o telhado cinza em arco por cima. O
+  resto é degrau de cimento cru. O corredor do alto, por onde se entra,
+  dá a volta inteira. Continua sem boca de vomitório.
+- **Lições**:
+  1. arquibancada coberta nem sempre é um prédio à parte: ver se ela é
+     só um trecho do mesmo anel, com telhado em cima (mesma fundura,
+     mesma curva);
+  2. não partir um lance em dois por causa de uma linha clara no
+     satélite: só há dois anéis se as fotos mostrarem o degrau ou a
+     mureta entre eles.
+- **Testado**: briga no estádio; chão um só, nenhum marcador fora; sem
+  erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
