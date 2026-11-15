@@ -576,3 +576,5 @@ import estadioDoCafe from './fichas/estadio-do-cafe.mjs';
 FICHAS[estadioDoCafe.id] = estadioDoCafe;
 import germanoKruger from './fichas/estadio-germano-kruger.mjs';
 FICHAS[germanoKruger.id] = germanoKruger;
+import willieDavids from './fichas/estadio-willie-davids.mjs';
+FICHAS[willieDavids.id] = willieDavids;

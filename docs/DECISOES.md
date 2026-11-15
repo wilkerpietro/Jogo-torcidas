@@ -13398,6 +13398,44 @@ também".
   Química, Arena do Grêmio); chão um só, nenhum marcador fora; sem erro
   de página.
 
+## Willie Davids lowpoly (Maringá) (dono, 15/11/2026)
+
+- O terceiro da ordem do dono ("2, depois 3, depois 1"): o modelo do
+  estádio que o Maringá passou a usar. Feito sem agente. Fotos de
+  referência (satélite de alta resolução, aéreas de várias épocas e de
+  dentro) fora do repositório. Não achei mapa de setores.
+- **Medida**: o meio do campo saiu do círculo central.
+- **Uma arquibancada só** (a lição do Estádio do Café, olhada antes de
+  modelar): um anel oval contínuo de degrau de cimento em volta da
+  pista, raso nas curvas (9 m) e fundo no meio do lado leste (24 m); a
+  coberta é o trecho oeste desse mesmo anel, mais fundo (34 m), com
+  cadeira e com o telhado. A altura acompanha a fundura (`inclinacao`).
+- **Os acessos**: não há boca de vomitório. O estádio fica em cima de
+  um aterro gramado; entra-se por cima, pela rua de asfalto que dá a
+  volta no alto do anel, e desce-se pelas escadas.
+- **Willie Davids** (o norte à direita, o oeste em cima):
+  - a pista vermelha de oito raias;
+  - em cima, a coberta: cadeira vinho nas pontas, amarela no meio e
+    azul-marinho na ponta norte, com as fileiras da frente descobertas;
+    por cima, o telhado em leque de nove panos claros, que passa do
+    fundo da arquibancada;
+  - o resto do anel em degrau de cimento cinza com as escadas claras;
+  - atrás do lado leste, o prédio das cabines e a escadaria da entrada;
+    em volta, o aterro gramado, os pátios de terra, o ginásio e as
+    piscinas ao norte.
+- **Como foi feito**: o telhado são nove `telhados` (um por pano), com
+  os pontos calculados na ficha entre o arco de fora e o de dentro; o
+  aterro é a `esplanada` verde do chão.
+- **O que é incerto**: as cores das cadeiras da coberta. As fotos são
+  de épocas diferentes (amarelo e vinho numa, verde, amarelo e vermelho
+  em outra) e o satélite não mostra debaixo do telhado. Usei a do
+  amarelo e vinho.
+- **Setores**: sem fonte. Escolha minha: a Força Maringaense no meio da
+  coberta, a visitante na metade norte do lado leste.
+- **Testado**: briga 60 × 56 jogando de Força Maringaense, agora na
+  cena `estadio-willie-davids`; chão um só, nenhum marcador fora; sem
+  erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
