@@ -14445,6 +14445,17 @@ O dono: "O formato ainda não está muito bom, observe detalhadamente a imagem d
 - **Sem os dois lotes escuros no lance de cima** (dono: "Não entendi esses dois lotes de cadeiras escuras no meio"). Eram uma tribuna de imprensa que eu tinha posto no meio do lance de cima do oeste por uma leitura de foto. O mapa mostra a tribuna (setores 201 a 203) no meio da faixa de camarotes do oeste, entre os C201-C218 e os C219-C236, não no lance de cima. Saíram: o lance de cima é todo da mesma cadeira.
 - **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página.
 
+## Independência lowpoly (América-MG) (dono, 15/11/2026)
+
+O dono aprovou o Mineirão ("Tudo certo, vamos pro Independência") e mandou sete fotos: de dentro (o fundo oeste, as laterais), uma aérea antiga e o esquema com as medidas (campo de 105 x 68, 7 m da linha lateral à arquibancada, 4 m da linha de fundo à de trás do gol, 22.860 lugares).
+
+- **De onde saiu cada coisa**: a planta, do satélite girado na escala do campo (o esquema confirma as distâncias); os lados, das ruas do mapa aberto (a Rua Genoveva de Souza ao norte, a Ismênia Tunes ao sul, a Pitangui no fundo leste); os três níveis, das fotos e da Wikipédia (o primeiro com 15 mil lugares, o segundo de imprensa e camarotes, o terceiro com 6 mil, 27 m de altura, bem inclinado); os setores e portões, do Lance! (Pitangui e Ismênia nas laterais, Minas atrás do gol, a visitante pelo portão 8, na Rua Ismênia Tunes).
+- **A ficha** (`fichas/estadio-independencia.mjs`): arena em U de cadeira verde. As duas laterais (a do norte passa do gol leste até 74 m do meio do campo, a do sul até 66 m) e o fundo oeste, cada uma com o lance de baixo (sem boca: entra-se pela faixa de circulação atrás dele, a regra dos dois andares), a faixa de circulação, os camarotes de vidro e o lance de cima, alto, com a boca a um quarto da altura em escadas alternadas. Os três telhados de chapa clara com a treliça branca na frente e o "América Futebol Clube" escrito nas duas laterais (como no satélite); os pilares que seguram a ponta do telhado do lado aberto; nos dois cantos do oeste o bloco baixo com a laje escura e as caixas d'água, e na quina virada pro campo a torre estreita de concreto e vidro; o fundo leste aberto, com o prédio de teto escuro, o placar e o estacionamento. Uma faixa de chão ao pé das três arquibancadas, na beira do campo, liga uma à outra por dentro (sem ela a lateral sul ficava separada, do outro lado da torre).
+- **Defeito do gerador achado aqui**: contorno de retângulo com canto em raio ZERO junta todas as colunas do lado do fundo num ponto do canto (a conta que decide o lado toma o fundo pela lateral) e o lance sai só com os degraus. Na ficha, canto de meio metro; nenhum outro estádio usa raio zero.
+- **As torcidas (escolhas minhas, sem mapa de setores)**: a Seita Verde no lance de baixo do fundo oeste (o Setor Minas); a visitante na ponta leste do lance de baixo da lateral sul (o lado do portão 8).
+- **O que ficou de fora**: a tenda branca da aérea antiga (no satélite de hoje o fundo leste tem um prédio de teto escuro); o escudo do América pintado nas cadeiras de uma das fotos (não sei em que arquibancada fica).
+- **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

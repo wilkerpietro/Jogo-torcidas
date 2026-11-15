@@ -597,3 +597,4 @@ import jorgeIsmael from './fichas/estadio-jorge-ismael-de-biasi.mjs'; FICHAS[jor
 import limeirao from './fichas/estadio-limeirao.mjs'; FICHAS[limeirao.id] = limeirao;
 import baraoDeSerraNegra from './fichas/estadio-barao-de-serra-negra.mjs'; FICHAS[baraoDeSerraNegra.id] = baraoDeSerraNegra;
 import mineirao from './fichas/estadio-mineirao.mjs'; FICHAS[mineirao.id] = mineirao;
+import independencia from './fichas/estadio-independencia.mjs'; FICHAS[independencia.id] = independencia;

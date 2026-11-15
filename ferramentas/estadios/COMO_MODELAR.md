@@ -149,6 +149,13 @@ formam um chão só; uma fresta isola o lance).
   pra dentro, `avanco` pra fora).
 - `parapeito`, `corFachada`, `corMureta`.
 
+RETÂNGULO NUNCA COM CANTO ZERO (o Independência): num anel `reto`, contorno
+`{ a, b, r: 0 }` faz o gerador tomar o lado do fundo pelo da lateral e
+juntar todas as colunas do fundo num ponto do canto (o lance sai só com os
+degraus). Use `r: 0.5`. Arquibancadas separadas por torre ou prédio de
+canto: uma faixa de `passagem` na beira do campo, ao pé delas, liga o chão
+(senão o teste dá duas ilhas).
+
 PLANTA TIRADA DO MAPA DE SETORES, RAIO A RAIO (o Mineirão; dono,
 15/11/2026: "observe detalhadamente a imagem do mapa pra planta da
 arquibancada vista de cima ser extremamente fiel ao mapa"). Quando nem
