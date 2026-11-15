@@ -14468,6 +14468,14 @@ O dono: "A MRV arena já foi feita? Do Atlético Mineiro" e "Vamos fazer o está
 - **O que é escolha minha, sem fonte**: a cor das cadeiras (nenhuma fonte diz: ficou preta com branco salpicado, à espera de foto do dono); a Galoucura no setor sem cadeira do fundo sul e o Esquadrão na lateral leste.
 - **Conferido**: chão único, nenhum marcador fora, briga rodando sem erro de página; o Mineirão assado de novo só com o Cruzeiro (a cena guarda os `clubes` da ficha: enquanto o Mineirão assado ainda listava o Atlético, a briga do Atlético abria nele).
 
+## O Athletic sai do Estádio Regional: Joaquim Portugal (dono, 15/11/2026)
+
+O dono: "Vamos pro do Athletic agora" (o primeiro dos três que dividiam o Estádio Regional: Athletic, Mamoré e URT).
+
+- **Os dados**: o Joaquim Portugal (`joaquim-portugal`, Interior de Minas, bairro São João del-Rei II, 6.000 lugares; hoje chamado Arena Sicredi) entrou em `dados/estadios.js`, na lista de estádios do Interior de Minas, nas fontes (`cidades_bairros.json`, com 2 estádios; `torcidas_relacoes.json`), no `importar_estadios.py` e no `importar_planilha.py`; o Athletic e o Esquadrão Alvinegro passam a ter o Joaquim Portugal como estádio; o Estádio Regional fica com o Mamoré e a URT. A capacidade: as fontes vão de 4.655 (Wikipédia) a 6.000 (Itatiaia, 2024), com obra de 2025 pra "até 7 mil"; ficou 6.000.
+- **O modelo ainda não foi feito**: os dois satélites mostram estados diferentes (o Bing, de antes da reforma, com as duas laterais cobertas; o Google, da obra de 2025, com a lateral noroeste demolida e o gramado sendo trocado), as matérias não dizem como ficou cada lado e a busca de fotos não trouxe nada do estádio. Pedi fotos ao dono. Até lá o Athletic usa a cena genérica pequena (`estadio-10`), que é o que vale pra todo clube sem estádio modelado.
+- **Conferido**: os arquivos de dados abrem; a briga do Athletic roda sem erro de página na cena genérica.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;

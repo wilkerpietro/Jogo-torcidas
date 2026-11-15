@@ -88,6 +88,8 @@ NOVOS = [
     # 15/11/2026, o dono: "A MRV arena já foi feita? Do Atlético Mineiro" — o Atlético sai do Mineirão e manda na Arena MRV
     # (no bairro Califórnia; no mapa do jogo, o vizinho Coração Eucarístico).
     {'nome': 'Arena MRV', 'mapa': 'belo-horizonte', 'bairro': 'Coração Eucarístico'},
+    # o Athletic sai do Estádio Regional e manda no Joaquim Portugal (a Arena Sicredi, em São João del-Rei).
+    {'nome': 'Joaquim Portugal', 'mapa': 'interior-de-minas', 'bairro': 'São João del-Rei II'},
 ]
 
 

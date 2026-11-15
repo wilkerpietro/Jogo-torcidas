@@ -3206,9 +3206,10 @@
    "temPraia": false,
    "temLagoa": false,
    "vegetacao": "mata",
-   "quantidadeEstadios": 1,
+   "quantidadeEstadios": 2,
    "estadios": [
-    "Estadio Regional"
+    "Estadio Regional",
+    "Joaquim Portugal"
    ],
    "rodovias": [
     "Rodovia Sudeste 1"
