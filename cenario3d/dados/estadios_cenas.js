@@ -6539,12 +6539,12 @@ window.__ESTADIOS = {
    "nome": "Ulrico Mursa",
    "faixas": {
     "mandante1": {
-     "x": 1177,
-     "y": 1532,
+     "x": 792,
+     "y": 1024,
      "len": 130,
      "dir": [
-      0.58,
-      -0.82
+      1,
+      0
      ]
     },
     "mandante2": {
@@ -6599,8 +6599,8 @@ window.__ESTADIOS = {
      "rot": "MANDANTE 1º ESCALÃO",
      "lado": "mandante",
      "entrada": "portao_mandante",
-     "x": 1136,
-     "y": 1591,
+     "x": 760,
+     "y": 1024,
      "jogador": true
     },
     {
@@ -6651,11 +6651,11 @@ window.__ESTADIOS = {
      "lado": "mandante",
      "raio": 40,
      "dir": [
-      -0.59,
-      0.81
+      -1,
+      0
      ],
-     "x": 1086,
-     "y": 1645
+     "x": 726,
+     "y": 1024
     },
     {
      "id": "portao_visitante",

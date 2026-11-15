@@ -2,7 +2,8 @@
    de referência (15/11/2026); o meio do campo foi tirado do círculo
    central. O campo corre de sudoeste a nordeste; no quadro o NOROESTE (a
    social coberta) fica em cima e o NORDESTE (o fundo do estacionamento) à
-   direita. NÃO achei mapa de setores do clube.
+   direita. NÃO achei mapa de setores do clube; os setores das torcidas foram
+   ditos pelo dono.
    Estádio pequeno, retangular, rubro-verde, com arquibancada em três lados:
    · EM CIMA (noroeste), a SOCIAL COBERTA: cadeira em blocos vermelhos e
      verdes com as escadas brancas, em cima de um muro branco (os bancos de
@@ -81,10 +82,11 @@ export default {
     /* em cima (noroeste): o mato do morro */
     { tipo: 'arvores', u: 0, v: 74, w: 150, d: 10, n: 34 }
   ],
-  /* (escolhas minhas, sem fonte: não achei mapa de setores) a Força Rubro Verde na ponta sudoeste da arquibancada descoberta e
-     a visitante na ponta nordeste dela; os outros bondes da casa na social */
-  jogo: { mandante1: [A(-40, -40), A(-19, -40)], mandante2: [A(12, 40), A(-12, 40)], mandante3: [A(42, 40), A(24, 40)], visitante: [A(22, -40), A(47, -40)],
-          tunelMandante: A(-29, -40), tunelVisitante: A(34, -40), folgaPM: 4,
+  /* dono, 15/11/2026: "Força Rubro Verde fica na arquibancada atrás do gol, a visitante fica no fim da arquibancada sul". A
+     Força Rubro Verde na arquibancadinha de trás do gol do sudoeste (à esquerda) e a visitante na ponta nordeste da
+     arquibancada descoberta (a ponta longe dela); os outros bondes da casa na social */
+  jogo: { mandante1: [A(-57.2, 14), A(-57.2, -14)], mandante2: [A(12, 40), A(-12, 40)], mandante3: [A(42, 40), A(24, 40)], visitante: [A(22, -40), A(47, -40)],
+          tunelMandante: 180, tunelVisitante: A(34, -40), folgaPM: 4,
           fracao: { mandante1: 0.5, mandante2: 0.5, mandante3: 0.5, visitante1: 0.5, visitante2: 0.55, visitante3: 0.45 },
           torcidas: { forca_rubro_verde: 'mandante1' } }
 };

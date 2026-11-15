@@ -13771,6 +13771,20 @@ também".
 - **Testado**: chão um só, nenhum marcador fora; briga como Força Rubro
   Verde sem erro de página. Fotos fora do repositório.
 
+## Ulrico Mursa: os setores das torcidas (dono, 15/11/2026)
+
+- O dono, na revisão: "Tudo certo. Força Rubro Verde fica na
+  arquibancada atrás do gol, a visitante fica no fim da arquibancada
+  sul."
+- A Força Rubro Verde foi pra arquibancadinha de trás do gol do
+  sudoeste. A visitante fica na ponta da arquibancada descoberta (a
+  "sul"): deixei na ponta nordeste, a que fica longe da Força — é a
+  minha leitura de "fim"; se for a outra ponta, é só trocar.
+- A próxima fila, dita pelo dono: Anacleto Campanella; depois de
+  revisado, o Ramalhão (Bruno Daniel); depois o Primeiro de Maio;
+  depois o Jayme Cintra (o do Paulista de Jundiaí, que hoje manda no
+  Nabi Abi Chedid nos dados).
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
