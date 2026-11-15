@@ -14193,6 +14193,40 @@ também".
 - **Testado**: brigas no Novelli Júnior, no Maião e no Ulrico Mursa sem
   erro de página.
 
+## Jorge Ismael de Biasi lowpoly (Novorizontino) (dono, 15/11/2026)
+
+- O dono: "Depois de corrigido isso, faça o estádio do Novorizontino,
+  depois Inter de Limeira e XV de Piracicaba." Um por vez, com revisão:
+  este é o do Novorizontino. A Inter de Limeira e o XV continuam
+  mandando nele nos dados até os estádios deles serem feitos.
+- Procurei o mapa de setores e NÃO achei.
+- **Épocas**: fotos antigas mostram o degrau de cimento cinza, sem
+  cadeira, e outras a pintura com a cara do tigre no meio. Fiquei com a
+  aérea mais recente: cadeira nos quatro lados e a fachada amarela. As
+  medidas saíram do satélite.
+- **Como é** (o meio do campo saiu do círculo central; no quadro a
+  coberta fica em cima): retangular, fechado dos quatro lados.
+  - A coberta (sudoeste): cadeira escura, 95 m por 13 m, com o meio
+    debaixo do telhado claro; atrás, o prédio amarelo e preto, com o
+    painel do escudo e o nome do estádio escrito em pé.
+  - A arquibancada comprida (nordeste): cinco blocos de cadeira
+    (escuro, amarelo-palha, escuro, amarelo-palha, escuro), 13 m de
+    fundo, com os dois cantos em curva.
+  - Atrás dos dois gols: a arquibancada amarelo-palha em cunha, funda do
+    lado da comprida e rasa do lado da coberta (o muro de trás é
+    enviesado): 18 a 26 m no sudeste, 8 a 18 m no noroeste.
+  - As quatro torres dos refletores nos cantos do gramado.
+- **Na ficha**: a família de contornos `C(k)`; as cunhas em três degraus
+  de fundura (aproximação do muro enviesado); a altura acompanha a
+  fundura (`inclinacao`). O alambrado e o muro nasceram sozinhos.
+- **Os acessos**: nenhuma boca aparece; ficou sem.
+- **As torcidas (escolha minha, sem fonte)**: a Garra do Tigre no meio
+  da arquibancada comprida e a visitante atrás do gol do sudeste.
+- **Aproximações**: as cunhas em degraus; a cadeira da coberta; o escudo
+  virou um painel preto; as janelas e faixas do prédio; as alturas.
+- **Testado**: chão um só, nenhum marcador fora; briga como Garra do
+  Tigre sem erro de página. Fotos fora do repositório.
+
 ## Descartado (decisão do dono, 17/08/2026)
 Indicador de tensão (permanente); Gestão como tela de menu; trair
 aliado; formação da saída; escalação manual; plano padrão-retrato;
